@@ -1447,10 +1447,18 @@ function coinClick(el){
 
 // SCROLL REVEAL — includes new sections
 const obs=new IntersectionObserver((entries)=>{
-  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');}});
-},{threshold:.08});
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.classList.add('visible');
+      e.target.style.opacity='1';
+      e.target.style.transform='none';
+    }
+  });
+},{threshold:.05});
 document.querySelectorAll('.reveal,.tcard,.tier-card,.game-feat,.booster-card,.skin-card,.rm-card,.donate-card,.nft-card').forEach(el=>{
-  if(!el.classList.contains('reveal')){el.style.cssText+='opacity:0;transform:translateY(25px);transition:opacity .6s ease,transform .6s ease,border-color .2s,box-shadow .2s;';}
+  el.style.opacity='0';
+  el.style.transform='translateY(25px)';
+  el.style.transition='opacity .6s ease,transform .6s ease,border-color .2s,box-shadow .2s';
   obs.observe(el);
   el.addEventListener('animationend',()=>el.style.animation='');
 });
