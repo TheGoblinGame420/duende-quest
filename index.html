@@ -515,6 +515,64 @@ footer{
 .f-soc a:hover{color:var(--green);transform:scale(1.3);}
 .f-note{color:rgba(255,255,255,.12);font-size:.58rem;line-height:2;max-width:550px;margin:.5rem auto 0;}
 
+/* ============ NFT STORE ============ */
+.store-tabs{display:flex;gap:.5rem;justify-content:center;margin-bottom:2.5rem;flex-wrap:wrap;}
+.store-tab{font-family:'Press Start 2P',monospace;font-size:.38rem;padding:.45rem 1.1rem;border:1px solid rgba(255,255,255,.12);border-radius:2px;cursor:pointer;transition:all .15s;color:rgba(255,255,255,.35);background:transparent;letter-spacing:.08em;}
+.store-tab:hover{color:rgba(255,255,255,.7);border-color:rgba(255,255,255,.3);}
+.store-tab.active{border-color:var(--yellow);color:var(--yellow);background:rgba(255,230,0,.07);box-shadow:0 0 10px rgba(255,230,0,.2);}
+.nft-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:1.2rem;max-width:1100px;margin:0 auto;}
+.nft-card{
+  background:rgba(255,255,255,.03);border:2px solid rgba(255,255,255,.08);border-radius:4px;
+  padding:1.4rem 1rem;text-align:center;transition:all .25s;cursor:pointer;position:relative;
+  box-shadow:4px 4px 0 rgba(0,0,0,.5);display:flex;flex-direction:column;align-items:center;gap:.5rem;
+}
+.nft-card:hover{transform:translate(-3px,-3px);}
+.nft-card.c-common{border-color:rgba(160,160,160,.2);}
+.nft-card.c-common:hover{box-shadow:6px 6px 0 rgba(160,160,160,.3);border-color:rgba(160,160,160,.5);}
+.nft-card.c-rare{border-color:rgba(0,238,255,.2);}
+.nft-card.c-rare:hover{box-shadow:6px 6px 0 var(--cyan);border-color:var(--cyan);}
+.nft-card.c-epic{border-color:rgba(124,58,237,.3);}
+.nft-card.c-epic:hover{box-shadow:6px 6px 0 var(--purple);border-color:var(--purple);}
+.nft-card.c-legendary{border-color:rgba(255,230,0,.35);animation:border-pulse 2s ease-in-out infinite;}
+.nft-card.c-legendary:hover{box-shadow:6px 6px 0 var(--yellow);border-color:var(--yellow);}
+.nft-card[data-cat].hidden{display:none;}
+.nft-img{width:100px;height:100px;object-fit:contain;image-rendering:pixelated;mix-blend-mode:screen;transition:transform .3s;filter:drop-shadow(0 0 10px rgba(0,0,0,.7));}
+.nft-card:hover .nft-img{transform:scale(1.1) rotate(-2deg);}
+.nft-badge{font-family:'Press Start 2P',monospace;font-size:.3rem;padding:.22rem .55rem;border-radius:2px;letter-spacing:.08em;}
+.nft-name{font-family:'Bangers',cursive;font-size:1.5rem;letter-spacing:.05em;line-height:1.1;}
+.nft-desc{font-size:.65rem;color:rgba(255,255,255,.35);line-height:1.6;flex:1;}
+.nft-price{font-family:'Press Start 2P',monospace;font-size:.48rem;padding:.5rem .8rem;background:rgba(0,0,0,.35);border-radius:3px;width:100%;margin-top:.3rem;}
+.nft-buy-btn{
+  width:100%;font-family:'Press Start 2P',monospace;font-size:.38rem;padding:.55rem;border-radius:2px;
+  border:none;cursor:pointer;transition:all .15s;margin-top:.3rem;letter-spacing:.05em;
+}
+.nft-buy-btn:hover{filter:brightness(1.15);transform:translateY(-1px);}
+.nft-buy-btn.free{background:linear-gradient(135deg,rgba(0,255,136,.15),rgba(0,200,100,.15));color:var(--green);border:1px solid rgba(0,255,136,.3);}
+.nft-buy-btn.pump{background:linear-gradient(135deg,#ff6b00,#cc4400);color:#fff;box-shadow:3px 3px 0 rgba(0,0,0,.5);}
+.nft-buy-btn.sol{background:linear-gradient(135deg,#9945ff,#6b2fcc);color:#fff;box-shadow:3px 3px 0 rgba(0,0,0,.5);}
+
+/* ============ EXCHANGE ============ */
+.exc-wrap{max-width:580px;margin:2.5rem auto 0;background:rgba(0,0,0,.45);border:2px solid rgba(255,230,0,.18);border-radius:6px;padding:2.5rem 2rem;box-shadow:0 0 40px rgba(255,230,0,.05),6px 6px 0 rgba(0,0,0,.5);}
+.exc-title{font-family:'Press Start 2P',monospace;font-size:.55rem;color:var(--yellow);text-align:center;margin-bottom:1.8rem;text-shadow:0 0 12px rgba(255,230,0,.4);}
+.exc-row{display:flex;align-items:center;gap:.8rem;margin:.7rem 0;flex-wrap:wrap;}
+.exc-label{font-family:'Press Start 2P',monospace;font-size:.35rem;color:rgba(255,255,255,.35);min-width:90px;letter-spacing:.06em;}
+.exc-input{background:rgba(255,255,255,.05);border:1px solid rgba(255,230,0,.3);border-radius:3px;color:var(--yellow);font-family:'Press Start 2P',monospace;font-size:.58rem;padding:.55rem .9rem;flex:1;min-width:120px;outline:none;transition:border-color .15s;}
+.exc-input:focus{border-color:var(--yellow);box-shadow:0 0 8px rgba(255,230,0,.2);}
+.exc-output{background:rgba(0,255,136,.05);border:1px solid rgba(0,255,136,.2);border-radius:3px;padding:.55rem .9rem;flex:1;font-family:'Press Start 2P',monospace;font-size:.58rem;color:var(--green);min-width:120px;}
+.exc-arrow{text-align:center;font-size:1.2rem;color:rgba(255,255,255,.2);margin:.4rem 0;}
+.exc-rate{font-family:'Press Start 2P',monospace;font-size:.32rem;color:rgba(255,255,255,.25);text-align:center;line-height:2.2;margin-bottom:1.2rem;}
+.exc-btn{width:100%;font-family:'Press Start 2P',monospace;font-size:.5rem;padding:.8rem;border-radius:3px;border:none;cursor:pointer;transition:all .2s;margin-top:.5rem;letter-spacing:.06em;}
+.exc-btn.connect{background:linear-gradient(135deg,#9945ff,#6b2fcc);color:#fff;box-shadow:4px 4px 0 rgba(0,0,0,.5);}
+.exc-btn.connect:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 rgba(153,69,255,.4);}
+.exc-btn.exchange{background:linear-gradient(135deg,var(--yellow),#cc9900);color:#000;box-shadow:4px 4px 0 rgba(0,0,0,.5);opacity:.45;pointer-events:none;}
+.exc-btn.exchange.active{opacity:1;pointer-events:all;}
+.exc-btn.exchange.active:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 rgba(255,230,0,.5);}
+.exc-note{font-family:'Press Start 2P',monospace;font-size:.3rem;color:rgba(255,255,255,.15);text-align:center;margin-top:.8rem;line-height:2;}
+
+/* scroll reveal */
+.reveal{opacity:0;transform:translateY(30px);transition:opacity .6s ease,transform .6s ease;}
+.reveal.visible{opacity:1;transform:none;}
+
 /* FLOAT */
 .float-btn{
   position:fixed;bottom:1.5rem;right:1.5rem;z-index:99;
@@ -558,7 +616,8 @@ footer{
   <ul class="nav-links">
     <li><a href="#nfts">NFTs</a></li>
     <li><a href="#game">Game</a></li>
-    <li><a href="#arsenal">Arsenal</a></li>
+    <li><a href="#nft-store">🛒 Tienda</a></li>
+    <li><a href="#exchange">🔄 Exchange</a></li>
     <li><a href="#ranking">Ranking</a></li>
     <li><a href="#telegram">Telegram</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
@@ -576,8 +635,8 @@ footer{
     100 INFINITO · 500 ELITE · 1,000 ESPECIAL · COMMON ILIMITADOS
   </div>
   <div class="hero-btns">
-    <a href="#" class="btn-buy">🚀 BUY $DUENDE</a>
-    <a href="#nfts" class="btn-pink">🎮 MINT NFT</a>
+    <a href="https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump" target="_blank" class="btn-buy">🚀 BUY $DUENDE</a>
+    <a href="#nft-store" class="btn-pink">🛒 NFT STORE</a>
     <a href="game.html" class="btn-game" target="_blank">⚔️ JUGAR AHORA</a>
   </div>
   <div class="ca-box">
@@ -606,12 +665,12 @@ footer{
   <p class="px-sub">El ejército del duende crece cada hora.<br>Únete antes de que sea tarde.</p>
   <div class="socials-grid">
     <a href="https://x.com/elduendesolana" target="_blank" class="soc"><span class="si">𝕏</span>Twitter / X</a>
-    <a href="https://t.me/duendecasino420" target="_blank" class="soc"><span class="si">✈️</span>Canal TG</a>
+    <a href="https://t.me/duendesolana420" target="_blank" class="soc"><span class="si">✈️</span>Canal TG</a>
     <a href="https://t.me/elduende420peru" target="_blank" class="soc"><span class="si">💬</span>Chat TG</a>
     <a href="https://www.instagram.com/ELDUENDE_SOLANA" target="_blank" class="soc"><span class="si">📸</span>Instagram</a>
     <a href="https://www.youtube.com/@Elduende_solana" target="_blank" class="soc"><span class="si">▶️</span>YouTube</a>
-    <a href="https://t.me/elduendepnp" target="_blank" class="soc"><span class="si">🧝</span>@elduendepnp</a>
-    <a href="#" class="soc pump"><span class="si">🔥</span>Pump.fun</a>
+    <a href="https://t.me/ElDuendeOficial" target="_blank" class="soc"><span class="si">🧝</span>@ElDuendeOficial</a>
+    <a href="https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump" target="_blank" class="soc pump"><span class="si">🔥</span>Pump.fun</a>
   </div>
 </section>
 
@@ -745,7 +804,7 @@ footer{
       </div>
       <div class="gs-title">✦ BOSS FIGHT ✦</div>
       <div class="gs-chars">
-        <img class="gs-char hero-char" src="img/duende_hero.png" alt="Hero" id="game-hero">
+        <img class="gs-char hero-char" src="assets/skin duende/duende_comun.png" alt="Hero" id="game-hero">
         <span class="gs-vs">VS</span>
         <img class="gs-char enemy-char" src="img/enemy.png" alt="Enemy" id="game-enemy">
         <img class="gs-char enemy2-char" src="img/enemy2.png" alt="Enemy 2" id="game-enemy2">
@@ -911,6 +970,158 @@ footer{
   </div>
 </section>
 
+<!-- ========== NFT STORE ========== -->
+<section class="section" id="nft-store" style="background:radial-gradient(ellipse at 30% 30%,rgba(255,230,0,.07),transparent 55%),radial-gradient(ellipse at 70% 70%,rgba(124,58,237,.07),transparent 55%)">
+  <div class="px-title reveal" style="color:var(--yellow)">🛒 NFT STORE</div>
+  <p class="px-sub reveal">Skins · Armas · Cofres · Todo en $DUENDE</p>
+
+  <div class="store-tabs reveal">
+    <button class="store-tab active" onclick="filterStore('all',this)">TODO</button>
+    <button class="store-tab" onclick="filterStore('skin',this)">👤 SKINS</button>
+    <button class="store-tab" onclick="filterStore('weapon',this)">⚔️ ARMAS</button>
+    <button class="store-tab" onclick="filterStore('chest',this)">📦 COFRES</button>
+  </div>
+
+  <div class="nft-grid" id="nft-store-grid">
+
+    <!-- SKINS -->
+    <div class="nft-card c-common reveal" data-cat="skin">
+      <img class="nft-img" src="assets/skin duende/duende_comun.png" alt="Duende Común" style="filter:drop-shadow(0 0 8px rgba(160,160,160,.5))">
+      <span class="nft-badge" style="background:rgba(160,160,160,.1);color:#aaa;border:1px solid rgba(160,160,160,.25)">COMMON</span>
+      <div class="nft-name" style="color:#ccc">Duende Común</div>
+      <div class="nft-desc">El duende base. Disponible para todos los jugadores sin costo.</div>
+      <div class="nft-price" style="color:#aaa">FREE</div>
+      <button class="nft-buy-btn free" onclick="window.open('game.html','_blank')">▶ JUGAR GRATIS</button>
+    </div>
+
+    <div class="nft-card c-epic reveal" data-cat="skin">
+      <img class="nft-img" src="assets/skin duende/skin_necromancer.png" alt="Necromancer" style="filter:drop-shadow(0 0 12px rgba(124,58,237,.7));animation:b-float 2.5s ease-in-out infinite">
+      <span class="nft-badge" style="background:rgba(124,58,237,.2);color:#a78bfa;border:1px solid rgba(124,58,237,.4)">EPIC</span>
+      <div class="nft-name" style="color:#a78bfa">Necromancer</div>
+      <div class="nft-desc">Maestro de los no-muertos. Invoca esqueletos como escudo. +35% HP máximo en batalla.</div>
+      <div class="nft-price" style="color:#a78bfa">5 $DUENDE</div>
+      <button class="nft-buy-btn pump" onclick="window.open('https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump','_blank')">🔥 COMPRAR EN PUMP</button>
+    </div>
+
+    <div class="nft-card c-legendary reveal" data-cat="skin">
+      <img class="nft-img" src="assets/skin duende/skin_legendariafull.png" alt="Legendaria" style="filter:drop-shadow(0 0 18px rgba(255,230,0,.8));animation:b-float 2s ease-in-out infinite .3s">
+      <span class="nft-badge" style="background:rgba(255,230,0,.2);color:var(--yellow);border:1px solid rgba(255,230,0,.5);animation:legendary-glow .8s ease-in-out infinite">LEGENDARY</span>
+      <div class="nft-name" style="color:var(--yellow)">Duende ∞</div>
+      <div class="nft-desc">El duende del infinito. Piel dorada de poder absoluto. +200% ganancias P2E.</div>
+      <div class="nft-price" style="color:var(--yellow)">15 $DUENDE</div>
+      <button class="nft-buy-btn pump" onclick="window.open('https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump','_blank')">🔥 COMPRAR EN PUMP</button>
+    </div>
+
+    <!-- WEAPONS -->
+    <div class="nft-card c-common reveal" data-cat="weapon">
+      <img class="nft-img" src="assets/armas/katana_comun_item.png" alt="Katana Común" style="filter:drop-shadow(0 0 8px rgba(160,160,160,.5));animation:b-float 2.2s ease-in-out infinite">
+      <span class="nft-badge" style="background:rgba(160,160,160,.1);color:#aaa;border:1px solid rgba(160,160,160,.25)">COMMON</span>
+      <div class="nft-name" style="color:#ccc">Katana Común</div>
+      <div class="nft-desc">Hoja de acero forjada en las minas. +15% velocidad de ataque. Drop temporal en batalla.</div>
+      <div class="nft-price" style="color:#aaa">2 $DUENDE</div>
+      <button class="nft-buy-btn pump" onclick="window.open('https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump','_blank')">🔥 COMPRAR EN PUMP</button>
+    </div>
+
+    <div class="nft-card c-legendary reveal" data-cat="weapon">
+      <img class="nft-img" src="assets/armas/katana_spark_item.png" alt="Katana Spark" style="filter:drop-shadow(0 0 16px rgba(0,238,255,.7));animation:b-float 2s ease-in-out infinite .5s">
+      <span class="nft-badge" style="background:rgba(0,238,255,.12);color:var(--cyan);border:1px solid rgba(0,238,255,.4);animation:legendary-glow .8s ease-in-out infinite">LEGENDARY</span>
+      <div class="nft-name" style="color:var(--cyan)">Katana Spark</div>
+      <div class="nft-desc">Forjada con rayos del Monte Lunar. Activa Fire Mode 8s · Chain lightning · +50% daño.</div>
+      <div class="nft-price" style="color:var(--cyan)">8 $DUENDE</div>
+      <button class="nft-buy-btn pump" onclick="window.open('https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump','_blank')">🔥 COMPRAR EN PUMP</button>
+    </div>
+
+    <!-- CHESTS -->
+    <div class="nft-card c-common reveal" data-cat="chest">
+      <img class="nft-img" src="assets/cofres/cofre_comun.png" alt="Cofre Común" style="filter:drop-shadow(0 0 8px rgba(170,255,170,.4));animation:b-float 2.3s ease-in-out infinite">
+      <span class="nft-badge" style="background:rgba(160,160,160,.1);color:#aaa;border:1px solid rgba(160,160,160,.25)">COMMON</span>
+      <div class="nft-name" style="color:#ccc">Cofre Común</div>
+      <div class="nft-desc">Contiene items aleatorios comunes. +5 DQ, +100 score, chance de arma.</div>
+      <div class="nft-price" style="color:#aaa">1 $DUENDE</div>
+      <button class="nft-buy-btn pump" onclick="window.open('https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump','_blank')">🔥 COMPRAR EN PUMP</button>
+    </div>
+
+    <div class="nft-card c-epic reveal" data-cat="chest">
+      <img class="nft-img" src="assets/cofres/cofre_epico.png" alt="Cofre Épico" style="filter:drop-shadow(0 0 14px rgba(124,58,237,.7));animation:b-float 2s ease-in-out infinite .3s">
+      <span class="nft-badge" style="background:rgba(124,58,237,.2);color:#a78bfa;border:1px solid rgba(124,58,237,.4)">EPIC</span>
+      <div class="nft-name" style="color:#a78bfa">Cofre Épico</div>
+      <div class="nft-desc">Items épicos garantizados. +10 DQ, +20 HP, +250 score. Arma épica posible.</div>
+      <div class="nft-price" style="color:#a78bfa">3 $DUENDE</div>
+      <button class="nft-buy-btn pump" onclick="window.open('https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump','_blank')">🔥 COMPRAR EN PUMP</button>
+    </div>
+
+    <div class="nft-card c-legendary reveal" data-cat="chest">
+      <img class="nft-img" src="assets/cofres/cofrelegendario.png" alt="Cofre Legendario" style="filter:drop-shadow(0 0 20px rgba(255,230,0,.9));animation:b-float 1.8s ease-in-out infinite .6s">
+      <span class="nft-badge" style="background:rgba(255,230,0,.2);color:var(--yellow);border:1px solid rgba(255,230,0,.5);animation:legendary-glow .8s ease-in-out infinite">LEGENDARY</span>
+      <div class="nft-name" style="color:var(--yellow)">Cofre Legendario</div>
+      <div class="nft-desc">El cofre supremo. +20 DQ, +40 HP, +500 score. Garantiza item legendario.</div>
+      <div class="nft-price" style="color:var(--yellow)">10 $DUENDE</div>
+      <button class="nft-buy-btn pump" onclick="window.open('https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump','_blank')">🔥 COMPRAR EN PUMP</button>
+    </div>
+
+  </div>
+
+  <div class="reveal" style="text-align:center;margin-top:2.5rem">
+    <a href="https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump" target="_blank" class="btn-buy" style="font-size:.65rem">🔥 COMPRAR $DUENDE EN PUMP.FUN</a>
+    <div style="font-family:'Press Start 2P',monospace;font-size:.32rem;color:rgba(255,255,255,.2);margin-top:.8rem;line-height:2">Necesitas $DUENDE para comprar items NFT · Conecta Phantom Wallet</div>
+  </div>
+</section>
+
+<!-- ========== EXCHANGE ========== -->
+<section class="section" id="exchange" style="background:radial-gradient(ellipse at center,rgba(255,230,0,.06),transparent 65%)">
+  <div class="px-title reveal" style="color:var(--yellow)">🔄 EXCHANGE</div>
+  <p class="px-sub reveal">Convierte tus $DUENDE en DQ Points para usar en el juego · 1 $DUENDE = 1,000 DQ</p>
+
+  <div class="exc-wrap reveal">
+    <div class="exc-title">$DUENDE → DQ POINTS</div>
+
+    <div class="exc-rate">
+      💱 TASA DE CONVERSIÓN: &nbsp;<span style="color:var(--yellow)">1 $DUENDE</span>&nbsp; = &nbsp;<span style="color:var(--green)">1,000 DQ Points</span><br>
+      Los DQ Points se usan en la Tienda DQ del juego para comprar items de batalla
+    </div>
+
+    <div class="exc-row">
+      <span class="exc-label">TÚ ENVÍAS</span>
+      <input class="exc-input" type="number" id="exc-duende-in" min="1" placeholder="0" oninput="calcExchange()">
+      <span style="font-family:'Press Start 2P',monospace;font-size:.45rem;color:var(--yellow);padding:.5rem .7rem;background:rgba(255,230,0,.07);border:1px solid rgba(255,230,0,.2);border-radius:3px;flex-shrink:0">$DUENDE</span>
+    </div>
+
+    <div class="exc-arrow">↕</div>
+
+    <div class="exc-row">
+      <span class="exc-label">RECIBES</span>
+      <div class="exc-output" id="exc-dq-out">0 DQ Points</div>
+      <span style="font-family:'Press Start 2P',monospace;font-size:.45rem;color:var(--green);padding:.5rem .7rem;background:rgba(0,255,136,.07);border:1px solid rgba(0,255,136,.2);border-radius:3px;flex-shrink:0">DQ</span>
+    </div>
+
+    <!-- Equivalencias -->
+    <div id="exc-breakdown" style="display:none;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.07);border-radius:3px;padding:.8rem 1rem;margin:.8rem 0;font-family:'Press Start 2P',monospace;font-size:.3rem;color:rgba(255,255,255,.35);line-height:2.5"></div>
+
+    <button class="exc-btn connect" onclick="excConnectWallet()" id="exc-wallet-btn">👻 CONECTAR PHANTOM WALLET</button>
+    <button class="exc-btn exchange" id="exc-do-btn" onclick="excDoExchange()">🔄 CANJEAR $DUENDE POR DQ</button>
+
+    <div class="exc-note">
+      ⚠ Función en desarrollo · Q3 2025<br>
+      Los DQ se acreditan automáticamente a tu cuenta del juego
+    </div>
+  </div>
+
+  <div class="reveal" style="max-width:580px;margin:1.5rem auto 0;display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;text-align:center">
+    <div style="background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06);border-radius:3px;padding:1rem .5rem">
+      <div style="font-family:'Press Start 2P',monospace;font-size:.55rem;color:var(--yellow);margin-bottom:.4rem">1</div>
+      <div style="font-family:'Press Start 2P',monospace;font-size:.3rem;color:rgba(255,255,255,.3);line-height:1.8">Conecta<br>Phantom</div>
+    </div>
+    <div style="background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06);border-radius:3px;padding:1rem .5rem">
+      <div style="font-family:'Press Start 2P',monospace;font-size:.55rem;color:var(--yellow);margin-bottom:.4rem">2</div>
+      <div style="font-family:'Press Start 2P',monospace;font-size:.3rem;color:rgba(255,255,255,.3);line-height:1.8">Ingresa<br>$DUENDE</div>
+    </div>
+    <div style="background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06);border-radius:3px;padding:1rem .5rem">
+      <div style="font-family:'Press Start 2P',monospace;font-size:.55rem;color:var(--green);margin-bottom:.4rem">3</div>
+      <div style="font-family:'Press Start 2P',monospace;font-size:.3rem;color:rgba(255,255,255,.3);line-height:1.8">Recibe<br>DQ Points</div>
+    </div>
+  </div>
+</section>
+
 <!-- ========== RANKING GLOBAL ========== -->
 <section class="section" id="ranking" style="background:radial-gradient(ellipse at center,rgba(0,255,136,.06),transparent 70%)">
   <div class="px-title" style="color:var(--green)">🌍 RANKING GLOBAL</div>
@@ -994,7 +1205,7 @@ footer{
 
   <div style="text-align:center;margin-top:2.5rem;padding:1.5rem;background:rgba(0,180,216,.04);border:1px solid rgba(0,180,216,.15);border-radius:4px;max-width:600px;margin-left:auto;margin-right:auto">
     <div style="font-family:'Press Start 2P',monospace;font-size:.42rem;color:#00b4d8;margin-bottom:.8rem;animation:blink .9s step-end infinite">⌛ LANZAMIENTO Q3 2025</div>
-    <a href="https://t.me/duendecasino420" target="_blank" style="font-family:'Press Start 2P',monospace;font-size:.5rem;color:#fff;background:linear-gradient(135deg,#0088cc,#005f99);padding:.8rem 1.6rem;border-radius:3px;text-decoration:none;box-shadow:4px 4px 0 rgba(0,0,0,.5);display:inline-block">✈️ UNIRME AL CANAL</a>
+    <a href="https://t.me/duendesolana420" target="_blank" style="font-family:'Press Start 2P',monospace;font-size:.5rem;color:#fff;background:linear-gradient(135deg,#0088cc,#005f99);padding:.8rem 1.6rem;border-radius:3px;text-decoration:none;box-shadow:4px 4px 0 rgba(0,0,0,.5);display:inline-block">✈️ UNIRME AL CANAL</a>
     <div style="font-family:'Press Start 2P',monospace;font-size:.32rem;color:rgba(255,255,255,.2);margin-top:.8rem">Notificación cuando lance el Mini App</div>
   </div>
 </section>
@@ -1151,11 +1362,11 @@ footer{
   </div>
   <div class="f-soc">
     <a href="https://x.com/elduendesolana" target="_blank" title="Twitter/X">𝕏</a>
-    <a href="https://t.me/duendecasino420" target="_blank" title="Canal Telegram">✈️</a>
+    <a href="https://t.me/duendesolana420" target="_blank" title="Canal Telegram">✈️</a>
     <a href="https://t.me/elduende420peru" target="_blank" title="Chat Telegram">💬</a>
     <a href="https://www.instagram.com/ELDUENDE_SOLANA" target="_blank" title="Instagram">📸</a>
     <a href="https://www.youtube.com/@Elduende_solana" target="_blank" title="YouTube">▶️</a>
-    <a href="https://t.me/elduendepnp" target="_blank" title="@elduendepnp">🧝</a>
+    <a href="https://t.me/ElDuendeOficial" target="_blank" title="@ElDuendeOficial">🧝</a>
   </div>
   <p class="f-note">
     $DUENDE es un token memecoin creado para entretenimiento y comunidad en Solana.<br>
@@ -1233,13 +1444,14 @@ function coinClick(el){
   el.outerHTML='<span style="font-size:2.5rem;animation:float-dude 3s ease-in-out infinite;display:block">'+opts[Math.floor(Math.random()*opts.length)]+'</span>';
 }
 
-// SCROLL REVEAL
+// SCROLL REVEAL — includes new sections
 const obs=new IntersectionObserver((entries)=>{
-  entries.forEach(e=>{if(e.isIntersecting){e.target.style.opacity='1';e.target.style.transform='translateY(0)';}});
+  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');}});
 },{threshold:.08});
-document.querySelectorAll('.tcard,.tier-card,.game-feat,.booster-card,.skin-card,.rm-card,.donate-card').forEach(el=>{
-  el.style.cssText+='opacity:0;transform:translateY(25px);transition:opacity .6s ease,transform .6s ease,border-color .2s,box-shadow .2s;';
+document.querySelectorAll('.reveal,.tcard,.tier-card,.game-feat,.booster-card,.skin-card,.rm-card,.donate-card,.nft-card').forEach(el=>{
+  if(!el.classList.contains('reveal')){el.style.cssText+='opacity:0;transform:translateY(25px);transition:opacity .6s ease,transform .6s ease,border-color .2s,box-shadow .2s;';}
   obs.observe(el);
+  el.addEventListener('animationend',()=>el.style.animation='');
 });
 
 // LIVE COUNTERS
@@ -1248,6 +1460,75 @@ setInterval(()=>{
   if(Math.random()>.4){holders+=Math.floor(Math.random()*3)+1;const e=document.getElementById('holders');if(e)e.textContent=holders.toLocaleString();}
   if(Math.random()>.7&&nftLeft>1400){nftLeft--;const e=document.getElementById('nft-left');if(e)e.textContent=nftLeft.toLocaleString();}
 },3500);
+
+// NFT STORE FILTER
+function filterStore(cat, btn){
+  document.querySelectorAll('.store-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.nft-card[data-cat]').forEach(c=>{
+    c.classList.toggle('hidden', cat!=='all' && c.dataset.cat!==cat);
+  });
+}
+
+// EXCHANGE CALCULATOR
+const RATE=1000;
+function calcExchange(){
+  const val=parseFloat(document.getElementById('exc-duende-in').value)||0;
+  const dq=Math.floor(val*RATE);
+  document.getElementById('exc-dq-out').textContent=dq.toLocaleString()+' DQ Points';
+  const bd=document.getElementById('exc-breakdown');
+  if(val>0){
+    const potions=Math.floor(dq/40), shields=Math.floor(dq/65), bolts=Math.floor(dq/90);
+    bd.style.display='block';
+    bd.innerHTML='Con '+(dq.toLocaleString())+' DQ puedes comprar:<br>'+
+      '▶ '+potions+' Energy Potions (40 DQ c/u)<br>'+
+      '▶ '+shields+' Ley Shields (65 DQ c/u)<br>'+
+      '▶ '+bolts+' Lightning Bolts (90 DQ c/u)';
+  } else {
+    bd.style.display='none';
+  }
+}
+
+// EXCHANGE WALLET CONNECT
+let excWalletConnected=false;
+async function excConnectWallet(){
+  if(!window.solana||!window.solana.isPhantom){window.open('https://phantom.app/','_blank');return;}
+  try{
+    await window.solana.connect();
+    excWalletConnected=true;
+    const btn=document.getElementById('exc-wallet-btn');
+    btn.textContent='✅ PHANTOM CONECTADA';btn.style.background='linear-gradient(135deg,#00ff88,#00cc6a)';btn.style.color='#000';
+    const exBtn=document.getElementById('exc-do-btn');
+    exBtn.classList.add('active');
+  }catch(e){console.warn(e);}
+}
+
+function excDoExchange(){
+  if(!excWalletConnected){alert('Conecta tu wallet primero.');return;}
+  const val=parseFloat(document.getElementById('exc-duende-in').value)||0;
+  if(val<=0){return;}
+  const dq=Math.floor(val*RATE);
+  alert('⚠️ Exchange en desarrollo (Q3 2025).\nRecibirías: '+dq.toLocaleString()+' DQ Points.\nConecta tu cuenta del juego para canjearlo.');
+}
+
+// MOUSE PARALLAX en hero
+document.querySelector('.hero')?.addEventListener('mousemove',e=>{
+  const cx=window.innerWidth/2, cy=window.innerHeight/2;
+  const dx=(e.clientX-cx)/cx, dy=(e.clientY-cy)/cy;
+  const coin=document.getElementById('hero-coin');
+  if(coin) coin.style.transform=`rotateY(${dx*18}deg) rotateX(${-dy*10}deg) scale(1.04)`;
+});
+
+// CLICK SPARKS on buttons
+document.querySelectorAll('.btn-buy,.btn-game,.btn-play-big,.nft-buy-btn.pump').forEach(btn=>{
+  btn.addEventListener('click',function(e){
+    const spark=document.createElement('span');
+    spark.textContent='⚡';
+    spark.style.cssText='position:fixed;left:'+(e.clientX-10)+'px;top:'+(e.clientY-10)+'px;font-size:1.4rem;pointer-events:none;z-index:9999;animation:float-p 1s ease-out forwards;opacity:1;';
+    document.body.appendChild(spark);
+    setTimeout(()=>spark.remove(),1000);
+  });
+});
 </script>
 </body>
 </html>

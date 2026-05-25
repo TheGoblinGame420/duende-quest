@@ -2,3 +2,10 @@ node_modules/
 .DS_Store
 Thumbs.db
 *.log
+
+# Nunca subir claves secretas
+.env
+.env.local
+.env*.local
+secrets.js
+service_role_key.txt

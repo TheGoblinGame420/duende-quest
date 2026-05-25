@@ -107,6 +107,37 @@ body{display:flex;flex-direction:column;align-items:center;justify-content:cente
 .pstat{background:rgba(0,255,136,.04);border:1px solid rgba(0,255,136,.1);border-radius:3px;padding:.5rem;text-align:center;}
 .pstat-label{font-size:.26rem;color:rgba(255,255,255,.3);margin-bottom:.2rem;}
 .pstat-val{font-size:.5rem;}
+
+/* ── DQ WALLET ── */
+.dq-card{background:rgba(0,0,10,.6);border:1px solid rgba(255,230,0,.2);border-radius:4px;padding:.8rem 1rem;width:100%;max-width:340px;margin:.3rem 0;}
+.dq-card-title{font-size:.3rem;color:rgba(255,255,255,.3);letter-spacing:.12em;margin-bottom:.4rem;}
+.dq-big{font-size:1.1rem;color:#ffe600;text-shadow:0 0 16px #ffe600,0 0 32px #ff9900;margin-bottom:.15rem;}
+.dq-sub{font-size:.28rem;color:rgba(255,255,255,.3);line-height:2;}
+.dq-convert{display:flex;align-items:center;justify-content:space-between;font-size:.35rem;padding:.5rem 0;border-top:1px solid rgba(255,255,255,.06);margin-top:.5rem;}
+.dq-convert span{color:#00ff88;}
+.dq-wallet-addr{font-size:.3rem;color:rgba(255,255,255,.25);word-break:break-all;line-height:1.8;margin-top:.3rem;font-family:monospace;}
+.dq-wallet-addr.linked{color:#00ff88;}
+.dq-divider{font-size:.28rem;color:rgba(255,255,255,.15);letter-spacing:.15em;margin:.6rem 0 .4rem;text-align:center;}
+#dq-coming{font-size:.3rem;color:rgba(255,255,255,.2);text-align:center;line-height:2.5;padding:.5rem;border:1px dashed rgba(255,255,255,.08);border-radius:3px;width:100%;max-width:340px;margin:.3rem 0;}
+
+/* ── ITEM SHOP / SKIN SHOP ── */
+.store-grid{display:grid;grid-template-columns:1fr 1fr;gap:.55rem;width:100%;max-width:440px;margin:.5rem 0;}
+.store-item{background:rgba(0,255,136,.04);border:1px solid rgba(0,255,136,.15);border-radius:3px;padding:.6rem .7rem;display:flex;align-items:center;gap:.55rem;cursor:pointer;transition:all .15s;position:relative;}
+.store-item:hover:not(.locked){border-color:var(--sc,#00ff88);background:rgba(0,255,136,.09);transform:translate(-1px,-1px);}
+.store-item.locked{opacity:.55;cursor:not-allowed;border-color:rgba(255,255,255,.08);}
+.store-item img{width:38px;height:38px;image-rendering:pixelated;mix-blend-mode:screen;flex-shrink:0;}
+.si-info{flex:1;}
+.si-name{font-size:.35rem;color:#fff;margin-bottom:.25rem;line-height:1.6;}
+.si-desc{font-size:.28rem;color:rgba(255,255,255,.3);line-height:1.5;margin-bottom:.25rem;}
+.si-price{font-size:.38rem;color:#ffe600;}
+.si-price.duende{color:#c084fc;}
+.si-lock{position:absolute;top:4px;right:6px;font-size:.55rem;}
+.store-bal{font-size:.5rem;margin-bottom:.6rem;text-align:center;}
+.store-bal span{display:inline-block;margin:.2rem .5rem;}
+.skin-preview{width:64px;height:64px;image-rendering:pixelated;mix-blend-mode:screen;margin-bottom:.3rem;flex-shrink:0;}
+.store-item.skin-card{flex-direction:column;align-items:center;text-align:center;padding:.7rem .5rem;}
+.store-item.skin-card .si-name{font-size:.32rem;margin-bottom:.2rem;}
+.owned-badge{font-size:.28rem;color:#00ff88;margin-top:.2rem;}
 </style>
 </head>
 <body>
@@ -126,11 +157,16 @@ body{display:flex;flex-direction:column;align-items:center;justify-content:cente
     </div>
     <button class="ob" onclick="startGame()">▶ NUEVA PARTIDA</button>
     <button class="ob purple" onclick="showRanking()">🏆 RANKING GLOBAL</button>
+    <div style="display:flex;gap:.4rem;flex-wrap:wrap;justify-content:center;">
+      <button class="ob" onclick="showItemShop()" style="background:linear-gradient(135deg,#00cc88,#007755);font-size:.52rem">🛒 TIENDA DQ</button>
+      <button class="ob" onclick="showSkinShop()" style="background:linear-gradient(135deg,#7c3aed,#4c1d95);font-size:.52rem">✨ SKINS</button>
+      <button class="ob yellow" onclick="showWallet()" style="font-size:.52rem">💰 WALLET</button>
+    </div>
     <button class="ob" id="menu-auth-btn" onclick="handleAuthBtnClick()" style="background:rgba(124,58,237,.2);color:#a78bfa;border:1px solid rgba(124,58,237,.35)">🔑 CUENTA</button>
     <a href="index.html" class="ob red" style="text-decoration:none;display:inline-block;margin:.3rem">⌂ VOLVER AL SITIO</a>
     <div style="display:flex;gap:.7rem;justify-content:center;margin-top:1.2rem;flex-wrap:wrap;">
       <a href="https://x.com/elduendesolana" target="_blank" style="color:#1da1f2;font-family:'Press Start 2P',monospace;font-size:.38rem;text-decoration:none;border:1px solid rgba(29,161,242,.3);padding:.3rem .6rem;border-radius:2px;transition:all .15s" onmouseover="this.style.background='rgba(29,161,242,.15)'" onmouseout="this.style.background='transparent'">𝕏 TWITTER</a>
-      <a href="https://t.me/duendecasino420" target="_blank" style="color:#00b4d8;font-family:'Press Start 2P',monospace;font-size:.38rem;text-decoration:none;border:1px solid rgba(0,180,216,.3);padding:.3rem .6rem;border-radius:2px;transition:all .15s" onmouseover="this.style.background='rgba(0,180,216,.15)'" onmouseout="this.style.background='transparent'">✈️ TELEGRAM</a>
+      <a href="https://t.me/duendesolana420" target="_blank" style="color:#00b4d8;font-family:'Press Start 2P',monospace;font-size:.38rem;text-decoration:none;border:1px solid rgba(0,180,216,.3);padding:.3rem .6rem;border-radius:2px;transition:all .15s" onmouseover="this.style.background='rgba(0,180,216,.15)'" onmouseout="this.style.background='transparent'">✈️ TELEGRAM</a>
       <a href="https://t.me/elduende420peru" target="_blank" style="color:#00b4d8;font-family:'Press Start 2P',monospace;font-size:.38rem;text-decoration:none;border:1px solid rgba(0,180,216,.3);padding:.3rem .6rem;border-radius:2px;transition:all .15s" onmouseover="this.style.background='rgba(0,180,216,.15)'" onmouseout="this.style.background='transparent'">💬 CHAT</a>
       <a href="https://www.youtube.com/@Elduende_solana" target="_blank" style="color:#ff0000;font-family:'Press Start 2P',monospace;font-size:.38rem;text-decoration:none;border:1px solid rgba(255,0,0,.3);padding:.3rem .6rem;border-radius:2px;transition:all .15s" onmouseover="this.style.background='rgba(255,0,0,.15)'" onmouseout="this.style.background='transparent'">▶️ YOUTUBE</a>
       <a href="https://www.instagram.com/ELDUENDE_SOLANA" target="_blank" style="color:#e1306c;font-family:'Press Start 2P',monospace;font-size:.38rem;text-decoration:none;border:1px solid rgba(225,48,108,.3);padding:.3rem .6rem;border-radius:2px;transition:all .15s" onmouseover="this.style.background='rgba(225,48,108,.15)'" onmouseout="this.style.background='transparent'">📸 INSTAGRAM</a>
@@ -213,6 +249,162 @@ body{display:flex;flex-direction:column;align-items:center;justify-content:cente
     </div>
   </div>
 
+  <!-- ── DQ ITEM SHOP ── -->
+  <div class="ov" id="ov-item-shop">
+    <div class="ov-title" style="color:#00ff88">🛒 TIENDA DQ</div>
+    <div class="store-bal">
+      <span style="color:#ffe600">🪙 <span id="shop-dq-bal">0</span> DQ</span>
+      <span style="color:rgba(255,255,255,.2);font-size:.3rem">·</span>
+      <span style="color:rgba(255,255,255,.3);font-size:.3rem">Los items se guardan para la próxima partida</span>
+    </div>
+    <div class="store-grid">
+      <div class="store-item" style="--sc:#00ff88" onclick="shopBuyItem('potion')">
+        <img id="shop-img-potion" src="" style="width:38px;height:38px">
+        <div class="si-info">
+          <div class="si-name">ENERGY POTION ×3</div>
+          <div class="si-desc">Recupera 50 HP al usar</div>
+          <div class="si-price">🪙 40 DQ</div>
+        </div>
+      </div>
+      <div class="store-item" style="--sc:#00eeff" onclick="shopBuyItem('shield')">
+        <img id="shop-img-shield" src="" style="width:38px;height:38px">
+        <div class="si-info">
+          <div class="si-name">LEY SHIELD ×2</div>
+          <div class="si-desc">5s invencibilidad total</div>
+          <div class="si-price">🪙 65 DQ</div>
+        </div>
+      </div>
+      <div class="store-item" style="--sc:#a78bfa" onclick="shopBuyItem('lightning')">
+        <img id="shop-img-lightning" src="" style="width:38px;height:38px">
+        <div class="si-info">
+          <div class="si-name">LIGHTNING BOLT</div>
+          <div class="si-desc">Elimina todos los enemigos</div>
+          <div class="si-price">🪙 90 DQ</div>
+        </div>
+      </div>
+      <div class="store-item" style="--sc:#ff6400" onclick="shopBuyItem('fire')">
+        <img id="shop-img-fire" src="" style="width:38px;height:38px">
+        <div class="si-info">
+          <div class="si-name">FIRE BLADE</div>
+          <div class="si-desc">30s disparo automático fuego</div>
+          <div class="si-price">🪙 80 DQ</div>
+        </div>
+      </div>
+      <div class="store-item" style="--sc:#ffe600" onclick="shopBuyItem('chest_key')">
+        <img src="assets/cofres/cofre_epico.png" style="width:38px;height:38px;image-rendering:pixelated;mix-blend-mode:screen">
+        <div class="si-info">
+          <div class="si-name">LLAVE ÉPICA</div>
+          <div class="si-desc">Abre un cofre épico al inicio</div>
+          <div class="si-price">🪙 120 DQ</div>
+        </div>
+      </div>
+      <div class="store-item" style="--sc:#ff00cc" onclick="shopBuyItem('hp_up')">
+        <div style="font-size:1.4rem;width:38px;text-align:center">❤️</div>
+        <div class="si-info">
+          <div class="si-name">HP MAX +25</div>
+          <div class="si-desc">Sube tu HP máximo permanente</div>
+          <div class="si-price">🪙 150 DQ</div>
+        </div>
+      </div>
+    </div>
+    <div id="shop-msg" style="font-size:.35rem;min-height:.7rem;color:#ff5555;margin:.3rem 0"></div>
+    <div style="display:flex;gap:.4rem;flex-wrap:wrap;justify-content:center">
+      <button class="ob" onclick="closeItemShop()">← VOLVER</button>
+    </div>
+  </div>
+
+  <!-- ── $DUENDE SKIN SHOP ── -->
+  <div class="ov" id="ov-skin-shop">
+    <div class="ov-title" style="color:#c084fc">✨ TIENDA SKINS</div>
+    <div class="store-bal">
+      <span style="color:#c084fc">💜 <span id="skin-shop-duende">0</span> $DUENDE</span>
+      <span style="color:rgba(255,255,255,.2);font-size:.3rem">·</span>
+      <span style="color:#ffe600">🪙 <span id="skin-shop-dq">0</span> DQ</span>
+    </div>
+    <div class="store-grid" style="grid-template-columns:1fr 1fr 1fr;max-width:480px">
+      <div class="store-item skin-card" onclick="equipSkin('comun')">
+        <img class="skin-preview" src="assets/skin duende/duende_comun.png">
+        <div class="si-name">DUENDE COMÚN</div>
+        <div class="si-price" style="font-size:.32rem;color:#00ff88">✅ GRATIS</div>
+        <div class="owned-badge" id="skin-equipped-comun"></div>
+      </div>
+      <div class="store-item skin-card locked" id="skin-card-necro">
+        <div class="si-lock">🔒</div>
+        <img class="skin-preview" src="assets/skin duende/skin_necromancer.png">
+        <div class="si-name">NECROMANCER</div>
+        <div class="si-price duende">5 $DUENDE</div>
+        <div class="owned-badge" id="skin-equipped-necro"></div>
+      </div>
+      <div class="store-item skin-card locked" id="skin-card-legend">
+        <div class="si-lock">🔒</div>
+        <img class="skin-preview" src="assets/skin duende/skin_legendariafull.png">
+        <div class="si-name">LEGENDARIA</div>
+        <div class="si-price duende">15 $DUENDE</div>
+        <div class="owned-badge" id="skin-equipped-legend"></div>
+      </div>
+    </div>
+    <div style="font-size:.3rem;color:rgba(255,255,255,.2);text-align:center;padding:.5rem;border:1px dashed rgba(124,58,237,.2);border-radius:3px;max-width:380px;margin:.4rem 0;line-height:2.2">
+      🔜 Conecta Phantom y compra $DUENDE en Pump.fun<br>
+      Las skins se desbloquean automáticamente con tu wallet
+    </div>
+    <button class="ob purple" onclick="connectPhantomFromWallet()" style="font-size:.38rem;margin-bottom:.4rem">👻 CONECTAR PHANTOM</button>
+    <div style="display:flex;gap:.4rem;flex-wrap:wrap;justify-content:center">
+      <button class="ob" onclick="closeSkinShop()">← VOLVER</button>
+    </div>
+  </div>
+
+  <!-- ── DQ WALLET MODAL ── -->
+  <div class="ov" id="ov-wallet">
+    <div class="ov-title" style="color:#ffe600">💰 DQ WALLET</div>
+
+    <!-- DQ Points balance -->
+    <div class="dq-card">
+      <div class="dq-card-title">DQ POINTS — SALDO TOTAL</div>
+      <div class="dq-big" id="wallet-dq-total">0</div>
+      <div class="dq-sub">Ganados en partidas · se acumulan para siempre</div>
+      <div class="dq-convert">
+        <span>1,000 DQ</span>
+        <span style="color:rgba(255,255,255,.3)">→</span>
+        <span>1 $DUENDE</span>
+        <span style="color:rgba(255,255,255,.3);font-size:.28rem">(próximamente)</span>
+      </div>
+    </div>
+
+    <!-- Sesión actual -->
+    <div class="dq-card" style="border-color:rgba(0,255,136,.15)">
+      <div class="dq-card-title">ESTA SESIÓN</div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div class="dq-big" id="wallet-session" style="font-size:.7rem;color:#00ff88;text-shadow:0 0 10px #00ff88">0</div>
+          <div class="dq-sub">monedas recogidas</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:.6rem;color:#c084fc;text-shadow:0 0 8px #7c3aed" id="wallet-xp">0 XP</div>
+          <div class="dq-sub">experiencia</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wallet Solana / Phantom -->
+    <div class="dq-card" style="border-color:rgba(124,58,237,.25)">
+      <div class="dq-card-title">SOLANA WALLET</div>
+      <div class="dq-wallet-addr" id="wallet-sol-addr">No conectada — usa 👻 Phantom</div>
+      <div class="dq-sub" id="wallet-sol-status" style="margin-top:.3rem;color:rgba(255,255,255,.2)">Conecta tu wallet para recibir $DUENDE</div>
+      <button class="ob purple" style="margin-top:.6rem;font-size:.38rem;padding:.5rem 1rem" onclick="connectPhantomFromWallet()">👻 CONECTAR PHANTOM</button>
+    </div>
+
+    <!-- Próximamente -->
+    <div id="dq-coming">
+      🔜 PRÓXIMAMENTE<br>
+      $DUENDE token · Exchange DQ → SOL<br>
+      TON Connect · Telegram Mini App rewards
+    </div>
+
+    <div style="display:flex;gap:.4rem;margin-top:.6rem;flex-wrap:wrap;justify-content:center">
+      <button class="ob" onclick="closeWallet()">← VOLVER</button>
+    </div>
+  </div>
+
   <!-- ── PROFILE MODAL ── -->
   <div class="ov" id="ov-profile">
     <div class="ov-title" style="color:#c084fc">👤 PERFIL</div>
@@ -279,6 +471,7 @@ const IMG = {
   // Enemies
   enemy: 'img/enemy.png',
   enemy2: 'img/enemy2.png',
+  enemy_magmar: 'assets/enemigos/enemy_magmar.png',
 
   // World
   ground: 'img/ground.png',
@@ -291,6 +484,15 @@ const IMG = {
 
   // Skills / Effects
   skill_fire: 'img/skill_fire.png',
+
+  // Chests
+  cofre_comun: 'assets/cofres/cofre_comun.png',
+  cofre_epico: 'assets/cofres/cofre_epico.png',
+  cofre_legendario: 'assets/cofres/cofrelegendario.png',
+
+  // Weapon drops
+  katana_comun: 'assets/armas/katana_comun_item.png',
+  katana_spark: 'assets/armas/katana_spark_item.png',
 
   // Skins (futuro / expansión)
   skin_berserker: 'img/skin_berserker.png',
@@ -474,8 +676,12 @@ const PL={
 
 // ── ENTITIES ──
 let enemies=[],coins=[],bullets=[],particles=[],fTexts=[];
+let chests=[],weaponDrops=[];
 let bgStars=[],bgMtns=[],bgClouds=[];
 let groundX=0;
+
+// weapon buff state
+let weaponBuff=null; // {type:'katana_comun'|'katana_spark', timer:0}
 
 // ── COMBO ──
 let comboCount=0,comboTimer=0,comboMultiplier=1;
@@ -513,26 +719,39 @@ function spawnEnemy(forceBoss=false){
   const isCharger=!isBoss&&!isFlyer&&wave>=2&&Math.random()<.3;
   const isExploder=!isBoss&&!isFlyer&&!isCharger&&wave>=5&&Math.random()<.2;
   const isGhost=!isBoss&&!isFlyer&&!isCharger&&!isExploder&&wave>=6&&Math.random()<.15;
-  const baseHp=isBoss?8:isCharger?3:isExploder?1:2;
+  const isMagmar=!isBoss&&!isFlyer&&!isCharger&&!isExploder&&!isGhost&&wave>=7&&Math.random()<.25;
+  const baseHp=isBoss?8:isMagmar?5:isCharger?3:isExploder?1:2;
   const e={
     x:W+30,
     y:isFlyer?GY-80-Math.random()*70:GY,
-    w:isBoss?96:isFlyer?72:68,
-    h:isBoss?90:isFlyer?68:62,
+    w:isBoss?96:isFlyer?72:isMagmar?80:68,
+    h:isBoss?90:isFlyer?68:isMagmar?76:62,
     hp:baseHp,maxHp:baseHp,
-    spd:(gameSpeed+(Math.random()*.8))*(isBoss?.75:isCharger?1.6:1),
-    type:isBoss?'boss':isFlyer?'flyer':isCharger?'charger':isExploder?'exploder':isGhost?'ghost':'normal',
+    spd:(gameSpeed+(Math.random()*.8))*(isBoss?.75:isCharger?1.6:isMagmar?.9:1),
+    type:isBoss?'boss':isFlyer?'flyer':isCharger?'charger':isExploder?'exploder':isGhost?'ghost':isMagmar?'magmar':'normal',
     isExploder:isExploder, isGhost:isGhost, ghostTimer:0, ghostAlpha:1,
-    isFlyer,isBoss,isCharger,
+    isFlyer,isBoss,isCharger,isMagmar,
     flashTimer:0,bobTimer:Math.random()*Math.PI*2,
     chargeTimer:isCharger?60:0,
-    // projectile shooter
-    shootTimer:isBoss?120:0,
+    // projectile shooter (boss + magmar)
+    shootTimer:isBoss?120:isMagmar?80:0,
     facing:-1,
     alive:true,
   };
   enemies.push(e);
   if(isBoss){bossActive=true; spawnFT(W/2-60,80,'★ BOSS FIGHT ★','#ff00cc',true);}
+  if(isMagmar) spawnFT(W/2-60,80,'🔥 MAGMAR!','#ff4400',true);
+}
+
+// ── SPAWN CHEST ──
+function spawnChest(x,y,tier='comun'){
+  chests.push({x,y,w:38,h:38,spd:gameSpeed*.4,tier,bob:Math.random()*Math.PI*2,glowTimer:0});
+}
+
+// ── SPAWN WEAPON DROP ──
+function spawnWeaponDrop(x,y){
+  const type=Math.random()<.6?'katana_comun':'katana_spark';
+  weaponDrops.push({x,y,w:44,h:24,spd:gameSpeed*.5,type,bob:Math.random()*Math.PI*2});
 }
 
 // ── SPAWN COIN ──
@@ -640,10 +859,11 @@ function useItem(slot){
 
 function killAllEnemies(){
   enemies.forEach(e=>{
-    const pts=(e.isBoss?300:e.type==='charger'?80:60)*comboMultiplier;
+    const pts=(e.isBoss?300:e.isMagmar?150:e.type==='charger'?80:60)*comboMultiplier;
     addScore(pts);
     spawnPFX(e.x+e.w/2,e.y+e.h/2,'#00eeff',20,7);
     spawnFT(e.x,e.y-10,'+'+Math.floor(pts),'#00eeff');
+    for(let c=0;c<(e.isBoss?4:e.isMagmar?2:1);c++) spawnCoin(e.x+Math.random()*e.w,e.y);
   });
   enemies=[];
   bossActive=false;
@@ -862,6 +1082,7 @@ function update(){
       e.x-=e.spd;
     }
     if(e.isFlyer){ e.bobTimer+=.07; e.y=e.y+(Math.sin(e.bobTimer)*.8); }
+    if(e.isMagmar){ e.bobTimer+=.04; spawnPFX(e.x+e.w/2,e.y+e.h*.8,'#ff4400',1,1.5,3); }
     if(e.isCharger&&e.chargeTimer>0) e.chargeTimer--;
     // Exploder: rush toward player when close
     if(e.isExploder){ const dx2=PL.x-e.x; const dist2=Math.abs(dx2); if(dist2<180){ e.spd=Math.min(e.spd+.15,gameSpeed*3); e.x+=dx2>0?e.spd:-e.spd; spawnPFX(e.x+e.w/2,e.y+e.h/2,'#ff6400',2,2,3); } }
@@ -869,8 +1090,19 @@ function update(){
     if(e.isGhost){ e.ghostTimer+=.04; e.ghostAlpha=.4+Math.sin(e.ghostTimer)*0.6; if(e.ghostAlpha<0) e.ghostAlpha=0; }
     if(e.flashTimer>0) e.flashTimer--;
 
-    // Boss shoots
-    if(e.isBoss){ e.shootTimer--; if(e.shootTimer<=0){ enemyShoot(e); e.shootTimer=90+Math.random()*60; } }
+    // Boss / Magmar shoot
+    if(e.isBoss||e.isMagmar){
+      e.shootTimer--;
+      if(e.shootTimer<=0){
+        enemyShoot(e);
+        if(e.isMagmar){
+          // Magmar fires 2 staggered fire balls
+          bullets.push({x:e.x,y:e.y+e.h*.4,vx:-5.5,vy:-1,w:20,h:14,enemy:true,fire:true,life:1});
+          bullets.push({x:e.x,y:e.y+e.h*.6,vx:-5.5,vy:1,w:20,h:14,enemy:true,fire:true,life:1});
+        }
+        e.shootTimer=e.isBoss?90+Math.random()*60:70+Math.random()*40;
+      }
+    }
 
     // ── MELEE HIT ──
     if(attackBox.active&&overlap(attackBox,{x:e.x+6,y:e.y+6,w:e.w-12,h:e.h-12})){
@@ -890,12 +1122,24 @@ function update(){
       else if(killStreak===5) { showPUNotif('☄️ 5 KILLS - IMPARABLE!'); shake(5); }
       else if(killStreak===10) { showPUNotif('⚡ 10 KILLS - LEGENDARIO!'); shake(8); addXP(50); }
       if(e.isBoss){ bossActive=false; bossKilled++; spawnFT(e.x,e.y-30,'BOSS MUERTO!','#ff00cc',true); playSound('boss'); addXP(80); }
-      else { addXP(e.isCharger?20:e.isExploder?15:10); playSound('hit'); }
-      spawnPFX(e.x+e.w/2,e.y+e.h/2,e.isBoss?'#ff00cc':e.isCharger?'#ff9900':'#ff3333',e.isBoss?35:20,e.isBoss?9:6);
-      // drop coins on kill
-      const coinDrop=e.isBoss?5:e.isCharger?2:1;
+      else { addXP(e.isMagmar?30:e.isCharger?20:e.isExploder?15:10); playSound('hit'); }
+      spawnPFX(e.x+e.w/2,e.y+e.h/2,e.isBoss?'#ff00cc':e.isMagmar?'#ff4400':e.isCharger?'#ff9900':'#ff3333',e.isBoss?35:e.isMagmar?28:20,e.isBoss?9:6);
+      // drop coins
+      const coinDrop=e.isBoss?5:e.isMagmar?3:e.isCharger?2:1;
       for(let c=0;c<coinDrop;c++) spawnCoin(e.x+Math.random()*e.w,e.y);
-      shake(e.isBoss?10:4);
+      // chest drops
+      if(e.isBoss){
+        const r=Math.random();
+        spawnChest(e.x+e.w/2,e.y, r<.3?'legendario':r<.75?'epico':'comun');
+      } else if(e.isMagmar&&Math.random()<.7){
+        const r=Math.random();
+        spawnChest(e.x+e.w/2,e.y, r<.1?'legendario':r<.35?'epico':'comun');
+      } else if(Math.random()<.08){
+        spawnChest(e.x+e.w/2,e.y,'comun');
+      }
+      // weapon drops (rare, wave 4+)
+      if(wave>=4&&Math.random()<.05) spawnWeaponDrop(e.x+e.w/2,e.y);
+      shake(e.isBoss?10:e.isMagmar?6:4);
       return false;
     }
 
@@ -938,9 +1182,15 @@ function update(){
           spawnPFX(e.x+e.w/2,e.y+e.h/2,'#ff6400',8,4);
           spawnFT(e.x,e.y-15,'+'+pts,'#ff6400');
           if(e.hp<=0){
-            spawnPFX(e.x+e.w/2,e.y+e.h/2,'#ff6400',20,6);
+            spawnPFX(e.x+e.w/2,e.y+e.h/2,e.isMagmar?'#ff4400':'#ff6400',20,6);
             if(e.isBoss) bossActive=false;
-            for(let c=0;c<(e.isBoss?4:1);c++) spawnCoin(e.x+Math.random()*e.w,e.y);
+            const cd=e.isBoss?4:e.isMagmar?2:1;
+            for(let c=0;c<cd;c++) spawnCoin(e.x+Math.random()*e.w,e.y);
+            if(e.isBoss||e.isMagmar){
+              const r=Math.random();
+              spawnChest(e.x+e.w/2,e.y,e.isBoss?(r<.3?'legendario':r<.75?'epico':'comun'):(r<.1?'legendario':r<.35?'epico':'comun'));
+            } else if(Math.random()<.06) spawnChest(e.x+e.w/2,e.y,'comun');
+            if(wave>=4&&Math.random()<.05) spawnWeaponDrop(e.x+e.w/2,e.y);
             enemies.splice(i,1);
           }
           updateHUD();
@@ -985,6 +1235,57 @@ function update(){
     }
     return c.x>-40;
   });
+
+  // ── CHESTS ──
+  chests=chests.filter(ch=>{
+    ch.x-=ch.spd>0?ch.spd:gameSpeed*.4;
+    ch.bob+=.06; ch.y+=Math.sin(ch.bob)*.5;
+    ch.glowTimer=(ch.glowTimer||0)+1;
+    if(overlap({x:PL.x+4,y:PL.y+4,w:PL.w-8,h:PL.h-8},ch)){
+      // Chest reward by tier
+      if(ch.tier==='legendario'){
+        PL.hp=Math.min(PL.maxHp,PL.hp+40); sessionCoins+=20; addXP(60); addScore(500);
+        shake(10); spawnFT(ch.x,ch.y-20,'⭐ COFRE LEGENDARIO! +500','#ffe600',true);
+        showPUNotif('⭐ COFRE LEGENDARIO! +20 monedas, +40 HP!');
+        spawnPFX(ch.x+ch.w/2,ch.y+ch.h/2,'#ffe600',30,7,5);
+      } else if(ch.tier==='epico'){
+        PL.hp=Math.min(PL.maxHp,PL.hp+20); sessionCoins+=10; addXP(30); addScore(250);
+        shake(6); spawnFT(ch.x,ch.y-20,'💜 COFRE ÉPICO! +250','#cc44ff',true);
+        showPUNotif('💜 COFRE ÉPICO! +10 monedas, +20 HP!');
+        spawnPFX(ch.x+ch.w/2,ch.y+ch.h/2,'#cc44ff',20,5,4);
+      } else {
+        sessionCoins+=5; addXP(15); addScore(100);
+        spawnFT(ch.x,ch.y-20,'📦 COFRE +100','#aaffaa',true);
+        spawnPFX(ch.x+ch.w/2,ch.y+ch.h/2,'#aaffaa',12,4,3);
+      }
+      totalCoins+=sessionCoins>0?0:0; // tracked separately
+      updateHUD(); updateHpHUD();
+      return false;
+    }
+    return ch.x>-50;
+  });
+
+  // ── WEAPON DROPS ──
+  weaponDrops=weaponDrops.filter(w=>{
+    w.x-=w.spd>0?w.spd:gameSpeed*.5;
+    w.bob+=.07; w.y+=Math.sin(w.bob)*.6;
+    if(overlap({x:PL.x+4,y:PL.y+4,w:PL.w-8,h:PL.h-8},w)){
+      const dur=w.type==='katana_spark'?480:360; // frames
+      weaponBuff={type:w.type,timer:dur,maxTimer:dur};
+      if(w.type==='katana_spark'){ PL.fireOn=true; PL.fireTimer=Math.max(PL.fireTimer,dur); }
+      shake(5);
+      spawnFT(w.x,w.y-20,w.type==='katana_spark'?'⚡ KATANA SPARK!':'🗡 KATANA COMÚN!',w.type==='katana_spark'?'#00eeff':'#ffe600',true);
+      showPUNotif(w.type==='katana_spark'?'⚡ KATANA SPARK — FIRE MODE 8s!':'🗡 KATANA COMÚN — +COMBO RANGE!');
+      spawnPFX(w.x+w.w/2,w.y+w.h/2,w.type==='katana_spark'?'#00eeff':'#ffe600',20,5,4);
+      return false;
+    }
+    return w.x>-60;
+  });
+  // weapon buff timer
+  if(weaponBuff){
+    weaponBuff.timer--;
+    if(weaponBuff.timer<=0) weaponBuff=null;
+  }
 
   // ── PARTICLES ──
   particles=particles.filter(p=>{ p.x+=p.vx; p.y+=p.vy; if(!p.ring) p.vy+=.12; p.life-=p.decay; if(p.ring) p.sz+=4; return p.life>0; });
@@ -1063,6 +1364,30 @@ function draw(){
     cx.drawImage(IMG_EL['coin'],c.x,c.y,c.w,c.h);cx.restore();
   });
 
+  // Chests
+  chests.forEach(ch=>{
+    const shadowColors={comun:'#aaffaa',epico:'#cc44ff',legendario:'#ffe600'};
+    const pulse=Math.sin(ch.glowTimer*.08)*.5+.5;
+    cx.save();cx.imageSmoothingEnabled=false;cx.globalCompositeOperation='screen';
+    cx.shadowColor=shadowColors[ch.tier];
+    cx.shadowBlur=10+pulse*14;
+    cx.globalAlpha=.92+pulse*.08;
+    const key='cofre_'+ch.tier;
+    cx.drawImage(IMG_EL[key],ch.x,ch.y,ch.w,ch.h);
+    cx.restore();
+  });
+
+  // Weapon drops
+  weaponDrops.forEach(w=>{
+    const pulse=Math.sin(frame*.1)*.4+.6;
+    cx.save();cx.imageSmoothingEnabled=false;cx.globalCompositeOperation='screen';
+    cx.shadowColor=w.type==='katana_spark'?'#00eeff':'#ffe600';
+    cx.shadowBlur=8+pulse*10;
+    cx.globalAlpha=.85+pulse*.15;
+    cx.drawImage(IMG_EL[w.type],w.x,w.y,w.w,w.h);
+    cx.restore();
+  });
+
   // Particles
   particles.forEach(p=>{
     cx.save(); cx.globalAlpha=p.life;
@@ -1076,12 +1401,14 @@ function draw(){
     const flashAlpha=e.flashTimer>0&&e.flashTimer%4<2?.25:1;
     const ghostA=e.isGhost?(e.ghostAlpha||1):1;
     const alpha=flashAlpha*ghostA;
-    const key=e.isBoss?'enemy2':'enemy';
+    const key=e.isBoss?'enemy2':e.isMagmar?'enemy_magmar':'enemy';
     cx.save(); cx.imageSmoothingEnabled=false; cx.globalCompositeOperation='screen'; cx.globalAlpha=alpha;
     // Exploder: red tint warning
     if(e.isExploder){ cx.shadowColor='#ff4400'; cx.shadowBlur=12+Math.sin(frame*.2)*8; }
     // Ghost: purple tint
     if(e.isGhost){ cx.shadowColor='#9333ea'; cx.shadowBlur=16; }
+    // Magmar: fire glow
+    if(e.isMagmar){ cx.shadowColor='#ff4400'; cx.shadowBlur=18+Math.sin(frame*.15)*10; }
     cx.translate(e.x+e.w/2,0); cx.scale(-1,1);
     cx.drawImage(IMG_EL[key],-e.w/2,e.y,e.w,e.h);
     cx.restore();
@@ -1097,9 +1424,18 @@ function draw(){
 
   // Enemy bullets
   bullets.filter(b=>b.enemy).forEach(b=>{
-    cx.save(); cx.fillStyle='#ff00cc';
-    cx.beginPath(); cx.ellipse(b.x+b.w/2,b.y+b.h/2,b.w/2,b.h/2,0,0,Math.PI*2); cx.fill();
-    cx.fillStyle='rgba(255,0,204,.3)'; cx.beginPath(); cx.ellipse(b.x+b.w/2,b.y+b.h/2,b.w,b.h,0,0,Math.PI*2); cx.fill();
+    cx.save();
+    if(b.fire){
+      // Magmar fire ball
+      cx.shadowColor='#ff4400'; cx.shadowBlur=10;
+      cx.fillStyle='#ff6600';
+      cx.beginPath(); cx.ellipse(b.x+b.w/2,b.y+b.h/2,b.w/2,b.h/2,0,0,Math.PI*2); cx.fill();
+      cx.fillStyle='rgba(255,200,0,.5)'; cx.beginPath(); cx.ellipse(b.x+b.w/2,b.y+b.h/2,b.w*.7,b.h*.7,0,0,Math.PI*2); cx.fill();
+    } else {
+      cx.fillStyle='#ff00cc';
+      cx.beginPath(); cx.ellipse(b.x+b.w/2,b.y+b.h/2,b.w/2,b.h/2,0,0,Math.PI*2); cx.fill();
+      cx.fillStyle='rgba(255,0,204,.3)'; cx.beginPath(); cx.ellipse(b.x+b.w/2,b.y+b.h/2,b.w,b.h,0,0,Math.PI*2); cx.fill();
+    }
     cx.restore();
   });
 
@@ -1111,9 +1447,10 @@ function draw(){
 
   // ── PLAYER ──
   const plAlpha=PL.invTimer>0&&PL.invTimer%8<4?.3:1;
+  const _plImg=IMG_EL[getPlayerImgKey()];
   cx.save(); cx.imageSmoothingEnabled=false; cx.globalCompositeOperation='screen'; cx.globalAlpha=plAlpha;
-  if(PL.facing<0){ cx.translate(PL.x+PL.w,0); cx.scale(-1,1); cx.drawImage(IMG_EL['duende_hero'],0,PL.y,PL.w,PL.h); }
-  else cx.drawImage(IMG_EL['duende_hero'],PL.x,PL.y,PL.w,PL.h);
+  if(PL.facing<0){ cx.translate(PL.x+PL.w,0); cx.scale(-1,1); cx.drawImage(_plImg,0,PL.y,PL.w,PL.h); }
+  else cx.drawImage(_plImg,PL.x,PL.y,PL.w,PL.h);
   cx.restore();
 
   // Dash trail
@@ -1122,7 +1459,7 @@ function draw(){
       const tx=PL.x-PL.dashDir*t*12;
       cx.save(); cx.imageSmoothingEnabled=false; cx.globalCompositeOperation='screen';
       cx.globalAlpha=.15*(5-t)/4;
-      cx.drawImage(IMG_EL['duende_hero'],tx,PL.y,PL.w,PL.h); cx.restore();
+      cx.drawImage(_plImg,tx,PL.y,PL.w,PL.h); cx.restore();
     }
     cx.save(); cx.strokeStyle='rgba(124,58,237,.6)'; cx.lineWidth=3;
     cx.beginPath(); cx.moveTo(PL.x,PL.y+PL.h/2); cx.lineTo(PL.x-PL.dashDir*50,PL.y+PL.h/2); cx.stroke(); cx.restore();
@@ -1182,6 +1519,16 @@ function draw(){
     cx.restore();
   }
 
+  // Weapon buff indicator
+  if(weaponBuff){
+    const bpct=weaponBuff.timer/weaponBuff.maxTimer;
+    const bcolor=weaponBuff.type==='katana_spark'?'#00eeff':'#ffe600';
+    cx.save();
+    cx.fillStyle='rgba(0,0,0,.5)'; cx.fillRect(PL.x,PL.y-26,PL.w,5);
+    cx.fillStyle=bcolor; cx.fillRect(PL.x,PL.y-26,PL.w*bpct,5);
+    cx.restore();
+  }
+
   // HP bar above player
   const hpPct=PL.hp/PL.maxHp;
   cx.fillStyle='rgba(0,0,0,.5)'; cx.fillRect(PL.x,PL.y-14,PL.w,8);
@@ -1222,10 +1569,12 @@ function startGame(){
   playerXP=0; playerLevel=1;
   killStreak=0; killStreakTimer=0;
   enemies=[]; coins=[]; bullets=[]; particles=[]; fTexts=[];
+  chests=[]; weaponDrops=[]; weaponBuff=null;
   shakeAmt=0; shakeTimer=0;
   Object.assign(PL,{x:80,y:GY,vx:0,vy:0,onGround:false,jumping:false,djUsed:false,coyoteTimer:0,jumpBuffer:0,dashing:false,dashTimer:0,dashDir:1,dashCd:0,comboStep:0,comboTimer:0,attackTimer:0,attackCd:0,attackHitbox:{x:0,y:0,w:0,h:0,active:false},slamming:false,slamTimer:0,hp:100,invTimer:0,shieldOn:false,shieldTimer:0,fireOn:false,fireTimer:0,lightTimer:0,flashTimer:0,facing:1,animTimer:0,runFrame:0,items:[[3,0,90],[2,0,120],[1,0,150],[1,0,180]]});
   
   loadProgress();
+  applyPendingInventory();
 
   initBg();
   updateHpHUD(); updateHUD(); updateXPBar();
@@ -1301,6 +1650,143 @@ function showRanking(){
 
 function handleAuthBtnClick(){
   if(typeof showAuthModal==='function') showAuthModal();
+}
+
+// ── PERSISTENT INVENTORY (bought from menu shop) ──
+const SHOP_ITEMS = {
+  potion:    { price:40,  slot:0, qty:3, label:'ENERGY POTION ×3' },
+  shield:    { price:65,  slot:1, qty:2, label:'LEY SHIELD ×2' },
+  lightning: { price:90,  slot:2, qty:1, label:'LIGHTNING BOLT' },
+  fire:      { price:80,  slot:3, qty:1, label:'FIRE BLADE' },
+  chest_key: { price:120, slot:-1, qty:1, label:'LLAVE ÉPICA' },
+  hp_up:     { price:150, slot:-1, qty:1, label:'HP MAX +25' },
+};
+let pendingInventory = JSON.parse(localStorage.getItem('dq_pending_inv')||'{}');
+// pendingInventory = { potion:3, shield:2, lightning:1, fire:1, chest_key:0, hp_up:0 }
+
+function showItemShop(){
+  hideAll();
+  // Set images from IMG dict
+  const imgMap = { potion:'item_potion', shield:'item_shield', lightning:'item_skill', fire:'skill_fire' };
+  Object.entries(imgMap).forEach(([k,v])=>{
+    const el=document.getElementById('shop-img-'+k);
+    if(el && IMG_EL[v]) el.src=IMG_EL[v].src;
+  });
+  document.getElementById('shop-dq-bal').textContent = totalCoins.toLocaleString();
+  document.getElementById('shop-msg').textContent = '';
+  document.getElementById('ov-item-shop').classList.add('show');
+}
+
+function closeItemShop(){
+  document.getElementById('ov-item-shop').classList.remove('show');
+  document.getElementById('ov-menu').classList.add('show');
+}
+
+function shopBuyItem(key){
+  const item = SHOP_ITEMS[key];
+  if(!item){ return; }
+  const msg = document.getElementById('shop-msg');
+  if(totalCoins < item.price){
+    msg.textContent = '⚠️ DQ insuficientes — juega para ganar más!';
+    msg.style.color='#ff5555';
+    return;
+  }
+  totalCoins -= item.price;
+  saveProgress();
+  pendingInventory[key] = (pendingInventory[key]||0) + item.qty;
+  localStorage.setItem('dq_pending_inv', JSON.stringify(pendingInventory));
+  document.getElementById('shop-dq-bal').textContent = totalCoins.toLocaleString();
+  msg.textContent = '✅ ' + item.label + ' guardado — listo para tu próxima partida!';
+  msg.style.color='#00ff88';
+}
+
+// Apply pending inventory at game start
+function applyPendingInventory(){
+  if(pendingInventory.potion)    { PL.items[0][0]=Math.min(5, PL.items[0][0]+(pendingInventory.potion||0)); }
+  if(pendingInventory.shield)    { PL.items[1][0]=Math.min(3, PL.items[1][0]+(pendingInventory.shield||0)); }
+  if(pendingInventory.lightning) { PL.items[2][0]=Math.min(2, PL.items[2][0]+(pendingInventory.lightning||0)); }
+  if(pendingInventory.fire)      { PL.items[3][0]=Math.min(2, PL.items[3][0]+(pendingInventory.fire||0)); }
+  if(pendingInventory.hp_up)     { PL.maxHp=Math.min(200, PL.maxHp+25*(pendingInventory.hp_up||0)); PL.hp=PL.maxHp; }
+  if(pendingInventory.chest_key) {
+    for(let i=0;i<(pendingInventory.chest_key||0);i++) spawnChest(100+Math.random()*200, GY-80-Math.random()*60, 'epico');
+  }
+  pendingInventory = {};
+  localStorage.setItem('dq_pending_inv', JSON.stringify(pendingInventory));
+}
+
+// ── SKIN SHOP ──
+let equippedSkin = localStorage.getItem('dq_skin') || 'comun';
+const SKIN_KEYS  = { comun:'duende_hero', necro:'skin_king', legend:'skin_berserker' };
+
+function showSkinShop(){
+  hideAll();
+  document.getElementById('skin-shop-dq').textContent = totalCoins.toLocaleString();
+  document.getElementById('skin-shop-duende').textContent = '0'; // placeholder until Phase 3
+  _refreshSkinUI();
+  document.getElementById('ov-skin-shop').classList.add('show');
+}
+
+function closeSkinShop(){
+  document.getElementById('ov-skin-shop').classList.remove('show');
+  document.getElementById('ov-menu').classList.add('show');
+}
+
+function equipSkin(skin){
+  if(skin !== 'comun') { return; } // only free skin available now
+  equippedSkin = skin;
+  localStorage.setItem('dq_skin', skin);
+  _refreshSkinUI();
+  if(typeof showPUNotif==='function') showPUNotif('✅ Skin equipada!');
+}
+
+function _refreshSkinUI(){
+  ['comun','necro','legend'].forEach(s=>{
+    const el=document.getElementById('skin-equipped-'+s);
+    if(el) el.textContent = (equippedSkin===s?'▶ EQUIPADA':'');
+  });
+}
+
+// Apply skin to player sprite
+function getPlayerImgKey(){
+  if(equippedSkin==='necro'   && IMG_EL['skin_king']?.naturalWidth>0)     return 'skin_king';
+  if(equippedSkin==='legend'  && IMG_EL['skin_berserker']?.naturalWidth>0) return 'skin_berserker';
+  return 'duende_hero';
+}
+
+// ── DQ WALLET ──
+function showWallet(){
+  hideAll();
+  // DQ Points = totalCoins (all sessions)
+  document.getElementById('wallet-dq-total').textContent=totalCoins.toLocaleString()+' DQ';
+  document.getElementById('wallet-session').textContent=sessionCoins;
+  document.getElementById('wallet-xp').textContent=playerXP+' XP';
+  // Solana wallet
+  const walletAddr=window._phantomPubkey||null;
+  const addrEl=document.getElementById('wallet-sol-addr');
+  const statusEl=document.getElementById('wallet-sol-status');
+  if(walletAddr){
+    addrEl.textContent=walletAddr.slice(0,8)+'...'+walletAddr.slice(-6);
+    addrEl.className='dq-wallet-addr linked';
+    statusEl.textContent='✅ Wallet conectada — lista para $DUENDE';
+    statusEl.style.color='#00ff88';
+    document.querySelector('#ov-wallet .ob.purple').textContent='✅ PHANTOM CONECTADA';
+  } else {
+    addrEl.textContent='No conectada — usa 👻 Phantom';
+    addrEl.className='dq-wallet-addr';
+    statusEl.textContent='Conecta tu wallet para recibir $DUENDE';
+    statusEl.style.color='';
+  }
+  document.getElementById('ov-wallet').classList.add('show');
+}
+
+function closeWallet(){
+  document.getElementById('ov-wallet').classList.remove('show');
+  document.getElementById('ov-menu').classList.add('show');
+}
+
+function connectPhantomFromWallet(){
+  if(typeof connectPhantom==='function') connectPhantom();
+  setTimeout(showWallet, 1000); // refresh after connect attempt
 }
 
 function closeRanking(){

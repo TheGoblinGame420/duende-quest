@@ -198,6 +198,7 @@ function showProfileModal() {
   if (wb) {
     if (currentProfile.wallet_solana) {
       const w = currentProfile.wallet_solana;
+      window._phantomPubkey = w; // expose for DQ Wallet panel
       wb.textContent = '👻 ' + w.slice(0, 6) + '...' + w.slice(-4);
       wb.style.color = '#00ff88';
     } else {
@@ -260,8 +261,29 @@ async function showGlobalRanking(filter) {
 
     list.innerHTML = '<div style="font-size:.38rem;color:rgba(255,255,255,.3);text-align:center;padding:1.2rem">⌛ CARGANDO...</div>';
 
-    const scores = await _fetchLeaderboard(filter);
-    if (!scores || scores.length === 0) {
+    const timeout = new Promise(res => setTimeout(() => res(null), 6000));
+    const scores  = await Promise.race([_fetchLeaderboard(filter), timeout]);
+
+    if (scores === null) {
+      // Timeout or DB error — fall back to local ranking
+      if (titleEl) titleEl.textContent = '🏆 RANKING LOCAL';
+      if (filtersEl) filtersEl.style.display = 'none';
+      const localRanking = (typeof ranking !== 'undefined') ? ranking : [];
+      if (localRanking.length === 0) {
+        list.innerHTML = '<div style="font-size:.38rem;color:rgba(255,255,255,.3);text-align:center;padding:1.2rem">⚠️ SIN CONEXIÓN — juega para generar récords locales</div>';
+      } else {
+        list.innerHTML = localRanking.slice(0, 15).map((r, i) => {
+          const medals = ['🥇', '🥈', '🥉'];
+          const cls = ['gold', 'silver', 'bronze'][i] || '';
+          return '<div class="rank-row"><span class="rank-pos ' + cls + '">' + (medals[i] || '#' + (i+1)) +
+            '</span><span class="rank-name">WAVE ' + r.wave + '</span>' +
+            '<span class="rank-score">' + r.score.toLocaleString() + '</span>' +
+            '<span class="rank-wave">' + (r.date || '') + '</span></div>';
+        }).join('');
+      }
+      return;
+    }
+    if (scores.length === 0) {
       list.innerHTML = '<div style="font-size:.38rem;color:rgba(255,255,255,.3);text-align:center;padding:1.2rem">SIN PARTIDAS AÚN — ¡SÉ EL PRIMERO!</div>';
       return;
     }
@@ -333,6 +355,7 @@ async function connectPhantom() {
   try {
     const resp   = await window.solana.connect();
     const pubkey = resp.publicKey.toString();
+    window._phantomPubkey = pubkey; // expose for DQ Wallet panel
     const short  = pubkey.slice(0, 6) + '...' + pubkey.slice(-4);
 
     const wb = document.getElementById('profile-wallet-btn');
