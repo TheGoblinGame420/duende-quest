@@ -109,3 +109,75 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE TRIGGER on_score_inserted
   AFTER INSERT ON public.game_scores
   FOR EACH ROW EXECUTE PROCEDURE public.update_profile_on_score();
+
+-- ═══════════════════════════════════════════
+-- DONATION & TELEGRAM EXTENSIONS
+-- ═══════════════════════════════════════════
+
+-- ── NEW COLUMNS ON PROFILES ─────────────────
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS wallet_address TEXT UNIQUE,
+  ADD COLUMN IF NOT EXISTS duende_balance BIGINT DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS telegram_id    TEXT UNIQUE;
+
+-- ── DONATIONS TABLE ─────────────────────────
+CREATE TABLE IF NOT EXISTS public.donations (
+  id              UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+  wallet_address  TEXT        NOT NULL,
+  sol_amount      NUMERIC     NOT NULL,
+  duende_earned   BIGINT      NOT NULL,
+  tx_signature    TEXT        UNIQUE NOT NULL,
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.donations ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "donations_select" ON public.donations
+  FOR SELECT USING (true);
+
+CREATE POLICY "donations_insert" ON public.donations
+  FOR INSERT WITH CHECK (true);
+
+-- ── RPC: add_duende_balance ─────────────────
+CREATE OR REPLACE FUNCTION public.add_duende_balance(p_wallet TEXT, p_amount BIGINT)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE public.profiles
+  SET duende_balance = duende_balance + p_amount,
+      updated_at = NOW()
+  WHERE wallet_address = p_wallet OR wallet_solana = p_wallet;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ═══════════════════════════════════════════
+-- STAKING TABLE & VIEW
+-- ═══════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS public.stakes (
+  id              UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  wallet_address  TEXT NOT NULL,
+  sol_amount      NUMERIC(18,9) NOT NULL,
+  lock_days       INTEGER NOT NULL CHECK (lock_days IN (7, 30, 90)),
+  apy_at_stake    NUMERIC(6,2) NOT NULL,
+  duende_expected BIGINT NOT NULL,
+  tx_signature    TEXT UNIQUE NOT NULL,
+  staked_at       TIMESTAMPTZ DEFAULT NOW(),
+  unlocks_at      TIMESTAMPTZ NOT NULL,
+  claimed         BOOLEAN DEFAULT FALSE,
+  claimed_at      TIMESTAMPTZ
+);
+
+ALTER TABLE public.stakes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "stakes_select" ON public.stakes FOR SELECT USING (true);
+CREATE POLICY "stakes_insert" ON public.stakes FOR INSERT WITH CHECK (true);
+CREATE POLICY "stakes_update" ON public.stakes FOR UPDATE USING (true);
+
+-- Vista de stats para el FOMO ticker
+CREATE OR REPLACE VIEW public.staking_stats AS
+SELECT
+  COUNT(*) as total_stakes,
+  COALESCE(SUM(sol_amount), 0) as total_sol_staked,
+  COALESCE(SUM(duende_expected), 0) as total_duende_locked,
+  COUNT(CASE WHEN claimed = false THEN 1 END) as active_stakes
+FROM public.stakes;
