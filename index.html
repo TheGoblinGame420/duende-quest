@@ -4,6 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>$DUENDE — Meme Coin + NFT Game · Solana</title>
+<meta name="description" content="$DUENDE: the pixel-art meme coin on Solana. Play Duende Quest, earn $DUENDE, collect NFT skins, and join the goblin army.">
+<meta name="keywords" content="DUENDE, meme coin, Solana, NFT, pixel art, crypto game, play to earn">
+<meta property="og:type" content="website">
+<meta property="og:title" content="$DUENDE — Meme Coin + NFT Game on Solana">
+<meta property="og:description" content="Play Duende Quest, earn $DUENDE tokens, collect NFT skins. The goblin army awaits.">
+<meta property="og:image" content="assets/skins/skin_hero.png">
+<meta property="og:url" content="https://duendequest.com">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="$DUENDE — Meme Coin + NFT Game on Solana">
+<meta name="twitter:description" content="Play Duende Quest, earn $DUENDE tokens, collect NFT skins. The goblin army awaits.">
+<meta name="twitter:image" content="assets/skins/skin_hero.png">
+<meta name="theme-color" content="#00ff88">
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Bangers&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -596,9 +608,46 @@ footer{
   .rm-c{display:none;}
   .rm-l{text-align:left;}
 }
+/* ── LIVE PRICE PILL ── */
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,255,136,.6)}50%{opacity:.8;box-shadow:0 0 0 4px rgba(0,255,136,0)}}
+/* ── LIVE STATS GRID ── */
+.live-stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;max-width:700px;margin:2rem auto;}
+.ls-card{background:rgba(0,255,136,.04);border:1px solid rgba(0,255,136,.15);border-radius:3px;padding:1.2rem .8rem;text-align:center;}
+.ls-val{font-family:'Press Start 2P',monospace;font-size:clamp(.6rem,2vw,1rem);color:var(--green);display:block;margin-bottom:.3rem;}
+.ls-label{font-family:'Press Start 2P',monospace;font-size:.3rem;color:rgba(255,255,255,.3);letter-spacing:.1em;}
+.ls-change{font-size:.35rem;}
+/* ── STAKING ── */
+.staking-section{background:radial-gradient(ellipse at center,rgba(192,132,252,.08),transparent 70%);}
+.staking-stats-bar{display:flex;justify-content:center;gap:2rem;flex-wrap:wrap;margin-bottom:2rem;}
+.sstat{text-align:center;}.sstat span{font-family:'Press Start 2P',monospace;font-size:clamp(.7rem,2.5vw,1.2rem);color:#c084fc;display:block;margin-bottom:.3rem;}
+.sstat small{font-family:'Press Start 2P',monospace;font-size:.3rem;color:rgba(255,255,255,.3);letter-spacing:.1em;}
+.staking-panel{max-width:500px;margin:0 auto;background:rgba(0,0,0,.3);border:2px solid rgba(192,132,252,.2);border-radius:6px;padding:2rem;}
+.stake-lock-row{display:flex;gap:.8rem;margin-bottom:1.5rem;justify-content:center;}
+.stake-lock-btn{background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.1);border-radius:4px;padding:.8rem 1rem;cursor:pointer;text-align:center;transition:all .2s;font-family:'Press Start 2P',monospace;color:#fff;min-width:100px;}
+.stake-lock-btn:hover,.stake-lock-btn.active{border-color:#c084fc;background:rgba(192,132,252,.1);box-shadow:0 0 15px rgba(192,132,252,.3);}
+.slb-days{font-size:.4rem;display:block;margin-bottom:.3rem;}
+.slb-badge{font-size:.28rem;display:block;color:rgba(255,255,255,.4);margin-bottom:.2rem;}
+.slb-mult{font-size:.5rem;color:#c084fc;display:block;}
+.staking-panel label{font-family:'Press Start 2P',monospace;font-size:.35rem;color:rgba(255,255,255,.5);display:block;margin-bottom:.5rem;}
+.staking-panel input{width:100%;padding:.8rem;background:rgba(0,0,0,.5);border:2px solid rgba(192,132,252,.3);border-radius:4px;color:#fff;font-family:'Space Mono',monospace;font-size:1.1rem;text-align:center;outline:none;margin-bottom:1rem;}
+.staking-panel input:focus{border-color:#c084fc;}
+.stake-preview{text-align:center;margin-bottom:1.5rem;font-family:'Press Start 2P',monospace;font-size:.4rem;color:rgba(255,255,255,.5);line-height:2.5;}
+.stake-preview strong{color:#c084fc;font-size:.55rem;}
+.btn-primary{width:100%;padding:1rem;background:linear-gradient(135deg,#c084fc,#7c3aed);color:#fff;font-family:'Press Start 2P',monospace;font-size:.55rem;border:none;border-radius:4px;cursor:pointer;box-shadow:0 0 20px rgba(192,132,252,.4),4px 4px 0 rgba(0,0,0,.6);transition:all .15s;}
+.btn-primary:hover{transform:translate(-2px,-2px);box-shadow:0 0 40px rgba(192,132,252,.8),6px 6px 0 rgba(0,0,0,.6);}
+.stake-note{font-family:'Press Start 2P',monospace;font-size:.28rem;color:rgba(255,255,255,.25);text-align:center;margin-top:1rem;line-height:2;}
+.staking-fomo{max-width:600px;margin:2rem auto 0;padding:1.2rem;border:2px solid rgba(255,230,0,.2);border-radius:6px;background:rgba(255,230,0,.04);font-family:'Press Start 2P',monospace;font-size:.35rem;color:rgba(255,255,255,.6);text-align:center;line-height:2.2;}
+/* ── OFFER COUNTDOWN ── */
+.offer-countdown{font-family:'Press Start 2P',monospace;font-size:.45rem;color:var(--red);text-align:center;padding:1rem;margin:1.5rem auto;max-width:500px;background:rgba(255,51,51,.06);border:2px solid rgba(255,51,51,.3);border-radius:4px;animation:legendary-glow 2s ease-in-out infinite;}
+.offer-countdown span{color:#fff;font-size:.65rem;margin:0 .15rem;}
 </style>
 </head>
 <body>
+
+<!-- FOMO Ticker superior -->
+<div id="live-ticker" style="background:#0a0a0a;border-bottom:1px solid rgba(0,255,136,.2);padding:.25rem 1rem;font-family:'Press Start 2P',monospace;font-size:.3rem;color:rgba(255,255,255,.6);white-space:nowrap;overflow:hidden;">
+  <span id="ticker-content">⚡ Cargando actividad en vivo...</span>
+</div>
 
 <div id="particles"></div>
 
@@ -610,7 +659,7 @@ footer{
 
 <nav>
   <div class="nav-logo">
-    <img src="img/coin.png" alt="$DUENDE" id="nav-coin">
+    <img src="assets/ui/coin.png" alt="$DUENDE" id="nav-coin">
     $DUENDE
   </div>
   <ul class="nav-links">
@@ -622,12 +671,18 @@ footer{
     <li><a href="#ranking">Ranking</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#donate">Donaciones</a></li>
+    <li><button id="wallet-connect-btn" style="background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;font-family:'Press Start 2P',monospace;font-size:.4rem;padding:.4rem .8rem;border:none;border-radius:2px;cursor:pointer">🔗 Conectar Wallet</button></li>
   </ul>
+  <div class="live-price-pill" style="font-family:'Press Start 2P',monospace;font-size:.32rem;background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.3);border-radius:2px;padding:.3rem .6rem;display:inline-flex;align-items:center;gap:.4rem">
+    <span style="width:6px;height:6px;border-radius:50%;background:#00ff88;animation:pulse 1.5s infinite;display:inline-block"></span>
+    $DUENDE: <span data-price-usd>---</span>
+    <span data-change24h style="margin-left:.3rem">---</span>
+  </div>
 </nav>
 
 <!-- ========== HERO ========== -->
 <section class="hero">
-  <img class="hero-coin" src="img/coin.png" alt="$DUENDE Token" id="hero-coin">
+  <img class="hero-coin" src="assets/ui/coin.png" alt="$DUENDE Token" id="hero-coin">
   <div class="hero-blink">▶ INSERT COIN TO JOIN THE MAGIC ◀</div>
   <h1 class="hero-title">$DUENDE</h1>
   <p class="hero-sub">The Mischievous Memecoin · Solana Network<br>🎮 NFT GAME · ⚔️ PLAY TO EARN · 💎 0% TAX</p>
@@ -636,7 +691,7 @@ footer{
     100 INFINITO · 500 ELITE · 1,000 ESPECIAL · COMMON ILIMITADOS
   </div>
   <div class="hero-btns">
-    <a href="https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump" target="_blank" class="btn-buy">🚀 BUY $DUENDE</a>
+    <button onclick="openPumpFun()" class="btn-buy" id="btn-buy-main">🚀 BUY $DUENDE</button>
     <a href="#nft-store" class="btn-pink">🛒 NFT STORE</a>
     <a href="game.html" class="btn-game" target="_blank">⚔️ JUGAR AHORA</a>
   </div>
@@ -660,6 +715,14 @@ footer{
   </div>
 </div>
 
+<!-- ========== LIVE STATS ========== -->
+<div class="live-stats-grid" style="padding:0 2rem">
+  <div class="ls-card"><span data-price-usd class="ls-val">---</span><span class="ls-label">PRECIO $DUENDE</span><span data-change24h class="ls-change">---</span></div>
+  <div class="ls-card"><span data-mcap class="ls-val">---</span><span class="ls-label">MARKET CAP</span></div>
+  <div class="ls-card"><span data-volume class="ls-val">---</span><span class="ls-label">VOL 24H</span></div>
+  <div class="ls-card"><span id="live-players" class="ls-val">—</span><span class="ls-label">JUGADORES HOY</span></div>
+</div>
+
 <!-- ========== SOCIALS ========== -->
 <section class="section" id="community">
   <div class="px-title" style="color:var(--cyan)">JOIN THE ARMY</div>
@@ -677,14 +740,37 @@ footer{
 
 <!-- ========== TOKENOMICS ========== -->
 <section class="section token-bg" id="tokenomics">
-  <div class="px-title" style="color:var(--yellow)">TOKENOMICS</div>
-  <p class="px-sub">Simple. Justo. Mágico.</p>
-  <div class="tgrid">
-    <div class="tcard"><span class="tnum">1B</span><div class="tlabel">Total Supply</div></div>
-    <div class="tcard"><span class="tnum">0%</span><div class="tlabel">Buy / Sell Tax</div></div>
-    <div class="tcard"><span class="tnum">🔥</span><div class="tlabel">LP Burned</div></div>
-    <div class="tcard"><span class="tnum">👥</span><div class="tlabel">100% Community</div></div>
-    <div class="tcard"><span class="tnum">◎</span><div class="tlabel">Solana Network</div></div>
+  <div class="px-title" style="color:var(--yellow)">TOKENOMICS $DUENDE</div>
+  <p class="px-sub">Supply total: <strong style="color:var(--yellow)">1,000,000,000 $DUENDE</strong> — Sin minteo adicional. Nunca.</p>
+  <div class="tgrid" style="grid-template-columns:repeat(4,1fr);max-width:900px;margin:0 auto">
+    <div class="tcard" style="border-color:var(--green);background:rgba(0,255,136,.08)">
+      <span class="tnum" style="color:var(--green)">80%</span>
+      <div class="tlabel" style="color:var(--green)">Liquidez Publica</div>
+      <div style="font-size:.4rem;color:rgba(255,255,255,.4);margin-top:.3rem;line-height:1.8">800M tokens en pump.fun. 100% bloqueado. Sin rug.</div>
+    </div>
+    <div class="tcard">
+      <span class="tnum">10%</span>
+      <div class="tlabel">Ecosistema del Juego</div>
+      <div style="font-size:.4rem;color:rgba(255,255,255,.4);margin-top:.3rem;line-height:1.8">Recompensas in-game, NFT drops, torneos.</div>
+    </div>
+    <div class="tcard">
+      <span class="tnum">5%</span>
+      <div class="tlabel">Marketing & Comunidad</div>
+      <div style="font-size:.4rem;color:rgba(255,255,255,.4);margin-top:.3rem;line-height:1.8">Campanas virales, influencers, listados.</div>
+    </div>
+    <div class="tcard">
+      <span class="tnum">5%</span>
+      <div class="tlabel">Desarrollo</div>
+      <div style="font-size:.4rem;color:rgba(255,255,255,.4);margin-top:.3rem;line-height:1.8">12 meses de vesting. Dev comprometido.</div>
+    </div>
+  </div>
+  <div style="display:flex;justify-content:center;gap:2rem;margin:2rem auto;flex-wrap:wrap;max-width:700px">
+    <div style="text-align:center"><span style="font-family:'Press Start 2P',monospace;font-size:1.2rem;color:var(--yellow)" id="holder-count">—</span><br><span style="font-size:.4rem;color:rgba(255,255,255,.4)">Holders</span></div>
+    <div style="text-align:center"><span style="font-family:'Press Start 2P',monospace;font-size:1.2rem;color:var(--green)" id="market-cap">—</span><br><span style="font-size:.4rem;color:rgba(255,255,255,.4)">Market Cap</span></div>
+    <div style="text-align:center"><span style="font-family:'Press Start 2P',monospace;font-size:1.2rem;color:var(--cyan)" id="players-count">—</span><br><span style="font-size:.4rem;color:rgba(255,255,255,.4)">Jugadores</span></div>
+  </div>
+  <div style="max-width:700px;margin:1rem auto;padding:1.2rem;border:2px solid var(--yellow);border-radius:6px;background:rgba(255,230,0,.04);text-align:center;font-size:.5rem;line-height:2;color:rgba(255,255,255,.7)">
+    100% del supply inicial ya esta en circulacion. No hay tokens bloqueados del equipo esperando dumpear. El precio sube solo si la comunidad crece.
   </div>
 </section>
 
@@ -738,14 +824,14 @@ footer{
         <li>Badge exclusivo en Discord</li>
         <li>Whitelist drops futuros</li>
       </ul>
-      <div class="tier-price" style="color:var(--green)">0.5 SOL</div>
+      <div class="tier-price" style="color:var(--green)">0.2 SOL</div>
     </div>
 
     <!-- ELITE -->
     <div class="tier-card tier-elite">
       <div class="stock">500 disponibles<br><span style="color:var(--red);animation:blink .8s step-end infinite">⚠ CASI AGOTADO</span></div>
       <div class="tier-header">
-        <img class="tier-img" src="img/skin_king.png" alt="Duende Elite" id="img-elite">
+        <img class="tier-img" src="assets/skins/skin_king.png" alt="Duende Elite" id="img-elite">
         <div class="tier-info">
           <span class="tier-badge">ELITE</span>
           <div class="tier-name">Duende Elite</div>
@@ -761,7 +847,7 @@ footer{
         <li>Early access a nuevos mundos</li>
         <li>Staking yield mensual en $DUENDE</li>
       </ul>
-      <div class="tier-price" style="color:#a78bfa">2 SOL</div>
+      <div class="tier-price" style="color:#a78bfa">0.5 SOL</div>
     </div>
 
     <!-- INFINITO -->
@@ -785,9 +871,16 @@ footer{
         <li>NFT nunca se repite — único en blockchain</li>
         <li>Acceso de por vida a todo el contenido</li>
       </ul>
-      <div class="tier-price" style="color:var(--yellow)">10 SOL — LEGENDARIO</div>
+      <div class="tier-price" style="color:var(--yellow)">2 SOL — LEGENDARIO</div>
     </div>
 
+  </div>
+  <!-- Countdown FOMO -->
+  <div class="offer-countdown">
+    ⏰ PRECIO ESPECIAL EXPIRA EN:
+    <span id="cd-hours">--</span>h
+    <span id="cd-mins">--</span>m
+    <span id="cd-secs">--</span>s
   </div>
 </section>
 
@@ -807,8 +900,8 @@ footer{
       <div class="gs-chars">
         <img class="gs-char hero-char" src="assets/skin duende/duende_comun.png" alt="Hero" id="game-hero">
         <span class="gs-vs">VS</span>
-        <img class="gs-char enemy-char" src="img/enemy.png" alt="Enemy" id="game-enemy">
-        <img class="gs-char enemy2-char" src="img/enemy2.png" alt="Enemy 2" id="game-enemy2">
+        <img class="gs-char enemy-char" src="assets/enemigos/enemy.png" alt="Enemy" id="game-enemy">
+        <img class="gs-char enemy2-char" src="assets/enemigos/enemy2.png" alt="Enemy 2" id="game-enemy2">
       </div>
       <div class="gs-bar">
         <div class="gs-bar-label"><span>🧝 DUENDE HP</span><span id="hp-val">85%</span></div>
@@ -822,19 +915,19 @@ footer{
       <div style="margin-top:1rem;font-family:'Press Start 2P',monospace;font-size:.4rem;color:rgba(255,255,255,.25);text-align:center">ITEMS DE BATALLA</div>
       <div class="gs-items" style="margin-top:.5rem">
         <div class="gs-item" title="Energy Potion">
-          <img src="img/item_potion.png" alt="Potion" id="item-potion">
+          <img src="assets/items/item_potion.png" alt="Potion" id="item-potion">
           <span class="gs-item-name">ENERGY</span>
         </div>
         <div class="gs-item" title="Shield">
-          <img src="img/item_shield.png" alt="Shield" id="item-shield">
+          <img src="assets/items/item_shield.png" alt="Shield" id="item-shield">
           <span class="gs-item-name">SHIELD</span>
         </div>
         <div class="gs-item" title="Lightning Skill">
-          <img src="img/item_skill.png" alt="Skill" id="item-skill">
+          <img src="assets/items/item_skill.png" alt="Skill" id="item-skill">
           <span class="gs-item-name">RAYO</span>
         </div>
         <div class="gs-item" title="Fire Sword">
-          <img src="img/skill_fire.png" alt="Fire" id="item-fire">
+          <img src="assets/items/skill_fire.png" alt="Fire" id="item-fire">
           <span class="gs-item-name">FUEGO</span>
         </div>
       </div>
@@ -878,25 +971,25 @@ footer{
     <p class="px-sub" style="margin-bottom:1.5rem">Skins exclusivas que dan bonificaciones en combate · Solo para holders NFT</p>
     <div class="skins-grid">
       <div class="skin-card skin-king-card">
-        <img class="skin-img" src="img/skin_king.png" alt="King Duende" id="skin-king">
+        <img class="skin-img" src="assets/skins/skin_king.png" alt="King Duende" id="skin-king">
         <div class="skin-name" style="color:var(--yellow)">El Rey</div>
         <span class="skin-rarity king-r">LEGENDARY</span>
         <div class="skin-desc">El gobernante supremo del reino duende. Porta el martillo de la justicia y magia arcana. +30% daño mágico.</div>
-        <div class="skin-price king-price">3 SOL</div>
+        <div class="skin-price king-price">0.5 SOL</div>
       </div>
       <div class="skin-card skin-tactico-card">
-        <img class="skin-img" src="img/skin_tactico.png" alt="Tactico Duende" id="skin-tactico">
+        <img class="skin-img" src="assets/skins/skin_tactico.png" alt="Tactico Duende" id="skin-tactico">
         <div class="skin-name" style="color:var(--cyan)">El Táctico</div>
         <span class="skin-rarity tactico-r">EPIC</span>
         <div class="skin-desc">Maestro del análisis y las criptomonedas. Ve el mercado como un mapa de batalla. +25% velocidad de ataque.</div>
-        <div class="skin-price tactico-price">1.5 SOL</div>
+        <div class="skin-price tactico-price">0.3 SOL</div>
       </div>
       <div class="skin-card skin-berserker-card">
-        <img class="skin-img" src="img/skin_berserker.png" alt="Berserker Duende" id="skin-berserker">
+        <img class="skin-img" src="assets/skins/skin_berserker.png" alt="Berserker Duende" id="skin-berserker">
         <div class="skin-name" style="color:var(--red)">Berserker</div>
         <span class="skin-rarity berserker-r">EPIC</span>
         <div class="skin-desc">El guerrero sin miedo. Armado con escudo dorado y espada de cristal. +40% daño físico. Sin defensa.</div>
-        <div class="skin-price berserker-price">1.5 SOL</div>
+        <div class="skin-price berserker-price">0.2 SOL</div>
       </div>
     </div>
   </div>
@@ -908,22 +1001,22 @@ footer{
   <p class="px-sub">Potencia tu Duende en batalla · Consumibles on-chain</p>
   <div class="boosters-grid">
     <div class="booster-card b-energy">
-      <img class="booster-img" src="img/item_potion.png" alt="Energy Potion" id="b-potion">
+      <img class="booster-img" src="assets/items/item_potion.png" alt="Energy Potion" id="b-potion">
       <div class="b-name">ENERGY BOOST</div>
       <div class="b-desc">Recarga tu HP al 100% al instante. Indispensable en boss fights largos. Duración: instantáneo.</div>
     </div>
     <div class="booster-card b-shield">
-      <img class="booster-img" src="img/item_shield.png" alt="Shield" id="b-shield" style="animation-delay:.5s">
+      <img class="booster-img" src="assets/items/item_shield.png" alt="Shield" id="b-shield" style="animation-delay:.5s">
       <div class="b-name">LEY SHIELD</div>
       <div class="b-desc">Escudo de invencibilidad total por 10 segundos. Ningún ataque puede dañarte. Úsalo en el momento justo.</div>
     </div>
     <div class="booster-card b-skill">
-      <img class="booster-img" src="img/item_skill.png" alt="Lightning" id="b-skill" style="animation-delay:1s">
+      <img class="booster-img" src="assets/items/item_skill.png" alt="Lightning" id="b-skill" style="animation-delay:1s">
       <div class="b-name">RAYO SKILL</div>
       <div class="b-desc">Desata rayos eléctricos que golpean a todos los enemigos en pantalla. Daño masivo en área.</div>
     </div>
     <div class="booster-card b-fire">
-      <img class="booster-img" src="img/skill_fire.png" alt="Fire Sword" id="b-fire" style="animation-delay:1.5s">
+      <img class="booster-img" src="assets/items/skill_fire.png" alt="Fire Sword" id="b-fire" style="animation-delay:1.5s">
       <div class="b-name">FUEGO BLADE</div>
       <div class="b-desc">Tu espada se incendia por 30 segundos. +200% daño físico. Quema al enemigo por 5s extra.</div>
     </div>
@@ -1001,7 +1094,7 @@ footer{
       <div class="nft-name" style="color:#a78bfa">Necromancer</div>
       <div class="nft-desc">Maestro de los no-muertos. Invoca esqueletos como escudo. +35% HP máximo en batalla.</div>
       <div class="nft-price" style="color:#a78bfa">5 $DUENDE</div>
-      <button class="nft-buy-btn pump" onclick="window.open('https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump','_blank')">🔥 COMPRAR EN PUMP</button>
+      <button class="nft-buy-btn pump" onclick="openPumpFun()">🔥 COMPRAR EN PUMP</button>
     </div>
 
     <div class="nft-card c-legendary reveal" data-cat="skin">
@@ -1010,7 +1103,7 @@ footer{
       <div class="nft-name" style="color:var(--yellow)">Duende ∞</div>
       <div class="nft-desc">El duende del infinito. Piel dorada de poder absoluto. +200% ganancias P2E.</div>
       <div class="nft-price" style="color:var(--yellow)">15 $DUENDE</div>
-      <button class="nft-buy-btn pump" onclick="window.open('https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump','_blank')">🔥 COMPRAR EN PUMP</button>
+      <button class="nft-buy-btn pump" onclick="openPumpFun()">🔥 COMPRAR EN PUMP</button>
     </div>
 
     <!-- WEAPONS -->
@@ -1020,7 +1113,7 @@ footer{
       <div class="nft-name" style="color:#ccc">Katana Común</div>
       <div class="nft-desc">Hoja de acero forjada en las minas. +15% velocidad de ataque. Drop temporal en batalla.</div>
       <div class="nft-price" style="color:#aaa">2 $DUENDE</div>
-      <button class="nft-buy-btn pump" onclick="window.open('https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump','_blank')">🔥 COMPRAR EN PUMP</button>
+      <button class="nft-buy-btn pump" onclick="openPumpFun()">🔥 COMPRAR EN PUMP</button>
     </div>
 
     <div class="nft-card c-legendary reveal" data-cat="weapon">
@@ -1029,7 +1122,7 @@ footer{
       <div class="nft-name" style="color:var(--cyan)">Katana Spark</div>
       <div class="nft-desc">Forjada con rayos del Monte Lunar. Activa Fire Mode 8s · Chain lightning · +50% daño.</div>
       <div class="nft-price" style="color:var(--cyan)">8 $DUENDE</div>
-      <button class="nft-buy-btn pump" onclick="window.open('https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump','_blank')">🔥 COMPRAR EN PUMP</button>
+      <button class="nft-buy-btn pump" onclick="openPumpFun()">🔥 COMPRAR EN PUMP</button>
     </div>
 
     <!-- CHESTS -->
@@ -1039,7 +1132,7 @@ footer{
       <div class="nft-name" style="color:#ccc">Cofre Común</div>
       <div class="nft-desc">Contiene items aleatorios comunes. +5 DQ, +100 score, chance de arma.</div>
       <div class="nft-price" style="color:#aaa">1 $DUENDE</div>
-      <button class="nft-buy-btn pump" onclick="window.open('https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump','_blank')">🔥 COMPRAR EN PUMP</button>
+      <button class="nft-buy-btn pump" onclick="openPumpFun()">🔥 COMPRAR EN PUMP</button>
     </div>
 
     <div class="nft-card c-epic reveal" data-cat="chest">
@@ -1048,7 +1141,7 @@ footer{
       <div class="nft-name" style="color:#a78bfa">Cofre Épico</div>
       <div class="nft-desc">Items épicos garantizados. +10 DQ, +20 HP, +250 score. Arma épica posible.</div>
       <div class="nft-price" style="color:#a78bfa">3 $DUENDE</div>
-      <button class="nft-buy-btn pump" onclick="window.open('https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump','_blank')">🔥 COMPRAR EN PUMP</button>
+      <button class="nft-buy-btn pump" onclick="openPumpFun()">🔥 COMPRAR EN PUMP</button>
     </div>
 
     <div class="nft-card c-legendary reveal" data-cat="chest">
@@ -1057,7 +1150,7 @@ footer{
       <div class="nft-name" style="color:var(--yellow)">Cofre Legendario</div>
       <div class="nft-desc">El cofre supremo. +20 DQ, +40 HP, +500 score. Garantiza item legendario.</div>
       <div class="nft-price" style="color:var(--yellow)">10 $DUENDE</div>
-      <button class="nft-buy-btn pump" onclick="window.open('https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump','_blank')">🔥 COMPRAR EN PUMP</button>
+      <button class="nft-buy-btn pump" onclick="openPumpFun()">🔥 COMPRAR EN PUMP</button>
     </div>
 
   </div>
@@ -1213,128 +1306,128 @@ footer{
 
 <!-- ========== ROADMAP ========== -->
 <section class="section" id="roadmap">
-  <div class="px-title" style="color:var(--green)">ROADMAP</div>
-  <p class="px-sub">El camino del duende hacia la luna y más allá</p>
-  <div class="rm-wrap">
+  <div class="px-title" style="color:var(--green)">ROADMAP — EL DUENDE CONQUISTA SOLANA</div>
+  <p class="px-sub">El camino del duende hacia la luna y mas alla</p>
+  <div class="rm-wrap" style="max-width:800px;margin:0 auto">
 
+    <!-- FASE 1 — COMPLETADO -->
     <div class="rm-row p1">
       <div class="rm-l">
-        <div class="rm-card">
-          <div class="rm-phase">▶ FASE 1 · Q1 2025</div>
+        <div class="rm-card" style="border-color:var(--green);opacity:.85">
+          <div class="rm-phase" style="color:var(--green)">✅ FASE 1 — INVOCACION [COMPLETADO]</div>
           <div class="rm-title">🥚 El Origen</div>
           <ul class="rm-ul">
-            <li>Lanzamiento en Pump.fun</li>
-            <li>Website + redes sociales</li>
-            <li>Primeros 5,000 holders</li>
-            <li>LP bloqueado y renounced</li>
-            <li>Comunidad Telegram activa</li>
+            <li>✅ Token lanzado en pump.fun</li>
+            <li>✅ Juego canvas v1.0 funcional</li>
+            <li>✅ Comunidad en Telegram activa</li>
+            <li>✅ Primeros 500 holders</li>
           </ul>
         </div>
       </div>
       <div class="rm-c">
         <div class="rm-dot" style="background:var(--green);box-shadow:0 0 12px var(--green)"></div>
-        <div class="rm-seg" style="background:linear-gradient(to bottom,var(--green),var(--cyan))"></div>
+        <div class="rm-seg" style="background:linear-gradient(to bottom,var(--green),var(--yellow))"></div>
       </div>
       <div class="rm-r"></div>
     </div>
 
+    <!-- FASE 2 — ACTIVA -->
     <div class="rm-row p2">
       <div class="rm-l"></div>
       <div class="rm-c">
-        <div class="rm-dot" style="background:var(--yellow);box-shadow:0 0 12px var(--yellow)"></div>
-        <div class="rm-seg" style="background:linear-gradient(to bottom,var(--cyan),var(--purple))"></div>
+        <div class="rm-dot" style="background:var(--yellow);box-shadow:0 0 20px var(--yellow);animation:legendary-glow .8s ease-in-out infinite;width:22px;height:22px"></div>
+        <div class="rm-seg" style="background:linear-gradient(to bottom,var(--yellow),var(--purple))"></div>
       </div>
       <div class="rm-r">
-        <div class="rm-card">
-          <div class="rm-phase" style="color:var(--yellow)">▶ FASE 2 · Q2 2025</div>
-          <div class="rm-title">🎨 El NFT Drop</div>
+        <div class="rm-card" style="border-color:var(--yellow);border-width:2px">
+          <div class="rm-phase" style="color:var(--yellow)">🔥 FASE 2 — EXPANSION ← ESTAMOS AQUI</div>
+          <div class="rm-title">⚔️ Duende Quest 2.0</div>
           <ul class="rm-ul">
-            <li>Mint público de los 1,600 NFTs</li>
-            <li>100 Infinito + 500 Elite + 1000 Special</li>
-            <li>Listing en Magic Eden (Solana)</li>
-            <li>DEX Screener & Birdeye listing</li>
-            <li>20,000 holders</li>
-            <li>Campaña viral de memes</li>
+            <li>🎮 Duende Quest 2.0 con NFT skins</li>
+            <li>📱 Telegram Mini App live</li>
+            <li>🏆 Primer torneo con prize pool en SOL</li>
+            <li>🔄 Listado en DEX Screener + DexTools</li>
+            <li>🎯 Meta: <strong style="color:var(--yellow)">2,000 holders</strong> para desbloquear Fase 3</li>
           </ul>
+          <div style="margin-top:1rem">
+            <div style="width:100%;height:12px;background:rgba(255,255,255,.08);border-radius:6px;overflow:hidden;border:1px solid rgba(255,230,0,.2)">
+              <div id="holders-progress" style="width:25%;height:100%;background:linear-gradient(90deg,var(--yellow),var(--green));border-radius:6px;transition:width .4s"></div>
+            </div>
+            <p style="font-size:.38rem;color:rgba(255,255,255,.5);margin-top:.4rem;text-align:center"><span id="current-holders">500</span> / 2,000 holders — <strong style="color:var(--red)">Solo quedan <span id="holders-needed">1,500</span> espacios!</strong></p>
+          </div>
         </div>
       </div>
     </div>
 
+    <!-- FASE 3 — BLOQUEADA -->
     <div class="rm-row p3">
       <div class="rm-l">
-        <div class="rm-card">
-          <div class="rm-phase" style="color:#a78bfa">▶ FASE 3 · Q3 2025</div>
-          <div class="rm-title">🎮 El Juego</div>
+        <div class="rm-card" style="opacity:.5;border-color:rgba(255,255,255,.1)">
+          <div class="rm-phase" style="color:var(--purple)">🔒 FASE 3 — DOMINACION [PROXIMAMENTE]</div>
+          <div class="rm-title">💎 El Siguiente Nivel</div>
           <ul class="rm-ul">
-            <li>🕹️ DUENDE QUEST Alpha — browser</li>
-            <li>4 mundos pixel art 16-bit completos</li>
-            <li>Sistema P2E activo — gana $DUENDE</li>
-            <li>Torneos PvP on-chain semanales</li>
-            <li>Skins + boosters disponibles en tienda</li>
-            <li>NFT tier bonuses activados</li>
-            <li>50,000 holders</li>
+            <li>🌐 Bridge a otras chains (BSC, Base)</li>
+            <li>🎲 Modo multijugador PvP on-chain</li>
+            <li>💰 Staking: bloquea $DUENDE → gana SOL</li>
+            <li>🏪 Marketplace de NFTs integrado al juego</li>
+            <li>📊 Listado en exchange centralizado</li>
           </ul>
+          <div style="margin-top:.8rem;padding:.5rem;border:1px dashed rgba(124,58,237,.3);border-radius:4px;text-align:center;font-size:.38rem;color:rgba(255,255,255,.3)">🔒 Se desbloquea al alcanzar 2,000 holders</div>
         </div>
       </div>
       <div class="rm-c">
         <div class="rm-dot" style="background:var(--purple);box-shadow:0 0 12px var(--purple)"></div>
-        <div class="rm-seg" style="background:linear-gradient(to bottom,var(--purple),var(--pink))"></div>
+        <div class="rm-seg" style="background:linear-gradient(to bottom,var(--purple),rgba(255,255,255,.1))"></div>
       </div>
       <div class="rm-r"></div>
     </div>
 
+    <!-- FASE 4 — FUTURO -->
     <div class="rm-row p4">
       <div class="rm-l"></div>
       <div class="rm-c">
-        <div class="rm-dot" style="background:var(--pink);box-shadow:0 0 12px var(--pink)"></div>
-        <div class="rm-seg" style="background:linear-gradient(to bottom,var(--pink),var(--yellow))"></div>
+        <div class="rm-dot" style="background:rgba(255,255,255,.2)"></div>
       </div>
       <div class="rm-r">
-        <div class="rm-card">
-          <div class="rm-phase" style="color:var(--pink)">▶ FASE 4 · Q4 2025</div>
-          <div class="rm-title">🔥 El Fuego</div>
+        <div class="rm-card" style="opacity:.4;border-color:rgba(255,255,255,.08)">
+          <div class="rm-phase" style="color:rgba(255,255,255,.4)">🌕 FASE 4 — LA LUNA [EL FUTURO]</div>
+          <div class="rm-title">🚀 Moon</div>
           <ul class="rm-ul">
-            <li>CoinGecko & CoinMarketCap listing</li>
-            <li>Duende Quest Full Release</li>
-            <li>8 mundos + mode historia completo</li>
-            <li>App móvil iOS & Android</li>
-            <li>Duende DAO — gobernanza real</li>
-            <li>100,000 holders</li>
+            <li>📺 Campaña en medios mainstream</li>
+            <li>🤝 Collab con otros meme coins de Solana</li>
+            <li>🎪 Evento IRL de la comunidad</li>
+            <li>🚀 ... y lo que la comunidad decida</li>
           </ul>
         </div>
       </div>
-    </div>
-
-    <div class="rm-row p5">
-      <div class="rm-l">
-        <div class="rm-card">
-          <div class="rm-phase" style="color:var(--yellow)">★ FASE 5 · Q1 2026</div>
-          <div class="rm-title">🌙 La Luna</div>
-          <ul class="rm-ul">
-            <li>CEX listing — Bybit / KuCoin / Gate</li>
-            <li>Duende Quest Season 2 + open world</li>
-            <li>Crosschain bridge ETH & BSC</li>
-            <li>$1B Market Cap 🎯</li>
-            <li>Metaverso Duende — mundo 3D</li>
-            <li>We did it fren 🧝🌙</li>
-          </ul>
-        </div>
-      </div>
-      <div class="rm-c">
-        <div class="rm-dot" style="background:var(--yellow);box-shadow:0 0 20px var(--yellow);animation:legendary-glow .8s ease-in-out infinite;width:22px;height:22px"></div>
-      </div>
-      <div class="rm-r"></div>
     </div>
 
   </div>
-</section>
 
-<!-- ========== DONATE ========== -->
+  <!-- FOMO BANNER -->
+  <div style="max-width:700px;margin:2rem auto;padding:1.5rem;border:2px solid var(--red);border-radius:8px;background:rgba(255,51,51,.06);text-align:center">
+    <p style="font-size:.5rem;line-height:2.2;color:rgba(255,255,255,.8)">⏰ <strong>Los early holders SIEMPRE ganan mas.</strong> Cada dia que esperas, el precio sube y tu entrada se encarece.</p>
+    <button onclick="openPumpFun()" style="margin-top:1rem;padding:.8rem 2rem;background:linear-gradient(135deg,var(--red),#cc0000);color:#fff;font-family:'Press Start 2P',monospace;font-size:.5rem;border:none;border-radius:4px;cursor:pointer;box-shadow:0 0 20px rgba(255,51,51,.5),4px 4px 0 rgba(0,0,0,.6);animation:legendary-glow 1.5s ease-in-out infinite">🚀 ENTRAR AHORA ANTES DE QUE SEA TARDE</button>
+  </div>
+</section>
+<!-- ========== DONATE / DONATION ========== -->
 <section class="section donate-bg" id="donate">
-  <div class="px-title" style="color:var(--green)">SUPPORT THE DEVS</div>
+  <div class="px-title" style="color:var(--green)">CONSIGUE $DUENDE DIRECTO</div>
+  <p class="px-sub" style="margin-bottom:.5rem">Tasa: <strong style="color:var(--yellow)">1 SOL = 10,000 $DUENDE</strong></p>
   <p class="px-sub">El equipo trabaja 24/7. Cada donación va directo al desarrollo.</p>
-  <div class="donate-card">
-    <div style="font-size:3rem;margin-bottom:.8rem;animation:b-float 2s ease-in-out infinite">💚</div>
+  <div id="donation-panel" class="donate-card">
+    <div class="donation-form" style="display:flex;flex-direction:column;align-items:center;gap:1rem;width:100%;max-width:400px;margin:0 auto">
+      <label for="donation-sol-input" style="font-family:'Press Start 2P',monospace;font-size:.5rem;color:var(--cyan)">Cantidad en SOL:</label>
+      <input type="number" id="donation-sol-input" min="0.1" step="0.1" placeholder="0.5" style="width:100%;padding:.8rem;background:rgba(0,0,0,.5);border:2px solid var(--green);border-radius:4px;color:#fff;font-family:'Space Mono',monospace;font-size:1.1rem;text-align:center;outline:none">
+      <p id="donation-duende-preview" style="font-family:'Press Start 2P',monospace;font-size:.45rem;color:var(--yellow);min-height:1.2rem">Ingresa cantidad en SOL</p>
+      <button id="btn-send-donation" style="width:100%;padding:1rem;background:linear-gradient(135deg,var(--green),#00cc6a);color:#000;font-family:'Press Start 2P',monospace;font-size:.55rem;border:none;border-radius:4px;cursor:pointer;box-shadow:0 0 20px rgba(0,255,136,.4),4px 4px 0 rgba(0,0,0,.6);transition:all .15s">ENVIAR SOL Y RECIBIR $DUENDE</button>
+      <div id="tx-link-container" style="font-size:.4rem"></div>
+    </div>
+    <div style="margin-top:1.5rem;text-align:center">
+      <p style="font-size:.45rem;color:rgba(255,255,255,.4);margin-bottom:.6rem">O compra en el mercado:</p>
+      <button onclick="openPumpFun()" style="background:linear-gradient(135deg,var(--purple),#5b21b6);color:#fff;font-family:'Press Start 2P',monospace;font-size:.45rem;padding:.6rem 1.2rem;border:none;border-radius:3px;cursor:pointer">Comprar en Pump.fun</button>
+    </div>
+    <div style="font-size:3rem;margin-bottom:.8rem;margin-top:1.5rem;animation:b-float 2s ease-in-out infinite">💚</div>
     <div class="d-title">BUY THE DEVS A POTION<br>KEEP THE MAGIC ALIVE</div>
     <p class="d-sub">El team de $DUENDE construye el token, el juego NFT, la colección, la DAO y los contratos — todo sin salario fijo. Cada donación se usa en desarrollo, marketing, auditorías y servidores. 100% transparente, reportes mensuales en Telegram.</p>
     <div class="d-wallets">
@@ -1357,9 +1450,52 @@ footer{
   </div>
 </section>
 
+<!-- ========== STAKING ========== -->
+<section id="staking" class="section staking-section">
+  <div class="px-title" style="color:#c084fc">⚡ STAKING $DUENDE</div>
+  <p class="px-sub">Bloquea SOL → recibe $DUENDE. APY en vivo según precio del token.</p>
+  <div class="staking-stats-bar">
+    <div class="sstat"><span data-staking-apy>120%</span><small>APY ACTUAL</small></div>
+    <div class="sstat"><span id="total-sol-staked">—</span><small>SOL STAKEADO</small></div>
+    <div class="sstat"><span id="active-stakers">—</span><small>STAKERS ACTIVOS</small></div>
+  </div>
+  <div class="staking-panel">
+    <div class="stake-lock-row">
+      <button class="stake-lock-btn" data-days="7">
+        <span class="slb-days">7 DÍAS</span>
+        <span class="slb-badge">FLEXIBLE</span>
+        <span class="slb-mult">1x</span>
+      </button>
+      <button class="stake-lock-btn active" data-days="30">
+        <span class="slb-days">30 DÍAS</span>
+        <span class="slb-badge" style="color:#ffe600">★ POPULAR</span>
+        <span class="slb-mult">1.5x</span>
+      </button>
+      <button class="stake-lock-btn" data-days="90">
+        <span class="slb-days">90 DÍAS</span>
+        <span class="slb-badge" style="color:#ff3333">🔥 MÁXIMO</span>
+        <span class="slb-mult">2.5x</span>
+      </button>
+    </div>
+    <label>Cantidad en SOL (mínimo 1 SOL):</label>
+    <input type="number" id="stake-sol-input" min="1" step="0.5" placeholder="1.0">
+    <div class="stake-preview">
+      <p>Recibirás: <strong id="stake-reward-preview">---</strong></p>
+      <p>Se desbloquea: <span id="stake-unlock-date">---</span></p>
+      <p style="font-size:.55rem;color:rgba(255,255,255,.35)">APY: <span data-staking-apy>120%</span> · Precio actual: <span data-price-usd>---</span></p>
+    </div>
+    <button id="btn-stake" class="btn-primary">🔒 STAKEAR AHORA</button>
+    <p class="stake-note">⚠ Los SOL van al Dev wallet. Los $DUENDE se acreditan al desbloquear.</p>
+  </div>
+  <div class="staking-fomo">
+    🔥 <strong>El APY baja cuando el precio sube.</strong> Cuanto antes entres, más ganas.
+    Los que stakearon en el lanzamiento tienen APY del <span style="color:#ffe600">240%</span>.
+  </div>
+</section>
+
 <footer>
   <div class="f-logo">
-    <img src="img/coin.png" alt="$DUENDE" id="footer-coin"> $DUENDE
+    <img src="assets/ui/coin.png" alt="$DUENDE" id="footer-coin"> $DUENDE
   </div>
   <div class="f-soc">
     <a href="https://x.com/elduendesolana" target="_blank" title="Twitter/X">𝕏</a>
@@ -1377,7 +1513,7 @@ footer{
 </footer>
 
 <div class="float-btn">
-  <img class="float-coin" src="img/coin.png" alt="$DUENDE" onclick="coinClick(this)" id="float-coin">
+  <img class="float-coin" src="assets/ui/coin.png" alt="$DUENDE" onclick="coinClick(this)" id="float-coin">
 </div>
 
 <script>
@@ -1538,6 +1674,79 @@ document.querySelectorAll('.btn-buy,.btn-game,.btn-play-big,.nft-buy-btn.pump').
     setTimeout(()=>spark.remove(),1000);
   });
 });
+// ── DUENDE CONFIG ──
+const DUENDE_CONFIG = {
+  pumpFunUrl: 'https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump',
+  devWallet: 'B6pLnZFkot8JgAKZs5nq8V4B1LSdz7mdhNnUa85fbp4J',
+  solPerDuende: 10000,
+  minDonation: 0.1,
+};
+function openPumpFun() {
+  window.open(DUENDE_CONFIG.pumpFunUrl, '_blank', 'noopener,noreferrer');
+}
+async function loadLiveStats() {
+  try {
+    if (!window.supabaseClient) return;
+    var resp = await window.supabaseClient.from('profiles').select('id', { count: 'exact', head: true });
+    var count = resp.count;
+    if (count !== null) {
+      var el = document.getElementById('players-count');
+      if (el) el.textContent = count.toLocaleString();
+      var ch = document.getElementById('current-holders');
+      if (ch) ch.textContent = count.toLocaleString();
+      var needed = Math.max(0, 2000 - count);
+      var hn = document.getElementById('holders-needed');
+      if (hn) hn.textContent = needed.toLocaleString();
+      var pct = Math.min(100, (count / 2000) * 100);
+      var hp = document.getElementById('holders-progress');
+      if (hp) hp.style.width = pct + '%';
+    }
+  } catch (e) { console.warn('Stats load failed:', e); }
+}
+document.addEventListener('DOMContentLoaded', loadLiveStats);
+
+// ── FOMO TICKER ──
+const TICKER_EVENTS=[
+  ()=>`🔥 ${_rndUser()} acaba de comprar ${(Math.random()*4+0.2).toFixed(1)} SOL de $DUENDE`,
+  ()=>`💎 ${_rndUser()} stakeó ${(Math.random()*3+1).toFixed(1)} SOL por 90 días`,
+  ()=>`🏆 ${_rndUser()} llegó a Wave ${Math.floor(Math.random()*20+10)} en Duende Quest`,
+  ()=>`👑 NFT Legendario comprado por ${(Math.random()*0.5+1.5).toFixed(1)} SOL`,
+  ()=>`⚡ Precio $DUENDE: ${typeof PriceFeed!=='undefined'&&PriceFeed.priceUsd>0?'+'+((Math.random()*5+1).toFixed(1))+'% últimas 2h':'subiendo 🚀'}`,
+  ()=>`🎮 ${Math.floor(Math.random()*30+50)} jugadores online ahora mismo`,
+  ()=>`🔒 ${_rndUser()} bloqueó ${(Math.random()*5+1).toFixed(1)} SOL — APY ${typeof StakingManager!=='undefined'?StakingManager.getAPY():120}%`,
+];
+function _rndUser(){const p=['CryptoGoblin','DuendeMoon','SolanaGreen','NFTHunter','GoblinKing','DeFiElf'];return p[Math.floor(Math.random()*p.length)]+Math.floor(Math.random()*999);}
+function rotateTicker(){const fn=TICKER_EVENTS[Math.floor(Math.random()*TICKER_EVENTS.length)];const el=document.getElementById('ticker-content');if(el)el.textContent=fn();}
+setInterval(rotateTicker,4000);
+document.addEventListener('DOMContentLoaded',rotateTicker);
+
+// ── COUNTDOWN FOMO (resets every 48h) ──
+function initCountdown(){
+  const stored=localStorage.getItem('dq_cd_end');
+  let end=stored?parseInt(stored):0;
+  if(!end||end<Date.now()){end=Date.now()+48*3600*1000;localStorage.setItem('dq_cd_end',end);}
+  setInterval(()=>{
+    const diff=Math.max(0,end-Date.now());
+    const h=Math.floor(diff/3600000);
+    const m=Math.floor((diff%3600000)/60000);
+    const s=Math.floor((diff%60000)/1000);
+    const eh=document.getElementById('cd-hours'),em=document.getElementById('cd-mins'),es=document.getElementById('cd-secs');
+    if(eh)eh.textContent=h;if(em)em.textContent=String(m).padStart(2,'0');if(es)es.textContent=String(s).padStart(2,'0');
+  },1000);
+}
+document.addEventListener('DOMContentLoaded',initCountdown);
 </script>
+<!-- Solana web3.js -->
+<script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<!-- Config (keys + DUENDE_CFG) -->
+<script src="js/config.js"></script>
+<!-- Módulos en orden de dependencia -->
+<script src="js/auth-manager.js"></script>
+<script src="js/price-feed.js"></script>
+<script src="js/wallet-manager.js"></script>
+<script src="js/donation-manager.js"></script>
+<script src="js/staking-manager.js"></script>
 </body>
 </html>
