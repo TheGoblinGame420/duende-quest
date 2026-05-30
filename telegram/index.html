@@ -225,7 +225,7 @@ async function tgLogin(){
   try{
     const tgId=String(TG_USER.id);
     const username=(TG_USER.username||TG_USER.first_name||'tg_'+tgId).slice(0,20);
-    // First check if profile with this telegram_id already exists
+    // Check if profile exists
     let{data}=await _sb.from('profiles').select('*').eq('telegram_id',tgId).maybeSingle();
     if(data){tgProfile=data;return;}
     // Try to find by username and link
@@ -234,7 +234,14 @@ async function tgLogin(){
       await _sb.from('profiles').update({telegram_id:tgId}).eq('id',byName.id);
       tgProfile=byName;tgProfile.telegram_id=tgId;return;
     }
-    // No profile found — will be created on first score submission
+    // Create new profile via RPC
+    try{
+      const{data:newId}=await _sb.rpc('create_tg_profile',{p_tg_id:tgId,p_username:username});
+      if(newId){
+        const{data:newProfile}=await _sb.from('profiles').select('*').eq('id',newId).maybeSingle();
+        if(newProfile){tgProfile=newProfile;return;}
+      }
+    }catch(e2){console.warn('[TG Profile Create]',e2);}
     tgProfile={username,telegram_id:tgId,best_score:0,total_coins:0};
   }catch(e){console.warn('[TG Auth]',e);}
 }
@@ -663,7 +670,24 @@ function endGame(){
 
 async function submitTGScore(){
   if(!_sb||!tgProfile) return;
-  try{await _sb.from('game_scores').insert({user_id:tgProfile.id,username:tgProfile.username,score:Math.floor(score),wave,level:playerLevel,coins:sessionCoins,bosses_killed:bossKilled,combos_max:comboCount});}catch(e){console.warn('[TG Score]',e);}
+  try{
+    const scoreData={username:tgProfile.username||'anon',score:Math.floor(score),wave,level:playerLevel,coins:sessionCoins,bosses_killed:bossKilled,combos_max:comboCount};
+    if(tgProfile.id) scoreData.user_id=tgProfile.id;
+    if(tgProfile.telegram_id) scoreData.telegram_id=tgProfile.telegram_id;
+    await _sb.from('game_scores').insert(scoreData);
+    // Update profile stats
+    if(tgProfile.id){
+      await _sb.from('profiles').update({
+        best_score:Math.max(tgProfile.best_score||0,scoreData.score),
+        best_wave:Math.max(tgProfile.best_wave||0,wave),
+        total_coins:(tgProfile.total_coins||0)+sessionCoins,
+        games_played:(tgProfile.games_played||0)+1,
+        updated_at:new Date().toISOString()
+      }).eq('id',tgProfile.id);
+      tgProfile.best_score=Math.max(tgProfile.best_score||0,scoreData.score);
+      tgProfile.games_played=(tgProfile.games_played||0)+1;
+    }
+  }catch(e){console.warn('[TG Score]',e);}
 }
 
 function toMenu(){hideAll();cancelAnimationFrame(raf);state='menu';document.getElementById('ov-start').classList.add('show');if(tg){try{tg.MainButton.hide();tg.BackButton.hide();}catch(e){}}}
