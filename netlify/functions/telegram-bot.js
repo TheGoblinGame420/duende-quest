@@ -37,8 +37,29 @@ async function supabaseQuery(path, options = {}) {
   return r.json();
 }
 
-// ── DexScreener price ───────────────────────────
+// ── Price feed (pump.fun first, DexScreener fallback) ──
+const PUMP_API = 'https://frontend-api-v3.pump.fun/coins/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump';
+
 async function getPrice() {
+  // Try pump.fun API first
+  try {
+    const r = await fetch(PUMP_API, { signal: AbortSignal.timeout(5000) });
+    const d = await r.json();
+    if (d && d.usd_market_cap) {
+      const mcap = parseFloat(d.usd_market_cap || 0);
+      const totalSupply = 1_000_000_000; // 1B tokens
+      const price = mcap / totalSupply;
+      return {
+        priceUsd: price,
+        priceChange24h: 0,
+        volume24h: 0,
+        marketCap: mcap,
+        liquidity: parseFloat(d.virtual_sol_reserves || 0) / 1e9 * 82,
+        source: 'pump.fun',
+      };
+    }
+  } catch (e) {}
+  // Fallback to DexScreener
   try {
     const r = await fetch(DEXSCREENER_URL, { signal: AbortSignal.timeout(5000) });
     const d = await r.json();
@@ -50,6 +71,7 @@ async function getPrice() {
       volume24h: parseFloat(pair.volume?.h24 || 0),
       marketCap: parseFloat(pair.marketCap || pair.fdv || 0),
       liquidity: parseFloat(pair.liquidity?.usd || 0),
+      source: 'DexScreener',
     };
   } catch (e) { return null; }
 }
@@ -164,7 +186,7 @@ async function handlePrice(chatId, messageId) {
       `📊 Vol 24h: *$${fmtNum(p.volume24h)}*\n` +
       `🏦 Market Cap: *$${fmtNum(p.marketCap)}*\n` +
       `💧 Liquidez: *$${fmtNum(p.liquidity)}*\n\n` +
-      `_Actualizado: ${new Date().toLocaleTimeString('es-ES')}_`;
+      `_Fuente: ${p.source || 'API'} · ${new Date().toLocaleTimeString('es-ES')}_`;
   }
 
   const opts = {
@@ -189,22 +211,25 @@ async function handlePrice(chatId, messageId) {
 
 async function handleStats(chatId, userId, messageId) {
   const tgId = String(userId);
-  const profiles = await supabaseQuery(
-    `profiles?telegram_id=eq.${tgId}&select=username,best_score,best_wave,total_coins,games_played,duende_balance`
-  );
+  let profiles;
+  try {
+    profiles = await supabaseQuery(
+      `profiles?telegram_id=eq.${tgId}&select=username,best_score,best_wave,total_coins,games_played,duende_balance`
+    );
+  } catch (e) { profiles = []; }
 
   let text;
-  if (!profiles || profiles.length === 0) {
-    text = '📊 *Tus Stats*\n\n_No tienes perfil aún. ¡Juega tu primera partida!_';
+  if (!Array.isArray(profiles) || profiles.length === 0) {
+    text = '📊 *Tus Stats*\n\n_No tienes perfil aún. ¡Juega tu primera partida para crear tu perfil!_';
   } else {
     const p = profiles[0];
     text =
-      `📊 *Stats de ${p.username}*\n\n` +
-      `🏆 Mejor Score: *${(p.best_score || 0).toLocaleString()}*\n` +
+      `📊 *Stats de ${p.username || 'Duende'}*\n\n` +
+      `🏆 Mejor Score: *${Number(p.best_score || 0).toLocaleString()}*\n` +
       `🌊 Mejor Wave: *${p.best_wave || 0}*\n` +
-      `🪙 Monedas Total: *${(p.total_coins || 0).toLocaleString()}*\n` +
+      `🪙 Monedas Total: *${Number(p.total_coins || 0).toLocaleString()}*\n` +
       `🎮 Partidas: *${p.games_played || 0}*\n` +
-      `💎 Balance $DUENDE: *${(p.duende_balance || 0).toLocaleString()}*\n\n` +
+      `💎 Balance $DUENDE: *${Number(p.duende_balance || 0).toLocaleString()}*\n\n` +
       `_Sigue jugando para subir en el ranking_`;
   }
 
