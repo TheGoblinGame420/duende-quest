@@ -83,6 +83,43 @@ function fmtNum(n) {
   return n.toFixed(2);
 }
 
+// ── Stars pricing ───────────────────────────────
+// 1 Star ≈ $0.013 USD (Telegram rate)
+const STAR_USD = 0.013;
+const STARS_PACKAGES = [
+  { label: '🌟 Starter',  usd: 10,  stars: 0 },
+  { label: '💎 Pro',      usd: 25,  stars: 0 },
+  { label: '🔥 Mega',     usd: 50,  stars: 0 },
+  { label: '👑 Whale',    usd: 100, stars: 0 },
+];
+
+function calcStarsPackages(priceUsd) {
+  if (!priceUsd || priceUsd <= 0) priceUsd = 0.0000001;
+  return STARS_PACKAGES.map(pkg => {
+    const stars = Math.ceil(pkg.usd / STAR_USD);
+    const tokens = Math.floor(pkg.usd / priceUsd);
+    return { ...pkg, stars, tokens };
+  });
+}
+
+async function createStarsInvoice(chatId, pkgIndex) {
+  const price = await getPrice();
+  const priceUsd = price?.priceUsd || 0.0000001;
+  const packages = calcStarsPackages(priceUsd);
+  const pkg = packages[pkgIndex];
+  if (!pkg) return;
+
+  const result = await tg('createInvoiceLink', {
+    title: `${pkg.label} — ${pkg.tokens.toLocaleString()} $DUENDE`,
+    description: `Compra ${pkg.tokens.toLocaleString()} tokens $DUENDE por ${pkg.stars} Stars (~$${pkg.usd} USD)`,
+    payload: JSON.stringify({ pkg: pkgIndex, tokens: pkg.tokens, usd: pkg.usd }),
+    currency: 'XTR',
+    prices: [{ label: `${pkg.tokens.toLocaleString()} $DUENDE`, amount: pkg.stars }],
+  });
+
+  return result?.result;
+}
+
 // ═══════════════════════════════════════════════════════
 // COMMAND HANDLERS
 // ═══════════════════════════════════════════════════════
@@ -137,8 +174,8 @@ async function handleStart(chatId, user, startPayload) {
       inline_keyboard: [
         [{ text: '🎮 JUGAR AHORA', web_app: { url: WEBAPP_URL } }],
         [
-          { text: '🚀 Comprar $DUENDE', url: PUMP_FUN_URL },
-          { text: '🌐 Web', url: SITE_URL },
+          { text: '⭐ Comprar con Stars', callback_data: 'buy' },
+          { text: '🚀 Pump.fun', url: PUMP_FUN_URL },
         ],
         [
           { text: '🏆 Ranking', callback_data: 'ranking' },
@@ -359,6 +396,7 @@ async function handleHelp(chatId) {
       `/ranking — Top 10 jugadores\n` +
       `/price — Precio $DUENDE en vivo\n` +
       `/stats — Tus estadísticas\n` +
+      `/buy — Comprar $DUENDE con Stars 💳\n` +
       `/referral — Tu link de referidos\n` +
       `/help — Esta lista de comandos\n\n` +
       `_Toca los botones para interactuar_`,
@@ -385,6 +423,42 @@ async function handlePlay(chatId) {
 }
 
 // ── Send promo message to channel (called via /announce) ──
+async function handleBuy(chatId, userId, messageId) {
+  const price = await getPrice();
+  const priceUsd = price?.priceUsd || 0.0000001;
+  const packages = calcStarsPackages(priceUsd);
+
+  let text =
+    `⭐ *COMPRAR $DUENDE CON STARS*\n\n` +
+    `💰 Precio actual: *$${priceUsd.toFixed(8)}*\n` +
+    `_Paga con tarjeta de crédito via Telegram Stars_\n\n`;
+
+  packages.forEach((pkg, i) => {
+    text += `${pkg.label}\n`;
+    text += `   ⭐ ${pkg.stars} Stars (~$${pkg.usd}) → *${pkg.tokens.toLocaleString()} $DUENDE*\n\n`;
+  });
+
+  text += `_Los tokens se acreditan al instante en tu balance_`;
+
+  const opts = {
+    chat_id: chatId,
+    text,
+    parse_mode: 'Markdown',
+    reply_markup: {
+      inline_keyboard: packages.map((pkg, i) => ([
+        { text: `${pkg.label} — ⭐${pkg.stars} Stars`, callback_data: `buy_${i}` },
+      ])),
+    },
+  };
+
+  if (messageId) {
+    opts.message_id = messageId;
+    await tg('editMessageText', opts);
+  } else {
+    await tg('sendMessage', opts);
+  }
+}
+
 async function handleAnnounce(chatId, userId) {
   // Only bot owner can announce — replace with your TG user ID
   // You can find yours by sending /stats and checking logs
@@ -424,6 +498,71 @@ exports.handler = async (event) => {
   try {
     const body = JSON.parse(event.body);
 
+    // Handle pre-checkout query (Stars payment approval)
+    if (body.pre_checkout_query) {
+      await tg('answerPreCheckoutQuery', {
+        pre_checkout_query_id: body.pre_checkout_query.id,
+        ok: true,
+      });
+      return { statusCode: 200, body: 'OK' };
+    }
+
+    // Handle successful Stars payment
+    if (body.message?.successful_payment) {
+      const payment = body.message.successful_payment;
+      const chatId = body.message.chat.id;
+      const userId = body.message.from.id;
+      const tgId = String(userId);
+
+      try {
+        const payload = JSON.parse(payment.invoice_payload);
+        const tokens = payload.tokens || 0;
+
+        if (tokens > 0) {
+          await supabaseQuery('rpc/add_duende_by_tgid', {
+            method: 'POST',
+            body: { p_tg_id: tgId, p_amount: tokens },
+          });
+
+          // Record purchase in stars_purchases table
+          await supabaseQuery('stars_purchases', {
+            method: 'POST',
+            body: {
+              telegram_id: tgId,
+              amount_usd: payload.usd || 0,
+              amount_stars: payment.total_amount || 0,
+              tokens_credited: tokens,
+              tx_id: payment.telegram_payment_charge_id || '',
+            },
+          });
+        }
+
+        await tg('sendMessage', {
+          chat_id: chatId,
+          text:
+            `✅ *¡Pago exitoso!*\n\n` +
+            `💎 +${tokens.toLocaleString()} $DUENDE acreditados\n` +
+            `⭐ ${payment.total_amount} Stars\n\n` +
+            `_¡Gracias por tu compra! Los tokens ya están en tu balance._`,
+          parse_mode: 'Markdown',
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: '🎮 JUGAR', web_app: { url: WEBAPP_URL } }],
+              [{ text: '⭐ Comprar más', callback_data: 'buy' }],
+            ],
+          },
+        });
+      } catch (e) {
+        console.error('[Stars Payment Error]', e);
+        await tg('sendMessage', {
+          chat_id: chatId,
+          text: '⚠️ Pago recibido pero hubo un error acreditando tokens. Contacta al admin.',
+        });
+      }
+
+      return { statusCode: 200, body: 'OK' };
+    }
+
     // Handle callback queries (inline button presses)
     if (body.callback_query) {
       const cb = body.callback_query;
@@ -435,11 +574,29 @@ exports.handler = async (event) => {
       // Answer callback to remove loading state
       await tg('answerCallbackQuery', { callback_query_id: cb.id });
 
+      if (data.startsWith('buy_')) {
+        const pkgIndex = parseInt(data.replace('buy_', ''), 10);
+        const invoiceUrl = await createStarsInvoice(chatId, pkgIndex);
+        if (invoiceUrl) {
+          await tg('sendMessage', {
+            chat_id: chatId,
+            text: '⭐ Toca el botón para pagar con Stars:',
+            reply_markup: {
+              inline_keyboard: [[{ text: '💳 Pagar con Stars', url: invoiceUrl }]],
+            },
+          });
+        } else {
+          await tg('sendMessage', { chat_id: chatId, text: '❌ Error creando factura. Intenta de nuevo.' });
+        }
+        return { statusCode: 200, body: 'OK' };
+      }
+
       switch (data) {
         case 'ranking': await handleRanking(chatId, messageId); break;
         case 'price': await handlePrice(chatId, messageId); break;
         case 'stats': await handleStats(chatId, user.id, messageId); break;
         case 'referral': await handleReferralCmd(chatId, user.id, messageId); break;
+        case 'buy': await handleBuy(chatId, user.id, messageId); break;
       }
 
       return { statusCode: 200, body: 'OK' };
@@ -464,6 +621,7 @@ exports.handler = async (event) => {
         case '/price': case '/precio': await handlePrice(chatId); break;
         case '/stats': case '/estadisticas': await handleStats(chatId, user.id); break;
         case '/referral': case '/referido': case '/ref': await handleReferralCmd(chatId, user.id); break;
+        case '/buy': case '/comprar': case '/stars': await handleBuy(chatId, user.id); break;
         case '/help': case '/ayuda': await handleHelp(chatId); break;
         case '/announce': await handleAnnounce(chatId, user.id); break;
       }

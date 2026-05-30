@@ -101,8 +101,9 @@ body{display:flex;flex-direction:column;align-items:center;font-family:"Press St
     <button class="ob" onclick="startGame()">▶ JUGAR</button>
     <button class="ob purple" onclick="openPumpFun()">🚀 COMPRAR $DUENDE</button>
     <div style="display:flex;gap:.3rem;margin-top:.5rem;flex-wrap:wrap;justify-content:center">
-      <button class="ob yellow" onclick="showOverlay('ov-donate')" style="font-size:.4rem">💚 DONAR</button>
+      <button class="ob yellow" onclick="showStarsShop()" style="font-size:.4rem">⭐ COMPRAR STARS</button>
       <button class="ob purple" onclick="showOverlay('ov-staking')" style="font-size:.4rem">⚡ STAKING</button>
+      <button class="ob" onclick="showOverlay('ov-donate')" style="font-size:.35rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);box-shadow:none;color:rgba(255,255,255,.5)">💚 DONAR SOL</button>
     </div>
   </div>
 
@@ -115,7 +116,7 @@ body{display:flex;flex-direction:column;align-items:center;font-family:"Press St
     <div style="display:flex;gap:.4rem;flex-wrap:wrap;justify-content:center">
       <button class="ob" onclick="startGame()">▶ REINTENTAR</button>
       <button class="ob purple" onclick="showOverlay('ov-rank')">🏆 RANKING</button>
-      <button class="ob yellow" onclick="openPumpFun()" style="font-size:.4rem">🚀 COMPRAR</button>
+      <button class="ob yellow" onclick="showStarsShop()" style="font-size:.4rem">⭐ COMPRAR</button>
     </div>
   </div>
 
@@ -146,6 +147,14 @@ body{display:flex;flex-direction:column;align-items:center;font-family:"Press St
     <input type="number" class="donate-input" id="tg-donate-input" min="0.2" step="0.1" placeholder="0.5">
     <p id="tg-donate-preview" style="font-size:.35rem;color:#ffe600;margin:.6rem 0;min-height:1rem">Ingresa cantidad en SOL</p>
     <button class="ob" onclick="tgDonate()">ENVIAR SOL</button>
+    <button class="ob red" onclick="showOverlay('ov-start')" style="font-size:.38rem;margin-top:.5rem">← VOLVER</button>
+  </div>
+
+  <div class="ov" id="ov-stars">
+    <div class="ov-title" style="color:#ffe600">⭐ COMPRAR $DUENDE</div>
+    <p style="font-size:.3rem;color:rgba(255,255,255,.4);text-align:center;margin-bottom:.6rem;line-height:2">Paga con tarjeta via Telegram Stars<br>Precio: <span id="stars-price" style="color:#00ff88">---</span></p>
+    <div id="stars-packages" style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:8px;margin-bottom:1rem"></div>
+    <p id="stars-status" style="font-size:.3rem;color:#ffe600;min-height:1rem;text-align:center"></p>
     <button class="ob red" onclick="showOverlay('ov-start')" style="font-size:.38rem;margin-top:.5rem">← VOLVER</button>
   </div>
 
@@ -301,6 +310,84 @@ function tgStake(){
   if(sol<1){showPUNotif('Mínimo 1 SOL');return;}
   const url='https://phantom.app/ul/transfer?recipient='+window.DUENDE_CFG.DEV_WALLET+'&amount='+sol+'&label=Duende+Stake+'+tgStakeLockDays+'d';
   if(tg){tg.openLink(url);}else{window.open(url,'_blank');}
+}
+
+// ═══════════════════════════════════════
+// STARS SHOP (Telegram Payments)
+// ═══════════════════════════════════════
+const STAR_USD=0.013;
+const STARS_PKGS=[
+  {label:'🌟 Starter',usd:10},
+  {label:'💎 Pro',usd:25},
+  {label:'🔥 Mega',usd:50},
+  {label:'👑 Whale',usd:100},
+];
+
+function buildStarsPackages(){
+  const price=tgPriceUsd||0.0000001;
+  return STARS_PKGS.map(p=>({
+    ...p,
+    stars:Math.ceil(p.usd/STAR_USD),
+    tokens:Math.floor(p.usd/price),
+  }));
+}
+
+function showStarsShop(){
+  showOverlay('ov-stars');
+  const priceEl=document.getElementById('stars-price');
+  priceEl.textContent=tgPriceUsd>0?'$'+tgPriceUsd.toFixed(8):'cargando...';
+  const container=document.getElementById('stars-packages');
+  const pkgs=buildStarsPackages();
+  container.innerHTML=pkgs.map((p,i)=>
+    `<div onclick="buyWithStars(${i})" style="background:rgba(255,230,0,.04);border:2px solid rgba(255,230,0,.2);border-radius:6px;padding:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:all .15s" ontouchstart="this.style.transform='scale(.97)'" ontouchend="this.style.transform=''">
+      <div><div style="font-size:.38rem;color:#fff;margin-bottom:4px">${p.label}</div><div style="font-size:.28rem;color:#ffe600">⭐ ${p.stars} Stars · ~$${p.usd}</div></div>
+      <div style="font-size:.35rem;color:#00ff88;text-align:right">${p.tokens.toLocaleString()}<br><span style="font-size:.25rem;color:rgba(255,255,255,.4)">$DUENDE</span></div>
+    </div>`
+  ).join('');
+}
+
+async function buyWithStars(pkgIndex){
+  if(!tg){showPUNotif('Solo disponible en Telegram');return;}
+  const statusEl=document.getElementById('stars-status');
+  statusEl.textContent='⏳ Generando factura...';
+  try{
+    const pkgs=buildStarsPackages();
+    const pkg=pkgs[pkgIndex];
+    const botUrl='https://criptoduendesolana.netlify.app/.netlify/functions/telegram-bot';
+    const resp=await fetch(botUrl+'-invoice',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        pkg_index:pkgIndex,
+        tokens:pkg.tokens,
+        stars:pkg.stars,
+        usd:pkg.usd,
+        label:pkg.label,
+        tg_id:String(TG_USER.id||''),
+      }),
+    });
+    const data=await resp.json();
+    if(data.invoice_url){
+      statusEl.textContent='';
+      tg.openInvoice(data.invoice_url,function(status){
+        if(status==='paid'){
+          statusEl.textContent='✅ ¡Pago exitoso! Tokens acreditados';
+          statusEl.style.color='#00ff88';
+          tgHaptic('heavy');
+          setTimeout(()=>{statusEl.style.color='#ffe600';},3000);
+        }else if(status==='cancelled'){
+          statusEl.textContent='❌ Pago cancelado';
+        }else{
+          statusEl.textContent='⚠️ Estado: '+status;
+        }
+      });
+    }else{
+      statusEl.textContent='❌ Error: '+(data.error||'intenta de nuevo');
+    }
+  }catch(e){
+    console.warn('[Stars]',e);
+    statusEl.textContent='❌ Error de conexión';
+  }
 }
 
 // ═══════════════════════════════════════
