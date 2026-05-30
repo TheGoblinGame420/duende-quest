@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://unpkg.com/@tonconnect/ui@2/dist/tonconnect-ui.min.js"></script>
 <script src="../js/config.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -89,6 +90,7 @@ body{display:flex;flex-direction:column;align-items:center;font-family:"Press St
       <div class="tg-price" id="tg-price-display">$DUENDE: ---</div>
     </div>
   </div>
+  <button id="ton-btn" onclick="toggleTonWallet()" style="font-size:8px;font-family:'Press Start 2P',monospace;padding:4px 8px;background:rgba(0,136,204,.15);border:1px solid rgba(0,136,204,.4);color:#0088cc;border-radius:4px;cursor:pointer;white-space:nowrap">💎 TON</button>
   <div class="tg-bal" id="tg-coins">🪙 0</div>
 </div>
 
@@ -155,6 +157,26 @@ body{display:flex;flex-direction:column;align-items:center;font-family:"Press St
     <p style="font-size:.3rem;color:rgba(255,255,255,.4);text-align:center;margin-bottom:.6rem;line-height:2">Paga con tarjeta via Telegram Stars<br>Precio: <span id="stars-price" style="color:#00ff88">---</span></p>
     <div id="stars-packages" style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:8px;margin-bottom:1rem"></div>
     <p id="stars-status" style="font-size:.3rem;color:#ffe600;min-height:1rem;text-align:center"></p>
+    <button class="ob red" onclick="showOverlay('ov-start')" style="font-size:.38rem;margin-top:.5rem">← VOLVER</button>
+  </div>
+
+  <div class="ov" id="ov-ton">
+    <div class="ov-title" style="color:#0088cc">💎 TON WALLET</div>
+    <div id="ton-status" style="font-size:.3rem;color:rgba(255,255,255,.4);text-align:center;margin-bottom:.8rem;line-height:2">Conecta tu wallet TON para comprar $DUENDE</div>
+    <div id="ton-connected-panel" style="display:none;width:100%;max-width:320px">
+      <div style="background:rgba(0,136,204,.06);border:1px solid rgba(0,136,204,.2);border-radius:6px;padding:12px;margin-bottom:12px;text-align:center">
+        <div style="font-size:.28rem;color:rgba(255,255,255,.4);margin-bottom:4px">Wallet conectada</div>
+        <div id="ton-addr" style="font-size:.28rem;color:#0088cc;word-break:break-all"></div>
+      </div>
+      <p style="font-size:.3rem;color:rgba(255,255,255,.4);text-align:center;margin-bottom:.6rem;line-height:2">1 TON = <span id="ton-duende-rate" style="color:#00ff88">---</span> $DUENDE</p>
+      <input type="number" class="donate-input" id="ton-amount-input" min="1" step="0.5" placeholder="1.0" style="margin-bottom:8px">
+      <p id="ton-preview" style="font-size:.32rem;color:#0088cc;margin-bottom:1rem;min-height:1rem;text-align:center">Ingresa cantidad en TON</p>
+      <button class="ob" onclick="sendTonPayment()" style="background:linear-gradient(135deg,#0088cc,#005580)">💎 ENVIAR TON</button>
+      <button class="ob red" onclick="disconnectTon()" style="font-size:.32rem;margin-top:.5rem">🔌 DESCONECTAR</button>
+    </div>
+    <div id="ton-connect-panel">
+      <button class="ob" onclick="connectTonWallet()" style="background:linear-gradient(135deg,#0088cc,#005580);font-size:.4rem">💎 CONECTAR WALLET TON</button>
+    </div>
     <button class="ob red" onclick="showOverlay('ov-start')" style="font-size:.38rem;margin-top:.5rem">← VOLVER</button>
   </div>
 
@@ -310,6 +332,136 @@ function tgStake(){
   if(sol<1){showPUNotif('Mínimo 1 SOL');return;}
   const url='https://phantom.app/ul/transfer?recipient='+window.DUENDE_CFG.DEV_WALLET+'&amount='+sol+'&label=Duende+Stake+'+tgStakeLockDays+'d';
   if(tg){tg.openLink(url);}else{window.open(url,'_blank');}
+}
+
+// ═══════════════════════════════════════
+// TON CONNECT 2.0
+// ═══════════════════════════════════════
+const TON_DEV_WALLET='UQAm2w4HcJ1tW8RBNj7BZQh0Q-ckpzlxzD-r8p2JduHkpQnc';
+const TON_MANIFEST='https://criptoduendesolana.netlify.app/tonconnect-manifest.json';
+let tonUI=null;
+let tonWalletAddr=null;
+let tonPriceUsd=0;
+
+function initTonConnect(){
+  try{
+    tonUI=new TON_CONNECT_UI.TonConnectUI({manifestUrl:TON_MANIFEST});
+    tonUI.onStatusChange(w=>{
+      if(w){
+        tonWalletAddr=TON_CONNECT_UI.toUserFriendlyAddress(w.account.address);
+        onTonConnected();
+      }else{
+        tonWalletAddr=null;
+        onTonDisconnected();
+      }
+    });
+  }catch(e){console.warn('[TON Init]',e);}
+}
+initTonConnect();
+
+function onTonConnected(){
+  const btn=document.getElementById('ton-btn');
+  btn.textContent='💎 '+tonWalletAddr.slice(0,4)+'...'+tonWalletAddr.slice(-4);
+  btn.style.borderColor='#00ff88';btn.style.color='#00ff88';
+  document.getElementById('ton-connect-panel').style.display='none';
+  document.getElementById('ton-connected-panel').style.display='block';
+  document.getElementById('ton-addr').textContent=tonWalletAddr;
+  document.getElementById('ton-status').textContent='Wallet conectada ✅';
+  if(_sb&&tgProfile&&tgProfile.id){
+    _sb.from('profiles').update({wallet_ton:tonWalletAddr}).eq('id',tgProfile.id).then(()=>{});
+  }
+  updateTonRate();
+}
+
+function onTonDisconnected(){
+  const btn=document.getElementById('ton-btn');
+  btn.textContent='💎 TON';btn.style.borderColor='rgba(0,136,204,.4)';btn.style.color='#0088cc';
+  document.getElementById('ton-connect-panel').style.display='block';
+  document.getElementById('ton-connected-panel').style.display='none';
+  document.getElementById('ton-status').textContent='Conecta tu wallet TON para comprar $DUENDE';
+  tonWalletAddr=null;
+}
+
+async function connectTonWallet(){
+  if(!tonUI){showPUNotif('TON Connect no disponible');return;}
+  try{await tonUI.openModal();}catch(e){console.warn('[TON Connect]',e);}
+}
+
+function disconnectTon(){
+  if(tonUI){try{tonUI.disconnect();}catch(e){}}
+  onTonDisconnected();
+}
+
+function toggleTonWallet(){
+  showOverlay('ov-ton');
+  updateTonRate();
+}
+
+async function fetchTonPrice(){
+  try{
+    const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=the-open-network&vs_currencies=usd',{signal:AbortSignal.timeout(4000)});
+    const d=await r.json();
+    tonPriceUsd=d?.['the-open-network']?.usd||0;
+  }catch(e){tonPriceUsd=3.5;}
+}
+fetchTonPrice();setInterval(fetchTonPrice,60000);
+
+function updateTonRate(){
+  const duendePrice=tgPriceUsd||0.0000001;
+  const tonP=tonPriceUsd||3.5;
+  const rate=Math.floor(tonP/duendePrice);
+  document.getElementById('ton-duende-rate').textContent=rate.toLocaleString();
+}
+
+document.getElementById('ton-amount-input')?.addEventListener('input',function(){
+  const ton=parseFloat(this.value)||0;
+  const duendePrice=tgPriceUsd||0.0000001;
+  const tonP=tonPriceUsd||3.5;
+  const tokens=Math.floor(ton*tonP/duendePrice);
+  const usd=(ton*tonP).toFixed(2);
+  document.getElementById('ton-preview').textContent=ton>0?tokens.toLocaleString()+' $DUENDE (~$'+usd+')':'Ingresa cantidad en TON';
+});
+
+async function sendTonPayment(){
+  if(!tonUI||!tonWalletAddr){showPUNotif('Conecta tu wallet primero');return;}
+  const ton=parseFloat(document.getElementById('ton-amount-input')?.value)||0;
+  const minTon=10/(tonPriceUsd||3.5);
+  if(ton<minTon){showPUNotif('Mínimo ~$10 ('+minTon.toFixed(2)+' TON)');return;}
+  const duendePrice=tgPriceUsd||0.0000001;
+  const tonP=tonPriceUsd||3.5;
+  const tokens=Math.floor(ton*tonP/duendePrice);
+  const nanotons=Math.floor(ton*1e9).toString();
+  try{
+    const tx={
+      validUntil:Math.floor(Date.now()/1000)+300,
+      messages:[{
+        address:TON_DEV_WALLET,
+        amount:nanotons,
+      }],
+    };
+    document.getElementById('ton-preview').textContent='⏳ Confirmando en wallet...';
+    const result=await tonUI.sendTransaction(tx);
+    document.getElementById('ton-preview').textContent='✅ TX enviada! Acreditando...';
+    document.getElementById('ton-preview').style.color='#00ff88';
+    if(_sb&&TG_USER.id){
+      await _sb.rpc('add_duende_by_tgid',{p_tg_id:String(TG_USER.id),p_amount:tokens});
+      await _sb.from('stars_purchases').insert({
+        telegram_id:String(TG_USER.id),
+        amount_usd:parseFloat((ton*tonP).toFixed(2)),
+        amount_stars:0,
+        tokens_credited:tokens,
+        tx_id:'ton_'+Date.now(),
+      });
+    }
+    showPUNotif('💎 +'+tokens.toLocaleString()+' $DUENDE!');
+    tgHaptic('heavy');
+    setTimeout(()=>{document.getElementById('ton-preview').style.color='#0088cc';document.getElementById('ton-preview').textContent='Ingresa cantidad en TON';},4000);
+  }catch(e){
+    console.warn('[TON TX]',e);
+    document.getElementById('ton-preview').textContent='❌ Transacción cancelada';
+    document.getElementById('ton-preview').style.color='#ff3333';
+    setTimeout(()=>{document.getElementById('ton-preview').style.color='#0088cc';},3000);
+  }
 }
 
 // ═══════════════════════════════════════
