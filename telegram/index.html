@@ -105,6 +105,7 @@ body{display:flex;flex-direction:column;align-items:center;font-family:"Press St
     <div style="display:flex;gap:.3rem;margin-top:.5rem;flex-wrap:wrap;justify-content:center">
       <button class="ob yellow" onclick="showStarsShop()" style="font-size:.4rem">⭐ COMPRAR STARS</button>
       <button class="ob" onclick="toggleTonWallet()" style="font-size:.4rem;background:linear-gradient(135deg,#0088cc,#005580);color:#fff">💎 TON WALLET</button>
+      <button class="ob" onclick="openExchange()" style="font-size:.4rem;background:linear-gradient(135deg,#00eeff,#0088aa);color:#000">🔄 EXCHANGE</button>
       <button class="ob purple" onclick="showOverlay('ov-staking')" style="font-size:.4rem">⚡ STAKING</button>
       <button class="ob" onclick="showOverlay('ov-donate')" style="font-size:.35rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);box-shadow:none;color:rgba(255,255,255,.5)">💚 DONAR SOL</button>
     </div>
@@ -158,6 +159,64 @@ body{display:flex;flex-direction:column;align-items:center;font-family:"Press St
     <p style="font-size:.3rem;color:rgba(255,255,255,.4);text-align:center;margin-bottom:.6rem;line-height:2">Paga con tarjeta via Telegram Stars<br>Precio: <span id="stars-price" style="color:#00ff88">---</span></p>
     <div id="stars-packages" style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:8px;margin-bottom:1rem"></div>
     <p id="stars-status" style="font-size:.3rem;color:#ffe600;min-height:1rem;text-align:center"></p>
+    <button class="ob red" onclick="showOverlay('ov-start')" style="font-size:.38rem;margin-top:.5rem">← VOLVER</button>
+  </div>
+
+  <div class="ov" id="ov-exchange">
+    <div class="ov-title" style="color:#00eeff">🔄 EXCHANGE</div>
+    <div style="display:flex;gap:4px;margin-bottom:12px;width:100%;max-width:320px">
+      <button id="ex-tab-buy" onclick="switchExTab('buy')" style="flex:1;font-family:'Press Start 2P',monospace;font-size:9px;padding:8px;border-radius:4px;cursor:pointer;border:2px solid #00ff88;background:rgba(0,255,136,.15);color:#00ff88">💎→🪙 COMPRAR</button>
+      <button id="ex-tab-sell" onclick="switchExTab('sell')" style="flex:1;font-family:'Press Start 2P',monospace;font-size:9px;padding:8px;border-radius:4px;cursor:pointer;border:2px solid rgba(255,255,255,.15);background:rgba(255,255,255,.03);color:rgba(255,255,255,.4)">🪙→💎 VENDER</button>
+    </div>
+    <div style="background:rgba(0,238,255,.04);border:1px solid rgba(0,238,255,.15);border-radius:6px;padding:12px;margin-bottom:12px;width:100%;max-width:320px;text-align:center">
+      <div style="font-size:.25rem;color:rgba(255,255,255,.3);margin-bottom:4px">Tasa actual</div>
+      <div style="font-size:.35rem;color:#00eeff">1 TON = <span id="ex-rate">---</span> $DUENDE</div>
+      <div style="font-size:.22rem;color:rgba(255,255,255,.25);margin-top:4px">TON: $<span id="ex-ton-price">---</span> · $DUENDE: $<span id="ex-duende-price">---</span></div>
+    </div>
+    <!-- BUY panel: TON → $DUENDE -->
+    <div id="ex-buy-panel" style="width:100%;max-width:320px">
+      <div style="font-size:.28rem;color:rgba(255,255,255,.4);text-align:center;margin-bottom:8px">Envías TON · Recibes $DUENDE al instante</div>
+      <div style="position:relative">
+        <div style="font-size:.22rem;color:rgba(255,255,255,.3);margin-bottom:2px">Envías</div>
+        <div style="display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.3);border:1px solid rgba(0,136,204,.3);border-radius:4px;padding:8px">
+          <span style="font-size:.35rem">💎</span>
+          <input type="number" id="ex-buy-input" min="0.1" step="0.1" placeholder="0.0" style="flex:1;background:none;border:none;color:#fff;font-family:'Press Start 2P',monospace;font-size:14px;outline:none;width:100%">
+          <span style="font-size:.28rem;color:#0088cc">TON</span>
+        </div>
+        <div style="text-align:center;font-size:16px;margin:6px 0;color:rgba(255,255,255,.2)">↓</div>
+        <div style="font-size:.22rem;color:rgba(255,255,255,.3);margin-bottom:2px">Recibes</div>
+        <div style="display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.3);border:1px solid rgba(0,255,136,.2);border-radius:4px;padding:8px">
+          <span style="font-size:.35rem">🪙</span>
+          <div id="ex-buy-output" style="flex:1;font-family:'Press Start 2P',monospace;font-size:14px;color:#00ff88">0</div>
+          <span style="font-size:.28rem;color:#00ff88">$DUENDE</span>
+        </div>
+      </div>
+      <div id="ex-buy-usd" style="font-size:.25rem;color:rgba(255,255,255,.3);text-align:center;margin-top:6px">~$0.00 USD</div>
+      <button class="ob" id="ex-buy-btn" onclick="exBuy()" style="background:linear-gradient(135deg,#00ff88,#00cc6a);width:100%;margin-top:10px">🔄 SWAP TON → $DUENDE</button>
+    </div>
+    <!-- SELL panel: $DUENDE → TON -->
+    <div id="ex-sell-panel" style="width:100%;max-width:320px;display:none">
+      <div style="font-size:.28rem;color:rgba(255,255,255,.4);text-align:center;margin-bottom:4px">Tu balance: <span id="ex-balance" style="color:#ffe600">0</span> $DUENDE</div>
+      <div style="font-size:.22rem;color:rgba(255,255,255,.25);text-align:center;margin-bottom:8px">Mínimo retiro: $10 USD equivalente</div>
+      <div style="position:relative">
+        <div style="font-size:.22rem;color:rgba(255,255,255,.3);margin-bottom:2px">Envías</div>
+        <div style="display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.3);border:1px solid rgba(255,230,0,.2);border-radius:4px;padding:8px">
+          <span style="font-size:.35rem">🪙</span>
+          <input type="number" id="ex-sell-input" min="1000" step="1000" placeholder="0" style="flex:1;background:none;border:none;color:#fff;font-family:'Press Start 2P',monospace;font-size:14px;outline:none;width:100%">
+          <span style="font-size:.28rem;color:#ffe600">$DUENDE</span>
+        </div>
+        <div style="text-align:center;font-size:16px;margin:6px 0;color:rgba(255,255,255,.2)">↓</div>
+        <div style="font-size:.22rem;color:rgba(255,255,255,.3);margin-bottom:2px">Recibes</div>
+        <div style="display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.3);border:1px solid rgba(0,136,204,.2);border-radius:4px;padding:8px">
+          <span style="font-size:.35rem">💎</span>
+          <div id="ex-sell-output" style="flex:1;font-family:'Press Start 2P',monospace;font-size:14px;color:#0088cc">0</div>
+          <span style="font-size:.28rem;color:#0088cc">TON</span>
+        </div>
+      </div>
+      <div id="ex-sell-usd" style="font-size:.25rem;color:rgba(255,255,255,.3);text-align:center;margin-top:6px">~$0.00 USD</div>
+      <button class="ob" id="ex-sell-btn" onclick="exSell()" style="background:linear-gradient(135deg,#ffe600,#cc9900);color:#000;width:100%;margin-top:10px">🔄 SWAP $DUENDE → TON</button>
+    </div>
+    <p id="ex-status" style="font-size:.28rem;color:#00eeff;min-height:1rem;text-align:center;margin-top:8px"></p>
     <button class="ob red" onclick="showOverlay('ov-start')" style="font-size:.38rem;margin-top:.5rem">← VOLVER</button>
   </div>
 
@@ -485,6 +544,145 @@ async function sendTonPayment(){
     document.getElementById('ton-preview').textContent='❌ Transacción cancelada';
     document.getElementById('ton-preview').style.color='#ff3333';
     setTimeout(()=>{document.getElementById('ton-preview').style.color='#0088cc';},3000);
+  }
+}
+
+// ═══════════════════════════════════════
+// EXCHANGE TON ↔ $DUENDE
+// ═══════════════════════════════════════
+let exMode='buy';
+
+function openExchange(){
+  showOverlay('ov-exchange');
+  updateExRate();
+  if(exMode==='sell')loadExBalance();
+}
+
+function switchExTab(mode){
+  exMode=mode;
+  const buyTab=document.getElementById('ex-tab-buy');
+  const sellTab=document.getElementById('ex-tab-sell');
+  const buyPanel=document.getElementById('ex-buy-panel');
+  const sellPanel=document.getElementById('ex-sell-panel');
+  if(mode==='buy'){
+    buyTab.style.borderColor='#00ff88';buyTab.style.background='rgba(0,255,136,.15)';buyTab.style.color='#00ff88';
+    sellTab.style.borderColor='rgba(255,255,255,.15)';sellTab.style.background='rgba(255,255,255,.03)';sellTab.style.color='rgba(255,255,255,.4)';
+    buyPanel.style.display='';sellPanel.style.display='none';
+  }else{
+    sellTab.style.borderColor='#ffe600';sellTab.style.background='rgba(255,230,0,.15)';sellTab.style.color='#ffe600';
+    buyTab.style.borderColor='rgba(255,255,255,.15)';buyTab.style.background='rgba(255,255,255,.03)';buyTab.style.color='rgba(255,255,255,.4)';
+    sellPanel.style.display='';buyPanel.style.display='none';
+    loadExBalance();
+  }
+  document.getElementById('ex-status').textContent='';
+}
+
+function updateExRate(){
+  const tonP=tonPriceUsd||3.5;
+  const dp=tgPriceUsd||0.0000001;
+  const rate=Math.floor(tonP/dp);
+  document.getElementById('ex-rate').textContent=rate.toLocaleString();
+  document.getElementById('ex-ton-price').textContent=tonP.toFixed(2);
+  document.getElementById('ex-duende-price').textContent=dp.toFixed(8);
+}
+
+async function loadExBalance(){
+  if(!_sb||!TG_USER.id)return;
+  try{
+    const{data}=await _sb.from('profiles').select('duende_balance').eq('telegram_id',String(TG_USER.id)).maybeSingle();
+    if(data)document.getElementById('ex-balance').textContent=Number(data.duende_balance||0).toLocaleString();
+  }catch(e){}
+}
+
+document.getElementById('ex-buy-input')?.addEventListener('input',function(){
+  const ton=parseFloat(this.value)||0;
+  const tonP=tonPriceUsd||3.5;
+  const dp=tgPriceUsd||0.0000001;
+  const tokens=Math.floor(ton*tonP/dp);
+  const usd=(ton*tonP).toFixed(2);
+  document.getElementById('ex-buy-output').textContent=tokens.toLocaleString();
+  document.getElementById('ex-buy-usd').textContent='~$'+usd+' USD';
+});
+
+document.getElementById('ex-sell-input')?.addEventListener('input',function(){
+  const tokens=parseInt(this.value)||0;
+  const tonP=tonPriceUsd||3.5;
+  const dp=tgPriceUsd||0.0000001;
+  const usd=tokens*dp;
+  const ton=usd/tonP;
+  document.getElementById('ex-sell-output').textContent=ton.toFixed(4);
+  document.getElementById('ex-sell-usd').textContent='~$'+usd.toFixed(2)+' USD';
+});
+
+async function exBuy(){
+  if(!tonUI||!tonWalletAddr){showPUNotif('Conecta tu wallet TON primero');toggleTonWallet();return;}
+  const ton=parseFloat(document.getElementById('ex-buy-input')?.value)||0;
+  const minTon=10/(tonPriceUsd||3.5);
+  if(ton<minTon){showPUNotif('Mínimo ~$10 ('+minTon.toFixed(2)+' TON)');return;}
+  const tonP=tonPriceUsd||3.5;
+  const dp=tgPriceUsd||0.0000001;
+  const tokens=Math.floor(ton*tonP/dp);
+  const nanotons=Math.floor(ton*1e9).toString();
+  const statusEl=document.getElementById('ex-status');
+  try{
+    statusEl.textContent='⏳ Confirmando en wallet...';
+    await tonUI.sendTransaction({
+      validUntil:Math.floor(Date.now()/1000)+300,
+      messages:[{address:TON_DEV_WALLET,amount:nanotons}],
+    });
+    statusEl.textContent='✅ Acreditando tokens...';statusEl.style.color='#00ff88';
+    if(_sb&&TG_USER.id){
+      await _sb.rpc('add_duende_by_tgid',{p_tg_id:String(TG_USER.id),p_amount:tokens});
+      await _sb.from('stars_purchases').insert({
+        telegram_id:String(TG_USER.id),
+        amount_usd:parseFloat((ton*tonP).toFixed(2)),
+        amount_stars:0,
+        tokens_credited:tokens,
+        tx_id:'ex_ton_'+Date.now(),
+      });
+    }
+    statusEl.textContent='✅ +'+tokens.toLocaleString()+' $DUENDE acreditados!';
+    tgHaptic('heavy');showPUNotif('🔄 +'+tokens.toLocaleString()+' $DUENDE!');
+    setTimeout(()=>{statusEl.style.color='#00eeff';statusEl.textContent='';},4000);
+  }catch(e){
+    console.warn('[Exchange Buy]',e);
+    statusEl.textContent='❌ Transacción cancelada';statusEl.style.color='#ff3333';
+    setTimeout(()=>{statusEl.style.color='#00eeff';statusEl.textContent='';},3000);
+  }
+}
+
+async function exSell(){
+  if(!tonWalletAddr){showPUNotif('Conecta tu wallet TON primero');toggleTonWallet();return;}
+  const tokens=parseInt(document.getElementById('ex-sell-input')?.value)||0;
+  const dp=tgPriceUsd||0.0000001;
+  const usd=tokens*dp;
+  if(usd<10){showPUNotif('Mínimo ~$10 USD en $DUENDE');return;}
+  const tonP=tonPriceUsd||3.5;
+  const tonAmount=usd/tonP;
+  const statusEl=document.getElementById('ex-status');
+  if(!_sb||!TG_USER.id){statusEl.textContent='❌ Error de conexión';return;}
+  try{
+    const{data:profile}=await _sb.from('profiles').select('duende_balance').eq('telegram_id',String(TG_USER.id)).maybeSingle();
+    const balance=Number(profile?.duende_balance||0);
+    if(tokens>balance){statusEl.textContent='❌ Balance insuficiente ('+balance.toLocaleString()+')';statusEl.style.color='#ff3333';setTimeout(()=>{statusEl.style.color='#00eeff';statusEl.textContent='';},3000);return;}
+    statusEl.textContent='⏳ Procesando retiro...';
+    await _sb.rpc('add_duende_by_tgid',{p_tg_id:String(TG_USER.id),p_amount:-tokens});
+    await _sb.from('withdrawal_requests').insert({
+      telegram_id:String(TG_USER.id),
+      wallet_ton:tonWalletAddr,
+      tokens_burned:tokens,
+      ton_amount:parseFloat(tonAmount.toFixed(6)),
+      usd_value:parseFloat(usd.toFixed(2)),
+      status:'pending',
+    });
+    statusEl.textContent='✅ Retiro solicitado: '+tonAmount.toFixed(4)+' TON';statusEl.style.color='#00ff88';
+    tgHaptic('heavy');showPUNotif('🔄 Retiro en proceso!');
+    loadExBalance();
+    setTimeout(()=>{statusEl.style.color='#00eeff';statusEl.textContent='';},5000);
+  }catch(e){
+    console.warn('[Exchange Sell]',e);
+    statusEl.textContent='❌ Error procesando retiro';statusEl.style.color='#ff3333';
+    setTimeout(()=>{statusEl.style.color='#00eeff';statusEl.textContent='';},3000);
   }
 }
 
