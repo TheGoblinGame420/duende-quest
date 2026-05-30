@@ -102,6 +102,7 @@ body{display:flex;flex-direction:column;align-items:center;font-family:"Press St
     <div id="start-rank-list" style="width:100%;max-width:320px;margin-bottom:.8rem"></div>
     <button class="ob" onclick="startGame()">▶ JUGAR</button>
     <button class="ob purple" onclick="openPumpFun()">🚀 COMPRAR $DUENDE</button>
+    <button class="ob" onclick="openSkinShop()" style="background:linear-gradient(135deg,#c084fc,#7c3aed);color:#fff;font-size:.45rem">🎨 SKINS SHOP</button>
     <div style="display:flex;gap:.3rem;margin-top:.5rem;flex-wrap:wrap;justify-content:center">
       <button class="ob yellow" onclick="showStarsShop()" style="font-size:.4rem">⭐ COMPRAR STARS</button>
       <button class="ob" onclick="toggleTonWallet()" style="font-size:.4rem;background:linear-gradient(135deg,#0088cc,#005580);color:#fff">💎 TON WALLET</button>
@@ -159,6 +160,14 @@ body{display:flex;flex-direction:column;align-items:center;font-family:"Press St
     <p style="font-size:.3rem;color:rgba(255,255,255,.4);text-align:center;margin-bottom:.6rem;line-height:2">Paga con tarjeta via Telegram Stars<br>Precio: <span id="stars-price" style="color:#00ff88">---</span></p>
     <div id="stars-packages" style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:8px;margin-bottom:1rem"></div>
     <p id="stars-status" style="font-size:.3rem;color:#ffe600;min-height:1rem;text-align:center"></p>
+    <button class="ob red" onclick="showOverlay('ov-start')" style="font-size:.38rem;margin-top:.5rem">← VOLVER</button>
+  </div>
+
+  <div class="ov" id="ov-skins">
+    <div class="ov-title" style="color:#c084fc">🎨 SKINS SHOP</div>
+    <div style="font-size:.25rem;color:rgba(255,255,255,.3);text-align:center;margin-bottom:10px">Skins dan buffs reales in-game · Compra con ⭐Stars o 💎TON</div>
+    <div id="skins-grid" style="width:100%;max-width:340px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;max-height:60vh;padding:4px"></div>
+    <p id="skin-status" style="font-size:.28rem;color:#c084fc;min-height:1rem;text-align:center;margin-top:8px"></p>
     <button class="ob red" onclick="showOverlay('ov-start')" style="font-size:.38rem;margin-top:.5rem">← VOLVER</button>
   </div>
 
@@ -544,6 +553,168 @@ async function sendTonPayment(){
     document.getElementById('ton-preview').textContent='❌ Transacción cancelada';
     document.getElementById('ton-preview').style.color='#ff3333';
     setTimeout(()=>{document.getElementById('ton-preview').style.color='#0088cc';},3000);
+  }
+}
+
+// ═══════════════════════════════════════
+// SKINS SHOP
+// ═══════════════════════════════════════
+const SKINS=[
+  {id:'comun',name:'Común',img:'../assets/skins/skin_hero.png',preview:'../assets/skins/duende_comun.png',usd:0,stars:0,buffs:null,desc:'Skin base gratis',color:'#888'},
+  {id:'tactico',name:'Táctico',img:'../assets/skins/skin_tactico.png',preview:'../assets/skins/skin_tactico.png',usd:25,stars:1925,buffs:{coinMult:1.1,label:'+10% monedas'},desc:'Operador especial',color:'#00ff88'},
+  {id:'necro',name:'Necromancer',img:'../assets/skins/skin_king.png',preview:'../assets/skins/skin_necromancer.png',usd:50,stars:3850,buffs:{coinMult:1.2,lifesteal:0.05,label:'+20% monedas · Lifesteal'},desc:'Roba vida al atacar',color:'#9333ea'},
+  {id:'king',name:'King',img:'../assets/skins/skin_king.png',preview:'../assets/skins/skin_king.png',usd:75,stars:5770,buffs:{coinMult:1.3,bonusHp:20,label:'+30% monedas · +20 HP'},desc:'Corona de poder',color:'#ffe600'},
+  {id:'berserker',name:'Berserker',img:'../assets/skins/skin_berserker.png',preview:'../assets/skins/skin_berserker.png',usd:120,stars:9230,buffs:{coinMult:1.4,atkMult:1.3,label:'+40% monedas · +30% ataque'},desc:'Furia desatada',color:'#ff4400'},
+  {id:'legendaria',name:'Legendaria',img:'../assets/skins/skin_berserker.png',preview:'../assets/skins/skin_legendariafull.png',usd:250,stars:19230,buffs:{coinMult:1.5,bonusHp:50,aura:true,label:'+50% monedas · +50 HP · Aura'},desc:'La skin definitiva',color:'#ff00cc'},
+];
+
+let ownedSkins=['comun'];
+let activeSkinBuffs=null;
+
+async function loadOwnedSkins(){
+  if(!_sb||!TG_USER.id)return;
+  try{
+    const{data}=await _sb.from('skin_purchases').select('skin_id').eq('telegram_id',String(TG_USER.id));
+    if(data)ownedSkins=['comun',...data.map(s=>s.skin_id)];
+  }catch(e){}
+  // Load equipped skin from profile
+  if(tgProfile?.equipped_skin)equippedSkin=tgProfile.equipped_skin;
+  applySkinBuffs();
+}
+setTimeout(loadOwnedSkins,2000);
+
+function applySkinBuffs(){
+  const skin=SKINS.find(s=>s.id===equippedSkin);
+  activeSkinBuffs=skin?.buffs||null;
+}
+
+function openSkinShop(){
+  showOverlay('ov-skins');
+  renderSkinShop();
+}
+
+function renderSkinShop(){
+  const grid=document.getElementById('skins-grid');
+  const tonP=tonPriceUsd||3.5;
+  grid.innerHTML=SKINS.map(s=>{
+    const owned=ownedSkins.includes(s.id);
+    const equipped=equippedSkin===s.id;
+    const tonCost=s.usd>0?(s.usd/tonP).toFixed(2):0;
+    return `<div style="background:rgba(${owned?'192,132,252':'255,255,255'},.04);border:2px solid ${equipped?s.color:'rgba(255,255,255,.1)'};border-radius:8px;padding:10px;display:flex;gap:10px;align-items:center;${equipped?'box-shadow:0 0 12px '+s.color+'40;':''}">
+      <img src="${s.preview}" style="width:56px;height:56px;image-rendering:pixelated;border-radius:4px;background:#0a0a1a;flex-shrink:0" onerror="this.style.display='none'">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.32rem;color:${s.color};margin-bottom:2px">${s.name} ${equipped?'✅':''}</div>
+        <div style="font-size:.22rem;color:rgba(255,255,255,.4);margin-bottom:4px">${s.desc}</div>
+        ${s.buffs?`<div style="font-size:.2rem;color:#00ff88;background:rgba(0,255,136,.06);padding:2px 6px;border-radius:2px;display:inline-block">${s.buffs.label}</div>`:''}
+        ${s.usd>0&&!owned?`<div style="font-size:.22rem;color:rgba(255,255,255,.3);margin-top:4px">⭐${s.stars} Stars · 💎${tonCost} TON · ~$${s.usd}</div>`:''}
+      </div>
+      <div style="flex-shrink:0">
+        ${s.usd===0?`<button onclick="equipSkinTG('${s.id}')" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:6px 8px;border-radius:4px;cursor:pointer;border:1px solid ${equipped?'#00ff88':'rgba(255,255,255,.2)'};background:${equipped?'rgba(0,255,136,.15)':'rgba(255,255,255,.05)'};color:${equipped?'#00ff88':'rgba(255,255,255,.4)'}">${equipped?'EQUIPADA':'EQUIPAR'}</button>`
+        :owned?`<button onclick="equipSkinTG('${s.id}')" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:6px 8px;border-radius:4px;cursor:pointer;border:1px solid ${equipped?'#00ff88':'rgba(255,255,255,.2)'};background:${equipped?'rgba(0,255,136,.15)':'rgba(255,255,255,.05)'};color:${equipped?'#00ff88':'rgba(255,255,255,.4)'}">${equipped?'EQUIPADA':'EQUIPAR'}</button>`
+        :`<div style="display:flex;flex-direction:column;gap:4px">
+            <button onclick="buySkinStars('${s.id}')" style="font-family:'Press Start 2P',monospace;font-size:6px;padding:5px 6px;border-radius:3px;cursor:pointer;border:1px solid rgba(255,230,0,.3);background:rgba(255,230,0,.1);color:#ffe600">⭐ STARS</button>
+            <button onclick="buySkinTon('${s.id}')" style="font-family:'Press Start 2P',monospace;font-size:6px;padding:5px 6px;border-radius:3px;cursor:pointer;border:1px solid rgba(0,136,204,.3);background:rgba(0,136,204,.1);color:#0088cc">💎 TON</button>
+          </div>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function equipSkinTG(skinId){
+  if(!ownedSkins.includes(skinId)&&skinId!=='comun')return;
+  equippedSkin=skinId;
+  localStorage.setItem('dq_skin',skinId);
+  applySkinBuffs();
+  if(_sb&&tgProfile?.id){
+    await _sb.from('profiles').update({equipped_skin:skinId}).eq('id',tgProfile.id);
+  }
+  renderSkinShop();
+  showPUNotif('🎨 Skin equipada: '+SKINS.find(s=>s.id===skinId)?.name);
+  tgHaptic('medium');
+}
+
+async function buySkinStars(skinId){
+  if(!tg){showPUNotif('Solo disponible en Telegram');return;}
+  const skin=SKINS.find(s=>s.id===skinId);if(!skin)return;
+  const statusEl=document.getElementById('skin-status');
+  statusEl.textContent='⏳ Generando factura...';
+  try{
+    const resp=await fetch('https://criptoduendesolana.netlify.app/.netlify/functions/telegram-bot-invoice',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        pkg_index:99,
+        tokens:0,
+        stars:skin.stars,
+        usd:skin.usd,
+        label:'🎨 Skin: '+skin.name,
+        tg_id:String(TG_USER.id||''),
+        skin_id:skinId,
+      }),
+    });
+    const data=await resp.json();
+    if(data.invoice_url){
+      statusEl.textContent='';
+      tg.openInvoice(data.invoice_url,async function(status){
+        if(status==='paid'){
+          ownedSkins.push(skinId);
+          if(_sb&&TG_USER.id){
+            await _sb.from('skin_purchases').insert({
+              telegram_id:String(TG_USER.id),
+              skin_id:skinId,
+              payment_type:'stars',
+              amount_paid:skin.stars,
+            });
+          }
+          equipSkinTG(skinId);
+          statusEl.textContent='✅ ¡Skin desbloqueada!';statusEl.style.color='#00ff88';
+          tgHaptic('heavy');
+          renderSkinShop();
+          setTimeout(()=>{statusEl.style.color='#c084fc';statusEl.textContent='';},4000);
+        }else{
+          statusEl.textContent='❌ Pago cancelado';
+          setTimeout(()=>{statusEl.textContent='';},3000);
+        }
+      });
+    }else{
+      statusEl.textContent='❌ '+(data.error||'Error');
+    }
+  }catch(e){
+    statusEl.textContent='❌ Error de conexión';
+    setTimeout(()=>{statusEl.textContent='';},3000);
+  }
+}
+
+async function buySkinTon(skinId){
+  if(!tonUI||!tonWalletAddr){showPUNotif('Conecta tu wallet TON primero');toggleTonWallet();return;}
+  const skin=SKINS.find(s=>s.id===skinId);if(!skin)return;
+  const tonP=tonPriceUsd||3.5;
+  const tonCost=skin.usd/tonP;
+  const nanotons=Math.floor(tonCost*1e9).toString();
+  const statusEl=document.getElementById('skin-status');
+  try{
+    statusEl.textContent='⏳ Confirmando en wallet...';
+    await tonUI.sendTransaction({
+      validUntil:Math.floor(Date.now()/1000)+300,
+      messages:[{address:TON_DEV_WALLET,amount:nanotons}],
+    });
+    ownedSkins.push(skinId);
+    if(_sb&&TG_USER.id){
+      await _sb.from('skin_purchases').insert({
+        telegram_id:String(TG_USER.id),
+        skin_id:skinId,
+        payment_type:'ton',
+        amount_paid:parseFloat(tonCost.toFixed(4)),
+      });
+    }
+    equipSkinTG(skinId);
+    statusEl.textContent='✅ ¡Skin desbloqueada!';statusEl.style.color='#00ff88';
+    tgHaptic('heavy');
+    renderSkinShop();
+    setTimeout(()=>{statusEl.style.color='#c084fc';statusEl.textContent='';},4000);
+  }catch(e){
+    statusEl.textContent='❌ Transacción cancelada';statusEl.style.color='#ff3333';
+    setTimeout(()=>{statusEl.style.color='#c084fc';statusEl.textContent='';},3000);
   }
 }
 
@@ -1083,7 +1254,7 @@ function update(){
     if(e.flashTimer>0)e.flashTimer--;
     if(e.isBoss||e.isMagmar){e.shootTimer--;if(e.shootTimer<=0){enemyShoot(e);if(e.isMagmar){bullets.push({x:e.x,y:e.y+e.h*.4,vx:-5.5,vy:-1,w:20,h:14,enemy:true,fire:true,life:1});bullets.push({x:e.x,y:e.y+e.h*.6,vx:-5.5,vy:1,w:20,h:14,enemy:true,fire:true,life:1});}e.shootTimer=e.isBoss?90+Math.random()*60:70+Math.random()*40;}}
     // Melee hit
-    if(attackBox.active&&overlap(attackBox,{x:e.x+6,y:e.y+6,w:e.w-12,h:e.h-12})){const dmg=1+PL.comboStep;e.hp-=dmg;e.flashTimer=10;const pts=hitCombo(e.isBoss?120:e.isCharger?80:60);spawnPFX(attackBox.x+attackBox.w/2,e.y+e.h/2,['#ffe600','#ff9900','#ff3333'][PL.comboStep],8+PL.comboStep*5,4+PL.comboStep*2);attackBox.active=false;tgHaptic('light');}
+    if(attackBox.active&&overlap(attackBox,{x:e.x+6,y:e.y+6,w:e.w-12,h:e.h-12})){const atkMult=activeSkinBuffs?.atkMult||1;const dmg=Math.ceil((1+PL.comboStep)*atkMult);e.hp-=dmg;if(activeSkinBuffs?.lifesteal){PL.hp=Math.min(PL.maxHp,PL.hp+Math.ceil(dmg*activeSkinBuffs.lifesteal*10));updateHpHUD();}e.flashTimer=10;const pts=hitCombo(e.isBoss?120:e.isCharger?80:60);spawnPFX(attackBox.x+attackBox.w/2,e.y+e.h/2,['#ffe600','#ff9900','#ff3333'][PL.comboStep],8+PL.comboStep*5,4+PL.comboStep*2);attackBox.active=false;tgHaptic('light');}
     // Kill
     if(e.hp<=0){killStreak++;killStreakTimer=180;if(killStreak===3)showPUNotif('🔥 3 KILLS!');else if(killStreak===5){showPUNotif('☄️ IMPARABLE!');shake(5);}else if(killStreak===10){showPUNotif('⚡ LEGENDARIO!');shake(8);addXP(50);}if(e.isBoss){bossActive=false;bossKilled++;playSound('boss');addXP(80);tgHaptic('heavy');}else{addXP(e.isMagmar?30:e.isCharger?20:e.isExploder?15:10);playSound('hit');tgHaptic('medium');}spawnPFX(e.x+e.w/2,e.y+e.h/2,e.isBoss?'#ff00cc':e.isMagmar?'#ff4400':'#ff3333',e.isBoss?35:20,e.isBoss?9:6);const coinDrop=e.isBoss?5:e.isMagmar?3:e.isCharger?2:1;for(let c=0;c<coinDrop;c++)spawnCoin(e.x+Math.random()*e.w,e.y);if(e.isBoss){const r=Math.random();spawnChest(e.x+e.w/2,e.y,r<.3?'legendario':r<.75?'epico':'comun');}else if(e.isMagmar&&Math.random()<.7){const r=Math.random();spawnChest(e.x+e.w/2,e.y,r<.1?'legendario':r<.35?'epico':'comun');}else if(Math.random()<.08)spawnChest(e.x+e.w/2,e.y,'comun');if(wave>=4&&Math.random()<.05)spawnWeaponDrop(e.x+e.w/2,e.y);shake(e.isBoss?10:e.isMagmar?6:4);return false;}
     // Player damage
@@ -1100,7 +1271,8 @@ function update(){
   });
 
   // COINS
-  coins=coins.filter(c=>{c.x-=c.spd>0?c.spd:gameSpeed*.6;c.bob+=.09;c.y+=Math.sin(c.bob)*.7;const dx=PL.x+PL.w/2-(c.x+c.w/2);const dy=PL.y+PL.h/2-(c.y+c.h/2);const dist=Math.sqrt(dx*dx+dy*dy);if(dist<90){c.x+=dx*.12;c.y+=dy*.12;}if(overlap({x:PL.x+4,y:PL.y+4,w:PL.w-8,h:PL.h-8},c)){sessionCoins++;totalCoins++;addScore(10*comboMultiplier);addXP(5);playSound('coin');spawnPFX(c.x+c.w/2,c.y+c.h/2,'#ffe600',6,3,3);return false;}return c.x>-40;});
+  const skinCoinMult=activeSkinBuffs?.coinMult||1;
+  coins=coins.filter(c=>{c.x-=c.spd>0?c.spd:gameSpeed*.6;c.bob+=.09;c.y+=Math.sin(c.bob)*.7;const dx=PL.x+PL.w/2-(c.x+c.w/2);const dy=PL.y+PL.h/2-(c.y+c.h/2);const dist=Math.sqrt(dx*dx+dy*dy);if(dist<90){c.x+=dx*.12;c.y+=dy*.12;}if(overlap({x:PL.x+4,y:PL.y+4,w:PL.w-8,h:PL.h-8},c)){const coinVal=Math.ceil(1*skinCoinMult);sessionCoins+=coinVal;totalCoins+=coinVal;addScore(Math.floor(10*comboMultiplier*skinCoinMult));addXP(5);playSound('coin');spawnPFX(c.x+c.w/2,c.y+c.h/2,'#ffe600',6,3,3);return false;}return c.x>-40;});
 
   // CHESTS
   chests=chests.filter(ch=>{ch.x-=ch.spd>0?ch.spd:gameSpeed*.4;ch.bob+=.06;ch.y+=Math.sin(ch.bob)*.5;ch.glowTimer=(ch.glowTimer||0)+1;if(overlap({x:PL.x+4,y:PL.y+4,w:PL.w-8,h:PL.h-8},ch)){if(ch.tier==='legendario'){PL.hp=Math.min(PL.maxHp,PL.hp+40);sessionCoins+=20;addXP(60);addScore(500);shake(10);showPUNotif('⭐ COFRE LEGENDARIO!');}else if(ch.tier==='epico'){PL.hp=Math.min(PL.maxHp,PL.hp+20);sessionCoins+=10;addXP(30);addScore(250);shake(6);showPUNotif('💜 COFRE ÉPICO!');}else{sessionCoins+=5;addXP(15);addScore(100);}tgHaptic('medium');updateHUD();updateHpHUD();return false;}return ch.x>-50;});
@@ -1161,10 +1333,14 @@ function draw(){
   bullets.filter(b=>!b.enemy).forEach(b=>{cx.save();cx.imageSmoothingEnabled=false;cx.globalCompositeOperation='screen';cx.globalAlpha=.9;cx.drawImage(IMG_EL['skill_fire'],b.x,b.y-b.h/2,b.w*1.8,b.h*1.8);cx.restore();});
   // Player
   const plAlpha=PL.invTimer>0&&PL.invTimer%8<4?.3:1;
-  const _plImg=IMG_EL[equippedSkin==='necro'&&IMG_EL['skin_king']?.naturalWidth>0?'skin_king':equippedSkin==='legend'&&IMG_EL['skin_berserker']?.naturalWidth>0?'skin_berserker':'duende_hero'];
+  const SKIN_IMG_MAP={comun:'duende_hero',tactico:'skin_tactico',necro:'skin_king',king:'skin_king',berserker:'skin_berserker',legendaria:'skin_berserker'};
+  const _plImgKey=SKIN_IMG_MAP[equippedSkin]||'duende_hero';
+  const _plImg=IMG_EL[_plImgKey]?.naturalWidth>0?IMG_EL[_plImgKey]:IMG_EL['duende_hero'];
   cx.save();cx.imageSmoothingEnabled=false;cx.globalCompositeOperation='screen';cx.globalAlpha=plAlpha;
   if(PL.facing<0){cx.translate(PL.x+PL.w,0);cx.scale(-1,1);cx.drawImage(_plImg,0,PL.y,PL.w,PL.h);}else cx.drawImage(_plImg,PL.x,PL.y,PL.w,PL.h);
   cx.restore();
+  // Skin aura (Legendaria)
+  if(activeSkinBuffs?.aura){const aR=Math.max(PL.w,PL.h)*.85;const aP=Math.sin(frame*.06)*.2;cx.save();cx.beginPath();cx.arc(PL.x+PL.w/2,PL.y+PL.h/2,aR*(1+aP),0,Math.PI*2);const aGrad=cx.createRadialGradient(PL.x+PL.w/2,PL.y+PL.h/2,0,PL.x+PL.w/2,PL.y+PL.h/2,aR);aGrad.addColorStop(0,'rgba(255,0,204,.12)');aGrad.addColorStop(.5,'rgba(192,132,252,.08)');aGrad.addColorStop(1,'rgba(0,0,0,0)');cx.fillStyle=aGrad;cx.fill();cx.restore();}
   // Dash trail
   if(PL.dashing){for(let t=1;t<=4;t++){cx.save();cx.imageSmoothingEnabled=false;cx.globalCompositeOperation='screen';cx.globalAlpha=.15*(5-t)/4;cx.drawImage(_plImg,PL.x-PL.dashDir*t*12,PL.y,PL.w,PL.h);cx.restore();}}
   // Shield
@@ -1197,7 +1373,8 @@ function showFomoMsg(){let msg=FOMO_MSGS[Math.floor(Math.random()*FOMO_MSGS.leng
 
 function startGame(){
   hideAll();score=0;wave=1;frame=0;gameSpeed=baseSpeed;waveTimer=0;bossActive=false;bossKilled=0;sessionCoins=0;comboCount=0;comboMultiplier=1;comboTimer=0;playerXP=0;playerLevel=1;killStreak=0;killStreakTimer=0;enemies=[];coins=[];bullets=[];particles=[];fTexts=[];chests=[];weaponDrops=[];weaponBuff=null;shakeAmt=0;shakeTimer=0;
-  Object.assign(PL,{x:80,y:GY,vx:0,vy:0,onGround:false,jumping:false,djUsed:false,coyoteTimer:0,jumpBuffer:0,dashing:false,dashTimer:0,dashDir:1,dashCd:0,comboStep:0,comboTimer:0,attackTimer:0,attackCd:0,attackHitbox:{x:0,y:0,w:0,h:0,active:false},slamming:false,slamTimer:0,hp:100,invTimer:0,shieldOn:false,shieldTimer:0,fireOn:false,fireTimer:0,lightTimer:0,flashTimer:0,facing:1,animTimer:0,runFrame:0,items:[[3,0,90],[2,0,120],[1,0,150],[1,0,180]]});
+  const bHp=activeSkinBuffs?.bonusHp||0;
+  Object.assign(PL,{x:80,y:GY,vx:0,vy:0,onGround:false,jumping:false,djUsed:false,coyoteTimer:0,jumpBuffer:0,dashing:false,dashTimer:0,dashDir:1,dashCd:0,comboStep:0,comboTimer:0,attackTimer:0,attackCd:0,attackHitbox:{x:0,y:0,w:0,h:0,active:false},slamming:false,slamTimer:0,hp:100+bHp,maxHp:100+bHp,invTimer:0,shieldOn:false,shieldTimer:0,fireOn:false,fireTimer:0,lightTimer:0,flashTimer:0,facing:1,animTimer:0,runFrame:0,items:[[3,0,90],[2,0,120],[1,0,150],[1,0,180]]});
   loadProgress();initBg();updateHpHUD();updateHUD();updateXPBar();for(let i=0;i<4;i++)updateItemHUD(i);
   state='playing';lastTs=performance.now();raf=requestAnimationFrame(loop);
   if(tg){try{tg.MainButton.hide();}catch(e){}}
