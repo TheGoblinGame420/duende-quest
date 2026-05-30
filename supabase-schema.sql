@@ -181,3 +181,34 @@ SELECT
   COALESCE(SUM(duende_expected), 0) as total_duende_locked,
   COUNT(CASE WHEN claimed = false THEN 1 END) as active_stakes
 FROM public.stakes;
+
+-- ═══════════════════════════════════════════
+-- REFERRAL SYSTEM
+-- ═══════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS public.referrals (
+  id                UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  referrer_tg_id    TEXT NOT NULL,
+  referred_tg_id    TEXT UNIQUE NOT NULL,
+  referred_username TEXT,
+  bonus_paid        BOOLEAN DEFAULT TRUE,
+  created_at        TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON public.referrals (referrer_tg_id);
+
+ALTER TABLE public.referrals ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "referrals_select" ON public.referrals FOR SELECT USING (true);
+CREATE POLICY "referrals_insert" ON public.referrals FOR INSERT WITH CHECK (true);
+
+-- ── RPC: add_duende_by_tgid ────────────────
+CREATE OR REPLACE FUNCTION public.add_duende_by_tgid(p_tg_id TEXT, p_amount BIGINT)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE public.profiles
+  SET duende_balance = duende_balance + p_amount,
+      updated_at = NOW()
+  WHERE telegram_id = p_tg_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
