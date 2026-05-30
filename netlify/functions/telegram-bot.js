@@ -94,14 +94,31 @@ async function handleStart(chatId, user, startPayload) {
     await handleReferral(referrerId, user);
   }
 
-  // Upsert profile
+  // Link or create profile
   const tgId = String(user.id);
   const username = (user.username || user.first_name || 'duende_' + tgId).slice(0, 20);
-  await supabaseQuery('profiles', {
-    method: 'POST',
-    body: { telegram_id: tgId, username },
-    prefer: 'resolution=merge-duplicates,return=representation',
-  });
+
+  // First check if profile with this telegram_id exists
+  let profiles = [];
+  try { profiles = await supabaseQuery(`profiles?telegram_id=eq.${tgId}&select=id,username`); } catch(e) {}
+
+  if (!Array.isArray(profiles) || profiles.length === 0) {
+    // Try to find by username and link telegram_id
+    try {
+      await supabaseQuery(`profiles?username=eq.${username}`, {
+        method: 'PATCH',
+        body: { telegram_id: tgId },
+      });
+    } catch(e) {
+      // If no match by username, try creating via RPC
+      try {
+        await supabaseQuery('rpc/link_telegram', {
+          method: 'POST',
+          body: { p_tg_id: tgId, p_username: username },
+        });
+      } catch(e2) {}
+    }
+  }
 
   const referralLink = `https://t.me/duendequest_bot?start=ref_${user.id}`;
 

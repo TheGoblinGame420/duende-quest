@@ -225,8 +225,17 @@ async function tgLogin(){
   try{
     const tgId=String(TG_USER.id);
     const username=(TG_USER.username||TG_USER.first_name||'tg_'+tgId).slice(0,20);
-    const{data}=await _sb.from('profiles').upsert({telegram_id:tgId,username},{onConflict:'telegram_id'}).select().single();
-    if(data) tgProfile=data;
+    // First check if profile with this telegram_id already exists
+    let{data}=await _sb.from('profiles').select('*').eq('telegram_id',tgId).maybeSingle();
+    if(data){tgProfile=data;return;}
+    // Try to find by username and link
+    const{data:byName}=await _sb.from('profiles').select('*').eq('username',username).maybeSingle();
+    if(byName){
+      await _sb.from('profiles').update({telegram_id:tgId}).eq('id',byName.id);
+      tgProfile=byName;tgProfile.telegram_id=tgId;return;
+    }
+    // No profile found — will be created on first score submission
+    tgProfile={username,telegram_id:tgId,best_score:0,total_coins:0};
   }catch(e){console.warn('[TG Auth]',e);}
 }
 tgLogin();
