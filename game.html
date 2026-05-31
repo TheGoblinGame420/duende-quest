@@ -317,41 +317,13 @@ body{display:flex;flex-direction:column;align-items:center;justify-content:cente
 
   <!-- ── $DUENDE SKIN SHOP ── -->
   <div class="ov" id="ov-skin-shop">
-    <div class="ov-title" style="color:#c084fc">✨ TIENDA SKINS</div>
-    <div style="font-family:'Press Start 2P',monospace;font-size:.3rem;color:#ffe600;margin-bottom:.5rem;text-align:center">⚡ PRECIO: <span id="store-price-tag" data-price-usd>---</span> · <span data-change24h>---</span></div>
-    <div class="store-bal">
-      <span style="color:#c084fc">💜 <span id="skin-shop-duende">0</span> $DUENDE</span>
-      <span style="color:rgba(255,255,255,.2);font-size:.3rem">·</span>
-      <span style="color:#ffe600">🪙 <span id="skin-shop-dq">0</span> DQ</span>
-    </div>
-    <div class="store-grid" style="grid-template-columns:1fr 1fr 1fr;max-width:480px">
-      <div class="store-item skin-card" onclick="equipSkin('comun')">
-        <img class="skin-preview" src="assets/skin duende/duende_comun.png">
-        <div class="si-name">DUENDE COMÚN</div>
-        <div class="si-price" style="font-size:.32rem;color:#00ff88">✅ GRATIS</div>
-        <div class="owned-badge" id="skin-equipped-comun"></div>
-      </div>
-      <div class="store-item skin-card locked" id="skin-card-necro">
-        <div class="si-lock">🔒</div>
-        <img class="skin-preview" src="assets/skin duende/skin_necromancer.png">
-        <div class="si-name">NECROMANCER</div>
-        <div class="si-price duende">3 $DUENDE</div>
-        <div class="owned-badge" id="skin-equipped-necro"></div>
-      </div>
-      <div class="store-item skin-card locked" id="skin-card-legend">
-        <div class="si-lock">🔒</div>
-        <img class="skin-preview" src="assets/skin duende/skin_legendariafull.png">
-        <div class="si-name">LEGENDARIA</div>
-        <div class="si-price duende">8 $DUENDE</div>
-        <div class="owned-badge" id="skin-equipped-legend"></div>
-      </div>
-    </div>
-    <div style="font-size:.3rem;color:rgba(255,255,255,.2);text-align:center;padding:.5rem;border:1px dashed rgba(124,58,237,.2);border-radius:3px;max-width:380px;margin:.4rem 0;line-height:2.2">
-      🔜 Conecta Phantom y compra $DUENDE en Pump.fun<br>
-      Las skins se desbloquean automáticamente con tu wallet
-    </div>
-    <button class="ob purple" onclick="connectPhantomFromWallet()" style="font-size:.38rem;margin-bottom:.4rem">👻 CONECTAR PHANTOM</button>
-    <div style="display:flex;gap:.4rem;flex-wrap:wrap;justify-content:center">
+    <div class="ov-title" style="color:#c084fc">🎨 NFT SKINS SHOP</div>
+    <div style="font-size:.28rem;color:rgba(255,255,255,.3);text-align:center;margin-bottom:.5rem">Compra con SOL via Phantom · Verificación on-chain via Helius</div>
+    <div id="web-wallet-status" style="font-size:.28rem;color:#c084fc;text-align:center;margin-bottom:.5rem"></div>
+    <div id="web-skins-grid" style="display:flex;flex-direction:column;gap:8px;max-width:420px;width:100%;max-height:55vh;overflow-y:auto;padding:4px"></div>
+    <p id="web-skin-status" style="font-size:.28rem;color:#c084fc;min-height:1rem;text-align:center;margin-top:8px"></p>
+    <div style="display:flex;gap:.4rem;flex-wrap:wrap;justify-content:center;margin-top:.5rem">
+      <button class="ob purple" onclick="connectPhantomForSkins()" id="web-phantom-btn" style="font-size:.35rem">👻 CONECTAR PHANTOM</button>
       <button class="ob" onclick="closeSkinShop()">← VOLVER</button>
     </div>
   </div>
@@ -1731,37 +1703,173 @@ function applyPendingInventory(){
   localStorage.setItem('dq_pending_inv', JSON.stringify(pendingInventory));
 }
 
-// ── SKIN SHOP ──
+// ── NFT SKIN SHOP ──
 let equippedSkin = localStorage.getItem('dq_skin') || 'comun';
-const SKIN_KEYS  = { comun:'duende_hero', necro:'skin_king', legend:'skin_berserker' };
+const SKIN_KEYS = { comun:'duende_hero', tactico:'skin_tactico', necro:'skin_king', king:'skin_king', berserker:'skin_berserker', legendaria:'skin_berserker' };
 
-function showSkinShop(){
-  hideAll();
-  document.getElementById('skin-shop-dq').textContent = totalCoins.toLocaleString();
-  document.getElementById('skin-shop-duende').textContent = '0'; // placeholder until Phase 3
-  _refreshSkinUI();
-  document.getElementById('ov-skin-shop').classList.add('show');
+const WEB_SKINS = [
+  { id:'comun', name:'Común', preview:'assets/skins/duende_comun.png', sol:0, usd:0, buffs:null, desc:'Skin base gratis', color:'#888' },
+  { id:'tactico', name:'Táctico', preview:'assets/skins/skin_tactico.png', sol:0, usd:25, buffs:{ coinMult:1.1, label:'+10% monedas' }, desc:'Operador especial', color:'#00ff88' },
+  { id:'necro', name:'Necromancer', preview:'assets/skins/skin_necromancer.png', sol:0, usd:50, buffs:{ coinMult:1.2, lifesteal:0.05, label:'+20% monedas · Lifesteal' }, desc:'Roba vida al atacar', color:'#9333ea' },
+  { id:'king', name:'King', preview:'assets/skins/skin_king.png', sol:0, usd:75, buffs:{ coinMult:1.3, bonusHp:20, label:'+30% monedas · +20 HP' }, desc:'Corona de poder', color:'#ffe600' },
+  { id:'berserker', name:'Berserker', preview:'assets/skins/skin_berserker.png', sol:0, usd:120, buffs:{ coinMult:1.4, atkMult:1.3, label:'+40% monedas · +30% ataque' }, desc:'Furia desatada', color:'#ff4400' },
+  { id:'legendaria', name:'Legendaria', preview:'assets/skins/skin_legendariafull.png', sol:0, usd:250, buffs:{ coinMult:1.5, bonusHp:50, aura:true, label:'+50% monedas · +50 HP · Aura' }, desc:'La skin definitiva', color:'#ff00cc' },
+];
+
+let webOwnedSkins = ['comun'];
+let webSkinBuffs = null;
+let phantomForSkins = null;
+
+// Calculate SOL prices from USD using live SOL price
+async function calcSolPrices() {
+  try {
+    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd', { signal: AbortSignal.timeout(4000) });
+    const d = await r.json();
+    const solPrice = d?.solana?.usd || 170;
+    WEB_SKINS.forEach(s => { if (s.usd > 0) s.sol = parseFloat((s.usd / solPrice).toFixed(3)); });
+  } catch (e) {
+    WEB_SKINS.forEach(s => { if (s.usd > 0) s.sol = parseFloat((s.usd / 170).toFixed(3)); });
+  }
 }
 
-function closeSkinShop(){
+async function connectPhantomForSkins() {
+  if (!window.solana?.isPhantom) {
+    window.open('https://phantom.app/', '_blank');
+    return;
+  }
+  try {
+    const resp = await window.solana.connect();
+    phantomForSkins = resp.publicKey.toString();
+    document.getElementById('web-wallet-status').innerHTML = '👻 <span style="color:#00ff88">' + phantomForSkins.slice(0,4) + '...' + phantomForSkins.slice(-4) + '</span> conectada';
+    document.getElementById('web-phantom-btn').textContent = '✅ CONECTADA';
+    loadWebOwnedSkins();
+  } catch (e) { console.warn('[Phantom]', e); }
+}
+
+async function loadWebOwnedSkins() {
+  try {
+    const r = await fetch('/.netlify/functions/helius-verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'get_owned_skins', wallet_address: phantomForSkins }),
+    });
+    const data = await r.json();
+    if (data.skins) webOwnedSkins = ['comun', ...data.skins];
+    renderWebSkinShop();
+  } catch (e) { renderWebSkinShop(); }
+}
+
+function showSkinShop() {
+  hideAll();
+  calcSolPrices().then(() => renderWebSkinShop());
+  document.getElementById('ov-skin-shop').classList.add('show');
+  if (phantomForSkins) loadWebOwnedSkins();
+}
+
+function closeSkinShop() {
   document.getElementById('ov-skin-shop').classList.remove('show');
   document.getElementById('ov-menu').classList.add('show');
 }
 
-function equipSkin(skin){
-  if(skin !== 'comun') { return; } // only free skin available now
-  equippedSkin = skin;
-  localStorage.setItem('dq_skin', skin);
-  _refreshSkinUI();
-  if(typeof showPUNotif==='function') showPUNotif('✅ Skin equipada!');
+function renderWebSkinShop() {
+  const grid = document.getElementById('web-skins-grid');
+  grid.innerHTML = WEB_SKINS.map(s => {
+    const owned = webOwnedSkins.includes(s.id);
+    const equipped = equippedSkin === s.id;
+    return `<div style="background:rgba(${owned ? '192,132,252' : '255,255,255'},.04);border:2px solid ${equipped ? s.color : 'rgba(255,255,255,.1)'};border-radius:8px;padding:10px;display:flex;gap:10px;align-items:center;${equipped ? 'box-shadow:0 0 12px ' + s.color + '40;' : ''}">
+      <img src="${s.preview}" style="width:56px;height:56px;image-rendering:pixelated;border-radius:4px;background:#0a0a1a;flex-shrink:0" onerror="this.style.display='none'">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.32rem;color:${s.color};margin-bottom:2px">${s.name} ${equipped ? '✅' : ''}</div>
+        <div style="font-size:.22rem;color:rgba(255,255,255,.4);margin-bottom:4px">${s.desc}</div>
+        ${s.buffs ? `<div style="font-size:.2rem;color:#00ff88;background:rgba(0,255,136,.06);padding:2px 6px;border-radius:2px;display:inline-block">${s.buffs.label}</div>` : ''}
+        ${s.sol > 0 && !owned ? `<div style="font-size:.22rem;color:rgba(255,255,255,.3);margin-top:4px">◎ ${s.sol} SOL · ~$${s.usd}</div>` : ''}
+      </div>
+      <div style="flex-shrink:0">
+        ${owned ?
+          `<button onclick="webEquipSkin('${s.id}')" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:6px 8px;border-radius:4px;cursor:pointer;border:1px solid ${equipped ? '#00ff88' : 'rgba(255,255,255,.2)'};background:${equipped ? 'rgba(0,255,136,.15)' : 'rgba(255,255,255,.05)'};color:${equipped ? '#00ff88' : 'rgba(255,255,255,.4)'}">${equipped ? 'EQUIPADA' : 'EQUIPAR'}</button>`
+          : s.sol > 0 ?
+          `<button onclick="webBuySkinSOL('${s.id}')" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:6px 8px;border-radius:4px;cursor:pointer;border:1px solid rgba(124,58,237,.4);background:rgba(124,58,237,.15);color:#c084fc">◎ COMPRAR</button>`
+          : `<button onclick="webEquipSkin('${s.id}')" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:6px 8px;border-radius:4px;cursor:pointer;border:1px solid rgba(0,255,136,.3);background:rgba(0,255,136,.1);color:#00ff88">GRATIS</button>`}
+      </div>
+    </div>`;
+  }).join('');
 }
 
-function _refreshSkinUI(){
-  ['comun','necro','legend'].forEach(s=>{
-    const el=document.getElementById('skin-equipped-'+s);
-    if(el) el.textContent = (equippedSkin===s?'▶ EQUIPADA':'');
-  });
+function webEquipSkin(skinId) {
+  if (!webOwnedSkins.includes(skinId) && skinId !== 'comun') return;
+  equippedSkin = skinId;
+  localStorage.setItem('dq_skin', skinId);
+  webSkinBuffs = WEB_SKINS.find(s => s.id === skinId)?.buffs || null;
+  renderWebSkinShop();
+  if (typeof showPUNotif === 'function') showPUNotif('🎨 Skin equipada: ' + WEB_SKINS.find(s => s.id === skinId)?.name);
 }
+
+async function webBuySkinSOL(skinId) {
+  if (!phantomForSkins) { connectPhantomForSkins(); return; }
+  const skin = WEB_SKINS.find(s => s.id === skinId);
+  if (!skin || skin.sol <= 0) return;
+  const statusEl = document.getElementById('web-skin-status');
+
+  try {
+    statusEl.textContent = '⏳ Preparando transacción...';
+    const connection = new solanaWeb3.Connection('https://api.mainnet-beta.solana.com');
+    const fromPubkey = new solanaWeb3.PublicKey(phantomForSkins);
+    const toPubkey = new solanaWeb3.PublicKey(window.DUENDE_CFG.DEV_WALLET);
+    const lamports = Math.floor(skin.sol * solanaWeb3.LAMPORTS_PER_SOL);
+
+    const tx = new solanaWeb3.Transaction().add(
+      solanaWeb3.SystemProgram.transfer({ fromPubkey, toPubkey, lamports })
+    );
+    tx.feePayer = fromPubkey;
+    const { blockhash } = await connection.getLatestBlockhash();
+    tx.recentBlockhash = blockhash;
+
+    statusEl.textContent = '⏳ Confirma en Phantom...';
+    const signed = await window.solana.signAndSendTransaction(tx);
+    const txSig = signed.signature;
+
+    statusEl.textContent = '⏳ Verificando on-chain con Helius...';
+    // Wait for confirmation
+    await connection.confirmTransaction(txSig, 'confirmed');
+
+    // Verify via Helius backend
+    const verifyResp = await fetch('/.netlify/functions/helius-verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'verify_skin_purchase',
+        tx_signature: txSig,
+        skin_id: skinId,
+        wallet_address: phantomForSkins,
+        expected_sol: skin.sol,
+      }),
+    });
+    const result = await verifyResp.json();
+
+    if (result.success) {
+      webOwnedSkins.push(skinId);
+      webEquipSkin(skinId);
+      statusEl.textContent = '✅ Skin desbloqueada! Verificada on-chain ✓';
+      statusEl.style.color = '#00ff88';
+      setTimeout(() => { statusEl.style.color = '#c084fc'; statusEl.textContent = ''; }, 5000);
+    } else {
+      statusEl.textContent = '❌ Error: ' + (result.error || 'Verificación fallida');
+      statusEl.style.color = '#ff3333';
+      setTimeout(() => { statusEl.style.color = '#c084fc'; statusEl.textContent = ''; }, 4000);
+    }
+  } catch (e) {
+    console.warn('[Buy Skin SOL]', e);
+    statusEl.textContent = '❌ Transacción cancelada';
+    statusEl.style.color = '#ff3333';
+    setTimeout(() => { statusEl.style.color = '#c084fc'; statusEl.textContent = ''; }, 3000);
+  }
+}
+
+// Apply skin buffs at game start
+function _applySkinBuffs() {
+  webSkinBuffs = WEB_SKINS.find(s => s.id === equippedSkin)?.buffs || null;
+}
+_applySkinBuffs();
 
 // Apply skin to player sprite
 function getPlayerImgKey(){
