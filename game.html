@@ -1748,7 +1748,7 @@ async function connectPhantomForSkins() {
 
 async function loadWebOwnedSkins() {
   try {
-    const r = await fetch('/.netlify/functions/helius-verify', {
+    const r = await fetch('/api/helius-verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'get_owned_skins', wallet_address: phantomForSkins }),
@@ -1833,7 +1833,7 @@ async function webBuySkinSOL(skinId) {
     await connection.confirmTransaction(txSig, 'confirmed');
 
     // Verify via Helius backend
-    const verifyResp = await fetch('/.netlify/functions/helius-verify', {
+    const verifyResp = await fetch('/api/helius-verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

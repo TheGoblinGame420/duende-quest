@@ -430,7 +430,7 @@ function tgStake(){
 // TON CONNECT 2.0
 // ═══════════════════════════════════════
 const TON_DEV_WALLET='UQAm2w4HcJ1tW8RBNj7BZQh0Q-ckpzlxzD-r8p2JduHkpQnc';
-const TON_MANIFEST='https://criptoduendesolana.netlify.app/tonconnect-manifest.json';
+const TON_MANIFEST='https://duendequest.pages.dev/tonconnect-manifest.json';
 let tonUI=null;
 let tonWalletAddr=null;
 let tonPriceUsd=0;
@@ -639,7 +639,7 @@ async function buySkinStars(skinId){
   const statusEl=document.getElementById('skin-status');
   statusEl.textContent='⏳ Generando factura...';
   try{
-    const resp=await fetch('https://criptoduendesolana.netlify.app/.netlify/functions/telegram-bot-invoice',{
+    const resp=await fetch('/api/telegram-bot-invoice',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
@@ -994,8 +994,7 @@ async function buyWithStars(pkgIndex){
   try{
     const pkgs=buildStarsPackages();
     const pkg=pkgs[pkgIndex];
-    const botUrl='https://criptoduendesolana.netlify.app/.netlify/functions/telegram-bot';
-    const resp=await fetch(botUrl+'-invoice',{
+    const resp=await fetch('/api/telegram-bot-invoice',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
