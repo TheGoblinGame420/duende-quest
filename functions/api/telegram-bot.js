@@ -199,7 +199,7 @@ async function handlePlay(token, chatId) {
 // MAIN HANDLER
 // ═══════════════════════════════════════════════════════
 
-export async function onRequestPost(context) {
+async function onRequestPost(context) {
   const env = getEnv(context);
   const token = env.BOT_TOKEN;
 
@@ -286,3 +286,5 @@ export async function onRequestPost(context) {
     return new Response('OK');
   }
 }
+
+export default { onRequestPost };

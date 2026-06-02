@@ -48,7 +48,7 @@ async function getNFTs(heliusKey, walletAddress) {
   } catch (e) { return []; }
 }
 
-export async function onRequestPost(context) {
+async function onRequestPost(context) {
   const headers = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type', 'Content-Type': 'application/json' };
   const env = getEnv(context);
 
@@ -98,6 +98,8 @@ export async function onRequestPost(context) {
   }
 }
 
-export async function onRequestOptions() {
+async function onRequestOptions() {
   return new Response('', { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type' } });
 }
+
+export default { onRequestPost, onRequestOptions };

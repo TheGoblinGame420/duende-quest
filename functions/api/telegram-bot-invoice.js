@@ -11,7 +11,7 @@ async function tgApi(token, method, body) {
   return r.json();
 }
 
-export async function onRequestPost(context) {
+async function onRequestPost(context) {
   const headers = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type', 'Content-Type': 'application/json' };
   const token = context.env.TELEGRAM_BOT_TOKEN;
 
@@ -34,6 +34,8 @@ export async function onRequestPost(context) {
   }
 }
 
-export async function onRequestOptions() {
+async function onRequestOptions() {
   return new Response('', { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type' } });
 }
+
+export default { onRequestPost, onRequestOptions };
