@@ -2,8 +2,8 @@
 // DUENDE QUEST — Telegram Bot Webhook (Cloudflare Pages Function)
 // ═══════════════════════════════════════════════════════
 
-const WEBAPP_URL = 'https://duendequest.pages.dev/telegram/index.html';
-const SITE_URL = 'https://duendequest.pages.dev';
+const WEBAPP_URL = 'https://duende-quest.alfonso12hc.workers.dev/telegram/index.html';
+const SITE_URL = 'https://duende-quest.alfonso12hc.workers.dev';
 const DEXSCREENER_URL = 'https://api.dexscreener.com/latest/dex/tokens/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump';
 const PUMP_FUN_URL = 'https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump';
 
