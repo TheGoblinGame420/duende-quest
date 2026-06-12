@@ -9,3 +9,5 @@ Thumbs.db
 .env*.local
 secrets.js
 service_role_key.txt
+.wrangler/
+dist-test/

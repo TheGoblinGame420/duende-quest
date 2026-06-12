@@ -343,7 +343,13 @@ async function _fetchLeaderboard(filter) {
 
   const { data, error } = await q;
   if (error) { console.warn('[Leaderboard]', error); return null; }
-  return data;
+  // Una entrada por jugador: su mejor score
+  const best = new Map();
+  for (const s of (data || [])) {
+    const k = (s.username || '?').toLowerCase();
+    if (!best.has(k) || s.score > best.get(k).score) best.set(k, s);
+  }
+  return [...best.values()].sort((a, b) => b.score - a.score).slice(0, 10);
 }
 
 // ─────────────────────────────────────────────

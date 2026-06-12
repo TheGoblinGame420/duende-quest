@@ -22,6 +22,19 @@ async function supabaseQuery(env, path, options = {}) {
   return r.json();
 }
 
+// SECURITY: skin prices live server-side; the client's `expected_sol` is ignored.
+const SKIN_PRICES_USD = { tactico: 25, necro: 50, king: 75, berserker: 120, legendaria: 250 };
+
+async function getSolPriceUsd() {
+  try {
+    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd', { signal: AbortSignal.timeout(5000) });
+    const d = await r.json();
+    const p = parseFloat(d?.solana?.usd || 0);
+    if (p > 0) return p;
+  } catch (e) {}
+  return 170;
+}
+
 async function verifyTransaction(heliusKey, txSignature, expectedSol, senderWallet) {
   try {
     const r = await fetch(`https://mainnet.helius-rpc.com/?api-key=${heliusKey}`, {
@@ -33,10 +46,15 @@ async function verifyTransaction(heliusKey, txSignature, expectedSol, senderWall
     const tx = data?.result;
     if (!tx || tx.meta?.err) return { valid: false, error: 'TX failed or not found' };
     const instructions = tx.transaction?.message?.instructions || [];
-    const transfers = instructions.filter(i => i.parsed?.type === 'transfer' && i.parsed?.info?.destination === DEV_WALLET);
-    if (transfers.length === 0) return { valid: false, error: 'No transfer to dev wallet' };
+    // The transfer must go TO the dev wallet AND come FROM the claiming wallet
+    const transfers = instructions.filter(i =>
+      i.parsed?.type === 'transfer' &&
+      i.parsed?.info?.destination === DEV_WALLET &&
+      (!senderWallet || i.parsed?.info?.source === senderWallet)
+    );
+    if (transfers.length === 0) return { valid: false, error: 'No transfer from sender to dev wallet' };
     const totalSol = transfers.reduce((sum, t) => sum + (t.parsed?.info?.lamports || 0), 0) / 1e9;
-    if (totalSol < expectedSol * 0.95) return { valid: false, error: `Expected ${expectedSol} SOL, got ${totalSol}` };
+    if (totalSol < expectedSol * 0.88) return { valid: false, error: `Expected ~${expectedSol.toFixed(4)} SOL, got ${totalSol}` };
     return { valid: true, sol: totalSol };
   } catch (e) { return { valid: false, error: e.message }; }
 }
@@ -57,11 +75,18 @@ async function onRequestPost(context) {
     const { action } = body;
 
     if (action === 'verify_skin_purchase') {
-      const { tx_signature, skin_id, wallet_address, expected_sol, telegram_id } = body;
+      const { tx_signature, skin_id, wallet_address, telegram_id } = body;
       if (!tx_signature || !skin_id || !wallet_address) return new Response(JSON.stringify({ error: 'Missing fields' }), { headers, status: 400 });
+      // Server-side price — never trust the client's expected_sol
+      const usd = SKIN_PRICES_USD[skin_id];
+      if (!usd) return new Response(JSON.stringify({ error: 'Unknown skin' }), { headers, status: 400 });
       const existing = await supabaseQuery(env, `skin_purchases?wallet_address=eq.${wallet_address}&skin_id=eq.${skin_id}&select=id`);
       if (Array.isArray(existing) && existing.length > 0) return new Response(JSON.stringify({ success: true, already_owned: true }), { headers });
-      const result = await verifyTransaction(env.HELIUS_API_KEY, tx_signature, expected_sol, wallet_address);
+      // Anti-replay: each tx signature can only unlock one purchase
+      const replay = await supabaseQuery(env, `skin_purchases?tx_signature=eq.${encodeURIComponent(tx_signature)}&select=id`);
+      if (Array.isArray(replay) && replay.length > 0) return new Response(JSON.stringify({ success: false, error: 'TX already used' }), { headers });
+      const expectedSol = usd / (await getSolPriceUsd());
+      const result = await verifyTransaction(env.HELIUS_API_KEY, tx_signature, expectedSol, wallet_address);
       if (!result.valid) return new Response(JSON.stringify({ success: false, error: result.error }), { headers });
       const purchaseData = { skin_id, payment_type: 'sol', amount_paid: result.sol, tx_signature, wallet_address };
       if (telegram_id) purchaseData.telegram_id = telegram_id;

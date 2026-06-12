@@ -7,6 +7,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/config.js"></script>
+<script src="js/missions.js"></script>
+<script src="js/streak.js"></script>
 <script src="js/auth-manager.js" defer></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -148,6 +150,8 @@ body{display:flex;flex-direction:column;align-items:center;justify-content:cente
   <div class="ov show" id="ov-menu">
     <div class="ov-title" style="color:#00ff88">🧝 DUENDE QUEST</div>
     <div id="menu-user-info"></div>
+    <div id="streak-banner" style="width:100%;max-width:380px;font-size:.3rem;padding:.4rem .7rem;background:rgba(255,153,0,.05);border:1px solid rgba(255,153,0,.18);border-radius:3px;margin-bottom:.4rem;line-height:1.6"></div>
+    <div id="daily-missions" style="width:100%;max-width:380px;background:rgba(255,230,0,.04);border:1px solid rgba(255,230,0,.15);border-radius:3px;padding:.5rem .7rem;margin-bottom:.6rem"></div>
     <div class="ov-sub">
       ← → MOVER &nbsp; ESPACIO / ↑ SALTAR (2x DOBLE)<br>
       Z / CLICK → COMBO ATAQUE (3 hits)<br>
@@ -533,6 +537,11 @@ let mLeft=false,mRight=false;
 // ── RANKING ──
 let ranking=JSON.parse(localStorage.getItem('dq_rank')||'[]');
 
+// ── DAILY MISSIONS (módulo compartido js/missions.js) ──
+DQMissions.onReward=m=>{ totalCoins+=m.reward; spawnFT(W/2-60,60,'🎯 +'+m.reward+' DQ','#ffe600',true); saveProgress(); };
+DQMissions.notify=msg=>showPUNotif(msg);
+function missionEvent(type,val){ DQMissions.event(type,val); }
+
 // ── XP / LEVEL SYSTEM ──
 let playerXP=0, playerLevel=1;
 const XP_PER_LEVEL=[0,100,250,450,700,1000,1400,1900,2500,3200,4000];
@@ -851,6 +860,8 @@ function killAllEnemies(){
     spawnPFX(e.x+e.w/2,e.y+e.h/2,'#00eeff',20,7);
     spawnFT(e.x,e.y-10,'+'+Math.floor(pts),'#00eeff');
     for(let c=0;c<(e.isBoss?4:e.isMagmar?2:1);c++) spawnCoin(e.x+Math.random()*e.w,e.y);
+    missionEvent('kill',1);
+    if(e.isBoss) missionEvent('boss',1);
   });
   enemies=[];
   bossActive=false;
@@ -961,6 +972,7 @@ function update(){
     gameSpeed=baseSpeed+wave*.35;
     document.getElementById('h-wave').textContent=wave;
     spawnFT(W/2-80,70,'— WAVE '+wave+' —','#ffe600',true);
+    missionEvent('wave',wave);
     showPUNotif('🌊 WAVE '+wave+' — VELOCIDAD UP!');
     shake(6);
     if(wave%3===0) spawnEnemy(true); // force boss every 3 waves
@@ -985,7 +997,7 @@ function update(){
 
   // Apply vx
   PL.x+=PL.vx;
-  PL.x=Math.max(10,Math.min(W/3,PL.x)); // keep player in left third
+  PL.x=Math.max(10,Math.min(W-PL.w-10,PL.x)); // free movement across the whole map
 
   // Gravity
   if(!PL.dashing){
@@ -1061,10 +1073,10 @@ function update(){
       const targetX=W*.4;
       e.x+=(targetX-e.x)*.015;
     } else if(e.isCharger&&e.chargeTimer<=0){
-      // charge at player
-      const dx=PL.x-e.x;
+      // charge at player: lock direction once so it commits to the pass instead of jittering on top of the player
+      if(!e.chargeDir) e.chargeDir=(PL.x>e.x)?1:-1;
       e.spd=Math.min(e.spd+.05,gameSpeed*2.2);
-      e.x+=dx>0?e.spd:-e.spd;
+      e.x+=e.chargeDir*e.spd;
     } else {
       e.x-=e.spd;
     }
@@ -1072,9 +1084,9 @@ function update(){
     if(e.isMagmar){ e.bobTimer+=.04; spawnPFX(e.x+e.w/2,e.y+e.h*.8,'#ff4400',1,1.5,3); }
     if(e.isCharger&&e.chargeTimer>0) e.chargeTimer--;
     // Exploder: rush toward player when close
-    if(e.isExploder){ const dx2=PL.x-e.x; const dist2=Math.abs(dx2); if(dist2<180){ e.spd=Math.min(e.spd+.15,gameSpeed*3); e.x+=dx2>0?e.spd:-e.spd; spawnPFX(e.x+e.w/2,e.y+e.h/2,'#ff6400',2,2,3); } }
-    // Ghost: phases in and out
-    if(e.isGhost){ e.ghostTimer+=.04; e.ghostAlpha=.4+Math.sin(e.ghostTimer)*0.6; if(e.ghostAlpha<0) e.ghostAlpha=0; }
+    if(e.isExploder){ const dx2=PL.x-e.x; if(!e.rushDir&&Math.abs(dx2)<180) e.rushDir=dx2>0?1:-1; if(e.rushDir){ e.spd=Math.min(e.spd+.15,gameSpeed*3); e.x+=e.rushDir*e.spd; spawnPFX(e.x+e.w/2,e.y+e.h/2,'#ff6400',2,2,3); } }
+    // Ghost: phases in and out (never fully invisible)
+    if(e.isGhost){ e.ghostTimer+=.04; e.ghostAlpha=Math.max(.18,.4+Math.sin(e.ghostTimer)*0.6); }
     if(e.flashTimer>0) e.flashTimer--;
 
     // Boss / Magmar shoot
@@ -1108,7 +1120,8 @@ function update(){
       if(killStreak===3) showPUNotif('🔥 3 KILLS - RACHA!');
       else if(killStreak===5) { showPUNotif('☄️ 5 KILLS - IMPARABLE!'); shake(5); }
       else if(killStreak===10) { showPUNotif('⚡ 10 KILLS - LEGENDARIO!'); shake(8); addXP(50); }
-      if(e.isBoss){ bossActive=false; bossKilled++; spawnFT(e.x,e.y-30,'BOSS MUERTO!','#ff00cc',true); playSound('boss'); addXP(80); }
+      missionEvent('kill',1);
+      if(e.isBoss){ bossActive=false; bossKilled++; missionEvent('boss',1); spawnFT(e.x,e.y-30,'BOSS MUERTO!','#ff00cc',true); playSound('boss'); addXP(80); }
       else { addXP(e.isMagmar?30:e.isCharger?20:e.isExploder?15:10); playSound('hit'); }
       spawnPFX(e.x+e.w/2,e.y+e.h/2,e.isBoss?'#ff00cc':e.isMagmar?'#ff4400':e.isCharger?'#ff9900':'#ff3333',e.isBoss?35:e.isMagmar?28:20,e.isBoss?9:6);
       // drop coins
@@ -1150,7 +1163,7 @@ function update(){
       updateHpHUD();
       if(PL.hp<=0){ endGame(); return true; }
     }
-    return e.x>-120;
+    return e.x>-120&&e.x<W+260; // cull on both sides (chargers/exploders can run off the right edge)
   });
 
   // ── BULLETS ──
@@ -1170,7 +1183,8 @@ function update(){
           spawnFT(e.x,e.y-15,'+'+pts,'#ff6400');
           if(e.hp<=0){
             spawnPFX(e.x+e.w/2,e.y+e.h/2,e.isMagmar?'#ff4400':'#ff6400',20,6);
-            if(e.isBoss) bossActive=false;
+            missionEvent('kill',1);
+            if(e.isBoss){ bossActive=false; missionEvent('boss',1); }
             const cd=e.isBoss?4:e.isMagmar?2:1;
             for(let c=0;c<cd;c++) spawnCoin(e.x+Math.random()*e.w,e.y);
             if(e.isBoss||e.isMagmar){
@@ -1212,6 +1226,7 @@ function update(){
     if(overlap({x:PL.x+4,y:PL.y+4,w:PL.w-8,h:PL.h-8},c)){
       sessionCoins++;
       totalCoins++;
+      missionEvent('coin',1);
       addScore(10*comboMultiplier);
       addXP(5);
       playSound('coin');
@@ -1245,7 +1260,7 @@ function update(){
         spawnFT(ch.x,ch.y-20,'📦 COFRE +100','#aaffaa',true);
         spawnPFX(ch.x+ch.w/2,ch.y+ch.h/2,'#aaffaa',12,4,3);
       }
-      totalCoins+=sessionCoins>0?0:0; // tracked separately
+      missionEvent('chest',1);
       updateHUD(); updateHpHUD();
       return false;
     }
@@ -1963,6 +1978,14 @@ document.addEventListener('keydown',e=>{
   if(e.code==='Enter'&&state==='menu') startGame();
 });
 document.addEventListener('keyup',e=>{ keys[e.code]=false; });
+
+// Daily missions init
+DQMissions.load();
+// Daily streak init (después de loadProgress para no pisar totalCoins)
+loadProgress();
+DQStreak.onReward=(day,bonus)=>{ totalCoins+=bonus; saveProgress(); };
+DQStreak.notify=msg=>showPUNotif(msg);
+DQStreak.check();
 
 // Touch
 cv.addEventListener('touchstart',e=>{ e.preventDefault(); jump(); },{passive:false});

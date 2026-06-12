@@ -1,0 +1,16 @@
+# Archivos que NUNCA deben servirse públicamente desde el Worker
+.git
+.gitignore
+.claude
+.assetsignore
+node_modules
+functions
+netlify
+sql
+worker.js
+wrangler.toml
+supabase-schema.sql
+SECURITY-SETUP.md
+SETUP.md
+make_banner.py
+dist-test

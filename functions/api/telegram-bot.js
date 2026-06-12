@@ -84,18 +84,27 @@ function calcStarsPackages(priceUsd) {
   });
 }
 
-async function createStarsInvoice(token, pkgIndex) {
+// ¿Primera compra? (server-side; se re-verifica al acreditar el pago)
+async function isFirstPurchase(env, tgId) {
+  if (!tgId) return false;
+  const rows = await supabaseQuery(env, `stars_purchases?telegram_id=eq.${encodeURIComponent(tgId)}&tokens_credited=gt.0&select=id&limit=1`);
+  return Array.isArray(rows) && rows.length === 0;
+}
+
+async function createStarsInvoice(token, env, pkgIndex, tgId) {
   const price = await getPrice();
   const priceUsd = price?.priceUsd || 0.0000001;
   const packages = calcStarsPackages(priceUsd);
   const pkg = packages[pkgIndex];
   if (!pkg) return;
+  const firstBuy = await isFirstPurchase(env, tgId);
+  const tokens = firstBuy ? pkg.tokens * 2 : pkg.tokens;
   const result = await tg(token, 'createInvoiceLink', {
-    title: `${pkg.label} — ${pkg.tokens.toLocaleString()} $DUENDE`,
-    description: `Compra ${pkg.tokens.toLocaleString()} tokens $DUENDE por ${pkg.stars} Stars (~$${pkg.usd} USD)`,
-    payload: JSON.stringify({ pkg: pkgIndex, tokens: pkg.tokens, usd: pkg.usd }),
+    title: `${firstBuy ? '🎁 OFERTA 1ª COMPRA 2x — ' : ''}${pkg.label} — ${tokens.toLocaleString()} $DUENDE`,
+    description: `${firstBuy ? '¡Bienvenida 2x! ' : ''}Compra ${tokens.toLocaleString()} tokens $DUENDE por ${pkg.stars} Stars (~$${pkg.usd} USD)`,
+    payload: JSON.stringify({ pkg: pkgIndex, tokens, usd: pkg.usd, first_buy: firstBuy }),
     currency: 'XTR',
-    prices: [{ label: `${pkg.tokens.toLocaleString()} $DUENDE`, amount: pkg.stars }],
+    prices: [{ label: `${tokens.toLocaleString()} $DUENDE`, amount: pkg.stars }],
   });
   return result?.result;
 }
@@ -132,11 +141,15 @@ async function handleStart(token, env, chatId, user, startPayload) {
 }
 
 async function handleRanking(token, env, chatId, messageId) {
-  const scores = await supabaseQuery(env, 'game_scores?select=username,score,wave&order=score.desc&limit=10');
+  const rows = await supabaseQuery(env, 'game_scores?select=username,score,wave&order=score.desc&limit=50');
+  // Una entrada por jugador: su mejor score
+  const best = new Map();
+  if (Array.isArray(rows)) for (const s of rows) { const k = (s.username || '?').toLowerCase(); if (!best.has(k) || s.score > best.get(k).score) best.set(k, s); }
+  const scores = [...best.values()].sort((a, b) => b.score - a.score).slice(0, 10);
   let text = '🏆 *TOP 10 — DUENDE QUEST*\n\n';
-  if (!scores || scores.length === 0) text += '_Aún no hay puntuaciones._';
+  if (scores.length === 0) text += '_Aún no hay puntuaciones._';
   else { const medals = ['🥇','🥈','🥉']; scores.forEach((s,i) => { text += `${medals[i]||`${i+1}.`} *${s.username}* — ${s.score.toLocaleString()} pts (Wave ${s.wave})\n`; }); }
-  const opts = { chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 JUGAR', web_app: { url: WEBAPP_URL } }],[{ text: '🔄 Actualizar', callback_data: 'ranking' }]] } };
+  const opts = { chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 JUGAR', web_app: { url: WEBAPP_URL } }],[{ text: '🔄 Actualizar', callback_data: 'ranking' }, { text: '⌂ Menú', callback_data: 'menu' }]] } };
   if (messageId) { opts.message_id = messageId; await tg(token, 'editMessageText', opts); } else await tg(token, 'sendMessage', opts);
 }
 
@@ -145,7 +158,7 @@ async function handlePrice(token, chatId, messageId) {
   let text;
   if (!p || p.priceUsd === 0) text = '💹 *$DUENDE — Precio*\n\n_No se pudo obtener._';
   else { const arrow = p.priceChange24h >= 0 ? '🟢 📈' : '🔴 📉'; text = `💹 *$DUENDE — Precio en vivo*\n\n💰 Precio: *$${p.priceUsd.toFixed(8)}*\n${arrow} 24h: *${p.priceChange24h >= 0 ? '+' : ''}${p.priceChange24h.toFixed(2)}%*\n📊 Vol 24h: *$${fmtNum(p.volume24h)}*\n🏦 Market Cap: *$${fmtNum(p.marketCap)}*\n💧 Liquidez: *$${fmtNum(p.liquidity)}*\n\n_Fuente: ${p.source}_`; }
-  const opts = { chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🚀 Comprar $DUENDE', url: PUMP_FUN_URL }],[{ text: '🔄 Actualizar', callback_data: 'price' }]] } };
+  const opts = { chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🚀 Comprar $DUENDE', url: PUMP_FUN_URL }],[{ text: '🔄 Actualizar', callback_data: 'price' }, { text: '⌂ Menú', callback_data: 'menu' }]] } };
   if (messageId) { opts.message_id = messageId; await tg(token, 'editMessageText', opts); } else await tg(token, 'sendMessage', opts);
 }
 
@@ -155,7 +168,7 @@ async function handleStats(token, env, chatId, userId, messageId) {
   let text;
   if (!Array.isArray(profiles) || profiles.length === 0) text = '📊 *Tus Stats*\n\n_No tienes perfil. ¡Juega tu primera partida!_';
   else { const p = profiles[0]; text = `📊 *Stats de ${p.username||'Duende'}*\n\n🏆 Mejor Score: *${Number(p.best_score||0).toLocaleString()}*\n🌊 Mejor Wave: *${p.best_wave||0}*\n🪙 Monedas: *${Number(p.total_coins||0).toLocaleString()}*\n🎮 Partidas: *${p.games_played||0}*\n💎 $DUENDE: *${Number(p.duende_balance||0).toLocaleString()}*`; }
-  const opts = { chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 JUGAR', web_app: { url: WEBAPP_URL } }],[{ text: '🔄 Actualizar', callback_data: 'stats' }]] } };
+  const opts = { chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 JUGAR', web_app: { url: WEBAPP_URL } }],[{ text: '🔄 Actualizar', callback_data: 'stats' }, { text: '⌂ Menú', callback_data: 'menu' }]] } };
   if (messageId) { opts.message_id = messageId; await tg(token, 'editMessageText', opts); } else await tg(token, 'sendMessage', opts);
 }
 
@@ -203,6 +216,17 @@ async function onRequestPost(context) {
   const env = getEnv(context);
   const token = env.BOT_TOKEN;
 
+  // ── SECURITY: only Telegram may call this webhook ──
+  // setWebhook must be registered with secret_token=TELEGRAM_WEBHOOK_SECRET (see SECURITY-SETUP.md).
+  // While the secret is not configured yet, requests pass (backward compat) but are logged.
+  const expectedSecret = context.env.TELEGRAM_WEBHOOK_SECRET;
+  if (expectedSecret) {
+    const got = context.request.headers.get('X-Telegram-Bot-Api-Secret-Token');
+    if (got !== expectedSecret) return new Response('Unauthorized', { status: 401 });
+  } else {
+    console.warn('[SECURITY] TELEGRAM_WEBHOOK_SECRET not set — webhook is unauthenticated');
+  }
+
   try {
     const body = await context.request.json();
 
@@ -219,12 +243,36 @@ async function onRequestPost(context) {
       const tgId = String(body.message.from.id);
       try {
         const payload = JSON.parse(payment.invoice_payload);
-        const tokens = payload.tokens || 0;
+        const starsPaid = payment.total_amount || 0;
+        const chargeId = payment.telegram_payment_charge_id || '';
+
+        // Anti-replay: never credit the same charge twice
+        if (chargeId) {
+          const dup = await supabaseQuery(env, `stars_purchases?tx_id=eq.${encodeURIComponent(chargeId)}&select=id`);
+          if (Array.isArray(dup) && dup.length > 0) return new Response('OK');
+        }
+
+        // Skin purchase paid with Stars → record server-side (client no longer inserts)
+        if (payload.skin_id) {
+          await supabaseQuery(env, 'skin_purchases', { method: 'POST', body: { telegram_id: tgId, skin_id: payload.skin_id, payment_type: 'stars', amount_paid: starsPaid, tx_signature: chargeId } });
+          await supabaseQuery(env, 'stars_purchases', { method: 'POST', body: { telegram_id: tgId, amount_usd: starsPaid * STAR_USD, amount_stars: starsPaid, tokens_credited: 0, tx_id: chargeId } });
+          await tg(token, 'sendMessage', { chat_id: chatId, text: `✅ *¡Skin desbloqueada!*\n\n🎨 Ya puedes equiparla en el juego\n⭐ ${starsPaid} Stars`, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 JUGAR', web_app: { url: WEBAPP_URL } }]] } });
+          return new Response('OK');
+        }
+
+        // Token purchase: NEVER trust payload.tokens — recompute from the Stars actually paid
+        const price = await getPrice();
+        const priceUsd = price?.priceUsd || 0.0000001;
+        const paidUsd = starsPaid * STAR_USD;
+        // Oferta 1ª compra 2x: solo si realmente no tiene compras previas (re-verificado aquí)
+        const firstBuyMult = (payload.first_buy && await isFirstPurchase(env, tgId)) ? 2 : 1;
+        const maxTokens = Math.floor((paidUsd / priceUsd) * 1.05 * firstBuyMult); // 5% price-drift tolerance
+        const tokens = Math.max(0, Math.min(parseInt(payload.tokens, 10) || 0, maxTokens)) || maxTokens;
         if (tokens > 0) {
           await supabaseQuery(env, 'rpc/add_duende_by_tgid', { method: 'POST', body: { p_tg_id: tgId, p_amount: tokens } });
-          await supabaseQuery(env, 'stars_purchases', { method: 'POST', body: { telegram_id: tgId, amount_usd: payload.usd||0, amount_stars: payment.total_amount||0, tokens_credited: tokens, tx_id: payment.telegram_payment_charge_id||'' } });
+          await supabaseQuery(env, 'stars_purchases', { method: 'POST', body: { telegram_id: tgId, amount_usd: +paidUsd.toFixed(2), amount_stars: starsPaid, tokens_credited: tokens, tx_id: chargeId } });
         }
-        await tg(token, 'sendMessage', { chat_id: chatId, text: `✅ *¡Pago exitoso!*\n\n💎 +${tokens.toLocaleString()} $DUENDE acreditados\n⭐ ${payment.total_amount} Stars`, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 JUGAR', web_app: { url: WEBAPP_URL } }],[{ text: '⭐ Comprar más', callback_data: 'buy' }]] } });
+        await tg(token, 'sendMessage', { chat_id: chatId, text: `✅ *¡Pago exitoso!*\n\n💎 +${tokens.toLocaleString()} $DUENDE acreditados\n⭐ ${starsPaid} Stars`, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 JUGAR', web_app: { url: WEBAPP_URL } }],[{ text: '⭐ Comprar más', callback_data: 'buy' }]] } });
       } catch(e) {
         await tg(token, 'sendMessage', { chat_id: chatId, text: '⚠️ Pago recibido pero error acreditando tokens.' });
       }
@@ -242,7 +290,7 @@ async function onRequestPost(context) {
 
       if (data.startsWith('buy_')) {
         const pkgIndex = parseInt(data.replace('buy_', ''), 10);
-        const invoiceUrl = await createStarsInvoice(token, pkgIndex);
+        const invoiceUrl = await createStarsInvoice(token, env, pkgIndex, String(user.id));
         if (invoiceUrl) await tg(token, 'sendMessage', { chat_id: chatId, text: '⭐ Toca para pagar:', reply_markup: { inline_keyboard: [[{ text: '💳 Pagar con Stars', url: invoiceUrl }]] } });
         else await tg(token, 'sendMessage', { chat_id: chatId, text: '❌ Error creando factura.' });
         return new Response('OK');
@@ -254,6 +302,7 @@ async function onRequestPost(context) {
         case 'stats': await handleStats(token, env, chatId, user.id, messageId); break;
         case 'referral': await handleReferralCmd(token, chatId, user.id, messageId); break;
         case 'buy': await handleBuy(token, chatId, user.id, messageId); break;
+        case 'menu': await handleStart(token, env, chatId, user, ''); break;
       }
       return new Response('OK');
     }

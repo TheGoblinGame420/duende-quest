@@ -2,6 +2,10 @@ name = "duende-quest"
 compatibility_date = "2024-01-01"
 main = "worker.js"
 
+# Crons: keep-alive Supabase (3:00/15:00), recordatorio diario (17:00 UTC), torneo semanal (lunes 12:00 UTC)
+[triggers]
+crons = ["0 3,15 * * *", "0 17 * * *", "0 12 * * 1"]
+
 [assets]
 directory = "."
 not_found_handling = "single-page-application"
