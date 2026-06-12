@@ -204,6 +204,33 @@ async function handleHelp(token, chatId) {
   await tg(token, 'sendMessage', { chat_id: chatId, text: `🧌 *DUENDE QUEST — Comandos*\n\n/start — Menú principal\n/play — Abrir el juego\n/ranking — Top 10\n/price — Precio $DUENDE\n/stats — Tus estadísticas\n/buy — Comprar $DUENDE con Stars 💳\n/referral — Tu link de referidos\n/help — Comandos`, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 JUGAR', web_app: { url: WEBAPP_URL } }]] } });
 }
 
+// ── /admin: métricas privadas (solo el dueño, via env ADMIN_TG_ID) ──
+async function handleAdmin(token, env, context, chatId, userId) {
+  const adminId = context.env.ADMIN_TG_ID;
+  if (!adminId) { await tg(token, 'sendMessage', { chat_id: chatId, text: '⚙️ Configura el secret ADMIN_TG_ID con tu Telegram ID:\n`npx wrangler secret put ADMIN_TG_ID`\n\nTu ID es: `' + userId + '`', parse_mode: 'Markdown' }); return; }
+  if (String(userId) !== String(adminId)) return; // silencio total para no-admins
+
+  const today = new Date(); today.setUTCHours(0, 0, 0, 0);
+  const week = new Date(Date.now() - 7 * 86400000).toISOString();
+  const [scoresToday, scoresWeek, buysWeek, pendingWd, topToday] = await Promise.all([
+    supabaseQuery(env, `game_scores?created_at=gte.${today.toISOString()}&select=username`),
+    supabaseQuery(env, `game_scores?created_at=gte.${week}&select=username`),
+    supabaseQuery(env, `stars_purchases?created_at=gte.${week}&select=amount_usd,amount_stars`),
+    supabaseQuery(env, `withdrawal_requests?status=eq.pending&select=tokens_burned,usd_value`),
+    supabaseQuery(env, `game_scores?created_at=gte.${today.toISOString()}&select=username,score&order=score.desc&limit=1`),
+  ]);
+  const uniq = a => Array.isArray(a) ? new Set(a.map(s => (s.username || '?').toLowerCase())).size : 0;
+  const n = a => Array.isArray(a) ? a.length : 0;
+  const usdWeek = (Array.isArray(buysWeek) ? buysWeek : []).reduce((s, b) => s + Number(b.amount_usd || 0), 0);
+  const wdUsd = (Array.isArray(pendingWd) ? pendingWd : []).reduce((s, w) => s + Number(w.usd_value || 0), 0);
+  const top = Array.isArray(topToday) && topToday[0] ? `${topToday[0].username} — ${Number(topToday[0].score).toLocaleString()}` : '—';
+  await tg(token, 'sendMessage', {
+    chat_id: chatId,
+    text: `📊 *PANEL ADMIN — DUENDE QUEST*\n\n*Hoy*\n🎮 Partidas: *${n(scoresToday)}* · 👥 Jugadores: *${uniq(scoresToday)}*\n🏆 Top: ${top}\n\n*Últimos 7 días*\n🎮 Partidas: *${n(scoresWeek)}* · 👥 Jugadores: *${uniq(scoresWeek)}*\n⭐ Compras: *${n(buysWeek)}* (~$${usdWeek.toFixed(2)})\n\n*Pendiente*\n💸 Retiros: *${n(pendingWd)}* (~$${wdUsd.toFixed(2)})`,
+    parse_mode: 'Markdown',
+  });
+}
+
 async function handlePlay(token, chatId) {
   await tg(token, 'sendMessage', { chat_id: chatId, text: '🎮 *¡A jugar!*', parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 ABRIR JUEGO', web_app: { url: WEBAPP_URL } }]] } });
 }
@@ -326,6 +353,7 @@ async function onRequestPost(context) {
         case '/referral': case '/ref': await handleReferralCmd(token, chatId, user.id); break;
         case '/buy': case '/comprar': case '/stars': await handleBuy(token, chatId, user.id); break;
         case '/help': case '/ayuda': await handleHelp(token, chatId); break;
+        case '/admin': await handleAdmin(token, env, context, chatId, user.id); break;
       }
     }
 

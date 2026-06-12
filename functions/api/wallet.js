@@ -208,6 +208,24 @@ async function onRequestPost(context) {
       return json(request, { success: true });
     }
 
+    // ── CLOUD SAVE: sincroniza progreso DQ del jugador (Telegram) ──
+    // El servidor solo acepta valores con límites de cordura y nunca BAJA
+    // el saldo guardado (el gasto legítimo viene acompañado del nuevo total).
+    if (action === 'sync_progress') {
+      const user = await verifyInitData(body.init_data, env.BOT_TOKEN);
+      if (!user?.id) return json(request, { error: 'auth_failed' }, 401);
+      const tgId = String(user.id);
+      const patch = {
+        dq_coins: Math.max(0, Math.min(10000000, Math.floor(+body.dq_coins || 0))),
+        dq_level: Math.max(1, Math.min(200, Math.floor(+body.dq_level || 1))),
+        dq_xp: Math.max(0, Math.min(1000000, Math.floor(+body.dq_xp || 0))),
+        streak_day: Math.max(0, Math.min(3650, Math.floor(+body.streak_day || 0))),
+        streak_last: String(body.streak_last || '').slice(0, 10),
+      };
+      await supabaseQuery(env, `profiles?telegram_id=eq.${tgId}`, { method: 'PATCH', body: patch });
+      return json(request, { success: true });
+    }
+
     return json(request, { error: 'unknown_action' }, 400);
   } catch (err) {
     console.error('[Wallet API]', err);

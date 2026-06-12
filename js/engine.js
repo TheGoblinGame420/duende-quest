@@ -90,6 +90,18 @@ let totalCoins = 0, sessionCoins = 0;
 let waveTimer = 0, bossActive = false, bossKilled = 0;
 let reviveUsed = false;
 const REVIVE_COST = 75; // DQ — sumidero de economía + segunda oportunidad
+
+// ── TUTORIAL (solo la primera partida de la vida del jugador) ──
+// paso 0: saltar · paso 1: atacar · paso 2: terminado
+let tutorialStep = localStorage.getItem('dq_tutorial') === 'done' ? 2 : 0;
+function tutorialAdvance(action) {
+  if (tutorialStep === 0 && action === 'jump') { tutorialStep = 1; showPUNotif('✅ ¡Eso es! Ahora ATACA'); }
+  else if (tutorialStep === 1 && action === 'attack') {
+    tutorialStep = 2;
+    localStorage.setItem('dq_tutorial', 'done');
+    showPUNotif('🧝 ¡Listo! Sobrevive y junta monedas');
+  }
+}
 let raf = null, lastTs = 0;
 let keys = {};
 let mLeft = false, mRight = false;
@@ -237,6 +249,7 @@ function playerShoot() { bullets.push({ x: PL.x + PL.w, y: PL.y + PL.h * .4, vx:
 function jump() { if (state !== 'playing') return; PL.jumpBuffer = 12; }
 function doJump() {
   playSound('jump'); _hap('light');
+  tutorialAdvance('jump');
   if (PL.onGround || PL.coyoteTimer > 0) {
     PL.vy = JUMP_FORCE; PL.djUsed = false;
     spawnPFX(PL.x + PL.w / 2, PL.y + PL.h, '#00ff88', 8, 3.5);
@@ -265,6 +278,7 @@ function dash() {
 function attack() {
   playSound('attack'); _hap('medium');
   if (state !== 'playing' || PL.attackCd > 0 || PL.slamming) return;
+  tutorialAdvance('attack');
   // Aerial slam: web requiere C/↓; en móvil/tg cualquier ataque aéreo cayendo
   const slamKey = DQE.airSlamNeedsKey === false ? true : (keys['KeyC'] || keys['ArrowDown']);
   if (!PL.onGround && PL.vy >= 0 && slamKey) {
@@ -719,6 +733,16 @@ function _playerImg() {
   return (img && img.naturalWidth > 0) ? img : IMG_EL['duende_hero'];
 }
 
+// ── BIOMAS: cada 5 waves el mundo cambia de color (sensación de viaje) ──
+const BIOMES = [
+  { top: '#010015', bot: '#050520', mtn: 'rgba(124,58,237,.07)',  cloud: '124,58,237',  ground: '#0a1a0f', line: '#00ff88' }, // noche violeta
+  { top: '#150005', bot: '#2a0510', mtn: 'rgba(255,68,68,.08)',   cloud: '255,80,40',   ground: '#1a0a0a', line: '#ff6444' }, // amanecer rojo
+  { top: '#001512', bot: '#03251c', mtn: 'rgba(0,255,170,.06)',   cloud: '0,200,150',   ground: '#06140f', line: '#00ffcc' }, // selva esmeralda
+  { top: '#0a0a18', bot: '#1c1430', mtn: 'rgba(192,132,252,.09)', cloud: '192,132,252', ground: '#120a1f', line: '#c084fc' }, // tormenta arcana
+  { top: '#181000', bot: '#2e2004', mtn: 'rgba(255,200,0,.07)',   cloud: '255,180,0',   ground: '#1a140a', line: '#ffe600' }, // desierto dorado
+];
+function currentBiome() { return BIOMES[Math.floor((wave - 1) / 5) % BIOMES.length]; }
+
 function draw() {
   const sx = (shakeAmt > 0 ? Math.round((Math.random() - .5) * shakeAmt * 2) : 0);
   const sy = (shakeAmt > 0 ? Math.round((Math.random() - .5) * shakeAmt * 2) : 0);
@@ -726,28 +750,29 @@ function draw() {
   if (shakeAmt > 0) cx.translate(sx, sy);
 
   // BG
+  const biome = currentBiome();
   const grad = cx.createLinearGradient(0, 0, 0, GY + 10);
-  grad.addColorStop(0, '#010015');
-  grad.addColorStop(1, '#050520');
+  grad.addColorStop(0, biome.top);
+  grad.addColorStop(1, biome.bot);
   cx.fillStyle = grad;
   cx.fillRect(0, 0, W, H);
 
   bgStars.forEach(s => { cx.fillStyle = `rgba(255,255,255,${.2 + Math.sin(frame * .04 + s.x) * .15})`; cx.fillRect(s.x, s.y, s.s, s.s); });
 
-  cx.fillStyle = 'rgba(124,58,237,.07)';
+  cx.fillStyle = biome.mtn;
   bgMtns.forEach(m => { cx.beginPath(); cx.moveTo(m.x, GY + 10); cx.lineTo(m.x + m.w / 2, GY + 10 - m.h); cx.lineTo(m.x + m.w, GY + 10); cx.fill(); });
 
   bgClouds.forEach(c => {
     const cg = cx.createRadialGradient(c.x + c.w / 2, c.y + c.h / 2, 0, c.x + c.w / 2, c.y + c.h / 2, c.w / 2);
-    cg.addColorStop(0, `rgba(124,58,237,${c.alpha * 2})`);
+    cg.addColorStop(0, `rgba(${biome.cloud},${c.alpha * 2})`);
     cg.addColorStop(1, 'rgba(0,0,0,0)');
     cx.fillStyle = cg; cx.fillRect(c.x, c.y, c.w, c.h * 2);
   });
 
   // Ground
-  cx.fillStyle = '#0a1a0f';
+  cx.fillStyle = biome.ground;
   cx.fillRect(0, GY + PL.h, W, H - (GY + PL.h));
-  cx.fillStyle = '#00ff88';
+  cx.fillStyle = biome.line;
   cx.fillRect(0, GY + PL.h, W, 3);
   cx.fillStyle = 'rgba(0,255,136,.1)';
   for (let gx = groundX; gx < W; gx += 40) cx.fillRect(gx, GY + PL.h + 3, 2, H - (GY + PL.h + 3));
@@ -936,6 +961,19 @@ function draw() {
   cx.fillStyle = 'rgba(0,0,0,.5)'; cx.fillRect(PL.x, PL.y - 14, PL.w, 8);
   cx.fillStyle = hpPct > .5 ? '#00ff88' : hpPct > .25 ? '#ffe600' : '#ff3333';
   cx.fillRect(PL.x, PL.y - 14, PL.w * hpPct, 8);
+
+  // Tutorial hints (primera partida): texto grande y pulsante en el centro
+  if (tutorialStep < 2 && state === 'playing') {
+    const pulse = .75 + Math.sin(frame * .12) * .25;
+    cx.save();
+    cx.globalAlpha = pulse;
+    cx.fillStyle = '#ffe600';
+    cx.font = '.8rem "Press Start 2P"';
+    cx.textAlign = 'center';
+    cx.shadowColor = '#000'; cx.shadowBlur = 8;
+    cx.fillText(tutorialStep === 0 ? '☝️ TOCA / ESPACIO = SALTAR' : '⚔ TOCA EL BOTÓN ⚔ / Z = ATACAR', W / 2, 70);
+    cx.restore();
+  }
 
   // Floating texts
   cx.save();

@@ -72,16 +72,14 @@ const DonationManager = {
 
   async registerDonation({ wallet, sol_amount, duende_earned, tx_signature }) {
     if (!window.supabaseClient) return;
+    // Solo registro: el crédito de $DUENDE lo procesa el servidor/admin tras
+    // verificar la TX (nunca acreditar saldo desde el navegador — es falsificable).
     await window.supabaseClient.from('donations').insert({
       wallet_address: wallet,
       sol_amount,
       duende_earned,
       tx_signature,
       created_at: new Date().toISOString(),
-    });
-    await window.supabaseClient.rpc('add_duende_balance', {
-      p_wallet: wallet,
-      p_amount: duende_earned,
     });
   }
 };

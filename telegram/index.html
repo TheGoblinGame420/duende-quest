@@ -345,7 +345,7 @@ async function tgLogin(){
     const r=await fetch('/api/wallet',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({action:'link_profile',init_data:(window.Telegram?.WebApp?.initData)||''})});
     const res=await r.json();
-    if(res.success&&res.profile){tgProfile=res.profile;return;}
+    if(res.success&&res.profile){tgProfile=res.profile;mergeCloudSave(res.profile);return;}
   }catch(e){console.warn('[TG Auth]',e);}
   // Fallback de solo-lectura (ej. abriendo fuera de Telegram)
   try{
@@ -355,6 +355,44 @@ async function tgLogin(){
   tgProfile={username,telegram_id:tgId,best_score:0,total_coins:0};
 }
 tgLogin();
+
+// ── CLOUD SAVE: la nube manda si tiene más progreso (cambio de dispositivo) ──
+function mergeCloudSave(p){
+  try{
+    let local={};
+    try{local=JSON.parse(localStorage.getItem('dq_save')||'{}');}catch(e){}
+    const cloudCoins=Number(p.dq_coins||0);
+    if(cloudCoins>Number(local.totalCoins||0)){
+      local.totalCoins=cloudCoins;
+      local.playerLevel=Math.max(Number(local.playerLevel||1),Number(p.dq_level||1));
+      local.playerXP=Math.max(Number(local.playerXP||0),Number(p.dq_xp||0));
+      localStorage.setItem('dq_save',JSON.stringify(local));
+      if(typeof loadProgress==='function'){loadProgress();updateHUD&&updateHUD();}
+      showPUNotif('☁️ Progreso recuperado de la nube: '+cloudCoins.toLocaleString()+' DQ');
+    }
+    // racha: la racha más LARGA gana si sigue viva (nube de ayer + login local de hoy = continúa)
+    let ls=null; try{ls=JSON.parse(localStorage.getItem('dq_streak')||'null');}catch(e){}
+    const cDay=Number(p.streak_day||0), cLast=p.streak_last||'';
+    if(cLast&&cDay>(ls?.day||0)){
+      const today=new Date().toISOString().slice(0,10);
+      const yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10);
+      if(cLast===today){
+        localStorage.setItem('dq_streak',JSON.stringify({last:today,day:cDay}));
+      }else if(cLast===yesterday){
+        // la nube venía de ayer: el login de hoy continúa la racha larga
+        const day=(ls&&ls.last===today)?cDay+1:cDay;
+        const last=(ls&&ls.last===today)?today:cLast;
+        localStorage.setItem('dq_streak',JSON.stringify({last,day}));
+      }
+      if(window.DQStreak)DQStreak.check();
+    }
+  }catch(e){console.warn('[CloudSave]',e);}
+}
+function syncProgressToCloud(){
+  let streak={day:0,last:''};
+  try{streak=JSON.parse(localStorage.getItem('dq_streak')||'{}')||streak;}catch(e){}
+  walletApi('sync_progress',{dq_coins:totalCoins,dq_level:playerLevel,dq_xp:playerXP,streak_day:streak.day||0,streak_last:streak.last||''}).catch(()=>{});
+}
 
 // ═══════════════════════════════════════
 // PRICE FEED
@@ -1030,6 +1068,7 @@ window.DQE={
     showFomoMsg();
     const tc=document.getElementById('tg-coins');if(tc)tc.textContent='🪙 '+totalCoins;
     submitTGScore();
+    syncProgressToCloud();
     if(tg){try{tg.MainButton.setText('🏆 VER RANKING');tg.MainButton.show();tg.MainButton.onClick(()=>{showOverlay('ov-rank');loadRanking();});}catch(e){}}
   },
 };

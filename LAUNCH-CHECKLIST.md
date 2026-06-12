@@ -27,7 +27,18 @@
 - Waves cada 30s (antes 40s), spawns más vivos desde wave 1, techo de densidad justo
 - Buffs de skins de pago activos también en web (+monedas, +ataque, lifesteal, aura)
 
+**Pulido final (2026-06-12)**
+- Tutorial de primera partida (SALTA → ATACA, solo una vez en la vida)
+- Biomas: el mundo cambia de color cada 5 waves (5 paletas)
+- Cloud save: DQ/nivel/XP/racha guardados en el perfil de Telegram — cambiar de teléfono ya no borra nada, y la racha larga continúa
+- `/admin` en el bot: partidas/jugadores de hoy y la semana, compras, retiros pendientes (solo tu ID)
+- Eliminada la copia antigua e insegura del backend (netlify/) y el crédito client-side de donaciones
+
 ## 📣 Para lanzar (te toca a ti)
+
+0. **Dos pasos de configuración** (una vez):
+   - Ejecuta `sql/cloud-save.sql` en el SQL Editor de Supabase (columnas del guardado en la nube)
+   - `npx wrangler secret put ADMIN_TG_ID` con tu ID de Telegram (envía `/admin` al bot y te lo dice)
 
 1. **Smoke test humano** (10 min): juega 1 partida completa en Telegram y 1 en web; compra el paquete Starter con Stars (verás el 2x) y confirma que se acredita.
 2. **Anuncio**: comparte el bot + tu link de referidos en tus comunidades (Telegram, X, YouTube). Mensaje sugerido: "Juega, sube al TOP 3 semanal y gana $DUENDE reales cada lunes 🏆".
