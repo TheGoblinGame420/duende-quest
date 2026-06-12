@@ -74,6 +74,7 @@ document.addEventListener('DOMContentLoaded', fitCanvas);
 const GRAVITY = 0.65, JUMP_FORCE = -14, DJUMP_FORCE = -11;
 const DASH_SPEED = 14, DASH_DUR = 14, DASH_CD = 45;
 const COMBO_WINDOW = 90;
+const WAVE_FRAMES = 1800; // ~30s por wave: progresión más adictiva (antes 2400/40s)
 const ITEM_SHOPS = [
   { name: 'ENERGY', price: 15, maxStock: 5 },
   { name: 'SHIELD', price: 25, maxStock: 3 },
@@ -87,6 +88,8 @@ let frame = 0, score = 0, hiScore = +localStorage.getItem('dq_hi') || 0, wave = 
 let gameSpeed = 3.5, baseSpeed = 3.5;
 let totalCoins = 0, sessionCoins = 0;
 let waveTimer = 0, bossActive = false, bossKilled = 0;
+let reviveUsed = false;
+const REVIVE_COST = 75; // DQ — sumidero de economía + segunda oportunidad
 let raf = null, lastTs = 0;
 let keys = {};
 let mLeft = false, mRight = false;
@@ -386,7 +389,7 @@ function update() {
   const skinBuffs = _buffs();
 
   // Wave progression
-  if (waveTimer % 2400 === 0) {
+  if (waveTimer % WAVE_FRAMES === 0) {
     wave++;
     gameSpeed = baseSpeed + wave * .35;
     spawnFT(W / 2 - 80, 70, '— WAVE ' + wave + ' —', '#ffe600', true);
@@ -395,7 +398,7 @@ function update() {
     shake(6);
     if (wave % 3 === 0) spawnEnemy(true);
   }
-  if (wave % 3 === 0 && !bossActive && waveTimer % 2400 < 5) spawnEnemy(true);
+  if (wave % 3 === 0 && !bossActive && waveTimer % WAVE_FRAMES < 5) spawnEnemy(true);
 
   // ── PLAYER MOVEMENT ──
   let targetVx = 0;
@@ -691,9 +694,10 @@ function update() {
   groundX = (groundX - gameSpeed) % 40;
 
   // ── SPAWN RATES ──
-  const spawnRate = Math.max(55, 120 - wave * 8);
-  if (frame % spawnRate === 0) spawnEnemy();
-  if (frame % 70 === 0) spawnCoin();
+  // arranque más vivo (wave 1 ya tiene acción) y techo de densidad para que sea difícil pero justo
+  const spawnRate = Math.max(50, 105 - wave * 8);
+  if (frame % spawnRate === 0 && enemies.length < 8 + wave) spawnEnemy();
+  if (frame % 60 === 0) spawnCoin();
 
   addScore(1);
 
@@ -962,6 +966,7 @@ function startGame() {
   playMusic();
   hideAll();
   score = 0; wave = 1; frame = 0; gameSpeed = baseSpeed; waveTimer = 0; bossActive = false; bossKilled = 0;
+  reviveUsed = false;
   sessionCoins = 0; comboCount = 0; comboMultiplier = 1; comboTimer = 0;
   playerXP = 0; playerLevel = 1;
   killStreak = 0; killStreakTimer = 0;
@@ -1011,9 +1016,47 @@ function endGame() {
   const fh = $id('final-hi'); if (fh) fh.textContent = 'HI-SCORE: ' + Math.floor(hiScore).toLocaleString();
   const ds = $id('dead-stats'); if (ds) ds.innerHTML = `WAVE: ${wave} &nbsp; 🪙 ${sessionCoins} &nbsp; LVL: ${playerLevel}<br>COMBOS: ${comboCount} &nbsp; BOSSES: ${bossKilled}`;
   const ov = $id('ov-dead'); if (ov) ov.classList.add('show');
+  offerRevive();
   try {
     DQE.onEndGame && DQE.onEndGame({ score: Math.floor(score), wave, level: playerLevel, coins: sessionCoins, bosses_killed: bossKilled, combos_max: comboCount });
   } catch (e) {}
+}
+
+// ── REVIVE (una vez por partida, cuesta DQ) ──
+function offerRevive() {
+  const ov = $id('ov-dead'); if (!ov) return;
+  let btn = $id('revive-btn');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.id = 'revive-btn';
+    btn.className = 'ob';
+    btn.style.cssText = 'background:linear-gradient(135deg,#ff00cc,#7c3aed);color:#fff;font-size:.6rem;box-shadow:0 0 24px rgba(255,0,204,.5),4px 4px 0 rgba(0,0,0,.6)';
+    btn.onclick = reviveGame;
+    const title = ov.querySelector('.ov-title');
+    if (title && title.nextSibling) ov.insertBefore(btn, title.nextSibling); else ov.prepend(btn);
+  }
+  const can = !reviveUsed && totalCoins >= REVIVE_COST;
+  btn.style.display = can ? '' : 'none';
+  if (can) btn.textContent = '💖 REVIVIR — ' + REVIVE_COST + ' DQ (tienes ' + totalCoins + ')';
+}
+function reviveGame() {
+  if (reviveUsed || totalCoins < REVIVE_COST || state !== 'dead') return;
+  reviveUsed = true;
+  totalCoins -= REVIVE_COST;
+  saveProgress();
+  PL.hp = Math.ceil(PL.maxHp * .6);
+  PL.invTimer = 150;
+  enemies = []; bullets = [];
+  spawnPFX(PL.x + PL.w / 2, PL.y + PL.h / 2, '#ff00cc', 35, 7, 6);
+  spawnFT(PL.x, PL.y - 30, '💖 REVIVIDO!', '#ff00cc', true);
+  showPUNotif('💖 SEGUNDA OPORTUNIDAD — ¡dale con todo!');
+  _hap('heavy');
+  const ov = $id('ov-dead'); if (ov) ov.classList.remove('show');
+  updateHpHUD(); updateHUD();
+  playMusic();
+  state = 'playing';
+  lastTs = performance.now();
+  raf = requestAnimationFrame(loop);
 }
 
 function toMenu() {
