@@ -1,6 +1,7 @@
 # Archivos que NUNCA deben servirse públicamente desde el Worker
 .git
 .gitignore
+.wrangler
 .claude
 .assetsignore
 node_modules
