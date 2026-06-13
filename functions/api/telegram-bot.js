@@ -244,6 +244,47 @@ async function handleAdmin(token, env, context, chatId, userId) {
   });
 }
 
+// ── /live: anuncia tu stream en Discord + canal de Telegram (solo admin) ──
+// Uso: /live  ó  /live Axie Origins  ó  /live Sunflower Land | hoy sorteo!
+const GAME_EMOJI = {
+  'axie origins': '⚔️', 'axie classic': '🐾', 'axie': '🐾',
+  'sunflower land': '🌻', 'sunflower': '🌻', 'roblox': '🟦',
+  'duende quest': '🧝', 'irl': '📸', 'just chatting': '💬',
+};
+async function handleLive(token, env, context, chatId, userId, payload) {
+  if (String(userId) !== String(context.env.ADMIN_TG_ID || '')) return; // solo admin
+  const kick = context.env.KICK_URL || 'https://kick.com/elduende420';
+  // separar "juego | nota opcional"
+  const [rawGame, ...noteParts] = (payload || '').split('|');
+  const game = (rawGame || '').trim();
+  const note = noteParts.join('|').trim();
+  const key = game.toLowerCase();
+  const emoji = GAME_EMOJI[key] || '🎮';
+  const playingLine = game ? `${emoji} Jugando: *${game}*` : '🎮 Stream en vivo';
+  const noteLine = note ? `\n📣 ${note}` : '';
+
+  const msg =
+    `🔴🔴 *¡EL DUENDE ESTÁ EN VIVO!* 🔴🔴\n\n` +
+    `${playingLine}${noteLine}\n\n` +
+    `👉 *Entra ahora:* ${kick}\n\n` +
+    `🧝 Mientras ves, juega *DUENDE QUEST* y gana \$DUENDE:\n` +
+    `https://t.me/duendequest_bot\n` +
+    `🪙 \$DUENDE: ${PUMP_FUN_URL}`;
+
+  // Discord
+  const okD = await postDiscord(env, msg.replace(/\*/g, '**'));
+  // Canal de Telegram
+  let okT = false;
+  if (context.env.TG_CHANNEL_ID) {
+    try {
+      const r = await tg(token, 'sendMessage', { chat_id: context.env.TG_CHANNEL_ID, text: msg, parse_mode: 'Markdown', disable_web_page_preview: false,
+        reply_markup: { inline_keyboard: [[{ text: '🔴 VER STREAM', url: kick }], [{ text: '🎮 JUGAR', url: 'https://t.me/duendequest_bot' }]] } });
+      okT = !!r.ok;
+    } catch (e) {}
+  }
+  await tg(token, 'sendMessage', { chat_id: chatId, text: `${okD ? '✅' : '❌'} Discord  ·  ${okT ? '✅' : '⚠️ (configura TG_CHANNEL_ID)'} Telegram\n\nVista previa:\n${msg}`, parse_mode: 'Markdown' });
+}
+
 async function handlePlay(token, chatId) {
   await tg(token, 'sendMessage', { chat_id: chatId, text: '🎮 *¡A jugar!*', parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 ABRIR JUEGO', web_app: { url: WEBAPP_URL } }]] } });
 }
@@ -367,6 +408,7 @@ async function onRequestPost(context) {
         case '/buy': case '/comprar': case '/stars': await handleBuy(token, chatId, user.id); break;
         case '/help': case '/ayuda': await handleHelp(token, chatId); break;
         case '/admin': await handleAdmin(token, env, context, chatId, user.id); break;
+        case '/live': case '/envivo': await handleLive(token, env, context, chatId, user.id, payload); break;
         case '/announce': case '/anuncio': {
           if (String(user.id) !== String(context.env.ADMIN_TG_ID || '')) break; // solo admin
           if (!payload.trim()) { await tg(token, 'sendMessage', { chat_id: chatId, text: 'Uso: /announce tu mensaje aquí — se publica en Discord #anuncios' }); break; }
