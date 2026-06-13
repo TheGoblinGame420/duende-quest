@@ -5,7 +5,34 @@
 //   0 12 * * 1    → torneo semanal: premia al top 3 (lunes 12:00 UTC)
 // ═══════════════════════════════════════════════════════
 
-import { tg, supabaseQuery, postDiscord } from './lib.js';
+import { tg, supabaseQuery, postDiscord, getDuendePriceUsd } from './lib.js';
+
+const PUMP_URL = 'https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump';
+
+// Ganchos de venta rotativos (uno distinto cada día según el día del año)
+const HYPE = [
+  '💎 Manos de diamante: el que aguanta, gana. ¿Ya tienes los tuyos?',
+  '🧝 El Duende no duerme — y tu bolsa tampoco debería. HODL $DUENDE.',
+  '🎮 Cada partida te da $DUENDE GRATIS. ¿Por qué no estás jugando?',
+  '🚀 Los early siempre cuentan la mejor historia. Tú estás temprano.',
+  '🔥 Comunidad fuerte = moneda fuerte. Trae un amigo hoy.',
+  '👑 El TOP del torneo gana $DUENDE cada lunes. ¿Vas por la corona?',
+  '🪙 Acumula jugando, compra en los dips, repite. El camino del duende.',
+];
+
+// ── Pulso diario del mercado $DUENDE (precio en vivo + gancho) ──
+export async function marketPulse(env) {
+  const price = await getDuendePriceUsd();
+  const hype = HYPE[Math.floor(Date.now() / 86400000) % HYPE.length];
+  const priceStr = price > 0 ? '$' + price.toFixed(8) : 'consulta el gráfico';
+  const msg = `📊 **PULSO $DUENDE — ${new Date().toLocaleDateString('es-PE', { day: '2-digit', month: 'short' })}**\n\n💰 Precio: **${priceStr}**\n${hype}\n\n🪙 Comprar: ${PUMP_URL}\n🎮 Jugar y ganar: https://t.me/duendequest_bot`;
+  await postDiscord(env, msg);
+  // También al canal de Telegram (opcional, si configuras TG_CHANNEL_ID)
+  if (env.TELEGRAM_BOT_TOKEN && env.TG_CHANNEL_ID) {
+    try { await tg(env.TELEGRAM_BOT_TOKEN, 'sendMessage', { chat_id: env.TG_CHANNEL_ID, text: msg.replace(/\*\*/g, '*'), parse_mode: 'Markdown', disable_web_page_preview: true }); } catch (e) {}
+  }
+  console.log('[MarketPulse] posted, price', price);
+}
 
 const WEBAPP_URL = 'https://duende-quest.alfonso12hc.workers.dev/telegram/index.html';
 const TOURNAMENT_PRIZES = [1000, 500, 250]; // $DUENDE para top 1-3
@@ -108,5 +135,6 @@ export async function weeklyTournament(env) {
 export async function runCron(cronExpr, env) {
   if (cronExpr === '0 17 * * *') return dailyReminder(env);
   if (cronExpr === '0 12 * * 1') return weeklyTournament(env);
+  if (cronExpr === '0 0 * * *') return marketPulse(env);
   return keepAlive(env);
 }
