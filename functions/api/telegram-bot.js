@@ -252,37 +252,42 @@ const GAME_EMOJI = {
   'duende quest': '🧝', 'irl': '📸', 'just chatting': '💬',
 };
 async function handleLive(token, env, context, chatId, userId, payload) {
-  if (String(userId) !== String(context.env.ADMIN_TG_ID || '')) return; // solo admin
-  const kick = context.env.KICK_URL || 'https://kick.com/elduende420';
-  // separar "juego | nota opcional"
+  if (String(userId) !== String(context.env.ADMIN_TG_ID || '')) {
+    await tg(token, 'sendMessage', { chat_id: chatId, text: '⛔ Solo el admin puede usar /live' });
+    return;
+  }
+  const kick = context.env.KICK_URL || 'https://kick.com/elduende420kick';
   const [rawGame, ...noteParts] = (payload || '').split('|');
   const game = (rawGame || '').trim();
   const note = noteParts.join('|').trim();
-  const key = game.toLowerCase();
-  const emoji = GAME_EMOJI[key] || '🎮';
-  const playingLine = game ? `${emoji} Jugando: *${game}*` : '🎮 Stream en vivo';
+  const emoji = GAME_EMOJI[game.toLowerCase()] || '🎮';
+  const playingLine = game ? `${emoji} Jugando: <b>${game}</b>` : '🎮 Stream en vivo';
   const noteLine = note ? `\n📣 ${note}` : '';
 
-  const msg =
-    `🔴🔴 *¡EL DUENDE ESTÁ EN VIVO!* 🔴🔴\n\n` +
+  // HTML: no se rompe con los guiones bajos de las URLs
+  const msgHtml =
+    `🔴🔴 <b>¡EL DUENDE ESTÁ EN VIVO!</b> 🔴🔴\n\n` +
     `${playingLine}${noteLine}\n\n` +
-    `👉 *Entra ahora:* ${kick}\n\n` +
-    `🧝 Mientras ves, juega *DUENDE QUEST* y gana \$DUENDE:\n` +
-    `https://t.me/duendequest_bot\n` +
-    `🪙 \$DUENDE: ${PUMP_FUN_URL}`;
+    `🧝 Mientras ves, juega <b>DUENDE QUEST</b> y gana $DUENDE\n` +
+    `🪙 $DUENDE en pump.fun`;
+  // Versión Discord (texto plano con ** y links visibles)
+  const msgDiscord =
+    `🔴🔴 **¡EL DUENDE ESTÁ EN VIVO!** 🔴🔴\n\n` +
+    `${(game ? `${emoji} Jugando: **${game}**` : '🎮 Stream en vivo')}${noteLine}\n\n` +
+    `👉 **Entra ahora:** ${kick}\n` +
+    `🧝 Juega y gana $DUENDE: https://t.me/duendequest_bot\n` +
+    `🪙 Compra $DUENDE: ${PUMP_FUN_URL}`;
 
-  // Discord
-  const okD = await postDiscord(env, msg.replace(/\*/g, '**'));
-  // Canal de Telegram
+  const okD = await postDiscord(env, msgDiscord);
   let okT = false;
   if (context.env.TG_CHANNEL_ID) {
     try {
-      const r = await tg(token, 'sendMessage', { chat_id: context.env.TG_CHANNEL_ID, text: msg, parse_mode: 'Markdown', disable_web_page_preview: false,
-        reply_markup: { inline_keyboard: [[{ text: '🔴 VER STREAM', url: kick }], [{ text: '🎮 JUGAR', url: 'https://t.me/duendequest_bot' }]] } });
+      const r = await tg(token, 'sendMessage', { chat_id: context.env.TG_CHANNEL_ID, text: msgHtml, parse_mode: 'HTML', disable_web_page_preview: true,
+        reply_markup: { inline_keyboard: [[{ text: '🔴 VER STREAM EN KICK', url: kick }], [{ text: '🎮 JUGAR DUENDE QUEST', url: 'https://t.me/duendequest_bot' }]] } });
       okT = !!r.ok;
     } catch (e) {}
   }
-  await tg(token, 'sendMessage', { chat_id: chatId, text: `${okD ? '✅' : '❌'} Discord  ·  ${okT ? '✅' : '⚠️ (configura TG_CHANNEL_ID)'} Telegram\n\nVista previa:\n${msg}`, parse_mode: 'Markdown' });
+  await tg(token, 'sendMessage', { chat_id: chatId, text: `Anuncio enviado:\n${okD ? '✅' : '❌'} Discord\n${okT ? '✅' : '⚠️ Telegram (falta configurar TG_CHANNEL_ID o el bot no es admin del canal)'}` });
 }
 
 async function handlePlay(token, chatId) {

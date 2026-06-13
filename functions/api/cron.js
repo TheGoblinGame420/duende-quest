@@ -25,11 +25,18 @@ export async function marketPulse(env) {
   const price = await getDuendePriceUsd();
   const hype = HYPE[Math.floor(Date.now() / 86400000) % HYPE.length];
   const priceStr = price > 0 ? '$' + price.toFixed(8) : 'consulta el gráfico';
-  const msg = `📊 **PULSO $DUENDE — ${new Date().toLocaleDateString('es-PE', { day: '2-digit', month: 'short' })}**\n\n💰 Precio: **${priceStr}**\n${hype}\n\n🪙 Comprar: ${PUMP_URL}\n🎮 Jugar y ganar: https://t.me/duendequest_bot`;
-  await postDiscord(env, msg);
-  // También al canal de Telegram (opcional, si configuras TG_CHANNEL_ID)
+  const fecha = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: 'short' });
+  await postDiscord(env, `📊 **PULSO $DUENDE — ${fecha}**\n\n💰 Precio: **${priceStr}**\n${hype}\n\n🪙 Comprar: ${PUMP_URL}\n🎮 Jugar y ganar: https://t.me/duendequest_bot`);
+  // Canal de Telegram (HTML para que las URLs con _ no rompan el mensaje)
   if (env.TELEGRAM_BOT_TOKEN && env.TG_CHANNEL_ID) {
-    try { await tg(env.TELEGRAM_BOT_TOKEN, 'sendMessage', { chat_id: env.TG_CHANNEL_ID, text: msg.replace(/\*\*/g, '*'), parse_mode: 'Markdown', disable_web_page_preview: true }); } catch (e) {}
+    try {
+      await tg(env.TELEGRAM_BOT_TOKEN, 'sendMessage', {
+        chat_id: env.TG_CHANNEL_ID,
+        text: `📊 <b>PULSO $DUENDE — ${fecha}</b>\n\n💰 Precio: <b>${priceStr}</b>\n${hype}`,
+        parse_mode: 'HTML', disable_web_page_preview: true,
+        reply_markup: { inline_keyboard: [[{ text: '🪙 COMPRAR $DUENDE', url: PUMP_URL }], [{ text: '🎮 JUGAR Y GANAR', url: 'https://t.me/duendequest_bot' }]] },
+      });
+    } catch (e) {}
   }
   console.log('[MarketPulse] posted, price', price);
 }
