@@ -12,7 +12,20 @@ function getEnv(context) {
     BOT_TOKEN: context.env.TELEGRAM_BOT_TOKEN,
     SUPABASE_URL: context.env.SUPABASE_URL || 'https://byspuovhhbmndqskvvjo.supabase.co',
     SUPABASE_KEY: context.env.SUPABASE_SERVICE_KEY || context.env.SUPABASE_ANON_KEY || '',
+    DISCORD_WEBHOOK_URL: context.env.DISCORD_WEBHOOK_URL || '',
   };
+}
+
+async function postDiscord(env, content) {
+  if (!env.DISCORD_WEBHOOK_URL) return false;
+  try {
+    const r = await fetch(env.DISCORD_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content, allowed_mentions: { parse: [] } }),
+    });
+    return r.ok;
+  } catch (e) { return false; }
 }
 
 async function tg(token, method, body) {
@@ -354,6 +367,13 @@ async function onRequestPost(context) {
         case '/buy': case '/comprar': case '/stars': await handleBuy(token, chatId, user.id); break;
         case '/help': case '/ayuda': await handleHelp(token, chatId); break;
         case '/admin': await handleAdmin(token, env, context, chatId, user.id); break;
+        case '/announce': case '/anuncio': {
+          if (String(user.id) !== String(context.env.ADMIN_TG_ID || '')) break; // solo admin
+          if (!payload.trim()) { await tg(token, 'sendMessage', { chat_id: chatId, text: 'Uso: /announce tu mensaje aquí — se publica en Discord #anuncios' }); break; }
+          const ok = await postDiscord(env, payload.trim());
+          await tg(token, 'sendMessage', { chat_id: chatId, text: ok ? '✅ Publicado en Discord' : '❌ No se pudo publicar (¿webhook configurado?)' });
+          break;
+        }
       }
     }
 

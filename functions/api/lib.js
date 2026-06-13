@@ -54,6 +54,8 @@ export function getEnv(context) {
     // so reads keep working until SUPABASE_SERVICE_KEY is configured.
     SUPABASE_KEY: context.env.SUPABASE_SERVICE_KEY || context.env.SUPABASE_ANON_KEY || '',
     HAS_SERVICE_KEY: !!context.env.SUPABASE_SERVICE_KEY,
+    DISCORD_WEBHOOK_URL: context.env.DISCORD_WEBHOOK_URL || '',
+    ADMIN_TG_ID: context.env.ADMIN_TG_ID || '',
   };
 }
 
@@ -64,6 +66,18 @@ export async function tg(token, method, body) {
     body: JSON.stringify(body),
   });
   return r.json();
+}
+
+// Publica un mensaje en Discord via webhook (no-op si no está configurado)
+export async function postDiscord(env, content) {
+  if (!env.DISCORD_WEBHOOK_URL) return;
+  try {
+    await fetch(env.DISCORD_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content, allowed_mentions: { parse: [] } }),
+    });
+  } catch (e) { console.error('[Discord]', e); }
 }
 
 export async function supabaseQuery(env, path, options = {}) {

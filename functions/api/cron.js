@@ -5,7 +5,7 @@
 //   0 12 * * 1    → torneo semanal: premia al top 3 (lunes 12:00 UTC)
 // ═══════════════════════════════════════════════════════
 
-import { tg, supabaseQuery } from './lib.js';
+import { tg, supabaseQuery, postDiscord } from './lib.js';
 
 const WEBAPP_URL = 'https://duende-quest.alfonso12hc.workers.dev/telegram/index.html';
 const TOURNAMENT_PRIZES = [1000, 500, 250]; // $DUENDE para top 1-3
@@ -49,6 +49,7 @@ export async function dailyReminder(env) {
     } catch (err) { /* usuario bloqueó el bot, etc. */ }
   }
   console.log('[DailyReminder] sent:', sent);
+  await postDiscord(env, '🎯 **¡Nuevas misiones diarias disponibles!**\n🔥 No pierdas tu racha — hoy puedes ganar hasta 100 DQ\n🎮 Juega: https://t.me/duendequest_bot');
 }
 
 // ── Torneo semanal ──
@@ -97,6 +98,10 @@ export async function weeklyTournament(env) {
       }
     }
   }
+  // Anuncio público en Discord con los ganadores
+  const medals = ['🥇', '🥈', '🥉'];
+  const podium = top.map((t, i) => `${medals[i]} **${t.username}** — ${Number(t.score).toLocaleString()} pts → +${TOURNAMENT_PRIZES[i].toLocaleString()} $DUENDE`).join('\n');
+  await postDiscord(env, `🏆 **¡GANADORES DEL TORNEO SEMANAL!** 🏆\n\n${podium}\n\n¡Felicidades duendes! 🧝 La nueva semana ya empezó — ¿quién será el próximo rey? 👑\n🎮 https://t.me/duendequest_bot`);
   console.log('[Tournament] awarded week', weekKey, top.map(t => t.username));
 }
 
