@@ -85,10 +85,10 @@ body{display:flex;flex-direction:column;align-items:center;font-family:"Press St
 
 <!-- TG HEADER -->
 <div id="tg-header">
-  <div class="tg-user">
+  <div class="tg-user" id="tg-user-box" onclick="showProfile()" style="cursor:pointer">
     <div class="tg-avatar" id="tg-avatar">🧝</div>
     <div>
-      <div class="tg-name" id="tg-name">Cargando...</div>
+      <div class="tg-name" id="tg-name">Conectando…</div>
       <div class="tg-price" id="tg-price-display">$DUENDE: ---</div>
     </div>
   </div>
@@ -341,11 +341,37 @@ if(tg){tg.ready();tg.expand();try{tg.enableClosingConfirmation();}catch(e){}}
 const TG_USER = tg?.initDataUnsafe?.user || {};
 function tgHaptic(type){try{tg?.HapticFeedback?.impactOccurred(type||'medium');}catch(e){}}
 
-// Set TG header
-document.getElementById('tg-name').textContent = TG_USER.first_name || TG_USER.username || 'Duende';
-if(TG_USER.id){
-  const av=document.getElementById('tg-avatar');
-  av.textContent=TG_USER.first_name?TG_USER.first_name[0].toUpperCase():'🧝';
+// Set TG header + estado de sesión visible
+function updateLoginUI(){
+  const nameEl=document.getElementById('tg-name');
+  const avEl=document.getElementById('tg-avatar');
+  if(!TG_USER.id){
+    // Abierto fuera de Telegram
+    nameEl.textContent='Invitado';
+    nameEl.style.color='rgba(255,255,255,.5)';
+    return;
+  }
+  const display=TG_USER.first_name||TG_USER.username||'Duende';
+  // ✅ = perfil sincronizado en la nube; sino sigue intentando
+  nameEl.textContent=display+(tgProfile&&tgProfile.id?' ✅':'');
+  nameEl.style.color='#00ff88';
+  avEl.textContent=TG_USER.first_name?TG_USER.first_name[0].toUpperCase():'🧝';
+  if(TG_USER.photo_url){ avEl.style.background='none'; avEl.innerHTML='<img src="'+TG_USER.photo_url+'" style="width:100%;height:100%;border-radius:50%;object-fit:cover">'; }
+}
+updateLoginUI();
+
+// Perfil rápido al tocar el header (interactivo)
+function showProfile(){
+  if(!TG_USER.id){ showPUNotif('Abre el juego desde Telegram para tener cuenta'); return; }
+  const wallet=window._tonAddr||tonWalletAddr||null;
+  const best=tgProfile?.best_score||0;
+  const msg='👤 '+(TG_USER.first_name||TG_USER.username||'Duende')+'\n'+
+    '🪙 '+Number(totalCoins||0).toLocaleString()+' DQ\n'+
+    '🏆 Mejor score: '+Number(best).toLocaleString()+'\n'+
+    (wallet?('💎 TON: '+wallet.slice(0,6)+'...'+wallet.slice(-4)):'💎 Wallet TON: no conectada')+'\n'+
+    (tgProfile&&tgProfile.id?'✅ Sesión sincronizada':'⏳ Sincronizando…');
+  if(tg&&tg.showPopup){ try{ tg.showPopup({title:'Tu perfil',message:msg,buttons:[{type:'close'}]}); return; }catch(e){} }
+  alert(msg);
 }
 
 // ═══════════════════════════════════════
@@ -368,14 +394,15 @@ async function tgLogin(){
     const r=await fetch('/api/wallet',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({action:'link_profile',init_data:(window.Telegram?.WebApp?.initData)||''})});
     const res=await r.json();
-    if(res.success&&res.profile){tgProfile=res.profile;mergeCloudSave(res.profile);return;}
+    if(res.success&&res.profile){tgProfile=res.profile;mergeCloudSave(res.profile);updateLoginUI();return;}
   }catch(e){console.warn('[TG Auth]',e);}
   // Fallback de solo-lectura (ej. abriendo fuera de Telegram)
   try{
     const{data}=await _sb.from('profiles').select('*').eq('telegram_id',tgId).maybeSingle();
-    if(data){tgProfile=data;return;}
+    if(data){tgProfile=data;updateLoginUI();return;}
   }catch(e){}
   tgProfile={username,telegram_id:tgId,best_score:0,total_coins:0};
+  updateLoginUI();
 }
 tgLogin();
 
@@ -518,9 +545,12 @@ function onTonConnected(){
   document.getElementById('ton-connected-panel').style.display='block';
   document.getElementById('ton-addr').textContent=tonWalletAddr;
   document.getElementById('ton-status').textContent='Wallet conectada ✅';
-  if(_sb&&tgProfile&&tgProfile.id){
-    walletApi('update_profile',{wallet_ton:tonWalletAddr}).catch(()=>{});
-  }
+  window._tonAddr=tonWalletAddr;
+  // Guardar la wallet server-side (identidad verificada por initData; no depende del perfil cargado)
+  if(TG_USER.id){ walletApi('update_profile',{wallet_ton:tonWalletAddr}).catch(()=>{}); }
+  showPUNotif('💎 Wallet TON conectada ✅');
+  tgHaptic('heavy');
+  if(typeof updateLoginUI==='function') updateLoginUI();
   updateTonRate();
 }
 
