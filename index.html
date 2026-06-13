@@ -706,12 +706,12 @@ footer{
 <!-- ========== STATS ========== -->
 <div class="stats-bar">
   <div class="stats-inner">
-    <div class="stat"><span class="stat-n" id="holders">14,293</span><span class="stat-l">Holders</span></div>
-    <div class="stat"><span class="stat-n">$4.2M</span><span class="stat-l">Market Cap</span></div>
+    <div class="stat"><span class="stat-n" id="holders" data-holders>—</span><span class="stat-l">Holders</span></div>
+    <div class="stat"><span class="stat-n" data-mcap>—</span><span class="stat-l">Market Cap</span></div>
     <div class="stat"><span class="stat-n">1B</span><span class="stat-l">Supply</span></div>
     <div class="stat"><span class="stat-n">0%</span><span class="stat-l">Tax</span></div>
-    <div class="stat"><span class="stat-n">🔥</span><span class="stat-l">LP Burned</span></div>
-    <div class="stat"><span class="stat-n" id="nft-left">1,587</span><span class="stat-l">NFTs Left</span></div>
+    <div class="stat"><span class="stat-n">pump.fun</span><span class="stat-l">Liquidez</span></div>
+    <div class="stat"><span class="stat-n" id="live-players-2">—</span><span class="stat-l">Jugadores hoy</span></div>
   </div>
 </div>
 
@@ -722,6 +722,50 @@ footer{
   <div class="ls-card"><span data-volume class="ls-val">---</span><span class="ls-label">VOL 24H</span></div>
   <div class="ls-card"><span id="live-players" class="ls-val">—</span><span class="ls-label">JUGADORES HOY</span></div>
 </div>
+
+<!-- ========== TRUST / TRANSPARENCIA ========== -->
+<section class="section" id="trust" style="padding-top:2rem">
+  <div class="px-title" style="color:var(--green)">🔒 TRANSPARENCIA</div>
+  <p class="px-sub" style="margin-bottom:1.2rem">Verifica todo por ti mismo — nada de promesas, solo datos on-chain</p>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.8rem;max-width:760px;margin:0 auto 1.4rem;">
+    <div style="background:rgba(0,255,136,.05);border:1px solid rgba(0,255,136,.25);border-radius:6px;padding:.9rem;text-align:center">
+      <div style="font-size:.9rem">💧</div>
+      <div style="font-family:'Press Start 2P',monospace;font-size:.4rem;color:var(--green);margin:.4rem 0">LIQUIDEZ</div>
+      <div style="font-size:.4rem;color:rgba(255,255,255,.6);line-height:1.6">Gestionada por pump.fun — la curva protege a los compradores</div>
+    </div>
+    <div style="background:rgba(0,255,136,.05);border:1px solid rgba(0,255,136,.25);border-radius:6px;padding:.9rem;text-align:center">
+      <div style="font-size:.9rem">🚫</div>
+      <div style="font-family:'Press Start 2P',monospace;font-size:.4rem;color:var(--green);margin:.4rem 0">0% TAX</div>
+      <div style="font-size:.4rem;color:rgba(255,255,255,.6);line-height:1.6">Sin impuestos de compra/venta. Estándar de pump.fun</div>
+    </div>
+    <div style="background:rgba(0,255,136,.05);border:1px solid rgba(0,255,136,.25);border-radius:6px;padding:.9rem;text-align:center">
+      <div style="font-size:.9rem">👥</div>
+      <div style="font-family:'Press Start 2P',monospace;font-size:.4rem;color:var(--green);margin:.4rem 0"><span data-holders>—</span></div>
+      <div style="font-size:.4rem;color:rgba(255,255,255,.6);line-height:1.6">Holders reales on-chain (en vivo)</div>
+    </div>
+    <div style="background:rgba(0,255,136,.05);border:1px solid rgba(0,255,136,.25);border-radius:6px;padding:.9rem;text-align:center">
+      <div style="font-size:.9rem">📊</div>
+      <div style="font-family:'Press Start 2P',monospace;font-size:.4rem;color:var(--green);margin:.4rem 0"><span data-mcap>—</span></div>
+      <div style="font-size:.4rem;color:rgba(255,255,255,.6);line-height:1.6">Market cap en vivo (DexScreener)</div>
+    </div>
+  </div>
+
+  <!-- Gráfico en vivo embebido -->
+  <div style="max-width:760px;margin:0 auto 1.2rem;border:1px solid rgba(124,58,237,.3);border-radius:8px;overflow:hidden;background:#0a0a14">
+    <iframe id="dex-chart" src="https://dexscreener.com/solana/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump?embed=1&theme=dark&info=0"
+      style="width:100%;height:420px;border:0" loading="lazy"></iframe>
+  </div>
+
+  <!-- Botones de verificación -->
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;max-width:760px;margin:0 auto">
+    <a href="https://rugcheck.xyz/tokens/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump" target="_blank" rel="noopener" style="font-family:'Press Start 2P',monospace;font-size:.4rem;color:#000;background:var(--green);padding:.6rem 1rem;border-radius:3px;text-decoration:none">✅ RUGCHECK</a>
+    <a href="https://solscan.io/token/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump" target="_blank" rel="noopener" style="font-family:'Press Start 2P',monospace;font-size:.4rem;color:#fff;background:rgba(124,58,237,.5);padding:.6rem 1rem;border-radius:3px;text-decoration:none">🔍 SOLSCAN</a>
+    <a href="https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump" target="_blank" rel="noopener" style="font-family:'Press Start 2P',monospace;font-size:.4rem;color:#000;background:var(--yellow);padding:.6rem 1rem;border-radius:3px;text-decoration:none">🚀 PUMP.FUN</a>
+    <a href="https://dexscreener.com/solana/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump" target="_blank" rel="noopener" style="font-family:'Press Start 2P',monospace;font-size:.4rem;color:#fff;background:rgba(0,238,255,.3);padding:.6rem 1rem;border-radius:3px;text-decoration:none">📈 DEXSCREENER</a>
+  </div>
+  <p style="font-size:.34rem;color:rgba(255,255,255,.3);text-align:center;margin-top:1rem;max-width:600px;margin-left:auto;margin-right:auto;line-height:1.8">⚠️ $DUENDE es un token comunitario de entretenimiento. Esto no es asesoría financiera. Invierte solo lo que puedas permitirte perder.</p>
+</section>
 
 <!-- ========== SOCIALS ========== -->
 <section class="section" id="community">
@@ -777,9 +821,9 @@ footer{
 <!-- ========== NFT TIERS ========== -->
 <section class="section nft-bg" id="nfts">
   <div class="px-title" style="color:var(--pink)">NFT COLLECTION</div>
-  <p class="px-sub">Cada Duende es único · Cada tier tiene beneficios distintos</p>
+  <p class="px-sub">Skins con beneficios reales en el juego · NFTs on-chain próximamente</p>
   <p class="tier-intro">
-    Para jugar Duende Quest necesitas poseer al menos un NFT Duende. Solo existen <strong style="color:var(--yellow)">1,600 NFTs de pago</strong> con beneficios. Los demás son Duendes Comunes — sin bonificaciones ni ganancias. Elige tu tier sabiamente.
+    🎮 <strong style="color:var(--green)">El juego es GRATIS</strong> — empieza con el Duende Base sin pagar nada. Las skins de pago dan bonificaciones (más monedas, +ataque, lifesteal, +HP) que se equipan en tu partida. <strong style="color:var(--yellow)">Próximamente</strong> estas skins se convertirán en NFTs coleccionables en Solana para sus dueños.
   </p>
 
   <div class="tiers-grid">
@@ -1599,12 +1643,18 @@ document.querySelectorAll('.reveal,.tcard,.tier-card,.game-feat,.booster-card,.s
   el.addEventListener('animationend',()=>el.style.animation='');
 });
 
-// LIVE COUNTERS
-let holders=14293, nftLeft=1587;
-setInterval(()=>{
-  if(Math.random()>.4){holders+=Math.floor(Math.random()*3)+1;const e=document.getElementById('holders');if(e)e.textContent=holders.toLocaleString();}
-  if(Math.random()>.7&&nftLeft>1400){nftLeft--;const e=document.getElementById('nft-left');if(e)e.textContent=nftLeft.toLocaleString();}
-},3500);
+// LIVE COUNTERS — holders reales (data-holders) los rellena PriceFeed desde /api/token-stats.
+// Aquí solo sincronizamos el medidor de progreso "camino a 2,000 holders" con el número real.
+document.addEventListener('priceUpdated', syncHolderProgress);
+setInterval(syncHolderProgress, 60000);
+function syncHolderProgress(){
+  const real = (typeof PriceFeed!=='undefined' && PriceFeed.holders) ? PriceFeed.holders : null;
+  if(real===null) return;
+  const meta=2000;
+  const ch=document.getElementById('current-holders'); if(ch) ch.textContent=real.toLocaleString();
+  const hn=document.getElementById('holders-needed'); if(hn) hn.textContent=Math.max(0,meta-real).toLocaleString();
+  const hp=document.getElementById('holders-progress'); if(hp) hp.style.width=Math.min(100,real/meta*100)+'%';
+}
 
 // NFT STORE FILTER
 function filterStore(cat, btn){
@@ -1690,32 +1740,25 @@ async function loadLiveStats() {
     var resp = await window.supabaseClient.from('profiles').select('id', { count: 'exact', head: true });
     var count = resp.count;
     if (count !== null) {
-      var el = document.getElementById('players-count');
-      if (el) el.textContent = count.toLocaleString();
-      var ch = document.getElementById('current-holders');
-      if (ch) ch.textContent = count.toLocaleString();
-      var needed = Math.max(0, 2000 - count);
-      var hn = document.getElementById('holders-needed');
-      if (hn) hn.textContent = needed.toLocaleString();
-      var pct = Math.min(100, (count / 2000) * 100);
-      var hp = document.getElementById('holders-progress');
-      if (hp) hp.style.width = pct + '%';
+      // jugadores registrados reales (no holders del token; eso lo maneja syncHolderProgress)
+      ['players-count','live-players','live-players-2'].forEach(function(id){
+        var el = document.getElementById(id); if (el) el.textContent = count.toLocaleString();
+      });
     }
   } catch (e) { console.warn('Stats load failed:', e); }
 }
 document.addEventListener('DOMContentLoaded', loadLiveStats);
 
-// ── FOMO TICKER ──
+// ── TICKER (mensajes reales/honestos — sin inventar compras ni usuarios) ──
 const TICKER_EVENTS=[
-  ()=>`🔥 ${_rndUser()} acaba de comprar ${(Math.random()*4+0.2).toFixed(1)} SOL de $DUENDE`,
-  ()=>`💎 ${_rndUser()} stakeó ${(Math.random()*3+1).toFixed(1)} SOL por 90 días`,
-  ()=>`🏆 ${_rndUser()} llegó a Wave ${Math.floor(Math.random()*20+10)} en Duende Quest`,
-  ()=>`👑 NFT Legendario comprado por ${(Math.random()*0.5+1.5).toFixed(1)} SOL`,
-  ()=>`⚡ Precio $DUENDE: ${typeof PriceFeed!=='undefined'&&PriceFeed.priceUsd>0?'+'+((Math.random()*5+1).toFixed(1))+'% últimas 2h':'subiendo 🚀'}`,
-  ()=>`🎮 ${Math.floor(Math.random()*30+50)} jugadores online ahora mismo`,
-  ()=>`🔒 ${_rndUser()} bloqueó ${(Math.random()*5+1).toFixed(1)} SOL — APY ${typeof StakingManager!=='undefined'?StakingManager.getAPY():120}%`,
+  ()=>`🎮 Juega DUENDE QUEST GRATIS en Telegram y gana $DUENDE real`,
+  ()=>`🏆 Torneo semanal: el TOP 3 gana 1000 / 500 / 250 $DUENDE cada lunes`,
+  ()=>`🔥 Misiones diarias + racha: vuelve cada día y gana más DQ`,
+  ()=>`🎁 Invita a un amigo: ambos ganan 500 $DUENDE`,
+  ()=>{const p=(typeof PriceFeed!=='undefined'&&PriceFeed.priceUsd>0)?'$'+PriceFeed.priceUsd.toFixed(8):'en vivo';return `💹 Precio $DUENDE: ${p}`;},
+  ()=>{const h=(typeof PriceFeed!=='undefined'&&PriceFeed.holders)?PriceFeed.holders.toLocaleString()+' holders':'comunidad creciendo';return `👥 ${h}`;},
+  ()=>`🔒 0% impuestos · contrato en pump.fun · verificable on-chain`,
 ];
-function _rndUser(){const p=['CryptoGoblin','DuendeMoon','SolanaGreen','NFTHunter','GoblinKing','DeFiElf'];return p[Math.floor(Math.random()*p.length)]+Math.floor(Math.random()*999);}
 function rotateTicker(){const fn=TICKER_EVENTS[Math.floor(Math.random()*TICKER_EVENTS.length)];const el=document.getElementById('ticker-content');if(el)el.textContent=fn();}
 setInterval(rotateTicker,4000);
 document.addEventListener('DOMContentLoaded',rotateTicker);

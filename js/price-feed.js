@@ -15,9 +15,22 @@ const PriceFeed = {
       this._broadcast();
     } catch(_) {}
   },
+  holders: null,
+  async fetchHolders() {
+    try {
+      const r = await fetch('/api/token-stats', { signal: AbortSignal.timeout(8000) });
+      const d = await r.json();
+      if (typeof d.holders === 'number' && d.holders >= 0) {
+        this.holders = d.holders;
+        document.querySelectorAll('[data-holders]').forEach(el => { el.textContent = d.holders.toLocaleString(); });
+      }
+    } catch (_) {}
+  },
   start(intervalMs = 30000) {
     this.fetch();
+    this.fetchHolders();
     this._timer = setInterval(() => this.fetch(), intervalMs);
+    setInterval(() => this.fetchHolders(), 300000); // holders cada 5 min
   },
   _broadcast() {
     document.querySelectorAll('[data-price-usd]').forEach(el => {
