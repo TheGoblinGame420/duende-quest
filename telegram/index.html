@@ -111,6 +111,7 @@ body{display:flex;flex-direction:column;align-items:center;font-family:"Press St
       <button class="ob yellow" onclick="showStarsShop()" style="font-size:.4rem">⭐ COMPRAR STARS</button>
       <button class="ob" onclick="toggleTonWallet()" style="font-size:.4rem;background:linear-gradient(135deg,#0088cc,#005580);color:#fff">💎 TON WALLET</button>
       <button class="ob" onclick="openExchange()" style="font-size:.4rem;background:linear-gradient(135deg,#00eeff,#0088aa);color:#000">🔄 EXCHANGE</button>
+      <button class="ob" onclick="openRedeem()" style="font-size:.4rem;background:linear-gradient(135deg,#00ff88,#00aa55);color:#000">🎁 CANJEAR DQ</button>
       <button class="ob purple" onclick="showOverlay('ov-staking')" style="font-size:.4rem">⚡ STAKING</button>
       <button class="ob" onclick="showOverlay('ov-donate')" style="font-size:.35rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);box-shadow:none;color:rgba(255,255,255,.5)">💚 DONAR SOL</button>
     </div>
@@ -174,6 +175,28 @@ body{display:flex;flex-direction:column;align-items:center;font-family:"Press St
     <div id="skins-grid" style="width:100%;max-width:340px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;max-height:60vh;padding:4px"></div>
     <p id="skin-status" style="font-size:.28rem;color:#c084fc;min-height:1rem;text-align:center;margin-top:8px"></p>
     <button class="ob red" onclick="showOverlay('ov-start')" style="font-size:.38rem;margin-top:.5rem">← VOLVER</button>
+  </div>
+
+  <div class="ov" id="ov-redeem">
+    <div class="ov-title" style="color:#00ff88">🎁 CANJEAR DQ → $DUENDE</div>
+    <div style="background:rgba(0,255,136,.05);border:1px solid rgba(0,255,136,.2);border-radius:6px;padding:14px;width:100%;max-width:330px;margin-bottom:12px">
+      <div style="font-size:.3rem;color:rgba(255,255,255,.5);text-align:center;line-height:1.9;margin-bottom:8px">Convierte los DQ que ganaste jugando en <b style="color:#00ff88">$DUENDE real</b> en tu wallet de Solana.</div>
+      <div style="display:flex;justify-content:space-between;font-size:.32rem;padding:6px 0;border-top:1px solid rgba(255,255,255,.07)">
+        <span style="color:rgba(255,255,255,.5)">Tu saldo DQ</span><span style="color:#ffe600" id="redeem-balance">—</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:.32rem;padding:6px 0;border-top:1px solid rgba(255,255,255,.07)">
+        <span style="color:rgba(255,255,255,.5)">Tasa</span><span style="color:#00ff88">1,000 DQ = 1 $DUENDE</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:.28rem;padding:6px 0;border-top:1px solid rgba(255,255,255,.07)">
+        <span style="color:rgba(255,255,255,.4)">Mínimo</span><span style="color:rgba(255,255,255,.6)">5,000 DQ</span>
+      </div>
+    </div>
+    <input id="redeem-wallet" placeholder="Tu wallet de Solana" style="width:100%;max-width:330px;font-family:monospace;font-size:.32rem;padding:10px;border-radius:4px;border:1px solid rgba(0,255,136,.3);background:rgba(0,0,0,.4);color:#fff;margin-bottom:8px">
+    <input id="redeem-amount" type="number" step="1000" min="5000" placeholder="DQ a canjear (múltiplos de 1000)" style="width:100%;max-width:330px;font-size:.32rem;padding:10px;border-radius:4px;border:1px solid rgba(0,255,136,.3);background:rgba(0,0,0,.4);color:#fff;margin-bottom:6px">
+    <div id="redeem-preview" style="font-size:.32rem;color:#00ff88;min-height:.5rem;margin-bottom:8px">—</div>
+    <button class="ob" id="redeem-btn" onclick="submitRedeem()" style="background:linear-gradient(135deg,#00ff88,#00aa55);color:#000;width:100%;max-width:330px">🎁 SOLICITAR CANJE</button>
+    <div id="redeem-status" style="font-size:.3rem;color:rgba(255,255,255,.5);min-height:.6rem;margin-top:8px;text-align:center;line-height:1.7"></div>
+    <button class="ob" onclick="toMenu()" style="background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);font-size:.4rem;margin-top:6px">← VOLVER</button>
   </div>
 
   <div class="ov" id="ov-exchange">
@@ -755,6 +778,37 @@ async function buySkinTon(skinId){
 // EXCHANGE TON ↔ $DUENDE
 // ═══════════════════════════════════════
 let exMode='buy';
+
+// ── CANJE DQ → $DUENDE ──
+function openRedeem(){
+  showOverlay('ov-redeem');
+  document.getElementById('redeem-balance').textContent=Number(totalCoins||0).toLocaleString()+' DQ';
+  document.getElementById('redeem-status').textContent='';
+  const w=document.getElementById('redeem-wallet'); if(w&&!w.value&&window._phantomPubkey) w.value=window._phantomPubkey;
+}
+document.getElementById('redeem-amount')?.addEventListener('input',function(){
+  const dq=parseInt(this.value)||0;
+  const el=document.getElementById('redeem-preview');
+  el.textContent = dq>=1000 ? 'Recibirás: '+Math.floor(dq/1000).toLocaleString()+' $DUENDE' : 'Mínimo 5,000 DQ';
+});
+async function submitRedeem(){
+  const wallet=(document.getElementById('redeem-wallet').value||'').trim();
+  const dq=parseInt(document.getElementById('redeem-amount').value)||0;
+  const st=document.getElementById('redeem-status');
+  if(dq<5000){ st.textContent='⚠️ Mínimo 5,000 DQ'; st.style.color='#ff5555'; return; }
+  st.textContent='⏳ Procesando solicitud...'; st.style.color='rgba(255,255,255,.6)';
+  const res=await walletApi('request_redemption',{wallet_sol:wallet,dq_amount:dq});
+  if(res.success){
+    totalCoins=res.new_balance; saveProgress&&saveProgress();
+    document.getElementById('redeem-balance').textContent=Number(totalCoins).toLocaleString()+' DQ';
+    st.innerHTML='✅ <b>¡Canje solicitado!</b><br>'+Number(res.duende).toLocaleString()+' $DUENDE llegarán a tu wallet en los próximos días (pago manual semanal).';
+    st.style.color='#00ff88'; tgHaptic('heavy');
+    document.getElementById('redeem-amount').value='';
+  } else {
+    const m={bad_wallet:'Dirección Solana inválida',below_minimum:'Mínimo 5,000 DQ',bad_amount:'Usa múltiplos de 1,000 DQ',insufficient:res.detail||'Saldo insuficiente',already_pending:'Ya tienes un canje pendiente — espera a que se pague',auth_failed:'Abre el juego desde Telegram'};
+    st.textContent='❌ '+(m[res.error]||res.detail||res.error||'Error'); st.style.color='#ff5555';
+  }
+}
 
 function openExchange(){
   showOverlay('ov-exchange');

@@ -226,6 +226,41 @@ async function onRequestPost(context) {
       return json(request, { success: true });
     }
 
+    // ── CANJE DQ → $DUENDE (manual semanal) ──
+    // 1000 DQ = 1 $DUENDE. Mínimo configurable. Descuenta DQ del saldo en la nube
+    // y registra la solicitud como 'pending' para que el admin la pague.
+    if (action === 'request_redemption') {
+      const user = await verifyInitData(body.init_data, env.BOT_TOKEN);
+      if (!user?.id) return json(request, { error: 'auth_failed' }, 401);
+      const tgId = String(user.id);
+      const DQ_PER_DUENDE = 1000;
+      const MIN_DQ = 5000; // mínimo para canjear (evita spam de micro-canjes)
+      const wallet = String(body.wallet_sol || '').trim();
+      const dq = Math.floor(+body.dq_amount || 0);
+
+      if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(wallet)) return json(request, { error: 'bad_wallet', detail: 'Dirección Solana inválida' }, 400);
+      if (dq < MIN_DQ) return json(request, { error: 'below_minimum', detail: `Mínimo ${MIN_DQ.toLocaleString()} DQ` }, 400);
+      if (dq % DQ_PER_DUENDE !== 0) return json(request, { error: 'bad_amount', detail: `Múltiplos de ${DQ_PER_DUENDE} DQ` }, 400);
+
+      // saldo real desde el perfil (cloud save)
+      const profiles = await supabaseQuery(env, `profiles?telegram_id=eq.${tgId}&select=dq_coins,username`);
+      const balance = Number(profiles?.[0]?.dq_coins || 0);
+      if (dq > balance) return json(request, { error: 'insufficient', detail: `Saldo: ${balance.toLocaleString()} DQ`, balance }, 400);
+
+      // una solicitud pendiente a la vez
+      const open = await supabaseQuery(env, `redemptions?telegram_id=eq.${tgId}&status=eq.pending&select=id&limit=1`);
+      if (Array.isArray(open) && open.length > 0) return json(request, { error: 'already_pending', detail: 'Ya tienes un canje pendiente' }, 409);
+
+      const duende = dq / DQ_PER_DUENDE;
+      // descontar DQ (server-side) y registrar
+      await supabaseQuery(env, `profiles?telegram_id=eq.${tgId}`, { method: 'PATCH', body: { dq_coins: balance - dq } });
+      await supabaseQuery(env, 'redemptions', {
+        method: 'POST',
+        body: { telegram_id: tgId, username: profiles?.[0]?.username || '', wallet_sol: wallet, dq_amount: dq, duende_amount: duende, status: 'pending' },
+      });
+      return json(request, { success: true, duende, dq, new_balance: balance - dq });
+    }
+
     return json(request, { error: 'unknown_action' }, 400);
   } catch (err) {
     console.error('[Wallet API]', err);

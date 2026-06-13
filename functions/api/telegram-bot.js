@@ -225,23 +225,52 @@ async function handleAdmin(token, env, context, chatId, userId) {
 
   const today = new Date(); today.setUTCHours(0, 0, 0, 0);
   const week = new Date(Date.now() - 7 * 86400000).toISOString();
-  const [scoresToday, scoresWeek, buysWeek, pendingWd, topToday] = await Promise.all([
+  const [scoresToday, scoresWeek, buysWeek, pendingWd, topToday, redemptions] = await Promise.all([
     supabaseQuery(env, `game_scores?created_at=gte.${today.toISOString()}&select=username`),
     supabaseQuery(env, `game_scores?created_at=gte.${week}&select=username`),
     supabaseQuery(env, `stars_purchases?created_at=gte.${week}&select=amount_usd,amount_stars`),
     supabaseQuery(env, `withdrawal_requests?status=eq.pending&select=tokens_burned,usd_value`),
     supabaseQuery(env, `game_scores?created_at=gte.${today.toISOString()}&select=username,score&order=score.desc&limit=1`),
+    supabaseQuery(env, `redemptions?status=eq.pending&select=id,username,wallet_sol,dq_amount,duende_amount&order=created_at.asc`),
   ]);
   const uniq = a => Array.isArray(a) ? new Set(a.map(s => (s.username || '?').toLowerCase())).size : 0;
   const n = a => Array.isArray(a) ? a.length : 0;
   const usdWeek = (Array.isArray(buysWeek) ? buysWeek : []).reduce((s, b) => s + Number(b.amount_usd || 0), 0);
   const wdUsd = (Array.isArray(pendingWd) ? pendingWd : []).reduce((s, w) => s + Number(w.usd_value || 0), 0);
   const top = Array.isArray(topToday) && topToday[0] ? `${topToday[0].username} — ${Number(topToday[0].score).toLocaleString()}` : '—';
+  // Canjes DQ → $DUENDE pendientes (con instrucciones de pago)
+  let redLines = '';
+  if (Array.isArray(redemptions) && redemptions.length) {
+    redLines = '\n\n*🎁 CANJES PENDIENTES (' + redemptions.length + ')*\n' + redemptions.slice(0, 10).map(r =>
+      `• ${r.duende_amount.toLocaleString()} \$DUENDE → \`${r.wallet_sol}\`\n   _paga y luego:_ /pay ${r.id}`
+    ).join('\n');
+  } else {
+    redLines = '\n\n🎁 Canjes pendientes: *0*';
+  }
   await tg(token, 'sendMessage', {
     chat_id: chatId,
-    text: `📊 *PANEL ADMIN — DUENDE QUEST*\n\n*Hoy*\n🎮 Partidas: *${n(scoresToday)}* · 👥 Jugadores: *${uniq(scoresToday)}*\n🏆 Top: ${top}\n\n*Últimos 7 días*\n🎮 Partidas: *${n(scoresWeek)}* · 👥 Jugadores: *${uniq(scoresWeek)}*\n⭐ Compras: *${n(buysWeek)}* (~$${usdWeek.toFixed(2)})\n\n*Pendiente*\n💸 Retiros: *${n(pendingWd)}* (~$${wdUsd.toFixed(2)})`,
+    text: `📊 *PANEL ADMIN — DUENDE QUEST*\n\n*Hoy*\n🎮 Partidas: *${n(scoresToday)}* · 👥 Jugadores: *${uniq(scoresToday)}*\n🏆 Top: ${top}\n\n*Últimos 7 días*\n🎮 Partidas: *${n(scoresWeek)}* · 👥 Jugadores: *${uniq(scoresWeek)}*\n⭐ Compras: *${n(buysWeek)}* (~$${usdWeek.toFixed(2)})\n\n*Pendiente*\n💸 Retiros TON: *${n(pendingWd)}* (~$${wdUsd.toFixed(2)})${redLines}`,
     parse_mode: 'Markdown',
   });
+}
+
+// ── /pay <id> [txsig]: marca un canje como pagado (solo admin) ──
+async function handlePay(token, env, context, chatId, userId, payload) {
+  if (String(userId) !== String(context.env.ADMIN_TG_ID || '')) return;
+  const [id, txsig] = payload.trim().split(/\s+/);
+  if (!id) { await tg(token, 'sendMessage', { chat_id: chatId, text: 'Uso: /pay <id> [firma_tx]\nVe los IDs con /admin' }); return; }
+  const rows = await supabaseQuery(env, `redemptions?id=eq.${encodeURIComponent(id)}&select=telegram_id,duende_amount,status&limit=1`);
+  const r = Array.isArray(rows) && rows[0];
+  if (!r) { await tg(token, 'sendMessage', { chat_id: chatId, text: '❌ Canje no encontrado' }); return; }
+  if (r.status === 'paid') { await tg(token, 'sendMessage', { chat_id: chatId, text: '⚠️ Ese canje ya está pagado' }); return; }
+  await supabaseQuery(env, `redemptions?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: { status: 'paid', tx_signature: txsig || '', paid_at: new Date().toISOString() } });
+  await tg(token, 'sendMessage', { chat_id: chatId, text: `✅ Canje marcado como PAGADO: ${Number(r.duende_amount).toLocaleString()} $DUENDE` });
+  // avisar al jugador
+  if (r.telegram_id && /^\d+$/.test(String(r.telegram_id))) {
+    try {
+      await tg(token, 'sendMessage', { chat_id: r.telegram_id, text: `🎉 *¡Tu canje fue enviado!*\n\n💎 ${Number(r.duende_amount).toLocaleString()} $DUENDE están en camino a tu wallet${txsig ? `\n🔗 https://solscan.io/tx/${txsig}` : ''}\n\n¡Gracias por jugar, duende! 🧝`, parse_mode: 'Markdown' });
+    } catch (e) {}
+  }
 }
 
 // ── /live: anuncia tu stream en Discord + canal de Telegram (solo admin) ──
@@ -414,6 +443,7 @@ async function onRequestPost(context) {
         case '/help': case '/ayuda': await handleHelp(token, chatId); break;
         case '/admin': await handleAdmin(token, env, context, chatId, user.id); break;
         case '/live': case '/envivo': await handleLive(token, env, context, chatId, user.id, payload); break;
+        case '/pay': case '/pagar': await handlePay(token, env, context, chatId, user.id, payload); break;
         case '/announce': case '/anuncio': {
           if (String(user.id) !== String(context.env.ADMIN_TG_ID || '')) break; // solo admin
           if (!payload.trim()) { await tg(token, 'sendMessage', { chat_id: chatId, text: 'Uso: /announce tu mensaje aquí — se publica en Discord #anuncios' }); break; }
