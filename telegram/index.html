@@ -104,7 +104,8 @@ body{display:flex;flex-direction:column;align-items:center;font-family:"Press St
     <div class="ov-sub">⚔ TOCA PARA SALTAR · BOTONES ABAJO<br>COMBOS · DASH · ITEMS · BOSSES</div>
     <div id="start-rank-list" style="width:100%;max-width:320px;margin-bottom:.8rem"></div>
     <div id="streak-banner" style="width:100%;max-width:320px;font-size:.3rem;padding:.4rem .7rem;background:rgba(255,153,0,.05);border:1px solid rgba(255,153,0,.18);border-radius:3px;margin-bottom:.4rem;line-height:1.6"></div>
-    <div id="daily-missions" style="width:100%;max-width:320px;background:rgba(255,230,0,.04);border:1px solid rgba(255,230,0,.15);border-radius:3px;padding:.5rem .7rem;margin-bottom:.6rem"></div>
+    <div id="daily-missions" style="width:100%;max-width:320px;background:rgba(255,230,0,.04);border:1px solid rgba(255,230,0,.15);border-radius:3px;padding:.5rem .7rem;margin-bottom:.4rem"></div>
+    <div id="achievements-panel" style="width:100%;max-width:320px;background:rgba(255,179,64,.04);border:1px solid rgba(255,179,64,.15);border-radius:3px;padding:.5rem .7rem;margin-bottom:.6rem"></div>
     <button class="ob" onclick="startGame()">▶ JUGAR</button>
     <button class="ob purple" onclick="openPumpFun()">🚀 COMPRAR $DUENDE</button>
     <button class="ob" onclick="openSkinShop()" style="background:linear-gradient(135deg,#c084fc,#7c3aed);color:#fff;font-size:.45rem">🎨 SKINS SHOP</button>
@@ -186,7 +187,10 @@ body{display:flex;flex-direction:column;align-items:center;font-family:"Press St
       <div style="display:flex;justify-content:space-between;font-size:.32rem;padding:6px 0;border-top:1px solid rgba(255,255,255,.07)">
         <span style="color:rgba(255,255,255,.5)">DQ canjeable</span><span style="color:#ffe600" id="redeem-balance">—</span>
       </div>
-      <div style="font-size:.26rem;color:rgba(255,255,255,.35);text-align:center;line-height:1.9;padding:4px 0">Se gana jugando (máx. 3,000 DQ al día). Es aparte de tus DQ de progreso, que sirven para revivir y skins.</div>
+      <div style="display:flex;justify-content:space-between;font-size:.28rem;padding:6px 0;border-top:1px solid rgba(255,255,255,.07)">
+        <span style="color:rgba(255,255,255,.4)">Ganado hoy</span><span style="color:rgba(255,255,255,.6)" id="redeem-today">—</span>
+      </div>
+      <div style="font-size:.26rem;color:rgba(255,255,255,.35);text-align:center;line-height:1.9;padding:4px 0">Se gana jugando, hasta 3,000 DQ al día. Es aparte de tus DQ de progreso, que sirven para revivir y comprar skins.</div>
       <div style="display:flex;justify-content:space-between;font-size:.32rem;padding:6px 0;border-top:1px solid rgba(255,255,255,.07)">
         <span style="color:rgba(255,255,255,.5)">Tasa</span><span style="color:#00ff88">1,000 DQ = 1 $DUENDE</span>
       </div>
@@ -830,6 +834,10 @@ async function openRedeem(){
       tgProfile=res.profile;
       dqRedeemable=Number(res.profile.dq_redeemable||0);
       bal.textContent=dqRedeemable.toLocaleString()+' DQ';
+      // el contador diario solo cuenta si es de hoy (el servidor lo resetea al acreditar)
+      const today=new Date().toISOString().slice(0,10);
+      const used=res.profile.dq_earn_day===today?Number(res.profile.dq_earn_today||0):0;
+      document.getElementById('redeem-today').textContent=used.toLocaleString()+' / 3,000 DQ';
     }
   }catch(e){}
 }
@@ -1255,6 +1263,7 @@ DQStreak.check();
 // Logros
 DQAch.onReward=a=>{ totalCoins+=a.reward; tgHaptic('heavy'); };
 DQAch.notify=msg=>{ showPUNotif(msg); try{playSound('achievement');}catch(e){} };
+DQAch.init();
 
 // Compartir score (Telegram share nativo)
 function shareScore(){

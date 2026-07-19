@@ -7,19 +7,20 @@
   'use strict';
 
   const LIST = [
-    { id: 'first_blood', desc: 'Primer enemigo derrotado', reward: 10 },
-    { id: 'wave5',  desc: 'Llega a la WAVE 5',     reward: 25 },
-    { id: 'wave10', desc: 'Llega a la WAVE 10',    reward: 60 },
-    { id: 'wave20', desc: 'Llega a la WAVE 20',    reward: 150 },
-    { id: 'boss1',  desc: 'Derrota tu primer BOSS', reward: 50 },
-    { id: 'kills100', desc: '100 enemigos en total', reward: 40 },
-    { id: 'kills1000', desc: '1,000 enemigos en total', reward: 200 },
-    { id: 'combo10', desc: 'Combo x5 alcanzado',   reward: 30 },
-    { id: 'rich', desc: 'Junta 100 monedas en una partida', reward: 35 },
+    { id: 'first_blood', icon: '⚔️', desc: 'Primer enemigo derrotado', reward: 10 },
+    { id: 'wave5',  icon: '🌊', desc: 'Llega a la WAVE 5',     reward: 25 },
+    { id: 'wave10', icon: '🌊', desc: 'Llega a la WAVE 10',    reward: 60 },
+    { id: 'wave20', icon: '🔱', desc: 'Llega a la WAVE 20',    reward: 150 },
+    { id: 'boss1',  icon: '👹', desc: 'Derrota tu primer BOSS', reward: 50 },
+    { id: 'kills100', icon: '💀', desc: '100 enemigos en total', reward: 40 },
+    { id: 'kills1000', icon: '☠️', desc: '1,000 enemigos en total', reward: 200 },
+    { id: 'combo10', icon: '🔥', desc: 'Combo x5 alcanzado',   reward: 30 },
+    { id: 'rich', icon: '💰', desc: 'Junta 100 monedas en una partida', reward: 35 },
   ];
   const META = LIST.reduce((m, a) => (m[a.id] = a, m), {});
 
   const DQAch = {
+    elId: 'achievements-panel',
     onReward: null,  // function(ach) — acreditar ach.reward
     notify: null,    // function(msg)
     _done: null,
@@ -38,6 +39,7 @@
       localStorage.setItem('dq_ach', JSON.stringify(this._done));
       if (typeof this.onReward === 'function') this.onReward(a);
       if (typeof this.notify === 'function') this.notify('🏅 LOGRO: ' + a.desc + ' (+' + a.reward + ' DQ)');
+      this.render();
     },
     // eventos que llama el motor
     onKill() {
@@ -53,6 +55,27 @@
     onCombo(mult) { if (mult >= 5) this.unlock('combo10'); },
     onSessionCoins(c) { if (c >= 100) this.unlock('rich'); },
     list() { this._load(); return LIST.map(a => ({ ...a, done: !!this._done[a.id] })); },
+
+    // Fila compacta de medallas en la pantalla de inicio: las conseguidas
+    // brillan, las que faltan quedan en gris con su pista al tocarlas.
+    render() {
+      const el = document.getElementById(this.elId);
+      if (!el) return;
+      const items = this.list();
+      const got = items.filter(a => a.done).length;
+      el.innerHTML =
+        '<div style="display:flex;justify-content:space-between;font-size:.32rem;color:#ffb340;letter-spacing:.1em;margin-bottom:.35rem">' +
+          '<span>🏅 LOGROS</span><span>' + got + '/' + items.length + '</span>' +
+        '</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:.3rem">' +
+          items.map(a => '<span title="' + a.desc + (a.done ? '' : ' (+' + a.reward + ' DQ)') + '" ' +
+            'style="font-size:.55rem;line-height:1;padding:.25rem;border-radius:3px;' +
+            (a.done ? 'background:rgba(255,179,64,.15);filter:none' : 'background:rgba(255,255,255,.03);filter:grayscale(1);opacity:.35') +
+            '">' + a.icon + '</span>').join('') +
+        '</div>';
+    },
+
+    init() { this._load(); this.render(); },
   };
 
   global.DQAch = DQAch;

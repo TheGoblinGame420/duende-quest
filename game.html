@@ -152,7 +152,8 @@ body{display:flex;flex-direction:column;align-items:center;justify-content:cente
     <div class="ov-title" style="color:#00ff88">🧝 DUENDE QUEST</div>
     <div id="menu-user-info"></div>
     <div id="streak-banner" style="width:100%;max-width:380px;font-size:.3rem;padding:.4rem .7rem;background:rgba(255,153,0,.05);border:1px solid rgba(255,153,0,.18);border-radius:3px;margin-bottom:.4rem;line-height:1.6"></div>
-    <div id="daily-missions" style="width:100%;max-width:380px;background:rgba(255,230,0,.04);border:1px solid rgba(255,230,0,.15);border-radius:3px;padding:.5rem .7rem;margin-bottom:.6rem"></div>
+    <div id="daily-missions" style="width:100%;max-width:380px;background:rgba(255,230,0,.04);border:1px solid rgba(255,230,0,.15);border-radius:3px;padding:.5rem .7rem;margin-bottom:.4rem"></div>
+    <div id="achievements-panel" style="width:100%;max-width:380px;background:rgba(255,179,64,.04);border:1px solid rgba(255,179,64,.15);border-radius:3px;padding:.5rem .7rem;margin-bottom:.6rem"></div>
     <div class="ov-sub">
       ← → MOVER &nbsp; ESPACIO / ↑ SALTAR (2x DOBLE)<br>
       Z / CLICK → COMBO ATAQUE (3 hits)<br>
@@ -814,6 +815,7 @@ DQStreak.check();
 // Logros
 DQAch.onReward=a=>{ totalCoins+=a.reward; saveProgress(); };
 DQAch.notify=msg=>{ showPUNotif(msg); playSound('achievement'); };
+DQAch.init();
 
 // Compartir score (web: X/Twitter + copiar)
 function shareScore(){
