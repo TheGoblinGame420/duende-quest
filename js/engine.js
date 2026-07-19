@@ -162,6 +162,10 @@ function playSound(type) {
     else if (type === 'levelup') { [261, 329, 392, 523].forEach((f, i) => { const o2 = ac.createOscillator(), g2 = ac.createGain(); o2.connect(g2); g2.connect(ac.destination); o2.frequency.value = f; g2.gain.setValueAtTime(.12, now + i * .08); g2.gain.exponentialRampToValueAtTime(.001, now + i * .08 + .15); o2.start(now + i * .08); o2.stop(now + i * .08 + .15); }); return; }
     else if (type === 'boss') { o.type = 'sawtooth'; o.frequency.setValueAtTime(60, now); g.gain.setValueAtTime(.3, now); g.gain.exponentialRampToValueAtTime(.001, now + .4); o.start(now); o.stop(now + .4); }
     else if (type === 'die') { o.type = 'sawtooth'; o.frequency.setValueAtTime(200, now); o.frequency.exponentialRampToValueAtTime(30, now + .5); g.gain.setValueAtTime(.3, now); g.gain.exponentialRampToValueAtTime(.001, now + .5); o.start(now); o.stop(now + .5); }
+    else if (type === 'powerup') { // arpegio ascendente brillante
+      [523, 659, 784, 1047].forEach((f, i) => { const o2 = ac.createOscillator(), g2 = ac.createGain(); o2.type = 'triangle'; o2.connect(g2); g2.connect(ac.destination); o2.frequency.value = f; g2.gain.setValueAtTime(.13, now + i * .05); g2.gain.exponentialRampToValueAtTime(.001, now + i * .05 + .18); o2.start(now + i * .05); o2.stop(now + i * .05 + .18); }); return; }
+    else if (type === 'achievement') { // fanfarria de logro
+      [659, 784, 988, 1319].forEach((f, i) => { const o2 = ac.createOscillator(), g2 = ac.createGain(); o2.type = 'square'; o2.connect(g2); g2.connect(ac.destination); o2.frequency.value = f; g2.gain.setValueAtTime(.1, now + i * .1); g2.gain.exponentialRampToValueAtTime(.001, now + i * .1 + .25); o2.start(now + i * .1); o2.stop(now + i * .1 + .25); }); return; }
   } catch (e) {}
 }
 
@@ -193,6 +197,19 @@ let chests = [], weaponDrops = [];
 let bgStars = [], bgMtns = [], bgClouds = [];
 let groundX = 0;
 let weaponBuff = null;
+// ── POWER-UPS temporales que caen del cielo ──
+let powerups = [];               // drops en pantalla
+let puMagnet = 0, puDouble = 0;  // timers activos (frames)
+const PU_TYPES = {
+  magnet: { emoji: '🧲', color: '#00eeff', dur: 360, label: '🧲 IMÁN DE MONEDAS!' },
+  double: { emoji: '✖️2', color: '#ffe600', dur: 360, label: '✖️2 PUNTOS DOBLES!' },
+  shield: { emoji: '🛡️', color: '#00ff88', dur: 300, label: '🛡️ ESCUDO!' },
+};
+function spawnPowerup() {
+  const keys = Object.keys(PU_TYPES);
+  const type = keys[Math.floor(Math.random() * keys.length)];
+  powerups.push({ x: W + 20, y: GY - 60 - Math.random() * 90, w: 34, h: 34, type, bob: Math.random() * Math.PI * 2, spd: gameSpeed * .55 });
+}
 let comboCount = 0, comboTimer = 0, comboMultiplier = 1;
 let killStreak = 0, killStreakTimer = 0;
 let shakeAmt = 0, shakeTimer = 0;
@@ -319,8 +336,8 @@ function killAllEnemies() {
     spawnPFX(e.x + e.w / 2, e.y + e.h / 2, '#00eeff', 20, 7);
     spawnFT(e.x, e.y - 10, '+' + Math.floor(pts), '#00eeff');
     for (let c = 0; c < (e.isBoss ? 4 : e.isMagmar ? 2 : 1); c++) spawnCoin(e.x + Math.random() * e.w, e.y);
-    missionEvent('kill', 1);
-    if (e.isBoss) missionEvent('boss', 1);
+    missionEvent('kill', 1); achEvent('onKill');
+    if (e.isBoss) { missionEvent('boss', 1); achEvent('onBoss'); }
   });
   enemies = [];
   bossActive = false;
@@ -361,11 +378,13 @@ function hitCombo(pts) {
   comboCount++;
   comboTimer = COMBO_WINDOW;
   comboMultiplier = Math.min(1 + Math.floor(comboCount / 3) * .5, 5);
+  achEvent('onCombo', comboMultiplier);
   const total = Math.floor(pts * comboMultiplier);
   addScore(total);
   return total;
 }
 function missionEvent(type, val) { try { window.DQMissions && DQMissions.event(type, val); } catch (e) {} }
+function achEvent(fn, val) { try { window.DQAch && DQAch[fn] && DQAch[fn](val); } catch (e) {} }
 
 // ── HUD ──
 function updateItemHUD(i) {
@@ -408,6 +427,7 @@ function update() {
     gameSpeed = baseSpeed + wave * .35;
     spawnFT(W / 2 - 80, 70, '— WAVE ' + wave + ' —', '#ffe600', true);
     missionEvent('wave', wave);
+    achEvent('onWave', wave);
     showPUNotif('🌊 WAVE ' + wave + ' — VELOCIDAD UP!');
     shake(6);
     if (wave % 3 === 0) spawnEnemy(true);
@@ -534,8 +554,8 @@ function update() {
       if (killStreak === 3) showPUNotif('🔥 3 KILLS - RACHA!');
       else if (killStreak === 5) { showPUNotif('☄️ 5 KILLS - IMPARABLE!'); shake(5); }
       else if (killStreak === 10) { showPUNotif('⚡ 10 KILLS - LEGENDARIO!'); shake(8); addXP(50); }
-      missionEvent('kill', 1);
-      if (e.isBoss) { bossActive = false; bossKilled++; missionEvent('boss', 1); spawnFT(e.x, e.y - 30, 'BOSS MUERTO!', '#ff00cc', true); playSound('boss'); addXP(80); _hap('heavy'); }
+      missionEvent('kill', 1); achEvent('onKill');
+      if (e.isBoss) { bossActive = false; bossKilled++; missionEvent('boss', 1); achEvent('onBoss'); spawnFT(e.x, e.y - 30, 'BOSS MUERTO!', '#ff00cc', true); playSound('boss'); addXP(80); _hap('heavy'); }
       else { addXP(e.isMagmar ? 30 : e.isCharger ? 20 : e.isExploder ? 15 : 10); playSound('hit'); _hap('medium'); }
       spawnPFX(e.x + e.w / 2, e.y + e.h / 2, e.isBoss ? '#ff00cc' : e.isMagmar ? '#ff4400' : e.isCharger ? '#ff9900' : '#ff3333', e.isBoss ? 35 : e.isMagmar ? 28 : 20, e.isBoss ? 9 : 6);
       const coinDrop = e.isBoss ? 5 : e.isMagmar ? 3 : e.isCharger ? 2 : 1;
@@ -593,8 +613,8 @@ function update() {
           spawnFT(e.x, e.y - 15, '+' + pts, '#ff6400');
           if (e.hp <= 0) {
             spawnPFX(e.x + e.w / 2, e.y + e.h / 2, e.isMagmar ? '#ff4400' : '#ff6400', 20, 6);
-            missionEvent('kill', 1);
-            if (e.isBoss) { bossActive = false; missionEvent('boss', 1); }
+            missionEvent('kill', 1); achEvent('onKill');
+            if (e.isBoss) { bossActive = false; missionEvent('boss', 1); achEvent('onBoss'); }
             const cd = e.isBoss ? 4 : e.isMagmar ? 2 : 1;
             for (let c = 0; c < cd; c++) spawnCoin(e.x + Math.random() * e.w, e.y);
             if (e.isBoss || e.isMagmar) {
@@ -632,17 +652,21 @@ function update() {
     const dx = PL.x + PL.w / 2 - (c.x + c.w / 2);
     const dy = PL.y + PL.h / 2 - (c.y + c.h / 2);
     const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist < 90) { c.x += dx * .12; c.y += dy * .12; }
+    // imán activo: rango y fuerza mucho mayores
+    const range = puMagnet > 0 ? 320 : 90;
+    const pull = puMagnet > 0 ? .25 : .12;
+    if (dist < range) { c.x += dx * pull; c.y += dy * pull; }
     if (overlap({ x: PL.x + 4, y: PL.y + 4, w: PL.w - 8, h: PL.h - 8 }, c)) {
       const coinVal = Math.ceil(1 * skinCoinMult);
       sessionCoins += coinVal;
       totalCoins += coinVal;
       missionEvent('coin', 1);
-      addScore(Math.floor(10 * comboMultiplier * skinCoinMult));
+      addScore(Math.floor(10 * comboMultiplier * skinCoinMult * (puDouble > 0 ? 2 : 1)));
       addXP(5);
       playSound('coin');
       spawnPFX(c.x + c.w / 2, c.y + c.h / 2, '#ffe600', 6, 3, 3);
       if (totalCoins % 10 === 0) spawnFT(PL.x, PL.y - 20, 'x' + comboMultiplier + ' COINS!', '#ffe600');
+      achEvent('onSessionCoins', sessionCoins);
       updateHUD();
       return false;
     }
@@ -697,6 +721,27 @@ function update() {
   });
   if (weaponBuff) { weaponBuff.timer--; if (weaponBuff.timer <= 0) weaponBuff = null; }
 
+  // ── POWER-UPS ──
+  if (puMagnet > 0) puMagnet--;
+  if (puDouble > 0) puDouble--;
+  if (frame % 900 === 0 && frame > 0) spawnPowerup(); // ~cada 15s
+  powerups = powerups.filter(pu => {
+    pu.x -= pu.spd > 0 ? pu.spd : gameSpeed * .55;
+    pu.bob += .08; pu.y += Math.sin(pu.bob) * .6;
+    if (overlap({ x: PL.x, y: PL.y, w: PL.w, h: PL.h }, pu)) {
+      const def = PU_TYPES[pu.type];
+      if (pu.type === 'magnet') puMagnet = def.dur;
+      else if (pu.type === 'double') puDouble = def.dur;
+      else if (pu.type === 'shield') { PL.shieldOn = true; PL.shieldTimer = def.dur; PL.invTimer = Math.max(PL.invTimer, def.dur); }
+      showPUNotif(def.label);
+      spawnFT(pu.x, pu.y - 10, def.emoji, def.color, true);
+      spawnPFX(pu.x + pu.w / 2, pu.y + pu.h / 2, def.color, 20, 5, 5);
+      playSound('powerup'); _hap('heavy');
+      return false;
+    }
+    return pu.x > -50;
+  });
+
   // ── PARTICLES / TEXT ──
   particles = particles.filter(p => { p.x += p.vx; p.y += p.vy; if (!p.ring) p.vy += .12; p.life -= p.decay; if (p.ring) p.sz += 4; return p.life > 0; });
   fTexts = fTexts.filter(t => { t.y += t.vy; t.life -= t.decay; return t.life > 0; });
@@ -743,6 +788,14 @@ const BIOMES = [
 ];
 function currentBiome() { return BIOMES[Math.floor((wave - 1) / 5) % BIOMES.length]; }
 
+function drawPuTimer(x, emoji, pct, color) {
+  cx.save();
+  cx.fillStyle = 'rgba(0,0,0,.5)'; cx.fillRect(x, 8, 38, 22);
+  cx.fillStyle = color; cx.fillRect(x, 28, 38 * Math.max(0, pct), 3);
+  cx.font = '13px sans-serif'; cx.textAlign = 'center'; cx.textBaseline = 'middle';
+  cx.fillStyle = '#fff'; cx.fillText(emoji, x + 19, 18);
+  cx.restore();
+}
 function draw() {
   const sx = (shakeAmt > 0 ? Math.round((Math.random() - .5) * shakeAmt * 2) : 0);
   const sy = (shakeAmt > 0 ? Math.round((Math.random() - .5) * shakeAmt * 2) : 0);
@@ -805,6 +858,25 @@ function draw() {
     cx.drawImage(IMG_EL[w.type], w.x, w.y, w.w, w.h);
     cx.restore();
   });
+
+  // Power-ups (burbuja con emoji)
+  powerups.forEach(pu => {
+    const def = PU_TYPES[pu.type];
+    const pulse = Math.sin(frame * .15) * .15 + .9;
+    cx.save();
+    cx.shadowColor = def.color; cx.shadowBlur = 14;
+    cx.fillStyle = 'rgba(0,0,0,.35)';
+    cx.beginPath(); cx.arc(pu.x + pu.w / 2, pu.y + pu.h / 2, pu.w / 2 * pulse, 0, Math.PI * 2); cx.fill();
+    cx.strokeStyle = def.color; cx.lineWidth = 2; cx.stroke();
+    cx.shadowBlur = 0; cx.font = '18px sans-serif'; cx.textAlign = 'center'; cx.textBaseline = 'middle';
+    cx.fillStyle = '#fff';
+    cx.fillText(def.emoji, pu.x + pu.w / 2, pu.y + pu.h / 2 + 1);
+    cx.restore();
+  });
+  // Indicador de power-ups activos (esquina sup. izquierda del canvas)
+  let pux = 8;
+  if (puMagnet > 0) { drawPuTimer(pux, '🧲', puMagnet / PU_TYPES.magnet.dur, '#00eeff'); pux += 44; }
+  if (puDouble > 0) { drawPuTimer(pux, '✖️2', puDouble / PU_TYPES.double.dur, '#ffe600'); pux += 44; }
 
   // Particles
   particles.forEach(p => {
@@ -1010,6 +1082,7 @@ function startGame() {
   killStreak = 0; killStreakTimer = 0;
   enemies = []; coins = []; bullets = []; particles = []; fTexts = [];
   chests = []; weaponDrops = []; weaponBuff = null;
+  powerups = []; puMagnet = 0; puDouble = 0;
   shakeAmt = 0; shakeTimer = 0;
   const bHp = _buffs()?.bonusHp || 0;
   Object.assign(PL, { x: 80, y: GY, vx: 0, vy: 0, onGround: false, jumping: false, djUsed: false, coyoteTimer: 0, jumpBuffer: 0, dashing: false, dashTimer: 0, dashDir: 1, dashCd: 0, comboStep: 0, comboTimer: 0, attackTimer: 0, attackCd: 0, attackHitbox: { x: 0, y: 0, w: 0, h: 0, active: false }, slamming: false, slamTimer: 0, hp: 100 + bHp, maxHp: 100 + bHp, invTimer: 0, shieldOn: false, shieldTimer: 0, fireOn: false, fireTimer: 0, lightTimer: 0, flashTimer: 0, facing: 1, animTimer: 0, runFrame: 0, items: [[3, 0, 90], [2, 0, 120], [1, 0, 150], [1, 0, 180]] });
