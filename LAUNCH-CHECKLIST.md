@@ -36,8 +36,9 @@
 
 ## 📣 Para lanzar (te toca a ti)
 
-0. **Dos pasos de configuración** (una vez):
+0. **Tres pasos de configuración** (una vez):
    - Ejecuta `sql/cloud-save.sql` en el SQL Editor de Supabase (columnas del guardado en la nube)
+   - Ejecuta `sql/redeemable-balance.sql` **antes de abrir el canje a nadie** (saldo canjeable server-side; sin esto el canje no funciona)
    - `npx wrangler secret put ADMIN_TG_ID` con tu ID de Telegram (envía `/admin` al bot y te lo dice)
 
 1. **Smoke test humano** (10 min): juega 1 partida completa en Telegram y 1 en web; compra el paquete Starter con Stars (verás el 2x) y confirma que se acredita.

@@ -7,8 +7,9 @@
 //   2. Payment   → TON transfer verified on-chain via toncenter
 //   3. Amounts   → computed server-side from live prices
 //   4. Replay    → tx hash recorded in ton_credits (unique)
-//
-// Actions: ton_buy | ton_stake | ton_sell | skin_ton
+//   5. Canje DQ  → se paga contra dq_redeemable, que solo crece aquí al
+//                  recibir partidas (tope por partida y por día). El saldo
+//                  del cloud save (dq_coins) es cosmético y no da dinero.
 // ═══════════════════════════════════════════════════════
 
 import {
@@ -18,6 +19,19 @@ import {
 
 const MIN_PURCHASE_USD = 10;
 const STAKE_LOCKS = { 7: 1, 30: 1.5, 90: 2.5 };
+
+// ── Economía del canje DQ → $DUENDE ──
+// El saldo canjeable NO es el del cloud save (ese lo manda el cliente y no es
+// de fiar): se acumula aquí, partida a partida, con tope por partida y por día.
+const DQ_PER_DUENDE = 1000;
+const DQ_MIN_REDEEM = 5000;
+const DQ_CAP_PER_GAME = 1500;  // techo duro de una sola partida
+const DQ_CAP_PER_DAY = 3000;   // techo diario (≈3 $DUENDE/día jugando en serio)
+
+// DQ plausible de una partida: las monedas escalan con las waves sobrevividas.
+function plausibleDq(coins, wave) {
+  return Math.max(0, Math.min(coins, 60 + wave * 30, DQ_CAP_PER_GAME));
+}
 
 async function alreadyCredited(env, txHash) {
   const rows = await supabaseQuery(env, `ton_credits?tx_hash=eq.${encodeURIComponent(txHash)}&select=id`);
@@ -205,12 +219,26 @@ async function onRequestPost(context) {
           total_coins: Number(p.total_coins || 0) + coins,
         },
       });
-      return json(request, { success: true });
+
+      // DQ canjeable: única vía de entrada, acotada por partida y por día
+      let granted = 0;
+      try {
+        const day = new Date().toISOString().slice(0, 10);
+        const res = await supabaseQuery(env, 'rpc/accrue_dq', {
+          method: 'POST',
+          body: { p_tg_id: tgId, p_amount: plausibleDq(coins, wave), p_day: day, p_daily_cap: DQ_CAP_PER_DAY },
+        });
+        granted = Number(Array.isArray(res) ? res[0] : res) || 0;
+      } catch (e) {
+        console.error('[accrue_dq]', e);
+      }
+      return json(request, { success: true, dq_granted: granted });
     }
 
     // ── CLOUD SAVE: sincroniza progreso DQ del jugador (Telegram) ──
-    // El servidor solo acepta valores con límites de cordura y nunca BAJA
-    // el saldo guardado (el gasto legítimo viene acompañado del nuevo total).
+    // OJO: estos valores los manda el cliente y son SOLO cosméticos (que no se
+    // pierda el progreso al cambiar de teléfono). El dinero real vive en
+    // dq_redeemable, que solo crece desde submit_score. No mezclar los dos.
     if (action === 'sync_progress') {
       const user = await verifyInitData(body.init_data, env.BOT_TOKEN);
       if (!user?.id) return json(request, { error: 'auth_failed' }, 401);
@@ -227,38 +255,39 @@ async function onRequestPost(context) {
     }
 
     // ── CANJE DQ → $DUENDE (manual semanal) ──
-    // 1000 DQ = 1 $DUENDE. Mínimo configurable. Descuenta DQ del saldo en la nube
-    // y registra la solicitud como 'pending' para que el admin la pague.
+    // 1000 DQ = 1 $DUENDE. Se paga SOLO contra dq_redeemable (ganado partida a
+    // partida en el servidor), nunca contra el saldo del cloud save.
     if (action === 'request_redemption') {
       const user = await verifyInitData(body.init_data, env.BOT_TOKEN);
       if (!user?.id) return json(request, { error: 'auth_failed' }, 401);
       const tgId = String(user.id);
-      const DQ_PER_DUENDE = 1000;
-      const MIN_DQ = 5000; // mínimo para canjear (evita spam de micro-canjes)
       const wallet = String(body.wallet_sol || '').trim();
       const dq = Math.floor(+body.dq_amount || 0);
 
       if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(wallet)) return json(request, { error: 'bad_wallet', detail: 'Dirección Solana inválida' }, 400);
-      if (dq < MIN_DQ) return json(request, { error: 'below_minimum', detail: `Mínimo ${MIN_DQ.toLocaleString()} DQ` }, 400);
+      if (dq < DQ_MIN_REDEEM) return json(request, { error: 'below_minimum', detail: `Mínimo ${DQ_MIN_REDEEM.toLocaleString()} DQ` }, 400);
       if (dq % DQ_PER_DUENDE !== 0) return json(request, { error: 'bad_amount', detail: `Múltiplos de ${DQ_PER_DUENDE} DQ` }, 400);
-
-      // saldo real desde el perfil (cloud save)
-      const profiles = await supabaseQuery(env, `profiles?telegram_id=eq.${tgId}&select=dq_coins,username`);
-      const balance = Number(profiles?.[0]?.dq_coins || 0);
-      if (dq > balance) return json(request, { error: 'insufficient', detail: `Saldo: ${balance.toLocaleString()} DQ`, balance }, 400);
 
       // una solicitud pendiente a la vez
       const open = await supabaseQuery(env, `redemptions?telegram_id=eq.${tgId}&status=eq.pending&select=id&limit=1`);
       if (Array.isArray(open) && open.length > 0) return json(request, { error: 'already_pending', detail: 'Ya tienes un canje pendiente' }, 409);
 
+      // descuento atómico: si no alcanza, no toca nada y devuelve -1
+      const rpc = await supabaseQuery(env, 'rpc/redeem_dq', { method: 'POST', body: { p_tg_id: tgId, p_dq: dq } });
+      const newBalance = Number(Array.isArray(rpc) ? rpc[0] : rpc);
+      if (!Number.isFinite(newBalance) || newBalance < 0) {
+        const profiles = await supabaseQuery(env, `profiles?telegram_id=eq.${tgId}&select=dq_redeemable`);
+        const balance = Number(profiles?.[0]?.dq_redeemable || 0);
+        return json(request, { error: 'insufficient', detail: `Saldo canjeable: ${balance.toLocaleString()} DQ`, balance }, 400);
+      }
+
       const duende = dq / DQ_PER_DUENDE;
-      // descontar DQ (server-side) y registrar
-      await supabaseQuery(env, `profiles?telegram_id=eq.${tgId}`, { method: 'PATCH', body: { dq_coins: balance - dq } });
+      const profiles = await supabaseQuery(env, `profiles?telegram_id=eq.${tgId}&select=username`);
       await supabaseQuery(env, 'redemptions', {
         method: 'POST',
         body: { telegram_id: tgId, username: profiles?.[0]?.username || '', wallet_sol: wallet, dq_amount: dq, duende_amount: duende, status: 'pending' },
       });
-      return json(request, { success: true, duende, dq, new_balance: balance - dq });
+      return json(request, { success: true, duende, dq, new_balance: newBalance });
     }
 
     return json(request, { error: 'unknown_action' }, 400);

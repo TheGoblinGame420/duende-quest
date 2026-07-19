@@ -184,8 +184,9 @@ body{display:flex;flex-direction:column;align-items:center;font-family:"Press St
     <div style="background:rgba(0,255,136,.05);border:1px solid rgba(0,255,136,.2);border-radius:6px;padding:14px;width:100%;max-width:330px;margin-bottom:12px">
       <div style="font-size:.3rem;color:rgba(255,255,255,.5);text-align:center;line-height:1.9;margin-bottom:8px">Convierte los DQ que ganaste jugando en <b style="color:#00ff88">$DUENDE real</b> en tu wallet de Solana.</div>
       <div style="display:flex;justify-content:space-between;font-size:.32rem;padding:6px 0;border-top:1px solid rgba(255,255,255,.07)">
-        <span style="color:rgba(255,255,255,.5)">Tu saldo DQ</span><span style="color:#ffe600" id="redeem-balance">—</span>
+        <span style="color:rgba(255,255,255,.5)">DQ canjeable</span><span style="color:#ffe600" id="redeem-balance">—</span>
       </div>
+      <div style="font-size:.26rem;color:rgba(255,255,255,.35);text-align:center;line-height:1.9;padding:4px 0">Se gana jugando (máx. 3,000 DQ al día). Es aparte de tus DQ de progreso, que sirven para revivir y skins.</div>
       <div style="display:flex;justify-content:space-between;font-size:.32rem;padding:6px 0;border-top:1px solid rgba(255,255,255,.07)">
         <span style="color:rgba(255,255,255,.5)">Tasa</span><span style="color:#00ff88">1,000 DQ = 1 $DUENDE</span>
       </div>
@@ -406,11 +407,16 @@ async function tgLogin(){
   tgProfile={username,telegram_id:tgId,best_score:0,total_coins:0};
   updateLoginUI();
 }
+// Saldo canjeable por $DUENDE. NO es totalCoins (ese es progreso local y lo
+// manda el cliente): lo lleva el servidor partida a partida, con tope diario.
+let dqRedeemable=0;
+
 tgLogin();
 
 // ── CLOUD SAVE: la nube manda si tiene más progreso (cambio de dispositivo) ──
 function mergeCloudSave(p){
   try{
+    dqRedeemable=Number(p.dq_redeemable||0);
     let local={};
     try{local=JSON.parse(localStorage.getItem('dq_save')||'{}');}catch(e){}
     const cloudCoins=Number(p.dq_coins||0);
@@ -812,11 +818,20 @@ async function buySkinTon(skinId){
 let exMode='buy';
 
 // ── CANJE DQ → $DUENDE ──
-function openRedeem(){
+async function openRedeem(){
   showOverlay('ov-redeem');
-  document.getElementById('redeem-balance').textContent=Number(totalCoins||0).toLocaleString()+' DQ';
+  const bal=document.getElementById('redeem-balance');
+  bal.textContent=Number(dqRedeemable||0).toLocaleString()+' DQ';
   document.getElementById('redeem-status').textContent='';
   const w=document.getElementById('redeem-wallet'); if(w&&!w.value&&window._phantomPubkey) w.value=window._phantomPubkey;
+  try{
+    const res=await walletApi('link_profile',{});
+    if(res.success&&res.profile){
+      tgProfile=res.profile;
+      dqRedeemable=Number(res.profile.dq_redeemable||0);
+      bal.textContent=dqRedeemable.toLocaleString()+' DQ';
+    }
+  }catch(e){}
 }
 document.getElementById('redeem-amount')?.addEventListener('input',function(){
   const dq=parseInt(this.value)||0;
@@ -831,8 +846,8 @@ async function submitRedeem(){
   st.textContent='⏳ Procesando solicitud...'; st.style.color='rgba(255,255,255,.6)';
   const res=await walletApi('request_redemption',{wallet_sol:wallet,dq_amount:dq});
   if(res.success){
-    totalCoins=res.new_balance; saveProgress&&saveProgress();
-    document.getElementById('redeem-balance').textContent=Number(totalCoins).toLocaleString()+' DQ';
+    dqRedeemable=Number(res.new_balance||0);
+    document.getElementById('redeem-balance').textContent=dqRedeemable.toLocaleString()+' DQ';
     st.innerHTML='✅ <b>¡Canje solicitado!</b><br>'+Number(res.duende).toLocaleString()+' $DUENDE llegarán a tu wallet en los próximos días (pago manual semanal).';
     st.style.color='#00ff88'; tgHaptic('heavy');
     document.getElementById('redeem-amount').value='';
@@ -1177,6 +1192,9 @@ async function submitTGScore(){
     if(res.success){
       tgProfile.best_score=Math.max(tgProfile.best_score||0,Math.floor(score));
       tgProfile.games_played=(tgProfile.games_played||0)+1;
+      // DQ canjeable que el servidor acreditó por esta partida (puede ser menos
+      // que las monedas si ya llegaste al tope diario)
+      dqRedeemable+=Number(res.dq_granted||0);
       return;
     }
   }catch(e){console.warn('[TG Score]',e);}
