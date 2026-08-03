@@ -31,12 +31,23 @@
       return day;
     },
 
+    // Mismo problema que en misiones: la racha solo se veía en la pantalla de
+    // inicio. Ahora se pinta también en cualquier contenedor data-dq-streak.
+    _targets() {
+      const out = [];
+      const legacy = document.getElementById(this.elId);
+      if (legacy) out.push(legacy);
+      document.querySelectorAll('[data-dq-streak]').forEach(e => { if (e !== legacy) out.push(e); });
+      return out;
+    },
+
     render(day) {
-      const el = document.getElementById(this.elId);
-      if (!el) return;
+      const destinos = this._targets();
+      if (!destinos.length) return;
       const next = bonusFor(day + 1);
-      el.innerHTML = '<span style="color:#ff9900">🔥 RACHA: DÍA ' + day + '</span>' +
+      const html = '<span style="color:#ff9900">🔥 RACHA: DÍA ' + day + '</span>' +
         '<span style="color:rgba(255,255,255,.35);float:right">mañana +' + next + ' DQ</span>';
+      destinos.forEach(el => { el.innerHTML = html; });
     },
   };
 

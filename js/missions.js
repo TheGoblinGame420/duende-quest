@@ -66,10 +66,22 @@
       if (changed) { this.save(); this.render(); }
     },
 
+    // Antes se pintaba en UN solo contenedor por id, que vivía dentro de la
+    // pantalla de inicio: el jugador veía sus misiones antes de la primera
+    // partida y nunca más. Ahora se pinta en todos los contenedores marcados
+    // con data-dq-missions, y el id antiguo sigue funcionando.
+    _targets() {
+      const out = [];
+      const legacy = document.getElementById(this.elId);
+      if (legacy) out.push(legacy);
+      document.querySelectorAll('[data-dq-missions]').forEach(e => { if (e !== legacy) out.push(e); });
+      return out;
+    },
+
     render() {
-      const el = document.getElementById(this.elId);
-      if (!el || !this.state) return;
-      el.innerHTML = '<div style="font-size:.32rem;color:#ffe600;letter-spacing:.1em;margin-bottom:.35rem">🎯 MISIONES DIARIAS</div>' +
+      const destinos = this._targets();
+      if (!destinos.length || !this.state) return;
+      const html = '<div style="font-size:.32rem;color:#ffe600;letter-spacing:.1em;margin-bottom:.35rem">🎯 MISIONES DIARIAS</div>' +
         this.state.list.map(m => {
           const pct = Math.min(100, Math.round(m.progress / m.goal * 100));
           return '<div style="margin-bottom:.3rem">' +
@@ -81,6 +93,7 @@
             '</div>' +
           '</div>';
         }).join('');
+      destinos.forEach(el => { el.innerHTML = html; });
     },
   };
 

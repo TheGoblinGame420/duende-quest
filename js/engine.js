@@ -112,10 +112,20 @@ window.addEventListener('load', setSlotImgs);
 const cv = $id('gc');
 const cx = cv.getContext('2d');
 cx.imageSmoothingEnabled = false;
-const W = 800, H = 320, GY = 240;
+// ── RESOLUCIÓN LÓGICA ──
+// 800x320 es una tira de 2.5:1. En un móvil vertical el canvas se ajusta al
+// ancho, así que en una pantalla de 375x812 el juego quedaba en 375x150: el
+// 19% del alto, con la mitad de la pantalla vacía y los sprites diminutos.
+// En vertical usamos un lienzo más cuadrado: al escalar al mismo ancho, todo
+// se dibuja un 33% más grande y el juego ocupa el doble de pantalla.
+const _esVertical = window.innerHeight > window.innerWidth * 1.15;
+const W = _esVertical ? 520 : 800;
+const H = _esVertical ? 400 : 320;
+const GY = H - 80;
 // Línea de suelo real: es donde draw() pinta el borde y donde apoyan los pies
 // del jugador (PL.y = GY, PL.h = 68). Todo lo que "esté en el suelo" usa esto.
 const GROUND = GY + 68;
+cv.width = W; cv.height = H;
 function fitCanvas() {
   if (DQE.fitCanvas) { DQE.fitCanvas(cv, W, H); return; }
   const container = cv.parentElement;
