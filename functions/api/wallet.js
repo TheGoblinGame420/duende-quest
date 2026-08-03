@@ -20,6 +20,31 @@ import {
 const MIN_PURCHASE_USD = 10;
 const STAKE_LOCKS = { 7: 1, 30: 1.5, 90: 2.5 };
 
+// ── INTERRUPTORES DE EMERGENCIA ──
+// Para pausar una vía sin desplegar código: pon la variable de entorno
+// correspondiente a "off" (npx wrangler secret put PAUSE_STAKE, valor "off").
+// Para reactivar, ponla a "on".
+//
+// ton_stake está APAGADO por defecto a propósito. Recibir cripto de un usuario,
+// custodiarla y devolverla incrementada es, en Perú, la conducta del art. 11 de
+// la Ley 26702 (captación de fondos del público sin autorización de la SBS),
+// sancionada por el art. 246 del Código Penal. Además el código actual acredita
+// la recompensa al instante y ningún proceso devuelve el principal en unlock_at.
+// No lo reactives sin haber consultado con un abogado peruano y sin haber
+// implementado la devolución del principal.
+const SWITCHES = {
+  ton_stake: 'off',
+  ton_buy: 'on',
+  ton_sell: 'on',
+  request_redemption: 'on',
+};
+
+function isEnabled(env, action) {
+  const override = env[`PAUSE_${action.toUpperCase()}`];
+  const value = override || SWITCHES[action] || 'on';
+  return String(value).toLowerCase() !== 'off';
+}
+
 // ── Economía del canje DQ → $DUENDE ──
 // El saldo canjeable NO es el del cloud save (ese lo manda el cliente y no es
 // de fiar): se acumula aquí, partida a partida, con tope por partida y por día.
@@ -31,6 +56,20 @@ const DQ_CAP_PER_DAY = 3000;   // techo diario (≈3 $DUENDE/día jugando en ser
 // DQ plausible de una partida: las monedas escalan con las waves sobrevividas.
 function plausibleDq(coins, wave) {
   return Math.max(0, Math.min(coins, 60 + wave * 30, DQ_CAP_PER_GAME));
+}
+
+// Candidatos de username para un perfil nuevo, del más bonito al más seguro.
+// profiles.username exige longitud 3-20 y es UNIQUE, así que hay que tener
+// alternativas: el último candidato lleva el telegram_id y no puede chocar.
+function buildUsernames(user, tgId) {
+  const clean = s => String(s || '').replace(/[^\w]/g, '').slice(0, 20);
+  const base = clean(user.username) || clean(user.first_name);
+  const out = [];
+  if (base.length >= 3) out.push(base);
+  if (base.length >= 1 && base.length < 3) out.push((base + '_dq').slice(0, 20));
+  if (base.length >= 3) out.push((base.slice(0, 14) + '_' + tgId.slice(-4)).slice(0, 20));
+  out.push(('duende_' + tgId).slice(0, 20));
+  return out;
 }
 
 async function alreadyCredited(env, txHash) {
@@ -76,6 +115,11 @@ async function onRequestPost(context) {
   try {
     const body = await request.json();
     const action = body.action;
+
+    // getEnv() devuelve un objeto acotado, así que el override se lee del entorno crudo.
+    if (!isEnabled(context.env, action)) {
+      return json(request, { error: 'paused', detail: 'Esta función está temporalmente desactivada.' }, 503);
+    }
 
     // ── BUY $DUENDE WITH TON ──
     if (action === 'ton_buy') {
@@ -129,11 +173,21 @@ async function onRequestPost(context) {
       const usd = tokens * duendeUsd;
       if (usd < MIN_PURCHASE_USD * 0.95) return json(request, { error: 'below_minimum' }, 400);
 
-      const profiles = await supabaseQuery(env, `profiles?telegram_id=eq.${tgId}&select=duende_balance`);
-      const balance = Number(profiles?.[0]?.duende_balance || 0);
-      if (tokens > balance) return json(request, { error: 'insufficient_balance', balance }, 400);
+      // una solicitud pendiente a la vez
+      const openWd = await supabaseQuery(env, `withdrawal_requests?telegram_id=eq.${tgId}&status=eq.pending&select=id&limit=1`);
+      if (Array.isArray(openWd) && openWd.length > 0) return json(request, { error: 'already_pending', detail: 'Ya tienes un retiro pendiente' }, 409);
 
-      await creditDuende(env, tgId, -tokens);
+      // Descuento atómico: si no alcanza no toca nada y devuelve -1. Antes esto
+      // era leer-comparar-restar en tres pasos, y dos peticiones a la vez
+      // generaban dos retiros con el mismo saldo.
+      const spent = await supabaseQuery(env, 'rpc/spend_duende', { method: 'POST', body: { p_tg_id: tgId, p_amount: tokens } });
+      const newBalance = Number(Array.isArray(spent) ? spent[0] : spent);
+      if (!Number.isFinite(newBalance) || newBalance < 0) {
+        const profiles = await supabaseQuery(env, `profiles?telegram_id=eq.${tgId}&select=duende_balance`);
+        const balance = Number(profiles?.[0]?.duende_balance || 0);
+        return json(request, { error: 'insufficient_balance', balance }, 400);
+      }
+
       await supabaseQuery(env, 'withdrawal_requests', {
         method: 'POST',
         body: {
@@ -177,10 +231,19 @@ async function onRequestPost(context) {
       const tgId = String(user.id);
       let profiles = await supabaseQuery(env, `profiles?telegram_id=eq.${tgId}&select=*&limit=1`);
       if (Array.isArray(profiles) && profiles.length > 0) return json(request, { success: true, profile: profiles[0] });
-      // crear perfil nuevo ligado al telegram_id verificado
-      const username = (user.username || user.first_name || 'duende_' + tgId).slice(0, 20);
-      const created = await supabaseQuery(env, 'profiles', { method: 'POST', body: { telegram_id: tgId, username } });
-      return json(request, { success: true, profile: Array.isArray(created) ? created[0] : created });
+
+      // Crear perfil nuevo ligado al telegram_id verificado.
+      // profiles.username tiene UNIQUE y CHECK de longitud 3-20: un nombre corto
+      // o repetido hacía fallar el INSERT en silencio y el jugador se quedaba
+      // sin perfil (y sin cloud save).
+      for (const candidate of buildUsernames(user, tgId)) {
+        const created = await supabaseQuery(env, 'profiles', { method: 'POST', body: { telegram_id: tgId, username: candidate } });
+        if (Array.isArray(created) && created[0]?.id) return json(request, { success: true, profile: created[0] });
+      }
+      // Si el telegram_id ya existía por una carrera, devolvemos el perfil que ganó.
+      profiles = await supabaseQuery(env, `profiles?telegram_id=eq.${tgId}&select=*&limit=1`);
+      if (Array.isArray(profiles) && profiles.length > 0) return json(request, { success: true, profile: profiles[0] });
+      return json(request, { error: 'profile_failed' }, 500);
     }
 
     // ── UPDATE PROFILE (solo campos permitidos, solo el dueño) ──

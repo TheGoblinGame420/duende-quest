@@ -12,6 +12,13 @@ function getEnv(context) {
   };
 }
 
+// Los valores que vienen del cliente se interpolan en filtros de PostgREST:
+// sin escapar, un valor con `&`, `,` o `)` reescribe la consulta y deja leer
+// filas ajenas de skin_purchases/profiles.
+function enc(v) {
+  return encodeURIComponent(String(v == null ? '' : v));
+}
+
 async function supabaseQuery(env, path, options = {}) {
   const url = `${env.SUPABASE_URL}/rest/v1/${path}`;
   const r = await fetch(url, {
@@ -80,7 +87,7 @@ async function onRequestPost(context) {
       // Server-side price — never trust the client's expected_sol
       const usd = SKIN_PRICES_USD[skin_id];
       if (!usd) return new Response(JSON.stringify({ error: 'Unknown skin' }), { headers, status: 400 });
-      const existing = await supabaseQuery(env, `skin_purchases?wallet_address=eq.${wallet_address}&skin_id=eq.${skin_id}&select=id`);
+      const existing = await supabaseQuery(env, `skin_purchases?wallet_address=eq.${enc(wallet_address)}&skin_id=eq.${enc(skin_id)}&select=id`);
       if (Array.isArray(existing) && existing.length > 0) return new Response(JSON.stringify({ success: true, already_owned: true }), { headers });
       // Anti-replay: each tx signature can only unlock one purchase
       const replay = await supabaseQuery(env, `skin_purchases?tx_signature=eq.${encodeURIComponent(tx_signature)}&select=id`);
@@ -91,7 +98,7 @@ async function onRequestPost(context) {
       const purchaseData = { skin_id, payment_type: 'sol', amount_paid: result.sol, tx_signature, wallet_address };
       if (telegram_id) purchaseData.telegram_id = telegram_id;
       else {
-        const profiles = await supabaseQuery(env, `profiles?or=(wallet_address.eq.${wallet_address},wallet_solana.eq.${wallet_address})&select=telegram_id`);
+        const profiles = await supabaseQuery(env, `profiles?or=(wallet_address.eq.${enc(wallet_address)},wallet_solana.eq.${enc(wallet_address)})&select=telegram_id`);
         purchaseData.telegram_id = (Array.isArray(profiles) && profiles[0]?.telegram_id) ? profiles[0].telegram_id : 'wallet_' + wallet_address.slice(0, 8);
       }
       await supabaseQuery(env, 'skin_purchases', { method: 'POST', body: purchaseData });
@@ -101,11 +108,11 @@ async function onRequestPost(context) {
     if (action === 'get_owned_skins') {
       const { wallet_address, telegram_id } = body;
       let skins = [];
-      if (telegram_id) { const data = await supabaseQuery(env, `skin_purchases?telegram_id=eq.${telegram_id}&select=skin_id`); if (Array.isArray(data)) skins = data.map(s => s.skin_id); }
+      if (telegram_id) { const data = await supabaseQuery(env, `skin_purchases?telegram_id=eq.${enc(telegram_id)}&select=skin_id`); if (Array.isArray(data)) skins = data.map(s => s.skin_id); }
       if (wallet_address) {
-        const profiles = await supabaseQuery(env, `profiles?or=(wallet_address.eq.${wallet_address},wallet_solana.eq.${wallet_address})&select=telegram_id`);
+        const profiles = await supabaseQuery(env, `profiles?or=(wallet_address.eq.${enc(wallet_address)},wallet_solana.eq.${enc(wallet_address)})&select=telegram_id`);
         if (Array.isArray(profiles) && profiles[0]?.telegram_id) {
-          const data = await supabaseQuery(env, `skin_purchases?telegram_id=eq.${profiles[0].telegram_id}&select=skin_id`);
+          const data = await supabaseQuery(env, `skin_purchases?telegram_id=eq.${enc(profiles[0].telegram_id)}&select=skin_id`);
           if (Array.isArray(data)) data.forEach(s => { if (!skins.includes(s.skin_id)) skins.push(s.skin_id); });
         }
       }

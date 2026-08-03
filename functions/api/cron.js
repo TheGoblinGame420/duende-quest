@@ -90,30 +90,35 @@ export async function dailyReminder(env) {
 export async function weeklyTournament(env) {
   const e = envOf(env);
   const token = env.TELEGRAM_BOT_TOKEN;
-  // clave de la semana premiada (lunes actual = cierre de la semana anterior)
-  const weekKey = new Date().toISOString().slice(0, 10);
+  // Clave de la semana premiada: el lunes de la semana natural en curso.
+  // Antes era la fecha de ejecución, así que relanzar el cron un martes creaba
+  // una clave nueva y volvía a pagar los mismos scores.
+  const now = new Date();
+  const monday = new Date(now);
+  monday.setUTCDate(now.getUTCDate() - ((now.getUTCDay() + 6) % 7));
+  const weekKey = monday.toISOString().slice(0, 10);
 
   // anti doble pago: ¿ya se premió esta semana?
   const done = await supabaseQuery(e, `tournament_awards?week_key=eq.${weekKey}&select=id&limit=1`);
   if (Array.isArray(done) && done.length > 0) { console.log('[Tournament] already awarded'); return; }
 
-  // top de la semana pasada, una entrada por jugador
+  // Top de la semana pasada. Solo scores VERIFICADOS y con telegram_id: la
+  // política de INSERT de game_scores sigue abierta para el juego web, así que
+  // cualquiera puede meter un score de 5.000.000 con la clave anon. El trigger
+  // mark_score_verified marca como verified=false todo lo que no inserte el
+  // Worker, y aquí premiamos solo lo verificado.
   const since = new Date(Date.now() - 7 * 86400000).toISOString();
-  const rows = await supabaseQuery(e, `game_scores?select=username,score,telegram_id&created_at=gte.${since}&order=score.desc&limit=200`);
-  if (!Array.isArray(rows) || rows.length === 0) { console.log('[Tournament] no scores'); return; }
+  const rows = await supabaseQuery(e, `game_scores?select=username,score,telegram_id&created_at=gte.${since}&verified=is.true&telegram_id=not.is.null&order=score.desc&limit=200`);
+  if (!Array.isArray(rows) || rows.length === 0) { console.log('[Tournament] no verified scores'); return; }
+  // Una entrada por jugador, por telegram_id (el username no identifica: se repite entre web y Telegram).
   const best = new Map();
-  for (const s of rows) { const k = (s.username || '?').toLowerCase(); if (!best.has(k) || s.score > best.get(k).score) best.set(k, s); }
+  for (const s of rows) { const k = String(s.telegram_id); if (!best.has(k) || s.score > best.get(k).score) best.set(k, s); }
   const top = [...best.values()].sort((a, b) => b.score - a.score).slice(0, 3);
 
   for (let i = 0; i < top.length; i++) {
     const w = top[i];
     const prize = TOURNAMENT_PRIZES[i];
-    // localizar telegram_id (en el score o via perfil por username)
-    let tgId = w.telegram_id;
-    if (!tgId) {
-      const prof = await supabaseQuery(e, `profiles?username=eq.${encodeURIComponent(w.username)}&select=telegram_id&limit=1`);
-      tgId = Array.isArray(prof) && prof[0]?.telegram_id;
-    }
+    const tgId = w.telegram_id;
     await supabaseQuery(e, 'tournament_awards', {
       method: 'POST',
       body: { week_key: weekKey, position: i + 1, username: w.username, score: w.score, prize_duende: prize, telegram_id: tgId || null },

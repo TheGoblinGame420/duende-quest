@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="../js/dom-utils.js"></script>
 <script src="../js/missions.js"></script>
 <script src="../js/streak.js"></script>
 <script src="../js/achievements.js"></script>
@@ -1220,7 +1221,7 @@ async function loadRanking(){
       const best=new Map();(raw||[]).forEach(s=>{const k=(s.username||'?').toLowerCase();if(!best.has(k)||s.score>best.get(k).score)best.set(k,s);});
       const data=[...best.values()].sort((a,b)=>b.score-a.score).slice(0,10);
       if(data&&data.length>0){
-        list.innerHTML=data.map((r,i)=>{const medals=['🥇','🥈','🥉'];const cls=['gold','silver','bronze'][i]||'';return '<div class="rank-row"><span class="rank-pos '+cls+'">'+(medals[i]||'#'+(i+1))+'</span><span class="rank-name">'+r.username+'</span><span class="rank-score">'+r.score.toLocaleString()+'</span><span class="rank-wave">W'+r.wave+'</span></div>';}).join('');
+        list.innerHTML=data.map((r,i)=>{const medals=['🥇','🥈','🥉'];const cls=['gold','silver','bronze'][i]||'';return '<div class="rank-row"><span class="rank-pos '+cls+'">'+(medals[i]||'#'+(i+1))+'</span><span class="rank-name">'+DQEsc(r.username)+'</span><span class="rank-score">'+r.score.toLocaleString()+'</span><span class="rank-wave">W'+r.wave+'</span></div>';}).join('');
         return;
       }
     }catch(e){}
@@ -1245,7 +1246,7 @@ async function loadStartRanking(){
     const best=new Map();(raw||[]).forEach(s=>{const k=(s.username||'?').toLowerCase();if(!best.has(k)||s.score>best.get(k).score)best.set(k,s);});
     const data=[...best.values()].sort((a,b)=>b.score-a.score).slice(0,5);
     if(data&&data.length>0){
-      el.innerHTML='<div style="font-size:.28rem;color:rgba(255,255,255,.3);text-align:center;margin-bottom:.3rem">🏆 TOP 5</div>'+data.map((r,i)=>{const medals=['🥇','🥈','🥉'];return '<div style="display:flex;gap:.4rem;font-size:.28rem;padding:.15rem .3rem;color:rgba(255,255,255,.5)"><span style="width:1rem">'+(medals[i]||'#'+(i+1))+'</span><span style="flex:1">'+r.username+'</span><span style="color:#00ff88">'+r.score.toLocaleString()+'</span></div>';}).join('');
+      el.innerHTML='<div style="font-size:.28rem;color:rgba(255,255,255,.3);text-align:center;margin-bottom:.3rem">🏆 TOP 5</div>'+data.map((r,i)=>{const medals=['🥇','🥈','🥉'];return '<div style="display:flex;gap:.4rem;font-size:.28rem;padding:.15rem .3rem;color:rgba(255,255,255,.5)"><span style="width:1rem">'+(medals[i]||'#'+(i+1))+'</span><span style="flex:1">'+DQEsc(r.username)+'</span><span style="color:#00ff88">'+r.score.toLocaleString()+'</span></div>';}).join('');
     }
   }catch(e){}
 }
