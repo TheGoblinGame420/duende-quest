@@ -46,6 +46,61 @@ const IMG = {
 const IMG_EL = {};
 Object.entries(IMG).forEach(([k, v]) => { const el = new Image(); el.src = v; IMG_EL[k] = el; });
 
+// ── SPRITES DERIVADOS ──
+// Generamos variantes por código a partir de los PNG que ya existen, sin
+// dibujar arte nuevo. Cada variante se calcula UNA vez y se guarda en caché.
+const _SPRCACHE = new Map();
+
+function _derive(key, id, paint) {
+  const cacheKey = key + '|' + id;
+  const hit = _SPRCACHE.get(cacheKey);
+  if (hit) return hit;
+  const src = IMG_EL[key];
+  if (!src || !src.naturalWidth) return src;            // aún no ha cargado
+  const c = document.createElement('canvas');
+  c.width = src.naturalWidth; c.height = src.naturalHeight;
+  const g = c.getContext('2d');
+  g.imageSmoothingEnabled = false;
+  g.drawImage(src, 0, 0);
+  paint(g, c.width, c.height);
+  _SPRCACHE.set(cacheKey, c);
+  return c;
+}
+
+// Silueta blanca del sprite, para el destello de impacto.
+function whiteSprite(key) {
+  return _derive(key, 'white', (g, w, h) => {
+    g.globalCompositeOperation = 'source-atop';
+    g.fillStyle = '#fff';
+    g.fillRect(0, 0, w, h);
+  });
+}
+
+// Copia teñida: 'source-atop' aplana el color dentro de la silueta y una
+// segunda pasada en 'overlay' devuelve el volumen del pixel art, así el
+// enemigo cambia de color sin perder sombras ni contorno.
+function tintedSprite(key, hex) {
+  return _derive(key, 'tint' + hex, (g, w, h) => {
+    g.globalCompositeOperation = 'source-atop';
+    g.globalAlpha = .45; g.fillStyle = hex; g.fillRect(0, 0, w, h);
+    g.globalCompositeOperation = 'overlay';
+    g.globalAlpha = .3; g.fillRect(0, 0, w, h);
+  });
+}
+
+// Un solo bitmap de enemigo servía para charger, exploder, ghost y flyer: el
+// jugador no podía leer de un vistazo qué le venía encima. El color coincide
+// con el de sus partículas de muerte, así que el tinte también predice el
+// efecto. Boss y magmar ya tienen sprite propio y se dejan sin teñir.
+function enemyTint(e) {
+  if (e.isBoss || e.isMagmar) return null;
+  if (e.isCharger) return '#ff9900';
+  if (e.isExploder) return '#ff3333';
+  if (e.isGhost) return '#9333ea';
+  if (e.isFlyer) return '#00eeff';
+  return null;
+}
+
 function setSlotImgs() {
   const keys = ['item_potion', 'item_shield', 'item_skill', 'skill_fire'];
   ['is0', 'is1', 'is2', 'is3'].forEach((id, i) => { const el = $id(id); if (el) el.src = IMG[keys[i]]; });
@@ -58,6 +113,9 @@ const cv = $id('gc');
 const cx = cv.getContext('2d');
 cx.imageSmoothingEnabled = false;
 const W = 800, H = 320, GY = 240;
+// Línea de suelo real: es donde draw() pinta el borde y donde apoyan los pies
+// del jugador (PL.y = GY, PL.h = 68). Todo lo que "esté en el suelo" usa esto.
+const GROUND = GY + 68;
 function fitCanvas() {
   if (DQE.fitCanvas) { DQE.fitCanvas(cv, W, H); return; }
   const container = cv.parentElement;
@@ -102,7 +160,7 @@ function tutorialAdvance(action) {
     showPUNotif('🧝 ¡Listo! Sobrevive y junta monedas');
   }
 }
-let raf = null, lastTs = 0;
+let raf = null;
 let keys = {};
 let mLeft = false, mRight = false;
 
@@ -110,11 +168,31 @@ let mLeft = false, mRight = false;
 let playerXP = 0, playerLevel = 1;
 const XP_PER_LEVEL = [0, 100, 250, 450, 700, 1000, 1400, 1900, 2500, 3200, 4000];
 function getXPNeeded(lvl) { return XP_PER_LEVEL[Math.min(lvl, XP_PER_LEVEL.length - 1)] || 4000 + (lvl - 10) * 600; }
+let runXP = 0;   // XP ganado en la partida actual, para enseñarlo al morir
 function addXP(amt) {
   playerXP += amt;
-  const needed = getXPNeeded(playerLevel);
-  if (playerXP >= needed) { playerXP -= needed; playerLevel++; onLevelUp(); }
+  runXP += amt;
+  // while y no if: un boss (+80) o un cofre legendario (+60) sobre un nivel bajo
+  // puede cruzar dos niveles de una vez, y antes se perdía el segundo.
+  while (playerXP >= getXPNeeded(playerLevel)) { playerXP -= getXPNeeded(playerLevel); playerLevel++; onLevelUp(); }
   updateXPBar();
+}
+
+// ── PERKS DE NIVEL ──
+// Antes subir de nivel no servía de nada: onLevelUp() mutaba PL en caliente,
+// pero startGame() reasignaba hp/maxHp a 100 y hitCombo() recalculaba el tope
+// del combo con un 5 fijo. Un LVL 12 empezaba exactamente igual que un LVL 1.
+// Ahora los perks se derivan del nivel y se aplican AL EMPEZAR cada partida.
+function levelPerks(lvl) {
+  return {
+    bonusHp: Math.floor(lvl / 3) * 20,
+    comboCap: 5 + Math.floor(lvl / 3) * .5,
+    potions: Math.min(3 + Math.floor(lvl / 3), 6),
+  };
+}
+function perksLabel(lvl) {
+  const p = levelPerks(lvl);
+  return 'LVL ' + lvl + ' · +' + p.bonusHp + ' HP · combo x' + p.comboCap + ' · ' + p.potions + ' pociones';
 }
 function updateXPBar() {
   const needed = getXPNeeded(playerLevel);
@@ -125,10 +203,14 @@ function updateXPBar() {
 }
 function onLevelUp() {
   saveProgress();
-  const bonus = playerLevel % 3;
-  if (bonus === 0) { PL.maxHp += 20; PL.hp = Math.min(PL.hp + 20, PL.maxHp); showPUNotif('❤️ MAX HP +20!'); }
-  else if (bonus === 1) { comboMultiplier = Math.min(comboMultiplier + .5, 8); showPUNotif('⚡ COMBO MAX +0.5!'); }
-  else { PL.items[0][0] = Math.min(PL.items[0][0] + 1, 6); showPUNotif('🧪 +1 POCION!'); }
+  // Efecto inmediato (se nota ya en esta partida) + el perk permanente, que se
+  // aplica de verdad al empezar la siguiente.
+  const p = levelPerks(playerLevel);
+  PL.maxHp = 100 + (_buffs()?.bonusHp || 0) + p.bonusHp;
+  PL.hp = Math.min(PL.hp + 20, PL.maxHp);
+  comboCap = p.comboCap;
+  PL.items[0][0] = Math.max(PL.items[0][0], p.potions);
+  showPUNotif('⬆️ NIVEL ' + playerLevel + ' — ' + perksLabel(playerLevel));
   spawnFT(PL.x, PL.y - 40, 'LEVEL UP!', '#c084fc', true);
   shake(8); playSound('levelup'); _hap('heavy');
   const badge = $id('level-badge');
@@ -148,7 +230,7 @@ function showPUNotif(msg) {
 // ── AUDIO ──
 let audioCtx = null;
 function getAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
-function playSound(type) {
+function playSound(type, power) {
   try {
     const ac = getAudio();
     const o = ac.createOscillator(), g = ac.createGain();
@@ -166,6 +248,13 @@ function playSound(type) {
       [523, 659, 784, 1047].forEach((f, i) => { const o2 = ac.createOscillator(), g2 = ac.createGain(); o2.type = 'triangle'; o2.connect(g2); g2.connect(ac.destination); o2.frequency.value = f; g2.gain.setValueAtTime(.13, now + i * .05); g2.gain.exponentialRampToValueAtTime(.001, now + i * .05 + .18); o2.start(now + i * .05); o2.stop(now + i * .05 + .18); }); return; }
     else if (type === 'achievement') { // fanfarria de logro
       [659, 784, 988, 1319].forEach((f, i) => { const o2 = ac.createOscillator(), g2 = ac.createGain(); o2.type = 'square'; o2.connect(g2); g2.connect(ac.destination); o2.frequency.value = f; g2.gain.setValueAtTime(.1, now + i * .1); g2.gain.exponentialRampToValueAtTime(.001, now + i * .1 + .25); o2.start(now + i * .1); o2.stop(now + i * .1 + .25); }); return; }
+    // 'slash' es el corte que CONECTA: sube de tono con el paso del combo, así
+    // el oído distingue el 1º del 3º golpe. Antes el melee no sonaba nunca.
+    else if (type === 'slash') { const f = [900, 700, 520][PL.comboStep] || 900; o.type = 'square'; o.frequency.setValueAtTime(f, now); o.frequency.exponentialRampToValueAtTime(f * .35, now + .06); g.gain.setValueAtTime(.2, now); g.gain.exponentialRampToValueAtTime(.001, now + .08); o.start(now); o.stop(now + .08); }
+    // 'crunch' es la muerte del enemigo: grave y con cuerpo, distinto del corte.
+    else if (type === 'crunch') { o.type = 'sawtooth'; o.frequency.setValueAtTime(90, now); o.frequency.exponentialRampToValueAtTime(40, now + .16); g.gain.setValueAtTime(.26, now); g.gain.exponentialRampToValueAtTime(.001, now + .18); o.start(now); o.stop(now + .18); }
+    // 'land' es el aterrizaje: el volumen escala con la velocidad de caída.
+    else if (type === 'land') { o.type = 'triangle'; o.frequency.setValueAtTime(150, now); o.frequency.exponentialRampToValueAtTime(70, now + .07); g.gain.setValueAtTime(Math.min(.22, .05 + (power || 0) * .012), now); g.gain.exponentialRampToValueAtTime(.001, now + .09); o.start(now); o.stop(now + .09); }
   } catch (e) {}
 }
 
@@ -210,10 +299,16 @@ function spawnPowerup() {
   const type = keys[Math.floor(Math.random() * keys.length)];
   powerups.push({ x: W + 20, y: GY - 60 - Math.random() * 90, w: 34, h: 34, type, bob: Math.random() * Math.PI * 2, spd: gameSpeed * .55 });
 }
-let comboCount = 0, comboTimer = 0, comboMultiplier = 1;
+let comboCount = 0, comboTimer = 0, comboMultiplier = 1, comboCap = 5;
 let killStreak = 0, killStreakTimer = 0;
 let shakeAmt = 0, shakeTimer = 0;
 function shake(a) { shakeAmt = a; shakeTimer = Math.ceil(a * 1.5); }
+
+// Hit-stop: congela unos frames la simulación al conectar un golpe. Es lo que
+// hace que pegar se sienta contundente en vez de atravesar niebla. 3 frames
+// (50 ms) no se perciben como tirón, se perciben como impacto.
+let hitStop = 0;
+function freeze(f) { hitStop = Math.max(hitStop, f); }
 
 function spawnPFX(x, y, color, n, spd, sz = 4) {
   for (let i = 0; i < n; i++) {
@@ -239,10 +334,15 @@ function spawnEnemy(forceBoss = false) {
   const isGhost = !isBoss && !isFlyer && !isCharger && !isExploder && wave >= 6 && Math.random() < .15;
   const isMagmar = !isBoss && !isFlyer && !isCharger && !isExploder && !isGhost && wave >= 7 && Math.random() < .25;
   const baseHp = isBoss ? 8 : isMagmar ? 5 : isCharger ? 3 : isExploder ? 1 : 2;
+  const eh = isBoss ? 90 : isFlyer ? 68 : isMagmar ? 76 : 62;
+  // Los enemigos se alineaban por su borde SUPERIOR a GY, así que cada uno
+  // apoyaba a una altura distinta: el normal flotaba 6px, el magmar atravesaba
+  // el suelo y al boss se le cortaba la base fuera del canvas. Ahora todos
+  // apoyan los pies en la misma línea de suelo que el jugador.
   enemies.push({
-    x: W + 30, y: isFlyer ? GY - 80 - Math.random() * 70 : GY,
+    x: W + 30, y: isFlyer ? GY - 80 - Math.random() * 70 : GROUND - eh,
     w: isBoss ? 96 : isFlyer ? 72 : isMagmar ? 80 : 68,
-    h: isBoss ? 90 : isFlyer ? 68 : isMagmar ? 76 : 62,
+    h: eh,
     hp: baseHp, maxHp: baseHp,
     spd: (gameSpeed + (Math.random() * .8)) * (isBoss ? .75 : isCharger ? 1.6 : isMagmar ? .9 : 1),
     type: isBoss ? 'boss' : isFlyer ? 'flyer' : isCharger ? 'charger' : isExploder ? 'exploder' : isGhost ? 'ghost' : isMagmar ? 'magmar' : 'normal',
@@ -267,24 +367,30 @@ function jump() { if (state !== 'playing') return; PL.jumpBuffer = 12; }
 function doJump() {
   playSound('jump'); _hap('light');
   tutorialAdvance('jump');
+  // squash negativo = estirado a lo alto. Al saltar el cuerpo se estira y al
+  // caer se aplasta: es el truco clásico que hace que un salto se sienta vivo.
   if (PL.onGround || PL.coyoteTimer > 0) {
     PL.vy = JUMP_FORCE; PL.djUsed = false;
+    PL.squash = -.22;
     spawnPFX(PL.x + PL.w / 2, PL.y + PL.h, '#00ff88', 8, 3.5);
     PL.coyoteTimer = 0;
   } else if (!PL.djUsed) {
     PL.vy = DJUMP_FORCE; PL.djUsed = true;
+    PL.squash = -.28;
     spawnPFX(PL.x + PL.w / 2, PL.y + PL.h, '#00eeff', 14, 5);
     spawnFT(PL.x, PL.y - 10, 'DOUBLE!', '#00eeff');
   }
   PL.jumpBuffer = 0;
 }
 function dash() {
-  playSound('dash'); _hap('medium');
-  const nearEnemy = enemies.some(e => Math.abs(e.x - PL.x) < 80 && Math.abs(e.y - PL.y) < 60);
-  if (nearEnemy && PL.dashCd <= 0) {
-    setTimeout(() => { showPUNotif('💨 PERFECT DODGE! +XP'); addXP(15); addScore(50); }, 200);
-  }
+  // El PERFECT DODGE se concedía antes del guard y dentro de un setTimeout, así
+  // que daba XP aunque el dash se rechazara por cooldown o el jugador ya
+  // estuviera muerto. Ahora solo se paga cuando el dash ocurre de verdad.
   if (state !== 'playing' || PL.dashCd > 0 || PL.dashing) return;
+  playSound('dash'); _hap('medium');
+  if (enemies.some(e => Math.abs(e.x - PL.x) < 80 && Math.abs(e.y - PL.y) < 60)) {
+    showPUNotif('💨 PERFECT DODGE! +XP'); addXP(15); addScore(50);
+  }
   PL.dashing = true; PL.dashTimer = DASH_DUR;
   PL.dashDir = PL.facing;
   PL.invTimer = Math.max(PL.invTimer, DASH_DUR + 4);
@@ -293,8 +399,11 @@ function dash() {
   spawnFT(PL.x, PL.y - 15, 'DASH!', '#a78bfa');
 }
 function attack() {
-  playSound('attack'); _hap('medium');
+  // El sonido va DESPUÉS del guard: antes, machacar el botón disparaba una
+  // ametralladora de sonidos mientras el ataque estaba en cooldown y no pasaba
+  // nada. El juego mentía sobre lo que estaba aceptando.
   if (state !== 'playing' || PL.attackCd > 0 || PL.slamming) return;
+  playSound('attack'); _hap('medium');
   tutorialAdvance('attack');
   // Aerial slam: web requiere C/↓; en móvil/tg cualquier ataque aéreo cayendo
   const slamKey = DQE.airSlamNeedsKey === false ? true : (keys['KeyC'] || keys['ArrowDown']);
@@ -304,6 +413,7 @@ function attack() {
     return;
   }
   if (PL.comboTimer > 0) PL.comboStep = (PL.comboStep + 1) % 3; else PL.comboStep = 0;
+  PL.swingId = (PL.swingId || 0) + 1;   // identifica este swing para el multi-golpe
   PL.comboTimer = COMBO_WINDOW;
   PL.attackTimer = 14 + PL.comboStep * 2;
   PL.attackCd = 18 + PL.comboStep * 3;
@@ -377,7 +487,8 @@ function addScore(pts) { score += pts; if (score > hiScore) { hiScore = score; l
 function hitCombo(pts) {
   comboCount++;
   comboTimer = COMBO_WINDOW;
-  comboMultiplier = Math.min(1 + Math.floor(comboCount / 3) * .5, 5);
+  // El tope venía fijo a 5, lo que pisaba el bonus de combo de subir de nivel.
+  comboMultiplier = Math.min(1 + Math.floor(comboCount / 3) * .5, comboCap);
   achEvent('onCombo', comboMultiplier);
   const total = Math.floor(pts * comboMultiplier);
   addScore(total);
@@ -430,6 +541,16 @@ function update() {
     achEvent('onWave', wave);
     showPUNotif('🌊 WAVE ' + wave + ' — VELOCIDAD UP!');
     shake(6);
+    // Cada 5 waves cambia el bioma: antes el mundo cambiaba de color y el
+    // jugador ni se enteraba de que era un sistema.
+    if ((wave - 1) % 5 === 0) {
+      const b = currentBiome();
+      const bi = Math.floor((wave - 1) / 5) % BIOMES.length;
+      markBiomeSeen(bi);
+      spawnFT(W / 2, 108, '⟡ ' + b.name + ' ⟡', b.line, true);
+      showPUNotif('⟡ Entras en ' + b.name);
+      shake(9); freeze(4);
+    }
     if (wave % 3 === 0) spawnEnemy(true);
   }
   if (wave % 3 === 0 && !bossActive && waveTimer % WAVE_FRAMES < 5) spawnEnemy(true);
@@ -458,7 +579,17 @@ function update() {
 
   const wasOnGround = PL.onGround;
   PL.onGround = false;
-  if (PL.y >= GY) { PL.y = GY; PL.vy = 0; PL.onGround = true; PL.djUsed = false; }
+  if (PL.y >= GY) {
+    // Aterrizaje: antes era silencioso e invisible. Ahora suena, levanta polvo
+    // y aplasta al duende un instante (squash), que es lo que da sensación de peso.
+    if (!PL.onGround && PL.vy > 3) {
+      playSound('land', PL.vy);
+      PL.squash = Math.min(.34, PL.vy * .022);
+      spawnPFX(PL.x + PL.w / 2, GY + PL.h - 2, 'rgba(255,255,255,.55)', Math.min(9, 2 + Math.round(PL.vy / 2)), 2.4, 3);
+      if (PL.vy > 11) shake(3);
+    }
+    PL.y = GY; PL.vy = 0; PL.onGround = true; PL.djUsed = false;
+  }
 
   if (wasOnGround && !PL.onGround) PL.coyoteTimer = 10;
   else if (PL.onGround) PL.coyoteTimer = 0;
@@ -467,7 +598,9 @@ function update() {
   // Slam landing
   if (PL.slamming && PL.onGround) {
     PL.slamming = false;
-    shake(12);
+    shake(12); freeze(7);
+    PL.squash = .4;
+    playSound('land', 14);
     enemies.forEach(e => {
       if (Math.abs(e.x - PL.x) < 120) {
         e.hp -= 3; e.flashTimer = 12;
@@ -484,6 +617,9 @@ function update() {
   if (PL.jumpBuffer > 0) { PL.jumpBuffer--; if (PL.onGround || PL.coyoteTimer > 0 || !PL.djUsed) doJump(); }
 
   // ── TIMERS ──
+  // squash guarda cuánto se aplasta el sprite; decae rápido para que el efecto
+  // se lea como un golpe seco y no como una deformación permanente.
+  if (PL.squash) { PL.squash *= .78; if (Math.abs(PL.squash) < .01) PL.squash = 0; }
   if (PL.invTimer > 0) PL.invTimer--;
   if (PL.dashCd > 0) PL.dashCd--;
   if (PL.attackCd > 0) PL.attackCd--;
@@ -503,8 +639,21 @@ function update() {
   if (PL.fireOn && frame % 10 === 0) playerShoot();
 
   // ── ENEMIES ──
+  // La hitbox se recalcula CADA frame siguiendo al jugador. Antes se congelaba
+  // en la posición donde empezó el ataque mientras el arco dibujado seguía al
+  // duende: se separaban hasta 56px y parecía que fallabas cuando acertabas.
   const attackBox = PL.attackHitbox;
+  if (PL.attackTimer > 0 && attackBox.active) {
+    const reach = [50, 60, 80][PL.comboStep];
+    const yOff = [10, 5, -5][PL.comboStep];
+    attackBox.x = PL.x + (PL.facing > 0 ? PL.w : -reach);
+    attackBox.y = PL.y + yOff;
+    attackBox.w = reach;
+    attackBox.h = PL.h - yOff * 1.5;
+  }
+  let swingHits = 0;
   enemies = enemies.filter(e => {
+    if (e.knock > 0) { e.x += e.knock; e.knock *= .72; if (e.knock < .4) e.knock = 0; }
     if (e.isBoss) {
       e.x += (W * .4 - e.x) * .015;
     } else if (e.isCharger && e.chargeTimer <= 0) {
@@ -535,16 +684,24 @@ function update() {
     }
 
     // ── MELEE HIT (con buffs de skin: atkMult, lifesteal) ──
-    if (attackBox.active && overlap(attackBox, { x: e.x + 6, y: e.y + 6, w: e.w - 12, h: e.h - 12 })) {
+    // Un swing puede tocar a VARIOS enemigos: antes se desactivaba la hitbox
+    // con el primero, así que cortabas a través de tres bichos y solo moría uno.
+    // e.hitBy evita que el mismo swing golpee dos veces al mismo enemigo.
+    if (attackBox.active && e.hitBy !== PL.swingId && overlap(attackBox, { x: e.x + 6, y: e.y + 6, w: e.w - 12, h: e.h - 12 })) {
+      e.hitBy = PL.swingId;
+      swingHits++;
       const atkMult = skinBuffs?.atkMult || 1;
       const dmg = Math.ceil((1 + PL.comboStep) * atkMult);
       e.hp -= dmg; e.flashTimer = 10;
+      e.knock = (e.knock || 0) + 5 + PL.comboStep * 2;   // retroceso: el golpe empuja
       if (skinBuffs?.lifesteal) { PL.hp = Math.min(PL.maxHp, PL.hp + Math.ceil(dmg * skinBuffs.lifesteal * 10)); updateHpHUD(); }
       const pts = hitCombo(e.isBoss ? 120 : e.isCharger ? 80 : 60);
       spawnPFX(attackBox.x + attackBox.w / 2, e.y + e.h / 2, ['#ffe600', '#ff9900', '#ff3333'][PL.comboStep], 8 + PL.comboStep * 5, 4 + PL.comboStep * 2);
       spawnFT(e.x, e.y - 20, '+' + pts, ['#ffe600', '#ff9900', '#ff3333'][PL.comboStep]);
       updateHUD();
-      attackBox.active = false;
+      playSound('slash');              // el impacto melee no sonaba en absoluto
+      freeze(3 + PL.comboStep);
+      shake(2 + PL.comboStep);
       _hap('light');
     }
 
@@ -556,7 +713,7 @@ function update() {
       else if (killStreak === 10) { showPUNotif('⚡ 10 KILLS - LEGENDARIO!'); shake(8); addXP(50); }
       missionEvent('kill', 1); achEvent('onKill');
       if (e.isBoss) { bossActive = false; bossKilled++; missionEvent('boss', 1); achEvent('onBoss'); spawnFT(e.x, e.y - 30, 'BOSS MUERTO!', '#ff00cc', true); playSound('boss'); addXP(80); _hap('heavy'); }
-      else { addXP(e.isMagmar ? 30 : e.isCharger ? 20 : e.isExploder ? 15 : 10); playSound('hit'); _hap('medium'); }
+      else { addXP(e.isMagmar ? 30 : e.isCharger ? 20 : e.isExploder ? 15 : 10); playSound('crunch'); _hap('medium'); }
       spawnPFX(e.x + e.w / 2, e.y + e.h / 2, e.isBoss ? '#ff00cc' : e.isMagmar ? '#ff4400' : e.isCharger ? '#ff9900' : '#ff3333', e.isBoss ? 35 : e.isMagmar ? 28 : 20, e.isBoss ? 9 : 6);
       const coinDrop = e.isBoss ? 5 : e.isMagmar ? 3 : e.isCharger ? 2 : 1;
       for (let c = 0; c < coinDrop; c++) spawnCoin(e.x + Math.random() * e.w, e.y);
@@ -571,12 +728,14 @@ function update() {
       }
       if (wave >= 4 && Math.random() < .05) spawnWeaponDrop(e.x + e.w / 2, e.y);
       shake(e.isBoss ? 10 : e.isMagmar ? 6 : 4);
+      freeze(e.isBoss ? 10 : e.isMagmar ? 6 : 4);
       return false;
     }
 
     // ── PLAYER DAMAGE ──
     if (e.isExploder && overlap({ x: PL.x - 20, y: PL.y - 20, w: PL.w + 40, h: PL.h + 40 }, { x: e.x, y: e.y, w: e.w, h: e.h })) {
       shake(15); e.hp = -1;
+      freeze(8);
       spawnPFX(e.x + e.w / 2, e.y + e.h / 2, '#ff6400', 40, 8, 8);
       spawnPFX(e.x + e.w / 2, e.y + e.h / 2, '#ffe600', 25, 6, 6);
       particles.push({ x: e.x + e.w / 2, y: e.y + e.h / 2, vx: 0, vy: 0, color: '#ff6400', life: 1, decay: .06, sz: 80, ring: true });
@@ -587,7 +746,7 @@ function update() {
       PL.hp -= dmg;
       PL.invTimer = 60; PL.flashTimer = 20;
       comboCount = 0; comboMultiplier = 1;
-      shake(8);
+      shake(8); freeze(6);
       spawnPFX(PL.x + PL.w / 2, PL.y + PL.h / 2, '#ff3333', 14, 5);
       spawnFT(PL.x, PL.y - 20, '-' + dmg + ' HP', '#ff3333');
       updateHpHUD();
@@ -643,6 +802,13 @@ function update() {
     }
     return true;
   });
+
+  // Un swing que toca a 2+ enemigos se celebra: es la recompensa a posicionarse
+  // bien, y antes era invisible porque el ataque solo golpeaba a uno.
+  if (swingHits >= 2) {
+    spawnFT(PL.x, PL.y - 42, swingHits >= 3 ? 'TRIPLE!' : 'DOBLE!', '#ff3333', true);
+    freeze(5); shake(5);
+  }
 
   // ── COINS (con buff coinMult de skins) ──
   const skinCoinMult = skinBuffs?.coinMult || 1;
@@ -779,14 +945,27 @@ function _playerImg() {
 }
 
 // ── BIOMAS: cada 5 waves el mundo cambia de color (sensación de viaje) ──
+// Los nombres no son decoracion: convierten un cambio de color que pasaba
+// desapercibido en un hito visible cada 5 waves, y en algo que coleccionar.
 const BIOMES = [
-  { top: '#010015', bot: '#050520', mtn: 'rgba(124,58,237,.07)',  cloud: '124,58,237',  ground: '#0a1a0f', line: '#00ff88' }, // noche violeta
-  { top: '#150005', bot: '#2a0510', mtn: 'rgba(255,68,68,.08)',   cloud: '255,80,40',   ground: '#1a0a0a', line: '#ff6444' }, // amanecer rojo
-  { top: '#001512', bot: '#03251c', mtn: 'rgba(0,255,170,.06)',   cloud: '0,200,150',   ground: '#06140f', line: '#00ffcc' }, // selva esmeralda
-  { top: '#0a0a18', bot: '#1c1430', mtn: 'rgba(192,132,252,.09)', cloud: '192,132,252', ground: '#120a1f', line: '#c084fc' }, // tormenta arcana
-  { top: '#181000', bot: '#2e2004', mtn: 'rgba(255,200,0,.07)',   cloud: '255,180,0',   ground: '#1a140a', line: '#ffe600' }, // desierto dorado
+  { name: 'NOCHE VIOLETA',    top: '#010015', bot: '#050520', mtn: 'rgba(124,58,237,.07)',  cloud: '124,58,237',  ground: '#0a1a0f', line: '#00ff88' },
+  { name: 'AMANECER ROJO',    top: '#150005', bot: '#2a0510', mtn: 'rgba(255,68,68,.08)',   cloud: '255,80,40',   ground: '#1a0a0a', line: '#ff6444' },
+  { name: 'SELVA ESMERALDA',  top: '#001512', bot: '#03251c', mtn: 'rgba(0,255,170,.06)',   cloud: '0,200,150',   ground: '#06140f', line: '#00ffcc' },
+  { name: 'TORMENTA ARCANA',  top: '#0a0a18', bot: '#1c1430', mtn: 'rgba(192,132,252,.09)', cloud: '192,132,252', ground: '#120a1f', line: '#c084fc' },
+  { name: 'DESIERTO DORADO',  top: '#181000', bot: '#2e2004', mtn: 'rgba(255,200,0,.07)',   cloud: '255,180,0',   ground: '#1a140a', line: '#ffe600' },
 ];
+// Biomas vistos alguna vez, para poder enseñar "BIOMAS 3/5" como colección.
+function markBiomeSeen(i) {
+  try {
+    const seen = JSON.parse(localStorage.getItem('dq_biomes') || '[]');
+    if (!seen.includes(i)) { seen.push(i); localStorage.setItem('dq_biomes', JSON.stringify(seen)); }
+  } catch (e) {}
+}
+function biomesSeen() {
+  try { return JSON.parse(localStorage.getItem('dq_biomes') || '[]').length; } catch (e) { return 0; }
+}
 function currentBiome() { return BIOMES[Math.floor((wave - 1) / 5) % BIOMES.length]; }
+let _vignette = null;
 
 function drawPuTimer(x, emoji, pct, color) {
   cx.save();
@@ -830,9 +1009,30 @@ function draw() {
   cx.fillStyle = 'rgba(0,255,136,.1)';
   for (let gx = groundX; gx < W; gx += 40) cx.fillRect(gx, GY + PL.h + 3, 2, H - (GY + PL.h + 3));
 
+  // ── SOMBRAS DE CONTACTO ──
+  // Todas juntas y ANTES de cualquier sprite, para que ninguna se pinte encima
+  // de otra entidad. Es el truco más barato que existe para dar peso en 2D: la
+  // sombra se encoge y se aclara con la altura, así se lee de un vistazo a qué
+  // altura está cada cosa (sobre todo el propio salto del jugador).
+  cx.save();
+  cx.fillStyle = '#000';
+  const _shadow = ent => {
+    const k = 1 - Math.min(1, (GROUND - (ent.y + ent.h)) / 130);
+    if (k <= .05) return;
+    cx.globalAlpha = .38 * k;
+    cx.beginPath();
+    cx.ellipse(ent.x + ent.w / 2, GROUND + 2, ent.w * .42 * k, 5 * k, 0, 0, Math.PI * 2);
+    cx.fill();
+  };
+  enemies.forEach(_shadow);
+  chests.forEach(_shadow);
+  weaponDrops.forEach(_shadow);
+  if (state === 'playing' || state === 'paused') _shadow(PL);
+  cx.restore();
+
   // Coins
   coins.forEach(c => {
-    cx.save(); cx.imageSmoothingEnabled = false; cx.globalCompositeOperation = 'screen';
+    cx.save(); cx.imageSmoothingEnabled = false;
     cx.drawImage(IMG_EL['coin'], c.x, c.y, c.w, c.h); cx.restore();
   });
 
@@ -840,7 +1040,7 @@ function draw() {
   chests.forEach(ch => {
     const shadowColors = { comun: '#aaffaa', epico: '#cc44ff', legendario: '#ffe600' };
     const pulse = Math.sin(ch.glowTimer * .08) * .5 + .5;
-    cx.save(); cx.imageSmoothingEnabled = false; cx.globalCompositeOperation = 'screen';
+    cx.save(); cx.imageSmoothingEnabled = false;
     cx.shadowColor = shadowColors[ch.tier];
     cx.shadowBlur = 10 + pulse * 14;
     cx.globalAlpha = .92 + pulse * .08;
@@ -851,7 +1051,7 @@ function draw() {
   // Weapon drops
   weaponDrops.forEach(w => {
     const pulse = Math.sin(frame * .1) * .4 + .6;
-    cx.save(); cx.imageSmoothingEnabled = false; cx.globalCompositeOperation = 'screen';
+    cx.save(); cx.imageSmoothingEnabled = false;
     cx.shadowColor = w.type === 'katana_spark' ? '#00eeff' : '#ffe600';
     cx.shadowBlur = 8 + pulse * 10;
     cx.globalAlpha = .85 + pulse * .15;
@@ -888,16 +1088,22 @@ function draw() {
 
   // Enemies
   enemies.forEach(e => {
-    const flashAlpha = e.flashTimer > 0 && e.flashTimer % 4 < 2 ? .25 : 1;
+    // El flash de golpe era una bajada de alpha a .25: al pegarle, el enemigo se
+    // volvía TRANSPARENTE, que se lee como "está desapareciendo", no como
+    // "acaba de encajar un golpe". Ahora destella en BLANCO y mantiene su cuerpo.
     const ghostA = e.isGhost ? (e.ghostAlpha || 1) : 1;
-    const alpha = flashAlpha * ghostA;
     const key = e.isBoss ? 'enemy2' : e.isMagmar ? 'enemy_magmar' : 'enemy';
-    cx.save(); cx.imageSmoothingEnabled = false; cx.globalCompositeOperation = 'screen'; cx.globalAlpha = alpha;
+    const variant = enemyTint(e);
+    cx.save(); cx.imageSmoothingEnabled = false; cx.globalAlpha = ghostA;
     if (e.isExploder) { cx.shadowColor = '#ff4400'; cx.shadowBlur = 12 + Math.sin(frame * .2) * 8; }
     if (e.isGhost) { cx.shadowColor = '#9333ea'; cx.shadowBlur = 16; }
     if (e.isMagmar) { cx.shadowColor = '#ff4400'; cx.shadowBlur = 18 + Math.sin(frame * .15) * 10; }
     cx.translate(e.x + e.w / 2, 0); cx.scale(-1, 1);
-    cx.drawImage(IMG_EL[key], -e.w / 2, e.y, e.w, e.h);
+    cx.drawImage(variant ? tintedSprite(key, variant) : IMG_EL[key], -e.w / 2, e.y, e.w, e.h);
+    if (e.flashTimer > 0) {
+      cx.globalAlpha = ghostA * Math.min(1, e.flashTimer / 8);
+      cx.drawImage(whiteSprite(key), -e.w / 2, e.y, e.w, e.h);
+    }
     cx.restore();
     if (e.maxHp > 2 || e.isBoss) {
       const bw = e.w; const pct = e.hp / e.maxHp;
@@ -924,18 +1130,24 @@ function draw() {
     cx.restore();
   });
 
-  // Player bullets
+  // Player bullets — el fuego SÍ es aditivo, pero con 'lighter' en vez de
+  // 'screen': suma luz sin volver invisible el negro del sprite.
   bullets.filter(b => !b.enemy).forEach(b => {
-    cx.save(); cx.imageSmoothingEnabled = false; cx.globalCompositeOperation = 'screen'; cx.globalAlpha = .9;
+    cx.save(); cx.imageSmoothingEnabled = false; cx.globalCompositeOperation = 'lighter'; cx.globalAlpha = .9;
     cx.drawImage(IMG_EL['skill_fire'], b.x, b.y - b.h / 2, b.w * 1.8, b.h * 1.8); cx.restore();
   });
 
   // ── PLAYER ──
   const plAlpha = PL.invTimer > 0 && PL.invTimer % 8 < 4 ? .3 : 1;
   const _plImg = _playerImg();
-  cx.save(); cx.imageSmoothingEnabled = false; cx.globalCompositeOperation = 'screen'; cx.globalAlpha = plAlpha;
-  if (PL.facing < 0) { cx.translate(PL.x + PL.w, 0); cx.scale(-1, 1); cx.drawImage(_plImg, 0, PL.y, PL.w, PL.h); }
-  else cx.drawImage(_plImg, PL.x, PL.y, PL.w, PL.h);
+  cx.save(); cx.imageSmoothingEnabled = false; cx.globalAlpha = plAlpha;
+  // Squash & stretch: se aplasta al aterrizar y se estira al saltar, siempre
+  // conservando el volumen y anclado a los pies para que no "flote".
+  const sq = PL.squash || 0;
+  const pw = PL.w * (1 + sq * .55), ph = PL.h * (1 - sq);
+  const px = PL.x - (pw - PL.w) / 2, py = PL.y + (PL.h - ph);
+  if (PL.facing < 0) { cx.translate(px + pw, 0); cx.scale(-1, 1); cx.drawImage(_plImg, 0, py, pw, ph); }
+  else cx.drawImage(_plImg, px, py, pw, ph);
   cx.restore();
 
   // Aura de skin (legendaria)
@@ -957,7 +1169,7 @@ function draw() {
   if (PL.dashing) {
     for (let t = 1; t <= 4; t++) {
       const tx = PL.x - PL.dashDir * t * 12;
-      cx.save(); cx.imageSmoothingEnabled = false; cx.globalCompositeOperation = 'screen';
+      cx.save(); cx.imageSmoothingEnabled = false;
       cx.globalAlpha = .15 * (5 - t) / 4;
       cx.drawImage(_plImg, tx, PL.y, PL.w, PL.h); cx.restore();
     }
@@ -979,7 +1191,7 @@ function draw() {
   // Fire aura
   if (PL.fireOn) {
     const foff = Math.sin(frame * .2) * 5;
-    cx.save(); cx.globalCompositeOperation = 'screen'; cx.globalAlpha = .7 + Math.sin(frame * .15) * .25;
+    cx.save(); cx.globalCompositeOperation = 'lighter'; cx.globalAlpha = .7 + Math.sin(frame * .15) * .25;
     cx.imageSmoothingEnabled = false;
     cx.drawImage(IMG_EL['skill_fire'], PL.x + PL.w - 5, PL.y + PL.h * .25 + foff, 38, 22); cx.restore();
   }
@@ -1047,13 +1259,36 @@ function draw() {
     cx.restore();
   }
 
-  // Floating texts
+  // Flash rojo al recibir daño. PL.flashTimer ya se ponía a 20 en los tres
+  // puntos de daño y se decrementaba cada frame, pero draw() no lo leía en
+  // ningún sitio: el estado estaba calculado y no se dibujaba.
+  if (PL.flashTimer > 0) {
+    cx.fillStyle = 'rgba(255,40,40,' + (PL.flashTimer / 20 * .26).toFixed(3) + ')';
+    cx.fillRect(0, 0, W, H);
+  }
+
+  // Viñeta: oscurece las esquinas y empuja la mirada al centro de la acción.
+  // Se cachea porque crear el gradiente cada frame es caro en móvil.
+  if (!_vignette) {
+    _vignette = document.createElement('canvas');
+    _vignette.width = W; _vignette.height = H;
+    const vg = _vignette.getContext('2d');
+    const rg = vg.createRadialGradient(W / 2, H / 2, H * .35, W / 2, H / 2, W * .62);
+    rg.addColorStop(0, 'rgba(0,0,0,0)');
+    rg.addColorStop(1, 'rgba(0,0,0,.42)');
+    vg.fillStyle = rg; vg.fillRect(0, 0, W, H);
+  }
+  cx.drawImage(_vignette, 0, 0);
+
+  // Floating texts — con contorno negro para que se lean sobre cualquier bioma.
   cx.save();
   fTexts.forEach(t => {
     cx.globalAlpha = t.life;
-    cx.fillStyle = t.color;
     cx.font = (t.big ? .55 : .42) + 'rem "Press Start 2P"';
     cx.textAlign = 'center';
+    cx.lineWidth = 4; cx.strokeStyle = 'rgba(0,0,0,.85)'; cx.lineJoin = 'round';
+    cx.strokeText(t.txt, t.x, t.y);
+    cx.fillStyle = t.color;
     cx.fillText(t.txt, t.x, t.y);
   });
   cx.restore();
@@ -1062,10 +1297,38 @@ function draw() {
 }
 
 // ── LOOP ──
+// Paso fijo con acumulador. Antes se llamaba a update() una vez por
+// requestAnimationFrame, así que en un móvil de 120Hz (lo normal hoy, y la Mini
+// App de Telegram es la plataforma principal) TODO corría al doble: gravedad,
+// velocidad, cooldowns y la duración de las waves. Ahora la simulación siempre
+// avanza a 60 pasos por segundo, se pinte a los fps que se pinte.
+const STEP = 1000 / 60;
+let _acc = 0, _last = 0;
+
+function resetLoopClock() { _acc = 0; _last = 0; }
+
 function loop(ts) {
-  if (state !== 'playing') return;
-  lastTs = ts;
-  update();
+  if (state !== 'playing') { raf = null; return; }
+  if (!_last) _last = ts;
+  let dt = ts - _last;
+  _last = ts;
+  if (dt > 250) dt = STEP;          // volvimos de una pestaña en segundo plano
+  _acc += dt;
+
+  let steps = 0;
+  while (_acc >= STEP && steps < 5) {
+    if (hitStop > 0) {
+      // Congelamos la simulación, pero el temblor tiene que seguir bajando
+      // o se queda clavado y se ve como un error de dibujo.
+      hitStop--;
+      if (shakeTimer > 0) { shakeTimer--; shakeAmt *= .85; if (shakeTimer <= 0) shakeAmt = 0; }
+    } else {
+      update();
+    }
+    _acc -= STEP; steps++;
+  }
+  if (steps === 5) _acc = 0;        // no acumular deuda si el móvil no da más
+
   draw();
   try { DQE.loopTick && DQE.loopTick(); } catch (e) {}
   raf = requestAnimationFrame(loop);
@@ -1083,18 +1346,32 @@ function startGame() {
   enemies = []; coins = []; bullets = []; particles = []; fTexts = [];
   chests = []; weaponDrops = []; weaponBuff = null;
   powerups = []; puMagnet = 0; puDouble = 0;
-  shakeAmt = 0; shakeTimer = 0;
+  shakeAmt = 0; shakeTimer = 0; hitStop = 0;
   const bHp = _buffs()?.bonusHp || 0;
   Object.assign(PL, { x: 80, y: GY, vx: 0, vy: 0, onGround: false, jumping: false, djUsed: false, coyoteTimer: 0, jumpBuffer: 0, dashing: false, dashTimer: 0, dashDir: 1, dashCd: 0, comboStep: 0, comboTimer: 0, attackTimer: 0, attackCd: 0, attackHitbox: { x: 0, y: 0, w: 0, h: 0, active: false }, slamming: false, slamTimer: 0, hp: 100 + bHp, maxHp: 100 + bHp, invTimer: 0, shieldOn: false, shieldTimer: 0, fireOn: false, fireTimer: 0, lightTimer: 0, flashTimer: 0, facing: 1, animTimer: 0, runFrame: 0, items: [[3, 0, 90], [2, 0, 120], [1, 0, 150], [1, 0, 180]] });
 
   loadProgress();
+  runXP = 0;
+
+  // Los perks de nivel se aplican AQUÍ, después de loadProgress(), porque es
+  // loadProgress() quien restaura playerLevel. Antes el Object.assign de arriba
+  // dejaba maxHp en 100 fijo y todo lo ganado subiendo de nivel se perdía.
+  const perks = levelPerks(playerLevel);
+  PL.maxHp = 100 + bHp + perks.bonusHp;
+  PL.hp = PL.maxHp;
+  comboCap = perks.comboCap;
+  PL.items[0][0] = Math.max(PL.items[0][0], perks.potions);
+
   try { DQE.onStartGame && DQE.onStartGame(); } catch (e) {}
 
   initBg();
   updateHpHUD(); updateHUD(); updateXPBar();
   for (let i = 0; i < 4; i++) updateItemHUD(i);
   state = 'playing';
-  lastTs = performance.now();
+  // Un solo bucle vivo: reanudar sin cancelar el anterior duplicaba el rAF y
+  // el juego se aceleraba tras varias pausas o revives.
+  if (raf) cancelAnimationFrame(raf);
+  resetLoopClock();
   raf = requestAnimationFrame(loop);
 }
 
@@ -1111,7 +1388,10 @@ function resumeGame() {
   playMusic();
   const ov = $id('ov-pause'); if (ov) ov.classList.remove('show');
   state = 'playing';
-  lastTs = performance.now();
+  // Un solo bucle vivo: reanudar sin cancelar el anterior duplicaba el rAF y
+  // el juego se aceleraba tras varias pausas o revives.
+  if (raf) cancelAnimationFrame(raf);
+  resetLoopClock();
   raf = requestAnimationFrame(loop);
 }
 
@@ -1126,11 +1406,54 @@ function endGame() {
   const fs = $id('final-score'); if (fs) fs.textContent = Math.floor(score).toLocaleString();
   const fh = $id('final-hi'); if (fh) fh.textContent = 'HI-SCORE: ' + Math.floor(hiScore).toLocaleString();
   const ds = $id('dead-stats'); if (ds) ds.innerHTML = `WAVE: ${wave} &nbsp; 🪙 ${sessionCoins} &nbsp; LVL: ${playerLevel}<br>COMBOS: ${comboCount} &nbsp; BOSSES: ${bossKilled}`;
+  renderDeadNudge();
   const ov = $id('ov-dead'); if (ov) ov.classList.add('show');
   offerRevive();
   try {
     DQE.onEndGame && DQE.onEndGame({ score: Math.floor(score), wave, level: playerLevel, coins: sessionCoins, bosses_killed: bossKilled, combos_max: comboCount });
   } catch (e) {}
+}
+
+// ── EL "CASI": el gancho que dispara la segunda partida ──
+// Morir mostraba un número y nada más. El momento de máxima intención de
+// reintentar es justo ese, y el juego no daba ninguna razón concreta. Todos
+// estos datos ya estaban en memoria; solo había que decirlos.
+function nearMissLines() {
+  const out = [];
+  const dHi = Math.ceil(hiScore - score);
+  if (score < hiScore && dHi > 0 && dHi < Math.max(400, hiScore * .35)) {
+    out.push('🎯 Te faltaron <b>' + dHi.toLocaleString() + '</b> pts para tu récord');
+  }
+  const nextWave = [5, 10, 15, 20, 30].find(w => wave < w);
+  if (nextWave) out.push('🌊 Llegaste a la wave <b>' + wave + '</b> — la <b>' + nextWave + '</b> está cerca');
+  const seen = biomesSeen();
+  if (seen < BIOMES.length) {
+    const nextBiomeWave = (Math.floor((wave - 1) / 5) + 1) * 5 + 1;
+    out.push('⟡ Biomas descubiertos: <b>' + seen + '/' + BIOMES.length + '</b> — el siguiente en la wave ' + nextBiomeWave);
+  }
+  try {
+    const m = (DQMissions.state.list || []).filter(x => !x.done)
+      .sort((a, b) => (b.progress / b.goal) - (a.progress / a.goal))[0];
+    if (m) out.push('📋 ' + m.desc + ': <b>' + m.progress + '/' + m.goal + '</b>');
+  } catch (e) {}
+  if (runXP > 0) {
+    const pct = Math.round(playerXP / getXPNeeded(playerLevel) * 100);
+    out.push('⬆️ <b>+' + runXP.toLocaleString() + ' XP</b> → LVL ' + playerLevel + ' (' + pct + '%)');
+  }
+  return out.slice(0, 3);
+}
+
+function renderDeadNudge() {
+  const ov = $id('ov-dead'); if (!ov) return;
+  let box = $id('dead-nudge');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'dead-nudge';
+    box.style.cssText = 'font-size:.36rem;line-height:1.9;color:rgba(255,255,255,.8);margin:.5rem 0;text-align:center;max-width:92%';
+    const ds = $id('dead-stats');
+    if (ds && ds.parentNode) ds.parentNode.insertBefore(box, ds.nextSibling); else ov.appendChild(box);
+  }
+  box.innerHTML = nearMissLines().join('<br>');
 }
 
 // ── REVIVE (una vez por partida, cuesta DQ) ──
@@ -1166,7 +1489,10 @@ function reviveGame() {
   updateHpHUD(); updateHUD();
   playMusic();
   state = 'playing';
-  lastTs = performance.now();
+  // Un solo bucle vivo: reanudar sin cancelar el anterior duplicaba el rAF y
+  // el juego se aceleraba tras varias pausas o revives.
+  if (raf) cancelAnimationFrame(raf);
+  resetLoopClock();
   raf = requestAnimationFrame(loop);
 }
 
