@@ -515,6 +515,35 @@ const PL = {
 // ── ENTITIES ──
 let enemies = [], coins = [], bullets = [], particles = [], fTexts = [];
 let chests = [], weaponDrops = [];
+
+// ── PLATAFORMAS ──
+// La amenaza venia toda por un solo eje y el suelo era una linea, asi que el
+// salto, el doble salto y el slam apenas tenian razon de ser: no habia nada
+// arriba que alcanzar. Con plataformas hay una segunda altura donde caen
+// monedas y desde donde se cae en picado sobre los enemigos.
+let plataformas = [];
+
+function initPlataformas() {
+  plataformas = [];
+  const alturas = [GROUND - 118, GROUND - 76, GROUND - 150];
+  for (let i = 0; i < 3; i++) {
+    plataformas.push({
+      x: 180 + i * (W / 2.2),
+      y: alturas[i % alturas.length],
+      w: 96 + Math.random() * 54,
+      h: 12,
+    });
+  }
+}
+
+function reciclarPlataforma(pl) {
+  pl.x = W + 40 + Math.random() * 160;
+  pl.y = GROUND - (70 + Math.random() * 90);
+  pl.w = 90 + Math.random() * 60;
+  // Premio por subir: casi siempre hay algo que recoger arriba.
+  if (Math.random() < .75) spawnCoin(pl.x + pl.w / 2, pl.y - 34);
+  if (Math.random() < .10) spawnChest(pl.x + pl.w / 2, pl.y - 40, 'comun');
+}
 let bgStars = [], bgMtns = [], bgClouds = [];
 let groundX = 0;
 let weaponBuff = null;
@@ -825,6 +854,11 @@ function update() {
       shake(9); freeze(4);
     }
     if (wave % 3 === 0) spawnEnemy(true);
+    // La oleada era un tick: subia la velocidad y el jugador no dejaba de
+    // correr nunca. En los juegos del genero la oleada CIERRA — cobras, eliges
+    // y compras — y ese hueco es donde vive la decision. A partir de la 2 se
+    // abre el descanso; la 1 no, para no cortar el arranque.
+    if (wave >= 2) { abrirDescanso(); return; }
   }
   if (wave % 3 === 0 && !bossActive && waveTimer % WAVE_FRAMES < 5) spawnEnemy(true);
 
@@ -850,9 +884,31 @@ function update() {
   }
   PL.y += PL.vy;
 
+  // Las plataformas se desplazan con el mundo y se reciclan por la derecha.
+  plataformas.forEach(pl => { pl.x -= gameSpeed * .85; if (pl.x + pl.w < -20) reciclarPlataforma(pl); });
+
   const wasOnGround = PL.onGround;
   PL.onGround = false;
-  if (PL.y >= GY) {
+
+  // Colision con plataformas: solo se aterriza CAYENDO y desde arriba, para
+  // poder atravesarlas saltando desde abajo. El slam las ignora a proposito:
+  // cae en picado hasta el suelo y eso le da su razon de ser.
+  if (PL.vy >= 0 && !PL.slamming) {
+    const piesAntes = PL.y + PL.h - PL.vy;
+    for (const pl of plataformas) {
+      const dentroX = PL.x + PL.w * .75 > pl.x && PL.x + PL.w * .25 < pl.x + pl.w;
+      if (dentroX && piesAntes <= pl.y + 4 && PL.y + PL.h >= pl.y) {
+        if (PL.vy > 3) {
+          playSound('land', PL.vy);
+          PL.squash = Math.min(.3, PL.vy * .02);
+          spawnPFX(PL.x + PL.w / 2, pl.y, 'rgba(255,255,255,.5)', 5, 2.2, 3);
+        }
+        PL.y = pl.y - PL.h; PL.vy = 0; PL.onGround = true; PL.djUsed = false;
+        break;
+      }
+    }
+  }
+  if (!PL.onGround && PL.y >= GY) {
     // Aterrizaje: antes era silencioso e invisible. Ahora suena, levanta polvo
     // y aplasta al duende un instante (squash), que es lo que da sensación de peso.
     if (!PL.onGround && PL.vy > 3) {
@@ -1314,6 +1370,23 @@ function draw() {
   cx.fillStyle = 'rgba(0,255,136,.1)';
   for (let gx = groundX; gx < W; gx += 40) cx.fillRect(gx, GY + PL.h + 3, 2, H - (GY + PL.h + 3));
 
+  // ── PLATAFORMAS ──
+  // Se pintan con el color del bioma para que formen parte del sitio, con una
+  // franja superior brillante que deja claro donde se puede pisar.
+  plataformas.forEach(pl => {
+    cx.save();
+    cx.fillStyle = 'rgba(0,0,0,.45)';
+    cx.fillRect(pl.x + 3, pl.y + 4, pl.w, pl.h);
+    cx.fillStyle = biome.ground;
+    cx.fillRect(pl.x, pl.y, pl.w, pl.h);
+    cx.fillStyle = biome.line;
+    cx.fillRect(pl.x, pl.y, pl.w, 3);
+    cx.globalAlpha = .30;
+    cx.fillStyle = biome.line;
+    cx.fillRect(pl.x, pl.y + pl.h, pl.w, 2);
+    cx.restore();
+  });
+
   // ── SOMBRAS DE CONTACTO ──
   // Todas juntas y ANTES de cualquier sprite, para que ninguna se pinte encima
   // de otra entidad. Es el truco más barato que existe para dar peso en 2D: la
@@ -1659,6 +1732,10 @@ function loop(ts) {
       if (shakeTimer > 0) { shakeTimer--; shakeAmt *= .85; if (shakeTimer <= 0) shakeAmt = 0; }
     } else {
       update();
+      // update() puede abrir el descanso entre oleadas o la eleccion de mejora.
+      // Si no cortamos aqui, el acumulador seguiria simulando frames con el
+      // juego ya pausado y la partida avanzaria por debajo del menu.
+      if (state !== 'playing') { draw(); return; }
     }
     _acc -= STEP; steps++;
   }
@@ -1683,7 +1760,9 @@ function startGame() {
   powerups = []; puMagnet = 0; puDouble = 0;
   shakeAmt = 0; shakeTimer = 0; hitStop = 0;
   mej = mejorasBase(); mejorasElegidas = []; runLevel = 1; runXPAcc = 0;
-  { const om = $id('ov-mejora'); if (om) om.style.display = 'none'; }
+  monedasAlEmpezarOleada = 0;
+  { const om = $id('ov-mejora'); if (om) om.style.display = 'none';
+    const od = $id('ov-descanso'); if (od) od.style.display = 'none'; }
   const bHp = _buffs()?.bonusHp || 0;
   Object.assign(PL, { x: 80, y: GY, vx: 0, vy: 0, onGround: false, jumping: false, djUsed: false, coyoteTimer: 0, jumpBuffer: 0, dashing: false, dashTimer: 0, dashDir: 1, dashCd: 0, comboStep: 0, comboTimer: 0, attackTimer: 0, attackCd: 0, attackHitbox: { x: 0, y: 0, w: 0, h: 0, active: false }, slamming: false, slamTimer: 0, hp: 100 + bHp, maxHp: 100 + bHp, invTimer: 0, shieldOn: false, shieldTimer: 0, fireOn: false, fireTimer: 0, lightTimer: 0, flashTimer: 0, facing: 1, animTimer: 0, runFrame: 0, items: [[3, 0, 90], [2, 0, 120], [1, 0, 150], [1, 0, 180]] });
 
@@ -1702,6 +1781,7 @@ function startGame() {
   try { DQE.onStartGame && DQE.onStartGame(); } catch (e) {}
 
   initBg();
+  initPlataformas();
   updateHpHUD(); updateHUD(); updateXPBar();
   for (let i = 0; i < 4; i++) updateItemHUD(i);
   state = 'playing';
@@ -1749,6 +1829,75 @@ function endGame() {
   try {
     DQE.onEndGame && DQE.onEndGame({ score: Math.floor(score), wave, level: playerLevel, coins: sessionCoins, bosses_killed: bossKilled, combos_max: comboCount });
   } catch (e) {}
+}
+
+// ── DESCANSO ENTRE OLEADAS ──
+// Cierra la oleada: enseña lo ganado y abre la tienda. ITEM_SHOPS y buyItem ya
+// existian, pero solo se llegaba a la tienda abriendo la pausa en mitad de la
+// accion, asi que practicamente nadie la usaba y las monedas se acumulaban sin
+// tener donde gastarse.
+let monedasAlEmpezarOleada = 0;
+
+function abrirDescanso() {
+  state = 'descanso';
+  if (raf) { cancelAnimationFrame(raf); raf = null; }
+  playSound('boton');
+  _hap('medium');
+  // Limpiamos la pantalla de enemigos para que el descanso sea un respiro real.
+  enemies.forEach(e => spawnPFX(e.x + e.w / 2, e.y + e.h / 2, '#00ff88', 8, 4));
+  enemies = []; bullets = []; bossActive = false;
+
+  const ganadas = sessionCoins - monedasAlEmpezarOleada;
+  monedasAlEmpezarOleada = sessionCoins;
+
+  let ov = $id('ov-descanso');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'ov-descanso';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:58;display:flex;flex-direction:column;' +
+      'align-items:center;justify-content:center;background:rgba(5,5,16,.93);padding:16px;gap:8px';
+    document.body.appendChild(ov);
+  }
+  pintarDescanso(ov, ganadas);
+  ov.style.display = 'flex';
+}
+
+function pintarDescanso(ov, ganadas) {
+  const b = currentBiome();
+  ov.innerHTML =
+    '<div style="font-size:.56rem;color:' + b.line + ';text-shadow:3px 3px 0 #000">OLEADA ' + (wave - 1) + ' SUPERADA</div>' +
+    '<div style="font-size:.34rem;color:#ffe600;margin:2px 0 8px">🪙 +' + ganadas + '  ·  total ' + sessionCoins + '</div>' +
+    '<div style="font-size:.26rem;color:rgba(255,255,255,.4);letter-spacing:.1em;margin-bottom:4px">TIENDA</div>' +
+    '<div id="tienda-descanso" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;width:min(430px,94%)"></div>' +
+    '<button id="seguir-descanso" style="margin-top:12px;width:min(430px,94%);min-height:56px;' +
+    'background:linear-gradient(135deg,#00ff88,#00cc6a);color:#000;font-family:inherit;font-size:.42rem;' +
+    'border:none;border-radius:8px;cursor:pointer;box-shadow:0 0 20px rgba(0,255,136,.4)">▶ OLEADA ' + wave + '</button>';
+
+  const rejilla = ov.querySelector('#tienda-descanso');
+  ITEM_SHOPS.forEach((it, i) => {
+    const lleno = PL.items[i][0] >= it.maxStock;
+    const puedo = sessionCoins >= it.price && !lleno;
+    const btn = document.createElement('button');
+    btn.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 6px;' +
+      'background:' + (puedo ? 'rgba(0,255,136,.13)' : 'rgba(255,255,255,.05)') + ';' +
+      'border:2px solid ' + (puedo ? 'rgba(0,255,136,.45)' : 'rgba(255,255,255,.12)') + ';' +
+      'border-radius:6px;color:#fff;font-family:inherit;cursor:' + (puedo ? 'pointer' : 'default') + ';' +
+      'opacity:' + (puedo ? '1' : '.55');
+    btn.innerHTML = '<span style="font-size:.32rem;color:#00ff88">' + it.name + '</span>' +
+      '<span style="font-size:.26rem;color:rgba(255,255,255,.55)">' +
+      (lleno ? 'MAXIMO' : '🪙 ' + it.price) + '  ·  x' + PL.items[i][0] + '</span>';
+    if (puedo) btn.onclick = () => { buyItem(i); playSound('boton'); pintarDescanso(ov, ganadas); };
+    rejilla.appendChild(btn);
+  });
+
+  ov.querySelector('#seguir-descanso').onclick = () => {
+    ov.style.display = 'none';
+    state = 'playing';
+    resetLoopClock();
+    if (raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(loop);
+    spawnFT(W / 2, 80, '— OLEADA ' + wave + ' —', '#ffe600', true);
+  };
 }
 
 // ── ELEGIR MEJORA (pausa la partida y ofrece 3 al azar) ──
