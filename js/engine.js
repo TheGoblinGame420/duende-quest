@@ -24,6 +24,30 @@ const $id = id => document.getElementById(id);
 
 // ── ASSETS ──
 const _AB = DQE.assetBase || 'assets/';
+
+// ── PARALLAX ──
+// El fondo eran un degradado, unos triangulos planos y unas nubes radiales.
+// Ahora cada bioma tiene dos capas de silueta que se desplazan a distinta
+// velocidad, que es lo que crea sensacion de profundidad y de sitio. Pesan
+// 11 KB las diez juntas (PNG de paleta), y se generan con
+// tools/generar_parallax.py usando la MISMA paleta del array BIOMES.
+const FONDO_NOMBRES = ['noche', 'amanecer', 'selva', 'tormenta', 'desierto'];
+const FONDOS = FONDO_NOMBRES.map(n => {
+  const lejos = new Image(); lejos.src = _AB + 'fondos/' + n + '_lejos.png';
+  const cerca = new Image(); cerca.src = _AB + 'fondos/' + n + '_cerca.png';
+  return { lejos, cerca };
+});
+let scrollLejos = 0, scrollCerca = 0;
+
+// Dibuja una capa repetida en bucle horizontal, anclada al suelo.
+function dibujarCapa(img, desplaz, alturaSobreSuelo) {
+  if (!img || !img.naturalWidth) return;
+  const escala = H / 320;                    // las capas se disenaron para 320 de alto
+  const w = img.naturalWidth * escala, h = img.naturalHeight * escala;
+  const y = GROUND - h + alturaSobreSuelo * escala;
+  let x = -(desplaz % w);
+  while (x < W) { cx.drawImage(img, x, y, w, h); x += w; }
+}
 const IMG = {
   duende_hero: _AB + 'skins/skin_hero.png',
   enemy: _AB + 'enemigos/enemy.png',
@@ -371,26 +395,91 @@ function showPUNotif(msg) {
 }
 
 // ── AUDIO ──
-let audioCtx = null;
-function getAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
+let audioCtx = null, masterGain = null;
+
+// Tres problemas reales del audio, arreglados aqui:
+//  1. Cada sonido se conectaba DIRECTO a destination, sin control de volumen
+//     ni compresor: en oleadas densas, diez efectos a la vez saturaban.
+//  2. No habia ni un solo resume(): en el WebView de iOS y de Telegram el
+//     contexto nace suspendido y el juego se quedaba mudo para siempre.
+//  3. Varias ramas creaban un oscilador que luego no usaban (fuga silenciosa).
+function getAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const comp = audioCtx.createDynamicsCompressor();
+    comp.threshold.value = -18; comp.knee.value = 12; comp.ratio.value = 8;
+    comp.attack.value = .003; comp.release.value = .12;
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = .85;
+    masterGain.connect(comp); comp.connect(audioCtx.destination);
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+  return audioCtx;
+}
+// El navegador solo permite arrancar el audio dentro de un gesto del usuario.
+['pointerdown', 'keydown', 'touchstart'].forEach(ev =>
+  window.addEventListener(ev, () => { try { getAudio(); } catch (e) {} }, { once: false, passive: true }));
+
+// ── EFECTOS GRABADOS ──
+// Sustituyen a los bips de oscilador en los eventos que mas se repiten. Son 9
+// archivos CC0 del pack retro de Juhani Junkala (dominio publico), convertidos
+// a ogg mono de 22 kHz: 37 KB los nueve juntos. Si alguno no carga, el motor
+// sigue usando la sintesis de siempre, asi que nunca se queda sin sonido.
+const SFX_ARCHIVOS = {
+  corte: 'corte', corte2: 'corte2', golpe: 'golpe', muerte: 'muerte',
+  explosion: 'explosion', moneda: 'moneda', salto: 'salto', caida: 'caida', boton: 'boton',
+};
+const SFX = {};
+Object.entries(SFX_ARCHIVOS).forEach(([k, f]) => {
+  const a = new Audio((DQE.audioBase || 'audio/') + 'sfx/' + f + '.ogg');
+  a.preload = 'auto'; a.volume = .55;
+  SFX[k] = a;
+});
+function reproducir(clave, volumen) {
+  const base = SFX[clave];
+  if (!base || !base.duration && base.readyState < 2) return false;
+  try {
+    // Clonamos para poder solapar el mismo efecto sin cortarlo.
+    const s = base.cloneNode();
+    s.volume = Math.max(0, Math.min(1, volumen === undefined ? .55 : volumen));
+    s.play().catch(() => {});
+    return true;
+  } catch (e) { return false; }
+}
+// Mapa de evento -> efecto grabado. Lo que no este aqui usa la sintesis.
+const SFX_POR_EVENTO = {
+  slash: 'corte', attack: 'corte2', hit: 'golpe', crunch: 'muerte',
+  coin: 'moneda', jump: 'salto', land: 'caida', die: 'explosion',
+};
 function playSound(type, power) {
+  const grabado = SFX_POR_EVENTO[type];
+  if (grabado) {
+    // El corte alterna entre dos muestras para que machacar el boton no suene
+    // a repeticion mecanica.
+    const clave = (type === 'slash' && frame % 2) ? 'corte2' : grabado;
+    const vol = type === 'land' ? Math.min(.6, .18 + (power || 0) * .03) : undefined;
+    if (reproducir(clave, vol)) return;
+  }
+  return _playSoundSintetico(type, power);
+}
+function _playSoundSintetico(type, power) {
   try {
     const ac = getAudio();
     const o = ac.createOscillator(), g = ac.createGain();
-    o.connect(g); g.connect(ac.destination);
+    o.connect(g); g.connect(masterGain || ac.destination);
     const now = ac.currentTime;
     if (type === 'jump') { o.frequency.setValueAtTime(220, now); o.frequency.exponentialRampToValueAtTime(440, now + .1); g.gain.setValueAtTime(.15, now); g.gain.exponentialRampToValueAtTime(.001, now + .15); o.start(now); o.stop(now + .15); }
     else if (type === 'attack') { o.type = 'sawtooth'; o.frequency.setValueAtTime(180, now); o.frequency.exponentialRampToValueAtTime(80, now + .08); g.gain.setValueAtTime(.2, now); g.gain.exponentialRampToValueAtTime(.001, now + .1); o.start(now); o.stop(now + .1); }
     else if (type === 'hit') { o.type = 'square'; o.frequency.setValueAtTime(120, now); g.gain.setValueAtTime(.25, now); g.gain.exponentialRampToValueAtTime(.001, now + .12); o.start(now); o.stop(now + .12); }
     else if (type === 'coin') { o.frequency.setValueAtTime(660, now); o.frequency.exponentialRampToValueAtTime(880, now + .06); g.gain.setValueAtTime(.1, now); g.gain.exponentialRampToValueAtTime(.001, now + .1); o.start(now); o.stop(now + .1); }
     else if (type === 'dash') { o.type = 'triangle'; o.frequency.setValueAtTime(300, now); o.frequency.exponentialRampToValueAtTime(600, now + .12); g.gain.setValueAtTime(.15, now); g.gain.exponentialRampToValueAtTime(.001, now + .15); o.start(now); o.stop(now + .15); }
-    else if (type === 'levelup') { [261, 329, 392, 523].forEach((f, i) => { const o2 = ac.createOscillator(), g2 = ac.createGain(); o2.connect(g2); g2.connect(ac.destination); o2.frequency.value = f; g2.gain.setValueAtTime(.12, now + i * .08); g2.gain.exponentialRampToValueAtTime(.001, now + i * .08 + .15); o2.start(now + i * .08); o2.stop(now + i * .08 + .15); }); return; }
+    else if (type === 'levelup') { [261, 329, 392, 523].forEach((f, i) => { const o2 = ac.createOscillator(), g2 = ac.createGain(); o2.connect(g2); g2.connect(masterGain || ac.destination); o2.frequency.value = f; g2.gain.setValueAtTime(.12, now + i * .08); g2.gain.exponentialRampToValueAtTime(.001, now + i * .08 + .15); o2.start(now + i * .08); o2.stop(now + i * .08 + .15); }); return; }
     else if (type === 'boss') { o.type = 'sawtooth'; o.frequency.setValueAtTime(60, now); g.gain.setValueAtTime(.3, now); g.gain.exponentialRampToValueAtTime(.001, now + .4); o.start(now); o.stop(now + .4); }
     else if (type === 'die') { o.type = 'sawtooth'; o.frequency.setValueAtTime(200, now); o.frequency.exponentialRampToValueAtTime(30, now + .5); g.gain.setValueAtTime(.3, now); g.gain.exponentialRampToValueAtTime(.001, now + .5); o.start(now); o.stop(now + .5); }
     else if (type === 'powerup') { // arpegio ascendente brillante
-      [523, 659, 784, 1047].forEach((f, i) => { const o2 = ac.createOscillator(), g2 = ac.createGain(); o2.type = 'triangle'; o2.connect(g2); g2.connect(ac.destination); o2.frequency.value = f; g2.gain.setValueAtTime(.13, now + i * .05); g2.gain.exponentialRampToValueAtTime(.001, now + i * .05 + .18); o2.start(now + i * .05); o2.stop(now + i * .05 + .18); }); return; }
+      [523, 659, 784, 1047].forEach((f, i) => { const o2 = ac.createOscillator(), g2 = ac.createGain(); o2.type = 'triangle'; o2.connect(g2); g2.connect(masterGain || ac.destination); o2.frequency.value = f; g2.gain.setValueAtTime(.13, now + i * .05); g2.gain.exponentialRampToValueAtTime(.001, now + i * .05 + .18); o2.start(now + i * .05); o2.stop(now + i * .05 + .18); }); return; }
     else if (type === 'achievement') { // fanfarria de logro
-      [659, 784, 988, 1319].forEach((f, i) => { const o2 = ac.createOscillator(), g2 = ac.createGain(); o2.type = 'square'; o2.connect(g2); g2.connect(ac.destination); o2.frequency.value = f; g2.gain.setValueAtTime(.1, now + i * .1); g2.gain.exponentialRampToValueAtTime(.001, now + i * .1 + .25); o2.start(now + i * .1); o2.stop(now + i * .1 + .25); }); return; }
+      [659, 784, 988, 1319].forEach((f, i) => { const o2 = ac.createOscillator(), g2 = ac.createGain(); o2.type = 'square'; o2.connect(g2); g2.connect(masterGain || ac.destination); o2.frequency.value = f; g2.gain.setValueAtTime(.1, now + i * .1); g2.gain.exponentialRampToValueAtTime(.001, now + i * .1 + .25); o2.start(now + i * .1); o2.stop(now + i * .1 + .25); }); return; }
     // 'slash' es el corte que CONECTA: sube de tono con el paso del combo, así
     // el oído distingue el 1º del 3º golpe. Antes el melee no sonaba nunca.
     else if (type === 'slash') { const f = [900, 700, 520][PL.comboStep] || 900; o.type = 'square'; o.frequency.setValueAtTime(f, now); o.frequency.exponentialRampToValueAtTime(f * .35, now + .06); g.gain.setValueAtTime(.2, now); g.gain.exponentialRampToValueAtTime(.001, now + .08); o.start(now); o.stop(now + .08); }
@@ -1123,6 +1212,10 @@ function update() {
   bgMtns.forEach(m => { m.x -= m.sp; if (m.x < -m.w) m.x = W + m.w; });
   bgClouds.forEach(c => { c.x -= c.sp; if (c.x < -c.w - 20) c.x = W + c.w; });
   groundX = (groundX - gameSpeed) % 40;
+  // El parallax reacciona a la velocidad real de la partida: cuando el juego
+  // acelera, el mundo pasa mas rapido y se nota.
+  scrollLejos += gameSpeed * .12;
+  scrollCerca += gameSpeed * .38;
 
   // ── SPAWN RATES ──
   // arranque más vivo (wave 1 ya tiene acción) y techo de densidad para que sea difícil pero justo
@@ -1200,8 +1293,11 @@ function draw() {
 
   bgStars.forEach(s => { cx.fillStyle = `rgba(255,255,255,${.2 + Math.sin(frame * .04 + s.x) * .15})`; cx.fillRect(s.x, s.y, s.s, s.s); });
 
-  cx.fillStyle = biome.mtn;
-  bgMtns.forEach(m => { cx.beginPath(); cx.moveTo(m.x, GY + 10); cx.lineTo(m.x + m.w / 2, GY + 10 - m.h); cx.lineTo(m.x + m.w, GY + 10); cx.fill(); });
+  // Capas de parallax: la lejana se mueve a un tercio de la cercana, que a su
+  // vez va mas lenta que el suelo. Esa diferencia es toda la profundidad.
+  const bi = Math.floor((wave - 1) / 3) % FONDOS.length;
+  dibujarCapa(FONDOS[bi].lejos, scrollLejos, 46);
+  dibujarCapa(FONDOS[bi].cerca, scrollCerca, 16);
 
   bgClouds.forEach(c => {
     const cg = cx.createRadialGradient(c.x + c.w / 2, c.y + c.h / 2, 0, c.x + c.w / 2, c.y + c.h / 2, c.w / 2);

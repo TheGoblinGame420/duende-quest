@@ -1192,7 +1192,10 @@ window.DQE={
   assetBase:'../assets/',
   menuOverlayId:'ov-start',
   airSlamNeedsKey:false,
-  music:null,
+  // La Mini App —que es la plataforma principal— no reproducia NADA de musica:
+  // este campo estaba a null y solo la version web cargaba la pista.
+  music:'../audio/bg_music.ogg',
+  audioBase:'../audio/',
   haptic:tp=>{try{tgHaptic(tp);}catch(e){}},
   getSkinBuffs:()=>{try{return activeSkinBuffs||null;}catch(e){return null;}},
   getPlayerImgKey:()=>{try{return ({comun:'duende_hero',tactico:'skin_tactico',necro:'skin_necromancer',king:'skin_king',berserker:'skin_berserker',legendaria:'skin_legendariafull'})[equippedSkin]||'duende_hero';}catch(e){return 'duende_hero';}},
