@@ -1746,6 +1746,46 @@ function loop(ts) {
   raf = requestAnimationFrame(loop);
 }
 
+// ── MODO ATRACCION ──
+// El menu era un rectangulo negro: hasta pulsar JUGAR no se veia ni un pixel
+// del juego, porque loop() sale de inmediato si el estado no es 'playing'.
+// Ver el bioma con parallax, el suelo y el duende moviendose detras del menu es
+// la mejor mejora de primera impresion por linea de codigo, y como vive en el
+// motor compartido sirve a la web y a la Mini App a la vez.
+let atraccionRaf = null;
+
+function bucleAtraccion() {
+  if (state !== 'menu' || document.hidden) { atraccionRaf = null; return; }
+  frame++;
+  groundX = (groundX - 1.6) % 40;
+  scrollLejos += .35;
+  scrollCerca += 1.1;
+  bgStars.forEach(st => { st.x -= st.sp * .5; if (st.x < 0) st.x = W; });
+  bgClouds.forEach(c => { c.x -= c.sp * .5; if (c.x < -c.w - 20) c.x = W + c.w; });
+  plataformas.forEach(pl => { pl.x -= 1.4; if (pl.x + pl.w < -20) { pl.x = W + 40; pl.y = GROUND - (70 + Math.random() * 90); } });
+  // El duende pasea de un lado a otro para que se le vea la animacion.
+  PL.vx = Math.sin(frame * .012) * 2.6;
+  PL.x += PL.vx;
+  if (PL.x < 40) PL.x = 40;
+  if (PL.x > W - PL.w - 40) PL.x = W - PL.w - 40;
+  PL.facing = PL.vx < 0 ? -1 : 1;
+  PL.onGround = true; PL.y = GY;
+  if (PL.squash) PL.squash *= .8;
+  // Un salto de vez en cuando para que no parezca un bucle de andar.
+  if (frame % 190 === 0) { PL.squash = -.2; spawnPFX(PL.x + PL.w / 2, GY + PL.h, '#00ff88', 6, 3); }
+  particles = particles.filter(pp => { pp.x += pp.vx; pp.y += pp.vy; pp.vy += .12; pp.life -= pp.decay; return pp.life > 0; });
+  draw();
+  atraccionRaf = requestAnimationFrame(bucleAtraccion);
+}
+
+function arrancarAtraccion() {
+  if (atraccionRaf) return;
+  if (!plataformas.length) initPlataformas();
+  if (!bgStars.length) initBg();
+  atraccionRaf = requestAnimationFrame(bucleAtraccion);
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && state === 'menu') arrancarAtraccion(); });
+
 // ── LIFECYCLE ──
 function startGame() {
   playMusic();
@@ -1785,6 +1825,7 @@ function startGame() {
   updateHpHUD(); updateHUD(); updateXPBar();
   for (let i = 0; i < 4; i++) updateItemHUD(i);
   state = 'playing';
+  if (atraccionRaf) { cancelAnimationFrame(atraccionRaf); atraccionRaf = null; }
   // Un solo bucle vivo: reanudar sin cancelar el anterior duplicaba el rAF y
   // el juego se aceleraba tras varias pausas o revives.
   if (raf) cancelAnimationFrame(raf);
@@ -1805,6 +1846,7 @@ function resumeGame() {
   playMusic();
   const ov = $id('ov-pause'); if (ov) ov.classList.remove('show');
   state = 'playing';
+  if (atraccionRaf) { cancelAnimationFrame(atraccionRaf); atraccionRaf = null; }
   // Un solo bucle vivo: reanudar sin cancelar el anterior duplicaba el rAF y
   // el juego se aceleraba tras varias pausas o revives.
   if (raf) cancelAnimationFrame(raf);
@@ -2031,6 +2073,7 @@ function reviveGame() {
   updateHpHUD(); updateHUD();
   playMusic();
   state = 'playing';
+  if (atraccionRaf) { cancelAnimationFrame(atraccionRaf); atraccionRaf = null; }
   // Un solo bucle vivo: reanudar sin cancelar el anterior duplicaba el rAF y
   // el juego se aceleraba tras varias pausas o revives.
   if (raf) cancelAnimationFrame(raf);
@@ -2040,6 +2083,8 @@ function reviveGame() {
 
 function toMenu() {
   hideAll();
+  state = 'menu';
+  arrancarAtraccion();
   cancelAnimationFrame(raf);
   state = 'menu';
   const ov = $id(DQE.menuOverlayId || 'ov-menu'); if (ov) ov.classList.add('show');
@@ -2066,3 +2111,6 @@ document.addEventListener('keydown', e => {
 document.addEventListener('keyup', e => { keys[e.code] = false; });
 cv.addEventListener('touchstart', e => { e.preventDefault(); jump(); }, { passive: false });
 cv.addEventListener('click', () => { if (state === 'menu') startGame(); else if (state === 'playing') attack(); });
+
+// Arrancar el mundo del menu en cuanto la pagina y las imagenes esten listas.
+window.addEventListener('load', () => { if (state === 'menu') arrancarAtraccion(); });
