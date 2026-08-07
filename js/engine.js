@@ -181,6 +181,7 @@ function tintedSprite(key, hex) {
 // con el de sus partículas de muerte, así que el tinte también predice el
 // efecto. Boss y magmar ya tienen sprite propio y se dejan sin teñir.
 function enemyTint(e) {
+  if (e.elite) return e.elite.color;
   if (e.isBoss || e.isMagmar) return null;
   if (e.isCharger) return '#ff9900';
   if (e.isExploder) return '#ff3333';
@@ -228,7 +229,13 @@ document.addEventListener('DOMContentLoaded', fitCanvas);
 
 // ── CONSTANTS ──
 const GRAVITY = 0.65, JUMP_FORCE = -14, DJUMP_FORCE = -11;
-const DASH_SPEED = 14, DASH_DUR = 14, DASH_CD = 45;
+const DASH_SPEED = 14, DASH_DUR = 14;
+// El dash daba 18 frames de invulnerabilidad cada 45: un 40%% del tiempo eras
+// intocable, asi que la estrategia optima era no pelear nunca. Medido con un
+// jugador automatico, esquivar sin atacar sobrevivia 300 s y luchar 84 s.
+// Con 62 de recarga la invulnerabilidad baja al 29%% y el dash sigue siendo la
+// herramienta de habilidad, pero deja de ser un escudo permanente.
+const DASH_CD = 62;
 const COMBO_WINDOW = 90;
 const WAVE_FRAMES = 1800; // ~30s por wave: progresión más adictiva (antes 2400/40s)
 const ITEM_SHOPS = [
@@ -267,9 +274,47 @@ let playerXP = 0, playerLevel = 1;
 const XP_PER_LEVEL = [0, 100, 250, 450, 700, 1000, 1400, 1900, 2500, 3200, 4000];
 function getXPNeeded(lvl) { return XP_PER_LEVEL[Math.min(lvl, XP_PER_LEVEL.length - 1)] || 4000 + (lvl - 10) * 600; }
 let runXP = 0;   // XP ganado en la partida actual, para enseñarlo al morir
+
+// ══ MEJORAS DE PARTIDA ══
+// El hueco mas grande frente a los juegos del genero (Vampire Survivors,
+// Brotato, Archero) era que aqui NO se construia nada dentro de la partida:
+// subir de nivel aplicaba bonus fijos y el XP era progresion permanente, asi
+// que la partida 40 se jugaba igual que la 4. Ahora, cada pocos niveles DE
+// PARTIDA se ofrecen 3 mejoras al azar que se acumulan y duran solo esa
+// partida. Ahi es donde nacen las decisiones y la variedad entre partidas.
+let mej = null;
+function mejorasBase() {
+  return { dano: 1, vidaPorMuerte: 0, cadencia: 1, alcance: 1, velocidad: 1,
+           monedas: 1, iman: 0, espinas: 0, dashRapido: 1, critico: 0, curaCombo: 0 };
+}
+
+const MEJORAS = [
+  { id: 'filo',    icono: '⚔',  nombre: 'FILO AFILADO',  desc: '+35% de dano',            usar: () => { mej.dano += .35; } },
+  { id: 'sed',     icono: '🩸', nombre: 'SED DE SANGRE', desc: '+3 vida por muerte',      usar: () => { mej.vidaPorMuerte += 3; } },
+  { id: 'furia',   icono: '⚡', nombre: 'FURIA',         desc: '+25% de cadencia',        usar: () => { mej.cadencia += .25; } },
+  { id: 'guadana', icono: '🌙', nombre: 'GUADANA',       desc: '+30% de alcance',         usar: () => { mej.alcance += .30; } },
+  { id: 'botas',   icono: '👟', nombre: 'BOTAS VELOCES', desc: '+20% de velocidad',       usar: () => { mej.velocidad += .20; } },
+  { id: 'corazon', icono: '❤', nombre: 'CORAZON',       desc: '+40 vida maxima y cura',  usar: () => { PL.maxHp += 40; PL.hp = Math.min(PL.maxHp, PL.hp + 40); updateHpHUD(); } },
+  { id: 'iman',    icono: '🧲', nombre: 'IMAN',          desc: 'Atrae monedas de lejos',  usar: () => { mej.iman += 1; } },
+  { id: 'espinas', icono: '🌵', nombre: 'ESPINAS',       desc: 'Danas a quien te toca',   usar: () => { mej.espinas += 2; } },
+  { id: 'critico', icono: '💥', nombre: 'GOLPE CRITICO', desc: '+20% de critico (x2)',    usar: () => { mej.critico += .20; } },
+  { id: 'avaro',   icono: '🪙', nombre: 'AVARICIA',      desc: '+50% de monedas',         usar: () => { mej.monedas += .50; } },
+  { id: 'sombra',  icono: '💨', nombre: 'SOMBRA',        desc: 'Dash mucho mas rapido',   usar: () => { mej.dashRapido *= .6; } },
+  { id: 'sanador', icono: '✨', nombre: 'SEGUNDO ALIENTO', desc: 'Combo x5 te cura 12',   usar: () => { mej.curaCombo += 12; } },
+];
+
+let mejorasElegidas = [];
+let runLevel = 1, runXPAcc = 0;
+function runXPNecesario(l) { return 55 + (l - 1) * 42; }
 function addXP(amt) {
   playerXP += amt;
   runXP += amt;
+  runXPAcc += amt;
+  while (state === 'playing' && runXPAcc >= runXPNecesario(runLevel)) {
+    runXPAcc -= runXPNecesario(runLevel);
+    runLevel++;
+    ofrecerMejoras();
+  }
   // while y no if: un boss (+80) o un cofre legendario (+60) sobre un nivel bajo
   // puede cruzar dos niveles de una vez, y antes se perdía el segundo.
   while (playerXP >= getXPNeeded(playerLevel)) { playerXP -= getXPNeeded(playerLevel); playerLevel++; onLevelUp(); }
@@ -424,13 +469,35 @@ function initBg() {
 }
 
 // ── SPAWNS ──
+// ══ ELITES ══
+// Un mismo bestiario se vuelve variado si algunos enemigos llegan con un
+// modificador visible. Cada afijo tine el sprite (tintedSprite ya cachea) y
+// cambia un solo parametro, asi que se leen de un vistazo y no complican el
+// motor. La probabilidad sube con la oleada hasta un techo.
+const AFIJOS = [
+  { id: 'blindado', nombre: 'BLINDADO', color: '#8899bb', hp: 2.6, vel: .75, xp: 2.2, monedas: 2 },
+  { id: 'veloz',    nombre: 'VELOZ',    color: '#00eeff', hp: .7,  vel: 1.9,  xp: 1.6, monedas: 1 },
+  { id: 'colosal',  nombre: 'COLOSAL',  color: '#ffcc00', hp: 3.4, vel: .6,  xp: 2.8, monedas: 3, escala: 1.45 },
+  { id: 'furioso',  nombre: 'FURIOSO',  color: '#ff3344', hp: 1.4, vel: 1.35, xp: 2.0, monedas: 2 },
+];
+
+function probabilidadElite() {
+  if (wave < 2) return 0;
+  return Math.min(.28, .05 + (wave - 2) * .022);
+}
+
 function spawnEnemy(forceBoss = false) {
-  const isBoss = forceBoss || (wave >= 4 && Math.random() < .12);
-  const isFlyer = !isBoss && wave >= 3 && Math.random() < .35;
+  // Antes: charger en la 2, flyer en la 3, boss en la 4, exploder en la 5,
+  // ghost en la 6 y magmar en la 7. Medido con un jugador automatico, una
+  // partida tipica muere en la oleada 2-3, asi que la mayoria de enemigos que
+  // programaste NO LOS VEIA NADIE. Ahora todo el bestiario aparece dentro de
+  // los dos primeros minutos.
+  const isBoss = forceBoss || (wave >= 3 && Math.random() < .12);
+  const isFlyer = !isBoss && wave >= 2 && Math.random() < .35;
   const isCharger = !isBoss && !isFlyer && wave >= 2 && Math.random() < .3;
-  const isExploder = !isBoss && !isFlyer && !isCharger && wave >= 5 && Math.random() < .2;
-  const isGhost = !isBoss && !isFlyer && !isCharger && !isExploder && wave >= 6 && Math.random() < .15;
-  const isMagmar = !isBoss && !isFlyer && !isCharger && !isExploder && !isGhost && wave >= 7 && Math.random() < .25;
+  const isExploder = !isBoss && !isFlyer && !isCharger && wave >= 3 && Math.random() < .2;
+  const isGhost = !isBoss && !isFlyer && !isCharger && !isExploder && wave >= 4 && Math.random() < .15;
+  const isMagmar = !isBoss && !isFlyer && !isCharger && !isExploder && !isGhost && wave >= 4 && Math.random() < .25;
   const baseHp = isBoss ? 8 : isMagmar ? 5 : isCharger ? 3 : isExploder ? 1 : 2;
   const eh = isBoss ? 90 : isFlyer ? 68 : isMagmar ? 76 : 62;
   // Los enemigos se alineaban por su borde SUPERIOR a GY, así que cada uno
@@ -451,6 +518,15 @@ function spawnEnemy(forceBoss = false) {
     shootTimer: isBoss ? 120 : isMagmar ? 80 : 0,
     facing: -1, alive: true,
   });
+  // Convertir en elite (nunca los jefes: ya son el evento de la oleada)
+  const nuevo = enemies[enemies.length - 1];
+  if (!isBoss && Math.random() < probabilidadElite()) {
+    const a = AFIJOS[Math.floor(Math.random() * AFIJOS.length)];
+    nuevo.elite = a;
+    nuevo.hp = nuevo.maxHp = Math.ceil(nuevo.maxHp * a.hp);
+    nuevo.spd *= a.vel;
+    if (a.escala) { nuevo.w = Math.round(nuevo.w * a.escala); nuevo.h = Math.round(nuevo.h * a.escala); nuevo.y = GROUND - nuevo.h; }
+  }
   if (isBoss) { bossActive = true; spawnFT(W / 2 - 60, 80, '★ BOSS FIGHT ★', '#ff00cc', true); _hap('heavy'); }
   if (isMagmar) spawnFT(W / 2 - 60, 80, '🔥 MAGMAR!', '#ff4400', true);
 }
@@ -514,8 +590,13 @@ function attack() {
   PL.swingId = (PL.swingId || 0) + 1;   // identifica este swing para el multi-golpe
   PL.comboTimer = COMBO_WINDOW;
   PL.attackTimer = 14 + PL.comboStep * 2;
-  PL.attackCd = 18 + PL.comboStep * 3;
-  const reach = [50, 60, 80][PL.comboStep];
+  PL.attackCd = Math.round((18 + PL.comboStep * 3) / mej.cadencia);
+  // i-frames al atacar: la ventana activa del golpe te hace intocable un
+  // instante. Sin esto, acercarse a pegar era SIEMPRE peor que huir, y las
+  // pruebas lo confirmaron: esquivar sin atacar sobrevivia 190 s de media y
+  // luchar solo 56 s. El juego castigaba su propio verbo principal.
+  PL.invTimer = Math.max(PL.invTimer, 10);
+  const reach = Math.round([50, 60, 80][PL.comboStep] * mej.alcance);
   const yOff = [10, 5, -5][PL.comboStep];
   PL.attackHitbox = { x: PL.x + (PL.facing > 0 ? PL.w : -reach), y: PL.y + yOff, w: reach, h: PL.h - yOff * 1.5, active: true };
   const colors = ['#ffe600', '#ff9900', '#ff3333'];
@@ -587,6 +668,11 @@ function hitCombo(pts) {
   comboTimer = COMBO_WINDOW;
   // El tope venía fijo a 5, lo que pisaba el bonus de combo de subir de nivel.
   comboMultiplier = Math.min(1 + Math.floor(comboCount / 3) * .5, comboCap);
+  if (mej && mej.curaCombo > 0 && comboCount > 0 && comboCount % 15 === 0 && PL.hp < PL.maxHp) {
+    PL.hp = Math.min(PL.maxHp, PL.hp + mej.curaCombo);
+    updateHpHUD();
+    spawnFT(PL.x + PL.w / 2, PL.y - 40, '+' + mej.curaCombo + ' COMBO', '#00ff88', true);
+  }
   achEvent('onCombo', comboMultiplier);
   const total = Math.floor(pts * comboMultiplier);
   addScore(total);
@@ -641,9 +727,9 @@ function update() {
     shake(6);
     // Cada 5 waves cambia el bioma: antes el mundo cambiaba de color y el
     // jugador ni se enteraba de que era un sistema.
-    if ((wave - 1) % 5 === 0) {
+    if ((wave - 1) % 3 === 0) {
       const b = currentBiome();
-      const bi = Math.floor((wave - 1) / 5) % BIOMES.length;
+      const bi = Math.floor((wave - 1) / 3) % BIOMES.length;
       markBiomeSeen(bi);
       spawnFT(W / 2, 108, '⟡ ' + b.name + ' ⟡', b.line, true);
       showPUNotif('⟡ Entras en ' + b.name);
@@ -666,7 +752,7 @@ function update() {
     if (PL.dashTimer <= 0) { PL.dashing = false; PL.vx = PL.dashDir * 3; }
   }
 
-  PL.x += PL.vx;
+  PL.x += PL.vx * (PL.dashing ? 1 : mej.velocidad);
   PL.x = Math.max(10, Math.min(W - PL.w - 10, PL.x)); // free movement across the whole map
 
   if (!PL.dashing) {
@@ -719,7 +805,7 @@ function update() {
   // se lea como un golpe seco y no como una deformación permanente.
   if (PL.squash) { PL.squash *= .78; if (Math.abs(PL.squash) < .01) PL.squash = 0; }
   if (PL.invTimer > 0) PL.invTimer--;
-  if (PL.dashCd > 0) PL.dashCd--;
+  if (PL.dashCd > 0) PL.dashCd -= (2 - mej.dashRapido);
   if (PL.attackCd > 0) PL.attackCd--;
   if (PL.comboTimer > 0) PL.comboTimer--;
   if (PL.attackTimer > 0) { PL.attackTimer--; } else { PL.attackHitbox.active = false; }
@@ -742,7 +828,7 @@ function update() {
   // duende: se separaban hasta 56px y parecía que fallabas cuando acertabas.
   const attackBox = PL.attackHitbox;
   if (PL.attackTimer > 0 && attackBox.active) {
-    const reach = [50, 60, 80][PL.comboStep];
+    const reach = Math.round([50, 60, 80][PL.comboStep] * mej.alcance);
     const yOff = [10, 5, -5][PL.comboStep];
     attackBox.x = PL.x + (PL.facing > 0 ? PL.w : -reach);
     attackBox.y = PL.y + yOff;
@@ -751,7 +837,7 @@ function update() {
   }
   let swingHits = 0;
   enemies = enemies.filter(e => {
-    if (e.knock > 0) { e.x += e.knock; e.knock *= .72; if (e.knock < .4) e.knock = 0; }
+    if (e.knock > 0) { e.x += e.knock; e.knock *= .78; if (e.knock < .4) e.knock = 0; }
     if (e.isBoss) {
       e.x += (W * .4 - e.x) * .015;
     } else if (e.isCharger && e.chargeTimer <= 0) {
@@ -789,9 +875,16 @@ function update() {
       e.hitBy = PL.swingId;
       swingHits++;
       const atkMult = skinBuffs?.atkMult || 1;
-      const dmg = Math.ceil((1 + PL.comboStep) * atkMult);
+      const critico = Math.random() < mej.critico;
+      const dmg = Math.ceil((1 + PL.comboStep) * atkMult * mej.dano * (critico ? 2 : 1));
+      if (critico) spawnFT(e.x + e.w / 2, e.y - 34, 'CRITICO!', '#ffe600', true);
       e.hp -= dmg; e.flashTimer = 10;
-      e.knock = (e.knock || 0) + 5 + PL.comboStep * 2;   // retroceso: el golpe empuja
+      // Retroceso fuerte a proposito: con 5 de empuje el desplazamiento total
+      // era de ~18 px y el enemigo mide 68, asi que tras golpearlo SEGUIAS
+      // pegado a el y comiendo dano por contacto. Con 18 el desplazamiento es
+      // de ~64 px y el golpe te saca del peligro: atacar pasa a ser tambien
+      // una herramienta defensiva, que es lo que hace viable el cuerpo a cuerpo.
+      e.knock = (e.knock || 0) + 18 + PL.comboStep * 6;
       if (skinBuffs?.lifesteal) { PL.hp = Math.min(PL.maxHp, PL.hp + Math.ceil(dmg * skinBuffs.lifesteal * 10)); updateHpHUD(); }
       const pts = hitCombo(e.isBoss ? 120 : e.isCharger ? 80 : 60);
       spawnPFX(attackBox.x + attackBox.w / 2, e.y + e.h / 2, ['#ffe600', '#ff9900', '#ff3333'][PL.comboStep], 8 + PL.comboStep * 5, 4 + PL.comboStep * 2);
@@ -809,6 +902,20 @@ function update() {
       if (killStreak === 3) showPUNotif('🔥 3 KILLS - RACHA!');
       else if (killStreak === 5) { showPUNotif('☄️ 5 KILLS - IMPARABLE!'); shake(5); }
       else if (killStreak === 10) { showPUNotif('⚡ 10 KILLS - LEGENDARIO!'); shake(8); addXP(50); }
+      if (e.elite) {
+        spawnFT(e.x + e.w / 2, e.y - 40, e.elite.nombre + ' CAIDO', e.elite.color, true);
+        addXP(Math.round(12 * e.elite.xp));
+        for (let c = 0; c < e.elite.monedas; c++) spawnCoin(e.x + Math.random() * e.w, e.y);
+        shake(7); freeze(6);
+      }
+      // Recompensa por luchar: cada muerte devuelve algo de vida si has
+      // invertido en ello. Es lo que convierte el combate en una opcion viable
+      // frente a huir, sin regalar nada a quien no elige esas mejoras.
+      if (mej.vidaPorMuerte > 0 && PL.hp < PL.maxHp) {
+        PL.hp = Math.min(PL.maxHp, PL.hp + mej.vidaPorMuerte);
+        updateHpHUD();
+        spawnFT(PL.x + PL.w / 2, PL.y - 26, '+' + mej.vidaPorMuerte, '#00ff88');
+      }
       missionEvent('kill', 1); achEvent('onKill');
       if (e.isBoss) { bossActive = false; bossKilled++; missionEvent('boss', 1); achEvent('onBoss'); spawnFT(e.x, e.y - 30, 'BOSS MUERTO!', '#ff00cc', true); playSound('boss'); addXP(80); _hap('heavy'); }
       else { addXP(e.isMagmar ? 30 : e.isCharger ? 20 : e.isExploder ? 15 : 10); playSound('crunch'); _hap('medium'); }
@@ -824,7 +931,7 @@ function update() {
       } else if (Math.random() < .08) {
         spawnChest(e.x + e.w / 2, e.y, 'comun');
       }
-      if (wave >= 4 && Math.random() < .05) spawnWeaponDrop(e.x + e.w / 2, e.y);
+      if (wave >= 2 && Math.random() < .07) spawnWeaponDrop(e.x + e.w / 2, e.y);
       shake(e.isBoss ? 10 : e.isMagmar ? 6 : 4);
       freeze(e.isBoss ? 10 : e.isMagmar ? 6 : 4);
       return false;
@@ -845,6 +952,7 @@ function update() {
       PL.invTimer = 60; PL.flashTimer = 20;
       comboCount = 0; comboMultiplier = 1;
       shake(8); freeze(6);
+      if (mej.espinas > 0) { e.hp -= mej.espinas; e.flashTimer = 10; e.knock = (e.knock || 0) + 12; }
       spawnPFX(PL.x + PL.w / 2, PL.y + PL.h / 2, '#ff3333', 14, 5);
       spawnFT(PL.x, PL.y - 20, '-' + dmg + ' HP', '#ff3333');
       updateHpHUD();
@@ -909,7 +1017,7 @@ function update() {
   }
 
   // ── COINS (con buff coinMult de skins) ──
-  const skinCoinMult = skinBuffs?.coinMult || 1;
+  const skinCoinMult = (skinBuffs?.coinMult || 1) * mej.monedas;
   coins = coins.filter(c => {
     c.x -= c.spd > 0 ? c.spd : gameSpeed * .6;
     c.bob += .09; c.y += Math.sin(c.bob) * .7;
@@ -917,7 +1025,7 @@ function update() {
     const dy = PL.y + PL.h / 2 - (c.y + c.h / 2);
     const dist = Math.sqrt(dx * dx + dy * dy);
     // imán activo: rango y fuerza mucho mayores
-    const range = puMagnet > 0 ? 320 : 90;
+    const range = puMagnet > 0 ? 320 : 90 + mej.iman * 110;
     const pull = puMagnet > 0 ? .25 : .12;
     if (dist < range) { c.x += dx * pull; c.y += dy * pull; }
     if (overlap({ x: PL.x + 4, y: PL.y + 4, w: PL.w - 8, h: PL.h - 8 }, c)) {
@@ -1065,7 +1173,7 @@ function markBiomeSeen(i) {
 function biomesSeen() {
   try { return JSON.parse(localStorage.getItem('dq_biomes') || '[]').length; } catch (e) { return 0; }
 }
-function currentBiome() { return BIOMES[Math.floor((wave - 1) / 5) % BIOMES.length]; }
+function currentBiome() { return BIOMES[Math.floor((wave - 1) / 3) % BIOMES.length]; }
 let _vignette = null;
 
 function drawPuTimer(x, emoji, pct, color) {
@@ -1206,6 +1314,15 @@ function draw() {
       drawSpr(whiteSprite(key), { x: -e.w / 2, y: e.y, w: e.w, h: e.h });
     }
     cx.restore();
+    if (e.elite) {
+      cx.save();
+      cx.font = '.26rem "Press Start 2P"'; cx.textAlign = 'center';
+      cx.lineWidth = 3; cx.strokeStyle = 'rgba(0,0,0,.85)'; cx.lineJoin = 'round';
+      cx.strokeText(e.elite.nombre, e.x + e.w / 2, e.y - 18);
+      cx.fillStyle = e.elite.color;
+      cx.fillText(e.elite.nombre, e.x + e.w / 2, e.y - 18);
+      cx.restore();
+    }
     if (e.maxHp > 2 || e.isBoss) {
       const bw = e.w; const pct = e.hp / e.maxHp;
       cx.fillStyle = 'rgba(0,0,0,.5)'; cx.fillRect(e.x, e.y - 12, bw, 7);
@@ -1364,6 +1481,23 @@ function draw() {
     cx.restore();
   }
 
+  // Progreso hacia la proxima mejora: el jugador necesita ver que le queda
+  // poco para elegir, porque esa es la zanahoria de cada partida.
+  if (state === 'playing' || state === 'eligiendo') {
+    const pct = Math.min(1, runXPAcc / runXPNecesario(runLevel));
+    cx.save();
+    cx.fillStyle = 'rgba(0,0,0,.45)'; cx.fillRect(W / 2 - 70, 8, 140, 7);
+    cx.fillStyle = '#c084fc'; cx.fillRect(W / 2 - 70, 8, 140 * pct, 7);
+    cx.strokeStyle = 'rgba(192,132,252,.5)'; cx.lineWidth = 1; cx.strokeRect(W / 2 - 70, 8, 140, 7);
+    cx.font = '.24rem "Press Start 2P"'; cx.textAlign = 'center'; cx.fillStyle = 'rgba(255,255,255,.55)';
+    cx.fillText('MEJORA ' + runLevel, W / 2, 26);
+    if (mejorasElegidas.length) {
+      cx.font = '13px sans-serif'; cx.textAlign = 'right';
+      cx.fillText(mejorasElegidas.slice(-8).join(' '), W - 8, 26);
+    }
+    cx.restore();
+  }
+
   // Flash rojo al recibir daño. PL.flashTimer ya se ponía a 20 en los tres
   // puntos de daño y se decrementaba cada frame, pero draw() no lo leía en
   // ningún sitio: el estado estaba calculado y no se dibujaba.
@@ -1452,6 +1586,8 @@ function startGame() {
   chests = []; weaponDrops = []; weaponBuff = null;
   powerups = []; puMagnet = 0; puDouble = 0;
   shakeAmt = 0; shakeTimer = 0; hitStop = 0;
+  mej = mejorasBase(); mejorasElegidas = []; runLevel = 1; runXPAcc = 0;
+  { const om = $id('ov-mejora'); if (om) om.style.display = 'none'; }
   const bHp = _buffs()?.bonusHp || 0;
   Object.assign(PL, { x: 80, y: GY, vx: 0, vy: 0, onGround: false, jumping: false, djUsed: false, coyoteTimer: 0, jumpBuffer: 0, dashing: false, dashTimer: 0, dashDir: 1, dashCd: 0, comboStep: 0, comboTimer: 0, attackTimer: 0, attackCd: 0, attackHitbox: { x: 0, y: 0, w: 0, h: 0, active: false }, slamming: false, slamTimer: 0, hp: 100 + bHp, maxHp: 100 + bHp, invTimer: 0, shieldOn: false, shieldTimer: 0, fireOn: false, fireTimer: 0, lightTimer: 0, flashTimer: 0, facing: 1, animTimer: 0, runFrame: 0, items: [[3, 0, 90], [2, 0, 120], [1, 0, 150], [1, 0, 180]] });
 
@@ -1517,6 +1653,62 @@ function endGame() {
   try {
     DQE.onEndGame && DQE.onEndGame({ score: Math.floor(score), wave, level: playerLevel, coins: sessionCoins, bosses_killed: bossKilled, combos_max: comboCount });
   } catch (e) {}
+}
+
+// ── ELEGIR MEJORA (pausa la partida y ofrece 3 al azar) ──
+function ofrecerMejoras() {
+  const disponibles = MEJORAS.slice();
+  // Barajado sencillo; se permite repetir mejoras ya elegidas porque casi
+  // todas son acumulables y repetir una es una decision valida.
+  for (let i = disponibles.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [disponibles[i], disponibles[j]] = [disponibles[j], disponibles[i]];
+  }
+  const opciones = disponibles.slice(0, 3);
+
+  state = 'eligiendo';
+  if (raf) { cancelAnimationFrame(raf); raf = null; }
+  pauseMusic();
+  playSound('levelup');
+  _hap('heavy');
+
+  let ov = $id('ov-mejora');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'ov-mejora';
+    ov.className = 'ov';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;' +
+      'align-items:center;justify-content:center;background:rgba(5,5,16,.94);padding:16px;gap:10px';
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML =
+    '<div style="font-size:.62rem;color:#c084fc;text-shadow:3px 3px 0 #000">NIVEL ' + runLevel + '</div>' +
+    '<div style="font-size:.34rem;color:rgba(255,255,255,.5);margin-bottom:6px">ELIGE UNA MEJORA</div>' +
+    opciones.map((m, i) =>
+      '<button data-i="' + i + '" style="width:min(420px,92%);min-height:66px;display:flex;align-items:center;gap:12px;' +
+      'background:linear-gradient(135deg,rgba(124,58,237,.28),rgba(0,255,136,.10));border:2px solid rgba(0,255,136,.45);' +
+      'border-radius:8px;color:#fff;font-family:inherit;padding:10px 14px;cursor:pointer;text-align:left">' +
+        '<span style="font-size:26px;line-height:1">' + m.icono + '</span>' +
+        '<span><span style="font-size:.38rem;color:#00ff88">' + m.nombre + '</span><br>' +
+        '<span style="font-size:.30rem;color:rgba(255,255,255,.65)">' + m.desc + '</span></span>' +
+      '</button>').join('');
+
+  ov.querySelectorAll('button').forEach(b => {
+    b.onclick = () => {
+      const m = opciones[+b.dataset.i];
+      try { m.usar(); } catch (e) {}
+      mejorasElegidas.push(m.icono);
+      spawnFT(PL.x, PL.y - 46, m.nombre, '#00ff88', true);
+      showPUNotif(m.icono + ' ' + m.nombre + ' — ' + m.desc);
+      ov.style.display = 'none';
+      state = 'playing';
+      playMusic();
+      resetLoopClock();
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(loop);
+    };
+  });
+  ov.style.display = 'flex';
 }
 
 // ── EL "CASI": el gancho que dispara la segunda partida ──
