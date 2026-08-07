@@ -23,3 +23,6 @@ dist-test
 # Toda la documentación interna (checklists, notas de seguridad, auditorías).
 # Regla general para que no vuelva a escaparse ninguna:
 *.md
+
+# Herramientas de assets: material de origen y scripts, no se sirven
+tools

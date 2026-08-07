@@ -11,3 +11,7 @@ secrets.js
 service_role_key.txt
 .wrangler/
 dist-test/
+
+# Cache de Python de las herramientas de assets
+__pycache__/
+*.pyc

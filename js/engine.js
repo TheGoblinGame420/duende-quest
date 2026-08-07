@@ -42,9 +42,97 @@ const IMG = {
   skin_berserker: _AB + 'skins/skin_berserker.png',
   skin_king: _AB + 'skins/skin_king.png',
   skin_tactico: _AB + 'skins/skin_tactico.png',
+  // Las dos skins mas caras existian en disco y se usaban de foto en la
+  // tienda, pero en partida se sustituian por otro personaje: quien pagaba
+  // 250 $ veia al berserker. Ahora cada skin usa su propio sprite.
+  skin_necromancer: _AB + 'skins/skin_necromancer.png',
+  skin_legendariafull: _AB + 'skins/skin_legendariafull.png',
+  duende_comun: _AB + 'skins/duende_comun.png',
 };
 const IMG_EL = {};
 Object.entries(IMG).forEach(([k, v]) => { const el = new Image(); el.src = v; IMG_EL[k] = el; });
+
+// ── ANIMACIÓN DEL DUENDE ──
+// En assets/sprite_sheets/ habia una hoja de animacion completa que nadie
+// cargaba: el jugador era una imagen congelada, y de hecho el motor calculaba
+// PL.animTimer y PL.runFrame sin leerlos jamas. tools/extraer_animacion.py
+// convierte esa hoja en un atlas en tira; aqui se reproduce.
+const ANIM_IMG = new Image();
+ANIM_IMG.src = _AB + 'skins/duende_anim.png';
+let ANIM_META = null;
+fetch(_AB + 'skins/duende_anim.json').then(r => r.json()).then(d => { ANIM_META = d; }).catch(() => {});
+
+// Indices dentro del atlas. La primera fila es reposo (4) + caminar (6), la
+// segunda ataque (5) + golpe recibido (3). Se salta el fotograma 0 porque su
+// recorte sale mas pequeno que el resto y da un salto feo en el bucle.
+const ANIM = {
+  reposo: [1, 2, 3],
+  camina: [4, 5, 6, 7, 8, 9],
+  ataca: [10, 11, 12, 13, 14],
+  herido: [15, 16, 17],
+};
+
+function animFrame() {
+  if (!ANIM_META || !ANIM_IMG.naturalWidth) return -1;
+  if (PL.attackTimer > 0) {
+    const dur = 14 + PL.comboStep * 2;
+    const t = 1 - Math.max(0, PL.attackTimer) / dur;
+    return ANIM.ataca[Math.min(ANIM.ataca.length - 1, Math.floor(t * ANIM.ataca.length))];
+  }
+  if (PL.invTimer > 44) return ANIM.herido[Math.floor(frame / 6) % ANIM.herido.length];
+  if (PL.onGround && Math.abs(PL.vx) > .6) return ANIM.camina[Math.floor(frame / 5) % ANIM.camina.length];
+  return ANIM.reposo[Math.floor(frame / 14) % ANIM.reposo.length];
+}
+
+// Dibuja un fotograma del atlas encajado en la caja del jugador. La celda es
+// mas alta que el duende erguido, asi que se escala por altoDePie para que la
+// animacion se vea del mismo tamano que el sprite estatico de siempre.
+function drawAnim(idx, caja, flip) {
+  const [cw, ch] = ANIM_META.celda;
+  const alto = caja.h / (ANIM_META.altoDePie || 1);
+  const ancho = alto * (cw / ch);
+  const x = caja.x + (caja.w - ancho) / 2;
+  const y = caja.y + caja.h - alto;
+  cx.save();
+  if (flip) { cx.translate(x + ancho, 0); cx.scale(-1, 1); }
+  cx.drawImage(ANIM_IMG, idx * cw, 0, cw, ch, flip ? 0 : x, y, ancho, alto);
+  cx.restore();
+}
+
+// ── DIBUJADO RESPETANDO LA PROPORCIÓN ──
+// Antes se estiraba el PNG entero dentro de la caja de colisión de la entidad.
+// Como los sprites venían con enormes márgenes transparentes y proporciones
+// distintas a la caja, el personaje salía aplastado al 40-60% de su ancho real:
+// el duende (proporción 1.06) metido en una caja de 52x68 (proporción 0.76) se
+// veía como un palo. Ahora los PNG están recortados a su dibujo, así que su
+// proporción natural es la buena: se dibuja a la altura pedida, con el ancho
+// que le corresponda, centrado sobre la caja y con los pies en la base.
+function spriteRect(img, caja) {
+  const h = caja.h;
+  const prop = (img && img.naturalHeight) ? img.naturalWidth / img.naturalHeight
+             : (img && img.height ? img.width / img.height : 1);
+  // Tope de seguridad: un sprite muy apaisado (el jefe es un oso a cuatro
+  // patas) se saldria demasiado de su caja de colisión y el jugador recibiria
+  // golpes donde no parece haber nada. 1,7x deja el arte casi intacto y evita
+  // el caso extremo.
+  const w = Math.min(h * prop, caja.w * 1.7);
+  return { x: caja.x + (caja.w - w) / 2, y: caja.y, w: w, h: h };
+}
+
+// Dibuja un sprite ajustado a la caja de la entidad, opcionalmente espejado.
+function drawSpr(img, caja, flip) {
+  if (!img || (img.naturalWidth !== undefined && !img.naturalWidth)) return;
+  const r = spriteRect(img, caja);
+  if (flip) {
+    cx.save();
+    cx.translate(r.x + r.w, 0);
+    cx.scale(-1, 1);
+    cx.drawImage(img, 0, r.y, r.w, r.h);
+    cx.restore();
+  } else {
+    cx.drawImage(img, r.x, r.y, r.w, r.h);
+  }
+}
 
 // ── SPRITES DERIVADOS ──
 // Generamos variantes por código a partir de los PNG que ya existen, sin
@@ -947,12 +1035,15 @@ function update() {
 }
 
 // ── DRAW ──
-function _playerImg() {
+// Devuelve la clave de sprite del jugador, ya validada (si la skin equipada
+// todavia no ha cargado se cae al duende base).
+function _playerKey() {
   let key = 'duende_hero';
   try { key = (DQE.getPlayerImgKey && DQE.getPlayerImgKey()) || 'duende_hero'; } catch (e) {}
   const img = IMG_EL[key];
-  return (img && img.naturalWidth > 0) ? img : IMG_EL['duende_hero'];
+  return (img && img.naturalWidth > 0) ? key : 'duende_hero';
 }
+function _playerImg() { return IMG_EL[_playerKey()]; }
 
 // ── BIOMAS: cada 5 waves el mundo cambia de color (sensación de viaje) ──
 // Los nombres no son decoracion: convierten un cambio de color que pasaba
@@ -1043,7 +1134,7 @@ function draw() {
   // Coins
   coins.forEach(c => {
     cx.save(); cx.imageSmoothingEnabled = false;
-    cx.drawImage(IMG_EL['coin'], c.x, c.y, c.w, c.h); cx.restore();
+    drawSpr(IMG_EL['coin'], c); cx.restore();
   });
 
   // Chests
@@ -1054,7 +1145,7 @@ function draw() {
     cx.shadowColor = shadowColors[ch.tier];
     cx.shadowBlur = 10 + pulse * 14;
     cx.globalAlpha = .92 + pulse * .08;
-    cx.drawImage(IMG_EL['cofre_' + ch.tier], ch.x, ch.y, ch.w, ch.h);
+    drawSpr(IMG_EL['cofre_' + ch.tier], ch);
     cx.restore();
   });
 
@@ -1065,7 +1156,7 @@ function draw() {
     cx.shadowColor = w.type === 'katana_spark' ? '#00eeff' : '#ffe600';
     cx.shadowBlur = 8 + pulse * 10;
     cx.globalAlpha = .85 + pulse * .15;
-    cx.drawImage(IMG_EL[w.type], w.x, w.y, w.w, w.h);
+    drawSpr(IMG_EL[w.type], w);
     cx.restore();
   });
 
@@ -1109,10 +1200,10 @@ function draw() {
     if (e.isGhost) { cx.shadowColor = '#9333ea'; cx.shadowBlur = 16; }
     if (e.isMagmar) { cx.shadowColor = '#ff4400'; cx.shadowBlur = 18 + Math.sin(frame * .15) * 10; }
     cx.translate(e.x + e.w / 2, 0); cx.scale(-1, 1);
-    cx.drawImage(variant ? tintedSprite(key, variant) : IMG_EL[key], -e.w / 2, e.y, e.w, e.h);
+    drawSpr(variant ? tintedSprite(key, variant) : IMG_EL[key], { x: -e.w / 2, y: e.y, w: e.w, h: e.h });
     if (e.flashTimer > 0) {
       cx.globalAlpha = ghostA * Math.min(1, e.flashTimer / 8);
-      cx.drawImage(whiteSprite(key), -e.w / 2, e.y, e.w, e.h);
+      drawSpr(whiteSprite(key), { x: -e.w / 2, y: e.y, w: e.w, h: e.h });
     }
     cx.restore();
     if (e.maxHp > 2 || e.isBoss) {
@@ -1149,15 +1240,19 @@ function draw() {
 
   // ── PLAYER ──
   const plAlpha = PL.invTimer > 0 && PL.invTimer % 8 < 4 ? .3 : 1;
-  const _plImg = _playerImg();
+  const _plKey = _playerKey();
+  const _plImg = IMG_EL[_plKey];
   cx.save(); cx.imageSmoothingEnabled = false; cx.globalAlpha = plAlpha;
   // Squash & stretch: se aplasta al aterrizar y se estira al saltar, siempre
   // conservando el volumen y anclado a los pies para que no "flote".
   const sq = PL.squash || 0;
   const pw = PL.w * (1 + sq * .55), ph = PL.h * (1 - sq);
   const px = PL.x - (pw - PL.w) / 2, py = PL.y + (PL.h - ph);
-  if (PL.facing < 0) { cx.translate(px + pw, 0); cx.scale(-1, 1); cx.drawImage(_plImg, 0, py, pw, ph); }
-  else cx.drawImage(_plImg, px, py, pw, ph);
+  // La animacion es del duende base: si el jugador lleva una skin de pago,
+  // se dibuja su sprite propio (que ahora si es el suyo) en vez de animar.
+  const _anim = _plKey === 'duende_hero' ? animFrame() : -1;
+  if (_anim >= 0) drawAnim(_anim, { x: px, y: py, w: pw, h: ph }, PL.facing < 0);
+  else drawSpr(_plImg, { x: px, y: py, w: pw, h: ph }, PL.facing < 0);
   cx.restore();
 
   // Aura de skin (legendaria)
@@ -1181,7 +1276,7 @@ function draw() {
       const tx = PL.x - PL.dashDir * t * 12;
       cx.save(); cx.imageSmoothingEnabled = false;
       cx.globalAlpha = .15 * (5 - t) / 4;
-      cx.drawImage(_plImg, tx, PL.y, PL.w, PL.h); cx.restore();
+      drawSpr(_plImg, { x: tx, y: PL.y, w: PL.w, h: PL.h }, PL.facing < 0); cx.restore();
     }
     cx.save(); cx.strokeStyle = 'rgba(124,58,237,.6)'; cx.lineWidth = 3;
     cx.beginPath(); cx.moveTo(PL.x, PL.y + PL.h / 2); cx.lineTo(PL.x - PL.dashDir * 50, PL.y + PL.h / 2); cx.stroke(); cx.restore();

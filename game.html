@@ -731,9 +731,13 @@ _applySkinBuffs();
 
 // Apply skin to player sprite
 function getPlayerImgKey(){
-  if(equippedSkin==='necro'   && IMG_EL['skin_king']?.naturalWidth>0)     return 'skin_king';
-  if(equippedSkin==='legend'  && IMG_EL['skin_berserker']?.naturalWidth>0) return 'skin_berserker';
-  return 'duende_hero';
+  // Cada skin con su propio sprite. Antes necro devolvia el rey y legendaria el
+  // berserker: el jugador pagaba y veia otro personaje.
+  const mapa={comun:'duende_hero',tactico:'skin_tactico',necro:'skin_necromancer',
+              king:'skin_king',berserker:'skin_berserker',
+              legend:'skin_legendariafull',legendaria:'skin_legendariafull'};
+  const k=mapa[equippedSkin];
+  return (k && IMG_EL[k]?.naturalWidth>0) ? k : 'duende_hero';
 }
 
 // ── DQ WALLET ──

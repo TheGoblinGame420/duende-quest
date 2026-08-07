@@ -1195,7 +1195,7 @@ window.DQE={
   music:null,
   haptic:tp=>{try{tgHaptic(tp);}catch(e){}},
   getSkinBuffs:()=>{try{return activeSkinBuffs||null;}catch(e){return null;}},
-  getPlayerImgKey:()=>{try{return ({comun:'duende_hero',tactico:'skin_tactico',necro:'skin_king',king:'skin_king',berserker:'skin_berserker',legendaria:'skin_berserker'})[equippedSkin]||'duende_hero';}catch(e){return 'duende_hero';}},
+  getPlayerImgKey:()=>{try{return ({comun:'duende_hero',tactico:'skin_tactico',necro:'skin_necromancer',king:'skin_king',berserker:'skin_berserker',legendaria:'skin_legendariafull'})[equippedSkin]||'duende_hero';}catch(e){return 'duende_hero';}},
   fitCanvas:cv2=>{cv2.style.width='100%';cv2.style.height='auto';},
   onStartGame:()=>{if(tg){try{tg.MainButton.hide();tg.BackButton.show();tg.BackButton.onClick(()=>{if(state==='playing')pauseGame();else if(state==='paused')resumeGame();});}catch(e){}}},
   onToMenu:()=>{if(tg){try{tg.MainButton.hide();tg.BackButton.hide();}catch(e){}}},
