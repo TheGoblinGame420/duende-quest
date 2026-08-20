@@ -158,6 +158,86 @@ function drawSpr(img, caja, flip) {
   }
 }
 
+// ══ ANIMACION DE ENEMIGOS ══
+// No hay hojas de sprites dibujadas para los enemigos, y no puedo dibujar arte
+// nuevo. Pero un sprite sheet no es mas que una tabla de transformaciones por
+// fotograma, y esas se pueden calcular: cada estado deforma, inclina, escala y
+// desplaza el mismo bitmap. Sale mas fluido que una hoja de 4 fotogramas,
+// pesa 0 KB y funciona igual para los siete tipos de enemigo.
+//
+// Estados: aparicion -> reposo -> anticipacion -> ataque -> golpeado -> muerte
+function animEnemigo(e) {
+  const t = frame * .1 + (e.bobTimer || 0);
+  const a = { escalaX: 1, escalaY: 1, giro: 0, dx: 0, dy: 0, alpha: 1 };
+
+  // APARICION: surge del suelo estirandose, con un destello. Antes los
+  // enemigos simplemente se materializaban en el borde.
+  if (e.aparicion > 0) {
+    const k = 1 - e.aparicion / 26;          // 0 -> 1
+    a.escalaY = .35 + k * .65;
+    a.escalaX = 1.5 - k * .5;
+    a.dy = (1 - k) * e.h * .5;
+    a.alpha = Math.min(1, k * 1.6);
+    return a;
+  }
+
+  // MUERTE: se aplasta contra el suelo girando y se desvanece.
+  if (e.muriendo > 0) {
+    const k = 1 - e.muriendo / 16;
+    a.escalaY = 1 - k * .8;
+    a.escalaX = 1 + k * .45;
+    a.giro = k * (e.facing < 0 ? -.5 : .5);
+    a.dy = k * e.h * .4;
+    a.alpha = 1 - k;
+    return a;
+  }
+
+  // ANTICIPACION del charger: se echa hacia atras antes de embestir. Es el
+  // aviso que permite reaccionar, y sin el la embestida se siente injusta.
+  if (e.isCharger && e.chargeTimer > 0 && e.chargeTimer < 34) {
+    const k = 1 - e.chargeTimer / 34;
+    a.dx = k * 12;
+    a.escalaX = 1 - k * .18;
+    a.escalaY = 1 + k * .16;
+    return a;
+  }
+
+  // ATAQUE a distancia: se hincha justo antes de disparar.
+  if (e.shootTimer > 0 && e.shootTimer < 18) {
+    const k = 1 - e.shootTimer / 18;
+    a.escalaX = 1 + k * .22;
+    a.escalaY = 1 + k * .12;
+    return a;
+  }
+
+  // GOLPEADO: retrocede y se comprime.
+  if (e.flashTimer > 0) {
+    const k = e.flashTimer / 10;
+    a.escalaX = 1 + k * .2;
+    a.escalaY = 1 - k * .16;
+    a.dx = k * 5;
+    return a;
+  }
+
+  // REPOSO: respiracion y balanceo. Cada familia se mueve distinto para que se
+  // distingan de un vistazo aunque compartan bitmap.
+  if (e.isFlyer) {
+    a.dy = Math.sin(t * 1.4) * 5;
+    a.giro = Math.sin(t * 1.4) * .09;
+  } else if (e.isMagmar) {
+    a.escalaY = 1 + Math.sin(t * .8) * .07;   // late como una masa
+    a.escalaX = 1 - Math.sin(t * .8) * .05;
+  } else if (e.isBoss) {
+    a.escalaY = 1 + Math.sin(t * .5) * .04;
+    a.dy = Math.sin(t * .5) * 2;
+  } else {
+    a.escalaY = 1 + Math.sin(t) * .05;        // caminar: sube y baja
+    a.dy = Math.abs(Math.sin(t)) * -3;
+    a.giro = Math.sin(t * .5) * .05;
+  }
+  return a;
+}
+
 // ── SPRITES DERIVADOS ──
 // Generamos variantes por código a partir de los PNG que ya existen, sin
 // dibujar arte nuevo. Cada variante se calcula UNA vez y se guarda en caché.
@@ -522,6 +602,9 @@ let chests = [], weaponDrops = [];
 // arriba que alcanzar. Con plataformas hay una segunda altura donde caen
 // monedas y desde donde se cae en picado sobre los enemigos.
 let plataformas = [];
+// Los enemigos muertos siguen unos frames en pantalla reproduciendo su
+// animacion de muerte antes de desaparecer.
+let cadaveres = [];
 
 function initPlataformas() {
   plataformas = [];
@@ -627,12 +710,23 @@ function spawnEnemy(forceBoss = false) {
     w: isBoss ? 96 : isFlyer ? 72 : isMagmar ? 80 : 68,
     h: eh,
     hp: baseHp, maxHp: baseHp,
-    spd: (gameSpeed + (Math.random() * .8)) * (isBoss ? .75 : isCharger ? 1.6 : isMagmar ? .9 : 1),
+    // Los normales van por DEBAJO del jugador (4 px/frame) para que se les
+    // pueda alcanzar y uno decida cuando entrar; el charger sigue siendo la
+    // amenaza rapida, pero avisa antes de embestir.
+    // El jugador corre a 4 px/frame. Un enemigo normal NUNCA debe superarlo, o
+    // desengancharse se vuelve imposible y la unica opcion es tragar el golpe.
+    // El charger si es mas rapido: es la amenaza que obliga a saltar o hacer
+    // dash, y por eso avisa 78 frames antes de embestir.
+    spd: isCharger ? Math.min(6.4, gameSpeed * 1.25 + Math.random() * .4)
+       : isBoss    ? Math.min(2.9, gameSpeed * .58)
+       : isMagmar  ? Math.min(3.0, gameSpeed * .62)
+       :             Math.min(3.5, gameSpeed * .78 + Math.random() * .3),
     type: isBoss ? 'boss' : isFlyer ? 'flyer' : isCharger ? 'charger' : isExploder ? 'exploder' : isGhost ? 'ghost' : isMagmar ? 'magmar' : 'normal',
     isExploder, isGhost, ghostTimer: 0, ghostAlpha: 1,
     isFlyer, isBoss, isCharger, isMagmar,
     flashTimer: 0, bobTimer: Math.random() * Math.PI * 2,
-    chargeTimer: isCharger ? 60 : 0,
+    aparicion: 26, muriendo: 0,
+    chargeTimer: isCharger ? 78 : 0,
     shootTimer: isBoss ? 120 : isMagmar ? 80 : 0,
     facing: -1, alive: true,
   });
@@ -642,7 +736,7 @@ function spawnEnemy(forceBoss = false) {
     const a = AFIJOS[Math.floor(Math.random() * AFIJOS.length)];
     nuevo.elite = a;
     nuevo.hp = nuevo.maxHp = Math.ceil(nuevo.maxHp * a.hp);
-    nuevo.spd *= a.vel;
+    nuevo.spd = Math.min(nuevo.spd * a.vel, nuevo.isCharger ? 7.5 : 4.6);
     if (a.escala) { nuevo.w = Math.round(nuevo.w * a.escala); nuevo.h = Math.round(nuevo.h * a.escala); nuevo.y = GROUND - nuevo.h; }
   }
   if (isBoss) { bossActive = true; spawnFT(W / 2 - 60, 80, '★ BOSS FIGHT ★', '#ff00cc', true); _hap('heavy'); }
@@ -841,7 +935,12 @@ function update() {
   // Wave progression
   if (waveTimer % WAVE_FRAMES === 0) {
     wave++;
-    gameSpeed = baseSpeed + wave * .35;
+    // La velocidad subia sin techo (+0,35 por oleada): en la oleada 10 los
+    // enemigos iban a 7 px/frame y el jugador corre a 4. Ni se les alcanzaba
+    // ni se les esquivaba, y encima cruzaban la pantalla tan rapido que habia
+    // MENOS en pantalla. Ahora el techo es 6,2 y la dificultad la pone la
+    // cantidad y los elites, no la velocidad pura.
+    gameSpeed = Math.min(6.2, baseSpeed + wave * .28);
     spawnFT(W / 2 - 80, 70, '— WAVE ' + wave + ' —', '#ffe600', true);
     missionEvent('wave', wave);
     achEvent('onWave', wave);
@@ -958,6 +1057,7 @@ function update() {
   // ── TIMERS ──
   // squash guarda cuánto se aplasta el sprite; decae rápido para que el efecto
   // se lea como un golpe seco y no como una deformación permanente.
+  cadaveres = cadaveres.filter(c => { c.muriendo--; c.y += 1.2; return c.muriendo > 0; });
   if (particles.length > 220) particles.splice(0, particles.length - 220);
   if (PL.squash) { PL.squash *= .78; if (Math.abs(PL.squash) < .01) PL.squash = 0; }
   if (PL.invTimer > 0) PL.invTimer--;
@@ -994,12 +1094,16 @@ function update() {
   let swingHits = 0;
   enemies = enemies.filter(e => {
     if (e.knock > 0) { e.x += e.knock; e.knock *= .78; if (e.knock < .4) e.knock = 0; }
+    if (e.aparicion > 0) e.aparicion--;
     if (e.isBoss) {
       e.x += (W * .4 - e.x) * .015;
     } else if (e.isCharger && e.chargeTimer <= 0) {
       // charge at player: lock direction once so it commits to the pass instead of jittering on top of the player
       if (!e.chargeDir) e.chargeDir = (PL.x > e.x) ? 1 : -1;
-      e.spd = Math.min(e.spd + .05, gameSpeed * 2.2);
+      // Aceleraba hasta gameSpeed*2,2 = mas de 13 px/frame en oleadas altas:
+      // cruzaba media pantalla en 20 frames y no habia reaccion humana posible.
+      // 7,5 es rapido pero legible, y con 78 frames de aviso es justo.
+      e.spd = Math.min(e.spd + .05, 7.5);
       e.x += e.chargeDir * e.spd;
     } else {
       e.x -= e.spd;
@@ -1007,7 +1111,7 @@ function update() {
     if (e.isFlyer) { e.bobTimer += .07; e.y = e.y + (Math.sin(e.bobTimer) * .8); }
     if (e.isMagmar) { e.bobTimer += .04; spawnPFX(e.x + e.w / 2, e.y + e.h * .8, '#ff4400', 1, 1.5, 3); }
     if (e.isCharger && e.chargeTimer > 0) e.chargeTimer--;
-    if (e.isExploder) { const dx2 = PL.x - e.x; if (!e.rushDir && Math.abs(dx2) < 180) e.rushDir = dx2 > 0 ? 1 : -1; if (e.rushDir) { e.spd = Math.min(e.spd + .15, gameSpeed * 3); e.x += e.rushDir * e.spd; spawnPFX(e.x + e.w / 2, e.y + e.h / 2, '#ff6400', 2, 2, 3); } }
+    if (e.isExploder) { const dx2 = PL.x - e.x; if (!e.rushDir && Math.abs(dx2) < 180) e.rushDir = dx2 > 0 ? 1 : -1; if (e.rushDir) { e.spd = Math.min(e.spd + .15, 6.5); e.x += e.rushDir * e.spd; spawnPFX(e.x + e.w / 2, e.y + e.h / 2, '#ff6400', 2, 2, 3); } }
     if (e.isGhost) { e.ghostTimer += .04; e.ghostAlpha = Math.max(.18, .4 + Math.sin(e.ghostTimer) * 0.6); }
     if (e.flashTimer > 0) e.flashTimer--;
 
@@ -1090,6 +1194,10 @@ function update() {
       if (wave >= 2 && Math.random() < .07) spawnWeaponDrop(e.x + e.w / 2, e.y);
       shake(e.isBoss ? 10 : e.isMagmar ? 6 : 4);
       freeze(e.isBoss ? 10 : e.isMagmar ? 6 : 4);
+      // El enemigo no desaparece de golpe: se queda 16 frames aplastandose
+      // contra el suelo y desvaneciendose. Es lo que hace que matar se sienta.
+      e.muriendo = 16; e.hp = 0; e.spd = 0;
+      cadaveres.push(e);
       return false;
     }
 
@@ -1480,25 +1588,36 @@ function draw() {
     cx.restore();
   });
 
-  // Enemies
-  enemies.forEach(e => {
+  // Enemies (los cadaveres se pintan primero, para que queden por detras)
+  cadaveres.concat(enemies).forEach(e => {
     // El flash de golpe era una bajada de alpha a .25: al pegarle, el enemigo se
     // volvía TRANSPARENTE, que se lee como "está desapareciendo", no como
     // "acaba de encajar un golpe". Ahora destella en BLANCO y mantiene su cuerpo.
     const ghostA = e.isGhost ? (e.ghostAlpha || 1) : 1;
     const key = e.isBoss ? 'enemy2' : e.isMagmar ? 'enemy_magmar' : 'enemy';
     const variant = enemyTint(e);
-    cx.save(); cx.imageSmoothingEnabled = false; cx.globalAlpha = ghostA;
-    if (e.isExploder) { cx.shadowColor = '#ff4400'; cx.shadowBlur = 12 + Math.sin(frame * .2) * 8; }
+    // La animacion transforma el sprite alrededor de sus PIES, que es donde
+    // pivota cualquier criatura al agacharse, embestir o caer muerta.
+    const an = animEnemigo(e);
+    const pies = e.y + e.h;
+    cx.save();
+    cx.imageSmoothingEnabled = false;
+    cx.globalAlpha = ghostA * an.alpha;
+    // shadowBlur constante en vez de animado: variarlo cada frame invalida la
+    // cache interna del navegador y con 13 enemigos en pantalla se nota.
+    if (e.isExploder) { cx.shadowColor = '#ff4400'; cx.shadowBlur = 14; }
     if (e.isGhost) { cx.shadowColor = '#9333ea'; cx.shadowBlur = 16; }
-    if (e.isMagmar) { cx.shadowColor = '#ff4400'; cx.shadowBlur = 18 + Math.sin(frame * .15) * 10; }
-    cx.translate(e.x + e.w / 2, 0); cx.scale(-1, 1);
-    drawSpr(variant ? tintedSprite(key, variant) : IMG_EL[key], { x: -e.w / 2, y: e.y, w: e.w, h: e.h });
+    if (e.isMagmar) { cx.shadowColor = '#ff4400'; cx.shadowBlur = 20; }
+    cx.translate(e.x + e.w / 2 + an.dx, pies + an.dy);
+    cx.rotate(an.giro);
+    cx.scale(-an.escalaX, an.escalaY);
+    drawSpr(variant ? tintedSprite(key, variant) : IMG_EL[key], { x: -e.w / 2, y: -e.h, w: e.w, h: e.h });
     if (e.flashTimer > 0) {
       cx.globalAlpha = ghostA * Math.min(1, e.flashTimer / 8);
-      drawSpr(whiteSprite(key), { x: -e.w / 2, y: e.y, w: e.w, h: e.h });
+      drawSpr(whiteSprite(key), { x: -e.w / 2, y: -e.h, w: e.w, h: e.h });
     }
     cx.restore();
+    if (e.muriendo > 0) return;
     if (e.elite) {
       cx.save();
       cx.font = '.26rem "Press Start 2P"'; cx.textAlign = 'center';
@@ -1811,7 +1930,7 @@ function startGame() {
   sessionCoins = 0; comboCount = 0; comboMultiplier = 1; comboTimer = 0;
   playerXP = 0; playerLevel = 1;
   killStreak = 0; killStreakTimer = 0;
-  enemies = []; coins = []; bullets = []; particles = []; fTexts = [];
+  enemies = []; coins = []; bullets = []; particles = []; fTexts = []; cadaveres = [];
   chests = []; weaponDrops = []; weaponBuff = null;
   powerups = []; puMagnet = 0; puDouble = 0;
   shakeAmt = 0; shakeTimer = 0; hitStop = 0;
