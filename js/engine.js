@@ -780,7 +780,11 @@ function loadProgress() {
 }
 
 // ── SCORE ──
-function addScore(pts) { score += pts; if (score > hiScore) { hiScore = score; localStorage.setItem('dq_hi', hiScore); } }
+// addScore se llama cada frame, asi que guardar en localStorage aqui suponia
+// 60 escrituras sincronas a disco por segundo justo en la partida buena (unas
+// 18.000 en una de 5 minutos). El record se persiste al morir y en el
+// autoguardado periodico, que es donde toca.
+function addScore(pts) { score += pts; if (score > hiScore) hiScore = score; }
 function hitCombo(pts) {
   comboCount++;
   comboTimer = COMBO_WINDOW;
@@ -885,7 +889,13 @@ function update() {
   PL.y += PL.vy;
 
   // Las plataformas se desplazan con el mundo y se reciclan por la derecha.
-  plataformas.forEach(pl => { pl.x -= gameSpeed * .85; if (pl.x + pl.w < -20) reciclarPlataforma(pl); });
+  // Las plataformas se movian a gameSpeed*.85 mientras el jugador corre a 4
+  // px/frame. En la oleada 4 eso da 4,17 > 4,00: quedarse encima era
+  // FISICAMENTE IMPOSIBLE por mucho que corrieras. Por eso los 50 jugadores
+  // medidos pasaban un 5,2% del tiempo en plataformas, experto y pro exactamente
+  // el mismo: no era una decision suya, era un techo del motor. Con el tope,
+  // correr a la derecha siempre le gana a la plataforma.
+  plataformas.forEach(pl => { pl.x -= Math.min(gameSpeed, 3.7) * .85; if (pl.x + pl.w < -20) reciclarPlataforma(pl); });
 
   const wasOnGround = PL.onGround;
   PL.onGround = false;
@@ -948,6 +958,7 @@ function update() {
   // ── TIMERS ──
   // squash guarda cuánto se aplasta el sprite; decae rápido para que el efecto
   // se lea como un golpe seco y no como una deformación permanente.
+  if (particles.length > 220) particles.splice(0, particles.length - 220);
   if (PL.squash) { PL.squash *= .78; if (Math.abs(PL.squash) < .01) PL.squash = 0; }
   if (PL.invTimer > 0) PL.invTimer--;
   if (PL.dashCd > 0) PL.dashCd -= (2 - mej.dashRapido);
@@ -1275,8 +1286,13 @@ function update() {
 
   // ── SPAWN RATES ──
   // arranque más vivo (wave 1 ya tiene acción) y techo de densidad para que sea difícil pero justo
-  const spawnRate = Math.max(50, 105 - wave * 8);
-  if (frame % spawnRate === 0 && enemies.length < 8 + wave) spawnEnemy();
+  // El suelo de 50 se tocaba en la oleada 7 y ya no se movia nunca mas,
+  // mientras gameSpeed seguia subiendo: los enemigos CRUZABAN la pantalla mas
+  // rapido, o sea que habia MENOS a la vez. La dificultad bajaba. Ahora la
+  // cadencia sigue apretando y el tope de simultaneos crece con la oleada.
+  const spawnRate = wave < 7 ? Math.max(50, 105 - wave * 8)
+                             : Math.max(22, 50 - (wave - 7) * 3);
+  if (frame % spawnRate === 0 && enemies.length < 8 + wave * 1.5) spawnEnemy();
   if (frame % 60 === 0) spawnCoin();
 
   addScore(1);
@@ -1882,6 +1898,8 @@ let monedasAlEmpezarOleada = 0;
 
 function abrirDescanso() {
   state = 'descanso';
+  localStorage.setItem('dq_hi', hiScore);   // el record ya no se guarda por frame
+  saveProgress();
   if (raf) { cancelAnimationFrame(raf); raf = null; }
   playSound('boton');
   _hap('medium');
@@ -1944,6 +1962,10 @@ function pintarDescanso(ov, ganadas) {
 
 // ── ELEGIR MEJORA (pausa la partida y ofrece 3 al azar) ──
 function ofrecerMejoras() {
+  // Se podia morir en el MISMO frame en que se abria esta pantalla: quedaban
+  // dos overlays superpuestos y al elegir la mejora seguias jugando con 0 de
+  // vida detras de un GAME OVER, con el boton de revivir muerto.
+  if (state !== 'playing') return;
   const disponibles = MEJORAS.slice();
   // Barajado sencillo; se permite repetir mejoras ya elegidas porque casi
   // todas son acumulables y repetir una es una decision valida.
@@ -1982,6 +2004,7 @@ function ofrecerMejoras() {
 
   ov.querySelectorAll('button').forEach(b => {
     b.onclick = () => {
+      if (state !== 'eligiendo') { ov.style.display = 'none'; return; }
       const m = opciones[+b.dataset.i];
       try { m.usar(); } catch (e) {}
       mejorasElegidas.push(m.icono);

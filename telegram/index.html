@@ -358,11 +358,11 @@ body{display:flex;flex-direction:column;align-items:center;font-family:"Press St
   </div>
 
   <div id="mbtns">
-    <button class="mb" ontouchstart="moveLeft(true)" ontouchend="moveLeft(false)">◀</button>
-    <button class="mb j" ontouchstart="jump()">▲ SALTAR</button>
-    <button class="mb att" ontouchstart="attack()">⚔</button>
-    <button class="mb" ontouchstart="dash()">💨</button>
-    <button class="mb" ontouchstart="moveRight(true)" ontouchend="moveRight(false)">▶</button>
+    <button class="mb" ontouchstart="moveLeft(true)" ontouchend="moveLeft(false)" ontouchcancel="moveLeft(false)" onmousedown="moveLeft(true)" onmouseup="moveLeft(false)" onmouseleave="moveLeft(false)">◀</button>
+    <button class="mb j" ontouchstart="jump()" onmousedown="jump()">▲ SALTAR</button>
+    <button class="mb att" ontouchstart="attack()" onmousedown="attack()">⚔</button>
+    <button class="mb" ontouchstart="dash()" onmousedown="dash()">💨</button>
+    <button class="mb" ontouchstart="moveRight(true)" ontouchend="moveRight(false)" ontouchcancel="moveRight(false)" onmousedown="moveRight(true)" onmouseup="moveRight(false)" onmouseleave="moveRight(false)">▶</button>
   </div>
 </div>
 
@@ -1188,6 +1188,22 @@ async function buyWithStars(pkgIndex){
 </script>
 <script>
 // ── CONFIGURACIÓN DEL MOTOR COMPARTIDO (../js/engine.js) ──
+// Telegram APILA los callbacks de BackButton y MainButton: registrarlos dentro
+// de onStartGame/onEndGame anadia uno NUEVO en cada partida. Con dos, el
+// primero pausaba y el segundo veia 'paused' y reanudaba — efecto neto cero.
+// Como en la Mini App el boton Atras es la unica puerta a la pausa, el jugador
+// quedaba encerrado en la partida hasta morir a partir de la segunda.
+const _alPulsarAtras=()=>{
+  if(state==='playing')pauseGame();
+  else if(state==='paused')resumeGame();
+  else if(state==='eligiendo'||state==='descanso'){ try{tgHaptic('light');}catch(e){} showPUNotif('Termina de elegir para continuar'); }
+  else toMenu();
+};
+const _alPulsarPrincipal=()=>{showOverlay('ov-rank');loadRanking();};
+let _atrasPuesto=false,_principalPuesto=false;
+function registrarAtras(){ if(_atrasPuesto)return; tg.BackButton.onClick(_alPulsarAtras); _atrasPuesto=true; }
+function registrarPrincipal(){ if(_principalPuesto)return; tg.MainButton.onClick(_alPulsarPrincipal); _principalPuesto=true; }
+
 window.DQE={
   assetBase:'../assets/',
   menuOverlayId:'ov-start',
@@ -1200,7 +1216,7 @@ window.DQE={
   getSkinBuffs:()=>{try{return activeSkinBuffs||null;}catch(e){return null;}},
   getPlayerImgKey:()=>{try{return ({comun:'duende_hero',tactico:'skin_tactico',necro:'skin_necromancer',king:'skin_king',berserker:'skin_berserker',legendaria:'skin_legendariafull'})[equippedSkin]||'duende_hero';}catch(e){return 'duende_hero';}},
   fitCanvas:cv2=>{cv2.style.width='100%';cv2.style.height='auto';},
-  onStartGame:()=>{if(tg){try{tg.MainButton.hide();tg.BackButton.show();tg.BackButton.onClick(()=>{if(state==='playing')pauseGame();else if(state==='paused')resumeGame();});}catch(e){}}},
+  onStartGame:()=>{if(tg){try{tg.MainButton.hide();tg.BackButton.show();registrarAtras();}catch(e){}}},
   onToMenu:()=>{if(tg){try{tg.MainButton.hide();tg.BackButton.hide();}catch(e){}}},
   onEndGame:stats=>{
     const entry={score:stats.score,wave:stats.wave,coins:stats.coins,date:new Date().toLocaleDateString()};
@@ -1211,7 +1227,7 @@ window.DQE={
     const tc=document.getElementById('tg-coins');if(tc)tc.textContent='🪙 '+totalCoins;
     submitTGScore();
     syncProgressToCloud();
-    if(tg){try{tg.MainButton.setText('🏆 VER RANKING');tg.MainButton.show();tg.MainButton.onClick(()=>{showOverlay('ov-rank');loadRanking();});}catch(e){}}
+    if(tg){try{tg.MainButton.setText('🏆 VER RANKING');tg.MainButton.show();registrarPrincipal();}catch(e){}}
   },
 };
 </script>

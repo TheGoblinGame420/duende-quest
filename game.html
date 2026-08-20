@@ -436,11 +436,11 @@ body{display:flex;flex-direction:column;align-items:center;justify-content:cente
 
   <!-- MOBILE BUTTONS -->
   <div id="mbtns">
-    <button class="mb" ontouchstart="moveLeft(true)" ontouchend="moveLeft(false)">◀</button>
-    <button class="mb j" ontouchstart="jump()">▲ SALTAR</button>
-    <button class="mb att" ontouchstart="attack()">⚔</button>
-    <button class="mb" ontouchstart="dash()">💨</button>
-    <button class="mb" ontouchstart="moveRight(true)" ontouchend="moveRight(false)">▶</button>
+    <button class="mb" ontouchstart="moveLeft(true)" ontouchend="moveLeft(false)" ontouchcancel="moveLeft(false)" onmousedown="moveLeft(true)" onmouseup="moveLeft(false)" onmouseleave="moveLeft(false)">◀</button>
+    <button class="mb j" ontouchstart="jump()" onmousedown="jump()">▲ SALTAR</button>
+    <button class="mb att" ontouchstart="attack()" onmousedown="attack()">⚔</button>
+    <button class="mb" ontouchstart="dash()" onmousedown="dash()">💨</button>
+    <button class="mb" ontouchstart="moveRight(true)" ontouchend="moveRight(false)" ontouchcancel="moveRight(false)" onmousedown="moveRight(true)" onmouseup="moveRight(false)" onmouseleave="moveRight(false)">▶</button>
   </div>
 </div>
 
