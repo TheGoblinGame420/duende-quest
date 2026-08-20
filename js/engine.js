@@ -25,6 +25,32 @@ const $id = id => document.getElementById(id);
 // ── ASSETS ──
 const _AB = DQE.assetBase || 'assets/';
 
+// ── ESTADO DE CARGA ──
+// Se lanzan 28 imagenes sin ninguna UI, y drawSpr() hace return si una imagen
+// no esta lista: con red lenta se podia empezar una partida de sprites
+// invisibles. Cada imagen del motor pasa por _vigilar(); el boton JUGAR
+// (id btn-jugar) queda deshabilitado ensenando el porcentaje hasta el 100%.
+// Un error de red cuenta como cargada: el motor tiene fallbacks para todo y
+// quedarse sin boton JUGAR seria peor que un sprite ausente.
+let _porCargar = 0, _cargadas = 0;
+function _vigilar(img) {
+  _porCargar++;
+  if (img.complete && img.naturalWidth) { _cargadas++; return; }
+  const fin = () => { _cargadas++; _pintarCarga(); };
+  img.addEventListener('load', fin, { once: true });
+  img.addEventListener('error', fin, { once: true });
+}
+function cargaCompleta() { return _cargadas >= _porCargar; }
+function _pctCarga() { return _porCargar ? Math.round(_cargadas / _porCargar * 100) : 100; }
+function _pintarCarga() {
+  const b = $id('btn-jugar');
+  if (!b) return;
+  if (!b.dataset.label) b.dataset.label = b.textContent;
+  if (cargaCompleta()) { b.disabled = false; b.style.opacity = ''; b.textContent = b.dataset.label; }
+  else { b.disabled = true; b.style.opacity = '.55'; b.textContent = '⌛ CARGANDO ' + _pctCarga() + '%'; }
+}
+window.addEventListener('DOMContentLoaded', _pintarCarga);
+
 // ── PARALLAX ──
 // El fondo eran un degradado, unos triangulos planos y unas nubes radiales.
 // Ahora cada bioma tiene dos capas de silueta que se desplazan a distinta
@@ -35,6 +61,7 @@ const FONDO_NOMBRES = ['noche', 'amanecer', 'selva', 'tormenta', 'desierto'];
 const FONDOS = FONDO_NOMBRES.map(n => {
   const lejos = new Image(); lejos.src = _AB + 'fondos/' + n + '_lejos.png';
   const cerca = new Image(); cerca.src = _AB + 'fondos/' + n + '_cerca.png';
+  _vigilar(lejos); _vigilar(cerca);
   return { lejos, cerca };
 });
 let scrollLejos = 0, scrollCerca = 0;
@@ -74,7 +101,7 @@ const IMG = {
   duende_comun: _AB + 'skins/duende_comun.png',
 };
 const IMG_EL = {};
-Object.entries(IMG).forEach(([k, v]) => { const el = new Image(); el.src = v; IMG_EL[k] = el; });
+Object.entries(IMG).forEach(([k, v]) => { const el = new Image(); el.src = v; _vigilar(el); IMG_EL[k] = el; });
 
 // ── ANIMACIÓN DEL DUENDE ──
 // En assets/sprite_sheets/ habia una hoja de animacion completa que nadie
@@ -83,6 +110,8 @@ Object.entries(IMG).forEach(([k, v]) => { const el = new Image(); el.src = v; IM
 // convierte esa hoja en un atlas en tira; aqui se reproduce.
 const ANIM_IMG = new Image();
 ANIM_IMG.src = _AB + 'skins/duende_anim.png';
+_vigilar(ANIM_IMG);
+_pintarCarga();
 let ANIM_META = null;
 fetch(_AB + 'skins/duende_anim.json').then(r => r.json()).then(d => { ANIM_META = d; }).catch(() => {});
 
@@ -372,6 +401,9 @@ function tutorialAdvance(action) {
 let raf = null;
 let keys = {};
 let mLeft = false, mRight = false;
+// Eje analogico del pad tactil de 3 zonas: -1..1 (0 parado, ±.5 andar, ±1 correr).
+let mAxis = 0;
+function setMove(v) { mAxis = v; }
 
 // ── XP / LEVEL ──
 let playerXP = 0, playerLevel = 1;
@@ -444,9 +476,9 @@ function perksLabel(lvl) {
 function updateXPBar() {
   const needed = getXPNeeded(playerLevel);
   const pct = Math.min(playerXP / needed, 1) * 100;
-  const f = $id('xp-fill'); if (f) f.style.width = pct + '%';
-  const b = $id('level-badge'); if (b) b.textContent = 'LVL ' + playerLevel;
-  const h = $id('h-level'); if (h) h.textContent = playerLevel;
+  _hW('xp-fill', (Math.round(pct * 10) / 10) + '%');
+  _hTxt('level-badge', 'LVL ' + playerLevel);
+  _hTxt('h-level', playerLevel);
 }
 function onLevelUp() {
   saveProgress();
@@ -509,20 +541,31 @@ const SFX_ARCHIVOS = {
   corte: 'corte', corte2: 'corte2', golpe: 'golpe', muerte: 'muerte',
   explosion: 'explosion', moneda: 'moneda', salto: 'salto', caida: 'caida', boton: 'boton',
 };
+// Pool fijo de 4 <audio> por efecto, en rotacion. Antes cada reproduccion
+// hacia cloneNode(): mas de mil elementos <audio> por partida, y en iOS hay un
+// tope de decodificadores de audio — al pasarlo el juego se queda mudo sin
+// ningun error. Cuatro bastan para solapar el mismo efecto sin cortarlo.
 const SFX = {};
 Object.entries(SFX_ARCHIVOS).forEach(([k, f]) => {
-  const a = new Audio((DQE.audioBase || 'audio/') + 'sfx/' + f + '.ogg');
-  a.preload = 'auto'; a.volume = .55;
-  SFX[k] = a;
+  const src = (DQE.audioBase || 'audio/') + 'sfx/' + f + '.ogg';
+  const pool = [];
+  for (let i = 0; i < 4; i++) {
+    const a = new Audio(src);
+    a.preload = 'auto'; a.volume = .55;
+    pool.push(a);
+  }
+  SFX[k] = { pool, idx: 0 };
 });
 function reproducir(clave, volumen) {
-  const base = SFX[clave];
-  if (!base || !base.duration && base.readyState < 2) return false;
+  const s = SFX[clave];
+  if (!s) return false;
+  const a = s.pool[s.idx];
+  if (!a.duration && a.readyState < 2) return false;
+  s.idx = (s.idx + 1) % s.pool.length;
   try {
-    // Clonamos para poder solapar el mismo efecto sin cortarlo.
-    const s = base.cloneNode();
-    s.volume = Math.max(0, Math.min(1, volumen === undefined ? .55 : volumen));
-    s.play().catch(() => {});
+    a.currentTime = 0;
+    a.volume = Math.max(0, Math.min(1, volumen === undefined ? .55 : volumen));
+    a.play().catch(() => {});
     return true;
   } catch (e) { return false; }
 }
@@ -791,8 +834,11 @@ function attack() {
   if (state !== 'playing' || PL.attackCd > 0 || PL.slamming) return;
   playSound('attack'); _hap('medium');
   tutorialAdvance('attack');
-  // Aerial slam: web requiere C/↓; en móvil/tg cualquier ataque aéreo cayendo
-  const slamKey = DQE.airSlamNeedsKey === false ? true : (keys['KeyC'] || keys['ArrowDown']);
+  // Aerial slam: web requiere C/↓. En móvil CUALQUIER ataque aéreo cayendo era
+  // slam (y el slam atraviesa las plataformas a propósito): atacar a un flyer
+  // te tiraba al suelo sin querer. Se exige caer con velocidad de verdad
+  // (vy > 5), que es cuando el slam se siente intencional.
+  const slamKey = DQE.airSlamNeedsKey === false ? PL.vy > 5 : (keys['KeyC'] || keys['ArrowDown']);
   if (!PL.onGround && PL.vy >= 0 && slamKey) {
     PL.slamming = true; PL.slamTimer = 20; PL.vy = 12;
     spawnFT(PL.x, PL.y - 15, 'SLAM!', '#ff6400', true);
@@ -898,30 +944,57 @@ function missionEvent(type, val) { try { window.DQMissions && DQMissions.event(t
 function achEvent(fn, val) { try { window.DQAch && DQAch[fn] && DQAch[fn](val); } catch (e) {} }
 
 // ── HUD ──
+// El HUD hacia ~19 getElementById y ~30 escrituras de estilo POR FRAME (unas
+// 1.140 busquedas por segundo). Los nodos se cachean la primera vez y solo se
+// escribe cuando el valor cambia. La barra de vida usa tres clases CSS
+// (.hp-ok/.hp-mid/.hp-low) en vez de reasignar un linear-gradient cada frame:
+// esa reasignacion reiniciaba su transition 60 veces por segundo y la barra
+// iba siempre 150 ms por detras del golpe.
+const _hud = { el: {}, ult: {} };
+function _hEl(id) {
+  if (!(id in _hud.el)) _hud.el[id] = document.getElementById(id);
+  return _hud.el[id];
+}
+function _hTxt(id, val) {
+  if (_hud.ult['t' + id] === val) return;
+  _hud.ult['t' + id] = val;
+  const el = _hEl(id); if (el) el.textContent = val;
+}
+function _hW(id, val) {
+  if (_hud.ult['w' + id] === val) return;
+  _hud.ult['w' + id] = val;
+  const el = _hEl(id); if (el) el.style.width = val;
+}
 function updateItemHUD(i) {
   const it = PL.items[i];
-  const ic = $id('ic' + i); if (ic) ic.textContent = it[0];
-  const sl = $id('sl' + i);
-  if (sl) { sl.classList.toggle('on-cd', it[1] > 0); sl.classList.toggle('ready', it[1] === 0 && it[0] > 0); }
+  _hTxt('ic' + i, it[0]);
+  const estado = it[1] > 0 ? 'cd' : it[0] > 0 ? 'ready' : 'off';
+  if (_hud.ult['sl' + i] !== estado) {
+    _hud.ult['sl' + i] = estado;
+    const sl = _hEl('sl' + i);
+    if (sl) { sl.classList.toggle('on-cd', estado === 'cd'); sl.classList.toggle('ready', estado === 'ready'); }
+  }
 }
 function updateHpHUD() {
-  const pct = PL.hp / PL.maxHp;
-  const f = $id('hp-fill'); if (!f) return;
-  f.style.width = Math.max(0, pct * 100) + '%';
-  f.style.background = pct > .5 ? 'linear-gradient(90deg,#00ff88,#00cc6a)' : pct > .25 ? 'linear-gradient(90deg,#ffe600,#cc9900)' : 'linear-gradient(90deg,#ff3333,#cc0000)';
+  const pct = Math.max(0, PL.hp / PL.maxHp);
+  _hW('hp-fill', (Math.round(pct * 1000) / 10) + '%');
+  const clase = pct > .5 ? 'hp-ok' : pct > .25 ? 'hp-mid' : 'hp-low';
+  if (_hud.ult.hpClase !== clase) {
+    _hud.ult.hpClase = clase;
+    const f = _hEl('hp-fill');
+    if (f) { f.classList.remove('hp-ok', 'hp-mid', 'hp-low'); f.classList.add(clase); }
+  }
 }
 function updateHUD() {
-  const s = $id('h-score'); if (s) s.textContent = Math.floor(score).toLocaleString();
-  const hi = $id('h-hi'); if (hi) hi.textContent = Math.floor(hiScore).toLocaleString();
-  const w = $id('h-wave'); if (w) w.textContent = wave;
-  const c = $id('h-coins'); if (c) c.textContent = sessionCoins;
-  const pct = comboTimer / COMBO_WINDOW;
-  const cf = $id('combo-fill'); if (cf) cf.style.width = (pct * 100) + '%';
-  const cb = $id('h-combo-x'); if (cb) cb.textContent = comboCount > 1 ? 'x' + comboMultiplier : '';
+  _hTxt('h-score', Math.floor(score).toLocaleString());
+  _hTxt('h-hi', Math.floor(hiScore).toLocaleString());
+  _hTxt('h-wave', wave);
+  _hTxt('h-coins', sessionCoins);
+  _hW('combo-fill', Math.round(comboTimer / COMBO_WINDOW * 100) + '%');
+  _hTxt('h-combo-x', comboCount > 1 ? 'x' + comboMultiplier : '');
   for (let i = 0; i < 4; i++) {
     const it = PL.items[i];
-    const bar = $id('cb' + i);
-    if (bar) bar.style.width = ((it[2] > 0 ? it[1] / it[2] : 0) * 100) + '%';
+    _hW('cb' + i, Math.round((it[2] > 0 ? it[1] / it[2] : 0) * 100) + '%');
   }
 }
 function overlap(a, b) { return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y; }
@@ -969,6 +1042,7 @@ function update() {
   let targetVx = 0;
   if ((keys['ArrowLeft'] || keys['KeyA'] || mLeft) && !PL.dashing) targetVx = -4;
   if ((keys['ArrowRight'] || keys['KeyD'] || mRight) && !PL.dashing) targetVx = 4;
+  if (mAxis !== 0 && !PL.dashing) targetVx = 4 * mAxis;   // pad táctil: andar o correr
   if (targetVx !== 0) PL.facing = targetVx > 0 ? 1 : -1;
   PL.vx += (targetVx - PL.vx) * .25;
 
@@ -1226,6 +1300,11 @@ function update() {
     return e.x > -120 && e.x < W + 260; // cull on both sides (chargers/exploders can run off the right edge)
   });
 
+  // endGame() puede haber saltado dentro del bucle de enemigos: si la partida
+  // acabo, este frame no sigue simulando. Antes seguian naciendo enemigos y
+  // monedas, y el score seguia subiendo, con el jugador ya muerto.
+  if (state !== 'playing') return;
+
   // ── BULLETS ──
   bullets = bullets.filter(b => {
     b.x += b.vx; b.y += b.vy;
@@ -1272,6 +1351,8 @@ function update() {
     }
     return true;
   });
+
+  if (state !== 'playing') return;   // muerto por una bala: cortar el frame igual
 
   // Un swing que toca a 2+ enemigos se celebra: es la recompensa a posicionarse
   // bien, y antes era invisible porque el ataque solo golpeaba a uno.
@@ -1448,6 +1529,23 @@ function biomesSeen() {
 }
 function currentBiome() { return BIOMES[Math.floor((wave - 1) / 3) % BIOMES.length]; }
 let _vignette = null;
+// El degradado del cielo se creaba cada frame; solo cambia al cambiar de bioma.
+let _gradFondo = { biome: null, grad: null };
+// Mancha radial pre-pintada para las nubes: 5 createRadialGradient por frame
+// era de lo mas caro del dibujado, y el resultado con un sprite es identico.
+const _nubes = new Map();
+function _nubeSprite(cloud) {
+  let c = _nubes.get(cloud);
+  if (c) return c;
+  c = document.createElement('canvas'); c.width = 128; c.height = 128;
+  const g = c.getContext('2d');
+  const rg = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  rg.addColorStop(0, 'rgba(' + cloud + ',1)');
+  rg.addColorStop(1, 'rgba(' + cloud + ',0)');
+  g.fillStyle = rg; g.fillRect(0, 0, 128, 128);
+  _nubes.set(cloud, c);
+  return c;
+}
 
 function drawPuTimer(x, emoji, pct, color) {
   cx.save();
@@ -1465,10 +1563,13 @@ function draw() {
 
   // BG
   const biome = currentBiome();
-  const grad = cx.createLinearGradient(0, 0, 0, GY + 10);
-  grad.addColorStop(0, biome.top);
-  grad.addColorStop(1, biome.bot);
-  cx.fillStyle = grad;
+  if (_gradFondo.biome !== biome) {
+    const g = cx.createLinearGradient(0, 0, 0, GY + 10);
+    g.addColorStop(0, biome.top);
+    g.addColorStop(1, biome.bot);
+    _gradFondo = { biome, grad: g };
+  }
+  cx.fillStyle = _gradFondo.grad;
   cx.fillRect(0, 0, W, H);
 
   bgStars.forEach(s => { cx.fillStyle = `rgba(255,255,255,${.2 + Math.sin(frame * .04 + s.x) * .15})`; cx.fillRect(s.x, s.y, s.s, s.s); });
@@ -1479,11 +1580,12 @@ function draw() {
   dibujarCapa(FONDOS[bi].lejos, scrollLejos, 46);
   dibujarCapa(FONDOS[bi].cerca, scrollCerca, 16);
 
+  const _nube = _nubeSprite(biome.cloud);
   bgClouds.forEach(c => {
-    const cg = cx.createRadialGradient(c.x + c.w / 2, c.y + c.h / 2, 0, c.x + c.w / 2, c.y + c.h / 2, c.w / 2);
-    cg.addColorStop(0, `rgba(${biome.cloud},${c.alpha * 2})`);
-    cg.addColorStop(1, 'rgba(0,0,0,0)');
-    cx.fillStyle = cg; cx.fillRect(c.x, c.y, c.w, c.h * 2);
+    cx.save();
+    cx.globalAlpha = c.alpha * 2;
+    cx.drawImage(_nube, c.x, c.y + c.h / 2 - c.w / 2, c.w, c.w);
+    cx.restore();
   });
 
   // Ground
@@ -1620,7 +1722,9 @@ function draw() {
     if (e.muriendo > 0) return;
     if (e.elite) {
       cx.save();
-      cx.font = '.26rem "Press Start 2P"'; cx.textAlign = 'center';
+      // En px absolutos: cx.font en rem se resuelve contra los 16px de la raiz
+      // y el nombre del elite acababa midiendo 3px en pantalla.
+      cx.font = '10px "Press Start 2P"'; cx.textAlign = 'center';
       cx.lineWidth = 3; cx.strokeStyle = 'rgba(0,0,0,.85)'; cx.lineJoin = 'round';
       cx.strokeText(e.elite.nombre, e.x + e.w / 2, e.y - 18);
       cx.fillStyle = e.elite.color;
@@ -1636,8 +1740,13 @@ function draw() {
     }
   });
 
+  // Balas: una sola pasada para separarlas (antes se hacía bullets.filter dos
+  // veces por frame, creando dos arrays intermedios extra).
+  const _balasEne = [], _balasJug = [];
+  bullets.forEach(b => (b.enemy ? _balasEne : _balasJug).push(b));
+
   // Enemy bullets
-  bullets.filter(b => b.enemy).forEach(b => {
+  _balasEne.forEach(b => {
     cx.save();
     if (b.fire) {
       cx.shadowColor = '#ff4400'; cx.shadowBlur = 10;
@@ -1654,7 +1763,7 @@ function draw() {
 
   // Player bullets — el fuego SÍ es aditivo, pero con 'lighter' en vez de
   // 'screen': suma luz sin volver invisible el negro del sprite.
-  bullets.filter(b => !b.enemy).forEach(b => {
+  _balasJug.forEach(b => {
     cx.save(); cx.imageSmoothingEnabled = false; cx.globalCompositeOperation = 'lighter'; cx.globalAlpha = .9;
     cx.drawImage(IMG_EL['skill_fire'], b.x, b.y - b.h / 2, b.w * 1.8, b.h * 1.8); cx.restore();
   });
@@ -1778,7 +1887,7 @@ function draw() {
     cx.save();
     cx.globalAlpha = pulse;
     cx.fillStyle = '#ffe600';
-    cx.font = '.8rem "Press Start 2P"';
+    cx.font = '16px "Press Start 2P"';
     cx.textAlign = 'center';
     cx.shadowColor = '#000'; cx.shadowBlur = 8;
     cx.fillText(tutorialStep === 0 ? '☝️ TOCA / ESPACIO = SALTAR' : '⚔ TOCA EL BOTÓN ⚔ / Z = ATACAR', W / 2, 70);
@@ -1793,7 +1902,7 @@ function draw() {
     cx.fillStyle = 'rgba(0,0,0,.45)'; cx.fillRect(W / 2 - 70, 8, 140, 7);
     cx.fillStyle = '#c084fc'; cx.fillRect(W / 2 - 70, 8, 140 * pct, 7);
     cx.strokeStyle = 'rgba(192,132,252,.5)'; cx.lineWidth = 1; cx.strokeRect(W / 2 - 70, 8, 140, 7);
-    cx.font = '.24rem "Press Start 2P"'; cx.textAlign = 'center'; cx.fillStyle = 'rgba(255,255,255,.55)';
+    cx.font = '8px "Press Start 2P"'; cx.textAlign = 'center'; cx.fillStyle = 'rgba(255,255,255,.55)';
     cx.fillText('MEJORA ' + runLevel, W / 2, 26);
     if (mejorasElegidas.length) {
       cx.font = '13px sans-serif'; cx.textAlign = 'right';
@@ -1827,7 +1936,7 @@ function draw() {
   cx.save();
   fTexts.forEach(t => {
     cx.globalAlpha = t.life;
-    cx.font = (t.big ? .55 : .42) + 'rem "Press Start 2P"';
+    cx.font = (t.big ? 19 : 14) + 'px "Press Start 2P"';
     cx.textAlign = 'center';
     cx.lineWidth = 4; cx.strokeStyle = 'rgba(0,0,0,.85)'; cx.lineJoin = 'round';
     cx.strokeText(t.txt, t.x, t.y);
@@ -1915,6 +2024,15 @@ function bucleAtraccion() {
 
 function arrancarAtraccion() {
   if (atraccionRaf) return;
+  // El menu pintaba los restos de la partida anterior: cadaveres, balas y
+  // monedas congelados detras de los botones. El modo atraccion arranca con
+  // el escenario limpio y el duende entero.
+  enemies = []; coins = []; bullets = []; chests = []; weaponDrops = [];
+  powerups = []; fTexts = []; cadaveres = []; particles = [];
+  bossActive = false;
+  PL.hp = PL.maxHp;
+  PL.invTimer = 0; PL.flashTimer = 0; PL.dashing = false; PL.slamming = false;
+  PL.attackHitbox.active = false;
   if (!plataformas.length) initPlataformas();
   if (!bgStars.length) initBg();
   atraccionRaf = requestAnimationFrame(bucleAtraccion);
@@ -1923,6 +2041,9 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden && st
 
 // ── LIFECYCLE ──
 function startGame() {
+  // Con red lenta se podia empezar sin sprites. El boton JUGAR ya ensena el
+  // progreso; este guard cubre ademas el Enter y los botones de reintentar.
+  if (!cargaCompleta()) { showPUNotif('⌛ CARGANDO ' + _pctCarga() + '%'); return; }
   playMusic();
   hideAll();
   score = 0; wave = 1; frame = 0; gameSpeed = baseSpeed; waveTimer = 0; bossActive = false; bossKilled = 0;
@@ -1936,8 +2057,6 @@ function startGame() {
   shakeAmt = 0; shakeTimer = 0; hitStop = 0;
   mej = mejorasBase(); mejorasElegidas = []; runLevel = 1; runXPAcc = 0;
   monedasAlEmpezarOleada = 0;
-  { const om = $id('ov-mejora'); if (om) om.style.display = 'none';
-    const od = $id('ov-descanso'); if (od) od.style.display = 'none'; }
   const bHp = _buffs()?.bonusHp || 0;
   Object.assign(PL, { x: 80, y: GY, vx: 0, vy: 0, onGround: false, jumping: false, djUsed: false, coyoteTimer: 0, jumpBuffer: 0, dashing: false, dashTimer: 0, dashDir: 1, dashCd: 0, comboStep: 0, comboTimer: 0, attackTimer: 0, attackCd: 0, attackHitbox: { x: 0, y: 0, w: 0, h: 0, active: false }, slamming: false, slamTimer: 0, hp: 100 + bHp, maxHp: 100 + bHp, invTimer: 0, shieldOn: false, shieldTimer: 0, fireOn: false, fireTimer: 0, lightTimer: 0, flashTimer: 0, facing: 1, animTimer: 0, runFrame: 0, items: [[3, 0, 90], [2, 0, 120], [1, 0, 150], [1, 0, 180]] });
 
@@ -1997,6 +2116,10 @@ function endGame() {
   _hap('heavy');
   localStorage.setItem('dq_hi', hiScore);
   saveProgress();
+  // Misiones y logros acumulan escrituras pendientes (throttle de 1s): al
+  // morir se vuelca todo, que es el momento que no puede perderse.
+  try { window.DQMissions && DQMissions.flush && DQMissions.flush(); } catch (e) {}
+  try { window.DQAch && DQAch.flush && DQAch.flush(); } catch (e) {}
   const fs = $id('final-score'); if (fs) fs.textContent = Math.floor(score).toLocaleString();
   const fh = $id('final-hi'); if (fh) fh.textContent = 'HI-SCORE: ' + Math.floor(hiScore).toLocaleString();
   const ds = $id('dead-stats'); if (ds) ds.innerHTML = `WAVE: ${wave} &nbsp; 🪙 ${sessionCoins} &nbsp; LVL: ${playerLevel}<br>COMBOS: ${comboCount} &nbsp; BOSSES: ${bossKilled}`;
@@ -2233,7 +2356,14 @@ function toMenu() {
   try { DQE.onToMenu && DQE.onToMenu(); } catch (e) {}
 }
 
-function hideAll() { document.querySelectorAll('.ov').forEach(o => o.classList.remove('show')); }
+function hideAll() {
+  document.querySelectorAll('.ov').forEach(o => o.classList.remove('show'));
+  // ov-descanso y ov-mejora se muestran con display inline (que le gana a la
+  // regla .ov{display:none}): sin cerrarlos aqui quedaban abiertos encima del
+  // menu o de la siguiente partida.
+  const od = $id('ov-descanso'); if (od) od.style.display = 'none';
+  const om = $id('ov-mejora'); if (om) om.style.display = 'none';
+}
 
 // ── INPUT ──
 document.addEventListener('keydown', e => {
@@ -2253,6 +2383,167 @@ document.addEventListener('keydown', e => {
 document.addEventListener('keyup', e => { keys[e.code] = false; });
 cv.addEventListener('touchstart', e => { e.preventDefault(); jump(); }, { passive: false });
 cv.addEventListener('click', () => { if (state === 'menu') startGame(); else if (state === 'playing') attack(); });
+
+// ══ CONTROLES TÁCTILES DE 3 ZONAS ══
+// El esquema anterior eran 5 botones en fila: el pulgar derecho tenia que
+// servir a la marcha (▶), el ataque (⚔) y el dash (💨) con 129 px de recorrido
+// entre extremos, y el dash perdia siempre esa subasta (de 0 usos por partida
+// en novatos a 12,9 en pros, medido). Ademas el ataque —la accion mas pulsada,
+// 322 veces en una partida pro— era el objetivo mas pequeno y mas lejano.
+// Ahora cada pulgar tiene UNA casa:
+//   · izquierdo: pad flotante (el origen es donde tocas; la distancia decide
+//     parado/andar/correr, y un flick horizontal es dash — el dash es un
+//     modificador de la DIRECCION, asi que vive en el pulgar del movimiento)
+//   · derecho: dos circulos grandes; el ataque es el mayor y el mas cercano al
+//     reposo del pulgar. El item solo aparece cuando de verdad hace falta.
+(function () {
+  const esTactil = matchMedia('(pointer:coarse)').matches &&
+    ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  if (!esTactil) return;
+  document.body.classList.add('ctl3');
+
+  const css = document.createElement('style');
+  css.textContent = `
+  body.ctl3 #mbtns{display:none !important;}
+  body.ctl3{justify-content:flex-start;}
+  body.ctl-jugando #play-panel{overflow:hidden;pointer-events:none;}
+  #ctl3{position:fixed;left:0;right:0;bottom:0;height:270px;z-index:35;pointer-events:none;display:none;}
+  body.ctl-jugando #ctl3{display:block;}
+  #ctl-pad{position:absolute;left:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));width:164px;height:186px;border-radius:18px;pointer-events:auto;touch-action:none;background:rgba(255,255,255,.025);border:1px solid rgba(0,255,136,.13);}
+  #ctl-pad .pista{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:"Press Start 2P",monospace;font-size:8px;color:rgba(255,255,255,.18);letter-spacing:.1em;pointer-events:none;}
+  #ctl-base{position:absolute;width:68px;height:68px;margin:-34px 0 0 -34px;border-radius:50%;border:2px solid rgba(0,255,136,.35);background:rgba(0,255,136,.05);display:none;pointer-events:none;}
+  #ctl-nub{position:absolute;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;background:rgba(0,255,136,.55);box-shadow:0 0 10px rgba(0,255,136,.5);display:none;pointer-events:none;}
+  .ctl-btn{position:absolute;pointer-events:auto;touch-action:none;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;font-family:"Press Start 2P",monospace;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;padding:0;transition:transform .06s;}
+  .ctl-btn:active{transform:scale(.92);}
+  #ctl-atk{right:13px;bottom:calc(34px + env(safe-area-inset-bottom,0px));width:112px;height:112px;font-size:34px;background:rgba(255,230,0,.13);border-color:rgba(255,230,0,.5);color:#ffe600;box-shadow:0 0 18px rgba(255,230,0,.2);}
+  #ctl-jmp{right:95px;bottom:calc(148px + env(safe-area-inset-bottom,0px));width:96px;height:96px;font-size:26px;background:rgba(0,255,136,.13);border-color:rgba(0,255,136,.5);color:#00ff88;box-shadow:0 0 16px rgba(0,255,136,.2);}
+  #ctl-item{right:6px;bottom:calc(192px + env(safe-area-inset-bottom,0px));width:68px;height:68px;background:rgba(0,238,255,.13);border-color:rgba(0,238,255,.55);box-shadow:0 0 14px rgba(0,238,255,.3);display:none;}
+  #ctl-item img{width:38px;height:38px;image-rendering:pixelated;pointer-events:none;}`;
+  document.head.appendChild(css);
+
+  const capa = document.createElement('div');
+  capa.id = 'ctl3';
+  capa.innerHTML =
+    '<div id="ctl-pad"><div class="pista">◂ MOVER ▸</div><div id="ctl-base"></div><div id="ctl-nub"></div></div>' +
+    '<button class="ctl-btn" id="ctl-jmp">▲</button>' +
+    '<button class="ctl-btn" id="ctl-atk">⚔</button>' +
+    '<button class="ctl-btn" id="ctl-item"><img alt=""></button>';
+  document.body.appendChild(capa);
+
+  const pad = $id('ctl-pad'), base = $id('ctl-base'), nub = $id('ctl-nub');
+  const btnItem = $id('ctl-item'), imgItem = btnItem.querySelector('img');
+
+  // ── PAD: origen relativo al dedo, zonas por distancia, dash por flick ──
+  let padId = null, origen = null, rectPad = null, hist = [];
+
+  function pintarStick(dx) {
+    base.style.left = (origen.x - rectPad.left) + 'px';
+    base.style.top = (origen.y - rectPad.top) + 'px';
+    nub.style.left = (origen.x - rectPad.left + dx) + 'px';
+    nub.style.top = (origen.y - rectPad.top) + 'px';
+  }
+
+  function soltarPad() {
+    padId = null; origen = null; hist = [];
+    setMove(0);
+    base.style.display = 'none'; nub.style.display = 'none';
+  }
+
+  pad.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (padId !== null) return;
+    const t = e.changedTouches[0];
+    padId = t.identifier;
+    rectPad = pad.getBoundingClientRect();
+    origen = { x: t.clientX, y: t.clientY };
+    hist = [{ x: t.clientX, t: performance.now() }];
+    base.style.display = 'block'; nub.style.display = 'block';
+    pintarStick(0);
+  }, { passive: false });
+
+  // preventDefault en touchmove es OBLIGATORIO: sin el, el arrastre vertical
+  // hace scroll de la pagina en mitad de la pelea.
+  pad.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (padId === null) return;
+    for (const t of e.changedTouches) {
+      if (t.identifier !== padId) continue;
+      const ahora = performance.now();
+      hist.push({ x: t.clientX, t: ahora });
+      while (hist.length > 1 && ahora - hist[0].t > 150) hist.shift();
+      // FLICK = dash: mas de 55 px recorridos en menos de 140 ms.
+      const viejo = hist[0];
+      if (state === 'playing' && !PL.dashing && PL.dashCd <= 0 &&
+          Math.abs(t.clientX - viejo.x) > 55 && ahora - viejo.t < 140) {
+        PL.facing = t.clientX > viejo.x ? 1 : -1;   // el flick manda la direccion
+        dash();                                      // dash() confirma con haptica media
+        origen.x = t.clientX; origen.y = t.clientY;  // reanclar: se sigue corriendo
+        hist = [{ x: t.clientX, t: ahora }];
+      }
+      // El origen persigue al dedo si se aleja mas de 60 px: asi invertir la
+      // marcha responde al instante en vez de exigir volver al punto inicial.
+      let dx = t.clientX - origen.x;
+      if (Math.abs(dx) > 60) { origen.x = t.clientX - 60 * Math.sign(dx); dx = 60 * Math.sign(dx); }
+      const adx = Math.abs(dx);
+      // zona muerta ≤12 · andar 12..34 · correr >34
+      setMove(adx <= 12 ? 0 : (adx <= 34 ? .5 : 1) * Math.sign(dx));
+      pintarStick(dx);
+    }
+  }, { passive: false });
+
+  ['touchend', 'touchcancel'].forEach(ev => pad.addEventListener(ev, e => {
+    e.preventDefault();
+    for (const t of e.changedTouches) if (t.identifier === padId) soltarPad();
+  }, { passive: false }));
+
+  // ── BOTONES ──
+  function alTocar(el, fn) {
+    el.addEventListener('touchstart', e => { e.preventDefault(); fn(); }, { passive: false });
+    el.addEventListener('mousedown', e => { e.preventDefault(); fn(); });
+  }
+  alTocar($id('ctl-jmp'), jump);
+  alTocar($id('ctl-atk'), attack);
+  alTocar(btnItem, () => { if (_slotCtx >= 0) useItem(_slotCtx); });
+
+  // ── ITEM CONTEXTUAL + VISIBILIDAD ──
+  // El boton de item solo existe cuando hay algo usable Y la situacion lo
+  // pide: vida baja, jefe en pantalla o la pantalla llena. El resto del tiempo
+  // no roba espacio ni atencion.
+  const CLAVES_ITEM = ['item_potion', 'item_shield', 'item_skill', 'skill_fire'];
+  function slotContextual() {
+    const listo = i => PL.items[i][0] > 0 && PL.items[i][1] <= 0;
+    if (PL.hp < 40 && listo(0)) return 0;   // primero curarse
+    if (listo(2)) return 2;                 // rayo: limpia la pantalla
+    if (listo(1)) return 1;                 // escudo
+    if (listo(3)) return 3;                 // fuego
+    return listo(0) ? 0 : -1;
+  }
+  let _slotCtx = -1, _jugando = false, _bloqueado = false;
+  setInterval(() => {
+    const jugando = state === 'playing';
+    if (jugando !== _jugando) {
+      _jugando = jugando;
+      document.body.classList.toggle('ctl-jugando', jugando);
+      if (!jugando) soltarPad();
+    }
+    // Mientras la partida vive (jugando o en sus pausas) la pagina no puede
+    // hacer scroll: en la Mini App el html/body llevan overflow-y:auto y un
+    // arrastre movia la pagina entera en mitad de la pelea.
+    const bloquear = jugando || state === 'paused' || state === 'descanso' || state === 'eligiendo';
+    if (bloquear !== _bloqueado) {
+      _bloqueado = bloquear;
+      document.documentElement.style.overflow = bloquear ? 'hidden' : '';
+      document.body.style.overflow = bloquear ? 'hidden' : '';
+    }
+    const urgencia = jugando && (PL.hp < 40 || bossActive || enemies.length >= 6);
+    const s = urgencia ? slotContextual() : -1;
+    if (s !== _slotCtx) {
+      _slotCtx = s;
+      if (s < 0) { btnItem.style.display = 'none'; }
+      else { imgItem.src = IMG[CLAVES_ITEM[s]]; btnItem.style.display = 'flex'; }
+    }
+  }, 150);
+})();
 
 // Arrancar el mundo del menu en cuanto la pagina y las imagenes esten listas.
 window.addEventListener('load', () => { if (state === 'menu') arrancarAtraccion(); });

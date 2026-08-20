@@ -46,9 +46,16 @@
       this._load();
       this.unlock('first_blood');
       this._killsTotal++;
-      localStorage.setItem('dq_kills_total', this._killsTotal);
+      // Una escritura a disco por kill sumaba a los tirones en móvil: el
+      // contador se vuelca como mucho una vez por segundo, y el motor llama a
+      // flush() al morir para no perder el resto.
+      if (!this._kTimer) this._kTimer = setTimeout(() => { this._kTimer = null; localStorage.setItem('dq_kills_total', this._killsTotal); }, 1000);
       if (this._killsTotal >= 100) this.unlock('kills100');
       if (this._killsTotal >= 1000) this.unlock('kills1000');
+    },
+    flush() {
+      if (this._kTimer) { clearTimeout(this._kTimer); this._kTimer = null; }
+      if (this._done) localStorage.setItem('dq_kills_total', this._killsTotal);
     },
     onBoss() { this.unlock('boss1'); },
     onWave(w) { if (w >= 5) this.unlock('wave5'); if (w >= 10) this.unlock('wave10'); if (w >= 20) this.unlock('wave20'); },

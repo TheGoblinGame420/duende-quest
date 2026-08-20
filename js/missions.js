@@ -51,19 +51,40 @@
 
     event(type, val) {
       if (!this.state) return;
-      let changed = false;
+      let changed = false, cumplida = false;
       this.state.list.forEach(m => {
         if (m.done || m.type !== type) return;
         m.progress = type === 'wave' ? Math.max(m.progress, val) : m.progress + (val || 1);
         if (m.progress >= m.goal) {
           m.progress = m.goal;
           m.done = true;
+          cumplida = true;
           if (typeof this.onReward === 'function') this.onReward(m);
           if (typeof this.notify === 'function') this.notify('🎯 MISIÓN CUMPLIDA: +' + m.reward + ' DQ!');
         }
         changed = true;
       });
-      if (changed) { this.save(); this.render(); }
+      // Guardar y repintar aquí costaba una escritura a disco y un innerHTML
+      // POR CADA moneda y cada kill, con el panel visible durante la partida
+      // en la Mini App. El progreso se marca sucio y se vuelca como mucho una
+      // vez por segundo; cumplir una misión sí pinta al instante, y el motor
+      // fuerza flush() al morir para no perder nada.
+      if (cumplida) { this._dirty = true; this.flush(); }
+      else if (changed) this._marcar();
+    },
+
+    _marcar() {
+      this._dirty = true;
+      if (this._timer) return;
+      this._timer = setTimeout(() => { this._timer = null; this.flush(); }, 1000);
+    },
+
+    flush() {
+      if (this._timer) { clearTimeout(this._timer); this._timer = null; }
+      if (!this._dirty) return;
+      this._dirty = false;
+      this.save();
+      this.render();
     },
 
     // Antes se pintaba en UN solo contenedor por id, que vivía dentro de la
