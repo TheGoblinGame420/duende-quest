@@ -262,7 +262,6 @@ html{font-size:24px;}
         <div class="card" id="perfil-skin"></div>
         <div class="card" id="perfil-wallet"></div>
         <button class="ob" onclick="invitarAmigos()" style="background:linear-gradient(135deg,#1da1f2,#0077b5);color:#fff">👥 INVITAR AMIGOS</button>
-        <button class="ob verde" onclick="openRedeem()">🎁 CANJEAR DQ</button>
         <button class="ob gris" onclick="abrirWeb()">🌐 WEB OFICIAL</button>
         <div class="hub-mini" id="perfil-sync" style="text-align:center;margin-top:6px"></div>
       </section>
@@ -284,10 +283,17 @@ html{font-size:24px;}
       </section>
 
       <!-- WALLET -->
+      <!-- Telegram prohibe distribuir o promocionar dentro de una Mini App
+           tokens que no sean de TON. $DUENDE es de Solana, asi que comprar,
+           cambiar (Exchange) o canjear DQ por $DUENDE se quitaron de aqui
+           (decision del dueño, 2026-09-28) y viven solo en la web. Lo que
+           SI se queda: conectar la wallet TON (hace falta para pagar skins
+           con TON) y comprar skins — un cosmetico pagado con Stars o TON no
+           es "distribuir un token", eso Telegram si lo permite. -->
       <section class="tab" id="tab-wallet">
         <div class="tab-titulo" style="color:#0098ea">💎 WALLET</div>
         <div class="card">
-          <div id="ton-status" class="hub-sub" style="margin:0 0 10px">Conecta tu wallet TON para comprar skins y $DUENDE</div>
+          <div id="ton-status" class="hub-sub" style="margin:0 0 10px">Conecta tu wallet TON para comprar skins</div>
           <div id="ton-connect-panel">
             <button class="ob big" onclick="connectTonWallet()" style="background:linear-gradient(135deg,#0098ea,#005f99);color:#fff">💎 CONECTAR WALLET TON</button>
             <div class="hub-mini" style="text-align:center;margin-top:6px">Tonkeeper · Wallet de Telegram · MyTonWallet</div>
@@ -295,19 +301,16 @@ html{font-size:24px;}
           <div id="ton-connected-panel" style="display:none">
             <div class="hub-mini">Wallet conectada</div>
             <div id="ton-addr" class="addr"></div>
-            <p class="hub-sub" style="margin:8px 0">1 TON = <span id="ton-duende-rate" style="color:#00ff88">---</span> $DUENDE</p>
-            <input type="number" class="donate-input" id="ton-amount-input" min="1" step="0.5" placeholder="1.0">
-            <p id="ton-preview" class="estado">Ingresa cantidad en TON</p>
-            <button class="ob" onclick="sendTonPayment()" style="background:linear-gradient(135deg,#0098ea,#005f99);color:#fff">💎 COMPRAR $DUENDE CON TON</button>
+            <div class="hub-mini" style="text-align:center;margin-top:8px">Lista para pagar skins en 🎨 SKINS</div>
             <button class="ob gris" onclick="disconnectTon()">🔌 DESCONECTAR</button>
           </div>
         </div>
-        <button class="ob yellow" onclick="showStarsShop()">⭐ COMPRAR CON STARS</button>
-        <div class="fila2">
-          <button class="ob" onclick="openExchange()" style="background:linear-gradient(135deg,#00eeff,#0088aa);color:#000">🔄 EXCHANGE</button>
-          <button class="ob verde" onclick="openRedeem()">🎁 CANJEAR DQ</button>
+        <div class="card">
+          <div class="hub-mini" style="margin-bottom:8px">COMPRAR Y CANJEAR $DUENDE</div>
+          <div class="hub-sub" style="margin-bottom:10px">Disponible en la página web, no dentro de Telegram.</div>
+          <button class="ob azul" onclick="abrirWeb()">🌐 IR A LA WEB</button>
         </div>
-        <button class="ob purple" onclick="openPumpFun()">🚀 $DUENDE EN PUMP.FUN</button>
+        <button class="ob purple" onclick="openPumpFun()">🚀 VER $DUENDE EN PUMP.FUN</button>
         <div class="card" id="wallet-precio"><span class="hub-mini">Precio $DUENDE</span><div id="hub-precio" style="color:#c084fc;font-size:12px;margin-top:4px">---</div></div>
       </section>
     </div>
@@ -333,7 +336,7 @@ html{font-size:24px;}
       <button class="ob" onclick="reintentar()">▶ REINTENTAR</button>
       <button class="ob" onclick="abrirMapa()" style="background:rgba(255,255,255,.1);color:#fff">🗺 MAPA</button>
       <button class="ob purple" onclick="showOverlay('ov-rank')">🏆 RANKING</button>
-      <button class="ob yellow" onclick="showStarsShop()" style="font-size:.4rem">⭐ COMPRAR</button>
+      <button class="ob" onclick="showOverlay('ov-start');irTab('skins')" style="background:linear-gradient(135deg,#c084fc,#7c3aed);color:#fff;font-size:.4rem">🎨 SKINS</button>
     </div>
   </div>
 
@@ -784,12 +787,9 @@ async function fetchTonPrice(){
 }
 fetchTonPrice();setInterval(fetchTonPrice,60000);
 
-function updateTonRate(){
-  const duendePrice=tgPriceUsd||0.0000001;
-  const tonP=tonPriceUsd||3.5;
-  const rate=Math.floor(tonP/duendePrice);
-  document.getElementById('ton-duende-rate').textContent=rate.toLocaleString();
-}
+// Ya no queda ningun precio "1 TON = X $DUENDE" en el hub (esa compra vive
+// solo en la web); esta funcion se deja vacia por si algo viejo la llama.
+function updateTonRate(){}
 
 document.getElementById('ton-amount-input')?.addEventListener('input',function(){
   const ton=parseFloat(this.value)||0;

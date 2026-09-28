@@ -214,8 +214,17 @@ código en la muerte (usan solo el fade de alpha).
    ganar, y `coinMult` sobre DQ canjeable por $DUENDE se parece a rendimiento
    (riesgo legal, ver `ESTRATEGIA-TOKEN.md`). Recomendación: cosméticas a
    1-5 USD. **Decisión del dueño**, no se tocó.
-3. **Quitar lo cripto de la Mini App** (comprar $DUENDE, exchange, staking):
-   las Blockchain Guidelines de Telegram lo prohíben. Solo web.
+3. ~~**Quitar lo cripto de la Mini App**~~ — hecho (2026-09-28, decisión del
+   dueño). Comprar $DUENDE con TON/Stars, el Exchange y Canjear DQ se
+   quitaron de `telegram/index.html` y se apagaron en el servidor
+   (`SWITCHES.ton_buy/ton_sell/request_redemption = 'off'` en
+   `functions/api/wallet.js`); solo funcionan en la web, que ya los tenía.
+   Se quedan: jugar, Stars (Telegram las permite), y comprar **skins** con
+   Stars o TON — una skin es un cosmético, no un token, así que no viola la
+   regla. Conectar la wallet TON se queda (hace falta para pagar skins).
+   Ojo: la web todavía no tiene un Exchange ni un Canjear DQ que funcionen
+   de verdad (dicen "en desarrollo") — por ahora esa función no existe en
+   ningún lado, solo se retiró de Telegram.
 4. ~~`ton_sell`: tope diario y retiro solo a wallet registrada hace >48 h~~
    — hecho esta tanda (24 h, ver arriba).
 5. Integrar más packs de `recursos/` (ver `recursos/INDICE.md`). El goblin

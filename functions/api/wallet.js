@@ -33,11 +33,17 @@ const STAKE_LOCKS = { 7: 1, 30: 1.5, 90: 2.5 };
 // la recompensa al instante y ningún proceso devuelve el principal en unlock_at.
 // No lo reactives sin haber consultado con un abogado peruano y sin haber
 // implementado la devolución del principal.
+// ton_buy/ton_sell/request_redemption: distribuian $DUENDE (token de Solana)
+// DENTRO de la Mini App de Telegram, que las Blockchain Guidelines de
+// Telegram prohiben (solo permiten promocionar/distribuir tokens de TON).
+// Decision del dueño (2026-09-28): comprar y canjear $DUENDE se hace solo en
+// la web. Las skins (skin_ton) se quedan encendidas: no son un token, son un
+// cosmetico pagado con TON o Stars, eso si lo permite Telegram.
 const SWITCHES = {
   ton_stake: 'off',
-  ton_buy: 'on',
-  ton_sell: 'on',
-  request_redemption: 'on',
+  ton_buy: 'off',
+  ton_sell: 'off',
+  request_redemption: 'off',
 };
 
 function isEnabled(env, action) {
