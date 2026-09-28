@@ -95,7 +95,11 @@ export async function supabaseQuery(env, path, options = {}) {
 }
 
 // ── Live prices (server-side only) ──
-export async function getDuendePriceUsd() {
+// estricto = true devuelve null si fallan las fuentes en vez del precio de
+// respaldo. Para mostrar precios el respaldo vale; para mover dinero no: con
+// $DUENDE a 0,0000001 (20 veces por debajo del real) ton_buy entregaba 20
+// veces mas tokens de los pagados.
+export async function getDuendePriceUsd(estricto = false) {
   try {
     const r = await fetch(PUMP_API, { signal: AbortSignal.timeout(5000) });
     const d = await r.json();
@@ -107,17 +111,17 @@ export async function getDuendePriceUsd() {
     const p = parseFloat(d?.pairs?.[0]?.priceUsd || 0);
     if (p > 0) return p;
   } catch (e) {}
-  return 0.0000001; // floor fallback
+  return estricto ? null : 0.0000001; // floor fallback
 }
 
-export async function getTonPriceUsd() {
+export async function getTonPriceUsd(estricto = false) {
   try {
     const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=the-open-network&vs_currencies=usd', { signal: AbortSignal.timeout(5000) });
     const d = await r.json();
     const p = parseFloat(d?.['the-open-network']?.usd || 0);
     if (p > 0) return p;
   } catch (e) {}
-  return 3.5;
+  return estricto ? null : 3.5;
 }
 
 export async function getSolPriceUsd() {
@@ -158,11 +162,32 @@ export async function verifyInitData(initData, botToken, maxAgeSeconds = 6 * 360
   }
 }
 
+// ── Firma de pagos TON ──
+// Antes el servidor aceptaba CUALQUIER pago reciente a la wallet dev que
+// superase el importe, asi que un atacante que viera en la cadena el pago de
+// otro podia reclamarlo como suyo. Ahora cada usuario recibe un "resto" unico
+// (los 6 ultimos digitos del importe en nanotons), derivado con HMAC de su
+// telegram_id, la accion y una ventana de 10 minutos. El pago solo cuenta si
+// acaba en SU resto. Sin tablas nuevas: el servidor lo recalcula al verificar.
+export function tonBucket(t = Date.now()) { return Math.floor(t / 600000); }
+export async function tonDust(secret, tgId, action, bucket) {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey('raw', enc.encode('ton-dust:' + secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, enc.encode(tgId + '|' + action + '|' + bucket)));
+  const n = ((sig[0] << 24) >>> 0) + (sig[1] << 16) + (sig[2] << 8) + sig[3];
+  return 1000 + (n % 998000);   // 0,000001-0,000999 TON: invisible para el usuario
+}
+// Restos validos ahora y en las dos ventanas anteriores (el pago tarda en confirmarse).
+export async function tonDustsValidos(secret, tgId, action) {
+  const b = tonBucket();
+  return Promise.all([b, b - 1, b - 2].map(x => tonDust(secret, tgId, action, x)));
+}
+
 // ── TON on-chain payment verification (toncenter) ──
-// Looks for a recent incoming transfer to the dev wallet matching the
-// expected amount (and sender when address formats are comparable).
-// Anti-replay is enforced by the caller via the ton_credits table.
-export async function findTonPayment(env, { fromWallet, minNanotons, windowSeconds = 1200 }) {
+// Busca un pago reciente a la wallet dev cuyo importe acabe en uno de los
+// restos del usuario (ver tonDust). El anti-replay lo hace quien llama,
+// insertando el hash en ton_credits (UNIQUE) ANTES de acreditar.
+export async function findTonPayment(env, { dusts, minNanotons, windowSeconds = 1200 }) {
   const key = env.TONCENTER_API_KEY ? `&api_key=${encodeURIComponent(env.TONCENTER_API_KEY)}` : '';
   const url = `https://toncenter.com/api/v2/getTransactions?address=${encodeURIComponent(TON_DEV_WALLET)}&limit=30${key}`;
   const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
@@ -175,6 +200,7 @@ export async function findTonPayment(env, { fromWallet, minNanotons, windowSecon
     if (!inMsg || txn.utime < since) continue;
     const value = parseInt(inMsg.value || '0', 10);
     if (value < minNanotons * 0.99) continue;
+    if (!Array.isArray(dusts) || !dusts.includes(value % 1000000)) continue;
     candidates.push({
       hash: txn.transaction_id?.hash || '',
       nanotons: value,
@@ -182,8 +208,8 @@ export async function findTonPayment(env, { fromWallet, minNanotons, windowSecon
       source: inMsg.source || '',
     });
   }
-  if (candidates.length === 0) return null;
-  // Prefer exact sender match (raw vs friendly formats may differ; fall back to amount+window match)
-  const exact = candidates.find(c => fromWallet && c.source === fromWallet);
-  return exact || candidates[0];
+  // Solo pagos firmados con el resto del usuario. Se devuelven TODOS: si el
+  // usuario pago dos veces seguidas, quien llama reclama el primero libre (con
+  // solo el primero, un pago viejo quedaba tapado por uno ya acreditado).
+  return candidates;
 }

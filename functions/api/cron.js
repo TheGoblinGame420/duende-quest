@@ -139,7 +139,7 @@ export async function weeklyTournament(env) {
   }
   // Anuncio público en Discord con los ganadores
   const medals = ['🥇', '🥈', '🥉'];
-  const podium = top.map((t, i) => `${medals[i]} **${t.username}** — ${Number(t.score).toLocaleString()} pts → +${TOURNAMENT_PRIZES[i].toLocaleString()} $DUENDE`).join('\n');
+  const podium = top.map((t, i) => `${medals[i]} **${String(t.username || '?').replace(/[*_\[\]`()~|>]/g, '').slice(0, 20)}** — ${Number(t.score).toLocaleString()} pts → +${TOURNAMENT_PRIZES[i].toLocaleString()} $DUENDE`).join('\n');
   await postDiscord(env, `🏆 **¡GANADORES DEL TORNEO SEMANAL!** 🏆\n\n${podium}\n\n¡Felicidades duendes! 🧝 La nueva semana ya empezó — ¿quién será el próximo rey? 👑\n🎮 https://t.me/duendequest_bot`);
   console.log('[Tournament] awarded week', weekKey, top.map(t => t.username));
 }

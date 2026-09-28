@@ -2,7 +2,11 @@
 // DUENDE QUEST — Helius NFT Verification (Cloudflare Pages)
 // ═══════════════════════════════════════════════════════
 
+import { verifyInitData } from './lib.js';
+
 const DEV_WALLET = 'B6pLnZFkot8JgAKZs5nq8V4B1LSdz7mdhNnUa85fbp4J';
+// Direccion Solana en base58 (32-44 caracteres, sin 0 O I l).
+const SOL_ADDR = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 
 function getEnv(context) {
   return {
@@ -39,7 +43,7 @@ async function getSolPriceUsd() {
     const p = parseFloat(d?.solana?.usd || 0);
     if (p > 0) return p;
   } catch (e) {}
-  return 170;
+  return null;   // sin precio real no se verifica: con 170 fijo se podia pagar de menos
 }
 
 async function verifyTransaction(heliusKey, txSignature, expectedSol, senderWallet) {
@@ -84,6 +88,7 @@ async function onRequestPost(context) {
     if (action === 'verify_skin_purchase') {
       const { tx_signature, skin_id, wallet_address, telegram_id } = body;
       if (!tx_signature || !skin_id || !wallet_address) return new Response(JSON.stringify({ error: 'Missing fields' }), { headers, status: 400 });
+      if (!SOL_ADDR.test(wallet_address) || !/^[1-9A-HJ-NP-Za-km-z]{64,90}$/.test(tx_signature)) return new Response(JSON.stringify({ error: 'Bad fields' }), { headers, status: 400 });
       // Server-side price — never trust the client's expected_sol
       const usd = SKIN_PRICES_USD[skin_id];
       if (!usd) return new Response(JSON.stringify({ error: 'Unknown skin' }), { headers, status: 400 });
@@ -92,34 +97,43 @@ async function onRequestPost(context) {
       // Anti-replay: each tx signature can only unlock one purchase
       const replay = await supabaseQuery(env, `skin_purchases?tx_signature=eq.${encodeURIComponent(tx_signature)}&select=id`);
       if (Array.isArray(replay) && replay.length > 0) return new Response(JSON.stringify({ success: false, error: 'TX already used' }), { headers });
-      const expectedSol = usd / (await getSolPriceUsd());
+      const solUsd = await getSolPriceUsd();
+      if (!solUsd) return new Response(JSON.stringify({ success: false, error: 'Precio de SOL no disponible, reintenta en un minuto' }), { headers, status: 503 });
+      const expectedSol = usd / solUsd;
       const result = await verifyTransaction(env.HELIUS_API_KEY, tx_signature, expectedSol, wallet_address);
       if (!result.valid) return new Response(JSON.stringify({ success: false, error: result.error }), { headers });
+      // La compra es de la wallet que PAGO. Antes el telegram_id venia del
+      // cliente sin verificar, o se sacaba del perfil cuyo wallet_solana
+      // coincidiera (columna que cualquier usuario puede editar): bastaba con
+      // copiar de Solscan la firma de un pago ajeno para quedarse la skin.
       const purchaseData = { skin_id, payment_type: 'sol', amount_paid: result.sol, tx_signature, wallet_address };
-      if (telegram_id) purchaseData.telegram_id = telegram_id;
-      else {
-        const profiles = await supabaseQuery(env, `profiles?or=(wallet_address.eq.${enc(wallet_address)},wallet_solana.eq.${enc(wallet_address)})&select=telegram_id`);
-        purchaseData.telegram_id = (Array.isArray(profiles) && profiles[0]?.telegram_id) ? profiles[0].telegram_id : 'wallet_' + wallet_address.slice(0, 8);
-      }
+      const tgUser = telegram_id && body.init_data ? await verifyInitData(body.init_data, context.env.TELEGRAM_BOT_TOKEN) : null;
+      purchaseData.telegram_id = (tgUser && String(tgUser.id) === String(telegram_id)) ? String(telegram_id) : 'wallet_' + wallet_address.slice(0, 8);
       await supabaseQuery(env, 'skin_purchases', { method: 'POST', body: purchaseData });
       return new Response(JSON.stringify({ success: true, sol: result.sol }), { headers });
     }
 
     if (action === 'get_owned_skins') {
+      // Las skins de una wallet son las que esa wallet pago. Por telegram_id
+      // solo con initData verificado (antes cualquiera veia las de cualquiera).
       const { wallet_address, telegram_id } = body;
       let skins = [];
-      if (telegram_id) { const data = await supabaseQuery(env, `skin_purchases?telegram_id=eq.${enc(telegram_id)}&select=skin_id`); if (Array.isArray(data)) skins = data.map(s => s.skin_id); }
-      if (wallet_address) {
-        const profiles = await supabaseQuery(env, `profiles?or=(wallet_address.eq.${enc(wallet_address)},wallet_solana.eq.${enc(wallet_address)})&select=telegram_id`);
-        if (Array.isArray(profiles) && profiles[0]?.telegram_id) {
-          const data = await supabaseQuery(env, `skin_purchases?telegram_id=eq.${enc(profiles[0].telegram_id)}&select=skin_id`);
-          if (Array.isArray(data)) data.forEach(s => { if (!skins.includes(s.skin_id)) skins.push(s.skin_id); });
-        }
+      const tgUser = telegram_id && body.init_data ? await verifyInitData(body.init_data, context.env.TELEGRAM_BOT_TOKEN) : null;
+      if (tgUser && String(tgUser.id) === String(telegram_id)) {
+        const data = await supabaseQuery(env, `skin_purchases?telegram_id=eq.${enc(telegram_id)}&select=skin_id`);
+        if (Array.isArray(data)) skins = data.map(s => s.skin_id);
+      }
+      if (wallet_address && SOL_ADDR.test(wallet_address)) {
+        const data = await supabaseQuery(env, `skin_purchases?wallet_address=eq.${enc(wallet_address)}&select=skin_id`);
+        if (Array.isArray(data)) data.forEach(s => { if (!skins.includes(s.skin_id)) skins.push(s.skin_id); });
       }
       return new Response(JSON.stringify({ skins }), { headers });
     }
 
     if (action === 'check_nfts') {
+      // Sin validar, la direccion iba cruda en la ruta de api.helius.xyz junto
+      // a nuestra api-key: servia para llamar a otras rutas con nuestra cuota.
+      if (!SOL_ADDR.test(String(body.wallet_address || ''))) return new Response(JSON.stringify({ error: 'Bad wallet' }), { headers, status: 400 });
       const nfts = await getNFTs(env.HELIUS_API_KEY, body.wallet_address);
       return new Response(JSON.stringify({ nfts: nfts.length, items: nfts.slice(0, 20) }), { headers });
     }

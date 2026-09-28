@@ -127,22 +127,24 @@ async function createStarsInvoice(token, env, pkgIndex, tgId) {
 // ═══════════════════════════════════════════════════════
 
 async function handleStart(token, env, chatId, user, startPayload) {
-  if (startPayload && startPayload.startsWith('ref_')) {
-    await handleReferral(token, env, startPayload.replace('ref_', ''), user);
-  }
   const tgId = String(user.id);
-  const username = (user.username || user.first_name || 'duende_' + tgId).slice(0, 20);
+  // SEGURIDAD: aqui habia un PATCH que movia a este telegram_id el perfil
+  // cuyo username coincidiera con user.username || user.first_name. El
+  // first_name lo elige cualquiera en Telegram, asi que bastaba con llamarse
+  // como la victima y mandar /start para quedarse con su perfil y su saldo.
+  // La vinculacion ya la hace link_profile (wallet.js) con initData verificado.
   let profiles = [];
-  try { profiles = await supabaseQuery(env, `profiles?telegram_id=eq.${tgId}&select=id,username`); } catch(e) {}
-  if (!Array.isArray(profiles) || profiles.length === 0) {
-    try { await supabaseQuery(env, `profiles?username=eq.${username}`, { method: 'PATCH', body: { telegram_id: tgId } }); } catch(e) {
-      try { await supabaseQuery(env, 'rpc/link_telegram', { method: 'POST', body: { p_tg_id: tgId, p_username: username } }); } catch(e2) {}
-    }
+  try { profiles = await supabaseQuery(env, `profiles?telegram_id=eq.${tgId}&select=id`); } catch(e) {}
+  const esNuevo = !Array.isArray(profiles) || profiles.length === 0;
+  // El referido solo cuenta para usuarios que aun no tenian perfil: antes dos
+  // jugadores existentes podian referirse el uno al otro y cobrar 2000.
+  if (esNuevo && startPayload && startPayload.startsWith('ref_')) {
+    await handleReferral(token, env, startPayload.replace('ref_', ''), user);
   }
   const referralLink = `https://t.me/duendequest_bot?start=ref_${user.id}`;
   await tg(token, 'sendMessage', {
     chat_id: chatId,
-    text: `🧌 *¡Bienvenido a DUENDE QUEST, ${user.first_name || 'Duende'}!*\n\n⚔️ Juego arcade play-to-earn en Solana\n💰 Gana tokens $DUENDE jugando\n⚡ Staking con hasta 240% APY\n🏆 Compite en el ranking global\n\n🎁 *Tu link de referido:*\n\`${referralLink}\`\n_Invita amigos y ambos ganan 500 $DUENDE_`,
+    text: `🧌 *¡Bienvenido a DUENDE QUEST, ${user.first_name || 'Duende'}!*\n\n⚔️ Juego arcade play-to-earn en Solana\n💰 Gana tokens $DUENDE jugando\n🗺 Campaña de 15 etapas con jefes\n🏆 Compite en el ranking global\n\n🎁 *Tu link de referido:*\n\`${referralLink}\`\n_Invita amigos y ambos ganan 500 $DUENDE_`,
     parse_mode: 'Markdown',
     reply_markup: { inline_keyboard: [
       [{ text: '🎮 JUGAR AHORA', web_app: { url: WEBAPP_URL } }],
@@ -153,6 +155,11 @@ async function handleStart(token, env, chatId, user, startPayload) {
   });
 }
 
+// Los nombres del ranking los escriben los jugadores: un nombre con * _ [ `
+// rompia el Markdown (Telegram rechazaba el mensaje y /ranking dejaba de
+// funcionar para todos) o colaba un enlace en un mensaje oficial del bot.
+function mdSeguro(t) { return String(t || '?').replace(/[*_\[\]`()]/g, '').slice(0, 20); }
+
 async function handleRanking(token, env, chatId, messageId) {
   const rows = await supabaseQuery(env, 'game_scores?select=username,score,wave&order=score.desc&limit=50');
   // Una entrada por jugador: su mejor score
@@ -161,7 +168,7 @@ async function handleRanking(token, env, chatId, messageId) {
   const scores = [...best.values()].sort((a, b) => b.score - a.score).slice(0, 10);
   let text = '🏆 *TOP 10 — DUENDE QUEST*\n\n';
   if (scores.length === 0) text += '_Aún no hay puntuaciones._';
-  else { const medals = ['🥇','🥈','🥉']; scores.forEach((s,i) => { text += `${medals[i]||`${i+1}.`} *${s.username}* — ${s.score.toLocaleString()} pts (Wave ${s.wave})\n`; }); }
+  else { const medals = ['🥇','🥈','🥉']; scores.forEach((s,i) => { text += `${medals[i]||`${i+1}.`} *${mdSeguro(s.username)}* — ${s.score.toLocaleString()} pts (Wave ${s.wave})\n`; }); }
   const opts = { chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 JUGAR', web_app: { url: WEBAPP_URL } }],[{ text: '🔄 Actualizar', callback_data: 'ranking' }, { text: '⌂ Menú', callback_data: 'menu' }]] } };
   if (messageId) { opts.message_id = messageId; await tg(token, 'editMessageText', opts); } else await tg(token, 'sendMessage', opts);
 }
@@ -193,9 +200,13 @@ async function handleReferralCmd(token, chatId, userId, messageId) {
 async function handleReferral(token, env, referrerId, newUser) {
   if (String(referrerId) === String(newUser.id)) return;
   try {
+    if (!/^\d{1,15}$/.test(String(referrerId))) return;
     const existing = await supabaseQuery(env, `referrals?referred_tg_id=eq.${newUser.id}&select=id`);
     if (Array.isArray(existing) && existing.length > 0) return;
-    await supabaseQuery(env, 'referrals', { method: 'POST', body: { referrer_tg_id: String(referrerId), referred_tg_id: String(newUser.id), referred_username: (newUser.username||newUser.first_name||'anon').slice(0,20) } });
+    // El INSERT es el cerrojo (indice UNIQUE en referred_tg_id, sql/02-seguridad.sql):
+    // si dos /start llegan a la vez, solo el que inserta la fila paga.
+    const ins = await supabaseQuery(env, 'referrals', { method: 'POST', body: { referrer_tg_id: String(referrerId), referred_tg_id: String(newUser.id), referred_username: (newUser.username||newUser.first_name||'anon').slice(0,20) } });
+    if (!Array.isArray(ins) || ins.length !== 1) return;
     await supabaseQuery(env, 'rpc/add_duende_by_tgid', { method: 'POST', body: { p_tg_id: String(referrerId), p_amount: 500 } });
     await supabaseQuery(env, 'rpc/add_duende_by_tgid', { method: 'POST', body: { p_tg_id: String(newUser.id), p_amount: 500 } });
     await tg(token, 'sendMessage', { chat_id: referrerId, text: `🎉 *¡Nuevo referido!*\n\n${newUser.first_name||'Alguien'} se unió.\n💎 +500 $DUENDE`, parse_mode: 'Markdown' });
@@ -362,15 +373,15 @@ async function onRequestPost(context) {
         const chargeId = payment.telegram_payment_charge_id || '';
 
         // Anti-replay: never credit the same charge twice
-        if (chargeId) {
-          const dup = await supabaseQuery(env, `stars_purchases?tx_id=eq.${encodeURIComponent(chargeId)}&select=id`);
-          if (Array.isArray(dup) && dup.length > 0) return new Response('OK');
-        }
+        if (!chargeId) return new Response('OK');
+        const dup = await supabaseQuery(env, `stars_purchases?tx_id=eq.${encodeURIComponent(chargeId)}&select=id`);
+        if (Array.isArray(dup) && dup.length > 0) return new Response('OK');
 
         // Skin purchase paid with Stars → record server-side (client no longer inserts)
         if (payload.skin_id) {
+          const reg = await supabaseQuery(env, 'stars_purchases', { method: 'POST', body: { telegram_id: tgId, amount_usd: starsPaid * STAR_USD, amount_stars: starsPaid, tokens_credited: 0, tx_id: chargeId } });
+          if (!Array.isArray(reg) || reg.length !== 1) return new Response('OK');   // reintento del webhook
           await supabaseQuery(env, 'skin_purchases', { method: 'POST', body: { telegram_id: tgId, skin_id: payload.skin_id, payment_type: 'stars', amount_paid: starsPaid, tx_signature: chargeId } });
-          await supabaseQuery(env, 'stars_purchases', { method: 'POST', body: { telegram_id: tgId, amount_usd: starsPaid * STAR_USD, amount_stars: starsPaid, tokens_credited: 0, tx_id: chargeId } });
           await tg(token, 'sendMessage', { chat_id: chatId, text: `✅ *¡Skin desbloqueada!*\n\n🎨 Ya puedes equiparla en el juego\n⭐ ${starsPaid} Stars`, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 JUGAR', web_app: { url: WEBAPP_URL } }]] } });
           return new Response('OK');
         }
@@ -384,8 +395,12 @@ async function onRequestPost(context) {
         const maxTokens = Math.floor((paidUsd / priceUsd) * 1.05 * firstBuyMult); // 5% price-drift tolerance
         const tokens = Math.max(0, Math.min(parseInt(payload.tokens, 10) || 0, maxTokens)) || maxTokens;
         if (tokens > 0) {
+          // Registrar ANTES de acreditar: tx_id es UNIQUE, asi que si Telegram
+          // reintenta el webhook o llegan dos a la vez, solo uno inserta y paga.
+          // Antes se acreditaba primero y el INSERT duplicado fallaba en silencio.
+          const reg = await supabaseQuery(env, 'stars_purchases', { method: 'POST', body: { telegram_id: tgId, amount_usd: +paidUsd.toFixed(2), amount_stars: starsPaid, tokens_credited: tokens, tx_id: chargeId } });
+          if (!Array.isArray(reg) || reg.length !== 1) return new Response('OK');
           await supabaseQuery(env, 'rpc/add_duende_by_tgid', { method: 'POST', body: { p_tg_id: tgId, p_amount: tokens } });
-          await supabaseQuery(env, 'stars_purchases', { method: 'POST', body: { telegram_id: tgId, amount_usd: +paidUsd.toFixed(2), amount_stars: starsPaid, tokens_credited: tokens, tx_id: chargeId } });
         }
         await tg(token, 'sendMessage', { chat_id: chatId, text: `✅ *¡Pago exitoso!*\n\n💎 +${tokens.toLocaleString()} $DUENDE acreditados\n⭐ ${starsPaid} Stars`, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 JUGAR', web_app: { url: WEBAPP_URL } }],[{ text: '⭐ Comprar más', callback_data: 'buy' }]] } });
       } catch(e) {

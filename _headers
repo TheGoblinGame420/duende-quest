@@ -1,0 +1,13 @@
+# Cabeceras de seguridad para los archivos estaticos (Workers Static Assets).
+# frame-ancestors permite que la Mini App se abra dentro de Telegram Web.
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Content-Security-Policy: frame-ancestors 'self' https://web.telegram.org https://*.telegram.org
+
+# TON Connect: las wallets web (p. ej. Wallet de Telegram) leen el manifiesto
+# desde el navegador, y sin CORS no pueden: la conexion fallaba sin error visible.
+/tonconnect-manifest.json
+  Access-Control-Allow-Origin: *

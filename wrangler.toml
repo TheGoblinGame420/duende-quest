@@ -8,4 +8,7 @@ crons = ["0 3,15 * * *", "0 17 * * *", "0 12 * * 1", "0 0 * * *"]
 
 [assets]
 directory = "."
+# Sin binding, env.ASSETS era undefined en worker.js y cualquier ruta que no
+# fuera un archivo devolvia 500 (error 1101) en vez del fallback SPA.
+binding = "ASSETS"
 not_found_handling = "single-page-application"
