@@ -101,7 +101,7 @@ BEGIN
 END $$;
 
 -- Solo el Worker (service role) los llama.
-REVOKE EXECUTE ON FUNCTION public.accrue_dq_web(UUID, INTEGER, TEXT, INTEGER) FROM anon, authenticated, PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.accrue_dq_web(UUID, INTEGER, TEXT, INTEGER, BIGINT) FROM anon, authenticated, PUBLIC;
 REVOKE EXECUTE ON FUNCTION public.redeem_dq_web(UUID, BIGINT)                 FROM anon, authenticated, PUBLIC;
 
 
@@ -116,7 +116,7 @@ CREATE INDEX IF NOT EXISTS redemptions_user_idx ON public.redemptions (user_id);
 
 -- ── COMPROBACIONES ──
 -- 1) Debe dar ERROR de permisos: nadie externo llama a estas funciones.
---    BEGIN; SET LOCAL ROLE authenticated; SELECT accrue_dq_web('00000000-0000-0000-0000-000000000000',1,'2026-01-01',100); ROLLBACK;
+--    BEGIN; SET LOCAL ROLE authenticated; SELECT accrue_dq_web('00000000-0000-0000-0000-000000000000',1,'2026-01-01',100,1); ROLLBACK;
 --
 -- 2) prosecdef debe salir true (SECURITY DEFINER, a propósito: necesitan
 --    escribir dq_redeemable, que el propio usuario no puede tocar).
