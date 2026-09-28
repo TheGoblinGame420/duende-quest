@@ -205,6 +205,69 @@ aplastamiento — el enemigo se volvía invisible 1-2 px). Corregido en
 `animEnemigo()`: los enemigos con `e.sheet` se saltan el aplastado por
 código en la muerte (usan solo el fade de alpha).
 
+## Cuarta tanda (28-sep-2026, continuación) — Exchange real en la web + Términos y Privacidad
+
+Rama `feat/canje-web-y-legal`, todavía **sin `git push`** — falta ejecutar
+`sql/03-web-canje.sql` primero (instrucciones abajo).
+
+**El Exchange/canje que en la tanda anterior no existía en ningún lado ahora
+sí funciona en la web:**
+
+- **Comprar skins con SOL, sin el hueco de seguridad que tenía antes.**
+  Reescrito `functions/api/helius-verify.js` con el patrón "reference" de
+  Solana Pay: el servidor genera una clave pública aleatoria única por
+  orden (`create_sol_order`), la mete en la transacción como cuenta de solo
+  lectura, y verifica el pago buscando esa referencia en la cadena de
+  Solana — así saca la wallet REAL del que pagó en vez de confiar en lo que
+  mande el cliente. Antes, cualquiera que viera un pago ajeno en Solscan
+  podía copiar wallet+firma y reclamar la skin él. Era el mismo hueco que ya
+  se había cerrado para TON en la primera tanda, pero nunca se aplicó al
+  lado de SOL.
+- **Canjear DQ ganado jugando por $DUENDE real, para cuentas web** (con
+  email, sin pasar por Telegram): `web_start_run` / `web_submit_score` /
+  `web_redeem` en `functions/api/wallet.js`, con el mismo ticket firmado
+  anti-repetición que ya usaba Telegram. Se encontró y corrigió un hueco
+  real en pruebas: un ticket válido se podía reenviar varias veces y
+  agotar de un tirón el tope diario de DQ — ahora cada partida guarda su
+  propio timestamp (`profiles.dq_last_run_ts`) y un ticket ya usado no
+  vuelve a dar nada.
+- Esto es **pago de recompensa por jugar** (el jugador nunca deposita nada),
+  no un exchange con saldo interno — por eso sí se construyó, a diferencia
+  del swap TON/SOL↔$DUENDE con saldo canjeable, que se queda apagado por el
+  riesgo de PSAV descrito en `ESTRATEGIA-TOKEN.md`.
+- Nuevo panel "CANJEAR DQ → $DUENDE" en `game.html` (pantalla de wallet),
+  con sus dos estados (sin cuenta / con cuenta) probados en el navegador.
+- `index.html`: los dos textos que mandaban a la Mini App de Telegram a
+  comprar/canjear $DUENDE ahora apuntan a `game.html#wallet`.
+
+**Términos de Servicio y Política de Privacidad** — `terminos.html` y
+`privacidad.html`, nuevos, enlazados desde el pie de `index.html` y desde
+la pantalla de wallet de `game.html`. Cubren: qué es DQ vs $DUENDE, que no
+somos una casa de cambio ni custodiamos fondos, que las wallets son no
+custodiales, riesgo/volatilidad de $DUENDE, qué datos se recogen y con qué
+proveedores se comparten (Supabase/Cloudflare/Helius/Telegram), y los
+derechos ARCO bajo la Ley 29733 peruana. Contacto:
+sonicoperuoficial@gmail.com (puesto ahí porque no hay otro email de
+soporte en el proyecto — si tienes uno mejor, dímelo y lo cambio).
+
+### Cómo ejecutar `sql/03-web-canje.sql` (necesario para que el canje web funcione)
+
+Es el mismo procedimiento que ya hiciste con `sql/02-seguridad.sql`:
+
+1. Entra a supabase.com → tu proyecto → en el menú de la izquierda, el ícono
+   ⚡ "SQL Editor".
+2. Click en "+ New query" (si sale un aviso de que los snippets ya no se
+   guardan solos, ciérralo, no afecta).
+3. Abre `sql/03-web-canje.sql` en la carpeta del proyecto, selecciona todo
+   (Ctrl+A) y cópialo (Ctrl+C).
+4. Pégalo (Ctrl+V) en el cuadro grande del SQL Editor, reemplazando lo que
+   hubiera ahí.
+5. Dale al botón verde "Run" (o Ctrl+Enter).
+6. Al final debe salir una tabla con 2 filas (`accrue_dq_web`,
+   `redeem_dq_web`) con la columna `prosecdef` en `true`. Si sale así,
+   quedó bien.
+7. Avísame cuando lo hayas corrido para hacer el `git push`.
+
 ## Pendiente
 
 1. **Probar en un móvil real** dentro de Telegram (sobre todo el flujo de pago
@@ -218,17 +281,15 @@ código en la muerte (usan solo el fade de alpha).
    dueño). Comprar $DUENDE con TON/Stars, el Exchange y Canjear DQ se
    quitaron de `telegram/index.html` y se apagaron en el servidor
    (`SWITCHES.ton_buy/ton_sell/request_redemption = 'off'` en
-   `functions/api/wallet.js`); solo funcionan en la web, que ya los tenía.
-   Se quedan: jugar, Stars (Telegram las permite), y comprar **skins** con
-   Stars o TON — una skin es un cosmético, no un token, así que no viola la
-   regla. Conectar la wallet TON se queda (hace falta para pagar skins).
-   Ojo: la web todavía no tiene un Exchange ni un Canjear DQ que funcionen
-   de verdad (dicen "en desarrollo") — por ahora esa función no existe en
-   ningún lado, solo se retiró de Telegram.
+   `functions/api/wallet.js`); solo funcionan en la web. ~~Ojo: la web
+   todavía no tiene un Exchange ni un Canjear DQ que funcionen de
+   verdad~~ — hecho esta tanda, ver arriba.
 4. ~~`ton_sell`: tope diario y retiro solo a wallet registrada hace >48 h~~
    — hecho esta tanda (24 h, ver arriba).
 5. Integrar más packs de `recursos/` (ver `recursos/INDICE.md`). El goblin
    normal (arriba) demuestra que el pixel art de baja resolución SÍ encaja
    escalado; quedan por probar los tilesets Tiled (GothicVania, Rocky Pass)
    como niveles reales y el resto del bestiario (esqueletos, seta, jefe).
+6. ~~**Términos de Servicio y Política de Privacidad**~~ — hecho esta
+   tanda, ver arriba (`terminos.html`, `privacidad.html`).
 6. Términos de servicio y privacidad (`ESTRATEGIA-TOKEN.md`).
