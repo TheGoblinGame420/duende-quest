@@ -183,6 +183,19 @@ nav{
   transition:all .15s;cursor:pointer;
 }
 .btn-pink:hover{background:rgba(255,0,204,.1);box-shadow:0 0 40px rgba(255,0,204,.6),6px 6px 0 rgba(255,0,204,.4);transform:translate(-2px,-2px);}
+/* La Mini App de Telegram es la plataforma principal (Stars + wallet TON
+   integrados), pero la landing no tenia ningun boton que abriera el bot: solo
+   un canal de anuncios. */
+.btn-tg{
+  display:inline-block;
+  background:linear-gradient(135deg,#0098ea,#0077b6);
+  color:#fff;font-family:'Press Start 2P',monospace;font-size:.7rem;
+  padding:.9rem 1.8rem;border-radius:3px;text-decoration:none;border:none;cursor:pointer;
+  box-shadow:0 0 25px rgba(0,152,234,.5),4px 4px 0 rgba(0,0,0,.6);
+  transition:all .15s;animation:btn-glow-tg 2s ease-in-out infinite;
+}
+.btn-tg:hover{transform:translate(-2px,-2px);box-shadow:0 0 50px rgba(0,152,234,.9),6px 6px 0 rgba(0,0,0,.6);}
+@keyframes btn-glow-tg{0%,100%{box-shadow:0 0 20px rgba(0,152,234,.4),4px 4px 0 rgba(0,0,0,.6);}50%{box-shadow:0 0 50px rgba(0,152,234,.9),4px 4px 0 rgba(0,0,0,.6);}}
 .ca-box{
   background:rgba(0,255,136,.04);border:2px solid rgba(0,255,136,.2);
   border-radius:4px;padding:1rem 1.5rem;
@@ -653,7 +666,7 @@ footer{
 
 <div class="ticker">
   <span class="ticker-inner">
-    🧝 $DUENDE TO THE MOON 🚀 · 🎮 JUEGA AHORA · 🏆 RANKING GLOBAL EN VIVO · 💎 SOLO 1,600 NFTs · 🔥 0% TAX · ✈️ TELEGRAM MINI APP Q3 2025 · ⚔️ DUENDE QUEST RPG · 👑 100 DUENDES DEL INFINITO · 🌍 CONECTA TU WALLET · ◎ SOLANA + TON · 🧝 $DUENDE TO THE MOON 🚀 &nbsp;
+    🧝 $DUENDE TO THE MOON 🚀 · 🎮 JUEGA AHORA · 🏆 RANKING GLOBAL EN VIVO · 💎 SOLO 1,600 NFTs · 🔥 0% TAX · ✈️ TELEGRAM MINI APP YA DISPONIBLE · ⚔️ DUENDE QUEST RPG · 👑 100 DUENDES DEL INFINITO · 🌍 CONECTA TU WALLET · ◎ SOLANA + TON · 🧝 $DUENDE TO THE MOON 🚀 &nbsp;
   </span>
 </div>
 
@@ -691,9 +704,10 @@ footer{
     100 INFINITO · 500 ELITE · 1,000 ESPECIAL · COMMON ILIMITADOS
   </div>
   <div class="hero-btns">
+    <a href="https://t.me/duendequest_bot/app" target="_blank" class="btn-tg">📱 JUGAR EN TELEGRAM</a>
     <button onclick="openPumpFun()" class="btn-buy" id="btn-buy-main">🚀 BUY $DUENDE</button>
     <a href="#nft-store" class="btn-pink">🛒 NFT STORE</a>
-    <a href="game.html" class="btn-game" target="_blank">⚔️ JUGAR AHORA</a>
+    <a href="game.html" class="btn-game" target="_blank">⚔️ JUGAR EN EL NAVEGADOR</a>
   </div>
   <div class="ca-box">
     <div style="flex:1;min-width:0">
@@ -889,7 +903,7 @@ footer{
         <li>3 boosters gratis por semana</li>
         <li>Voto en la DAO de $DUENDE</li>
         <li>Early access a nuevos mundos</li>
-        <li>Staking yield mensual en $DUENDE</li>
+        <li>Skin y marco de perfil exclusivos</li>
       </ul>
       <div class="tier-price" style="color:#a78bfa">0.5 SOL</div>
     </div>
@@ -1239,7 +1253,8 @@ footer{
     <button class="exc-btn exchange" id="exc-do-btn" onclick="excDoExchange()">🔄 CANJEAR $DUENDE POR DQ</button>
 
     <div class="exc-note">
-      ⚠ Función en desarrollo · Q3 2025<br>
+      ⚠ Este canje web está en desarrollo. Mientras tanto, compra y canjea
+      $DUENDE con TON o Stars desde <a href="https://t.me/duendequest_bot/app" target="_blank" style="color:var(--green)">la Mini App de Telegram</a>, que ya funciona.<br>
       Los DQ se acreditan automáticamente a tu cuenta del juego
     </div>
   </div>
@@ -1317,34 +1332,41 @@ footer{
 <!-- ========== TELEGRAM MINI APP ========== -->
 <section class="section" id="telegram" style="background:radial-gradient(ellipse at 30% 60%,rgba(0,180,216,.08),transparent 60%),radial-gradient(ellipse at 70% 40%,rgba(124,58,237,.06),transparent 60%)">
   <div class="px-title" style="color:#00b4d8">✈️ TELEGRAM MINI APP</div>
-  <p class="px-sub">Próximamente · Juega desde Telegram · Gana TON real · Canjea por $DUENDE</p>
+  <!-- Decia "Proximamente" y "LANZAMIENTO Q3 2025" con un badge parpadeando:
+       la Mini App lleva meses en produccion (bot @duendequest_bot), y a fecha
+       de hoy tiene campaña de 15 etapas con jefes, tienda de skins, ranking y
+       wallet TON. La landing prometia algo que ya existe y no daba forma de
+       abrirlo. -->
+  <p class="px-sub">🟢 DISPONIBLE AHORA · Campaña de 15 etapas con jefes · Skins · Wallet TON</p>
 
   <div style="max-width:900px;margin:2.5rem auto 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.5rem">
 
     <div style="background:rgba(0,180,216,.04);border:2px solid rgba(0,180,216,.2);border-radius:4px;padding:1.8rem;box-shadow:4px 4px 0 rgba(0,0,0,.5);text-align:center">
-      <div style="font-size:2.5rem;margin-bottom:.8rem">✈️</div>
-      <div style="font-family:'Press Start 2P',monospace;font-size:.5rem;color:#00b4d8;margin-bottom:.6rem">TELEGRAM NATIVE</div>
-      <div style="font-size:.78rem;color:rgba(255,255,255,.4);line-height:1.7">Juega Duende Quest directamente desde Telegram. Sin salir de la app. Un toque y estás en partida.</div>
+      <div style="font-size:2.5rem;margin-bottom:.8rem">🗺️</div>
+      <div style="font-family:'Press Start 2P',monospace;font-size:.5rem;color:#00b4d8;margin-bottom:.6rem">CAMPAÑA + JEFES</div>
+      <div style="font-size:.78rem;color:rgba(255,255,255,.4);line-height:1.7">5 mundos, 15 etapas y un jefe con ataques que avisan antes de golpear en cada final de mundo. Gana estrellas y desbloquea el modo SIN FIN.</div>
     </div>
 
     <div style="background:rgba(0,180,216,.04);border:2px solid rgba(0,180,216,.2);border-radius:4px;padding:1.8rem;box-shadow:4px 4px 0 rgba(0,0,0,.5);text-align:center">
-      <div style="font-size:2.5rem;margin-bottom:.8rem">💎</div>
-      <div style="font-family:'Press Start 2P',monospace;font-size:.5rem;color:#00b4d8;margin-bottom:.6rem">GANA TON REAL</div>
-      <div style="font-size:.78rem;color:rgba(255,255,255,.4);line-height:1.7">Cada partida completada genera DQ Points. Acumula puntos y canjéalos por TON directamente a tu wallet.</div>
+      <div style="font-size:2.5rem;margin-bottom:.8rem">🎨</div>
+      <div style="font-family:'Press Start 2P',monospace;font-size:.5rem;color:#00b4d8;margin-bottom:.6rem">SKINS · STARS O TON</div>
+      <div style="font-size:.78rem;color:rgba(255,255,255,.4);line-height:1.7">Cada skin trae su propia animación y su color de corte. Cómpralas con Telegram Stars (tarjeta) o con tu wallet TON.</div>
     </div>
 
     <div style="background:rgba(0,180,216,.04);border:2px solid rgba(0,180,216,.2);border-radius:4px;padding:1.8rem;box-shadow:4px 4px 0 rgba(0,0,0,.5);text-align:center">
       <div style="font-size:2.5rem;margin-bottom:.8rem">🔄</div>
-      <div style="font-family:'Press Start 2P',monospace;font-size:.5rem;color:#00b4d8;margin-bottom:.6rem">TON → $DUENDE</div>
-      <div style="font-size:.78rem;color:rgba(255,255,255,.4);line-height:1.7">Convierte tus ganancias en TON a $DUENDE en Solana. Bridge integrado. El ecosistema completo en una sola app.</div>
+      <div style="font-family:'Press Start 2P',monospace;font-size:.5rem;color:#00b4d8;margin-bottom:.6rem">TON ⇄ $DUENDE</div>
+      <div style="font-size:.78rem;color:rgba(255,255,255,.4);line-height:1.7">Compra $DUENDE con TON o Stars, y canjea el DQ que ganas jugando de vuelta a $DUENDE en tu wallet.</div>
     </div>
 
   </div>
 
   <div style="text-align:center;margin-top:2.5rem;padding:1.5rem;background:rgba(0,180,216,.04);border:1px solid rgba(0,180,216,.15);border-radius:4px;max-width:600px;margin-left:auto;margin-right:auto">
-    <div style="font-family:'Press Start 2P',monospace;font-size:.42rem;color:#00b4d8;margin-bottom:.8rem;animation:blink .9s step-end infinite">⌛ LANZAMIENTO Q3 2025</div>
-    <a href="https://t.me/duendesolana420" target="_blank" style="font-family:'Press Start 2P',monospace;font-size:.5rem;color:#fff;background:linear-gradient(135deg,#0088cc,#005f99);padding:.8rem 1.6rem;border-radius:3px;text-decoration:none;box-shadow:4px 4px 0 rgba(0,0,0,.5);display:inline-block">✈️ UNIRME AL CANAL</a>
-    <div style="font-family:'Press Start 2P',monospace;font-size:.32rem;color:rgba(255,255,255,.2);margin-top:.8rem">Notificación cuando lance el Mini App</div>
+    <div style="font-family:'Press Start 2P',monospace;font-size:.42rem;color:#00ff88;margin-bottom:.8rem">🟢 EL BOT YA ESTÁ ACTIVO</div>
+    <div style="display:flex;gap:.8rem;flex-wrap:wrap;justify-content:center">
+      <a href="https://t.me/duendequest_bot/app" target="_blank" style="font-family:'Press Start 2P',monospace;font-size:.5rem;color:#fff;background:linear-gradient(135deg,#0098ea,#0077b6);padding:.8rem 1.6rem;border-radius:3px;text-decoration:none;box-shadow:4px 4px 0 rgba(0,0,0,.5);display:inline-block">📱 ABRIR LA MINI APP</a>
+      <a href="https://t.me/duendesolana420" target="_blank" style="font-family:'Press Start 2P',monospace;font-size:.5rem;color:#fff;background:linear-gradient(135deg,#0088cc,#005f99);padding:.8rem 1.6rem;border-radius:3px;text-decoration:none;box-shadow:4px 4px 0 rgba(0,0,0,.5);display:inline-block">✈️ CANAL DE ANUNCIOS</a>
+    </div>
   </div>
 </section>
 
@@ -1412,7 +1434,7 @@ footer{
           <ul class="rm-ul">
             <li>🌐 Bridge a otras chains (BSC, Base)</li>
             <li>🎲 Modo multijugador PvP on-chain</li>
-            <li>💰 Staking: bloquea $DUENDE → gana SOL</li>
+            <li>🏆 Temporadas de ranking con premios cosméticos</li>
             <li>🏪 Marketplace de NFTs integrado al juego</li>
             <li>📊 Listado en exchange centralizado</li>
           </ul>
@@ -1495,7 +1517,13 @@ footer{
 </section>
 
 <!-- ========== STAKING ========== -->
-<section id="staking" class="section staking-section">
+<!-- OCULTO el 28-sep-2026 (reversible: quita style="display:none").
+     Anunciaba 120-240% APY y "cuanto antes entres, mas ganas" por enviar SOL a
+     la wallet personal del dueño. Captar fondos de terceros prometiendo
+     devolverlos con rendimiento es la conducta del art. 11 de la Ley 26702 y
+     el art. 246 del Codigo Penal (ver ESTRATEGIA-TOKEN.md). El staking TON ya
+     estaba apagado por lo mismo. No reactivar sin consultar a un abogado. -->
+<section id="staking" class="section staking-section" style="display:none">
   <div class="px-title" style="color:#c084fc">⚡ STAKING $DUENDE</div>
   <p class="px-sub">Bloquea SOL → recibe $DUENDE. APY en vivo según precio del token.</p>
   <div class="staking-stats-bar">
@@ -1703,7 +1731,7 @@ function excDoExchange(){
   const val=parseFloat(document.getElementById('exc-duende-in').value)||0;
   if(val<=0){return;}
   const dq=Math.floor(val*RATE);
-  alert('⚠️ Exchange en desarrollo (Q3 2025).\nRecibirías: '+dq.toLocaleString()+' DQ Points.\nConecta tu cuenta del juego para canjearlo.');
+  alert('⚠️ Este canje web está en desarrollo.\nRecibirías: '+dq.toLocaleString()+' DQ Points.\nMientras tanto, usa la Mini App de Telegram (t.me/duendequest_bot/app), que ya compra y canjea $DUENDE de verdad.');
 }
 
 // MOUSE PARALLAX en hero
