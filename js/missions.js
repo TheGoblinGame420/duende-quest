@@ -13,9 +13,13 @@
     { id: 'kill50', desc: 'Elimina 50 enemigos', type: 'kill', goal: 50, reward: 60 },
     { id: 'coin30', desc: 'Recoge 30 monedas',   type: 'coin', goal: 30, reward: 25 },
     { id: 'coin80', desc: 'Recoge 80 monedas',   type: 'coin', goal: 80, reward: 55 },
-    { id: 'wave5',  desc: 'Llega a la WAVE 5',   type: 'wave', goal: 5,  reward: 40 },
-    { id: 'wave8',  desc: 'Llega a la WAVE 8',   type: 'wave', goal: 8,  reward: 80 },
-    { id: 'boss1',  desc: 'Derrota 1 BOSS',      type: 'boss', goal: 1,  reward: 50 },
+    // wave8 era inalcanzable para casi todos (la partida media acababa en la
+    // oleada 4) y boss1 tambien, porque el jefe se borraba al abrir el
+    // descanso. Ahora hay campaña, jefes que se pueden pelear y sellos.
+    { id: 'etapa2', desc: 'Completa 2 etapas',   type: 'etapa', goal: 2, reward: 40 },
+    { id: 'star3',  desc: 'Gana 3 estrellas',    type: 'estrella', goal: 3, reward: 60 },
+    { id: 'sello3', desc: 'Recoge 3 sellos ✦',   type: 'sello', goal: 3, reward: 45 },
+    { id: 'boss1',  desc: 'Derrota 1 JEFE',      type: 'boss', goal: 1,  reward: 50 },
     { id: 'chest3', desc: 'Abre 3 cofres',       type: 'chest', goal: 3, reward: 35 },
   ];
 

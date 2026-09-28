@@ -100,6 +100,17 @@ const IMG = {
   skin_legendariafull: _AB + 'skins/skin_legendariafull.png',
   duende_comun: _AB + 'skins/duende_comun.png',
 };
+// ── EFECTOS (FX) EN TIRA ──
+// Pack CC0 de ansimuz (Sideview Fantasy), unido en tiras por
+// tools/generar_fx.py. [ancho, alto, frames, ticks por frame]
+const FX = {
+  corte_h:      [65, 40, 5, 2],
+  corte_arriba: [52, 56, 5, 2],
+  corte_giro:   [52, 48, 6, 2],
+  muerte:       [64, 64, 8, 3],
+  rayo:         [128, 96, 9, 2],
+};
+Object.keys(FX).forEach(k => { IMG['fx_' + k] = _AB + 'fx/' + k + '.png'; });
 const IMG_EL = {};
 Object.entries(IMG).forEach(([k, v]) => { const el = new Image(); el.src = v; _vigilar(el); IMG_EL[k] = el; });
 
@@ -231,6 +242,17 @@ function animEnemigo(e) {
     return a;
   }
 
+  // JEFE: se agacha durante el aviso y se tambalea aturdido.
+  if (e.jefe) {
+    const j = e.jefe;
+    if (j.estado === 'aviso') {
+      const k = 1 - j.t / j.max;
+      a.dx = -k * 10; a.escalaX = 1 - k * .15; a.escalaY = 1 + k * .12;
+      return a;
+    }
+    if (j.estado === 'aturdido') { a.giro = Math.sin(frame * .5) * .08; return a; }
+  }
+
   // ATAQUE a distancia: se hincha justo antes de disparar.
   if (e.shootTimer > 0 && e.shootTimer < 18) {
     const k = 1 - e.shootTimer / 18;
@@ -306,6 +328,10 @@ function tintedSprite(key, hex) {
     g.globalAlpha = .45; g.fillStyle = hex; g.fillRect(0, 0, w, h);
     g.globalCompositeOperation = 'overlay';
     g.globalAlpha = .3; g.fillRect(0, 0, w, h);
+    // 'overlay' pinta tambien sobre los pixeles transparentes: sin este
+    // recorte cada enemigo teñido llevaba un cuadrado de color detras.
+    g.globalCompositeOperation = 'destination-in';
+    g.globalAlpha = 1; g.drawImage(IMG_EL[key], 0, 0);
   });
 }
 
@@ -315,6 +341,7 @@ function tintedSprite(key, hex) {
 // efecto. Boss y magmar ya tienen sprite propio y se dejan sin teñir.
 function enemyTint(e) {
   if (e.elite) return e.elite.color;
+  if (e.tinte) return e.tinte;
   if (e.isBoss || e.isMagmar) return null;
   if (e.isCharger) return '#ff9900';
   if (e.isExploder) return '#ff3333';
@@ -380,6 +407,9 @@ const ITEM_SHOPS = [
 
 // ── GAME STATE (globals — las páginas leen/escriben estos) ──
 let state = 'menu';
+// Campaña: nivel = null es SIN FIN. Ver LEVELS mas abajo.
+let nivel = null, ultimoInicio = null;
+let sellos = 0, sellosPuestos = 0, victoriaEn = 0, jefeInvocado = false, jefeOleada = 0;
 let frame = 0, score = 0, hiScore = +localStorage.getItem('dq_hi') || 0, wave = 1;
 let gameSpeed = 3.5, baseSpeed = 3.5;
 let totalCoins = 0, sessionCoins = 0;
@@ -667,26 +697,76 @@ function reciclarPlataforma(pl) {
   pl.y = GROUND - (70 + Math.random() * 90);
   pl.w = 90 + Math.random() * 60;
   // Premio por subir: casi siempre hay algo que recoger arriba.
-  if (Math.random() < .75) spawnCoin(pl.x + pl.w / 2, pl.y - 34);
+  // Sello de campaña (la 3ª estrella): solo arriba de una plataforma. Si se
+  // escapa sin recogerlo, vuelve a salir en otra, asi siempre se puede lograr.
+  if (pl.sello) { pl.sello = false; sellosPuestos--; }
+  if (nivel && sellos + sellosPuestos < 3 && frame > 360 * (sellos + sellosPuestos)) { pl.sello = true; sellosPuestos++; }
+  else if (Math.random() < .75) spawnCoin(pl.x + pl.w / 2, pl.y - 34);
   if (Math.random() < .10) spawnChest(pl.x + pl.w / 2, pl.y - 40, 'comun');
 }
 let bgStars = [], bgMtns = [], bgClouds = [];
 let groundX = 0;
-let weaponBuff = null;
+// ══ ARMAS ══
+// weaponBuff ponia el cartel "+COMBO RANGE!" y no cambiaba nada del juego. Ahora
+// cada arma cambia alcance, cadencia, daño y empuje, y dura hasta que coges
+// otra: es una decision de build, no un temporizador.
+const ARMAS = {
+  base:   { id: 'base',   nombre: 'KATANA', alcance: 1,   cd: 1,   dano: 1,   empuje: 1,   alto: 1,   color: null },
+  odachi: { id: 'odachi', nombre: 'ODACHI', alcance: 1.5, cd: 1.4, dano: 1.7, empuje: 1.4, alto: 1.5, color: 'rgba(255,255,255,.8)', icono: 'katana_comun', desc: 'lenta, enorme alcance' },
+  chispa: { id: 'chispa', nombre: 'CHISPA', alcance: 1,   cd: 1,   dano: 1,   empuje: .8,  alto: 1,   color: 'rgba(0,238,255,.8)', icono: 'katana_spark', desc: 'el rayo salta a otro enemigo' },
+  dagas:  { id: 'dagas',  nombre: 'DAGAS',  alcance: .8,  cd: .5,  dano: .6,  empuje: .6,  alto: .9,  color: 'rgba(192,132,252,.8)', icono: 'katana_comun', tinte: '#c084fc', desc: 'rapidisimas, doble combo' },
+};
+let arma = ARMAS.base;
+function alcanceGolpe() { return Math.round([50, 60, 80][PL.comboStep] * mej.alcance * arma.alcance); }
+// Efecto propio al conectar un golpe.
+function efectoArma(e, dmg) {
+  if (arma.id === 'dagas') { comboCount++; if (comboCount > comboMax) comboMax = comboCount; }
+  if (arma.id === 'chispa') {
+    const cx0 = e.x + e.w / 2, cy0 = e.y + e.h / 2;
+    let otro = null, mejor = 150;
+    for (const o of enemies) {
+      if (o === e || o.hp <= 0 || o.muriendo) continue;
+      const d = Math.hypot(o.x + o.w / 2 - cx0, o.y + o.h / 2 - cy0);
+      if (d < mejor) { mejor = d; otro = o; }
+    }
+    if (otro) {
+      otro.hp -= Math.max(1, Math.ceil(dmg * .5)); otro.flashTimer = 10;
+      const ox = otro.x + otro.w / 2, oy = otro.y + otro.h / 2;
+      for (let k = 1; k <= 4; k++) spawnPFX(cx0 + (ox - cx0) * k / 5, cy0 + (oy - cy0) * k / 5, '#00eeff', 2, 1.5, 3);
+      lanzarFX('rayo', ox, oy, otro.h / 80, false, false, true);
+    }
+  }
+}
 // ── POWER-UPS temporales que caen del cielo ──
 let powerups = [];               // drops en pantalla
 let puMagnet = 0, puDouble = 0;  // timers activos (frames)
 const PU_TYPES = {
-  magnet: { emoji: '🧲', color: '#00eeff', dur: 360, label: '🧲 IMÁN DE MONEDAS!' },
-  double: { emoji: '✖️2', color: '#ffe600', dur: 360, label: '✖️2 PUNTOS DOBLES!' },
-  shield: { emoji: '🛡️', color: '#00ff88', dur: 300, label: '🛡️ ESCUDO!' },
+  magnet: { emoji: '🧲', color: '#00eeff', rgb: '0,238,255', dur: 360, label: '🧲 IMÁN DE MONEDAS!' },
+  double: { emoji: '✖️2', color: '#ffe600', rgb: '255,230,0', dur: 360, label: '✖️2 PUNTOS DOBLES!' },
+  shield: { emoji: '🛡️', color: '#00ff88', rgb: '0,255,136', dur: 300, label: '🛡️ ESCUDO!' },
 };
 function spawnPowerup() {
   const keys = Object.keys(PU_TYPES);
   const type = keys[Math.floor(Math.random() * keys.length)];
   powerups.push({ x: W + 20, y: GY - 60 - Math.random() * 90, w: 34, h: 34, type, bob: Math.random() * Math.PI * 2, spd: gameSpeed * .55 });
 }
+// Efectos en pantalla. sigue=true: se dibuja pegado al jugador (el corte
+// acompaña al duende si se mueve durante el golpe).
+let efectos = [];
+// Color de corte propio de cada skin de pago: es lo que se ve en cada golpe
+// (y en cada captura que se comparte). La skin gratis conserva el azul.
+const COLOR_CORTE = {
+  skin_tactico: '#00ff88', skin_necromancer: '#b44cff', skin_king: '#ffd84a',
+  skin_berserker: '#ff3344', skin_legendariafull: '#ff3cf0',
+};
+function lanzarFX(tipo, x, y, escala, flip, sigue, aditivo) {
+  if (efectos.length > 40) efectos.shift();
+  efectos.push({ tipo, x, y, escala, flip, sigue, aditivo, t: 0 });
+}
 let comboCount = 0, comboTimer = 0, comboMultiplier = 1, comboCap = 5;
+// comboCount vuelve a 0 con cada golpe recibido, asi que al morir casi
+// siempre valia 0: la pantalla final y el ranking recibian un dato falso.
+let comboMax = 0;
 let killStreak = 0, killStreakTimer = 0;
 let shakeAmt = 0, shakeTimer = 0;
 function shake(a) { shakeAmt = a; shakeTimer = Math.ceil(a * 1.5); }
@@ -726,6 +806,7 @@ const AFIJOS = [
 ];
 
 function probabilidadElite() {
+  if (nivel) return nivel.elite;
   if (wave < 2) return 0;
   return Math.min(.28, .05 + (wave - 2) * .022);
 }
@@ -736,12 +817,15 @@ function spawnEnemy(forceBoss = false) {
   // partida tipica muere en la oleada 2-3, asi que la mayoria de enemigos que
   // programaste NO LOS VEIA NADIE. Ahora todo el bestiario aparece dentro de
   // los dos primeros minutos.
-  const isBoss = forceBoss || (wave >= 3 && Math.random() < .12);
-  const isFlyer = !isBoss && wave >= 2 && Math.random() < .35;
-  const isCharger = !isBoss && !isFlyer && wave >= 2 && Math.random() < .3;
-  const isExploder = !isBoss && !isFlyer && !isCharger && wave >= 3 && Math.random() < .2;
-  const isGhost = !isBoss && !isFlyer && !isCharger && !isExploder && wave >= 4 && Math.random() < .15;
-  const isMagmar = !isBoss && !isFlyer && !isCharger && !isExploder && !isGhost && wave >= 4 && Math.random() < .25;
+  // El jefe ya no sale al azar (antes un 12% de cada spawn desde la oleada 3):
+  // salia como un enemigo mas y dejaba de ser un evento.
+  const isBoss = forceBoss;
+  const ok = t => !nivel || nivel.pool.includes(t);
+  const isFlyer = !isBoss && ok('flyer') && (nivel || wave >= 2) && Math.random() < .35;
+  const isCharger = !isBoss && !isFlyer && ok('charger') && (nivel || wave >= 2) && Math.random() < .3;
+  const isExploder = !isBoss && !isFlyer && !isCharger && ok('exploder') && (nivel || wave >= 3) && Math.random() < .2;
+  const isGhost = !isBoss && !isFlyer && !isCharger && !isExploder && ok('ghost') && (nivel || wave >= 4) && Math.random() < .15;
+  const isMagmar = !isBoss && !isFlyer && !isCharger && !isExploder && !isGhost && ok('magmar') && (nivel || wave >= 4) && Math.random() < .25;
   const baseHp = isBoss ? 8 : isMagmar ? 5 : isCharger ? 3 : isExploder ? 1 : 2;
   const eh = isBoss ? 90 : isFlyer ? 68 : isMagmar ? 76 : 62;
   // Los enemigos se alineaban por su borde SUPERIOR a GY, así que cada uno
@@ -786,7 +870,11 @@ function spawnEnemy(forceBoss = false) {
   if (isMagmar) spawnFT(W / 2 - 60, 80, '🔥 MAGMAR!', '#ff4400', true);
 }
 function spawnChest(x, y, tier = 'comun') { chests.push({ x, y, w: 38, h: 38, spd: gameSpeed * .4, tier, bob: Math.random() * Math.PI * 2, glowTimer: 0 }); }
-function spawnWeaponDrop(x, y) { const type = Math.random() < .6 ? 'katana_comun' : 'katana_spark'; weaponDrops.push({ x, y, w: 44, h: 24, spd: gameSpeed * .5, type, bob: Math.random() * Math.PI * 2 }); }
+function spawnWeaponDrop(x, y) {
+  const tipos = ['odachi', 'chispa', 'dagas'].filter(t => t !== arma.id);
+  const type = tipos[Math.floor(Math.random() * tipos.length)];
+  weaponDrops.push({ x, y, w: 44, h: 24, spd: gameSpeed * .5, type, bob: Math.random() * Math.PI * 2 });
+}
 function spawnCoin(x, y) { coins.push({ x: x || W + 10, y: y || GY - 30 - Math.random() * 90, w: 28, h: 28, spd: gameSpeed * .7, bob: Math.random() * Math.PI * 2, magnetic: false }); }
 function enemyShoot(e) { bullets.push({ x: e.x, y: e.y + e.h / 2, vx: -6, vy: 0, w: 18, h: 12, enemy: true, life: 1 }); }
 function playerShoot() { bullets.push({ x: PL.x + PL.w, y: PL.y + PL.h * .4, vx: 10 + gameSpeed, vy: 0, w: 26, h: 16, enemy: false, life: 1 }); }
@@ -840,7 +928,7 @@ function attack() {
   // (vy > 5), que es cuando el slam se siente intencional.
   const slamKey = DQE.airSlamNeedsKey === false ? PL.vy > 5 : (keys['KeyC'] || keys['ArrowDown']);
   if (!PL.onGround && PL.vy >= 0 && slamKey) {
-    PL.slamming = true; PL.slamTimer = 20; PL.vy = 12;
+    PL.slamming = true; PL.slamTimer = 20; PL.vy = 12; PL.slamY0 = PL.y;
     spawnFT(PL.x, PL.y - 15, 'SLAM!', '#ff6400', true);
     return;
   }
@@ -848,17 +936,21 @@ function attack() {
   PL.swingId = (PL.swingId || 0) + 1;   // identifica este swing para el multi-golpe
   PL.comboTimer = COMBO_WINDOW;
   PL.attackTimer = 14 + PL.comboStep * 2;
-  PL.attackCd = Math.round((18 + PL.comboStep * 3) / mej.cadencia);
+  PL.attackCd = Math.round((18 + PL.comboStep * 3) * arma.cd / mej.cadencia);
   // i-frames al atacar: la ventana activa del golpe te hace intocable un
   // instante. Sin esto, acercarse a pegar era SIEMPRE peor que huir, y las
   // pruebas lo confirmaron: esquivar sin atacar sobrevivia 190 s de media y
   // luchar solo 56 s. El juego castigaba su propio verbo principal.
   PL.invTimer = Math.max(PL.invTimer, 10);
-  const reach = Math.round([50, 60, 80][PL.comboStep] * mej.alcance);
+  const reach = alcanceGolpe();
   const yOff = [10, 5, -5][PL.comboStep];
-  PL.attackHitbox = { x: PL.x + (PL.facing > 0 ? PL.w : -reach), y: PL.y + yOff, w: reach, h: PL.h - yOff * 1.5, active: true };
+  const alto = (PL.h - yOff * 1.5) * arma.alto;
+  PL.attackHitbox = { x: PL.x + (PL.facing > 0 ? PL.w : -reach), y: PL.y + yOff - (alto - (PL.h - yOff * 1.5)) / 2, w: reach, h: alto, active: true };
   const colors = ['#ffe600', '#ff9900', '#ff3333'];
   spawnPFX(PL.attackHitbox.x + reach / 2, PL.y + PL.h / 2, colors[PL.comboStep], 6 + PL.comboStep * 4, 4 + PL.comboStep * 2);
+  const tipoCorte = ['corte_h', 'corte_arriba', 'corte_giro'][PL.comboStep];
+  lanzarFX(tipoCorte, PL.facing > 0 ? PL.w + reach * .35 : -reach * .35, PL.h * .5, reach / 34, PL.facing < 0, true, true);
+  efectos[efectos.length - 1].tinte = COLOR_CORTE[_playerKey()] || null;
 }
 function moveLeft(on) { mLeft = on; }
 function moveRight(on) { mRight = on; }
@@ -877,17 +969,17 @@ function useItem(slot) {
   updateHpHUD();
 }
 function killAllEnemies() {
-  enemies.forEach(e => {
+  const jefes = enemies.filter(e => e.jefe && e.hp > 8);
+  jefes.forEach(e => { e.hp -= 8; e.flashTimer = 12; spawnPFX(e.x + e.w / 2, e.y + e.h / 2, '#00eeff', 20, 7); });
+  enemies.filter(e => !jefes.includes(e)).forEach(e => {
     const pts = (e.isBoss ? 300 : e.isMagmar ? 150 : e.type === 'charger' ? 80 : 60) * comboMultiplier;
     addScore(pts);
     spawnPFX(e.x + e.w / 2, e.y + e.h / 2, '#00eeff', 20, 7);
     spawnFT(e.x, e.y - 10, '+' + Math.floor(pts), '#00eeff');
-    for (let c = 0; c < (e.isBoss ? 4 : e.isMagmar ? 2 : 1); c++) spawnCoin(e.x + Math.random() * e.w, e.y);
-    missionEvent('kill', 1); achEvent('onKill');
-    if (e.isBoss) { missionEvent('boss', 1); achEvent('onBoss'); }
+    matarEnemigo(e);
   });
-  enemies = [];
-  bossActive = false;
+  enemies = jefes;
+  bossActive = jefes.length > 0;
 }
 function buyItem(slot) {
   const shop = ITEM_SHOPS[slot];
@@ -927,6 +1019,7 @@ function loadProgress() {
 function addScore(pts) { score += pts; if (score > hiScore) hiScore = score; }
 function hitCombo(pts) {
   comboCount++;
+  if (comboCount > comboMax) comboMax = comboCount;
   comboTimer = COMBO_WINDOW;
   // El tope venía fijo a 5, lo que pisaba el bonus de combo de subir de nivel.
   comboMultiplier = Math.min(1 + Math.floor(comboCount / 3) * .5, comboCap);
@@ -999,21 +1092,293 @@ function updateHUD() {
 }
 function overlap(a, b) { return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y; }
 
+// ══ JEFES CON ATAQUES TELEGRAFIADOS ══
+// El jefe era un enemigo grande con 8 de vida que se acercaba y disparaba una
+// bala recta: moria en 4 golpes y no pedia nada distinto. Ahora es una
+// maquina de estados con ataques que AVISAN 45-60 frames antes (el novato
+// reacciona en ~26) y una ventana de aturdimiento para castigarle.
+const JEFES = {
+  oso: {
+    nombre: 'OSO REY', hp: 70, w: 110, h: 100, fase2: .5,
+    ataques: ['embestida', 'salto'], ataquesF2: ['embestida', 'salto', 'rocas'],
+    aviso: { embestida: 50, salto: 45, rocas: 60 }, pausa: [70, 45],
+  },
+};
+// Un nombre por bioma, en el orden del array BIOMES.
+const NOMBRES_JEFE = ['OSO REY', 'SEÑOR DEL ALBA', 'TITAN ESMERALDA', 'REY TORMENTA', 'FARAON DORADO'];
+// Cada bioma cambia el REPERTORIO del jefe, no solo su vida: asi los cinco
+// jefes se pelean distinto con el mismo sprite. 'doble' es una embestida de
+// ida y vuelta: al chocar con la pared avisa otra vez (40 f) y regresa.
+const ESTILO_JEFE = [
+  {},
+  { ataques: ['salto', 'rocas'], ataquesF2: ['salto', 'rocas', 'embestida'], rocas: 4 },
+  { ataques: ['doble', 'salto'], ataquesF2: ['doble', 'salto', 'rocas'], vel: 10 },
+  { ataques: ['rocas', 'embestida'], ataquesF2: ['rocas', 'doble', 'salto'], rocas: 5, pausa: [60, 40] },
+  { ataques: ['doble', 'salto', 'rocas'], ataquesF2: ['doble', 'salto', 'rocas'], rocas: 5, vel: 10.5, pausa: [55, 38] },
+];
+
+function spawnJefe(tipo, extraHp, bioma) {
+  const bi = bioma || 0;
+  const def = Object.assign({}, JEFES[tipo] || JEFES.oso, ESTILO_JEFE[bi] || {});
+  def.aviso = Object.assign({ doble: 50 }, def.aviso);
+  const nombre = NOMBRES_JEFE[bi] || def.nombre;
+  const hp = def.hp + (extraHp || 0);
+  enemies.push({
+    x: W + 20, y: GROUND - def.h, w: def.w, h: def.h,
+    hp, maxHp: hp, spd: 0, type: 'boss', isBoss: true,
+    isExploder: false, isGhost: false, isFlyer: false, isCharger: false, isMagmar: false,
+    ghostTimer: 0, ghostAlpha: 1, flashTimer: 0, bobTimer: 0,
+    aparicion: 26, muriendo: 0, chargeTimer: 0, shootTimer: 0, facing: -1, alive: true,
+    tinte: bi ? BIOMES[bi].line : null,
+    jefe: { def, nombre, estado: 'entrada', t: 60, max: 60, fase: 1, ataque: null, objX: 0, dir: -1, huecos: [], ultimo: null },
+  });
+  bossActive = true;
+  spawnFT(W / 2, 80, '★ ' + nombre + ' ★', '#ff00cc', true);
+  showPUNotif('☠ ¡JEFE! Esquiva cuando veas el rojo');
+  shake(10); _hap('heavy');
+}
+
+function _jefeElegirAtaque(j) {
+  const lista = j.fase === 2 ? j.def.ataquesF2 : j.def.ataques;
+  let op = lista.filter(a => a !== j.ultimo);
+  if (!op.length) op = lista;
+  return op[Math.floor(Math.random() * op.length)];
+}
+
+function actualizarJefe(e) {
+  const j = e.jefe;
+  j.t--;
+  if (j.fase === 1 && e.hp < e.maxHp * j.def.fase2) {
+    j.fase = 2;
+    spawnFT(W / 2, 90, '¡FURIA!', '#ff3344', true);
+    shake(12); freeze(8); _hap('heavy');
+  }
+  const centro = e.x + e.w / 2;
+  if (j.estado === 'entrada') {
+    e.x += (W * .72 - e.x) * .06;
+    if (j.t <= 0) { j.estado = 'pausa'; j.t = j.def.pausa[0]; }
+    return;
+  }
+  if (j.estado === 'pausa') {
+    const dir = PL.x + PL.w / 2 > centro ? 1 : -1;
+    e.facing = dir;
+    e.x = Math.max(20, Math.min(W - e.w - 20, e.x + dir * .8));
+    if (j.t <= 0) {
+      j.ataque = _jefeElegirAtaque(j); j.ultimo = j.ataque; j.rebotado = false;
+      j.estado = 'aviso';
+      j.t = j.max = Math.max(40, j.def.aviso[j.ataque] - (j.fase === 2 ? 5 : 0));
+      j.dir = dir;
+      j.objX = Math.max(e.w / 2, Math.min(W - e.w / 2, PL.x + PL.w / 2));
+      if (j.ataque === 'rocas') {
+        // 4 columnas, nunca a menos de 120 px del jugador: siempre queda hueco.
+        j.huecos = [];
+        let intentos = 0;
+        while (j.huecos.length < (j.def.rocas || 4) && intentos++ < 80) {
+          const x = 20 + Math.random() * (W - 84);
+          if (Math.abs(x + 22 - (PL.x + PL.w / 2)) < 120) continue;
+          if (j.huecos.some(h => Math.abs(h - x) < 64)) continue;
+          j.huecos.push(x);
+        }
+      }
+      _hap('light');
+    }
+    return;
+  }
+  if (j.estado === 'aviso') {
+    if (j.t <= 0) {
+      j.estado = 'ejecuta';
+      if (j.ataque === 'salto') { j.t = 40; j.x0 = e.x; }
+      else if (j.ataque === 'rocas') {
+        j.huecos.forEach(x => bullets.push({ x, y: -40, vx: 0, vy: 9, w: 44, h: 36, enemy: true, roca: true, dmg: 20, life: 1 }));
+        j.t = 40;
+      } else j.t = 200;
+    }
+    return;
+  }
+  if (j.estado === 'ejecuta') {
+    if (j.ataque === 'embestida' || j.ataque === 'doble') {
+      e.x += j.dir * (j.def.vel || 9);
+      if (frame % 3 === 0) spawnPFX(centro, GROUND - 4, 'rgba(255,255,255,.5)', 2, 2, 3);
+      if (e.x < 30 || e.x > W - e.w - 30 || j.t <= 0) {
+        e.x = Math.max(30, Math.min(W - e.w - 30, e.x));
+        shake(10); playSound('land', 14);
+        if (j.ataque === 'doble' && !j.rebotado) {
+          // Vuelta: nuevo aviso (mas corto, pero nunca menos de 40 f) y al otro lado.
+          j.rebotado = true; j.dir = -j.dir; e.facing = j.dir;
+          j.estado = 'aviso'; j.t = j.max = 40;
+          return;
+        }
+        spawnFT(e.x + e.w / 2, e.y - 30, 'ATURDIDO', '#ffe600', true);
+        j.estado = 'aturdido'; j.t = 55;
+      }
+    } else if (j.ataque === 'salto') {
+      const k = 1 - j.t / 40;
+      e.x = j.x0 + (j.objX - e.w / 2 - j.x0) * k;
+      e.y = GROUND - e.h - Math.sin(k * Math.PI) * 170;
+      if (j.t <= 0) {
+        e.y = GROUND - e.h;
+        shake(14); freeze(6); playSound('land', 16);
+        particles.push({ x: e.x + e.w / 2, y: GROUND, vx: 0, vy: 0, color: '#ff3344', life: 1, decay: .06, sz: 90, ring: true });
+        spawnPFX(e.x + e.w / 2, GROUND - 6, '#ffaa66', 24, 6, 5);
+        if (PL.invTimer <= 0 && overlap({ x: e.x - 20, y: e.y, w: e.w + 40, h: e.h }, PL)) golpearJugador(30, 'APLASTADO');
+        // Dos ondas por el suelo: encima de una plataforma no te tocan. Es la
+        // primera razon de verdad para subir a ellas.
+        bullets.push({ x: e.x - 26, y: GROUND - 18, vx: -6, vy: 0, w: 26, h: 18, enemy: true, onda: true, dmg: 18, life: 1 });
+        bullets.push({ x: e.x + e.w, y: GROUND - 18, vx: 6, vy: 0, w: 26, h: 18, enemy: true, onda: true, dmg: 18, life: 1 });
+        j.estado = 'aturdido'; j.t = 50;
+      }
+    } else if (j.t <= 0) { // rocas: el jefe no se mueve mientras caen
+      j.estado = 'pausa'; j.t = j.def.pausa[j.fase - 1];
+    }
+    return;
+  }
+  if (j.estado === 'aturdido' && j.t <= 0) {
+    j.estado = 'pausa'; j.t = j.def.pausa[j.fase - 1];
+  }
+}
+
+// Daño al jugador desde una fuente con cantidad propia (jefe, ondas, rocas).
+function golpearJugador(dmg, txt) {
+  PL.hp -= dmg; PL.invTimer = 60; PL.flashTimer = 20;
+  comboCount = 0; comboMultiplier = 1;
+  shake(8); freeze(6);
+  spawnPFX(PL.x + PL.w / 2, PL.y + PL.h / 2, '#ff3333', 14, 5);
+  spawnFT(PL.x, PL.y - 20, '-' + dmg + (txt ? ' ' + txt : ' HP'), '#ff3333');
+  updateHpHUD(); _hap('heavy');
+  if (PL.hp <= 0) endGame();
+}
+
+// Avisos en el suelo, por debajo de los sprites. Sin shadowBlur: rectangulos
+// y elipses con un parpadeo que se acelera en el ultimo 30% del aviso.
+function dibujarAvisosJefe() {
+  const e = enemies.find(x => x.jefe && x.jefe.estado === 'aviso');
+  if (!e) return;
+  const j = e.jefe;
+  const k = 1 - j.t / j.max;
+  const a = .16 + .26 * ((frame >> (k > .7 ? 1 : 3)) & 1);
+  cx.save();
+  cx.fillStyle = '#ff2244';
+  cx.globalAlpha = a;
+  if (j.ataque === 'embestida' || j.ataque === 'doble') {
+    const x0 = j.dir > 0 ? e.x + e.w : 0;
+    const x1 = j.dir > 0 ? W : e.x;
+    cx.fillRect(x0, GROUND - e.h * .8, x1 - x0, e.h * .8);
+  } else if (j.ataque === 'salto') {
+    cx.beginPath(); cx.ellipse(j.objX, GROUND, e.w * .75, 12, 0, 0, Math.PI * 2); cx.fill();
+    cx.fillRect(j.objX - 3, 0, 6, GROUND);
+    cx.globalAlpha = a * .6;
+    cx.fillRect(0, GROUND - 18, W, 18);   // las ondas barreran el suelo
+  } else if (j.ataque === 'rocas') {
+    j.huecos.forEach(x => cx.fillRect(x, 0, 44, GROUND));
+  }
+  cx.globalAlpha = 1;
+  cx.font = '22px "Press Start 2P"'; cx.textAlign = 'center';
+  cx.lineWidth = 4; cx.lineJoin = 'round'; cx.strokeStyle = '#000';
+  cx.strokeText('!', e.x + e.w / 2, e.y - 22);
+  cx.fillStyle = '#ffe600'; cx.fillText('!', e.x + e.w / 2, e.y - 22);
+  cx.restore();
+}
+
+function dibujarBarraJefe() {
+  const e = enemies.find(x => x.jefe && !x.muriendo);
+  if (!e) return;
+  const bw = Math.min(300, W - 80), bx = (W - bw) / 2, by = 34;
+  cx.save();
+  cx.fillStyle = 'rgba(0,0,0,.6)'; cx.fillRect(bx - 2, by - 2, bw + 4, 12);
+  cx.fillStyle = e.jefe.fase === 2 ? '#ff3344' : '#ff00cc';
+  cx.fillRect(bx, by, bw * Math.max(0, e.hp / e.maxHp), 8);
+  cx.font = '10px "Press Start 2P"'; cx.textAlign = 'center';
+  cx.lineWidth = 3; cx.lineJoin = 'round'; cx.strokeStyle = '#000';
+  cx.strokeText(e.jefe.nombre, W / 2, by + 24);
+  cx.fillStyle = '#fff'; cx.fillText(e.jefe.nombre, W / 2, by + 24);
+  cx.restore();
+}
+
+// Toda muerte de enemigo pasa por aqui, venga del melee, del slam o de una
+// bala. Antes las balas (modo fuego, katana spark) tenian su propia copia
+// recortada: no daban XP, no contaban el jefe en bossKilled, no aplicaban la
+// vida por muerte y el enemigo desaparecia sin animacion de muerte.
+function matarEnemigo(e) {
+  killStreak++; killStreakTimer = 180;
+  if (killStreak === 3) showPUNotif('🔥 3 KILLS - RACHA!');
+  else if (killStreak === 5) { showPUNotif('☄️ 5 KILLS - IMPARABLE!'); shake(5); }
+  else if (killStreak === 10) { showPUNotif('⚡ 10 KILLS - LEGENDARIO!'); shake(8); addXP(50); }
+  if (e.elite) {
+    spawnFT(e.x + e.w / 2, e.y - 40, e.elite.nombre + ' CAIDO', e.elite.color, true);
+    addXP(Math.round(12 * e.elite.xp));
+    for (let c = 0; c < e.elite.monedas; c++) spawnCoin(e.x + Math.random() * e.w, e.y);
+    shake(7); freeze(6);
+  }
+  // Recompensa por luchar: cada muerte devuelve algo de vida si has
+  // invertido en ello. Es lo que convierte el combate en una opcion viable
+  // frente a huir, sin regalar nada a quien no elige esas mejoras.
+  if (mej.vidaPorMuerte > 0 && PL.hp < PL.maxHp) {
+    PL.hp = Math.min(PL.maxHp, PL.hp + mej.vidaPorMuerte);
+    updateHpHUD();
+    spawnFT(PL.x + PL.w / 2, PL.y - 26, '+' + mej.vidaPorMuerte, '#00ff88');
+  }
+  missionEvent('kill', 1); achEvent('onKill');
+  if (e.isBoss) { bossActive = false; bossKilled++; missionEvent('boss', 1); achEvent('onBoss'); spawnFT(e.x, e.y - 30, 'BOSS MUERTO!', '#ff00cc', true); playSound('boss'); addXP(80); _hap('heavy'); }
+  else { addXP(e.isMagmar ? 30 : e.isCharger ? 20 : e.isExploder ? 15 : 10); playSound('crunch'); _hap('medium'); }
+  spawnPFX(e.x + e.w / 2, e.y + e.h / 2, e.isBoss ? '#ff00cc' : e.isMagmar ? '#ff4400' : e.isCharger ? '#ff9900' : '#ff3333', e.isBoss ? 35 : e.isMagmar ? 28 : 20, e.isBoss ? 9 : 6);
+  const coinDrop = e.isBoss ? 5 : e.isMagmar ? 3 : e.isCharger ? 2 : 1;
+  for (let c = 0; c < coinDrop; c++) spawnCoin(e.x + Math.random() * e.w, e.y);
+  if (e.isBoss) {
+    const r = Math.random();
+    spawnChest(e.x + e.w / 2, e.y, r < .3 ? 'legendario' : r < .75 ? 'epico' : 'comun');
+  } else if (e.isMagmar && Math.random() < .7) {
+    const r = Math.random();
+    spawnChest(e.x + e.w / 2, e.y, r < .1 ? 'legendario' : r < .35 ? 'epico' : 'comun');
+  } else if (Math.random() < .08) {
+    spawnChest(e.x + e.w / 2, e.y, 'comun');
+  }
+  if (wave >= 2 && Math.random() < .07) spawnWeaponDrop(e.x + e.w / 2, e.y);
+  shake(e.isBoss ? 10 : e.isMagmar ? 6 : 4);
+  freeze(e.isBoss ? 10 : e.isMagmar ? 6 : 4);
+  // El enemigo no desaparece de golpe: se queda 16 frames aplastandose
+  // contra el suelo y desvaneciendose. Es lo que hace que matar se sienta.
+  e.muriendo = 16; e.hp = 0; e.spd = 0;
+  cadaveres.push(e);
+  lanzarFX('muerte', e.x + e.w / 2, e.y + e.h / 2, e.h / 38, false, false, true);
+  // 90 frames para ver caer monedas y cofre antes de la pantalla de victoria.
+  if (e.jefe && nivel) {
+    victoriaEn = 90; spawnFT(W / 2, 110, '¡ETAPA SUPERADA!', '#ffe600', true);
+    // Ya ganaste: nada de lo que quede en pantalla puede matarte en los 90
+    // frames de celebracion (antes un esbirro o una roca en vuelo daban GAME OVER).
+    PL.invTimer = 9999;
+    bullets = bullets.filter(b => !b.enemy);
+  }
+}
+
 // ── UPDATE ──
 function update() {
   if (frame % 300 === 0) saveProgress();
-  frame++; waveTimer++;
+  frame++;
+  // Mientras hay un jefe vivo la oleada no avanza: antes el descanso lo
+  // borraba de la pantalla y el jefe se escapaba sin pelear.
+  if (!bossActive) waveTimer++;
   const skinBuffs = _buffs();
 
   // Wave progression
-  if (waveTimer % WAVE_FRAMES === 0) {
+  if (victoriaEn > 0 && --victoriaEn === 0) { ganarNivel(); return; }
+  if (waveTimer % WAVE_FRAMES === 0 && waveTimer > 0 && !jefeInvocado) {
     wave++;
+    if (nivel && wave > nivel.oleadas) {
+      if (nivel.jefe) {
+        jefeInvocado = true;
+        spawnJefe(nivel.jefe.tipo, nivel.jefe.hp, nivel.bioma);
+        // Medido: el jugador llegaba al jefe con la mitad de la vida gastada en
+        // la oleada previa y moria sin haber visto sus ataques. Un respiro antes.
+        PL.hp = Math.min(PL.maxHp, PL.hp + 35); updateHpHUD();
+        spawnFT(PL.x, PL.y - 30, '+35 HP', '#00ff88', true);
+      } else { ganarNivel(); return; }
+    } else {
     // La velocidad subia sin techo (+0,35 por oleada): en la oleada 10 los
     // enemigos iban a 7 px/frame y el jugador corre a 4. Ni se les alcanzaba
     // ni se les esquivaba, y encima cruzaban la pantalla tan rapido que habia
     // MENOS en pantalla. Ahora el techo es 6,2 y la dificultad la pone la
     // cantidad y los elites, no la velocidad pura.
-    gameSpeed = Math.min(6.2, baseSpeed + wave * .28);
+    gameSpeed = Math.min(6.2, (nivel ? nivel.vel : baseSpeed) + wave * .28);
     spawnFT(W / 2 - 80, 70, '— WAVE ' + wave + ' —', '#ffe600', true);
     missionEvent('wave', wave);
     achEvent('onWave', wave);
@@ -1021,7 +1386,7 @@ function update() {
     shake(6);
     // Cada 5 waves cambia el bioma: antes el mundo cambiaba de color y el
     // jugador ni se enteraba de que era un sistema.
-    if ((wave - 1) % 3 === 0) {
+    if (!nivel && (wave - 1) % 3 === 0) {
       const b = currentBiome();
       const bi = Math.floor((wave - 1) / 3) % BIOMES.length;
       markBiomeSeen(bi);
@@ -1029,14 +1394,17 @@ function update() {
       showPUNotif('⟡ Entras en ' + b.name);
       shake(9); freeze(4);
     }
-    if (wave % 3 === 0) spawnEnemy(true);
     // La oleada era un tick: subia la velocidad y el jugador no dejaba de
     // correr nunca. En los juegos del genero la oleada CIERRA — cobras, eliges
     // y compras — y ese hueco es donde vive la decision. A partir de la 2 se
     // abre el descanso; la 1 no, para no cortar el arranque.
     if (wave >= 2) { abrirDescanso(); return; }
+    }
   }
-  if (wave % 3 === 0 && !bossActive && waveTimer % WAVE_FRAMES < 5) spawnEnemy(true);
+  if (!nivel && wave % 3 === 0 && jefeOleada !== wave) {
+    jefeOleada = wave;
+    spawnJefe('oso', (wave / 3 - 1) * 15, Math.floor((wave - 1) / 3) % BIOMES.length);
+  }
 
   // ── PLAYER MOVEMENT ──
   let targetVx = 0;
@@ -1076,7 +1444,7 @@ function update() {
   // Colision con plataformas: solo se aterriza CAYENDO y desde arriba, para
   // poder atravesarlas saltando desde abajo. El slam las ignora a proposito:
   // cae en picado hasta el suelo y eso le da su razon de ser.
-  if (PL.vy >= 0 && !PL.slamming) {
+  if (PL.vy >= 0) {
     const piesAntes = PL.y + PL.h - PL.vy;
     for (const pl of plataformas) {
       const dentroX = PL.x + PL.w * .75 > pl.x && PL.x + PL.w * .25 < pl.x + pl.w;
@@ -1087,6 +1455,13 @@ function update() {
           spawnPFX(PL.x + PL.w / 2, pl.y, 'rgba(255,255,255,.5)', 5, 2.2, 3);
         }
         PL.y = pl.y - PL.h; PL.vy = 0; PL.onGround = true; PL.djUsed = false;
+        if (pl.sello) {
+          pl.sello = false; sellosPuestos--; sellos++;
+          missionEvent('sello', 1);
+          spawnFT(pl.x + pl.w / 2, pl.y - 30, '✦ SELLO ' + sellos + '/3', '#ffe600', true);
+          spawnPFX(pl.x + pl.w / 2, pl.y - 10, '#ffe600', 18, 5, 4);
+          playSound('powerup'); _hap('medium');
+        }
         break;
       }
     }
@@ -1110,20 +1485,27 @@ function update() {
   // Slam landing
   if (PL.slamming && PL.onGround) {
     PL.slamming = false;
-    shake(12); freeze(7);
+    // El slam ahora aterriza en la primera superficie y pega mas cuanto mas
+    // alto empezo: saltar desde una plataforma lo duplica. Y ya no golpea a los
+    // voladores que estan muy por encima del suelo.
+    const altura = PL.y - (PL.slamY0 || PL.y);
+    const pot = altura > 90 ? 2 : 1;
+    if (pot === 2) spawnFT(PL.x, PL.y - 40, '¡SLAM DESDE ALTURA!', '#ff6400', true);
+    shake(12 * pot); freeze(7);
     PL.squash = .4;
     playSound('land', 14);
     enemies.forEach(e => {
-      if (Math.abs(e.x - PL.x) < 120) {
-        e.hp -= 3; e.flashTimer = 12;
+      if (e.jefe && e.jefe.estado === 'entrada') return;
+      if (Math.abs(e.x + e.w / 2 - (PL.x + PL.w / 2)) < 120 + altura * .4 && Math.abs((e.y + e.h) - (PL.y + PL.h)) < 70) {
+        e.hp -= Math.ceil(3 * pot * mej.dano); e.flashTimer = 12;
         spawnPFX(e.x + e.w / 2, e.y + e.h / 2, '#ff6400', 14, 5);
         const pts = hitCombo(70);
         spawnFT(e.x, e.y - 20, '+' + pts, '#ff6400', true);
       }
     });
-    spawnPFX(PL.x + PL.w / 2, GY + 5, '#ff6400', 25, 6, 6);
-    particles.push({ x: PL.x + PL.w / 2, y: GY + 4, vx: 0, vy: 0, color: '#ff6400', life: 1, decay: .08, sz: 60, ring: true });
-    particles.push({ x: PL.x + PL.w / 2, y: GY + 4, vx: 0, vy: 0, color: '#ffe600', life: 1, decay: .1, sz: 40, ring: true });
+    spawnPFX(PL.x + PL.w / 2, PL.y + PL.h, '#ff6400', 25, 6, 6);
+    particles.push({ x: PL.x + PL.w / 2, y: PL.y + PL.h, vx: 0, vy: 0, color: '#ff6400', life: 1, decay: .08, sz: 60, ring: true });
+    particles.push({ x: PL.x + PL.w / 2, y: PL.y + PL.h, vx: 0, vy: 0, color: '#ffe600', life: 1, decay: .1, sz: 40, ring: true });
   }
 
   if (PL.jumpBuffer > 0) { PL.jumpBuffer--; if (PL.onGround || PL.coyoteTimer > 0 || !PL.djUsed) doJump(); }
@@ -1158,22 +1540,25 @@ function update() {
   // duende: se separaban hasta 56px y parecía que fallabas cuando acertabas.
   const attackBox = PL.attackHitbox;
   if (PL.attackTimer > 0 && attackBox.active) {
-    const reach = Math.round([50, 60, 80][PL.comboStep] * mej.alcance);
+    const reach = alcanceGolpe();
     const yOff = [10, 5, -5][PL.comboStep];
+    const alto = (PL.h - yOff * 1.5) * arma.alto;
     attackBox.x = PL.x + (PL.facing > 0 ? PL.w : -reach);
-    attackBox.y = PL.y + yOff;
+    attackBox.y = PL.y + yOff - (alto - (PL.h - yOff * 1.5)) / 2;
     attackBox.w = reach;
-    attackBox.h = PL.h - yOff * 1.5;
+    attackBox.h = alto;
   }
   let swingHits = 0;
   enemies = enemies.filter(e => {
     if (e.knock > 0) { e.x += e.knock; e.knock *= .78; if (e.knock < .4) e.knock = 0; }
     if (e.aparicion > 0) e.aparicion--;
-    if (e.isBoss) {
+    if (e.jefe) {
+      actualizarJefe(e);
+    } else if (e.isBoss) {
       e.x += (W * .4 - e.x) * .015;
     } else if (e.isCharger && e.chargeTimer <= 0) {
       // charge at player: lock direction once so it commits to the pass instead of jittering on top of the player
-      if (!e.chargeDir) e.chargeDir = (PL.x > e.x) ? 1 : -1;
+      if (!e.chargeDir) { e.chargeDir = (PL.x > e.x) ? 1 : -1; e.facing = e.chargeDir; }
       // Aceleraba hasta gameSpeed*2,2 = mas de 13 px/frame en oleadas altas:
       // cruzaba media pantalla en 20 frames y no habia reaccion humana posible.
       // 7,5 es rapido pero legible, y con 78 frames de aviso es justo.
@@ -1189,7 +1574,7 @@ function update() {
     if (e.isGhost) { e.ghostTimer += .04; e.ghostAlpha = Math.max(.18, .4 + Math.sin(e.ghostTimer) * 0.6); }
     if (e.flashTimer > 0) e.flashTimer--;
 
-    if (e.isBoss || e.isMagmar) {
+    if ((e.isBoss && !e.jefe) || e.isMagmar) {
       e.shootTimer--;
       if (e.shootTimer <= 0) {
         enemyShoot(e);
@@ -1210,7 +1595,13 @@ function update() {
       swingHits++;
       const atkMult = skinBuffs?.atkMult || 1;
       const critico = Math.random() < mej.critico;
-      const dmg = Math.ceil((1 + PL.comboStep) * atkMult * mej.dano * (critico ? 2 : 1));
+      let dmg = Math.max(1, Math.ceil((1 + PL.comboStep) * atkMult * mej.dano * arma.dano * (critico ? 2 : 1)));
+      // Golpe aereo: premia usar el salto y las plataformas para atacar.
+      if (!PL.onGround) dmg = Math.ceil(dmg * 1.25);
+      if (e.jefe) {
+        if (e.jefe.estado === 'entrada') dmg = 0;
+        else if (e.jefe.estado === 'aturdido') dmg = Math.ceil(dmg * 1.5);
+      }
       if (critico) spawnFT(e.x + e.w / 2, e.y - 34, 'CRITICO!', '#ffe600', true);
       e.hp -= dmg; e.flashTimer = 10;
       // Retroceso fuerte a proposito: con 5 de empuje el desplazamiento total
@@ -1218,7 +1609,8 @@ function update() {
       // pegado a el y comiendo dano por contacto. Con 18 el desplazamiento es
       // de ~64 px y el golpe te saca del peligro: atacar pasa a ser tambien
       // una herramienta defensiva, que es lo que hace viable el cuerpo a cuerpo.
-      e.knock = (e.knock || 0) + 18 + PL.comboStep * 6;
+      e.knock = (e.knock || 0) + (18 + PL.comboStep * 6) * arma.empuje * (e.jefe ? .15 : 1);
+      efectoArma(e, dmg);
       if (skinBuffs?.lifesteal) { PL.hp = Math.min(PL.maxHp, PL.hp + Math.ceil(dmg * skinBuffs.lifesteal * 10)); updateHpHUD(); }
       const pts = hitCombo(e.isBoss ? 120 : e.isCharger ? 80 : 60);
       spawnPFX(attackBox.x + attackBox.w / 2, e.y + e.h / 2, ['#ffe600', '#ff9900', '#ff3333'][PL.comboStep], 8 + PL.comboStep * 5, 4 + PL.comboStep * 2);
@@ -1231,49 +1623,7 @@ function update() {
     }
 
     // kill check
-    if (e.hp <= 0) {
-      killStreak++; killStreakTimer = 180;
-      if (killStreak === 3) showPUNotif('🔥 3 KILLS - RACHA!');
-      else if (killStreak === 5) { showPUNotif('☄️ 5 KILLS - IMPARABLE!'); shake(5); }
-      else if (killStreak === 10) { showPUNotif('⚡ 10 KILLS - LEGENDARIO!'); shake(8); addXP(50); }
-      if (e.elite) {
-        spawnFT(e.x + e.w / 2, e.y - 40, e.elite.nombre + ' CAIDO', e.elite.color, true);
-        addXP(Math.round(12 * e.elite.xp));
-        for (let c = 0; c < e.elite.monedas; c++) spawnCoin(e.x + Math.random() * e.w, e.y);
-        shake(7); freeze(6);
-      }
-      // Recompensa por luchar: cada muerte devuelve algo de vida si has
-      // invertido en ello. Es lo que convierte el combate en una opcion viable
-      // frente a huir, sin regalar nada a quien no elige esas mejoras.
-      if (mej.vidaPorMuerte > 0 && PL.hp < PL.maxHp) {
-        PL.hp = Math.min(PL.maxHp, PL.hp + mej.vidaPorMuerte);
-        updateHpHUD();
-        spawnFT(PL.x + PL.w / 2, PL.y - 26, '+' + mej.vidaPorMuerte, '#00ff88');
-      }
-      missionEvent('kill', 1); achEvent('onKill');
-      if (e.isBoss) { bossActive = false; bossKilled++; missionEvent('boss', 1); achEvent('onBoss'); spawnFT(e.x, e.y - 30, 'BOSS MUERTO!', '#ff00cc', true); playSound('boss'); addXP(80); _hap('heavy'); }
-      else { addXP(e.isMagmar ? 30 : e.isCharger ? 20 : e.isExploder ? 15 : 10); playSound('crunch'); _hap('medium'); }
-      spawnPFX(e.x + e.w / 2, e.y + e.h / 2, e.isBoss ? '#ff00cc' : e.isMagmar ? '#ff4400' : e.isCharger ? '#ff9900' : '#ff3333', e.isBoss ? 35 : e.isMagmar ? 28 : 20, e.isBoss ? 9 : 6);
-      const coinDrop = e.isBoss ? 5 : e.isMagmar ? 3 : e.isCharger ? 2 : 1;
-      for (let c = 0; c < coinDrop; c++) spawnCoin(e.x + Math.random() * e.w, e.y);
-      if (e.isBoss) {
-        const r = Math.random();
-        spawnChest(e.x + e.w / 2, e.y, r < .3 ? 'legendario' : r < .75 ? 'epico' : 'comun');
-      } else if (e.isMagmar && Math.random() < .7) {
-        const r = Math.random();
-        spawnChest(e.x + e.w / 2, e.y, r < .1 ? 'legendario' : r < .35 ? 'epico' : 'comun');
-      } else if (Math.random() < .08) {
-        spawnChest(e.x + e.w / 2, e.y, 'comun');
-      }
-      if (wave >= 2 && Math.random() < .07) spawnWeaponDrop(e.x + e.w / 2, e.y);
-      shake(e.isBoss ? 10 : e.isMagmar ? 6 : 4);
-      freeze(e.isBoss ? 10 : e.isMagmar ? 6 : 4);
-      // El enemigo no desaparece de golpe: se queda 16 frames aplastandose
-      // contra el suelo y desvaneciendose. Es lo que hace que matar se sienta.
-      e.muriendo = 16; e.hp = 0; e.spd = 0;
-      cadaveres.push(e);
-      return false;
-    }
+    if (e.hp <= 0) { matarEnemigo(e); return false; }
 
     // ── PLAYER DAMAGE ──
     if (e.isExploder && overlap({ x: PL.x - 20, y: PL.y - 20, w: PL.w + 40, h: PL.h + 40 }, { x: e.x, y: e.y, w: e.w, h: e.h })) {
@@ -1284,8 +1634,9 @@ function update() {
       particles.push({ x: e.x + e.w / 2, y: e.y + e.h / 2, vx: 0, vy: 0, color: '#ff6400', life: 1, decay: .06, sz: 80, ring: true });
       if (PL.invTimer <= 0) { PL.hp -= 30; PL.invTimer = 60; PL.flashTimer = 20; shake(12); spawnFT(PL.x, PL.y - 20, '-30 EXPLOSION!', '#ff6400', true); updateHpHUD(); _hap('heavy'); if (PL.hp <= 0) { endGame(); } }
     }
-    if (PL.invTimer <= 0 && !e.isExploder && overlap({ x: PL.x + 6, y: PL.y + 6, w: PL.w - 12, h: PL.h - 12 }, { x: e.x + 8, y: e.y + 8, w: e.w - 16, h: e.h - 16 })) {
-      const dmg = e.isBoss ? 22 : e.isCharger ? 15 : 12;
+    const jefeInofensivo = e.jefe && e.jefe.estado !== 'pausa' && e.jefe.estado !== 'ejecuta';
+    if (PL.invTimer <= 0 && !e.isExploder && !jefeInofensivo && overlap({ x: PL.x + 6, y: PL.y + 6, w: PL.w - 12, h: PL.h - 12 }, { x: e.x + 8, y: e.y + 8, w: e.w - 16, h: e.h - 16 })) {
+      const dmg = e.jefe ? (e.jefe.estado === 'pausa' ? 10 : 25) : e.isBoss ? 22 : e.isCharger ? 15 : 12;
       PL.hp -= dmg;
       PL.invTimer = 60; PL.flashTimer = 20;
       comboCount = 0; comboMultiplier = 1;
@@ -1309,7 +1660,8 @@ function update() {
   bullets = bullets.filter(b => {
     b.x += b.vx; b.y += b.vy;
     if (b.life <= 0) return false;
-    if (b.x < -30 || b.x > W + 30) return false;
+    if (b.x < -30 || b.x > W + 30 || b.y > H + 30) return false;
+    if (b.roca && b.y + b.h >= GROUND) { spawnPFX(b.x + b.w / 2, GROUND - 4, '#aa8866', 10, 4, 4); shake(3); return false; }
 
     if (!b.enemy) {
       for (let i = enemies.length - 1; i >= 0; i--) {
@@ -1319,29 +1671,18 @@ function update() {
           const pts = hitCombo(40);
           spawnPFX(e.x + e.w / 2, e.y + e.h / 2, '#ff6400', 8, 4);
           spawnFT(e.x, e.y - 15, '+' + pts, '#ff6400');
-          if (e.hp <= 0) {
-            spawnPFX(e.x + e.w / 2, e.y + e.h / 2, e.isMagmar ? '#ff4400' : '#ff6400', 20, 6);
-            missionEvent('kill', 1); achEvent('onKill');
-            if (e.isBoss) { bossActive = false; missionEvent('boss', 1); achEvent('onBoss'); }
-            const cd = e.isBoss ? 4 : e.isMagmar ? 2 : 1;
-            for (let c = 0; c < cd; c++) spawnCoin(e.x + Math.random() * e.w, e.y);
-            if (e.isBoss || e.isMagmar) {
-              const r = Math.random();
-              spawnChest(e.x + e.w / 2, e.y, e.isBoss ? (r < .3 ? 'legendario' : r < .75 ? 'epico' : 'comun') : (r < .1 ? 'legendario' : r < .35 ? 'epico' : 'comun'));
-            } else if (Math.random() < .06) spawnChest(e.x + e.w / 2, e.y, 'comun');
-            if (wave >= 4 && Math.random() < .05) spawnWeaponDrop(e.x + e.w / 2, e.y);
-            enemies.splice(i, 1);
-          }
+          if (e.hp <= 0) { matarEnemigo(e); enemies.splice(i, 1); }
           updateHUD();
           return false;
         }
       }
     } else {
       if (PL.invTimer <= 0 && overlap(b, { x: PL.x + 6, y: PL.y + 6, w: PL.w - 12, h: PL.h - 12 })) {
-        PL.hp -= 15; PL.invTimer = 45; PL.flashTimer = 15;
+        const bd = b.dmg || 15;
+        PL.hp -= bd; PL.invTimer = 45; PL.flashTimer = 15;
         comboCount = 0; comboMultiplier = 1;
         spawnPFX(PL.x + PL.w / 2, PL.y + PL.h / 2, '#ff3333', 10, 4);
-        spawnFT(PL.x, PL.y - 15, '-15 HP', '#ff3333');
+        spawnFT(PL.x, PL.y - 15, '-' + bd + ' HP', '#ff3333');
         shake(5);
         updateHpHUD();
         _hap('heavy');
@@ -1424,19 +1765,16 @@ function update() {
     w.x -= w.spd > 0 ? w.spd : gameSpeed * .5;
     w.bob += .07; w.y += Math.sin(w.bob) * .6;
     if (overlap({ x: PL.x + 4, y: PL.y + 4, w: PL.w - 8, h: PL.h - 8 }, w)) {
-      const dur = w.type === 'katana_spark' ? 480 : 360;
-      weaponBuff = { type: w.type, timer: dur, maxTimer: dur };
-      if (w.type === 'katana_spark') { PL.fireOn = true; PL.fireTimer = Math.max(PL.fireTimer, dur); }
+      arma = ARMAS[w.type] || ARMAS.base;
       shake(5);
-      spawnFT(w.x, w.y - 20, w.type === 'katana_spark' ? '⚡ KATANA SPARK!' : '🗡 KATANA COMÚN!', w.type === 'katana_spark' ? '#00eeff' : '#ffe600', true);
-      showPUNotif(w.type === 'katana_spark' ? '⚡ KATANA SPARK — FIRE MODE 8s!' : '🗡 KATANA COMÚN — +COMBO RANGE!');
-      spawnPFX(w.x + w.w / 2, w.y + w.h / 2, w.type === 'katana_spark' ? '#00eeff' : '#ffe600', 20, 5, 4);
+      spawnFT(w.x, w.y - 20, '🗡 ' + arma.nombre + '!', arma.color || '#ffe600', true);
+      showPUNotif('🗡 ' + arma.nombre + ' — ' + arma.desc);
+      spawnPFX(w.x + w.w / 2, w.y + w.h / 2, arma.color || '#ffe600', 20, 5, 4);
       _hap('heavy');
       return false;
     }
     return w.x > -60;
   });
-  if (weaponBuff) { weaponBuff.timer--; if (weaponBuff.timer <= 0) weaponBuff = null; }
 
   // ── POWER-UPS ──
   if (puMagnet > 0) puMagnet--;
@@ -1460,6 +1798,7 @@ function update() {
   });
 
   // ── PARTICLES / TEXT ──
+  efectos = efectos.filter(f => ++f.t < FX[f.tipo][2] * FX[f.tipo][3]);
   particles = particles.filter(p => { p.x += p.vx; p.y += p.vy; if (!p.ring) p.vy += .12; p.life -= p.decay; if (p.ring) p.sz += 4; return p.life > 0; });
   fTexts = fTexts.filter(t => { t.y += t.vy; t.life -= t.decay; return t.life > 0; });
 
@@ -1481,7 +1820,10 @@ function update() {
   // cadencia sigue apretando y el tope de simultaneos crece con la oleada.
   const spawnRate = wave < 7 ? Math.max(50, 105 - wave * 8)
                              : Math.max(22, 50 - (wave - 7) * 3);
-  if (frame % spawnRate === 0 && enemies.length < 8 + wave * 1.5) spawnEnemy();
+  // Con el jefe en pantalla solo acompañan 2: el combate es contra el.
+  const ritmo = nivel ? Math.round(spawnRate * nivel.dens) : spawnRate;
+  const tope = nivel ? nivel.tope : 8 + wave * 1.5;
+  if (frame % ritmo === 0 && enemies.length < tope && !(bossActive && enemies.length >= (nivel ? 2 : 3)) && !victoriaEn) spawnEnemy();
   if (frame % 60 === 0) spawnCoin();
 
   addScore(1);
@@ -1527,7 +1869,164 @@ function markBiomeSeen(i) {
 function biomesSeen() {
   try { return JSON.parse(localStorage.getItem('dq_biomes') || '[]').length; } catch (e) { return 0; }
 }
-function currentBiome() { return BIOMES[Math.floor((wave - 1) / 3) % BIOMES.length]; }
+function currentBiome() { return nivel ? BIOMES[nivel.bioma] : BIOMES[Math.floor((wave - 1) / 3) % BIOMES.length]; }
+
+// ══ CAMPAÑA: 5 biomas × 3 etapas ══
+// En el modo sin fin el novato (vive ~101 s) nunca ganaba nada. Una etapa de
+// 1-3 oleadas cabe dentro de esa ventana y termina en VICTORIA. La tercera
+// etapa de cada bioma es un jefe. Cada bioma presenta un enemigo nuevo en vez
+// de soltar el bestiario entero en los primeros dos minutos. SIN FIN queda
+// como modo de ranking y se desbloquea al vencer al primer jefe.
+const POOLS = [
+  ['normal', 'flyer'],
+  ['normal', 'flyer', 'charger'],
+  ['normal', 'flyer', 'charger', 'exploder'],
+  ['normal', 'flyer', 'charger', 'exploder', 'ghost'],
+  ['normal', 'flyer', 'charger', 'exploder', 'ghost', 'magmar'],
+];
+const LEVELS = [];
+// dens multiplica el intervalo entre spawns y tope limita los enemigos a la
+// vez: la 1-1 es la primera impresion y tiene que poder ganarla un novato.
+BIOMES.forEach((b, bi) => {
+  const vel = 3.1 + bi * .3, pool = POOLS[bi];
+  const dens = Math.max(1, 1.7 - bi * .18), tope = 4 + bi * 2;
+  LEVELS.push({ id: (bi + 1) + '-1', bioma: bi, oleadas: 2, vel, pool: bi ? pool.slice(0, -1) : ['normal'], elite: bi * .05, dens: dens + (bi ? .15 : .9), tope: bi ? tope : 2 });
+  LEVELS.push({ id: (bi + 1) + '-2', bioma: bi, oleadas: 3, vel: vel + .2, pool, elite: .05 + bi * .05, dens, tope: tope + 1 });
+  LEVELS.push({ id: (bi + 1) + '-3', bioma: bi, oleadas: 1, vel: vel + .2, pool, elite: .05 + bi * .05, dens: dens + .15, tope, jefe: { tipo: 'oso', hp: bi * 20 } });
+});
+
+function leerCampana() {
+  try { return JSON.parse(localStorage.getItem('dq_campana') || '{}').estrellas || {}; } catch (e) { return {}; }
+}
+function guardarCampana(est) {
+  try { localStorage.setItem('dq_campana', JSON.stringify({ estrellas: est })); } catch (e) {}
+}
+function nivelDesbloqueado(i, est) {
+  if (i === 0) return true;
+  return (est[LEVELS[i - 1].id] || 0) >= 1;
+}
+function sinFinDesbloqueado(est) { return (est['1-3'] || 0) >= 1; }
+
+// Recompensa en DQ solo por estrellas NUEVAS, para que repetir la 1-1 no se
+// pueda farmear.
+function ganarNivel() {
+  state = 'victoria';
+  if (raf) { cancelAnimationFrame(raf); raf = null; }
+  stopMusic();
+  playSound('levelup'); _hap('heavy');
+  const idx = LEVELS.indexOf(nivel);
+  const est = leerCampana();
+  const antes = est[nivel.id] || 0;
+  const conseguidas = [true, PL.hp / PL.maxHp >= .5 && !reviveUsed, sellos >= 3];
+  const n = conseguidas.filter(Boolean).length;
+  const nuevas = Math.max(0, n - antes);
+  const premio = nuevas * (20 + nivel.bioma * 10);
+  if (n > antes) { est[nivel.id] = n; guardarCampana(est); }
+  missionEvent('etapa', 1);
+  try { window.DQAch && DQAch.onEtapa && DQAch.onEtapa(nivel.id, LEVELS.reduce((t, l) => t + (est[l.id] || 0), 0)); } catch (e) {}
+  if (n > antes) missionEvent('estrella', n - antes);
+  if (premio) { totalCoins += premio; }
+  localStorage.setItem('dq_hi', hiScore);
+  saveProgress();
+  try { window.DQMissions && DQMissions.flush && DQMissions.flush(); } catch (e) {}
+  try { window.DQAch && DQAch.flush && DQAch.flush(); } catch (e) {}
+
+  let ov = $id('ov-victoria');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'ov-victoria';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:58;display:flex;flex-direction:column;' +
+      'align-items:center;justify-content:center;background:#050510;padding:16px;gap:8px;text-align:center';
+    document.body.appendChild(ov);
+  }
+  const b = BIOMES[nivel.bioma];
+  const txt = ['Etapa completada', 'Terminar con 50% de vida o más, sin revivir', 'Recoger los 3 sellos ✦ de las plataformas (' + sellos + '/3)'];
+  const siguiente = LEVELS[idx + 1];
+  ov.innerHTML =
+    '<div style="font-size:.44rem;color:' + b.line + '">' + b.name + ' · ' + nivel.id + '</div>' +
+    '<div style="font-size:.70rem;color:#ffe600;text-shadow:3px 3px 0 #000;margin:4px 0">¡VICTORIA!</div>' +
+    '<div style="font-size:1.6rem;letter-spacing:.2em;margin:2px 0">' +
+      conseguidas.map(c => '<span style="color:' + (c ? '#ffe600' : 'rgba(255,255,255,.18)') + '">★</span>').join('') + '</div>' +
+    '<div style="font-size:.40rem;line-height:2;color:rgba(255,255,255,.85);max-width:460px">' +
+      conseguidas.map((c, i) => '<span style="color:' + (c ? '#00ff88' : 'rgba(255,255,255,.4)') + '">' + (c ? '★ ' : '☆ ') + txt[i] + '</span>').join('<br>') + '</div>' +
+    (premio ? '<div style="font-size:.36rem;color:#00ff88;margin-top:4px">+' + premio + ' DQ por estrellas nuevas</div>' : '') +
+    '<div style="display:flex;flex-direction:column;gap:8px;width:min(380px,92%);margin-top:10px">' +
+      (siguiente ? '<button class="ob" id="vic-sig">▶ SIGUIENTE · ' + siguiente.id + '</button>' : '<button class="ob" id="vic-sig">∞ MODO SIN FIN</button>') +
+      (typeof window.shareScore === 'function' ? '<button class="ob" id="vic-share" style="background:linear-gradient(135deg,#1da1f2,#0077b5);color:#fff">📣 COMPARTIR</button>' : '') +
+      '<button class="ob" id="vic-rep" style="background:rgba(255,255,255,.08);color:#fff">↻ REPETIR</button>' +
+      '<button class="ob" id="vic-mapa" style="background:rgba(255,255,255,.08);color:#fff">🗺 MAPA</button>' +
+    '</div>';
+  ov.querySelector('#vic-sig').onclick = () => siguiente ? startGame({ nivel: idx + 1 }) : startGame();
+  ov.querySelector('#vic-rep').onclick = () => startGame({ nivel: idx });
+  ov.querySelector('#vic-mapa').onclick = () => abrirMapa();
+  const vs = ov.querySelector('#vic-share'); if (vs) vs.onclick = () => window.shareScore();
+  // Para que la pagina sincronice los DQ ganados (en Telegram, a la nube).
+  try { DQE.onVictoria && DQE.onVictoria({ nivel: nivel.id, estrellas: n, premio }); } catch (e) {}
+  ultimaVictoria = { id: nivel.id, bioma: b.name, estrellas: n };
+  ov.style.display = 'flex';
+}
+
+function abrirMapa() {
+  hideAll();
+  try { DQE.onToMenu && DQE.onToMenu(); } catch (e) {}
+  if (raf) { cancelAnimationFrame(raf); raf = null; }
+  if (state !== 'menu') { state = 'menu'; arrancarAtraccion(); }
+  const est = leerCampana();
+  let ov = $id('ov-niveles');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'ov-niveles';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:58;display:flex;flex-direction:column;' +
+      'align-items:center;justify-content:center;background:#050510;padding:16px;gap:8px;overflow-y:auto';
+    document.body.appendChild(ov);
+  }
+  const total = LEVELS.reduce((s, l) => s + (est[l.id] || 0), 0);
+  let html = '<div style="font-size:.56rem;color:#00ff88;text-shadow:3px 3px 0 #000">🗺 MAPA</div>' +
+    '<div style="font-size:.42rem;color:#ffe600;margin-bottom:6px">★ ' + total + ' / ' + (LEVELS.length * 3) + '</div>';
+  BIOMES.forEach((b, bi) => {
+    html += '<div style="width:min(460px,96%);display:flex;align-items:center;gap:6px">' +
+      '<div style="flex:1;font-size:.36rem;line-height:1.5;color:' + b.line + ';text-align:left">' + b.name + '</div>';
+    for (let k = 0; k < 3; k++) {
+      const i = bi * 3 + k, l = LEVELS[i], ok = nivelDesbloqueado(i, est), s = est[l.id] || 0;
+      html += '<button data-n="' + i + '" ' + (ok ? '' : 'disabled ') + 'style="width:74px;min-height:52px;border-radius:6px;font-family:inherit;' +
+        'border:2px solid ' + (ok ? b.line : 'rgba(255,255,255,.12)') + ';background:' + (ok ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.3)') + ';' +
+        'color:#fff;cursor:' + (ok ? 'pointer' : 'default') + ';font-size:.42rem;line-height:1.6">' +
+        (ok ? (l.jefe ? '☠ ' : '') + l.id + '<br><span style="color:#ffe600;font-size:.56rem">' + '★'.repeat(s) + '<span style="color:rgba(255,255,255,.2)">' + '★'.repeat(3 - s) + '</span></span>' : '🔒') +
+        '</button>';
+    }
+    html += '</div>';
+  });
+  const sf = sinFinDesbloqueado(est);
+  html += '<button class="ob" id="mapa-sinfin" style="width:min(420px,94%);margin-top:8px' + (sf ? '' : ';opacity:.45') + '">' +
+    (sf ? '∞ MODO SIN FIN (RANKING)' : '🔒 SIN FIN · vence al jefe 1-3') + '</button>' +
+    '<button class="ob" id="mapa-volver" style="width:min(420px,94%);background:rgba(255,255,255,.08);color:#fff">← VOLVER</button>';
+  ov.innerHTML = html;
+  ov.querySelectorAll('button[data-n]').forEach(bt => { bt.onclick = () => startGame({ nivel: +bt.dataset.n }); });
+  ov.querySelector('#mapa-sinfin').onclick = () => { if (sf) startGame(); };
+  ov.querySelector('#mapa-volver').onclick = () => toMenu();
+  ov.style.display = 'flex';
+}
+
+// JUGAR: la primera etapa sin completar; si ya estan todas, SIN FIN.
+// Texto para compartir: tras una victoria habla de la etapa y sus estrellas,
+// que es un logro que el amigo puede intentar igualar.
+let ultimaVictoria = null;
+function textoCompartir() {
+  if (state === 'victoria' && ultimaVictoria) {
+    return '🧝 Superé la etapa ' + ultimaVictoria.id + ' (' + ultimaVictoria.bioma + ') de DUENDE QUEST con ' +
+      '★'.repeat(ultimaVictoria.estrellas) + '☆'.repeat(3 - ultimaVictoria.estrellas) + ' ¿Puedes sacar las 3 estrellas? 👇';
+  }
+  return '🧝 Hice ' + Math.floor(score).toLocaleString() + ' puntos en DUENDE QUEST (Wave ' + wave + ')! ¿Me superas? 👇';
+}
+
+function jugar() {
+  const est = leerCampana();
+  const i = LEVELS.findIndex(l => !est[l.id]);
+  if (i >= 0) startGame({ nivel: i }); else startGame();
+}
+function reintentar() { startGame(ultimoInicio || undefined); }
+
+
 let _vignette = null;
 // El degradado del cielo se creaba cada frame; solo cambia al cambiar de bioma.
 let _gradFondo = { biome: null, grad: null };
@@ -1545,6 +2044,18 @@ function _nubeSprite(cloud) {
   g.fillStyle = rg; g.fillRect(0, 0, 128, 128);
   _nubes.set(cloud, c);
   return c;
+}
+
+// Brillo neon barato: el halo radial ya cacheado de las nubes, sumado con
+// 'lighter'. Sustituye a shadowBlur, que obliga al navegador a desenfocar la
+// silueta de cada sprite en cada frame y en moviles de gama media es de lo
+// mas caro que se puede pedir a un canvas.
+function brillo(x, y, r, rgb, a) {
+  cx.save();
+  cx.globalAlpha = a;
+  cx.globalCompositeOperation = 'lighter';
+  cx.drawImage(_nubeSprite(rgb), x - r, y - r, r * 2, r * 2);
+  cx.restore();
 }
 
 function drawPuTimer(x, emoji, pct, color) {
@@ -1576,7 +2087,7 @@ function draw() {
 
   // Capas de parallax: la lejana se mueve a un tercio de la cercana, que a su
   // vez va mas lenta que el suelo. Esa diferencia es toda la profundidad.
-  const bi = Math.floor((wave - 1) / 3) % FONDOS.length;
+  const bi = Math.max(0, BIOMES.indexOf(biome)) % FONDOS.length;
   dibujarCapa(FONDOS[bi].lejos, scrollLejos, 46);
   dibujarCapa(FONDOS[bi].cerca, scrollCerca, 16);
 
@@ -1610,6 +2121,17 @@ function draw() {
     cx.globalAlpha = .30;
     cx.fillStyle = biome.line;
     cx.fillRect(pl.x, pl.y + pl.h, pl.w, 2);
+    if (pl.sello) {
+      // Estrella de 5 puntas dibujada con path: sin sprite nuevo.
+      const sx0 = pl.x + pl.w / 2, sy0 = pl.y - 22 + Math.sin(frame * .08) * 4, r = 11;
+      cx.globalAlpha = 1; cx.fillStyle = '#ffe600'; cx.strokeStyle = '#000'; cx.lineWidth = 2;
+      cx.beginPath();
+      for (let k = 0; k < 10; k++) {
+        const ang = -Math.PI / 2 + k * Math.PI / 5, rr = k % 2 ? r * .45 : r;
+        cx.lineTo(sx0 + Math.cos(ang) * rr, sy0 + Math.sin(ang) * rr);
+      }
+      cx.closePath(); cx.stroke(); cx.fill();
+    }
     cx.restore();
   });
 
@@ -1634,6 +2156,8 @@ function draw() {
   if (state === 'playing' || state === 'paused') _shadow(PL);
   cx.restore();
 
+  dibujarAvisosJefe();
+
   // Coins
   coins.forEach(c => {
     cx.save(); cx.imageSmoothingEnabled = false;
@@ -1642,11 +2166,10 @@ function draw() {
 
   // Chests
   chests.forEach(ch => {
-    const shadowColors = { comun: '#aaffaa', epico: '#cc44ff', legendario: '#ffe600' };
+    const brillos = { comun: '170,255,170', epico: '204,68,255', legendario: '255,230,0' };
     const pulse = Math.sin(ch.glowTimer * .08) * .5 + .5;
+    brillo(ch.x + ch.w / 2, ch.y + ch.h / 2, ch.w * (.9 + pulse * .3), brillos[ch.tier], .35 + pulse * .25);
     cx.save(); cx.imageSmoothingEnabled = false;
-    cx.shadowColor = shadowColors[ch.tier];
-    cx.shadowBlur = 10 + pulse * 14;
     cx.globalAlpha = .92 + pulse * .08;
     drawSpr(IMG_EL['cofre_' + ch.tier], ch);
     cx.restore();
@@ -1656,10 +2179,11 @@ function draw() {
   weaponDrops.forEach(w => {
     const pulse = Math.sin(frame * .1) * .4 + .6;
     cx.save(); cx.imageSmoothingEnabled = false;
-    cx.shadowColor = w.type === 'katana_spark' ? '#00eeff' : '#ffe600';
-    cx.shadowBlur = 8 + pulse * 10;
+    const def = ARMAS[w.type] || ARMAS.odachi;
     cx.globalAlpha = .85 + pulse * .15;
-    drawSpr(IMG_EL[w.type], w);
+    drawSpr(def.tinte ? tintedSprite(def.icono, def.tinte) : IMG_EL[def.icono], w);
+    cx.font = '8px "Press Start 2P"'; cx.textAlign = 'center'; cx.fillStyle = def.color || '#fff';
+    cx.fillText(def.nombre, w.x + w.w / 2, w.y - 6);
     cx.restore();
   });
 
@@ -1667,12 +2191,12 @@ function draw() {
   powerups.forEach(pu => {
     const def = PU_TYPES[pu.type];
     const pulse = Math.sin(frame * .15) * .15 + .9;
+    brillo(pu.x + pu.w / 2, pu.y + pu.h / 2, pu.w * .9, def.rgb, .45);
     cx.save();
-    cx.shadowColor = def.color; cx.shadowBlur = 14;
     cx.fillStyle = 'rgba(0,0,0,.35)';
     cx.beginPath(); cx.arc(pu.x + pu.w / 2, pu.y + pu.h / 2, pu.w / 2 * pulse, 0, Math.PI * 2); cx.fill();
     cx.strokeStyle = def.color; cx.lineWidth = 2; cx.stroke();
-    cx.shadowBlur = 0; cx.font = '18px sans-serif'; cx.textAlign = 'center'; cx.textBaseline = 'middle';
+    cx.font = '18px sans-serif'; cx.textAlign = 'center'; cx.textBaseline = 'middle';
     cx.fillStyle = '#fff';
     cx.fillText(def.emoji, pu.x + pu.w / 2, pu.y + pu.h / 2 + 1);
     cx.restore();
@@ -1702,17 +2226,14 @@ function draw() {
     // pivota cualquier criatura al agacharse, embestir o caer muerta.
     const an = animEnemigo(e);
     const pies = e.y + e.h;
+    const aura = e.isMagmar ? '255,68,0' : e.isExploder ? '255,68,0' : e.isGhost ? '147,51,234' : null;
+    if (aura && !e.muriendo) brillo(e.x + e.w / 2, e.y + e.h / 2, e.h * .75, aura, (e.isGhost ? .35 : .45) * ghostA);
     cx.save();
     cx.imageSmoothingEnabled = false;
     cx.globalAlpha = ghostA * an.alpha;
-    // shadowBlur constante en vez de animado: variarlo cada frame invalida la
-    // cache interna del navegador y con 13 enemigos en pantalla se nota.
-    if (e.isExploder) { cx.shadowColor = '#ff4400'; cx.shadowBlur = 14; }
-    if (e.isGhost) { cx.shadowColor = '#9333ea'; cx.shadowBlur = 16; }
-    if (e.isMagmar) { cx.shadowColor = '#ff4400'; cx.shadowBlur = 20; }
     cx.translate(e.x + e.w / 2 + an.dx, pies + an.dy);
     cx.rotate(an.giro);
-    cx.scale(-an.escalaX, an.escalaY);
+    cx.scale((e.facing > 0 ? 1 : -1) * an.escalaX, an.escalaY);
     drawSpr(variant ? tintedSprite(key, variant) : IMG_EL[key], { x: -e.w / 2, y: -e.h, w: e.w, h: e.h });
     if (e.flashTimer > 0) {
       cx.globalAlpha = ghostA * Math.min(1, e.flashTimer / 8);
@@ -1748,8 +2269,14 @@ function draw() {
   // Enemy bullets
   _balasEne.forEach(b => {
     cx.save();
-    if (b.fire) {
-      cx.shadowColor = '#ff4400'; cx.shadowBlur = 10;
+    if (b.roca) {
+      cx.fillStyle = '#6b5544'; cx.fillRect(b.x + 4, b.y, b.w - 8, b.h);
+      cx.fillRect(b.x, b.y + 6, b.w, b.h - 12);
+      cx.fillStyle = '#9c8068'; cx.fillRect(b.x + 8, b.y + 4, 12, 8);
+    } else if (b.onda) {
+      cx.fillStyle = 'rgba(255,120,60,.85)';
+      cx.beginPath(); cx.moveTo(b.x, b.y + b.h); cx.lineTo(b.x + b.w / 2, b.y); cx.lineTo(b.x + b.w, b.y + b.h); cx.fill();
+    } else if (b.fire) {
       cx.fillStyle = '#ff6600';
       cx.beginPath(); cx.ellipse(b.x + b.w / 2, b.y + b.h / 2, b.w / 2, b.h / 2, 0, 0, Math.PI * 2); cx.fill();
       cx.fillStyle = 'rgba(255,200,0,.5)'; cx.beginPath(); cx.ellipse(b.x + b.w / 2, b.y + b.h / 2, b.w * .7, b.h * .7, 0, 0, Math.PI * 2); cx.fill();
@@ -1782,7 +2309,21 @@ function draw() {
   // se dibuja su sprite propio (que ahora si es el suyo) en vez de animar.
   const _anim = _plKey === 'duende_hero' ? animFrame() : -1;
   if (_anim >= 0) drawAnim(_anim, { x: px, y: py, w: pw, h: ph }, PL.facing < 0);
-  else drawSpr(_plImg, { x: px, y: py, w: pw, h: ph }, PL.facing < 0);
+  else {
+    // Las skins de pago son una sola imagen: sin esto el que PAGABA veia un
+    // personaje congelado y el gratis uno animado. Se anima por codigo
+    // alrededor de los pies: respira quieto, rebota al andar, se inclina al
+    // correr y se lanza hacia delante en cada golpe.
+    const mov = Math.abs(PL.vx) > .6 && PL.onGround;
+    const rebote = mov ? -Math.abs(Math.sin(frame * .3)) * 4 : Math.sin(frame * .06) * 1.2;
+    const respira = mov ? 0 : Math.sin(frame * .06) * .025;
+    const empuje = PL.attackTimer > 0 ? PL.facing * 7 * (PL.attackTimer / 16) : 0;
+    const giro = mov ? .07 * PL.facing : !PL.onGround ? -.05 * PL.facing : 0;
+    cx.translate(px + pw / 2 + empuje, py + ph);
+    cx.rotate(giro);
+    cx.scale(1 - respira * .5, 1 + respira);
+    drawSpr(_plImg, { x: -pw / 2, y: -ph + rebote, w: pw, h: ph }, PL.facing < 0);
+  }
   cx.restore();
 
   // Aura de skin (legendaria)
@@ -1831,12 +2372,31 @@ function draw() {
     cx.drawImage(IMG_EL['skill_fire'], PL.x + PL.w - 5, PL.y + PL.h * .25 + foff, 38, 22); cx.restore();
   }
 
-  // Attack arc
-  if (PL.attackHitbox.active) {
+  // Efectos en tira (cortes, muertes, descargas). 'lighter' suma luz: sobre
+  // el fondo oscuro es lo que les da el aspecto neon sin shadowBlur.
+  efectos.forEach(f => {
+    const [fw, fh, n, tpf] = FX[f.tipo];
+    const base = IMG_EL['fx_' + f.tipo];
+    if (!base || !base.naturalWidth) return;
+    const img = f.tinte ? tintedSprite('fx_' + f.tipo, f.tinte) : base;
+    const i = Math.min(n - 1, Math.floor(f.t / tpf));
+    const w = fw * f.escala, h = fh * f.escala;
+    const x = f.sigue ? PL.x + f.x : f.x, y = f.sigue ? PL.y + f.y : f.y;
+    cx.save();
+    cx.imageSmoothingEnabled = false;
+    if (f.aditivo) cx.globalCompositeOperation = 'lighter';
+    cx.translate(x, y);
+    if (f.flip) cx.scale(-1, 1);
+    cx.drawImage(img, i * fw, 0, fw, fh, -w / 2, -h / 2, w, h);
+    cx.restore();
+  });
+
+  // Attack arc (fino: el corte en tira ya da la forma del golpe)
+  if (PL.attackHitbox.active && !(IMG_EL.fx_corte_h && IMG_EL.fx_corte_h.naturalWidth)) {
     const colors = ['rgba(255,230,0,.5)', 'rgba(255,153,0,.6)', 'rgba(255,51,51,.7)'];
-    cx.save(); cx.strokeStyle = colors[PL.comboStep]; cx.lineWidth = 3 + PL.comboStep;
+    cx.save(); cx.strokeStyle = arma.color || colors[PL.comboStep]; cx.lineWidth = 3 + PL.comboStep;
     const cx2 = PL.x + (PL.facing > 0 ? PL.w : 0);
-    cx.beginPath(); cx.arc(cx2, PL.y + PL.h / 2, 40 + PL.comboStep * 12,
+    cx.beginPath(); cx.arc(cx2, PL.y + PL.h / 2, (40 + PL.comboStep * 12) * arma.alcance,
       PL.facing > 0 ? -Math.PI * .55 : Math.PI * .45,
       PL.facing > 0 ? Math.PI * .55 : Math.PI * 1.55); cx.stroke();
     cx.restore();
@@ -1865,13 +2425,14 @@ function draw() {
     cx.restore();
   }
 
-  // Weapon buff bar
-  if (weaponBuff) {
-    const bpct = weaponBuff.timer / weaponBuff.maxTimer;
-    const bcolor = weaponBuff.type === 'katana_spark' ? '#00eeff' : '#ffe600';
+  // Arma equipada y sellos de la etapa (esquina inferior izquierda)
+  if (state === 'playing' || state === 'paused') {
     cx.save();
-    cx.fillStyle = 'rgba(0,0,0,.5)'; cx.fillRect(PL.x, PL.y - 26, PL.w, 5);
-    cx.fillStyle = bcolor; cx.fillRect(PL.x, PL.y - 26, PL.w * bpct, 5);
+    cx.font = '8px "Press Start 2P"'; cx.textAlign = 'left';
+    cx.lineWidth = 3; cx.lineJoin = 'round'; cx.strokeStyle = '#000';
+    const txtArma = '🗡 ' + arma.nombre + (nivel ? '   ✦ ' + sellos + '/3   ' + nivel.id : '');
+    cx.strokeText(txtArma, 8, H - 8);
+    cx.fillStyle = arma.color || '#ffe600'; cx.fillText(txtArma, 8, H - 8);
     cx.restore();
   }
 
@@ -1889,7 +2450,8 @@ function draw() {
     cx.fillStyle = '#ffe600';
     cx.font = '16px "Press Start 2P"';
     cx.textAlign = 'center';
-    cx.shadowColor = '#000'; cx.shadowBlur = 8;
+    cx.lineWidth = 4; cx.lineJoin = 'round'; cx.strokeStyle = '#000';
+    cx.strokeText(tutorialStep === 0 ? '☝️ TOCA / ESPACIO = SALTAR' : '⚔ TOCA EL BOTÓN ⚔ / Z = ATACAR', W / 2, 70);
     cx.fillText(tutorialStep === 0 ? '☝️ TOCA / ESPACIO = SALTAR' : '⚔ TOCA EL BOTÓN ⚔ / Z = ATACAR', W / 2, 70);
     cx.restore();
   }
@@ -1931,6 +2493,7 @@ function draw() {
     vg.fillStyle = rg; vg.fillRect(0, 0, W, H);
   }
   cx.drawImage(_vignette, 0, 0);
+  dibujarBarraJefe();
 
   // Floating texts — con contorno negro para que se lean sobre cualquier bioma.
   cx.save();
@@ -2028,7 +2591,7 @@ function arrancarAtraccion() {
   // monedas congelados detras de los botones. El modo atraccion arranca con
   // el escenario limpio y el duende entero.
   enemies = []; coins = []; bullets = []; chests = []; weaponDrops = [];
-  powerups = []; fTexts = []; cadaveres = []; particles = [];
+  powerups = []; fTexts = []; cadaveres = []; particles = []; efectos = [];
   bossActive = false;
   PL.hp = PL.maxHp;
   PL.invTimer = 0; PL.flashTimer = 0; PL.dashing = false; PL.slamming = false;
@@ -2040,19 +2603,24 @@ function arrancarAtraccion() {
 document.addEventListener('visibilitychange', () => { if (!document.hidden && state === 'menu') arrancarAtraccion(); });
 
 // ── LIFECYCLE ──
-function startGame() {
+function startGame(opts) {
   // Con red lenta se podia empezar sin sprites. El boton JUGAR ya ensena el
   // progreso; este guard cubre ademas el Enter y los botones de reintentar.
   if (!cargaCompleta()) { showPUNotif('⌛ CARGANDO ' + _pctCarga() + '%'); return; }
+  opts = (opts && typeof opts === 'object' && !(opts instanceof Event)) ? opts : null;
+  nivel = (opts && opts.nivel != null) ? LEVELS[opts.nivel] || null : null;
+  ultimoInicio = opts;
+  sellos = 0; sellosPuestos = 0; victoriaEn = 0; jefeInvocado = false; jefeOleada = 0;
+  arma = ARMAS.base;
   playMusic();
   hideAll();
-  score = 0; wave = 1; frame = 0; gameSpeed = baseSpeed; waveTimer = 0; bossActive = false; bossKilled = 0;
+  score = 0; wave = 1; frame = 0; gameSpeed = nivel ? nivel.vel : baseSpeed; waveTimer = 0; bossActive = false; bossKilled = 0;
   reviveUsed = false;
-  sessionCoins = 0; comboCount = 0; comboMultiplier = 1; comboTimer = 0;
+  sessionCoins = 0; comboCount = 0; comboMax = 0; comboMultiplier = 1; comboTimer = 0;
   playerXP = 0; playerLevel = 1;
   killStreak = 0; killStreakTimer = 0;
-  enemies = []; coins = []; bullets = []; particles = []; fTexts = []; cadaveres = [];
-  chests = []; weaponDrops = []; weaponBuff = null;
+  enemies = []; coins = []; bullets = []; particles = []; fTexts = []; cadaveres = []; efectos = [];
+  chests = []; weaponDrops = [];
   powerups = []; puMagnet = 0; puDouble = 0;
   shakeAmt = 0; shakeTimer = 0; hitStop = 0;
   mej = mejorasBase(); mejorasElegidas = []; runLevel = 1; runXPAcc = 0;
@@ -2109,6 +2677,7 @@ function resumeGame() {
 }
 
 function endGame() {
+  if (victoriaEn > 0 && nivel) { ganarNivel(); return; }   // el jefe ya cayo
   stopMusic();
   state = 'dead';
   cancelAnimationFrame(raf);
@@ -2122,12 +2691,12 @@ function endGame() {
   try { window.DQAch && DQAch.flush && DQAch.flush(); } catch (e) {}
   const fs = $id('final-score'); if (fs) fs.textContent = Math.floor(score).toLocaleString();
   const fh = $id('final-hi'); if (fh) fh.textContent = 'HI-SCORE: ' + Math.floor(hiScore).toLocaleString();
-  const ds = $id('dead-stats'); if (ds) ds.innerHTML = `WAVE: ${wave} &nbsp; 🪙 ${sessionCoins} &nbsp; LVL: ${playerLevel}<br>COMBOS: ${comboCount} &nbsp; BOSSES: ${bossKilled}`;
+  const ds = $id('dead-stats'); if (ds) ds.innerHTML = `WAVE: ${wave} &nbsp; 🪙 ${sessionCoins} &nbsp; LVL: ${playerLevel}<br>COMBO MAX: ${comboMax} &nbsp; BOSSES: ${bossKilled}`;
   renderDeadNudge();
   const ov = $id('ov-dead'); if (ov) ov.classList.add('show');
   offerRevive();
   try {
-    DQE.onEndGame && DQE.onEndGame({ score: Math.floor(score), wave, level: playerLevel, coins: sessionCoins, bosses_killed: bossKilled, combos_max: comboCount });
+    DQE.onEndGame && DQE.onEndGame({ score: Math.floor(score), wave, level: playerLevel, coins: sessionCoins, bosses_killed: bossKilled, combos_max: comboMax, modo: nivel ? 'campana' : 'sinfin', nivel: nivel ? nivel.id : null });
   } catch (e) {}
 }
 
@@ -2269,6 +2838,15 @@ function ofrecerMejoras() {
 // estos datos ya estaban en memoria; solo había que decirlos.
 function nearMissLines() {
   const out = [];
+  if (nivel) {
+    const tot = nivel.oleadas * WAVE_FRAMES;
+    if (jefeInvocado) {
+      const j = enemies.find(x => x.jefe);
+      if (j) out.push('☠ Al jefe le quedaba un <b>' + Math.round(j.hp / j.maxHp * 100) + '%</b> de vida');
+    } else out.push('🏁 Te faltaron <b>' + Math.max(1, Math.ceil((tot - waveTimer) / 60)) + ' s</b> para acabar la etapa ' + nivel.id);
+    out.push('💡 Los avisos rojos del jefe dicen dónde va a golpear');
+    return out;
+  }
   const dHi = Math.ceil(hiScore - score);
   if (score < hiScore && dHi > 0 && dHi < Math.max(400, hiScore * .35)) {
     out.push('🎯 Te faltaron <b>' + dHi.toLocaleString() + '</b> pts para tu récord');
@@ -2277,7 +2855,7 @@ function nearMissLines() {
   if (nextWave) out.push('🌊 Llegaste a la wave <b>' + wave + '</b> — la <b>' + nextWave + '</b> está cerca');
   const seen = biomesSeen();
   if (seen < BIOMES.length) {
-    const nextBiomeWave = (Math.floor((wave - 1) / 5) + 1) * 5 + 1;
+    const nextBiomeWave = (Math.floor((wave - 1) / 3) + 1) * 3 + 1;
     out.push('⟡ Biomas descubiertos: <b>' + seen + '/' + BIOMES.length + '</b> — el siguiente en la wave ' + nextBiomeWave);
   }
   try {
@@ -2329,7 +2907,13 @@ function reviveGame() {
   saveProgress();
   PL.hp = Math.ceil(PL.maxHp * .6);
   PL.invTimer = 150;
-  enemies = []; bullets = [];
+  // El jefe se queda (antes se borraba con el resto y la partida quedaba
+  // atascada: bossActive seguia en true, la oleada congelada y la etapa sin
+  // final). Vuelve a su pausa y se aleja para dar un respiro.
+  enemies = enemies.filter(e => e.jefe && !e.muriendo);
+  enemies.forEach(e => { e.jefe.estado = 'pausa'; e.jefe.t = 90; e.x = PL.x < W / 2 ? W - e.w - 40 : 40; e.y = GROUND - e.h; });
+  bossActive = enemies.length > 0;
+  bullets = [];
   spawnPFX(PL.x + PL.w / 2, PL.y + PL.h / 2, '#ff00cc', 35, 7, 6);
   spawnFT(PL.x, PL.y - 30, '💖 REVIVIDO!', '#ff00cc', true);
   showPUNotif('💖 SEGUNDA OPORTUNIDAD — ¡dale con todo!');
@@ -2348,6 +2932,7 @@ function reviveGame() {
 
 function toMenu() {
   hideAll();
+  nivel = null;
   state = 'menu';
   arrancarAtraccion();
   cancelAnimationFrame(raf);
@@ -2363,6 +2948,7 @@ function hideAll() {
   // menu o de la siguiente partida.
   const od = $id('ov-descanso'); if (od) od.style.display = 'none';
   const om = $id('ov-mejora'); if (om) om.style.display = 'none';
+  ['ov-victoria', 'ov-niveles'].forEach(id => { const o = $id(id); if (o) o.style.display = 'none'; });
 }
 
 // ── INPUT ──
@@ -2378,11 +2964,11 @@ document.addEventListener('keydown', e => {
   if (e.code === 'Digit3') useItem(2);
   if (e.code === 'Digit4') useItem(3);
   if (e.code === 'KeyP' || e.code === 'Escape') { if (state === 'playing') pauseGame(); else if (state === 'paused') resumeGame(); }
-  if (e.code === 'Enter' && state === 'menu') startGame();
+  if (e.code === 'Enter' && state === 'menu') jugar();
 });
 document.addEventListener('keyup', e => { keys[e.code] = false; });
 cv.addEventListener('touchstart', e => { e.preventDefault(); jump(); }, { passive: false });
-cv.addEventListener('click', () => { if (state === 'menu') startGame(); else if (state === 'playing') attack(); });
+cv.addEventListener('click', () => { if (state === 'menu') jugar(); else if (state === 'playing') attack(); });
 
 // ══ CONTROLES TÁCTILES DE 3 ZONAS ══
 // El esquema anterior eran 5 botones en fila: el pulgar derecho tenia que

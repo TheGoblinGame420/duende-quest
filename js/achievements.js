@@ -16,6 +16,11 @@
     { id: 'kills1000', icon: '☠️', desc: '1,000 enemigos en total', reward: 200 },
     { id: 'combo10', icon: '🔥', desc: 'Combo x5 alcanzado',   reward: 30 },
     { id: 'rich', icon: '💰', desc: 'Junta 100 monedas en una partida', reward: 35 },
+    // Campaña: metas largas que se ven en el menu y dan razon para volver.
+    { id: 'bioma1', icon: '🐻', desc: 'Vence al OSO REY (etapa 1-3)', reward: 40 },
+    { id: 'bioma3', icon: '🌿', desc: 'Termina el tercer bioma (3-3)', reward: 90 },
+    { id: 'campana', icon: '👑', desc: 'Termina la campaña (5-3)', reward: 250 },
+    { id: 'estrellas45', icon: '⭐', desc: 'Consigue las 45 estrellas', reward: 400 },
   ];
   const META = LIST.reduce((m, a) => (m[a.id] = a, m), {});
 
@@ -61,6 +66,12 @@
     onWave(w) { if (w >= 5) this.unlock('wave5'); if (w >= 10) this.unlock('wave10'); if (w >= 20) this.unlock('wave20'); },
     onCombo(mult) { if (mult >= 5) this.unlock('combo10'); },
     onSessionCoins(c) { if (c >= 100) this.unlock('rich'); },
+    onEtapa(id, totalEstrellas) {
+      if (id === '1-3') this.unlock('bioma1');
+      if (id === '3-3') this.unlock('bioma3');
+      if (id === '5-3') this.unlock('campana');
+      if (totalEstrellas >= 45) this.unlock('estrellas45');
+    },
     list() { this._load(); return LIST.map(a => ({ ...a, done: !!this._done[a.id] })); },
 
     // Fila compacta de medallas en la pantalla de inicio: las conseguidas
