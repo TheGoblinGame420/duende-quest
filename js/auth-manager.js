@@ -155,6 +155,10 @@ async function _loadProfile(user) {
   const { data } = await _sb.from('profiles').select('*').eq('id', user.id).single();
   currentProfile = data;
   _updateMenuUI();
+  // Cloud save (game.html): progreso (monedas, nivel, racha, estrellas de
+  // campaña) que antes solo vivia en localStorage. currentProfile ya trae
+  // esas columnas de la misma consulta, sin round-trip extra.
+  try { if (typeof mergeCloudSaveWeb === 'function' && data) mergeCloudSaveWeb(data); } catch (e) {}
 }
 
 function _updateMenuUI() {

@@ -20,6 +20,35 @@ import {
 const MIN_PURCHASE_USD = 10;
 const MAX_WITHDRAW_USD_24H = 100;   // tope de retiros ton_sell por usuario y día
 const STAKE_LOCKS = { 7: 1, 30: 1.5, 90: 2.5 };
+const CAMPAIGN_STAR_LEVELS = 45;    // 5 biomas x 3 etapas x 3 estrellas — ver LEVELS en js/engine.js
+
+// Construye el patch del cloud save (compartido por Telegram y web): valores
+// cosméticos que manda el cliente, saneados con topes generosos para que un
+// cliente manipulado no pueda escribir basura ilimitada en la fila.
+function cloudSavePatch(body) {
+  const patch = {
+    dq_coins: Math.max(0, Math.min(10000000, Math.floor(+body.dq_coins || 0))),
+    dq_level: Math.max(1, Math.min(200, Math.floor(+body.dq_level || 1))),
+    dq_xp: Math.max(0, Math.min(1000000, Math.floor(+body.dq_xp || 0))),
+    streak_day: Math.max(0, Math.min(3650, Math.floor(+body.streak_day || 0))),
+    streak_last: String(body.streak_last || '').slice(0, 10),
+  };
+  if (typeof body.campaign_stars === 'string' && body.campaign_stars.length <= 4000) {
+    try {
+      const parsed = JSON.parse(body.campaign_stars);
+      const clean = {};
+      let n = 0;
+      for (const k of Object.keys(parsed)) {
+        if (n >= CAMPAIGN_STAR_LEVELS) break;
+        if (!/^[1-5]-[1-3]$/.test(k)) continue;
+        clean[k] = Math.max(0, Math.min(3, Math.floor(+parsed[k] || 0)));
+        n++;
+      }
+      patch.campaign_stars = clean;
+    } catch (e) { /* ignora estrellas mal formadas, no rompe el resto del guardado */ }
+  }
+  return patch;
+}
 
 // ── INTERRUPTORES DE EMERGENCIA ──
 // Para pausar una vía sin desplegar código: pon la variable de entorno
@@ -441,14 +470,21 @@ async function onRequestPost(context) {
       const user = await verifyInitData(body.init_data, env.BOT_TOKEN);
       if (!user?.id) return json(request, { error: 'auth_failed' }, 401);
       const tgId = String(user.id);
-      const patch = {
-        dq_coins: Math.max(0, Math.min(10000000, Math.floor(+body.dq_coins || 0))),
-        dq_level: Math.max(1, Math.min(200, Math.floor(+body.dq_level || 1))),
-        dq_xp: Math.max(0, Math.min(1000000, Math.floor(+body.dq_xp || 0))),
-        streak_day: Math.max(0, Math.min(3650, Math.floor(+body.streak_day || 0))),
-        streak_last: String(body.streak_last || '').slice(0, 10),
-      };
+      const patch = cloudSavePatch(body);
       await supabaseQuery(env, `profiles?telegram_id=eq.${tgId}`, { method: 'PATCH', body: patch });
+      return json(request, { success: true });
+    }
+
+    // ── CLOUD SAVE WEB: lo mismo que sync_progress pero para cuentas de la
+    // web (Supabase Auth), que hasta ahora no tenían ningun cloud save — el
+    // progreso (monedas del cofre, nivel/XP, racha, estrellas de campaña)
+    // solo vivia en localStorage del navegador y se perdia al cambiar de
+    // dispositivo o borrar datos del sitio. ──
+    if (action === 'web_sync_progress') {
+      const user = await verifySupabaseUser(env, body.access_token);
+      if (!user?.id) return json(request, { error: 'auth_failed' }, 401);
+      const patch = cloudSavePatch(body);
+      await supabaseQuery(env, `profiles?id=eq.${user.id}`, { method: 'PATCH', body: patch });
       return json(request, { success: true });
     }
 

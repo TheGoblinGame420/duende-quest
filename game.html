@@ -495,7 +495,7 @@ window.DQE = {
   getPlayerImgKey: () => { try { return getPlayerImgKey(); } catch (e) { return 'duende_hero'; } },
   onStartGame: () => { try { applyPendingInventory(); } catch (e) {} try { _webEnviarScorePendiente(); _webPedirTicket(); } catch (e) {} },
   loopTick: () => { try { refreshGamePrice(); } catch (e) {} },
-  onVictoria: () => { try { _webEnviarScorePendiente(); } catch (e) {} },
+  onVictoria: () => { try { _webEnviarScorePendiente(); } catch (e) {} try { webSyncProgressToCloud(); } catch (e) {} },
   onToMenu: () => { try { _webEnviarScorePendiente(); } catch (e) {} },
   onEndGame: stats => {
     if (stats.modo === 'sinfin') {
@@ -513,6 +513,7 @@ window.DQE = {
       webRunTicket = null;
       if (typeof reviveUsed === 'undefined' || reviveUsed || typeof totalCoins === 'undefined' || totalCoins < (typeof REVIVE_COST !== 'undefined' ? REVIVE_COST : 0)) _webEnviarScorePendiente();
     }
+    try { webSyncProgressToCloud(); } catch (e) {}
     // El ranking es del modo SIN FIN: una etapa de campaña dura 1-3 oleadas
     // y mezclarla en el ranking no compararia lo mismo.
     if (stats.modo !== 'sinfin') return;
@@ -556,6 +557,54 @@ function _webEnviarScorePendiente(){
   if(!webScorePendiente) return;
   const d=webScorePendiente; webScorePendiente=null;
   _walletApiWeb('web_submit_score',{score:Math.floor(d.score),wave:d.wave,coins:d.coins,run:d.run}).catch(()=>{});
+}
+
+// ══ CLOUD SAVE (cuenta web) ══
+// Antes el progreso (monedas del cofre, nivel/XP, racha, estrellas de
+// campaña) solo vivia en localStorage de ESTE navegador: cambiar de
+// dispositivo, borrar datos del sitio o probar en otro navegador lo perdia
+// todo. Mismo patron que ya tenia Telegram (telegram/index.html), aqui
+// portado a cuentas de Supabase Auth.
+function mergeCloudSaveWeb(p){
+  try{
+    let local={}; try{local=JSON.parse(localStorage.getItem('dq_save')||'{}');}catch(e){}
+    const cloudCoins=Number(p.dq_coins||0);
+    if(cloudCoins>Number(local.totalCoins||0)){
+      local.totalCoins=cloudCoins;
+      local.playerLevel=Math.max(Number(local.playerLevel||1),Number(p.dq_level||1));
+      local.playerXP=Math.max(Number(local.playerXP||0),Number(p.dq_xp||0));
+      localStorage.setItem('dq_save',JSON.stringify(local));
+      if(typeof loadProgress==='function'){loadProgress();typeof updateHUD==='function'&&updateHUD();}
+      if(typeof refreshCoinsHUD==='function')refreshCoinsHUD();
+      if(typeof showPUNotif==='function')showPUNotif('☁️ Progreso recuperado de la nube: '+cloudCoins.toLocaleString()+' DQ');
+    }
+    let ls=null; try{ls=JSON.parse(localStorage.getItem('dq_streak')||'null');}catch(e){}
+    const cDay=Number(p.streak_day||0), cLast=p.streak_last||'';
+    if(cLast&&cDay>(ls?.day||0)){
+      const today=new Date().toISOString().slice(0,10);
+      const yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10);
+      if(cLast===today){
+        localStorage.setItem('dq_streak',JSON.stringify({last:today,day:cDay}));
+      }else if(cLast===yesterday){
+        const day=(ls&&ls.last===today)?cDay+1:cDay;
+        const last=(ls&&ls.last===today)?today:cLast;
+        localStorage.setItem('dq_streak',JSON.stringify({last,day}));
+      }
+      if(window.DQStreak)DQStreak.check();
+    }
+    if(p.campaign_stars&&typeof leerCampana==='function'){
+      const cloudEst=p.campaign_stars,localEst=leerCampana();let cambio=false;
+      for(const k in cloudEst){ if(Number(cloudEst[k])>Number(localEst[k]||0)){ localEst[k]=cloudEst[k]; cambio=true; } }
+      if(cambio&&typeof guardarCampana==='function')guardarCampana(localEst);
+    }
+  }catch(e){console.warn('[CloudSave]',e);}
+}
+function webSyncProgressToCloud(){
+  if(!(currentUser&&currentUser.id)) return;
+  let streak={day:0,last:''};
+  try{streak=JSON.parse(localStorage.getItem('dq_streak')||'{}')||streak;}catch(e){}
+  const campaign_stars=typeof leerCampana==='function'?JSON.stringify(leerCampana()):'{}';
+  _walletApiWeb('web_sync_progress',{dq_coins:totalCoins,dq_level:playerLevel,dq_xp:playerXP,streak_day:streak.day||0,streak_last:streak.last||'',campaign_stars}).catch(()=>{});
 }
 
 async function pintarCanjeWeb(){

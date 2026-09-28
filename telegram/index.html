@@ -631,12 +631,19 @@ function mergeCloudSave(p){
       }
       if(window.DQStreak)DQStreak.check();
     }
+    // estrellas de campaña: por etapa se queda la mayor de las dos (nube o local)
+    if(p.campaign_stars&&typeof leerCampana==='function'){
+      const cloudEst=p.campaign_stars,localEst=leerCampana();let cambio=false;
+      for(const k in cloudEst){ if(Number(cloudEst[k])>Number(localEst[k]||0)){ localEst[k]=cloudEst[k]; cambio=true; } }
+      if(cambio&&typeof guardarCampana==='function')guardarCampana(localEst);
+    }
   }catch(e){console.warn('[CloudSave]',e);}
 }
 function syncProgressToCloud(){
   let streak={day:0,last:''};
   try{streak=JSON.parse(localStorage.getItem('dq_streak')||'{}')||streak;}catch(e){}
-  walletApi('sync_progress',{dq_coins:totalCoins,dq_level:playerLevel,dq_xp:playerXP,streak_day:streak.day||0,streak_last:streak.last||''}).catch(()=>{});
+  const campaign_stars=typeof leerCampana==='function'?JSON.stringify(leerCampana()):'{}';
+  walletApi('sync_progress',{dq_coins:totalCoins,dq_level:playerLevel,dq_xp:playerXP,streak_day:streak.day||0,streak_last:streak.last||'',campaign_stars}).catch(()=>{});
 }
 
 // ═══════════════════════════════════════
@@ -721,8 +728,16 @@ function initTonConnect(){
     // twaReturnUrl: dentro de Telegram, tras aprobar en la wallet (Tonkeeper,
     // Wallet...) hay que volver a la Mini App. Sin esto el usuario se quedaba
     // en la wallet y la conexion no llegaba nunca al juego.
+    // OJO: este bot abre el juego con botones "web_app" ad-hoc (ver
+    // functions/api/telegram-bot.js), no como Mini App con nombre corto
+    // registrado en BotFather (/newapp) — "t.me/duendequest_bot/app" no
+    // corresponde a nada real y Telegram no puede volver ahi. Se usa el link
+    // del bot a secas, que siempre existe: reabre el chat y desde ahi
+    // "JUGAR AHORA" vuelve al juego, donde TON Connect recupera la sesion ya
+    // aprobada (queda guardada del lado de la wallet, no depende de este
+    // link para completarse — el link solo trae de vuelta el foco al chat).
     tonUI=new TON_CONNECT_UI.TonConnectUI({manifestUrl:TON_MANIFEST,
-      actionsConfiguration:{twaReturnUrl:'https://t.me/duendequest_bot/app'}});
+      actionsConfiguration:{twaReturnUrl:'https://t.me/duendequest_bot'}});
     tonUI.onStatusChange(w=>{
       if(w){
         tonWalletAddr=TON_CONNECT_UI.toUserFriendlyAddress(w.account.address);
