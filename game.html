@@ -13,6 +13,10 @@
 <script src="js/auth-manager.js" defer></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
+/* Sin esto, todo el texto en rem (HUD, wallet, tiendas, perfil) se resolvia
+   contra los 16px por defecto del navegador: el HUD quedaba en 4,8-9,6px,
+   ilegible. Mismo bug que se encontro y corrigio en telegram/index.html. */
+html{font-size:22px;}
 html,body{width:100%;height:100%;overflow:hidden;background:#000;}
 body{display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:"Press Start 2P",monospace;}
 
@@ -391,11 +395,24 @@ body{display:flex;flex-direction:column;align-items:center;justify-content:cente
       <button class="ob purple" style="margin-top:.6rem;font-size:.38rem;padding:.5rem 1rem" onclick="connectPhantomFromWallet()">👻 CONECTAR PHANTOM</button>
     </div>
 
-    <!-- Próximamente -->
-    <div id="dq-coming">
-      🔜 PRÓXIMAMENTE<br>
-      $DUENDE token · Exchange DQ → SOL<br>
-      TON Connect · Telegram Mini App rewards
+    <!-- Canje DQ canjeable -> $DUENDE real (cuenta con sesión iniciada) -->
+    <div class="dq-card" style="border-color:rgba(0,255,136,.25)" id="dq-canje-card">
+      <div class="dq-card-title">CANJEAR DQ → $DUENDE</div>
+      <div id="dq-canje-sin-cuenta" style="display:none">
+        <div class="dq-sub">Inicia sesión para ver tu saldo canjeable y pedir un canje.</div>
+        <button class="ob purple" style="margin-top:.5rem;font-size:.38rem;padding:.5rem 1rem" onclick="closeWallet();handleAuthBtnClick()">👤 INICIAR SESIÓN</button>
+      </div>
+      <div id="dq-canje-con-cuenta" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <div class="dq-big" id="dq-canje-saldo" style="font-size:.65rem">0 DQ</div>
+          <div class="dq-sub" style="margin:0">canjeable</div>
+        </div>
+        <div class="dq-sub" style="margin-top:-.3rem">1,000 DQ = 1 $DUENDE · mínimo 5,000 DQ</div>
+        <input id="dq-canje-wallet" type="text" placeholder="Tu wallet de Solana" style="width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(0,255,136,.2);border-radius:3px;padding:.4rem;margin-top:.4rem;color:#fff;font-size:.5rem;font-family:monospace;word-break:break-all">
+        <input id="dq-canje-cantidad" type="number" step="1000" min="5000" placeholder="DQ a canjear" style="width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(0,255,136,.2);border-radius:3px;padding:.4rem;margin-top:.3rem;color:#fff;font-size:.5rem;font-family:monospace">
+        <button class="ob" style="margin-top:.5rem;width:100%;font-size:.38rem;padding:.5rem 1rem;background:linear-gradient(135deg,#00ff88,#00aa55);color:#000" onclick="enviarCanjeWeb()">🎁 SOLICITAR CANJE</button>
+        <div id="dq-canje-status" style="margin-top:.3rem;min-height:1.2rem;font-size:.4rem;line-height:1.6"></div>
+      </div>
     </div>
 
     <div style="display:flex;gap:.4rem;margin-top:.6rem;flex-wrap:wrap;justify-content:center">
@@ -471,8 +488,10 @@ window.DQE = {
   music: 'audio/bg_music.ogg',
   getSkinBuffs: () => { try { return webSkinBuffs || null; } catch (e) { return null; } },
   getPlayerImgKey: () => { try { return getPlayerImgKey(); } catch (e) { return 'duende_hero'; } },
-  onStartGame: () => { try { applyPendingInventory(); } catch (e) {} },
+  onStartGame: () => { try { applyPendingInventory(); } catch (e) {} try { _webEnviarScorePendiente(); _webPedirTicket(); } catch (e) {} },
   loopTick: () => { try { refreshGamePrice(); } catch (e) {} },
+  onVictoria: () => { try { _webEnviarScorePendiente(); } catch (e) {} },
+  onToMenu: () => { try { _webEnviarScorePendiente(); } catch (e) {} },
   onEndGame: stats => {
     if (stats.modo === 'sinfin') {
       const entry = { score: stats.score, wave: stats.wave, coins: stats.coins, date: new Date().toLocaleDateString() };
@@ -480,6 +499,15 @@ window.DQE = {
       localStorage.setItem('dq_rank', JSON.stringify(ranking));
     }
     showFomoMsg();
+    // El canje DQ->$DUENDE (arriba) tambien es solo del modo SIN FIN, igual
+    // que en Telegram. Si todavia puede revivir, se aplaza el envio: antes
+    // se mandaba aqui y el score conseguido tras revivir (pagando DQ) no
+    // llegaba nunca a acreditarse.
+    if (stats.modo === 'sinfin' && webRunTicket) {
+      webScorePendiente = { score: stats.score, wave: stats.wave, coins: stats.coins, run: webRunTicket };
+      webRunTicket = null;
+      if (typeof reviveUsed === 'undefined' || reviveUsed || typeof totalCoins === 'undefined' || totalCoins < (typeof REVIVE_COST !== 'undefined' ? REVIVE_COST : 0)) _webEnviarScorePendiente();
+    }
     // El ranking es del modo SIN FIN: una etapa de campaña dura 1-3 oleadas
     // y mezclarla en el ranking no compararia lo mismo.
     if (stats.modo !== 'sinfin') return;
@@ -492,6 +520,71 @@ window.DQE = {
 'use strict';
 // ── RANKING ──// ── RANKING ──
 let ranking=JSON.parse(localStorage.getItem('dq_rank')||'[]');
+
+// ══ CANJE DQ → $DUENDE (cuenta web) ══
+// Reconstruye en la web lo que se quito de la Mini App de Telegram por
+// cumplimiento (Blockchain Guidelines: solo tokens de TON dentro de una Mini
+// App). Aqui SI se puede: el jugador nunca deposita nada, solo cobra lo que
+// gano jugando, verificado por el servidor con el mismo sistema de ticket
+// firmado que usa Telegram (ver functions/api/wallet.js).
+async function _accessToken(){
+  try{ if(!window._sb) return null; const {data}=await window._sb.auth.getSession(); return data?.session?.access_token||null; }catch(e){ return null; }
+}
+async function _walletApiWeb(action,payload){
+  const token=await _accessToken();
+  if(!token) return {error:'auth_failed'};
+  try{
+    const r=await fetch('/api/wallet',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,access_token:token,...payload})});
+    return await r.json();
+  }catch(e){ return {error:'network'}; }
+}
+
+let webRunTicket=null, webScorePendiente=null;
+async function _webPedirTicket(){
+  webRunTicket=null;
+  if(typeof nivel!=='undefined'&&nivel) return;   // la campaña no acumula DQ canjeable, igual que en Telegram
+  if(!(await _accessToken())) return;              // sin cuenta, no hay a quien acreditarle
+  const r=await _walletApiWeb('web_start_run',{});
+  if(r&&r.run) webRunTicket=r.run;
+}
+function _webEnviarScorePendiente(){
+  if(!webScorePendiente) return;
+  const d=webScorePendiente; webScorePendiente=null;
+  _walletApiWeb('web_submit_score',{score:Math.floor(d.score),wave:d.wave,coins:d.coins,run:d.run}).catch(()=>{});
+}
+
+async function pintarCanjeWeb(){
+  const sinCuenta=document.getElementById('dq-canje-sin-cuenta');
+  const conCuenta=document.getElementById('dq-canje-con-cuenta');
+  const token=await _accessToken();
+  if(!token){ sinCuenta.style.display='block'; conCuenta.style.display='none'; return; }
+  sinCuenta.style.display='none'; conCuenta.style.display='block';
+  const r=await _walletApiWeb('web_my_data',{});
+  document.getElementById('dq-canje-saldo').textContent=Number((r&&r.dq_redeemable)||0).toLocaleString()+' DQ';
+  const walletInput=document.getElementById('dq-canje-wallet');
+  if(!walletInput.value && window._phantomPubkey) walletInput.value=window._phantomPubkey;
+  else if(!walletInput.value && typeof currentProfile!=='undefined' && currentProfile && currentProfile.wallet_solana) walletInput.value=currentProfile.wallet_solana;
+}
+
+async function enviarCanjeWeb(){
+  const statusEl=document.getElementById('dq-canje-status');
+  const wallet=(document.getElementById('dq-canje-wallet').value||'').trim();
+  const dq=Math.floor(+document.getElementById('dq-canje-cantidad').value||0);
+  statusEl.style.color='';
+  statusEl.textContent='⏳ Enviando...';
+  const r=await _walletApiWeb('web_redeem',{wallet_sol:wallet,dq_amount:dq});
+  if(!r||!r.success){
+    const m={bad_wallet:'Dirección Solana inválida',below_minimum:'Mínimo 5,000 DQ',bad_amount:'Usa múltiplos de 1,000 DQ',insufficient:(r&&r.detail)||'Saldo insuficiente',already_pending:'Ya tienes un canje pendiente — espera a que se pague',auth_failed:'Inicia sesión primero'};
+    statusEl.style.color='#ff3333';
+    statusEl.textContent='❌ '+(m[r&&r.error]||(r&&r.detail)||'Error');
+    return;
+  }
+  statusEl.style.color='#00ff88';
+  statusEl.textContent='✅ Canje pedido: recibirás '+r.duende+' $DUENDE en tu wallet (procesado a mano, unos días)';
+  document.getElementById('dq-canje-saldo').textContent=Number(r.new_balance||0).toLocaleString()+' DQ';
+  document.getElementById('dq-canje-cantidad').value='';
+}
+
 
 // ── DAILY MISSIONS (módulo compartido js/missions.js) ──
 DQMissions.onReward=m=>{ totalCoins+=m.reward; spawnFT(W/2-60,60,'🎯 +'+m.reward+' DQ','#ffe600',true); saveProgress(); };
@@ -690,15 +783,25 @@ async function webBuySkinSOL(skinId) {
   const statusEl = document.getElementById('web-skin-status');
 
   try {
-    statusEl.textContent = '⏳ Preparando transacción...';
+    // Patron "reference" de Solana Pay: el servidor decide el precio y crea
+    // una orden ANTES de pagar; el pago se verifica despues buscando esa
+    // referencia en la cadena, nunca confiando en lo que diga el cliente
+    // (antes, cualquiera que viera un pago ajeno en Solscan podia
+    // reclamarlo con solo mandar la misma firma y wallet).
+    statusEl.textContent = '⏳ Preparando orden...';
+    const ordenResp = await fetch('/api/helius-verify', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'create_sol_order', skin_id: skinId }),
+    });
+    const orden = await ordenResp.json();
+    if (!orden.success) { statusEl.textContent = '❌ ' + (orden.detail || orden.error || 'Error creando la orden'); return; }
+
     const connection = new solanaWeb3.Connection('https://api.mainnet-beta.solana.com');
     const fromPubkey = new solanaWeb3.PublicKey(phantomForSkins);
-    const toPubkey = new solanaWeb3.PublicKey(window.DUENDE_CFG.DEV_WALLET);
-    const lamports = Math.floor(skin.sol * solanaWeb3.LAMPORTS_PER_SOL);
-
-    const tx = new solanaWeb3.Transaction().add(
-      solanaWeb3.SystemProgram.transfer({ fromPubkey, toPubkey, lamports })
-    );
+    const toPubkey = new solanaWeb3.PublicKey(orden.dev_wallet);
+    const ix = solanaWeb3.SystemProgram.transfer({ fromPubkey, toPubkey, lamports: orden.lamports });
+    ix.keys.push({ pubkey: new solanaWeb3.PublicKey(orden.reference), isSigner: false, isWritable: false });
+    const tx = new solanaWeb3.Transaction().add(ix);
     tx.feePayer = fromPubkey;
     const { blockhash } = await connection.getLatestBlockhash();
     tx.recentBlockhash = blockhash;
@@ -708,20 +811,15 @@ async function webBuySkinSOL(skinId) {
     const txSig = signed.signature;
 
     statusEl.textContent = '⏳ Verificando on-chain con Helius...';
-    // Wait for confirmation
     await connection.confirmTransaction(txSig, 'confirmed');
 
-    // Verify via Helius backend
+    // El servidor busca el pago POR LA REFERENCIA, no por lo que diga esta
+    // llamada: aunque alguien mas dispare esta misma peticion, el credito va
+    // siempre a la wallet que de verdad pago (leida de la cadena).
     const verifyResp = await fetch('/api/helius-verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'verify_skin_purchase',
-        tx_signature: txSig,
-        skin_id: skinId,
-        wallet_address: phantomForSkins,
-        expected_sol: skin.sol,
-      }),
+      body: JSON.stringify({ action: 'verify_skin_purchase', reference: orden.reference }),
     });
     const result = await verifyResp.json();
 
@@ -786,6 +884,7 @@ function showWallet(){
     statusEl.textContent='Conecta tu wallet para recibir $DUENDE';
     statusEl.style.color='';
   }
+  pintarCanjeWeb();
   document.getElementById('ov-wallet').classList.add('show');
 }
 

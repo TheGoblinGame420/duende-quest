@@ -13,7 +13,7 @@
 // ═══════════════════════════════════════════════════════
 
 import {
-  getEnv, json, corsHeaders, supabaseQuery, verifyInitData, findTonPayment, tonDust, tonBucket, tonDustsValidos,
+  getEnv, json, corsHeaders, supabaseQuery, verifyInitData, verifySupabaseUser, findTonPayment, tonDust, tonBucket, tonDustsValidos,
   getDuendePriceUsd, getTonPriceUsd, SKIN_PRICES_USD,
 } from './lib.js';
 
@@ -486,6 +486,80 @@ async function onRequestPost(context) {
         body: { telegram_id: tgId, username: profiles?.[0]?.username || '', wallet_sol: wallet, dq_amount: dq, duende_amount: duende, status: 'pending' },
       });
       return json(request, { success: true, duende, dq, new_balance: newBalance });
+    }
+
+    // ══ CANJE DQ→$DUENDE PARA LA WEB (Supabase Auth, no Telegram) ══
+    // Mismo mecanismo (ticket firmado al empezar, limites de verosimilitud al
+    // terminar, accrue_dq/redeem_dq con tope) que la version de Telegram, pero
+    // identificando al jugador por su sesion de Supabase en vez de initData.
+    // "web:" en el ticket evita que uno de Telegram sirva aqui o al reves.
+    if (action === 'web_start_run') {
+      const user = await verifySupabaseUser(env, body.access_token);
+      if (!user?.id) return json(request, { error: 'auth_failed' }, 401);
+      const ts = Date.now();
+      return json(request, { success: true, run: ts + '.' + await firmarRun(env.BOT_TOKEN, 'web:' + user.id, ts) });
+    }
+
+    if (action === 'web_submit_score') {
+      const user = await verifySupabaseUser(env, body.access_token);
+      if (!user?.id) return json(request, { error: 'auth_failed' }, 401);
+      const uid = user.id;
+      const score = Math.max(0, Math.min(5000000, Math.floor(+body.score || 0)));
+      const wave = Math.max(1, Math.min(500, Math.floor(+body.wave || 1)));
+      const coins = Math.max(0, Math.min(100000, Math.floor(+body.coins || 0)));
+      const inicio = await leerRun(env.BOT_TOKEN, 'web:' + uid, body.run);
+      if (!inicio) return json(request, { error: 'bad_run' }, 400);
+      const seg = (Date.now() - inicio) / 1000;
+      if (seg < 15 || seg > 6 * 3600) return json(request, { error: 'implausible' }, 422);
+      if (wave > 1 + seg / 20 || score > 25000 * wave + 30000) return json(request, { error: 'implausible' }, 422);
+      let granted = 0;
+      try {
+        const day = new Date().toISOString().slice(0, 10);
+        const res = await supabaseQuery(env, 'rpc/accrue_dq_web', {
+          method: 'POST',
+          body: { p_user_id: uid, p_amount: plausibleDq(coins, wave), p_day: day, p_daily_cap: DQ_CAP_PER_DAY, p_run_ts: inicio },
+        });
+        granted = Number(Array.isArray(res) ? res[0] : res) || 0;
+      } catch (e) { console.error('[accrue_dq_web]', e); }
+      return json(request, { success: true, dq_granted: granted });
+    }
+
+    if (action === 'web_redeem') {
+      const user = await verifySupabaseUser(env, body.access_token);
+      if (!user?.id) return json(request, { error: 'auth_failed' }, 401);
+      const uid = user.id;
+      const wallet = String(body.wallet_sol || '').trim();
+      const dq = Math.floor(+body.dq_amount || 0);
+
+      if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(wallet)) return json(request, { error: 'bad_wallet', detail: 'Dirección Solana inválida' }, 400);
+      if (dq < DQ_MIN_REDEEM) return json(request, { error: 'below_minimum', detail: `Mínimo ${DQ_MIN_REDEEM.toLocaleString()} DQ` }, 400);
+      if (dq % DQ_PER_DUENDE !== 0) return json(request, { error: 'bad_amount', detail: `Múltiplos de ${DQ_PER_DUENDE} DQ` }, 400);
+
+      const open = await supabaseQuery(env, `redemptions?user_id=eq.${uid}&status=eq.pending&select=id&limit=1`);
+      if (Array.isArray(open) && open.length > 0) return json(request, { error: 'already_pending', detail: 'Ya tienes un canje pendiente' }, 409);
+
+      const rpc = await supabaseQuery(env, 'rpc/redeem_dq_web', { method: 'POST', body: { p_user_id: uid, p_dq: dq } });
+      const newBalance = Number(Array.isArray(rpc) ? rpc[0] : rpc);
+      if (!Number.isFinite(newBalance) || newBalance < 0) {
+        const profiles = await supabaseQuery(env, `profiles?id=eq.${uid}&select=dq_redeemable`);
+        const balance = Number(profiles?.[0]?.dq_redeemable || 0);
+        return json(request, { error: 'insufficient', detail: `Saldo canjeable: ${balance.toLocaleString()} DQ`, balance }, 400);
+      }
+
+      const duende = dq / DQ_PER_DUENDE;
+      const profiles = await supabaseQuery(env, `profiles?id=eq.${uid}&select=username`);
+      await supabaseQuery(env, 'redemptions', {
+        method: 'POST',
+        body: { user_id: uid, username: profiles?.[0]?.username || '', wallet_sol: wallet, dq_amount: dq, duende_amount: duende, status: 'pending' },
+      });
+      return json(request, { success: true, duende, dq, new_balance: newBalance });
+    }
+
+    if (action === 'web_my_data') {
+      const user = await verifySupabaseUser(env, body.access_token);
+      if (!user?.id) return json(request, { error: 'auth_failed' }, 401);
+      const profiles = await supabaseQuery(env, `profiles?id=eq.${user.id}&select=dq_redeemable&limit=1`);
+      return json(request, { success: true, dq_redeemable: Number(profiles?.[0]?.dq_redeemable || 0) });
     }
 
     return json(request, { error: 'unknown_action' }, 400);

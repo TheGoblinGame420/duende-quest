@@ -131,7 +131,28 @@ export async function getSolPriceUsd() {
     const p = parseFloat(d?.solana?.usd || 0);
     if (p > 0) return p;
   } catch (e) {}
-  return 170;
+  return null; // sin precio real no se cobra de menos por un valor fijo desfasado
+}
+
+// ── Sesion de la web (Supabase Auth) ──
+// Equivalente a verifyInitData pero para game.html/index.html, que no tienen
+// Telegram. El cliente manda el access_token de su propia sesion de
+// Supabase; se lo pasamos a Supabase Auth para que diga de quien es. No hace
+// falta ningun secreto nuevo: la apikey puede ser la de servicio que ya
+// tenemos, lo que decide la respuesta es el Bearer del USUARIO.
+export async function verifySupabaseUser(env, accessToken) {
+  try {
+    if (!accessToken) return null;
+    const r = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
+      headers: { apikey: env.SUPABASE_KEY, Authorization: `Bearer ${accessToken}` },
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!r.ok) return null;
+    const user = await r.json();
+    return user?.id ? user : null;
+  } catch (e) {
+    return null;
+  }
 }
 
 // ── Telegram WebApp initData verification (HMAC-SHA256) ──

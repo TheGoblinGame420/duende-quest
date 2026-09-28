@@ -1253,9 +1253,9 @@ footer{
     <button class="exc-btn exchange" id="exc-do-btn" onclick="excDoExchange()">🔄 CANJEAR $DUENDE POR DQ</button>
 
     <div class="exc-note">
-      ⚠ Este canje web está en desarrollo. Mientras tanto, compra y canjea
-      $DUENDE con TON o Stars desde <a href="https://t.me/duendequest_bot/app" target="_blank" style="color:var(--green)">la Mini App de Telegram</a>, que ya funciona.<br>
-      Los DQ se acreditan automáticamente a tu cuenta del juego
+      ⚠ Este canje ($DUENDE → DQ Points para la tienda) está en desarrollo.<br>
+      Para CANJEAR LO QUE GANAS JUGANDO por $DUENDE de verdad, entra a
+      <a href="game.html#wallet" style="color:var(--green)">tu wallet dentro del juego</a>.
     </div>
   </div>
 
@@ -1731,7 +1731,7 @@ function excDoExchange(){
   const val=parseFloat(document.getElementById('exc-duende-in').value)||0;
   if(val<=0){return;}
   const dq=Math.floor(val*RATE);
-  alert('⚠️ Este canje web está en desarrollo.\nRecibirías: '+dq.toLocaleString()+' DQ Points.\nMientras tanto, usa la Mini App de Telegram (t.me/duendequest_bot/app), que ya compra y canjea $DUENDE de verdad.');
+  alert('⚠️ Este canje (gastar $DUENDE para comprar DQ) está en desarrollo.\nRecibirías: '+dq.toLocaleString()+' DQ Points.\nSi lo que quieres es CANJEAR LO QUE GANAS JUGANDO por $DUENDE real, entra a tu wallet dentro del juego (game.html).');
 }
 
 // MOUSE PARALLAX en hero
