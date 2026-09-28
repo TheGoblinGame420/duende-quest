@@ -12,3 +12,9 @@ directory = "."
 # fuera un archivo devolvia 500 (error 1101) en vez del fallback SPA.
 binding = "ASSETS"
 not_found_handling = "single-page-application"
+# Sin esto, Cloudflare sirve los archivos estaticos (index.html, engine.js,
+# tonconnect-manifest.json...) DIRECTO desde su cache, sin pasar por
+# worker.js: las cabeceras de seguridad que se añaden ahi solo llegaban a
+# aparecer en rutas que no existen (el unico caso que SI cae al Worker por
+# defecto). Con run_worker_first, toda peticion pasa primero por worker.js.
+run_worker_first = true
