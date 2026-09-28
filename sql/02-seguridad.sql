@@ -101,6 +101,34 @@ BEGIN
 END $$;
 
 
+-- ── A5. ton_sell: retirar solo a una wallet registrada hace >24h ──
+-- Hoy ton_sell manda el TON a body.wallet_ton, que pone el CLIENTE en cada
+-- peticion. Un initData robado (vale 6h) bastaba para retirar a la wallet del
+-- atacante en el momento: conectar su propia wallet y pedir el retiro, todo
+-- en la misma sesion robada. wallet_ton_actualizado se pone sola (trigger, no
+-- la puede falsificar el cliente) cada vez que cambia wallet_ton; el Worker
+-- exige que tenga mas de 24h antes de dejar retirar a ella.
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS wallet_ton_actualizado TIMESTAMPTZ;
+
+CREATE OR REPLACE FUNCTION public.marcar_wallet_ton_actualizada()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY INVOKER
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  IF NEW.wallet_ton IS DISTINCT FROM OLD.wallet_ton THEN
+    NEW.wallet_ton_actualizado := now();
+  END IF;
+  RETURN NEW;
+END $$;
+
+DROP TRIGGER IF EXISTS trg_marcar_wallet_ton ON public.profiles;
+CREATE TRIGGER trg_marcar_wallet_ton
+  BEFORE UPDATE ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.marcar_wallet_ton_actualizada();
+
+
 -- ═══════════════════════════════════════════════════════
 -- PASO B — SOLO DESPUÉS DE DESPLEGAR EL CÓDIGO NUEVO
 -- ═══════════════════════════════════════════════════════

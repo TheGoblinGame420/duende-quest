@@ -29,3 +29,8 @@ tools
 
 # Packs de terceros sin integrar (material de origen, ~21 MB): no se sirven
 recursos
+
+# _headers es una convencion de Cloudflare PAGES; este sitio es un Worker con
+# Static Assets y no la lee (las cabeceras se ponen a mano en worker.js). Si
+# alguna vez vuelve a crearse por costumbre, que al menos no se sirva publico.
+_headers

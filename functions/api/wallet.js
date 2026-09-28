@@ -212,7 +212,20 @@ async function onRequestPost(context) {
       const tgId = String(user.id);
       const tokens = Math.floor(parseFloat(body.tokens) || 0);
       if (tokens <= 0) return json(request, { error: 'invalid_amount' }, 400);
-      if (!body.wallet_ton) return json(request, { error: 'missing_wallet' }, 400);
+
+      // El destino del retiro es SIEMPRE profiles.wallet_ton, nunca el del
+      // body: antes se mandaba a body.wallet_ton (lo que pusiera el cliente
+      // en esa peticion), asi que un initData robado (vale 6h) bastaba para
+      // retirar a la wallet del atacante conectandola en el momento. Ademas
+      // se exige que llevara >=24h registrada (wallet_ton_actualizado, que
+      // solo mueve un trigger — el cliente no puede adelantarlo).
+      const perfilW = await supabaseQuery(env, `profiles?telegram_id=eq.${tgId}&select=wallet_ton,wallet_ton_actualizado&limit=1`);
+      const walletTon = perfilW?.[0]?.wallet_ton || '';
+      const actualizada = perfilW?.[0]?.wallet_ton_actualizado;
+      if (!walletTon) return json(request, { error: 'missing_wallet', detail: 'Conecta y guarda tu wallet TON desde WALLET antes de retirar' }, 400);
+      if (!actualizada || Date.now() - Date.parse(actualizada) < 24 * 3600000) {
+        return json(request, { error: 'wallet_too_new', detail: 'Tu wallet TON debe llevar al menos 24h conectada antes de poder retirar a ella' }, 403);
+      }
 
       const [tonUsd, duendeUsd] = await Promise.all([getTonPriceUsd(true), getDuendePriceUsd(true)]);
       if (!tonUsd || !duendeUsd) return json(request, { error: 'price_unavailable' }, 503);
@@ -247,7 +260,7 @@ async function onRequestPost(context) {
       await supabaseQuery(env, 'withdrawal_requests', {
         method: 'POST',
         body: {
-          telegram_id: tgId, wallet_ton: body.wallet_ton, tokens_burned: tokens,
+          telegram_id: tgId, wallet_ton: walletTon, tokens_burned: tokens,
           ton_amount: +(usd / tonUsd).toFixed(6), usd_value: +usd.toFixed(2), status: 'pending',
         },
       });
