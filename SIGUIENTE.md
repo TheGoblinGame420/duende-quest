@@ -161,6 +161,50 @@ seguridad de esta sesión midió on-chain 3-4 holders reales y ~$2.000 de
 capitalización. Es una decisión de negocio, no la toqué, pero está muy lejos
 de lo real.
 
+## Tercera tanda (misma noche) — commits aplicados, revisión independiente y goblin animado
+
+Se aplicaron los 6 commits de las dos tandas anteriores a `master` (rama
+`campana-seguridad-hub-telegram`, fusionada localmente; **sin `git push`
+todavía** — falta ejecutar el PASO A del SQL primero, ver arriba). Un agente
+revisor auditó los 6 commits ya aplicados y encontró 2 cosas reales,
+corregidas:
+
+- **`_headers` no hacía nada.** Es una convención de Cloudflare *Pages*; este
+  sitio es un Worker con Static Assets (`[assets]` en `wrangler.toml`), que
+  no lo lee. Las cabeceras de seguridad (incluido el CORS del manifiesto de
+  TON Connect, que sin esto pudo no funcionar) estaban en un archivo muerto
+  y además publicado. Movidas a `worker.js`, envolviendo `env.ASSETS.fetch`.
+  El archivo `_headers` se borró.
+- Un sprite del pack `recursos/jefes/ansimuz-grotto-dragon` traía un
+  `patreon-license.txt` que contradice el CC0 declarado por el mismo autor
+  en OGA. No se usaba en ningún sitio y no se servía, pero se quitó del todo
+  para no dejar ambigüedad en el repo.
+
+También se cerró el pendiente nº4 de abajo: **`ton_sell` ahora retira
+siempre a `profiles.wallet_ton`** (nunca al que mande el cliente en el
+body) **y exige que lleve ≥24 h fijada** (`wallet_ton_actualizado`, que
+mueve un trigger — el cliente no puede adelantarlo). Antes, un `initData`
+robado (vale 6 h) bastaba para conectar la wallet del atacante y retirar en
+el momento. Requiere el bloque A5 de `sql/02-seguridad.sql` (mismo Paso A).
+
+**Enemigo "normal" con animación real** (`js/engine.js` + `tools/generar_enemigos_cc0.py`,
+CC0 de Goblin Corps/Moikmellah): antes era un bitmap estático deformado por
+código; ahora tiene ciclo de caminar (6 frames), daño (2) y muerte (2) de
+verdad. Sirve de prueba de que SÍ encaja el pixel art de baja resolución
+integrado a escala (con `imageSmoothingEnabled=false` no hace falta
+reescalar el PNG, el motor ya dibuja nítido) — contradice la nota del punto
+5 de abajo, que decía que "chocaba" con el detalle actual: probado, no
+choca. Los demás tipos (charger/exploder/ghost/flyer/magmar/boss) siguen
+con su bitmap propio; el tinte de élite y el resto del motor funcionan
+igual sobre la hoja nueva sin cambios adicionales.
+
+Verificado: partidas simuladas en varias etapas sin errores, la muerte por
+hoja de animación tenía un bug real (doble aplastado: el frame de KO del
+artista YA es un cuerpo colapsado, y el código le aplicaba ADEMÁS su propio
+aplastamiento — el enemigo se volvía invisible 1-2 px). Corregido en
+`animEnemigo()`: los enemigos con `e.sheet` se saltan el aplastado por
+código en la muerte (usan solo el fade de alpha).
+
 ## Pendiente
 
 1. **Probar en un móvil real** dentro de Telegram (sobre todo el flujo de pago
@@ -172,9 +216,10 @@ de lo real.
    1-5 USD. **Decisión del dueño**, no se tocó.
 3. **Quitar lo cripto de la Mini App** (comprar $DUENDE, exchange, staking):
    las Blockchain Guidelines de Telegram lo prohíben. Solo web.
-4. `ton_sell`: tope diario y retiro solo a wallet registrada hace >48 h
-   (hoy un initData robado permite pedir retiro a cualquier wallet).
-5. Integrar más packs de `recursos/` (ver `recursos/INDICE.md`). Ojo: los
-   enemigos CC0 son pixel art de baja resolución y chocan con el detalle de
-   los enemigos actuales; los tilesets de ansimuz sí encajarían como fondos.
+4. ~~`ton_sell`: tope diario y retiro solo a wallet registrada hace >48 h~~
+   — hecho esta tanda (24 h, ver arriba).
+5. Integrar más packs de `recursos/` (ver `recursos/INDICE.md`). El goblin
+   normal (arriba) demuestra que el pixel art de baja resolución SÍ encaja
+   escalado; quedan por probar los tilesets Tiled (GothicVania, Rocky Pass)
+   como niveles reales y el resto del bestiario (esqueletos, seta, jefe).
 6. Términos de servicio y privacidad (`ESTRATEGIA-TOKEN.md`).
