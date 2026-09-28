@@ -1,7 +1,0 @@
-Boss Dragon (Grotto Escape 2) - FRAMES
-PNG/spritesheets/*.png: tiras de 1 fila, celda 144x64 px.
-idle.png 864x64 -> 6 frames
-breath.png 1008x64 -> 7 frames (aliento de fuego / ataque a distancia)
-tail.png 1152x64 -> 8 frames (coletazo / ataque cuerpo a cuerpo)
-Frames sueltos en PNG/sprites/{idle,breath,tail}/. Sin animacion de muerte: usar FX de enemy-death escalado o flash por codigo.
-Proyectil sugerido: enemigos/ansimuz-sideview-fantasy/Grotto-escape-2-FX fire-ball (3 frames 52x29).

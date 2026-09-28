@@ -2,7 +2,7 @@
 
 Descargados el 2026-09-28. **Todo es CC0 (dominio público)**: uso comercial permitido y sin atribución obligatoria. Cada carpeta tiene su `LICENCIA.txt` (fuente, autor, URL de la licencia) y, si trae sprites animados, un `FRAMES.txt` con el tamaño de frame y las animaciones para cortarlos.
 
-Total aproximado: **21 MB, 14 packs**.
+Total aproximado: **20,5 MB, 13 packs**.
 
 > **OJO, antes de publicar:** esta carpeta NO está todavía en `.assetsignore`, así que el Worker la serviría en público. Hay que agregar `recursos` a `.assetsignore` y copiar a `assets/` solo lo que se integre.
 
@@ -28,7 +28,6 @@ Total aproximado: **21 MB, 14 packs**.
 | Enemigos | Sideview Fantasy Collection (sprites) | ansimuz | CC0 | `enemigos/ansimuz-sideview-fantasy/` (4,1 MB) | Varía: seta 63×37, rana 42×38, lagarto 64×32, serpiente ~27×20, fantasma 64×64, pájaro 32×32, dragón volador 192×176 | seta y rana → **selva/amanecer**; lagarto y serpiente → **desierto**; fantasma → **noche**; pájaro → cualquiera | La seta que escupe gas es un buen enemigo de área. **Trae FX de corte (slash horizontal, ascendente y circular)** que le quedan perfectos a la katana, además de explosión de muerte, fuego y electricidad (sirve para **tormenta**). El dragón volador sirve de mini-jefe. |
 | Enemigos | Big Mushroom | Scratchio | CC0 | `enemigos/scratchio-big-mushroom/` (46 KB) | 29×28 (ataque 40×18) | **selva**, **amanecer** | Animaciones completas: aparecer, caminar, daño, morir y esconderse. Incluye una versión invertida (sirve de variante élite) y la paleta. Muy pequeño: escalar x6. |
 | Enemigos | 2D Platformer Enemies | Ashuuya | CC0 | `enemigos/ashuuya-platformer-enemies/` (30 KB) | murciélago 127×138, fantasma 75×138, esqueleto 138×138, slime 74×86, araña 138×138 | murciélago y araña → **noche**/**selva**; slime → **amanecer** | **Es el único a resolución parecida a la del juego**, pero es otro estilo (pintado, casi sin píxel visible) y solo trae el ciclo de movimiento, sin ataque ni muerte. Sirve de relleno o prototipo. |
-| Jefe | Grotto Escape 2 Boss Dragon | ansimuz | CC0 (ver nota) | `jefes/ansimuz-grotto-dragon/` (490 KB) | **144×64** | **desierto** o **tormenta** | Idle (6), aliento de fuego (7) y coletazo (8). Viene con un `patreon-license.txt` antiguo que lo limita a mecenas, pero el autor lo publicó explícitamente como CC0 en OGA dentro de esta colección. Detalles en `LICENCIA.txt`. |
 | UI | 496 pixel art RPG icons | Henrique Lazarini (7Soul1) | CC0 | `ui/7soul1-496-rpg-icons/` (2,2 MB) | 34×34 aprox. | Tienda, cofres, inventario, skins | Espadas y katanas (`W_Sword*`), armaduras, pociones, gemas, pergaminos y skills. Estilo RPG clásico, más detallado que el resto. El recopilador quitó los iconos derivados de juegos con copyright. |
 
 ## Asignación sugerida por bioma
@@ -36,7 +35,7 @@ Total aproximado: **21 MB, 14 packs**.
 | Bioma | Tiles/fondo | Enemigos de oleada | Jefe |
 |---|---|---|---|
 | amanecer | Sunny Land (o Kenney) | goblins peasant/soldier, zarigüeya, rana, Big Mushroom | dragón volador (`sunny-dragon`) |
-| desierto | Rocky Pass | goblins assassin/samurai, lagarto, serpiente | Boss Dragon |
+| desierto | Rocky Pass | goblins assassin/samurai, lagarto, serpiente | (sin candidato CC0 propio aún) |
 | noche | GothicVania Cemetery | esqueletos (rise/walk), fantasmas, hell-gato, MV skeleton | ángel oscuro (Church) |
 | selva | GothicVania Swamp | araña, "thing", seta de gas, goblins | goblin battleLord (escalado) |
 | tormenta | GothicVania Church + Castle twilight | ghoul en llamas, MV skeleton ensangrentado, goblin mage | mago (Church) |

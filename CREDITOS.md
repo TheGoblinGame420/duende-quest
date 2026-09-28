@@ -31,6 +31,17 @@ Se usan 5 efectos, unidos en tiras por `tools/generar_fx.py` (`assets/fx/`):
 corte_h, corte_arriba y corte_giro (los tres golpes del combo), muerte y
 rayo (el arma CHISPA).
 
+## Enemigo "normal" animado
+
+**Goblin Corps (MV Platformer set)** — Moikmellah. Licencia CC0.
+https://opengameart.org/content/goblin-corps-mv-platformer-set
+
+Se usa la variante `soldier`, recortada a las dos filas que hacen falta
+(caminar + daño/muerte) por `tools/generar_enemigos_cc0.py`
+(`assets/enemigos/sheets/goblin_normal.png`). Sustituye al bitmap estatico
+deformado por codigo que llevaba el enemigo "normal" desde el principio del
+proyecto.
+
 ## Fondos parallax de los biomas
 
 **GothicVania Cemetery**, **GothicVania Swamp** y **GothicVania Rocky Pass** —

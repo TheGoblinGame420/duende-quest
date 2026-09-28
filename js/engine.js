@@ -80,6 +80,7 @@ const IMG = {
   enemy: _AB + 'enemigos/enemy.png',
   enemy2: _AB + 'enemigos/enemy2.png',
   enemy_magmar: _AB + 'enemigos/enemy_magmar.png',
+  sh_goblin_normal: _AB + 'enemigos/sheets/goblin_normal.png',
   coin: _AB + 'ui/coin.png',
   item_potion: _AB + 'items/item_potion.png',
   item_shield: _AB + 'items/item_shield.png',
@@ -221,14 +222,18 @@ function animEnemigo(e) {
     return a;
   }
 
-  // MUERTE: se aplasta contra el suelo girando y se desvanece.
+  // MUERTE: se aplasta contra el suelo girando y se desvanece. Los enemigos
+  // con hoja de animacion (e.sheet) ya tienen su propio frame de KO dibujado
+  // por el artista (un cuerpo colapsado): aplicarles ADEMAS este aplastado
+  // por codigo comprimia dos veces y el sprite acababa en 1-2 px, invisible.
   if (e.muriendo > 0) {
     const k = 1 - e.muriendo / 16;
+    a.alpha = 1 - k;
+    if (e.sheet) return a;
     a.escalaY = 1 - k * .8;
     a.escalaX = 1 + k * .45;
     a.giro = k * (e.facing < 0 ? -.5 : .5);
     a.dy = k * e.h * .4;
-    a.alpha = 1 - k;
     return a;
   }
 
@@ -339,6 +344,46 @@ function tintedSprite(key, hex) {
 // jugador no podía leer de un vistazo qué le venía encima. El color coincide
 // con el de sus partículas de muerte, así que el tinte también predice el
 // efecto. Boss y magmar ya tienen sprite propio y se dejan sin teñir.
+// ── HOJAS DE ANIMACION (sprite sheets) ──
+// El enemigo "normal" era un solo bitmap deformado por codigo para simular
+// caminar/recibir daño/morir. goblin_normal.png (CC0, Goblin Corps de
+// Moikmellah — ver CREDITOS.md) trae un ciclo de verdad: fila 0 = idle (col
+// 0) + caminar (col 1-6), fila 1 = daño (col 1-2) + muerte/KO (col 6-7).
+// Cada celda mide 32x64 pero el goblin solo ocupa la mitad inferior (es una
+// hoja de estilo "RPG Maker"): por eso la escala se calcula contra la altura
+// real del dibujo (idealAltoPx), no contra la celda entera.
+const SHEETS = {
+  goblin_normal: {
+    fw: 32, fh: 64, idealAltoPx: 33, altoObjetivo: 70,
+    filaMov: 0, colMovIni: 1, nMov: 6,
+    filaGolpe: 1, colGolpeIni: 1, nGolpe: 2,
+    colMuerteIni: 6, nMuerte: 2,
+  },
+};
+function sheetFrame(e, s) {
+  if (e.muriendo > 0) {
+    const k = 1 - e.muriendo / 16;
+    const i = Math.min(s.nMuerte - 1, Math.floor(k * s.nMuerte));
+    return { fila: s.filaGolpe, col: s.colMuerteIni + i };
+  }
+  if (e.flashTimer > 0) {
+    const i = Math.floor((10 - e.flashTimer) / 5) % s.nGolpe;
+    return { fila: s.filaGolpe, col: s.colGolpeIni + i };
+  }
+  const i = Math.floor(frame / 6) % s.nMov;
+  return { fila: s.filaMov, col: s.colMovIni + i };
+}
+// Dibuja en el sistema local ya trasladado a los pies del enemigo (origen en
+// (0,0) = pies, igual que el resto de drawSpr en este bucle). El tamaño en
+// pantalla depende de altoObjetivo, no de la caja de colision: la hoja
+// conserva su proporcion 32:64 en vez de estirarse al hitbox.
+function drawSheet(img, s, f) {
+  if (!img || !img.naturalWidth) return;
+  const escala = s.altoObjetivo / s.idealAltoPx;
+  const dh = s.fh * escala, dw = s.fw * escala;
+  cx.drawImage(img, f.col * s.fw, f.fila * s.fh, s.fw, s.fh, -dw / 2, -dh, dw, dh);
+}
+
 function enemyTint(e) {
   if (e.elite) return e.elite.color;
   if (e.tinte) return e.tinte;
@@ -849,6 +894,10 @@ function spawnEnemy(forceBoss = false) {
        : isMagmar  ? Math.min(3.0, gameSpeed * .62)
        :             Math.min(3.5, gameSpeed * .78 + Math.random() * .3),
     type: isBoss ? 'boss' : isFlyer ? 'flyer' : isCharger ? 'charger' : isExploder ? 'exploder' : isGhost ? 'ghost' : isMagmar ? 'magmar' : 'normal',
+    // El "normal" es el enemigo mas visto de largo (sin afijo, aparece desde
+    // la oleada 1): es el que mas rentaba pasar de bitmap deformado a un
+    // ciclo de animacion de verdad.
+    sheet: (!isBoss && !isFlyer && !isCharger && !isExploder && !isGhost && !isMagmar) ? 'goblin_normal' : null,
     isExploder, isGhost, ghostTimer: 0, ghostAlpha: 1,
     isFlyer, isBoss, isCharger, isMagmar,
     flashTimer: 0, bobTimer: Math.random() * Math.PI * 2,
@@ -2234,10 +2283,17 @@ function draw() {
     cx.translate(e.x + e.w / 2 + an.dx, pies + an.dy);
     cx.rotate(an.giro);
     cx.scale((e.facing > 0 ? 1 : -1) * an.escalaX, an.escalaY);
-    drawSpr(variant ? tintedSprite(key, variant) : IMG_EL[key], { x: -e.w / 2, y: -e.h, w: e.w, h: e.h });
-    if (e.flashTimer > 0) {
-      cx.globalAlpha = ghostA * Math.min(1, e.flashTimer / 8);
-      drawSpr(whiteSprite(key), { x: -e.w / 2, y: -e.h, w: e.w, h: e.h });
+    if (e.sheet) {
+      const sh = SHEETS[e.sheet], imgKey = 'sh_' + e.sheet;
+      drawSheet(variant ? tintedSprite(imgKey, variant) : IMG_EL[imgKey], sh, sheetFrame(e, sh));
+      // Sin destello blanco encima: el propio frame de daño de la hoja ya
+      // comunica el golpe, y superponer los dos se leia como un parpadeo raro.
+    } else {
+      drawSpr(variant ? tintedSprite(key, variant) : IMG_EL[key], { x: -e.w / 2, y: -e.h, w: e.w, h: e.h });
+      if (e.flashTimer > 0) {
+        cx.globalAlpha = ghostA * Math.min(1, e.flashTimer / 8);
+        drawSpr(whiteSprite(key), { x: -e.w / 2, y: -e.h, w: e.w, h: e.h });
+      }
     }
     cx.restore();
     if (e.muriendo > 0) return;
