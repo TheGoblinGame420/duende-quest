@@ -1,0 +1,7 @@
+Enemigos/jefes incluidos en GothicVania Church - FRAMES
+SPRITES/burning-ghoul/spritesheet/v1/burning-ghoul.png 456x60 -> 8 frames 57x60 (zombie en llamas, caminar) ; v2 912x60 -> 16 frames 57x60
+SPRITES/wizard/spritesheet/wizard.png 1215x66 -> 15 frames 81x66 (idle 5 + lanzar fuego 10)  => MINI-JEFE mago
+SPRITES/angel/spritesheet/angel.png 1106x234 -> rejilla 9x2 de 122x117 (11 frames: idle 8 + ataque 3) => JEFE angel oscuro
+SPRITES/fx/fireball 3 frames 26x26 ; fx/enemy-death 9 frames 81x66
+SPRITES/player/spritesheet/player.png 1106x180 -> 13x3 de 82x60 (36 frames; heroe caballero, NO se usa, referencia)
+Tiles: ENVIRONMENT/tileset.png 336x224 (tiles 16x16). backgrounds.png 624x192 (capas parallax).

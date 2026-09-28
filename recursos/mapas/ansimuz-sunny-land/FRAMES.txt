@@ -1,0 +1,7 @@
+Enemigos incluidos en Sunny Land - FRAMES (PNG/spritesheets, tiras 1 fila)
+oposum.png 216x28 -> 6 frames 36x28 (zarigueya corriendo)
+eagle-attack.png 160x41 -> 4 frames 40x41 (aguila en picada)
+frog-idle.png 140x32 -> 4 frames 35x32 ; frog-jump.png 105x32 -> 3 celdas 35x32 (2 frames reales en PNG/sprites/frog/jump)
+enemy-deadth.png 240x41 -> 6 frames 40x41 (explosion de muerte)
+items: cherry 7x(15x21), gem 5x(15x13)
+Mapa Tiled: mapa-demo/maps/map.json (58x25 tiles de 16x16) con mapa-demo/environment/tileset.png.

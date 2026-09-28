@@ -1,0 +1,4 @@
+Enemigos incluidos en GothicVania Swamp - FRAMES (frames sueltos en Sprites/)
+Spider/walk: 4 frames 32x21 ; Thing/walk thing: 4 frames 33x45 ; Ghost/Flying: 4 frames 31x44
+Enemy-Death/Explosion: 6 frames 39x49 ; Fire: 2 frames 25x6
+Tiles: Evironment/tileset.png 336x112 (tiles 16x16) + trees.png, props.png, background + 2 capas medias para parallax.

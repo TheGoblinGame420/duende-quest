@@ -1,0 +1,12 @@
+Sideview Fantasy (ansimuz) - FRAMES
+Tiras horizontales de 1 fila. frame = ancho_total / n_frames. Tambien hay frames sueltos en PNG/sprites/.
+enemy-ghost/PNG/transparent-*.png: 384x64 -> 6 frames de 64x64 (flotar)
+flying-bird/sprites/*.png: 224x32 -> 7 frames de 32x32 (volar)
+Grotto-escape-2-lizzard/PNG/spritesheets (celda 64x32): idle 4, walk 6, run 6, jump 3, hurt 3, tongue(ataque) 5
+Grotto-escape-2-snake/PNG/spritesheets: idle 80x20 -> 4x(20x20); walk 108x20 -> 4x(27x20); hurt 72x20 -> 3x(24x20); shoot 108x21 -> 4x(27x21); jump 408x25 -> 6x(68x25); attack 1 frame 28x15; spit 2x(7x5); spring 3x(14x32)
+sunny-bunny/PNG: idle 96x42 -> 4x(24x42); run 204x44 -> 6x(34x44); jump 425x57 -> 5x(85x57)
+sunny-froggy/PNG: walk 420x38 -> 10x(42x38); taunting 212x42 -> 4x(53x42); jump 1344x80 -> 7x(192x80)
+sunny-mushroom/PNG/spritesheets: walk 410x30 -> 10 frames (41x30, frames sueltos de tamano variable en sprites/walking); breath 630x37 -> 10x(63x37) (ataque de gas); breath-no-gas 252x37 -> 4x(63x37); gas-alone 378x37 -> 6x(63x37); jump 1296x64 -> 9x(144x64)
+sunny-dragon/PNG/spritesheets/sunny-dragon-fly.png: 1728x176 -> 9x(192x176) (dragon volador grande: sirve de MINI-JEFE)
+Grotto-escape-2-FX/PNG/spritesheets (efectos, utiles para la katana): slash-horizontal 5x(65x40), slash-upward 5x(52x56), slash-circular 6x(52x48), enemy-death 7x(64x64), energy-smack 8x(128x96), electro-shock 9x(128x96), energy-shield 8x(51x47), fire-ball 3x(52x29)
+Faltan en general animaciones de 'muerte' por enemigo: usar Grotto-escape-2-FX/enemy-death como explosion comun.

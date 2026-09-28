@@ -26,3 +26,6 @@ dist-test
 
 # Herramientas de assets: material de origen y scripts, no se sirven
 tools
+
+# Packs de terceros sin integrar (material de origen, ~21 MB): no se sirven
+recursos

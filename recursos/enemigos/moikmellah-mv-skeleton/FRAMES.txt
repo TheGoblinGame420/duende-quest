@@ -1,0 +1,8 @@
+MV Platformer Skeleton - FRAMES
+skeletonBase.png y bloodSkeletonBase.png: 320x640 = rejilla 10 col x 10 filas, celda 32x64 px. Solo filas 0-5 tienen dibujo.
+Misma convencion del set 'MV Platformer' de Moikmellah (ver Goblin Corps/frameGuide.png):
+Fila 0 (10): idle + ciclo de caminar + inicio de salto
+Fila 1 (10): agachado / dano / poses de transicion
+Fila 2-4 (10 c/u): ataques (vertical, horizontal, jab) en distintas variantes
+Fila 5: col 1-5 = caida, dano en aire y KO (esqueleto tirado en el suelo)
+(La asignacion exacta por celda debe confirmarse visualmente; la rejilla 32x64 si es exacta.)

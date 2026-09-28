@@ -1,0 +1,9 @@
+Goblin Corps - FRAMES
+Todas las hojas (full/*.png, base.png, hats/, outfits/) miden 320x256 = rejilla de 10 columnas x 4 filas, celda 32x64 px, sin margen.
+Guia oficial: frameGuide.png. Mirando a la derecha.
+Fila 0: col 0 = Idle (1) | col 1-6 = Walk (6) | col 7-9 = Jump (3)
+Fila 1: col 0 = Stand (1) | col 1-2 = Dano alto / hurt (2) | col 3-5 = Dano en el aire (3) | col 6-7 = KO / muerte (2, cuerpo en el suelo) | col 8-9 vacias
+Fila 2: col 0-3 = Golpe vertical (4) | col 4-6 = Golpe horizontal (3) | col 7-8 = Jab/Punch (2) | col 9 = Guardia (1)
+Fila 3: misma estructura que la fila 2 (variante de los golpes: segunda capa/continuacion; comparar con goblinAnimPreview.gif)
+Variantes listas (full/): assassin, battleLord, centurion, guard, knight, lord, mage, peasant, samurai, soldier.
+Capas sueltas para componer: base.png + outfits/ + hats/ (misma rejilla). weapons/: sword 96x32 (3 frames 32x32), hammer 160x32 (5 frames 32x32), dagger 8x8.

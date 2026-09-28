@@ -1,0 +1,9 @@
+Pack: Castle Platformer ("working title" assets)
+Autor: Jetrel
+Fuente: https://opengameart.org/content/castle-platformer
+Licencia: CC0 1.0 Universal (dominio publico) - https://creativecommons.org/publicdomain/zero/1.0/
+Fecha de descarga: 2026-09-28
+Atribucion obligatoria: NO (CC0). Credito recomendado en CREDITOS.md: "Castle Platformer ("working title" assets) - Jetrel".
+
+Notas:
+El zip original no trae archivo de licencia; la licencia CC0 esta declarada en la pagina de OpenGameArt subida por el propio autor. preview-oga.png es la captura publicada en esa pagina.

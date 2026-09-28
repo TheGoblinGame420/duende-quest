@@ -1,0 +1,10 @@
+Pack: GothicVania Cemetery Pack
+Autor: Luis Zuno (@ansimuz)
+Fuente: https://opengameart.org/content/gothicvania-cemetery-pack
+Licencia: CC0 1.0 Universal (dominio publico) - https://creativecommons.org/publicdomain/zero/1.0/
+Fecha de descarga: 2026-09-28
+Atribucion obligatoria: NO (CC0). Credito recomendado en CREDITOS.md: "GothicVania Cemetery Pack - Luis Zuno (@ansimuz)".
+
+Notas:
+public-license.txt del autor: dominio publico, uso comercial permitido.
+SE ELIMINARON los sonidos/musica de la demo (musica de Pascal Belisle con licencia distinta que exige credito) y el codigo Phaser.

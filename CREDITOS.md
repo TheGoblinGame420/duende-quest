@@ -22,6 +22,33 @@ https://kenney.nl/assets/particle-pack
 Se usan 3 de las 200 texturas, reescaladas de 512×512 a 64×64 (`assets/fx/`):
 halo, chispa y humo.
 
+## Efectos de corte, muerte y descarga
+
+**Sideview Fantasy Collection** (FX de Grotto Escape 2) — ansimuz. Licencia CC0.
+https://opengameart.org/content/sideview-fantasy-collection
+
+Se usan 5 efectos, unidos en tiras por `tools/generar_fx.py` (`assets/fx/`):
+corte_h, corte_arriba y corte_giro (los tres golpes del combo), muerte y
+rayo (el arma CHISPA).
+
+## Fondos parallax de los biomas
+
+**GothicVania Cemetery**, **GothicVania Swamp** y **GothicVania Rocky Pass** —
+ansimuz. Licencia CC0.
+https://opengameart.org/users/ansimuz
+
+`tools/generar_fondos_cc0.py` compone sus capas en `assets/fondos/`: noche
+(cementerio), selva (pantano), desierto (cañón), y amanecer y tormenta
+recoloreados a partir de los mismos. Sustituyen a las siluetas que generaba
+`tools/generar_parallax.py`.
+
+## Packs descargados y aún sin integrar
+
+`recursos/` guarda 14 packs CC0 más (mapas Tiled, enemigos animados, un jefe
+dragón, iconos). No se publican (`recursos` está en `.assetsignore`). El
+detalle de cada uno, con autor, URL y licencia, está en `recursos/INDICE.md`.
+Al integrar cualquiera, añadirlo a este archivo.
+
 ---
 
 ## Lo que NO se usó, y por qué
@@ -44,7 +71,7 @@ declarada la interpretación por defecto es "todos los derechos reservados".
 
 ## Assets generados por código
 
-Las capas de parallax (`assets/fondos/`) no vienen de ningún pack: las genera
-`tools/generar_parallax.py` con la paleta exacta del array `BIOMES` del motor.
-Se hizo así a propósito, para que encajen con los colores del juego en vez de
-traer los de otro artista.
+Hasta el 28-sep-2026 las capas de parallax las generaba
+`tools/generar_parallax.py` con la paleta del array `BIOMES`. Se sustituyeron
+por los fondos CC0 de ansimuz (arriba), que tienen detalle de pixel art real;
+el script antiguo se conserva por si se quiere volver.

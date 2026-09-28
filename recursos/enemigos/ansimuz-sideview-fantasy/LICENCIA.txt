@@ -1,0 +1,10 @@
+Pack: Sideview Fantasy Patreon Collection (solo carpeta Sprites, sin el dragon jefe)
+Autor: Luis Zuno (@ansimuz)
+Fuente: https://opengameart.org/content/sideview-fantasy-patreon-collection
+Licencia: CC0 1.0 Universal (dominio publico) - https://creativecommons.org/publicdomain/zero/1.0/
+Fecha de descarga: 2026-09-28
+Atribucion obligatoria: NO (CC0). Credito recomendado en CREDITOS.md: "Sideview Fantasy Patreon Collection (solo carpeta Sprites, sin el dragon jefe) - Luis Zuno (@ansimuz)".
+
+Notas:
+Pagina de OGA: CC0 y 'They are free to use in whatever you want. Credit is not required'.
+No se copiaron los Environments del pack (fondos de lava, niebla, etc.; ~8 MB) para mantener el tamano; se pueden bajar de la misma URL si hacen falta.

@@ -1,0 +1,9 @@
+Pack: 2D Platformer Enemies
+Autor: Ashuuya
+Fuente: https://opengameart.org/content/2d-platformer-enemies
+Licencia: CC0 1.0 Universal (dominio publico) - https://creativecommons.org/publicdomain/zero/1.0/
+Fecha de descarga: 2026-09-28
+Atribucion obligatoria: NO (CC0). Credito recomendado en CREDITOS.md: "2D Platformer Enemies - Ashuuya".
+
+Notas:
+Licencia declarada en la pagina de OGA. Se bajaron los 5 spritesheets sueltos (no hay zip).

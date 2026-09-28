@@ -1,0 +1,7 @@
+2D Platformer Enemies (Ashuuya) - FRAMES (1 fila cada uno, solo ciclo de movimiento)
+plat_bat_spritesheet.png 381x138 -> 3 frames 127x138 (volar)
+plat_ghost_spritesheet.png 150x138 -> 2 frames 75x138 (flotar)
+plat_skeleton_spritesheet.png 552x138 -> 4 frames 138x138 (caminar)
+plat_slime_spritesheet.png 296x86 -> 4 frames 74x86 (saltar/rebotar)
+plat_spider_spritesheet.png 828x138 -> 6 frames 138x138 (colgar/bajar/caminar)
+Sin ataque, dano ni muerte: habria que resolverlo por codigo (flash + desintegrar), como ya hace el motor.

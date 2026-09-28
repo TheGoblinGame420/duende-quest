@@ -1,0 +1,10 @@
+Big Mushroom - FRAMES (tiras horizontales, celda 29x28 salvo el ataque)
+Big Mushroom_Walk.png 174x28 -> 6 frames 29x28
+Big Mushroom_Hurt.png 29x28 -> 1 frame
+Big Mushroom_Die.png 174x28 -> 6 frames
+Big Mushroom_Spawnpng.png 232x28 -> 8 frames (sale del suelo)
+Big Mushroom_De Spawn.png 116x28 -> 4 frames (se esconde)
+Big Mushroom_Single.png 29x28 -> idle estatico
+Attack.png 520x18 -> 13 frames de 40x18 (proyectil/esporas)
+'Big Mushroom Inverse/': misma hoja con paleta invertida (variante de color / elite).
+*Palette.png: paletas de 11 y 3 colores (utiles para recolorear por bioma).

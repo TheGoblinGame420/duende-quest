@@ -1,0 +1,8 @@
+Enemigos incluidos en GothicVania Cemetery - FRAMES (frames sueltos en PNG/Sprites/<enemigo>/)
+skeleton / skeleton-clothed: 8 frames de 44x52 (caminar)
+skeleton-rise / skeleton-rise-clothed: 6 frames de 44x52 (sale de la tumba -> ideal para spawn de oleada)
+ghost / ghost-halo: 4 frames 37x65 (flotar)
+hell-gato: 4 frames 96x53 (perro/gato infernal corriendo)
+enemy-death: 5 frames 44x52
+Tambien hay atlas empaquetado en mapa-demo/atlas/atlas.png + atlas.json (formato TexturePacker JSON hash).
+Mapa Tiled: mapa-demo/maps/map.json (300x14 tiles de 16x16; capas Collisions/Back/Main; tilesets tileset.png y objects.png).

@@ -1,0 +1,9 @@
+Pack: 496 pixel art icons for medieval/fantasy RPG
+Autor: Henrique Lazarini (7Soul1); recopilado por gnola14
+Fuente: https://opengameart.org/content/496-pixel-art-icons-for-medievalfantasy-rpg
+Licencia: CC0 1.0 Universal (dominio publico) - https://creativecommons.org/publicdomain/zero/1.0/
+Fecha de descarga: 2026-09-28
+Atribucion obligatoria: NO (CC0). Credito recomendado en CREDITOS.md: "496 pixel art icons for medieval/fantasy RPG - Henrique Lazarini (7Soul1); recopilado por gnola14".
+
+Notas:
+La recopilacion quito los iconos derivados de juegos con copyright para que todo sea dominio publico. Iconos 34x34 aprox. (armas W_*, armaduras A_*, items I_*, pociones P_*, skills S_*, etc.).
