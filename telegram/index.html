@@ -11,7 +11,7 @@
 <script src="../js/missions.js"></script>
 <script src="../js/streak.js"></script>
 <script src="../js/achievements.js"></script>
-<script src="https://unpkg.com/@tonconnect/ui@2/dist/tonconnect-ui.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tonconnect/ui@2/dist/tonconnect-ui.min.js"></script>
 <script src="../js/config.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -117,6 +117,88 @@ body{display:flex;flex-direction:column;align-items:center;font-family:"Press St
 #ov-girar{display:none;position:fixed;inset:0;z-index:999;background:#050510;color:#00ff88;text-align:center;align-items:center;justify-content:center;font-size:14px;line-height:2.4;}
 #ov-girar span{font-size:9px;color:rgba(255,255,255,.45);}
 @media (orientation:landscape) and (max-height:520px){#ov-girar{display:flex;}}
+
+/* ── Tamaño base ──
+   Todos los textos pequeños estaban en rem (.22rem-.4rem) pensando en una raiz
+   grande, pero la raiz era la del navegador (16 px): salian de 3,5 a 6,4 px,
+   ilegibles en un movil. Con 24 px de raiz pasan a 5,3-9,6 px, y lo nuevo usa px. */
+html{font-size:24px;}
+/* Pantallas encima del juego: fondo OPACO (antes se transparentaba el juego). */
+.ov{background:#050510;}
+
+/* ── MENU EN PESTAÑAS ── */
+#ov-start{justify-content:flex-start;padding:0;overflow:hidden;}
+#hub{width:100%;max-width:480px;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:0 14px calc(88px + env(safe-area-inset-bottom,0px));}
+#hub-top{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:10px;padding:10px 0;
+  background:#050510;border-bottom:1px solid rgba(0,255,136,.15);margin-bottom:12px;cursor:pointer;}
+.hub-av,.perfil-av{border-radius:50%;background:linear-gradient(135deg,#7c3aed,#00ff88);display:flex;
+  align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;}
+.hub-av{width:38px;height:38px;font-size:18px;}
+.hub-av img,.perfil-av img{width:100%;height:100%;object-fit:cover;}
+.hub-nombre{font-size:11px;color:#00ff88;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hub-mini{font-size:8px;color:rgba(255,255,255,.45);line-height:1.8;}
+.hub-dq{font-size:11px;color:#ffe600;white-space:nowrap;}
+.hub-logo{font-size:20px;color:#00ff88;text-align:center;text-shadow:3px 3px 0 #000,0 0 18px rgba(0,255,136,.4);margin:6px 0 14px;}
+.tab{display:none;flex-direction:column;align-items:stretch;gap:10px;}
+.tab.on{display:flex;}
+.tab .ob{margin:0;width:100%;}
+.ob.big{font-size:16px;min-height:62px;}
+.ob.azul{background:linear-gradient(135deg,#00b4d8,#0077b6);color:#fff;}
+.ob.verde{background:linear-gradient(135deg,#00ff88,#00aa55);color:#000;}
+.ob.gris{background:rgba(255,255,255,.08);color:#fff;box-shadow:none;border:1px solid rgba(255,255,255,.15);}
+.fila2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.fila2 .ob{font-size:11px;padding:12px 6px;}
+.card{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:12px;}
+.card:empty{display:none;}
+.tab-titulo{font-size:18px;text-align:center;text-shadow:3px 3px 0 #000;margin-top:4px;}
+.hub-sub{font-size:8px;color:rgba(255,255,255,.5);text-align:center;line-height:2;}
+.estado{font-size:9px;color:#c084fc;text-align:center;min-height:14px;line-height:1.8;}
+.addr{font-size:9px;color:#0098ea;word-break:break-all;line-height:1.8;margin-top:4px;}
+/* Los modulos compartidos (misiones, logros, racha) escriben con rem: aqui se
+   fuerza un minimo legible. */
+#daily-missions,#achievements-panel,#streak-banner{font-size:9px;line-height:1.8;}
+#daily-missions *,#achievements-panel *,#streak-banner *{font-size:max(1em,8px)!important;}
+#achievements-panel span[title]{font-size:18px!important;}
+
+/* Perfil */
+.perfil-cab{display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:4px;}
+.perfil-av{width:84px;height:84px;font-size:38px;box-shadow:0 0 24px rgba(0,255,136,.35);}
+.perfil-nombre{font-size:15px;color:#00ff88;text-align:center;}
+.xp-bar{width:80%;height:8px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden;}
+.xp-bar div{height:100%;width:0;background:linear-gradient(90deg,#7c3aed,#c084fc);}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.stat{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 8px;text-align:center;}
+.stat b{display:block;font-size:13px;color:#fff;margin-bottom:6px;font-weight:normal;}
+.stat span{font-size:7px;color:rgba(255,255,255,.45);letter-spacing:.05em;}
+
+/* Skins */
+#skins-grid{display:flex;flex-direction:column;gap:10px;}
+.skin{display:flex;gap:10px;align-items:center;background:rgba(255,255,255,.035);border:2px solid rgba(255,255,255,.1);border-radius:10px;padding:10px;}
+.skin img{width:72px;height:72px;image-rendering:pixelated;object-fit:contain;border-radius:6px;background:#0a0a1a;flex-shrink:0;}
+.skin .n{font-size:11px;margin-bottom:6px;}
+.skin .d{font-size:8px;color:rgba(255,255,255,.5);line-height:1.7;}
+.skin .b{font-size:8px;color:#00ff88;margin-top:4px;line-height:1.7;}
+.skin .p{font-size:8px;color:#ffe600;margin-top:4px;line-height:1.7;}
+.skin .acc{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
+.skin button{font-family:"Press Start 2P",monospace;font-size:9px;min-height:36px;padding:6px 10px;border-radius:6px;cursor:pointer;}
+
+/* Ranking */
+.rk{display:flex;align-items:center;gap:8px;padding:10px;border-radius:8px;background:rgba(255,255,255,.03);font-size:10px;margin-bottom:6px;}
+.rk.yo{background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.4);}
+.rk .pos{width:34px;color:rgba(255,255,255,.45);}
+.rk .nom{flex:1;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rk .sc{color:#00ff88;}
+.rk .wv{color:rgba(255,255,255,.35);font-size:8px;width:34px;text-align:right;}
+
+/* Barra de pestañas */
+#tabbar{position:fixed;left:0;right:0;bottom:0;z-index:45;display:grid;grid-template-columns:repeat(5,1fr);
+  background:#0a0a1a;border-top:2px solid rgba(0,255,136,.3);padding-bottom:env(safe-area-inset-bottom,0px);}
+#tabbar button{background:none;border:none;color:rgba(255,255,255,.45);font-family:"Press Start 2P",monospace;font-size:7px;
+  display:flex;flex-direction:column;align-items:center;gap:5px;padding:9px 0 10px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+#tabbar button span{font-size:20px;filter:grayscale(1);opacity:.6;}
+#tabbar button.on{color:#00ff88;}
+#tabbar button.on span{filter:none;opacity:1;}
 </style>
 </head>
 <body>
@@ -124,7 +206,7 @@ body{display:flex;flex-direction:column;align-items:center;font-family:"Press St
 
 <!-- TG HEADER -->
 <div id="tg-header">
-  <div class="tg-user" id="tg-user-box" onclick="showProfile()" style="cursor:pointer">
+  <div class="tg-user" id="tg-user-box" onclick="showOverlay('ov-start');irTab('perfil')" style="cursor:pointer">
     <div class="tg-avatar" id="tg-avatar">🧝</div>
     <div>
       <div class="tg-name" id="tg-name">Conectando…</div>
@@ -138,24 +220,107 @@ body{display:flex;flex-direction:column;align-items:center;font-family:"Press St
 <div id="game-area">
   <!-- OVERLAYS -->
   <div class="ov show" id="ov-start">
-    <div class="ov-title" style="color:#00ff88">🧝 DUENDE QUEST</div>
-    <div class="ov-sub">⚔ TOCA PARA SALTAR · BOTONES ABAJO<br>COMBOS · DASH · ITEMS · BOSSES</div>
-    <div id="start-rank-list" style="width:100%;max-width:320px;margin-bottom:.8rem"></div>
-    <div id="streak-banner" style="width:100%;max-width:320px;font-size:.3rem;padding:.4rem .7rem;background:rgba(255,153,0,.05);border:1px solid rgba(255,153,0,.18);border-radius:3px;margin-bottom:.4rem;line-height:1.6"></div>
-    <div id="daily-missions" style="width:100%;max-width:320px;background:rgba(255,230,0,.04);border:1px solid rgba(255,230,0,.15);border-radius:3px;padding:.5rem .7rem;margin-bottom:.4rem"></div>
-    <div id="achievements-panel" style="width:100%;max-width:320px;background:rgba(255,179,64,.04);border:1px solid rgba(255,179,64,.15);border-radius:3px;padding:.5rem .7rem;margin-bottom:.6rem"></div>
-    <button class="ob" id="btn-jugar" onclick="startGame()">▶ JUGAR</button>
-    <button class="ob purple" onclick="openPumpFun()">🚀 COMPRAR $DUENDE</button>
-    <button class="ob" onclick="openSkinShop()" style="background:linear-gradient(135deg,#c084fc,#7c3aed);color:#fff;font-size:.45rem">🎨 SKINS SHOP</button>
-    <div style="display:flex;gap:.3rem;margin-top:.5rem;flex-wrap:wrap;justify-content:center">
-      <button class="ob yellow" onclick="showStarsShop()" style="font-size:.4rem">⭐ COMPRAR STARS</button>
-      <button class="ob" onclick="toggleTonWallet()" style="font-size:.4rem;background:linear-gradient(135deg,#0088cc,#005580);color:#fff">💎 TON WALLET</button>
-      <button class="ob" onclick="openExchange()" style="font-size:.4rem;background:linear-gradient(135deg,#00eeff,#0088aa);color:#000">🔄 EXCHANGE</button>
-      <button class="ob" onclick="openRedeem()" style="font-size:.4rem;background:linear-gradient(135deg,#00ff88,#00aa55);color:#000">🎁 CANJEAR DQ</button>
-      <button class="ob purple" onclick="showOverlay('ov-staking')" style="font-size:.4rem">⚡ STAKING</button>
-      <button class="ob" onclick="showOverlay('ov-donate')" style="font-size:.35rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);box-shadow:none;color:rgba(255,255,255,.5)">💚 DONAR SOL</button>
+    <!-- ══ MENU EN PESTAÑAS ══
+         Antes era una columna de 10 botones sin PERFIL ni RANKING (el ranking
+         solo se veia al morir), con textos de 5 px y un fondo transparente
+         que dejaba ver el juego detras. Ahora: 5 pestañas fijas abajo, cada
+         una con su pantalla completa. -->
+    <div id="hub">
+      <div id="hub-top">
+        <div class="hub-av" id="hub-avatar" onclick="irTab('perfil')">🧝</div>
+        <div style="flex:1;min-width:0" onclick="irTab('perfil')">
+          <div class="hub-nombre" id="hub-nombre">Invitado</div>
+          <div class="hub-mini" id="hub-nivel">NIVEL 1</div>
+        </div>
+        <div class="hub-dq" id="hub-dq">🪙 0</div>
+      </div>
+
+      <!-- JUGAR -->
+      <section class="tab on" id="tab-jugar">
+        <div class="hub-logo">🧝 DUENDE QUEST</div>
+        <div class="card" id="hub-campana"></div>
+        <button class="ob big" id="btn-jugar" onclick="jugar()">▶ JUGAR</button>
+        <div class="fila2">
+          <button class="ob azul" onclick="abrirMapa()">🗺 MAPA</button>
+          <button class="ob" id="btn-sinfin" onclick="jugarSinFin()" style="background:linear-gradient(135deg,#ff3cf0,#7c3aed);color:#fff">∞ SIN FIN</button>
+        </div>
+        <div class="card" id="streak-banner"></div>
+        <div class="card" id="daily-missions"></div>
+        <div class="card" id="achievements-panel"></div>
+      </section>
+
+      <!-- PERFIL -->
+      <section class="tab" id="tab-perfil">
+        <div class="perfil-cab">
+          <div class="perfil-av" id="perfil-avatar">🧝</div>
+          <div class="perfil-nombre" id="perfil-nombre">Invitado</div>
+          <div class="hub-mini" id="perfil-user"></div>
+          <div class="xp-bar"><div id="perfil-xp"></div></div>
+          <div class="hub-mini" id="perfil-nivel">NIVEL 1</div>
+        </div>
+        <div class="stats" id="perfil-stats"></div>
+        <div class="card" id="perfil-skin"></div>
+        <div class="card" id="perfil-wallet"></div>
+        <button class="ob" onclick="invitarAmigos()" style="background:linear-gradient(135deg,#1da1f2,#0077b5);color:#fff">👥 INVITAR AMIGOS</button>
+        <button class="ob verde" onclick="openRedeem()">🎁 CANJEAR DQ</button>
+        <button class="ob gris" onclick="abrirWeb()">🌐 WEB OFICIAL</button>
+        <div class="hub-mini" id="perfil-sync" style="text-align:center;margin-top:6px"></div>
+      </section>
+
+      <!-- SKINS -->
+      <section class="tab" id="tab-skins">
+        <div class="tab-titulo" style="color:#c084fc">🎨 SKINS</div>
+        <div class="hub-sub">Cada skin tiene su sprite y su color de corte propio. Paga con ⭐ Stars o 💎 TON.</div>
+        <div id="skins-grid"></div>
+        <p id="skin-status" class="estado"></p>
+      </section>
+
+      <!-- RANKING -->
+      <section class="tab" id="tab-ranking">
+        <div class="tab-titulo" style="color:#ffe600">🏆 RANKING</div>
+        <div class="hub-sub">Modo SIN FIN · el mejor score de cada jugador. Premio semanal para el top.</div>
+        <div id="rank-hub"></div>
+        <button class="ob" id="btn-sinfin2" onclick="jugarSinFin()" style="background:linear-gradient(135deg,#ff3cf0,#7c3aed);color:#fff">∞ JUGAR SIN FIN</button>
+      </section>
+
+      <!-- WALLET -->
+      <section class="tab" id="tab-wallet">
+        <div class="tab-titulo" style="color:#0098ea">💎 WALLET</div>
+        <div class="card">
+          <div id="ton-status" class="hub-sub" style="margin:0 0 10px">Conecta tu wallet TON para comprar skins y $DUENDE</div>
+          <div id="ton-connect-panel">
+            <button class="ob big" onclick="connectTonWallet()" style="background:linear-gradient(135deg,#0098ea,#005f99);color:#fff">💎 CONECTAR WALLET TON</button>
+            <div class="hub-mini" style="text-align:center;margin-top:6px">Tonkeeper · Wallet de Telegram · MyTonWallet</div>
+          </div>
+          <div id="ton-connected-panel" style="display:none">
+            <div class="hub-mini">Wallet conectada</div>
+            <div id="ton-addr" class="addr"></div>
+            <p class="hub-sub" style="margin:8px 0">1 TON = <span id="ton-duende-rate" style="color:#00ff88">---</span> $DUENDE</p>
+            <input type="number" class="donate-input" id="ton-amount-input" min="1" step="0.5" placeholder="1.0">
+            <p id="ton-preview" class="estado">Ingresa cantidad en TON</p>
+            <button class="ob" onclick="sendTonPayment()" style="background:linear-gradient(135deg,#0098ea,#005f99);color:#fff">💎 COMPRAR $DUENDE CON TON</button>
+            <button class="ob gris" onclick="disconnectTon()">🔌 DESCONECTAR</button>
+          </div>
+        </div>
+        <button class="ob yellow" onclick="showStarsShop()">⭐ COMPRAR CON STARS</button>
+        <div class="fila2">
+          <button class="ob" onclick="openExchange()" style="background:linear-gradient(135deg,#00eeff,#0088aa);color:#000">🔄 EXCHANGE</button>
+          <button class="ob verde" onclick="openRedeem()">🎁 CANJEAR DQ</button>
+        </div>
+        <button class="ob purple" onclick="openPumpFun()">🚀 $DUENDE EN PUMP.FUN</button>
+        <div class="card" id="wallet-precio"><span class="hub-mini">Precio $DUENDE</span><div id="hub-precio" style="color:#c084fc;font-size:12px;margin-top:4px">---</div></div>
+      </section>
     </div>
+
+    <nav id="tabbar">
+      <button data-tab="jugar" class="on" onclick="irTab('jugar')"><span>🎮</span>JUGAR</button>
+      <button data-tab="perfil" onclick="irTab('perfil')"><span>👤</span>PERFIL</button>
+      <button data-tab="skins" onclick="irTab('skins')"><span>🎨</span>SKINS</button>
+      <button data-tab="ranking" onclick="irTab('ranking')"><span>🏆</span>RANKING</button>
+      <button data-tab="wallet" onclick="irTab('wallet')"><span>💎</span>WALLET</button>
+    </nav>
   </div>
+
 
   <div class="ov" id="ov-dead">
     <div class="ov-title" style="color:#ff3333">💀 GAME OVER</div>
@@ -165,7 +330,8 @@ body{display:flex;flex-direction:column;align-items:center;font-family:"Press St
     <div class="fomo-msg" id="fomo-death-msg" style="display:none"></div>
     <button class="ob" onclick="shareScore()" style="background:linear-gradient(135deg,#1da1f2,#0077b5);color:#fff">📣 COMPARTIR MI SCORE</button>
     <div style="display:flex;gap:.4rem;flex-wrap:wrap;justify-content:center">
-      <button class="ob" onclick="startGame()">▶ REINTENTAR</button>
+      <button class="ob" onclick="reintentar()">▶ REINTENTAR</button>
+      <button class="ob" onclick="abrirMapa()" style="background:rgba(255,255,255,.1);color:#fff">🗺 MAPA</button>
       <button class="ob purple" onclick="showOverlay('ov-rank')">🏆 RANKING</button>
       <button class="ob yellow" onclick="showStarsShop()" style="font-size:.4rem">⭐ COMPRAR</button>
     </div>
@@ -207,14 +373,6 @@ body{display:flex;flex-direction:column;align-items:center;font-family:"Press St
     <p style="font-size:.3rem;color:rgba(255,255,255,.4);text-align:center;margin-bottom:.6rem;line-height:2">Paga con tarjeta via Telegram Stars<br>Precio: <span id="stars-price" style="color:#00ff88">---</span></p>
     <div id="stars-packages" style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:8px;margin-bottom:1rem"></div>
     <p id="stars-status" style="font-size:.3rem;color:#ffe600;min-height:1rem;text-align:center"></p>
-    <button class="ob red" onclick="toMenu()" style="font-size:.38rem;margin-top:.5rem">← VOLVER</button>
-  </div>
-
-  <div class="ov" id="ov-skins">
-    <div class="ov-title" style="color:#c084fc">🎨 SKINS SHOP</div>
-    <div style="font-size:.25rem;color:rgba(255,255,255,.3);text-align:center;margin-bottom:10px">Skins dan buffs reales in-game · Compra con ⭐Stars o 💎TON</div>
-    <div id="skins-grid" style="width:100%;max-width:340px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;max-height:60vh;padding:4px"></div>
-    <p id="skin-status" style="font-size:.28rem;color:#c084fc;min-height:1rem;text-align:center;margin-top:8px"></p>
     <button class="ob red" onclick="toMenu()" style="font-size:.38rem;margin-top:.5rem">← VOLVER</button>
   </div>
 
@@ -299,26 +457,6 @@ body{display:flex;flex-direction:column;align-items:center;font-family:"Press St
       <button class="ob" id="ex-sell-btn" onclick="exSell()" style="background:linear-gradient(135deg,#ffe600,#cc9900);color:#000;width:100%;margin-top:10px">🔄 SWAP $DUENDE → TON</button>
     </div>
     <p id="ex-status" style="font-size:.28rem;color:#00eeff;min-height:1rem;text-align:center;margin-top:8px"></p>
-    <button class="ob red" onclick="toMenu()" style="font-size:.38rem;margin-top:.5rem">← VOLVER</button>
-  </div>
-
-  <div class="ov" id="ov-ton">
-    <div class="ov-title" style="color:#0088cc">💎 TON WALLET</div>
-    <div id="ton-status" style="font-size:.3rem;color:rgba(255,255,255,.4);text-align:center;margin-bottom:.8rem;line-height:2">Conecta tu wallet TON para comprar $DUENDE</div>
-    <div id="ton-connected-panel" style="display:none;width:100%;max-width:320px">
-      <div style="background:rgba(0,136,204,.06);border:1px solid rgba(0,136,204,.2);border-radius:6px;padding:12px;margin-bottom:12px;text-align:center">
-        <div style="font-size:.28rem;color:rgba(255,255,255,.4);margin-bottom:4px">Wallet conectada</div>
-        <div id="ton-addr" style="font-size:.28rem;color:#0088cc;word-break:break-all"></div>
-      </div>
-      <p style="font-size:.3rem;color:rgba(255,255,255,.4);text-align:center;margin-bottom:.6rem;line-height:2">1 TON = <span id="ton-duende-rate" style="color:#00ff88">---</span> $DUENDE</p>
-      <input type="number" class="donate-input" id="ton-amount-input" min="1" step="0.5" placeholder="1.0" style="margin-bottom:8px">
-      <p id="ton-preview" style="font-size:.32rem;color:#0088cc;margin-bottom:1rem;min-height:1rem;text-align:center">Ingresa cantidad en TON</p>
-      <button class="ob" onclick="sendTonPayment()" style="background:linear-gradient(135deg,#0088cc,#005580)">💎 ENVIAR TON</button>
-      <button class="ob red" onclick="disconnectTon()" style="font-size:.32rem;margin-top:.5rem">🔌 DESCONECTAR</button>
-    </div>
-    <div id="ton-connect-panel">
-      <button class="ob" onclick="connectTonWallet()" style="background:linear-gradient(135deg,#0088cc,#005580);font-size:.4rem">💎 CONECTAR WALLET TON</button>
-    </div>
     <button class="ob red" onclick="toMenu()" style="font-size:.38rem;margin-top:.5rem">← VOLVER</button>
   </div>
 
@@ -448,11 +586,7 @@ async function tgLogin(){
     const res=await r.json();
     if(res.success&&res.profile){tgProfile=res.profile;mergeCloudSave(res.profile);updateLoginUI();return;}
   }catch(e){console.warn('[TG Auth]',e);}
-  // Fallback de solo-lectura (ej. abriendo fuera de Telegram)
-  try{
-    const{data}=await _sb.from('profiles').select('*').eq('telegram_id',tgId).maybeSingle();
-    if(data){tgProfile=data;updateLoginUI();return;}
-  }catch(e){}
+  // Sin initData valido (fuera de Telegram) no se lee nada del servidor.
   tgProfile={username,telegram_id:tgId,best_score:0,total_coins:0};
   updateLoginUI();
 }
@@ -581,7 +715,11 @@ let tonPriceUsd=0;
 
 function initTonConnect(){
   try{
-    tonUI=new TON_CONNECT_UI.TonConnectUI({manifestUrl:TON_MANIFEST});
+    // twaReturnUrl: dentro de Telegram, tras aprobar en la wallet (Tonkeeper,
+    // Wallet...) hay que volver a la Mini App. Sin esto el usuario se quedaba
+    // en la wallet y la conexion no llegaba nunca al juego.
+    tonUI=new TON_CONNECT_UI.TonConnectUI({manifestUrl:TON_MANIFEST,
+      actionsConfiguration:{twaReturnUrl:'https://t.me/duendequest_bot/app'}});
     tonUI.onStatusChange(w=>{
       if(w){
         tonWalletAddr=TON_CONNECT_UI.toUserFriendlyAddress(w.account.address);
@@ -632,8 +770,9 @@ function disconnectTon(){
 }
 
 function toggleTonWallet(){
-  showOverlay('ov-ton');
-  updateTonRate();
+  // Antes abria un overlay propio (ov-ton); ahora es la pestaña WALLET del hub.
+  showOverlay('ov-start');
+  irTab('wallet');
 }
 
 async function fetchTonPrice(){
@@ -673,6 +812,15 @@ async function walletApi(action,payload){
   return r.json();
 }
 
+// El servidor solo acepta un pago TON si sus 6 ultimos digitos (en nanotons)
+// son el "resto" que le asigna a este usuario: asi nadie puede reclamar el
+// pago de otro. Cuesta como mucho 0,000999 TON extra.
+async function importeFirmado(ton,payAction){
+  const q=await walletApi('ton_quote',{pay_action:payAction});
+  if(!q||!q.dust)throw new Error(q&&q.error==='auth_failed'?'Abre el juego desde Telegram':'No se pudo preparar el pago');
+  return (BigInt(Math.floor(ton*1000))*1000000n+BigInt(q.dust)).toString();
+}
+
 async function sendTonPayment(){
   if(!tonUI||!tonWalletAddr){showPUNotif('Conecta tu wallet primero');return;}
   const ton=parseFloat(document.getElementById('ton-amount-input')?.value)||0;
@@ -681,8 +829,8 @@ async function sendTonPayment(){
   const duendePrice=tgPriceUsd||0.0000001;
   const tonP=tonPriceUsd||3.5;
   const tokens=Math.floor(ton*tonP/duendePrice);
-  const nanotons=Math.floor(ton*1e9).toString();
   try{
+    const nanotons=await importeFirmado(ton,'ton_buy');
     const tx={
       validUntil:Math.floor(Date.now()/1000)+300,
       messages:[{
@@ -725,12 +873,18 @@ const SKINS=[
 let ownedSkins=['comun'];
 let activeSkinBuffs=null;
 
+// Una sola llamada verificada con initData trae saldo, skins y stakes.
+let _misDatos=null;
+async function misDatos(forzar){
+  if(!forzar&&_misDatos)return _misDatos;
+  try{ const r=await walletApi('my_data',{}); if(r&&r.success)_misDatos=r; }catch(e){}
+  return _misDatos;
+}
+
 async function loadOwnedSkins(){
-  if(!_sb||!TG_USER.id)return;
-  try{
-    const{data}=await _sb.from('skin_purchases').select('skin_id').eq('telegram_id',String(TG_USER.id));
-    if(data)ownedSkins=['comun',...data.map(s=>s.skin_id)];
-  }catch(e){}
+  if(!TG_USER.id)return;
+  const d=await misDatos(true);
+  if(d)ownedSkins=['comun',...d.skins];
   // Load equipped skin from profile
   if(tgProfile?.equipped_skin)equippedSkin=tgProfile.equipped_skin;
   applySkinBuffs();
@@ -738,38 +892,42 @@ async function loadOwnedSkins(){
 setTimeout(loadOwnedSkins,2000);
 
 function applySkinBuffs(){
+  // Solo cuenta si la skin esta comprada: antes bastaba con escribir
+  // 'legendaria' en localStorage para tener sus buffs gratis.
+  // Solo si el servidor respondio: si my_data fallo (red), no se le quita la
+  // skin a quien la compro.
+  if(_misDatos&&!ownedSkins.includes(equippedSkin))equippedSkin='comun';
   const skin=SKINS.find(s=>s.id===equippedSkin);
   activeSkinBuffs=skin?.buffs||null;
 }
 
 function openSkinShop(){
-  showOverlay('ov-skins');
-  renderSkinShop();
+  // Antes abria un overlay propio (ov-skins); ahora es la pestaña SKINS del hub.
+  showOverlay('ov-start');
+  irTab('skins');
 }
 
 function renderSkinShop(){
   const grid=document.getElementById('skins-grid');
+  if(!grid)return;
   const tonP=tonPriceUsd||3.5;
   grid.innerHTML=SKINS.map(s=>{
     const owned=ownedSkins.includes(s.id);
     const equipped=equippedSkin===s.id;
     const tonCost=s.usd>0?(s.usd/tonP).toFixed(2):0;
-    return `<div style="background:rgba(${owned?'192,132,252':'255,255,255'},.04);border:2px solid ${equipped?s.color:'rgba(255,255,255,.1)'};border-radius:8px;padding:10px;display:flex;gap:10px;align-items:center;${equipped?'box-shadow:0 0 12px '+s.color+'40;':''}">
-      <img src="${s.preview}" style="width:56px;height:56px;image-rendering:pixelated;border-radius:4px;background:#0a0a1a;flex-shrink:0" onerror="this.style.display='none'">
+    const boton=equipped?`<button style="border:none;background:rgba(0,255,136,.18);color:#00ff88">✅ EQUIPADA</button>`
+      :(s.usd===0||owned)?`<button onclick="equipSkinTG('${s.id}')" style="border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);color:#fff">EQUIPAR</button>`
+      :`<button onclick="buySkinStars('${s.id}')" style="border:1px solid rgba(255,230,0,.4);background:rgba(255,230,0,.12);color:#ffe600">⭐ STARS</button>
+        <button onclick="buySkinTon('${s.id}')" style="border:1px solid rgba(0,152,234,.4);background:rgba(0,152,234,.12);color:#0098ea">💎 TON</button>`;
+    return `<div class="skin" style="border-color:${equipped?s.color:'rgba(255,255,255,.1)'}">
+      <img src="${s.preview}" onerror="this.style.display='none'">
       <div style="flex:1;min-width:0">
-        <div style="font-size:.32rem;color:${s.color};margin-bottom:2px">${s.name} ${equipped?'✅':''}</div>
-        <div style="font-size:.22rem;color:rgba(255,255,255,.4);margin-bottom:4px">${s.desc}</div>
-        ${s.buffs?`<div style="font-size:.2rem;color:#00ff88;background:rgba(0,255,136,.06);padding:2px 6px;border-radius:2px;display:inline-block">${s.buffs.label}</div>`:''}
-        ${s.usd>0&&!owned?`<div style="font-size:.22rem;color:rgba(255,255,255,.3);margin-top:4px">⭐${s.stars} Stars · 💎${tonCost} TON · ~$${s.usd}</div>`:''}
+        <div class="n" style="color:${s.color}">${s.name}</div>
+        <div class="d">${s.desc}</div>
+        ${s.buffs?`<div class="b">${s.buffs.label}</div>`:''}
+        ${s.usd>0&&!owned?`<div class="p">⭐${s.stars} · 💎${tonCost} TON · ~$${s.usd}</div>`:''}
       </div>
-      <div style="flex-shrink:0">
-        ${s.usd===0?`<button onclick="equipSkinTG('${s.id}')" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:6px 8px;border-radius:4px;cursor:pointer;border:1px solid ${equipped?'#00ff88':'rgba(255,255,255,.2)'};background:${equipped?'rgba(0,255,136,.15)':'rgba(255,255,255,.05)'};color:${equipped?'#00ff88':'rgba(255,255,255,.4)'}">${equipped?'EQUIPADA':'EQUIPAR'}</button>`
-        :owned?`<button onclick="equipSkinTG('${s.id}')" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:6px 8px;border-radius:4px;cursor:pointer;border:1px solid ${equipped?'#00ff88':'rgba(255,255,255,.2)'};background:${equipped?'rgba(0,255,136,.15)':'rgba(255,255,255,.05)'};color:${equipped?'#00ff88':'rgba(255,255,255,.4)'}">${equipped?'EQUIPADA':'EQUIPAR'}</button>`
-        :`<div style="display:flex;flex-direction:column;gap:4px">
-            <button onclick="buySkinStars('${s.id}')" style="font-family:'Press Start 2P',monospace;font-size:6px;padding:5px 6px;border-radius:3px;cursor:pointer;border:1px solid rgba(255,230,0,.3);background:rgba(255,230,0,.1);color:#ffe600">⭐ STARS</button>
-            <button onclick="buySkinTon('${s.id}')" style="font-family:'Press Start 2P',monospace;font-size:6px;padding:5px 6px;border-radius:3px;cursor:pointer;border:1px solid rgba(0,136,204,.3);background:rgba(0,136,204,.1);color:#0088cc">💎 TON</button>
-          </div>`}
-      </div>
+      <div class="acc">${boton}</div>
     </div>`;
   }).join('');
 }
@@ -835,9 +993,9 @@ async function buySkinTon(skinId){
   const skin=SKINS.find(s=>s.id===skinId);if(!skin)return;
   const tonP=tonPriceUsd||3.5;
   const tonCost=skin.usd/tonP;
-  const nanotons=Math.floor(tonCost*1e9).toString();
   const statusEl=document.getElementById('skin-status');
   try{
+    const nanotons=await importeFirmado(tonCost,'skin_ton');
     statusEl.textContent='⏳ Confirmando en wallet...';
     await tonUI.sendTransaction({
       validUntil:Math.floor(Date.now()/1000)+300,
@@ -946,11 +1104,9 @@ function updateExRate(){
 }
 
 async function loadExBalance(){
-  if(!_sb||!TG_USER.id)return;
-  try{
-    const{data}=await _sb.from('profiles').select('duende_balance').eq('telegram_id',String(TG_USER.id)).maybeSingle();
-    if(data)document.getElementById('ex-balance').textContent=Number(data.duende_balance||0).toLocaleString();
-  }catch(e){}
+  if(!TG_USER.id)return;
+  const d=await misDatos(true);
+  if(d&&d.profile)document.getElementById('ex-balance').textContent=Number(d.profile.duende_balance||0).toLocaleString();
 }
 
 document.getElementById('ex-buy-input')?.addEventListener('input',function(){
@@ -981,9 +1137,9 @@ async function exBuy(){
   const tonP=tonPriceUsd||3.5;
   const dp=tgPriceUsd||0.0000001;
   const tokens=Math.floor(ton*tonP/dp);
-  const nanotons=Math.floor(ton*1e9).toString();
   const statusEl=document.getElementById('ex-status');
   try{
+    const nanotons=await importeFirmado(ton,'ton_buy');
     statusEl.textContent='⏳ Confirmando en wallet...';
     await tonUI.sendTransaction({
       validUntil:Math.floor(Date.now()/1000)+300,
@@ -1075,8 +1231,8 @@ async function tonStake(){
   const apy=Math.min(240,Math.max(50,Math.floor(1000*tonP/duendePrice/1000000)));
   const baseTokens=Math.floor(ton*tonP/duendePrice);
   const reward=Math.floor(baseTokens*(apy/100)*(tgStakeLockDays/365)*mult);
-  const nanotons=Math.floor(ton*1e9).toString();
   try{
+    const nanotons=await importeFirmado(ton,'ton_stake');
     const tx={
       validUntil:Math.floor(Date.now()/1000)+300,
       messages:[{address:TON_DEV_WALLET,amount:nanotons}],
@@ -1105,9 +1261,9 @@ async function tonStake(){
 }
 
 async function loadActiveStakes(){
-  const el=document.getElementById('active-stakes');if(!el||!_sb||!TG_USER.id)return;
+  const el=document.getElementById('active-stakes');if(!el||!TG_USER.id)return;
   try{
-    const{data}=await _sb.from('ton_stakes').select('*').eq('telegram_id',String(TG_USER.id)).order('created_at',{ascending:false}).limit(5);
+    const data=((await misDatos(true))||{}).stakes;
     if(!data||data.length===0){el.innerHTML='';return;}
     el.innerHTML='<div style="font-size:.28rem;color:rgba(255,255,255,.3);margin-bottom:6px;text-align:center">📋 Tus Stakes</div>'+
       data.map(s=>{
@@ -1232,22 +1388,144 @@ window.DQE={
   getSkinBuffs:()=>{try{return activeSkinBuffs||null;}catch(e){return null;}},
   getPlayerImgKey:()=>{try{return ({comun:'duende_hero',tactico:'skin_tactico',necro:'skin_necromancer',king:'skin_king',berserker:'skin_berserker',legendaria:'skin_legendariafull'})[equippedSkin]||'duende_hero';}catch(e){return 'duende_hero';}},
   fitCanvas:cv2=>{cv2.style.width='100%';cv2.style.height='auto';},
-  onStartGame:()=>{if(tg){try{tg.MainButton.hide();tg.BackButton.show();registrarAtras();}catch(e){}}},
-  onToMenu:()=>{if(tg){try{tg.MainButton.hide();tg.BackButton.hide();}catch(e){}}},
+  onStartGame:()=>{enviarScorePendiente();if(tgProfile)pedirTicket();if(tg){try{tg.MainButton.hide();tg.BackButton.show();registrarAtras();}catch(e){}}},
+  onVictoria:()=>{try{syncProgressToCloud();}catch(e){}},
+  onToMenu:()=>{enviarScorePendiente();pintarCabecera();pintarResumenCampana();if(tg){try{tg.MainButton.hide();tg.BackButton.hide();}catch(e){}}},
   onEndGame:stats=>{
-    const entry={score:stats.score,wave:stats.wave,coins:stats.coins,date:new Date().toLocaleDateString()};
-    ranking.push(entry);ranking.sort((a,b)=>b.score-a.score);ranking=ranking.slice(0,10);
-    localStorage.setItem('dq_rank',JSON.stringify(ranking));
+    if(stats.modo==='sinfin'){
+      const entry={score:stats.score,wave:stats.wave,coins:stats.coins,date:new Date().toLocaleDateString()};
+      ranking.push(entry);ranking.sort((a,b)=>b.score-a.score);ranking=ranking.slice(0,10);
+      localStorage.setItem('dq_rank',JSON.stringify(ranking));
+    }
     const ds=document.getElementById('dead-stats');if(ds)ds.innerHTML='WAVE: '+stats.wave+' · 🪙 '+stats.coins+' · LVL: '+stats.level;
     showFomoMsg();
     const tc=document.getElementById('tg-coins');if(tc)tc.textContent='🪙 '+totalCoins;
-    submitTGScore();
+    pintarCabecera();pintarResumenCampana();
+    // El ranking es solo del modo SIN FIN. Si todavia puede revivir, el envio
+    // se aplaza: antes se mandaba aqui y el score conseguido tras revivir
+    // (pagando 75 DQ) no llegaba nunca al ranking.
+    if(stats.modo==='sinfin'){
+      scorePendiente={score:stats.score,wave:stats.wave,level:stats.level,coins:stats.coins};
+      if(reviveUsed||totalCoins<REVIVE_COST)enviarScorePendiente();
+    }
     syncProgressToCloud();
     if(tg){try{tg.MainButton.setText('🏆 VER RANKING');tg.MainButton.show();registrarPrincipal();}catch(e){}}
   },
 };
 </script>
 <script src="../js/engine.js"></script>
+<script>
+
+// ══ MENU EN PESTAÑAS ══
+// Antes: 10 botones en columna sin perfil, sin ranking visible y con textos
+// en rem que salian de 4-6 px (la pagina no fija la raiz). Ahora 5 pestañas
+// fijas, texto en px, y todo lo que faltaba (perfil, ranking, comprar,
+// conectar wallet) vive en una de ellas.
+function irTab(nombre){
+  document.querySelectorAll('#hub .tab').forEach(t=>t.classList.toggle('on', t.id==='tab-'+nombre));
+  document.querySelectorAll('#tabbar button').forEach(b=>b.classList.toggle('on', b.dataset.tab===nombre));
+  document.getElementById('hub').scrollTop=0;
+  if(nombre==='perfil') pintarPerfil();
+  if(nombre==='skins') renderSkinShop();
+  if(nombre==='ranking') pintarRankingHub();
+  if(nombre==='wallet') pintarWallet();
+}
+
+function jugarSinFin(){ startGame(); }
+
+function invitarAmigos(){
+  const link='https://t.me/duendequest_bot?start=ref_'+(TG_USER.id||'');
+  const texto='🧝 Estoy jugando DUENDE QUEST — campaña de 15 etapas con jefes. ¡Únete y ganamos $DUENDE los dos! 👇';
+  if(tg&&tg.openTelegramLink){ tg.openTelegramLink('https://t.me/share/url?url='+encodeURIComponent(link)+'&text='+encodeURIComponent(texto)); return; }
+  try{ navigator.clipboard.writeText(texto+'\n'+link); showPUNotif('📋 Link copiado'); }catch(e){}
+}
+function abrirWeb(){ const url='https://duende-quest.alfonso12hc.workers.dev/'; if(tg){tg.openLink(url);}else{window.open(url,'_blank');} }
+
+// ── Cabecera (avatar, nombre, DQ) ──
+function pintarCabecera(){
+  const nombre=TG_USER.first_name||TG_USER.username||'Invitado';
+  const inicial=TG_USER.first_name?TG_USER.first_name[0].toUpperCase():'🧝';
+  document.getElementById('hub-nombre').textContent=nombre;
+  document.getElementById('hub-nivel').textContent='NIVEL '+(typeof playerLevel!=='undefined'?playerLevel:1);
+  document.getElementById('hub-dq').textContent='🪙 '+Number(totalCoins||0).toLocaleString();
+  [document.getElementById('hub-avatar'), document.getElementById('perfil-avatar')].forEach(av=>{
+    if(!av) return;
+    if(TG_USER.photo_url) av.innerHTML='<img src="'+TG_USER.photo_url+'">';
+    else av.textContent=inicial;
+  });
+}
+setInterval(pintarCabecera,4000);
+
+// ── Perfil ──
+function pintarPerfil(){
+  pintarCabecera();
+  const nombre=TG_USER.first_name||TG_USER.username||'Invitado';
+  document.getElementById('perfil-nombre').textContent=nombre;
+  document.getElementById('perfil-user').textContent=TG_USER.username?'@'+TG_USER.username:(TG_USER.id?'ID '+TG_USER.id:'Fuera de Telegram');
+  document.getElementById('perfil-nivel').textContent='NIVEL '+playerLevel;
+  const necesita=getXPNeeded(playerLevel);
+  document.getElementById('perfil-xp').style.width=Math.min(100,Math.round((playerXP/necesita)*100))+'%';
+  const est=leerCampana();
+  const totalEstrellas=LEVELS.reduce((s,l)=>s+(est[l.id]||0),0);
+  const stats=[
+    ['🏆', Number(tgProfile?.best_score||hiScore||0).toLocaleString(), 'MEJOR SCORE'],
+    ['⭐', totalEstrellas+'/'+(LEVELS.length*3), 'ESTRELLAS'],
+    ['🪙', Number(totalCoins||0).toLocaleString(), 'DQ'],
+    ['🔥', (JSON.parse(localStorage.getItem('dq_streak')||'{}').day||0), 'RACHA (DÍAS)'],
+  ];
+  document.getElementById('perfil-stats').innerHTML=stats.map(s=>'<div class="stat"><b>'+s[0]+' '+s[1]+'</b><span>'+s[2]+'</span></div>').join('');
+  const skin=SKINS.find(s=>s.id===equippedSkin);
+  document.getElementById('perfil-skin').innerHTML=skin?('<div class="hub-mini">SKIN EQUIPADA</div><div style="display:flex;align-items:center;gap:8px;margin-top:6px"><img src="'+skin.preview+'" style="width:40px;height:40px;image-rendering:pixelated;border-radius:6px;background:#0a0a1a"><div style="font-size:11px;color:'+skin.color+'">'+skin.name+'</div></div>'):'';
+  const w=window._tonAddr||tonWalletAddr;
+  document.getElementById('perfil-wallet').innerHTML='<div class="hub-mini">WALLET TON</div><div style="margin-top:4px">'+(w?('<span class="addr">'+w.slice(0,8)+'...'+w.slice(-6)+'</span>'):'<span class="estado" style="color:rgba(255,255,255,.4)">No conectada — ve a WALLET</span>')+'</div>';
+  document.getElementById('perfil-sync').textContent=tgProfile&&tgProfile.id?'✅ Progreso sincronizado':'⏳ Sincronizando…';
+}
+
+// ── Ranking (dentro del hub, con tu propia fila resaltada) ──
+async function pintarRankingHub(){
+  const el=document.getElementById('rank-hub');
+  el.innerHTML='<div class="hub-sub">⌛ Cargando...</div>';
+  let data=null;
+  if(_sb){
+    try{
+      const{data:raw}=await _sb.from('game_scores').select('username,score,wave,telegram_id').eq('verified',true).order('score',{ascending:false}).limit(100);
+      const best=new Map();(raw||[]).forEach(s=>{const k=String(s.telegram_id||s.username||'?').toLowerCase();if(!best.has(k)||s.score>best.get(k).score)best.set(k,s);});
+      data=[...best.values()].sort((a,b)=>b.score-a.score).slice(0,20);
+    }catch(e){}
+  }
+  if(!data||!data.length){
+    el.innerHTML=ranking.length?ranking.map((r,i)=>filaRank(i,r.username||'Tú',r.score,r.wave,false)).join(''):'<div class="hub-sub">Aún no hay partidas SIN FIN registradas.<br>¡Sé el primero!</div>';
+    return;
+  }
+  const miId=String(TG_USER.id||'');
+  el.innerHTML=data.map((r,i)=>filaRank(i,r.username,r.score,r.wave,String(r.telegram_id||'')===miId)).join('');
+}
+function filaRank(i,nombre,score,wave,esYo){
+  const medals=['🥇','🥈','🥉'];
+  return '<div class="rk'+(esYo?' yo':'')+'"><span class="pos">'+(medals[i]||'#'+(i+1))+'</span><span class="nom">'+DQEsc(nombre)+(esYo?' (tú)':'')+'</span><span class="sc">'+Number(score).toLocaleString()+'</span><span class="wv">W'+wave+'</span></div>';
+}
+
+// ── Wallet: reusa los paneles TON existentes, solo repinta el precio ──
+function pintarWallet(){
+  const p=document.getElementById('hub-precio');
+  if(p) p.textContent=tgPriceUsd>0?'$'+tgPriceUsd.toFixed(8):'cargando...';
+  updateTonRate();
+}
+
+// Resumen de campaña en la pestaña JUGAR (estrellas totales y siguiente etapa).
+function pintarResumenCampana(){
+  const el=document.getElementById('hub-campana'); if(!el||typeof LEVELS==='undefined')return;
+  const est=leerCampana();
+  const total=LEVELS.reduce((s,l)=>s+(est[l.id]||0),0);
+  const idx=LEVELS.findIndex(l=>!est[l.id]);
+  const sig=idx>=0?LEVELS[idx]:null;
+  el.innerHTML='<div class="hub-mini">CAMPAÑA · ⭐ '+total+'/'+(LEVELS.length*3)+'</div>'+
+    (sig?'<div style="font-size:11px;color:#00ff88;margin-top:4px">▶ Siguiente: '+sig.id+' · '+BIOMES[sig.bioma].name+'</div>'
+         :'<div style="font-size:11px;color:#ffe600;margin-top:4px">🏆 ¡Campaña completa! Prueba el SIN FIN</div>');
+}
+
+pintarCabecera();pintarResumenCampana();
+</script>
 <script>
 'use strict';
 let ranking=JSON.parse(localStorage.getItem('dq_rank')||'[]');
@@ -1257,13 +1535,27 @@ let equippedSkin=localStorage.getItem('dq_skin')||'comun';
 const FOMO_MSGS=['🚀 Mientras jugabas, $DUENDE subió {x}%','💎 {n} jugadores stakearon SOL esta hora','🔥 Solo quedan {left} NFTs Especiales','⚡ NFT Elite = +30% más monedas','👑 Top player tiene {score} pts'];
 function showFomoMsg(){let msg=FOMO_MSGS[Math.floor(Math.random()*FOMO_MSGS.length)];msg=msg.replace('{x}',(Math.random()*10+1).toFixed(1)).replace('{n}',Math.floor(Math.random()*20+5)).replace('{left}',Math.floor(Math.random()*100+50)).replace('{score}',(Math.random()*50000+10000).toFixed(0));const el=document.getElementById('fomo-death-msg');if(el){el.textContent=msg;el.style.display='block';}}
 
-async function submitTGScore(){
-  if(!tgProfile) return;
+// Ticket firmado por el servidor al empezar una partida de SIN FIN: con el
+// acota la oleada y los puntos por tiempo jugado (ver start_game en wallet.js).
+let runTicket=null;
+async function pedirTicket(){
+  runTicket=null;
+  if(typeof nivel!=='undefined'&&nivel) return;   // la campaña no va al ranking
+  try{ const r=await walletApi('start_game',{}); if(r&&r.run) runTicket=r.run; }catch(e){}
+}
+
+let scorePendiente=null;
+function enviarScorePendiente(){ if(scorePendiente){ const d=scorePendiente; scorePendiente=null; submitTGScore(d); } }
+
+async function submitTGScore(d){
+  if(!tgProfile||!d) return;
   try{
     // Score firmado: el servidor verifica la identidad (initData) y aplica límites anti-cheat
-    const res=await walletApi('submit_score',{score:Math.floor(score),wave,level:playerLevel,coins:sessionCoins});
+    if(!runTicket) return;   // sin ticket de inicio el servidor lo rechaza
+    const t=runTicket; runTicket=null;   // se toma ANTES del await: startGame pide uno nuevo enseguida
+    const res=await walletApi('submit_score',{score:Math.floor(d.score),wave:d.wave,level:d.level,coins:d.coins,run:t});
     if(res.success){
-      tgProfile.best_score=Math.max(tgProfile.best_score||0,Math.floor(score));
+      tgProfile.best_score=Math.max(tgProfile.best_score||0,Math.floor(d.score));
       tgProfile.games_played=(tgProfile.games_played||0)+1;
       // DQ canjeable que el servidor acreditó por esta partida (puede ser menos
       // que las monedas si ya llegaste al tope diario)
@@ -1328,6 +1620,7 @@ loadProgress();
 function refreshCoinsHUD(){
   const tc=document.getElementById('tg-coins');
   if(tc)tc.textContent='🪙 '+Number(totalCoins).toLocaleString();
+  pintarCabecera();
 }
 function grantCoins(n){ totalCoins+=n; saveProgress(); refreshCoinsHUD(); tgHaptic('heavy'); }
 refreshCoinsHUD();
@@ -1347,7 +1640,7 @@ DQAch.init();
 
 // Compartir score (Telegram share nativo)
 function shareScore(){
-  const txt='🧝 Hice '+Math.floor(score).toLocaleString()+' puntos en DUENDE QUEST (Wave '+wave+')! ¿Me superas? Juega gratis y gana $DUENDE 👇';
+  const txt=textoCompartir();
   const url='https://t.me/duendequest_bot';
   if(tg&&tg.openTelegramLink){
     tg.openTelegramLink('https://t.me/share/url?url='+encodeURIComponent(url)+'&text='+encodeURIComponent(txt));

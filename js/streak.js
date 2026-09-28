@@ -45,8 +45,12 @@
       const destinos = this._targets();
       if (!destinos.length) return;
       const next = bonusFor(day + 1);
-      const html = '<span style="color:#ff9900">🔥 RACHA: DÍA ' + day + '</span>' +
-        '<span style="color:rgba(255,255,255,.35);float:right">mañana +' + next + ' DQ</span>';
+      // Sin font-size propio, heredaba el de quien lo contenga: en game.html el
+      // contenedor ya fijaba .3rem, pero en el panel dentro de la partida
+      // (data-dq-streak) nadie lo fijaba y el texto salia al tamaño raiz de la
+      // pagina (aun mas grande cuando telegram/index.html paso su raiz a 26px).
+      const html = '<span style="font-size:.28rem;color:#ff9900">🔥 RACHA: DÍA ' + day + '</span>' +
+        '<span style="font-size:.26rem;color:rgba(255,255,255,.35);float:right">mañana +' + next + ' DQ</span>';
       destinos.forEach(el => { el.innerHTML = html; });
     },
   };
