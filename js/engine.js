@@ -1102,6 +1102,7 @@ function spawnEnemy(forceBoss = false) {
   });
   // Convertir en elite (nunca los jefes: ya son el evento de la oleada)
   const nuevo = enemies[enemies.length - 1];
+  if (nuevo.sheet) markBestiaSeen(nuevo.sheet);
   if (!isBoss && Math.random() < probabilidadElite()) {
     const a = AFIJOS[Math.floor(Math.random() * AFIJOS.length)];
     nuevo.elite = a;
@@ -2130,6 +2131,25 @@ function markBiomeSeen(i) {
 function biomesSeen() {
   try { return JSON.parse(localStorage.getItem('dq_biomes') || '[]').length; } catch (e) { return 0; }
 }
+// Bestiario visto alguna vez (mismo patron que biomasSeen): con 13 criaturas
+// con hoja de animacion repartidas en 5 biomas, un jugador dificilmente las
+// ve todas en una sola sesion. No cuenta al angel (el logro de campaña ya
+// lo cubre por separado).
+function markBestiaSeen(sheetName) {
+  if (!sheetName || sheetName === 'angel') return;
+  try {
+    const seen = JSON.parse(localStorage.getItem('dq_bestiario') || '[]');
+    if (!seen.includes(sheetName)) {
+      seen.push(sheetName);
+      localStorage.setItem('dq_bestiario', JSON.stringify(seen));
+      if (seen.length >= bestiarioTotal()) { try { window.DQAch && DQAch.onBestiario && DQAch.onBestiario(); } catch (e) {} }
+    }
+  } catch (e) {}
+}
+function bestiarioSeen() {
+  try { return JSON.parse(localStorage.getItem('dq_bestiario') || '[]').length; } catch (e) { return 0; }
+}
+function bestiarioTotal() { return Object.keys(SHEETS).length - 1; } // -1: angel no cuenta, tiene su propio logro
 function currentBiome() { return nivel ? BIOMES[nivel.bioma] : BIOMES[Math.floor((wave - 1) / 3) % BIOMES.length]; }
 
 // ══ CAMPAÑA: 5 biomas × 3 etapas ══
@@ -3139,6 +3159,8 @@ function nearMissLines() {
     const nextBiomeWave = (Math.floor((wave - 1) / 3) + 1) * 3 + 1;
     out.push('⟡ Biomas descubiertos: <b>' + seen + '/' + BIOMES.length + '</b> — el siguiente en la wave ' + nextBiomeWave);
   }
+  const bSeen = bestiarioSeen(), bTotal = bestiarioTotal();
+  if (bSeen < bTotal) out.push('📖 Bestiario: <b>' + bSeen + '/' + bTotal + '</b> criaturas descubiertas');
   try {
     const m = (DQMissions.state.list || []).filter(x => !x.done)
       .sort((a, b) => (b.progress / b.goal) - (a.progress / a.goal))[0];

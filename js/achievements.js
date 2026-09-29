@@ -21,6 +21,7 @@
     { id: 'bioma3', icon: '🌿', desc: 'Termina el tercer bioma (3-3)', reward: 90 },
     { id: 'campana', icon: '👑', desc: 'Termina la campaña (5-3)', reward: 250 },
     { id: 'estrellas45', icon: '⭐', desc: 'Consigue las 45 estrellas', reward: 400 },
+    { id: 'bestiario', icon: '📖', desc: 'Descubre todo el bestiario', reward: 120 },
   ];
   const META = LIST.reduce((m, a) => (m[a.id] = a, m), {});
 
@@ -66,6 +67,7 @@
     onWave(w) { if (w >= 5) this.unlock('wave5'); if (w >= 10) this.unlock('wave10'); if (w >= 20) this.unlock('wave20'); },
     onCombo(mult) { if (mult >= 5) this.unlock('combo10'); },
     onSessionCoins(c) { if (c >= 100) this.unlock('rich'); },
+    onBestiario() { this.unlock('bestiario'); },
     onEtapa(id, totalEstrellas) {
       if (id === '1-3') this.unlock('bioma1');
       if (id === '3-3') this.unlock('bioma3');
