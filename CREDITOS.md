@@ -86,6 +86,34 @@ en una sola hoja de 2 filas con `tools/generar_hongo_cc0.py`
 (`assets/enemigos/sheets/hongo.png`). Va en **SELVA ESMERALDA**, junto al
 goblin.
 
+## Quinto, sexto y septimo enemigo animado: goblin peasant, goblin assassin y lagarto
+
+**Goblin Corps (MV Platformer set)** — Moikmellah. Licencia CC0.
+https://opengameart.org/content/goblin-corps-mv-platformer-set
+
+Dos variantes mas del mismo pack usado para el goblin "normal": `peasant`
+(tunica marron, sin casco) y `assassin` (traje azul-morado oscuro con
+capucha), misma rejilla 32x64 y mismas columnas que soldier/samurai/mage
+(confirmado a ojo con las 7 variantes sueltas que quedaban, no solo estas
+dos — ver `tools/generar_goblin_variantes2_cc0.py`). El peasant va a
+**AMANECER ROJO** (`assets/enemigos/sheets/goblin_peasant.png`), que hasta
+esta tanda era el unico bioma con un solo enemigo con hoja; el assassin va a
+**NOCHE** (`assets/enemigos/sheets/goblin_assassin.png`), sumandose al
+esqueleto.
+
+**Sideview Fantasy Patreon Collection** (Grotto Escape 2 - Lizzard) — Luis
+Zuno (ansimuz). Licencia CC0.
+https://opengameart.org/content/sideview-fantasy-patreon-collection
+
+Segundo enemigo animado que no es un humanoide reskineado, y primero con
+rejilla propia muy chica (celda 64x32, dibujo real de 11-17 px de alto). El
+pack trae `walk.png` y `hurt.png` como tiras sueltas pero SIN frames de
+muerte; `tools/generar_lagarto_cc0.py` re-empaqueta caminar + daño y reusa
+el ultimo frame de daño como pose de "muerte" (se desvanece por el
+fade-out de alpha que ya aplica el motor a todo enemigo con hoja). Va en
+**DESIERTO DORADO** (`assets/enemigos/sheets/lagarto.png`), junto al goblin
+samurai.
+
 `SHEET_POR_BIOMA` en `js/engine.js` tiene el reparto final por bioma.
 
 ## Segunda variante de fondo (amanecer, selva, tormenta)
@@ -104,13 +132,13 @@ para que la campaña no se vea igual la segunda vez.
 ## Packs descargados y aún sin integrar
 
 `recursos/` guarda más packs CC0 sin integrar del todo (mapas Tiled, un jefe
-dragón, iconos), más lo que queda sin tocar de Goblin Corps (6 variantes:
-assassin, battleLord, centurion, guard, knight, lord) y del resto de
-Sideview Fantasy Collection (lagarto, serpiente, fantasma, rana — solo se
-usó la seta grande de Scratchio, que es un pack aparte). No se publican
-(`recursos` está en `.assetsignore`). El detalle de cada uno, con autor, URL
-y licencia, está en `recursos/INDICE.md`. Al integrar cualquiera, añadirlo a
-este archivo.
+dragón, iconos), más lo que queda sin tocar de Goblin Corps (5 variantes:
+battleLord, centurion, guard, knight, lord) y del resto de Sideview Fantasy
+Collection (serpiente, fantasma, pájaro, rana, dragón volador — solo se
+usaron el lagarto de aquí y la seta grande de Scratchio, que es un pack
+aparte). No se publican (`recursos` está en `.assetsignore`). El detalle de
+cada uno, con autor, URL y licencia, está en `recursos/INDICE.md`. Al
+integrar cualquiera, añadirlo a este archivo.
 
 ---
 

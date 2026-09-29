@@ -90,6 +90,9 @@ const IMG = {
   sh_goblin_samurai: _AB + 'enemigos/sheets/goblin_samurai.png',
   sh_goblin_mage: _AB + 'enemigos/sheets/goblin_mage.png',
   sh_hongo: _AB + 'enemigos/sheets/hongo.png',
+  sh_goblin_peasant: _AB + 'enemigos/sheets/goblin_peasant.png',
+  sh_goblin_assassin: _AB + 'enemigos/sheets/goblin_assassin.png',
+  sh_lagarto: _AB + 'enemigos/sheets/lagarto.png',
   coin: _AB + 'ui/coin.png',
   item_potion: _AB + 'items/item_potion.png',
   item_shield: _AB + 'items/item_shield.png',
@@ -404,18 +407,51 @@ const SHEETS = {
     filaGolpe: 1, colGolpeIni: 0, nGolpe: 1,
     colMuerteIni: 1, nMuerte: 6,
   },
+  // Quinta y sexta variante del mismo pack Goblin Corps (mismo grid 32x64 y
+  // mismas columnas que soldier/samurai/mage — ver
+  // tools/generar_goblin_variantes2_cc0.py). peasant (tunica marron, sin
+  // casco) va a AMANECER ROJO, que hasta esta tanda era el UNICO bioma con
+  // un solo enemigo con hoja. assassin (traje azul-morado oscuro, capucha)
+  // va a NOCHE junto al esqueleto: un goblin sigiloso vestido de oscuro para
+  // acechar de noche.
+  goblin_peasant: {
+    fw: 32, fh: 64, idealAltoPx: 35, altoObjetivo: 70,
+    filaMov: 0, colMovIni: 1, nMov: 6,
+    filaGolpe: 1, colGolpeIni: 1, nGolpe: 2,
+    colMuerteIni: 6, nMuerte: 2,
+  },
+  goblin_assassin: {
+    fw: 32, fh: 64, idealAltoPx: 33, altoObjetivo: 70,
+    filaMov: 0, colMovIni: 1, nMov: 6,
+    filaGolpe: 1, colGolpeIni: 1, nGolpe: 2,
+    colMuerteIni: 6, nMuerte: 2,
+  },
+  // Segundo enemigo no-humanoide, y primero con rejilla propia MUY chica
+  // (Grotto Escape 2 - Lizzard, CC0 — ver tools/generar_lagarto_cc0.py). Va
+  // a DESIERTO DORADO junto al goblin samurai. El pack no trae frames de
+  // muerte: nMuerte=1 reusa el ultimo frame de "hurt" (el mas arqueado) como
+  // pose de colapso, y se desvanece con el fade-out por alpha que ya aplica
+  // animEnemigo() a todo enemigo con hoja durante e.muriendo.
+  lagarto: {
+    fw: 64, fh: 32, idealAltoPx: 17, altoObjetivo: 70,
+    filaMov: 0, colMovIni: 0, nMov: 6,
+    filaGolpe: 1, colGolpeIni: 0, nGolpe: 3,
+    colMuerteIni: 3, nMuerte: 1,
+  },
 };
 // Enemigo "normal" (el mas visto, sin afijo): antes SIEMPRE era el goblin;
 // ahora varia por bioma para que la campaña completa no se sienta como el
-// mismo enemigo repintado 15 veces. NOCHE(0) y TORMENTA(3) alternan con el
-// esqueleto; TORMENTA(3) suma ademas al goblin mago; DESIERTO(4) suma al
-// goblin samurai; SELVA(2) suma al hongo (unico no-humanoide del bestiario).
+// mismo enemigo repintado 15 veces. NOCHE(0) alterna esqueleto+goblin
+// assassin; AMANECER(1) suma al goblin peasant; TORMENTA(3) suma ademas al
+// goblin mago; DESIERTO(4) suma al goblin samurai y al lagarto; SELVA(2)
+// suma al hongo (unico no-humanoide del bestiario hasta que llego el
+// lagarto).
 const SHEET_POR_BIOMA = [
-  ['goblin_normal', 'esqueleto'],               // 0 noche
-  ['goblin_normal'],                            // 1 amanecer
-  ['goblin_normal', 'hongo'],                   // 2 selva
-  ['goblin_normal', 'esqueleto', 'goblin_mage'], // 3 tormenta
-  ['goblin_normal', 'goblin_samurai'],          // 4 desierto
+  ['goblin_normal', 'esqueleto', 'goblin_assassin'], // 0 noche
+  ['goblin_normal', 'goblin_peasant'],               // 1 amanecer
+  ['goblin_normal', 'hongo'],                        // 2 selva
+  ['goblin_normal', 'esqueleto', 'goblin_mage'],     // 3 tormenta
+  ['goblin_normal', 'goblin_samurai', 'lagarto'],    // 4 desierto
 ];
 function sheetNormalDeBioma() {
   const bi = nivel ? nivel.bioma : Math.floor((wave - 1) / 3) % BIOMES.length;
