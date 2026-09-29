@@ -790,7 +790,16 @@ const ARMAS = {
   base:   { id: 'base',   nombre: 'KATANA', alcance: 1,   cd: 1,   dano: 1,   empuje: 1,   alto: 1,   color: null },
   odachi: { id: 'odachi', nombre: 'ODACHI', alcance: 1.5, cd: 1.4, dano: 1.7, empuje: 1.4, alto: 1.5, color: 'rgba(255,255,255,.8)', icono: 'katana_comun', desc: 'lenta, enorme alcance' },
   chispa: { id: 'chispa', nombre: 'CHISPA', alcance: 1,   cd: 1,   dano: 1,   empuje: .8,  alto: 1,   color: 'rgba(0,238,255,.8)', icono: 'katana_spark', desc: 'el rayo salta a otro enemigo' },
-  dagas:  { id: 'dagas',  nombre: 'DAGAS',  alcance: .8,  cd: .5,  dano: .6,  empuje: .6,  alto: .9,  color: 'rgba(192,132,252,.8)', icono: 'katana_comun', tinte: '#c084fc', desc: 'rapidisimas, doble combo' },
+  // dano .6 no bajaba nada en la practica: el danio por golpe de combo (1,2,3
+  // antes de multiplicar) se redondea con Math.ceil y nunca baja de 1, asi que
+  // .6 solo recortaba el 3er golpe (3->2). Con su cd .5 (el doble de rapida),
+  // el ciclo de 3 golpes daba 5 danio en 32 frames = 9,4 danio/s: mas que la
+  // KATANA (6 en 63f = 5,7/s) y mas que el ODACHI (12 en 88f = 8,2/s), el arma
+  // pensada como "rapida pero floja" era la de mas danio bruto del juego. Con
+  // .3 el mismo redondeo da 1+1+1=3 danio en 32f = 5,6 danio/s: sigue siendo
+  // la mas rapida (mejor para el combo x2 y para encadenar critico/curaCombo)
+  // pero ya no le gana en danio a las armas pensadas para pegar fuerte.
+  dagas:  { id: 'dagas',  nombre: 'DAGAS',  alcance: .8,  cd: .5,  dano: .3,  empuje: .6,  alto: .9,  color: 'rgba(192,132,252,.8)', icono: 'katana_comun', tinte: '#c084fc', desc: 'rapidisimas, doble combo' },
 };
 let arma = ARMAS.base;
 function alcanceGolpe() { return Math.round([50, 60, 80][PL.comboStep] * mej.alcance * arma.alcance); }
