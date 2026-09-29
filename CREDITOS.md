@@ -53,6 +53,29 @@ https://opengameart.org/users/ansimuz
 recoloreados a partir de los mismos. Sustituyen a las siluetas que generaba
 `tools/generar_parallax.py`.
 
+## Segundo enemigo animado: esqueleto
+
+**MV Platformer Skeleton** — Moikmellah. Licencia CC0.
+https://opengameart.org/content/goblin-corps-mv-platformer-set (mismo autor
+y set que el goblin de arriba)
+
+`tools/generar_esqueleto_cc0.py` recorta caminar/daño/KO en
+`assets/enemigos/sheets/esqueleto.png`. Aparece junto al goblin en los
+biomas NOCHE y TORMENTA (`SHEET_POR_BIOMA` en `js/engine.js`).
+
+## Segunda variante de fondo (amanecer, selva, tormenta)
+
+**Sunny Land** (ya listado en `recursos/INDICE.md`) — ansimuz. CC0.
+**Parallax Forest Pack** — ansimuz. CC0.
+https://opengameart.org/content/forest-background
+**Castle Platformer ("working title" assets)** — Jetrel. CC0.
+https://opengameart.org/content/castle-platformer
+
+`tools/generar_fondos_variantes.py` genera `amanecer2`, `selva2` y
+`tormenta2` en `assets/fondos/`. El motor elige al azar entre las dos
+variantes de cada bioma al entrar (`FONDO_VARIANTES` en `js/engine.js`),
+para que la campaña no se vea igual la segunda vez.
+
 ## Packs descargados y aún sin integrar
 
 `recursos/` guarda 14 packs CC0 más (mapas Tiled, enemigos animados, un jefe

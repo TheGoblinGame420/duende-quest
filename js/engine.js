@@ -57,14 +57,19 @@ window.addEventListener('DOMContentLoaded', _pintarCarga);
 // velocidad, que es lo que crea sensacion de profundidad y de sitio. Pesan
 // 11 KB las diez juntas (PNG de paleta), y se generan con
 // tools/generar_parallax.py usando la MISMA paleta del array BIOMES.
-const FONDO_NOMBRES = ['noche', 'amanecer', 'selva', 'tormenta', 'desierto'];
-const FONDOS = FONDO_NOMBRES.map(n => {
+// Segunda variante para amanecer/tormenta (packs CC0 ya descargados y sin
+// usar: Sunny Land y Castle Platformer — ver tools/generar_fondos_variantes.py).
+// El motor elige una al azar cada vez que ENTRA a ese bioma (no cada frame:
+// ver _bgVarBi mas abajo), asi la campaña no se ve identica en cada vuelta.
+const FONDO_VARIANTES = [['noche'], ['amanecer', 'amanecer2'], ['selva', 'selva2'], ['tormenta', 'tormenta2'], ['desierto']];
+const FONDOS = FONDO_VARIANTES.map(nombres => nombres.map(n => {
   const lejos = new Image(); lejos.src = _AB + 'fondos/' + n + '_lejos.png';
   const cerca = new Image(); cerca.src = _AB + 'fondos/' + n + '_cerca.png';
   _vigilar(lejos); _vigilar(cerca);
   return { lejos, cerca };
-});
+}));
 let scrollLejos = 0, scrollCerca = 0;
+let _bgVarBi = -1, _bgVarIdx = 0;
 
 // Dibuja una capa repetida en bucle horizontal, anclada al suelo.
 function dibujarCapa(img, desplaz, alturaSobreSuelo) {
@@ -81,6 +86,7 @@ const IMG = {
   enemy2: _AB + 'enemigos/enemy2.png',
   enemy_magmar: _AB + 'enemigos/enemy_magmar.png',
   sh_goblin_normal: _AB + 'enemigos/sheets/goblin_normal.png',
+  sh_esqueleto: _AB + 'enemigos/sheets/esqueleto.png',
   coin: _AB + 'ui/coin.png',
   item_potion: _AB + 'items/item_potion.png',
   item_shield: _AB + 'items/item_shield.png',
@@ -359,7 +365,32 @@ const SHEETS = {
     filaGolpe: 1, colGolpeIni: 1, nGolpe: 2,
     colMuerteIni: 6, nMuerte: 2,
   },
+  // Segundo enemigo con hoja de animacion (MV Platformer Skeleton, CC0 —
+  // ver tools/generar_esqueleto_cc0.py). Va en NOCHE y TORMENTA junto al
+  // goblin, para que esos dos biomas no sean el mismo enemigo repintado.
+  esqueleto: {
+    fw: 32, fh: 64, idealAltoPx: 45, altoObjetivo: 70,
+    filaMov: 0, colMovIni: 0, nMov: 6,
+    filaGolpe: 1, colGolpeIni: 0, nGolpe: 2,
+    colMuerteIni: 2, nMuerte: 3,
+  },
 };
+// Enemigo "normal" (el mas visto, sin afijo): antes SIEMPRE era el goblin;
+// ahora varia por bioma para que la campaña completa no se sienta como el
+// mismo enemigo repintado 15 veces. NOCHE(0) y TORMENTA(3) alternan con el
+// esqueleto; el resto se queda con el goblin.
+const SHEET_POR_BIOMA = [
+  ['goblin_normal', 'esqueleto'],  // 0 noche
+  ['goblin_normal'],               // 1 amanecer
+  ['goblin_normal'],               // 2 selva
+  ['goblin_normal', 'esqueleto'],  // 3 tormenta
+  ['goblin_normal'],               // 4 desierto
+];
+function sheetNormalDeBioma() {
+  const bi = nivel ? nivel.bioma : Math.floor((wave - 1) / 3) % BIOMES.length;
+  const opciones = SHEET_POR_BIOMA[bi] || ['goblin_normal'];
+  return opciones[Math.floor(Math.random() * opciones.length)];
+}
 function sheetFrame(e, s) {
   if (e.muriendo > 0) {
     const k = 1 - e.muriendo / 16;
@@ -897,7 +928,7 @@ function spawnEnemy(forceBoss = false) {
     // El "normal" es el enemigo mas visto de largo (sin afijo, aparece desde
     // la oleada 1): es el que mas rentaba pasar de bitmap deformado a un
     // ciclo de animacion de verdad.
-    sheet: (!isBoss && !isFlyer && !isCharger && !isExploder && !isGhost && !isMagmar) ? 'goblin_normal' : null,
+    sheet: (!isBoss && !isFlyer && !isCharger && !isExploder && !isGhost && !isMagmar) ? sheetNormalDeBioma() : null,
     isExploder, isGhost, ghostTimer: 0, ghostAlpha: 1,
     isFlyer, isBoss, isCharger, isMagmar,
     flashTimer: 0, bobTimer: Math.random() * Math.PI * 2,
@@ -2137,8 +2168,10 @@ function draw() {
   // Capas de parallax: la lejana se mueve a un tercio de la cercana, que a su
   // vez va mas lenta que el suelo. Esa diferencia es toda la profundidad.
   const bi = Math.max(0, BIOMES.indexOf(biome)) % FONDOS.length;
-  dibujarCapa(FONDOS[bi].lejos, scrollLejos, 46);
-  dibujarCapa(FONDOS[bi].cerca, scrollCerca, 16);
+  if (_bgVarBi !== bi) { _bgVarBi = bi; _bgVarIdx = Math.floor(Math.random() * FONDOS[bi].length); }
+  const _fondo = FONDOS[bi][_bgVarIdx];
+  dibujarCapa(_fondo.lejos, scrollLejos, 46);
+  dibujarCapa(_fondo.cerca, scrollCerca, 16);
 
   const _nube = _nubeSprite(biome.cloud);
   bgClouds.forEach(c => {
