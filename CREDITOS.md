@@ -116,6 +116,41 @@ samurai.
 
 `SHEET_POR_BIOMA` en `js/engine.js` tiene el reparto final por bioma.
 
+## Octavo, noveno y decimo enemigo animado: goblin centurion, goblin battlelord y serpiente
+
+**Goblin Corps (MV Platformer set)** — Moikmellah. Licencia CC0.
+https://opengameart.org/content/goblin-corps-mv-platformer-set
+
+Dos variantes mas del mismo pack usado para el goblin "normal": `centurion`
+(piel canela, vincha roja, torso desnudo) y `battleLord` (piel canela,
+vincha/cresta verde, armadura de cuero con placas), misma rejilla 32x64 y
+mismas columnas que las 5 variantes previas (confirmado a ojo con las 5
+sueltas que quedaban en `full/`, no solo estas dos — ver
+`tools/generar_goblin_variantes3_cc0.py`). Las dos van a **SELVA ESMERALDA**
+(`assets/enemigos/sheets/goblin_centurion.png` y `goblin_battlelord.png`),
+que hasta esta tanda era el bioma con menos variedad (solo goblin_normal +
+hongo): la piel canela y las vinchas se leen como guerreros tribales de la
+jungla, en vez de soldados uniformados como el resto de reskins. `guard`,
+`knight` y `lord` (piel gris, armadura metalica generica) se dejaron sin
+usar: no encajan con jungla y se guardan para un bioma tipo castillo si
+aparece mas adelante.
+
+**Sideview Fantasy Patreon Collection** (Grotto Escape 2 - Snake) — Luis Zuno
+(ansimuz). Licencia CC0.
+https://opengameart.org/content/sideview-fantasy-patreon-collection
+
+Tercer enemigo animado que no es un humanoide reskineado (mismo pack que dio
+el lagarto). Rejilla propia (celda 27x20 caminar, 24x20 daño, cada
+animacion en su propio PNG suelto). Igual que el lagarto, el pack no trae
+frames de muerte: `tools/generar_serpiente_cc0.py` re-empaqueta caminar +
+daño y reusa el ultimo frame de daño (el mas replegado) como pose de
+"muerte", con el mismo fade-out por alpha del motor. Va en **DESIERTO
+DORADO** (`assets/enemigos/sheets/serpiente.png`), junto al goblin samurai y
+el lagarto — la sugerencia original de `recursos/INDICE.md` ya emparejaba
+lagarto y serpiente como fauna de cañon rocoso, y aqui se confirmo a ojo.
+
+`SHEET_POR_BIOMA` en `js/engine.js` tiene el reparto final por bioma.
+
 ## Segunda variante de fondo (amanecer, selva, tormenta)
 
 **Sunny Land** (ya listado en `recursos/INDICE.md`) — ansimuz. CC0.
@@ -132,13 +167,13 @@ para que la campaña no se vea igual la segunda vez.
 ## Packs descargados y aún sin integrar
 
 `recursos/` guarda más packs CC0 sin integrar del todo (mapas Tiled, un jefe
-dragón, iconos), más lo que queda sin tocar de Goblin Corps (5 variantes:
-battleLord, centurion, guard, knight, lord) y del resto de Sideview Fantasy
-Collection (serpiente, fantasma, pájaro, rana, dragón volador — solo se
-usaron el lagarto de aquí y la seta grande de Scratchio, que es un pack
-aparte). No se publican (`recursos` está en `.assetsignore`). El detalle de
-cada uno, con autor, URL y licencia, está en `recursos/INDICE.md`. Al
-integrar cualquiera, añadirlo a este archivo.
+dragón, iconos), más lo que queda sin tocar de Goblin Corps (3 variantes:
+guard, knight, lord) y del resto de Sideview Fantasy Collection (fantasma,
+pájaro, rana, dragón volador — solo se usaron el lagarto y la serpiente de
+aquí y la seta grande de Scratchio, que es un pack aparte). No se publican
+(`recursos` está en `.assetsignore`). El detalle de cada uno, con autor, URL
+y licencia, está en `recursos/INDICE.md`. Al integrar cualquiera, añadirlo a
+este archivo.
 
 ---
 
