@@ -55,14 +55,18 @@ draw.text((200, 30), "DUENDE QUEST", fill=(255, 230, 0, 255), font=font_big)
 draw.text((200, 75), "Play-to-Earn  |  Solana", fill=(192, 132, 252, 255), font=font_med)
 
 # Features
-features = ["Kill enemies & earn $DUENDE", "Staking up to 240% APY", "NFTs & Skins", "Global Ranking"]
+# "Staking up to 240% APY" se quito: el staking esta apagado desde
+# fix(cumplimiento) por el riesgo penal descrito en ESTRATEGIA-TOKEN.md
+# (art. 11 Ley 26702 / art. 246 Codigo Penal) y este banner nunca se llego a
+# publicar, pero seguia listo para generarse con la promesa vieja.
+features = ["Kill enemies & earn $DUENDE", "Skins & campaign", "Global Ranking"]
 for i, f in enumerate(features):
     y_pos = 110 + i * 24
     draw.text((220, y_pos), f"  {f}", fill=(200, 200, 200, 255), font=font_sm)
 
 # Bottom bar
 draw.rectangle([(0, 340), (639, 359)], fill=(192, 132, 252, 40))
-draw.text((200, 343), "t.me/duendequest_bot/app", fill=(192, 132, 252, 255), font=font_sm)
+draw.text((200, 343), "t.me/duendequest_bot", fill=(192, 132, 252, 255), font=font_sm)
 
 img.save(out, "PNG")
 print(f"Saved: {out}")
