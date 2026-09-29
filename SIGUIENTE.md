@@ -292,4 +292,55 @@ Es el mismo procedimiento que ya hiciste con `sql/02-seguridad.sql`:
    como niveles reales y el resto del bestiario (esqueletos, seta, jefe).
 6. ~~**Términos de Servicio y Política de Privacidad**~~ — hecho esta
    tanda, ver arriba (`terminos.html`, `privacidad.html`).
+
+## Quinta tanda (29-sep-2026) — tienda de skins, TON Connect y cloud save
+
+El dueño avisó dos cosas: "no puedo comprar las skins en la web" y "al
+darle click a conectar wallet en Telegram no conecta nada". Las dos eran
+bugs reales, no percepción:
+
+- **Tienda de skins invisible.** `#ov-skin-shop` vive en una caja de 320px
+  compartida por todas las pantallas. Con 6 skins detalladas el contenido
+  no cabía: el grid tenía su propio `overflow-y:auto`, y en CSS eso hace
+  que el alto mínimo automático de ese elemento sea 0 — flexbox lo
+  aplastó a ~70px en vez de respetarle su `max-height`. Además la pantalla
+  estaba centrada (`justify-content:center`), así que al desbordar el
+  scroll empezaba mostrando el CENTRO del contenido, no el principio. El
+  resultado visual: título, botón "Conectar Phantom" y nada más — ninguna
+  skin de pago ni su botón "Comprar" se veían jamás. No era un problema de
+  Solana Pay ni de Helius: las skins nunca llegaban a ser clickeables
+  porque nunca se veían. Arreglado solo en esa pantalla (`justify-content:
+  flex-start` + `overflow-y:auto` en el modal, `flex-shrink:0` en cada
+  fila) — audité las otras 8 pantallas (`.ov`) por el mismo patrón y
+  ninguna más lo tenía (son las únicas dos: la única otra que usa un
+  `overflow-y:auto` propio).
+- **TON Connect no volvía al juego.** `twaReturnUrl` apuntaba a
+  `t.me/duendequest_bot/app`, un link que no corresponde a nada real (el
+  bot abre el juego con botones `web_app` ad-hoc, no como Mini App con
+  nombre corto registrado en BotFather). Un jugador con wallet externa
+  aprobaba la conexión allá y Telegram no tenía adónde volver — se quedaba
+  en la wallet, el juego nunca reflejaba la conexión. Cambiado al link del
+  bot a secas (`t.me/duendequest_bot`, siempre válido).
+- **Cloud save real** (`sql/04-cloud-save-web.sql`, ejecutado y confirmado
+  por el dueño). Ya existía para Telegram (monedas, nivel, XP, racha) pero
+  nunca incluía las estrellas de campaña, y la web no tenía nada de esto —
+  cambiar de dispositivo o borrar datos del sitio perdía todo el progreso
+  sin remedio. Ahora `profiles.campaign_stars` guarda las estrellas y
+  `web_sync_progress`/`sync_progress` (con saneado compartido,
+  `cloudSavePatch()` en `wallet.js`) suben/bajan todo el progreso
+  cosmético para cuentas web y de Telegram por igual.
+- **Verificación con jugador automático** (mismo patrón de siempre: driver
+  `startGame()`/`update()` en bucle desde la consola, manejando también
+  `eligiendo` — pantalla de mejora — y `descanso` — pantalla entre
+  oleadas). Corrida completa de SIN FIN hasta wave 3 con 7 mejoras
+  elegidas y 2 descansos, e intento de la etapa jefe 1-3: cero errores de
+  consola en ambas, misiones y logros se marcaron bien, game over y
+  guardado local funcionaron.
+
+**Sin verificar (no lo pude probar sin Telegram real ni una wallet
+externa real):** que el flujo completo TON Connect ↔ Tonkeeper/wallet de
+Telegram efectivamente complete la conexión de punta a punta en
+producción — el fix corrige un bug concreto y verificable en el código,
+pero el "camino feliz" completo solo se puede confirmar con el dueño
+probando en su teléfono.
 6. Términos de servicio y privacidad (`ESTRATEGIA-TOKEN.md`).
