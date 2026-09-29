@@ -151,6 +151,29 @@ lagarto y serpiente como fauna de cañon rocoso, y aqui se confirmo a ojo.
 
 `SHEET_POR_BIOMA` en `js/engine.js` tiene el reparto final por bioma.
 
+## Jefe final de la campaña: ángel
+
+**GothicVania Church** — Luis Zuno (ansimuz). Licencia CC0.
+https://opengameart.org/content/gothicvania-church-pack
+
+Hasta ahora el único jefe del juego era `oso` (`JEFES` en `js/engine.js`):
+un oso reciclado por bioma vía tinte de color, con nombre y repertorio de
+ataques distintos según el bioma pero siempre el mismo bitmap estático
+(`assets/enemigos/enemy2.png`). Este es el primer jefe con silueta propia,
+usado SOLO en la etapa final de la campaña (5-3) — las otras 4 etapas con
+jefe siguen usando el oso. `tools/generar_angel_cc0.py` empaqueta los 8
+frames de "idle" (aleteo) como ciclo de movimiento y 2 de los 3 de
+"angel-attack" como destello de golpe; el pack no trae daño ni muerte
+propios, así que el último frame de ataque se reusa como pose de colapso
+(mismo patrón que lagarto/serpiente). Se dibuja con el mismo sistema de
+hoja que el resto del bestiario (`assets/enemigos/sheets/angel.png`) — el
+código del jefe (`actualizarJefe`, telegrafiado de ataques) ya era
+genérico y no necesitó ningún cambio para aceptar un sprite distinto del
+oso. Se llama "ÁNGEL CAÍDO" en vez del nombre por bioma (`NOMBRES_JEFE`)
+para no salir como "FARAÓN DORADO" solo por vivir en DESIERTO DORADO —
+el oso reciclado que SIN FIN sigue mandando a ese mismo bioma cada 15
+waves conserva ese nombre sin cambios.
+
 ## Segunda variante de fondo (amanecer, selva, tormenta)
 
 **Sunny Land** (ya listado en `recursos/INDICE.md`) — ansimuz. CC0.

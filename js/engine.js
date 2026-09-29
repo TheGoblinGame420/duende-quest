@@ -96,6 +96,7 @@ const IMG = {
   sh_goblin_centurion: _AB + 'enemigos/sheets/goblin_centurion.png',
   sh_goblin_battlelord: _AB + 'enemigos/sheets/goblin_battlelord.png',
   sh_serpiente: _AB + 'enemigos/sheets/serpiente.png',
+  sh_angel: _AB + 'enemigos/sheets/angel.png',
   coin: _AB + 'ui/coin.png',
   item_potion: _AB + 'items/item_potion.png',
   item_shield: _AB + 'items/item_shield.png',
@@ -470,6 +471,19 @@ const SHEETS = {
     filaMov: 0, colMovIni: 0, nMov: 4,
     filaGolpe: 1, colGolpeIni: 0, nGolpe: 3,
     colMuerteIni: 3, nMuerte: 1,
+  },
+  // Primer JEFE con silueta propia (GothicVania Church, ansimuz, CC0 — ver
+  // tools/generar_angel_cc0.py). Celda mucho mas grande (122x117) que las
+  // de arriba: no importa, drawSheet() escala la celda entera por el mismo
+  // factor sin recortar, el tamaño en pantalla no cambia frame a frame
+  // aunque el aleteo varie mucho de alto (alas plegadas vs bien abiertas).
+  // El pack no trae daño/muerte propios: nMuerte=1 reusa el ultimo frame de
+  // "attack" como pose de colapso (mismo patron que lagarto/serpiente).
+  angel: {
+    fw: 122, fh: 117, idealAltoPx: 85, altoObjetivo: 130,
+    filaMov: 0, colMovIni: 0, nMov: 8,
+    filaGolpe: 1, colGolpeIni: 0, nGolpe: 2,
+    colMuerteIni: 2, nMuerte: 1,
   },
 };
 // Enemigo "normal" (el mas visto, sin afijo): antes SIEMPRE era el goblin;
@@ -1292,8 +1306,22 @@ const JEFES = {
     ataques: ['embestida', 'salto'], ataquesF2: ['embestida', 'salto', 'rocas'],
     aviso: { embestida: 50, salto: 45, rocas: 60 }, pausa: [70, 45],
   },
+  // Jefe final de la campaña (solo etapa 5-3, ver LEVELS): primer jefe con
+  // silueta propia en vez del oso reciclado — ver tools/generar_angel_cc0.py.
+  // Su ataques/ataquesF2/pausa/vel reales los pisa ESTILO_JEFE[4] igual que
+  // al oso (Object.assign en spawnJefe corre ESTILO_JEFE despues), asi que
+  // lo que de verdad importa de esta entrada es hp/w/h/fase2/aviso.
+  angel: {
+    nombre: 'ÁNGEL CAÍDO', hp: 140, w: 130, h: 150, fase2: .5,
+    ataques: ['salto', 'rocas'], ataquesF2: ['salto', 'rocas', 'embestida'],
+    aviso: { embestida: 50, salto: 50, rocas: 55 }, pausa: [65, 42],
+  },
 };
-// Un nombre por bioma, en el orden del array BIOMES.
+// Un nombre por bioma, en el orden del array BIOMES. Lo pisa el 4to
+// parametro de spawnJefe cuando el nivel trae su propio nombre (asi el
+// jefe final de la campaña, un angel, no sale llamado "FARAON DORADO" solo
+// por vivir en el bioma DESIERTO DORADO — pero el oso reciclado que SIN FIN
+// sigue mandando a ese mismo bioma cada 15 waves si conserva ese nombre).
 const NOMBRES_JEFE = ['OSO REY', 'SEÑOR DEL ALBA', 'TITAN ESMERALDA', 'REY TORMENTA', 'FARAON DORADO'];
 // Cada bioma cambia el REPERTORIO del jefe, no solo su vida: asi los cinco
 // jefes se pelean distinto con el mismo sprite. 'doble' es una embestida de
@@ -1306,19 +1334,23 @@ const ESTILO_JEFE = [
   { ataques: ['doble', 'salto', 'rocas'], ataquesF2: ['doble', 'salto', 'rocas'], rocas: 5, vel: 10.5, pausa: [55, 38] },
 ];
 
-function spawnJefe(tipo, extraHp, bioma) {
+function spawnJefe(tipo, extraHp, bioma, nombreOverride) {
   const bi = bioma || 0;
   const def = Object.assign({}, JEFES[tipo] || JEFES.oso, ESTILO_JEFE[bi] || {});
   def.aviso = Object.assign({ doble: 50 }, def.aviso);
-  const nombre = NOMBRES_JEFE[bi] || def.nombre;
+  const nombre = nombreOverride || NOMBRES_JEFE[bi] || def.nombre;
   const hp = def.hp + (extraHp || 0);
+  // Jefes con silueta propia (hoja de animacion, SHEETS[tipo] existe) no
+  // usan el tinte por bioma: ese tinte es para diferenciar el MISMO bitmap
+  // de oso reciclado, y desentonaria pisando la paleta ya propia del sprite.
+  const sheet = SHEETS[tipo] ? tipo : null;
   enemies.push({
     x: W + 20, y: GROUND - def.h, w: def.w, h: def.h,
     hp, maxHp: hp, spd: 0, type: 'boss', isBoss: true,
     isExploder: false, isGhost: false, isFlyer: false, isCharger: false, isMagmar: false,
     ghostTimer: 0, ghostAlpha: 1, flashTimer: 0, bobTimer: 0,
     aparicion: 26, muriendo: 0, chargeTimer: 0, shootTimer: 0, facing: -1, alive: true,
-    tinte: bi ? BIOMES[bi].line : null,
+    sheet, tinte: (bi && !sheet) ? BIOMES[bi].line : null,
     jefe: { def, nombre, estado: 'entrada', t: 60, max: 60, fase: 1, ataque: null, objX: 0, dir: -1, huecos: [], ultimo: null },
   });
   bossActive = true;
@@ -1555,7 +1587,7 @@ function update() {
     if (nivel && wave > nivel.oleadas) {
       if (nivel.jefe) {
         jefeInvocado = true;
-        spawnJefe(nivel.jefe.tipo, nivel.jefe.hp, nivel.bioma);
+        spawnJefe(nivel.jefe.tipo, nivel.jefe.hp, nivel.bioma, nivel.jefe.tipo !== 'oso' ? JEFES[nivel.jefe.tipo].nombre : null);
         // Medido: el jugador llegaba al jefe con la mitad de la vida gastada en
         // la oleada previa y moria sin haber visto sus ataques. Un respiro antes.
         PL.hp = Math.min(PL.maxHp, PL.hp + 35); updateHpHUD();
@@ -2081,7 +2113,10 @@ BIOMES.forEach((b, bi) => {
   const dens = Math.max(1, 1.7 - bi * .18), tope = 4 + bi * 2;
   LEVELS.push({ id: (bi + 1) + '-1', bioma: bi, oleadas: 2, vel, pool: bi ? pool.slice(0, -1) : ['normal'], elite: bi * .05, dens: dens + (bi ? .15 : .9), tope: bi ? tope : 2 });
   LEVELS.push({ id: (bi + 1) + '-2', bioma: bi, oleadas: 3, vel: vel + .2, pool, elite: .05 + bi * .05, dens, tope: tope + 1 });
-  LEVELS.push({ id: (bi + 1) + '-3', bioma: bi, oleadas: 1, vel: vel + .2, pool, elite: .05 + bi * .05, dens: dens + .15, tope, jefe: { tipo: 'oso', hp: bi * 20 } });
+  // El ultimo bioma (DESIERTO DORADO, bi 4) es el cierre de las 15 etapas:
+  // en vez de otro oso reciclado, el angel — primer jefe con silueta propia.
+  const esFinal = bi === BIOMES.length - 1;
+  LEVELS.push({ id: (bi + 1) + '-3', bioma: bi, oleadas: 1, vel: vel + .2, pool, elite: .05 + bi * .05, dens: dens + .15, tope, jefe: { tipo: esFinal ? 'angel' : 'oso', hp: bi * 20 } });
 });
 
 function leerCampana() {
