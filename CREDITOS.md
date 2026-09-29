@@ -174,6 +174,55 @@ para no salir como "FARAÓN DORADO" solo por vivir en DESIERTO DORADO —
 el oso reciclado que SIN FIN sigue mandando a ese mismo bioma cada 15
 waves conserva ese nombre sin cambios.
 
+## Decimoprimer y decimosegundo enemigo animado: ghoul ardiente y hechicero
+
+**GothicVania Church** — Luis Zuno (ansimuz). Licencia CC0.
+https://opengameart.org/content/gothicvania-church-pack
+
+Mismo pack que dio el ángel (arriba), del que quedaban dos sprites sin usar
+que `recursos/INDICE.md` ya marcaba: el "burning-ghoul" y el "wizard".
+
+El **ghoul ardiente** (`assets/enemigos/sheets/ghoul_ardiente.png`,
+`tools/generar_ghoul_ardiente_cc0.py`) es el cuarto enemigo no-humanoide
+(despues de hongo/lagarto/serpiente). Va a **TORMENTA ARCANA**, que hasta
+esta tanda no tenia ningun enemigo de fuego (solo goblin mago/esqueleto,
+temática arcana/eléctrica) — `recursos/INDICE.md` ya lo describía como "el
+enemigo de fuego que faltaba". El pack trae dos variantes de paleta (v1/v2,
+misma pose); se usó v1 porque encaja mejor con la paleta violeta de
+TORMENTA. Solo trae un ciclo de carrera (7 de 8 frames sueltos quedan
+dentro del tag de animación del pack, el 8vo queda fuera): sin daño ni
+muerte propios, se reusan el último frame del ciclo + el frame suelto (el
+más extendido) como flash de golpe, y el frame suelto otra vez como pose de
+colapso — mismo patrón que lagarto/serpiente/ángel.
+
+El **hechicero** (`assets/enemigos/sheets/hechicero.png`,
+`tools/generar_hechicero_cc0.py`) es el "wizard" del pack, que
+`recursos/INDICE.md` marcaba sin revisar como posible mini-jefe. Se llama
+"hechicero" y no "mago" para no confundirse con goblin_mage (el párrafo de
+arriba en este mismo archivo). Mirado a ojo (previews `idle.gif`/`fire.gif`
+del pack) no lee como jefe: no tiene fase 2, ni ataque propio telegrafiado,
+y su altura de dibujo real es parecida al resto del bestiario "normal" —
+solo se ve más grande por la túnica ancha, no por estatura. Intentar un
+jefe nuevo sin poder probar el telegrafiado de ataques en partida real era
+el riesgo que este reparto de tareas pedía evitar, así que se integró como
+enemigo normal (el patrón más simple, `SHEETS`/`SHEET_POR_BIOMA`, ya
+probado 11 veces). Va a **NOCHE**, no a TORMENTA como sugería la fila
+original de `recursos/INDICE.md` (esa sugerencia era para cuando esto era
+candidato a jefe): TORMENTA ya tiene al goblin mago y en esta misma tanda
+suma al ghoul de arriba, así que hubiera quedado con 5 variantes mientras
+NOCHE se quedaba en 3; la túnica violeta oscura y la capucha leen mejor
+como "nigromante de cementerio" junto al esqueleto y el goblin assassin
+(los dos ya "acechan de noche", ver más arriba). El pack no trae una tira
+de "caminar" con piernas (túnica larga, casi sin pies visibles a la
+vista): se usa el ciclo de "Idle" (manos quietas) como fila de movimiento,
+igual patrón que lagarto/serpiente cuando su "caminar" tampoco mostraba
+desplazamiento de piernas — el desplazamiento en X ya lo hace el código del
+motor, no el dibujo. Sin daño/muerte propios: el golpe reusa 3 frames del
+conjuro de "Fire" subiendo de intensidad (manos cada vez más arriba), y la
+muerte reusa el frame final de descarga como pose de colapso.
+
+`SHEET_POR_BIOMA` en `js/engine.js` tiene el reparto final por bioma.
+
 ## Segunda variante de fondo (amanecer, selva, tormenta)
 
 **Sunny Land** (ya listado en `recursos/INDICE.md`) — ansimuz. CC0.

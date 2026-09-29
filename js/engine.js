@@ -96,6 +96,8 @@ const IMG = {
   sh_goblin_centurion: _AB + 'enemigos/sheets/goblin_centurion.png',
   sh_goblin_battlelord: _AB + 'enemigos/sheets/goblin_battlelord.png',
   sh_serpiente: _AB + 'enemigos/sheets/serpiente.png',
+  sh_ghoul_ardiente: _AB + 'enemigos/sheets/ghoul_ardiente.png',
+  sh_hechicero: _AB + 'enemigos/sheets/hechicero.png',
   sh_angel: _AB + 'enemigos/sheets/angel.png',
   coin: _AB + 'ui/coin.png',
   item_potion: _AB + 'items/item_potion.png',
@@ -472,6 +474,43 @@ const SHEETS = {
     filaGolpe: 1, colGolpeIni: 0, nGolpe: 3,
     colMuerteIni: 3, nMuerte: 1,
   },
+  // Cuarto enemigo no-humanoide: el "burning-ghoul" de GothicVania Church,
+  // mismo pack que dio el angel (CC0 — ver tools/generar_ghoul_ardiente_cc0.py).
+  // Va a TORMENTA ARCANA, que hasta esta tanda no tenia ningun enemigo de
+  // fuego (solo arcano/electrico): recursos/INDICE.md ya lo marcaba como "el
+  // enemigo de fuego que faltaba". El pack solo trae un ciclo de carrera (7
+  // de sus 8 frames sueltos, el 8vo queda fuera del tag de animacion): sin
+  // daño ni muerte propios, se reusan el ultimo frame del ciclo + el frame
+  // suelto (el mas extendido) como flash de golpe, y el frame suelto otra
+  // vez como pose de colapso (nMuerte=1), mismo patron que lagarto/serpiente.
+  ghoul_ardiente: {
+    fw: 57, fh: 60, idealAltoPx: 47, altoObjetivo: 70,
+    filaMov: 0, colMovIni: 0, nMov: 7,
+    filaGolpe: 1, colGolpeIni: 0, nGolpe: 2,
+    colMuerteIni: 2, nMuerte: 1,
+  },
+  // El "wizard" del mismo pack (GothicVania Church — ver
+  // tools/generar_hechicero_cc0.py). Se llama 'hechicero' y NO 'mago' para
+  // no confundirse con goblin_mage (ya integrado, TORMENTA). recursos/INDICE.md
+  // lo marcaba como posible mini-jefe; mirado a ojo (previews/idle.gif,
+  // previews/fire.gif) no lee como jefe: sin fase 2, sin ataque propio
+  // telegrafiado, altura de dibujo parecida al resto del bestiario "normal"
+  // (solo la tunica lo hace mas ANCHO). Se integra como enemigo normal en
+  // NOCHE, junto al esqueleto y el goblin assassin (encapuchado oscuro =
+  // nigromante de cementerio; TORMENTA ya tiene goblin_mage + el ghoul de
+  // arriba, hubiera quedado sobrecargada). El pack no trae "caminar" con
+  // piernas (tunica larga, casi sin pies visibles): se usa el ciclo de
+  // "Idle" como fila de movimiento, igual patron que lagarto/serpiente
+  // cuando su "caminar" tampoco mostraba desplazamiento de piernas — el
+  // motor ya mueve al enemigo en X por codigo. Sin daño/muerte propios:
+  // golpe reusa 3 frames del conjuro de "Fire" subiendo de intensidad, y
+  // muerte reusa el frame final de descarga (nMuerte=1) como pose de colapso.
+  hechicero: {
+    fw: 81, fh: 66, idealAltoPx: 53, altoObjetivo: 70,
+    filaMov: 0, colMovIni: 0, nMov: 5,
+    filaGolpe: 1, colGolpeIni: 0, nGolpe: 3,
+    colMuerteIni: 3, nMuerte: 1,
+  },
   // Primer JEFE con silueta propia (GothicVania Church, ansimuz, CC0 — ver
   // tools/generar_angel_cc0.py). Celda mucho mas grande (122x117) que las
   // de arriba: no importa, drawSheet() escala la celda entera por el mismo
@@ -489,15 +528,16 @@ const SHEETS = {
 // Enemigo "normal" (el mas visto, sin afijo): antes SIEMPRE era el goblin;
 // ahora varia por bioma para que la campaña completa no se sienta como el
 // mismo enemigo repintado 15 veces. NOCHE(0) alterna esqueleto+goblin
-// assassin; AMANECER(1) suma al goblin peasant; SELVA(2) suma al hongo y a
-// los goblins centurion/battlelord (guerreros tribales); TORMENTA(3) suma
-// ademas al goblin mago; DESIERTO(4) suma al goblin samurai, el lagarto y
-// la serpiente (fauna de cañon rocoso).
+// assassin+hechicero (nigromante encapuchado); AMANECER(1) suma al goblin
+// peasant; SELVA(2) suma al hongo y a los goblins centurion/battlelord
+// (guerreros tribales); TORMENTA(3) suma al goblin mago Y al ghoul ardiente
+// (fuego, lo unico que le faltaba a ese bioma); DESIERTO(4) suma al goblin
+// samurai, el lagarto y la serpiente (fauna de cañon rocoso).
 const SHEET_POR_BIOMA = [
-  ['goblin_normal', 'esqueleto', 'goblin_assassin'],              // 0 noche
+  ['goblin_normal', 'esqueleto', 'goblin_assassin', 'hechicero'], // 0 noche
   ['goblin_normal', 'goblin_peasant'],                            // 1 amanecer
   ['goblin_normal', 'hongo', 'goblin_centurion', 'goblin_battlelord'], // 2 selva
-  ['goblin_normal', 'esqueleto', 'goblin_mage'],                  // 3 tormenta
+  ['goblin_normal', 'esqueleto', 'goblin_mage', 'ghoul_ardiente'], // 3 tormenta
   ['goblin_normal', 'goblin_samurai', 'lagarto', 'serpiente'],    // 4 desierto
 ];
 function sheetNormalDeBioma() {
