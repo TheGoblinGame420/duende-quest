@@ -2263,7 +2263,7 @@ function abrirMapa() {
       html += '<button data-n="' + i + '" ' + (ok ? '' : 'disabled ') + 'style="width:74px;min-height:52px;border-radius:6px;font-family:inherit;' +
         'border:2px solid ' + (ok ? b.line : 'rgba(255,255,255,.12)') + ';background:' + (ok ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.3)') + ';' +
         'color:#fff;cursor:' + (ok ? 'pointer' : 'default') + ';font-size:.42rem;line-height:1.6">' +
-        (ok ? (l.jefe ? '☠ ' : '') + l.id + '<br><span style="color:#ffe600;font-size:.56rem">' + '★'.repeat(s) + '<span style="color:rgba(255,255,255,.2)">' + '★'.repeat(3 - s) + '</span></span>' : '🔒') +
+        (ok ? (l.jefe ? (l.jefe.tipo === 'oso' ? '☠ ' : '👑 ') : '') + l.id + '<br><span style="color:#ffe600;font-size:.56rem">' + '★'.repeat(s) + '<span style="color:rgba(255,255,255,.2)">' + '★'.repeat(3 - s) + '</span></span>' : '🔒') +
         '</button>';
     }
     html += '</div>';
