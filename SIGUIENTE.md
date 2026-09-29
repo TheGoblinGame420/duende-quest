@@ -405,3 +405,74 @@ producción — el fix corrige un bug concreto y verificable en el código,
 pero el "camino feliz" completo solo se puede confirmar con el dueño
 probando en su teléfono.
 6. Términos de servicio y privacidad (`ESTRATEGIA-TOKEN.md`).
+
+## Séptima tanda (29-sep-2026) — 6 agentes en paralelo, jefe final y ranking real
+
+El dueño pidió "mejora todo el día, no pares hasta que se acabe la
+ventana de contexto" y desplegar agentes para explorar el juego y buscar
+en internet qué mejorar. Se lanzaron 6 agentes en total, en 2 rondas, cada
+uno en su worktree aislado, todos revisados (diff leído, sprites vistos
+con el Read tool, sintaxis verificada, y para los que tocaban
+`js/engine.js` se confirmó que el merge automático combinó todo sin
+perder nada) y probados en vivo con el jugador automático antes de
+fusionar a master:
+
+**Bugs reales encontrados y arreglados:**
+- `telegram/index.html` hacía una consulta a Supabase en **cada apertura**
+  de la Mini App para un panel (`#start-rank-list`) que ya no existe desde
+  el rediseño a 5 pestañas — puro gasto, sin efecto visible. También un
+  event listener huérfano de un input que ya no existe.
+- `index.html` (landing) tenía el mismo link muerto de Telegram
+  (`t.me/duendequest_bot/app`) que ya se había arreglado dentro de la Mini
+  App — arreglado también aquí (es el botón de más tráfico del sitio).
+- `make_banner.py` generaba un banner promocional (sin usar en ningún
+  lado, pero servido público en `assets/`) que todavía prometía "Staking
+  up to 240% APY" — la promesa exacta con riesgo penal por la que el
+  staking está apagado en todo el sitio. Arreglado.
+- `og:url` apuntaba a un dominio (`duendequest.com`) que nadie posee —
+  cambiado al dominio real. No existía favicon en ningún archivo del
+  proyecto — agregado.
+- **Bug real de cálculo en donaciones** (formulario en vivo, transacción
+  SOL de verdad firmada al dev wallet): `updateDuendeRate()` calculaba
+  "tokens por $1" en vez de "tokens por SOL" (le faltaba multiplicar por
+  el precio de SOL) y sobreescribía cada 30s la tasa que la misma
+  pantalla promete arriba, dejándola en ~1-2% de lo prometido. Arreglado.
+- `index.html#exchange` prometía "entra a tu wallet dentro del juego" con
+  un link a `game.html#wallet` que no hacía nada (el fragmento no tenía
+  ningún listener). Ahora sí abre el panel.
+- **DAGAS pegaba más fuerte que ODACHI y KATANA**, al revés de su diseño
+  ("rápida pero floja"): `Math.ceil` sobre el multiplicador de combo
+  anulaba casi toda la reducción de daño declarada. Verificado con la
+  matemática exacta (ciclo de 3 golpes: 9,4 daño/s vs 8,2 de ODACHI),
+  corregido.
+- **Ranking global de la landing era 5 nombres inventados** (DUENDE_MASTER,
+  EL_REY_420...) con un badge parpadeante "● LIVE" y "Actualizado en
+  tiempo real · Powered by Supabase" que nunca estuvo conectado a nada.
+  Se le preguntó al dueño qué hacer (conectarlo de verdad / relabel /
+  quitarlo / dejarlo) y eligió conectarlo: ahora `cargarRankingLanding()`
+  llama a la MISMA `_fetchLeaderboard()` que ya usa el ranking del juego,
+  sin duplicar lógica. Con solo 2 jugadores reales hoy se ve corto, pero
+  ya no miente.
+
+**Contenido nuevo — bestiario:** de 2 enemigos con hoja de animación (goblin
+normal + esqueleto) a **13**: goblin samurai/mago/peasant/assassin/
+centurion/battlelord, hongo, lagarto, serpiente, ghoul ardiente, hechicero
+— repartidos por los 5 biomas (`SHEET_POR_BIOMA` en `js/engine.js`), cada
+uno verificado con PIL antes de integrarlo (nunca confiando en la
+documentación del pack) y probado en combate real en su bioma.
+
+**Jefe final de la campaña con silueta propia.** Los 5 jefes eran el MISMO
+bitmap (`oso`, solo cambiaba el tinte por bioma). La etapa 5-3 (cierre de
+las 15 etapas) ahora pelea contra un ángel de verdad (GothicVania Church,
+CC0) — primer jefe con hoja de animación. `spawnJefe()` ganó un 4to
+parámetro (nombre explícito, para no salir "FARAÓN DORADO" solo por el
+bioma) y ahora pone `e.sheet` cuando el tipo de jefe tiene una hoja
+definida, sin tocar el resto del sistema de ataques/telegrafiado (ya era
+genérico). HP 220 (vs ~130-150 de los jefes anteriores) — escalada real
+para un cierre de campaña. Probado en vivo de punta a punta: spawn →
+pelea real → las 4 fases de estado → muerte → "¡VICTORIA!".
+
+**Verificación final:** corrida del jugador automático en los 5 biomas
++ el jefe final, **en producción** (no solo local), cero errores de
+consola en ninguna. El ranking real de la landing confirmado mostrando
+jugadores de verdad de la base de datos de producción.
