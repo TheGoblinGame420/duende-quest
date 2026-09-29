@@ -87,6 +87,9 @@ const IMG = {
   enemy_magmar: _AB + 'enemigos/enemy_magmar.png',
   sh_goblin_normal: _AB + 'enemigos/sheets/goblin_normal.png',
   sh_esqueleto: _AB + 'enemigos/sheets/esqueleto.png',
+  sh_goblin_samurai: _AB + 'enemigos/sheets/goblin_samurai.png',
+  sh_goblin_mage: _AB + 'enemigos/sheets/goblin_mage.png',
+  sh_hongo: _AB + 'enemigos/sheets/hongo.png',
   coin: _AB + 'ui/coin.png',
   item_potion: _AB + 'items/item_potion.png',
   item_shield: _AB + 'items/item_shield.png',
@@ -374,17 +377,45 @@ const SHEETS = {
     filaGolpe: 1, colGolpeIni: 0, nGolpe: 2,
     colMuerteIni: 2, nMuerte: 3,
   },
+  // Dos variantes MAS del mismo pack Goblin Corps (mismo grid 32x64 y mismas
+  // columnas que goblin_normal, solo cambia el bitmap fuente — ver
+  // tools/generar_goblin_variantes_cc0.py). idealAltoPx se midio por
+  // separado para cada una porque el sombrero/capucha cambia la altura real.
+  goblin_samurai: {
+    fw: 32, fh: 64, idealAltoPx: 34, altoObjetivo: 70,
+    filaMov: 0, colMovIni: 1, nMov: 6,
+    filaGolpe: 1, colGolpeIni: 1, nGolpe: 2,
+    colMuerteIni: 6, nMuerte: 2,
+  },
+  goblin_mage: {
+    fw: 32, fh: 64, idealAltoPx: 36, altoObjetivo: 70,
+    filaMov: 0, colMovIni: 1, nMov: 6,
+    filaGolpe: 1, colGolpeIni: 1, nGolpe: 2,
+    colMuerteIni: 6, nMuerte: 2,
+  },
+  // Primer enemigo animado que NO es un humanoide reskineado: Big Mushroom
+  // (Scratchio, CC0 — ver tools/generar_hongo_cc0.py). Rejilla propia 29x28,
+  // mas chica que la del goblin/esqueleto (por eso fw/fh distintos), y con
+  // solo 1 frame de daño (el pack no trae 2 como el goblin; sheetFrame() ya
+  // soporta nGolpe=1 sin cambios).
+  hongo: {
+    fw: 29, fh: 28, idealAltoPx: 24, altoObjetivo: 70,
+    filaMov: 0, colMovIni: 0, nMov: 6,
+    filaGolpe: 1, colGolpeIni: 0, nGolpe: 1,
+    colMuerteIni: 1, nMuerte: 6,
+  },
 };
 // Enemigo "normal" (el mas visto, sin afijo): antes SIEMPRE era el goblin;
 // ahora varia por bioma para que la campaña completa no se sienta como el
 // mismo enemigo repintado 15 veces. NOCHE(0) y TORMENTA(3) alternan con el
-// esqueleto; el resto se queda con el goblin.
+// esqueleto; TORMENTA(3) suma ademas al goblin mago; DESIERTO(4) suma al
+// goblin samurai; SELVA(2) suma al hongo (unico no-humanoide del bestiario).
 const SHEET_POR_BIOMA = [
-  ['goblin_normal', 'esqueleto'],  // 0 noche
-  ['goblin_normal'],               // 1 amanecer
-  ['goblin_normal'],               // 2 selva
-  ['goblin_normal', 'esqueleto'],  // 3 tormenta
-  ['goblin_normal'],               // 4 desierto
+  ['goblin_normal', 'esqueleto'],               // 0 noche
+  ['goblin_normal'],                            // 1 amanecer
+  ['goblin_normal', 'hongo'],                   // 2 selva
+  ['goblin_normal', 'esqueleto', 'goblin_mage'], // 3 tormenta
+  ['goblin_normal', 'goblin_samurai'],          // 4 desierto
 ];
 function sheetNormalDeBioma() {
   const bi = nivel ? nivel.bioma : Math.floor((wave - 1) / 3) % BIOMES.length;

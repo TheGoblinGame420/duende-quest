@@ -63,6 +63,31 @@ y set que el goblin de arriba)
 `assets/enemigos/sheets/esqueleto.png`. Aparece junto al goblin en los
 biomas NOCHE y TORMENTA (`SHEET_POR_BIOMA` en `js/engine.js`).
 
+## Tercer y cuarto enemigo animado: goblin samurai, goblin mago y hongo
+
+**Goblin Corps (MV Platformer set)** — Moikmellah. Licencia CC0.
+https://opengameart.org/content/goblin-corps-mv-platformer-set
+
+Dos variantes mas del mismo pack usado para el goblin "normal" (arriba):
+`samurai` y `mage`, misma rejilla 32x64 y mismas columnas que `soldier`
+(confirmado a ojo, no solo por el texto de `FRAMES.txt` — ver
+`tools/generar_goblin_variantes_cc0.py`). El samurai va a **DESIERTO
+DORADO** (`assets/enemigos/sheets/goblin_samurai.png`) y el mago a
+**TORMENTA ARCANA**, sumandose al esqueleto que ya estaba ahi
+(`assets/enemigos/sheets/goblin_mage.png`).
+
+**Animated Mushroom Monster Pixel Art (Big Mushroom)** — Scratchio.
+Licencia CC0.
+https://opengameart.org/content/animated-mushroom-monster-pixel-art
+
+Primer enemigo animado que no es un humanoide reskineado. El pack trae cada
+animacion en una tira PNG separada (caminar, daño, morir); se re-empaquetan
+en una sola hoja de 2 filas con `tools/generar_hongo_cc0.py`
+(`assets/enemigos/sheets/hongo.png`). Va en **SELVA ESMERALDA**, junto al
+goblin.
+
+`SHEET_POR_BIOMA` en `js/engine.js` tiene el reparto final por bioma.
+
 ## Segunda variante de fondo (amanecer, selva, tormenta)
 
 **Sunny Land** (ya listado en `recursos/INDICE.md`) — ansimuz. CC0.
@@ -78,10 +103,14 @@ para que la campaña no se vea igual la segunda vez.
 
 ## Packs descargados y aún sin integrar
 
-`recursos/` guarda 14 packs CC0 más (mapas Tiled, enemigos animados, un jefe
-dragón, iconos). No se publican (`recursos` está en `.assetsignore`). El
-detalle de cada uno, con autor, URL y licencia, está en `recursos/INDICE.md`.
-Al integrar cualquiera, añadirlo a este archivo.
+`recursos/` guarda más packs CC0 sin integrar del todo (mapas Tiled, un jefe
+dragón, iconos), más lo que queda sin tocar de Goblin Corps (6 variantes:
+assassin, battleLord, centurion, guard, knight, lord) y del resto de
+Sideview Fantasy Collection (lagarto, serpiente, fantasma, rana — solo se
+usó la seta grande de Scratchio, que es un pack aparte). No se publican
+(`recursos` está en `.assetsignore`). El detalle de cada uno, con autor, URL
+y licencia, está en `recursos/INDICE.md`. Al integrar cualquiera, añadirlo a
+este archivo.
 
 ---
 
