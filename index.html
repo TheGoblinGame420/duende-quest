@@ -1287,38 +1287,13 @@ footer{
       <span style="font-family:'Press Start 2P',monospace;font-size:.45rem;color:var(--green)">◈ TOP JUGADORES</span>
       <span style="font-family:'Press Start 2P',monospace;font-size:.38rem;color:rgba(255,255,255,.25);animation:blink .9s step-end infinite">● LIVE</span>
     </div>
-    <!-- Demo rows -->
+    <!-- Filas reales: las pinta cargarRankingLanding() mas abajo, leyendo
+         game_scores de Supabase (misma consulta que usa el ranking dentro
+         del juego, _fetchLeaderboard() en js/auth-manager.js). Antes esto
+         eran 5 nombres y puntajes inventados a mano con un badge "LIVE" que
+         nunca estuvo conectado a nada. -->
     <div id="landing-leaderboard">
-      <div style="display:flex;align-items:center;gap:.8rem;padding:.7rem 1.2rem;border-bottom:1px solid rgba(255,255,255,.04);font-family:'Press Start 2P',monospace">
-        <span style="font-size:.5rem;color:var(--yellow)">🥇</span>
-        <span style="flex:1;font-size:.38rem;color:rgba(255,255,255,.7)">DUENDE_MASTER</span>
-        <span style="font-size:.42rem;color:var(--green)">284,390</span>
-        <span style="font-size:.3rem;color:rgba(255,255,255,.25)">W22</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:.8rem;padding:.7rem 1.2rem;border-bottom:1px solid rgba(255,255,255,.04);font-family:'Press Start 2P',monospace">
-        <span style="font-size:.5rem;color:#aaa">🥈</span>
-        <span style="flex:1;font-size:.38rem;color:rgba(255,255,255,.7)">EL_REY_420</span>
-        <span style="font-size:.42rem;color:var(--green)">201,750</span>
-        <span style="font-size:.3rem;color:rgba(255,255,255,.25)">W18</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:.8rem;padding:.7rem 1.2rem;border-bottom:1px solid rgba(255,255,255,.04);font-family:'Press Start 2P',monospace">
-        <span style="font-size:.5rem;color:#cd7f32">🥉</span>
-        <span style="flex:1;font-size:.38rem;color:rgba(255,255,255,.7)">SOLANA_GOBLIN</span>
-        <span style="font-size:.42rem;color:var(--green)">178,200</span>
-        <span style="font-size:.3rem;color:rgba(255,255,255,.25)">W15</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:.8rem;padding:.7rem 1.2rem;border-bottom:1px solid rgba(255,255,255,.04);font-family:'Press Start 2P',monospace">
-        <span style="font-size:.4rem;color:rgba(255,255,255,.3)">#4</span>
-        <span style="flex:1;font-size:.38rem;color:rgba(255,255,255,.5)">MAGMAR_KING</span>
-        <span style="font-size:.42rem;color:rgba(0,255,136,.7)">142,580</span>
-        <span style="font-size:.3rem;color:rgba(255,255,255,.25)">W13</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:.8rem;padding:.7rem 1.2rem;font-family:'Press Start 2P',monospace">
-        <span style="font-size:.4rem;color:rgba(255,255,255,.3)">#5</span>
-        <span style="flex:1;font-size:.38rem;color:rgba(255,255,255,.5)">NECRO_DUENDE</span>
-        <span style="font-size:.42rem;color:rgba(0,255,136,.7)">98,400</span>
-        <span style="font-size:.3rem;color:rgba(255,255,255,.25)">W11</span>
-      </div>
+      <div style="padding:1.2rem;text-align:center;font-family:'Press Start 2P',monospace;font-size:.32rem;color:rgba(255,255,255,.3)">Cargando…</div>
     </div>
     <div style="padding:1rem;text-align:center;border-top:1px solid rgba(0,255,136,.1)">
       <a href="game.html" style="font-family:'Press Start 2P',monospace;font-size:.4rem;color:var(--green);text-decoration:none;letter-spacing:.1em">▶ VER RANKING COMPLETO EN EL JUEGO</a>
@@ -1821,6 +1796,42 @@ document.addEventListener('DOMContentLoaded',initCountdown);
 <script src="js/config.js"></script>
 <!-- Módulos en orden de dependencia -->
 <script src="js/auth-manager.js"></script>
+<script>
+// Ranking real de la landing (antes: 5 nombres inventados con un badge
+// "LIVE" que no estaba conectado a nada). auth-manager.js registra su
+// propio listener de 'load' (que llama a initSupabase()) ANTES que este
+// script — los listeners de 'load' corren en orden de registro, asi que
+// _sb ya esta listo cuando llega este.
+async function cargarRankingLanding(){
+  const el = document.getElementById('landing-leaderboard');
+  if (!el) return;
+  if (typeof _sb === 'undefined' || !_sb || typeof _fetchLeaderboard !== 'function') {
+    el.innerHTML = '<div style="padding:1.2rem;text-align:center;font-family:\'Press Start 2P\',monospace;font-size:.3rem;color:rgba(255,255,255,.3)">Ranking no disponible ahora mismo</div>';
+    return;
+  }
+  let scores = null;
+  try { scores = await _fetchLeaderboard('alltime'); } catch (e) {}
+  if (!scores || scores.length === 0) {
+    el.innerHTML = '<div style="padding:1.2rem;text-align:center;font-family:\'Press Start 2P\',monospace;font-size:.3rem;color:rgba(255,255,255,.3)">Aún no hay partidas — ¡sé el primero del ranking!</div>';
+    return;
+  }
+  const esc = s => String(s || '?').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const medals = ['🥇', '🥈', '🥉'];
+  el.innerHTML = scores.slice(0, 5).map((s, i) => {
+    const pos = i < 3
+      ? '<span style="font-size:.5rem;color:' + ['var(--yellow)', '#aaa', '#cd7f32'][i] + '">' + medals[i] + '</span>'
+      : '<span style="font-size:.4rem;color:rgba(255,255,255,.3)">#' + (i + 1) + '</span>';
+    const borde = i < scores.slice(0, 5).length - 1 ? 'border-bottom:1px solid rgba(255,255,255,.04);' : '';
+    return '<div style="display:flex;align-items:center;gap:.8rem;padding:.7rem 1.2rem;' + borde + 'font-family:\'Press Start 2P\',monospace">' +
+      pos +
+      '<span style="flex:1;font-size:.38rem;color:rgba(255,255,255,.7);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(s.username) + '</span>' +
+      '<span style="font-size:.42rem;color:var(--green)">' + Number(s.score || 0).toLocaleString() + '</span>' +
+      '<span style="font-size:.3rem;color:rgba(255,255,255,.25)">W' + (s.wave || 0) + '</span>' +
+    '</div>';
+  }).join('');
+}
+window.addEventListener('load', cargarRankingLanding);
+</script>
 <script src="js/price-feed.js"></script>
 <script src="js/wallet-manager.js"></script>
 <script src="js/donation-manager.js"></script>
