@@ -2206,8 +2206,16 @@ function ganarNivel() {
   const b = BIOMES[nivel.bioma];
   const txt = ['Etapa completada', 'Terminar con 50% de vida o más, sin revivir', 'Recoger los 3 sellos ✦ de las plataformas (' + sellos + '/3)'];
   const siguiente = LEVELS[idx + 1];
+  // Etapa 5-3 (sin "siguiente") cierra las 15 etapas Y es la unica con jefe
+  // de silueta propia (angel, no el oso reciclado) — antes esta pantalla era
+  // identica a la de cualquier otra etapa, sin ningun momento que marcara
+  // "esto es el final", pese a ser literalmente el remate de la campaña.
+  const esCampanaCompleta = !siguiente;
   ov.innerHTML =
     '<div style="font-size:.44rem;color:' + b.line + '">' + b.name + ' · ' + nivel.id + '</div>' +
+    (esCampanaCompleta
+      ? '<div style="font-size:.34rem;color:#c084fc;letter-spacing:.15em;margin-top:2px;text-shadow:0 0 12px #c084fc">🏆 CAMPAÑA COMPLETADA — DERROTASTE AL ÁNGEL CAÍDO 🏆</div>'
+      : '') +
     '<div style="font-size:.70rem;color:#ffe600;text-shadow:3px 3px 0 #000;margin:4px 0">¡VICTORIA!</div>' +
     '<div style="font-size:1.6rem;letter-spacing:.2em;margin:2px 0">' +
       conseguidas.map(c => '<span style="color:' + (c ? '#ffe600' : 'rgba(255,255,255,.18)') + '">★</span>').join('') + '</div>' +
