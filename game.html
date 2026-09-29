@@ -997,6 +997,12 @@ DQAch.onReward=a=>{ totalCoins+=a.reward; saveProgress(); };
 DQAch.notify=msg=>{ showPUNotif(msg); playSound('achievement'); };
 DQAch.init();
 
+// index.html#exchange enlaza aqui a "game.html#wallet" prometiendo "entra a
+// tu wallet dentro del juego": el fragmento #wallet no correspondia a ningun
+// elemento ni listener, asi que no hacia nada y el jugador se quedaba en el
+// menu principal. Ahora si abre el panel de verdad.
+if (location.hash === '#wallet') showWallet();
+
 // Compartir score (web: X/Twitter + copiar)
 function shareScore(){
   const txt=textoCompartir();

@@ -55,10 +55,13 @@ const DonationManager = {
   },
 
   updateDuendeRate() {
-    const p = typeof PriceFeed !== 'undefined' ? PriceFeed.priceUsd : 0;
-    if (p > 0) {
-      this.SOL_TO_DUENDE_RATE = Math.floor(1 / p);
-    }
+    // NO recalcular SOL_TO_DUENDE_RATE aqui: la formula anterior hacia
+    // Math.floor(1/precioDuendeUsd), que es "tokens por $1", no "tokens por
+    // SOL" (le faltaba multiplicar por el precio de SOL en USD, que ronda
+    // los $70-200, no $1). Con el precio real de $DUENDE el resultado se
+    // quedaba en un ~1-2% del valor que la propia pagina promete arriba
+    // ("Tasa: 1 SOL = 10,000 $DUENDE"), estafando sin querer a quien donara
+    // SOL de verdad. La tasa se queda fija en la que se anuncia.
     const preview = document.getElementById('donation-duende-preview');
     const input = document.getElementById('donation-sol-input');
     if (preview && input) {
