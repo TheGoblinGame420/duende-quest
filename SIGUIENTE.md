@@ -286,12 +286,73 @@ Es el mismo procedimiento que ya hiciste con `sql/02-seguridad.sql`:
    verdad~~ — hecho esta tanda, ver arriba.
 4. ~~`ton_sell`: tope diario y retiro solo a wallet registrada hace >48 h~~
    — hecho esta tanda (24 h, ver arriba).
-5. Integrar más packs de `recursos/` (ver `recursos/INDICE.md`). El goblin
+5. Integrar más packs de `recursos/` (ver `recursos/INDICE.md`). ~~El goblin
    normal (arriba) demuestra que el pixel art de baja resolución SÍ encaja
-   escalado; quedan por probar los tilesets Tiled (GothicVania, Rocky Pass)
-   como niveles reales y el resto del bestiario (esqueletos, seta, jefe).
+   escalado~~ — confirmado y ampliado en la sexta tanda: 4 enemigos más
+   (esqueleto, goblin samurai/mago, hongo) + 3 variantes de fondo. **Sigue
+   pendiente**: los tilesets Tiled (mapas reales con plataformas de
+   GothicVania/Rocky Pass/Sunny Land en vez de las plataformas
+   proceduralmente generadas que usa el motor hoy) — es un cambio de
+   arquitectura más grande (parsear TMX/JSON, geometría real de nivel),
+   no una sustitución de sprite. Quedan también por usar: el resto del
+   pack Goblin Corps (7 de 10 variantes sin tocar), la seta invertida
+   (élite de hongo), el pack ansimuz-sideview-fantasy completo (rana,
+   lagarto, serpiente, fantasma, dragón volador — mini-jefe candidato),
+   y GothicVania Church (mago/ángel oscuro, candidato a jefe nuevo).
 6. ~~**Términos de Servicio y Política de Privacidad**~~ — hecho esta
    tanda, ver arriba (`terminos.html`, `privacidad.html`).
+
+## Sexta tanda (29-sep-2026) — 3 agentes en paralelo
+
+El dueño pidió seguir mejorando "todo el día" y desplegar agentes para
+explorar el juego y buscar en internet qué mejorar. Se lanzaron 3 agentes
+en worktrees aislados (cada uno con su propia rama, revisados y fusionados
+a mano tras verificarlos, no fusionados a ciegas):
+
+- **Auditoría de UI en `telegram/index.html`** (mismo tipo de bug que la
+  tienda de skins web, buscado explícitamente ahí): no se repite — ese
+  archivo ya pone `overflow-y:auto` en el propio overlay, no en un hijo
+  flex. Sí encontró y quitó `loadStartRanking()`: una consulta a Supabase
+  en **cada apertura** de la Mini App para un contenedor
+  (`#start-rank-list`) que ya no existe desde el rediseño a 5 pestañas —
+  gasto puro, sin efecto visible. También un event listener huérfano de
+  `ton-amount-input` (input que ya no existe, mismo commit que lo quitó
+  se olvidó del listener). De paso encontró que `index.html` (la landing,
+  más tráfico que la Mini App) tenía el mismo link muerto de Telegram
+  (`t.me/duendequest_bot/app`) que ya se había arreglado adentro de la
+  Mini App — arreglado también, y de paso se encontró y limpió
+  `make_banner.py`: generaba un banner promocional (sin usar en ningún
+  lado, pero servido público en `assets/`) que todavía prometía "Staking
+  up to 240% APY" — la promesa exacta con riesgo penal por la que el
+  staking está apagado en todo el sitio desde hace varios commits.
+- **Más bestiario CC0**: esqueleto (MV Platformer Skeleton, va a NOCHE y
+  TORMENTA junto al goblin), goblin samurai (DESIERTO) y goblin mago
+  (TORMENTA) del mismo pack Goblin Corps ya integrado, y hongo (Big
+  Mushroom, SELVA) — el primer enemigo no-humanoide del juego. Todos
+  reusan el sistema de hoja de animación sin tocar `sheetFrame()`/
+  `drawSheet()`. Verificado con partidas simuladas reales en los 5
+  biomas (no solo sintaxis): cero errores.
+- **Auditoría numérica de balance**: encontró que DAGAS (pensada "rápida
+  pero floja") hacía MÁS daño por segundo que ODACHI (el arma pensada
+  para pegar fuerte) y que la KATANA inicial, por un redondeo
+  (`Math.ceil` sobre el multiplicador de combo) que anulaba casi toda la
+  reducción de daño declarada. Corregido (`dano: .6` → `.3`). Revisó
+  también la curva de recompensas de misiones/logros, el precio de la
+  tienda DQ vs. ingreso realista de monedas, y el costo de revivir — todo
+  consistente, no tocó nada ahí. Señaló (sin tocarlo, por ser decisión de
+  diseño con dinero real de por medio) que **completar una etapa de
+  campaña sin morir nunca acredita $0 de DQ canjeable** — solo el modo
+  SIN FIN llama a `submit_score`/`accrue_dq`. Probé esto por separado con
+  el jugador automático hasta wave 20 en SIN FIN priorizando siempre
+  daño/cadencia al elegir mejora (el peor caso para "los jefes se vuelven
+  triviales"): el tiempo para matar a cada jefe **no baja**, sube (619
+  frames en wave 3 → 996 en wave 18), así que la curva de jefes aguanta
+  bien incluso a un jugador agresivo — no hacía falta tocarla.
+
+Los 3 se revisaron (diff leído, sprites vistos con el Read tool antes de
+fusionar, sintaxis verificada, y para los dos que tocaban `js/engine.js`
+se confirmó que el merge automático combinó ambos sin perder nada) y ya
+están en producción.
 
 ## Quinta tanda (29-sep-2026) — tienda de skins, TON Connect y cloud save
 
