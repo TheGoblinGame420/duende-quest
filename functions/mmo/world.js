@@ -183,7 +183,11 @@ export class MmoWorld {
     let uid = null, nombre = null, pagadas = null;
     try {
       if (a.k === 'tg' && typeof a.d === 'string') {
-        const u = await verifyInitData(a.d, env.BOT_TOKEN);
+        // 24 h y no las 6 h de las rutas de dinero: si la Mini App quedo
+        // abierta en segundo plano, Telegram entrega el initData del momento
+        // en que se abrio y con 6 h el jugador quedaba bloqueado. Aqui no se
+        // mueve dinero real, asi que la ventana larga no arriesga nada.
+        const u = await verifyInitData(a.d, env.BOT_TOKEN, 24 * 3600);
         if (u?.id) {
           uid = 'tg:' + u.id;
           nombre = limpiarNombre(u.username || u.first_name) || 'Duende' + String(u.id).slice(-4);
@@ -201,7 +205,15 @@ export class MmoWorld {
         nombre = limpiarNombre(m.nombre) || 'Duende' + Math.floor(1000 + Math.random() * 9000);
       }
     } catch (e) { uid = null; }
-    if (!uid) { s.autenticando = false; return this.expulsar(s, 'No se pudo verificar tu identidad. Vuelve a abrir el juego.'); }
+    if (!uid) {
+      // auth: el cliente reintenta como invitado en vez de quedar bloqueado.
+      console.warn('[MMO] identidad no verificada', a.k);
+      s.autenticando = false;
+      this.enviar(s, { t: 'err', m: 'No se pudo verificar tu identidad.', fatal: true, auth: String(a.k || '') });
+      try { s.ws.close(4000, 'auth'); } catch (e) {}
+      this.cerrar(s);
+      return;
+    }
     if (s.cerrado) return;
 
     // Misma cuenta abierta en otra pestaña: la vieja se cierra.

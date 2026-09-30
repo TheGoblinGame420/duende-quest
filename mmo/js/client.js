@@ -7,7 +7,7 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
-} from './data.js?v=17';
+} from './data.js?v=18';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -127,6 +127,9 @@ pintarSonido();
 
 // ── ESTADO ──
 let ws = null, miId = 0, yo = null, mapaId = 'pueblo', conectado = false, reintentos = 0, fatal = false;
+// Si el servidor no logra verificar la cuenta (initData de Telegram viejo,
+// sesion web caducada), se entra como invitado en vez de quedar bloqueado.
+let forzarInvitado = false;
 const otros = new Map();   // id -> jugador remoto
 const mons = new Map();    // id -> monstruo
 let textos = [], parts = [], efectos = [], burbujas = new Map(), monedas = [], balas = [];
@@ -151,8 +154,8 @@ async function autenticacion() {
   // la cuenta nueva hereda ese personaje en vez de empezar de cero.
   const previo = localStorage.getItem('dq_mmo_tok');
   const inv0 = /^[a-f0-9]{32}$/.test(previo || '') ? previo : undefined;
-  if (TG) return { auth: { k: 'tg', d: TG.initData }, inv: inv0 };
-  const tok = await tokenWeb();
+  if (TG && !forzarInvitado) return { auth: { k: 'tg', d: TG.initData }, inv: inv0 };
+  const tok = forzarInvitado ? null : await tokenWeb();
   if (tok) return { auth: { k: 'web', tok }, inv: inv0 };
   let inv = localStorage.getItem('dq_mmo_tok');
   if (!/^[a-f0-9]{32}$/.test(inv || '')) {
@@ -160,7 +163,9 @@ async function autenticacion() {
     inv = [...b].map(x => x.toString(16).padStart(2, '0')).join('');
     localStorage.setItem('dq_mmo_tok', inv);
   }
-  return { auth: { k: 'inv', tok: inv }, nombre: localStorage.getItem('dq_mmo_nombre') || '' };
+  let nombreTg = '';
+  try { const u = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user; if (u) nombreTg = u.username || u.first_name || ''; } catch (e) {}
+  return { auth: { k: 'inv', tok: inv }, nombre: localStorage.getItem('dq_mmo_nombre') || nombreTg };
 }
 
 let _sb = null;
@@ -177,20 +182,22 @@ async function conectar() {
   if (ws && ws.readyState <= 1) return;
   const hola = await autenticacion();
   ws = new WebSocket(urlWs());
-  ws.onopen = () => { conectado = true; reintentos = 0; mandar({ t: 'hola', ...hola }); };
+  // reintentos se reinicia al recibir 'bienvenido', no al abrir: si el
+  // servidor aceptaba el socket y lo cerraba enseguida, se reintentaba sin fin.
+  ws.onopen = () => { conectado = true; mandar({ t: 'hola', ...hola }); };
   ws.onmessage = ev => { let m; try { m = JSON.parse(ev.data); } catch (e) { return; } recibir(m); };
   ws.onclose = () => {
     conectado = false;
     if (fatal || pausado) return;
     if (reintentos++ < 6) setTimeout(conectar, Math.min(8000, 600 * reintentos));
-    else mostrarError('Se perdió la conexión con el servidor.');
+    else mostrarError('No se pudo conectar con el servidor. Revisa tu conexión a internet y pulsa RECONECTAR.');
   };
 }
 
 function recibir(m) {
   switch (m.t) {
     case 'bienvenido':
-      miId = m.id; yo = m.yo; online = m.on || 0;
+      miId = m.id; yo = m.yo; online = m.on || 0; reintentos = 0;
       $('m-inicio').classList.remove('on');
       pintarHud();
       if (m.nuevo) aviso('¡Bienvenido, ' + yo.nombre + '! Habla con el Guardia Tito si necesitas ayuda.');
@@ -261,6 +268,12 @@ function recibir(m) {
     case 'snap': P.x = m.x; P.y = m.y; P.vx = 0; P.vy = 0; break;
     case 'ranking': pintarRanking(m.r); break;
     case 'err':
+      if (m.auth && m.auth !== 'inv' && !forzarInvitado) {
+        // El servidor cierra el socket; onclose reconecta solo, ya como invitado.
+        forzarInvitado = true; reintentos = 0;
+        aviso('No pudimos verificar tu cuenta: entras como invitado (tu personaje de la cuenta no se toca). Cierra y vuelve a abrir el juego para entrar con ella.');
+        break;
+      }
       if (m.fatal) { fatal = true; mostrarError(m.m); }
       else aviso(m.m);
       break;
