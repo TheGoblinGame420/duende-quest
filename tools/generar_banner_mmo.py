@@ -94,7 +94,7 @@ def texto(xy, t, f, color, borde=6, ancla='mm'):
 texto((W / 2, 92), 'DUENDE QUEST', f1, (255, 230, 0, 255), 8)
 texto((W / 2, 178), 'ONLINE', f2, (0, 238, 255, 255), 6)
 texto((W / 2, 236), 'EL MMORPG DE LOS DUENDES  ·  JUEGA GRATIS', f3, (255, 255, 255, 255), 4)
-texto((W / 2, 598), 'Web y Telegram  ·  5 zonas  ·  jefes  ·  misiones  ·  7 skins', f3, (0, 255, 136, 255), 4)
+texto((W / 2, 598), 'Web y Telegram  ·  6 zonas  ·  jefes  ·  misiones  ·  7 skins', f3, (0, 255, 136, 255), 4)
 
 img.convert('RGB').save(A('mmo_banner.png'), optimize=True)
 print('ok', os.path.getsize(A('mmo_banner.png')), 'bytes')

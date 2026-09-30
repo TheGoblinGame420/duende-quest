@@ -449,3 +449,19 @@ Hasta el 28-sep-2026 las capas de parallax las generaba
 `tools/generar_parallax.py` con la paleta del array `BIOMES`. Se sustituyeron
 por los fondos CC0 de ansimuz (arriba), que tienen detalle de pixel art real;
 el script antiguo se conserva por si se quiere volver.
+
+---
+
+## DUENDE QUEST ONLINE (mmo/) — assets
+
+El MMORPG reutiliza TODOS los assets ya acreditados arriba (duende, skins,
+bestiario, jefes, fondos, efectos, sonidos) sin arte nuevo. Lo único que se
+empaquetó para él:
+
+- **Rey Goblin** (`assets/enemigos/sheets/goblin_lord.png`, jefe del
+  Castillo del Rey Goblin): la variante `goblin.lord.png` del mismo pack
+  **Goblin Corps de Moikmellah (CC0)** del que ya salían los otros 10
+  goblins; se había dejado sin usar a propósito "para un bioma castillo".
+  Recorte y medida: `tools/generar_goblin_lord_cc0.py`.
+- **Banner para compartir** (`assets/mmo_banner.png`): composición de sprites
+  y fondos CC0 ya listados, con `tools/generar_banner_mmo.py`.

@@ -943,3 +943,11 @@ diarias repetibles, sonido propio para jefes.
   nivel, costo 150×1,7ⁿ, ~42k de oro hasta +10). Sin azar a propósito: cada
   mejora sale siempre bien (nada de mecánicas tipo apuesta).
 - Arnés: 97 comprobaciones.
+- **Sexta zona, final de juego: Castillo del Rey Goblin (Nv 32-40)**. El
+  tope es Nv 40 y el Desierto acababa en 32: de 32 a 40 no había dónde
+  jugar. Fondo del pack de castillo ya usado (`tormenta2`), 4 monstruos de
+  élite Nv 33-38 (hojas del bestiario con tintes de la corte), jefe **Rey
+  Goblin** Nv 42 (el `goblin_lord` que se había reservado para un bioma
+  castillo; `tools/generar_goblin_lord_cc0.py`), 4 misiones más (la cadena
+  pasa a 24). Portales: desde el Desierto y desde el pueblo. Simulado: el
+  Rey se vence en solitario a Nv 40 en ~41-45 s con ~7 pociones.

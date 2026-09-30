@@ -42,6 +42,8 @@ export const HOJAS = {
   pajaro:            { fw: 32, fh: 32, ideal: 25, mov: [0, 0, 7], golpe: [1, 0, 2], muerte: [2, 1] },
   conejo:            { fw: 34, fh: 44, ideal: 38, mov: [0, 0, 6], golpe: [1, 0, 2], muerte: [2, 1] },
   hellhound:         { fw: 67, fh: 39, ideal: 39, mov: [0, 0, 5], golpe: [1, 0, 2], muerte: [2, 1] },
+  // Solo del MMO: el rey goblin (tools/generar_goblin_lord_cc0.py).
+  goblin_lord:       { fw: 32, fh: 64, ideal: 35, mov: [0, 1, 6], golpe: [1, 1, 2], muerte: [6, 2] },
 };
 
 // ── MONSTRUOS ──
@@ -68,12 +70,19 @@ export const MONSTRUOS = {
   lagarto:           { nombre: 'Lagarto',           hoja: 'lagarto',           nivel: 26, vel: 1.2 },
   serpiente:         { nombre: 'Serpiente',         hoja: 'serpiente',         nivel: 27 },
   conejo:            { nombre: 'Conejo Salvaje',    hoja: 'conejo',            nivel: 28, vel: 1.4 },
+  // Castillo del Rey Goblin (final de juego): el bestiario de siempre con
+  // armaduras de la corte (tintes propios).
+  guardia_real:      { nombre: 'Guardia Real',      hoja: 'goblin_guard',      nivel: 33, tinte: '#ffd84a' },
+  caballero_negro:   { nombre: 'Caballero Negro',   hoja: 'goblin_knight',     nivel: 35, tinte: '#6b21a8', vel: 1.2 },
+  esqueleto_real:    { nombre: 'Esqueleto Real',    hoja: 'esqueleto',         nivel: 36, tinte: '#ffd84a' },
+  hechicero_corte:   { nombre: 'Hechicero de la Corte', hoja: 'hechicero',     nivel: 38, tinte: '#00eeff', dispara: true },
   // Jefes: uno por zona, reaparecen solos cada cierto tiempo.
   jefe_sabueso:  { nombre: 'Sabueso Infernal',       hoja: 'hellhound',         nivel: 8,  jefe: true, alto: 110, hpX: 14, atkX: 1.4, w: 150, h: 70 },
   jefe_caballero:{ nombre: 'Rey Goblin Caballero',   hoja: 'goblin_knight',     nivel: 14, jefe: true, alto: 130, hpX: 16, atkX: 1.4, w: 70, h: 120, tinte: '#ff6444' },
   jefe_senor:    { nombre: 'Señor de la Guerra',     hoja: 'goblin_battlelord', nivel: 20, jefe: true, alto: 135, hpX: 18, atkX: 1.5, w: 70, h: 125, tinte: '#00ffcc' },
   jefe_ghoul:    { nombre: 'Ghoul Infernal',         hoja: 'ghoul_ardiente',    nivel: 26, jefe: true, alto: 130, hpX: 20, atkX: 1.5, w: 110, h: 120, tinte: '#ff9900', dispara: true },
   jefe_angel:    { nombre: 'Ángel Caído',            hoja: 'angel',             nivel: 32, jefe: true, alto: 150, hpX: 24, atkX: 1.6, w: 110, h: 140, vuela: true, dispara: true },
+  jefe_rey:      { nombre: 'Rey Goblin',             hoja: 'goblin_lord',       nivel: 42, jefe: true, alto: 150, hpX: 26, atkX: 1.6, w: 70, h: 135, tinte: '#ffd84a', dispara: true },
 };
 
 export function statsMonstruo(key) {
@@ -169,6 +178,10 @@ export const MISIONES = [
   { nombre: 'Escamas al sol',           tipo: 'lagarto',           n: 10, xp: 950,   oro: 1150 },
   { nombre: 'Conejos salvajes',         tipo: 'conejo',            n: 10, xp: 1000,  oro: 1200, pw: { pocion: 10 } },
   { nombre: 'La caída del Ángel',       tipo: 'jefe_angel',        n: 1,  xp: 8000,  oro: 10000, pw: { rayo: 3, escudo: 3, fuego: 3 } },
+  { nombre: 'Las puertas del castillo', tipo: 'guardia_real',      n: 10, xp: 1300,  oro: 1500 },
+  { nombre: 'Armadura negra',           tipo: 'caballero_negro',   n: 10, xp: 1400,  oro: 1600 },
+  { nombre: 'Huesos de la corona',      tipo: 'esqueleto_real',    n: 10, xp: 1500,  oro: 1700, pw: { pocion: 10 } },
+  { nombre: 'El Rey Goblin',            tipo: 'jefe_rey',          n: 1,  xp: 15000, oro: 20000, pw: { rayo: 5, escudo: 5, fuego: 5 } },
 ];
 // Mision diaria repetible (se reinicia cada dia UTC). Solo cuentan monstruos
 // de tu nivel o hasta 5 por debajo, para que no se cumpla farmeando la
@@ -186,7 +199,7 @@ export function zonaDe(tipoMonstruo) {
 // plataformas: [x, y, ancho] (y = cara superior). portales: x del centro.
 export const MAPAS = {
   pueblo: {
-    nombre: 'Pueblo Duende', fondo: 'amanecer2', ancho: 2150, zona: false,
+    nombre: 'Pueblo Duende', fondo: 'amanecer2', ancho: 2400, zona: false,
     paleta: { cielo: ['#1a0b2e', '#3a1a3a'], suelo: '#1c1426', linea: '#ffd84a' },
     plataformas: [[420, 300, 160], [1320, 300, 160], [860, 240, 180]],
     portales: [
@@ -195,6 +208,7 @@ export const MAPAS = {
       { x: 1560, a: 'selva',     ax: 150,  etiqueta: 'Selva Esmeralda', nv: '12-18' },
       { x: 1800, a: 'tormenta',  ax: 150,  etiqueta: 'Picos Tormenta', nv: '18-24' },
       { x: 2040, a: 'desierto',  ax: 150,  etiqueta: 'Desierto Dorado', nv: '24-32' },
+      { x: 2280, a: 'castillo',  ax: 150,  etiqueta: 'Castillo del Rey', nv: '32-40' },
     ],
     npcs: [
       { id: 'mercader', nombre: 'Mercader Grumo', hoja: 'goblin_peasant', x: 950, tipo: 'tienda' },
@@ -239,9 +253,19 @@ export const MAPAS = {
     nombre: 'Desierto Dorado', fondo: 'desierto', ancho: 2600, zona: true, nv: [24, 32],
     paleta: { cielo: ['#181000', '#2e2004'], suelo: '#1a140a', linea: '#ffe600' },
     plataformas: [[520, 290, 220], [1100, 240, 200], [1650, 300, 200], [2150, 250, 200]],
-    portales: [{ x: 60, a: 'tormenta', ax: 2450, etiqueta: 'Picos Tormenta', nv: '18-24' }, { x: 2540, a: 'pueblo', ax: 950, etiqueta: 'Pueblo Duende' }],
+    portales: [{ x: 60, a: 'tormenta', ax: 2450, etiqueta: 'Picos Tormenta', nv: '18-24' }, { x: 2540, a: 'castillo', ax: 150, etiqueta: 'Castillo del Rey', nv: '32-40' }],
     monstruos: ['goblin_samurai', 'lagarto', 'serpiente', 'conejo'], max: 12,
     jefe: 'jefe_angel',
+  },
+  // Final de juego (Nv 32-40, hasta el tope): el rey goblin en su castillo.
+  // Fondo del pack de castillo que ya usaba el arcade (tormenta2).
+  castillo: {
+    nombre: 'Castillo del Rey Goblin', fondo: 'tormenta2', ancho: 2800, zona: true, nv: [32, 40],
+    paleta: { cielo: ['#0d0a1a', '#241838'], suelo: '#1a1424', linea: '#ffd84a' },
+    plataformas: [[450, 290, 220], [950, 230, 180], [1450, 290, 240], [2000, 240, 200], [2400, 300, 160]],
+    portales: [{ x: 60, a: 'desierto', ax: 2450, etiqueta: 'Desierto Dorado', nv: '24-32' }, { x: 2740, a: 'pueblo', ax: 950, etiqueta: 'Pueblo Duende' }],
+    monstruos: ['guardia_real', 'caballero_negro', 'esqueleto_real', 'hechicero_corte'], max: 12,
+    jefe: 'jefe_rey',
   },
 };
 
