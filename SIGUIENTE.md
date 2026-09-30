@@ -738,3 +738,45 @@ responde `401 auth_failed` con token inválido (confirma que la ruta está
 desplegada y valida identidad antes de tocar la base de datos, igual que el
 resto de acciones). Corrida de campaña sin errores de consola tras el
 cambio.
+
+## Catorceava tanda (30-sep-2026) — segundo jefe con sprite propio: sabueso infernal
+
+Búsqueda en internet de un jefe CC0 gratuito para reemplazar otro de los 4
+"oso reciclado" (solo el ángel, jefe final, tenía sprite propio). Se
+investigaron y descartaron 3 candidatos antes de encontrar uno bueno:
+- "Mecha-Stone Golem" (Kronovi) — prohíbe explícitamente redistribuir.
+- "2D Pixel Art Golems Pack" (MonoPixelArt) — prohíbe explícitamente
+  modificar Y redistribuir (bloquea directamente el pipeline de este repo).
+- "Animated Pixel Minotaur" (rvros) — genuinamente CC0, pero cuesta $1.50
+  mínimo; no se compró sin permiso explícito (se le preguntó al dueño, pidió
+  seguir buscando opciones gratis primero).
+
+**Encontrado y usado:** "Hell Hound Sprite Animation" (ansimuz — mismo
+creador de confianza cuyo pack GothicVania Church ya dio el sprite del
+ángel). Gratis ($0 real, no "pay what you want" con piso), y el zip trae su
+propio `public-license.pdf` que declara CC0 explícito ("no restrictions on
+use, modification, or redistribution") — más claro todavía que el texto de
+la página.
+
+Integrado como **SEGUNDO jefe con silueta propia**, en la etapa **1-3
+(NOCHE VIOLETA)** — la PRIMERA etapa con jefe de la campaña, no la última
+(el ángel sigue siendo el cierre en 5-3). HP/ataques/aviso/pausa copiados
+literales de `JEFES.oso` a propósito: el objetivo era darle sprite propio
+al primer jefe sin retocar una dificultad ya afinada. Las etapas 2-3/3-3/4-3
+siguen con oso reciclado.
+
+`bestiarioTotal()` se ajustó para excluir también a `hellhound` del conteo
+del logro "bestiario completo" (igual que ya excluía a `angel`) — sin este
+ajuste el logro se hubiera vuelto inalcanzable (contaría una criatura que
+nunca se marca como "vista" por `markBestiaSeen`, al ser jefe).
+
+Verificado en vivo con el flujo REAL de producción (completar 1-1 y 1-2 de
+verdad, entrar a 1-3, confirmar `nivel.jefe.tipo==='hellhound'`, dañar al
+jefe, ver el death-fade): sin errores. Corrida completa de los 15 niveles
+tras el merge, sin errores de consola, cada bioma con su bestiario correcto
+y el jefe correcto en su etapa (1-3 hellhound, 5-3 angel, las demás oso).
+
+**Balance de jefes con sprite propio, 2 de 5:** ángel (final, HP 220) y
+sabueso infernal (apertura, HP 70, sin cambios de balance). Quedan 3-3 y 4-3
+si se quiere seguir esta línea en el futuro (packs CC0 de ansimuz/otros
+creadores ya agotados para esta ronda; buscar de nuevo si se retoma).
