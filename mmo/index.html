@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Duende Quest Online</title>
+<meta name="description" content="DUENDE QUEST ONLINE — el MMORPG de los duendes: explora 5 zonas, caza monstruos con otros jugadores, derrota jefes y consigue todas las skins.">
+<meta name="theme-color" content="#0a0418">
+<link rel="icon" type="image/png" href="/assets/ui/coin.png">
+<link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/js/config.js"></script>
+<style>
+:root{--bg:#07030f;--panel:rgba(12,6,26,.94);--borde:rgba(192,132,252,.35);--verde:#00ff88;--amarillo:#ffe600;--rosa:#ff3cf0;--cian:#00eeff;--rojo:#ff3344;}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;background:var(--bg);color:#fff;font-family:'Press Start 2P',monospace;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;}
+#app{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;}
+#escena{position:relative;width:100%;flex:1 1 auto;display:flex;align-items:center;justify-content:center;min-height:0;}
+#gc{display:block;image-rendering:pixelated;image-rendering:crisp-edges;background:#000;box-shadow:0 0 40px rgba(124,58,237,.25);}
+#hud{position:absolute;inset:0;pointer-events:none;}
+#hud .caja{position:absolute;pointer-events:auto;}
+
+/* barras */
+#stat{left:8px;top:8px;background:var(--panel);border:1px solid var(--borde);border-radius:6px;padding:7px 9px;min-width:190px;}
+#stat .nom{font-size:8px;color:var(--amarillo);margin-bottom:6px;display:flex;justify-content:space-between;gap:8px;}
+.barra{height:9px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;margin-bottom:4px;position:relative;}
+.barra>i{display:block;height:100%;transition:width .15s;}
+.barra>span{position:absolute;inset:0;font-size:6px;line-height:9px;text-align:center;color:#fff;text-shadow:1px 1px 0 #000;}
+#bhp>i{background:linear-gradient(90deg,#ff3344,#ff7766);}
+#bxp>i{background:linear-gradient(90deg,#00ff88,#ffe600);}
+#stat .oro{font-size:8px;color:var(--amarillo);display:flex;align-items:center;gap:5px;margin-top:3px;}
+#stat .oro img{width:14px;height:14px;image-rendering:pixelated;}
+#mapa-nom{left:50%;transform:translateX(-50%);top:8px;font-size:8px;color:#fff;background:var(--panel);border:1px solid var(--borde);border-radius:6px;padding:6px 10px;white-space:nowrap;text-align:center;}
+#mapa-nom small{display:block;font-size:6px;color:rgba(255,255,255,.45);margin-top:3px;}
+#botones{right:8px;top:8px;display:flex;gap:5px;}
+.bt{font-family:inherit;font-size:9px;background:var(--panel);color:#fff;border:1px solid var(--borde);border-radius:6px;padding:7px 8px;cursor:pointer;}
+.bt:active{transform:scale(.95);}
+#jefe-bar{left:50%;transform:translateX(-50%);top:46px;width:min(420px,70%);display:none;text-align:center;}
+#jefe-bar .n{font-size:8px;color:var(--rosa);text-shadow:0 0 8px var(--rosa);margin-bottom:4px;}
+#jefe-bar .barra{height:10px;border:1px solid rgba(255,60,240,.5);}
+#jefe-bar .barra>i{background:linear-gradient(90deg,#ff3cf0,#ff3344);}
+
+/* poderes */
+#poderes{right:8px;bottom:8px;display:flex;gap:6px;}
+.pw{width:46px;height:46px;border:1px solid var(--borde);border-radius:7px;background:var(--panel);position:relative;cursor:pointer;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.pw img{width:32px;height:32px;object-fit:contain;image-rendering:pixelated;}
+.pw .k{position:absolute;left:3px;top:3px;font-size:6px;color:rgba(255,255,255,.55);}
+.pw .n{position:absolute;right:3px;bottom:3px;font-size:7px;color:var(--amarillo);text-shadow:1px 1px 0 #000;}
+.pw .cd{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.65);}
+.pw.vacio img{filter:grayscale(1);opacity:.35;}
+
+/* chat */
+#chat{left:8px;bottom:8px;width:min(340px,48%);}
+#chat-log{font-family:system-ui,-apple-system,Segoe UI,sans-serif;font-size:12px;line-height:1.35;max-height:118px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;text-shadow:1px 1px 0 #000,0 0 3px #000;pointer-events:none;margin-bottom:4px;}
+#chat-log div{word-break:break-word;}
+#chat-log b{color:var(--cian);font-weight:600;}
+#chat-log .sis{color:var(--amarillo);}
+#chat-log .ok{color:var(--verde);}
+#chat-in{width:100%;font-family:system-ui,sans-serif;font-size:13px;background:rgba(0,0,0,.6);border:1px solid var(--borde);color:#fff;border-radius:5px;padding:6px 8px;outline:none;display:none;}
+
+/* avisos */
+#avisos{left:50%;transform:translateX(-50%);top:86px;display:flex;flex-direction:column;align-items:center;gap:5px;pointer-events:none!important;}
+.aviso{font-size:8px;background:rgba(0,0,0,.75);border:1px solid var(--borde);padding:7px 11px;border-radius:6px;animation:av 3.6s forwards;text-align:center;max-width:90vw;line-height:1.6;}
+@keyframes av{0%{opacity:0;transform:translateY(-6px)}8%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}
+
+/* interaccion */
+#interactuar{left:50%;transform:translateX(-50%);bottom:70px;display:none;font-size:9px;}
+
+/* controles tactiles */
+#tactil{display:none;width:100%;flex:0 0 auto;padding:10px 12px calc(10px + env(safe-area-inset-bottom));gap:10px;justify-content:space-between;align-items:center;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(20,8,40,.9));}
+.tc{font-family:inherit;width:62px;height:62px;border-radius:50%;border:2px solid rgba(255,255,255,.2);background:rgba(255,255,255,.07);color:#fff;font-size:18px;touch-action:none;}
+.tc.on{background:rgba(0,255,136,.25);border-color:var(--verde);}
+.tc.grande{width:78px;height:78px;font-size:24px;background:rgba(255,60,60,.18);border-color:rgba(255,60,60,.5);}
+#t-izq,#t-der{display:flex;gap:10px;align-items:center;}
+body.tactil #tactil{display:flex;}
+
+/* modales */
+.modal{position:fixed;inset:0;background:rgba(3,0,10,.8);display:none;align-items:center;justify-content:center;z-index:50;padding:12px;}
+.modal.on{display:flex;}
+.ventana{background:var(--panel);border:1px solid var(--borde);border-radius:10px;width:min(560px,100%);max-height:92vh;overflow:auto;padding:16px;box-shadow:0 0 40px rgba(124,58,237,.35);}
+.ventana h2{font-size:12px;color:var(--amarillo);margin-bottom:12px;text-align:center;line-height:1.5;}
+.ventana p,.ventana li{font-family:system-ui,sans-serif;font-size:13px;line-height:1.5;color:rgba(255,255,255,.8);}
+.ventana .cerrar{float:right;}
+.tabs{display:flex;gap:6px;margin-bottom:12px;justify-content:center;flex-wrap:wrap;}
+.tab{font-family:inherit;font-size:8px;padding:8px 10px;border-radius:6px;border:1px solid var(--borde);background:transparent;color:rgba(255,255,255,.6);cursor:pointer;}
+.tab.on{background:linear-gradient(135deg,#7c3aed,#c084fc);color:#fff;border-color:transparent;}
+.lista{display:flex;flex-direction:column;gap:8px;}
+.item{display:flex;gap:10px;align-items:center;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:8px;background:rgba(255,255,255,.03);}
+.item .ico{width:56px;height:56px;flex:0 0 56px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35);border-radius:6px;overflow:hidden;}
+.item .ico img{max-width:52px;max-height:52px;image-rendering:pixelated;}
+.item .txt{flex:1;min-width:0;}
+.item .txt b{display:block;font-size:9px;margin-bottom:5px;}
+.item .txt small{font-family:system-ui,sans-serif;font-size:12px;color:rgba(255,255,255,.6);}
+.item .acc{display:flex;flex-direction:column;gap:5px;align-items:flex-end;}
+.precio{font-size:8px;color:var(--amarillo);white-space:nowrap;}
+.btn{font-family:inherit;font-size:8px;padding:8px 10px;border-radius:6px;border:none;cursor:pointer;background:linear-gradient(135deg,#00ff88,#00b862);color:#02140a;white-space:nowrap;}
+.btn.sec{background:rgba(255,255,255,.1);color:#fff;}
+.btn[disabled]{opacity:.4;cursor:not-allowed;}
+.oro-top{text-align:center;font-size:9px;color:var(--amarillo);margin-bottom:10px;}
+.fila{display:flex;justify-content:space-between;font-size:8px;padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.06);}
+.fila.yo{color:var(--verde);}
+input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-radius:7px;border:1px solid var(--borde);background:rgba(0,0,0,.4);color:#fff;text-align:center;margin:12px 0;outline:none;}
+.centro{text-align:center;}
+#carga{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:60;}
+#carga .t{font-size:14px;color:var(--amarillo);text-shadow:0 0 16px rgba(255,230,0,.5);text-align:center;line-height:1.6;}
+#carga .s{font-size:8px;color:rgba(255,255,255,.5);}
+#carga .barra{width:220px;}
+#carga .barra>i{background:linear-gradient(90deg,#7c3aed,#00ff88);}
+@media (max-width:600px){
+  #stat{min-width:150px;padding:5px 7px;}
+  #mapa-nom{top:auto;bottom:calc(100% - 40px);display:none;}
+  .bt{padding:6px 6px;font-size:8px;}
+  #chat{width:62%;}
+  #chat-log{font-size:11px;max-height:80px;}
+}
+</style>
+</head>
+<body>
+<div id="carga">
+  <div class="t">DUENDE QUEST<br>ONLINE</div>
+  <div class="barra"><i id="carga-i" style="width:0%"></i></div>
+  <div class="s" id="carga-s">Cargando el mundo…</div>
+</div>
+
+<div id="app">
+  <div id="escena">
+    <canvas id="gc"></canvas>
+    <div id="hud">
+      <div class="caja" id="stat">
+        <div class="nom"><span id="h-nombre">—</span><span id="h-nivel">Nv 1</span></div>
+        <div class="barra" id="bhp"><i style="width:100%"></i><span id="h-hp">100/100</span></div>
+        <div class="barra" id="bxp"><i style="width:0%"></i><span id="h-xp">0%</span></div>
+        <div class="oro"><img src="/assets/ui/coin.png" alt=""><span id="h-oro">0</span></div>
+      </div>
+      <div class="caja" id="mapa-nom"><span id="h-mapa">—</span><small id="h-mapa-sub"></small></div>
+      <div class="caja" id="botones">
+        <button class="bt" id="b-inv" title="Inventario (I)">🎒</button>
+        <button class="bt" id="b-rank" title="Ranking">🏆</button>
+        <button class="bt" id="b-ayuda" title="Ayuda">❔</button>
+        <button class="bt" id="b-sonido" title="Sonido">🔊</button>
+        <a class="bt" href="/game.html" title="Volver al juego arcade" style="text-decoration:none">🏠</a>
+      </div>
+      <div class="caja" id="jefe-bar"><div class="n" id="jefe-n">JEFE</div><div class="barra"><i style="width:100%"></i></div></div>
+      <div class="caja" id="avisos"></div>
+      <div class="caja" id="chat"><div id="chat-log"></div><input id="chat-in" maxlength="120" placeholder="Escribe y pulsa Enter…" autocomplete="off"></div>
+      <button class="caja btn" id="interactuar">E · ENTRAR</button>
+      <div class="caja" id="poderes"></div>
+    </div>
+  </div>
+  <div id="tactil">
+    <div id="t-izq">
+      <button class="tc" id="t-l">◀</button>
+      <button class="tc" id="t-r">▶</button>
+    </div>
+    <div id="t-der">
+      <button class="tc" id="t-chat" style="width:46px;height:46px;font-size:14px">💬</button>
+      <button class="tc" id="t-dash">💨</button>
+      <button class="tc" id="t-jump">⤴</button>
+      <button class="tc grande" id="t-atk">⚔</button>
+    </div>
+  </div>
+</div>
+
+<!-- Inicio -->
+<div class="modal" id="m-inicio">
+  <div class="ventana centro">
+    <h2>⚔️ DUENDE QUEST ONLINE ⚔️</h2>
+    <p>Explora 5 zonas con otros jugadores, caza a los monstruos del bestiario, derrota a los jefes y consigue todas las skins.</p>
+    <div id="inicio-invitado">
+      <input class="nombre" id="in-nombre" maxlength="16" placeholder="Nombre de tu duende">
+      <button class="btn" id="b-jugar" style="width:100%;padding:14px;font-size:10px">▶ ENTRAR AL MUNDO</button>
+      <p style="margin-top:12px;font-size:12px;color:rgba(255,255,255,.5)">Si tienes cuenta en DUENDE QUEST, <a href="/game.html" style="color:#c084fc">inicia sesión en el juego</a> y vuelve: tu personaje quedará ligado a tu cuenta y tus skins pagadas se desbloquean aquí.</p>
+    </div>
+    <div id="inicio-cuenta" style="display:none">
+      <p style="margin:10px 0" id="inicio-quien"></p>
+      <button class="btn" id="b-jugar2" style="width:100%;padding:14px;font-size:10px">▶ ENTRAR AL MUNDO</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tienda -->
+<div class="modal" id="m-tienda">
+  <div class="ventana">
+    <button class="bt cerrar" data-cerrar>✕</button>
+    <h2>🛒 MERCADER GRUMO</h2>
+    <div class="oro-top">Tu oro: <span id="t-oro">0</span></div>
+    <div class="tabs">
+      <button class="tab on" data-tab="pw">PODERES</button>
+      <button class="tab" data-tab="arma">ARMAS</button>
+      <button class="tab" data-tab="skin">SKINS</button>
+    </div>
+    <div class="lista" id="tienda-lista"></div>
+  </div>
+</div>
+
+<!-- Inventario -->
+<div class="modal" id="m-inv">
+  <div class="ventana">
+    <button class="bt cerrar" data-cerrar>✕</button>
+    <h2>🎒 TU DUENDE</h2>
+    <div id="inv-stats" class="lista" style="margin-bottom:12px"></div>
+    <div class="tabs">
+      <button class="tab on" data-itab="skin">SKINS</button>
+      <button class="tab" data-itab="arma">ARMAS</button>
+    </div>
+    <div class="lista" id="inv-lista"></div>
+  </div>
+</div>
+
+<!-- Ranking -->
+<div class="modal" id="m-rank">
+  <div class="ventana">
+    <button class="bt cerrar" data-cerrar>✕</button>
+    <h2>🏆 LOS DUENDES MÁS FUERTES</h2>
+    <div id="rank-lista"><p class="centro">Cargando…</p></div>
+  </div>
+</div>
+
+<!-- Ayuda -->
+<div class="modal" id="m-ayuda">
+  <div class="ventana">
+    <button class="bt cerrar" data-cerrar>✕</button>
+    <h2 id="ayuda-t">❔ CÓMO SE JUEGA</h2>
+    <ul style="padding-left:18px" id="ayuda-lista">
+      <li><b>Moverse:</b> ← → o A / D · <b>Saltar:</b> ↑, W o Espacio (doble salto)</li>
+      <li><b>Atacar:</b> Z o J (combo de 3 golpes) · <b>Dash:</b> X o K</li>
+      <li><b>Poderes:</b> 1 Poción · 2 Escudo · 3 Rayo · 4 Fuego</li>
+      <li><b>Entrar a portales / hablar:</b> E o ↑ encima</li>
+      <li><b>Chat:</b> Enter · <b>Inventario:</b> I</li>
+      <li>Cada zona tiene su nivel recomendado y un <b>jefe</b> que reaparece cada 5 minutos: pelear en grupo reparte la recompensa.</li>
+      <li>El <b>Mercader</b> del pueblo vende poderes, armas y las 7 skins. Las skins que ya compraste en el juego principal se desbloquean solas.</li>
+      <li>El oro del MMO es solo del juego: no se canjea por dinero ni por $DUENDE.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Muerte -->
+<div class="modal" id="m-muerte">
+  <div class="ventana centro">
+    <h2 style="color:#ff3344">💀 HAS CAÍDO</h2>
+    <p>Pierdes un 5% de la experiencia de tu nivel. Los amigos del pueblo te curarán.</p>
+    <button class="btn" id="b-revivir" style="margin-top:14px;padding:14px;font-size:10px;width:100%">↺ REVIVIR EN EL PUEBLO</button>
+  </div>
+</div>
+
+<!-- Desconexion -->
+<div class="modal" id="m-error">
+  <div class="ventana centro">
+    <h2 style="color:#ff9900">⚠️ CONEXIÓN</h2>
+    <p id="error-txt">Se perdió la conexión con el servidor.</p>
+    <button class="btn" id="b-reconectar" style="margin-top:14px;padding:12px;width:100%">RECONECTAR</button>
+  </div>
+</div>
+
+<script type="module" src="/mmo/js/client.js"></script>
+</body>
+</html>

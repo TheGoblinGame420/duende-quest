@@ -7,6 +7,7 @@ import heliusVerify from './functions/api/helius-verify.js';
 import walletApi from './functions/api/wallet.js';
 import tokenStats from './functions/api/token-stats.js';
 import { runCron } from './functions/api/cron.js';
+export { MmoWorld } from './functions/mmo/world.js';
 
 export default {
   async fetch(request, env, ctx) {
@@ -31,6 +32,16 @@ export default {
     if (path === '/api/token-stats') {
       if (request.method === 'OPTIONS') return tokenStats.onRequestOptions(context);
       return tokenStats.onRequestGet(context);
+    }
+    // DUENDE QUEST ONLINE: todo el mundo vive en un solo Durable Object.
+    if (path === '/mmo/ws') {
+      if (!env.MMO) return new Response('MMO no configurado', { status: 503 });
+      try {
+        return await env.MMO.get(env.MMO.idFromName('mundo-1')).fetch(request);
+      } catch (e) {
+        console.error('[MMO]', e);
+        return new Response('MMO no disponible', { status: 503 });
+      }
     }
 
     // Serve static files. El archivo _headers de una sesion anterior NO hace

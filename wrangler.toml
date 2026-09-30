@@ -18,3 +18,15 @@ not_found_handling = "single-page-application"
 # aparecer en rutas que no existen (el unico caso que SI cae al Worker por
 # defecto). Con run_worker_first, toda peticion pasa primero por worker.js.
 run_worker_first = true
+
+# DUENDE QUEST ONLINE (mmo/): el mundo en tiempo real es un Durable Object
+# (functions/mmo/world.js) al que se conecta cada jugador por WebSocket en
+# /mmo/ws. new_sqlite_classes y no new_classes: el plan gratuito de Workers
+# solo admite Durable Objects con almacenamiento SQLite.
+[[durable_objects.bindings]]
+name = "MMO"
+class_name = "MmoWorld"
+
+[[migrations]]
+tag = "v1-mmo"
+new_sqlite_classes = ["MmoWorld"]
