@@ -208,29 +208,40 @@ export async function tonDustsValidos(secret, tgId, action) {
 // Busca un pago reciente a la wallet dev cuyo importe acabe en uno de los
 // restos del usuario (ver tonDust). El anti-replay lo hace quien llama,
 // insertando el hash en ton_credits (UNIQUE) ANTES de acreditar.
+//
+// Devuelve SIEMPRE un array (vacio si no hay pago o si toncenter falla).
+// Antes, un timeout/caida de toncenter o una respuesta no-JSON (rate limit,
+// pagina de error HTML) lanzaba una excepcion sin capturar aqui dentro; los
+// tres que llaman (ton_buy, ton_stake, skin_ton) hacen `pagos.length` sin
+// comprobar null, asi que esa excepcion no volvia el 402 "payment_not_found"
+// pensado, sino un 500 "server_error" generico para un pago real y valido.
 export async function findTonPayment(env, { dusts, minNanotons, windowSeconds = 1200 }) {
-  const key = env.TONCENTER_API_KEY ? `&api_key=${encodeURIComponent(env.TONCENTER_API_KEY)}` : '';
-  const url = `https://toncenter.com/api/v2/getTransactions?address=${encodeURIComponent(TON_DEV_WALLET)}&limit=30${key}`;
-  const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
-  const d = await r.json();
-  if (!d?.ok || !Array.isArray(d.result)) return null;
-  const since = Math.floor(Date.now() / 1000) - windowSeconds;
-  const candidates = [];
-  for (const txn of d.result) {
-    const inMsg = txn.in_msg;
-    if (!inMsg || txn.utime < since) continue;
-    const value = parseInt(inMsg.value || '0', 10);
-    if (value < minNanotons * 0.99) continue;
-    if (!Array.isArray(dusts) || !dusts.includes(value % 1000000)) continue;
-    candidates.push({
-      hash: txn.transaction_id?.hash || '',
-      nanotons: value,
-      utime: txn.utime,
-      source: inMsg.source || '',
-    });
+  try {
+    const key = env.TONCENTER_API_KEY ? `&api_key=${encodeURIComponent(env.TONCENTER_API_KEY)}` : '';
+    const url = `https://toncenter.com/api/v2/getTransactions?address=${encodeURIComponent(TON_DEV_WALLET)}&limit=30${key}`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    const d = await r.json();
+    if (!d?.ok || !Array.isArray(d.result)) return [];
+    const since = Math.floor(Date.now() / 1000) - windowSeconds;
+    const candidates = [];
+    for (const txn of d.result) {
+      const inMsg = txn.in_msg;
+      if (!inMsg || txn.utime < since) continue;
+      const value = parseInt(inMsg.value || '0', 10);
+      if (value < minNanotons * 0.99) continue;
+      if (!Array.isArray(dusts) || !dusts.includes(value % 1000000)) continue;
+      candidates.push({
+        hash: txn.transaction_id?.hash || '',
+        nanotons: value,
+        utime: txn.utime,
+        source: inMsg.source || '',
+      });
+    }
+    // Solo pagos firmados con el resto del usuario. Se devuelven TODOS: si el
+    // usuario pago dos veces seguidas, quien llama reclama el primero libre (con
+    // solo el primero, un pago viejo quedaba tapado por uno ya acreditado).
+    return candidates;
+  } catch (e) {
+    return [];
   }
-  // Solo pagos firmados con el resto del usuario. Se devuelven TODOS: si el
-  // usuario pago dos veces seguidas, quien llama reclama el primero libre (con
-  // solo el primero, un pago viejo quedaba tapado por uno ya acreditado).
-  return candidates;
 }
