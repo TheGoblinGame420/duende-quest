@@ -488,6 +488,21 @@ async function onRequestPost(context) {
       return json(request, { success: true });
     }
 
+    // ── VINCULAR WALLET TON DESDE LA WEB (Supabase Auth) ──
+    // Mismo campo profiles.wallet_ton que ya llena update_profile en Telegram,
+    // pero identificando al dueño por sesion de Supabase en vez de initData:
+    // asi la wallet TON queda vinculada al perfil sin importar si el jugador
+    // entro por Telegram o por el navegador.
+    if (action === 'web_update_profile') {
+      const user = await verifySupabaseUser(env, body.access_token);
+      if (!user?.id) return json(request, { error: 'auth_failed' }, 401);
+      const allowed = {};
+      if (typeof body.wallet_ton === 'string' && body.wallet_ton.length <= 80) allowed.wallet_ton = body.wallet_ton;
+      if (Object.keys(allowed).length === 0) return json(request, { error: 'no_fields' }, 400);
+      await supabaseQuery(env, `profiles?id=eq.${user.id}`, { method: 'PATCH', body: allowed });
+      return json(request, { success: true });
+    }
+
     // ── CANJE DQ → $DUENDE (manual semanal) ──
     // 1000 DQ = 1 $DUENDE. Se paga SOLO contra dq_redeemable (ganado partida a
     // partida en el servidor), nunca contra el saldo del cloud save.

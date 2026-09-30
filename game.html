@@ -15,6 +15,7 @@
 <meta name="apple-mobile-web-app-title" content="Duende Quest">
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tonconnect/ui@2/dist/tonconnect-ui.min.js"></script>
 <script src="js/config.js"></script>
 <script src="js/missions.js"></script>
 <script src="js/streak.js"></script>
@@ -404,6 +405,15 @@ body{display:flex;flex-direction:column;align-items:center;justify-content:cente
       <button class="ob purple" style="margin-top:.6rem;font-size:.38rem;padding:.5rem 1rem" onclick="connectPhantomFromWallet()">👻 CONECTAR PHANTOM</button>
     </div>
 
+    <!-- Wallet TON (Tonkeeper, etc.) -- misma vinculacion que ya existe en el
+         bot de Telegram (telegram/index.html), ahora tambien desde la web. -->
+    <div class="dq-card" style="border-color:rgba(0,152,234,.25)">
+      <div class="dq-card-title">TON WALLET</div>
+      <div class="dq-wallet-addr" id="wallet-ton-addr">No conectada</div>
+      <div class="dq-sub" id="wallet-ton-status" style="margin-top:.3rem;color:rgba(255,255,255,.2)">Conecta tu wallet TON (Tonkeeper, etc.)</div>
+      <button class="ob" style="margin-top:.6rem;font-size:.38rem;padding:.5rem 1rem;background:linear-gradient(135deg,#0098ea,#005f99);color:#fff" onclick="connectTonWeb()">💎 CONECTAR WALLET TON</button>
+    </div>
+
     <!-- Canje DQ canjeable -> $DUENDE real (cuenta con sesión iniciada) -->
     <div class="dq-card" style="border-color:rgba(0,255,136,.25)" id="dq-canje-card">
       <div class="dq-card-title">CANJEAR DQ → $DUENDE</div>
@@ -552,6 +562,49 @@ async function _walletApiWeb(action,payload){
     const r=await fetch('/api/wallet',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,access_token:token,...payload})});
     return await r.json();
   }catch(e){ return {error:'network'}; }
+}
+
+// ══ TON CONNECT (web) ══
+// Mismo manifest y la misma columna profiles.wallet_ton que ya usa el bot de
+// Telegram (telegram/index.html) -- aqui sin twaReturnUrl (eso es especifico
+// de volver a un chat de Telegram tras aprobar en la wallet; en una pestaña
+// normal de navegador el SDK ya maneja el regreso solo, con QR o extension).
+const TON_MANIFEST_WEB='https://duende-quest.alfonso12hc.workers.dev/tonconnect-manifest.json';
+let tonUIWeb=null, tonAddrWeb=null;
+function initTonConnectWeb(){
+  try{
+    if(typeof TON_CONNECT_UI==='undefined') return;
+    tonUIWeb=new TON_CONNECT_UI.TonConnectUI({manifestUrl:TON_MANIFEST_WEB});
+    tonUIWeb.onStatusChange(w=>{
+      tonAddrWeb = w ? TON_CONNECT_UI.toUserFriendlyAddress(w.account.address) : null;
+      if(tonAddrWeb) _walletApiWeb('web_update_profile',{wallet_ton:tonAddrWeb}).catch(()=>{});
+      pintarTonWalletWeb();
+    });
+  }catch(e){console.warn('[TON Web]',e);}
+}
+initTonConnectWeb();
+function connectTonWeb(){
+  if(!tonUIWeb){ if(typeof showPUNotif==='function') showPUNotif('TON Connect no disponible'); return; }
+  tonUIWeb.openModal().catch(()=>{});
+}
+function pintarTonWalletWeb(){
+  const addrEl=document.getElementById('wallet-ton-addr');
+  const statusEl=document.getElementById('wallet-ton-status');
+  if(!addrEl) return;
+  if(tonAddrWeb){
+    addrEl.textContent=tonAddrWeb.slice(0,6)+'...'+tonAddrWeb.slice(-6);
+    addrEl.className='dq-wallet-addr linked';
+    statusEl.textContent='✅ Wallet TON conectada';
+    statusEl.style.color='#00ff88';
+    // Reintenta guardar por si la conexion se restauro antes de iniciar sesion
+    // (el evento onStatusChange no vuelve a dispararse solo por loguearse).
+    _walletApiWeb('web_update_profile',{wallet_ton:tonAddrWeb}).catch(()=>{});
+  } else {
+    addrEl.textContent='No conectada';
+    addrEl.className='dq-wallet-addr';
+    statusEl.textContent='Conecta tu wallet TON (Tonkeeper, etc.)';
+    statusEl.style.color='';
+  }
 }
 
 let webRunTicket=null, webScorePendiente=null;
@@ -947,6 +1000,7 @@ function showWallet(){
     statusEl.textContent='Conecta tu wallet para recibir $DUENDE';
     statusEl.style.color='';
   }
+  pintarTonWalletWeb();
   pintarCanjeWeb();
   document.getElementById('ov-wallet').classList.add('show');
 }
