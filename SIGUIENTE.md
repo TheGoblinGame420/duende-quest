@@ -600,3 +600,44 @@ lectura de código + el patrón ya usado en el resto del archivo.
 Limpieza de housekeeping: se borraron 8 worktrees/branches de rondas
 anteriores ya mergeadas a master (`git worktree remove` + `git branch -D`),
 solo quedaban acumulando espacio en disco sin ningún propósito.
+
+## Décima tanda (29-sep-2026) — cache de assets y tope de referidos
+
+**Rendimiento — ningún archivo estático se cacheaba, ni siquiera un PNG que
+nunca cambia.** `worker.js` servía TODO (HTML, JS, imágenes, hojas de
+sprites) con `Cache-Control: public, max-age=0, must-revalidate` porque
+`env.ASSETS.fetch()` no pone cache real y nadie lo sobreescribía (el
+`_headers` de una sesión previa no aplica porque este sitio usa Static
+Assets, no Cloudflare Pages — ya documentado en el propio `worker.js`).
+Con `run_worker_first=true` cada request pasa por el Worker de todas formas,
+así que ahí mismo se puede decidir la cabecera. Ahora: `assets/*` (los PNG
+de sprites/UI, audio) cachea 1 día (`max-age=86400,
+stale-while-revalidate=3600`) — HTML y JS del motor (`game.html`,
+`js/engine.js`, etc.) siguen en `max-age=0` a propósito, porque no tienen
+nombre con hash y se despliegan varias veces por hora: cachearlos dejaría a
+jugadores atascados en una versión vieja (con bugs ya arreglados) sin
+enterarse. Verificado en producción: `assets/ui/coin.png` y las hojas de
+sprites devuelven la cabecera nueva, `game.html`/`engine.js` siguen igual.
+
+**Seguridad — el bono de referidos no tenía tope.** La auditoría de la
+tanda anterior había señalado (sin arreglar, por ser "diseño de producto")
+que `handleReferral()` en `functions/api/telegram-bot.js` acredita 500
+$DUENDE al referente por CADA cuenta nueva de Telegram que entre con su
+link, sin ningún límite — una sola persona con cuentas desechables podía
+drenar el suministro sin tope. Se agregó un tope real y barato de
+implementar (no requería tocar el esquema SQL, solo contar filas de
+`referrals` por `referrer_tg_id`, columna que ya se usaba): máximo 20
+referidos pagados por persona. Por encima de eso el bono se corta (la
+cuenta nueva referida igual puede jugar normal, solo no llega el "+500 al
+referente"). Verificado que el resto de la API (`/api/wallet` vía POST)
+sigue respondiendo bien tras el deploy.
+
+**Nota aparte (sin tocar, informado y decidido por el dueño):** `index.html`
+tiene un botón "STAKEAR AHORA" real en la landing (`js/staking-manager.js`)
+que manda SOL de verdad a la wallet del dueño en Solana mainnet prometiendo
+devolver $DUENDE con rendimiento — la MISMA exposición penal ya documentada
+para el staking en TON (`ESTRATEGIA-TOKEN.md`, art. 11 Ley 26702 / art. 246
+Código Penal peruano) que llevó a apagar `ton_stake` con un switch. Se le
+preguntó explícitamente al dueño qué hacer con esta versión en Solana de la
+web; su decisión (29-sep-2026): **dejarlo activo**. No se tocó nada de
+`js/staking-manager.js` ni de `index.html` en esa sección.
