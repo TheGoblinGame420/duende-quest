@@ -476,3 +476,62 @@ pelea real → las 4 fases de estado → muerte → "¡VICTORIA!".
 + el jefe final, **en producción** (no solo local), cero errores de
 consola en ninguna. El ranking real de la landing confirmado mostrando
 jugadores de verdad de la base de datos de producción.
+
+## Octava tanda (29-sep-2026, continuación) — bestiario a 18, meta de colección y cierre de campaña con más peso
+
+Todo esto en agentes/worktrees separados, revisado (diff + sprites vistos con
+PIL antes de integrar) y verificado en vivo con el jugador automático antes
+de mergear, igual que las tandas anteriores.
+
+**Contenido nuevo — bestiario (13 → 18 con hoja de animación):**
+- `ghoul_ardiente` y `hechicero` (bioma tormenta).
+- `goblin_guard`, `goblin_knight` (bioma amanecer), `rana` (bioma selva),
+  `fantasma` (bioma noche), `pajaro` (bioma amanecer).
+- `rana` fue el primer sprite con celdas de tamaño distinto en ambos ejes
+  entre el frame de caminata y el de golpe/muerte del pack fuente — se
+  verificó a mano en movimiento (forzando un spawn y usando `zoom`/
+  screenshot) que no salta de tamaño ni desalinea las patas contra el
+  suelo; quedó bien.
+- `SHEET_POR_BIOMA` (`js/engine.js`) queda así (noche/amanecer/selva/
+  tormenta/desierto): cada bioma con 4-5 enemigos normales propios, sin
+  reciclar el mismo bicho entre biomas salvo `goblin_normal` (el base).
+
+**Meta de colección — "Bestiario" (nuevo sistema, cero deuda futura):**
+- `markBestiaSeen()`/`bestiarioSeen()`/`bestiarioTotal()` en `js/engine.js`:
+  guarda en `localStorage` (`dq_bestiario`) qué sprites ya viste en combate.
+  `bestiarioTotal()` cuenta `Object.keys(SHEETS).length - 1` (excluye al
+  ángel, que es jefe) — **si se agrega un enemigo nuevo con hoja de
+  animación en el futuro, la meta crece sola, sin tocar código.**
+- Logro nuevo `bestiario` (+120 DQ) en `js/achievements.js`, se dispara solo
+  al completar la colección.
+- Pantalla de muerte (`nearMissLines`) ahora también puede mostrar
+  "📖 Bestiario: X/Y criaturas descubiertas" como gancho de FOMO, junto a
+  las demás pistas ya existentes (comparte el tope de 3 líneas).
+
+**Cierre de campaña con más presencia:**
+- Al ganar la etapa 5-3 (última del juego), la pantalla de victoria ahora
+  suma la línea "🏆 CAMPAÑA COMPLETADA — DERROTASTE AL ÁNGEL CAÍDO 🏆"
+  además del "¡VICTORIA!" normal.
+- El mapa de campaña (`abrirMapa()`) ahora distingue el jefe final: corona
+  👑 en vez de calavera ☠ en el botón de la etapa 5-3, para que se note a
+  simple vista cuál etapa tiene al jefe de verdad distinto.
+- El aviso "NUEVO" del menú principal, que seguía anunciando una feature
+  vieja (explotadores/fantasmas de hace varias tandas), ahora dice
+  "🆕 NUEVO: BESTIARIO AMPLIADO 📖 Y JEFE FINAL 👑" — reflejando lo que de
+  verdad se agregó más recientemente.
+
+**Verificación:** jugador automático corrido en los biomas noche/amanecer/
+selva tras el merge (sin errores de consola, sheets vistos coinciden con
+`SHEET_POR_BIOMA`); spawn forzado de `rana` en vivo para revisar su
+animación en detalle. Push a `origin/master` confirmado en producción vía
+curl (`engine.js` en vivo con `goblin_guard`, `goblin_knight`, `'rana'`,
+`fantasma`, `pajaro`).
+
+**Pendiente / reservado para más adelante:**
+- `goblin_lord` (del pack de variantes goblin) — se decidió no integrarlo
+  aún, se ve mejor como jefe de un futuro bioma castillo que como enemigo
+  normal más.
+- El dragón (pack sunny-land) — reservado para un futuro intento de jefe
+  bien diseñado y probado en vivo, no se apuró su integración esta vez.
+- Bestiario ahora en 18 criaturas + 1 jefe con hoja; quedan biomas con
+  solo 3-4 sprites propios si se quiere seguir engordando el pool.
