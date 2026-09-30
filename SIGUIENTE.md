@@ -710,3 +710,31 @@ para un futuro bioma castillo, el dragón `sunny-dragon` para un futuro
 intento de jefe bien probado en vivo) y `sunny-mushroom` (descartado por
 redundante, arriba). Cualquier ronda de contenido futura necesitaría buscar
 un pack CC0 nuevo.
+
+## Treceava tanda (30-sep-2026) — vincular wallet TON tambien desde la web
+
+Pedido explícito del dueño: poder vincular la wallet en TON tanto desde la
+web como desde Telegram (antes solo Telegram tenía TON Connect; la web solo
+tenía Solana/Phantom vía `js/wallet-manager.js`).
+
+**`game.html`** ahora carga el mismo SDK `@tonconnect/ui` y el mismo
+`tonconnect-manifest.json` ya en producción que usa `telegram/index.html`.
+Nueva tarjeta "TON WALLET" en el panel de wallet (`#ov-wallet`), junto a la
+de Solana — botón "CONECTAR WALLET TON" abre el modal real (QR + lista de
+wallets: Tonkeeper, Wallet in Telegram, etc.). Sin `twaReturnUrl` (eso es
+específico de volver a un chat de Telegram; en una pestaña normal el SDK ya
+maneja el regreso solo).
+
+**Backend:** nueva acción `web_update_profile` en `functions/api/wallet.js`
+— mismo patrón exacto que `update_profile` (la versión Telegram) pero con
+`verifySupabaseUser`/`access_token` en vez de `verifyInitData`/`init_data`.
+Guarda `profiles.wallet_ton` identificando al dueño por su sesión de
+Supabase, para que quede vinculada sin importar si el jugador entra por
+Telegram o por el navegador — mismo campo, dos caminos de auth.
+
+Verificado en vivo en producción: el modal de TON Connect abre de verdad
+(QR generado, manifest válido), `POST /api/wallet {action:web_update_profile}`
+responde `401 auth_failed` con token inválido (confirma que la ruta está
+desplegada y valida identidad antes de tocar la base de datos, igual que el
+resto de acciones). Corrida de campaña sin errores de consola tras el
+cambio.
