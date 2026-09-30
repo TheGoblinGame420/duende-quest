@@ -7,9 +7,12 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, MISIONES,
   statsMonstruo, sueloEn, zonaDe,
-} from './data.js';
+} from './data.js?v=6';
 
-const $ = id => document.getElementById(id);
+// Durante un despliegue puede llegar este JS con un HTML de la version
+// anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
+// reventar al cargar y dejar la pantalla de carga colgada.
+const $ = id => document.getElementById(id) || (() => { const e = document.createElement(id === 'mini' ? 'canvas' : 'div'); e.id = id; return e; })();
 const A = '/assets/';
 const TG = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? window.Telegram.WebApp : null;
 if (TG) {
