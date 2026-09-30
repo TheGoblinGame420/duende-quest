@@ -936,3 +936,10 @@ diarias repetibles, sonido propio para jefes.
   están los nivel 1. Ahora cada jefe solo persigue a quien entre a 520 px de
   su guarida, no se le puede arrastrar a más de 600 px, y vuelve a casa si
   no hay nadie.
+- **Invitado → cuenta**: si alguien juega como invitado y luego entra con su
+  cuenta web o de Telegram (sin personaje todavía), hereda el personaje del
+  invitado; el de invitado se borra y su fila del ranking pasa a la cuenta.
+- **Forja** en el Mercader: cada arma de +0 a +10 con oro (+7% de daño por
+  nivel, costo 150×1,7ⁿ, ~42k de oro hasta +10). Sin azar a propósito: cada
+  mejora sale siempre bien (nada de mecánicas tipo apuesta).
+- Arnés: 97 comprobaciones.

@@ -14,6 +14,7 @@
 
 import {
   MAPAS, MONSTRUOS, statsMonstruo, statsJugador, xpParaSubir, SKINS, ARMAS, PODERES, MISIONES, DIARIA, premioDiaria, hoyUTC,
+  FORJA_MAX, costoForja, multForja,
   ATAQUE_CD_MS, ALCANCE_BASE, COMBO_MULT, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre,
 } from '../../mmo/js/data.js';
 import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery } from '../api/lib.js';
@@ -228,6 +229,7 @@ export class MmoWorld {
     if (!c) c = personajeNuevo(uid, nombre);
     c.skins = c.skins || ['comun']; c.armas = c.armas || ['katana']; c.pw = c.pw || {};
     c.mis = c.mis || { i: 0, p: 0 };
+    c.forja = c.forja || {};
     for (const p of PODERES) if (typeof c.pw[p.id] !== 'number') c.pw[p.id] = 0;
     if (!MAPAS[c.mapa]) c.mapa = 'pueblo';
 
@@ -293,7 +295,7 @@ export class MmoWorld {
       nombre: c.nombre, nivel: c.nivel, xp: c.xp, xpSig: xpParaSubir(c.nivel), oro: c.oro,
       hp: Math.ceil(s.hp), maxHp: s.st.maxHp, atk: s.st.atk, def: s.st.def,
       arma: c.arma, armas: c.armas, skin: c.skin, skins: c.skins, pw: c.pw,
-      kills: c.kills, jefes: c.jefes, muerto: s.muerto, mis: c.mis,
+      kills: c.kills, jefes: c.jefes, muerto: s.muerto, mis: c.mis, forja: c.forja,
     };
   }
   actualizarYo(s) { this.enviar(s, { t: 'yo', yo: this.datosPropios(s) }); }
@@ -393,9 +395,10 @@ export class MmoWorld {
       .sort((a, b) => Math.abs(a.x - s.x) - Math.abs(b.x - s.x))
       .slice(0, maxObjetivos);
     let curado = 0;
+    const forja = multForja((s.c.forja || {})[s.c.arma]);
     for (const o of lista) {
       const crit = Math.random() < 0.12;
-      let dmg = s.st.atk * arma.dano * COMBO_MULT[paso] * rnd(0.9, 1.1) * (crit ? 1.8 : 1) * (ahora < s.fuego ? 1.5 : 1);
+      let dmg = s.st.atk * arma.dano * forja * COMBO_MULT[paso] * rnd(0.9, 1.1) * (crit ? 1.8 : 1) * (ahora < s.fuego ? 1.5 : 1);
       dmg = Math.max(1, Math.round(dmg));
       golpes.push([o.id, dmg, crit ? 1 : 0]);
       curado += dmg;
@@ -411,7 +414,7 @@ export class MmoWorld {
         if (d < mejor) { mejor = d; otro = o; }
       }
       if (otro) {
-        const dmg = Math.max(1, Math.round(s.st.atk * 0.5 * COMBO_MULT[paso]));
+        const dmg = Math.max(1, Math.round(s.st.atk * 0.5 * forja * COMBO_MULT[paso]));
         golpes.push([otro.id, dmg, 2]);
         this.danar(otro, dmg, s);
       }
@@ -645,6 +648,14 @@ export class MmoWorld {
       if (c.oro < costo) return this.enviar(s, { t: 'toast', m: 'No te alcanza el oro.' });
       if ((c.pw[def.id] || 0) + n > 99) return this.enviar(s, { t: 'toast', m: 'Máximo 99 por poder.' });
       c.oro -= costo; c.pw[def.id] = (c.pw[def.id] || 0) + n;
+    } else if (m.k === 'forja') {
+      if (typeof m.id !== 'string' || !Object.hasOwn(ARMAS, m.id) || !c.armas.includes(m.id)) return;
+      const nv = c.forja[m.id] || 0;
+      if (nv >= FORJA_MAX) return this.enviar(s, { t: 'toast', m: 'Esa arma ya está al máximo (+' + FORJA_MAX + ').' });
+      const costo = costoForja(nv);
+      if (c.oro < costo) return this.enviar(s, { t: 'toast', m: 'No te alcanza el oro.' });
+      c.oro -= costo;
+      c.forja[m.id] = nv + 1;
     } else if (m.k === 'arma' || m.k === 'skin') {
       const tabla = m.k === 'arma' ? ARMAS : SKINS;
       const lista = m.k === 'arma' ? c.armas : c.skins;
@@ -658,7 +669,7 @@ export class MmoWorld {
       lista.push(m.id);
       this.equipar(s, { k: m.k, id: m.id });
     } else return;
-    this.enviar(s, { t: 'toast', m: '✅ Compra realizada', ok: true });
+    this.enviar(s, { t: 'toast', m: m.k === 'forja' ? `⚒️ ¡${ARMAS[m.id].nombre} +${c.forja[m.id]}!` : '✅ Compra realizada', ok: true });
     this.actualizarYo(s);
     this.guardar(s);
   }

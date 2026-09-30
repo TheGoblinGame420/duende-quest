@@ -125,6 +125,12 @@ export const ARMAS = {
   odachi: { nombre: 'Odachi', precio: 2000, alcance: 1.5, cd: 1.4, dano: 1.7, color: '#ffffff', icono: 'katana_comun', desc: 'Lenta, alcance enorme' },
   chispa: { nombre: 'Chispa', precio: 5000, alcance: 1,   cd: 1,   dano: 1.05, color: '#00eeff', icono: 'katana_spark', desc: 'El rayo salta a otro enemigo' },
 };
+// Forja: cada arma sube de +0 a +10 pagando oro, +7% de daño por nivel.
+// Siempre sale bien (nada de azar ni de perder el arma): es una meta de oro
+// a largo plazo, no una apuesta.
+export const FORJA_MAX = 10;
+export const costoForja = n => Math.round(150 * Math.pow(1.7, n));   // de +n a +n+1
+export const multForja = n => 1 + 0.07 * (n || 0);
 export const ATAQUE_CD_MS = 330;          // x arma.cd
 export const ALCANCE_BASE = [55, 65, 85]; // por paso de combo, x arma.alcance
 export const COMBO_MULT = [1, 1.15, 1.45];

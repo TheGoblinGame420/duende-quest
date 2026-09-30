@@ -6,8 +6,8 @@
 // ═══════════════════════════════════════════════════════
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, MISIONES, DIARIA,
-  statsMonstruo, sueloEn, zonaDe, premioDiaria,
-} from './data.js?v=15';
+  statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
+} from './data.js?v=16';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1034,7 +1034,18 @@ function pintarTienda() {
   $('t-oro').textContent = yo.oro.toLocaleString('es');
   const L = $('tienda-lista');
   let h = '';
-  if (tabTienda === 'pw') {
+  const nvF = id => (yo.forja || {})[id] || 0;
+  if (tabTienda === 'forja') {
+    for (const id of yo.armas) {
+      const d = ARMAS[id], n = nvF(id);
+      const ico = `<img src="${A}armas/${d.icono}_item.png" style="${id !== 'katana' ? 'filter:drop-shadow(0 0 4px ' + d.color + ')' : ''}">`;
+      const desc = 'Daño ×' + multForja(n).toFixed(2) + (n < FORJA_MAX ? ' → ×' + multForja(n + 1).toFixed(2) : ' · máximo');
+      const acc = n >= FORJA_MAX ? '<span class="precio" style="color:#00ff88">✓ +' + FORJA_MAX + '</span>'
+        : `<span class="precio">🪙 ${costoForja(n).toLocaleString('es')}</span><button class="btn" data-comprar="forja" data-id="${id}" ${yo.oro < costoForja(n) ? 'disabled' : ''}>MEJORAR A +${n + 1}</button>`;
+      h += tarjeta(ico, d.nombre + ' +' + n, desc, acc);
+    }
+    h += '<p style="margin-top:8px;font-size:12px;color:rgba(255,255,255,.5)">Cada mejora sale siempre bien: +7% de daño por nivel, hasta +' + FORJA_MAX + '. Compra más armas en la pestaña ARMAS para forjarlas también.</p>';
+  } else if (tabTienda === 'pw') {
     PODERES.forEach(p => {
       h += tarjeta(`<img src="${A}items/${p.icono}.png">`, p.nombre + ` <span style="color:#888">(tienes ${yo.pw[p.id] || 0})</span>`, p.desc,
         `<span class="precio">🪙 ${p.precio}</span><button class="btn" data-comprar="pw" data-id="${p.id}" data-n="1" ${yo.oro < p.precio ? 'disabled' : ''}>COMPRAR</button><button class="btn sec" data-comprar="pw" data-id="${p.id}" data-n="5" ${yo.oro < p.precio * 5 ? 'disabled' : ''}>x5</button>`);
@@ -1068,7 +1079,7 @@ function pintarInventario() {
     `<div class="fila"><span>VIDA</span><span>${yo.maxHp}</span></div>` +
     `<div class="fila"><span>ATAQUE</span><span>${yo.atk}</span></div>` +
     `<div class="fila"><span>DEFENSA</span><span>${yo.def}</span></div>` +
-    `<div class="fila"><span>ARMA</span><span>${esc(ARMAS[yo.arma].nombre)}</span></div>` +
+    `<div class="fila"><span>ARMA</span><span>${esc(ARMAS[yo.arma].nombre)} +${(yo.forja || {})[yo.arma] || 0}</span></div>` +
     `<div class="fila"><span>MONSTRUOS / JEFES</span><span>${yo.kills} / ${yo.jefes}</span></div>`;
   const tabla = tabInv === 'arma' ? ARMAS : SKINS;
   const tiene = tabInv === 'arma' ? yo.armas : yo.skins;
@@ -1080,7 +1091,8 @@ function pintarInventario() {
     const acc = !tiene.includes(id) ? '<span class="precio" style="color:#666">🔒 Mercader</span>'
       : puesto === id ? '<span class="precio" style="color:#00ff88">✓ EQUIPADO</span>'
       : `<button class="btn sec" data-equipar="${tabInv}" data-id="${id}">EQUIPAR</button>`;
-    h += tarjeta(ico, d.nombre, d.desc, acc);
+    const mas = tabInv === 'arma' && tiene.includes(id) ? ' +' + ((yo.forja || {})[id] || 0) : '';
+    h += tarjeta(ico, d.nombre + mas, d.desc, acc);
   }
   $('inv-lista').innerHTML = h;
   $('inv-lista').querySelectorAll('[data-equipar]').forEach(b => b.onclick = () => mandar({ t: 'equipar', k: b.dataset.equipar, id: b.dataset.id }));
