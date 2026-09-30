@@ -236,16 +236,97 @@ https://opengameart.org/content/castle-platformer
 variantes de cada bioma al entrar (`FONDO_VARIANTES` en `js/engine.js`),
 para que la campaña no se vea igual la segunda vez.
 
+## Decimotercer al decimoseptimo enemigo animado: goblin guard, goblin knight, rana, fantasma y pájaro
+
+**Goblin Corps (MV Platformer set)** — Moikmellah. Licencia CC0.
+https://opengameart.org/content/goblin-corps-mv-platformer-set
+
+Últimas dos variantes sin usar del mismo pack: `guard` (armadura gris lisa,
+penacho verde chico) y `knight` (misma armadura, cresta/mohawk ROJO en el
+casco), misma rejilla 32x64 y mismas columnas que las 8 variantes previas
+(confirmado a ojo con las 3 sueltas que quedaban en `full/`, no solo estas
+dos — ver `tools/generar_goblin_variantes4_cc0.py`). Las dos van a
+**AMANECER ROJO** (`assets/enemigos/sheets/goblin_guard.png` y
+`goblin_knight.png`), que hasta esta tanda era el bioma con menos variedad de
+todo el juego (solo goblin_normal + goblin_peasant): el knight ademas conecta
+con la paleta del bioma via su cresta roja (línea de acento `#ff6444` en
+`BIOMES`). `guard`/`knight` leen como soldados de guarnición sin más, a
+diferencia de la tercera variante que quedaba (`lord`: corona + capa/tunica
+larga), que se descartó — ver más abajo.
+
+**Sideview Fantasy Patreon Collection** — Luis Zuno (ansimuz). Licencia CC0.
+https://opengameart.org/content/sideview-fantasy-patreon-collection
+
+Tres enemigos más del mismo pack que ya dio lagarto y serpiente, ninguno
+humanoide reskineado:
+
+- **rana** (`sunny-froggy`, `assets/enemigos/sheets/rana.png`,
+  `tools/generar_rana_cc0.py`): va a **SELVA ESMERALDA**, junto al hongo y
+  los goblins tribales — la fila `caminar` (42x38) y la de `taunting`
+  (53x42, reusada para golpe/muerte) traen celdas de tamaño DISTINTO en
+  ambos ejes, no solo el ancho como en la serpiente: se empaquetaron en una
+  celda común 53x42 con `caminar` centrada horizontalmente y anclada al
+  borde inferior, para que las patas no salten de posición al cambiar de
+  fila. Sin daño/muerte propios: el golpe reusa el frame de "croar con la
+  boca abierta" + la única pose distinta del ciclo de taunting (torcida), y
+  la muerte reusa esta última.
+- **fantasma** (`enemy-ghost`, `assets/enemigos/sheets/fantasma.png`,
+  `tools/generar_fantasma_cc0.py`): va a **NOCHE VIOLETA**, junto al
+  esqueleto, el goblin assassin y el hechicero (cementerio nocturno) — cráneo
+  flotando en una capa negra con partículas magenta, se usó la variante
+  "con partículas" del pack por el toque extra de caracter espectral. Ciclo
+  único de flotar (6 frames, sin tag de animación separado): el golpe y la
+  muerte reusan los frames finales del mismo ciclo (la capa más abierta),
+  igual patrón que el ghoul ardiente.
+- **pájaro** (`flying-bird`, `assets/enemigos/sheets/pajaro.png`,
+  `tools/generar_pajaro_cc0.py`): va a **AMANECER ROJO**, junto al goblin
+  guard/knight — "pájaros al amanecer" es la lectura más directa de
+  `recursos/INDICE.md` ("pájaro → cualquiera"). Se usó la paleta
+  crema/hueso del pack (no la variante "-skin" azul/naranja, que lee más a
+  loro tropical y hubiera encajado mejor en selva, ya reforzada esta misma
+  tanda con la rana). Ciclo único de vuelo (7 frames): golpe y muerte reusan
+  las posturas de ala más extendida del mismo ciclo.
+
+`SHEET_POR_BIOMA` en `js/engine.js` tiene el reparto final por bioma.
+
+## Lo que se dejó sin integrar esta tanda, y por qué
+
+- **goblin lord** (Goblin Corps, corona + capa/túnica larga sobre la misma
+  armadura de guard/knight): a diferencia de esos dos, la corona lo lee
+  inequívocamente como REALEZA — un "rey goblin" que necesita una escena de
+  trono/castillo para tener sentido narrativo. Ningún bioma actual (noche,
+  amanecer, selva, tormenta, desierto) sostiene esa lectura sin que se sienta
+  fuera de lugar. Se guarda en `recursos/` para el mismo hipotético bioma
+  castillo que ya mencionaba `recursos/INDICE.md`.
+- **dragón volador** (`sunny-dragon`, Sideview Fantasy Collection, celda
+  192x176, el más grande de todo el lote): se miró de cerca (los 9 frames de
+  `sunny-dragon-fly.png`) aplicando el mismo criterio que ya se usó con el
+  "wizard"/hechicero en la tanda anterior. A diferencia del hechicero, que sí
+  tenía dos tags de animación separados (Idle + Fire) de donde sacar un golpe
+  con sentido, el dragón trae **un único ciclo de vuelo continuo** (aleteo),
+  sin ninguna pose de ataque, daño o telegrafiado propio — ni siquiera una
+  variación de postura que sugiera "en picada" o "escupe fuego". No lee como
+  jefe (sin fase 2 ni ataque propio que telegrafiar, el mismo motivo por el
+  que el hechicero no se integró como jefe) pero tampoco vale la pena
+  integrarlo como enemigo normal: su única razón de ser es la escala (dragón
+  grande, "mini-jefe" en el propio nombre del pack), y encogerlo al
+  `altoObjetivo: 70` de todo el bestiario normal —igual que se hizo con el
+  pájaro, que sí es una criatura chica de verdad— desperdiciaría exactamente
+  lo que lo hace interesante. Sin poder verificar en partida real un
+  telegrafiado de ataque nuevo (la limitación explícita de este reparto de
+  tareas), forzar un jefe a medias era peor que dejarlo pendiente. Se guarda
+  en `recursos/` para una tanda futura con más margen para diseñar y probar
+  un ataque propio.
+
 ## Packs descargados y aún sin integrar
 
 `recursos/` guarda más packs CC0 sin integrar del todo (mapas Tiled, un jefe
-dragón, iconos), más lo que queda sin tocar de Goblin Corps (3 variantes:
-guard, knight, lord) y del resto de Sideview Fantasy Collection (fantasma,
-pájaro, rana, dragón volador — solo se usaron el lagarto y la serpiente de
-aquí y la seta grande de Scratchio, que es un pack aparte). No se publican
-(`recursos` está en `.assetsignore`). El detalle de cada uno, con autor, URL
-y licencia, está en `recursos/INDICE.md`. Al integrar cualquiera, añadirlo a
-este archivo.
+dragón —ver más arriba—, iconos), más lo que queda sin tocar de Goblin Corps
+(`lord`, ver más arriba) y del resto de Sideview Fantasy Collection (el
+dragón volador; ya se integraron lagarto, serpiente, rana, fantasma y
+pájaro). No se publican (`recursos` está en `.assetsignore`). El detalle de
+cada uno, con autor, URL y licencia, está en `recursos/INDICE.md`. Al
+integrar cualquiera, añadirlo a este archivo.
 
 ---
 
