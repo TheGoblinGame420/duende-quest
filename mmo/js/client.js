@@ -7,7 +7,7 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria,
-} from './data.js?v=9';
+} from './data.js?v=10';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -129,7 +129,7 @@ pintarSonido();
 let ws = null, miId = 0, yo = null, mapaId = 'pueblo', conectado = false, reintentos = 0, fatal = false;
 const otros = new Map();   // id -> jugador remoto
 const mons = new Map();    // id -> monstruo
-let textos = [], parts = [], efectos = [], burbujas = new Map(), monedas = [];
+let textos = [], parts = [], efectos = [], burbujas = new Map(), monedas = [], balas = [];
 let jefeVivo = null;
 const cdPoder = {};        // id -> ms fin
 let frame = 0;
@@ -266,7 +266,7 @@ let fundido = 0;
 function entrarMapa(m) {
   if (m.mapa !== mapaId) fundido = 1;
   mapaId = m.mapa;
-  otros.clear(); mons.clear(); efectos = []; textos = []; burbujas.clear(); jefeVivo = null;
+  otros.clear(); mons.clear(); efectos = []; textos = []; balas = []; burbujas.clear(); jefeVivo = null;
   P.x = m.x; P.y = SUELO; P.vx = 0; P.vy = 0; P.suelo = true;
   m.jugadores.forEach(agregarOtro);
   m.mons.forEach(agregarMon);
@@ -322,6 +322,7 @@ function snapshot(m) {
     o.st = st;
   }
   for (const [id, o] of mons) if (!vistos.has(id) && (!o.muereT || t - o.muereT > 2000)) mons.delete(id);
+  balas = (m.b || []).map(([id, x, y, vx, vy, jefe]) => ({ id, x, y, vx, vy, jefe, t }));
   if (jefeVivo && !mons.has(jefeVivo.id)) jefeVivo = null;
 }
 
@@ -474,6 +475,7 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyX' || e.code === 'KeyK' || e.code === 'ShiftLeft') dash();
   if (e.code === 'KeyE') interactuar();
   if (e.code === 'KeyI') abrirInventario();
+  if (e.code === 'KeyR') volverAlPueblo();
   if (e.code === 'Enter') { e.preventDefault(); abrirChat(); }
   if (/^Digit[1-4]$/.test(e.code)) usarPoder(+e.code.slice(5) - 1);
   if (e.code.startsWith('Arrow')) e.preventDefault();
@@ -499,6 +501,12 @@ botonTactil('t-jump', saltar);
 botonTactil('t-dash', dash);
 botonTactil('t-chat', abrirChat);
 $('interactuar').onclick = interactuar;
+function volverAlPueblo() {
+  if (!yo || P.muerto) return;
+  if (mapaId === 'pueblo') { aviso('Ya estás en el pueblo.'); return; }
+  sfx('boton', .3); mandar({ t: 'regreso' });
+}
+$('b-regreso').onclick = volverAlPueblo;
 $('b-inv').onclick = abrirInventario;
 $('b-rank').onclick = abrirRanking;
 $('b-ayuda').onclick = () => abrir('m-ayuda');
@@ -795,7 +803,27 @@ function burbuja(x, y, txt) {
   lineas.forEach((s, i) => g.fillText(s, x, y - h + 15 + i * 13));
 }
 
+// Bolas de fuego: la posicion se extrapola desde la ultima foto del
+// servidor con su velocidad, asi se mueven fluidas a 60 fps.
+function dibujarBalas() {
+  const ahora = performance.now();
+  for (const b of balas) {
+    const dt = Math.min(0.2, (ahora - b.t) / 1000);
+    const x = b.x + b.vx * dt - camX, y = b.y + b.vy * dt;
+    if (x < -20 || x > VW + 20) continue;
+    const r = b.jefe ? 9 : 7;
+    const col = b.jefe ? '255,60,240' : '192,132,252';
+    g.save(); g.globalCompositeOperation = 'lighter';
+    const rg = g.createRadialGradient(x, y, 1, x, y, r * 2.6);
+    rg.addColorStop(0, 'rgba(255,255,255,.95)'); rg.addColorStop(.35, `rgba(${col},.85)`); rg.addColorStop(1, `rgba(${col},0)`);
+    g.fillStyle = rg; g.beginPath(); g.arc(x, y, r * 2.6, 0, Math.PI * 2); g.fill();
+    g.restore();
+    if (frame % 2 === 0) particula(x + camX - Math.sign(b.vx) * 6, y, b.jefe ? '#ff3cf0' : '#c084fc', 1.2);
+  }
+}
+
 function dibujarEfectos() {
+  dibujarBalas();
   efectos = efectos.filter(f => {
     const [fw, fh, n, tpf] = FX[f.tipo];
     const img = f.tinte ? tenido('fx_' + f.tipo, f.tinte) : IMG['fx_' + f.tipo];

@@ -154,6 +154,7 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
       <div class="caja" id="minimapa"><canvas id="mini" width="170" height="26"></canvas></div>
       <div class="caja" id="mapa-nom"><span id="h-mapa">—</span><small id="h-mapa-sub"></small></div>
       <div class="caja" id="botones">
+        <button class="bt" id="b-regreso" title="Volver al pueblo (R)">🌀</button>
         <button class="bt" id="b-inv" title="Inventario (I)">🎒</button>
         <button class="bt" id="b-rank" title="Ranking">🏆</button>
         <button class="bt" id="b-ayuda" title="Ayuda">❔</button>
@@ -260,7 +261,8 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
       <li><b>Atacar:</b> Z o J (combo de 3 golpes) · <b>Dash:</b> X o K</li>
       <li><b>Poderes:</b> 1 Poción · 2 Escudo · 3 Rayo · 4 Fuego</li>
       <li><b>Entrar a portales / hablar:</b> E o ↑ encima</li>
-      <li><b>Chat:</b> Enter · <b>Inventario:</b> I</li>
+      <li><b>Chat:</b> Enter · <b>Inventario:</b> I · <b>Volver al pueblo:</b> R o 🌀 (fuera de combate)</li>
+      <li>Los hechiceros, magos y algunos jefes lanzan <b>bolas de fuego</b>: salta o apártate de su línea.</li>
       <li>El <b>Guardia Tito</b> del pueblo te da una cadena de 20 misiones que recorre las 5 zonas: entrégaselas para cobrar experiencia, oro y poderes.</li>
       <li>Cada zona tiene su nivel recomendado (los monstruos más fáciles cerca de la entrada) y un <b>jefe</b> que reaparece cada 5 minutos: pelear en grupo reparte la recompensa.</li>
       <li>La vida se recupera sola si pasas 5 segundos sin recibir golpes, y rápido en el pueblo.</li>
@@ -291,6 +293,6 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=9"></script>
+<script type="module" src="/mmo/js/client.js?v=10"></script>
 </body>
 </html>

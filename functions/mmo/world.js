@@ -54,7 +54,8 @@ export class MmoWorld {
     this.sesiones = new Map();          // id de sesion -> sesion
     this.porUid = new Map();            // uid -> sesion
     this.mundo = {};
-    for (const id in MAPAS) this.mundo[id] = { mons: new Map(), jefeEn: 0, spawnEn: 0 };
+    for (const id in MAPAS) this.mundo[id] = { mons: new Map(), balas: [], jefeEn: 0, spawnEn: 0 };
+    this.sigBala = 1;
     this.sigSesion = 1;
     this.sigMon = 1;
     this.bucle = null;
@@ -148,6 +149,7 @@ export class MmoWorld {
       case 'equipar': return this.equipar(s, m);
       case 'revivir': return this.revivir(s);
       case 'mision': return this.mision(s, m);
+      case 'regreso': return this.regreso(s);
       case 'ranking': return this.enviarRanking(s);
       case 'ping': return this.enviar(s, { t: 'pong', ts: m.ts });
     }
@@ -293,6 +295,15 @@ export class MmoWorld {
     for (const o of this.sesiones.values()) if (o.c && o !== s && o.c.mapa === mapaId) jugadores.push(this.infoJugador(o));
     this.enviar(s, { t: 'mapa', mapa: mapaId, x: Math.round(s.x), jugadores, mons: [...w.mons.values()].map(m => this.infoMonstruo(m)) });
     this.aMapa(mapaId, { t: 'pj', p: this.infoJugador(s) }, s);
+  }
+
+  // Volver al pueblo desde cualquier zona (antes habia que desandar todas
+  // las anteriores a pie). Solo fuera de combate, para que no sirva de huida.
+  regreso(s) {
+    if (s.muerto || s.c.mapa === 'pueblo') return;
+    if (Date.now() - (s.golpeT || 0) < 8000) return this.enviar(s, { t: 'toast', m: 'No puedes volver en pleno combate: aléjate unos segundos.' });
+    this.entrarMapa(s, 'pueblo', MAPAS.pueblo.spawn);
+    this.guardar(s);
   }
 
   portal(s, m) {
@@ -733,10 +744,25 @@ export class MmoWorld {
       this.pensar(o, jugadores, ahora, dt, mapa);
     }
 
+    // Proyectiles: vuelan en linea recta y se esquivan saltando o alejandose.
+    w.balas = w.balas.filter(b => {
+      b.x += b.vx * dt; b.y += b.vy * dt;
+      if (ahora > b.hasta || b.x < 0 || b.x > mapa.ancho || b.y > SUELO + 10 || b.y < -50) return false;
+      for (const s of jugadores) {
+        if (s.muerto) continue;
+        if (Math.abs(b.x - s.x) < FIS.jugW / 2 + 6 && b.y > s.y - FIS.jugH && b.y < s.y + 4) {
+          this.herir(s, b.dmg, { id: b.dueno });
+          return false;
+        }
+      }
+      return true;
+    });
+
     const snap = {
       t: 's',
       p: jugadores.map(s => [s.id, Math.round(s.x), Math.round(s.y), s.f, s.a, Math.ceil(s.hp), s.st.maxHp, (ahora < s.escudo ? 1 : 0) | (ahora < s.fuego ? 2 : 0) | (s.muerto ? 4 : 0)]),
       m: [...w.mons.values()].map(o => [o.id, Math.round(o.x), Math.round(o.y), o.f, this.codigoEstado(o), Math.max(0, Math.ceil(o.hp))]),
+      b: w.balas.map(b => [b.id, Math.round(b.x), Math.round(b.y), Math.round(b.vx), Math.round(b.vy), b.jefe ? 1 : 0]),
     };
     const txt = JSON.stringify(snap);
     for (const s of jugadores) this.enviar(s, txt);
@@ -797,7 +823,10 @@ export class MmoWorld {
         else if (Math.abs(obj.x - o.x) > 30) { o.f = obj.x > o.x ? 1 : -1; vx = o.f * o.vel * 60 * dt; }
       }
     } else if (obj && !golpeado) {
-      if (Math.abs(obj.x - o.x) > 20) { o.f = obj.x > o.x ? 1 : -1; vx = o.f * o.vel * 1.35 * 60 * dt; }
+      // Los que disparan guardan la distancia en vez de pegarse.
+      const lejos = MONSTRUOS[o.k].dispara ? 170 : 20;
+      o.f = obj.x > o.x ? 1 : -1;
+      if (Math.abs(obj.x - o.x) > lejos) vx = o.f * o.vel * 1.35 * 60 * dt;
     } else if (!golpeado) {
       // Pasear: tramos cortos a un lado y pausas.
       if (ahora >= o.pasoEn) { o.dir = Math.random() < 0.35 ? 0 : (Math.random() < 0.5 ? -1 : 1); o.pasoEn = ahora + rnd(1200, 3200); }
@@ -808,6 +837,21 @@ export class MmoWorld {
     if (o.vuela) {
       const objetivoY = obj ? clamp(obj.y - 30, SUELO - 200, SUELO - 20) : o.baseY;
       o.y += (objetivoY + Math.sin(ahora / 400 + o.id) * 14 - o.y) * 0.08;
+    }
+
+    // Disparo: bola de fuego hacia el objetivo (los jefes, tres en abanico).
+    if (MONSTRUOS[o.k].dispara && obj && !o.aviso && !o.embiste && ahora >= (o.disparoEn || 0) && Math.abs(obj.x - o.x) < 430) {
+      o.disparoEn = ahora + (o.jefe ? 3200 : 2600) + rnd(0, 600);
+      const oy = o.y - o.h * 0.55;
+      const base = Math.atan2((obj.y - 30) - oy, obj.x - o.x);
+      const angs = o.jefe ? [base - 0.22, base, base + 0.22] : [o.vuela ? base : (obj.x > o.x ? 0 : Math.PI)];
+      for (const a of angs) {
+        this.mundo[o.mapa].balas.push({
+          id: this.sigBala++, x: o.x + Math.cos(a) * 20, y: oy, vx: Math.cos(a) * 260, vy: Math.sin(a) * 260,
+          dmg: o.atk * (o.jefe ? 1 : 0.8), hasta: ahora + 2200, dueno: o.id, jefe: o.jefe,
+        });
+      }
+      o.golpeHasta = Math.max(o.golpeHasta, ahora + 200);  // pose de "lanzar" (frame de golpe)
     }
 
     // Daño por contacto.

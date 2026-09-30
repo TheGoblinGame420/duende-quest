@@ -52,7 +52,7 @@ export const MONSTRUOS = {
   esqueleto:         { nombre: 'Esqueleto',         hoja: 'esqueleto',         nivel: 2 },
   goblin_assassin:   { nombre: 'Goblin Asesino',    hoja: 'goblin_assassin',   nivel: 3, vel: 1.3 },
   fantasma:          { nombre: 'Fantasma',          hoja: 'fantasma',          nivel: 4, vuela: true },
-  hechicero:         { nombre: 'Hechicero',         hoja: 'hechicero',         nivel: 5 },
+  hechicero:         { nombre: 'Hechicero',         hoja: 'hechicero',         nivel: 5, dispara: true },
   goblin_peasant:    { nombre: 'Goblin Campesino',  hoja: 'goblin_peasant',    nivel: 7 },
   goblin_guard:      { nombre: 'Goblin Guardia',    hoja: 'goblin_guard',      nivel: 8 },
   pajaro:            { nombre: 'Pájaro Hueso',      hoja: 'pajaro',            nivel: 9, vuela: true },
@@ -61,7 +61,7 @@ export const MONSTRUOS = {
   rana:              { nombre: 'Rana de Charca',    hoja: 'rana',              nivel: 14 },
   goblin_centurion:  { nombre: 'Goblin Centurión',  hoja: 'goblin_centurion',  nivel: 15 },
   goblin_battlelord: { nombre: 'Goblin Señor',      hoja: 'goblin_battlelord', nivel: 17 },
-  goblin_mage:       { nombre: 'Goblin Mago',       hoja: 'goblin_mage',       nivel: 19 },
+  goblin_mage:       { nombre: 'Goblin Mago',       hoja: 'goblin_mage',       nivel: 19, dispara: true },
   esqueleto_arcano:  { nombre: 'Esqueleto Arcano',  hoja: 'esqueleto',         nivel: 20, tinte: '#c084fc' },
   ghoul_ardiente:    { nombre: 'Ghoul Ardiente',    hoja: 'ghoul_ardiente',    nivel: 22, vel: 1.2 },
   goblin_samurai:    { nombre: 'Goblin Samurái',    hoja: 'goblin_samurai',    nivel: 25 },
@@ -72,8 +72,8 @@ export const MONSTRUOS = {
   jefe_sabueso:  { nombre: 'Sabueso Infernal',       hoja: 'hellhound',         nivel: 8,  jefe: true, alto: 110, hpX: 14, atkX: 1.4, w: 150, h: 70 },
   jefe_caballero:{ nombre: 'Rey Goblin Caballero',   hoja: 'goblin_knight',     nivel: 14, jefe: true, alto: 130, hpX: 16, atkX: 1.4, w: 70, h: 120, tinte: '#ff6444' },
   jefe_senor:    { nombre: 'Señor de la Guerra',     hoja: 'goblin_battlelord', nivel: 20, jefe: true, alto: 135, hpX: 18, atkX: 1.5, w: 70, h: 125, tinte: '#00ffcc' },
-  jefe_ghoul:    { nombre: 'Ghoul Infernal',         hoja: 'ghoul_ardiente',    nivel: 26, jefe: true, alto: 130, hpX: 20, atkX: 1.5, w: 110, h: 120, tinte: '#ff9900' },
-  jefe_angel:    { nombre: 'Ángel Caído',            hoja: 'angel',             nivel: 32, jefe: true, alto: 150, hpX: 24, atkX: 1.6, w: 110, h: 140, vuela: true },
+  jefe_ghoul:    { nombre: 'Ghoul Infernal',         hoja: 'ghoul_ardiente',    nivel: 26, jefe: true, alto: 130, hpX: 20, atkX: 1.5, w: 110, h: 120, tinte: '#ff9900', dispara: true },
+  jefe_angel:    { nombre: 'Ángel Caído',            hoja: 'angel',             nivel: 32, jefe: true, alto: 150, hpX: 24, atkX: 1.6, w: 110, h: 140, vuela: true, dispara: true },
 };
 
 export function statsMonstruo(key) {
