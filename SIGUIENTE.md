@@ -535,3 +535,68 @@ curl (`engine.js` en vivo con `goblin_guard`, `goblin_knight`, `'rana'`,
   bien diseñado y probado en vivo, no se apuró su integración esta vez.
 - Bestiario ahora en 18 criaturas + 1 jefe con hoja; quedan biomas con
   solo 3-4 sprites propios si se quiere seguir engordando el pool.
+
+## Novena tanda (29-sep-2026) — 3 agentes de auditoría en paralelo (balance, seguridad, móvil)
+
+Primero se confirmó que los dos pedidos originales de esta sesión larga siguen
+resueltos y verificados en producción: TON Connect en el bot de Telegram
+conecta de verdad (`twaReturnUrl` real, manifest y su ícono responden 200 en
+producción) y el progreso se sincroniza a la nube en victoria/derrota
+(`syncProgressToCloud()` en `telegram/index.html`).
+
+**Auditoría de balance de armas (las 4 del juego: KATANA/ODACHI/CHISPA/
+DAGAS)** — matemática exacta del DPS real de cada una (ciclo completo de
+combo de 3 golpes). Resultado: ODACHI 8.18/s > KATANA≈CHISPA 5.71/s > DAGAS
+5.625/s. Coincide con lo que cada arma promete ser (ODACHI lenta pero fuerte,
+DAGAS rápida pero floja, CHISPA es un sidegrade de utilidad — daño en área a
+cambio de menos empuje, no una arma "fuerte/floja"). **No se tocó nada, todo
+estaba bien** (el bug de DAGAS de esta misma sesión, más arriba en este
+archivo, ya lo había corregido).
+
+**Bug de seguridad real encontrado y corregido — `functions/api/lib.js`,
+`findTonPayment()`:** no envolvía la consulta a toncenter (API externa) en
+try/catch, y devolvía `null` en vez de array cuando toncenter fallaba
+(rate limit, timeout, mantenimiento). Los 3 llamadores (`ton_buy`,
+`ton_stake`, `skin_ton`) hacen `pagos.length` sin comprobar null → un
+jugador que pagara TON justo cuando toncenter tuviera un hipo veía un
+error genérico 500 en vez del 402 "espera y reintenta" que el propio
+código ya tenía pensado, sin perder el pago (el dinero seguía bien, era
+solo un mensaje de error confuso). Corregido: ahora siempre devuelve un
+array, nunca lanza. Además se auditó TODO `functions/api/` (auth, clamps
+de `cloudSavePatch`, condiciones de carrera en saldo/canje, el sistema de
+"dust" de pagos TON — genuinamente verificado on-chain, no de confianza
+del cliente) sin encontrar ningún otro problema explotable.
+
+**3 bugs reales de CSS móvil encontrados y corregidos:**
+- `index.html`: faltaba `overflow-x:hidden` en `<html>` (solo lo tenía
+  `body`) — el ticker/marquee de 2031px de ancho inflaba el viewport móvil
+  de 375px a 504px reales, sacando el badge de precio del header fuera de
+  pantalla y habilitando scroll horizontal en todo el sitio.
+- `index.html`: la grilla de tokenomics (`.tgrid`) tenía un
+  `grid-template-columns` inline de 4 columnas fijas que ignoraba el
+  responsive de la clase — la 4ta tarjeta quedaba cortada en móvil. Ahora
+  2x2 en `max-width:700px`.
+- `index.html`: el botón flotante de la moneda se solapaba con
+  "Política de Privacidad" del footer en móvil sin forma de despejarlo con
+  scroll — se le agregó `padding-bottom:7rem` al footer en ese mismo media
+  query.
+- **`game.html` (el más importante, afectaba TAMBIÉN a escritorio, no solo
+  móvil):** las capas `.ov` (menú principal, pausa, tienda, wallet, ranking,
+  cuenta) usaban `position:absolute;inset:0` dentro de `#wrap`, cuyo alto lo
+  fija el canvas del juego (bastante más bajo que el viewport real) — el
+  contenido del menú se salía de ese recuadro y quedaba mezclado
+  visualmente con el HUD (SCORE/HP/WAVE) que sigue debajo en el documento.
+  Arreglado igual que ya se había hecho para `#ov-niveles` (el mapa) y
+  `#ov-skin-shop` (la tienda, tanda anterior): `position:fixed` +
+  `overflow-y:auto`, cubre el viewport real completo.
+
+**Verificación:** los 4 fixes de CSS confirmados en vivo en producción con
+el navegador integrado en 375px (sin scroll horizontal, sin overlap) y en
+1024px (tokenomics sigue en 4 columnas, sin regresión). El fix de
+`findTonPayment` verificado con `node --check` (sintaxis) — no se puede
+probar en vivo sin una wallet TON real y un pago real, se confía en la
+lectura de código + el patrón ya usado en el resto del archivo.
+
+Limpieza de housekeeping: se borraron 8 worktrees/branches de rondas
+anteriores ya mergeadas a master (`git worktree remove` + `git branch -D`),
+solo quedaban acumulando espacio en disco sin ningún propósito.
