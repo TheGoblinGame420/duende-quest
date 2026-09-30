@@ -98,6 +98,11 @@ const IMG = {
   sh_serpiente: _AB + 'enemigos/sheets/serpiente.png',
   sh_ghoul_ardiente: _AB + 'enemigos/sheets/ghoul_ardiente.png',
   sh_hechicero: _AB + 'enemigos/sheets/hechicero.png',
+  sh_goblin_guard: _AB + 'enemigos/sheets/goblin_guard.png',
+  sh_goblin_knight: _AB + 'enemigos/sheets/goblin_knight.png',
+  sh_rana: _AB + 'enemigos/sheets/rana.png',
+  sh_fantasma: _AB + 'enemigos/sheets/fantasma.png',
+  sh_pajaro: _AB + 'enemigos/sheets/pajaro.png',
   sh_angel: _AB + 'enemigos/sheets/angel.png',
   coin: _AB + 'ui/coin.png',
   item_potion: _AB + 'items/item_potion.png',
@@ -524,19 +529,86 @@ const SHEETS = {
     filaGolpe: 1, colGolpeIni: 0, nGolpe: 2,
     colMuerteIni: 2, nMuerte: 1,
   },
+  // Novena y decima variante del mismo pack Goblin Corps (mismo grid 32x64 y
+  // mismas columnas que las 8 variantes previas — ver
+  // tools/generar_goblin_variantes4_cc0.py). Van a AMANECER ROJO, que hasta
+  // esta tanda era el bioma con menos variedad (solo goblin_normal +
+  // goblin_peasant): armadura gris generica que se lee como guarnicion sin
+  // mas (guard) o con una cresta ROJA en el casco que conecta con la paleta
+  // del bioma (knight). goblin_lord (corona + capa larga, el tercero de las
+  // 3 variantes que quedaban) se dejo sin usar: lee como REALEZA/rey goblin,
+  // una narrativa de castillo/trono que ningun bioma actual sostiene (ver
+  // CREDITOS.md).
+  goblin_guard: {
+    fw: 32, fh: 64, idealAltoPx: 35, altoObjetivo: 70,
+    filaMov: 0, colMovIni: 1, nMov: 6,
+    filaGolpe: 1, colGolpeIni: 1, nGolpe: 2,
+    colMuerteIni: 6, nMuerte: 2,
+  },
+  goblin_knight: {
+    fw: 32, fh: 64, idealAltoPx: 38, altoObjetivo: 70,
+    filaMov: 0, colMovIni: 1, nMov: 6,
+    filaGolpe: 1, colGolpeIni: 1, nGolpe: 2,
+    colMuerteIni: 6, nMuerte: 2,
+  },
+  // Sexto enemigo no-humanoide: la rana "sunny-froggy" (Sideview Fantasy
+  // Patreon Collection, mismo pack CC0 que lagarto/serpiente — ver
+  // tools/generar_rana_cc0.py). Rejilla propia 53x42 (caminar 42x38
+  // reempaquetado centrado y anclado abajo dentro de la celda de "taunting",
+  // que es mas grande). Va a SELVA ESMERALDA, junto al hongo y los goblins
+  // tribales. Sin daño/muerte propios: golpe reusa 2 frames de "taunting"
+  // (croar con la boca abierta + la pose torcida) y muerte reusa la pose
+  // torcida otra vez (nMuerte=1) como colapso.
+  rana: {
+    fw: 53, fh: 42, idealAltoPx: 34, altoObjetivo: 70,
+    filaMov: 0, colMovIni: 0, nMov: 10,
+    filaGolpe: 1, colGolpeIni: 0, nGolpe: 2,
+    colMuerteIni: 2, nMuerte: 1,
+  },
+  // Septimo enemigo no-humanoide: el "enemy-ghost" del mismo pack Sideview
+  // Fantasy (ver tools/generar_fantasma_cc0.py). Craneo flotando en una capa
+  // negra con particulas magenta. Va a NOCHE VIOLETA, junto al esqueleto,
+  // goblin assassin y hechicero (cementerio nocturno). Ciclo unico de
+  // flotar (sin tag de animacion separado): nMov usa los 6 frames enteros,
+  // golpe reusa los 2 frames de capa mas abierta (4 y 5) y muerte reusa el
+  // ultimo (nMuerte=1) como colapso.
+  fantasma: {
+    fw: 64, fh: 64, idealAltoPx: 36, altoObjetivo: 70,
+    filaMov: 0, colMovIni: 0, nMov: 6,
+    filaGolpe: 1, colGolpeIni: 0, nGolpe: 2,
+    colMuerteIni: 2, nMuerte: 1,
+  },
+  // Octavo enemigo no-humanoide: el "flying-bird" del mismo pack Sideview
+  // Fantasy (ver tools/generar_pajaro_cc0.py), paleta crema/hueso (no la
+  // variante "-skin" azul/naranja, que hubiera leido mas a loro tropical de
+  // selva). Va a AMANECER ROJO junto al goblin guard/knight: "pajaros al
+  // amanecer" es la lectura mas directa de recursos/INDICE.md ("pajaro ->
+  // cualquiera"). Ciclo unico de vuelo: nMov usa los 7 frames enteros, golpe
+  // reusa las 2 posturas de ala mas extendida (6 y 0) y muerte reusa el
+  // frame 0 (nMuerte=1) como pose "en picada".
+  pajaro: {
+    fw: 32, fh: 32, idealAltoPx: 25, altoObjetivo: 70,
+    filaMov: 0, colMovIni: 0, nMov: 7,
+    filaGolpe: 1, colGolpeIni: 0, nGolpe: 2,
+    colMuerteIni: 2, nMuerte: 1,
+  },
 };
 // Enemigo "normal" (el mas visto, sin afijo): antes SIEMPRE era el goblin;
 // ahora varia por bioma para que la campaña completa no se sienta como el
 // mismo enemigo repintado 15 veces. NOCHE(0) alterna esqueleto+goblin
-// assassin+hechicero (nigromante encapuchado); AMANECER(1) suma al goblin
-// peasant; SELVA(2) suma al hongo y a los goblins centurion/battlelord
-// (guerreros tribales); TORMENTA(3) suma al goblin mago Y al ghoul ardiente
-// (fuego, lo unico que le faltaba a ese bioma); DESIERTO(4) suma al goblin
-// samurai, el lagarto y la serpiente (fauna de cañon rocoso).
+// assassin+hechicero (nigromante encapuchado) y ahora fantasma (craneo con
+// particulas magenta, cementerio nocturno); AMANECER(1) suma al goblin
+// peasant y, esta tanda, a goblin guard+knight (guarnicion generica/cresta
+// roja) y al pajaro (paleta crema, "pajaros al amanecer" — era el bioma con
+// menos variedad de todos); SELVA(2) suma al hongo, a los goblins
+// centurion/battlelord (guerreros tribales) y ahora a la rana (charca de
+// selva); TORMENTA(3) suma al goblin mago Y al ghoul ardiente (fuego, lo
+// unico que le faltaba a ese bioma); DESIERTO(4) suma al goblin samurai, el
+// lagarto y la serpiente (fauna de cañon rocoso).
 const SHEET_POR_BIOMA = [
-  ['goblin_normal', 'esqueleto', 'goblin_assassin', 'hechicero'], // 0 noche
-  ['goblin_normal', 'goblin_peasant'],                            // 1 amanecer
-  ['goblin_normal', 'hongo', 'goblin_centurion', 'goblin_battlelord'], // 2 selva
+  ['goblin_normal', 'esqueleto', 'goblin_assassin', 'hechicero', 'fantasma'], // 0 noche
+  ['goblin_normal', 'goblin_peasant', 'goblin_guard', 'goblin_knight', 'pajaro'], // 1 amanecer
+  ['goblin_normal', 'hongo', 'goblin_centurion', 'goblin_battlelord', 'rana'], // 2 selva
   ['goblin_normal', 'esqueleto', 'goblin_mage', 'ghoul_ardiente'], // 3 tormenta
   ['goblin_normal', 'goblin_samurai', 'lagarto', 'serpiente'],    // 4 desierto
 ];
@@ -2131,10 +2203,11 @@ function markBiomeSeen(i) {
 function biomesSeen() {
   try { return JSON.parse(localStorage.getItem('dq_biomes') || '[]').length; } catch (e) { return 0; }
 }
-// Bestiario visto alguna vez (mismo patron que biomasSeen): con 13 criaturas
-// con hoja de animacion repartidas en 5 biomas, un jugador dificilmente las
-// ve todas en una sola sesion. No cuenta al angel (el logro de campaña ya
-// lo cubre por separado).
+// Bestiario visto alguna vez (mismo patron que biomasSeen): con 18 criaturas
+// con hoja de animacion repartidas en 5 biomas (bestiarioTotal() cuenta
+// SHEETS automaticamente, no hace falta tocar este numero al sumar mas), un
+// jugador dificilmente las ve todas en una sola sesion. No cuenta al angel
+// (el logro de campaña ya lo cubre por separado).
 function markBestiaSeen(sheetName) {
   if (!sheetName || sheetName === 'angel') return;
   try {
