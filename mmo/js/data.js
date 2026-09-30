@@ -80,7 +80,9 @@ export function statsMonstruo(key) {
   const m = MONSTRUOS[key];
   const L = m.nivel;
   const hp = Math.round((30 + 15 * L) * (m.hpX || 1));
-  const atk = Math.round((6 + 4 * L) * (m.atkX || 1));
+  // 6+4L mataba a un nivel 1 en 6 golpes de un Nv3: con 4+3L un monstruo de
+  // tu nivel necesita ~15 golpes y uno 2 niveles arriba ~8.
+  const atk = Math.round((4 + 3 * L) * (m.atkX || 1));
   const xp = Math.round((5 + 4 * L) * (m.jefe ? 12 : 1));
   const oro = Math.round((2 + 2 * L) * (m.jefe ? 25 : 1));
   return {

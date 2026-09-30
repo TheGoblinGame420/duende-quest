@@ -199,7 +199,14 @@ function recibir(m) {
       sfx('moneda', .3);
       break;
     case 'ph': {
-      if (m.p === miId) { P.herido = 18; sfx('golpe', .45); flotante(P.x, P.y - 70, '-' + m.d, '#ff3344', 11); if (TG && TG.HapticFeedback) try { TG.HapticFeedback.impactOccurred('medium'); } catch (e) {} }
+      if (m.p === miId) {
+        P.herido = 18; sfx('golpe', .45); flotante(P.x, P.y - 70, '-' + m.d, '#ff3344', 11);
+        // Retroceso: el golpe te aparta del monstruo (y corta el combo de pegado).
+        const o = mons.get(m.from);
+        if (o) { P.vx = (P.x < o.x ? -1 : 1) * 7; if (P.suelo) { P.vy = -4; P.suelo = false; } }
+        sacudir = Math.max(sacudir, 4);
+        if (TG && TG.HapticFeedback) try { TG.HapticFeedback.impactOccurred('medium'); } catch (e) {}
+      }
       else { const o = otros.get(m.p); if (o) { o.herido = 18; flotante(o.x, o.y - 70, '-' + m.d, '#ff7777', 9); } }
       break;
     }
@@ -509,8 +516,11 @@ function dibujarCapa(img, desplaz, sobreSuelo) {
   const e = VH / 320;
   const w = img.naturalWidth * e, h = img.naturalHeight * e;
   const y = SUELO - h + sobreSuelo * e;
-  let x = -((desplaz % w) + w) % w;
-  while (x < VW) { g.drawImage(img, x, y, w, h); x += w; }
+  // Enteros y 1 px de solape: con coordenadas fraccionarias quedaba una
+  // costura vertical visible entre mosaico y mosaico.
+  let x = Math.floor(-((desplaz % w) + w) % w);
+  const wi = Math.ceil(w), yi = Math.round(y), hi = Math.round(h);
+  while (x < VW) { g.drawImage(img, x, yi, wi + 1, hi); x += wi; }
 }
 
 function dibujarFondo(mp) {

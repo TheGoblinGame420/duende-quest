@@ -434,6 +434,7 @@ export class MmoWorld {
     const real = Math.max(1, Math.round(dmg * rnd(0.9, 1.1) - s.st.def * 0.5));
     s.hp -= real;
     s.inv = ahora + INVULNERABLE_GOLPE_MS;
+    s.golpeT = ahora;
     this.aMapa(s.c.mapa, { t: 'ph', p: s.id, d: real, from: fuente ? fuente.id : 0 });
     if (s.hp <= 0) {
       s.hp = 0;
@@ -601,6 +602,14 @@ export class MmoWorld {
       }
     }
 
+    // Regeneracion: rapida en zona segura, y en las zonas solo tras 5 s sin
+    // recibir golpes (descansar entre peleas en vez de volver al pueblo).
+    for (const s of jugadores) {
+      if (s.muerto || s.hp >= s.st.maxHp) continue;
+      const k = !mapa.zona ? 0.12 : (ahora - (s.golpeT || 0) > 5000 ? 0.03 : 0);
+      if (k) s.hp = Math.min(s.st.maxHp, s.hp + s.st.maxHp * k * dt);
+    }
+
     // Aura de la skin legendaria: quema lo que esta pegado al jugador.
     for (const s of jugadores) {
       if (s.muerto || !(SKINS[s.c.skin].buffs || {}).aura || ahora < s.auraT) continue;
@@ -633,7 +642,13 @@ export class MmoWorld {
     const mapa = MAPAS[mapaId];
     const st = statsMonstruo(k);
     const def = MONSTRUOS[k];
-    const x = xFija || rnd(260, mapa.ancho - 260);
+    // Cada zona va de menos a mas: la lista de monstruos esta ordenada por
+    // nivel y cada uno aparece en su tramo del mapa, asi el mas facil queda
+    // junto a la entrada y el mas duro al fondo.
+    const i = Math.max(0, (mapa.monstruos || []).indexOf(k));
+    const n = (mapa.monstruos || [k]).length;
+    const tramo = (mapa.ancho - 500) / n;
+    const x = xFija || (250 + tramo * i + rnd(0, tramo));
     const alturaVuelo = def.vuela ? rnd(90, 170) : 0;
     const o = {
       id: this.sigMon++, k, mapa: mapaId, jefe: !!def.jefe, vuela: !!def.vuela,
@@ -650,11 +665,14 @@ export class MmoWorld {
   pensar(o, jugadores, ahora, dt, mapa) {
     // Objetivo: quien le pego (si sigue cerca) o el jugador vivo mas cercano
     // dentro del radio de agresion.
+    // Los normales son pasivos (como en MapleStory): solo persiguen a quien
+    // les pego. Asi el jugador elige sus peleas; los jefes si cazan.
     let obj = null;
-    const radio = o.jefe ? 700 : (o.obj ? 420 : 170);
+    const radio = o.jefe ? 700 : (o.obj ? 420 : 0);
     let mejor = radio;
     for (const s of jugadores) {
       if (s.muerto) continue;
+      if (!o.jefe && s.id !== o.obj) continue;
       const d = Math.abs(s.x - o.x);
       const bonus = s.id === o.obj ? -120 : 0;
       if (d + bonus < mejor) { mejor = d + bonus; obj = s; }
