@@ -385,33 +385,6 @@ async function connectPhantom() {
 }
 
 // ─────────────────────────────────────────────
-// TELEGRAM LOGIN
-// ─────────────────────────────────────────────
-async function loginWithTelegram(initData) {
-  if (!_sb || !initData) return { success: false };
-  try {
-    const params = new URLSearchParams(initData);
-    const userRaw = params.get('user');
-    if (!userRaw) return { success: false };
-    const tgUser = JSON.parse(decodeURIComponent(userRaw));
-    const tgId = String(tgUser.id);
-    const username = tgUser.username || tgUser.first_name || 'tg_' + tgId;
-
-    const { data, error } = await _sb.from('profiles').upsert({
-      telegram_id: tgId,
-      username: username.slice(0, 20),
-    }, { onConflict: 'telegram_id' }).select().single();
-
-    if (error) { console.warn('[TG Auth]', error); return { success: false }; }
-    currentProfile = data;
-    return { success: true, profile: data };
-  } catch (e) {
-    console.warn('[TG Auth]', e);
-    return { success: false };
-  }
-}
-
-// ─────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────
 function showAuthError(msg) {
