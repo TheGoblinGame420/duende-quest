@@ -104,6 +104,7 @@ const IMG = {
   sh_fantasma: _AB + 'enemigos/sheets/fantasma.png',
   sh_pajaro: _AB + 'enemigos/sheets/pajaro.png',
   sh_angel: _AB + 'enemigos/sheets/angel.png',
+  sh_conejo: _AB + 'enemigos/sheets/conejo.png',
   coin: _AB + 'ui/coin.png',
   item_potion: _AB + 'items/item_potion.png',
   item_shield: _AB + 'items/item_shield.png',
@@ -592,6 +593,21 @@ const SHEETS = {
     filaGolpe: 1, colGolpeIni: 0, nGolpe: 2,
     colMuerteIni: 2, nMuerte: 1,
   },
+  // Noveno enemigo no-humanoide: el "sunny-bunny" del mismo pack Sideview
+  // Fantasy (ver tools/generar_conejo_cc0.py). Va a DESIERTO DORADO junto al
+  // goblin samurai, el lagarto y la serpiente: fauna de cañon rocoso, y era
+  // (junto a TORMENTA) uno de los 2 biomas que se habian quedado en 4
+  // enemigos en vez de 5. Movimiento reusa el ciclo de "run" (34x44, ya
+  // anclado abajo). Sin daño/muerte propios: golpe recorta por bbox 2 poses
+  // aisladas de "jump" (agazapado en el aire + extendido en diagonal) y las
+  // re-centra dentro de la celda de "run"; muerte reusa la pose agazapada
+  // (nMuerte=1) como colapso.
+  conejo: {
+    fw: 34, fh: 44, idealAltoPx: 38, altoObjetivo: 70,
+    filaMov: 0, colMovIni: 0, nMov: 6,
+    filaGolpe: 1, colGolpeIni: 0, nGolpe: 2,
+    colMuerteIni: 2, nMuerte: 1,
+  },
 };
 // Enemigo "normal" (el mas visto, sin afijo): antes SIEMPRE era el goblin;
 // ahora varia por bioma para que la campaña completa no se sienta como el
@@ -604,13 +620,14 @@ const SHEETS = {
 // centurion/battlelord (guerreros tribales) y ahora a la rana (charca de
 // selva); TORMENTA(3) suma al goblin mago Y al ghoul ardiente (fuego, lo
 // unico que le faltaba a ese bioma); DESIERTO(4) suma al goblin samurai, el
-// lagarto y la serpiente (fauna de cañon rocoso).
+// lagarto, la serpiente y ahora el conejo (fauna de cañon rocoso), quedando
+// los 5 biomas parejos en variedad (5 enemigos normales cada uno).
 const SHEET_POR_BIOMA = [
   ['goblin_normal', 'esqueleto', 'goblin_assassin', 'hechicero', 'fantasma'], // 0 noche
   ['goblin_normal', 'goblin_peasant', 'goblin_guard', 'goblin_knight', 'pajaro'], // 1 amanecer
   ['goblin_normal', 'hongo', 'goblin_centurion', 'goblin_battlelord', 'rana'], // 2 selva
   ['goblin_normal', 'esqueleto', 'goblin_mage', 'ghoul_ardiente'], // 3 tormenta
-  ['goblin_normal', 'goblin_samurai', 'lagarto', 'serpiente'],    // 4 desierto
+  ['goblin_normal', 'goblin_samurai', 'lagarto', 'serpiente', 'conejo'], // 4 desierto
 ];
 function sheetNormalDeBioma() {
   const bi = nivel ? nivel.bioma : Math.floor((wave - 1) / 3) % BIOMES.length;

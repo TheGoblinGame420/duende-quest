@@ -289,8 +289,49 @@ humanoide reskineado:
 
 `SHEET_POR_BIOMA` en `js/engine.js` tiene el reparto final por bioma.
 
+## Decimoctavo enemigo animado: conejo del desierto
+
+**Sideview Fantasy Patreon Collection** — Luis Zuno (ansimuz). Licencia CC0.
+https://opengameart.org/content/sideview-fantasy-patreon-collection
+
+Última carpeta sin usar del pack junto a `sunny-mushroom` (ver más abajo por
+qué esta NO se integró). `sunny-bunny` no traía sugerencia de bioma en
+`recursos/INDICE.md`: se eligió **DESIERTO DORADO**, junto al goblin samurai,
+el lagarto y la serpiente (fauna de cañón rocoso) por el nombre "sunny" del
+pack y porque desierto —junto a tormenta— era uno de los 2 biomas que se
+habían quedado en 4 enemigos normales en vez de 5, quedando los 5 biomas
+parejos en variedad tras esta tanda.
+
+Medido con PIL (bbox del canal alpha, nunca solo el nombre del archivo): el
+pack trae tres tiras de celda distinta — `idle` (4×24×42, variación mínima
+entre frames, no sirve de golpe/muerte), `run` (6×34×44, pies ya anclados al
+borde inferior de su propia celda) y `jump` (5×85×57, arco de salto que
+recorre toda la celda ancha, mismo problema que tuvo `sunny-froggy-jump`).
+A diferencia de la rana, aquí sí había dos poses aisladas y útiles dentro de
+"jump" si se recortaban por su propio bbox en vez de pegar la celda entera:
+frame 2 (agazapado en el aire, orejas hacia atrás, silueta compacta) y
+frame 3 (extendido, brazos y piernas abiertos en diagonal). Se usó "run"
+como movimiento (`assets/enemigos/sheets/conejo.png`,
+`tools/generar_conejo_cc0.py`) y esos dos recortes, re-centrados y anclados
+al borde inferior de la celda de "run" (mismo truco de re-anclaje que ya usó
+`generar_rana_cc0.py`), como flash de golpe; la pose agazapada se reusa una
+vez más como colapso.
+
 ## Lo que se dejó sin integrar esta tanda, y por qué
 
+- **sunny-mushroom** (Sideview Fantasy Patreon Collection, la otra carpeta
+  sin usar junto a `sunny-bunny`): se comparó visualmente a ojo (con PIL,
+  renders en 5-6x) contra el `hongo` (Big Mushroom, Scratchio, CC0) ya
+  integrado en SELVA, y resultó ser el mismo concepto — un hongo/seta
+  caminando con capuchón rojo moteado de blanco sobre un cuerpo bulboso —
+  solo con un estilo de dibujo ligeramente distinto (más redondeado, tipo
+  "goomba" con cara visible, contra el `hongo` actual, más texturado y sin
+  cara). Para el jugador se hubiera leído como el mismo enemigo repintado,
+  no como una criatura nueva, así que no se integró. Se guarda en
+  `recursos/` por si a futuro se quiere usar en un bioma sin hongo actual
+  (p. ej. como variante élite o afijo "escupe gas" del propio `hongo`, ya
+  que el pack sí trae un ataque de gas telegrafiado que el `hongo` actual no
+  tiene).
 - **goblin lord** (Goblin Corps, corona + capa/túnica larga sobre la misma
   armadura de guard/knight): a diferencia de esos dos, la corona lo lee
   inequívocamente como REALEZA — un "rey goblin" que necesita una escena de
@@ -323,10 +364,11 @@ humanoide reskineado:
 `recursos/` guarda más packs CC0 sin integrar del todo (mapas Tiled, un jefe
 dragón —ver más arriba—, iconos), más lo que queda sin tocar de Goblin Corps
 (`lord`, ver más arriba) y del resto de Sideview Fantasy Collection (el
-dragón volador; ya se integraron lagarto, serpiente, rana, fantasma y
-pájaro). No se publican (`recursos` está en `.assetsignore`). El detalle de
-cada uno, con autor, URL y licencia, está en `recursos/INDICE.md`. Al
-integrar cualquiera, añadirlo a este archivo.
+dragón volador y `sunny-mushroom`, descartado por redundante con el `hongo`
+ya integrado — ver más arriba; ya se integraron lagarto, serpiente, rana,
+fantasma, pájaro y conejo). No se publican (`recursos` está en
+`.assetsignore`). El detalle de cada uno, con autor, URL y licencia, está en
+`recursos/INDICE.md`. Al integrar cualquiera, añadirlo a este archivo.
 
 ---
 
