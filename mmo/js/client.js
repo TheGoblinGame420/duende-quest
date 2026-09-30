@@ -21,18 +21,27 @@ if (TACTIL) document.body.classList.add('tactil');
 // En vertical (movil) la vista es casi cuadrada: se ve menos mapa a los lados
 // pero todo se dibuja mas grande. El alto logico no cambia (el mapa no tiene
 // scroll vertical).
-let VW = 800;
+// En vertical, ademas, la vista crece hacia arriba (OY px de cielo extra)
+// para llenar la pantalla del telefono en vez de dejar franjas vacias: el
+// mundo sigue midiendo 450 de alto y se dibuja desplazado OY hacia abajo.
+let VW = 800, OY = 0;
 const cv = $('gc');
 const g = cv.getContext('2d');
+if (TACTIL) {
+  const f1 = $('t-fila1');
+  f1.insertBefore($('interactuar'), f1.firstChild);
+  f1.insertBefore($('poderes'), f1.firstChild);
+}
 function ajustarVista() {
   const vertical = innerHeight > innerWidth * 1.1;
-  VW = vertical ? 470 : 800;
-  cv.width = VW; cv.height = VH;
-  g.imageSmoothingEnabled = false;
+  VW = vertical ? 400 : 800;
   const esc = $('escena');
   const aw = esc.clientWidth, ah = esc.clientHeight;
-  const k = Math.min(aw / VW, ah / VH);
-  const w = Math.floor(VW * k), h = Math.floor(VH * k);
+  OY = vertical ? Math.max(0, Math.min(330, Math.floor(ah / (aw / VW)) - VH)) : 0;
+  cv.width = VW; cv.height = VH + OY;
+  g.imageSmoothingEnabled = false;
+  const k = Math.min(aw / VW, ah / (VH + OY));
+  const w = Math.floor(VW * k), h = Math.floor((VH + OY) * k);
   cv.style.width = w + 'px'; cv.style.height = h + 'px';
   const hud = $('hud');
   hud.style.left = ((aw - w) / 2) + 'px'; hud.style.top = ((ah - h) / 2) + 'px';
@@ -532,14 +541,14 @@ function dibujarCapa(img, desplaz, sobreSuelo) {
 }
 
 function dibujarFondo(mp) {
-  const gr = g.createLinearGradient(0, 0, 0, VH);
+  const gr = g.createLinearGradient(0, -OY, 0, VH);
   gr.addColorStop(0, mp.paleta.cielo[0]); gr.addColorStop(1, mp.paleta.cielo[1]);
-  g.fillStyle = gr; g.fillRect(0, 0, VW, VH);
+  g.fillStyle = gr; g.fillRect(0, -OY, VW, VH + OY);
   // Estrellas fijas (semilla por mapa).
   g.fillStyle = 'rgba(255,255,255,.5)';
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < 40 + Math.round(OY / 8); i++) {
     const sx = ((i * 137 + mapaId.length * 53) % 997) / 997 * VW;
-    const sy = ((i * 71) % 211) / 211 * 200;
+    const sy = ((i * 71) % 211) / 211 * (200 + OY) - OY;
     const par = .5 + .5 * Math.sin(frame * .03 + i);
     g.globalAlpha = .2 + .4 * par; g.fillRect((sx - camX * .05 + VW * 4) % VW, sy, 2, 2);
   }
@@ -799,6 +808,7 @@ function dibujar() {
   camX += (objCam - camX) * .15;
   if (mp.ancho <= VW) camX = (mp.ancho - VW) / 2;
   g.save();
+  g.translate(0, OY);
   if (sacudir > 0) { g.translate((Math.random() - .5) * sacudir, (Math.random() - .5) * sacudir); sacudir *= .85; if (sacudir < .5) sacudir = 0; }
   dibujarFondo(mp);
   dibujarSuelo(mp);
@@ -818,10 +828,13 @@ function dibujar() {
   // Boton contextual
   const c = cercano();
   const bi = $('interactuar');
+  // visibility y no display: en la barra tactil ocupa su hueco siempre, asi
+  // los botones de al lado no saltan de sitio cada vez que aparece.
+  bi.style.display = 'block';
   if (c && yo && !P.muerto) {
-    bi.style.display = 'block';
+    bi.style.visibility = 'visible';
     bi.textContent = c.tipo === 'portal' ? (TACTIL ? '🚪 ENTRAR' : 'E · ENTRAR') : (TACTIL ? '💬 HABLAR' : 'E · HABLAR');
-  } else bi.style.display = 'none';
+  } else bi.style.visibility = 'hidden';
 }
 
 // ── HUD ──

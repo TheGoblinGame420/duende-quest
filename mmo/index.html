@@ -68,13 +68,19 @@ html,body{height:100%;background:var(--bg);color:#fff;font-family:'Press Start 2
 /* interaccion */
 #interactuar{left:50%;transform:translateX(-50%);bottom:70px;display:none;font-size:9px;}
 
-/* controles tactiles */
-#tactil{display:none;width:100%;flex:0 0 auto;padding:10px 12px calc(10px + env(safe-area-inset-bottom));gap:10px;justify-content:space-between;align-items:center;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(20,8,40,.9));}
-.tc{font-family:inherit;width:62px;height:62px;border-radius:50%;border:2px solid rgba(255,255,255,.2);background:rgba(255,255,255,.07);color:#fff;font-size:18px;touch-action:none;}
+/* controles tactiles: fila 1 = poderes + accion + chat, fila 2 = mover / saltar / atacar */
+#tactil{display:none;width:100%;flex:0 0 auto;flex-direction:column;gap:10px;padding:8px 12px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(20,8,40,.6),rgba(20,8,40,.95));border-top:1px solid rgba(192,132,252,.2);}
+.tf{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.tc{font-family:inherit;width:62px;height:62px;border-radius:50%;border:2px solid rgba(255,255,255,.2);background:rgba(255,255,255,.07);color:#fff;font-size:18px;touch-action:none;flex:0 0 auto;}
 .tc.on{background:rgba(0,255,136,.25);border-color:var(--verde);}
-.tc.grande{width:78px;height:78px;font-size:24px;background:rgba(255,60,60,.18);border-color:rgba(255,60,60,.5);}
+.tc.grande{width:80px;height:80px;font-size:26px;background:rgba(255,60,60,.18);border-color:rgba(255,60,60,.5);}
+.tc.chico{width:44px;height:44px;font-size:15px;}
 #t-izq,#t-der{display:flex;gap:10px;align-items:center;}
 body.tactil #tactil{display:flex;}
+body.tactil #t-fila1 #poderes{position:static;display:flex;gap:6px;}
+body.tactil #t-fila1 .pw{width:44px;height:44px;}
+body.tactil #t-fila1 #interactuar{position:static;transform:none;font-size:8px;padding:10px 8px;}
+body.tactil #chat{width:70%;bottom:6px;}
 
 /* modales */
 .modal{position:fixed;inset:0;background:rgba(3,0,10,.8);display:none;align-items:center;justify-content:center;z-index:50;padding:12px;}
@@ -150,15 +156,19 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
     </div>
   </div>
   <div id="tactil">
-    <div id="t-izq">
-      <button class="tc" id="t-l">◀</button>
-      <button class="tc" id="t-r">▶</button>
+    <div class="tf" id="t-fila1">
+      <button class="tc chico" id="t-chat">💬</button>
     </div>
-    <div id="t-der">
-      <button class="tc" id="t-chat" style="width:46px;height:46px;font-size:14px">💬</button>
-      <button class="tc" id="t-dash">💨</button>
-      <button class="tc" id="t-jump">⤴</button>
-      <button class="tc grande" id="t-atk">⚔</button>
+    <div class="tf">
+      <div id="t-izq">
+        <button class="tc" id="t-l">◀</button>
+        <button class="tc" id="t-r">▶</button>
+      </div>
+      <div id="t-der">
+        <button class="tc" id="t-dash">💨</button>
+        <button class="tc" id="t-jump">⤴</button>
+        <button class="tc grande" id="t-atk">⚔</button>
+      </div>
     </div>
   </div>
 </div>
