@@ -806,3 +806,90 @@ JS — código vestigial de antes de que existiera `link_profile`, nunca
 llamado desde ninguna UI. Eliminado por completo. Verificado en vivo: login
 por email/password y registro siguen funcionando, ranking global carga
 bien, sin errores de consola nuevos.
+
+## DUENDE QUEST ONLINE — el MMORPG (30-sep-2026)
+
+Pedido del dueño: "hazlo MMORPG aparte, decide tú cómo, con assets gratis o
+generados, usa Unity si puedes, que conserve la esencia, todas las skins,
+poderes y la tienda".
+
+**Decisiones:**
+- **Sin Unity.** No está instalado, activarlo pide la cuenta/licencia del
+  dueño, y su build web pesa 20-40 MB: malo para Telegram en móvil, que es
+  donde está el público. Se hizo con la misma tecnología que el arcade
+  (HTML5 Canvas + JS), así funciona en web y como Mini App.
+- **Estilo MapleStory (lateral).** Todos los sprites que ya existen son de
+  vista lateral: el duende animado, las 7 skins, las 19 criaturas, los 2
+  jefes con hoja, los fondos CC0 de los 5 biomas y los efectos de corte se
+  reutilizan TAL CUAL. Cero assets nuevos → nada nuevo que licenciar.
+- **Servidor: un Durable Object de Cloudflare** (`functions/mmo/world.js`,
+  clase `MmoWorld`, binding `MMO` en `wrangler.toml`, migración
+  `v1-mmo` con `new_sqlite_classes`: el plan gratuito solo admite DO con
+  SQLite). Mismo Worker, mismo deploy por `git push`, sin hosting nuevo.
+  Todo el mundo vive en UNA instancia (`idFromName('mundo-1')`): a esta
+  escala es lo más simple; los mensajes ya van filtrados por mapa por si hay
+  que partirlo. Límites del plan gratis: 100k req/día (los mensajes WS
+  entrantes cuentan 20:1) y 13.000 GB-s/día (≈28 h de servidor activo con
+  jugadores conectados); el bucle se apaga solo cuando no queda nadie.
+- **Autoritativo en el servidor**: vida, daño, oro, XP, compras, monstruos,
+  misiones. El cliente manda intenciones y su posición (validada contra la
+  velocidad máxima; si se teletransporta, `snap`).
+- **Identidad**: `initData` de Telegram (HMAC, reutiliza `verifyInitData`),
+  sesión de Supabase en la web (`verifySupabaseUser`), o invitado con un
+  token secreto de 32 hex en localStorage (el servidor guarda solo su
+  SHA-256). Misma cuenta en otra pestaña → la vieja se cierra.
+- **Economía aparte**: oro del MMO, NO canjeable por $DUENDE ni dinero
+  (evita sumar exposición legal, ver memoria `token-reality-and-constraints`).
+  Las skins pagadas con dinero real en el juego principal
+  (`skin_purchases` por telegram_id o por wallet_solana del perfil web) se
+  desbloquean solas en el MMO.
+
+**Contenido:**
+- Pueblo Duende (zona segura): Mercader Grumo (tienda), Guardia Tito
+  (misiones), Sabio Hechicero (ranking), 5 portales.
+- 5 zonas (Bosque Nocturno 1-6, Colinas Rojas 6-12, Selva Esmeralda 12-18,
+  Picos Tormenta 18-24, Desierto Dorado 24-32) con el bestiario de su bioma,
+  ordenado de menor a mayor nivel desde la entrada. Un jefe por zona
+  (Sabueso Infernal, Rey Goblin Caballero, Señor de la Guerra, Ghoul
+  Infernal, Ángel Caído) que reaparece cada 5 min; la recompensa se reparte
+  por daño con mínimo un tercio por participante.
+- Las 4 armas del arcade (Katana/Dagas/Odachi/Chispa, mismo reparto de
+  daño/s) y los 4 poderes (Poción/Escudo/Rayo/Fuego) con los mismos
+  efectos; las 7 skins con sus mismas ventajas (oro extra, robo de vida,
+  vida, ataque, aura que quema).
+- Cadena de 20 misiones (4 por zona, cerrando con su jefe).
+- Nivel máximo 40, regeneración fuera de combate, castigo de muerte suave
+  (5% XP del nivel). Monstruos normales pasivos (solo persiguen si les
+  pegas); los jefes cazan.
+- Chat de mapa (con límite), ranking, minimapa, jugadores en línea,
+  controles táctiles en 2 filas para móvil vertical, botón Atrás de
+  Telegram.
+- Accesos: bot (`/start` y `/mmo`), menú del arcade web, hub de la Mini App
+  (pasa el hash con `tgWebAppData`), botón en la landing.
+
+**Cómo probar (IMPORTANTE):**
+- `wrangler dev` **no puede correr Durable Objects en esta máquina**: todo
+  lo que usa SQLite local da "internal error" (probado hasta con un DO
+  mínimo, con y sin sandbox, fecha de compatibilidad vieja y nueva). No es
+  el código. La lógica del servidor se prueba con un arnés en Node que
+  importa el `world.js` real con almacenamiento y sockets falsos y un reloj
+  controlado (70 comprobaciones: combate, cooldowns, niveles, poderes, jefe
+  en grupo, tienda, misiones, muerte, persistencia, sesión duplicada, flood,
+  ids `__proto__`). La integración real se prueba en producción con un
+  cliente WebSocket de Node y el navegador.
+- **Cada cambio del cliente**: subir juntos el `?v=` de
+  `<script src="/mmo/js/client.js?v=N">` en `mmo/index.html` y el de
+  `import ... from './data.js?v=N'` en `client.js`. Si no, durante un
+  despliegue un HTML nuevo puede quedarse con un JS viejo de caché (ya pasó:
+  la página se quedó en "Cargando el mundo").
+
+**Bugs encontrados y corregidos en el camino:** comprar `__proto__`/
+`constructor` dejaba el oro en NaN (ahora `Object.hasOwn`); un nivel 1
+moría en 14 s en la primera zona (balance rehecho); cerrar la pestaña al
+estar por morir te devolvía con vida llena (ahora se guardan vida y
+muerte); costura vertical entre mosaicos del fondo; layout vertical con
+franjas vacías y el botón de ataque fuera de pantalla.
+
+**Siguientes ideas (no hechas):** grupos/party con XP compartida, comercio
+entre jugadores, más mapas (castillo con goblin_lord como jefe), misiones
+diarias repetibles, sonido propio para jefes.
