@@ -7,7 +7,7 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria,
-} from './data.js?v=13';
+} from './data.js?v=14';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -782,7 +782,10 @@ function dibujarDuende(q, esYo) {
   if (fuego) { for (let i = 0; i < 2; i++) particula(q.x + (Math.random() - .5) * 20, pies - 20 - Math.random() * 30, Math.random() < .5 ? '#ff6400' : '#ffe600', 1.5); }
   // Nombre y nivel
   const nom = esYo ? yo.nombre : q.n, lv = esYo ? yo.nivel : q.lv;
-  etiqueta(x, pies + 16, nom + ' · Nv' + lv, esYo ? '#ffe600' : (SKINS[skin] ? SKINS[skin].color : '#fff'), 6);
+  // Si otro duende esta pegado al propio, su nombre baja una linea: antes
+  // se encimaban ("ClaudeTest · Nv1Duendecillo Bot").
+  const baja = !esYo && Math.abs(q.x - P.x) < 110 && Math.abs(q.y - P.y) < 40 ? 13 : 0;
+  etiqueta(x, pies + 16 + baja, nom + ' · Nv' + lv, esYo ? '#ffe600' : (SKINS[skin] ? SKINS[skin].color : '#fff'), 6);
   if (!esYo && q.hp < q.mx) {
     g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(x - 18, pies - 76, 36, 5);
     g.fillStyle = '#ff3344'; g.fillRect(x - 17, pies - 75, 34 * Math.max(0, q.hp / q.mx), 3);

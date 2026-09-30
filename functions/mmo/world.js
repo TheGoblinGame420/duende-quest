@@ -26,6 +26,9 @@ const ESCUDO_MS = 5000;
 const FUEGO_MS = 8000;
 const INVULNERABLE_GOLPE_MS = 700;
 const INACTIVO_MS = 10 * 60 * 1000;
+// Bots de las pruebas en produccion (sus tokens de invitado son fijos): juegan
+// de verdad pero no deben aparecer en el ranking de los jugadores reales.
+const UIDS_PRUEBA = new Set(['inv:db4c11dc0a66af5e7b009f14', 'inv:145ca8bcf50bad57e9077518']);
 
 async function sha256hex(s) {
   const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
@@ -661,6 +664,7 @@ export class MmoWorld {
 
   // ── RANKING ──
   async actualizarRanking(s) {
+    if (UIDS_PRUEBA.has(s.c.uid)) return;
     const r = (await this.state.storage.get('ranking')) || [];
     const i = r.findIndex(x => x.uid === s.c.uid);
     const fila = { uid: s.c.uid, n: s.c.nombre, lv: s.c.nivel, xp: s.c.xp, k: s.c.kills };
@@ -670,7 +674,7 @@ export class MmoWorld {
   }
 
   async enviarRanking(s) {
-    const r = (await this.state.storage.get('ranking')) || [];
+    const r = ((await this.state.storage.get('ranking')) || []).filter(x => !UIDS_PRUEBA.has(x.uid));
     this.enviar(s, { t: 'ranking', r: r.slice(0, 20).map(x => ({ n: x.n, lv: x.lv, k: x.k, yo: x.uid === s.c.uid })) });
   }
 
@@ -797,7 +801,7 @@ export class MmoWorld {
     const alturaVuelo = def.vuela ? rnd(90, 170) : 0;
     const o = {
       id: this.sigMon++, k, mapa: mapaId, jefe: !!def.jefe, vuela: !!def.vuela,
-      x, y: SUELO - alturaVuelo, baseY: SUELO - alturaVuelo, f: Math.random() < 0.5 ? 1 : -1,
+      x, casaX: x, y: SUELO - alturaVuelo, baseY: SUELO - alturaVuelo, f: Math.random() < 0.5 ? 1 : -1,
       hp: st.hp, max: st.hp, atk: st.atk, vel: st.vel, w: st.w, h: st.h,
       dano: new Map(), obj: 0, golpeHasta: 0, ataqueEn: 0, pasoEn: 0, dir: 0,
       aviso: false, embiste: false, faseEn: Date.now() + 4000, fase: 0,
@@ -812,12 +816,17 @@ export class MmoWorld {
     // dentro del radio de agresion.
     // Los normales son pasivos (como en MapleStory): solo persiguen a quien
     // les pego. Asi el jugador elige sus peleas; los jefes si cazan.
+    // Los jefes tienen territorio: solo cazan a quien entra a ~520 px de su
+    // guarida. Antes perseguian a 700 px de donde estuvieran, y en el Bosque
+    // Nocturno eso llegaba a la entrada: un nivel 1 recien llegado moria una
+    // y otra vez a manos de un Nv 8 que no habia ido a buscar.
     let obj = null;
     const radio = o.jefe ? 700 : (o.obj ? 420 : 0);
     let mejor = radio;
     for (const s of jugadores) {
       if (s.muerto) continue;
       if (!o.jefe && s.id !== o.obj) continue;
+      if (o.jefe && Math.abs(s.x - o.casaX) > 520 && s.id !== o.obj) continue;
       const d = Math.abs(s.x - o.x);
       const bonus = s.id === o.obj ? -120 : 0;
       if (d + bonus < mejor) { mejor = d + bonus; obj = s; }
@@ -826,7 +835,11 @@ export class MmoWorld {
 
     const golpeado = ahora < o.golpeHasta;
     let vx = 0;
-    if (o.jefe && obj) {
+    if (o.jefe && !obj && Math.abs(o.x - o.casaX) > 20 && !o.embiste) {
+      // Sin nadie en su territorio vuelve a la guarida.
+      o.aviso = false;
+      o.f = o.casaX > o.x ? 1 : -1; vx = o.f * o.vel * 60 * dt;
+    } else if (o.jefe && obj) {
       // Jefe: persigue, y cada pocos segundos avisa y embiste.
       if (o.aviso) {
         if (ahora >= o.faseEn) { o.aviso = false; o.embiste = true; o.faseEn = ahora + 750; o.f = obj.x > o.x ? 1 : -1; }
@@ -848,6 +861,7 @@ export class MmoWorld {
       if (o.dir) { o.f = o.dir; vx = o.dir * o.vel * 0.6 * 60 * dt; }
     }
     o.x = clamp(o.x + vx, 30, mapa.ancho - 30);
+    if (o.jefe) o.x = clamp(o.x, o.casaX - 600, o.casaX + 600);   // no se le puede arrastrar a la entrada
     if (o.x <= 30 || o.x >= mapa.ancho - 30) o.dir = -o.dir;
     if (o.vuela) {
       const objetivoY = obj ? clamp(obj.y - 30, SUELO - 200, SUELO - 20) : o.baseY;

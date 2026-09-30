@@ -893,3 +893,46 @@ franjas vacías y el botón de ataque fuera de pantalla.
 **Siguientes ideas (no hechas):** grupos/party con XP compartida, comercio
 entre jugadores, más mapas (castillo con goblin_lord como jefe), misiones
 diarias repetibles, sonido propio para jefes.
+
+### DUENDE QUEST ONLINE — segunda ronda (30-sep-2026, misma noche)
+
+- **Jefes vencibles en solitario.** Con 2 jugadores reales las misiones de
+  jefe se hacen solos. Simulado con el `world.js` real (script de
+  simulación: un jugador pegado al jefe, poción bajo 40% de vida, con y sin
+  saltar las embestidas): roce del jefe 0,7x ataque cada 1,25 s, embestida
+  avisada 2,4x. Resultado: al nivel máximo recomendado de cada zona se gana
+  en 25-50 s con 2-9 pociones; el Ángel final ~85%.
+- **Caza cooperativa**: quien esté a <500 px cuando cae un monstruo gana el
+  25% de su XP aunque no le haya pegado.
+- **Misión diaria** "Caza del día" (25 monstruos de tu nivel o hasta 5 por
+  debajo, se cobra una vez por día UTC con el Guardia Tito).
+- **Monstruos a distancia**: hechicero, goblin mago, Ghoul Infernal y Ángel
+  lanzan bolas de fuego (los jefes en abanico de 3). El servidor las mueve y
+  decide el impacto; se esquivan saltando.
+- **Volver al pueblo** (R o 🌀) desde cualquier zona, solo fuera de combate
+  (8 s sin recibir golpes).
+- **Inactividad**: el servidor desconecta tras 10 min sin actividad y el
+  cliente suelta la conexión si la pestaña queda oculta 3 min (reconecta al
+  volver). Sin esto, UNA pestaña abierta casi agotaba el cupo diario gratis
+  de CPU de Durable Objects (13.000 GB-s).
+- **Física a paso fijo de 60 Hz** en el cliente: antes iba por fotograma
+  (al doble en pantallas de 120/144 Hz, en cámara lenta con pestaña lenta).
+- Chat global con etiqueta de mapa, ❗ sobre el Guardia con misión lista,
+  nombre de monstruo al herirlo, fundido de portal, más monstruos con más
+  jugadores en la zona, etiquetas de portales en 2 líneas.
+- **Banner para compartir** `assets/mmo_banner.png` (Open Graph en /mmo/),
+  generado por `tools/generar_banner_mmo.py` con sprites/fondos existentes;
+  `mmo/manifest.json` para instalar el MMO aparte.
+- **Ranking limpio de pruebas**: migración única `mig:ranking-pruebas` que
+  sacó a los personajes de las verificaciones, y `UIDS_PRUEBA` en
+  `world.js` con los tokens fijos de los bots de prueba (`'8'.repeat(32)` y
+  `'9'.repeat(32)`): pueden jugar en producción sin salir en el ranking. Si
+  se crean más bots de prueba, usar esos tokens.
+- Arnés: 84 comprobaciones (misiones, diaria, proyectiles, regreso,
+  inactividad, chat global…).
+- **Territorio de jefes**: la prueba de resistencia en producción (4 min de
+  caza con un bot: 0 desconexiones, 0 errores, 10,3 fotos/s) mostró que el
+  Sabueso (Nv 8) cazaba a 700 px y llegaba a la entrada del Bosque, donde
+  están los nivel 1. Ahora cada jefe solo persigue a quien entre a 520 px de
+  su guarida, no se le puede arrastrar a más de 600 px, y vuelve a casa si
+  no hay nadie.
