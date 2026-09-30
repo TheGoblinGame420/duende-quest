@@ -780,3 +780,29 @@ y el jefe correcto en su etapa (1-3 hellhound, 5-3 angel, las demás oso).
 sabueso infernal (apertura, HP 70, sin cambios de balance). Quedan 3-3 y 4-3
 si se quiere seguir esta línea en el futuro (packs CC0 de ansimuz/otros
 creadores ya agotados para esta ronda; buscar de nuevo si se retoma).
+
+## Quinceava tanda (30-sep-2026) — codigo muerto inseguro eliminado
+
+Auditoria manual de `js/auth-manager.js` completo (no se había revisado a
+fondo esta sesión). Encontrado: `loginWithTelegram(initData)` — tomaba
+`initData` SIN verificar su firma HMAC (a diferencia de `link_profile` en
+`functions/api/wallet.js`, que sí la verifica contra el token del bot) y
+hacía un `upsert` DIRECTO desde el cliente a `profiles` por `telegram_id`.
+
+Como el `telegram_id` de cualquier jugador es público (aparece en su propio
+link de referidos, `t.me/duendequest_bot?start=ref_<id>`), alguien con solo
+ese número podía fabricar un `initData` falso y llamar a esta función para
+sobreescribir el `username` de OTRO jugador (no el saldo ni la wallet,
+solo el username — pero suficiente para vandalismo/suplantación en el
+ranking). Hoy no era explotable en la práctica porque `profiles` tiene
+`INSERT` revocado para `anon`/`authenticated` (bloquea también el upsert,
+ver `sql/01-blindaje.sql`), pero confiar solo en ese permiso de base de
+datos como única defensa de una función insegura por diseño es frágil —
+cualquier cambio futuro en los grants la reactivaría sin que nadie se
+diera cuenta.
+
+Confirmado con grep en todo el repo: **cero call sites**, en ningún HTML ni
+JS — código vestigial de antes de que existiera `link_profile`, nunca
+llamado desde ninguna UI. Eliminado por completo. Verificado en vivo: login
+por email/password y registro siguen funcionando, ranking global carga
+bien, sin errores de consola nuevos.
