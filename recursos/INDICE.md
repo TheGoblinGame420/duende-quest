@@ -1,8 +1,8 @@
 # Recursos de arte de terceros (sin integrar)
 
-Descargados el 2026-09-28. **Todo es CC0 (dominio público)**: uso comercial permitido y sin atribución obligatoria. Cada carpeta tiene su `LICENCIA.txt` (fuente, autor, URL de la licencia) y, si trae sprites animados, un `FRAMES.txt` con el tamaño de frame y las animaciones para cortarlos.
+Descargados el 2026-09-28 (salvo `enemigos/ansimuz-hell-hound/`, del 2026-09-30 — ver su fila en la tabla). **Todo es CC0 (dominio público)**: uso comercial permitido y sin atribución obligatoria. Cada carpeta tiene su `LICENCIA.txt` (fuente, autor, URL de la licencia) y, si trae sprites animados, un `FRAMES.txt` con el tamaño de frame y las animaciones para cortarlos (o, si no lo trae, se midió a mano con PIL — ver el comentario del script `tools/generar_*_cc0.py` correspondiente).
 
-Total aproximado: **20,5 MB, 13 packs**.
+Total aproximado: **21,7 MB, 14 packs**.
 
 > **OJO, antes de publicar:** esta carpeta NO está todavía en `.assetsignore`, así que el Worker la serviría en público. Hay que agregar `recursos` a `.assetsignore` y copiar a `assets/` solo lo que se integre.
 
@@ -29,6 +29,7 @@ Total aproximado: **20,5 MB, 13 packs**.
 | Enemigos | Big Mushroom | Scratchio | CC0 | `enemigos/scratchio-big-mushroom/` (46 KB) | 29×28 (ataque 40×18) | **selva**, **amanecer** | Animaciones completas: aparecer, caminar, daño, morir y esconderse. Incluye una versión invertida (sirve de variante élite) y la paleta. Muy pequeño: escalar x6. **Ya integrado en SELVA** (`hongo` en `SHEET_POR_BIOMA`, `js/engine.js`): se usaron caminar + daño + morir, re-empaquetadas en `assets/enemigos/sheets/hongo.png` por `tools/generar_hongo_cc0.py`. Aparecer/esconderse se dejaron fuera (el motor ya anima la aparición de todo enemigo por código) y quedan la paleta invertida y el ataque a distancia sin usar, por si se quiere una variante élite o un afijo "escupe esporas" a futuro. |
 | Enemigos | 2D Platformer Enemies | Ashuuya | CC0 | `enemigos/ashuuya-platformer-enemies/` (30 KB) | murciélago 127×138, fantasma 75×138, esqueleto 138×138, slime 74×86, araña 138×138 | murciélago y araña → **noche**/**selva**; slime → **amanecer** | **Es el único a resolución parecida a la del juego**, pero es otro estilo (pintado, casi sin píxel visible) y solo trae el ciclo de movimiento, sin ataque ni muerte. Sirve de relleno o prototipo. |
 | UI | 496 pixel art RPG icons | Henrique Lazarini (7Soul1) | CC0 | `ui/7soul1-496-rpg-icons/` (2,2 MB) | 34×34 aprox. | Tienda, cofres, inventario, skins | Espadas y katanas (`W_Sword*`), armaduras, pociones, gemas, pergaminos y skills. Estilo RPG clásico, más detallado que el resto. El recopilador quitó los iconos derivados de juegos con copyright. |
+| Jefe | Hell Hound Sprite Animation | Luis Zuno (ansimuz) | CC0 | `enemigos/ansimuz-hell-hound/` (1,2 MB) | Rejilla propia por tira: idle/walk 64×32, run 67×32, jump 65×48 | **noche** (jefe) | Descargado el 2026-09-30 (fuera de la tanda del resto de esta tabla), aparte porque se buscó puntualmente para dar silueta propia a un SEGUNDO jefe de campaña (el primero fue el ángel de GothicVania Church, arriba). Sin `FRAMES.txt`; medido con PIL. **Ya integrado como el jefe de la etapa 1-3** (NOCHE VIOLETA, el PRIMER jefe de la campaña — al revés que el ángel, que es el ÚLTIMO): `hellhound` en `JEFES`/`SHEETS` (`js/engine.js`), `assets/enemigos/sheets/hellhound.png` — ver `tools/generar_hellhound_cc0.py` y `CREDITOS.md`. Reemplaza al `oso` reciclado solo en esa etapa; amanecer/selva/tormenta lo siguen usando. |
 
 ## Asignación sugerida por bioma
 
@@ -36,7 +37,7 @@ Total aproximado: **20,5 MB, 13 packs**.
 |---|---|---|---|
 | amanecer | Sunny Land (o Kenney) | goblins peasant/soldier, zarigüeya, rana, Big Mushroom | dragón volador (`sunny-dragon`) |
 | desierto | Rocky Pass | goblins assassin/samurai, lagarto, serpiente | (sin candidato CC0 propio aún) |
-| noche | GothicVania Cemetery | esqueletos (rise/walk), fantasmas, hell-gato, MV skeleton | ángel oscuro (Church) |
+| noche | GothicVania Cemetery | esqueletos (rise/walk), fantasmas, hell-gato, MV skeleton | sabueso infernal (Hell Hound, ansimuz) — **ya integrado**, ver más abajo |
 | selva | GothicVania Swamp | araña, "thing", seta de gas, goblins | goblin battleLord (escalado) |
 | tormenta | GothicVania Church + Castle twilight | ghoul en llamas, MV skeleton ensangrentado, goblin mage | mago (Church) |
 
@@ -64,9 +65,15 @@ por ser el bioma con menos variedad y por la lectura directa "pájaros al
 amanecer") y conejo (desierto, no estaba en esta tabla original — carpeta
 `sunny-bunny` sin sugerencia de bioma, se eligió desierto por el nombre
 "sunny" del pack y porque desierto se había quedado en 4 enemigos en vez de
-5, junto a tormenta) — ver `SHEET_POR_BIOMA` en `js/engine.js`. Zarigüeya,
-araña, "thing" y los jefes por bioma (dragón volador — visto de cerca esta
-tanda, ver CREDITOS.md — y ángel oscuro salvo el de la etapa final ya
-integrado) siguen pendientes. `lord` (Goblin Corps) y `sunny-mushroom`
-(descartado por redundante con el hongo ya integrado, ver CREDITOS.md)
-también quedan sin usar.
+5, junto a tormenta) — ver `SHEET_POR_BIOMA` en `js/engine.js`. De los jefes
+por bioma, ya hay DOS con silueta propia (`JEFES` en `js/engine.js`): el
+ángel oscuro (Church) es el jefe FINAL de la campaña (etapa 5-3, DESIERTO
+DORADO estructuralmente por ser el último bioma del array `BIOMES`, no por
+tema) y el sabueso infernal (Hell Hound, ansimuz, integrado esta misma
+tanda) es el PRIMER jefe (etapa 1-3, NOCHE VIOLETA — no estaba en esta tabla
+original, que sugería el ángel ahí por tema de catedral/cementerio; ver
+CREDITOS.md). Amanecer, selva y tormenta siguen con el `oso` reciclado.
+Zarigüeya, araña, "thing" y el dragón volador (visto de cerca, no lee como
+jefe — ver CREDITOS.md) siguen pendientes. `lord` (Goblin Corps) y
+`sunny-mushroom` (descartado por redundante con el hongo ya integrado, ver
+CREDITOS.md) también quedan sin usar.

@@ -1,0 +1,24 @@
+Pack: Hell Hound Sprite Animation
+Autor: Luis Zuno (@ansimuz)
+Fuente: https://ansimuz.itch.io/hell-hound-sprite-animation
+Licencia: CC0 1.0 Universal (dominio publico)
+Fecha de descarga: 2026-09-30
+Atribucion obligatoria: NO (CC0). Credito recomendado en CREDITOS.md: "Hell Hound Sprite Animation - Luis Zuno (@ansimuz)".
+
+Notas:
+Descarga gratuita via itch.io ("No thanks, just take me to the downloads",
+$0, sin pago obligatorio). El texto de la pagina de itch.io dice: "You may
+use these assets in personal or commercial projects. You may modify these
+assets to suit your needs. Credit is not required but appreciated it."
+
+El propio zip trae su licencia (public-license.pdf, conservado en esta
+carpeta), que es MAS explicita que la pagina web y confirma CC0 sin
+ambiguedad: "All assets included in this package are licensed under the
+Creative Commons Zero (CC0) license, which means you can use them freely in
+any project, whether personal or commercial, without the need for
+attribution. There are no restrictions on use, modification, or
+redistribution of these assets." — Luis Zuno aka Ansimuz.
+
+No se copio "Looking-for-more.pdf" (una pagina de autopromocion sin
+contenido de licencia) ni el .zip original ni los archivos ".DS_Store" /
+"__MACOSX" que trae el zip (basura de macOS).
