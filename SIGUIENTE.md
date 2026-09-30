@@ -678,3 +678,35 @@ robots.txt el comportamiento por defecto de cualquier crawler es "permitir
 todo"), solo una ausencia de un archivo SEO "nice to have" — de muy bajo
 valor dado que el crecimiento de este proyecto es 100% social/orgánico
 (Telegram/Twitter), no por buscadores.
+
+## Doceava tanda (29-sep-2026) — conejo del desierto, bestiario a 19 y biomas parejos
+
+Último enemigo del pack Ansimuz Sideview Fantasy que quedaba sin usar:
+`sunny-bunny` → `conejo`, integrado en DESIERTO DORADO (índice 4 de
+`SHEET_POR_BIOMA`), que junto con TORMENTA se había quedado en 4 enemigos
+normales en vez de 5 — ahora los 5 biomas quedan parejos. Ciclo de caminar
+reutiliza el "run" del pack (34x44, ya anclado al suelo); golpe/muerte se
+recortan de 2 poses aisladas del frame de "jump" (agazapado + extendido),
+re-centradas dentro de la celda de run con el mismo truco de re-anclaje que
+ya usó `rana`.
+
+**Se evaluó y se descartó** integrar `sunny-mushroom` (la otra criatura sin
+usar del mismo pack): comparado visualmente con PIL contra el `hongo` ya
+existente (bioma selva, pack distinto — Scratchio) resultó ser el mismo
+concepto para el jugador (capuchón moteado sobre cuerpo bulboso caminando),
+solo con otro trazo — se hubiera sentido como un reskin, no una criatura
+nueva. Documentado en `CREDITOS.md`/`recursos/INDICE.md`, mismo criterio que
+ya se usó con `goblin_lord` y el dragón en tandas anteriores.
+
+Verificado en vivo (spawn forzado en bioma desierto, capturas de pantalla):
+el conejo se para correctamente sobre el suelo, tamaño y silueta legibles,
+sin errores de consola en la campaña completa. **Bestiario: 19 criaturas +
+1 jefe con hoja de animación**, `bestiarioTotal()` sigue sin tocarse (cuenta
+sola).
+
+Con esto, los packs CC0 ya descargados en `recursos/enemigos/` están
+agotados salvo las 2 reservas explícitas de tandas anteriores (`goblin_lord`
+para un futuro bioma castillo, el dragón `sunny-dragon` para un futuro
+intento de jefe bien probado en vivo) y `sunny-mushroom` (descartado por
+redundante, arriba). Cualquier ronda de contenido futura necesitaría buscar
+un pack CC0 nuevo.
