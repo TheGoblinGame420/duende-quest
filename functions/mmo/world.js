@@ -59,6 +59,21 @@ export class MmoWorld {
     this.sigSesion = 1;
     this.sigMon = 1;
     this.bucle = null;
+    if (state.blockConcurrencyWhile) state.blockConcurrencyWhile(() => this.migrar());
+  }
+
+  // Migraciones de una sola vez sobre el almacenamiento del mundo.
+  async migrar() {
+    try {
+      // Los personajes de prueba de las verificaciones en produccion del
+      // 30-sep-2026 ("Bot Prueba" subio a Nv 2) no deben salir en el ranking real.
+      if (!(await this.state.storage.get('mig:ranking-pruebas'))) {
+        const r = (await this.state.storage.get('ranking')) || [];
+        const pruebas = ['Bot Prueba', 'Probador', 'ClaudeTest', 'Duendecillo Bot', 'Sim'];
+        await this.state.storage.put('ranking', r.filter(x => !pruebas.includes(x.n)));
+        await this.state.storage.put('mig:ranking-pruebas', 1);
+      }
+    } catch (e) { console.error('[MMO migrar]', e); }
   }
 
   async fetch(request) {

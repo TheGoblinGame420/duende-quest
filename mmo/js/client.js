@@ -7,7 +7,7 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria,
-} from './data.js?v=11';
+} from './data.js?v=12';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1145,14 +1145,23 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-function bucle() {
-  frame++;
-  fisica();
+// Paso fijo de 60 Hz: la fisica iba por fotograma, asi que en una pantalla
+// de 120/144 Hz el duende corria y saltaba al doble, y en una pestaña lenta
+// iba a camara lenta. Ahora se acumula el tiempo real y se simula en pasos
+// de 1/60 s; se dibuja solo cuando hubo al menos un paso.
+const PASO = 1000 / 60;
+let ultimoT = performance.now(), acum = 0;
+function bucle(t) {
+  requestAnimationFrame(bucle);
+  acum += Math.min(200, Math.max(0, t - ultimoT));
+  ultimoT = t;
+  let pasos = 0;
+  while (acum >= PASO) { frame++; fisica(); acum -= PASO; pasos++; }
+  if (!pasos) return;
   dibujar();
   if (frame % 3 === 0) dibujarMinimapa();
   pintarVida();
   pintarCooldowns();
-  requestAnimationFrame(bucle);
 }
 inicio();
 requestAnimationFrame(bucle);
