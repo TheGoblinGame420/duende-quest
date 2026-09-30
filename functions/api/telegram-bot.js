@@ -4,6 +4,7 @@
 
 const WEBAPP_URL = 'https://duende-quest.alfonso12hc.workers.dev/telegram/index.html';
 const SITE_URL = 'https://duende-quest.alfonso12hc.workers.dev';
+const MMO_URL = 'https://duende-quest.alfonso12hc.workers.dev/mmo/';
 const DEXSCREENER_URL = 'https://api.dexscreener.com/latest/dex/tokens/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump';
 const PUMP_FUN_URL = 'https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump';
 
@@ -144,10 +145,11 @@ async function handleStart(token, env, chatId, user, startPayload) {
   const referralLink = `https://t.me/duendequest_bot?start=ref_${user.id}`;
   await tg(token, 'sendMessage', {
     chat_id: chatId,
-    text: `🧌 *¡Bienvenido a DUENDE QUEST, ${user.first_name || 'Duende'}!*\n\n⚔️ Juego arcade play-to-earn en Solana\n💰 Gana tokens $DUENDE jugando\n🗺 Campaña de 15 etapas con jefes\n🏆 Compite en el ranking global\n\n🎁 *Tu link de referido:*\n\`${referralLink}\`\n_Invita amigos y ambos ganan 500 $DUENDE_`,
+    text: `🧌 *¡Bienvenido a DUENDE QUEST, ${user.first_name || 'Duende'}!*\n\n⚔️ Juego arcade play-to-earn en Solana\n💰 Gana tokens $DUENDE jugando\n🗺 Campaña de 15 etapas con jefes\n🌍 *NUEVO: DUENDE QUEST ONLINE* — el MMORPG: caza con otros jugadores\n🏆 Compite en el ranking global\n\n🎁 *Tu link de referido:*\n\`${referralLink}\`\n_Invita amigos y ambos ganan 500 $DUENDE_`,
     parse_mode: 'Markdown',
     reply_markup: { inline_keyboard: [
       [{ text: '🎮 JUGAR AHORA', web_app: { url: WEBAPP_URL } }],
+      [{ text: '🌍 DUENDE QUEST ONLINE (MMO)', web_app: { url: MMO_URL } }],
       [{ text: '⭐ Comprar con Stars', callback_data: 'buy' }, { text: '🚀 Pump.fun', url: PUMP_FUN_URL }],
       [{ text: '🏆 Ranking', callback_data: 'ranking' }, { text: '💹 Precio', callback_data: 'price' }],
       [{ text: '📊 Mis Stats', callback_data: 'stats' }, { text: '🎁 Referidos', callback_data: 'referral' }],
@@ -232,7 +234,7 @@ async function handleBuy(token, chatId, userId, messageId) {
 }
 
 async function handleHelp(token, chatId) {
-  await tg(token, 'sendMessage', { chat_id: chatId, text: `🧌 *DUENDE QUEST — Comandos*\n\n/start — Menú principal\n/play — Abrir el juego\n/ranking — Top 10\n/price — Precio $DUENDE\n/stats — Tus estadísticas\n/buy — Comprar $DUENDE con Stars 💳\n/referral — Tu link de referidos\n/help — Comandos`, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 JUGAR', web_app: { url: WEBAPP_URL } }]] } });
+  await tg(token, 'sendMessage', { chat_id: chatId, text: `🧌 *DUENDE QUEST — Comandos*\n\n/start — Menú principal\n/play — Abrir el juego\n/mmo — DUENDE QUEST ONLINE (MMORPG)\n/ranking — Top 10\n/price — Precio $DUENDE\n/stats — Tus estadísticas\n/buy — Comprar $DUENDE con Stars 💳\n/referral — Tu link de referidos\n/help — Comandos`, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 JUGAR', web_app: { url: WEBAPP_URL } }]] } });
 }
 
 // ── /admin: métricas privadas (solo el dueño, via env ADMIN_TG_ID) ──
@@ -457,6 +459,9 @@ async function onRequestPost(context) {
       switch (cmd) {
         case '/start': await handleStart(token, env, chatId, user, payload); break;
         case '/play': case '/jugar': await handlePlay(token, chatId); break;
+        case '/mmo': case '/online':
+          await tg(token, 'sendMessage', { chat_id: chatId, text: '🌍 *DUENDE QUEST ONLINE*\n\nEl MMORPG de los duendes: 5 zonas, jefes que reaparecen, las 7 skins y las 4 armas. Caza junto a otros jugadores en tiempo real.', parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🌍 ENTRAR AL MUNDO', web_app: { url: MMO_URL } }]] } });
+          break;
         case '/ranking': case '/top': await handleRanking(token, env, chatId); break;
         case '/price': case '/precio': await handlePrice(token, chatId); break;
         case '/stats': await handleStats(token, env, chatId, user.id); break;

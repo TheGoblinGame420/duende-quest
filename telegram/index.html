@@ -244,6 +244,9 @@ html{font-size:24px;}
           <button class="ob azul" onclick="abrirMapa()">🗺 MAPA</button>
           <button class="ob" id="btn-sinfin" onclick="jugarSinFin()" style="background:linear-gradient(135deg,#ff3cf0,#7c3aed);color:#fff">∞ SIN FIN</button>
         </div>
+        <!-- El hash lleva tgWebAppData: pasarlo asegura que /mmo/ reciba la
+             identidad de Telegram aunque el SDK no la recupere de sessionStorage. -->
+        <button class="ob" onclick="location.href='/mmo/'+(location.hash||'')" style="background:linear-gradient(135deg,#00eeff,#7c3aed);color:#fff;width:100%">🌍 DUENDE QUEST ONLINE · MMO</button>
         <div class="card" id="streak-banner"></div>
         <div class="card" id="daily-missions"></div>
         <div class="card" id="achievements-panel"></div>

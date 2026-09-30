@@ -12,7 +12,14 @@ import {
 const $ = id => document.getElementById(id);
 const A = '/assets/';
 const TG = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? window.Telegram.WebApp : null;
-if (TG) { try { TG.ready(); TG.expand(); TG.disableVerticalSwipes && TG.disableVerticalSwipes(); TG.setHeaderColor && TG.setHeaderColor('#0a0418'); } catch (e) {} }
+if (TG) {
+  try { TG.ready(); TG.expand(); TG.disableVerticalSwipes && TG.disableVerticalSwipes(); TG.setHeaderColor && TG.setHeaderColor('#0a0418'); } catch (e) {}
+  // Dentro de Telegram, "volver" lleva al hub de la Mini App, no a la web.
+  const volver = () => { location.href = '/telegram/index.html' + (location.hash || ''); };
+  try { TG.BackButton.show(); TG.BackButton.onClick(volver); } catch (e) {}
+  const casa = document.querySelector('#botones a[href="/game.html"]');
+  if (casa) casa.href = '/telegram/index.html' + (location.hash || '');
+}
 
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
 if (TACTIL) document.body.classList.add('tactil');

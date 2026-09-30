@@ -71,15 +71,16 @@ html,body{height:100%;background:var(--bg);color:#fff;font-family:'Press Start 2
 /* controles tactiles: fila 1 = poderes + accion + chat, fila 2 = mover / saltar / atacar */
 #tactil{display:none;width:100%;flex:0 0 auto;flex-direction:column;gap:10px;padding:8px 12px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(20,8,40,.6),rgba(20,8,40,.95));border-top:1px solid rgba(192,132,252,.2);}
 .tf{display:flex;justify-content:space-between;align-items:center;gap:8px;}
-.tc{font-family:inherit;width:62px;height:62px;border-radius:50%;border:2px solid rgba(255,255,255,.2);background:rgba(255,255,255,.07);color:#fff;font-size:18px;touch-action:none;flex:0 0 auto;}
+.tc{font-family:inherit;width:56px;height:56px;border-radius:50%;border:2px solid rgba(255,255,255,.2);background:rgba(255,255,255,.07);color:#fff;font-size:17px;touch-action:none;flex:0 0 auto;}
 .tc.on{background:rgba(0,255,136,.25);border-color:var(--verde);}
-.tc.grande{width:80px;height:80px;font-size:26px;background:rgba(255,60,60,.18);border-color:rgba(255,60,60,.5);}
-.tc.chico{width:44px;height:44px;font-size:15px;}
-#t-izq,#t-der{display:flex;gap:10px;align-items:center;}
+.tc.grande{width:74px;height:74px;font-size:25px;background:rgba(255,60,60,.18);border-color:rgba(255,60,60,.5);}
+.tc.chico{width:40px;height:40px;font-size:14px;}
+#t-izq,#t-der{display:flex;gap:8px;align-items:center;}
 body.tactil #tactil{display:flex;}
-body.tactil #t-fila1 #poderes{position:static;display:flex;gap:6px;}
-body.tactil #t-fila1 .pw{width:44px;height:44px;}
-body.tactil #t-fila1 #interactuar{position:static;transform:none;font-size:8px;padding:10px 8px;}
+body.tactil #t-fila1 #poderes{position:static;display:flex;gap:5px;}
+body.tactil #t-fila1 .pw{width:42px;height:42px;}
+body.tactil #t-fila1 .pw img{width:28px;height:28px;}
+body.tactil #t-fila1 #interactuar{position:static;transform:none;font-size:7px;padding:10px 7px;}
 body.tactil #chat{width:70%;bottom:6px;}
 
 /* modales */
