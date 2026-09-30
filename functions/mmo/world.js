@@ -397,6 +397,16 @@ export class MmoWorld {
       premios.push([sid, xp, oro]);
       this.dar(s, xp, oro, o);
     }
+    // Caza cooperativa: quien este cerca y vivo se lleva el 25% de la
+    // experiencia aunque no le haya pegado (cazar juntos siempre compensa).
+    for (const s of this.sesiones.values()) {
+      if (!s.c || s.c.mapa !== o.mapa || s.muerto || o.dano.has(s.id) || Math.abs(s.x - o.x) > 500) continue;
+      const xp = Math.max(1, Math.round(base.xp * 0.25));
+      this.sumarXp(s, xp);
+      s.sucio = true;
+      this.enviar(s, { t: 'gana', xp, oro: 0, drops: [], x: Math.round(o.x), y: Math.round(o.y - o.h), coop: true });
+      this.actualizarYo(s);
+    }
     this.aMapa(o.mapa, { t: 'md', id: o.id, pr: premios });
     if (o.jefe) {
       this.mundo[o.mapa].jefeEn = Date.now() + JEFE_REAPARECE_MS;
@@ -758,8 +768,13 @@ export class MmoWorld {
         if (s.muerto) continue;
         const toca = Math.abs(s.x - o.x) < (o.w / 2 + FIS.jugW / 2 - 4) && s.y > o.y - o.h && s.y - FIS.jugH < o.y;
         if (toca) {
-          this.herir(s, o.embiste ? o.atk * 1.6 : o.atk, o);
-          o.ataqueEn = ahora + (o.jefe ? 700 : 1100);
+          // Jefes: el roce hace poco y el peligro de verdad es la embestida
+          // (avisada con el temblor rojo, se esquiva saltando por encima).
+          // Con el roce a atk entero cada 0,7 s ningun jugador podia hacer
+          // la mision del jefe en solitario, y hoy casi siempre se juega solo.
+          const dmg = o.jefe ? (o.embiste ? o.atk * 2.4 : o.atk * 0.7) : o.atk;
+          this.herir(s, dmg, o);
+          o.ataqueEn = ahora + (o.jefe ? 1250 : 1100);
           break;
         }
       }

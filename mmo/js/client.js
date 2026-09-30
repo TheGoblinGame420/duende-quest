@@ -7,7 +7,7 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, MISIONES,
   statsMonstruo, sueloEn, zonaDe,
-} from './data.js?v=6';
+} from './data.js?v=7';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -213,9 +213,10 @@ function recibir(m) {
     }
     case 'at': ataqueRemoto(m); break;
     case 'gana':
+      if (m.coop) { flotante(m.x, m.y, '+' + m.xp + ' XP (grupo)', '#00eeff', 9); break; }
       for (let i = 0; i < Math.min(8, 2 + Math.floor(m.oro / 15)); i++) monedas.push({ x: m.x, y: m.y + 20, vx: (Math.random() - .5) * 5, vy: -4 - Math.random() * 3, t: 0 });
       flotante(m.x, m.y, '+' + m.xp + ' XP', '#00ff88', 10);
-      flotante(m.x, m.y + 14, '+' + m.oro + ' oro', '#ffe600', 10);
+      if (m.oro > 0) flotante(m.x, m.y + 14, '+' + m.oro + ' oro', '#ffe600', 10);
       if (m.drops && m.drops.length) m.drops.forEach(d => { const pd = PODERES.find(p => p.id === d); if (pd) aviso('🎁 Encontraste: ' + pd.nombre, 'ok'); });
       sfx('moneda', .3);
       break;
