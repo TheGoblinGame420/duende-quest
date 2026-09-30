@@ -25,6 +25,7 @@ const JEFE_PRIMERO_MS = 60 * 1000;
 const ESCUDO_MS = 5000;
 const FUEGO_MS = 8000;
 const INVULNERABLE_GOLPE_MS = 700;
+const INACTIVO_MS = 10 * 60 * 1000;
 
 async function sha256hex(s) {
   const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
@@ -136,6 +137,7 @@ export class MmoWorld {
 
     if (m.t === 'hola') return this.hola(s, m);
     if (!s.c) return;
+    if (m.t !== 'ping') s.actT = ahora;
     switch (m.t) {
       case 'mv': return this.mover(s, m);
       case 'atk': return this.atacar(s, m);
@@ -214,7 +216,7 @@ export class MmoWorld {
     s.x = clamp(c.x || 200, 20, MAPAS[c.mapa].ancho - 20);
     s.y = SUELO; s.f = 1; s.a = 0;
     s.movT = Date.now(); s.atkT = 0; s.chatT = 0; s.cdPw = {}; s.inv = 0; s.escudo = 0; s.fuego = 0; s.auraT = 0;
-    s.sucio = true; s.guardadoT = Date.now();
+    s.sucio = true; s.guardadoT = Date.now(); s.actT = Date.now();
     this.porUid.set(uid, s);
     if (nuevo) await this.guardar(s);
 
@@ -546,7 +548,9 @@ export class MmoWorld {
     const txt = String(m.m || '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 120);
     if (!txt) return;
     s.chatT = ahora;
-    this.aMapa(s.c.mapa, { t: 'chat', p: s.id, n: s.c.nombre, m: txt });
+    // Global y no por mapa: con pocos jugadores a la vez, un chat por mapa
+    // estaria casi siempre vacio. Las burbujas solo se ven en el mismo mapa.
+    this.aTodos({ t: 'chat', p: s.id, n: s.c.nombre, m: txt, mapa: s.c.mapa });
   }
 
   // ── TIENDA ──
@@ -629,7 +633,19 @@ export class MmoWorld {
   // ── SIMULACION ──
   tick() {
     const ahora = Date.now();
-    if (ahora - (this.onT || 0) > 10000) { this.onT = ahora; this.aTodos({ t: 'on', n: this.contarOnline() }); }
+    if (ahora - (this.onT || 0) > 10000) {
+      this.onT = ahora;
+      // Una pestaña abierta sin jugar mantiene vivo el objeto (y cobra tiempo
+      // de CPU del cupo diario) todo el dia: fuera tras 10 min sin actividad.
+      for (const s of [...this.sesiones.values()]) {
+        if (s.c && ahora - (s.actT || 0) > INACTIVO_MS) {
+          this.enviar(s, { t: 'err', m: 'Te desconectamos por inactividad. Pulsa RECONECTAR para volver.', fatal: true });
+          try { s.ws.close(4001, 'inactivo'); } catch (e) {}
+          this.cerrar(s);
+        }
+      }
+      this.aTodos({ t: 'on', n: this.contarOnline() });
+    }
     const porMapa = {};
     for (const s of this.sesiones.values()) {
       if (!s.c) continue;

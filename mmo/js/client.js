@@ -7,7 +7,7 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, MISIONES,
   statsMonstruo, sueloEn, zonaDe,
-} from './data.js?v=7';
+} from './data.js?v=8';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -177,7 +177,7 @@ async function conectar() {
   ws.onmessage = ev => { let m; try { m = JSON.parse(ev.data); } catch (e) { return; } recibir(m); };
   ws.onclose = () => {
     conectado = false;
-    if (fatal) return;
+    if (fatal || pausado) return;
     if (reintentos++ < 6) setTimeout(conectar, Math.min(8000, 600 * reintentos));
     else mostrarError('Se perdió la conexión con el servidor.');
   };
@@ -246,7 +246,10 @@ function recibir(m) {
     case 'pa': { const o = otros.get(m.p); if (o) { o.sk = m.sk; o.ar = m.ar; o.mx = m.mx; } break; }
     case 'pw': efectoPoder(m.p, m.i); break;
     case 'cd': cdPoder[m.id] = performance.now() + m.hasta; break;
-    case 'chat': lineaChat(m.n, m.m, m.p); burbujas.set(m.p, { txt: m.m, hasta: performance.now() + 5000 }); break;
+    case 'chat':
+      lineaChat(m.mapa && m.mapa !== mapaId && MAPAS[m.mapa] ? m.n + ' (' + MAPAS[m.mapa].nombre + ')' : m.n, m.m);
+      if (!m.mapa || m.mapa === mapaId) burbujas.set(m.p, { txt: m.m, hasta: performance.now() + 5000 });
+      break;
     case 'on': online = m.n; pintarSubMapa(); break;
     case 'toast': aviso(m.m, m.ok ? 'ok' : ''); break;
     case 'aviso': aviso(m.m, 'jefe'); lineaChat(null, m.m); break;
@@ -646,7 +649,13 @@ function dibujarNPCs(mp) {
     etiqueta(x, SUELO - 72, n.nombre, activo ? '#ffe600' : '#00ff88', 7);
     if (n.tipo === 'tienda') { g.font = '14px sans-serif'; g.textAlign = 'center'; g.fillText('🛒', x, SUELO - 90 + Math.sin(frame * .1) * 3); }
     if (n.tipo === 'ranking') { g.font = '14px sans-serif'; g.textAlign = 'center'; g.fillText('🏆', x, SUELO - 90 + Math.sin(frame * .1) * 3); }
-    if (n.tipo === 'guia') { g.font = '14px sans-serif'; g.textAlign = 'center'; g.fillText('❔', x, SUELO - 90 + Math.sin(frame * .1) * 3); }
+    if (n.tipo === 'guia') {
+      // ❗ cuando hay una mision lista para entregar, como la bombilla de MapleStory.
+      const q = yo && MISIONES[yo.mis.i];
+      const lista = q && yo.mis.p >= q.n;
+      g.font = (lista ? 18 : 14) + 'px sans-serif'; g.textAlign = 'center';
+      g.fillText(lista ? '❗' : '❔', x, SUELO - 90 + Math.sin(frame * (lista ? .25 : .1)) * 3);
+    }
   }
 }
 
@@ -697,7 +706,8 @@ function dibujarMonstruo(o) {
     g.font = '6px "Press Start 2P", monospace'; g.textAlign = 'center';
     const dif = def.nivel - (yo ? yo.nivel : 1);
     g.fillStyle = dif >= 5 ? '#ff3344' : dif >= 2 ? '#ff9900' : dif <= -5 ? '#888' : '#fff';
-    g.fillText('Nv' + def.nivel, x, y - 4);
+    // Con el nombre solo cuando esta herido: todos a la vez llenaban la pantalla.
+    g.fillText('Nv' + def.nivel + (o.hp < o.mx ? ' ' + def.nombre : ''), x, y - 4);
   } else {
     etiqueta(x, o.y - o.alto - 10, '👑 ' + def.nombre, '#ff3cf0', 7);
   }
@@ -1067,6 +1077,19 @@ async function inicio() {
 }
 
 setInterval(() => mandar({ t: 'ping', ts: Date.now() }), 20000);
+
+// Pestaña oculta mas de 3 minutos (otra app, pantalla apagada): se suelta la
+// conexion para no tener el servidor encendido por nadie, y al volver se
+// reconecta sola.
+let pausado = false, timerOculta = null;
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    timerOculta = setTimeout(() => { if (ws && ws.readyState === 1) { pausado = true; ws.close(4100, 'oculta'); } }, 180000);
+  } else {
+    clearTimeout(timerOculta);
+    if (pausado) { pausado = false; reintentos = 0; aviso('Reconectando…'); conectar(); }
+  }
+});
 
 function bucle() {
   frame++;
