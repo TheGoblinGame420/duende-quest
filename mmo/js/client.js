@@ -167,7 +167,7 @@ async function conectar() {
 function recibir(m) {
   switch (m.t) {
     case 'bienvenido':
-      miId = m.id; yo = m.yo;
+      miId = m.id; yo = m.yo; online = m.on || 0;
       $('m-inicio').classList.remove('on');
       pintarHud();
       if (m.nuevo) aviso('¡Bienvenido, ' + yo.nombre + '! Habla con el Guardia Tito si necesitas ayuda.');
@@ -225,6 +225,7 @@ function recibir(m) {
     case 'pw': efectoPoder(m.p, m.i); break;
     case 'cd': cdPoder[m.id] = performance.now() + m.hasta; break;
     case 'chat': lineaChat(m.n, m.m, m.p); burbujas.set(m.p, { txt: m.m, hasta: performance.now() + 5000 }); break;
+    case 'on': online = m.n; pintarSubMapa(); break;
     case 'toast': aviso(m.m, m.ok ? 'ok' : ''); break;
     case 'aviso': aviso(m.m, 'jefe'); lineaChat(null, m.m); break;
     case 'snap': P.x = m.x; P.y = m.y; P.vx = 0; P.vy = 0; break;
@@ -244,10 +245,17 @@ function entrarMapa(m) {
   m.mons.forEach(agregarMon);
   const mp = MAPAS[mapaId];
   $('h-mapa').textContent = mp.nombre;
-  $('h-mapa-sub').textContent = mp.zona ? 'Nivel recomendado ' + mp.nv[0] + '-' + mp.nv[1] : 'Zona segura';
+  pintarSubMapa();
   camX = Math.max(0, Math.min(mp.ancho - VW, P.x - VW / 2));
   $('carga').style.display = 'none';
   aviso('📍 ' + mp.nombre);
+}
+
+let online = 0;
+function pintarSubMapa() {
+  const mp = MAPAS[mapaId];
+  const base = mp.zona ? 'Nivel ' + mp.nv[0] + '-' + mp.nv[1] : 'Zona segura';
+  $('h-mapa-sub').textContent = base + (online ? ' · 👥 ' + online + ' en línea' : '');
 }
 
 function agregarOtro(p) {

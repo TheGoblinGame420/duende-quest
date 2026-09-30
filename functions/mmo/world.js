@@ -197,8 +197,17 @@ export class MmoWorld {
 
     s.c = c;
     s.st = statsJugador(c.nivel, c.skin);
-    s.hp = s.st.maxHp;
+    // Se guarda la vida y si estaba muerto: si no, cerrar la pestaña justo
+    // antes de morir te devolvia con la vida llena en el mismo sitio.
+    if (c.muerto) {
+      c.xp = Math.max(0, c.xp - Math.round(xpParaSubir(c.nivel) * 0.05));
+      c.muerto = false; c.mapa = 'pueblo'; c.x = MAPAS.pueblo.spawn;
+      s.hp = s.st.maxHp;
+    } else {
+      s.hp = typeof c.hp === 'number' ? clamp(c.hp, 1, s.st.maxHp) : s.st.maxHp;
+    }
     s.muerto = false;
+    s.golpeT = 0;
     s.x = clamp(c.x || 200, 20, MAPAS[c.mapa].ancho - 20);
     s.y = SUELO; s.f = 1; s.a = 0;
     s.movT = Date.now(); s.atkT = 0; s.chatT = 0; s.cdPw = {}; s.inv = 0; s.escudo = 0; s.fuego = 0; s.auraT = 0;
@@ -206,7 +215,7 @@ export class MmoWorld {
     this.porUid.set(uid, s);
     if (nuevo) await this.guardar(s);
 
-    this.enviar(s, { t: 'bienvenido', id: s.id, yo: this.datosPropios(s), nuevo, regaladas });
+    this.enviar(s, { t: 'bienvenido', id: s.id, yo: this.datosPropios(s), nuevo, regaladas, on: this.contarOnline() });
     this.entrarMapa(s, c.mapa, s.x, true);
     if (!this.bucle) this.bucle = setInterval(() => this.tick(), TICK_MS);
   }
@@ -440,6 +449,7 @@ export class MmoWorld {
       s.hp = 0;
       s.muerto = true;
       this.aMapa(s.c.mapa, { t: 'pm', p: s.id });
+      this.guardar(s);
     }
     this.actualizarYo(s);
   }
@@ -566,6 +576,8 @@ export class MmoWorld {
   async guardar(s) {
     if (!s.c) return;
     s.c.x = Math.round(s.x || s.c.x || 0);
+    if (typeof s.hp === 'number') s.c.hp = Math.ceil(s.hp);
+    s.c.muerto = !!s.muerto;
     s.guardadoT = Date.now();
     s.sucio = false;
     try { await this.state.storage.put('c:' + s.c.uid, s.c); } catch (e) { console.error('[MMO guardar]', e); }
@@ -574,6 +586,7 @@ export class MmoWorld {
   // ── SIMULACION ──
   tick() {
     const ahora = Date.now();
+    if (ahora - (this.onT || 0) > 10000) { this.onT = ahora; this.aTodos({ t: 'on', n: this.contarOnline() }); }
     const porMapa = {};
     for (const s of this.sesiones.values()) {
       if (!s.c) continue;
