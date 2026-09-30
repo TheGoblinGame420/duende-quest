@@ -641,3 +641,40 @@ Código Penal peruano) que llevó a apagar `ton_stake` con un switch. Se le
 preguntó explícitamente al dueño qué hacer con esta versión en Solana de la
 web; su decisión (29-sep-2026): **dejarlo activo**. No se tocó nada de
 `js/staking-manager.js` ni de `index.html` en esa sección.
+
+## Onceava tanda (29-sep-2026) — SEO de vista previa e instalación como app
+
+**`og:image`/`twitter:image` de la landing usaban ruta relativa** (a
+diferencia de `og:url`, que ya era absoluta) — los crawlers de vista previa
+de Telegram/Twitter/Discord no siempre resuelven rutas relativas de forma
+fiable. Además apuntaban a `skin_hero.png` (222x210, pixel art suelto con
+fondo transparente) en vez de un banner horizontal — mal formato para
+`summary_large_image`. Cambiado a URL absoluta apuntando a
+`assets/telegram_app_banner.png` (640x360, ya es un banner hecho para esto,
+limpiado de afirmaciones falsas esta misma sesión). Verificado en vivo.
+
+**`game.html` no tenía soporte de "Agregar a pantalla de inicio"** (PWA
+básico) — sin `manifest.json` ni `apple-touch-icon`, instalar el juego desde
+un navegador móvil normal (fuera de Telegram) no daba un ícono propio en
+Android y no ofrecía nada limpio en iOS Safari. Se agregó `manifest.json`
+(raíz del repo, mismo patrón que `tonconnect-manifest.json`) con
+`start_url: /game.html`, `display: standalone`, colores del tema, e íconos
+generados desde `assets/ui/coin.png` (la moneda del juego, ya bien
+compuesta como medallón) escalados sin suavizado a 192/512/180px con fondo
+sólido (no transparente, para que iOS no rellene con blanco). `game.html`
+ganó los `<link>`/`<meta>` correspondientes. Nota de despliegue: el
+`manifest.json` nuevo tardó ~1 min extra en propagarse en el edge de
+Cloudflare tras el push (servía el fallback SPA/HTML mientras tanto) —
+normal para un archivo nuevo, ya se resolvió solo; no hace falta reintentar
+nada si pasa de nuevo con un archivo top-level nuevo.
+
+**Nota aparte, sin arreglar (muy baja prioridad):** `robots.txt` y
+`sitemap.xml` tampoco existen — cualquier ruta no reconocida cae al mismo
+fallback SPA (sirve `index.html` con 200 OK, cuidado si algo hace
+`curl -o /dev/null -w '%{http_code}'` para "verificar" que un archivo
+existe: el código 200 no prueba nada en este sitio, hay que mirar
+`Content-Type` o el cuerpo real). No es un problema funcional (sin
+robots.txt el comportamiento por defecto de cualquier crawler es "permitir
+todo"), solo una ausencia de un archivo SEO "nice to have" — de muy bajo
+valor dado que el crecimiento de este proyecto es 100% social/orgánico
+(Telegram/Twitter), no por buscadores.
