@@ -208,6 +208,22 @@ export class MmoWorld {
     if (vieja && vieja !== s) { await this.guardar(vieja); this.expulsar(vieja, 'Tu cuenta se abrió en otro dispositivo'); }
 
     let c = await this.state.storage.get('c:' + uid);
+    let heredado = false;
+    // Quien jugo como invitado y luego entra con su cuenta (web o Telegram)
+    // no empieza de cero: si la cuenta aun no tiene personaje, hereda el del
+    // invitado (el token es secreto: solo lo tiene quien jugo con el).
+    if (!c && !uid.startsWith('inv:') && /^[a-f0-9]{32}$/.test(m.inv || '')) {
+      const uidInv = 'inv:' + (await sha256hex('dq-mmo:' + m.inv)).slice(0, 24);
+      const previo = uidInv !== uid && await this.state.storage.get('c:' + uidInv);
+      if (previo && !this.porUid.has(uidInv)) {
+        c = { ...previo, uid, nombre };
+        await this.state.storage.delete('c:' + uidInv);
+        heredado = true;
+        const r = (await this.state.storage.get('ranking')) || [];
+        const fila = r.find(x => x.uid === uidInv);
+        if (fila) { fila.uid = uid; fila.n = nombre; await this.state.storage.put('ranking', r); }
+      }
+    }
     const nuevo = !c;
     if (!c) c = personajeNuevo(uid, nombre);
     c.skins = c.skins || ['comun']; c.armas = c.armas || ['katana']; c.pw = c.pw || {};
@@ -238,9 +254,9 @@ export class MmoWorld {
     s.movT = Date.now(); s.atkT = 0; s.chatT = 0; s.cdPw = {}; s.inv = 0; s.escudo = 0; s.fuego = 0; s.auraT = 0;
     s.sucio = true; s.guardadoT = Date.now(); s.actT = Date.now();
     this.porUid.set(uid, s);
-    if (nuevo) await this.guardar(s);
+    if (nuevo || heredado) await this.guardar(s);
 
-    this.enviar(s, { t: 'bienvenido', id: s.id, yo: this.datosPropios(s), nuevo, regaladas, on: this.contarOnline() });
+    this.enviar(s, { t: 'bienvenido', id: s.id, yo: this.datosPropios(s), nuevo, heredado, regaladas, on: this.contarOnline() });
     this.entrarMapa(s, c.mapa, s.x, true);
     if (!this.bucle) this.bucle = setInterval(() => this.tick(), TICK_MS);
   }

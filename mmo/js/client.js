@@ -7,7 +7,7 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria,
-} from './data.js?v=14';
+} from './data.js?v=15';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -147,9 +147,13 @@ function urlWs() { return (location.protocol === 'https:' ? 'wss://' : 'ws://') 
 function mandar(o) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
 
 async function autenticacion() {
-  if (TG) return { auth: { k: 'tg', d: TG.initData } };
+  // Si hubo partida de invitado en este dispositivo, su token viaja tambien:
+  // la cuenta nueva hereda ese personaje en vez de empezar de cero.
+  const previo = localStorage.getItem('dq_mmo_tok');
+  const inv0 = /^[a-f0-9]{32}$/.test(previo || '') ? previo : undefined;
+  if (TG) return { auth: { k: 'tg', d: TG.initData }, inv: inv0 };
   const tok = await tokenWeb();
-  if (tok) return { auth: { k: 'web', tok } };
+  if (tok) return { auth: { k: 'web', tok }, inv: inv0 };
   let inv = localStorage.getItem('dq_mmo_tok');
   if (!/^[a-f0-9]{32}$/.test(inv || '')) {
     const b = new Uint8Array(16); crypto.getRandomValues(b);
@@ -190,6 +194,7 @@ function recibir(m) {
       $('m-inicio').classList.remove('on');
       pintarHud();
       if (m.nuevo) aviso('¡Bienvenido, ' + yo.nombre + '! Habla con el Guardia Tito si necesitas ayuda.');
+      if (m.heredado) { aviso('☁️ Tu progreso de invitado pasó a tu cuenta.', 'ok'); try { localStorage.removeItem('dq_mmo_tok'); } catch (e) {} }
       if (m.regaladas && m.regaladas.length) aviso('🎁 Skins de tu cuenta desbloqueadas: ' + m.regaladas.map(k => SKINS[k].nombre).join(', '), 'ok');
       break;
     case 'mapa': entrarMapa(m); break;
