@@ -1,0 +1,26 @@
+{
+  "name": "DUENDE QUEST",
+  "short_name": "Duende Quest",
+  "description": "Arcade shooter pixel-art de DUENDE QUEST: sobrevive oleadas, sube de nivel y gana $DUENDE.",
+  "start_url": "/game.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#02020a",
+  "theme_color": "#00ff88",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "/assets/ui/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/ui/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
