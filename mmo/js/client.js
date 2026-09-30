@@ -5,8 +5,8 @@
 // algo (daño, oro, experiencia, compras) lo decide el servidor.
 // ═══════════════════════════════════════════════════════
 import {
-  VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS,
-  statsMonstruo, sueloEn,
+  VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, MISIONES,
+  statsMonstruo, sueloEn, zonaDe,
 } from './data.js';
 
 const $ = id => document.getElementById(id);
@@ -126,7 +126,7 @@ pintarSonido();
 let ws = null, miId = 0, yo = null, mapaId = 'pueblo', conectado = false, reintentos = 0, fatal = false;
 const otros = new Map();   // id -> jugador remoto
 const mons = new Map();    // id -> monstruo
-let textos = [], parts = [], efectos = [], burbujas = new Map();
+let textos = [], parts = [], efectos = [], burbujas = new Map(), monedas = [];
 let jefeVivo = null;
 const cdPoder = {};        // id -> ms fin
 let frame = 0;
@@ -195,6 +195,7 @@ function recibir(m) {
       if (yo.muerto && !(antes && antes.muerto)) morir();
       if (!yo.muerto) $('m-muerte').classList.remove('on');
       pintarHud(); if ($('m-tienda').classList.contains('on')) pintarTienda(); if ($('m-inv').classList.contains('on')) pintarInventario();
+      if ($('m-mision').classList.contains('on')) pintarMision();
       break;
     }
     case 's': snapshot(m); break;
@@ -209,6 +210,7 @@ function recibir(m) {
     }
     case 'at': ataqueRemoto(m); break;
     case 'gana':
+      for (let i = 0; i < Math.min(8, 2 + Math.floor(m.oro / 15)); i++) monedas.push({ x: m.x, y: m.y + 20, vx: (Math.random() - .5) * 5, vy: -4 - Math.random() * 3, t: 0 });
       flotante(m.x, m.y, '+' + m.xp + ' XP', '#00ff88', 10);
       flotante(m.x, m.y + 14, '+' + m.oro + ' oro', '#ffe600', 10);
       if (m.drops && m.drops.length) m.drops.forEach(d => { const pd = PODERES.find(p => p.id === d); if (pd) aviso('🎁 Encontraste: ' + pd.nombre, 'ok'); });
@@ -444,7 +446,7 @@ function interactuar() {
   if (c.tipo === 'portal') { mandar({ t: 'portal', i: c.i }); }
   else if (c.n.tipo === 'tienda') abrirTienda();
   else if (c.n.tipo === 'ranking') abrirRanking();
-  else abrir('m-ayuda');
+  else abrirMision();
 }
 
 // ── ENTRADA ──
@@ -797,6 +799,17 @@ function dibujarEfectos() {
     return true;
   });
   g.globalAlpha = 1;
+  // Monedas que saltan del monstruo y vuelan hacia el duende.
+  monedas = monedas.filter(c => {
+    c.t++;
+    if (c.t > 22) { c.vx += (P.x - c.x) * .012; c.vy += ((P.y - 30) - c.y) * .012; c.vx *= .9; c.vy *= .9; }
+    else { c.vy += .35; if (c.y > SUELO - 4) { c.y = SUELO - 4; c.vy *= -.45; } }
+    c.x += c.vx; c.y += c.vy;
+    if (c.t > 70 || (c.t > 22 && Math.hypot(P.x - c.x, P.y - 30 - c.y) < 14)) return false;
+    const img = IMG.coin;
+    if (img && img.naturalWidth) { const s = 11 * Math.abs(Math.cos(c.t * .25)) + 2; g.drawImage(img, c.x - camX - s / 2, c.y - 6, s, 12); }
+    return true;
+  });
   textos = textos.filter(t => {
     t.t++; t.y -= .7;
     if (t.t > 60) return false;
@@ -854,7 +867,53 @@ function pintarHud() {
   const pxp = yo.xpSig ? Math.floor(yo.xp / yo.xpSig * 100) : 100;
   $('bxp').querySelector('i').style.width = pxp + '%';
   $('h-xp').textContent = 'XP ' + pxp + '%';
+  const q = MISIONES[yo.mis ? yo.mis.i : 0];
+  const hm = $('h-mision');
+  if (!q) { hm.textContent = '📜 ¡Todas las misiones completas!'; hm.className = ''; }
+  else {
+    const lista = yo.mis.p >= q.n;
+    hm.textContent = lista ? '📜 ' + q.nombre + ' ✓ — vuelve con Tito' : '📜 ' + q.nombre + ' ' + yo.mis.p + '/' + q.n;
+    hm.className = lista ? 'lista' : '';
+  }
   pintarPoderes();
+}
+
+// ── MISIONES ──
+function abrirMision() { if (!yo) return; abrir('m-mision'); pintarMision(); }
+function pintarMision() {
+  const i = yo.mis ? yo.mis.i : 0, q = MISIONES[i];
+  const cuerpo = $('mision-cuerpo');
+  if (!q) { cuerpo.innerHTML = '<p class="centro">¡Completaste las ' + MISIONES.length + ' misiones! Eres una leyenda del Pueblo Duende. 👑</p>'; return; }
+  const def = MONSTRUOS[q.tipo];
+  const zona = MAPAS[zonaDe(q.tipo)];
+  const lista = yo.mis.p >= q.n;
+  const extra = q.pw ? ' · ' + Object.entries(q.pw).map(([k, v]) => v + ' ' + PODERES.find(p => p.id === k).nombre).join(', ') : '';
+  const pide = def.jefe ? 'Participa en la caída de <b style="display:inline;color:#fff">' + esc(def.nombre) + '</b>' : 'Derrota ' + q.n + ' × <b style="display:inline;color:#fff">' + esc(def.nombre) + '</b>';
+  cuerpo.innerHTML =
+    '<p>Misión ' + (i + 1) + ' de ' + MISIONES.length + '</p>' +
+    '<div class="mis-caja"><b>' + esc(q.nombre) + '</b>' +
+    '<p>' + pide + ' en ' + esc(zona ? zona.nombre : '?') + ' (Nv ' + def.nivel + ').</p>' +
+    '<div class="mis-barra"><i style="width:' + Math.round(yo.mis.p / q.n * 100) + '%"></i></div>' +
+    '<p>' + yo.mis.p + ' / ' + q.n + '</p>' +
+    '<p style="color:#ffe600">Recompensa: +' + q.xp + ' XP · +' + q.oro + ' oro' + esc(extra) + '</p></div>' +
+    (lista ? '<button class="btn" id="b-entregar" style="width:100%;padding:12px">✅ ENTREGAR MISIÓN</button>' : '<p class="centro">Vuelve cuando la termines.</p>');
+  const b = $('b-entregar');
+  if (b) b.onclick = () => { sfx('boton', .3); mandar({ t: 'mision' }); };
+}
+
+// ── MINIMAPA ──
+const mini = $('mini'), mg = mini.getContext('2d');
+function dibujarMinimapa() {
+  const mp = MAPAS[mapaId];
+  const W = mini.width, H = mini.height, k = (W - 8) / mp.ancho, y = H / 2;
+  mg.clearRect(0, 0, W, H);
+  mg.fillStyle = 'rgba(255,255,255,.12)'; mg.fillRect(4, y - 1, W - 8, 2);
+  mg.strokeStyle = 'rgba(255,255,255,.3)'; mg.lineWidth = 1; mg.strokeRect(4 + camX * k + .5, 2.5, Math.min(W - 8, VW * k), H - 5);
+  for (const p of mp.portales) { mg.fillStyle = '#c084fc'; mg.fillRect(4 + p.x * k - 2, y - 5, 4, 10); }
+  for (const n of (mp.npcs || [])) { mg.fillStyle = '#00ff88'; mg.fillRect(4 + n.x * k - 1.5, y - 2, 3, 4); }
+  for (const o of mons.values()) if (MONSTRUOS[o.k].jefe && !o.muereT) { mg.fillStyle = '#ff3cf0'; mg.beginPath(); mg.arc(4 + o.x * k, y, 4, 0, 7); mg.fill(); }
+  for (const q of otros.values()) { mg.fillStyle = '#00eeff'; mg.fillRect(4 + q.x * k - 1.5, y - 3, 3, 6); }
+  mg.fillStyle = '#ffe600'; mg.fillRect(4 + P.x * k - 2, y - 4, 4, 8);
 }
 function pintarVida() {
   const k = P.maxHp ? P.hp / P.maxHp : 1;
@@ -1009,6 +1068,7 @@ function bucle() {
   frame++;
   fisica();
   dibujar();
+  if (frame % 3 === 0) dibujarMinimapa();
   pintarVida();
   pintarCooldowns();
   requestAnimationFrame(bucle);

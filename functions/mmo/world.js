@@ -13,7 +13,7 @@
 // ═══════════════════════════════════════════════════════
 
 import {
-  MAPAS, MONSTRUOS, statsMonstruo, statsJugador, xpParaSubir, SKINS, ARMAS, PODERES,
+  MAPAS, MONSTRUOS, statsMonstruo, statsJugador, xpParaSubir, SKINS, ARMAS, PODERES, MISIONES,
   ATAQUE_CD_MS, ALCANCE_BASE, COMBO_MULT, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre,
 } from '../../mmo/js/data.js';
 import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery } from '../api/lib.js';
@@ -42,6 +42,7 @@ function personajeNuevo(uid, nombre) {
     skin: 'comun', skins: ['comun'],
     pw: { pocion: 5, escudo: 1, rayo: 1, fuego: 1 },
     kills: 0, jefes: 0, creado: Date.now(),
+    mis: { i: 0, p: 0 },
   };
 }
 
@@ -144,6 +145,7 @@ export class MmoWorld {
       case 'comprar': return this.comprar(s, m);
       case 'equipar': return this.equipar(s, m);
       case 'revivir': return this.revivir(s);
+      case 'mision': return this.mision(s);
       case 'ranking': return this.enviarRanking(s);
       case 'ping': return this.enviar(s, { t: 'pong', ts: m.ts });
     }
@@ -187,6 +189,7 @@ export class MmoWorld {
     const nuevo = !c;
     if (!c) c = personajeNuevo(uid, nombre);
     c.skins = c.skins || ['comun']; c.armas = c.armas || ['katana']; c.pw = c.pw || {};
+    c.mis = c.mis || { i: 0, p: 0 };
     for (const p of PODERES) if (typeof c.pw[p.id] !== 'number') c.pw[p.id] = 0;
     if (!MAPAS[c.mapa]) c.mapa = 'pueblo';
 
@@ -244,7 +247,7 @@ export class MmoWorld {
       nombre: c.nombre, nivel: c.nivel, xp: c.xp, xpSig: xpParaSubir(c.nivel), oro: c.oro,
       hp: Math.ceil(s.hp), maxHp: s.st.maxHp, atk: s.st.atk, def: s.st.def,
       arma: c.arma, armas: c.armas, skin: c.skin, skins: c.skins, pw: c.pw,
-      kills: c.kills, jefes: c.jefes, muerto: s.muerto,
+      kills: c.kills, jefes: c.jefes, muerto: s.muerto, mis: c.mis,
     };
   }
   actualizarYo(s) { this.enviar(s, { t: 'yo', yo: this.datosPropios(s) }); }
@@ -402,28 +405,18 @@ export class MmoWorld {
     }
   }
 
-  dar(s, xp, oro, o) {
+  // Suma experiencia y sube de nivel si toca. Devuelve si subio.
+  sumarXp(s, xp) {
     const c = s.c;
-    c.oro += oro;
-    c.kills++;
-    if (o && o.jefe) c.jefes++;
+    if (c.nivel >= NIVEL_MAX) return false;
     let subio = false;
-    if (c.nivel < NIVEL_MAX) {
-      c.xp += xp;
-      while (c.nivel < NIVEL_MAX && c.xp >= xpParaSubir(c.nivel)) {
-        c.xp -= xpParaSubir(c.nivel);
-        c.nivel++;
-        subio = true;
-      }
-      if (c.nivel >= NIVEL_MAX) c.xp = 0;
+    c.xp += xp;
+    while (c.nivel < NIVEL_MAX && c.xp >= xpParaSubir(c.nivel)) {
+      c.xp -= xpParaSubir(c.nivel);
+      c.nivel++;
+      subio = true;
     }
-    // Drops: pociones y, en jefes, poderes raros.
-    const drops = [];
-    if (Math.random() < 0.05) { c.pw.pocion = Math.min(99, c.pw.pocion + 1); drops.push('pocion'); }
-    if (o && o.jefe) {
-      const r = PODERES[1 + Math.floor(Math.random() * 3)].id;
-      c.pw[r] = Math.min(99, c.pw[r] + 1); drops.push(r);
-    }
+    if (c.nivel >= NIVEL_MAX) c.xp = 0;
     if (subio) {
       s.st = statsJugador(c.nivel, c.skin);
       s.hp = s.st.maxHp;
@@ -431,9 +424,49 @@ export class MmoWorld {
       this.actualizarRanking(s);
       this.guardar(s);
     }
+    return subio;
+  }
+
+  dar(s, xp, oro, o) {
+    const c = s.c;
+    c.oro += oro;
+    c.kills++;
+    if (o && o.jefe) c.jefes++;
+    this.sumarXp(s, xp);
+    // Drops: pociones y, en jefes, poderes raros.
+    const drops = [];
+    if (Math.random() < 0.05) { c.pw.pocion = Math.min(99, c.pw.pocion + 1); drops.push('pocion'); }
+    if (o && o.jefe) {
+      const r = PODERES[1 + Math.floor(Math.random() * 3)].id;
+      c.pw[r] = Math.min(99, c.pw[r] + 1); drops.push(r);
+    }
+    // Mision en curso: cuenta si el monstruo es el que pide.
+    const q = MISIONES[c.mis.i];
+    if (o && q && o.k === q.tipo && c.mis.p < q.n) {
+      c.mis.p++;
+      if (c.mis.p === q.n) this.enviar(s, { t: 'toast', m: `📜 ¡"${q.nombre}" cumplida! Vuelve con el Guardia Tito del pueblo.`, ok: true });
+    }
     s.sucio = true;
     this.enviar(s, { t: 'gana', xp, oro, drops, x: Math.round(o ? o.x : s.x), y: Math.round(o ? o.y - o.h : s.y - 60) });
     this.actualizarYo(s);
+  }
+
+  // Entregar la mision al Guardia Tito.
+  mision(s) {
+    const c = s.c;
+    const npc = MAPAS.pueblo.npcs.find(n => n.tipo === 'guia');
+    if (c.mapa !== 'pueblo' || !npc || Math.abs(s.x - npc.x) > 200) return this.enviar(s, { t: 'toast', m: 'Habla con el Guardia Tito en el pueblo.' });
+    const q = MISIONES[c.mis.i];
+    if (!q) return this.enviar(s, { t: 'toast', m: 'Ya completaste todas las misiones. ¡Eres una leyenda del Pueblo Duende!' });
+    if (c.mis.p < q.n) return this.enviar(s, { t: 'toast', m: `Todavía te faltan ${q.n - c.mis.p} para "${q.nombre}".` });
+    c.oro += q.oro;
+    for (const k in (q.pw || {})) c.pw[k] = Math.min(99, (c.pw[k] || 0) + q.pw[k]);
+    c.mis = { i: c.mis.i + 1, p: 0 };
+    this.sumarXp(s, q.xp);
+    this.enviar(s, { t: 'toast', m: `✅ Recompensa: +${q.xp} XP · +${q.oro} oro`, ok: true });
+    this.enviar(s, { t: 'gana', xp: q.xp, oro: q.oro, drops: Object.keys(q.pw || {}), x: Math.round(s.x), y: Math.round(s.y - 80) });
+    this.actualizarYo(s);
+    this.guardar(s);
   }
 
   herir(s, dmg, fuente) {

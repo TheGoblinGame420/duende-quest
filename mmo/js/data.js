@@ -137,6 +137,38 @@ export const PODERES = [
   { id: 'fuego',  nombre: 'Fuego',   icono: 'skill_fire',  precio: 200, cd: 20000, desc: 'Golpes de fuego (+50%) por 8 s' },
 ];
 
+// ── MISIONES ──
+// Una cadena que recorre el mundo en orden: cada zona pide cazar a sus
+// criaturas y cierra con su jefe. Se aceptan y entregan al Guardia Tito del
+// pueblo. La recompensa ronda lo que da la propia caza, asi que se nota
+// pero no reemplaza a jugar.
+export const MISIONES = [
+  { nombre: 'Limpieza nocturna',        tipo: 'goblin_normal',     n: 8,  xp: 60,    oro: 80 },
+  { nombre: 'Huesos inquietos',         tipo: 'esqueleto',         n: 10, xp: 130,   oro: 150 },
+  { nombre: 'Cazador de sombras',       tipo: 'goblin_assassin',   n: 8,  xp: 170,   oro: 200, pw: { pocion: 3 } },
+  { nombre: 'Aullido infernal',         tipo: 'jefe_sabueso',      n: 1,  xp: 500,   oro: 600, pw: { escudo: 2 } },
+  { nombre: 'Campesinos rebeldes',      tipo: 'goblin_peasant',    n: 10, xp: 280,   oro: 330 },
+  { nombre: 'La guardia roja',          tipo: 'goblin_guard',      n: 10, xp: 330,   oro: 380 },
+  { nombre: 'Plumas de hueso',          tipo: 'pajaro',            n: 8,  xp: 340,   oro: 400, pw: { fuego: 1 } },
+  { nombre: 'La corona del caballero',  tipo: 'jefe_caballero',    n: 1,  xp: 1200,  oro: 1400, pw: { rayo: 2 } },
+  { nombre: 'Esporas gigantes',         tipo: 'hongo',             n: 10, xp: 500,   oro: 560 },
+  { nombre: 'Coro de la charca',        tipo: 'rana',              n: 10, xp: 550,   oro: 600 },
+  { nombre: 'Tambores de guerra',       tipo: 'goblin_battlelord', n: 8,  xp: 560,   oro: 650, pw: { pocion: 5 } },
+  { nombre: 'El Señor de la Guerra',    tipo: 'jefe_senor',        n: 1,  xp: 2500,  oro: 2800, pw: { escudo: 2, rayo: 1 } },
+  { nombre: 'Magia prohibida',          tipo: 'goblin_mage',       n: 10, xp: 700,   oro: 800 },
+  { nombre: 'Huesos arcanos',           tipo: 'esqueleto_arcano',  n: 10, xp: 760,   oro: 860 },
+  { nombre: 'Fuego que camina',         tipo: 'ghoul_ardiente',    n: 8,  xp: 700,   oro: 900, pw: { fuego: 2 } },
+  { nombre: 'El Ghoul Infernal',        tipo: 'jefe_ghoul',        n: 1,  xp: 4000,  oro: 4500, pw: { rayo: 2, escudo: 2 } },
+  { nombre: 'Filo del desierto',        tipo: 'goblin_samurai',    n: 10, xp: 900,   oro: 1100 },
+  { nombre: 'Escamas al sol',           tipo: 'lagarto',           n: 10, xp: 950,   oro: 1150 },
+  { nombre: 'Conejos salvajes',         tipo: 'conejo',            n: 10, xp: 1000,  oro: 1200, pw: { pocion: 10 } },
+  { nombre: 'La caída del Ángel',       tipo: 'jefe_angel',        n: 1,  xp: 8000,  oro: 10000, pw: { rayo: 3, escudo: 3, fuego: 3 } },
+];
+export function zonaDe(tipoMonstruo) {
+  for (const id in MAPAS) if (MAPAS[id].monstruos && (MAPAS[id].monstruos.includes(tipoMonstruo) || MAPAS[id].jefe === tipoMonstruo)) return id;
+  return null;
+}
+
 // ── MAPAS ──
 // plataformas: [x, y, ancho] (y = cara superior). portales: x del centro.
 export const MAPAS = {
