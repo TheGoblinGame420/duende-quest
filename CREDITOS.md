@@ -359,6 +359,59 @@ vez más como colapso.
   en `recursos/` para una tanda futura con más margen para diseñar y probar
   un ataque propio.
 
+## Segundo jefe con silueta propia: sabueso infernal
+
+**Hell Hound Sprite Animation** — Luis Zuno (ansimuz). Licencia CC0.
+https://ansimuz.itch.io/hell-hound-sprite-animation
+
+Hasta esta tanda, de los 5 jefes de la campaña (uno por bioma) solo el
+**ángel** (arriba) tenía silueta propia — los otros 4 seguían siendo el
+mismo `oso` reciclado con un tinte de color por bioma. Este es el segundo:
+al revés que el ángel (jefe FINAL, etapa 5-3), el sabueso reemplaza al oso
+en la **primera** etapa con jefe de toda la campaña (1-3, **NOCHE
+VIOLETA**) — la campaña ahora abre y cierra con un jefe propio, y las 3
+etapas del medio (amanecer, selva, tormenta) siguen con el oso reciclado.
+
+Descargado con el link "No thanks, just take me to the downloads" ($0, sin
+pago obligatorio). El texto de la página de itch.io ya era permisivo ("You
+may use these assets in personal or commercial projects. You may modify
+these assets... Credit is not required but appreciated it"), pero el propio
+zip trae su licencia (`public-license.pdf`, ver
+`recursos/enemigos/ansimuz-hell-hound/`) y es **más explícita todavía**:
+confirma CC0 sin ambigüedad ("no restrictions on use, modification, or
+redistribution"). Se descartaron antes dos candidatos de otro autor
+(MonoPixelArt: "Mecha-Stone Golem" y "2D Pixel Art Golems Pack") por
+prohibir explícitamente modificar o redistribuir — este es CC0 real, sin
+esa restricción.
+
+Medido con PIL (bbox del canal alfa, nunca el nombre del archivo ni el
+tamaño total del PNG): 4 tiras sueltas (`idle`, `walk`, `run`, `jump`), cada
+una con su propia rejilla de celda uniforme. `tools/generar_hellhound_cc0.py`
+usa `run` (5 frames, 67×32, ya anclado al borde inferior) como movimiento y
+recorta por bbox 2 poses de `jump` (mandíbula abierta hacia atrás +
+embestida hacia adelante) como golpe, reusando la primera como pose de
+colapso — el pack tampoco trae daño ni muerte propios (hasta un comentario
+en la página de descarga lo admite: "you only miss the death here"). Visto
+en grande (renders ×6–×10 con PIL antes de escribir el empaquetador final,
+no solo el nombre del pack): silueta de perro esquelético oscuro con
+grietas de lava naranja y ojos celestes brillantes — se leía claramente
+como criatura de JEFE, no como un reskin más del bestiario normal.
+
+`assets/enemigos/sheets/hellhound.png`, entrada `hellhound` en `SHEETS` y
+`JEFES` (`js/engine.js`). `altoObjetivo: 110` (entre el 70 del bestiario
+normal y el 130 del ángel, jefe final) — "intermedio", como pide un jefe de
+apertura y no de cierre. Es un cuadrúpedo (ancho > alto): `drawSheet()`
+escala igual ambos ejes, así que en pantalla queda un sabueso largo y bajo
+en vez de una figura vertical como oso/ángel — encaja con la silueta real
+de un perro en vez de forzarlo a verse "alto". HP/ataques copiados
+literales de `JEFES.oso` (mismo `hp: 70`, mismo repertorio
+`embestida`/`salto`/`rocas`): el objetivo era dar sprite propio al primer
+jefe sin tocar una dificultad ya afinada, no rebalancearlo.
+
+`bestiarioTotal()`/`markBestiaSeen()` excluyen `hellhound` igual que
+`angel` (ninguno de los dos jefes se cuenta para el logro "descubre todo
+el bestiario": ambos tienen su propio logro de campaña).
+
 ## Packs descargados y aún sin integrar
 
 `recursos/` guarda más packs CC0 sin integrar del todo (mapas Tiled, un jefe

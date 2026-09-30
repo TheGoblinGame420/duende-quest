@@ -105,6 +105,7 @@ const IMG = {
   sh_pajaro: _AB + 'enemigos/sheets/pajaro.png',
   sh_angel: _AB + 'enemigos/sheets/angel.png',
   sh_conejo: _AB + 'enemigos/sheets/conejo.png',
+  sh_hellhound: _AB + 'enemigos/sheets/hellhound.png',
   coin: _AB + 'ui/coin.png',
   item_potion: _AB + 'items/item_potion.png',
   item_shield: _AB + 'items/item_shield.png',
@@ -605,6 +606,27 @@ const SHEETS = {
   conejo: {
     fw: 34, fh: 44, idealAltoPx: 38, altoObjetivo: 70,
     filaMov: 0, colMovIni: 0, nMov: 6,
+    filaGolpe: 1, colGolpeIni: 0, nGolpe: 2,
+    colMuerteIni: 2, nMuerte: 1,
+  },
+  // Segundo JEFE con silueta propia (Hell Hound Sprite Animation, ansimuz,
+  // CC0 — ver tools/generar_hellhound_cc0.py), al reves que el angel: este
+  // reemplaza al oso reciclado en la PRIMERA etapa con jefe de la campaña
+  // (1-3, NOCHE VIOLETA) en vez de en la ultima. altoObjetivo=110 (entre el
+  // 70 del bestiario normal y el 130 del angel, jefe final): "intermedio",
+  // como pide un jefe de campaña que no es el cierre. Celda 67x39 mas ancha
+  // que alta (perro a cuatro patas, no bipedo como oso/angel): drawSheet()
+  // escala igual ambos ejes por el mismo factor, asi que en pantalla queda
+  // un sabueso largo y bajo en vez de una figura alta — encaja con la
+  // silueta real de un perro, no hace falta forzarlo a verse "alto".
+  // Sin daño/muerte propios (ni el pack los trae — un comentario de la
+  // pagina de descarga lo admite: "you only miss the death here"): golpe
+  // recorta por bbox 2 poses de "jump" (mandibula abierta hacia atras +
+  // embestida hacia adelante) y muerte reusa la primera (nMuerte=1) como
+  // aullido de colapso.
+  hellhound: {
+    fw: 67, fh: 39, idealAltoPx: 39, altoObjetivo: 110,
+    filaMov: 0, colMovIni: 0, nMov: 5,
     filaGolpe: 1, colGolpeIni: 0, nGolpe: 2,
     colMuerteIni: 2, nMuerte: 1,
   },
@@ -1446,6 +1468,20 @@ const JEFES = {
     ataques: ['salto', 'rocas'], ataquesF2: ['salto', 'rocas', 'embestida'],
     aviso: { embestida: 50, salto: 50, rocas: 55 }, pausa: [65, 42],
   },
+  // Segundo jefe con silueta propia (Hell Hound, ansimuz, CC0 — ver
+  // tools/generar_hellhound_cc0.py). Al reves que el angel (jefe FINAL,
+  // etapa 5-3): este reemplaza al oso reciclado en la PRIMERA etapa con
+  // jefe (1-3, NOCHE VIOLETA — ver LEVELS), asi que ESTILO_JEFE[0] (vacio,
+  // {}) no le pisa nada: usa su propio ataques/ataquesF2/aviso/pausa de
+  // abajo tal cual. Se copian LITERAL de JEFES.oso (mismo hp tambien, 70 +
+  // bi*20 con bi=0 = 70 sin cambio) a proposito: el objetivo de esta tanda
+  // era darle sprite propio al primer jefe sin tocar su dificultad ya
+  // afinada, no rebalancearlo.
+  hellhound: {
+    nombre: 'SABUESO INFERNAL', hp: 70, w: 130, h: 90, fase2: .5,
+    ataques: ['embestida', 'salto'], ataquesF2: ['embestida', 'salto', 'rocas'],
+    aviso: { embestida: 50, salto: 45, rocas: 60 }, pausa: [70, 45],
+  },
 };
 // Un nombre por bioma, en el orden del array BIOMES. Lo pisa el 4to
 // parametro de spawnJefe cuando el nivel trae su propio nombre (asi el
@@ -2226,7 +2262,7 @@ function biomesSeen() {
 // jugador dificilmente las ve todas en una sola sesion. No cuenta al angel
 // (el logro de campaña ya lo cubre por separado).
 function markBestiaSeen(sheetName) {
-  if (!sheetName || sheetName === 'angel') return;
+  if (!sheetName || sheetName === 'angel' || sheetName === 'hellhound') return;
   try {
     const seen = JSON.parse(localStorage.getItem('dq_bestiario') || '[]');
     if (!seen.includes(sheetName)) {
@@ -2239,7 +2275,7 @@ function markBestiaSeen(sheetName) {
 function bestiarioSeen() {
   try { return JSON.parse(localStorage.getItem('dq_bestiario') || '[]').length; } catch (e) { return 0; }
 }
-function bestiarioTotal() { return Object.keys(SHEETS).length - 1; } // -1: angel no cuenta, tiene su propio logro
+function bestiarioTotal() { return Object.keys(SHEETS).length - 2; } // -2: angel y hellhound no cuentan, son jefes con logro propio
 function currentBiome() { return nivel ? BIOMES[nivel.bioma] : BIOMES[Math.floor((wave - 1) / 3) % BIOMES.length]; }
 
 // ══ CAMPAÑA: 5 biomas × 3 etapas ══
@@ -2265,8 +2301,14 @@ BIOMES.forEach((b, bi) => {
   LEVELS.push({ id: (bi + 1) + '-2', bioma: bi, oleadas: 3, vel: vel + .2, pool, elite: .05 + bi * .05, dens, tope: tope + 1 });
   // El ultimo bioma (DESIERTO DORADO, bi 4) es el cierre de las 15 etapas:
   // en vez de otro oso reciclado, el angel — primer jefe con silueta propia.
+  // El PRIMER bioma (NOCHE VIOLETA, bi 0) recibe el segundo jefe con silueta
+  // propia, el sabueso infernal (ver tools/generar_hellhound_cc0.py): al
+  // reves que el angel, en vez del cierre es la apertura — la campaña
+  // arranca y termina con un jefe propio, y los 3 del medio (amanecer,
+  // selva, tormenta) siguen con el oso reciclado.
   const esFinal = bi === BIOMES.length - 1;
-  LEVELS.push({ id: (bi + 1) + '-3', bioma: bi, oleadas: 1, vel: vel + .2, pool, elite: .05 + bi * .05, dens: dens + .15, tope, jefe: { tipo: esFinal ? 'angel' : 'oso', hp: bi * 20 } });
+  const esNoche = bi === 0;
+  LEVELS.push({ id: (bi + 1) + '-3', bioma: bi, oleadas: 1, vel: vel + .2, pool, elite: .05 + bi * .05, dens: dens + .15, tope, jefe: { tipo: esFinal ? 'angel' : (esNoche ? 'hellhound' : 'oso'), hp: bi * 20 } });
 });
 
 function leerCampana() {
