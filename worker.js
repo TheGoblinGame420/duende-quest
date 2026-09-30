@@ -49,6 +49,16 @@ export default {
     // TON Connect: las wallets externas (Tonkeeper, etc.) leen el manifiesto
     // desde su propio origen; sin CORS aqui la conexion fallaba en silencio.
     if (path === '/tonconnect-manifest.json') headers.set('Access-Control-Allow-Origin', '*');
+    // Imagenes/audio bajo assets/ no tienen nombre de archivo con hash, asi que
+    // no se puede cachear "para siempre": si se regenera un PNG con el mismo
+    // nombre (ya paso con telegram_app_banner.png), un cache eterno serviria la
+    // version vieja. 1 dia es un punto medio real: en una sesion de juego con
+    // 19 hojas de sprites, el jugador deja de re-pedir y re-validar cada una en
+    // cada recarga, y una actualizacion tarda como mucho 24h en notarse en vez
+    // de nunca cachearse (el resto de rutas, HTML/JS/manifest, se despliega
+    // varias veces por hora y sigue sin cache para no dejar a nadie con una
+    // version vieja del motor del juego).
+    if (path.startsWith('/assets/')) headers.set('Cache-Control', 'public, max-age=86400, stale-while-revalidate=3600');
     return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
   },
 
