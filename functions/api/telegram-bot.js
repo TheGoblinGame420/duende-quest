@@ -201,6 +201,13 @@ async function handleReferral(token, env, referrerId, newUser) {
   if (String(referrerId) === String(newUser.id)) return;
   try {
     if (!/^\d{1,15}$/.test(String(referrerId))) return;
+    // Tope por referente: sin esto, una sola persona podia crear cuentas de
+    // Telegram desechables en cadena y drenar el suministro de $DUENDE sin
+    // limite (500 DQ por cada una, sin verificacion de identidad posible).
+    // 20 referidos reales ya es generosidad de sobra para crecimiento organico;
+    // pasado eso se corta el bono (la cuenta nueva igual puede jugar normal).
+    const yaReferidos = await supabaseQuery(env, `referrals?referrer_tg_id=eq.${referrerId}&select=id&limit=20`);
+    if (Array.isArray(yaReferidos) && yaReferidos.length >= 20) return;
     const existing = await supabaseQuery(env, `referrals?referred_tg_id=eq.${newUser.id}&select=id`);
     if (Array.isArray(existing) && existing.length > 0) return;
     // El INSERT es el cerrojo (indice UNIQUE en referred_tg_id, sql/02-seguridad.sql):
