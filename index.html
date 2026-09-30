@@ -25,7 +25,7 @@
   --dark:#02020a;--card:rgba(255,255,255,0.04);
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-html{scroll-behavior:smooth;}
+html{scroll-behavior:smooth;overflow-x:hidden;}
 body{
   background:var(--dark);color:#fff;
   font-family:'Space Mono',monospace;
@@ -621,6 +621,8 @@ footer{
   .rm-row{grid-template-columns:1fr;}
   .rm-c{display:none;}
   .rm-l{text-align:left;}
+  .tgrid{grid-template-columns:repeat(2,1fr) !important;}
+  footer{padding-bottom:7rem;}
 }
 /* ── LIVE PRICE PILL ── */
 @keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,255,136,.6)}50%{opacity:.8;box-shadow:0 0 0 4px rgba(0,255,136,0)}}

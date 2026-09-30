@@ -51,7 +51,7 @@ body{display:flex;flex-direction:column;align-items:center;justify-content:cente
 .slot.active-fx{border-color:#00ff88;box-shadow:0 0 12px rgba(0,255,136,.6);}
 
 /* ── OVERLAYS ── */
-.ov{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,10,.92);z-index:20;padding:1rem;}
+.ov{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,10,.92);z-index:20;padding:1rem;overflow-y:auto;}
 .ov.show{display:flex;}
 .ov-title{font-size:clamp(.9rem,3vw,1.8rem);margin-bottom:.8rem;text-shadow:3px 3px 0 #000;}
 .ov-sub{font-size:.4rem;color:rgba(255,255,255,.4);margin-bottom:1.5rem;letter-spacing:.1em;line-height:2.2;text-align:center;}
