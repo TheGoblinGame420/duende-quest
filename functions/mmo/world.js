@@ -13,7 +13,7 @@
 // ═══════════════════════════════════════════════════════
 
 import {
-  MAPAS, MONSTRUOS, statsMonstruo, statsJugador, xpParaSubir, SKINS, ARMAS, PODERES, MISIONES,
+  MAPAS, MONSTRUOS, statsMonstruo, statsJugador, xpParaSubir, SKINS, ARMAS, PODERES, MISIONES, DIARIA, premioDiaria, hoyUTC,
   ATAQUE_CD_MS, ALCANCE_BASE, COMBO_MULT, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre,
 } from '../../mmo/js/data.js';
 import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery } from '../api/lib.js';
@@ -147,7 +147,7 @@ export class MmoWorld {
       case 'comprar': return this.comprar(s, m);
       case 'equipar': return this.equipar(s, m);
       case 'revivir': return this.revivir(s);
-      case 'mision': return this.mision(s);
+      case 'mision': return this.mision(s, m);
       case 'ranking': return this.enviarRanking(s);
       case 'ping': return this.enviar(s, { t: 'pong', ts: m.ts });
     }
@@ -243,9 +243,17 @@ export class MmoWorld {
     return [];
   }
 
+  diariaDe(c) {
+    const hoy = hoyUTC();
+    if (!c.diaria || c.diaria.d !== hoy) c.diaria = { d: hoy, p: 0, ok: false };
+    return c.diaria;
+  }
+
   datosPropios(s) {
     const c = s.c;
+    this.diariaDe(c);
     return {
+      diaria: c.diaria,
       nombre: c.nombre, nivel: c.nivel, xp: c.xp, xpSig: xpParaSubir(c.nivel), oro: c.oro,
       hp: Math.ceil(s.hp), maxHp: s.st.maxHp, atk: s.st.atk, def: s.st.def,
       arma: c.arma, armas: c.armas, skin: c.skin, skins: c.skins, pw: c.pw,
@@ -452,6 +460,12 @@ export class MmoWorld {
       const r = PODERES[1 + Math.floor(Math.random() * 3)].id;
       c.pw[r] = Math.min(99, c.pw[r] + 1); drops.push(r);
     }
+    // Diaria: monstruos de su nivel o hasta 5 por debajo.
+    const d = this.diariaDe(c);
+    if (o && !d.ok && d.p < DIARIA.n && MONSTRUOS[o.k].nivel >= c.nivel - 5) {
+      d.p++;
+      if (d.p === DIARIA.n) this.enviar(s, { t: 'toast', m: `📅 ¡"${DIARIA.nombre}" cumplida! Cóbrala con el Guardia Tito.`, ok: true });
+    }
     // Mision en curso: cuenta si el monstruo es el que pide.
     const q = MISIONES[c.mis.i];
     if (o && q && o.k === q.tipo && c.mis.p < q.n) {
@@ -463,11 +477,26 @@ export class MmoWorld {
     this.actualizarYo(s);
   }
 
-  // Entregar la mision al Guardia Tito.
-  mision(s) {
+  // Entregar la mision (o la diaria) al Guardia Tito.
+  mision(s, m) {
     const c = s.c;
     const npc = MAPAS.pueblo.npcs.find(n => n.tipo === 'guia');
     if (c.mapa !== 'pueblo' || !npc || Math.abs(s.x - npc.x) > 200) return this.enviar(s, { t: 'toast', m: 'Habla con el Guardia Tito en el pueblo.' });
+    if (m && m.diaria) {
+      const d = this.diariaDe(c);
+      if (d.ok) return this.enviar(s, { t: 'toast', m: 'Ya cobraste la de hoy. ¡Vuelve mañana!' });
+      if (d.p < DIARIA.n) return this.enviar(s, { t: 'toast', m: `Te faltan ${DIARIA.n - d.p} monstruos para la caza del día.` });
+      const pr = premioDiaria(c.nivel);
+      d.ok = true;
+      c.oro += pr.oro;
+      c.pw.pocion = Math.min(99, (c.pw.pocion || 0) + pr.pocion);
+      this.sumarXp(s, pr.xp);
+      this.enviar(s, { t: 'toast', m: `✅ Caza del día: +${pr.xp} XP · +${pr.oro} oro · +${pr.pocion} pociones`, ok: true });
+      this.enviar(s, { t: 'gana', xp: pr.xp, oro: pr.oro, drops: [], x: Math.round(s.x), y: Math.round(s.y - 80) });
+      this.actualizarYo(s);
+      this.guardar(s);
+      return;
+    }
     const q = MISIONES[c.mis.i];
     if (!q) return this.enviar(s, { t: 'toast', m: 'Ya completaste todas las misiones. ¡Eres una leyenda del Pueblo Duende!' });
     if (c.mis.p < q.n) return this.enviar(s, { t: 'toast', m: `Todavía te faltan ${q.n - c.mis.p} para "${q.nombre}".` });
@@ -662,10 +691,13 @@ export class MmoWorld {
 
     if (mapa.zona) {
       // Reponer monstruos poco a poco (no todos de golpe).
+      // Mas jugadores en la zona, mas monstruos (hasta el doble), para que no
+      // se queden esperando reapariciones peleandose por los mismos.
+      const max = Math.min(mapa.max * 2, mapa.max + 4 * (jugadores.length - 1));
       const vivos = [...w.mons.values()].filter(m => !m.jefe).length;
-      if (vivos < mapa.max && ahora >= w.spawnEn) {
+      if (vivos < max && ahora >= w.spawnEn) {
         this.crearMonstruo(mapaId, mapa.monstruos[Math.floor(Math.random() * mapa.monstruos.length)]);
-        w.spawnEn = ahora + (vivos < mapa.max / 2 ? 700 : 2500);
+        w.spawnEn = ahora + (vivos < max / 2 ? 700 : 2500);
       }
       if (mapa.jefe && w.jefeEn && ahora >= w.jefeEn && ![...w.mons.values()].some(m => m.jefe)) {
         w.jefeEn = 0;

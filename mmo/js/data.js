@@ -164,6 +164,13 @@ export const MISIONES = [
   { nombre: 'Conejos salvajes',         tipo: 'conejo',            n: 10, xp: 1000,  oro: 1200, pw: { pocion: 10 } },
   { nombre: 'La caída del Ángel',       tipo: 'jefe_angel',        n: 1,  xp: 8000,  oro: 10000, pw: { rayo: 3, escudo: 3, fuego: 3 } },
 ];
+// Mision diaria repetible (se reinicia cada dia UTC). Solo cuentan monstruos
+// de tu nivel o hasta 5 por debajo, para que no se cumpla farmeando la
+// primera zona con un personaje alto.
+export const DIARIA = { nombre: 'Caza del día', n: 25 };
+export function premioDiaria(nivel) { return { xp: Math.round(xpParaSubir(nivel) * 0.3), oro: 40 * nivel, pocion: 3 }; }
+export const hoyUTC = () => new Date(Date.now()).toISOString().slice(0, 10);
+
 export function zonaDe(tipoMonstruo) {
   for (const id in MAPAS) if (MAPAS[id].monstruos && (MAPAS[id].monstruos.includes(tipoMonstruo) || MAPAS[id].jefe === tipoMonstruo)) return id;
   return null;

@@ -5,9 +5,9 @@
 // algo (daño, oro, experiencia, compras) lo decide el servidor.
 // ═══════════════════════════════════════════════════════
 import {
-  VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, MISIONES,
-  statsMonstruo, sueloEn, zonaDe,
-} from './data.js?v=8';
+  VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, MISIONES, DIARIA,
+  statsMonstruo, sueloEn, zonaDe, premioDiaria,
+} from './data.js?v=9';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -252,7 +252,7 @@ function recibir(m) {
       break;
     case 'on': online = m.n; pintarSubMapa(); break;
     case 'toast': aviso(m.m, m.ok ? 'ok' : ''); break;
-    case 'aviso': aviso(m.m, 'jefe'); lineaChat(null, m.m); break;
+    case 'aviso': aviso(m.m, 'jefe'); lineaChat(null, m.m); sfx('explosion', .3); break;
     case 'snap': P.x = m.x; P.y = m.y; P.vx = 0; P.vy = 0; break;
     case 'ranking': pintarRanking(m.r); break;
     case 'err':
@@ -262,7 +262,9 @@ function recibir(m) {
   }
 }
 
+let fundido = 0;
 function entrarMapa(m) {
+  if (m.mapa !== mapaId) fundido = 1;
   mapaId = m.mapa;
   otros.clear(); mons.clear(); efectos = []; textos = []; burbujas.clear(); jefeVivo = null;
   P.x = m.x; P.y = SUELO; P.vx = 0; P.vy = 0; P.suelo = true;
@@ -652,7 +654,8 @@ function dibujarNPCs(mp) {
     if (n.tipo === 'guia') {
       // ❗ cuando hay una mision lista para entregar, como la bombilla de MapleStory.
       const q = yo && MISIONES[yo.mis.i];
-      const lista = q && yo.mis.p >= q.n;
+      const dia = yo && yo.diaria;
+      const lista = (q && yo.mis.p >= q.n) || (dia && !dia.ok && dia.p >= DIARIA.n);
       g.font = (lista ? 18 : 14) + 'px sans-serif'; g.textAlign = 'center';
       g.fillText(lista ? '❗' : '❔', x, SUELO - 90 + Math.sin(frame * (lista ? .25 : .1)) * 3);
     }
@@ -853,6 +856,8 @@ function dibujar() {
   if (yo) dibujarDuende(P, true);
   dibujarEfectos();
   g.restore();
+  // Fundido al cruzar un portal.
+  if (fundido > 0) { g.fillStyle = `rgba(7,3,15,${fundido})`; g.fillRect(0, 0, cv.width, cv.height); fundido = Math.max(0, fundido - .05); }
   // Barra del jefe
   if (jefeVivo && !jefeVivo.muereT) {
     $('jefe-bar').style.display = 'block';
@@ -883,7 +888,11 @@ function pintarHud() {
   $('h-xp').textContent = 'XP ' + pxp + '%';
   const q = MISIONES[yo.mis ? yo.mis.i : 0];
   const hm = $('h-mision');
-  if (!q) { hm.textContent = '📜 ¡Todas las misiones completas!'; hm.className = ''; }
+  if (!q) {
+    const d = yo.diaria || { p: 0, ok: false };
+    hm.textContent = d.ok ? '📅 Caza del día ✓ — vuelve mañana' : '📅 ' + DIARIA.nombre + ' ' + Math.min(d.p, DIARIA.n) + '/' + DIARIA.n;
+    hm.className = !d.ok && d.p >= DIARIA.n ? 'lista' : '';
+  }
   else {
     const lista = yo.mis.p >= q.n;
     hm.textContent = lista ? '📜 ' + q.nombre + ' ✓ — vuelve con Tito' : '📜 ' + q.nombre + ' ' + yo.mis.p + '/' + q.n;
@@ -894,10 +903,22 @@ function pintarHud() {
 
 // ── MISIONES ──
 function abrirMision() { if (!yo) return; abrir('m-mision'); pintarMision(); }
+function cajaDiaria() {
+  const d = yo.diaria || { p: 0, ok: false };
+  const pr = premioDiaria(yo.nivel);
+  const lista = d.p >= DIARIA.n && !d.ok;
+  return '<div class="mis-caja" style="border-color:rgba(0,238,255,.35)"><b>📅 ' + esc(DIARIA.nombre) + '</b>' +
+    '<p>Derrota ' + DIARIA.n + ' monstruos de tu nivel (o hasta 5 por debajo). Se renueva cada día.</p>' +
+    '<div class="mis-barra"><i style="width:' + Math.round(Math.min(1, d.p / DIARIA.n) * 100) + '%;background:linear-gradient(90deg,#00eeff,#00ff88)"></i></div>' +
+    '<p>' + Math.min(d.p, DIARIA.n) + ' / ' + DIARIA.n + (d.ok ? ' · ✓ cobrada hoy' : '') + '</p>' +
+    '<p style="color:#ffe600">Recompensa: +' + pr.xp + ' XP · +' + pr.oro + ' oro · +' + pr.pocion + ' pociones</p>' +
+    (lista ? '<button class="btn" id="b-diaria" style="width:100%;padding:10px;margin-top:6px">✅ COBRAR CAZA DEL DÍA</button>' : '') + '</div>';
+}
 function pintarMision() {
   const i = yo.mis ? yo.mis.i : 0, q = MISIONES[i];
   const cuerpo = $('mision-cuerpo');
-  if (!q) { cuerpo.innerHTML = '<p class="centro">¡Completaste las ' + MISIONES.length + ' misiones! Eres una leyenda del Pueblo Duende. 👑</p>'; return; }
+  const conectarDiaria = () => { const b = $('b-diaria'); if (b) b.onclick = () => { sfx('boton', .3); mandar({ t: 'mision', diaria: true }); }; };
+  if (!q) { cuerpo.innerHTML = '<p class="centro">¡Completaste las ' + MISIONES.length + ' misiones! Eres una leyenda del Pueblo Duende. 👑</p>' + cajaDiaria(); conectarDiaria(); return; }
   const def = MONSTRUOS[q.tipo];
   const zona = MAPAS[zonaDe(q.tipo)];
   const lista = yo.mis.p >= q.n;
@@ -910,9 +931,11 @@ function pintarMision() {
     '<div class="mis-barra"><i style="width:' + Math.round(yo.mis.p / q.n * 100) + '%"></i></div>' +
     '<p>' + yo.mis.p + ' / ' + q.n + '</p>' +
     '<p style="color:#ffe600">Recompensa: +' + q.xp + ' XP · +' + q.oro + ' oro' + esc(extra) + '</p></div>' +
-    (lista ? '<button class="btn" id="b-entregar" style="width:100%;padding:12px">✅ ENTREGAR MISIÓN</button>' : '<p class="centro">Vuelve cuando la termines.</p>');
+    (lista ? '<button class="btn" id="b-entregar" style="width:100%;padding:12px">✅ ENTREGAR MISIÓN</button>' : '<p class="centro">Vuelve cuando la termines.</p>') +
+    cajaDiaria();
   const b = $('b-entregar');
   if (b) b.onclick = () => { sfx('boton', .3); mandar({ t: 'mision' }); };
+  conectarDiaria();
 }
 
 // ── MINIMAPA ──
