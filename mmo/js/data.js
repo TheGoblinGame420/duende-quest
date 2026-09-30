@@ -180,15 +180,15 @@ export function zonaDe(tipoMonstruo) {
 // plataformas: [x, y, ancho] (y = cara superior). portales: x del centro.
 export const MAPAS = {
   pueblo: {
-    nombre: 'Pueblo Duende', fondo: 'amanecer2', ancho: 1900, zona: false,
+    nombre: 'Pueblo Duende', fondo: 'amanecer2', ancho: 2150, zona: false,
     paleta: { cielo: ['#1a0b2e', '#3a1a3a'], suelo: '#1c1426', linea: '#ffd84a' },
     plataformas: [[420, 300, 160], [1320, 300, 160], [860, 240, 180]],
     portales: [
       { x: 90,   a: 'noche',     ax: 150,  etiqueta: 'Bosque Nocturno', nv: '1-6' },
       { x: 330,  a: 'amanecer',  ax: 150,  etiqueta: 'Colinas Rojas', nv: '6-12' },
-      { x: 1570, a: 'selva',     ax: 150,  etiqueta: 'Selva Esmeralda', nv: '12-18' },
-      { x: 1700, a: 'tormenta',  ax: 150,  etiqueta: 'Picos Tormenta', nv: '18-24' },
-      { x: 1830, a: 'desierto',  ax: 150,  etiqueta: 'Desierto Dorado', nv: '24-32' },
+      { x: 1560, a: 'selva',     ax: 150,  etiqueta: 'Selva Esmeralda', nv: '12-18' },
+      { x: 1800, a: 'tormenta',  ax: 150,  etiqueta: 'Picos Tormenta', nv: '18-24' },
+      { x: 2040, a: 'desierto',  ax: 150,  etiqueta: 'Desierto Dorado', nv: '24-32' },
     ],
     npcs: [
       { id: 'mercader', nombre: 'Mercader Grumo', hoja: 'goblin_peasant', x: 950, tipo: 'tienda' },

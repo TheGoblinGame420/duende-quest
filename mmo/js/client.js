@@ -7,7 +7,7 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria,
-} from './data.js?v=10';
+} from './data.js?v=11';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -620,7 +620,10 @@ function dibujarPortales(mp) {
     g.beginPath(); g.ellipse(0, 0, 30, 50, 0, 0, Math.PI * 2); g.fill();
     g.restore();
     const activo = cerca && cerca.tipo === 'portal' && cerca.i === i;
-    etiqueta(x, y - 62, p.etiqueta + (p.nv ? ' · Nv ' + p.nv : ''), activo ? '#ffe600' : '#c084fc', 7);
+    // Dos lineas (nombre / nivel): en una sola, los portales vecinos del
+    // pueblo se pisaban las etiquetas.
+    etiqueta(x, y - 72, p.etiqueta, activo ? '#ffe600' : '#c084fc', 7);
+    if (p.nv) etiqueta(x, y - 58, 'Nv ' + p.nv, activo ? '#ffe600' : 'rgba(255,255,255,.7)', 6);
   });
 }
 
