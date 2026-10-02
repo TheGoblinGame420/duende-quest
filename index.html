@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
+<script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>$DUENDE — Meme Coin + NFT Game · Solana</title>
@@ -235,6 +237,15 @@ nav{
 .px-title{font-family:'Press Start 2P',monospace;font-size:clamp(.8rem,2.5vw,1.3rem);text-align:center;margin-bottom:.5rem;text-shadow:3px 3px 0 rgba(0,0,0,.8);}
 .px-sub{font-family:'Press Start 2P',monospace;font-size:.45rem;color:rgba(255,255,255,.3);text-align:center;letter-spacing:.1em;line-height:2;margin-bottom:2.5rem;}
 .socials-grid{display:flex;gap:.7rem;justify-content:center;flex-wrap:wrap;max-width:750px;margin:0 auto;}
+.creador-box{max-width:720px;margin:2.5rem auto 0;padding:1.4rem;border:2px solid var(--green);border-radius:4px;background:rgba(0,255,136,.05);box-shadow:5px 5px 0 rgba(0,255,136,.25);text-align:center}
+.creador-t{font-family:'Press Start 2P',monospace;font-size:.6rem;color:var(--green);margin-bottom:.8rem}
+.creador-box p{font-size:.6rem;line-height:1.6;color:rgba(255,255,255,.8);margin-bottom:1rem}
+.creador-links{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:.7rem}
+.creador-links a{display:block;padding:.8rem .5rem;border:1px solid rgba(255,255,255,.18);border-radius:4px;color:#fff;text-decoration:none;font-size:.55rem;line-height:1.6;overflow-wrap:anywhere;background:rgba(0,0,0,.3)}
+.creador-links a:hover{border-color:var(--green);color:var(--green)}
+.creador-links small{display:block;font-weight:400;font-size:.45rem;color:rgba(255,255,255,.55);margin-top:.25rem}
+.hero-creador{margin-top:1rem;font-size:.5rem;line-height:2;color:rgba(255,255,255,.7)}
+.hero-creador a{color:var(--green);text-decoration:none;font-weight:700}
 .soc{
   display:flex;flex-direction:column;align-items:center;gap:.4rem;
   background:var(--card);border:2px solid rgba(255,255,255,.07);
@@ -719,6 +730,7 @@ footer{
     </div>
     <button class="ca-copy" id="ca-btn" onclick="copyCa()">COPY CA</button>
   </div>
+  <div class="hero-creador">Creado por <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial</a> · <a href="https://t.me/elduende420peru" target="_blank" rel="noopener">Canal</a> · <a href="https://t.me/duendesolana420" target="_blank" rel="noopener">Grupo</a> · <a href="#community">¿Quién está detrás?</a></div>
 </section>
 
 <!-- ========== STATS ========== -->
@@ -791,12 +803,22 @@ footer{
   <p class="px-sub">El ejército del duende crece cada hora.<br>Únete antes de que sea tarde.</p>
   <div class="socials-grid">
     <a href="https://x.com/elduendesolana" target="_blank" class="soc"><span class="si">𝕏</span>Twitter / X</a>
-    <a href="https://t.me/duendesolana420" target="_blank" class="soc"><span class="si">✈️</span>Canal TG</a>
-    <a href="https://t.me/elduende420peru" target="_blank" class="soc"><span class="si">💬</span>Chat TG</a>
+    <a href="https://t.me/duendesolana420" target="_blank" class="soc"><span class="si">💬</span>Grupo TG</a>
+    <a href="https://t.me/elduende420peru" target="_blank" class="soc"><span class="si">📢</span>Canal TG</a>
     <a href="https://www.instagram.com/ELDUENDE_SOLANA" target="_blank" class="soc"><span class="si">📸</span>Instagram</a>
     <a href="https://www.youtube.com/@Elduende_solana" target="_blank" class="soc"><span class="si">▶️</span>YouTube</a>
     <a href="https://t.me/ElDuendeOficial" target="_blank" class="soc"><span class="si">🧝</span>@ElDuendeOficial</a>
     <a href="https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump" target="_blank" class="soc pump"><span class="si">🔥</span>Pump.fun</a>
+  </div>
+  <div class="creador-box">
+    <div class="creador-t">👤 CREADOR DEL JUEGO</div>
+    <p>DUENDE QUEST lo crea y mantiene <b>El Duende</b> desde Perú 🇵🇪. Estos son los únicos canales oficiales: desconfía de cualquier otra cuenta que diga ser del juego.</p>
+    <div class="creador-links">
+      <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">🧝 @ElDuendeOficial<small>Creador</small></a>
+      <a href="https://t.me/elduende420peru" target="_blank" rel="noopener">📢 t.me/elduende420peru<small>Canal oficial</small></a>
+      <a href="https://t.me/duendesolana420" target="_blank" rel="noopener">💬 t.me/duendesolana420<small>Grupo oficial</small></a>
+      <a href="https://t.me/duendequest_bot" target="_blank" rel="noopener">🤖 @duendequest_bot<small>Bot oficial del juego</small></a>
+    </div>
   </div>
 </section>
 
@@ -1344,7 +1366,7 @@ footer{
     <div style="font-family:'Press Start 2P',monospace;font-size:.42rem;color:#00ff88;margin-bottom:.8rem">🟢 EL BOT YA ESTÁ ACTIVO</div>
     <div style="display:flex;gap:.8rem;flex-wrap:wrap;justify-content:center">
       <a href="https://t.me/duendequest_bot" target="_blank" style="font-family:'Press Start 2P',monospace;font-size:.5rem;color:#fff;background:linear-gradient(135deg,#0098ea,#0077b6);padding:.8rem 1.6rem;border-radius:3px;text-decoration:none;box-shadow:4px 4px 0 rgba(0,0,0,.5);display:inline-block">📱 ABRIR LA MINI APP</a>
-      <a href="https://t.me/duendesolana420" target="_blank" style="font-family:'Press Start 2P',monospace;font-size:.5rem;color:#fff;background:linear-gradient(135deg,#0088cc,#005f99);padding:.8rem 1.6rem;border-radius:3px;text-decoration:none;box-shadow:4px 4px 0 rgba(0,0,0,.5);display:inline-block">✈️ CANAL DE ANUNCIOS</a>
+      <a href="https://t.me/duendesolana420" target="_blank" style="font-family:'Press Start 2P',monospace;font-size:.5rem;color:#fff;background:linear-gradient(135deg,#0088cc,#005f99);padding:.8rem 1.6rem;border-radius:3px;text-decoration:none;box-shadow:4px 4px 0 rgba(0,0,0,.5);display:inline-block">💬 GRUPO OFICIAL</a>
     </div>
   </div>
 </section>
@@ -1550,11 +1572,11 @@ footer{
   </div>
   <div class="f-soc">
     <a href="https://x.com/elduendesolana" target="_blank" title="Twitter/X">𝕏</a>
-    <a href="https://t.me/duendesolana420" target="_blank" title="Canal Telegram">✈️</a>
-    <a href="https://t.me/elduende420peru" target="_blank" title="Chat Telegram">💬</a>
+    <a href="https://t.me/duendesolana420" target="_blank" title="Grupo oficial de Telegram">💬</a>
+    <a href="https://t.me/elduende420peru" target="_blank" title="Canal oficial de Telegram">📢</a>
     <a href="https://www.instagram.com/ELDUENDE_SOLANA" target="_blank" title="Instagram">📸</a>
     <a href="https://www.youtube.com/@Elduende_solana" target="_blank" title="YouTube">▶️</a>
-    <a href="https://t.me/ElDuendeOficial" target="_blank" title="@ElDuendeOficial">🧝</a>
+    <a href="https://t.me/ElDuendeOficial" target="_blank" title="Creador: @ElDuendeOficial">🧝</a>
   </div>
   <p class="f-note">
     $DUENDE es un token memecoin creado para entretenimiento y comunidad en Solana.<br>

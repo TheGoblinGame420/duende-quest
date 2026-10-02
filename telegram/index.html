@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
+<script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
 <title>DUENDE QUEST — Telegram</title>
@@ -250,6 +252,15 @@ html{font-size:24px;}
         <div class="card" id="streak-banner"></div>
         <div class="card" id="daily-missions"></div>
         <div class="card" id="achievements-panel"></div>
+        <div class="card" style="text-align:center">
+          <div style="color:#00ff88;font-weight:700;margin-bottom:.4rem">👤 CREADOR DEL JUEGO</div>
+          <div style="opacity:.75;font-size:.8em;margin-bottom:.6rem">Canales oficiales de DUENDE QUEST</div>
+          <button class="ob" onclick="abrirTg('ElDuendeOficial')" style="width:100%">🧝 @ElDuendeOficial</button>
+          <div class="fila2">
+            <button class="ob azul" onclick="abrirTg('elduende420peru')">📢 CANAL</button>
+            <button class="ob azul" onclick="abrirTg('duendesolana420')">💬 GRUPO</button>
+          </div>
+        </div>
       </section>
 
       <!-- PERFIL -->
@@ -1448,6 +1459,7 @@ function invitarAmigos(){
   if(tg&&tg.openTelegramLink){ tg.openTelegramLink('https://t.me/share/url?url='+encodeURIComponent(link)+'&text='+encodeURIComponent(texto)); return; }
   try{ navigator.clipboard.writeText(texto+'\n'+link); showPUNotif('📋 Link copiado'); }catch(e){}
 }
+function abrirTg(u){ const url='https://t.me/'+u; if(tg&&tg.openTelegramLink){tg.openTelegramLink(url);}else{window.open(url,'_blank');} }
 function abrirWeb(){ const url='https://duende-quest.alfonso12hc.workers.dev/'; if(tg){tg.openLink(url);}else{window.open(url,'_blank');} }
 
 // ── Cabecera (avatar, nombre, DQ) ──
