@@ -6,11 +6,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Duende Quest Online</title>
-<meta name="description" content="DUENDE QUEST ONLINE — el MMORPG de los duendes: explora 6 zonas, caza monstruos con otros jugadores, derrota jefes y consigue todas las skins.">
+<meta name="description" content="DUENDE QUEST ONLINE — el MMORPG de los duendes: explora 10 zonas hasta el nivel 60, caza monstruos con otros jugadores, consigue equipo legendario, aprende habilidades y derrota al jefe mundial.">
 <meta name="theme-color" content="#0a0418">
 <meta property="og:type" content="website">
 <meta property="og:title" content="DUENDE QUEST ONLINE — el MMORPG de los duendes">
-<meta property="og:description" content="6 zonas, jefes que reaparecen, 24 misiones y las 7 skins. Caza en tiempo real con otros jugadores, gratis en el navegador o en Telegram.">
+<meta property="og:description" content="10 zonas hasta Nv 60, 40 misiones, equipo con rarezas, habilidades, logros y un jefe mundial cada 30 minutos. Caza en tiempo real con otros jugadores, gratis en el navegador o en Telegram.">
 <meta property="og:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/mmo_banner.png">
 <meta property="og:url" content="https://duende-quest.alfonso12hc.workers.dev/mmo/">
 <meta name="twitter:card" content="summary_large_image">
@@ -71,6 +71,24 @@ html,body{height:100%;background:var(--bg);color:#fff;font-family:'Press Start 2
 .pw .n{position:absolute;right:3px;bottom:3px;font-size:7px;color:var(--amarillo);text-shadow:1px 1px 0 #000;}
 .pw .cd{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.65);}
 .pw.vacio img{filter:grayscale(1);opacity:.35;}
+#habs{right:8px;bottom:62px;display:none;gap:6px;}
+.pw.hab{border-radius:50%;border-color:rgba(255,230,0,.45);}
+.pw.hab .n{left:0;right:0;text-align:center;bottom:15px;font-size:6px;color:#fff;}
+#h-mundial{font-size:6px;color:var(--rosa);margin-top:5px;line-height:1.6;max-width:210px;}
+#h-mundial.lista{animation:parp .8s infinite alternate;}
+.ranuras{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
+.ranura{border:2px solid rgba(255,255,255,.15);border-radius:8px;background:rgba(0,0,0,.35);aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:2px;}
+.ranura img{width:60%;image-rendering:pixelated;}
+.ranura small{font-size:5px;color:rgba(255,255,255,.6);}
+.ranura.vacia{cursor:default;border-style:dashed;}
+.ranura.vacia span{color:rgba(255,255,255,.25);font-size:10px;}
+.dias{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.dia{border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:6px 2px;text-align:center;display:flex;flex-direction:column;gap:4px;align-items:center;background:rgba(0,0,0,.3);}
+.dia b{font-size:5px;}
+.dia span{font-size:16px;}
+.dia small{font-family:system-ui,sans-serif;font-size:9px;color:rgba(255,255,255,.6);line-height:1.2;}
+.dia.hecho{opacity:.45;}
+.dia.hoy{border-color:var(--verde);background:rgba(0,255,136,.12);box-shadow:0 0 12px rgba(0,255,136,.35);}
 
 /* chat */
 #chat{left:8px;bottom:8px;width:min(340px,48%);}
@@ -101,6 +119,10 @@ body.tactil #tactil{display:flex;}
 body.tactil #t-fila1 #poderes{position:static;display:flex;gap:5px;}
 body.tactil #t-fila1 .pw{width:42px;height:42px;}
 body.tactil #t-fila1 .pw img{width:28px;height:28px;}
+body.tactil #t-fila0{display:none;justify-content:flex-end;}
+body.tactil #t-fila0 #habs{position:static;gap:6px;}
+body.tactil #t-fila0 .pw{width:44px;height:44px;}
+body.tactil #t-fila0 .pw img{width:28px;height:28px;}
 body.tactil #t-fila1 #interactuar{position:static;transform:none;font-size:7px;padding:10px 7px;}
 body.tactil #chat{width:70%;bottom:6px;}
 
@@ -164,6 +186,7 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
         <div class="barra" id="bxp"><i style="width:0%"></i><span id="h-xp">0%</span></div>
         <div class="oro"><img src="/assets/ui/coin.png" alt=""><span id="h-oro">0</span></div>
         <div id="h-mision"></div>
+        <div id="h-mundial"></div>
       </div>
       <div class="caja" id="minimapa"><canvas id="mini" width="170" height="26"></canvas></div>
       <div class="caja" id="mapa-nom"><span id="h-mapa">—</span><small id="h-mapa-sub"></small></div>
@@ -180,9 +203,11 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
       <div class="caja" id="chat"><div id="chat-log"></div><input id="chat-in" maxlength="120" placeholder="Escribe y pulsa Enter…" autocomplete="off"></div>
       <button class="caja btn" id="interactuar">E · ENTRAR</button>
       <div class="caja" id="poderes"></div>
+      <div class="caja" id="habs"></div>
     </div>
   </div>
   <div id="tactil">
+    <div class="tf" id="t-fila0"></div>
     <div class="tf" id="t-fila1">
       <button class="tc chico" id="t-chat">💬</button>
     </div>
@@ -204,7 +229,7 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
 <div class="modal" id="m-inicio">
   <div class="ventana centro">
     <h2>⚔️ DUENDE QUEST ONLINE ⚔️</h2>
-    <p>Explora 6 zonas con otros jugadores, caza a los monstruos del bestiario, derrota a los jefes y consigue todas las skins.</p>
+    <p>Explora 10 zonas hasta el nivel 60 con otros jugadores: caza monstruos, consigue equipo legendario, aprende habilidades y derrota al jefe mundial cada 30 minutos.</p>
     <div id="inicio-invitado">
       <input class="nombre" id="in-nombre" maxlength="16" placeholder="Nombre de tu duende">
       <button class="btn" id="b-jugar" style="width:100%;padding:14px;font-size:10px">▶ ENTRAR AL MUNDO</button>
@@ -243,6 +268,8 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
     <div class="tabs">
       <button class="tab on" data-itab="skin">SKINS</button>
       <button class="tab" data-itab="arma">ARMAS</button>
+      <button class="tab" data-itab="equipo">EQUIPO</button>
+      <button class="tab" data-itab="logros">LOGROS</button>
     </div>
     <div class="lista" id="inv-lista"></div>
   </div>
@@ -276,16 +303,31 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
       <li><b>Moverse:</b> ← → o A / D · <b>Saltar:</b> ↑, W o Espacio (doble salto)</li>
       <li><b>Atacar:</b> Z o J (combo de 3 golpes) · <b>Dash:</b> X o K</li>
       <li><b>Poderes:</b> 1 Poción · 2 Escudo · 3 Rayo · 4 Fuego</li>
+      <li><b>Habilidades</b> (se aprenden solas): C Torbellino (Nv 10) · V Estocada (Nv 20) · B Meteoros (Nv 30) · N Furia (Nv 45)</li>
       <li><b>Entrar a portales / hablar:</b> E o ↑ encima</li>
       <li><b>Chat:</b> Enter · <b>Inventario:</b> I · <b>Volver al pueblo:</b> R o 🌀 (fuera de combate)</li>
       <li>Los hechiceros, magos y algunos jefes lanzan <b>bolas de fuego</b>: salta o apártate de su línea.</li>
-      <li>El <b>Guardia Tito</b> del pueblo te da una cadena de 24 misiones que recorre las 6 zonas (hasta el Castillo del Rey Goblin): entrégaselas para cobrar experiencia, oro y poderes.</li>
+      <li>El <b>Guardia Tito</b> del pueblo te da una cadena de 40 misiones que recorre las 10 zonas (hasta los Acantilados Mágicos y su Dragón Ancestral): entrégaselas para cobrar experiencia, oro y poderes.</li>
+      <li><b>Equipo:</b> los monstruos sueltan cascos, armaduras, botas, anillos y amuletos (los jefes siempre). Hay 4 rarezas: <span style="color:#d0d0d0">común</span>, <span style="color:#33aaff">raro</span>, <span style="color:#c084fc">épico</span> y <span style="color:#ffae00">legendario</span>. Equípalos o véndelos en 🎒 → EQUIPO.</li>
+      <li><b>Jefe mundial:</b> a las :00 y :30 aparece el Gran Duende Corrupto en el Coliseo (portal 👹 del pueblo). Todos los niveles pueden pelear y todos ganan equipo.</li>
+      <li><b>Recompensa diaria:</b> entra cada día para una racha de 7 premios (el 7º trae un objeto épico). <b>Logros:</b> cada uno da oro y un título para lucir sobre tu nombre.</li>
       <li>Cada zona tiene su nivel recomendado (los monstruos más fáciles cerca de la entrada) y un <b>jefe</b> que reaparece cada 5 minutos: pelear en grupo reparte la recompensa.</li>
-      <li>La vida se recupera sola si pasas 5 segundos sin recibir golpes, y rápido en el pueblo.</li>
+      <li>La vida se recupera sola si pasas 4 segundos sin recibir golpes, y rápido en el pueblo.</li>
       <li>El <b>Mercader</b> del pueblo vende poderes, armas y las 7 skins. Las skins que ya compraste en el juego principal se desbloquean solas.</li>
       <li>El oro del MMO es solo del juego: no se canjea por dinero ni por $DUENDE.</li>
+      <li style="font-size:11px;color:rgba(255,255,255,.5)"><b>Créditos de arte:</b> Luis Zuno (ansimuz) — Magic Cliffs y Warped Caves (CC-BY 3.0), Mountain Dusk, Underwater, GothicVania y Sunny Land (CC0); Moikmellah, Ashuuya, Scratchio y 7Soul1 (CC0). Sonidos: Juhani Junkala (CC0).</li>
     </ul>
     <p class="creador">👤 Creado por <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial</a> · <a href="https://t.me/elduende420peru" target="_blank" rel="noopener">📢 Canal</a> · <a href="https://t.me/duendesolana420" target="_blank" rel="noopener">💬 Grupo</a></p>
+  </div>
+</div>
+
+<!-- Recompensa diaria -->
+<div class="modal" id="m-login">
+  <div class="ventana">
+    <button class="bt cerrar" data-cerrar>✕</button>
+    <h2>🎁 RECOMPENSA DIARIA</h2>
+    <div id="login-cuerpo"></div>
+    <button class="btn" data-cerrar style="width:100%;margin-top:12px;padding:12px">¡A CAZAR!</button>
   </div>
 </div>
 
@@ -310,6 +352,6 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=19"></script>
+<script type="module" src="/mmo/js/client.js?v=20"></script>
 </body>
 </html>

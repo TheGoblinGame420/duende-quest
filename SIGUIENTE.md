@@ -951,3 +951,31 @@ diarias repetibles, sonido propio para jefes.
   castillo; `tools/generar_goblin_lord_cc0.py`), 4 misiones más (la cadena
   pasa a 24). Portales: desde el Desierto y desde el pueblo. Simulado: el
   Rey se vence en solitario a Nv 40 en ~41-45 s con ~7 pociones.
+
+### DUENDE QUEST ONLINE — gran expansión (2-oct-2026)
+
+- **Tope Nv 60 y 4 zonas nuevas** (cadena desde el Castillo y portales en el
+  pueblo, que pasa a 3300 px): Cumbres del Ocaso (40-45, jefe Coloso de
+  Hueso), Cavernas Abisales (45-50, Rey Cangrejo), Abismo Marino (50-55,
+  Leviatán) y Acantilados Mágicos (55-60, **Dragón Ancestral**). 18 monstruos
+  nuevos y 16 misiones más (la cadena pasa a 40). Arte de ansimuz/Ashuuya,
+  ver CREDITOS.md (dos packs son **CC-BY: el crédito es obligatorio** y está
+  también en la ayuda del MMO). Hojas y fondos: `tools/generar_mmo_expansion_cc0.py`.
+- `HOJAS[k].izq = 1` marca los dibujos que miran a la izquierda (el
+  Sabueso Infernal caminaba de espaldas desde siempre).
+- **Equipo**: casco, armadura, botas, anillo y amuleto; 4 rarezas; lo suelta
+  el 6% de los monstruos de tu nivel (o hasta 10 por debajo) y los jefes
+  siempre (raro+). Bolsa de 40 (si se llena, lo nuevo se vende solo). Nunca se
+  compra: nada de cajas de pago. Un legendario se anuncia a todo el servidor.
+- **Habilidades** por nivel: Torbellino (10), Estocada (20), Meteoros (30),
+  Furia (45). Teclas C V B N; en móvil, fila propia encima de los poderes.
+- **Recompensa diaria** con racha de 7 días (el 7º da un objeto épico).
+- **Logros (16) y títulos** sobre el nombre.
+- **Jefe mundial** cada 30 min (:00 y :30 UTC) en el Coliseo (portal 👹 del
+  pueblo): vida 20.000 + 15.000 por conectado, pega un % de la vida de cada
+  uno (4% roce, 6% bola, 15% embestida) para que todos los niveles peleen
+  juntos; todos los que le pegan reciben XP, oro y un objeto raro+. Escapa a
+  los 10 min.
+- Prueba: arnés de 44 comprobaciones con el `world.js` real y un servidor
+  local en Node (WebSocket a mano, sin librerías) que sirve el juego completo
+  en el navegador — `wrangler dev` sigue sin poder con Durable Objects aquí.

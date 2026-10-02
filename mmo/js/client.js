@@ -7,7 +7,8 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, ALCANCE_BASE, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
-} from './data.js?v=19';
+  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, HABILIDADES, LOGROS, LOGIN_PREMIOS, multLogin, NIVEL_MAX,
+} from './data.js?v=20';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -48,6 +49,7 @@ if (TACTIL) {
   const f1 = $('t-fila1');
   f1.insertBefore($('interactuar'), f1.firstChild);
   f1.insertBefore($('poderes'), f1.firstChild);
+  $('t-fila0').appendChild($('habs'));
 }
 function ajustarVista() {
   const vertical = innerHeight > innerWidth * 1.1;
@@ -271,6 +273,12 @@ function recibir(m) {
       flotante(m.x, m.y, '+' + m.xp + ' XP', '#00ff88', 10);
       if (m.oro > 0) flotante(m.x, m.y + 14, '+' + m.oro + ' oro', '#ffe600', 10);
       if (m.drops && m.drops.length) m.drops.forEach(d => { const pd = PODERES.find(p => p.id === d); if (pd) aviso('🎁 Encontraste: ' + pd.nombre, 'ok'); });
+      if (m.item) {
+        const rz = RAREZAS[m.item.r];
+        flotante(m.x, m.y - 16, '★ ' + nombreItem(m.item), rz.color, m.item.r >= 2 ? 11 : 9);
+        aviso('🎁 ' + rz.nombre + ': ' + nombreItem(m.item) + ' Nv' + m.item.nv + ' (' + textoBonos(m.item.b) + ')', m.item.r >= 2 ? 'jefe' : 'ok');
+        if (m.item.r >= 2) { sfx('explosion', .3); for (let i = 0; i < 24; i++) particula(m.x, m.y, rz.color, 4); }
+      }
       sfx('moneda', .3);
       break;
     case 'ph': {
@@ -296,7 +304,15 @@ function recibir(m) {
       else if (quien) quien.lv = m.lv;
       break;
     }
-    case 'pa': { const o = otros.get(m.p); if (o) { o.sk = m.sk; o.ar = m.ar; o.mx = m.mx; } break; }
+    case 'pa': { const o = otros.get(m.p); if (o) { o.sk = m.sk; o.ar = m.ar; o.mx = m.mx; o.ti = m.ti || ''; } break; }
+    case 'hb': habilidadRemota(m); break;
+    case 'login': mostrarLogin(m); break;
+    case 'logro':
+      aviso('🏅 ¡Logro: "' + m.titulo + '"! +' + m.oro.toLocaleString('es') + ' oro · ponte el título en 🎒', 'ok');
+      sfx('explosion', .35);
+      for (let i = 0; i < 30; i++) particula(P.x, P.y - 40, ['#ffe600', '#ff3cf0', '#00ff88'][i % 3], 5);
+      break;
+    case 'mundial': mundial = { vivo: m.vivo, en: m.en ? m.en - Date.now() + performance.now() : 0 }; break;
     case 'pw': efectoPoder(m.p, m.i); break;
     case 'cd': cdPoder[m.id] = performance.now() + m.hasta; break;
     case 'chat':
@@ -346,7 +362,7 @@ function pintarSubMapa() {
 
 function agregarOtro(p) {
   if (p.id === miId) return;
-  otros.set(p.id, { id: p.id, n: p.n, lv: p.lv, sk: p.sk, ar: p.ar, x: p.x, y: p.y, f: p.f, a: 0, hp: p.hp, mx: p.mx, muerto: p.muerto, buf: [{ t: performance.now(), x: p.x, y: p.y }], herido: 0, atk: 0, paso: 0 });
+  otros.set(p.id, { id: p.id, n: p.n, lv: p.lv, sk: p.sk, ar: p.ar, ti: p.ti || '', x: p.x, y: p.y, f: p.f, a: 0, hp: p.hp, mx: p.mx, muerto: p.muerto, buf: [{ t: performance.now(), x: p.x, y: p.y }], herido: 0, atk: 0, paso: 0 });
 }
 
 function agregarMon(d) {
@@ -411,7 +427,7 @@ function ataqueRemoto(m) {
     const o = mons.get(id);
     if (!o) continue;
     o.golpeT = performance.now();
-    const col = tipo === 1 ? '#ff9900' : tipo === 2 ? '#00eeff' : tipo === 3 ? '#ff3cf0' : '#ffffff';
+    const col = tipo === 1 ? '#ff9900' : tipo === 2 ? '#00eeff' : tipo === 3 ? '#ff3cf0' : tipo === 4 ? '#ffe600' : '#ffffff';
     flotante(o.x + (Math.random() - .5) * 16, o.y - o.alto - 6, (tipo === 1 ? '¡' : '') + dmg + (tipo === 1 ? '!' : ''), col, tipo === 1 ? 13 : 10);
     for (let i = 0; i < 4; i++) particula(o.x, o.y - o.alto / 2, col, 3);
     if (tipo === 2 && m.s !== -1) lanzarFX('rayo', o.x, o.y - o.alto / 2, .5, false);
@@ -550,6 +566,8 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyR') volverAlPueblo();
   if (e.code === 'Enter') { e.preventDefault(); abrirChat(); }
   if (/^Digit[1-4]$/.test(e.code)) usarPoder(+e.code.slice(5) - 1);
+  const ih = ['KeyC', 'KeyV', 'KeyB', 'KeyN'].indexOf(e.code);
+  if (ih >= 0) usarHab(ih);
   if (e.code.startsWith('Arrow')) e.preventDefault();
 });
 addEventListener('keyup', e => { teclas[e.code] = false; });
@@ -605,13 +623,162 @@ function pintarPoderes() {
   });
 }
 function pintarCooldowns() {
-  const cont = $('poderes'); if (!cont.children.length) return;
   const ahora = performance.now();
+  const ch = $('habs');
+  if (ch.children.length) HABILIDADES.forEach((h, i) => {
+    const fin = cdPoder['h_' + h.id] || 0;
+    ponCss(ch.children[i].querySelector('.cd'), 'height', Math.round((fin > ahora ? (fin - ahora) / h.cd : 0) * 100) + '%');
+  });
+  if (frame % 30 === 0) pintarMundial();
+  const cont = $('poderes'); if (!cont.children.length) return;
   PODERES.forEach((p, i) => {
     const fin = cdPoder[p.id] || 0;
     const k = fin > ahora ? (fin - ahora) / p.cd : 0;
     ponCss(cont.children[i].querySelector('.cd'), 'height', Math.round(k * 100) + '%');
   });
+}
+
+// ── HABILIDADES ──
+// Se aprenden solas al subir de nivel (Nv 10/20/30/45). Teclas C V B N o
+// los botones redondos (en movil, una fila encima de los poderes).
+function pintarHabs() {
+  const cont = $('habs');
+  if (!cont.children.length) {
+    HABILIDADES.forEach((h, i) => {
+      const d = document.createElement('div');
+      d.className = 'pw hab'; d.title = h.nombre + ' — ' + h.desc;
+      d.innerHTML = `<span class="k">${h.tecla}</span><img src="${A}items/equipo/${h.icono}.png" alt=""><span class="n"></span><div class="cd" style="height:0"></div>`;
+      d.addEventListener('click', () => usarHab(i));
+      d.addEventListener('touchstart', e => { e.preventDefault(); usarHab(i); }, { passive: false });
+      cont.appendChild(d);
+    });
+  }
+  if (!yo) return;
+  HABILIDADES.forEach((h, i) => {
+    const d = cont.children[i];
+    const bloq = yo.nivel < h.nv;
+    d.classList.toggle('vacio', bloq);
+    ponTxt(d.querySelector('.n'), bloq ? 'Nv' + h.nv : '');
+  });
+  // Hasta Nv 10 no hay ninguna: la fila no ocupa sitio.
+  ponCss($('t-fila0'), 'display', yo.nivel >= HABILIDADES[0].nv ? 'flex' : 'none');
+  ponCss(cont, 'display', yo.nivel >= HABILIDADES[0].nv ? 'flex' : 'none');
+}
+function usarHab(i) {
+  const h = HABILIDADES[i];
+  if (!yo || !h || P.muerto || chatAbierto()) return;
+  if (yo.nivel < h.nv) { aviso('🔒 ' + h.nombre + ' se aprende a nivel ' + h.nv + '.'); return; }
+  if (performance.now() < (cdPoder['h_' + h.id] || 0)) return;
+  // La estocada lleva al duende hacia delante (el servidor ya admite un dash).
+  if (h.id === 'estocada' && P.dashCd <= 0) { P.dash = FIS.dashT; P.dashCd = FIS.dashCd; }
+  mandar({ t: 'hab', id: h.id });
+}
+function habilidadRemota(m) {
+  const mio = m.p === miId;
+  const quien = mio ? P : otros.get(m.p);
+  if (quien) {
+    const col = colorCorte(mio ? yo.skin : quien.sk);
+    if (m.id === 'torbellino') { lanzarFX('corte_giro', quien.x, quien.y - 34, 3, false, mio, col); lanzarFX('corte_giro', quien.x, quien.y - 34, 2.2, true, mio, col); sfx('corte2', .4); }
+    if (m.id === 'estocada') { lanzarFX('corte_h', quien.x + m.f * 130, quien.y - 32, 3.4, m.f < 0, false, col); sfx('corte', .45); }
+    if (m.id === 'meteoro') {
+      for (let k = 0; k < 8; k++) lanzarFX('rayo', quien.x + (k - 3.5) * 105, quien.y - 70 - (k % 2) * 40, 1.3, k % 2 === 0);
+      sfx('explosion', .5); if (mio) sacudir = 12;
+    }
+    if (m.id === 'furia') {
+      for (let k = 0; k < 40; k++) particula(quien.x, quien.y - 30, k % 2 ? '#ff3344' : '#ff9900', 5);
+      flotante(quien.x, quien.y - 90, '¡FURIA!', '#ff3344', 13); sfx('explosion', .4);
+      if (mio) P.furiaHasta = performance.now() + 10000;
+    }
+  }
+  ataqueRemoto({ p: m.p, s: -1, f: m.f, h: m.h });
+}
+
+// ── TITULOS / LOGROS ──
+function tituloDe(id) { const L = LOGROS.find(x => x.id === id); return L ? L.titulo : ''; }
+function pintarLogros() {
+  const tienen = yo.logros || [];
+  let h = `<p class="centro" style="margin-bottom:8px">${tienen.length} de ${LOGROS.length} logros · cada uno da oro y un título para lucir sobre tu nombre</p>`;
+  if (yo.titulo) h += `<button class="btn sec" data-titulo="" style="width:100%;margin-bottom:8px">QUITAR TÍTULO</button>`;
+  for (const L of LOGROS) {
+    const ok = tienen.includes(L.id);
+    const acc = !ok ? `<span class="precio" style="color:#666">🔒 +${L.oro.toLocaleString('es')}</span>`
+      : yo.titulo === L.id ? '<span class="precio" style="color:#00ff88">✓ EN USO</span>'
+      : `<button class="btn sec" data-titulo="${L.id}">USAR TÍTULO</button>`;
+    h += tarjeta(ok ? '🏅' : '🔒', esc(L.titulo), esc(L.desc), acc);
+  }
+  $('inv-lista').innerHTML = h;
+  $('inv-lista').querySelectorAll('[data-titulo]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'titulo', id: b.dataset.titulo }); });
+}
+
+// ── EQUIPO ──
+const puntaje = b => (b.atk || 0) * 3 + (b.def || 0) * 2 + (b.hp || 0) * 0.3 + (b.crit || 0) * 300;
+function htmlItem(it) {
+  const rz = RAREZAS[it.r];
+  return `<img src="${A}items/equipo/${iconoItem(it)}.png" style="filter:drop-shadow(0 0 4px ${rz.color})">`;
+}
+function pintarEquipo() {
+  const eq = yo.eq || {}, bolsa = yo.bolsa || [];
+  let h = '<div class="ranuras">';
+  for (const k in RANURAS) {
+    const it = eq[k];
+    h += it
+      ? `<div class="ranura" data-quitar="${k}" title="Quitar" style="border-color:${RAREZAS[it.r].color}">${htmlItem(it)}<small>${RANURAS[k].nombre}</small></div>`
+      : `<div class="ranura vacia"><span>—</span><small>${RANURAS[k].nombre}</small></div>`;
+  }
+  h += '</div>';
+  h += `<p class="centro" style="margin:6px 0">🎒 Bolsa ${bolsa.length}/${BOLSA_MAX} · toca una pieza puesta para quitarla</p>`;
+  const comunes = bolsa.filter(x => x.r === 0);
+  if (comunes.length) h += `<button class="btn sec" id="b-vender-comunes" style="width:100%;margin-bottom:8px">VENDER ${comunes.length} COMUNES (+${comunes.reduce((a, x) => a + precioVenta(x), 0).toLocaleString('es')} oro)</button>`;
+  if (!bolsa.length) h += '<p class="centro" style="color:rgba(255,255,255,.5)">Los monstruos sueltan equipo al morir, y los jefes siempre. ¡A cazar!</p>';
+  const orden = [...bolsa].sort((a, b) => b.r - a.r || b.nv - a.nv);
+  for (const it of orden) {
+    const rz = RAREZAS[it.r];
+    const puesto = eq[it.s];
+    const dif = puntaje(it.b) - (puesto ? puntaje(puesto.b) : 0);
+    const flecha = dif > 0 ? '<span style="color:#00ff88"> ▲ MEJOR</span>' : '';
+    const puede = it.nv <= yo.nivel;
+    const acc = (puede ? `<button class="btn" data-eq="${it.id}">EQUIPAR</button>` : `<span class="precio" style="color:#ff3344">Nv ${it.nv}</span>`)
+      + `<button class="btn sec" data-vender="${it.id}">VENDER ${precioVenta(it)}</button>`;
+    h += tarjeta(htmlItem(it), `<span style="color:${rz.color}">${esc(nombreItem(it))}</span> <span style="color:#888">Nv${it.nv}</span>${flecha}`,
+      `${rz.nombre} · ${RANURAS[it.s].nombre} · ${textoBonos(it.b)}`, acc);
+  }
+  $('inv-lista').innerHTML = h;
+  const L = $('inv-lista');
+  L.querySelectorAll('[data-eq]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'item', a: 'equipar', id: b.dataset.eq }); });
+  L.querySelectorAll('[data-vender]').forEach(b => b.onclick = () => { sfx('moneda', .3); mandar({ t: 'item', a: 'vender', id: b.dataset.vender }); });
+  L.querySelectorAll('[data-quitar]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'item', a: 'quitar', ranura: b.dataset.quitar }); });
+  const bv = $('b-vender-comunes');
+  if (bv) bv.onclick = () => { sfx('moneda', .4); comunes.forEach(x => mandar({ t: 'item', a: 'vender', id: x.id })); };
+}
+
+// ── RECOMPENSA DIARIA ──
+function mostrarLogin(m) {
+  let h = '<div class="dias">';
+  LOGIN_PREMIOS.forEach((pr, i) => {
+    const n = i + 1;
+    const cls = n < m.racha ? 'hecho' : n === m.racha ? 'hoy' : '';
+    h += `<div class="dia ${cls}"><b>DÍA ${n}</b><span>${n === 7 ? '🎁' : pr.oro ? '🪙' : '🧪'}</span><small>${esc(pr.txt)}</small></div>`;
+  });
+  h += '</div>';
+  let txt = '¡Hoy recibes ' + m.txt + '!';
+  if (m.oro) txt = '¡Hoy recibes ' + m.oro.toLocaleString('es') + ' oro' + (m.item ? ' y ' + RAREZAS[m.item.r].nombre.toLowerCase() + ': ' + nombreItem(m.item) : '') + '!';
+  $('login-cuerpo').innerHTML = h + `<p class="centro" style="margin-top:12px;color:#00ff88">${esc(txt)}</p><p class="centro" style="font-size:12px;color:rgba(255,255,255,.55)">Vuelve mañana para el día ${m.racha % 7 + 1}. Si faltas un día, la racha vuelve a empezar. El oro crece con tu nivel.</p>`;
+  abrir('m-login');
+  sfx('moneda', .5);
+}
+
+// ── JEFE MUNDIAL ──
+let mundial = { vivo: false, en: 0 };
+function pintarMundial() {
+  const el = $('h-mundial');
+  if (!yo) return;
+  if (mundial.vivo) { ponTxt(el, '👹 ¡Jefe mundial en el Coliseo! (portal del pueblo)'); el.className = 'lista'; return; }
+  const ms = mundial.en - performance.now();
+  if (mundial.en && ms > 0) {
+    const mm = Math.floor(ms / 60000), ss = Math.floor(ms / 1000) % 60;
+    ponTxt(el, '👹 Jefe mundial en ' + mm + ':' + String(ss).padStart(2, '0'));
+    el.className = ms < 120000 ? 'lista' : '';
+  } else { ponTxt(el, ''); el.className = ''; }
 }
 
 // ── EFECTOS ──
@@ -727,7 +894,7 @@ function dibujarHoja(k, hoja, fila, col, alto, x, y, f, alpha, tinte, blancoFlas
   g.save();
   g.globalAlpha = alpha;
   g.translate(x, y);
-  g.scale(f > 0 ? 1 : -1, 1);
+  g.scale((f > 0) !== !!hoja.izq ? 1 : -1, 1);
   g.drawImage(img, col * hoja.fw, fila * hoja.fh, hoja.fw, hoja.fh, -dw / 2, -dh, dw, dh);
   g.restore();
 }
@@ -869,6 +1036,8 @@ function dibujarDuende(q, esYo) {
   // se encimaban ("ClaudeTest · Nv1Duendecillo Bot").
   const baja = !esYo && Math.abs(q.x - P.x) < 110 && Math.abs(q.y - P.y) < 40 ? 13 : 0;
   etiqueta(x, pies + 16 + baja, nom + ' · Nv' + lv, esYo ? '#ffe600' : (SKINS[skin] ? SKINS[skin].color : '#fff'), 6);
+  const ti = esYo ? tituloDe(yo.titulo) : q.ti;
+  if (ti) etiqueta(x, pies + 29 + baja, '« ' + ti + ' »', '#c084fc', 5);
   if (!esYo && q.hp < q.mx) {
     g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(x - 18, pies - 76, 36, 5);
     g.fillStyle = '#ff3344'; g.fillRect(x - 17, pies - 75, 34 * Math.max(0, q.hp / q.mx), 3);
@@ -1030,6 +1199,7 @@ function pintarHud() {
     hm.className = lista ? 'lista' : '';
   }
   pintarPoderes();
+  pintarHabs();
 }
 
 // ── MISIONES ──
@@ -1166,13 +1336,17 @@ document.querySelectorAll('[data-itab]').forEach(b => b.onclick = () => { tabInv
 function abrirInventario() { if (!yo) return; abrir('m-inv'); pintarInventario(); }
 function pintarInventario() {
   if (!yo) return;
-  $('inv-stats').innerHTML =
+  if (tabInv === 'equipo' || tabInv === 'logros') $('inv-stats').innerHTML = '';
+  else $('inv-stats').innerHTML =
     `<div class="fila"><span>NIVEL</span><span>${yo.nivel}</span></div>` +
     `<div class="fila"><span>VIDA</span><span>${yo.maxHp}</span></div>` +
     `<div class="fila"><span>ATAQUE</span><span>${yo.atk}</span></div>` +
     `<div class="fila"><span>DEFENSA</span><span>${yo.def}</span></div>` +
+    `<div class="fila"><span>CRÍTICO</span><span>${Math.round((yo.crit || .12) * 100)}%</span></div>` +
     `<div class="fila"><span>ARMA</span><span>${esc(ARMAS[yo.arma].nombre)} +${(yo.forja || {})[yo.arma] || 0}</span></div>` +
     `<div class="fila"><span>MONSTRUOS / JEFES</span><span>${yo.kills} / ${yo.jefes}</span></div>`;
+  if (tabInv === 'equipo') return pintarEquipo();
+  if (tabInv === 'logros') return pintarLogros();
   const tabla = tabInv === 'arma' ? ARMAS : SKINS;
   const tiene = tabInv === 'arma' ? yo.armas : yo.skins;
   const puesto = tabInv === 'arma' ? yo.arma : yo.skin;

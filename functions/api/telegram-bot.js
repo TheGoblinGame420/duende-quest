@@ -155,7 +155,7 @@ async function handleStart(token, env, chatId, user, startPayload) {
   const referralLink = `https://t.me/duendequest_bot?start=ref_${user.id}`;
   await tg(token, 'sendMessage', {
     chat_id: chatId,
-    text: `🧌 *¡Bienvenido a DUENDE QUEST, ${user.first_name || 'Duende'}!*\n\n⚔️ Juego arcade play-to-earn en Solana\n💰 Gana tokens $DUENDE jugando\n🗺 Campaña de 15 etapas con jefes\n🌍 *NUEVO: DUENDE QUEST ONLINE* — el MMORPG: caza con otros jugadores\n🏆 Compite en el ranking global\n\n${TEXTO_CREADOR}\n\n🎁 *Tu link de referido:*\n\`${referralLink}\`\n_Invita amigos y ambos ganan 500 $DUENDE_`,
+    text: `🧌 *¡Bienvenido a DUENDE QUEST, ${user.first_name || 'Duende'}!*\n\n⚔️ Juego arcade play-to-earn en Solana\n💰 Gana tokens $DUENDE jugando\n🗺 Campaña de 15 etapas con jefes\n🌍 *DUENDE QUEST ONLINE* — el MMORPG: 10 zonas hasta Nv 60, equipo legendario y jefe mundial cada 30 min\n🏆 Compite en el ranking global\n\n${TEXTO_CREADOR}\n\n🎁 *Tu link de referido:*\n\`${referralLink}\`\n_Invita amigos y ambos ganan 500 $DUENDE_`,
     parse_mode: 'Markdown',
     reply_markup: { inline_keyboard: [
       [{ text: '🎮 JUGAR AHORA', web_app: { url: WEBAPP_URL } }],
@@ -476,7 +476,7 @@ async function onRequestPost(context) {
         case '/start': await handleStart(token, env, chatId, user, payload); break;
         case '/play': case '/jugar': await handlePlay(token, chatId); break;
         case '/mmo': case '/online':
-          await tg(token, 'sendMessage', { chat_id: chatId, text: '🌍 *DUENDE QUEST ONLINE*\n\nEl MMORPG de los duendes: 6 zonas, jefes que reaparecen, las 7 skins y las 4 armas. Caza junto a otros jugadores en tiempo real.', parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🌍 ENTRAR AL MUNDO', web_app: { url: MMO_URL } }]] } });
+          await tg(token, 'sendMessage', { chat_id: chatId, text: '🌍 *DUENDE QUEST ONLINE*\n\nEl MMORPG de los duendes: 10 zonas hasta el nivel 60, equipo legendario, habilidades, logros, recompensa diaria y un jefe mundial cada 30 minutos. Caza junto a otros jugadores en tiempo real.', parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🌍 ENTRAR AL MUNDO', web_app: { url: MMO_URL } }]] } });
           break;
         case '/ranking': case '/top': await handleRanking(token, env, chatId); break;
         case '/price': case '/precio': await handlePrice(token, chatId); break;
