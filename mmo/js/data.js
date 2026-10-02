@@ -89,9 +89,11 @@ export function statsMonstruo(key) {
   const m = MONSTRUOS[key];
   const L = m.nivel;
   const hp = Math.round((30 + 15 * L) * (m.hpX || 1));
-  // 6+4L mataba a un nivel 1 en 6 golpes de un Nv3: con 4+3L un monstruo de
-  // tu nivel necesita ~15 golpes y uno 2 niveles arriba ~8.
-  const atk = Math.round((4 + 3 * L) * (m.atkX || 1));
+  // 6+4L mataba a un nivel 1 en 6 golpes de un Nv3. Con 4+3L seguia siendo
+  // facil morir: el ataque crecia mas rapido que la vida del jugador y desde
+  // Nv 20 un monstruo de tu nivel te tumbaba en ~10 golpes. Con 4+2,4L (y la
+  // vida a +30/nivel) uno de tu nivel necesita ~20 golpes en todo el juego.
+  const atk = Math.round((4 + 2.4 * L) * (m.atkX || 1));
   const xp = Math.round((5 + 4 * L) * (m.jefe ? 12 : 1));
   const oro = Math.round((2 + 2 * L) * (m.jefe ? 25 : 1));
   return {
@@ -107,7 +109,7 @@ export function xpParaSubir(nivel) { return Math.round(40 * Math.pow(nivel, 1.5)
 export function statsJugador(nivel, skin) {
   const b = (SKINS[skin] && SKINS[skin].buffs) || {};
   return {
-    maxHp: 100 + 25 * (nivel - 1) + (b.bonusHp || 0) * Math.max(1, Math.floor(nivel / 5)),
+    maxHp: 100 + 30 * (nivel - 1) + (b.bonusHp || 0) * Math.max(1, Math.floor(nivel / 5)),
     atk: Math.round((10 + 3 * (nivel - 1)) * (b.atkMult || 1)),
     def: Math.floor(nivel * 1.5),
   };

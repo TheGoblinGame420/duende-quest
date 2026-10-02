@@ -25,7 +25,7 @@ const JEFE_REAPARECE_MS = 5 * 60 * 1000;
 const JEFE_PRIMERO_MS = 60 * 1000;
 const ESCUDO_MS = 5000;
 const FUEGO_MS = 8000;
-const INVULNERABLE_GOLPE_MS = 700;
+const INVULNERABLE_GOLPE_MS = 900;
 const INACTIVO_MS = 10 * 60 * 1000;
 // Bots de las pruebas en produccion (sus tokens de invitado son fijos): juegan
 // de verdad pero no deben aparecer en el ranking de los jugadores reales.
@@ -574,7 +574,11 @@ export class MmoWorld {
     if (s.muerto) return;
     const ahora = Date.now();
     if (ahora < s.inv || ahora < s.escudo) return;
-    const real = Math.max(1, Math.round(dmg * rnd(0.9, 1.1) - s.st.def * 0.5));
+    let real = Math.max(1, Math.round(dmg * rnd(0.9, 1.1) - s.st.def * 0.6));
+    // Un monstruo comun nunca quita mas de un 30% de la vida de un golpe: en
+    // una zona algo alta se sufre, pero ya no se muere en tres toques. Los
+    // jefes quedan fuera (su embestida avisada es el peligro de verdad).
+    if (!(fuente && fuente.jefe)) real = Math.min(real, Math.ceil(s.st.maxHp * 0.3));
     s.hp -= real;
     s.inv = ahora + INVULNERABLE_GOLPE_MS;
     s.golpeT = ahora;
@@ -775,11 +779,11 @@ export class MmoWorld {
       }
     }
 
-    // Regeneracion: rapida en zona segura, y en las zonas solo tras 5 s sin
+    // Regeneracion: rapida en zona segura, y en las zonas solo tras 4 s sin
     // recibir golpes (descansar entre peleas en vez de volver al pueblo).
     for (const s of jugadores) {
       if (s.muerto || s.hp >= s.st.maxHp) continue;
-      const k = !mapa.zona ? 0.12 : (ahora - (s.golpeT || 0) > 5000 ? 0.03 : 0);
+      const k = !mapa.zona ? 0.12 : (ahora - (s.golpeT || 0) > 4000 ? 0.04 : 0);
       if (k) s.hp = Math.min(s.st.maxHp, s.hp + s.st.maxHp * k * dt);
     }
 
@@ -809,7 +813,7 @@ export class MmoWorld {
       for (const s of jugadores) {
         if (s.muerto) continue;
         if (Math.abs(b.x - s.x) < FIS.jugW / 2 + 6 && b.y > s.y - FIS.jugH && b.y < s.y + 4) {
-          this.herir(s, b.dmg, { id: b.dueno });
+          this.herir(s, b.dmg, { id: b.dueno, jefe: b.jefe });
           return false;
         }
       }
@@ -916,7 +920,7 @@ export class MmoWorld {
       for (const a of angs) {
         this.mundo[o.mapa].balas.push({
           id: this.sigBala++, x: o.x + Math.cos(a) * 20, y: oy, vx: Math.cos(a) * 260, vy: Math.sin(a) * 260,
-          dmg: o.atk * (o.jefe ? 1 : 0.8), hasta: ahora + 2200, dueno: o.id, jefe: o.jefe,
+          dmg: o.atk * (o.jefe ? 1 : 0.6), hasta: ahora + 2200, dueno: o.id, jefe: o.jefe,
         });
       }
       o.golpeHasta = Math.max(o.golpeHasta, ahora + 200);  // pose de "lanzar" (frame de golpe)
@@ -934,7 +938,7 @@ export class MmoWorld {
           // la mision del jefe en solitario, y hoy casi siempre se juega solo.
           const dmg = o.jefe ? (o.embiste ? o.atk * 2.4 : o.atk * 0.7) : o.atk;
           this.herir(s, dmg, o);
-          o.ataqueEn = ahora + (o.jefe ? 1250 : 1100);
+          o.ataqueEn = ahora + (o.jefe ? 1250 : 1300);
           break;
         }
       }

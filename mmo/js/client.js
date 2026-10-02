@@ -5,15 +5,20 @@
 // algo (daño, oro, experiencia, compras) lo decide el servidor.
 // ═══════════════════════════════════════════════════════
 import {
-  VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, MISIONES, DIARIA,
+  VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, ALCANCE_BASE, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
-} from './data.js?v=18';
+} from './data.js?v=19';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
 // reventar al cargar y dejar la pantalla de carga colgada.
 const $ = id => document.getElementById(id) || (() => { const e = document.createElement(id === 'mini' ? 'canvas' : 'div'); e.id = id; return e; })();
 const A = '/assets/';
+// El HUD se repinta cada fotograma: tocar el DOM aunque el valor no cambie
+// obliga al navegador a recalcular estilos 60 veces por segundo. Estas dos
+// solo escriben cuando hay un cambio real.
+function ponTxt(el, v) { if (el._t !== v) { el._t = v; el.textContent = v; } }
+function ponCss(el, prop, v) { const k = '_c' + prop; if (el[k] !== v) { el[k] = v; el.style[prop] = v; } }
 const TG = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? window.Telegram.WebApp : null;
 if (TG) {
   try { TG.ready(); TG.expand(); TG.disableVerticalSwipes && TG.disableVerticalSwipes(); TG.setHeaderColor && TG.setHeaderColor('#0a0418'); } catch (e) {}
@@ -36,7 +41,9 @@ if (TACTIL) document.body.classList.add('tactil');
 // mundo sigue midiendo 450 de alto y se dibuja desplazado OY hacia abajo.
 let VW = 800, OY = 0;
 const cv = $('gc');
-const g = cv.getContext('2d');
+// Opaco: el fondo se pinta entero cada fotograma y asi el navegador no
+// tiene que mezclar el lienzo con la pagina.
+const g = cv.getContext('2d', { alpha: false });
 if (TACTIL) {
   const f1 = $('t-fila1');
   f1.insertBefore($('interactuar'), f1.firstChild);
@@ -105,17 +112,51 @@ function tenido(k, hex) {
   return c;
 }
 function blanco(k) { return tenido(k, '#ffffff'); }
+// Crear una copia teñida es caro (un lienzo del tamaño de toda la hoja): si
+// se hacia la primera vez que se golpeaba a cada monstruo, ese golpe daba un
+// tiron. Se preparan todas mientras carga, de a poco para no congelar.
+function precalentarTintes() {
+  const tareas = [];
+  for (const k in HOJAS) { tareas.push(['sh_' + k, '#ffffff'], ['sh_' + k, '#ff3344']); }
+  for (const k in MONSTRUOS) if (MONSTRUOS[k].tinte) tareas.push(['sh_' + MONSTRUOS[k].hoja, MONSTRUOS[k].tinte]);
+  for (const f in FX) for (const sk in SKINS) if (sk !== 'comun') tareas.push(['fx_' + f, SKINS[sk].color]);
+  const paso = () => { const t0 = performance.now(); while (tareas.length && performance.now() - t0 < 8) { const [k, c] = tareas.shift(); tenido(k, c); } if (tareas.length) setTimeout(paso, 16); };
+  paso();
+}
 
 // ── SONIDO ──
 let sonido = localStorage.getItem('dq_mmo_sonido') !== '0';
+// Efectos con Web Audio: se decodifican una vez y cada golpe es un nodo
+// barato. Con <audio> (currentTime = 0 + play() en cada golpe) el iPhone y
+// varios Android congelaban el hilo principal un instante en cada impacto:
+// ese era el "lag al pegar".
+const SFX_NOMBRES = ['corte', 'corte2', 'golpe', 'muerte', 'moneda', 'salto', 'caida', 'boton', 'explosion'];
+const AC = window.AudioContext || window.webkitAudioContext;
+let actx = null;
 const SFX = {};
-['corte', 'corte2', 'golpe', 'muerte', 'moneda', 'salto', 'caida', 'boton', 'explosion'].forEach(k => {
-  SFX[k] = { pool: [0, 1, 2].map(() => { const a = new Audio('/audio/sfx/' + k + '.ogg'); a.preload = 'auto'; a.volume = .45; return a; }), i: 0 };
-});
+const sfxUltimo = {};
+function iniciarAudio() {
+  if (actx || !AC) { if (actx && actx.state === 'suspended') actx.resume().catch(() => {}); return; }
+  try { actx = new AC(); } catch (e) { return; }
+  SFX_NOMBRES.forEach(k => {
+    // mp3 y no ogg: Safari de iPhone no siempre decodifica Ogg Vorbis.
+    fetch('/audio/sfx/' + k + '.mp3').then(r => r.arrayBuffer())
+      .then(b => new Promise((ok, mal) => actx.decodeAudioData(b, ok, mal)))
+      .then(buf => { SFX[k] = buf; }).catch(() => {});
+  });
+}
+['touchstart', 'pointerdown', 'keydown'].forEach(ev => addEventListener(ev, iniciarAudio, { passive: true }));
 function sfx(k, vol) {
-  if (!sonido || !SFX[k]) return;
-  const s = SFX[k]; const a = s.pool[s.i]; s.i = (s.i + 1) % s.pool.length;
-  try { a.currentTime = 0; a.volume = vol || .45; a.play().catch(() => {}); } catch (e) {}
+  if (!sonido || !actx || !SFX[k] || actx.state !== 'running') return;
+  // El mismo sonido mas de una vez cada 45 ms no se oye distinto y solo gasta.
+  const ahora = performance.now();
+  if (ahora - (sfxUltimo[k] || 0) < 45) return;
+  sfxUltimo[k] = ahora;
+  try {
+    const src = actx.createBufferSource(); src.buffer = SFX[k];
+    const gan = actx.createGain(); gan.gain.value = vol || .45;
+    src.connect(gan); gan.connect(actx.destination); src.start();
+  } catch (e) {}
 }
 const musica = new Audio('/audio/bg_music.ogg'); musica.loop = true; musica.volume = .25;
 function pintarSonido() { $('b-sonido').textContent = sonido ? '🔊' : '🔇'; }
@@ -372,10 +413,10 @@ function ataqueRemoto(m) {
     o.golpeT = performance.now();
     const col = tipo === 1 ? '#ff9900' : tipo === 2 ? '#00eeff' : tipo === 3 ? '#ff3cf0' : '#ffffff';
     flotante(o.x + (Math.random() - .5) * 16, o.y - o.alto - 6, (tipo === 1 ? '¡' : '') + dmg + (tipo === 1 ? '!' : ''), col, tipo === 1 ? 13 : 10);
-    for (let i = 0; i < 6; i++) particula(o.x, o.y - o.alto / 2, col, 3);
+    for (let i = 0; i < 4; i++) particula(o.x, o.y - o.alto / 2, col, 3);
     if (tipo === 2 && m.s !== -1) lanzarFX('rayo', o.x, o.y - o.alto / 2, .5, false);
   }
-  if (m.h.length && m.p === miId) sfx('golpe', .35);
+  if (m.h.length && m.p === miId && !(performance.now() - (P.golpePredicho || 0) < 600)) sfx('golpe', .35);
 }
 
 function efectoPoder(pid, i) {
@@ -452,6 +493,19 @@ function atacar() {
   const esc = (arma.alcance || 1) * (P.paso === 2 ? 1.25 : 1.05);
   lanzarFX(tipo, P.x + P.f * 40 * arma.alcance, P.y - 32, esc, P.f < 0, true, colorCorte(yo.skin));
   sfx(P.paso === 1 ? 'corte2' : 'corte', .35);
+  // Respuesta inmediata: el destello y el sonido del impacto salen ya, con la
+  // misma caja de golpe que usa el servidor; los numeros de daño llegan con
+  // su respuesta. Antes todo esperaba el viaje de ida y vuelta (100-300 ms
+  // en movil) y cada golpe se sentia con retraso.
+  const alcance = ALCANCE_BASE[P.paso] * arma.alcance;
+  const alto = 72 * (yo.arma === 'odachi' ? 1.4 : 1);
+  const x0 = P.f > 0 ? P.x - 8 : P.x - 8 - alcance, x1 = P.f > 0 ? P.x + 8 + alcance : P.x + 8;
+  let acierta = false;
+  for (const o of mons.values()) {
+    if (o.muereT || o.x + o.w / 2 < x0 || o.x - o.w / 2 > x1 || o.y < P.y - alto || o.y - o.h > P.y + 8) continue;
+    o.golpeT = ahora; acierta = true;
+  }
+  if (acierta) { sfx('golpe', .35); P.golpePredicho = ahora; }
 }
 function usarPoder(i) {
   if (!yo || P.muerto) return;
@@ -546,7 +600,7 @@ function pintarPoderes() {
   PODERES.forEach((p, i) => {
     const d = cont.children[i];
     const n = yo.pw[p.id] || 0;
-    d.querySelector('.n').textContent = n;
+    ponTxt(d.querySelector('.n'), String(n));
     d.classList.toggle('vacio', n <= 0);
   });
 }
@@ -556,16 +610,21 @@ function pintarCooldowns() {
   PODERES.forEach((p, i) => {
     const fin = cdPoder[p.id] || 0;
     const k = fin > ahora ? (fin - ahora) / p.cd : 0;
-    cont.children[i].querySelector('.cd').style.height = Math.round(k * 100) + '%';
+    ponCss(cont.children[i].querySelector('.cd'), 'height', Math.round(k * 100) + '%');
   });
 }
 
 // ── EFECTOS ──
-function flotante(x, y, txt, color, tam) { textos.push({ x, y, txt, color, tam: tam || 10, t: 0 }); if (textos.length > 80) textos.shift(); }
+// Topes bajos a proposito: en un movil, 400 particulas y 80 textos a la vez
+// (un combo contra un grupo) era lo que hacia caer los fotogramas.
+function flotante(x, y, txt, color, tam) { textos.push({ x, y, txt, color, tam: tam || 10, t: 0 }); if (textos.length > 30) textos.shift(); }
 function particula(x, y, color, vel) {
-  parts.push({ x, y, vx: (Math.random() - .5) * vel * 2, vy: (Math.random() - .8) * vel * 1.6, color, vida: 30 + Math.random() * 20, t: 0 });
-  if (parts.length > 400) parts.shift();
+  if (parts.length >= 160) return;
+  parts.push({ x, y, vx: (Math.random() - .5) * vel * 2, vy: (Math.random() - .8) * vel * 1.6, color, vida: 24 + Math.random() * 16, t: 0 });
 }
+// Filtra en el sitio (sin crear un arreglo nuevo cada fotograma: menos
+// recolector de basura, que en movil se nota como tirones).
+function filtrar(arr, fn) { let j = 0; for (let i = 0; i < arr.length; i++) if (fn(arr[i])) arr[j++] = arr[i]; arr.length = j; return arr; }
 function lanzarFX(tipo, x, y, escala, flip, sigue, tinte) {
   efectos.push({ tipo, x, y, escala, flip, sigue, tinte, t: 0, dx: sigue ? x - P.x : 0, dy: sigue ? y - P.y : 0 });
   if (efectos.length > 60) efectos.shift();
@@ -645,10 +704,16 @@ function dibujarPortales(mp) {
   });
 }
 
+const _anchos = new Map();
+// Medidas tomadas antes de que cargue la fuente pixel salen con la de
+// respaldo: se tiran cuando ya esta lista.
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => _anchos.clear()).catch(() => {});
 function etiqueta(x, y, txt, color, tam) {
   g.font = (tam || 7) + 'px "Press Start 2P", monospace';
   g.textAlign = 'center';
-  const w = g.measureText(txt).width;
+  const kw = (tam || 7) + txt;
+  let w = _anchos.get(kw);
+  if (w === undefined) { w = g.measureText(txt).width; if (_anchos.size > 300) _anchos.clear(); _anchos.set(kw, w); }
   g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(x - w / 2 - 4, y - (tam || 7) - 3, w + 8, (tam || 7) + 7);
   g.fillStyle = color || '#fff'; g.fillText(txt, x, y);
 }
@@ -829,26 +894,37 @@ function burbuja(x, y, txt) {
 
 // Bolas de fuego: la posicion se extrapola desde la ultima foto del
 // servidor con su velocidad, asi se mueven fluidas a 60 fps.
+// La bola se dibuja una vez en un lienzo aparte y luego solo se copia: crear
+// un degradado radial por bala y por fotograma costaba caro en movil.
+const _bola = {};
+function spriteBola(jefe) {
+  const k = jefe ? 1 : 0;
+  if (_bola[k]) return _bola[k];
+  const r = (jefe ? 9 : 7) * 2.6, c = document.createElement('canvas');
+  c.width = c.height = Math.ceil(r * 2);
+  const x = c.getContext('2d'), col = jefe ? '255,60,240' : '192,132,252';
+  const rg = x.createRadialGradient(r, r, 1, r, r, r);
+  rg.addColorStop(0, 'rgba(255,255,255,.95)'); rg.addColorStop(.35, `rgba(${col},.85)`); rg.addColorStop(1, `rgba(${col},0)`);
+  x.fillStyle = rg; x.beginPath(); x.arc(r, r, r, 0, Math.PI * 2); x.fill();
+  return (_bola[k] = c);
+}
 function dibujarBalas() {
   const ahora = performance.now();
+  if (balas.length) g.globalCompositeOperation = 'lighter';
   for (const b of balas) {
     const dt = Math.min(0.2, (ahora - b.t) / 1000);
     const x = b.x + b.vx * dt - camX, y = b.y + b.vy * dt;
     if (x < -20 || x > VW + 20) continue;
-    const r = b.jefe ? 9 : 7;
-    const col = b.jefe ? '255,60,240' : '192,132,252';
-    g.save(); g.globalCompositeOperation = 'lighter';
-    const rg = g.createRadialGradient(x, y, 1, x, y, r * 2.6);
-    rg.addColorStop(0, 'rgba(255,255,255,.95)'); rg.addColorStop(.35, `rgba(${col},.85)`); rg.addColorStop(1, `rgba(${col},0)`);
-    g.fillStyle = rg; g.beginPath(); g.arc(x, y, r * 2.6, 0, Math.PI * 2); g.fill();
-    g.restore();
-    if (frame % 2 === 0) particula(x + camX - Math.sign(b.vx) * 6, y, b.jefe ? '#ff3cf0' : '#c084fc', 1.2);
+    const img = spriteBola(b.jefe);
+    g.drawImage(img, x - img.width / 2, y - img.height / 2);
+    if (frame % 3 === 0) particula(x + camX - Math.sign(b.vx) * 6, y, b.jefe ? '#ff3cf0' : '#c084fc', 1.2);
   }
+  g.globalCompositeOperation = 'source-over';
 }
 
 function dibujarEfectos() {
   dibujarBalas();
-  efectos = efectos.filter(f => {
+  filtrar(efectos, f => {
     const [fw, fh, n, tpf] = FX[f.tipo];
     const img = f.tinte ? tenido('fx_' + f.tipo, f.tinte) : IMG['fx_' + f.tipo];
     const i = Math.floor(f.t / tpf);
@@ -861,7 +937,7 @@ function dibujarEfectos() {
     g.restore();
     return true;
   });
-  parts = parts.filter(p => {
+  filtrar(parts, p => {
     p.t++; p.x += p.vx; p.y += p.vy; p.vy += .15; p.vx *= .97;
     if (p.t > p.vida) return false;
     g.globalAlpha = 1 - p.t / p.vida; g.fillStyle = p.color; g.fillRect(p.x - camX, p.y, 3, 3);
@@ -869,7 +945,7 @@ function dibujarEfectos() {
   });
   g.globalAlpha = 1;
   // Monedas que saltan del monstruo y vuelan hacia el duende.
-  monedas = monedas.filter(c => {
+  filtrar(monedas, c => {
     c.t++;
     if (c.t > 22) { c.vx += (P.x - c.x) * .012; c.vy += ((P.y - 30) - c.y) * .012; c.vx *= .9; c.vy *= .9; }
     else { c.vy += .35; if (c.y > SUELO - 4) { c.y = SUELO - 4; c.vy *= -.45; } }
@@ -879,11 +955,14 @@ function dibujarEfectos() {
     if (img && img.naturalWidth) { const s = 11 * Math.abs(Math.cos(c.t * .25)) + 2; g.drawImage(img, c.x - camX - s / 2, c.y - 6, s, 12); }
     return true;
   });
-  textos = textos.filter(t => {
+  g.textAlign = 'center';
+  let fuenteAct = '';
+  filtrar(textos, t => {
     t.t++; t.y -= .7;
     if (t.t > 60) return false;
     g.globalAlpha = Math.min(1, (60 - t.t) / 20);
-    g.font = t.tam + 'px "Press Start 2P", monospace'; g.textAlign = 'center';
+    const fu = t.tam + 'px "Press Start 2P", monospace';
+    if (fu !== fuenteAct) { g.font = fu; fuenteAct = fu; }
     g.fillStyle = '#000'; g.fillText(t.txt, t.x - camX + 1, t.y + 1);
     g.fillStyle = t.color; g.fillText(t.txt, t.x - camX, t.y);
     return true;
@@ -912,32 +991,32 @@ function dibujar() {
   if (fundido > 0) { g.fillStyle = `rgba(7,3,15,${fundido})`; g.fillRect(0, 0, cv.width, cv.height); fundido = Math.max(0, fundido - .05); }
   // Barra del jefe
   if (jefeVivo && !jefeVivo.muereT) {
-    $('jefe-bar').style.display = 'block';
-    $('jefe-n').textContent = '👑 ' + MONSTRUOS[jefeVivo.k].nombre + ' · Nv ' + MONSTRUOS[jefeVivo.k].nivel;
-    $('jefe-bar').querySelector('i').style.width = Math.max(0, jefeVivo.hp / jefeVivo.mx * 100) + '%';
-  } else $('jefe-bar').style.display = 'none';
+    ponCss($('jefe-bar'), 'display', 'block');
+    ponTxt($('jefe-n'), '👑 ' + MONSTRUOS[jefeVivo.k].nombre + ' · Nv ' + MONSTRUOS[jefeVivo.k].nivel);
+    ponCss($('jefe-bar').querySelector('i'), 'width', Math.max(0, Math.round(jefeVivo.hp / jefeVivo.mx * 100)) + '%');
+  } else ponCss($('jefe-bar'), 'display', 'none');
   // Boton contextual
   const c = cercano();
   const bi = $('interactuar');
   // visibility y no display: en la barra tactil ocupa su hueco siempre, asi
   // los botones de al lado no saltan de sitio cada vez que aparece.
-  bi.style.display = 'block';
+  ponCss(bi, 'display', 'block');
   if (c && yo && !P.muerto) {
-    bi.style.visibility = 'visible';
-    bi.textContent = c.tipo === 'portal' ? (TACTIL ? '🚪 ENTRAR' : 'E · ENTRAR') : (TACTIL ? '💬 HABLAR' : 'E · HABLAR');
-  } else bi.style.visibility = 'hidden';
+    ponCss(bi, 'visibility', 'visible');
+    ponTxt(bi, c.tipo === 'portal' ? (TACTIL ? '🚪 ENTRAR' : 'E · ENTRAR') : (TACTIL ? '💬 HABLAR' : 'E · HABLAR'));
+  } else ponCss(bi, 'visibility', 'hidden');
 }
 
 // ── HUD ──
 function pintarHud() {
   if (!yo) return;
   P.maxHp = yo.maxHp; P.hp = yo.hp; P.muerto = yo.muerto;
-  $('h-nombre').textContent = yo.nombre;
-  $('h-nivel').textContent = 'Nv ' + yo.nivel;
-  $('h-oro').textContent = yo.oro.toLocaleString('es');
+  ponTxt($('h-nombre'), yo.nombre);
+  ponTxt($('h-nivel'), 'Nv ' + yo.nivel);
+  ponTxt($('h-oro'), yo.oro.toLocaleString('es'));
   const pxp = yo.xpSig ? Math.floor(yo.xp / yo.xpSig * 100) : 100;
-  $('bxp').querySelector('i').style.width = pxp + '%';
-  $('h-xp').textContent = 'XP ' + pxp + '%';
+  ponCss($('bxp').querySelector('i'), 'width', pxp + '%');
+  ponTxt($('h-xp'), 'XP ' + pxp + '%');
   const q = MISIONES[yo.mis ? yo.mis.i : 0];
   const hm = $('h-mision');
   if (!q) {
@@ -1006,8 +1085,8 @@ function dibujarMinimapa() {
 }
 function pintarVida() {
   const k = P.maxHp ? P.hp / P.maxHp : 1;
-  $('bhp').querySelector('i').style.width = Math.max(0, k * 100) + '%';
-  $('h-hp').textContent = Math.max(0, Math.ceil(P.hp)) + '/' + P.maxHp;
+  ponCss($('bhp').querySelector('i'), 'width', Math.max(0, Math.round(k * 100)) + '%');
+  ponTxt($('h-hp'), Math.max(0, Math.ceil(P.hp)) + '/' + P.maxHp);
 }
 
 function aviso(txt, tipo) {
@@ -1138,6 +1217,7 @@ async function inicio() {
   pintarPoderes();
   const esperar = () => new Promise(r => { const chk = () => (cargadas >= porCargar ? r() : setTimeout(chk, 100)); chk(); });
   await Promise.race([esperar(), new Promise(r => setTimeout(r, 12000))]);
+  precalentarTintes();
   $('carga-s').textContent = 'Conectando…';
   const tokWeb = TG ? null : await tokenWeb();
   $('carga').style.display = 'none';
