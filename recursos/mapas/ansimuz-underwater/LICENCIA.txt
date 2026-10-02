@@ -1,0 +1,7 @@
+Pack: Underwater Diving Pack
+Autor: Luis Zuno (ansimuz)
+Fuente: https://opengameart.org/content/underwater-diving-pack
+Licencia: CC0 / dominio publico (public-license.txt: "Public domain and free to use on whatever you want, personal or commercial") 
+Fecha de descarga: 2026-10-02
+Atribucion obligatoria: NO.
+Uso: fondos del Abismo Marino y peces (pez, pez_dardo, pez_grande). No se copio la musica (Pascal Belisle, licencia aparte) ni el codigo.

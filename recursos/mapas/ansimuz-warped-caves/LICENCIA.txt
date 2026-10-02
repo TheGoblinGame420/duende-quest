@@ -1,0 +1,7 @@
+Pack: Warped Caves Pixel Art Pack
+Autor: Luis Zuno (ansimuz)
+Fuente: https://opengameart.org/content/warped-caves-pixel-art-pack
+Licencia: CC-BY 3.0 segun public-license.txt del zip (la pagina de OpenGameArt dice CC0; se toma la mas estricta) - https://creativecommons.org/licenses/by/3.0/
+Fecha de descarga: 2026-10-02
+Atribucion obligatoria: SI. Credito en CREDITOS.md y en la ayuda del MMO: "Warped Caves - Luis Zuno (ansimuz), CC-BY 3.0".
+Uso: fondos de Cavernas Abisales y enemigos cangrejo, saltador y pulpo.

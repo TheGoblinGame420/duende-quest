@@ -465,3 +465,37 @@ empaquetó para él:
   Recorte y medida: `tools/generar_goblin_lord_cc0.py`.
 - **Banner para compartir** (`assets/mmo_banner.png`): composición de sprites
   y fondos CC0 ya listados, con `tools/generar_banner_mmo.py`.
+
+### Gran expansión del MMO (2-oct-2026): zonas Nv 40-60, equipo y habilidades
+
+Hojas y fondos generados por `tools/generar_mmo_expansion_cc0.py`.
+
+**Con atribución obligatoria (CC-BY 3.0):**
+
+- **Magic Cliffs Environment** — Luis Zuno (ansimuz). CC-BY 3.0.
+  https://opengameart.org/content/magic-cliffs-environment
+  Fondos de los **Acantilados Mágicos**. (La página dice CC0 pero el
+  `public-license.txt` del zip dice CC-BY 3.0: se respeta la más estricta.)
+- **Warped Caves Pixel Art Pack** — Luis Zuno (ansimuz). CC-BY 3.0.
+  https://opengameart.org/content/warped-caves-pixel-art-pack
+  Fondos de las **Cavernas Abisales** y los enemigos cangrejo, saltarín y
+  pulpo. (Mismo caso de licencia que el anterior.)
+
+El crédito de estos dos también se muestra dentro del juego (ayuda ❔ del MMO).
+
+**CC0 (sin atribución obligatoria):**
+
+- **Mountain at Dusk Background** — ansimuz.
+  https://opengameart.org/content/mountain-at-dusk-background — fondos de las
+  **Cumbres del Ocaso**.
+- **Underwater Diving Pack** — ansimuz.
+  https://opengameart.org/content/underwater-diving-pack — fondos del
+  **Abismo Marino** y los peces (piraña, pez dardo, pez ogro / Leviatán). La
+  música del pack (Pascal Belisle, licencia aparte) NO se usó.
+- Ya descargados antes (ver `recursos/INDICE.md`): murciélago, babosa y
+  coloso esqueleto (**2D Platformer Enemies**, Ashuuya), araña, "cosa" y
+  espectro (**GothicVania Swamp**), gato infernal, esqueleto errante y alma
+  errante (**GothicVania Cemetery**), águila y zarigüeya (**Sunny Land**) y
+  el **Dragón Ancestral** (sunny-dragon de **Sideview Fantasy Collection**).
+- Íconos de equipo, habilidades y cofres: **496 pixel art RPG icons** —
+  Henrique Lazarini (7Soul1), CC0 (`assets/items/equipo/`).

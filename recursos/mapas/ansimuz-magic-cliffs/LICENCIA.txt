@@ -1,0 +1,7 @@
+Pack: Magic Cliffs Environment
+Autor: Luis Zuno (ansimuz)
+Fuente: https://opengameart.org/content/magic-cliffs-environment
+Licencia: CC-BY 3.0 segun public-license.txt del zip (la pagina de OpenGameArt dice CC0; se toma la mas estricta) - https://creativecommons.org/licenses/by/3.0/
+Fecha de descarga: 2026-10-02
+Atribucion obligatoria: SI. Credito en CREDITOS.md y en la ayuda del MMO: "Magic Cliffs Environment - Luis Zuno (ansimuz), CC-BY 3.0".
+Uso: fondos de la zona Acantilados Magicos (assets/fondos/acantilados_*.png).
