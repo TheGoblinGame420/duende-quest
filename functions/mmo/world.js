@@ -17,9 +17,10 @@ import {
   FORJA_MAX, costoForja, multForja,
   RANURAS, RAREZAS, BOLSA_MAX, baseItem, precioVenta, nombreItem, HABILIDADES, FURIA_MS,
   LOGIN_PREMIOS, multLogin, LOGROS, MUNDIAL_DURA_MS, proximoMundial,
+  MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, MTON_EDAD_MIN_MS, WALLET_ESPERA_MS, FONDO_REFERENCIA_MTON, tonAmigable,
   ATAQUE_CD_MS, ALCANCE_BASE, COMBO_MULT, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre,
 } from '../../mmo/js/data.js';
-import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery } from '../api/lib.js';
+import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery, tg } from '../api/lib.js';
 
 const MAX_JUGADORES = 300;
 const GUARDAR_CADA_MS = 20000;
@@ -51,6 +52,7 @@ function personajeNuevo(uid, nombre) {
     kills: 0, jefes: 0, creado: Date.now(),
     mis: { i: 0, p: 0 },
     eq: {}, bolsa: [], logros: [], titulo: '', mundiales: 0, login: null,
+    mton: 0, mtonTotal: 0, wallet: null,
   };
 }
 
@@ -91,12 +93,16 @@ export class MmoWorld {
     this.sigSesion = 1;
     this.sigMon = 1;
     this.bucle = null;
+    this.fondo = null;
+    this.retiros = [];
     if (state.blockConcurrencyWhile) state.blockConcurrencyWhile(() => this.migrar());
   }
 
   // Migraciones de una sola vez sobre el almacenamiento del mundo.
   async migrar() {
     try {
+      this.fondo = (await this.state.storage.get('fondo')) || null;
+      this.retiros = (await this.state.storage.get('retiros')) || [];
       // Los personajes de prueba de las verificaciones en produccion del
       // 30-sep-2026 ("Bot Prueba" subio a Nv 2) no deben salir en el ranking real.
       if (!(await this.state.storage.get('mig:ranking-pruebas'))) {
@@ -114,6 +120,8 @@ export class MmoWorld {
   }
 
   async _fetch(request) {
+    const url = new URL(request.url);
+    if (url.pathname.startsWith('/interno/')) return this.interno(request, url.pathname.slice(9));
     if (request.headers.get('Upgrade') !== 'websocket') {
       return new Response(JSON.stringify({ ok: true, online: this.contarOnline() }), { headers: { 'Content-Type': 'application/json' } });
     }
@@ -201,6 +209,9 @@ export class MmoWorld {
       case 'hab': return this.habilidad(s, m);
       case 'item': return this.item(s, m);
       case 'titulo': return this.ponerTitulo(s, m);
+      case 'wallet': return this.ponerWallet(s, m);
+      case 'retirar': return this.retirar(s);
+      case 'fondo': return this.enviar(s, { t: 'fondo', ...this.infoFondo() });
       case 'ping': return this.enviar(s, { t: 'pong', ts: m.ts });
     }
   }
@@ -273,6 +284,7 @@ export class MmoWorld {
     c.skins = c.skins || ['comun']; c.armas = c.armas || ['katana']; c.pw = c.pw || {};
     c.mis = c.mis || { i: 0, p: 0 };
     c.forja = c.forja || {};
+    c.mton = c.mton || 0; c.mtonTotal = c.mtonTotal || 0; c.wallet = c.wallet || null;
     c.eq = c.eq || {}; c.bolsa = c.bolsa || []; c.logros = c.logros || []; c.titulo = c.titulo || ''; c.mundiales = c.mundiales || 0;
     for (const p of PODERES) if (typeof c.pw[p.id] !== 'number') c.pw[p.id] = 0;
     if (!MAPAS[c.mapa]) c.mapa = 'pueblo';
@@ -330,6 +342,162 @@ export class MmoWorld {
   }
 
   stats(c) { return statsJugador(c.nivel, c.skin, c.eq); }
+
+  // ── mTON / PLAY TO EARN ──
+  // Quien puede ganar: cuenta real (Telegram o web, no invitado), Nv 15+ y
+  // personaje con 48 h. Frena granjas de bots con cuentas desechables.
+  elegibilidad(c) {
+    return {
+      cuenta: !c.uid.startsWith('inv:') && !UIDS_PRUEBA.has(c.uid),
+      nivel: c.nivel >= MTON_NIVEL_MIN,
+      edad: Date.now() - (c.creado || Date.now()) >= MTON_EDAD_MIN_MS,
+    };
+  }
+
+  // El fondo del dia (UTC). auto = % de ingresos de la semana (lo pone el
+  // cron cada medianoche); extra = TON diarios que el dueño agrega a mano.
+  fondoHoy() {
+    const hoy = hoyUTC();
+    const f = this.fondo || { dia: '', auto: 0, extra: 0, gastado: 0, porUid: {} };
+    if (f.dia !== hoy) { f.dia = hoy; f.gastado = 0; f.porUid = {}; f.avisados = {}; }
+    this.fondo = f;
+    return f;
+  }
+  infoFondo() {
+    const f = this.fondoHoy();
+    const total = Math.round((f.auto || 0) + (f.extra || 0));
+    return { total, gastado: Math.round(f.gastado), auto: Math.round(f.auto || 0), extra: Math.round(f.extra || 0) };
+  }
+  guardarFondo() { this.state.storage.put('fondo', this.fondo).catch(() => {}); }
+
+  darMton(s, base, motivo) {
+    const c = s.c;
+    const el = this.elegibilidad(c);
+    const f = this.fondoHoy();
+    const total = (f.auto || 0) + (f.extra || 0);
+    if (!el.cuenta || !el.nivel || !el.edad) {
+      // Una vez por dia se le explica por que no gano mTON.
+      if (!f.avisados) f.avisados = {};
+      if (el.cuenta && !f.avisados[c.uid]) {
+        f.avisados[c.uid] = 1;
+        this.enviar(s, { t: 'toast', m: !el.nivel ? `💎 Desde nivel ${MTON_NIVEL_MIN} ganas mTON (TON real) en jefes y misiones.` : '💎 Tu personaje gana mTON a partir de su 2º día de vida.' });
+      }
+      return 0;
+    }
+    if (total <= 0) return 0;
+    const factor = clamp(total / FONDO_REFERENCIA_MTON, 0.25, 5);
+    const topeCuenta = Math.max(50, total * 0.25);
+    const ya = f.porUid[c.uid] || 0;
+    const n = Math.floor(Math.min(base * factor, total - f.gastado, topeCuenta - ya));
+    if (n <= 0) {
+      if (!f.avisados) f.avisados = {};
+      if (!f.avisados['x' + c.uid]) { f.avisados['x' + c.uid] = 1; this.enviar(s, { t: 'toast', m: f.gastado >= total ? '💎 El fondo de mTON de hoy ya se repartió. Vuelve mañana.' : '💎 Llegaste al máximo de mTON por jugador de hoy.' }); }
+      return 0;
+    }
+    c.mton += n; c.mtonTotal += n;
+    f.gastado += n; f.porUid[c.uid] = ya + n;
+    s.sucio = true;
+    this.guardarFondo();
+    this.enviar(s, { t: 'mton', n, total: c.mton, motivo });
+    return n;
+  }
+
+  ponerWallet(s, m) {
+    const c = s.c;
+    const a = String(m.a || '').toLowerCase();
+    if (!/^(-1|0):[0-9a-f]{64}$/.test(a)) return this.enviar(s, { t: 'toast', m: 'Dirección de wallet no válida.' });
+    if (c.uid.startsWith('inv:')) return this.enviar(s, { t: 'toast', m: 'Inicia sesión con Telegram o tu cuenta para conectar una wallet.' });
+    if (c.wallet && c.wallet.a === a) return;
+    if (this.retiros.some(x => x.uid === c.uid && x.estado === 'pendiente')) return this.enviar(s, { t: 'toast', m: 'No puedes cambiar de wallet con un retiro pendiente.' });
+    return this.state.storage.get('w:' + a).then(async dueno => {
+      if (dueno && dueno !== c.uid) return this.enviar(s, { t: 'toast', m: 'Esa wallet ya está ligada a otra cuenta del juego.' });
+      if (c.wallet) await this.state.storage.delete('w:' + c.wallet.a);
+      await this.state.storage.put('w:' + a, c.uid);
+      c.wallet = { a, desde: Date.now() };
+      await this.guardar(s);
+      this.enviar(s, { t: 'toast', m: `👛 Wallet conectada. Podrás retirar a ella dentro de ${WALLET_ESPERA_MS / 3600000} horas (protección por si te roban la cuenta).`, ok: true });
+      this.actualizarYo(s);
+    });
+  }
+
+  async retirar(s) {
+    const c = s.c;
+    const el = this.elegibilidad(c);
+    const no = t => this.enviar(s, { t: 'toast', m: t });
+    if (!el.cuenta || !el.nivel) return no(`Para retirar necesitas una cuenta de Telegram o web y nivel ${MTON_NIVEL_MIN}.`);
+    if (!c.wallet) return no('Primero conecta tu wallet TON.');
+    if (Date.now() - c.wallet.desde < WALLET_ESPERA_MS) return no('Tu wallet es nueva: podrás retirar cuando cumpla ' + (WALLET_ESPERA_MS / 3600000) + ' horas conectada.');
+    if (c.mton < RETIRO_MIN_MTON) return no(`El retiro mínimo es ${RETIRO_MIN_MTON.toLocaleString('es')} mTON (${RETIRO_MIN_MTON / MTON_POR_TON} TON).`);
+    if (this.retiros.some(x => x.uid === c.uid && x.estado === 'pendiente')) return no('Ya tienes un retiro pendiente de aprobación.');
+    const mton = Math.floor(c.mton);
+    const r = {
+      id: Math.random().toString(36).slice(2, 8).toUpperCase(), uid: c.uid, nombre: c.nombre, nivel: c.nivel,
+      mton, ton: mton / MTON_POR_TON, wallet: c.wallet.a, amigable: tonAmigable(c.wallet.a),
+      creado: Date.now(), estado: 'pendiente', kills: c.kills, edadDias: Math.floor((Date.now() - (c.creado || Date.now())) / 86400000),
+    };
+    c.mton -= mton;
+    this.retiros.push(r);
+    if (this.retiros.length > 300) this.retiros = this.retiros.filter(x => x.estado === 'pendiente').concat(this.retiros.filter(x => x.estado !== 'pendiente').slice(-200));
+    await this.state.storage.put('retiros', this.retiros);
+    await this.guardar(s);
+    this.enviar(s, { t: 'toast', m: `💸 Retiro de ${r.ton} TON solicitado. El equipo lo revisa y lo paga a tu wallet (normalmente en 24-48 h).`, ok: true });
+    this.actualizarYo(s);
+    // Solo letras/numeros: un nombre con * _ ` rompia el Markdown del aviso.
+    const nom = r.nombre.replace(/[^\p{L}\p{N} ]/gu, '');
+    this.avisarAdmin(`💸 *Retiro #${r.id}* — ${r.ton} TON\n👤 ${nom} · Nv ${r.nivel} · ${r.kills} cazas · personaje de ${r.edadDias} días\n👛 \`${r.amigable}\`\n\nPágalo desde tu wallet y luego: /pagado ${r.id}\nSi es trampa: /rechazar ${r.id}`);
+  }
+
+  async avisarAdmin(texto) {
+    try {
+      const env = getEnv({ env: this.env });
+      if (env.BOT_TOKEN && env.ADMIN_TG_ID) await tg(env.BOT_TOKEN, 'sendMessage', { chat_id: env.ADMIN_TG_ID, text: texto, parse_mode: 'Markdown' });
+    } catch (e) { console.error('[MMO avisarAdmin]', e); }
+  }
+  async avisarJugador(uid, texto) {
+    const s = this.porUid.get(uid);
+    if (s) { this.enviar(s, { t: 'toast', m: texto, ok: true }); this.actualizarYo(s); }
+    if (uid.startsWith('tg:')) {
+      try { const env = getEnv({ env: this.env }); await tg(env.BOT_TOKEN, 'sendMessage', { chat_id: uid.slice(3), text: texto }); } catch (e) {}
+    }
+  }
+
+  // Ordenes del bot (/retiros, /pagado, /rechazar, /fondo) y del cron.
+  async interno(request, accion) {
+    const json = o => new Response(JSON.stringify(o), { headers: { 'Content-Type': 'application/json' } });
+    if (!this.env.TELEGRAM_BOT_TOKEN || request.headers.get('x-interno') !== this.env.TELEGRAM_BOT_TOKEN) return new Response('no', { status: 403 });
+    let b = {};
+    try { b = await request.json(); } catch (e) {}
+    const f = this.fondoHoy();
+    if (accion === 'fondo') {
+      if (typeof b.auto === 'number' && b.auto >= 0) f.auto = Math.round(b.auto);
+      if (typeof b.extra === 'number' && b.extra >= 0) f.extra = Math.round(b.extra);
+      this.guardarFondo();
+      return json({ ok: true, ...this.infoFondo() });
+    }
+    if (accion === 'retiros') return json({ ok: true, pendientes: this.retiros.filter(x => x.estado === 'pendiente'), fondo: this.infoFondo() });
+    if (accion === 'pagado' || accion === 'rechazar') {
+      const r = this.retiros.find(x => x.id === String(b.id || '').toUpperCase() && x.estado === 'pendiente');
+      if (!r) return json({ ok: false, error: 'No hay un retiro pendiente con ese código.' });
+      r.estado = accion === 'pagado' ? 'pagado' : 'rechazado';
+      r.cerrado = Date.now();
+      if (b.tx) r.tx = String(b.tx).slice(0, 120);
+      if (accion === 'rechazar') {
+        // Se le devuelven los mTON (salvo que el dueño lo marque como trampa).
+        const s = this.porUid.get(r.uid);
+        const c = s ? s.c : await this.state.storage.get('c:' + r.uid);
+        if (c && !b.trampa) {
+          c.mton = (c.mton || 0) + r.mton;
+          if (s) await this.guardar(s); else await this.state.storage.put('c:' + r.uid, c);
+        }
+      }
+      await this.state.storage.put('retiros', this.retiros);
+      await this.avisarJugador(r.uid, accion === 'pagado'
+        ? `✅ ¡Tu retiro de ${r.ton} TON fue pagado a tu wallet! Gracias por jugar DUENDE QUEST ONLINE.`
+        : `❌ Tu retiro de ${r.ton} TON fue rechazado${b.trampa ? ' por uso de trampas.' : '. Los mTON volvieron a tu saldo.'}`);
+      return json({ ok: true, retiro: r });
+    }
+    return json({ ok: false, error: 'acción desconocida' });
+  }
 
   // Recompensa por entrar: una por dia UTC, racha de 7 (faltar un dia la
   // reinicia). Devuelve lo que se dio, o null si hoy ya se cobro.
@@ -400,6 +568,9 @@ export class MmoWorld {
       arma: c.arma, armas: c.armas, skin: c.skin, skins: c.skins, pw: c.pw,
       kills: c.kills, jefes: c.jefes, muerto: s.muerto, mis: c.mis, forja: c.forja,
       eq: c.eq, bolsa: c.bolsa, logros: c.logros, titulo: c.titulo, mundiales: c.mundiales, login: c.login, crit: s.st.crit,
+      mton: c.mton, wallet: c.wallet ? { a: tonAmigable(c.wallet.a), desde: c.wallet.desde } : null,
+      p2e: this.elegibilidad(c), creado: c.creado,
+      retiros: this.retiros.filter(x => x.uid === c.uid).slice(-5).map(x => ({ id: x.id, ton: x.ton, estado: x.estado, creado: x.creado })),
     };
   }
   actualizarYo(s) { this.enviar(s, { t: 'yo', yo: this.datosPropios(s) }); }
@@ -666,6 +837,7 @@ export class MmoWorld {
       c.oro += oro;
       c.mundiales = (c.mundiales || 0) + 1;
       const it = this.darItem(s, generarItem(c.nivel, parte > 0.15 ? 2 : 1));
+      if (parte >= 0.02) this.darMton(s, 40 + 160 * Math.min(1, parte), 'mundial');
       this.sumarXp(s, xp);
       this.enviar(s, { t: 'gana', xp, oro, drops: [], item: it, x: Math.round(o.x), y: Math.round(o.y - o.h) });
       this.enviar(s, { t: 'toast', m: `👹 ¡Venciste al jefe mundial! +${xp} XP · +${oro} oro · ${RAREZAS[it.r].nombre}: ${nombreItem(it)}`, ok: true });
@@ -712,6 +884,7 @@ export class MmoWorld {
       const oro = Math.max(1, Math.round(base.oro * k * rnd(0.8, 1.2) * mult));
       premios.push([sid, xp, oro]);
       this.dar(s, xp, oro, o);
+      if (o.jefe && parte >= 0.1) this.darMton(s, 20 * Math.max(0.3, MONSTRUOS[o.k].nivel / 30), 'jefe');
     }
     // Caza cooperativa: quien este cerca y vivo se lleva el 25% de la
     // experiencia aunque no le haya pegado (cazar juntos siempre compensa).
@@ -814,6 +987,7 @@ export class MmoWorld {
       c.pw.pocion = Math.min(99, (c.pw.pocion || 0) + pr.pocion);
       this.sumarXp(s, pr.xp);
       this.enviar(s, { t: 'toast', m: `✅ Caza del día: +${pr.xp} XP · +${pr.oro} oro · +${pr.pocion} pociones`, ok: true });
+      this.darMton(s, 25, 'diaria');
       this.enviar(s, { t: 'gana', xp: pr.xp, oro: pr.oro, drops: [], x: Math.round(s.x), y: Math.round(s.y - 80) });
       this.actualizarYo(s);
       this.guardar(s);

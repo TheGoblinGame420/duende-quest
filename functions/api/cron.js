@@ -3,6 +3,7 @@
 //   0 3,15 * * *  → keep-alive Supabase (no se pausa el free tier)
 //   0 17 * * *    → recordatorio diario de misiones
 //   0 12 * * 1    → torneo semanal: premia al top 3 (lunes 12:00 UTC)
+//   0 0 * * *     → pulso del mercado + fondo diario de mTON del MMO
 // ═══════════════════════════════════════════════════════
 
 import { tg, supabaseQuery, postDiscord, getDuendePriceUsd } from './lib.js';
@@ -144,9 +145,43 @@ export async function weeklyTournament(env) {
   console.log('[Tournament] awarded week', weekKey, top.map(t => t.username));
 }
 
+// ── Fondo diario de mTON (play to earn del MMO) ──
+// Se reparte como maximo un % de lo que entro la semana anterior: TON
+// verificados on-chain (ton_credits) + Stars (stars_purchases, en USD, que se
+// pasan a TON al precio del dia). Asi nunca se promete mas de lo que entro.
+// El dueño puede sumar TON propios con /fondo <TON> en el bot.
+const FONDO_PCT = 0.3;
+async function precioTonUsd() {
+  try {
+    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=the-open-network&vs_currencies=usd');
+    const d = await r.json();
+    const p = Number(d && d['the-open-network'] && d['the-open-network'].usd);
+    return p > 0 ? p : 0;
+  } catch (e) { return 0; }
+}
+export async function mmoFondo(env) {
+  if (!env.MMO) return;
+  const desde = new Date(Date.now() - 7 * 86400000).toISOString();
+  const [tons, stars, precio] = await Promise.all([
+    supabaseQuery(env, `ton_credits?created_at=gte.${desde}&select=nanotons`),
+    supabaseQuery(env, `stars_purchases?created_at=gte.${desde}&select=amount_usd`),
+    precioTonUsd(),
+  ]);
+  const tonSemana = (Array.isArray(tons) ? tons : []).reduce((a, x) => a + Number(x.nanotons || 0) / 1e9, 0);
+  const usdSemana = (Array.isArray(stars) ? stars : []).reduce((a, x) => a + Number(x.amount_usd || 0), 0);
+  const ingresoTon = tonSemana + (precio ? usdSemana / precio : 0);
+  const autoMton = Math.floor(ingresoTon * FONDO_PCT / 7 * 1000);
+  const stub = env.MMO.get(env.MMO.idFromName('mundo-1'));
+  const r = await stub.fetch('https://mmo/interno/fondo', { method: 'POST', headers: { 'x-interno': env.TELEGRAM_BOT_TOKEN || '' }, body: JSON.stringify({ auto: autoMton }) });
+  console.log('[Fondo mTON]', { tonSemana, usdSemana, precio, autoMton, resp: await r.text() });
+}
+
 export async function runCron(cronExpr, env) {
   if (cronExpr === '0 17 * * *') return dailyReminder(env);
   if (cronExpr === '0 12 * * 1') return weeklyTournament(env);
-  if (cronExpr === '0 0 * * *') return marketPulse(env);
+  if (cronExpr === '0 0 * * *') {
+    await marketPulse(env).catch(e => console.error('[Cron pulso]', e));
+    return mmoFondo(env);
+  }
   return keepAlive(env);
 }

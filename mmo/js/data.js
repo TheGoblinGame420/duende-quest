@@ -508,3 +508,35 @@ export function limpiarNombre(s) {
   const n = String(s || '').normalize('NFC').replace(/[^\p{L}\p{N} _]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 16);
   return n.length >= 3 ? n : '';
 }
+
+// ── mTON (play to earn) ──
+// 1.000 mTON = 1 TON. Solo salen de jefes, del jefe mundial y de la caza del
+// dia, y nunca mas de lo que hay en el FONDO DIARIO (un % de lo que entro la
+// semana anterior por Stars y TON, mas lo que el dueño agregue a mano). Los
+// retiros los aprueba el dueño desde el bot (/retiros). Nada que se compre
+// (skins, Stars) aumenta lo que se gana en mTON.
+export const MTON_POR_TON = 1000;
+export const RETIRO_MIN_MTON = 5000;          // 5 TON
+export const MTON_NIVEL_MIN = 15;
+export const MTON_EDAD_MIN_MS = 48 * 3600 * 1000;     // personaje con 2 dias o mas
+export const WALLET_ESPERA_MS = 72 * 3600 * 1000;     // wallet fija 3 dias antes de retirar
+export const FONDO_PCT_INGRESOS = 0.3;                // 30% de los ingresos semanales
+export const FONDO_REFERENCIA_MTON = 2000;            // con un fondo de 2 TON/dia, los premios valen su base
+
+// Direccion TON "amigable" (UQ..., no rebotable) a partir de la cruda "0:hex".
+export function tonAmigable(cruda) {
+  const m = /^(-1|0):([0-9a-f]{64})$/i.exec(String(cruda || ''));
+  if (!m) return '';
+  const b = new Uint8Array(36);
+  b[0] = 0x51; b[1] = m[1] === '-1' ? 0xff : 0;
+  for (let i = 0; i < 32; i++) b[2 + i] = parseInt(m[2].substr(i * 2, 2), 16);
+  let crc = 0;
+  for (let i = 0; i < 34; i++) {
+    crc ^= b[i] << 8;
+    for (let j = 0; j < 8; j++) crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) & 0xffff : (crc << 1) & 0xffff;
+  }
+  b[34] = crc >> 8; b[35] = crc & 0xff;
+  let s = '';
+  for (const x of b) s += String.fromCharCode(x);
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_');
+}

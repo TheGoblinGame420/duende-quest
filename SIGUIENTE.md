@@ -979,3 +979,28 @@ diarias repetibles, sonido propio para jefes.
 - Prueba: arnés de 44 comprobaciones con el `world.js` real y un servidor
   local en Node (WebSocket a mano, sin librerías) que sirve el juego completo
   en el navegador — `wrangler dev` sigue sin poder con Durable Objects aquí.
+
+### DUENDE QUEST ONLINE — play to earn con mTON (2-oct-2026)
+
+Decisiones del dueño: retiro mínimo **5 TON**, aprobación **manual**, fondo
+diario = **% de ingresos**, y la web también cobra en TON (Phantom no recibe TON).
+
+- **mTON** (1.000 = 1 TON) vive en el personaje del Durable Object (`c.mton`).
+  Solo lo dan: jefes de zona (si hiciste ≥10% del daño), jefe mundial (≥2%) y
+  la caza del día. Nada pagado (skins, Stars) aumenta lo que se gana.
+- **Quién gana:** cuenta de Telegram o web (no invitados ni `UIDS_PRUEBA`),
+  Nv 15+, personaje con 48 h. Tope por jugador: 25% del fondo del día.
+- **Fondo diario** (`fondo` en el storage del DO): `auto` lo pone el cron de
+  medianoche UTC (`mmoFondo` en `functions/api/cron.js`: 30% de lo que entró en
+  7 días por `ton_credits` + `stars_purchases` pasado a TON con el precio de
+  CoinGecko, dividido entre 7) y `extra` lo pone el dueño con **/fondo 0.5** en
+  el bot. **Sin ingresos y sin /fondo, el fondo es 0 y nadie gana mTON.**
+- **Wallet TON** con TON Connect (se carga al abrir 💎), única por cuenta
+  (`w:<addr>` en el storage) y fija 72 h antes de poder retirar.
+- **Retiros:** descuentan el saldo, quedan en `retiros` (storage del DO) y el
+  bot avisa al ADMIN_TG_ID. Comandos del dueño: **/retiros**, **/pagado CODIGO**
+  (avisa al jugador por Telegram), **/rechazar CODIGO** (devuelve los mTON) y
+  **/rechazar CODIGO trampa** (no los devuelve). El pago se hace a mano desde la
+  wallet del dueño. Rutas internas del DO: `/interno/*` con cabecera
+  `x-interno = TELEGRAM_BOT_TOKEN`; el Worker solo expone `/mmo/ws`.
+- Arnés de 31 comprobaciones del dinero (`arnes_mton.mjs`) + el de 44.

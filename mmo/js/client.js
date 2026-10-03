@@ -8,7 +8,8 @@ import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, ALCANCE_BASE, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
   RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, HABILIDADES, LOGROS, LOGIN_PREMIOS, multLogin, NIVEL_MAX,
-} from './data.js?v=20';
+  MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
+} from './data.js?v=21';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -254,6 +255,7 @@ function recibir(m) {
       if (!yo.muerto) $('m-muerte').classList.remove('on');
       pintarHud(); if ($('m-tienda').classList.contains('on')) pintarTienda(); if ($('m-inv').classList.contains('on')) pintarInventario();
       if ($('m-mision').classList.contains('on')) pintarMision();
+      if ($('m-wallet').classList.contains('on')) pintarWallet();
       break;
     }
     case 's': snapshot(m); break;
@@ -306,6 +308,15 @@ function recibir(m) {
     }
     case 'pa': { const o = otros.get(m.p); if (o) { o.sk = m.sk; o.ar = m.ar; o.mx = m.mx; o.ti = m.ti || ''; } break; }
     case 'hb': habilidadRemota(m); break;
+    case 'mton':
+      if (yo) yo.mton = m.total;
+      flotante(P.x, P.y - 110, '+' + m.n + ' mTON', '#00eeff', 12);
+      aviso('💎 +' + m.n + ' mTON (tienes ' + tonTxt(m.total) + ' TON) — ' + ({ jefe: 'por el jefe', mundial: 'por el jefe mundial', diaria: 'por la caza del día' }[m.motivo] || ''), 'ok');
+      sfx('moneda', .5);
+      for (let i = 0; i < 20; i++) particula(P.x, P.y - 40, '#00eeff', 4);
+      pintarHud();
+      break;
+    case 'fondo': fondoInfo = m; if ($('m-wallet').classList.contains('on')) pintarWallet(); break;
     case 'login': mostrarLogin(m); break;
     case 'logro':
       aviso('🏅 ¡Logro: "' + m.titulo + '"! +' + m.oro.toLocaleString('es') + ' oro · ponte el título en 🎒', 'ok');
@@ -600,6 +611,8 @@ $('b-regreso').onclick = volverAlPueblo;
 $('b-inv').onclick = abrirInventario;
 $('b-rank').onclick = abrirRanking;
 $('b-ayuda').onclick = () => abrir('m-ayuda');
+$('b-wallet').onclick = abrirWallet;
+$('h-mton-c').onclick = abrirWallet;
 
 // Poderes (HUD)
 function pintarPoderes() {
@@ -779,6 +792,82 @@ function pintarMundial() {
     ponTxt(el, '👹 Jefe mundial en ' + mm + ':' + String(ss).padStart(2, '0'));
     el.className = ms < 120000 ? 'lista' : '';
   } else { ponTxt(el, ''); el.className = ''; }
+}
+
+// ── mTON / WALLET TON / RETIROS ──
+// La wallet se conecta con TON Connect (Tonkeeper, MyTonWallet, la wallet de
+// Telegram...) tanto en Telegram como en la web; la libreria se carga solo
+// al abrir esta ventana para no pesar en la carga del juego. El servidor
+// guarda la direccion y decide todo lo demas (saldo, retiros).
+let fondoInfo = null, tonUI = null;
+// 6100 mTON -> "6,1" (con coma: "6.100 TON" se lee seis mil cien en español).
+const tonTxt = mton => (mton / MTON_POR_TON).toLocaleString('es', { maximumFractionDigits: 3 });
+function abrirWallet() { if (!yo) return; abrir('m-wallet'); mandar({ t: 'fondo' }); pintarWallet(); }
+function cargarTonConnect() {
+  if (window.TON_CONNECT_UI) return Promise.resolve();
+  return new Promise((ok, mal) => {
+    const sc = document.createElement('script');
+    sc.src = 'https://cdn.jsdelivr.net/npm/@tonconnect/ui@2/dist/tonconnect-ui.min.js';
+    sc.onload = ok; sc.onerror = () => mal(new Error('No se pudo cargar TON Connect'));
+    document.head.appendChild(sc);
+  });
+}
+async function conectarWallet() {
+  try {
+    await cargarTonConnect();
+    if (!tonUI) {
+      tonUI = new window.TON_CONNECT_UI.TonConnectUI({ manifestUrl: 'https://duende-quest.alfonso12hc.workers.dev/tonconnect-manifest.json' });
+      // Dentro de Telegram, al aprobar en la wallet hay que volver al bot.
+      if (TG) tonUI.uiOptions = { actionsConfiguration: { twaReturnUrl: 'https://t.me/duendequest_bot' } };
+      tonUI.onStatusChange(w => { if (w && w.account && w.account.address) mandar({ t: 'wallet', a: w.account.address }); });
+    }
+    if (tonUI.wallet && tonUI.wallet.account) { mandar({ t: 'wallet', a: tonUI.wallet.account.address }); return; }
+    await tonUI.openModal();
+  } catch (e) { aviso('No se pudo abrir la conexión de wallet: ' + (e.message || e)); }
+}
+function pintarWallet() {
+  if (!yo) return;
+  const el = yo.p2e || {};
+  const mton = yo.mton || 0;
+  const pct = Math.min(100, Math.round(mton / RETIRO_MIN_MTON * 100));
+  const w = yo.wallet;
+  const lista = w && Date.now() - w.desde >= WALLET_ESPERA_MS;
+  const fila = (ok, txt) => `<div class="req"><span>${txt}</span><span class="${ok ? 'si' : 'no'}">${ok ? '✓' : '✗'}</span></div>`;
+  let h = `<div class="saldo"><b>${mton.toLocaleString('es')} mTON</b><small>= ${tonTxt(mton)} TON · 1.000 mTON = 1 TON</small></div>`;
+  h += `<div class="mis-barra"><i style="width:${pct}%"></i></div><p class="centro" style="font-size:12px">${pct}% del retiro mínimo (${RETIRO_MIN_MTON / MTON_POR_TON} TON)</p>`;
+  if (!el.cuenta) {
+    h += '<p class="centro" style="margin:12px 0;color:#ffae00">Juegas como invitado: para ganar y retirar TON entra desde el bot de Telegram (@duendequest_bot) o inicia sesión en el juego web.</p>';
+  }
+  h += '<div style="margin:10px 0">' +
+    fila(el.cuenta, 'Cuenta de Telegram o web') +
+    fila(el.nivel, 'Nivel ' + MTON_NIVEL_MIN + ' o más (tienes ' + yo.nivel + ')') +
+    fila(el.edad, 'Personaje con 2 días de vida') +
+    fila(!!w, 'Wallet TON conectada') +
+    fila(lista, 'Wallet conectada hace 3 días (seguridad)') +
+    fila(mton >= RETIRO_MIN_MTON, 'Saldo de ' + (RETIRO_MIN_MTON / MTON_POR_TON) + ' TON') + '</div>';
+  if (w) h += `<p class="centro" style="font-size:12px;word-break:break-all;margin-bottom:8px">👛 ${esc(w.a)}</p>`;
+  if (el.cuenta) h += `<button class="btn sec" id="b-conectar" style="width:100%;margin-bottom:8px">${w ? 'CAMBIAR WALLET TON' : 'CONECTAR WALLET TON'}</button>`;
+  const puede = el.cuenta && el.nivel && lista && mton >= RETIRO_MIN_MTON;
+  h += `<button class="btn" id="b-retirar" style="width:100%;padding:12px" ${puede ? '' : 'disabled'}>RETIRAR ${tonTxt(Math.floor(mton))} TON</button>`;
+  if (fondoInfo) {
+    const resta = Math.max(0, fondoInfo.total - fondoInfo.gastado);
+    h += `<p class="centro" style="margin-top:10px;font-size:12px;color:rgba(255,255,255,.6)">Fondo de hoy para todos: ${tonTxt(resta)} de ${tonTxt(fondoInfo.total)} TON por repartir</p>`;
+  }
+  const rs = yo.retiros || [];
+  if (rs.length) {
+    h += '<div style="margin-top:10px">' + rs.slice().reverse().map(x => `<div class="fila"><span>#${esc(x.id)} · ${x.ton} TON</span><span style="color:${x.estado === 'pagado' ? '#00ff88' : x.estado === 'rechazado' ? '#ff7777' : '#ffe600'}">${x.estado.toUpperCase()}</span></div>`).join('') + '</div>';
+  }
+  h += '<ul style="padding-left:18px;margin-top:12px;font-size:12px">' +
+    '<li>Ganas mTON derrotando <b>jefes</b> (si haces al menos el 10% del daño), en el <b>jefe mundial</b> y al cobrar la <b>caza del día</b>.</li>' +
+    '<li>Cada día se reparte un fondo limitado entre todos y hay un máximo por jugador: cuando se acaba, vuelve mañana.</li>' +
+    '<li>Los retiros los revisa el equipo y se pagan a tu wallet en 24-48 h. Usar bots o varias cuentas anula el retiro.</li></ul>';
+  $('wallet-cuerpo').innerHTML = h;
+  const bc = $('b-conectar'); if (bc) bc.onclick = () => { sfx('boton', .3); conectarWallet(); };
+  const br = $('b-retirar');
+  if (br) br.onclick = () => {
+    if (!confirm('¿Retirar ' + tonTxt(Math.floor(mton)) + ' TON a ' + (w ? w.a : '') + '?')) return;
+    sfx('moneda', .5); mandar({ t: 'retirar' });
+  };
 }
 
 // ── EFECTOS ──
@@ -1183,6 +1272,7 @@ function pintarHud() {
   ponTxt($('h-nombre'), yo.nombre);
   ponTxt($('h-nivel'), 'Nv ' + yo.nivel);
   ponTxt($('h-oro'), yo.oro.toLocaleString('es'));
+  ponTxt($('h-mton'), (yo.mton || 0).toLocaleString('es') + ' mTON');
   const pxp = yo.xpSig ? Math.floor(yo.xp / yo.xpSig * 100) : 100;
   ponCss($('bxp').querySelector('i'), 'width', pxp + '%');
   ponTxt($('h-xp'), 'XP ' + pxp + '%');

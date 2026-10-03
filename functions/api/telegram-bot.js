@@ -155,7 +155,7 @@ async function handleStart(token, env, chatId, user, startPayload) {
   const referralLink = `https://t.me/duendequest_bot?start=ref_${user.id}`;
   await tg(token, 'sendMessage', {
     chat_id: chatId,
-    text: `🧌 *¡Bienvenido a DUENDE QUEST, ${user.first_name || 'Duende'}!*\n\n⚔️ Juego arcade play-to-earn en Solana\n💰 Gana tokens $DUENDE jugando\n🗺 Campaña de 15 etapas con jefes\n🌍 *DUENDE QUEST ONLINE* — el MMORPG: 10 zonas hasta Nv 60, equipo legendario y jefe mundial cada 30 min\n🏆 Compite en el ranking global\n\n${TEXTO_CREADOR}\n\n🎁 *Tu link de referido:*\n\`${referralLink}\`\n_Invita amigos y ambos ganan 500 $DUENDE_`,
+    text: `🧌 *¡Bienvenido a DUENDE QUEST, ${user.first_name || 'Duende'}!*\n\n⚔️ Juego arcade play-to-earn en Solana\n💰 Gana tokens $DUENDE jugando\n🗺 Campaña de 15 etapas con jefes\n🌍 *DUENDE QUEST ONLINE* — el MMORPG: 10 zonas hasta Nv 60, equipo legendario y jefe mundial cada 30 min\n💎 *Gana TON jugando:* desde Nv 15 los jefes dan mTON (1.000 = 1 TON), retiro desde 5 TON\n🏆 Compite en el ranking global\n\n${TEXTO_CREADOR}\n\n🎁 *Tu link de referido:*\n\`${referralLink}\`\n_Invita amigos y ambos ganan 500 $DUENDE_`,
     parse_mode: 'Markdown',
     reply_markup: { inline_keyboard: [
       [{ text: '🎮 JUGAR AHORA', web_app: { url: WEBAPP_URL } }],
@@ -242,6 +242,43 @@ async function handleBuy(token, chatId, userId, messageId) {
   text += '_Los tokens se acreditan al instante_';
   const opts = { chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: { inline_keyboard: packages.map((pkg,i) => [{ text: `${pkg.label} — ⭐${pkg.stars} Stars`, callback_data: `buy_${i}` }]) } };
   if (messageId) { opts.message_id = messageId; await tg(token, 'editMessageText', opts); } else await tg(token, 'sendMessage', opts);
+}
+
+// ── Play to earn del MMO: retiros de mTON y fondo diario (solo el dueño) ──
+async function mmoInterno(env, accion, body) {
+  if (!env.MMO) return { ok: false, error: 'MMO no configurado' };
+  const stub = env.MMO.get(env.MMO.idFromName('mundo-1'));
+  const r = await stub.fetch('https://mmo/interno/' + accion, { method: 'POST', headers: { 'x-interno': env.TELEGRAM_BOT_TOKEN || '' }, body: JSON.stringify(body || {}) });
+  return r.json();
+}
+async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
+  if (String(userId) !== String(context.env.ADMIN_TG_ID || '')) return; // silencio para no-admins
+  const env = context.env;
+  const enviar = text => tg(token, 'sendMessage', { chat_id: chatId, text, disable_web_page_preview: true });
+  const [arg1, arg2] = payload.trim().split(/\s+/);
+  const fondoTxt = f => `Fondo de hoy: ${(f.total / 1000).toFixed(3)} TON (auto ${(f.auto / 1000).toFixed(3)} + tuyo ${(f.extra / 1000).toFixed(3)}) · repartido ${(f.gastado / 1000).toFixed(3)} TON`;
+  if (cmd === '/retiros') {
+    const r = await mmoInterno(env, 'retiros');
+    if (!r.ok) return enviar('❌ ' + (r.error || 'error'));
+    if (!r.pendientes.length) return enviar('✅ No hay retiros pendientes.\n' + fondoTxt(r.fondo));
+    const lineas = r.pendientes.map(x => `#${x.id} · ${x.ton} TON · ${x.nombre} Nv${x.nivel} · ${x.kills} cazas · ${x.edadDias} días\n${x.amigable}`);
+    return enviar('💸 Retiros pendientes:\n\n' + lineas.join('\n\n') + '\n\nPaga desde tu wallet y responde /pagado CODIGO (o /rechazar CODIGO, o /rechazar CODIGO trampa para no devolver los mTON).\n\n' + fondoTxt(r.fondo));
+  }
+  if (cmd === '/pagado' || cmd === '/rechazar') {
+    if (!arg1) return enviar('Uso: ' + cmd + ' CODIGO');
+    const r = await mmoInterno(env, cmd === '/pagado' ? 'pagado' : 'rechazar', { id: arg1, tx: cmd === '/pagado' ? arg2 : undefined, trampa: arg2 === 'trampa' });
+    return enviar(r.ok ? `✅ Retiro #${r.retiro.id} marcado como ${r.retiro.estado}. Se le avisó al jugador.` : '❌ ' + r.error);
+  }
+  if (cmd === '/fondo') {
+    if (arg1 !== undefined) {
+      const ton = Number(String(arg1).replace(',', '.'));
+      if (!(ton >= 0 && ton <= 1000)) return enviar('Uso: /fondo 0.5  (TON diarios que agregas tú, aparte del % automático de ingresos)');
+      const r = await mmoInterno(env, 'fondo', { extra: Math.round(ton * 1000) });
+      return enviar(r.ok ? '✅ Listo. ' + fondoTxt(r) : '❌ ' + r.error);
+    }
+    const r = await mmoInterno(env, 'fondo', {});
+    return enviar(fondoTxt(r) + '\n\nEl % automático (30% de lo que entró la semana pasada en TON y Stars) se recalcula cada medianoche UTC. Para sumar TON tuyos cada día: /fondo 0.5');
+  }
 }
 
 async function handleCreador(token, chatId) {
@@ -476,7 +513,7 @@ async function onRequestPost(context) {
         case '/start': await handleStart(token, env, chatId, user, payload); break;
         case '/play': case '/jugar': await handlePlay(token, chatId); break;
         case '/mmo': case '/online':
-          await tg(token, 'sendMessage', { chat_id: chatId, text: '🌍 *DUENDE QUEST ONLINE*\n\nEl MMORPG de los duendes: 10 zonas hasta el nivel 60, equipo legendario, habilidades, logros, recompensa diaria y un jefe mundial cada 30 minutos. Caza junto a otros jugadores en tiempo real.', parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🌍 ENTRAR AL MUNDO', web_app: { url: MMO_URL } }]] } });
+          await tg(token, 'sendMessage', { chat_id: chatId, text: '🌍 *DUENDE QUEST ONLINE*\n\nEl MMORPG de los duendes: 10 zonas hasta el nivel 60, equipo legendario, habilidades, logros, recompensa diaria y un jefe mundial cada 30 minutos. Caza junto a otros jugadores en tiempo real.\n\n💎 *Play to earn:* desde nivel 15 los jefes, el jefe mundial y la caza del día dan mTON (1.000 mTON = 1 TON). Desde 5 TON retiras a tu wallet TON.', parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🌍 ENTRAR AL MUNDO', web_app: { url: MMO_URL } }]] } });
           break;
         case '/ranking': case '/top': await handleRanking(token, env, chatId); break;
         case '/price': case '/precio': await handlePrice(token, chatId); break;
@@ -485,6 +522,7 @@ async function onRequestPost(context) {
         case '/buy': case '/comprar': case '/stars': await handleBuy(token, chatId, user.id); break;
         case '/help': case '/ayuda': await handleHelp(token, chatId); break;
         case '/creador': case '/creator': case '/oficial': await handleCreador(token, chatId); break;
+        case '/retiros': case '/pagado': case '/rechazar': case '/fondo': await handleMmoAdmin(token, context, chatId, user.id, cmd, payload); break;
         case '/admin': await handleAdmin(token, env, context, chatId, user.id); break;
         case '/live': case '/envivo': await handleLive(token, env, context, chatId, user.id, payload); break;
         case '/pay': case '/pagar': await handlePay(token, env, context, chatId, user.id, payload); break;
