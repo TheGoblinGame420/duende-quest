@@ -269,6 +269,26 @@ async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
     const r = await mmoInterno(env, cmd === '/pagado' ? 'pagado' : 'rechazar', { id: arg1, tx: cmd === '/pagado' ? arg2 : undefined, trampa: arg2 === 'trampa' });
     return enviar(r.ok ? `✅ Retiro #${r.retiro.id} marcado como ${r.retiro.estado}. Se le avisó al jugador.` : '❌ ' + r.error);
   }
+  if (cmd === '/pedidos') {
+    const r = await mmoInterno(env, 'pedidos');
+    if (!r.ok) return enviar('❌ ' + (r.error || 'error'));
+    if (!r.pedidos.length) return enviar('✅ No hay compras por entregar.');
+    const lineas = r.pedidos.map(x => `#${x.codigo} · ${x.nombre} ($${x.usd}) · ${x.jugador}\n` + (x.metodo === 'stars'
+      ? `⭐ ${x.starsPagadas} Stars pagadas (verificado por Telegram)`
+      : `◎ ${(x.lamports / 1e9).toFixed(9)} SOL · ${x.cadena ? (x.cadena.ok ? '✅ visto en la cadena' : '❌ ' + x.cadena.motivo) : '⚠️ sin comprobar'}\nhttps://solscan.io/tx/${x.firma}`));
+    return enviar('🛒 Compras por entregar:\n\n' + lineas.join('\n\n') + '\n\n/entregar CODIGO para darle lo que compró · /anular CODIGO motivo para cancelar (las Stars se devuelven solas; el SOL lo devuelves tú).');
+  }
+  if (cmd === '/entregar') {
+    if (!arg1) return enviar('Uso: /entregar CODIGO');
+    const r = await mmoInterno(env, 'entregar', { codigo: arg1 });
+    return enviar(r.ok ? `🎁 Pedido #${r.pedido.codigo} entregado a ${r.pedido.jugador}: ${r.pedido.nombre}. Se le avisó.` : '❌ ' + r.error);
+  }
+  if (cmd === '/anular') {
+    if (!arg1) return enviar('Uso: /anular CODIGO motivo');
+    const motivo = payload.trim().split(/\s+/).slice(1).join(' ');
+    const r = await mmoInterno(env, 'anular', { codigo: arg1, motivo });
+    return enviar(r.ok ? `❌ Pedido #${r.pedido.codigo} anulado.${r.reembolso || (r.pedido.metodo === 'sol' ? ' Si llegó SOL, devuélvelo tú desde tu wallet.' : '')}` : '❌ ' + r.error);
+  }
   if (cmd === '/fondo') {
     if (arg1 !== undefined) {
       const ton = Number(String(arg1).replace(',', '.'));
@@ -419,7 +439,16 @@ async function onRequestPost(context) {
 
     // Pre-checkout query
     if (body.pre_checkout_query) {
-      await tg(token, 'answerPreCheckoutQuery', { pre_checkout_query_id: body.pre_checkout_query.id, ok: true });
+      // Compras de la tienda del MMO: solo se cobra si el pedido sigue abierto
+      // (no vencido ni ya pagado), asi nadie paga dos veces lo mismo.
+      let pagoOk = true;
+      try {
+        const pl = JSON.parse(body.pre_checkout_query.invoice_payload || '{}');
+        if (pl.mmo) pagoOk = !!(await mmoInterno(context.env, 'pedidoValido', { codigo: pl.mmo })).ok;
+      } catch (e) {}
+      await tg(token, 'answerPreCheckoutQuery', pagoOk
+        ? { pre_checkout_query_id: body.pre_checkout_query.id, ok: true }
+        : { pre_checkout_query_id: body.pre_checkout_query.id, ok: false, error_message: 'Este pedido ya venció o ya se pagó. Vuelve a pedirlo desde el juego.' });
       return new Response('OK');
     }
 
@@ -437,6 +466,16 @@ async function onRequestPost(context) {
         if (!chargeId) return new Response('OK');
         const dup = await supabaseQuery(env, `stars_purchases?tx_id=eq.${encodeURIComponent(chargeId)}&select=id`);
         if (Array.isArray(dup) && dup.length > 0) return new Response('OK');
+
+        // Tienda del MMO: se registra el pago (cuenta para el fondo de mTON) y
+        // el dueño entrega a mano con /entregar.
+        if (payload.mmo) {
+          const reg = await supabaseQuery(env, 'stars_purchases', { method: 'POST', body: { telegram_id: tgId, amount_usd: +(starsPaid * STAR_USD).toFixed(2), amount_stars: starsPaid, tokens_credited: 0, tx_id: chargeId } });
+          if (!Array.isArray(reg) || reg.length !== 1) return new Response('OK');
+          const rsp = await mmoInterno(context.env, 'pedidoPagado', { codigo: payload.mmo, stars: starsPaid, charge: chargeId, tgId });
+          await tg(token, 'sendMessage', { chat_id: chatId, text: `✅ *Pago recibido* (${starsPaid} ⭐)\n\nTu compra "${(rsp && rsp.nombre) || 'del MMO'}" (pedido #${payload.mmo}) la entrega El Duende en persona. Te avisamos aquí apenas esté en tu personaje.`, parse_mode: 'Markdown' });
+          return new Response('OK');
+        }
 
         // Skin purchase paid with Stars → record server-side (client no longer inserts)
         if (payload.skin_id) {
@@ -522,7 +561,7 @@ async function onRequestPost(context) {
         case '/buy': case '/comprar': case '/stars': await handleBuy(token, chatId, user.id); break;
         case '/help': case '/ayuda': await handleHelp(token, chatId); break;
         case '/creador': case '/creator': case '/oficial': await handleCreador(token, chatId); break;
-        case '/retiros': case '/pagado': case '/rechazar': case '/fondo': await handleMmoAdmin(token, context, chatId, user.id, cmd, payload); break;
+        case '/retiros': case '/pagado': case '/rechazar': case '/fondo': case '/pedidos': case '/entregar': case '/anular': await handleMmoAdmin(token, context, chatId, user.id, cmd, payload); break;
         case '/admin': await handleAdmin(token, env, context, chatId, user.id); break;
         case '/live': case '/envivo': await handleLive(token, env, context, chatId, user.id, payload); break;
         case '/pay': case '/pagar': await handlePay(token, env, context, chatId, user.id, payload); break;

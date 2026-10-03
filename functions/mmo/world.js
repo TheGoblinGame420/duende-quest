@@ -18,9 +18,10 @@ import {
   RANURAS, RAREZAS, BOLSA_MAX, baseItem, precioVenta, nombreItem, HABILIDADES, FURIA_MS,
   LOGIN_PREMIOS, multLogin, LOGROS, MUNDIAL_DURA_MS, proximoMundial,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, MTON_EDAD_MIN_MS, WALLET_ESPERA_MS, FONDO_REFERENCIA_MTON, tonAmigable,
+  RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, FONDO_PCT_INGRESOS, PAQUETES, estrellasDe, PEDIDO_VIGENCIA_MS,
   ATAQUE_CD_MS, ALCANCE_BASE, COMBO_MULT, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre,
 } from '../../mmo/js/data.js';
-import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery, tg } from '../api/lib.js';
+import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery, tg, getSolPriceUsd, SOL_DEV_WALLET } from '../api/lib.js';
 
 const MAX_JUGADORES = 300;
 const GUARDAR_CADA_MS = 20000;
@@ -95,6 +96,8 @@ export class MmoWorld {
     this.bucle = null;
     this.fondo = null;
     this.retiros = [];
+    this.pedidos = [];
+    this.ingresosSol = [];
     if (state.blockConcurrencyWhile) state.blockConcurrencyWhile(() => this.migrar());
   }
 
@@ -103,6 +106,8 @@ export class MmoWorld {
     try {
       this.fondo = (await this.state.storage.get('fondo')) || null;
       this.retiros = (await this.state.storage.get('retiros')) || [];
+      this.pedidos = (await this.state.storage.get('pedidos')) || [];
+      this.ingresosSol = (await this.state.storage.get('ingresosSol')) || [];
       // Los personajes de prueba de las verificaciones en produccion del
       // 30-sep-2026 ("Bot Prueba" subio a Nv 2) no deben salir en el ranking real.
       if (!(await this.state.storage.get('mig:ranking-pruebas'))) {
@@ -212,6 +217,8 @@ export class MmoWorld {
       case 'wallet': return this.ponerWallet(s, m);
       case 'retirar': return this.retirar(s);
       case 'fondo': return this.enviar(s, { t: 'fondo', ...this.infoFondo() });
+      case 'pedido': return this.pedido(s, m);
+      case 'pedidoFirma': return this.pedidoFirma(s, m);
       case 'ping': return this.enviar(s, { t: 'pong', ts: m.ts });
     }
   }
@@ -386,7 +393,7 @@ export class MmoWorld {
     }
     if (total <= 0) return 0;
     const factor = clamp(total / FONDO_REFERENCIA_MTON, 0.25, 5);
-    const topeCuenta = Math.max(50, total * 0.25);
+    const topeCuenta = Math.max(50, total * TOPE_DIARIO_PCT);
     const ya = f.porUid[c.uid] || 0;
     const n = Math.floor(Math.min(base * factor, total - f.gastado, topeCuenta - ya));
     if (n <= 0) {
@@ -429,7 +436,12 @@ export class MmoWorld {
     if (Date.now() - c.wallet.desde < WALLET_ESPERA_MS) return no('Tu wallet es nueva: podrás retirar cuando cumpla ' + (WALLET_ESPERA_MS / 3600000) + ' horas conectada.');
     if (c.mton < RETIRO_MIN_MTON) return no(`El retiro mínimo es ${RETIRO_MIN_MTON.toLocaleString('es')} mTON (${RETIRO_MIN_MTON / MTON_POR_TON} TON).`);
     if (this.retiros.some(x => x.uid === c.uid && x.estado === 'pendiente')) return no('Ya tienes un retiro pendiente de aprobación.');
-    const mton = Math.floor(c.mton);
+    const ultimo = this.retiros.filter(x => x.uid === c.uid && x.estado === 'pagado').map(x => x.creado).sort((a, b) => b - a)[0];
+    if (ultimo && Date.now() - ultimo < RETIRO_CADA_MS) {
+      const dias = Math.ceil((RETIRO_CADA_MS - (Date.now() - ultimo)) / 86400000);
+      return no(`Solo se puede retirar una vez por semana: te faltan ${dias} día(s).`);
+    }
+    const mton = Math.min(Math.floor(c.mton), RETIRO_MAX_MTON);
     const r = {
       id: Math.random().toString(36).slice(2, 8).toUpperCase(), uid: c.uid, nombre: c.nombre, nivel: c.nivel,
       mton, ton: mton / MTON_POR_TON, wallet: c.wallet.a, amigable: tonAmigable(c.wallet.a),
@@ -445,6 +457,161 @@ export class MmoWorld {
     // Solo letras/numeros: un nombre con * _ ` rompia el Markdown del aviso.
     const nom = r.nombre.replace(/[^\p{L}\p{N} ]/gu, '');
     this.avisarAdmin(`💸 *Retiro #${r.id}* — ${r.ton} TON\n👤 ${nom} · Nv ${r.nivel} · ${r.kills} cazas · personaje de ${r.edadDias} días\n👛 \`${r.amigable}\`\n\nPágalo desde tu wallet y luego: /pagado ${r.id}\nSi es trampa: /rechazar ${r.id}`);
+  }
+
+  // ── TIENDA PREMIUM (Stars / SOL, entrega manual) ──
+  buscarPedido(codigo) { return this.pedidos.find(x => x.codigo === String(codigo || '').toUpperCase()); }
+  async guardarPedidos() {
+    // Los que nunca se pagaron caducan; se guardan los ultimos 300.
+    const ahora = Date.now();
+    for (const x of this.pedidos) if (x.estado === 'esperando_pago' && ahora - x.creado > PEDIDO_VIGENCIA_MS) x.estado = 'vencido';
+    this.pedidos = this.pedidos.filter(x => x.estado !== 'vencido' || ahora - x.creado < 86400000).slice(-300);
+    await this.state.storage.put('pedidos', this.pedidos);
+  }
+  transparencia() {
+    const pagados = this.retiros.filter(x => x.estado === 'pagado');
+    return { retirosPagados: pagados.length, tonPagados: Math.round(pagados.reduce((a, x) => a + x.ton, 0) * 1000) / 1000, pct: Math.round(FONDO_PCT_INGRESOS * 100) };
+  }
+
+  async pedido(s, m) {
+    const c = s.c;
+    const pq = PAQUETES.find(x => x.id === m.id);
+    if (!pq) return;
+    const metodo = m.metodo === 'sol' ? 'sol' : 'stars';
+    const no = t => this.enviar(s, { t: 'toast', m: t });
+    if (c.uid.startsWith('inv:')) return no('Para comprar entra con tu cuenta de Telegram o inicia sesión en el juego web.');
+    if (metodo === 'stars' && !c.uid.startsWith('tg:')) return no('Las Stars solo se pueden usar dentro de Telegram. En la web se paga con SOL.');
+    if (metodo === 'sol' && c.uid.startsWith('tg:')) return no('Dentro de Telegram se paga con Stars.');
+    await this.guardarPedidos();
+    if (this.pedidos.filter(x => x.uid === c.uid && x.estado === 'esperando_pago').length >= 3) return no('Tienes compras sin pagar: termina o espera 30 minutos.');
+    const env = getEnv({ env: this.env });
+    const pd = {
+      codigo: Math.random().toString(36).slice(2, 8).toUpperCase(), uid: c.uid, jugador: c.nombre,
+      paquete: pq.id, nombre: pq.nombre, usd: pq.usd, metodo, creado: Date.now(), estado: 'esperando_pago',
+    };
+    if (metodo === 'stars') {
+      pd.stars = estrellasDe(pq.usd);
+      let link = null;
+      try {
+        const rsp = await tg(env.BOT_TOKEN, 'createInvoiceLink', {
+          title: `🌍 ${pq.nombre}`, description: `DUENDE QUEST ONLINE — ${pq.desc}. Pedido #${pd.codigo}.`,
+          payload: JSON.stringify({ mmo: pd.codigo }), currency: 'XTR', prices: [{ label: pq.nombre, amount: pd.stars }],
+        });
+        link = rsp && rsp.result;
+      } catch (e) {}
+      if (!link) return no('No se pudo crear el pago con Stars. Intenta de nuevo en un rato.');
+      this.pedidos.push(pd);
+      await this.guardarPedidos();
+      return this.enviar(s, { t: 'factura', codigo: pd.codigo, link });
+    }
+    const precio = await getSolPriceUsd();
+    if (!precio) return no('No se pudo leer el precio del SOL ahora. Intenta en un minuto.');
+    // Monto con 4 cifras finales propias de este pedido: si pagas desde otra
+    // wallet, El Duende lo reconoce en Solscan solo por el monto.
+    const marca = 1 + Math.floor(Math.random() * 9998);
+    pd.lamports = Math.ceil(pq.usd / precio * 1e9 / 1e4) * 1e4 + marca;
+    pd.precioSol = precio;
+    this.pedidos.push(pd);
+    await this.guardarPedidos();
+    this.enviar(s, { t: 'pedidoSol', codigo: pd.codigo, lamports: pd.lamports, wallet: SOL_DEV_WALLET, usd: pq.usd, nombre: pq.nombre });
+  }
+
+  async pedidoFirma(s, m) {
+    const c = s.c;
+    const pd = this.buscarPedido(m.codigo);
+    const firma = String(m.firma || '').trim();
+    const no = t => this.enviar(s, { t: 'toast', m: t });
+    if (!pd || pd.uid !== c.uid || pd.metodo !== 'sol' || pd.estado !== 'esperando_pago') return no('Ese pedido ya no está esperando pago.');
+    if (!/^[1-9A-HJ-NP-Za-km-z]{60,100}$/.test(firma)) return no('Esa firma de transacción no es válida. Cópiala de Phantom o de Solscan.');
+    if (await this.state.storage.get('firma:' + firma)) return no('Esa transacción ya se usó para otro pedido.');
+    await this.state.storage.put('firma:' + firma, pd.codigo);
+    pd.firma = firma; pd.estado = 'por_verificar'; pd.pagadoEn = Date.now();
+    // Recien enviada, la transaccion tarda unos segundos en confirmarse.
+    for (let i = 0; i < 4; i++) {
+      pd.cadena = await this.verificarSol(firma, pd.lamports, pd.creado);
+      if (!pd.cadena || pd.cadena.ok || !/no existe/.test(pd.cadena.motivo) || i === 3) break;
+      await new Promise(r => setTimeout(r, 5000));
+    }
+    await this.guardarPedidos();
+    no('📨 Recibimos tu pago. El Duende lo revisa y te entrega la compra (te avisamos aquí y por Telegram).');
+    this.actualizarYo(s);
+    const v = pd.cadena;
+    const chequeo = v === null ? '⚠️ No se pudo consultar la cadena: revísalo tú' : v.ok ? `✅ En la cadena: ${(v.recibido / 1e9).toFixed(6)} SOL llegaron a tu wallet` : `❌ En la cadena NO aparece el pago esperado (${v.motivo})`;
+    this.avisarAdmin(`◎ *Pedido #${pd.codigo}* — ${pd.nombre} ($${pd.usd})\n👤 ${pd.jugador.replace(/[^\p{L}\p{N} ]/gu, '')}\n💰 Debe pagar ${(pd.lamports / 1e9).toFixed(9)} SOL a tu wallet\n${chequeo}\n🔗 https://solscan.io/tx/${firma}\n\nSi está bien: /entregar ${pd.codigo}\nSi no: /anular ${pd.codigo}`);
+  }
+
+  // Comprueba en la cadena que la transaccion existe, salio bien y dejo en la
+  // wallet del dueño al menos lo pedido. Es una AYUDA para la revision manual:
+  // la decision la toma el dueño con /entregar.
+  async verificarSol(firma, lamports, desde) {
+    try {
+      const key = this.env.HELIUS_API_KEY;
+      const url = key ? `https://mainnet.helius-rpc.com/?api-key=${key}` : 'https://api.mainnet-beta.solana.com';
+      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getTransaction', params: [firma, { encoding: 'json', maxSupportedTransactionVersion: 0, commitment: 'confirmed' }] }) });
+      const d = await r.json();
+      const tx = d && d.result;
+      if (!tx) return { ok: false, motivo: 'la transacción no existe (o aún no se confirma)', recibido: 0 };
+      if (tx.meta && tx.meta.err) return { ok: false, motivo: 'la transacción falló', recibido: 0 };
+      const claves = (tx.transaction.message.accountKeys || []).map(k => typeof k === 'string' ? k : k.pubkey);
+      const i = claves.indexOf(SOL_DEV_WALLET);
+      const recibido = i >= 0 ? tx.meta.postBalances[i] - tx.meta.preBalances[i] : 0;
+      if (tx.blockTime && tx.blockTime * 1000 < desde - 120000) return { ok: false, motivo: 'es un pago anterior al pedido', recibido };
+      if (recibido < lamports * 0.99) return { ok: false, motivo: `llegaron ${(recibido / 1e9).toFixed(6)} SOL`, recibido };
+      return { ok: true, recibido };
+    } catch (e) { return null; }
+  }
+
+  async pedidoPagadoStars(b) {
+    const pd = this.buscarPedido(b.codigo);
+    if (!pd || pd.metodo !== 'stars') return { ok: false, error: 'pedido desconocido' };
+    if (pd.estado !== 'esperando_pago' && pd.estado !== 'vencido') return { ok: true, repetido: true, nombre: pd.nombre };
+    if ('tg:' + b.tgId !== pd.uid || (b.stars | 0) < pd.stars) {
+      this.avisarAdmin(`⚠️ Pago de Stars raro en el pedido #${pd.codigo}: pagó ${b.stars} (se pedían ${pd.stars}) desde tg ${b.tgId}. Revísalo; para devolverlo: /anular ${pd.codigo}`);
+    }
+    pd.estado = 'pagado'; pd.charge = String(b.charge || ''); pd.tgPagador = String(b.tgId || ''); pd.starsPagadas = b.stars | 0; pd.pagadoEn = Date.now();
+    await this.guardarPedidos();
+    this.avisarAdmin(`⭐ *Pedido #${pd.codigo}* pagado — ${pd.nombre} (${pd.starsPagadas} Stars, ya están en tu bot)\n👤 ${pd.jugador.replace(/[^\p{L}\p{N} ]/gu, '')}\n\nEntrégalo: /entregar ${pd.codigo}\nO devuelve las Stars: /anular ${pd.codigo}`);
+    const s = this.porUid.get(pd.uid);
+    if (s) this.actualizarYo(s);
+    return { ok: true, nombre: pd.nombre };
+  }
+
+  async entregarPedido(b) {
+    const pd = this.buscarPedido(b.codigo);
+    if (!pd || (pd.estado !== 'pagado' && pd.estado !== 'por_verificar')) return { ok: false, error: 'No hay un pedido pagado con ese código.' };
+    const pq = PAQUETES.find(x => x.id === pd.paquete);
+    const s = this.porUid.get(pd.uid);
+    const c = s ? s.c : await this.state.storage.get('c:' + pd.uid);
+    if (!c || !pq) return { ok: false, error: 'No encontré al jugador o el paquete.' };
+    c.oro += pq.oro || 0;
+    for (const k in (pq.pw || {})) c.pw[k] = Math.min(99, (c.pw[k] || 0) + pq.pw[k]);
+    pd.estado = 'entregado'; pd.entregado = Date.now();
+    if (pd.metodo === 'sol') {
+      this.ingresosSol.push({ usd: pd.usd, t: Date.now() });
+      this.ingresosSol = this.ingresosSol.filter(x => Date.now() - x.t < 30 * 86400000);
+      await this.state.storage.put('ingresosSol', this.ingresosSol);
+    }
+    if (s) await this.guardar(s); else await this.state.storage.put('c:' + pd.uid, c);
+    await this.guardarPedidos();
+    await this.avisarJugador(pd.uid, `🎁 ¡Tu compra "${pd.nombre}" ya está en tu personaje! Gracias por apoyar DUENDE QUEST.`);
+    return { ok: true, pedido: pd };
+  }
+
+  async anularPedido(b) {
+    const pd = this.buscarPedido(b.codigo);
+    if (!pd || pd.estado === 'entregado' || pd.estado === 'anulado') return { ok: false, error: 'Ese pedido no se puede anular (no existe, ya se entregó o ya se anuló).' };
+    let reembolso = '';
+    if (pd.metodo === 'stars' && pd.charge && pd.tgPagador) {
+      try {
+        const env = getEnv({ env: this.env });
+        const rsp = await tg(env.BOT_TOKEN, 'refundStarPayment', { user_id: Number(pd.tgPagador), telegram_payment_charge_id: pd.charge });
+        reembolso = rsp && rsp.ok ? ' Las Stars se devolvieron solas.' : ' ⚠️ Telegram no aceptó devolver las Stars: ' + ((rsp && rsp.description) || '?');
+      } catch (e) { reembolso = ' ⚠️ No se pudieron devolver las Stars.'; }
+    }
+    pd.estado = 'anulado'; pd.motivo = String(b.motivo || '').slice(0, 120);
+    await this.guardarPedidos();
+    await this.avisarJugador(pd.uid, `❌ Tu compra "${pd.nombre}" (#${pd.codigo}) fue anulada${pd.motivo ? ': ' + pd.motivo : ''}.${pd.metodo === 'stars' && reembolso.includes('devolvieron') ? ' Tus Stars fueron devueltas.' : ''}`);
+    return { ok: true, pedido: pd, reembolso };
   }
 
   async avisarAdmin(texto) {
@@ -469,12 +636,28 @@ export class MmoWorld {
     try { b = await request.json(); } catch (e) {}
     const f = this.fondoHoy();
     if (accion === 'fondo') {
-      if (typeof b.auto === 'number' && b.auto >= 0) f.auto = Math.round(b.auto);
+      if (typeof b.auto === 'number' && b.auto >= 0) {
+        // Las compras en SOL de la tienda del MMO viven aqui (no en Supabase):
+        // se suman al % de ingresos con el precio del TON que manda el cron.
+        const semana = Date.now() - 7 * 86400000;
+        const usdSol = this.ingresosSol.filter(x => x.t >= semana).reduce((a, x) => a + x.usd, 0);
+        const extraSol = b.precioTon > 0 ? usdSol / b.precioTon * FONDO_PCT_INGRESOS / 7 * MTON_POR_TON : 0;
+        f.auto = Math.round(b.auto + extraSol);
+      }
       if (typeof b.extra === 'number' && b.extra >= 0) f.extra = Math.round(b.extra);
       this.guardarFondo();
       return json({ ok: true, ...this.infoFondo() });
     }
     if (accion === 'retiros') return json({ ok: true, pendientes: this.retiros.filter(x => x.estado === 'pendiente'), fondo: this.infoFondo() });
+    if (accion === 'pedidoValido') {
+      const pd = this.buscarPedido(b.codigo);
+      const ok = !!pd && pd.metodo === 'stars' && pd.estado === 'esperando_pago' && Date.now() - pd.creado < PEDIDO_VIGENCIA_MS;
+      return json({ ok });
+    }
+    if (accion === 'pedidoPagado') return json(await this.pedidoPagadoStars(b));
+    if (accion === 'pedidos') return json({ ok: true, pedidos: this.pedidos.filter(x => x.estado === 'pagado' || x.estado === 'por_verificar') });
+    if (accion === 'entregar') return json(await this.entregarPedido(b));
+    if (accion === 'anular') return json(await this.anularPedido(b));
     if (accion === 'pagado' || accion === 'rechazar') {
       const r = this.retiros.find(x => x.id === String(b.id || '').toUpperCase() && x.estado === 'pendiente');
       if (!r) return json({ ok: false, error: 'No hay un retiro pendiente con ese código.' });
@@ -571,6 +754,9 @@ export class MmoWorld {
       mton: c.mton, wallet: c.wallet ? { a: tonAmigable(c.wallet.a), desde: c.wallet.desde } : null,
       p2e: this.elegibilidad(c), creado: c.creado,
       retiros: this.retiros.filter(x => x.uid === c.uid).slice(-5).map(x => ({ id: x.id, ton: x.ton, estado: x.estado, creado: x.creado })),
+      pedidos: this.pedidos.filter(x => x.uid === c.uid && x.estado !== 'esperando_pago' && x.estado !== 'vencido').slice(-5)
+        .map(x => ({ codigo: x.codigo, nombre: x.nombre, metodo: x.metodo, estado: x.estado, creado: x.creado })),
+      transparencia: this.transparencia(),
     };
   }
   actualizarYo(s) { this.enviar(s, { t: 'yo', yo: this.datosPropios(s) }); }
@@ -837,7 +1023,9 @@ export class MmoWorld {
       c.oro += oro;
       c.mundiales = (c.mundiales || 0) + 1;
       const it = this.darItem(s, generarItem(c.nivel, parte > 0.15 ? 2 : 1));
-      if (parte >= 0.02) this.darMton(s, 40 + 160 * Math.min(1, parte), 'mundial');
+      // Premio fijo para todos los que ayudaron: si dependiera del daño, una
+      // skin pagada con mas ataque daria mas mTON (y se pagaria para ganar).
+      if (parte >= 0.02) this.darMton(s, 80, 'mundial');
       this.sumarXp(s, xp);
       this.enviar(s, { t: 'gana', xp, oro, drops: [], item: it, x: Math.round(o.x), y: Math.round(o.y - o.h) });
       this.enviar(s, { t: 'toast', m: `👹 ¡Venciste al jefe mundial! +${xp} XP · +${oro} oro · ${RAREZAS[it.r].nombre}: ${nombreItem(it)}`, ok: true });

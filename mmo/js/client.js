@@ -9,7 +9,8 @@ import {
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
   RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, HABILIDADES, LOGROS, LOGIN_PREMIOS, multLogin, NIVEL_MAX,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
-} from './data.js?v=21';
+  RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
+} from './data.js?v=22';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -316,6 +317,8 @@ function recibir(m) {
       for (let i = 0; i < 20; i++) particula(P.x, P.y - 40, '#00eeff', 4);
       pintarHud();
       break;
+    case 'factura': abrirFactura(m); break;
+    case 'pedidoSol': mostrarPedidoSol(m); break;
     case 'fondo': fondoInfo = m; if ($('m-wallet').classList.contains('on')) pintarWallet(); break;
     case 'login': mostrarLogin(m); break;
     case 'logro':
@@ -848,7 +851,11 @@ function pintarWallet() {
   if (w) h += `<p class="centro" style="font-size:12px;word-break:break-all;margin-bottom:8px">👛 ${esc(w.a)}</p>`;
   if (el.cuenta) h += `<button class="btn sec" id="b-conectar" style="width:100%;margin-bottom:8px">${w ? 'CAMBIAR WALLET TON' : 'CONECTAR WALLET TON'}</button>`;
   const puede = el.cuenta && el.nivel && lista && mton >= RETIRO_MIN_MTON;
-  h += `<button class="btn" id="b-retirar" style="width:100%;padding:12px" ${puede ? '' : 'disabled'}>RETIRAR ${tonTxt(Math.floor(mton))} TON</button>`;
+  const aRetirar = Math.min(Math.floor(mton), RETIRO_MAX_MTON);
+  h += `<button class="btn" id="b-retirar" style="width:100%;padding:12px" ${puede ? '' : 'disabled'}>RETIRAR ${tonTxt(aRetirar)} TON</button>`;
+  h += '<button class="btn sec" id="b-premium" style="width:100%;margin-top:8px">⭐ TIENDA PREMIUM (oro y poderes)</button>';
+  const tr = yo.transparencia;
+  if (tr) h += `<div class="mis-caja" style="margin-top:12px"><b>📊 TRANSPARENCIA</b><p style="font-size:12px">El fondo de cada día es el <span style="color:#ffe600">${tr.pct}%</span> de lo que entró al juego la semana anterior (Stars y cripto) dividido entre 7, más lo que aporta El Duende. Nunca se reparte más de lo que entra. Pagado a jugadores hasta hoy: <span style="color:#00eeff">${tonTxt(tr.tonPagados * MTON_POR_TON)} TON</span> en ${tr.retirosPagados} retiro(s).</p></div>`;
   if (fondoInfo) {
     const resta = Math.max(0, fondoInfo.total - fondoInfo.gastado);
     h += `<p class="centro" style="margin-top:10px;font-size:12px;color:rgba(255,255,255,.6)">Fondo de hoy para todos: ${tonTxt(resta)} de ${tonTxt(fondoInfo.total)} TON por repartir</p>`;
@@ -859,15 +866,100 @@ function pintarWallet() {
   }
   h += '<ul style="padding-left:18px;margin-top:12px;font-size:12px">' +
     '<li>Ganas mTON derrotando <b>jefes</b> (si haces al menos el 10% del daño), en el <b>jefe mundial</b> y al cobrar la <b>caza del día</b>.</li>' +
-    '<li>Cada día se reparte un fondo limitado entre todos y hay un máximo por jugador: cuando se acaba, vuelve mañana.</li>' +
+    `<li>Cada día se reparte un fondo limitado entre todos y nadie se lleva más del ${Math.round(TOPE_DIARIO_PCT * 100)}%: cuando se acaba, vuelve mañana.</li>` +
+    `<li>Un retiro por semana, de ${RETIRO_MIN_MTON / MTON_POR_TON} a ${RETIRO_MAX_MTON / MTON_POR_TON} TON (lo que pase de ${RETIRO_MAX_MTON / MTON_POR_TON} queda para el siguiente).</li>` +
     '<li>Los retiros los revisa el equipo y se pagan a tu wallet en 24-48 h. Usar bots o varias cuentas anula el retiro.</li></ul>';
   $('wallet-cuerpo').innerHTML = h;
   const bc = $('b-conectar'); if (bc) bc.onclick = () => { sfx('boton', .3); conectarWallet(); };
+  const bp = $('b-premium'); if (bp) bp.onclick = abrirPremium;
   const br = $('b-retirar');
   if (br) br.onclick = () => {
-    if (!confirm('¿Retirar ' + tonTxt(Math.floor(mton)) + ' TON a ' + (w ? w.a : '') + '?')) return;
+    if (!confirm('¿Retirar ' + tonTxt(aRetirar) + ' TON a ' + (w ? w.a : '') + '?')) return;
     sfx('moneda', .5); mandar({ t: 'retirar' });
   };
+}
+
+// ── TIENDA PREMIUM (Stars en Telegram, SOL en la web) ──
+// Con dinero se compran cosas del juego, nunca mTON. Cada compra la revisa y
+// entrega El Duende a mano: aqui solo se pide y se paga.
+function htmlPremium() {
+  const cuentaTg = !!TG && !forzarInvitado;
+  const cuenta = yo && yo.p2e && yo.p2e.cuenta;
+  let h = '<p style="font-size:12px;color:rgba(255,255,255,.65);margin-bottom:10px">Apoya el juego y llévate oro y poderes. Cada pago lo revisa <b>El Duende</b> en persona y te lo entrega en tu personaje (te avisamos aquí y por Telegram). Con dinero <b>no</b> se compran mTON: los TON solo se ganan jugando.</p>';
+  for (const pq of PAQUETES) {
+    let acc;
+    if (!cuenta) acc = '<span class="precio" style="color:#666">Inicia sesión</span>';
+    else if (cuentaTg) acc = `<span class="precio">⭐ ${estrellasDe(pq.usd)}</span><button class="btn" data-premium="${pq.id}" data-metodo="stars">PAGAR CON STARS</button>`;
+    else acc = `<span class="precio">~$${pq.usd} en SOL</span><button class="btn" data-premium="${pq.id}" data-metodo="sol">PAGAR CON SOL</button>`;
+    h += tarjeta(`<img src="${A}items/equipo/${pq.icono}.png">`, esc(pq.nombre), esc(pq.desc), acc);
+  }
+  const ps = (yo && yo.pedidos) || [];
+  if (ps.length) {
+    const col = { pagado: '#ffe600', por_verificar: '#ffe600', entregado: '#00ff88', anulado: '#ff7777' };
+    const txt = { pagado: 'POR ENTREGAR', por_verificar: 'EN REVISIÓN', entregado: 'ENTREGADO', anulado: 'ANULADO' };
+    h += '<p style="margin:12px 0 4px;font-size:12px">Tus compras:</p>' + ps.slice().reverse().map(x => `<div class="fila"><span>#${esc(x.codigo)} · ${esc(x.nombre)}</span><span style="color:${col[x.estado] || '#fff'}">${txt[x.estado] || x.estado}</span></div>`).join('');
+  }
+  return h;
+}
+function conectarPremium(L) {
+  L.querySelectorAll('[data-premium]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'pedido', id: b.dataset.premium, metodo: b.dataset.metodo }); });
+}
+function abrirPremium() {
+  tabTienda = 'premium';
+  document.querySelectorAll('[data-tab]').forEach(x => x.classList.toggle('on', x.dataset.tab === 'premium'));
+  abrir('m-tienda'); pintarTienda();
+}
+// Telegram abre su propia ventana de pago de Stars.
+function abrirFactura(m) {
+  if (!TG || !TG.openInvoice) { window.open(m.link, '_blank'); return; }
+  TG.openInvoice(m.link, st => {
+    if (st === 'paid') aviso('⭐ ¡Pago recibido! El Duende te entregará tu compra en breve.', 'ok');
+    else if (st === 'failed') aviso('El pago no se completó.');
+  });
+}
+// SOL: con Phantom (un toque) o desde cualquier wallet pegando la firma.
+let pedidoSol = null;
+function mostrarPedidoSol(m) {
+  pedidoSol = m;
+  const sol = (m.lamports / 1e9).toFixed(9);
+  $('sol-cuerpo').innerHTML =
+    `<p class="centro" style="margin-bottom:8px">${esc(m.nombre)} · pedido <b>#${esc(m.codigo)}</b></p>` +
+    `<div class="saldo"><b>${sol} SOL</b><small>(~$${m.usd}) · paga el monto EXACTO: sus últimas cifras identifican tu pedido</small></div>` +
+    `<button class="btn" id="b-phantom" style="width:100%;padding:12px;margin-bottom:10px">PAGAR CON PHANTOM</button>` +
+    `<p style="font-size:12px;margin:6px 0">¿Otra wallet? Envía <b>${sol} SOL</b> a la wallet de El Duende:</p>` +
+    `<p style="font-size:11px;word-break:break-all;background:rgba(0,0,0,.35);padding:8px;border-radius:6px">${esc(m.wallet)}</p>` +
+    `<div style="display:flex;gap:6px;margin:6px 0"><button class="btn sec" id="b-copia-w" style="flex:1">COPIAR WALLET</button><button class="btn sec" id="b-copia-m" style="flex:1">COPIAR MONTO</button></div>` +
+    `<p style="font-size:12px;margin-top:8px">Y pega aquí la firma (signature) de la transacción:</p>` +
+    `<input class="nombre" id="in-firma" placeholder="Firma de la transacción" style="font-size:10px;margin:6px 0">` +
+    `<button class="btn" id="b-firma" style="width:100%">ENVIAR COMPROBANTE</button>` +
+    `<p style="font-size:11px;color:rgba(255,255,255,.5);margin-top:8px">Tienes 30 minutos. El pago va directo a la wallet de El Duende y él te entrega la compra a mano.</p>`;
+  abrir('m-sol');
+  const copiar = t => { try { navigator.clipboard.writeText(t); aviso('📋 Copiado', 'ok'); } catch (e) {} };
+  $('b-copia-w').onclick = () => copiar(m.wallet);
+  $('b-copia-m').onclick = () => copiar(sol);
+  $('b-firma').onclick = () => { const f = $('in-firma').value.trim(); if (f) mandar({ t: 'pedidoFirma', codigo: m.codigo, firma: f }); };
+  $('in-firma').addEventListener('keydown', e => e.stopPropagation());
+  $('b-phantom').onclick = () => pagarConPhantom(m);
+}
+function cargarScript(src) {
+  return new Promise((ok, mal) => { const sc = document.createElement('script'); sc.src = src; sc.onload = ok; sc.onerror = () => mal(new Error('No se pudo cargar ' + src)); document.head.appendChild(sc); });
+}
+async function pagarConPhantom(m) {
+  const prov = (window.phantom && window.phantom.solana) || (window.solana && window.solana.isPhantom ? window.solana : null);
+  if (!prov) { aviso('No encontramos Phantom en este navegador. Instálalo o paga desde otra wallet y pega la firma.'); window.open('https://phantom.app/', '_blank'); return; }
+  try {
+    if (!window.solanaWeb3) await cargarScript('https://unpkg.com/@solana/web3.js@1/lib/index.iife.min.js');
+    const { Connection, PublicKey, Transaction, SystemProgram } = window.solanaWeb3;
+    const { publicKey } = await prov.connect();
+    const con = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
+    const tx = new Transaction().add(SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: new PublicKey(m.wallet), lamports: m.lamports }));
+    tx.feePayer = publicKey;
+    tx.recentBlockhash = (await con.getLatestBlockhash()).blockhash;
+    const { signature } = await prov.signAndSendTransaction(tx);
+    aviso('◎ Pago enviado. Comprobando…', 'ok');
+    mandar({ t: 'pedidoFirma', codigo: m.codigo, firma: signature });
+    cerrarModales();
+  } catch (e) { aviso('No se completó el pago con Phantom: ' + (e.message || e)); }
 }
 
 // ── EFECTOS ──
@@ -1385,6 +1477,7 @@ function pintarTienda() {
   if (!yo) return;
   $('t-oro').textContent = yo.oro.toLocaleString('es');
   const L = $('tienda-lista');
+  if (tabTienda === 'premium') { L.innerHTML = htmlPremium(); conectarPremium(L); return; }
   let h = '';
   const nvF = id => (yo.forja || {})[id] || 0;
   if (tabTienda === 'forja') {

@@ -172,7 +172,7 @@ export async function mmoFondo(env) {
   const ingresoTon = tonSemana + (precio ? usdSemana / precio : 0);
   const autoMton = Math.floor(ingresoTon * FONDO_PCT / 7 * 1000);
   const stub = env.MMO.get(env.MMO.idFromName('mundo-1'));
-  const r = await stub.fetch('https://mmo/interno/fondo', { method: 'POST', headers: { 'x-interno': env.TELEGRAM_BOT_TOKEN || '' }, body: JSON.stringify({ auto: autoMton }) });
+  const r = await stub.fetch('https://mmo/interno/fondo', { method: 'POST', headers: { 'x-interno': env.TELEGRAM_BOT_TOKEN || '' }, body: JSON.stringify({ auto: autoMton, precioTon: precio }) });
   console.log('[Fondo mTON]', { tonSemana, usdSemana, precio, autoMton, resp: await r.text() });
 }
 

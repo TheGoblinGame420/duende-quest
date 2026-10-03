@@ -1004,3 +1004,32 @@ diario = **% de ingresos**, y la web también cobra en TON (Phantom no recibe TO
   wallet del dueño. Rutas internas del DO: `/interno/*` con cabecera
   `x-interno = TELEGRAM_BOT_TOKEN`; el Worker solo expone `/mmo/ws`.
 - Arnés de 31 comprobaciones del dinero (`arnes_mton.mjs`) + el de 44.
+
+### DUENDE QUEST ONLINE — tienda premium manual y economía (2-oct-2026)
+
+Pedido del dueño: que entren depósitos grandes y salgan retiros chicos, con
+compras por Stars y SOL a su cuenta, todo manual y transparente (3 jugadores).
+
+- **Con dinero se compran cosas del juego (oro y poderes), NUNCA mTON.** Si
+  se pudiera comprar mTON y retirarlo en TON, el juego sería un exchange (PSAV)
+  y "depositar mucho para retirar poco" sería captar fondos. Así, lo que entra
+  sostiene el fondo (30% de los ingresos) y los retiros siempre son menores.
+- Paquetes en `PAQUETES` (data.js): $1, $3, $5, $20 → oro / kit de poderes.
+  Stars = usd / 0,013 (igual que las skins del bot). Stars solo en Telegram;
+  SOL solo en la web (Telegram no permite otras cadenas en Mini Apps).
+- **Stars:** el DO crea la factura (`createInvoiceLink`, payload `{mmo: código}`);
+  el bot valida en `pre_checkout_query` que el pedido siga abierto, registra el
+  pago en `stars_purchases` (cuenta para el fondo) y avisa al dueño.
+- **SOL:** monto con 4 cifras finales propias del pedido, a `SOL_DEV_WALLET`;
+  Phantom en un toque o cualquier wallet + pegar la firma. El DO mira la
+  transacción en la cadena (Helius si hay clave) y le pasa al dueño el
+  resultado + enlace de Solscan. Una firma no sirve para dos pedidos.
+- **Entrega manual:** /pedidos, /entregar CODIGO, /anular CODIGO motivo (las
+  Stars se devuelven solas con `refundStarPayment`; el SOL lo devuelve el dueño).
+  Los SOL entregados se guardan en `ingresosSol` del DO y se suman al fondo.
+- **Retiros más chicos:** máximo 10 TON por retiro, uno cada 7 días, y ningún
+  jugador se lleva más del 20% del fondo del día. Premio del jefe mundial fijo
+  (no depende del daño, para que una skin pagada no dé más mTON).
+- **Transparencia** en la ventana 💎: fórmula del fondo y total pagado a
+  jugadores; cada jugador ve el estado de sus compras y retiros.
+- Arnés: 54 comprobaciones del dinero/tienda + 44 del juego.

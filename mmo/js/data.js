@@ -540,3 +540,25 @@ export function tonAmigable(cruda) {
   for (const x of b) s += String.fromCharCode(x);
   return btoa(s).replace(/\+/g, '-').replace(/\//g, '_');
 }
+
+// Limites para que el fondo dure: un retiro cada 7 dias y como mucho 10 TON
+// por retiro (lo que sobre se queda en el saldo para el siguiente).
+export const RETIRO_MAX_MTON = 10000;
+export const RETIRO_CADA_MS = 7 * 86400000;
+export const TOPE_DIARIO_PCT = 0.2;    // ningun jugador se lleva mas del 20% del fondo del dia
+
+// ── TIENDA PREMIUM ──
+// Con dinero real se compran cosas DEL JUEGO (oro y poderes), NUNCA mTON:
+// asi lo que entra sostiene el fondo y nadie paga para "retirar mas". Se paga
+// con Stars dentro de Telegram y con SOL en la web (Telegram no permite otras
+// cadenas en sus Mini Apps). El dueño revisa cada pago y entrega a mano con
+// /entregar en el bot: con pocos jugadores es lo mas transparente.
+export const STAR_USD = 0.013;   // lo mismo que usa el bot para las skins
+export const PAQUETES = [
+  { id: 'oro1',  nombre: 'Bolsita de oro',     usd: 1,  oro: 5000,   icono: 'I_GoldCoin',  desc: '5.000 oro' },
+  { id: 'kit',   nombre: 'Kit del aventurero', usd: 3,  pw: { pocion: 20, escudo: 8, rayo: 8, fuego: 8 }, icono: 'I_Chest01', desc: '20 pociones, 8 escudos, 8 rayos y 8 fuegos' },
+  { id: 'oro5',  nombre: 'Saco de oro',        usd: 5,  oro: 30000,  icono: 'I_GoldBar',  desc: '30.000 oro (+20% de regalo)' },
+  { id: 'oro20', nombre: 'Cofre de oro',       usd: 20, oro: 140000, icono: 'I_Chest02', desc: '140.000 oro (+40% de regalo)' },
+];
+export const estrellasDe = usd => Math.ceil(usd / STAR_USD);
+export const PEDIDO_VIGENCIA_MS = 30 * 60 * 1000;   // 30 min para pagar

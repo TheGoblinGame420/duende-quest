@@ -261,6 +261,7 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
       <button class="tab" data-tab="arma">ARMAS</button>
       <button class="tab" data-tab="forja">FORJA</button>
       <button class="tab" data-tab="skin">SKINS</button>
+      <button class="tab" data-tab="premium">⭐ PREMIUM</button>
     </div>
     <div class="lista" id="tienda-lista"></div>
   </div>
@@ -322,7 +323,8 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
       <li>La vida se recupera sola si pasas 4 segundos sin recibir golpes, y rápido en el pueblo.</li>
       <li>El <b>Mercader</b> del pueblo vende poderes, armas y las 7 skins. Las skins que ya compraste en el juego principal se desbloquean solas.</li>
       <li>El oro del MMO es solo del juego: no se canjea por dinero ni por $DUENDE.</li>
-      <li><b>💎 mTON (play to earn):</b> desde nivel 15, con cuenta de Telegram o web, los jefes, el jefe mundial y la caza del día dan mTON. 1.000 mTON = 1 TON y desde 5 TON puedes retirar a tu wallet TON (botón 💎). Cada día se reparte un fondo limitado.</li>
+      <li><b>💎 mTON (play to earn):</b> desde nivel 15, con cuenta de Telegram o web, los jefes, el jefe mundial y la caza del día dan mTON. 1.000 mTON = 1 TON y desde 5 TON puedes retirar a tu wallet TON (botón 💎), una vez por semana y hasta 10 TON por retiro. Cada día se reparte un fondo limitado.</li>
+      <li><b>⭐ Tienda premium</b> (Mercader o botón 💎): oro y poderes con Stars en Telegram o con SOL en la web. El Duende revisa cada pago y te lo entrega en persona. Con dinero nunca se compran mTON.</li>
       <li style="font-size:11px;color:rgba(255,255,255,.5)"><b>Créditos de arte:</b> Luis Zuno (ansimuz) — Magic Cliffs y Warped Caves (CC-BY 3.0), Mountain Dusk, Underwater, GothicVania y Sunny Land (CC0); Moikmellah, Ashuuya, Scratchio y 7Soul1 (CC0). Sonidos: Juhani Junkala (CC0).</li>
     </ul>
     <p class="creador">👤 Creado por <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial</a> · <a href="https://t.me/elduende420peru" target="_blank" rel="noopener">📢 Canal</a> · <a href="https://t.me/duendesolana420" target="_blank" rel="noopener">💬 Grupo</a></p>
@@ -335,6 +337,15 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
     <button class="bt cerrar" data-cerrar>✕</button>
     <h2>💎 GANA TON JUGANDO</h2>
     <div id="wallet-cuerpo"></div>
+  </div>
+</div>
+
+<!-- Pago en SOL (solo web) -->
+<div class="modal" id="m-sol">
+  <div class="ventana">
+    <button class="bt cerrar" data-cerrar>✕</button>
+    <h2>◎ PAGAR CON SOL</h2>
+    <div id="sol-cuerpo"></div>
   </div>
 </div>
 
@@ -369,6 +380,6 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=21"></script>
+<script type="module" src="/mmo/js/client.js?v=22"></script>
 </body>
 </html>
