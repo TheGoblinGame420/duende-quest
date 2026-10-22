@@ -458,6 +458,13 @@ export const TINTES = {
 // enseñan una vez (lo nuevo para los que vuelven). La mas reciente arriba;
 // subir 'n' al añadir una.
 export const NOVEDADES = [
+  { n: 9, fecha: '22 oct 2026', items: [
+    'Interfaz renovada: iconos dibujados en el HUD, botones táctiles nuevos y avisos más claros.',
+    'Guía del juego por secciones y pantalla de carga con consejos.',
+    'Marco del objetivo con acciones a la vista: Grupo, Hermandad, Mensaje, Duelo, Amigo y Ver.',
+    'Chat en el móvil: panel de gestos y frases rápidas.',
+    'La Tienda premium muestra los precios antes de iniciar sesión.',
+  ] },
   { n: 8, fecha: '22 oct 2026', items: [
     '🌧️ Clima: algunas horas llueve o nieva en ciertas zonas; con lluvia el Pez Dorado sale el doble.',
     '🐟 Colección de especies de peces: una por pesquero, oro la primera vez y el logro Ictiólogo.',
