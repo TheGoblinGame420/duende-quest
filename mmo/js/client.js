@@ -3381,11 +3381,35 @@ function cajaTareas() {
     '<div class="mis-caja"><b>📆 Misiones de la semana</b>' + T.sem.l.map(fila).join('') +
     `<p style="font-size:12px;margin-top:6px">Cada una: +${T.premioSem.xp.toLocaleString('es')} XP y +${T.premioSem.oro.toLocaleString('es')} oro. Las 2: ${T.sem.bono ? '✓ bono cobrado' : 'objeto épico'}. Se renuevan los lunes.</p></div>`;
 }
+// Final de juego: lo que queda por hacer esta semana (y hoy), de un vistazo.
+function cajaSemana() {
+  if (!yo || yo.nivel < RUNA_NIVEL) return '';
+  const fila = (ok, txt, dcha) => `<div class="fila" style="${ok ? 'color:var(--ok)' : ''}"><span>${ok ? '✓' : '•'} ${txt}</span><span>${dcha}</span></div>`;
+  const hoy = new Date().toISOString().slice(0, 10);
+  let h = '<div class="mis-caja"><b>🗓️ Tu semana</b>';
+  const md = yo.mazDia && yo.mazDia.d === hoy ? (yo.mazDia.hechas || []).length : 0;
+  h += fila(md > 0, '🏰 Premio del día de mazmorra (uno por mazmorra)', md + ' hoy');
+  const b = yo.boveda || { n: 0 };
+  h += fila(b.n >= BOVEDA_UMBRALES[BOVEDA_UMBRALES.length - 1], '🗝️ Bóveda: mazmorras de la semana', `${b.n}/${BOVEDA_UMBRALES[BOVEDA_UMBRALES.length - 1]} → ${opcionesBoveda(b.n)} de 3`);
+  if (yo.nivel >= NIVEL_MAX) {
+    const ba = yo.banda || { j: [], t: 0 };
+    const nj = MAZMORRAS.santuario ? MAZMORRAS.santuario.jefes.length : 4;
+    h += fila(ba.j.length >= nj, '⚔️ Botín de la banda', `${ba.j.length}/${nj}`);
+    if (!(yo.monturas || []).includes('abismo')) h += fila(false, '🦇 Titán para el Murciélago del Abismo', `${ba.t}/${BANDA_MONTURA}`);
+  }
+  if (hermandad && hermandad.gesta) {
+    const G = hermandad.gesta, n = GESTA_UMBRALES.filter(u => G.p >= u).length;
+    h += fila(n === GESTA_UMBRALES.length, '🏆 Gesta de tu hermandad', n ? GESTA_NOMBRES[n - 1] : G.p + '/' + GESTA_UMBRALES[0]);
+  }
+  const ru = yo.runas || {}, tot = Object.keys(RUNAS).reduce((a, k) => a + (ru[k] || 0), 0), max = Object.keys(RUNAS).length * RUNA_MAX;
+  h += fila(tot >= max, '✨ Runas de la Artesana', tot + '/' + max);
+  return h + '<p style="font-size:12px;margin-top:6px">La Bóveda, la banda, los afijos y la gesta se renuevan los lunes (UTC).</p></div>';
+}
 function pintarMision() {
   const i = yo.mis ? yo.mis.i : 0, q = MISIONES[i];
   const cuerpo = $('mision-cuerpo');
   const conectarDiaria = () => { const b = $('b-diaria'); if (b) b.onclick = () => { sfx('boton', .3); mandar({ t: 'mision', diaria: true }); }; };
-  if (!q) { cuerpo.innerHTML = '<p class="centro">Completaste las ' + MISIONES.length + ' misiones. Eres una leyenda del Pueblo Duende. 👑</p>' + cajaDiaria() + cajaTareas(); conectarDiaria(); return; }
+  if (!q) { cuerpo.innerHTML = '<p class="centro">Completaste las ' + MISIONES.length + ' misiones. Eres una leyenda del Pueblo Duende. 👑</p>' + cajaSemana() + cajaDiaria() + cajaTareas(); conectarDiaria(); return; }
   const def = MONSTRUOS[q.tipo];
   const zona = MAPAS[zonaDe(q.tipo)];
   const lista = yo.mis.p >= q.n;
@@ -3399,7 +3423,7 @@ function pintarMision() {
     '<p>' + yo.mis.p + ' / ' + q.n + '</p>' +
     '<p style="color:var(--oro)">Recompensa: +' + q.xp + ' XP · +' + q.oro + ' oro' + esc(extra) + '</p></div>' +
     (lista ? '<button class="btn" id="b-entregar" style="width:100%;padding:12px">Entregar misión</button>' : '<p class="centro">Vuelve cuando la termines.</p>') +
-    cajaDiaria() + cajaTareas();
+    cajaSemana() + cajaDiaria() + cajaTareas();
   const b = $('b-entregar');
   if (b) b.onclick = () => { sfx('boton', .3); mandar({ t: 'mision' }); };
   conectarDiaria();
