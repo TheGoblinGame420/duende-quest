@@ -70,6 +70,7 @@ export const Torre = {
     // Una subida que cruza el lunes no cuenta para la semana nueva (ni da
     // otra vez los cofres de la anterior).
     if (T.sem === semanaUTC()) for (const s of vivos) this.anotarTorre(s, T.piso);
+    for (const s of vivos) this.progresoTarea(s, 'torre');
     this.aClave(w.clave, { t: 'torre', piso: T.piso, limpio: 1 });
     this.aClave(w.clave, { t: 'emote', m: `✅ ¡Piso ${T.piso} superado!${(T.piso + 1) % TORRE.jefeCada === 0 ? ' El siguiente tiene jefe.' : ''}` });
     T.sigEn = ahora + TORRE.pausa;

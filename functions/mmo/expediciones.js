@@ -27,6 +27,7 @@ export const Expediciones = {
       c.mat = c.mat || {};
       for (const k in pr.mat) c.mat[k] = Math.min(999, (c.mat[k] || 0) + pr.mat[k]);
       c.expediciones = (c.expediciones || 0) + 1;
+      this.progresoTarea && this.progresoTarea(s, 'exped');
       s.sucio = true;
       const mats = Object.entries(pr.mat).map(([k, n]) => `${n} ${MATERIALES[k].nombre}`).join(', ');
       this.enviar(s, { t: 'toast', ok: true, m: `🧭 Volvió la expedición: +${pr.oro.toLocaleString('es')} oro${pr.xp ? ', +' + pr.xp.toLocaleString('es') + ' XP' : ''} y ${mats}.` });

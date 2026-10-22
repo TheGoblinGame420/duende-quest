@@ -956,6 +956,7 @@ export const TAREAS_DIA = [
   { id: 'hab', tipo: 'hab', n: 50, txt: 'Usa 50 habilidades en combate' },
   { id: 'recoger', tipo: 'recoger', n: 6, txt: 'Recoge 6 plantas o vetas de mineral' },
   { id: 'pescar', tipo: 'pescar', n: 5, txt: 'Pesca 5 peces (pesquero 🎣 del pueblo o de una zona)' },
+  { id: 'exped', tipo: 'exped', n: 1, txt: 'Recoge una expedición (registro de misiones)', nv: 5 },
 ];
 export const TAREAS_SEMANA = [
   { id: 'caza300', tipo: 'caza', n: 300, txt: 'Caza 300 monstruos de tu nivel' },
@@ -964,6 +965,7 @@ export const TAREAS_SEMANA = [
   { id: 'mundial3', tipo: 'mundial', n: 3, txt: 'Vence 3 veces al jefe mundial', nv: 5 },
   { id: 'recoger30', tipo: 'recoger', n: 30, txt: 'Recoge 30 plantas o vetas de mineral' },
   { id: 'pescar25', tipo: 'pescar', n: 25, txt: 'Pesca 25 peces' },
+  { id: 'torre10', tipo: 'torre', n: 10, txt: 'Supera 10 pisos de la Torre del Duende (en total)', nv: 10 },
 ];
 export const premioTarea = (nivel, semanal) => ({ xp: Math.round(xpParaSubir(nivel) * (semanal ? 0.8 : 0.25)), oro: (semanal ? 300 : 40) * nivel });
 // La zona "de tu nivel" (para la tarea de zona).
