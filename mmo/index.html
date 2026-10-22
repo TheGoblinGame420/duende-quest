@@ -429,6 +429,9 @@ input.nombre:focus{border-color:var(--pri-txt);}
 #carga .t{font-size:14px;color:var(--txt);text-align:center;line-height:1.7;}
 #carga .s{font-family:var(--sans);font-size:13px;color:var(--txt2);}
 #carga .barra{width:220px;}
+#carga .duende-carga{image-rendering:pixelated;animation:flotar 2.4s ease-in-out infinite;}
+@keyframes flotar{50%{transform:translateY(-6px);}}
+#carga .consejo-carga{position:absolute;bottom:max(32px,env(safe-area-inset-bottom));left:24px;right:24px;margin:0;text-align:center;font-family:var(--sans);font-size:12px;line-height:1.5;color:var(--txt3);}
 #carga .barra>i{background:var(--pri);}
 @media (max-width:600px){
   .bt{padding:6px 6px;font-size:8px;}
@@ -459,9 +462,12 @@ input.nombre:focus{border-color:var(--pri-txt);}
 </head>
 <body>
 <div id="carga">
+  <img class="duende-carga" src="/assets/skins/duende_comun.png" alt="" width="62" height="105">
   <div class="t">DUENDE QUEST<br>ONLINE</div>
   <div class="barra"><i id="carga-i" style="width:0%"></i></div>
   <div class="s" id="carga-s">Cargando el mundo…</div>
+  <p class="consejo-carga" id="carga-c"></p>
+  <script>(function(){var c=['Las bolas de fuego se esquivan saltando.','Interrumpe los hechizos con barra naranja.','El guerrero genera el doble de amenaza: deja que él reciba los golpes.','En grupo se comparte la experiencia, con un 10% extra por miembro.','Con lluvia, el Pez Dorado sale el doble.','Cada 5 pisos nuevos de la Torre hay un cofre.','La vida se regenera tras 4 segundos sin recibir daño.','La Piedra de Hogar te devuelve al pueblo.','Las expediciones siguen aunque cierres el juego.','La Hora Feliz da +50% de experiencia por caza.'];document.getElementById('carga-c').textContent='Consejo: '+c[Math.floor(Math.random()*c.length)];})();</script>
 </div>
 
 <div id="app">
@@ -845,6 +851,6 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=232"></script>
+<script type="module" src="/mmo/js/client.js?v=234"></script>
 </body>
 </html>
