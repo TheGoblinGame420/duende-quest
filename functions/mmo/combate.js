@@ -341,6 +341,7 @@ export const Combate = {
       if (!riv || riv.id !== m.tg) return this.no(s, 'Ese jugador no es tu rival de duelo.');
       if (this.distJug(s, riv) > h.rango + 20) return this.no(s, 'Fuera de alcance.');
       if (h.id === 'eviscerar' && !(s.combo > 0)) return this.no(s, 'Necesitas puntos de combo (usa Golpe Siniestro).');
+      if (h.bajo && riv.hp / riv.st.maxHp > h.bajo) return this.no(s, 'Solo funciona con enemigos casi muertos.');
       this.desmontar(s);
       if (h.gcd !== false) s.gcdHasta = ahora + GCD_MS;
       if (h.cast) {

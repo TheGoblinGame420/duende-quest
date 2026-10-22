@@ -395,8 +395,11 @@ export class MmoWorld {
     // Se guarda la vida y si estaba muerto: si no, cerrar la pestaña justo
     // antes de morir te devolvia con la vida llena en el mismo sitio.
     if (c.muerto) {
-      c.xp = Math.max(0, c.xp - Math.round(xpParaSubir(c.nivel) * 0.05));
-      c.muerto = false; c.mapa = 'pueblo'; c.x = MAPAS.pueblo.spawn;
+      // Igual que revivir(): hasta Nv 10 sin perder XP y en la entrada de la zona.
+      const novato = c.nivel < 10 && MAPAS[c.mapa] && MAPAS[c.mapa].zona && c.mapa !== 'coliseo';
+      if (c.nivel >= 10) c.xp = Math.max(0, c.xp - Math.round(xpParaSubir(c.nivel) * 0.05));
+      c.muerto = false;
+      if (novato) c.x = 150; else { c.mapa = 'pueblo'; c.x = MAPAS.pueblo.spawn; }
       s.hp = s.st.maxHp;
     } else {
       s.hp = typeof c.hp === 'number' ? clamp(c.hp, 1, s.st.maxHp) : s.st.maxHp;
@@ -836,7 +839,7 @@ export class MmoWorld {
     const ayer = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
     const anteayer = new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10);
     // Faltar UN dia no borra la racha: retrocede dos dias (antes volvia al 1).
-    const racha = L.d === ayer ? (L.racha % LOGIN_PREMIOS.length) + 1 : L.d === anteayer ? Math.max(1, (L.racha || 1) - 1) : 1;
+    const racha = L.d === ayer ? (L.racha % LOGIN_PREMIOS.length) + 1 : L.d === anteayer && L.racha < LOGIN_PREMIOS.length ? Math.max(1, (L.racha || 1) - 1) : 1;
     const pr = LOGIN_PREMIOS[racha - 1];
     const oro = Math.round((pr.oro || 0) * multLogin(c.nivel));
     c.oro += oro;
@@ -1022,7 +1025,7 @@ export class MmoWorld {
   // se avanza en el aire, el dash y la montura).
   techoEn(mapa, x) {
     let base = SUELO;
-    for (const [px, py, pw] of MAPAS[mapa].plataformas || []) if (x >= px - 260 && x <= px + pw + 260 && py < base) base = py;
+    for (const [px, py, pw] of MAPAS[mapa].plataformas || []) if (x >= px - 380 && x <= px + pw + 380 && py < base) base = py;
     return base - MAX_SALTO;
   }
 

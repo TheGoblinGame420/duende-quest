@@ -1294,6 +1294,23 @@ contador en el seguimiento. Aviso al entrar. Solo oro y títulos.
 Además: "N hoy" junto a "en línea" (jugadores distintos del día, del índice
 de retención, cada 10 s con el mensaje `on`).
 
+**Tercera revisión (agente, 22-oct) y arreglos (?v=36):**
+- ALTA: el duelo curaba la vida al máximo al empezar (y al 30% al acabar):
+  retarse servía de cura infinita contra jefes. Ya no cura nada; hay que
+  llevar 5 s fuera de combate para retar y aceptar; nunca en mazmorras ni en
+  el Coliseo (se vuelve a mirar al aceptar); 10 s entre retos a la misma
+  persona; `dueloFin` llega a los dos aunque estén en mapas distintos.
+- En duelo, Ejecutar exige rival bajo el 25% y tras un aturdimiento el
+  rival es inmune 4 s (Polimorfia en cadena).
+- Reconectar solo devuelve a TU instancia (`c.inst`) y con nivel para ella
+  (antes se podía caer en el Desafío de otro a Nv 20).
+- Un Nv 60 del grupo entra a la mazmorra/Desafío abierto del grupo aunque no
+  haya vencido ese +k; quien va llevado avanza de uno en uno; el premio del
+  Desafío es al batir tu marca o una vez al día por mazmorra (`c.desDia`).
+- Racha: tras el día 7, faltar vuelve al 1 (si no, se cobraba el 7 cada 3).
+- `techoEn` con margen ±380 (salto con dash y montura daba falsos positivos).
+- Novato que cierra el juego muerto: mismo trato que al revivir.
+
 Sin hacer: avisos a la hora habitual de cada uno (el cron de las 17 UTC ya
 usa 4 de 5 disparadores del plan gratis), y final de juego para D30 (1→60 se
 juega en 5-8 h). Ojo: la bienvenida del bot aún habla de $DUENDE en Solana

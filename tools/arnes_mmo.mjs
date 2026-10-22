@@ -988,7 +988,8 @@ async function pruebasDuelos() {
   await a.mandar({ t: 'retar', p: b.id });
   a.hp = 10;
   await b.mandar({ t: 'retoResp', si: true });
-  chequear(a.duelo && b.duelo && a.duelo.con === b.id && a.hp === a.st.maxHp, 'aceptado: duelo con la vida llena');
+  chequear(a.duelo && b.duelo && a.duelo.con === b.id && a.hp === 10, 'aceptado: empieza el duelo y no cura a nadie');
+  a.hp = a.st.maxHp;
   await c.mandar({ t: 'retar', p: a.id });
   chequear(!c.retoDuelo && !a.retoDuelo, 'no se reta a quien ya está en duelo');
   const hp0 = b.hp;
@@ -1013,22 +1014,28 @@ async function pruebasDuelos() {
   chequear(!a.duelo && !b.duelo && !b.muerto && b.hp >= 1, 'al quedar a 1 de vida el duelo termina sin muertes');
   chequear((a.c.duelosG || 0) === g0 + 1, 'se cuenta la victoria');
   chequear(a.ultimos('dueloFin').some(x => x.g === a.id), 'todos saben quién ganó');
+  // En combate no se puede retar (si no, el duelo servia para escapar).
+  a.limpiar(); avanzar(1000);
+  await a.mandar({ t: 'retar', p: b.id });
+  chequear(!b.retoDuelo && a.ultimos('no').some(x => /combate/.test(x.m)), 'en mitad de un combate no se puede retar');
   // Por tiempo y por distancia.
+  avanzar(11000);
   await a.mandar({ t: 'retar', p: b.id }); await b.mandar({ t: 'retoResp', si: true });
   avanzar(3100 + 90000 + 100); tick(1);
   chequear(!a.duelo && !b.duelo, 'a los 90 s se acaba');
+  avanzar(11000);
   await a.mandar({ t: 'retar', p: b.id }); await b.mandar({ t: 'retoResp', si: true });
   avanzar(3100); b.x = 2200; tick(1);
   chequear(!a.duelo && !b.duelo, 'si se alejan, se acaba');
-  b.x = 960;
+  b.x = 960; avanzar(11000);
   await a.mandar({ t: 'retar', p: b.id }); await b.mandar({ t: 'retoResp', si: true });
   await dejar(b); tick(1);
   chequear(!a.duelo && a.ultimos('dueloFin').some(x => /se fue/.test(x.m)), 'si el rival se desconecta, gana el otro');
   // Altura: no se puede volar.
-  await aMapa(c, 'amanecer', 2550); c.movT = Date.now() - 100; c.snapHasta = 0;
-  await c.mandar({ t: 'mv', x: 2560, y: 40, f: 1, a: 2 });
+  await aMapa(c, 'pueblo', 2500); c.movT = Date.now() - 100; c.snapHasta = 0;
+  await c.mandar({ t: 'mv', x: 2510, y: 40, f: 1, a: 2 });
   chequear(c.y >= 400 - 215, 'no se puede volar por encima de un doble salto (y=' + Math.round(c.y) + ')');
-  avanzar(200); await c.mandar({ t: 'mv', x: 2565, y: 300, f: 1, a: 2 });
+  avanzar(200); await c.mandar({ t: 'mv', x: 2515, y: 300, f: 1, a: 2 });
   chequear(c.y === 300, 'un salto normal sí vale');
   // En una mazmorra no.
   a.k = 'catacumbas#99';
@@ -1096,6 +1103,8 @@ async function pruebasNovato() {
   const hace = d => new Date(Date.now() - d * 86400000).toISOString().slice(0, 10);
   n.c.login = { d: hace(2), racha: 5, total: 5 };
   chequear(mundo.procesarLogin(n).racha === 4, 'faltar un día retrocede dos en la racha');
+  n.c.login = { d: hace(2), racha: 7, total: 7 };
+  chequear(mundo.procesarLogin(n).racha === 1, 'tras el día 7, faltar vuelve a empezar (no se cobra el 7 cada 3 días)');
   n.c.login = { d: hace(3), racha: 5, total: 5 };
   chequear(mundo.procesarLogin(n).racha === 1, 'faltar más vuelve a empezar');
   n.c.login = { d: hace(1), racha: 5, total: 5 };
@@ -1135,6 +1144,20 @@ async function pruebasDesafios() {
   await aMapa(d, 'pueblo', 800);
   await d.mandar({ t: 'mazmorra', id: 'catacumbas', k: 2 });
   chequear(mundo.mundoDe(d).inst && mundo.mundoDe(d).inst.k === 2, 'ahora se abre el +2');
+  // Llevado por un grupo: avanza de uno en uno y solo vuelve a su instancia.
+  const h = await entrar('Lider60', '61'), l = await entrar('Llevado', '62');
+  ponerNivel(h, 60, 'guerrero'); ponerNivel(l, 60, 'sacerdote');
+  h.c.desafio = { templo: 9 };
+  await aMapa(h, 'pueblo', 800); await aMapa(l, 'pueblo', 810);
+  await h.mandar({ t: 'invitar', p: l.id }); await l.mandar({ t: 'grupoResp', si: true });
+  await h.mandar({ t: 'mazmorra', id: 'templo', k: 10 });
+  const wt = mundo.mundoDe(h);
+  chequear(l.k === wt.clave && wt.inst.k === 10, 'el grupo entra junto al +10');
+  const fT = [...wt.mons.values()].find(o => o.final);
+  for (const o of [...wt.mons.values()]) if (o.jefe && o !== fT) { mundo.danar(o, o.hp + 1, h); tick(1); }
+  mundo.danar(fT, fT.hp + 1, h); tick(2);
+  chequear(h.c.desafio.templo === 10 && l.c.desafio.templo === 1, 'el llevado avanza de uno en uno (+1), el líder +10');
+  await dejar(l); await dejar(h);
   await dejar(d);
 }
 

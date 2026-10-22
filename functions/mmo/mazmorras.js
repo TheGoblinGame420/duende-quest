@@ -37,6 +37,14 @@ export const Mazmorras = {
     const mz = MAZMORRAS[id];
     if (!this.cercaDelBuscador(s)) return this.no(s, 'Ve al portal de mazmorras del pueblo.');
     if (s.c.nivel < mz.nv[0]) return this.no(s, `Necesitas nivel ${mz.nv[0]} para ${mz.nombre}.`);
+    // La del grupo, si sigue abierta y es esta mazmorra: se entra a ella
+    // (tambien a su Desafio, con nivel 60) sin mirar lo que pide el cliente.
+    const gi = this.grupoDe(s);
+    const wg = gi && gi.inst && this.mundo[gi.inst];
+    if (wg && wg.inst && !wg.inst.completada && wg.inst.id === id) {
+      if (wg.inst.k && s.c.nivel < NIVEL_MAX) return this.no(s, `Tu grupo está en un Desafío: hace falta nivel ${NIVEL_MAX}.`);
+      return this.unirAInstancia(s, wg);
+    }
     // Desafio +k: solo a Nv 60 y hasta uno mas que el mejor vencido.
     const k = Math.max(0, Math.min(DESAFIO_MAX, m.k | 0));
     if (k && s.c.nivel < NIVEL_MAX) return this.no(s, `Los Desafíos se abren a nivel ${NIVEL_MAX}.`);
@@ -104,6 +112,7 @@ export const Mazmorras = {
 
   unirAInstancia(s, w) {
     const mz = MAZMORRAS[w.inst.id];
+    s.c.inst = w.clave;   // para volver a ESTA (y no a otra del mismo mapa) al reconectar
     this.entrarMapa(s, mz.mapa, 150, false, w.clave);
     w.inst.vacioDesde = 0;
     this.enviar(s, { t: 'toast', m: w.inst.k ? `⚡ ${mz.nombre} — Desafío +${w.inst.k}: monstruos con ${Math.round(w.inst.mv * 100)}% de vida y ${Math.round(w.inst.ma * 100)}% de daño.` : `🏰 ${mz.nombre} (Nv ${w.inst.nv}). Aquí los monstruos atacan solos y en grupo: ¡con cuidado!`, ok: true });
@@ -112,10 +121,9 @@ export const Mazmorras = {
   // Al reconectar: si estaba en una mazmorra que sigue abierta (la suya o la
   // de su grupo), vuelve a ella donde estaba en vez de aparecer en el pueblo.
   volverAInstancia(s, mapa, x) {
-    const g = this.grupoDe(s);
-    const previa = g ? g.inst : this.instDe && this.instDe.get(s.c.uid);
-    const w = previa && this.mundo[previa];
+    const w = s.c.inst && this.mundo[s.c.inst];
     if (!w || !w.inst || w.inst.completada || w.mapa !== mapa) return false;
+    if (s.c.nivel < (w.inst.k ? NIVEL_MAX : MAZMORRAS[w.inst.id].nv[0])) return false;
     this.entrarMapa(s, mapa, x, false, w.clave);
     w.inst.vacioDesde = 0;
     this.enviar(s, { t: 'toast', m: `🏰 Volviste a ${MAZMORRAS[w.inst.id].nombre}.`, ok: true });
@@ -319,14 +327,25 @@ export const Mazmorras = {
       // de nivel 60+k que se puede equipar a Nv 60).
       if (I.k) {
         c.desafio = c.desafio || {};
-        c.desafio[I.id] = Math.max(c.desafio[I.id] || 0, I.k);
-        c.desafioMax = Math.max(c.desafioMax || 0, I.k);
-        const pd = premioDesafio(I.k);
-        c.oro += pd.oro;
-        const it = this.generarItem(pd.nvItem, pd.rMin);
-        it.des = 1;
-        this.darItem(s, it);
-        extra += ` Desafío +${I.k} vencido: +${pd.oro.toLocaleString('es')} oro y un objeto de nivel ${pd.nvItem}. Ya puedes intentar el +${Math.min(DESAFIO_MAX, I.k + 1)}.`;
+        // Quien va "llevado" por su grupo avanza de uno en uno (no salta del
+        // +0 al +20 en una partida); el premio completo es al batir tu marca
+        // o, como mucho, una vez al dia por mazmorra.
+        const antes = c.desafio[I.id] || 0;
+        const nuevo = Math.min(I.k, antes + 1);
+        const marca = nuevo > antes;
+        c.desafio[I.id] = Math.max(antes, nuevo);
+        c.desafioMax = Math.max(c.desafioMax || 0, c.desafio[I.id]);
+        if (!c.desDia || c.desDia.d !== hoy) c.desDia = { d: hoy, hechas: [] };
+        if (marca || !c.desDia.hechas.includes(I.id)) {
+          if (!c.desDia.hechas.includes(I.id)) c.desDia.hechas.push(I.id);
+          const pd = premioDesafio(I.k);
+          c.oro += pd.oro;
+          const it = this.generarItem(pd.nvItem, pd.rMin);
+          it.des = 1;
+          this.darItem(s, it);
+          extra += ` Desafío +${I.k} vencido: +${pd.oro.toLocaleString('es')} oro y un objeto de nivel ${pd.nvItem}.`;
+        } else extra += ` Desafío +${I.k} vencido (el premio de esta mazmorra ya lo cobraste hoy: bate tu marca para otro).`;
+        extra += ` Tu marca aquí: +${c.desafio[I.id]}.`;
       }
       s.sucio = true;
       this.enviar(s, { t: 'completada', id: I.id, txt: `🏆 ¡${mz.nombre}${I.k ? ' +' + I.k : ''} completada!${extra}` });
