@@ -575,6 +575,7 @@ async function pruebas() {
   await pruebasLfg();
   await pruebasBoveda();
   await pruebasFortaleza();
+  await pruebasMascotas();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -1313,6 +1314,32 @@ async function pruebasTintes() {
   await dejar(t); await dejar(v);
 }
 
+
+async function pruebasMascotas() {
+  console.log('Mascotas (solo estética)');
+  const D = await import('../mmo/js/data.js');
+  const m = await entrar('Domador', '7b'), v = await entrar('Mirador', '7c');
+  ponerNivel(m, 12, 'guerrero'); ponerNivel(v, 12, 'mago');
+  await aMapa(m, 'pueblo', 900); await aMapa(v, 'pueblo', 950);
+  m.c.oro = 100;
+  m.limpiar(); await m.mandar({ t: 'comprar', k: 'mascota', id: 'hongo' });
+  chequear(!(m.c.mascotas || []).length && m.ultimos('toast').some(x => /oro/.test(x.m)), 'sin oro no se compra');
+  await m.mandar({ t: 'comprar', k: 'mascota', id: 'rana' });
+  chequear(!(m.c.mascotas || []).includes('rana'), 'ni por debajo del nivel que pide');
+  await m.mandar({ t: 'comprar', k: 'mascota', id: '__proto__' });
+  chequear(m.c.oro === 100, 'un id raro no hace nada');
+  m.c.oro = 20000; v.limpiar();
+  await m.mandar({ t: 'comprar', k: 'mascota', id: 'hongo' });
+  chequear(m.c.mascotas.includes('hongo') && m.c.mascota === 'hongo' && m.c.oro === 20000 - D.MASCOTAS.hongo.precio, 'se compra con oro y queda puesta');
+  chequear(v.ultimos('pa').some(x => x.p === m.id && x.ma === 'hongo'), 'los demás la ven');
+  const st0 = JSON.stringify(mundo.stats(m.c));
+  await m.mandar({ t: 'comprar', k: 'mascota', id: '' });
+  chequear(m.c.mascota === '' && JSON.stringify(mundo.stats(m.c)) === st0, 'se guarda y no cambia ninguna estadística');
+  const oro1 = m.c.oro;
+  await m.mandar({ t: 'comprar', k: 'mascota', id: 'hongo' });
+  chequear(m.c.mascota === 'hongo' && m.c.oro === oro1, 'volver a llevarla no se cobra otra vez');
+  await dejar(m); await dejar(v);
+}
 
 async function pruebasFortaleza() {
   console.log('Cuarta mazmorra: Fortaleza Goblin');

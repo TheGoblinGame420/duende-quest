@@ -20,7 +20,7 @@ import {
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, MTON_EDAD_MIN_MS, WALLET_ESPERA_MS, FONDO_REFERENCIA_MTON, tonAmigable,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, FONDO_PCT_INGRESOS, PAQUETES, estrellasDe, PEDIDO_VIGENCIA_MS,
   temporadaDe, TEMPORADAS, TEMP_PROB, TEMP_JEFE,
-  TINTES,
+  TINTES, MASCOTAS,
   CONJUNTOS, CONJUNTO_PROB,
   semanaUTC, afijosSemana, DES_SEM_MIN, premioDesSem, BESTIARIO_HITOS, premioBestiario, talento, TALENTOS, TALENTO_MAX, puntosTalento, costoReinicioTalentos, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX,
 } from '../../mmo/js/data.js';
@@ -935,7 +935,7 @@ export class MmoWorld {
       eq: c.eq, bolsa: c.bolsa, logros: c.logros, titulo: c.titulo, mundiales: c.mundiales, login: c.login, crit: s.st.crit,
       clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, desafio: c.desafio || {}, ...Object.fromEntries(TEMPORADAS.map(t => [t.campo, c[t.campo] || 0])), chicha: this.infoChicha(c), temp: (temporadaDe() || {}).id || '', herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, best: c.best || {},
       boveda: c.boveda, bovedaOpc: c.bovedaOpc || null,
-      espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, tintes: c.tintes || [], tinte: c.tinte || '', montado: s.montado || null,
+      espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, tintes: c.tintes || [], tinte: c.tinte || '', mascotas: c.mascotas || [], mascota: c.mascota || '', montado: s.montado || null,
       mton: c.mton, wallet: c.wallet ? { a: tonAmigable(c.wallet.a), desde: c.wallet.desde } : null,
       p2e: this.elegibilidad(c), creado: c.creado,
       retiros: this.retiros.filter(x => x.uid === c.uid).slice(-5).map(x => ({ id: x.id, ton: x.ton, estado: x.estado, creado: x.creado })),
@@ -951,7 +951,7 @@ export class MmoWorld {
   }
   // Lo que cambia al equiparse o elegir clase (mensaje 'pa').
   infoApariencia(s) {
-    return { p: s.id, id: s.id, sk: s.c.skin, ar: s.c.arma, mx: s.st.maxHp, ti: this.textoTitulo(s.c), cl: s.c.clase || '', rmx: s.st.recMax, hn: this.nombreHermandad(s.c.herm), mo: s.montado || '', es: s.c.espec || '', tn: s.c.tinte || '' };
+    return { p: s.id, id: s.id, sk: s.c.skin, ar: s.c.arma, mx: s.st.maxHp, ti: this.textoTitulo(s.c), cl: s.c.clase || '', rmx: s.st.recMax, hn: this.nombreHermandad(s.c.herm), mo: s.montado || '', es: s.c.espec || '', tn: s.c.tinte || '', ma: s.c.mascota || '' };
   }
   // Auras con su tiempo restante, para quien llega al mapa y no vio cuando se pusieron.
   aurasVivas(au) {
@@ -978,6 +978,9 @@ export class MmoWorld {
   // clave = mundo vivo (por defecto el mismo id del mapa; las mazmorras
   // pasan una clave de instancia propia).
   entrarMapa(s, mapaId, x, primeraVez, clave) {
+    // Un mapa que no existe (uno guardado que se quito, o una prueba) tumbaba
+    // el bucle del mundo en simularMapa: al pueblo.
+    if (!Object.hasOwn(MAPAS, mapaId)) { mapaId = 'pueblo'; clave = null; x = 800; }
     const k = clave || mapaId;
     if (!primeraVez) {
       this.cancelarCast(s);
@@ -1597,6 +1600,22 @@ export class MmoWorld {
         c.tinte = m.id;
       }
       this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });
+    } else if (m.k === 'mascota') {
+      // Mascota: '' la guarda; si ya la tienes, solo se cambia.
+      c.mascotas = c.mascotas || [];
+      if (m.id === '') { c.mascota = ''; }
+      else {
+        if (typeof m.id !== 'string' || !Object.hasOwn(MASCOTAS, m.id)) return;
+        const ma = MASCOTAS[m.id];
+        if (!c.mascotas.includes(m.id)) {
+          if (c.nivel < ma.nv) return this.enviar(s, { t: 'toast', m: `Necesitas nivel ${ma.nv} para esa mascota.` });
+          if (c.oro < ma.precio) return this.enviar(s, { t: 'toast', m: 'No te alcanza el oro.' });
+          c.oro -= ma.precio;
+          c.mascotas.push(m.id);
+        }
+        c.mascota = m.id;
+      }
+      this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });
     } else if (m.k === 'arma' || m.k === 'skin') {
       const tabla = m.k === 'arma' ? ARMAS : SKINS;
       const lista = m.k === 'arma' ? c.armas : c.skins;
@@ -1611,7 +1630,7 @@ export class MmoWorld {
       this.equipar(s, { k: m.k, id: m.id });
     } else return;
     this.revisarLogros(s);
-    this.enviar(s, { t: 'toast', m: m.k === 'forja' ? `⚒️ ¡${ARMAS[m.id].nombre} +${c.forja[m.id]}!` : m.k === 'montura' ? `🐎 ¡${MONTURAS[m.id].nombre} es tuya! Móntala con la tecla Y o el botón 🐎.` : m.k === 'tinte' ? (c.tinte ? `🎨 Tu nombre ahora es ${TINTES[c.tinte].nombre}.` : '🎨 Tu nombre vuelve al color de tu clase.') : '✅ Compra realizada', ok: true });
+    this.enviar(s, { t: 'toast', m: m.k === 'forja' ? `⚒️ ¡${ARMAS[m.id].nombre} +${c.forja[m.id]}!` : m.k === 'montura' ? `🐎 ¡${MONTURAS[m.id].nombre} es tuya! Móntala con la tecla Y o el botón 🐎.` : m.k === 'tinte' ? (c.tinte ? `🎨 Tu nombre ahora es ${TINTES[c.tinte].nombre}.` : '🎨 Tu nombre vuelve al color de tu clase.') : m.k === 'mascota' ? (c.mascota ? `🐾 ${MASCOTAS[c.mascota].nombre} te acompaña.` : '🐾 Guardaste a tu mascota.') : '✅ Compra realizada', ok: true });
     this.actualizarYo(s);
     this.guardar(s);
   }

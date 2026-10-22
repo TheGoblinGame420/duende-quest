@@ -7,14 +7,14 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, ALCANCE_BASE, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
-  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TINTES, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
+  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TINTES, MASCOTAS, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo,
-} from './data.js?v=59';
+} from './data.js?v=61';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -453,7 +453,7 @@ function recibir(m) {
       else if (quien) { quien.lv = m.lv; if (m.mx) quien.mx = m.mx; if (m.rmx) quien.rmx = m.rmx; }
       break;
     }
-    case 'pa': { const o = otros.get(m.p); if (o) { o.sk = m.sk; o.ar = m.ar; o.mx = m.mx; o.ti = m.ti || ''; o.cl = m.cl || ''; o.rmx = m.rmx || 0; o.hn = m.hn || ''; o.mo = m.mo || ''; o.es = m.es || ''; o.tn = m.tn || ''; } break; }
+    case 'pa': { const o = otros.get(m.p); if (o) { o.sk = m.sk; o.ar = m.ar; o.mx = m.mx; o.ti = m.ti || ''; o.cl = m.cl || ''; o.rmx = m.rmx || 0; o.hn = m.hn || ''; o.mo = m.mo || ''; o.es = m.es || ''; o.tn = m.tn || ''; o.ma = m.ma || ''; } break; }
     case 'hb': habilidadRemota(m); break;
     case 'cast': {
       const h = m.id === 'hogar' ? { nombre: 'Piedra de Hogar' } : m.id === 'montar' ? { nombre: 'Invocar montura' } : m.id === 'recolectar' ? { nombre: 'Recogiendo' } : habPorId(m.id);
@@ -592,7 +592,7 @@ function aurasDeServidor(au) {
 
 function agregarOtro(p) {
   if (p.id === miId) return;
-  otros.set(p.id, { id: p.id, n: p.n, lv: p.lv, sk: p.sk, ar: p.ar, ti: p.ti || '', cl: p.cl || '', hn: p.hn || '', mo: p.mo || '', es: p.es || '', tn: p.tn || '', rmx: p.rmx || 0, rec: 0, fl: 0, x: p.x, y: p.y, f: p.f, a: 0, hp: p.hp, mx: p.mx, muerto: p.muerto, buf: [{ t: performance.now(), x: p.x, y: p.y }], herido: 0, atk: 0, paso: 0 });
+  otros.set(p.id, { id: p.id, n: p.n, lv: p.lv, sk: p.sk, ar: p.ar, ti: p.ti || '', cl: p.cl || '', hn: p.hn || '', mo: p.mo || '', es: p.es || '', tn: p.tn || '', ma: p.ma || '', rmx: p.rmx || 0, rec: 0, fl: 0, x: p.x, y: p.y, f: p.f, a: 0, hp: p.hp, mx: p.mx, muerto: p.muerto, buf: [{ t: performance.now(), x: p.x, y: p.y }], herido: 0, atk: 0, paso: 0 });
   aurasP.set(p.id, aurasDeServidor(p.au));
 }
 
@@ -612,6 +612,9 @@ function snapshot(m) {
     if (id === miId) {
       P.hp = hp; P.maxHp = mx; P.fl = fl; P.escudo = !!(fl & FJ.escudo); P.fuego = !!(fl & FJ.fuego);
       P.rec = rec || 0; P.recMax = rmx || 0; P.combo = cp || 0;
+      // El "yo" ya no llega tras cada golpe: se mantiene al dia aqui para que
+      // pintarHud (que copia de yo) no vuelva un instante a la vida vieja.
+      if (yo) { yo.hp = hp; yo.maxHp = mx; yo.rec = P.rec; yo.recMax = P.recMax; yo.combo = P.combo; }
       continue;
     }
     const o = otros.get(id);
@@ -2497,8 +2500,10 @@ function dibujarFondo(mp) {
     g.globalAlpha = .2 + .4 * par; g.fillRect((sx - camX * .05 + VW * 4) % VW, sy, 2, 2);
   }
   g.globalAlpha = 1;
-  dibujarCapa(IMG['lejos_' + mp.fondo], camX * .25, 46, mp.paleta.cielo[1]);
-  dibujarCapa(IMG['cerca_' + mp.fondo], camX * .5, 16, mp.paleta.cielo[1]);
+  // El fundido solo en las mazmorras (era donde se veia la franja; en los
+  // mapas abiertos pintaba una banda sobre la capa lejana).
+  dibujarCapa(IMG['lejos_' + mp.fondo], camX * .25, 46, mp.instancia ? mp.paleta.cielo[1] : null);
+  dibujarCapa(IMG['cerca_' + mp.fondo], camX * .5, 16, mp.instancia ? mp.paleta.cielo[1] : null);
 }
 
 function dibujarSuelo(mp) {
@@ -2587,6 +2592,7 @@ function spriteTexto(txt, tam, color, fondo, sombra) {
   x.font = fu; x.textBaseline = 'alphabetic'; x.textAlign = 'left';
   if (fondo) { x.fillStyle = 'rgba(0,0,0,.6)'; x.fillRect(0, 0, c.width, c.height); }
   const bx = fondo ? 4 : 0, by = fondo ? fs + 3 : fs;
+  c._by = by;   // linea base: etiqueta() la alinea con la de la letra pixel
   if (sombra) { x.fillStyle = '#000'; x.fillText(txt, bx + 1, by + 1); }
   x.fillStyle = color; x.fillText(txt, bx, by);
   if (_textos.size > 600) _textos.delete(_textos.keys().next().value);
@@ -2606,7 +2612,8 @@ function emoji(txt, tam, x, y) {
 function etiqueta(x, y, txt, color, tam) {
   tam = TAM_MIN(tam || 7);
   const c = spriteTexto(txt, tam, color || '#fff', true, false);
-  g.drawImage(c, Math.round(x - c.width / 2), Math.round(y - tam - 3));
+  // Misma linea base que una etiqueta en letra pixel (tam + 3 desde arriba).
+  g.drawImage(c, Math.round(x - c.width / 2), Math.round(y - (c._by || tam + 3)));
 }
 
 function dibujarHoja(k, hoja, fila, col, alto, x, y, f, alpha, tinte, blancoFlash) {
@@ -2743,6 +2750,23 @@ function dibujarMonstruo(o) {
   }
 }
 
+// Mascota: sigue al duende con retraso, a su espalda (las que vuelan, a la
+// altura de la cabeza). El estado va en el propio duende (q.pet).
+function dibujarMascota(q, id, f, pies) {
+  const ma = MASCOTAS[id];
+  if (!ma) return;
+  const hm = HOJAS[ma.hoja];
+  if (!hm) return;
+  const objX = q.x - f * 34, objY = ma.vuela ? pies - 62 + Math.sin(frame * .07) * 6 : pies;
+  const p = q.pet || (q.pet = { x: objX, y: objY, f });
+  if (Math.abs(p.x - objX) > 500) { p.x = objX; p.y = objY; }
+  const dx = objX - p.x;
+  p.x += dx * .08; p.y += (objY - p.y) * .15;
+  if (Math.abs(dx) > 2) p.f = dx > 0 ? 1 : -1;
+  const anda = Math.abs(dx) > 3 || ma.vuela;
+  const col = hm.mov[1] + (anda ? Math.floor(frame / 6) % hm.mov[2] : 0);
+  dibujarHoja(ma.hoja, hm, hm.mov[0], col, ma.alto, p.x - camX, p.y, p.f, 1, null, false);
+}
 function accesorioClase(clase, x, top, f) {
   if (clase !== 'mago' && clase !== 'sacerdote' && clase !== 'picaro') return;
   g.save();
@@ -2796,6 +2820,8 @@ function dibujarDuende(q, esYo) {
     dibujarHoja(mo.hoja, hm, hm.mov[0], col, mo.alto, x, pies, f, 1, null, false);
   }
   const piesOrig = pies;
+  const masc = esYo ? yo.mascota : q.ma;
+  if (masc && !muerto && !(fl & FJ.sigilo)) dibujarMascota(q, masc, f, piesOrig);
   pies = pies - (mo ? mo.dy : 0);
   g.save();
   if (muerto) g.globalAlpha = .35;
@@ -3046,7 +3072,7 @@ function dibujar() {
   let jc = null, dj = 1100;
   for (const o of mons.values()) if (MONSTRUOS[o.k].jefe && !o.muereT && Math.abs(o.x - P.x) < dj) { dj = Math.abs(o.x - P.x); jc = o; }
   jefeVivo = jc;
-  if (jefeVivo && !jefeVivo.muereT) {
+  if (jefeVivo && !jefeVivo.muereT && !duelo) {   // en duelo manda el marcador del duelo
     ponCss($('jefe-bar'), 'display', 'block');
     ponTxt($('jefe-n'), '👑 ' + MONSTRUOS[jefeVivo.k].nombre + ' · Nv ' + jefeVivo.nv);
     rellenar($('jefe-bar').querySelector('i'), jefeVivo.hp / jefeVivo.mx);
@@ -3352,6 +3378,16 @@ function pintarTienda() {
       h += tarjeta(ico, `<span style="color:${tn.color === 'arcoiris' ? '#facc15' : tn.color}">${esc(tn.nombre)}</span>`, 'Color de tu nombre sobre tu duende: lo ven todos. Solo estética.', acc);
     }
     if (yo.tinte) h += `<button class="btn sec" data-comprar="tinte" data-id="" style="width:100%;margin-top:6px">Volver al color de mi clase</button>`;
+  } else if (tabTienda === 'mascota') {
+    for (const [id, ma] of Object.entries(MASCOTAS)) {
+      const tiene = (yo.mascotas || []).includes(id);
+      const ico = `<canvas data-hoja="${ma.hoja}" width="52" height="52"></canvas>`;
+      const acc = tiene ? (yo.mascota === id ? '<span class="precio" style="color:var(--ok)">✓ Te acompaña</span>' : `<button class="btn sec" data-comprar="mascota" data-id="${id}">Llevar</button>`)
+        : yo.nivel < ma.nv ? `<span class="precio" style="color:var(--warn)">Nv ${ma.nv}</span><span class="precio">🪙 ${ma.precio.toLocaleString('es')}</span>`
+        : `<span class="precio">🪙 ${ma.precio.toLocaleString('es')}</span><button class="btn" data-comprar="mascota" data-id="${id}" ${yo.oro < ma.precio ? 'disabled' : ''}>Comprar</button>`;
+      h += tarjeta(ico, esc(ma.nombre), 'Te sigue a todas partes y la ven todos. Solo estética: no da nada.', acc);
+    }
+    if (yo.mascota) h += `<button class="btn sec" data-comprar="mascota" data-id="" style="width:100%;margin-top:6px">Guardar a mi mascota</button>`;
   } else if (tabTienda === 'montura') {
     for (const [id, mo] of Object.entries(MONTURAS)) {
       const tiene = (yo.monturas || []).includes(id);
@@ -3383,8 +3419,9 @@ function pintarTienda() {
   }
   L.innerHTML = h;
   // Retratos de las monturas (primer cuadro de su hoja).
-  L.querySelectorAll('canvas[data-montura]').forEach(c => {
-    const mo = MONTURAS[c.dataset.montura], hm = HOJAS[mo.hoja], img = IMG['sh_' + mo.hoja];
+  L.querySelectorAll('canvas[data-montura], canvas[data-hoja]').forEach(c => {
+    const hoja = c.dataset.hoja || MONTURAS[c.dataset.montura].hoja;
+    const hm = HOJAS[hoja], img = IMG['sh_' + hoja];
     if (!img || !img.naturalWidth) return;
     const x = c.getContext('2d'); x.imageSmoothingEnabled = false;
     const e = Math.min(48 / hm.fw, 48 / hm.fh);

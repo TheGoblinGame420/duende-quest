@@ -374,6 +374,15 @@ export const TINTES = {
   amatista:  { nombre: 'Amatista',   color: '#c084fc', nv: 40, precio: 100000 },
   arcoiris:  { nombre: 'Arcoíris',   color: 'arcoiris', nv: 60, precio: 500000 },
 };
+// Mascotas (solo se ven, no dan nada): te siguen a todas partes. Otra meta
+// de oro a largo plazo. Usan las hojas de los monstruos, en pequeño.
+export const MASCOTAS = {
+  hongo:      { nombre: 'Hongo Saltarín',    hoja: 'hongo',      alto: 24, nv: 10, precio: 15000 },
+  rana:       { nombre: 'Rana Charquera',    hoja: 'rana',       alto: 24, nv: 15, precio: 25000 },
+  zarigueya:  { nombre: 'Zarigüeya Ladrona', hoja: 'zarigueya',  alto: 22, nv: 20, precio: 40000 },
+  pajaro:     { nombre: 'Pájaro Hueso',      hoja: 'pajaro',     alto: 24, nv: 30, precio: 70000, vuela: true },
+  murcielago: { nombre: 'Murciélago Real',   hoja: 'murcielago', alto: 30, nv: 45, precio: 150000, vuela: true },
+};
 export const velMontura = id => (MONTURAS[id] ? MONTURAS[id].vel : 1);
 
 // Cambiar de clase: gratis hasta Nv 10, luego cuesta oro (asi se puede

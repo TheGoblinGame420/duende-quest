@@ -1531,6 +1531,13 @@ duelo...) y pasó los hallazgos a esta sesión. Arreglado y publicado:
 - Diaria del jefe mundial desde Nv 5; Bloque de Hielo avisa; consejo de
   muerte sin "tecla Q" en móvil.
 
+**Mascotas (?v=60):** `MASCOTAS` en data.js (Hongo 15k Nv10, Rana 25k Nv15,
+Zarigüeya 40k Nv20, Pájaro 70k Nv30, Murciélago 150k Nv45; usan las hojas de
+monstruos en pequeño). Pestaña 🐾 MASCOTAS del Mercader (`comprar` con
+k:'mascota'; id '' la guarda), `c.mascotas`/`c.mascota`, se ve en
+`infoApariencia.ma`; en el cliente `dibujarMascota` (estado en `q.pet`). Solo
+estética, gasto de oro a largo plazo.
+
 **Pendiente / ideas para la siguiente sesión:**
 - Probar FPS en un teléfono real (sigue sin hacerse; en Chrome con CPU 4×
   lenta ya va a ~37 FPS en combate).
