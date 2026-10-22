@@ -1642,8 +1642,8 @@ Ciudadela 45-60). Todo publicado con build y humo OK.
 
 ### DUENDE QUEST ONLINE — banda, runas y gesta (22-oct-2026, cuarta parte)
 
-Sesión de "mejora continua" (?v=68 → ?v=75; los pares 72/74 son de la otra
-sesión). Arnés: **458 comprobaciones**. Nada de esto da mTON.
+Sesión de "mejora continua" (?v=68 → ?v=89, impares; los pares son de la otra
+sesión). Arnés: **474 comprobaciones**. Nada de esto da mTON.
 
 **Reparto con la otra sesión (que siguió en el MMO a la vez):** ella lleva
 SKINS/PAQUETES, la tienda premium con SOL/Stars y los pedidos (world.js
@@ -1706,6 +1706,53 @@ cada push.
   Sigue siendo la semana más dura; falta medir con jugadores reales.
 - Web: /guia (banda, runas, monturas, mascotas, temporadas, gesta) y
   /novedades con la actualización. NOVEDADES del juego n=3.
+
+**Revisiones y QA (todo arreglado y publicado, ?v=79 → ?v=89):**
+- 1ª revisión (banda): una banda de 10 entraba a mazmorras de 5 y a
+  Desafíos; más de 10 dentro de una instancia; la vida del jefe se fijaba
+  con 1 jugador aunque llegaran 9 más; botín a quien no peleaba; zona
+  dorada que golpeaba a gente fuera de la sala.
+- 2ª revisión (runas y gesta): Esencia sin freno en las Catacumbas a Nv 60
+  (ahora `ESENCIA_NV` = 40 y solo a quien pelea), entrar a una hermandad
+  que ya llegó al Oro cobraba todo (ahora `GESTA_ANTIG_MS` = 1 día; la caza
+  cuenta con monstruos de tu nivel o hasta 10 por debajo; la mazmorra, a
+  quien pelea con el jefe final), reconexión a tu mazmorra propia con
+  grupo, enfurecer al reescalar (`o.enfX`), hermandad disuelta que volvía
+  al almacenamiento.
+- QA de jugador (agente con Chrome sin ventana, PC y móvil): con 1-3
+  jugadores entrar en la zona dorada no compensaba (ahora si nadie entra
+  estalla con el doble), flecha "JUNTAOS" si la zona cae fuera de la
+  pantalla, banda arriba del portal a Nv 60, marcos de grupo en 2 columnas
+  en el móvil (>5), Esencia visible al momento, barra de la gesta por
+  tramos con "cobrado/por cobrar", Artesana en cuadrícula, botón 📰
+  Novedades en la Ayuda, Águila Real dorada (`MONTURAS.tinte`), Sapo más
+  grande, mascotas por nivel.
+
+**Después (?v=87-89):** calendario de temporadas completo hasta el 6 de
+enero de 2028 (Festival del Viento en mayo, Ofrenda a la Pachamama en
+agosto, Primavera Duende en septiembre y la vuelta anual de Noche, Cosecha
+y Navidad con el mismo contador y títulos; el arnés lo permite si repiten
+títulos). Caja **"Tu semana"** en el registro de misiones (L) para Nv 40+
+(`cajaSemana`). **Primera victoria del servidor** contra el Titán
+(`this.primeros` en storage 'primeros', anuncio global y título «Pionero
+del Abismo»; excluye `UIDS_PRUEBA` vía `esPrueba`). Inspeccionar muestra
+runas, Titanes y Pionero.
+
+**Estado al cerrar (22-oct, mañana):** cliente **?v=89** (impares de esta
+sesión; la otra iba por el 86), arnés **474**, 5 mazmorras + 1 banda. Todo
+publicado con build y humo OK.
+
+**Pendiente / ideas para la siguiente sesión del MMO (mazmorras, eventos,
+social, equilibrio):**
+- Medir con jugadores reales: dificultad de la banda (sim con EQ=1: guerrero
+  solo ~2,5 min; 3-10 jugadores ~4 min), Volcánico, duelos.
+- El mago solo y sin buen equipo no pasa la banda ni un +5 en el
+  simulador: puede que la IA del bot sea mala (no se aleja de los packs);
+  mirar antes de tocar la clase.
+- Una 2ª banda o un modo heroico de la banda cuando haya gente a Nv 60.
+- Sprites propios por clase; FPS en un teléfono real; /mmostats con datos.
+- Precios con 4 cifras salen sin punto ("2500"): `toLocaleString('es')`
+  no agrupa 4 cifras (detalle).
 
 ### DUENDE QUEST ONLINE — skins con poderes a la venta con SOL (22-oct-2026, mañana)
 
