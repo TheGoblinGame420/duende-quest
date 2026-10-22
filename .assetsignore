@@ -34,3 +34,6 @@ recursos
 # Static Assets y no la lee (las cabeceras se ponen a mano en worker.js). Si
 # alguna vez vuelve a crearse por costumbre, que al menos no se sirva publico.
 _headers
+
+# Video promocional (salida de tools/promo/): no se publica
+/promo

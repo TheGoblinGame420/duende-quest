@@ -15,3 +15,6 @@ dist-test/
 # Cache de Python de las herramientas de assets
 __pycache__/
 *.pyc
+
+# Video promocional (salida de tools/promo/): no se sube ni se publica
+/promo/
