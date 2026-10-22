@@ -593,7 +593,12 @@ export const Mazmorras = {
   revivirEnInstancia(s) {
     const w = this.mundo[s.k];
     if (!w || !w.inst) return false;
-    this.entrarMapa(s, w.mapa, 150, false, s.k);
+    // Junto a la ultima barrera ya abierta (un punto de control): antes se
+    // volvia a la entrada y habia que cruzar toda la mazmorra otra vez.
+    const mz = MAZMORRAS[w.inst.id];
+    const abiertas = mz ? mz.jefes.map(j => j.muro).filter(mu => !(w.muros || []).includes(mu)) : [];
+    const x = abiertas.length ? Math.max(...abiertas) + 60 : 150;
+    this.entrarMapa(s, w.mapa, x, false, s.k);
     return true;
   },
 

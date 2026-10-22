@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=148';
+} from './data.js?v=150';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1869,7 +1869,7 @@ function abrirBuscador() {
   // A Nv 60 la banda va arriba (abajo quedaba tras 5 mazmorras y los afijos).
   h += hTorreBloq;
   if (yo.nivel >= NIVEL_MAX) h = h.slice(0, posBanda) + hBanda + h.slice(posBanda); else h += hBanda;
-  h += '<ul style="padding-left:18px;margin-top:10px;font-size:12px"><li>Aquí los monstruos atacan solos y en packs: tira de uno y vendrá todo su grupo.</li><li>Cada jefe guarda una barrera. Lee sus avisos: <b style="color:var(--warn)">sal de las zonas marcadas</b> en el suelo e <b>interrumpe</b> (Patada, Zurrar, Contrahechizo o Silencio) los hechizos con barra naranja.</li><li>Si caéis todos, revivís en la entrada y el jefe se recupera.</li><li>Cada jefe da equipo a cada uno; el último, épico.</li><li>En la banda, las <b style="color:#facc15">zonas doradas</b> se aguantan <b>juntos</b>: el golpe se reparte entre los que estén dentro.</li></ul>';
+  h += '<ul style="padding-left:18px;margin-top:10px;font-size:12px"><li>Aquí los monstruos atacan solos y en packs: tira de uno y vendrá todo su grupo.</li><li>Cada jefe guarda una barrera. Lee sus avisos: <b style="color:var(--warn)">sal de las zonas marcadas</b> en el suelo e <b>interrumpe</b> (Patada, Zurrar, Contrahechizo o Silencio) los hechizos con barra naranja.</li><li>Si caéis todos, revivís junto a la última barrera abierta y el jefe se recupera.</li><li>Cada jefe da equipo a cada uno; el último, épico.</li><li>En la banda, las <b style="color:#facc15">zonas doradas</b> se aguantan <b>juntos</b>: el golpe se reparte entre los que estén dentro.</li></ul>';
   L.innerHTML = h;
   L.querySelectorAll('[data-maz]').forEach(b => b.onclick = () => { sfx('explosion', .3); mandar({ t: 'mazmorra', id: b.dataset.maz }); cerrarModales(); });
   L.querySelectorAll('[data-torre]').forEach(b => b.onclick = () => { sfx('explosion', .3); mandar({ t: 'torre' }); cerrarModales(); });
@@ -4094,12 +4094,12 @@ function resumenMuerte(m) {
   if (ult && ult.nv && yo && ult.nv >= yo.nivel + 3) consejo = 'Ese enemigo es de nivel bastante más alto que tú: sube un par de niveles en una zona de tu nivel (🗺️ tecla M).';
   else if (m.pw > 0) consejo = 'Tenías ' + m.pw + ' pociones: úsalas (' + (TACTIL ? 'el primer consumible de la barra' : 'tecla Q') + ') cuando tu vida baje de la mitad.';
   else if (!m.pw) consejo = 'Te quedaste sin pociones: compra en el Mercader o fabrícalas con hierbas en la Artesana Lila.';
-  if (m.inst) consejo = 'En las mazmorras, sal de las zonas marcadas en el suelo e interrumpe los hechizos con barra naranja. Revives en la entrada.';
+  if (m.inst) consejo = 'En las mazmorras, sal de las zonas marcadas en el suelo e interrumpe los hechizos con barra naranja. Revives junto a la última barrera abierta.';
   if (consejo) h += `<p style="margin-top:8px;color:var(--txt)">💡 ${esc(consejo)}</p>`;
   $('muerte-info').innerHTML = h;
   // Hasta Nv 10 se revive en la entrada de la misma zona (y sin perder XP).
   const novato = yo && yo.nivel < 10 && MAPAS[mapaId] && MAPAS[mapaId].zona && mapaId !== 'coliseo';
-  $('b-revivir').textContent = m.inst ? '↺ Revivir en la entrada' : novato ? '↺ Revivir aquí (entrada de la zona)' : '↺ Revivir en el pueblo';
+  $('b-revivir').textContent = m.inst ? '↺ Revivir junto a la última barrera' : novato ? '↺ Revivir aquí (entrada de la zona)' : '↺ Revivir en el pueblo';
   if (novato && !m.inst) h += '<p style="margin-top:6px;font-size:12px;color:var(--ok)">Hasta nivel 10 morir no te quita experiencia.</p>';
   $('muerte-info').innerHTML = h;
 }

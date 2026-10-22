@@ -356,7 +356,7 @@ async function pruebas() {
   tick(35);
   chequear(s3.hp === s3.max && !s3.combateDesde, 'si todos caen, el jefe se recupera');
   await d1.mandar({ t: 'revivir' });
-  chequear(!d1.muerto && d1.k === wI.clave && d1.x < 300, 'se revive en la entrada de la mazmorra');
+  chequear(!d1.muerto && d1.k === wI.clave && d1.x > 300 && d1.x < s3.casaX, 'se revive junto a la última barrera abierta (antes del jefe que queda)');
   await d2.mandar({ t: 'revivir' }); await d3.mandar({ t: 'revivir' });
   // Completar
   const oro0 = d2.c.oro, bolsa0 = d2.c.bolsa.length;
