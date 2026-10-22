@@ -1706,3 +1706,36 @@ cada push.
   Sigue siendo la semana más dura; falta medir con jugadores reales.
 - Web: /guia (banda, runas, monturas, mascotas, temporadas, gesta) y
   /novedades con la actualización. NOVEDADES del juego n=3.
+
+### DUENDE QUEST ONLINE — skins con poderes a la venta con SOL (22-oct-2026, mañana)
+
+Pedido del dueño (en la sesión "Keep improving..."): "agrégale poderes a las
+skins para que se vendan en Solana también; primero envían SOL a mi wallet y
+yo envío la skin", "sigue mejorando y publica cada mejora hasta las 5 pm".
+Esta sesión lleva la tienda (pares del `?v=`), la otra lo demás (impares).
+
+- **Skins** (`SKINS` en data.js): `usd` 2/4/7/12/20 y poderes nuevos
+  (`critBonus`, `xpMult`, `defMult` en `statsJugador` y `dar()`). Cada una es
+  un paquete `skin_<id>` de `PAQUETES`. Web: SOL a `SOL_DEV_WALLET` (Phantom
+  o firma pegada); Telegram: Stars (sus reglas no permiten otra cripto en
+  Mini Apps; ningún texto de la Mini App menciona SOL). El dueño entrega con
+  `/entregar CODIGO` (se añade y se pone; si ya la tenía, su precio en oro).
+  Se siguen pudiendo comprar con oro. Términos §10 al día.
+- **Pago con SOL seguro** (revisión): `verificarSol` exige una
+  transferencia `jsonParsed` a la wallet por EXACTAMENTE `pd.lamports`; la
+  firma `firma:<sig>` solo se gasta si es de ese pedido (o la cadena no
+  respondió / aún no confirma); `anularPedido` la libera; un pedido
+  `vencido` (24 h) también acepta el pago; el pedido se guarda antes de
+  esperar a la cadena.
+- Móvil: «Pagar con Phantom» sin Phantom abre el juego dentro de Phantom
+  (`phantom.app/ul/browse/...`); «Tus compras» muestra los pedidos con SOL
+  sin pagar con «Pagar» para retomarlos.
+- Probador de skins (10 s, solo en tu pantalla) y cuánto cambian ataque,
+  vida, defensa y crítico. Gestos (`GESTOS`): /saludar /bailar... y fila de
+  emojis en el chat rápido del móvil. «Atrás» de Telegram cierra la ventana
+  abierta. La ayuda (?) explica todo lo nuevo. Humo de producción con
+  amigos y tienda.
+- Ojo (del revisor): las skins del juego principal cuestan $25-$250 y pagar
+  allí desbloquea la del MMO, que aquí cuesta $2-$20: decisión de precios
+  del dueño.
+
