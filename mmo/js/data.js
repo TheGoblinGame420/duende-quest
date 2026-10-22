@@ -750,6 +750,12 @@ export const LOGROS = [
   { id: 'uva200',      titulo: 'Señor de la Vendimia', desc: 'Junta 200 uvas en la Vendimia Duende',     oro: 12000, cond: c => (c.uvas || 0) >= 200 },
   { id: 'estrella50',  titulo: 'Cazaestrellas',      desc: 'Junta 50 estrellas fugaces en la Lluvia de Estrellas',  oro: 3000,  cond: c => (c.estrellas || 0) >= 50 },
   { id: 'estrella200', titulo: 'Guardián del Cielo', desc: 'Junta 200 estrellas fugaces en la Lluvia de Estrellas', oro: 12000, cond: c => (c.estrellas || 0) >= 200 },
+  { id: 'cometa50',    titulo: 'Cometero',           desc: 'Junta 50 cometas en el Festival del Viento',   oro: 3000,  cond: c => (c.cometas || 0) >= 50 },
+  { id: 'cometa200',   titulo: 'Señor de los Vientos', desc: 'Junta 200 cometas en el Festival del Viento', oro: 12000, cond: c => (c.cometas || 0) >= 200 },
+  { id: 'semilla50',   titulo: 'Sembrador',          desc: 'Junta 50 semillas en la Ofrenda a la Pachamama',  oro: 3000,  cond: c => (c.semillas || 0) >= 50 },
+  { id: 'semilla200',  titulo: 'Guardián de la Pachamama', desc: 'Junta 200 semillas en la Ofrenda a la Pachamama', oro: 12000, cond: c => (c.semillas || 0) >= 200 },
+  { id: 'flor50',      titulo: 'Jardinero',          desc: 'Junta 50 flores en la Primavera Duende',      oro: 3000,  cond: c => (c.flores || 0) >= 50 },
+  { id: 'flor200',     titulo: 'Rey de la Primavera', desc: 'Junta 200 flores en la Primavera Duende',    oro: 12000, cond: c => (c.flores || 0) >= 200 },
   { id: 'sol50',       titulo: 'Hijo del Sol',       desc: 'Junta 50 soles de oro en la Fiesta del Sol',  oro: 3000,  cond: c => (c.soles || 0) >= 50 },
   { id: 'sol200',      titulo: 'Señor del Inti',     desc: 'Junta 200 soles de oro en la Fiesta del Sol', oro: 12000, cond: c => (c.soles || 0) >= 200 },
   { id: 'fuego50',     titulo: 'Patriota Duende',    desc: 'Junta 50 fuegos artificiales en las Fiestas Patrias Duende',  oro: 3000,  cond: c => (c.fuegos || 0) >= 50 },
@@ -992,12 +998,29 @@ export const TEMPORADAS = [
   // Las Liridas (lluvia de estrellas de abril).
   { id: 'estrellas2027', nombre: 'Lluvia de Estrellas', ini: Date.UTC(2027, 3, 15), fin: Date.UTC(2027, 4, 3), hasta: '2 de mayo',
     emoji: '🌠', deco: '✨', cosas: 'estrellas fugaces', campo: 'estrellas', color: '#fde047', titulos: ['Cazaestrellas', 'Guardián del Cielo'] },
+  // Mayo: cometas en el viento (Festival del Viento).
+  { id: 'viento2027', nombre: 'Festival del Viento', ini: Date.UTC(2027, 4, 14), fin: Date.UTC(2027, 4, 29), hasta: '28 de mayo',
+    emoji: '🪁', deco: '🪁', cosas: 'cometas', campo: 'cometas', color: '#22d3ee', titulos: ['Cometero', 'Señor de los Vientos'] },
   // Inti Raymi (24 de junio, Cusco).
   { id: 'inti2027', nombre: 'Fiesta del Sol', ini: Date.UTC(2027, 5, 12), fin: Date.UTC(2027, 5, 28), hasta: '27 de junio',
     emoji: '☀️', deco: '🌞', cosas: 'soles de oro', campo: 'soles', color: '#f59e0b', titulos: ['Hijo del Sol', 'Señor del Inti'] },
   // Fiestas Patrias (28 de julio).
   { id: 'patrias2027', nombre: 'Fiestas Patrias Duende', ini: Date.UTC(2027, 6, 20), fin: Date.UTC(2027, 7, 1), hasta: '31 de julio',
     emoji: '🎆', deco: '🎆', cosas: 'fuegos artificiales', campo: 'fuegos', color: '#ef4444', titulos: ['Patriota Duende', 'Gran Mariscal'] },
+  // Agosto, mes de la Pachamama (ofrendas a la tierra).
+  { id: 'pachamama2027', nombre: 'Ofrenda a la Pachamama', ini: Date.UTC(2027, 7, 6), fin: Date.UTC(2027, 7, 22), hasta: '21 de agosto',
+    emoji: '🌱', deco: '🌾', cosas: 'semillas', campo: 'semillas', color: '#84cc16', titulos: ['Sembrador', 'Guardián de la Pachamama'] },
+  // Primavera (23 de septiembre en el sur).
+  { id: 'primavera2027', nombre: 'Primavera Duende', ini: Date.UTC(2027, 8, 23), fin: Date.UTC(2027, 9, 8), hasta: '7 de octubre',
+    emoji: '🌸', deco: '🌸', cosas: 'flores', campo: 'flores', color: '#f9a8d4', titulos: ['Jardinero', 'Rey de la Primavera'] },
+  // Las de cada año vuelven con su mismo contador y sus mismos titulos
+  // (como los eventos anuales de WoW): quien no los saco, otra oportunidad.
+  { id: 'noche2027', nombre: 'Noche de Duendes', ini: Date.UTC(2027, 9, 25), fin: Date.UTC(2027, 10, 3), hasta: '2 de noviembre',
+    emoji: '🎃', deco: '🎃', cosas: 'calabazas', campo: 'calabazas', color: '#ff9a3c', titulos: ['Cazacalabazas', 'Rey de las Calabazas'] },
+  { id: 'cosecha2027', nombre: 'Cosecha del Maíz Morado', ini: Date.UTC(2027, 10, 13), fin: Date.UTC(2027, 11, 1), hasta: '30 de noviembre',
+    emoji: '🌽', deco: '🌽', cosas: 'mazorcas', campo: 'mazorcas', color: '#a855f7', titulos: ['Cosechador', 'Señor del Maíz Morado'] },
+  { id: 'navidad2027', nombre: 'Navidad Duende', ini: Date.UTC(2027, 11, 18), fin: Date.UTC(2028, 0, 7), hasta: '6 de enero',
+    emoji: '🎁', deco: '🎄', cosas: 'regalos', campo: 'regalos', color: '#4ade80', titulos: ['Duende Navideño', 'Santa Duende'] },
 ];
 export const temporadaDe = (t = Date.now()) => TEMPORADAS.find(x => t >= x.ini && t < x.fin) || null;
 export const temporadaActiva = (t = Date.now()) => !!temporadaDe(t);

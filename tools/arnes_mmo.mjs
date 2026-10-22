@@ -1272,10 +1272,13 @@ async function pruebasTemporada() {
   const D = await import('../mmo/js/data.js');
   const T = D.TEMPORADAS;
   chequear(T.every((x, i) => x.ini < x.fin && (!i || T[i - 1].fin <= x.ini)), 'las temporadas van en orden y no se pisan');
-  chequear(new Set(T.map(x => x.campo)).size === T.length && new Set(T.map(x => x.id)).size === T.length, 'cada temporada tiene su propio contador');
+  // Ids unicos; un contador repetido (evento anual) lleva los mismos titulos.
+  const porCampo = {};
+  for (const x of T) porCampo[x.campo] = porCampo[x.campo] || x.titulos.join('|');
+  chequear(new Set(T.map(x => x.id)).size === T.length && T.every(x => porCampo[x.campo] === x.titulos.join('|')), 'ids únicos y los eventos anuales repiten contador y títulos');
   const sinLogros = T.filter(x => [50, 200].some((n, i) => { const L = D.LOGROS.find(l => l.titulo === x.titulos[i]); return !L || L.cond({ [x.campo]: n - 1 }) || !L.cond({ [x.campo]: n }); }));
   chequear(!sinLogros.length, 'cada temporada tiene sus logros de 50 y 200 ' + sinLogros.map(x => x.id).join(','));
-  chequear(new Date(T[T.length - 1].fin).getUTCFullYear() === 2027 && T.some(x => new Date(x.ini).getUTCMonth() === 0) && T.some(x => new Date(x.ini).getUTCMonth() >= 2), 'hay temporadas en enero y de marzo en adelante');
+  chequear(new Date(T[T.length - 1].fin).getUTCFullYear() >= 2027 && T.some(x => new Date(x.ini).getUTCMonth() === 0) && T.some(x => new Date(x.ini).getUTCMonth() >= 2), 'hay temporadas en enero y de marzo en adelante');
   chequear(Object.values(D.MONTURAS).every(mo => D.HOJAS[mo.hoja] && (mo.precio > 0 || mo.banda) && mo.vel > 1), 'todas las monturas tienen hoja, precio y velocidad');
   reloj = Math.max(relojAntes, reloj);
   await dejar(t);
