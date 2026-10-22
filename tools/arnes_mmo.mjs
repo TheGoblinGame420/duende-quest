@@ -1642,10 +1642,11 @@ async function pruebasHoraFeliz() {
 async function pruebasPagoSol() {
   console.log('Pago con SOL: firma ajena y pago tardío');
   const { SOL_DEV_WALLET } = await import('../functions/api/lib.js');
-  let tx = null, firmasLista = [];
+  let tx = null, firmasLista = [], rpcCaida = false;
   const fetchReal = globalThis.fetch;
   globalThis.fetch = async (url, o) => {
     const u = String(url);
+    if (/mainnet-beta|helius/.test(u) && rpcCaida) return { ok: false, json: async () => ({ error: { code: 429 } }) };
     if (/mainnet-beta|helius/.test(u)) { const b = JSON.parse(o.body); return { json: async () => ({ result: b.method === 'getSignaturesForAddress' ? firmasLista : tx }) }; }
     return { ok: true, json: async () => ({ solana: { usd: 150 }, price: 150, data: { amount: '150' } }) };
   };
@@ -1704,6 +1705,20 @@ async function pruebasPagoSol() {
     avanzar(20000);
     await mundo.pedidoBuscar(A, { codigo: pA3.codigo });
     chequear(mundo.buscarPedido(pA3.codigo).estado === 'por_verificar' && mundo.buscarPedido(pA3.codigo).firma === '9'.repeat(88), '«Ya pagué» encuentra el pago exacto y lo pasa al dueño');
+    // Con la red caida no se reserva la firma de nadie (antes se podia atar
+    // a tu pedido la firma de un pago ajeno visto en Solscan).
+    V.limpiar(); await mundo.pedido(V, { id: 'skin_berserker', metodo: 'sol' });
+    const pV2 = V.ultimos('pedidoSol').pop();
+    rpcCaida = true; avanzar(20000);
+    await mundo.pedidoFirma(V, { codigo: pV2.codigo, firma: '4'.repeat(88) });
+    rpcCaida = false;
+    chequear(mundo.buscarPedido(pV2.codigo).estado === 'esperando_pago' && !(await state.storage.get('firma:' + '4'.repeat(88))) && V.ultimos('toast').some(x => /No pudimos consultar/.test(x.m)), 'con la red caída la firma no se reserva y el pedido sigue esperando');
+    chequear(pV2.ref && pV2.ref.length >= 32 && /^[1-9A-HJ-NP-Za-km-z]+$/.test(pV2.ref), 'cada pedido lleva su clave reference de Solana Pay');
+    // Tope de pedidos por hora y cuenta.
+    const T = await entrar('Pedidor', '7a'); T.c.uid = 'web:pedidor'; T.c.skins = ['comun'];
+    for (let i = 0; i < 12; i++) { await mundo.pedido(T, { id: 'skin_tactico', metodo: 'sol' }); const u = mundo.pedidos.filter(x => x.uid === T.c.uid && x.estado === 'esperando_pago'); for (const x of u) x.estado = 'anulado'; }
+    chequear(mundo.pedidos.filter(x => x.uid === T.c.uid).length === 10, 'como mucho 10 pedidos por hora y cuenta');
+    await dejar(T);
     for (const x of [A, V, C]) await dejar(x);
   } finally { globalThis.fetch = fetchReal; mundo.avisarAdmin = adminReal; }
 }

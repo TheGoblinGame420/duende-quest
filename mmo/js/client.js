@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=154';
+} from './data.js?v=156';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -2753,7 +2753,7 @@ function conectarPremium(L) {
   // Retomar un pago con SOL que quedo a medias (p. ej. tras abrir el juego en Phantom).
   L.querySelectorAll('[data-retomar]').forEach(b => b.onclick = () => {
     const x = ((yo && yo.pedidos) || []).find(p => p.codigo === b.dataset.retomar);
-    if (x && x.lamports) mostrarPedidoSol({ codigo: x.codigo, lamports: x.lamports, wallet: x.wallet, usd: x.usd, nombre: x.nombre });
+    if (x && x.lamports) mostrarPedidoSol({ codigo: x.codigo, lamports: x.lamports, wallet: x.wallet, usd: x.usd, nombre: x.nombre, ref: x.ref });
   });
   L.querySelectorAll('[data-premium]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'pedido', id: b.dataset.premium, metodo: b.dataset.metodo }); });
 }
@@ -2799,7 +2799,7 @@ function mostrarPedidoSol(m) {
   $('in-firma').addEventListener('keydown', e => e.stopPropagation());
   $('b-phantom').onclick = () => pagarConPhantom(m);
   $('b-buscar').onclick = () => { sfx('boton', .3); aviso('🔎 Buscando tu pago en la red…', 'ok'); mandar({ t: 'pedidoBuscar', codigo: m.codigo }); };
-  if (!TACTIL) cargarScript('https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js').then(() => {
+  if (!TACTIL) cargarScript('https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js', 'sha384-mZT2gIty7ZDdOGkxfP6joZcYdMW1Jvj9dRlfpTmaJAKKXTqzygtB22k7FLe+KZC1').then(() => {
     if (!$('sol-qr') || pedidoSol !== m || !window.qrcode) return;
     const q = window.qrcode(0, 'M'); q.addData(uriSolPay(m)); q.make();
     $('sol-qr').innerHTML = q.createImgTag(4, 8);
@@ -2813,10 +2813,10 @@ function mostrarPedidoSol(m) {
 }
 // Enlace Solana Pay del pedido (monto exacto; las wallets lo leen del QR).
 function uriSolPay(m) {
-  return `solana:${m.wallet}?amount=${(m.lamports / 1e9).toFixed(9)}&label=${encodeURIComponent('DUENDE QUEST')}&message=${encodeURIComponent('Pedido #' + m.codigo)}`;
+  return `solana:${m.wallet}?amount=${(m.lamports / 1e9).toFixed(9)}${m.ref ? '&reference=' + m.ref : ''}&label=${encodeURIComponent('DUENDE QUEST')}&message=${encodeURIComponent('Pedido #' + m.codigo)}`;
 }
-function cargarScript(src) {
-  return new Promise((ok, mal) => { const sc = document.createElement('script'); sc.src = src; sc.onload = ok; sc.onerror = () => mal(new Error('No se pudo cargar ' + src)); document.head.appendChild(sc); });
+function cargarScript(src, sri) {
+  return new Promise((ok, mal) => { const sc = document.createElement('script'); sc.src = src; if (sri) { sc.integrity = sri; sc.crossOrigin = 'anonymous'; } sc.onload = ok; sc.onerror = () => mal(new Error('No se pudo cargar ' + src)); document.head.appendChild(sc); });
 }
 // Wallet de Solana del navegador: Phantom, Solflare o la que inyecte
 // window.solana (Backpack...). Todas aceptan connect y firmar.
@@ -2838,13 +2838,16 @@ async function pagarConPhantom(m) {
     aviso('No encontramos Phantom en este navegador. Instálalo o paga desde otra wallet y pega la firma.'); window.open('https://phantom.app/', '_blank'); return;
   }
   try {
-    if (!window.solanaWeb3) await cargarScript('https://unpkg.com/@solana/web3.js@1/lib/index.iife.min.js');
+    // Version fija con SRI (en dic-2024 dos versiones 1.95.x de esta libreria venian con una puerta trasera).
+    if (!window.solanaWeb3) await cargarScript('https://unpkg.com/@solana/web3.js@1.98.0/lib/index.iife.min.js', 'sha384-1/Ll6ABlJDlMx1URcif2stL9Fxod/1rg71YHzGqTl6Bwzi0Vq993Jt/oVLFXfUgQ');
     const { Connection, PublicKey, Transaction, SystemProgram } = window.solanaWeb3;
     const r = await prov.connect();
     const publicKey = (r && r.publicKey) || prov.publicKey;
     if (!publicKey) throw new Error('la wallet no dio su dirección');
     const con = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
-    const tx = new Transaction().add(SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: new PublicKey(m.wallet), lamports: m.lamports }));
+    const ix = SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: new PublicKey(m.wallet), lamports: m.lamports });
+    if (m.ref) ix.keys.push({ pubkey: new PublicKey(m.ref), isSigner: false, isWritable: false });
+    const tx = new Transaction().add(ix);
     tx.feePayer = publicKey;
     tx.recentBlockhash = (await con.getLatestBlockhash()).blockhash;
     let signature;

@@ -104,6 +104,16 @@ function generarItem(nv, rMin) {
   return { id: idItem(), s, nv: Math.max(1, Math.round(nv)), r, b };
 }
 
+// Clave publica al azar (32 bytes en base58) para la 'reference' de Solana Pay.
+const B58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+function claveAzar() {
+  const b = crypto.getRandomValues(new Uint8Array(32));
+  let n = 0n; for (const x of b) n = n * 256n + BigInt(x);
+  let t = ''; while (n > 0n) { t = B58[Number(n % 58n)] + t; n /= 58n; }
+  for (const x of b) { if (x) break; t = '1' + t; }
+  return t;
+}
+
 // Botones del aviso de un pedido pagado al dueño (el bot los atiende).
 const botonesPedido = codigo => [[{ text: '✅ Entregar', callback_data: 'mmoent:' + codigo }, { text: '❌ Anular', callback_data: 'mmoanu:' + codigo }]];
 
@@ -661,7 +671,9 @@ export class MmoWorld {
     // Los que nunca se pagaron caducan; se guardan los ultimos 300.
     const ahora = Date.now();
     for (const x of this.pedidos) if (x.estado === 'esperando_pago' && ahora - x.creado > PEDIDO_VIGENCIA_MS) x.estado = 'vencido';
-    this.pedidos = this.pedidos.filter(x => x.estado !== 'vencido' || ahora - x.creado < 86400000).slice(-300);
+    this.pedidos = this.pedidos.filter(x => x.estado !== 'vencido' || ahora - x.creado < 86400000);
+    let sobran = this.pedidos.length - 300;
+    if (sobran > 0) this.pedidos = this.pedidos.filter(x => !(sobran > 0 && (x.estado === 'entregado' || x.estado === 'anulado' || x.estado === 'vencido') && sobran-- > 0));
     await this.state.storage.put('pedidos', this.pedidos);
   }
   transparencia() {
@@ -680,7 +692,8 @@ export class MmoWorld {
     if (metodo === 'sol' && c.uid.startsWith('tg:')) return no('Dentro de Telegram se paga con Stars.');
     if (pq.skin && (c.skins || []).includes(pq.skin)) return no('Ya tienes esa skin.');
     await this.guardarPedidos();
-    if (this.pedidos.filter(x => x.uid === c.uid && x.estado === 'esperando_pago').length >= 3) return no('Tienes compras sin pagar: termina o espera 30 minutos.');
+    if (this.pedidos.filter(x => x.uid === c.uid && (x.estado === 'esperando_pago' || x.estado === 'por_verificar')).length >= 3) return no('Tienes compras sin pagar: termina o espera 30 minutos.');
+    if (this.pedidos.filter(x => x.uid === c.uid && Date.now() - x.creado < 3600000).length >= 10) return no('Has creado muchos pedidos seguidos: espera un rato.');
     const env = getEnv({ env: this.env });
     const pd = {
       codigo: Math.random().toString(36).slice(2, 8).toUpperCase(), uid: c.uid, jugador: c.nombre,
@@ -707,12 +720,14 @@ export class MmoWorld {
     if (!precio) return no('No se pudo leer el precio del SOL ahora. Intenta en un minuto.');
     // Monto con 4 cifras finales propias de este pedido: si pagas desde otra
     // wallet, El Duende lo reconoce en Solscan solo por el monto.
-    const marca = 1 + Math.floor(Math.random() * 9998);
-    pd.lamports = Math.ceil(pq.usd / precio * 1e9 / 1e4) * 1e4 + marca;
+    const base = Math.ceil(pq.usd / precio * 1e9 / 1e4) * 1e4;
+    const ocupado = l => this.pedidos.some(x => x.metodo === 'sol' && x.lamports === l && x.estado !== 'entregado' && x.estado !== 'anulado');
+    for (let i = 0; i < 30; i++) { pd.lamports = base + 1 + Math.floor(Math.random() * 9998); if (!ocupado(pd.lamports)) break; }
+    pd.ref = claveAzar();   // 'reference' de Solana Pay: identifica el pago en la cadena
     pd.precioSol = precio;
     this.pedidos.push(pd);
     await this.guardarPedidos();
-    this.enviar(s, { t: 'pedidoSol', codigo: pd.codigo, lamports: pd.lamports, wallet: SOL_DEV_WALLET, usd: pq.usd, nombre: pq.nombre });
+    this.enviar(s, { t: 'pedidoSol', codigo: pd.codigo, lamports: pd.lamports, wallet: SOL_DEV_WALLET, usd: pq.usd, nombre: pq.nombre, ref: pd.ref });
     this.actualizarYo(s);   // aparece en "Tus compras" para retomar el pago
   }
 
@@ -726,34 +741,56 @@ export class MmoWorld {
     // rechaza pagos anteriores al pedido.
     if (!pd || pd.uid !== c.uid || pd.metodo !== 'sol' || (pd.estado !== 'esperando_pago' && pd.estado !== 'vencido')) return no('Ese pedido ya no está esperando pago.');
     if (!/^[1-9A-HJ-NP-Za-km-z]{60,100}$/.test(firma)) return no('Esa firma de transacción no es válida. Cópiala de Phantom o de Solscan.');
+    // Una comprobacion cada pocos segundos por cuenta (no por sesion).
+    if (!this.ritmoSol(c.uid, 'f', 6000)) return no('Espera unos segundos antes de volver a intentarlo.');
     if (await this.state.storage.get('firma:' + firma)) return no('Esa transacción ya se usó para otro pedido.');
     if (this.verificando && this.verificando.has(firma)) return no('Esa transacción se está comprobando.');
     (this.verificando = this.verificando || new Set()).add(firma);
+    const antes = pd.estado;
+    let cadena = null;
     try {
-      pd.firma = firma; pd.estado = 'por_verificar'; pd.pagadoEn = Date.now();
-      await this.guardarPedidos();   // por si el servidor se reinicia mientras se comprueba
+      pd.firma = firma; pd.estado = 'por_verificar';
       // Recien enviada, la transaccion tarda unos segundos en confirmarse.
       for (let i = 0; i < 4; i++) {
-        pd.cadena = await this.verificarSol(firma, pd.lamports, pd.creado);
-        if (!pd.cadena || pd.cadena.ok || !/no existe/.test(pd.cadena.motivo) || i === 3) break;
+        cadena = await this.verificarSol(firma, pd.lamports, pd.creado);
+        if (!cadena || cadena.ok || !/no existe/.test(cadena.motivo) || i === 3) break;
         await new Promise(r => setTimeout(r, 5000));
       }
-      // La firma queda gastada solo si es el pago de ESTE pedido (o si no se
-      // pudo consultar la cadena: lo revisa el dueño). Si es el pago de otro
-      // (alguien pego una firma ajena de Solscan), queda libre para su dueño.
-      if (!pd.cadena || pd.cadena.ok || /no existe/.test(pd.cadena.motivo)) await this.state.storage.put('firma:' + firma, pd.codigo);
-      else { pd.firma = ''; pd.estado = 'esperando_pago'; }
+      // El dueño pudo entregarlo o anularlo mientras tanto: no se toca.
+      if (pd.estado !== 'por_verificar' || pd.firma !== firma) return;
+      // Solo un pago CONFIRMADO de este pedido gasta la firma y llega al
+      // dueño. Si la red falla o aun no se ve, el pedido sigue esperando y
+      // la firma queda libre (antes se reservaba: con la red caida, alguien
+      // podia atar a su pedido la firma de un pago ajeno visto en Solscan).
+      if (!cadena || !cadena.ok || await this.state.storage.get('firma:' + firma)) {
+        pd.estado = antes; pd.firma = '';
+        this.actualizarYo(s);
+        if (!cadena) return no('No pudimos consultar la red de Solana ahora. Vuelve a intentarlo en un minuto: tu pago no se pierde.');
+        if (cadena.ok) return no('Esa transacción ya se usó para otro pedido.');
+        if (/no existe/.test(cadena.motivo)) return no('Aún no vemos esa transacción confirmada en la red. Espera un minuto y pulsa «Ya pagué» (o vuelve a pegarla).');
+        // Casi el monto (una wallet o exchange que redondea): que el dueño lo sepa.
+        if (cadena.recibido > 0 && Math.abs(cadena.recibido - pd.lamports) < 2e6 && !pd.avisoCasi) {
+          pd.avisoCasi = 1;
+          this.avisarAdmin(`⚠️ Pedido #${pd.codigo} (${pd.nombre}, $${pd.usd}): llegó un pago con un monto parecido pero no exacto (${(cadena.recibido / 1e9).toFixed(9)} SOL; se pedían ${(pd.lamports / 1e9).toFixed(9)}).\n🔗 https://solscan.io/tx/${firma}\nSi es suyo: /entregar ${pd.codigo}`, botonesPedido(pd.codigo));
+        }
+        return no('Esa transacción no es el pago de este pedido (' + cadena.motivo + '). Paga el monto exacto que se muestra.');
+      }
+      await this.state.storage.put('firma:' + firma, pd.codigo);
+      pd.cadena = cadena; pd.pagadoEn = Date.now();
       await this.guardarPedidos();
     } finally { this.verificando.delete(firma); }
-    if (pd.estado === 'esperando_pago') {
-      this.actualizarYo(s);
-      return no('Esa transacción no es el pago de este pedido (' + pd.cadena.motivo + '). Paga el monto exacto que se muestra y pega SU firma.');
-    }
     no('📨 Recibimos tu pago. El Duende lo revisa y te entrega la compra (te avisamos aquí y por Telegram).');
     this.actualizarYo(s);
-    const v = pd.cadena;
-    const chequeo = v === null ? '⚠️ No se pudo consultar la cadena: revísalo tú' : v.ok ? `✅ En la cadena: ${(v.recibido / 1e9).toFixed(6)} SOL llegaron a tu wallet` : `❌ En la cadena NO aparece el pago esperado (${v.motivo})`;
-    this.avisarAdmin(`◎ *Pedido #${pd.codigo}* — ${pd.nombre} ($${pd.usd})\n👤 ${pd.jugador.replace(/[^\p{L}\p{N} ]/gu, '')}\n💰 Debe pagar ${(pd.lamports / 1e9).toFixed(9)} SOL a tu wallet\n${chequeo}\n🔗 https://solscan.io/tx/${firma}\n\nSi está bien: /entregar ${pd.codigo}\nSi no: /anular ${pd.codigo}`, botonesPedido(pd.codigo));
+    this.avisarAdmin(`◎ *Pedido #${pd.codigo}* — ${pd.nombre} ($${pd.usd})\n👤 ${pd.jugador.replace(/[^\p{L}\p{N} ]/gu, '')}\n💰 Debía pagar ${(pd.lamports / 1e9).toFixed(9)} SOL a tu wallet\n✅ En la cadena: ${(cadena.recibido / 1e9).toFixed(6)} SOL llegaron a tu wallet\n🔗 https://solscan.io/tx/${firma}\n\nSi está bien: /entregar ${pd.codigo}\nSi no: /anular ${pd.codigo}`, botonesPedido(pd.codigo));
+  }
+  // Ritmo de las operaciones con la red de Solana, por cuenta.
+  ritmoSol(uid, tipo, ms) {
+    this.ritmoSolM = this.ritmoSolM || new Map();
+    const k = uid + ':' + tipo, ahora = Date.now();
+    if (ahora - (this.ritmoSolM.get(k) || 0) < ms) return false;
+    this.ritmoSolM.set(k, ahora);
+    if (this.ritmoSolM.size > 5000) for (const [kk, t] of this.ritmoSolM) if (ahora - t > 60000) this.ritmoSolM.delete(kk);
+    return true;
   }
 
   // "Ya pague": busca el pago entre las ultimas transacciones de la wallet
@@ -765,27 +802,35 @@ export class MmoWorld {
     const pd = this.buscarPedido(m.codigo);
     const no = t => this.enviar(s, { t: 'toast', m: t });
     if (!pd || pd.uid !== c.uid || pd.metodo !== 'sol' || (pd.estado !== 'esperando_pago' && pd.estado !== 'vencido')) return no('Ese pedido ya no está esperando pago.');
-    const ahora = Date.now();
-    if (ahora - (s.buscarSolT || 0) < 15000) return no('Espera unos segundos y vuelve a comprobar.');
-    s.buscarSolT = ahora;
-    const firmas = await this.firmasRecientesSol();
+    if (!this.ritmoSol(c.uid, 'b', 15000)) return no('Espera unos segundos y vuelve a comprobar.');
+    // 1) La clave 'reference' de Solana Pay (unica del pedido): la llevan el
+    //    QR, el enlace a la wallet y el pago con Phantom.
+    let firmas = pd.ref ? await this.firmasRecientesSol(pd.ref, 10) : [];
+    // 2) Si no aparece (pago desde otra wallet con el monto exacto): las
+    //    ultimas de la wallet del dueño, sin las ya usadas ni las anteriores.
+    if (firmas && !firmas.length) firmas = await this.firmasRecientesSol(SOL_DEV_WALLET, 50);
     if (!firmas) return no('No se pudo consultar la red de Solana ahora. Prueba en un momento (o pega la firma).');
-    // Como mucho 12 consultas (cada una es una peticion a la red).
-    const cand = firmas.filter(f => f && !f.err && typeof f.signature === 'string' && (!f.blockTime || f.blockTime * 1000 >= pd.creado - 120000)).slice(0, 12);
-    for (const f of cand) {
+    const cand = [];
+    for (const f of firmas) {
+      if (!f || f.err || typeof f.signature !== 'string' || (f.blockTime && f.blockTime * 1000 < pd.creado - 30000)) continue;
       if (await this.state.storage.get('firma:' + f.signature)) continue;
-      const v = await this.verificarSol(f.signature, pd.lamports, pd.creado);
-      if (v && v.ok) return this.pedidoFirma(s, { codigo: pd.codigo, firma: f.signature });
+      cand.push(f.signature);
+      if (cand.length >= 10) break;
+    }
+    for (const sig of cand) {
+      const v = await this.verificarSol(sig, pd.lamports, pd.creado);
+      if (v && v.ok) { this.ritmoSolM.delete(c.uid + ':f'); return this.pedidoFirma(s, { codigo: pd.codigo, firma: sig }); }
     }
     no('Aún no vemos tu pago en la red. Si acabas de enviarlo, espera unos segundos y vuelve a comprobar.');
   }
-  async firmasRecientesSol() {
+  async firmasRecientesSol(direccion, limite) {
     try {
       const key = this.env.HELIUS_API_KEY;
       const url = key ? `https://mainnet.helius-rpc.com/?api-key=${key}` : 'https://api.mainnet-beta.solana.com';
-      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getSignaturesForAddress', params: [SOL_DEV_WALLET, { limit: 25, commitment: 'confirmed' }] }) });
+      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(8000), body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getSignaturesForAddress', params: [direccion, { limit: limite, commitment: 'confirmed' }] }) });
+      if (r.ok === false) return null;
       const d = await r.json();
-      return Array.isArray(d && d.result) ? d.result : null;
+      return d && !d.error && Array.isArray(d.result) ? d.result : null;
     } catch (e) { return null; }
   }
 
@@ -796,20 +841,22 @@ export class MmoWorld {
     try {
       const key = this.env.HELIUS_API_KEY;
       const url = key ? `https://mainnet.helius-rpc.com/?api-key=${key}` : 'https://api.mainnet-beta.solana.com';
-      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getTransaction', params: [firma, { encoding: 'jsonParsed', maxSupportedTransactionVersion: 0, commitment: 'confirmed' }] }) });
+      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(8000), body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getTransaction', params: [firma, { encoding: 'jsonParsed', maxSupportedTransactionVersion: 0, commitment: 'confirmed' }] }) });
+      if (r.ok === false) return null;   // 429, 5xx...: no se sabe (no es "no existe")
       const d = await r.json();
-      const tx = d && d.result;
+      if (!d || d.error) return null;
+      const tx = d.result;
       if (!tx) return { ok: false, motivo: 'la transacción no existe (o aún no se confirma)', recibido: 0 };
       if (tx.meta && tx.meta.err) return { ok: false, motivo: 'la transacción falló', recibido: 0 };
       const claves = (tx.transaction.message.accountKeys || []).map(k => typeof k === 'string' ? k : k.pubkey);
       const i = claves.indexOf(SOL_DEV_WALLET);
       const recibido = i >= 0 ? tx.meta.postBalances[i] - tx.meta.preBalances[i] : 0;
-      if (tx.blockTime && tx.blockTime * 1000 < desde - 120000) return { ok: false, motivo: 'es un pago anterior al pedido', recibido };
+      if (tx.blockTime && tx.blockTime * 1000 < desde - 30000) return { ok: false, motivo: 'es un pago anterior al pedido', recibido };
       // Una transferencia de EXACTAMENTE el monto del pedido (sus ultimas 4
       // cifras son propias de el): sin esto, cualquier pago ajeno a la misma
       // wallet (visible en Solscan) valia para cobrar otro pedido.
       const ins = [...((tx.transaction.message.instructions) || []), ...(((tx.meta && tx.meta.innerInstructions) || []).flatMap(x => x.instructions || []))];
-      const exacta = ins.some(x => x && x.parsed && x.parsed.type === 'transfer' && x.parsed.info && x.parsed.info.destination === SOL_DEV_WALLET && Number(x.parsed.info.lamports) === Number(lamports));
+      const exacta = ins.some(x => x && x.program === 'system' && x.parsed && x.parsed.type === 'transfer' && x.parsed.info && x.parsed.info.destination === SOL_DEV_WALLET && Number(x.parsed.info.lamports) === Number(lamports));
       if (!exacta) return { ok: false, motivo: recibido > 0 ? `monto distinto: llegaron ${(recibido / 1e9).toFixed(9)} SOL y el pedido es de ${(lamports / 1e9).toFixed(9)}` : 'no hay una transferencia a tu wallet', recibido };
       return { ok: true, recibido };
     } catch (e) { return null; }
@@ -1069,7 +1116,7 @@ export class MmoWorld {
       retiros: this.retiros.filter(x => x.uid === c.uid).slice(-5).map(x => ({ id: x.id, ton: x.ton, estado: x.estado, creado: x.creado })),
       // Los de SOL sin pagar (y sin caducar) tambien, para poder retomar el pago.
       pedidos: this.pedidos.filter(x => x.uid === c.uid && x.estado !== 'vencido' && (x.estado !== 'esperando_pago' || (x.metodo === 'sol' && Date.now() - x.creado < PEDIDO_VIGENCIA_MS))).slice(-5)
-        .map(x => ({ codigo: x.codigo, nombre: x.nombre, metodo: x.metodo, estado: x.estado, creado: x.creado, ...(x.estado === 'esperando_pago' ? { lamports: x.lamports, usd: x.usd, wallet: SOL_DEV_WALLET } : {}) })),
+        .map(x => ({ codigo: x.codigo, nombre: x.nombre, metodo: x.metodo, estado: x.estado, creado: x.creado, ...(x.estado === 'esperando_pago' ? { lamports: x.lamports, usd: x.usd, wallet: SOL_DEV_WALLET, ref: x.ref || '' } : {}) })),
       transparencia: this.transparencia(),
     };
   }
