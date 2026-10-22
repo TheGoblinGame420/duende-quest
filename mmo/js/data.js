@@ -405,6 +405,7 @@ export const NOVEDADES = [
     '⚡ Desafíos con afijos que cambian cada lunes y su propio ranking semanal.',
     '🐾 Mascotas y 🎨 colores de nombre en el Mercader (solo estética).',
     '⭐ Lista de amigos (pestaña En línea): ves cuándo se conectan, les susurras o invitas al grupo.',
+    '🔍 Inspecciona a otro jugador desde su marco: su equipo, conjuntos y logros.',
     '⚗️ Elixir de Sabiduría en la Artesana: +10% de experiencia por caza durante 30 min.',
     '🎩 Cada clase se distingue: sombrero de mago, aureola de sacerdote, capucha de pícaro.',
     '🌽 Del 13 al 30 de noviembre: Cosecha del Maíz Morado.',

@@ -14,7 +14,7 @@ import {
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo,
-} from './data.js?v=66';
+} from './data.js?v=67';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -534,6 +534,7 @@ function recibir(m) {
     case 'ev': case 'cofres': case 'cofreA': recibirMundoAbierto(m); break;
     case 'quien': quienLista = m.r || []; pintarSocial(); break;
     case 'contactos': contactos = m.l || []; pintarSocial(); break;
+    case 'inspeccion': pintarInspeccion(m); break;
     case 'on': online = m.n; if (m.h) jugaronHoy = m.h; pintarSubMapa(); break;
     case 'toast': aviso(m.m, m.ok ? 'ok' : ''); if (m.hab) { $('acciones').innerHTML = ''; pintarHud(); } break;
     case 'aviso': aviso(m.m, 'jefe'); lineaChat(null, m.m); sfx('explosion', .3); break;
@@ -1296,6 +1297,7 @@ function pintarAccionesObjetivo() {
   ponCss($('o-herm'), 'display', (r === 'lider' || r === 'oficial') && !q.hn ? 'block' : 'none');
   ponCss($('o-duelo'), 'display', !duelo && !instancia && !MAPAS[mapaId].instancia ? 'block' : 'none');
 }
+$('o-insp').onclick = () => { const q = jugObjetivo(); if (q) { mandar({ t: 'inspeccionar', p: q.id }); sfx('boton', .3); } };
 $('o-amigo').onclick = () => { const q = jugObjetivo(); if (q) { mandar({ t: 'contactoAdd', p: q.id }); sfx('boton', .3); } };
 $('o-duelo').onclick = () => { const q = jugObjetivo(); if (q) { mandar({ t: 'retar', p: q.id }); sfx('boton', .3); } };
 
@@ -1517,6 +1519,25 @@ $('o-herm').onclick = () => { const q = jugObjetivo(); if (q) { mandar({ t: 'her
 let muros = [];                 // barreras cerradas de la instancia (x)
 let instancia = null;           // { id, nv, hechos }
 function topeMuros() { return muros.length ? Math.min(...muros) - 22 : Infinity; }
+// Inspeccionar a otro jugador: su equipo puesto, conjuntos y lo que ha hecho.
+function pintarInspeccion(m) {
+  const cl = CLASES[m.cl];
+  let h = `<p style="font:600 15px var(--sans);color:${cl ? cl.color : 'var(--txt)'};margin-bottom:2px">${esc(m.n)} <span style="color:var(--txt2);font-weight:400">Nv ${m.lv}${cl ? ' · ' + esc(cl.nombre) : ''}</span></p>`;
+  const extra = [m.ti ? '«' + m.ti + '»' : '', m.herm ? '<' + m.herm + '>' : ''].filter(Boolean).join(' · ');
+  if (extra) h += `<p style="font-size:12px;color:var(--txt2);margin-bottom:8px">${esc(extra)}</p>`;
+  for (const k in RANURAS) {
+    const it = (m.eq || {})[k];
+    if (!it || !RAREZAS[it.r]) { h += tarjeta('<span style="color:var(--txt3)">—</span>', `<span style="color:var(--txt3)">${RANURAS[k].nombre}</span>`, 'Vacío', ''); continue; }
+    const rz = RAREZAS[it.r];
+    h += tarjeta(htmlItem(it), `<span style="color:${rz.color}">${esc(nombreItem(it))}</span> <span style="color:var(--txt2)">Nv${it.nv}</span>`,
+      `${rz.nombre} · ${RANURAS[k].nombre} · ${textoBonos(it.b)}${it.cj && CONJUNTOS[it.cj] ? '<br><span style="color:' + CONJUNTOS[it.cj].color + '">' + esc(CONJUNTOS[it.cj].nombre) + '</span>' : ''}`, '');
+  }
+  const pz = piezasConjunto(m.eq || {});
+  for (const id in pz) if (pz[id] >= 2 && CONJUNTOS[id]) h += `<p style="font-size:12px;color:${CONJUNTOS[id].color};margin-top:4px">${esc(CONJUNTOS[id].nombre)}: ${pz[id]} piezas</p>`;
+  h += `<p style="font-size:12px;color:var(--txt2);margin-top:8px">🏆 ${m.logros} logros · 🏰 ${m.mazmorras} mazmorras${m.desafioMax ? ' · ⚡ Desafío +' + m.desafioMax : ''}${m.duelos ? ' · ⚔️ ' + m.duelos + ' duelos ganados' : ''}</p>`;
+  $('insp-lista').innerHTML = h;
+  abrir('m-inspeccion');
+}
 // Novedades: una vez por dispositivo y version de NOVEDADES, cuando no hay
 // otra ventana abierta (la clase, la recompensa diaria...). Al personaje
 // recien creado no: para el todo es nuevo.

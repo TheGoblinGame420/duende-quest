@@ -339,6 +339,18 @@ export const Social = {
     }
   },
 
+  // ── INSPECCIONAR (como en WoW) ──
+  // El equipo puesto y lo que se puede presumir de otro jugador conectado.
+  // Nada privado: ni uid, ni oro, ni mTON, ni bolsa.
+  inspeccionar(s, m) {
+    const t = this.sesiones.get(m.p | 0);
+    if (!t || !t.c) return this.no(s, 'Ese jugador ya no está conectado.');
+    const c = t.c;
+    this.enviar(s, { t: 'inspeccion', p: t.id, n: c.nombre, lv: c.nivel, cl: c.clase || '', es: c.espec || '', ti: this.textoTitulo ? this.textoTitulo(c) : '',
+      eq: c.eq || {}, logros: (c.logros || []).length, mazmorras: c.mazmorras || 0, desafioMax: c.desafioMax || 0, duelos: c.duelosG || 0,
+      herm: this.nombreHermandad ? this.nombreHermandad(c.herm) : '' });
+  },
+
   // Lista de quien esta conectado (para invitar o susurrar).
   quien(s) {
     const r = [];

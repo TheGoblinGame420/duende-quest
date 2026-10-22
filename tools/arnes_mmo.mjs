@@ -1341,6 +1341,12 @@ async function pruebasContactos() {
   a.limpiar();
   const b2 = await entrar('Amigo', '7e');
   chequear(a.ultimos('toast').some(x => /Tu amigo Amigo se conectó/.test(x.m)), 'al volver, aviso de que se conectó');
+  console.log('Inspeccionar');
+  b2.c.oro = 12345; b2.c.mton = 77;
+  a.limpiar(); await a.mandar({ t: 'inspeccionar', p: b2.id });
+  const ins = a.ultimos('inspeccion').pop();
+  chequear(ins && ins.n === 'Amigo' && ins.eq && typeof ins.logros === 'number', 'inspeccionar devuelve nombre, equipo y logros');
+  chequear(!JSON.stringify(ins).includes(b2.c.uid) && ins.oro === undefined && ins.mton === undefined && ins.bolsa === undefined, 'sin uid, oro, mTON ni bolsa');
   await a.mandar({ t: 'contactoQuitar', uid: pub(b2.c.uid) });
   chequear(!a.c.contactos.length, 'se quita de la lista');
   await dejar(a); await dejar(b2);

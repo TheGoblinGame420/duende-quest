@@ -1595,7 +1595,12 @@ se cancela con `shutdown /a`). La otra sesión llevó el MMO; esta, lo demás.
 `contactoQuitar` / `contactos`, aviso "Tu amigo X se conectó" en `hola`
 (`avisarContactos`). Botón ⭐ en el marco de otro jugador; la lista va arriba
 de la pestaña En línea. Elixir de Sabiduría (+10% XP de caza, 30 min) en la
-Artesana; logro «Cuidador de Bichos» (3 mascotas).
+Artesana; logro «Cuidador de Bichos» (3 mascotas). Tercera revisión
+(agente): aviso de "te añadió" una vez por persona y sesión, "se conectó"
+solo tras 5+ min fuera (`salidaAntes`), `renombrarContacto` al heredar un
+invitado. **Inspeccionar** (?v=67): botón 🔍 en el marco de otro jugador →
+`inspeccionar` devuelve equipo puesto, título, hermandad, logros, mazmorras,
+mejor Desafío y duelos (nada de uid, oro, mTON ni bolsa).
 
 **Pendiente / ideas para la siguiente sesión:**
 - Probar FPS en un teléfono real (sigue sin hacerse; en Chrome con CPU 4×
