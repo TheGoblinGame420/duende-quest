@@ -1256,7 +1256,7 @@ async function pruebasTemporada() {
   chequear(t.c.calabazas === c0, 'acabado el evento ya no caen');
   reloj = Date.UTC(2026, 10, 8, 12);
   const pr = await entrar('Anticipado', '63');
-  chequear(pr.ultimos('toast').some(x => /Próximo evento: Cosecha del Maíz Morado, desde el 13 de noviembre \(en 5 días\)/.test(x.m)), 'sin evento, se anuncia el próximo si falta poco');
+  chequear(pr.ultimos('toast').some(x => /Próximo evento: Cosecha del Maíz Morado, desde el 12 de noviembre a las 19:00 \(hora de Perú\) \(en 5 días\)/.test(x.m)), 'sin evento, se anuncia el próximo si falta poco');
   await dejar(pr);
   reloj = Date.UTC(2026, 10, 20, 12);
   for (let i = 0; i < 40; i++) { const o4 = monstruo(t, 'goblin_normal', 40); mundo.danar(o4, o4.hp + 1, t); tick(1); }
@@ -1374,7 +1374,7 @@ async function pruebasExpedicion() {
   avanzar(3600000 + 1000); j.actT = reloj;
   const pesc1 = j.c.mat.pescado || 0;
   await j.mandar({ t: 'exped', recoger: 1 });
-  chequear(j.c.mat.pescado - pesc1 === D.premioExpedicion(1, 20, 'lago').mat.pescado && D.premioExpedicion(1, 20, 'lago').mat.pescado === 2, 'el Lago trae el doble de pescado');
+  chequear(j.c.mat.pescado - pesc1 === D.premioExpedicion(1, 20, 'lago').mat.pescado && D.premioExpedicion(1, 20, 'lago').mat.pescado === 3, 'el Lago trae el triple de pescado');
   await dejar(j);
 }
 

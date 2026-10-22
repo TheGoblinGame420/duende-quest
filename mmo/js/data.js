@@ -458,7 +458,7 @@ export const TINTES = {
 // enseñan una vez (lo nuevo para los que vuelven). La mas reciente arriba;
 // subir 'n' al añadir una.
 export const NOVEDADES = [
-  { n: 7, fecha: '22 de octubre (mediodía)', items: [
+  { n: 7, fecha: '22 de octubre (mediodía, 2)', items: [
     '🏰 Madriguera Goblin: una mazmorra nueva desde Nv 6 para aprender las mecánicas (portal de mazmorras del pueblo).',
     '🧭 Expediciones (Nv 5+): manda a tu mascota 1, 4 u 8 horas y vuelve con oro, experiencia y materiales (registro de misiones, L).',
     '🐟 Pececito Dorado: una mascota que solo se consigue pescando (muy rara).',
@@ -466,10 +466,10 @@ export const NOVEDADES = [
     '🛡️ Ranking semanal de hermandades y /topmmo en el bot con los rankings de la semana.',
     '📅 Calendario en Novedades y barras de progreso en los logros.',
   ] },
-  { n: 6, fecha: '22 de octubre (mañana, 2)', items: [
+  { n: 6, fecha: '22 de octubre (media mañana)', items: [
     '🗼 Torre del Duende (Nv 10+, portal de mazmorras): pisos sin fin cada vez más duros, un jefe cada 5, cofres y ranking semanal.',
     '🎣 Pesca: hay un pesquero en el pueblo y en cada zona. Lanza el sedal y TIRA cuando pique.',
-    '🍲 La Artesana cocina Ceviche del Duende (+10% oro) y Sudado Dorado (+5% daño y defensa) con lo que pesques.',
+    '🍲 La Artesana cocina Ceviche del Duende (+10% oro) y Sudado Dorado (+5% daño y -5% daño recibido) con lo que pesques.',
     '🏅 Logros Pescador y Maestro Pescador, y una misión diaria nueva.',
   ] },
   { n: 5, fecha: '22 de octubre (mediodía)', items: [
@@ -1643,12 +1643,12 @@ export const premioTorre = (p, nivel) => ({ oro: Math.round(40 * nivel * Math.mi
 // de experiencia y materiales. Da menos que jugar esas horas. Nunca mTON.
 export const EXPEDICION = { nv: 5, horas: [1, 4, 8],
   // Cada destino trae el doble de su material.
-  destinos: { bosque: { nombre: 'Bosque', emoji: '🌲', mat: 'hierba' }, mina: { nombre: 'Mina', emoji: '⛏️', mat: 'mineral' }, lago: { nombre: 'Lago', emoji: '🎣', mat: 'pescado' } } };
+  destinos: { bosque: { nombre: 'Bosque', a: 'al Bosque', emoji: '🌲', mat: 'hierba' }, mina: { nombre: 'Mina', a: 'a la Mina', emoji: '⛏️', mat: 'mineral' }, lago: { nombre: 'Lago', a: 'al Lago', emoji: '🎣', mat: 'pescado' } } };
 export const premioExpedicion = (h, nv, dest) => {
   const k = Math.pow(h, 0.75);
   const mat = { hierba: Math.ceil(h * 1.5), mineral: Math.ceil(h * 1.5), pescado: h };
   const d = EXPEDICION.destinos[dest];
-  if (d) mat[d.mat] *= 2;
+  if (d) mat[d.mat] *= d.mat === 'pescado' ? 3 : 2;
   if (h >= 8) mat.cristal = 1;
   return { oro: Math.round(40 * nv * k), xp: Math.round(xpParaSubir(nv) * 0.02 * k), mat };
 };

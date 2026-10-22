@@ -456,7 +456,7 @@ export const Mazmorras = {
         c.oro += pr.oro;
         this.sumarXp(s, pr.xp);
         const it = this.darItem(s, this.generarItem(I.nv, 2));
-        extra = ` Premio del día: +${pr.xp.toLocaleString('es')} XP, +${pr.oro.toLocaleString('es')} oro y ${it.r >= 3 ? 'un LEGENDARIO' : 'un objeto ÉPICO'}.`;
+        extra = ` Premio del día: ${c.nivel < NIVEL_MAX ? '+' + pr.xp.toLocaleString('es') + ' XP, ' : ''}+${pr.oro.toLocaleString('es')} oro y ${it.r >= 3 ? 'un LEGENDARIO' : 'un objeto ÉPICO'}.`;
       }
       // Desafio vencido: abre el siguiente y da su premio (oro y un objeto
       // de nivel 60+k que se puede equipar a Nv 60).

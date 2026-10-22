@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=146';
+} from './data.js?v=148';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -608,6 +608,7 @@ function entrarMapa(m) {
   const mp = MAPAS[mapaId];
   $('h-mapa').textContent = mp.nombre;
   pintarSubMapa();
+  if (yo) pintarHud();   // la linea de mision/mazmorra cambia con el mapa
   camX = Math.max(0, Math.min(mp.ancho - VW, P.x - VW / 2));
   $('carga').style.display = 'none';
   aviso('📍 ' + mp.nombre);
@@ -1755,7 +1756,7 @@ function htmlCalendario() {
   const lunes = Date.parse(semanaUTC() + 'T00:00:00Z') + 7 * 86400000;
   l.push(`🏆 <b>Cierre de los rankings semanales</b> (experiencia, Torre, Desafíos; premios y todo de cero): ${dia(lunes)} a las ${hora(lunes)}.`);
   const tp = TEMPORADAS.find(x => x.fin > ahora);
-  if (tp) l.push(tp.ini <= ahora ? `${tp.emoji} <b>${esc(tp.nombre)}</b>: en marcha hasta el ${esc(tp.hasta)}.` : `${tp.emoji} <b>${esc(tp.nombre)}</b>: empieza el ${dia(tp.ini)}.`);
+  if (tp) l.push(tp.ini <= ahora ? `${tp.emoji} <b>${esc(tp.nombre)}</b>: en marcha hasta el ${esc(tp.hasta)}.` : `${tp.emoji} <b>${esc(tp.nombre)}</b>: empieza el ${dia(tp.ini)} a las ${hora(tp.ini)}.`);
   return '<div class="mis-caja" style="margin-top:0"><b>📅 Calendario</b><ul style="padding-left:18px;margin-top:4px;font:13px/1.5 var(--sans);color:var(--txt2)">' + l.map(x => `<li>${x}</li>`).join('') + '</ul><p style="font-size:11px;color:var(--txt3)">Horas en la hora de tu dispositivo.</p></div>';
 }
 function abrirNovedades() {
@@ -2623,7 +2624,7 @@ function pintarMundial() {
   // Al novato el contador del jefe mundial solo le distrae de su mision.
   if (yo.nivel < 10) { ponTxt(el, ''); el.className = ''; return; }
   const nomM = (MONSTRUOS[mundial.k] || {}).nombre || 'Jefe mundial';
-  if (mundial.vivo) { ponTxt(el, '👹 ' + nomM + ' en el Coliseo (portal del pueblo)' + extraHf); el.className = 'lista'; return; }
+  if (mundial.vivo) { ponTxt(el, '👹 ' + nomM + ' en el Coliseo' + (TACTIL ? '' : ' (portal del pueblo)') + extraHf); el.className = 'lista'; return; }
   const ms = mundial.en - performance.now();
   if (mundial.en && ms > 0) {
     const mm = Math.floor(ms / 60000), ss = Math.floor(ms / 1000) % 60;
@@ -3532,7 +3533,7 @@ function dibujar() {
   ponCss(bi, 'display', 'block');
   if (c && yo && !P.muerto) {
     ponCss(bi, 'visibility', 'visible');
-    ponTxt(bi, c.tipo === 'res' ? '✝ RESUCITAR' : c.tipo === 'portal' ? (TACTIL ? '🚪 ENTRAR' : 'E · ENTRAR') : c.tipo === 'cofre' ? (TACTIL ? '🗝️ ABRIR' : 'E · ABRIR') : c.tipo === 'nodo' ? (TACTIL ? '⛏️ RECOGER' : 'E · RECOGER') : c.tipo === 'pesca' ? (castYo && castYo.id === 'pica' ? (TACTIL ? '🐟 ¡TIRA!' : 'E · ¡TIRA!') : castYo && castYo.id === 'pescar' ? '🎣 Espera…' : (TACTIL ? '🎣 PESCAR' : 'E · PESCAR')) : (TACTIL ? '💬 HABLAR' : 'E · HABLAR'));
+    ponTxt(bi, c.tipo === 'res' ? '✝ RESUCITAR' : c.tipo === 'portal' ? (c.p.etiqueta === 'Salida' ? (TACTIL ? '🚪 SALIR' : 'E · SALIR') : (TACTIL ? '🚪 ENTRAR' : 'E · ENTRAR')) : c.tipo === 'cofre' ? (TACTIL ? '🗝️ ABRIR' : 'E · ABRIR') : c.tipo === 'nodo' ? (TACTIL ? '⛏️ RECOGER' : 'E · RECOGER') : c.tipo === 'pesca' ? (castYo && castYo.id === 'pica' ? (TACTIL ? '🐟 ¡TIRA!' : 'E · ¡TIRA!') : castYo && castYo.id === 'pescar' ? '🎣 Espera…' : (TACTIL ? '🎣 PESCAR' : 'E · PESCAR')) : (TACTIL ? '💬 HABLAR' : 'E · HABLAR'));
   } else ponCss(bi, 'visibility', 'hidden');
 }
 
@@ -3675,7 +3676,7 @@ function cajaExpedicion() {
     let dest = 'bosque'; try { dest = localStorage.getItem('dq_exped') || 'bosque'; } catch (e) {}
     if (!EXPEDICION.destinos[dest]) dest = 'bosque';
     h += `<p style="font-size:12px;color:var(--txt2)">${esc(quien)} puede salir a explorar mientras no juegas. Vuelve con oro, experiencia y materiales (el doble de los de su destino).</p>`;
-    h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">' + Object.entries(EXPEDICION.destinos).map(([id, d]) => `<button class="btn ${id === dest ? '' : 'sec'}" data-exdest="${id}" style="flex:1;min-width:80px;padding:6px">${d.emoji} ${esc(d.nombre)}<br><small>×2 ${esc(MATERIALES[d.mat].nombre)}</small></button>`).join('') + '</div>';
+    h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">' + Object.entries(EXPEDICION.destinos).map(([id, d]) => `<button class="btn ${id === dest ? '' : 'sec'}" data-exdest="${id}" style="flex:1;min-width:80px;padding:6px;white-space:normal;line-height:1.25">${d.emoji} ${esc(d.nombre)}<br><small>×${d.mat === 'pescado' ? 3 : 2} ${esc(MATERIALES[d.mat].nombre)}</small></button>`).join('') + '</div>';
     h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">';
     for (const hh of EXPEDICION.horas) { const pr = premioExpedicion(hh, yo.nivel, dest); h += `<button class="btn sec" data-exped="${hh}" data-d="${dest}" style="flex:1;min-width:90px">${hh} h<br><small>🪙 ${pr.oro.toLocaleString('es')}</small></button>`; }
     h += '</div>';
@@ -3684,7 +3685,7 @@ function cajaExpedicion() {
     if (ms <= 0) h += `<p>${esc(quien)} ya volvió.</p><button class="btn" id="b-exped" style="width:100%;margin-top:6px">Recoger</button>`;
     else {
       const hh = Math.floor(ms / 3600000), mm = Math.ceil(ms % 3600000 / 60000);
-      h += `<p style="font-size:12px;color:var(--txt2)">${esc(quien)} vuelve en ${hh ? hh + ' h ' : ''}${mm} min.</p><div class="mis-barra"><i style="width:${Math.round((1 - ms / (ex.fin - ex.ini)) * 100)}%"></i></div>`;
+      h += `<p style="font-size:12px;color:var(--txt2)">${esc(quien)} está ${esc(((EXPEDICION.destinos[ex.d] || EXPEDICION.destinos.bosque).a).replace(/^al /, 'en el ').replace(/^a la /, 'en la '))}: vuelve en ${hh ? hh + ' h ' : ''}${mm} min.</p><div class="mis-barra"><i style="width:${Math.round((1 - ms / (ex.fin - ex.ini)) * 100)}%"></i></div>`;
     }
   }
   return h + '</div>';
@@ -4074,7 +4075,7 @@ function pintarRanking(r, sem, finSem, des, dsem, af, duel, elo, torre, tmax, he
   h += (torre && torre.length) ? torre.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>piso ${x.p}</span></div>`).join('') : '<p class="centro" style="font-size:12px">Nadie ha subido aún esta semana. Entra por el portal de mazmorras del pueblo (Nv 10+).</p>';
   // Hermandades: puntos de la gesta de esta semana.
   h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">🛡️ Hermandades (gesta de esta semana)</p>';
-  h += (herm && herm.length) ? herm.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>${x.p.toLocaleString('es')} pts · ${x.m} miembros</span></div>`).join('') : '<p class="centro" style="font-size:12px">Ninguna hermandad ha sumado aún esta semana. Fúndala desde Social (Nv 10).</p>';
+  h += (herm && herm.length) ? herm.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>${x.p.toLocaleString('es')} pts · ${x.m} miembro${x.m === 1 ? '' : 's'}</span></div>`).join('') : '<p class="centro" style="font-size:12px">Ninguna hermandad ha sumado aún esta semana. Fúndala desde Social (Nv 10).</p>';
   // Duelos (Elo): se cuenta con cuenta y desde Nv 10; 3 al dia por pareja.
   h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">⚔️ Duelistas (Elo)' + (elo ? ' · tu Elo: ' + elo : '') + '</p>';
   h += (duel && duel.length) ? duel.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>${x.e} · ${x.g} victorias</span></div>`).join('') : '<p class="centro" style="font-size:12px">Nadie ha ganado aún un duelo que cuente. Reta a alguien desde su marco (⚔️): con cuenta y desde Nv 10.</p>';

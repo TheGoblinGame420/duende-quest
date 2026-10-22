@@ -45,7 +45,7 @@ export const Expediciones = {
     s.sucio = true;
     const quien = c.mascota && MASCOTAS[c.mascota] ? MASCOTAS[c.mascota].nombre : 'Un duendecillo explorador';
     this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });   // la mascota se va
-    this.enviar(s, { t: 'toast', ok: true, m: `🧭 ${quien} sale de expedición al ${EXPEDICION.destinos[d].nombre}: vuelve en ${h} h. Recógela en el registro de misiones (L).` });
+    this.enviar(s, { t: 'toast', ok: true, m: `🧭 ${quien} sale de expedición ${EXPEDICION.destinos[d].a}: vuelve en ${h} h. Recógela en el registro de misiones (L).` });
     this.actualizarYo(s);
     this.guardar(s);
   },

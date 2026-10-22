@@ -477,7 +477,7 @@ export class MmoWorld {
       const prox = TEMPORADAS.filter(x => x.ini > ahora && x.ini - ahora <= 10 * 86400000).sort((a, b) => a.ini - b.ini)[0];
       if (prox) {
         const dias = Math.ceil((prox.ini - ahora) / 86400000);
-        const fecha = new Date(prox.ini).toLocaleDateString('es', { day: 'numeric', month: 'long', timeZone: 'UTC' });
+        const fecha = new Date(prox.ini).toLocaleDateString('es', { day: 'numeric', month: 'long', timeZone: 'America/Lima' }) + ' a las ' + new Date(prox.ini).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Lima' }) + ' (hora de Perú)';
         this.enviar(s, { t: 'toast', m: `${prox.emoji} Próximo evento: ${prox.nombre}, desde el ${fecha} (en ${dias} día${dias > 1 ? 's' : ''}). Los monstruos soltarán ${prox.cosas} y habrá dos títulos.` });
       }
     }
@@ -2238,6 +2238,15 @@ export class MmoWorld {
     if (raiz && !o.embiste) vx = 0;
     o.x = clamp(o.x + vx, 30, mapa.ancho - 30);
     if (o.jefe) o.x = clamp(o.x, o.casaX - (o.mazmorra ? 450 : 600), o.casaX + (o.mazmorra ? 450 : 600));   // no se le puede arrastrar a la entrada
+    // Mazmorras: ningun monstruo (ni jefe) cruza una barrera cerrada; cada uno
+    // se queda en la sala donde nacio (antes los packs del fondo se sumaban
+    // al combate del primer jefe).
+    const wm = o.cl.includes('#') ? this.mundo[o.cl] : null;
+    if (wm && wm.muros && wm.muros.length) {
+      let lo = 30, hi = mapa.ancho - 30;
+      for (const mu of wm.muros) { if (mu <= o.casaX) lo = Math.max(lo, mu + 25); else hi = Math.min(hi, mu - 25); }
+      o.x = clamp(o.x, lo, hi);
+    }
     if (o.x <= 30 || o.x >= mapa.ancho - 30) o.dir = -o.dir;
     if (o.vuela) {
       const objetivoY = obj ? clamp(obj.y - 30, SUELO - 200, SUELO - 20) : o.baseY;
