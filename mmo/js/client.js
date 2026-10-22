@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=212';
+} from './data.js?v=214';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -26,7 +26,7 @@ const A = '/assets/';
 // El HUD se repinta cada fotograma: tocar el DOM aunque el valor no cambie
 // obliga al navegador a recalcular estilos 60 veces por segundo. Estas dos
 // solo escriben cuando hay un cambio real.
-function ponTxt(el, v) { if (el._t !== v) { el._t = v; el.textContent = v; } }
+function ponTxt(el, v) { if (el._t !== v) { el._t = v; el.textContent = typeof v === 'string' ? sinEmojiC(v) : v; } }
 function ponCss(el, prop, v) { const k = '_c' + prop; if (el[k] !== v) { el[k] = v; el.style[prop] = v; } }
 const TG = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? window.Telegram.WebApp : null;
 if (TG) {
@@ -1788,6 +1788,15 @@ function htmlCalendario() {
 // Textos sin el emoji del principio (avisos, notas del parche, objetivos):
 // el tipo de mensaje ya lo dice su color. Declaracion de funcion para que
 // sirva aunque se llame antes de llegar a esta linea al cargar.
+// Con memoria: el HUD y las etiquetas del lienzo repiten los mismos textos cada fotograma.
+// (var y no const: ponTxt se usa antes de llegar a esta linea al cargar.)
+var memoSinEmoji;
+function sinEmojiC(t) {
+  const m = memoSinEmoji || (memoSinEmoji = new Map());
+  let r = m.get(t);
+  if (r === undefined) { r = sinEmoji(t); if (m.size > 3000) m.clear(); m.set(t, r); }
+  return r;
+}
 function sinEmoji(t) { return String(t).replace(/(\p{Extended_Pictographic}|\uFE0F|\u200D)+/gu, '').replace(/\s{2,}/g, ' ').replace(/^[\s·:\-—]+/, '').trim(); }
 function abrirNovedades() {
   let h = htmlCalendario() + '<h3>Notas del parche</h3>';
@@ -3075,6 +3084,7 @@ function emoji(txt, tam, x, y) {
 }
 function etiqueta(x, y, txt, color, tam) {
   tam = TAM_MIN(tam || 7);
+  txt = sinEmojiC(txt);
   const c = spriteTexto(txt, tam, color || '#fff', true, false);
   // Que no se salga por los bordes (en el movil, con 400 de ancho, los
   // nombres de los NPC del borde salian cortados).
