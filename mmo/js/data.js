@@ -747,6 +747,7 @@ export const LOGROS = [
   { id: 'mundial1',  titulo: 'Cazador de Titanes', desc: 'Vence al jefe mundial',          oro: 2000,  cond: c => (c.mundiales || 0) >= 1 },
   { id: 'torre10',   titulo: 'Escalador',          desc: 'Supera el piso 10 de la Torre',  oro: 3000,  cond: c => (c.torreMax || 0) >= 10 },
   { id: 'torre25',   titulo: 'Señor de la Torre',  desc: 'Supera el piso 25 de la Torre',  oro: 12000, cond: c => (c.torreMax || 0) >= 25 },
+  { id: 'reytorre',  titulo: 'Rey de la Torre',    desc: 'Gana el ranking semanal de la Torre (desde el piso 10)', oro: 10000, cond: c => (c.reyTorre || 0) >= 1 },
   { id: 'pesca50',   titulo: 'Pescador',           desc: 'Pesca 50 peces',                 oro: 1500,  cond: c => (c.peces || 0) >= 50 },
   { id: 'pesca500',  titulo: 'Maestro Pescador',   desc: 'Pesca 500 peces',                oro: 8000,  cond: c => (c.peces || 0) >= 500 },
   { id: 'mundial10', titulo: 'Titán',              desc: 'Vence 10 veces al jefe mundial', oro: 15000, cond: c => (c.mundiales || 0) >= 10 },
@@ -1574,7 +1575,9 @@ LOGROS.push(
 // ── TORRE DEL DUENDE ── (functions/mmo/torre.js)
 // Pisos con oleadas de monstruos de tu nivel, cada uno mas duro; un jefe
 // cada jefeCada. tiempo por piso; porHora subidas por jugador; max por grupo.
-export const TORRE = { nv: 10, max: 5, jefeCada: 5, pausa: 3500, tiempo: 150000, porHora: 12, instancias: 30, vidaJefe: 0.35, atkJefe: 0.8 };
+export const TORRE = { nv: 10, max: 5, jefeCada: 5, pausa: 3500, tiempo: 150000, porHora: 12, instancias: 30, vidaJefe: 0.35, atkJefe: 0.8, semMin: 10 };
+// Premio del ranking semanal (desde el piso semMin): 1º, 2º y 3º.
+export const premioTorreSem = i => [15000, 7500, 3500][i] || 0;
 export const pisoTorre = p => ({ n: Math.min(6, 2 + Math.floor((p - 1) / 3)), vida: 1.2 * Math.pow(1.07, p - 1), atk: Math.pow(1.045, p - 1), jefe: p % 5 === 0 });
 // Cofre de cada 5 pisos nuevos de la semana: oro (hasta el piso 50) y equipo (epico desde el 15).
 export const premioTorre = (p, nivel) => ({ oro: Math.round(40 * nivel * Math.min(10, p / 5)), rMin: p >= 15 ? 2 : 1 });

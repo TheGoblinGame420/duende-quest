@@ -1852,6 +1852,7 @@ export class MmoWorld {
       await this.state.storage.put('rankDesSem', this.rds);
       await this.premiarDesSem(vieja);
     }
+    if (this.rt ? this.rt.sem !== sem : true) await this.cargarRankTorre();
     if (this.rs.sem !== sem) {
       const vieja = this.rs;
       this.rs = { sem, l: {} };

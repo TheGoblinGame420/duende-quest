@@ -1391,6 +1391,12 @@ async function pruebasTorre() {
   j.inv = 0; mundo.herir(j, 1e9, { id: 0, pct: 0 }); if (!j.muerto) { j.hp = 0; mundo.morir && mundo.morir(j); }
   tick(2);
   chequear(w2.torre.fin, 'si caen todos, se acaba');
+  // Cambio de semana: premio a los 3 primeros (desde el piso semMin).
+  await mundo.cargarRankTorre();
+  mundo.rt = { sem: '2000-01-03', l: { [j.c.uid]: { n: j.c.nombre, p: 12, k: 'guerrero', t: 1 }, 'inv:otro': { n: 'Otro', p: 3, k: '', t: 2 } } };
+  const oroT = j.c.oro;
+  await mundo.cargarRankTorre();
+  chequear(j.c.oro - oroT === D.premioTorreSem(0) + D.LOGROS.find(l => l.id === 'reytorre').oro && j.c.logros.includes('reytorre') && mundo.rt.sem === D.semanaUTC() && !Object.keys(mundo.rt.l).length, 'al cambiar la semana: premio al 1º, título y ranking de cero');
   await dejar(j);
 }
 

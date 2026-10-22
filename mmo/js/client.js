@@ -11,12 +11,12 @@ import {
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
-  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe, TORRE,
+  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe, TORRE, premioTorreSem,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=112';
+} from './data.js?v=114';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -3921,6 +3921,7 @@ function pintarRanking(r, sem, finSem, des, dsem, af, duel, elo, torre, tmax) {
   h += (des && des.length) ? des.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>⚡ +${x.k}</span></div>`).join('') : '<p class="centro" style="font-size:12px">Nadie ha vencido aún un Desafío. Se abren a nivel 60 en el portal de mazmorras.</p>';
   // Torre del Duende: mejor piso de la semana.
   h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">🗼 Torre del Duende (esta semana)' + (tmax ? ' · tu marca: piso ' + tmax : '') + '</p>';
+  h += `<p style="font-size:12px;color:var(--txt2);margin-bottom:4px">Premios el lunes (desde el piso ${TORRE.semMin}): 🥇 ${premioTorreSem(0).toLocaleString('es')} oro y título Rey de la Torre · 🥈 ${premioTorreSem(1).toLocaleString('es')} · 🥉 ${premioTorreSem(2).toLocaleString('es')}.</p>`;
   h += (torre && torre.length) ? torre.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>piso ${x.p}</span></div>`).join('') : '<p class="centro" style="font-size:12px">Nadie ha subido aún esta semana. Entra por el portal de mazmorras del pueblo (Nv 10+).</p>';
   // Duelos (Elo): se cuenta con cuenta y desde Nv 10; 3 al dia por pareja.
   h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">⚔️ Duelistas (Elo)' + (elo ? ' · tu Elo: ' + elo : '') + '</p>';

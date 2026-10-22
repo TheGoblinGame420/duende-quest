@@ -12,7 +12,8 @@
 // como de mazmorra para que no cuenten como jefes de zona.
 // La instancia es 'torre#xxxx' con w.torre (no w.inst: no es una mazmorra).
 // ═══════════════════════════════════════════════════════
-import { MAPAS, MONSTRUOS, TORRE, pisoTorre, premioTorre, zonaDeNivel, semanaUTC, NIVEL_MAX, PASE } from '../../mmo/js/data.js';
+import { MAPAS, MONSTRUOS, TORRE, pisoTorre, premioTorre, premioTorreSem, zonaDeNivel, semanaUTC, NIVEL_MAX, PASE } from '../../mmo/js/data.js';
+import { getEnv, tg } from '../api/lib.js';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 
@@ -135,10 +136,42 @@ export const Torre = {
   },
 
   // Ranking semanal de la Torre: en memoria y guardado al momento (pasa poco).
+  // Al cambiar la semana se premia a los 3 primeros (cerrarSemanaTorre).
   async cargarRankTorre() {
     if (!this.rt) this.rt = (await this.state.storage.get('rankTorre')) || { sem: semanaUTC(), l: {} };
-    if (this.rt.sem !== semanaUTC()) this.rt = { sem: semanaUTC(), l: {} };
+    if (this.rt.sem !== semanaUTC()) await this.cerrarSemanaTorre();
     return this.rt;
+  },
+  cerrarSemanaTorre() {
+    if (this.cerrandoT) return this.cerrandoT;
+    this.cerrandoT = (async () => {
+      const vieja = this.rt || (await this.state.storage.get('rankTorre'));
+      if (!vieja || vieja.sem === semanaUTC()) { this.rt = vieja || { sem: semanaUTC(), l: {} }; return; }
+      this.rt = { sem: semanaUTC(), l: {} };
+      await this.state.storage.put('rankTorre', this.rt);
+      await this.premiarTorre(vieja);
+    })().finally(() => { this.cerrandoT = null; });
+    return this.cerrandoT;
+  },
+  async premiarTorre(rt) {
+    const top = Object.entries(rt.l || {}).sort((a, b) => b[1].p - a[1].p || a[1].t - b[1].t).filter(([, f]) => f.p >= TORRE.semMin).slice(0, 3);
+    const nombres = [];
+    for (let i = 0; i < top.length; i++) {
+      const [uid, f] = top[i];
+      const s = this.porUid.get(uid);
+      const c = s ? s.c : await this.state.storage.get('c:' + uid);
+      if (!c) continue;
+      const oro = premioTorreSem(i);
+      c.oro += oro;
+      if (i === 0) c.reyTorre = (c.reyTorre || 0) + 1;
+      if (s) { this.actualizarYo(s); this.revisarLogros(s); await this.guardar(s); }
+      else await this.state.storage.put('c:' + uid, c);
+      nombres.push(['🥇', '🥈', '🥉'][i] + ' ' + f.n + ' (piso ' + f.p + ')');
+      const txt = `🗼 ¡Quedaste ${['1º', '2º', '3º'][i]} en la Torre del Duende esta semana (piso ${f.p})! Premio: +${oro.toLocaleString('es')} oro${i === 0 ? ' y el título de Rey de la Torre' : ''}. La Torre vuelve a empezar.`;
+      if (s) this.enviar(s, { t: 'toast', m: txt, ok: true });
+      if (uid.startsWith('tg:') && this.quiereAvisos && await this.quiereAvisos(uid)) { try { const env = getEnv({ env: this.env }); await tg(env.BOT_TOKEN, 'sendMessage', { chat_id: uid.slice(3), text: txt }); } catch (e) {} }
+    }
+    if (nombres.length) this.aTodos({ t: 'aviso', m: `🗼 Ranking semanal de la Torre: ${nombres.join(' · ')}. Esta semana, de cero.` });
   },
   anotarRankTorre(s, piso) {
     if (this.esPrueba(s.c)) return;
