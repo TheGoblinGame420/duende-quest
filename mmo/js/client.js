@@ -493,7 +493,7 @@ function recibir(m) {
       }
       P.x = m.x; P.y = m.y; P.vx = 0; P.vy = 0; if (m.f) P.f = m.f;
       break;
-    case 'ranking': pintarRanking(m.r, m.sem, m.finSem); break;
+    case 'ranking': pintarRanking(m.r, m.sem, m.finSem, m.des); break;
     case 'err':
       if (m.auth && m.auth !== 'inv' && !forzarInvitado) {
         // El servidor cierra el socket; onclose reconecta solo, ya como invitado.
@@ -3161,13 +3161,16 @@ function pintarInventario() {
 function abrirRanking() { abrir('m-rank'); $('rank-lista').innerHTML = '<p class="centro">Cargando…</p>'; mandar({ t: 'ranking' }); }
 // Dos rankings: el de la semana (experiencia ganada; premia al top 3 cada
 // lunes, asi un jugador nuevo tambien puede ganar) y el de siempre (nivel).
-function pintarRanking(r, sem, finSem) {
+function pintarRanking(r, sem, finSem, des) {
   const med = ['🥇', '🥈', '🥉'];
   let h = '<p style="font-size:12px;color:#ffe600;margin-bottom:4px">🏆 Esta semana (experiencia ganada)</p>';
   if (finSem) { const ms = finSem - Date.now(); const d = Math.floor(ms / 86400000), hh = Math.floor(ms / 3600000) % 24; h += `<p style="font-size:11px;color:rgba(255,255,255,.55);margin-bottom:6px">Termina en ${d} d ${hh} h. Premios: 🥇 oro ×400 tu nivel, objeto épico y título · 🥈 ×200 · 🥉 ×100.</p>`; }
   h += (sem && sem.length) ? sem.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>${x.xp.toLocaleString('es')} XP · Nv ${x.lv}</span></div>`).join('') : '<p class="centro">Nadie ha cazado aún esta semana. ¡Es tu oportunidad!</p>';
   h += '<p style="font-size:12px;color:#c084fc;margin:12px 0 4px">⭐ Los más fuertes (nivel)</p>';
   h += r.length ? r.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>Nv ${x.lv} · ${x.k} caz.</span></div>`).join('') : '<p class="centro">Todavía nadie sube de nivel.</p>';
+  // Desafios de mazmorra (Nv 60): el mejor +k de cada uno.
+  h += '<p style="font-size:12px;color:#ffd84a;margin:12px 0 4px">⚡ Desafíos de mazmorra (mejor +k)</p>';
+  h += (des && des.length) ? des.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>⚡ +${x.k}</span></div>`).join('') : '<p class="centro" style="font-size:12px">Nadie ha vencido aún un Desafío. Se abren a nivel 60 en el portal de mazmorras.</p>';
   $('rank-lista').innerHTML = h;
 }
 
@@ -3186,7 +3189,11 @@ function resumenMuerte(m) {
   if (m.inst) consejo = 'En las mazmorras, sal de las zonas marcadas en el suelo e interrumpe los hechizos con barra naranja. Revives en la entrada.';
   if (consejo) h += `<p style="margin-top:8px;color:#ffe600">💡 ${esc(consejo)}</p>`;
   $('muerte-info').innerHTML = h;
-  $('b-revivir').textContent = m.inst ? '↺ REVIVIR EN LA ENTRADA' : '↺ REVIVIR EN EL PUEBLO';
+  // Hasta Nv 10 se revive en la entrada de la misma zona (y sin perder XP).
+  const novato = yo && yo.nivel < 10 && MAPAS[mapaId] && MAPAS[mapaId].zona && mapaId !== 'coliseo';
+  $('b-revivir').textContent = m.inst ? '↺ REVIVIR EN LA ENTRADA' : novato ? '↺ REVIVIR AQUÍ (ENTRADA DE LA ZONA)' : '↺ REVIVIR EN EL PUEBLO';
+  if (novato && !m.inst) h += '<p style="margin-top:6px;font-size:12px;color:#4ade80">Hasta nivel 10 morir no te quita experiencia.</p>';
+  $('muerte-info').innerHTML = h;
 }
 function morir() {
   P.muerto = true;

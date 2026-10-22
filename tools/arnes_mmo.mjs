@@ -1146,6 +1146,11 @@ async function pruebasDesafios() {
   await aMapa(d, 'pueblo', 800);
   await d.mandar({ t: 'mazmorra', id: 'catacumbas', k: 2 });
   chequear(mundo.mundoDe(d).inst && mundo.mundoDe(d).inst.k === 2, 'ahora se abre el +2');
+  for (let i = 0; i < 20; i++) await espera();
+  d.limpiar(); await d.mandar({ t: 'ranking' });
+  for (let i = 0; i < 20; i++) await espera();
+  const rk = d.ultimos('ranking').pop();
+  chequear(rk && rk.des && rk.des.some(x => x.yo && x.k === 1), 'el ranking de Desafíos muestra tu mejor +k');
   // Llevado por un grupo: avanza de uno en uno y solo vuelve a su instancia.
   const h = await entrar('Lider60', '61'), l = await entrar('Llevado', '62');
   ponerNivel(h, 60, 'guerrero'); ponerNivel(l, 60, 'sacerdote');

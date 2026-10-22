@@ -334,7 +334,9 @@ export const Mazmorras = {
         const nuevo = Math.min(I.k, antes + 1);
         const marca = nuevo > antes;
         c.desafio[I.id] = Math.max(antes, nuevo);
-        c.desafioMax = Math.max(c.desafioMax || 0, c.desafio[I.id]);
+        const maxAntes = c.desafioMax || 0;
+        c.desafioMax = Math.max(maxAntes, c.desafio[I.id]);
+        if (c.desafioMax > maxAntes) this.actualizarRankDes(s).catch(e => console.error('[MMO rankDes]', e));
         if (!c.desDia || c.desDia.d !== hoy) c.desDia = { d: hoy, hechas: [] };
         if (marca || !c.desDia.hechas.includes(I.id)) {
           if (!c.desDia.hechas.includes(I.id)) c.desDia.hechas.push(I.id);

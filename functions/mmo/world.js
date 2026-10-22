@@ -1610,7 +1610,20 @@ export class MmoWorld {
   async enviarRanking(s) {
     const r = ((await this.state.storage.get('ranking')) || []).filter(x => !UIDS_PRUEBA.has(x.uid));
     const sem = this.topSemana().slice(0, 20).map(([uid, x]) => ({ n: x.n, lv: x.lv, xp: x.xp, yo: uid === s.c.uid }));
-    this.enviar(s, { t: 'ranking', r: r.slice(0, 20).map(x => ({ n: x.n, lv: x.lv, k: x.k, yo: x.uid === s.c.uid })), sem, finSem: Date.parse(this.rs.sem + 'T00:00:00Z') + 7 * 86400000 });
+    const des = ((await this.state.storage.get('rankDes')) || []).slice(0, 10).map(x => ({ n: x.n, k: x.k, yo: x.uid === s.c.uid }));
+    this.enviar(s, { t: 'ranking', r: r.slice(0, 20).map(x => ({ n: x.n, lv: x.lv, k: x.k, yo: x.uid === s.c.uid })), sem, des, finSem: Date.parse(this.rs.sem + 'T00:00:00Z') + 7 * 86400000 });
+  }
+
+  // Ranking de Desafios (final de juego): el mejor +k de cada uno. Se
+  // actualiza al batir la marca propia.
+  async actualizarRankDes(s) {
+    if (UIDS_PRUEBA.has(s.c.uid) || !s.c.desafioMax) return;
+    const r = (await this.state.storage.get('rankDes')) || [];
+    const i = r.findIndex(x => x.uid === s.c.uid);
+    const fila = { uid: s.c.uid, n: s.c.nombre, k: s.c.desafioMax, t: Date.now() };
+    if (i >= 0) { if (r[i].k >= fila.k) return; r[i] = fila; } else r.push(fila);
+    r.sort((a, b) => b.k - a.k || a.t - b.t);
+    await this.state.storage.put('rankDes', r.slice(0, 30));
   }
 
   // ── RANKING SEMANAL ──
