@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=206';
+} from './data.js?v=208';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -504,7 +504,7 @@ function recibir(m) {
     case 'pescado': {
       const p = pesqueroDe(mapaId);
       if (p) for (let k = 0; k < 18; k++) particula(p.x, SUELO - 8, m.dorado ? '#facc15' : '#93c5fd', 3);
-      flotante(P.x, P.y - 80, m.dorado ? '🐟 ¡Pez Dorado!' : '🐟 +' + m.cant, m.dorado ? '#facc15' : '#93c5fd', 12);
+      flotante(P.x, P.y - 80, m.dorado ? 'Pez Dorado' : '+' + m.cant + ' Pescado', m.dorado ? '#facc15' : '#93c5fd', 12);
       sfx('moneda', .4);
       break;
     }
@@ -545,7 +545,7 @@ function recibir(m) {
     case 'fondo': fondoInfo = m; if ($('m-wallet').classList.contains('on')) pintarWallet(); break;
     case 'login': mostrarLogin(m); break;
     case 'logro':
-      aviso('Logro desbloqueado: ' + m.titulo + ' · +' + m.oro.toLocaleString('es') + ' oro. Puedes llevar el título desde el inventario.', 'ok', 6000);
+      aviso('Logro desbloqueado: ' + m.titulo + ' · +' + m.oro.toLocaleString('es', { useGrouping: 'always' }) + ' oro. Puedes llevar el título desde el inventario.', 'ok', 6000);
       vibrar();
       ofrecerPresumir('🏅 ¡Conseguí el logro «' + m.titulo + '»!');
       sfx('explosion', .35);
@@ -567,7 +567,7 @@ function recibir(m) {
     case 'dueloFin': finDuelo(m); break;
     case 'critDuelo': { const q = m.p === miId ? P : otros.get(m.p); if (q) flotante(q.x, q.y - 92, '¡CRÍTICO!', '#ffd34d', 10); break; }
     case 'buscador': abrirBuscador(); break;
-    case 'amigos': pintarAmigos(m); if (presumirPend && m.ref) { presumirPend = false; ofrecerPresumir(presumirTxt); aviso('📣 Listo: toca «Compartir logro» otra vez para compartir.'); } break;
+    case 'amigos': pintarAmigos(m); if (presumirPend && m.ref) { presumirPend = false; ofrecerPresumir(presumirTxt); aviso('Enlace preparado. Pulsa «Compartir logro».'); } break;
     case 'muerte': resumenMuerte(m); break;
     case 'nodos': recibirNodos(m.l); break;
     case 'recogido': { const n = nodos.find(x => x.i === m.i); if (n) { n.listo = performance.now() + m.en; for (let k = 0; k < 14; k++) particula(n.x, SUELO - 14, m.tipo === 'hierba' ? '#4ade80' : '#cbd5e1', 3); } sfx('moneda', .3); break; }
@@ -635,7 +635,7 @@ function pintarSubMapa() {
   if (!mp.torre) torreInfo = null;
   const base = mp.torre ? (torreInfo && torreInfo.mejor ? 'Tu marca esta semana: piso ' + torreInfo.mejor : 'Torre') : mp.instancia ? (MAZMORRAS[mp.mazmorra] && MAZMORRAS[mp.mazmorra].banda ? 'Banda' : 'Mazmorra') + (instancia ? ' · Nv ' + instancia.nv + (instancia.k ? ' · ⚡+' + instancia.k : '') : '') : mp.zona && mp.nv ? 'Nivel ' + mp.nv[0] + '-' + mp.nv[1] : 'Zona segura';
   const cl = climaDe(mapaId);
-  $('h-mapa-sub').textContent = base + (cl ? (cl === 'nieve' ? ' · ❄️ nieva' : ' · 🌧️ llueve') : '') + (online ? ' · 👥 ' + online + ' en línea' : '') + (jugaronHoy > online ? ' · ' + jugaronHoy + ' hoy' : '');
+  $('h-mapa-sub').textContent = base + (cl ? (cl === 'nieve' ? ' · Nieve' : ' · Lluvia') : '') + (online ? ' · ' + online + ' en línea' : '') + (jugaronHoy > online ? ' · ' + jugaronHoy + ' hoy' : '');
 }
 
 // Auras que llegan con el jugador/monstruo (las que ya tenia puestas).
@@ -1349,7 +1349,7 @@ function enviarChat(v) {
 }
 function mensajeChat(m) {
   const canal = m.canal || 'general';
-  if (m.sis) { lineaChat(null, m.m, canal); return; }
+  if (m.sis) { lineaChat(null, sinEmoji(m.m), canal); return; }
   let quien = m.n;
   if (canal === 'susurro') {
     if (m.de) { quien = m.de + ' te susurra'; ultimoSusurro = m.de; sfx('boton', .4); }
@@ -1528,7 +1528,7 @@ function pintarSocial() {
   const L = $('social-lista');
   if (tabSocial === 'grupo') {
     if (!grupo) {
-      L.innerHTML = '<p class="centro" style="margin:10px 0">No estás en un grupo.</p><p class="centro" style="font-size:12px;color:var(--txt2)">Toca a otro jugador y pulsa ➕ en su marco, o búscalo en la pestaña «En línea». En grupo compartís la experiencia y las misiones de cada presa (con un 10% extra por miembro) y podéis entrar juntos a las mazmorras.</p>';
+      L.innerHTML = '<p class="centro" style="margin:10px 0">No estás en un grupo.</p><p class="centro" style="font-size:12px;color:var(--txt2)">Toca a otro jugador y pulsa ➕ en su marco, o búscalo en la pestaña «En línea». En grupo comparten la experiencia y las misiones de cada presa (con un 10% extra por miembro) y pueden entrar juntos a las mazmorras.</p>';
       return;
     }
     const tope = grupo.banda ? BANDA_MAX : 5;
@@ -1551,7 +1551,7 @@ function pintarSocial() {
     const bb = $('b-banda'); if (bb) bb.onclick = () => { mandar({ t: 'banda', si: !grupo.banda }); sfx('boton', .3); };
   } else if (tabSocial === 'online') {
     // Arriba, tus amigos (conectados o no); debajo, todos los conectados.
-    let h = '<p style="font:600 13px var(--sans);color:var(--txt);margin:2px 0 6px">⭐ Tus amigos</p>';
+    let h = '<p style="font:600 13px var(--sans);color:var(--txt);margin:2px 0 6px">Amigos</p>';
     h += contactos.length ? contactos.map(x => {
       const cl = CLASES[x.cl];
       const puede = x.on && !x.g && (!grupo || soyLider());
@@ -1560,7 +1560,7 @@ function pintarSocial() {
         x.on ? esc((cl ? cl.nombre + ' · ' : '') + x.mapa + (x.g ? ' · en grupo' : '')) : 'Desconectado',
         (puede ? `<button class="btn" data-inv="${x.id}">Invitar</button>` : '') + (x.on ? `<button class="btn sec" data-sus="${esc(x.n)}">💬</button>` : '') + `<button class="btn sec" data-qamigo="${esc(x.uid)}" title="Quitar de amigos">✕</button>`);
     }).join('') : '<p style="font-size:12px;color:var(--txt2);margin-bottom:8px">Toca a otro jugador y pulsa ⭐ en su marco: verás cuándo se conecta.</p>';
-    h += '<p style="font:600 13px var(--sans);color:var(--txt);margin:10px 0 6px">🟢 Conectados</p>';
+    h += '<p style="font:600 13px var(--sans);color:var(--txt);margin:10px 0 6px">Conectados</p>';
     if (!quienLista.length) { L.innerHTML = h + '<p class="centro">No hay nadie más conectado ahora mismo.</p>'; conectarListaSocial(L); return; }
     L.innerHTML = h + quienLista.map(x => {
       const cl = CLASES[x.cl];
@@ -1588,7 +1588,7 @@ function pintarAmigos(m) {
   const enlWeb = location.origin + '/mmo/?ref=' + m.ref;
   const texto = 'Juguemos juntos a DUENDE QUEST ONLINE, el MMORPG de duendes: gratis, en Telegram o en el navegador. 🧝';
   L.innerHTML = `<div class="mis-caja" style="margin-top:0"><b>Invita a tus amigos</b>
-    <p style="font-size:12px">Cuando un amigo que entre con tu enlace llegue a <b style="display:inline">nivel ${m.nivel}</b>, los dos ganan oro: tu amigo, <b style="display:inline">${premioAmigo(m.nivel).oro.toLocaleString('es')} oro</b>, y tú, <b style="display:inline">${premioAmigo(yo ? yo.nivel : 1).oro.toLocaleString('es')} oro</b> a tu nivel actual (sube con tu nivel)${m.max ? ', por tus primeros ' + m.max + ' amigos' : ''}. Al 5º amigo te regalamos el <b style="display:inline">Conejo Saltarín</b> de montura y un título.</p>
+    <p style="font-size:12px">Cuando un amigo que entre con tu enlace llegue a <b style="display:inline">nivel ${m.nivel}</b>, los dos ganan oro: tu amigo, <b style="display:inline">${premioAmigo(m.nivel).oro.toLocaleString('es', { useGrouping: 'always' })} oro</b>, y tú, <b style="display:inline">${premioAmigo(yo ? yo.nivel : 1).oro.toLocaleString('es', { useGrouping: 'always' })} oro</b> a tu nivel actual (sube con tu nivel)${m.max ? ', por tus primeros ' + m.max + ' amigos' : ''}. Al 5º amigo te regalamos el <b style="display:inline">Conejo Saltarín</b> de montura y un título.</p>
     <p style="font-size:12px;margin-top:6px">Amigos que ya llegaron: <b style="display:inline;color:var(--ok)">${m.amigos}</b></p></div>
     <button class="btn" id="b-comp-tg" style="width:100%;padding:12px;margin-bottom:8px">Compartir por Telegram</button>
     <button class="btn sec" id="b-comp-copiar" style="width:100%;margin-bottom:6px">Copiar enlace</button>
@@ -1652,14 +1652,14 @@ function htmlGesta(hm) {
     return `<div class="mis-barra" style="flex:1;margin:0"><i style="width:${pc}%"></i></div>`;
   }).join('') + '</div>';
   h += '<div style="display:flex;gap:4px;font-size:11px">' + GESTA_UMBRALES.map((u, i) =>
-    `<span style="flex:1;color:${G.p >= u ? 'var(--ok)' : 'var(--txt2)'}">${GESTA_NOMBRES[i]} ${u.toLocaleString('es')}<br><span style="color:var(--txt3)">🪙 ${premioGesta(i, yo.nivel).oro.toLocaleString('es')}</span>${G.p >= u ? `<br><span style="color:${i < cob ? 'var(--ok)' : 'var(--warn)'}">${i < cob ? '✓ cobrado' : 'por cobrar'}</span>` : ''}</span>`).join('') + '</div>';
-  h += `<p style="font-size:12px;margin-top:6px">${G.p.toLocaleString('es')} puntos · tu aporte: <b style="display:inline;color:${mio >= GESTA_MIN ? 'var(--ok)' : 'var(--warn)'}">${mio}</b>${mio < GESTA_MIN ? ` (cobras desde ${GESTA_MIN})` : ''}</p><p style="font-size:11px;color:var(--txt3)">Se cobra al aportar ${GESTA_MIN} puntos y llevar un día en la hermandad (si no, al volver a entrar o al seguir sumando).</p>`;
+    `<span style="flex:1;color:${G.p >= u ? 'var(--ok)' : 'var(--txt2)'}">${GESTA_NOMBRES[i]} ${u.toLocaleString('es', { useGrouping: 'always' })}<br><span style="color:var(--txt3)">🪙 ${premioGesta(i, yo.nivel).oro.toLocaleString('es', { useGrouping: 'always' })}</span>${G.p >= u ? `<br><span style="color:${i < cob ? 'var(--ok)' : 'var(--warn)'}">${i < cob ? '✓ cobrado' : 'por cobrar'}</span>` : ''}</span>`).join('') + '</div>';
+  h += `<p style="font-size:12px;margin-top:6px">${G.p.toLocaleString('es', { useGrouping: 'always' })} puntos · tu aporte: <b style="display:inline;color:${mio >= GESTA_MIN ? 'var(--ok)' : 'var(--warn)'}">${mio}</b>${mio < GESTA_MIN ? ` (cobras desde ${GESTA_MIN})` : ''}</p><p style="font-size:11px;color:var(--txt3)">Se cobra al aportar ${GESTA_MIN} puntos y llevar un día en la hermandad (si no, al volver a entrar o al seguir sumando).</p>`;
   if (top.length) h += '<p style="font-size:12px;color:var(--txt2)">Más aportan: ' + top.map(([u, p]) => `${esc(nombre(u))} ${p}`).join(' · ') + '</p>';
   h += `<p style="font-size:11px;color:var(--txt3);margin-top:4px">${GESTA_PUNTOS.caza} punto por monstruo de tu nivel (o hasta 10 por debajo), ${GESTA_PUNTOS.jefe} por jefe, ${GESTA_PUNTOS.mazmorra} por mazmorra completada y ${GESTA_PUNTOS.pesca} por pez. Se reinicia el lunes.</p></div>`;
   return h;
 }
 let hermandad = null;           // { id, nombre, motd, m: [{ uid, n, lv, cl, r, on }] }
-const RANGO = { lider: '👑 Líder', oficial: '⭐ Oficial', miembro: 'Miembro' };
+const RANGO = { lider: 'Líder', oficial: 'Oficial', miembro: 'Miembro' };
 function miRangoHerm() {
   if (!hermandad || !yo) return null;
   const yoM = hermandad.m.find(x => x.on && x.n === yo.nombre);
@@ -1672,11 +1672,11 @@ pintarHermandad = L => {
     L.innerHTML = `<p class="centro" style="margin:8px 0">No estás en una hermandad.</p>
       <p class="centro" style="font-size:12px;color:var(--txt2)">Una hermandad es tu clan: chat propio (/h), su nombre bajo el tuyo y compañeros con quienes hacer mazmorras. Pide a un líder u oficial que te invite, o funda la tuya.</p>
       <input class="nombre" id="in-herm" maxlength="20" placeholder="Nombre de tu hermandad" ${puede ? '' : 'disabled'}>
-      <button class="btn" id="b-herm-crear" style="width:100%;padding:12px" ${puede && yo.oro >= HERM_COSTO ? '' : 'disabled'}>Fundar (${HERM_COSTO.toLocaleString('es')} oro)</button>
+      <button class="btn" id="b-herm-crear" style="width:100%;padding:12px" ${puede && yo.oro >= HERM_COSTO ? '' : 'disabled'}>Fundar (${HERM_COSTO.toLocaleString('es', { useGrouping: 'always' })} oro)</button>
       ${puede ? '' : `<p class="centro" style="font-size:12px;color:var(--warn);margin-top:6px">Necesitas nivel ${HERM_NIVEL} para fundar una.</p>`}`;
     const i = $('in-herm');
     i.addEventListener('keydown', e => e.stopPropagation());
-    $('b-herm-crear').onclick = () => { const n = i.value.trim(); if (n.length < 3) { i.focus(); return; } if (confirm('¿Fundar la hermandad "' + n + '" por ' + HERM_COSTO.toLocaleString('es') + ' oro?')) mandar({ t: 'hermCrear', nombre: n }); };
+    $('b-herm-crear').onclick = () => { const n = i.value.trim(); if (n.length < 3) { i.focus(); return; } if (confirm('¿Fundar la hermandad "' + n + '" por ' + HERM_COSTO.toLocaleString('es', { useGrouping: 'always' }) + ' oro?')) mandar({ t: 'hermCrear', nombre: n }); };
     return;
   }
   const r = miRangoHerm();
@@ -1774,21 +1774,21 @@ function htmlCalendario() {
   l.push(`👹 <b>Jefes mundiales</b> en el Coliseo: ${jefes.join(' · ')}.`);
   l.push(`🧳 <b>Mercader ambulante</b>: ${ambulanteActivo() ? '<span style="color:var(--ok)">está aquí este fin de semana</span>' : 'de viernes a domingo'}.`);
   const lunes = Date.parse(semanaUTC() + 'T00:00:00Z') + 7 * 86400000;
-  l.push(`🏆 <b>Cierre de los rankings semanales</b> (experiencia, Torre, Desafíos; premios y todo de cero): ${dia(lunes)} a las ${hora(lunes)}.`);
+  l.push(`🏆 <b>Cierre de rankings semanales</b>: ${dia(lunes)} a las ${hora(lunes)}.`);
   // Pronostico: donde llueve (Pez Dorado x2) o nieva, ahora o en las proximas horas.
   const pron = Object.keys(CLIMA).map(id => {
-    for (let h = 0; h < 6; h++) { const t = Math.floor(ahora / 3600000) * 3600000 + h * 3600000; if (climaDe(id, t + 1000)) return h + '|' + `${climaDe(id, t + 1000) === 'nieve' ? '❄️' : '🌧️'} ${esc(MAPAS[id].nombre)} ${h ? 'a las ' + hora(t) : '<b style="color:var(--ok)">ahora</b>'}`; }
+    for (let h = 0; h < 6; h++) { const t = Math.floor(ahora / 3600000) * 3600000 + h * 3600000; if (climaDe(id, t + 1000)) return h + '|' + `${esc(MAPAS[id].nombre)} (${climaDe(id, t + 1000) === 'nieve' ? 'nieve' : 'lluvia'}) ${h ? 'a las ' + hora(t) : '<b style="color:var(--ok)">ahora</b>'}`; }
     return '';
   }).filter(Boolean).sort((a, b) => parseInt(a) - parseInt(b)).map(x => x.slice(x.indexOf('|') + 1));
   if (pron.length) l.push(`☁️ <b>Clima</b> (con lluvia el Pez Dorado sale el doble): ${pron.join(' · ')}.`);
   const tp = TEMPORADAS.find(x => x.fin > ahora);
   if (tp) l.push(tp.ini <= ahora ? `${tp.emoji} <b>${esc(tp.nombre)}</b>: en marcha hasta el ${esc(tp.hasta)}.` : `${tp.emoji} <b>${esc(tp.nombre)}</b>: empieza el ${dia(tp.ini)} a las ${hora(tp.ini)}.`);
-  return '<h3>Calendario</h3><ul>' + l.map(x => `<li>${x.replace(/^(\p{Extended_Pictographic}|\uFE0F|\s)+/u, '')}</li>`).join('') + '</ul><p class="creditos" style="margin-top:4px">Horas en la hora de tu dispositivo.</p>';
+  return '<h3>Calendario</h3><ul>' + l.map(x => `<li>${x.replace(/^(\p{Extended_Pictographic}|\uFE0F|\s)+/u, '')}</li>`).join('') + '</ul><p class="creditos" style="margin-top:4px">Horario local.</p>';
 }
 // Textos sin el emoji del principio (avisos, notas del parche, objetivos):
 // el tipo de mensaje ya lo dice su color. Declaracion de funcion para que
 // sirva aunque se llame antes de llegar a esta linea al cargar.
-function sinEmoji(t) { return String(t).replace(/^(\p{Extended_Pictographic}|\p{Emoji_Presentation}|\uFE0F|\u200D|\s)+/u, ''); }
+function sinEmoji(t) { return String(t).replace(/(\p{Extended_Pictographic}|\uFE0F|\u200D)+/gu, '').replace(/\s{2,}/g, ' ').replace(/^[\s·:\-—]+/, '').trim(); }
 function abrirNovedades() {
   let h = htmlCalendario() + '<h3>Notas del parche</h3>';
   for (const nv of NOVEDADES) {
@@ -1846,7 +1846,7 @@ function pintarLfg() {
   let h = '<b>👥 Buscar grupo</b>';
   if (!abiertas.length) h += `<p style="color:var(--txt2)">Se abre con la primera mazmorra (Nv ${MAZMORRAS[Object.keys(MAZMORRAS)[0]].nv[0]}).</p>`;
   else if (mio) h += `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span style="flex:1;font-size:13px;color:var(--ok)">📢 Buscas grupo para ${esc(MAZMORRAS[mio.id].nombre)} (${mio.m}/${mio.mx || 5})</span><button class="btn sec" id="lfg-quitar">Dejar de buscar</button></div>`;
-  else if (!grupo || grupo.lider === yo.pid) h += `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><select id="lfg-maz" style="flex:1;min-width:120px">${abiertas.map(id => `<option value="${id}">${esc(MAZMORRAS[id].nombre)}</option>`).join('')}</select><button class="btn" id="lfg-anunciar">📢 Anunciarme</button></div><p style="font-size:12px;color:var(--txt2);margin-top:4px">Se avisa a los conectados con nivel; quien quiera se une a tu grupo con un toque.</p>`;
+  else if (!grupo || grupo.lider === yo.pid) h += `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><select id="lfg-maz" style="flex:1;min-width:120px">${abiertas.map(id => `<option value="${id}">${esc(MAZMORRAS[id].nombre)}</option>`).join('')}</select><button class="btn" id="lfg-anunciar">Buscar grupo</button></div><p style="font-size:12px;color:var(--txt2);margin-top:4px">Se avisa a los conectados con nivel; quien quiera se une a tu grupo con un toque.</p>`;
   const otros = lfgLista.filter(x => !x.yo);
   if (otros.length) h += otros.map(x => { const cl = CLASES[x.cl]; return `<div class="fila" style="align-items:center"><span><b style="color:${cl ? cl.color : 'var(--txt)'}">${esc(x.n)}</b> Nv ${x.nv} · ${esc(MAZMORRAS[x.id].nombre)} · ${x.m}/${x.mx || 5}</span>${grupo ? '' : `<button class="btn" data-lfg="${esc(x.pid)}">Unirme</button>`}</div>`; }).join('');
   else h += '<p style="font-size:12px;color:var(--txt2);margin-top:6px">Nadie más está buscando grupo ahora.</p>';
@@ -1858,7 +1858,7 @@ function pintarLfg() {
 function abrirBuscador() {
   if (!yo) return;
   const L = $('maz-lista');
-  let h = `<p class="centro" style="margin-bottom:8px;font-size:12px">${grupo ? '👥 Entraréis juntos los del grupo que estén en el pueblo (los demás podrán unirse después por este portal).' : 'Entras solo: la mazmorra se ajusta a ti. Con un grupo es más fácil y más divertido (👥).'}</p>`;
+  let h = `<p class="centro" style="margin-bottom:8px;font-size:12px">${grupo ? '👥 Entrarán juntos los del grupo que estén en el pueblo (los demás podrán unirse después por este portal).' : 'En solitario la dificultad se ajusta a ti; en grupo entran juntos.'}</p>`;
   h += '<div class="mis-caja" id="maz-lfg"></div>';
   h += `<div class="mis-caja" style="font-size:13px;color:var(--txt2)">${htmlProgresoBoveda()}${yo.bovedaOpc && yo.bovedaOpc.length ? '<br><button class="btn" id="b-boveda" style="margin-top:8px">🗝️ Abrir la Bóveda</button>' : ''}</div>`;
   // Torre del Duende: pisos sin fin (functions/mmo/torre.js).
@@ -1902,7 +1902,7 @@ function abrirBuscador() {
   // A Nv 60 la banda va arriba (abajo quedaba tras 5 mazmorras y los afijos).
   h += hTorreBloq;
   if (yo.nivel >= NIVEL_MAX) h = h.slice(0, posBanda) + hBanda + h.slice(posBanda); else h += hBanda;
-  h += '<ul style="padding-left:18px;margin-top:10px;font-size:12px"><li>Aquí los monstruos atacan solos y en packs: tira de uno y vendrá todo su grupo.</li><li>Cada jefe guarda una barrera. Lee sus avisos: <b style="color:var(--warn)">sal de las zonas marcadas</b> en el suelo e <b>interrumpe</b> (Patada, Zurrar, Contrahechizo o Silencio) los hechizos con barra naranja.</li><li>Si caéis todos, revivís junto a la última barrera abierta y el jefe se recupera.</li><li>Cada jefe da equipo a cada uno; el último, épico.</li><li>En la banda, las <b style="color:#facc15">zonas doradas</b> se aguantan <b>juntos</b>: el golpe se reparte entre los que estén dentro.</li></ul>';
+  h += '<ul style="padding-left:18px;margin-top:10px;font-size:12px"><li>Aquí los monstruos atacan solos y en packs: tira de uno y vendrá todo su grupo.</li><li>Cada jefe guarda una barrera. Lee sus avisos: <b style="color:var(--warn)">sal de las zonas marcadas</b> en el suelo e <b>interrumpe</b> (Patada, Zurrar, Contrahechizo o Silencio) los hechizos con barra naranja.</li><li>Si todo el grupo cae, reaparece junto a la última barrera abierta y el jefe se recupera.</li><li>Cada jefe da equipo a cada uno; el último, épico.</li><li>En la banda, las <b style="color:#facc15">zonas doradas</b> se aguantan <b>juntos</b>: el golpe se reparte entre los que estén dentro.</li></ul>';
   L.innerHTML = h;
   L.querySelectorAll('[data-maz]').forEach(b => b.onclick = () => { sfx('explosion', .3); mandar({ t: 'mazmorra', id: b.dataset.maz }); cerrarModales(); });
   L.querySelectorAll('[data-torre]').forEach(b => b.onclick = () => { sfx('explosion', .3); mandar({ t: 'torre', desde: +b.dataset.torre }); cerrarModales(); });
@@ -2038,7 +2038,7 @@ function recibirMundoAbierto(m) {
     for (let i = 0; i < 26; i++) particula(cf.x, cf.y - 16, i % 2 ? C.color : '#ffe600', 4);
     for (let i = 0; i < Math.min(8, 3 + Math.floor(m.oro / 40)); i++) monedas.push({ x: cf.x, y: cf.y - 10, vx: (Math.random() - .5) * 5, vy: -4 - Math.random() * 3, t: 0 });
     flotante(cf.x, cf.y - 40, '+' + m.oro + ' oro', '#ffe600', 11);
-    let txt = '🗝️ ' + C.nombre + ': +' + m.oro.toLocaleString('es') + ' oro';
+    let txt = '🗝️ ' + C.nombre + ': +' + m.oro.toLocaleString('es', { useGrouping: 'always' }) + ' oro';
     if (m.pociones) { flotante(cf.x, cf.y - 54, '+' + m.pociones + ' poción', '#ff6b9d', 9); txt += ' · +' + m.pociones + ' poción' + (m.pociones > 1 ? 'es' : ''); }
     if (m.item) {
       const rz = RAREZAS[m.item.r];
@@ -2179,7 +2179,7 @@ function abrirClases(obligatorio) {
   const costo = yo.clase ? costoCambioClase(yo.nivel) : 0;
   $('clase-cerrar').style.display = obligatorio ? 'none' : '';
   $('clase-txt').textContent = yo.clase
-    ? (costo ? 'Cambiar de clase a tu nivel cuesta ' + costo.toLocaleString('es') + ' oro.' : 'Hasta nivel 10 cambiar de clase es gratis.')
+    ? (costo ? 'Cambiar de clase a tu nivel cuesta ' + costo.toLocaleString('es', { useGrouping: 'always' }) + ' oro.' : 'Hasta nivel 10 cambiar de clase es gratis.')
     : 'Cada clase juega distinto y cumple un papel en el grupo: el tanque aguanta, el sanador cura y los demás hacen daño. Hasta nivel 10 puedes cambiarla gratis.';
   cont.innerHTML = Object.entries(CLASES).map(([id, cl]) => {
     const habs = habsDe(id).map(h => `<img src="${A}items/equipo/${h.icono}.png" title="${esc(h.nombre)} (Nv ${h.nv})">`).join('');
@@ -2191,7 +2191,7 @@ function abrirClases(obligatorio) {
   cont.querySelectorAll('[data-clase]').forEach(b => b.onclick = () => {
     const id = b.dataset.clase;
     if (id === yo.clase) { cerrarModales(); return; }
-    if (yo.clase && costo && !confirm('¿Cambiar a ' + CLASES[id].nombre + ' por ' + costo.toLocaleString('es') + ' oro?')) return;
+    if (yo.clase && costo && !confirm('¿Cambiar a ' + CLASES[id].nombre + ' por ' + costo.toLocaleString('es', { useGrouping: 'always' }) + ' oro?')) return;
     sfx('explosion', .35);
     mandar({ t: 'clase', id });
     cerrarModales();
@@ -2212,7 +2212,7 @@ function pintarLibro() {
   const rec = RECURSOS[cl.recurso].nombre;
   let h = `<p class="centro" style="margin-bottom:6px">${esc(cl.rol)} · recurso: <b style="color:${RECURSOS[cl.recurso].color}">${esc(rec)}</b></p>`;
   // Especializaciones (desde Nv 10).
-  h += `<p style="font-size:12px;margin:6px 0 4px;color:var(--txt);font-weight:600">✨ Especialización ${yo.nivel < ESPEC_NIVEL ? '(desde nivel ' + ESPEC_NIVEL + ')' : '(cambio gratis fuera de combate)'}</p><div class="clases" style="margin-bottom:10px">`;
+  h += `<p style="font-size:12px;margin:6px 0 4px;color:var(--txt);font-weight:600">Especialización ${yo.nivel < ESPEC_NIVEL ? '(desde nivel ' + ESPEC_NIVEL + ')' : '(cambio gratis fuera de combate)'}</p><div class="clases" style="margin-bottom:10px">`;
   for (const [id, e] of Object.entries(ESPECS[yo.clase])) {
     const sel = yo.espec === id && yo.nivel >= ESPEC_NIVEL;
     h += `<div class="clase ${sel ? 'sel' : ''}" data-espec="${id}" style="--c:${cl.color};${yo.nivel < ESPEC_NIVEL ? 'opacity:.5;cursor:default' : ''}">
@@ -2222,7 +2222,7 @@ function pintarLibro() {
   for (const hb of HABS.filter(x => x.clase === yo.clase)) {
     const bloq = yo.nivel < hb.nv;
     const costo = costoHab(hb, P.recMax || yo.recMax || 0, yo.espec);
-    const datos = [hb.costo ? costo + ' ' + rec.toLowerCase() : 'sin costo', hb.cast ? (hb.cast / 1000).toLocaleString('es') + ' s de lanzamiento' : 'instantánea', hb.cd ? 'recarga ' + Math.round(hb.cd / 1000) + ' s' : '', hb.rango ? 'alcance ' + hb.rango : ''].filter(Boolean).join(' · ');
+    const datos = [hb.costo ? costo + ' ' + rec.toLowerCase() : 'sin costo', hb.cast ? (hb.cast / 1000).toLocaleString('es', { useGrouping: 'always' }) + ' s de lanzamiento' : 'instantánea', hb.cd ? 'recarga ' + Math.round(hb.cd / 1000) + ' s' : '', hb.rango ? 'alcance ' + hb.rango : ''].filter(Boolean).join(' · ');
     const ico = `<img src="${A}items/equipo/${hb.icono}.png" style="${bloq ? 'filter:grayscale(1);opacity:.4' : ''}">`;
     const tecla = hb.barra === false ? 'Botón de acción' : 'Tecla ' + (habsDe(yo.clase).indexOf(hb) + 1);
     h += tarjeta(ico, esc(hb.nombre) + ` <span style="color:${bloq ? 'var(--warn)' : 'var(--txt2)'}">Nv ${hb.nv}</span>`, esc(hb.desc) + '<br><span style="color:var(--txt2)">' + esc(datos) + '</span>',
@@ -2231,19 +2231,19 @@ function pintarLibro() {
   // Talentos: un punto por nivel desde el 10.
   const tal = yo.tal || {};
   const libres = puntosTalento(yo.nivel) - Object.values(tal).reduce((a, b) => a + b, 0);
-  h += `<p style="font-size:12px;margin:12px 0 4px;color:var(--txt);font-weight:600">🌟 Talentos ${yo.nivel < TALENTO_NIVEL ? '(desde nivel ' + TALENTO_NIVEL + ')' : '· puntos libres: <b>' + libres + '</b>'}</p><div class="talentos">`;
+  h += `<p style="font-size:12px;margin:12px 0 4px;color:var(--txt);font-weight:600">Talentos ${yo.nivel < TALENTO_NIVEL ? '(desde nivel ' + TALENTO_NIVEL + ')' : '· puntos libres: <b>' + libres + '</b>'}</p><div class="talentos">`;
   for (const t of TALENTOS) {
     const r = tal[t.id] || 0;
     h += `<div class="tal ${r ? 'on' : ''}"><img src="${A}items/equipo/${t.icono}.png" alt=""><div><b>${esc(t.nombre)} ${r}/${TALENTO_MAX}</b><small>${esc(t.txt)} por rango</small></div><button class="btn sec" data-tal="${t.id}" ${libres > 0 && r < TALENTO_MAX ? '' : 'disabled'}>+</button></div>`;
   }
   h += '</div>';
-  if (Object.keys(tal).length) h += `<button class="btn sec" id="b-tal-reset" style="width:100%;margin-top:6px">Reiniciar talentos (${costoReinicioTalentos(yo.nivel).toLocaleString('es')} oro)</button>`;
+  if (Object.keys(tal).length) h += `<button class="btn sec" id="b-tal-reset" style="width:100%;margin-top:6px">Reiniciar talentos (${costoReinicioTalentos(yo.nivel).toLocaleString('es', { useGrouping: 'always' })} oro)</button>`;
   const costoC = costoCambioClase(yo.nivel);
-  h += `<button class="btn sec" id="b-cambiar-clase" style="width:100%;margin-top:8px">Cambiar de clase${costoC ? ' (' + costoC.toLocaleString('es') + ' oro)' : ' (gratis hasta Nv 10)'}</button>`;
+  h += `<button class="btn sec" id="b-cambiar-clase" style="width:100%;margin-top:8px">Cambiar de clase${costoC ? ' (' + costoC.toLocaleString('es', { useGrouping: 'always' }) + ' oro)' : ' (gratis hasta Nv 10)'}</button>`;
   $('libro-lista').innerHTML = h;
   $('b-cambiar-clase').onclick = () => abrirClases(false);
   $('libro-lista').querySelectorAll('[data-tal]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'talento', id: b.dataset.tal }); });
-  const br = $('b-tal-reset'); if (br) br.onclick = () => { if (confirm('¿Reiniciar todos tus talentos por ' + costoReinicioTalentos(yo.nivel).toLocaleString('es') + ' oro?')) mandar({ t: 'talentoReset' }); };
+  const br = $('b-tal-reset'); if (br) br.onclick = () => { if (confirm('¿Reiniciar todos tus talentos por ' + costoReinicioTalentos(yo.nivel).toLocaleString('es', { useGrouping: 'always' }) + ' oro?')) mandar({ t: 'talentoReset' }); };
   $('libro-lista').querySelectorAll('[data-espec]').forEach(b => b.onclick = () => { if (yo.nivel >= ESPEC_NIVEL && yo.espec !== b.dataset.espec) { sfx('explosion', .3); mandar({ t: 'espec', id: b.dataset.espec }); } });
 }
 
@@ -2278,9 +2278,9 @@ function objetivoGuia() {
   if (!q) return null;
   if (yo.mis.p >= q.n) {
     const tito = MAPAS.pueblo.npcs.find(n => n.tipo === 'guia');
-    if (mapaId === 'pueblo') return { x: tito.x, txt: '❗ Entrega: Guardia Tito' };
+    if (mapaId === 'pueblo') return { x: tito.x, txt: 'Entregar: Guardia Tito' };
     const p = portalHacia('pueblo');
-    return p ? { x: p.x, y: SUELO - 150, txt: 'Vuelve al pueblo (o 🌀)' } : null;
+    return p ? { x: p.x, y: SUELO - 150, txt: 'Volver al pueblo' } : null;
   }
   const zona = zonaDe(q.tipo);
   if (zona && mapaId !== zona) {
@@ -2405,7 +2405,7 @@ function pintarDescanso() {
   const w = Math.min(100 - ini, (yo.descanso || 0) / yo.xpSig * 100);
   ponCss(d, 'left', ini + '%');
   ponCss(d, 'width', Math.max(0, w) + '%');
-  b.title = 'Experiencia: ' + yo.xp.toLocaleString('es') + ' / ' + yo.xpSig.toLocaleString('es') + ((yo.descanso || 0) > 0 ? ' · 😴 descanso: +' + yo.descanso.toLocaleString('es') + ' XP (cazas al doble)' : '');
+  b.title = 'Experiencia: ' + yo.xp.toLocaleString('es', { useGrouping: 'always' }) + ' / ' + yo.xpSig.toLocaleString('es', { useGrouping: 'always' }) + ((yo.descanso || 0) > 0 ? ' · 😴 descanso: +' + yo.descanso.toLocaleString('es', { useGrouping: 'always' }) + ' XP (cazas al doble)' : '');
 }
 
 // ── RECOLECCION Y ARTESANIA ──
@@ -2448,7 +2448,7 @@ function abrirArtesana() {
       `<button class="btn" data-receta="${r.id}" ${puede ? '' : 'disabled'}>Fabricar</button>`);
   }
   // Runas: mejoras permanentes de nivel alto (+2% por rango).
-  h += `<p style="font:600 13px var(--sans);color:var(--txt);margin:12px 0 6px">✨ Runas permanentes${yo.nivel < RUNA_NIVEL ? ` <span style="color:var(--warn)">(desde Nv ${RUNA_NIVEL})</span>` : ''}</p>`;
+  h += `<p style="font:600 13px var(--sans);color:var(--txt);margin:12px 0 6px">Runas permanentes${yo.nivel < RUNA_NIVEL ? ` <span style="color:var(--warn)">(desde Nv ${RUNA_NIVEL})</span>` : ''}</p>`;
   for (const [id, ru] of Object.entries(RUNAS)) {
     const r = (yo.runas || {})[id] || 0;
     let det = r ? `Rango ${r}/${RUNA_MAX}: +${Math.round(r * RUNA_PCT * 100)}% de ${ru.desc}.` : `Sin grabar (hasta +${Math.round(RUNA_MAX * RUNA_PCT * 100)}% de ${ru.desc}).`;
@@ -2456,7 +2456,7 @@ function abrirArtesana() {
     if (r < RUNA_MAX) {
       const cos = costoRuna(id, r + 1);
       const pide = Object.entries(cos.mat).map(([k, n]) => `<span style="color:${(mat[k] || 0) >= n ? 'var(--ok)' : 'var(--err)'}">${n} ${esc(MATERIALES[k].nombre)}</span>`).join(' + ')
-        + ` + <span style="color:${yo.oro >= cos.oro ? 'var(--ok)' : 'var(--err)'}">🪙 ${cos.oro.toLocaleString('es')}</span>`;
+        + ` + <span style="color:${yo.oro >= cos.oro ? 'var(--ok)' : 'var(--err)'}">🪙 ${cos.oro.toLocaleString('es', { useGrouping: 'always' })}</span>`;
       const puede = yo.nivel >= RUNA_NIVEL && yo.oro >= cos.oro && Object.entries(cos.mat).every(([k, n]) => (mat[k] || 0) >= n);
       det += `<br>Rango ${r + 1} (+${Math.round((r + 1) * RUNA_PCT * 100)}%): ${pide}`;
       acc = `<button class="btn" data-runa="${id}" ${puede ? '' : 'disabled'}>Grabar</button>`;
@@ -2484,14 +2484,14 @@ function pintarChicha() {
   h += `<div class="mis-caja" style="margin-top:0;text-align:center"><div style="font-size:40px">🥤</div><b style="color:var(--txt);font:600 16px/1.35 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;margin-bottom:0">Un litro de chicha morada, enviado a tu casa</b>
     <p style="font-size:12px;color:var(--txt2);margin-top:4px">Promoción gratuita y opcional: no hay que comprar nada.</p>
     <p style="font-size:12px;margin-top:6px">Cada monstruo que cazas suelta su chicha: <b style="display:inline">1 punto</b>, <b style="display:inline">3</b> si es de tu nivel o más, <b style="display:inline">25</b> un jefe. Desde nivel ${CHICHA.nvPuntos}, hasta ${CHICHA.porDia} puntos al día.</p>
-    <p style="font-size:22px;color:var(--oro);margin:8px 0">${ch.p.toLocaleString('es')} puntos</p>
+    <p style="font-size:22px;color:var(--oro);margin:8px 0">${ch.p.toLocaleString('es', { useGrouping: 'always' })} puntos</p>
     <p style="font-size:12px;color:var(--txt2)">Hoy: ${ch.hoy}/${CHICHA.porDia}</p></div>`;
   for (const meta of CHICHA.niveles) {
     const hecho = (ch.rec || []).includes(meta);
     const pct = Math.min(100, Math.round(ch.p / meta * 100));
     const acc = hecho ? '<span class="precio" style="color:var(--ok)">✓ Reclamado</span>'
       : ch.p >= meta ? `<button class="btn" data-chicha="${meta}">Reclamar</button>` : `<span class="precio">${pct}%</span>`;
-    h += tarjeta('<div style="font-size:30px">🥤</div>', `${meta.toLocaleString('es')} puntos`, `Un litro de chicha morada peruana enviado a tu casa.<div class="mis-barra"><i style="width:${pct}%"></i></div>`, acc);
+    h += tarjeta('<div style="font-size:30px">🥤</div>', `${meta.toLocaleString('es', { useGrouping: 'always' })} puntos`, `Un litro de chicha morada peruana enviado a tu casa.<div class="mis-barra"><i style="width:${pct}%"></i></div>`, acc);
   }
   h += `<ul style="padding-left:18px;margin-top:8px;font-size:12px;line-height:1.45;color:var(--txt2)">
     <li>Promoción gratuita: no hay que comprar nada. Los puntos no se compran, no se venden y no se gastan al reclamar.</li>
@@ -2511,7 +2511,7 @@ function pintarBestiario() {
     const n = best[k] || 0;
     const sig = BESTIARIO_HITOS.find(x => x > n);
     const i = BESTIARIO_HITOS.indexOf(sig);
-    const desc = n ? (sig ? `${n} / ${sig} · próximo premio: ${premioBestiario(m.nivel, i).toLocaleString('es')} oro` : `${n} · ✓ completo`) : `Sin cazar · Nv ${m.nivel}${m.jefe ? ' · jefe' : ''}`;
+    const desc = n ? (sig ? `${n} / ${sig} · próximo premio: ${premioBestiario(m.nivel, i).toLocaleString('es', { useGrouping: 'always' })} oro` : `${n} · ✓ completo`) : `Sin cazar · Nv ${m.nivel}${m.jefe ? ' · jefe' : ''}`;
     h += tarjeta(n ? `<canvas data-best="${k}" width="52" height="52"></canvas>` : '❔', n ? esc(m.nombre) + ` <span style="color:var(--txt2)">Nv ${m.nivel}</span>` : '<span style="color:var(--txt3)">???</span>', desc,
       `<span class="precio" style="color:${!sig && n ? 'var(--ok)' : 'var(--oro)'}">${'★'.repeat(BESTIARIO_HITOS.filter(x => x <= n).length)}${'☆'.repeat(BESTIARIO_HITOS.filter(x => x > n).length)}</span>`);
   }
@@ -2521,7 +2521,7 @@ function pintarBestiario() {
   for (const [z, nom] of Object.entries(ESPECIES)) {
     const n = esp[z] || 0, mp = MAPAS[z];
     h += tarjeta(n ? '<div style="font-size:30px;text-align:center">🐟</div>' : '❔', n ? esc(nom) : '<span style="color:var(--txt3)">???</span>',
-      n ? `${n} pescado${n === 1 ? '' : 's'} · ${esc(mp.nombre)}` : `Pesca en el pesquero de ${esc(mp.nombre)} (primera vez: +${premioEspecie(z === 'pueblo' ? 1 : mp.nv[0]).toLocaleString('es')} oro)`,
+      n ? `${n} pescado${n === 1 ? '' : 's'} · ${esc(mp.nombre)}` : `Pesca en el pesquero de ${esc(mp.nombre)} (primera vez: +${premioEspecie(z === 'pueblo' ? 1 : mp.nv[0]).toLocaleString('es', { useGrouping: 'always' })} oro)`,
       `<span class="precio" style="color:${n ? 'var(--ok)' : 'var(--txt3)'}">${n ? '✓' : '—'}</span>`);
   }
   $('inv-lista').innerHTML = h;
@@ -2545,12 +2545,12 @@ function pintarLogros() {
   if (yo.titulo) h += `<button class="btn sec" data-titulo="" style="width:100%;margin-bottom:8px">Quitar título</button>`;
   for (const L of LOGROS) {
     const ok = tienen.includes(L.id);
-    const acc = !ok ? `<span class="precio" style="color:var(--txt3)">🔒 +${L.oro.toLocaleString('es')}</span>`
+    const acc = !ok ? `<span class="precio" style="color:var(--txt3)">🔒 +${L.oro.toLocaleString('es', { useGrouping: 'always' })}</span>`
       : yo.titulo === L.id ? '<span class="precio" style="color:var(--ok)">✓ En uso</span>'
       : `<button class="btn sec" data-titulo="${L.id}">Usar título</button>`;
     // Los que se cuentan: barra de progreso mientras no se tienen.
     const pr = !ok && progresoLogro(L.id, { ...yo, amigos: yo.amigosN || 0 });
-    const barra = pr && pr[0] > 0 ? `<div class="mis-barra"><i style="width:${Math.round(pr[0] / pr[1] * 100)}%"></i></div><small style="color:var(--txt2)">${pr[0].toLocaleString('es')} / ${pr[1].toLocaleString('es')}</small>` : '';
+    const barra = pr && pr[0] > 0 ? `<div class="mis-barra"><i style="width:${Math.round(pr[0] / pr[1] * 100)}%"></i></div><small style="color:var(--txt2)">${pr[0].toLocaleString('es', { useGrouping: 'always' })} / ${pr[1].toLocaleString('es', { useGrouping: 'always' })}</small>` : '';
     h += tarjeta(ok ? '🏅' : '🔒', esc(L.titulo), esc(L.desc) + barra, acc);
   }
   $('inv-lista').innerHTML = h;
@@ -2584,7 +2584,7 @@ function pintarEquipo() {
     const cj = CONJUNTOS[id];
     h += `<p class="centro" style="margin:4px 0;font-size:12px;color:${cj.color}">◆ ${esc(cj.nombre)} ${pz[id]}/5 — ${pz[id] >= 4 ? 'bono completo' : pz[id] >= 2 ? 'bono de 2 activo' : 'sin bono aún'}<br><span style="color:var(--txt2)">${esc(textoConjunto(cj))}</span></p>`;
   }
-  h += `<p class="centro" style="margin:6px 0">🎒 Bolsa ${bolsa.length}/${BOLSA_MAX} · toca una pieza puesta para quitarla</p>`;
+  h += `<p class="centro" style="margin:6px 0">Bolsa ${bolsa.length}/${BOLSA_MAX} · toca una pieza puesta para quitarla</p>`;
   const comunes = bolsa.filter(x => x.r === 0);
   // Lo mejor de la bolsa para cada ranura (que se pueda usar a tu nivel).
   const mejoras = Object.keys(RANURAS).map(k => {
@@ -2595,7 +2595,7 @@ function pintarEquipo() {
     return cand && (!puesto || puntaje(cand.b) > puntaje(puesto.b)) ? cand : null;
   }).filter(Boolean);
   if (mejoras.length) h += `<button class="btn" id="b-equipar-mejor" style="width:100%;margin-bottom:8px">▲ Equipar lo mejor (${mejoras.length})</button>`;
-  if (comunes.length) h += `<button class="btn sec" id="b-vender-comunes" style="width:100%;margin-bottom:8px">Vender ${comunes.length} comunes (+${comunes.reduce((a, x) => a + precioVenta(x), 0).toLocaleString('es')} oro)</button>`;
+  if (comunes.length) h += `<button class="btn sec" id="b-vender-comunes" style="width:100%;margin-bottom:8px">Vender ${comunes.length} comunes (+${comunes.reduce((a, x) => a + precioVenta(x), 0).toLocaleString('es', { useGrouping: 'always' })} oro)</button>`;
   if (!bolsa.length) h += '<p class="centro" style="color:var(--txt2)">Los monstruos sueltan equipo al morir, y los jefes siempre.</p>';
   const orden = [...bolsa].sort((a, b) => b.r - a.r || b.nv - a.nv);
   for (const it of orden) {
@@ -2635,8 +2635,8 @@ function mostrarLogin(m) {
   });
   h += '</div>';
   let txt = 'Hoy recibes ' + m.txt + '.';
-  if (m.oro) txt = 'Hoy recibes ' + m.oro.toLocaleString('es') + ' oro' + (m.item ? ' y ' + RAREZAS[m.item.r].nombre.toLowerCase() + ': ' + nombreItem(m.item) : '') + '.';
-  ponTxt($('login-ok'), m.oro ? 'Recoger ' + m.oro.toLocaleString('es') + ' oro' : 'Recoger');
+  if (m.oro) txt = 'Hoy recibes ' + m.oro.toLocaleString('es', { useGrouping: 'always' }) + ' oro' + (m.item ? ' y ' + RAREZAS[m.item.r].nombre.toLowerCase() + ': ' + nombreItem(m.item) : '') + '.';
+  ponTxt($('login-ok'), m.oro ? 'Recoger ' + m.oro.toLocaleString('es', { useGrouping: 'always' }) + ' oro' : 'Recoger');
   $('login-cuerpo').innerHTML = h + `<p class="centro" style="margin-top:12px;color:var(--ok);font-weight:600">${esc(txt)}</p><p class="centro" style="font-size:12px;color:var(--txt2)">Vuelve mañana para el día ${m.racha % 7 + 1}. Si faltas un día, retrocede dos; si faltas más, vuelve a empezar. El oro crece con tu nivel.</p>`;
   abrir('m-login');
   sfx('moneda', .5);
@@ -2718,7 +2718,7 @@ function pintarWallet() {
   const lista = w && Date.now() - w.desde >= WALLET_ESPERA_MS;
   const fila = (ok, txt) => `<div class="req"><span>${txt}</span><span class="${ok ? 'si' : 'no'}">${ok ? '✓' : '✗'}</span></div>`;
   let h = '<p class="centro" style="font-size:12px;color:var(--txt2);margin-bottom:8px">Recompensa opcional: los mTON solo se ganan jugando (no se compran) y salen de un fondo diario limitado.</p>';
-  h += `<div class="saldo"><b>${mton.toLocaleString('es')} mTON</b><small>= ${tonTxt(mton)} TON · 1.000 mTON = 1 TON</small></div>`;
+  h += `<div class="saldo"><b>${mton.toLocaleString('es', { useGrouping: 'always' })} mTON</b><small>= ${tonTxt(mton)} TON · 1.000 mTON = 1 TON</small></div>`;
   h += `<div class="mis-barra"><i style="width:${pct}%"></i></div><p class="centro" style="font-size:12px">${pct}% del retiro mínimo (${RETIRO_MIN_MTON / MTON_POR_TON} TON)</p>`;
   if (!el.cuenta) {
     h += '<p class="centro" style="margin:12px 0;font-size:13px;color:var(--warn)">Juegas como invitado. Para recibir mTON y retirar TON, entra desde el bot de Telegram (@duendequest_bot) o inicia sesión en el juego web.</p>';
@@ -3526,7 +3526,7 @@ function dibujarZonas() {
       g.save(); g.fillStyle = '#facc15';
       g.beginPath(); g.moveTo(ax + (der ? 12 : -12), ay); g.lineTo(ax - (der ? 6 : -6), ay - 12); g.lineTo(ax - (der ? 6 : -6), ay + 12); g.fill();
       g.restore();
-      etiqueta(der ? VW - 54 : 54, ay - 18, 'JUNTAOS', '#facc15', 7);
+      etiqueta(der ? VW - 54 : 54, ay - 18, 'REÚNANSE', '#facc15', 7);
       continue;
     }
     if (x1 < -10 || x0 > VW + 10) continue;
@@ -3539,7 +3539,7 @@ function dibujarZonas() {
       // Zona para aguantar JUNTOS (banda): columna dorada que llama a entrar.
       g.globalAlpha = .16 + Math.abs(Math.sin(frame * .12)) * .14; g.fillStyle = col; g.fillRect(x0, SUELO - 120, x1 - x0, 122);
       g.globalAlpha = .95; g.strokeStyle = col; g.lineWidth = 3; g.strokeRect(x0, SUELO - 120, x1 - x0, 122);
-      g.globalAlpha = 1; etiqueta((x0 + x1) / 2, SUELO - 128 - Math.abs(Math.sin(frame * .15)) * 6, 'JUNTAOS AQUI', col, 8);
+      g.globalAlpha = 1; etiqueta((x0 + x1) / 2, SUELO - 128 - Math.abs(Math.sin(frame * .15)) * 6, 'REÚNANSE AQUÍ', col, 8);
     } else {
       g.globalAlpha = .18 + Math.abs(Math.sin(frame * .2)) * .25; g.fillStyle = col; g.fillRect(x0, SUELO - 6, x1 - x0, 8);
       g.globalAlpha = .9; g.strokeStyle = col; g.lineWidth = 2; g.setLineDash([6, 4]); g.strokeRect(x0, SUELO - 120, x1 - x0, 122);
@@ -3617,11 +3617,11 @@ function pintarHud() {
   if ($('ret-yo')._src !== imgSkin) { $('ret-yo')._src = imgSkin; $('ret-yo').src = imgSkin; }
   ponCss($('brec'), 'display', cl ? 'block' : 'none');
   if (cl) ponCss($('brec').querySelector('i'), 'background', RECURSOS[cl.recurso].color);
-  ponTxt($('h-oro'), yo.oro.toLocaleString('es'));
-  ponTxt($('h-mton'), (yo.mton || 0).toLocaleString('es') + ' mTON');
+  ponTxt($('h-oro'), yo.oro.toLocaleString('es', { useGrouping: 'always' }));
+  ponTxt($('h-mton'), (yo.mton || 0).toLocaleString('es', { useGrouping: 'always' }) + ' mTON');
   const pxp = yo.xpSig ? Math.floor(yo.xp / yo.xpSig * 100) : 100;
   rellenar($('bxp').querySelector('i'), pxp / 100);
-  $('bxp').title = 'Experiencia: ' + yo.xp.toLocaleString('es') + ' / ' + (yo.xpSig || 0).toLocaleString('es') + ' (' + pxp + '%)';
+  $('bxp').title = 'Experiencia: ' + yo.xp.toLocaleString('es', { useGrouping: 'always' }) + ' / ' + (yo.xpSig || 0).toLocaleString('es', { useGrouping: 'always' }) + ' (' + pxp + '%)';
   const q = MISIONES[yo.mis ? yo.mis.i : 0];
   const hm = $('h-mision');
   if (instancia && MAZMORRAS[instancia.id]) {
@@ -3670,9 +3670,9 @@ function cajaTareas() {
   if (!T) return '';
   const fila = t => `<div class="fila" style="${t.ok ? 'color:var(--ok)' : ''}"><span>${t.ok ? '✓' : '•'} ${esc(t.txt)}</span><span>${t.p}/${t.n}</span></div>`;
   return '<div class="mis-caja"><b>Misiones del día</b>' + T.dia.l.map(fila).join('') +
-    `<p style="font-size:12px;margin-top:6px">Cada una: +${T.premio.xp.toLocaleString('es')} XP y +${T.premio.oro.toLocaleString('es')} oro. Las 3: ${T.dia.bono ? '✓ bono cobrado' : 'objeto raro + pociones y escudos'}. Se renuevan cada día.</p></div>` +
+    `<p style="font-size:12px;margin-top:6px">Cada una: +${T.premio.xp.toLocaleString('es', { useGrouping: 'always' })} XP y +${T.premio.oro.toLocaleString('es', { useGrouping: 'always' })} oro. Las 3: ${T.dia.bono ? '✓ bono cobrado' : 'objeto raro + pociones y escudos'}. Se renuevan cada día.</p></div>` +
     '<div class="mis-caja"><b>Misiones de la semana</b>' + T.sem.l.map(fila).join('') +
-    `<p style="font-size:12px;margin-top:6px">Cada una: +${T.premioSem.xp.toLocaleString('es')} XP y +${T.premioSem.oro.toLocaleString('es')} oro. Las 2: ${T.sem.bono ? '✓ bono cobrado' : 'objeto épico'}. Se renuevan los lunes.</p></div>`;
+    `<p style="font-size:12px;margin-top:6px">Cada una: +${T.premioSem.xp.toLocaleString('es', { useGrouping: 'always' })} XP y +${T.premioSem.oro.toLocaleString('es', { useGrouping: 'always' })} oro. Las 2: ${T.sem.bono ? '✓ bono cobrado' : 'objeto épico'}. Se renuevan los lunes.</p></div>`;
 }
 // Final de juego: lo que queda por hacer esta semana (y hoy), de un vistazo.
 function cajaSemana() {
@@ -3681,21 +3681,21 @@ function cajaSemana() {
   const hoy = new Date().toISOString().slice(0, 10);
   let h = '<div class="mis-caja"><b>Tu semana</b>';
   const md = yo.mazDia && yo.mazDia.d === hoy ? (yo.mazDia.hechas || []).length : 0;
-  h += fila(md > 0, '🏰 Premio del día de mazmorra (uno por mazmorra)', md + ' hoy');
+  h += fila(md > 0, 'Premio del día de mazmorra (uno por mazmorra)', md + ' hoy');
   const b = yo.boveda || { n: 0 };
-  h += fila(b.n >= BOVEDA_UMBRALES[BOVEDA_UMBRALES.length - 1], '🗝️ Bóveda: mazmorras de la semana', `${b.n}/${BOVEDA_UMBRALES[BOVEDA_UMBRALES.length - 1]} → ${opcionesBoveda(b.n)} de 3`);
+  h += fila(b.n >= BOVEDA_UMBRALES[BOVEDA_UMBRALES.length - 1], 'Bóveda: mazmorras de la semana', `${b.n}/${BOVEDA_UMBRALES[BOVEDA_UMBRALES.length - 1]} → ${opcionesBoveda(b.n)} de 3`);
   if (yo.nivel >= NIVEL_MAX) {
     const ba = yo.banda || { j: [], t: 0 };
     const nj = MAZMORRAS.santuario ? MAZMORRAS.santuario.jefes.length : 4;
-    h += fila(ba.j.length >= nj, '⚔️ Botín de la banda', `${ba.j.length}/${nj}`);
-    if (!(yo.monturas || []).includes('abismo')) h += fila(false, '🦇 Titán para el Murciélago del Abismo', `${ba.t}/${BANDA_MONTURA}`);
+    h += fila(ba.j.length >= nj, 'Botín de la banda', `${ba.j.length}/${nj}`);
+    if (!(yo.monturas || []).includes('abismo')) h += fila(false, 'Titán para el Murciélago del Abismo', `${ba.t}/${BANDA_MONTURA}`);
   }
   if (hermandad && hermandad.gesta) {
     const G = hermandad.gesta, n = GESTA_UMBRALES.filter(u => G.p >= u).length;
-    h += fila(n === GESTA_UMBRALES.length, '🏆 Gesta de tu hermandad', n ? GESTA_NOMBRES[n - 1] : G.p + '/' + GESTA_UMBRALES[0]);
+    h += fila(n === GESTA_UMBRALES.length, 'Gesta de tu hermandad', n ? GESTA_NOMBRES[n - 1] : G.p + '/' + GESTA_UMBRALES[0]);
   }
   const ru = yo.runas || {}, tot = Object.keys(RUNAS).reduce((a, k) => a + (ru[k] || 0), 0), max = Object.keys(RUNAS).length * RUNA_MAX;
-  h += fila(tot >= max, '✨ Runas de la Artesana', tot + '/' + max);
+  h += fila(tot >= max, 'Runas de la Artesana', tot + '/' + max);
   return h + '<p style="font-size:12px;margin-top:6px">La Bóveda, la banda, los afijos y la gesta se renuevan los lunes (UTC).</p></div>';
 }
 // Pase de temporada: progreso y los 20 niveles con su premio (se cobran a mano).
@@ -3740,10 +3740,10 @@ function cajaExpedicion() {
   if (!ex) {
     let dest = 'bosque'; try { dest = localStorage.getItem('dq_exped') || 'bosque'; } catch (e) {}
     if (!EXPEDICION.destinos[dest]) dest = 'bosque';
-    h += `<p style="font-size:12px;color:var(--txt2)">${esc(quien)} puede salir a explorar mientras no juegas. Vuelve con oro, experiencia y materiales (el doble de los de su destino)${yo.mascota && MASCOTAS[yo.mascota] ? '; con tu mascota, +15% de oro' : '. Con una mascota (Mercader), +15% de oro'}.</p>`;
+    h += `<p style="font-size:12px;color:var(--txt2)">${esc(quien)} explora mientras no juegas y vuelve con oro, experiencia y el doble de materiales de su destino${yo.mascota && MASCOTAS[yo.mascota] ? '; con tu mascota, +15% de oro' : '. Con una mascota (Mercader), +15% de oro'}.</p>`;
     h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">' + Object.entries(EXPEDICION.destinos).map(([id, d]) => `<button class="btn ${id === dest ? '' : 'sec'}" data-exdest="${id}" style="flex:1;min-width:80px;padding:6px;white-space:normal;line-height:1.25"><img src="${A}items/equipo/${MATERIALES[d.mat].icono}.png" alt="" style="width:16px;height:16px;image-rendering:pixelated;vertical-align:-3px;margin-right:4px">${esc(d.nombre)}<br><small>×${d.mat === 'pescado' ? 3 : 2} ${esc(MATERIALES[d.mat].nombre)}</small></button>`).join('') + '</div>';
     h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">';
-    for (const hh of EXPEDICION.horas) { const pr = premioExpedicion(hh, yo.nivel, dest); if (yo.mascota && MASCOTAS[yo.mascota]) pr.oro = Math.round(pr.oro * 1.15); h += `<button class="btn sec" data-exped="${hh}" data-d="${dest}" style="flex:1;min-width:90px">${hh} h<br><small>🪙 ${pr.oro.toLocaleString('es')}</small></button>`; }
+    for (const hh of EXPEDICION.horas) { const pr = premioExpedicion(hh, yo.nivel, dest); if (yo.mascota && MASCOTAS[yo.mascota]) pr.oro = Math.round(pr.oro * 1.15); h += `<button class="btn sec" data-exped="${hh}" data-d="${dest}" style="flex:1;min-width:90px">${hh} h<br><small>🪙 ${pr.oro.toLocaleString('es', { useGrouping: 'always' })}</small></button>`; }
     h += '</div>';
   } else {
     const ms = ex.fin - Date.now();
@@ -3876,7 +3876,7 @@ function pintarObjetivo() {
     ponCss($('o-nombre'), 'color', colorNivel(o.nv));
     ponTxt($('o-nivel'), def.jefe ? '☠' : String(o.nv));
     ponTxt($('o-tipo'), def.jefe ? 'Jefe' : 'Nv ' + o.nv);
-    pintarBarra($('ohp'), o.hp / o.mx, Math.max(0, o.hp).toLocaleString('es') + '/' + o.mx.toLocaleString('es'));
+    pintarBarra($('ohp'), o.hp / o.mx, Math.max(0, o.hp).toLocaleString('es', { useGrouping: 'always' }) + '/' + o.mx.toLocaleString('es', { useGrouping: 'always' }));
     ponCss($('orec'), 'display', 'none');
     const cm = castMon.get(o.id);
     ponCss($('ocast'), 'display', cm ? 'block' : 'none');
@@ -3983,7 +3983,7 @@ function tarjeta(ico, nombre, desc, derecha) {
 function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 function pintarTienda() {
   if (!yo) return;
-  $('t-oro').textContent = yo.oro.toLocaleString('es');
+  $('t-oro').textContent = yo.oro.toLocaleString('es', { useGrouping: 'always' });
   const L = $('tienda-lista');
   if (tabTienda === 'premium') { L.innerHTML = htmlPremium(); conectarPremium(L); return; }
   let h = '';
@@ -3994,7 +3994,7 @@ function pintarTienda() {
       const ico = `<img src="${A}armas/${d.icono}_item.png" style="${id !== 'katana' ? 'filter:drop-shadow(0 0 4px ' + d.color + ')' : ''}">`;
       const desc = 'Daño ×' + multForja(n).toFixed(2) + (n < FORJA_MAX ? ' → ×' + multForja(n + 1).toFixed(2) : ' · máximo');
       const acc = n >= FORJA_MAX ? '<span class="precio" style="color:var(--ok)">✓ +' + FORJA_MAX + '</span>'
-        : `<span class="precio">🪙 ${costoForja(n).toLocaleString('es')}</span><button class="btn" data-comprar="forja" data-id="${id}" ${yo.oro < costoForja(n) ? 'disabled' : ''}>Mejorar a +${n + 1}</button>`;
+        : `<span class="precio">🪙 ${costoForja(n).toLocaleString('es', { useGrouping: 'always' })}</span><button class="btn" data-comprar="forja" data-id="${id}" ${yo.oro < costoForja(n) ? 'disabled' : ''}>Mejorar a +${n + 1}</button>`;
       h += tarjeta(ico, d.nombre + ' +' + n, desc, acc);
     }
     h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Cada mejora sale siempre bien: +7% de daño por nivel, hasta +' + FORJA_MAX + '. Compra más armas en la pestaña «Armas» para forjarlas también.</p>';
@@ -4005,8 +4005,8 @@ function pintarTienda() {
       const muestra = tn.color === 'arcoiris' ? 'background:linear-gradient(90deg,#f43f5e,#facc15,#34d399,#38bdf8,#c084fc)' : 'background:' + tn.color;
       const ico = `<div style="width:40px;height:40px;border-radius:8px;${muestra}"></div>`;
       const acc = tiene ? (yo.tinte === id ? '<span class="precio" style="color:var(--ok)">✓ En uso</span>' : `<button class="btn sec" data-comprar="tinte" data-id="${id}">Usar</button>`)
-        : yo.nivel < tn.nv ? `<span class="precio" style="color:var(--warn)">Nv ${tn.nv}</span><span class="precio">🪙 ${tn.precio.toLocaleString('es')}</span>`
-        : `<span class="precio">🪙 ${tn.precio.toLocaleString('es')}</span><button class="btn" data-comprar="tinte" data-id="${id}" ${yo.oro < tn.precio ? 'disabled' : ''}>Comprar</button>`;
+        : yo.nivel < tn.nv ? `<span class="precio" style="color:var(--warn)">Nv ${tn.nv}</span><span class="precio">🪙 ${tn.precio.toLocaleString('es', { useGrouping: 'always' })}</span>`
+        : `<span class="precio">🪙 ${tn.precio.toLocaleString('es', { useGrouping: 'always' })}</span><button class="btn" data-comprar="tinte" data-id="${id}" ${yo.oro < tn.precio ? 'disabled' : ''}>Comprar</button>`;
       h += tarjeta(ico, `<span style="color:${tn.color === 'arcoiris' ? '#facc15' : tn.color}">${esc(tn.nombre)}</span>`, 'Color de tu nombre sobre tu duende: lo ven todos. Solo estética.', acc);
     }
     if (yo.tinte) h += `<button class="btn sec" data-comprar="tinte" data-id="" style="width:100%;margin-top:6px">Volver al color de mi clase</button>`;
@@ -4016,8 +4016,8 @@ function pintarTienda() {
       if ((ma.amb || ma.pase || ma.pesca) && !tiene) continue;   // las del ambulante, en su pestaña; la del pase no se vende
       const ico = `<canvas data-hoja="${ma.hoja}" data-tinte="${ma.tinte || ''}" width="52" height="52"></canvas>`;
       const acc = tiene ? (yo.mascota === id ? '<span class="precio" style="color:var(--ok)">✓ Te acompaña</span>' : `<button class="btn sec" data-comprar="mascota" data-id="${id}">Llevar</button>`)
-        : yo.nivel < ma.nv ? `<span class="precio" style="color:var(--warn)">Nv ${ma.nv}</span><span class="precio">🪙 ${ma.precio.toLocaleString('es')}</span>`
-        : `<span class="precio">🪙 ${ma.precio.toLocaleString('es')}</span><button class="btn" data-comprar="mascota" data-id="${id}" ${yo.oro < ma.precio ? 'disabled' : ''}>Comprar</button>`;
+        : yo.nivel < ma.nv ? `<span class="precio" style="color:var(--warn)">Nv ${ma.nv}</span><span class="precio">🪙 ${ma.precio.toLocaleString('es', { useGrouping: 'always' })}</span>`
+        : `<span class="precio">🪙 ${ma.precio.toLocaleString('es', { useGrouping: 'always' })}</span><button class="btn" data-comprar="mascota" data-id="${id}" ${yo.oro < ma.precio ? 'disabled' : ''}>Comprar</button>`;
       h += tarjeta(ico, esc(ma.nombre), 'Te sigue a todas partes y la ven todos. Solo estética: no da nada.', acc);
     }
     if (yo.mascota) h += `<button class="btn sec" data-comprar="mascota" data-id="" style="width:100%;margin-top:6px">Guardar a mi mascota</button>`;
@@ -4028,8 +4028,8 @@ function pintarTienda() {
     const fila = (k, id, d, ico, extra) => {
       const tiene = ((k === 'tinte' ? yo.tintes : yo.mascotas) || []).includes(id);
       const acc = tiene ? '<span class="precio" style="color:var(--ok)">✓ Ya es tuyo</span>'
-        : yo.nivel < d.nv ? `<span class="precio" style="color:var(--warn)">Nv ${d.nv}</span><span class="precio">🪙 ${d.precio.toLocaleString('es')}</span>`
-        : `<span class="precio">🪙 ${d.precio.toLocaleString('es')}</span><button class="btn" data-comprar="${k}" data-id="${id}" ${!activo || yo.oro < d.precio ? 'disabled' : ''}>${activo ? 'Comprar' : 'El viernes'}</button>`;
+        : yo.nivel < d.nv ? `<span class="precio" style="color:var(--warn)">Nv ${d.nv}</span><span class="precio">🪙 ${d.precio.toLocaleString('es', { useGrouping: 'always' })}</span>`
+        : `<span class="precio">🪙 ${d.precio.toLocaleString('es', { useGrouping: 'always' })}</span><button class="btn" data-comprar="${k}" data-id="${id}" ${!activo || yo.oro < d.precio ? 'disabled' : ''}>${activo ? 'Comprar' : 'El viernes'}</button>`;
       h += tarjeta(ico, extra, k === 'tinte' ? 'Color de nombre exclusivo del ambulante.' : 'Mascota exclusiva del ambulante.', acc);
     };
     for (const id of of.tintes) { const tn = TINTES[id]; fila('tinte', id, tn, `<div style="width:40px;height:40px;border-radius:8px;background:${tn.color}"></div>`, `<span style="color:${tn.color}">${esc(tn.nombre)}</span>`); }
@@ -4041,8 +4041,8 @@ function pintarTienda() {
       const acc = tiene ? (yo.montura === id ? '<span class="precio" style="color:var(--ok)">✓ En uso</span>' : `<button class="btn sec" data-comprar="montura" data-id="${id}">Usar</button>`)
         : mo.banda ? `<span class="precio" style="color:var(--txt2)">⚔️ Banda ${(yo.banda || {}).t || 0}/${BANDA_MONTURA}</span>`
         : mo.torre ? `<span class="precio" style="color:var(--txt2)">🗼 Piso ${yo.torreMax || 0}/${TORRE.montura}</span>`
-        : yo.nivel < mo.nv ? `<span class="precio" style="color:var(--warn)">Nv ${mo.nv}</span><span class="precio">🪙 ${mo.precio.toLocaleString('es')}</span>`
-        : `<span class="precio">🪙 ${mo.precio.toLocaleString('es')}</span><button class="btn" data-comprar="montura" data-id="${id}" ${yo.oro < mo.precio ? 'disabled' : ''}>Comprar</button>`;
+        : yo.nivel < mo.nv ? `<span class="precio" style="color:var(--warn)">Nv ${mo.nv}</span><span class="precio">🪙 ${mo.precio.toLocaleString('es', { useGrouping: 'always' })}</span>`
+        : `<span class="precio">🪙 ${mo.precio.toLocaleString('es', { useGrouping: 'always' })}</span><button class="btn" data-comprar="montura" data-id="${id}" ${yo.oro < mo.precio ? 'disabled' : ''}>Comprar</button>`;
       h += tarjeta(ico, esc(mo.nombre), `+${Math.round((mo.vel - 1) * 100)}% de velocidad · ` + (mo.banda ? `no se vende: vence al Titán de la banda en ${BANDA_MONTURA} semanas distintas` : mo.torre ? `no se vende: supera el piso ${TORRE.montura} de la Torre del Duende` : `desde Nv ${mo.nv}`), acc);
     }
     h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Monta con la tecla Y o el botón 🐎 (1,5 s, fuera de combate). No se puede montar en mazmorras ni en el Coliseo.</p>';
@@ -4061,7 +4061,7 @@ function pintarTienda() {
       let acc;
       if (tiene.includes(id)) acc = puesto === id ? '<span class="precio" style="color:var(--ok)">✓ Equipado</span>' : `<button class="btn sec" data-equipar="${tabTienda}" data-id="${id}">Equipar</button>`;
       else {
-        acc = `<span class="precio">🪙 ${d.precio.toLocaleString('es')}</span><button class="btn" data-comprar="${tabTienda}" data-id="${id}" ${yo.oro < d.precio ? 'disabled' : ''}>Comprar</button>`;
+        acc = `<span class="precio">🪙 ${d.precio.toLocaleString('es', { useGrouping: 'always' })}</span><button class="btn" data-comprar="${tabTienda}" data-id="${id}" ${yo.oro < d.precio ? 'disabled' : ''}>Comprar</button>`;
         // Skins: tambien con dinero; el pago lo revisa El Duende y la entrega a mano.
         if (tabTienda === 'skin' && d.usd && yo.p2e && yo.p2e.cuenta) acc += (TG && !forzarInvitado)
           ? `<button class="btn sec" data-premium="skin_${id}" data-metodo="stars">⭐ ${estrellasDe(d.usd)}</button>`
@@ -4134,26 +4134,26 @@ function abrirRanking() { abrir('m-rank'); $('rank-lista').innerHTML = '<p class
 // lunes, asi un jugador nuevo tambien puede ganar) y el de siempre (nivel).
 function pintarRanking(r, sem, finSem, des, dsem, af, duel, elo, torre, tmax, herm) {
   const med = ['🥇', '🥈', '🥉'];
-  let h = '<p style="font-size:12px;color:var(--txt);font-weight:600;margin-bottom:4px">🏆 Esta semana (experiencia ganada)</p>';
+  let h = '<p style="font-size:12px;color:var(--txt);font-weight:600;margin-bottom:4px">Esta semana (experiencia ganada)</p>';
   if (finSem) { const ms = finSem - Date.now(); const d = Math.floor(ms / 86400000), hh = Math.floor(ms / 3600000) % 24; h += `<p style="font-size:12px;color:var(--txt2);margin-bottom:6px">Termina en ${d} d ${hh} h. Premios: 🥇 oro ×400 tu nivel, objeto épico y título · 🥈 ×200 · 🥉 ×100.</p>`; }
-  h += (sem && sem.length) ? sem.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>${x.xp.toLocaleString('es')} XP · Nv ${x.lv}</span></div>`).join('') : '<p class="centro">Nadie ha cazado aún esta semana.</p>';
-  h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">⭐ Los más fuertes (nivel)</p>';
+  h += (sem && sem.length) ? sem.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>${x.xp.toLocaleString('es', { useGrouping: 'always' })} XP · Nv ${x.lv}</span></div>`).join('') : '<p class="centro">Nadie ha cazado aún esta semana.</p>';
+  h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">Los más fuertes (nivel)</p>';
   h += r.length ? r.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>Nv ${x.lv} · ${x.k} caz.</span></div>`).join('') : '<p class="centro">Todavía nadie sube de nivel.</p>';
   // Desafios de la semana (con sus afijos) y de siempre: el mejor +k de cada uno.
   h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">⚡ Desafíos de esta semana</p>';
-  if (af && af.length) h += `<p style="font-size:12px;color:var(--txt2);margin-bottom:6px">Afijos: ${af.map(a => AFIJOS[a] ? AFIJOS[a].emoji + ' ' + AFIJOS[a].nombre : '').join(' · ')}. Premios desde el +${DES_SEM_MIN}: 🥇 ${premioDesSem(0).toLocaleString('es')} oro y título · 🥈 ${premioDesSem(1).toLocaleString('es')} · 🥉 ${premioDesSem(2).toLocaleString('es')}.</p>`;
+  if (af && af.length) h += `<p style="font-size:12px;color:var(--txt2);margin-bottom:6px">Afijos: ${af.map(a => AFIJOS[a] ? AFIJOS[a].emoji + ' ' + AFIJOS[a].nombre : '').join(' · ')}. Premios desde el +${DES_SEM_MIN}: 🥇 ${premioDesSem(0).toLocaleString('es', { useGrouping: 'always' })} oro y título · 🥈 ${premioDesSem(1).toLocaleString('es', { useGrouping: 'always' })} · 🥉 ${premioDesSem(2).toLocaleString('es', { useGrouping: 'always' })}.</p>`;
   h += (dsem && dsem.length) ? dsem.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>⚡ +${x.k}</span></div>`).join('') : '<p class="centro" style="font-size:12px">Nadie ha vencido un Desafío esta semana.</p>';
   h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">⚡ Desafíos de mazmorra (mejor +k de siempre)</p>';
   h += (des && des.length) ? des.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>⚡ +${x.k}</span></div>`).join('') : '<p class="centro" style="font-size:12px">Nadie ha vencido aún un Desafío. Se abren a nivel 60 en el portal de mazmorras.</p>';
   // Torre del Duende: mejor piso de la semana.
-  h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">🗼 Torre del Duende (esta semana)' + (tmax ? ' · tu marca: piso ' + tmax : '') + '</p>';
-  h += `<p style="font-size:12px;color:var(--txt2);margin-bottom:4px">Premios el lunes (desde el piso ${TORRE.semMin}): 🥇 ${premioTorreSem(0).toLocaleString('es')} oro y título Rey de la Torre · 🥈 ${premioTorreSem(1).toLocaleString('es')} · 🥉 ${premioTorreSem(2).toLocaleString('es')}.</p>`;
+  h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">Torre del Duende (esta semana)' + (tmax ? ' · tu marca: piso ' + tmax : '') + '</p>';
+  h += `<p style="font-size:12px;color:var(--txt2);margin-bottom:4px">Premios el lunes (desde el piso ${TORRE.semMin}): 🥇 ${premioTorreSem(0).toLocaleString('es', { useGrouping: 'always' })} oro y título Rey de la Torre · 🥈 ${premioTorreSem(1).toLocaleString('es', { useGrouping: 'always' })} · 🥉 ${premioTorreSem(2).toLocaleString('es', { useGrouping: 'always' })}.</p>`;
   h += (torre && torre.length) ? torre.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>piso ${x.p}</span></div>`).join('') : '<p class="centro" style="font-size:12px">Nadie ha subido aún esta semana. Entra por el portal de mazmorras del pueblo (Nv 10+).</p>';
   // Hermandades: puntos de la gesta de esta semana.
-  h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">🛡️ Hermandades (gesta de esta semana)</p>';
-  h += (herm && herm.length) ? herm.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>${x.p.toLocaleString('es')} pts · ${x.m} miembro${x.m === 1 ? '' : 's'}</span></div>`).join('') : '<p class="centro" style="font-size:12px">Ninguna hermandad ha sumado aún esta semana. Fúndala desde Social (Nv 10).</p>';
+  h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">Hermandades (gesta de esta semana)</p>';
+  h += (herm && herm.length) ? herm.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>${x.p.toLocaleString('es', { useGrouping: 'always' })} pts · ${x.m} miembro${x.m === 1 ? '' : 's'}</span></div>`).join('') : '<p class="centro" style="font-size:12px">Ninguna hermandad ha sumado aún esta semana. Fúndala desde Social (Nv 10).</p>';
   // Duelos (Elo): se cuenta con cuenta y desde Nv 10; 3 al dia por pareja.
-  h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">⚔️ Duelistas (Elo)' + (elo ? ' · tu Elo: ' + elo : '') + '</p>';
+  h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">Duelistas (Elo)' + (elo ? ' · tu Elo: ' + elo : '') + '</p>';
   h += (duel && duel.length) ? duel.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>${x.e} · ${x.g} victorias</span></div>`).join('') : '<p class="centro" style="font-size:12px">Nadie ha ganado aún un duelo que cuente. Reta a alguien desde su marco (⚔️): con cuenta y desde Nv 10.</p>';
   $('rank-lista').innerHTML = h;
 }

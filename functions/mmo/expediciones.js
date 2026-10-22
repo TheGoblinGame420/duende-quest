@@ -34,7 +34,7 @@ export const Expediciones = {
       if (this.puntoPase) this.puntoPase(s, PASE.puntos.exped);
       s.sucio = true;
       const mats = Object.entries(pr.mat).map(([k, n]) => `${n} ${MATERIALES[k].nombre}`).join(', ');
-      this.enviar(s, { t: 'toast', ok: true, m: `🧭 Volvió la expedición: +${pr.oro.toLocaleString('es')} oro${pr.xp ? ', +' + pr.xp.toLocaleString('es') + ' XP' : ''} y ${mats}.` });
+      this.enviar(s, { t: 'toast', ok: true, m: `🧭 Volvió la expedición: +${pr.oro.toLocaleString('es', { useGrouping: 'always' })} oro${pr.xp ? ', +' + pr.xp.toLocaleString('es', { useGrouping: 'always' }) + ' XP' : ''} y ${mats}.` });
       this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });   // vuelve la mascota
       this.revisarLogros(s);
       this.actualizarYo(s);

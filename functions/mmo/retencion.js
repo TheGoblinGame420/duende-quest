@@ -45,7 +45,7 @@ const NIVEL_MAZMORRA = 6;           // la primera mazmorra (Madriguera Goblin) p
 
 export const diaNum = (t = Date.now()) => Math.floor(t / DIA_MS);
 export const diaISO = n => new Date(n * DIA_MS).toISOString().slice(0, 10);
-const fmt = n => Math.round(n).toLocaleString('es');
+const fmt = n => Math.round(n).toLocaleString('es', { useGrouping: 'always' });
 const pct = (x, base) => base ? Math.round(x / base * 1000) / 10 : null;
 const vacio = () => ({ n: 0, a: 0, ses: 0, min: 0, r1: 0, r7: 0, r30: 0 });
 

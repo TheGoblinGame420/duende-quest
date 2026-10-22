@@ -26,7 +26,7 @@ export const Combate = {
     if (s.muerto || typeof m.id !== 'string' || !Object.hasOwn(CLASES, m.id) || c.clase === m.id) return;
     if (c.clase && (Date.now() - (s.combateT || 0) < 5000 || s.cast)) return this.no(s, 'No puedes cambiar de clase en pleno combate.');
     const costo = c.clase ? costoCambioClase(c.nivel) : 0;
-    if (c.oro < costo) return this.enviar(s, { t: 'toast', m: `Cambiar de clase a tu nivel cuesta ${costo.toLocaleString('es')} oro.` });
+    if (c.oro < costo) return this.enviar(s, { t: 'toast', m: `Cambiar de clase a tu nivel cuesta ${costo.toLocaleString('es', { useGrouping: 'always' })} oro.` });
     c.oro -= costo;
     c.clase = m.id;
     c.espec = null;
@@ -39,7 +39,7 @@ export const Combate = {
     this.recursoInicial(s);
     s.sucio = true;
     this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });
-    this.enviar(s, { t: 'toast', m: `⚔️ ¡Ahora eres ${CLASES[m.id].nombre}! Tus habilidades están en la barra de acción (teclas 1-8).`, ok: true });
+    this.enviar(s, { t: 'toast', m: `⚔️ ¡Ahora eres ${CLASES[m.id].nombre}! `, ok: true });
     this.actualizarYo(s);
     this.guardar(s);
   },

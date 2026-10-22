@@ -493,7 +493,7 @@ export class MmoWorld {
         this.enviar(s, { t: 'toast', m: `${prox.emoji} Próximo evento: ${prox.nombre}, desde el ${fecha} (en ${dias} día${dias > 1 ? 's' : ''}). Los monstruos soltarán ${prox.cosas} y habrá dos títulos.` });
       }
     }
-    if (descansado > 0) this.enviar(s, { t: 'toast', m: `😴 Descansaste: tus próximas cazas dan el DOBLE de experiencia (+${c.descanso.toLocaleString('es')} XP de descanso).`, ok: true });
+    if (descansado > 0) this.enviar(s, { t: 'toast', m: `😴 Descansaste: tus próximas cazas dan el DOBLE de experiencia (+${c.descanso.toLocaleString('es', { useGrouping: 'always' })} XP de descanso).`, ok: true });
     this.enviar(s, this.estadoMundial());
     this.entrarMapa(s, c.mapa, s.x, true);
     this.reengancharGrupo(s);
@@ -540,7 +540,7 @@ export class MmoWorld {
     const c = s.c;
     if (!c.tal || !Object.keys(c.tal).length) return;
     const costo = costoReinicioTalentos(c.nivel);
-    if (c.oro < costo) return this.no(s, `Reiniciar los talentos cuesta ${costo.toLocaleString('es')} oro.`);
+    if (c.oro < costo) return this.no(s, `Reiniciar los talentos cuesta ${costo.toLocaleString('es', { useGrouping: 'always' })} oro.`);
     c.oro -= costo;
     c.tal = {};
     this.recalcular(s);
@@ -642,7 +642,7 @@ export class MmoWorld {
     if (!el.cuenta || !el.nivel) return no(`Para retirar necesitas una cuenta de Telegram o web y nivel ${MTON_NIVEL_MIN}.`);
     if (!c.wallet) return no('Primero conecta tu wallet TON.');
     if (Date.now() - c.wallet.desde < WALLET_ESPERA_MS) return no('Tu wallet es nueva: podrás retirar cuando cumpla ' + (WALLET_ESPERA_MS / 3600000) + ' horas conectada.');
-    if (c.mton < RETIRO_MIN_MTON) return no(`El retiro mínimo es ${RETIRO_MIN_MTON.toLocaleString('es')} mTON (${RETIRO_MIN_MTON / MTON_POR_TON} TON).`);
+    if (c.mton < RETIRO_MIN_MTON) return no(`El retiro mínimo es ${RETIRO_MIN_MTON.toLocaleString('es', { useGrouping: 'always' })} mTON (${RETIRO_MIN_MTON / MTON_POR_TON} TON).`);
     if (this.retiros.some(x => x.uid === c.uid && x.estado === 'pendiente')) return no('Ya tienes un retiro pendiente de aprobación.');
     const ultimo = this.retiros.filter(x => x.uid === c.uid && x.estado === 'pagado').map(x => x.creado).sort((a, b) => b - a)[0];
     if (ultimo && Date.now() - ultimo < RETIRO_CADA_MS) {
@@ -895,7 +895,7 @@ export class MmoWorld {
     let notaSkin = '';
     if (pq.skin && SKINS[pq.skin]) {
       c.skins = c.skins || ['comun'];
-      if (c.skins.includes(pq.skin)) { c.oro += SKINS[pq.skin].precio; notaSkin = ` Ya la tenías: te dimos ${SKINS[pq.skin].precio.toLocaleString('es')} de oro.`; }
+      if (c.skins.includes(pq.skin)) { c.oro += SKINS[pq.skin].precio; notaSkin = ` Ya la tenías: te dimos ${SKINS[pq.skin].precio.toLocaleString('es', { useGrouping: 'always' })} de oro.`; }
       else { c.skins.push(pq.skin); c.skin = pq.skin; notaSkin = ' Ya la llevas puesta.'; }
       if (s) { s.st = this.stats(c); this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) }); this.actualizarYo(s); }
     }
@@ -1079,7 +1079,7 @@ export class MmoWorld {
     // barata de la bolsa (son de coleccion; perderlas dolia mucho).
     if (c.bolsa.length >= BOLSA_MAX && (it.cj || it.banda)) {
       const i = c.bolsa.reduce((m, x, k) => (!x.cj && !x.banda && (m < 0 || precioVenta(x) < precioVenta(c.bolsa[m])) ? k : m), -1);
-      if (i >= 0) { const v0 = precioVenta(c.bolsa[i]); c.oro += v0; c.bolsa.splice(i, 1); if (!silencioso) this.enviar(s, { t: 'toast', m: `🎒 Bolsa llena: vendí lo más barato (+${v0} oro) para guardar tu pieza de conjunto.` }); }
+      if (i >= 0) { const v0 = precioVenta(c.bolsa[i]); c.oro += v0; c.bolsa.splice(i, 1); if (!silencioso) this.enviar(s, { t: 'toast', m: `🎒 Bolsa llena: se vendió tu objeto más barato (+${v0} oro) para guardar tu pieza de conjunto.` }); }
     }
     if (c.bolsa.length >= BOLSA_MAX) {
       const v = precioVenta(it);
@@ -1495,7 +1495,7 @@ export class MmoWorld {
       s.st = this.stats(c);
       s.hp = s.st.maxHp;
       const nueva = HABS.find(h => h.clase === c.clase && h.nv === c.nivel);
-      if (nueva) this.enviar(s, { t: 'toast', m: `✨ ¡Nueva habilidad: ${nueva.nombre}! Ya está en tu barra de acción.`, ok: true, hab: nueva.id });
+      if (nueva) this.enviar(s, { t: 'toast', m: `✨ ¡Nueva habilidad: ${nueva.nombre}! `, ok: true, hab: nueva.id });
       this.revisarLogros(s);
       this.hermSubioNivel(s);
       this.revisarAmigo(s).catch(e => console.error('[MMO amigo]', e));
@@ -1573,7 +1573,7 @@ export class MmoWorld {
       if (i >= 0) {
         const pr = premioBestiario(MONSTRUOS[o.k].nivel, i);
         c.oro += pr;
-        this.enviar(s, { t: 'toast', m: `📖 Bestiario: ${n} × ${MONSTRUOS[o.k].nombre} · +${pr.toLocaleString('es')} oro`, ok: true });
+        this.enviar(s, { t: 'toast', m: `📖 Bestiario: ${n} × ${MONSTRUOS[o.k].nombre} · +${pr.toLocaleString('es', { useGrouping: 'always' })} oro`, ok: true });
       }
     }
     // Misiones diarias y semanales (solo quien peleo de verdad).
@@ -1601,7 +1601,7 @@ export class MmoWorld {
     if (s.k !== 'pueblo' || !npc || Math.abs(s.x - npc.x) > 200) return this.enviar(s, { t: 'toast', m: 'Habla con el Guardia Tito en el pueblo.' });
     if (m && m.diaria) {
       const d = this.diariaDe(c);
-      if (d.ok) return this.enviar(s, { t: 'toast', m: 'Ya cobraste la de hoy. ¡Vuelve mañana!' });
+      if (d.ok) return this.enviar(s, { t: 'toast', m: 'Ya cobraste la caza de hoy.' });
       if (d.p < DIARIA.n) return this.enviar(s, { t: 'toast', m: `Te faltan ${DIARIA.n - d.p} monstruos para la caza del día.` });
       const pr = premioDiaria(c.nivel);
       d.ok = true;
@@ -1616,7 +1616,7 @@ export class MmoWorld {
       return;
     }
     const q = MISIONES[c.mis.i];
-    if (!q) return this.enviar(s, { t: 'toast', m: 'Ya completaste todas las misiones. ¡Eres una leyenda del Pueblo Duende!' });
+    if (!q) return this.enviar(s, { t: 'toast', m: 'Ya completaste todas las misiones. Has completado todas las misiones del Guardia Tito.' });
     if (c.mis.p < q.n) return this.enviar(s, { t: 'toast', m: `Todavía te faltan ${q.n - c.mis.p} para "${q.nombre}".` });
     c.oro += q.oro;
     for (const k in (q.pw || {})) c.pw[k] = Math.min(99, (c.pw[k] || 0) + q.pw[k]);
@@ -1918,7 +1918,7 @@ export class MmoWorld {
       if (s) { this.actualizarYo(s); this.revisarLogros(s); await this.guardar(s); }
       else await this.state.storage.put('c:' + uid, c);
       nombres.push(['🥇', '🥈', '🥉'][i] + ' ' + f.n + ' (+' + f.k + ')');
-      const txt = `⚡ ¡Quedaste ${['1º', '2º', '3º'][i]} en el ranking semanal de Desafíos de DUENDE QUEST ONLINE (+${f.k})! Premio: +${oro.toLocaleString('es')} oro${i === 0 ? ' y el título de Maestro de Desafíos' : ''}. Esta semana cambian los afijos.`;
+      const txt = `⚡ ¡Quedaste ${['1º', '2º', '3º'][i]} en el ranking semanal de Desafíos de DUENDE QUEST ONLINE (+${f.k})! Premio: +${oro.toLocaleString('es', { useGrouping: 'always' })} oro${i === 0 ? ' y el título de Maestro de Desafíos' : ''}. Esta semana cambian los afijos.`;
       if (s) this.enviar(s, { t: 'toast', m: txt, ok: true });
       if (await this.quiereAvisos(uid)) { try { const env = getEnv({ env: this.env }); await tg(env.BOT_TOKEN, 'sendMessage', { chat_id: uid.slice(3), text: txt }); } catch (e) {} }
     }
@@ -2002,7 +2002,7 @@ export class MmoWorld {
       if (s) { this.actualizarYo(s); this.revisarLogros(s); await this.guardar(s); }
       else await this.state.storage.put('c:' + uid, c);
       nombres.push(['🥇', '🥈', '🥉'][i] + ' ' + f.n);
-      const txt = `🏆 ¡Quedaste ${['1º', '2º', '3º'][i]} en el ranking semanal de DUENDE QUEST ONLINE! Premio: +${oro.toLocaleString('es')} oro y ${RAREZAS[it.r].nombre.toLowerCase()}: ${nombreItem(it)}${i === 0 ? ' y el título de Campeón Semanal' : ''}. Ya empezó la nueva semana: ¡a defenderlo!`;
+      const txt = `🏆 ¡Quedaste ${['1º', '2º', '3º'][i]} en el ranking semanal de DUENDE QUEST ONLINE! Premio: +${oro.toLocaleString('es', { useGrouping: 'always' })} oro y ${RAREZAS[it.r].nombre.toLowerCase()}: ${nombreItem(it)}${i === 0 ? ' y el título de Campeón Semanal' : ''}. Ya empezó la nueva semana: ¡a defenderlo!`;
       // Por Telegram solo a quien no pidio dejar de recibir avisos.
       if (s) this.enviar(s, { t: 'toast', m: txt, ok: true });
       if (await this.quiereAvisos(uid)) { try { const env = getEnv({ env: this.env }); await tg(env.BOT_TOKEN, 'sendMessage', { chat_id: uid.slice(3), text: txt }); } catch (e) {} }
@@ -2030,7 +2030,7 @@ export class MmoWorld {
       this.onT = ahora;
       // Aviso a todos al empezar y al acabar la Hora Feliz.
       const hf = horaFelizActiva(ahora);
-      if (this.hfAntes !== undefined && hf !== this.hfAntes) this.aTodos({ t: 'aviso', m: hf ? '⚡ ¡Empieza la Hora Feliz! Durante una hora, +50% de experiencia por caza.' : '⚡ Terminó la Hora Feliz. Mañana a la misma hora, otra.' });
+      if (this.hfAntes !== undefined && hf !== this.hfAntes) this.aTodos({ t: 'aviso', m: hf ? '⚡ ¡Empieza la Hora Feliz! Durante una hora, +50% de experiencia por caza.' : '⚡ Terminó la Hora Feliz.' });
       this.hfAntes = hf;
       // Una pestaña abierta sin jugar mantiene vivo el objeto (y cobra tiempo
       // de CPU del cupo diario) todo el dia: fuera tras 10 min sin actividad.

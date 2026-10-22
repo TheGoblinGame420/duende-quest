@@ -73,7 +73,7 @@ export const Hermandades = {
     const c = s.c;
     if (c.herm) return this.no(s, 'Ya estás en una hermandad.');
     if (c.nivel < HERM_NIVEL) return this.no(s, `Necesitas nivel ${HERM_NIVEL} para fundar una hermandad.`);
-    if (c.oro < HERM_COSTO) return this.no(s, `Fundar una hermandad cuesta ${HERM_COSTO.toLocaleString('es')} oro.`);
+    if (c.oro < HERM_COSTO) return this.no(s, `Fundar una hermandad cuesta ${HERM_COSTO.toLocaleString('es', { useGrouping: 'always' })} oro.`);
     const nombre = limpiarNombreHerm(m.nombre);
     if (!nombre) return this.no(s, 'El nombre debe tener de 3 a 20 letras o números.');
     const clave = 'hn:' + nombre.toLowerCase();
@@ -279,7 +279,7 @@ export const Hermandades = {
     if (!oro) return;
     c.oro += oro;
     s.sucio = true;
-    this.enviar(s, { t: 'toast', ok: true, m: `🏆 Gesta de <${h.nombre}>: +${oro.toLocaleString('es')} oro.` });
+    this.enviar(s, { t: 'toast', ok: true, m: `🏆 Gesta de <${h.nombre}>: +${oro.toLocaleString('es', { useGrouping: 'always' })} oro.` });
     this.revisarLogros(s);
     this.actualizarYo(s);
   },

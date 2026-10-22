@@ -1720,7 +1720,7 @@ async function pruebasPagoSol() {
     chequear(mundo.buscarPedido(pC.codigo).estado === 'por_verificar' && admin.some(t => t.includes(pC.codigo)), 'pagar después de los 30 min igual llega al dueño');
     // /ventas: lo entregado (las skins King de las pruebas anteriores) y lo pendiente.
     const vt = await interno('ventas');
-    chequear(vt.ok && vt.d7.n >= 1 && vt.d7.sol >= 1 && vt.d7.top.some(x => /Skin King/.test(x.nombre)) && vt.pendientes >= 1, '/ventas resume lo entregado (7 y 30 días, por método y lo más vendido) y lo pendiente');
+    chequear(vt.ok && vt.d7.n >= 1 && vt.d7.sol >= 1 && vt.d7.top.some(x => /Skin Rey/.test(x.nombre)) && vt.pendientes >= 1, '/ventas resume lo entregado (7 y 30 días, por método y lo más vendido) y lo pendiente');
     // Anular libera la firma.
     await mundo.anularPedido({ codigo: pC.codigo, motivo: 'prueba' });
     chequear(!(await state.storage.get('firma:' + '6'.repeat(88))), 'anular un pedido deja libre su firma');
@@ -1772,7 +1772,7 @@ async function pruebasSkinsDinero() {
   try {
     const r = await mundo.entregarPedido({ codigo: 'SKN001' });
     chequear(r.ok && j.c.skins.includes('king') && j.c.skin === 'king', '/entregar le da la skin y se la pone');
-    chequear(j.st.def === mundo.stats(j.c).def && avisosJ.some(t => /Skin King/.test(t)), 'sus poderes se aplican al momento y se le avisa');
+    chequear(j.st.def === mundo.stats(j.c).def && avisosJ.some(t => /Skin Rey/.test(t)), 'sus poderes se aplican al momento y se le avisa');
     // Otra vez la misma (ya la tiene): se le devuelve el precio en oro.
     const oro0 = j.c.oro;
     mundo.pedidos.push({ codigo: 'SKN002', uid: j.c.uid, jugador: j.c.nombre, paquete: 'skin_king', nombre: pq.nombre, usd: pq.usd, metodo: 'sol', creado: Date.now(), estado: 'pagado' });

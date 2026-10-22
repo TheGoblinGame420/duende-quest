@@ -44,7 +44,7 @@ export const Torre = {
     // altos y cobraria cofres de pisos que no subio).
     const d0 = m.desde | 0;
     const desde = d0 > 0 && d0 % 5 === 0 && quienes.every(x => d0 <= atajoTorre(this.torreSem(x.c).max)) ? d0 : 0;
-    if (d0 && !desde && quienes.length > 1) this.enviar(s, { t: 'toast', m: '🗼 El atajo solo vale si todos los del grupo tienen esa marca esta semana: subís desde el piso 1.' });
+    if (d0 && !desde && quienes.length > 1) this.enviar(s, { t: 'toast', m: '🗼 El atajo solo vale si todos los del grupo tienen esa marca esta semana: suben desde el piso 1.' });
     w.torre = { sem: semanaUTC(), piso: desde, nv: Math.min(NIVEL_MAX, Math.max(...quienes.map(x => x.c.nivel))), n: quienes.length, sigEn: ahora + TORRE.pausa, pisoIni: 0, fin: false, vacioDesde: 0 };
     for (const x of quienes) {
       this.entrarMapa(x, 'torre', 700, false, clave);
@@ -150,7 +150,7 @@ export const Torre = {
       c.oro += pr.oro;
       const it = this.darItem(s, this.generarItem(Math.min(NIVEL_MAX, c.nivel), pr.rMin));
       if (this.puntoPase) this.puntoPase(s, PASE.puntos.torre);
-      this.enviar(s, { t: 'toast', ok: true, m: `🎁 Cofre del piso ${p}: +${pr.oro.toLocaleString('es')} oro y ${it && it.r >= 2 ? 'un objeto ÉPICO' : 'un objeto raro'}.` });
+      this.enviar(s, { t: 'toast', ok: true, m: `🎁 Cofre del piso ${p}: +${pr.oro.toLocaleString('es', { useGrouping: 'always' })} oro y ${it && it.r >= 2 ? 'un objeto ÉPICO' : 'un objeto raro'}.` });
     }
     this.enviar(s, { t: 'torre', piso, mejor: t.max });
     this.anotarRankTorre(s, piso);
@@ -194,7 +194,7 @@ export const Torre = {
       if (s) { this.actualizarYo(s); this.revisarLogros(s); await this.guardar(s); }
       else await this.state.storage.put('c:' + uid, c);
       nombres.push(['🥇', '🥈', '🥉'][i] + ' ' + f.n + ' (piso ' + f.p + ')');
-      const txt = `🗼 ¡Quedaste ${['1º', '2º', '3º'][i]} en la Torre del Duende esta semana (piso ${f.p})! Premio: +${oro.toLocaleString('es')} oro${i === 0 ? ' y el título de Rey de la Torre' : ''}. La Torre vuelve a empezar.`;
+      const txt = `🗼 ¡Quedaste ${['1º', '2º', '3º'][i]} en la Torre del Duende esta semana (piso ${f.p})! Premio: +${oro.toLocaleString('es', { useGrouping: 'always' })} oro${i === 0 ? ' y el título de Rey de la Torre' : ''}. La Torre vuelve a empezar.`;
       if (s) this.enviar(s, { t: 'toast', m: txt, ok: true });
       if (uid.startsWith('tg:') && this.quiereAvisos && await this.quiereAvisos(uid)) { try { const env = getEnv({ env: this.env }); await tg(env.BOT_TOKEN, 'sendMessage', { chat_id: uid.slice(3), text: txt }); } catch (e) {} }
     }

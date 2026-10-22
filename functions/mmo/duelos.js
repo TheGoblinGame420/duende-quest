@@ -40,7 +40,7 @@ export const Duelos = {
   retarDuelo(s, m) {
     const t = this.sesiones.get(m.p | 0);
     if (!t || !t.c || t === s || s.muerto || t.muerto) return;
-    if (!mapaDuelo(s.k) || s.k !== t.k) return this.no(s, 'Solo podéis batiros en el mismo mapa (y no en mazmorras ni en el Coliseo).');
+    if (!mapaDuelo(s.k) || s.k !== t.k) return this.no(s, 'Solo pueden batirse en el mismo mapa (y no en mazmorras ni en el Coliseo).');
     if (s.duelo || t.duelo) return this.no(s, 'Uno de los dos ya está en un duelo.');
     if (Math.abs(s.x - t.x) > 600) return this.no(s, 'Acércate más para retarlo.');
     const ahora = Date.now();

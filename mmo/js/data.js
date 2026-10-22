@@ -458,7 +458,7 @@ export const TINTES = {
 // enseñan una vez (lo nuevo para los que vuelven). La mas reciente arriba;
 // subir 'n' al añadir una.
 export const NOVEDADES = [
-  { n: 8, fecha: '22 de octubre (tarde)', items: [
+  { n: 8, fecha: '22 oct 2026', items: [
     '🌧️ Clima: algunas horas llueve o nieva en ciertas zonas; con lluvia el Pez Dorado sale el doble.',
     '🐟 Colección de especies de peces: una por pesquero, oro la primera vez y el logro Ictiólogo.',
     '🧭 Expediciones con destino (Bosque, Mina o Lago) y misión diaria nueva; semanal de la Torre.',
@@ -467,7 +467,7 @@ export const NOVEDADES = [
     '✨ Vitrina de skins junto al Mercader.',
     '💳 En la web, las skins se pueden pagar escaneando un QR con tu wallet.',
   ] },
-  { n: 7, fecha: '22 de octubre (mediodía, 2)', items: [
+  { n: 7, fecha: '22 oct 2026', items: [
     '🏰 Madriguera Goblin: una mazmorra nueva desde Nv 6 para aprender las mecánicas (portal de mazmorras del pueblo).',
     '🧭 Expediciones (Nv 5+): manda a tu mascota 1, 4 u 8 horas y vuelve con oro, experiencia y materiales (registro de misiones, L).',
     '🐟 Pececito Dorado: una mascota que solo se consigue pescando (muy rara).',
@@ -475,26 +475,26 @@ export const NOVEDADES = [
     '🛡️ Ranking semanal de hermandades y /topmmo en el bot con los rankings de la semana.',
     '📅 Calendario en Novedades y barras de progreso en los logros.',
   ] },
-  { n: 6, fecha: '22 de octubre (media mañana)', items: [
+  { n: 6, fecha: '22 oct 2026', items: [
     '🗼 Torre del Duende (Nv 10+, portal de mazmorras): pisos sin fin cada vez más duros, un jefe cada 5, cofres y ranking semanal.',
     '🎣 Pesca: hay un pesquero en el pueblo y en cada zona. Lanza el sedal y TIRA cuando pique.',
     '🍲 La Artesana cocina Ceviche del Duende (+10% oro) y Sudado Dorado (+5% daño y -5% daño recibido) con lo que pesques.',
     '🏅 Logros Pescador y Maestro Pescador, y una misión diaria nueva.',
   ] },
-  { n: 5, fecha: '22 de octubre (mediodía)', items: [
+  { n: 5, fecha: '22 oct 2026', items: [
     '🎟️ Pase de temporada mensual y gratis: misiones, mazmorras y jefe mundial dan puntos; 20 niveles de premios y una mascota exclusiva (registro de misiones, L).',
     '👹 Jefes mundiales que rotan: el Gran Duende, el Dragón de la Tormenta y el Coloso de Obsidiana.',
     '🧳 Mercader ambulante los fines de semana: colores y mascotas que no se venden el resto de la semana.',
     '⚔️ Ranking de duelos con Elo (huir cuenta como derrota).',
   ] },
-  { n: 4, fecha: '22 de octubre (mañana)', items: [
+  { n: 4, fecha: '22 oct 2026', items: [
     '⚡ Hora Feliz cada día de 20:00 a 21:00 (hora de Perú): +50% de experiencia por caza.',
     '🎭 Las skins dan más poderes (crítico, defensa, experiencia...) y se pueden probar 10 s en el Mercader.',
     '💳 Skins también con SOL en la web o con Stars en Telegram; El Duende revisa el pago y te la entrega.',
     '👋 Gestos (/saludar, /bailar...), lista de amigos con aviso al conectarse e Inspeccionar.',
     '📊 Tus estadísticas en el inventario.',
   ] },
-  { n: 3, fecha: '21 de octubre (noche)', items: [
+  { n: 3, fecha: '21 oct 2026', items: [
     '⚔️ Primera BANDA: el Santuario del Titán (Nv 60, de 1 a 10 jugadores), en el portal de mazmorras del pueblo. Cuatro jefes, botín de nivel 64-66 una vez por semana y el Murciélago del Abismo si vences al Titán en 3 semanas.',
     '👥 El líder puede convertir su grupo en banda (hasta 10) desde Social > Grupo.',
     '🟡 Zonas doradas: hay que aguantarlas juntos, el golpe se reparte entre los que estén dentro.',
@@ -503,7 +503,7 @@ export const NOVEDADES = [
     '🏆 Gesta semanal de hermandad: entre todos sumad puntos cazando, venciendo jefes y completando mazmorras; Bronce, Plata y Oro dan oro a quien aportó.',
     '✨ Runas en la Artesana (desde Nv 40): +2% de ataque, defensa o vida por rango, hasta +10%. Piden Flor de Luna y Mithril (zonas Nv 30+) y Esencia Abisal (jefes de mazmorras de Nv 40+).',
   ] },
-  { n: 2, fecha: '22 de octubre', items: [
+  { n: 2, fecha: '21 oct 2026', items: [
     '🏰 Dos mazmorras nuevas: la Fortaleza Goblin (Nv 20-40) y el Nido de la Reina Araña (Nv 40-58).',
     '🗝️ Bóveda semanal: cuantas más mazmorras hagas en la semana, más objetos para elegir el lunes.',
     '📢 Buscador de grupo en el portal de mazmorras: anúnciate y otros se unen con un toque.',
@@ -564,7 +564,7 @@ export const HABS = [
   { id: 'bola_fuego', clase: 'mago', nombre: 'Bola de Fuego', nv: 1, icono: 'S_Fire03', costo: 7, cd: 0, cast: 1500, rango: 430, obj: 'enemigo', mult: 5.5,
     desc: 'Lanzas una bola de fuego (×5,5). 1,5 s de lanzamiento.' },
   { id: 'nova', clase: 'mago', nombre: 'Nova de Escarcha', nv: 4, icono: 'S_Ice02', costo: 9, cd: 14000, radio: 160, obj: 'area', mult: 1.5, raiz: 5000,
-    desc: 'Congelas en el sitio a todo lo cercano 5 s (×1,5). Ideal para escapar.' },
+    desc: 'Congelas en el sitio a todo lo cercano 5 s (×1,5). ' },
   { id: 'misiles', clase: 'mago', nombre: 'Misiles Arcanos', nv: 8, icono: 'S_Magic02', costo: 10, cd: 6000, rango: 430, obj: 'enemigo', mult: 6, golpes: 3,
     desc: 'Tres misiles al instante (×2 cada uno).' },
   { id: 'polimorfia', clase: 'mago', nombre: 'Polimorfia', nv: 14, icono: 'S_Magic01', costo: 6, cd: 0, cast: 1500, rango: 380, obj: 'enemigo', dura: 15000,
@@ -858,8 +858,8 @@ export const SKINS = {
   // usd: tambien se venden con dinero (SOL en la web, Stars en Telegram); el
   // pago va a la wallet de El Duende y el la entrega a mano (/entregar).
   tactico:    { nombre: 'Táctico',     img: 'skin_tactico',        precio: 3000,   usd: 2,  color: '#00ff88', buffs: { oroMult: 1.1, critBonus: .03 }, desc: '+10% oro · +3% crítico' },
-  necro:      { nombre: 'Necromancer', img: 'skin_necromancer',    precio: 9000,   usd: 4,  color: '#b44cff', buffs: { oroMult: 1.2, robo: .05, xpMult: 1.05 }, desc: '+20% oro · roba 5% de vida · +5% experiencia' },
-  king:       { nombre: 'King',        img: 'skin_king',           precio: 20000,  usd: 7,  color: '#ffd84a', buffs: { oroMult: 1.3, bonusHp: 20, defMult: 1.1 }, desc: '+30% oro · +HP extra · +10% defensa' },
+  necro:      { nombre: 'Nigromante', img: 'skin_necromancer',    precio: 9000,   usd: 4,  color: '#b44cff', buffs: { oroMult: 1.2, robo: .05, xpMult: 1.05 }, desc: '+20% oro · roba 5% de vida · +5% experiencia' },
+  king:       { nombre: 'Rey',        img: 'skin_king',           precio: 20000,  usd: 7,  color: '#ffd84a', buffs: { oroMult: 1.3, bonusHp: 20, defMult: 1.1 }, desc: '+30% oro · +HP extra · +10% defensa' },
   berserker:  { nombre: 'Berserker',   img: 'skin_berserker',      precio: 45000,  usd: 12, color: '#ff3344', buffs: { oroMult: 1.4, atkMult: 1.3, critBonus: .03 }, desc: '+40% oro · +30% ataque · +3% crítico' },
   legendaria: { nombre: 'Legendaria',  img: 'skin_legendariafull', precio: 100000, usd: 20, color: '#ff3cf0', buffs: { oroMult: 1.5, bonusHp: 50, aura: true, atkMult: 1.1, xpMult: 1.1 }, desc: '+50% oro · +HP · +10% ataque · +10% experiencia · aura que quema' },
 };
@@ -1032,14 +1032,14 @@ export const RECETAS = [
   { id: 'escudos', nombre: 'Escudos ×2', icono: 'item_shield', dir: 'items/', pide: { mineral: 4 }, da: { pw: { escudo: 2 } }, desc: 'Dos escudos de invulnerabilidad' },
   { id: 'fuego', nombre: 'Pólvora de fuego ×2', icono: 'skill_fire', dir: 'items/', pide: { hierba: 2, mineral: 2 }, da: { pw: { fuego: 2 } }, desc: 'Dos golpes de fuego' },
   { id: 'refinar', nombre: 'Refinar cristal', icono: 'I_Crystal01', pide: { mineral: 8 }, da: { mat: { cristal: 1 } }, desc: '8 minerales se funden en 1 Cristal Arcano' },
-  { id: 'elixirF', nombre: 'Elixir de Fuerza', icono: 'P_Red03', pide: { hierba: 6, cristal: 1 }, da: { elixir: 'elixirF' }, desc: '+10% de daño durante 30 min (aguanta la muerte)' },
+  { id: 'elixirF', nombre: 'Elixir de Fuerza', icono: 'P_Red03', pide: { hierba: 6, cristal: 1 }, da: { elixir: 'elixirF' }, desc: '+10% de daño durante 30 min (persiste al morir)' },
   { id: 'elixirP', nombre: 'Elixir de Piel de Piedra', icono: 'P_Blue05', pide: { mineral: 6, cristal: 1 }, da: { elixir: 'elixirP' }, desc: 'Recibes un 10% menos de daño durante 30 min' },
   { id: 'destilar', nombre: 'Destilar Flor de Luna', icono: 'S_Magic02', pide: { hierba: 10, cristal: 1 }, da: { mat: { flor: 1 } }, desc: '10 hierbas y un cristal se destilan en 1 Flor de Luna' },
-  { id: 'elixirX', nombre: 'Elixir de Sabiduría', icono: 'I_Book', pide: { hierba: 4, mineral: 2, cristal: 1 }, da: { elixir: 'elixirX' }, desc: '+10% de experiencia por caza durante 30 min (aguanta la muerte)' },
+  { id: 'elixirX', nombre: 'Elixir de Sabiduría', icono: 'I_Book', pide: { hierba: 4, mineral: 2, cristal: 1 }, da: { elixir: 'elixirX' }, desc: '+10% de experiencia por caza durante 30 min (persiste al morir)' },
   // Con lo que se pesca (PESCA).
   { id: 'frito', nombre: 'Pescado frito ×3', icono: 'I_C_Fish', pide: { pescado: 3 }, da: { pw: { pocion: 3 } }, desc: 'Tres pociones de vida (como las de hierba)' },
-  { id: 'ceviche', nombre: 'Ceviche del Duende', icono: 'I_C_Fish', pide: { pescado: 5, hierba: 2 }, da: { elixir: 'ceviche' }, desc: '+10% de oro por caza durante 30 min (aguanta la muerte)' },
-  { id: 'sudado', nombre: 'Sudado Dorado', icono: 'I_C_Pie', pide: { pescado: 3, pez_dorado: 1 }, da: { elixir: 'sudado' }, desc: '+5% de daño y -5% de daño recibido durante 30 min (aguanta la muerte)' },
+  { id: 'ceviche', nombre: 'Ceviche del Duende', icono: 'I_C_Fish', pide: { pescado: 5, hierba: 2 }, da: { elixir: 'ceviche' }, desc: '+10% de oro por caza durante 30 min (persiste al morir)' },
+  { id: 'sudado', nombre: 'Sudado Dorado', icono: 'I_C_Pie', pide: { pescado: 3, pez_dorado: 1 }, da: { elixir: 'sudado' }, desc: '+5% de daño y -5% de daño recibido durante 30 min (persiste al morir)' },
 ];
 
 // ── PESCA ──
@@ -1159,7 +1159,7 @@ export const HERM_MAX = 50;
 // Oro) da oro a quien aporto al menos GESTA_MIN puntos esa semana. Se
 // reinicia el lunes (UTC). Solo oro y un logro.
 export const GESTA_UMBRALES = [500, 1500, 4000];
-export const GESTA_NOMBRES = ['🥉 Bronce', '🥈 Plata', '🥇 Oro'];
+export const GESTA_NOMBRES = ['Bronce', 'Plata', 'Oro'];
 export const GESTA_PUNTOS = { caza: 1, jefe: 10, mazmorra: 25, pesca: 1 };
 export const GESTA_MIN = 20;
 export const GESTA_ANTIG_MS = 24 * 3600000;   // un dia en la hermandad para cobrar
@@ -1274,7 +1274,7 @@ export const AFIJOS = {
   tiranico:    { nombre: 'Tiránico',    emoji: '👑', desde: 2, desc: 'Los jefes tienen +25% de vida y +15% de daño.' },
   furioso:     { nombre: 'Furioso',     emoji: '😡', desde: 5, desc: 'Los monstruos que no son jefes se enfurecen bajo el 30% de vida (+50% de daño): remátalos rápido.' },
   volcanico:   { nombre: 'Volcánico',   emoji: '🌋', desde: 5, desc: 'En combate brotan llamas bajo los pies de cada uno cada pocos segundos: sal de la marca o salta.' },
-  sanguinario: { nombre: 'Sanguinario', emoji: '🩸', desde: 5, desc: 'Al morir, un monstruo cura un 20% de su vida a los de su pack que sigan vivos: bajadlos a la vez.' },
+  sanguinario: { nombre: 'Sanguinario', emoji: '🩸', desde: 5, desc: 'Al morir, un monstruo cura un 20% de su vida a los de su pack que sigan vivos: mátenlos a la vez.' },
 };
 const AF_PRIM = ['fortificado', 'tiranico'], AF_SEC = ['furioso', 'volcanico', 'sanguinario'];
 export function afijosSemana(sem = semanaUTC()) {

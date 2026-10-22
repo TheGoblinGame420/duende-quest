@@ -471,7 +471,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
           <div class="auras" id="au-yo"></div>
         </div>
       </div>
-      <div class="caja" id="monedero"><img src="/assets/ui/coin.png" alt=""><span id="h-oro">0</span><span id="h-mton-c" class="mton" title="Tu mTON (1.000 = 1 TON)">💎 <span id="h-mton">0 mTON</span></span></div>
+      <div class="caja" id="monedero"><img src="/assets/ui/coin.png" alt=""><span id="h-oro">0</span><span id="h-mton-c" class="mton" title="Tu mTON (1.000 = 1 TON)"><img src="/assets/items/equipo/I_Sapphire.png" alt="" style="width:14px;height:14px;image-rendering:pixelated;vertical-align:-2px"> <span id="h-mton">0 mTON</span></span></div>
       <div class="caja uf" id="uf-obj">
         <div class="ret"><canvas id="ret-obj" width="64" height="64"></canvas><b id="o-nivel">1</b></div>
         <div class="cu">
@@ -505,7 +505,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
       <div class="caja" id="errores"></div>
       <div class="caja" id="emotes"></div>
       <div class="caja" id="consejo"></div>
-      <button class="caja bt" id="presumir">📣 Compartir logro</button>
+      <button class="caja bt" id="presumir">Compartir logro</button>
       <div class="caja" id="chat"><div id="chat-log"></div><div id="frases"></div><input id="chat-in" maxlength="120" placeholder="Escribe y pulsa Enter…" autocomplete="off"></div>
       <button class="caja btn" id="interactuar">E · ENTRAR</button>
       <div class="caja" id="lanzar"><div class="barra"><i style="transform:scaleX(0)"></i><span id="lanzar-t"></span></div></div>
@@ -678,7 +678,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 
       <h3>Contenido</h3>
       <ul>
-        <li><b>Mazmorras.</b> Desde Nv 6 en el portal de mazmorras del pueblo. Instancias para tu grupo o en solitario (se ajustan), con 3 jefes. Premio extra la primera vez cada día. Si caéis todos, el jefe se recupera y reaparecéis en la última barrera abierta.</li>
+        <li><b>Mazmorras.</b> Desde Nv 6 en el portal de mazmorras del pueblo. Instancias para tu grupo o en solitario (se ajustan), con 3 jefes. Premio extra la primera vez cada día. Si todo el grupo cae, el jefe se recupera y reaparecen en la última barrera abierta.</li>
         <li><b>Torre del Duende.</b> Desde Nv 10. Oleadas por piso con un jefe cada 5 y 2:30 para limpiar cada piso. Cofre cada 5 pisos nuevos de la semana, ranking semanal y montura al piso 30.</li>
         <li><b>Banda.</b> Santuario del Titán, Nv 60, de 1 a 10 jugadores. Botín semanal por jefe.</li>
         <li><b>Desafíos.</b> A Nv 60, cada mazmorra con niveles +k y afijos semanales. La Bóveda semanal premia las mazmorras completadas.</li>
@@ -793,7 +793,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <div class="modal" id="m-boveda">
   <div class="ventana">
     <button class="bt cerrar" data-cerrar>✕</button>
-    <h2>BOVEDA SEMANAL</h2>
+    <h2>BÓVEDA SEMANAL</h2>
     <div class="lista" id="boveda-lista"></div>
   </div>
 </div>
@@ -838,6 +838,6 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=206"></script>
+<script type="module" src="/mmo/js/client.js?v=208"></script>
 </body>
 </html>

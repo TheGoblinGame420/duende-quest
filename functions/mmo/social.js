@@ -315,7 +315,7 @@ export const Social = {
     this.avisarGrupo(g, `👥 ${s.c.nombre} se unió al grupo desde el buscador (${mz.nombre}).`);
     this.enviarGrupo(g);
     this.enviar(lider, { t: 'toast', ok: true, m: `📢 ${s.c.nombre} (Nv ${s.c.nivel}) se unió a tu grupo para ${mz.nombre}.` });
-    this.enviar(s, { t: 'toast', ok: true, m: `👥 Te uniste al grupo de ${lider.c.nombre} para ${mz.nombre}. Id juntos al portal de mazmorras del pueblo.` });
+    this.enviar(s, { t: 'toast', ok: true, m: `👥 Te uniste al grupo de ${lider.c.nombre} para ${mz.nombre}. Vayan juntos al portal de mazmorras del pueblo.` });
     if (g.uids.length >= maxGrupo(g)) this.lfg.delete(uid);
   },
 
