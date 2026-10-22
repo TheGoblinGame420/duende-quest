@@ -917,7 +917,8 @@ export class MmoWorld {
       const torre = (await this.topTorre()).filter(([uid]) => !fuera(uid)).slice(0, 5).map(([, x]) => ({ n: x.n, p: x.p }));
       const des = this.topDesSem().filter(([uid]) => !fuera(uid)).slice(0, 3).map(([, x]) => ({ n: x.n, k: x.k }));
       const duel = ((await this.state.storage.get('rankDuelo')) || []).filter(x => !fuera(x.uid)).slice(0, 5).map(x => ({ n: x.n, e: x.e }));
-      return json({ ok: true, xp, torre, des, duel, online: this.contarOnline() });
+      const herm = (await this.topHerm()).slice(0, 3).map(([, x]) => ({ n: x.n, p: x.p }));
+      return json({ ok: true, xp, torre, des, duel, herm, online: this.contarOnline() });
     }
     if (accion === 'entregar') return json(await this.entregarPedido(b));
     if (accion === 'anular') return json(await this.anularPedido(b));
@@ -1783,7 +1784,8 @@ export class MmoWorld {
     const dsem = this.topDesSem().slice(0, 10).map(([uid, x]) => ({ n: x.n, k: x.k, yo: uid === s.c.uid }));
     const duel = ((await this.state.storage.get('rankDuelo')) || []).slice(0, 10).map(x => ({ n: x.n, e: x.e, g: x.g, yo: x.uid === s.c.uid }));
     const torre = (await this.topTorre()).slice(0, 10).map(([uid, x]) => ({ n: x.n, p: x.p, yo: uid === s.c.uid }));
-    this.enviar(s, { t: 'ranking', r: r.slice(0, 20).map(x => ({ n: x.n, lv: x.lv, k: x.k, yo: x.uid === s.c.uid })), sem, des, dsem, duel, elo: s.c.elo || 0, torre, tmax: this.torreSem(s.c).max, af: afijosSemana(), finSem: Date.parse(this.rs.sem + 'T00:00:00Z') + 7 * 86400000 });
+    const herm = (await this.topHerm()).slice(0, 5).map(([id, x]) => ({ n: x.n, p: x.p, m: x.m, yo: id === s.c.herm }));
+    this.enviar(s, { t: 'ranking', r: r.slice(0, 20).map(x => ({ n: x.n, lv: x.lv, k: x.k, yo: x.uid === s.c.uid })), sem, des, dsem, duel, elo: s.c.elo || 0, torre, tmax: this.torreSem(s.c).max, herm, af: afijosSemana(), finSem: Date.parse(this.rs.sem + 'T00:00:00Z') + 7 * 86400000 });
   }
 
   // Ranking semanal de Desafios: el mejor +k vencido esta semana (con los

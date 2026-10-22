@@ -2097,6 +2097,10 @@ async function pruebasGesta() {
   chequear(a.c.gestaCob.n === 3 && a.c.logros.includes('gesta'), 'al llegar al Oro se cobran Plata y Oro y llega el logro Gesta Dorada');
   const z2 = await entrar('Gestolo', 'd4'); await calma(); await calma();
   chequear(z2.c.gestaCob && z2.c.gestaCob.n === 3, 'quien aportó y estaba fuera cobra al entrar');
+  // Ranking semanal de hermandades (se pone al dia al guardar las gestas).
+  await calma(); await calma();
+  const th = await mundo.topHerm();
+  chequear(th.length && th[0][0] === h.id && th[0][1].p === G.p, 'la hermandad sale en el ranking semanal con sus puntos');
   // El cliente recibe la gesta con los aportes por id publico.
   a.limpiar();
   await a.mandar({ t: 'herm' }); await calma();

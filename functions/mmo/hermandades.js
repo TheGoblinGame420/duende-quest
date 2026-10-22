@@ -241,6 +241,7 @@ export const Hermandades = {
       this.avisarHerm(h, `🏆 ¡Gesta semanal: ${GESTA_NOMBRES[n1 - 1]} conseguido! Quien aportó ${GESTA_MIN}+ puntos cobra su oro.`);
       for (const x of this.conectadosHerm(h)) this.cobrarGesta(x, h);
       this.guardarHerm(h);
+      this.anotarRankHerm([h]);
       this.hermSucias.delete(h);
     } else if (n1 && G.c[s.c.uid] >= GESTA_MIN && (!s.c.gestaCob || s.c.gestaCob.sem !== G.sem || s.c.gestaCob.n < n1)) this.cobrarGesta(s, h);
   },
@@ -272,8 +273,29 @@ export const Hermandades = {
   guardarHermsSucias(ahora) {
     if (!this.hermSucias || !this.hermSucias.size || ahora - (this.hermGuardT || 0) < 30000) return;
     this.hermGuardT = ahora;
-    for (const h of this.hermSucias) if (this.herms && this.herms.get(h.id) === h && Object.keys(h.miembros).length) this.guardarHerm(h);
+    const vivas = [...this.hermSucias].filter(h => this.herms && this.herms.get(h.id) === h && Object.keys(h.miembros).length);
+    for (const h of vivas) this.guardarHerm(h);
     this.hermSucias.clear();
+    this.anotarRankHerm(vivas);
+  },
+
+  // Ranking semanal de hermandades por puntos de la gesta: 'rankHerm' =
+  // { sem, l: { id: { n, p, m } } }. Se pone al dia al guardar las gestas.
+  async cargarRankHerm() {
+    if (!this.rh) { this.rhP = this.rhP || this.state.storage.get('rankHerm'); const r = await this.rhP; if (!this.rh) this.rh = r || { sem: semanaUTC(), l: {} }; }
+    if (this.rh.sem !== semanaUTC()) this.rh = { sem: semanaUTC(), l: {} };
+    return this.rh;
+  },
+  anotarRankHerm(hs) {
+    if (!hs.length) return;
+    this.cargarRankHerm().then(rh => {
+      for (const h of hs) { const G = this.gestaDe(h); if (G.p > 0) rh.l[h.id] = { n: h.nombre, p: G.p, m: Object.keys(h.miembros).length }; }
+      return this.state.storage.put('rankHerm', rh);
+    }).catch(e => console.error('[MMO rankHerm]', e));
+  },
+  async topHerm() {
+    const rh = await this.cargarRankHerm();
+    return Object.entries(rh.l).sort((a, b) => b[1].p - a[1].p);
   },
 
   // Nivel nuevo: su ficha en la hermandad se pone al dia.

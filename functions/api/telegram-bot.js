@@ -213,6 +213,7 @@ async function handleTopMmo(token, env, chatId, messageId) {
     text += `\n🏆 *Experiencia*\n` + (r.xp.length ? r.xp.map((x, i) => `${med(i)} *${mdSeguro(x.n)}* — ${x.xp.toLocaleString('es')} XP (Nv ${x.lv})`).join('\n') : '_Nadie aún._');
     text += `\n\n🗼 *Torre del Duende*\n` + (r.torre.length ? r.torre.map((x, i) => `${med(i)} *${mdSeguro(x.n)}* — piso ${x.p}`).join('\n') : '_Nadie ha subido aún._');
     if (r.des.length) text += `\n\n⚡ *Desafíos*\n` + r.des.map((x, i) => `${med(i)} *${mdSeguro(x.n)}* — +${x.k}`).join('\n');
+    if (r.herm && r.herm.length) text += `\n\n🛡️ *Hermandades (gesta)*\n` + r.herm.map((x, i) => `${med(i)} *${mdSeguro(x.n)}* — ${x.p.toLocaleString('es')} pts`).join('\n');
     text += `\n\n⚔️ *Duelos (Elo)*\n` + (r.duel.length ? r.duel.map((x, i) => `${med(i)} *${mdSeguro(x.n)}* — ${x.e}`).join('\n') : '_Nadie aún._');
     text += `\n\n👥 Ahora mismo: ${r.online} en línea. Los 3 primeros de la Torre y de Desafíos se llevan oro y título el lunes.`;
   }
