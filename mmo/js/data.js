@@ -765,7 +765,7 @@ export const TAREAS_DIA = [
   { id: 'grupo', tipo: 'grupo', n: 15, txt: 'Caza 15 monstruos en grupo' },
   { id: 'jefe', tipo: 'jefe', n: 1, txt: 'Derrota a un jefe de zona', nv: 6 },
   { id: 'mazmorra', tipo: 'mazmorra', n: 1, txt: 'Completa una mazmorra', nv: 10 },
-  { id: 'mundial', tipo: 'mundial', n: 1, txt: 'Vence al jefe mundial del Coliseo' },
+  { id: 'mundial', tipo: 'mundial', n: 1, txt: 'Vence al jefe mundial del Coliseo', nv: 5 },
   { id: 'hab', tipo: 'hab', n: 50, txt: 'Usa 50 habilidades en combate' },
   { id: 'recoger', tipo: 'recoger', n: 6, txt: 'Recoge 6 plantas o vetas de mineral' },
 ];

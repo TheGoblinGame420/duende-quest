@@ -1252,7 +1252,8 @@ async function pruebasTemporada() {
   for (let i = 0; i < 40; i++) { const o3 = monstruo(t, 'goblin_normal', 40); mundo.danar(o3, o3.hp + 1, t); tick(1); }
   chequear(t.c.regalos > 0 && t.c.calabazas === c0, 'en Navidad caen regalos (' + t.c.regalos + '), no calabazas');
   reloj = Date.UTC(2027, 1, 9, 12);
-  for (let i = 0; i < 40; i++) { const o5 = monstruo(t, 'goblin_normal', 40); mundo.danar(o5, o5.hp + 1, t); tick(1); }
+  t.actT = reloj;   // el salto de semanas lo echaria por inactividad
+  for (let i = 0; i < 150 && !t.c.mascaras; i++) { const o5 = monstruo(t, 'goblin_normal', 40); mundo.danar(o5, o5.hp + 1, t); tick(1); }
   chequear(t.c.mascaras > 0, 'en Carnaval (febrero) caen máscaras (' + t.c.mascaras + ')');
   reloj = Math.max(relojAntes, reloj);
   await dejar(t);

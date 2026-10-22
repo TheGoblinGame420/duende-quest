@@ -1471,8 +1471,9 @@ export class MmoWorld {
     if (s.montado) this.desmontar(s);
     if (s.cast && (s.cast.h === 'hogar' || s.cast.h === 'montar' || s.cast.h === 'recolectar')) this.cancelarCast(s, 'Te golpearon: se canceló.');
     this.aClave(s.k, { t: 'ph', p: s.id, d: real, ab: abs || undefined, from: fuente ? fuente.id : 0 });
-    if (s.hp <= 0) this.morir(s);
-    this.actualizarYo(s);
+    // La vida ya va en cada foto del mundo: el "yo" entero (bolsa, equipo...)
+    // tras cada golpe pesaba en la red y repintaba las ventanas del movil.
+    if (s.hp <= 0) { this.morir(s); this.actualizarYo(s); }
   }
 
   morir(s) {

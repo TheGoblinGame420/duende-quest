@@ -14,7 +14,7 @@ import {
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo,
-} from './data.js?v=52';
+} from './data.js?v=53';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -229,6 +229,7 @@ let objetivo = null;            // { k: 'm' (monstruo) | 'p' (jugador), id }
 let jugaronHoy = 0;             // jugadores distintos de hoy (servidor, cada 10 s)
 let duelo = null;               // { con, ini, fin } (ini/fin en performance.now())
 let castYo = null;              // { id, nombre, ini, fin } (tiempos de performance.now)
+let castPend = 0;               // hasta cuando esperamos el 'cast' de un hechizo pedido (sin retroceso)
 const castOtros = new Map();    // id de jugador -> { id, ini, fin }
 const castMon = new Map();      // id de monstruo -> { nombre, ini, fin, int }
 let gcdHasta = 0;
@@ -376,7 +377,9 @@ function recibir(m) {
         P.herido = 18; sfx('golpe', .45); flotante(P.x, P.y - 70, '-' + m.d, '#ff3344', 11);
         // Retroceso: el golpe te aparta del monstruo (y corta el combo de pegado).
         const o = mons.get(m.from);
-        if (o && !castYo) { P.vx = (P.x < o.x ? -1 : 1) * 7; if (P.suelo) { P.vy = -4; P.suelo = false; } }
+        // Ni durante un lanzamiento ni mientras llega su confirmacion: el
+        // retroceso movia al jugador y el servidor cancelaba el hechizo.
+        if (o && !castYo && performance.now() > castPend) { P.vx = (P.x < o.x ? -1 : 1) * 7; if (P.suelo) { P.vy = -4; P.suelo = false; } }
         sacudir = Math.max(sacudir, 4);
         if (TG && TG.HapticFeedback) try { TG.HapticFeedback.impactOccurred('medium'); } catch (e) {}
       } else { q.herido = 18; flotante(q.x, q.y - 70, '-' + m.d, '#ff7777', 9); }
@@ -479,7 +482,7 @@ function recibir(m) {
     case 'reto': mostrarInvitacion({ ...m, duelo: 1 }); break;
     case 'duelo': empiezaDuelo(m); break;
     case 'dueloFin': finDuelo(m); break;
-    case 'critDuelo': break;
+    case 'critDuelo': { const q = m.p === miId ? P : otros.get(m.p); if (q) flotante(q.x, q.y - 92, '¡CRÍTICO!', '#ffd34d', 10); break; }
     case 'buscador': abrirBuscador(); break;
     case 'amigos': pintarAmigos(m); if (presumirPend && m.ref) { presumirPend = false; ofrecerPresumir(presumirTxt); aviso('📣 Listo: toca «Compartir logro» otra vez para compartir.'); } break;
     case 'muerte': resumenMuerte(m); break;
@@ -940,7 +943,7 @@ function boton(icono, tecla, titulo, alUsar) {
   const d = document.createElement('div');
   d.className = 'pw';
   d.title = titulo;
-  d.innerHTML = `<span class="k">${tecla}</span><img src="${icono}" alt=""><span class="n"></span><div class="cd" style="height:0"></div><span class="cdt"></span>`;
+  d.innerHTML = `<span class="k">${tecla}</span><img src="${icono}" alt=""><span class="n"></span><div class="cd"></div><span class="cdt"></span>`;
   const usar = e => { e.preventDefault(); d.classList.add('on'); setTimeout(() => d.classList.remove('on'), 120); alUsar(); };
   d.addEventListener('touchstart', usar, { passive: false });
   d.addEventListener('mousedown', usar);
@@ -1002,7 +1005,7 @@ function usarHabDef(h, tgForzado) {
   if (!yo || P.muerto || chatAbierto() || !h) return;
   const ahora = performance.now();
   if (yo.nivel < h.nv) { errorRojo('Aprendes ' + h.nombre + ' a nivel ' + h.nv + '.'); return; }
-  if (congelado()) return;
+  if (congelado()) { errorRojo('Estás dentro del Bloque de Hielo: espera a que se rompa.'); return; }
   if (castYo) { errorRojo('Ya estás lanzando otro hechizo.'); return; }
   if (ahora < (cdPoder['h_' + h.id] || 0)) { errorRojo(h.nombre + ' todavía no está lista.'); return; }
   if (h.gcd !== false && ahora < gcdHasta) return;
@@ -1025,6 +1028,7 @@ function usarHabDef(h, tgForzado) {
   if (h.gcd !== false) gcdHasta = ahora + GCD_MS;
   tuto.usoHab = true;
   // La carga mueve al guerrero: el servidor lo pone junto al objetivo.
+  if (h.cast) castPend = ahora + 600;
   mandar({ t: 'hab', id: h.id, tg, tk });
 }
 function pintarCooldowns() {
@@ -1040,12 +1044,12 @@ function pintarCooldowns() {
       const enCd = fin > ahora;
       const gcd = h.gcd !== false && gcdHasta > ahora && !enCd;
       const k = enCd ? (fin - ahora) / h.cd : gcd ? (gcdHasta - ahora) / GCD_MS : 0;
-      ponCss(d.querySelector('.cd'), 'height', Math.round(k * 100) + '%');
-      ponTxt(d.querySelector('.cdt'), enCd && fin - ahora > 1500 ? String(Math.ceil((fin - ahora) / 1000)) : '');
+      ponCss(d._cd || (d._cd = d.querySelector('.cd')), 'transform', 'scaleY(' + Math.round(k * 100) / 100 + ')');
+      ponTxt(d._cdt || (d._cdt = d.querySelector('.cdt')), enCd && fin - ahora > 1500 ? String(Math.ceil((fin - ahora) / 1000)) : '');
       const bloq = yo.nivel < h.nv;
       d.classList.toggle('sinrec', !bloq && P.rec < costoHab(h, P.recMax || 0, yo.espec));
       const lejos = h.obj === 'enemigo' && o && !o.muereT && distMon(o) > h.rango;
-      d.querySelector('.k').classList.toggle('lejos', !!lejos);
+      (d._k || (d._k = d.querySelector('.k'))).classList.toggle('lejos', !!lejos);
       const listo = !bloq && ((h.id === 'eviscerar' && P.combo >= 5) || (h.bajo && o && !o.muereT && o.hp / o.mx <= h.bajo));
       d.classList.toggle('listo', !!listo);
     });
@@ -1055,7 +1059,8 @@ function pintarCooldowns() {
   PODERES.forEach((p, i) => {
     const fin = cdPoder[p.id] || 0;
     const k = fin > ahora ? (fin - ahora) / p.cd : 0;
-    ponCss(pc.children[i].querySelector('.cd'), 'height', Math.round(k * 100) + '%');
+    const e = pc.children[i];
+    ponCss(e._cd || (e._cd = e.querySelector('.cd')), 'transform', 'scaleY(' + Math.round(k * 100) / 100 + ')');
   });
 }
 
@@ -1894,10 +1899,27 @@ function objetivoGuia() {
   for (const o of mons.values()) if (o.k === q.tipo && !o.muereT && Math.abs(o.x - P.x) < md) { md = Math.abs(o.x - P.x); mejor = o; }
   if (mejor) return { x: mejor.x, y: mejor.y - mejor.alto - 18, txt: def.nombre, mon: mejor };
   if (def.jefe && MAPAS[mapaId].jefe === q.tipo) return { x: MAPAS[mapaId].ancho * 0.62, txt: def.nombre + ' (reaparece pronto)' };
+  // Ninguno a la vista: donde suelen salir (su tramo del mapa, como en el servidor).
+  const lista = MAPAS[mapaId].monstruos || [];
+  const i = lista.indexOf(q.tipo);
+  if (i >= 0) { const tramo = (MAPAS[mapaId].ancho - 500) / lista.length; return { x: 250 + tramo * (i + 0.5), txt: def.nombre + ' (reaparecen aquí)' }; }
   return null;
 }
+// La guia se recalcula 4 veces por segundo (busca rutas entre zonas); en
+// cada fotograma solo se sigue al monstruo elegido.
+let guiaCache = null, guiaT = 0;
+function guiaActual() {
+  const ahora = performance.now();
+  if (ahora - guiaT > 250) { guiaT = ahora; guiaCache = objetivoGuia(); }
+  const ob = guiaCache;
+  if (ob && ob.mon) {
+    if (ob.mon.muereT || !mons.has(ob.mon.id)) { guiaT = 0; return null; }
+    ob.x = ob.mon.x; ob.y = ob.mon.y - ob.mon.alto - 18;
+  }
+  return ob;
+}
 function dibujarGuia() {
-  const ob = objetivoGuia();
+  const ob = guiaActual();
   if (!ob) return;
   const x = ob.x - camX;
   const bote = Math.sin(frame * .12) * 4;
@@ -1919,9 +1941,8 @@ function dibujarGuia() {
     else { g.moveTo(ex, y); g.lineTo(ex + 16, y - 11); g.lineTo(ex + 16, y + 11); }
     g.closePath(); g.fill(); g.stroke();
     const dist = Math.round(Math.abs(ob.x - P.x) / 10);
-    g.font = '6px "Press Start 2P", monospace';
     const t = ob.txt + ' · ' + dist + ' m';
-    const w = g.measureText(t).width;
+    const w = spriteTexto(t, TAM_MIN(6), '#ffe600', true, false).width - 8;   // misma cache que etiqueta()
     etiqueta(der ? ex - 24 - w / 2 : ex + 24 + w / 2, y + 3, t, '#ffe600', 6);
   }
   g.restore();
@@ -2006,18 +2027,16 @@ function dibujarNodos() {
     if (x < -30 || x > VW + 30) continue;
     const listo = ahora >= n.listo;
     const img = IMG['ico_' + MATERIALES[n.tipo].icono];
-    g.save();
+    // Sin 'lighter' (mezcla cara en el movil) ni save/restore por nodo.
     if (listo) {
-      g.globalCompositeOperation = 'lighter';
-      g.globalAlpha = .35 + Math.sin(frame * .08 + n.i) * .15;
+      g.globalAlpha = .25 + Math.sin(frame * .08 + n.i) * .1;
       g.fillStyle = n.tipo === 'hierba' ? '#4ade80' : '#cbd5e1';
       g.beginPath(); g.ellipse(x, SUELO - 10, 18, 7, 0, 0, Math.PI * 2); g.fill();
-      g.globalCompositeOperation = 'source-over';
     }
     g.globalAlpha = listo ? 1 : .3;
     if (img && img.naturalWidth) g.drawImage(img, x - 12, SUELO - 26 + (listo ? Math.sin(frame * .05 + n.i) * 1.5 : 0), 24, 24);
-    g.restore();
   }
+  g.globalAlpha = 1;
 }
 function abrirArtesana() {
   if (!yo) return;
@@ -2378,7 +2397,7 @@ async function pagarConPhantom(m) {
 // (un combo contra un grupo) era lo que hacia caer los fotogramas.
 function flotante(x, y, txt, color, tam) { textos.push({ x, y, txt, color, tam: tam || 10, t: 0 }); if (textos.length > 30) textos.shift(); }
 function particula(x, y, color, vel) {
-  if (parts.length >= 160) return;
+  if (parts.length >= (ligero ? 50 : 160)) return;
   parts.push({ x, y, vx: (Math.random() - .5) * vel * 2, vy: (Math.random() - .8) * vel * 1.6, color, vida: 24 + Math.random() * 16, t: 0 });
 }
 // Filtra en el sitio (sin crear un arreglo nuevo cada fotograma: menos
@@ -2484,19 +2503,27 @@ function dibujarPortales(mp) {
 // cada fotograma era lo mas caro del juego en un movil lento (medido con
 // la CPU 4x mas lenta). Una etiqueta se pinta una vez y luego solo se copia.
 const _textos = new Map();
+// En el movil la letra pixel de 6 px no se lee: minimo 7.
+const TAM_MIN = t => (TACTIL ? Math.max(t, 7) : t);
+// La letra pixel solo trae el latin basico: flechas, emojis y otros simbolos
+// salian como "_". Esos textos van con la letra del sistema.
+const FUERA_PIXEL = /[^ -ÿ]/;
 function spriteTexto(txt, tam, color, fondo, sombra) {
+  tam = TAM_MIN(tam);
   const k = tam + '|' + color + '|' + (fondo ? 1 : 0) + (sombra ? 1 : 0) + '|' + txt;
   let c = _textos.get(k);
   if (c) return c;
   c = document.createElement('canvas');
   const x = c.getContext('2d');
-  const fu = tam + 'px "Press Start 2P", monospace';
+  const raro = FUERA_PIXEL.test(txt);
+  const fs = raro ? tam + 3 : tam, baja = raro ? Math.ceil(fs * 0.25) : 0;   // la del sistema baja de la linea (g, p, emojis)
+  const fu = raro ? 'bold ' + fs + 'px system-ui, sans-serif' : tam + 'px "Press Start 2P", monospace';
   x.font = fu;
   const w = Math.ceil(x.measureText(txt).width);
-  c.width = w + (fondo ? 8 : 2); c.height = tam + (fondo ? 7 : 3);
+  c.width = w + (fondo ? 8 : 2); c.height = fs + baja + (fondo ? 7 : 3);
   x.font = fu; x.textBaseline = 'alphabetic'; x.textAlign = 'left';
   if (fondo) { x.fillStyle = 'rgba(0,0,0,.6)'; x.fillRect(0, 0, c.width, c.height); }
-  const bx = fondo ? 4 : 0, by = fondo ? tam + 3 : tam;
+  const bx = fondo ? 4 : 0, by = fondo ? fs + 3 : fs;
   if (sombra) { x.fillStyle = '#000'; x.fillText(txt, bx + 1, by + 1); }
   x.fillStyle = color; x.fillText(txt, bx, by);
   if (_textos.size > 600) _textos.delete(_textos.keys().next().value);
@@ -2509,7 +2536,7 @@ if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => _tex
 // Arcoiris: 12 tonos que van rotando (pocos, para no llenar la cache de textos).
 function colorTinte(tn) { return tn.color === 'arcoiris' ? 'hsl(' + (Math.floor(frame / 8) % 12) * 30 + ',90%,68%)' : tn.color; }
 function etiqueta(x, y, txt, color, tam) {
-  tam = tam || 7;
+  tam = TAM_MIN(tam || 7);
   const c = spriteTexto(txt, tam, color || '#fff', true, false);
   g.drawImage(c, Math.round(x - c.width / 2), Math.round(y - tam - 3));
 }
@@ -2802,7 +2829,7 @@ function dibujarEfectos() {
     if (i >= n) return false;
     if (!img || !img.width) return true;
     const x = (f.sigue ? P.x + f.dx : f.x) - camX, y = f.sigue ? P.y + f.dy : f.y;
-    g.save(); g.globalCompositeOperation = 'lighter'; g.translate(x, y); if (f.flip) g.scale(-1, 1);
+    g.save(); if (!ligero) g.globalCompositeOperation = 'lighter'; g.translate(x, y); if (f.flip) g.scale(-1, 1);
     g.drawImage(img, i * fw, 0, fw, fh, -fw * f.escala / 2, -fh * f.escala / 2, fw * f.escala, fh * f.escala);
     g.restore();
     return true;
@@ -2913,7 +2940,7 @@ function dibujar() {
   if (jefeVivo && !jefeVivo.muereT) {
     ponCss($('jefe-bar'), 'display', 'block');
     ponTxt($('jefe-n'), '👑 ' + MONSTRUOS[jefeVivo.k].nombre + ' · Nv ' + jefeVivo.nv);
-    ponCss($('jefe-bar').querySelector('i'), 'width', Math.max(0, Math.round(jefeVivo.hp / jefeVivo.mx * 100)) + '%');
+    rellenar($('jefe-bar').querySelector('i'), jefeVivo.hp / jefeVivo.mx);
   } else ponCss($('jefe-bar'), 'display', 'none');
   // Boton contextual
   const c = cercano();
@@ -2945,7 +2972,7 @@ function pintarHud() {
   ponTxt($('h-oro'), yo.oro.toLocaleString('es'));
   ponTxt($('h-mton'), (yo.mton || 0).toLocaleString('es') + ' mTON');
   const pxp = yo.xpSig ? Math.floor(yo.xp / yo.xpSig * 100) : 100;
-  ponCss($('bxp').querySelector('i'), 'width', pxp + '%');
+  rellenar($('bxp').querySelector('i'), pxp / 100);
   $('bxp').title = 'Experiencia: ' + yo.xp.toLocaleString('es') + ' / ' + (yo.xpSig || 0).toLocaleString('es') + ' (' + pxp + '%)';
   const q = MISIONES[yo.mis ? yo.mis.i : 0];
   const hm = $('h-mision');
@@ -3041,9 +3068,11 @@ function dibujarMinimapa() {
 }
 // ── MARCOS DE UNIDAD (cada fotograma; solo tocan el DOM si algo cambia) ──
 function ponClase(el, c, on) { const k = '_cl' + c; if (el[k] !== on) { el[k] = on; el.classList.toggle(c, on); } }
+// Relleno de una barra (0..1) con transform: sin recalcular el diseño.
+function rellenar(i, k) { if (i) ponCss(i, 'transform', 'scaleX(' + Math.max(0, Math.min(100, Math.round(k * 100))) / 100 + ')'); }
 function pintarBarra(el, k, txt) {
-  ponCss(el.querySelector('i'), 'width', Math.max(0, Math.min(100, Math.round(k * 100))) + '%');
-  if (txt !== undefined) ponTxt(el.querySelector('span'), txt);
+  rellenar(el._i || (el._i = el.querySelector('i')), k);
+  if (txt !== undefined) ponTxt(el._s || (el._s = el.querySelector('span')), txt);
 }
 // Iconos de auras con los segundos que les quedan (verde = buena, rojo = mala).
 function pintarAuras(el, au, extra) {
@@ -3145,7 +3174,7 @@ function pintarLanzar() {
   if (!castYo) return;
   const ahora = performance.now();
   const k = Math.min(1, (ahora - castYo.ini) / (castYo.fin - castYo.ini));
-  ponCss($('lanzar').querySelector('i'), 'width', Math.round(k * 100) + '%');
+  rellenar($('lanzar').querySelector('i'), k);
   ponTxt($('lanzar-t'), castYo.nombre + '  ' + Math.max(0, (castYo.fin - ahora) / 1000).toFixed(1) + ' s');
 }
 
@@ -3322,7 +3351,7 @@ function resumenMuerte(m) {
   if (g.length) h += '<p style="font-size:12px;color:var(--txt2)">Últimos golpes: ' + g.map(x => esc(x.n) + ' −' + x.d).join(' · ') + '</p>';
   let consejo = '';
   if (ult && ult.nv && yo && ult.nv >= yo.nivel + 3) consejo = 'Ese enemigo es de nivel bastante más alto que tú: sube un par de niveles en una zona de tu nivel (🗺️ tecla M).';
-  else if (m.pw > 0) consejo = 'Tenías ' + m.pw + ' pociones: úsalas (tecla Q o el primer consumible) cuando tu vida baje de la mitad.';
+  else if (m.pw > 0) consejo = 'Tenías ' + m.pw + ' pociones: úsalas (' + (TACTIL ? 'el primer consumible de la barra' : 'tecla Q') + ') cuando tu vida baje de la mitad.';
   else if (!m.pw) consejo = 'Te quedaste sin pociones: compra en el Mercader o fabrícalas con hierbas en la Artesana Lila.';
   if (m.inst) consejo = 'En las mazmorras, sal de las zonas marcadas en el suelo e interrumpe los hechizos con barra naranja. Revives en la entrada.';
   if (consejo) h += `<p style="margin-top:8px;color:var(--txt)">💡 ${esc(consejo)}</p>`;
@@ -3408,8 +3437,17 @@ document.addEventListener('visibilitychange', () => {
 // de 1/60 s; se dibuja solo cuando hubo al menos un paso.
 const PASO = 1000 / 60;
 let ultimoT = performance.now(), acum = 0;
+// Modo ligero: si un dispositivo no llega a ~35 FPS de media, se dibujan
+// menos particulas y los efectos sin mezcla aditiva (lo mas caro medido en
+// un movil lento). Se decide solo una vez.
+let ligero = false, mediaDt = 16, muestrasDt = 0;
 function bucle(t) {
   requestAnimationFrame(bucle);
+  const dt = t - ultimoT;
+  if (!ligero && dt > 0 && dt < 250 && !document.hidden) {
+    mediaDt = mediaDt * 0.97 + dt * 0.03;
+    if (++muestrasDt > 300 && mediaDt > 28) ligero = true;
+  }
   acum += Math.min(200, Math.max(0, t - ultimoT));
   ultimoT = t;
   let pasos = 0;
