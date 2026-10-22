@@ -11,7 +11,7 @@ import {
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
-  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe, TORRE, premioTorreSem, zonaDeNivel, EXPEDICION, premioExpedicion,
+  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe, TORRE, premioTorreSem, zonaDeNivel, progresoLogro, EXPEDICION, premioExpedicion,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
@@ -2457,7 +2457,10 @@ function pintarLogros() {
     const acc = !ok ? `<span class="precio" style="color:var(--txt3)">🔒 +${L.oro.toLocaleString('es')}</span>`
       : yo.titulo === L.id ? '<span class="precio" style="color:var(--ok)">✓ En uso</span>'
       : `<button class="btn sec" data-titulo="${L.id}">Usar título</button>`;
-    h += tarjeta(ok ? '🏅' : '🔒', esc(L.titulo), esc(L.desc), acc);
+    // Los que se cuentan: barra de progreso mientras no se tienen.
+    const pr = !ok && progresoLogro(L.id, { ...yo, amigos: yo.amigosN || 0 });
+    const barra = pr && pr[0] > 0 ? `<div class="mis-barra"><i style="width:${Math.round(pr[0] / pr[1] * 100)}%"></i></div><small style="color:var(--txt2)">${pr[0].toLocaleString('es')} / ${pr[1].toLocaleString('es')}</small>` : '';
+    h += tarjeta(ok ? '🏅' : '🔒', esc(L.titulo), esc(L.desc) + barra, acc);
   }
   $('inv-lista').innerHTML = h;
   $('inv-lista').querySelectorAll('[data-titulo]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'titulo', id: b.dataset.titulo }); });

@@ -1595,3 +1595,24 @@ export const premioExpedicion = (h, nv) => {
   return { oro: Math.round(40 * nv * k), xp: Math.round(xpParaSubir(nv) * 0.02 * k), mat };
 };
 
+// Progreso de los logros que se cuentan (para la barra de la ventana de
+// logros): id -> [campo del personaje, meta]. Los de temporada usan su campo.
+const PROG_LOGRO = {
+  caza100: ['kills', 100], caza1000: ['kills', 1000], caza5000: ['kills', 5000], jefe1: ['jefes', 1], jefe25: ['jefes', 25],
+  nv20: ['nivel', 20], nv40: ['nivel', 40], nv60: ['nivel', 60], mundial1: ['mundiales', 1], mundial10: ['mundiales', 10],
+  duelista: ['duelosG', 10], mazmorra1: ['mazmorras', 1], desafio5: ['desafioMax', 5], desafio10: ['desafioMax', 10], desafio20: ['desafioMax', 20],
+  pesca50: ['peces', 50], pesca500: ['peces', 500], torre10: ['torreMax', 10], torre25: ['torreMax', 25], exped25: ['expediciones', 25],
+  amigo1: ['amigos', 1], amigo5: ['amigos', 5],
+};
+export function progresoLogro(id, c) {
+  let p = PROG_LOGRO[id];
+  if (!p) {
+    // Los de temporada: el primer titulo pide 50 de su objeto y el segundo 200.
+    const L = LOGROS.find(x => x.id === id);
+    const t = L && TEMPORADAS.find(x => (x.titulos || []).includes(L.titulo));
+    if (t) p = [t.campo, t.titulos.indexOf(L.titulo) ? 200 : 50];
+  }
+  if (!p) return null;
+  return [Math.min(c[p[0]] || 0, p[1]), p[1]];
+}
+
