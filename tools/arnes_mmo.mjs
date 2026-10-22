@@ -576,7 +576,9 @@ async function pruebas() {
   await pruebasBoveda();
   await pruebasFortaleza();
   await pruebasBanda();
+  await pruebasTopeBanda();
   await pruebasRunas();
+  await pruebasGesta();
   await pruebasMascotas();
   await pruebasContactos();
   await pruebasSkinsDinero();
@@ -1511,6 +1513,9 @@ async function pruebasBanda() {
   chequear(g.uids.length === 6, 'la banda admite a un 6º');
   await L.mandar({ t: 'banda', si: false });
   chequear(g.banda, 'con más de 5 no vuelve a ser grupo');
+  L.limpiar();
+  await L.mandar({ t: 'mazmorra', id: 'ciudadela', k: 3 });
+  chequear(!L.k.includes('#') && L.ultimos('no').some(x => /son para 5/.test(x.m)), 'una banda de 6 no entra a una mazmorra de 5 (ni a sus Desafíos)');
   // Entrar (un Desafio no aplica a la banda)
   await L.mandar({ t: 'mazmorra', id: 'santuario', k: 3 });
   const w = mundo.mundoDe(L);
@@ -1535,7 +1540,19 @@ async function pruebasBanda() {
   chequear(dentro.every(x => x.hp < x.st.maxHp * 0.45 && x.hp > x.st.maxHp * 0.35), 'si nadie la aguanta, estalla sobre todos (con su golpe entero)');
   // Botin: una vez por semana y jefe.
   for (const x of dentro) { x.hp = x.st.maxHp; x.x = coloso.x - 100; x.c.bolsa = []; }
-  mundo.danar(coloso, 1, L); mundo.danar(coloso, coloso.hp + 1, L); tick(1);
+  // Uno que no pelea no cobra; uno con la bolsa llena (de piezas de banda) tampoco, y no gasta la semana.
+  const quieto = dentro[5], lleno = dentro[4];
+  lleno.c.bolsa = Array.from({ length: D.BOLSA_MAX }, (_, i) => ({ id: 'x' + i, s: 'casco', nv: 64, r: 2, b: {}, banda: 1 }));
+  for (const x of dentro) if (x !== quieto) mundo.danar(coloso, 1, x);
+  // Con el combate empezado por pocos, llegan mas: la vida del jefe sube.
+  const max1 = coloso.max;
+  tick(2);
+  chequear(coloso.max >= max1, 'la vida del jefe se ajusta a los que hay en la sala');
+  mundo.danar(coloso, coloso.hp + 1, L); tick(1);
+  chequear(!quieto.c.bolsa.length && !(quieto.c.bandaSem && quieto.c.bandaSem.j.mz_coloso_ab), 'quien no pelea no se lleva el botín de la banda');
+  chequear(lleno.c.bolsa.length === D.BOLSA_MAX && !(lleno.c.bandaSem && lleno.c.bandaSem.j.mz_coloso_ab), 'con la bolsa llena no cobra ni gasta la semana');
+  lleno.c.bolsa = [];
+  for (const x of [quieto, lleno]) { const i = dentro.indexOf(x); dentro.splice(i, 1); }
   const botin = dentro.map(x => x.c.bolsa.find(it => it.nv === D.botinBandaNv(false)));
   chequear(botin.every(it => it && it.r >= 2 && it.des), 'cada uno se lleva un objeto épico de nivel ' + D.botinBandaNv(false));
   chequear(dentro.every(x => x.c.bandaSem && x.c.bandaSem.j.mz_coloso_ab), 'queda anotado el botín de la semana');
@@ -1559,7 +1576,8 @@ async function pruebasBanda() {
   for (const o of jefes) if (o !== titan && !o.muere) { mundo.danar(o, 1, L); mundo.danar(o, o.hp + 1, L); tick(1); }
   for (const x of dentro) { x.x = titan.x - 100; x.hp = x.st.maxHp; }
   dentro[1].c.titanes = 2;
-  mundo.danar(titan, 1, L); mundo.danar(titan, titan.hp + 1, L); tick(2);
+  for (const x of dentro) mundo.danar(titan, 1, x);
+  mundo.danar(titan, titan.hp + 1, L); tick(2);
   chequear(w.inst.completada && L.c.logros.includes('titan') && L.c.titanes === 1, 'vencer al Titán completa la banda y da su logro');
   chequear(dentro[1].c.monturas.includes('abismo') && dentro[1].c.logros.includes('abismo'), 'a la 3ª semana se gana el Murciélago del Abismo');
   chequear(dentro[1].c.boveda && dentro[1].c.boveda.k === 5, 'la banda cuenta en la Bóveda como un Desafío +5');
@@ -1578,6 +1596,32 @@ async function pruebasBanda() {
   const g2 = mundo.grupoDe(solo);
   chequear(g2 && g2.banda && g2.uids.length === 2, 'quien se une desde el buscador de la banda forma una banda');
   await dejar(l2); await dejar(solo);
+}
+
+async function pruebasTopeBanda() {
+  console.log('Banda: tope de 10 dentro');
+  const D = await import('../mmo/js/data.js');
+  const px = D.MAPAS.pueblo.portales.find(p => p.buscador).x;
+  const js = [];
+  for (let i = 0; i < 12; i++) { const j = await entrar('Tope' + i, 'e' + i.toString(16)); ponerNivel(j, 60, 'guerrero'); await aMapa(j, 'pueblo', px); js.push(j); }
+  const [L] = js;
+  await L.mandar({ t: 'invitar', p: js[1].id }); await js[1].mandar({ t: 'grupoResp', si: true });
+  await L.mandar({ t: 'banda', si: true });
+  for (let i = 2; i < 10; i++) { await L.mandar({ t: 'invitar', p: js[i].id }); await js[i].mandar({ t: 'grupoResp', si: true }); }
+  await L.mandar({ t: 'mazmorra', id: 'santuario' });
+  const w = mundo.mundoDe(L);
+  chequear(js.slice(0, 10).every(x => x.k === w.clave), 'entran los 10');
+  // Expulsado: sale de la instancia; el nuevo entra, pero nunca mas de 10.
+  await L.mandar({ t: 'expulsarGrupo', uid: pub(js[9].c.uid) });
+  chequear(js[9].k === 'pueblo', 'quien sale del grupo vuelve al pueblo');
+  await L.mandar({ t: 'invitar', p: js[10].id }); await js[10].mandar({ t: 'grupoResp', si: true });
+  await js[10].mandar({ t: 'mazmorra', id: 'santuario' });
+  chequear(js[10].k === w.clave, 'el nuevo entra a la banda de su grupo');
+  await js[9].mandar({ t: 'mazmorra', id: 'santuario' });
+  chequear(js[9].k !== w.clave, 'el expulsado no vuelve a esa instancia');
+  let dentro = 0; for (const x of mundo.sesiones.values()) if (x.c && x.k === w.clave) dentro++;
+  chequear(dentro === 10, 'nunca hay más de 10 dentro (' + dentro + ')');
+  for (const x of js) await dejar(x);
 }
 
 async function pruebasRunas() {
@@ -1637,6 +1681,57 @@ async function pruebasRunas() {
   mundo.actualizarYo(r);
   chequear(r.ultimos('yo').some(x => x.yo && x.yo.runas && x.yo.runas.vida === 5), 'el cliente recibe sus runas');
   await dejar(r);
+}
+
+async function pruebasGesta() {
+  console.log('Hermandades: gesta semanal');
+  const D = await import('../mmo/js/data.js');
+  const a = await entrar('Gestero', 'd2'), b = await entrar('Gestera', 'd3'), z = await entrar('Gestolo', 'd4');
+  for (const x of [a, b, z]) { ponerNivel(x, 30, 'guerrero'); x.c.oro = 100000; await aMapa(x, 'noche', 600); }
+  await a.mandar({ t: 'hermCrear', nombre: 'Los Gesteros' }); await calma();
+  await a.mandar({ t: 'hermInvitar', p: b.id }); await calma();
+  await b.mandar({ t: 'hermResp', si: true }); await calma();
+  await a.mandar({ t: 'hermInvitar', p: z.id }); await calma();
+  await z.mandar({ t: 'hermResp', si: true }); await calma();
+  const h = mundo.herms.get(a.c.herm);
+  chequear(h && Object.keys(h.miembros).length === 3, 'hermandad de 3');
+  limpiarMapa(a);
+  // a caza 10 y vence un jefe; b, uno solo (no llega al minimo).
+  for (let i = 0; i < 10; i++) { const o = monstruo(a, 'goblin_normal', 30); mundo.danar(o, o.hp + 1, a); tick(1); }
+  const j = monstruo(a, 'jefe_sabueso', 30); mundo.danar(j, j.hp + 1, a); tick(1);
+  const o1 = monstruo(b, 'goblin_normal', 30); mundo.danar(o1, o1.hp + 1, b); tick(1);
+  const G = h.gesta;
+  chequear(G && G.c[a.c.uid] === 20 && G.c[b.c.uid] === 1 && G.p === 21, 'monstruo 1 punto, jefe 10 (' + JSON.stringify(G && G.c && Object.values(G.c)) + ')');
+  // Pasar el Bronce: a cobra, b no (aporto poco), y b cobra al llegar al minimo.
+  const oa = a.c.oro, ob = b.c.oro;
+  G.p = D.GESTA_UMBRALES[0] - 1;
+  a.limpiar();
+  const o2 = monstruo(a, 'goblin_normal', 30); mundo.danar(o2, o2.hp + 1, a); tick(1);
+  const pr = D.premioGesta(0, 30).oro;
+  chequear(a.c.oro - oa >= pr && a.ultimos('toast').some(x => /Gesta de <Los Gesteros>/.test(x.m)), 'al llegar al Bronce, quien aportó cobra ' + pr + ' oro');
+  chequear(b.c.oro - ob < pr, 'quien no llega al mínimo de puntos aún no cobra');
+  for (let i = 0; i < 2; i++) { const o3 = monstruo(b, 'jefe_sabueso', 30); mundo.danar(o3, o3.hp + 1, b); tick(1); }
+  chequear(b.c.oro - ob >= pr, 'al llegar al mínimo cobra el nivel ya conseguido');
+  const oa2 = a.c.oro;
+  const o4 = monstruo(a, 'goblin_normal', 30); mundo.danar(o4, o4.hp + 1, a); tick(1);
+  chequear(a.c.oro - oa2 < pr, 'cada nivel se cobra una sola vez');
+  // Oro: logro. Un miembro desconectado cobra al volver.
+  G.c[z.c.uid] = 50;
+  await dejar(z);
+  G.p = D.GESTA_UMBRALES[2] - 1;
+  const o5 = monstruo(a, 'goblin_normal', 30); mundo.danar(o5, o5.hp + 1, a); tick(1);
+  chequear(a.c.gestaCob.n === 3 && a.c.logros.includes('gesta'), 'al llegar al Oro se cobran Plata y Oro y llega el logro Gesta Dorada');
+  const z2 = await entrar('Gestolo', 'd4'); await calma(); await calma();
+  chequear(z2.c.gestaCob && z2.c.gestaCob.n === 3, 'quien aportó y estaba fuera cobra al entrar');
+  // El cliente recibe la gesta con los aportes por id publico.
+  a.limpiar();
+  await a.mandar({ t: 'herm' }); await calma();
+  const inf = a.ultimos('herm').pop();
+  chequear(inf && inf.h.gesta && inf.h.gesta.p >= D.GESTA_UMBRALES[2] && inf.h.gesta.c[pub(a.c.uid)] > 0 && !JSON.stringify(inf).includes(a.c.uid), 'el cliente ve la gesta sin uids');
+  // La semana siguiente empieza de cero.
+  G.sem = '2000-01-03';
+  chequear(mundo.gestaDe(h).p === 0, 'cada lunes vuelve a empezar');
+  await dejar(a); await dejar(b); await dejar(z2);
 }
 
 async function pruebasBoveda() {

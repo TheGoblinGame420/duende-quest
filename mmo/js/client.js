@@ -14,7 +14,8 @@ import {
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
-} from './data.js?v=73';
+  GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
+} from './data.js?v=74';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1230,7 +1231,7 @@ function mostrarInvitacion(m) {
   $('inv-si').textContent = m.lfg ? 'Unirme' : 'Aceptar';
   $('inv-no').textContent = m.lfg ? 'Ahora no' : 'Rechazar';
   $('inv-txt').innerHTML = m.lfg
-    ? `📢 <b style="color:${cl ? cl.color : 'var(--txt)'}">${esc(m.n)}</b> (Nv ${m.nv}${cl ? ' ' + esc(cl.nombre) : ''}) busca grupo para <b style="color:var(--ok)">${esc((MAZMORRAS[m.id] || {}).nombre || 'una mazmorra')}</b> (${m.m}/5)`
+    ? `📢 <b style="color:${cl ? cl.color : 'var(--txt)'}">${esc(m.n)}</b> (Nv ${m.nv}${cl ? ' ' + esc(cl.nombre) : ''}) busca grupo para <b style="color:var(--ok)">${esc((MAZMORRAS[m.id] || {}).nombre || 'una mazmorra')}</b> (${m.m}/${m.mx || 5})`
     : m.duelo
     ? `⚔️ <b style="color:${cl ? cl.color : 'var(--txt)'}">${esc(m.de)}</b> (Nv ${m.nv}${cl ? ' ' + esc(cl.nombre) : ''}) te reta a un <b style="color:var(--err)">duelo</b>`
     : m.herm
@@ -1480,6 +1481,24 @@ $('b-mapa').onclick = () => abrirMapaMundo();
 // Hermandades: se completa en su seccion (justo debajo).
 let pintarHermandad = L => { L.innerHTML = ''; };
 // ── HERMANDAD ──
+// Gesta semanal de la hermandad: barra con Bronce/Plata/Oro, tu aporte y
+// quienes mas suman.
+function htmlGesta(hm) {
+  const G = hm.gesta;
+  if (!G) return '';
+  const tope = GESTA_UMBRALES[GESTA_UMBRALES.length - 1];
+  const mio = G.c[yo.pid] || 0;
+  const nombre = uid => { const x = hm.m.find(y => y.uid === uid); return x ? x.n : '?'; };
+  const top = Object.entries(G.c).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  let h = '<div style="margin-top:8px;border-top:1px solid var(--borde);padding-top:8px"><b>🏆 Gesta semanal</b>';
+  h += `<div class="mis-barra" style="margin:6px 0"><i style="width:${Math.min(100, G.p / tope * 100)}%"></i></div>`;
+  h += '<div style="display:flex;justify-content:space-between;gap:4px;font-size:11px;flex-wrap:wrap">' + GESTA_UMBRALES.map((u, i) =>
+    `<span style="color:${G.p >= u ? 'var(--ok)' : 'var(--txt2)'}">${GESTA_NOMBRES[i]} ${u.toLocaleString('es')}${G.p >= u ? ' ✓' : ''}<br><span style="color:var(--txt3)">🪙 ${premioGesta(i, yo.nivel).oro.toLocaleString('es')}</span></span>`).join('') + '</div>';
+  h += `<p style="font-size:12px;margin-top:6px">${G.p.toLocaleString('es')} puntos · tu aporte: <b style="display:inline;color:${mio >= GESTA_MIN ? 'var(--ok)' : 'var(--warn)'}">${mio}</b>${mio < GESTA_MIN ? ` (cobras desde ${GESTA_MIN})` : ''}</p>`;
+  if (top.length) h += '<p style="font-size:12px;color:var(--txt2)">Más aportan: ' + top.map(([u, p]) => `${esc(nombre(u))} ${p}`).join(' · ') + '</p>';
+  h += `<p style="font-size:11px;color:var(--txt3);margin-top:4px">${GESTA_PUNTOS.caza} punto por monstruo, ${GESTA_PUNTOS.jefe} por jefe y ${GESTA_PUNTOS.mazmorra} por mazmorra completada. Se reinicia el lunes.</p></div>`;
+  return h;
+}
 let hermandad = null;           // { id, nombre, motd, m: [{ uid, n, lv, cl, r, on }] }
 const RANGO = { lider: '👑 Líder', oficial: '⭐ Oficial', miembro: 'Miembro' };
 function miRangoHerm() {
@@ -1506,6 +1525,7 @@ pintarHermandad = L => {
   const on = hermandad.m.filter(x => x.on).length;
   let h = `<div class="mis-caja" style="margin-top:0"><b>🛡️ &lt;${esc(hermandad.nombre)}&gt;</b><p style="font-size:12px">${hermandad.m.length} miembros · ${on} en línea · tu rango: ${esc(RANGO[r] || '—')}</p>`;
   h += `<p style="font-size:12px;margin-top:6px;color:var(--txt2)">📜 ${esc(hermandad.motd || 'Sin mensaje del día.')}</p>`;
+  h += htmlGesta(hermandad);
   if (manda) h += `<div style="display:flex;gap:6px;margin-top:6px"><input class="nombre" id="in-motd" maxlength="140" placeholder="Nuevo mensaje del día" style="margin:0;font-size:9px;padding:8px"><button class="btn sec" id="b-motd">Guardar</button></div>`;
   h += '</div>';
   for (const x of hermandad.m) {

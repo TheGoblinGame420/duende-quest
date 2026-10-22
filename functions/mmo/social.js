@@ -90,6 +90,7 @@ export const Social = {
     if (!g) return;
     g.uids = g.uids.filter(u => u !== s.c.uid);
     s.gid = 0;
+    if (g.inst && this.sacarDeInstancia) this.sacarDeInstancia(s, g.inst);
     this.enviar(s, { t: 'grupo', g: null });
     if (motivo !== 'silencio') this.avisarGrupo(g, `👥 ${s.c.nombre} ${motivo === 'expulsado' ? 'fue expulsado del' : 'dejó el'} grupo.`);
     this.ordenarGrupo(g);
@@ -116,7 +117,11 @@ export const Social = {
     if (!g || g.lider !== s.c.uid || !uid || uid === s.c.uid) return;
     const t = this.porUid.get(uid);
     if (t) { this.salirGrupo(t, 'expulsado'); this.enviar(t, { t: 'toast', m: '👥 Te expulsaron del grupo.' }); }
-    else { g.uids = g.uids.filter(u => u !== uid); this.avisarGrupo(g, '👥 Un miembro desconectado fue expulsado del grupo.'); this.ordenarGrupo(g); }
+    else {
+      g.uids = g.uids.filter(u => u !== uid);
+      if (this.instDe && this.instDe.get(uid) === g.inst) this.instDe.delete(uid);
+      this.avisarGrupo(g, '👥 Un miembro desconectado fue expulsado del grupo.'); this.ordenarGrupo(g);
+    }
   },
   // Convertir el grupo en banda (hasta 10) o volver a grupo (si son 5 o menos).
   bandaGrupo(s, m) {
@@ -126,6 +131,8 @@ export const Social = {
     const si = !!m.si;
     if (!si && g.uids.length > GRUPO_MAX) return this.no(s, `Sois más de ${GRUPO_MAX}: no puede volver a ser un grupo.`);
     if (g.banda === si) return;
+    const wi = g.inst && this.mundo[g.inst];
+    if (wi && wi.inst && !wi.inst.completada && !wi.inst.banda) return this.no(s, 'Tu grupo está dentro de una mazmorra: terminadla o salid antes de cambiar.');
     g.banda = si;
     this.avisarGrupo(g, si ? `⚔️ El grupo ahora es una BANDA (hasta ${BANDA_MAX}).` : '👥 La banda vuelve a ser un grupo (hasta 5).');
     this.enviarGrupo(g);
@@ -233,8 +240,10 @@ export const Social = {
     if (s.c.nivel < mz.nv[0]) return this.no(s, `Necesitas nivel ${mz.nv[0]} para ${mz.nombre}.`);
     const g = this.grupoDe(s);
     if (g && g.lider !== s.c.uid) return this.no(s, 'Solo el líder del grupo puede buscar más gente.');
-    if (g && mz.banda && !g.banda) { g.banda = true; this.avisarGrupo(g, `⚔️ El grupo ahora es una BANDA (hasta ${BANDA_MAX}).`); this.enviarGrupo(g); }
-    if (g && g.uids.length >= maxGrupo(g)) return this.no(s, 'Tu grupo ya está lleno.');
+    if (g && !mz.banda && g.uids.length > GRUPO_MAX) return this.no(s, `Las mazmorras son para ${GRUPO_MAX}: tu banda solo puede buscar gente para la banda.`);
+    const wi = g && g.inst && this.mundo[g.inst];
+    if (g && mz.banda && !g.banda && wi && wi.inst && !wi.inst.completada) return this.no(s, 'Tu grupo está dentro de una mazmorra: terminadla antes de buscar gente para la banda.');
+    if (g && g.uids.length >= (mz.banda ? BANDA_MAX : maxGrupo(g))) return this.no(s, 'Tu grupo ya está lleno.');
     const ahora = Date.now();
     // El limite va aparte: quitar la busqueda no lo reinicia (si no, anunciar
     // y quitar en bucle inundaba de avisos a todos los conectados).
@@ -242,6 +251,7 @@ export const Social = {
     if (ahora - (this.lfgT.get(s.c.uid) || 0) < LFG_CADA_MS) return this.no(s, 'Ya anunciaste tu búsqueda hace nada: espera un minuto.');
     for (const [u, t] of this.lfgT) if (ahora - t >= LFG_CADA_MS) this.lfgT.delete(u);
     this.lfgT.set(s.c.uid, ahora);
+    if (g && mz.banda && !g.banda) { g.banda = true; this.avisarGrupo(g, `⚔️ El grupo ahora es una BANDA (hasta ${BANDA_MAX}).`); this.enviarGrupo(g); }
     const e = { id: m.id, t: ahora, hasta: ahora + LFG_MS };
     this.lfg.set(s.c.uid, e);
     const aviso = JSON.stringify({ t: 'lfgAviso', ...this.infoLfg(s.c.uid, e) });
@@ -298,7 +308,7 @@ export const Social = {
       this.grupos.set(g.id, g);
       lider.gid = g.id;
     }
-    if (g.uids.length >= maxGrupo(g)) return this.no(s, 'Ese grupo ya está lleno.');
+    if (g.uids.length >= Math.min(maxGrupo(g), mz.banda ? BANDA_MAX : GRUPO_MAX)) return this.no(s, 'Ese grupo ya está lleno.');
     g.uids.push(s.c.uid);
     s.gid = g.id;
     s.invitacion = null;

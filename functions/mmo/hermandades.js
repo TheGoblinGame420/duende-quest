@@ -9,7 +9,7 @@
 // El personaje lleva su hermandad en c.herm. Rangos: 'lider', 'oficial',
 // 'miembro'. Crear una cuesta oro (sale del juego, no de dinero real).
 // ═══════════════════════════════════════════════════════
-import { HERM_COSTO, HERM_NIVEL, HERM_MAX } from '../../mmo/js/data.js';
+import { HERM_COSTO, HERM_NIVEL, HERM_MAX, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta, semanaUTC } from '../../mmo/js/data.js';
 import { pub } from './social.js';
 
 const INV_MS = 60000;
@@ -45,11 +45,15 @@ export const Hermandades = {
     this.enviar(s, { t: 'herm', h: this.infoHerm(h) });
     if (h.motd) this.enviar(s, { t: 'chat', canal: 'hermandad', sis: 1, m: `📜 Mensaje del día de <${h.nombre}>: ${h.motd}` });
     this.avisarHerm(h, `🛡️ ${c.nombre} se conectó.`, s);
+    this.cobrarGesta(s, h);
   },
 
   infoHerm(h) {
+    const G = this.gestaDe(h);
+    const gc = {};
+    for (const u in G.c) if (h.miembros[u]) gc[pub(u)] = G.c[u];
     return {
-      id: h.id, nombre: h.nombre, motd: h.motd || '', creada: h.creada,
+      id: h.id, nombre: h.nombre, motd: h.motd || '', creada: h.creada, gesta: { p: G.p, c: gc },
       m: Object.entries(h.miembros).map(([uid, m]) => ({ uid: pub(uid), n: m.n, lv: m.lv, cl: m.cl, r: m.r, on: this.porUid.has(uid) ? 1 : 0 }))
         .sort((a, b) => b.on - a.on || ({ lider: 0, oficial: 1, miembro: 2 }[a.r] - { lider: 0, oficial: 1, miembro: 2 }[b.r]) || b.lv - a.lv),
     };
@@ -209,6 +213,63 @@ export const Hermandades = {
     if (!h) return this.no(s, 'No estás en una hermandad.');
     const txt = JSON.stringify({ ...base, canal: 'hermandad' });
     for (const x of this.conectadosHerm(h)) this.enviar(x, txt);
+  },
+
+  // ── GESTA SEMANAL ──
+  // h.gesta = { sem, p: puntos de todos, c: { uid: puntos propios } }. Vive
+  // en memoria y se guarda cada 30 s (guardarHermsSucias) o al pasar un
+  // nivel. c.gestaCob = { sem, n }: niveles ya cobrados esa semana.
+  gestaDe(h) {
+    const sem = semanaUTC();
+    if (!h.gesta || h.gesta.sem !== sem) h.gesta = { sem, p: 0, c: {} };
+    return h.gesta;
+  },
+  puntoGesta(s, tipo) {
+    const id = s.c.herm;
+    const h = id && this.herms && this.herms.get(id);
+    if (!h || !h.miembros[s.c.uid]) return;
+    const G = this.gestaDe(h);
+    const pts = GESTA_PUNTOS[tipo] || 0;
+    if (!pts) return;
+    const antes = G.p, mioAntes = G.c[s.c.uid] || 0;
+    G.p += pts;
+    G.c[s.c.uid] = mioAntes + pts;
+    (this.hermSucias = this.hermSucias || new Set()).add(h);
+    const n0 = GESTA_UMBRALES.filter(u => antes >= u).length, n1 = GESTA_UMBRALES.filter(u => G.p >= u).length;
+    if (n1 > n0) {
+      this.avisarHerm(h, `🏆 ¡Gesta semanal: ${GESTA_NOMBRES[n1 - 1]} conseguido! Quien aportó ${GESTA_MIN}+ puntos cobra su oro.`);
+      for (const x of this.conectadosHerm(h)) this.cobrarGesta(x, h);
+      this.guardarHerm(h);
+      this.hermSucias.delete(h);
+    } else if (mioAntes < GESTA_MIN && G.c[s.c.uid] >= GESTA_MIN && n1) this.cobrarGesta(s, h);
+  },
+  // Cobra los niveles de la gesta de esta semana que aun no cobro (si aporto
+  // lo minimo). Se mira al pasar un nivel, al llegar al minimo y al entrar.
+  cobrarGesta(s, h) {
+    const c = s.c;
+    if (!h || !h.miembros[c.uid]) return;
+    const G = this.gestaDe(h);
+    if ((G.c[c.uid] || 0) < GESTA_MIN) return;
+    const n = GESTA_UMBRALES.filter(u => G.p >= u).length;
+    if (!c.gestaCob || c.gestaCob.sem !== G.sem) c.gestaCob = { sem: G.sem, n: 0 };
+    let oro = 0;
+    while (c.gestaCob.n < n) {
+      oro += premioGesta(c.gestaCob.n, c.nivel).oro;
+      c.gestaCob.n++;
+      if (c.gestaCob.n === GESTA_UMBRALES.length) c.gestaOro = (c.gestaOro || 0) + 1;
+    }
+    if (!oro) return;
+    c.oro += oro;
+    s.sucio = true;
+    this.enviar(s, { t: 'toast', ok: true, m: `🏆 Gesta de <${h.nombre}>: +${oro.toLocaleString('es')} oro.` });
+    this.revisarLogros(s);
+    this.actualizarYo(s);
+  },
+  guardarHermsSucias(ahora) {
+    if (!this.hermSucias || !this.hermSucias.size || ahora - (this.hermGuardT || 0) < 30000) return;
+    this.hermGuardT = ahora;
+    for (const h of this.hermSucias) this.guardarHerm(h);
+    this.hermSucias.clear();
   },
 
   // Nivel nuevo: su ficha en la hermandad se pone al dia.
