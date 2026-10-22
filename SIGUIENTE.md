@@ -1190,3 +1190,54 @@ sección "MUNDO ABIERTO" de `client.js`. Solo zonas abiertas con monstruos
   del arnés: `entrar()` esperaba el login con 20 vueltas de setImmediate y el
   SHA-256 a veces tardaba más (ahora espera por tiempo real).
 - No se subió el `?v=` (sigue en 27): súbelo con el siguiente cambio del cliente.
+
+### DUENDE QUEST ONLINE — retención y mundo abierto (21-oct-2026, segunda parte)
+
+El dueño pidió "publícalo, mundo abierto, perfecto, 100% de retención" y
+"mejora continuamente hasta acabar la sesión y pasa a otra haciendo lo
+mismo". Publicado en varias tandas (cliente ?v=30). Además de lo de los
+agentes (avisos de Telegram + estadísticas `/mmostats`, invasiones/raros/
+cofres, ver sus apartados), se hizo:
+
+- **Guía del jugador nuevo:** flecha amarilla hacia el siguiente paso de la
+  misión (busca la ruta de portales entre zonas), tutorial de 5 consejos
+  (`#consejo`, se guarda por personaje en localStorage), viaje caminando
+  contra el borde de la zona (hay que soltar la tecla tras cada viaje; no en
+  mazmorras).
+- **XP de descanso** (`c.descanso`, `c.salida`): 8% de tu nivel por hora
+  fuera (desde 1 h), tope 1,5 niveles; duplica la XP de las cazas. Azul en
+  la barra de XP.
+- **Misiones diarias (3) y semanales (2)** en `functions/mmo/tareas.js`,
+  elegidas por hash de uid+fecha, se cobran solas, bono por completarlas.
+  Tecla L = registro de misiones.
+- **Ranking semanal** de XP ganada (`rankSem` en el storage, en memoria y
+  volcado cada minuto). Al cambiar la semana premia al top 3 (oro × nivel,
+  objeto, título Campeón Semanal) y avisa por Telegram (respetando /avisos).
+- **Recolección y artesanía** (`functions/mmo/profesiones.js`): 4 nodos por
+  zona, Artesana Lila (pueblo x=1680) con pociones, escudos, pólvora,
+  refinar cristal y elixires de 30 min (`c.elix`, aguantan la muerte).
+- **Talentos**: 1 punto por nivel desde el 10, 10 talentos × 5 rangos (📖).
+- **Bestiario** (`c.best`): hitos 25/100/300 por tipo de monstruo con oro.
+- **Invita a un amigo** (`functions/mmo/amigos.js`): enlace
+  `t.me/duendequest_bot?start=mmo_<código>` (el bot responde con el MMO y
+  `?ref=`) o `/mmo/?ref=<código>`. Premio para los dos cuando el amigo llega
+  a Nv 10 (solo cuentas reales y personajes nuevos); al 5º, montura.
+- Resumen de muerte con consejo, frases rápidas en el chat del móvil,
+  "equipar lo mejor", ataque automático (🔁 / tecla H), textos del lienzo en
+  caché (`spriteTexto`).
+- **Arreglo importante (segunda revisión):** dos `hola` simultáneos de la
+  misma cuenta creaban dos copias del personaje (se podía duplicar mTON).
+  Ahora `this.entrando` reserva el uid durante el login.
+
+Ninguna de estas cosas da mTON. Arnés: 234 comprobaciones.
+
+**Medición de rendimiento:** con la CPU 4× más lenta (Chrome sin ventana,
+sin GPU) el combate cargado va a ~20-28 FPS; a velocidad normal, 60. Hay que
+repetir la medida con la máquina libre (los agentes cargaban la CPU) y
+probar en un teléfono real; script en el scratchpad de la sesión (fps.mjs).
+
+**Pendiente / ideas para la siguiente sesión:** duelos entre jugadores,
+validar la física vertical en `mover` (hoy se puede mandar una `y` alta y
+abrir el cofre de la plataforma sin saltar), buscador de grupo, más
+mazmorras, eventos de temporada, y revisar los números D1/D7 con /mmostats
+cuando haya datos (las estadísticas empezaron de cero el 21-oct).
