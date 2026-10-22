@@ -1113,3 +1113,38 @@ recargas, la Carga cruzando barreras, aturdir no cortaba lanzamientos, y
 casa de subastas o comercio entre jugadores, profesiones, talentos con
 puntos. Con 2-3 jugadores reales, lo que más rinde es que se jueguen las
 mazmorras en grupo.
+
+### DUENDE QUEST ONLINE — mundo abierto: invasiones, raros y cofres (21-oct-2026)
+
+Todo en `functions/mmo/eventos.js` (mixin `Eventos`); en el cliente, la
+sección "MUNDO ABIERTO" de `client.js`. Solo zonas abiertas con monstruos
+(nunca pueblo, Coliseo ni mazmorras). **Nada de esto da mTON.**
+
+- **Invasiones**: cada 12-15 min, en una zona abierta elegida al azar entre
+  las que tienen gente; aviso a todo el servidor. Oleadas de invasores
+  agresivos (cada 6 s, cerca de los jugadores, del nivel medio de los
+  presentes dentro del tramo de la zona) y, al cumplir la meta (20 en
+  solitario, +8 por jugador, tope 60), un **Capitán** élite (12× vida, más
+  por jugador). Al caer, todos los que pegaron o curaron a algún invasor
+  (por uid) cobran XP, oro y un objeto raro+ con el nivel de la zona. A los
+  5 min sin terminar, se retiran y no hay premio. Panel en `#h-evento`
+  (nombre, reloj, progreso) para todos; el minimapa se enciende en la zona.
+- **Élites raros**: en cada zona con gente, una tirada por minuto (12%) a
+  partir de 3-8 min; nombre propio, tinte dorado/plateado, 6× vida, "★ Raro".
+  Aviso solo a la zona; uno vivo como mucho; tras morir, 20 min sin otro.
+  Suelta a cada participante un objeto raro+ y XP/oro extra.
+- **Cofres**: 3 por zona en sitios fijos (legendario en la plataforma más
+  alta, épico en la más lejana a esa, común al fondo del mapa). Las
+  posiciones las manda el servidor (`{t:'cofres'}` al entrar a un mapa), no
+  están en data.js. Cada jugador abre cada cofre una vez cada 30 min (marca en
+  `c.cofres`, guardada al momento); el servidor valida la distancia (70 px) y
+  que no esté abierto. Oro según el nivel de la zona, a veces pociones y, con
+  poca probabilidad, equipo. Tecla E o el botón de acción.
+- Ganchos en `world.js`: import + `Object.assign`, `case 'cofre'`,
+  `eventosAlEntrar` en `entrarMapa`, `tickEventos` en `tick`,
+  `alMorirEspecial` en `matar`, `ex` en `infoMonstruo` y en las opciones de
+  `crearMonstruo`.
+- Arnés: 155 comprobaciones (52 nuevas). Se arregló además una falla al azar
+  del arnés: `entrar()` esperaba el login con 20 vueltas de setImmediate y el
+  SHA-256 a veces tardaba más (ahora espera por tiempo real).
+- No se subió el `?v=` (sigue en 27): súbelo con el siguiente cambio del cliente.

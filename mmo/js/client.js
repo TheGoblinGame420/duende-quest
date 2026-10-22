@@ -431,6 +431,7 @@ function recibir(m) {
     case 'mmx': { const o = mons.get(m.id); if (o) { o.mx = m.mx; o.hp = m.hp; } break; }
     case 'emote': emote(m.m); break;
     case 'completada': completada(m); break;
+    case 'ev': case 'cofres': case 'cofreA': recibirMundoAbierto(m); break;
     case 'quien': quienLista = m.r || []; pintarSocial(); break;
     case 'on': online = m.n; pintarSubMapa(); break;
     case 'toast': aviso(m.m, m.ok ? 'ok' : ''); if (m.hab) { $('acciones').innerHTML = ''; pintarHud(); } break;
@@ -499,6 +500,7 @@ function agregarOtro(p) {
 function agregarMon(d) {
   const st = statsMonstruo(d.k, d.nv);
   const o = { id: d.id, k: d.k, nv: d.nv || MONSTRUOS[d.k].nivel, x: d.x, y: d.y, f: d.f, hp: d.hp, mx: d.mx, st: d.st, fl: 0, alto: st.alto, w: st.w, h: st.h, buf: [{ t: performance.now(), x: d.x, y: d.y }], nace: performance.now(), muereT: 0, golpeT: 0 };
+  if (d.ex) o.ex = d.ex;   // invasor, capitan o raro (ver MUNDO ABIERTO)
   mons.set(d.id, o);
   aurasM.set(d.id, aurasDeServidor(d.au));
   if (MONSTRUOS[d.k].jefe) jefeVivo = o;
@@ -765,7 +767,7 @@ function cercano() {
   }
   for (let i = 0; i < mp.portales.length; i++) if (Math.abs(P.x - mp.portales[i].x) < 70) return { tipo: 'portal', i, p: mp.portales[i] };
   for (const n of (mp.npcs || [])) if (Math.abs(P.x - n.x) < 90) return { tipo: 'npc', n };
-  return null;
+  return cofreCercano();
 }
 function interactuar() {
   if (!yo || P.muerto) return;
@@ -773,6 +775,7 @@ function interactuar() {
   if (!c) return;
   sfx('boton', .3);
   if (c.tipo === 'res') { usarHabDef(habPorId('resurreccion'), c.q.id); return; }
+  if (c.tipo === 'cofre') { abrirCofre(c.c); return; }
   if (c.tipo === 'portal' && c.p.buscador) { abrirBuscador(); return; }
   if (c.tipo === 'portal') { mandar({ t: 'portal', i: c.i }); }
   else if (c.n.tipo === 'tienda') abrirTienda();
@@ -963,7 +966,7 @@ function pintarCooldowns() {
       d.classList.toggle('listo', !!listo);
     });
   }
-  if (frame % 30 === 0) pintarMundial();
+  if (frame % 30 === 0) { pintarMundial(); pintarEvento(); }
   const pc = $('consumibles'); if (!pc.children.length) return;
   PODERES.forEach((p, i) => {
     const fin = cdPoder[p.id] || 0;
@@ -1330,6 +1333,179 @@ function abrirMapaMundo() {
   h += fila('coliseo', MAPAS.coliseo, '👹 Jefe mundial a las :00 y :30 — todos los niveles', '').replace('class="zm', 'style="margin-top:8px" class="zm');
   $('mapa-lista').innerHTML = h;
   abrir('m-mapa');
+}
+
+// ── MUNDO ABIERTO: INVASIONES, ELITES RAROS Y COFRES ──
+// El servidor (functions/mmo/eventos.js) decide todo: cuando empieza una
+// invasion, quien cobra y que hay en cada cofre. Aqui solo se dibuja, se
+// muestra el panel del evento y se pide abrir un cofre.
+// Ganchos fuera de esta seccion: recibir (ev/cofres/cofreA), agregarMon
+// (o.ex), dibujarMonstruo (tinte), dibujar (cofres y marcas), cercano /
+// interactuar (cofre), dibujarMinimapa y pintarCooldowns (panel).
+let evento = null;          // { on, mapa, nombre, fin, meta, hechos, fase } o { on: false, txt, hasta } al acabar
+let cofres = [];            // { id, x, y, tipo, hasta } (hasta: abierto PARA TI hasta ese momento)
+let cofresMapa = '';
+const COFRE = {
+  comun:      { img: 'cofre_comun',     nombre: 'Cofre común',      color: '#d0d0d0', luz: '220,220,220' },
+  epico:      { img: 'cofre_epico',     nombre: 'Cofre épico',      color: '#c084fc', luz: '192,132,252' },
+  legendario: { img: 'cofrelegendario', nombre: 'Cofre legendario', color: '#ffd84a', luz: '255,216,74' },
+};
+for (const k in COFRE) cargar(COFRE[k].img, A + 'cofres/' + COFRE[k].img + '.png');
+const COFRE_ALTO = 30;      // alto en pantalla (los dibujos miden 120 px)
+
+function recibirMundoAbierto(m) {
+  const ahora = performance.now();
+  if (m.t === 'ev') {
+    if (m.on) evento = { on: true, mapa: m.mapa, nombre: m.nombre, fin: ahora + m.ms, meta: m.meta, hechos: m.hechos, fase: m.fase };
+    else if (m.fin && evento && evento.on) {
+      // Queda unos segundos el resultado en el panel.
+      evento = { on: false, txt: m.fin === 'ganada' ? '🏆 ¡Invasión rechazada!' : '⌛ La invasión terminó sin premio', ok: m.fin === 'ganada', hasta: ahora + 8000 };
+      if (m.mapa === mapaId) sacudir = Math.max(sacudir, m.fin === 'ganada' ? 8 : 0);
+    } else if (!m.fin && evento && evento.on) evento = null;
+    pintarEvento();
+  } else if (m.t === 'cofres') {
+    cofres = m.l.map(([id, x, y, tipo, ms]) => ({ id, x, y, tipo, hasta: ms ? ahora + ms : 0 }));
+    if (cofresMapa !== m.mapa) { cofresMapa = m.mapa; precalentarZona(m.mapa); }
+  } else if (m.t === 'cofreA') {
+    const cf = cofres.find(c => c.id === m.id);
+    if (!cf) return;
+    cf.hasta = ahora + m.ms;
+    const C = COFRE[m.tipo] || COFRE.comun;
+    sfx('moneda', .5); sfx('explosion', .25);
+    for (let i = 0; i < 26; i++) particula(cf.x, cf.y - 16, i % 2 ? C.color : '#ffe600', 4);
+    for (let i = 0; i < Math.min(8, 3 + Math.floor(m.oro / 40)); i++) monedas.push({ x: cf.x, y: cf.y - 10, vx: (Math.random() - .5) * 5, vy: -4 - Math.random() * 3, t: 0 });
+    flotante(cf.x, cf.y - 40, '+' + m.oro + ' oro', '#ffe600', 11);
+    let txt = '🗝️ ' + C.nombre + ': +' + m.oro.toLocaleString('es') + ' oro';
+    if (m.pociones) { flotante(cf.x, cf.y - 54, '+' + m.pociones + ' poción', '#ff6b9d', 9); txt += ' · +' + m.pociones + ' poción' + (m.pociones > 1 ? 'es' : ''); }
+    if (m.item) {
+      const rz = RAREZAS[m.item.r];
+      flotante(cf.x, cf.y - 68, '★ ' + nombreItem(m.item), rz.color, 10);
+      txt += ' · ' + rz.nombre + ': ' + nombreItem(m.item);
+    }
+    aviso(txt, 'ok');
+  }
+}
+
+// Las copias teñidas (raro dorado/plateado, capitan) se preparan al entrar a
+// la zona y de a una: crearlas cuando aparece el raro daba un tiron.
+function precalentarZona(id) {
+  const mp = MAPAS[id];
+  if (!mp || !mp.monstruos) return;
+  const tareas = [];
+  for (const k of mp.monstruos) for (const t of ['#ffd84a', '#e5e7eb', '#ff5a1f']) tareas.push(['sh_' + MONSTRUOS[k].hoja, t]);
+  const paso = () => { const t = tareas.shift(); if (!t) return; tenido(t[0], t[1]); setTimeout(paso, 30); };
+  setTimeout(paso, 200);
+}
+
+function cofreCercano() {
+  const ahora = performance.now();
+  for (const c of cofres) if (c.hasta <= ahora && Math.abs(P.x - c.x) < 60 && Math.abs(P.y - c.y) < 60) return { tipo: 'cofre', c };
+  return null;
+}
+function abrirCofre(c) { mandar({ t: 'cofre', id: c.id }); }
+
+function dibujarCofres() {
+  const ahora = performance.now();
+  for (const c of cofres) {
+    const x = c.x - camX;
+    if (x < -60 || x > VW + 60) continue;
+    const C = COFRE[c.tipo] || COFRE.comun;
+    const im = IMG[C.img];
+    const abierto = c.hasta > ahora;
+    const cerca = Math.abs(P.x - c.x) < 200;
+    if (!abierto) {
+      // Luz que late y alguna chispa: se ve de lejos que hay algo que abrir.
+      g.save(); g.globalCompositeOperation = 'lighter';
+      const rg = g.createRadialGradient(x, c.y - 14, 2, x, c.y - 14, 42);
+      rg.addColorStop(0, `rgba(${C.luz},${.32 + Math.sin(frame * .08) * .12})`); rg.addColorStop(1, `rgba(${C.luz},0)`);
+      g.fillStyle = rg; g.fillRect(x - 44, c.y - 58, 88, 70); g.restore();
+      if (frame % 20 === 0) particula(c.x + (Math.random() - .5) * 30, c.y - 20 - Math.random() * 12, C.color, 1.2);
+    }
+    if (im && im.naturalWidth) {
+      const h = COFRE_ALTO, w = im.naturalWidth * h / im.naturalHeight;
+      const flota = abierto ? 0 : Math.sin(frame * .06 + c.id) * 1.5;
+      g.save(); g.globalAlpha = abierto ? .35 : 1;
+      g.drawImage(im, x - w / 2, c.y - h + 2 + flota, w, h);
+      g.restore();
+    }
+    if (cerca) {
+      if (abierto) etiqueta(x, c.y - COFRE_ALTO - 8, '✓ ' + Math.ceil((c.hasta - ahora) / 60000) + ' min', 'rgba(255,255,255,.55)', 6);
+      else etiqueta(x, c.y - COFRE_ALTO - 8, C.nombre, C.color, 6);
+    }
+  }
+}
+
+// Marcas sobre los monstruos especiales: el raro (★, con destellos de su
+// color), el Capitan de la invasion y una llamita sobre cada invasor.
+function dibujarMarcasEspeciales() {
+  for (const o of mons.values()) {
+    const ex = o.ex;
+    if (!ex || o.muereT) continue;
+    const x = o.x - camX;
+    if (x < -150 || x > VW + 150) continue;
+    const arriba = o.y - o.alto - 24;
+    // El nombre no se sale por el borde (en movil la vista mide 400).
+    const xe = Math.max(80, Math.min(VW - 80, x));
+    if (ex.raro) {
+      if (frame % 6 === 0) particula(o.x + (Math.random() - .5) * o.w, o.y - Math.random() * o.alto, ex.ti || '#ffd84a', 1.4);
+      etiqueta(xe, arriba, '★ Raro · ' + ex.nom, ex.ti || '#ffd84a', 6);
+    } else if (ex.cap) {
+      etiqueta(xe, arriba, '⚔ ' + ex.nom, '#ff7a3c', 7);
+      barraMini(x, arriba + 4, 60, o.hp / o.mx, '#ff7a3c');
+    } else if (ex.ev) {
+      g.font = '10px sans-serif'; g.textAlign = 'center';
+      g.fillText('🔥', x, arriba - 2 + Math.sin(frame * .15 + o.id) * 2);
+    }
+  }
+}
+
+function dibujarMiniMundoAbierto(k, y) {
+  const ahora = performance.now();
+  for (const c of cofres) {
+    mg.fillStyle = c.hasta > ahora ? 'rgba(255,255,255,.25)' : (COFRE[c.tipo] || COFRE.comun).color;
+    mg.fillRect(4 + c.x * k - 2, y - 7, 4, 4);
+  }
+  for (const o of mons.values()) {
+    if (!o.ex || o.muereT) continue;
+    const mx = 4 + o.x * k;
+    if (o.ex.raro || o.ex.cap) {
+      // Rombo: el raro de su color, el Capitan en rojo.
+      mg.fillStyle = o.ex.raro ? (o.ex.ti || '#ffd84a') : '#ff5a1f';
+      mg.beginPath(); mg.moveTo(mx, y - 6); mg.lineTo(mx + 4, y); mg.lineTo(mx, y + 6); mg.lineTo(mx - 4, y); mg.fill();
+    } else if (o.ex.ev) { mg.fillStyle = '#ff9a3c'; mg.fillRect(mx - 1, y + 3, 2, 3); }
+  }
+  // Invasion en esta zona: el borde del minimapa se enciende.
+  if (evento && evento.on && evento.mapa === mapaId) {
+    mg.strokeStyle = `rgba(255,122,60,${.5 + Math.sin(frame * .2) * .3})`; mg.lineWidth = 2;
+    mg.strokeRect(1, 1, mini.width - 2, mini.height - 2);
+  }
+}
+
+// Panel del evento en el seguimiento de la derecha (bajo la mision).
+function pintarEvento() {
+  const el = $('h-evento');
+  const ahora = performance.now();
+  if (evento && !evento.on && ahora > evento.hasta) evento = null;
+  if (!evento) { ponCss(el, 'display', 'none'); return; }
+  if (!el.firstChild) el.innerHTML = '<b></b><span></span><i><u></u></i>';
+  ponCss(el, 'display', 'block');
+  const [t1, t2, barra] = el.children;
+  if (!evento.on) {
+    ponTxt(t1, evento.txt); ponTxt(t2, '');
+    ponCss(barra, 'display', 'none');
+    ponClase(el, 'lista', !!evento.ok); ponClase(el, 'aqui', false);
+    return;
+  }
+  const ms = Math.max(0, evento.fin - ahora);
+  const reloj = Math.floor(ms / 60000) + ':' + String(Math.floor(ms / 1000) % 60).padStart(2, '0');
+  const aqui = evento.mapa === mapaId;
+  const zona = MAPAS[evento.mapa] ? MAPAS[evento.mapa].nombre : '';
+  ponTxt(t1, '🔥 ' + evento.nombre + (aqui ? '' : ' · ' + zona));
+  ponTxt(t2, '⏱ ' + reloj + ' · ' + (evento.fase === 'capitan' ? '¡Derrota al Capitán!' : 'Invasores ' + evento.hechos + '/' + evento.meta));
+  ponCss(barra, 'display', 'block');
+  ponCss(barra.firstChild, 'width', (evento.fase === 'capitan' ? 100 : Math.round(evento.hechos / evento.meta * 100)) + '%');
+  ponClase(el, 'lista', evento.fase === 'capitan' || ms < 60000);
+  ponClase(el, 'aqui', aqui);
 }
 
 // ── CLASES Y LIBRO DE HECHIZOS ──
@@ -1850,7 +2026,7 @@ function dibujarMonstruo(o) {
     g.translate(x, o.y - 4 + Math.abs(Math.sin(frame * .2)) * -3); if (o.f < 0) g.scale(-1, 1);
     g.fillText('🐑', 0, 0); g.restore();
   } else {
-    dibujarHoja(def.hoja, hoja, fila, col, o.alto * (0.4 + 0.6 * nace), x + temblor, o.y, o.f, alpha * nace, def.tinte || (o.st === 3 ? '#ff3344' : null), golpeado && !o.muereT && (ahora - o.golpeT) < 70);
+    dibujarHoja(def.hoja, hoja, fila, col, o.alto * (0.4 + 0.6 * nace), x + temblor, o.y, o.f, alpha * nace, (o.ex && o.ex.ti) || def.tinte || (o.st === 3 ? '#ff3344' : null), golpeado && !o.muereT && (ahora - o.golpeT) < 70);
   }
   if (o.muereT) return;
   if (raiz) {
@@ -2130,7 +2306,9 @@ function dibujar() {
   dibujarMuros();
   dibujarPortales(mp);
   dibujarNPCs(mp);
+  dibujarCofres();
   for (const o of mons.values()) dibujarMonstruo(o);
+  dibujarMarcasEspeciales();
   for (const q of otros.values()) { interpolar(q); if (q.atk > 0) q.atk--; if (q.herido > 0) q.herido--; dibujarDuende(q, false); }
   if (yo) dibujarDuende(P, true);
   dibujarProyectiles();
@@ -2156,7 +2334,7 @@ function dibujar() {
   ponCss(bi, 'display', 'block');
   if (c && yo && !P.muerto) {
     ponCss(bi, 'visibility', 'visible');
-    ponTxt(bi, c.tipo === 'res' ? '✝ RESUCITAR' : c.tipo === 'portal' ? (TACTIL ? '🚪 ENTRAR' : 'E · ENTRAR') : (TACTIL ? '💬 HABLAR' : 'E · HABLAR'));
+    ponTxt(bi, c.tipo === 'res' ? '✝ RESUCITAR' : c.tipo === 'portal' ? (TACTIL ? '🚪 ENTRAR' : 'E · ENTRAR') : c.tipo === 'cofre' ? (TACTIL ? '🗝️ ABRIR' : 'E · ABRIR') : (TACTIL ? '💬 HABLAR' : 'E · HABLAR'));
   } else ponCss(bi, 'visibility', 'hidden');
 }
 
@@ -2250,6 +2428,7 @@ function dibujarMinimapa() {
   for (const n of (mp.npcs || [])) { mg.fillStyle = '#00ff88'; mg.fillRect(4 + n.x * k - 1.5, y - 2, 3, 4); }
   for (const o of mons.values()) if (MONSTRUOS[o.k].jefe && !o.muereT) { mg.fillStyle = '#ff3cf0'; mg.beginPath(); mg.arc(4 + o.x * k, y, 4, 0, 7); mg.fill(); }
   for (const q of otros.values()) { mg.fillStyle = '#00eeff'; mg.fillRect(4 + q.x * k - 1.5, y - 3, 3, 6); }
+  dibujarMiniMundoAbierto(k, y);
   mg.fillStyle = '#ffe600'; mg.fillRect(4 + P.x * k - 2, y - 4, 4, 8);
 }
 // ── MARCOS DE UNIDAD (cada fotograma; solo tocan el DOM si algo cambia) ──
