@@ -28,6 +28,7 @@ import { Mazmorras } from './mazmorras.js';
 import { Hermandades } from './hermandades.js';
 import { Tareas } from './tareas.js';
 import { Retencion } from './retencion.js';
+import { Eventos } from './eventos.js';
 
 const MAX_JUGADORES = 300;
 const GUARDAR_CADA_MS = 20000;
@@ -257,6 +258,7 @@ export class MmoWorld {
       case 'hermRango': return this.rangoHerm(s, m);
       case 'hermMotd': return this.motdHerm(s, m);
       case 'herm': return this.verHerm(s);
+      case 'cofre': return this.abrirCofre(s, m);
       case 'cancelar': return this.cancelarCast(s);
       case 'pw': return this.poder(s, m);
       case 'portal': return this.portal(s, m);
@@ -860,7 +862,7 @@ export class MmoWorld {
   }
 
   infoMonstruo(m) {
-    return { id: m.id, k: m.k, x: Math.round(m.x), y: Math.round(m.y), f: m.f, hp: Math.ceil(m.hp), mx: m.max, st: this.codigoEstado(m), au: this.aurasVivas(m.au), nv: m.nv || undefined };
+    return { id: m.id, k: m.k, x: Math.round(m.x), y: Math.round(m.y), f: m.f, hp: Math.ceil(m.hp), mx: m.max, st: this.codigoEstado(m), au: this.aurasVivas(m.au), nv: m.nv || undefined, ex: m.ex || undefined };
   }
 
   codigoEstado(m) {
@@ -896,6 +898,7 @@ export class MmoWorld {
     this.enviar(s, { t: 'mapa', mapa: mapaId, clave: k, x: Math.round(s.x), jugadores, mons: [...w.mons.values()].map(m => this.infoMonstruo(m)),
       muros: w.muros || [], inst: w.inst ? { id: w.inst.id, nv: w.inst.nv, hechos: w.inst.hechos } : null });
     this.aClave(k, { t: 'pj', p: this.infoJugador(s) }, s);
+    this.eventosAlEntrar(s, mapaId);
   }
 
   portal(s, m) {
@@ -1144,6 +1147,8 @@ export class MmoWorld {
       this.actualizarYo(s);
     }
     if (o.jefe && o.mazmorra) this.alMorirJefeMaz(o);
+    // Invasores, capitan y raros (functions/mmo/eventos.js).
+    if (o.ex) this.alMorirEspecial(o);
     this.aClave(o.cl, { t: 'md', id: o.id, pr: premios });
     if (o.jefe && !o.mazmorra) {
       this.mundoK(o.cl).jefeEn = Date.now() + JEFE_REAPARECE_MS;
@@ -1552,6 +1557,8 @@ export class MmoWorld {
       (porClave[s.k] = porClave[s.k] || []).push(s);
       if (s.sucio && ahora - s.guardadoT > GUARDAR_CADA_MS) this.guardar(s);
     }
+    // Invasiones, raros (functions/mmo/eventos.js): solo mira zonas con gente.
+    this.tickEventos(ahora, porClave);
     for (const k in porClave) this.simularMapa(k, porClave[k], ahora);
     // Instancias vacias (todos salieron): se cierran solas.
     if (this.limpiarInstancias) this.limpiarInstancias(porClave, ahora);
@@ -1660,7 +1667,7 @@ export class MmoWorld {
       dano: new Map(), amen: new Map(), au: {}, cast: null, obj: 0, golpeHasta: 0, ataqueEn: 0, pasoEn: 0, dir: 0,
       aviso: false, embiste: false, faseEn: Date.now() + 4000, fase: 0,
     };
-    if (op) for (const kk of ['nv', 'agresivo', 'mazmorra', 'radioAgro', 'grupo', 'guion', 'xpX', 'sinEmbestida', 'jefeMaz']) if (op[kk] !== undefined) o[kk] = op[kk];
+    if (op) for (const kk of ['nv', 'agresivo', 'mazmorra', 'radioAgro', 'grupo', 'guion', 'xpX', 'sinEmbestida', 'jefeMaz', 'ex']) if (op[kk] !== undefined) o[kk] = op[kk];
     w.mons.set(o.id, o);
     this.aClave(clave, { t: 'ms', m: this.infoMonstruo(o) });
     return o;
@@ -1803,4 +1810,6 @@ Object.assign(MmoWorld.prototype, Tareas);
 // Estadisticas de retencion y avisos de vuelta por Telegram: functions/mmo/retencion.js
 Object.assign(MmoWorld.prototype, Retencion);
 MmoWorld.prototype.uidsPrueba = UIDS_PRUEBA;
+// Invasiones, elites raros y cofres del mundo abierto: functions/mmo/eventos.js
+Object.assign(MmoWorld.prototype, Eventos);
 MmoWorld.prototype.generarItem = generarItem;

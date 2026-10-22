@@ -86,6 +86,13 @@ html,body{height:100%;background:var(--bg);color:#fff;font-family:'Press Start 2
 #h-mision.lista{color:var(--verde);animation:parp 1s infinite alternate;}
 #h-mundial{color:var(--rosa);margin-top:4px;}
 #h-mundial.lista{animation:parp .8s infinite alternate;}
+/* invasion en curso (functions/mmo/eventos.js): nombre, tiempo y progreso */
+#h-evento{display:none;font-size:6px;line-height:1.6;color:#ff9a3c;margin-top:5px;text-shadow:1px 1px 0 #000,0 0 3px #000;}
+#h-evento b,#h-evento span{display:block;font-weight:normal;}
+#h-evento i{display:block;height:3px;margin:2px 0 0 auto;width:110px;max-width:100%;background:rgba(0,0,0,.55);border-radius:2px;overflow:hidden;}
+#h-evento u{display:block;height:100%;width:0;background:linear-gradient(90deg,#ff5a1f,#ffd84a);transition:width .3s;}
+#h-evento.aqui b{color:#ffd84a;}
+#h-evento.lista{animation:parp .8s infinite alternate;}
 #hud.estrecho #seguimiento{top:112px;max-width:150px;}
 @keyframes parp{to{opacity:.55}}
 #minimapa{right:8px;top:62px;background:var(--panel);border:1px solid var(--borde);border-radius:6px;padding:4px;}
@@ -310,7 +317,7 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
       <div class="caja" id="grupo"></div>
       <div class="caja" id="invitacion"><span id="inv-txt"></span><button class="btn" id="inv-si">ACEPTAR</button><button class="btn sec" id="inv-no">RECHAZAR</button></div>
       <div class="caja" id="minimapa"><canvas id="mini" width="170" height="26"></canvas></div>
-      <div class="caja" id="seguimiento"><div id="h-mision"></div><div id="h-tareas"></div><div id="h-mundial"></div></div>
+      <div class="caja" id="seguimiento"><div id="h-mision"></div><div id="h-tareas"></div><div id="h-mundial"></div><div id="h-evento"></div></div>
       <div class="caja" id="mapa-nom"><span id="h-mapa">—</span><small id="h-mapa-sub"></small></div>
       <div class="caja" id="botones">
         <button class="bt" id="b-libro" title="Hechizos y clase (P)">📖</button>

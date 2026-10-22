@@ -9,7 +9,8 @@
 // ═══════════════════════════════════════════════════════
 import { MmoWorld } from '../functions/mmo/world.js';
 import { pub } from '../functions/mmo/social.js';
-import { MAPAS, HABS, CLASES, statsJugador } from '../mmo/js/data.js';
+import { MAPAS, HABS, CLASES, statsJugador, statsMonstruo, SUELO } from '../mmo/js/data.js';
+import { cofresDe, esZonaAbierta, EVENTO_DURA_MS, COFRE_CADA_MS, RARO_REAPARECE_MS } from '../functions/mmo/eventos.js';
 
 let reloj = 1_800_000_000_000 + 7 * 60 * 1000;   // lejos de las :00/:30 del jefe mundial
 const dateNowReal = Date.now;
@@ -48,8 +49,11 @@ export async function entrar(nombre, n) {
   const s = [...mundo.sesiones.values()].pop();
   const tok = String(n).repeat(32).slice(0, 32).replace(/[^a-f0-9]/g, 'a');
   ws.emitir('message', { data: JSON.stringify({ t: 'hola', auth: { k: 'inv', tok }, nombre }) });
-  // sha256 de crypto.subtle va por el pool de hilos: puede tardar mas de 20 vueltas.
-  for (let i = 0; i < 500 && !s.c; i++) await espera();
+  // El SHA-256 del token va al pool de hilos de Node: con la maquina ocupada
+  // tardaba mas que unas vueltas de setImmediate y la prueba fallaba al azar
+  // ("Cannot set properties of null"). Se espera por tiempo real (hasta 3 s).
+  for (let i = 0; i < 20 && !s.c; i++) await espera();
+  for (let i = 0; i < 300 && !s.c; i++) await new Promise(r => setTimeout(r, 10));
   if (mundo.bucle) { clearInterval(mundo.bucle); mundo.bucle = 1; }
   s.ws = ws;
   s.mandar = o => { s.cuenta = 0; return mundo.recibir(s, JSON.stringify(o)); };
@@ -492,6 +496,7 @@ async function pruebas() {
   tick(30);
   chequear(t2.hp === hpT, 'el turista no recibe daño de un goblin pasivo');
 
+  await pruebasMundoAbierto();
   await pruebasRetencion();
 }
 
@@ -543,7 +548,7 @@ async function pruebasRetencion() {
   mundo.env.TELEGRAM_BOT_TOKEN = TOKEN_BOT;
   const D = Math.floor(Date.now() / DIA) + 1;
   irA(D);
-  const h1 = await entrarR('Cohorte1', '2a'), h2 = await entrarR('Cohorte2', '2b'), h3 = await entrarR('Cohorte3', '2c');
+  const h1 = await entrarR('Cohorte1', '6a'), h2 = await entrarR('Cohorte2', '6b'), h3 = await entrarR('Cohorte3', '6c');
   const bot = await entrarR('BotPrueba', '9');
   chequear(mundo.uidsPrueba.has(bot.c.uid), 'el token 9 es un bot de prueba');
   let d0 = await mundo.retDia(D);
@@ -559,17 +564,17 @@ async function pruebasRetencion() {
   chequear(Math.abs(d0.min - 7) < 0.1, 'los minutos del día van al agregado sin el bot (' + d0.min + ')');
 
   irA(D + 1);
-  const h1b = await entrarR('Cohorte1', '2a'), h2b = await entrarR('Cohorte2', '2b');
+  const h1b = await entrarR('Cohorte1', '6a'), h2b = await entrarR('Cohorte2', '6b');
   chequear(h1b.c.ret.ses === 2 && h1b.c.ret.dt === 2 && h1b.c.ret.alta === 1, 'al volver suma sesión y día distinto');
   chequear((await mundo.retDia(D)).r1 === 2, 'D1: 2 de los 3 volvieron al día siguiente');
   await dejar(h1b);
-  const h1c = await entrarR('Cohorte1', '2a');
+  const h1c = await entrarR('Cohorte1', '6a');
   const d1 = await mundo.retDia(D + 1);
   chequear((await mundo.retDia(D)).r1 === 2 && d1.a === 2 && d1.ses === 3 && d1.n === 0, 'otra sesión el mismo día no se cuenta doble');
   await dejar(h1c); await dejar(h2b);
 
   irA(D + 7);
-  const h1d = await entrarR('Cohorte1', '2a');
+  const h1d = await entrarR('Cohorte1', '6a');
   chequear((await mundo.retDia(D)).r7 === 1, 'D7: 1 volvió a los 7 días');
   // Sigue conectado pasada la medianoche: el guardado periodico anota el dia nuevo.
   irA(D + 8, 0);
@@ -579,7 +584,7 @@ async function pruebasRetencion() {
   chequear((await mundo.retDia(D + 8)).a === 1 && h1d.c.ret.d.at(-1) === D + 8, 'quien cruza la medianoche jugando cuenta como activo del día nuevo');
   await dejar(h1d);
   irA(D + 8, 10);
-  const h3b = await entrarR('Cohorte3', '2c');
+  const h3b = await entrarR('Cohorte3', '6c');
   await dejar(h3b);
 
   const st = await interno('stats');
@@ -611,7 +616,7 @@ async function pruebasRetencion() {
   const t1 = await entrarTg('Rachero', 3001), t2 = await entrarTg('Callado', 3002), t3 = await entrarTg('Bloqueador', 3003);
   const t4 = await entrarTg('SinAvisos', 3004), t5 = await entrarTg('Diario', 3005);
   const gA = await entrarTg('Lider', 3006), gB = await entrarTg('Amigo', 3007);
-  const i1 = await entrarR('Invitado', '2d');
+  const i1 = await entrarR('Invitado', '6d');
   chequear(t1.c && t1.c.uid === 'tg:3001' && t1.c.login && t1.c.login.racha === 1, 'entra con Telegram (initData firmado) y cobra el día 1 de la racha');
   await gA.mandar({ t: 'invitar', p: gB.id });
   await gB.mandar({ t: 'grupoResp', si: true });
@@ -694,6 +699,170 @@ async function pruebasRetencion() {
   try { await runCron('0 17 * * *', envCron); } finally { globalThis.fetch = fetchReal; }
   chequear(ids() === '3004', 'el MMO avisa a quien le toca (' + ids() + ')');
   chequear(arcade.sort().join(',') === '3001,9999', 'el recordatorio del arcade se salta al avisado, al que bloqueó y a quien pidió no recibir avisos (' + arcade + ')');
+}
+
+// ── MUNDO ABIERTO: invasiones, raros y cofres (functions/mmo/eventos.js) ──
+async function pruebasMundoAbierto() {
+  const invasores = (clave, ev) => [...mundo.mundoK(clave).mons.values()].filter(o => o.ex && o.ex.ev === ev.id && !o.muere);
+  const matarCon = (o, s) => mundo.danar(o, o.hp + 1, s);
+  const premio = s => s.ultimos('toast').some(x => /Invasión rechazada/.test(x.m));
+
+  console.log('Invasión: empieza sola en una zona con gente');
+  if (mundo.evento) mundo.terminarEvento(false);
+  const h1 = await entrar('Heroe', '2a'), h2 = await entrar('Mirona', '2b'), h3 = await entrar('Lejana', '2c'), cu = await entrar('Sanadora', '2d');
+  ponerNivel(h1, 9, 'guerrero'); ponerNivel(h2, 9, 'mago'); ponerNivel(h3, 14, 'mago'); ponerNivel(cu, 9, 'sacerdote');
+  mundo.proxEvento = Date.now() - 1;
+  tick(1);
+  const ev0 = mundo.evento;
+  chequear(ev0 && esZonaAbierta(ev0.mapa) && mundo.presentesEn(ev0.mapa).length > 0, 'la invasión elige una zona abierta con jugadores (' + (ev0 && ev0.mapa) + ')');
+  chequear(ev0 && !['pueblo', 'coliseo'].includes(ev0.mapa) && !ev0.mapa.includes('#'), 'nunca en el pueblo, el Coliseo ni una mazmorra');
+  chequear(h1.ultimos('aviso').some(x => /🔥/.test(x.m)), 'se avisa a todo el servidor');
+  mundo.terminarEvento(false);
+  const falta = mundo.proxEvento - Date.now();
+  chequear(!mundo.evento && falta >= 12 * 60000 && falta <= 15 * 60000, 'la siguiente invasión queda a 12-15 min');
+  mundo.proxEvento = Infinity;   // el resto de las pruebas las empieza a mano
+
+  console.log('Invasión: oleadas, meta, capitán y premio solo para quien participó');
+  await aMapa(h1, 'amanecer', 1200); await aMapa(h2, 'amanecer', 2300); await aMapa(cu, 'amanecer', 1250); await aMapa(h3, 'selva', 800);
+  limpiarMapa(h1);
+  for (const s of [h1, h2, h3, cu]) s.limpiar();
+  const ev = mundo.empezarEvento('amanecer');
+  chequear(ev && ev.meta >= 20 && ev.meta <= 60, 'meta escalada con los presentes (' + (ev && ev.meta) + ')');
+  chequear(h3.ultimos('ev').some(x => x.on && x.mapa === 'amanecer'), 'el panel del evento llega también a quien está en otra zona');
+  chequear(mundo.empezarEvento('selva') === null, 'no hay dos invasiones a la vez');
+  tick(1);
+  const ola = invasores('amanecer', ev);
+  chequear(ola.length >= 2 && ola.every(o => o.agresivo), 'llega una oleada de invasores agresivos (' + ola.length + ')');
+  chequear(ola.every(o => o.nv >= MAPAS.amanecer.nv[0] && o.nv <= MAPAS.amanecer.nv[1]), 'del nivel de la zona');
+  matarCon(ola[0], h1);
+  // La sanadora cura a h1 mientras pelea: eso tambien es participar.
+  mundo.danar(ola[1], 1, h1);
+  h1.hp = h1.st.maxHp - 200;
+  mundo.curar(cu, h1, 100);
+  let vueltas = 0;
+  while (mundo.evento && mundo.evento.fase === 'oleadas' && vueltas++ < 200) {
+    tick(61);
+    for (const o of invasores('amanecer', ev)) if (!o.ex.cap) matarCon(o, h1);
+  }
+  chequear(ev.hechos === ev.meta, 'el progreso cuenta cada invasor (' + ev.hechos + '/' + ev.meta + ')');
+  chequear(h2.ultimos('ev').some(x => x.on && x.hechos > 0), 'quien está en la zona ve el progreso');
+  const cap = mundo.mundoK('amanecer').mons.get(ev.capitan);
+  chequear(ev.fase === 'capitan' && cap && cap.ex.cap, 'al cumplir la meta llega el Capitán');
+  chequear(cap && cap.max > statsMonstruo(cap.k, cap.nv).hp * 5, 'el Capitán es élite (mucha más vida)');
+  chequear(h1.ultimos('ev').some(x => x.fase === 'capitan'), 'el panel pasa a la fase del Capitán');
+  const bolsa1 = h1.c.bolsa.length, bolsaCu = cu.c.bolsa.length, bolsa2 = h2.c.bolsa.length, bolsa3 = h3.c.bolsa.length;
+  const oro2 = h2.c.oro, oro3 = h3.c.oro;
+  for (const s of [h1, h2, h3, cu]) s.limpiar();
+  matarCon(cap, h1);
+  chequear(!mundo.evento, 'al caer el Capitán la invasión termina');
+  chequear(premio(h1) && h1.c.bolsa.length > bolsa1, 'quien peleó cobra XP, oro y objeto');
+  chequear(h1.ultimos('gana').some(x => x.item && x.item.r >= 1), 'el objeto es raro o mejor');
+  chequear(premio(cu) && cu.c.bolsa.length > bolsaCu, 'quien curó en el evento también cobra');
+  chequear(!premio(h2) && h2.c.bolsa.length === bolsa2 && h2.c.oro === oro2, 'quien estaba en la zona sin pelear no cobra');
+  chequear(!premio(h3) && h3.c.bolsa.length === bolsa3 && h3.c.oro === oro3, 'quien estaba en otra zona no cobra');
+  chequear(h3.ultimos('aviso').some(x => /rechazada/.test(x.m)) && h3.ultimos('ev').some(x => !x.on), 'se avisa a todos que terminó');
+  chequear(invasores('amanecer', ev).length === 0, 'no quedan invasores');
+  chequear(!h1.ultimos('mton').length && !cu.ultimos('mton').length, 'la invasión no da mTON');
+
+  console.log('Invasión: sin completar a tiempo termina sin premio');
+  for (const s of [h1, h2, h3, cu]) s.limpiar();
+  const evp = mundo.empezarEvento('amanecer');
+  tick(1);
+  mundo.danar(invasores('amanecer', evp)[0], 1, h1);
+  const oroP = h1.c.oro, bolsaP = h1.c.bolsa.length;
+  avanzar(EVENTO_DURA_MS);
+  tick(1);
+  chequear(!mundo.evento, 'a los 5 minutos la invasión se acaba');
+  chequear(h1.ultimos('ev').some(x => !x.on && x.fin === 'perdida'), 'el panel dice que se perdió');
+  chequear(!premio(h1) && h1.c.oro === oroP && h1.c.bolsa.length === bolsaP, 'sin premio para nadie');
+  chequear(invasores('amanecer', evp).length === 0, 'los invasores se retiran');
+
+  console.log('Cofres del tesoro');
+  const cfs = cofresDe('selva');
+  chequear(cfs.length >= 2 && cfs.length <= 3, 'cada zona abierta tiene 2-3 cofres (' + cfs.length + ')');
+  chequear(!cofresDe('pueblo').length && !cofresDe('coliseo').length && !cofresDe('catacumbas').length, 'ni el pueblo, ni el Coliseo, ni las mazmorras tienen');
+  chequear(cfs.some(c => c.y < SUELO), 'hay cofres encima de las plataformas');
+  h3.limpiar();
+  await aMapa(h3, 'selva', 800);
+  const lista = h3.ultimos('cofres').pop();
+  chequear(lista && lista.l.length === cfs.length && lista.l.every(x => x[4] === 0), 'al entrar a la zona llegan sus cofres, todos cerrados');
+  const cf = cfs.find(c => c.y < SUELO);
+  h3.x = cf.x + 300; h3.y = cf.y;
+  let oro0 = h3.c.oro;
+  await h3.mandar({ t: 'cofre', id: cf.i });
+  chequear(h3.c.oro === oro0 && h3.ultimos('no').some(x => /Acércate/.test(x.m)), 'de lejos no se abre');
+  h3.x = cf.x; h3.y = SUELO;
+  await h3.mandar({ t: 'cofre', id: cf.i });
+  chequear(h3.c.oro === oro0, 'el de lo alto de una plataforma no se abre desde el suelo');
+  h3.x = cf.x + 20; h3.y = cf.y;
+  await h3.mandar({ t: 'cofre', id: String(cf.i) });
+  chequear(h3.c.oro === oro0, 'un id que no es número se ignora');
+  await h3.mandar({ t: 'cofre', id: cf.i });
+  const ganado = h3.c.oro - oro0;
+  chequear(ganado > 0 && h3.ultimos('cofreA').length === 1, 'cerca, el cofre se abre y da oro (' + ganado + ')');
+  chequear(((almacen.get('c:' + h3.c.uid) || {}).cofres || {})['selva:' + cf.i], 'se guarda al momento (un reinicio no lo reabre)');
+  oro0 = h3.c.oro;
+  avanzar(1000);
+  await h3.mandar({ t: 'cofre', id: cf.i });
+  chequear(h3.c.oro === oro0 && h3.ultimos('cofreA').length === 1, 'no se abre dos veces');
+  h3.limpiar();
+  await aMapa(h3, 'selva', 800);
+  chequear(h3.ultimos('cofres').pop().l.find(x => x[0] === cf.i)[4] > 0, 'al volver, ese cofre figura abierto para ti');
+  const otro = await entrar('Exploradora', '2e');
+  ponerNivel(otro, 14, 'picaro');
+  await aMapa(otro, 'selva', 800);
+  otro.x = cf.x; otro.y = cf.y;
+  const oroO = otro.c.oro;
+  await otro.mandar({ t: 'cofre', id: cf.i });
+  chequear(otro.c.oro > oroO, 'cada jugador tiene su propio cofre');
+  avanzar(COFRE_CADA_MS);
+  h3.x = cf.x; h3.y = cf.y;
+  oro0 = h3.c.oro;
+  await h3.mandar({ t: 'cofre', id: cf.i });
+  chequear(h3.c.oro > oro0, 'pasados 30 minutos vuelve a tener tesoro');
+  chequear(Object.keys(h3.c.cofres).length === 1, 'las marcas viejas se limpian');
+  const alto = cofresDe('acantilados').find(c => c.tipo === 'comun'), bajo = cofresDe('noche').find(c => c.tipo === 'comun');
+  const r1 = await entrar('Rica', '2f'); ponerNivel(r1, 58, 'mago');
+  await aMapa(r1, 'acantilados', alto.x); r1.x = alto.x; r1.y = alto.y;
+  let o0 = r1.c.oro; await r1.mandar({ t: 'cofre', id: alto.i }); const oroAlto = r1.c.oro - o0;
+  await aMapa(r1, 'noche', bajo.x); r1.x = bajo.x; r1.y = bajo.y;
+  o0 = r1.c.oro; await r1.mandar({ t: 'cofre', id: bajo.i }); const oroBajo = r1.c.oro - o0;
+  chequear(oroAlto > oroBajo * 5, 'el oro va con el nivel de la zona (' + oroAlto + ' contra ' + oroBajo + ')');
+
+  console.log('Élites raros');
+  await aMapa(h3, 'selva', 1300);
+  await aMapa(h1, 'amanecer', 1300);
+  limpiarMapa(h3);
+  h1.limpiar(); h3.limpiar(); otro.limpiar();
+  const raro = mundo.crearRaro('selva');
+  chequear(raro && raro.ex.raro && raro.ex.nom && /^#/.test(raro.ex.ti), 'tiene nombre propio y tinte');
+  chequear(raro.max === Math.round(statsMonstruo(raro.k, raro.nv).hp * 6), 'tiene mucha más vida');
+  chequear(h3.ultimos('emote').some(x => /★/.test(x.m)) && !h1.ultimos('emote').some(x => /★/.test(x.m)), 'se avisa solo a esa zona');
+  chequear(h3.ultimos('ms').some(x => x.m.id === raro.id && x.m.ex && x.m.ex.raro), 'el cliente recibe la marca de raro');
+  chequear(mundo.crearRaro('selva') === raro, 'como mucho uno vivo por zona');
+  const bolsaR = h3.c.bolsa.length;
+  mundo.danar(raro, 1, otro);
+  matarCon(raro, h3);
+  chequear(h3.c.bolsa.length > bolsaR && h3.ultimos('gana').some(x => x.item && x.item.r >= 1), 'suelta un objeto raro o mejor garantizado');
+  chequear(otro.ultimos('gana').some(x => x.item && x.item.r >= 1), 'también a quien ayudó');
+  const w = mundo.mundoK('selva');
+  chequear(w.raroProx - Date.now() >= RARO_REAPARECE_MS - 1000, 'reaparición larga (20 min)');
+  // Con el azar a favor (Math.random = 0) para ver solo el efecto del tiempo.
+  // actT: si no, el servidor lo echa por inactividad al saltar 20 min.
+  const azarReal = Math.random;
+  const raroVivo = () => [...w.mons.values()].some(o => o.ex && o.ex.raro && !o.muere);
+  avanzar(RARO_REAPARECE_MS - 120000);
+  h3.actT = Date.now();
+  Math.random = () => 0;
+  tick(1);
+  Math.random = azarReal;
+  chequear(!h3.cerrado && !raroVivo(), 'antes de la reaparición no sale otro');
+  avanzar(200000);
+  h3.actT = Date.now();
+  Math.random = () => 0;
+  tick(1);
+  Math.random = azarReal;
+  chequear(raroVivo(), 'después sí puede volver');
 }
 
 pruebas().then(resumen).catch(e => { console.error(e); process.exit(1); });
