@@ -175,7 +175,9 @@ export async function weeklyTournament(env) {
 // verificados on-chain (ton_credits) + Stars (stars_purchases, en USD, que se
 // pasan a TON al precio del dia). Asi nunca se promete mas de lo que entro.
 // El dueño puede sumar TON propios con /fondo <TON> en el bot.
-const FONDO_PCT = 0.3;
+// 0 desde el 22-oct-2026: el fondo de mTON lo aporta solo el creador (/fondo),
+// nunca lo que pagan otros jugadores (no parecer un "pozo").
+const FONDO_PCT = 0;
 async function precioTonUsd() {
   try {
     const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=the-open-network&vs_currencies=usd');
