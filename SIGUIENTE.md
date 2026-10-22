@@ -1245,7 +1245,33 @@ alejarse 900 px, cambiar de mapa o desconectarse. Daño reducido (×0,12 golpe,
 ×0,2 vara; la defensa solo amortigua) para ~20-40 s a igual nivel. Logro
 "Duelista" (10 victorias, `c.duelosG`). Ni oro ni mTON por ganar.
 
-**Pendiente / ideas para la siguiente sesión:** validar la física vertical en `mover` (hoy se puede mandar una `y` alta y
-abrir el cofre de la plataforma sin saltar), buscador de grupo, más
+**Auditoría del jugador nuevo (agente, 21-oct) y arreglos (?v=32):** un bot
+que seguía la flecha moría 75-94 veces en 40 min y no pasaba de Nv 2-5
+(sin esas trampas llegaba a Nv 10 en ~9 min). Causas y arreglos:
+- El Sabueso (Nv 8) tenía la guarida en mitad del Bosque (x 1612): ahora
+  `MAPAS.noche.jefeX = 2330` y los jefes de zona no persiguen a quien está
+  3+ niveles por debajo (salvo que les pegue).
+- La zona se taponaba con tipos que el novato no mata (fantasmas, hechiceros):
+  `tipoAReponer` limita cada tipo a su parte del cupo y saca el doble del
+  tipo de las misiones de los presentes; con la zona llena se retira cada
+  20 s un monstruo que nadie tocó en 3 min (`md` con `fuera:1`).
+- Morir antes de Nv 10: sin perder XP y a la entrada de la misma zona.
+- La racha diaria la tapaba la ventana de clase: ahora sale tras elegirla;
+  faltar UN día retrocede dos en vez de reiniciarla.
+- Móvil: descripciones de clase, seguimiento a 8 px (7 en estrecho), avisos
+  más abajo, solo la siguiente habilidad bloqueada, aparición fuera del
+  Mercader (pueblo x=720).
+Además se validó la altura en `mover` (`techoEn`: doble salto ≈183 px,
+tope 215 sobre el suelo o una plataforma cercana).
+
+Otros hallazgos del informe aún sin hacer: misiones de jefe que bloquean la
+cadena jugando solo, `requestWriteAccess`/`addToHomeScreen` en Telegram,
+avisos a la hora habitual de cada uno, mantener la instancia ~5 min al
+reconectar, desconexión a los 3 min con la pestaña oculta, ser claros con el
+fondo de mTON en 0, y final de juego para D30 (1→60 se juega en 5-8 h).
+Metas realistas: D1 30-35%, D7 10-12%, D30 4-6% (el 100% no existe; con
+menos de ~100 altas por cohorte los porcentajes no significan nada).
+
+**Pendiente / ideas para la siguiente sesión:** lo de arriba, buscador de grupo, más
 mazmorras, eventos de temporada, y revisar los números D1/D7 con /mmostats
 cuando haya datos (las estadísticas empezaron de cero el 21-oct).

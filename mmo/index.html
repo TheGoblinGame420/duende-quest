@@ -81,7 +81,7 @@ html,body{height:100%;background:var(--bg);color:#fff;font-family:'Press Start 2
 /* seguimiento de misiones (derecha, bajo el minimapa) */
 #seguimiento{right:8px;top:100px;max-width:200px;text-align:right;pointer-events:none!important;}
 #h-tareas{font-size:6px;line-height:1.6;color:#fde68a;margin-top:3px;text-shadow:1px 1px 0 #000,0 0 3px #000;}
-#h-mision,#h-mundial{font-size:6px;line-height:1.6;text-shadow:1px 1px 0 #000,0 0 3px #000;}
+#h-mision,#h-mundial{font-size:8px;line-height:1.6;text-shadow:1px 1px 0 #000,0 0 3px #000;}
 #h-mision{color:#ffd84a;}
 #h-mision.lista{color:var(--verde);animation:parp 1s infinite alternate;}
 #h-mundial{color:var(--rosa);margin-top:4px;}
@@ -94,6 +94,7 @@ html,body{height:100%;background:var(--bg);color:#fff;font-family:'Press Start 2
 #h-evento.aqui b{color:#ffd84a;}
 #h-evento.lista{animation:parp .8s infinite alternate;}
 #hud.estrecho #seguimiento{top:112px;max-width:150px;}
+#hud.estrecho #h-mision{font-size:7px;}
 @keyframes parp{to{opacity:.55}}
 #minimapa{right:8px;top:62px;background:var(--panel);border:1px solid var(--borde);border-radius:6px;padding:4px;}
 #minimapa canvas{display:block;image-rendering:pixelated;}
@@ -163,6 +164,8 @@ body.tactil #pie{display:none;}
 #emotes div{font-size:9px;color:#ffae00;text-shadow:1px 1px 0 #000,0 0 8px #000,0 0 14px rgba(255,120,0,.6);margin:4px 0;animation:av 3.2s forwards;line-height:1.6;}
 #hud.estrecho #emotes div{font-size:7px;}
 #consejo{left:50%;transform:translateX(-50%);top:128px;display:none;font-size:8px;color:#ffe600;background:rgba(10,4,24,.85);border:1px solid #ffe600;border-radius:8px;padding:8px 12px;white-space:nowrap;pointer-events:none!important;animation:brilla 1.4s infinite alternate;}
+/* En el movil los avisos bajan al cielo vacio: arriba pisaban el seguimiento. */
+#hud.estrecho #avisos{top:250px;width:90%;}
 #hud.estrecho #consejo{top:200px;font-size:7px;white-space:normal;width:86%;text-align:center;line-height:1.6;}
 @keyframes brilla{to{box-shadow:0 0 14px rgba(255,230,0,.55)}}
 #bxp b.desc{position:absolute;top:0;bottom:0;background:rgba(56,189,248,.55);}
@@ -210,7 +213,8 @@ body.tactil #pie{display:none;}
 .clase p{font-size:12px!important;}
 .clase .habs{display:flex;gap:3px;flex-wrap:wrap;}
 .clase .habs img{width:22px;height:22px;image-rendering:pixelated;border:1px solid rgba(255,255,255,.15);border-radius:3px;}
-@media (max-width:520px){.clases{grid-template-columns:1fr;}.clase p{display:none;}}
+/* En el movil tambien se ve que hace cada clase (antes solo el nombre). */
+@media (max-width:520px){.clases{grid-template-columns:1fr;}.clase p{font-size:11px!important;line-height:1.35;margin:4px 0 2px;}.clase .habs img{width:18px;height:18px;}}
 
 /* chat */
 #chat{left:8px;bottom:10px;width:min(320px,42%);}
@@ -601,6 +605,6 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=31"></script>
+<script type="module" src="/mmo/js/client.js?v=32"></script>
 </body>
 </html>

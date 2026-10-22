@@ -13,7 +13,7 @@ import {
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
-} from './data.js?v=31';
+} from './data.js?v=32';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -289,6 +289,7 @@ function recibir(m) {
       if (!antes || antes.clase !== yo.clase || antes.nivel !== yo.nivel) $('acciones').innerHTML = '';
       if ($('m-libro').classList.contains('on')) pintarLibro();
       if (yo.clase && $('m-clase').classList.contains('on') && antes && !antes.clase) cerrarModales();
+      if (yo.clase && loginPend) { const lp = loginPend; loginPend = null; setTimeout(() => mostrarLogin(lp), 900); }
       pintarHud(); if ($('m-tienda').classList.contains('on')) pintarTienda(); if ($('m-inv').classList.contains('on')) pintarInventario();
       if ($('m-mision').classList.contains('on')) pintarMision();
       if ($('m-wallet').classList.contains('on')) pintarWallet();
@@ -304,6 +305,7 @@ function recibir(m) {
     case 'ms': agregarMon(m.m); break;
     case 'md': {
       const o = mons.get(m.id);
+      if (m.fuera) { mons.delete(m.id); castMon.delete(m.id); aurasM.delete(m.id); if (objetivo && objetivo.k === 'm' && objetivo.id === m.id) objetivo = null; break; }
       if (o) { o.muereT = performance.now(); o.st = 2; lanzarFX('muerte', o.x, o.y - o.alto * .45, o.alto / 60, false); sfx('muerte', .35); }
       if (o && MONSTRUOS[o.k].jefe) jefeVivo = null;
       castMon.delete(m.id); aurasM.delete(m.id);
@@ -937,10 +939,14 @@ function pintarAcciones() {
       cont.appendChild(d);
     });
   }
+  // Solo se ve la siguiente por desbloquear: siete casillas grises
+  // ("Nv4…Nv36") llenaban la barra del novato.
+  const prox = habs.findIndex(h => yo.nivel < h.nv);
   habs.forEach((h, i) => {
     const d = cont.children[i];
     const bloq = yo.nivel < h.nv;
     d.classList.toggle('vacio', bloq);
+    ponCss(d, 'display', bloq && i !== prox ? 'none' : '');
     ponTxt(d.querySelector('.n'), bloq ? 'Nv' + h.nv : '');
   });
 }
@@ -1957,7 +1963,11 @@ function pintarEquipo() {
 }
 
 // ── RECOMPENSA DIARIA ──
+// El premio diario de un personaje sin clase espera a que la elija: si no,
+// la ventana de clase lo tapaba y el novato nunca veia el calendario.
+let loginPend = null;
 function mostrarLogin(m) {
+  if (!yo || !yo.clase) { loginPend = m; return; }
   let h = '<div class="dias">';
   LOGIN_PREMIOS.forEach((pr, i) => {
     const n = i + 1;
@@ -1967,7 +1977,7 @@ function mostrarLogin(m) {
   h += '</div>';
   let txt = '¡Hoy recibes ' + m.txt + '!';
   if (m.oro) txt = '¡Hoy recibes ' + m.oro.toLocaleString('es') + ' oro' + (m.item ? ' y ' + RAREZAS[m.item.r].nombre.toLowerCase() + ': ' + nombreItem(m.item) : '') + '!';
-  $('login-cuerpo').innerHTML = h + `<p class="centro" style="margin-top:12px;color:#00ff88">${esc(txt)}</p><p class="centro" style="font-size:12px;color:rgba(255,255,255,.55)">Vuelve mañana para el día ${m.racha % 7 + 1}. Si faltas un día, la racha vuelve a empezar. El oro crece con tu nivel.</p>`;
+  $('login-cuerpo').innerHTML = h + `<p class="centro" style="margin-top:12px;color:#00ff88">${esc(txt)}</p><p class="centro" style="font-size:12px;color:rgba(255,255,255,.55)">Vuelve mañana para el día ${m.racha % 7 + 1}. Si faltas un día, retrocede dos; si faltas más, vuelve a empezar. El oro crece con tu nivel.</p>`;
   abrir('m-login');
   sfx('moneda', .5);
 }

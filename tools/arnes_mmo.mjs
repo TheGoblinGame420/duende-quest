@@ -565,6 +565,7 @@ async function pruebas() {
   await pruebasRetencion();
   await pruebasAmigos();
   await pruebasDuelos();
+  await pruebasNovato();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -1021,10 +1022,65 @@ async function pruebasDuelos() {
   await a.mandar({ t: 'retar', p: b.id }); await b.mandar({ t: 'retoResp', si: true });
   await dejar(b); tick(1);
   chequear(!a.duelo && a.ultimos('dueloFin').some(x => /se fue/.test(x.m)), 'si el rival se desconecta, gana el otro');
+  // Altura: no se puede volar.
+  await aMapa(c, 'amanecer', 2550); c.movT = Date.now() - 100; c.snapHasta = 0;
+  await c.mandar({ t: 'mv', x: 2560, y: 40, f: 1, a: 2 });
+  chequear(c.y >= 400 - 215, 'no se puede volar por encima de un doble salto (y=' + Math.round(c.y) + ')');
+  avanzar(200); await c.mandar({ t: 'mv', x: 2565, y: 300, f: 1, a: 2 });
+  chequear(c.y === 300, 'un salto normal sí vale');
   // En una mazmorra no.
   a.k = 'catacumbas#99';
   a.limpiar(); await a.mandar({ t: 'retar', p: c.id });
   chequear(!c.retoDuelo, 'no hay duelos en mazmorras');
   a.k = 'amanecer';
   for (const s of [a, c]) await dejar(s);
+}
+
+async function pruebasNovato() {
+  console.log('Jugador nuevo: el bosque no es una trampa');
+  const n = await entrar('Novato', '5d');
+  ponerNivel(n, 3, 'guerrero');
+  await aMapa(n, 'noche', 1500);
+  const w = mundo.mundoDe(n);
+  limpiarMapa(n);
+  w.jefeEn = Date.now() - 1; tick(1);
+  const jefe = [...w.mons.values()].find(o => o.jefe);
+  chequear(jefe && jefe.x > 2200, 'el Sabueso aparece al fondo del bosque (x=' + (jefe && Math.round(jefe.x)) + ')');
+  n.x = jefe.x - 200; tick(3);
+  chequear(jefe.obj !== n.id, 'no persigue a un novato 3+ niveles por debajo');
+  const n2 = await entrar('Valiente', '5e'); ponerNivel(n2, 7, 'guerrero'); await aMapa(n2, 'noche', jefe.x - 200);
+  tick(3);
+  chequear(jefe.obj === n2.id, 'a uno de nivel cercano sí');
+  await dejar(n2);
+  w.mons.clear();
+  // Reparto por tipo
+  w.spawnEn = 0;
+  for (let i = 0; i < 300; i++) { tick(1); avanzar(800); w.spawnEn = 0; }
+  const cuenta = {};
+  for (const o of w.mons.values()) if (!o.jefe) cuenta[o.k] = (cuenta[o.k] || 0) + 1;
+  const maxTipo = Math.max(...Object.values(cuenta));
+  chequear(maxTipo <= Math.ceil(12 / 5) + 1, 'ningún tipo acapara la zona (' + JSON.stringify(cuenta) + ')');
+  // Retiro de los que nadie toca
+  const antes = w.mons.size;
+  avanzar(200000); w.retiroEn = 0; n.x = 100; tick(1);
+  chequear(w.mons.size < antes || [...w.mons.values()].some(o => Date.now() - o.nacio < 1000), 'con la zona llena, se retira uno que nadie tocó en 3 min');
+  // Morir de novato
+  n.c.xp = 50; n.inv = 0;
+  mundo.herir(n, 1e6, { id: 0, jefe: true });
+  chequear(n.muerto, '(muere)');
+  mundo.revivir(n);
+  chequear(n.c.xp === 50 && n.c.mapa === 'noche' && n.x < 300, 'hasta Nv 10 se revive en la entrada de la zona sin perder XP');
+  ponerNivel(n, 12); n.c.xp = 500; n.inv = 0;
+  mundo.herir(n, 1e6, { id: 0, jefe: true }); mundo.revivir(n);
+  chequear(n.c.xp < 500 && n.c.mapa === 'pueblo', 'desde Nv 10, como antes (pueblo y -5% XP)');
+  // Racha que perdona
+  const hoy = new Date(Date.now()).toISOString().slice(0, 10);
+  const hace = d => new Date(Date.now() - d * 86400000).toISOString().slice(0, 10);
+  n.c.login = { d: hace(2), racha: 5, total: 5 };
+  chequear(mundo.procesarLogin(n).racha === 4, 'faltar un día retrocede dos en la racha');
+  n.c.login = { d: hace(3), racha: 5, total: 5 };
+  chequear(mundo.procesarLogin(n).racha === 1, 'faltar más vuelve a empezar');
+  n.c.login = { d: hace(1), racha: 5, total: 5 };
+  chequear(mundo.procesarLogin(n).racha === 6 && n.c.login.d === hoy, 'jugar seguido la sube');
+  await dejar(n);
 }

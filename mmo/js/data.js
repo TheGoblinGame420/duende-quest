@@ -835,7 +835,7 @@ export const MAPAS = {
       { id: 'sabio', nombre: 'Sabio Hechicero', hoja: 'hechicero', x: 1180, tipo: 'ranking' },
       { id: 'artesana', nombre: 'Artesana Lila', hoja: 'goblin_mage', x: 1680, tipo: 'artesania' },
     ],
-    spawn: 950,
+    spawn: 720,
   },
   noche: {
     nombre: 'Bosque Nocturno', fondo: 'noche', ancho: 2600, zona: true, nv: [1, 6],
@@ -843,7 +843,9 @@ export const MAPAS = {
     plataformas: [[500, 300, 200], [900, 240, 160], [1400, 290, 220], [1900, 250, 180]],
     portales: [{ x: 60, a: 'pueblo', ax: 150, etiqueta: 'Pueblo Duende' }, { x: 2540, a: 'amanecer', ax: 150, etiqueta: 'Colinas Rojas', nv: '6-12' }],
     monstruos: ['goblin_normal', 'esqueleto', 'goblin_assassin', 'fantasma', 'hechicero'], max: 12,
-    jefe: 'jefe_sabueso',
+    // Guarida al fondo, pasados los hechiceros: en el medio (x 1612) cazaba
+    // a los novatos de las misiones 2 y 3 (medido: 75-94 muertes en 40 min).
+    jefe: 'jefe_sabueso', jefeX: 2330,
   },
   amanecer: {
     nombre: 'Colinas Rojas', fondo: 'amanecer', ancho: 2600, zona: true, nv: [6, 12],

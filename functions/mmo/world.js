@@ -96,6 +96,8 @@ function generarItem(nv, rMin) {
   return { id: idItem(), s, nv: Math.max(1, Math.round(nv)), r, b };
 }
 
+// Doble salto: 11,5²/1,2 + 10²/1,2 ≈ 194 px; margen por los fotogramas.
+const MAX_SALTO = 215;
 export class MmoWorld {
   constructor(state, env) {
     this.state = state;
@@ -827,7 +829,9 @@ export class MmoWorld {
     const L = c.login || { d: null, racha: 0, total: 0 };
     if (L.d === hoy) return null;
     const ayer = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-    const racha = L.d === ayer ? (L.racha % LOGIN_PREMIOS.length) + 1 : 1;
+    const anteayer = new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10);
+    // Faltar UN dia no borra la racha: retrocede dos dias (antes volvia al 1).
+    const racha = L.d === ayer ? (L.racha % LOGIN_PREMIOS.length) + 1 : L.d === anteayer ? Math.max(1, (L.racha || 1) - 1) : 1;
     const pr = LOGIN_PREMIOS[racha - 1];
     const oro = Math.round((pr.oro || 0) * multLogin(c.nivel));
     c.oro += oro;
@@ -998,11 +1002,23 @@ export class MmoWorld {
     // Moverse cancela el hechizo que se esta lanzando (como en WoW).
     if (s.cast && (Math.abs(m.x - s.cast.x) > 6 || Math.abs(y - s.cast.y) > 6)) this.cancelarCast(s, s.cast.h === 'hogar' ? 'Te moviste: la Piedra de Hogar se canceló.' : '');
     s.x = clamp(m.x, 10, ancho - 10);
-    s.y = clamp(y, 40, SUELO);
+    // Altura: como mucho un doble salto (~195 px) sobre el suelo o una
+    // plataforma cercana. Antes se aceptaba cualquier y: se podia "volar"
+    // (y abrir cofres o esquivar a los monstruos de abajo sin saltar).
+    s.y = clamp(Math.max(y, this.techoEn(s.c.mapa, s.x)), 40, SUELO);
     s.f = m.f === -1 ? -1 : 1;
     s.a = clamp(m.a | 0, 0, 6);
     s.movT = ahora;
     s.c.x = Math.round(s.x);
+  }
+
+  // y mas alta (mas pequeña) a la que se puede llegar saltando en x: el doble
+  // salto desde la superficie mas alta de alrededor (con margen por lo que
+  // se avanza en el aire, el dash y la montura).
+  techoEn(mapa, x) {
+    let base = SUELO;
+    for (const [px, py, pw] of MAPAS[mapa].plataformas || []) if (x >= px - 260 && x <= px + pw + 260 && py < base) base = py;
+    return base - MAX_SALTO;
   }
 
   // ── EQUIPO ──
@@ -1119,6 +1135,7 @@ export class MmoWorld {
   danar(o, dmg, s, amen) {
     if (o.muere) return 0;
     const ahora = Date.now();
+    o.tocadoT = ahora;
     // Caparazon (jefes de mazmorra): casi no recibe daño mientras dura.
     const cap = this.auraMon(o, 'caparazon');
     if (cap) dmg = Math.max(1, Math.round(dmg * (1 - (cap.reduce || 0.9))));
@@ -1419,13 +1436,20 @@ export class MmoWorld {
   revivir(s) {
     if (!s.muerto) return;
     const c = s.c;
-    // Castigo suave: se pierde el 5% de la experiencia del nivel actual.
-    c.xp = Math.max(0, c.xp - Math.round(xpParaSubir(c.nivel) * 0.05));
+    // Castigo suave: se pierde el 5% de la experiencia del nivel actual. Hasta
+    // nivel 10 no se pierde nada y se revive a la entrada de la misma zona
+    // (antes: al pueblo, a 80-100 m, y la espiral de muertes echaba al novato).
+    const novato = c.nivel < 10;
+    if (!novato) c.xp = Math.max(0, c.xp - Math.round(xpParaSubir(c.nivel) * 0.05));
     s.muerto = false;
     s.hp = s.st.maxHp;
     this.recursoInicial(s);
     s.inv = Date.now() + 2000;
-    if (!this.revivirEnInstancia(s)) this.entrarMapa(s, 'pueblo', MAPAS.pueblo.spawn);
+    const zona = MAPAS[c.mapa];
+    if (!this.revivirEnInstancia(s)) {
+      if (novato && zona && zona.zona && !s.k.includes('#') && c.mapa !== 'coliseo') this.entrarMapa(s, c.mapa, 150);
+      else this.entrarMapa(s, 'pueblo', MAPAS.pueblo.spawn);
+    }
     this.reponerElixires(s);
     this.actualizarYo(s);
     this.guardar(s);
@@ -1665,12 +1689,20 @@ export class MmoWorld {
       const max = Math.min(mapa.max * 2, mapa.max + 4 * (jugadores.length - 1));
       const vivos = [...w.mons.values()].filter(m => !m.jefe).length;
       if (vivos < max && ahora >= w.spawnEn) {
-        this.crearMonstruo(clave, mapa.monstruos[Math.floor(Math.random() * mapa.monstruos.length)]);
+        this.crearMonstruo(clave, this.tipoAReponer(w, mapa, jugadores, max));
         w.spawnEn = ahora + (vivos < max / 2 ? 700 : 2500);
+      }
+      // Zona llena de monstruos que nadie toca (p. ej. fantasmas que un
+      // novato no alcanza): los que llevan 3 min sin pelear se retiran para
+      // dejar sitio a otros.
+      if (vivos >= max && ahora >= (w.retiroEn || 0)) {
+        w.retiroEn = ahora + 20000;
+        const viejo = [...w.mons.values()].find(m => !m.jefe && !m.ex && !m.muere && !m.amen.size && ahora - (m.tocadoT || m.nacio || 0) > 180000);
+        if (viejo) { w.mons.delete(viejo.id); this.aClave(clave, { t: 'md', id: viejo.id, pr: [], fuera: 1 }); }
       }
       if (mapa.jefe && w.jefeEn && ahora >= w.jefeEn && ![...w.mons.values()].some(m => m.jefe)) {
         w.jefeEn = 0;
-        const j = this.crearMonstruo(clave, mapa.jefe, mapa.ancho * 0.62);
+        const j = this.crearMonstruo(clave, mapa.jefe, mapa.jefeX || mapa.ancho * 0.62);
         this.aTodos({ t: 'aviso', m: `👑 ¡${MONSTRUOS[j.k].nombre} apareció en ${mapa.nombre}!` });
       }
     }
@@ -1734,6 +1766,25 @@ export class MmoWorld {
   }
 
   // op (mazmorras): { nv, hpX, atkX, agresivo, mazmorra, ... } se copian al monstruo.
+  // Que tipo reponer: ninguno pasa de su parte del cupo (si no, la zona se
+  // llenaba de un tipo que el novato no mata y dejaban de salir los de su
+  // mision), y el que piden las misiones de los presentes sale el doble.
+  tipoAReponer(w, mapa, jugadores, max) {
+    const tipos = mapa.monstruos;
+    const cuenta = {};
+    for (const m of w.mons.values()) if (!m.jefe && !m.muere) cuenta[m.k] = (cuenta[m.k] || 0) + 1;
+    const tope = Math.ceil(max / tipos.length) + 1;
+    const pedidos = new Set(jugadores.map(s => (MISIONES[s.c.mis && s.c.mis.i] || {}).tipo));
+    const bolsa = [];
+    for (const k of tipos) {
+      if ((cuenta[k] || 0) >= tope) continue;
+      bolsa.push(k);
+      if (pedidos.has(k)) bolsa.push(k);
+    }
+    const lista = bolsa.length ? bolsa : tipos;
+    return lista[Math.floor(Math.random() * lista.length)];
+  }
+
   crearMonstruo(clave, k, xFija, op) {
     const w = this.mundoK(clave);
     const mapa = MAPAS[w.mapa];
@@ -1753,7 +1804,7 @@ export class MmoWorld {
       x, casaX: x, y: SUELO - alturaVuelo, baseY: SUELO - alturaVuelo, f: Math.random() < 0.5 ? 1 : -1,
       hp, max: hp, atk: Math.round(st.atk * ((op && op.atkX) || 1)), vel: st.vel, w: st.w, h: st.h,
       dano: new Map(), amen: new Map(), au: {}, cast: null, obj: 0, golpeHasta: 0, ataqueEn: 0, pasoEn: 0, dir: 0,
-      aviso: false, embiste: false, faseEn: Date.now() + 4000, fase: 0,
+      aviso: false, embiste: false, faseEn: Date.now() + 4000, fase: 0, nacio: Date.now(),
     };
     if (op) for (const kk of ['nv', 'agresivo', 'mazmorra', 'radioAgro', 'grupo', 'guion', 'xpX', 'sinEmbestida', 'jefeMaz', 'ex']) if (op[kk] !== undefined) o[kk] = op[kk];
     w.mons.set(o.id, o);
@@ -1791,8 +1842,12 @@ export class MmoWorld {
     if (!obj && (o.jefe || o.agresivo) && !oveja && !aturdido) {
       const territorio = o.jefe && !o.mazmorra;
       let md = territorio ? 520 : (o.radioAgro || 230);
+      // El jefe de zona no va a por quien esta 3+ niveles por debajo (salvo
+      // que le pegue: entonces entra por la amenaza, arriba).
+      const nvJefe = territorio ? (o.nv || MONSTRUOS[o.k].nivel || 0) : 0;
       for (const s of jugadores) {
         if (s.muerto || this.aura(s, 'sigilo') || Math.abs(s.y - o.y) > 220) continue;
+        if (territorio && s.c.nivel <= nvJefe - 3) continue;
         const d = Math.abs(s.x - (territorio ? o.casaX : o.x));
         if (d < md) { md = d; obj = s; }
       }
