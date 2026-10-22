@@ -87,7 +87,7 @@ a{color:var(--cian);}
 #hud.estrecho .uf .nm{font-size:8px;}
 #hud.estrecho .uf .nm small{font-size:7px;}
 #uf-yo{left:8px;top:8px;width:206px;}
-#uf-obj{left:222px;top:8px;width:206px;display:none;}
+#uf-obj{left:222px;top:8px;width:206px;display:none;flex-wrap:wrap;}
 #uf-obj.hostil .ret{border-color:var(--err);}
 #uf-obj.amigo .ret{border-color:var(--ok);}
 #hud.estrecho #uf-yo{width:172px;}
@@ -221,8 +221,8 @@ body.tactil #pie{display:none;}
 #invitacion{left:50%;transform:translateX(-50%);top:58px;display:none;background:var(--panel);border:1px solid var(--pri);border-radius:var(--radio);padding:10px 12px;text-align:center;z-index:5;box-shadow:var(--sombra);}
 #invitacion span{display:block;font-family:var(--sans);font-size:14px;line-height:1.4;color:var(--txt);margin-bottom:8px;}
 #invitacion .btn{margin:0 3px;}
-.oacc{display:none;gap:4px;margin-top:4px;}
-.oacc .bt{font-size:7px;padding:4px 7px;min-height:32px;min-width:32px;}
+.oacc{display:none;flex:1 0 100%;flex-wrap:wrap;gap:4px;margin:2px 0 0;}
+.oacc .bt{flex:1 1 30%;font:600 10px var(--sans);letter-spacing:0;padding:3px 2px;min-height:26px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 #emotes{left:50%;transform:translateX(-50%);top:36%;pointer-events:none!important;text-align:center;width:92%;}
 #emotes div{font-size:9px;color:#fbbf24;text-shadow:1px 1px 0 #000,0 0 6px #000;margin:4px 0;animation:av 3.2s forwards;line-height:1.6;}
 #hud.estrecho #emotes div{font-size:7px;}
@@ -486,8 +486,8 @@ input.nombre:focus{border-color:var(--pri-txt);}
           <div class="barra rc" id="orec"><i></i><span id="o-rec"></span></div>
           <div class="barra castm" id="ocast"><i style="transform:scaleX(0)"></i><span id="o-cast"></span></div>
           <div class="auras" id="au-obj"></div>
-          <div class="oacc" id="o-acc"><button class="bt" id="o-invitar">Grupo</button><button class="bt" id="o-herm" title="Invitar a tu hermandad">Herm.</button><button class="bt" id="o-susurrar" title="Susurrar">Mensaje</button><button class="bt" id="o-duelo" title="Retar a un duelo">Duelo</button><button class="bt" id="o-amigo" title="Añadir a tu lista de amigos">Amigo</button><button class="bt" id="o-insp" title="Inspeccionar su equipo">Ver</button></div>
         </div>
+        <div class="oacc" id="o-acc"><button class="bt" id="o-invitar">Grupo</button><button class="bt" id="o-herm" title="Invitar a tu hermandad">Herm.</button><button class="bt" id="o-susurrar" title="Susurrar">Mensaje</button><button class="bt" id="o-duelo" title="Retar a un duelo">Duelo</button><button class="bt" id="o-amigo" title="Añadir a tu lista de amigos">Amigo</button><button class="bt" id="o-insp" title="Inspeccionar su equipo">Ver</button></div>
       </div>
       <div class="caja" id="grupo"></div>
       <div class="caja" id="invitacion"><span id="inv-txt"></span><button class="btn" id="inv-si">Aceptar</button><button class="btn sec" id="inv-no">Rechazar</button></div>
@@ -844,6 +844,6 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=222"></script>
+<script type="module" src="/mmo/js/client.js?v=224"></script>
 </body>
 </html>
