@@ -1893,3 +1893,22 @@ Esta sesión lleva la tienda (pares del `?v=`), la otra lo demás (impares).
     de nivel; logro Trotamundos; en mazmorras se revive junto a la última
     barrera abierta y **ningún monstruo cruza una barrera cerrada**.
   - Arnés: **554 bien, 0 mal**.
+- **?v=158-176 (22-oct, primera hora de la tarde):**
+  - Pago con SOL, segunda pasada: estado `comprobando` mientras se mira la
+    cadena (ni /pedidos ni /entregar lo ven); fuera el aviso de «monto
+    parecido»; «Ya pagué» también mira la wallet si la reference no da.
+  - Mazmorras: los packs sin presa vuelven a su sitio y se curan; se
+    revive dentro de la sala ya limpia (barrera − 120).
+  - **Clima** (`climaDe` en data.js, por hora y zona): lluvia/nieve visual;
+    con lluvia el Pez Dorado sale el doble. **Especies de peces**
+    (`ESPECIES`, una por pesquero; oro la primera vez; logro Ictiólogo;
+    colección en Inventario → BESTIARIO).
+  - Torre: **atajo** (`atajoTorre`: con marca semanal 10+, empezar 5 pisos
+    por debajo; en grupo solo si todos la tienen).
+  - Misiones: diaria «Recoge una expedición», semanal «Supera 10 pisos de
+    la Torre»; la expedición da 3 puntos del pase.
+  - **Telegram**: dentro de la Mini App se ocultan los textos de SOL /
+    wallets (`body.tg .solo-web` y filtro en Novedades).
+  - Resistencia: 30 bots al azar, 10 min simulados, 0 excepciones
+    (scratchpad/soak.mjs de esta sesión).
+  - Arnés: **558 bien, 0 mal**.
