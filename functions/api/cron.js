@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════
 // DUENDE QUEST — Scheduled jobs (Cloudflare Worker crons)
 //   0 3,15 * * *  → keep-alive Supabase (no se pausa el free tier)
-//   0 17 * * *    → recordatorio diario de misiones
+//   0 17 * * *    → avisos de vuelta del MMO + recordatorio diario de misiones
 //   0 12 * * 1    → torneo semanal: premia al top 3 (lunes 12:00 UTC)
 //   0 0 * * *     → pulso del mercado + fondo diario de mTON del MMO
 // ═══════════════════════════════════════════════════════
@@ -62,7 +62,10 @@ export async function keepAlive(env) {
 }
 
 // ── Recordatorio diario ──
-export async function dailyReminder(env) {
+// saltar = telegram_id que no deben recibirlo: los que ya recibieron hoy el
+// aviso del MMO (un solo mensaje del bot a la misma hora) y los que pidieron
+// no recibir avisos (/avisos off) o bloquearon al bot.
+export async function dailyReminder(env, saltar = new Set()) {
   const e = envOf(env);
   const token = env.TELEGRAM_BOT_TOKEN;
   if (!token) return;
@@ -71,6 +74,7 @@ export async function dailyReminder(env) {
   let sent = 0;
   for (const p of profiles) {
     if (!p.telegram_id || !/^\d+$/.test(p.telegram_id)) continue;
+    if (saltar.has(String(p.telegram_id))) continue;
     try {
       await tg(token, 'sendMessage', {
         chat_id: p.telegram_id,
@@ -85,6 +89,19 @@ export async function dailyReminder(env) {
   }
   console.log('[DailyReminder] sent:', sent);
   await postDiscord(env, '🎯 **¡Nuevas misiones diarias disponibles!**\n🔥 No pierdas tu racha — hoy puedes ganar hasta 100 DQ\n🎮 Juega: https://t.me/duendequest_bot');
+}
+
+// ── Avisos de vuelta de DUENDE QUEST ONLINE ──
+// Los arma y manda el propio Durable Object (functions/mmo/retencion.js),
+// que tiene el estado de cada personaje. Devuelve a quien escribio y a quien
+// no hay que escribir, para que el recordatorio del arcade no repita.
+export async function mmoRecordatorios(env) {
+  if (!env.MMO) return null;
+  const stub = env.MMO.get(env.MMO.idFromName('mundo-1'));
+  const r = await stub.fetch('https://mmo/interno/recordatorios', { method: 'POST', headers: { 'x-interno': env.TELEGRAM_BOT_TOKEN || '' }, body: '{}' });
+  const d = await r.json();
+  console.log('[MMO avisos]', { candidatos: d.candidatos, enviados: d.enviados, bloqueados: d.bloqueados, fallidos: d.fallidos });
+  return d;
 }
 
 // ── Torneo semanal ──
@@ -177,7 +194,15 @@ export async function mmoFondo(env) {
 }
 
 export async function runCron(cronExpr, env) {
-  if (cronExpr === '0 17 * * *') return dailyReminder(env);
+  if (cronExpr === '0 17 * * *') {
+    // Primero el MMO: si falla, el recordatorio del arcade sale igual.
+    let saltar = new Set();
+    try {
+      const d = await mmoRecordatorios(env);
+      if (d && d.ok) saltar = new Set([...(d.ids || []), ...(d.callar || [])].map(String));
+    } catch (e) { console.error('[Cron avisos MMO]', e); }
+    return dailyReminder(env, saltar);
+  }
   if (cronExpr === '0 12 * * 1') return weeklyTournament(env);
   if (cronExpr === '0 0 * * *') {
     await marketPulse(env).catch(e => console.error('[Cron pulso]', e));
