@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=196';
+} from './data.js?v=198';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -3595,7 +3595,7 @@ function dibujar() {
   ponCss(bi, 'display', 'block');
   if (c && yo && !P.muerto) {
     ponCss(bi, 'visibility', 'visible');
-    ponTxt(bi, c.tipo === 'res' ? '✝ RESUCITAR' : c.tipo === 'portal' ? (c.p.etiqueta === 'Salida' ? (TACTIL ? '🚪 SALIR' : 'E · SALIR') : (TACTIL ? '🚪 ENTRAR' : 'E · ENTRAR')) : c.tipo === 'cofre' ? (TACTIL ? '🗝️ ABRIR' : 'E · ABRIR') : c.tipo === 'vitrina' ? (TACTIL ? '✨ VER SKINS' : 'E · VER SKINS') : c.tipo === 'nodo' ? (TACTIL ? '⛏️ RECOGER' : 'E · RECOGER') : c.tipo === 'pesca' ? (castYo && castYo.id === 'pica' ? (TACTIL ? '🐟 ¡TIRA!' : 'E · ¡TIRA!') : castYo && castYo.id === 'pescar' ? '🎣 Espera…' : (TACTIL ? '🎣 PESCAR' : 'E · PESCAR')) : (TACTIL ? '💬 HABLAR' : 'E · HABLAR'));
+    ponTxt(bi, c.tipo === 'res' ? 'RESUCITAR' : c.tipo === 'portal' ? (c.p.etiqueta === 'Salida' ? (TACTIL ? 'SALIR' : 'E · SALIR') : (TACTIL ? 'ENTRAR' : 'E · ENTRAR')) : c.tipo === 'cofre' ? (TACTIL ? 'ABRIR' : 'E · ABRIR') : c.tipo === 'vitrina' ? (TACTIL ? 'VER SKINS' : 'E · VER SKINS') : c.tipo === 'nodo' ? (TACTIL ? 'RECOGER' : 'E · RECOGER') : c.tipo === 'pesca' ? (castYo && castYo.id === 'pica' ? (TACTIL ? '¡TIRA!' : 'E · ¡TIRA!') : castYo && castYo.id === 'pescar' ? 'Espera…' : (TACTIL ? 'PESCAR' : 'E · PESCAR')) : (TACTIL ? 'HABLAR' : 'E · HABLAR'));
   } else ponCss(bi, 'visibility', 'hidden');
 }
 
