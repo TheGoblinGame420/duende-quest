@@ -585,6 +585,7 @@ async function pruebas() {
   await pruebasPagoSol();
   await pruebasHoraFeliz();
   await pruebasElo();
+  await pruebasAmbulante();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -1340,6 +1341,30 @@ async function pruebasTintes() {
   await dejar(t); await dejar(v);
 }
 
+
+async function pruebasAmbulante() {
+  console.log('Mercader ambulante (fines de semana)');
+  const D = await import('../mmo/js/data.js');
+  const m = await entrar('Coleccion', '86');
+  ponerNivel(m, 45, 'mago'); m.c.oro = 1e6;
+  await aMapa(m, 'pueblo', 900);
+  // Un martes: no se vende.
+  let t = Math.floor(Date.now() / DIA) * DIA; while (new Date(t).getUTCDay() !== 2) t += DIA;
+  reloj = Math.max(reloj, t + 12 * 3600000); m.actT = reloj;
+  const of = D.ambulanteOferta();
+  m.limpiar(); await m.mandar({ t: 'comprar', k: 'tinte', id: of.tintes[0] });
+  chequear(!(m.c.tintes || []).includes(of.tintes[0]) && m.ultimos('toast').some(x => /ambulante/.test(x.m)), 'entre semana no se puede comprar lo del ambulante');
+  // El sábado de esa semana: sí, y solo lo de su oferta.
+  reloj = t + 4 * DIA + 12 * 3600000; m.actT = reloj;
+  chequear(D.ambulanteActivo() && D.ambulanteOferta().tintes.join() === of.tintes.join(), 'el sábado está y trae la oferta de la semana');
+  await m.mandar({ t: 'comprar', k: 'tinte', id: of.tintes[0] });
+  await m.mandar({ t: 'comprar', k: 'mascota', id: of.mascotas[0] });
+  chequear(m.c.tintes.includes(of.tintes[0]) && m.c.mascotas.includes(of.mascotas[0]), 'el fin de semana se compran el color y la mascota de la oferta');
+  const otro = D.AMB_TINTES.find(x => !of.tintes.includes(x));
+  await m.mandar({ t: 'comprar', k: 'tinte', id: otro });
+  chequear(!m.c.tintes.includes(otro), 'lo que no está en la oferta de esa semana, no');
+  await dejar(m);
+}
 
 async function pruebasElo() {
   console.log('Ranking de duelos (Elo)');

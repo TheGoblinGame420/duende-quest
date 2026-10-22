@@ -20,7 +20,7 @@ import {
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, MTON_EDAD_MIN_MS, WALLET_ESPERA_MS, FONDO_REFERENCIA_MTON, tonAmigable,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, FONDO_PCT_INGRESOS, PAQUETES, estrellasDe, PEDIDO_VIGENCIA_MS,
   temporadaDe, TEMPORADAS, TEMP_PROB, TEMP_JEFE,
-  TINTES, MASCOTAS,
+  TINTES, MASCOTAS, enOfertaAmbulante, ambulanteActivo,
   CONJUNTOS, CONJUNTO_PROB,
   semanaUTC, horaFelizActiva, HORA_FELIZ, afijosSemana, DES_SEM_MIN, premioDesSem, BESTIARIO_HITOS, premioBestiario, talento, TALENTOS, TALENTO_MAX, puntosTalento, costoReinicioTalentos, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX,
 } from '../../mmo/js/data.js';
@@ -459,6 +459,7 @@ export class MmoWorld {
     this.enviar(s, { t: 'bienvenido', id: s.id, yo: this.datosPropios(s), nuevo, heredado, regaladas, on: this.contarOnline() });
     if (login) this.enviar(s, { t: 'login', ...login });
     const tp = temporadaDe();
+    if (ambulanteActivo() && c.nivel >= 15) this.enviar(s, { t: 'toast', m: '🧳 Este fin de semana el Mercader trae género del ambulante: colores y una mascota que no vende el resto de la semana (pestaña AMBULANTE).', ok: true });
     if (tp) this.enviar(s, { t: 'toast', m: `${tp.emoji} ¡${tp.nombre}! Hasta el ${tp.hasta} los monstruos sueltan ${tp.cosas} (los jefes, ${TEMP_JEFE}). 50 = título «${tp.titulos[0]}», 200 = «${tp.titulos[1]}». Llevas ${c[tp.campo] || 0}.`, ok: true });
     else {
       // Sin evento: si el siguiente empieza en 10 dias o menos, se anuncia
@@ -1677,6 +1678,7 @@ export class MmoWorld {
         if (typeof m.id !== 'string' || !Object.hasOwn(TINTES, m.id)) return;
         const tn = TINTES[m.id];
         if (!c.tintes.includes(m.id)) {
+          if (tn.amb && !enOfertaAmbulante('tinte', m.id)) return this.enviar(s, { t: 'toast', m: 'Ese color solo lo trae el Mercader ambulante algunos fines de semana.' });
           if (c.nivel < tn.nv) return this.enviar(s, { t: 'toast', m: `Necesitas nivel ${tn.nv} para ese color.` });
           if (c.oro < tn.precio) return this.enviar(s, { t: 'toast', m: 'No te alcanza el oro.' });
           c.oro -= tn.precio;
@@ -1693,6 +1695,7 @@ export class MmoWorld {
         if (typeof m.id !== 'string' || !Object.hasOwn(MASCOTAS, m.id)) return;
         const ma = MASCOTAS[m.id];
         if (!c.mascotas.includes(m.id)) {
+          if (ma.amb && !enOfertaAmbulante('mascota', m.id)) return this.enviar(s, { t: 'toast', m: 'Esa mascota solo la trae el Mercader ambulante algunos fines de semana.' });
           if (c.nivel < ma.nv) return this.enviar(s, { t: 'toast', m: `Necesitas nivel ${ma.nv} para esa mascota.` });
           if (c.oro < ma.precio) return this.enviar(s, { t: 'toast', m: 'No te alcanza el oro.' });
           c.oro -= ma.precio;

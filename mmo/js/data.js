@@ -1465,3 +1465,30 @@ export function horaFelizTiempos(t = Date.now()) {
   return { activa: false, falta: prox - t, acaba: 0 };
 }
 
+// ── MERCADER AMBULANTE (viernes a domingo UTC) ──
+// Cada fin de semana el Mercader trae 2 colores de nombre y 1 mascota que no
+// vende el resto de la semana; la oferta rota cada semana. Solo estetica y
+// con oro. Lo que compras es tuyo para siempre.
+Object.assign(TINTES, {
+  coral:  { nombre: 'Coral Marino',     color: '#ff7f6e', nv: 15, precio: 35000, amb: true },
+  hielo:  { nombre: 'Hielo Eterno',     color: '#a5f3fc', nv: 15, precio: 35000, amb: true },
+  sombra: { nombre: 'Sombra Violeta',   color: '#8b5cf6', nv: 25, precio: 50000, amb: true },
+  lima:   { nombre: 'Lima Ácida',       color: '#bef264', nv: 25, precio: 50000, amb: true },
+  sangre: { nombre: 'Sangre de Dragón', color: '#dc2626', nv: 40, precio: 80000, amb: true },
+  aurora: { nombre: 'Aurora',           color: '#5eead4', nv: 40, precio: 80000, amb: true },
+});
+Object.assign(MASCOTAS, {
+  hongo_dorado:  { nombre: 'Hongo Dorado',    hoja: 'hongo',    alto: 24, nv: 15, precio: 60000,  tinte: '#facc15', amb: true },
+  rana_azul:     { nombre: 'Rana Azul',       hoja: 'rana',     alto: 24, nv: 20, precio: 70000,  tinte: '#38bdf8', amb: true },
+  pajaro_fuego:  { nombre: 'Pájaro de Fuego', hoja: 'pajaro',   alto: 24, nv: 30, precio: 110000, tinte: '#f97316', vuela: true, amb: true },
+  fantasma_rosa: { nombre: 'Fantasmita Rosa', hoja: 'fantasma', alto: 28, nv: 40, precio: 160000, tinte: '#f472b6', vuela: true, amb: true },
+});
+export const AMB_TINTES = ['coral', 'hielo', 'sombra', 'lima', 'sangre', 'aurora'];
+export const AMB_MASCOTAS = ['hongo_dorado', 'rana_azul', 'pajaro_fuego', 'fantasma_rosa'];
+export const ambulanteActivo = (t = Date.now()) => [5, 6, 0].includes(new Date(t).getUTCDay());
+export function ambulanteOferta(sem = semanaUTC()) {
+  const n = Math.round(Date.parse(sem + 'T00:00:00Z') / (7 * 86400000));
+  return { tintes: [AMB_TINTES[(2 * n) % 6], AMB_TINTES[(2 * n + 1) % 6]], mascotas: [AMB_MASCOTAS[n % 4]] };
+}
+export const enOfertaAmbulante = (k, id) => ambulanteActivo() && ambulanteOferta()[k === 'tinte' ? 'tintes' : 'mascotas'].includes(id);
+

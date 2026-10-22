@@ -7,7 +7,7 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, ALCANCE_BASE, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
-  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TINTES, MASCOTAS, NOVEDADES, GESTOS, horaFelizTiempos, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
+  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TINTES, MASCOTAS, NOVEDADES, ambulanteActivo, ambulanteOferta, semanaUTC, GESTOS, horaFelizTiempos, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=98';
+} from './data.js?v=100';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -3008,7 +3008,7 @@ function dibujarMascota(q, id, f, pies, montado) {
   if (Math.abs(dx) > 2) p.f = dx > 0 ? 1 : -1;
   const anda = Math.abs(dx) > 3 || ma.vuela;
   const col = hm.mov[1] + (anda ? Math.floor(frame / 6) % hm.mov[2] : 0);
-  dibujarHoja(ma.hoja, hm, hm.mov[0], col, ma.alto, p.x - camX, p.y, p.f, 1, null, false);
+  dibujarHoja(ma.hoja, hm, hm.mov[0], col, ma.alto, p.x - camX, p.y, p.f, 1, ma.tinte || null, false);
 }
 function accesorioClase(clase, x, top, f) {
   if (clase !== 'mago' && clase !== 'sacerdote' && clase !== 'picaro') return;
@@ -3658,6 +3658,7 @@ function pintarTienda() {
   } else if (tabTienda === 'tinte') {
     for (const [id, tn] of Object.entries(TINTES)) {
       const tiene = (yo.tintes || []).includes(id);
+      if (tn.amb && !tiene) continue;   // los del ambulante, en su pestaña
       const muestra = tn.color === 'arcoiris' ? 'background:linear-gradient(90deg,#f43f5e,#facc15,#34d399,#38bdf8,#c084fc)' : 'background:' + tn.color;
       const ico = `<div style="width:40px;height:40px;border-radius:8px;${muestra}"></div>`;
       const acc = tiene ? (yo.tinte === id ? '<span class="precio" style="color:var(--ok)">✓ En uso</span>' : `<button class="btn sec" data-comprar="tinte" data-id="${id}">Usar</button>`)
@@ -3669,6 +3670,7 @@ function pintarTienda() {
   } else if (tabTienda === 'mascota') {
     for (const [id, ma] of Object.entries(MASCOTAS)) {
       const tiene = (yo.mascotas || []).includes(id);
+      if (ma.amb && !tiene) continue;   // las del ambulante, en su pestaña
       const ico = `<canvas data-hoja="${ma.hoja}" width="52" height="52"></canvas>`;
       const acc = tiene ? (yo.mascota === id ? '<span class="precio" style="color:var(--ok)">✓ Te acompaña</span>' : `<button class="btn sec" data-comprar="mascota" data-id="${id}">Llevar</button>`)
         : yo.nivel < ma.nv ? `<span class="precio" style="color:var(--warn)">Nv ${ma.nv}</span><span class="precio">🪙 ${ma.precio.toLocaleString('es')}</span>`
@@ -3676,6 +3678,19 @@ function pintarTienda() {
       h += tarjeta(ico, esc(ma.nombre), 'Te sigue a todas partes y la ven todos. Solo estética: no da nada.', acc);
     }
     if (yo.mascota) h += `<button class="btn sec" data-comprar="mascota" data-id="" style="width:100%;margin-top:6px">Guardar a mi mascota</button>`;
+  } else if (tabTienda === 'ambulante') {
+    // Mercader ambulante: la oferta de esta semana; se compra de viernes a domingo (UTC).
+    const activo = ambulanteActivo(), of = ambulanteOferta();
+    h += `<p style="font-size:13px;color:var(--txt2);margin-bottom:8px">${activo ? '🧳 <b style="color:var(--ok)">El ambulante está aquí este fin de semana.</b>' : '🧳 El ambulante llega el <b>viernes</b> y se va el domingo (UTC). Esta es su oferta de esta semana:'} Cada semana trae otra cosa. Solo estética.</p>`;
+    const fila = (k, id, d, ico, extra) => {
+      const tiene = ((k === 'tinte' ? yo.tintes : yo.mascotas) || []).includes(id);
+      const acc = tiene ? '<span class="precio" style="color:var(--ok)">✓ Ya es tuyo</span>'
+        : yo.nivel < d.nv ? `<span class="precio" style="color:var(--warn)">Nv ${d.nv}</span><span class="precio">🪙 ${d.precio.toLocaleString('es')}</span>`
+        : `<span class="precio">🪙 ${d.precio.toLocaleString('es')}</span><button class="btn" data-comprar="${k}" data-id="${id}" ${!activo || yo.oro < d.precio ? 'disabled' : ''}>${activo ? 'Comprar' : 'El viernes'}</button>`;
+      h += tarjeta(ico, extra, k === 'tinte' ? 'Color de nombre exclusivo del ambulante.' : 'Mascota exclusiva del ambulante.', acc);
+    };
+    for (const id of of.tintes) { const tn = TINTES[id]; fila('tinte', id, tn, `<div style="width:40px;height:40px;border-radius:8px;background:${tn.color}"></div>`, `<span style="color:${tn.color}">${esc(tn.nombre)}</span>`); }
+    for (const id of of.mascotas) { const ma = MASCOTAS[id]; fila('mascota', id, ma, `<canvas data-hoja="${ma.hoja}" data-tinte="${ma.tinte || ''}" width="52" height="52"></canvas>`, esc(ma.nombre)); }
   } else if (tabTienda === 'montura') {
     for (const [id, mo] of Object.entries(MONTURAS)) {
       const tiene = (yo.monturas || []).includes(id);
