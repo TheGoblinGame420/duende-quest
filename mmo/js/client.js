@@ -14,7 +14,7 @@ import {
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
-} from './data.js?v=72';
+} from './data.js?v=73';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -2558,7 +2558,17 @@ function cargarScript(src) {
 }
 async function pagarConPhantom(m) {
   const prov = (window.phantom && window.phantom.solana) || (window.solana && window.solana.isPhantom ? window.solana : null);
-  if (!prov) { aviso('No encontramos Phantom en este navegador. Instálalo o paga desde otra wallet y pega la firma.'); window.open('https://phantom.app/', '_blank'); return; }
+  if (!prov) {
+    // En el movil el navegador no trae Phantom: se abre el juego dentro de
+    // la app de Phantom (enlace universal), donde si se puede firmar; alli
+    // se vuelve a pedir la compra (el pedido sin pagar caduca solo).
+    if (TACTIL) {
+      aviso('Abriendo el juego dentro de Phantom: entra con tu cuenta y vuelve a pedir la compra en la tienda; ahí se paga con un toque.', 'ok');
+      window.location.href = 'https://phantom.app/ul/browse/' + encodeURIComponent(location.href) + '?ref=' + encodeURIComponent(location.origin);
+      return;
+    }
+    aviso('No encontramos Phantom en este navegador. Instálalo o paga desde otra wallet y pega la firma.'); window.open('https://phantom.app/', '_blank'); return;
+  }
   try {
     if (!window.solanaWeb3) await cargarScript('https://unpkg.com/@solana/web3.js@1/lib/index.iife.min.js');
     const { Connection, PublicKey, Transaction, SystemProgram } = window.solanaWeb3;
