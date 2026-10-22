@@ -7,7 +7,7 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, ALCANCE_BASE, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
-  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TINTES, MASCOTAS, NOVEDADES, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
+  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TINTES, MASCOTAS, NOVEDADES, GESTOS, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
@@ -15,7 +15,7 @@ import {
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
-} from './data.js?v=76';
+} from './data.js?v=78';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -542,6 +542,7 @@ function recibir(m) {
     case 'quien': quienLista = m.r || []; pintarSocial(); break;
     case 'contactos': contactos = m.l || []; pintarSocial(); break;
     case 'inspeccion': pintarInspeccion(m); break;
+    case 'gesto': if (GESTOS[m.id]) { gestos.set(m.p, { id: m.id, t: performance.now() }); if (m.p === miId) sfx('boton', .25); } break;
     case 'on': online = m.n; if (m.h) jugaronHoy = m.h; pintarSubMapa(); break;
     case 'toast': aviso(m.m, m.ok ? 'ok' : ''); if (m.hab) { $('acciones').innerHTML = ''; pintarHud(); } break;
     case 'aviso': aviso(m.m, 'jefe'); lineaChat(null, m.m); sfx('explosion', .3); break;
@@ -955,7 +956,8 @@ function abrirChat() {
   // En el movil, frases de un toque encima del teclado.
   if (TACTIL) {
     const f = $('frases');
-    if (!f.children.length) FRASES.forEach(t => { const b = document.createElement('button'); b.className = 'bt'; b.textContent = t; b.onmousedown = b.ontouchstart = e => { e.preventDefault(); mandar({ t: 'chat', canal: 'general', m: t }); cerrarChat(); }; f.appendChild(b); });
+    if (!f.children.length) for (const [k, gs] of Object.entries(GESTOS)) { const b = document.createElement('button'); b.className = 'bt'; b.textContent = gs.e; b.title = '/' + k; b.onmousedown = b.ontouchstart = e => { e.preventDefault(); mandar({ t: 'gesto', id: k }); cerrarChat(); }; f.appendChild(b); }
+    if (f.children.length <= Object.keys(GESTOS).length) FRASES.forEach(t => { const b = document.createElement('button'); b.className = 'bt'; b.textContent = t; b.onmousedown = b.ontouchstart = e => { e.preventDefault(); mandar({ t: 'chat', canal: 'general', m: t }); cerrarChat(); }; f.appendChild(b); });
     ponCss(f, 'display', 'flex');
   }
 }
@@ -1202,6 +1204,7 @@ function enviarChat(v) {
   const m = /^\/(\w+)\s*(.*)$/s.exec(v);
   if (!m) { mandar({ t: 'chat', canal: 'general', m: v }); return; }
   const cmd = m[1].toLowerCase(), resto = m[2].trim();
+  if (GESTOS[cmd]) return mandar({ t: 'gesto', id: cmd });
   if (['d', 'decir'].includes(cmd)) return resto && mandar({ t: 'chat', canal: 'decir', m: resto });
   if (['g', 'grupo', 'p'].includes(cmd)) return resto && mandar({ t: 'chat', canal: 'grupo', m: resto });
   if (['h', 'hermandad'].includes(cmd)) return resto && mandar({ t: 'chat', canal: 'hermandad', m: resto });
@@ -1213,7 +1216,7 @@ function enviarChat(v) {
   if (cmd === 'r') { if (!ultimoSusurro) { errorRojo('Nadie te ha susurrado todavía.'); return; } return resto && mandar({ t: 'chat', canal: 'susurro', a: ultimoSusurro, m: resto }); }
   if (cmd === 'invitar' || cmd === 'inv') { const q = [...otros.values()].find(x => x.n.toLowerCase() === resto.toLowerCase()); if (q) mandar({ t: 'invitar', p: q.id }); else errorRojo('Para invitar, ese jugador tiene que estar en tu mapa (o usa 👥).'); return; }
   if (cmd === 'salir') { mandar({ t: 'salirGrupo' }); return; }
-  errorRojo('Comandos: /d decir · /g grupo · /h hermandad · /s Nombre susurro · /r responder');
+  errorRojo('Comandos: /d decir · /g grupo · /h hermandad · /s Nombre susurro · /r responder · gestos: ' + Object.keys(GESTOS).map(k => '/' + k).join(' '));
 }
 function mensajeChat(m) {
   const canal = m.canal || 'general';
@@ -1369,6 +1372,7 @@ function abrirSocial(tab) {
   if (tabSocial === 'hermandad') mandar({ t: 'herm' });
   pintarSocial();
 }
+const gestos = new Map();   // id de jugador -> { id del gesto, t }
 let contactos = [];   // tu lista de amigos [{ uid, n, on, id, lv, cl, mapa, g }]
 function conectarListaSocial(L) {
   L.querySelectorAll('[data-inv]').forEach(b => b.onclick = () => { mandar({ t: 'invitar', p: +b.dataset.inv }); b.disabled = true; });
@@ -3064,6 +3068,12 @@ function dibujarDuende(q, esYo) {
   if (ti) etiqueta(x, linea, '« ' + ti + ' »', '#c084fc', 5);
   if (!esYo && (q.hp < q.mx || elegido) && !muerto) barraMini(x, pies - 78, 36, q.hp / q.mx, '#4ade80');
   if (!esYo && lanza) barraMini(x, pies - 71, 36, (performance.now() - lanza.ini) / (lanza.fin - lanza.ini), '#ffe600');
+  const ge = gestos.get(esYo ? miId : q.id);
+  if (ge) {
+    const k = (performance.now() - ge.t) / 2500;
+    if (k >= 1) gestos.delete(esYo ? miId : q.id);
+    else { const salto = ge.id === 'bailar' ? Math.abs(Math.sin(k * 18)) * 10 : Math.sin(k * 3.14) * 6; emoji(GESTOS[ge.id].e, 26, x + (ge.id === 'bailar' ? Math.sin(k * 24) * 6 : 0), pies - 92 - salto); }
+  }
   const bb = burbujas.get(esYo ? miId : q.id);
   if (bb && performance.now() < bb.hasta) burbuja(x, pies - 84, bb.txt);
 }

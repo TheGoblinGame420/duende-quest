@@ -14,7 +14,7 @@
 // Buscar grupo: te anuncias para una mazmorra (10 min) y quien tenga nivel
 // se une con un toque, sin esperar a que aceptes (el lider puede expulsar).
 // ═══════════════════════════════════════════════════════
-import { MAPAS, MAZMORRAS, BANDA_MAX } from '../../mmo/js/data.js';
+import { MAPAS, MAZMORRAS, BANDA_MAX, GESTOS } from '../../mmo/js/data.js';
 
 export const GRUPO_MAX = 5;
 // Un grupo convertido en banda (boton del lider o al buscar gente para la
@@ -370,6 +370,14 @@ export const Social = {
       if (x === s || !x.c || !(x.c.contactos || []).some(a => a.u === s.c.uid)) continue;
       this.enviar(x, { t: 'toast', m: `👋 Tu amigo ${s.c.nombre} se conectó.` });
     }
+  },
+
+  // ── GESTOS ──
+  gesto(s, m) {
+    const ahora = Date.now();
+    if (typeof m.id !== 'string' || !Object.hasOwn(GESTOS, m.id) || ahora - (s.gestoT || 0) < 1500) return;
+    s.gestoT = ahora;
+    this.aClave(s.k, { t: 'gesto', p: s.id, id: m.id });
   },
 
   // ── INSPECCIONAR (como en WoW) ──

@@ -270,6 +270,7 @@ export class MmoWorld {
       case 'contactoQuitar': return this.quitarContacto(s, m);
       case 'contactos': return this.enviarContactos(s);
       case 'inspeccionar': return this.inspeccionar(s, m);
+      case 'gesto': return this.gesto(s, m);
       case 'boveda': return this.elegirBoveda(s, m);
       case 'lfgLista': return this.lfgLista(s);
       case 'lfgQuitar': return this.quitarLfg(s);

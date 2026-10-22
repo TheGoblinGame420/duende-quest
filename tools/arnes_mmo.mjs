@@ -1411,6 +1411,12 @@ async function pruebasContactos() {
   const ins = a.ultimos('inspeccion').pop();
   chequear(ins && ins.n === 'Amigo' && ins.eq && typeof ins.logros === 'number', 'inspeccionar devuelve nombre, equipo y logros');
   chequear(!JSON.stringify(ins).includes(b2.c.uid) && ins.oro === undefined && ins.mton === undefined && ins.bolsa === undefined, 'sin uid, oro, mTON ni bolsa');
+  console.log('Gestos');
+  await aMapa(a, 'pueblo', 900); await aMapa(b2, 'pueblo', 950);
+  b2.limpiar(); await a.mandar({ t: 'gesto', id: 'saludar' });
+  chequear(b2.ultimos('gesto').some(x => x.p === a.id && x.id === 'saludar'), 'el gesto lo ven los del mapa');
+  b2.limpiar(); await a.mandar({ t: 'gesto', id: 'bailar' }); await a.mandar({ t: 'gesto', id: '__proto__' });
+  chequear(!b2.ultimos('gesto').length, 'como mucho uno cada 1,5 s y solo gestos que existen');
   await a.mandar({ t: 'contactoQuitar', uid: pub(b2.c.uid) });
   chequear(!a.c.contactos.length, 'se quita de la lista');
   await dejar(a); await dejar(b2);
