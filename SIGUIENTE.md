@@ -1944,3 +1944,23 @@ Esta sesión lleva la tienda (pares del `?v=`), la otra lo demás (impares).
     +15% de oro; HUD de la Torre con el modificador del piso.
   - Un build de Workers Builds falló sin motivo (dry-run local bien): se
     reintentó con un commit vacío, como ya pasó el 2-oct.
+- **?v=202-216 (22-oct, tarde) — segunda pasada de estilo (auditoría de
+  textos con un agente):**
+  - **Filtro global de emojis**: `sinEmoji()` quita pictogramas en cualquier
+    posición; se aplica en `aviso()`, `emote()`, líneas de sistema del chat,
+    `ponTxt()` y `etiqueta()` (con memoria `sinEmojiC`), y un
+    `MutationObserver` limpia el texto de todas las ventanas (`.modal`),
+    respetando `.ico`, campos de texto y `[data-emoji]`; la moneda 🪙 pasa a
+    `<img class="moneda">`. Si un texto NECESITA un emoji, marcarlo con
+    `data-emoji`.
+  - Iconos del pack en NPC (moneda, medalla, frasco), pesquero, tarjetas
+    (logros, bestiario, peces, Torre, chicha), recompensa diaria, monedero
+    de mTON y destinos de expedición. Ranking con #1 #2 #3.
+  - «Vosotros» → «ustedes» en todo el juego. Skins Nigromante y Rey. Números
+    con separador de miles siempre (`useGrouping: 'always'`). Notas del
+    parche con fechas «22 oct 2026». Aviso de seguridad solo en PREMIUM.
+  - Élite de la Torre con tinte dorado y etiqueta (`o.ex = { elite: 1 }`).
+  - Cloudflare tuvo builds lentos (incidencia de Durable Objects) hacia las
+    13:20-13:45 de Perú: se esperó comprobando el `?v=` servido en vez de la
+    API de GitHub (que limita a 60 consultas/hora sin token).
+  - Arnés: **562 bien, 0 mal**. FPS móvil CPU 4×: 60.
