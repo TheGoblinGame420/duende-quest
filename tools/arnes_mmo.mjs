@@ -1327,7 +1327,15 @@ async function pruebasContactos() {
   chequear(b.ultimos('toast').some(x => /te añadió/.test(x.m)), 'al otro se le avisa');
   a.limpiar(); await a.mandar({ t: 'contactoAdd', p: b.id });
   chequear(a.ultimos('no').length === 1 && a.c.contactos.length === 1, 'no se repite');
+  b.limpiar();
+  for (let i = 0; i < 10; i++) { await a.mandar({ t: 'contactoQuitar', uid: pub(b.c.uid) }); await a.mandar({ t: 'contactoAdd', p: b.id }); }
+  chequear(b.ultimos('toast').filter(x => /te añadió/.test(x.m)).length === 0, 'añadir y quitar en bucle no inunda al otro de avisos');
   await dejar(b);
+  a.limpiar();
+  const bR = await entrar('Amigo', '7e');
+  chequear(!a.ultimos('toast').some(x => /se conectó/.test(x.m)), 'una reconexión rápida no repite el aviso');
+  await dejar(bR);
+  avanzar(6 * 60000); a.actT = Date.now();
   a.limpiar(); await a.mandar({ t: 'contactos' });
   chequear(a.ultimos('contactos').pop().l[0].on === 0, 'al irse sale desconectado');
   a.limpiar();

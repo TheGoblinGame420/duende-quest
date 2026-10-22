@@ -1509,7 +1509,8 @@ sesión principal lanzó un agente que jugó con Chrome sin ventana (informe y
 scripts en su scratchpad `qa_gamer_mmo/`: `fps.mjs`, `h.mjs`, combate,
 duelo...) y pasó los hallazgos a esta sesión. Arreglado y publicado:
 - **Rendimiento móvil** (medido con su `fps.mjs`, 390×844, CPU 4× lenta, 14
-  monstruos): combate **13,2 → 37 FPS**, reposo 41 → 58. Causas: emojis con
+  monstruos): combate **13,2 → 37 FPS**, reposo 41 → 58; en PC (1366×768,
+  CPU 4×) combate 7,7 → 55 FPS. Causas: emojis con
   `fillText` en cada fotograma (ahora `emoji()` con sprite cacheado), barras
   y recargas con `width/height` (ahora `transform`, `rellenar()`),
   `querySelector` por fotograma, flecha guía con BFS cada fotograma (ahora

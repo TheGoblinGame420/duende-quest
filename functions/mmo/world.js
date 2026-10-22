@@ -381,6 +381,7 @@ export class MmoWorld {
         c = { ...previo, uid, nombre };
         await this.state.storage.delete('c:' + uidInv);
         heredado = true;
+        this.renombrarContacto(uidInv, uid);
         const r = (await this.state.storage.get('ranking')) || [];
         const fila = r.find(x => x.uid === uidInv);
         if (fila) { fila.uid = uid; fila.n = nombre; await this.state.storage.put('ranking', r); }
@@ -432,6 +433,7 @@ export class MmoWorld {
     this.porUid.set(uid, s);
     const login = this.procesarLogin(s);
     // XP de descanso por el tiempo fuera (c.salida se pone al guardar).
+    const salidaAntes = c.salida || 0;
     let descansado = 0;
     if (c.salida && c.nivel < NIVEL_MAX) {
       const antes = c.descanso || 0;
@@ -463,7 +465,7 @@ export class MmoWorld {
     this.enviar(s, this.estadoMundial());
     this.entrarMapa(s, c.mapa, s.x, true);
     this.reengancharGrupo(s);
-    this.avisarContactos(s);
+    this.avisarContactos(s, salidaAntes);
     if (instGuardada) this.volverAInstancia(s, instGuardada.mapa, instGuardada.x);
     this.reponerElixires(s);
     await this.cargarHermandadDe(s);

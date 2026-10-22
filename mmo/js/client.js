@@ -14,7 +14,7 @@ import {
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo,
-} from './data.js?v=65';
+} from './data.js?v=66';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -2623,7 +2623,7 @@ const _textos = new Map();
 const TAM_MIN = t => (TACTIL ? Math.max(t, 7) : t);
 // La letra pixel solo trae el latin basico: flechas, emojis y otros simbolos
 // salian como "_". Esos textos van con la letra del sistema.
-const FUERA_PIXEL = /[^ -ÿ]/;
+const FUERA_PIXEL = /[^\x00-\xff]/;
 function spriteTexto(txt, tam, color, fondo, sombra) {
   tam = TAM_MIN(tam);
   const k = tam + '|' + color + '|' + (fondo ? 1 : 0) + (sombra ? 1 : 0) + '|' + txt;

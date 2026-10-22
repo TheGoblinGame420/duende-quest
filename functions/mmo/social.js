@@ -298,8 +298,18 @@ export const Social = {
     l.push({ u: t.c.uid, n: t.c.nombre });
     s.sucio = true;
     this.enviar(s, { t: 'toast', ok: true, m: `⭐ ${t.c.nombre} está en tu lista de amigos: verás cuándo se conecta.` });
-    this.enviar(t, { t: 'toast', m: `⭐ ${s.c.nombre} te añadió a su lista de amigos.` });
+    // Una vez por persona y sesion: añadir y quitar en bucle inundaba de avisos.
+    t.avisosAmigo = t.avisosAmigo || new Set();
+    if (!t.avisosAmigo.has(s.c.uid)) { t.avisosAmigo.add(s.c.uid); this.enviar(t, { t: 'toast', m: `⭐ ${s.c.nombre} te añadió a su lista de amigos.` }); }
     this.enviarContactos(s);
+  },
+  // Un invitado que pasa a cuenta cambia de uid: en las listas de los
+  // conectados se cambia el viejo por el nuevo (los que no estan conectados
+  // lo veran "desconectado" hasta que lo quiten y lo vuelvan a añadir).
+  renombrarContacto(viejo, nuevo) {
+    for (const x of this.sesiones.values()) {
+      for (const a of (x.c && x.c.contactos) || []) if (a.u === viejo) { a.u = nuevo; x.sucio = true; }
+    }
   },
   quitarContacto(s, m) {
     const l = s.c.contactos || [];
@@ -318,8 +328,11 @@ export const Social = {
     }).sort((a, b) => b.on - a.on || a.n.localeCompare(b.n));
     this.enviar(s, { t: 'contactos', l });
   },
-  // Al entrar: avisa a quien lo tiene de amigo y esta conectado.
-  avisarContactos(s) {
+  // Al entrar: avisa a quien lo tiene de amigo y esta conectado (solo si
+  // llevaba 5+ min fuera: el movil se reconecta a menudo al volver de
+  // segundo plano y el aviso se repetia).
+  avisarContactos(s, salidaAntes) {
+    if (salidaAntes && Date.now() - salidaAntes < 5 * 60000) return;
     for (const x of this.sesiones.values()) {
       if (x === s || !x.c || !(x.c.contactos || []).some(a => a.u === s.c.uid)) continue;
       this.enviar(x, { t: 'toast', m: `👋 Tu amigo ${s.c.nombre} se conectó.` });
