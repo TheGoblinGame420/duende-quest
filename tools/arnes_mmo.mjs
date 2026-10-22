@@ -583,6 +583,7 @@ async function pruebas() {
   await pruebasContactos();
   await pruebasSkinsDinero();
   await pruebasPagoSol();
+  await pruebasHoraFeliz();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -1338,6 +1339,28 @@ async function pruebasTintes() {
   await dejar(t); await dejar(v);
 }
 
+
+async function pruebasHoraFeliz() {
+  console.log('Hora Feliz (01-02 UTC, +50% XP de caza)');
+  const D = await import('../mmo/js/data.js');
+  const dia = Math.floor(Date.now() / DIA) + 1;
+  chequear(D.horaFelizActiva(dia * DIA + 1.5 * 3600000) && !D.horaFelizActiva(dia * DIA + 3 * 3600000), 'activa de 01:00 a 02:00 UTC');
+  const t = D.horaFelizTiempos(dia * DIA + 0.5 * 3600000);
+  chequear(!t.activa && Math.abs(t.falta - 1800000) < 1000, 'cuenta lo que falta para que empiece');
+  const h = await entrar('Feliz', '84');
+  ponerNivel(h, 20, 'guerrero'); h.c.skin = 'comun'; h.c.elix = {}; h.c.descanso = 0;
+  await aMapa(h, 'noche', 600); limpiarMapa(h);
+  const caza = () => { const x0 = h.c.xp; const o = monstruo(h, 'goblin_normal', 30, { nv: 20 }); mundo.danar(o, o.hp + 1, h); tick(1); return h.c.xp - x0; };
+  reloj = Math.max(reloj, dia * DIA + 3 * 3600000); h.actT = reloj;
+  const sin = caza();
+  reloj = (dia + 1) * DIA + 1.2 * 3600000; h.actT = reloj;
+  const con = caza();
+  chequear(Math.abs(con / sin - 1.5) < 0.05, 'en la Hora Feliz la caza da +50% de XP (' + con + ' frente a ' + sin + ')');
+  h.limpiar(); mundo.onT = 0; mundo.hfAntes = false; mundo.tick();
+  chequear(h.ultimos('aviso').some(x => /Hora Feliz/.test(x.m)), 'al empezar se avisa a todos');
+  reloj = Math.max(reloj, (dia + 1) * DIA + 3 * 3600000);
+  await dejar(h);
+}
 
 async function pruebasPagoSol() {
   console.log('Pago con SOL: firma ajena y pago tardío');

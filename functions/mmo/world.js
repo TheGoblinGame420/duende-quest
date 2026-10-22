@@ -22,7 +22,7 @@ import {
   temporadaDe, TEMPORADAS, TEMP_PROB, TEMP_JEFE,
   TINTES, MASCOTAS,
   CONJUNTOS, CONJUNTO_PROB,
-  semanaUTC, afijosSemana, DES_SEM_MIN, premioDesSem, BESTIARIO_HITOS, premioBestiario, talento, TALENTOS, TALENTO_MAX, puntosTalento, costoReinicioTalentos, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX,
+  semanaUTC, horaFelizActiva, HORA_FELIZ, afijosSemana, DES_SEM_MIN, premioDesSem, BESTIARIO_HITOS, premioBestiario, talento, TALENTOS, TALENTO_MAX, puntosTalento, costoReinicioTalentos, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX,
 } from '../../mmo/js/data.js';
 import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery, tg, getSolPriceUsd, SOL_DEV_WALLET } from '../api/lib.js';
 import { MMO_URL } from '../api/telegram-bot.js';
@@ -1384,6 +1384,8 @@ export class MmoWorld {
     c.oro += oro;
     c.kills++;
     if (o && o.jefe) c.jefes++;
+    // Hora Feliz (cada dia 01-02 UTC): +50% de la XP de caza.
+    if (horaFelizActiva()) xp = Math.round(xp * HORA_FELIZ.xp);
     // Elixir de Sabiduria (artesania): +10% de la XP de caza. Skins con xpMult.
     if (this.elixir(s, 'elixirX')) xp = Math.round(xp * 1.1);
     const xpSkin = ((SKINS[c.skin] || {}).buffs || {}).xpMult;
@@ -1875,6 +1877,10 @@ export class MmoWorld {
     const ahora = Date.now();
     if (ahora - (this.onT || 0) > 10000) {
       this.onT = ahora;
+      // Aviso a todos al empezar y al acabar la Hora Feliz.
+      const hf = horaFelizActiva(ahora);
+      if (this.hfAntes !== undefined && hf !== this.hfAntes) this.aTodos({ t: 'aviso', m: hf ? '⚡ ¡Empieza la Hora Feliz! Durante una hora, +50% de experiencia por caza.' : '⚡ Terminó la Hora Feliz. Mañana a la misma hora, otra.' });
+      this.hfAntes = hf;
       // Una pestaña abierta sin jugar mantiene vivo el objeto (y cobra tiempo
       // de CPU del cupo diario) todo el dia: fuera tras 10 min sin actividad.
       for (const s of [...this.sesiones.values()]) {

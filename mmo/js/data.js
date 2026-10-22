@@ -436,6 +436,13 @@ export const TINTES = {
 // enseñan una vez (lo nuevo para los que vuelven). La mas reciente arriba;
 // subir 'n' al añadir una.
 export const NOVEDADES = [
+  { n: 4, fecha: '22 de octubre (mañana)', items: [
+    '⚡ Hora Feliz cada día de 20:00 a 21:00 (hora de Perú): +50% de experiencia por caza.',
+    '🎭 Las skins dan más poderes (crítico, defensa, experiencia...) y se pueden probar 10 s en el Mercader.',
+    '💳 Skins también con SOL en la web o con Stars en Telegram; El Duende revisa el pago y te la entrega.',
+    '👋 Gestos (/saludar, /bailar...), lista de amigos con aviso al conectarse e Inspeccionar.',
+    '📊 Tus estadísticas en el inventario.',
+  ] },
   { n: 3, fecha: '22 de octubre (noche)', items: [
     '⚔️ Primera BANDA: el Santuario del Titán (Nv 60, de 1 a 10 jugadores), en el portal de mazmorras del pueblo. Cuatro jefes, botín de nivel 64-66 una vez por semana y el Murciélago del Abismo si vences al Titán en 3 semanas.',
     '👥 El líder puede convertir su grupo en banda (hasta 10) desde Social > Grupo.',
@@ -1442,3 +1449,19 @@ export const GESTOS = {
   enojo:    { e: '😡', txt: 'se enfada' },
   llorar:   { e: '😭', txt: 'llora' },
 };
+
+// ── HORA FELIZ ──
+// Cada dia de 01:00 a 02:00 UTC (20:00-21:00 en Peru) la experiencia de caza
+// sube un 50%. Un motivo para volver cada dia a la misma hora. Sin mTON.
+export const HORA_FELIZ = { ini: 1, fin: 2, xp: 1.5 };
+export function horaFelizActiva(t = Date.now()) { const h = new Date(t).getUTCHours(); return h >= HORA_FELIZ.ini && h < HORA_FELIZ.fin; }
+// ms que faltan para que empiece (0 si esta activa) y para que acabe.
+export function horaFelizTiempos(t = Date.now()) {
+  const d = new Date(t);
+  const hoyIni = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), HORA_FELIZ.ini);
+  const hoyFin = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), HORA_FELIZ.fin);
+  if (t >= hoyIni && t < hoyFin) return { activa: true, falta: 0, acaba: hoyFin - t };
+  const prox = t < hoyIni ? hoyIni : hoyIni + 86400000;
+  return { activa: false, falta: prox - t, acaba: 0 };
+}
+

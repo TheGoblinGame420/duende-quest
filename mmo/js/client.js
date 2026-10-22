@@ -7,7 +7,7 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, ALCANCE_BASE, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
-  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TINTES, MASCOTAS, NOVEDADES, GESTOS, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
+  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TINTES, MASCOTAS, NOVEDADES, GESTOS, horaFelizTiempos, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=94';
+} from './data.js?v=96';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -2466,6 +2466,14 @@ let mundial = { vivo: false, en: 0 };
 function pintarMundial() {
   const el = $('h-mundial');
   if (!yo) return;
+  // Hora Feliz: mientras dura, manda en esta linea (y 30 min antes, avisa).
+  const hf = horaFelizTiempos(Date.now());
+  if (hf.activa || hf.falta < 30 * 60000) {
+    const ms = hf.activa ? hf.acaba : hf.falta, mm = Math.floor(ms / 60000), ss = Math.floor(ms / 1000) % 60;
+    ponTxt(el, hf.activa ? '⚡ Hora Feliz: +50% XP · ' + mm + ':' + String(ss).padStart(2, '0') : '⚡ Hora Feliz en ' + mm + ':' + String(ss).padStart(2, '0'));
+    el.className = hf.activa ? 'lista' : '';
+    return;
+  }
   // Al novato el contador del jefe mundial solo le distrae de su mision.
   if (yo.nivel < 10) { ponTxt(el, ''); el.className = ''; return; }
   if (mundial.vivo) { ponTxt(el, '👹 Jefe mundial activo en el Coliseo (portal del pueblo)'); el.className = 'lista'; return; }
