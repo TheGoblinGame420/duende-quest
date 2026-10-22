@@ -1964,3 +1964,21 @@ Esta sesión lleva la tienda (pares del `?v=`), la otra lo demás (impares).
     13:20-13:45 de Perú: se esperó comprobando el `?v=` servido en vez de la
     API de GitHub (que limita a 60 consultas/hora sin token).
   - Arnés: **562 bien, 0 mal**. FPS móvil CPU 4×: 60.
+- **?v=218-226 (22-oct, tarde) — tercera pasada de estilo (capturas de QA):**
+  - Restos del filtro: `limpiarRestos()` quita «()» y espacios que deja un
+    emoji borrado. Ojo: ◀ ▶ ⏱ ⏳ son pictogramas y el filtro los borra; ✓ ★ ☆
+    ✗ ▲ no. El tutorial ya no depende de ◀ ▶.
+  - Botones táctiles (chat, auto, esquivar, saltar, atacar) con iconos de
+    línea SVG (`.ico-tc`); marco del objetivo con texto (Grupo, Herm.,
+    Mensaje, Duelo, Amigo, Ver) en 2 filas de 3 **bajo el retrato** (dentro
+    de `.cu` se cortaban en el móvil).
+  - Avisos del servidor en tono de juego: sin «¡…!» ni emojis («Nueva
+    montura: X. Mercader → Monturas.», «Has alcanzado el nivel N.»). Los
+    gritos de jefes conservan la exclamación. El arnés ya no busca 🔥 en el
+    aviso de invasión.
+  - Panel de frases rápidas del chat con fondo propio; Torre con botones
+    «Piso 1» / «Piso N»; libro de hechizos sin el tiempo de lanzamiento
+    repetido y «Barra N» en táctil; inicio con «Gratis · Sin descargas ·
+    Telegram y web» en una línea; en PC los avisos bajan (`#hud.tuto`)
+    mientras se ve el consejo del tutorial.
+  - Arnés: **562 bien, 0 mal**.

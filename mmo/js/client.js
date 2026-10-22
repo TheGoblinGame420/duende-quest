@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=226';
+} from './data.js?v=228';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -373,7 +373,7 @@ function recibir(m) {
       if (antes && antes.nivel < 8 && yo.nivel >= 8 && (yo.skins || []).length <= 1) setTimeout(() => aviso('Las skins del Mercader dan bonificaciones (oro, ataque, defensa, experiencia). Puedes probarlas antes de comprarlas en la pestaña SKINS.', 'ok'), 6000);
       // Lo que se abre con el nivel: avisarlo justo al llegar.
       if (antes && yo.nivel > antes.nivel) {
-        const abre = { 5: 'Desbloqueado: Expediciones. Tu mascota explora mientras no juegas (registro de misiones, L).',
+        const abre = { 5: 'Desbloqueado: Expediciones. Tu mascota explora mientras no juegas (registro de misiones' + (TACTIL ? ').' : ', L).'),
           6: 'Desbloqueada: Madriguera Goblin, tu primera mazmorra. Portal de mazmorras del pueblo.',
           10: 'Desbloqueada: Torre del Duende. Pisos sin fin y un cofre cada 5. Portal de mazmorras del pueblo.' };
         for (const nv of Object.keys(abre)) if (antes.nivel < +nv && yo.nivel >= +nv) setTimeout(() => aviso(abre[nv], 'ok', 10000), 3500);
@@ -1182,7 +1182,7 @@ function pintarAcciones() {
     const bloq = yo.nivel < h.nv;
     d.classList.toggle('vacio', bloq);
     ponCss(d, 'display', bloq && i !== prox ? 'none' : '');
-    ponTxt(d.querySelector('.n'), bloq ? 'Nv' + h.nv : '');
+    ponTxt(d.querySelector('.n'), bloq ? 'NV' + h.nv : '');
   });
 }
 function usarHab(i) {
@@ -2296,7 +2296,7 @@ function objetivoGuia() {
   const zona = zonaDe(q.tipo);
   if (zona && mapaId !== zona) {
     const p = portalHacia(zona);
-    return p ? { x: p.x, y: SUELO - 150, txt: '> ' + MAPAS[zona].nombre } : null;
+    return p ? { x: p.x, y: SUELO - 150, txt: 'Ir a ' + MAPAS[zona].nombre } : null;
   }
   const def = MONSTRUOS[q.tipo];
   let mejor = null, md = Infinity;
@@ -3038,7 +3038,7 @@ function dibujarPortales(mp) {
     // pueblo se pisaban las etiquetas.
     const sube = mp.portales.some(q => q !== p && q.x < p.x && p.x - q.x < 200) ? 30 : 0;
     etiqueta(x, y - 72 - sube, p.etiqueta, activo ? '#ffe600' : '#c084fc', 7);
-    if (p.nv) etiqueta(x, y - 58 - sube, /^\d/.test(p.nv) ? 'Nv ' + p.nv : p.nv, activo ? '#ffe600' : 'rgba(255,255,255,.7)', 6);
+    if (p.nv) etiqueta(x, y - 58 - sube, /^\d/.test(p.nv) ? 'NV ' + p.nv : p.nv, activo ? '#ffe600' : 'rgba(255,255,255,.7)', 6);
   });
 }
 
@@ -3221,7 +3221,7 @@ function dibujarMonstruo(o) {
     const w = 40, y = o.y - o.alto - 12;
     if (o.hp < o.mx || elegido) barraMini(x, y, w, o.hp / o.mx, '#ff3344');
     // Con el nombre solo cuando esta herido o elegido: todos a la vez llenaban la pantalla.
-    const tn = spriteTexto('Nv' + o.nv + (o.hp < o.mx || elegido ? ' ' + def.nombre : ''), 6, colorNivel(o.nv), false, false);
+    const tn = spriteTexto('NV' + o.nv + (o.hp < o.mx || elegido ? ' ' + def.nombre : ''), 6, colorNivel(o.nv), false, false);
     g.drawImage(tn, Math.round(x - tn.width / 2), Math.round(y - 4 - 6 - (o.etqNivel || 0) * 10));
     if (cm) barraMini(x, y + 7, w, (ahora - cm.ini) / (cm.fin - cm.ini), cm.int ? '#ffae00' : '#aaa');
   } else {
@@ -3388,7 +3388,7 @@ function dibujarDuende(q, esYo) {
   const tn = TINTES[esYo ? yo.tinte : q.tn];
   const colNom = tn ? colorTinte(tn) : esYo ? '#ffe600' : (CLASES[clase] ? CLASES[clase].color : (SKINS[skin] ? SKINS[skin].color : '#fff'));
   pies = piesOrig;
-  etiqueta(x, pies + 16 + baja, (muerto ? '💀 ' : '') + nom + ' · Nv' + lv, colNom, 6);
+  etiqueta(x, pies + 16 + baja, (muerto ? '💀 ' : '') + nom + ' · NV' + lv, colNom, 6);
   // Hermandad y titulo debajo; si otro duende esta pegado al tuyo, solo su
   // nombre (en el suelo no caben dos pilas de etiquetas).
   const hn = esYo ? (hermandad ? hermandad.nombre : '') : (baja ? '' : q.hn);
