@@ -31,7 +31,7 @@
 // avisos sin volver se pausa hasta que vuelva.
 // ═══════════════════════════════════════════════════════
 
-import { xpParaSubir, premioDiaria, premioMazmorraDia, LOGIN_PREMIOS, multLogin, HABS, CLASES, NIVEL_MAX, DIARIA } from '../../mmo/js/data.js';
+import { xpParaSubir, premioDiaria, premioMazmorraDia, LOGIN_PREMIOS, multLogin, HABS, CLASES, NIVEL_MAX, DIARIA, horaFelizActiva } from '../../mmo/js/data.js';
 import { getEnv, tg } from '../api/lib.js';
 import { MMO_URL } from '../api/telegram-bot.js';
 
@@ -380,6 +380,7 @@ export const Retencion = {
   // Texto plano, sin Markdown: el nombre lo eligio el jugador.
   async mensajeAviso(c, hoy) {
     const lineas = [];
+    if (horaFelizActiva()) lineas.push('⚡ Ahora mismo es la Hora Feliz: +50% de experiencia por caza hasta las 21:00 (hora de Perú).');
     const L = c.login;
     if (L && L.d === diaISO(hoy - 1) && L.racha >= 1 && L.racha < LOGIN_PREMIOS.length) {
       const pr = LOGIN_PREMIOS[L.racha];
