@@ -567,6 +567,7 @@ async function pruebas() {
   await pruebasDuelos();
   await pruebasNovato();
   await pruebasDesafios();
+  await pruebasTemporada();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -1135,4 +1136,24 @@ async function pruebasDesafios() {
   await d.mandar({ t: 'mazmorra', id: 'catacumbas', k: 2 });
   chequear(mundo.mundoDe(d).inst && mundo.mundoDe(d).inst.k === 2, 'ahora se abre el +2');
   await dejar(d);
+}
+
+async function pruebasTemporada() {
+  console.log('Temporada: Noche de Duendes');
+  const t = await entrar('Calabacero', '60');
+  ponerNivel(t, 8, 'guerrero');
+  await aMapa(t, 'noche', 600); limpiarMapa(t);
+  const relojAntes = reloj;
+  reloj = Date.UTC(2026, 9, 28, 12);
+  for (let i = 0; i < 60; i++) { const o = monstruo(t, 'goblin_normal', 40); mundo.danar(o, o.hp + 1, t); tick(1); }
+  chequear((t.c.calabazas || 0) > 2 && t.c.calabazas < 30, 'durante el evento caen calabazas (' + t.c.calabazas + ' de 60)');
+  t.c.calabazas = 49;
+  const o = monstruo(t, 'jefe_sabueso', 40); mundo.danar(o, o.hp + 1, t); tick(1);
+  chequear(t.c.calabazas >= 54 && t.c.logros.includes('calabaza50'), 'los jefes dan varias y a 50 llega el título');
+  reloj = Date.UTC(2026, 10, 5, 12);
+  const c0 = t.c.calabazas;
+  for (let i = 0; i < 30; i++) { const o2 = monstruo(t, 'goblin_normal', 40); mundo.danar(o2, o2.hp + 1, t); tick(1); }
+  chequear(t.c.calabazas === c0, 'acabado el evento ya no caen');
+  reloj = Math.max(relojAntes, reloj);
+  await dejar(t);
 }

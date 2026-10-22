@@ -19,6 +19,7 @@ import {
   LOGIN_PREMIOS, multLogin, LOGROS, MUNDIAL_DURA_MS, proximoMundial,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, MTON_EDAD_MIN_MS, WALLET_ESPERA_MS, FONDO_REFERENCIA_MTON, tonAmigable,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, FONDO_PCT_INGRESOS, PAQUETES, estrellasDe, PEDIDO_VIGENCIA_MS,
+  TEMPORADA, temporadaActiva, CALABAZA_PROB, CALABAZAS_JEFE,
   semanaUTC, BESTIARIO_HITOS, premioBestiario, talento, TALENTOS, TALENTO_MAX, puntosTalento, costoReinicioTalentos, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX,
 } from '../../mmo/js/data.js';
 import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery, tg, getSolPriceUsd, SOL_DEV_WALLET } from '../api/lib.js';
@@ -426,6 +427,7 @@ export class MmoWorld {
 
     this.enviar(s, { t: 'bienvenido', id: s.id, yo: this.datosPropios(s), nuevo, heredado, regaladas, on: this.contarOnline() });
     if (login) this.enviar(s, { t: 'login', ...login });
+    if (temporadaActiva()) this.enviar(s, { t: 'toast', m: `🎃 ¡${TEMPORADA.nombre}! Hasta el 2 de noviembre los monstruos sueltan calabazas (los jefes, ${CALABAZAS_JEFE}). 50 = título «Cazacalabazas», 200 = «Rey de las Calabazas». Llevas ${c.calabazas || 0}.`, ok: true });
     if (descansado > 0) this.enviar(s, { t: 'toast', m: `😴 Descansaste: tus próximas cazas dan el DOBLE de experiencia (+${c.descanso.toLocaleString('es')} XP de descanso).`, ok: true });
     this.enviar(s, this.estadoMundial());
     this.entrarMapa(s, c.mapa, s.x, true);
@@ -895,7 +897,7 @@ export class MmoWorld {
       arma: c.arma, armas: c.armas, skin: c.skin, skins: c.skins, pw: c.pw,
       kills: c.kills, jefes: c.jefes, muerto: s.muerto, mis: c.mis, forja: c.forja,
       eq: c.eq, bolsa: c.bolsa, logros: c.logros, titulo: c.titulo, mundiales: c.mundiales, login: c.login, crit: s.st.crit,
-      clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, desafio: c.desafio || {}, herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, best: c.best || {},
+      clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, desafio: c.desafio || {}, calabazas: c.calabazas || 0, herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, best: c.best || {},
       espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, montado: s.montado || null,
       mton: c.mton, wallet: c.wallet ? { a: tonAmigable(c.wallet.a), desde: c.wallet.desde } : null,
       p2e: this.elegibilidad(c), creado: c.creado,
@@ -1273,6 +1275,12 @@ export class MmoWorld {
     this.sumarXp(s, xp);
     // Drops: pociones y, en jefes, poderes raros.
     const drops = [];
+    // Temporada (Noche de Duendes): calabazas para los logros con titulo.
+    let cal = 0;
+    if (o && participo !== false && temporadaActiva()) {
+      cal = o.jefe ? CALABAZAS_JEFE : (Math.random() < CALABAZA_PROB ? 1 : 0);
+      if (cal) c.calabazas = (c.calabazas || 0) + cal;
+    }
     if (Math.random() < 0.05) { c.pw.pocion = Math.min(99, c.pw.pocion + 1); drops.push('pocion'); }
     if (o && o.jefe) {
       const r = PODERES[1 + Math.floor(Math.random() * 3)].id;
@@ -1319,7 +1327,7 @@ export class MmoWorld {
       if (c.mis.p === q.n) this.enviar(s, { t: 'toast', m: `📜 ¡"${q.nombre}" cumplida! Vuelve con el Guardia Tito del pueblo.`, ok: true });
     }
     s.sucio = true;
-    this.enviar(s, { t: 'gana', xp, oro, drops, item, x: Math.round(o ? o.x : s.x), y: Math.round(o ? o.y - o.h : s.y - 60) });
+    this.enviar(s, { t: 'gana', xp, oro, drops, item, cal: cal || undefined, x: Math.round(o ? o.x : s.x), y: Math.round(o ? o.y - o.h : s.y - 60) });
     this.revisarLogros(s);
     this.actualizarYo(s);
   }
@@ -1660,7 +1668,7 @@ export class MmoWorld {
           this.cerrar(s);
         }
       }
-      this.aTodos({ t: 'on', n: this.contarOnline() });
+      this.contarHoy().then(h => this.aTodos({ t: 'on', n: this.contarOnline(), h }), () => this.aTodos({ t: 'on', n: this.contarOnline() }));
       this.revisarSemana(ahora).catch(e => console.error('[MMO semana]', e));
     }
     this.revisarMundial(ahora);

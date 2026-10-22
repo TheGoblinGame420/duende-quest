@@ -573,6 +573,8 @@ export const LOGROS = [
   { id: 'desafio5',  titulo: 'Desafiante',          desc: 'Vence un Desafío +5',               oro: 8000,  cond: c => (c.desafioMax || 0) >= 5 },
   { id: 'desafio10', titulo: 'Implacable',          desc: 'Vence un Desafío +10',              oro: 20000, cond: c => (c.desafioMax || 0) >= 10 },
   { id: 'desafio20', titulo: 'Leyenda del Duende',  desc: 'Vence un Desafío +20',              oro: 50000, cond: c => (c.desafioMax || 0) >= 20 },
+  { id: 'calabaza50',  titulo: 'Cazacalabazas',      desc: 'Junta 50 calabazas en la Noche de Duendes',  oro: 3000,  cond: c => (c.calabazas || 0) >= 50 },
+  { id: 'calabaza200', titulo: 'Rey de las Calabazas', desc: 'Junta 200 calabazas en la Noche de Duendes', oro: 12000, cond: c => (c.calabazas || 0) >= 200 },
   { id: 'mazmorra10', titulo: 'Conquistador',       desc: 'Completa 10 mazmorras',             oro: 10000, cond: c => (c.mazmorras || 0) >= 10 },
   { id: 'kraken',    titulo: 'Azote del Abismo',    desc: 'Vence al Kraken del Templo Hundido', oro: 8000,  cond: c => !!(c.mzJefes && c.mzJefes.mz_kraken) },
   { id: 'dragon',    titulo: 'Matadragones',        desc: 'Vence al Dragón Carmesí de la Ciudadela', oro: 15000, cond: c => !!(c.mzJefes && c.mzJefes.mz_dragon) },
@@ -742,6 +744,14 @@ export const RECETAS = [
   { id: 'elixirF', nombre: 'Elixir de Fuerza', icono: 'P_Red03', pide: { hierba: 6, cristal: 1 }, da: { elixir: 'elixirF' }, desc: '+10% de daño durante 30 min (aguanta la muerte)' },
   { id: 'elixirP', nombre: 'Elixir de Piel de Piedra', icono: 'P_Blue05', pide: { mineral: 6, cristal: 1 }, da: { elixir: 'elixirP' }, desc: 'Recibes un 10% menos de daño durante 30 min' },
 ];
+
+// ── TEMPORADAS ──
+// Eventos con fecha real: dan motivo para volver esos dias. Premios del
+// juego (oro, titulos) y nada mas. "Noche de Duendes" = Halloween 2026:
+// los monstruos sueltan calabazas (los jefes, varias) y hay logros con titulo.
+export const TEMPORADA = { id: 'noche2026', nombre: 'Noche de Duendes', ini: Date.UTC(2026, 9, 25), fin: Date.UTC(2026, 10, 3) };
+export const temporadaActiva = (t = Date.now()) => t >= TEMPORADA.ini && t < TEMPORADA.fin;
+export const CALABAZA_PROB = 0.2, CALABAZAS_JEFE = 5;
 
 // ── BESTIARIO ──
 // Cuantos de cada monstruo has cazado. Cada tipo tiene 3 hitos con premio

@@ -50,6 +50,15 @@ export const Retencion = {
   // ── Almacenamiento ──
   // Se cachea la PROMESA y no el valor: dos sesiones que suman a la vez
   // reciben el mismo objeto y ninguna pisa la suma de la otra al guardar.
+  // Cuantos jugadores distintos entraron hoy (UTC). Con 1-3 en linea a la
+  // vez el mundo parece vacio; "12 jugaron hoy" cuenta la verdad completa.
+  async contarHoy() {
+    const idx = await this.retIdx(), hoy = diaNum();
+    let n = 0;
+    for (const u in idx) if (idx[u].v === hoy) n++;
+    return n;
+  },
+
   retIdx() {
     if (!this._retIdx) {
       this._retIdx = this.state.storage.get('ret:idx').then(x => x || {});

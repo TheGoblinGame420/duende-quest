@@ -7,13 +7,13 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, ALCANCE_BASE, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
-  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio,
+  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, temporadaActiva, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
-} from './data.js?v=34';
+} from './data.js?v=35';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -219,6 +219,7 @@ let frame = 0;
 
 // ── OBJETIVO, LANZAMIENTOS Y AURAS (estilo WoW) ──
 let objetivo = null;            // { k: 'm' (monstruo) | 'p' (jugador), id }
+let jugaronHoy = 0;             // jugadores distintos de hoy (servidor, cada 10 s)
 let duelo = null;               // { con, ini, fin } (ini/fin en performance.now())
 let castYo = null;              // { id, nombre, ini, fin } (tiempos de performance.now)
 const castOtros = new Map();    // id de jugador -> { id, ini, fin }
@@ -336,6 +337,7 @@ function recibir(m) {
       if (m.coop) { flotante(m.x, m.y, '+' + m.xp + ' XP (grupo)', '#00eeff', 9); break; }
       for (let i = 0; i < Math.min(8, 2 + Math.floor(m.oro / 15)); i++) monedas.push({ x: m.x, y: m.y + 20, vx: (Math.random() - .5) * 5, vy: -4 - Math.random() * 3, t: 0 });
       flotante(m.x, m.y, '+' + m.xp + ' XP', '#c084fc', 10);
+      if (m.cal) { flotante(m.x + 18, m.y - 30, '+' + m.cal + ' 🎃', '#ff9a3c', 10); if (yo) yo.calabazas = (yo.calabazas || 0) + m.cal; }
       if (m.oro > 0) flotante(m.x, m.y + 14, '+' + m.oro + ' oro', '#ffe600', 10);
       if (m.drops && m.drops.length) m.drops.forEach(d => { const pd = PODERES.find(p => p.id === d); if (pd) aviso('🎁 Encontraste: ' + pd.nombre, 'ok'); });
       if (m.item) {
@@ -468,7 +470,7 @@ function recibir(m) {
     case 'completada': completada(m); break;
     case 'ev': case 'cofres': case 'cofreA': recibirMundoAbierto(m); break;
     case 'quien': quienLista = m.r || []; pintarSocial(); break;
-    case 'on': online = m.n; pintarSubMapa(); break;
+    case 'on': online = m.n; if (m.h) jugaronHoy = m.h; pintarSubMapa(); break;
     case 'toast': aviso(m.m, m.ok ? 'ok' : ''); if (m.hab) { $('acciones').innerHTML = ''; pintarHud(); } break;
     case 'aviso': aviso(m.m, 'jefe'); lineaChat(null, m.m); sfx('explosion', .3); break;
     case 'snap':
@@ -516,7 +518,7 @@ let online = 0;
 function pintarSubMapa() {
   const mp = MAPAS[mapaId];
   const base = mp.instancia ? 'Mazmorra' + (instancia ? ' · Nv ' + instancia.nv + (instancia.k ? ' · ⚡+' + instancia.k : '') : '') : mp.zona && mp.nv ? 'Nivel ' + mp.nv[0] + '-' + mp.nv[1] : 'Zona segura';
-  $('h-mapa-sub').textContent = base + (online ? ' · 👥 ' + online + ' en línea' : '');
+  $('h-mapa-sub').textContent = base + (online ? ' · 👥 ' + online + ' en línea' : '') + (jugaronHoy > online ? ' · ' + jugaronHoy + ' hoy' : '');
 }
 
 // Auras que llegan con el jugador/monstruo (las que ya tenia puestas).
@@ -2253,6 +2255,19 @@ function dibujarSuelo(mp) {
   }
 }
 
+// Temporada: calabazas encendidas por el suelo de cada mapa (solo decorado).
+function dibujarTemporada(mp) {
+  if (!temporadaActiva()) return;
+  const spr = spriteTexto('🎃', 28, '#fff', false, false);
+  for (let x = 170; x < mp.ancho; x += 520) {
+    const sx = x - camX;
+    if (sx < -40 || sx > VW + 40) continue;
+    g.globalAlpha = .25 + .1 * Math.sin(frame / 20 + x); g.fillStyle = '#ff9a3c';
+    g.beginPath(); g.arc(sx, SUELO - 14, 30, 0, 7); g.fill(); g.globalAlpha = 1;
+    g.drawImage(spr, sx - spr.width / 2, SUELO - spr.height + 2);
+  }
+}
+
 function dibujarPortales(mp) {
   const cerca = cercano();
   mp.portales.forEach((p, i) => {
@@ -2688,6 +2703,7 @@ function dibujar() {
   dibujarSuelo(mp);
   dibujarZonas();
   dibujarMuros();
+  dibujarTemporada(mp);
   dibujarPortales(mp);
   dibujarNPCs(mp);
   dibujarCofres();
@@ -2764,7 +2780,7 @@ function pintarHud() {
   if (T) {
     const hd = T.dia.l.filter(t => t.ok).length, hs = T.sem.l.filter(t => t.ok).length;
     const sig = T.dia.l.find(t => !t.ok);
-    ponTxt($('h-tareas'), '☀️ Diarias ' + hd + '/' + T.dia.l.length + ' · 📆 ' + hs + '/' + T.sem.l.length + (sig ? ' — ' + sig.txt + ' ' + sig.p + '/' + sig.n : ''));
+    ponTxt($('h-tareas'), '☀️ Diarias ' + hd + '/' + T.dia.l.length + ' · 📆 ' + hs + '/' + T.sem.l.length + (sig ? ' — ' + sig.txt + ' ' + sig.p + '/' + sig.n : '') + (temporadaActiva() ? ' · 🎃 ' + (yo.calabazas || 0) : ''));
   }
   pintarPoderes();
   pintarAcciones();

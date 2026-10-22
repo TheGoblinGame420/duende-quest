@@ -1285,6 +1285,14 @@ jefes de mazmorra nunca dan). Simulación sin equipo
 (`node tools/sim_mazmorra.mjs ciudadela 0,3,6,10 desafio`): guerrero solo
 hasta +3, grupo de 3 hasta +10 en ~9 min; con equipo se llega más lejos.
 
+**Temporada "Noche de Duendes" (?v=35):** del 25-oct al 2-nov-2026 (UTC,
+`TEMPORADA` en data.js; para otra fecha basta cambiar `id/nombre/ini/fin`).
+Cada caza con participación da 20% de una 🎃 (jefes, 5); `c.calabazas`;
+logros con título a 50 y 200. Calabazas decorando el suelo de cada mapa y
+contador en el seguimiento. Aviso al entrar. Solo oro y títulos.
+Además: "N hoy" junto a "en línea" (jugadores distintos del día, del índice
+de retención, cada 10 s con el mensaje `on`).
+
 Sin hacer: avisos a la hora habitual de cada uno (el cron de las 17 UTC ya
 usa 4 de 5 disparadores del plan gratis), y final de juego para D30 (1→60 se
 juega en 5-8 h). Ojo: la bienvenida del bot aún habla de $DUENDE en Solana
