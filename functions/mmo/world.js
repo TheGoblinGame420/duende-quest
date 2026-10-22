@@ -702,18 +702,34 @@ export class MmoWorld {
     const pd = this.buscarPedido(m.codigo);
     const firma = String(m.firma || '').trim();
     const no = t => this.enviar(s, { t: 'toast', m: t });
-    if (!pd || pd.uid !== c.uid || pd.metodo !== 'sol' || pd.estado !== 'esperando_pago') return no('Ese pedido ya no está esperando pago.');
+    // 'vencido' tambien: quien paga pasados los 30 min (p. ej. tras abrir el
+    // juego dentro de Phantom en el movil) no pierde su SOL; la cadena ya
+    // rechaza pagos anteriores al pedido.
+    if (!pd || pd.uid !== c.uid || pd.metodo !== 'sol' || (pd.estado !== 'esperando_pago' && pd.estado !== 'vencido')) return no('Ese pedido ya no está esperando pago.');
     if (!/^[1-9A-HJ-NP-Za-km-z]{60,100}$/.test(firma)) return no('Esa firma de transacción no es válida. Cópiala de Phantom o de Solscan.');
     if (await this.state.storage.get('firma:' + firma)) return no('Esa transacción ya se usó para otro pedido.');
-    await this.state.storage.put('firma:' + firma, pd.codigo);
-    pd.firma = firma; pd.estado = 'por_verificar'; pd.pagadoEn = Date.now();
-    // Recien enviada, la transaccion tarda unos segundos en confirmarse.
-    for (let i = 0; i < 4; i++) {
-      pd.cadena = await this.verificarSol(firma, pd.lamports, pd.creado);
-      if (!pd.cadena || pd.cadena.ok || !/no existe/.test(pd.cadena.motivo) || i === 3) break;
-      await new Promise(r => setTimeout(r, 5000));
+    if (this.verificando && this.verificando.has(firma)) return no('Esa transacción se está comprobando.');
+    (this.verificando = this.verificando || new Set()).add(firma);
+    try {
+      pd.firma = firma; pd.estado = 'por_verificar'; pd.pagadoEn = Date.now();
+      await this.guardarPedidos();   // por si el servidor se reinicia mientras se comprueba
+      // Recien enviada, la transaccion tarda unos segundos en confirmarse.
+      for (let i = 0; i < 4; i++) {
+        pd.cadena = await this.verificarSol(firma, pd.lamports, pd.creado);
+        if (!pd.cadena || pd.cadena.ok || !/no existe/.test(pd.cadena.motivo) || i === 3) break;
+        await new Promise(r => setTimeout(r, 5000));
+      }
+      // La firma queda gastada solo si es el pago de ESTE pedido (o si no se
+      // pudo consultar la cadena: lo revisa el dueño). Si es el pago de otro
+      // (alguien pego una firma ajena de Solscan), queda libre para su dueño.
+      if (!pd.cadena || pd.cadena.ok || /no existe/.test(pd.cadena.motivo)) await this.state.storage.put('firma:' + firma, pd.codigo);
+      else { pd.firma = ''; pd.estado = 'esperando_pago'; }
+      await this.guardarPedidos();
+    } finally { this.verificando.delete(firma); }
+    if (pd.estado === 'esperando_pago') {
+      this.actualizarYo(s);
+      return no('Esa transacción no es el pago de este pedido (' + pd.cadena.motivo + '). Paga el monto exacto que se muestra y pega SU firma.');
     }
-    await this.guardarPedidos();
     no('📨 Recibimos tu pago. El Duende lo revisa y te entrega la compra (te avisamos aquí y por Telegram).');
     this.actualizarYo(s);
     const v = pd.cadena;
@@ -728,7 +744,7 @@ export class MmoWorld {
     try {
       const key = this.env.HELIUS_API_KEY;
       const url = key ? `https://mainnet.helius-rpc.com/?api-key=${key}` : 'https://api.mainnet-beta.solana.com';
-      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getTransaction', params: [firma, { encoding: 'json', maxSupportedTransactionVersion: 0, commitment: 'confirmed' }] }) });
+      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getTransaction', params: [firma, { encoding: 'jsonParsed', maxSupportedTransactionVersion: 0, commitment: 'confirmed' }] }) });
       const d = await r.json();
       const tx = d && d.result;
       if (!tx) return { ok: false, motivo: 'la transacción no existe (o aún no se confirma)', recibido: 0 };
@@ -737,7 +753,12 @@ export class MmoWorld {
       const i = claves.indexOf(SOL_DEV_WALLET);
       const recibido = i >= 0 ? tx.meta.postBalances[i] - tx.meta.preBalances[i] : 0;
       if (tx.blockTime && tx.blockTime * 1000 < desde - 120000) return { ok: false, motivo: 'es un pago anterior al pedido', recibido };
-      if (recibido < lamports * 0.99) return { ok: false, motivo: `llegaron ${(recibido / 1e9).toFixed(6)} SOL`, recibido };
+      // Una transferencia de EXACTAMENTE el monto del pedido (sus ultimas 4
+      // cifras son propias de el): sin esto, cualquier pago ajeno a la misma
+      // wallet (visible en Solscan) valia para cobrar otro pedido.
+      const ins = [...((tx.transaction.message.instructions) || []), ...(((tx.meta && tx.meta.innerInstructions) || []).flatMap(x => x.instructions || []))];
+      const exacta = ins.some(x => x && x.parsed && x.parsed.type === 'transfer' && x.parsed.info && x.parsed.info.destination === SOL_DEV_WALLET && Number(x.parsed.info.lamports) === Number(lamports));
+      if (!exacta) return { ok: false, motivo: recibido > 0 ? `monto distinto: llegaron ${(recibido / 1e9).toFixed(9)} SOL y el pedido es de ${(lamports / 1e9).toFixed(9)}` : 'no hay una transferencia a tu wallet', recibido };
       return { ok: true, recibido };
     } catch (e) { return null; }
   }
@@ -790,6 +811,8 @@ export class MmoWorld {
   async anularPedido(b) {
     const pd = this.buscarPedido(b.codigo);
     if (!pd || pd.estado === 'entregado' || pd.estado === 'anulado') return { ok: false, error: 'Ese pedido no se puede anular (no existe, ya se entregó o ya se anuló).' };
+    // La firma vuelve a quedar libre (si era de otro pago, su dueño puede usarla).
+    if (pd.firma && (await this.state.storage.get('firma:' + pd.firma)) === pd.codigo) await this.state.storage.delete('firma:' + pd.firma);
     let reembolso = '';
     if (pd.metodo === 'stars' && pd.charge && pd.tgPagador) {
       try {

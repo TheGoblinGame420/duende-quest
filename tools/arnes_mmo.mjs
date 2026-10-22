@@ -582,6 +582,7 @@ async function pruebas() {
   await pruebasMascotas();
   await pruebasContactos();
   await pruebasSkinsDinero();
+  await pruebasPagoSol();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -1334,6 +1335,59 @@ async function pruebasTintes() {
   await dejar(t); await dejar(v);
 }
 
+
+async function pruebasPagoSol() {
+  console.log('Pago con SOL: firma ajena y pago tardío');
+  const { SOL_DEV_WALLET } = await import('../functions/api/lib.js');
+  let tx = null;
+  const fetchReal = globalThis.fetch;
+  globalThis.fetch = async (url, o) => {
+    const u = String(url);
+    if (/mainnet-beta|helius/.test(u)) return { json: async () => ({ result: tx }) };
+    return { ok: true, json: async () => ({ solana: { usd: 150 }, price: 150, data: { amount: '150' } }) };
+  };
+  const txDe = lamports => ({ blockTime: Math.floor(Date.now() / 1000), meta: { err: null, preBalances: [5e9, 1e9], postBalances: [5e9 - lamports - 5000, 1e9 + lamports], innerInstructions: [] },
+    transaction: { message: { accountKeys: [{ pubkey: 'Pagador111' }, { pubkey: SOL_DEV_WALLET }], instructions: [{ program: 'system', parsed: { type: 'transfer', info: { source: 'Pagador111', destination: SOL_DEV_WALLET, lamports } } }] } } });
+  const adminReal = mundo.avisarAdmin; const admin = []; mundo.avisarAdmin = async t => { admin.push(t); };
+  try {
+    const A = await entrar('Tramposo', '81'), V = await entrar('Victima', '82'), C = await entrar('Tardio', '83');
+    A.c.uid = 'web:tramposo'; V.c.uid = 'web:victima'; C.c.uid = 'web:tardio';
+    for (const x of [A, V, C]) x.c.skins = ['comun'];
+    A.limpiar(); V.limpiar();
+    await mundo.pedido(A, { id: 'skin_legendaria', metodo: 'sol' });
+    await mundo.pedido(V, { id: 'skin_legendaria', metodo: 'sol' });
+    const pA = A.ultimos('pedidoSol').pop(), pV = V.ultimos('pedidoSol').pop();
+    chequear(pA && pV && pA.lamports !== pV.lamports, 'cada pedido tiene su monto exacto propio');
+    // La victima paga su pedido; el tramposo pega esa firma (publica en Solscan).
+    tx = txDe(pV.lamports);
+    const firma = '5'.repeat(88);
+    avanzar(60000);
+    A.limpiar(); await mundo.pedidoFirma(A, { codigo: pA.codigo, firma });
+    chequear(mundo.buscarPedido(pA.codigo).estado === 'esperando_pago' && A.ultimos('toast').some(x => /no es el pago de este pedido/.test(x.m)), 'una firma ajena no vale para otro pedido');
+    await mundo.pedidoFirma(V, { codigo: pV.codigo, firma });
+    const dV = mundo.buscarPedido(pV.codigo);
+    chequear(dV.estado === 'por_verificar' && dV.cadena && dV.cadena.ok, 'y quien pagó de verdad puede usar su firma');
+    // Monto parecido pero no exacto: no se da por bueno.
+    await mundo.pedido(A, { id: 'skin_tactico', metodo: 'sol' });
+    const pA2 = A.ultimos('pedidoSol').pop();
+    tx = txDe(pA2.lamports + 5e6);
+    await mundo.pedidoFirma(A, { codigo: pA2.codigo, firma: '7'.repeat(88) });
+    chequear(mundo.buscarPedido(pA2.codigo).estado === 'esperando_pago', 'un monto distinto al del pedido no se da por pagado');
+    // Pago tardio (a los 31 min): no se pierde.
+    C.limpiar(); await mundo.pedido(C, { id: 'skin_king', metodo: 'sol' });
+    const pC = C.ultimos('pedidoSol').pop();
+    avanzar(31 * 60000);
+    await mundo.guardarPedidos();
+    chequear(mundo.buscarPedido(pC.codigo).estado === 'vencido', 'a los 30 min el pedido sin pagar caduca');
+    tx = txDe(pC.lamports);
+    await mundo.pedidoFirma(C, { codigo: pC.codigo, firma: '6'.repeat(88) });
+    chequear(mundo.buscarPedido(pC.codigo).estado === 'por_verificar' && admin.some(t => t.includes(pC.codigo)), 'pagar después de los 30 min igual llega al dueño');
+    // Anular libera la firma.
+    await mundo.anularPedido({ codigo: pC.codigo, motivo: 'prueba' });
+    chequear(!(await state.storage.get('firma:' + '6'.repeat(88))), 'anular un pedido deja libre su firma');
+    for (const x of [A, V, C]) await dejar(x);
+  } finally { globalThis.fetch = fetchReal; mundo.avisarAdmin = adminReal; }
+}
 
 async function pruebasSkinsDinero() {
   console.log('Skins con poderes, también con dinero (SOL / Stars, entrega manual)');

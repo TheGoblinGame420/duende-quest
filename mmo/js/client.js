@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=80';
+} from './data.js?v=82';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1205,7 +1205,7 @@ function enviarChat(v) {
   const m = /^\/(\w+)\s*(.*)$/s.exec(v);
   if (!m) { mandar({ t: 'chat', canal: 'general', m: v }); return; }
   const cmd = m[1].toLowerCase(), resto = m[2].trim();
-  if (GESTOS[cmd]) return mandar({ t: 'gesto', id: cmd });
+  if (Object.hasOwn(GESTOS, cmd)) return mandar({ t: 'gesto', id: cmd });
   if (['d', 'decir'].includes(cmd)) return resto && mandar({ t: 'chat', canal: 'decir', m: resto });
   if (['g', 'grupo', 'p'].includes(cmd)) return resto && mandar({ t: 'chat', canal: 'grupo', m: resto });
   if (['h', 'hermandad'].includes(cmd)) return resto && mandar({ t: 'chat', canal: 'hermandad', m: resto });
@@ -2548,7 +2548,6 @@ function htmlPremium() {
     const ico = pq.skin ? `<img src="${A}skins/${pq.img}.png">` : `<img src="${A}items/equipo/${pq.icono}.png">`;
     h += tarjeta(ico, esc(pq.nombre), esc(pq.desc) + (pq.skin ? '<br><span style="color:var(--txt2)">Skin con poderes: también se consigue con oro.</span>' : ''), acc);
   }
-  if (cuentaTg) h += '<p style="font-size:12px;color:var(--txt2);margin-top:6px">¿Prefieres pagar con SOL? Entra al juego desde la web (duende-quest.alfonso12hc.workers.dev/mmo) con tu cuenta.</p>';
   const ps = (yo && yo.pedidos) || [];
   if (ps.length) {
     const col = { pagado: 'var(--warn)', por_verificar: 'var(--warn)', entregado: 'var(--ok)', anulado: 'var(--err)', esperando_pago: 'var(--txt2)' };
@@ -3620,7 +3619,7 @@ function pintarTienda() {
       if (tabTienda === 'skin' && !tiene.includes(id)) acc += `<button class="btn sec" data-probar="${id}">Probar</button>`;
       h += tarjeta(ico, d.nombre, d.desc + (tabTienda === 'skin' && puesto !== id ? difSkin(id) : ''), acc);
     }
-    if (tabTienda === 'skin') h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Cada skin da sus poderes mientras la llevas. Se compran con oro o, con tu cuenta, con dinero: ' + ((TG && !forzarInvitado) ? 'Stars aquí en Telegram o SOL desde la web' : 'SOL a la wallet de El Duende (o Stars dentro de Telegram)') + '; El Duende revisa el pago y te la entrega en tu personaje. Las skins que ya pagaste en el juego principal se desbloquean solas al entrar con tu cuenta.</p>';
+    if (tabTienda === 'skin') h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Cada skin da sus poderes mientras la llevas. Se compran con oro o, con tu cuenta, con dinero: ' + ((TG && !forzarInvitado) ? 'Telegram Stars' : 'SOL a la wallet de El Duende') + '; El Duende revisa el pago y te la entrega en tu personaje. Las skins que ya pagaste en el juego principal se desbloquean solas al entrar con tu cuenta.</p>';
   }
   L.innerHTML = h;
   // Retratos de las monturas (primer cuadro de su hoja).
