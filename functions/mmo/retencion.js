@@ -31,7 +31,7 @@
 // avisos sin volver se pausa hasta que vuelva.
 // ═══════════════════════════════════════════════════════
 
-import { xpParaSubir, premioDiaria, premioMazmorraDia, LOGIN_PREMIOS, multLogin, HABS, CLASES, NIVEL_MAX, DIARIA, horaFelizActiva } from '../../mmo/js/data.js';
+import { xpParaSubir, premioDiaria, premioMazmorraDia, LOGIN_PREMIOS, multLogin, HABS, CLASES, NIVEL_MAX, DIARIA, horaFelizActiva, TORRE, semanaUTC } from '../../mmo/js/data.js';
 import { getEnv, tg } from '../api/lib.js';
 import { MMO_URL } from '../api/telegram-bot.js';
 
@@ -400,6 +400,8 @@ export const Retencion = {
       const pr = premioMazmorraDia(c.nivel);
       lineas.push(`🏰 El premio diario de mazmorra está disponible: +${fmt(pr.xp)} XP, +${fmt(pr.oro)} oro y un objeto ÉPICO.`);
     }
+    // Torre del Duende: si esta semana aun no subio (su cofre cada 5 pisos espera).
+    if (c.nivel >= TORRE.nv && (!c.torre || c.torre.sem !== semanaUTC() || !c.torre.max)) lineas.push('🗼 Esta semana aún no subes la Torre del Duende: cada 5 pisos nuevos, un cofre con oro y equipo.');
     const pd = premioDiaria(c.nivel);
     lineas.push(`🎯 ${DIARIA.nombre} sin cobrar: +${fmt(pd.xp)} XP, +${fmt(pd.oro)} oro y ${pd.pocion} pociones.`);
     if (c.nivel < NIVEL_MAX) {
