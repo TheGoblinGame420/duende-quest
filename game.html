@@ -737,6 +737,15 @@ function ajustarLienzo(cv, W, H) {
 // ── CONFIGURACIÓN DEL MOTOR COMPARTIDO (js/engine.js) ──
 window.DQE = {
   fitCanvas: (cv, W, H) => { try { ajustarLienzo(cv, W, H); } catch (e) { console.warn('[fitCanvas]', e); } },
+  // Movil vertical: alto LOGICO que cabe entre el borde superior y los
+  // controles tactiles (HUD ~120 px + _RESERVA_TACTIL), a la escala con la que
+  // el lienzo llenara el ancho. El motor lo acota a 400-560 y lo fija al cargar.
+  altoVertical: (W) => {
+    const tactil = matchMedia('(pointer:coarse)').matches && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    const ancho = document.documentElement.clientWidth || window.innerWidth;
+    const libre = window.innerHeight - 120 - (tactil ? _RESERVA_TACTIL + 8 : 24);
+    return libre * W / Math.max(1, Math.min(ancho, W * 4));
+  },
   assetBase: 'assets/',
   menuOverlayId: 'ov-menu',
   airSlamNeedsKey: true,

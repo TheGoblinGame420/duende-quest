@@ -720,7 +720,18 @@ cx.imageSmoothingEnabled = false;
 // se dibuja un 33% más grande y el juego ocupa el doble de pantalla.
 const _esVertical = window.innerHeight > window.innerWidth * 1.15;
 const W = _esVertical ? 520 : 800;
-const H = _esVertical ? 400 : 320;
+// Lienzo vertical mas alto (opcional): en un movil de 390x844 el lienzo de
+// 520x400 ocupaba 300 px y dejaba ~190 px vacios entre el HUD y los controles
+// tactiles. Si la pagina define DQE.altoVertical(W) (cuanto alto LOGICO cabe
+// encima de los controles), el lienzo crece hacia arriba hasta 560: mas cielo,
+// mismo suelo (GY = H - 80) y mismos sprites; el ancho logico no cambia, asi
+// que la jugabilidad horizontal es identica. Sin el hook, 400 como siempre.
+function _altoVertical() {
+  let h = 400;
+  try { if (DQE.altoVertical) h = Math.floor(+DQE.altoVertical(520)); } catch (e) {}
+  return (h > 400) ? Math.min(560, h) : 400;
+}
+const H = _esVertical ? _altoVertical() : 320;
 const GY = H - 80;
 // Línea de suelo real: es donde draw() pinta el borde y donde apoyan los pies
 // del jugador (PL.y = GY, PL.h = 68). Todo lo que "esté en el suelo" usa esto.
@@ -1289,7 +1300,10 @@ const AFIJOS = [
 function probabilidadElite() {
   if (nivel) return nivel.elite;
   if (wave < 2) return 0;
-  return Math.min(.28, .05 + (wave - 2) * .022);
+  // Hasta la oleada 6 igual que antes (.138); desde ahi sube un poco mas
+  // rapido (+.03/oleada) para que el modo SIN FIN no se quede plano.
+  if (wave <= 6) return .05 + (wave - 2) * .022;
+  return Math.min(.36, .138 + (wave - 6) * .03);
 }
 
 function spawnEnemy(forceBoss = false) {
@@ -2432,8 +2446,12 @@ function update() {
   // mientras gameSpeed seguia subiendo: los enemigos CRUZABAN la pantalla mas
   // rapido, o sea que habia MENOS a la vez. La dificultad bajaba. Ahora la
   // cadencia sigue apretando y el tope de simultaneos crece con la oleada.
-  const spawnRate = wave < 7 ? Math.max(50, 105 - wave * 8)
-                             : Math.max(22, 50 - (wave - 7) * 3);
+  // Medido con el bot (oct-2026): con -3/oleada desde la 7 la cadencia era
+  // casi plana y el bot llegaba a la oleada 12 sin morir. Ahora la rampa
+  // empieza en la 6 y aprieta 5 frames por oleada (65 -> 55 -> 50 -> 45 ->
+  // 40 -> 35 ...) hasta el suelo de 22: sin saltos bruscos entre oleadas.
+  const spawnRate = wave < 6 ? Math.max(57, 105 - wave * 8)
+                             : Math.max(22, 55 - (wave - 6) * 5);
   // Con el jefe en pantalla solo acompañan 2: el combate es contra el.
   const ritmo = nivel ? Math.round(spawnRate * nivel.dens) : spawnRate;
   const tope = nivel ? nivel.tope : 8 + wave * 1.5;
@@ -2524,8 +2542,8 @@ const LEVELS = [];
 BIOMES.forEach((b, bi) => {
   const vel = 3.1 + bi * .3, pool = POOLS[bi];
   const dens = Math.max(1, 1.7 - bi * .18), tope = 4 + bi * 2;
-  LEVELS.push({ id: (bi + 1) + '-1', bioma: bi, oleadas: 2, vel, pool: bi ? pool.slice(0, -1) : ['normal'], elite: bi * .05, dens: dens + (bi ? .15 : .9), tope: bi ? tope : 2 });
-  LEVELS.push({ id: (bi + 1) + '-2', bioma: bi, oleadas: 3, vel: vel + .2, pool, elite: .05 + bi * .05, dens, tope: tope + 1 });
+  LEVELS.push({ id: (bi + 1) + '-1', bioma: bi, oleadas: 2, vel, pool: bi ? pool.slice(0, -1) : ['normal'], elite: bi * .05, dens: dens + (bi ? .15 : .5), tope: bi ? tope : 2 });
+  LEVELS.push({ id: (bi + 1) + '-2', bioma: bi, oleadas: 3, vel: vel + .2, pool, elite: .05 + bi * .05, dens: bi ? dens : 1.3, tope: tope + 1 });
   // El ultimo bioma (DESIERTO DORADO, bi 4) es el cierre de las 15 etapas:
   // en vez de otro oso reciclado, el angel — primer jefe con silueta propia.
   // El PRIMER bioma (NOCHE VIOLETA, bi 0) recibe el segundo jefe con silueta
