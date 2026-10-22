@@ -1594,7 +1594,14 @@ se cancela con `shutdown /a`). La otra sesión llevó el MMO; esta, lo demás.
 - Segunda ronda de QA (MMO ?v=65 y web en vivo) arreglada: modo ligero con
   histéresis, buscador de grupo sin avisos en mazmorras/duelos, duelos más
   largos (la otra sesión); token sin par en DEX, compra en móvil con Phantom,
-  precios de skins y objetos reales, banner y hoja de ruta al día (esta). Informes en el scratchpad de la sesión (qa_gamer_*, qa_regresion).
+  precios de skins y objetos reales, banner y hoja de ruta al día (esta).
+- Últimos de la noche: portada con "Lo nuevo" y aviso en el hero; pestañas
+  Perfil/Skins/Ranking/Wallet de la mini app pulidas; arcade con 1-2 algo más
+  exigente, sin fin que acelera desde la oleada 6, lienzo más alto en el
+  móvil (`DQE.altoVertical`) y controles compactos en pantallas de ≤700 px
+  de alto; el bot manda el tráiler (TRAILER_URL) a quien llega por primera
+  vez; carrusel de 3 imágenes (`python tools/promo/carrusel.py`) y textos
+  para redes en /promo/TEXTOS_PARA_REDES.txt (no se sube a git). Informes en el scratchpad de la sesión (qa_gamer_*, qa_regresion).
 
 **Lista de amigos y Elixir de Sabiduría (?v=64-65):** `c.contactos`
 [{u, n}] (máx. 50; al cliente solo `pub(uid)`), mensajes `contactoAdd` /
