@@ -1926,3 +1926,21 @@ Esta sesión lleva la tienda (pares del `?v=`), la otra lo demás (impares).
     líder, mensaje 'hermColor'); «Compartir logro» anclado abajo en el móvil.
   - Resistencia 40 bots / 6 min: 0 errores. FPS móvil CPU 4×: 60.
   - Arnés: **562 bien, 0 mal**.
+- **?v=188-200 (22-oct, tarde) — estilo profesional (pedido del dueño: «que
+  no se vea tan IA, que se vea hecho por programadores reales»):**
+  - Ayuda → **Guía del juego** por secciones (controles de teclado solo en
+    PC, táctiles en el móvil: `.solo-pc` / `.solo-tactil`); Novedades →
+    **Notas del parche** («Parche 1.N»); calendario en el mismo formato.
+  - Sin emojis decorativos en títulos de ventanas, pestañas, botón de
+    acción, seguimiento del HUD, cajas del registro de misiones, avisos y
+    consejos (`sinEmoji()` en client.js; el tipo de aviso lo da la barra
+    lateral de color). Botones del HUD con **iconos del pack 7Soul1** e
+    iconos de línea SVG (sonido, inicio).
+  - Avisos con una ventana abierta en una capa propia (`#avisos-modal`): el
+    HUD vive en el contexto de apilado de `#app` y la ventana los tapaba.
+  - QA 5: notas del parche/Bóveda también al entrar; monstruos de la Torre
+    al 60% de experiencia (`TORRE.xp`, `xpX` ya se aplica en `matar`); su
+    jefe no cuenta para misiones de historia; con mascota la expedición da
+    +15% de oro; HUD de la Torre con el modificador del piso.
+  - Un build de Workers Builds falló sin motivo (dry-run local bien): se
+    reintentó con un commit vacío, como ya pasó el 2-oct.
