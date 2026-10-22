@@ -39,8 +39,12 @@ export const Torre = {
     const clave = 'torre#' + this.sigInst.toString(36) + Math.random().toString(36).slice(2, 6);
     const w = this.mundoK(clave);
     w.spawnEn = Infinity;
-    // Atajo (solo el de quien pulsa; a lo sumo su marca de la semana - 5).
-    const desde = (m.desde | 0) > 0 && (m.desde | 0) <= atajoTorre(this.torreSem(c).max) && (m.desde | 0) % 5 === 0 ? m.desde | 0 : 0;
+    // Atajo: a lo sumo la marca de la semana - 5.
+    // En grupo, solo si TODOS lo tienen (si no, se llevaria a alguien a pisos
+    // altos y cobraria cofres de pisos que no subio).
+    const d0 = m.desde | 0;
+    const desde = d0 > 0 && d0 % 5 === 0 && quienes.every(x => d0 <= atajoTorre(this.torreSem(x.c).max)) ? d0 : 0;
+    if (d0 && !desde && quienes.length > 1) this.enviar(s, { t: 'toast', m: '🗼 El atajo solo vale si todos los del grupo tienen esa marca esta semana: subís desde el piso 1.' });
     w.torre = { sem: semanaUTC(), piso: desde, nv: Math.min(NIVEL_MAX, Math.max(...quienes.map(x => x.c.nivel))), n: quienes.length, sigEn: ahora + TORRE.pausa, pisoIni: 0, fin: false, vacioDesde: 0 };
     for (const x of quienes) {
       this.entrarMapa(x, 'torre', 700, false, clave);
