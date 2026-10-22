@@ -2024,7 +2024,7 @@ Esta sesión lleva la tienda (pares del `?v=`), la otra lo demás (impares).
        («LAW», «ENERGY»).
   - Los invitados de QA **Qa82508p** y **Qa84334m** (Nv 2) aparecen en el
     ranking semanal de producción; desaparecen con el cierre semanal.
-- **Reel publicitario (22-oct):** `scratchpad/reel/grabar.mjs` graba escenas
+- **Reel publicitario (22-oct):** `tools/reel_grabar.mjs` graba escenas
   del juego en local con `Page.startScreencast` (405×720, ~55 fps) y
   rótulos en el DOM con Press Start 2P; ffmpeg las une con fundidos a
   1080×1920 (24 s, sin música).
