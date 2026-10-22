@@ -1248,7 +1248,7 @@ export const MAPAS = {
   pueblo: {
     nombre: 'Pueblo Duende', fondo: 'amanecer2', ancho: 3300, zona: false,
     paleta: { cielo: ['#1a0b2e', '#3a1a3a'], suelo: '#1c1426', linea: '#ffd84a' },
-    plataformas: [[420, 300, 160], [1320, 300, 160], [860, 240, 180]],
+    plataformas: [[420, 300, 160], [1215, 300, 110], [860, 240, 180]],   // la del medio, sin cruzar el portal del Coliseo
     portales: [
       { x: 90,   a: 'noche',     ax: 150,  etiqueta: 'Bosque Nocturno', nv: '1-6' },
       { x: 330,  a: 'amanecer',  ax: 150,  etiqueta: 'Colinas Rojas', nv: '6-12' },
