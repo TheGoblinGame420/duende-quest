@@ -692,7 +692,7 @@ export class MmoWorld {
     if (metodo === 'sol' && c.uid.startsWith('tg:')) return no('Dentro de Telegram se paga con Stars.');
     if (pq.skin && (c.skins || []).includes(pq.skin)) return no('Ya tienes esa skin.');
     await this.guardarPedidos();
-    if (this.pedidos.filter(x => x.uid === c.uid && (x.estado === 'esperando_pago' || x.estado === 'por_verificar')).length >= 3) return no('Tienes compras sin pagar: termina o espera 30 minutos.');
+    if (this.pedidos.filter(x => x.uid === c.uid && (x.estado === 'esperando_pago' || x.estado === 'comprobando' || x.estado === 'por_verificar')).length >= 3) return no('Tienes compras sin pagar: termina o espera 30 minutos.');
     if (this.pedidos.filter(x => x.uid === c.uid && Date.now() - x.creado < 3600000).length >= 10) return no('Has creado muchos pedidos seguidos: espera un rato.');
     const env = getEnv({ env: this.env });
     const pd = {
@@ -749,7 +749,7 @@ export class MmoWorld {
     const antes = pd.estado;
     let cadena = null;
     try {
-      pd.firma = firma; pd.estado = 'por_verificar';
+      pd.firma = firma; pd.estado = 'comprobando';   // ni /pedidos ni /entregar lo ven hasta confirmar
       // Recien enviada, la transaccion tarda unos segundos en confirmarse.
       for (let i = 0; i < 4; i++) {
         cadena = await this.verificarSol(firma, pd.lamports, pd.creado);
@@ -757,7 +757,7 @@ export class MmoWorld {
         await new Promise(r => setTimeout(r, 5000));
       }
       // El dueño pudo entregarlo o anularlo mientras tanto: no se toca.
-      if (pd.estado !== 'por_verificar' || pd.firma !== firma) return;
+      if (pd.estado !== 'comprobando' || pd.firma !== firma) return;
       // Solo un pago CONFIRMADO de este pedido gasta la firma y llega al
       // dueño. Si la red falla o aun no se ve, el pedido sigue esperando y
       // la firma queda libre (antes se reservaba: con la red caida, alguien
@@ -768,15 +768,10 @@ export class MmoWorld {
         if (!cadena) return no('No pudimos consultar la red de Solana ahora. Vuelve a intentarlo en un minuto: tu pago no se pierde.');
         if (cadena.ok) return no('Esa transacción ya se usó para otro pedido.');
         if (/no existe/.test(cadena.motivo)) return no('Aún no vemos esa transacción confirmada en la red. Espera un minuto y pulsa «Ya pagué» (o vuelve a pegarla).');
-        // Casi el monto (una wallet o exchange que redondea): que el dueño lo sepa.
-        if (cadena.recibido > 0 && Math.abs(cadena.recibido - pd.lamports) < 2e6 && !pd.avisoCasi) {
-          pd.avisoCasi = 1;
-          this.avisarAdmin(`⚠️ Pedido #${pd.codigo} (${pd.nombre}, $${pd.usd}): llegó un pago con un monto parecido pero no exacto (${(cadena.recibido / 1e9).toFixed(9)} SOL; se pedían ${(pd.lamports / 1e9).toFixed(9)}).\n🔗 https://solscan.io/tx/${firma}\nSi es suyo: /entregar ${pd.codigo}`, botonesPedido(pd.codigo));
-        }
         return no('Esa transacción no es el pago de este pedido (' + cadena.motivo + '). Paga el monto exacto que se muestra.');
       }
       await this.state.storage.put('firma:' + firma, pd.codigo);
-      pd.cadena = cadena; pd.pagadoEn = Date.now();
+      pd.estado = 'por_verificar'; pd.cadena = cadena; pd.pagadoEn = Date.now();
       await this.guardarPedidos();
     } finally { this.verificando.delete(firma); }
     no('📨 Recibimos tu pago. El Duende lo revisa y te entrega la compra (te avisamos aquí y por Telegram).');
@@ -805,22 +800,26 @@ export class MmoWorld {
     if (!this.ritmoSol(c.uid, 'b', 15000)) return no('Espera unos segundos y vuelve a comprobar.');
     // 1) La clave 'reference' de Solana Pay (unica del pedido): la llevan el
     //    QR, el enlace a la wallet y el pago con Phantom.
-    let firmas = pd.ref ? await this.firmasRecientesSol(pd.ref, 10) : [];
-    // 2) Si no aparece (pago desde otra wallet con el monto exacto): las
-    //    ultimas de la wallet del dueño, sin las ya usadas ni las anteriores.
-    if (firmas && !firmas.length) firmas = await this.firmasRecientesSol(SOL_DEV_WALLET, 50);
-    if (!firmas) return no('No se pudo consultar la red de Solana ahora. Prueba en un momento (o pega la firma).');
-    const cand = [];
-    for (const f of firmas) {
-      if (!f || f.err || typeof f.signature !== 'string' || (f.blockTime && f.blockTime * 1000 < pd.creado - 30000)) continue;
-      if (await this.state.storage.get('firma:' + f.signature)) continue;
-      cand.push(f.signature);
-      if (cand.length >= 10) break;
-    }
-    for (const sig of cand) {
-      const v = await this.verificarSol(sig, pd.lamports, pd.creado);
-      if (v && v.ok) { this.ritmoSolM.delete(c.uid + ':f'); return this.pedidoFirma(s, { codigo: pd.codigo, firma: sig }); }
-    }
+    // 2) Si no aparece ahi (pago desde otra wallet con el monto exacto, o
+    //    alguien lleno de basura la reference): las ultimas de la wallet del
+    //    dueño, sin las ya usadas ni las anteriores al pedido.
+    const probar = async firmas => {
+      const cand = [];
+      for (const f of firmas || []) {
+        if (!f || f.err || typeof f.signature !== 'string' || (f.blockTime && f.blockTime * 1000 < pd.creado - 30000)) continue;
+        if (await this.state.storage.get('firma:' + f.signature)) continue;
+        cand.push(f.signature);
+        if (cand.length >= 8) break;
+      }
+      for (const sig of cand) { const v = await this.verificarSol(sig, pd.lamports, pd.creado); if (v && v.ok) return sig; }
+      return null;
+    };
+    const porRef = pd.ref ? await this.firmasRecientesSol(pd.ref, 20) : [];
+    let sig = await probar(porRef);
+    let porWallet = [];
+    if (!sig) { porWallet = await this.firmasRecientesSol(SOL_DEV_WALLET, 50); sig = await probar(porWallet); }
+    if (sig) { this.ritmoSolM.delete(c.uid + ':f'); return this.pedidoFirma(s, { codigo: pd.codigo, firma: sig }); }
+    if (!porRef && !porWallet) return no('No se pudo consultar la red de Solana ahora. Prueba en un momento (o pega la firma).');
     no('Aún no vemos tu pago en la red. Si acabas de enviarlo, espera unos segundos y vuelve a comprobar.');
   }
   async firmasRecientesSol(direccion, limite) {
