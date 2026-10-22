@@ -9,7 +9,7 @@
 // El personaje lleva su hermandad en c.herm. Rangos: 'lider', 'oficial',
 // 'miembro'. Crear una cuesta oro (sale del juego, no de dinero real).
 // ═══════════════════════════════════════════════════════
-import { HERM_COSTO, HERM_NIVEL, HERM_MAX, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, GESTA_ANTIG_MS, premioGesta, semanaUTC } from '../../mmo/js/data.js';
+import { HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, GESTA_ANTIG_MS, premioGesta, semanaUTC } from '../../mmo/js/data.js';
 import { pub } from './social.js';
 
 const INV_MS = 60000;
@@ -30,6 +30,7 @@ export const Hermandades = {
     return h;
   },
   nombreHermandad(id) { const h = this.herms && this.herms.get(id); return h ? h.nombre : ''; },
+  colorHermandad(id) { const h = this.herms && this.herms.get(id); return h ? h.color | 0 : 0; },
   async guardarHerm(h) { await this.state.storage.put('h:' + h.id, h); },
   rangoEn(h, uid) { return h && h.miembros[uid] ? h.miembros[uid].r : null; },
   conectadosHerm(h) { return Object.keys(h.miembros).map(u => this.porUid.get(u)).filter(x => x && x.c && !x.cerrado); },
@@ -53,7 +54,7 @@ export const Hermandades = {
     const gc = {};
     for (const u in G.c) if (h.miembros[u]) gc[pub(u)] = G.c[u];
     return {
-      id: h.id, nombre: h.nombre, motd: h.motd || '', creada: h.creada, gesta: { p: G.p, c: gc },
+      id: h.id, nombre: h.nombre, motd: h.motd || '', color: h.color | 0, creada: h.creada, gesta: { p: G.p, c: gc },
       m: Object.entries(h.miembros).map(([uid, m]) => ({ uid: pub(uid), n: m.n, lv: m.lv, cl: m.cl, r: m.r, on: this.porUid.has(uid) ? 1 : 0 }))
         .sort((a, b) => b.on - a.on || ({ lider: 0, oficial: 1, miembro: 2 }[a.r] - { lider: 0, oficial: 1, miembro: 2 }[b.r]) || b.lv - a.lv),
     };
@@ -195,6 +196,17 @@ export const Hermandades = {
     this.enviarHerm(h);
   },
 
+  // Color de la hermandad (solo el lider). Se ve al momento en todos.
+  async colorHerm(s, m) {
+    const h = await this.hermandad(s.c.herm);
+    if (!h || this.rangoEn(h, s.c.uid) !== 'lider') return;
+    const i = m.i | 0;
+    if (i < 0 || i >= HERM_COLORES.length || i === (h.color | 0)) return;
+    h.color = i;
+    await this.guardarHerm(h);
+    this.enviarHerm(h);
+    for (const x of this.conectadosHerm(h)) this.aClave(x.k, { t: 'pa', ...this.infoApariencia(x) });
+  },
   async motdHerm(s, m) {
     const h = await this.hermandad(s.c.herm);
     const r = this.rangoEn(h, s.c.uid);

@@ -311,6 +311,7 @@ export class MmoWorld {
       case 'hermExpulsar': return this.expulsarHerm(s, m);
       case 'hermRango': return this.rangoHerm(s, m);
       case 'hermMotd': return this.motdHerm(s, m);
+      case 'hermColor': return this.colorHerm(s, m);
       case 'herm': return this.verHerm(s);
       case 'cofre': return this.abrirCofre(s, m);
       case 'recolectar': return this.recolectar(s, m);
@@ -1143,7 +1144,7 @@ export class MmoWorld {
   }
   // Lo que cambia al equiparse o elegir clase (mensaje 'pa').
   infoApariencia(s) {
-    return { p: s.id, id: s.id, sk: s.c.skin, ar: s.c.arma, mx: s.st.maxHp, ti: this.textoTitulo(s.c), cl: s.c.clase || '', rmx: s.st.recMax, hn: this.nombreHermandad(s.c.herm), mo: s.montado || '', es: s.c.espec || '', tn: s.c.tinte || '', ma: s.c.exped ? '' : s.c.mascota || '' };
+    return { p: s.id, id: s.id, sk: s.c.skin, ar: s.c.arma, mx: s.st.maxHp, ti: this.textoTitulo(s.c), cl: s.c.clase || '', rmx: s.st.recMax, hn: this.nombreHermandad(s.c.herm), hc: this.colorHermandad(s.c.herm), mo: s.montado || '', es: s.c.espec || '', tn: s.c.tinte || '', ma: s.c.exped ? '' : s.c.mascota || '' };
   }
   // Auras con su tiempo restante, para quien llega al mapa y no vio cuando se pusieron.
   aurasVivas(au) {

@@ -11,12 +11,12 @@ import {
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
-  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe, climaDe, CLIMA, ESPECIES, premioEspecie, TORRE, atajoTorre, premioTorreSem, zonaDeNivel, progresoLogro, proximoMundial, mundialDe, HORA_FELIZ, EXPEDICION, premioExpedicion,
+  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe, climaDe, CLIMA, ESPECIES, premioEspecie, TORRE, atajoTorre, HERM_COLORES, premioTorreSem, zonaDeNivel, progresoLogro, proximoMundial, mundialDe, HORA_FELIZ, EXPEDICION, premioExpedicion,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=184';
+} from './data.js?v=186';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -473,7 +473,7 @@ function recibir(m) {
       else if (quien) { quien.lv = m.lv; if (m.mx) quien.mx = m.mx; if (m.rmx) quien.rmx = m.rmx; }
       break;
     }
-    case 'pa': { const o = otros.get(m.p); if (o) { o.sk = m.sk; o.ar = m.ar; o.mx = m.mx; o.ti = m.ti || ''; o.cl = m.cl || ''; o.rmx = m.rmx || 0; o.hn = m.hn || ''; o.mo = m.mo || ''; o.es = m.es || ''; o.tn = m.tn || ''; o.ma = m.ma || ''; } break; }
+    case 'pa': { const o = otros.get(m.p); if (o) { o.sk = m.sk; o.ar = m.ar; o.mx = m.mx; o.ti = m.ti || ''; o.cl = m.cl || ''; o.rmx = m.rmx || 0; o.hn = m.hn || ''; o.hc = m.hc | 0; o.mo = m.mo || ''; o.es = m.es || ''; o.tn = m.tn || ''; o.ma = m.ma || ''; } break; }
     case 'hb': habilidadRemota(m); break;
     case 'cast': {
       const h = m.id === 'hogar' ? { nombre: 'Piedra de Hogar' } : m.id === 'montar' ? { nombre: 'Invocar montura' } : m.id === 'recolectar' ? { nombre: 'Recogiendo' } : m.id === 'pescar' ? { nombre: '🎣 Pescando' } : habPorId(m.id);
@@ -642,7 +642,7 @@ function aurasDeServidor(au) {
 
 function agregarOtro(p) {
   if (p.id === miId) return;
-  otros.set(p.id, { id: p.id, n: p.n, lv: p.lv, sk: p.sk, ar: p.ar, ti: p.ti || '', cl: p.cl || '', hn: p.hn || '', mo: p.mo || '', es: p.es || '', tn: p.tn || '', ma: p.ma || '', rmx: p.rmx || 0, rec: 0, fl: 0, x: p.x, y: p.y, f: p.f, a: 0, hp: p.hp, mx: p.mx, muerto: p.muerto, buf: [{ t: performance.now(), x: p.x, y: p.y }], herido: 0, atk: 0, paso: 0 });
+  otros.set(p.id, { id: p.id, n: p.n, lv: p.lv, sk: p.sk, ar: p.ar, ti: p.ti || '', cl: p.cl || '', hn: p.hn || '', hc: p.hc | 0, mo: p.mo || '', es: p.es || '', tn: p.tn || '', ma: p.ma || '', rmx: p.rmx || 0, rec: 0, fl: 0, x: p.x, y: p.y, f: p.f, a: 0, hp: p.hp, mx: p.mx, muerto: p.muerto, buf: [{ t: performance.now(), x: p.x, y: p.y }], herido: 0, atk: 0, paso: 0 });
   aurasP.set(p.id, aurasDeServidor(p.au));
 }
 
@@ -1679,6 +1679,7 @@ pintarHermandad = L => {
   let h = `<div class="mis-caja" style="margin-top:0"><b>🛡️ &lt;${esc(hermandad.nombre)}&gt;</b><p style="font-size:12px">${hermandad.m.length} miembros · ${on} en línea · tu rango: ${esc(RANGO[r] || '—')}</p>`;
   h += `<p style="font-size:12px;margin-top:6px;color:var(--txt2)">📜 ${esc(hermandad.motd || 'Sin mensaje del día.')}</p>`;
   h += htmlGesta(hermandad);
+  if (r === 'lider') h += `<div style="display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap"><span style="font-size:12px;color:var(--txt2)">Color:</span>${HERM_COLORES.map((col, i) => `<button class="bt" data-hcol="${i}" title="Color ${i + 1}" style="width:28px;height:28px;border-radius:50%;background:${col};border:2px solid ${(hermandad.color | 0) === i ? '#fff' : 'transparent'}"></button>`).join('')}</div>`;
   if (manda) h += `<div style="display:flex;gap:6px;margin-top:6px"><input class="nombre" id="in-motd" maxlength="140" placeholder="Nuevo mensaje del día" style="margin:0;font-size:9px;padding:8px"><button class="btn sec" id="b-motd">Guardar</button></div>`;
   h += '</div>';
   for (const x of hermandad.m) {
@@ -1695,6 +1696,7 @@ pintarHermandad = L => {
   L.innerHTML = h;
   L.querySelectorAll('[data-hr]').forEach(b => b.onclick = () => { if (b.dataset.r !== 'lider' || confirm('¿Pasarle el liderazgo?')) mandar({ t: 'hermRango', uid: b.dataset.hr, r: b.dataset.r }); });
   L.querySelectorAll('[data-hx]').forEach(b => b.onclick = () => { if (confirm('¿Expulsar de la hermandad?')) mandar({ t: 'hermExpulsar', uid: b.dataset.hx }); });
+  L.querySelectorAll('[data-hcol]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'hermColor', i: +b.dataset.hcol }); });
   const bm = $('b-motd');
   if (bm) { $('in-motd').addEventListener('keydown', e => e.stopPropagation()); bm.onclick = () => mandar({ t: 'hermMotd', m: $('in-motd').value }); }
   $('b-herm-salir').onclick = () => { if (confirm('¿Dejar la hermandad?' + (r === 'lider' && hermandad.m.length > 1 ? ' El liderazgo pasará a otro miembro.' : r === 'lider' ? ' Eres el último: se disolverá.' : ''))) mandar({ t: 'hermSalir' }); };
@@ -3365,7 +3367,7 @@ function dibujarDuende(q, esYo) {
   // nombre (en el suelo no caben dos pilas de etiquetas).
   const hn = esYo ? (hermandad ? hermandad.nombre : '') : (baja ? '' : q.hn);
   let linea = pies + 29 + baja;
-  if (hn) { etiqueta(x, linea, '<' + hn + '>', '#4ade80', 5); linea += 12; }
+  if (hn) { etiqueta(x, linea, '<' + hn + '>', HERM_COLORES[(esYo ? hermandad && hermandad.color : q.hc) | 0] || '#4ade80', 5); linea += 12; }
   const ti = esYo ? tituloDe(yo.titulo) : (baja ? '' : q.ti);
   if (ti) etiqueta(x, linea, '« ' + ti + ' »', '#c084fc', 5);
   if (!esYo && (q.hp < q.mx || elegido) && !muerto) barraMini(x, pies - 78, 36, q.hp / q.mx, '#4ade80');

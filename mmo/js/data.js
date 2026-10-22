@@ -1150,6 +1150,8 @@ export const premioAmigo = nivel => ({ oro: 1500 + 150 * nivel });
 
 // ── HERMANDADES ──
 export const HERM_COSTO = 5000;   // oro para fundar una
+// Color del nombre de la hermandad bajo cada miembro (lo elige el lider).
+export const HERM_COLORES = ['#4ade80', '#60a5fa', '#f472b6', '#facc15', '#f97316', '#a78bfa', '#f87171', '#2dd4bf'];
 export const HERM_NIVEL = 10;
 export const HERM_MAX = 50;
 // Gesta semanal: toda la hermandad suma puntos (1 por monstruo, 10 por

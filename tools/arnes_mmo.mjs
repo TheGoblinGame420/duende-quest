@@ -2172,6 +2172,11 @@ async function pruebasGesta() {
   await calma(); await calma();
   const th = await mundo.topHerm();
   chequear(th.length && th[0][0] === h.id && th[0][1].p === G.p, 'la hermandad sale en el ranking semanal con sus puntos');
+  // Color de la hermandad: solo el lider; llega en la apariencia de cada miembro.
+  await b.mandar({ t: 'hermColor', i: 3 }); await calma();
+  chequear(!(h.color | 0), 'un miembro no cambia el color');
+  b.limpiar(); await a.mandar({ t: 'hermColor', i: 3 }); await calma();
+  chequear(h.color === 3 && mundo.infoApariencia(b).hc === 3 && b.ultimos('pa').some(x => x.hc === 3), 'el líder cambia el color y se ve en todos');
   // El cliente recibe la gesta con los aportes por id publico.
   a.limpiar();
   await a.mandar({ t: 'herm' }); await calma();
