@@ -324,6 +324,7 @@ export class MmoWorld {
       case 'fondo': return this.enviar(s, { t: 'fondo', ...this.infoFondo() });
       case 'pedido': return this.pedido(s, m);
       case 'pedidoFirma': return this.pedidoFirma(s, m);
+      case 'pedidoBuscar': return this.pedidoBuscar(s, m);
       case 'ping': return this.enviar(s, { t: 'pong', ts: m.ts });
     }
   }
@@ -753,6 +754,39 @@ export class MmoWorld {
     const v = pd.cadena;
     const chequeo = v === null ? '⚠️ No se pudo consultar la cadena: revísalo tú' : v.ok ? `✅ En la cadena: ${(v.recibido / 1e9).toFixed(6)} SOL llegaron a tu wallet` : `❌ En la cadena NO aparece el pago esperado (${v.motivo})`;
     this.avisarAdmin(`◎ *Pedido #${pd.codigo}* — ${pd.nombre} ($${pd.usd})\n👤 ${pd.jugador.replace(/[^\p{L}\p{N} ]/gu, '')}\n💰 Debe pagar ${(pd.lamports / 1e9).toFixed(9)} SOL a tu wallet\n${chequeo}\n🔗 https://solscan.io/tx/${firma}\n\nSi está bien: /entregar ${pd.codigo}\nSi no: /anular ${pd.codigo}`, botonesPedido(pd.codigo));
+  }
+
+  // "Ya pague": busca el pago entre las ultimas transacciones de la wallet
+  // (el monto exacto, con su marca de 4 cifras, identifica el pedido) y, si
+  // lo encuentra, sigue como si se hubiera pegado su firma. Asi se puede
+  // pagar escaneando el QR (Solana Pay) con el movil sin copiar nada.
+  async pedidoBuscar(s, m) {
+    const c = s.c;
+    const pd = this.buscarPedido(m.codigo);
+    const no = t => this.enviar(s, { t: 'toast', m: t });
+    if (!pd || pd.uid !== c.uid || pd.metodo !== 'sol' || (pd.estado !== 'esperando_pago' && pd.estado !== 'vencido')) return no('Ese pedido ya no está esperando pago.');
+    const ahora = Date.now();
+    if (ahora - (s.buscarSolT || 0) < 15000) return no('Espera unos segundos y vuelve a comprobar.');
+    s.buscarSolT = ahora;
+    const firmas = await this.firmasRecientesSol();
+    if (!firmas) return no('No se pudo consultar la red de Solana ahora. Prueba en un momento (o pega la firma).');
+    // Como mucho 12 consultas (cada una es una peticion a la red).
+    const cand = firmas.filter(f => f && !f.err && typeof f.signature === 'string' && (!f.blockTime || f.blockTime * 1000 >= pd.creado - 120000)).slice(0, 12);
+    for (const f of cand) {
+      if (await this.state.storage.get('firma:' + f.signature)) continue;
+      const v = await this.verificarSol(f.signature, pd.lamports, pd.creado);
+      if (v && v.ok) return this.pedidoFirma(s, { codigo: pd.codigo, firma: f.signature });
+    }
+    no('Aún no vemos tu pago en la red. Si acabas de enviarlo, espera unos segundos y vuelve a comprobar.');
+  }
+  async firmasRecientesSol() {
+    try {
+      const key = this.env.HELIUS_API_KEY;
+      const url = key ? `https://mainnet.helius-rpc.com/?api-key=${key}` : 'https://api.mainnet-beta.solana.com';
+      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getSignaturesForAddress', params: [SOL_DEV_WALLET, { limit: 25, commitment: 'confirmed' }] }) });
+      const d = await r.json();
+      return Array.isArray(d && d.result) ? d.result : null;
+    } catch (e) { return null; }
   }
 
   // Comprueba en la cadena que la transaccion existe, salio bien y dejo en la

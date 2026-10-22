@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=142';
+} from './data.js?v=144';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -2748,9 +2748,13 @@ function mostrarPedidoSol(m) {
   const sol = (m.lamports / 1e9).toFixed(9);
   $('sol-cuerpo').innerHTML =
     `<p class="centro" style="margin-bottom:8px">${esc(m.nombre)} · pedido <b>#${esc(m.codigo)}</b></p>` +
-    `<div class="saldo"><b>${sol} SOL</b><small>(~$${m.usd}) · paga el monto <b>exacto</b>: sus últimas cifras identifican tu pedido</small></div>` +
+    `<div class="saldo"><b>${sol} SOL</b><small>(~$${m.usd}) · paga el monto <b style="display:inline">exacto</b>: sus últimas cifras identifican tu pedido</small></div>` +
     `<button class="btn" id="b-phantom" style="width:100%;padding:12px;margin-bottom:10px">Pagar con Phantom${hayWalletSol() && !window.phantom ? ' / tu wallet' : ''}</button>` +
     (TACTIL && !hayWalletSol() ? `<button class="btn sec" id="b-solflare" style="width:100%;padding:10px;margin-bottom:10px">Pagar con Solflare</button>` : '') +
+    // Solana Pay: QR (escanéalo con Phantom/Solflare del móvil) con el monto exacto.
+    (TACTIL ? '' : `<p style="font-size:12px;margin:6px 0">O escanea con tu wallet del móvil (Solana Pay):</p><div id="sol-qr" style="display:flex;justify-content:center;margin:6px 0;min-height:40px"></div>`) +
+    (TACTIL ? `<a class="btn sec" id="b-solpay" href="${esc(uriSolPay(m))}" style="display:block;text-align:center;text-decoration:none;margin-bottom:6px">Abrir en mi wallet</a>` : '') +
+    `<button class="btn" id="b-buscar" style="width:100%;margin:4px 0 10px">✅ Ya pagué: comprobar</button>` +
     `<p style="font-size:12px;margin:6px 0">¿Otra wallet? Envía <b>${sol} SOL</b> a la wallet de El Duende:</p>` +
     `<p style="font-size:11px;word-break:break-all;background:var(--bg);border:1px solid var(--borde);padding:8px;border-radius:6px">${esc(m.wallet)}</p>` +
     `<div style="display:flex;gap:6px;margin:6px 0"><button class="btn sec" id="b-copia-w" style="flex:1">Copiar wallet</button><button class="btn sec" id="b-copia-m" style="flex:1">Copiar monto</button></div>` +
@@ -2765,11 +2769,22 @@ function mostrarPedidoSol(m) {
   $('b-firma').onclick = () => { const f = $('in-firma').value.trim(); if (f) mandar({ t: 'pedidoFirma', codigo: m.codigo, firma: f }); };
   $('in-firma').addEventListener('keydown', e => e.stopPropagation());
   $('b-phantom').onclick = () => pagarConPhantom(m);
+  $('b-buscar').onclick = () => { sfx('boton', .3); aviso('🔎 Buscando tu pago en la red…', 'ok'); mandar({ t: 'pedidoBuscar', codigo: m.codigo }); };
+  if (!TACTIL) cargarScript('https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js').then(() => {
+    if (!$('sol-qr') || pedidoSol !== m || !window.qrcode) return;
+    const q = window.qrcode(0, 'M'); q.addData(uriSolPay(m)); q.make();
+    $('sol-qr').innerHTML = q.createImgTag(4, 8);
+    const img = $('sol-qr').querySelector('img'); if (img) { img.style.background = '#fff'; img.style.borderRadius = '8px'; img.alt = 'QR de pago Solana Pay'; }
+  }).catch(() => { if ($('sol-qr')) $('sol-qr').textContent = ''; });
   const bsf = $('b-solflare');
   if (bsf) bsf.onclick = () => {
     aviso('Abriendo el juego dentro de Solflare: entra con tu cuenta y, en la tienda premium → Tus compras, pulsa «Pagar» en el pedido #' + m.codigo + '.', 'ok');
     window.location.href = 'https://solflare.com/ul/v1/browse/' + encodeURIComponent(location.href) + '?ref=' + encodeURIComponent(location.origin);
   };
+}
+// Enlace Solana Pay del pedido (monto exacto; las wallets lo leen del QR).
+function uriSolPay(m) {
+  return `solana:${m.wallet}?amount=${(m.lamports / 1e9).toFixed(9)}&label=${encodeURIComponent('DUENDE QUEST')}&message=${encodeURIComponent('Pedido #' + m.codigo)}`;
 }
 function cargarScript(src) {
   return new Promise((ok, mal) => { const sc = document.createElement('script'); sc.src = src; sc.onload = ok; sc.onerror = () => mal(new Error('No se pudo cargar ' + src)); document.head.appendChild(sc); });

@@ -1642,11 +1642,11 @@ async function pruebasHoraFeliz() {
 async function pruebasPagoSol() {
   console.log('Pago con SOL: firma ajena y pago tardío');
   const { SOL_DEV_WALLET } = await import('../functions/api/lib.js');
-  let tx = null;
+  let tx = null, firmasLista = [];
   const fetchReal = globalThis.fetch;
   globalThis.fetch = async (url, o) => {
     const u = String(url);
-    if (/mainnet-beta|helius/.test(u)) return { json: async () => ({ result: tx }) };
+    if (/mainnet-beta|helius/.test(u)) { const b = JSON.parse(o.body); return { json: async () => ({ result: b.method === 'getSignaturesForAddress' ? firmasLista : tx }) }; }
     return { ok: true, json: async () => ({ solana: { usd: 150 }, price: 150, data: { amount: '150' } }) };
   };
   const txDe = lamports => ({ blockTime: Math.floor(Date.now() / 1000), meta: { err: null, preBalances: [5e9, 1e9], postBalances: [5e9 - lamports - 5000, 1e9 + lamports], innerInstructions: [] },
@@ -1692,6 +1692,18 @@ async function pruebasPagoSol() {
     // Anular libera la firma.
     await mundo.anularPedido({ codigo: pC.codigo, motivo: 'prueba' });
     chequear(!(await state.storage.get('firma:' + '6'.repeat(88))), 'anular un pedido deja libre su firma');
+    // "Ya pague": se encuentra el pago entre las ultimas transacciones de la wallet.
+    A.limpiar(); await mundo.pedido(A, { id: 'skin_necro', metodo: 'sol' });
+    const pA3 = A.ultimos('pedidoSol').pop();
+    firmasLista = [];
+    avanzar(20000);
+    A.limpiar(); await mundo.pedidoBuscar(A, { codigo: pA3.codigo });
+    chequear(mundo.buscarPedido(pA3.codigo).estado === 'esperando_pago' && A.ultimos('toast').some(x => /Aún no vemos/.test(x.m)), '«Ya pagué» sin pago en la red: aún no');
+    firmasLista = [{ signature: '9'.repeat(88), blockTime: Math.floor(Date.now() / 1000), err: null }];
+    tx = txDe(pA3.lamports);
+    avanzar(20000);
+    await mundo.pedidoBuscar(A, { codigo: pA3.codigo });
+    chequear(mundo.buscarPedido(pA3.codigo).estado === 'por_verificar' && mundo.buscarPedido(pA3.codigo).firma === '9'.repeat(88), '«Ya pagué» encuentra el pago exacto y lo pasa al dueño');
     for (const x of [A, V, C]) await dejar(x);
   } finally { globalThis.fetch = fetchReal; mundo.avisarAdmin = adminReal; }
 }
