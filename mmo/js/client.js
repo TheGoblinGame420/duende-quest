@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=220';
+} from './data.js?v=222';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1767,7 +1767,7 @@ function htmlCalendario() {
   const l = [];
   const hf = horaFelizTiempos(ahora);
   const hfIni = Date.UTC(new Date(ahora).getUTCFullYear(), new Date(ahora).getUTCMonth(), new Date(ahora).getUTCDate(), HORA_FELIZ.ini);
-  l.push(`⚡ <b>Hora Feliz</b> (+50% XP): ${hf.activa ? '<span style="color:var(--ok)">¡ahora mismo!</span>' : 'cada día de ' + hora(hfIni) + ' a ' + hora(hfIni + 3600000)}.`);
+  l.push(`⚡ <b>Hora Feliz</b> (+50% XP): ${hf.activa ? '<span style="color:var(--ok)">activa ahora</span>' : 'cada día de ' + hora(hfIni) + ' a ' + hora(hfIni + 3600000)}.`);
   let t = proximoMundial(ahora);
   const jefes = [];
   for (let i = 0; i < 3; i++, t += 1800000) jefes.push(`${hora(t)} ${esc((MONSTRUOS[mundialDe(t + 1000)] || {}).nombre || '')}`);
@@ -2033,7 +2033,7 @@ function recibirMundoAbierto(m) {
     if (m.on) evento = { on: true, mapa: m.mapa, nombre: m.nombre, fin: ahora + m.ms, meta: m.meta, hechos: m.hechos, fase: m.fase };
     else if (m.fin && evento && evento.on) {
       // Queda unos segundos el resultado en el panel.
-      evento = { on: false, txt: m.fin === 'ganada' ? '🏆 ¡Invasión rechazada!' : '⌛ La invasión terminó sin premio', ok: m.fin === 'ganada', hasta: ahora + 8000 };
+      evento = { on: false, txt: m.fin === 'ganada' ? 'Invasión rechazada' : 'La invasión terminó sin premio', ok: m.fin === 'ganada', hasta: ahora + 8000 };
       if (m.mapa === mapaId) sacudir = Math.max(sacudir, m.fin === 'ganada' ? 8 : 0);
     } else if (!m.fin && evento && evento.on) evento = null;
     pintarEvento();
@@ -2176,7 +2176,7 @@ function pintarEvento() {
   const aqui = evento.mapa === mapaId;
   const zona = MAPAS[evento.mapa] ? MAPAS[evento.mapa].nombre : '';
   ponTxt(t1, '🔥 ' + evento.nombre + (aqui ? '' : ' · ' + zona));
-  ponTxt(t2, '⏱ ' + reloj + ' · ' + (evento.fase === 'capitan' ? '¡Derrota al Capitán!' : 'Invasores ' + evento.hechos + '/' + evento.meta));
+  ponTxt(t2, '⏱ ' + reloj + ' · ' + (evento.fase === 'capitan' ? 'Derrota al Capitán' : 'Invasores ' + evento.hechos + '/' + evento.meta));
   ponCss(barra, 'display', 'block');
   ponCss(barra.firstChild, 'width', (evento.fase === 'capitan' ? 100 : Math.round(evento.hechos / evento.meta * 100)) + '%');
   ponClase(el, 'lista', evento.fase === 'capitan' || ms < 60000);
@@ -2235,9 +2235,9 @@ function pintarLibro() {
     const costo = costoHab(hb, P.recMax || yo.recMax || 0, yo.espec);
     const datos = [hb.costo ? costo + ' ' + rec.toLowerCase() : 'sin costo', hb.cast ? (hb.cast / 1000).toLocaleString('es', { useGrouping: 'always' }) + ' s de lanzamiento' : 'instantánea', hb.cd ? 'recarga ' + Math.round(hb.cd / 1000) + ' s' : '', hb.rango ? 'alcance ' + hb.rango : ''].filter(Boolean).join(' · ');
     const ico = `<img src="${A}items/equipo/${hb.icono}.png" style="${bloq ? 'filter:grayscale(1);opacity:.4' : ''}">`;
-    const tecla = hb.barra === false ? 'Botón de acción' : 'Tecla ' + (habsDe(yo.clase).indexOf(hb) + 1);
-    h += tarjeta(ico, esc(hb.nombre) + ` <span style="color:${bloq ? 'var(--warn)' : 'var(--txt2)'}">Nv ${hb.nv}</span>`, esc(hb.desc) + '<br><span style="color:var(--txt2)">' + esc(datos) + '</span>',
-      `<span class="precio" style="color:${bloq ? 'var(--txt3)' : 'var(--txt)'}">${bloq ? '🔒' : esc(tecla)}</span>`);
+    const tecla = hb.barra === false ? 'Botón de acción' : (TACTIL ? 'Barra ' : 'Tecla ') + (habsDe(yo.clase).indexOf(hb) + 1);
+    h += tarjeta(ico, esc(hb.nombre) + ` <span style="color:${bloq ? 'var(--warn)' : 'var(--txt2)'}">Nv ${hb.nv}</span>`, esc(hb.desc.replace(/\s*[\d,]+ s de lanzamiento\./, '')) + '<br><span style="color:var(--txt2)">' + esc(datos) + '</span>',
+      `<span class="precio" style="color:${bloq ? 'var(--txt3)' : 'var(--txt)'}">${bloq ? 'Bloqueada' : esc(tecla)}</span>`);
   }
   // Talentos: un punto por nivel desde el 10.
   const tal = yo.tal || {};
@@ -3723,7 +3723,7 @@ function sugerencias() {
   if (pa) { const nv = Math.min(PASE.niveles, Math.floor(pa.p / PASE.porNivel)), sin = nv - (pa.cob || []).filter(n => n <= nv).length; if (sin > 0) l.push(`🎟️ Cobra ${sin} premio${sin > 1 ? 's' : ''} del pase (más abajo).`); }
   if (yo.bovedaOpc && yo.bovedaOpc.length) l.push('🗝️ Elige tu objeto de la Bóveda semanal (portal de mazmorras).');
   const msM = mundial.en ? mundial.en - performance.now() : 0;
-  if (yo.nivel >= 5 && mundial.vivo) l.push('👹 ¡El jefe mundial está en el Coliseo! Todos los niveles ganan.');
+  if (yo.nivel >= 5 && mundial.vivo) l.push('El jefe mundial está en el Coliseo. Todos los niveles reciben premio.');
   else if (yo.nivel >= 5 && msM > 0 && msM < 600000) l.push(`👹 Jefe mundial en ${Math.ceil(msM / 60000)} min: ve al Coliseo (portal del pueblo).`);
   if (horaFelizTiempos(Date.now()).activa) l.push('⚡ Es la Hora Feliz: caza ahora, +50% de experiencia.');
   const t = yo.tareas, pend = t && t.dia ? t.dia.l.filter(x => !x.ok) : [];
@@ -3806,7 +3806,7 @@ function pintarMision() {
     '<p>' + yo.mis.p + ' / ' + q.n + '</p>' +
     '<p style="color:var(--oro)">Recompensa: +' + q.xp + ' XP · +' + q.oro + ' oro' + esc(extra) + '</p></div>' +
     (lista && cercaDeTito() ? '<button class="btn" id="b-entregar" style="width:100%;padding:12px">Entregar misión</button>'
-      : lista ? '<p class="centro" style="color:var(--ok)">✅ ¡Cumplida! Entrégasela al Guardia Tito en el pueblo (sigue la flecha amarilla o usa la Piedra de Hogar 🌀).</p>'
+      : lista ? '<p class="centro" style="color:var(--ok)">Cumplida. Entrégasela al Guardia Tito en el pueblo (sigue la flecha amarilla o usa la Piedra de Hogar).</p>'
       : '<p class="centro">Vuelve cuando la termines.</p>') +
     cajaSugerencias() + cajaExpedicion() + cajaPase() + cajaSemana() + cajaDiaria() + cajaTareas();
   conectarPase();
@@ -3940,7 +3940,7 @@ function pintarLanzar() {
   const ahora = performance.now();
   const k = Math.min(1, (ahora - castYo.ini) / (castYo.fin - castYo.ini));
   if (castYo.id === 'pescar') { rellenar($('lanzar').querySelector('i'), .5 + Math.sin(ahora / 300) * .1); ponTxt($('lanzar-t'), '🎣 Espera a que pique…'); return; }
-  if (castYo.id === 'pica') { rellenar($('lanzar').querySelector('i'), 1 - k); ponTxt($('lanzar-t'), '🐟 ¡PICA! Pulsa ' + (TACTIL ? '¡TIRA!' : 'E')); return; }
+  if (castYo.id === 'pica') { rellenar($('lanzar').querySelector('i'), 1 - k); ponTxt($('lanzar-t'), 'Pica: pulsa ' + (TACTIL ? '¡TIRA!' : 'E')); return; }
   rellenar($('lanzar').querySelector('i'), k);
   ponTxt($('lanzar-t'), castYo.nombre + '  ' + Math.max(0, (castYo.fin - ahora) / 1000).toFixed(1) + ' s');
 }

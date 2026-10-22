@@ -444,9 +444,9 @@ input.nombre:focus{border-color:var(--pri-txt);}
 #m-inicio h1{font-size:15px;line-height:1.6;color:var(--txt);margin-bottom:10px;}
 #m-inicio h1 span{display:block;font-size:10px;color:var(--oro);margin-top:6px;letter-spacing:.08em;}
 #m-inicio .lema{font-size:15px;color:var(--txt);margin-bottom:6px;}
-#m-inicio .ventajas{list-style:none;display:flex;flex-wrap:wrap;justify-content:center;gap:4px 16px;margin:12px 0 4px;}
-#m-inicio .ventajas li{font-family:var(--sans);font-size:13px;font-weight:600;color:var(--txt2);margin:0;}
-#m-inicio .ventajas li::before{content:'✓ ';color:var(--ok);}
+#m-inicio .ventajas{list-style:none;display:flex;flex-wrap:wrap;justify-content:center;gap:2px 0;margin:10px 0 4px;}
+#m-inicio .ventajas li{font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--txt3);margin:0;white-space:nowrap;}
+#m-inicio .ventajas li+li::before{content:'·';margin:0 7px;}
 #m-inicio .btn-grande{width:100%;min-height:48px;font-size:16px;}
 #m-inicio .nota{margin-top:12px;font-size:13px;color:var(--txt2);}
 #m-inicio .nota a{color:var(--cian);}
@@ -546,12 +546,12 @@ input.nombre:focus{border-color:var(--pri-txt);}
     <p class="lema">El juego de rol online de los duendes.</p>
     <p>Cuatro clases, mazmorras y una banda con jefes, la Torre del Duende, hermandades y diez zonas hasta el nivel 60.</p>
     <ul class="ventajas" aria-label="Ventajas">
-      <li>Gratis</li><li>Sin descargas</li><li>Telegram o navegador</li>
+      <li>Gratis</li><li>Sin descargas</li><li>Telegram y web</li>
     </ul>
     <div id="inicio-invitado">
       <input class="nombre" id="in-nombre" maxlength="16" placeholder="Nombre de tu duende" aria-label="Nombre de tu duende">
       <button class="btn btn-grande" id="b-jugar">Entrar al mundo</button>
-      <p class="nota">¿Ya tienes cuenta en Duende Quest? <a href="/game.html">Inicia sesión en el juego</a> y vuelve: tu personaje quedará ligado a tu cuenta y tus skins compradas se desbloquean aquí.</p>
+      <p class="nota">¿Ya tienes cuenta en Duende Quest? <a href="/game.html">Inicia sesión</a> para vincular tu personaje y tus skins.</p>
     </div>
     <div id="inicio-cuenta" style="display:none">
       <p style="margin:14px 0 12px" id="inicio-quien"></p>
@@ -844,6 +844,6 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=220"></script>
+<script type="module" src="/mmo/js/client.js?v=222"></script>
 </body>
 </html>
