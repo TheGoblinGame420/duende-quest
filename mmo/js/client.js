@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=162';
+} from './data.js?v=164';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -628,7 +628,8 @@ function pintarSubMapa() {
   const mp = MAPAS[mapaId];
   if (!mp.torre) torreInfo = null;
   const base = mp.torre ? '🗼 Piso ' + (torreInfo ? torreInfo.piso : 0) + (torreInfo && torreInfo.mejor ? ' · tu marca: ' + torreInfo.mejor : '') : mp.instancia ? (MAZMORRAS[mp.mazmorra] && MAZMORRAS[mp.mazmorra].banda ? 'Banda' : 'Mazmorra') + (instancia ? ' · Nv ' + instancia.nv + (instancia.k ? ' · ⚡+' + instancia.k : '') : '') : mp.zona && mp.nv ? 'Nivel ' + mp.nv[0] + '-' + mp.nv[1] : 'Zona segura';
-  $('h-mapa-sub').textContent = base + (online ? ' · 👥 ' + online + ' en línea' : '') + (jugaronHoy > online ? ' · ' + jugaronHoy + ' hoy' : '');
+  const cl = climaDe(mapaId);
+  $('h-mapa-sub').textContent = base + (cl ? (cl === 'nieve' ? ' · ❄️ nieva' : ' · 🌧️ llueve') : '') + (online ? ' · 👥 ' + online + ' en línea' : '') + (jugaronHoy > online ? ' · ' + jugaronHoy + ' hoy' : '');
 }
 
 // Auras que llegan con el jugador/monstruo (las que ya tenia puestas).
@@ -2936,6 +2937,28 @@ function dibujarSuelo(mp) {
 // igual se ve la correcta); sin dato, la del reloj local.
 function temporadaYa() { return yo && yo.temp !== undefined ? TEMPORADAS.find(x => x.id === yo.temp) || null : temporadaDe(); }
 // Temporada: su adorno (calabazas, arboles...) por el suelo de cada mapa.
+// ── CLIMA ── (solo se ve) Algunas horas llueve o nieva en ciertas zonas;
+// cambia cada hora y es igual para todos. Pocas lineas (ligero en el movil).
+const CLIMA = { selva: 'lluvia', tormenta: 'lluvia', abismo: 'lluvia', acantilados: 'lluvia', cumbres: 'nieve' };
+function climaDe(id, t = Date.now()) {
+  const c = CLIMA[id];
+  return c && (Math.floor(t / 3600000) + [...id].reduce((a, ch) => a + ch.charCodeAt(0), 0)) % 3 === 0 ? c : null;
+}
+function dibujarClima() {
+  const c = climaDe(mapaId);
+  if (!c) return;
+  const n = ligero ? 24 : 56, H = 450 + OY, W = VW + 40;
+  if (c === 'lluvia') {
+    g.globalAlpha = .35; g.strokeStyle = '#a5c8ff'; g.lineWidth = 1;
+    g.beginPath();
+    for (let i = 0; i < n; i++) { const x = (i * 97 + frame * 3) % W - 20, y = (i * 53 + frame * 9) % H - OY; g.moveTo(x, y); g.lineTo(x - 3, y + 12); }
+    g.stroke();
+  } else {
+    g.globalAlpha = .8; g.fillStyle = '#f8fafc';
+    for (let i = 0; i < n; i++) { const x = ((i * 97 + frame * .6 + Math.sin(frame * .02 + i) * 20) % W + W) % W - 20, y = (i * 53 + frame * 1.2) % H - OY; g.fillRect(x, y, 2, 2); }
+  }
+  g.globalAlpha = 1;
+}
 function dibujarTemporada(mp) {
   const tp = temporadaYa();
   if (!tp) return;
@@ -3521,6 +3544,7 @@ function dibujar() {
   if (yo) dibujarDuende(P, true);
   dibujarProyectiles();
   dibujarEfectos();
+  dibujarClima();
   dibujarGuia();
   dibujarDuelo();
   g.restore();
