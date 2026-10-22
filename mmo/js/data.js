@@ -615,6 +615,8 @@ export const LOGROS = [
   { id: 'maestrodes', titulo: 'Maestro de Desafíos', desc: 'Gana el ranking semanal de Desafíos (desde el +5)', oro: 10000, cond: c => (c.maestroDes || 0) >= 1 },
   { id: 'calabaza50',  titulo: 'Cazacalabazas',      desc: 'Junta 50 calabazas en la Noche de Duendes',  oro: 3000,  cond: c => (c.calabazas || 0) >= 50 },
   { id: 'calabaza200', titulo: 'Rey de las Calabazas', desc: 'Junta 200 calabazas en la Noche de Duendes', oro: 12000, cond: c => (c.calabazas || 0) >= 200 },
+  { id: 'mazorca50',   titulo: 'Cosechador',         desc: 'Junta 50 mazorcas en la Cosecha del Maíz Morado',  oro: 3000,  cond: c => (c.mazorcas || 0) >= 50 },
+  { id: 'mazorca200',  titulo: 'Señor del Maíz Morado', desc: 'Junta 200 mazorcas en la Cosecha del Maíz Morado', oro: 12000, cond: c => (c.mazorcas || 0) >= 200 },
   { id: 'regalo50',    titulo: 'Duende Navideño',    desc: 'Junta 50 regalos en la Navidad Duende',      oro: 3000,  cond: c => (c.regalos || 0) >= 50 },
   { id: 'regalo200',   titulo: 'Santa Duende',       desc: 'Junta 200 regalos en la Navidad Duende',     oro: 12000, cond: c => (c.regalos || 0) >= 200 },
   { id: 'mazmorra10', titulo: 'Conquistador',       desc: 'Completa 10 mazmorras',             oro: 10000, cond: c => (c.mazmorras || 0) >= 10 },
@@ -798,6 +800,9 @@ export const RECETAS = [
 export const TEMPORADAS = [
   { id: 'noche2026', nombre: 'Noche de Duendes', ini: Date.UTC(2026, 9, 25), fin: Date.UTC(2026, 10, 3), hasta: '2 de noviembre',
     emoji: '🎃', deco: '🎃', cosas: 'calabazas', campo: 'calabazas', color: '#ff9a3c', titulos: ['Cazacalabazas', 'Rey de las Calabazas'] },
+  // Cosecha del Maiz Morado: el maiz de la chicha morada (el premio fisico).
+  { id: 'cosecha2026', nombre: 'Cosecha del Maíz Morado', ini: Date.UTC(2026, 10, 13), fin: Date.UTC(2026, 11, 1), hasta: '30 de noviembre',
+    emoji: '🌽', deco: '🌽', cosas: 'mazorcas', campo: 'mazorcas', color: '#a855f7', titulos: ['Cosechador', 'Señor del Maíz Morado'] },
   { id: 'navidad2026', nombre: 'Navidad Duende', ini: Date.UTC(2026, 11, 18), fin: Date.UTC(2027, 0, 7), hasta: '6 de enero',
     emoji: '🎁', deco: '🎄', cosas: 'regalos', campo: 'regalos', color: '#4ade80', titulos: ['Duende Navideño', 'Santa Duende'] },
 ];

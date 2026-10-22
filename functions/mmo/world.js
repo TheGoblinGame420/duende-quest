@@ -19,7 +19,7 @@ import {
   LOGIN_PREMIOS, multLogin, LOGROS, MUNDIAL_DURA_MS, proximoMundial,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, MTON_EDAD_MIN_MS, WALLET_ESPERA_MS, FONDO_REFERENCIA_MTON, tonAmigable,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, FONDO_PCT_INGRESOS, PAQUETES, estrellasDe, PEDIDO_VIGENCIA_MS,
-  temporadaDe, TEMP_PROB, TEMP_JEFE,
+  temporadaDe, TEMPORADAS, TEMP_PROB, TEMP_JEFE,
   TINTES,
   CONJUNTOS, CONJUNTO_PROB,
   semanaUTC, afijosSemana, DES_SEM_MIN, premioDesSem, BESTIARIO_HITOS, premioBestiario, talento, TALENTOS, TALENTO_MAX, puntosTalento, costoReinicioTalentos, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX,
@@ -440,6 +440,17 @@ export class MmoWorld {
     if (login) this.enviar(s, { t: 'login', ...login });
     const tp = temporadaDe();
     if (tp) this.enviar(s, { t: 'toast', m: `${tp.emoji} ¡${tp.nombre}! Hasta el ${tp.hasta} los monstruos sueltan ${tp.cosas} (los jefes, ${TEMP_JEFE}). 50 = título «${tp.titulos[0]}», 200 = «${tp.titulos[1]}». Llevas ${c[tp.campo] || 0}.`, ok: true });
+    else {
+      // Sin evento: si el siguiente empieza en 10 dias o menos, se anuncia
+      // (un motivo para volver ese dia).
+      const ahora = Date.now();
+      const prox = TEMPORADAS.filter(x => x.ini > ahora && x.ini - ahora <= 10 * 86400000).sort((a, b) => a.ini - b.ini)[0];
+      if (prox) {
+        const dias = Math.ceil((prox.ini - ahora) / 86400000);
+        const fecha = new Date(prox.ini).toLocaleDateString('es', { day: 'numeric', month: 'long', timeZone: 'UTC' });
+        this.enviar(s, { t: 'toast', m: `${prox.emoji} Próximo evento: ${prox.nombre}, desde el ${fecha} (en ${dias} día${dias > 1 ? 's' : ''}). Los monstruos soltarán ${prox.cosas} y habrá dos títulos.` });
+      }
+    }
     if (descansado > 0) this.enviar(s, { t: 'toast', m: `😴 Descansaste: tus próximas cazas dan el DOBLE de experiencia (+${c.descanso.toLocaleString('es')} XP de descanso).`, ok: true });
     this.enviar(s, this.estadoMundial());
     this.entrarMapa(s, c.mapa, s.x, true);
@@ -916,7 +927,7 @@ export class MmoWorld {
       arma: c.arma, armas: c.armas, skin: c.skin, skins: c.skins, pw: c.pw,
       kills: c.kills, jefes: c.jefes, muerto: s.muerto, mis: c.mis, forja: c.forja,
       eq: c.eq, bolsa: c.bolsa, logros: c.logros, titulo: c.titulo, mundiales: c.mundiales, login: c.login, crit: s.st.crit,
-      clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, desafio: c.desafio || {}, calabazas: c.calabazas || 0, regalos: c.regalos || 0, chicha: this.infoChicha(c), temp: (temporadaDe() || {}).id || '', herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, best: c.best || {},
+      clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, desafio: c.desafio || {}, ...Object.fromEntries(TEMPORADAS.map(t => [t.campo, c[t.campo] || 0])), chicha: this.infoChicha(c), temp: (temporadaDe() || {}).id || '', herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, best: c.best || {},
       espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, tintes: c.tintes || [], tinte: c.tinte || '', montado: s.montado || null,
       mton: c.mton, wallet: c.wallet ? { a: tonAmigable(c.wallet.a), desde: c.wallet.desde } : null,
       p2e: this.elegibilidad(c), creado: c.creado,

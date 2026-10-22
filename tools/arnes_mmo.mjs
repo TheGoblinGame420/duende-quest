@@ -1209,6 +1209,15 @@ async function pruebasTemporada() {
   const c0 = t.c.calabazas;
   for (let i = 0; i < 30; i++) { const o2 = monstruo(t, 'goblin_normal', 40); mundo.danar(o2, o2.hp + 1, t); tick(1); }
   chequear(t.c.calabazas === c0, 'acabado el evento ya no caen');
+  reloj = Date.UTC(2026, 10, 8, 12);
+  const pr = await entrar('Anticipado', '63');
+  chequear(pr.ultimos('toast').some(x => /Próximo evento: Cosecha del Maíz Morado, desde el 13 de noviembre \(en 5 días\)/.test(x.m)), 'sin evento, se anuncia el próximo si falta poco');
+  await dejar(pr);
+  reloj = Date.UTC(2026, 10, 20, 12);
+  for (let i = 0; i < 40; i++) { const o4 = monstruo(t, 'goblin_normal', 40); mundo.danar(o4, o4.hp + 1, t); tick(1); }
+  chequear(t.c.mazorcas > 0 && t.c.calabazas === c0, 'en la Cosecha (noviembre) caen mazorcas (' + t.c.mazorcas + ')');
+  mundo.actualizarYo(t);
+  chequear(t.ultimos('yo').some(x => x.yo && x.yo.mazorcas === t.c.mazorcas), 'y el cliente recibe su contador');
   reloj = Date.UTC(2026, 11, 24, 12);
   t.c.regalos = 0;
   for (let i = 0; i < 40; i++) { const o3 = monstruo(t, 'goblin_normal', 40); mundo.danar(o3, o3.hp + 1, t); tick(1); }
