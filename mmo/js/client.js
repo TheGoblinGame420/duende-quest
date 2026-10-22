@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=108';
+} from './data.js?v=110';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1031,7 +1031,7 @@ function abrirChat() {
   // En el movil, frases de un toque encima del teclado.
   if (TACTIL) {
     const f = $('frases');
-    const rotulo = t => { const d = document.createElement('div'); d.style.cssText = 'flex-basis:100%;font:600 11px var(--sans);color:#e2e8f0;margin:2px 0 0;text-shadow:1px 1px 0 #000,0 0 4px #000'; d.textContent = t; return d; };
+    const rotulo = t => { const d = document.createElement('div'); d.style.cssText = 'flex-basis:100%;font:600 11px var(--sans);color:#e2e8f0;margin:2px 0 0;padding:2px 6px;background:rgba(10,14,24,.85);border-radius:6px;text-shadow:1px 1px 0 #000'; d.textContent = t; return d; };
     if (!f.children.length) f.appendChild(rotulo('Gestos (solo se ven sobre tu duende):'));
     if (f.children.length === 1) for (const [k, gs] of Object.entries(GESTOS)) { const b = document.createElement('button'); b.className = 'bt'; b.textContent = gs.e; b.title = '/' + k; b.onmousedown = b.ontouchstart = e => { e.preventDefault(); mandar({ t: 'gesto', id: k }); cerrarChat(); }; f.appendChild(b); }
     if (f.children.length <= Object.keys(GESTOS).length + 1) { f.appendChild(rotulo('Frases al chat general:')); FRASES.forEach(t => { const b = document.createElement('button'); b.className = 'bt'; b.textContent = t; b.onmousedown = b.ontouchstart = e => { e.preventDefault(); mandar({ t: 'chat', canal: 'general', m: t }); cerrarChat(); }; f.appendChild(b); }); }
@@ -1472,7 +1472,7 @@ function difSkin(id) {
   if (b.maxHp !== a.maxHp) l.push(`Vida ${a.maxHp} → ${v(a.maxHp, b.maxHp, b.maxHp)}`);
   if (b.def !== a.def) l.push(`Defensa ${a.def} → ${v(a.def, b.def, b.def)}`);
   if (Math.abs(b.crit - a.crit) > 0.001) l.push(`Crítico ${Math.round(a.crit * 100)}% → ${v(a.crit, b.crit, Math.round(b.crit * 100) + '%')}`);
-  return l.length ? '<br><span style="font-size:12px">' + l.join(' · ') + '</span>' : '';
+  return l.length ? '<br><span style="font-size:12px">' + l.map(x => '<span style="white-space:nowrap">' + x + '</span>').join(' · ') + '</span>' : '';
 }
 const gestos = new Map();   // id de jugador -> { id del gesto, t }
 let contactos = [];   // tu lista de amigos [{ uid, n, on, id, lv, cl, mapa, g }]
@@ -1708,8 +1708,9 @@ function revisarNovedades() {
   if (yo.nivel < 3 && (yo.kills || 0) < 20) { guardar(); return; }
   let n = 0;
   const t = setInterval(() => {
-    if (!document.querySelector('.modal.on') && performance.now() - ventanaAutoT > 3000) { clearInterval(t); ventanaAutoT = performance.now(); abrirNovedades(); guardar(); }
-    else if (++n > 60) clearInterval(t);
+    const seguro = !MAPAS[mapaId].zona && !P.muerto && !castYo;
+    if (seguro && !document.querySelector('.modal.on') && performance.now() - ventanaAutoT > 3000) { clearInterval(t); ventanaAutoT = performance.now(); abrirNovedades(); guardar(); }
+    else if (++n > 450) clearInterval(t);
   }, 2000);
 }
 function abrirNovedades() {
@@ -2195,12 +2196,12 @@ function objetivoGuia() {
     const tito = MAPAS.pueblo.npcs.find(n => n.tipo === 'guia');
     if (mapaId === 'pueblo') return { x: tito.x, txt: '❗ Entrega: Guardia Tito' };
     const p = portalHacia('pueblo');
-    return p ? { x: p.x, txt: 'Vuelve al pueblo (o 🌀)' } : null;
+    return p ? { x: p.x, y: SUELO - 150, txt: 'Vuelve al pueblo (o 🌀)' } : null;
   }
   const zona = zonaDe(q.tipo);
   if (zona && mapaId !== zona) {
     const p = portalHacia(zona);
-    return p ? { x: p.x, txt: '> ' + MAPAS[zona].nombre } : null;
+    return p ? { x: p.x, y: SUELO - 150, txt: '> ' + MAPAS[zona].nombre } : null;
   }
   const def = MONSTRUOS[q.tipo];
   let mejor = null, md = Infinity;
@@ -2266,7 +2267,7 @@ const TUTORIAL = [
   { id: 'ir', txt: () => '🟡 Sigue la flecha amarilla: te lleva a tu misión', hecho: t => (yo.kills || 0) > t.k0 || (MAPAS[mapaId].zona && !instancia) },
   { id: 'atacar', txt: () => TACTIL ? '⚔️ Pega con el botón rojo (mantenlo pulsado)' : '⚔️ Pega con Z (o J); Tab elige al enemigo', hecho: t => (yo.kills || 0) > t.k0 },
   { id: 'habilidad', txt: () => '✨ Usa tu habilidad: ' + (TACTIL ? 'el primer botón de la barra' : 'tecla 1'), hecho: t => t.usoHab },
-  { id: 'mision', txt: () => '📜 Completa la misión y la flecha te llevará al Guardia Tito', hecho: () => (yo.mis && yo.mis.i >= 1) },
+  { id: 'mision', txt: () => (yo.mis && MISIONES[yo.mis.i] && yo.mis.p >= MISIONES[yo.mis.i].n ? '✅ ¡Misión cumplida! Sigue la flecha y entrégasela al Guardia Tito' : '📜 Completa la misión y la flecha te llevará al Guardia Tito'), hecho: () => (yo.mis && yo.mis.i >= 1) },
 ];
 const tuto = { i: -1, x0: 0, k0: 0, usoHab: false, clave: '' };
 function pintarTutorial() {
@@ -2305,6 +2306,8 @@ function viajePorBorde(izq, der) {
   const i = mp.portales.findIndex(p => p.a && !p.buscador && !p.fin && Math.abs(p.x - P.x) < 85);
   if (i < 0) return;
   bordeT = performance.now(); bordeSoltar = true;
+  const dest = MAPAS[mp.portales[i].a];
+  if (dest && dest.nv && yo.nivel < dest.nv[0] - 5) { errorRojo(`⚠️ ${dest.nombre} es de nivel ${dest.nv[0]}-${dest.nv[1]}. Si de verdad quieres ir, entra por su portal (E).`); return; }
   mandar({ t: 'portal', i });
 }
 
@@ -2874,8 +2877,9 @@ function dibujarPortales(mp) {
     const activo = cerca && cerca.tipo === 'portal' && cerca.i === i;
     // Dos lineas (nombre / nivel): en una sola, los portales vecinos del
     // pueblo se pisaban las etiquetas.
-    etiqueta(x, y - 72, p.etiqueta, activo ? '#ffe600' : '#c084fc', 7);
-    if (p.nv) etiqueta(x, y - 58, /^\d/.test(p.nv) ? 'Nv ' + p.nv : p.nv, activo ? '#ffe600' : 'rgba(255,255,255,.7)', 6);
+    const sube = mp.portales.some(q => q !== p && q.x < p.x && p.x - q.x < 200) ? 30 : 0;
+    etiqueta(x, y - 72 - sube, p.etiqueta, activo ? '#ffe600' : '#c084fc', 7);
+    if (p.nv) etiqueta(x, y - 58 - sube, /^\d/.test(p.nv) ? 'Nv ' + p.nv : p.nv, activo ? '#ffe600' : 'rgba(255,255,255,.7)', 6);
   });
 }
 
@@ -3795,7 +3799,7 @@ function pintarTienda() {
   } else if (tabTienda === 'ambulante') {
     // Mercader ambulante: la oferta de esta semana; se compra de viernes a domingo (UTC).
     const activo = ambulanteActivo(), of = ambulanteOferta();
-    h += `<p style="font-size:13px;color:var(--txt2);margin-bottom:8px">${activo ? '🧳 <b style="color:var(--ok)">El ambulante está aquí este fin de semana.</b>' : '🧳 El ambulante llega el <b>viernes</b> y se va el domingo (UTC). Esta es su oferta de esta semana:'} Cada semana trae otra cosa. Solo estética.</p>`;
+    h += `<p style="font-size:13px;color:var(--txt2);margin-bottom:8px">${activo ? '🧳 <b style="color:var(--ok)">El ambulante está aquí este fin de semana.</b>' : '🧳 El ambulante llega el <b>viernes</b> y se va el domingo (UTC).'} Cada semana trae otra cosa (solo estética). Su oferta de esta semana:</p>`;
     const fila = (k, id, d, ico, extra) => {
       const tiene = ((k === 'tinte' ? yo.tintes : yo.mascotas) || []).includes(id);
       const acc = tiene ? '<span class="precio" style="color:var(--ok)">✓ Ya es tuyo</span>'
@@ -3847,7 +3851,7 @@ function pintarTienda() {
   L.querySelectorAll('canvas[data-montura], canvas[data-hoja]').forEach(c => {
     const hoja = c.dataset.hoja || MONTURAS[c.dataset.montura].hoja;
     const hm = HOJAS[hoja], img = c.dataset.tinte ? tenido('sh_' + hoja, c.dataset.tinte) : IMG['sh_' + hoja];
-    if (!img || !img.naturalWidth) return;
+    if (!img || !(img.naturalWidth || img.width)) return;
     const x = c.getContext('2d'); x.imageSmoothingEnabled = false;
     const e = Math.min(48 / hm.fw, 48 / hm.fh);
     x.save(); x.translate(26, 50); if (hm.izq) x.scale(-1, 1);

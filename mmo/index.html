@@ -232,8 +232,8 @@ body.tactil #pie{display:none;}
 #presumir{left:50%;transform:translateX(-50%);top:172px;bottom:auto;display:none;z-index:6;font-family:var(--sans);font-size:14px;font-weight:600;padding:10px 16px;background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:var(--sombra);animation:none;}
 #presumir:hover{background:var(--pri2);border-color:var(--pri2);}
 #hud.estrecho #presumir{bottom:auto;top:470px;}
-#hud.estrecho #avisos{top:262px;width:90%;}
-#hud.estrecho #consejo{top:200px;font-size:13px;white-space:normal;width:86%;text-align:center;line-height:1.45;}
+#hud.estrecho #avisos{top:322px;width:90%;}
+#hud.estrecho #consejo{top:248px;font-size:13px;white-space:normal;width:86%;text-align:center;line-height:1.45;}
 /* "brilla" ya no destella: se deja definida por si algun estilo en linea la usa. */
 @keyframes brilla{to{box-shadow:var(--sombra)}}
 #bxp b.desc{position:absolute;top:0;bottom:0;background:rgba(96,165,250,.5);}
@@ -351,7 +351,7 @@ body.tactil #lanzar{bottom:16px;}
 .ventana .cerrar{position:absolute;top:10px;right:10px;z-index:2;min-width:40px;min-height:40px;font-size:14px;padding:0;display:inline-flex;align-items:center;justify-content:center;margin:0;}
 .ventana h2{padding:0 46px;}
 /* Ventanas con pestañas: alto fijo, asi las pestañas no saltan bajo el dedo al cambiar. */
-#m-tienda .ventana,#m-social .ventana{height:min(88vh,760px);}
+#m-tienda .ventana,#m-social .ventana,#m-inv .ventana{height:min(88vh,760px);}
 .ventana{scrollbar-width:thin;scrollbar-color:var(--borde) transparent;scrollbar-gutter:stable;}
 .ventana::-webkit-scrollbar{width:8px;height:8px;}
 .ventana::-webkit-scrollbar-track{background:transparent;}
@@ -783,6 +783,6 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=108"></script>
+<script type="module" src="/mmo/js/client.js?v=110"></script>
 </body>
 </html>

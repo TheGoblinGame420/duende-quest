@@ -419,7 +419,7 @@ export const MONTURAS = {
   conejo:    { nombre: 'Conejo Saltarín',      hoja: 'conejo',    nv: 20, precio: 8000,   vel: 1.5, alto: 40, dy: 24 },
   sapo:      { nombre: 'Sapo Gigante',         hoja: 'rana',      nv: 25, precio: 15000,  vel: 1.55, alto: 74, dy: 30 },
   hellgato:  { nombre: 'Gato Infernal',        hoja: 'hellgato',  nv: 35, precio: 35000,  vel: 1.7, alto: 44, dy: 22 },
-  hellhound: { nombre: 'Sabueso Infernal',     hoja: 'hellhound', nv: 40, precio: 60000,  vel: 1.8, alto: 52, dy: 26 },
+  hellhound: { nombre: 'Sabueso de Guerra',    hoja: 'hellhound', nv: 40, precio: 60000,  vel: 1.8, alto: 52, dy: 26 },
   aguila:    { nombre: 'Águila Real',          hoja: 'aguila',    nv: 50, precio: 150000, vel: 1.9, alto: 70, dy: 38, tinte: '#d4a24a' },
   dragon:    { nombre: 'Dragón Ancestral',     hoja: 'dragon',    nv: 60, precio: 300000, vel: 2,   alto: 84, dy: 40 },
   // No se vende: se gana venciendo al Titan de la banda en 3 semanas.
@@ -458,7 +458,7 @@ export const NOVEDADES = [
     '👋 Gestos (/saludar, /bailar...), lista de amigos con aviso al conectarse e Inspeccionar.',
     '📊 Tus estadísticas en el inventario.',
   ] },
-  { n: 3, fecha: '22 de octubre (noche)', items: [
+  { n: 3, fecha: '21 de octubre (noche)', items: [
     '⚔️ Primera BANDA: el Santuario del Titán (Nv 60, de 1 a 10 jugadores), en el portal de mazmorras del pueblo. Cuatro jefes, botín de nivel 64-66 una vez por semana y el Murciélago del Abismo si vences al Titán en 3 semanas.',
     '👥 El líder puede convertir su grupo en banda (hasta 10) desde Social > Grupo.',
     '🟡 Zonas doradas: hay que aguantarlas juntos, el golpe se reparte entre los que estén dentro.',
@@ -930,7 +930,9 @@ export const TAREAS_SEMANA = [
   { id: 'caza300', tipo: 'caza', n: 300, txt: 'Caza 300 monstruos de tu nivel' },
   { id: 'maz3', tipo: 'mazmorra', n: 3, txt: 'Completa 3 mazmorras', nv: 10 },
   { id: 'jefes5', tipo: 'jefe', n: 5, txt: 'Derrota a 5 jefes de zona', nv: 6 },
-  { id: 'mundial3', tipo: 'mundial', n: 3, txt: 'Vence 3 veces al jefe mundial' },
+  { id: 'mundial3', tipo: 'mundial', n: 3, txt: 'Vence 3 veces al jefe mundial', nv: 5 },
+  { id: 'recoger30', tipo: 'recoger', n: 30, txt: 'Recoge 30 plantas o vetas de mineral' },
+  { id: 'pescar25', tipo: 'pescar', n: 25, txt: 'Pesca 25 peces' },
 ];
 export const premioTarea = (nivel, semanal) => ({ xp: Math.round(xpParaSubir(nivel) * (semanal ? 0.8 : 0.25)), oro: (semanal ? 300 : 40) * nivel });
 // La zona "de tu nivel" (para la tarea de zona).
