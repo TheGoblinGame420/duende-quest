@@ -28,10 +28,13 @@ ws.onopen = async () => {
   fin(yo && yo.clase, 'tiene clase: ' + (yo && yo.clase));
   fin(yo && typeof yo.recMax === 'number' && yo.pid, 'datos nuevos en "yo" (recurso, id público)');
   fin((vistos.s || 0) > 5, 'llegan fotos del mundo (' + (vistos.s || 0) + ')');
+  fin(yo && yo.boveda && yo.boveda.sem, 'la Bóveda semanal llega en "yo" (semana ' + (yo && yo.boveda && yo.boveda.sem) + ')');
   mandar({ t: 'quien' });
+  mandar({ t: 'lfgLista' });
   mandar({ t: 'atk', s: 0 });
   await esperar(1000);
   fin(!!vistos.quien, 'responde la lista de jugadores');
+  fin(!!vistos.lfg, 'responde la lista del buscador de grupo');
   ws.close();
   setTimeout(() => process.exit(0), 300);
 };

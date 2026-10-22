@@ -1421,6 +1421,95 @@ dentro de Telegram (decisión del dueño; ver memoria de restricciones).
 Metas realistas: D1 30-35%, D7 10-12%, D30 4-6% (el 100% no existe; con
 menos de ~100 altas por cohorte los porcentajes no significan nada).
 
-**Pendiente / ideas para la siguiente sesión:** lo de arriba, buscador de grupo, más
-mazmorras, eventos de temporada, y revisar los números D1/D7 con /mmostats
-cuando haya datos (las estadísticas empezaron de cero el 21-oct).
+**Pendiente / ideas para la siguiente sesión:** ver la sección siguiente (22-oct,
+tercera parte), que ya hizo buscador de grupo, más mazmorras, temporada y
+avisos a la hora habitual.
+
+### DUENDE QUEST ONLINE — final de juego, avisos a su hora y 4ª mazmorra (22-oct-2026, tercera parte)
+
+Sesión de "mejora continua" (?v=45 → ?v=52, todo publicado y con humo OK).
+Arnés: **361 comprobaciones** (`node --no-warnings tools/arnes_mmo.mjs`).
+Nada de esto da mTON.
+
+- **Afijos semanales de los Desafíos** (`AFIJOS`, `afijosSemana`, `afijosDe`,
+  `multAfijos` en data.js; `afijoFurioso`, `afijoVolcanico`, `alMorirPack`
+  en mazmorras.js): cambian cada lunes UTC (ciclo de 6 semanas). Primario
+  desde el +2: Fortificado (packs +25% vida, +15% daño) o Tiránico (jefes
+  igual). Secundario desde el +5: Furioso (bajo 30% → +50% daño), Volcánico
+  (llama bajo cada jugador cada 8 s en combate, aviso 1,6 s, 12% de la
+  vida; se esquiva saliendo o saltando) o Sanguinario (al morir uno, su
+  pack se cura 20%). Se fijan al abrir la instancia (`w.inst.af`, `mvP/maP`
+  packs, `mvJ/maJ` jefes). Simulación sin equipo: grupo de 3 vence el +10
+  en ~12,5 min (antes ~9).
+- **Ranking semanal de Desafíos** (`rankDesSem` en storage, `this.rds`,
+  `anotarDesSem`, `premiarDesSem` desde `revisarSemana`): mejor +k
+  acreditado de la semana; el lunes, top 3 desde el +5: 20.000 / 10.000 /
+  5.000 oro y el 1º `c.maestroDes` → logro «Maestro de Desafíos».
+- **Avisos a la hora habitual** (retencion.js): `ret:idx[uid].hs` = hora UTC
+  de la primera entrada de cada día (últimas 10); `horaHabitual` = la más
+  repetida (con <3 días, 17). La **alarma del Durable Object** (`alarm()`,
+  cada hora en punto +30 s; se programa en `migrar` con `asegurarAlarma`)
+  avisa a quien le toca; las 17:00 las sigue haciendo el cron (sin gastar
+  el 5º disparador). El cron recibe `hoy` (avisados hoy + los que se avisarán
+  más tarde) y el recordatorio del arcade se los salta: un mensaje al día.
+  Si falla la llamada del MMO, pide `interno/avisadosHoy`; sin lista, ese día
+  no sale el del arcade. Máx. 40 avisos por hora (lo que pase se pierde ese
+  día; con la escala actual sobra).
+- **Temporada «Cosecha del Maíz Morado»** (13-30 nov, 🌽 → `c.mazorcas`,
+  títulos Cosechador / Señor del Maíz Morado). "yo" manda el contador de
+  todas las temporadas de `TEMPORADAS`. Sin evento activo, al entrar se
+  anuncia el siguiente si falta ≤10 días. Calendario: Noche de Duendes
+  25-oct→2-nov, Cosecha 13→30-nov, Navidad 18-dic→6-ene, Carnaval Duende
+  4→14-feb-2027 (🎭 → `c.mascaras`, títulos Carnavalero / Rey Momo). Falta
+  algo para mediados de enero y marzo en adelante.
+- **Buscador de grupo** (social.js `buscarGrupo/lfgVigentes/unirseLfg/
+  quitarLfg`; cliente `pintarLfg`, aviso con tipo `lfg` en `#invitacion`):
+  en el portal de mazmorras "📢 Anunciarme" (10 min; límite 1/min en
+  `this.lfgT`, que quitar no reinicia). Se avisa a los conectados con nivel
+  y sin grupo; "Unirme" mete al momento en el grupo (la líder expulsa si
+  quiere). No se entra así a un grupo dentro de un Desafío; el aviso no tapa
+  una invitación real sin contestar; se borra al desconectarse.
+- **Bóveda semanal** (mazmorras.js `rotarBoveda/progresoBoveda/
+  elegirBoveda`, `BOVEDA_UMBRALES` = 1/4/8): mazmorras completadas en la
+  semana → 1-3 objetos para elegir UNO el lunes (nivel propio, o 60+k con
+  Desafíos; épico desde +5). Rota en `datosPropios`. Si no eliges, esa
+  semana se pierde. Se abre sola al entrar (espera a que se cierren otras
+  ventanas) y desde el portal.
+- **4ª mazmorra: Fortaleza Goblin** (Nv 20-40, `MAZMORRAS.fortaleza`, mapa
+  `fortaleza` con fondo `cumbres`): jefes `mz_capataz`, `mz_chaman`,
+  `mz_rey_goblin`; conjunto «Botín del Rey Goblin»; logro «Azote Goblin».
+  Una mazmorra nueva es SOLO datos: MONSTRUOS (jefes con guion), MAZMORRAS,
+  MAPAS (instancia), CONJUNTOS (obligatorio: el premio del Desafío usa
+  `cj = id`) y opcionalmente un logro.
+- **Revisión independiente (agente)**: encontró y se arreglaron 4 fallos del
+  buscador y del cron (ver commit "arreglos de la revisión").
+
+**Cómo se trabajó (útil para la siguiente):**
+- Otra sesión estaba publicando en master a la vez (web, arcade, guía):
+  antes de cada push `git fetch` + `git merge origin/master` (la herramienta
+  `sync_with_base_branch` falló por "Committer identity unknown" en el
+  equipo). Si los dos subís `?v=` a la vez, quedáis en el mismo número:
+  súbelo uno más tras fusionar.
+- Desde el 22-oct `worker.js` cachea 7 días los JS pedidos con `?v=`: subir
+  el `?v=` (HTML + import de data.js) es OBLIGATORIO en cada cambio del
+  cliente o de data.js.
+- `mmo-local` tiene `autoPort` (el 8787 lo usaba otra sesión): el puerto
+  sale en el resultado de preview_start. Reiniciarlo tras cambiar el
+  servidor (carga world.js al arrancar).
+- Con la máquina cargada (agentes corriendo pruebas a la vez) el arnés
+  puede fallar al azar en el login ("Cannot set properties of null"): se
+  alargó la espera en `entrarTg` y en `sim_mazmorra.mjs`; si vuelve a pasar,
+  repetir antes de buscar un fallo.
+- Scripts de captura de esta sesión (cdp.mjs + `/__dev`): en el scratchpad
+  (`foto_afijos.mjs`, `foto_lfg.mjs` con dos jugadores, `foto_boveda.mjs`,
+  `foto_fort.mjs`) y `deploy.sh <sha>` (espera Workers Builds y corre el humo).
+
+**Pendiente / ideas para la siguiente sesión:**
+- Probar FPS en un teléfono real (sigue sin hacerse).
+- Temporadas desde marzo de 2027 (y quizá mediados de enero).
+- Más final de juego para D30: profesiones de nivel alto, cosméticos con
+  oro (mascotas/monturas de oro), una banda de 10, transfiguración.
+- Revisar con /mmostats los números D1/D7 (y si llegan avisos a otras horas
+  que las 17: en los registros sale "[MMO avisos Nh]").
+- Equilibrio de los afijos con jugadores reales (Volcánico + Tiránico puede
+  ser duro en solitario).

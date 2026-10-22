@@ -639,6 +639,8 @@ export const LOGROS = [
   { id: 'mazorca50',   titulo: 'Cosechador',         desc: 'Junta 50 mazorcas en la Cosecha del Maíz Morado',  oro: 3000,  cond: c => (c.mazorcas || 0) >= 50 },
   { id: 'mazorca200',  titulo: 'Señor del Maíz Morado', desc: 'Junta 200 mazorcas en la Cosecha del Maíz Morado', oro: 12000, cond: c => (c.mazorcas || 0) >= 200 },
   { id: 'regalo50',    titulo: 'Duende Navideño',    desc: 'Junta 50 regalos en la Navidad Duende',      oro: 3000,  cond: c => (c.regalos || 0) >= 50 },
+  { id: 'mascara50',   titulo: 'Carnavalero',        desc: 'Junta 50 máscaras en el Carnaval Duende',    oro: 3000,  cond: c => (c.mascaras || 0) >= 50 },
+  { id: 'mascara200',  titulo: 'Rey Momo',           desc: 'Junta 200 máscaras en el Carnaval Duende',   oro: 12000, cond: c => (c.mascaras || 0) >= 200 },
   { id: 'regalo200',   titulo: 'Santa Duende',       desc: 'Junta 200 regalos en la Navidad Duende',     oro: 12000, cond: c => (c.regalos || 0) >= 200 },
   { id: 'mazmorra10', titulo: 'Conquistador',       desc: 'Completa 10 mazmorras',             oro: 10000, cond: c => (c.mazmorras || 0) >= 10 },
   { id: 'kraken',    titulo: 'Azote del Abismo',    desc: 'Vence al Kraken del Templo Hundido', oro: 8000,  cond: c => !!(c.mzJefes && c.mzJefes.mz_kraken) },
@@ -827,6 +829,8 @@ export const TEMPORADAS = [
     emoji: '🌽', deco: '🌽', cosas: 'mazorcas', campo: 'mazorcas', color: '#a855f7', titulos: ['Cosechador', 'Señor del Maíz Morado'] },
   { id: 'navidad2026', nombre: 'Navidad Duende', ini: Date.UTC(2026, 11, 18), fin: Date.UTC(2027, 0, 7), hasta: '6 de enero',
     emoji: '🎁', deco: '🎄', cosas: 'regalos', campo: 'regalos', color: '#4ade80', titulos: ['Duende Navideño', 'Santa Duende'] },
+  { id: 'carnaval2027', nombre: 'Carnaval Duende', ini: Date.UTC(2027, 1, 4), fin: Date.UTC(2027, 1, 15), hasta: '14 de febrero',
+    emoji: '🎭', deco: '🎭', cosas: 'máscaras', campo: 'mascaras', color: '#f472b6', titulos: ['Carnavalero', 'Rey Momo'] },
 ];
 export const temporadaDe = (t = Date.now()) => TEMPORADAS.find(x => t >= x.ini && t < x.fin) || null;
 export const temporadaActiva = (t = Date.now()) => !!temporadaDe(t);
