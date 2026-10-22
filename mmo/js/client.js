@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=128';
+} from './data.js?v=130';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1808,12 +1808,14 @@ function abrirBuscador() {
   h += '<div class="mis-caja" id="maz-lfg"></div>';
   h += `<div class="mis-caja" style="font-size:13px;color:var(--txt2)">${htmlProgresoBoveda()}${yo.bovedaOpc && yo.bovedaOpc.length ? '<br><button class="btn" id="b-boveda" style="margin-top:8px">🗝️ Abrir la Bóveda</button>' : ''}</div>`;
   // Torre del Duende: pisos sin fin (functions/mmo/torre.js).
+  let hTorreBloq = '';
   {
     const bloq = yo.nivel < TORRE.nv;
     const tj = tarjeta('<div style="font-size:34px;line-height:52px;text-align:center">🗼</div>', `Torre del Duende <span style="color:${bloq ? 'var(--warn)' : 'var(--txt2)'}">Nv ${TORRE.nv}+</span>`,
       `Pisos sin fin: oleadas de monstruos de tu nivel cada vez más duras y un jefe cada ${TORRE.jefeCada}. Limpia cada piso en ${textoMinutos(TORRE.tiempo)}. Solo o con tu grupo.<br><span style="color:var(--txt2)">Esta semana: piso ${yo.torreSem || 0} · tu récord: ${yo.torreMax || 0}</span><br><span style="color:var(--ok)">Cada 5 pisos nuevos de la semana: cofre con oro y equipo (épico desde el 15).</span>`,
       bloq ? `<span class="precio" style="color:var(--txt3)">🔒 Nv ${TORRE.nv} (te faltan ${TORRE.nv - yo.nivel})</span>` : '<button class="btn" data-torre="1">Subir</button>');
-    h += bloq ? tj.replace('<div class="item">', '<div class="item" style="opacity:.55">') : tj;
+    // Bloqueada, al final (arriba quedaba antes que la mazmorra que si puedes hacer).
+    if (bloq) hTorreBloq = tj.replace('<div class="item">', '<div class="item" style="opacity:.55">'); else h += tj;
   }
   let hBanda = '';
   const posBanda = h.length;
@@ -1843,6 +1845,7 @@ function abrirBuscador() {
     h += htmlAfijos(afijosSemana());
   }
   // A Nv 60 la banda va arriba (abajo quedaba tras 5 mazmorras y los afijos).
+  h += hTorreBloq;
   if (yo.nivel >= NIVEL_MAX) h = h.slice(0, posBanda) + hBanda + h.slice(posBanda); else h += hBanda;
   h += '<ul style="padding-left:18px;margin-top:10px;font-size:12px"><li>Aquí los monstruos atacan solos y en packs: tira de uno y vendrá todo su grupo.</li><li>Cada jefe guarda una barrera. Lee sus avisos: <b style="color:var(--warn)">sal de las zonas marcadas</b> en el suelo e <b>interrumpe</b> (Patada, Zurrar, Contrahechizo o Silencio) los hechizos con barra naranja.</li><li>Si caéis todos, revivís en la entrada y el jefe se recupera.</li><li>Cada jefe da equipo a cada uno; el último, épico.</li><li>En la banda, las <b style="color:#facc15">zonas doradas</b> se aguantan <b>juntos</b>: el golpe se reparte entre los que estén dentro.</li></ul>';
   L.innerHTML = h;
@@ -3610,11 +3613,11 @@ function sugerencias() {
   if (horaFelizTiempos(Date.now()).activa) l.push('⚡ Es la Hora Feliz: caza ahora, +50% de experiencia.');
   const t = yo.tareas, pend = t && t.dia ? t.dia.l.filter(x => !x.ok) : [];
   if (pend.length) l.push(`📅 Te ${pend.length > 1 ? 'quedan ' + pend.length + ' diarias' : 'queda 1 diaria'}: ${esc(pend[0].txt)} (${pend[0].p}/${pend[0].n}).`);
-  if (yo.nivel >= 10) {
+  if (yo.nivel >= Math.min(...Object.values(MAZMORRAS).map(m => m.nv[0]))) {
     const hoy = new Date().toISOString().slice(0, 10), hechas = yo.mazDia && yo.mazDia.d === hoy ? yo.mazDia.hechas || [] : [];
     const mz = Object.entries(MAZMORRAS).filter(([id, m]) => !m.banda && yo.nivel >= m.nv[0] && !hechas.includes(id)).sort((a, b) => b[1].nv[0] - a[1].nv[0])[0];
     if (mz) l.push(`🏰 ${esc(mz[1].nombre)}: premio del día sin cobrar (XP, oro y un épico).`);
-    if (!yo.torreSem) l.push('🗼 Sube la Torre del Duende: cada 5 pisos nuevos de la semana, un cofre.');
+    if (!yo.torreSem && yo.nivel >= TORRE.nv) l.push('🗼 Sube la Torre del Duende: cada 5 pisos nuevos de la semana, un cofre.');
   }
   const z = zonaDeNivel(yo.nivel);
   if (MAPAS[z] && mapaId !== z) l.push(`🗺️ Tu zona ahora: ${esc(MAPAS[z].nombre)} (Nv ${MAPAS[z].nv[0]}-${MAPAS[z].nv[1]}).`);

@@ -41,7 +41,7 @@ const VENTANA_AVISO = 14;           // solo se avisa a quien jugo en estos dias
 const AVISOS_SIN_RESPUESTA = 2;     // despues de esto, pausa hasta que vuelva
 const POR_SEGUNDO = 25;             // Telegram corta a ~30 mensajes/s por bot
 const OLVIDAR_DIAS = 35;            // el indice olvida a quien no juega hace mas
-const NIVEL_MAZMORRA = 10;          // la primera mazmorra (Catacumbas) pide Nv 10
+const NIVEL_MAZMORRA = 6;           // la primera mazmorra (Madriguera Goblin) pide Nv 6
 
 export const diaNum = (t = Date.now()) => Math.floor(t / DIA_MS);
 export const diaISO = n => new Date(n * DIA_MS).toISOString().slice(0, 10);

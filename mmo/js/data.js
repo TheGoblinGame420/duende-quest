@@ -131,6 +131,23 @@ export const MONSTRUOS = {
   // ── Jefes de MAZMORRA (ver MAZMORRAS): su nivel lo pone la instancia y su
   // guion son las mecanicas del combate (zonas en el suelo, hechizos que se
   // pueden interrumpir, esbirros, enfurecer...).
+  // Madriguera Goblin (Nv 6-16): la primera, para aprender las mecanicas.
+  mz_hongo:      { nombre: 'Hongo Ancestral',       hoja: 'hongo',        nivel: 8, jefe: true, mazmorra: true, alto: 125, w: 100, h: 105, tinte: '#a3e635',
+    guion: [
+      { tipo: 'zona', nombre: 'Nube de Esporas', cada: 12000, primero: 6000, aviso: 2200, ancho: 260, donde: 'jefe', dano: 0.25, color: '#a3e635' },
+      { tipo: 'adds', en: [0.5], k: 'goblin_normal', n: 2 },
+    ] },
+  mz_rana:       { nombre: 'Reina de la Charca',    hoja: 'rana',         nivel: 9, jefe: true, mazmorra: true, alto: 115, w: 110, h: 90, tinte: '#38bdf8',
+    guion: [
+      { tipo: 'cast', nombre: 'Croar Ensordecedor', cada: 14000, primero: 7000, dura: 2800, int: true, a: 'todos', aturde: 1500, dano: 0.12 },
+      { tipo: 'zona', nombre: 'Charco Pegajoso', cada: 13000, primero: 9000, aviso: 2000, ancho: 190, donde: 'azar', n: 2, dano: 0.2, color: '#38bdf8' },
+    ] },
+  mz_cabecilla:  { nombre: 'Cabecilla de la Madriguera', hoja: 'goblin_centurion', nivel: 10, jefe: true, mazmorra: true, alto: 155, w: 75, h: 135, tinte: '#f97316',
+    guion: [
+      { tipo: 'embestida' },
+      { tipo: 'zona', nombre: 'Pisotón', cada: 11000, primero: 5000, aviso: 2000, ancho: 240, donde: 'jefe', dano: 0.3, color: '#f97316' },
+      { tipo: 'enrage', en: 0.3, atkX: 1.4 },
+    ] },
   mz_guardian:   { nombre: 'Guardián Óseo',        hoja: 'esqueleto',    nivel: 20, jefe: true, mazmorra: true, alto: 150, w: 70, h: 135, tinte: '#d6d3d1',
     guion: [
       { tipo: 'zona', nombre: 'Golpe Sísmico', cada: 11000, primero: 6000, aviso: 1800, ancho: 300, donde: 'jefe', dano: 0.35, color: '#ff7a1a' },
@@ -440,6 +457,7 @@ export const TINTES = {
 // subir 'n' al añadir una.
 export const NOVEDADES = [
   { n: 6, fecha: '22 de octubre (tarde)', items: [
+    '🏰 Madriguera Goblin: una mazmorra nueva desde Nv 6 para aprender las mecánicas (portal de mazmorras del pueblo).',
     '🧭 Expediciones (Nv 5+): manda a tu mascota 1, 4 u 8 horas y vuelve con oro, experiencia y materiales (registro de misiones, L).',
     '🗼 Torre del Duende (Nv 10+, portal de mazmorras): pisos sin fin cada vez más duros, un jefe cada 5, cofres y ranking semanal.',
     '🎣 Pesca: hay un pesquero en el pueblo y en cada zona. Lanza el sedal y TIRA cuando pique.',
@@ -672,6 +690,7 @@ export function nombreItem(it) { const r = RANURAS[it.s]; return r ? r.nombres[t
 // conjunto puestas hay un bono pequeño; con 4, uno mayor. Una meta de
 // coleccion a largo plazo que obliga a repetir cada mazmorra.
 export const CONJUNTOS = {
+  madriguera: { nombre: 'Pieles de la Madriguera', color: '#84cc16', b2: { hp: 0.08 }, b4: { atk: 0.06, def: 0.06 } },
   catacumbas: { nombre: 'Huesos del Guardián', color: '#a3e635', b2: { def: 0.08 }, b4: { atk: 0.08, hp: 0.10 } },
   fortaleza:  { nombre: 'Botín del Rey Goblin', color: '#eab308', b2: { crit: 0.03 }, b4: { atk: 0.10, hp: 0.08 } },
   templo:     { nombre: 'Marea Hundida',       color: '#38bdf8', b2: { hp: 0.10 },  b4: { atk: 0.10, crit: 0.04 } },
@@ -1122,6 +1141,16 @@ export const premioGesta = (i, nivel) => ({ oro: [100, 250, 500][i] * Math.max(1
 // o con amigos. Grupos de monstruos ("packs") agresivos y 3 jefes; cada jefe
 // abre la barrera que guarda. Dan experiencia, oro y equipo (nunca mTON).
 export const MAZMORRAS = {
+  madriguera: {
+    nombre: 'Madriguera Goblin', mapa: 'madriguera', nv: [6, 16], icono: 'I_Torch01',
+    desc: 'La primera mazmorra: los goblins del bosque esconden aquí lo que roban. Ideal para aprender a esquivar zonas e interrumpir.',
+    packs: [
+      { x: 520, k: ['goblin_normal', 'goblin_normal'] }, { x: 900, k: ['goblin_peasant', 'goblin_normal'] }, { x: 1250, k: ['goblin_assassin', 'goblin_peasant', 'goblin_normal'] },
+      { x: 2050, k: ['goblin_guard', 'hechicero'] }, { x: 2400, k: ['goblin_peasant', 'goblin_assassin', 'goblin_peasant'] },
+      { x: 3250, k: ['goblin_guard', 'goblin_guard'] }, { x: 3550, k: ['hechicero', 'goblin_guard', 'goblin_assassin'] },
+    ],
+    jefes: [{ k: 'mz_hongo', x: 1620, muro: 1820 }, { k: 'mz_rana', x: 2800, muro: 3000 }, { k: 'mz_cabecilla', x: 3950, muro: 4200, final: true }],
+  },
   catacumbas: {
     nombre: 'Catacumbas del Duende', mapa: 'catacumbas', nv: [10, 30], icono: 'E_Bones02',
     desc: 'Bajo el pueblo duerme un ejército de huesos. Tres guardianes custodian la cripta.',
@@ -1360,6 +1389,13 @@ jefe: 'jefe_rey',
   },
   // ── MAZMORRAS (instancias privadas para tu grupo o para ti solo) ──
   // muros: barreras magicas que se abren al vencer al jefe que las guarda.
+  madriguera: {
+    nombre: 'Madriguera Goblin', fondo: 'noche', ancho: 4400, zona: true, instancia: true, mazmorra: 'madriguera',
+    paleta: { cielo: ['#010015', '#08081f'], suelo: '#0a1a0f', linea: '#84cc16' },
+    plataformas: [[700, 290, 200], [1250, 250, 180], [2200, 285, 220], [3300, 260, 200]],
+    portales: [{ x: 60, a: 'pueblo', ax: 795, etiqueta: 'Salida' }, { x: 4340, a: 'pueblo', ax: 795, etiqueta: 'Salida', fin: 1 }],
+    monstruos: [], max: 0,
+  },
   catacumbas: {
     nombre: 'Catacumbas del Duende', fondo: 'cavernas', ancho: 4400, zona: true, instancia: true, mazmorra: 'catacumbas',
     paleta: { cielo: ['#12061f', '#3a1450'], suelo: '#120a1c', linea: '#a8a29e' },
