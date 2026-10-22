@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=194';
+} from './data.js?v=196';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -250,7 +250,11 @@ function sonarMusica() {
   if (!musica.src) musica.src = musica.canPlayType('audio/ogg; codecs="vorbis"') ? '/audio/bg_music.ogg' : '/audio/bg_music.mp3';
   musica.play().catch(() => {});
 }
-function pintarSonido() { $('b-sonido').textContent = sonido ? '🔊' : '🔇'; }
+// Altavoz de linea (con o sin ondas).
+function pintarSonido() {
+  $('b-sonido').innerHTML = '<svg class="ico-bt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H3v6h3l5 4z"/>' + (sonido ? '<path d="M15.5 8.5a5 5 0 010 7"/><path d="M18.5 5.5a9 9 0 010 13"/>' : '<path d="M16 9l5 6M21 9l-5 6"/>') + '</svg>';
+  $('b-sonido').setAttribute('aria-label', sonido ? 'Silenciar' : 'Activar sonido');
+}
 $('b-sonido').onclick = () => {
   sonido = !sonido; localStorage.setItem('dq_mmo_sonido', sonido ? '1' : '0'); pintarSonido();
   if (sonido) sonarMusica(); else musica.pause();
@@ -347,6 +351,7 @@ async function conectar() {
 function recibir(m) {
   switch (m.t) {
     case 'bienvenido':
+      setTimeout(() => { if (yo) { revisarBoveda(); revisarNovedades(); } }, 1500);
       miId = m.id; yo = m.yo; online = m.on || 0; reintentos = 0;
       $('m-inicio').classList.remove('on');
       pintarHud();
@@ -628,7 +633,7 @@ const textoMinutos = ms => Math.floor(ms / 60000) + ' min' + (ms % 60000 ? ' y '
 function pintarSubMapa() {
   const mp = MAPAS[mapaId];
   if (!mp.torre) torreInfo = null;
-  const base = mp.torre ? '🗼 Piso ' + (torreInfo ? torreInfo.piso : 0) + (torreInfo && torreInfo.mejor ? ' · tu marca: ' + torreInfo.mejor : '') : mp.instancia ? (MAZMORRAS[mp.mazmorra] && MAZMORRAS[mp.mazmorra].banda ? 'Banda' : 'Mazmorra') + (instancia ? ' · Nv ' + instancia.nv + (instancia.k ? ' · ⚡+' + instancia.k : '') : '') : mp.zona && mp.nv ? 'Nivel ' + mp.nv[0] + '-' + mp.nv[1] : 'Zona segura';
+  const base = mp.torre ? (torreInfo && torreInfo.mejor ? 'Tu marca esta semana: piso ' + torreInfo.mejor : 'Torre') : mp.instancia ? (MAZMORRAS[mp.mazmorra] && MAZMORRAS[mp.mazmorra].banda ? 'Banda' : 'Mazmorra') + (instancia ? ' · Nv ' + instancia.nv + (instancia.k ? ' · ⚡+' + instancia.k : '') : '') : mp.zona && mp.nv ? 'Nivel ' + mp.nv[0] + '-' + mp.nv[1] : 'Zona segura';
   const cl = climaDe(mapaId);
   $('h-mapa-sub').textContent = base + (cl ? (cl === 'nieve' ? ' · ❄️ nieva' : ' · 🌧️ llueve') : '') + (online ? ' · 👥 ' + online + ' en línea' : '') + (jugaronHoy > online ? ' · ' + jugaronHoy + ' hoy' : '');
 }
@@ -3936,9 +3941,15 @@ function aviso(txt, tipo, ms) {
   else if (tipo === 'jefe') d.style.borderLeftColor = 'var(--warn)';
   else if (tipo === 'error') d.style.borderLeftColor = 'var(--err)';
   d.textContent = sinEmoji(txt);
-  $('avisos').appendChild(d);
+  // Con una ventana abierta, en una capa propia por encima (si no, la tapaba).
+  let capa = $('avisos');
+  if (document.querySelector('.modal.on')) {
+    capa = $('avisos-modal');
+    if (!capa) { capa = document.createElement('div'); capa.id = 'avisos-modal'; document.body.appendChild(capa); }
+  }
+  capa.appendChild(d);
   setTimeout(() => d.remove(), ms || 3700);
-  while ($('avisos').children.length > 4) { const v = [...$('avisos').children].find(x => !x.dataset.imp) || $('avisos').firstChild; v.remove(); }
+  while (capa.children.length > 4) { const v = [...capa.children].find(x => !x.dataset.imp) || capa.firstChild; v.remove(); }
 }
 
 function lineaChat(nombre, txt, canal, colorNombre) {

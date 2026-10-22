@@ -233,7 +233,12 @@ body.tactil #pie{display:none;}
 /* Tras un logro o una mazmorra: compartirlo con tu enlace de invitacion. */
 #presumir{left:50%;transform:translateX(-50%);top:172px;bottom:auto;display:none;z-index:61;font-family:var(--sans);font-size:14px;font-weight:600;padding:10px 16px;background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:var(--sombra);animation:none;}
 #presumir:hover{background:var(--pri2);border-color:var(--pri2);}
-#hud.estrecho #presumir{top:auto;bottom:105px;}
+#hud.estrecho #presumir{top:96px;bottom:auto;left:8px;transform:none;font-size:12px;padding:7px 10px;}
+/* Botones del HUD con iconos dibujados (pack RPG 7Soul1, CC0) o de linea. */
+.bt .ico-bt{width:20px;height:20px;display:block;image-rendering:pixelated;pointer-events:none;}
+.bt:has(.ico-bt){padding:4px 6px;}
+.bt svg.ico-bt{width:18px;height:18px;margin:2px;}
+#avisos-modal{position:fixed;left:50%;transform:translateX(-50%);top:14px;z-index:80;display:flex;flex-direction:column;align-items:center;gap:5px;pointer-events:none;width:min(92vw,520px);}
 /* Guia del juego: secciones con titulo, definiciones para los controles. */
 .guia h3{font:700 13px var(--sans);color:var(--txt);text-transform:uppercase;letter-spacing:.08em;margin:16px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--borde);}
 .guia h3:first-child{margin-top:0;}
@@ -483,16 +488,16 @@ input.nombre:focus{border-color:var(--pri-txt);}
       <div class="caja" id="seguimiento"><div id="h-mision"></div><div id="h-tareas"></div><div id="h-mundial"></div><div id="h-evento"></div></div>
       <div class="caja" id="mapa-nom"><span id="h-mapa">—</span><small id="h-mapa-sub"></small></div>
       <div class="caja" id="botones">
-        <button class="bt" id="b-libro" title="Hechizos y clase (P)">📖</button>
-        <button class="bt" id="b-mapa" title="Mapa del mundo (M)">🗺️</button>
-        <button class="bt" id="b-social" title="Grupo, jugadores y hermandad (O)">👥</button>
-        <button class="bt" id="b-regreso" title="Piedra de Hogar: volver al pueblo (R)">🌀</button>
-        <button class="bt" id="b-inv" title="Inventario (I)">🎒</button>
-        <button class="bt" id="b-wallet" title="mTON y retiros">💎</button>
-        <button class="bt" id="b-rank" title="Ranking">🏆</button>
-        <button class="bt" id="b-ayuda" title="Ayuda">❔</button>
+        <button class="bt" id="b-libro" title="Hechizos y clase (P)" aria-label="Hechizos"><img class="ico-bt" src="/assets/items/equipo/W_Book01.png" alt=""></button>
+        <button class="bt" id="b-mapa" title="Mapa del mundo (M)" aria-label="Mapa"><img class="ico-bt" src="/assets/items/equipo/I_Map.png" alt=""></button>
+        <button class="bt" id="b-social" title="Grupo, jugadores y hermandad (O)" aria-label="Social"><img class="ico-bt" src="/assets/items/equipo/I_Scroll.png" alt=""></button>
+        <button class="bt" id="b-regreso" title="Piedra de Hogar: volver al pueblo (R)" aria-label="Piedra de Hogar"><img class="ico-bt" src="/assets/items/equipo/I_Crystal02.png" alt=""></button>
+        <button class="bt" id="b-inv" title="Inventario (I)" aria-label="Inventario"><img class="ico-bt" src="/assets/items/equipo/I_Chest02.png" alt=""></button>
+        <button class="bt" id="b-wallet" title="mTON y retiros" aria-label="mTON"><img class="ico-bt" src="/assets/items/equipo/I_Sapphire.png" alt=""></button>
+        <button class="bt" id="b-rank" title="Ranking" aria-label="Ranking"><img class="ico-bt" src="/assets/items/equipo/Ac_Medal01.png" alt=""></button>
+        <button class="bt" id="b-ayuda" title="Guía del juego" aria-label="Guía"><img class="ico-bt" src="/assets/items/equipo/I_Book.png" alt=""></button>
         <button class="bt" id="b-sonido" title="Sonido">🔊</button>
-        <a class="bt" href="/game.html" title="Volver al juego arcade" style="text-decoration:none">🏠</a>
+        <a class="bt" href="/game.html" title="Volver al juego arcade" aria-label="Inicio" style="text-decoration:none"><svg class="ico-bt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></a>
       </div>
       <div class="caja" id="jefe-bar"><div class="n" id="jefe-n">JEFE</div><div class="barra"><i></i></div></div>
       <div class="caja" id="avisos"></div>
@@ -832,6 +837,6 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=194"></script>
+<script type="module" src="/mmo/js/client.js?v=196"></script>
 </body>
 </html>

@@ -1445,7 +1445,7 @@ export class MmoWorld {
       const k = (o.jefe ? Math.max(parte, 1 / 3) : parte) * (1 + 0.1 * (n - 1)) / n;
       for (const s of b.miembros) {
         const mult = (((SKINS[s.c.skin].buffs || {}).oroMult) || 1) * (1 + talento(s.c, 'fortuna'));
-        const xp = Math.max(1, Math.round(base.xp * k * (1 + talento(s.c, 'erudicion'))));
+        const xp = Math.max(1, Math.round(base.xp * k * (1 + talento(s.c, 'erudicion')) * (o.xpX || 1)));
         const oro = Math.max(1, Math.round(base.oro * k * rnd(0.8, 1.2) * mult));
         premios.push([s.id, xp, oro]);
         cobraron.add(s.id);
@@ -1460,7 +1460,7 @@ export class MmoWorld {
     // experiencia aunque no le haya pegado (cazar juntos siempre compensa).
     for (const s of this.sesiones.values()) {
       if (!s.c || s.k !== o.cl || s.muerto || cobraron.has(s.id) || Math.abs(s.x - o.x) > 500) continue;
-      const xp = Math.max(1, Math.round(base.xp * 0.25));
+      const xp = Math.max(1, Math.round(base.xp * 0.25 * (o.xpX || 1)));
       this.sumarXp(s, xp);
       s.sucio = true;
       this.enviar(s, { t: 'gana', xp, oro: 0, drops: [], x: Math.round(o.x), y: Math.round(o.y - o.h), coop: true });
@@ -1584,7 +1584,7 @@ export class MmoWorld {
     }
     // Mision en curso: cuenta si el monstruo es el que pide.
     const q = MISIONES[c.mis.i];
-    if (o && q && o.k === q.tipo && c.mis.p < q.n) {
+    if (o && q && o.k === q.tipo && !(o.torre && o.jefe) && c.mis.p < q.n) {
       c.mis.p++;
       if (c.mis.p === q.n) this.enviar(s, { t: 'toast', m: `📜 ¡"${q.nombre}" cumplida! Vuelve con el Guardia Tito del pueblo.`, ok: true });
     }

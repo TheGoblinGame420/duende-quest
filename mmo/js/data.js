@@ -1648,7 +1648,7 @@ LOGROS.push(
 // ── TORRE DEL DUENDE ── (functions/mmo/torre.js)
 // Pisos con oleadas de monstruos de tu nivel, cada uno mas duro; un jefe
 // cada jefeCada. tiempo por piso; porHora subidas por jugador; max por grupo.
-export const TORRE = { nv: 10, max: 5, jefeCada: 5, pausa: 3500, tiempo: 150000, porHora: 12, instancias: 30, vidaJefe: 0.35, atkJefe: 0.8, semMin: 10, montura: 30 };
+export const TORRE = { nv: 10, max: 5, jefeCada: 5, pausa: 3500, tiempo: 150000, porHora: 12, instancias: 30, vidaJefe: 0.35, atkJefe: 0.8, semMin: 10, montura: 30, xp: 0.6 };
 // Premio del ranking semanal (desde el piso semMin): 1º, 2º y 3º.
 export const premioTorreSem = i => [15000, 7500, 3500][i] || 0;
 // Atajo: con marca semanal de 10+, se puede empezar 5 pisos por debajo de

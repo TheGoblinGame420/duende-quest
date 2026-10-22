@@ -65,7 +65,7 @@ export const Torre = {
     const T = w.torre;
     if (T.fin) return;
     const vivos = jugadores.filter(s => !s.muerto);
-    if (!vivos.length) return this.acabarTorre(w, jugadores, `💀 La Torre os venció en el piso ${T.piso}.`);
+    if (!vivos.length) return this.acabarTorre(w, jugadores, `La Torre ${jugadores.length > 1 ? 'os' : 'te'} venció en el piso ${T.piso}.`);
     if (T.sigEn) {
       if (ahora >= T.sigEn) this.subirPiso(w, ahora);
       return;
@@ -98,7 +98,8 @@ export const Torre = {
       const x = lados[i % 2] + rnd(-90, 90);
       const elite = mod === 'elite' && i === 0;
       const o = this.crearMonstruo(w.clave, pool[Math.floor(Math.random() * pool.length)], x,
-        { nv: T.nv + (i === 0 ? 1 : 0), hpX: vida * (mod === 'blindados' ? 1.3 : elite ? 3 : 1), atkX: P.atk * (mod === 'blindados' ? 0.9 : elite ? 1.3 : 1), agresivo: true, radioAgro: 2000 });
+        { nv: T.nv + (i === 0 ? 1 : 0), hpX: vida * (mod === 'blindados' ? 1.3 : elite ? 3 : 1), atkX: P.atk * (mod === 'blindados' ? 0.9 : elite ? 1.3 : 1), agresivo: true, radioAgro: 2000, xpX: TORRE.xp });
+      o.torre = true;
       if (mod === 'veloces') o.vel *= 1.3;
     }
     if (P.jefe) {
@@ -107,7 +108,7 @@ export const Torre = {
         .sort((a, b) => MONSTRUOS[b].nivel - MONSTRUOS[a].nivel).slice(0, 3);
       const k = jefes[(T.piso / TORRE.jefeCada) % jefes.length] || z.jefe;
       if (MONSTRUOS[k]) this.crearMonstruo(w.clave, k, 700 + (Math.random() < 0.5 ? -330 : 330),
-        { nv: T.nv + 2, hpX: P.vida * TORRE.vidaJefe * (1 + 1.2 * (n - 1)), atkX: P.atk * TORRE.atkJefe, agresivo: true, radioAgro: 2000, mazmorra: true });
+        { nv: T.nv + 2, hpX: P.vida * TORRE.vidaJefe * (1 + 1.2 * (n - 1)), atkX: P.atk * TORRE.atkJefe, agresivo: true, radioAgro: 2000, mazmorra: true, xpX: TORRE.xp }).torre = true;
     }
     this.aClave(w.clave, { t: 'torre', piso: T.piso, nv: T.nv, en: TORRE.tiempo, mod: mod || '', jefe: P.jefe ? 1 : 0 });
     const M = mod && MODS_TORRE[mod];
