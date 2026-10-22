@@ -14,7 +14,7 @@ import {
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo,
-} from './data.js?v=49';
+} from './data.js?v=50';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -471,7 +471,8 @@ function recibir(m) {
     case 'chat': mensajeChat(m); break;
     case 'grupo': grupo = m.g; pintarSocial(); break;
     case 'invitacion': mostrarInvitacion(m); break;
-    case 'lfgAviso': if (!grupo) mostrarInvitacion({ ...m, lfg: 1, ms: 30000 }); break;
+    // No tapa una invitacion de verdad (grupo, hermandad, duelo) sin contestar.
+    case 'lfgAviso': if (!grupo && !($('invitacion').style.display === 'block' && $('invitacion').dataset.tipo !== 'lfg')) mostrarInvitacion({ ...m, lfg: 1, ms: 30000 }); break;
     case 'lfg': lfgLista = m.l || []; pintarLfg(); break;
     case 'herm': hermandad = m.h; pintarSocial(); break;
     case 'hermInv': mostrarInvitacion({ ...m, herm: 1 }); break;

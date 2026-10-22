@@ -206,6 +206,7 @@ export const Retencion = {
     if (accion === 'stats') return this.retStats();
     if (accion === 'recordatorios') return this.recordatorios(b && Number.isInteger(b.hora) ? b.hora : horaUTC());
     if (accion === 'avisos') return this.ponerAvisos(b || {});
+    if (accion === 'avisadosHoy') return this.avisadosHoy(b && Number.isInteger(b.hora) ? b.hora : horaUTC());
     return null;
   },
 
@@ -335,6 +336,19 @@ export const Retencion = {
     res.callar = Object.keys(idx).filter(u => u.startsWith('tg:') && (idx[u].off || idx[u].bloq)).map(u => u.slice(3));
     res.hoy = Object.keys(idx).filter(u => u.startsWith('tg:') && (idx[u].ad === hoy || (this.puedeAvisar(u, idx[u], hoy) && horaHabitual(idx[u]) > hora))).map(u => u.slice(3));
     return res;
+  },
+
+  // Solo la lista (sin enviar nada): a quien el recordatorio del arcade no
+  // debe escribir hoy. El cron la pide si fallo 'recordatorios'.
+  async avisadosHoy(hora) {
+    const hoy = diaNum();
+    const idx = await this.retIdx();
+    const tg = Object.keys(idx).filter(u => u.startsWith('tg:'));
+    return {
+      ok: true,
+      callar: tg.filter(u => idx[u].off || idx[u].bloq).map(u => u.slice(3)),
+      hoy: tg.filter(u => idx[u].ad === hoy || (this.puedeAvisar(u, idx[u], hoy) && horaHabitual(idx[u]) > hora)).map(u => u.slice(3)),
+    };
   },
 
   // Alarma del Durable Object, cada hora en punto: los avisos de quien

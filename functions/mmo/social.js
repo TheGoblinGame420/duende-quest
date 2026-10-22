@@ -137,6 +137,7 @@ export const Social = {
   },
   // Al salir: el grupo lo espera; si ya no queda nadie conectado, se borra.
   desconectarDeGrupo(s) {
+    if (this.lfg) this.lfg.delete(s.c.uid);   // su busqueda de grupo, fuera
     const g = this.grupoDe(s);
     if (!g) return;
     if (!this.sesionesGrupo(g).some(x => x !== s)) { this.grupos.delete(g.id); if (this.alDisolverGrupo) this.alDisolverGrupo(g); return; }
@@ -218,8 +219,12 @@ export const Social = {
     if (g && g.lider !== s.c.uid) return this.no(s, 'Solo el líder del grupo puede buscar más gente.');
     if (g && g.uids.length >= GRUPO_MAX) return this.no(s, 'Tu grupo ya está lleno.');
     const ahora = Date.now();
-    const prev = this.lfg.get(s.c.uid);
-    if (prev && ahora - prev.t < LFG_CADA_MS) return this.no(s, 'Ya anunciaste tu búsqueda hace nada: espera un minuto.');
+    // El limite va aparte: quitar la busqueda no lo reinicia (si no, anunciar
+    // y quitar en bucle inundaba de avisos a todos los conectados).
+    this.lfgT = this.lfgT || new Map();
+    if (ahora - (this.lfgT.get(s.c.uid) || 0) < LFG_CADA_MS) return this.no(s, 'Ya anunciaste tu búsqueda hace nada: espera un minuto.');
+    for (const [u, t] of this.lfgT) if (ahora - t >= LFG_CADA_MS) this.lfgT.delete(u);
+    this.lfgT.set(s.c.uid, ahora);
     const e = { id: m.id, t: ahora, hasta: ahora + LFG_MS };
     this.lfg.set(s.c.uid, e);
     const aviso = JSON.stringify({ t: 'lfgAviso', ...this.infoLfg(s.c.uid, e) });
@@ -261,6 +266,10 @@ export const Social = {
     if (s.gid) return this.no(s, 'Ya estás en un grupo: sal de él para unirte a otro.');
     if (s.c.nivel < mz.nv[0]) return this.no(s, `Necesitas nivel ${mz.nv[0]} para ${mz.nombre}.`);
     let g = this.grupoDe(lider);
+    // Dentro de un Desafio abierto solo se entra por invitacion (la lider
+    // acepta a quien quiere: el premio del Desafio es grande).
+    const wi = g && g.inst && this.mundo[g.inst];
+    if (wi && wi.inst && wi.inst.k && !wi.inst.completada) return this.no(s, 'Ese grupo ya está dentro de un Desafío: pide a la líder que te invite.');
     if (!g) {
       g = { id: this.sigGrupo++, lider: uid, uids: [uid] };
       this.grupos.set(g.id, g);

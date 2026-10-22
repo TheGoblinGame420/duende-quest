@@ -778,7 +778,6 @@ async function pruebasRetencion() {
   try { await runCron('0 17 * * *', envCron); } finally { globalThis.fetch = fetchReal; }
   chequear(ids() === '3004', 'el MMO avisa a quien le toca (' + ids() + ')');
   chequear(arcade.sort().join(',') === '3001,9999', 'el recordatorio del arcade se salta al avisado, al que bloqueó y a quien pidió no recibir avisos (' + arcade + ')');
-
   console.log('Avisos a la hora habitual de cada uno');
   const { horaHabitual, HORA_DEFECTO } = await import('../functions/mmo/retencion.js');
   chequear(horaHabitual({ hs: [20, 20] }) === HORA_DEFECTO && horaHabitual({}) === HORA_DEFECTO, 'con menos de 3 días anotados, las 17:00');
@@ -801,6 +800,24 @@ async function pruebasRetencion() {
     await mundo.alarm();
     chequear(salidos.length === 0, 'una sola vez al día');
   } finally { delete state.storage.setAlarm; }
+  // Si falla la llamada de avisos, se pide solo la lista; sin lista, no sale el del arcade.
+  for (const [modo, esperado] of [['lista', '9999'], ['nada', '']]) {
+    irA(A + (modo === 'lista' ? 11 : 12), 17);
+    arcade.length = 0;
+    globalThis.fetch = async (url, init) => {
+      const u = String(url);
+      if (u.includes('/rest/v1/profiles')) return new Response(JSON.stringify([{ telegram_id: '3003' }, { telegram_id: '3010' }, { telegram_id: '9999' }]));
+      if (u.includes('api.telegram.org')) { arcade.push(String(JSON.parse(init.body).chat_id)); return new Response('{"ok":true}'); }
+      return new Response('{}');
+    };
+    const envFalla = { ...envCron, MMO: { idFromName: () => 'mundo-1', get: () => ({ fetch: async (url, init) => {
+      if (url.includes('/recordatorios') || modo === 'nada') return new Response('Error del servidor', { status: 500 });
+      return mundo.interno(new Request(url, init), url.split('/interno/')[1]);
+    } }) } };
+    try { await runCron('0 17 * * *', envFalla); } finally { globalThis.fetch = fetchReal; }
+    chequear(arcade.sort().join(',') === esperado, modo === 'lista' ? 'si falla el aviso del MMO, el arcade igual se salta al que bloqueó y a quien tendrá su aviso más tarde (' + arcade + ')' : 'sin la lista del MMO, ese día no sale el recordatorio del arcade (' + arcade + ')');
+  }
+
 }
 
 // ── MUNDO ABIERTO: invasiones, raros y cofres (functions/mmo/eventos.js) ──
@@ -1353,6 +1370,33 @@ async function pruebasLfg() {
   chequear(l && l.l.length === 1 && l.l[0].m === 2, 'la búsqueda sigue en la lista con 2/5');
   await d.mandar({ t: 'lfgUnir', pid: av.pid });
   chequear(d.gid === e.gid && d.gid !== a.gid, 'quien ya tiene grupo no se une a otro');
+  // Anunciar y quitar en bucle no salta el límite de un minuto.
+  const f = await entrar('Floodero', '76'), v = await entrar('Victima', '77');
+  ponerNivel(f, 20, 'mago'); ponerNivel(v, 20, 'guerrero'); v.limpiar();
+  for (let i = 0; i < 10; i++) { await f.mandar({ t: 'lfg', id: 'catacumbas' }); await f.mandar({ t: 'lfgQuitar' }); }
+  chequear(v.ultimos('lfgAviso').length === 1, 'anunciar y quitar en bucle no inunda a los demás (' + v.ultimos('lfgAviso').length + ' avisos)');
+  avanzar(61000);
+  await f.mandar({ t: 'lfg', id: 'catacumbas' });
+  chequear(mundo.lfg.has(f.c.uid), 'al minuto se puede volver a anunciar');
+  await dejar(f);
+  chequear(!mundo.lfg.has(f.c.uid), 'al desconectarse su búsqueda sale de la lista');
+  await dejar(v);
+  // A un grupo dentro de un Desafío no se entra por el buscador.
+  const l6 = await entrar('Lider60b', '78'), o6 = await entrar('Otro60', '79');
+  ponerNivel(l6, 60, 'guerrero'); ponerNivel(o6, 60, 'mago');
+  l6.c.desafio = { catacumbas: 3 };
+  await aMapa(l6, 'pueblo', 800);
+  await l6.mandar({ t: 'lfg', id: 'catacumbas' });
+  const pid6 = pub(l6.c.uid);
+  await l6.mandar({ t: 'mazmorra', id: 'catacumbas', k: 3 });
+  // solo: le ponemos un grupo con la instancia abierta
+  mundo.iniciarSocial();
+  const g6 = { id: mundo.sigGrupo++, lider: l6.c.uid, uids: [l6.c.uid, 'x:fantasma'], inst: l6.k };
+  mundo.grupos.set(g6.id, g6); l6.gid = g6.id;
+  o6.limpiar(); await o6.mandar({ t: 'lfgUnir', pid: pid6 });
+  chequear(!o6.gid && o6.ultimos('no').some(x => /Desafío/.test(x.m)), 'a un grupo dentro de un Desafío solo se entra por invitación');
+  mundo.grupos.delete(g6.id); l6.gid = 0;
+  await dejar(l6); await dejar(o6);
   avanzar(LFG_MS + 1000);
   b.limpiar(); await b.mandar({ t: 'lfgLista' });
   chequear(b.ultimos('lfg').pop().l.length === 0, 'a los 10 minutos la búsqueda caduca');

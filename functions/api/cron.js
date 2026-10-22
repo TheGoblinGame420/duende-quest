@@ -102,8 +102,15 @@ export async function mmoRecordatorios(env) {
   // invocacion); se repite mientras queden, con un tope de tandas.
   let d = null;
   for (let tanda = 0; tanda < 8; tanda++) {
-    const r = await stub.fetch('https://mmo/interno/recordatorios', { method: 'POST', headers: { 'x-interno': env.TELEGRAM_BOT_TOKEN || '' }, body: '{}' });
-    const x = await r.json();
+    let x;
+    try {
+      const r = await stub.fetch('https://mmo/interno/recordatorios', { method: 'POST', headers: { 'x-interno': env.TELEGRAM_BOT_TOKEN || '' }, body: '{}' });
+      x = await r.json();
+    } catch (e) {
+      // Una tanda que falla no tira lo que ya se juntó (ids de los avisados).
+      if (d) { console.error('[MMO avisos tanda]', e); break; }
+      throw e;
+    }
     if (!d) d = x;
     else { for (const k of ['candidatos', 'enviados', 'bloqueados', 'fallidos']) d[k] = (d[k] || 0) + (x[k] || 0); d.ids = [...(d.ids || []), ...(x.ids || [])]; d.callar = x.callar || d.callar; d.hoy = x.hoy || d.hoy; }
     if (!x.ok || !x.quedan || !x.enviados) break;
@@ -206,13 +213,25 @@ export async function mmoFondo(env) {
 export async function runCron(cronExpr, env) {
   if (cronExpr === '0 17 * * *') {
     // Primero el MMO: si falla, el recordatorio del arcade sale igual.
-    let saltar = new Set();
+    // Ni a los avisados hoy por el MMO (a su hora o ahora) ni a los que se
+    // avisaran mas tarde a su hora habitual: un solo mensaje por persona.
+    let saltar = null;
     try {
       const d = await mmoRecordatorios(env);
-      // Ni a los avisados hoy por el MMO (a su hora o ahora) ni a los que se
-      // avisaran mas tarde a su hora habitual: un solo mensaje por persona.
-      if (d && d.ok) saltar = new Set([...(d.ids || []), ...(d.callar || []), ...(d.hoy || [])].map(String));
+      if (!env.MMO) saltar = new Set();
+      else if (d && d.ok) saltar = new Set([...(d.ids || []), ...(d.callar || []), ...(d.hoy || [])].map(String));
     } catch (e) { console.error('[Cron avisos MMO]', e); }
+    // Si fallo, se pide solo la lista; si tampoco llega, hoy no sale el
+    // recordatorio del arcade (mejor ninguno que dos al mismo jugador).
+    if (!saltar) {
+      try {
+        const stub = env.MMO.get(env.MMO.idFromName('mundo-1'));
+        const r = await stub.fetch('https://mmo/interno/avisadosHoy', { method: 'POST', headers: { 'x-interno': env.TELEGRAM_BOT_TOKEN || '' }, body: '{}' });
+        const x = await r.json();
+        if (x && x.ok) saltar = new Set([...(x.callar || []), ...(x.hoy || [])].map(String));
+      } catch (e) { console.error('[Cron avisados MMO]', e); }
+    }
+    if (!saltar) { console.error('[Cron] sin la lista del MMO: hoy no sale el recordatorio del arcade'); return; }
     return dailyReminder(env, saltar);
   }
   if (cronExpr === '0 12 * * 1') return weeklyTournament(env);
