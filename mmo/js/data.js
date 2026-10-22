@@ -198,6 +198,26 @@ export const MONSTRUOS = {
       { tipo: 'adds', en: [0.5], k: 'goblin_samurai', n: 2 },
       { tipo: 'enrage', en: 0.25, atkX: 1.5 },
     ] },
+  // Nido de la Reina Araña (Nv 40-58)
+  mz_reina:      { nombre: 'Reina Araña',           hoja: 'arana',          nivel: 46, jefe: true, mazmorra: true, alto: 72, w: 110, h: 60, tinte: '#a3e635',
+    guion: [
+      { tipo: 'zona', nombre: 'Lluvia de Veneno', cada: 10000, primero: 5000, aviso: 1500, ancho: 170, donde: 'jugadores', dano: 0.3, color: '#a3e635' },
+      { tipo: 'adds', en: [0.7, 0.4], k: 'arana', n: 2 },
+      { tipo: 'escudo', nombre: 'Capullo de Seda', cada: 22000, primero: 12000, dura: 4000, reduce: 0.75 },
+    ] },
+  mz_liche:      { nombre: 'Liche Errante',         hoja: 'esqueleto_capa', nivel: 48, jefe: true, mazmorra: true, alto: 150, w: 70, h: 135, tinte: '#7dd3fc', dispara: true,
+    guion: [
+      { tipo: 'cast', nombre: 'Descarga de Escarcha', cada: 8000, primero: 4500, dura: 2200, int: true, a: 'objetivo', dano: 0.5 },
+      { tipo: 'zona', nombre: 'Ventisca', cada: 13000, primero: 7500, aviso: 1600, ancho: 220, donde: 'azar', n: 3, dano: 0.28, color: '#7dd3fc' },
+      { tipo: 'adds', en: [0.5], k: 'murcielago', n: 2 },
+    ] },
+  mz_cancerbero: { nombre: 'Cancerbero',            hoja: 'hellhound',      nivel: 50, jefe: true, mazmorra: true, alto: 130, w: 160, h: 100, tinte: '#f43f5e',
+    guion: [
+      { tipo: 'embestida' },
+      { tipo: 'zona', nombre: 'Aliento Ígneo', cada: 10000, primero: 5000, aviso: 1500, ancho: 280, donde: 'frente', dano: 0.4, color: '#fb7185' },
+      { tipo: 'cast', nombre: 'Aullido Infernal', cada: 15000, primero: 9000, dura: 2400, int: true, a: 'todos', aturde: 1800, dano: 0.15 },
+      { tipo: 'enrage', en: 0.25, atkX: 1.5 },
+    ] },
   mz_dragon:     { nombre: 'Dragón Carmesí',        hoja: 'dragon',       nivel: 58, jefe: true, mazmorra: true, alto: 200, w: 170, h: 140, tinte: '#dc2626', vuela: true, dispara: true,
     guion: [
       { tipo: 'zona', nombre: 'Aliento de Fuego', cada: 12000, primero: 7000, aviso: 2000, ancho: 560, donde: 'frente', dano: 0.5, color: '#ef4444' },
@@ -379,7 +399,7 @@ export const TINTES = {
 // subir 'n' al añadir una.
 export const NOVEDADES = [
   { n: 2, fecha: '22 de octubre', items: [
-    '🏰 Nueva mazmorra: la Fortaleza Goblin (Nv 20-40), con el Rey Goblin Barrigón.',
+    '🏰 Dos mazmorras nuevas: la Fortaleza Goblin (Nv 20-40) y el Nido de la Reina Araña (Nv 40-58).',
     '🗝️ Bóveda semanal: cuantas más mazmorras hagas en la semana, más objetos para elegir el lunes.',
     '📢 Buscador de grupo en el portal de mazmorras: anúnciate y otros se unen con un toque.',
     '⚡ Desafíos con afijos que cambian cada lunes y su propio ranking semanal.',
@@ -572,6 +592,7 @@ export const CONJUNTOS = {
   catacumbas: { nombre: 'Huesos del Guardián', color: '#a3e635', b2: { def: 0.08 }, b4: { atk: 0.08, hp: 0.10 } },
   fortaleza:  { nombre: 'Botín del Rey Goblin', color: '#eab308', b2: { crit: 0.03 }, b4: { atk: 0.10, hp: 0.08 } },
   templo:     { nombre: 'Marea Hundida',       color: '#38bdf8', b2: { hp: 0.10 },  b4: { atk: 0.10, crit: 0.04 } },
+  nido:       { nombre: 'Seda de la Reina',    color: '#a3e635', b2: { hp: 0.08 },  b4: { crit: 0.04, def: 0.10 } },
   ciudadela:  { nombre: 'Escamas del Dragón',  color: '#f97316', b2: { atk: 0.08 }, b4: { atk: 0.08, def: 0.10, hp: 0.10 } },
 };
 export const CONJUNTO_PROB = 0.25;
@@ -669,6 +690,7 @@ export const LOGROS = [
   { id: 'mazmorra10', titulo: 'Conquistador',       desc: 'Completa 10 mazmorras',             oro: 10000, cond: c => (c.mazmorras || 0) >= 10 },
   { id: 'kraken',    titulo: 'Azote del Abismo',    desc: 'Vence al Kraken del Templo Hundido', oro: 8000,  cond: c => !!(c.mzJefes && c.mzJefes.mz_kraken) },
   { id: 'reygoblin', titulo: 'Azote Goblin',        desc: 'Vence al Rey Goblin Barrigón de la Fortaleza', oro: 6000, cond: c => !!(c.mzJefes && c.mzJefes.mz_rey_goblin) },
+  { id: 'cancerbero', titulo: 'Domador del Infierno', desc: 'Vence al Cancerbero del Nido de la Reina Araña', oro: 12000, cond: c => !!(c.mzJefes && c.mzJefes.mz_cancerbero) },
   { id: 'dragon',    titulo: 'Matadragones',        desc: 'Vence al Dragón Carmesí de la Ciudadela', oro: 15000, cond: c => !!(c.mzJefes && c.mzJefes.mz_dragon) },
 ];
 
@@ -919,6 +941,16 @@ export const MAZMORRAS = {
     ],
     jefes: [{ k: 'mz_cangrejo', x: 1620, muro: 1820 }, { k: 'mz_sirena', x: 2800, muro: 3000 }, { k: 'mz_kraken', x: 3950, muro: 4200, final: true }],
   },
+  nido: {
+    nombre: 'Nido de la Reina Araña', mapa: 'nido', nv: [40, 58], icono: 'S_Poison03',
+    desc: 'Bajo los picos, una red de túneles de seda. Algo de tres cabezas guarda la salida.',
+    packs: [
+      { x: 520, k: ['arana', 'arana'] }, { x: 900, k: ['murcielago', 'esqueleto_capa'] }, { x: 1250, k: ['arana', 'hellgato', 'arana'] },
+      { x: 2050, k: ['esqueleto_capa', 'esqueleto_capa'] }, { x: 2400, k: ['murcielago', 'arana', 'murcielago'] },
+      { x: 3250, k: ['hellgato', 'hellgato'] }, { x: 3550, k: ['esqueleto_capa', 'arana', 'hellgato'] },
+    ],
+    jefes: [{ k: 'mz_reina', x: 1620, muro: 1820 }, { k: 'mz_liche', x: 2800, muro: 3000 }, { k: 'mz_cancerbero', x: 3950, muro: 4200, final: true }],
+  },
   ciudadela: {
     nombre: 'Ciudadela del Dragón', mapa: 'ciudadela', nv: [45, 60], icono: 'S_Fire06',
     desc: 'La fortaleza del Dragón Carmesí. Solo los duendes más fuertes vuelven a contarlo.',
@@ -1115,6 +1147,13 @@ jefe: 'jefe_rey',
     nombre: 'Templo Hundido', fondo: 'abismo', ancho: 4400, zona: true, instancia: true, mazmorra: 'templo',
     paleta: { cielo: ['#02101c', '#0b3550'], suelo: '#06141c', linea: '#38bdf8' },
     plataformas: [[650, 285, 220], [1300, 245, 180], [2250, 280, 200], [3350, 250, 220]],
+    portales: [{ x: 60, a: 'pueblo', ax: 795, etiqueta: 'Salida' }, { x: 4340, a: 'pueblo', ax: 795, etiqueta: 'Salida', fin: 1 }],
+    monstruos: [], max: 0,
+  },
+  nido: {
+    nombre: 'Nido de la Reina Araña', fondo: 'tormenta', ancho: 4400, zona: true, instancia: true, mazmorra: 'nido',
+    paleta: { cielo: ['#0a0a18', '#1c1430'], suelo: '#10141a', linea: '#a3e635' },
+    plataformas: [[690, 285, 210], [1270, 245, 190], [2220, 280, 210], [3330, 250, 210]],
     portales: [{ x: 60, a: 'pueblo', ax: 795, etiqueta: 'Salida' }, { x: 4340, a: 'pueblo', ax: 795, etiqueta: 'Salida', fin: 1 }],
     monstruos: [], max: 0,
   },

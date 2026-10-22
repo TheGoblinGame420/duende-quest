@@ -1344,9 +1344,12 @@ async function pruebasMascotas() {
 async function pruebasFortaleza() {
   console.log('Cuarta mazmorra: Fortaleza Goblin');
   const D = await import('../mmo/js/data.js');
-  const mz = D.MAZMORRAS.fortaleza;
-  chequear(mz && D.MAPAS[mz.mapa] && D.MAPAS[mz.mapa].instancia && D.CONJUNTOS.fortaleza, 'tiene mapa de instancia y conjunto propio');
-  chequear(mz.jefes.every(j => D.MONSTRUOS[j.k] && D.MONSTRUOS[j.k].mazmorra && D.MONSTRUOS[j.k].guion) && mz.packs.every(p => p.k.every(k => D.MONSTRUOS[k])), 'jefes con guion y packs de monstruos que existen');
+  // Todas las mazmorras: mapa de instancia, conjunto (el premio del Desafío
+  // usa cj = id), jefes con guion y hoja, y packs de monstruos que existen.
+  for (const [id, mz] of Object.entries(D.MAZMORRAS)) {
+    chequear(D.MAPAS[mz.mapa] && D.MAPAS[mz.mapa].instancia && D.CONJUNTOS[id] && mz.jefes.filter(j => j.final).length === 1, id + ': mapa de instancia, conjunto y un jefe final');
+    chequear(mz.jefes.every(j => D.MONSTRUOS[j.k] && D.MONSTRUOS[j.k].mazmorra && D.MONSTRUOS[j.k].guion && D.HOJAS[D.MONSTRUOS[j.k].hoja]) && mz.packs.every(p => p.k.every(k => D.MONSTRUOS[k])), id + ': jefes con guion y hoja, packs que existen');
+  }
   const f = await entrar('Fortalecido', '7a');
   ponerNivel(f, 19, 'guerrero');
   await aMapa(f, 'pueblo', 800);
@@ -1360,6 +1363,17 @@ async function pruebasFortaleza() {
   for (const o of [...w.mons.values()]) if (o.jefe && o !== fin) { mundo.danar(o, 1, f); mundo.danar(o, o.hp + 1, f); tick(1); }
   mundo.danar(fin, 1, f); mundo.danar(fin, fin.hp + 1, f); tick(2);
   chequear(w.inst.completada && f.c.logros.includes('reygoblin'), 'se completa y da el logro Azote Goblin');
+  // Quinta: Nido de la Reina Araña (Nv 40-58)
+  avanzar(10000); tick(1);
+  ponerNivel(f, 45);
+  await aMapa(f, 'pueblo', 800);
+  await f.mandar({ t: 'mazmorra', id: 'nido' });
+  const wn = mundo.mundoDe(f);
+  chequear(wn.inst && wn.inst.id === 'nido' && wn.inst.nv === 45, 'a Nv 45 entra al Nido de la Reina Araña');
+  const finN = [...wn.mons.values()].find(o => o.final);
+  for (const o of [...wn.mons.values()]) if (o.jefe && o !== finN) { mundo.danar(o, 1, f); mundo.danar(o, o.hp + 1, f); tick(1); }
+  mundo.danar(finN, 1, f); mundo.danar(finN, finN.hp + 1, f); tick(2);
+  chequear(wn.inst.completada && f.c.logros.includes('cancerbero'), 'se completa y da el logro Domador del Infierno');
   await dejar(f);
 }
 

@@ -1550,6 +1550,15 @@ la Bóveda (`ventanaAutoT`). El consejo del tutorial en PC baja a top:236px
 (tapaba el cartel de la zona). Recorrido del novato del QA tras todo esto:
 Nv 4 y 2 misiones en 70 s, sin errores.
 
+**5ª mazmorra: Nido de la Reina Araña (?v=63):** Nv 40-58 (`MAZMORRAS.nido`,
+mapa `nido` con fondo `tormenta`): jefes `mz_reina` (Lluvia de Veneno,
+arañas, Capullo de Seda), `mz_liche` (Descarga de Escarcha interrumpible,
+Ventisca, murciélagos) y `mz_cancerbero` (embestida, Aliento Ígneo al frente,
+Aullido que aturde, enfurecer). Conjunto «Seda de la Reina», logro «Domador
+del Infierno». Simulación: todas las clases solas, jefes de 19-69 s. El arnés
+revisa ahora TODAS las mazmorras (mapa de instancia, conjunto, jefe final,
+guion, hojas).
+
 **Pendiente / ideas para la siguiente sesión:**
 - Probar FPS en un teléfono real (sigue sin hacerse; en Chrome con CPU 4×
   lenta ya va a ~37 FPS en combate).
