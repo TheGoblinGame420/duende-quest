@@ -440,7 +440,7 @@ export const NOVEDADES = [
     '⚔️ Primera BANDA: el Santuario del Titán (Nv 60, de 1 a 10 jugadores). Cuatro jefes, botín de nivel 64-66 una vez por semana y el Murciélago del Abismo si vences al Titán en 3 semanas.',
     '👥 El líder puede convertir su grupo en banda (hasta 10) desde Social > Grupo.',
     '🟡 Zonas doradas: hay que aguantarlas juntos, el golpe se reparte entre los que estén dentro.',
-    '🐸 Monturas nuevas en el Mercader: Sapo Gigante (Nv 25) y Águila Real (Nv 50).',
+    '🐸 Monturas nuevas en el Mercader: Sapo Gigante (Nv 25) y Águila Real (Nv 50). Y cuatro mascotas más: Arañita, Cangrejito, Pulpito y Fantasmita.',
     '📅 Temporadas de 2027: Verano Duende (enero), Vendimia (marzo), Lluvia de Estrellas (abril), Fiesta del Sol (junio) y Fiestas Patrias (julio).',
     '🏆 Gesta semanal de hermandad: entre todos sumad puntos cazando, venciendo jefes y completando mazmorras; Bronce, Plata y Oro dan oro a quien aportó.',
     '✨ Runas en la Artesana (desde Nv 40): +2% de ataque, defensa o vida por rango, hasta +10%. Piden Flor de Luna y Mithril (zonas Nv 30+) y Esencia Abisal (jefes de mazmorra).',
@@ -467,6 +467,10 @@ export const MASCOTAS = {
   zarigueya:  { nombre: 'Zarigüeya Ladrona', hoja: 'zarigueya',  alto: 22, nv: 20, precio: 40000 },
   pajaro:     { nombre: 'Pájaro Hueso',      hoja: 'pajaro',     alto: 24, nv: 30, precio: 70000, vuela: true },
   murcielago: { nombre: 'Murciélago Real',   hoja: 'murcielago', alto: 30, nv: 45, precio: 150000, vuela: true },
+  arana:      { nombre: 'Arañita de Seda',   hoja: 'arana',      alto: 18, nv: 25, precio: 30000 },
+  cangrejo:   { nombre: 'Cangrejito',        hoja: 'cangrejo',   alto: 22, nv: 35, precio: 55000 },
+  pulpo:      { nombre: 'Pulpito Brujo',     hoja: 'pulpo',      alto: 24, nv: 40, precio: 90000, vuela: true },
+  fantasma:   { nombre: 'Fantasmita',        hoja: 'fantasma',   alto: 28, nv: 50, precio: 200000, vuela: true },
 };
 export const velMontura = id => (MONTURAS[id] ? MONTURAS[id].vel : 1);
 
@@ -754,6 +758,7 @@ export const LOGROS = [
   { id: 'kraken',    titulo: 'Azote del Abismo',    desc: 'Vence al Kraken del Templo Hundido', oro: 8000,  cond: c => !!(c.mzJefes && c.mzJefes.mz_kraken) },
   { id: 'runas',     titulo: 'Maestro Rúnico',      desc: 'Graba las tres runas de la Artesana a rango 5', oro: 20000, cond: c => !!c.runas && Object.keys(RUNAS).every(k => (c.runas[k] || 0) >= RUNA_MAX) },
   { id: 'mascotas3', titulo: 'Cuidador de Bichos',  desc: 'Consigue 3 mascotas', oro: 3000, cond: c => (c.mascotas || []).length >= 3 },
+  { id: 'mascotas8', titulo: 'Domador de Mascotas', desc: 'Consigue 8 mascotas', oro: 15000, cond: c => (c.mascotas || []).length >= 8 },
   { id: 'reygoblin', titulo: 'Azote Goblin',        desc: 'Vence al Rey Goblin Barrigón de la Fortaleza', oro: 6000, cond: c => !!(c.mzJefes && c.mzJefes.mz_rey_goblin) },
   { id: 'cancerbero', titulo: 'Domador del Infierno', desc: 'Vence al Cancerbero del Nido de la Reina Araña', oro: 12000, cond: c => !!(c.mzJefes && c.mzJefes.mz_cancerbero) },
   { id: 'dragon',    titulo: 'Matadragones',        desc: 'Vence al Dragón Carmesí de la Ciudadela', oro: 15000, cond: c => !!(c.mzJefes && c.mzJefes.mz_dragon) },
