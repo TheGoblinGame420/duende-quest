@@ -1596,7 +1596,7 @@ export class MmoWorld {
     this.limpiarAuras(s);
     this.olvidar(s);
     this.aClave(s.k, { t: 'pm', p: s.id });
-    this.enviar(s, { t: 'muerte', golpes: (s.golpes || []).map(x => ({ n: x.n, nv: x.nv, d: x.d })), pw: s.c.pw.pocion || 0, inst: s.k.includes('#') });
+    this.enviar(s, { t: 'muerte', golpes: (s.golpes || []).map(x => ({ n: x.n, nv: x.nv, d: x.d })), pw: s.c.pw.pocion || 0, inst: !!(this.mundo[s.k] && this.mundo[s.k].inst) });
     s.golpes = [];
     this.guardar(s);
   }

@@ -1447,6 +1447,7 @@ async function pruebasPesca() {
   chequear(D.TAREAS_DIA.some(t => t.tipo === 'pescar') && D.LOGROS.some(l => l.id === 'pesca50'), 'misión diaria y logros de pesca');
   // En una zona tambien hay pesquero; en una mazmorra no.
   chequear(D.pesqueroDe('selva') && !D.pesqueroDe('catacumbas') && !D.pesqueroDe('coliseo'), 'pesqueros en zonas, no en mazmorras ni Coliseo');
+  chequear(Object.keys(D.MAPAS).every(id => { const p = D.pesqueroDe(id); return !p || id === 'pueblo' || Math.abs(p.x - D.MAPAS[id].ancho * 0.62) > 600; }), 'los pesqueros quedan lejos del jefe de zona');
   await dejar(j);
 }
 

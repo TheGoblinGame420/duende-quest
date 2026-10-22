@@ -994,7 +994,7 @@ export const RECETAS = [
   { id: 'elixirX', nombre: 'Elixir de Sabiduría', icono: 'I_Book', pide: { hierba: 4, mineral: 2, cristal: 1 }, da: { elixir: 'elixirX' }, desc: '+10% de experiencia por caza durante 30 min (aguanta la muerte)' },
   // Con lo que se pesca (PESCA).
   { id: 'ceviche', nombre: 'Ceviche del Duende', icono: 'I_C_Fish', pide: { pescado: 5, hierba: 2 }, da: { elixir: 'ceviche' }, desc: '+10% de oro por caza durante 30 min (aguanta la muerte)' },
-  { id: 'sudado', nombre: 'Sudado Dorado', icono: 'I_C_Pie', pide: { pescado: 3, pez_dorado: 1 }, da: { elixir: 'sudado' }, desc: '+5% de daño y -5% de daño recibido durante 30 min' },
+  { id: 'sudado', nombre: 'Sudado Dorado', icono: 'I_C_Pie', pide: { pescado: 3, pez_dorado: 1 }, da: { elixir: 'sudado' }, desc: '+5% de daño y -5% de daño recibido durante 30 min (aguanta la muerte)' },
 ];
 
 // ── PESCA ──
@@ -1008,7 +1008,7 @@ export function pesqueroDe(mapaId) {
   if (mapaId === 'pueblo') return { x: 475, nv: 1 };   // entre el portal de las Colinas y el Guardia
   const m = MAPAS[mapaId];
   if (!m || !m.zona || m.instancia || m.coliseo || !m.nv) return null;
-  return { x: Math.round(m.ancho * 0.68), nv: m.nv[0] };
+  return { x: Math.round(m.ancho * 0.28), nv: m.nv[0] };   // lejos del jefe de zona (62%)
 }
 
 // ── RUNAS (artesania de nivel alto) ──

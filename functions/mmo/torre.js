@@ -25,21 +25,21 @@ export const Torre = {
     if (c.nivel < TORRE.nv) return this.no(s, `La Torre se abre a nivel ${TORRE.nv}.`);
     const ahora = Date.now();
     this.creadasT = this.creadasT || new Map();
-    const hechas = (this.creadasT.get(c.uid) || []).filter(t => ahora - t < 3600000);
-    if (hechas.length >= TORRE.porHora) return this.no(s, 'Has subido muchas veces seguidas: descansa un rato.');
+    const hechas = x => (this.creadasT.get(x.c.uid) || []).filter(t => ahora - t < 3600000);
+    if (hechas(s).length >= TORRE.porHora) return this.no(s, 'Has subido muchas veces seguidas: descansa un rato.');
     if (Object.values(this.mundo).filter(w => w.torre).length >= TORRE.instancias) return this.no(s, 'La Torre está llena ahora mismo: prueba en unos minutos.');
-    hechas.push(ahora);
-    this.creadasT.set(c.uid, hechas);
-    // Suben juntos los del grupo que esten junto al portal, vivos y con nivel.
+    // Suben juntos los del grupo que esten junto al portal, vivos, con nivel
+    // y sin pasarse de subidas por hora (cuentan para todos, no solo quien pulsa).
     const g = this.grupoDe(s);
-    const quienes = g ? this.sesionesGrupo(g).filter(x => x !== s && !x.muerto && this.cercaDelBuscador(x) && x.c.nivel >= TORRE.nv) : [];
+    const quienes = g ? this.sesionesGrupo(g).filter(x => x !== s && !x.muerto && this.cercaDelBuscador(x) && x.c.nivel >= TORRE.nv && hechas(x).length < TORRE.porHora) : [];
     quienes.unshift(s);
     quienes.length = Math.min(quienes.length, TORRE.max);
+    for (const x of quienes) this.creadasT.set(x.c.uid, [...hechas(x), ahora]);
     this.sigInst = (this.sigInst || 0) + 1;
     const clave = 'torre#' + this.sigInst.toString(36) + Math.random().toString(36).slice(2, 6);
     const w = this.mundoK(clave);
     w.spawnEn = Infinity;
-    w.torre = { piso: 0, nv: Math.min(NIVEL_MAX, Math.max(...quienes.map(x => x.c.nivel))), n: quienes.length, sigEn: ahora + TORRE.pausa, pisoIni: 0, fin: false, vacioDesde: 0 };
+    w.torre = { sem: semanaUTC(), piso: 0, nv: Math.min(NIVEL_MAX, Math.max(...quienes.map(x => x.c.nivel))), n: quienes.length, sigEn: ahora + TORRE.pausa, pisoIni: 0, fin: false, vacioDesde: 0 };
     for (const x of quienes) {
       this.entrarMapa(x, 'torre', 700, false, clave);
       this.enviar(x, { t: 'torre', piso: 0, mejor: this.torreSem(x.c).max, nv: w.torre.nv });
@@ -67,7 +67,9 @@ export const Torre = {
     if (ahora - T.pisoIni > TORRE.tiempo) return this.acabarTorre(w, jugadores, `⏳ Se acabó el tiempo del piso ${T.piso}.`, true);
     for (const o of w.mons.values()) if (!o.muere) return;
     // Piso limpio: cuenta para todos los que siguen en pie.
-    for (const s of vivos) this.anotarTorre(s, T.piso);
+    // Una subida que cruza el lunes no cuenta para la semana nueva (ni da
+    // otra vez los cofres de la anterior).
+    if (T.sem === semanaUTC()) for (const s of vivos) this.anotarTorre(s, T.piso);
     this.aClave(w.clave, { t: 'torre', piso: T.piso, limpio: 1 });
     this.aClave(w.clave, { t: 'emote', m: `✅ ¡Piso ${T.piso} superado!${(T.piso + 1) % TORRE.jefeCada === 0 ? ' El siguiente tiene jefe.' : ''}` });
     T.sigEn = ahora + TORRE.pausa;
@@ -138,7 +140,11 @@ export const Torre = {
   // Ranking semanal de la Torre: en memoria y guardado al momento (pasa poco).
   // Al cambiar la semana se premia a los 3 primeros (cerrarSemanaTorre).
   async cargarRankTorre() {
-    if (!this.rt) this.rt = (await this.state.storage.get('rankTorre')) || { sem: semanaUTC(), l: {} };
+    if (!this.rt) {
+      this.rtP = this.rtP || this.state.storage.get('rankTorre');
+      const r = await this.rtP;
+      if (!this.rt) this.rt = r || { sem: semanaUTC(), l: {} };
+    }
     if (this.rt.sem !== semanaUTC()) await this.cerrarSemanaTorre();
     return this.rt;
   },
