@@ -1454,6 +1454,12 @@ async function pruebasTorre() {
   await aMapa(j, 'pueblo', 795); tick(70); await j.mandar({ t: 'torre', desde: 10 }); tick(40);
   chequear(mundo.mundoDe(j).torre && mundo.mundoDe(j).torre.piso === 11, 'con marca 17 se empieza desde el piso 11');
   await aMapa(j, 'pueblo', 795);
+  { const pf = await interno('perfil', { tgId: '999000111' });
+    chequear(pf.ok && pf.existe === false, '/yo sin personaje: lo dice');
+    const tgj = await entrar('Perfilado', '7c'); tgj.c.uid = 'tg:999000112'; mundo.porUid.set(tgj.c.uid, tgj); tgj.c.peces = 7;
+    const pf2 = await interno('perfil', { tgId: '999000112' });
+    chequear(pf2.ok && pf2.existe && pf2.n === tgj.c.nombre && pf2.peces === 7 && pf2.en === true, '/yo devuelve tu personaje (nivel, oro, peces, Torre...)');
+    await dejar(tgj); }
   const tp = await interno('tops');
   chequear(tp.ok && Array.isArray(tp.torre) && Array.isArray(tp.xp) && Array.isArray(tp.duel) && typeof tp.online === 'number', 'el bot puede leer los rankings de la semana (/topmmo)');
   chequear((await interno('tops', {}, 'mal')).ok === undefined, 'sin la cabecera del bot no responde');

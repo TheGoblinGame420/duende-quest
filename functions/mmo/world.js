@@ -994,6 +994,19 @@ export class MmoWorld {
     if (accion === 'pedidoPagado') return json(await this.pedidoPagadoStars(b));
     if (accion === 'pedidos') return json({ ok: true, pedidos: this.pedidos.filter(x => x.estado === 'pagado' || x.estado === 'por_verificar') });
     if (accion === 'ventas') return json(this.resumenVentas());
+    // /yo del bot: el personaje de quien escribe (solo el suyo: el bot manda
+    // el id de Telegram del remitente).
+    if (accion === 'perfil') {
+      const uid = 'tg:' + String(b.tgId || '').replace(/\D/g, '');
+      if (uid === 'tg:') return json({ ok: false });
+      const s = this.porUid.get(uid);
+      const c = s && s.c ? s.c : await this.state.storage.get('c:' + uid);
+      if (!c) return json({ ok: true, existe: false });
+      const ex = c.exped ? { h: c.exped.h, d: c.exped.d || 'bosque', listo: c.exped.fin <= Date.now(), min: Math.max(0, Math.ceil((c.exped.fin - Date.now()) / 60000)) } : null;
+      return json({ ok: true, existe: true, en: !!s, n: c.nombre, lv: c.nivel, cl: c.clase || '', oro: c.oro || 0, mton: c.mton || 0,
+        torre: this.torreSem(c).max, torreMax: c.torreMax || 0, peces: c.peces || 0, especies: Object.keys(c.especies || {}).length,
+        logros: (c.logros || []).length, mazmorras: c.mazmorras || 0, elo: c.elo || 0, exped: ex, racha: (c.login || {}).racha || 0 });
+    }
     // Rankings publicos de la semana (solo nombres y marcas) para /topmmo del bot.
     if (accion === 'tops') {
       const fuera = uid => UIDS_PRUEBA.has(uid);
