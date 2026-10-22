@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=214';
+} from './data.js?v=216';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1588,7 +1588,7 @@ function pintarAmigos(m) {
   const enlWeb = location.origin + '/mmo/?ref=' + m.ref;
   const texto = 'Juguemos juntos a DUENDE QUEST ONLINE, el MMORPG de duendes: gratis, en Telegram o en el navegador. 🧝';
   L.innerHTML = `<div class="mis-caja" style="margin-top:0"><b>Invita a tus amigos</b>
-    <p style="font-size:12px">Cuando un amigo que entre con tu enlace llegue a <b style="display:inline">nivel ${m.nivel}</b>, los dos ganan oro: tu amigo, <b style="display:inline">${premioAmigo(m.nivel).oro.toLocaleString('es', { useGrouping: 'always' })} oro</b>, y tú, <b style="display:inline">${premioAmigo(yo ? yo.nivel : 1).oro.toLocaleString('es', { useGrouping: 'always' })} oro</b> a tu nivel actual (sube con tu nivel)${m.max ? ', por tus primeros ' + m.max + ' amigos' : ''}. Al 5º amigo te regalamos el <b style="display:inline">Conejo Saltarín</b> de montura y un título.</p>
+    <p style="font-size:12px">Cuando un amigo invitado llegue a nivel ${m.nivel}: él recibe ${premioAmigo(m.nivel).oro.toLocaleString('es', { useGrouping: 'always' })} de oro y tú, ${premioAmigo(yo ? yo.nivel : 1).oro.toLocaleString('es', { useGrouping: 'always' })} (aumenta con tu nivel)${m.max ? '. Hasta ' + m.max + ' amigos' : ''}. Con 5 amigos: montura Conejo Saltarín y un título.</p>
     <p style="font-size:12px;margin-top:6px">Amigos que ya llegaron: <b style="display:inline;color:var(--ok)">${m.amigos}</b></p></div>
     <button class="btn" id="b-comp-tg" style="width:100%;padding:12px;margin-bottom:8px">Compartir por Telegram</button>
     <button class="btn sec" id="b-comp-copiar" style="width:100%;margin-bottom:6px">Copiar enlace</button>
@@ -2472,7 +2472,7 @@ function abrirArtesana() {
     }
     h += tarjeta(`<img src="${A}items/equipo/${ru.icono}.png">`, esc(ru.nombre), det, acc);
   }
-  h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Las plantas 🌿 y vetas ⛏️ brillan en el suelo de cada zona: acércate y pulsa E (o RECOGER). El pescado sale de los pesqueros 🎣 (uno en el pueblo y otro en cada zona; no se agotan, hasta 80 capturas al día). Cada una vuelve a crecer a los 5 minutos. El Cristal Arcano sale a veces al recoger, o se refina con 8 minerales. En las zonas de Nv 30+ salen también Flor de Luna y Mithril; la Esencia Abisal la sueltan los jefes de mazmorras de nivel 40 o más a quien pelea (y el doble los de la banda).</p>';
+  h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Plantas y vetas: en cada zona, reaparecen a los 5 min. Pescado: pesqueros del pueblo y de cada zona (80 capturas al día). Cristal Arcano: al recoger o refinando 8 minerales. Flor de Luna y Mithril: zonas Nv 30+. Esencia Abisal: jefes de mazmorra de Nv 40+ (el doble en la banda).</p>';
   const ven = $('arte-lista').closest('.ventana'), sc = ven ? ven.scrollTop : 0, scl = $('arte-lista').scrollTop;
   $('arte-lista').innerHTML = h;
   $('arte-lista').querySelectorAll('[data-receta]').forEach(b => b.onclick = () => { sfx('moneda', .4); mandar({ t: 'fabricar', id: b.dataset.receta }); });
@@ -3706,7 +3706,7 @@ function cajaSemana() {
   }
   const ru = yo.runas || {}, tot = Object.keys(RUNAS).reduce((a, k) => a + (ru[k] || 0), 0), max = Object.keys(RUNAS).length * RUNA_MAX;
   h += fila(tot >= max, 'Runas de la Artesana', tot + '/' + max);
-  return h + '<p style="font-size:12px;margin-top:6px">La Bóveda, la banda, los afijos y la gesta se renuevan los lunes (UTC).</p></div>';
+  return h + '<p style="font-size:12px;margin-top:6px">La Bóveda, la banda, los afijos y la gesta se renuevan cada lunes.</p></div>';
 }
 // Pase de temporada: progreso y los 20 niveles con su premio (se cobran a mano).
 // "Que hacer ahora": las 3 cosas que mas te convienen con tu nivel y lo que
@@ -3795,7 +3795,7 @@ function pintarMision() {
   const zona = MAPAS[zonaDe(q.tipo)];
   const lista = yo.mis.p >= q.n;
   const extra = q.pw ? ' · ' + Object.entries(q.pw).map(([k, v]) => v + ' ' + PODERES.find(p => p.id === k).nombre).join(', ') : '';
-  const pide = def.jefe ? 'Participa en la caída de <b style="display:inline;color:var(--txt)">' + esc(def.nombre) + '</b>' : 'Derrota ' + q.n + ' × <b style="display:inline;color:var(--txt)">' + esc(def.nombre) + '</b>';
+  const pide = def.jefe ? 'Participa en la caída de <b style="display:inline;color:var(--txt)">' + esc(def.nombre) + '</b>' : 'Derrota a ' + q.n + ' <b style="display:inline;color:var(--txt)">' + esc(def.nombre) + '</b>';
   cuerpo.innerHTML =
     '<p>Misión ' + (i + 1) + ' de ' + MISIONES.length + '</p>' +
     '<div class="mis-caja"><b>' + esc(q.nombre) + '</b>' +
@@ -4218,7 +4218,7 @@ function resumenMuerte(m) {
   let consejo = '';
   if (ult && ult.nv && yo && ult.nv >= yo.nivel + 3) consejo = 'Ese enemigo es de nivel bastante más alto que tú: sube un par de niveles en una zona de tu nivel (🗺️ tecla M).';
   else if (m.pw > 0) consejo = 'Tenías ' + m.pw + ' pociones: úsalas (' + (TACTIL ? 'el primer consumible de la barra' : 'tecla Q') + ') cuando tu vida baje de la mitad.';
-  else if (!m.pw) consejo = 'Te quedaste sin pociones: compra en el Mercader o fabrícalas con hierbas en la Artesana Lila.';
+  else if (!m.pw) consejo = 'Sin pociones: cómpralas en el Mercader o fabrícalas en la Artesana.';
   if (m.inst) consejo = 'En las mazmorras, sal de las zonas marcadas en el suelo e interrumpe los hechizos con barra naranja. Revives junto a la última barrera abierta.';
   if (consejo) h += `<p style="margin-top:8px;color:var(--txt)">💡 ${esc(consejo)}</p>`;
   $('muerte-info').innerHTML = h;

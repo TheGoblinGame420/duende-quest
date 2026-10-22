@@ -621,7 +621,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <div class="modal" id="m-novedades">
   <div class="ventana">
     <button class="bt cerrar" data-cerrar>✕</button>
-    <h2 class="sans">Notas del parche</h2>
+    <h2>NOTAS DEL PARCHE</h2>
     <div class="lista" id="nov-lista"></div>
   </div>
 </div>
@@ -639,7 +639,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <div class="modal" id="m-ayuda">
   <div class="ventana">
     <button class="bt cerrar" data-cerrar>✕</button>
-    <h2 id="ayuda-t" class="sans">Guía del juego</h2>
+    <h2 id="ayuda-t">GUÍA DEL JUEGO</h2>
     <button class="btn sec" id="b-novedades" style="width:100%;margin-bottom:10px">Notas del parche y calendario</button>
     <div id="ayuda-lista" class="guia">
       <h3>Controles</h3>
@@ -823,7 +823,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
     <h2 class="sans" style="color:#f87171">Has caído</h2>
     <div id="muerte-info"></div>
     <p style="margin-top:8px">Pierdes un 5% de la experiencia de tu nivel.</p>
-    <p style="margin-top:8px;color:var(--oro)">✝ Si hay un sacerdote cerca, puede resucitarte aquí mismo: espera en vez de volver.</p>
+    <p style="margin-top:8px;color:var(--oro)">Un sacerdote cercano puede resucitarte aquí.</p>
     <button class="btn" id="b-revivir" style="margin-top:14px;width:100%;min-height:46px">↺ Revivir en el pueblo</button>
   </div>
 </div>
@@ -840,6 +840,6 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=214"></script>
+<script type="module" src="/mmo/js/client.js?v=216"></script>
 </body>
 </html>

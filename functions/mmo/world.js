@@ -1343,7 +1343,7 @@ export class MmoWorld {
       o.hp = o.max = 20000 + 15000 * n;
       M.o = o; M.hasta = ahora + MUNDIAL_DURA_MS;
       this.aClave('coliseo', { t: 'ms', m: this.infoMonstruo(o) });
-      this.aTodos({ t: 'aviso', m: `👹 ¡${MONSTRUOS[o.k].nombre.toUpperCase()} APARECIÓ EN EL COLISEO! Tienes 10 minutos.` });
+      this.aTodos({ t: 'aviso', m: `${MONSTRUOS[o.k].nombre} ha aparecido en el Coliseo. Tienes 10 minutos.` });
       this.aTodos(this.estadoMundial());
     }
   }
@@ -1586,7 +1586,7 @@ export class MmoWorld {
     const q = MISIONES[c.mis.i];
     if (o && q && o.k === q.tipo && !(o.torre && o.jefe) && c.mis.p < q.n) {
       c.mis.p++;
-      if (c.mis.p === q.n) this.enviar(s, { t: 'toast', m: `📜 ¡"${q.nombre}" cumplida! Vuelve con el Guardia Tito del pueblo.`, ok: true });
+      if (c.mis.p === q.n) this.enviar(s, { t: 'toast', m: `Misión cumplida: «${q.nombre}». Entrégala al Guardia Tito.`, ok: true });
     }
     s.sucio = true;
     this.enviar(s, { t: 'gana', xp, oro, drops, item, cal: cal || undefined, tp: cal ? tp.id : undefined, chi: chi || undefined, x: Math.round(o ? o.x : s.x), y: Math.round(o ? o.y - o.h : s.y - 60) });

@@ -1578,7 +1578,7 @@ async function pruebasMundiales() {
   if (mundo.mundial && mundo.mundial.o) { mundo.mundo.coliseo.mons.delete(mundo.mundial.o.id); mundo.mundial.o = null; }
   v.limpiar(); mundo.revisarMundial(reloj);
   const o = mundo.mundial && mundo.mundial.o;
-  chequear(o && o.k === D.mundialDe(base + 2 * 1800000 + 1000) && v.ultimos('aviso').some(x => x.m.includes(D.MONSTRUOS[o.k].nombre.toUpperCase())), 'aparece el que toca y el aviso dice su nombre (' + (o && o.k) + ')');
+  chequear(o && o.k === D.mundialDe(base + 2 * 1800000 + 1000) && v.ultimos('aviso').some(x => x.m.includes(D.MONSTRUOS[o.k].nombre)), 'aparece el que toca y el aviso dice su nombre (' + (o && o.k) + ')');
   if (o) { mundo.mundo.coliseo.mons.delete(o.id); mundo.mundial.o = null; }
   await dejar(v);
 }
