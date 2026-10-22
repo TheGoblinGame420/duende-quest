@@ -1311,6 +1311,14 @@ de retención, cada 10 s con el mensaje `on`).
 - `techoEn` con margen ±380 (salto con dash y montura daba falsos positivos).
 - Novato que cierra el juego muerto: mismo trato que al revivir.
 
+**Calendario de temporadas (?v=37):** `TEMPORADAS` en data.js es una
+lista y se encienden solas por fecha (`temporadaDe`): Noche de Duendes
+(25-oct a 2-nov, 🎃 → `c.calabazas`) y Navidad Duende (18-dic a 6-ene, 🎁 →
+`c.regalos`, adorno 🎄, títulos «Duende Navideño» y «Santa Duende»). Para
+una nueva: añadirla a la lista con su `campo`, sus dos logros en LOGROS y
+el campo en `datosPropios`. Además, vibración de Telegram (`vibrar`) al
+subir de nivel, ganar un logro y terminar un duelo.
+
 Sin hacer: avisos a la hora habitual de cada uno (el cron de las 17 UTC ya
 usa 4 de 5 disparadores del plan gratis), y final de juego para D30 (1→60 se
 juega en 5-8 h). Ojo: la bienvenida del bot aún habla de $DUENDE en Solana

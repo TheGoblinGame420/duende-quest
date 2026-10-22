@@ -7,13 +7,13 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, ALCANCE_BASE, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
-  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, temporadaActiva, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio,
+  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, temporadaDe, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
-} from './data.js?v=36';
+} from './data.js?v=37';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -51,6 +51,10 @@ function permisosTg(nv) {
     }
   } catch (e) {}
 }
+
+// Vibracion de Telegram en los momentos buenos (subir de nivel, logro,
+// ganar un duelo): en la mini app se nota en la mano, como un juego nativo.
+function vibrar(tipo) { if (TG && TG.HapticFeedback) try { TG.HapticFeedback.notificationOccurred(tipo || 'success'); } catch (e) {} }
 
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
 if (TACTIL) document.body.classList.add('tactil');
@@ -308,7 +312,7 @@ function recibir(m) {
       if (yo.muerto && !(antes && antes.muerto)) morir();
       if (!yo.muerto) { $('m-muerte').classList.remove('on'); P.muerto = false; }
       if (!antes || antes.clase !== yo.clase || antes.nivel !== yo.nivel) $('acciones').innerHTML = '';
-      if (antes && yo.nivel > antes.nivel) setTimeout(() => permisosTg(yo.nivel), 2500);
+      if (antes && yo.nivel > antes.nivel) { vibrar(); setTimeout(() => permisosTg(yo.nivel), 2500); }
       // Invitado: su personaje vive solo en este navegador. Se le recuerda
       // en algunos niveles como no perderlo (y recibir avisos y mTON).
       if (antes && yo.nivel > antes.nivel && soyInvitado && [5, 10, 15, 25].includes(yo.nivel)) setTimeout(() => aviso('☁️ Juegas como invitado: tu personaje vive solo en este navegador. Inicia sesión en el juego (🏠) o entra por @duendequest_bot en Telegram y se pasará a tu cuenta.', 'ok'), 4000);
@@ -342,7 +346,7 @@ function recibir(m) {
       if (m.coop) { flotante(m.x, m.y, '+' + m.xp + ' XP (grupo)', '#00eeff', 9); break; }
       for (let i = 0; i < Math.min(8, 2 + Math.floor(m.oro / 15)); i++) monedas.push({ x: m.x, y: m.y + 20, vx: (Math.random() - .5) * 5, vy: -4 - Math.random() * 3, t: 0 });
       flotante(m.x, m.y, '+' + m.xp + ' XP', '#c084fc', 10);
-      if (m.cal) { flotante(m.x + 18, m.y - 30, '+' + m.cal + ' 🎃', '#ff9a3c', 10); if (yo) yo.calabazas = (yo.calabazas || 0) + m.cal; }
+      if (m.cal) { const tp = temporadaDe() || { emoji: '🎃', color: '#ff9a3c', campo: 'calabazas' }; flotante(m.x + 18, m.y - 30, '+' + m.cal + ' ' + tp.emoji, tp.color, 10); if (yo) yo[tp.campo] = (yo[tp.campo] || 0) + m.cal; }
       if (m.oro > 0) flotante(m.x, m.y + 14, '+' + m.oro + ' oro', '#ffe600', 10);
       if (m.drops && m.drops.length) m.drops.forEach(d => { const pd = PODERES.find(p => p.id === d); if (pd) aviso('🎁 Encontraste: ' + pd.nombre, 'ok'); });
       if (m.item) {
@@ -448,6 +452,7 @@ function recibir(m) {
     case 'login': mostrarLogin(m); break;
     case 'logro':
       aviso('🏅 ¡Logro: "' + m.titulo + '"! +' + m.oro.toLocaleString('es') + ' oro · ponte el título en 🎒', 'ok');
+      vibrar();
       sfx('explosion', .35);
       for (let i = 0; i < 30; i++) particula(P.x, P.y - 40, ['#ffe600', '#ff3cf0', '#00ff88'][i % 3], 5);
       break;
@@ -1240,6 +1245,7 @@ function finDuelo(m) {
   if (m.a !== miId && m.b !== miId) return;
   duelo = null;
   aviso(m.m, m.g === miId ? 'ok' : '');
+  vibrar(m.g === miId ? 'success' : 'warning');
   if (m.g === miId) { sfx('moneda', .5); for (let i = 0; i < 24; i++) particula(P.x, P.y - 40, '#ffe600', 4); }
 }
 $('o-invitar').onclick = () => { const q = jugObjetivo(); if (q) { mandar({ t: 'invitar', p: q.id }); sfx('boton', .3); } };
@@ -2260,14 +2266,15 @@ function dibujarSuelo(mp) {
   }
 }
 
-// Temporada: calabazas encendidas por el suelo de cada mapa (solo decorado).
+// Temporada: su adorno (calabazas, arboles...) por el suelo de cada mapa.
 function dibujarTemporada(mp) {
-  if (!temporadaActiva()) return;
-  const spr = spriteTexto('🎃', 28, '#fff', false, false);
+  const tp = temporadaDe();
+  if (!tp) return;
+  const spr = spriteTexto(tp.deco, 28, '#fff', false, false);
   for (let x = 170; x < mp.ancho; x += 520) {
     const sx = x - camX;
     if (sx < -40 || sx > VW + 40) continue;
-    g.globalAlpha = .25 + .1 * Math.sin(frame / 20 + x); g.fillStyle = '#ff9a3c';
+    g.globalAlpha = .25 + .1 * Math.sin(frame / 20 + x); g.fillStyle = tp.color;
     g.beginPath(); g.arc(sx, SUELO - 14, 30, 0, 7); g.fill(); g.globalAlpha = 1;
     g.drawImage(spr, sx - spr.width / 2, SUELO - spr.height + 2);
   }
@@ -2785,7 +2792,7 @@ function pintarHud() {
   if (T) {
     const hd = T.dia.l.filter(t => t.ok).length, hs = T.sem.l.filter(t => t.ok).length;
     const sig = T.dia.l.find(t => !t.ok);
-    ponTxt($('h-tareas'), '☀️ Diarias ' + hd + '/' + T.dia.l.length + ' · 📆 ' + hs + '/' + T.sem.l.length + (sig ? ' — ' + sig.txt + ' ' + sig.p + '/' + sig.n : '') + (temporadaActiva() ? ' · 🎃 ' + (yo.calabazas || 0) : ''));
+    ponTxt($('h-tareas'), '☀️ Diarias ' + hd + '/' + T.dia.l.length + ' · 📆 ' + hs + '/' + T.sem.l.length + (sig ? ' — ' + sig.txt + ' ' + sig.p + '/' + sig.n : '') + (temporadaDe() ? ' · ' + temporadaDe().emoji + ' ' + (yo[temporadaDe().campo] || 0) : ''));
   }
   pintarPoderes();
   pintarAcciones();

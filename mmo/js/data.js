@@ -575,6 +575,8 @@ export const LOGROS = [
   { id: 'desafio20', titulo: 'Leyenda del Duende',  desc: 'Vence un Desafío +20',              oro: 50000, cond: c => (c.desafioMax || 0) >= 20 },
   { id: 'calabaza50',  titulo: 'Cazacalabazas',      desc: 'Junta 50 calabazas en la Noche de Duendes',  oro: 3000,  cond: c => (c.calabazas || 0) >= 50 },
   { id: 'calabaza200', titulo: 'Rey de las Calabazas', desc: 'Junta 200 calabazas en la Noche de Duendes', oro: 12000, cond: c => (c.calabazas || 0) >= 200 },
+  { id: 'regalo50',    titulo: 'Duende Navideño',    desc: 'Junta 50 regalos en la Navidad Duende',      oro: 3000,  cond: c => (c.regalos || 0) >= 50 },
+  { id: 'regalo200',   titulo: 'Santa Duende',       desc: 'Junta 200 regalos en la Navidad Duende',     oro: 12000, cond: c => (c.regalos || 0) >= 200 },
   { id: 'mazmorra10', titulo: 'Conquistador',       desc: 'Completa 10 mazmorras',             oro: 10000, cond: c => (c.mazmorras || 0) >= 10 },
   { id: 'kraken',    titulo: 'Azote del Abismo',    desc: 'Vence al Kraken del Templo Hundido', oro: 8000,  cond: c => !!(c.mzJefes && c.mzJefes.mz_kraken) },
   { id: 'dragon',    titulo: 'Matadragones',        desc: 'Vence al Dragón Carmesí de la Ciudadela', oro: 15000, cond: c => !!(c.mzJefes && c.mzJefes.mz_dragon) },
@@ -746,12 +748,20 @@ export const RECETAS = [
 ];
 
 // ── TEMPORADAS ──
-// Eventos con fecha real: dan motivo para volver esos dias. Premios del
-// juego (oro, titulos) y nada mas. "Noche de Duendes" = Halloween 2026:
-// los monstruos sueltan calabazas (los jefes, varias) y hay logros con titulo.
-export const TEMPORADA = { id: 'noche2026', nombre: 'Noche de Duendes', ini: Date.UTC(2026, 9, 25), fin: Date.UTC(2026, 10, 3) };
-export const temporadaActiva = (t = Date.now()) => t >= TEMPORADA.ini && t < TEMPORADA.fin;
-export const CALABAZA_PROB = 0.2, CALABAZAS_JEFE = 5;
+// Eventos con fecha real: se encienden solos y dan motivo para volver esos
+// dias. Premios del juego (oro, titulos) y nada mas. En cada uno los
+// monstruos sueltan su objeto (los jefes, varios) y hay dos logros con
+// titulo (data LOGROS: `campo` >= 50 y >= 200). Para uno nuevo basta
+// añadirlo aqui y sus dos logros.
+export const TEMPORADAS = [
+  { id: 'noche2026', nombre: 'Noche de Duendes', ini: Date.UTC(2026, 9, 25), fin: Date.UTC(2026, 10, 3), hasta: '2 de noviembre',
+    emoji: '🎃', deco: '🎃', cosas: 'calabazas', campo: 'calabazas', color: '#ff9a3c', titulos: ['Cazacalabazas', 'Rey de las Calabazas'] },
+  { id: 'navidad2026', nombre: 'Navidad Duende', ini: Date.UTC(2026, 11, 18), fin: Date.UTC(2027, 0, 7), hasta: '6 de enero',
+    emoji: '🎁', deco: '🎄', cosas: 'regalos', campo: 'regalos', color: '#4ade80', titulos: ['Duende Navideño', 'Santa Duende'] },
+];
+export const temporadaDe = (t = Date.now()) => TEMPORADAS.find(x => t >= x.ini && t < x.fin) || null;
+export const temporadaActiva = (t = Date.now()) => !!temporadaDe(t);
+export const TEMP_PROB = 0.2, TEMP_JEFE = 5;
 
 // ── BESTIARIO ──
 // Cuantos de cada monstruo has cazado. Cada tipo tiene 3 hitos con premio

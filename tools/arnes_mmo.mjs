@@ -1177,6 +1177,10 @@ async function pruebasTemporada() {
   const c0 = t.c.calabazas;
   for (let i = 0; i < 30; i++) { const o2 = monstruo(t, 'goblin_normal', 40); mundo.danar(o2, o2.hp + 1, t); tick(1); }
   chequear(t.c.calabazas === c0, 'acabado el evento ya no caen');
+  reloj = Date.UTC(2026, 11, 24, 12);
+  t.c.regalos = 0;
+  for (let i = 0; i < 40; i++) { const o3 = monstruo(t, 'goblin_normal', 40); mundo.danar(o3, o3.hp + 1, t); tick(1); }
+  chequear(t.c.regalos > 0 && t.c.calabazas === c0, 'en Navidad caen regalos (' + t.c.regalos + '), no calabazas');
   reloj = Math.max(relojAntes, reloj);
   await dejar(t);
 }
