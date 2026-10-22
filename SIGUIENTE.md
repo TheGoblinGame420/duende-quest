@@ -1876,3 +1876,20 @@ Esta sesión lleva la tienda (pares del `?v=`), la otra lo demás (impares).
   - Avisos de Telegram: recuerdan la Torre si no subiste esta semana.
   - FPS móvil (CPU 4×, 14 monstruos): 59,5 en combate con ?v=132.
   - Arnés: **549 bien, 0 mal**.
+- **?v=144-156 (22-oct, mediodía):**
+  - **Pago con SOL**: QR de Solana Pay en la web (monto exacto + clave
+    `reference` única por pedido, `pd.ref`), «Abrir en mi wallet» en el
+    móvil y **«Ya pagué: comprobar»** (`pedidoBuscar`: busca por la
+    reference y luego entre las 50 últimas firmas de la wallet). El pago con
+    Phantom también lleva la reference.
+  - **Endurecido tras revisión de seguridad** (v156): la firma solo se
+    reserva y avisa al dueño si la cadena confirma el pago exacto (un error
+    de la RPC ya no cuenta como «no existe»); `guardarPedidos` solo recorta
+    pedidos cerrados; tope 10 pedidos/h por cuenta; ritmo por uid
+    (`ritmoSol`); timeout 8 s; margen 30 s; marca única entre abiertos;
+    web3.js@1.98.0 y qrcode-generator con SRI (si se cambia la versión, hay
+    que recalcular el hash sha384).
+  - Vitrina de skins junto al Mercader; avisos de lo que se abre al subir
+    de nivel; logro Trotamundos; en mazmorras se revive junto a la última
+    barrera abierta y **ningún monstruo cruza una barrera cerrada**.
+  - Arnés: **554 bien, 0 mal**.
