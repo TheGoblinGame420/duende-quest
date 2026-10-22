@@ -1602,6 +1602,19 @@ invitado. **Inspeccionar** (?v=67): botón 🔍 en el marco de otro jugador →
 `inspeccionar` devuelve equipo puesto, título, hermandad, logros, mazmorras,
 mejor Desafío y duelos (nada de uid, oro, mTON ni bolsa).
 
+**QA de la tarde (sesión principal) y cierre de la noche (?v=68):** modo
+ligero por tandas de 5 s con histéresis (`medirLigero`, `aditivo()` en todas
+las mezclas aditivas); el aviso del buscador no salta en mazmorras/Coliseo/
+duelo/combate; duelos `ESCALA` 0,16 y `ESCALA_VARA` 0,45 (el ×2,5 dejaba
+guerrero contra pícaro en 11 s; falta medir con jugadores reales); `tareas`
+cada 3 s como mucho; en móvil errores al 50% y emotes al 43%, chat 2 líneas;
+☆/★ de amigo con estado; mascota detrás de la montura y con seguimiento por
+tiempo.
+
+**Estado al cerrar (22-oct, ~4:00):** cliente **?v=68**, arnés **393**,
+5 mazmorras (Catacumbas 10-30, Fortaleza 20-40, Templo 30-48, Nido 40-58,
+Ciudadela 45-60). Todo publicado con build y humo OK.
+
 **Pendiente / ideas para la siguiente sesión:**
 - Probar FPS en un teléfono real (sigue sin hacerse; en Chrome con CPU 4×
   lenta ya va a ~37 FPS en combate).
