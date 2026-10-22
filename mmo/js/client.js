@@ -13,7 +13,7 @@ import {
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
-} from './data.js?v=30';
+} from './data.js?v=31';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -201,6 +201,7 @@ let frame = 0;
 
 // ── OBJETIVO, LANZAMIENTOS Y AURAS (estilo WoW) ──
 let objetivo = null;            // { k: 'm' (monstruo) | 'p' (jugador), id }
+let duelo = null;               // { con, ini, fin } (ini/fin en performance.now())
 let castYo = null;              // { id, nombre, ini, fin } (tiempos de performance.now)
 const castOtros = new Map();    // id de jugador -> { id, ini, fin }
 const castMon = new Map();      // id de monstruo -> { nombre, ini, fin, int }
@@ -430,6 +431,10 @@ function recibir(m) {
     case 'invitacion': mostrarInvitacion(m); break;
     case 'herm': hermandad = m.h; pintarSocial(); break;
     case 'hermInv': mostrarInvitacion({ ...m, herm: 1 }); break;
+    case 'reto': mostrarInvitacion({ ...m, duelo: 1 }); break;
+    case 'duelo': empiezaDuelo(m); break;
+    case 'dueloFin': finDuelo(m); break;
+    case 'critDuelo': break;
     case 'buscador': abrirBuscador(); break;
     case 'amigos': pintarAmigos(m); break;
     case 'muerte': resumenMuerte(m); break;
@@ -472,7 +477,7 @@ function entrarMapa(m) {
   if (m.mapa !== mapaId) fundido = 1;
   mapaId = m.mapa;
   otros.clear(); mons.clear(); efectos = []; textos = []; balas = []; burbujas.clear(); jefeVivo = null;
-  objetivo = null; castOtros.clear(); castMon.clear(); aurasM.clear(); proyectiles = []; zonas = [];
+  objetivo = null; duelo = null; castOtros.clear(); castMon.clear(); aurasM.clear(); proyectiles = []; zonas = [];
   muros = m.muros || []; instancia = m.inst || null; nodos = [];
   for (const id of [...aurasP.keys()]) if (id !== miId) aurasP.delete(id);
   P.x = m.x; P.y = SUELO; P.vx = 0; P.vy = 0; P.suelo = true;
@@ -572,7 +577,7 @@ function ataqueRemoto(m) {
   const ahora = performance.now();
   if (m.vara) {
     // Disparo de vara: un proyectil del color de la clase hasta el objetivo.
-    const o = mons.get(m.vara);
+    const o = m.varaP ? blancoJug(m.varaP === miId ? P : otros.get(m.varaP)) : mons.get(m.vara);
     if (quien && o) {
       const cl = m.p === miId ? (yo && yo.clase) : quien.cl;
       proyectiles.push({ x0: quien.x + (m.f || 1) * 14, y0: quien.y - 36, o, ini: ahora, dur: 180, color: cl === 'sacerdote' ? '#ffe9a8' : '#a78bfa', r: 4 });
@@ -681,7 +686,7 @@ function atacar() {
     if (!o) { errorRojo('No hay ningún enemigo al alcance de tu vara.'); P.atkCdHasta = ahora + 400; return; }
     P.atkCdHasta = ahora + VARA.cdMs * arma.cd;
     P.atk = 10; P.f = o.x >= P.x ? 1 : -1;
-    mandar({ t: 'atk', s: 0, tg: o.id });
+    mandar({ t: 'atk', s: 0, tg: o.id, tk: esRival(o) ? 'p' : undefined });
     return;
   }
   P.paso = P.comboT > 0 ? (P.paso + 1) % 3 : 0;
@@ -727,6 +732,8 @@ function jugObjetivo() { return objetivo && objetivo.k === 'p' ? (objetivo.id ==
 // servidor dira "fuera de alcance", como en WoW), o si no hay ninguno el mas
 // cercano al alcance, que pasa a ser el objetivo.
 function enemigoParaUsar(rango) {
+  const riv = rivalDuelo();
+  if (riv && (!objetivo || (objetivo.k === 'p' && objetivo.id === riv.id) || (distJug(riv) <= rango && !monObjetivo()))) { objetivo = { k: 'p', id: riv.id }; return riv; }
   const o = monObjetivo();
   if (o && !o.muereT) return o;
   let mejor = null, md = Infinity;
@@ -952,12 +959,13 @@ function usarHabDef(h, tgForzado) {
   if (h.gcd !== false && ahora < gcdHasta) return;
   const costo = costoHab(h, P.recMax || 0, yo.espec);
   if (P.rec < costo) { errorRojo('No tienes suficiente ' + RECURSOS[CLASES[yo.clase].recurso].nombre.toLowerCase() + '.'); return; }
-  let tg = 0;
+  let tg = 0, tk;
   if (h.obj === 'enemigo') {
     const o = enemigoParaUsar(h.rango);
     if (!o) { errorRojo('No hay ningún enemigo al alcance.'); return; }
-    if (distMon(o) > h.rango + 20) { errorRojo('Fuera de alcance.'); return; }
+    if ((esRival(o) ? distJug(o) : distMon(o)) > h.rango + 20) { errorRojo('Fuera de alcance.'); return; }
     tg = o.id;
+    if (esRival(o)) tk = 'p';
     if (h.cast) P.f = o.x >= P.x ? 1 : -1;
   } else if (h.obj === 'aliado' || h.obj === 'muerto') {
     tg = tgForzado || (objetivo && objetivo.k === 'p' ? objetivo.id : 0);
@@ -968,7 +976,7 @@ function usarHabDef(h, tgForzado) {
   if (h.gcd !== false) gcdHasta = ahora + GCD_MS;
   tuto.usoHab = true;
   // La carga mueve al guerrero: el servidor lo pone junto al objetivo.
-  mandar({ t: 'hab', id: h.id, tg });
+  mandar({ t: 'hab', id: h.id, tg, tk });
 }
 function pintarCooldowns() {
   const ahora = performance.now();
@@ -1006,7 +1014,8 @@ function pintarCooldowns() {
 function habilidadRemota(m) {
   const mio = m.p === miId;
   const quien = mio ? P : otros.get(m.p);
-  const o = m.tk === 'm' || (!m.tk && m.tg) ? mons.get(m.tg) : null;
+  const contraJug = m.tk === 'p' && (habPorId(m.id) || {}).obj === 'enemigo';
+  const o = m.tk === 'm' || (!m.tk && m.tg) ? mons.get(m.tg) : contraJug ? blancoJug(m.tg === miId ? P : otros.get(m.tg)) : null;
   const aliado = m.tk === 'p' ? (m.tg === miId ? P : otros.get(m.tg)) : null;
   if (quien) {
     const col = colorCorte(mio ? yo.skin : quien.sk);
@@ -1109,8 +1118,10 @@ function mensajeChat(m) {
 // seguir jugando mientras tanto).
 function mostrarInvitacion(m) {
   const cl = CLASES[m.cl];
-  $('invitacion').dataset.tipo = m.herm ? 'herm' : 'grupo';
-  $('inv-txt').innerHTML = m.herm
+  $('invitacion').dataset.tipo = m.duelo ? 'duelo' : m.herm ? 'herm' : 'grupo';
+  $('inv-txt').innerHTML = m.duelo
+    ? `⚔️ <b style="color:${cl ? cl.color : '#fff'}">${esc(m.de)}</b> (Nv ${m.nv}${cl ? ' ' + esc(cl.nombre) : ''}) te reta a un <b style="color:#ff6677">duelo</b>`
+    : m.herm
     ? `<b>${esc(m.de)}</b> te invita a la hermandad <b style="color:#4ade80">&lt;${esc(m.nombre)}&gt;</b>`
     : `<b style="color:${cl ? cl.color : '#fff'}">${esc(m.de)}</b> (Nv ${m.nv}${cl ? ' ' + esc(cl.nombre) : ''}) te invita a su grupo`;
   ponCss($('invitacion'), 'display', 'block');
@@ -1118,7 +1129,7 @@ function mostrarInvitacion(m) {
   clearTimeout(mostrarInvitacion.t);
   mostrarInvitacion.t = setTimeout(() => ponCss($('invitacion'), 'display', 'none'), m.ms || 60000);
 }
-const respInv = si => { mandar({ t: $('invitacion').dataset.tipo === 'herm' ? 'hermResp' : 'grupoResp', si }); ponCss($('invitacion'), 'display', 'none'); if (si) sfx('boton', .3); };
+const respInv = si => { mandar({ t: { herm: 'hermResp', duelo: 'retoResp' }[$('invitacion').dataset.tipo] || 'grupoResp', si }); ponCss($('invitacion'), 'display', 'none'); if (si) sfx('boton', .3); };
 $('inv-si').onclick = () => respInv(true);
 $('inv-no').onclick = () => respInv(false);
 
@@ -1168,6 +1179,36 @@ function pintarAccionesObjetivo() {
   ponCss($('o-invitar'), 'display', !enMiGrupo && (!grupo || soyLider()) ? 'block' : 'none');
   const r = miRangoHerm();
   ponCss($('o-herm'), 'display', (r === 'lider' || r === 'oficial') && !q.hn ? 'block' : 'none');
+  ponCss($('o-duelo'), 'display', !duelo && !instancia && !MAPAS[mapaId].instancia ? 'block' : 'none');
+}
+$('o-duelo').onclick = () => { const q = jugObjetivo(); if (q) { mandar({ t: 'retar', p: q.id }); sfx('boton', .3); } };
+
+// ── DUELOS ──
+// El rival, si el duelo ya empezo (tras la cuenta atras).
+function rivalDuelo() {
+  if (!duelo || performance.now() < duelo.ini) return null;
+  return otros.get(duelo.con) || null;
+}
+const esRival = q => !!q && q === rivalDuelo();
+// Los jugadores no tienen "alto" como los monstruos: para los efectos.
+const blancoJug = q => q && { get x() { return q.x; }, get y() { return q.y; }, alto: 60, h: 60, w: 30 };
+function empiezaDuelo(m) {
+  const otro = m.a === miId ? m.b : m.b === miId ? m.a : 0;
+  if (!otro) return;
+  const ahora = performance.now();
+  duelo = { con: otro, ini: ahora + m.en, fin: ahora + m.en + m.ms };
+  objetivo = { k: 'p', id: otro };
+  ponCss($('invitacion'), 'display', 'none');
+  const n = (otros.get(otro) || {}).n || 'tu rival';
+  aviso(`⚔️ Duelo contra ${n}: 90 s, gana quien deje al otro a 1 de vida.`, 'jefe');
+  for (let i = 0; i < 3; i++) setTimeout(() => { if (duelo) { flotante(P.x, P.y - 110, String(3 - i), '#ffe600', 18); sfx('boton', .4); } }, i * 1000);
+  setTimeout(() => { if (duelo) { flotante(P.x, P.y - 110, '¡A LUCHAR!', '#ff3344', 16); sfx('explosion', .3); } }, m.en);
+}
+function finDuelo(m) {
+  if (m.a !== miId && m.b !== miId) return;
+  duelo = null;
+  aviso(m.m, m.g === miId ? 'ok' : '');
+  if (m.g === miId) { sfx('moneda', .5); for (let i = 0; i < 24; i++) particula(P.x, P.y - 40, '#ffe600', 4); }
 }
 $('o-invitar').onclick = () => { const q = jugObjetivo(); if (q) { mandar({ t: 'invitar', p: q.id }); sfx('boton', .3); } };
 $('o-susurrar').onclick = () => { const q = jugObjetivo(); if (!q) return; abrirChat(); $('chat-in').value = '/s ' + q.n + ' '; };
@@ -2381,7 +2422,7 @@ function dibujarDuende(q, esYo) {
   const clase = esYo ? yo.clase : q.cl;
   const mo = !muerto && MONTURAS[esYo ? yo.montado : q.mo];
   sombra(x, pies, mo ? 30 : 18);
-  if (elegido) anilloSeleccion(x, pies, mo ? 34 : 24, '#00ff88');
+  if (elegido) anilloSeleccion(x, pies, mo ? 34 : 24, duelo && duelo.con === id ? '#ff3344' : '#00ff88');
   if (mo) {
     // La montura camina bajo el duende, que va subido encima.
     const hm = HOJAS[mo.hoja];

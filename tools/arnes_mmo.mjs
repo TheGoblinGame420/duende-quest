@@ -564,6 +564,7 @@ async function pruebas() {
   await pruebasMundoAbierto();
   await pruebasRetencion();
   await pruebasAmigos();
+  await pruebasDuelos();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -963,4 +964,67 @@ async function pruebasAmigos() {
     chequear(viejo.c.amigos === 1, 'el premio se paga una sola vez');
     chequear(avisos.some(a => /sendMessage/.test(a) && /7001/.test(a)), 'se avisa por Telegram a quien invitó');
   } finally { globalThis.fetch = fetchReal; mundo.tgEnviar = tgReal; }
+}
+
+async function pruebasDuelos() {
+  console.log('Duelos');
+  const a = await entrar('Retador', '5a'), b = await entrar('Retado', '5b'), c = await entrar('Mirón', '5c');
+  ponerNivel(a, 12, 'guerrero'); ponerNivel(b, 12, 'mago'); ponerNivel(c, 12, 'picaro');
+  for (const s of [a, b, c]) await aMapa(s, 'amanecer', 900);
+  limpiarMapa(a);
+  b.x = 960; a.f = 1;
+  a.limpiar(); b.limpiar();
+  await a.mandar({ t: 'retar', p: b.id });
+  chequear(b.ultimos('reto').length === 1, 'al retado le llega el reto');
+  await b.mandar({ t: 'retoResp', si: false });
+  chequear(!a.duelo && !b.duelo && a.ultimos('toast').some(x => /rechazó/.test(x.m)), 'puede rechazarlo');
+  await a.mandar({ t: 'retar', p: b.id });
+  avanzar(31000);
+  await b.mandar({ t: 'retoResp', si: true });
+  chequear(!a.duelo, 'un reto caduca a los 30 s');
+  await a.mandar({ t: 'retar', p: b.id });
+  a.hp = 10;
+  await b.mandar({ t: 'retoResp', si: true });
+  chequear(a.duelo && b.duelo && a.duelo.con === b.id && a.hp === a.st.maxHp, 'aceptado: duelo con la vida llena');
+  await c.mandar({ t: 'retar', p: a.id });
+  chequear(!c.retoDuelo && !a.retoDuelo, 'no se reta a quien ya está en duelo');
+  const hp0 = b.hp;
+  a.atkT = 0; await a.mandar({ t: 'atk', s: 0 });
+  chequear(b.hp === hp0, 'durante la cuenta atrás no hay golpes');
+  avanzar(3100);
+  a.atkT = 0; await a.mandar({ t: 'atk', s: 0 });
+  chequear(b.hp < hp0, 'pasada la cuenta, el ataque básico daña al rival (' + Math.round(hp0 - b.hp) + ')');
+  chequear(hp0 - b.hp < b.st.maxHp * 0.2, 'el daño entre jugadores va reducido');
+  const hpC = c.hp; c.x = 960;
+  a.atkT = 0; avanzar(1000); await a.mandar({ t: 'atk', s: 0 });
+  chequear(c.hp === hpC, 'a un mirón no le pasa nada');
+  b.cdHab = {}; b.gcdHasta = 0; b.rec = b.st.recMax;
+  const hpA = a.hp;
+  await b.mandar({ t: 'hab', id: 'misiles', tg: a.id, tk: 'p' });
+  tick(1);
+  chequear(a.hp < hpA || b.cast, 'una habilidad de daño sirve contra el rival');
+  if (b.cast) { avanzar(3000); tick(1); chequear(a.hp < hpA, 'el lanzamiento llega al rival'); }
+  // A 1 de vida: termina, nadie muere.
+  b.hp = 2; const g0 = a.c.duelosG || 0;
+  for (let i = 0; i < 20 && a.duelo; i++) { a.atkT = 0; avanzar(1000); await a.mandar({ t: 'atk', s: 0 }); }
+  chequear(!a.duelo && !b.duelo && !b.muerto && b.hp >= 1, 'al quedar a 1 de vida el duelo termina sin muertes');
+  chequear((a.c.duelosG || 0) === g0 + 1, 'se cuenta la victoria');
+  chequear(a.ultimos('dueloFin').some(x => x.g === a.id), 'todos saben quién ganó');
+  // Por tiempo y por distancia.
+  await a.mandar({ t: 'retar', p: b.id }); await b.mandar({ t: 'retoResp', si: true });
+  avanzar(3100 + 90000 + 100); tick(1);
+  chequear(!a.duelo && !b.duelo, 'a los 90 s se acaba');
+  await a.mandar({ t: 'retar', p: b.id }); await b.mandar({ t: 'retoResp', si: true });
+  avanzar(3100); b.x = 2200; tick(1);
+  chequear(!a.duelo && !b.duelo, 'si se alejan, se acaba');
+  b.x = 960;
+  await a.mandar({ t: 'retar', p: b.id }); await b.mandar({ t: 'retoResp', si: true });
+  await dejar(b); tick(1);
+  chequear(!a.duelo && a.ultimos('dueloFin').some(x => /se fue/.test(x.m)), 'si el rival se desconecta, gana el otro');
+  // En una mazmorra no.
+  a.k = 'catacumbas#99';
+  a.limpiar(); await a.mandar({ t: 'retar', p: c.id });
+  chequear(!c.retoDuelo, 'no hay duelos en mazmorras');
+  a.k = 'amanecer';
+  for (const s of [a, c]) await dejar(s);
 }

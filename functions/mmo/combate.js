@@ -286,8 +286,12 @@ export const Combate = {
         if (g) { g[2] = 2; golpes.push(g); }
       }
     }
+    // Duelo: el rival tambien recibe el golpe si esta en la caja.
+    const riv = this.rivalDuelo(s);
+    const pegoRiv = !!riv && riv.x + FIS.jugW / 2 > x0 && riv.x - FIS.jugW / 2 < x1 && riv.y > y0 && riv.y - FIS.jugH < y1;
+    if (pegoRiv) this.golpeDuelo(s, riv, arma.dano * COMBO_MULT[paso], true);
     // El guerrero gana Ira con cada golpe que conecta.
-    if (golpes.length && cl && cl.recurso === 'ira') s.rec = Math.min(100, s.rec + 3 + (crit ? 2 : 0));
+    if ((golpes.length || pegoRiv) && cl && cl.recurso === 'ira') s.rec = Math.min(100, s.rec + 3 + (crit ? 2 : 0));
     this.robarVida(s, curado);
     this.aClave(s.k, { t: 'at', p: s.id, s: paso, f: s.f, h: golpes });
   },
@@ -297,6 +301,15 @@ export const Combate = {
     const ahora = Date.now();
     const arma = ARMAS[s.c.arma] || ARMAS.katana;
     if (s.cast || ahora - s.atkT < VARA.cdMs * arma.cd * 0.8) return;
+    if (m.tk === 'p') {
+      const riv = this.rivalDuelo(s);
+      if (!riv || riv.id !== m.tg || this.distJug(s, riv) > VARA.rango) return;
+      s.atkT = ahora;
+      s.f = riv.x >= s.x ? 1 : -1;
+      this.golpeDuelo(s, riv, VARA.mult * arma.dano, true);
+      this.aClave(s.k, { t: 'at', p: s.id, s: 0, f: s.f, h: [], varaP: riv.id });
+      return;
+    }
     const o = this.enemigoAlAlcance(s, m.tg, VARA.rango);
     if (!o) return this.no(s, 'No hay ningún enemigo al alcance de tu vara.');
     s.atkT = ahora;
@@ -322,6 +335,22 @@ export const Combate = {
     if (h.gcd !== false && ahora < (s.gcdHasta || 0) - 80) return;
     const costo = costoHab(h, s.st.recMax, s.c.espec);
     if (s.rec < costo) return this.no(s, `No tienes suficiente ${RECURSOS[CLASES[c.clase].recurso].nombre.toLowerCase()}.`);
+    // Duelo: la habilidad va contra el rival.
+    if (h.obj === 'enemigo' && m.tk === 'p') {
+      const riv = this.rivalDuelo(s);
+      if (!riv || riv.id !== m.tg) return this.no(s, 'Ese jugador no es tu rival de duelo.');
+      if (this.distJug(s, riv) > h.rango + 20) return this.no(s, 'Fuera de alcance.');
+      if (h.id === 'eviscerar' && !(s.combo > 0)) return this.no(s, 'Necesitas puntos de combo (usa Golpe Siniestro).');
+      this.desmontar(s);
+      if (h.gcd !== false) s.gcdHasta = ahora + GCD_MS;
+      if (h.cast) {
+        s.cast = { h: h.id, fin: ahora + h.cast, x: s.x, y: s.y, tg: riv.id, tk: 'p' };
+        s.f = riv.x >= s.x ? 1 : -1;
+        this.aClave(s.k, { t: 'cast', p: s.id, id: h.id, ms: h.cast, tg: riv.id });
+        return;
+      }
+      return this.habDuelo(s, h, riv);
+    }
     let obj = null;
     if (h.obj === 'enemigo') {
       obj = this.enemigoAlAlcance(s, m.tg, h.rango, h.min);
@@ -384,6 +413,13 @@ export const Combate = {
       return;
     }
     const h = habPorId(ca.h);
+    if (ca.tk === 'p') {
+      const riv = this.rivalDuelo(s);
+      const ok = riv && riv.id === ca.tg && this.distJug(s, riv) <= h.rango + 60 && s.rec >= costoHab(h, s.st.recMax, s.c.espec) && !s.muerto;
+      this.aClave(s.k, { t: 'castFin', p: s.id, ok: !!ok });
+      if (ok) this.habDuelo(s, h, riv);
+      return;
+    }
     let obj = null;
     if (h.obj === 'enemigo') {
       const o = this.mundoDe(s).mons.get(ca.tg);

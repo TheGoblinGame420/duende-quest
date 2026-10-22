@@ -1236,8 +1236,16 @@ sin GPU) el combate cargado va a ~20-28 FPS; a velocidad normal, 60. Hay que
 repetir la medida con la máquina libre (los agentes cargaban la CPU) y
 probar en un teléfono real; script en el scratchpad de la sesión (fps.mjs).
 
-**Pendiente / ideas para la siguiente sesión:** duelos entre jugadores,
-validar la física vertical en `mover` (hoy se puede mandar una `y` alta y
+**Duelos** (`functions/mmo/duelos.js`, cliente ?v=31): botón ⚔️ en el
+marco de otro jugador → reto de 30 s → cuenta atrás de 3 s → 90 s de pelea
+con ataque básico y habilidades de daño (`tk:'p'` en `atk`/`hab`). Nadie
+muere: quien queda a 1 de vida pierde; al acabar ambos quedan con ≥30% de
+vida. Termina también por tiempo (gana quien tenga más % de vida), por
+alejarse 900 px, cambiar de mapa o desconectarse. Daño reducido (×0,12 golpe,
+×0,2 vara; la defensa solo amortigua) para ~20-40 s a igual nivel. Logro
+"Duelista" (10 victorias, `c.duelosG`). Ni oro ni mTON por ganar.
+
+**Pendiente / ideas para la siguiente sesión:** validar la física vertical en `mover` (hoy se puede mandar una `y` alta y
 abrir el cofre de la plataforma sin saltar), buscador de grupo, más
 mazmorras, eventos de temporada, y revisar los números D1/D7 con /mmostats
 cuando haya datos (las estadísticas empezaron de cero el 21-oct).

@@ -29,6 +29,7 @@ import { Hermandades } from './hermandades.js';
 import { Tareas } from './tareas.js';
 import { Profesiones } from './profesiones.js';
 import { Amigos } from './amigos.js';
+import { Duelos } from './duelos.js';
 import { Retencion } from './retencion.js';
 import { Eventos } from './eventos.js';
 
@@ -254,6 +255,8 @@ export class MmoWorld {
       case 'liderGrupo': return this.liderGrupo(s, m);
       case 'quien': return this.quien(s);
       case 'amigos': return this.infoAmigos(s);
+      case 'retar': return this.retarDuelo(s, m);
+      case 'retoResp': return this.respuestaDuelo(s, m);
       case 'mazmorra': return this.entrarMazmorra(s, m);
       case 'hermCrear': return this.crearHermandad(s, m);
       case 'hermInvitar': return this.invitarHerm(s, m);
@@ -1340,7 +1343,8 @@ export class MmoWorld {
     if (s.muerto) return;
     const ahora = Date.now();
     const pct = fuente && fuente.pct;
-    if ((ahora < s.inv && !pct) || ahora < s.escudo || this.aura(s, 'bloque')) return;
+    const duelo = fuente && fuente.duelo;
+    if ((ahora < s.inv && !pct && !duelo) || ahora < s.escudo || this.aura(s, 'bloque')) return;
     // Evasion del picaro: esquiva golpes cuerpo a cuerpo (las bolas y las
     // zonas no).
     if (!(fuente && (fuente.bala || fuente.zona)) && this.aura(s, 'evasion') && Math.random() < EVASION) {
@@ -1358,6 +1362,9 @@ export class MmoWorld {
     // Mecanicas de jefes de mazmorra: un % de TU vida (justo para todos los
     // niveles y clases); se evitan saliendo de la zona o interrumpiendo.
     if (pct) real = Math.round(s.st.maxHp * pct * rnd(0.95, 1.05));
+    // Duelo: la defensa solo amortigua un poco (si no, el guerrero no recibia
+    // casi nada); la escala del daño ya la pone golpeDuelo.
+    if (duelo) real = Math.max(1, Math.round(bruto * (1 - s.st.def / (s.st.def + 120))));
     // Un monstruo comun nunca quita mas de un 30% de la vida de un golpe: en
     // una zona algo alta se sufre, pero ya no se muere en tres toques. Los
     // jefes quedan fuera (su embestida avisada es el peligro de verdad).
@@ -1375,12 +1382,14 @@ export class MmoWorld {
       if (abs > 0 && de && de.c) this.amenazaCura(de, s, abs);
       if (esc.abs <= 0) this.quitarAura(s, 'escudoPoder');
     }
+    // En un duelo nadie muere: se queda a 1 y el duelo termina.
+    if (duelo) real = Math.min(real, Math.max(0, Math.ceil(s.hp) - 1));
     s.hp -= real;
     // Los ultimos golpes, para explicar la muerte ("te mató...").
     const mo = fuente && fuente.id ? this.mundoDe(s).mons.get(fuente.id) : null;
     s.golpes = (s.golpes || []).filter(x => ahora - x.t < 12000).slice(-4);
     s.golpes.push({ t: ahora, n: mo ? MONSTRUOS[mo.k].nombre : 'Daño', nv: mo ? (mo.nv || MONSTRUOS[mo.k].nivel) : 0, d: real });
-    if (!pct) s.inv = ahora + INVULNERABLE_GOLPE_MS;
+    if (!pct && !duelo) s.inv = ahora + INVULNERABLE_GOLPE_MS;
     s.golpeT = ahora;
     s.combateT = ahora;
     // El guerrero se enfurece al recibir golpes.
@@ -1629,6 +1638,7 @@ export class MmoWorld {
     }
     this.revisarMundial(ahora);
     this.tickGrupos(ahora);
+    this.tickDuelos(ahora);
     const porClave = {};
     for (const s of this.sesiones.values()) {
       if (!s.c) continue;
@@ -1889,6 +1899,8 @@ Object.assign(MmoWorld.prototype, Tareas);
 Object.assign(MmoWorld.prototype, Profesiones);
 // Invita a un amigo: functions/mmo/amigos.js
 Object.assign(MmoWorld.prototype, Amigos);
+// Duelos entre jugadores: functions/mmo/duelos.js
+Object.assign(MmoWorld.prototype, Duelos);
 // Estadisticas de retencion y avisos de vuelta por Telegram: functions/mmo/retencion.js
 Object.assign(MmoWorld.prototype, Retencion);
 MmoWorld.prototype.uidsPrueba = UIDS_PRUEBA;

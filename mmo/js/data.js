@@ -565,6 +565,7 @@ export const LOGROS = [
   { id: 'equipo5',   titulo: 'Bien Equipado',      desc: 'Lleva puestas las 5 piezas de equipo', oro: 2000, cond: c => Object.keys(RANURAS).every(k => c.eq && c.eq[k]) },
   { id: 'campeon',   titulo: 'Campeón Semanal',     desc: 'Gana el ranking semanal de experiencia', oro: 5000, cond: c => (c.campeon || 0) >= 1 },
   { id: 'bestiario20', titulo: 'Naturalista',     desc: 'Completa el primer hito de 20 monstruos del bestiario', oro: 4000, cond: c => Object.values(c.best || {}).filter(n => n >= 25).length >= 20 },
+  { id: 'duelista',  titulo: 'Duelista',           desc: 'Gana 10 duelos', oro: 3000, cond: c => (c.duelosG || 0) >= 10 },
   { id: 'amigo1',    titulo: 'Buen Compañero',     desc: 'Un amigo que invitaste llegó a nivel 10', oro: 1000, cond: c => (c.amigos || 0) >= 1 },
   { id: 'amigo5',    titulo: 'Líder de la Manada', desc: '5 amigos invitados llegaron a nivel 10', oro: 8000, cond: c => (c.amigos || 0) >= 5 },
   { id: 'herm',      titulo: 'Hermano de Armas',    desc: 'Únete a una hermandad (o funda la tuya)', oro: 1000, cond: c => !!c.herm },
