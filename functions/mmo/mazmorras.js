@@ -18,7 +18,7 @@
 // ultimo, epica). NUNCA mTON: ese dinero sale de un fondo limitado y sumar
 // fuentes nuevas se habla antes con el dueño.
 // ═══════════════════════════════════════════════════════
-import { MAPAS, MONSTRUOS, MAZMORRAS, escalaMazmorra, premioMazmorraDia, nivelMazmorra, statsMonstruo, SUELO, hoyUTC, NIVEL_MAX, DESAFIO_MAX, multDesafio, premioDesafio, AFIJOS, afijosDe, multAfijos } from '../../mmo/js/data.js';
+import { MAPAS, MONSTRUOS, MAZMORRAS, escalaMazmorra, premioMazmorraDia, nivelMazmorra, statsMonstruo, SUELO, hoyUTC, NIVEL_MAX, DESAFIO_MAX, multDesafio, premioDesafio, AFIJOS, afijosDe, multAfijos, opcionesBoveda, semanaUTC, nombreItem } from '../../mmo/js/data.js';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const VACIA_MS = 300000;   // una instancia sin nadie se cierra a los 5 min (en el movil se corta mucho: da tiempo a reconectar)
@@ -360,6 +360,7 @@ export const Mazmorras = {
       this.progresoTarea(s, 'mazmorra');
       if (!c.mazDia || c.mazDia.d !== hoy) c.mazDia = { d: hoy, hechas: [] };
       let extra = '';
+      let kBoveda = 0;
       // La primera vez del dia en cada mazmorra trae un premio extra.
       if (!c.mazDia.hechas.includes(I.id)) {
         c.mazDia.hechas.push(I.id);
@@ -381,6 +382,7 @@ export const Mazmorras = {
         const marca = nuevo > antes;
         c.desafio[I.id] = Math.max(antes, nuevo);
         this.anotarDesSem(s, nuevo);
+        kBoveda = nuevo;
         const maxAntes = c.desafioMax || 0;
         c.desafioMax = Math.max(maxAntes, c.desafio[I.id]);
         if (c.desafioMax > maxAntes) this.actualizarRankDes(s).catch(e => console.error('[MMO rankDes]', e));
@@ -397,6 +399,7 @@ export const Mazmorras = {
         } else extra += ` Desafío +${I.k} vencido (el premio de esta mazmorra ya lo cobraste hoy: bate tu marca para otro).`;
         extra += ` Tu marca aquí: +${c.desafio[I.id]}.`;
       }
+      this.progresoBoveda(s, kBoveda);
       s.sucio = true;
       this.enviar(s, { t: 'completada', id: I.id, txt: `🏆 ¡${mz.nombre}${I.k ? ' +' + I.k : ''} completada!${extra}` });
       this.revisarLogros(s);
@@ -405,6 +408,47 @@ export const Mazmorras = {
       nombres.push(c.nombre);
     }
     this.aTodos({ t: 'aviso', m: `🏰 ${nombres.join(', ')} ${nombres.length > 1 ? 'completaron' : 'completó'} ${mz.nombre} ${I.k ? '— ⚡ Desafío +' + I.k : '(Nv ' + I.nv + ')'}.` });
+  },
+
+  // ── BOVEDA SEMANAL ──
+  // c.boveda = { sem, n: mazmorras completadas, k: mejor +k } de la semana en
+  // curso; c.bovedaOpc = los objetos por elegir de una semana pasada. Al
+  // cambiar la semana (se mira en datosPropios, al entrar o jugando) se
+  // generan las opciones; si aun no elegiste las anteriores, esa semana se
+  // pierde (como en WoW). Devuelve true si roto.
+  rotarBoveda(c) {
+    const sem = semanaUTC();
+    const b = c.boveda;
+    if (b && b.sem === sem) return false;
+    if (b && b.n > 0 && !(c.bovedaOpc && c.bovedaOpc.length)) {
+      const nv = b.k ? NIVEL_MAX + Math.min(b.k, DESAFIO_MAX) : Math.min(NIVEL_MAX, c.nivel);
+      c.bovedaOpc = [];
+      for (let i = 0; i < opcionesBoveda(b.n); i++) {
+        const it = this.generarItem(nv, b.k >= 5 ? 2 : 1);
+        if (b.k) it.des = 1;
+        c.bovedaOpc.push(it);
+      }
+    }
+    c.boveda = { sem, n: 0, k: 0 };
+    return true;
+  },
+  progresoBoveda(s, k) {
+    const c = s.c;
+    this.rotarBoveda(c);
+    c.boveda.n++;
+    c.boveda.k = Math.max(c.boveda.k, k || 0);
+  },
+  elegirBoveda(s, m) {
+    const c = s.c, opc = c.bovedaOpc;
+    if (!opc || !opc.length) return this.no(s, 'No tienes nada en la Bóveda.');
+    const it = opc[m.i | 0];
+    if (!it) return;
+    c.bovedaOpc = null;
+    this.darItem(s, it);
+    s.sucio = true;
+    this.enviar(s, { t: 'toast', ok: true, m: `🗝️ Te llevas ${nombreItem(it)} de la Bóveda semanal.` });
+    this.actualizarYo(s);
+    this.guardar(s);
   },
 
   // Morir en una mazmorra: se revive en su entrada (si sigue abierta).

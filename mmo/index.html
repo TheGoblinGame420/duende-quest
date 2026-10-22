@@ -691,6 +691,14 @@ input.nombre:focus{border-color:var(--pri-txt);}
 </div>
 
 <!-- Buscador de mazmorras -->
+<div class="modal" id="m-boveda">
+  <div class="ventana">
+    <button class="bt cerrar" data-cerrar>✕</button>
+    <h2>🗝️ BOVEDA SEMANAL</h2>
+    <div class="lista" id="boveda-lista"></div>
+  </div>
+</div>
+
 <div class="modal" id="m-mazmorras">
   <div class="ventana">
     <button class="bt cerrar" data-cerrar>✕</button>
@@ -731,6 +739,6 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=48"></script>
+<script type="module" src="/mmo/js/client.js?v=49"></script>
 </body>
 </html>

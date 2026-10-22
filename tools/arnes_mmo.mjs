@@ -573,6 +573,7 @@ async function pruebas() {
   await pruebasChicha();
   await pruebasAfijos();
   await pruebasLfg();
+  await pruebasBoveda();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -602,6 +603,8 @@ async function entrarTg(nombre, id, extra) {
   const s = [...mundo.sesiones.values()].pop();
   ws.emitir('message', { data: JSON.stringify({ t: 'hola', auth: { k: 'tg', d: await initDataTg(id, nombre) }, ...(extra || {}) }) });
   for (let i = 0; i < 200 && !s.c; i++) await espera();
+  // Con la maquina cargada la firma (crypto) tarda mas: se espera por tiempo real.
+  for (let i = 0; i < 300 && !s.c; i++) await new Promise(r => setTimeout(r, 10));
   if (mundo.bucle) { clearInterval(mundo.bucle); mundo.bucle = 1; }
   s.ws = ws;
   s.mandar = o => { s.cuenta = 0; return mundo.recibir(s, JSON.stringify(o)); };
@@ -1281,6 +1284,46 @@ async function pruebasTintes() {
   await dejar(t); await dejar(v);
 }
 
+
+async function pruebasBoveda() {
+  console.log('Bóveda semanal');
+  const D = await import('../mmo/js/data.js');
+  chequear(D.opcionesBoveda(0) === 0 && D.opcionesBoveda(1) === 1 && D.opcionesBoveda(4) === 2 && D.opcionesBoveda(8) === 3, '1, 4 y 8 mazmorras abren 1, 2 y 3 opciones');
+  const b = await entrar('Bovedero', '75');
+  ponerNivel(b, 60, 'guerrero');
+  b.c.desafio = { catacumbas: 6 };
+  mundo.actualizarYo(b);
+  const sem0 = D.semanaUTC();
+  chequear(b.c.boveda && b.c.boveda.sem === sem0 && b.c.boveda.n === 0, 'empieza la semana sin progreso');
+  const completar = async (k) => {
+    await aMapa(b, 'pueblo', 800);
+    await b.mandar({ t: 'mazmorra', id: 'catacumbas', k });
+    const w = mundo.mundoDe(b);
+    const fin = [...w.mons.values()].find(o => o.final);
+    for (const o of [...w.mons.values()]) if (o.jefe && o !== fin) { mundo.danar(o, 1, b); mundo.danar(o, o.hp + 1, b); tick(1); }
+    mundo.danar(fin, 1, b); mundo.danar(fin, fin.hp + 1, b); tick(2);
+    avanzar(10000); tick(1);
+    return w.inst.completada;
+  };
+  chequear(await completar(0), 'completa una mazmorra normal');
+  for (let i = 0; i < 3; i++) await completar(0);
+  chequear(await completar(5), 'y un Desafío +5');
+  chequear(b.c.boveda.n === 5 && b.c.boveda.k === 5, 'la Bóveda cuenta 5 mazmorras y el mejor +5 (' + b.c.boveda.n + ', +' + b.c.boveda.k + ')');
+  chequear(!b.c.bovedaOpc, 'esta semana aún no hay nada que elegir');
+  reloj = Math.max(reloj, Date.parse(sem0 + 'T00:00:00Z') + 7 * DIA + 3600000);
+  b.limpiar();
+  mundo.actualizarYo(b);
+  const y = b.ultimos('yo').pop().yo;
+  chequear(b.c.bovedaOpc && b.c.bovedaOpc.length === 2 && y.bovedaOpc.length === 2, 'el lunes hay 2 objetos para elegir (5 mazmorras)');
+  chequear(b.c.bovedaOpc.every(it => it.nv === 65 && it.des && it.r >= 2), 'de nivel 65 y épicos o más (Desafío +5)');
+  chequear(b.c.boveda.n === 0 && b.c.boveda.sem === D.semanaUTC(), 'y la semana nueva empieza de cero');
+  const elegido = b.c.bovedaOpc[1];
+  await b.mandar({ t: 'boveda', i: 1 });
+  chequear(!b.c.bovedaOpc && b.c.bolsa.some(it => it.id === elegido.id), 'se elige uno y va a la bolsa; los demás se pierden');
+  b.limpiar(); await b.mandar({ t: 'boveda', i: 0 });
+  chequear(b.ultimos('no').length === 1 && !b.c.bolsa.filter(it => it.id === elegido.id)[1], 'no se puede elegir dos veces');
+  await dejar(b);
+}
 
 async function pruebasLfg() {
   console.log('Buscar grupo para una mazmorra');

@@ -7,14 +7,14 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, ALCANCE_BASE, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
-  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TINTES, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem,
+  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TINTES, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo,
-} from './data.js?v=48';
+} from './data.js?v=49';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -327,6 +327,8 @@ function recibir(m) {
       if ($('m-mision').classList.contains('on')) pintarMision();
       if ($('m-wallet').classList.contains('on')) pintarWallet();
       if ($('m-arte').classList.contains('on')) abrirArtesana();
+      if ($('m-boveda').classList.contains('on')) abrirBoveda();
+      revisarBoveda();
       break;
     }
     case 's': snapshot(m); break;
@@ -1431,6 +1433,42 @@ $('o-herm').onclick = () => { const q = jugObjetivo(); if (q) { mandar({ t: 'her
 let muros = [];                 // barreras cerradas de la instancia (x)
 let instancia = null;           // { id, nv, hechos }
 function topeMuros() { return muros.length ? Math.min(...muros) - 22 : Infinity; }
+// Boveda semanal: elegir UNO de los objetos que abrieron tus mazmorras de
+// la semana pasada. Se ofrece sola una vez por sesion al entrar.
+function revisarBoveda() {
+  if (!yo || !yo.clase || !yo.bovedaOpc || !yo.bovedaOpc.length || revisarBoveda.hecho) return;
+  revisarBoveda.hecho = true;
+  // Espera a que se cierre lo que haya abierto (la recompensa diaria, la
+  // clase...); si tarda mucho, queda el aviso.
+  let n = 0;
+  const t = setInterval(() => {
+    if (!document.querySelector('.modal.on')) { clearInterval(t); if (yo.bovedaOpc && yo.bovedaOpc.length) abrirBoveda(); }
+    else if (++n > 45) { clearInterval(t); aviso('🗝️ Tu Bóveda semanal te espera: ábrela en el portal de mazmorras del pueblo.', 'ok'); }
+  }, 2000);
+}
+function htmlProgresoBoveda() {
+  const b = yo.boveda || { n: 0 };
+  const sig = BOVEDA_UMBRALES.find(u => b.n < u);
+  return `🗝️ <b style="color:var(--txt)">Bóveda semanal:</b> ${b.n} mazmorra${b.n === 1 ? '' : 's'} esta semana → ${opcionesBoveda(b.n)} de 3 objetos para elegir el lunes${sig ? ` (el siguiente con ${sig})` : ''}.${b.k ? ' Desafío +' + b.k + ': objetos de nivel ' + (NIVEL_MAX + b.k) + '.' : ''}`;
+}
+function abrirBoveda() {
+  if (!yo) return;
+  const opc = yo.bovedaOpc || [];
+  let h = '';
+  if (!opc.length) h += '<p class="centro" style="color:var(--txt2)">Ahora no hay nada que elegir.</p>';
+  else {
+    h += '<p class="centro" style="margin-bottom:8px;font-size:13px">Tus mazmorras de la semana pasada abrieron estos objetos. <b>Elige uno</b> (los demás se pierden).</p>';
+    opc.forEach((it, i) => {
+      const rz = RAREZAS[it.r];
+      h += tarjeta(htmlItem(it), `<span style="color:${rz.color}">${esc(nombreItem(it))}</span> <span style="color:var(--txt2)">Nv${it.nv}</span>`,
+        `${rz.nombre} · ${RANURAS[it.s].nombre} · ${textoBonos(it.b)}`, `<button class="btn" data-bov="${i}">Elegir</button>`);
+    });
+  }
+  h += `<p style="font-size:12px;color:var(--txt2);margin-top:10px">${htmlProgresoBoveda()}</p>`;
+  $('boveda-lista').innerHTML = h;
+  $('boveda-lista').querySelectorAll('[data-bov]').forEach(b => b.onclick = () => { sfx('moneda', .4); mandar({ t: 'boveda', i: +b.dataset.bov }); cerrarModales(); });
+  abrir('m-boveda');
+}
 // Buscar grupo: anunciarse para una mazmorra y la lista de quien busca.
 let lfgLista = [];
 function pintarLfg() {
@@ -1455,6 +1493,7 @@ function abrirBuscador() {
   const L = $('maz-lista');
   let h = `<p class="centro" style="margin-bottom:8px;font-size:12px">${grupo ? '👥 Entraréis juntos los del grupo que estén en el pueblo (los demás podrán unirse después por este portal).' : 'Entras solo: la mazmorra se ajusta a ti. Con un grupo es más fácil y más divertido (👥).'}</p>`;
   h += '<div class="mis-caja" id="maz-lfg"></div>';
+  h += `<div class="mis-caja" style="font-size:13px;color:var(--txt2)">${htmlProgresoBoveda()}${yo.bovedaOpc && yo.bovedaOpc.length ? '<br><button class="btn" id="b-boveda" style="margin-top:8px">🗝️ Abrir la Bóveda</button>' : ''}</div>`;
   for (const id in MAZMORRAS) {
     const mz = MAZMORRAS[id];
     const bloq = yo.nivel < mz.nv[0];
@@ -1484,6 +1523,7 @@ function abrirBuscador() {
   L.querySelectorAll('[data-maz]').forEach(b => b.onclick = () => { sfx('explosion', .3); mandar({ t: 'mazmorra', id: b.dataset.maz }); cerrarModales(); });
   pintarLfg();
   mandar({ t: 'lfgLista' });
+  const bb = $('b-boveda'); if (bb) bb.onclick = abrirBoveda;
   L.querySelectorAll('[data-mazk]').forEach(b => b.onclick = () => { const sel = L.querySelector(`[data-dk="${b.dataset.mazk}"]`); sfx('explosion', .35); mandar({ t: 'mazmorra', id: b.dataset.mazk, k: +sel.value }); cerrarModales(); });
   abrir('m-mazmorras');
 }

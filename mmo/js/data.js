@@ -907,6 +907,12 @@ export const multAfijos = (af = []) => {
 // afijos). Premia al top 3 cada lunes, solo desde el +5 para que no se gane
 // con un +1. Solo oro y un titulo.
 export const DES_SEM_MIN = 5;
+// Boveda semanal (como la Gran Camara de WoW): las mazmorras completadas en
+// la semana (lunes a domingo UTC) abren 1, 2 o 3 objetos y el lunes eliges
+// UNO. Nivel del objeto: el tuyo o, si venciste Desafios, 60 + tu mejor +k
+// de la semana (epico desde el +5). Sin compra ni mTON.
+export const BOVEDA_UMBRALES = [1, 4, 8];
+export const opcionesBoveda = n => BOVEDA_UMBRALES.filter(u => n >= u).length;
 export const premioDesSem = i => [20000, 10000, 5000][i] || 0;
 export const nivelMazmorra = (mz, nivelGrupo) => Math.max(mz.nv[0], Math.min(mz.nv[1], nivelGrupo));
 
