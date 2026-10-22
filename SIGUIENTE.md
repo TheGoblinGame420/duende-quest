@@ -1588,7 +1588,13 @@ se cancela con `shutdown /a`). La otra sesión llevó el MMO; esta, lo demás.
   (ignorada por git y por el sitio): vertical 1080x1920, cuadrado 1080x1080 y
   portada. `--solo-montar` reusa las tomas.
 - QA de jugador (MMO, arcade, mini app) y QA de regresión en producción: sin
-  regresiones. Informes en el scratchpad de la sesión (qa_gamer_*, qa_regresion).
+  regresiones.
+- Medición final del novato (4:20, ?v=68, bot móvil mago, 10 min): 0 muertes,
+  Nv 9 a los 8,8 min, 6 misiones entregadas y ya en las Colinas Rojas.
+- Segunda ronda de QA (MMO ?v=65 y web en vivo) arreglada: modo ligero con
+  histéresis, buscador de grupo sin avisos en mazmorras/duelos, duelos más
+  largos (la otra sesión); token sin par en DEX, compra en móvil con Phantom,
+  precios de skins y objetos reales, banner y hoja de ruta al día (esta). Informes en el scratchpad de la sesión (qa_gamer_*, qa_regresion).
 
 **Lista de amigos y Elixir de Sabiduría (?v=64-65):** `c.contactos`
 [{u, n}] (máx. 50; al cliente solo `pub(uid)`), mensajes `contactoAdd` /
