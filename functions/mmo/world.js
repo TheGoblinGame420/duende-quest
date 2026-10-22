@@ -22,7 +22,7 @@ import {
   temporadaDe, TEMPORADAS, TEMP_PROB, TEMP_JEFE,
   TINTES, MASCOTAS, enOfertaAmbulante, ambulanteActivo, mundialDe,
   CONJUNTOS, CONJUNTO_PROB,
-  semanaUTC, horaFelizActiva, HORA_FELIZ, afijosSemana, DES_SEM_MIN, premioDesSem, BESTIARIO_HITOS, premioBestiario, talento, TALENTOS, TALENTO_MAX, puntosTalento, costoReinicioTalentos, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX,
+  semanaUTC, horaFelizActiva, HORA_FELIZ, PASE, afijosSemana, DES_SEM_MIN, premioDesSem, BESTIARIO_HITOS, premioBestiario, talento, TALENTOS, TALENTO_MAX, puntosTalento, costoReinicioTalentos, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX,
 } from '../../mmo/js/data.js';
 import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery, tg, getSolPriceUsd, SOL_DEV_WALLET } from '../api/lib.js';
 import { MMO_URL } from '../api/telegram-bot.js';
@@ -37,6 +37,7 @@ import { Duelos } from './duelos.js';
 import { Chicha } from './chicha.js';
 import { Retencion } from './retencion.js';
 import { Eventos } from './eventos.js';
+import { Pase } from './pase.js';
 
 const MAX_JUGADORES = 300;
 const GUARDAR_CADA_MS = 20000;
@@ -277,6 +278,7 @@ export class MmoWorld {
       case 'contactos': return this.enviarContactos(s);
       case 'inspeccionar': return this.inspeccionar(s, m);
       case 'gesto': return this.gesto(s, m);
+      case 'pase': return this.cobrarPase(s, m);
       case 'boveda': return this.elegirBoveda(s, m);
       case 'lfgLista': return this.lfgLista(s);
       case 'lfgQuitar': return this.quitarLfg(s);
@@ -838,7 +840,9 @@ export class MmoWorld {
 
   async anularPedido(b) {
     const pd = this.buscarPedido(b.codigo);
-    if (!pd || pd.estado === 'entregado' || pd.estado === 'anulado') return { ok: false, error: 'Ese pedido no se puede anular (no existe, ya se entregó o ya se anuló).' };
+    if (!pd || pd.estado === 'entregado' || pd.estado === 'anulado' || pd.estado === 'anulando') return { ok: false, error: 'Ese pedido no se puede anular (no existe, ya se entregó o ya se anuló).' };
+    const estadoAntes = pd.estado;
+    pd.estado = 'anulando';   // un segundo toque (o /entregar) mientras se devuelven las Stars ya no pasa
     // La firma vuelve a quedar libre (si era de otro pago, su dueño puede usarla).
     if (pd.firma && (await this.state.storage.get('firma:' + pd.firma)) === pd.codigo) await this.state.storage.delete('firma:' + pd.firma);
     let reembolso = '';
@@ -1008,7 +1012,7 @@ export class MmoWorld {
       kills: c.kills, jefes: c.jefes, muerto: s.muerto, mis: c.mis, forja: c.forja,
       eq: c.eq, bolsa: c.bolsa, logros: c.logros, titulo: c.titulo, mundiales: c.mundiales, login: c.login, crit: s.st.crit,
       clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, desafio: c.desafio || {}, ...Object.fromEntries(TEMPORADAS.map(t => [t.campo, c[t.campo] || 0])), chicha: this.infoChicha(c), temp: (temporadaDe() || {}).id || '', herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, best: c.best || {},
-      boveda: c.boveda, bovedaOpc: c.bovedaOpc || null, banda: this.infoBanda(c), runas: c.runas || {}, gestaCob: c.gestaCob || null,
+      boveda: c.boveda, bovedaOpc: c.bovedaOpc || null, pase: this.infoPase(c), banda: this.infoBanda(c), runas: c.runas || {}, gestaCob: c.gestaCob || null,
       espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, tintes: c.tintes || [], tinte: c.tinte || '', mascotas: c.mascotas || [], mascota: c.mascota || '', montado: s.montado || null,
       mton: c.mton, wallet: c.wallet ? { a: tonAmigable(c.wallet.a), desde: c.wallet.desde } : null,
       p2e: this.elegibilidad(c), creado: c.creado,
@@ -1237,6 +1241,7 @@ export class MmoWorld {
       c.oro += oro;
       c.mundiales = (c.mundiales || 0) + 1;
       this.progresoTarea(s, 'mundial');
+      this.puntoPase(s, PASE.puntos.mundial);
       const it = this.darItem(s, generarItem(c.nivel, parte > 0.15 ? 2 : 1));
       // Premio fijo para todos los que ayudaron: si dependiera del daño, una
       // skin pagada con mas ataque daria mas mTON (y se pagaria para ganar).
@@ -1697,6 +1702,7 @@ export class MmoWorld {
         if (typeof m.id !== 'string' || !Object.hasOwn(MASCOTAS, m.id)) return;
         const ma = MASCOTAS[m.id];
         if (!c.mascotas.includes(m.id)) {
+          if (ma.pase) return this.enviar(s, { t: 'toast', m: 'Esa mascota solo se gana con el pase de temporada.' });
           if (ma.amb && !enOfertaAmbulante('mascota', m.id)) return this.enviar(s, { t: 'toast', m: 'Esa mascota solo la trae el Mercader ambulante algunos fines de semana.' });
           if (c.nivel < ma.nv) return this.enviar(s, { t: 'toast', m: `Necesitas nivel ${ma.nv} para esa mascota.` });
           if (c.oro < ma.precio) return this.enviar(s, { t: 'toast', m: 'No te alcanza el oro.' });
@@ -2239,4 +2245,6 @@ Object.assign(MmoWorld.prototype, Retencion);
 MmoWorld.prototype.uidsPrueba = UIDS_PRUEBA;
 // Invasiones, elites raros y cofres del mundo abierto: functions/mmo/eventos.js
 Object.assign(MmoWorld.prototype, Eventos);
+// Pase de temporada mensual: functions/mmo/pase.js
+Object.assign(MmoWorld.prototype, Pase);
 MmoWorld.prototype.generarItem = generarItem;

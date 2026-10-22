@@ -10,7 +10,7 @@
 // cadena de misiones (que se acaba) y el jefe mundial.
 // Premios: XP, oro, poderes y equipo. NUNCA mTON.
 // ═══════════════════════════════════════════════════════
-import { TAREAS_DIA, TAREAS_SEMANA, premioTarea, zonaDeNivel, hoyUTC, semanaUTC, MAPAS, MONSTRUOS, NIVEL_MAX } from '../../mmo/js/data.js';
+import { TAREAS_DIA, TAREAS_SEMANA, premioTarea, zonaDeNivel, hoyUTC, semanaUTC, MAPAS, MONSTRUOS, NIVEL_MAX , PASE } from '../../mmo/js/data.js';
 
 // Hash entero pequeño y estable (para elegir las tareas del dia).
 function hash(t) { let h = 2166136261; for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h; }
@@ -84,6 +84,7 @@ export const Tareas = {
 
   cobrarTarea(s, def, semanal) {
     const c = s.c;
+    if (this.puntoPase) this.puntoPase(s, semanal ? PASE.puntos.semanal : PASE.puntos.diaria);
     const pr = premioTarea(c.nivel, semanal);
     c.oro += pr.oro;
     if (c.nivel < NIVEL_MAX) this.sumarXp(s, pr.xp);
@@ -94,6 +95,7 @@ export const Tareas = {
 
   bonoTareas(s, semanal) {
     const c = s.c;
+    if (this.puntoPase) this.puntoPase(s, PASE.puntos.bono);
     const it = this.darItem(s, this.generarItem(c.nivel, semanal ? 2 : 1));
     c.pw.escudo = Math.min(99, (c.pw.escudo || 0) + (semanal ? 5 : 2));
     c.pw.pocion = Math.min(99, (c.pw.pocion || 0) + (semanal ? 10 : 5));

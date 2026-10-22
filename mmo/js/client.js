@@ -7,7 +7,7 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, ALCANCE_BASE, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
-  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TINTES, MASCOTAS, NOVEDADES, ambulanteActivo, ambulanteOferta, semanaUTC, GESTOS, horaFelizTiempos, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
+  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TINTES, MASCOTAS, NOVEDADES, PASE, premioPase, ambulanteActivo, ambulanteOferta, semanaUTC, GESTOS, horaFelizTiempos, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=102';
+} from './data.js?v=104';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -546,6 +546,7 @@ function recibir(m) {
     case 'quien': quienLista = m.r || []; pintarSocial(); break;
     case 'contactos': contactos = m.l || []; pintarSocial(); break;
     case 'inspeccion': pintarInspeccion(m); break;
+    case 'pase': if (yo) { yo.pase = m.pase; if ($('m-mision').classList.contains('on')) pintarMision(); } break;
     case 'gesto': if (GESTOS[m.id]) { gestos.set(m.p, { id: m.id, t: performance.now() }); if (m.p === miId) sfx('boton', .25); } break;
     case 'on': online = m.n; if (m.h) jugaronHoy = m.h; pintarSubMapa(); break;
     case 'toast': aviso(m.m, m.ok ? 'ok' : ''); if (m.hab) { $('acciones').innerHTML = ''; pintarHud(); } break;
@@ -957,6 +958,8 @@ addEventListener('blur', () => { for (const k in teclas) teclas[k] = false; tIzq
 const FRASES = ['¡Hola! 👋', '¿Hacemos grupo?', '¿Mazmorra? 🏰', '¡Gracias! 🙏', '¡Bien jugado! ⚔️', '¡Ayuda aquí!', 'Me voy, ¡nos vemos! 👋'];
 function abrirChat() {
   const i = $('chat-in'); i.style.display = 'block'; i.focus();
+  // Movil: con el chat abierto se ve el historial entero.
+  if ($('hud').classList.contains('estrecho')) $('chat-log').classList.add('abierto');
   // En el movil, frases de un toque encima del teclado.
   if (TACTIL) {
     const f = $('frases');
@@ -975,7 +978,8 @@ $('chat-log').addEventListener('click', () => {
   clearTimeout(l._t);
   if (l.classList.contains('abierto')) l._t = setTimeout(() => l.classList.remove('abierto'), 8000);
 });
-function cerrarChat() { $('chat-in').value = ''; $('chat-in').blur(); $('chat-in').style.display = 'none'; ponCss($('frases'), 'display', 'none'); }
+function cerrarChat() {
+  $('chat-log').classList.remove('abierto'); $('chat-in').value = ''; $('chat-in').blur(); $('chat-in').style.display = 'none'; ponCss($('frases'), 'display', 'none'); }
 $('chat-in').addEventListener('blur', () => setTimeout(() => ponCss($('frases'), 'display', 'none'), 150));
 function botonTactil(id, abajo, arriba) {
   const b = $(id);
@@ -2468,20 +2472,23 @@ function pintarMundial() {
   if (!yo) return;
   // Hora Feliz: mientras dura, manda en esta linea (y 30 min antes, avisa).
   const hf = horaFelizTiempos(Date.now());
-  if (hf.activa || hf.falta < 30 * 60000) {
+  const msM = mundial.en ? mundial.en - performance.now() : 0;
+  // Con el jefe mundial en pie (o a menos de 5 min), primero el jefe.
+  if ((hf.activa || hf.falta < 30 * 60000) && !mundial.vivo && !(msM > 0 && msM < 300000)) {
     const ms = hf.activa ? hf.acaba : hf.falta, mm = Math.floor(ms / 60000), ss = Math.floor(ms / 1000) % 60;
     ponTxt(el, hf.activa ? '⚡ Hora Feliz: +50% XP · ' + mm + ':' + String(ss).padStart(2, '0') : '⚡ Hora Feliz en ' + mm + ':' + String(ss).padStart(2, '0'));
     el.className = hf.activa ? 'lista' : '';
     return;
   }
+  const extraHf = hf.activa ? ' · ⚡ +50% XP' : '';
   // Al novato el contador del jefe mundial solo le distrae de su mision.
   if (yo.nivel < 10) { ponTxt(el, ''); el.className = ''; return; }
   const nomM = (MONSTRUOS[mundial.k] || {}).nombre || 'Jefe mundial';
-  if (mundial.vivo) { ponTxt(el, '👹 ' + nomM + ' en el Coliseo (portal del pueblo)'); el.className = 'lista'; return; }
+  if (mundial.vivo) { ponTxt(el, '👹 ' + nomM + ' en el Coliseo (portal del pueblo)' + extraHf); el.className = 'lista'; return; }
   const ms = mundial.en - performance.now();
   if (mundial.en && ms > 0) {
     const mm = Math.floor(ms / 60000), ss = Math.floor(ms / 1000) % 60;
-    ponTxt(el, '👹 ' + nomM + ' en ' + mm + ':' + String(ss).padStart(2, '0'));
+    ponTxt(el, '👹 ' + nomM + ' en ' + mm + ':' + String(ss).padStart(2, '0') + extraHf);
     el.className = ms < 120000 ? 'lista' : '';
   } else { ponTxt(el, ''); el.className = ''; }
 }
@@ -3450,11 +3457,27 @@ function cajaSemana() {
   h += fila(tot >= max, '✨ Runas de la Artesana', tot + '/' + max);
   return h + '<p style="font-size:12px;margin-top:6px">La Bóveda, la banda, los afijos y la gesta se renuevan los lunes (UTC).</p></div>';
 }
+// Pase de temporada: progreso y los 20 niveles con su premio (se cobran a mano).
+function cajaPase() {
+  if (!yo || !yo.pase) return '';
+  const pa = yo.pase, nv = Math.floor(pa.p / PASE.porNivel), tope = PASE.niveles * PASE.porNivel;
+  const mes = new Date(pa.mes + '-01T00:00:00Z').toLocaleDateString('es', { month: 'long', timeZone: 'UTC' });
+  let h = `<div class="mis-caja"><b>🎟️ Pase de temporada de ${esc(mes)}</b>`;
+  h += `<p style="font-size:12px;color:var(--txt2)">Nivel ${nv} de ${PASE.niveles} · ${pa.p >= tope ? 'completo' : (pa.p % PASE.porNivel) + '/' + PASE.porNivel + ' puntos para el siguiente'}. Puntos: misión diaria ${PASE.puntos.diaria}, semanal ${PASE.puntos.semanal}, mazmorra ${PASE.puntos.mazmorra}, jefe mundial ${PASE.puntos.mundial}. Gratis; empieza de cero cada mes.</p>`;
+  h += `<div class="mis-barra"><i style="width:${pa.p >= tope ? 100 : Math.round((pa.p % PASE.porNivel) / PASE.porNivel * 100)}%"></i></div>`;
+  h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin-top:8px">';
+  for (let n = 1; n <= PASE.niveles; n++) {
+    const pr = premioPase(n, yo.nivel), cob = pa.cob.includes(n), listo = nv >= n && !cob;
+    h += `<div style="border:1px solid ${listo ? 'var(--ok)' : 'var(--borde)'};border-radius:8px;padding:6px;font-size:12px;${cob ? 'opacity:.5' : ''}"><b style="display:inline;color:var(--txt)">${n}</b> ${esc(pr.txt)}${listo ? `<br><button class="btn" data-pase="${n}" style="margin-top:4px;padding:4px 10px">Cobrar</button>` : cob ? ' ✓' : ''}</div>`;
+  }
+  return h + '</div></div>';
+}
 function pintarMision() {
   const i = yo.mis ? yo.mis.i : 0, q = MISIONES[i];
   const cuerpo = $('mision-cuerpo');
   const conectarDiaria = () => { const b = $('b-diaria'); if (b) b.onclick = () => { sfx('boton', .3); mandar({ t: 'mision', diaria: true }); }; };
-  if (!q) { cuerpo.innerHTML = '<p class="centro">Completaste las ' + MISIONES.length + ' misiones. Eres una leyenda del Pueblo Duende. 👑</p>' + cajaSemana() + cajaDiaria() + cajaTareas(); conectarDiaria(); return; }
+  const conectarPase = () => cuerpo.querySelectorAll('[data-pase]').forEach(b => b.onclick = () => { sfx('moneda', .4); mandar({ t: 'pase', n: +b.dataset.pase }); });
+  if (!q) { cuerpo.innerHTML = '<p class="centro">Completaste las ' + MISIONES.length + ' misiones. Eres una leyenda del Pueblo Duende. 👑</p>' + cajaPase() + cajaSemana() + cajaDiaria() + cajaTareas(); conectarDiaria(); conectarPase(); return; }
   const def = MONSTRUOS[q.tipo];
   const zona = MAPAS[zonaDe(q.tipo)];
   const lista = yo.mis.p >= q.n;
@@ -3468,7 +3491,8 @@ function pintarMision() {
     '<p>' + yo.mis.p + ' / ' + q.n + '</p>' +
     '<p style="color:var(--oro)">Recompensa: +' + q.xp + ' XP · +' + q.oro + ' oro' + esc(extra) + '</p></div>' +
     (lista ? '<button class="btn" id="b-entregar" style="width:100%;padding:12px">Entregar misión</button>' : '<p class="centro">Vuelve cuando la termines.</p>') +
-    cajaSemana() + cajaDiaria() + cajaTareas();
+    cajaPase() + cajaSemana() + cajaDiaria() + cajaTareas();
+  conectarPase();
   const b = $('b-entregar');
   if (b) b.onclick = () => { sfx('boton', .3); mandar({ t: 'mision' }); };
   conectarDiaria();
@@ -3671,8 +3695,8 @@ function pintarTienda() {
   } else if (tabTienda === 'mascota') {
     for (const [id, ma] of Object.entries(MASCOTAS)) {
       const tiene = (yo.mascotas || []).includes(id);
-      if (ma.amb && !tiene) continue;   // las del ambulante, en su pestaña
-      const ico = `<canvas data-hoja="${ma.hoja}" width="52" height="52"></canvas>`;
+      if ((ma.amb || ma.pase) && !tiene) continue;   // las del ambulante, en su pestaña; la del pase no se vende
+      const ico = `<canvas data-hoja="${ma.hoja}" data-tinte="${ma.tinte || ''}" width="52" height="52"></canvas>`;
       const acc = tiene ? (yo.mascota === id ? '<span class="precio" style="color:var(--ok)">✓ Te acompaña</span>' : `<button class="btn sec" data-comprar="mascota" data-id="${id}">Llevar</button>`)
         : yo.nivel < ma.nv ? `<span class="precio" style="color:var(--warn)">Nv ${ma.nv}</span><span class="precio">🪙 ${ma.precio.toLocaleString('es')}</span>`
         : `<span class="precio">🪙 ${ma.precio.toLocaleString('es')}</span><button class="btn" data-comprar="mascota" data-id="${id}" ${yo.oro < ma.precio ? 'disabled' : ''}>Comprar</button>`;
@@ -3733,7 +3757,7 @@ function pintarTienda() {
   // Retratos de las monturas (primer cuadro de su hoja).
   L.querySelectorAll('canvas[data-montura], canvas[data-hoja]').forEach(c => {
     const hoja = c.dataset.hoja || MONTURAS[c.dataset.montura].hoja;
-    const hm = HOJAS[hoja], img = IMG['sh_' + hoja];
+    const hm = HOJAS[hoja], img = c.dataset.tinte ? tenido('sh_' + hoja, c.dataset.tinte) : IMG['sh_' + hoja];
     if (!img || !img.naturalWidth) return;
     const x = c.getContext('2d'); x.imageSmoothingEnabled = false;
     const e = Math.min(48 / hm.fw, 48 / hm.fh);

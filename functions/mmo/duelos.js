@@ -63,8 +63,10 @@ export const Duelos = {
     const ahora = Date.now();
     if (ahora - (s.combateT || 0) < CALMA_MS || ahora - (t.combateT || 0) < CALMA_MS) return this.no(s, 'Ahora no: uno de los dos está en combate.');
     const ini = ahora + CUENTA_MS;
-    s.duelo = { con: t.id, ini, fin: ini + DUELO_MS };
-    t.duelo = { con: s.id, ini, fin: ini + DUELO_MS };
+    // Donde empezo (para saber quien huyo) y el uid del rival (por si se desconecta).
+    const x0 = (s.x + t.x) / 2, k0 = s.k;
+    s.duelo = { con: t.id, ini, fin: ini + DUELO_MS, x0, k0, uid: t.c.uid };
+    t.duelo = { con: s.id, ini, fin: ini + DUELO_MS, x0, k0, uid: s.c.uid };
     this.aClave(s.k, { t: 'duelo', a: s.id, b: t.id, en: CUENTA_MS, ms: DUELO_MS });
   },
 
@@ -88,6 +90,17 @@ export const Duelos = {
     this.aClave(a.k, fin);
     // Si ya estaban en mapas distintos, el otro tambien debe enterarse.
     if (b && b.k !== a.k) this.enviar(b, fin);
+  },
+
+  // Elo del que se desconecto en mitad del duelo: se carga su personaje (o su
+  // sesion, si ya volvio) y pierde como si hubiera perdido el duelo.
+  async eloPorAbandono(g, uid) {
+    const vuelto = this.porUid.get(uid);
+    if (vuelto && vuelto.c) { this.puntuarDuelo(g, vuelto); return; }
+    const c = await this.state.storage.get('c:' + uid);
+    if (!c) return;
+    const r = this.puntuarDuelo(g, { c });
+    if (r && !r.sin && !this.porUid.get(uid)) await this.state.storage.put('c:' + uid, c);
   },
 
   puntuarDuelo(g, p) {
@@ -114,10 +127,25 @@ export const Duelos = {
       const d = s.duelo;
       if (!d) continue;
       const t = this.sesiones.get(d.con);
-      if (!t || !t.c || t.cerrado || !t.duelo) { s.duelo = null; this.enviar(s, { t: 'dueloFin', a: s.id, b: 0, g: s.id, m: '⚔️ Tu rival se fue: ganas el duelo.' }); continue; }
+      if (!t || !t.c || t.cerrado || !t.duelo) {
+        // El rival se desconecto: gana el que se quedo (tambien en el Elo, si
+        // el duelo ya habia empezado; si no, huir no costaba nada).
+        s.duelo = null;
+        let txt = '⚔️ Tu rival se fue: ganas el duelo.';
+        if (ahora >= d.ini && d.uid) { s.c.duelosG = (s.c.duelosG || 0) + 1; s.sucio = true; this.revisarLogros(s); this.eloPorAbandono(s, d.uid).catch(e => console.error('[MMO elo abandono]', e)); }
+        this.enviar(s, { t: 'dueloFin', a: s.id, b: 0, g: s.id, m: txt });
+        continue;
+      }
       if (s.id > t.id) continue;   // cada pareja se mira una vez
       if (s.muerto || t.muerto) this.terminarDuelo(s, s.muerto ? (t.muerto ? null : t) : s, 'cayó en combate');
-      else if (t.k !== s.k || Math.abs(t.x - s.x) > LEJOS) this.terminarDuelo(s, null, 'se alejaron');
+      else if (t.k !== s.k || Math.abs(t.x - s.x) > LEJOS) {
+        // Pierde el que se fue (cambio de mapa o se alejo mas del punto de inicio).
+        if (ahora < d.ini) this.terminarDuelo(s, null, 'se alejaron');
+        else {
+          const fuera = x => (x.k !== d.k0 ? 1e9 : Math.abs(x.x - d.x0));
+          this.terminarDuelo(s, fuera(s) > fuera(t) ? t : s, (fuera(s) > fuera(t) ? s : t).c.nombre + ' huyó');
+        }
+      }
       else if (ahora > d.fin) this.terminarDuelo(s, s.hp / s.st.maxHp > t.hp / t.st.maxHp ? s : t.hp / t.st.maxHp > s.hp / s.st.maxHp ? t : null, 'se acabó el tiempo');
     }
   },

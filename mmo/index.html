@@ -242,8 +242,8 @@ body.tactil #pie{display:none;}
 #hud.estrecho #errores{top:50%;width:92%;}
 #hud.estrecho #errores div{white-space:normal;}
 #hud.estrecho #emotes{top:43%;}
-#hud.estrecho #chat-log{max-height:34px;pointer-events:auto;cursor:pointer;}
-/* Tocar el chat en el movil lo despliega 8 s (con fondo para leerlo). */
+#hud.estrecho #chat-log{max-height:34px;}
+/* Con el chat abierto (💬) se despliega el historial (con fondo para leerlo). */
 #hud.estrecho #chat-log.abierto{max-height:150px;background:rgba(10,14,22,.88);border-radius:8px;padding:4px 6px;}
 #errores div{font-size:8px;color:#f87171;text-shadow:1px 1px 0 #000,0 0 6px #000;margin:3px 0;animation:av 1.6s forwards;white-space:nowrap;}
 .ranuras{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
@@ -633,6 +633,8 @@ input.nombre:focus{border-color:var(--pri-txt);}
       <li><b>☀️ Misiones diarias y semanales:</b> cada día 3 tareas y cada semana 2, según tu nivel (tecla L para verlas). Se cobran solas al cumplirlas y completarlas todas da un bono de equipo. <b>😴 Descanso:</b> si pasas horas fuera, tus próximas cazas dan el doble de experiencia (la parte azul de la barra).</li>
       <li><b>🌿 Recolección:</b> en cada zona brillan plantas y vetas de mineral: acércate y pulsa E (o ⛏️ RECOGER). La <b>Artesana Lila</b> del pueblo (⚗️) las convierte en pociones, escudos, pólvora y elixires de 30 minutos.</li>
       <li><b>🛡️ Hermandades:</b> tu clan, con chat propio (/h) y su nombre bajo el tuyo. Fúndala desde 👥 → HERMANDAD (nivel 10 y 5.000 oro) o pide que te inviten.</li>
+      <li><b>🎟️ Pase de temporada:</b> gratis, cada mes. Las misiones diarias (10 puntos) y semanales (30), las mazmorras (6) y el jefe mundial (10) dan puntos; cada 75, un nivel con premio que cobras en el registro de misiones (L). Al 20, la mascota Duendecillo Dorado.</li>
+      <li><b>🧳 Mercader ambulante:</b> de viernes a domingo (UTC) el Mercader trae colores y una mascota exclusivos que rotan cada semana.</li>
       <li><b>⚡ Hora Feliz:</b> cada día de 20:00 a 21:00 (hora de Perú; 01:00-02:00 UTC) la caza da +50% de experiencia. Se ve en el seguimiento.</li>
       <li><b>📢 Buscar grupo:</b> en el portal de mazmorras, «Anunciarme» avisa a los conectados con nivel; quien quiera se une a tu grupo con un toque.</li>
       <li><b>⚡ Desafíos (Nv 60):</b> cada mazmorra con un +k cada vez más duro y <b>afijos</b> que cambian cada lunes. Ranking semanal de Desafíos con premio. <b>🗝️ Bóveda semanal:</b> 1, 4 y 8 mazmorras en la semana abren 1, 2 y 3 objetos; el lunes eliges uno.</li>
@@ -779,6 +781,6 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=102"></script>
+<script type="module" src="/mmo/js/client.js?v=104"></script>
 </body>
 </html>

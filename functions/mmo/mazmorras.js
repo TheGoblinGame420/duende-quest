@@ -18,7 +18,7 @@
 // ultimo, epica). NUNCA mTON: ese dinero sale de un fondo limitado y sumar
 // fuentes nuevas se habla antes con el dueño.
 // ═══════════════════════════════════════════════════════
-import { MAPAS, MONSTRUOS, MAZMORRAS, MONTURAS, MATERIALES, esenciaJefe, ESENCIA_NV, escalaMazmorra, premioMazmorraDia, nivelMazmorra, statsMonstruo, SUELO, hoyUTC, NIVEL_MAX, DESAFIO_MAX, multDesafio, premioDesafio, AFIJOS, afijosDe, multAfijos, opcionesBoveda, semanaUTC, nombreItem, BANDA_MONTURA, botinBandaNv, CONJUNTO_PROB, BANDA_MAX, BOLSA_MAX } from '../../mmo/js/data.js';
+import { MAPAS, MONSTRUOS, MAZMORRAS, MONTURAS, MATERIALES, esenciaJefe, ESENCIA_NV, escalaMazmorra, premioMazmorraDia, nivelMazmorra, statsMonstruo, SUELO, hoyUTC, NIVEL_MAX, DESAFIO_MAX, multDesafio, premioDesafio, AFIJOS, afijosDe, multAfijos, opcionesBoveda, semanaUTC, nombreItem, BANDA_MONTURA, botinBandaNv, CONJUNTO_PROB, BANDA_MAX, BOLSA_MAX , PASE } from '../../mmo/js/data.js';
 import { GRUPO_MAX } from './social.js';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -441,6 +441,7 @@ export const Mazmorras = {
     for (const s of jugadores) {
       const c = s.c;
       c.mazmorras = (c.mazmorras || 0) + 1;
+      if (this.puntoPase) this.puntoPase(s, PASE.puntos.mazmorra);
       this.progresoTarea(s, 'mazmorra');
       if (peleo(s)) this.puntoGesta(s, 'mazmorra');
       if (!c.mazDia || c.mazDia.d !== hoy) c.mazDia = { d: hoy, hechas: [] };

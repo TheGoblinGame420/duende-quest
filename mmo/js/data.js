@@ -439,6 +439,12 @@ export const TINTES = {
 // enseñan una vez (lo nuevo para los que vuelven). La mas reciente arriba;
 // subir 'n' al añadir una.
 export const NOVEDADES = [
+  { n: 5, fecha: '22 de octubre (mediodía)', items: [
+    '🎟️ Pase de temporada mensual y gratis: misiones, mazmorras y jefe mundial dan puntos; 20 niveles de premios y una mascota exclusiva (registro de misiones, L).',
+    '👹 Jefes mundiales que rotan: el Gran Duende, el Dragón de la Tormenta y el Coloso de Obsidiana.',
+    '🧳 Mercader ambulante los fines de semana: colores y mascotas que no se venden el resto de la semana.',
+    '⚔️ Ranking de duelos con Elo (huir cuenta como derrota).',
+  ] },
   { n: 4, fecha: '22 de octubre (mañana)', items: [
     '⚡ Hora Feliz cada día de 20:00 a 21:00 (hora de Perú): +50% de experiencia por caza.',
     '🎭 Las skins dan más poderes (crítico, defensa, experiencia...) y se pueden probar 10 s en el Mercader.',
@@ -1499,4 +1505,26 @@ export const enOfertaAmbulante = (k, id) => ambulanteActivo() && ambulanteOferta
 // Cada media hora sale otro (el que toca en el instante t).
 export const MUNDIALES = ['jefe_mundial', 'mundial_tormenta', 'mundial_coloso'];
 export const mundialDe = t => MUNDIALES[Math.floor(t / 1800000) % MUNDIALES.length];
+
+// ── PASE DE TEMPORADA (gratis, se renueva cada mes UTC) ──
+// Jugar da puntos (misiones diarias y semanales, su bono, mazmorras y jefe
+// mundial); cada 75 puntos, un nivel con premio que se cobra a mano en el
+// registro de misiones (L). Al nivel 20, una mascota que no se vende. Sin
+// compra y sin mTON.
+export const PASE = { niveles: 20, porNivel: 75, puntos: { diaria: 10, semanal: 30, bono: 15, mazmorra: 6, mundial: 10 } };
+export const paseMes = (t = Date.now()) => new Date(t).toISOString().slice(0, 7);
+export function premioPase(n, nivel) {
+  const oro = k => Math.round(k * Math.max(1, nivel));
+  if (n === PASE.niveles) return { mascota: 'duende_pase', oro: oro(600), txt: 'la mascota Duendecillo Dorado y ' + oro(600).toLocaleString('es') + ' de oro' };
+  if (n === 10) return { item: 2, oro: oro(300), txt: 'un objeto épico y ' + oro(300).toLocaleString('es') + ' de oro' };
+  if (n % 5 === 0) return { item: 1, oro: oro(200), txt: 'un objeto raro y ' + oro(200).toLocaleString('es') + ' de oro' };
+  if (n % 3 === 0) return { pw: { pocion: 5, escudo: 2 }, txt: '5 pociones y 2 escudos' };
+  if (n % 3 === 2) return { pw: { rayo: 2, fuego: 2 }, txt: '2 rayos y 2 fuegos' };
+  return { oro: oro(60 + 15 * n), txt: oro(60 + 15 * n).toLocaleString('es') + ' de oro' };
+}
+MASCOTAS.duende_pase = { nombre: 'Duendecillo Dorado', hoja: 'goblin_normal', alto: 26, nv: 1, precio: 0, tinte: '#facc15', pase: true };
+LOGROS.push(
+  { id: 'pase10', titulo: 'Aventurero del Pase', desc: 'Llega al nivel 10 del pase de temporada', oro: 2000, cond: c => (c.paseMax || 0) >= 10 },
+  { id: 'pase20', titulo: 'Leyenda del Pase',    desc: 'Completa los 20 niveles del pase de temporada', oro: 5000, cond: c => (c.paseMax || 0) >= 20 },
+);
 

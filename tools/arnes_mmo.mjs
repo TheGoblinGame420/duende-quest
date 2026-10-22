@@ -587,6 +587,7 @@ async function pruebas() {
   await pruebasElo();
   await pruebasAmbulante();
   await pruebasMundiales();
+  await pruebasPase();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -1343,6 +1344,43 @@ async function pruebasTintes() {
 }
 
 
+async function pruebasPase() {
+  console.log('Pase de temporada (mensual, gratis)');
+  const D = await import('../mmo/js/data.js');
+  const j = await entrar('Pasero', '88');
+  ponerNivel(j, 30, 'guerrero');
+  await aMapa(j, 'pueblo', 900);
+  const pa = mundo.paseDe(j.c);
+  chequear(pa.mes === D.paseMes() && pa.p === 0, 'empieza el mes en 0');
+  mundo.puntoPase(j, D.PASE.puntos.semanal); mundo.puntoPase(j, 50);
+  chequear(j.c.pase.p === 80, 'suma puntos (80)');
+  j.limpiar(); await j.mandar({ t: 'pase', n: 2 });
+  chequear(j.ultimos('no').some(x => /Aún no/.test(x.m)), 'no se cobra un nivel no alcanzado');
+  const oro0 = j.c.oro;
+  await j.mandar({ t: 'pase', n: 1 });
+  chequear(j.c.pase.cob.includes(1) && j.c.oro > oro0, 'el nivel 1 se cobra (oro)');
+  j.limpiar(); await j.mandar({ t: 'pase', n: 1 });
+  chequear(j.ultimos('no').some(x => /Ya cobraste/.test(x.m)), 'no se cobra dos veces');
+  // Hasta el 20: la mascota que no se vende y el logro.
+  mundo.puntoPase(j, 10000);
+  for (let n = 2; n <= D.PASE.niveles; n++) await j.mandar({ t: 'pase', n });
+  chequear(j.c.mascotas.includes('duende_pase') && j.c.logros.includes('pase20'), 'al 20: la mascota Duendecillo Dorado y el logro');
+  const k = await entrar('Comprante', '89'); ponerNivel(k, 30, 'mago'); k.c.oro = 1e6; await aMapa(k, 'pueblo', 900);
+  await k.mandar({ t: 'comprar', k: 'mascota', id: 'duende_pase' });
+  chequear(!(k.c.mascotas || []).includes('duende_pase'), 'la mascota del pase no se vende');
+  // Mes nuevo: de cero.
+  j.c.pase.mes = '2000-01';
+  chequear(mundo.paseDe(j.c).p === 0 && j.c.paseMax === 20, 'cada mes empieza de cero (el logro queda)');
+  // Puntos de una mazmorra completada.
+  ponerNivel(j, 20); await aMapa(j, 'pueblo', 800);
+  await j.mandar({ t: 'mazmorra', id: 'catacumbas' });
+  const w = mundo.mundoDe(j), fin = [...w.mons.values()].find(o => o.final);
+  for (const o of [...w.mons.values()]) if (o.jefe && o !== fin) { mundo.danar(o, 1, j); mundo.danar(o, o.hp + 1, j); tick(1); }
+  mundo.danar(fin, 1, j); mundo.danar(fin, fin.hp + 1, j); tick(2);
+  chequear(j.c.pase.p >= D.PASE.puntos.mazmorra, 'completar una mazmorra da puntos del pase');
+  await dejar(j); await dejar(k);
+}
+
 async function pruebasMundiales() {
   console.log('Jefes mundiales que rotan');
   const D = await import('../mmo/js/data.js');
@@ -1401,6 +1439,26 @@ async function pruebasElo() {
   for (let i = 0; i < 20; i++) await espera();
   const rk = a.ws.rec.filter(m => m.t === 'ranking').pop();
   chequear(rk && rk.duel && rk.duel[0] && rk.duel[0].yo && rk.elo === a.c.elo, 'el ranking muestra los duelistas por Elo');
+  // Huir: el que se va pierde Elo (antes, alejarse era empate y nadie perdía).
+  const c1 = await entrarTg('Huidor', 7203), c2 = await entrarTg('Paciente', 7204);
+  for (const x of [c1, c2]) ponerNivel(x, 15, 'mago');
+  await aMapa(c1, 'noche', 600); await aMapa(c2, 'noche', 640);
+  const ini = Date.now() - 1000;
+  c1.duelo = { con: c2.id, ini, fin: ini + 90000, x0: 620, k0: 'noche', uid: c2.c.uid };
+  c2.duelo = { con: c1.id, ini, fin: ini + 90000, x0: 620, k0: 'noche', uid: c1.c.uid };
+  await aMapa(c1, 'pueblo', 300);
+  mundo.tickDuelos(Date.now());
+  chequear(c2.c.elo > 1000 && c1.c.elo < 1000, 'cambiar de mapa en mitad del duelo cuenta como derrota (' + c1.c.elo + ' / ' + c2.c.elo + ')');
+  const e1 = c1.c.elo, e2 = c2.c.elo;
+  await aMapa(c1, 'noche', 600);
+  c1.duelo = { con: c2.id, ini, fin: ini + 90000, x0: 620, k0: 'noche', uid: c2.c.uid };
+  c2.duelo = { con: c1.id, ini, fin: ini + 90000, x0: 620, k0: 'noche', uid: c1.c.uid };
+  await dejar(c1);
+  mundo.tickDuelos(Date.now());
+  for (let i = 0; i < 30; i++) await espera();
+  const guardado = await state.storage.get('c:' + c1.c.uid);
+  chequear(c2.c.elo > e2 && guardado && guardado.elo < e1, 'desconectarse en mitad del duelo también resta Elo (' + (guardado && guardado.elo) + ')');
+  await dejar(c2);
   for (const x of [a, b, inv]) await dejar(x);
 }
 
