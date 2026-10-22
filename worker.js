@@ -69,7 +69,18 @@ export default {
     // de nunca cachearse (el resto de rutas, HTML/JS/manifest, se despliega
     // varias veces por hora y sigue sin cache para no dejar a nadie con una
     // version vieja del motor del juego).
-    if (path.startsWith('/assets/')) headers.set('Cache-Control', 'public, max-age=86400, stale-while-revalidate=3600');
+    // /audio/ (bg_music.ogg pesa ~600 KB) sigue la misma regla que /assets/.
+    // Nunca se aplica a una respuesta HTML (p. ej. el fallback SPA) ni a errores.
+    const cacheable = (res.status === 200 || res.status === 304) && !(res.headers.get('Content-Type') || '').includes('text/html');
+    if (cacheable && (path.startsWith('/assets/') || path.startsWith('/audio/'))) {
+      headers.set('Cache-Control', 'public, max-age=86400, stale-while-revalidate=3600');
+    } else if (cacheable && url.searchParams.has('v') && /\.(js|css)$/.test(path)) {
+      // JS/CSS pedido con ?v=N (mmo/js/client.js?v=45 y su import data.js?v=45):
+      // la URL cambia en cada version, asi que puede cachearse 7 dias sin
+      // revalidar. REGLA: cualquier cambio en esos archivos DEBE subir el ?v=
+      // (en el HTML y en el import), o el jugador seguira con el JS viejo.
+      headers.set('Cache-Control', 'public, max-age=604800');
+    }
     return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
   },
 
