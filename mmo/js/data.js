@@ -612,6 +612,7 @@ export const LOGROS = [
   { id: 'desafio5',  titulo: 'Desafiante',          desc: 'Vence un Desafío +5',               oro: 8000,  cond: c => (c.desafioMax || 0) >= 5 },
   { id: 'desafio10', titulo: 'Implacable',          desc: 'Vence un Desafío +10',              oro: 20000, cond: c => (c.desafioMax || 0) >= 10 },
   { id: 'desafio20', titulo: 'Leyenda del Duende',  desc: 'Vence un Desafío +20',              oro: 50000, cond: c => (c.desafioMax || 0) >= 20 },
+  { id: 'maestrodes', titulo: 'Maestro de Desafíos', desc: 'Gana el ranking semanal de Desafíos (desde el +5)', oro: 10000, cond: c => (c.maestroDes || 0) >= 1 },
   { id: 'calabaza50',  titulo: 'Cazacalabazas',      desc: 'Junta 50 calabazas en la Noche de Duendes',  oro: 3000,  cond: c => (c.calabazas || 0) >= 50 },
   { id: 'calabaza200', titulo: 'Rey de las Calabazas', desc: 'Junta 200 calabazas en la Noche de Duendes', oro: 12000, cond: c => (c.calabazas || 0) >= 200 },
   { id: 'regalo50',    titulo: 'Duende Navideño',    desc: 'Junta 50 regalos en la Navidad Duende',      oro: 3000,  cond: c => (c.regalos || 0) >= 50 },
@@ -877,6 +878,31 @@ export const premioMazmorraDia = nivel => ({ xp: Math.round(xpParaSubir(nivel) *
 export const DESAFIO_MAX = 30;
 export const multDesafio = k => ({ vida: 1 + 0.2 * k, atk: 1 + 0.1 * k });
 export const premioDesafio = k => ({ oro: 500 * (k + 4), nvItem: 60 + Math.min(k, DESAFIO_MAX), rMin: k >= 10 ? 2 : 1 });
+// Afijos semanales de los Desafios (como las M+ de WoW): cambian cada lunes
+// UTC y son los mismos para todos. El primario (Fortificado o Tiranico) desde
+// el +2 y el secundario desde el +5. Se fijan al abrir la instancia.
+export const AFIJOS = {
+  fortificado: { nombre: 'Fortificado', emoji: '🛡️', desde: 2, desc: 'Los monstruos que no son jefes tienen +25% de vida y +15% de daño.' },
+  tiranico:    { nombre: 'Tiránico',    emoji: '👑', desde: 2, desc: 'Los jefes tienen +25% de vida y +15% de daño.' },
+  furioso:     { nombre: 'Furioso',     emoji: '😡', desde: 5, desc: 'Los monstruos que no son jefes se enfurecen bajo el 30% de vida (+50% de daño): remátalos rápido.' },
+  volcanico:   { nombre: 'Volcánico',   emoji: '🌋', desde: 5, desc: 'En combate brotan llamas bajo los pies de cada uno cada pocos segundos: sal de la marca o salta.' },
+  sanguinario: { nombre: 'Sanguinario', emoji: '🩸', desde: 5, desc: 'Al morir, un monstruo cura un 20% de su vida a los de su pack que sigan vivos: bajadlos a la vez.' },
+};
+const AF_PRIM = ['fortificado', 'tiranico'], AF_SEC = ['furioso', 'volcanico', 'sanguinario'];
+export function afijosSemana(sem = semanaUTC()) {
+  const n = Math.round(Date.parse(sem + 'T00:00:00Z') / (7 * 86400000));
+  return [AF_PRIM[n % 2], AF_SEC[n % 3]];
+}
+export const afijosDe = (k, sem) => (k ? afijosSemana(sem).filter(a => k >= AFIJOS[a].desde) : []);
+export const multAfijos = (af = []) => {
+  const f = af.includes('fortificado'), t = af.includes('tiranico');
+  return { vidaPack: f ? 1.25 : 1, atkPack: f ? 1.15 : 1, vidaJefe: t ? 1.25 : 1, atkJefe: t ? 1.15 : 1 };
+};
+// Ranking semanal de Desafios: el mejor +k vencido en la semana (con sus
+// afijos). Premia al top 3 cada lunes, solo desde el +5 para que no se gane
+// con un +1. Solo oro y un titulo.
+export const DES_SEM_MIN = 5;
+export const premioDesSem = i => [20000, 10000, 5000][i] || 0;
 export const nivelMazmorra = (mz, nivelGrupo) => Math.max(mz.nv[0], Math.min(mz.nv[1], nivelGrupo));
 
 export function zonaDe(tipoMonstruo) {

@@ -7,14 +7,14 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, ALCANCE_BASE, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
-  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TINTES, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio,
+  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TINTES, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo,
-} from './data.js?v=44';
+} from './data.js?v=45';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -498,7 +498,7 @@ function recibir(m) {
       }
       P.x = m.x; P.y = m.y; P.vx = 0; P.vy = 0; if (m.f) P.f = m.f;
       break;
-    case 'ranking': pintarRanking(m.r, m.sem, m.finSem, m.des); break;
+    case 'ranking': pintarRanking(m.r, m.sem, m.finSem, m.des, m.dsem, m.af); break;
     case 'err':
       if (m.auth && m.auth !== 'inv' && !forzarInvitado) {
         // El servidor cierra el socket; onclose reconecta solo, ya como invitado.
@@ -1443,12 +1443,21 @@ function abrirBuscador() {
       h += `<div class="mis-caja" style="margin:-4px 0 10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap"><b style="color:var(--txt)">⚡ Desafío</b><span style="font-size:12px;color:var(--txt2)">${mejor ? 'Mejor: +' + mejor : 'Aún ninguno'}</span><select data-dk="${id}" style="flex:1;min-width:120px">${ops}</select><button class="btn sec" data-mazk="${id}">Entrar</button></div>`;
     }
   }
-  if (yo.nivel >= NIVEL_MAX) h += '<p style="font-size:12px;color:var(--txt2);margin-top:6px">⚡ Desafíos: la misma mazmorra a Nv 60 con monstruos más duros en cada paso. Vencer el +k abre el siguiente y da oro y un objeto de nivel 60+k (se equipa a Nv 60). Logros a +5, +10 y +20.</p>';
+  if (yo.nivel >= NIVEL_MAX) {
+    h += '<p style="font-size:12px;color:var(--txt2);margin-top:6px">⚡ Desafíos: la misma mazmorra a Nv 60 con monstruos más duros en cada paso. Vencer el +k abre el siguiente y da oro y un objeto de nivel 60+k (se equipa a Nv 60). Logros a +5, +10 y +20.</p>';
+    h += htmlAfijos(afijosSemana());
+  }
   h += '<ul style="padding-left:18px;margin-top:10px;font-size:12px"><li>Aquí los monstruos atacan solos y en packs: tira de uno y vendrá todo su grupo.</li><li>Cada jefe guarda una barrera. Lee sus avisos: <b style="color:var(--warn)">sal de las zonas marcadas</b> en el suelo e <b>interrumpe</b> (Patada, Zurrar, Contrahechizo o Silencio) los hechizos con barra naranja.</li><li>Si caéis todos, revivís en la entrada y el jefe se recupera.</li><li>Cada jefe da equipo a cada uno; el último, épico.</li></ul>';
   L.innerHTML = h;
   L.querySelectorAll('[data-maz]').forEach(b => b.onclick = () => { sfx('explosion', .3); mandar({ t: 'mazmorra', id: b.dataset.maz }); cerrarModales(); });
   L.querySelectorAll('[data-mazk]').forEach(b => b.onclick = () => { const sel = L.querySelector(`[data-dk="${b.dataset.mazk}"]`); sfx('explosion', .35); mandar({ t: 'mazmorra', id: b.dataset.mazk, k: +sel.value }); cerrarModales(); });
   abrir('m-mazmorras');
+}
+// Afijos de la semana de los Desafios (cambian cada lunes UTC).
+function htmlAfijos(af) {
+  return '<div class="mis-caja" style="margin-top:8px;font-size:12px"><b style="color:var(--txt)">Afijos de esta semana</b>'
+    + af.map(a => `<div style="margin-top:4px">${AFIJOS[a].emoji} <b style="color:var(--txt)">${AFIJOS[a].nombre}</b> <span style="color:var(--txt3)">(desde +${AFIJOS[a].desde})</span><br><span style="color:var(--txt2)">${esc(AFIJOS[a].desc)}</span></div>`).join('')
+    + `<div style="margin-top:6px;color:var(--txt2)">El mejor +k de la semana entra al ranking semanal de Desafíos (🏆 en el pueblo): el top 3 desde el +${DES_SEM_MIN} gana oro cada lunes.</div></div>`;
 }
 // Aviso grande en naranja (las mecanicas de los jefes), como los avisos de banda de WoW.
 function emote(txt) {
@@ -3212,15 +3221,18 @@ function pintarInventario() {
 function abrirRanking() { abrir('m-rank'); $('rank-lista').innerHTML = '<p class="centro">Cargando…</p>'; mandar({ t: 'ranking' }); }
 // Dos rankings: el de la semana (experiencia ganada; premia al top 3 cada
 // lunes, asi un jugador nuevo tambien puede ganar) y el de siempre (nivel).
-function pintarRanking(r, sem, finSem, des) {
+function pintarRanking(r, sem, finSem, des, dsem, af) {
   const med = ['🥇', '🥈', '🥉'];
   let h = '<p style="font-size:12px;color:var(--txt);font-weight:600;margin-bottom:4px">🏆 Esta semana (experiencia ganada)</p>';
   if (finSem) { const ms = finSem - Date.now(); const d = Math.floor(ms / 86400000), hh = Math.floor(ms / 3600000) % 24; h += `<p style="font-size:12px;color:var(--txt2);margin-bottom:6px">Termina en ${d} d ${hh} h. Premios: 🥇 oro ×400 tu nivel, objeto épico y título · 🥈 ×200 · 🥉 ×100.</p>`; }
   h += (sem && sem.length) ? sem.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>${x.xp.toLocaleString('es')} XP · Nv ${x.lv}</span></div>`).join('') : '<p class="centro">Nadie ha cazado aún esta semana.</p>';
   h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">⭐ Los más fuertes (nivel)</p>';
   h += r.length ? r.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>Nv ${x.lv} · ${x.k} caz.</span></div>`).join('') : '<p class="centro">Todavía nadie sube de nivel.</p>';
-  // Desafios de mazmorra (Nv 60): el mejor +k de cada uno.
-  h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">⚡ Desafíos de mazmorra (mejor +k)</p>';
+  // Desafios de la semana (con sus afijos) y de siempre: el mejor +k de cada uno.
+  h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">⚡ Desafíos de esta semana</p>';
+  if (af && af.length) h += `<p style="font-size:12px;color:var(--txt2);margin-bottom:6px">Afijos: ${af.map(a => AFIJOS[a] ? AFIJOS[a].emoji + ' ' + AFIJOS[a].nombre : '').join(' · ')}. Premios desde el +${DES_SEM_MIN}: 🥇 ${premioDesSem(0).toLocaleString('es')} oro y título · 🥈 ${premioDesSem(1).toLocaleString('es')} · 🥉 ${premioDesSem(2).toLocaleString('es')}.</p>`;
+  h += (dsem && dsem.length) ? dsem.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>⚡ +${x.k}</span></div>`).join('') : '<p class="centro" style="font-size:12px">Nadie ha vencido un Desafío esta semana.</p>';
+  h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">⚡ Desafíos de mazmorra (mejor +k de siempre)</p>';
   h += (des && des.length) ? des.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>⚡ +${x.k}</span></div>`).join('') : '<p class="centro" style="font-size:12px">Nadie ha vencido aún un Desafío. Se abren a nivel 60 en el portal de mazmorras.</p>';
   $('rank-lista').innerHTML = h;
 }

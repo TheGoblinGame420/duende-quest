@@ -22,7 +22,7 @@ import {
   temporadaDe, TEMP_PROB, TEMP_JEFE,
   TINTES,
   CONJUNTOS, CONJUNTO_PROB,
-  semanaUTC, BESTIARIO_HITOS, premioBestiario, talento, TALENTOS, TALENTO_MAX, puntosTalento, costoReinicioTalentos, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX,
+  semanaUTC, afijosSemana, DES_SEM_MIN, premioDesSem, BESTIARIO_HITOS, premioBestiario, talento, TALENTOS, TALENTO_MAX, puntosTalento, costoReinicioTalentos, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX,
 } from '../../mmo/js/data.js';
 import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery, tg, getSolPriceUsd, SOL_DEV_WALLET } from '../api/lib.js';
 import { Combate } from './combate.js';
@@ -133,6 +133,7 @@ export class MmoWorld {
       this.pedidos = (await this.state.storage.get('pedidos')) || [];
       this.ingresosSol = (await this.state.storage.get('ingresosSol')) || [];
       this.rs = (await this.state.storage.get('rankSem')) || { sem: semanaUTC(), l: {} };
+      this.rds = (await this.state.storage.get('rankDesSem')) || { sem: semanaUTC(), l: {} };
       // Los personajes de prueba de las verificaciones en produccion del
       // 30-sep-2026 ("Bot Prueba" subio a Nv 2) no deben salir en el ranking real.
       if (!(await this.state.storage.get('mig:ranking-pruebas'))) {
@@ -1241,6 +1242,7 @@ export class MmoWorld {
       this.actualizarYo(s);
     }
     if (o.jefe && o.mazmorra) this.alMorirJefeMaz(o);
+    if (o.grupo && this.alMorirPack) this.alMorirPack(o);
     // Invasores, capitan y raros (functions/mmo/eventos.js).
     if (o.ex) this.alMorirEspecial(o);
     this.aClave(o.cl, { t: 'md', id: o.id, pr: premios });
@@ -1623,7 +1625,40 @@ export class MmoWorld {
     const r = ((await this.state.storage.get('ranking')) || []).filter(x => !UIDS_PRUEBA.has(x.uid));
     const sem = this.topSemana().slice(0, 20).map(([uid, x]) => ({ n: x.n, lv: x.lv, xp: x.xp, yo: uid === s.c.uid }));
     const des = ((await this.state.storage.get('rankDes')) || []).slice(0, 10).map(x => ({ n: x.n, k: x.k, yo: x.uid === s.c.uid }));
-    this.enviar(s, { t: 'ranking', r: r.slice(0, 20).map(x => ({ n: x.n, lv: x.lv, k: x.k, yo: x.uid === s.c.uid })), sem, des, finSem: Date.parse(this.rs.sem + 'T00:00:00Z') + 7 * 86400000 });
+    const dsem = this.topDesSem().slice(0, 10).map(([uid, x]) => ({ n: x.n, k: x.k, yo: uid === s.c.uid }));
+    this.enviar(s, { t: 'ranking', r: r.slice(0, 20).map(x => ({ n: x.n, lv: x.lv, k: x.k, yo: x.uid === s.c.uid })), sem, des, dsem, af: afijosSemana(), finSem: Date.parse(this.rs.sem + 'T00:00:00Z') + 7 * 86400000 });
+  }
+
+  // Ranking semanal de Desafios: el mejor +k vencido esta semana (con los
+  // afijos de la semana). Pasa poco: se guarda al momento. Se premia en
+  // revisarSemana al cambiar la semana.
+  anotarDesSem(s, k) {
+    if (!this.rds || UIDS_PRUEBA.has(s.c.uid) || k <= 0 || this.rds.sem !== semanaUTC()) return;
+    const f = this.rds.l[s.c.uid];
+    if (f && f.k >= k) return;
+    this.rds.l[s.c.uid] = { n: s.c.nombre, k, t: Date.now() };
+    this.state.storage.put('rankDesSem', this.rds).catch(e => console.error('[MMO rankDesSem]', e));
+  }
+  topDesSem(rds = this.rds) { return Object.entries((rds && rds.l) || {}).sort((a, b) => b[1].k - a[1].k || a[1].t - b[1].t); }
+  async premiarDesSem(rds) {
+    const top = this.topDesSem(rds).filter(([, f]) => f.k >= DES_SEM_MIN).slice(0, 3);
+    const nombres = [];
+    for (let i = 0; i < top.length; i++) {
+      const [uid, f] = top[i];
+      const s = this.porUid.get(uid);
+      const c = s ? s.c : await this.state.storage.get('c:' + uid);
+      if (!c) continue;
+      const oro = premioDesSem(i);
+      c.oro += oro;
+      if (i === 0) c.maestroDes = (c.maestroDes || 0) + 1;
+      if (s) { this.actualizarYo(s); this.revisarLogros(s); await this.guardar(s); }
+      else await this.state.storage.put('c:' + uid, c);
+      nombres.push(['🥇', '🥈', '🥉'][i] + ' ' + f.n + ' (+' + f.k + ')');
+      const txt = `⚡ ¡Quedaste ${['1º', '2º', '3º'][i]} en el ranking semanal de Desafíos de DUENDE QUEST ONLINE (+${f.k})! Premio: +${oro.toLocaleString('es')} oro${i === 0 ? ' y el título de Maestro de Desafíos' : ''}. Esta semana cambian los afijos.`;
+      if (s) this.enviar(s, { t: 'toast', m: txt, ok: true });
+      if (await this.quiereAvisos(uid)) { try { const env = getEnv({ env: this.env }); await tg(env.BOT_TOKEN, 'sendMessage', { chat_id: uid.slice(3), text: txt }); } catch (e) {} }
+    }
+    if (nombres.length) this.aTodos({ t: 'aviso', m: `⚡ Ranking semanal de Desafíos: ${nombres.join(' · ')}. Nuevos afijos esta semana.` });
   }
 
   // Ranking de Desafios (final de juego): el mejor +k de cada uno. Se
@@ -1655,6 +1690,12 @@ export class MmoWorld {
   async revisarSemana(ahora) {
     if (!this.rs) return;
     const sem = semanaUTC();
+    if (this.rds && this.rds.sem !== sem) {
+      const vieja = this.rds;
+      this.rds = { sem, l: {} };
+      await this.state.storage.put('rankDesSem', this.rds);
+      await this.premiarDesSem(vieja);
+    }
     if (this.rs.sem !== sem) {
       const vieja = this.rs;
       this.rs = { sem, l: {} };

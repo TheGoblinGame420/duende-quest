@@ -12,7 +12,8 @@
       "name": "mmo-local",
       "runtimeExecutable": "node",
       "runtimeArgs": ["tools/mmo_local.mjs"],
-      "port": 8787
+      "port": 8787,
+      "autoPort": true
     }
   ]
 }

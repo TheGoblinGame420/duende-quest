@@ -18,7 +18,7 @@
 // ultimo, epica). NUNCA mTON: ese dinero sale de un fondo limitado y sumar
 // fuentes nuevas se habla antes con el dueño.
 // ═══════════════════════════════════════════════════════
-import { MAPAS, MONSTRUOS, MAZMORRAS, escalaMazmorra, premioMazmorraDia, nivelMazmorra, statsMonstruo, SUELO, hoyUTC, NIVEL_MAX, DESAFIO_MAX, multDesafio, premioDesafio } from '../../mmo/js/data.js';
+import { MAPAS, MONSTRUOS, MAZMORRAS, escalaMazmorra, premioMazmorraDia, nivelMazmorra, statsMonstruo, SUELO, hoyUTC, NIVEL_MAX, DESAFIO_MAX, multDesafio, premioDesafio, AFIJOS, afijosDe, multAfijos } from '../../mmo/js/data.js';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const VACIA_MS = 300000;   // una instancia sin nadie se cierra a los 5 min (en el movil se corta mucho: da tiempo a reconectar)
@@ -92,16 +92,22 @@ export const Mazmorras = {
     w.spawnEn = Infinity;
     w.zonas = [];
     const md = multDesafio(k);
-    w.inst = { id, nv: nivel, creado: Date.now(), vacioDesde: 0, hechos: 0, completada: false, k, mv: md.vida, ma: md.atk };
+    // Afijos de la semana: se fijan al abrirla (un cambio de semana a mitad
+    // de la partida no la cambia).
+    const af = afijosDe(k);
+    const ma = multAfijos(af);
+    w.inst = { id, nv: nivel, creado: Date.now(), vacioDesde: 0, hechos: 0, completada: false, k, mv: md.vida, ma: md.atk, af,
+      mvP: md.vida * ma.vidaPack, maP: md.atk * ma.atkPack, mvJ: md.vida * ma.vidaJefe, maJ: md.atk * ma.atkJefe };
+    const I = w.inst;
     w.muros = mz.jefes.map(j => j.muro);
     const esc = escalaMazmorra(n);
     mz.packs.forEach((pk, ip) => {
       const grupo = clave + ':' + ip;
       pk.k.forEach((k, i) => this.crearMonstruo(clave, k, pk.x + i * 48 - (pk.k.length - 1) * 24,
-        { nv: nivel + (i === 0 ? 1 : 0), hpX: esc.vidaPack * md.vida, atkX: esc.atkPack * md.atk, agresivo: true, radioAgro: 230, grupo }));
+        { nv: nivel + (i === 0 ? 1 : 0), hpX: esc.vidaPack * I.mvP, atkX: esc.atkPack * I.maP, agresivo: true, radioAgro: 230, grupo }));
     });
     mz.jefes.forEach((j, i) => {
-      const o = this.crearMonstruo(clave, j.k, j.x, { nv: nivel + 2, hpX: esc.vidaJefe * md.vida, atkX: esc.atkJefe * md.atk, agresivo: true, radioAgro: 260, mazmorra: true, jefeMaz: i });
+      const o = this.crearMonstruo(clave, j.k, j.x, { nv: nivel + 2, hpX: esc.vidaJefe * I.mvJ, atkX: esc.atkJefe * I.maJ, agresivo: true, radioAgro: 260, mazmorra: true, jefeMaz: i });
       o.final = !!j.final;
       o.atk0 = statsMonstruo(j.k, nivel + 2).atk;
       o.vel0 = o.vel;
@@ -115,7 +121,8 @@ export const Mazmorras = {
     s.c.inst = w.clave;   // para volver a ESTA (y no a otra del mismo mapa) al reconectar
     this.entrarMapa(s, mz.mapa, 150, false, w.clave);
     w.inst.vacioDesde = 0;
-    this.enviar(s, { t: 'toast', m: w.inst.k ? `⚡ ${mz.nombre} — Desafío +${w.inst.k}: monstruos con ${Math.round(w.inst.mv * 100)}% de vida y ${Math.round(w.inst.ma * 100)}% de daño.` : `🏰 ${mz.nombre} (Nv ${w.inst.nv}). Aquí los monstruos atacan solos y en grupo: ¡con cuidado!`, ok: true });
+    const af = (w.inst.af || []).map(a => AFIJOS[a].emoji + ' ' + AFIJOS[a].nombre).join(', ');
+    this.enviar(s, { t: 'toast', m: w.inst.k ? `⚡ ${mz.nombre} — Desafío +${w.inst.k}: monstruos con ${Math.round(w.inst.mv * 100)}% de vida y ${Math.round(w.inst.ma * 100)}% de daño.${af ? ' Afijos: ' + af + '.' : ''}` : `🏰 ${mz.nombre} (Nv ${w.inst.nv}). Aquí los monstruos atacan solos y en grupo: ¡con cuidado!`, ok: true });
   },
 
   // Al reconectar: si estaba en una mazmorra que sigue abierta (la suya o la
@@ -163,9 +170,9 @@ export const Mazmorras = {
     const esc = escalaMazmorra(n);
     const pct = o.hp / o.max;
     const I = (w && w.inst) || {};
-    o.max = Math.round(statsMonstruo(o.k, o.nv).hp * esc.vidaJefe * (I.mv || 1));
+    o.max = Math.round(statsMonstruo(o.k, o.nv).hp * esc.vidaJefe * (I.mvJ || I.mv || 1));
     o.hp = Math.max(1, Math.round(o.max * pct));
-    o.atk = Math.round(o.atk0 * esc.atkJefe * (I.ma || 1));
+    o.atk = Math.round(o.atk0 * esc.atkJefe * (I.maJ || I.ma || 1));
     o.combateDesde = ahora;
     o.gs = {};
     this.aClave(o.cl, { t: 'mmx', id: o.id, mx: o.max, hp: Math.ceil(o.hp) });
@@ -184,6 +191,45 @@ export const Mazmorras = {
       return ahora < z.fin;
     });
     for (const o of [...w.mons.values()]) if (!o.muere && o.jefe && o.mazmorra && o.combateDesde) this.guionJefe(o, w, jugadores, ahora);
+    const af = (w.inst && w.inst.af) || [];
+    if (af.includes('furioso')) this.afijoFurioso(w);
+    if (af.includes('volcanico')) this.afijoVolcanico(w, jugadores, ahora);
+  },
+
+  // ── AFIJOS DE LOS DESAFIOS ──
+  // Furioso: los que no son jefes se enfurecen bajo el 30% de vida.
+  afijoFurioso(w) {
+    for (const o of w.mons.values()) {
+      if (o.jefe || o.muere || o.furia || o.hp / o.max >= 0.3) continue;
+      o.furia = true;
+      o.atk = Math.round(o.atk * 1.5);
+      this.aClave(o.cl, { t: 'emote', m: `😡 ¡${MONSTRUOS[o.k].nombre} se enfurece! Remátalo.` });
+    }
+  },
+  // Volcanico: mientras haya combate, cada 8 s una llama bajo cada jugador
+  // (aviso de 1,6 s; se esquiva saliendo de la marca o saltando).
+  afijoVolcanico(w, jugadores, ahora) {
+    const peleando = [...w.mons.values()].find(o => !o.muere && o.amen.size);
+    if (!peleando) { w.volcEn = 0; return; }
+    if (!w.volcEn) { w.volcEn = ahora + 4000; return; }
+    if (ahora < w.volcEn) return;
+    w.volcEn = ahora + 8000;
+    w.sigZona = w.sigZona || 1;
+    for (const s of jugadores) if (!s.muerto) w.zonas.push({ id: w.sigZona++, x0: s.x - 55, x1: s.x + 55, act: ahora + 1600, fin: ahora + 2100, dano: 0.12, color: '#ff5a1f', de: peleando.id });
+    if (!w.volcAviso) { w.volcAviso = true; this.aClave(w.clave, { t: 'emote', m: '🌋 ¡El suelo arde bajo tus pies! Sal de la marca naranja.' }); }
+  },
+  // Sanguinario (llamado desde matar): al morir uno de un pack, cura un 20%
+  // de su vida a los de su pack que sigan vivos.
+  alMorirPack(o) {
+    const w = this.mundo[o.cl];
+    if (!w || !w.inst || !(w.inst.af || []).includes('sanguinario') || o.jefe) return;
+    let n = 0;
+    for (const x of w.mons.values()) {
+      if (x === o || x.muere || x.grupo !== o.grupo || x.hp >= x.max) continue;
+      x.hp = Math.min(x.max, x.hp + x.max * 0.2);
+      n++;
+    }
+    if (n) this.aClave(o.cl, { t: 'emote', m: '🩸 Su pack se cura con su sangre: ¡bajadlos a la vez!' });
   },
 
   guionJefe(o, w, jugadores, ahora) {
@@ -259,7 +305,7 @@ export const Mazmorras = {
     const esc = escalaMazmorra(Math.max(1, vivos.length));
     const I = (this.mundo[o.cl] && this.mundo[o.cl].inst) || {};
     for (let i = 0; i < m.n; i++) {
-      const a = this.crearMonstruo(o.cl, m.k, o.x + (i % 2 ? 1 : -1) * (90 + i * 30), { nv: o.nv - 2, hpX: esc.vidaPack * 0.5 * (I.mv || 1), atkX: I.ma || 1, agresivo: true, radioAgro: 700 });
+      const a = this.crearMonstruo(o.cl, m.k, o.x + (i % 2 ? 1 : -1) * (90 + i * 30), { nv: o.nv - 2, hpX: esc.vidaPack * 0.5 * (I.mvP || I.mv || 1), atkX: I.maP || I.ma || 1, agresivo: true, radioAgro: 700 });
       a.esbirroDe = o.id;
       const t = vivos[Math.floor(Math.random() * vivos.length)];
       if (t) a.amen.set(t.id, 1);
@@ -334,6 +380,7 @@ export const Mazmorras = {
         const nuevo = Math.min(I.k, antes + 1);
         const marca = nuevo > antes;
         c.desafio[I.id] = Math.max(antes, nuevo);
+        this.anotarDesSem(s, nuevo);
         const maxAntes = c.desafioMax || 0;
         c.desafioMax = Math.max(maxAntes, c.desafio[I.id]);
         if (c.desafioMax > maxAntes) this.actualizarRankDes(s).catch(e => console.error('[MMO rankDes]', e));

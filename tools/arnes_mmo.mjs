@@ -571,6 +571,7 @@ async function pruebas() {
   await pruebasConjuntos();
   await pruebasTintes();
   await pruebasChicha();
+  await pruebasAfijos();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -1247,6 +1248,77 @@ async function pruebasTintes() {
   await dejar(t); await dejar(v);
 }
 
+
+async function pruebasAfijos() {
+  console.log('Afijos semanales y ranking semanal de Desafíos');
+  const D = await import('../mmo/js/data.js');
+  const af = D.afijosSemana();
+  chequear(D.afijosDe(1).length === 0 && D.afijosDe(2).length === 1 && D.afijosDe(5).length === 2, 'sin afijos al +1, primario desde +2, los dos desde +5');
+  chequear(D.afijosSemana('2026-10-19').join() !== D.afijosSemana('2026-10-26').join(), 'cambian de una semana a otra');
+  const d = await entrar('Afijero', '6a');
+  ponerNivel(d, 60, 'guerrero');
+  d.c.desafio = { catacumbas: 4 };
+  await aMapa(d, 'pueblo', 800);
+  d.limpiar();
+  await d.mandar({ t: 'mazmorra', id: 'catacumbas', k: 5 });
+  const w = mundo.mundoDe(d);
+  chequear(w.inst && w.inst.k === 5 && w.inst.af.join() === af.join(), 'la instancia +5 lleva los afijos de la semana (' + af.join(', ') + ')');
+  chequear(d.ultimos('toast').some(x => x.m.includes('Afijos:')), 'al entrar se avisan los afijos');
+  const pack = [...w.mons.values()].find(o => !o.jefe);
+  const base = mundo.crearMonstruo('pueblo', pack.k, 100, { nv: pack.nv, hpX: 2.2 });
+  mundo.mundoK('pueblo').mons.delete(base.id);
+  const esperado = D.multDesafio(5).vida * D.multAfijos(af).vidaPack;
+  chequear(Math.abs(pack.max / base.max - esperado) < 0.05, 'vida de los packs según el +k y Fortificado (×' + (pack.max / base.max).toFixed(2) + ' de ×' + esperado.toFixed(2) + ')');
+  // Furioso
+  w.inst.af = ['furioso'];
+  const atk0 = pack.atk;
+  pack.hp = pack.max * 0.25;
+  tick(1);
+  chequear(pack.furia && pack.atk === Math.round(atk0 * 1.5), 'Furioso: bajo el 30% pega un 50% más');
+  // Sanguinario
+  w.inst.af = ['sanguinario'];
+  const mates = [...w.mons.values()].filter(o => o.grupo === pack.grupo && o !== pack && !o.muere);
+  const otro = mates[0];
+  chequear(!!otro, 'el pack tiene más de un monstruo');
+  otro.hp = otro.max * 0.5;
+  mundo.danar(pack, pack.hp + 1, d); tick(1);
+  chequear(Math.abs(otro.hp / otro.max - 0.7) < 0.01, 'Sanguinario: al morir uno, su pack se cura un 20% (' + (otro.hp / otro.max).toFixed(2) + ')');
+  // Volcanico: con combate, llama bajo el jugador; quien se queda, recibe.
+  w.inst.af = ['volcanico'];
+  w.zonas = [];
+  for (const o of [...w.mons.values()]) if (o !== otro) w.mons.delete(o.id);
+  otro.x = d.x + 600; otro.au.aturdido = { hasta: reloj + 60000 };
+  otro.amen.set(d.id, 1);
+  d.hp = d.st.maxHp; d.y = SUELO;
+  tick(1); tick(41);
+  const z = w.zonas.find(z => z.color === '#ff5a1f' && z.x0 < d.x && d.x < z.x1);
+  chequear(!!z, 'Volcánico: aparece una llama bajo el jugador');
+  const hp0 = d.hp;
+  d.inv = 0;
+  tick(18);
+  chequear(d.hp < hp0 - d.st.maxHp * 0.08, 'quien no se mueve recibe el golpe de la llama');
+  // Ranking semanal: vencer el +5 lo anota y el lunes premia.
+  w.inst.af = [];
+  mundo.rds.l = {};   // las pruebas de Desafíos de antes dejaron a otros en la tabla
+  for (const o of [...w.mons.values()]) w.mons.delete(o.id);
+  const fin = mundo.crearMonstruo(w.clave, 'mz_senor', d.x + 50, { nv: 62, agresivo: true, mazmorra: true, jefeMaz: 2 });
+  fin.final = true;
+  mundo.danar(fin, 1, d); mundo.danar(fin, fin.hp + 1, d); tick(2);   // el primer golpe empieza el combate (y reescala su vida)
+  chequear(w.inst.completada && mundo.rds.l[d.c.uid] && mundo.rds.l[d.c.uid].k === 5, 'el +5 vencido entra al ranking semanal de Desafíos');
+  d.limpiar(); await d.mandar({ t: 'ranking' });
+  for (let i = 0; i < 20; i++) await espera();
+  const rk = d.ultimos('ranking').pop();
+  chequear(rk && rk.dsem && rk.dsem.some(x => x.yo && x.k === 5) && rk.af && rk.af.length === 2, 'el ranking manda la tabla semanal y los afijos');
+  const oro0 = d.c.oro;
+  const fSem = Date.parse(mundo.rds.sem + 'T00:00:00Z') + 7 * DIA;
+  reloj = Math.max(reloj, fSem + 3600000);
+  await mundo.revisarSemana(reloj);
+  for (let i = 0; i < 20; i++) await espera();
+  const logro = D.LOGROS.find(l => l.id === 'maestrodes').oro;
+  chequear(d.c.oro === oro0 + D.premioDesSem(0) + logro && d.c.maestroDes === 1 && (d.c.logros || []).includes('maestrodes'), 'el lunes el 1º cobra ' + D.premioDesSem(0) + ' de oro y el título (más el oro del logro)');
+  chequear(mundo.rds.sem === D.semanaUTC() && !Object.keys(mundo.rds.l).length, 'y la tabla empieza de cero');
+  await dejar(d);
+}
 async function pruebasChicha() {
   console.log('Premio de chicha morada');
   const D = await import('../mmo/js/data.js');
