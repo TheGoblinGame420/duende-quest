@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=208';
+} from './data.js?v=210';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -3974,6 +3974,42 @@ function cerrarModales() { document.querySelectorAll('.modal.on').forEach(m => {
 document.querySelectorAll('[data-cerrar]').forEach(b => b.onclick = cerrarModales);
 document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m) cerrarModales(); }));
 
+// Estilo de las ventanas: el texto se pinta sin emojis (la moneda pasa a ser
+// el icono de oro del pack). Se respetan los iconos de las tarjetas (.ico),
+// los campos de texto y lo marcado con data-emoji. Asi no hay que cuidar
+// cada texto a mano en las decenas de sitios que pintan con innerHTML.
+const EMOJI_RX = /(\p{Extended_Pictographic}|\uFE0F|\u200D)+/gu;
+function limpiarEmojis(raiz) {
+  if (!raiz) return;
+  if (raiz.nodeType === 3) { limpiarTexto(raiz); return; }
+  if (raiz.nodeType !== 1 || raiz.closest('.ico, [data-emoji], input, textarea, canvas')) return;
+  const w = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT);
+  const nodos = [];
+  for (let n = w.nextNode(); n; n = w.nextNode()) nodos.push(n);
+  nodos.forEach(limpiarTexto);
+}
+function limpiarTexto(n) {
+  const t = n.nodeValue;
+  if (!t || !/[\u2190-\u2BFF\u{1F000}-\u{1FAFF}]/u.test(t)) return;
+  const pa = n.parentElement;
+  if (!pa || pa.closest('.ico, [data-emoji], input, textarea')) return;
+  if (t.includes('\u{1FA99}')) {
+    // La moneda: icono de oro.
+    const partes = t.split('\u{1FA99}');
+    const frag = document.createDocumentFragment();
+    partes.forEach((x, i) => {
+      if (i) { const im = document.createElement('img'); im.src = A + 'items/equipo/I_GoldCoin.png'; im.alt = 'oro'; im.className = 'moneda'; frag.appendChild(im); }
+      frag.appendChild(document.createTextNode(x.replace(EMOJI_RX, '').replace(/ {2,}/g, ' ')));
+    });
+    pa.replaceChild(frag, n);
+    return;
+  }
+  const limpio = t.replace(EMOJI_RX, '').replace(/ {2,}/g, ' ');
+  if (limpio !== t) n.nodeValue = /^\s/.test(t) ? limpio : limpio.replace(/^\s+/, '');
+}
+const obsVentanas = new MutationObserver(ms => { for (const m of ms) m.addedNodes.forEach(limpiarEmojis); });
+document.querySelectorAll('.modal').forEach(m => { limpiarEmojis(m); obsVentanas.observe(m, { childList: true, subtree: true }); });
+
 let tabTienda = 'pw';
 document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { tabTienda = b.dataset.tab; document.querySelectorAll('[data-tab]').forEach(x => x.classList.toggle('on', x === b)); pintarTienda(); });
 function abrirTienda() { abrir('m-tienda'); pintarTienda(); }
@@ -3983,6 +4019,7 @@ function tarjeta(ico, nombre, desc, derecha) {
 function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 function pintarTienda() {
   if (!yo) return;
+  $('m-tienda').classList.toggle('tab-premium', tabTienda === 'premium');
   $('t-oro').textContent = yo.oro.toLocaleString('es', { useGrouping: 'always' });
   const L = $('tienda-lista');
   if (tabTienda === 'premium') { L.innerHTML = htmlPremium(); conectarPremium(L); return; }
@@ -4133,7 +4170,7 @@ function abrirRanking() { abrir('m-rank'); $('rank-lista').innerHTML = '<p class
 // Dos rankings: el de la semana (experiencia ganada; premia al top 3 cada
 // lunes, asi un jugador nuevo tambien puede ganar) y el de siempre (nivel).
 function pintarRanking(r, sem, finSem, des, dsem, af, duel, elo, torre, tmax, herm) {
-  const med = ['🥇', '🥈', '🥉'];
+  const med = ['#1', '#2', '#3'];
   let h = '<p style="font-size:12px;color:var(--txt);font-weight:600;margin-bottom:4px">Esta semana (experiencia ganada)</p>';
   if (finSem) { const ms = finSem - Date.now(); const d = Math.floor(ms / 86400000), hh = Math.floor(ms / 3600000) % 24; h += `<p style="font-size:12px;color:var(--txt2);margin-bottom:6px">Termina en ${d} d ${hh} h. Premios: 🥇 oro ×400 tu nivel, objeto épico y título · 🥈 ×200 · 🥉 ×100.</p>`; }
   h += (sem && sem.length) ? sem.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>${x.xp.toLocaleString('es', { useGrouping: 'always' })} XP · Nv ${x.lv}</span></div>`).join('') : '<p class="centro">Nadie ha cazado aún esta semana.</p>';
