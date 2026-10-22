@@ -1344,6 +1344,11 @@ este último va rotando 12 tonos). Pestaña 🎨 COLORES del Mercader
 `c.tinte`, se ve en `infoApariencia.tn`. Solo estética: gasto de oro a largo
 plazo.
 
+**Ranking de Desafíos (?v=42):** en el Sabio Hechicero, el mejor +k de
+cada uno (`rankDes` en el storage, top 30, se actualiza al batir la marca;
+`actualizarRankDes`). Y el botón de la muerte dice "revivir aquí" a los
+novatos (Nv < 10), que reviven en la entrada de la zona sin perder XP.
+
 Sin hacer: avisos a la hora habitual de cada uno (el cron de las 17 UTC ya
 usa 4 de 5 disparadores del plan gratis), y final de juego para D30 (1→60 se
 juega en 5-8 h). Ojo: la bienvenida del bot aún habla de $DUENDE en Solana
