@@ -22,14 +22,15 @@ const RUTAS = [
 ];
 const esperar = ms => new Promise(r => setTimeout(r, ms));
 
-export async function abrirNavegador({ ancho = 960, alto = 600, movil = false, puerto = 9333 + Math.floor(Math.random() * 500) } = {}) {
+export async function abrirNavegador({ ancho = 960, alto = 600, movil = false, puerto = 9333 + Math.floor(Math.random() * 500), args = [] } = {}) {
   const exe = RUTAS.find(r => fs.existsSync(r));
   if (!exe) throw new Error('No encontré Chrome ni Edge');
   const perfil = fs.mkdtempSync(path.join(os.tmpdir(), 'dq-cdp-'));
   const proc = spawn(exe, [
     '--headless=new', `--remote-debugging-port=${puerto}`, `--user-data-dir=${perfil}`,
     `--window-size=${ancho},${alto}`, '--no-first-run', '--no-default-browser-check',
-    '--autoplay-policy=no-user-gesture-required', '--mute-audio', 'about:blank',
+    '--autoplay-policy=no-user-gesture-required', '--mute-audio',
+    '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', ...args, 'about:blank',
   ], { stdio: 'ignore' });
   let lista = null;
   for (let i = 0; i < 60 && !lista; i++) {
@@ -53,7 +54,13 @@ export async function abrirNavegador({ ancho = 960, alto = 600, movil = false, p
       for (const f of oyentes) f(m);
     }
   };
-  const cmd = (method, params = {}) => new Promise((ok, mal) => { const id = sig++; pend.set(id, { ok, mal }); ws.send(JSON.stringify({ id, method, params })); });
+  // Con tope de 30 s: una pagina colgada no deja el script esperando para siempre.
+  const cmd = (method, params = {}) => new Promise((ok, mal) => {
+    const id = sig++;
+    const t = setTimeout(() => { if (pend.has(id)) { pend.delete(id); mal(new Error('CDP sin respuesta: ' + method)); } }, 30000);
+    pend.set(id, { ok: v => { clearTimeout(t); ok(v); }, mal: e => { clearTimeout(t); mal(e); } });
+    ws.send(JSON.stringify({ id, method, params }));
+  });
   await cmd('Page.enable');
   await cmd('Runtime.enable');
   await cmd('Emulation.setDeviceMetricsOverride', { width: ancho, height: alto, deviceScaleFactor: 1, mobile: movil });
@@ -97,6 +104,8 @@ export async function abrirNavegador({ ancho = 960, alto = 600, movil = false, p
       await esperar(ms);
       await cmd('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     },
+    // Eventos del protocolo (p. ej. Page.screencastFrame). Devuelve la baja.
+    escuchar(f) { oyentes.push(f); return () => { const i = oyentes.indexOf(f); if (i >= 0) oyentes.splice(i, 1); }; },
     esperar,
     async cerrar() { try { ws.close(); } catch (e) {} proc.kill(); await esperar(300); try { fs.rmSync(perfil, { recursive: true, force: true }); } catch (e) {} },
   };

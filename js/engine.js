@@ -816,14 +816,14 @@ function mejorasBase() {
 }
 
 const MEJORAS = [
-  { id: 'filo',    icono: '⚔',  nombre: 'FILO AFILADO',  desc: '+35% de dano',            usar: () => { mej.dano += .35; } },
+  { id: 'filo',    icono: '⚔',  nombre: 'FILO AFILADO',  desc: '+35% de daño',            usar: () => { mej.dano += .35; } },
   { id: 'sed',     icono: '🩸', nombre: 'SED DE SANGRE', desc: '+3 vida por muerte',      usar: () => { mej.vidaPorMuerte += 3; } },
   { id: 'furia',   icono: '⚡', nombre: 'FURIA',         desc: '+25% de cadencia',        usar: () => { mej.cadencia += .25; } },
   { id: 'guadana', icono: '🌙', nombre: 'GUADANA',       desc: '+30% de alcance',         usar: () => { mej.alcance += .30; } },
   { id: 'botas',   icono: '👟', nombre: 'BOTAS VELOCES', desc: '+20% de velocidad',       usar: () => { mej.velocidad += .20; } },
   { id: 'corazon', icono: '❤', nombre: 'CORAZON',       desc: '+40 vida maxima y cura',  usar: () => { mej.vidaExtra += 40; PL.maxHp += 40; PL.hp = Math.min(PL.maxHp, PL.hp + 40); updateHpHUD(); } },
   { id: 'iman',    icono: '🧲', nombre: 'IMAN',          desc: 'Atrae monedas de lejos',  usar: () => { mej.iman += 1; } },
-  { id: 'espinas', icono: '🌵', nombre: 'ESPINAS',       desc: 'Danas a quien te toca',   usar: () => { mej.espinas += 2; } },
+  { id: 'espinas', icono: '🌵', nombre: 'ESPINAS',       desc: 'Dañas a quien te toca',   usar: () => { mej.espinas += 2; } },
   { id: 'critico', icono: '💥', nombre: 'GOLPE CRITICO', desc: '+20% de critico (x2)',    usar: () => { mej.critico += .20; } },
   { id: 'avaro',   icono: '🪙', nombre: 'AVARICIA',      desc: '+50% de monedas',         usar: () => { mej.monedas += .50; } },
   { id: 'sombra',  icono: '💨', nombre: 'SOMBRA',        desc: 'Dash mucho mas rapido',   usar: () => { mej.dashRapido *= .6; } },
