@@ -11,12 +11,12 @@ import {
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
-  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe, climaDe, ESPECIES, premioEspecie, TORRE, atajoTorre, premioTorreSem, zonaDeNivel, progresoLogro, proximoMundial, mundialDe, HORA_FELIZ, EXPEDICION, premioExpedicion,
+  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe, climaDe, CLIMA, ESPECIES, premioEspecie, TORRE, atajoTorre, premioTorreSem, zonaDeNivel, progresoLogro, proximoMundial, mundialDe, HORA_FELIZ, EXPEDICION, premioExpedicion,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=178';
+} from './data.js?v=180';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1765,6 +1765,12 @@ function htmlCalendario() {
   l.push(`🧳 <b>Mercader ambulante</b>: ${ambulanteActivo() ? '<span style="color:var(--ok)">está aquí este fin de semana</span>' : 'de viernes a domingo'}.`);
   const lunes = Date.parse(semanaUTC() + 'T00:00:00Z') + 7 * 86400000;
   l.push(`🏆 <b>Cierre de los rankings semanales</b> (experiencia, Torre, Desafíos; premios y todo de cero): ${dia(lunes)} a las ${hora(lunes)}.`);
+  // Pronostico: donde llueve (Pez Dorado x2) o nieva, ahora o en las proximas horas.
+  const pron = Object.keys(CLIMA).map(id => {
+    for (let h = 0; h < 6; h++) { const t = Math.floor(ahora / 3600000) * 3600000 + h * 3600000; if (climaDe(id, t + 1000)) return `${climaDe(id, t + 1000) === 'nieve' ? '❄️' : '🌧️'} ${esc(MAPAS[id].nombre)} ${h ? 'a las ' + hora(t) : '<b style="color:var(--ok)">ahora</b>'}`; }
+    return '';
+  }).filter(Boolean);
+  if (pron.length) l.push(`☁️ <b>Clima</b> (con lluvia el Pez Dorado sale el doble): ${pron.join(' · ')}.`);
   const tp = TEMPORADAS.find(x => x.fin > ahora);
   if (tp) l.push(tp.ini <= ahora ? `${tp.emoji} <b>${esc(tp.nombre)}</b>: en marcha hasta el ${esc(tp.hasta)}.` : `${tp.emoji} <b>${esc(tp.nombre)}</b>: empieza el ${dia(tp.ini)} a las ${hora(tp.ini)}.`);
   return '<div class="mis-caja" style="margin-top:0"><b>📅 Calendario</b><ul style="padding-left:18px;margin-top:4px;font:13px/1.5 var(--sans);color:var(--txt2)">' + l.map(x => `<li>${x}</li>`).join('') + '</ul><p style="font-size:11px;color:var(--txt3)">Horas en la hora de tu dispositivo.</p></div>';
