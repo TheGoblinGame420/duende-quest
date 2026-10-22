@@ -46,7 +46,7 @@ export const Tareas = {
     const c = s.c;
     if (!c) return;
     const { dia, sem } = this.tareasDe(c);
-    let cambio = false;
+    let cambio = false, acabada = false;
     const revisar = (bloque, defs, semanal) => {
       for (const t of bloque.l) {
         if (t.ok) continue;
@@ -64,7 +64,7 @@ export const Tareas = {
         if (!vale) continue;
         t.p++;
         cambio = true;
-        if (t.p >= def.n) { t.ok = true; this.cobrarTarea(s, def, semanal); }
+        if (t.p >= def.n) { t.ok = true; acabada = true; this.cobrarTarea(s, def, semanal); }
       }
       if (!bloque.bono && bloque.l.length && bloque.l.every(t => t.ok)) {
         bloque.bono = true;
@@ -73,7 +73,13 @@ export const Tareas = {
     };
     revisar(dia, TAREAS_DIA, false);
     revisar(sem, TAREAS_SEMANA, true);
-    if (cambio) { s.sucio = true; this.enviar(s, { t: 'tareas', ...this.infoTareas(c) }); }
+    // El progreso se manda como mucho cada 3 s (la de "usa 50 habilidades"
+    // lo mandaba con cada una); al cumplirse una, al momento.
+    if (cambio) {
+      s.sucio = true;
+      const ahora = Date.now();
+      if (acabada || ahora - (s.tareasT || 0) >= 3000) { s.tareasT = ahora; this.enviar(s, { t: 'tareas', ...this.infoTareas(c) }); }
+    }
   },
 
   cobrarTarea(s, def, semanal) {

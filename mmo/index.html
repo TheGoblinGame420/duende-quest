@@ -236,6 +236,11 @@ body.tactil #pie{display:none;}
 @keyframes brilla{to{box-shadow:var(--sombra)}}
 #bxp b.desc{position:absolute;top:0;bottom:0;background:rgba(96,165,250,.5);}
 #errores{left:50%;transform:translateX(-50%);top:28%;pointer-events:none!important;text-align:center;}
+/* Movil: errores y avisos de jefe por debajo de la barra del jefe y del seguimiento (los tapaban). */
+#hud.estrecho #errores{top:50%;width:92%;}
+#hud.estrecho #errores div{white-space:normal;}
+#hud.estrecho #emotes{top:43%;}
+#hud.estrecho #chat-log{max-height:34px;}
 #errores div{font-size:8px;color:#f87171;text-shadow:1px 1px 0 #000,0 0 6px #000;margin:3px 0;animation:av 1.6s forwards;white-space:nowrap;}
 .ranuras{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
 .ranura{border:1px solid var(--borde);border-radius:8px;background:var(--panel2);aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:2px;}
@@ -442,7 +447,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
           <div class="barra rc" id="orec"><i></i><span id="o-rec"></span></div>
           <div class="barra castm" id="ocast"><i style="transform:scaleX(0)"></i><span id="o-cast"></span></div>
           <div class="auras" id="au-obj"></div>
-          <div class="oacc" id="o-acc"><button class="bt" id="o-invitar">➕ GRUPO</button><button class="bt" id="o-herm">🛡️</button><button class="bt" id="o-susurrar">💬</button><button class="bt" id="o-duelo" title="Retar a un duelo">⚔️</button><button class="bt" id="o-amigo" title="Añadir a tu lista de amigos">⭐</button><button class="bt" id="o-insp" title="Inspeccionar su equipo">🔍</button></div>
+          <div class="oacc" id="o-acc"><button class="bt" id="o-invitar">➕ GRUPO</button><button class="bt" id="o-herm">🛡️</button><button class="bt" id="o-susurrar">💬</button><button class="bt" id="o-duelo" title="Retar a un duelo">⚔️</button><button class="bt" id="o-amigo" title="Añadir a tu lista de amigos">☆</button><button class="bt" id="o-insp" title="Inspeccionar su equipo">🔍</button></div>
         </div>
       </div>
       <div class="caja" id="grupo"></div>
@@ -759,6 +764,6 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=67"></script>
+<script type="module" src="/mmo/js/client.js?v=68"></script>
 </body>
 </html>

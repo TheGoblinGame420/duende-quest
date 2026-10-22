@@ -230,8 +230,14 @@ export const Social = {
     this.lfg.set(s.c.uid, e);
     const aviso = JSON.stringify({ t: 'lfgAviso', ...this.infoLfg(s.c.uid, e) });
     let n = 0;
-    for (const x of this.sesiones.values()) if (x.c && x !== s && !x.gid && x.c.nivel >= mz.nv[0]) { this.enviar(x, aviso); n++; }
-    this.enviar(s, { t: 'toast', ok: true, m: `📢 Buscas grupo para ${mz.nombre} (10 min). ` + (n ? `Se avisó a ${n} jugador${n > 1 ? 'es' : ''} con nivel.` : 'Ahora no hay nadie más conectado con nivel: queda en la lista del portal de mazmorras.') });
+    // No a quien esta en una mazmorra, el Coliseo, un duelo o peleando (el
+    // aviso salia en mitad de un jefe): la busqueda queda en la lista igual.
+    for (const x of this.sesiones.values()) {
+      if (!x.c || x === s || x.gid || x.c.nivel < mz.nv[0]) continue;
+      if (x.k.includes('#') || x.k === 'coliseo' || x.duelo || ahora - (x.combateT || 0) < 8000) continue;
+      this.enviar(x, aviso); n++;
+    }
+    this.enviar(s, { t: 'toast', ok: true, m: `📢 Buscas grupo para ${mz.nombre} (10 min). ` + (n ? `Se avisó a ${n} jugador${n > 1 ? 'es' : ''} con nivel.` : 'Ahora no hay nadie libre con nivel: queda en la lista del portal de mazmorras.') });
     this.lfgLista(s);
   },
   infoLfg(uid, e) {

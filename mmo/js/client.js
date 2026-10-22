@@ -14,7 +14,7 @@ import {
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo,
-} from './data.js?v=67';
+} from './data.js?v=68';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -346,6 +346,7 @@ function recibir(m) {
       if (m.regaladas && m.regaladas.length) aviso('🎁 Skins de tu cuenta desbloqueadas: ' + m.regaladas.map(k => SKINS[k].nombre).join(', '), 'ok');
       // Personaje sin clase (nuevo, o de antes de las clases): a elegir.
       if (!yo.clase) setTimeout(() => abrirClases(true), 300);
+      mandar({ t: 'contactos' });
       break;
     case 'mapa': entrarMapa(m); break;
     case 'yo': {
@@ -1295,10 +1296,18 @@ function pintarAccionesObjetivo() {
   ponCss($('o-invitar'), 'display', !enMiGrupo && (!grupo || soyLider()) ? 'block' : 'none');
   const r = miRangoHerm();
   ponCss($('o-herm'), 'display', (r === 'lider' || r === 'oficial') && !q.hn ? 'block' : 'none');
+  { const q = jugObjetivo(); const ya = q && contactos.some(x => x.on && x.id === q.id); ponTxt($('o-amigo'), ya ? '★' : '☆'); $('o-amigo').title = ya ? 'Quitar de tus amigos' : 'Añadir a tu lista de amigos'; }
   ponCss($('o-duelo'), 'display', !duelo && !instancia && !MAPAS[mapaId].instancia ? 'block' : 'none');
 }
 $('o-insp').onclick = () => { const q = jugObjetivo(); if (q) { mandar({ t: 'inspeccionar', p: q.id }); sfx('boton', .3); } };
-$('o-amigo').onclick = () => { const q = jugObjetivo(); if (q) { mandar({ t: 'contactoAdd', p: q.id }); sfx('boton', .3); } };
+$('o-amigo').onclick = () => {
+  const q = jugObjetivo();
+  if (!q) return;
+  const ya = contactos.find(x => x.on && x.id === q.id);
+  mandar(ya ? { t: 'contactoQuitar', uid: ya.uid } : { t: 'contactoAdd', p: q.id });
+  if (ya) aviso('Quitaste a ' + q.n + ' de tus amigos.');
+  sfx('boton', .3);
+};
 $('o-duelo').onclick = () => { const q = jugObjetivo(); if (q) { mandar({ t: 'retar', p: q.id }); sfx('boton', .3); } };
 
 // ── DUELOS ──
@@ -1691,7 +1700,7 @@ function dibujarMuros() {
     const x = mx - camX;
     if (x < -40 || x > VW + 40) continue;
     g.save();
-    g.globalCompositeOperation = 'lighter';
+    g.globalCompositeOperation = aditivo();
     const gr = g.createLinearGradient(x - 18, 0, x + 18, 0);
     gr.addColorStop(0, 'rgba(192,132,252,0)'); gr.addColorStop(.5, 'rgba(192,132,252,.55)'); gr.addColorStop(1, 'rgba(192,132,252,0)');
     g.fillStyle = gr; g.fillRect(x - 18, -OY, 36, SUELO + OY);
@@ -1814,7 +1823,7 @@ function dibujarCofres() {
     const cerca = Math.abs(P.x - c.x) < 200;
     if (!abierto) {
       // Luz que late y alguna chispa: se ve de lejos que hay algo que abrir.
-      g.save(); g.globalCompositeOperation = 'lighter';
+      g.save(); g.globalCompositeOperation = aditivo();
       const rg = g.createRadialGradient(x, c.y - 14, 2, x, c.y - 14, 42);
       rg.addColorStop(0, `rgba(${C.luz},${.32 + Math.sin(frame * .08) * .12})`); rg.addColorStop(1, `rgba(${C.luz},0)`);
       g.fillStyle = rg; g.fillRect(x - 44, c.y - 58, 88, 70); g.restore();
@@ -2615,7 +2624,7 @@ function dibujarPortales(mp) {
     if (x < -80 || x > VW + 80) return;
     g.save();
     g.translate(x, y);
-    g.globalCompositeOperation = 'lighter';
+    g.globalCompositeOperation = aditivo();
     for (let k = 0; k < 3; k++) {
       g.strokeStyle = (p.buscador ? ['#ffd84a', '#ff9900', '#ffe9a8'] : ['#c084fc', '#00eeff', '#ff3cf0'])[k];
       g.lineWidth = 3; g.globalAlpha = .55;
@@ -2777,7 +2786,7 @@ function dibujarMonstruo(o) {
   const temblor = o.st === 3 ? (Math.random() - .5) * 5 : 0;
   if (def.jefe && !o.muereT) {
     // Aura de jefe
-    g.save(); g.globalCompositeOperation = 'lighter';
+    g.save(); g.globalCompositeOperation = aditivo();
     const rg = g.createRadialGradient(x, o.y - o.alto / 2, 5, x, o.y - o.alto / 2, o.alto * .8);
     const c = o.st === 3 ? '255,60,60' : '255,60,240';
     rg.addColorStop(0, `rgba(${c},.28)`); rg.addColorStop(1, `rgba(${c},0)`);
@@ -2821,16 +2830,20 @@ function dibujarMonstruo(o) {
 
 // Mascota: sigue al duende con retraso, a su espalda (las que vuelan, a la
 // altura de la cabeza). El estado va en el propio duende (q.pet).
-function dibujarMascota(q, id, f, pies) {
+function dibujarMascota(q, id, f, pies, montado) {
   const ma = MASCOTAS[id];
   if (!ma) return;
   const hm = HOJAS[ma.hoja];
   if (!hm) return;
-  const objX = q.x - f * 34, objY = ma.vuela ? pies - 62 + Math.sin(frame * .07) * 6 : pies;
-  const p = q.pet || (q.pet = { x: objX, y: objY, f });
+  const objX = q.x - f * (montado ? 64 : 34), objY = ma.vuela ? pies - 62 + Math.sin(frame * .07) * 6 : pies;
+  const ahora = performance.now();
+  const p = q.pet || (q.pet = { x: objX, y: objY, f, t: ahora });
   if (Math.abs(p.x - objX) > 500) { p.x = objX; p.y = objY; }
   const dx = objX - p.x;
-  p.x += dx * .08; p.y += (objY - p.y) * .15;
+  // Mismo ritmo con 60 o con 20 FPS: el paso depende del tiempo pasado.
+  const k = Math.min(1, (ahora - (p.t || ahora)) / 16.7);
+  p.t = ahora;
+  p.x += dx * (1 - Math.pow(.92, k)); p.y += (objY - p.y) * (1 - Math.pow(.85, k));
   if (Math.abs(dx) > 2) p.f = dx > 0 ? 1 : -1;
   const anda = Math.abs(dx) > 3 || ma.vuela;
   const col = hm.mov[1] + (anda ? Math.floor(frame / 6) % hm.mov[2] : 0);
@@ -2890,7 +2903,7 @@ function dibujarDuende(q, esYo) {
   }
   const piesOrig = pies;
   const masc = esYo ? yo.mascota : q.ma;
-  if (masc && !muerto && !(fl & FJ.sigilo)) dibujarMascota(q, masc, f, piesOrig);
+  if (masc && !muerto && !(fl & FJ.sigilo)) dibujarMascota(q, masc, f, piesOrig, !!mo);
   pies = pies - (mo ? mo.dy : 0);
   g.save();
   if (muerto) g.globalAlpha = .35;
@@ -2899,7 +2912,7 @@ function dibujarDuende(q, esYo) {
   const escudo = esYo ? P.escudo : q.escudo;
   const fuego = esYo ? P.fuego : q.fuego;
   if (skin === 'legendaria' && !muerto) {
-    g.save(); g.globalCompositeOperation = 'lighter';
+    g.save(); g.globalCompositeOperation = aditivo();
     const rg = g.createRadialGradient(x, pies - 30, 4, x, pies - 30, 60);
     rg.addColorStop(0, 'rgba(255,60,240,.3)'); rg.addColorStop(1, 'rgba(255,60,240,0)');
     g.fillStyle = rg; g.fillRect(x - 60, pies - 90, 120, 120); g.restore();
@@ -3010,7 +3023,7 @@ function spriteBola(jefe) {
 }
 function dibujarBalas() {
   const ahora = performance.now();
-  if (balas.length) g.globalCompositeOperation = 'lighter';
+  if (balas.length) g.globalCompositeOperation = aditivo();
   for (const b of balas) {
     const dt = Math.min(0.2, (ahora - b.t) / 1000);
     const x = b.x + b.vx * dt - camX, y = b.y + b.vy * dt;
@@ -3032,7 +3045,7 @@ function dibujarEfectos() {
     if (i >= n) return false;
     if (!img || !img.width) return true;
     const x = (f.sigue ? P.x + f.dx : f.x) - camX, y = f.sigue ? P.y + f.dy : f.y;
-    g.save(); if (!ligero) g.globalCompositeOperation = 'lighter'; g.translate(x, y); if (f.flip) g.scale(-1, 1);
+    g.save(); g.globalCompositeOperation = aditivo(); g.translate(x, y); if (f.flip) g.scale(-1, 1);
     g.drawImage(img, i * fw, 0, fw, fh, -fw * f.escala / 2, -fh * f.escala / 2, fw * f.escala, fh * f.escala);
     g.restore();
     return true;
@@ -3071,7 +3084,7 @@ function dibujarEfectos() {
 function dibujarProyectiles() {
   const ahora = performance.now();
   if (!proyectiles.length) return;
-  g.save(); g.globalCompositeOperation = 'lighter';
+  g.save(); g.globalCompositeOperation = aditivo();
   filtrar(proyectiles, p => {
     const k = (ahora - p.ini) / p.dur;
     if (k < 0) return true;
@@ -3652,19 +3665,27 @@ document.addEventListener('visibilitychange', () => {
 // de 1/60 s; se dibuja solo cuando hubo al menos un paso.
 const PASO = 1000 / 60;
 let ultimoT = performance.now(), acum = 0;
-// Modo ligero: si un dispositivo no llega a ~35 FPS de media, se dibujan
-// menos particulas y los efectos sin mezcla aditiva (lo mas caro medido en
-// un movil lento). Se decide solo una vez.
-let ligero = false, mediaDt = 16, muestrasDt = 0;
+// Modo ligero: si en dos tandas seguidas de 5 s la media no llega a ~36 FPS
+// se dibujan menos particulas y sin mezcla aditiva; se apaga tras dos tandas
+// a mas de ~50 FPS. Por tandas (y no al instante) para que un cambio de mapa
+// o el recolector de basura no lo enciendan para siempre.
+let ligero = false, tandaT = 0, tandaN = 0, tandaMs = 0, tandasMal = 0, tandasBien = 0;
+function aditivo() { return ligero ? 'source-over' : 'lighter'; }
+function medirLigero(dt) {
+  if (document.hidden || dt <= 0 || dt > 250) return;
+  tandaN++; tandaMs += dt;
+  if ((tandaT += dt) < 5000) return;
+  const media = tandaMs / tandaN;
+  tandaT = tandaN = tandaMs = 0;
+  if (media > 28) { tandasMal++; tandasBien = 0; } else if (media < 20) { tandasBien++; tandasMal = 0; } else { tandasMal = tandasBien = 0; }
+  if (!ligero && tandasMal >= 2) ligero = true;
+  else if (ligero && tandasBien >= 2) ligero = false;
+}
 let pausaGolpe = 0;
 function bucle(t) {
   requestAnimationFrame(bucle);
   if (t < pausaGolpe) { ultimoT = t; return; }
-  const dt = t - ultimoT;
-  if (!ligero && dt > 0 && dt < 250 && !document.hidden) {
-    mediaDt = mediaDt * 0.97 + dt * 0.03;
-    if (++muestrasDt > 300 && mediaDt > 28) ligero = true;
-  }
+  medirLigero(t - ultimoT);
   acum += Math.min(200, Math.max(0, t - ultimoT));
   ultimoT = t;
   let pasos = 0;

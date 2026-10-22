@@ -18,9 +18,11 @@ const RETO_MS = 30000, CUENTA_MS = 3000, DUELO_MS = 90000, LEJOS = 900, CALMA_MS
 const mapaDuelo = k => !k.includes('#') && k !== 'coliseo';
 // El golpe de espada sale cada ~0,33 s y el disparo de vara cada 0,7 s: la
 // vara pega mas por golpe para que ninguna clase gane solo por cadencia.
-// ×2,5 desde el 22-oct: con 0,12/0,2 a los 25 s ambos seguian al ~80% (el QA
-// de jugador) y casi todos acababan por tiempo. Ahora ~40-50 s a igual nivel.
-const ESCALA = 0.3, ESCALA_VARA = 0.5;
+// 22-oct: con 0,12/0,2 un duelo de magos (vara cada 0,7 s) seguia al ~80% a
+// los 25 s; con todo ×2,5 un guerrero contra un picaro (golpe cada 0,33 s)
+// acababa en 11 s. Ahora el golpe cuerpo a cuerpo (y las habilidades) ×1,35 y
+// la vara ×2,25: ~25-45 s a igual nivel segun las clases (QA de jugador).
+const ESCALA = 0.16, ESCALA_VARA = 0.45;
 const rnd = (a, b) => a + Math.random() * (b - a);
 
 export const Duelos = {
