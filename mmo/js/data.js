@@ -788,6 +788,8 @@ export const LOGROS = [
   { id: 'zonas10',   titulo: 'Trotamundos',        desc: 'Visita las 10 zonas del mundo',  oro: 5000,  cond: c => (c.nVisitadas || 0) >= 10 },
   { id: 'exped25',   titulo: 'Explorador',         desc: 'Completa 25 expediciones',       oro: 3000,  cond: c => (c.expediciones || 0) >= 25 },
   { id: 'especies',  titulo: 'Ictiólogo',          desc: 'Pesca las 11 especies (una por pesquero)', oro: 10000, cond: c => Object.keys(c.especies || {}).length >= 11 },
+  { id: 'dorados25', titulo: 'Buscador de Oro',    desc: 'Pesca 25 Peces Dorados',          oro: 5000,  cond: c => (c.dorados || 0) >= 25 },
+  { id: 'exped8',    titulo: 'Gran Viajero',       desc: 'Completa 10 expediciones de 8 horas', oro: 6000, cond: c => (c.exped8 || 0) >= 10 },
   { id: 'pesca50',   titulo: 'Pescador',           desc: 'Pesca 50 peces',                 oro: 1500,  cond: c => (c.peces || 0) >= 50 },
   { id: 'pesca500',  titulo: 'Maestro Pescador',   desc: 'Pesca 500 peces',                oro: 8000,  cond: c => (c.peces || 0) >= 500 },
   { id: 'mundial10', titulo: 'Titán',              desc: 'Vence 10 veces al jefe mundial', oro: 15000, cond: c => (c.mundiales || 0) >= 10 },
@@ -1683,7 +1685,7 @@ const PROG_LOGRO = {
   nv20: ['nivel', 20], nv40: ['nivel', 40], nv60: ['nivel', 60], mundial1: ['mundiales', 1], mundial10: ['mundiales', 10],
   duelista: ['duelosG', 10], mazmorra1: ['mazmorras', 1], desafio5: ['desafioMax', 5], desafio10: ['desafioMax', 10], desafio20: ['desafioMax', 20],
   pesca50: ['peces', 50], pesca500: ['peces', 500], torre10: ['torreMax', 10], torre25: ['torreMax', 25], exped25: ['expediciones', 25],
-  amigo1: ['amigos', 1], amigo5: ['amigos', 5], zonas10: ['nVisitadas', 10], especies: ['nEspecies', 11],
+  amigo1: ['amigos', 1], amigo5: ['amigos', 5], zonas10: ['nVisitadas', 10], especies: ['nEspecies', 11], dorados25: ['dorados', 25], exped8: ['exped8', 10],
 };
 export function progresoLogro(id, c) {
   let p = PROG_LOGRO[id];

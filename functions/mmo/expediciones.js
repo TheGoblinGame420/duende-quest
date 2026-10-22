@@ -27,6 +27,7 @@ export const Expediciones = {
       c.mat = c.mat || {};
       for (const k in pr.mat) c.mat[k] = Math.min(999, (c.mat[k] || 0) + pr.mat[k]);
       c.expediciones = (c.expediciones || 0) + 1;
+      if (e.h >= 8) c.exped8 = (c.exped8 || 0) + 1;
       this.progresoTarea && this.progresoTarea(s, 'exped');
       if (this.puntoPase) this.puntoPase(s, PASE.puntos.exped);
       s.sucio = true;
