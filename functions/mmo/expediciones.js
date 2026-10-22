@@ -28,6 +28,7 @@ export const Expediciones = {
       s.sucio = true;
       const mats = Object.entries(pr.mat).map(([k, n]) => `${n} ${MATERIALES[k].nombre}`).join(', ');
       this.enviar(s, { t: 'toast', ok: true, m: `🧭 Volvió la expedición: +${pr.oro.toLocaleString('es')} oro, +${pr.xp.toLocaleString('es')} XP y ${mats}.` });
+      this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });   // vuelve la mascota
       this.revisarLogros(s);
       this.actualizarYo(s);
       this.guardar(s);
@@ -40,6 +41,7 @@ export const Expediciones = {
     c.exped = { h, ini: ahora, fin: ahora + h * 3600000, nv: c.nivel };
     s.sucio = true;
     const quien = c.mascota && MASCOTAS[c.mascota] ? MASCOTAS[c.mascota].nombre : 'Un duendecillo explorador';
+    this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });   // la mascota se va
     this.enviar(s, { t: 'toast', ok: true, m: `🧭 ${quien} sale de expedición: vuelve en ${h} h. Recógela en el registro de misiones (L).` });
     this.actualizarYo(s);
     this.guardar(s);

@@ -3160,7 +3160,7 @@ function dibujarDuende(q, esYo) {
     dibujarHoja(mo.hoja, hm, hm.mov[0], col, mo.alto, x, pies, f, 1, mo.tinte || null, false);
   }
   const piesOrig = pies;
-  const masc = esYo ? yo.mascota : q.ma;
+  const masc = esYo ? (yo.exped ? '' : yo.mascota) : q.ma;   // de expedicion no se ve
   if (masc && !muerto && !(fl & FJ.sigilo)) dibujarMascota(q, masc, f, piesOrig, !!mo);
   pies = pies - (mo ? mo.dy : 0);
   g.save();
