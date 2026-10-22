@@ -106,15 +106,15 @@
     render() {
       const destinos = this._targets();
       if (!destinos.length || !this.state) return;
-      const html = '<div style="font-size:.32rem;color:#ffe600;letter-spacing:.1em;margin-bottom:.35rem">🎯 MISIONES DIARIAS</div>' +
+      const html = '<div style="font-size:.45rem;color:var(--oro,#f2c14e);letter-spacing:.06em;margin-bottom:.35rem">🎯 MISIONES DIARIAS</div>' +
         this.state.list.map(m => {
           const pct = Math.min(100, Math.round(m.progress / m.goal * 100));
           return '<div style="margin-bottom:.3rem">' +
-            '<div style="display:flex;justify-content:space-between;font-size:.28rem;color:' + (m.done ? '#00ff88' : 'rgba(255,255,255,.55)') + ';line-height:1.8">' +
+            '<div style="display:flex;justify-content:space-between;gap:.5rem;font-family:var(--sans,system-ui,sans-serif);font-size:.6rem;color:' + (m.done ? 'var(--ok,#22c55e)' : 'var(--txt2,#9aa3b5)') + ';line-height:1.5">' +
               '<span>' + (m.done ? '✅' : '▫️') + ' ' + m.desc + '</span><span>' + (m.done ? '+' + m.reward + ' DQ' : m.progress + '/' + m.goal) + '</span>' +
             '</div>' +
             '<div style="height:3px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden">' +
-              '<div style="height:100%;width:' + pct + '%;background:' + (m.done ? '#00ff88' : '#ffe600') + '"></div>' +
+              '<div style="height:100%;width:' + pct + '%;background:' + (m.done ? 'var(--ok,#22c55e)' : 'var(--oro,#f2c14e)') + '"></div>' +
             '</div>' +
           '</div>';
         }).join('');

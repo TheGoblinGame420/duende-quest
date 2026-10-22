@@ -2352,7 +2352,7 @@ function ganarNivel() {
     ov = document.createElement('div');
     ov.id = 'ov-victoria';
     ov.style.cssText = 'position:fixed;inset:0;z-index:58;display:flex;flex-direction:column;' +
-      'align-items:center;justify-content:center;background:#050510;padding:16px;gap:8px;text-align:center';
+      'align-items:center;justify-content:safe center;background:var(--bg,#0b0f17);padding:16px;gap:8px;text-align:center;overflow-y:auto';
     document.body.appendChild(ov);
   }
   const b = BIOMES[nivel.bioma];
@@ -2366,19 +2366,19 @@ function ganarNivel() {
   ov.innerHTML =
     '<div style="font-size:.44rem;color:' + b.line + '">' + b.name + ' · ' + nivel.id + '</div>' +
     (esCampanaCompleta
-      ? '<div style="font-size:.34rem;color:#c084fc;letter-spacing:.15em;margin-top:2px;text-shadow:0 0 12px #c084fc">🏆 CAMPAÑA COMPLETADA — DERROTASTE AL ÁNGEL CAÍDO 🏆</div>'
+      ? '<div style="font-size:.34rem;color:var(--rosa,#a78bfa);margin-top:2px;font-family:var(--sans,system-ui,sans-serif);font-size:14px;font-weight:700">🏆 Campaña completada: derrotaste al Ángel Caído</div>'
       : '') +
-    '<div style="font-size:.70rem;color:#ffe600;text-shadow:3px 3px 0 #000;margin:4px 0">¡VICTORIA!</div>' +
+    '<div style="font-size:.70rem;color:var(--oro,#f2c14e);margin:4px 0">VICTORIA</div>' +
     '<div style="font-size:1.6rem;letter-spacing:.2em;margin:2px 0">' +
-      conseguidas.map(c => '<span style="color:' + (c ? '#ffe600' : 'rgba(255,255,255,.18)') + '">★</span>').join('') + '</div>' +
-    '<div style="font-size:.40rem;line-height:2;color:rgba(255,255,255,.85);max-width:460px">' +
-      conseguidas.map((c, i) => '<span style="color:' + (c ? '#00ff88' : 'rgba(255,255,255,.4)') + '">' + (c ? '★ ' : '☆ ') + txt[i] + '</span>').join('<br>') + '</div>' +
-    (premio ? '<div style="font-size:.36rem;color:#00ff88;margin-top:4px">+' + premio + ' DQ por estrellas nuevas</div>' : '') +
+      conseguidas.map(c => '<span style="color:' + (c ? 'var(--oro,#f2c14e)' : 'rgba(255,255,255,.18)') + '">★</span>').join('') + '</div>' +
+    '<div style="font-family:var(--sans,system-ui,sans-serif);font-size:14px;line-height:1.7;color:var(--txt2,#9aa3b5);max-width:460px">' +
+      conseguidas.map((c, i) => '<span style="color:' + (c ? 'var(--ok,#22c55e)' : 'var(--txt3,#8a93a6)') + '">' + (c ? '★ ' : '☆ ') + txt[i] + '</span>').join('<br>') + '</div>' +
+    (premio ? '<div style="font-family:var(--sans,system-ui,sans-serif);font-size:14px;font-weight:600;color:var(--oro,#f2c14e);margin-top:4px">+' + premio + ' DQ por estrellas nuevas</div>' : '') +
     '<div style="display:flex;flex-direction:column;gap:8px;width:min(380px,92%);margin-top:10px">' +
       (siguiente ? '<button class="ob" id="vic-sig">▶ SIGUIENTE · ' + siguiente.id + '</button>' : '<button class="ob" id="vic-sig">∞ MODO SIN FIN</button>') +
-      (typeof window.shareScore === 'function' ? '<button class="ob" id="vic-share" style="background:linear-gradient(135deg,#1da1f2,#0077b5);color:#fff">📣 COMPARTIR</button>' : '') +
-      '<button class="ob" id="vic-rep" style="background:rgba(255,255,255,.08);color:#fff">↻ REPETIR</button>' +
-      '<button class="ob" id="vic-mapa" style="background:rgba(255,255,255,.08);color:#fff">🗺 MAPA</button>' +
+      (typeof window.shareScore === 'function' ? '<button class="ob sec" id="vic-share">📣 COMPARTIR</button>' : '') +
+      '<button class="ob sec" id="vic-rep">↻ REPETIR</button>' +
+      '<button class="ob sec" id="vic-mapa">🗺 MAPA</button>' +
     '</div>';
   ov.querySelector('#vic-sig').onclick = () => siguiente ? startGame({ nivel: idx + 1 }) : startGame();
   ov.querySelector('#vic-rep').onclick = () => startGame({ nivel: idx });
@@ -2401,29 +2401,30 @@ function abrirMapa() {
     ov = document.createElement('div');
     ov.id = 'ov-niveles';
     ov.style.cssText = 'position:fixed;inset:0;z-index:58;display:flex;flex-direction:column;' +
-      'align-items:center;justify-content:center;background:#050510;padding:16px;gap:8px;overflow-y:auto';
+      'align-items:center;justify-content:safe center;background:var(--bg,#0b0f17);padding:16px;gap:8px;overflow-y:auto';
     document.body.appendChild(ov);
   }
   const total = LEVELS.reduce((s, l) => s + (est[l.id] || 0), 0);
-  let html = '<div style="font-size:.56rem;color:#00ff88;text-shadow:3px 3px 0 #000">🗺 MAPA</div>' +
-    '<div style="font-size:.42rem;color:#ffe600;margin-bottom:6px">★ ' + total + ' / ' + (LEVELS.length * 3) + '</div>';
+  let html = '<div style="font-size:.56rem;color:var(--txt,#e6e9f0)">🗺 MAPA</div>' +
+    '<div style="font-size:.42rem;color:var(--oro,#f2c14e);margin-bottom:6px">★ ' + total + ' / ' + (LEVELS.length * 3) + '</div>';
   BIOMES.forEach((b, bi) => {
     html += '<div style="width:min(460px,96%);display:flex;align-items:center;gap:6px">' +
-      '<div style="flex:1;font-size:.36rem;line-height:1.5;color:' + b.line + ';text-align:left">' + b.name + '</div>';
+      '<div style="flex:1;font-size:.36rem;line-height:1.5;color:var(--txt2,#9aa3b5);text-align:left">' + b.name + '</div>';
     for (let k = 0; k < 3; k++) {
       const i = bi * 3 + k, l = LEVELS[i], ok = nivelDesbloqueado(i, est), s = est[l.id] || 0;
       html += '<button data-n="' + i + '" ' + (ok ? '' : 'disabled ') + 'style="width:74px;min-height:52px;border-radius:6px;font-family:inherit;' +
-        'border:2px solid ' + (ok ? b.line : 'rgba(255,255,255,.12)') + ';background:' + (ok ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.3)') + ';' +
-        'color:#fff;cursor:' + (ok ? 'pointer' : 'default') + ';font-size:.42rem;line-height:1.6">' +
-        (ok ? (l.jefe ? (l.jefe.tipo === 'oso' ? '☠ ' : '👑 ') : '') + l.id + '<br><span style="color:#ffe600;font-size:.56rem">' + '★'.repeat(s) + '<span style="color:rgba(255,255,255,.2)">' + '★'.repeat(3 - s) + '</span></span>' : '🔒') +
+        'border:1px solid ' + (ok ? b.line : 'var(--borde,#263049)') + ';background:' + (ok ? 'var(--panel2,#182033)' : 'var(--panel,#121826)') + ';' +
+        'color:var(--txt,#e6e9f0);cursor:' + (ok ? 'pointer' : 'default') + ';font-size:.42rem;line-height:1.6">' +
+        (ok ? (l.jefe ? (l.jefe.tipo === 'oso' ? '☠ ' : '👑 ') : '') + l.id + '<br><span style="color:var(--oro,#f2c14e);font-size:.56rem">' + '★'.repeat(s) + '<span style="color:rgba(255,255,255,.2)">' + '★'.repeat(3 - s) + '</span></span>' : '🔒') +
         '</button>';
     }
     html += '</div>';
   });
   const sf = sinFinDesbloqueado(est);
-  html += '<button class="ob" id="mapa-sinfin" style="width:min(420px,94%);margin-top:8px' + (sf ? '' : ';opacity:.45') + '">' +
+  html += '<button class="ob' + (sf ? '' : ' sec') + '" id="mapa-sinfin" ' + (sf ? '' : 'aria-disabled="true" ') + 'style="width:min(420px,94%);margin-top:8px;white-space:nowrap' +
+    (sf ? '' : ';opacity:.55;cursor:not-allowed;font-family:var(--sans,system-ui,sans-serif);font-size:13px;font-weight:600') + '">' +
     (sf ? '∞ MODO SIN FIN (RANKING)' : '🔒 SIN FIN · vence al jefe 1-3') + '</button>' +
-    '<button class="ob" id="mapa-volver" style="width:min(420px,94%);background:rgba(255,255,255,.08);color:#fff">← VOLVER</button>';
+    '<button class="ob sec" id="mapa-volver" style="width:min(420px,94%)">← VOLVER</button>';
   ov.innerHTML = html;
   ov.querySelectorAll('button[data-n]').forEach(bt => { bt.onclick = () => startGame({ nivel: +bt.dataset.n }); });
   ov.querySelector('#mapa-sinfin').onclick = () => { if (sf) startGame(); };
@@ -3326,7 +3327,7 @@ function offerRevive() {
     btn = document.createElement('button');
     btn.id = 'revive-btn';
     btn.className = 'ob';
-    btn.style.cssText = 'background:linear-gradient(135deg,#ff00cc,#7c3aed);color:#fff;font-size:.6rem;box-shadow:0 0 24px rgba(255,0,204,.5),4px 4px 0 rgba(0,0,0,.6)';
+    btn.style.cssText = 'background:var(--panel2,#182033);color:var(--txt,#e6e9f0);border:1px solid var(--oro,#f2c14e);box-shadow:none';
     btn.onclick = reviveGame;
     const title = ov.querySelector('.ov-title');
     if (title && title.nextSibling) ov.insertBefore(btn, title.nextSibling); else ov.prepend(btn);

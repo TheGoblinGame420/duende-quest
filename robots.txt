@@ -4,7 +4,6 @@ Allow: /
 # Rutas internas: API, WebSocket del MMO y la Mini App de Telegram (solo se abre desde Telegram)
 Disallow: /api/
 Disallow: /mmo/ws
-Disallow: /telegram/
 Disallow: /tonconnect-manifest.json
 
 Sitemap: https://duende-quest.alfonso12hc.workers.dev/sitemap.xml

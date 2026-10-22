@@ -50,7 +50,7 @@
       // (data-dq-streak) nadie lo fijaba y el texto salia al tamaño raiz de la
       // pagina (aun mas grande cuando telegram/index.html paso su raiz a 26px).
       const html = '<span style="font-size:.28rem;color:#ff9900">🔥 RACHA: DÍA ' + day + '</span>' +
-        '<span style="font-size:.26rem;color:rgba(255,255,255,.35);float:right">mañana +' + next + ' DQ</span>';
+        '<span style="font-size:.26rem;color:#9aa3b5;float:right">mañana +' + next + ' DQ</span>';
       destinos.forEach(el => { el.innerHTML = html; });
     },
   };

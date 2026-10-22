@@ -8,6 +8,7 @@
 <title>DUENDE QUEST — Telegram</title>
 <!-- Página interna de la Mini App de Telegram: no debe salir en buscadores -->
 <meta name="robots" content="noindex">
+<meta name="description" content="Duende Quest en Telegram: juega gratis el MMO y el arcade, mira tu perfil, skins y ranking.">
 <meta name="theme-color" content="#0b0f17">
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -25,8 +26,8 @@
    variables viejas se quedan remapeadas a tonos sobrios por compatibilidad. */
 :root{
   --bg:#0b0f17;--panel:#121826;--panel2:#182033;--borde:#263049;
-  --txt:#e6e9f0;--txt2:#9aa3b5;--txt3:#6b7489;
-  --pri:#3b82f6;--pri2:#2563eb;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444;--oro:#f2c14e;
+  --txt:#e6e9f0;--txt2:#9aa3b5;--txt3:#8a93a6;
+  --pri:#2563eb;--pri2:#1d4ed8;--pri-txt:#60a5fa;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444;--oro:#f2c14e;
   --verde:#22c55e;--amarillo:#f2c14e;--rosa:#a78bfa;--cian:#60a5fa;--rojo:#ef4444;
   --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --pixel:"Press Start 2P",monospace;
@@ -44,8 +45,8 @@ body{display:flex;flex-direction:column;align-items:center;font-family:var(--pix
 .tg-avatar{width:32px;height:32px;border-radius:50%;background:var(--panel2);border:1px solid var(--borde);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--txt);overflow:hidden;flex-shrink:0;}
 .tg-name{font-size:14px;font-weight:600;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .tg-bal{font-size:14px;font-weight:600;color:var(--oro);white-space:nowrap;}
-.tg-price{font-size:11px;color:var(--txt3);}
-#ton-btn{font-family:var(--sans);font-size:13px;font-weight:600;padding:6px 10px;min-height:32px;background:transparent;border:1px solid var(--borde);color:var(--txt);border-radius:8px;cursor:pointer;white-space:nowrap;}
+.tg-price{font-size:12px;color:var(--txt3);}
+#ton-btn{font-family:var(--sans);font-size:13px;font-weight:600;padding:6px 10px;min-height:40px;background:transparent;border:1px solid var(--borde);color:var(--txt);border-radius:8px;cursor:pointer;white-space:nowrap;}
 #ton-btn:active{transform:scale(.98);}
 
 /* En un movil de 812px el juego ocupaba 150px y quedaban ~500px de vacio negro
@@ -143,16 +144,17 @@ body{display:flex;flex-direction:column;align-items:center;font-family:var(--pix
 .stake-lock-row{display:flex;gap:8px;margin-bottom:16px;justify-content:center;flex-wrap:wrap;}
 .stake-lock-btn{background:transparent;border:1px solid var(--borde);border-radius:8px;padding:10px 12px;cursor:pointer;text-align:center;font-family:var(--sans);font-weight:600;color:var(--txt);font-size:13px;min-width:75px;}
 .stake-lock-btn:active{transform:scale(.98);}
-.stake-lock-btn.active{border-color:var(--pri);background:rgba(59,130,246,.12);}
+.stake-lock-btn.active{border-color:var(--pri-txt);background:rgba(59,130,246,.12);}
 .donate-input{width:100%;max-width:250px;padding:12px;background:var(--panel);border:1px solid var(--borde);border-radius:8px;color:var(--txt);font-family:var(--sans);font-size:18px;text-align:center;outline:none;}
-.donate-input:focus{border-color:var(--pri);}
+.donate-input:focus{border-color:var(--pri-txt);}
 
 /* ── GIRAR EL MÓVIL ──
    W/H del canvas son const calculadas una vez: girar el móvil dejaba la
    resolución equivocada. Se fuerza vertical con un aviso a pantalla completa
    (max-height 520 evita disparar esto en un escritorio apaisado). */
-#ov-girar{display:none;position:fixed;inset:0;z-index:999;background:var(--bg);color:var(--txt);text-align:center;align-items:center;justify-content:center;font-size:14px;line-height:2.4;}
-#ov-girar span{font-family:var(--sans);font-size:14px;color:var(--txt2);}
+/* "GIRA EL MÓVIL" lleva tilde: en la fuente pixel salía mal, va en sans negrita */
+#ov-girar{display:none;position:fixed;inset:0;z-index:999;background:var(--bg);color:var(--txt);text-align:center;align-items:center;justify-content:center;font-family:var(--sans);font-weight:700;font-size:18px;line-height:1.8;}
+#ov-girar span{font-family:var(--sans);font-size:14px;font-weight:400;color:var(--txt2);}
 @media (orientation:landscape) and (max-height:520px){#ov-girar{display:flex;}}
 
 /* ── Tamaño base ──
@@ -204,7 +206,7 @@ html{font-size:24px;}
 #hub-pie nav{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;font-size:12px;}
 #hub-pie a{color:var(--txt2);text-decoration:none;}
 #hub-pie a:active{color:var(--txt);}
-#hub-pie small{font-size:11px;color:var(--txt3);text-align:center;line-height:1.45;}
+#hub-pie small{font-size:12px;color:var(--txt3);text-align:center;line-height:1.45;}
 
 /* Perfil */
 .perfil-cab{display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:4px;}
@@ -221,7 +223,14 @@ html{font-size:24px;}
 #skins-grid{display:flex;flex-direction:column;gap:10px;}
 .skin{display:flex;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--borde);border-radius:10px;padding:10px;}
 .skin img{width:72px;height:72px;image-rendering:pixelated;object-fit:contain;border-radius:6px;background:#0a0e18;flex-shrink:0;}
-.skin .n{font-family:var(--pixel);font-size:11px;margin-bottom:6px;}
+/* Nombre en texto normal (los neones de cada skin bajaban el contraste hasta
+   3,3:1 y las tildes salían mal en pixel); el color de la skin queda solo en
+   un punto pequeño junto al nombre. */
+.skin .n{font-family:var(--sans);font-weight:700;font-size:15px;color:var(--txt)!important;margin-bottom:4px;display:flex;align-items:center;gap:6px;}
+.rar{display:inline-block;width:10px;height:10px;border-radius:50%;flex-shrink:0;box-shadow:0 0 0 1px rgba(255,255,255,.18);}
+.skin .acc button{border:1px solid var(--borde)!important;background:transparent!important;color:var(--txt)!important;}
+.skin .acc button.compra{background:var(--pri)!important;border-color:transparent!important;color:#fff!important;}
+.skin .acc button.equipada{border-color:rgba(34,197,94,.45)!important;color:var(--ok)!important;}
 .skin .d{font-size:13px;color:var(--txt2);line-height:1.45;}
 .skin .b{font-size:12px;color:var(--ok);margin-top:4px;line-height:1.45;}
 .skin .p{font-size:12px;color:var(--oro);margin-top:4px;line-height:1.45;}
@@ -239,11 +248,43 @@ html{font-size:24px;}
 /* Barra de pestañas */
 #tabbar{position:fixed;left:0;right:0;bottom:0;z-index:45;display:grid;grid-template-columns:repeat(5,1fr);
   background:var(--panel);border-top:1px solid var(--borde);padding-bottom:env(safe-area-inset-bottom,0px);}
-#tabbar button{background:none;border:none;color:var(--txt3);font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.03em;
+#tabbar button{background:none;border:none;color:var(--txt2);font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:.03em;
   display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 10px;min-height:56px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
-#tabbar button span{font-size:20px;filter:grayscale(1);opacity:.55;}
+#tabbar button span{font-size:20px;filter:grayscale(1);opacity:.8;}
 #tabbar button.on{color:var(--cian);}
 #tabbar button.on span{filter:none;opacity:1;}
+/* En pantallas anchas la barra ocupaba 1920px; se alinea con el menú (480px) */
+@media (min-width:481px){#tabbar{max-width:480px;left:50%;right:auto;width:100%;transform:translateX(-50%);border-left:1px solid var(--borde);border-right:1px solid var(--borde);}}
+
+/* Foco visible para teclado */
+:focus-visible{outline:2px solid #60a5fa;outline-offset:2px;}
+
+/* ── Pantallas viejas (Exchange, Stars, Canje, Donar, Staking) ──
+   Ya no se abren desde ningún botón, pero si alguien llega a ellas no deben
+   verse con los neones y textos de 5 px de antes. */
+.ov-title.sans{font-family:var(--sans);font-weight:700;font-size:20px;}
+.vj-card{width:100%;max-width:330px;background:var(--panel);border:1px solid var(--borde);border-radius:8px;padding:12px 14px;margin-bottom:12px;font-family:var(--sans);}
+.vj-txt{font-family:var(--sans);font-size:13px;color:var(--txt2);line-height:1.45;text-align:center;}
+.vj-small{font-family:var(--sans);font-size:12px;color:var(--txt3);line-height:1.45;}
+.vj-fila{display:flex;justify-content:space-between;gap:8px;font-family:var(--sans);font-size:13px;padding:7px 0;border-top:1px solid var(--borde);color:var(--txt2);}
+.vj-fila b,.vj-val{color:var(--txt);font-weight:600;}
+.vj-input{width:100%;max-width:330px;font-family:var(--sans);font-size:15px;padding:10px 12px;border-radius:8px;border:1px solid var(--borde);background:var(--panel);color:var(--txt);margin-bottom:8px;outline:none;}
+.vj-input:focus{border-color:var(--pri-txt);}
+.vj-seg{display:flex;gap:6px;margin-bottom:12px;width:100%;max-width:320px;}
+.vj-seg button{flex:1;font-family:var(--sans);font-size:13px;font-weight:600;padding:8px;min-height:40px;border-radius:8px;cursor:pointer;border:1px solid var(--borde);background:transparent;color:var(--txt2);}
+.vj-caja{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--borde);border-radius:8px;padding:8px 10px;font-family:var(--sans);}
+.vj-caja input,.vj-caja .vj-out{flex:1;width:100%;background:none;border:none;outline:none;color:var(--txt);font-family:var(--sans);font-size:16px;font-weight:600;}
+.vj-caja .vj-u{font-size:13px;color:var(--txt2);font-weight:600;}
+.vj-flecha{text-align:center;font-size:16px;margin:6px 0;color:var(--txt3);}
+#ov-donate p,#ov-stars p,#ov-redeem p,#ov-exchange p,#ov-staking p{font-family:var(--sans);}
+#stars-packages>div{background:var(--panel)!important;border:1px solid var(--borde)!important;border-radius:8px!important;font-family:var(--sans);}
+#active-stakes>div{font-family:var(--sans);font-size:12px!important;color:var(--txt2)!important;}
+#active-stakes>div>div{font-family:var(--sans);}
+/* Pausa: monedas y tienda en tokens (antes amarillo neón y textos de 7 px) */
+#ov-pause .pz-oro{font-family:var(--sans);font-size:14px;font-weight:600;color:var(--oro);margin-bottom:12px;}
+#ov-pause .pz-item{background:var(--panel);border:1px solid var(--borde);border-radius:8px;padding:10px;text-align:center;cursor:pointer;font-family:var(--sans);}
+#ov-pause .pz-item div:first-child{font-size:13px;font-weight:600;color:var(--txt);margin-bottom:4px;}
+#ov-pause .pz-item div:last-child{font-size:13px;color:var(--oro);}
 </style>
 </head>
 <body>
@@ -287,12 +328,12 @@ html{font-size:24px;}
         <!-- Acción principal: el MMO. El hash lleva tgWebAppData: pasarlo asegura
              que /mmo/ reciba la identidad de Telegram aunque el SDK no la recupere
              de sessionStorage. -->
-        <button class="ob big" onclick="location.href='/mmo/'+(location.hash||'')" style="width:100%">🌍 Duende Quest Online</button>
+        <button class="ob big" onclick="location.href='/mmo/'+(location.hash||'')" style="width:100%">▶ Jugar online gratis</button>
         <div class="hub-mini" style="text-align:center;margin-top:-4px">Mundo en línea con otros jugadores (MMO)</div>
 
         <div class="seccion-t">Arcade</div>
         <div class="card" id="hub-campana"></div>
-        <button class="ob big sec" id="btn-jugar" onclick="jugar()">▶ JUGAR</button>
+        <button class="ob big sec" id="btn-jugar" onclick="jugar()">Jugar arcade</button>
         <div class="fila2">
           <button class="ob sec" onclick="abrirMapa()">🗺 Mapa</button>
           <button class="ob sec" id="btn-sinfin" onclick="jugarSinFin()">∞ Sin fin</button>
@@ -383,6 +424,7 @@ html{font-size:24px;}
         <nav>
           <a href="/terminos.html" target="_blank" rel="noopener">Términos</a>
           <a href="/privacidad.html" target="_blank" rel="noopener">Privacidad</a>
+          <a href="/seguridad.html" target="_blank" rel="noopener">Seguridad</a>
           <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">Contacto: @ElDuendeOficial</a>
         </nav>
         <small>🔒 Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado.</small>
@@ -422,14 +464,14 @@ html{font-size:24px;}
 
   <div class="ov" id="ov-pause">
     <div class="ov-title">PAUSA</div>
-    <div style="font-size:.45rem;color:#ffe600;margin-bottom:.8rem">🪙 <span id="shop-coins-val">0</span> MONEDAS</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;max-width:340px;width:100%;margin-bottom:1rem;">
-      <div style="background:rgba(0,255,136,.04);border:1px solid rgba(0,255,136,.15);border-radius:2px;padding:.5rem;text-align:center;cursor:pointer" onclick="buyItem(0)"><div style="font-size:.32rem;color:#fff;margin-bottom:.2rem">ENERGY</div><div style="font-size:.28rem;color:#ffe600">🪙 15</div></div>
-      <div style="background:rgba(0,238,255,.04);border:1px solid rgba(0,238,255,.15);border-radius:2px;padding:.5rem;text-align:center;cursor:pointer" onclick="buyItem(1)"><div style="font-size:.32rem;color:#fff;margin-bottom:.2rem">SHIELD</div><div style="font-size:.28rem;color:#ffe600">🪙 25</div></div>
-      <div style="background:rgba(167,139,250,.04);border:1px solid rgba(167,139,250,.15);border-radius:2px;padding:.5rem;text-align:center;cursor:pointer" onclick="buyItem(2)"><div style="font-size:.32rem;color:#fff;margin-bottom:.2rem">RAYO</div><div style="font-size:.28rem;color:#ffe600">🪙 35</div></div>
-      <div style="background:rgba(255,100,0,.04);border:1px solid rgba(255,100,0,.15);border-radius:2px;padding:.5rem;text-align:center;cursor:pointer" onclick="buyItem(3)"><div style="font-size:.32rem;color:#fff;margin-bottom:.2rem">FIRE</div><div style="font-size:.28rem;color:#ffe600">🪙 30</div></div>
+    <div class="pz-oro">🪙 <span id="shop-coins-val">0</span> monedas</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:340px;width:100%;margin-bottom:16px;">
+      <div class="pz-item" onclick="buyItem(0)"><div>Energía</div><div>🪙 15</div></div>
+      <div class="pz-item" onclick="buyItem(1)"><div>Escudo</div><div>🪙 25</div></div>
+      <div class="pz-item" onclick="buyItem(2)"><div>Rayo</div><div>🪙 35</div></div>
+      <div class="pz-item" onclick="buyItem(3)"><div>Fuego</div><div>🪙 30</div></div>
     </div>
-    <div style="display:flex;gap:.4rem">
+    <div style="display:flex;gap:8px">
       <button class="ob" onclick="resumeGame()">▶ Continuar</button>
       <button class="ob sec" onclick="toMenu()">⌂ Menú</button>
     </div>
@@ -437,131 +479,130 @@ html{font-size:24px;}
 
   <div class="ov" id="ov-donate">
     <div class="ov-title">DONAR SOL</div>
-    <p style="font-size:.32rem;color:rgba(255,255,255,.4);text-align:center;margin-bottom:1rem;line-height:2">1 SOL = 10,000 $DUENDE · Mínimo 0.2 SOL</p>
+    <p class="vj-txt" style="margin-bottom:16px">1 SOL = 10,000 $DUENDE · Mínimo 0.2 SOL</p>
     <input type="number" class="donate-input" id="tg-donate-input" min="0.2" step="0.1" placeholder="0.5">
-    <p id="tg-donate-preview" style="font-size:.35rem;color:#ffe600;margin:.6rem 0;min-height:1rem">Ingresa cantidad en SOL</p>
+    <p id="tg-donate-preview" class="vj-txt" style="color:var(--txt);margin:10px 0;min-height:20px">Ingresa cantidad en SOL</p>
     <button class="ob" onclick="tgDonate()">Enviar SOL</button>
-    <button class="ob sec" onclick="toMenu()" style="margin-top:.5rem">← Volver</button>
+    <button class="ob sec" onclick="toMenu()" style="margin-top:8px">← Volver</button>
   </div>
 
   <div class="ov" id="ov-stars">
     <div class="ov-title">COMPRAR $DUENDE</div>
-    <div style="font-family:var(--sans);font-size:13px;color:var(--txt);background:var(--panel);border:1px solid var(--borde);border-radius:8px;padding:10px 14px;margin-bottom:.5rem;text-align:center;line-height:1.45">Oferta de bienvenida: tu 1ª compra vale <b>2x tokens</b></div>
-    <p style="font-size:.3rem;color:rgba(255,255,255,.4);text-align:center;margin-bottom:.6rem;line-height:2">Paga con tarjeta via Telegram Stars<br>Precio: <span id="stars-price" style="color:#00ff88">---</span></p>
-    <div id="stars-packages" style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:8px;margin-bottom:1rem"></div>
-    <p id="stars-status" style="font-size:.3rem;color:#ffe600;min-height:1rem;text-align:center"></p>
-    <button class="ob sec" onclick="toMenu()" style="margin-top:.5rem">← Volver</button>
+    <div class="vj-card vj-txt" style="color:var(--txt)">Oferta de bienvenida: tu 1ª compra vale <b>2x tokens</b></div>
+    <p class="vj-txt" style="margin-bottom:12px">Paga con tarjeta vía Telegram Stars<br>Precio: <span id="stars-price" class="vj-val">---</span></p>
+    <div id="stars-packages" style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
+    <p id="stars-status" class="vj-txt" style="color:var(--txt);min-height:20px"></p>
+    <button class="ob sec" onclick="toMenu()" style="margin-top:8px">← Volver</button>
   </div>
 
   <div class="ov" id="ov-redeem">
-    <div class="ov-title">CANJEAR DQ → $DUENDE</div>
-    <div style="background:rgba(0,255,136,.05);border:1px solid rgba(0,255,136,.2);border-radius:6px;padding:14px;width:100%;max-width:330px;margin-bottom:12px">
-      <div style="font-size:.3rem;color:rgba(255,255,255,.5);text-align:center;line-height:1.9;margin-bottom:8px">Convierte los DQ que ganaste jugando en <b style="color:#00ff88">$DUENDE real</b> en tu wallet de Solana.</div>
-      <div style="display:flex;justify-content:space-between;font-size:.32rem;padding:6px 0;border-top:1px solid rgba(255,255,255,.07)">
-        <span style="color:rgba(255,255,255,.5)">DQ canjeable</span><span style="color:#ffe600" id="redeem-balance">—</span>
+    <div class="ov-title sans">Canjear DQ → $DUENDE</div>
+    <div class="vj-card">
+      <div class="vj-txt" style="margin-bottom:8px">Convierte los DQ que ganaste jugando en <b style="color:var(--txt)">$DUENDE real</b> en tu wallet de Solana.</div>
+      <div class="vj-fila">
+        <span>DQ canjeable</span><span class="vj-val" style="color:var(--oro)" id="redeem-balance">—</span>
       </div>
-      <div style="display:flex;justify-content:space-between;font-size:.28rem;padding:6px 0;border-top:1px solid rgba(255,255,255,.07)">
-        <span style="color:rgba(255,255,255,.4)">Ganado hoy</span><span style="color:rgba(255,255,255,.6)" id="redeem-today">—</span>
+      <div class="vj-fila">
+        <span>Ganado hoy</span><span class="vj-val" id="redeem-today">—</span>
       </div>
-      <div style="font-size:.26rem;color:rgba(255,255,255,.35);text-align:center;line-height:1.9;padding:4px 0">Se gana jugando, hasta 3,000 DQ al día. Es aparte de tus DQ de progreso, que sirven para revivir y comprar skins.</div>
-      <div style="display:flex;justify-content:space-between;font-size:.32rem;padding:6px 0;border-top:1px solid rgba(255,255,255,.07)">
-        <span style="color:rgba(255,255,255,.5)">Tasa</span><span style="color:#00ff88">1,000 DQ = 1 $DUENDE</span>
+      <div class="vj-small" style="text-align:center;padding:4px 0 8px">Se gana jugando, hasta 3,000 DQ al día. Es aparte de tus DQ de progreso, que sirven para revivir y comprar skins.</div>
+      <div class="vj-fila">
+        <span>Tasa</span><span class="vj-val">1,000 DQ = 1 $DUENDE</span>
       </div>
-      <div style="display:flex;justify-content:space-between;font-size:.28rem;padding:6px 0;border-top:1px solid rgba(255,255,255,.07)">
-        <span style="color:rgba(255,255,255,.4)">Mínimo</span><span style="color:rgba(255,255,255,.6)">5,000 DQ</span>
+      <div class="vj-fila">
+        <span>Mínimo</span><span class="vj-val">5,000 DQ</span>
       </div>
     </div>
-    <input id="redeem-wallet" placeholder="Tu wallet de Solana" style="width:100%;max-width:330px;font-family:monospace;font-size:.32rem;padding:10px;border-radius:4px;border:1px solid rgba(0,255,136,.3);background:rgba(0,0,0,.4);color:#fff;margin-bottom:8px">
-    <input id="redeem-amount" type="number" step="1000" min="5000" placeholder="DQ a canjear (múltiplos de 1000)" style="width:100%;max-width:330px;font-size:.32rem;padding:10px;border-radius:4px;border:1px solid rgba(0,255,136,.3);background:rgba(0,0,0,.4);color:#fff;margin-bottom:6px">
-    <div id="redeem-preview" style="font-size:.32rem;color:#00ff88;min-height:.5rem;margin-bottom:8px">—</div>
+    <input id="redeem-wallet" class="vj-input" placeholder="Tu wallet de Solana" style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px">
+    <input id="redeem-amount" class="vj-input" type="number" step="1000" min="5000" placeholder="DQ a canjear (múltiplos de 1000)" style="margin-bottom:6px">
+    <div id="redeem-preview" class="vj-txt" style="color:var(--txt);min-height:18px;margin-bottom:8px">—</div>
     <button class="ob" id="redeem-btn" onclick="submitRedeem()" style="width:100%;max-width:330px">Solicitar canje</button>
-    <div id="redeem-status" style="font-size:.3rem;color:rgba(255,255,255,.5);min-height:.6rem;margin-top:8px;text-align:center;line-height:1.7"></div>
+    <div id="redeem-status" class="vj-txt" style="min-height:18px;margin-top:8px"></div>
     <button class="ob sec" onclick="toMenu()" style="margin-top:6px">← Volver</button>
   </div>
 
   <div class="ov" id="ov-exchange">
     <div class="ov-title">EXCHANGE</div>
-    <div style="display:flex;gap:4px;margin-bottom:12px;width:100%;max-width:320px">
-      <button id="ex-tab-buy" onclick="switchExTab('buy')" style="flex:1;font-family:'Press Start 2P',monospace;font-size:9px;padding:8px;border-radius:4px;cursor:pointer;border:2px solid #00ff88;background:rgba(0,255,136,.15);color:#00ff88">💎→🪙 COMPRAR</button>
-      <button id="ex-tab-sell" onclick="switchExTab('sell')" style="flex:1;font-family:'Press Start 2P',monospace;font-size:9px;padding:8px;border-radius:4px;cursor:pointer;border:2px solid rgba(255,255,255,.15);background:rgba(255,255,255,.03);color:rgba(255,255,255,.4)">🪙→💎 VENDER</button>
+    <div class="vj-seg">
+      <button id="ex-tab-buy" onclick="switchExTab('buy')" style="border-color:#60a5fa;background:rgba(59,130,246,.12);color:#e6e9f0">💎→🪙 Comprar</button>
+      <button id="ex-tab-sell" onclick="switchExTab('sell')" style="border-color:#263049;background:transparent;color:#9aa3b5">🪙→💎 Vender</button>
     </div>
-    <div style="background:rgba(0,238,255,.04);border:1px solid rgba(0,238,255,.15);border-radius:6px;padding:12px;margin-bottom:12px;width:100%;max-width:320px;text-align:center">
-      <div style="font-size:.25rem;color:rgba(255,255,255,.3);margin-bottom:4px">Tasa actual</div>
-      <div style="font-size:.35rem;color:#00eeff">1 TON = <span id="ex-rate">---</span> $DUENDE</div>
-      <div style="font-size:.22rem;color:rgba(255,255,255,.25);margin-top:4px">TON: $<span id="ex-ton-price">---</span> · $DUENDE: $<span id="ex-duende-price">---</span></div>
+    <div class="vj-card" style="max-width:320px;text-align:center">
+      <div class="vj-small" style="margin-bottom:4px">Tasa actual</div>
+      <div style="font-size:15px;font-weight:600;color:var(--txt)">1 TON = <span id="ex-rate">---</span> $DUENDE</div>
+      <div class="vj-small" style="margin-top:4px">TON: $<span id="ex-ton-price">---</span> · $DUENDE: $<span id="ex-duende-price">---</span></div>
     </div>
     <!-- BUY panel: TON → $DUENDE -->
     <div id="ex-buy-panel" style="width:100%;max-width:320px">
-      <div style="font-size:.28rem;color:rgba(255,255,255,.4);text-align:center;margin-bottom:8px">Envías TON · Recibes $DUENDE al instante</div>
+      <div class="vj-txt" style="margin-bottom:8px">Envías TON · Recibes $DUENDE al instante</div>
       <div style="position:relative">
-        <div style="font-size:.22rem;color:rgba(255,255,255,.3);margin-bottom:2px">Envías</div>
-        <div style="display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.3);border:1px solid rgba(0,136,204,.3);border-radius:4px;padding:8px">
-          <span style="font-size:.35rem">💎</span>
-          <input type="number" id="ex-buy-input" min="0.1" step="0.1" placeholder="0.0" style="flex:1;background:none;border:none;color:#fff;font-family:'Press Start 2P',monospace;font-size:14px;outline:none;width:100%">
-          <span style="font-size:.28rem;color:#0088cc">TON</span>
+        <div class="vj-small" style="margin-bottom:4px">Envías</div>
+        <div class="vj-caja">
+          <span>💎</span>
+          <input type="number" id="ex-buy-input" min="0.1" step="0.1" placeholder="0.0">
+          <span class="vj-u">TON</span>
         </div>
-        <div style="text-align:center;font-size:16px;margin:6px 0;color:rgba(255,255,255,.2)">↓</div>
-        <div style="font-size:.22rem;color:rgba(255,255,255,.3);margin-bottom:2px">Recibes</div>
-        <div style="display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.3);border:1px solid rgba(0,255,136,.2);border-radius:4px;padding:8px">
-          <span style="font-size:.35rem">🪙</span>
-          <div id="ex-buy-output" style="flex:1;font-family:'Press Start 2P',monospace;font-size:14px;color:#00ff88">0</div>
-          <span style="font-size:.28rem;color:#00ff88">$DUENDE</span>
+        <div class="vj-flecha">↓</div>
+        <div class="vj-small" style="margin-bottom:4px">Recibes</div>
+        <div class="vj-caja">
+          <span>🪙</span>
+          <div id="ex-buy-output" class="vj-out">0</div>
+          <span class="vj-u">$DUENDE</span>
         </div>
       </div>
-      <div id="ex-buy-usd" style="font-size:.25rem;color:rgba(255,255,255,.3);text-align:center;margin-top:6px">~$0.00 USD</div>
+      <div id="ex-buy-usd" class="vj-small" style="text-align:center;margin-top:6px">~$0.00 USD</div>
       <button class="ob" id="ex-buy-btn" onclick="exBuy()" style="width:100%;margin-top:10px">Swap TON → $DUENDE</button>
     </div>
     <!-- SELL panel: $DUENDE → TON -->
     <div id="ex-sell-panel" style="width:100%;max-width:320px;display:none">
-      <div style="font-size:.28rem;color:rgba(255,255,255,.4);text-align:center;margin-bottom:4px">Tu balance: <span id="ex-balance" style="color:#ffe600">0</span> $DUENDE</div>
-      <div style="font-size:.22rem;color:rgba(255,255,255,.25);text-align:center;margin-bottom:8px">Mínimo retiro: $10 USD equivalente</div>
+      <div class="vj-txt" style="margin-bottom:4px">Tu balance: <span id="ex-balance" class="vj-val" style="color:var(--oro)">0</span> $DUENDE</div>
+      <div class="vj-small" style="text-align:center;margin-bottom:8px">Mínimo retiro: $10 USD equivalente</div>
       <div style="position:relative">
-        <div style="font-size:.22rem;color:rgba(255,255,255,.3);margin-bottom:2px">Envías</div>
-        <div style="display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.3);border:1px solid rgba(255,230,0,.2);border-radius:4px;padding:8px">
-          <span style="font-size:.35rem">🪙</span>
-          <input type="number" id="ex-sell-input" min="1000" step="1000" placeholder="0" style="flex:1;background:none;border:none;color:#fff;font-family:'Press Start 2P',monospace;font-size:14px;outline:none;width:100%">
-          <span style="font-size:.28rem;color:#ffe600">$DUENDE</span>
+        <div class="vj-small" style="margin-bottom:4px">Envías</div>
+        <div class="vj-caja">
+          <span>🪙</span>
+          <input type="number" id="ex-sell-input" min="1000" step="1000" placeholder="0">
+          <span class="vj-u">$DUENDE</span>
         </div>
-        <div style="text-align:center;font-size:16px;margin:6px 0;color:rgba(255,255,255,.2)">↓</div>
-        <div style="font-size:.22rem;color:rgba(255,255,255,.3);margin-bottom:2px">Recibes</div>
-        <div style="display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.3);border:1px solid rgba(0,136,204,.2);border-radius:4px;padding:8px">
-          <span style="font-size:.35rem">💎</span>
-          <div id="ex-sell-output" style="flex:1;font-family:'Press Start 2P',monospace;font-size:14px;color:#0088cc">0</div>
-          <span style="font-size:.28rem;color:#0088cc">TON</span>
+        <div class="vj-flecha">↓</div>
+        <div class="vj-small" style="margin-bottom:4px">Recibes</div>
+        <div class="vj-caja">
+          <span>💎</span>
+          <div id="ex-sell-output" class="vj-out">0</div>
+          <span class="vj-u">TON</span>
         </div>
       </div>
-      <div id="ex-sell-usd" style="font-size:.25rem;color:rgba(255,255,255,.3);text-align:center;margin-top:6px">~$0.00 USD</div>
+      <div id="ex-sell-usd" class="vj-small" style="text-align:center;margin-top:6px">~$0.00 USD</div>
       <button class="ob" id="ex-sell-btn" onclick="exSell()" style="width:100%;margin-top:10px">Swap $DUENDE → TON</button>
     </div>
-    <p id="ex-status" style="font-size:.28rem;color:#00eeff;min-height:1rem;text-align:center;margin-top:8px"></p>
-    <button class="ob sec" onclick="toMenu()" style="margin-top:.5rem">← Volver</button>
+    <p id="ex-status" class="vj-txt" style="color:var(--txt);min-height:20px;margin-top:8px"></p>
+    <button class="ob sec" onclick="toMenu()" style="margin-top:8px">← Volver</button>
   </div>
 
   <div class="ov" id="ov-staking">
     <div class="ov-title">STAKING</div>
     <!-- Tab selector -->
-    <div style="display:flex;gap:4px;margin-bottom:12px">
-      <button id="stake-tab-ton" onclick="switchStakeTab('ton')" style="flex:1;font-family:'Press Start 2P',monospace;font-size:9px;padding:8px;border-radius:4px;cursor:pointer;border:2px solid #0088cc;background:rgba(0,136,204,.15);color:#0088cc">💎 TON</button>
-      <button id="stake-tab-sol" onclick="switchStakeTab('sol')" style="flex:1;font-family:'Press Start 2P',monospace;font-size:9px;padding:8px;border-radius:4px;cursor:pointer;border:2px solid rgba(255,255,255,.15);background:rgba(255,255,255,.03);color:rgba(255,255,255,.4)">☀ SOL</button>
+    <div class="vj-seg" style="max-width:260px">
+      <button id="stake-tab-ton" onclick="switchStakeTab('ton')" style="border-color:#60a5fa;background:rgba(59,130,246,.12);color:#e6e9f0">💎 TON</button>
+      <button id="stake-tab-sol" onclick="switchStakeTab('sol')" style="border-color:#263049;background:transparent;color:#9aa3b5">☀ SOL</button>
     </div>
-    <p style="font-size:.3rem;color:rgba(255,255,255,.4);text-align:center;margin-bottom:.8rem;line-height:2">APY actual: <span id="tg-staking-apy" style="color:#c084fc">120%</span></p>
+    <p class="vj-txt" style="margin-bottom:16px">APY actual: <span id="tg-staking-apy" class="vj-val">120%</span></p>
     <div class="stake-lock-row">
       <button class="stake-lock-btn" data-days="7" onclick="tgSelectLock(7,this)">7D · 1x</button>
       <button class="stake-lock-btn active" data-days="30" onclick="tgSelectLock(30,this)">30D · 1.5x</button>
       <button class="stake-lock-btn" data-days="90" onclick="tgSelectLock(90,this)">90D · 2.5x</button>
     </div>
     <input type="number" class="donate-input" id="tg-stake-input" min="1" step="0.5" placeholder="1.0">
-    <p id="tg-stake-preview" style="font-size:.32rem;color:#c084fc;margin:.5rem 0;min-height:1rem">---</p>
+    <p id="tg-stake-preview" class="vj-txt" style="color:var(--txt);margin:10px 0;min-height:20px">---</p>
     <!-- TON staking button (default) -->
     <button class="ob" id="stake-btn-ton" onclick="tonStake()">Stakear TON</button>
     <!-- SOL staking button (hidden by default) -->
     <button class="ob" id="stake-btn-sol" onclick="tgStake()" style="display:none">Stakear SOL</button>
-    <div id="stake-ton-info" style="font-size:.25rem;color:rgba(255,255,255,.3);text-align:center;margin-top:8px">Requiere wallet TON conectada</div>
+    <div id="stake-ton-info" class="vj-small" style="text-align:center;margin-top:8px">Requiere wallet TON conectada</div>
     <!-- Active stakes -->
     <div id="active-stakes" style="width:100%;max-width:320px;margin-top:12px"></div>
-    <button class="ob sec" onclick="toMenu()" style="margin-top:.5rem">← Volver</button>
+    <button class="ob sec" onclick="toMenu()" style="margin-top:8px">← Volver</button>
   </div>
-
   <div id="canvas-container"><canvas id="gc" width="800" height="320"></canvas></div>
 
   <div id="hud">
@@ -572,10 +613,10 @@ html{font-size:24px;}
     <div class="hb"><div class="hl">🪙</div><div class="hv" id="h-coins">0</div></div>
     <div class="hb"><div class="hl">LVL</div><div class="hv" id="h-level" style="color:#c084fc">1</div></div>
     <div id="slots">
-      <div class="slot ready" id="sl0" onclick="useItem(0)"><span class="hk">1</span><img id="is0"><span class="cnt" id="ic0">3</span><div class="cd-bar" id="cb0" style="width:0"></div></div>
-      <div class="slot ready" id="sl1" onclick="useItem(1)"><span class="hk">2</span><img id="is1"><span class="cnt" id="ic1">2</span><div class="cd-bar" id="cb1" style="width:0"></div></div>
-      <div class="slot ready" id="sl2" onclick="useItem(2)"><span class="hk">3</span><img id="is2"><span class="cnt" id="ic2">1</span><div class="cd-bar" id="cb2" style="width:0"></div></div>
-      <div class="slot ready" id="sl3" onclick="useItem(3)"><span class="hk">4</span><img id="is3"><span class="cnt" id="ic3">1</span><div class="cd-bar" id="cb3" style="width:0"></div></div>
+      <div class="slot ready" id="sl0" onclick="useItem(0)"><span class="hk">1</span><img id="is0" alt=""><span class="cnt" id="ic0">3</span><div class="cd-bar" id="cb0" style="width:0"></div></div>
+      <div class="slot ready" id="sl1" onclick="useItem(1)"><span class="hk">2</span><img id="is1" alt=""><span class="cnt" id="ic1">2</span><div class="cd-bar" id="cb1" style="width:0"></div></div>
+      <div class="slot ready" id="sl2" onclick="useItem(2)"><span class="hk">3</span><img id="is2" alt=""><span class="cnt" id="ic2">1</span><div class="cd-bar" id="cb2" style="width:0"></div></div>
+      <div class="slot ready" id="sl3" onclick="useItem(3)"><span class="hk">4</span><img id="is3" alt=""><span class="cnt" id="ic3">1</span><div class="cd-bar" id="cb3" style="width:0"></div></div>
     </div>
   </div>
   <div id="xp-bar-wrap"><div id="xp-fill"></div><span id="level-badge">LVL 1</span></div>
@@ -995,14 +1036,14 @@ function renderSkinShop(){
     const owned=ownedSkins.includes(s.id);
     const equipped=equippedSkin===s.id;
     const tonCost=s.usd>0?(s.usd/tonP).toFixed(2):0;
-    const boton=equipped?`<button style="border:none;background:rgba(0,255,136,.18);color:#00ff88">✅ EQUIPADA</button>`
-      :(s.usd===0||owned)?`<button onclick="equipSkinTG('${s.id}')" style="border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);color:#fff">EQUIPAR</button>`
-      :`<button onclick="buySkinStars('${s.id}')" style="border:1px solid rgba(255,230,0,.4);background:rgba(255,230,0,.12);color:#ffe600">⭐ STARS</button>
-        <button onclick="buySkinTon('${s.id}')" style="border:1px solid rgba(0,152,234,.4);background:rgba(0,152,234,.12);color:#0098ea">💎 TON</button>`;
-    return `<div class="skin" style="border-color:${equipped?s.color:'rgba(255,255,255,.1)'}">
-      <img src="${s.preview}" onerror="this.style.display='none'">
+    const boton=equipped?`<button class="equipada">✅ Equipada</button>`
+      :(s.usd===0||owned)?`<button onclick="equipSkinTG('${s.id}')">Equipar</button>`
+      :`<button class="compra" onclick="buySkinStars('${s.id}')">⭐ Stars</button>
+        <button onclick="buySkinTon('${s.id}')">💎 TON</button>`;
+    return `<div class="skin" style="border-color:${equipped?'rgba(34,197,94,.45)':'var(--borde)'}">
+      <img src="${s.preview}" alt="Skin ${s.name}" onerror="this.style.display='none'">
       <div style="flex:1;min-width:0">
-        <div class="n" style="color:${s.color}">${s.name}</div>
+        <div class="n"><span class="rar" style="background:${s.color}"></span>${s.name}</div>
         <div class="d">${s.desc}</div>
         ${s.buffs?`<div class="b">${s.buffs.label}</div>`:''}
         ${s.usd>0&&!owned?`<div class="p">⭐${s.stars} · 💎${tonCost} TON · ~$${s.usd}</div>`:''}
@@ -1162,12 +1203,12 @@ function switchExTab(mode){
   const buyPanel=document.getElementById('ex-buy-panel');
   const sellPanel=document.getElementById('ex-sell-panel');
   if(mode==='buy'){
-    buyTab.style.borderColor='#00ff88';buyTab.style.background='rgba(0,255,136,.15)';buyTab.style.color='#00ff88';
-    sellTab.style.borderColor='rgba(255,255,255,.15)';sellTab.style.background='rgba(255,255,255,.03)';sellTab.style.color='rgba(255,255,255,.4)';
+    buyTab.style.borderColor='#60a5fa';buyTab.style.background='rgba(59,130,246,.12)';buyTab.style.color='#e6e9f0';
+    sellTab.style.borderColor='#263049';sellTab.style.background='transparent';sellTab.style.color='#9aa3b5';
     buyPanel.style.display='';sellPanel.style.display='none';
   }else{
-    sellTab.style.borderColor='#ffe600';sellTab.style.background='rgba(255,230,0,.15)';sellTab.style.color='#ffe600';
-    buyTab.style.borderColor='rgba(255,255,255,.15)';buyTab.style.background='rgba(255,255,255,.03)';buyTab.style.color='rgba(255,255,255,.4)';
+    sellTab.style.borderColor='#60a5fa';sellTab.style.background='rgba(59,130,246,.12)';sellTab.style.color='#e6e9f0';
+    buyTab.style.borderColor='#263049';buyTab.style.background='transparent';buyTab.style.color='#9aa3b5';
     sellPanel.style.display='';buyPanel.style.display='none';
     loadExBalance();
   }
@@ -1283,15 +1324,15 @@ function switchStakeTab(mode){
   const solBtn=document.getElementById('stake-btn-sol');
   const info=document.getElementById('stake-ton-info');
   if(mode==='ton'){
-    tonTab.style.borderColor='#0088cc';tonTab.style.background='rgba(0,136,204,.15)';tonTab.style.color='#0088cc';
-    solTab.style.borderColor='rgba(255,255,255,.15)';solTab.style.background='rgba(255,255,255,.03)';solTab.style.color='rgba(255,255,255,.4)';
+    tonTab.style.borderColor='#60a5fa';tonTab.style.background='rgba(59,130,246,.12)';tonTab.style.color='#e6e9f0';
+    solTab.style.borderColor='#263049';solTab.style.background='transparent';solTab.style.color='#9aa3b5';
     tonBtn.style.display='';solBtn.style.display='none';
     info.textContent=tonWalletAddr?'Wallet: '+tonWalletAddr.slice(0,6)+'...'+tonWalletAddr.slice(-4):'Requiere wallet TON conectada';
     document.getElementById('tg-stake-input').placeholder='1.0';
     document.getElementById('tg-stake-input').min='0.5';
   }else{
-    solTab.style.borderColor='#c084fc';solTab.style.background='rgba(192,132,252,.15)';solTab.style.color='#c084fc';
-    tonTab.style.borderColor='rgba(255,255,255,.15)';tonTab.style.background='rgba(255,255,255,.03)';tonTab.style.color='rgba(255,255,255,.4)';
+    solTab.style.borderColor='#60a5fa';solTab.style.background='rgba(59,130,246,.12)';solTab.style.color='#e6e9f0';
+    tonTab.style.borderColor='#263049';tonTab.style.background='transparent';tonTab.style.color='#9aa3b5';
     solBtn.style.display='';tonBtn.style.display='none';
     info.textContent='Abre Phantom wallet para stakear SOL';
     document.getElementById('tg-stake-input').placeholder='1.0';
@@ -1345,16 +1386,16 @@ async function loadActiveStakes(){
   try{
     const data=((await misDatos(true))||{}).stakes;
     if(!data||data.length===0){el.innerHTML='';return;}
-    el.innerHTML='<div style="font-size:.28rem;color:rgba(255,255,255,.3);margin-bottom:6px;text-align:center">📋 Tus Stakes</div>'+
+    el.innerHTML='<div style="font-family:var(--sans);font-size:13px;font-weight:600;color:var(--txt2);margin-bottom:6px;text-align:center">📋 Tus Stakes</div>'+
       data.map(s=>{
         const unlock=new Date(s.unlock_at);
         const now=new Date();
         const active=unlock>now;
         const daysLeft=Math.max(0,Math.ceil((unlock-now)/(1000*60*60*24)));
-        return '<div style="background:rgba(192,132,252,.04);border:1px solid rgba(192,132,252,.15);border-radius:4px;padding:8px;margin-bottom:4px;font-size:.25rem;display:flex;justify-content:space-between;align-items:center">'+
-          '<div><span style="color:#0088cc">'+s.amount_ton+' TON</span> · '+s.lock_days+'D · '+s.multiplier+'x</div>'+
-          '<div style="text-align:right"><div style="color:#00ff88">+'+Number(s.reward_duende).toLocaleString()+' $DUENDE</div>'+
-          '<div style="color:'+(active?'#ffe600':'#00ff88')+'">'+(active?daysLeft+'d restantes':'✅ Completado')+'</div></div></div>';
+        return '<div style="background:var(--panel);border:1px solid var(--borde);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12px;display:flex;justify-content:space-between;align-items:center">'+
+          '<div><span style="color:var(--txt);font-weight:600">'+s.amount_ton+' TON</span> · '+s.lock_days+'D · '+s.multiplier+'x</div>'+
+          '<div style="text-align:right"><div style="color:var(--txt)">+'+Number(s.reward_duende).toLocaleString()+' $DUENDE</div>'+
+          '<div style="color:'+(active?'var(--txt2)':'var(--ok)')+'">'+(active?daysLeft+'d restantes':'✅ Completado')+'</div></div></div>';
       }).join('');
   }catch(e){}
 }
@@ -1386,9 +1427,9 @@ function showStarsShop(){
   const container=document.getElementById('stars-packages');
   const pkgs=buildStarsPackages();
   container.innerHTML=pkgs.map((p,i)=>
-    `<div onclick="buyWithStars(${i})" style="background:rgba(255,230,0,.04);border:2px solid rgba(255,230,0,.2);border-radius:6px;padding:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:all .15s" ontouchstart="this.style.transform='scale(.97)'" ontouchend="this.style.transform=''">
-      <div><div style="font-size:.38rem;color:#fff;margin-bottom:4px">${p.label}</div><div style="font-size:.28rem;color:#ffe600">⭐ ${p.stars} Stars · ~$${p.usd}</div></div>
-      <div style="font-size:.35rem;color:#00ff88;text-align:right">${p.tokens.toLocaleString()}<br><span style="font-size:.25rem;color:rgba(255,255,255,.4)">$DUENDE</span></div>
+    `<div onclick="buyWithStars(${i})" style="background:var(--panel);border:1px solid var(--borde);border-radius:8px;padding:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:all .15s" ontouchstart="this.style.transform='scale(.97)'" ontouchend="this.style.transform=''">
+      <div><div style="font-size:14px;font-weight:600;color:var(--txt);margin-bottom:4px">${p.label}</div><div style="font-size:13px;color:var(--txt2)">⭐ ${p.stars} Stars · ~$${p.usd}</div></div>
+      <div style="font-size:14px;font-weight:600;color:var(--txt);text-align:right">${p.tokens.toLocaleString()}<br><span style="font-size:12px;font-weight:400;color:var(--txt2)">$DUENDE</span></div>
     </div>`
   ).join('');
 }
@@ -1556,7 +1597,7 @@ function pintarPerfil(){
   ];
   document.getElementById('perfil-stats').innerHTML=stats.map(s=>'<div class="stat"><b>'+s[0]+' '+s[1]+'</b><span>'+s[2]+'</span></div>').join('');
   const skin=SKINS.find(s=>s.id===equippedSkin);
-  document.getElementById('perfil-skin').innerHTML=skin?('<div class="hub-mini">SKIN EQUIPADA</div><div style="display:flex;align-items:center;gap:8px;margin-top:6px"><img src="'+skin.preview+'" style="width:40px;height:40px;image-rendering:pixelated;border-radius:6px;background:#0a0a1a"><div style="font-size:11px;color:'+skin.color+'">'+skin.name+'</div></div>'):'';
+  document.getElementById('perfil-skin').innerHTML=skin?('<div class="hub-mini">SKIN EQUIPADA</div><div style="display:flex;align-items:center;gap:8px;margin-top:6px"><img src="'+skin.preview+'" alt="" style="width:40px;height:40px;image-rendering:pixelated;border-radius:6px;background:#0a0a1a"><div style="font-size:15px;font-weight:600;color:var(--txt);display:flex;align-items:center;gap:6px"><span class="rar" style="background:'+skin.color+'"></span>'+skin.name+'</div></div>'):'';
   const w=window._tonAddr||tonWalletAddr;
   document.getElementById('perfil-wallet').innerHTML='<div class="hub-mini">WALLET TON</div><div style="margin-top:4px">'+(w?('<span class="addr">'+w.slice(0,8)+'...'+w.slice(-6)+'</span>'):'<span class="estado" style="color:rgba(255,255,255,.4)">No conectada — ve a WALLET</span>')+'</div>';
   document.getElementById('perfil-sync').textContent=tgProfile&&tgProfile.id?'✅ Progreso sincronizado':'⏳ Sincronizando…';
@@ -1601,8 +1642,8 @@ function pintarResumenCampana(){
   const idx=LEVELS.findIndex(l=>!est[l.id]);
   const sig=idx>=0?LEVELS[idx]:null;
   el.innerHTML='<div class="hub-mini">CAMPAÑA · ⭐ '+total+'/'+(LEVELS.length*3)+'</div>'+
-    (sig?'<div style="font-size:11px;color:#00ff88;margin-top:4px">▶ Siguiente: '+sig.id+' · '+BIOMES[sig.bioma].name+'</div>'
-         :'<div style="font-size:11px;color:#ffe600;margin-top:4px">🏆 ¡Campaña completa! Prueba el SIN FIN</div>');
+    (sig?'<div style="font-size:13px;color:var(--txt);margin-top:4px">▶ Siguiente: '+sig.id+' · '+BIOMES[sig.bioma].name+'</div>'
+         :'<div style="font-size:13px;color:var(--oro);margin-top:4px">🏆 ¡Campaña completa! Prueba el SIN FIN</div>');
 }
 
 pintarCabecera();pintarResumenCampana();

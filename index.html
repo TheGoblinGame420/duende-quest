@@ -87,8 +87,8 @@
    en linea, pero apuntan a tonos apagados. */
 :root{
   --bg:#0b0f17;--panel:#121826;--panel2:#182033;--borde:#263049;
-  --txt:#e6e9f0;--txt2:#9aa3b5;--txt3:#6b7489;
-  --pri:#3b82f6;--pri2:#2563eb;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444;--oro:#f2c14e;
+  --txt:#e6e9f0;--txt2:#9aa3b5;--txt3:#8a93a6;
+  --pri:#2563eb;--pri2:#1d4ed8;--pri-txt:#60a5fa;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444;--oro:#f2c14e;
   --verde:#22c55e;--amarillo:#f2c14e;--rosa:#a78bfa;--cian:#60a5fa;--rojo:#ef4444;
   --green:#22c55e;--purple:#a78bfa;--pink:#a78bfa;
   --yellow:#f2c14e;--cyan:#60a5fa;--red:#ef4444;
@@ -141,8 +141,9 @@ nav{
   font-family:var(--sans);font-size:14px;font-weight:500;transition:color .15s;
 }
 .nav-links a:hover{color:var(--txt);}
-#wallet-connect-btn{background:transparent;color:var(--txt);border:1px solid var(--borde);border-radius:8px;font-family:var(--sans);font-size:13px;font-weight:600;padding:.45rem .8rem;cursor:pointer;min-height:36px;}
-#wallet-connect-btn:hover{border-color:var(--pri);}
+#wallet-connect-btn{background:transparent;color:var(--txt2);border:1px solid var(--borde);border-radius:8px;font-family:var(--sans);font-size:13px;font-weight:600;padding:.45rem .8rem;cursor:pointer;min-height:44px;}
+.nav-right{display:flex;align-items:center;gap:.6rem;}
+#wallet-connect-btn:hover{border-color:var(--pri-txt);}
 .live-price-pill{font-family:var(--sans);font-size:12px;color:var(--txt2);background:var(--panel);border:1px solid var(--borde);border-radius:8px;padding:.3rem .6rem;display:inline-flex;align-items:center;gap:.4rem;white-space:nowrap;}
 .live-price-pill .dot{width:6px;height:6px;border-radius:50%;background:var(--ok);display:inline-block;}
 
@@ -199,11 +200,12 @@ nav{
   border:1px solid var(--borde);text-decoration:none;cursor:pointer;
   transition:border-color .15s,background .15s,transform .1s;
 }
-.btn-tg:hover,.btn-sec:hover,.btn-buy:hover,.btn-game:hover,.btn-pink:hover{border-color:var(--pri);background:rgba(59,130,246,.08);}
+.btn-tg:hover,.btn-sec:hover,.btn-buy:hover,.btn-game:hover,.btn-pink:hover{border-color:var(--pri-txt);background:rgba(59,130,246,.08);}
 .btn-tg:active,.btn-sec:active,.btn-buy:active,.btn-game:active,.btn-pink:active{transform:scale(.98);}
 .hero-more{font-size:14px;color:var(--txt2);line-height:1.8;}
 .hero-more a,.hero-more button{color:var(--txt);background:none;border:none;font:inherit;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--txt3);cursor:pointer;padding:0;}
-.hero-more a:hover,.hero-more button:hover{color:#fff;text-decoration-color:var(--pri);}
+#btn-buy-main{display:inline-flex;align-items:center;min-height:44px;vertical-align:middle;}
+.hero-more a:hover,.hero-more button:hover{color:#fff;text-decoration-color:var(--pri-txt);}
 .sec-line{max-width:640px;margin:1rem auto 0;padding:.7rem 1rem;border:1px solid var(--borde);border-radius:8px;background:var(--panel);font-family:var(--sans);font-size:13px;line-height:1.45;color:var(--txt);text-align:center;}
 .ca-box{
   background:var(--panel);border:1px solid var(--borde);
@@ -219,11 +221,12 @@ nav{
 .ca-addr{font-family:var(--mono);font-size:13px;color:var(--txt);word-break:break-all;text-align:center;line-height:1.6;}
 .ca-copy{
   background:transparent;color:var(--txt);border:1px solid var(--borde);
-  padding:.5rem 1rem;border-radius:8px;min-height:36px;
+  padding:.5rem 1rem;border-radius:8px;min-height:44px;
+  display:inline-flex;align-items:center;justify-content:center;
   font-family:var(--sans);font-size:13px;font-weight:600;
   cursor:pointer;transition:border-color .15s;flex-shrink:0;
 }
-.ca-copy:hover{border-color:var(--pri);}
+.ca-copy:hover{border-color:var(--pri-txt);}
 .ca-copy.ok{border-color:var(--ok);color:var(--ok);}
 
 /* ============ STATS ============ */
@@ -237,6 +240,9 @@ nav{
 .stat{text-align:center;}
 .stat-n{font-family:var(--px);font-size:clamp(12px,2.4vw,16px);color:var(--txt);display:block;margin-bottom:.45rem;}
 .stat-l{font-family:var(--sans);font-size:12px;color:var(--txt2);}
+/* Sin dato real todavía (o navegador sin :has) → la franja no se muestra */
+.stats-bar:has(#live-players-2:empty){display:none;}
+@supports not selector(:has(*)){.stats-bar{display:none;}}
 
 /* ============ SECCIONES ============ */
 .section{padding:4rem 1rem;position:relative;z-index:1;}
@@ -248,7 +254,7 @@ nav{
 .creador-box p{font-size:14px;line-height:1.5;color:var(--txt2);margin-bottom:1rem}
 .creador-links{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.6rem}
 .creador-links a{display:block;padding:.75rem .6rem;border:1px solid var(--borde);border-radius:8px;color:var(--txt);text-decoration:none;font-size:14px;font-weight:600;line-height:1.45;overflow-wrap:anywhere;background:var(--panel2)}
-.creador-links a:hover{border-color:var(--pri)}
+.creador-links a:hover{border-color:var(--pri-txt)}
 .creador-links small{display:block;font-weight:400;font-size:12px;color:var(--txt2);margin-top:.15rem}
 .hero-creador{margin-top:1.4rem;font-size:13px;line-height:1.8;color:var(--txt2)}
 .hero-creador a{color:var(--txt);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--txt3);font-weight:600}
@@ -259,7 +265,7 @@ nav{
   font-family:var(--sans);font-size:13px;font-weight:600;
   transition:border-color .15s;min-width:92px;
 }
-.soc:hover{border-color:var(--pri);}
+.soc:hover{border-color:var(--pri-txt);}
 .si{font-size:1.4rem;}
 
 /* ============ TOKENOMICS ============ */
@@ -296,7 +302,7 @@ nav{
 .tier-img{width:84px;height:84px;object-fit:contain;image-rendering:pixelated;}
 .tier-info{flex:1;}
 .tier-badge{
-  font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:.06em;
+  font-family:var(--sans);font-size:12px;font-weight:700;letter-spacing:.06em;
   padding:.2rem .55rem;border-radius:6px;display:inline-block;margin-bottom:.35rem;
 }
 .tier-name{font-family:var(--sans);font-weight:700;font-size:20px;line-height:1.2;color:var(--txt);}
@@ -346,7 +352,7 @@ nav{
 .gs-item img{width:40px;height:40px;object-fit:contain;image-rendering:pixelated;}
 .gs-item-name{
   position:absolute;bottom:-1.3rem;left:50%;transform:translateX(-50%);
-  font-family:var(--sans);font-size:11px;color:var(--txt2);white-space:nowrap;
+  font-family:var(--sans);font-size:12px;color:var(--txt2);white-space:nowrap;
 }
 .game-info{display:flex;flex-direction:column;gap:1rem;}
 .game-feat{
@@ -371,7 +377,7 @@ nav{
 }
 .skin-img{width:110px;height:110px;object-fit:contain;image-rendering:pixelated;margin:0 auto 1rem;display:block;}
 .skin-name{font-family:var(--sans);font-weight:700;font-size:19px;margin-bottom:.35rem;}
-.skin-rarity{font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:.06em;padding:.2rem .55rem;border-radius:6px;margin-bottom:.7rem;display:inline-block;}
+.skin-rarity{font-family:var(--sans);font-size:12px;font-weight:700;letter-spacing:.06em;padding:.2rem .55rem;border-radius:6px;margin-bottom:.7rem;display:inline-block;}
 .king-r{color:var(--oro);border:1px solid rgba(242,193,78,.45);}
 .tactico-r{color:var(--cyan);border:1px solid rgba(96,165,250,.4);}
 .berserker-r{color:var(--red);border:1px solid rgba(239,68,68,.4);}
@@ -420,10 +426,11 @@ nav{
 .w-addr{font-family:var(--mono);font-size:13px;color:var(--txt2);word-break:break-all;flex:1;text-align:left;min-width:0;}
 .w-copy{
   background:transparent;border:1px solid var(--borde);color:var(--txt);
-  font-family:var(--sans);font-size:13px;font-weight:600;min-height:36px;
+  font-family:var(--sans);font-size:13px;font-weight:600;min-height:44px;
+  display:inline-flex;align-items:center;justify-content:center;
   padding:.35rem .8rem;border-radius:8px;cursor:pointer;flex-shrink:0;
 }
-.w-copy:hover{border-color:var(--pri);}
+.w-copy:hover{border-color:var(--pri-txt);}
 .w-copy.ok{border-color:var(--ok);color:var(--ok);}
 .d-note{font-family:var(--sans);font-size:13px;color:var(--txt2);line-height:1.7;}
 #btn-send-donation{background:var(--pri)!important;color:#fff!important;font-family:var(--sans)!important;font-size:15px!important;font-weight:600;border-radius:8px!important;box-shadow:none!important;min-height:44px;}
@@ -438,18 +445,18 @@ footer{
 .f-logo{font-family:var(--px);font-size:13px;color:var(--txt);margin-bottom:1rem;}
 .f-logo img{width:26px;height:26px;vertical-align:middle;image-rendering:pixelated;border-radius:50%;margin-right:.5rem;}
 .f-soc{display:flex;justify-content:center;gap:.6rem;margin:1.2rem 0;flex-wrap:wrap;}
-.f-soc a{color:var(--txt2);font-size:14px;font-weight:500;text-decoration:none;padding:.3rem .5rem;}
+.f-soc a{color:var(--txt2);font-size:14px;font-weight:500;text-decoration:none;padding:.3rem .5rem;min-height:44px;display:inline-flex;align-items:center;}
 .f-soc a:hover{color:var(--txt);}
 .f-note{color:var(--txt2);font-size:13px;line-height:1.6;max-width:600px;margin:.5rem auto 0;}
 .f-links{display:flex;gap:.4rem 1.2rem;justify-content:center;flex-wrap:wrap;margin:1rem 0 .4rem;font-size:14px;}
-.f-links a{color:var(--txt);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--txt3);}
-.f-links a:hover{text-decoration-color:var(--pri);}
+.f-links a{min-height:44px;display:inline-flex;align-items:center;color:var(--txt);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--txt3);}
+.f-links a:hover{text-decoration-color:var(--pri-txt);}
 
 /* ============ NFT STORE ============ */
 .store-tabs{display:flex;gap:.5rem;justify-content:center;margin-bottom:2rem;flex-wrap:wrap;}
 .store-tab{font-family:var(--sans);font-size:14px;font-weight:600;padding:.5rem 1rem;min-height:40px;border:1px solid var(--borde);border-radius:8px;cursor:pointer;color:var(--txt2);background:transparent;}
 .store-tab:hover{color:var(--txt);}
-.store-tab.active{border-color:var(--pri);color:var(--txt);background:rgba(59,130,246,.12);}
+.store-tab.active{border-color:var(--pri-txt);color:var(--txt);background:rgba(59,130,246,.12);}
 .nft-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:1rem;max-width:1100px;margin:0 auto;}
 .nft-card{
   background:var(--panel);border:1px solid var(--borde);border-radius:10px;
@@ -461,7 +468,7 @@ footer{
 .nft-card.c-legendary{border-color:rgba(242,193,78,.4);}
 .nft-card[data-cat].hidden{display:none;}
 .nft-img{width:96px;height:96px;object-fit:contain;image-rendering:pixelated;}
-.nft-badge{font-family:var(--sans);font-size:11px;font-weight:700;padding:.2rem .55rem;border-radius:6px;letter-spacing:.06em;}
+.nft-badge{font-family:var(--sans);font-size:12px;font-weight:700;padding:.2rem .55rem;border-radius:6px;letter-spacing:.06em;}
 .nft-name{font-family:var(--sans);font-weight:700;font-size:18px;line-height:1.2;}
 .nft-desc{font-size:14px;color:var(--txt2);line-height:1.5;flex:1;}
 .nft-price{font-family:var(--sans);font-size:15px;font-weight:700;padding:.5rem .8rem;background:var(--panel2);border-radius:8px;width:100%;margin-top:.3rem;}
@@ -469,24 +476,24 @@ footer{
   width:100%;font-family:var(--sans);font-size:14px;font-weight:600;padding:.6rem;min-height:40px;border-radius:8px;
   border:1px solid var(--borde);background:transparent;color:var(--txt);cursor:pointer;margin-top:.3rem;
 }
-.nft-buy-btn:hover{border-color:var(--pri);background:rgba(59,130,246,.08);}
-.nft-buy-btn.free{background:var(--pri);border-color:var(--pri);color:#fff;}
+.nft-buy-btn:hover{border-color:var(--pri-txt);background:rgba(59,130,246,.08);}
+.nft-buy-btn.free{background:var(--pri);border-color:var(--pri-txt);color:#fff;}
 .nft-buy-btn.free:hover{background:var(--pri2);}
 .nft-buy-btn.pump,.nft-buy-btn.sol{background:transparent;color:var(--txt);}
 
 /* ============ EXCHANGE ============ */
 .exc-wrap{max-width:580px;margin:2rem auto 0;background:var(--panel);border:1px solid var(--borde);border-radius:10px;padding:2rem 1.4rem;box-shadow:var(--sombra);}
 .exc-title{font-family:var(--px);font-size:11px;color:var(--txt);text-align:center;margin-bottom:1.4rem;}
-.exc-row{display:flex;align-items:center;gap:.8rem;margin:.7rem 0;flex-wrap:wrap;}
+.exc-row{display:flex;align-items:center;gap:.8rem;margin:.7rem 0;flex-wrap:nowrap;}
 .exc-label{font-family:var(--sans);font-size:13px;font-weight:600;color:var(--txt2);min-width:90px;}
-.exc-input{background:var(--panel2);border:1px solid var(--borde);border-radius:8px;color:var(--txt);font-family:var(--sans);font-size:16px;padding:.6rem .9rem;flex:1;min-width:120px;outline:none;}
-.exc-input:focus{border-color:var(--pri);}
-.exc-output{background:var(--panel2);border:1px solid var(--borde);border-radius:8px;padding:.6rem .9rem;flex:1;font-family:var(--sans);font-size:16px;color:var(--txt);min-width:120px;}
+.exc-input{background:var(--panel2);border:1px solid var(--borde);border-radius:8px;color:var(--txt);font-family:var(--sans);font-size:16px;padding:.6rem .9rem;flex:1;min-width:0;outline:none;}
+.exc-input:focus{border-color:var(--pri-txt);}
+.exc-output{background:var(--panel2);border:1px solid var(--borde);border-radius:8px;padding:.6rem .9rem;flex:1;font-family:var(--sans);font-size:16px;color:var(--txt);min-width:0;}
 .exc-arrow{text-align:center;font-size:1.1rem;color:var(--txt3);margin:.3rem 0;}
 .exc-rate{font-family:var(--sans);font-size:13px;color:var(--txt2);text-align:center;line-height:1.6;margin-bottom:1.2rem;}
 .exc-btn{width:100%;font-family:var(--sans);font-size:15px;font-weight:600;padding:.75rem;min-height:44px;border-radius:8px;cursor:pointer;margin-top:.5rem;}
 .exc-btn.connect{background:transparent;color:var(--txt);border:1px solid var(--borde);}
-.exc-btn.connect:hover{border-color:var(--pri);}
+.exc-btn.connect:hover{border-color:var(--pri-txt);}
 .exc-btn.exchange{background:var(--pri);color:#fff;border:none;opacity:.45;pointer-events:none;cursor:not-allowed;}
 .exc-btn.exchange.active{opacity:1;pointer-events:all;cursor:pointer;}
 .exc-btn.exchange.active:hover{background:var(--pri2);}
@@ -502,6 +509,7 @@ footer{
 /* RESPONSIVE */
 @media(max-width:860px){
   .nav-links{display:none;}
+  #wallet-connect-btn{display:none;}
   .live-price-pill{display:none!important;}
   .game-layout{grid-template-columns:1fr;}
 }
@@ -532,7 +540,7 @@ footer{
 .staking-panel{max-width:500px;margin:0 auto;background:var(--panel);border:1px solid var(--borde);border-radius:10px;padding:2rem;}
 .stake-lock-row{display:flex;gap:.8rem;margin-bottom:1.5rem;justify-content:center;}
 .stake-lock-btn{background:var(--panel2);border:1px solid var(--borde);border-radius:8px;padding:.8rem 1rem;cursor:pointer;text-align:center;font-family:var(--sans);color:var(--txt);min-width:100px;}
-.stake-lock-btn:hover,.stake-lock-btn.active{border-color:var(--pri);}
+.stake-lock-btn:hover,.stake-lock-btn.active{border-color:var(--pri-txt);}
 .slb-days{font-size:13px;display:block;margin-bottom:.3rem;}
 .slb-badge{font-size:11px;display:block;color:var(--txt2);margin-bottom:.2rem;}
 .slb-mult{font-size:14px;color:var(--txt);display:block;}
@@ -544,7 +552,7 @@ footer{
 .stake-note{font-family:var(--sans);font-size:12px;color:var(--txt2);text-align:center;margin-top:1rem;line-height:1.6;}
 .staking-fomo{max-width:600px;margin:2rem auto 0;padding:1rem;border:1px solid var(--borde);border-radius:10px;background:var(--panel);font-family:var(--sans);font-size:13px;color:var(--txt2);text-align:center;line-height:1.6;}
 /* ── Piezas nuevas de la landing sobria ── */
-.nav-play{display:inline-flex;align-items:center;min-height:36px;padding:.4rem .95rem;border-radius:8px;background:var(--pri);color:#fff;font-family:var(--sans);font-size:14px;font-weight:600;text-decoration:none;}
+.nav-play{display:inline-flex;align-items:center;min-height:44px;padding:.4rem .95rem;border-radius:8px;background:var(--pri);color:#fff;font-family:var(--sans);font-size:14px;font-weight:600;text-decoration:none;}
 .nav-play:hover{background:var(--pri2);}
 .btn-sm{min-height:40px;padding:.5rem 1rem;font-size:14px;}
 .trust-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.8rem;max-width:760px;margin:0 auto 1.4rem;}
@@ -614,15 +622,15 @@ h3.gf-title,h3.b-name,h3.tier-name,h3.nft-name,h3.rm-title{margin-top:0;}
     <li><a href="#tokenomics">Token</a></li>
     <li><a href="#nft-store">Tienda</a></li>
     <li><a href="#roadmap">Hoja de ruta</a></li>
-    <li><button id="wallet-connect-btn" type="button">🔗 Conectar Wallet</button></li>
   </ul>
-  <div style="display:flex;align-items:center;gap:.6rem">
+  <div class="nav-right">
+    <a class="nav-play" href="/mmo/" target="_blank" rel="noopener">Jugar</a>
+    <button id="wallet-connect-btn" type="button">🔗 Conectar Wallet</button>
     <div class="live-price-pill" title="Precio de $DUENDE (DexScreener)">
       <span class="dot"></span>
       $DUENDE: <span data-price-usd>---</span>
       <span data-change24h>---</span>
     </div>
-    <a class="nav-play" href="/mmo/" target="_blank" rel="noopener">Jugar</a>
   </div>
 </nav>
 
@@ -647,14 +655,13 @@ h3.gf-title,h3.b-name,h3.tier-name,h3.nft-name,h3.rm-title{margin-top:0;}
   <div class="hero-creador">Creado en Perú por <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial</a> · <a href="https://t.me/elduende420peru" target="_blank" rel="noopener">Canal oficial</a> · <a href="https://t.me/duendesolana420" target="_blank" rel="noopener">Grupo oficial</a> · <a href="#community">¿Quién está detrás?</a></div>
 </section>
 
-<!-- ========== STATS (datos reales: jugadores de la base del juego; token desde DexScreener/API) ========== -->
+<!-- ========== STATS (dato real: jugadores registrados de la base del juego).
+     Holders, market cap, supply e impuesto viven en la sección del token (#trust).
+     La franja queda oculta mientras #live-players-2 esté vacío; loadLiveStats()
+     la rellena con el número real y entonces se muestra (ver .stats-bar:has). ========== -->
 <div class="stats-bar">
   <div class="stats-inner">
-    <div class="stat"><span class="stat-n" id="live-players-2">—</span><span class="stat-l">Jugadores registrados</span></div>
-    <div class="stat"><span class="stat-n" id="holders" data-holders>—</span><span class="stat-l">Holders de $DUENDE</span></div>
-    <div class="stat"><span class="stat-n" data-mcap>—</span><span class="stat-l">Market cap</span></div>
-    <div class="stat"><span class="stat-n">1B</span><span class="stat-l">Supply</span></div>
-    <div class="stat"><span class="stat-n">0%</span><span class="stat-l">Impuesto</span></div>
+    <div class="stat"><span class="stat-n" id="live-players-2"></span><span class="stat-l">Jugadores registrados</span></div>
   </div>
 </div>
 
@@ -887,7 +894,7 @@ h3.gf-title,h3.b-name,h3.tier-name,h3.nft-name,h3.rm-title{margin-top:0;}
     <div style="flex:1;min-width:0">
       <div class="ca-addr" id="ca-text">HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump</div>
     </div>
-    <button class="ca-copy" id="ca-btn" type="button" onclick="copyCa()">COPY CA</button>
+    <button class="ca-copy" id="ca-btn" type="button" onclick="copyCa()">Copiar dirección</button>
   </div>
 
   <div class="trust-grid">
@@ -1295,13 +1302,13 @@ h3.gf-title,h3.b-name,h3.tier-name,h3.nft-name,h3.rm-title{margin-top:0;}
     <div class="rm-row p1">
       <div class="rm-l">
         <div class="rm-card">
-          <div class="rm-phase" style="color:var(--green)">FASE 1 · COMPLETADA</div>
+          <div class="rm-phase" style="color:var(--green)">FASE 1 · 3 DE 4 LOGRADOS</div>
           <h3 class="rm-title">El origen</h3>
           <ul class="rm-ul">
             <li>✅ Token lanzado en pump.fun</li>
             <li>✅ Juego canvas v1.0 funcional</li>
             <li>✅ Comunidad en Telegram activa</li>
-            <li>✅ Primeros 500 holders</li>
+            <li>• Meta pendiente: primeros 500 holders</li>
           </ul>
         </div>
       </div>
@@ -1332,9 +1339,9 @@ h3.gf-title,h3.b-name,h3.tier-name,h3.nft-name,h3.rm-title{margin-top:0;}
           </ul>
           <div style="margin-top:1rem">
             <div style="width:100%;height:10px;background:var(--panel2);border-radius:6px;overflow:hidden;border:1px solid var(--borde)">
-              <div id="holders-progress" style="width:25%;height:100%;background:var(--oro);border-radius:6px;transition:width .4s"></div>
+              <div id="holders-progress" style="width:0%;height:100%;background:var(--oro);border-radius:6px;transition:width .4s"></div>
             </div>
-            <p style="font-size:13px;color:var(--txt2);margin-top:.5rem;text-align:center"><span id="current-holders">500</span> / 2,000 holders · faltan <span id="holders-needed">1,500</span></p>
+            <p style="font-size:13px;color:var(--txt2);margin-top:.5rem;text-align:center"><span id="current-holders">—</span> / 2,000 holders · faltan <span id="holders-needed">—</span></p>
           </div>
         </div>
       </div>
@@ -1403,7 +1410,7 @@ h3.gf-title,h3.b-name,h3.tier-name,h3.nft-name,h3.rm-title{margin-top:0;}
       <label for="donation-sol-input" style="font-size:14px;font-weight:600;color:var(--txt)">Cantidad en SOL (mínimo 0.1)</label>
       <input type="number" id="donation-sol-input" min="0.1" step="0.1" placeholder="0.5" style="width:100%;padding:.8rem;background:var(--panel2);border:1px solid var(--borde);border-radius:8px;color:var(--txt);font-family:var(--sans);font-size:1.1rem;text-align:center;outline:none">
       <p id="donation-duende-preview" style="font-size:14px;color:var(--oro);min-height:1.2rem">Ingresa cantidad en SOL</p>
-      <button id="btn-send-donation" type="button" style="width:100%;padding:.8rem 1rem;border:none;cursor:pointer">ENVIAR SOL Y RECIBIR $DUENDE</button>
+      <button id="btn-send-donation" type="button" style="width:100%;padding:.8rem 1rem;border:none;cursor:pointer">Enviar SOL y recibir $DUENDE</button>
       <div id="tx-link-container" style="font-size:13px"></div>
     </div>
     <div style="margin-top:1.4rem;text-align:center">
@@ -1412,23 +1419,22 @@ h3.gf-title,h3.b-name,h3.tier-name,h3.nft-name,h3.rm-title{margin-top:0;}
     </div>
     <p class="sec-line" style="margin-bottom:1.6rem">🔒 Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado. Envía solo desde tu propia wallet y revisa la dirección antes de firmar.</p>
     <h3 class="d-title">Donaciones voluntarias</h3>
-    <p class="d-sub">El token, el juego, la colección y los contratos los construye un equipo pequeño sin salario fijo. Cada donación se usa en desarrollo, marketing, auditorías y servidores, con reportes mensuales en Telegram.</p>
+    <p class="d-sub">Lo desarrolla una sola persona. Las donaciones se usan en servidores y desarrollo.</p>
     <div class="d-wallets">
       <div class="d-wallet">
         <span class="w-chain">◎ SOL</span>
         <span class="w-addr" id="sol-addr">B6pLnZFkot8JgAKZs5nq8V4B1LSdz7mdhNnUa85fbp4J</span>
-        <button class="w-copy" type="button" onclick="copyW('sol-addr',this)">COPY</button>
+        <button class="w-copy" type="button" onclick="copyW('sol-addr',this)">Copiar</button>
       </div>
       <div class="d-wallet">
         <span class="w-chain">Ξ ETH</span>
         <span class="w-addr" id="eth-addr">0x9f0113d0F6729CA82Edb9Df4Fc94Ca453D3e0BC5</span>
-        <button class="w-copy" type="button" onclick="copyW('eth-addr',this)">COPY</button>
+        <button class="w-copy" type="button" onclick="copyW('eth-addr',this)">Copiar</button>
       </div>
     </div>
     <div class="d-note">
       Las donaciones son voluntarias y no otorgan derechos sobre el proyecto.<br>
-      Fondos destinados a: desarrollo del juego · marketing · auditorías · servidores.<br>
-      Reportes mensuales publicados en Telegram y Twitter.
+      Fondos destinados a: servidores y desarrollo del juego.
     </div>
   </div>
 </section>
@@ -1499,7 +1505,7 @@ h3.gf-title,h3.b-name,h3.tier-name,h3.nft-name,h3.rm-title{margin-top:0;}
   <div class="f-links">
     <a href="terminos.html">Términos de Servicio</a>
     <a href="privacidad.html">Política de Privacidad</a>
-    <a href="#seguridad">Seguridad</a>
+    <a href="/seguridad.html">Seguridad</a>
     <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">Contacto: @ElDuendeOficial (creador)</a>
   </div>
   <p class="f-note" id="seguridad">🔒 Seguridad: nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado. Los únicos canales oficiales son los de esta página.</p>
@@ -1559,16 +1565,16 @@ for(let i=0;i<28;i++){
 // COPY CA
 function copyCa(){
   navigator.clipboard.writeText(document.getElementById('ca-text').textContent).then(()=>{
-    const b=document.getElementById('ca-btn');b.textContent='✓ COPIED!';b.classList.add('ok');
-    setTimeout(()=>{b.textContent='COPY CA';b.classList.remove('ok');},2000);
+    const b=document.getElementById('ca-btn');b.textContent='✓ Copiada';b.classList.add('ok');
+    setTimeout(()=>{b.textContent='Copiar dirección';b.classList.remove('ok');},2000);
   });
 }
 
 // COPY WALLET
 function copyW(id,btn){
   navigator.clipboard.writeText(document.getElementById(id).textContent).then(()=>{
-    btn.textContent='✓ OK';btn.classList.add('ok');
-    setTimeout(()=>{btn.textContent='COPY';btn.classList.remove('ok');},2000);
+    btn.textContent='✓ Copiada';btn.classList.add('ok');
+    setTimeout(()=>{btn.textContent='Copiar';btn.classList.remove('ok');},2000);
   });
 }
 
