@@ -1646,6 +1646,9 @@ LOGROS.push(
 export const TORRE = { nv: 10, max: 5, jefeCada: 5, pausa: 3500, tiempo: 150000, porHora: 12, instancias: 30, vidaJefe: 0.35, atkJefe: 0.8, semMin: 10, montura: 30 };
 // Premio del ranking semanal (desde el piso semMin): 1º, 2º y 3º.
 export const premioTorreSem = i => [15000, 7500, 3500][i] || 0;
+// Atajo: con marca semanal de 10+, se puede empezar 5 pisos por debajo de
+// ella (en multiplos de 5). Los cofres siguen siendo por marca nueva.
+export const atajoTorre = max => (max >= 10 ? Math.floor(max / 5) * 5 - 5 : 0);
 // Modificador de cada piso (no en los de jefe): variedad entre subidas.
 export const MODS_TORRE = {
   veloces:   { emoji: '💨', nombre: 'Veloces',   desc: 'se mueven un 30% más rápido' },

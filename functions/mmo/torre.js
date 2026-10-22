@@ -12,13 +12,13 @@
 // como de mazmorra para que no cuenten como jefes de zona.
 // La instancia es 'torre#xxxx' con w.torre (no w.inst: no es una mazmorra).
 // ═══════════════════════════════════════════════════════
-import { MAPAS, MONSTRUOS, TORRE, MODS_TORRE, modTorre, pisoTorre, premioTorre, premioTorreSem, zonaDeNivel, semanaUTC, NIVEL_MAX, PASE } from '../../mmo/js/data.js';
+import { MAPAS, MONSTRUOS, TORRE, MODS_TORRE, modTorre, atajoTorre, pisoTorre, premioTorre, premioTorreSem, zonaDeNivel, semanaUTC, NIVEL_MAX, PASE } from '../../mmo/js/data.js';
 import { getEnv, tg } from '../api/lib.js';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 
 export const Torre = {
-  entrarTorre(s) {
+  entrarTorre(s, m = {}) {
     const c = s.c;
     if (s.muerto) return;
     if (!this.cercaDelBuscador(s)) return this.no(s, 'Ve al portal de mazmorras del pueblo.');
@@ -39,10 +39,12 @@ export const Torre = {
     const clave = 'torre#' + this.sigInst.toString(36) + Math.random().toString(36).slice(2, 6);
     const w = this.mundoK(clave);
     w.spawnEn = Infinity;
-    w.torre = { sem: semanaUTC(), piso: 0, nv: Math.min(NIVEL_MAX, Math.max(...quienes.map(x => x.c.nivel))), n: quienes.length, sigEn: ahora + TORRE.pausa, pisoIni: 0, fin: false, vacioDesde: 0 };
+    // Atajo (solo el de quien pulsa; a lo sumo su marca de la semana - 5).
+    const desde = (m.desde | 0) > 0 && (m.desde | 0) <= atajoTorre(this.torreSem(c).max) && (m.desde | 0) % 5 === 0 ? m.desde | 0 : 0;
+    w.torre = { sem: semanaUTC(), piso: desde, nv: Math.min(NIVEL_MAX, Math.max(...quienes.map(x => x.c.nivel))), n: quienes.length, sigEn: ahora + TORRE.pausa, pisoIni: 0, fin: false, vacioDesde: 0 };
     for (const x of quienes) {
       this.entrarMapa(x, 'torre', 700, false, clave);
-      this.enviar(x, { t: 'torre', piso: 0, mejor: this.torreSem(x.c).max, nv: w.torre.nv });
+      this.enviar(x, { t: 'torre', piso: desde, mejor: this.torreSem(x.c).max, nv: w.torre.nv });
       this.enviar(x, { t: 'toast', ok: true, m: `🗼 Torre del Duende (Nv ${w.torre.nv}). Limpia cada piso en ${Math.floor(TORRE.tiempo / 60000)} min y ${Math.round(TORRE.tiempo % 60000 / 1000)} s. Cada 5 pisos nuevos de la semana, un cofre.` });
     }
     if (g) for (const x of this.sesionesGrupo(g)) if (!quienes.includes(x)) this.enviar(x, { t: 'toast', m: '🗼 Tu grupo subió a la Torre del Duende (solo entran los que están junto al portal).' });

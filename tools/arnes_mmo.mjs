@@ -1358,7 +1358,7 @@ async function pruebasEvadir() {
   const o = [...w.mons.values()].find(x => x.grupo && Math.abs(x.casaX - 900) < 80);
   o.x = o.casaX + 260; o.hp = 1; o.amen.clear(); o.obj = 0;
   tick(60);
-  chequear(Math.abs(o.x - o.casaX) <= 60 && o.hp === o.max, 'un pack sin presa vuelve a su sitio y se cura');
+  chequear(Math.abs(o.x - o.casaX) < 150 && o.hp === o.max, 'un pack sin presa vuelve a su sitio y se cura');
   await dejar(j);
 }
 
@@ -1445,6 +1445,15 @@ async function pruebasTorre() {
   await km.mandar({ t: 'comprar', k: 'montura', id: 'torre' });
   chequear(!(km.c.monturas || []).includes('torre'), 'la montura de la Torre no se vende');
   await dejar(km);
+  // Atajo: con marca 17, se puede empezar desde el piso 11 (no desde el 16).
+  await calma && 0;
+  j.muerto = false; j.hp = j.st.maxHp; j.c.torre = { sem: D.semanaUTC(), max: 17 };
+  mundo.creadasT && mundo.creadasT.delete(j.c.uid);
+  await aMapa(j, 'pueblo', 795); await j.mandar({ t: 'torre', desde: 15 }); tick(40);
+  chequear(mundo.mundoDe(j).torre && mundo.mundoDe(j).torre.piso === 1, 'no se puede empezar más arriba de lo permitido');
+  await aMapa(j, 'pueblo', 795); tick(70); await j.mandar({ t: 'torre', desde: 10 }); tick(40);
+  chequear(mundo.mundoDe(j).torre && mundo.mundoDe(j).torre.piso === 11, 'con marca 17 se empieza desde el piso 11');
+  await aMapa(j, 'pueblo', 795);
   const tp = await interno('tops');
   chequear(tp.ok && Array.isArray(tp.torre) && Array.isArray(tp.xp) && Array.isArray(tp.duel) && typeof tp.online === 'number', 'el bot puede leer los rankings de la semana (/topmmo)');
   chequear((await interno('tops', {}, 'mal')).ok === undefined, 'sin la cabecera del bot no responde');

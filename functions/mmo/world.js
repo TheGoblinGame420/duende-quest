@@ -301,7 +301,7 @@ export class MmoWorld {
       case 'retar': return this.retarDuelo(s, m);
       case 'retoResp': return this.respuestaDuelo(s, m);
       case 'mazmorra': return this.entrarMazmorra(s, m);
-      case 'torre': return this.entrarTorre(s);
+      case 'torre': return this.entrarTorre(s, m);
       case 'exped': return this.expedicion(s, m);
       case 'hermCrear': return this.crearHermandad(s, m);
       case 'hermInvitar': return this.invitarHerm(s, m);
