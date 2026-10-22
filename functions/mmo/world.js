@@ -908,6 +908,15 @@ export class MmoWorld {
     if (accion === 'pedidoPagado') return json(await this.pedidoPagadoStars(b));
     if (accion === 'pedidos') return json({ ok: true, pedidos: this.pedidos.filter(x => x.estado === 'pagado' || x.estado === 'por_verificar') });
     if (accion === 'ventas') return json(this.resumenVentas());
+    // Rankings publicos de la semana (solo nombres y marcas) para /topmmo del bot.
+    if (accion === 'tops') {
+      const fuera = uid => UIDS_PRUEBA.has(uid);
+      const xp = this.topSemana().filter(([uid]) => !fuera(uid)).slice(0, 5).map(([, x]) => ({ n: x.n, lv: x.lv, xp: x.xp }));
+      const torre = (await this.topTorre()).filter(([uid]) => !fuera(uid)).slice(0, 5).map(([, x]) => ({ n: x.n, p: x.p }));
+      const des = this.topDesSem().filter(([uid]) => !fuera(uid)).slice(0, 3).map(([, x]) => ({ n: x.n, k: x.k }));
+      const duel = ((await this.state.storage.get('rankDuelo')) || []).filter(x => !fuera(x.uid)).slice(0, 5).map(x => ({ n: x.n, e: x.e }));
+      return json({ ok: true, xp, torre, des, duel, online: this.contarOnline() });
+    }
     if (accion === 'entregar') return json(await this.entregarPedido(b));
     if (accion === 'anular') return json(await this.anularPedido(b));
     if (accion === 'pagado' || accion === 'rechazar') {

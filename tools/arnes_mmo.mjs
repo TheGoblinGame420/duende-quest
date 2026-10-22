@@ -1391,6 +1391,9 @@ async function pruebasTorre() {
   j.inv = 0; mundo.herir(j, 1e9, { id: 0, pct: 0 }); if (!j.muerto) { j.hp = 0; mundo.morir && mundo.morir(j); }
   tick(2);
   chequear(w2.torre.fin, 'si caen todos, se acaba');
+  const tp = await interno('tops');
+  chequear(tp.ok && Array.isArray(tp.torre) && Array.isArray(tp.xp) && Array.isArray(tp.duel) && typeof tp.online === 'number', 'el bot puede leer los rankings de la semana (/topmmo)');
+  chequear((await interno('tops', {}, 'mal')).ok === undefined, 'sin la cabecera del bot no responde');
   // Cambio de semana: premio a los 3 primeros (desde el piso semMin).
   await mundo.cargarRankTorre();
   mundo.rt = { sem: '2000-01-03', l: { [j.c.uid]: { n: j.c.nombre, p: 12, k: 'guerrero', t: 1 }, 'inv:otro': { n: 'Otro', p: 3, k: '', t: 2 } } };

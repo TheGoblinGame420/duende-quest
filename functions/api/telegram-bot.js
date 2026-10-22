@@ -202,6 +202,24 @@ async function handleRanking(token, env, chatId, messageId) {
   if (messageId) { opts.message_id = messageId; await tg(token, 'editMessageText', opts); } else await tg(token, 'sendMessage', opts);
 }
 
+// Rankings de la semana del MMO (nombres y marcas; nada privado).
+async function handleTopMmo(token, env, chatId, messageId) {
+  let r = null;
+  try { r = await mmoInterno(env, 'tops'); } catch (e) {}
+  const med = i => ['🥇', '🥈', '🥉'][i] || `${i + 1}.`;
+  let text = '🌍 *DUENDE QUEST ONLINE — esta semana*\n';
+  if (!r || !r.ok) text += '\n_No se pudo leer el ranking ahora. Prueba en un momento._';
+  else {
+    text += `\n🏆 *Experiencia*\n` + (r.xp.length ? r.xp.map((x, i) => `${med(i)} *${mdSeguro(x.n)}* — ${x.xp.toLocaleString('es')} XP (Nv ${x.lv})`).join('\n') : '_Nadie aún._');
+    text += `\n\n🗼 *Torre del Duende*\n` + (r.torre.length ? r.torre.map((x, i) => `${med(i)} *${mdSeguro(x.n)}* — piso ${x.p}`).join('\n') : '_Nadie ha subido aún._');
+    if (r.des.length) text += `\n\n⚡ *Desafíos*\n` + r.des.map((x, i) => `${med(i)} *${mdSeguro(x.n)}* — +${x.k}`).join('\n');
+    text += `\n\n⚔️ *Duelos (Elo)*\n` + (r.duel.length ? r.duel.map((x, i) => `${med(i)} *${mdSeguro(x.n)}* — ${x.e}`).join('\n') : '_Nadie aún._');
+    text += `\n\n👥 Ahora mismo: ${r.online} en línea. Los 3 primeros de la Torre y de Desafíos se llevan oro y título el lunes.`;
+  }
+  const opts = { chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🌍 Entrar al mundo', web_app: { url: MMO_URL } }], [{ text: '🔄 Actualizar', callback_data: 'topmmo' }]] } };
+  if (messageId) { opts.message_id = messageId; await tg(token, 'editMessageText', opts).catch(() => {}); } else await tg(token, 'sendMessage', opts);
+}
+
 async function handlePrice(token, chatId, messageId) {
   const p = await getPrice();
   let text;
@@ -386,7 +404,7 @@ async function handleCreador(token, chatId) {
 }
 
 async function handleHelp(token, chatId) {
-  await tg(token, 'sendMessage', { chat_id: chatId, text: `🧌 *DUENDE QUEST — Comandos*\n\n/start — Menú principal\n/play — Abrir el juego\n/mmo — DUENDE QUEST ONLINE (MMORPG)\n/avisos — Avisos para volver al MMO (on / off)\n/ranking — Top 10\n/stats — Tus estadísticas\n/referral — Tu link para invitar amigos\n/price — Precio de $DUENDE\n/buy — Comprar $DUENDE con Stars\n/creador — Creador y canales oficiales\n/help — Esta ayuda\n\n${TEXTO_SEGURIDAD}\nMás información: ${SEGURIDAD_URL}\n\n${TEXTO_CREADOR}`, parse_mode: 'Markdown', disable_web_page_preview: true, reply_markup: { inline_keyboard: [[{ text: '🎮 Jugar', web_app: { url: WEBAPP_URL } }], BOTON_SEGURIDAD] } });
+  await tg(token, 'sendMessage', { chat_id: chatId, text: `🧌 *DUENDE QUEST — Comandos*\n\n/start — Menú principal\n/play — Abrir el juego\n/mmo — DUENDE QUEST ONLINE (MMORPG)\n/topmmo — Ranking de la semana del MMO\n/avisos — Avisos para volver al MMO (on / off)\n/ranking — Top 10\n/stats — Tus estadísticas\n/referral — Tu link para invitar amigos\n/price — Precio de $DUENDE\n/buy — Comprar $DUENDE con Stars\n/creador — Creador y canales oficiales\n/help — Esta ayuda\n\n${TEXTO_SEGURIDAD}\nMás información: ${SEGURIDAD_URL}\n\n${TEXTO_CREADOR}`, parse_mode: 'Markdown', disable_web_page_preview: true, reply_markup: { inline_keyboard: [[{ text: '🎮 Jugar', web_app: { url: WEBAPP_URL } }], BOTON_SEGURIDAD] } });
 }
 
 // ── /admin: métricas privadas (solo el dueño, via env ADMIN_TG_ID) ──
@@ -641,6 +659,7 @@ async function onRequestPost(context) {
 
       switch (data) {
         case 'ranking': await handleRanking(token, env, chatId, messageId); break;
+        case 'topmmo': await handleTopMmo(token, env, chatId, messageId); break;
         case 'price': await handlePrice(token, chatId, messageId); break;
         case 'stats': await handleStats(token, env, chatId, user.id, messageId); break;
         case 'referral': await handleReferralCmd(token, chatId, user.id, messageId); break;
@@ -671,9 +690,10 @@ async function onRequestPost(context) {
           await handleStart(token, env, chatId, user, payload); break;
         case '/play': case '/jugar': await handlePlay(token, chatId); break;
         case '/mmo': case '/online':
-          await tg(token, 'sendMessage', { chat_id: chatId, text: '🌍 *DUENDE QUEST ONLINE*\n\nMMORPG de duendes al estilo World of Warcraft, gratis y sin descargas. Elige tu clase (Guerrero, Mago, Sacerdote o Pícaro), forma grupo con amigos, entra a 5 mazmorras con jefes que hay que esquivar e interrumpir y a la banda de 10 del Titán, funda tu hermandad, consigue montura y sube hasta el nivel 60 en 10 zonas. Jefe mundial cada 30 minutos.\n\n🎭 *Skins con poderes:* más oro, ataque, defensa o experiencia; en el Mercader, con el oro del juego o con Stars.\n\n🥤 *Premio:* junta 10.000 puntos cazando y te enviamos un litro de chicha morada a tu casa.\n\n💎 *Recompensas en TON (opcional):* desde el nivel 15, los jefes, el jefe mundial y la caza del día dan mTON del fondo del día, si lo hay (1.000 mTON = 1 TON). Desde 5 TON puedes pedir el retiro a tu wallet TON; cada retiro se revisa y se paga a mano.\n\n' + TEXTO_SEGURIDAD, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🌍 Entrar al mundo', web_app: { url: MMO_URL } }], BOTON_SEGURIDAD] } });
+          await tg(token, 'sendMessage', { chat_id: chatId, text: '🌍 *DUENDE QUEST ONLINE*\n\nMMORPG de duendes al estilo World of Warcraft, gratis y sin descargas. Elige tu clase (Guerrero, Mago, Sacerdote o Pícaro), forma grupo con amigos, entra a 5 mazmorras con jefes que hay que esquivar e interrumpir, a la banda de 10 del Titán y a la Torre del Duende (pisos sin fin con ranking semanal), pesca, funda tu hermandad, consigue montura y sube hasta el nivel 60 en 10 zonas. Jefe mundial cada 30 minutos.\n\n🎭 *Skins con poderes:* más oro, ataque, defensa o experiencia; en el Mercader, con el oro del juego o con Stars.\n\n🥤 *Premio:* junta 10.000 puntos cazando y te enviamos un litro de chicha morada a tu casa.\n\n💎 *Recompensas en TON (opcional):* desde el nivel 15, los jefes, el jefe mundial y la caza del día dan mTON del fondo del día, si lo hay (1.000 mTON = 1 TON). Desde 5 TON puedes pedir el retiro a tu wallet TON; cada retiro se revisa y se paga a mano.\n\n' + TEXTO_SEGURIDAD, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🌍 Entrar al mundo', web_app: { url: MMO_URL } }], [{ text: '🏆 Ranking de la semana', callback_data: 'topmmo' }], BOTON_SEGURIDAD] } });
           break;
         case '/ranking': case '/top': await handleRanking(token, env, chatId); break;
+        case '/topmmo': case '/torre': await handleTopMmo(token, env, chatId); break;
         case '/price': case '/precio': await handlePrice(token, chatId); break;
         case '/stats': await handleStats(token, env, chatId, user.id); break;
         case '/referral': case '/ref': await handleReferralCmd(token, chatId, user.id); break;
