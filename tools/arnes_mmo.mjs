@@ -569,6 +569,7 @@ async function pruebas() {
   await pruebasDesafios();
   await pruebasTemporada();
   await pruebasConjuntos();
+  await pruebasTintes();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -1216,4 +1217,26 @@ async function pruebasConjuntos() {
   }
   chequear(piezas > 0, 'los jefes de mazmorra sueltan piezas de su conjunto');
   await dejar(p);
+}
+
+async function pruebasTintes() {
+  console.log('Colores del nombre');
+  const t = await entrar('Pintor', '64'), v = await entrar('Mirante', '65');
+  ponerNivel(t, 25, 'mago');
+  await aMapa(t, 'pueblo', 950); await aMapa(v, 'pueblo', 1000);
+  mundo.revisarLogros(t);   // los de nivel pagan oro: que no cuenten aqui
+  t.c.oro = 30000;
+  await t.mandar({ t: 'comprar', k: 'tinte', id: 'rubi' });
+  chequear(!(t.c.tintes || []).includes('rubi') && t.c.oro === 30000, 'sin nivel no se compra');
+  await t.mandar({ t: 'comprar', k: 'tinte', id: 'esmeralda' });
+  chequear(!(t.c.tintes || []).includes('esmeralda') && t.c.oro === 30000, 'sin oro no se compra');
+  await t.mandar({ t: 'comprar', k: 'tinte', id: 'oro' });
+  chequear(t.c.tinte === 'oro' && t.c.oro === 10000, 'se compra y se pone');
+  chequear(v.ultimos('pa').some(x => x.id === t.id && x.tn === 'oro'), 'los demás ven el color');
+  await t.mandar({ t: 'comprar', k: 'tinte', id: '' });
+  await t.mandar({ t: 'comprar', k: 'tinte', id: 'oro' });
+  chequear(t.c.tinte === 'oro' && t.c.oro === 10000, 'quitarlo y volver a ponerlo no cobra otra vez');
+  await t.mandar({ t: 'comprar', k: 'tinte', id: '__proto__' });
+  chequear(t.c.oro === 10000, 'ids raros no hacen nada');
+  await dejar(t); await dejar(v);
 }

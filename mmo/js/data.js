@@ -345,6 +345,15 @@ export const MONTURAS = {
   dragon:    { nombre: 'Dragón Ancestral',     hoja: 'dragon',    nv: 60, precio: 300000, vel: 2,   alto: 84, dy: 40 },
 };
 export const MONTAR_MS = 1500;
+// Colores del nombre (solo se ven, no dan nada): metas de oro a largo plazo
+// que todos ven sobre tu duende. 'arcoiris' cambia de color.
+export const TINTES = {
+  oro:       { nombre: 'Oro Duende', color: '#ffd84a', nv: 10, precio: 20000 },
+  esmeralda: { nombre: 'Esmeralda',  color: '#34d399', nv: 20, precio: 40000 },
+  rubi:      { nombre: 'Rubí',       color: '#fb7185', nv: 30, precio: 60000 },
+  amatista:  { nombre: 'Amatista',   color: '#c084fc', nv: 40, precio: 100000 },
+  arcoiris:  { nombre: 'Arcoíris',   color: 'arcoiris', nv: 60, precio: 500000 },
+};
 export const velMontura = id => (MONTURAS[id] ? MONTURAS[id].vel : 1);
 
 // Cambiar de clase: gratis hasta Nv 10, luego cuesta oro (asi se puede

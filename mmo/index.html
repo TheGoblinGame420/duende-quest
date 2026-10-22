@@ -167,7 +167,7 @@ body.tactil #pie{display:none;}
 /* En el movil los avisos bajan al cielo vacio: arriba pisaban el seguimiento. */
 /* Tras un logro o una mazmorra: compartirlo con tu enlace de invitacion. */
 #presumir{left:50%;transform:translateX(-50%);bottom:170px;display:none;z-index:6;font-size:9px;padding:9px 14px;border-color:#ffd84a;color:#ffd84a;box-shadow:0 0 14px rgba(255,216,74,.35);animation:brilla 1.4s infinite alternate;}
-#hud.estrecho #presumir{bottom:auto;top:395px;}
+#hud.estrecho #presumir{bottom:auto;top:470px;}
 #hud.estrecho #avisos{top:250px;width:90%;}
 #hud.estrecho #consejo{top:200px;font-size:7px;white-space:normal;width:86%;text-align:center;line-height:1.6;}
 @keyframes brilla{to{box-shadow:0 0 14px rgba(255,230,0,.55)}}
@@ -413,6 +413,7 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
       <button class="tab" data-tab="forja">FORJA</button>
       <button class="tab" data-tab="skin">SKINS</button>
       <button class="tab" data-tab="montura">🐎 MONTURAS</button>
+      <button class="tab" data-tab="tinte">🎨 COLORES</button>
       <button class="tab" data-tab="premium">⭐ PREMIUM</button>
     </div>
     <div class="lista" id="tienda-lista"></div>
@@ -609,6 +610,6 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=40"></script>
+<script type="module" src="/mmo/js/client.js?v=41"></script>
 </body>
 </html>

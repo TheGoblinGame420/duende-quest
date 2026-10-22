@@ -1337,6 +1337,13 @@ en `statsJugador` vía `bonoConjuntos`). En 🎒 Equipo se ve cada conjunto
 puesto con sus piezas y bonos. Arreglado además: los objetos de Desafío
 (Nv 60+k) salían en rojo y sin EQUIPAR en la bolsa (`puedeUsar`).
 
+**Colores del nombre (?v=41):** `TINTES` en data.js (Oro Duende 20k Nv10,
+Esmeralda 40k Nv20, Rubí 60k Nv30, Amatista 100k Nv40, Arcoíris 500k Nv60,
+este último va rotando 12 tonos). Pestaña 🎨 COLORES del Mercader
+(`comprar` con k:'tinte'; id '' vuelve al color de la clase). `c.tintes`,
+`c.tinte`, se ve en `infoApariencia.tn`. Solo estética: gasto de oro a largo
+plazo.
+
 Sin hacer: avisos a la hora habitual de cada uno (el cron de las 17 UTC ya
 usa 4 de 5 disparadores del plan gratis), y final de juego para D30 (1→60 se
 juega en 5-8 h). Ojo: la bienvenida del bot aún habla de $DUENDE en Solana

@@ -7,13 +7,13 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, ALCANCE_BASE, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
-  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, temporadaDe, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio,
+  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, temporadaDe, TINTES, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
-} from './data.js?v=40';
+} from './data.js?v=41';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -406,7 +406,7 @@ function recibir(m) {
       else if (quien) { quien.lv = m.lv; if (m.mx) quien.mx = m.mx; if (m.rmx) quien.rmx = m.rmx; }
       break;
     }
-    case 'pa': { const o = otros.get(m.p); if (o) { o.sk = m.sk; o.ar = m.ar; o.mx = m.mx; o.ti = m.ti || ''; o.cl = m.cl || ''; o.rmx = m.rmx || 0; o.hn = m.hn || ''; o.mo = m.mo || ''; o.es = m.es || ''; } break; }
+    case 'pa': { const o = otros.get(m.p); if (o) { o.sk = m.sk; o.ar = m.ar; o.mx = m.mx; o.ti = m.ti || ''; o.cl = m.cl || ''; o.rmx = m.rmx || 0; o.hn = m.hn || ''; o.mo = m.mo || ''; o.es = m.es || ''; o.tn = m.tn || ''; } break; }
     case 'hb': habilidadRemota(m); break;
     case 'cast': {
       const h = m.id === 'hogar' ? { nombre: 'Piedra de Hogar' } : m.id === 'montar' ? { nombre: 'Invocar montura' } : m.id === 'recolectar' ? { nombre: 'Recogiendo' } : habPorId(m.id);
@@ -542,7 +542,7 @@ function aurasDeServidor(au) {
 
 function agregarOtro(p) {
   if (p.id === miId) return;
-  otros.set(p.id, { id: p.id, n: p.n, lv: p.lv, sk: p.sk, ar: p.ar, ti: p.ti || '', cl: p.cl || '', hn: p.hn || '', mo: p.mo || '', es: p.es || '', rmx: p.rmx || 0, rec: 0, fl: 0, x: p.x, y: p.y, f: p.f, a: 0, hp: p.hp, mx: p.mx, muerto: p.muerto, buf: [{ t: performance.now(), x: p.x, y: p.y }], herido: 0, atk: 0, paso: 0 });
+  otros.set(p.id, { id: p.id, n: p.n, lv: p.lv, sk: p.sk, ar: p.ar, ti: p.ti || '', cl: p.cl || '', hn: p.hn || '', mo: p.mo || '', es: p.es || '', tn: p.tn || '', rmx: p.rmx || 0, rec: 0, fl: 0, x: p.x, y: p.y, f: p.f, a: 0, hp: p.hp, mx: p.mx, muerto: p.muerto, buf: [{ t: performance.now(), x: p.x, y: p.y }], herido: 0, atk: 0, paso: 0 });
   aurasP.set(p.id, aurasDeServidor(p.au));
 }
 
@@ -2374,6 +2374,8 @@ function spriteTexto(txt, tam, color, fondo, sombra) {
 // Las medidas tomadas antes de cargar la fuente pixel salen con la de
 // respaldo: al cargarse, se tira la cache.
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => _textos.clear()).catch(() => {});
+// Arcoiris: 12 tonos que van rotando (pocos, para no llenar la cache de textos).
+function colorTinte(tn) { return tn.color === 'arcoiris' ? 'hsl(' + (Math.floor(frame / 8) % 12) * 30 + ',90%,68%)' : tn.color; }
 function etiqueta(x, y, txt, color, tam) {
   tam = tam || 7;
   const c = spriteTexto(txt, tam, color || '#fff', true, false);
@@ -2596,7 +2598,8 @@ function dibujarDuende(q, esYo) {
   // Si otro duende esta pegado al propio, su nombre baja una linea: antes
   // se encimaban ("ClaudeTest · Nv1Duendecillo Bot").
   const baja = !esYo && Math.abs(q.x - P.x) < 110 && Math.abs(q.y - P.y) < 40 ? 13 : 0;
-  const colNom = esYo ? '#ffe600' : (CLASES[clase] ? CLASES[clase].color : (SKINS[skin] ? SKINS[skin].color : '#fff'));
+  const tn = TINTES[esYo ? yo.tinte : q.tn];
+  const colNom = tn ? colorTinte(tn) : esYo ? '#ffe600' : (CLASES[clase] ? CLASES[clase].color : (SKINS[skin] ? SKINS[skin].color : '#fff'));
   pies = piesOrig;
   etiqueta(x, pies + 16 + baja, (muerto ? '💀 ' : '') + nom + ' · Nv' + lv, colNom, 6);
   // Hermandad y titulo debajo; si otro duende esta pegado al tuyo, solo su
@@ -3066,6 +3069,17 @@ function pintarTienda() {
       h += tarjeta(ico, d.nombre + ' +' + n, desc, acc);
     }
     h += '<p style="margin-top:8px;font-size:12px;color:rgba(255,255,255,.5)">Cada mejora sale siempre bien: +7% de daño por nivel, hasta +' + FORJA_MAX + '. Compra más armas en la pestaña ARMAS para forjarlas también.</p>';
+  } else if (tabTienda === 'tinte') {
+    for (const [id, tn] of Object.entries(TINTES)) {
+      const tiene = (yo.tintes || []).includes(id);
+      const muestra = tn.color === 'arcoiris' ? 'background:linear-gradient(90deg,#f43f5e,#facc15,#34d399,#38bdf8,#c084fc)' : 'background:' + tn.color;
+      const ico = `<div style="width:40px;height:40px;border-radius:8px;${muestra}"></div>`;
+      const acc = tiene ? (yo.tinte === id ? '<span class="precio" style="color:#00ff88">✓ EN USO</span>' : `<button class="btn sec" data-comprar="tinte" data-id="${id}">USAR</button>`)
+        : yo.nivel < tn.nv ? `<span class="precio" style="color:#ff7777">Nv ${tn.nv}</span><span class="precio">🪙 ${tn.precio.toLocaleString('es')}</span>`
+        : `<span class="precio">🪙 ${tn.precio.toLocaleString('es')}</span><button class="btn" data-comprar="tinte" data-id="${id}" ${yo.oro < tn.precio ? 'disabled' : ''}>COMPRAR</button>`;
+      h += tarjeta(ico, `<span style="color:${tn.color === 'arcoiris' ? '#facc15' : tn.color}">${esc(tn.nombre)}</span>`, 'Color de tu nombre sobre tu duende: lo ven todos. Solo estética.', acc);
+    }
+    if (yo.tinte) h += `<button class="btn sec" data-comprar="tinte" data-id="" style="width:100%;margin-top:6px">VOLVER AL COLOR DE MI CLASE</button>`;
   } else if (tabTienda === 'montura') {
     for (const [id, mo] of Object.entries(MONTURAS)) {
       const tiene = (yo.monturas || []).includes(id);
