@@ -325,7 +325,7 @@ body.tg .solo-web{display:none;}
 
 /* avisos (aviso.ok / aviso.jefe: variantes de color para client.js) */
 #avisos{z-index:60;left:50%;transform:translateX(-50%);top:86px;display:flex;flex-direction:column;align-items:center;gap:5px;pointer-events:none!important;}
-.aviso{font-family:var(--sans);font-size:13px;font-weight:600;line-height:1.4;color:var(--txt);background:rgba(18,24,38,.94);border:1px solid var(--borde);padding:7px 12px;border-radius:8px;animation:av 3.6s forwards;text-align:center;max-width:90vw;box-shadow:var(--sombra);}
+.aviso{font-family:var(--sans);font-size:13px;font-weight:600;line-height:1.4;color:var(--txt);background:rgba(14,18,28,.95);border:1px solid var(--borde);border-left:3px solid #64748b;padding:7px 12px;border-radius:6px;animation:av 3.6s forwards;text-align:left;max-width:min(90vw,520px);box-shadow:var(--sombra);}
 .aviso.ok{border-color:rgba(34,197,94,.6);}
 .aviso.jefe{border-color:rgba(167,139,250,.6);color:#ddd6fe;}
 @keyframes av{0%{opacity:0;transform:translateY(-6px)}8%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}
@@ -556,7 +556,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <div class="modal" id="m-tienda">
   <div class="ventana">
     <button class="bt cerrar" data-cerrar>✕</button>
-    <h2>🛒 MERCADER GRUMO</h2>
+    <h2>MERCADER GRUMO</h2>
     <div class="oro-top">Tu oro: <span id="t-oro">0</span></div>
     <div class="tabs">
       <button class="tab on" data-tab="pw">PODERES</button>
@@ -578,7 +578,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <div class="modal" id="m-inv">
   <div class="ventana">
     <button class="bt cerrar" data-cerrar>✕</button>
-    <h2>🎒 TU DUENDE</h2>
+    <h2>TU DUENDE</h2>
     <div id="inv-stats" class="lista" style="margin-bottom:12px"></div>
     <div class="tabs">
       <button class="tab on" data-itab="skin">SKINS</button>
@@ -596,7 +596,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <div class="modal" id="m-mision">
   <div class="ventana">
     <button class="bt cerrar" data-cerrar>✕</button>
-    <h2>📜 GUARDIA TITO</h2>
+    <h2>GUARDIA TITO</h2>
     <div id="mision-cuerpo"></div>
     <p style="margin-top:10px;font-size:13px;color:var(--txt2)">¿Dudas con los controles? Pulsa ❔ arriba a la derecha.</p>
   </div>
@@ -605,7 +605,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <div class="modal" id="m-inspeccion">
   <div class="ventana">
     <button class="bt cerrar" data-cerrar>✕</button>
-    <h2>🔍 INSPECCIONAR</h2>
+    <h2>INSPECCIONAR</h2>
     <div class="lista" id="insp-lista"></div>
   </div>
 </div>
@@ -622,7 +622,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <div class="modal" id="m-rank">
   <div class="ventana">
     <button class="bt cerrar" data-cerrar>✕</button>
-    <h2>🏆 RANKING</h2>
+    <h2>RANKING</h2>
     <div id="rank-lista"><p class="centro">Cargando…</p></div>
   </div>
 </div>
@@ -714,7 +714,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <div class="modal" id="m-wallet">
   <div class="ventana">
     <button class="bt cerrar" data-cerrar>✕</button>
-    <h2>💎 RECOMPENSAS EN TON<small>Opcionales · con límites diarios y semanales</small></h2>
+    <h2>RECOMPENSAS EN TON<small>Opcionales · con límites diarios y semanales</small></h2>
     <div id="wallet-cuerpo"></div>
     <p class="seguridad">🔒 Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado.</p>
   </div>
@@ -724,7 +724,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <div class="modal" id="m-sol">
   <div class="ventana">
     <button class="bt cerrar" data-cerrar>✕</button>
-    <h2>◎ PAGAR CON SOL</h2>
+    <h2>PAGAR CON SOL</h2>
     <div id="sol-cuerpo"></div>
     <p class="seguridad">🔒 Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado.</p>
   </div>
@@ -734,7 +734,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <div class="modal" id="m-login">
   <div class="ventana">
     <button class="bt cerrar" data-cerrar>✕</button>
-    <h2>🎁 RECOMPENSA DIARIA</h2>
+    <h2>RECOMPENSA DIARIA</h2>
     <div id="login-cuerpo"></div>
     <button class="btn" data-cerrar id="login-ok" style="width:100%;margin-top:12px">Recoger</button>
   </div>
@@ -744,7 +744,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <div class="modal" id="m-clase">
   <div class="ventana">
     <button class="bt cerrar" data-cerrar id="clase-cerrar">✕</button>
-    <h2>⚔️ ELIGE TU CLASE</h2>
+    <h2>ELIGE TU CLASE</h2>
     <p class="centro" id="clase-txt" style="margin-bottom:10px">Cada clase juega distinto y cumple un papel en el grupo: el tanque aguanta, el sanador cura y los demás hacen daño.</p>
     <div class="clases" id="clases"></div>
   </div>
@@ -754,7 +754,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <div class="modal" id="m-social">
   <div class="ventana">
     <button class="bt cerrar" data-cerrar>✕</button>
-    <h2>👥 SOCIAL</h2>
+    <h2>SOCIAL</h2>
     <div class="tabs">
       <button class="tab on" data-stab="grupo">GRUPO</button>
       <button class="tab" data-stab="online">EN LÍNEA</button>
@@ -769,7 +769,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <div class="modal" id="m-arte">
   <div class="ventana">
     <button class="bt cerrar" data-cerrar>✕</button>
-    <h2>⚗️ ARTESANA LILA</h2>
+    <h2>ARTESANA LILA</h2>
     <div class="lista" id="arte-lista"></div>
   </div>
 </div>
@@ -778,7 +778,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <div class="modal" id="m-mapa">
   <div class="ventana">
     <button class="bt cerrar" data-cerrar>✕</button>
-    <h2>🗺️ MAPA DEL MUNDO</h2>
+    <h2>MAPA DEL MUNDO</h2>
     <div id="mapa-lista"></div>
   </div>
 </div>
@@ -787,7 +787,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <div class="modal" id="m-boveda">
   <div class="ventana">
     <button class="bt cerrar" data-cerrar>✕</button>
-    <h2>🗝️ BOVEDA SEMANAL</h2>
+    <h2>BOVEDA SEMANAL</h2>
     <div class="lista" id="boveda-lista"></div>
   </div>
 </div>
@@ -795,7 +795,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <div class="modal" id="m-mazmorras">
   <div class="ventana">
     <button class="bt cerrar" data-cerrar>✕</button>
-    <h2>🏰 MAZMORRAS</h2>
+    <h2>MAZMORRAS</h2>
     <div class="lista" id="maz-lista"></div>
   </div>
 </div>
@@ -804,7 +804,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <div class="modal" id="m-libro">
   <div class="ventana">
     <button class="bt cerrar" data-cerrar>✕</button>
-    <h2 id="libro-t">📖 HECHIZOS</h2>
+    <h2 id="libro-t">HECHIZOS</h2>
     <div class="lista" id="libro-lista"></div>
   </div>
 </div>
@@ -812,7 +812,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- Muerte -->
 <div class="modal" id="m-muerte">
   <div class="ventana centro">
-    <h2 class="sans" style="color:#f87171">💀 Has caído</h2>
+    <h2 class="sans" style="color:#f87171">Has caído</h2>
     <div id="muerte-info"></div>
     <p style="margin-top:8px">Pierdes un 5% de la experiencia de tu nivel.</p>
     <p style="margin-top:8px;color:var(--oro)">✝ Si hay un sacerdote cerca, puede resucitarte aquí mismo: espera en vez de volver.</p>
@@ -823,7 +823,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- Desconexion -->
 <div class="modal" id="m-error">
   <div class="ventana centro">
-    <h2 class="sans" style="color:var(--warn)">⚠️ Conexión</h2>
+    <h2 class="sans" style="color:var(--warn)">Conexión</h2>
     <p id="error-txt">Se perdió la conexión con el servidor.</p>
     <button class="btn" id="b-reconectar" style="margin-top:14px;width:100%;min-height:46px">Reconectar</button>
   </div>
@@ -832,6 +832,6 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=190"></script>
+<script type="module" src="/mmo/js/client.js?v=192"></script>
 </body>
 </html>

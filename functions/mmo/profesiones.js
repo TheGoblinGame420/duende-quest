@@ -129,7 +129,7 @@ export const Profesiones = {
       if (!c.especies[c.mapa]) {
         const pe = premioEspecie(p.nv);
         c.oro += pe;
-        txt += ` · 🆕 ¡Nueva especie: ${esp}! (+${pe} oro)`;
+        txt += ` · Nueva especie: ${esp} (+${pe} oro)`;
       }
       c.especies[c.mapa] = (c.especies[c.mapa] || 0) + 1;
       c.nEspecies = Object.keys(c.especies).length;

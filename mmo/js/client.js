@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=190';
+} from './data.js?v=192';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1779,8 +1779,10 @@ function htmlCalendario() {
   if (tp) l.push(tp.ini <= ahora ? `${tp.emoji} <b>${esc(tp.nombre)}</b>: en marcha hasta el ${esc(tp.hasta)}.` : `${tp.emoji} <b>${esc(tp.nombre)}</b>: empieza el ${dia(tp.ini)} a las ${hora(tp.ini)}.`);
   return '<h3>Calendario</h3><ul>' + l.map(x => `<li>${x.replace(/^(\p{Extended_Pictographic}|\uFE0F|\s)+/u, '')}</li>`).join('') + '</ul><p class="creditos" style="margin-top:4px">Horas en la hora de tu dispositivo.</p>';
 }
-// Las notas guardan su emoji (para el chat y el bot); en la ventana van sin el.
-const sinEmoji = t => String(t).replace(/^(\p{Extended_Pictographic}|\p{Emoji_Presentation}|\uFE0F|\u200D|\s)+/u, '');
+// Textos sin el emoji del principio (avisos, notas del parche, objetivos):
+// el tipo de mensaje ya lo dice su color. Declaracion de funcion para que
+// sirva aunque se llame antes de llegar a esta linea al cargar.
+function sinEmoji(t) { return String(t).replace(/^(\p{Extended_Pictographic}|\p{Emoji_Presentation}|\uFE0F|\u200D|\s)+/u, ''); }
 function abrirNovedades() {
   let h = htmlCalendario() + '<h3>Notas del parche</h3>';
   for (const nv of NOVEDADES) {
@@ -1927,7 +1929,7 @@ function htmlAfijos(af) {
 function emote(txt) {
   const c = $('emotes');
   const d = document.createElement('div');
-  d.textContent = txt;
+  d.textContent = sinEmoji(txt);
   c.appendChild(d);
   setTimeout(() => d.remove(), 3200);
   while (c.children.length > 3) c.firstChild.remove();
@@ -2196,7 +2198,7 @@ function abrirLibro() {
 }
 function pintarLibro() {
   const cl = CLASES[yo.clase];
-  $('libro-t').innerHTML = `📖 <span style="color:${cl.color}">${esc(cl.nombre.toUpperCase())}</span>`;
+  $('libro-t').innerHTML = `<span style="color:${cl.color}">${esc(cl.nombre.toUpperCase())}</span>`;
   // "PÍCARO": la fuente pixel no tiene letras con tilde.
   $('libro-t').classList.toggle('sans', /[^ -~]/.test(cl.nombre));
   const rec = RECURSOS[cl.recurso].nombre;
@@ -2362,7 +2364,7 @@ function pintarTutorial() {
     return;
   }
   ponCss(el, 'display', 'block');
-  ponTxt(el, paso.txt() + '  (' + (tuto.i + 1) + '/' + TUTORIAL.length + ')');
+  ponTxt(el, sinEmoji(paso.txt()) + '  (' + (tuto.i + 1) + '/' + TUTORIAL.length + ')');
 }
 
 // Mundo abierto: caminar contra el borde de una zona pasa a la siguiente
@@ -3929,9 +3931,11 @@ function aviso(txt, tipo, ms) {
   const d = document.createElement('div');
   d.className = 'aviso';
   if (ms) d.dataset.imp = '1';
-  if (tipo === 'ok') d.style.borderColor = 'var(--ok)';
-  if (tipo === 'jefe') { d.style.borderColor = 'var(--warn)'; d.style.color = 'var(--txt)'; }
-  d.textContent = txt;
+  // Sin emoji delante: el tipo lo dice el color de la barra lateral.
+  if (tipo === 'ok') d.style.borderLeftColor = 'var(--ok)';
+  else if (tipo === 'jefe') d.style.borderLeftColor = 'var(--warn)';
+  else if (tipo === 'error') d.style.borderLeftColor = 'var(--err)';
+  d.textContent = sinEmoji(txt);
   $('avisos').appendChild(d);
   setTimeout(() => d.remove(), ms || 3700);
   while ($('avisos').children.length > 4) { const v = [...$('avisos').children].find(x => !x.dataset.imp) || $('avisos').firstChild; v.remove(); }
