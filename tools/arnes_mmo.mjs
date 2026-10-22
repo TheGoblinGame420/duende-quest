@@ -1348,7 +1348,7 @@ async function pruebasPagoSol() {
   };
   const txDe = lamports => ({ blockTime: Math.floor(Date.now() / 1000), meta: { err: null, preBalances: [5e9, 1e9], postBalances: [5e9 - lamports - 5000, 1e9 + lamports], innerInstructions: [] },
     transaction: { message: { accountKeys: [{ pubkey: 'Pagador111' }, { pubkey: SOL_DEV_WALLET }], instructions: [{ program: 'system', parsed: { type: 'transfer', info: { source: 'Pagador111', destination: SOL_DEV_WALLET, lamports } } }] } } });
-  const adminReal = mundo.avisarAdmin; const admin = []; mundo.avisarAdmin = async t => { admin.push(t); };
+  const adminReal = mundo.avisarAdmin; const admin = [], botonesAdmin = []; mundo.avisarAdmin = async (t, b) => { admin.push(t); botonesAdmin.push(b); };
   try {
     const A = await entrar('Tramposo', '81'), V = await entrar('Victima', '82'), C = await entrar('Tardio', '83');
     A.c.uid = 'web:tramposo'; V.c.uid = 'web:victima'; C.c.uid = 'web:tardio';
@@ -1367,6 +1367,7 @@ async function pruebasPagoSol() {
     await mundo.pedidoFirma(V, { codigo: pV.codigo, firma });
     const dV = mundo.buscarPedido(pV.codigo);
     chequear(dV.estado === 'por_verificar' && dV.cadena && dV.cadena.ok, 'y quien pagó de verdad puede usar su firma');
+    chequear(botonesAdmin.some(k => k && JSON.stringify(k).includes('mmoent:' + pV.codigo) && JSON.stringify(k).includes('mmoanu:' + pV.codigo)), 'el aviso al dueño trae los botones Entregar y Anular');
     // Monto parecido pero no exacto: no se da por bueno.
     await mundo.pedido(A, { id: 'skin_tactico', metodo: 'sol' });
     const pA2 = A.ultimos('pedidoSol').pop();

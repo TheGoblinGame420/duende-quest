@@ -100,6 +100,9 @@ function generarItem(nv, rMin) {
   return { id: idItem(), s, nv: Math.max(1, Math.round(nv)), r, b };
 }
 
+// Botones del aviso de un pedido pagado al dueño (el bot los atiende).
+const botonesPedido = codigo => [[{ text: '✅ Entregar', callback_data: 'mmoent:' + codigo }, { text: '❌ Anular', callback_data: 'mmoanu:' + codigo }]];
+
 // Doble salto: 11,5²/1,2 + 10²/1,2 ≈ 194 px; margen por los fotogramas.
 const MAX_SALTO = 215;
 export class MmoWorld {
@@ -734,7 +737,7 @@ export class MmoWorld {
     this.actualizarYo(s);
     const v = pd.cadena;
     const chequeo = v === null ? '⚠️ No se pudo consultar la cadena: revísalo tú' : v.ok ? `✅ En la cadena: ${(v.recibido / 1e9).toFixed(6)} SOL llegaron a tu wallet` : `❌ En la cadena NO aparece el pago esperado (${v.motivo})`;
-    this.avisarAdmin(`◎ *Pedido #${pd.codigo}* — ${pd.nombre} ($${pd.usd})\n👤 ${pd.jugador.replace(/[^\p{L}\p{N} ]/gu, '')}\n💰 Debe pagar ${(pd.lamports / 1e9).toFixed(9)} SOL a tu wallet\n${chequeo}\n🔗 https://solscan.io/tx/${firma}\n\nSi está bien: /entregar ${pd.codigo}\nSi no: /anular ${pd.codigo}`);
+    this.avisarAdmin(`◎ *Pedido #${pd.codigo}* — ${pd.nombre} ($${pd.usd})\n👤 ${pd.jugador.replace(/[^\p{L}\p{N} ]/gu, '')}\n💰 Debe pagar ${(pd.lamports / 1e9).toFixed(9)} SOL a tu wallet\n${chequeo}\n🔗 https://solscan.io/tx/${firma}\n\nSi está bien: /entregar ${pd.codigo}\nSi no: /anular ${pd.codigo}`, botonesPedido(pd.codigo));
   }
 
   // Comprueba en la cadena que la transaccion existe, salio bien y dejo en la
@@ -772,7 +775,7 @@ export class MmoWorld {
     }
     pd.estado = 'pagado'; pd.charge = String(b.charge || ''); pd.tgPagador = String(b.tgId || ''); pd.starsPagadas = b.stars | 0; pd.pagadoEn = Date.now();
     await this.guardarPedidos();
-    this.avisarAdmin(`⭐ *Pedido #${pd.codigo}* pagado — ${pd.nombre} (${pd.starsPagadas} Stars, ya están en tu bot)\n👤 ${pd.jugador.replace(/[^\p{L}\p{N} ]/gu, '')}\n\nEntrégalo: /entregar ${pd.codigo}\nO devuelve las Stars: /anular ${pd.codigo}`);
+    this.avisarAdmin(`⭐ *Pedido #${pd.codigo}* pagado — ${pd.nombre} (${pd.starsPagadas} Stars, ya están en tu bot)\n👤 ${pd.jugador.replace(/[^\p{L}\p{N} ]/gu, '')}\n\nEntrégalo: /entregar ${pd.codigo}\nO devuelve las Stars: /anular ${pd.codigo}`, botonesPedido(pd.codigo));
     const s = this.porUid.get(pd.uid);
     if (s) this.actualizarYo(s);
     return { ok: true, nombre: pd.nombre };
@@ -827,10 +830,11 @@ export class MmoWorld {
     return { ok: true, pedido: pd, reembolso };
   }
 
-  async avisarAdmin(texto) {
+  // botones: teclado en linea opcional (p. ej. Entregar / Anular un pedido).
+  async avisarAdmin(texto, botones) {
     try {
       const env = getEnv({ env: this.env });
-      if (env.BOT_TOKEN && env.ADMIN_TG_ID) await tg(env.BOT_TOKEN, 'sendMessage', { chat_id: env.ADMIN_TG_ID, text: texto, parse_mode: 'Markdown' });
+      if (env.BOT_TOKEN && env.ADMIN_TG_ID) await tg(env.BOT_TOKEN, 'sendMessage', { chat_id: env.ADMIN_TG_ID, text: texto, parse_mode: 'Markdown', ...(botones ? { reply_markup: { inline_keyboard: botones } } : {}) });
     } catch (e) { console.error('[MMO avisarAdmin]', e); }
   }
   async avisarJugador(uid, texto) {

@@ -600,6 +600,27 @@ async function onRequestPost(context) {
         return new Response('OK');
       }
 
+      // Botones del aviso de un pedido del MMO (solo el dueño): entregar con un
+      // toque; anular pide confirmación (no se deshace).
+      if (/^mmo(ent|anu|anu2):[A-Z0-9]{4,10}$/.test(data)) {
+        if (String(user.id) !== String(context.env.ADMIN_TG_ID || '')) return new Response('OK');
+        const [acc, codigo] = data.split(':');
+        if (acc === 'mmoanu') {
+          await tg(token, 'sendMessage', { chat_id: chatId, text: `¿Anular el pedido #${codigo}? Si pagó con SOL, el SOL lo devuelves tú.`, reply_markup: { inline_keyboard: [[{ text: '❌ Sí, anular', callback_data: 'mmoanu2:' + codigo }]] } });
+          return new Response('OK');
+        }
+        let r = null;
+        try { r = await mmoInterno(context.env, acc === 'mmoent' ? 'entregar' : 'anular', acc === 'mmoent' ? { codigo } : { codigo, motivo: 'anulado por El Duende' }); } catch (e) {}
+        // Se quitan los botones del aviso para no pulsarlos dos veces.
+        await tg(token, 'editMessageReplyMarkup', { chat_id: chatId, message_id: messageId, reply_markup: { inline_keyboard: [] } }).catch(() => {});
+        const txt = !r ? '❌ No se pudo hablar con el MMO ahora. Prueba con el comando.'
+          : !r.ok ? '❌ ' + r.error
+          : acc === 'mmoent' ? `🎁 Pedido #${r.pedido.codigo} entregado a ${r.pedido.jugador}: ${r.pedido.nombre}. Se le avisó.`
+          : `❌ Pedido #${r.pedido.codigo} anulado.${r.reembolso || (r.pedido.metodo === 'sol' ? ' Si llegó SOL, devuélvelo tú desde tu wallet.' : '')}`;
+        await tg(token, 'sendMessage', { chat_id: chatId, text: txt });
+        return new Response('OK');
+      }
+
       // Boton "No quiero más avisos" de los avisos de vuelta del MMO.
       if (data === 'mmoavisos:off') {
         let r = null;
