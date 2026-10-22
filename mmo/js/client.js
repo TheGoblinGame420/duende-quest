@@ -825,6 +825,7 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyM') abrirMapaMundo();
   if (e.code === 'KeyL') abrirMision();
   if (e.code === 'KeyY') montar();
+  if (e.code === 'KeyH') $('t-auto').onclick();
   if (e.code === 'KeyR') volverAlPueblo();
   if (e.code === 'Escape') objetivo = null;
   if (e.code === 'Enter') { e.preventDefault(); abrirChat(); }
@@ -3070,7 +3071,31 @@ function bucle(t) {
   if (frame % 3 === 0) dibujarMinimapa();
   pintarVida();
   pintarCooldowns();
+  if (autoAtk && frame % 4 === 0) ataqueAuto();
 }
+// Ataque automatico (como el auto-ataque de WoW): mientras tengas un
+// enemigo elegido al alcance, el duende le pega solo. En el movil,
+// mantener pulsado el boton de ataque minutos seguidos cansa la mano.
+let autoAtk = false;
+try { autoAtk = localStorage.getItem('dq_auto') === '1'; } catch (e) {}
+function ataqueAuto() {
+  if (!yo || P.muerto || castYo || chatAbierto() || document.querySelector('.modal.on')) return;
+  const o = monObjetivo();
+  if (!o || o.muereT) return;
+  const cl = CLASES[yo.clase];
+  const rango = cl && cl.basico === 'vara' ? VARA.rango : 70;
+  if (distMon(o) > rango) return;
+  if (!(cl && cl.basico === 'vara')) P.f = o.x >= P.x ? 1 : -1;
+  atacar();
+}
+function pintarAuto() { const b = $('t-auto'); b.classList.toggle('on', autoAtk); b.textContent = autoAtk ? '🔁 AUTO' : '🔁'; }
+$('t-auto').onclick = () => {
+  autoAtk = !autoAtk;
+  try { localStorage.setItem('dq_auto', autoAtk ? '1' : '0'); } catch (e) {}
+  pintarAuto();
+  aviso(autoAtk ? '🔁 Ataque automático: elige un enemigo y tu duende le pegará solo.' : 'Ataque automático apagado.');
+};
+pintarAuto();
 inicio();
 requestAnimationFrame(bucle);
 // Solo en el servidor local de pruebas (tools/mmo_local.mjs): acceso al
