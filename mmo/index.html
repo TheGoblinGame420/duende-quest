@@ -234,6 +234,8 @@ body.tactil #pie{display:none;}
 #presumir{left:50%;transform:translateX(-50%);top:172px;bottom:auto;display:none;z-index:61;font-family:var(--sans);font-size:14px;font-weight:600;padding:10px 16px;background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:var(--sombra);animation:none;}
 #presumir:hover{background:var(--pri2);border-color:var(--pri2);}
 #hud.estrecho #presumir{bottom:auto;top:585px;}
+/* Dentro de Telegram no se menciona otra cripto que no sea TON (sus reglas). */
+body.tg .solo-web{display:none;}
 #hud.estrecho #avisos{top:322px;width:90%;}
 #hud.estrecho #consejo{top:248px;font-size:13px;white-space:normal;width:86%;text-align:center;line-height:1.45;}
 /* "brilla" ya no destella: se deja definida por si algun estilo en linea la usa. */
@@ -653,10 +655,10 @@ input.nombre:focus{border-color:var(--pri-txt);}
       <li><b>Recompensa diaria:</b> entra cada día para una racha de 7 premios (el 7º trae un objeto épico). <b>Logros:</b> cada uno da oro y un título para lucir sobre tu nombre.</li>
       <li>Cada zona tiene su nivel recomendado (los monstruos más fáciles cerca de la entrada) y un <b>jefe</b> que reaparece cada 5 minutos: pelear en grupo reparte la recompensa.</li>
       <li>La vida se recupera sola si pasas 4 segundos sin recibir golpes, y rápido en el pueblo.</li>
-      <li>El <b>Mercader</b> del pueblo vende poderes, armas, monturas, colores de nombre, mascotas y las skins. <b>Cada skin da poderes</b> mientras la llevas (oro, ataque, defensa, vida, crítico o experiencia): se compran con oro o, con tu cuenta, con dinero (SOL en la web, Stars en Telegram; El Duende revisa el pago y te la entrega). Las skins que ya compraste en el juego principal se desbloquean solas.</li>
+      <li>El <b>Mercader</b> del pueblo vende poderes, armas, monturas, colores de nombre, mascotas y las skins. <b>Cada skin da poderes</b> mientras la llevas (oro, ataque, defensa, vida, crítico o experiencia): se compran con oro o, con tu cuenta, con dinero (<span class="solo-web">SOL en la web, </span>Stars en Telegram; El Duende revisa el pago y te la entrega). Las skins que ya compraste en el juego principal se desbloquean solas.</li>
       <li>El oro del MMO es solo del juego: no se canjea por dinero ni por $DUENDE.</li>
       <li><b>💎 Recompensas en mTON (opcional):</b> desde nivel 15, con cuenta de Telegram o web, los jefes, el jefe mundial y la caza del día dan mTON. 1.000 mTON = 1 TON y desde 5 TON puedes retirar a tu wallet TON (botón 💎), una vez por semana y hasta 10 TON por retiro. Cada día se reparte un fondo limitado.</li>
-      <li><b>⭐ Tienda premium</b> (Mercader o botón 💎): oro, poderes y skins con Stars en Telegram o con SOL en la web (en el ordenador puedes escanear el QR de Solana Pay con la wallet del móvil y pulsar «Ya pagué: comprobar»; en el móvil, «Pagar con Phantom» o «Pagar con Solflare» abre el juego dentro de esa wallet; un pago a medias se retoma en «Tus compras»). El Duende revisa cada pago y te lo entrega en persona. Con dinero nunca se compran mTON.</li>
+      <li><b>⭐ Tienda premium</b> (Mercader o botón 💎): oro, poderes y skins con Stars en Telegram<span class="solo-web"> o con SOL en la web (en el ordenador puedes escanear el QR de Solana Pay con la wallet del móvil y pulsar «Ya pagué: comprobar»; en el móvil, «Pagar con Phantom» o «Pagar con Solflare» abre el juego dentro de esa wallet; un pago a medias se retoma en «Tus compras»)</span>. El Duende revisa cada pago y te lo entrega en persona. Con dinero nunca se compran mTON.</li>
       <li><b>🔒 Seguridad:</b> nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado. El único contacto oficial es @ElDuendeOficial.</li>
       <li style="font-size:12px;color:var(--txt2)"><b>Créditos de arte:</b> Luis Zuno (ansimuz) — Magic Cliffs y Warped Caves (CC-BY 3.0), Mountain Dusk, Underwater, GothicVania y Sunny Land (CC0); Moikmellah, Ashuuya, Scratchio y 7Soul1 (CC0). Sonidos: Juhani Junkala (CC0).</li>
     </ul>
@@ -786,6 +788,6 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=168"></script>
+<script type="module" src="/mmo/js/client.js?v=170"></script>
 </body>
 </html>

@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=168';
+} from './data.js?v=170';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -66,6 +66,7 @@ function vibrar(tipo) { if (TG && TG.HapticFeedback) try { TG.HapticFeedback.not
 
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
 if (TACTIL) document.body.classList.add('tactil');
+if (TG) document.body.classList.add('tg');
 
 // ── VISTA ──
 // En vertical (movil) la vista es casi cuadrada: se ve menos mapa a los lados
@@ -1772,7 +1773,8 @@ function abrirNovedades() {
   let h = htmlCalendario();
   for (const nv of NOVEDADES) {
     h += `<p style="font:600 13px var(--sans);color:var(--txt);margin:6px 0">${esc(nv.fecha)}</p><ul style="padding-left:18px;font:13px/1.5 var(--sans);color:var(--txt2)">`;
-    h += nv.items.map(x => `<li style="margin-bottom:4px">${esc(x)}</li>`).join('') + '</ul>';
+    // En Telegram, sin lo que habla de SOL o wallets (sus reglas).
+    h += nv.items.filter(x => !TG || !/\bSOL\b|wallet|Solana/i.test(x)).map(x => `<li style="margin-bottom:4px">${esc(x)}</li>`).join('') + '</ul>';
   }
   $('nov-lista').innerHTML = h;
   abrir('m-novedades');
