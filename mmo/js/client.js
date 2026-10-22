@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=192';
+} from './data.js?v=194';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1581,7 +1581,7 @@ function pintarAmigos(m) {
   const enlTg = 'https://t.me/duendequest_bot?start=mmo_' + m.ref;
   const enlWeb = location.origin + '/mmo/?ref=' + m.ref;
   const texto = 'Juguemos juntos a DUENDE QUEST ONLINE, el MMORPG de duendes: gratis, en Telegram o en el navegador. 🧝';
-  L.innerHTML = `<div class="mis-caja" style="margin-top:0"><b>🤝 Invita a tus amigos</b>
+  L.innerHTML = `<div class="mis-caja" style="margin-top:0"><b>Invita a tus amigos</b>
     <p style="font-size:12px">Cuando un amigo que entre con tu enlace llegue a <b style="display:inline">nivel ${m.nivel}</b>, los dos ganan oro: tu amigo, <b style="display:inline">${premioAmigo(m.nivel).oro.toLocaleString('es')} oro</b>, y tú, <b style="display:inline">${premioAmigo(yo ? yo.nivel : 1).oro.toLocaleString('es')} oro</b> a tu nivel actual (sube con tu nivel)${m.max ? ', por tus primeros ' + m.max + ' amigos' : ''}. Al 5º amigo te regalamos el <b style="display:inline">Conejo Saltarín</b> de montura y un título.</p>
     <p style="font-size:12px;margin-top:6px">Amigos que ya llegaron: <b style="display:inline;color:var(--ok)">${m.amigos}</b></p></div>
     <button class="btn" id="b-comp-tg" style="width:100%;padding:12px;margin-bottom:8px">Compartir por Telegram</button>
@@ -1676,7 +1676,7 @@ pintarHermandad = L => {
   const r = miRangoHerm();
   const manda = r === 'lider' || r === 'oficial';
   const on = hermandad.m.filter(x => x.on).length;
-  let h = `<div class="mis-caja" style="margin-top:0"><b>🛡️ &lt;${esc(hermandad.nombre)}&gt;</b><p style="font-size:12px">${hermandad.m.length} miembros · ${on} en línea · tu rango: ${esc(RANGO[r] || '—')}</p>`;
+  let h = `<div class="mis-caja" style="margin-top:0"><b>&lt;${esc(hermandad.nombre)}&gt;</b><p style="font-size:12px">${hermandad.m.length} miembros · ${on} en línea · tu rango: ${esc(RANGO[r] || '—')}</p>`;
   h += `<p style="font-size:12px;margin-top:6px;color:var(--txt2)">📜 ${esc(hermandad.motd || 'Sin mensaje del día.')}</p>`;
   h += htmlGesta(hermandad);
   if (r === 'lider') h += `<div style="display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap"><span style="font-size:12px;color:var(--txt2)">Color:</span>${HERM_COLORES.map((col, i) => `<button class="bt" data-hcol="${i}" title="Color ${i + 1}" style="width:28px;height:28px;border-radius:50%;background:${col};border:2px solid ${(hermandad.color | 0) === i ? '#fff' : 'transparent'}"></button>`).join('')}</div>`;
@@ -2643,7 +2643,7 @@ function pintarMundial() {
   if (MAPAS[mapaId].torre && torreInfo) {
     const ms = Math.max(0, torreInfo.fin - performance.now()), mm = Math.floor(ms / 60000), ss = Math.floor(ms / 1000) % 60;
     const M = torreInfo.mod && MODS_TORRE[torreInfo.mod];
-    ponTxt(el, '🗼 Piso ' + torreInfo.piso + (torreInfo.jefe ? ' · 👑' : M ? ' · ' + M.emoji + ' ' + M.nombre : '') + (torreInfo.piso && ms ? ' · ⏳ ' + mm + ':' + String(ss).padStart(2, '0') : ''));
+    ponTxt(el, 'Torre · Piso ' + torreInfo.piso + (torreInfo.jefe ? ' · Jefe' : M ? ' · ' + M.nombre : '') + (torreInfo.piso && ms ? ' · ⏳ ' + mm + ':' + String(ss).padStart(2, '0') : ''));
     el.className = ms && ms < 30000 ? '' : 'lista';
     return;
   }
@@ -2653,19 +2653,19 @@ function pintarMundial() {
   // Con el jefe mundial en pie (o a menos de 5 min), primero el jefe.
   if ((hf.activa || hf.falta < 30 * 60000) && !mundial.vivo && !(msM > 0 && msM < 300000)) {
     const ms = hf.activa ? hf.acaba : hf.falta, mm = Math.floor(ms / 60000), ss = Math.floor(ms / 1000) % 60;
-    ponTxt(el, hf.activa ? '⚡ Hora Feliz: +50% XP · ' + mm + ':' + String(ss).padStart(2, '0') : '⚡ Hora Feliz en ' + mm + ':' + String(ss).padStart(2, '0'));
+    ponTxt(el, hf.activa ? 'Hora Feliz +50% XP · ' + mm + ':' + String(ss).padStart(2, '0') : 'Hora Feliz en ' + mm + ':' + String(ss).padStart(2, '0'));
     el.className = hf.activa ? 'lista' : '';
     return;
   }
-  const extraHf = hf.activa ? ' · ⚡ +50% XP' : '';
+  const extraHf = hf.activa ? ' · Hora Feliz +50% XP' : '';
   // Al novato el contador del jefe mundial solo le distrae de su mision.
   if (yo.nivel < 10) { ponTxt(el, ''); el.className = ''; return; }
   const nomM = (MONSTRUOS[mundial.k] || {}).nombre || 'Jefe mundial';
-  if (mundial.vivo) { ponTxt(el, '👹 ' + nomM + ' en el Coliseo' + (TACTIL ? '' : ' (portal del pueblo)') + extraHf); el.className = 'lista'; return; }
+  if (mundial.vivo) { ponTxt(el, nomM + ' en el Coliseo' + (TACTIL ? '' : ' (portal del pueblo)') + extraHf); el.className = 'lista'; return; }
   const ms = mundial.en - performance.now();
   if (mundial.en && ms > 0) {
     const mm = Math.floor(ms / 60000), ss = Math.floor(ms / 1000) % 60;
-    ponTxt(el, '👹 ' + nomM + ' en ' + mm + ':' + String(ss).padStart(2, '0') + extraHf);
+    ponTxt(el, nomM + ' en ' + mm + ':' + String(ss).padStart(2, '0') + extraHf);
     el.className = ms < 120000 ? 'lista' : '';
   } else { ponTxt(el, ''); el.className = ''; }
 }
@@ -2729,7 +2729,7 @@ function pintarWallet() {
   h += `<button class="btn" id="b-retirar" style="width:100%;padding:12px" ${puede ? '' : 'disabled'}>Retirar ${tonTxt(aRetirar)} TON</button>`;
   h += '<button class="btn sec" id="b-premium" style="width:100%;margin-top:8px">Tienda premium (oro y poderes)</button>';
   const tr = yo.transparencia;
-  if (tr) h += `<div class="mis-caja" style="margin-top:12px"><b>📊 Transparencia</b><p style="font-size:12px;color:var(--txt2)">${tr.pct ? 'El fondo de cada día es el <b style="display:inline;color:var(--txt)">' + tr.pct + '%</b> de lo que entró al juego la semana anterior, más lo que aporta El Duende.' : 'El fondo de cada día lo aporta El Duende, el creador: no sale de lo que pagan otros jugadores.'} Nunca se reparte más de lo que hay. Pagado a jugadores hasta hoy: <b style="display:inline;color:var(--txt)">${tonTxt(tr.tonPagados * MTON_POR_TON)} TON</b> en ${tr.retirosPagados} retiro(s).</p></div>`;
+  if (tr) h += `<div class="mis-caja" style="margin-top:12px"><b>Transparencia</b><p style="font-size:12px;color:var(--txt2)">${tr.pct ? 'El fondo de cada día es el <b style="display:inline;color:var(--txt)">' + tr.pct + '%</b> de lo que entró al juego la semana anterior, más lo que aporta El Duende.' : 'El fondo de cada día lo aporta El Duende, el creador: no sale de lo que pagan otros jugadores.'} Nunca se reparte más de lo que hay. Pagado a jugadores hasta hoy: <b style="display:inline;color:var(--txt)">${tonTxt(tr.tonPagados * MTON_POR_TON)} TON</b> en ${tr.retirosPagados} retiro(s).</p></div>`;
   if (fondoInfo) {
     const resta = Math.max(0, fondoInfo.total - fondoInfo.gastado);
     h += `<p class="centro" style="margin-top:10px;font-size:12px;color:var(--txt2)">Fondo de hoy para todos: ${tonTxt(resta)} de ${tonTxt(fondoInfo.total)} TON por repartir</p>`;
@@ -3618,23 +3618,23 @@ function pintarHud() {
   const hm = $('h-mision');
   if (instancia && MAZMORRAS[instancia.id]) {
     const mz = MAZMORRAS[instancia.id];
-    hm.textContent = '🏰 ' + mz.nombre + ' (Nv ' + instancia.nv + ') · Jefes ' + (instancia.hechos || 0) + '/' + mz.jefes.length;
+    hm.textContent = mz.nombre + ' (Nv ' + instancia.nv + ') · Jefes ' + (instancia.hechos || 0) + '/' + mz.jefes.length;
     hm.className = '';
   } else if (!q) {
     const d = yo.diaria || { p: 0, ok: false };
-    hm.textContent = d.ok ? '📅 Caza del día ✓ — vuelve mañana' : '📅 ' + DIARIA.nombre + ' ' + Math.min(d.p, DIARIA.n) + '/' + DIARIA.n;
+    hm.textContent = d.ok ? 'Caza del día ✓ — vuelve mañana' : DIARIA.nombre + ' ' + Math.min(d.p, DIARIA.n) + '/' + DIARIA.n;
     hm.className = !d.ok && d.p >= DIARIA.n ? 'lista' : '';
   }
   else {
     const lista = yo.mis.p >= q.n;
-    hm.textContent = lista ? '📜 ' + q.nombre + ' ✓ — vuelve con Tito' : '📜 ' + q.nombre + ' ' + yo.mis.p + '/' + q.n;
+    hm.textContent = lista ? q.nombre + ' ✓ — vuelve con Tito' : q.nombre + ' ' + yo.mis.p + '/' + q.n;
     hm.className = lista ? 'lista' : '';
   }
   const T = yo.tareas;
   if (T) {
     const hd = T.dia.l.filter(t => t.ok).length, hs = T.sem.l.filter(t => t.ok).length;
     const sig = T.dia.l.find(t => !t.ok);
-    ponTxt($('h-tareas'), '☀️ Diarias ' + hd + '/' + T.dia.l.length + ' · 📆 ' + hs + '/' + T.sem.l.length + (sig ? ' — ' + sig.txt + ' ' + sig.p + '/' + sig.n : '') + (temporadaYa() ? ' · ' + temporadaYa().emoji + ' ' + (yo[temporadaYa().campo] || 0) : ''));
+    ponTxt($('h-tareas'), 'Diarias ' + hd + '/' + T.dia.l.length + ' · Semana ' + hs + '/' + T.sem.l.length + (sig ? ' — ' + sig.txt + ' ' + sig.p + '/' + sig.n : '') + (temporadaYa() ? ' · ' + temporadaYa().emoji + ' ' + (yo[temporadaYa().campo] || 0) : ''));
   }
   pintarPoderes();
   pintarAcciones();
@@ -3649,7 +3649,7 @@ function cajaDiaria() {
   const d = yo.diaria || { p: 0, ok: false };
   const pr = premioDiaria(yo.nivel);
   const lista = d.p >= DIARIA.n && !d.ok;
-  return '<div class="mis-caja"><b>📅 ' + esc(DIARIA.nombre) + '</b>' +
+  return '<div class="mis-caja"><b>' + esc(DIARIA.nombre) + '</b>' +
     '<p>Derrota ' + DIARIA.n + ' monstruos de tu nivel (o hasta 5 por debajo). Se renueva cada día.</p>' +
     '<div class="mis-barra"><i style="width:' + Math.round(Math.min(1, d.p / DIARIA.n) * 100) + '%;background:var(--ok)"></i></div>' +
     '<p>' + Math.min(d.p, DIARIA.n) + ' / ' + DIARIA.n + (d.ok ? ' · ✓ cobrada hoy' : '') + '</p>' +
@@ -3661,9 +3661,9 @@ function cajaTareas() {
   const T = yo.tareas;
   if (!T) return '';
   const fila = t => `<div class="fila" style="${t.ok ? 'color:var(--ok)' : ''}"><span>${t.ok ? '✓' : '•'} ${esc(t.txt)}</span><span>${t.p}/${t.n}</span></div>`;
-  return '<div class="mis-caja"><b>☀️ Misiones del día</b>' + T.dia.l.map(fila).join('') +
+  return '<div class="mis-caja"><b>Misiones del día</b>' + T.dia.l.map(fila).join('') +
     `<p style="font-size:12px;margin-top:6px">Cada una: +${T.premio.xp.toLocaleString('es')} XP y +${T.premio.oro.toLocaleString('es')} oro. Las 3: ${T.dia.bono ? '✓ bono cobrado' : 'objeto raro + pociones y escudos'}. Se renuevan cada día.</p></div>` +
-    '<div class="mis-caja"><b>📆 Misiones de la semana</b>' + T.sem.l.map(fila).join('') +
+    '<div class="mis-caja"><b>Misiones de la semana</b>' + T.sem.l.map(fila).join('') +
     `<p style="font-size:12px;margin-top:6px">Cada una: +${T.premioSem.xp.toLocaleString('es')} XP y +${T.premioSem.oro.toLocaleString('es')} oro. Las 2: ${T.sem.bono ? '✓ bono cobrado' : 'objeto épico'}. Se renuevan los lunes.</p></div>`;
 }
 // Final de juego: lo que queda por hacer esta semana (y hoy), de un vistazo.
@@ -3671,7 +3671,7 @@ function cajaSemana() {
   if (!yo || yo.nivel < RUNA_NIVEL) return '';
   const fila = (ok, txt, dcha) => `<div class="fila" style="${ok ? 'color:var(--ok)' : ''}"><span>${ok ? '✓' : '•'} ${txt}</span><span>${dcha}</span></div>`;
   const hoy = new Date().toISOString().slice(0, 10);
-  let h = '<div class="mis-caja"><b>🗓️ Tu semana</b>';
+  let h = '<div class="mis-caja"><b>Tu semana</b>';
   const md = yo.mazDia && yo.mazDia.d === hoy ? (yo.mazDia.hechas || []).length : 0;
   h += fila(md > 0, '🏰 Premio del día de mazmorra (uno por mazmorra)', md + ' hoy');
   const b = yo.boveda || { n: 0 };
@@ -3751,7 +3751,7 @@ function cajaPase() {
   if (!yo || !yo.pase) return '';
   const pa = yo.pase, nv = Math.floor(pa.p / PASE.porNivel), tope = PASE.niveles * PASE.porNivel;
   const mes = new Date(pa.mes + '-01T00:00:00Z').toLocaleDateString('es', { month: 'long', timeZone: 'UTC' });
-  let h = `<div class="mis-caja"><b>🎟️ Pase de temporada de ${esc(mes)}</b>`;
+  let h = `<div class="mis-caja"><b>Pase de temporada de ${esc(mes)}</b>`;
   h += `<p style="font-size:12px;color:var(--txt2)">Nivel ${nv} de ${PASE.niveles} · ${pa.p >= tope ? 'completo' : (pa.p % PASE.porNivel) + '/' + PASE.porNivel + ' puntos para el siguiente'}. Puntos: misión diaria ${PASE.puntos.diaria}, semanal ${PASE.puntos.semanal}, mazmorra ${PASE.puntos.mazmorra}, jefe mundial ${PASE.puntos.mundial}, cofre de la Torre ${PASE.puntos.torre}, expedición ${PASE.puntos.exped}. Gratis; empieza de cero cada mes.</p>`;
   h += `<div class="mis-barra"><i style="width:${pa.p >= tope ? 100 : Math.round((pa.p % PASE.porNivel) / PASE.porNivel * 100)}%"></i></div>`;
   h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin-top:8px">';
