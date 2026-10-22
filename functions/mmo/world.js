@@ -1310,6 +1310,8 @@ export class MmoWorld {
     c.oro += oro;
     c.kills++;
     if (o && o.jefe) c.jefes++;
+    // Elixir de Sabiduria (artesania): +10% de la XP de caza.
+    if (this.elixir(s, 'elixirX')) xp = Math.round(xp * 1.1);
     // El descanso duplica la experiencia de cada caza hasta gastarse.
     const extra = Math.min(c.descanso || 0, xp);
     if (extra > 0) { c.descanso -= extra; xp += extra; }

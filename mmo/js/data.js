@@ -404,6 +404,7 @@ export const NOVEDADES = [
     '📢 Buscador de grupo en el portal de mazmorras: anúnciate y otros se unen con un toque.',
     '⚡ Desafíos con afijos que cambian cada lunes y su propio ranking semanal.',
     '🐾 Mascotas y 🎨 colores de nombre en el Mercader (solo estética).',
+    '⚗️ Elixir de Sabiduría en la Artesana: +10% de experiencia por caza durante 30 min.',
     '🎩 Cada clase se distingue: sombrero de mago, aureola de sacerdote, capucha de pícaro.',
     '🌽 Del 13 al 30 de noviembre: Cosecha del Maíz Morado.',
     '📱 El juego va mucho más fluido en el móvil y la música suena en iPhone.',
@@ -541,6 +542,7 @@ export const AURAS = {
   caparazon:   { nombre: 'Caparazón (casi inmune)', icono: 'E_Metal05' },
   elixirF:     { nombre: 'Elixir de Fuerza (+10% daño)', icono: 'P_Red03' },
   elixirP:     { nombre: 'Elixir de Piel de Piedra (-10% daño recibido)', icono: 'P_Blue05' },
+  elixirX:     { nombre: 'Elixir de Sabiduría (+10% experiencia de caza)', icono: 'I_Book' },
 };
 
 // ── EQUIPO ──
@@ -689,6 +691,7 @@ export const LOGROS = [
   { id: 'regalo200',   titulo: 'Santa Duende',       desc: 'Junta 200 regalos en la Navidad Duende',     oro: 12000, cond: c => (c.regalos || 0) >= 200 },
   { id: 'mazmorra10', titulo: 'Conquistador',       desc: 'Completa 10 mazmorras',             oro: 10000, cond: c => (c.mazmorras || 0) >= 10 },
   { id: 'kraken',    titulo: 'Azote del Abismo',    desc: 'Vence al Kraken del Templo Hundido', oro: 8000,  cond: c => !!(c.mzJefes && c.mzJefes.mz_kraken) },
+  { id: 'mascotas3', titulo: 'Cuidador de Bichos',  desc: 'Consigue 3 mascotas', oro: 3000, cond: c => (c.mascotas || []).length >= 3 },
   { id: 'reygoblin', titulo: 'Azote Goblin',        desc: 'Vence al Rey Goblin Barrigón de la Fortaleza', oro: 6000, cond: c => !!(c.mzJefes && c.mzJefes.mz_rey_goblin) },
   { id: 'cancerbero', titulo: 'Domador del Infierno', desc: 'Vence al Cancerbero del Nido de la Reina Araña', oro: 12000, cond: c => !!(c.mzJefes && c.mzJefes.mz_cancerbero) },
   { id: 'dragon',    titulo: 'Matadragones',        desc: 'Vence al Dragón Carmesí de la Ciudadela', oro: 15000, cond: c => !!(c.mzJefes && c.mzJefes.mz_dragon) },
@@ -859,6 +862,7 @@ export const RECETAS = [
   { id: 'refinar', nombre: 'Refinar cristal', icono: 'I_Crystal01', pide: { mineral: 8 }, da: { mat: { cristal: 1 } }, desc: '8 minerales se funden en 1 Cristal Arcano' },
   { id: 'elixirF', nombre: 'Elixir de Fuerza', icono: 'P_Red03', pide: { hierba: 6, cristal: 1 }, da: { elixir: 'elixirF' }, desc: '+10% de daño durante 30 min (aguanta la muerte)' },
   { id: 'elixirP', nombre: 'Elixir de Piel de Piedra', icono: 'P_Blue05', pide: { mineral: 6, cristal: 1 }, da: { elixir: 'elixirP' }, desc: 'Recibes un 10% menos de daño durante 30 min' },
+  { id: 'elixirX', nombre: 'Elixir de Sabiduría', icono: 'I_Book', pide: { hierba: 4, mineral: 2, cristal: 1 }, da: { elixir: 'elixirX' }, desc: '+10% de experiencia por caza durante 30 min (aguanta la muerte)' },
 ];
 
 // ── TEMPORADAS ──

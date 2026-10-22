@@ -1338,6 +1338,19 @@ async function pruebasMascotas() {
   const oro1 = m.c.oro;
   await m.mandar({ t: 'comprar', k: 'mascota', id: 'hongo' });
   chequear(m.c.mascota === 'hongo' && m.c.oro === oro1, 'volver a llevarla no se cobra otra vez');
+  m.c.mascotas = ['hongo', 'rana', 'zarigueya']; mundo.revisarLogros(m);
+  chequear(m.c.logros.includes('mascotas3'), 'con 3 mascotas, el logro Cuidador de Bichos');
+  // Elixir de Sabiduria: +10% de la XP de caza.
+  console.log('Elixir de Sabiduría');
+  await aMapa(m, 'pueblo', 1680);
+  m.c.mat = { hierba: 4, mineral: 2, cristal: 1 };
+  await m.mandar({ t: 'fabricar', id: 'elixirX' });
+  chequear(mundo.elixir(m, 'elixirX') && !m.c.mat.cristal, 'la Artesana lo fabrica con hierba, mineral y cristal');
+  await aMapa(m, 'noche', 600); limpiarMapa(m); m.c.descanso = 0;
+  const xpCon = []; for (let i = 0; i < 2; i++) { const x0 = m.c.xp, nv0 = m.c.nivel; const o = monstruo(m, 'goblin_normal', 30, { nv: 12 }); mundo.danar(o, o.hp + 1, m); tick(1); if (m.c.nivel === nv0) xpCon.push(m.c.xp - x0); }
+  m.c.elix = {};
+  const xpSin = []; for (let i = 0; i < 2; i++) { const x0 = m.c.xp, nv0 = m.c.nivel; const o = monstruo(m, 'goblin_normal', 30, { nv: 12 }); mundo.danar(o, o.hp + 1, m); tick(1); if (m.c.nivel === nv0) xpSin.push(m.c.xp - x0); }
+  chequear(xpCon.length && xpSin.length && Math.abs(xpCon[0] / xpSin[0] - 1.1) < 0.05, 'da un 10% más de experiencia por caza (' + xpCon[0] + ' frente a ' + xpSin[0] + ')');
   await dejar(m); await dejar(v);
 }
 
