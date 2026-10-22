@@ -1559,6 +1559,36 @@ del Infierno». Simulación: todas las clases solas, jefes de 19-69 s. El arnés
 revisa ahora TODAS las mazmorras (mapa de instancia, conjunto, jefe final,
 guion, hojas).
 
+**Noche del 22-oct (sesión principal, web/arcade/mini app):** el dueño pidió
+trabajar de 1 a 6 am solo y apagar la laptop a las 6 (`shutdown /s` programado;
+se cancela con `shutdown /a`). La otra sesión llevó el MMO; esta, lo demás.
+- Portada: tráiler de 30 s (`assets/video/trailer-1.mp4`, 720p, preload none,
+  VideoObject), capturas reales (`assets/capturas/`, WebP + PNG), "Empieza en
+  3 pasos", 8 preguntas frecuentes con FAQPage, enlaces a /guia y /novedades;
+  sin el bloque base64 de 470 KB (578 → 133 KB). Sección "Apoya Duende Quest"
+  (compra directa manual + donaciones, decisión del dueño: NO quitar).
+- Páginas nuevas /guia y /novedades (desde data.js; en el sitemap).
+- Mini app: arreglado un ReferenceError (updateLoginUI antes de tgProfile)
+  que rompía login/TON/skins/Stars dentro de Telegram; ready/expand, colores,
+  safe areas, BackButton, vibración, bienvenida, tarjeta de chicha morada.
+- Arcade (js/engine.js, game.html, telegram): CORAZÓN ya no se pierde al
+  subir de nivel, pausa táctil y automática, Web Audio con mp3 de respaldo,
+  silencio (tecla M), 3-5 mejoras por etapa (teclas 1/2/3), voladores en
+  picada, lienzo grande y nítido en PC, pantalla de carga.
+- MMO (servidor): `tiposQueFaltan` en world.js — el tipo de la misión de un
+  presente siempre aparece aunque la zona esté llena (QA: misión 1 sin
+  goblins); los invasores `ex` no cuentan para el tope.
+- Rendimiento: PNG sin pérdida (−120 KB) y caché en worker.js para /audio/ y
+  JS con ?v= (7 días: SIEMPRE subir el ?v= al cambiar client.js/data.js).
+- Bot: bienvenida y /mmo con el premio de chicha morada y 4 mazmorras.
+- Video promocional: `node tools/promo/hacer_promo.mjs` (~10 min; graba juego
+  real en un servidor local propio en :8796 y monta con ffmpeg; música
+  original por código, SFX CC0; nunca bg_music.ogg). Salida en /promo/
+  (ignorada por git y por el sitio): vertical 1080x1920, cuadrado 1080x1080 y
+  portada. `--solo-montar` reusa las tomas.
+- QA de jugador (MMO, arcade, mini app) y QA de regresión en producción: sin
+  regresiones. Informes en el scratchpad de la sesión (qa_gamer_*, qa_regresion).
+
 **Pendiente / ideas para la siguiente sesión:**
 - Probar FPS en un teléfono real (sigue sin hacerse; en Chrome con CPU 4×
   lenta ya va a ~37 FPS en combate).
