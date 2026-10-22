@@ -20,6 +20,7 @@ import {
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, MTON_EDAD_MIN_MS, WALLET_ESPERA_MS, FONDO_REFERENCIA_MTON, tonAmigable,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, FONDO_PCT_INGRESOS, PAQUETES, estrellasDe, PEDIDO_VIGENCIA_MS,
   temporadaDe, TEMP_PROB, TEMP_JEFE,
+  CONJUNTOS, CONJUNTO_PROB,
   semanaUTC, BESTIARIO_HITOS, premioBestiario, talento, TALENTOS, TALENTO_MAX, puntosTalento, costoReinicioTalentos, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX,
 } from '../../mmo/js/data.js';
 import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery, tg, getSolPriceUsd, SOL_DEV_WALLET } from '../api/lib.js';
@@ -1297,7 +1298,11 @@ export class MmoWorld {
     if (o) {
       const nvM = o.nv || MONSTRUOS[o.k].nivel;
       if (o.jefe) {
-        item = this.darItem(s, generarItem(nvM, o.final ? 2 : 1));
+        const it0 = generarItem(nvM, o.final ? 2 : 1);
+        // Jefe de mazmorra: a veces la pieza es de su conjunto.
+        const idMaz = o.mazmorra && this.mundo[o.cl] && this.mundo[o.cl].inst && this.mundo[o.cl].inst.id;
+        if (idMaz && CONJUNTOS[idMaz] && Math.random() < CONJUNTO_PROB) it0.cj = idMaz;
+        item = this.darItem(s, it0);
         if ((n || 1) === 1 && Math.random() < 0.3) this.darItem(s, generarItem(nvM, 0));
       } else if (nvM >= c.nivel - 10 && Math.random() < 0.06 * ((n || 1) > 1 ? 1.2 / n : 1)) {
         item = this.darItem(s, generarItem(nvM, 0));

@@ -1329,6 +1329,14 @@ jugadores: sin gente, los % de retención no significan nada.
 **Valle de Nv 10-30 (?v=39):** las misiones de caza 9-23 dan ×1,8 de XP
 (solo daban ~20% de un nivel; ahora ~35-40%). Las de jefe, igual.
 
+**Conjuntos de mazmorra (?v=40):** `CONJUNTOS` en data.js, uno por
+mazmorra (Huesos del Guardián, Marea Hundida, Escamas del Dragón). Los jefes
+de mazmorra sueltan su pieza un 45% de las veces (`it.cj`) y el premio del
+Desafío siempre lo es. 2 piezas = bono pequeño, 4 = mayor (multiplicadores
+en `statsJugador` vía `bonoConjuntos`). En 🎒 Equipo se ve cada conjunto
+puesto con sus piezas y bonos. Arreglado además: los objetos de Desafío
+(Nv 60+k) salían en rojo y sin EQUIPAR en la bolsa (`puedeUsar`).
+
 Sin hacer: avisos a la hora habitual de cada uno (el cron de las 17 UTC ya
 usa 4 de 5 disparadores del plan gratis), y final de juego para D30 (1→60 se
 juega en 5-8 h). Ojo: la bienvenida del bot aún habla de $DUENDE en Solana

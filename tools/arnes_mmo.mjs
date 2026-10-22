@@ -568,6 +568,7 @@ async function pruebas() {
   await pruebasNovato();
   await pruebasDesafios();
   await pruebasTemporada();
+  await pruebasConjuntos();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -1183,4 +1184,36 @@ async function pruebasTemporada() {
   chequear(t.c.regalos > 0 && t.c.calabazas === c0, 'en Navidad caen regalos (' + t.c.regalos + '), no calabazas');
   reloj = Math.max(relojAntes, reloj);
   await dejar(t);
+}
+
+async function pruebasConjuntos() {
+  console.log('Conjuntos de mazmorra');
+  const D = await import('../mmo/js/data.js');
+  const p = await entrar('Coleccionista', '63');
+  ponerNivel(p, 40, 'guerrero');
+  const base = mundo.stats(p.c);
+  const pieza = (s, cj) => ({ id: 'x' + s + cj, s, nv: 40, r: 1, b: { def: 1 }, cj });
+  p.c.eq = { casco: pieza('casco', 'templo'), armadura: pieza('armadura', 'templo') };
+  const dos = mundo.stats(p.c);
+  p.c.eq = { casco: pieza('casco', 'templo'), armadura: pieza('armadura', 'catacumbas') };
+  const mezcla = mundo.stats(p.c);
+  chequear(dos.maxHp > mezcla.maxHp * 1.08, '2 piezas del mismo conjunto dan su bono (+10% vida)');
+  p.c.eq = { casco: pieza('casco', 'templo'), armadura: pieza('armadura', 'templo'), botas: pieza('botas', 'templo'), anillo: pieza('anillo', 'templo') };
+  const cuatro = mundo.stats(p.c);
+  chequear(cuatro.atk > dos.atk * 1.08 && cuatro.crit > dos.crit + 0.03, 'con 4, el bono mayor (ataque y crítico)');
+  chequear(/Marea Hundida/.test(D.nombreItem(pieza('casco', 'templo'))), 'el nombre del objeto dice su conjunto');
+  // Los jefes de mazmorra sueltan piezas
+  await aMapa(p, 'pueblo', 800);
+  let piezas = 0;
+  for (let i = 0; i < 6; i++) {
+    const w = mundo.crearInstancia('catacumbas', 30, 1);
+    mundo.unirAInstancia(p, w);
+    for (const o of [...w.mons.values()]) if (o.jefe) { mundo.danar(o, o.hp + 1, p); tick(1); }
+    piezas = p.c.bolsa.filter(x => x.cj === 'catacumbas').length;
+    avanzar(6000); tick(1);
+    await aMapa(p, 'pueblo', 800);
+    if (p.c.bolsa.length > 30) p.c.bolsa.length = 0;
+  }
+  chequear(piezas > 0, 'los jefes de mazmorra sueltan piezas de su conjunto');
+  await dejar(p);
 }

@@ -7,13 +7,13 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, ALCANCE_BASE, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
-  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, temporadaDe, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio,
+  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, temporadaDe, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
-} from './data.js?v=39';
+} from './data.js?v=40';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1991,6 +1991,8 @@ function htmlItem(it) {
   const rz = RAREZAS[it.r];
   return `<img src="${A}items/equipo/${iconoItem(it)}.png" style="filter:drop-shadow(0 0 4px ${rz.color})">`;
 }
+// Se puede usar a tu nivel (lo de los Desafios, nivel 60+k, se usa a Nv 60).
+const puedeUsar = it => it.nv <= yo.nivel || (!!it.des && yo.nivel >= NIVEL_MAX);
 function pintarEquipo() {
   const eq = yo.eq || {}, bolsa = yo.bolsa || [];
   let h = '<div class="ranuras">';
@@ -2001,12 +2003,18 @@ function pintarEquipo() {
       : `<div class="ranura vacia"><span>—</span><small>${RANURAS[k].nombre}</small></div>`;
   }
   h += '</div>';
+  // Conjuntos que llevas puestos (aunque sea una pieza): cuantas y su bono.
+  const pz = piezasConjunto(eq);
+  for (const id in pz) {
+    const cj = CONJUNTOS[id];
+    h += `<p class="centro" style="margin:4px 0;font-size:12px;color:${cj.color}">◆ ${esc(cj.nombre)} ${pz[id]}/5 — ${pz[id] >= 4 ? '¡bono completo!' : pz[id] >= 2 ? 'bono de 2 activo' : 'sin bono aún'}<br><span style="color:#aaa">${esc(textoConjunto(cj))}</span></p>`;
+  }
   h += `<p class="centro" style="margin:6px 0">🎒 Bolsa ${bolsa.length}/${BOLSA_MAX} · toca una pieza puesta para quitarla</p>`;
   const comunes = bolsa.filter(x => x.r === 0);
   // Lo mejor de la bolsa para cada ranura (que se pueda usar a tu nivel).
   const mejoras = Object.keys(RANURAS).map(k => {
     const puesto = eq[k];
-    const cand = bolsa.filter(x => x.s === k && x.nv <= yo.nivel).sort((a, b) => puntaje(b.b) - puntaje(a.b))[0];
+    const cand = bolsa.filter(x => x.s === k && puedeUsar(x)).sort((a, b) => puntaje(b.b) - puntaje(a.b))[0];
     return cand && (!puesto || puntaje(cand.b) > puntaje(puesto.b)) ? cand : null;
   }).filter(Boolean);
   if (mejoras.length) h += `<button class="btn" id="b-equipar-mejor" style="width:100%;margin-bottom:8px">▲ EQUIPAR LO MEJOR (${mejoras.length})</button>`;
@@ -2018,11 +2026,11 @@ function pintarEquipo() {
     const puesto = eq[it.s];
     const dif = puntaje(it.b) - (puesto ? puntaje(puesto.b) : 0);
     const flecha = dif > 0 ? '<span style="color:#00ff88"> ▲ MEJOR</span>' : '';
-    const puede = it.nv <= yo.nivel;
+    const puede = puedeUsar(it);
     const acc = (puede ? `<button class="btn" data-eq="${it.id}">EQUIPAR</button>` : `<span class="precio" style="color:#ff3344">Nv ${it.nv}</span>`)
       + `<button class="btn sec" data-vender="${it.id}">VENDER ${precioVenta(it)}</button>`;
     h += tarjeta(htmlItem(it), `<span style="color:${rz.color}">${esc(nombreItem(it))}</span> <span style="color:#888">Nv${it.nv}</span>${flecha}`,
-      `${rz.nombre} · ${RANURAS[it.s].nombre} · ${textoBonos(it.b)}`, acc);
+      `${rz.nombre} · ${RANURAS[it.s].nombre} · ${textoBonos(it.b)}${it.cj && CONJUNTOS[it.cj] ? '<br><span style="color:' + CONJUNTOS[it.cj].color + '">Conjunto: ' + esc(textoConjunto(CONJUNTOS[it.cj])) + '</span>' : ''}`, acc);
   }
   $('inv-lista').innerHTML = h;
   const L = $('inv-lista');

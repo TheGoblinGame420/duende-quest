@@ -342,6 +342,7 @@ export const Mazmorras = {
           c.oro += pd.oro;
           const it = this.generarItem(pd.nvItem, pd.rMin);
           it.des = 1;
+          it.cj = I.id;   // el premio del Desafio siempre es del conjunto de su mazmorra
           this.darItem(s, it);
           extra += ` Desafío +${I.k} vencido: +${pd.oro.toLocaleString('es')} oro y un objeto de nivel ${pd.nvItem}.`;
         } else extra += ` Desafío +${I.k} vencido (el premio de esta mazmorra ya lo cobraste hoy: bate tu marca para otro).`;

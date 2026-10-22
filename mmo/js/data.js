@@ -226,15 +226,16 @@ export function descansoGanado(nivel, msFuera) {
 export function statsJugador(nivel, skin, eq, clase, espec, tal) {
   const b = (SKINS[skin] && SKINS[skin].buffs) || {};
   const e = bonoEquipo(eq);
+  const cj = bonoConjuntos(eq);
   const cl = CLASES[clase];
   const m = (cl && cl.mod) || { hp: 1, def: 1, atk: 1, crit: 0 };
   const sp = (nivel >= ESPEC_NIVEL && especDe(clase, espec) && especDe(clase, espec).mod) || {};
   const t = { tal };
   return {
-    maxHp: Math.round((100 + 30 * (nivel - 1) + (b.bonusHp || 0) * Math.max(1, Math.floor(nivel / 5)) + e.hp) * m.hp * (sp.hp || 1) * (1 + talento(t, 'vida'))),
-    atk: Math.round((10 + 3 * (nivel - 1) + e.atk) * (b.atkMult || 1) * m.atk * (sp.atk || 1) * (1 + talento(t, 'fuerza'))),
-    def: Math.floor((Math.floor(nivel * 1.5) + e.def) * m.def * (sp.def || 1) * (1 + talento(t, 'defensa'))),
-    crit: 0.12 + e.crit + m.crit + (sp.crit || 0) + talento(t, 'critico'),
+    maxHp: Math.round((100 + 30 * (nivel - 1) + (b.bonusHp || 0) * Math.max(1, Math.floor(nivel / 5)) + e.hp) * m.hp * (sp.hp || 1) * (1 + talento(t, 'vida')) * (1 + cj.hp)),
+    atk: Math.round((10 + 3 * (nivel - 1) + e.atk) * (b.atkMult || 1) * m.atk * (sp.atk || 1) * (1 + talento(t, 'fuerza')) * (1 + cj.atk)),
+    def: Math.floor((Math.floor(nivel * 1.5) + e.def) * m.def * (sp.def || 1) * (1 + talento(t, 'defensa')) * (1 + cj.def)),
+    crit: 0.12 + e.crit + m.crit + (sp.crit || 0) + talento(t, 'critico') + cj.crit,
     recMax: recursoMax(clase, nivel),
   };
 }
@@ -508,7 +509,36 @@ export function baseItem(ranura, nv) {
   }
   return {};
 }
-export function nombreItem(it) { const r = RANURAS[it.s]; return r ? r.nombres[tierItem(it.nv)] : '?'; }
+export function nombreItem(it) { const r = RANURAS[it.s]; return r ? r.nombres[tierItem(it.nv)] + (it.cj && CONJUNTOS[it.cj] ? ' «' + CONJUNTOS[it.cj].nombre + '»' : '') : '?'; }
+// ── CONJUNTOS ──
+// Cada mazmorra tiene su conjunto: sus jefes (y sus Desafios) a veces sueltan
+// piezas marcadas (it.cj = id de la mazmorra). Con 2 piezas del mismo
+// conjunto puestas hay un bono pequeño; con 4, uno mayor. Una meta de
+// coleccion a largo plazo que obliga a repetir cada mazmorra.
+export const CONJUNTOS = {
+  catacumbas: { nombre: 'Huesos del Guardián', color: '#a3e635', b2: { def: 0.08 }, b4: { atk: 0.08, hp: 0.10 } },
+  templo:     { nombre: 'Marea Hundida',       color: '#38bdf8', b2: { hp: 0.10 },  b4: { atk: 0.10, crit: 0.04 } },
+  ciudadela:  { nombre: 'Escamas del Dragón',  color: '#f97316', b2: { atk: 0.08 }, b4: { atk: 0.08, def: 0.10, hp: 0.10 } },
+};
+export const CONJUNTO_PROB = 0.45;
+export function piezasConjunto(eq) {
+  const n = {};
+  for (const k in eq || {}) { const it = eq[k]; if (it && it.cj && CONJUNTOS[it.cj]) n[it.cj] = (n[it.cj] || 0) + 1; }
+  return n;
+}
+export function bonoConjuntos(eq) {
+  const t = { hp: 0, atk: 0, def: 0, crit: 0 };
+  const n = piezasConjunto(eq);
+  for (const id in n) {
+    const cj = CONJUNTOS[id];
+    for (const [min, b] of [[2, cj.b2], [4, cj.b4]]) if (n[id] >= min) for (const k in b) t[k] += b[k];
+  }
+  return t;
+}
+export function textoConjunto(cj) {
+  const pct = b => Object.entries(b).map(([k, v]) => '+' + Math.round(v * 100) + '% ' + { hp: 'vida', atk: 'ataque', def: 'defensa', crit: 'crítico' }[k]).join(', ');
+  return '2 piezas: ' + pct(cj.b2) + ' · 4 piezas: ' + pct(cj.b4);
+}
 export function iconoItem(it) { const r = RANURAS[it.s]; return r ? r.iconos[tierItem(it.nv)] : 'I_Chest01'; }
 export function precioVenta(it) { return Math.round((20 + it.nv * 6) * Math.pow(RAREZAS[it.r].mult, 2)); }
 export function bonoEquipo(eq) {
