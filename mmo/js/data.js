@@ -1612,7 +1612,7 @@ export const mundialDe = t => MUNDIALES[Math.floor(t / 1800000) % MUNDIALES.leng
 // mundial); cada 75 puntos, un nivel con premio que se cobra a mano en el
 // registro de misiones (L). Al nivel 20, una mascota que no se vende. Sin
 // compra y sin mTON.
-export const PASE = { niveles: 20, porNivel: 75, puntos: { diaria: 10, semanal: 30, bono: 15, mazmorra: 6, mundial: 10, torre: 4 } };
+export const PASE = { niveles: 20, porNivel: 75, puntos: { diaria: 10, semanal: 30, bono: 15, mazmorra: 6, mundial: 10, torre: 4, exped: 3 } };
 export const paseMes = (t = Date.now()) => new Date(t).toISOString().slice(0, 7);
 export function premioPase(n, nivel) {
   const oro = k => Math.round(k * Math.max(1, nivel));

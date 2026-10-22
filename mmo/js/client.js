@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=170';
+} from './data.js?v=172';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -3726,7 +3726,7 @@ function cajaPase() {
   const pa = yo.pase, nv = Math.floor(pa.p / PASE.porNivel), tope = PASE.niveles * PASE.porNivel;
   const mes = new Date(pa.mes + '-01T00:00:00Z').toLocaleDateString('es', { month: 'long', timeZone: 'UTC' });
   let h = `<div class="mis-caja"><b>🎟️ Pase de temporada de ${esc(mes)}</b>`;
-  h += `<p style="font-size:12px;color:var(--txt2)">Nivel ${nv} de ${PASE.niveles} · ${pa.p >= tope ? 'completo' : (pa.p % PASE.porNivel) + '/' + PASE.porNivel + ' puntos para el siguiente'}. Puntos: misión diaria ${PASE.puntos.diaria}, semanal ${PASE.puntos.semanal}, mazmorra ${PASE.puntos.mazmorra}, jefe mundial ${PASE.puntos.mundial}, cofre de la Torre ${PASE.puntos.torre}. Gratis; empieza de cero cada mes.</p>`;
+  h += `<p style="font-size:12px;color:var(--txt2)">Nivel ${nv} de ${PASE.niveles} · ${pa.p >= tope ? 'completo' : (pa.p % PASE.porNivel) + '/' + PASE.porNivel + ' puntos para el siguiente'}. Puntos: misión diaria ${PASE.puntos.diaria}, semanal ${PASE.puntos.semanal}, mazmorra ${PASE.puntos.mazmorra}, jefe mundial ${PASE.puntos.mundial}, cofre de la Torre ${PASE.puntos.torre}, expedición ${PASE.puntos.exped}. Gratis; empieza de cero cada mes.</p>`;
   h += `<div class="mis-barra"><i style="width:${pa.p >= tope ? 100 : Math.round((pa.p % PASE.porNivel) / PASE.porNivel * 100)}%"></i></div>`;
   h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin-top:8px">';
   for (let n = 1; n <= PASE.niveles; n++) {

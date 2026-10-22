@@ -8,7 +8,7 @@
 // que jugar esas horas. Nunca mTON.
 // c.exped = { h, ini, fin, nv }   (nv: tu nivel al salir, fija el premio)
 // ═══════════════════════════════════════════════════════
-import { EXPEDICION, premioExpedicion, MATERIALES, MASCOTAS, NIVEL_MAX } from '../../mmo/js/data.js';
+import { EXPEDICION, premioExpedicion, MATERIALES, MASCOTAS, NIVEL_MAX, PASE } from '../../mmo/js/data.js';
 
 export const Expediciones = {
   expedicion(s, m) {
@@ -28,6 +28,7 @@ export const Expediciones = {
       for (const k in pr.mat) c.mat[k] = Math.min(999, (c.mat[k] || 0) + pr.mat[k]);
       c.expediciones = (c.expediciones || 0) + 1;
       this.progresoTarea && this.progresoTarea(s, 'exped');
+      if (this.puntoPase) this.puntoPase(s, PASE.puntos.exped);
       s.sucio = true;
       const mats = Object.entries(pr.mat).map(([k, n]) => `${n} ${MATERIALES[k].nombre}`).join(', ');
       this.enviar(s, { t: 'toast', ok: true, m: `🧭 Volvió la expedición: +${pr.oro.toLocaleString('es')} oro${pr.xp ? ', +' + pr.xp.toLocaleString('es') + ' XP' : ''} y ${mats}.` });
