@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=92';
+} from './data.js?v=94';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1195,7 +1195,7 @@ function habilidadRemota(m) {
 // Error corto en rojo arriba al centro (como "No tienes suficiente maná").
 function errorRojo(txt) {
   const c = $('errores');
-  if (c.lastChild && c.lastChild.textContent === txt && performance.now() - (c.lastChild._t || 0) < 700) return;
+  for (const d of c.children) if (d.textContent === txt && performance.now() - (d._t || 0) < 1500) return;
   const d = document.createElement('div');
   d.textContent = txt; d._t = performance.now();
   c.appendChild(d);
@@ -2957,7 +2957,7 @@ function dibujarMonstruo(o) {
     if (o.hp < o.mx || elegido) barraMini(x, y, w, o.hp / o.mx, '#ff3344');
     // Con el nombre solo cuando esta herido o elegido: todos a la vez llenaban la pantalla.
     const tn = spriteTexto('Nv' + o.nv + (o.hp < o.mx || elegido ? ' ' + def.nombre : ''), 6, colorNivel(o.nv), false, false);
-    g.drawImage(tn, Math.round(x - tn.width / 2), Math.round(y - 4 - 6));
+    g.drawImage(tn, Math.round(x - tn.width / 2), Math.round(y - 4 - 6 - (o.etqNivel || 0) * 10));
     if (cm) barraMini(x, y + 7, w, (ahora - cm.ini) / (cm.fin - cm.ini), cm.int ? '#ffae00' : '#aaa');
   } else {
     etiqueta(x, o.y - o.alto - 10, '👑 ' + def.nombre, '#ff3cf0', 7);
@@ -2965,6 +2965,22 @@ function dibujarMonstruo(o) {
   }
 }
 
+// Monstruos amontonados: sus nombres se escalonan hacia arriba para que no
+// se pisen ("Nv1 Gob1ab"). Se recalcula cada 6 fotogramas.
+function escalonarEtiquetas() {
+  const l = [];
+  for (const o of mons.values()) if (!o.muereT && !MONSTRUOS[o.k].jefe && Math.abs(o.x - P.x) < VW) l.push(o);
+  l.sort((a, b) => a.x - b.x);
+  for (let i = 0; i < l.length; i++) {
+    const o = l[i];
+    let n = 0;
+    for (let j = Math.max(0, i - 4); j < i; j++) {
+      const p = l[j];
+      if (o.x - p.x < 70 && Math.abs((p.y - p.alto) - (o.y - o.alto)) < 30) n = Math.max(n, (p.etqNivel || 0) + 1);
+    }
+    o.etqNivel = Math.min(n, 3);
+  }
+}
 // Mascota: sigue al duende con retraso, a su espalda (las que vuelan, a la
 // altura de la cabeza). El estado va en el propio duende (q.pet).
 function dibujarMascota(q, id, f, pies, montado) {
@@ -3295,6 +3311,7 @@ function dibujar() {
   dibujarNPCs(mp);
   dibujarCofres();
   dibujarNodos();
+  if (frame % 6 === 0) escalonarEtiquetas();
   for (const o of mons.values()) dibujarMonstruo(o);
   dibujarMarcasEspeciales();
   for (const q of otros.values()) { interpolar(q); if (q.atk > 0) q.atk--; if (q.herido > 0) q.herido--; dibujarDuende(q, false); }
