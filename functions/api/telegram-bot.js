@@ -326,7 +326,7 @@ async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
       return enviar(r.ok ? '✅ Listo. ' + fondoTxt(r) : '❌ ' + r.error);
     }
     const r = await mmoInterno(env, 'fondo', {});
-    return enviar(fondoTxt(r) + '\n\nEl % automático (30% de lo que entró la semana pasada en TON y Stars) se recalcula cada medianoche UTC. Para sumar TON tuyos cada día: /fondo 0.5');
+    return enviar(fondoTxt(r) + '\n\nDesde el 22-oct el % automático de ingresos está en 0: el fondo es solo lo que agregas tú (así no sale de lo que pagan otros jugadores). Para sumar TON tuyos cada día: /fondo 0.5');
   }
 }
 

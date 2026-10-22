@@ -1083,7 +1083,7 @@ export const RETIRO_MIN_MTON = 5000;          // 5 TON
 export const MTON_NIVEL_MIN = 15;
 export const MTON_EDAD_MIN_MS = 48 * 3600 * 1000;     // personaje con 2 dias o mas
 export const WALLET_ESPERA_MS = 72 * 3600 * 1000;     // wallet fija 3 dias antes de retirar
-export const FONDO_PCT_INGRESOS = 0.3;                // 30% de los ingresos semanales
+export const FONDO_PCT_INGRESOS = 0;   // el fondo lo aporta solo el creador (/fondo), no los ingresos (22-oct-2026)                // 30% de los ingresos semanales
 export const FONDO_REFERENCIA_MTON = 2000;            // con un fondo de 2 TON/dia, los premios valen su base
 
 // Direccion TON "amigable" (UQ..., no rebotable) a partir de la cruda "0:hex".

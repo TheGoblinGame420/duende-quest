@@ -2189,7 +2189,7 @@ function pintarWallet() {
   h += `<button class="btn" id="b-retirar" style="width:100%;padding:12px" ${puede ? '' : 'disabled'}>Retirar ${tonTxt(aRetirar)} TON</button>`;
   h += '<button class="btn sec" id="b-premium" style="width:100%;margin-top:8px">Tienda premium (oro y poderes)</button>';
   const tr = yo.transparencia;
-  if (tr) h += `<div class="mis-caja" style="margin-top:12px"><b>📊 Transparencia</b><p style="font-size:12px;color:var(--txt2)">El fondo de cada día es el <b style="display:inline;color:var(--txt)">${tr.pct}%</b> de lo que entró al juego la semana anterior (Stars y cripto) dividido entre 7, más lo que aporta El Duende. Nunca se reparte más de lo que entra. Pagado a jugadores hasta hoy: <b style="display:inline;color:var(--txt)">${tonTxt(tr.tonPagados * MTON_POR_TON)} TON</b> en ${tr.retirosPagados} retiro(s).</p></div>`;
+  if (tr) h += `<div class="mis-caja" style="margin-top:12px"><b>📊 Transparencia</b><p style="font-size:12px;color:var(--txt2)">${tr.pct ? 'El fondo de cada día es el <b style="display:inline;color:var(--txt)">' + tr.pct + '%</b> de lo que entró al juego la semana anterior, más lo que aporta El Duende.' : 'El fondo de cada día lo aporta El Duende, el creador: no sale de lo que pagan otros jugadores.'} Nunca se reparte más de lo que hay. Pagado a jugadores hasta hoy: <b style="display:inline;color:var(--txt)">${tonTxt(tr.tonPagados * MTON_POR_TON)} TON</b> en ${tr.retirosPagados} retiro(s).</p></div>`;
   if (fondoInfo) {
     const resta = Math.max(0, fondoInfo.total - fondoInfo.gastado);
     h += `<p class="centro" style="margin-top:10px;font-size:12px;color:var(--txt2)">Fondo de hoy para todos: ${tonTxt(resta)} de ${tonTxt(fondoInfo.total)} TON por repartir</p>`;

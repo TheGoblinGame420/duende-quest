@@ -10,11 +10,11 @@ const DonationManager = {
 
   async sendDonation(solAmount) {
     if (!WalletManager.walletAddress || !WalletManager.provider) {
-      if (typeof showNotification === 'function') showNotification('Conecta tu wallet primero', 'error');
+      if (typeof showNotification === 'function') showNotification('Conecta tu wallet primero (botón Conectar Wallet arriba).', 'error');
       return { success: false };
     }
     if (solAmount < this.MIN_SOL) {
-      if (typeof showNotification === 'function') showNotification('Minimo ' + this.MIN_SOL + ' SOL', 'warning');
+      if (typeof showNotification === 'function') showNotification('Mínimo ' + this.MIN_SOL + ' SOL', 'warning');
       return { success: false };
     }
     const provider = WalletManager.provider;
@@ -99,8 +99,8 @@ function initDonationPanel() {
       const sol = parseFloat(input.value) || 0;
       const duende = DonationManager.calculateReward(sol);
       preview.textContent = sol > 0
-        ? 'Recibiras: ' + duende.toLocaleString() + ' $DUENDE'
-        : 'Ingresa cantidad en SOL';
+        ? 'Recibirás ' + duende.toLocaleString() + ' $DUENDE (te los envía el creador a mano)'
+        : 'Elige un monto para ver cuánto recibes';
     });
   }
 
@@ -108,24 +108,24 @@ function initDonationPanel() {
     btnSend.addEventListener('click', async () => {
       const sol = parseFloat(input?.value);
       if (!sol || sol < DonationManager.MIN_SOL) {
-        if (typeof showNotification === 'function') showNotification('Minimo ' + DonationManager.MIN_SOL + ' SOL', 'warning');
+        if (typeof showNotification === 'function') showNotification('Mínimo ' + DonationManager.MIN_SOL + ' SOL', 'warning');
         return;
       }
       btnSend.disabled = true;
       btnSend.textContent = 'Procesando...';
       const result = await DonationManager.sendDonation(sol);
       if (result.success) {
-        if (typeof showNotification === 'function') showNotification('Listo! Recibiras ' + result.duendeEarned.toLocaleString() + ' $DUENDE', 'success');
+        if (typeof showNotification === 'function') showNotification('¡Gracias por tu apoyo! El creador te enviará ' + result.duendeEarned.toLocaleString() + ' $DUENDE a tu wallet. Guarda el enlace de la transacción.', 'success');
         showTxLink(result.signature);
         input.value = '';
-        preview.textContent = 'Ingresa cantidad en SOL';
+        preview.textContent = 'Elige un monto para ver cuánto recibes';
       } else if (result.reason === 'user_rejected') {
-        if (typeof showNotification === 'function') showNotification('Transaccion cancelada', 'warning');
+        if (typeof showNotification === 'function') showNotification('Transacción cancelada', 'warning');
       } else {
-        if (typeof showNotification === 'function') showNotification('Error en la transaccion. Intenta de nuevo.', 'error');
+        if (typeof showNotification === 'function') showNotification('No se pudo enviar la transacción. Intenta de nuevo.', 'error');
       }
       btnSend.disabled = false;
-      btnSend.textContent = 'ENVIAR SOL Y RECIBIR $DUENDE';
+      btnSend.textContent = 'Enviar SOL y recibir $DUENDE';
     });
   }
 }
@@ -137,7 +137,7 @@ function showTxLink(signature) {
   a.href = 'https://solscan.io/tx/' + encodeURIComponent(signature);
   a.target = '_blank';
   a.rel = 'noopener';
-  a.textContent = 'Ver transaccion en Solscan →';
+  a.textContent = 'Ver tu transacción en Solscan';
   container.innerHTML = '';
   container.appendChild(a);
 }

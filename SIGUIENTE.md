@@ -1392,15 +1392,27 @@ y 5 corrigieron por archivo. Tokens finales: --pri #2563eb (texto blanco
 AA), --pri2 #1d4ed8, --pri-txt #60a5fa (azul para TEXTO sobre oscuro),
 --txt3 #8a93a6. Cloudflare sirve las páginas sin .html (/game, /seguridad,
 /terminos, /privacidad redirigen 307): canonical y sitemap usan esas URLs.
-Pendiente del DUEÑO (no se tocó, son decisiones de negocio/legales; ver el
-informe de confianza en la conversación del 22-oct): venta directa
-SOL→$DUENDE a tasa fija en la portada (riesgo PSAV, contradice Términos),
-"Revenue share"/DAO del nivel Duende ∞, tokenomics contradictoria (vesting
-vs sin tokens bloqueados), /buy de $DUENDE con Stars en el bot (política de
-Telegram y Términos §2), fondo de mTON hecho con lo que pagan otros jugadores
-mientras la tienda vende poderes, bonos de skins vs "solo cosméticos" en
-Términos, torneos con pozo que no existe, identidad del proveedor (nombre/RUC
-y Libro de Reclamaciones si vende a consumidores en Perú).
+Decisiones del dueño (22-oct, "resuélvelo tú, te doy permiso", y luego
+"deja las donaciones y la compra del token, lo manejamos manual"):
+- SE MANTIENE la venta directa y manual SOL→$DUENDE (1 SOL = 10.000; el dueño
+  envía los tokens a mano para no pagar APIs) y las donaciones; la sección
+  "Apoya Duende Quest" de la portada se rediseñó para convertir más: compra
+  directa en 3 pasos con montos rápidos y botón de conectar wallet (en móvil
+  el del menú está oculto), donaciones aparte, en qué se usa el apoyo.
+  También se mantiene /buy de $DUENDE con Stars en el bot. NO TOCAR sin
+  que lo pida el dueño (ya se le explicó el riesgo PSAV/Telegram).
+- Quitado de la portada: perks inventados de los niveles de skin (DAO,
+  revenue share, torneos con premio, boosters, Discord, escasez "100 en
+  total") → beneficios reales de las skins (precios en US$ de la tienda);
+  tokenomics inventada (80% bloqueado, vesting) → datos verificables
+  on-chain; "pozo de torneos" → ranking semanal real; armas/cofres con
+  precio en SOL → objetos que se consiguen jugando.
+- Fondo de mTON: FONDO_PCT (cron.js) y FONDO_PCT_INGRESOS (data.js) en 0;
+  lo aporta solo el creador con /fondo, nunca lo que pagan otros jugadores.
+- Términos al día: compra directa descrita (no inversión, entrega manual),
+  skins con sus bonos, el fondo del creador, ninguna compra da mTON.
+Sigue pendiente (no código): nombre/RUC del titular y Libro de
+Reclamaciones si se vende a consumidores en Perú.
 
 Sin hacer: avisos a la hora habitual de cada uno (el cron de las 17 UTC ya
 usa 4 de 5 disparadores del plan gratis), y final de juego para D30 (1→60 se
