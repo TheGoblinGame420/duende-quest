@@ -1589,6 +1589,13 @@ se cancela con `shutdown /a`). La otra sesión llevó el MMO; esta, lo demás.
 - QA de jugador (MMO, arcade, mini app) y QA de regresión en producción: sin
   regresiones. Informes en el scratchpad de la sesión (qa_gamer_*, qa_regresion).
 
+**Lista de amigos y Elixir de Sabiduría (?v=64-65):** `c.contactos`
+[{u, n}] (máx. 50; al cliente solo `pub(uid)`), mensajes `contactoAdd` /
+`contactoQuitar` / `contactos`, aviso "Tu amigo X se conectó" en `hola`
+(`avisarContactos`). Botón ⭐ en el marco de otro jugador; la lista va arriba
+de la pestaña En línea. Elixir de Sabiduría (+10% XP de caza, 30 min) en la
+Artesana; logro «Cuidador de Bichos» (3 mascotas).
+
 **Pendiente / ideas para la siguiente sesión:**
 - Probar FPS en un teléfono real (sigue sin hacerse; en Chrome con CPU 4×
   lenta ya va a ~37 FPS en combate).

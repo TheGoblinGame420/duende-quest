@@ -576,6 +576,7 @@ async function pruebas() {
   await pruebasBoveda();
   await pruebasFortaleza();
   await pruebasMascotas();
+  await pruebasContactos();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -1314,6 +1315,28 @@ async function pruebasTintes() {
   await dejar(t); await dejar(v);
 }
 
+
+async function pruebasContactos() {
+  console.log('Lista de amigos');
+  const a = await entrar('Amiga', '7d'), b = await entrar('Amigo', '7e');
+  a.limpiar(); b.limpiar();
+  await a.mandar({ t: 'contactoAdd', p: b.id });
+  const l = a.ultimos('contactos').pop();
+  chequear(l && l.l.length === 1 && l.l[0].n === 'Amigo' && l.l[0].on === 1 && l.l[0].uid === pub(b.c.uid), 'se añade y sale conectado');
+  chequear(!JSON.stringify(l).includes(b.c.uid), 'la lista no lleva el uid real');
+  chequear(b.ultimos('toast').some(x => /te añadió/.test(x.m)), 'al otro se le avisa');
+  a.limpiar(); await a.mandar({ t: 'contactoAdd', p: b.id });
+  chequear(a.ultimos('no').length === 1 && a.c.contactos.length === 1, 'no se repite');
+  await dejar(b);
+  a.limpiar(); await a.mandar({ t: 'contactos' });
+  chequear(a.ultimos('contactos').pop().l[0].on === 0, 'al irse sale desconectado');
+  a.limpiar();
+  const b2 = await entrar('Amigo', '7e');
+  chequear(a.ultimos('toast').some(x => /Tu amigo Amigo se conectó/.test(x.m)), 'al volver, aviso de que se conectó');
+  await a.mandar({ t: 'contactoQuitar', uid: pub(b2.c.uid) });
+  chequear(!a.c.contactos.length, 'se quita de la lista');
+  await dejar(a); await dejar(b2);
+}
 
 async function pruebasMascotas() {
   console.log('Mascotas (solo estética)');

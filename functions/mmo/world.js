@@ -264,6 +264,9 @@ export class MmoWorld {
       case 'expulsarGrupo': return this.expulsarGrupo(s, m);
       case 'liderGrupo': return this.liderGrupo(s, m);
       case 'lfg': return this.buscarGrupo(s, m);
+      case 'contactoAdd': return this.agregarContacto(s, m);
+      case 'contactoQuitar': return this.quitarContacto(s, m);
+      case 'contactos': return this.enviarContactos(s);
       case 'boveda': return this.elegirBoveda(s, m);
       case 'lfgLista': return this.lfgLista(s);
       case 'lfgQuitar': return this.quitarLfg(s);
@@ -460,6 +463,7 @@ export class MmoWorld {
     this.enviar(s, this.estadoMundial());
     this.entrarMapa(s, c.mapa, s.x, true);
     this.reengancharGrupo(s);
+    this.avisarContactos(s);
     if (instGuardada) this.volverAInstancia(s, instGuardada.mapa, instGuardada.x);
     this.reponerElixires(s);
     await this.cargarHermandadDe(s);

@@ -31,6 +31,7 @@ export function pub(uid) {
   return h.toString(36);
 }
 const INVITACION_MS = 60000;
+export const CONTACTOS_MAX = 50;      // amigos en la lista de cada personaje
 export const LFG_MS = 10 * 60000;       // cuanto dura un anuncio de "busco grupo"
 const LFG_CADA_MS = 60000;              // y cada cuanto se puede volver a anunciar
 const limpiar = t => String(t || '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 120);
@@ -283,6 +284,46 @@ export const Social = {
     this.enviar(lider, { t: 'toast', ok: true, m: `📢 ${s.c.nombre} (Nv ${s.c.nivel}) se unió a tu grupo para ${mz.nombre}.` });
     this.enviar(s, { t: 'toast', ok: true, m: `👥 Te uniste al grupo de ${lider.c.nombre} para ${mz.nombre}. Id juntos al portal de mazmorras del pueblo.` });
     if (g.uids.length >= GRUPO_MAX) this.lfg.delete(uid);
+  },
+
+  // ── AMIGOS (lista de contactos, como en WoW) ──
+  // c.contactos = [{ u: uid, n: ultimo nombre conocido }]. Al cliente solo le
+  // llega pub(uid). Avisa cuando un amigo se conecta.
+  agregarContacto(s, m) {
+    const t = this.sesiones.get(m.p | 0);
+    if (!t || !t.c || t === s) return;
+    const l = s.c.contactos || (s.c.contactos = []);
+    if (l.some(a => a.u === t.c.uid)) return this.no(s, `${t.c.nombre} ya está en tu lista de amigos.`);
+    if (l.length >= CONTACTOS_MAX) return this.no(s, `Tu lista de amigos está llena (${CONTACTOS_MAX}).`);
+    l.push({ u: t.c.uid, n: t.c.nombre });
+    s.sucio = true;
+    this.enviar(s, { t: 'toast', ok: true, m: `⭐ ${t.c.nombre} está en tu lista de amigos: verás cuándo se conecta.` });
+    this.enviar(t, { t: 'toast', m: `⭐ ${s.c.nombre} te añadió a su lista de amigos.` });
+    this.enviarContactos(s);
+  },
+  quitarContacto(s, m) {
+    const l = s.c.contactos || [];
+    const i = l.findIndex(a => pub(a.u) === m.uid);
+    if (i < 0) return;
+    l.splice(i, 1);
+    s.sucio = true;
+    this.enviarContactos(s);
+  },
+  enviarContactos(s) {
+    const l = (s.c.contactos || []).map(a => {
+      const x = this.porUid.get(a.u);
+      const on = !!(x && x.c && !x.cerrado);
+      if (on) a.n = x.c.nombre;
+      return { uid: pub(a.u), n: a.n, on: on ? 1 : 0, id: on ? x.id : 0, lv: on ? x.c.nivel : 0, cl: on ? x.c.clase || '' : '', mapa: on && MAPAS[x.c.mapa] ? MAPAS[x.c.mapa].nombre : '', g: on && x.gid ? 1 : 0 };
+    }).sort((a, b) => b.on - a.on || a.n.localeCompare(b.n));
+    this.enviar(s, { t: 'contactos', l });
+  },
+  // Al entrar: avisa a quien lo tiene de amigo y esta conectado.
+  avisarContactos(s) {
+    for (const x of this.sesiones.values()) {
+      if (x === s || !x.c || !(x.c.contactos || []).some(a => a.u === s.c.uid)) continue;
+      this.enviar(x, { t: 'toast', m: `👋 Tu amigo ${s.c.nombre} se conectó.` });
+    }
   },
 
   // Lista de quien esta conectado (para invitar o susurrar).

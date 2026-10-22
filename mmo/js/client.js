@@ -14,7 +14,7 @@ import {
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo,
-} from './data.js?v=64';
+} from './data.js?v=65';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -533,6 +533,7 @@ function recibir(m) {
     case 'completada': completada(m); break;
     case 'ev': case 'cofres': case 'cofreA': recibirMundoAbierto(m); break;
     case 'quien': quienLista = m.r || []; pintarSocial(); break;
+    case 'contactos': contactos = m.l || []; pintarSocial(); break;
     case 'on': online = m.n; if (m.h) jugaronHoy = m.h; pintarSubMapa(); break;
     case 'toast': aviso(m.m, m.ok ? 'ok' : ''); if (m.hab) { $('acciones').innerHTML = ''; pintarHud(); } break;
     case 'aviso': aviso(m.m, 'jefe'); lineaChat(null, m.m); sfx('explosion', .3); break;
@@ -1295,6 +1296,7 @@ function pintarAccionesObjetivo() {
   ponCss($('o-herm'), 'display', (r === 'lider' || r === 'oficial') && !q.hn ? 'block' : 'none');
   ponCss($('o-duelo'), 'display', !duelo && !instancia && !MAPAS[mapaId].instancia ? 'block' : 'none');
 }
+$('o-amigo').onclick = () => { const q = jugObjetivo(); if (q) { mandar({ t: 'contactoAdd', p: q.id }); sfx('boton', .3); } };
 $('o-duelo').onclick = () => { const q = jugObjetivo(); if (q) { mandar({ t: 'retar', p: q.id }); sfx('boton', .3); } };
 
 // ── DUELOS ──
@@ -1340,14 +1342,20 @@ $('o-susurrar').onclick = () => { const q = jugObjetivo(); if (!q) return; abrir
 
 // ── VENTANA SOCIAL (👥, tecla O) ──
 let tabSocial = 'grupo', quienLista = [];
-document.querySelectorAll('[data-stab]').forEach(b => b.onclick = () => { tabSocial = b.dataset.stab; document.querySelectorAll('[data-stab]').forEach(x => x.classList.toggle('on', x === b)); if (tabSocial === 'online') mandar({ t: 'quien' }); pintarSocial(); });
+document.querySelectorAll('[data-stab]').forEach(b => b.onclick = () => { tabSocial = b.dataset.stab; document.querySelectorAll('[data-stab]').forEach(x => x.classList.toggle('on', x === b)); if (tabSocial === 'online') { mandar({ t: 'quien' }); mandar({ t: 'contactos' }); } pintarSocial(); });
 function abrirSocial(tab) {
   if (!yo) return;
   if (tab) { tabSocial = tab; document.querySelectorAll('[data-stab]').forEach(x => x.classList.toggle('on', x.dataset.stab === tab)); }
   abrir('m-social');
-  if (tabSocial === 'online') mandar({ t: 'quien' });
+  if (tabSocial === 'online') { mandar({ t: 'quien' }); mandar({ t: 'contactos' }); }
   if (tabSocial === 'hermandad') mandar({ t: 'herm' });
   pintarSocial();
+}
+let contactos = [];   // tu lista de amigos [{ uid, n, on, id, lv, cl, mapa, g }]
+function conectarListaSocial(L) {
+  L.querySelectorAll('[data-inv]').forEach(b => b.onclick = () => { mandar({ t: 'invitar', p: +b.dataset.inv }); b.disabled = true; });
+  L.querySelectorAll('[data-sus]').forEach(b => b.onclick = () => { cerrarModales(); abrirChat(); $('chat-in').value = '/s ' + b.dataset.sus + ' '; });
+  L.querySelectorAll('[data-qamigo]').forEach(b => b.onclick = () => { mandar({ t: 'contactoQuitar', uid: b.dataset.qamigo }); });
 }
 function pintarSocial() {
   if (!$('m-social').classList.contains('on')) return;
@@ -1372,16 +1380,26 @@ function pintarSocial() {
     L.querySelectorAll('[data-echar]').forEach(b => b.onclick = () => mandar({ t: 'expulsarGrupo', uid: b.dataset.echar }));
     $('b-salir-grupo').onclick = () => { mandar({ t: 'salirGrupo' }); };
   } else if (tabSocial === 'online') {
-    if (!quienLista.length) { L.innerHTML = '<p class="centro">No hay nadie más conectado ahora mismo.</p>'; return; }
-    L.innerHTML = quienLista.map(x => {
+    // Arriba, tus amigos (conectados o no); debajo, todos los conectados.
+    let h = '<p style="font:600 13px var(--sans);color:var(--txt);margin:2px 0 6px">⭐ Tus amigos</p>';
+    h += contactos.length ? contactos.map(x => {
+      const cl = CLASES[x.cl];
+      const puede = x.on && !x.g && (!grupo || soyLider());
+      return tarjeta(`<img src="${A}items/equipo/${cl ? cl.icono : 'S_Buff06'}.png" style="${x.on ? '' : 'filter:grayscale(1);opacity:.5'}">`,
+        `<span style="color:${x.on ? (cl ? cl.color : 'var(--txt)') : 'var(--txt3)'}">${esc(x.n)}</span>${x.on ? ' <span style="color:var(--txt2)">Nv ' + x.lv + '</span>' : ''}`,
+        x.on ? esc((cl ? cl.nombre + ' · ' : '') + x.mapa + (x.g ? ' · en grupo' : '')) : 'Desconectado',
+        (puede ? `<button class="btn" data-inv="${x.id}">Invitar</button>` : '') + (x.on ? `<button class="btn sec" data-sus="${esc(x.n)}">💬</button>` : '') + `<button class="btn sec" data-qamigo="${esc(x.uid)}" title="Quitar de amigos">✕</button>`);
+    }).join('') : '<p style="font-size:12px;color:var(--txt2);margin-bottom:8px">Toca a otro jugador y pulsa ⭐ en su marco: verás cuándo se conecta.</p>';
+    h += '<p style="font:600 13px var(--sans);color:var(--txt);margin:10px 0 6px">🟢 Conectados</p>';
+    if (!quienLista.length) { L.innerHTML = h + '<p class="centro">No hay nadie más conectado ahora mismo.</p>'; conectarListaSocial(L); return; }
+    L.innerHTML = h + quienLista.map(x => {
       const cl = CLASES[x.cl];
       const puede = !x.g && (!grupo || soyLider());
       return tarjeta(`<img src="${A}items/equipo/${cl ? cl.icono : 'S_Buff06'}.png">`, `<span style="color:${cl ? cl.color : 'var(--txt2)'}">${esc(x.n)}</span> <span style="color:var(--txt2)">Nv ${x.lv}</span>`,
         esc((cl ? cl.nombre + ' · ' : '') + x.mapa + (x.h ? ' · <' + x.h + '>' : '') + (x.g ? ' · en grupo' : '')),
         (puede ? `<button class="btn" data-inv="${x.id}">Invitar</button>` : '') + `<button class="btn sec" data-sus="${esc(x.n)}">💬</button>`);
     }).join('');
-    L.querySelectorAll('[data-inv]').forEach(b => b.onclick = () => { mandar({ t: 'invitar', p: +b.dataset.inv }); b.disabled = true; });
-    L.querySelectorAll('[data-sus]').forEach(b => b.onclick = () => { cerrarModales(); abrirChat(); $('chat-in').value = '/s ' + b.dataset.sus + ' '; });
+    conectarListaSocial(L);
   } else if (tabSocial === 'amigos') {
     // Se pide una vez (pintarSocial se llama a menudo, p. ej. con el grupo).
     if (amigosInfo) pintarAmigos(amigosInfo); else L.innerHTML = '<p class="centro">Cargando…</p>';
@@ -1980,7 +1998,7 @@ function objetivoGuia() {
   const zona = zonaDe(q.tipo);
   if (zona && mapaId !== zona) {
     const p = portalHacia(zona);
-    return p ? { x: p.x, txt: '» ' + MAPAS[zona].nombre } : null;
+    return p ? { x: p.x, txt: '> ' + MAPAS[zona].nombre } : null;
   }
   const def = MONSTRUOS[q.tipo];
   let mejor = null, md = Infinity;

@@ -404,6 +404,7 @@ export const NOVEDADES = [
     '📢 Buscador de grupo en el portal de mazmorras: anúnciate y otros se unen con un toque.',
     '⚡ Desafíos con afijos que cambian cada lunes y su propio ranking semanal.',
     '🐾 Mascotas y 🎨 colores de nombre en el Mercader (solo estética).',
+    '⭐ Lista de amigos (pestaña En línea): ves cuándo se conectan, les susurras o invitas al grupo.',
     '⚗️ Elixir de Sabiduría en la Artesana: +10% de experiencia por caza durante 30 min.',
     '🎩 Cada clase se distingue: sombrero de mago, aureola de sacerdote, capucha de pícaro.',
     '🌽 Del 13 al 30 de noviembre: Cosecha del Maíz Morado.',
