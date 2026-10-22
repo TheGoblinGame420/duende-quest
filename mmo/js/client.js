@@ -11,12 +11,12 @@ import {
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
-  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe, TORRE, premioTorreSem,
+  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe, TORRE, premioTorreSem, zonaDeNivel,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=116';
+} from './data.js?v=118';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -3549,12 +3549,40 @@ function cajaSemana() {
   return h + '<p style="font-size:12px;margin-top:6px">La Bóveda, la banda, los afijos y la gesta se renuevan los lunes (UTC).</p></div>';
 }
 // Pase de temporada: progreso y los 20 niveles con su premio (se cobran a mano).
+// "Que hacer ahora": las 3 cosas que mas te convienen con tu nivel y lo que
+// tienes pendiente (hay muchos sistemas y el novato no sabe por donde ir).
+function sugerencias() {
+  const l = [];
+  const pa = yo.pase;
+  if (pa) { const nv = Math.min(PASE.niveles, Math.floor(pa.p / PASE.porNivel)), sin = nv - (pa.cob || []).filter(n => n <= nv).length; if (sin > 0) l.push(`🎟️ Cobra ${sin} premio${sin > 1 ? 's' : ''} del pase (más abajo).`); }
+  if (yo.bovedaOpc && yo.bovedaOpc.length) l.push('🗝️ Elige tu objeto de la Bóveda semanal (portal de mazmorras).');
+  const msM = mundial.en ? mundial.en - performance.now() : 0;
+  if (yo.nivel >= 5 && mundial.vivo) l.push('👹 ¡El jefe mundial está en el Coliseo! Todos los niveles ganan.');
+  else if (yo.nivel >= 5 && msM > 0 && msM < 600000) l.push(`👹 Jefe mundial en ${Math.ceil(msM / 60000)} min: ve al Coliseo (portal del pueblo).`);
+  if (horaFelizTiempos(Date.now()).activa) l.push('⚡ Es la Hora Feliz: caza ahora, +50% de experiencia.');
+  const t = yo.tareas, pend = t && t.dia ? t.dia.l.filter(x => !x.ok) : [];
+  if (pend.length) l.push(`📅 Te ${pend.length > 1 ? 'quedan ' + pend.length + ' diarias' : 'queda 1 diaria'}: ${esc(pend[0].txt)} (${pend[0].p}/${pend[0].n}).`);
+  if (yo.nivel >= 10) {
+    const hoy = new Date().toISOString().slice(0, 10), hechas = yo.mazDia && yo.mazDia.d === hoy ? yo.mazDia.hechas || [] : [];
+    const mz = Object.entries(MAZMORRAS).filter(([id, m]) => !m.banda && yo.nivel >= m.nv[0] && !hechas.includes(id)).sort((a, b) => b[1].nv[0] - a[1].nv[0])[0];
+    if (mz) l.push(`🏰 ${esc(mz[1].nombre)}: premio del día sin cobrar (XP, oro y un épico).`);
+    if (!yo.torreSem) l.push('🗼 Sube la Torre del Duende: cada 5 pisos nuevos de la semana, un cofre.');
+  }
+  const z = zonaDeNivel(yo.nivel);
+  if (MAPAS[z] && mapaId !== z) l.push(`🗺️ Tu zona ahora: ${esc(MAPAS[z].nombre)} (Nv ${MAPAS[z].nv[0]}-${MAPAS[z].nv[1]}).`);
+  l.push('🎣 Para descansar: pesca en el estanque del pueblo y cocina con la Artesana.');
+  return l.slice(0, 3);
+}
+function cajaSugerencias() {
+  if (!yo || !yo.clase) return '';
+  return '<div class="mis-caja"><b>💡 Qué hacer ahora</b><ul style="padding-left:18px;margin-top:4px;font-size:13px;line-height:1.45">' + sugerencias().map(x => `<li>${x}</li>`).join('') + '</ul></div>';
+}
 function cajaPase() {
   if (!yo || !yo.pase) return '';
   const pa = yo.pase, nv = Math.floor(pa.p / PASE.porNivel), tope = PASE.niveles * PASE.porNivel;
   const mes = new Date(pa.mes + '-01T00:00:00Z').toLocaleDateString('es', { month: 'long', timeZone: 'UTC' });
   let h = `<div class="mis-caja"><b>🎟️ Pase de temporada de ${esc(mes)}</b>`;
-  h += `<p style="font-size:12px;color:var(--txt2)">Nivel ${nv} de ${PASE.niveles} · ${pa.p >= tope ? 'completo' : (pa.p % PASE.porNivel) + '/' + PASE.porNivel + ' puntos para el siguiente'}. Puntos: misión diaria ${PASE.puntos.diaria}, semanal ${PASE.puntos.semanal}, mazmorra ${PASE.puntos.mazmorra}, jefe mundial ${PASE.puntos.mundial}. Gratis; empieza de cero cada mes.</p>`;
+  h += `<p style="font-size:12px;color:var(--txt2)">Nivel ${nv} de ${PASE.niveles} · ${pa.p >= tope ? 'completo' : (pa.p % PASE.porNivel) + '/' + PASE.porNivel + ' puntos para el siguiente'}. Puntos: misión diaria ${PASE.puntos.diaria}, semanal ${PASE.puntos.semanal}, mazmorra ${PASE.puntos.mazmorra}, jefe mundial ${PASE.puntos.mundial}, cofre de la Torre ${PASE.puntos.torre}. Gratis; empieza de cero cada mes.</p>`;
   h += `<div class="mis-barra"><i style="width:${pa.p >= tope ? 100 : Math.round((pa.p % PASE.porNivel) / PASE.porNivel * 100)}%"></i></div>`;
   h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin-top:8px">';
   for (let n = 1; n <= PASE.niveles; n++) {
@@ -3568,7 +3596,7 @@ function pintarMision() {
   const cuerpo = $('mision-cuerpo');
   const conectarDiaria = () => { const b = $('b-diaria'); if (b) b.onclick = () => { sfx('boton', .3); mandar({ t: 'mision', diaria: true }); }; };
   const conectarPase = () => cuerpo.querySelectorAll('[data-pase]').forEach(b => b.onclick = () => { sfx('moneda', .4); mandar({ t: 'pase', n: +b.dataset.pase }); });
-  if (!q) { cuerpo.innerHTML = '<p class="centro">Completaste las ' + MISIONES.length + ' misiones. Eres una leyenda del Pueblo Duende. 👑</p>' + cajaPase() + cajaSemana() + cajaDiaria() + cajaTareas(); conectarDiaria(); conectarPase(); return; }
+  if (!q) { cuerpo.innerHTML = '<p class="centro">Completaste las ' + MISIONES.length + ' misiones. Eres una leyenda del Pueblo Duende. 👑</p>' + cajaSugerencias() + cajaPase() + cajaSemana() + cajaDiaria() + cajaTareas(); conectarDiaria(); conectarPase(); return; }
   const def = MONSTRUOS[q.tipo];
   const zona = MAPAS[zonaDe(q.tipo)];
   const lista = yo.mis.p >= q.n;
@@ -3582,7 +3610,7 @@ function pintarMision() {
     '<p>' + yo.mis.p + ' / ' + q.n + '</p>' +
     '<p style="color:var(--oro)">Recompensa: +' + q.xp + ' XP · +' + q.oro + ' oro' + esc(extra) + '</p></div>' +
     (lista ? '<button class="btn" id="b-entregar" style="width:100%;padding:12px">Entregar misión</button>' : '<p class="centro">Vuelve cuando la termines.</p>') +
-    cajaPase() + cajaSemana() + cajaDiaria() + cajaTareas();
+    cajaSugerencias() + cajaPase() + cajaSemana() + cajaDiaria() + cajaTareas();
   conectarPase();
   const b = $('b-entregar');
   if (b) b.onclick = () => { sfx('boton', .3); mandar({ t: 'mision' }); };
