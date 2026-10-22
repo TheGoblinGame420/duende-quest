@@ -1139,7 +1139,7 @@ export class MmoWorld {
       m = { ...m, x: Math.min(s.x, tope) };
     }
     // Moverse cancela el hechizo que se esta lanzando (como en WoW).
-    if (s.cast && (Math.abs(m.x - s.cast.x) > 6 || Math.abs(y - s.cast.y) > 6)) this.cancelarCast(s, s.cast.h === 'hogar' ? 'Te moviste: la Piedra de Hogar se canceló.' : '');
+    if (s.cast && (Math.abs(m.x - s.cast.x) > 6 || Math.abs(y - s.cast.y) > 6)) this.cancelarCast(s, s.cast.h === 'hogar' ? 'Te moviste: la Piedra de Hogar se canceló.' : s.cast.h === 'pescar' || s.cast.h === 'pica' ? 'Te moviste: se cortó el sedal.' : '');
     s.x = clamp(m.x, 10, ancho - 10);
     // Altura: como mucho un doble salto (~195 px) sobre el suelo o una
     // plataforma cercana. Antes se aceptaba cualquier y: se podia "volar"
@@ -1721,6 +1721,7 @@ export class MmoWorld {
         const ma = MASCOTAS[m.id];
         if (!c.mascotas.includes(m.id)) {
           if (ma.pase) return this.enviar(s, { t: 'toast', m: 'Esa mascota solo se gana con el pase de temporada.' });
+          if (ma.pesca) return this.enviar(s, { t: 'toast', m: 'Esa mascota solo se consigue pescando.' });
           if (ma.amb && !enOfertaAmbulante('mascota', m.id)) return this.enviar(s, { t: 'toast', m: 'Esa mascota solo la trae el Mercader ambulante algunos fines de semana.' });
           if (c.nivel < ma.nv) return this.enviar(s, { t: 'toast', m: `Necesitas nivel ${ma.nv} para esa mascota.` });
           if (c.oro < ma.precio) return this.enviar(s, { t: 'toast', m: 'No te alcanza el oro.' });

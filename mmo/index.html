@@ -200,7 +200,9 @@ body.tactil #pie{display:none;}
 #lanzar{left:50%;transform:translateX(-50%);bottom:14px;width:230px;display:none;}
 #lanzar .barra{height:12px;border:1px solid rgba(242,193,78,.55);margin:0;}
 #lanzar .barra>i{background:linear-gradient(90deg,#d99a1e,var(--oro));transition:none;}
-#lanzar .barra>span{font-size:6px;line-height:12px;}
+#lanzar .barra>span{font-size:7px;line-height:12px;}
+#hud.estrecho #lanzar .barra{height:16px;}
+#hud.estrecho #lanzar .barra>span{font-size:8px;line-height:16px;}
 #lanzar.mal .barra>i{background:var(--err);}
 /* Encima de la cabeza del duende (abajo tapaba su nombre). */
 #hud.estrecho #lanzar{bottom:150px;width:60%;}
@@ -237,7 +239,7 @@ body.tactil #pie{display:none;}
 /* "brilla" ya no destella: se deja definida por si algun estilo en linea la usa. */
 @keyframes brilla{to{box-shadow:var(--sombra)}}
 #bxp b.desc{position:absolute;top:0;bottom:0;background:rgba(96,165,250,.5);}
-#errores{left:50%;transform:translateX(-50%);top:28%;pointer-events:none!important;text-align:center;}
+#errores{z-index:60;left:50%;transform:translateX(-50%);top:28%;pointer-events:none!important;text-align:center;}
 /* Movil: errores y avisos de jefe por debajo de la barra del jefe y del seguimiento (los tapaban). */
 #hud.estrecho #errores{top:50%;width:92%;}
 #hud.estrecho #errores div{white-space:normal;}
@@ -306,7 +308,7 @@ body.tactil #pie{display:none;}
 #chat-in:focus{border-color:var(--pri-txt);}
 
 /* avisos (aviso.ok / aviso.jefe: variantes de color para client.js) */
-#avisos{left:50%;transform:translateX(-50%);top:86px;display:flex;flex-direction:column;align-items:center;gap:5px;pointer-events:none!important;}
+#avisos{z-index:60;left:50%;transform:translateX(-50%);top:86px;display:flex;flex-direction:column;align-items:center;gap:5px;pointer-events:none!important;}
 .aviso{font-family:var(--sans);font-size:13px;font-weight:600;line-height:1.4;color:var(--txt);background:rgba(18,24,38,.94);border:1px solid var(--borde);padding:7px 12px;border-radius:8px;animation:av 3.6s forwards;text-align:center;max-width:90vw;box-shadow:var(--sombra);}
 .aviso.ok{border-color:rgba(34,197,94,.6);}
 .aviso.jefe{border-color:rgba(167,139,250,.6);color:#ddd6fe;}
@@ -634,7 +636,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
       <li><b>🌿 Recolección:</b> en cada zona brillan plantas y vetas de mineral: acércate y pulsa E (o ⛏️ RECOGER). La <b>Artesana Lila</b> del pueblo (⚗️) las convierte en pociones, escudos, pólvora y elixires de 30 minutos.</li>
       <li><b>🗼 Torre del Duende:</b> desde Nv 10, en el portal de mazmorras del pueblo. Cada piso es una oleada de monstruos de tu nivel, cada vez más dura, con un jefe cada 5 pisos; hay que limpiarlo en 2 min y medio. Si caéis todos, se acaba. Tu mejor piso de la semana sale en el ranking y cada 5 pisos nuevos de la semana dan un cofre.</li>
       <li><b>🧭 Expediciones:</b> desde Nv 5, en el registro de misiones (L). Tu mascota (o un duendecillo) sale 1, 4 u 8 horas y vuelve con oro, algo de experiencia y materiales. Una a la vez: mándala antes de irte y recógela al volver.</li>
-      <li><b>🎣 Pesca:</b> hay un pesquero (agua azul) en el pueblo y en cada zona. Acércate, pulsa E (o 🎣 PESCAR) y espera: cuando el corcho se hunda y salga <b>¡PICA!</b>, pulsa otra vez enseguida (¡TIRA!). Si tiras antes, el pez se asusta; moverte o recibir un golpe corta el sedal. Con el pescado, la Artesana cocina Ceviche (+10% oro) y Sudado Dorado (+5% daño y defensa). Hasta 80 capturas al día.</li>
+      <li><b>🎣 Pesca:</b> hay un pesquero (agua azul) en el pueblo y en cada zona. Acércate, pulsa E (o 🎣 PESCAR) y espera: cuando el corcho se hunda y salga <b>¡PICA!</b>, pulsa otra vez enseguida (¡TIRA!). Si tiras antes, el pez se asusta; moverte o recibir un golpe corta el sedal. Con el pescado, la Artesana cocina Ceviche (+10% oro) y Sudado Dorado (+5% daño y defensa). Hasta 80 capturas al día. Muy de vez en cuando sale el <b>Pececito Dorado</b>, una mascota que solo se consigue pescando.</li>
       <li><b>🛡️ Hermandades:</b> tu clan, con chat propio (/h) y su nombre bajo el tuyo. Fúndala desde 👥 → HERMANDAD (nivel 10 y 5.000 oro) o pide que te inviten.</li>
       <li><b>🎟️ Pase de temporada:</b> gratis, cada mes. Las misiones diarias (10 puntos) y semanales (30), las mazmorras (6) y el jefe mundial (10) dan puntos; cada 75, un nivel con premio que cobras en el registro de misiones (L). Al 20, la mascota Duendecillo Dorado.</li>
       <li><b>🧳 Mercader ambulante:</b> de viernes a domingo (UTC) el Mercader trae colores y una mascota exclusivos que rotan cada semana.</li>
@@ -784,6 +786,6 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=124"></script>
+<script type="module" src="/mmo/js/client.js?v=126"></script>
 </body>
 </html>

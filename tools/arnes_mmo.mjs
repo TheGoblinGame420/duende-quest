@@ -1471,6 +1471,15 @@ async function pruebasPesca() {
   const oro0 = j.c.oro; mundo.dar(j, 1, 100, null, 1, false);
   chequear(j.c.oro - oro0 === 110, 'el ceviche da +10% de oro de caza');
   chequear(D.TAREAS_DIA.some(t => t.tipo === 'pescar') && D.LOGROS.some(l => l.id === 'pesca50'), 'misión diaria y logros de pesca');
+  // Pececito Dorado: seguro a las mascotaSeguro capturas; no se vende.
+  await aMapa(j, 'pueblo', p.x + 30);
+  j.c.pescaHoy = { d: D.hoyUTC(), n: 0 }; j.c.peces = D.PESCA.mascotaSeguro;
+  j.limpiar(); await j.mandar({ t: 'pescar' }); await esperarPica(); await j.mandar({ t: 'tirar' });
+  chequear(j.c.mascotas.includes('pececito'), 'el Pececito Dorado sale pescando (seguro a las ' + D.PESCA.mascotaSeguro + ')');
+  const k2 = await entrar('Compradora2', '82'); ponerNivel(k2, 20, 'mago'); k2.c.oro = 1e6; await aMapa(k2, 'pueblo', 900);
+  await k2.mandar({ t: 'comprar', k: 'mascota', id: 'pececito' });
+  chequear(!(k2.c.mascotas || []).includes('pececito'), 'el Pececito Dorado no se vende');
+  await dejar(k2);
   // En una zona tambien hay pesquero; en una mazmorra no.
   chequear(D.pesqueroDe('selva') && !D.pesqueroDe('catacumbas') && !D.pesqueroDe('coliseo'), 'pesqueros en zonas, no en mazmorras ni Coliseo');
   chequear(Object.keys(D.MAPAS).every(id => { const p = D.pesqueroDe(id); return !p || id === 'pueblo' || Math.abs(p.x - D.MAPAS[id].ancho * 0.62) > 600; }), 'los pesqueros quedan lejos del jefe de zona');

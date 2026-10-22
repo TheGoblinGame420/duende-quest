@@ -445,6 +445,8 @@ export const NOVEDADES = [
     '🎣 Pesca: hay un pesquero en el pueblo y en cada zona. Lanza el sedal y TIRA cuando pique.',
     '🍲 La Artesana cocina Ceviche del Duende (+10% oro) y Sudado Dorado (+5% daño y defensa) con lo que pesques.',
     '🏅 Logros Pescador y Maestro Pescador, y una misión diaria nueva.',
+    '🐟 Pececito Dorado: una mascota que solo se consigue pescando (muy rara).',
+    '📅 Calendario en Novedades y barras de progreso en los logros.',
   ] },
   { n: 5, fecha: '22 de octubre (mediodía)', items: [
     '🎟️ Pase de temporada mensual y gratis: misiones, mazmorras y jefe mundial dan puntos; 20 niveles de premios y una mascota exclusiva (registro de misiones, L).',
@@ -1005,7 +1007,7 @@ export const RECETAS = [
 // antes de que pique lo asusta; moverse o recibir un golpe corta el sedal.
 // Da Pescado (y a veces Pez Dorado o un cofre hundido con un poco de oro)
 // para la Artesana. Hasta porDia capturas al dia. Nunca mTON.
-export const PESCA = { min: 3000, max: 9000, ventana: 2000, porDia: 80, dorado: 0.05, cofre: 0.02, radio: 80 };
+export const PESCA = { min: 3000, max: 9000, ventana: 2000, porDia: 80, dorado: 0.05, cofre: 0.02, radio: 80, mascota: 1 / 250, mascotaSeguro: 300 };
 export function pesqueroDe(mapaId) {
   if (mapaId === 'pueblo') return { x: 475, nv: 1 };   // entre el portal de las Colinas y el Guardia
   const m = MAPAS[mapaId];
@@ -1569,6 +1571,8 @@ export function premioPase(n, nivel) {
   return { oro: oro(60 + 15 * n), txt: oro(60 + 15 * n).toLocaleString('es') + ' de oro' };
 }
 MASCOTAS.duende_pase = { nombre: 'Duendecillo Dorado', hoja: 'goblin_normal', alto: 26, nv: 1, precio: 0, tinte: '#facc15', pase: true };
+// Solo pescando (PESCA.mascota por captura; segura a las mascotaSeguro capturas).
+MASCOTAS.pececito = { nombre: 'Pececito Dorado', hoja: 'pez', alto: 22, nv: 1, precio: 0, tinte: '#facc15', vuela: true, pesca: true };
 LOGROS.push(
   { id: 'pase10', titulo: 'Aventurero del Pase', desc: 'Llega al nivel 10 del pase de temporada', oro: 2000, cond: c => (c.paseMax || 0) >= 10 },
   { id: 'pase20', titulo: 'Leyenda del Pase',    desc: 'Completa los 20 niveles del pase de temporada', oro: 5000, cond: c => (c.paseMax || 0) >= 20 },

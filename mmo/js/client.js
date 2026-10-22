@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=124';
+} from './data.js?v=126';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -486,7 +486,7 @@ function recibir(m) {
       castYo = { id: 'pica', nombre: '🐟 ¡PICA!', ini: performance.now(), fin: performance.now() + m.ms, tg: 0 };
       verLanzar(true); $('lanzar').classList.remove('mal');
       tono('nivel'); vibrar('warning');
-      { const p = pesqueroDe(mapaId); if (p) for (let k = 0; k < 10; k++) particula(p.x, SUELO - 6, '#93c5fd', 2.5); }
+      { const p = pesqueroDe(mapaId); if (p) for (let k = 0; k < 10; k++) particula(p.x, SUELO - 14, '#93c5fd', 2); }
       break;
     case 'pescado': {
       const p = pesqueroDe(mapaId);
@@ -769,7 +769,7 @@ function fisica() {
   if (obj) P.f = obj > 0 ? 1 : -1;
   // Moverse cancela el lanzamiento (el servidor tambien lo hace; aqui se
   // ve al instante).
-  if (obj && castYo) { castYo = null; mandar({ t: 'cancelar' }); verLanzar(false); }
+  if (obj && castYo) { if (castYo.id === 'pescar' || castYo.id === 'pica') errorRojo('Te moviste: se cortó el sedal.'); castYo = null; mandar({ t: 'cancelar' }); verLanzar(false); }
   viajePorBorde(izq, der);
   if (P.dash > 0) { P.dash--; P.vx = P.f * FIS.dashVel; }
   else P.vx += (obj - P.vx) * .3;
@@ -1699,6 +1699,7 @@ function pintarInspeccion(m) {
 // recien creado no: para el todo es nuevo.
 // Ventanas que se abren solas (Bóveda, Novedades): una cada vez, con aire entre ellas.
 let ventanaAutoT = -1e9;
+let ultCastT = -1e9;
 function revisarNovedades() {
   if (!yo || !yo.clase || revisarNovedades.hecho || !NOVEDADES.length) return;
   revisarNovedades.hecho = true;
@@ -1710,7 +1711,8 @@ function revisarNovedades() {
   if (yo.nivel < 3 && (yo.kills || 0) < 20) { guardar(); return; }
   let n = 0;
   const t = setInterval(() => {
-    const seguro = !MAPAS[mapaId].zona && !P.muerto && !castYo;
+    if (castYo) ultCastT = performance.now();
+    const seguro = !MAPAS[mapaId].zona && !P.muerto && !castYo && performance.now() - ultCastT > 15000;
     if (seguro && !document.querySelector('.modal.on') && performance.now() - ventanaAutoT > 3000) { clearInterval(t); ventanaAutoT = performance.now(); abrirNovedades(); guardar(); }
     else if (++n > 450) clearInterval(t);
   }, 2000);
@@ -1810,7 +1812,7 @@ function abrirBuscador() {
     const bloq = yo.nivel < TORRE.nv;
     const tj = tarjeta('<div style="font-size:34px;line-height:52px;text-align:center">🗼</div>', `Torre del Duende <span style="color:${bloq ? 'var(--warn)' : 'var(--txt2)'}">Nv ${TORRE.nv}+</span>`,
       `Pisos sin fin: oleadas de monstruos de tu nivel cada vez más duras y un jefe cada ${TORRE.jefeCada}. Limpia cada piso en ${textoMinutos(TORRE.tiempo)}. Solo o con tu grupo.<br><span style="color:var(--txt2)">Esta semana: piso ${yo.torreSem || 0} · tu récord: ${yo.torreMax || 0}</span><br><span style="color:var(--ok)">Cada 5 pisos nuevos de la semana: cofre con oro y equipo (épico desde el 15).</span>`,
-      bloq ? `<span class="precio" style="color:var(--txt3)">🔒 Nv ${TORRE.nv}</span>` : '<button class="btn" data-torre="1">Subir</button>');
+      bloq ? `<span class="precio" style="color:var(--txt3)">🔒 Nv ${TORRE.nv} (te faltan ${TORRE.nv - yo.nivel})</span>` : '<button class="btn" data-torre="1">Subir</button>');
     h += bloq ? tj.replace('<div class="item">', '<div class="item" style="opacity:.55">') : tj;
   }
   let hBanda = '';
@@ -2378,7 +2380,7 @@ function abrirArtesana() {
   if (!yo) return;
   const mat = yo.mat || {};
   let h = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin-bottom:10px">' +
-    Object.entries(MATERIALES).map(([k, m]) => `<span class="precio" style="display:flex;align-items:center;gap:4px"><img src="${A}items/equipo/${m.icono}.png" style="width:22px;height:22px;image-rendering:pixelated">${esc(m.nombre)}: ${mat[k] || 0}</span>`).join('') + '</div>';
+    Object.entries(MATERIALES).map(([k, m]) => `<span style="display:flex;align-items:center;gap:4px;font:12px/1.3 var(--sans);color:var(--txt2)"><img src="${A}items/equipo/${m.icono}.png" style="width:22px;height:22px;image-rendering:pixelated">${esc(m.nombre)}: ${mat[k] || 0}</span>`).join('') + '</div>';
   for (const r of RECETAS) {
     const pide = Object.entries(r.pide).map(([k, n]) => `<span style="color:${(mat[k] || 0) >= n ? 'var(--ok)' : 'var(--err)'}">${n} ${esc(MATERIALES[k].nombre)}</span>`).join(' + ');
     const puede = Object.entries(r.pide).every(([k, n]) => (mat[k] || 0) >= n);
@@ -2401,7 +2403,7 @@ function abrirArtesana() {
     }
     h += tarjeta(`<img src="${A}items/equipo/${ru.icono}.png">`, esc(ru.nombre), det, acc);
   }
-  h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Las plantas 🌿 y vetas ⛏️ brillan en el suelo de cada zona: acércate y pulsa E (o RECOGER). El pescado sale de los pesqueros 🎣 (uno en el pueblo y otro en cada zona). Cada una vuelve a crecer a los 5 minutos. El Cristal Arcano sale a veces al recoger, o se refina con 8 minerales. En las zonas de Nv 30+ salen también Flor de Luna y Mithril; la Esencia Abisal la sueltan los jefes de mazmorras de nivel 40 o más a quien pelea (y el doble los de la banda).</p>';
+  h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Las plantas 🌿 y vetas ⛏️ brillan en el suelo de cada zona: acércate y pulsa E (o RECOGER). El pescado sale de los pesqueros 🎣 (uno en el pueblo y otro en cada zona; no se agotan, hasta 80 capturas al día). Cada una vuelve a crecer a los 5 minutos. El Cristal Arcano sale a veces al recoger, o se refina con 8 minerales. En las zonas de Nv 30+ salen también Flor de Luna y Mithril; la Esencia Abisal la sueltan los jefes de mazmorras de nivel 40 o más a quien pelea (y el doble los de la banda).</p>';
   const ven = $('arte-lista').closest('.ventana'), sc = ven ? ven.scrollTop : 0, scl = $('arte-lista').scrollTop;
   $('arte-lista').innerHTML = h;
   $('arte-lista').querySelectorAll('[data-receta]').forEach(b => b.onclick = () => { sfx('moneda', .4); mandar({ t: 'fabricar', id: b.dataset.receta }); });
@@ -3002,7 +3004,7 @@ function dibujarNPCs(mp) {
     const col = hoja.mov[1] + (Math.floor(frame / 14) % 2);
     dibujarHoja(n.hoja, hoja, hoja.mov[0], col, 62, x, SUELO + Math.sin(frame * .05) * 1, P.x > n.x ? 1 : -1, 1, null, false);
     const activo = cerca && cerca.tipo === 'npc' && cerca.n === n;
-    etiqueta(x, SUELO - 72, n.nombre, activo ? '#ffe600' : '#00ff88', 7);
+    if (x > -10 && x < VW + 10) etiqueta(x, SUELO - 72, n.nombre, activo ? '#ffe600' : '#00ff88', 7);
     if (n.tipo === 'tienda') emoji('🛒', 14, x, SUELO - 90 + Math.sin(frame * .1) * 3);
     if (n.tipo === 'ranking') emoji('🏆', 14, x, SUELO - 90 + Math.sin(frame * .1) * 3);
     if (n.tipo === 'artesania') emoji('⚗️', 14, x, SUELO - 90 + Math.sin(frame * .1) * 3);
@@ -3595,6 +3597,8 @@ function cajaSemana() {
 // tienes pendiente (hay muchos sistemas y el novato no sabe por donde ir).
 function sugerencias() {
   const l = [];
+  const qm = yo.mis && MISIONES[yo.mis.i];
+  if (qm && yo.mis.p >= qm.n) l.push('✅ Tu misión está cumplida: entrégasela al Guardia Tito en el pueblo.');
   const ex = yo.exped;
   if (ex && Date.now() >= ex.fin) l.push('🧭 Tu expedición volvió: recógela aquí abajo.');
   const pa = yo.pase;
@@ -3655,6 +3659,7 @@ function cajaPase() {
   }
   return h + '</div></div>';
 }
+function cercaDeTito() { const t = MAPAS.pueblo.npcs.find(n => n.tipo === 'guia'); return mapaId === 'pueblo' && t && Math.abs(P.x - t.x) < 190; }
 function pintarMision() {
   const i = yo.mis ? yo.mis.i : 0, q = MISIONES[i];
   const cuerpo = $('mision-cuerpo');
@@ -3677,7 +3682,9 @@ function pintarMision() {
     '<div class="mis-barra"><i style="width:' + Math.round(yo.mis.p / q.n * 100) + '%"></i></div>' +
     '<p>' + yo.mis.p + ' / ' + q.n + '</p>' +
     '<p style="color:var(--oro)">Recompensa: +' + q.xp + ' XP · +' + q.oro + ' oro' + esc(extra) + '</p></div>' +
-    (lista ? '<button class="btn" id="b-entregar" style="width:100%;padding:12px">Entregar misión</button>' : '<p class="centro">Vuelve cuando la termines.</p>') +
+    (lista && cercaDeTito() ? '<button class="btn" id="b-entregar" style="width:100%;padding:12px">Entregar misión</button>'
+      : lista ? '<p class="centro" style="color:var(--ok)">✅ ¡Cumplida! Entrégasela al Guardia Tito en el pueblo (sigue la flecha amarilla o usa la Piedra de Hogar 🌀).</p>'
+      : '<p class="centro">Vuelve cuando la termines.</p>') +
     cajaSugerencias() + cajaExpedicion() + cajaPase() + cajaSemana() + cajaDiaria() + cajaTareas();
   conectarPase();
   const b = $('b-entregar');
@@ -3884,7 +3891,7 @@ function pintarTienda() {
   } else if (tabTienda === 'mascota') {
     for (const [id, ma] of Object.entries(MASCOTAS)) {
       const tiene = (yo.mascotas || []).includes(id);
-      if ((ma.amb || ma.pase) && !tiene) continue;   // las del ambulante, en su pestaña; la del pase no se vende
+      if ((ma.amb || ma.pase || ma.pesca) && !tiene) continue;   // las del ambulante, en su pestaña; la del pase no se vende
       const ico = `<canvas data-hoja="${ma.hoja}" data-tinte="${ma.tinte || ''}" width="52" height="52"></canvas>`;
       const acc = tiene ? (yo.mascota === id ? '<span class="precio" style="color:var(--ok)">✓ Te acompaña</span>' : `<button class="btn sec" data-comprar="mascota" data-id="${id}">Llevar</button>`)
         : yo.nivel < ma.nv ? `<span class="precio" style="color:var(--warn)">Nv ${ma.nv}</span><span class="precio">🪙 ${ma.precio.toLocaleString('es')}</span>`

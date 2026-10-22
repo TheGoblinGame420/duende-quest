@@ -121,6 +121,13 @@ export const Profesiones = {
     let txt = `🎣 +${cant} ${MATERIALES.pescado.nombre}`, dorado = false, oro = 0;
     if (Math.random() < PESCA.dorado + p.nv / 1500) { c.mat.pez_dorado = Math.min(999, (c.mat.pez_dorado || 0) + 1); dorado = true; txt += ' y ¡1 Pez Dorado!'; }
     if (Math.random() < PESCA.cofre) { oro = 30 * Math.max(5, p.nv); c.oro += oro; txt += ` y un cofre hundido (+${oro} oro)`; }
+    // La mascota que solo se pesca: muy rara, segura a las mascotaSeguro capturas.
+    c.mascotas = c.mascotas || [];
+    if (!c.mascotas.includes('pececito') && (Math.random() < PESCA.mascota || c.peces >= PESCA.mascotaSeguro)) {
+      c.mascotas.push('pececito');
+      txt += ' ¡Y un PECECITO DORADO! Ahora es tu mascota (Mercader → MASCOTAS).';
+      this.aTodos({ t: 'aviso', m: `🐟 ¡${c.nombre} pescó el Pececito Dorado!` });
+    }
     s.sucio = true;
     this.enviar(s, { t: 'pescado', cant, dorado, oro, hoy: c.pescaHoy.n });
     this.enviar(s, { t: 'toast', m: txt, ok: true });
