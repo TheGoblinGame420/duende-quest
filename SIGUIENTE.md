@@ -1842,3 +1842,22 @@ Esta sesión lleva la tienda (pares del `?v=`), la otra lo demás (impares).
     vecinos escalonados, no viajar por el borde a zonas 5+ niveles arriba,
     semanales nuevas (recoger, pescar), montura "Sabueso de Guerra".
   - Arnés: **530 bien, 0 mal**.
+- **?v=116-126 (22-oct, antes del mediodía):**
+  - Revisión de pesca/Torre: pesqueros de zona al 28% del ancho (lejos del
+    jefe), subida que cruza el lunes no anota, ranking de la Torre con una
+    sola carga (`rtP`), pantalla de muerte en la Torre, límite de subidas
+    para todo el grupo. Premios semanales de la Torre (top 3, título «Rey de
+    la Torre») y aviso a todos al batir el récord semanal (cada 5 pisos).
+  - Bot: **/topmmo** (y /torre) con los rankings de la semana (interno
+    'tops', solo nombres y marcas); botón «Ranking de la semana» en /mmo.
+  - **Expediciones** (functions/mmo/expediciones.js, `EXPEDICION`): 1/4/8 h
+    desde Nv 5, una a la vez, en el registro de misiones; la mascota no se ve
+    mientras está fuera; el aviso de vuelta por Telegram lo menciona.
+  - «💡 Qué hacer ahora» en el registro de misiones; **calendario** en
+    Novedades; barras de progreso en los logros (`progresoLogro`);
+    **Pececito Dorado** (solo pescando: 1/250, seguro a las 300 capturas).
+  - Pago con SOL: cualquier wallet inyectada (Phantom, Solflare, Backpack) y
+    botón «Pagar con Solflare» en el móvil sin wallet.
+  - QA ronda 3: avisos por encima de ventanas, «Entregar misión» solo junto
+    a Tito, cabecera de la Artesana, barra de lanzamiento en el móvil.
+  - Arnés: **542 bien, 0 mal**.
