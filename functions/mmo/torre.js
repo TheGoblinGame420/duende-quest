@@ -12,7 +12,7 @@
 // como de mazmorra para que no cuenten como jefes de zona.
 // La instancia es 'torre#xxxx' con w.torre (no w.inst: no es una mazmorra).
 // ═══════════════════════════════════════════════════════
-import { MAPAS, MONSTRUOS, TORRE, pisoTorre, premioTorre, premioTorreSem, zonaDeNivel, semanaUTC, NIVEL_MAX, PASE } from '../../mmo/js/data.js';
+import { MAPAS, MONSTRUOS, TORRE, MODS_TORRE, modTorre, pisoTorre, premioTorre, premioTorreSem, zonaDeNivel, semanaUTC, NIVEL_MAX, PASE } from '../../mmo/js/data.js';
 import { getEnv, tg } from '../api/lib.js';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -86,10 +86,13 @@ export const Torre = {
     const pool = z.monstruos;
     const vida = P.vida * (1 + 0.8 * (n - 1));
     const lados = [260, 1140];
+    const mod = modTorre(T.piso);
     for (let i = 0; i < P.n; i++) {
       const x = lados[i % 2] + rnd(-90, 90);
-      this.crearMonstruo(w.clave, pool[Math.floor(Math.random() * pool.length)], x,
-        { nv: T.nv + (i === 0 ? 1 : 0), hpX: vida, atkX: P.atk, agresivo: true, radioAgro: 2000 });
+      const elite = mod === 'elite' && i === 0;
+      const o = this.crearMonstruo(w.clave, pool[Math.floor(Math.random() * pool.length)], x,
+        { nv: T.nv + (i === 0 ? 1 : 0), hpX: vida * (mod === 'blindados' ? 1.3 : elite ? 3 : 1), atkX: P.atk * (mod === 'blindados' ? 0.9 : elite ? 1.3 : 1), agresivo: true, radioAgro: 2000 });
+      if (mod === 'veloces') o.vel *= 1.3;
     }
     if (P.jefe) {
       // Jefes de zona de tu tramo, por turnos; sin territorio ni mTON.
@@ -100,7 +103,8 @@ export const Torre = {
         { nv: T.nv + 2, hpX: P.vida * TORRE.vidaJefe * (1 + 1.2 * (n - 1)), atkX: P.atk * TORRE.atkJefe, agresivo: true, radioAgro: 2000, mazmorra: true });
     }
     this.aClave(w.clave, { t: 'torre', piso: T.piso, nv: T.nv, en: TORRE.tiempo });
-    this.aClave(w.clave, { t: 'emote', m: P.jefe ? `👑 Piso ${T.piso}: ¡un jefe!` : `🗼 Piso ${T.piso}` });
+    const M = mod && MODS_TORRE[mod];
+    this.aClave(w.clave, { t: 'emote', m: P.jefe ? `👑 Piso ${T.piso}: ¡un jefe!` : M ? `🗼 Piso ${T.piso} · ${M.emoji} ${M.nombre}: ${M.desc}` : `🗼 Piso ${T.piso}` });
   },
 
   // Fin de la subida: los que siguen dentro vuelven al pueblo (los caidos,

@@ -1627,6 +1627,13 @@ LOGROS.push(
 export const TORRE = { nv: 10, max: 5, jefeCada: 5, pausa: 3500, tiempo: 150000, porHora: 12, instancias: 30, vidaJefe: 0.35, atkJefe: 0.8, semMin: 10, montura: 30 };
 // Premio del ranking semanal (desde el piso semMin): 1º, 2º y 3º.
 export const premioTorreSem = i => [15000, 7500, 3500][i] || 0;
+// Modificador de cada piso (no en los de jefe): variedad entre subidas.
+export const MODS_TORRE = {
+  veloces:   { emoji: '💨', nombre: 'Veloces',   desc: 'se mueven un 30% más rápido' },
+  blindados: { emoji: '🛡️', nombre: 'Blindados', desc: '+30% de vida, -10% de daño' },
+  elite:     { emoji: '⭐', nombre: 'Élite',     desc: 'uno de ellos tiene el triple de vida y +30% de daño' },
+};
+export const modTorre = p => (p % 5 === 0 ? null : p % 7 === 0 ? 'elite' : p % 4 === 2 ? 'veloces' : p % 4 === 3 ? 'blindados' : null);
 export const pisoTorre = p => ({ n: Math.min(6, 2 + Math.floor((p - 1) / 3)), vida: 1.2 * Math.pow(1.07, p - 1), atk: Math.pow(1.045, p - 1), jefe: p % 5 === 0 });
 // Cofre de cada 5 pisos nuevos de la semana: oro (hasta el piso 50) y equipo (epico desde el 15).
 export const premioTorre = (p, nivel) => ({ oro: Math.round(40 * nivel * Math.min(10, p / 5)), rMin: p >= 15 ? 2 : 1 });
