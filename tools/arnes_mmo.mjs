@@ -1257,6 +1257,20 @@ async function pruebasTemporada() {
   t.actT = reloj;   // el salto de semanas lo echaria por inactividad
   for (let i = 0; i < 150 && !t.c.mascaras; i++) { const o5 = monstruo(t, 'goblin_normal', 40); mundo.danar(o5, o5.hp + 1, t); tick(1); }
   chequear(t.c.mascaras > 0, 'en Carnaval (febrero) caen máscaras (' + t.c.mascaras + ')');
+  reloj = Date.UTC(2027, 2, 10, 12);
+  t.actT = reloj;
+  for (let i = 0; i < 150 && !t.c.uvas; i++) { const o6 = monstruo(t, 'goblin_normal', 40); mundo.danar(o6, o6.hp + 1, t); tick(1); }
+  chequear(t.c.uvas > 0 && !t.c.conchas, 'en la Vendimia (marzo) caen uvas (' + t.c.uvas + ')');
+  // Todas las temporadas: sin solaparse, en orden, y cada una con sus dos
+  // logros (50 y 200) cuyos titulos son los que anuncia.
+  const D = await import('../mmo/js/data.js');
+  const T = D.TEMPORADAS;
+  chequear(T.every((x, i) => x.ini < x.fin && (!i || T[i - 1].fin <= x.ini)), 'las temporadas van en orden y no se pisan');
+  chequear(new Set(T.map(x => x.campo)).size === T.length && new Set(T.map(x => x.id)).size === T.length, 'cada temporada tiene su propio contador');
+  const sinLogros = T.filter(x => [50, 200].some((n, i) => { const L = D.LOGROS.find(l => l.titulo === x.titulos[i]); return !L || L.cond({ [x.campo]: n - 1 }) || !L.cond({ [x.campo]: n }); }));
+  chequear(!sinLogros.length, 'cada temporada tiene sus logros de 50 y 200 ' + sinLogros.map(x => x.id).join(','));
+  chequear(new Date(T[T.length - 1].fin).getUTCFullYear() === 2027 && T.some(x => new Date(x.ini).getUTCMonth() === 0) && T.some(x => new Date(x.ini).getUTCMonth() >= 2), 'hay temporadas en enero y de marzo en adelante');
+  chequear(Object.values(D.MONTURAS).every(mo => D.HOJAS[mo.hoja] && mo.precio > 0 && mo.vel > 1), 'todas las monturas tienen hoja, precio y velocidad');
   reloj = Math.max(relojAntes, reloj);
   await dejar(t);
 }

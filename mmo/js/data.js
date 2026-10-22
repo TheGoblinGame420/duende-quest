@@ -380,8 +380,10 @@ export function talento(c, id) {
 export const MONTURAS = {
   lagarto:   { nombre: 'Lagarto del Desierto', hoja: 'lagarto',   nv: 20, precio: 8000,   vel: 1.5, alto: 48, dy: 22 },
   conejo:    { nombre: 'Conejo Saltarín',      hoja: 'conejo',    nv: 20, precio: 8000,   vel: 1.5, alto: 40, dy: 24 },
+  sapo:      { nombre: 'Sapo Gigante',         hoja: 'rana',      nv: 25, precio: 15000,  vel: 1.55, alto: 60, dy: 32 },
   hellgato:  { nombre: 'Gato Infernal',        hoja: 'hellgato',  nv: 35, precio: 35000,  vel: 1.7, alto: 44, dy: 22 },
   hellhound: { nombre: 'Sabueso Infernal',     hoja: 'hellhound', nv: 40, precio: 60000,  vel: 1.8, alto: 52, dy: 26 },
+  aguila:    { nombre: 'Águila Real',          hoja: 'aguila',    nv: 50, precio: 150000, vel: 1.9, alto: 70, dy: 38 },
   dragon:    { nombre: 'Dragón Ancestral',     hoja: 'dragon',    nv: 60, precio: 300000, vel: 2,   alto: 84, dy: 40 },
 };
 export const MONTAR_MS = 1500;
@@ -690,6 +692,16 @@ export const LOGROS = [
   { id: 'regalo50',    titulo: 'Duende Navideño',    desc: 'Junta 50 regalos en la Navidad Duende',      oro: 3000,  cond: c => (c.regalos || 0) >= 50 },
   { id: 'mascara50',   titulo: 'Carnavalero',        desc: 'Junta 50 máscaras en el Carnaval Duende',    oro: 3000,  cond: c => (c.mascaras || 0) >= 50 },
   { id: 'mascara200',  titulo: 'Rey Momo',           desc: 'Junta 200 máscaras en el Carnaval Duende',   oro: 12000, cond: c => (c.mascaras || 0) >= 200 },
+  { id: 'concha50',    titulo: 'Bañista Duende',     desc: 'Junta 50 conchas en el Verano Duende',       oro: 3000,  cond: c => (c.conchas || 0) >= 50 },
+  { id: 'concha200',   titulo: 'Rey de la Playa',    desc: 'Junta 200 conchas en el Verano Duende',      oro: 12000, cond: c => (c.conchas || 0) >= 200 },
+  { id: 'uva50',       titulo: 'Pisador de Uvas',    desc: 'Junta 50 uvas en la Vendimia Duende',        oro: 3000,  cond: c => (c.uvas || 0) >= 50 },
+  { id: 'uva200',      titulo: 'Señor de la Vendimia', desc: 'Junta 200 uvas en la Vendimia Duende',     oro: 12000, cond: c => (c.uvas || 0) >= 200 },
+  { id: 'estrella50',  titulo: 'Cazaestrellas',      desc: 'Junta 50 estrellas fugaces en la Lluvia de Estrellas',  oro: 3000,  cond: c => (c.estrellas || 0) >= 50 },
+  { id: 'estrella200', titulo: 'Guardián del Cielo', desc: 'Junta 200 estrellas fugaces en la Lluvia de Estrellas', oro: 12000, cond: c => (c.estrellas || 0) >= 200 },
+  { id: 'sol50',       titulo: 'Hijo del Sol',       desc: 'Junta 50 soles de oro en la Fiesta del Sol',  oro: 3000,  cond: c => (c.soles || 0) >= 50 },
+  { id: 'sol200',      titulo: 'Señor del Inti',     desc: 'Junta 200 soles de oro en la Fiesta del Sol', oro: 12000, cond: c => (c.soles || 0) >= 200 },
+  { id: 'fuego50',     titulo: 'Patriota Duende',    desc: 'Junta 50 fuegos artificiales en las Fiestas Patrias Duende',  oro: 3000,  cond: c => (c.fuegos || 0) >= 50 },
+  { id: 'fuego200',    titulo: 'Gran Mariscal',      desc: 'Junta 200 fuegos artificiales en las Fiestas Patrias Duende', oro: 12000, cond: c => (c.fuegos || 0) >= 200 },
   { id: 'regalo200',   titulo: 'Santa Duende',       desc: 'Junta 200 regalos en la Navidad Duende',     oro: 12000, cond: c => (c.regalos || 0) >= 200 },
   { id: 'mazmorra10', titulo: 'Conquistador',       desc: 'Completa 10 mazmorras',             oro: 10000, cond: c => (c.mazmorras || 0) >= 10 },
   { id: 'kraken',    titulo: 'Azote del Abismo',    desc: 'Vence al Kraken del Templo Hundido', oro: 8000,  cond: c => !!(c.mzJefes && c.mzJefes.mz_kraken) },
@@ -881,8 +893,23 @@ export const TEMPORADAS = [
     emoji: '🌽', deco: '🌽', cosas: 'mazorcas', campo: 'mazorcas', color: '#a855f7', titulos: ['Cosechador', 'Señor del Maíz Morado'] },
   { id: 'navidad2026', nombre: 'Navidad Duende', ini: Date.UTC(2026, 11, 18), fin: Date.UTC(2027, 0, 7), hasta: '6 de enero',
     emoji: '🎁', deco: '🎄', cosas: 'regalos', campo: 'regalos', color: '#4ade80', titulos: ['Duende Navideño', 'Santa Duende'] },
+  // Verano en Peru (enero): entre la Navidad y el Carnaval.
+  { id: 'verano2027', nombre: 'Verano Duende', ini: Date.UTC(2027, 0, 15), fin: Date.UTC(2027, 0, 30), hasta: '29 de enero',
+    emoji: '🐚', deco: '🏖️', cosas: 'conchas', campo: 'conchas', color: '#38bdf8', titulos: ['Bañista Duende', 'Rey de la Playa'] },
   { id: 'carnaval2027', nombre: 'Carnaval Duende', ini: Date.UTC(2027, 1, 4), fin: Date.UTC(2027, 1, 15), hasta: '14 de febrero',
     emoji: '🎭', deco: '🎭', cosas: 'máscaras', campo: 'mascaras', color: '#f472b6', titulos: ['Carnavalero', 'Rey Momo'] },
+  // La Vendimia de Ica (marzo).
+  { id: 'vendimia2027', nombre: 'Vendimia Duende', ini: Date.UTC(2027, 2, 4), fin: Date.UTC(2027, 2, 22), hasta: '21 de marzo',
+    emoji: '🍇', deco: '🍇', cosas: 'uvas', campo: 'uvas', color: '#a78bfa', titulos: ['Pisador de Uvas', 'Señor de la Vendimia'] },
+  // Las Liridas (lluvia de estrellas de abril).
+  { id: 'estrellas2027', nombre: 'Lluvia de Estrellas', ini: Date.UTC(2027, 3, 15), fin: Date.UTC(2027, 4, 3), hasta: '2 de mayo',
+    emoji: '🌠', deco: '✨', cosas: 'estrellas fugaces', campo: 'estrellas', color: '#fde047', titulos: ['Cazaestrellas', 'Guardián del Cielo'] },
+  // Inti Raymi (24 de junio, Cusco).
+  { id: 'inti2027', nombre: 'Fiesta del Sol', ini: Date.UTC(2027, 5, 12), fin: Date.UTC(2027, 5, 28), hasta: '27 de junio',
+    emoji: '☀️', deco: '🌞', cosas: 'soles de oro', campo: 'soles', color: '#f59e0b', titulos: ['Hijo del Sol', 'Señor del Inti'] },
+  // Fiestas Patrias (28 de julio).
+  { id: 'patrias2027', nombre: 'Fiestas Patrias Duende', ini: Date.UTC(2027, 6, 20), fin: Date.UTC(2027, 7, 1), hasta: '31 de julio',
+    emoji: '🎆', deco: '🎆', cosas: 'fuegos artificiales', campo: 'fuegos', color: '#ef4444', titulos: ['Patriota Duende', 'Gran Mariscal'] },
 ];
 export const temporadaDe = (t = Date.now()) => TEMPORADAS.find(x => t >= x.ini && t < x.fin) || null;
 export const temporadaActiva = (t = Date.now()) => !!temporadaDe(t);
