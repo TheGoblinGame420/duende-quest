@@ -14,7 +14,7 @@ import {
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo,
-} from './data.js?v=58';
+} from './data.js?v=59';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1780,8 +1780,7 @@ function dibujarMarcasEspeciales() {
       etiqueta(xe, arriba, '⚔ ' + ex.nom, '#ff7a3c', 7);
       barraMini(x, arriba + 4, 60, o.hp / o.mx, '#ff7a3c');
     } else if (ex.ev) {
-      g.font = '10px sans-serif'; g.textAlign = 'center';
-      g.fillText('🔥', x, arriba - 2 + Math.sin(frame * .15 + o.id) * 2);
+      emoji('🔥', 10, x, arriba - 2 + Math.sin(frame * .15 + o.id) * 2);
     }
   }
 }
@@ -1948,7 +1947,7 @@ function objetivoGuia() {
   const zona = zonaDe(q.tipo);
   if (zona && mapaId !== zona) {
     const p = portalHacia(zona);
-    return p ? { x: p.x, txt: '→ ' + MAPAS[zona].nombre } : null;
+    return p ? { x: p.x, txt: '» ' + MAPAS[zona].nombre } : null;
   }
   const def = MONSTRUOS[q.tipo];
   let mejor = null, md = Infinity;
@@ -1996,7 +1995,8 @@ function dibujarGuia() {
     if (der) { g.moveTo(ex, y); g.lineTo(ex - 16, y - 11); g.lineTo(ex - 16, y + 11); }
     else { g.moveTo(ex, y); g.lineTo(ex + 16, y - 11); g.lineTo(ex + 16, y + 11); }
     g.closePath(); g.fill(); g.stroke();
-    const dist = Math.round(Math.abs(ob.x - P.x) / 10);
+    // De 5 en 5 m: cada metro distinto era otro texto que dibujar y guardar.
+    const dist = Math.max(5, Math.round(Math.abs(ob.x - P.x) / 50) * 5);
     const t = ob.txt + ' · ' + dist + ' m';
     const w = spriteTexto(t, TAM_MIN(6), '#ffe600', true, false).width - 8;   // misma cache que etiqueta()
     etiqueta(der ? ex - 24 - w / 2 : ex + 24 + w / 2, y + 3, t, '#ffe600', 6);
@@ -2598,6 +2598,11 @@ function spriteTexto(txt, tam, color, fondo, sombra) {
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => _textos.clear()).catch(() => {});
 // Arcoiris: 12 tonos que van rotando (pocos, para no llenar la cache de textos).
 function colorTinte(tn) { return tn.color === 'arcoiris' ? 'hsl(' + (Math.floor(frame / 8) % 12) * 30 + ',90%,68%)' : tn.color; }
+// Emoji ya dibujado en su lienzo (fillText de un emoji en cada fotograma es caro).
+function emoji(txt, tam, x, y) {
+  const c = spriteTexto(txt, tam - 3, '#fff', false, false);
+  g.drawImage(c, Math.round(x - c.width / 2), Math.round(y - tam));
+}
 function etiqueta(x, y, txt, color, tam) {
   tam = TAM_MIN(tam || 7);
   const c = spriteTexto(txt, tam, color || '#fff', true, false);
@@ -2629,16 +2634,15 @@ function dibujarNPCs(mp) {
     dibujarHoja(n.hoja, hoja, hoja.mov[0], col, 62, x, SUELO + Math.sin(frame * .05) * 1, P.x > n.x ? 1 : -1, 1, null, false);
     const activo = cerca && cerca.tipo === 'npc' && cerca.n === n;
     etiqueta(x, SUELO - 72, n.nombre, activo ? '#ffe600' : '#00ff88', 7);
-    if (n.tipo === 'tienda') { g.font = '14px sans-serif'; g.textAlign = 'center'; g.fillText('🛒', x, SUELO - 90 + Math.sin(frame * .1) * 3); }
-    if (n.tipo === 'ranking') { g.font = '14px sans-serif'; g.textAlign = 'center'; g.fillText('🏆', x, SUELO - 90 + Math.sin(frame * .1) * 3); }
-    if (n.tipo === 'artesania') { g.font = '14px sans-serif'; g.textAlign = 'center'; g.fillText('⚗️', x, SUELO - 90 + Math.sin(frame * .1) * 3); }
+    if (n.tipo === 'tienda') emoji('🛒', 14, x, SUELO - 90 + Math.sin(frame * .1) * 3);
+    if (n.tipo === 'ranking') emoji('🏆', 14, x, SUELO - 90 + Math.sin(frame * .1) * 3);
+    if (n.tipo === 'artesania') emoji('⚗️', 14, x, SUELO - 90 + Math.sin(frame * .1) * 3);
     if (n.tipo === 'guia') {
       // ❗ cuando hay una mision lista para entregar, como la bombilla de MapleStory.
       const q = yo && MISIONES[yo.mis.i];
       const dia = yo && yo.diaria;
       const lista = (q && yo.mis.p >= q.n) || (dia && !dia.ok && dia.p >= DIARIA.n);
-      g.font = (lista ? 18 : 14) + 'px sans-serif'; g.textAlign = 'center';
-      g.fillText(lista ? '❗' : '❔', x, SUELO - 90 + Math.sin(frame * (lista ? .25 : .1)) * 3);
+      emoji(lista ? '❗' : '❔', lista ? 18 : 14, x, SUELO - 90 + Math.sin(frame * (lista ? .25 : .1)) * 3);
     }
   }
 }
@@ -2705,9 +2709,9 @@ function dibujarMonstruo(o) {
   }
   if (oveja && !o.muereT) {
     // Polimorfia: una oveja que pasea (se rompe al pegarle).
-    g.save(); g.font = '30px sans-serif'; g.textAlign = 'center';
+    g.save();
     g.translate(x, o.y - 4 + Math.abs(Math.sin(frame * .2)) * -3); if (o.f < 0) g.scale(-1, 1);
-    g.fillText('🐑', 0, 0); g.restore();
+    emoji('🐑', 30, 0, 0); g.restore();
   } else {
     dibujarHoja(def.hoja, hoja, fila, col, o.alto * (0.4 + 0.6 * nace), x + temblor, o.y, o.f, alpha * nace, (o.ex && o.ex.ti) || def.tinte || (o.st === 3 ? '#ff3344' : null), golpeado && !o.muereT && (ahora - o.golpeT) < 70);
   }
@@ -2871,13 +2875,20 @@ function dibujarDuende(q, esYo) {
   if (bb && performance.now() < bb.hasta) burbuja(x, pies - 84, bb.txt);
 }
 
+const _burbujas = new Map();   // texto -> { lineas, w } (medir cada fotograma costaba)
 function burbuja(x, y, txt) {
   g.font = '11px system-ui, sans-serif';
-  const lineas = [];
-  let l = '';
-  for (const p of txt.split(' ')) { if (g.measureText(l + ' ' + p).width > 150) { lineas.push(l); l = p; } else l = l ? l + ' ' + p : p; }
-  if (l) lineas.push(l);
-  const w = Math.min(160, Math.max(...lineas.map(s => g.measureText(s).width))) + 12;
+  let m = _burbujas.get(txt);
+  if (!m) {
+    const lineas = [];
+    let l = '';
+    for (const p of txt.split(' ')) { if (g.measureText(l + ' ' + p).width > 150) { lineas.push(l); l = p; } else l = l ? l + ' ' + p : p; }
+    if (l) lineas.push(l);
+    m = { lineas, w: Math.min(160, Math.max(...lineas.map(s => g.measureText(s).width))) + 12 };
+    if (_burbujas.size > 50) _burbujas.delete(_burbujas.keys().next().value);
+    _burbujas.set(txt, m);
+  }
+  const { lineas, w } = m;
   const h = lineas.length * 13 + 8;
   g.fillStyle = 'rgba(255,255,255,.92)';
   g.beginPath(); g.roundRect ? g.roundRect(x - w / 2, y - h, w, h, 6) : g.rect(x - w / 2, y - h, w, h); g.fill();
