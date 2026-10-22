@@ -1022,6 +1022,7 @@ export const RECETAS = [
   { id: 'destilar', nombre: 'Destilar Flor de Luna', icono: 'S_Magic02', pide: { hierba: 10, cristal: 1 }, da: { mat: { flor: 1 } }, desc: '10 hierbas y un cristal se destilan en 1 Flor de Luna' },
   { id: 'elixirX', nombre: 'Elixir de Sabiduría', icono: 'I_Book', pide: { hierba: 4, mineral: 2, cristal: 1 }, da: { elixir: 'elixirX' }, desc: '+10% de experiencia por caza durante 30 min (aguanta la muerte)' },
   // Con lo que se pesca (PESCA).
+  { id: 'frito', nombre: 'Pescado frito ×3', icono: 'I_C_Fish', pide: { pescado: 3 }, da: { pw: { pocion: 3 } }, desc: 'Tres pociones de vida (como las de hierba)' },
   { id: 'ceviche', nombre: 'Ceviche del Duende', icono: 'I_C_Fish', pide: { pescado: 5, hierba: 2 }, da: { elixir: 'ceviche' }, desc: '+10% de oro por caza durante 30 min (aguanta la muerte)' },
   { id: 'sudado', nombre: 'Sudado Dorado', icono: 'I_C_Pie', pide: { pescado: 3, pez_dorado: 1 }, da: { elixir: 'sudado' }, desc: '+5% de daño y -5% de daño recibido durante 30 min (aguanta la muerte)' },
 ];
