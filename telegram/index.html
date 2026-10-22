@@ -253,8 +253,31 @@ html{font-size:24px;}
 .xp-bar div{height:100%;width:0;background:var(--rosa);}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .stat{background:var(--panel);border:1px solid var(--borde);border-radius:10px;padding:10px 8px;text-align:center;}
-.stat b{display:block;font-size:17px;color:var(--txt);margin-bottom:4px;font-weight:600;}
-.stat span{font-size:11px;color:var(--txt2);letter-spacing:.05em;}
+.stat b{display:block;font-size:18px;color:var(--txt);margin-bottom:4px;font-weight:700;font-variant-numeric:tabular-nums;}
+.stat span{font-size:12px;color:var(--txt2);letter-spacing:.02em;}
+.perfil-cab.card{padding:16px 12px 14px;}
+.perfil-cab .xp-bar{margin-top:6px;}
+.fila-dato{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;}
+.fila-dato .ob{width:auto!important;padding:8px 14px;font-size:14px;flex-shrink:0;}
+
+/* Cabecera común de las pestañas secundarias (igual que JUGAR: título pixel
+   corto + una línea de explicación en sans) */
+.tab-cab{display:flex;flex-direction:column;gap:6px;margin:4px 0 2px;}
+
+/* Estados vacíos / error: una tarjeta con icono, título y explicación */
+.vacio{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;padding:18px 14px;}
+.vacio[hidden]{display:none;}
+.vacio .ic{font-size:28px;line-height:1;}
+.vacio b{font-size:15px;font-weight:600;color:var(--txt);}
+.vacio p{font-size:13px;color:var(--txt2);line-height:1.45;max-width:300px;}
+.vacio .ob{margin-top:6px!important;width:auto!important;min-width:180px;}
+
+/* Esqueleto de carga (en vez de huecos en blanco) */
+.skel{display:block;border-radius:6px;background:linear-gradient(90deg,var(--panel) 0%,var(--panel2) 50%,var(--panel) 100%);background-size:200% 100%;animation:skel 1.3s ease-in-out infinite;}
+.rk.skel-fila{border-color:var(--borde);}
+.rk.skel-fila .skel{height:12px;}
+@keyframes skel{0%{background-position:100% 0;}100%{background-position:-100% 0;}}
+@media (prefers-reduced-motion:reduce){.skel{animation:none;}}
 
 /* Skins */
 #skins-grid{display:flex;flex-direction:column;gap:10px;}
@@ -271,16 +294,29 @@ html{font-size:24px;}
 .skin .d{font-size:13px;color:var(--txt2);line-height:1.45;}
 .skin .b{font-size:12px;color:var(--ok);margin-top:4px;line-height:1.45;}
 .skin .p{font-size:12px;color:var(--oro);margin-top:4px;line-height:1.45;}
-.skin .acc{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
-.skin button{font-family:var(--sans);font-weight:600;font-size:13px;min-height:44px;padding:6px 10px;border-radius:8px;cursor:pointer;}
+.skin .acc{display:flex;flex-direction:column;gap:6px;flex-shrink:0;min-width:96px;}
+.skin button{font-family:var(--sans);font-weight:600;font-size:13px;min-height:44px;padding:6px 10px;border-radius:8px;cursor:pointer;width:100%;white-space:nowrap;}
+.skin button:active{transform:scale(.98);}
+.skin.on{border-color:rgba(34,197,94,.45);}
+.skin .tuya{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.04em;color:var(--txt2);border:1px solid var(--borde);border-radius:999px;padding:1px 7px;margin-left:2px;}
+.skin .p{font-variant-numeric:tabular-nums;}
+#skin-status:empty{display:none;}
 
 /* Ranking */
-.rk{display:flex;align-items:center;gap:8px;padding:10px;border-radius:8px;background:var(--panel);border:1px solid transparent;font-size:14px;margin-bottom:6px;}
-.rk.yo{background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.5);}
-.rk .pos{width:34px;color:var(--txt3);}
-.rk .nom{flex:1;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.rk .sc{color:var(--txt);font-weight:600;}
-.rk .wv{color:var(--txt3);font-size:12px;width:34px;text-align:right;}
+#rank-hub{display:flex;flex-direction:column;gap:6px;}
+.rk{display:flex;align-items:center;gap:8px;padding:10px 12px;min-height:44px;border-radius:10px;background:var(--panel);border:1px solid var(--borde);font-size:14px;}
+.rk.yo{background:rgba(59,130,246,.12);border-color:rgba(96,165,250,.5);}
+.rk .pos{width:34px;color:var(--txt3);font-weight:600;font-variant-numeric:tabular-nums;flex-shrink:0;}
+.rk .nom{flex:1;min-width:0;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rk .sc{color:var(--txt);font-weight:700;font-variant-numeric:tabular-nums;min-width:72px;text-align:right;}
+.rk .wv{color:var(--txt3);font-size:12px;min-width:62px;text-align:right;font-variant-numeric:tabular-nums;}
+.rk-cab{display:flex;gap:8px;padding:0 12px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--txt3);}
+.rk-cab span:first-child{width:34px;}.rk-cab span:nth-child(2){flex:1;}.rk-cab span:nth-child(3){min-width:72px;text-align:right;}.rk-cab span:last-child{min-width:62px;text-align:right;}
+.rk-nota{font-size:12px;color:var(--txt3);text-align:center;line-height:1.45;}
+
+/* Wallet */
+.precio-v{color:var(--txt);font-size:16px;font-weight:600;margin-top:4px;font-variant-numeric:tabular-nums;min-height:22px;}
+.precio-v .skel{width:120px;height:16px;margin-top:3px;}
 
 /* Barra de pestañas */
 #tabbar{position:fixed;left:0;right:0;bottom:0;z-index:45;display:grid;grid-template-columns:repeat(5,1fr);
@@ -444,35 +480,56 @@ html{font-size:24px;}
 
       <!-- PERFIL -->
       <section class="tab" id="tab-perfil">
-        <div class="perfil-cab">
+        <div class="perfil-cab card">
           <div class="perfil-av" id="perfil-avatar">🧝</div>
           <div class="perfil-nombre" id="perfil-nombre">Invitado</div>
           <div class="hub-mini" id="perfil-user"></div>
           <div class="xp-bar"><div id="perfil-xp"></div></div>
           <div class="hub-mini" id="perfil-nivel">NIVEL 1</div>
         </div>
-        <div class="stats" id="perfil-stats"></div>
+        <!-- Solo para invitados (fuera de Telegram): qué ganan al entrar por Telegram -->
+        <div class="card vacio" id="perfil-invitado" hidden>
+          <div class="ic" aria-hidden="true">🔑</div>
+          <b>Inicia sesión con Telegram</b>
+          <p>Abre el juego desde nuestro bot de Telegram y tu progreso, tus skins y tu puesto en el ranking se guardan en tu cuenta. Como invitado, todo queda solo en este dispositivo.</p>
+          <button class="ob" type="button" onclick="abrirTg('duendequest_bot')">Abrir en Telegram</button>
+        </div>
+        <h2 class="seccion-t">Estadísticas</h2>
+        <div class="stats" id="perfil-stats">
+          <div class="stat"><span class="skel" style="height:18px;width:60%;margin:0 auto 6px"></span><span class="skel" style="height:10px;width:45%;margin:0 auto"></span></div>
+          <div class="stat"><span class="skel" style="height:18px;width:60%;margin:0 auto 6px"></span><span class="skel" style="height:10px;width:45%;margin:0 auto"></span></div>
+          <div class="stat"><span class="skel" style="height:18px;width:60%;margin:0 auto 6px"></span><span class="skel" style="height:10px;width:45%;margin:0 auto"></span></div>
+          <div class="stat"><span class="skel" style="height:18px;width:60%;margin:0 auto 6px"></span><span class="skel" style="height:10px;width:45%;margin:0 auto"></span></div>
+        </div>
         <div class="card" id="perfil-skin"></div>
         <div class="card" id="perfil-wallet"></div>
-        <button class="ob" onclick="invitarAmigos()">👥 Invitar amigos</button>
+        <button class="ob" id="perfil-invitar" onclick="invitarAmigos()">👥 Invitar amigos</button>
         <button class="ob sec" onclick="abrirWeb()">🌐 Web oficial</button>
-        <div class="hub-mini" id="perfil-sync" style="text-align:center;margin-top:6px"></div>
+        <div class="hub-mini" id="perfil-sync" style="text-align:center;margin-top:2px"></div>
       </section>
 
       <!-- SKINS -->
       <section class="tab" id="tab-skins">
-        <div class="tab-titulo">SKINS</div>
-        <div class="hub-sub">Opcionales. Cada skin tiene su sprite y su color de corte propio. Se pagan con Telegram Stars o con TON.</div>
-        <div id="skins-grid"></div>
-        <p id="skin-status" class="estado"></p>
-        <p class="seguro">El pago se confirma dentro de Telegram (Stars) o en tu wallet (TON).</p>
+        <div class="tab-cab">
+          <div class="tab-titulo">SKINS</div>
+          <div class="hub-sub">Opcionales. Cada skin tiene su sprite y su color de corte propio. Se pagan con Telegram Stars o con TON.</div>
+        </div>
+        <p id="skin-status" class="estado" role="status" aria-live="polite"></p>
+        <div id="skins-grid">
+          <div class="skin"><span class="skel" style="width:72px;height:72px;flex-shrink:0"></span><div style="flex:1"><span class="skel" style="height:14px;width:55%;margin-bottom:8px"></span><span class="skel" style="height:10px;width:80%"></span></div></div>
+          <div class="skin"><span class="skel" style="width:72px;height:72px;flex-shrink:0"></span><div style="flex:1"><span class="skel" style="height:14px;width:55%;margin-bottom:8px"></span><span class="skel" style="height:10px;width:80%"></span></div></div>
+        </div>
+        <p class="seguro">🔒 El pago se confirma dentro de Telegram (Stars) o en tu wallet (TON). Nunca te pediremos pagos por mensaje privado.</p>
       </section>
 
       <!-- RANKING -->
       <section class="tab" id="tab-ranking">
-        <div class="tab-titulo">RANKING</div>
-        <div class="hub-sub">Modo Sin fin · el mejor puntaje de cada jugador. Premio semanal para el top.</div>
-        <div id="rank-hub"></div>
+        <div class="tab-cab">
+          <div class="tab-titulo">RANKING</div>
+          <div class="hub-sub">Modo Sin fin · el mejor puntaje de cada jugador. Premio semanal para el top.</div>
+        </div>
+        <div class="rk-cab" aria-hidden="true"><span>#</span><span>Jugador</span><span>Puntos</span><span>Oleada</span></div>
+        <div id="rank-hub" aria-live="polite"></div>
         <button class="ob" id="btn-sinfin2" onclick="jugarSinFin()">∞ Jugar sin fin</button>
       </section>
 
@@ -485,9 +542,13 @@ html{font-size:24px;}
            con TON) y comprar skins — un cosmetico pagado con Stars o TON no
            es "distribuir un token", eso Telegram si lo permite. -->
       <section class="tab" id="tab-wallet">
-        <div class="tab-titulo">WALLET</div>
+        <div class="tab-cab">
+          <div class="tab-titulo">WALLET</div>
+          <div class="hub-sub">Opcional. Solo hace falta para pagar skins con TON.</div>
+        </div>
         <div class="card">
-          <div id="ton-status" class="hub-sub" style="margin:0 0 10px">Conecta tu wallet TON para comprar skins</div>
+          <div class="card-t">Wallet TON</div>
+          <div id="ton-status" class="hub-sub" style="margin:0 0 10px;text-align:left">Conecta tu wallet TON para comprar skins</div>
           <div id="ton-connect-panel">
             <button class="ob big" onclick="connectTonWallet()">💎 Conectar wallet TON</button>
             <div class="hub-mini" style="text-align:center;margin-top:6px">Opcional · Tonkeeper · Wallet de Telegram · MyTonWallet</div>
@@ -499,14 +560,15 @@ html{font-size:24px;}
             <button class="ob red" onclick="disconnectTon()" style="width:100%">Desconectar</button>
           </div>
         </div>
-        <p class="seguro">🔒 Cada pago lo apruebas tú en tu wallet. No compartas nunca tu frase semilla.</p>
+        <p class="seguro">🔒 Cada pago lo apruebas tú en tu wallet. Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado.</p>
+        <h2 class="seccion-t">Token $DUENDE</h2>
         <div class="card">
           <div class="card-t">Comprar y canjear $DUENDE</div>
           <div class="hub-sub" style="margin-bottom:10px;text-align:left">Disponible en la página web, no dentro de Telegram.</div>
           <button class="ob sec" onclick="abrirWeb()" style="width:100%">🌐 Ir a la web</button>
+          <button class="ob sec" onclick="openPumpFun()" style="width:100%;margin-top:8px">Ver $DUENDE en pump.fun</button>
         </div>
-        <button class="ob sec" onclick="openPumpFun()">Ver $DUENDE en pump.fun</button>
-        <div class="card" id="wallet-precio"><span class="hub-mini">Precio $DUENDE (referencia de mercado, puede variar)</span><div id="hub-precio" style="color:var(--txt);font-size:15px;font-weight:600;margin-top:4px">---</div></div>
+        <div class="card" id="wallet-precio"><div class="card-t" style="margin-bottom:0">Precio $DUENDE</div><div id="hub-precio" class="precio-v"><span class="skel"></span></div><div class="hub-mini" style="color:var(--txt3)">Referencia de mercado en USD. Puede variar.</div></div>
       </section>
 
       <!-- Pie común a todas las pestañas: legales y canales oficiales -->
@@ -1001,11 +1063,11 @@ initTonConnect();
 function onTonConnected(){
   const btn=document.getElementById('ton-btn');
   btn.textContent='💎 '+tonWalletAddr.slice(0,4)+'...'+tonWalletAddr.slice(-4);
-  btn.style.borderColor='#00ff88';btn.style.color='#00ff88';
+  btn.style.borderColor='rgba(34,197,94,.45)';btn.style.color='var(--txt)';
   document.getElementById('ton-connect-panel').style.display='none';
   document.getElementById('ton-connected-panel').style.display='block';
   document.getElementById('ton-addr').textContent=tonWalletAddr;
-  document.getElementById('ton-status').textContent='Wallet conectada ✅';
+  document.getElementById('ton-status').textContent='✅ Wallet conectada';
   window._tonAddr=tonWalletAddr;
   // Guardar la wallet server-side (identidad verificada por initData; no depende del perfil cargado)
   if(TG_USER.id){ walletApi('update_profile',{wallet_ton:tonWalletAddr}).catch(()=>{}); }
@@ -1017,10 +1079,10 @@ function onTonConnected(){
 
 function onTonDisconnected(){
   const btn=document.getElementById('ton-btn');
-  btn.textContent='💎 TON';btn.style.borderColor='rgba(0,136,204,.4)';btn.style.color='#0088cc';
+  btn.textContent='💎 TON';btn.style.borderColor='';btn.style.color='';
   document.getElementById('ton-connect-panel').style.display='block';
   document.getElementById('ton-connected-panel').style.display='none';
-  document.getElementById('ton-status').textContent='Conecta tu wallet TON para comprar $DUENDE';
+  document.getElementById('ton-status').textContent='Conecta tu wallet TON para comprar skins';
   tonWalletAddr=null;
 }
 
@@ -1172,13 +1234,14 @@ function renderSkinShop(){
       :(s.usd===0||owned)?`<button onclick="equipSkinTG('${s.id}')">Equipar</button>`
       :`<button class="compra" onclick="buySkinStars('${s.id}')">⭐ Stars</button>
         <button onclick="buySkinTon('${s.id}')">💎 TON</button>`;
-    return `<div class="skin" style="border-color:${equipped?'rgba(34,197,94,.45)':'var(--borde)'}">
-      <img src="${s.preview}" alt="Skin ${s.name}" width="72" height="72" loading="lazy" decoding="async" onerror="this.style.display='none'">
+    return `<div class="skin${equipped?' on':''}">
+      <img src="${s.preview}" alt="Skin ${s.name}" width="72" height="72" loading="lazy" decoding="async" onerror="this.style.visibility='hidden'">
       <div style="flex:1;min-width:0">
-        <div class="n"><span class="rar" style="background:${s.color}"></span>${s.name}</div>
+        <div class="n"><span class="rar" style="background:${s.color}"></span>${s.name}${owned&&s.usd>0?'<span class="tuya">Tuya</span>':''}</div>
         <div class="d">${s.desc}</div>
         ${s.buffs?`<div class="b">${s.buffs.label}</div>`:''}
-        ${s.usd>0&&!owned?`<div class="p">⭐${s.stars} · 💎${tonCost} TON · ~$${s.usd}</div>`:''}
+        ${s.usd>0&&!owned?`<div class="p">⭐ ${Number(s.stars).toLocaleString('es')} Stars<br>💎 ${Number(tonCost).toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2})} TON <span style="color:var(--txt3)">· ≈ ${s.usd} USD</span></div>`:''}
+        ${s.usd===0?`<div class="p" style="color:var(--txt3)">Gratis</div>`:''}
       </div>
       <div class="acc">${boton}</div>
     </div>`;
@@ -1223,10 +1286,10 @@ async function buySkinStars(skinId){
           // El registro de la compra lo hace el webhook del bot server-side (anti-fraude)
           ownedSkins.push(skinId);
           equipSkinTG(skinId);
-          statusEl.textContent='✅ ¡Skin desbloqueada!';statusEl.style.color='#00ff88';
+          statusEl.textContent='✅ ¡Skin desbloqueada!';statusEl.style.color='var(--ok)';
           tgHaptic('heavy');
           renderSkinShop();
-          setTimeout(()=>{statusEl.style.color='#c084fc';statusEl.textContent='';},4000);
+          setTimeout(()=>{statusEl.style.color='';statusEl.textContent='';},4000);
         }else{
           statusEl.textContent='❌ Pago cancelado';
           setTimeout(()=>{statusEl.textContent='';},3000);
@@ -1257,19 +1320,19 @@ async function buySkinTon(skinId){
     statusEl.textContent='⏳ Verificando pago on-chain...';
     const res=await walletApi('skin_ton',{wallet_ton:tonWalletAddr,skin_id:skinId});
     if(!res.success){
-      statusEl.textContent='⏳ '+(res.detail||res.error||'Verificación pendiente, reintenta en 1 min');statusEl.style.color='#ffe600';
-      setTimeout(()=>{statusEl.style.color='#c084fc';},5000);
+      statusEl.textContent='⏳ '+(res.detail||res.error||'Verificación pendiente, reintenta en 1 min');statusEl.style.color='var(--warn)';
+      setTimeout(()=>{statusEl.style.color='';},5000);
       return;
     }
     ownedSkins.push(skinId);
     equipSkinTG(skinId);
-    statusEl.textContent='✅ ¡Skin desbloqueada!';statusEl.style.color='#00ff88';
+    statusEl.textContent='✅ ¡Skin desbloqueada!';statusEl.style.color='var(--ok)';
     tgHaptic('heavy');
     renderSkinShop();
-    setTimeout(()=>{statusEl.style.color='#c084fc';statusEl.textContent='';},4000);
+    setTimeout(()=>{statusEl.style.color='';statusEl.textContent='';},4000);
   }catch(e){
-    statusEl.textContent='❌ Transacción cancelada';statusEl.style.color='#ff3333';
-    setTimeout(()=>{statusEl.style.color='#c084fc';statusEl.textContent='';},3000);
+    statusEl.textContent='❌ Transacción cancelada';statusEl.style.color='var(--err)';
+    setTimeout(()=>{statusEl.style.color='';statusEl.textContent='';},3000);
   }
 }
 
@@ -1742,49 +1805,77 @@ function pintarPerfil(){
   const est=leerCampana();
   const totalEstrellas=LEVELS.reduce((s,l)=>s+(est[l.id]||0),0);
   const stats=[
-    ['🏆', Number(tgProfile?.best_score||hiScore||0).toLocaleString(), 'MEJOR SCORE'],
-    ['⭐', totalEstrellas+'/'+(LEVELS.length*3), 'ESTRELLAS'],
-    ['🪙', Number(totalCoins||0).toLocaleString(), 'DQ'],
-    ['🔥', (JSON.parse(localStorage.getItem('dq_streak')||'{}').day||0), 'RACHA (DÍAS)'],
+    ['🏆', Number(tgProfile?.best_score||hiScore||0).toLocaleString('es'), 'Mejor puntaje'],
+    ['⭐', totalEstrellas+' / '+(LEVELS.length*3), 'Estrellas'],
+    ['🪙', Number(totalCoins||0).toLocaleString('es'), 'Monedas DQ'],
+    ['🔥', Number(JSON.parse(localStorage.getItem('dq_streak')||'{}').day||0).toLocaleString('es'), 'Racha (días)'],
   ];
   document.getElementById('perfil-stats').innerHTML=stats.map(s=>'<div class="stat"><b>'+s[0]+' '+s[1]+'</b><span>'+s[2]+'</span></div>').join('');
+  const invitado=document.getElementById('perfil-invitado');
+  if(invitado) invitado.hidden=!!TG_USER.id;
+  // Un solo botón principal por vista: al invitado se le destaca "Abrir en Telegram"
+  const bInv=document.getElementById('perfil-invitar'); if(bInv) bInv.classList.toggle('sec',!TG_USER.id);
   const skin=SKINS.find(s=>s.id===equippedSkin);
-  document.getElementById('perfil-skin').innerHTML=skin?('<div class="hub-mini">SKIN EQUIPADA</div><div style="display:flex;align-items:center;gap:8px;margin-top:6px"><img src="'+skin.preview+'" alt="" width="40" height="40" decoding="async" style="width:40px;height:40px;image-rendering:pixelated;border-radius:6px;background:#0a0a1a"><div style="font-size:15px;font-weight:600;color:var(--txt);display:flex;align-items:center;gap:6px"><span class="rar" style="background:'+skin.color+'"></span>'+skin.name+'</div></div>'):'';
+  document.getElementById('perfil-skin').innerHTML=skin?('<div class="fila-dato"><div style="display:flex;align-items:center;gap:10px;min-width:0"><img src="'+skin.preview+'" alt="" width="44" height="44" decoding="async" style="width:44px;height:44px;image-rendering:pixelated;border-radius:6px;background:#0a0e18;flex-shrink:0"><div style="min-width:0"><div class="card-t" style="margin-bottom:2px">Skin equipada</div><div style="font-size:15px;font-weight:600;color:var(--txt);display:flex;align-items:center;gap:6px"><span class="rar" style="background:'+skin.color+'"></span>'+skin.name+'</div></div></div><button class="ob sec" type="button" onclick="irTab(\'skins\')">Cambiar</button></div>'):'';
   const w=window._tonAddr||tonWalletAddr;
-  document.getElementById('perfil-wallet').innerHTML='<div class="hub-mini">WALLET TON</div><div style="margin-top:4px">'+(w?('<span class="addr">'+w.slice(0,8)+'...'+w.slice(-6)+'</span>'):'<span class="estado" style="color:var(--txt2)">No conectada — ve a WALLET</span>')+'</div>';
-  document.getElementById('perfil-sync').textContent=tgProfile&&tgProfile.id?'✅ Progreso sincronizado':'⏳ Sincronizando…';
+  document.getElementById('perfil-wallet').innerHTML='<div class="fila-dato"><div style="min-width:0"><div class="card-t" style="margin-bottom:2px">Wallet TON</div>'+(w?('<span class="addr">'+w.slice(0,8)+'…'+w.slice(-6)+'</span>'):'<span style="font-size:13px;color:var(--txt2)">No conectada · opcional</span>')+'</div>'+(w?'':'<button class="ob sec" type="button" onclick="irTab(\'wallet\')">Conectar</button>')+'</div>';
+  document.getElementById('perfil-sync').textContent=!TG_USER.id?'💾 Progreso guardado solo en este dispositivo':(tgProfile&&tgProfile.id?'✅ Progreso sincronizado':'⏳ Sincronizando…');
 }
 
 // ── Ranking (dentro del hub, con tu propia fila resaltada) ──
 async function pintarRankingHub(){
   const el=document.getElementById('rank-hub');
-  el.innerHTML='<div class="hub-sub">⌛ Cargando...</div>';
-  let data=null;
+  // Esqueleto mientras llega la respuesta (antes: una línea "Cargando..." sola)
+  const skel='<div class="rk skel-fila" aria-hidden="true"><span class="pos"><span class="skel" style="width:22px"></span></span><span class="nom"><span class="skel" style="width:60%"></span></span><span class="wv"><span class="skel" style="width:48px"></span></span></div>';
+  el.innerHTML='<span class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Cargando ranking…</span>'+skel.repeat(6);
+  let data=null, fallo=!_sb;
   if(_sb){
     try{
       const{data:raw}=await _sb.from('game_scores').select('username,score,wave,telegram_id').eq('verified',true).order('score',{ascending:false}).limit(100);
       const best=new Map();(raw||[]).forEach(s=>{const k=String(s.telegram_id||s.username||'?').toLowerCase();if(!best.has(k)||s.score>best.get(k).score)best.set(k,s);});
       data=[...best.values()].sort((a,b)=>b.score-a.score).slice(0,20);
-    }catch(e){}
+    }catch(e){ fallo=true; }
   }
+  const cab=document.querySelector('#tab-ranking .rk-cab');
   if(!data||!data.length){
-    el.innerHTML=ranking.length?ranking.map((r,i)=>filaRank(i,r.username||'Tú',r.score,r.wave,false)).join(''):'<div class="hub-sub">Aún no hay partidas SIN FIN registradas.<br>¡Sé el primero!</div>';
+    const reintentar='<button class="ob sec" type="button" onclick="pintarRankingHub()">↻ Reintentar</button>';
+    if(ranking.length){
+      if(cab) cab.style.display='';
+      el.innerHTML=ranking.map((r,i)=>filaRank(i,r.username||'Tú',r.score,r.wave,false)).join('')+
+        '<p class="rk-nota">'+(fallo?'Sin conexión con el ranking global: se muestran tus partidas en este dispositivo.':'Tus partidas en este dispositivo. Aún no hay puntajes verificados en el ranking global.')+'</p>'+(fallo?reintentar:'');
+    }else{
+      if(cab) cab.style.display='none';
+      el.innerHTML=fallo
+        ?'<div class="card vacio"><div class="ic" aria-hidden="true">📡</div><b>No se pudo cargar el ranking</b><p>Revisa tu conexión e inténtalo de nuevo.</p>'+reintentar+'</div>'
+        :'<div class="card vacio"><div class="ic" aria-hidden="true">🏆</div><b>Aún no hay puntajes</b><p>Juega una partida en el modo Sin fin y sé el primero de la tabla.</p></div>';
+    }
     return;
   }
+  if(cab) cab.style.display='';
   const miId=String(TG_USER.id||'');
   el.innerHTML=data.map((r,i)=>filaRank(i,r.username,r.score,r.wave,String(r.telegram_id||'')===miId)).join('');
 }
 function filaRank(i,nombre,score,wave,esYo){
   const medals=['🥇','🥈','🥉'];
-  return '<div class="rk'+(esYo?' yo':'')+'"><span class="pos">'+(medals[i]||'#'+(i+1))+'</span><span class="nom">'+DQEsc(nombre)+(esYo?' (tú)':'')+'</span><span class="sc">'+Number(score).toLocaleString()+'</span><span class="wv">W'+wave+'</span></div>';
+  return '<div class="rk'+(esYo?' yo':'')+'"><span class="pos">'+(medals[i]||(i+1))+'</span><span class="nom">'+DQEsc(nombre)+(esYo?' (tú)':'')+'</span><span class="sc">'+Number(score||0).toLocaleString('es')+'</span><span class="wv">Oleada '+Number(wave||0)+'</span></div>';
 }
 
 // ── Wallet: reusa los paneles TON existentes, solo repinta el precio ──
 function pintarWallet(){
   const p=document.getElementById('hub-precio');
-  if(p) p.textContent=tgPriceUsd>0?'$'+tgPriceUsd.toFixed(8):'cargando...';
+  if(p){
+    if(tgPriceUsd>0){ p.textContent='$'+tgPriceUsd.toFixed(8); _precioIntentos=0; }
+    else if(_precioIntentos>=5){ p.innerHTML='<span style="font-size:13px;font-weight:400;color:var(--txt2)">No disponible ahora mismo</span>'; _precioIntentos=0; }
+    else{
+      // Esqueleto mientras llega el precio; se repinta solo si la pestaña sigue abierta
+      if(!p.querySelector('.skel')) p.innerHTML='<span class="skel"></span>';
+      _precioIntentos++;
+      setTimeout(()=>{ const t=document.getElementById('tab-wallet'); if(t&&t.classList.contains('on'))pintarWallet(); },3000);
+    }
+  }
   updateTonRate();
 }
+var _precioIntentos=0;
 
 // Resumen de campaña en la pestaña JUGAR (estrellas totales y siguiente etapa).
 function pintarResumenCampana(){
