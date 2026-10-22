@@ -4,7 +4,7 @@
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Duende Quest: juego arcade gratis en el navegador</title>
 <meta name="description" content="Juega gratis a Duende Quest, un juego arcade de plataformas en pixel art hecho en Perú: oleadas, jefes, campaña y ranking global. Sin descargas.">
 <link rel="canonical" href="https://duende-quest.alfonso12hc.workers.dev/game">
@@ -31,6 +31,21 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Duende Quest">
+<!-- Abre las conexiones a los CDN antes: los scripts de abajo bloquean el
+     primer pintado y cada handshake TLS ahorrado es pantalla negra de menos. -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- PANTALLA DE CARGA: los scripts de abajo (Supabase, TON Connect) bloquean
+     el analisis; con red movil lenta se veian ~3 s de pantalla negra. Este
+     bloque va ANTES de ellos para que el navegador lo pinte ya. Se oculta solo
+     cuando llega la hoja de estilos principal (#carga-inicial{display:none}),
+     sin JS. Luego el boton JUGAR muestra "CARGANDO N%" hasta tener las imagenes. -->
+<div id="carga-inicial" role="status" style="position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#0b0f17;color:#9aa3b5;font:14px/1.45 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif">
+  <img src="/assets/ui/icon-180.png" alt="" width="72" height="72" style="border-radius:16px">
+  <span style="color:#e6e9f0;font-weight:600;font-size:16px">Duende Quest</span>
+  <span>Cargando el juego…</span>
+</div>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tonconnect/ui@2/dist/tonconnect-ui.min.js"></script>
@@ -52,17 +67,24 @@
   --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --pixel:"Press Start 2P",monospace;
 }
+#carga-inicial{display:none!important;}
 *{margin:0;padding:0;box-sizing:border-box;}
 /* Sin esto, todo el texto en rem (HUD, wallet, tiendas, perfil) se resolvia
    contra los 16px por defecto del navegador: el HUD quedaba en 4,8-9,6px,
    ilegible. Mismo bug que se encontro y corrigio en telegram/index.html. */
 html{font-size:22px;}
 html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);}
-body{display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--pixel);}
+body{display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--pixel);
+  /* Muesca / barra de gestos: con viewport-fit=cover el contenido llega al
+     borde fisico, asi que el juego se aparta de las zonas seguras. */
+  padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);}
 a{color:var(--cian);}
 
-#wrap{position:relative;width:800px;max-width:100vw;}
-#gc{display:block;width:100%;border:1px solid var(--borde);box-shadow:var(--sombra);image-rendering:pixelated;cursor:crosshair;}
+/* El ancho real lo pone ajustarLienzo() (DQE.fitCanvas): escala el lienzo al
+   espacio libre manteniendo la proporcion, con multiplos enteros cuando
+   caben (pixel art nitido). 800px es solo el valor sin JS. */
+#wrap{position:relative;width:800px;max-width:100%;}
+#gc{display:block;width:100%;height:auto;border:1px solid var(--borde);box-shadow:var(--sombra);image-rendering:pixelated;cursor:crosshair;}
 
 /* ── HUD ── */
 #hud{display:flex;justify-content:space-between;align-items:center;padding:.5rem .8rem;background:var(--panel);border:1px solid var(--borde);border-top:none;gap:.5rem;flex-wrap:wrap;}
@@ -78,6 +100,16 @@ a{color:var(--cian);}
 #hp-fill.hp-low{background:var(--err);}
 #combo-wrap{width:80px;height:6px;background:rgba(255,255,255,.06);border:1px solid var(--borde);border-radius:2px;overflow:hidden;}
 #combo-fill{height:100%;background:var(--warn);width:0%;transition:width .1s;}
+#wrap.grande #hud{padding:.6rem 1.1rem;}
+#wrap.grande .hl{font-size:.38rem;}
+#wrap.grande .hv{font-size:.8rem;}
+#wrap.grande #hp-wrap{width:170px;height:12px;}
+#wrap.grande #combo-wrap{width:130px;height:9px;}
+#wrap.grande .slot{width:54px;height:54px;}
+#wrap.grande .slot img{width:38px;height:38px;}
+#wrap.grande .slot .hk,#wrap.grande .slot .cnt{font-size:.36rem;}
+#wrap.grande #xp-bar-wrap{height:7px;}
+#wrap.grande #level-badge{font-size:.36rem;top:-14px;}
 
 /* item slots */
 #slots{display:flex;gap:.4rem;}
@@ -92,7 +124,8 @@ a{color:var(--cian);}
 .slot.active-fx{border-color:var(--ok);box-shadow:0 0 0 1px var(--ok);}
 
 /* ── OVERLAYS ── */
-.ov{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(11,15,23,.97);z-index:20;padding:1rem;overflow-y:auto;}
+.ov{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(11,15,23,.97);z-index:20;overflow-y:auto;
+  padding:calc(1rem + env(safe-area-inset-top,0px)) calc(1rem + env(safe-area-inset-right,0px)) calc(1rem + env(safe-area-inset-bottom,0px)) calc(1rem + env(safe-area-inset-left,0px));}
 .ov.show{display:flex;}
 /* Si el contenido no cabe (móvil), que empiece arriba en vez de cortarse el título */
 .ov{justify-content:safe center;}
@@ -134,13 +167,33 @@ h1.ov-title{font-weight:normal;}
 #streak-banner span:first-child{font-weight:600;color:var(--warn)!important;}
 #streak-banner span+span{color:var(--txt2)!important;}
 /* Menu: botones del mismo ancho y todo alcanzable (el pie legal se cortaba a 1366x768) */
-#ov-menu{justify-content:flex-start;padding-top:1.2rem;padding-bottom:1.2rem;}
+#ov-menu{justify-content:flex-start;padding-top:calc(1.2rem + env(safe-area-inset-top,0px));padding-bottom:calc(1.2rem + env(safe-area-inset-bottom,0px));}
 #ov-menu > *{flex-shrink:0;}
 #ov-menu .ob{width:min(260px,80%);}
 #ov-menu .fila-btns{width:min(380px,100%);}
 #ov-menu .fila-btns{gap:.3rem;}
 #ov-menu .fila-btns .ob{width:auto;flex:1 1 0;min-width:0;margin:.15rem;padding-left:.35rem;padding-right:.35rem;font-size:.38rem;white-space:nowrap;}
 @media (min-height:700px){#ov-menu{justify-content:safe center;}}
+/* ── PRIMERA VEZ: un solo boton principal, controles claros, MMO secundario ── */
+.menu-lema{font-family:var(--sans);font-size:14px;line-height:1.45;color:var(--txt2);text-align:center;margin:-.35rem 0 .9rem;}
+#ov-menu #btn-jugar{width:min(320px,90%);min-height:52px;font-size:.6rem;margin:.1rem 0 .25rem;}
+.menu-ayuda{font-family:var(--sans);font-size:12.5px;color:var(--txt3);margin:0 0 .7rem;text-align:center;}
+.menu-ayuda kbd,.controles kbd{font-family:var(--sans);font-size:12px;font-weight:600;color:var(--txt);background:var(--panel2);border:1px solid var(--borde);border-bottom-width:2px;border-radius:4px;padding:0 6px;min-width:1.6em;display:inline-block;text-align:center;line-height:1.5;}
+@media (pointer:coarse){.solo-teclado{display:none;}}
+.controles{width:100%;max-width:380px;background:var(--panel);border:1px solid var(--borde);border-radius:8px;margin-bottom:.7rem;font-family:var(--sans);font-size:13px;line-height:1.45;color:var(--txt2);}
+.controles details+details{border-top:1px solid var(--borde);}
+.controles summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:.5rem;min-height:44px;padding:0 .8rem;font-weight:600;font-size:14px;color:var(--txt);}
+.controles summary::-webkit-details-marker{display:none;}
+.controles summary::after{content:"+";font-size:18px;line-height:1;color:var(--txt3);}
+.controles details[open] summary::after{content:"−";}
+.controles summary:focus-visible{outline:2px solid var(--cian);outline-offset:-2px;border-radius:8px;}
+.controles ul{list-style:none;padding:0 .8rem .7rem;display:grid;gap:.4rem;}
+.controles li{display:flex;align-items:center;justify-content:space-between;gap:.6rem;}
+.controles li .k{display:flex;flex-wrap:wrap;align-items:center;gap:3px;color:var(--txt3);font-size:12px;flex-shrink:0;}
+.controles li .a{text-align:right;}
+.controles .icono-tactil{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;border:1px solid var(--borde);background:var(--panel2);color:var(--txt);font-size:12px;}
+#ov-menu a.mmo-link{width:min(320px,90%);font-family:var(--sans);font-size:14px;font-weight:600;line-height:1.3;margin:.55rem 0 .35rem;gap:.5rem;}
+.badge-nuevo{font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:.02em;color:#bfdbfe;background:rgba(37,99,235,.18);border:1px solid rgba(96,165,250,.45);border-radius:999px;padding:1px 8px;}
 .menu-nota{font-family:var(--sans);font-size:13px;color:var(--txt2);margin:.2rem 0 .4rem;text-align:center;}
 .menu-nota a{color:var(--cian);text-decoration:none;font-weight:600;}
 .fila-btns{display:flex;gap:.4rem;flex-wrap:wrap;justify-content:center;}
@@ -258,22 +311,41 @@ h1.ov-title{font-weight:normal;}
 </style>
 </head>
 <body>
-<div id="ov-girar"><div>📱<br>GIRA EL MÓVIL<br><span>Este juego se juega en vertical</span></div></div>
+<div id="ov-girar" role="alert"><div>📱<br>GIRA EL MÓVIL<br><span>Duende Quest se juega en vertical.</span></div></div>
 <div id="wrap">
 
   <!-- ── OVERLAYS ── -->
   <div class="ov show" id="ov-menu">
     <h1 class="ov-title" style="color:var(--txt)">🧝 DUENDE QUEST</h1>
+    <p class="menu-lema">Gratis · Sin descargas · Jefes y ranking global</p>
     <div id="menu-user-info"></div>
-    <div id="streak-banner" class="panel-menu"></div>
-    <div id="daily-missions" class="panel-menu"></div>
-    <div id="achievements-panel" class="panel-menu" style="margin-bottom:.6rem"></div>
-    <div class="ov-sub">
-      <kbd>←</kbd> <kbd>→</kbd> mover · <kbd>Espacio</kbd> / <kbd>↑</kbd> saltar (doble salto)<br>
-      <kbd>Z</kbd> o clic: combo de 3 golpes · <kbd>X</kbd>: dash invulnerable<br>
-      <kbd>C</kbd>: ataque aéreo · <kbd>1</kbd>-<kbd>4</kbd>: objetos · <kbd>P</kbd>: pausa y tienda
-    </div>
+    <!-- El motor deshabilita este boton y muestra "CARGANDO N%" hasta que
+         todas las imagenes estan listas (js/engine.js, _pintarCarga). -->
     <button class="ob" id="btn-jugar" onclick="jugar()">▶ JUGAR</button>
+    <p class="menu-ayuda solo-teclado">o pulsa <kbd>Enter</kbd></p>
+    <section class="controles" aria-label="Controles">
+      <details id="ctl-teclado" open>
+        <summary>⌨️ Teclado y ratón</summary>
+        <ul>
+          <li><span class="k"><kbd>←</kbd><kbd>→</kbd> o <kbd>A</kbd><kbd>D</kbd></span><span class="a">Moverte</span></li>
+          <li><span class="k"><kbd>Espacio</kbd> o <kbd>↑</kbd></span><span class="a">Saltar (doble salto)</span></li>
+          <li><span class="k"><kbd>Z</kbd> o clic</span><span class="a">Atacar (combo de 3)</span></li>
+          <li><span class="k"><kbd>X</kbd></span><span class="a">Dash invulnerable</span></li>
+          <li><span class="k"><kbd>C</kbd> en el aire</span><span class="a">Ataque aéreo</span></li>
+          <li><span class="k"><kbd>1</kbd>–<kbd>4</kbd> · <kbd>P</kbd></span><span class="a">Objetos · Pausa y tienda</span></li>
+        </ul>
+      </details>
+      <details id="ctl-tactil">
+        <summary>👆 Pantalla táctil</summary>
+        <ul>
+          <li><span class="k">Zona izquierda</span><span class="a">Desliza para moverte</span></li>
+          <li><span class="k">Deslizar rápido</span><span class="a">Dash invulnerable</span></li>
+          <li><span class="k"><span class="icono-tactil" aria-hidden="true">▲</span></span><span class="a">Saltar (toca dos veces: doble salto)</span></li>
+          <li><span class="k"><span class="icono-tactil" aria-hidden="true">⚔</span></span><span class="a">Atacar (botón grande)</span></li>
+          <li><span class="k">Botón de objeto</span><span class="a">Aparece cuando te hace falta</span></li>
+        </ul>
+      </details>
+    </section>
     <div class="fila-btns">
       <button class="ob sec" onclick="abrirMapa()">🗺 MAPA · NIVELES</button>
       <button class="ob purple" onclick="showRanking()">🏆 RANKING</button>
@@ -284,7 +356,10 @@ h1.ov-title{font-weight:normal;}
       <button class="ob yellow" onclick="showWallet()">💰 WALLET</button>
     </div>
     <button class="ob sec" id="menu-auth-btn" onclick="handleAuthBtnClick()">🔑 CUENTA</button>
-    <p class="menu-nota">Nuevo: <a href="/mmo/">Duende Quest Online, el MMORPG →</a></p>
+    <a href="/mmo/" class="ob sec mmo-link"><span class="badge-nuevo">Nuevo</span> Juega online con otros →</a>
+    <div id="streak-banner" class="panel-menu"></div>
+    <div id="daily-missions" class="panel-menu"></div>
+    <div id="achievements-panel" class="panel-menu" style="margin-bottom:.6rem"></div>
     <a href="index.html" class="ob sec">⌂ VOLVER AL SITIO</a>
     <footer class="pie">
       <div class="pie-redes">
@@ -561,7 +636,7 @@ h1.ov-title{font-weight:normal;}
     </div>
   </div>
 
-  <canvas id="gc" width="800" height="320"></canvas>
+  <canvas id="gc" width="800" height="320" role="img" aria-label="Pantalla del juego Duende Quest"></canvas>
 
   <!-- HUD -->
   <div id="hud">
@@ -580,10 +655,10 @@ h1.ov-title{font-weight:normal;}
     <div class="hb"><div class="hl">LVL</div><div class="hv" id="h-level" style="color:var(--rosa)">1</div></div>
     <div class="hb"><div class="hl">$DUENDE (USD)</div><div class="hv" id="game-price-display" style="font-size:.3rem;color:var(--txt2)">---</div></div>
     <div id="slots">
-      <div class="slot ready" id="sl0" onclick="useItem(0)"><span class="hk">1</span><img id="is0" alt=""><span class="cnt" id="ic0">3</span><div class="cd-bar" id="cb0" style="width:0"></div></div>
-      <div class="slot ready" id="sl1" onclick="useItem(1)"><span class="hk">2</span><img id="is1" alt=""><span class="cnt" id="ic1">2</span><div class="cd-bar" id="cb1" style="width:0"></div></div>
-      <div class="slot ready" id="sl2" onclick="useItem(2)"><span class="hk">3</span><img id="is2" alt=""><span class="cnt" id="ic2">1</span><div class="cd-bar" id="cb2" style="width:0"></div></div>
-      <div class="slot ready" id="sl3" onclick="useItem(3)"><span class="hk">4</span><img id="is3" alt=""><span class="cnt" id="ic3">1</span><div class="cd-bar" id="cb3" style="width:0"></div></div>
+      <div class="slot ready" id="sl0" onclick="useItem(0)" role="button" aria-label="Usar objeto 1: Poción de energía"><span class="hk">1</span><img id="is0" alt=""><span class="cnt" id="ic0">3</span><div class="cd-bar" id="cb0" style="width:0"></div></div>
+      <div class="slot ready" id="sl1" onclick="useItem(1)" role="button" aria-label="Usar objeto 2: Escudo"><span class="hk">2</span><img id="is1" alt=""><span class="cnt" id="ic1">2</span><div class="cd-bar" id="cb1" style="width:0"></div></div>
+      <div class="slot ready" id="sl2" onclick="useItem(2)" role="button" aria-label="Usar objeto 3: Rayo"><span class="hk">3</span><img id="is2" alt=""><span class="cnt" id="ic2">1</span><div class="cd-bar" id="cb2" style="width:0"></div></div>
+      <div class="slot ready" id="sl3" onclick="useItem(3)" role="button" aria-label="Usar objeto 4: Espada de fuego"><span class="hk">4</span><img id="is3" alt=""><span class="cnt" id="ic3">1</span><div class="cd-bar" id="cb3" style="width:0"></div></div>
     </div>
   </div>
   <!-- XP BAR -->
@@ -593,19 +668,68 @@ h1.ov-title{font-weight:normal;}
 
   <!-- MOBILE BUTTONS -->
   <div id="mbtns">
-    <button class="mb" ontouchstart="moveLeft(true)" ontouchend="moveLeft(false)" ontouchcancel="moveLeft(false)" onmousedown="moveLeft(true)" onmouseup="moveLeft(false)" onmouseleave="moveLeft(false)">◀</button>
-    <button class="mb j" ontouchstart="jump()" onmousedown="jump()">▲ SALTAR</button>
-    <button class="mb att" ontouchstart="attack()" onmousedown="attack()">⚔</button>
-    <button class="mb" ontouchstart="dash()" onmousedown="dash()">💨</button>
-    <button class="mb" ontouchstart="moveRight(true)" ontouchend="moveRight(false)" ontouchcancel="moveRight(false)" onmousedown="moveRight(true)" onmouseup="moveRight(false)" onmouseleave="moveRight(false)">▶</button>
+    <button class="mb" aria-label="Mover a la izquierda" ontouchstart="moveLeft(true)" ontouchend="moveLeft(false)" ontouchcancel="moveLeft(false)" onmousedown="moveLeft(true)" onmouseup="moveLeft(false)" onmouseleave="moveLeft(false)">◀</button>
+    <button class="mb j" aria-label="Saltar" ontouchstart="jump()" onmousedown="jump()">▲ SALTAR</button>
+    <button class="mb att" aria-label="Atacar" ontouchstart="attack()" onmousedown="attack()">⚔</button>
+    <button class="mb" aria-label="Dash" ontouchstart="dash()" onmousedown="dash()">💨</button>
+    <button class="mb" aria-label="Mover a la derecha" ontouchstart="moveRight(true)" ontouchend="moveRight(false)" ontouchcancel="moveRight(false)" onmousedown="moveRight(true)" onmouseup="moveRight(false)" onmouseleave="moveRight(false)">▶</button>
   </div>
 </div>
 
 <script>
 'use strict';
 
+// ── TAMAÑO DEL LIENZO (override de DQE.fitCanvas) ──
+// El ajuste por defecto del motor solo encoge (nunca pasa de 800 px: en un
+// monitor 1920x1080 el juego ocupaba el 12% de la pantalla) y lo hace con
+// transform: scale(), que no cambia la caja del canvas; en el movil vertical
+// eso dejaba 100 px vacios entre el lienzo y el HUD. Aqui se da al #wrap el
+// ancho final y el canvas lo llena con width:100%/height:auto, asi que la
+// proporcion se mantiene sola. El motor no traduce coordenadas del raton
+// (clic en el lienzo = atacar/jugar, toque = saltar), asi que escalar por CSS
+// no afecta a la entrada.
+const _RESERVA_TACTIL = 252;   // alto de los controles tactiles fijos (js/engine.js, #ctl3)
+function ajustarLienzo(cv, W, H) {
+  const wrap = cv.parentElement;
+  if (!wrap) return;
+  const cs = getComputedStyle(document.body);
+  const tactil = document.body.classList.contains('ctl3');
+  // En PC se deja un margen minimo para que el borde no pegue con la ventana.
+  const margen = tactil || document.documentElement.clientWidth <= 600 ? 0 : 24;
+  const libreW = document.documentElement.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - margen;
+  const libreH = window.innerHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - margen;
+  // Lo que va debajo del lienzo (HUD, barra de XP, botones moviles): su alto
+  // depende del ancho (el HUD se parte en filas), por eso se mide dos veces.
+  const resto = () => ['hud', 'xp-bar-wrap', 'mbtns'].reduce((t, id) => {
+    const el = document.getElementById(id);
+    return t + (el && el.offsetParent !== null ? el.offsetHeight : 0);
+  }, 0);
+  const aplicar = () => {
+    let s = libreW / W;
+    const altoUtil = libreH - resto() - (tactil ? _RESERVA_TACTIL : 0) - 2;
+    // En tactil manda el ancho (los controles flotan debajo); solo se encoge
+    // un poco si el HUD acabaria tapado por los botones en moviles bajitos.
+    if (tactil) s = Math.max(Math.min(s, altoUtil / H), s * .85);
+    else s = Math.min(s, altoUtil / H);
+    // Pixel art nitido: si un multiplo entero aprovecha >=80% del espacio, se
+    // usa (2x en 1920x1080 = 1600x640); si no, el tamaño exacto que cabe.
+    const ent = Math.floor(s);
+    if (!tactil && ent >= 1 && ent / s >= .8) s = ent;
+    s = Math.max(.3, Math.min(s, 4));
+    wrap.style.width = Math.floor(W * s) + 'px';
+    // HUD mas grande cuando el lienzo es enorme: si no, quedaba en letra de 13 px
+    // bajo un juego de 1600 px de ancho.
+    wrap.classList.toggle('grande', !tactil && W * s >= 1200);
+    wrap.style.height = '';
+    cv.style.width = '100%'; cv.style.height = 'auto';
+    cv.style.transform = ''; cv.style.transformOrigin = '';
+  };
+  aplicar(); aplicar();
+}
+
 // ── CONFIGURACIÓN DEL MOTOR COMPARTIDO (js/engine.js) ──
 window.DQE = {
+  fitCanvas: (cv, W, H) => { try { ajustarLienzo(cv, W, H); } catch (e) { console.warn('[fitCanvas]', e); } },
   assetBase: 'assets/',
   menuOverlayId: 'ov-menu',
   airSlamNeedsKey: true,
@@ -1169,6 +1293,44 @@ DQAch.init();
 // elemento ni listener, asi que no hacia nada y el jugador se quedaba en el
 // menu principal. Ahora si abre el panel de verdad.
 if (location.hash === '#wallet') showWallet();
+
+// ── CONTROLES DEL MENÚ: se abre primero el esquema del dispositivo ──
+// En un móvil se despliega "Pantalla táctil" y se pliega el teclado; en PC al
+// revés. Los dos siguen a un toque para quien use ambos.
+(function(){
+  const tactil = document.body.classList.contains('ctl3') || matchMedia('(pointer:coarse)').matches;
+  const t = document.getElementById('ctl-tactil'), k = document.getElementById('ctl-teclado');
+  if (!t || !k) return;
+  if (tactil) { t.open = true; k.open = false; t.parentNode.insertBefore(t, k); }
+})();
+
+// ── REAJUSTE DEL LIENZO ──
+// La fuente pixel llega tarde y cambia el alto del HUD: se vuelve a medir.
+try { document.fonts && document.fonts.ready.then(() => fitCanvas()); } catch (e) {}
+window.addEventListener('load', () => fitCanvas());
+if (window.visualViewport) visualViewport.addEventListener('resize', () => fitCanvas());
+
+// ── GIRAR EL MÓVIL ──
+// El motor elige la resolución una sola vez (520x400 en vertical, 800x320 en
+// horizontal). Si alguien abre el juego con el móvil apaisado (sale el aviso
+// "gira el móvil") y luego lo pone vertical, el lienzo quedaba en 800x320:
+// una tira diminuta. Si aún está en el menú principal sin nada abierto, se
+// recarga para elegir la resolución correcta; en plena partida no se toca.
+(function(){
+  if (!matchMedia('(pointer:coarse)').matches) return;
+  let t = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(t);
+    t = setTimeout(() => {
+      const quiereVertical = window.innerHeight > window.innerWidth * 1.15;
+      const esVertical = W === 520;
+      // Solo de apaisado a vertical: al reves no hace falta (sale el aviso de girar).
+      if (!quiereVertical || esVertical || state !== 'menu') return;
+      const abiertos = [...document.querySelectorAll('.ov.show')].map(o => o.id);
+      if (abiertos.length === 1 && abiertos[0] === 'ov-menu' && !document.getElementById('ov-niveles')?.offsetParent) location.reload();
+    }, 400);
+  });
+})();
 
 // Compartir score (web: X/Twitter + copiar)
 function shareScore(){
