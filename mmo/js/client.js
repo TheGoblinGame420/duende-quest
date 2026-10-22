@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=82';
+} from './data.js?v=84';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -2136,7 +2136,8 @@ function dibujarGuia() {
   } else {
     // Fuera de la vista: flecha en el borde con la distancia.
     const der = x >= VW - 24;
-    const ex = der ? VW - 14 + bote * .5 : 14 - bote * .5, y = SUELO - 92;
+    // Por encima de los iconos de los NPC (el ? de Tito caia encima).
+    const ex = der ? VW - 14 + bote * .5 : 14 - bote * .5, y = SUELO - 150;
     g.beginPath();
     if (der) { g.moveTo(ex, y); g.lineTo(ex - 16, y - 11); g.lineTo(ex - 16, y + 11); }
     else { g.moveTo(ex, y); g.lineTo(ex + 16, y - 11); g.lineTo(ex + 16, y + 11); }
@@ -2793,6 +2794,10 @@ function emoji(txt, tam, x, y) {
 function etiqueta(x, y, txt, color, tam) {
   tam = TAM_MIN(tam || 7);
   const c = spriteTexto(txt, tam, color || '#fff', true, false);
+  // Que no se salga por los bordes (en el movil, con 400 de ancho, los
+  // nombres de los NPC del borde salian cortados).
+  const m = c.width / 2 + 2;
+  if (x > -c.width && x < VW + c.width) x = Math.max(m, Math.min(VW - m, x));
   // Misma linea base que una etiqueta en letra pixel (tam + 3 desde arriba).
   g.drawImage(c, Math.round(x - c.width / 2), Math.round(y - (c._by || tam + 3)));
 }
