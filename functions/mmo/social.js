@@ -389,7 +389,7 @@ export const Social = {
     const c = t.c;
     this.enviar(s, { t: 'inspeccion', p: t.id, n: c.nombre, lv: c.nivel, cl: c.clase || '', es: c.espec || '', ti: this.textoTitulo ? this.textoTitulo(c) : '',
       eq: c.eq || {}, logros: (c.logros || []).length, mazmorras: c.mazmorras || 0, desafioMax: c.desafioMax || 0, duelos: c.duelosG || 0,
-      runas: c.runas || {}, titanes: c.titanes || 0, pionero: c.pionero ? 1 : 0,
+      runas: c.runas || {}, titanes: c.titanes || 0, pionero: c.pionero ? 1 : 0, torreMax: c.torreMax || 0, peces: c.peces || 0,
       herm: this.nombreHermandad ? this.nombreHermandad(c.herm) : '' });
   },
 

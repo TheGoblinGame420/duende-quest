@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=138';
+} from './data.js?v=140';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1687,7 +1687,7 @@ function pintarInspeccion(m) {
   }
   const pz = piezasConjunto(m.eq || {});
   for (const id in pz) if (pz[id] >= 2 && CONJUNTOS[id]) h += `<p style="font-size:12px;color:${CONJUNTOS[id].color};margin-top:4px">${esc(CONJUNTOS[id].nombre)}: ${pz[id]} piezas</p>`;
-  h += `<p style="font-size:12px;color:var(--txt2);margin-top:8px">🏆 ${m.logros} logros · 🏰 ${m.mazmorras} mazmorras${m.desafioMax ? ' · ⚡ Desafío +' + m.desafioMax : ''}${m.duelos ? ' · ⚔️ ' + m.duelos + ' duelos ganados' : ''}</p>`;
+  h += `<p style="font-size:12px;color:var(--txt2);margin-top:8px">🏆 ${m.logros} logros · 🏰 ${m.mazmorras} mazmorras${m.desafioMax ? ' · ⚡ Desafío +' + m.desafioMax : ''}${m.duelos ? ' · ⚔️ ' + m.duelos + ' duelos ganados' : ''}${m.torreMax ? ' · 🗼 piso ' + m.torreMax + ' de la Torre' : ''}${m.peces ? ' · 🎣 ' + m.peces + ' peces' : ''}</p>`;
   const ru = m.runas || {};
   const txtRunas = Object.entries(RUNAS).filter(([k]) => ru[k]).map(([k, r]) => `${esc(r.nombre)} ${ru[k]}/${RUNA_MAX}`).join(' · ');
   if (txtRunas || m.titanes || m.pionero) h += `<p style="font-size:12px;color:var(--txt2);margin-top:4px">${txtRunas ? '✨ ' + txtRunas : ''}${m.titanes ? (txtRunas ? ' · ' : '') + '⚔️ Titán vencido ' + m.titanes + ' ' + (m.titanes === 1 ? 'vez' : 'veces') : ''}${m.pionero ? ' · 🌟 Pionero del Abismo' : ''}</p>`;
