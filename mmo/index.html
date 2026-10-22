@@ -242,7 +242,9 @@ body.tactil #pie{display:none;}
 #hud.estrecho #errores{top:50%;width:92%;}
 #hud.estrecho #errores div{white-space:normal;}
 #hud.estrecho #emotes{top:43%;}
-#hud.estrecho #chat-log{max-height:34px;}
+#hud.estrecho #chat-log{max-height:34px;pointer-events:auto;cursor:pointer;}
+/* Tocar el chat en el movil lo despliega 8 s (con fondo para leerlo). */
+#hud.estrecho #chat-log.abierto{max-height:150px;background:rgba(10,14,22,.88);border-radius:8px;padding:4px 6px;}
 #errores div{font-size:8px;color:#f87171;text-shadow:1px 1px 0 #000,0 0 6px #000;margin:3px 0;animation:av 1.6s forwards;white-space:nowrap;}
 .ranuras{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
 .ranura{border:1px solid var(--borde);border-radius:8px;background:var(--panel2);aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:2px;}
@@ -770,6 +772,6 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=89"></script>
+<script type="module" src="/mmo/js/client.js?v=90"></script>
 </body>
 </html>

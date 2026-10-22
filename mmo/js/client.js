@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=89';
+} from './data.js?v=90';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -965,6 +965,14 @@ function abrirChat() {
     ponCss(f, 'display', 'flex');
   }
 }
+// Movil: tocar el chat lo despliega 8 s.
+$('chat-log').addEventListener('click', () => {
+  if (!$('hud').classList.contains('estrecho')) return;
+  const l = $('chat-log');
+  l.classList.toggle('abierto');
+  clearTimeout(l._t);
+  if (l.classList.contains('abierto')) l._t = setTimeout(() => l.classList.remove('abierto'), 8000);
+});
 function cerrarChat() { $('chat-in').value = ''; $('chat-in').blur(); $('chat-in').style.display = 'none'; ponCss($('frases'), 'display', 'none'); }
 $('chat-in').addEventListener('blur', () => setTimeout(() => ponCss($('frases'), 'display', 'none'), 150));
 function botonTactil(id, abajo, arriba) {
