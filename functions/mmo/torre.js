@@ -100,6 +100,7 @@ export const Torre = {
       const o = this.crearMonstruo(w.clave, pool[Math.floor(Math.random() * pool.length)], x,
         { nv: T.nv + (i === 0 ? 1 : 0), hpX: vida * (mod === 'blindados' ? 1.3 : elite ? 3 : 1), atkX: P.atk * (mod === 'blindados' ? 0.9 : elite ? 1.3 : 1), agresivo: true, radioAgro: 2000, xpX: TORRE.xp });
       o.torre = true;
+      if (elite) { o.ex = { elite: 1, ti: '#facc15', nom: 'Élite' }; this.aClave(w.clave, { t: 'ms', m: this.infoMonstruo(o) }); }
       if (mod === 'veloces') o.vel *= 1.3;
     }
     if (P.jefe) {

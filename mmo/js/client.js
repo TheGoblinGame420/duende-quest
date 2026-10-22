@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=202';
+} from './data.js?v=204';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1776,9 +1776,9 @@ function htmlCalendario() {
   l.push(`🏆 <b>Cierre de los rankings semanales</b> (experiencia, Torre, Desafíos; premios y todo de cero): ${dia(lunes)} a las ${hora(lunes)}.`);
   // Pronostico: donde llueve (Pez Dorado x2) o nieva, ahora o en las proximas horas.
   const pron = Object.keys(CLIMA).map(id => {
-    for (let h = 0; h < 6; h++) { const t = Math.floor(ahora / 3600000) * 3600000 + h * 3600000; if (climaDe(id, t + 1000)) return `${climaDe(id, t + 1000) === 'nieve' ? '❄️' : '🌧️'} ${esc(MAPAS[id].nombre)} ${h ? 'a las ' + hora(t) : '<b style="color:var(--ok)">ahora</b>'}`; }
+    for (let h = 0; h < 6; h++) { const t = Math.floor(ahora / 3600000) * 3600000 + h * 3600000; if (climaDe(id, t + 1000)) return h + '|' + `${climaDe(id, t + 1000) === 'nieve' ? '❄️' : '🌧️'} ${esc(MAPAS[id].nombre)} ${h ? 'a las ' + hora(t) : '<b style="color:var(--ok)">ahora</b>'}`; }
     return '';
-  }).filter(Boolean);
+  }).filter(Boolean).sort((a, b) => parseInt(a) - parseInt(b)).map(x => x.slice(x.indexOf('|') + 1));
   if (pron.length) l.push(`☁️ <b>Clima</b> (con lluvia el Pez Dorado sale el doble): ${pron.join(' · ')}.`);
   const tp = TEMPORADAS.find(x => x.fin > ahora);
   if (tp) l.push(tp.ini <= ahora ? `${tp.emoji} <b>${esc(tp.nombre)}</b>: en marcha hasta el ${esc(tp.hasta)}.` : `${tp.emoji} <b>${esc(tp.nombre)}</b>: empieza el ${dia(tp.ini)} a las ${hora(tp.ini)}.`);
@@ -2114,6 +2114,8 @@ function dibujarMarcasEspeciales() {
     } else if (ex.cap) {
       etiqueta(xe, arriba, '⚔ ' + ex.nom, '#ff7a3c', 7);
       barraMini(x, arriba + 4, 60, o.hp / o.mx, '#ff7a3c');
+    } else if (ex.elite) {
+      etiqueta(xe, arriba, 'Élite', '#facc15', 6);
     } else if (ex.ev) {
       emoji('🔥', 10, x, arriba - 2 + Math.sin(frame * .15 + o.id) * 2);
     }
