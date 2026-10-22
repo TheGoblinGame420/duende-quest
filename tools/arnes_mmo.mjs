@@ -479,9 +479,14 @@ async function pruebas() {
 
   console.log('Ranking semanal');
   const cw = await entrar('Campeona', '4a'), sw = await entrar('Segundo', '4b');
-  mundo.rs = { sem: '2000-01-03', l: {} };
+  const { semanaUTC } = await import('../mmo/js/data.js');
+  mundo.rs = { sem: semanaUTC(), l: {} };
   mundo.sumarXp(cw, 500); mundo.sumarXp(sw, 100);
   chequear(mundo.topSemana()[0][1].n === 'Campeona', 'el ranking semanal ordena por XP de la semana');
+  mundo.rs.sem = '2000-01-03';   // la semana termino
+  const xpVieja = mundo.rs.l[cw.c.uid].xp;
+  mundo.sumarXp(cw, 50);
+  chequear(mundo.rs.l[cw.c.uid].xp === xpVieja, 'la XP de la semana nueva no cuenta para la vieja');
   const oroC = cw.c.oro;
   await mundo.revisarSemana(Date.now());
   chequear(cw.c.campeon === 1 && cw.c.oro > oroC, 'al cambiar la semana el primero recibe premio y título');
@@ -535,6 +540,18 @@ async function pruebas() {
   tl.c.oro = 5000;
   await tl.mandar({ t: 'talentoReset' });
   chequear(!Object.keys(tl.c.tal).length && tl.c.oro === 5000 - 1100, 'reiniciar cuesta 100 × nivel y devuelve los puntos');
+
+  console.log('Doble entrada simultánea de una cuenta');
+  {
+    const w1 = new WsFalso(), w2 = new WsFalso();
+    mundo.abrir(w1); const s1 = [...mundo.sesiones.values()].pop();
+    mundo.abrir(w2); const s2 = [...mundo.sesiones.values()].pop();
+    const hola = JSON.stringify({ t: 'hola', auth: { k: 'inv', tok: 'd'.repeat(32) }, nombre: 'Gemelo' });
+    w1.emitir('message', { data: hola }); w2.emitir('message', { data: hola });
+    for (let i = 0; i < 300; i++) await new Promise(r => setTimeout(r, 5));
+    const vivas = [s1, s2].filter(x => x.c && !x.cerrado);
+    chequear(vivas.length === 1, 'dos hola a la vez de la misma cuenta dejan una sola sesión (' + vivas.length + ')');
+  }
 
   console.log('Monstruos pasivos no pegan a quien no les ataca');
   const t2 = await entrar('Turista', 5);
@@ -609,6 +626,7 @@ async function pruebasRetencion() {
   const g1 = almacen.get('c:' + h1.c.uid);
   chequear(Math.abs(g1.ret.min - 5) < 0.05, 'al cerrar suma los minutos jugados (' + g1.ret.min + ')');
   chequear(Math.abs(h2.c.ret.min - 1) < 0.05, 'una pestaña quieta suma solo 1 minuto (' + h2.c.ret.min + ')');
+  await mundo.retVolcar();
   d0 = await mundo.retDia(D);
   chequear(Math.abs(d0.min - 7) < 0.1, 'los minutos del día van al agregado sin el bot (' + d0.min + ')');
 
@@ -922,6 +940,8 @@ async function pruebasAmigos() {
   const fetchReal = globalThis.fetch;
   const avisos = [];
   globalThis.fetch = async (url, init) => { avisos.push(String(url) + ' ' + (init && init.body || '')); return new Response('{"ok":true}'); };
+  const tgReal = mundo.tgEnviar;
+  mundo.tgEnviar = async (metodo, cuerpo) => { avisos.push(metodo + ' ' + JSON.stringify(cuerpo)); return { ok: true }; };
   try {
     const host = await entrarTg('Anfitrion', 7001);
     host.limpiar = () => { host.ws.rec.length = 0; };
@@ -942,5 +962,5 @@ async function pruebasAmigos() {
     for (let i = 0; i < 50; i++) await espera();
     chequear(viejo.c.amigos === 1, 'el premio se paga una sola vez');
     chequear(avisos.some(a => /sendMessage/.test(a) && /7001/.test(a)), 'se avisa por Telegram a quien invitó');
-  } finally { globalThis.fetch = fetchReal; }
+  } finally { globalThis.fetch = fetchReal; mundo.tgEnviar = tgReal; }
 }

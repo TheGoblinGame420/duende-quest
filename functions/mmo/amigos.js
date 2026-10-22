@@ -59,7 +59,9 @@ export const Amigos = {
     }
     if (otro) { this.revisarLogros(otro); this.actualizarYo(otro); await this.guardar(otro); }
     else await this.state.storage.put('c:' + c.invitadoPor, co);
-    await this.avisarJugador(c.invitadoPor, `🤝 ¡Tu amigo ${c.nombre} llegó a nivel ${AMIGO_NIVEL} en DUENDE QUEST ONLINE! Ganaste oro${co.amigos === 5 ? ' y el Conejo Saltarín de montura' : ''}. Amigos invitados: ${co.amigos}.`);
+    const txtA = `🤝 ¡Tu amigo ${c.nombre} llegó a nivel ${AMIGO_NIVEL} en DUENDE QUEST ONLINE! Ganaste oro${co.amigos === 5 ? ' y el Conejo Saltarín de montura' : ''}. Amigos invitados: ${co.amigos}.`;
+    if (otro) this.enviar(otro, { t: 'toast', m: txtA, ok: true });
+    if (await this.quiereAvisos(c.invitadoPor)) { try { await this.tgEnviar('sendMessage', { chat_id: c.invitadoPor.slice(3), text: txtA }); } catch (e) {} }
   },
 
   async infoAmigos(s) {

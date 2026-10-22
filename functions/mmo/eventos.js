@@ -303,6 +303,7 @@ export const Eventos = {
   abrirCofre(s, m) {
     if (s.muerto) return;
     const mapaId = s.k;
+    if (s.k.includes('#')) return;   // en una mazmorra no hay cofres (y no se cachea la clave)
     const cf = cofresDe(mapaId).find(x => x.i === (m.id | 0));
     if (!cf || typeof m.id !== 'number') return;
     if (Math.abs(s.x - cf.x) > COFRE_DIST || Math.abs(s.y - cf.y) > COFRE_DIST) return this.no(s, 'Acércate más al cofre.');

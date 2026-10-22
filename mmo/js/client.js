@@ -13,7 +13,7 @@ import {
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
-} from './data.js?v=29';
+} from './data.js?v=30';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -629,7 +629,7 @@ function fisica() {
   // Moverse cancela el lanzamiento (el servidor tambien lo hace; aqui se
   // ve al instante).
   if (obj && castYo) { castYo = null; mandar({ t: 'cancelar' }); verLanzar(false); }
-  if (izq || der) viajePorBorde(izq, der);
+  viajePorBorde(izq, der);
   if (P.dash > 0) { P.dash--; P.vx = P.f * FIS.dashVel; }
   else P.vx += (obj - P.vx) * .3;
   if (P.dashCd > 0) P.dashCd--;
@@ -1745,15 +1745,19 @@ function pintarTutorial() {
 
 // Mundo abierto: caminar contra el borde de una zona pasa a la siguiente
 // por su portal, sin tener que pararse a pulsar "entrar".
-let bordeT = 0;
+// Tras cada viaje hay que soltar la direccion: si no, al llegar junto al
+// portal de vuelta (pueblo ↔ bosque) se rebotaba entre los dos mapas. En
+// las mazmorras no: alejarse a la izquierda te sacaba sin querer.
+let bordeT = 0, bordeSoltar = false;
 function viajePorBorde(izq, der) {
   const mp = MAPAS[mapaId];
-  if (castYo || P.muerto || performance.now() - bordeT < 1500) return;
+  if (!izq && !der) { bordeSoltar = false; return; }
+  if (bordeSoltar || instancia || mp.instancia || castYo || P.muerto || performance.now() - bordeT < 1500) return;
   const enBorde = (izq && P.x <= 16) || (der && P.x >= mp.ancho - 16);
   if (!enBorde) return;
-  const i = mp.portales.findIndex(p => p.a && !p.buscador && Math.abs(p.x - P.x) < 85);
+  const i = mp.portales.findIndex(p => p.a && !p.buscador && !p.fin && Math.abs(p.x - P.x) < 85);
   if (i < 0) return;
-  bordeT = performance.now();
+  bordeT = performance.now(); bordeSoltar = true;
   mandar({ t: 'portal', i });
 }
 

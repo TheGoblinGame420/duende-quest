@@ -329,6 +329,19 @@ export class MmoWorld {
       return;
     }
     if (s.cerrado) return;
+    // Una cuenta solo puede estar ENTRANDO por una sesion a la vez. Antes, dos
+    // pestañas que mandaban el hola juntas pasaban las dos la comprobacion de
+    // "misma cuenta abierta" (hay awaits en medio) y quedaban dos copias del
+    // personaje: la segunda en guardar pisaba a la primera (se podia retirar
+    // mTON y recuperarlo, o contar doble la XP semanal).
+    this.entrando = this.entrando || new Map();
+    if (this.entrando.has(uid)) { this.expulsar(s, 'Tu cuenta ya está entrando desde otra pestaña. Usa solo una.'); return; }
+    this.entrando.set(uid, s);
+    try { await this.holaCuenta(s, m, env, uid, nombre, pagadas); }
+    finally { if (this.entrando.get(uid) === s) this.entrando.delete(uid); }
+  }
+
+  async holaCuenta(s, m, env, uid, nombre, pagadas) {
 
     // Misma cuenta abierta en otra pestaña: la vieja se cierra.
     const vieja = this.porUid.get(uid);
@@ -1535,7 +1548,9 @@ export class MmoWorld {
   // (oro, un objeto y el titulo de Campeon) y empieza de cero. Cualquiera
   // puede ganarla, no solo los de nivel alto: cuenta lo que juegas.
   sumarXpSemana(s, xp) {
-    if (!this.rs || UIDS_PRUEBA.has(s.c.uid) || xp <= 0) return;
+    // Si ya cambio la semana y aun no se roto (pasa en el tick), no se suma a
+    // la vieja: si no, se ganaba su premio con XP de la semana nueva.
+    if (!this.rs || UIDS_PRUEBA.has(s.c.uid) || xp <= 0 || this.rs.sem !== semanaUTC()) return;
     const f = this.rs.l[s.c.uid] || (this.rs.l[s.c.uid] = { xp: 0 });
     f.xp += xp; f.n = s.c.nombre; f.lv = s.c.nivel;
     this.rsSucio = true;
@@ -1574,7 +1589,10 @@ export class MmoWorld {
       if (s) { this.actualizarYo(s); this.revisarLogros(s); await this.guardar(s); }
       else await this.state.storage.put('c:' + uid, c);
       nombres.push(['🥇', '🥈', '🥉'][i] + ' ' + f.n);
-      await this.avisarJugador(uid, `🏆 ¡Quedaste ${['1º', '2º', '3º'][i]} en el ranking semanal de DUENDE QUEST ONLINE! Premio: +${oro.toLocaleString('es')} oro y ${RAREZAS[it.r].nombre.toLowerCase()}: ${nombreItem(it)}${i === 0 ? ' y el título de Campeón Semanal' : ''}. Ya empezó la nueva semana: ¡a defenderlo!`);
+      const txt = `🏆 ¡Quedaste ${['1º', '2º', '3º'][i]} en el ranking semanal de DUENDE QUEST ONLINE! Premio: +${oro.toLocaleString('es')} oro y ${RAREZAS[it.r].nombre.toLowerCase()}: ${nombreItem(it)}${i === 0 ? ' y el título de Campeón Semanal' : ''}. Ya empezó la nueva semana: ¡a defenderlo!`;
+      // Por Telegram solo a quien no pidio dejar de recibir avisos.
+      if (s) this.enviar(s, { t: 'toast', m: txt, ok: true });
+      if (await this.quiereAvisos(uid)) { try { const env = getEnv({ env: this.env }); await tg(env.BOT_TOKEN, 'sendMessage', { chat_id: uid.slice(3), text: txt }); } catch (e) {} }
     }
     if (nombres.length) this.aTodos({ t: 'aviso', m: `🏆 Ranking semanal: ${nombres.join(' · ')}. ¡Empieza una semana nueva!` });
   }

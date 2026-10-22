@@ -44,6 +44,8 @@ const fmt = n => Math.round(n).toLocaleString('es');
 const pct = (x, base) => base ? Math.round(x / base * 1000) / 10 : null;
 const vacio = () => ({ n: 0, a: 0, ses: 0, min: 0, r1: 0, r7: 0, r30: 0 });
 
+const MAX_ENVIOS = 40;   // avisos por llamada a 'recordatorios' (limite de subpeticiones)
+
 export const Retencion = {
   // ── Almacenamiento ──
   // Se cachea la PROMESA y no el valor: dos sesiones que suman a la vez
@@ -143,8 +145,12 @@ export const Retencion = {
     const hoy = diaNum(ahora);
     const nuevoDia = this.retMarcarDia(c, hoy);
     if (this.uidsPrueba.has(c.uid)) return;
+    // Los minutos del dia se juntan en memoria y se escriben como mucho una
+    // vez por minuto: escribir el agregado en CADA guardado doblaba las
+    // escrituras al storage (que cuentan en el cupo diario del plan gratis).
+    if (min >= 0.01) this._retMin = { d: hoy, min: ((this._retMin && this._retMin.d === hoy) ? this._retMin.min : 0) + min };
     (async () => {
-      if (min >= 0.01) await this.retSumar(hoy, { min });
+      if (this._retMin && (ahora - (this._retMinT || 0) > 60000 || this._retMin.d !== hoy)) await this.retVolcar();
       if (nuevoDia) {
         const idx = await this.retIdx();
         const e = idx[c.uid] || (idx[c.uid] = { v: 0 });
@@ -155,8 +161,17 @@ export const Retencion = {
     })().catch(e => console.error('[MMO retAlGuardar]', e));
   },
 
+  // Escribe los minutos pendientes en el agregado del dia.
+  async retVolcar() {
+    const pend = this._retMin;
+    if (!pend) return;
+    this._retMin = null; this._retMinT = Date.now();
+    await this.retSumar(pend.d, { min: Math.round(pend.min * 100) / 100 });
+  },
+
   // Rutas internas de este modulo (las llama interno() de world.js).
   async internoRetencion(accion, b) {
+    await this.retVolcar();
     if (accion === 'stats') return this.retStats();
     if (accion === 'recordatorios') return this.recordatorios();
     if (accion === 'avisos') return this.ponerAvisos(b || {});
@@ -242,7 +257,12 @@ export const Retencion = {
       if (!e.off && !e.bloq && (e.v || 0) < hoy - OLVIDAR_DIAS) delete idx[uid];
     }
     let n = 0;
-    for (const uid of Object.keys(idx).filter(u => this.puedeAvisar(u, idx[u], hoy))) {
+    // Como mucho MAX_ENVIOS por llamada: cada mensaje a Telegram es una
+    // subpeticion y el plan gratis permite ~50 por invocacion. El cron llama
+    // varias veces; primero van los que hace mas que no reciben aviso.
+    const lista = Object.keys(idx).filter(u => this.puedeAvisar(u, idx[u], hoy)).sort((a, b) => (idx[a].ad || 0) - (idx[b].ad || 0));
+    res.quedan = Math.max(0, lista.length - MAX_ENVIOS);
+    for (const uid of lista.slice(0, MAX_ENVIOS)) {
       const c = await this.state.storage.get('c:' + uid);
       const e = idx[uid];
       // Pudo entrar mientras se leia su personaje.
@@ -320,11 +340,19 @@ export const Retencion = {
 
   // /avisos on|off (y el boton del aviso). Se guarda en el indice y no en el
   // personaje: si el jugador esta conectado, su guardado no lo pisa.
+  async quiereAvisos(uid) {
+    if (!uid.startsWith('tg:')) return false;
+    const e = (await this.retIdx())[uid];
+    return !(e && (e.off || e.bloq));
+  },
+
   async ponerAvisos(b) {
     const id = String(b.tgId || '');
     if (!/^\d{1,15}$/.test(id)) return { ok: false, error: 'id de Telegram no válido' };
     const idx = await this.retIdx();
     const uid = 'tg:' + id;
+    // Solo consultar (/avisos sin on/off): no se crea ni se escribe nada.
+    if (b.on !== true && b.on !== false) { const e0 = idx[uid] || {}; return { ok: true, on: !e0.off, jugo: (e0.v || 0) > 0 }; }
     const e = idx[uid] || (idx[uid] = { v: 0 });
     if (b.on === true) { delete e.off; delete e.bloq; e.a = 0; }
     else if (b.on === false) e.off = 1;

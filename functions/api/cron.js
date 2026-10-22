@@ -98,8 +98,16 @@ export async function dailyReminder(env, saltar = new Set()) {
 export async function mmoRecordatorios(env) {
   if (!env.MMO) return null;
   const stub = env.MMO.get(env.MMO.idFromName('mundo-1'));
-  const r = await stub.fetch('https://mmo/interno/recordatorios', { method: 'POST', headers: { 'x-interno': env.TELEGRAM_BOT_TOKEN || '' }, body: '{}' });
-  const d = await r.json();
+  // Cada llamada manda como mucho ~40 (limite de subpeticiones del DO por
+  // invocacion); se repite mientras queden, con un tope de tandas.
+  let d = null;
+  for (let tanda = 0; tanda < 8; tanda++) {
+    const r = await stub.fetch('https://mmo/interno/recordatorios', { method: 'POST', headers: { 'x-interno': env.TELEGRAM_BOT_TOKEN || '' }, body: '{}' });
+    const x = await r.json();
+    if (!d) d = x;
+    else { for (const k of ['candidatos', 'enviados', 'bloqueados', 'fallidos']) d[k] = (d[k] || 0) + (x[k] || 0); d.ids = [...(d.ids || []), ...(x.ids || [])]; d.callar = x.callar || d.callar; }
+    if (!x.ok || !x.quedan || !x.enviados) break;
+  }
   console.log('[MMO avisos]', { candidatos: d.candidatos, enviados: d.enviados, bloqueados: d.bloqueados, fallidos: d.fallidos });
   return d;
 }
