@@ -173,6 +173,37 @@ async function completa(idMaz, nivel, clases, k = 0) {
 }
 
 const [, , soloMaz, soloNivel, modo] = process.argv;
+// Torre del Duende (solo): hasta que piso llega cada clase.
+//   node tools/sim_mazmorra.mjs torre 20,40,60        (EQ=1 con equipo epico)
+async function torre(nivel, clase) {
+  const mundo = new MmoWorld(state, {});
+  const b = await bot(mundo, clase, nivel);
+  b.c.pw.pocion = 10;
+  mundo.entrarMapa(b, 'pueblo', 795);
+  mundo.entrarTorre(b);
+  const w = mundo.mundoDe(b);
+  w.zonas = [];
+  const t0 = Date.now();
+  while (!w.torre.fin && !b.muerto && Date.now() - t0 < 60 * 60000) {
+    reloj += 100;
+    const blanco = [...w.mons.values()].filter(o => !o.muere).sort((x, y) => Math.abs(x.x - b.x) - Math.abs(y.x - b.x))[0];
+    if (blanco) decidir(mundo, b, blanco, w);
+    mundo.tick();
+    if (b.k !== w.clave) break;
+  }
+  const r = { piso: w.torre.piso, max: b.c.torre ? b.c.torre.max : 0, min: Math.round((Date.now() - t0) / 60000), pociones: b.bot.pociones, motivo: b.muerto ? 'murió' : w.torre.fin ? 'tiempo' : 'tope' };
+  mundo.cerrar(b);
+  return r;
+}
+if (soloMaz === 'torre') {
+  for (const nv of String(soloNivel || '20,40,60').split(',').map(Number)) {
+    for (const cl of ['guerrero', 'picaro', 'mago', 'sacerdote']) {
+      const r = await torre(nv, cl);
+      console.log(`Torre Nv ${nv} ${cl.padEnd(10)} superó ${String(r.max).padStart(2)} pisos (${r.motivo} en el ${r.piso}) en ${r.min} min · pociones ${r.pociones}`);
+    }
+  }
+  process.exit(0);
+}
 // Desafios (Nv 60, sin equipo: pesimista):  node tools/sim_mazmorra.mjs ciudadela 0,3,6,10 desafio
 if (modo === 'desafio') {
   for (const k of String(soloNivel || '0,3,6,10').split(',').map(Number)) {

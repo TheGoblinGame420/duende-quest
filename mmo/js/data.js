@@ -1575,7 +1575,7 @@ LOGROS.push(
 // Pisos con oleadas de monstruos de tu nivel, cada uno mas duro; un jefe
 // cada jefeCada. tiempo por piso; porHora subidas por jugador; max por grupo.
 export const TORRE = { nv: 10, max: 5, jefeCada: 5, pausa: 3500, tiempo: 150000, porHora: 12, instancias: 30, vidaJefe: 0.35, atkJefe: 0.8 };
-export const pisoTorre = p => ({ n: Math.min(6, 2 + Math.floor((p - 1) / 3)), vida: 1.2 + 0.15 * (p - 1), atk: 1 + 0.06 * (p - 1), jefe: p % 5 === 0 });
+export const pisoTorre = p => ({ n: Math.min(6, 2 + Math.floor((p - 1) / 3)), vida: 1.2 * Math.pow(1.07, p - 1), atk: Math.pow(1.045, p - 1), jefe: p % 5 === 0 });
 // Cofre de cada 5 pisos nuevos de la semana: oro (hasta el piso 50) y equipo (epico desde el 15).
 export const premioTorre = (p, nivel) => ({ oro: Math.round(40 * nivel * Math.min(10, p / 5)), rMin: p >= 15 ? 2 : 1 });
 

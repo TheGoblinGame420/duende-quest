@@ -196,7 +196,9 @@ export const Mazmorras = {
   alAgro(o, obj, ahora) {
     const w = this.mundoK(o.cl);
     if (o.grupo) for (const x of w.mons.values()) if (x !== o && x.grupo === o.grupo && !x.muere && !x.amen.size) x.amen.set(obj.id, 1);
-    if (o.mazmorra && o.jefe && !o.combateDesde) this.empezarJefe(o, w, ahora);
+    // Solo en una mazmorra de verdad (los jefes de la Torre van marcados
+    // mazmorra para no dar mTON, pero no tienen guion ni su escala).
+    if (o.mazmorra && o.jefe && !o.combateDesde && w.inst) this.empezarJefe(o, w, ahora);
   },
   // Lo mismo si el primer contacto es un golpe (un mago desde lejos).
   alPegar(o, s) { if (s && (o.grupo || (o.mazmorra && !o.combateDesde))) this.alAgro(o, s, Date.now()); },

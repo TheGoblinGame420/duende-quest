@@ -1367,6 +1367,7 @@ async function pruebasTorre() {
   const mton0 = j.c.mton || 0, oro0 = j.c.oro;
   for (let p = 1; p <= 5; p++) {
     if (p === 5) chequear(vivos().some(o => o.jefe && o.mazmorra), 'el piso 5 tiene un jefe (de los que no dan mTON)');
+    if (p === 5) { const jf = vivos().find(o => o.jefe), mx = jf.max; mundo.alAgro(jf, j, Date.now()); chequear(Number.isFinite(jf.atk) && jf.max === mx && !jf.combateDesde, 'el jefe de la Torre no toma la escala de los de mazmorra'); }
     limpiar(); tick(2);
     chequear(w.torre.piso === p && j.c.torre.max === p, 'piso ' + p + ' superado y anotado');
     tick(40);
