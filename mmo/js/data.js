@@ -1075,14 +1075,14 @@ jefe: 'jefe_rey',
   // muros: barreras magicas que se abren al vencer al jefe que las guarda.
   catacumbas: {
     nombre: 'Catacumbas del Duende', fondo: 'cavernas', ancho: 4400, zona: true, instancia: true, mazmorra: 'catacumbas',
-    paleta: { cielo: ['#07030f', '#1a0b2e'], suelo: '#120a1c', linea: '#a8a29e' },
+    paleta: { cielo: ['#12061f', '#3a1450'], suelo: '#120a1c', linea: '#a8a29e' },
     plataformas: [[700, 290, 200], [1250, 250, 180], [2200, 285, 220], [3300, 260, 200]],
     portales: [{ x: 60, a: 'pueblo', ax: 795, etiqueta: 'Salida' }, { x: 4340, a: 'pueblo', ax: 795, etiqueta: 'Salida', fin: 1 }],
     monstruos: [], max: 0,
   },
   fortaleza: {
     nombre: 'Fortaleza Goblin', fondo: 'cumbres', ancho: 4400, zona: true, instancia: true, mazmorra: 'fortaleza',
-    paleta: { cielo: ['#140e04', '#33240a'], suelo: '#1a1307', linea: '#eab308' },
+    paleta: { cielo: ['#2a1630', '#7a4a6a'], suelo: '#1a1307', linea: '#eab308' },
     plataformas: [[680, 285, 210], [1280, 245, 190], [2230, 280, 210], [3320, 255, 210]],
     portales: [{ x: 60, a: 'pueblo', ax: 795, etiqueta: 'Salida' }, { x: 4340, a: 'pueblo', ax: 795, etiqueta: 'Salida', fin: 1 }],
     monstruos: [], max: 0,

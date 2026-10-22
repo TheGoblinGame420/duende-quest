@@ -14,7 +14,7 @@ import {
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo,
-} from './data.js?v=56';
+} from './data.js?v=57';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -2460,7 +2460,7 @@ function lanzarFX(tipo, x, y, escala, flip, sigue, tinte) {
 }
 
 // ── DIBUJO ──
-function dibujarCapa(img, desplaz, sobreSuelo) {
+function dibujarCapa(img, desplaz, sobreSuelo, fundir) {
   if (!img || !img.naturalWidth) return;
   const e = VH / 320;
   const w = img.naturalWidth * e, h = img.naturalHeight * e;
@@ -2470,6 +2470,13 @@ function dibujarCapa(img, desplaz, sobreSuelo) {
   let x = Math.floor(-((desplaz % w) + w) % w);
   const wi = Math.ceil(w), yi = Math.round(y), hi = Math.round(h);
   while (x < VW) { g.drawImage(img, x, yi, wi + 1, hi); x += wi; }
+  // En PC el lienzo es mas alto que la imagen: su borde de arriba se
+  // funde con el cielo en vez de cortar en seco (la "franja" de las mazmorras).
+  if (fundir && yi > -OY) {
+    const gr = g.createLinearGradient(0, yi, 0, yi + 70 * e);
+    gr.addColorStop(0, fundir); gr.addColorStop(1, fundir + '00');
+    g.fillStyle = gr; g.fillRect(0, yi - 1, VW, 70 * e + 1);
+  }
 }
 
 function dibujarFondo(mp) {
@@ -2485,8 +2492,8 @@ function dibujarFondo(mp) {
     g.globalAlpha = .2 + .4 * par; g.fillRect((sx - camX * .05 + VW * 4) % VW, sy, 2, 2);
   }
   g.globalAlpha = 1;
-  dibujarCapa(IMG['lejos_' + mp.fondo], camX * .25, 46);
-  dibujarCapa(IMG['cerca_' + mp.fondo], camX * .5, 16);
+  dibujarCapa(IMG['lejos_' + mp.fondo], camX * .25, 46, mp.paleta.cielo[1]);
+  dibujarCapa(IMG['cerca_' + mp.fondo], camX * .5, 16, mp.paleta.cielo[1]);
 }
 
 function dibujarSuelo(mp) {
