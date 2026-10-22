@@ -234,6 +234,20 @@ body.tactil #pie{display:none;}
 #presumir{left:50%;transform:translateX(-50%);top:172px;bottom:auto;display:none;z-index:61;font-family:var(--sans);font-size:14px;font-weight:600;padding:10px 16px;background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:var(--sombra);animation:none;}
 #presumir:hover{background:var(--pri2);border-color:var(--pri2);}
 #hud.estrecho #presumir{top:auto;bottom:105px;}
+/* Guia del juego: secciones con titulo, definiciones para los controles. */
+.guia h3{font:700 13px var(--sans);color:var(--txt);text-transform:uppercase;letter-spacing:.08em;margin:16px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--borde);}
+.guia h3:first-child{margin-top:0;}
+.guia ul{padding-left:16px;margin:0;}
+.guia li{font:13px/1.5 var(--sans);color:var(--txt2);margin-bottom:5px;}
+.guia li b{color:var(--txt);}
+.guia dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0;font:13px/1.45 var(--sans);}
+.guia dt{color:var(--txt);font-weight:600;white-space:nowrap;}
+.guia dd{margin:0;color:var(--txt2);}
+.guia .creditos{font-size:11px;color:var(--txt3);margin-top:16px;line-height:1.5;}
+body.tactil .solo-pc,body:not(.tactil) .solo-tactil{display:none;}
+.guia .parche{display:flex;justify-content:space-between;align-items:baseline;margin:12px 0 4px;font:13px var(--sans);}
+.guia .parche b{color:var(--txt);}
+.guia .parche span{color:var(--txt3);font-size:12px;}
 /* Dentro de Telegram no se menciona otra cripto que no sea TON (sus reglas). */
 body.tg .solo-web{display:none;}
 #hud.estrecho #avisos{top:322px;width:90%;}
@@ -599,7 +613,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <div class="modal" id="m-novedades">
   <div class="ventana">
     <button class="bt cerrar" data-cerrar>✕</button>
-    <h2>📰 NOVEDADES Y CALENDARIO</h2>
+    <h2 class="sans">Notas del parche</h2>
     <div class="lista" id="nov-lista"></div>
   </div>
 </div>
@@ -617,51 +631,81 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <div class="modal" id="m-ayuda">
   <div class="ventana">
     <button class="bt cerrar" data-cerrar>✕</button>
-    <h2 id="ayuda-t" class="sans">❔ Cómo se juega</h2>
-    <button class="btn sec" id="b-novedades" style="width:100%;margin-bottom:8px">📰 Novedades y calendario</button>
-    <ul style="padding-left:18px" id="ayuda-lista">
-      <li><b>Moverse:</b> ← → o A / D · <b>Saltar:</b> ↑, W o Espacio (doble salto)</li>
-      <li><b>Ataque básico:</b> Z o J (combo de 3 golpes; magos y sacerdotes disparan con la vara) · <b>Dash:</b> X o K</li>
-      <li><b>Clases:</b> Guerrero (tanque, Ira), Mago (daño a distancia, Maná), Sacerdote (sanador, Maná) y Pícaro (daño cuerpo a cuerpo, Energía y puntos de combo). Se elige al entrar; cambiarla es gratis hasta Nv 10 (📖).</li>
-      <li><b>Habilidades:</b> teclas <b>1-8</b> o la barra de acción. Comparten 1 s de tiempo global; las que tienen lanzamiento se cancelan si te mueves. Se aprenden solas al subir de nivel.</li>
-      <li><b>Objetivo:</b> toca o haz clic en un monstruo (o en otro jugador para curarlo). <b>Tab</b> cambia al enemigo más cercano y <b>Esc</b> lo quita. Si no eliges ninguno, las habilidades apuntan solas al enemigo más cercano.</li>
-      <li><b>Amenaza:</b> los monstruos atacan a quien más los enfureció. El guerrero genera el doble y puede <b>Provocar</b>; curar también enfurece.</li>
-      <li><b>🔁 Ataque automático:</b> tecla H o el botón 🔁: con un enemigo elegido al alcance, tu duende le pega solo.</li>
-      <li><b>Consumibles:</b> Q Poción · F Escudo · G Rayo · T Fuego</li>
-      <li><b>🌟 Talentos:</b> desde Nv 10 ganas un punto por nivel para repartir en 📖 (fuerza, vida, crítico, defensa, recargas, recurso, curas, oro, experiencia y velocidad; 5 rangos cada uno).</li>
-      <li><b>Especializaciones:</b> desde Nv 10 cada clase elige una de dos en 📖 (Armas o Protección, Fuego o Escarcha, Sagrado o Sombras, Asesinato o Combate). Se cambia gratis fuera de combate.</li>
-      <li><b>🐎 Monturas:</b> el Mercader las vende desde Nv 20. Tecla <b>Y</b> o el botón 🐎 para montar (1,5 s, fuera de combate): corres mucho más rápido. Atacar o recibir un golpe te baja. <b>Mapa del mundo:</b> tecla M o 🗺️.</li>
-      <li><b>Entrar a portales / hablar:</b> E o ↑ encima</li>
-      <li><b>Grupos:</b> toca a otro jugador y pulsa ➕ en su marco, o usa 👥 (tecla O). En grupo compartís la experiencia y las misiones de cada presa (+10% por miembro), veis la vida de todos y el sacerdote puede curar a cualquiera tocando su marco.</li>
-      <li><b>🏰 Mazmorras:</b> el portal de mazmorras del pueblo (junto al Guardia Tito) abre el buscador. La primera, la Madriguera Goblin, se abre a Nv 6. Son copias privadas para tu grupo (o para ti solo, se ajustan) con packs de monstruos agresivos y 3 jefes con mecánicas: sal de las zonas marcadas en el suelo, interrumpe los hechizos con barra naranja y cuidado con sus esbirros. Cada jefe da equipo y la primera de cada día trae un premio extra.</li>
-      <li><b>☀️ Misiones diarias y semanales:</b> cada día 3 tareas y cada semana 2, según tu nivel (tecla L para verlas). Se cobran solas al cumplirlas y completarlas todas da un bono de equipo. <b>😴 Descanso:</b> si pasas horas fuera, tus próximas cazas dan el doble de experiencia (la parte azul de la barra).</li>
-      <li><b>🌿 Recolección:</b> en cada zona brillan plantas y vetas de mineral: acércate y pulsa E (o ⛏️ RECOGER). La <b>Artesana Lila</b> del pueblo (⚗️) las convierte en pociones, escudos, pólvora y elixires de 30 minutos.</li>
-      <li><b>🗼 Torre del Duende:</b> desde Nv 10, en el portal de mazmorras del pueblo. Cada piso es una oleada de monstruos de tu nivel, cada vez más dura, con un jefe cada 5 pisos; hay que limpiarlo en 2 min y medio. Si caéis todos, se acaba. Tu mejor piso de la semana sale en el ranking y cada 5 pisos nuevos de la semana dan un cofre. Al superar el piso 30 ganas el Lagarto de la Torre, una montura que no se vende.</li>
-      <li><b>🧭 Expediciones:</b> desde Nv 5, en el registro de misiones (L). Tu mascota (o un duendecillo) sale 1, 4 u 8 horas y vuelve con oro, algo de experiencia y materiales. Una a la vez: mándala antes de irte y recógela al volver.</li>
-      <li><b>🎣 Pesca:</b> hay un pesquero (agua azul) en el pueblo y en cada zona. Acércate, pulsa E (o 🎣 PESCAR) y espera: cuando el corcho se hunda y salga <b>¡PICA!</b>, pulsa otra vez enseguida (¡TIRA!). Si tiras antes, el pez se asusta; moverte o recibir un golpe corta el sedal. Con el pescado, la Artesana cocina Ceviche (+10% oro) y Sudado Dorado (+5% daño y defensa). Hasta 80 capturas al día. Muy de vez en cuando sale el <b>Pececito Dorado</b>, una mascota que solo se consigue pescando. Cuando llueve en una zona (🌧️ junto a su nombre), el Pez Dorado sale el doble. Cada pesquero tiene su especie: la primera vez que la pescas te da oro (colección en Inventario → BESTIARIO).</li>
-      <li><b>🛡️ Hermandades:</b> tu clan, con chat propio (/h) y su nombre bajo el tuyo. Fúndala desde 👥 → HERMANDAD (nivel 10 y 5.000 oro) o pide que te inviten.</li>
-      <li><b>🎟️ Pase de temporada:</b> gratis, cada mes. Las misiones diarias (10 puntos) y semanales (30), las mazmorras (6) y el jefe mundial (10) dan puntos; cada 75, un nivel con premio que cobras en el registro de misiones (L). Al 20, la mascota Duendecillo Dorado.</li>
-      <li><b>🧳 Mercader ambulante:</b> de viernes a domingo (UTC) el Mercader trae colores y una mascota exclusivos que rotan cada semana.</li>
-      <li><b>⚡ Hora Feliz:</b> cada día de 20:00 a 21:00 (hora de Perú; 01:00-02:00 UTC) la caza da +50% de experiencia. Se ve en el seguimiento.</li>
-      <li><b>📢 Buscar grupo:</b> en el portal de mazmorras, «Anunciarme» avisa a los conectados con nivel; quien quiera se une a tu grupo con un toque.</li>
-      <li><b>⚡ Desafíos (Nv 60):</b> cada mazmorra con un +k cada vez más duro y <b>afijos</b> que cambian cada lunes. Ranking semanal de Desafíos con premio. <b>🗝️ Bóveda semanal:</b> 1, 4 y 8 mazmorras en la semana abren 1, 2 y 3 objetos; el lunes eliges uno.</li>
-      <li><b>⭐ Amigos:</b> toca a otro jugador y pulsa ☆ en su marco; verás cuándo se conecta (👥 → En línea). <b>🔍 Inspeccionar:</b> su equipo, conjuntos y logros. <b>⚔️ Duelo:</b> nadie muere, gana quien deja al otro a 1 de vida.</li>
-      <li><b>Chat:</b> Enter. Sin nada delante habla a todo el servidor; <b>/d</b> solo a tu mapa, <b>/g</b> a tu grupo, <b>/h</b> a tu hermandad, <b>/s Nombre</b> susurra y <b>/r</b> responde. <b>Gestos:</b> /saludar /bailar /reir /aplaudir /gracias /si /enojo /llorar (en el móvil, en el chat rápido).</li>
-      <li><b>Misiones:</b> L · <b>Mapa:</b> M · <b>Social:</b> O · <b>Inventario:</b> I · <b>Hechizos:</b> P · <b>Piedra de Hogar:</b> R o 🌀 (6 s quieto y sin recibir golpes)</li>
-      <li>Los hechiceros, magos y algunos jefes lanzan <b>bolas de fuego</b>: salta o apártate de su línea.</li>
-      <li>El <b>Guardia Tito</b> del pueblo te da una cadena de 40 misiones que recorre las 10 zonas (hasta los Acantilados Mágicos y su Dragón Ancestral): entrégaselas para cobrar experiencia, oro y poderes.</li>
-      <li><b>Equipo:</b> los monstruos sueltan cascos, armaduras, botas, anillos y amuletos (los jefes siempre). Hay 4 rarezas: <span style="color:#d0d0d0">común</span>, <span style="color:#33aaff">raro</span>, <span style="color:#c084fc">épico</span> y <span style="color:#ffae00">legendario</span>. Equípalos o véndelos en 🎒 → EQUIPO.</li>
-      <li><b>Jefe mundial:</b> a las :00 y :30 aparece en el Coliseo un jefe mundial (rotan el Gran Duende Corrupto, el Dragón de la Tormenta y el Coloso de Obsidiana) (portal 👹 del pueblo). Todos los niveles pueden pelear y todos ganan equipo.</li>
-      <li><b>Recompensa diaria:</b> entra cada día para una racha de 7 premios (el 7º trae un objeto épico). <b>Logros:</b> cada uno da oro y un título para lucir sobre tu nombre.</li>
-      <li>Cada zona tiene su nivel recomendado (los monstruos más fáciles cerca de la entrada) y un <b>jefe</b> que reaparece cada 5 minutos: pelear en grupo reparte la recompensa.</li>
-      <li>La vida se recupera sola si pasas 4 segundos sin recibir golpes, y rápido en el pueblo.</li>
-      <li>El <b>Mercader</b> del pueblo vende poderes, armas, monturas, colores de nombre, mascotas y las skins. <b>Cada skin da poderes</b> mientras la llevas (oro, ataque, defensa, vida, crítico o experiencia): se compran con oro o, con tu cuenta, con dinero (<span class="solo-web">SOL en la web, </span>Stars en Telegram; El Duende revisa el pago y te la entrega). Las skins que ya compraste en el juego principal se desbloquean solas.</li>
-      <li>El oro del MMO es solo del juego: no se canjea por dinero ni por $DUENDE.</li>
-      <li><b>💎 Recompensas en mTON (opcional):</b> desde nivel 15, con cuenta de Telegram o web, los jefes, el jefe mundial y la caza del día dan mTON. 1.000 mTON = 1 TON y desde 5 TON puedes retirar a tu wallet TON (botón 💎), una vez por semana y hasta 10 TON por retiro. Cada día se reparte un fondo limitado.</li>
-      <li><b>⭐ Tienda premium</b> (Mercader o botón 💎): oro, poderes y skins con Stars en Telegram<span class="solo-web"> o con SOL en la web (en el ordenador puedes escanear el QR de Solana Pay con la wallet del móvil y pulsar «Ya pagué: comprobar»; en el móvil, «Pagar con Phantom» o «Pagar con Solflare» abre el juego dentro de esa wallet; un pago a medias se retoma en «Tus compras»)</span>. El Duende revisa cada pago y te lo entrega en persona. Con dinero nunca se compran mTON.</li>
-      <li><b>🔒 Seguridad:</b> nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado. El único contacto oficial es @ElDuendeOficial.</li>
-      <li style="font-size:12px;color:var(--txt2)"><b>Créditos de arte:</b> Luis Zuno (ansimuz) — Magic Cliffs y Warped Caves (CC-BY 3.0), Mountain Dusk, Underwater, GothicVania y Sunny Land (CC0); Moikmellah, Ashuuya, Scratchio y 7Soul1 (CC0). Sonidos: Juhani Junkala (CC0).</li>
-    </ul>
+    <h2 id="ayuda-t" class="sans">Guía del juego</h2>
+    <button class="btn sec" id="b-novedades" style="width:100%;margin-bottom:10px">Notas del parche y calendario</button>
+    <div id="ayuda-lista" class="guia">
+      <h3>Controles</h3>
+      <dl class="solo-pc">
+        <dt>Mover / saltar</dt><dd>← → o A D · ↑, W o Espacio (doble salto)</dd>
+        <dt>Atacar / esquivar</dt><dd>Z o J · X o K</dd>
+        <dt>Habilidades</dt><dd>1-8 · Tab: siguiente objetivo · Esc: quitar objetivo · H: ataque automático</dd>
+        <dt>Consumibles</dt><dd>Q poción · F escudo · G rayo · T fuego</dd>
+        <dt>Interactuar</dt><dd>E (portales, NPC, pesca, recolección)</dd>
+        <dt>Ventanas</dt><dd>L misiones · I inventario · P hechizos · O social · M mapa · Y montura · R piedra de hogar · Enter chat</dd>
+      </dl>
+      <dl class="solo-tactil">
+        <dt>Mover / saltar</dt><dd>Flechas y botón de salto (doble salto)</dd>
+        <dt>Combate</dt><dd>Botón de ataque, habilidades en la barra y consumibles a la izquierda</dd>
+        <dt>Objetivo</dt><dd>Toca un monstruo, o un aliado para curarlo</dd>
+        <dt>Interactuar</dt><dd>El botón azul cambia según lo que tengas cerca: entrar, hablar, pescar, recoger</dd>
+      </dl>
+
+      <h3>Combate</h3>
+      <ul>
+        <li><b>Clases.</b> Guerrero (tanque, Ira), Mago (distancia, Maná), Sacerdote (sanación, Maná) y Pícaro (cuerpo a cuerpo, Energía y combos). Cambiar de clase es gratis hasta Nv 10.</li>
+        <li><b>Habilidades.</b> Se aprenden al subir de nivel y comparten 1 s de recarga global. Moverse cancela los lanzamientos.</li>
+        <li><b>Amenaza.</b> Los monstruos atacan a quien más daño o curación hace. El guerrero genera el doble y puede provocar.</li>
+        <li><b>Mecánicas.</b> Sal de las zonas marcadas en el suelo e interrumpe los lanzamientos con barra naranja. Las bolas de fuego se esquivan saltando.</li>
+        <li><b>Vida.</b> Se regenera tras 4 s sin recibir daño, y rápido en el pueblo.</li>
+      </ul>
+
+      <h3>Progresión</h3>
+      <ul>
+        <li><b>Historia.</b> El Guardia Tito tiene 40 misiones que recorren las 10 zonas, hasta el Dragón Ancestral.</li>
+        <li><b>Diarias y semanales.</b> 3 tareas al día y 2 a la semana según tu nivel (L). Se cobran solas.</li>
+        <li><b>Talentos y especialización.</b> Desde Nv 10, en el libro de hechizos (P).</li>
+        <li><b>Equipo.</b> Común, <span style="color:#33aaff">raro</span>, <span style="color:#c084fc">épico</span> y <span style="color:#ffae00">legendario</span>. Los jefes siempre sueltan una pieza; las mazmorras tienen conjuntos con bonificaciones.</li>
+        <li><b>Descanso.</b> Tras horas desconectado, la caza da el doble de experiencia (tramo azul de la barra).</li>
+        <li><b>Pase de temporada.</b> Gratuito y mensual: 20 niveles con premios por diarias, semanales, mazmorras, Torre, expediciones y jefe mundial.</li>
+        <li><b>Logros.</b> Cada uno da oro y un título visible sobre tu nombre.</li>
+      </ul>
+
+      <h3>Contenido</h3>
+      <ul>
+        <li><b>Mazmorras.</b> Desde Nv 6 en el portal de mazmorras del pueblo. Instancias para tu grupo o en solitario (se ajustan), con 3 jefes. Premio extra la primera vez cada día. Si caéis todos, el jefe se recupera y reaparecéis en la última barrera abierta.</li>
+        <li><b>Torre del Duende.</b> Desde Nv 10. Oleadas por piso con un jefe cada 5 y 2:30 para limpiar cada piso. Cofre cada 5 pisos nuevos de la semana, ranking semanal y montura al piso 30.</li>
+        <li><b>Banda.</b> Santuario del Titán, Nv 60, de 1 a 10 jugadores. Botín semanal por jefe.</li>
+        <li><b>Desafíos.</b> A Nv 60, cada mazmorra con niveles +k y afijos semanales. La Bóveda semanal premia las mazmorras completadas.</li>
+        <li><b>Jefe mundial.</b> Cada media hora en el Coliseo; rotan tres jefes. Todos los niveles participan y reciben botín.</li>
+        <li><b>Eventos.</b> Hora Feliz diaria (+50% de experiencia de 20:00 a 21:00, hora de Perú), Mercader ambulante los fines de semana y temporadas con objetos propios.</li>
+      </ul>
+
+      <h3>Oficios</h3>
+      <ul>
+        <li><b>Recolección.</b> Plantas y vetas en cada zona; vuelven a estar disponibles a los 5 minutos.</li>
+        <li><b>Pesca.</b> Un pesquero en el pueblo y en cada zona. Lanza y tira cuando pique; tirar antes o moverte lo espanta. Cada pesquero tiene su especie y, con lluvia, el Pez Dorado es el doble de frecuente. Hasta 80 capturas al día.</li>
+        <li><b>Artesanía.</b> La Artesana Lila convierte materiales y pescado en pociones, elixires, comida y runas.</li>
+        <li><b>Expediciones.</b> Desde Nv 5 (L). Envía a tu mascota 1, 4 u 8 horas al Bosque, la Mina o el Lago y recoge el botín al volver.</li>
+      </ul>
+
+      <h3>Social</h3>
+      <ul>
+        <li><b>Grupos.</b> Desde el marco de otro jugador o en Social (O). La experiencia de cada presa se reparte con un 10% extra por miembro. El buscador del portal de mazmorras avisa a quien busque grupo.</li>
+        <li><b>Hermandades.</b> Desde Nv 10 por 5.000 de oro. Chat propio, gesta semanal y ranking.</li>
+        <li><b>Chat.</b> General por defecto; /d mapa, /g grupo, /h hermandad, /s Nombre susurro, /r responder. Gestos: /saludar /bailar /reir /aplaudir /gracias /si /enojo /llorar.</li>
+        <li><b>Duelos.</b> Desde el marco de otro jugador. Nadie muere y cuentan para el ranking Elo.</li>
+      </ul>
+
+      <h3>Tienda y cuenta</h3>
+      <ul>
+        <li><b>Mercader.</b> Poderes, armas, monturas, colores, mascotas y skins. Cada skin da bonificaciones mientras la llevas.</li>
+        <li><b>Tienda premium.</b> Oro, poderes y skins con Stars en Telegram<span class="solo-web"> o con SOL en la web (Phantom, Solflare o QR de Solana Pay; «Ya pagué» comprueba el pago)</span>. Cada pedido se revisa y se entrega a mano. Con dinero nunca se compran mTON.</li>
+        <li><b>Oro.</b> Es solo del juego: no se canjea por dinero ni por $DUENDE.</li>
+        <li><b>mTON (opcional).</b> Desde Nv 15 con cuenta: jefes, jefe mundial y caza del día reparten un fondo diario limitado. 1.000 mTON = 1 TON; retiro desde 5 TON, una vez por semana y hasta 10 TON.</li>
+        <li><b>Seguridad.</b> Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado. El único contacto oficial es @ElDuendeOficial.</li>
+      </ul>
+      <p class="creditos"><b>Créditos de arte:</b> Luis Zuno (ansimuz) — Magic Cliffs y Warped Caves (CC-BY 3.0), Mountain Dusk, Underwater, GothicVania y Sunny Land (CC0); Moikmellah, Ashuuya, Scratchio y 7Soul1 (CC0). Sonidos: Juhani Junkala (CC0).</p>
+    </div>
     <p class="creador">👤 Creado por <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial</a> · <a href="https://t.me/elduende420peru" target="_blank" rel="noopener">📢 Canal</a> · <a href="https://t.me/duendesolana420" target="_blank" rel="noopener">💬 Grupo</a></p>
   </div>
 </div>
@@ -788,6 +832,6 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=188"></script>
+<script type="module" src="/mmo/js/client.js?v=190"></script>
 </body>
 </html>

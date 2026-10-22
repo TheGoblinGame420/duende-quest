@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=188';
+} from './data.js?v=190';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1777,16 +1777,19 @@ function htmlCalendario() {
   if (pron.length) l.push(`☁️ <b>Clima</b> (con lluvia el Pez Dorado sale el doble): ${pron.join(' · ')}.`);
   const tp = TEMPORADAS.find(x => x.fin > ahora);
   if (tp) l.push(tp.ini <= ahora ? `${tp.emoji} <b>${esc(tp.nombre)}</b>: en marcha hasta el ${esc(tp.hasta)}.` : `${tp.emoji} <b>${esc(tp.nombre)}</b>: empieza el ${dia(tp.ini)} a las ${hora(tp.ini)}.`);
-  return '<div class="mis-caja" style="margin-top:0"><b>📅 Calendario</b><ul style="padding-left:18px;margin-top:4px;font:13px/1.5 var(--sans);color:var(--txt2)">' + l.map(x => `<li>${x}</li>`).join('') + '</ul><p style="font-size:11px;color:var(--txt3)">Horas en la hora de tu dispositivo.</p></div>';
+  return '<h3>Calendario</h3><ul>' + l.map(x => `<li>${x.replace(/^(\p{Extended_Pictographic}|\uFE0F|\s)+/u, '')}</li>`).join('') + '</ul><p class="creditos" style="margin-top:4px">Horas en la hora de tu dispositivo.</p>';
 }
+// Las notas guardan su emoji (para el chat y el bot); en la ventana van sin el.
+const sinEmoji = t => String(t).replace(/^(\p{Extended_Pictographic}|\p{Emoji_Presentation}|\uFE0F|\u200D|\s)+/u, '');
 function abrirNovedades() {
-  let h = htmlCalendario();
+  let h = htmlCalendario() + '<h3>Notas del parche</h3>';
   for (const nv of NOVEDADES) {
-    h += `<p style="font:600 13px var(--sans);color:var(--txt);margin:6px 0">${esc(nv.fecha)}</p><ul style="padding-left:18px;font:13px/1.5 var(--sans);color:var(--txt2)">`;
+    h += `<p class="parche"><b>Parche 1.${nv.n}</b><span>${esc(nv.fecha)}</span></p><ul>`;
     // En Telegram, sin lo que habla de SOL o wallets (sus reglas).
-    h += nv.items.filter(x => !TG || !(/\bSOL\b/.test(x) || /wallet|solana|phantom|solflare/i.test(x))).map(x => `<li style="margin-bottom:4px">${esc(x)}</li>`).join('') + '</ul>';
+    h += nv.items.filter(x => !TG || !(/\bSOL\b/.test(x) || /wallet|solana|phantom|solflare/i.test(x))).map(x => `<li>${esc(sinEmoji(x))}</li>`).join('') + '</ul>';
   }
   $('nov-lista').innerHTML = h;
+  $('nov-lista').classList.add('guia');
   abrir('m-novedades');
 }
 // Boveda semanal: elegir UNO de los objetos que abrieron tus mazmorras de
@@ -3717,13 +3720,13 @@ function sugerencias() {
 }
 function cajaSugerencias() {
   if (!yo || !yo.clase) return '';
-  return '<div class="mis-caja"><b>💡 Qué hacer ahora</b><ul style="padding-left:18px;margin-top:4px;font-size:13px;line-height:1.45">' + sugerencias().map(x => `<li>${x}</li>`).join('') + '</ul></div>';
+  return '<div class="mis-caja"><b>Objetivos</b><ul style="padding-left:18px;margin-top:4px;font-size:13px;line-height:1.45">' + sugerencias().map(x => `<li>${sinEmoji(x)}</li>`).join('') + '</ul></div>';
 }
 function cajaExpedicion() {
   if (!yo || yo.nivel < EXPEDICION.nv) return '';
   const ex = yo.exped;
   const quien = yo.mascota && MASCOTAS[yo.mascota] ? MASCOTAS[yo.mascota].nombre : 'Un duendecillo explorador';
-  let h = '<div class="mis-caja"><b>🧭 Expedición</b>';
+  let h = '<div class="mis-caja"><b>Expedición</b>';
   if (!ex) {
     let dest = 'bosque'; try { dest = localStorage.getItem('dq_exped') || 'bosque'; } catch (e) {}
     if (!EXPEDICION.destinos[dest]) dest = 'bosque';
