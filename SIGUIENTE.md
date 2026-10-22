@@ -1363,6 +1363,12 @@ Arreglos de la cuarta revisión: «equipar lo mejor» no rompe un conjunto
 activo; piezas de conjunto ya no se autovenden con la bolsa llena;
 probabilidad de pieza 25%; la temporada la manda el servidor (`yo.temp`).
 
+**Nueva medición del novato (22-oct, bot de la auditoría en móvil, mago,
+servidor local con ?v=41):** 0 muertes y Nv 9 en 8 min, misión 4 (el
+Sabueso) vencida y ya en las Colinas Rojas. Antes: 75 muertes en 40 min y
+Nv 5. Script: `ret/jugar.mjs` en el scratchpad de la sesión (variable PJ =
+puerto del servidor local).
+
 Sin hacer: avisos a la hora habitual de cada uno (el cron de las 17 UTC ya
 usa 4 de 5 disparadores del plan gratis), y final de juego para D30 (1→60 se
 juega en 5-8 h). Ojo: la bienvenida del bot aún habla de $DUENDE en Solana
