@@ -252,16 +252,19 @@ export const Mazmorras = {
       this.aClave(o.cl, { t: 'emote', m: `😡 ¡${MONSTRUOS[o.k].nombre} se enfurece! Remátalo.` });
     }
   },
-  // Volcanico: mientras haya combate, cada 8 s una llama bajo cada jugador
-  // (aviso de 1,6 s; se esquiva saliendo de la marca o saltando).
+  // Volcanico: mientras haya combate, cada 10 s una llama bajo cada jugador
+  // (aviso de 2 s, 10% de la vida; medido con sim_mazmorra EQ=1: a 8 s/1,6 s/12%
+  // la semana Tiranico+Volcanico era mucho mas dura que las demas; se esquiva saliendo de la marca o saltando).
   afijoVolcanico(w, jugadores, ahora) {
     const peleando = [...w.mons.values()].find(o => !o.muere && o.amen.size);
     if (!peleando) { w.volcEn = 0; return; }
     if (!w.volcEn) { w.volcEn = ahora + 4000; return; }
     if (ahora < w.volcEn) return;
-    w.volcEn = ahora + 8000;
+    // No a la vez que una zona del jefe: sin sitio seguro, era la que mas mataba.
+    if (w.zonas.some(z => !z.hecho && !z.volc)) { w.volcEn = ahora + 1500; return; }
+    w.volcEn = ahora + 10000;
     w.sigZona = w.sigZona || 1;
-    for (const s of jugadores) if (!s.muerto) w.zonas.push({ id: w.sigZona++, x0: s.x - 55, x1: s.x + 55, act: ahora + 1600, fin: ahora + 2100, dano: 0.12, color: '#ff5a1f', de: peleando.id });
+    for (const s of jugadores) if (!s.muerto) w.zonas.push({ id: w.sigZona++, x0: s.x - 55, x1: s.x + 55, act: ahora + 2000, fin: ahora + 2500, dano: 0.1, color: '#ff5a1f', de: peleando.id, volc: true });
     if (!w.volcAviso) { w.volcAviso = true; this.aClave(w.clave, { t: 'emote', m: '🌋 ¡El suelo arde bajo tus pies! Sal de la marca naranja.' }); }
   },
   // Sanguinario (llamado desde matar): al morir uno de un pack, cura un 20%

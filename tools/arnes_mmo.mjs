@@ -1881,7 +1881,7 @@ async function pruebasAfijos() {
   chequear(!!z, 'Volcánico: aparece una llama bajo el jugador');
   const hp0 = d.hp;
   d.inv = 0;
-  tick(18);
+  tick(22);
   chequear(d.hp < hp0 - d.st.maxHp * 0.08, 'quien no se mueve recibe el golpe de la llama');
   // Ranking semanal: vencer el +5 lo anota y el lunes premia.
   w.inst.af = [];

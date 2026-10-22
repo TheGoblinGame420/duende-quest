@@ -10,9 +10,10 @@
 // tools/ no se publica (.assetsignore).
 // ═══════════════════════════════════════════════════════
 import { MmoWorld } from '../functions/mmo/world.js';
-import { MAZMORRAS, MONSTRUOS, HABS, costoHab, FIS, SUELO } from '../mmo/js/data.js';
+import { MAZMORRAS, MONSTRUOS, HABS, costoHab, FIS, SUELO, RANURAS } from '../mmo/js/data.js';
 
-let reloj = 1_800_000_000_000 + 7 * 60 * 1000;
+// SEM=2027-01-18 fija la semana (y con ella los afijos: esa es Tiranico+Volcanico).
+let reloj = process.env.SEM ? Date.parse(process.env.SEM + 'T12:00:00Z') : 1_800_000_000_000 + 7 * 60 * 1000;
 Date.now = () => reloj;
 const almacen = new Map();
 const state = { storage: { get: async k => almacen.get(k), put: async (k, v) => { almacen.set(k, v); }, delete: async k => almacen.delete(k) }, blockConcurrencyWhile: f => f() };
@@ -31,6 +32,8 @@ async function bot(mundo, clase, nivel) {
   for (let i = 0; i < 300 && !s.c; i++) await new Promise(r => setTimeout(r, 10));
   if (mundo.bucle) { clearInterval(mundo.bucle); mundo.bucle = 1; }
   s.c.clase = clase; s.c.nivel = nivel; s.c.pw = { pocion: 10, escudo: 0, rayo: 0, fuego: 0 };
+  // EQ=1: equipo epico de su nivel en las 5 ranuras (mas realista que sin nada).
+  if (process.env.EQ) { s.c.eq = {}; for (const r of Object.keys(RANURAS)) { let it; do { it = mundo.generarItem(nivel, 2); } while (it.s !== r); s.c.eq[r] = it; } }
   s.st = mundo.stats(s.c); s.hp = s.st.maxHp; mundo.recursoInicial(s);
   s.mandar = o => { s.cuenta = 0; return mundo.recibir(s, JSON.stringify(o)); };
   s.bot = { pociones: 0, muertes: 0, atkT: 0 };
