@@ -414,10 +414,10 @@ export function talento(c, id) {
 export const MONTURAS = {
   lagarto:   { nombre: 'Lagarto del Desierto', hoja: 'lagarto',   nv: 20, precio: 8000,   vel: 1.5, alto: 48, dy: 22 },
   conejo:    { nombre: 'Conejo Saltarín',      hoja: 'conejo',    nv: 20, precio: 8000,   vel: 1.5, alto: 40, dy: 24 },
-  sapo:      { nombre: 'Sapo Gigante',         hoja: 'rana',      nv: 25, precio: 15000,  vel: 1.55, alto: 60, dy: 32 },
+  sapo:      { nombre: 'Sapo Gigante',         hoja: 'rana',      nv: 25, precio: 15000,  vel: 1.55, alto: 74, dy: 30 },
   hellgato:  { nombre: 'Gato Infernal',        hoja: 'hellgato',  nv: 35, precio: 35000,  vel: 1.7, alto: 44, dy: 22 },
   hellhound: { nombre: 'Sabueso Infernal',     hoja: 'hellhound', nv: 40, precio: 60000,  vel: 1.8, alto: 52, dy: 26 },
-  aguila:    { nombre: 'Águila Real',          hoja: 'aguila',    nv: 50, precio: 150000, vel: 1.9, alto: 70, dy: 38 },
+  aguila:    { nombre: 'Águila Real',          hoja: 'aguila',    nv: 50, precio: 150000, vel: 1.9, alto: 70, dy: 38, tinte: '#d4a24a' },
   dragon:    { nombre: 'Dragón Ancestral',     hoja: 'dragon',    nv: 60, precio: 300000, vel: 2,   alto: 84, dy: 40 },
   // No se vende: se gana venciendo al Titan de la banda en 3 semanas.
   abismo:    { nombre: 'Murciélago del Abismo', hoja: 'murcielago', nv: 60, precio: 0, banda: true, vel: 2, alto: 76, dy: 30 },
@@ -437,7 +437,7 @@ export const TINTES = {
 // subir 'n' al añadir una.
 export const NOVEDADES = [
   { n: 3, fecha: '22 de octubre (noche)', items: [
-    '⚔️ Primera BANDA: el Santuario del Titán (Nv 60, de 1 a 10 jugadores). Cuatro jefes, botín de nivel 64-66 una vez por semana y el Murciélago del Abismo si vences al Titán en 3 semanas.',
+    '⚔️ Primera BANDA: el Santuario del Titán (Nv 60, de 1 a 10 jugadores), en el portal de mazmorras del pueblo. Cuatro jefes, botín de nivel 64-66 una vez por semana y el Murciélago del Abismo si vences al Titán en 3 semanas.',
     '👥 El líder puede convertir su grupo en banda (hasta 10) desde Social > Grupo.',
     '🟡 Zonas doradas: hay que aguantarlas juntos, el golpe se reparte entre los que estén dentro.',
     '🐸 Monturas nuevas en el Mercader: Sapo Gigante (Nv 25) y Águila Real (Nv 50). Y cuatro mascotas más: Arañita, Cangrejito, Pulpito y Fantasmita.',
@@ -466,11 +466,11 @@ export const MASCOTAS = {
   hongo:      { nombre: 'Hongo Saltarín',    hoja: 'hongo',      alto: 24, nv: 10, precio: 15000 },
   rana:       { nombre: 'Rana Charquera',    hoja: 'rana',       alto: 24, nv: 15, precio: 25000 },
   zarigueya:  { nombre: 'Zarigüeya Ladrona', hoja: 'zarigueya',  alto: 22, nv: 20, precio: 40000 },
-  pajaro:     { nombre: 'Pájaro Hueso',      hoja: 'pajaro',     alto: 24, nv: 30, precio: 70000, vuela: true },
-  murcielago: { nombre: 'Murciélago Real',   hoja: 'murcielago', alto: 30, nv: 45, precio: 150000, vuela: true },
   arana:      { nombre: 'Arañita de Seda',   hoja: 'arana',      alto: 18, nv: 25, precio: 30000 },
+  pajaro:     { nombre: 'Pájaro Hueso',      hoja: 'pajaro',     alto: 24, nv: 30, precio: 70000, vuela: true },
   cangrejo:   { nombre: 'Cangrejito',        hoja: 'cangrejo',   alto: 22, nv: 35, precio: 55000 },
   pulpo:      { nombre: 'Pulpito Brujo',     hoja: 'pulpo',      alto: 24, nv: 40, precio: 90000, vuela: true },
+  murcielago: { nombre: 'Murciélago Real',   hoja: 'murcielago', alto: 30, nv: 45, precio: 150000, vuela: true },
   fantasma:   { nombre: 'Fantasmita',        hoja: 'fantasma',   alto: 28, nv: 50, precio: 200000, vuela: true },
 };
 export const velMontura = id => (MONTURAS[id] ? MONTURAS[id].vel : 1);
