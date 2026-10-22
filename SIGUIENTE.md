@@ -2003,3 +2003,28 @@ Esta sesión lleva la tienda (pares del `?v=`), la otra lo demás (impares).
   - Parche 1.9 en las notas del parche (interfaz renovada).
   - El arnés busca ahora «XP extra en tus próximas cazas» y «hasta 5».
   - Resistencia 20 bots / 3 min: 0 errores. Arnés: **562 bien, 0 mal**.
+- **?v=238 (22-oct, 15:05) — QA 8 en producción (agente):** ventanas abren
+  arriba (`abrir()` pone `.ventana.scrollTop = 0`), pase «Nv N · premio»,
+  miles con `useGrouping: 'always'` en el pase, forja con coma decimal,
+  «retiro/retiros», «Nv N» sin partir en el libro.
+  - **Pendiente de QA 8** (no se hizo por tiempo):
+    1. Móvil: con el chat abierto los avisos (`#hud.estrecho #avisos`,
+       top 322px) tapan el panel `#frases`; también tapan la etiqueta de la
+       flecha guía en combate.
+    2. Móvil: el chat plegado (`#chat-log` max-height 34px) enseña la cola de
+       un mensaje y pisa la placa del jugador.
+    3. «Misión cumplida» sale dos veces (consejo del tutorial paso 5 + aviso
+       del servidor, world.js ~1589).
+    4. PREMIUM en móvil: columna de precio + botón muy ancha; apilar el botón
+       bajo el texto en pantallas estrechas.
+    5. Gestos del chat móvil son emojis sueltos (`GESTOS[k].e`): ponerles
+       texto o iconos. AUTO cambia de ancho al activarse (`pintarAuto`).
+    6. Detalles: nombre vacío al entrar solo pone el borde rojo; «29 caz.»
+       en el ranking; iconos de Escudo/Poción del pack con texto en inglés
+       («LAW», «ENERGY»).
+  - Los invitados de QA **Qa82508p** y **Qa84334m** (Nv 2) aparecen en el
+    ranking semanal de producción; desaparecen con el cierre semanal.
+- **Reel publicitario (22-oct):** `scratchpad/reel/grabar.mjs` graba escenas
+  del juego en local con `Page.startScreencast` (405×720, ~55 fps) y
+  rótulos en el DOM con Press Start 2P; ffmpeg las une con fundidos a
+  1080×1920 (24 s, sin música).
