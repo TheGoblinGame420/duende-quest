@@ -199,7 +199,7 @@ export class MmoWorld {
       this.salirDeMundo(s);
       await this.guardar(s);
     }
-    if (this.contarOnline() === 0 && this.bucle) { clearInterval(this.bucle); this.bucle = null; }
+    if (this.contarOnline() === 0 && this.bucle) { clearInterval(this.bucle); this.bucle = null; this.guardarHermsSucias(Infinity); }
   }
 
   enviar(s, obj) {
@@ -1391,7 +1391,7 @@ export class MmoWorld {
     }
     // Misiones diarias y semanales (solo quien peleo de verdad).
     if (o && participo !== false) {
-      this.puntoGesta(s, o.jefe ? 'jefe' : 'caza');
+      if (o.jefe || (o.nv || MONSTRUOS[o.k].nivel) >= c.nivel - 10) this.puntoGesta(s, o.jefe ? 'jefe' : 'caza');
       this.progresoTarea(s, 'caza', o, n || 1);
       if (o.jefe && !o.mazmorra && !MONSTRUOS[o.k].mundial) this.progresoTarea(s, 'jefe', o);
     }

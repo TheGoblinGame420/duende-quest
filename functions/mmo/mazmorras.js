@@ -18,7 +18,7 @@
 // ultimo, epica). NUNCA mTON: ese dinero sale de un fondo limitado y sumar
 // fuentes nuevas se habla antes con el dueño.
 // ═══════════════════════════════════════════════════════
-import { MAPAS, MONSTRUOS, MAZMORRAS, MONTURAS, MATERIALES, esenciaJefe, escalaMazmorra, premioMazmorraDia, nivelMazmorra, statsMonstruo, SUELO, hoyUTC, NIVEL_MAX, DESAFIO_MAX, multDesafio, premioDesafio, AFIJOS, afijosDe, multAfijos, opcionesBoveda, semanaUTC, nombreItem, BANDA_MONTURA, botinBandaNv, CONJUNTO_PROB, BANDA_MAX, BOLSA_MAX } from '../../mmo/js/data.js';
+import { MAPAS, MONSTRUOS, MAZMORRAS, MONTURAS, MATERIALES, esenciaJefe, ESENCIA_NV, escalaMazmorra, premioMazmorraDia, nivelMazmorra, statsMonstruo, SUELO, hoyUTC, NIVEL_MAX, DESAFIO_MAX, multDesafio, premioDesafio, AFIJOS, afijosDe, multAfijos, opcionesBoveda, semanaUTC, nombreItem, BANDA_MONTURA, botinBandaNv, CONJUNTO_PROB, BANDA_MAX, BOLSA_MAX } from '../../mmo/js/data.js';
 import { GRUPO_MAX } from './social.js';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -151,6 +151,7 @@ export const Mazmorras = {
     const w = clave && this.mundo[clave];
     if (!w || !w.inst || s.k !== clave) return;
     if (s.c.inst === clave) s.c.inst = null;
+    if (this.instDe && this.instDe.get(s.c.uid) === clave) this.instDe.delete(s.c.uid);
     this.entrarMapa(s, 'pueblo', 795);
     this.enviar(s, { t: 'toast', m: '🏰 Saliste del grupo: vuelves al pueblo.' });
   },
@@ -163,7 +164,7 @@ export const Mazmorras = {
     if (s.c.nivel < (w.inst.k ? NIVEL_MAX : MAZMORRAS[w.inst.id].nv[0])) return false;
     // Solo a la de tu grupo o a la tuya (no a la de un grupo que dejaste).
     const g = this.grupoDe(s);
-    if (!((g && g.inst === w.clave) || (!g && this.instDe && this.instDe.get(s.c.uid) === w.clave))) return false;
+    if (!((g && g.inst === w.clave) || (this.instDe && this.instDe.get(s.c.uid) === w.clave))) return false;
     if (this.llenaInst(w, s)) return false;
     this.entrarMapa(s, mapa, x, false, w.clave);
     w.inst.vacioDesde = 0;
@@ -299,7 +300,7 @@ export const Mazmorras = {
       const pct = o.hp / o.max;
       o.max = Math.round(statsMonstruo(o.k, o.nv).hp * esc.vidaJefe * (I.mvJ || I.mv || 1));
       o.hp = Math.max(1, Math.round(o.max * pct));
-      o.atk = Math.round(o.atk0 * esc.atkJefe * (I.maJ || I.ma || 1) * (o.enfurecido ? 1.5 : 1));
+      o.atk = Math.round(o.atk0 * esc.atkJefe * (I.maJ || I.ma || 1) * (o.enfurecido ? o.enfX || 1.5 : 1));
       o.nEsc = nSala;
       this.aClave(o.cl, { t: 'mmx', id: o.id, mx: o.max, hp: Math.ceil(o.hp) });
     }
@@ -323,6 +324,7 @@ export const Mazmorras = {
         for (const u of m.en) if (o.hp / o.max <= u && !st.hechos.includes(u)) { st.hechos.push(u); this.invocarEsbirros(o, m); }
       } else if (m.tipo === 'enrage' && !o.enfurecido && o.hp / o.max <= m.en) {
         o.enfurecido = true;
+        o.enfX = m.atkX;
         o.atk = Math.round(o.atk * m.atkX);
         o.vel = o.vel0 * 1.3;
         this.aClave(o.cl, { t: 'emote', m: `😡 ¡${def.nombre} se enfurece!` });
@@ -393,7 +395,7 @@ export const Mazmorras = {
     for (const a of Object.keys(o.au)) this.quitarAuraMon(o, a);
     o.hp = o.max;
     o.amen.clear(); o.dano.clear();
-    o.combateDesde = 0; o.gs = {}; o.cast = null; o.soloDesde = 0; o.enfurecido = false;
+    o.combateDesde = 0; o.gs = {}; o.cast = null; o.soloDesde = 0; o.enfurecido = false; o.enfX = 1;
     o.atk = o.atk0; o.vel = o.vel0; o.x = o.casaX; o.au = {};
     this.quitarEsbirros(o, w);
     w.zonas = [];
@@ -414,9 +416,12 @@ export const Mazmorras = {
     this.aClave(o.cl, { t: 'muros', muros: w.muros, hechos: I.hechos });
     const jugadores = [...this.sesiones.values()].filter(s => s.c && s.k === o.cl);
     const es = esenciaJefe(I.banda, I.k);
+    const peleo = s => o.dano.has(s.id) || !!(o.cura && o.cura.has(s.id));
     for (const s of jugadores) {
       s.c.mzJefes = s.c.mzJefes || {}; s.c.mzJefes[o.k] = (s.c.mzJefes[o.k] || 0) + 1;
-      // Esencia Abisal (para las runas de la Artesana), a todos los de dentro.
+      // Esencia Abisal (para las runas de la Artesana): mazmorras de nivel
+      // alto y solo a quien peleo.
+      if (I.nv < ESENCIA_NV || !peleo(s)) continue;
       s.c.mat = s.c.mat || {};
       s.c.mat.esencia = Math.min(999, (s.c.mat.esencia || 0) + es);
       s.sucio = true;
@@ -433,7 +438,7 @@ export const Mazmorras = {
       const c = s.c;
       c.mazmorras = (c.mazmorras || 0) + 1;
       this.progresoTarea(s, 'mazmorra');
-      this.puntoGesta(s, 'mazmorra');
+      if (peleo(s)) this.puntoGesta(s, 'mazmorra');
       if (!c.mazDia || c.mazDia.d !== hoy) c.mazDia = { d: hoy, hechas: [] };
       let extra = '';
       let kBoveda = 0;

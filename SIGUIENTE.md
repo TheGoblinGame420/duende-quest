@@ -1639,3 +1639,70 @@ Ciudadela 45-60). Todo publicado con build y humo OK.
   que las 17: en los registros sale "[MMO avisos Nh]").
 - Equilibrio de los afijos con jugadores reales (Volcánico + Tiránico puede
   ser duro en solitario).
+
+### DUENDE QUEST ONLINE — banda, runas y gesta (22-oct-2026, cuarta parte)
+
+Sesión de "mejora continua" (?v=68 → ?v=75; los pares 72/74 son de la otra
+sesión). Arnés: **458 comprobaciones**. Nada de esto da mTON.
+
+**Reparto con la otra sesión (que siguió en el MMO a la vez):** ella lleva
+SKINS/PAQUETES, la tienda premium con SOL/Stars y los pedidos (world.js
+`pedido`/`entregarPedido`, functions/api/telegram-bot.js y las pestañas de
+skins/premium del cliente); esta, mazmorras, banda, profesiones, eventos y
+equilibrio. Para no chocar con el `?v=`: **esta sesión usa los impares
+(75, 77...) y la otra los pares (76, 78...)**. Avisarse por SendMessage tras
+cada push.
+
+- **Temporadas de 2027** (`TEMPORADAS`, data.js): Verano Duende 15-29 ene
+  (🐚 `c.conchas`), Vendimia 4-21 mar (🍇 `c.uvas`), Lluvia de Estrellas
+  15 abr-2 may (🌠 `c.estrellas`), Fiesta del Sol 12-27 jun (☀️ `c.soles`),
+  Fiestas Patrias 20-31 jul (🎆 `c.fuegos`), con sus logros de 50/200. El
+  arnés comprueba que van en orden, no se pisan y tienen sus dos logros.
+  Falta: mayo y de agosto en adelante.
+- **Monturas** Sapo Gigante (Nv 25, 15k) y Águila Real (Nv 50, 150k);
+  **mascotas** Arañita, Cangrejito, Pulpito y Fantasmita (25k-200k) y logro
+  «Domador de Mascotas» (8).
+- **Banda: Santuario del Titán** (`MAZMORRAS.santuario`, `banda: true`,
+  `dif` ×1,5 vida ×1,2 daño, mapa `santuario` de 5800 px con fondo
+  `amanecer2`). Nv 60, de 1 a 10. Jefes `mz_coloso_ab`, `mz_madre_baba`,
+  `mz_serafin`, `mz_titan`. Mecánica nueva: zona `junta` (`donde: 'uno'`)
+  dorada que se **aguanta juntos**: golpe = dano × min(jugadores en la sala,
+  3) repartido entre los de dentro; si no entra nadie, `dano` a todos.
+  - Grupos: `maxGrupo(g)` = 5, o 10 con `g.banda` (botón del líder en
+    Social › Grupo, mensaje `banda`; o solo al anunciarse para la banda en
+    el buscador). Una banda de más de 5 no entra a mazmorras de 5 ni a
+    Desafíos; tope 5/10 dentro de cada instancia (`capInst/llenaInst`);
+    salir o ser expulsado del grupo te saca de la instancia
+    (`sacarDeInstancia`) y `volverAInstancia` solo devuelve a la de tu grupo
+    o a la tuya (`alDisolverGrupo` reparte la instancia a los miembros).
+  - La vida del jefe se reescala hacia arriba si llegan más a la sala con
+    el combate empezado (`o.nEsc` en `guionJefe`).
+  - Botín (`botinBanda`, llamado desde `dar()`): épico Nv 64 (Titán 66, 15%
+    legendario) una vez por semana y jefe (`c.bandaSem`), solo a quien pegó
+    o curó y sin gastar la semana con la bolsa llena (`it.banda` se trata
+    como pieza de conjunto). Conjunto «Corona del Titán». Titán vencido en
+    3 semanas (`c.titanes`) → montura `abismo` (no se vende). Cuenta en la
+    Bóveda como +5 una vez por semana. Logros «Azote del Titán» y «Jinete
+    del Abismo».
+  - Simulación (sin equipo): guerrero solo ~3 min; 3/5/10 jugadores
+    5,5-6,5 min; jefes ~30 s solo y ~60-75 s con 5. El mago solo sin
+    equipo no la pasa (es una banda; también le cuesta el +5 solo).
+- **Artesanía de nivel alto**: en zonas Nv 30+ las plantas dan Flor de
+  Luna y las vetas Mithril (`RARO_ZONA`), los jefes de mazmorra Esencia
+  Abisal (`esenciaJefe`: 1, +1 en Desafío, 2 en banda). **Runas** en la
+  Artesana desde Nv 40 (`RUNAS`, `costoRuna`, `grabarRuna`): Fuerza/Piedra/
+  Vida, +2% por rango hasta 5 (+10%), coste 2.500·r² oro + materiales;
+  logro «Maestro Rúnico». Receta «Destilar Flor de Luna».
+- **Gesta semanal de hermandad** (hermandades.js `gestaDe/puntoGesta/
+  cobrarGesta/guardarHermsSucias`): monstruo 1, jefe 10, mazmorra 25;
+  Bronce 500 / Plata 1.500 / Oro 4.000 dan 100/250/500 × nivel de oro a
+  quien aportó 20+ puntos (al pasar el nivel, al llegar al mínimo o al
+  entrar). `h.gesta` se guarda cada 30 s (un reinicio puede perder hasta
+  30 s de puntos). Logro «Gesta Dorada».
+- **Equilibrio de afijos**: con `SEM=<lunes> EQ=1 node tools/sim_mazmorra.mjs
+  ciudadela 5,10 desafio` (nuevo: fija la semana y equipa épicos) la semana
+  Tiránico+Volcánico era mucho más dura que las demás; Volcánico pasó a
+  cada 10 s, aviso 2 s, 10% y sin brotar a la vez que una zona del jefe.
+  Sigue siendo la semana más dura; falta medir con jugadores reales.
+- Web: /guia (banda, runas, monturas, mascotas, temporadas, gesta) y
+  /novedades con la actualización. NOVEDADES del juego n=3.

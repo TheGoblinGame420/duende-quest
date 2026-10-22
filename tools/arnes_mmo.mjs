@@ -1644,13 +1644,20 @@ async function pruebasRunas() {
   for (let i = 0; i < 8; i++) { const n = D.nodosDe('noche')[i % 4]; r.c.nodos = {}; r.x = n.x; mundo.terminarRecoleccion(r, { nodo: n.i }); }
   chequear(r.c.mat.flor === f0 && r.c.mat.mithril === m0, 'en zonas bajas no salen');
   // Esencia Abisal de los jefes de mazmorra.
-  const w = mundo.crearInstancia('catacumbas', 30, 1);
+  const wb = mundo.crearInstancia('catacumbas', 30, 1);
+  mundo.unirAInstancia(r, wb);
+  const jb = [...wb.mons.values()].find(o => o.jefe && !o.final);
+  r.x = jb.x - 80;
+  const eb = r.c.mat.esencia || 0;
+  mundo.danar(jb, 1, r); mundo.danar(jb, jb.hp + 1, r); tick(1);
+  chequear((r.c.mat.esencia || 0) === eb, 'una mazmorra de nivel bajo no da Esencia');
+  const w = mundo.crearInstancia('nido', 47, 1);
   mundo.unirAInstancia(r, w);
   const jefe = [...w.mons.values()].find(o => o.jefe && !o.final);
   r.x = jefe.x - 80;
   const e0 = r.c.mat.esencia || 0;
   mundo.danar(jefe, 1, r); mundo.danar(jefe, jefe.hp + 1, r); tick(1);
-  chequear(r.c.mat.esencia === e0 + 1, 'un jefe de mazmorra da 1 Esencia Abisal');
+  chequear(r.c.mat.esencia === e0 + 1, 'un jefe de mazmorra de nivel alto da 1 Esencia Abisal');
   // Grabar runas en la Artesana.
   const ax = D.MAPAS.pueblo.npcs.find(x => x.tipo === 'artesania').x;
   await aMapa(r, 'pueblo', ax);
@@ -1695,31 +1702,34 @@ async function pruebasGesta() {
   await z.mandar({ t: 'hermResp', si: true }); await calma();
   const h = mundo.herms.get(a.c.herm);
   chequear(h && Object.keys(h.miembros).length === 3, 'hermandad de 3');
+  // Recien entrados aun no cobran: se les da antiguedad (se prueba abajo).
+  const antig = () => { for (const u in h.miembros) h.miembros[u].desde = reloj - 2 * 86400000; };
+  antig();
   limpiarMapa(a);
   // a caza 10 y vence un jefe; b, uno solo (no llega al minimo).
-  for (let i = 0; i < 10; i++) { const o = monstruo(a, 'goblin_normal', 30); mundo.danar(o, o.hp + 1, a); tick(1); }
+  for (let i = 0; i < 10; i++) { const o = monstruo(a, 'goblin_normal', 30, { nv: 30 }); mundo.danar(o, o.hp + 1, a); tick(1); }
   const j = monstruo(a, 'jefe_sabueso', 30); mundo.danar(j, j.hp + 1, a); tick(1);
-  const o1 = monstruo(b, 'goblin_normal', 30); mundo.danar(o1, o1.hp + 1, b); tick(1);
+  const o1 = monstruo(b, 'goblin_normal', 30, { nv: 30 }); mundo.danar(o1, o1.hp + 1, b); tick(1);
   const G = h.gesta;
   chequear(G && G.c[a.c.uid] === 20 && G.c[b.c.uid] === 1 && G.p === 21, 'monstruo 1 punto, jefe 10 (' + JSON.stringify(G && G.c && Object.values(G.c)) + ')');
   // Pasar el Bronce: a cobra, b no (aporto poco), y b cobra al llegar al minimo.
   const oa = a.c.oro, ob = b.c.oro;
   G.p = D.GESTA_UMBRALES[0] - 1;
   a.limpiar();
-  const o2 = monstruo(a, 'goblin_normal', 30); mundo.danar(o2, o2.hp + 1, a); tick(1);
+  const o2 = monstruo(a, 'goblin_normal', 30, { nv: 30 }); mundo.danar(o2, o2.hp + 1, a); tick(1);
   const pr = D.premioGesta(0, 30).oro;
   chequear(a.c.oro - oa >= pr && a.ultimos('toast').some(x => /Gesta de <Los Gesteros>/.test(x.m)), 'al llegar al Bronce, quien aportó cobra ' + pr + ' oro');
   chequear(b.c.oro - ob < pr, 'quien no llega al mínimo de puntos aún no cobra');
   for (let i = 0; i < 2; i++) { const o3 = monstruo(b, 'jefe_sabueso', 30); mundo.danar(o3, o3.hp + 1, b); tick(1); }
   chequear(b.c.oro - ob >= pr, 'al llegar al mínimo cobra el nivel ya conseguido');
   const oa2 = a.c.oro;
-  const o4 = monstruo(a, 'goblin_normal', 30); mundo.danar(o4, o4.hp + 1, a); tick(1);
+  const o4 = monstruo(a, 'goblin_normal', 30, { nv: 30 }); mundo.danar(o4, o4.hp + 1, a); tick(1);
   chequear(a.c.oro - oa2 < pr, 'cada nivel se cobra una sola vez');
   // Oro: logro. Un miembro desconectado cobra al volver.
   G.c[z.c.uid] = 50;
   await dejar(z);
   G.p = D.GESTA_UMBRALES[2] - 1;
-  const o5 = monstruo(a, 'goblin_normal', 30); mundo.danar(o5, o5.hp + 1, a); tick(1);
+  const o5 = monstruo(a, 'goblin_normal', 30, { nv: 30 }); mundo.danar(o5, o5.hp + 1, a); tick(1);
   chequear(a.c.gestaCob.n === 3 && a.c.logros.includes('gesta'), 'al llegar al Oro se cobran Plata y Oro y llega el logro Gesta Dorada');
   const z2 = await entrar('Gestolo', 'd4'); await calma(); await calma();
   chequear(z2.c.gestaCob && z2.c.gestaCob.n === 3, 'quien aportó y estaba fuera cobra al entrar');
@@ -1728,6 +1738,17 @@ async function pruebasGesta() {
   await a.mandar({ t: 'herm' }); await calma();
   const inf = a.ultimos('herm').pop();
   chequear(inf && inf.h.gesta && inf.h.gesta.p >= D.GESTA_UMBRALES[2] && inf.h.gesta.c[pub(a.c.uid)] > 0 && !JSON.stringify(inf).includes(a.c.uid), 'el cliente ve la gesta sin uids');
+  // Recien llegado a una hermandad que ya llego al Oro: no cobra hasta un dia despues.
+  const n = await entrar('Gestonuevo', 'd5'); ponerNivel(n, 30, 'guerrero'); await aMapa(n, 'noche', 600);
+  await a.mandar({ t: 'hermInvitar', p: n.id }); await calma();
+  await n.mandar({ t: 'hermResp', si: true }); await calma();
+  limpiarMapa(n);
+  for (let i = 0; i < 3; i++) { const o6 = monstruo(n, 'jefe_sabueso', 30); mundo.danar(o6, o6.hp + 1, n); tick(1); }
+  chequear(!(n.c.gestaCob && n.c.gestaCob.n), 'quien acaba de entrar no cobra la gesta ya conseguida');
+  avanzar(25 * 3600000); n.actT = reloj;
+  const o7 = monstruo(n, 'goblin_normal', 30, { nv: 30 }); mundo.danar(o7, o7.hp + 1, n); tick(1);
+  chequear(n.c.gestaCob && n.c.gestaCob.n === 3, 'tras un día en la hermandad, cobra');
+  await dejar(n);
   // La semana siguiente empieza de cero.
   G.sem = '2000-01-03';
   chequear(mundo.gestaDe(h).p === 0, 'cada lunes vuelve a empezar');

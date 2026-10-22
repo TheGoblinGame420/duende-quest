@@ -443,7 +443,7 @@ export const NOVEDADES = [
     '🐸 Monturas nuevas en el Mercader: Sapo Gigante (Nv 25) y Águila Real (Nv 50). Y cuatro mascotas más: Arañita, Cangrejito, Pulpito y Fantasmita.',
     '📅 Temporadas de 2027: Verano Duende (enero), Vendimia (marzo), Lluvia de Estrellas (abril), Fiesta del Sol (junio) y Fiestas Patrias (julio).',
     '🏆 Gesta semanal de hermandad: entre todos sumad puntos cazando, venciendo jefes y completando mazmorras; Bronce, Plata y Oro dan oro a quien aportó.',
-    '✨ Runas en la Artesana (desde Nv 40): +2% de ataque, defensa o vida por rango, hasta +10%. Piden Flor de Luna y Mithril (zonas Nv 30+) y Esencia Abisal (jefes de mazmorra).',
+    '✨ Runas en la Artesana (desde Nv 40): +2% de ataque, defensa o vida por rango, hasta +10%. Piden Flor de Luna y Mithril (zonas Nv 30+) y Esencia Abisal (jefes de mazmorras de Nv 40+).',
   ] },
   { n: 2, fecha: '22 de octubre', items: [
     '🏰 Dos mazmorras nuevas: la Fortaleza Goblin (Nv 20-40) y el Nido de la Reina Araña (Nv 40-58).',
@@ -926,7 +926,10 @@ export const MATERIALES = {
 // de uno extra por recogida (se tiran los dos).
 export const RARO_ZONA = [[30, 0.6], [45, 0.4]];
 export const raroDe = tipo => (tipo === 'hierba' ? 'flor' : 'mithril');
-// Esencia Abisal por jefe: mazmorra 1 (+1 en Desafio), banda 2.
+// Esencia Abisal por jefe: mazmorra 1 (+1 en Desafio), banda 2. Solo en
+// mazmorras de nivel ESENCIA_NV o mas (a Nv 60 las Catacumbas eran una
+// fuente sin freno) y para quien pego o curo a ese jefe.
+export const ESENCIA_NV = 40;
 export const esenciaJefe = (banda, k) => (banda ? 2 : 1 + (k ? 1 : 0));
 export const NODO_CADA_MS = 5 * 60000;
 export const RECOLECTAR_MS = 1500;
@@ -1028,6 +1031,7 @@ export const GESTA_UMBRALES = [500, 1500, 4000];
 export const GESTA_NOMBRES = ['🥉 Bronce', '🥈 Plata', '🥇 Oro'];
 export const GESTA_PUNTOS = { caza: 1, jefe: 10, mazmorra: 25 };
 export const GESTA_MIN = 20;
+export const GESTA_ANTIG_MS = 24 * 3600000;   // un dia en la hermandad para cobrar
 export const premioGesta = (i, nivel) => ({ oro: [100, 250, 500][i] * Math.max(1, nivel) });
 
 // ── MAZMORRAS ──

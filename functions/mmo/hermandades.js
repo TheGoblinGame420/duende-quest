@@ -9,7 +9,7 @@
 // El personaje lleva su hermandad en c.herm. Rangos: 'lider', 'oficial',
 // 'miembro'. Crear una cuesta oro (sale del juego, no de dinero real).
 // ═══════════════════════════════════════════════════════
-import { HERM_COSTO, HERM_NIVEL, HERM_MAX, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta, semanaUTC } from '../../mmo/js/data.js';
+import { HERM_COSTO, HERM_NIVEL, HERM_MAX, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, GESTA_ANTIG_MS, premioGesta, semanaUTC } from '../../mmo/js/data.js';
 import { pub } from './social.js';
 
 const INV_MS = 60000;
@@ -142,6 +142,7 @@ export const Hermandades = {
     }
     const quedan = Object.entries(h.miembros);
     if (!quedan.length) {
+      if (this.hermSucias) this.hermSucias.delete(h);
       await this.state.storage.delete('h:' + h.id);
       await this.state.storage.delete('hn:' + h.nombre.toLowerCase());
       this.herms.delete(h.id);
@@ -241,7 +242,7 @@ export const Hermandades = {
       for (const x of this.conectadosHerm(h)) this.cobrarGesta(x, h);
       this.guardarHerm(h);
       this.hermSucias.delete(h);
-    } else if (mioAntes < GESTA_MIN && G.c[s.c.uid] >= GESTA_MIN && n1) this.cobrarGesta(s, h);
+    } else if (n1 && G.c[s.c.uid] >= GESTA_MIN && (!s.c.gestaCob || s.c.gestaCob.sem !== G.sem || s.c.gestaCob.n < n1)) this.cobrarGesta(s, h);
   },
   // Cobra los niveles de la gesta de esta semana que aun no cobro (si aporto
   // lo minimo). Se mira al pasar un nivel, al llegar al minimo y al entrar.
@@ -250,6 +251,9 @@ export const Hermandades = {
     if (!h || !h.miembros[c.uid]) return;
     const G = this.gestaDe(h);
     if ((G.c[c.uid] || 0) < GESTA_MIN) return;
+    // Hay que llevar un tiempo en la hermandad (si no, entrar a una que ya
+    // llego al Oro y aportar 20 puntos cobraba todo). Se cobra mas tarde.
+    if (Date.now() - (h.miembros[c.uid].desde || 0) < GESTA_ANTIG_MS) return;
     const n = GESTA_UMBRALES.filter(u => G.p >= u).length;
     if (!c.gestaCob || c.gestaCob.sem !== G.sem) c.gestaCob = { sem: G.sem, n: 0 };
     let oro = 0;
@@ -268,7 +272,7 @@ export const Hermandades = {
   guardarHermsSucias(ahora) {
     if (!this.hermSucias || !this.hermSucias.size || ahora - (this.hermGuardT || 0) < 30000) return;
     this.hermGuardT = ahora;
-    for (const h of this.hermSucias) this.guardarHerm(h);
+    for (const h of this.hermSucias) if (this.herms && this.herms.get(h.id) === h && Object.keys(h.miembros).length) this.guardarHerm(h);
     this.hermSucias.clear();
   },
 

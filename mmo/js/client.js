@@ -1494,7 +1494,7 @@ function htmlGesta(hm) {
   h += `<div class="mis-barra" style="margin:6px 0"><i style="width:${Math.min(100, G.p / tope * 100)}%"></i></div>`;
   h += '<div style="display:flex;justify-content:space-between;gap:4px;font-size:11px;flex-wrap:wrap">' + GESTA_UMBRALES.map((u, i) =>
     `<span style="color:${G.p >= u ? 'var(--ok)' : 'var(--txt2)'}">${GESTA_NOMBRES[i]} ${u.toLocaleString('es')}${G.p >= u ? ' ✓' : ''}<br><span style="color:var(--txt3)">🪙 ${premioGesta(i, yo.nivel).oro.toLocaleString('es')}</span></span>`).join('') + '</div>';
-  h += `<p style="font-size:12px;margin-top:6px">${G.p.toLocaleString('es')} puntos · tu aporte: <b style="display:inline;color:${mio >= GESTA_MIN ? 'var(--ok)' : 'var(--warn)'}">${mio}</b>${mio < GESTA_MIN ? ` (cobras desde ${GESTA_MIN})` : ''}</p>`;
+  h += `<p style="font-size:12px;margin-top:6px">${G.p.toLocaleString('es')} puntos · tu aporte: <b style="display:inline;color:${mio >= GESTA_MIN ? 'var(--ok)' : 'var(--warn)'}">${mio}</b>${mio < GESTA_MIN ? ` (cobras desde ${GESTA_MIN})` : ''}</p><p style="font-size:11px;color:var(--txt3)">Para cobrar hay que llevar un día en la hermandad.</p>`;
   if (top.length) h += '<p style="font-size:12px;color:var(--txt2)">Más aportan: ' + top.map(([u, p]) => `${esc(nombre(u))} ${p}`).join(' · ') + '</p>';
   h += `<p style="font-size:11px;color:var(--txt3);margin-top:4px">${GESTA_PUNTOS.caza} punto por monstruo, ${GESTA_PUNTOS.jefe} por jefe y ${GESTA_PUNTOS.mazmorra} por mazmorra completada. Se reinicia el lunes.</p></div>`;
   return h;
@@ -2243,7 +2243,7 @@ function abrirArtesana() {
     }
     h += tarjeta(`<img src="${A}items/equipo/${ru.icono}.png">`, esc(ru.nombre), det, acc);
   }
-  h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Las plantas 🌿 y vetas ⛏️ brillan en el suelo de cada zona: acércate y pulsa E (o RECOGER). Cada una vuelve a crecer a los 5 minutos. El Cristal Arcano sale a veces al recoger, o se refina con 8 minerales. En las zonas de Nv 30+ salen también Flor de Luna y Mithril; la Esencia Abisal la sueltan los jefes de mazmorra (y el doble los de la banda).</p>';
+  h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Las plantas 🌿 y vetas ⛏️ brillan en el suelo de cada zona: acércate y pulsa E (o RECOGER). Cada una vuelve a crecer a los 5 minutos. El Cristal Arcano sale a veces al recoger, o se refina con 8 minerales. En las zonas de Nv 30+ salen también Flor de Luna y Mithril; la Esencia Abisal la sueltan los jefes de mazmorras de nivel 40 o más a quien pelea (y el doble los de la banda).</p>';
   const ven = $('arte-lista').closest('.ventana'), sc = ven ? ven.scrollTop : 0, scl = $('arte-lista').scrollTop;
   $('arte-lista').innerHTML = h;
   $('arte-lista').querySelectorAll('[data-receta]').forEach(b => b.onclick = () => { sfx('moneda', .4); mandar({ t: 'fabricar', id: b.dataset.receta }); });
