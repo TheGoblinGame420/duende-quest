@@ -11,12 +11,12 @@ import {
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
-  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe, TORRE, premioTorreSem, zonaDeNivel, progresoLogro, EXPEDICION, premioExpedicion,
+  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe, TORRE, premioTorreSem, zonaDeNivel, progresoLogro, proximoMundial, mundialDe, HORA_FELIZ, EXPEDICION, premioExpedicion,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=122';
+} from './data.js?v=124';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1715,8 +1715,28 @@ function revisarNovedades() {
     else if (++n > 450) clearInterval(t);
   }, 2000);
 }
+// Calendario: lo que pasa a su hora (en la hora local del jugador).
+function htmlCalendario() {
+  const ahora = Date.now();
+  const hora = t => new Date(t).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
+  const dia = t => new Date(t).toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' });
+  const l = [];
+  const hf = horaFelizTiempos(ahora);
+  const hfIni = Date.UTC(new Date(ahora).getUTCFullYear(), new Date(ahora).getUTCMonth(), new Date(ahora).getUTCDate(), HORA_FELIZ.ini);
+  l.push(`⚡ <b>Hora Feliz</b> (+50% XP): ${hf.activa ? '<span style="color:var(--ok)">¡ahora mismo!</span>' : 'cada día de ' + hora(hfIni) + ' a ' + hora(hfIni + 3600000)}.`);
+  let t = proximoMundial(ahora);
+  const jefes = [];
+  for (let i = 0; i < 3; i++, t += 1800000) jefes.push(`${hora(t)} ${esc((MONSTRUOS[mundialDe(t + 1000)] || {}).nombre || '')}`);
+  l.push(`👹 <b>Jefes mundiales</b> en el Coliseo: ${jefes.join(' · ')}.`);
+  l.push(`🧳 <b>Mercader ambulante</b>: ${ambulanteActivo() ? '<span style="color:var(--ok)">está aquí este fin de semana</span>' : 'de viernes a domingo'}.`);
+  const lunes = Date.parse(semanaUTC() + 'T00:00:00Z') + 7 * 86400000;
+  l.push(`🏆 <b>Cierre de los rankings semanales</b> (experiencia, Torre, Desafíos; premios y todo de cero): ${dia(lunes)} a las ${hora(lunes)}.`);
+  const tp = TEMPORADAS.find(x => x.fin > ahora);
+  if (tp) l.push(tp.ini <= ahora ? `${tp.emoji} <b>${esc(tp.nombre)}</b>: en marcha hasta el ${esc(tp.hasta)}.` : `${tp.emoji} <b>${esc(tp.nombre)}</b>: empieza el ${dia(tp.ini)}.`);
+  return '<div class="mis-caja" style="margin-top:0"><b>📅 Calendario</b><ul style="padding-left:18px;margin-top:4px;font:13px/1.5 var(--sans);color:var(--txt2)">' + l.map(x => `<li>${x}</li>`).join('') + '</ul><p style="font-size:11px;color:var(--txt3)">Horas en la hora de tu dispositivo.</p></div>';
+}
 function abrirNovedades() {
-  let h = '';
+  let h = htmlCalendario();
   for (const nv of NOVEDADES) {
     h += `<p style="font:600 13px var(--sans);color:var(--txt);margin:6px 0">${esc(nv.fecha)}</p><ul style="padding-left:18px;font:13px/1.5 var(--sans);color:var(--txt2)">`;
     h += nv.items.map(x => `<li style="margin-bottom:4px">${esc(x)}</li>`).join('') + '</ul>';
