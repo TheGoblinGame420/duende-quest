@@ -495,6 +495,16 @@ export const Mazmorras = {
       nombres.push(c.nombre);
     }
     this.aTodos({ t: 'aviso', m: `🏰 ${nombres.join(', ')} ${nombres.length > 1 ? 'completaron' : 'completó'} ${mz.nombre} ${I.k ? '— ⚡ Desafío +' + I.k : '(Nv ' + I.nv + ')'}.` });
+    // Primera victoria del servidor contra el jefe final de la banda: queda
+    // escrita para siempre y da el titulo «Pionero del Abismo».
+    this.primeros = this.primeros || {};
+    const reales = jugadores.filter(s => !this.esPrueba(s.c) && (o.dano.has(s.id) || !!(o.cura && o.cura.has(s.id))));
+    if (I.banda && !this.primeros[o.k] && reales.length) {
+      this.primeros[o.k] = { t: Date.now(), n: reales.map(s => s.c.nombre) };
+      this.state.storage.put('primeros', this.primeros);
+      for (const s of reales) { s.c.pionero = 1; this.revisarLogros(s); this.actualizarYo(s); }
+      this.aTodos({ t: 'aviso', m: `🌟 ¡PRIMERA VICTORIA DEL SERVIDOR! ${reales.map(s => s.c.nombre).join(', ')} ${reales.length > 1 ? 'vencieron' : 'venció'} a ${MONSTRUOS[o.k].nombre} por primera vez.` });
+    }
   },
 
   // ── BANDA ──

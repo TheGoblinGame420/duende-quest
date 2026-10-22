@@ -137,6 +137,8 @@ export class MmoWorld {
       this.ingresosSol = (await this.state.storage.get('ingresosSol')) || [];
       this.rs = (await this.state.storage.get('rankSem')) || { sem: semanaUTC(), l: {} };
       this.rds = (await this.state.storage.get('rankDesSem')) || { sem: semanaUTC(), l: {} };
+      // Primeras victorias del servidor (jefe final de la banda): { idJefe: { t, n } }.
+      this.primeros = (await this.state.storage.get('primeros')) || {};
       // Avisos de vuelta a la hora habitual de cada uno (retencion.js).
       await this.asegurarAlarma();
       // Los personajes de prueba de las verificaciones en produccion del
@@ -535,6 +537,7 @@ export class MmoWorld {
   // ── mTON / PLAY TO EARN ──
   // Quien puede ganar: cuenta real (Telegram o web, no invitado), Nv 15+ y
   // personaje con 48 h. Frena granjas de bots con cuentas desechables.
+  esPrueba(c) { return UIDS_PRUEBA.has(c.uid); }
   elegibilidad(c) {
     return {
       cuenta: !c.uid.startsWith('inv:') && !UIDS_PRUEBA.has(c.uid),

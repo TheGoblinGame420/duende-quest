@@ -1648,6 +1648,12 @@ async function pruebasBanda() {
   mundo.danar(titan, titan.hp + 1, L); tick(2);
   chequear(w.inst.completada && L.c.logros.includes('titan') && L.c.titanes === 1, 'vencer al Titán completa la banda y da su logro');
   chequear(dentro[1].c.monturas.includes('abismo') && dentro[1].c.logros.includes('abismo'), 'a la 3ª semana se gana el Murciélago del Abismo');
+  chequear(mundo.primeros && mundo.primeros.mz_titan && dentro.every(x => x.c.logros.includes('pionero')), 'la primera victoria del servidor queda escrita y da «Pionero del Abismo»');
+  const pr = await entrar('Mirón', 'c9'); pr.limpiar();
+  await pr.mandar({ t: 'inspeccionar', p: dentro[1].id });
+  const ins = pr.ultimos('inspeccion').pop();
+  chequear(ins && ins.titanes === 3 && ins.pionero === 1 && !JSON.stringify(ins).includes(dentro[1].c.uid), 'inspeccionar muestra la banda y las runas, sin uid');
+  await dejar(pr);
   chequear(dentro[1].c.boveda && dentro[1].c.boveda.k === 5, 'la banda cuenta en la Bóveda como un Desafío +5');
   // No se vende.
   await aMapa(solo, 'pueblo', px);

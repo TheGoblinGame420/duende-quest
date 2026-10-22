@@ -770,6 +770,7 @@ export const LOGROS = [
   { id: 'cancerbero', titulo: 'Domador del Infierno', desc: 'Vence al Cancerbero del Nido de la Reina Araña', oro: 12000, cond: c => !!(c.mzJefes && c.mzJefes.mz_cancerbero) },
   { id: 'dragon',    titulo: 'Matadragones',        desc: 'Vence al Dragón Carmesí de la Ciudadela', oro: 15000, cond: c => !!(c.mzJefes && c.mzJefes.mz_dragon) },
   { id: 'titan',     titulo: 'Azote del Titán',     desc: 'Vence al Titán del Abismo en la banda del Santuario', oro: 25000, cond: c => !!(c.mzJefes && c.mzJefes.mz_titan) },
+  { id: 'pionero',   titulo: 'Pionero del Abismo',  desc: 'Forma parte de la primera victoria del servidor contra el Titán del Abismo', oro: 30000, cond: c => !!c.pionero },
   { id: 'abismo',    titulo: 'Jinete del Abismo',   desc: 'Gana el Murciélago del Abismo (vence al Titán en 3 semanas distintas)', oro: 20000, cond: c => (c.monturas || []).includes('abismo') },
 ];
 
