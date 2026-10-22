@@ -453,6 +453,7 @@ export const NOVEDADES = [
     '🐾 Mascotas y 🎨 colores de nombre en el Mercader (solo estética).',
     '⭐ Lista de amigos (pestaña En línea): ves cuándo se conectan, les susurras o invitas al grupo.',
     '🔍 Inspecciona a otro jugador desde su marco: su equipo, conjuntos y logros.',
+    '👋 Gestos: /saludar, /bailar, /reir, /aplaudir… (en el móvil, en el chat rápido).',
     '⚗️ Elixir de Sabiduría en la Artesana: +10% de experiencia por caza durante 30 min.',
     '🎩 Cada clase se distingue: sombrero de mago, aureola de sacerdote, capucha de pícaro.',
     '🌽 Del 13 al 30 de noviembre: Cosecha del Maíz Morado.',
@@ -1404,3 +1405,16 @@ for (const [id, sk] of Object.entries(SKINS)) {
 }
 export const estrellasDe = usd => Math.ceil(usd / STAR_USD);
 export const PEDIDO_VIGENCIA_MS = 30 * 60 * 1000;   // 30 min para pagar
+
+// ── GESTOS (/saludar, /bailar...): un emoji grande sobre tu duende que ven
+// los de tu mapa. Solo social.
+export const GESTOS = {
+  saludar:  { e: '👋', txt: 'saluda' },
+  bailar:   { e: '💃', txt: 'baila' },
+  reir:     { e: '😂', txt: 'se ríe' },
+  aplaudir: { e: '👏', txt: 'aplaude' },
+  gracias:  { e: '🙏', txt: 'da las gracias' },
+  si:       { e: '👍', txt: 'dice que sí' },
+  enojo:    { e: '😡', txt: 'se enfada' },
+  llorar:   { e: '😭', txt: 'llora' },
+};

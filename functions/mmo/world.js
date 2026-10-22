@@ -270,6 +270,7 @@ export class MmoWorld {
       case 'contactoQuitar': return this.quitarContacto(s, m);
       case 'contactos': return this.enviarContactos(s);
       case 'inspeccionar': return this.inspeccionar(s, m);
+      case 'gesto': return this.gesto(s, m);
       case 'boveda': return this.elegirBoveda(s, m);
       case 'lfgLista': return this.lfgLista(s);
       case 'lfgQuitar': return this.quitarLfg(s);
@@ -693,6 +694,7 @@ export class MmoWorld {
     this.pedidos.push(pd);
     await this.guardarPedidos();
     this.enviar(s, { t: 'pedidoSol', codigo: pd.codigo, lamports: pd.lamports, wallet: SOL_DEV_WALLET, usd: pq.usd, nombre: pq.nombre });
+    this.actualizarYo(s);   // aparece en "Tus compras" para retomar el pago
   }
 
   async pedidoFirma(s, m) {
@@ -958,8 +960,9 @@ export class MmoWorld {
       mton: c.mton, wallet: c.wallet ? { a: tonAmigable(c.wallet.a), desde: c.wallet.desde } : null,
       p2e: this.elegibilidad(c), creado: c.creado,
       retiros: this.retiros.filter(x => x.uid === c.uid).slice(-5).map(x => ({ id: x.id, ton: x.ton, estado: x.estado, creado: x.creado })),
-      pedidos: this.pedidos.filter(x => x.uid === c.uid && x.estado !== 'esperando_pago' && x.estado !== 'vencido').slice(-5)
-        .map(x => ({ codigo: x.codigo, nombre: x.nombre, metodo: x.metodo, estado: x.estado, creado: x.creado })),
+      // Los de SOL sin pagar (y sin caducar) tambien, para poder retomar el pago.
+      pedidos: this.pedidos.filter(x => x.uid === c.uid && x.estado !== 'vencido' && (x.estado !== 'esperando_pago' || (x.metodo === 'sol' && Date.now() - x.creado < PEDIDO_VIGENCIA_MS))).slice(-5)
+        .map(x => ({ codigo: x.codigo, nombre: x.nombre, metodo: x.metodo, estado: x.estado, creado: x.creado, ...(x.estado === 'esperando_pago' ? { lamports: x.lamports, usd: x.usd, wallet: SOL_DEV_WALLET } : {}) })),
       transparencia: this.transparencia(),
     };
   }
