@@ -774,6 +774,29 @@ async function pruebasRetencion() {
   try { await runCron('0 17 * * *', envCron); } finally { globalThis.fetch = fetchReal; }
   chequear(ids() === '3004', 'el MMO avisa a quien le toca (' + ids() + ')');
   chequear(arcade.sort().join(',') === '3001,9999', 'el recordatorio del arcade se salta al avisado, al que bloqueó y a quien pidió no recibir avisos (' + arcade + ')');
+
+  console.log('Avisos a la hora habitual de cada uno');
+  const { horaHabitual, HORA_DEFECTO } = await import('../functions/mmo/retencion.js');
+  chequear(horaHabitual({ hs: [20, 20] }) === HORA_DEFECTO && horaHabitual({}) === HORA_DEFECTO, 'con menos de 3 días anotados, las 17:00');
+  chequear(horaHabitual({ hs: [20, 3, 20, 3, 1] }) === 3 && horaHabitual({ hs: [1, 2, 2, 1, 22, 22, 5] }) === 22 && horaHabitual({ hs: [20, 20, 9] }) === 20, 'la hora más repetida (en empate, la más reciente)');
+  for (let k = 7; k <= 9; k++) { irA(A + k, 20); const n = await entrarTg('Nocturno', 3010); await dejar(n); }
+  chequear(horaHabitual((await mundo.retIdx())['tg:3010']) === 20, 'se anota la hora de su primera entrada de cada día');
+  irA(A + 10, 17);
+  salidos.length = 0;
+  r = await interno('recordatorios');
+  chequear(!deQuien('3010') && r.hoy.includes('3010'), 'a las 17:00 no se le avisa, pero el arcade sabe que tendrá su aviso más tarde');
+  let alarma = null;
+  state.storage.setAlarm = async t => { alarma = t; };
+  try {
+    irA(A + 10, 20);
+    salidos.length = 0;
+    await mundo.alarm();
+    chequear(ids() === '3010', 'la alarma de las 20:00 le avisa a él solo (' + ids() + ')');
+    chequear(alarma === (Math.floor(Date.now() / 3600000) + 1) * 3600000 + 30000, 'y se programa para la hora siguiente');
+    salidos.length = 0;
+    await mundo.alarm();
+    chequear(salidos.length === 0, 'una sola vez al día');
+  } finally { delete state.storage.setAlarm; }
 }
 
 // ── MUNDO ABIERTO: invasiones, raros y cofres (functions/mmo/eventos.js) ──

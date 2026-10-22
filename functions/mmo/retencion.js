@@ -15,15 +15,20 @@
 //     exactamente 1, 7 y 30 dias despues (retencion "dia N" clasica).
 //   ret:idx → { uid: { v: ultimo dia jugado, l: nivel, a: avisos sin
 //     respuesta, ad: dia del ultimo aviso, off: 1 si pidio no recibir avisos,
-//     bloq: 1 si bloqueo al bot } }
+//     bloq: 1 si bloqueo al bot, hs: hora UTC de su primera entrada de cada
+//     dia, las ultimas 10 } }
 //     Un solo objeto: con la escala actual (decenas de jugadores) cabe de
 //     sobra y evita listar todos los c:<uid> (que pesan bolsa, equipo...)
 //     para contar activos o elegir a quien avisar.
 //
-// Los avisos los manda el cron de las 17:00 UTC (functions/api/cron.js) por
-// la ruta interna 'recordatorios'. Reglas para no hacer spam: solo cuentas de
-// Telegram que jugaron en los ultimos 14 dias y no entraron hoy, 1 aviso al
-// dia como mucho, y tras 2 avisos sin volver se pausa hasta que vuelva.
+// Los avisos salen a la HORA HABITUAL de cada uno (la que mas se repite en
+// sus primeras entradas del dia; con menos de 3 dias anotados, las 17:00
+// UTC). Las 17:00 las manda el cron (functions/api/cron.js) por la ruta
+// interna 'recordatorios'; el resto de horas, la alarma del propio Durable
+// Object (alarm(), cada hora en punto), sin gastar otro disparador de cron.
+// Reglas para no hacer spam: solo cuentas de Telegram que jugaron en los
+// ultimos 14 dias y no entraron hoy, 1 aviso al dia como mucho, y tras 2
+// avisos sin volver se pausa hasta que vuelva.
 // ═══════════════════════════════════════════════════════
 
 import { xpParaSubir, premioDiaria, premioMazmorraDia, LOGIN_PREMIOS, multLogin, HABS, CLASES, NIVEL_MAX, DIARIA } from '../../mmo/js/data.js';
@@ -45,6 +50,21 @@ const pct = (x, base) => base ? Math.round(x / base * 1000) / 10 : null;
 const vacio = () => ({ n: 0, a: 0, ses: 0, min: 0, r1: 0, r7: 0, r30: 0 });
 
 const MAX_ENVIOS = 40;   // avisos por llamada a 'recordatorios' (limite de subpeticiones)
+export const HORA_DEFECTO = 17;   // la del cron: para quien aun no tiene hora habitual
+const DIAS_PARA_HORA = 3;         // dias con hora anotada para fiarse de ella
+const horaUTC = (t = Date.now()) => new Date(t).getUTCHours();
+
+// La hora (UTC) a la que suele volver: la mas repetida de sus primeras
+// entradas del dia; en empate, la mas reciente.
+export function horaHabitual(e) {
+  const hs = (e && e.hs) || [];
+  if (hs.length < DIAS_PARA_HORA) return HORA_DEFECTO;
+  const n = {};
+  for (const h of hs) n[h] = (n[h] || 0) + 1;
+  let mejor = hs[hs.length - 1];
+  for (let i = hs.length - 1; i >= 0; i--) if (n[hs[i]] > n[mejor]) mejor = hs[i];
+  return mejor;
+}
 
 export const Retencion = {
   // ── Almacenamiento ──
@@ -129,6 +149,8 @@ export const Retencion = {
       const e = idx[c.uid] || (idx[c.uid] = { v: 0 });
       e.v = hoy; e.l = c.nivel;
       e.a = 0;   // volvio: se reanudan los avisos
+      // Primera entrada del dia: su hora, para avisarle a esa hora.
+      if (nuevoDia) e.hs = [...(e.hs || []), horaUTC(ahora)].slice(-10);
       await this.retGuardarIdx();
       if (nuevo) await this.retSumar(hoy, { n: 1 });
       await this.retSumar(hoy, { ses: 1 });
@@ -182,7 +204,7 @@ export const Retencion = {
   async internoRetencion(accion, b) {
     await this.retVolcar();
     if (accion === 'stats') return this.retStats();
-    if (accion === 'recordatorios') return this.recordatorios();
+    if (accion === 'recordatorios') return this.recordatorios(b && Number.isInteger(b.hora) ? b.hora : horaUTC());
     if (accion === 'avisos') return this.ponerAvisos(b || {});
     return null;
   },
@@ -255,7 +277,10 @@ export const Retencion = {
       && !this.porUid.has(uid) && !this.uidsPrueba.has(uid);
   },
 
-  async recordatorios() {
+  // Avisa a quien le toca a esta hora (UTC). Devuelve tambien a quien no
+  // debe escribir hoy el recordatorio del arcade (17:00): los ya avisados
+  // hoy y los que se avisaran mas tarde, asi cada uno recibe un solo mensaje.
+  async recordatorios(hora = horaUTC()) {
     const hoy = diaNum();
     const idx = await this.retIdx();
     const res = { ok: true, candidatos: 0, enviados: 0, bloqueados: 0, fallidos: 0, ids: [], callar: [] };
@@ -269,7 +294,7 @@ export const Retencion = {
     // Como mucho MAX_ENVIOS por llamada: cada mensaje a Telegram es una
     // subpeticion y el plan gratis permite ~50 por invocacion. El cron llama
     // varias veces; primero van los que hace mas que no reciben aviso.
-    const lista = Object.keys(idx).filter(u => this.puedeAvisar(u, idx[u], hoy)).sort((a, b) => (idx[a].ad || 0) - (idx[b].ad || 0));
+    const lista = Object.keys(idx).filter(u => this.puedeAvisar(u, idx[u], hoy) && horaHabitual(idx[u]) === hora).sort((a, b) => (idx[a].ad || 0) - (idx[b].ad || 0));
     res.quedan = Math.max(0, lista.length - MAX_ENVIOS);
     for (const uid of lista.slice(0, MAX_ENVIOS)) {
       const c = await this.state.storage.get('c:' + uid);
@@ -308,7 +333,32 @@ export const Retencion = {
     }
     await this.retGuardarIdx();
     res.callar = Object.keys(idx).filter(u => u.startsWith('tg:') && (idx[u].off || idx[u].bloq)).map(u => u.slice(3));
+    res.hoy = Object.keys(idx).filter(u => u.startsWith('tg:') && (idx[u].ad === hoy || (this.puedeAvisar(u, idx[u], hoy) && horaHabitual(idx[u]) > hora))).map(u => u.slice(3));
     return res;
+  },
+
+  // Alarma del Durable Object, cada hora en punto: los avisos de quien
+  // tiene su hora habitual en otra hora que las 17:00 (esa la hace el cron).
+  // Una tanda por hora (el limite de subpeticiones por invocacion).
+  async alarm() {
+    try {
+      const h = horaUTC();
+      if (h !== HORA_DEFECTO) {
+        const r = await this.recordatorios(h);
+        if (r.enviados || r.bloqueados) console.log('[MMO avisos ' + h + 'h]', { enviados: r.enviados, bloqueados: r.bloqueados, fallidos: r.fallidos, quedan: r.quedan });
+      }
+    } catch (e) { console.error('[MMO alarma]', e); }
+    await this.programarAlarma();
+  },
+  async programarAlarma() {
+    const st = this.state.storage;
+    if (!st.setAlarm) return;
+    try { await st.setAlarm((Math.floor(Date.now() / 3600000) + 1) * 3600000 + 30000); } catch (e) { console.error('[MMO setAlarm]', e); }
+  },
+  async asegurarAlarma() {
+    const st = this.state.storage;
+    if (!st.getAlarm) return;
+    try { if (!(await st.getAlarm())) await this.programarAlarma(); } catch (e) { console.error('[MMO getAlarm]', e); }
   },
 
   // El texto se arma con lo que ese jugador tiene pendiente HOY, de lo mas

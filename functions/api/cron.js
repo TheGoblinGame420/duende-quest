@@ -105,7 +105,7 @@ export async function mmoRecordatorios(env) {
     const r = await stub.fetch('https://mmo/interno/recordatorios', { method: 'POST', headers: { 'x-interno': env.TELEGRAM_BOT_TOKEN || '' }, body: '{}' });
     const x = await r.json();
     if (!d) d = x;
-    else { for (const k of ['candidatos', 'enviados', 'bloqueados', 'fallidos']) d[k] = (d[k] || 0) + (x[k] || 0); d.ids = [...(d.ids || []), ...(x.ids || [])]; d.callar = x.callar || d.callar; }
+    else { for (const k of ['candidatos', 'enviados', 'bloqueados', 'fallidos']) d[k] = (d[k] || 0) + (x[k] || 0); d.ids = [...(d.ids || []), ...(x.ids || [])]; d.callar = x.callar || d.callar; d.hoy = x.hoy || d.hoy; }
     if (!x.ok || !x.quedan || !x.enviados) break;
   }
   console.log('[MMO avisos]', { candidatos: d.candidatos, enviados: d.enviados, bloqueados: d.bloqueados, fallidos: d.fallidos });
@@ -209,7 +209,9 @@ export async function runCron(cronExpr, env) {
     let saltar = new Set();
     try {
       const d = await mmoRecordatorios(env);
-      if (d && d.ok) saltar = new Set([...(d.ids || []), ...(d.callar || [])].map(String));
+      // Ni a los avisados hoy por el MMO (a su hora o ahora) ni a los que se
+      // avisaran mas tarde a su hora habitual: un solo mensaje por persona.
+      if (d && d.ok) saltar = new Set([...(d.ids || []), ...(d.callar || []), ...(d.hoy || [])].map(String));
     } catch (e) { console.error('[Cron avisos MMO]', e); }
     return dailyReminder(env, saltar);
   }

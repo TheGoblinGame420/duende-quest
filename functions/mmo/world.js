@@ -134,6 +134,8 @@ export class MmoWorld {
       this.ingresosSol = (await this.state.storage.get('ingresosSol')) || [];
       this.rs = (await this.state.storage.get('rankSem')) || { sem: semanaUTC(), l: {} };
       this.rds = (await this.state.storage.get('rankDesSem')) || { sem: semanaUTC(), l: {} };
+      // Avisos de vuelta a la hora habitual de cada uno (retencion.js).
+      await this.asegurarAlarma();
       // Los personajes de prueba de las verificaciones en produccion del
       // 30-sep-2026 ("Bot Prueba" subio a Nv 2) no deben salir en el ranking real.
       if (!(await this.state.storage.get('mig:ranking-pruebas'))) {
