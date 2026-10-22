@@ -2719,7 +2719,8 @@ function mostrarPedidoSol(m) {
   $('sol-cuerpo').innerHTML =
     `<p class="centro" style="margin-bottom:8px">${esc(m.nombre)} · pedido <b>#${esc(m.codigo)}</b></p>` +
     `<div class="saldo"><b>${sol} SOL</b><small>(~$${m.usd}) · paga el monto <b>exacto</b>: sus últimas cifras identifican tu pedido</small></div>` +
-    `<button class="btn" id="b-phantom" style="width:100%;padding:12px;margin-bottom:10px">Pagar con Phantom</button>` +
+    `<button class="btn" id="b-phantom" style="width:100%;padding:12px;margin-bottom:10px">Pagar con Phantom${hayWalletSol() && !window.phantom ? ' / tu wallet' : ''}</button>` +
+    (TACTIL && !hayWalletSol() ? `<button class="btn sec" id="b-solflare" style="width:100%;padding:10px;margin-bottom:10px">Pagar con Solflare</button>` : '') +
     `<p style="font-size:12px;margin:6px 0">¿Otra wallet? Envía <b>${sol} SOL</b> a la wallet de El Duende:</p>` +
     `<p style="font-size:11px;word-break:break-all;background:var(--bg);border:1px solid var(--borde);padding:8px;border-radius:6px">${esc(m.wallet)}</p>` +
     `<div style="display:flex;gap:6px;margin:6px 0"><button class="btn sec" id="b-copia-w" style="flex:1">Copiar wallet</button><button class="btn sec" id="b-copia-m" style="flex:1">Copiar monto</button></div>` +
@@ -2734,12 +2735,23 @@ function mostrarPedidoSol(m) {
   $('b-firma').onclick = () => { const f = $('in-firma').value.trim(); if (f) mandar({ t: 'pedidoFirma', codigo: m.codigo, firma: f }); };
   $('in-firma').addEventListener('keydown', e => e.stopPropagation());
   $('b-phantom').onclick = () => pagarConPhantom(m);
+  const bsf = $('b-solflare');
+  if (bsf) bsf.onclick = () => {
+    aviso('Abriendo el juego dentro de Solflare: entra con tu cuenta y, en la tienda premium → Tus compras, pulsa «Pagar» en el pedido #' + m.codigo + '.', 'ok');
+    window.location.href = 'https://solflare.com/ul/v1/browse/' + encodeURIComponent(location.href) + '?ref=' + encodeURIComponent(location.origin);
+  };
 }
 function cargarScript(src) {
   return new Promise((ok, mal) => { const sc = document.createElement('script'); sc.src = src; sc.onload = ok; sc.onerror = () => mal(new Error('No se pudo cargar ' + src)); document.head.appendChild(sc); });
 }
+// Wallet de Solana del navegador: Phantom, Solflare o la que inyecte
+// window.solana (Backpack...). Todas aceptan connect y firmar.
+function walletSol() {
+  return (window.phantom && window.phantom.solana) || (window.solflare && window.solflare.isSolflare ? window.solflare : null) || window.solana || null;
+}
+function hayWalletSol() { return !!walletSol(); }
 async function pagarConPhantom(m) {
-  const prov = (window.phantom && window.phantom.solana) || (window.solana && window.solana.isPhantom ? window.solana : null);
+  const prov = walletSol();
   if (!prov) {
     // En el movil el navegador no trae Phantom: se abre el juego dentro de
     // la app de Phantom (enlace universal), donde si se puede firmar; alli
@@ -2754,16 +2766,21 @@ async function pagarConPhantom(m) {
   try {
     if (!window.solanaWeb3) await cargarScript('https://unpkg.com/@solana/web3.js@1/lib/index.iife.min.js');
     const { Connection, PublicKey, Transaction, SystemProgram } = window.solanaWeb3;
-    const { publicKey } = await prov.connect();
+    const r = await prov.connect();
+    const publicKey = (r && r.publicKey) || prov.publicKey;
+    if (!publicKey) throw new Error('la wallet no dio su dirección');
     const con = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
     const tx = new Transaction().add(SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: new PublicKey(m.wallet), lamports: m.lamports }));
     tx.feePayer = publicKey;
     tx.recentBlockhash = (await con.getLatestBlockhash()).blockhash;
-    const { signature } = await prov.signAndSendTransaction(tx);
+    let signature;
+    if (prov.signAndSendTransaction) { const res = await prov.signAndSendTransaction(tx); signature = typeof res === 'string' ? res : res && res.signature; }
+    else signature = await con.sendRawTransaction((await prov.signTransaction(tx)).serialize());
+    if (!signature) throw new Error('la wallet no devolvió la firma');
     aviso('◎ Pago enviado. Comprobando…', 'ok');
     mandar({ t: 'pedidoFirma', codigo: m.codigo, firma: signature });
     cerrarModales();
-  } catch (e) { aviso('No se completó el pago con Phantom: ' + (e.message || e)); }
+  } catch (e) { aviso('No se completó el pago con tu wallet: ' + (e.message || e)); }
 }
 
 // ── EFECTOS ──
