@@ -458,6 +458,13 @@ export const TINTES = {
 // enseñan una vez (lo nuevo para los que vuelven). La mas reciente arriba;
 // subir 'n' al añadir una.
 export const NOVEDADES = [
+  { n: 8, fecha: '22 de octubre (tarde)', items: [
+    '🌧️ Clima: algunas horas llueve o nieva en ciertas zonas; con lluvia el Pez Dorado sale el doble.',
+    '🧭 Expediciones con destino (Bosque, Mina o Lago) y misión diaria nueva; semanal de la Torre.',
+    '🗼 Torre: pisos con modificadores (Veloces, Blindados, Élite) y el Lagarto de la Torre al piso 30.',
+    '🏰 En las mazmorras revives junto a la última barrera abierta y los packs vuelven a su sitio.',
+    '✨ Vitrina de skins junto al Mercader. En la web, las skins se pueden pagar escaneando un QR con tu wallet.',
+  ] },
   { n: 7, fecha: '22 de octubre (mediodía, 2)', items: [
     '🏰 Madriguera Goblin: una mazmorra nueva desde Nv 6 para aprender las mecánicas (portal de mazmorras del pueblo).',
     '🧭 Expediciones (Nv 5+): manda a tu mascota 1, 4 u 8 horas y vuelve con oro, experiencia y materiales (registro de misiones, L).',
