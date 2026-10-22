@@ -14,7 +14,7 @@ import {
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo,
-} from './data.js?v=53';
+} from './data.js?v=54';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -643,7 +643,10 @@ function ataqueRemoto(m) {
     const col = COLOR_GOLPE[tipo] || '#ffffff';
     const retraso = m.vara ? 170 : 0;
     const pintar = () => {
-      flotante(o.x + (Math.random() - .5) * 16, o.y - o.alto - 6, (tipo === 1 ? '¡' : '') + dmg + (tipo === 1 ? '!' : ''), col, tipo === 1 ? 13 : tipo === 5 ? 9 : 10);
+      // Por encima del nombre del monstruo (antes lo tapaba), y el critico
+      // con su palabra y su sonido: se tiene que notar.
+      flotante(o.x + (Math.random() - .5) * 16, o.y - o.alto - 30, (tipo === 1 ? '¡' : '') + dmg + (tipo === 1 ? '!' : ''), col, tipo === 1 ? 14 : tipo === 5 ? 9 : 11);
+      if (tipo === 1 && m.p === miId) { flotante(o.x, o.y - o.alto - 50, '¡CRÍTICO!', '#ffd34d', 8); sfx('explosion', .18); }
       for (let i = 0; i < 4; i++) particula(o.x, o.y - o.alto / 2, col, 3);
     };
     if (retraso) setTimeout(pintar, retraso); else pintar();
@@ -2673,6 +2676,34 @@ function dibujarMonstruo(o) {
   }
 }
 
+function accesorioClase(clase, x, top, f) {
+  if (clase !== 'mago' && clase !== 'sacerdote' && clase !== 'picaro') return;
+  g.save();
+  g.lineWidth = 1.5; g.strokeStyle = '#000';
+  if (clase === 'mago') {
+    // Sombrero puntiagudo con estrella.
+    const b = top + 9;
+    g.fillStyle = '#5b21b6';
+    g.beginPath(); g.ellipse(x, b, 17, 4, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+    g.beginPath(); g.moveTo(x - 11, b - 1); g.lineTo(x + 11, b - 1); g.lineTo(x - f * 7, b - 27); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#fde047'; g.fillRect(x - f * 2 - 1.5, b - 13, 3, 3);
+  } else if (clase === 'sacerdote') {
+    // Aureola dorada que flota sobre la cabeza.
+    const y = top - 3 + Math.sin(frame * .08) * 1.5;
+    g.strokeStyle = '#fde68a'; g.lineWidth = 3; g.globalAlpha = .95;
+    g.beginPath(); g.ellipse(x, y, 12, 4, 0, 0, Math.PI * 2); g.stroke();
+    g.strokeStyle = 'rgba(255,240,180,.35)'; g.lineWidth = 6;
+    g.beginPath(); g.ellipse(x, y, 12, 4, 0, 0, Math.PI * 2); g.stroke();
+  } else {
+    // Capucha oscura con la cola al viento.
+    const c = top + 13;
+    g.fillStyle = '#1e293b';
+    g.beginPath(); g.arc(x, c, 15, Math.PI, Math.PI * 2); g.closePath(); g.fill(); g.stroke();
+    g.beginPath(); g.moveTo(x - f * 12, c - 6); g.lineTo(x - f * 30, c + 2 + Math.sin(frame * .2) * 3); g.lineTo(x - f * 12, c + 2); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#fff569'; g.fillRect(x - 14, c - 2, 28, 2);
+  }
+  g.restore();
+}
 function dibujarDuende(q, esYo) {
   const x = q.x - camX;
   let pies = q.y;
@@ -2740,6 +2771,9 @@ function dibujarDuende(q, esYo) {
     }
   }
   g.restore();
+  // Todas las clases comparten el sprite del duende: un accesorio dibujado
+  // las distingue de un vistazo (sombrero, aureola, capucha).
+  if (!muerto && !(fl & FJ.sigilo && !esYo)) accesorioClase(clase, x, pies - (skin === 'comun' ? FIS.jugH : 66), f);
   if (escudo) { g.save(); g.strokeStyle = '#00eeff'; g.globalAlpha = .6 + Math.sin(frame * .2) * .2; g.lineWidth = 2; g.beginPath(); g.ellipse(x, pies - 30, 30, 40, 0, 0, Math.PI * 2); g.stroke(); g.restore(); }
   if (fl & FJ.escudoPoder) { g.save(); g.strokeStyle = '#ffe9a8'; g.fillStyle = 'rgba(255,233,168,.12)'; g.globalAlpha = .7 + Math.sin(frame * .12) * .2; g.lineWidth = 2; g.beginPath(); g.ellipse(x, pies - 30, 27, 37, 0, 0, Math.PI * 2); g.fill(); g.stroke(); g.restore(); }
   if (fl & FJ.bloque) { g.save(); g.globalAlpha = .55; g.fillStyle = '#9be7ff'; g.fillRect(x - 22, pies - 66, 44, 68); g.globalAlpha = .9; g.strokeStyle = '#e0f7ff'; g.lineWidth = 2; g.strokeRect(x - 22, pies - 66, 44, 68); g.restore(); }

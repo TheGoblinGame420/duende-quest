@@ -358,7 +358,7 @@ export function talento(c, id) {
 // en mazmorras ni en el Coliseo). Atacar, usar una habilidad o recibir un
 // golpe te baja. dy: cuanto se eleva el jinete sobre la montura.
 export const MONTURAS = {
-  lagarto:   { nombre: 'Lagarto del Desierto', hoja: 'lagarto',   nv: 20, precio: 8000,   vel: 1.5, alto: 30, dy: 16 },
+  lagarto:   { nombre: 'Lagarto del Desierto', hoja: 'lagarto',   nv: 20, precio: 8000,   vel: 1.5, alto: 48, dy: 22 },
   conejo:    { nombre: 'Conejo Saltarín',      hoja: 'conejo',    nv: 20, precio: 8000,   vel: 1.5, alto: 40, dy: 24 },
   hellgato:  { nombre: 'Gato Infernal',        hoja: 'hellgato',  nv: 35, precio: 35000,  vel: 1.7, alto: 44, dy: 22 },
   hellhound: { nombre: 'Sabueso Infernal',     hoja: 'hellhound', nv: 40, precio: 60000,  vel: 1.8, alto: 52, dy: 26 },

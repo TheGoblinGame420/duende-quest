@@ -169,11 +169,11 @@ a{color:var(--cian);}
 .bt{font-family:inherit;font-size:9px;line-height:1.2;background:var(--panel);color:var(--txt);border:1px solid var(--borde);border-radius:8px;padding:7px 8px;cursor:pointer;transition:background .15s,border-color .15s;}
 .bt:hover{background:var(--panel2);border-color:#34405e;}
 .bt:active{transform:scale(.96);}
-#jefe-bar{left:50%;transform:translateX(-50%);top:84px;width:min(420px,50%);display:none;text-align:center;}
+#jefe-bar{left:50%;transform:translateX(-50%);top:40px;width:min(420px,50%);display:none;text-align:center;}
 #jefe-bar .n{font-size:8px;color:#f1d4ff;text-shadow:1px 1px 0 #000,0 0 3px #000;margin-bottom:4px;}
 #jefe-bar .barra{height:10px;border:1px solid rgba(239,68,68,.55);}
 #jefe-bar .barra>i{background:linear-gradient(90deg,#b91c1c,var(--err));}
-#hud.estrecho #jefe-bar{top:150px;bottom:auto;width:80%;}
+#hud.estrecho #jefe-bar{top:226px;bottom:auto;width:80%;}
 
 /* barra de accion: 7 habilidades de la clase + 4 consumibles */
 #pie{flex:0 0 auto;width:100%;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 8px 7px;background:var(--panel);border-top:1px solid var(--borde);}
@@ -202,7 +202,8 @@ body.tactil #pie{display:none;}
 #lanzar .barra>i{background:linear-gradient(90deg,#d99a1e,var(--oro));transition:none;}
 #lanzar .barra>span{font-size:6px;line-height:12px;}
 #lanzar.mal .barra>i{background:var(--err);}
-#hud.estrecho #lanzar{bottom:44px;width:60%;}
+/* Encima de la cabeza del duende (abajo tapaba su nombre). */
+#hud.estrecho #lanzar{bottom:150px;width:60%;}
 /* grupo */
 #grupo{left:8px;top:92px;width:150px;display:none;}
 #hud.estrecho #grupo{top:142px;width:128px;}
@@ -228,7 +229,7 @@ body.tactil #pie{display:none;}
 #presumir{left:50%;transform:translateX(-50%);top:172px;bottom:auto;display:none;z-index:6;font-family:var(--sans);font-size:14px;font-weight:600;padding:10px 16px;background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:var(--sombra);animation:none;}
 #presumir:hover{background:var(--pri2);border-color:var(--pri2);}
 #hud.estrecho #presumir{bottom:auto;top:470px;}
-#hud.estrecho #avisos{top:250px;width:90%;}
+#hud.estrecho #avisos{top:262px;width:90%;}
 #hud.estrecho #consejo{top:200px;font-size:13px;white-space:normal;width:86%;text-align:center;line-height:1.45;}
 /* "brilla" ya no destella: se deja definida por si algun estilo en linea la usa. */
 @keyframes brilla{to{box-shadow:var(--sombra)}}
@@ -740,6 +741,6 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=53"></script>
+<script type="module" src="/mmo/js/client.js?v=54"></script>
 </body>
 </html>
