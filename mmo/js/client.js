@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=150';
+} from './data.js?v=152';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -365,6 +365,13 @@ function recibir(m) {
       if (antes && yo.nivel > antes.nivel) { vibrar(); setTimeout(() => permisosTg(yo.nivel), 2500); }
       // Una vez, a Nv 8: que existen las skins con poderes (informativo).
       if (antes && antes.nivel < 8 && yo.nivel >= 8 && (yo.skins || []).length <= 1) setTimeout(() => aviso('🎭 ¿Sabías? Las skins del Mercader dan poderes (más oro, ataque, defensa...). Míralas en su pestaña SKINS; con «Probar» te ves con ellas.', 'ok'), 6000);
+      // Lo que se abre con el nivel: avisarlo justo al llegar.
+      if (antes && yo.nivel > antes.nivel) {
+        const abre = { 5: '🧭 ¡Ya puedes mandar expediciones! Tu mascota (o un duendecillo) explora mientras no juegas: registro de misiones (L).',
+          6: '🏰 ¡Se abrió tu primera mazmorra, la Madriguera Goblin! Entra por el portal de mazmorras del pueblo, solo o en grupo.',
+          10: '🗼 ¡Se abrió la Torre del Duende! Pisos sin fin con cofres cada 5: portal de mazmorras del pueblo.' };
+        for (const nv of Object.keys(abre)) if (antes.nivel < +nv && yo.nivel >= +nv) setTimeout(() => aviso(abre[nv], 'ok'), 3500);
+      }
       // Invitado: su personaje vive solo en este navegador. Se le recuerda
       // en algunos niveles como no perderlo (y recibir avisos y mTON).
       if (antes && yo.nivel > antes.nivel && soyInvitado && [5, 10, 15, 25].includes(yo.nivel)) setTimeout(() => aviso('☁️ Juegas como invitado: tu personaje vive solo en este navegador. Inicia sesión en el juego (🏠) o entra por @duendequest_bot en Telegram y se pasará a tu cuenta.', 'ok'), 4000);
