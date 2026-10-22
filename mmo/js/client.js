@@ -11,12 +11,12 @@ import {
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
-  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe, climaDe, CLIMA, ESPECIES, premioEspecie, TORRE, atajoTorre, HERM_COLORES, premioTorreSem, zonaDeNivel, progresoLogro, proximoMundial, mundialDe, HORA_FELIZ, EXPEDICION, premioExpedicion,
+  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe, climaDe, CLIMA, ESPECIES, premioEspecie, TORRE, atajoTorre, MODS_TORRE, HERM_COLORES, premioTorreSem, zonaDeNivel, progresoLogro, proximoMundial, mundialDe, HORA_FELIZ, EXPEDICION, premioExpedicion,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=186';
+} from './data.js?v=188';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -487,7 +487,7 @@ function recibir(m) {
     case 'torre':
       // Marca nueva de la semana cada 5 pisos: ofrecer presumirla (con tu enlace).
       if (m.mejor >= 5 && m.mejor % 5 === 0 && m.piso === m.mejor && m.mejor > ((torreInfo && torreInfo.mejor) || 0)) ofrecerPresumir(`🗼 ¡Llegué al piso ${m.mejor} de la Torre del Duende! ¿Me superas?`);
-      torreInfo = { piso: m.piso, fin: m.limpio ? 0 : m.en ? performance.now() + m.en : (torreInfo ? torreInfo.fin : 0), mejor: m.mejor !== undefined ? m.mejor : (torreInfo ? torreInfo.mejor : 0) };
+      torreInfo = { mod: m.en ? (m.mod || '') : (torreInfo ? torreInfo.mod : ''), jefe: m.en ? !!m.jefe : (torreInfo ? torreInfo.jefe : false), piso: m.piso, fin: m.limpio ? 0 : m.en ? performance.now() + m.en : (torreInfo ? torreInfo.fin : 0), mejor: m.mejor !== undefined ? m.mejor : (torreInfo ? torreInfo.mejor : 0) };
       pintarSubMapa();
       break;
     case 'pica':
@@ -2637,7 +2637,8 @@ function pintarMundial() {
   // En la Torre: el piso y el tiempo que le queda.
   if (MAPAS[mapaId].torre && torreInfo) {
     const ms = Math.max(0, torreInfo.fin - performance.now()), mm = Math.floor(ms / 60000), ss = Math.floor(ms / 1000) % 60;
-    ponTxt(el, '🗼 Piso ' + torreInfo.piso + (torreInfo.piso && ms ? ' · ⏳ ' + mm + ':' + String(ss).padStart(2, '0') : ''));
+    const M = torreInfo.mod && MODS_TORRE[torreInfo.mod];
+    ponTxt(el, '🗼 Piso ' + torreInfo.piso + (torreInfo.jefe ? ' · 👑' : M ? ' · ' + M.emoji + ' ' + M.nombre : '') + (torreInfo.piso && ms ? ' · ⏳ ' + mm + ':' + String(ss).padStart(2, '0') : ''));
     el.className = ms && ms < 30000 ? '' : 'lista';
     return;
   }

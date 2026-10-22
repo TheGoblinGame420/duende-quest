@@ -109,7 +109,7 @@ export const Torre = {
       if (MONSTRUOS[k]) this.crearMonstruo(w.clave, k, 700 + (Math.random() < 0.5 ? -330 : 330),
         { nv: T.nv + 2, hpX: P.vida * TORRE.vidaJefe * (1 + 1.2 * (n - 1)), atkX: P.atk * TORRE.atkJefe, agresivo: true, radioAgro: 2000, mazmorra: true });
     }
-    this.aClave(w.clave, { t: 'torre', piso: T.piso, nv: T.nv, en: TORRE.tiempo });
+    this.aClave(w.clave, { t: 'torre', piso: T.piso, nv: T.nv, en: TORRE.tiempo, mod: mod || '', jefe: P.jefe ? 1 : 0 });
     const M = mod && MODS_TORRE[mod];
     this.aClave(w.clave, { t: 'emote', m: P.jefe ? `👑 Piso ${T.piso}: ¡un jefe!` : M ? `🗼 Piso ${T.piso} · ${M.emoji} ${M.nombre}: ${M.desc}` : `🗼 Piso ${T.piso}` });
   },
