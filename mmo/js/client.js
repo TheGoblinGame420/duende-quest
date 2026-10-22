@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=204';
+} from './data.js?v=206';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -959,7 +959,8 @@ function dibujarPesquero() {
   g.strokeStyle = '#bfdbfe'; g.lineWidth = 1;
   g.beginPath(); g.ellipse(x + 10, SUELO - 3, 6 + r * 22, 1.5 + r * 4, 0, 0, Math.PI * 2); g.stroke();
   g.globalAlpha = 1;
-  emoji('🎣', 24, x - 60, SUELO - 6);
+  const ip = IMG.ico_I_FishTail;
+  if (ip && ip.naturalWidth) g.drawImage(ip, x - 70, SUELO - 24, 18, 18);
 }
 // Vitrina del pueblo, junto al Mercader: una skin con poderes que cambia
 // cada 5 s (solo se ve; se compran en el Mercader, pestaña SKINS).
@@ -981,7 +982,7 @@ function dibujarVitrina() {
     g.drawImage(img, x - img.naturalWidth * e / 2, SUELO - 34 - img.naturalHeight * e + Math.sin(frame * .05) * 1.5, img.naturalWidth * e, img.naturalHeight * e);
     g.globalAlpha = 1;
   }
-  etiqueta(x, SUELO - 128, '✨ ' + sk.nombre, sk.color || '#ffd84a', 6);
+  etiqueta(x, SUELO - 128, sk.nombre, sk.color || '#ffd84a', 6);
 }
 // El sedal y el corcho de quien pesca (el corcho se hunde al picar).
 function dibujarSedal(x, pies, f, pica) {
@@ -1985,7 +1986,7 @@ function abrirMapaMundo() {
     const jefe = mp.jefe ? MONSTRUOS[mp.jefe] : null;
     h += fila(id, mp, jefe ? '👑 ' + esc(jefe.nombre) + ' (Nv ' + jefe.nivel + ')' : '', 'Nv ' + mp.nv[0] + '-' + mp.nv[1]);
   }
-  h += '</div><p style="margin:12px 0 6px;font-size:12px;color:var(--txt);font-weight:600">🏰 Mazmorras (portal dorado del pueblo)</p><div class="mapa-mundo">';
+  h += '</div><p style="margin:12px 0 6px;font-size:12px;color:var(--txt);font-weight:600">Mazmorras (portal dorado del pueblo)</p><div class="mapa-mundo">';
   for (const id in MAZMORRAS) {
     const mz = MAZMORRAS[id];
     const mp = MAPAS[mz.mapa];
@@ -2411,7 +2412,7 @@ function pintarDescanso() {
 // Plantas y vetas de la zona (el servidor dice cuando vuelve a estar lista
 // cada una para ti) y la ventana de la Artesana Lila.
 let nodos = [];
-['I_Leaf', 'I_Rock01', 'I_Crystal01'].forEach(k => cargar('ico_' + k, A + 'items/equipo/' + k + '.png'));
+['I_Leaf', 'I_Rock01', 'I_Crystal01', 'I_GoldCoin', 'Ac_Medal01', 'P_Green01', 'I_FishTail'].forEach(k => cargar('ico_' + k, A + 'items/equipo/' + k + '.png'));
 function recibirNodos(l) { const t = performance.now(); nodos = (l || []).map(n => ({ ...n, listo: t + (n.en || 0) })); }
 function nodoCercano() {
   for (const n of nodos) if (Math.abs(P.x - n.x) < 55) return { tipo: 'nodo', n };
@@ -3108,9 +3109,9 @@ function dibujarNPCs(mp) {
     dibujarHoja(n.hoja, hoja, hoja.mov[0], col, 62, x, SUELO + Math.sin(frame * .05) * 1, P.x > n.x ? 1 : -1, 1, null, false);
     const activo = cerca && cerca.tipo === 'npc' && cerca.n === n;
     if (x > -10 && x < VW + 10) etiqueta(x, SUELO - 72, n.nombre, activo ? '#ffe600' : '#00ff88', 7);
-    if (n.tipo === 'tienda') emoji('🛒', 14, x, SUELO - 90 + Math.sin(frame * .1) * 3);
-    if (n.tipo === 'ranking') emoji('🏆', 14, x, SUELO - 90 + Math.sin(frame * .1) * 3);
-    if (n.tipo === 'artesania') emoji('⚗️', 14, x, SUELO - 90 + Math.sin(frame * .1) * 3);
+    // Icono sobre el NPC (pack RPG): moneda la tienda, medalla el ranking, frasco la artesana.
+    const icoNpc = { tienda: 'I_GoldCoin', ranking: 'Ac_Medal01', artesania: 'P_Green01' }[n.tipo];
+    if (icoNpc) { const im = IMG['ico_' + icoNpc]; if (im && im.naturalWidth) g.drawImage(im, x - 9, SUELO - 104 + Math.sin(frame * .1) * 3, 18, 18); }
     if (n.tipo === 'guia') {
       // ❗ cuando hay una mision lista para entregar, como la bombilla de MapleStory.
       const q = yo && MISIONES[yo.mis.i];

@@ -1322,8 +1322,8 @@ export const MAPAS = {
       { x: 2760, a: 'cavernas',  ax: 150,  etiqueta: 'Cavernas Abisales', nv: '45-50' },
       { x: 3000, a: 'abismo',    ax: 150,  etiqueta: 'Abismo Marino', nv: '50-55' },
       { x: 3240, a: 'acantilados', ax: 150, etiqueta: 'Acantilados Mágicos', nv: '55-60' },
-      { x: 1400, a: 'coliseo',   ax: 300,  etiqueta: '👹 Coliseo', nv: 'Jefe mundial' },
-      { x: 795,  buscador: 1,             etiqueta: '🏰 Mazmorras', nv: 'Solo o en grupo' },
+      { x: 1400, a: 'coliseo',   ax: 300,  etiqueta: 'Coliseo', nv: 'Jefe mundial' },
+      { x: 795,  buscador: 1,             etiqueta: 'Mazmorras', nv: 'Solo o en grupo' },
     ],
     npcs: [
       { id: 'mercader', nombre: 'Mercader Grumo', hoja: 'goblin_peasant', x: 950, tipo: 'tienda' },
