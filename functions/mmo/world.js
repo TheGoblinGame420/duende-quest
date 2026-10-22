@@ -1349,6 +1349,10 @@ export class MmoWorld {
       if (esc.abs <= 0) this.quitarAura(s, 'escudoPoder');
     }
     s.hp -= real;
+    // Los ultimos golpes, para explicar la muerte ("te mató...").
+    const mo = fuente && fuente.id ? this.mundoDe(s).mons.get(fuente.id) : null;
+    s.golpes = (s.golpes || []).filter(x => ahora - x.t < 12000).slice(-4);
+    s.golpes.push({ t: ahora, n: mo ? MONSTRUOS[mo.k].nombre : 'Daño', nv: mo ? (mo.nv || MONSTRUOS[mo.k].nivel) : 0, d: real });
     if (!pct) s.inv = ahora + INVULNERABLE_GOLPE_MS;
     s.golpeT = ahora;
     s.combateT = ahora;
@@ -1371,6 +1375,8 @@ export class MmoWorld {
     this.limpiarAuras(s);
     this.olvidar(s);
     this.aClave(s.k, { t: 'pm', p: s.id });
+    this.enviar(s, { t: 'muerte', golpes: (s.golpes || []).map(x => ({ n: x.n, nv: x.nv, d: x.d })), pw: s.c.pw.pocion || 0, inst: s.k.includes('#') });
+    s.golpes = [];
     this.guardar(s);
   }
 

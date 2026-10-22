@@ -430,6 +430,7 @@ function recibir(m) {
     case 'herm': hermandad = m.h; pintarSocial(); break;
     case 'hermInv': mostrarInvitacion({ ...m, herm: 1 }); break;
     case 'buscador': abrirBuscador(); break;
+    case 'muerte': resumenMuerte(m); break;
     case 'nodos': recibirNodos(m.l); break;
     case 'recogido': { const n = nodos.find(x => x.i === m.i); if (n) { n.listo = performance.now() + m.en; for (let k = 0; k < 14; k++) particula(n.x, SUELO - 14, m.tipo === 'hierba' ? '#4ade80' : '#cbd5e1', 3); } sfx('moneda', .3); break; }
     case 'tareas': if (yo) { yo.tareas = m; pintarHud(); if ($('m-mision').classList.contains('on')) pintarMision(); } break;
@@ -832,7 +833,18 @@ addEventListener('keydown', e => {
 addEventListener('keyup', e => { teclas[e.code] = false; });
 addEventListener('blur', () => { for (const k in teclas) teclas[k] = false; tIzq = tDer = false; });
 
-function abrirChat() { const i = $('chat-in'); i.style.display = 'block'; i.focus(); }
+const FRASES = ['¡Hola! 👋', '¿Hacemos grupo?', '¿Mazmorra? 🏰', '¡Gracias! 🙏', '¡Bien jugado! ⚔️', '¡Ayuda aquí!', 'Me voy, ¡nos vemos! 👋'];
+function abrirChat() {
+  const i = $('chat-in'); i.style.display = 'block'; i.focus();
+  // En el movil, frases de un toque encima del teclado.
+  if (TACTIL) {
+    const f = $('frases');
+    if (!f.children.length) FRASES.forEach(t => { const b = document.createElement('button'); b.className = 'bt'; b.textContent = t; b.onmousedown = b.ontouchstart = e => { e.preventDefault(); mandar({ t: 'chat', canal: 'general', m: t }); cerrarChat(); }; f.appendChild(b); });
+    ponCss(f, 'display', 'flex');
+  }
+}
+function cerrarChat() { $('chat-in').value = ''; $('chat-in').blur(); $('chat-in').style.display = 'none'; ponCss($('frases'), 'display', 'none'); }
+$('chat-in').addEventListener('blur', () => setTimeout(() => ponCss($('frases'), 'display', 'none'), 150));
 function botonTactil(id, abajo, arriba) {
   const b = $(id);
   const on = e => { e.preventDefault(); b.classList.add('on'); abajo && abajo(); };
@@ -1810,6 +1822,13 @@ function pintarEquipo() {
   h += '</div>';
   h += `<p class="centro" style="margin:6px 0">🎒 Bolsa ${bolsa.length}/${BOLSA_MAX} · toca una pieza puesta para quitarla</p>`;
   const comunes = bolsa.filter(x => x.r === 0);
+  // Lo mejor de la bolsa para cada ranura (que se pueda usar a tu nivel).
+  const mejoras = Object.keys(RANURAS).map(k => {
+    const puesto = eq[k];
+    const cand = bolsa.filter(x => x.s === k && x.nv <= yo.nivel).sort((a, b) => puntaje(b.b) - puntaje(a.b))[0];
+    return cand && (!puesto || puntaje(cand.b) > puntaje(puesto.b)) ? cand : null;
+  }).filter(Boolean);
+  if (mejoras.length) h += `<button class="btn" id="b-equipar-mejor" style="width:100%;margin-bottom:8px">▲ EQUIPAR LO MEJOR (${mejoras.length})</button>`;
   if (comunes.length) h += `<button class="btn sec" id="b-vender-comunes" style="width:100%;margin-bottom:8px">VENDER ${comunes.length} COMUNES (+${comunes.reduce((a, x) => a + precioVenta(x), 0).toLocaleString('es')} oro)</button>`;
   if (!bolsa.length) h += '<p class="centro" style="color:rgba(255,255,255,.5)">Los monstruos sueltan equipo al morir, y los jefes siempre. ¡A cazar!</p>';
   const orden = [...bolsa].sort((a, b) => b.r - a.r || b.nv - a.nv);
@@ -1829,6 +1848,8 @@ function pintarEquipo() {
   L.querySelectorAll('[data-eq]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'item', a: 'equipar', id: b.dataset.eq }); });
   L.querySelectorAll('[data-vender]').forEach(b => b.onclick = () => { sfx('moneda', .3); mandar({ t: 'item', a: 'vender', id: b.dataset.vender }); });
   L.querySelectorAll('[data-quitar]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'item', a: 'quitar', ranura: b.dataset.quitar }); });
+  const bm = $('b-equipar-mejor');
+  if (bm) bm.onclick = () => { sfx('boton', .4); mejoras.forEach(x => mandar({ t: 'item', a: 'equipar', id: x.id })); };
   const bv = $('b-vender-comunes');
   if (bv) bv.onclick = () => { sfx('moneda', .4); comunes.forEach(x => mandar({ t: 'item', a: 'vender', id: x.id })); };
 }
@@ -2925,6 +2946,23 @@ function pintarRanking(r, sem, finSem) {
   $('rank-lista').innerHTML = h;
 }
 
+// Resumen de la muerte: quien te mato, los ultimos golpes y un consejo.
+// Morir sin entender por que es de lo que mas hace abandonar.
+function resumenMuerte(m) {
+  const g = m.golpes || [];
+  const ult = g[g.length - 1];
+  let h = '';
+  if (ult) h += `<p>Te venció: <b style="color:#ff7777">${esc(ult.n)}${ult.nv ? ' (Nv ' + ult.nv + ')' : ''}</b></p>`;
+  if (g.length) h += '<p style="font-size:12px;color:rgba(255,255,255,.6)">Últimos golpes: ' + g.map(x => esc(x.n) + ' −' + x.d).join(' · ') + '</p>';
+  let consejo = '';
+  if (ult && ult.nv && yo && ult.nv >= yo.nivel + 3) consejo = 'Ese enemigo es de nivel bastante más alto que tú: sube un par de niveles en una zona de tu nivel (🗺️ tecla M).';
+  else if (m.pw > 0) consejo = 'Tenías ' + m.pw + ' pociones: úsalas (tecla Q o el primer consumible) cuando tu vida baje de la mitad.';
+  else if (!m.pw) consejo = 'Te quedaste sin pociones: compra en el Mercader o fabrícalas con hierbas en la Artesana Lila.';
+  if (m.inst) consejo = 'En las mazmorras, sal de las zonas marcadas en el suelo e interrumpe los hechizos con barra naranja. Revives en la entrada.';
+  if (consejo) h += `<p style="margin-top:8px;color:#ffe600">💡 ${esc(consejo)}</p>`;
+  $('muerte-info').innerHTML = h;
+  $('b-revivir').textContent = m.inst ? '↺ REVIVIR EN LA ENTRADA' : '↺ REVIVIR EN EL PUEBLO';
+}
 function morir() {
   P.muerto = true;
   sfx('explosion', .4);

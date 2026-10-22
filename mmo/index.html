@@ -219,6 +219,8 @@ body.tactil #pie{display:none;}
 #chat-log b{color:var(--cian);font-weight:600;}
 #chat-log .sis{color:var(--amarillo);}
 #chat-log .ok{color:var(--verde);}
+#frases{display:none;flex-wrap:wrap;gap:4px;margin-bottom:4px;}
+#frases .bt{font-family:system-ui,sans-serif;font-size:12px;padding:6px 8px;}
 #chat-in{width:100%;font-family:system-ui,sans-serif;font-size:13px;background:rgba(0,0,0,.6);border:1px solid var(--borde);color:#fff;border-radius:5px;padding:6px 8px;outline:none;display:none;}
 
 /* avisos */
@@ -346,7 +348,7 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
       <div class="caja" id="errores"></div>
       <div class="caja" id="emotes"></div>
       <div class="caja" id="consejo"></div>
-      <div class="caja" id="chat"><div id="chat-log"></div><input id="chat-in" maxlength="120" placeholder="Escribe y pulsa Enter…" autocomplete="off"></div>
+      <div class="caja" id="chat"><div id="chat-log"></div><div id="frases"></div><input id="chat-in" maxlength="120" placeholder="Escribe y pulsa Enter…" autocomplete="off"></div>
       <button class="caja btn" id="interactuar">E · ENTRAR</button>
       <div class="caja" id="lanzar"><div class="barra"><i style="width:0%"></i><span id="lanzar-t"></span></div></div>
       <div class="caja barra" id="bxp"><i style="width:0%"></i><span id="h-xp"></span></div>
@@ -576,7 +578,8 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
 <div class="modal" id="m-muerte">
   <div class="ventana centro">
     <h2 style="color:#ff3344">💀 HAS CAÍDO</h2>
-    <p>Pierdes un 5% de la experiencia de tu nivel. Los amigos del pueblo te curarán.</p>
+    <div id="muerte-info"></div>
+    <p style="margin-top:8px">Pierdes un 5% de la experiencia de tu nivel.</p>
     <p style="margin-top:8px;color:#ffe600">✝ Si hay un sacerdote cerca, puede resucitarte aquí mismo: espera en vez de volver.</p>
     <button class="btn" id="b-revivir" style="margin-top:14px;padding:14px;font-size:10px;width:100%">↺ REVIVIR EN EL PUEBLO</button>
   </div>
