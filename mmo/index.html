@@ -154,6 +154,10 @@ body.tactil #pie{display:none;}
 #emotes{left:50%;transform:translateX(-50%);top:36%;pointer-events:none!important;text-align:center;width:92%;}
 #emotes div{font-size:9px;color:#ffae00;text-shadow:1px 1px 0 #000,0 0 8px #000,0 0 14px rgba(255,120,0,.6);margin:4px 0;animation:av 3.2s forwards;line-height:1.6;}
 #hud.estrecho #emotes div{font-size:7px;}
+#consejo{left:50%;transform:translateX(-50%);top:128px;display:none;font-size:8px;color:#ffe600;background:rgba(10,4,24,.85);border:1px solid #ffe600;border-radius:8px;padding:8px 12px;white-space:nowrap;pointer-events:none!important;animation:brilla 1.4s infinite alternate;}
+#hud.estrecho #consejo{top:200px;font-size:7px;white-space:normal;width:86%;text-align:center;line-height:1.6;}
+@keyframes brilla{to{box-shadow:0 0 14px rgba(255,230,0,.55)}}
+#bxp b.desc{position:absolute;top:0;bottom:0;background:rgba(56,189,248,.55);}
 #errores{left:50%;transform:translateX(-50%);top:28%;pointer-events:none!important;text-align:center;}
 #errores div{font-size:8px;color:#ff3344;text-shadow:1px 1px 0 #000,0 0 6px #000;margin:3px 0;animation:av 1.6s forwards;white-space:nowrap;}
 .ranuras{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
@@ -323,6 +327,7 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
       <div class="caja" id="avisos"></div>
       <div class="caja" id="errores"></div>
       <div class="caja" id="emotes"></div>
+      <div class="caja" id="consejo"></div>
       <div class="caja" id="chat"><div id="chat-log"></div><input id="chat-in" maxlength="120" placeholder="Escribe y pulsa Enter…" autocomplete="off"></div>
       <button class="caja btn" id="interactuar">E · ENTRAR</button>
       <div class="caja" id="lanzar"><div class="barra"><i style="width:0%"></i><span id="lanzar-t"></span></div></div>

@@ -213,6 +213,16 @@ export function statsMonstruo(key, nivel) {
 
 // ── PROGRESION DEL JUGADOR ──
 export function xpParaSubir(nivel) { return Math.round(40 * Math.pow(nivel, 1.5)); }
+// XP de descanso (como en WoW): estar fuera del juego acumula experiencia
+// extra que duplica la de cada caza hasta gastarse. 8% de tu nivel por hora
+// fuera (desde la primera hora), con un tope de 1,5 niveles. Un motivo
+// amable para volver al dia siguiente, sin castigar a quien no puede.
+export const DESCANSO_POR_HORA = 0.08;
+export const DESCANSO_MAX = 1.5;
+export function descansoGanado(nivel, msFuera) {
+  const horas = msFuera / 3600000;
+  return horas < 1 ? 0 : Math.round(xpParaSubir(nivel) * DESCANSO_POR_HORA * horas);
+}
 export function statsJugador(nivel, skin, eq, clase, espec) {
   const b = (SKINS[skin] && SKINS[skin].buffs) || {};
   const e = bonoEquipo(eq);

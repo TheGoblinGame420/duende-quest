@@ -19,7 +19,7 @@ import {
   LOGIN_PREMIOS, multLogin, LOGROS, MUNDIAL_DURA_MS, proximoMundial,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, MTON_EDAD_MIN_MS, WALLET_ESPERA_MS, FONDO_REFERENCIA_MTON, tonAmigable,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, FONDO_PCT_INGRESOS, PAQUETES, estrellasDe, PEDIDO_VIGENCIA_MS,
-  SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura,
+  SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX,
 } from '../../mmo/js/data.js';
 import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery, tg, getSolPriceUsd, SOL_DEV_WALLET } from '../api/lib.js';
 import { Combate } from './combate.js';
@@ -379,10 +379,18 @@ export class MmoWorld {
     s.sucio = true; s.guardadoT = Date.now(); s.actT = Date.now();
     this.porUid.set(uid, s);
     const login = this.procesarLogin(s);
+    // XP de descanso por el tiempo fuera (c.salida se pone al guardar).
+    let descansado = 0;
+    if (c.salida && c.nivel < NIVEL_MAX) {
+      const antes = c.descanso || 0;
+      c.descanso = Math.min(Math.round(xpParaSubir(c.nivel) * DESCANSO_MAX), antes + descansoGanado(c.nivel, Date.now() - c.salida));
+      descansado = c.descanso - antes;
+    }
     if (nuevo || heredado || login) await this.guardar(s);
 
     this.enviar(s, { t: 'bienvenido', id: s.id, yo: this.datosPropios(s), nuevo, heredado, regaladas, on: this.contarOnline() });
     if (login) this.enviar(s, { t: 'login', ...login });
+    if (descansado > 0) this.enviar(s, { t: 'toast', m: `😴 Descansaste: tus próximas cazas dan el DOBLE de experiencia (+${c.descanso.toLocaleString('es')} XP de descanso).`, ok: true });
     this.enviar(s, this.estadoMundial());
     this.entrarMapa(s, c.mapa, s.x, true);
     this.reengancharGrupo(s);
@@ -813,7 +821,7 @@ export class MmoWorld {
       arma: c.arma, armas: c.armas, skin: c.skin, skins: c.skins, pw: c.pw,
       kills: c.kills, jefes: c.jefes, muerto: s.muerto, mis: c.mis, forja: c.forja,
       eq: c.eq, bolsa: c.bolsa, logros: c.logros, titulo: c.titulo, mundiales: c.mundiales, login: c.login, crit: s.st.crit,
-      clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, herm: c.herm || null, pid: pub(c.uid),
+      clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0,
       espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, montado: s.montado || null,
       mton: c.mton, wallet: c.wallet ? { a: tonAmigable(c.wallet.a), desde: c.wallet.desde } : null,
       p2e: this.elegibilidad(c), creado: c.creado,
@@ -1165,6 +1173,9 @@ export class MmoWorld {
     c.oro += oro;
     c.kills++;
     if (o && o.jefe) c.jefes++;
+    // El descanso duplica la experiencia de cada caza hasta gastarse.
+    const extra = Math.min(c.descanso || 0, xp);
+    if (extra > 0) { c.descanso -= extra; xp += extra; }
     this.sumarXp(s, xp);
     // Drops: pociones y, en jefes, poderes raros.
     const drops = [];
@@ -1441,6 +1452,7 @@ export class MmoWorld {
     s.c.x = Math.round(s.x || s.c.x || 0);
     if (typeof s.hp === 'number') s.c.hp = Math.ceil(s.hp);
     s.c.muerto = !!s.muerto;
+    s.c.salida = Date.now();
     s.guardadoT = Date.now();
     s.sucio = false;
     try { await this.state.storage.put('c:' + s.c.uid, s.c); } catch (e) { console.error('[MMO guardar]', e); }

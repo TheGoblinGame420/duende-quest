@@ -438,6 +438,21 @@ async function pruebas() {
   await pr.mandar({ t: 'hab', id: 'escudo_poder', tg: q1.id });
   chequear(!v2.dano.has(pr.id) && !(v2.cura && v2.cura.has(pr.id)), 'un escudo que no absorbe nada no cuenta como participar');
 
+  console.log('XP de descanso');
+  let dz = await entrar('Dormilon', '2e');
+  ponerNivel(dz, 10, 'guerrero');
+  await mundo.cerrar(dz);
+  const guardado = await state.storage.get('c:' + dz.c.uid);
+  guardado.salida = Date.now() - 10 * 3600000;
+  await state.storage.put('c:' + dz.c.uid, guardado);
+  dz = await entrar('Dormilon', '2e');
+  chequear(dz.c.descanso > 0 && dz.ultimos('toast').some(x => /Descansaste/.test(x.m)), 'tras 10 h fuera hay XP de descanso (' + dz.c.descanso + ')');
+  await aMapa(dz, 'noche', 700); limpiarMapa(dz);
+  const xpA = dz.c.xp, desA = dz.c.descanso;
+  const gd = monstruo(dz, 'goblin_normal', 30); dz.f = 1;
+  for (let i = 0; i < 12 && !gd.muere; i++) { avanzar(400); await dz.mandar({ t: 'atk', s: i % 3 }); }
+  chequear(gd.muere && dz.c.descanso < desA, 'cazar gasta el descanso y da el doble');
+
   console.log('Monstruos pasivos no pegan a quien no les ataca');
   const t2 = await entrar('Turista', 5);
   await aMapa(t2, 'noche', 2000);

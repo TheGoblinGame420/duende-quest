@@ -618,6 +618,7 @@ function fisica() {
   // Moverse cancela el lanzamiento (el servidor tambien lo hace; aqui se
   // ve al instante).
   if (obj && castYo) { castYo = null; mandar({ t: 'cancelar' }); verLanzar(false); }
+  if (izq || der) viajePorBorde(izq, der);
   if (P.dash > 0) { P.dash--; P.vx = P.f * FIS.dashVel; }
   else P.vx += (obj - P.vx) * .3;
   if (P.dashCd > 0) P.dashCd--;
@@ -937,6 +938,7 @@ function usarHabDef(h, tgForzado) {
   }
   if (h.id === 'eviscerar' && !(P.combo > 0)) { errorRojo('Necesitas puntos de combo (usa Golpe Siniestro).'); return; }
   if (h.gcd !== false) gcdHasta = ahora + GCD_MS;
+  tuto.usoHab = true;
   // La carga mueve al guerrero: el servidor lo pone junto al objetivo.
   mandar({ t: 'hab', id: h.id, tg });
 }
@@ -1390,6 +1392,142 @@ function pintarLibro() {
   $('libro-lista').innerHTML = h;
   $('b-cambiar-clase').onclick = () => abrirClases(false);
   $('libro-lista').querySelectorAll('[data-espec]').forEach(b => b.onclick = () => { if (yo.nivel >= ESPEC_NIVEL && yo.espec !== b.dataset.espec) { sfx('explosion', .3); mandar({ t: 'espec', id: b.dataset.espec }); } });
+}
+
+// ── GUIA: flecha hacia el objetivo y tutorial del jugador nuevo ──
+// Lo que mas hacia abandonar en la primera partida era no saber adonde ir:
+// la mision decia "Bosque Nocturno" pero nada señalaba el camino. La flecha
+// amarilla apunta siempre al siguiente paso: el portal correcto (buscando
+// la ruta entre zonas), la presa de la mision o el Guardia Tito.
+
+// Primer portal del camino mas corto hasta otro mapa (por portales).
+function portalHacia(destino) {
+  if (mapaId === destino || !MAPAS[destino]) return null;
+  const prev = { [mapaId]: null };
+  const cola = [mapaId];
+  while (cola.length) {
+    const m = cola.shift();
+    if (m === destino) break;
+    MAPAS[m].portales.forEach((p, i) => {
+      if (!p.a || p.fin || !MAPAS[p.a] || MAPAS[p.a].instancia || p.a in prev) return;
+      prev[p.a] = { de: m, i };
+      cola.push(p.a);
+    });
+  }
+  if (!(destino in prev)) return null;
+  let m = destino;
+  while (prev[m] && prev[m].de !== mapaId) m = prev[m].de;
+  return prev[m] ? MAPAS[mapaId].portales[prev[m].i] : null;
+}
+function objetivoGuia() {
+  if (!yo || !yo.clase || P.muerto || instancia || !yo.mis) return null;
+  const q = MISIONES[yo.mis.i];
+  if (!q) return null;
+  if (yo.mis.p >= q.n) {
+    const tito = MAPAS.pueblo.npcs.find(n => n.tipo === 'guia');
+    if (mapaId === 'pueblo') return { x: tito.x, txt: '❗ Entrega: Guardia Tito' };
+    const p = portalHacia('pueblo');
+    return p ? { x: p.x, txt: 'Vuelve al pueblo (o 🌀)' } : null;
+  }
+  const zona = zonaDe(q.tipo);
+  if (zona && mapaId !== zona) {
+    const p = portalHacia(zona);
+    return p ? { x: p.x, txt: '→ ' + MAPAS[zona].nombre } : null;
+  }
+  const def = MONSTRUOS[q.tipo];
+  let mejor = null, md = Infinity;
+  for (const o of mons.values()) if (o.k === q.tipo && !o.muereT && Math.abs(o.x - P.x) < md) { md = Math.abs(o.x - P.x); mejor = o; }
+  if (mejor) return { x: mejor.x, y: mejor.y - mejor.alto - 18, txt: def.nombre, mon: mejor };
+  if (def.jefe && MAPAS[mapaId].jefe === q.tipo) return { x: MAPAS[mapaId].ancho * 0.62, txt: def.nombre + ' (reaparece pronto)' };
+  return null;
+}
+function dibujarGuia() {
+  const ob = objetivoGuia();
+  if (!ob) return;
+  const x = ob.x - camX;
+  const bote = Math.sin(frame * .12) * 4;
+  g.save();
+  g.fillStyle = '#ffe600'; g.strokeStyle = '#000'; g.lineWidth = 2;
+  if (x > 24 && x < VW - 24) {
+    // A la vista: flecha que rebota sobre el objetivo.
+    const y = (ob.y || SUELO - 110) + bote;
+    if (!ob.mon || Math.abs(ob.x - P.x) > 60) {
+      g.beginPath(); g.moveTo(x - 9, y - 14); g.lineTo(x + 9, y - 14); g.lineTo(x, y); g.closePath(); g.fill(); g.stroke();
+      etiqueta(x, y - 20, ob.txt, '#ffe600', 6);
+    }
+  } else {
+    // Fuera de la vista: flecha en el borde con la distancia.
+    const der = x >= VW - 24;
+    const ex = der ? VW - 14 + bote * .5 : 14 - bote * .5, y = SUELO - 92;
+    g.beginPath();
+    if (der) { g.moveTo(ex, y); g.lineTo(ex - 16, y - 11); g.lineTo(ex - 16, y + 11); }
+    else { g.moveTo(ex, y); g.lineTo(ex + 16, y - 11); g.lineTo(ex + 16, y + 11); }
+    g.closePath(); g.fill(); g.stroke();
+    const dist = Math.round(Math.abs(ob.x - P.x) / 10);
+    g.font = '6px "Press Start 2P", monospace';
+    const t = ob.txt + ' · ' + dist + ' m';
+    const w = g.measureText(t).width;
+    etiqueta(der ? ex - 24 - w / 2 : ex + 24 + w / 2, y + 3, t, '#ffe600', 6);
+  }
+  g.restore();
+}
+
+// Tutorial de los primeros minutos: un consejo cada vez, que se cumple solo
+// al hacerlo. Se guarda por personaje en este dispositivo.
+const TUTORIAL = [
+  { id: 'mover', txt: () => TACTIL ? '👆 Muévete con ◀ ▶' : '⌨️ Muévete con ← → (o A / D)', hecho: t => Math.abs(P.x - t.x0) > 120 },
+  { id: 'ir', txt: () => '🟡 Sigue la flecha amarilla: te lleva a tu misión', hecho: t => (yo.kills || 0) > t.k0 || (MAPAS[mapaId].zona && !instancia) },
+  { id: 'atacar', txt: () => TACTIL ? '⚔️ Pega con el botón rojo (mantenlo pulsado)' : '⚔️ Pega con Z (o J); Tab elige al enemigo', hecho: t => (yo.kills || 0) > t.k0 },
+  { id: 'habilidad', txt: () => '✨ Usa tu habilidad: ' + (TACTIL ? 'el primer botón de la barra' : 'tecla 1'), hecho: t => t.usoHab },
+  { id: 'mision', txt: () => '📜 Completa la misión y la flecha te llevará al Guardia Tito', hecho: () => (yo.mis && yo.mis.i >= 1) },
+];
+const tuto = { i: -1, x0: 0, k0: 0, usoHab: false, clave: '' };
+function pintarTutorial() {
+  const el = $('consejo');
+  if (!yo || !yo.clase || yo.nivel > 6 || $('m-clase').classList.contains('on')) { ponCss(el, 'display', 'none'); return; }
+  const clave = 'dq_tuto_' + (yo.pid || '');
+  if (tuto.clave !== clave) {
+    tuto.clave = clave;
+    let i = 0; try { i = +(localStorage.getItem(clave) || 0); } catch (e) {}
+    tuto.i = i; tuto.x0 = P.x; tuto.k0 = yo.kills || 0; tuto.usoHab = false;
+  }
+  const paso = TUTORIAL[tuto.i];
+  if (!paso) { ponCss(el, 'display', 'none'); return; }
+  if (paso.hecho(tuto)) {
+    tuto.i++; tuto.x0 = P.x; tuto.k0 = yo.kills || 0;
+    try { localStorage.setItem(clave, String(tuto.i)); } catch (e) {}
+    sfx('moneda', .3);
+    return;
+  }
+  ponCss(el, 'display', 'block');
+  ponTxt(el, paso.txt() + '  (' + (tuto.i + 1) + '/' + TUTORIAL.length + ')');
+}
+
+// Mundo abierto: caminar contra el borde de una zona pasa a la siguiente
+// por su portal, sin tener que pararse a pulsar "entrar".
+let bordeT = 0;
+function viajePorBorde(izq, der) {
+  const mp = MAPAS[mapaId];
+  if (castYo || P.muerto || performance.now() - bordeT < 1500) return;
+  const enBorde = (izq && P.x <= 16) || (der && P.x >= mp.ancho - 16);
+  if (!enBorde) return;
+  const i = mp.portales.findIndex(p => p.a && !p.buscador && Math.abs(p.x - P.x) < 85);
+  if (i < 0) return;
+  bordeT = performance.now();
+  mandar({ t: 'portal', i });
+}
+
+// Barra de XP: la parte de descanso se ve en azul por delante de la tuya.
+function pintarDescanso() {
+  const b = $('bxp');
+  let d = b.querySelector('b');
+  if (!d) { d = document.createElement('b'); d.className = 'desc'; b.appendChild(d); }
+  if (!yo || !yo.xpSig) return;
+  const ini = Math.min(100, yo.xp / yo.xpSig * 100);
+  const w = Math.min(100 - ini, (yo.descanso || 0) / yo.xpSig * 100);
+  ponCss(d, 'left', ini + '%');
+  ponCss(d, 'width', Math.max(0, w) + '%');
+  b.title = 'Experiencia: ' + yo.xp.toLocaleString('es') + ' / ' + yo.xpSig.toLocaleString('es') + ((yo.descanso || 0) > 0 ? ' · 😴 descanso: +' + yo.descanso.toLocaleString('es') + ' XP (cazas al doble)' : '');
 }
 
 // ── TITULOS / LOGROS ──
@@ -2135,6 +2273,7 @@ function dibujar() {
   if (yo) dibujarDuende(P, true);
   dibujarProyectiles();
   dibujarEfectos();
+  dibujarGuia();
   g.restore();
   // Fundido al cruzar un portal.
   if (fundido > 0) { g.fillStyle = `rgba(7,3,15,${fundido})`; g.fillRect(0, 0, cv.width, cv.height); fundido = Math.max(0, fundido - .05); }
@@ -2198,6 +2337,7 @@ function pintarHud() {
   }
   pintarPoderes();
   pintarAcciones();
+  pintarDescanso();
 }
 
 // ── MISIONES ──
@@ -2289,6 +2429,7 @@ function pintarVida() {
   pintarAccionesObjetivo();
   pintarGrupo();
   pintarLanzar();
+  if (frame % 10 === 0) pintarTutorial();
 }
 let retratoDe = '';
 function pintarObjetivo() {
