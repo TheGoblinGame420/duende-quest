@@ -66,8 +66,8 @@ td a{word-break:break-all;}
 .pasos li{counter-increment:p;position:relative;padding-left:2.1rem;margin-bottom:.7rem;}
 .pasos li::before{content:counter(p);position:absolute;left:0;top:.05rem;width:1.5rem;height:1.5rem;border-radius:50%;background:var(--panel2);border:1px solid var(--borde);color:var(--txt);font-size:.8rem;font-weight:600;display:flex;align-items:center;justify-content:center;}
 footer{border-top:1px solid var(--borde);background:var(--panel);}
-footer .in{max-width:720px;margin:0 auto;padding:1.4rem 16px 2.2rem;display:flex;flex-wrap:wrap;gap:.5rem 1.1rem;color:var(--txt2);font-size:.88rem;}
-footer a{color:var(--txt2);}
+footer .in{max-width:720px;margin:0 auto;padding:1.4rem 16px 2.2rem;display:flex;flex-wrap:wrap;align-items:center;gap:.5rem 1.1rem;color:var(--txt2);font-size:.88rem;}
+footer a{display:inline-flex;align-items:center;min-height:40px;padding:10px 6px;color:var(--txt2);}
 footer a:hover{color:var(--txt);}
 @media (max-width:520px){h1{font-size:1.4rem;}}
 </style>
@@ -79,9 +79,9 @@ footer a:hover{color:var(--txt);}
     <a class="brand" href="/"><img src="assets/ui/coin.png" alt="" width="20" height="20">DUENDE QUEST</a>
     <nav aria-label="Páginas">
       <a href="/">Inicio</a>
-      <a href="terminos.html">Términos</a>
-      <a href="privacidad.html">Privacidad</a>
-      <a href="seguridad.html" aria-current="page">Seguridad</a>
+      <a href="/terminos">Términos</a>
+      <a href="/privacidad">Privacidad</a>
+      <a href="/seguridad" aria-current="page">Seguridad</a>
     </nav>
   </div>
 </header>
@@ -150,7 +150,7 @@ footer a:hover{color:var(--txt);}
     <li>El equipo te escribe por Telegram desde la cuenta oficial @ElDuendeOficial, menciona tu código y te pide la dirección de entrega.</li>
     <li>Recibes el premio. El envío es gratis: <strong>no hay nada que pagar</strong>.</li>
   </ol>
-  <p>Si alguien te escribe diciendo que ganaste algo que <strong>no reclamaste tú</strong> en el juego, o no sabe tu código, o te pide dinero por el envío, es una estafa. Más detalles en los <a href="terminos.html#chicha">Términos</a>.</p>
+  <p>Si alguien te escribe diciendo que ganaste algo que <strong>no reclamaste tú</strong> en el juego, o no sabe tu código, o te pide dinero por el envío, es una estafa. Más detalles en los <a href="/terminos#chicha">Términos</a>.</p>
 
   <h2 id="senales">Señales de una estafa</h2>
   <ul>
@@ -170,16 +170,18 @@ footer a:hover{color:var(--txt);}
   </ol>
   <div class="nota info"><p><strong>Si ya compartiste tu frase semilla o tu llave privada:</strong> crea una wallet nueva de inmediato y mueve ahí todo lo que tengas; la wallet anterior ya no es segura. Si diste tu contraseña del juego, cámbiala. Nosotros no podemos revertir transacciones en la blockchain.</p></div>
 
-  <p>Más información: <a href="terminos.html">Términos de Servicio</a> · <a href="privacidad.html">Política de Privacidad</a>.</p>
+  <p>Más información: <a href="/terminos">Términos de Servicio</a> · <a href="/privacidad">Política de Privacidad</a>.</p>
 </main>
 
 <footer>
   <div class="in">
     <span>DUENDE QUEST</span>
     <a href="/">Inicio</a>
-    <a href="terminos.html">Términos</a>
-    <a href="privacidad.html">Privacidad</a>
-    <a href="seguridad.html">Seguridad</a>
+    <a href="/guia">Guía</a>
+    <a href="/novedades">Novedades</a>
+    <a href="/terminos">Términos</a>
+    <a href="/privacidad">Privacidad</a>
+    <a href="/seguridad">Seguridad</a>
     <a href="https://t.me/ElDuendeOficial" rel="noopener">Creador oficial</a>
   </div>
 </footer>

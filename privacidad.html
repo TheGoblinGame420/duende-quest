@@ -61,8 +61,8 @@ th,td{text-align:left;padding:.55rem .6rem;border-bottom:1px solid var(--borde);
 th{color:var(--txt2);font-weight:600;background:var(--panel);}
 td:first-child{width:58%;}
 footer{border-top:1px solid var(--borde);background:var(--panel);}
-footer .in{max-width:720px;margin:0 auto;padding:1.4rem 16px 2.2rem;display:flex;flex-wrap:wrap;gap:.5rem 1.1rem;color:var(--txt2);font-size:.88rem;}
-footer a{color:var(--txt2);}
+footer .in{max-width:720px;margin:0 auto;padding:1.4rem 16px 2.2rem;display:flex;flex-wrap:wrap;align-items:center;gap:.5rem 1.1rem;color:var(--txt2);font-size:.88rem;}
+footer a{display:inline-flex;align-items:center;min-height:40px;padding:10px 6px;color:var(--txt2);}
 footer a:hover{color:var(--txt);}
 @media (max-width:520px){h1{font-size:1.4rem;}td:first-child{width:auto;}}
 </style>
@@ -74,9 +74,9 @@ footer a:hover{color:var(--txt);}
     <a class="brand" href="/"><img src="assets/ui/coin.png" alt="" width="20" height="20">DUENDE QUEST</a>
     <nav aria-label="Páginas">
       <a href="/">Inicio</a>
-      <a href="terminos.html">Términos</a>
-      <a href="privacidad.html" aria-current="page">Privacidad</a>
-      <a href="seguridad.html">Seguridad</a>
+      <a href="/terminos">Términos</a>
+      <a href="/privacidad" aria-current="page">Privacidad</a>
+      <a href="/seguridad">Seguridad</a>
     </nav>
   </div>
 </header>
@@ -167,7 +167,7 @@ footer a:hover{color:var(--txt);}
 
   <h2 id="seguridad"><span class="n">10.</span>Seguridad</h2>
   <p>Aplicamos medidas técnicas razonables para proteger tus datos: contraseñas cifradas, controles de acceso a nivel de base de datos, verificación firmada de partidas, de la sesión de Telegram y de los pagos para evitar manipulación, y una espera de 72 horas antes de poder retirar a una wallet TON recién conectada, por si alguien entra a tu cuenta. Ningún sistema es 100% infalible; si detectamos una brecha de seguridad que afecte tus datos, te lo notificaremos conforme a la ley.</p>
-  <p>Consejos para protegerte de suplantaciones: <a href="seguridad.html">Seguridad y estafas</a>.</p>
+  <p>Consejos para protegerte de suplantaciones: <a href="/seguridad">Seguridad y estafas</a>.</p>
 
   <h2 id="cookies"><span class="n">11.</span>Cookies y almacenamiento local</h2>
   <p>Usamos <code>localStorage</code> del navegador para guardar tu sesión, un ranking local de respaldo y, en el MMO, tu código de invitado y preferencias como el sonido. No usamos cookies de rastreo publicitario ni de terceros con fines de marketing.</p>
@@ -183,9 +183,11 @@ footer a:hover{color:var(--txt);}
   <div class="in">
     <span>DUENDE QUEST</span>
     <a href="/">Inicio</a>
-    <a href="terminos.html">Términos</a>
-    <a href="privacidad.html">Privacidad</a>
-    <a href="seguridad.html">Seguridad</a>
+    <a href="/guia">Guía</a>
+    <a href="/novedades">Novedades</a>
+    <a href="/terminos">Términos</a>
+    <a href="/privacidad">Privacidad</a>
+    <a href="/seguridad">Seguridad</a>
     <a href="https://t.me/ElDuendeOficial" rel="noopener">Creador oficial</a>
   </div>
 </footer>

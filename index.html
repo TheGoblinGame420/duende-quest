@@ -122,7 +122,7 @@
       "name": "¿Cómo compro $DUENDE?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Hay dos formas: Directo al creador, en la sección Apoya Duende Quest: conectas tu wallet de Solana y envías SOL (mínimo 0.1) a la tasa fija de 1 SOL = 10,000 $DUENDE. El creador revisa el pago y te envía los tokens a mano a la misma wallet. Ese dinero financia el desarrollo del juego. En el mercado, en pump.fun, al precio del momento. Comprueba que la dirección del contrato sea HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump."
+        "text": "Hay dos formas: Directo al creador, en la sección Apoya Duende Quest: conectas tu wallet de Solana y envías SOL (mínimo 0.1) a la tasa fija de 1 SOL = 10.000 $DUENDE. El creador revisa el pago y te envía los tokens a mano a la misma wallet. Ese dinero financia el desarrollo del juego. En el mercado, en pump.fun, al precio del momento. Comprueba que la dirección del contrato sea HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump."
       }
     },
     {
@@ -211,8 +211,9 @@ nav{
   font-family:var(--px);font-size:12px;color:var(--txt);text-decoration:none;
 }
 .nav-logo img{width:28px;height:28px;image-rendering:pixelated;border-radius:50%;}
-.nav-links{display:flex;gap:1.1rem;list-style:none;align-items:center;}
+.nav-links{display:flex;gap:.35rem;list-style:none;align-items:center;}
 .nav-links a{
+  display:inline-flex;align-items:center;min-height:40px;padding:10px 6px;
   color:var(--txt2);text-decoration:none;
   font-family:var(--sans);font-size:14px;font-weight:500;transition:color .15s;
 }
@@ -279,7 +280,7 @@ nav{
 .btn-tg:hover,.btn-sec:hover,.btn-buy:hover,.btn-game:hover,.btn-pink:hover{border-color:var(--pri-txt);background:rgba(59,130,246,.08);}
 .btn-tg:active,.btn-sec:active,.btn-buy:active,.btn-game:active,.btn-pink:active{transform:scale(.98);}
 .hero-more{font-size:14px;color:var(--txt2);line-height:1.8;}
-.hero-more a,.hero-more button{color:var(--txt);background:none;border:none;font:inherit;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--txt3);cursor:pointer;padding:0;}
+.hero-more a,.hero-more button{color:var(--txt);background:none;border:none;font:inherit;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--txt3);cursor:pointer;display:inline-flex;align-items:center;min-height:40px;padding:10px 6px;vertical-align:middle;}
 #btn-buy-main{display:inline-flex;align-items:center;min-height:44px;vertical-align:middle;}
 .hero-more a:hover,.hero-more button:hover{color:#fff;text-decoration-color:var(--pri-txt);}
 .sec-line{max-width:640px;margin:1rem auto 0;padding:.7rem 1rem;border:1px solid var(--borde);border-radius:8px;background:var(--panel);font-family:var(--sans);font-size:13px;line-height:1.45;color:var(--txt);text-align:center;}
@@ -333,7 +334,7 @@ nav{
 .creador-links a:hover{border-color:var(--pri-txt)}
 .creador-links small{display:block;font-weight:400;font-size:12px;color:var(--txt2);margin-top:.15rem}
 .hero-creador{margin-top:1.4rem;font-size:13px;line-height:1.8;color:var(--txt2)}
-.hero-creador a{color:var(--txt);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--txt3);font-weight:600}
+.hero-creador a{display:inline-flex;align-items:center;min-height:40px;padding:10px 6px;vertical-align:middle;color:var(--txt);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--txt3);font-weight:600}
 .soc{
   display:flex;flex-direction:column;align-items:center;gap:.35rem;
   background:var(--panel);border:1px solid var(--borde);
@@ -525,7 +526,7 @@ footer{
 .f-soc a:hover{color:var(--txt);}
 .f-note{color:var(--txt2);font-size:13px;line-height:1.6;max-width:600px;margin:.5rem auto 0;}
 .f-links{display:flex;gap:.4rem 1.2rem;justify-content:center;flex-wrap:wrap;margin:1rem 0 .4rem;font-size:14px;}
-.f-links a{min-height:44px;display:inline-flex;align-items:center;color:var(--txt);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--txt3);}
+.f-links a{min-height:44px;display:inline-flex;align-items:center;padding:10px 6px;color:var(--txt);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--txt3);}
 .f-links a:hover{text-decoration-color:var(--pri-txt);}
 
 /* ============ NFT STORE ============ */
@@ -603,6 +604,16 @@ footer{
   *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important;}
 }
 /* ── LIVE STATS GRID ── */
+[hidden]{display:none!important;}
+.dex-sin-par{max-width:700px;margin:1.6rem auto 0;padding:.8rem 1rem;background:var(--panel);border:1px solid var(--borde);border-radius:10px;font-family:var(--sans);font-size:14px;line-height:1.5;color:var(--txt2);text-align:center;}
+.dex-sin-par a{color:var(--pri-txt);font-weight:600;}
+/* Aviso flotante (showNotification) */
+#dq-toasts{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:10000;display:flex;flex-direction:column;gap:.5rem;width:min(420px,calc(100vw - 32px));pointer-events:none;}
+.dq-toast{pointer-events:auto;background:var(--panel2);color:var(--txt);border:1px solid var(--borde);border-left:4px solid var(--pri);border-radius:8px;padding:.75rem .9rem;font:500 14px/1.45 var(--sans);box-shadow:0 4px 16px rgba(0,0,0,.35);transition:opacity .25s,transform .25s;}
+.dq-toast.ok{border-left-color:var(--ok);}
+.dq-toast.warn{border-left-color:var(--warn);}
+.dq-toast.err{border-left-color:var(--err);}
+.dq-toast.sale{opacity:0;transform:translateY(6px);}
 .live-stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.8rem;max-width:700px;margin:2rem auto;}
 .ls-card{background:var(--panel);border:1px solid var(--borde);border-radius:10px;padding:1rem .8rem;text-align:center;}
 .ls-val{font-family:var(--px);font-size:clamp(11px,2vw,14px);color:var(--txt);display:block;margin-bottom:.45rem;}
@@ -770,7 +781,7 @@ section[id]{scroll-margin-top:72px;}
   <div class="nav-right">
     <a class="nav-play" href="/mmo/" target="_blank" rel="noopener">Jugar</a>
     <button id="wallet-connect-btn" type="button">🔗 Conectar Wallet</button>
-    <div class="live-price-pill" title="Precio de $DUENDE (DexScreener)">
+    <div class="live-price-pill" title="Precio de $DUENDE (DexScreener)" data-solo-dex hidden>
       <span class="dot"></span>
       $DUENDE: <span data-price-usd>---</span>
       <span data-change24h>---</span>
@@ -805,7 +816,7 @@ section[id]{scroll-margin-top:72px;}
      la rellena con el número real y entonces se muestra (ver .stats-bar:has). ========== -->
 <div class="stats-bar">
   <div class="stats-inner">
-    <div class="stat"><span class="stat-n" id="live-players-2"></span><span class="stat-l">Jugadores registrados</span></div>
+    <div class="stat" data-jugadores hidden><span class="stat-n" id="live-players-2"></span><span class="stat-l">Jugadores registrados</span></div>
   </div>
 </div>
 
@@ -847,7 +858,7 @@ section[id]{scroll-margin-top:72px;}
   <h2 class="px-title" id="trailer-h">Mira el tráiler</h2>
   <p class="px-sub">30 segundos de juego real: clases, mazmorras, juego online y el premio de chicha morada.</p>
   <div style="max-width:340px;margin:0 auto;border-radius:14px;overflow:hidden;border:1px solid var(--borde);background:#000;box-shadow:0 4px 16px rgba(0,0,0,.35)">
-    <video id="trailer-video" controls playsinline preload="none" width="720" height="1280" poster="assets/video/trailer-2-poster.jpg" style="display:block;width:100%;height:auto;aspect-ratio:9/16;background:#000">
+    <video id="trailer-video" controls playsinline preload="none" width="720" height="1280" poster="assets/video/trailer-2-poster.webp" style="display:block;width:100%;height:auto;aspect-ratio:9/16;background:#000">
       <source src="assets/video/trailer-2.mp4" type="video/mp4">
       Tu navegador no puede reproducir el video.
     </video>
@@ -1015,34 +1026,10 @@ section[id]{scroll-margin-top:72px;}
     <p style="font-size:13px;color:var(--txt2);margin-top:.8rem">Sin descargas · Crea tu cuenta · Ranking global</p>
   </div>
 
-  <!-- SKINS -->
-  <div style="margin-top:3.5rem">
-    <h3 class="px-title" style="font-size:13px">Skins de pago (opcionales)</h3>
-    <p class="px-sub" style="margin-bottom:1.5rem">Skins exclusivas con bonificaciones en combate para holders de NFT. El juego se puede jugar sin ellas.</p>
-    <div class="skins-grid">
-      <div class="skin-card skin-king-card">
-        <img class="skin-img" src="assets/skins/skin_king.png" alt="Skin El Rey de Duende Quest" id="skin-king" loading="lazy" width="110" height="110" decoding="async">
-        <div class="skin-name" style="color:var(--yellow)">El Rey</div>
-        <span class="skin-rarity king-r">LEGENDARY</span>
-        <div class="skin-desc">El gobernante supremo del reino duende. Porta el martillo de la justicia y magia arcana. +30% daño mágico.</div>
-        <div class="skin-price king-price">0.5 SOL</div>
-      </div>
-      <div class="skin-card skin-tactico-card">
-        <img class="skin-img" src="assets/skins/skin_tactico.png" alt="Skin El Táctico de Duende Quest" id="skin-tactico" loading="lazy" width="110" height="110" decoding="async">
-        <div class="skin-name" style="color:var(--cyan)">El Táctico</div>
-        <span class="skin-rarity tactico-r">EPIC</span>
-        <div class="skin-desc">Maestro del análisis y las criptomonedas. Ve el mercado como un mapa de batalla. +25% velocidad de ataque.</div>
-        <div class="skin-price tactico-price">0.3 SOL</div>
-      </div>
-      <div class="skin-card skin-berserker-card">
-        <img class="skin-img" src="assets/skins/skin_berserker.png" alt="Skin Berserker de Duende Quest" id="skin-berserker" loading="lazy" width="110" height="110" decoding="async">
-        <div class="skin-name" style="color:var(--red)">Berserker</div>
-        <span class="skin-rarity berserker-r">EPIC</span>
-        <div class="skin-desc">El guerrero sin miedo. Armado con escudo dorado y espada de cristal. +40% daño físico. Sin defensa.</div>
-        <div class="skin-price berserker-price">0.2 SOL</div>
-      </div>
-    </div>
-  </div>
+  <!-- SKINS: antes aqui habia precios en SOL (0.5 / 0.3 / 0.2 SOL "para holders
+       de NFT") que contradecian la tienda real. Ahora una sola presentacion:
+       la coleccion de #nfts, con los precios de game.html / telegram. -->
+  <p class="px-sub" style="margin-top:2.5rem">Skins opcionales de US$25 a US$250, con Telegram Stars o TON en la tienda del juego. <a href="#nfts" style="color:var(--pri-txt);font-weight:600">Ver la colección de skins</a></p>
 </section>
 
 <!-- ========== TELEGRAM MINI APP ========== -->
@@ -1158,22 +1145,27 @@ section[id]{scroll-margin-top:72px;}
       <h3><span data-holders>—</span> holders</h3>
       <p>Holders reales on-chain (en vivo).</p>
     </div>
-    <div class="trust-card">
+    <div class="trust-card" data-solo-mcap hidden>
       <h3><span data-mcap>—</span></h3>
-      <p>Market cap en vivo (DexScreener).</p>
+      <p>Market cap en vivo (pump.fun o DexScreener).</p>
     </div>
   </div>
 
+  <!-- Sin par en DEX (el token sigue en la curva de pump.fun): en vez de un
+       grafico vacio de 420 px y precios "---", un aviso con el enlace real.
+       price-feed.js lo cambia por el bloque de DexScreener si aparece un par. -->
+  <p class="dex-sin-par" id="dex-sin-par">Aún sin par en DEX: $DUENDE se opera en la curva de pump.fun, así que aquí no hay gráfico, precio ni volumen. <a href="https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump" target="_blank" rel="noopener">Ver $DUENDE en pump.fun</a></p>
+
   <div class="live-stats-grid">
-    <div class="ls-card"><span data-price-usd class="ls-val">---</span><span class="ls-label">Precio $DUENDE</span><span data-change24h class="ls-change">---</span></div>
-    <div class="ls-card"><span data-mcap class="ls-val">---</span><span class="ls-label">Market cap</span></div>
-    <div class="ls-card"><span data-volume class="ls-val">---</span><span class="ls-label">Volumen 24 h</span></div>
-    <div class="ls-card"><span id="live-players" class="ls-val">—</span><span class="ls-label">Jugadores registrados</span></div>
+    <div class="ls-card" data-solo-dex hidden><span data-price-usd class="ls-val">---</span><span class="ls-label">Precio $DUENDE</span><span data-change24h class="ls-change">---</span></div>
+    <div class="ls-card" data-solo-dex hidden><span data-mcap class="ls-val">---</span><span class="ls-label">Market cap</span></div>
+    <div class="ls-card" data-solo-dex hidden><span data-volume class="ls-val">---</span><span class="ls-label">Volumen 24 h</span></div>
+    <div class="ls-card" data-jugadores hidden><span id="live-players" class="ls-val">—</span><span class="ls-label">Jugadores registrados</span></div>
   </div>
 
-  <!-- Grafico en vivo embebido -->
-  <div style="max-width:760px;margin:0 auto 1.2rem;border:1px solid var(--borde);border-radius:10px;overflow:hidden;background:var(--panel)">
-    <iframe id="dex-chart" title="Gráfico de precio de $DUENDE en DexScreener" src="https://dexscreener.com/solana/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump?embed=1&theme=dark&info=0"
+  <!-- Grafico en vivo embebido (solo si DexScreener tiene un par; el src se pone desde price-feed.js) -->
+  <div data-solo-dex hidden style="max-width:760px;margin:0 auto 1.2rem;border:1px solid var(--borde);border-radius:10px;overflow:hidden;background:var(--panel)">
+    <iframe id="dex-chart" title="Gráfico de precio de $DUENDE en DexScreener" data-src="https://dexscreener.com/solana/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump?embed=1&theme=dark&info=0"
       style="width:100%;height:420px;border:0" loading="lazy"></iframe>
   </div>
 
@@ -1191,7 +1183,7 @@ section[id]{scroll-margin-top:72px;}
 <!-- ========== TOKENOMICS ========== -->
 <section class="section token-bg" id="tokenomics" aria-labelledby="tokenomics-h">
   <h2 class="px-title" id="tokenomics-h">Tokenomics de $DUENDE</h2>
-  <p class="px-sub">Supply total: <strong style="color:var(--txt)">1,000,000,000 $DUENDE</strong>. Sin minteo adicional.</p>
+  <p class="px-sub">Supply total: <strong style="color:var(--txt)">1.000.000.000 $DUENDE</strong>. Sin minteo adicional.</p>
   <div class="tgrid" style="grid-template-columns:repeat(3,1fr);max-width:900px;margin:0 auto">
     <div class="tcard">
       <span class="tnum" style="color:var(--green)">1.000M</span>
@@ -1210,9 +1202,9 @@ section[id]{scroll-margin-top:72px;}
     </div>
   </div>
   <div style="display:flex;justify-content:center;gap:2rem;margin:2rem auto;flex-wrap:wrap;max-width:700px">
-    <div style="text-align:center"><span class="stat-n" id="holder-count">—</span><span class="stat-l">Holders</span></div>
-    <div style="text-align:center"><span class="stat-n" id="market-cap">—</span><span class="stat-l">Market cap</span></div>
-    <div style="text-align:center"><span class="stat-n" id="players-count">—</span><span class="stat-l">Jugadores registrados</span></div>
+    <div style="text-align:center"><span class="stat-n" id="holder-count" data-holders>—</span><span class="stat-l">Holders</span></div>
+    <div style="text-align:center" data-solo-mcap hidden><span class="stat-n" id="market-cap" data-mcap>—</span><span class="stat-l">Market cap</span></div>
+    <div style="text-align:center" data-jugadores hidden><span class="stat-n" id="players-count">—</span><span class="stat-l">Jugadores registrados</span></div>
   </div>
   <p class="sec-line" style="max-width:700px">Token de entretenimiento: no hay vesting, tokens bloqueados ni reparto de ganancias. El precio lo define el mercado, puede bajar a cero y nada de esto es asesoría financiera. <a href="https://solscan.io/token/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump" target="_blank" rel="noopener">Ver el token en Solscan</a>.</p>
 </section>
@@ -1246,6 +1238,23 @@ section[id]{scroll-margin-top:72px;}
       <div class="tier-price">Gratis</div>
     </div>
 
+    <!-- TACTICO -->
+    <div class="tier-card tier-special">
+      <div class="tier-header">
+        <img class="tier-img" src="assets/skins/skin_tactico.png" alt="Skin Táctico de Duende Quest" id="img-tactico" loading="lazy" width="84" height="84" decoding="async">
+        <div class="tier-info">
+          <span class="tier-badge">SPECIAL</span>
+          <h3 class="tier-name">Táctico</h3>
+          <div class="tier-supply">Skin del juego</div>
+        </div>
+      </div>
+      <div class="tier-divider"></div>
+      <ul class="tier-perks">
+        <li>+10% monedas en el arcade</li>
+        <li>Se compra en la tienda del juego (Stars o TON)</li>
+      </ul>
+      <div class="tier-price" style="color:var(--green)">US$25</div>
+    </div>
     <!-- SPECIAL -->
     <div class="tier-card tier-special">
       <div class="tier-header">
@@ -1284,6 +1293,24 @@ section[id]{scroll-margin-top:72px;}
       <div class="tier-price" style="color:#a78bfa">US$75</div>
     </div>
 
+    <!-- BERSERKER -->
+    <div class="tier-card tier-elite">
+      <div class="tier-header">
+        <img class="tier-img" src="assets/skins/skin_berserker.png" alt="Skin Berserker de Duende Quest" id="img-berserker" loading="lazy" width="84" height="84" decoding="async">
+        <div class="tier-info">
+          <span class="tier-badge">ELITE</span>
+          <h3 class="tier-name">Berserker</h3>
+          <div class="tier-supply">Skin del juego</div>
+        </div>
+      </div>
+      <div class="tier-divider"></div>
+      <ul class="tier-perks">
+        <li>+40% monedas en el arcade</li>
+        <li>+30% de ataque</li>
+        <li>Se compra en la tienda del juego (Stars o TON)</li>
+      </ul>
+      <div class="tier-price" style="color:#a78bfa">US$120</div>
+    </div>
     <!-- INFINITO -->
     <div class="tier-card tier-infinito">
       <div class="tier-header">
@@ -1316,27 +1343,27 @@ section[id]{scroll-margin-top:72px;}
 <!-- ========== BOOSTERS ========== -->
 <section class="section" id="boosters" aria-labelledby="boosters-h">
   <h2 class="px-title" id="boosters-h">Objetos y potenciadores</h2>
-  <p class="px-sub">Consumibles para potenciar a tu duende en batalla.</p>
+  <p class="px-sub">Los 4 objetos del modo arcade. Empiezas cada partida con 3 pociones (más al subir de nivel), 2 escudos, 1 rayo y 1 fuego, y puedes reponerlos con monedas en la tienda de la partida.</p>
   <div class="boosters-grid">
     <div class="booster-card b-energy">
-      <img class="booster-img" src="assets/items/item_potion.png" alt="Poción Energy Boost" id="b-potion" loading="lazy" width="72" height="72" decoding="async">
-      <h3 class="b-name">Energy Boost</h3>
-      <p class="b-desc">Recarga tu HP al 100% al instante. Indispensable en peleas largas contra jefes.</p>
+      <img class="booster-img" src="assets/items/item_potion.png" alt="Poción de energía" id="b-potion" loading="lazy" width="72" height="72" decoding="async">
+      <h3 class="b-name">Poción de energía</h3>
+      <p class="b-desc">Recupera 50 de vida al instante. Es la que más llevas encima.</p>
     </div>
     <div class="booster-card b-shield">
-      <img class="booster-img" src="assets/items/item_shield.png" alt="Escudo Ley Shield" id="b-shield" loading="lazy" width="72" height="72" decoding="async">
-      <h3 class="b-name">Ley Shield</h3>
-      <p class="b-desc">Escudo de invencibilidad total por 10 segundos. Ningún ataque puede dañarte.</p>
+      <img class="booster-img" src="assets/items/item_shield.png" alt="Escudo" id="b-shield" loading="lazy" width="72" height="72" decoding="async">
+      <h3 class="b-name">Escudo</h3>
+      <p class="b-desc">5 segundos de invencibilidad: ningún golpe te quita vida.</p>
     </div>
     <div class="booster-card b-skill">
-      <img class="booster-img" src="assets/items/item_skill.png" alt="Habilidad Rayo Skill" id="b-skill" loading="lazy" width="72" height="72" decoding="async">
-      <h3 class="b-name">Rayo Skill</h3>
-      <p class="b-desc">Rayos eléctricos que golpean a todos los enemigos en pantalla. Daño en área.</p>
+      <img class="booster-img" src="assets/items/item_skill.png" alt="Rayo" id="b-skill" loading="lazy" width="72" height="72" decoding="async">
+      <h3 class="b-name">Rayo</h3>
+      <p class="b-desc">Limpia la pantalla: elimina a los enemigos normales y le quita un trozo de vida a los jefes.</p>
     </div>
     <div class="booster-card b-fire">
-      <img class="booster-img" src="assets/items/skill_fire.png" alt="Espada Fuego Blade" id="b-fire" loading="lazy" width="72" height="72" decoding="async">
-      <h3 class="b-name">Fuego Blade</h3>
-      <p class="b-desc">Tu espada se incendia por 30 segundos: +200% daño físico y quemadura de 5 s extra.</p>
+      <img class="booster-img" src="assets/items/skill_fire.png" alt="Fuego" id="b-fire" loading="lazy" width="72" height="72" decoding="async">
+      <h3 class="b-name">Fuego</h3>
+      <p class="b-desc">Durante 6 segundos disparas bolas de fuego hacia delante sin parar.</p>
     </div>
   </div>
 </section>
@@ -1550,17 +1577,20 @@ section[id]{scroll-margin-top:72px;}
           <div class="rm-phase" style="color:var(--oro)">FASE 2 · EN CURSO</div>
           <h3 class="rm-title">Duende Quest 2.0</h3>
           <ul class="rm-ul">
-            <li>• Duende Quest 2.0 con skins NFT</li>
-            <li>• Telegram Mini App publicada</li>
+            <li>✅ Duende Quest Online: MMORPG multijugador gratis</li>
+            <li>✅ Telegram Mini App publicada (@duendequest_bot)</li>
+            <li>✅ Skins de pago en el juego (Telegram Stars o TON)</li>
+            <li>✅ Temporadas con títulos cosméticos (la primera empieza el 25 de octubre)</li>
+            <li>• Skins como NFT coleccionables en Solana</li>
             <li>• Primer torneo con premios en SOL</li>
             <li>• Listado en DEX Screener + DexTools</li>
-            <li>• Meta: 2,000 holders para desbloquear la Fase 3</li>
+            <li>• Meta: 2.000 holders para desbloquear la Fase 3</li>
           </ul>
           <div style="margin-top:1rem">
             <div style="width:100%;height:10px;background:var(--panel2);border-radius:6px;overflow:hidden;border:1px solid var(--borde)">
               <div id="holders-progress" style="width:0%;height:100%;background:var(--oro);border-radius:6px;transition:width .4s"></div>
             </div>
-            <p style="font-size:13px;color:var(--txt2);margin-top:.5rem;text-align:center"><span id="current-holders">—</span> / 2,000 holders · faltan <span id="holders-needed">—</span></p>
+            <p style="font-size:13px;color:var(--txt2);margin-top:.5rem;text-align:center"><span id="current-holders">—</span> / 2.000 holders · faltan <span id="holders-needed">—</span></p>
           </div>
         </div>
       </div>
@@ -1575,11 +1605,10 @@ section[id]{scroll-margin-top:72px;}
           <ul class="rm-ul">
             <li>• Bridge a otras chains (BSC, Base)</li>
             <li>• Modo multijugador PvP on-chain</li>
-            <li>• Temporadas de ranking con premios cosméticos</li>
             <li>• Marketplace de NFTs integrado al juego</li>
             <li>• Listado en exchange centralizado</li>
           </ul>
-          <p style="margin-top:.8rem;padding:.5rem;border:1px dashed var(--borde);border-radius:8px;text-align:center;font-size:13px;color:var(--txt2)">Se desbloquea al alcanzar 2,000 holders</p>
+          <p style="margin-top:.8rem;padding:.5rem;border:1px dashed var(--borde);border-radius:8px;text-align:center;font-size:13px;color:var(--txt2)">Se desbloquea al alcanzar 2.000 holders</p>
         </div>
       </div>
       <div class="rm-c">
@@ -1649,9 +1678,9 @@ section[id]{scroll-margin-top:72px;}
     <div class="apoyo-card">
       <h3>Compra $DUENDE directo al creador</h3>
       <p class="sub">Cada compra financia el desarrollo del juego. El creador revisa tu pago y te envía los tokens a mano.</p>
-      <div class="apoyo-tasa"><span>Tasa fija</span><strong>1 SOL = 10,000 $DUENDE</strong></div>
+      <div class="apoyo-tasa"><span>Tasa fija</span><strong>1 SOL = 10.000 $DUENDE</strong></div>
       <ol class="apoyo-pasos">
-        <li>Conecta tu wallet de Solana (Phantom o Solflare). <button type="button" class="btn-sec" style="margin-top:.4rem;min-height:40px;padding:.4rem .9rem;font-size:13px" onclick="var b=document.getElementById('wallet-connect-btn');if(b)b.click();">Conectar wallet</button></li>
+        <li>Conecta tu wallet de Solana (Phantom). <button type="button" id="apoyo-wallet-btn" class="btn-sec" style="margin-top:.4rem;min-height:44px;padding:.4rem .9rem;font-size:14px" onclick="conectarWalletApoyo()">Conectar wallet</button><span id="apoyo-wallet-nota" style="display:block;font-size:13px;color:var(--txt2);margin-top:.35rem">En el móvil se abre esta página dentro de la app Phantom para que puedas firmar.</span></li>
         <li>Elige cuánto SOL enviar (mínimo 0.1) y confirma en tu wallet.</li>
         <li>El creador te envía tus $DUENDE a la misma wallet. Guarda el enlace de la transacción.</li>
       </ol>
@@ -1701,6 +1730,66 @@ section[id]{scroll-margin-top:72px;}
   </div>
   <p class="d-note" style="max-width:700px;margin:1.2rem auto 0;text-align:center">Las compras y donaciones son voluntarias y no otorgan derechos sobre el proyecto. $DUENDE es un token de entretenimiento: su precio puede subir o bajar y nada de esto es asesoría financiera.</p>
   <script>
+    // Aviso flotante: donation-manager.js llama a showNotification(msg, tipo)
+    // (tipo: 'success' | 'error' | 'warning' | 'info'), pero no estaba definida
+    // en ninguna parte y los errores de la compra no se veian.
+    function showNotification(msg, tipo) {
+      var cont = document.getElementById('dq-toasts');
+      if (!cont) {
+        cont = document.createElement('div');
+        cont.id = 'dq-toasts';
+        cont.setAttribute('role', 'status');
+        cont.setAttribute('aria-live', 'polite');
+        document.body.appendChild(cont);
+      }
+      var t = document.createElement('div');
+      t.className = 'dq-toast ' + ({ success: 'ok', error: 'err', warning: 'warn' }[tipo] || '');
+      t.textContent = String(msg || '');
+      cont.appendChild(t);
+      setTimeout(function () { t.classList.add('sale'); setTimeout(function () { t.remove(); }, 300); }, tipo === 'success' ? 7000 : 4500);
+    }
+    window.showNotification = showNotification;
+
+    // "Conectar wallet" de la tarjeta. El boton de la barra (#wallet-connect-btn)
+    // esta oculto en el movil y, sin Phantom inyectado, solo abria phantom.app.
+    // Ahora: con wallet inyectada se conecta aqui mismo; en el movil sin wallet
+    // se abre esta pagina en el navegador interno de Phantom (deep link oficial).
+    function apoyoEsMovil() { return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent)); }
+    function apoyoPintarWallet() {
+      var b = document.getElementById('apoyo-wallet-btn');
+      var dir = (typeof WalletManager !== 'undefined') ? WalletManager.walletAddress : null;
+      if (!b) return;
+      b.textContent = dir ? 'Wallet conectada: ' + dir.slice(0, 4) + '…' + dir.slice(-4) : 'Conectar wallet';
+      var n = document.getElementById('apoyo-wallet-nota');
+      if (n) n.hidden = !!dir;
+    }
+    async function conectarWalletApoyo() {
+      if (typeof WalletManager === 'undefined') return;
+      if (WalletManager.walletAddress) { apoyoPintarWallet(); return; }
+      if (!WalletManager.getProvider()) {
+        if (apoyoEsMovil()) {
+          var url = location.href.split('#')[0] + '#donate';
+          location.href = 'https://phantom.app/ul/browse/' + encodeURIComponent(url) + '?ref=' + encodeURIComponent(location.origin);
+        } else {
+          showNotification('No encontramos Phantom en este navegador. Instala la extensión desde phantom.app y recarga la página.', 'warning');
+          window.open('https://phantom.app/download', '_blank', 'noopener');
+        }
+        return;
+      }
+      var r = await WalletManager.connect();
+      if (r && r.success) {
+        if (typeof updateWalletUI === 'function') updateWalletUI(r.address);
+        showNotification('Wallet conectada. Elige un monto y confirma en Phantom.', 'success');
+      } else if (r && r.reason === 'user_rejected') {
+        showNotification('Conexión cancelada en la wallet.', 'warning');
+      } else {
+        showNotification('No se pudo conectar la wallet. Intenta de nuevo.', 'error');
+      }
+      apoyoPintarWallet();
+    }
+    window.addEventListener('load', function () { setTimeout(apoyoPintarWallet, 1200); });
+    document.addEventListener('click', function (e) { if (e.target && e.target.id === 'wallet-connect-btn') setTimeout(apoyoPintarWallet, 1500); });
+
     // Montos rapidos: rellenan el campo y actualizan la vista previa.
     document.querySelectorAll('.apoyo-montos [data-monto]').forEach(function (b) {
       b.addEventListener('click', function () {
@@ -1742,14 +1831,14 @@ section[id]{scroll-margin-top:72px;}
       <div class="faq-r">
         <p>Hay dos formas:</p>
         <ul>
-          <li><strong>Directo al creador</strong>, en la sección <a href="#donate">Apoya Duende Quest</a>: conectas tu wallet de Solana y envías SOL (mínimo 0.1) a la tasa fija de 1 SOL = 10,000 $DUENDE. El creador revisa el pago y te envía los tokens a mano a la misma wallet. Ese dinero financia el desarrollo del juego.</li>
+          <li><strong>Directo al creador</strong>, en la sección <a href="#donate">Apoya Duende Quest</a>: conectas tu wallet de Solana y envías SOL (mínimo 0.1) a la tasa fija de 1 SOL = 10.000 $DUENDE. El creador revisa el pago y te envía los tokens a mano a la misma wallet. Ese dinero financia el desarrollo del juego.</li>
           <li><strong>En el mercado</strong>, en <a href="https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump" target="_blank" rel="noopener">pump.fun</a>, al precio del momento. Comprueba que la dirección del contrato sea <code>HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump</code>.</li>
         </ul>
       </div>
     </details>
     <details>
       <summary>¿Qué es la chicha morada?</summary>
-      <div class="faq-r"><p>Un premio físico y gratuito de Duende Quest Online: un litro de chicha morada. Desde el nivel 10, cada monstruo que cazas suma puntos (hasta 600 por día). Al llegar a 10.000 y a 50.000 puntos puedes reclamar un litro cada vez, como máximo dos por jugador. No es un sorteo y nunca se paga nada, ni siquiera el envío.</p><p>Solo suman las cuentas (no los invitados). Para reclamar necesitas nivel 15, un personaje de al menos 48 horas y haber entrado por Telegram. Se entregan como máximo 10 litros al mes y los envíos son dentro del Perú. Las reglas completas están en los <a href="terminos.html#chicha">Términos</a>.</p></div>
+      <div class="faq-r"><p>Un premio físico y gratuito de Duende Quest Online: un litro de chicha morada. Desde el nivel 10, cada monstruo que cazas suma puntos (hasta 600 por día). Al llegar a 10.000 y a 50.000 puntos puedes reclamar un litro cada vez, como máximo dos por jugador. No es un sorteo y nunca se paga nada, ni siquiera el envío.</p><p>Solo suman las cuentas (no los invitados). Para reclamar necesitas nivel 15, un personaje de al menos 48 horas y haber entrado por Telegram. Se entregan como máximo 10 litros al mes y los envíos son dentro del Perú. Las reglas completas están en los <a href="/terminos#chicha">Términos</a>.</p></div>
     </details>
     <details>
       <summary>¿Es seguro?</summary>
@@ -1884,9 +1973,9 @@ section[id]{scroll-margin-top:72px;}
   <div class="f-links">
     <a href="/guia">Guía del juego</a>
     <a href="/novedades">Novedades</a>
-    <a href="terminos.html">Términos de Servicio</a>
-    <a href="privacidad.html">Política de Privacidad</a>
-    <a href="/seguridad.html">Seguridad</a>
+    <a href="/terminos">Términos de Servicio</a>
+    <a href="/privacidad">Política de Privacidad</a>
+    <a href="/seguridad">Seguridad</a>
     <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">Contacto: @ElDuendeOficial (creador)</a>
   </div>
   <p class="f-note" id="seguridad">🔒 Seguridad: nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado. Los únicos canales oficiales son los de esta página.</p>
@@ -1961,15 +2050,17 @@ document.querySelectorAll('.reveal,.tcard,.tier-card,.game-feat,.booster-card,.s
 });
 
 // LIVE COUNTERS — holders reales (data-holders) los rellena PriceFeed desde /api/token-stats.
-// Aquí solo sincronizamos el medidor de progreso "camino a 2,000 holders" con el número real.
+// Aquí solo sincronizamos el medidor de progreso "camino a 2.000 holders" con el número real.
+// PriceFeed emite 'priceUpdated' también al llegar los holders (aunque no haya par en DEX).
 document.addEventListener('priceUpdated', syncHolderProgress);
 setInterval(syncHolderProgress, 60000);
 function syncHolderProgress(){
-  const real = (typeof PriceFeed!=='undefined' && PriceFeed.holders) ? PriceFeed.holders : null;
+  const real = (typeof PriceFeed!=='undefined' && typeof PriceFeed.holders==='number') ? PriceFeed.holders : null;
   if(real===null) return;
   const meta=2000;
-  const ch=document.getElementById('current-holders'); if(ch) ch.textContent=real.toLocaleString();
-  const hn=document.getElementById('holders-needed'); if(hn) hn.textContent=Math.max(0,meta-real).toLocaleString();
+  const f=(typeof fmtEs==='function')?fmtEs:(n=>n.toLocaleString('es'));
+  const ch=document.getElementById('current-holders'); if(ch) ch.textContent=f(real);
+  const hn=document.getElementById('holders-needed'); if(hn) hn.textContent=f(Math.max(0,meta-real));
   const hp=document.getElementById('holders-progress'); if(hp) hp.style.width=Math.min(100,real/meta*100)+'%';
 }
 
@@ -2056,11 +2147,13 @@ async function loadLiveStats() {
     if (!window.supabaseClient) return;
     var resp = await window.supabaseClient.from('profiles').select('id', { count: 'exact', head: true });
     var count = resp.count;
-    if (count !== null) {
-      // jugadores registrados reales (no holders del token; eso lo maneja syncHolderProgress)
+    if (typeof count === 'number') {
+      // jugadores registrados reales (no holders del token; eso lo maneja syncHolderProgress).
+      // Sus tarjetas ([data-jugadores]) siguen ocultas si no hay número.
       ['players-count','live-players','live-players-2'].forEach(function(id){
-        var el = document.getElementById(id); if (el) el.textContent = count.toLocaleString();
+        var el = document.getElementById(id); if (el) el.textContent = (typeof fmtEs === 'function') ? fmtEs(count) : count.toLocaleString('es');
       });
+      document.querySelectorAll('[data-jugadores]').forEach(function(el){ el.hidden = false; });
     }
   } catch (e) { console.warn('Stats load failed:', e); }
 }
@@ -2069,11 +2162,11 @@ document.addEventListener('DOMContentLoaded', loadLiveStats);
 // ── TICKER (mensajes reales/honestos — sin inventar compras ni usuarios) ──
 const TICKER_EVENTS=[
   ()=>`🎮 Juega DUENDE QUEST GRATIS en Telegram y gana $DUENDE real`,
-  ()=>`🏆 Torneo semanal: el TOP 3 gana 1000 / 500 / 250 $DUENDE cada lunes`,
+  ()=>`🏆 Torneo semanal: el TOP 3 gana 1.000 / 500 / 250 $DUENDE cada lunes`,
   ()=>`🔥 Misiones diarias + racha: vuelve cada día y gana más DQ`,
   ()=>`🎁 Invita a un amigo: ambos ganan 500 $DUENDE`,
   ()=>{const p=(typeof PriceFeed!=='undefined'&&PriceFeed.priceUsd>0)?'$'+PriceFeed.priceUsd.toFixed(8):'en vivo';return `💹 Precio $DUENDE: ${p}`;},
-  ()=>{const h=(typeof PriceFeed!=='undefined'&&PriceFeed.holders)?PriceFeed.holders.toLocaleString()+' holders':'comunidad creciendo';return `👥 ${h}`;},
+  ()=>{const h=(typeof PriceFeed!=='undefined'&&PriceFeed.holders)?fmtEs(PriceFeed.holders)+' holders':'comunidad creciendo';return `👥 ${h}`;},
   ()=>`🔒 0% impuestos · contrato en pump.fun · verificable on-chain`,
 ];
 function rotateTicker(){const fn=TICKER_EVENTS[Math.floor(Math.random()*TICKER_EVENTS.length)];const el=document.getElementById('ticker-content');if(el)el.textContent=fn();}
@@ -2097,9 +2190,9 @@ function initCountdown(){
 document.addEventListener('DOMContentLoaded',initCountdown);
 </script>
 <!-- Solana web3.js -->
-<script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+<script src="https://unpkg.com/@solana/web3.js@1.99.0/lib/index.iife.min.js"></script>
 <!-- Supabase -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <!-- Config (keys + DUENDE_CFG) -->
 <script src="js/config.js"></script>
 <!-- Módulos en orden de dependencia -->

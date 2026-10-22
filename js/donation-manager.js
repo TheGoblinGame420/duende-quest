@@ -1,4 +1,9 @@
 'use strict';
+// Cantidades en formato español ("10.000"), igual que el resto de la página.
+function fmtDuende(n) {
+  try { return Number(n).toLocaleString('es', { useGrouping: 'always' }); }
+  catch (_) { return Number(n).toLocaleString('es'); }
+}
 const DonationManager = {
   DEV_WALLET: 'B6pLnZFkot8JgAKZs5nq8V4B1LSdz7mdhNnUa85fbp4J',
   SOL_TO_DUENDE_RATE: 10000,
@@ -10,12 +15,12 @@ const DonationManager = {
 
   async sendDonation(solAmount) {
     if (!WalletManager.walletAddress || !WalletManager.provider) {
-      if (typeof showNotification === 'function') showNotification('Conecta tu wallet primero (botón Conectar Wallet arriba).', 'error');
-      return { success: false };
+      if (typeof showNotification === 'function') showNotification('Conecta tu wallet primero: pulsa «Conectar wallet» en el paso 1 de esta tarjeta.', 'error');
+      return { success: false, reason: 'no_wallet' };
     }
     if (solAmount < this.MIN_SOL) {
       if (typeof showNotification === 'function') showNotification('Mínimo ' + this.MIN_SOL + ' SOL', 'warning');
-      return { success: false };
+      return { success: false, reason: 'min' };
     }
     const provider = WalletManager.provider;
     try {
@@ -60,7 +65,7 @@ const DonationManager = {
     // SOL" (le faltaba multiplicar por el precio de SOL en USD, que ronda
     // los $70-200, no $1). Con el precio real de $DUENDE el resultado se
     // quedaba en un ~1-2% del valor que la propia pagina promete arriba
-    // ("Tasa: 1 SOL = 10,000 $DUENDE"), estafando sin querer a quien donara
+    // ("Tasa: 1 SOL = 10.000 $DUENDE"), estafando sin querer a quien donara
     // SOL de verdad. La tasa se queda fija en la que se anuncia.
     const preview = document.getElementById('donation-duende-preview');
     const input = document.getElementById('donation-sol-input');
@@ -68,7 +73,7 @@ const DonationManager = {
       const sol = parseFloat(input.value) || 0;
       if (sol > 0) {
         const duende = this.calculateReward(sol);
-        preview.textContent = 'Recibirás ' + duende.toLocaleString() + ' $DUENDE (te los envía el creador a mano)';
+        preview.textContent = 'Recibirás ' + fmtDuende(duende) + ' $DUENDE (te los envía el creador a mano)';
       }
     }
   },
@@ -99,7 +104,7 @@ function initDonationPanel() {
       const sol = parseFloat(input.value) || 0;
       const duende = DonationManager.calculateReward(sol);
       preview.textContent = sol > 0
-        ? 'Recibirás ' + duende.toLocaleString() + ' $DUENDE (te los envía el creador a mano)'
+        ? 'Recibirás ' + fmtDuende(duende) + ' $DUENDE (te los envía el creador a mano)'
         : 'Elige un monto para ver cuánto recibes';
     });
   }
@@ -115,10 +120,12 @@ function initDonationPanel() {
       btnSend.textContent = 'Procesando...';
       const result = await DonationManager.sendDonation(sol);
       if (result.success) {
-        if (typeof showNotification === 'function') showNotification('¡Gracias por tu apoyo! El creador te enviará ' + result.duendeEarned.toLocaleString() + ' $DUENDE a tu wallet. Guarda el enlace de la transacción.', 'success');
+        if (typeof showNotification === 'function') showNotification('¡Gracias por tu apoyo! El creador te enviará ' + fmtDuende(result.duendeEarned) + ' $DUENDE a tu wallet. Guarda el enlace de la transacción.', 'success');
         showTxLink(result.signature);
         input.value = '';
         preview.textContent = 'Elige un monto para ver cuánto recibes';
+      } else if (result.reason === 'no_wallet' || result.reason === 'min') {
+        // ya se avisó dentro de sendDonation
       } else if (result.reason === 'user_rejected') {
         if (typeof showNotification === 'function') showNotification('Transacción cancelada', 'warning');
       } else {

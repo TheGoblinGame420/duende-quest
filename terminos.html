@@ -66,8 +66,8 @@ table{width:100%;border-collapse:collapse;font-size:.92rem;}
 th,td{text-align:left;padding:.55rem .6rem;border-bottom:1px solid var(--borde);vertical-align:top;}
 th{color:var(--txt2);font-weight:600;background:var(--panel);}
 footer{border-top:1px solid var(--borde);background:var(--panel);}
-footer .in{max-width:720px;margin:0 auto;padding:1.4rem 16px 2.2rem;display:flex;flex-wrap:wrap;gap:.5rem 1.1rem;color:var(--txt2);font-size:.88rem;}
-footer a{color:var(--txt2);}
+footer .in{max-width:720px;margin:0 auto;padding:1.4rem 16px 2.2rem;display:flex;flex-wrap:wrap;align-items:center;gap:.5rem 1.1rem;color:var(--txt2);font-size:.88rem;}
+footer a{display:inline-flex;align-items:center;min-height:40px;padding:10px 6px;color:var(--txt2);}
 footer a:hover{color:var(--txt);}
 @media (max-width:520px){h1{font-size:1.4rem;}.toc ol{columns:1;}}
 </style>
@@ -79,9 +79,9 @@ footer a:hover{color:var(--txt);}
     <a class="brand" href="/"><img src="assets/ui/coin.png" alt="" width="20" height="20">DUENDE QUEST</a>
     <nav aria-label="Páginas">
       <a href="/">Inicio</a>
-      <a href="terminos.html" aria-current="page">Términos</a>
-      <a href="privacidad.html">Privacidad</a>
-      <a href="seguridad.html">Seguridad</a>
+      <a href="/terminos" aria-current="page">Términos</a>
+      <a href="/privacidad">Privacidad</a>
+      <a href="/seguridad">Seguridad</a>
     </nav>
   </div>
 </header>
@@ -125,7 +125,7 @@ footer a:hover{color:var(--txt);}
 
   <h2 id="quien"><span class="n">1.</span>Quién ofrece este Servicio</h2>
   <p>DUENDE QUEST es un proyecto independiente, desarrollado y operado por una persona natural desde Perú: su creador (contacto en la sección final). No es un banco, una casa de cambio, una entidad financiera regulada ni un Proveedor de Servicios de Activos Virtuales (PSAV): no custodiamos fondos de terceros ni recibimos depósitos a cambio de una promesa de rendimiento. La única venta de $DUENDE que hace el creador es la compra directa y manual descrita en la sección «Compra directa de $DUENDE».</p>
-  <p>Los canales oficiales del proyecto están listados en la página de <a href="seguridad.html">Seguridad y estafas</a>. Para contacto, reclamos o ejercicio de derechos sobre tus datos: <a href="mailto:sonicoperuoficial@gmail.com">sonicoperuoficial@gmail.com</a>.</p>
+  <p>Los canales oficiales del proyecto están listados en la página de <a href="/seguridad">Seguridad y estafas</a>. Para contacto, reclamos o ejercicio de derechos sobre tus datos: <a href="mailto:sonicoperuoficial@gmail.com">sonicoperuoficial@gmail.com</a>.</p>
 
   <h2 id="que"><span class="n">2.</span>Qué es el Servicio</h2>
   <p>DUENDE QUEST es un videojuego arcade de plataformas con progreso, misiones diarias, una tienda cosmética de skins y un sistema de puntos internos llamado <strong>DQ</strong>. El Servicio existe en estas versiones:</p>
@@ -222,7 +222,7 @@ footer a:hover{color:var(--txt);}
     <li><strong>Aprobación manual:</strong> cada reclamo lo revisa el equipo. Podemos rechazarlo si detectamos trampa (bots, multicuentas, explotación de errores) o si el envío no es posible; si se rechaza sin ser trampa, puedes volver a reclamarlo.</li>
     <li><strong>Entrega:</strong> el equipo te escribe por Telegram para pedirte la dirección de entrega. <strong>El juego no guarda direcciones</strong>; la dirección se usa solo para enviar el premio. Zonas de envío: dentro del Perú; los envíos a otros países se evalúan caso por caso y pueden no ser posibles.</li>
   </ul>
-  <div class="nota ok"><p>El premio <strong>nunca</strong> requiere pagar envío, impuestos ni ningún otro cargo. Si alguien te pide dinero o datos de pago para "liberar" tu chicha, es una estafa: repórtalo como se indica en <a href="seguridad.html">Seguridad y estafas</a>.</p></div>
+  <div class="nota ok"><p>El premio <strong>nunca</strong> requiere pagar envío, impuestos ni ningún otro cargo. Si alguien te pide dinero o datos de pago para "liberar" tu chicha, es una estafa: repórtalo como se indica en <a href="/seguridad">Seguridad y estafas</a>.</p></div>
 
   <h2 id="token"><span class="n">13.</span>El token $DUENDE</h2>
   <div class="nota err">
@@ -267,9 +267,11 @@ footer a:hover{color:var(--txt);}
   <div class="in">
     <span>DUENDE QUEST</span>
     <a href="/">Inicio</a>
-    <a href="terminos.html">Términos</a>
-    <a href="privacidad.html">Privacidad</a>
-    <a href="seguridad.html">Seguridad</a>
+    <a href="/guia">Guía</a>
+    <a href="/novedades">Novedades</a>
+    <a href="/terminos">Términos</a>
+    <a href="/privacidad">Privacidad</a>
+    <a href="/seguridad">Seguridad</a>
     <a href="https://t.me/ElDuendeOficial" rel="noopener">Creador oficial</a>
   </div>
 </footer>

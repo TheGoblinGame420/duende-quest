@@ -1,6 +1,12 @@
 # Genera assets/mmo_banner.png (1200x630, vista previa al compartir /mmo/)
+# y assets/capturas/mmo-banner-640.webp (640x336, la que muestra la landing)
 # con los MISMOS sprites y fondos CC0 que usa el juego: nada de arte nuevo.
 # Uso: py tools/generar_banner_mmo.py
+#
+# Los numeros del texto salen de mmo/js/data.js (revisado el 22-oct-2026):
+# CLASES = 4, MAZMORRAS = 5, SKINS = 6, y 10 zonas de caza en MAPAS (sin
+# contar el Pueblo, el Coliseo ni las 5 mazmorras). Si cambian, actualizalos.
+CLASES, ZONAS, MAZMORRAS, SKINS = 4, 10, 5, 6
 import json, math, os
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
@@ -94,7 +100,12 @@ def texto(xy, t, f, color, borde=6, ancla='mm'):
 texto((W / 2, 92), 'DUENDE QUEST', f1, (255, 230, 0, 255), 8)
 texto((W / 2, 178), 'ONLINE', f2, (0, 238, 255, 255), 6)
 texto((W / 2, 236), 'EL MMORPG DE LOS DUENDES  ·  JUEGA GRATIS', f3, (255, 255, 255, 255), 4)
-texto((W / 2, 598), 'Web y Telegram  ·  6 zonas  ·  jefes  ·  misiones  ·  7 skins', f3, (0, 255, 136, 255), 4)
+texto((W / 2, 598), f'Web y Telegram  ·  {CLASES} clases  ·  {ZONAS} zonas  ·  {MAZMORRAS} mazmorras  ·  {SKINS} skins', f3, (0, 255, 136, 255), 4)
 
-img.convert('RGB').save(A('mmo_banner.png'), optimize=True)
+rgb = img.convert('RGB')
+rgb.save(A('mmo_banner.png'), optimize=True)
 print('ok', os.path.getsize(A('mmo_banner.png')), 'bytes')
+# Version ligera para la landing (<picture> de index.html)
+chica = rgb.resize((640, 336), Image.LANCZOS)
+chica.save(A('capturas', 'mmo-banner-640.webp'), 'WEBP', quality=82, method=6)
+print('ok', os.path.getsize(A('capturas', 'mmo-banner-640.webp')), 'bytes (webp 640)')
