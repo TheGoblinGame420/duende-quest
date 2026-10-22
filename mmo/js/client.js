@@ -15,7 +15,8 @@ import {
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
-} from './data.js?v=79';
+  statsJugador,
+} from './data.js?v=80';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1371,6 +1372,20 @@ function abrirSocial(tab) {
   if (tabSocial === 'online') { mandar({ t: 'quien' }); mandar({ t: 'contactos' }); }
   if (tabSocial === 'hermandad') mandar({ t: 'herm' });
   pintarSocial();
+}
+// Probador de skins (solo se ve en tu pantalla, 10 s).
+let probando = null;
+// Lo que cambiaria en tus estadisticas con otra skin.
+function difSkin(id) {
+  if (!yo || !yo.clase) return '';
+  const a = statsJugador(yo.nivel, yo.skin, yo.eq, yo.clase, yo.espec, yo.tal, yo.runas);
+  const b = statsJugador(yo.nivel, id, yo.eq, yo.clase, yo.espec, yo.tal, yo.runas);
+  const l = [];
+  if (b.atk !== a.atk) l.push(`Ataque ${a.atk} → <b style="color:${b.atk > a.atk ? 'var(--ok)' : 'var(--err)'}">${b.atk}</b>`);
+  if (b.maxHp !== a.maxHp) l.push(`Vida ${a.maxHp} → <b style="color:${b.maxHp > a.maxHp ? 'var(--ok)' : 'var(--err)'}">${b.maxHp}</b>`);
+  if (b.def !== a.def) l.push(`Defensa ${a.def} → <b style="color:${b.def > a.def ? 'var(--ok)' : 'var(--err)'}">${b.def}</b>`);
+  if (Math.abs(b.crit - a.crit) > 0.001) l.push(`Crítico ${Math.round(a.crit * 100)}% → <b style="color:${b.crit > a.crit ? 'var(--ok)' : 'var(--err)'}">${Math.round(b.crit * 100)}%</b>`);
+  return l.length ? '<br><span style="font-size:12px">' + l.join(' · ') + '</span>' : '';
 }
 const gestos = new Map();   // id de jugador -> { id del gesto, t }
 let contactos = [];   // tu lista de amigos [{ uid, n, on, id, lv, cl, mapa, g }]
@@ -2970,7 +2985,7 @@ function dibujarDuende(q, esYo) {
   const x = q.x - camX;
   let pies = q.y;
   if (x < -120 || x > VW + 120) return;
-  const skin = esYo ? yo.skin : q.sk;
+  const skin = esYo ? (probando && performance.now() < probando.hasta ? probando.skin : yo.skin) : q.sk;
   const muerto = esYo ? P.muerto : q.muerto;
   const herido = (esYo ? P.herido : q.herido) > 0;
   const f = esYo ? P.f : q.f;
@@ -3602,7 +3617,8 @@ function pintarTienda() {
           ? `<button class="btn sec" data-premium="skin_${id}" data-metodo="stars">⭐ ${estrellasDe(d.usd)}</button>`
           : `<button class="btn sec" data-premium="skin_${id}" data-metodo="sol">◎ ~$${d.usd} en SOL</button>`;
       }
-      h += tarjeta(ico, d.nombre, d.desc, acc);
+      if (tabTienda === 'skin' && !tiene.includes(id)) acc += `<button class="btn sec" data-probar="${id}">Probar</button>`;
+      h += tarjeta(ico, d.nombre, d.desc + (tabTienda === 'skin' && puesto !== id ? difSkin(id) : ''), acc);
     }
     if (tabTienda === 'skin') h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Cada skin da sus poderes mientras la llevas. Se compran con oro o, con tu cuenta, con dinero: ' + ((TG && !forzarInvitado) ? 'Stars aquí en Telegram o SOL desde la web' : 'SOL a la wallet de El Duende (o Stars dentro de Telegram)') + '; El Duende revisa el pago y te la entrega en tu personaje. Las skins que ya pagaste en el juego principal se desbloquean solas al entrar con tu cuenta.</p>';
   }
@@ -3620,6 +3636,11 @@ function pintarTienda() {
   });
   L.querySelectorAll('[data-comprar]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'comprar', k: b.dataset.comprar, id: b.dataset.id, n: +b.dataset.n || 1 }); });
   conectarPremium(L);   // skins: el boton de pagar con dinero
+  L.querySelectorAll('[data-probar]').forEach(b => b.onclick = () => {
+    probando = { skin: b.dataset.probar, hasta: performance.now() + 10000 };
+    cerrarModales(); sfx('boton', .3);
+    aviso('👀 Probando ' + SKINS[b.dataset.probar].nombre + ' durante 10 s (solo lo ves tú).', 'ok');
+  });
   L.querySelectorAll('[data-equipar]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'equipar', k: b.dataset.equipar, id: b.dataset.id }); });
 }
 
