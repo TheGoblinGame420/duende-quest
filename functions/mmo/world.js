@@ -1663,7 +1663,7 @@ export class MmoWorld {
       // de CPU del cupo diario) todo el dia: fuera tras 10 min sin actividad.
       for (const s of [...this.sesiones.values()]) {
         if (s.c && ahora - (s.actT || 0) > INACTIVO_MS) {
-          this.enviar(s, { t: 'err', m: 'Te desconectamos por inactividad. Pulsa RECONECTAR para volver.', fatal: true });
+          this.enviar(s, { t: 'err', m: 'Te desconectamos por inactividad. Toca la pantalla o pulsa una tecla para volver.', fatal: true, inactivo: true });
           try { s.ws.close(4001, 'inactivo'); } catch (e) {}
           this.cerrar(s);
         }

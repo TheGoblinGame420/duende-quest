@@ -1231,10 +1231,11 @@ cofres, ver sus apartados), se hizo:
 
 Ninguna de estas cosas da mTON. Arnés: 234 comprobaciones.
 
-**Medición de rendimiento:** con la CPU 4× más lenta (Chrome sin ventana,
-sin GPU) el combate cargado va a ~20-28 FPS; a velocidad normal, 60. Hay que
-repetir la medida con la máquina libre (los agentes cargaban la CPU) y
-probar en un teléfono real; script en el scratchpad de la sesión (fps.mjs).
+**Medición de rendimiento:** repetida el 22-oct con la máquina libre (CPU
+al 6%): combate cargado con 14 monstruos a 60 FPS (p95 17 ms) a velocidad
+normal y 55 FPS (p95 33 ms) con la CPU 4× más lenta (Chrome sin ventana, sin
+GPU). Los 20-28 FPS de antes eran por la carga de los agentes. Falta probar
+en un teléfono real.
 
 **Duelos** (`functions/mmo/duelos.js`, cliente ?v=31): botón ⚔️ en el
 marco de otro jugador → reto de 30 s → cuenta atrás de 3 s → 90 s de pelea

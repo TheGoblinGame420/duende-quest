@@ -242,7 +242,9 @@ let camX = 0;
 function urlWs() { return (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/mmo/ws'; }
 function mandar(o) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
 
+let soyInvitado = false;
 async function autenticacion() {
+  soyInvitado = false;
   // Si hubo partida de invitado en este dispositivo, su token viaja tambien:
   // la cuenta nueva hereda ese personaje en vez de empezar de cero.
   const previo = localStorage.getItem('dq_mmo_tok');
@@ -258,6 +260,7 @@ async function autenticacion() {
   }
   let nombreTg = '';
   try { const u = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user; if (u) nombreTg = u.username || u.first_name || ''; } catch (e) {}
+  soyInvitado = true;
   return { auth: { k: 'inv', tok: inv }, nombre: localStorage.getItem('dq_mmo_nombre') || nombreTg };
 }
 
@@ -307,6 +310,9 @@ function recibir(m) {
       if (!yo.muerto) { $('m-muerte').classList.remove('on'); P.muerto = false; }
       if (!antes || antes.clase !== yo.clase || antes.nivel !== yo.nivel) $('acciones').innerHTML = '';
       if (antes && yo.nivel > antes.nivel) setTimeout(() => permisosTg(yo.nivel), 2500);
+      // Invitado: su personaje vive solo en este navegador. Se le recuerda
+      // en algunos niveles como no perderlo (y recibir avisos y mTON).
+      if (antes && yo.nivel > antes.nivel && soyInvitado && [5, 10, 15, 25].includes(yo.nivel)) setTimeout(() => aviso('☁️ Juegas como invitado: tu personaje vive solo en este navegador. Inicia sesión en el juego (🏠) o entra por @duendequest_bot en Telegram y se pasará a tu cuenta.', 'ok'), 4000);
       if ($('m-libro').classList.contains('on')) pintarLibro();
       if (yo.clase && $('m-clase').classList.contains('on') && antes && !antes.clase) cerrarModales();
       if (yo.clase && loginPend) { const lp = loginPend; loginPend = null; setTimeout(() => mostrarLogin(lp), 900); }
@@ -489,7 +495,7 @@ function recibir(m) {
         aviso('No pudimos verificar tu cuenta: entras como invitado (tu personaje de la cuenta no se toca). Cierra y vuelve a abrir el juego para entrar con ella.');
         break;
       }
-      if (m.fatal) { fatal = true; mostrarError(m.m); }
+      if (m.fatal) { fatal = true; dormido = !!m.inactivo; mostrarError(m.m); }
       else aviso(m.m);
       break;
   }
@@ -3134,7 +3140,13 @@ function mostrarError(txt) {
   $('m-error').classList.add('on');
   $('carga').style.display = 'none';
 }
-$('b-reconectar').onclick = () => { fatal = false; reintentos = 0; $('m-error').classList.remove('on'); conectar(); };
+$('b-reconectar').onclick = () => { fatal = false; dormido = false; reintentos = 0; $('m-error').classList.remove('on'); conectar(); };
+// Desconectado por inactividad: cualquier toque o tecla vuelve a conectar
+// (antes habia que encontrar y pulsar RECONECTAR).
+let dormido = false;
+const despertar = () => { if (dormido && $('m-error').classList.contains('on')) $('b-reconectar').onclick(); };
+addEventListener('pointerdown', despertar, true);
+addEventListener('keydown', despertar, true);
 
 // ── INICIO ──
 async function inicio() {
