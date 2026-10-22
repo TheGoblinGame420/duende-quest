@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=84';
+} from './data.js?v=86';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -362,6 +362,8 @@ function recibir(m) {
       if (!yo.muerto) { $('m-muerte').classList.remove('on'); P.muerto = false; }
       if (!antes || antes.clase !== yo.clase || antes.nivel !== yo.nivel) $('acciones').innerHTML = '';
       if (antes && yo.nivel > antes.nivel) { vibrar(); setTimeout(() => permisosTg(yo.nivel), 2500); }
+      // Una vez, a Nv 8: que existen las skins con poderes (informativo).
+      if (antes && antes.nivel < 8 && yo.nivel >= 8 && (yo.skins || []).length <= 1) setTimeout(() => aviso('🎭 ¿Sabías? Las skins del Mercader dan poderes (más oro, ataque, defensa...). Míralas en su pestaña SKINS; con «Probar» te ves con ellas.', 'ok'), 6000);
       // Invitado: su personaje vive solo en este navegador. Se le recuerda
       // en algunos niveles como no perderlo (y recibir avisos y mTON).
       if (antes && yo.nivel > antes.nivel && soyInvitado && [5, 10, 15, 25].includes(yo.nivel)) setTimeout(() => aviso('☁️ Juegas como invitado: tu personaje vive solo en este navegador. Inicia sesión en el juego (🏠) o entra por @duendequest_bot en Telegram y se pasará a tu cuenta.', 'ok'), 4000);
@@ -2360,7 +2362,10 @@ function htmlItem(it) {
 const puedeUsar = it => it.nv <= yo.nivel || (!!it.des && yo.nivel >= NIVEL_MAX);
 function pintarEquipo() {
   const eq = yo.eq || {}, bolsa = yo.bolsa || [];
-  let h = '<div class="ranuras">';
+  // Tus estadisticas de un vistazo (y lo que pone tu skin).
+  const sk = SKINS[yo.skin];
+  let h = `<div class="mis-caja" style="margin-top:0;font-size:13px;display:flex;flex-wrap:wrap;gap:4px 14px"><span>⚔️ Ataque <b>${yo.atk}</b></span><span>🛡️ Defensa <b>${yo.def}</b></span><span>❤️ Vida <b>${yo.maxHp}</b></span><span>🎯 Crítico <b>${Math.round((yo.crit || 0) * 100)}%</b></span>${sk && sk.buffs ? `<span style="flex-basis:100%;color:${sk.color}">Skin ${esc(sk.nombre)}: ${esc(sk.desc)}</span>` : ''}</div>`;
+  h += '<div class="ranuras">';
   for (const k in RANURAS) {
     const it = eq[k];
     h += it
