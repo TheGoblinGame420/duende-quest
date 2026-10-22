@@ -40,7 +40,7 @@ export const Chicha = {
     // Aviso al cruzar un nivel de premio.
     for (const meta of CHICHA.niveles) {
       if (ch.p >= meta && ch.p - n < meta && !(ch.rec || []).includes(meta)) {
-        this.enviar(s, { t: 'toast', m: `${meta.toLocaleString('es', { useGrouping: 'always' })} puntos de chicha. Reclama tu litro de chicha morada en Inventario → CHICHA.`, ok: true });
+        this.enviar(s, { t: 'toast', m: `${meta.toLocaleString('es', { useGrouping: 'always' })} puntos de chicha. Reclama tu litro de chicha morada en Inventario → «Chicha».`, ok: true });
       }
     }
     return n;

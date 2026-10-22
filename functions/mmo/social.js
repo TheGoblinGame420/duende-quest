@@ -129,10 +129,10 @@ export const Social = {
     if (!g) return this.no(s, 'Primero forma un grupo: invita a alguien desde su marco.');
     if (g.lider !== s.c.uid) return this.no(s, 'Solo el líder puede convertir el grupo en banda.');
     const si = !!m.si;
-    if (!si && g.uids.length > GRUPO_MAX) return this.no(s, `Sois más de ${GRUPO_MAX}: no puede volver a ser un grupo.`);
+    if (!si && g.uids.length > GRUPO_MAX) return this.no(s, `Son más de ${GRUPO_MAX}: no puede volver a ser un grupo.`);
     if (g.banda === si) return;
     const wi = g.inst && this.mundo[g.inst];
-    if (wi && wi.inst && !wi.inst.completada && !wi.inst.banda) return this.no(s, 'Tu grupo está dentro de una mazmorra: terminadla o salid antes de cambiar.');
+    if (wi && wi.inst && !wi.inst.completada && !wi.inst.banda) return this.no(s, 'Tu grupo está en una mazmorra: termínenla o salgan antes de cambiar.');
     g.banda = si;
     this.avisarGrupo(g, si ? `⚔️ El grupo ahora es una BANDA (hasta ${BANDA_MAX}).` : '👥 La banda vuelve a ser un grupo (hasta 5).');
     this.enviarGrupo(g);
@@ -242,7 +242,7 @@ export const Social = {
     if (g && g.lider !== s.c.uid) return this.no(s, 'Solo el líder del grupo puede buscar más gente.');
     if (g && !mz.banda && g.uids.length > GRUPO_MAX) return this.no(s, `Las mazmorras son para ${GRUPO_MAX}: tu banda solo puede buscar gente para la banda.`);
     const wi = g && g.inst && this.mundo[g.inst];
-    if (g && mz.banda && !g.banda && wi && wi.inst && !wi.inst.completada) return this.no(s, 'Tu grupo está dentro de una mazmorra: terminadla antes de buscar gente para la banda.');
+    if (g && mz.banda && !g.banda && wi && wi.inst && !wi.inst.completada) return this.no(s, 'Tu grupo está en una mazmorra: termínenla antes de buscar gente para la banda.');
     if (g && g.uids.length >= (mz.banda ? BANDA_MAX : maxGrupo(g))) return this.no(s, 'Tu grupo ya está lleno.');
     const ahora = Date.now();
     // El limite va aparte: quitar la busqueda no lo reinicia (si no, anunciar
@@ -302,7 +302,7 @@ export const Social = {
     // Dentro de un Desafio abierto solo se entra por invitacion (la lider
     // acepta a quien quiere: el premio del Desafio es grande).
     const wi = g && g.inst && this.mundo[g.inst];
-    if (wi && wi.inst && wi.inst.k && !wi.inst.completada) return this.no(s, 'Ese grupo ya está dentro de un Desafío: pide a la líder que te invite.');
+    if (wi && wi.inst && wi.inst.k && !wi.inst.completada) return this.no(s, 'Ese grupo ya está dentro de un Desafío: pide al líder que te invite.');
     if (!g) {
       g = { id: this.sigGrupo++, lider: uid, uids: [uid], banda: !!mz.banda };
       this.grupos.set(g.id, g);

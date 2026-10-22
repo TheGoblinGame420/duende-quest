@@ -65,7 +65,7 @@ export const Torre = {
     const T = w.torre;
     if (T.fin) return;
     const vivos = jugadores.filter(s => !s.muerto);
-    if (!vivos.length) return this.acabarTorre(w, jugadores, `La Torre ${jugadores.length > 1 ? 'os' : 'te'} venció en el piso ${T.piso}.`);
+    if (!vivos.length) return this.acabarTorre(w, jugadores, `La Torre ${jugadores.length > 1 ? 'los' : 'te'} venció en el piso ${T.piso}.`);
     if (T.sigEn) {
       if (ahora >= T.sigEn) this.subirPiso(w, ahora);
       return;

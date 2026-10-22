@@ -120,7 +120,7 @@ export const Profesiones = {
     c.mat.pescado = Math.min(999, (c.mat.pescado || 0) + cant);
     let txt = `🎣 +${cant} ${MATERIALES.pescado.nombre}`, dorado = false, oro = 0;
     // Con lluvia (CLIMA) los dorados pican el doble.
-    if (Math.random() < (PESCA.dorado + p.nv / 1500) * (climaDe(c.mapa) === 'lluvia' ? 2 : 1)) { c.mat.pez_dorado = Math.min(999, (c.mat.pez_dorado || 0) + 1); c.dorados = (c.dorados || 0) + 1; dorado = true; txt += ' y ¡1 Pez Dorado!'; }
+    if (Math.random() < (PESCA.dorado + p.nv / 1500) * (climaDe(c.mapa) === 'lluvia' ? 2 : 1)) { c.mat.pez_dorado = Math.min(999, (c.mat.pez_dorado || 0) + 1); c.dorados = (c.dorados || 0) + 1; dorado = true; txt += ' y 1 Pez Dorado'; }
     if (Math.random() < PESCA.cofre) { oro = 30 * Math.max(5, p.nv); c.oro += oro; txt += ` y un cofre hundido (+${oro} oro)`; }
     // La especie de este pesquero: la primera vez, oro.
     c.especies = c.especies || {};

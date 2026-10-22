@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=228';
+} from './data.js?v=230';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -344,7 +344,7 @@ async function conectar() {
     conectado = false;
     if (fatal || pausado) return;
     if (reintentos++ < 6) setTimeout(conectar, Math.min(8000, 600 * reintentos));
-    else mostrarError('No se pudo conectar con el servidor. Revisa tu conexión a internet y pulsa RECONECTAR.');
+    else mostrarError('No se pudo conectar con el servidor. Revisa tu conexión a internet y pulsa «Reconectar».');
   };
 }
 
@@ -355,7 +355,7 @@ function recibir(m) {
       miId = m.id; yo = m.yo; online = m.on || 0; reintentos = 0;
       $('m-inicio').classList.remove('on');
       pintarHud();
-      if (m.nuevo) aviso('Bienvenido a Pueblo Duende, ' + yo.nombre + '. El Guardia Tito tiene tu primera misión.');
+      if (m.nuevo) aviso('Bienvenido al Pueblo Duende, ' + yo.nombre + '. El Guardia Tito tiene tu primera misión.');
       if (m.heredado) { aviso('☁️ Tu progreso de invitado pasó a tu cuenta.', 'ok'); try { localStorage.removeItem('dq_mmo_tok'); } catch (e) {} }
       if (m.regaladas && m.regaladas.length) aviso('🎁 Skins de tu cuenta desbloqueadas: ' + m.regaladas.map(k => SKINS[k].nombre).join(', '), 'ok');
       // Personaje sin clase (nuevo, o de antes de las clases): a elegir.
@@ -370,7 +370,7 @@ function recibir(m) {
       if (!antes || antes.clase !== yo.clase || antes.nivel !== yo.nivel) $('acciones').innerHTML = '';
       if (antes && yo.nivel > antes.nivel) { vibrar(); setTimeout(() => permisosTg(yo.nivel), 2500); }
       // Una vez, a Nv 8: que existen las skins con poderes (informativo).
-      if (antes && antes.nivel < 8 && yo.nivel >= 8 && (yo.skins || []).length <= 1) setTimeout(() => aviso('Las skins del Mercader dan bonificaciones (oro, ataque, defensa, experiencia). Puedes probarlas antes de comprarlas en la pestaña SKINS.', 'ok'), 6000);
+      if (antes && antes.nivel < 8 && yo.nivel >= 8 && (yo.skins || []).length <= 1) setTimeout(() => aviso('Las skins del Mercader dan bonificaciones (oro, ataque, defensa, experiencia). Pruébalas en la pestaña «Skins».', 'ok'), 6000);
       // Lo que se abre con el nivel: avisarlo justo al llegar.
       if (antes && yo.nivel > antes.nivel) {
         const abre = { 5: 'Desbloqueado: Expediciones. Tu mascota explora mientras no juegas (registro de misiones' + (TACTIL ? ').' : ', L).'),
@@ -380,7 +380,7 @@ function recibir(m) {
       }
       // Invitado: su personaje vive solo en este navegador. Se le recuerda
       // en algunos niveles como no perderlo (y recibir avisos y mTON).
-      if (antes && yo.nivel > antes.nivel && soyInvitado && [5, 10, 15, 25].includes(yo.nivel)) setTimeout(() => aviso('☁️ Juegas como invitado: tu personaje vive solo en este navegador. Inicia sesión en el juego (🏠) o entra por @duendequest_bot en Telegram y se pasará a tu cuenta.', 'ok'), 4000);
+      if (antes && yo.nivel > antes.nivel && soyInvitado && [5, 10, 15, 25].includes(yo.nivel)) setTimeout(() => aviso('Juegas como invitado: este personaje solo existe en este navegador. Inicia sesión (botón Inicio) o entra por @duendequest_bot en Telegram para guardarlo en tu cuenta.', 'ok'), 4000);
       if ($('m-libro').classList.contains('on')) pintarLibro();
       if (yo.clase && $('m-clase').classList.contains('on') && antes && !antes.clase) cerrarModales();
       if (yo.clase && loginPend) { const lp = loginPend; loginPend = null; setTimeout(() => mostrarLogin(lp), 900); }
@@ -1343,7 +1343,7 @@ function enviarChat(v) {
     return mandar({ t: 'chat', canal: 'susurro', a: resto.slice(0, sp), m: resto.slice(sp + 1) });
   }
   if (cmd === 'r') { if (!ultimoSusurro) { errorRojo('Nadie te ha susurrado todavía.'); return; } return resto && mandar({ t: 'chat', canal: 'susurro', a: ultimoSusurro, m: resto }); }
-  if (cmd === 'invitar' || cmd === 'inv') { const q = [...otros.values()].find(x => x.n.toLowerCase() === resto.toLowerCase()); if (q) mandar({ t: 'invitar', p: q.id }); else errorRojo('Para invitar, ese jugador tiene que estar en tu mapa (o usa 👥).'); return; }
+  if (cmd === 'invitar' || cmd === 'inv') { const q = [...otros.values()].find(x => x.n.toLowerCase() === resto.toLowerCase()); if (q) mandar({ t: 'invitar', p: q.id }); else errorRojo('Ese jugador no está en tu mapa. Invítalo desde Social → En línea.'); return; }
   if (cmd === 'salir') { mandar({ t: 'salirGrupo' }); return; }
   errorRojo('Comandos: /d decir · /g grupo · /h hermandad · /s Nombre susurro · /r responder · gestos: ' + Object.keys(GESTOS).map(k => '/' + k).join(' '));
 }
@@ -1558,7 +1558,7 @@ function pintarSocial() {
       return tarjeta(`<img src="${A}items/equipo/${cl ? cl.icono : 'S_Buff06'}.png" style="${x.on ? '' : 'filter:grayscale(1);opacity:.5'}">`,
         `<span style="color:${x.on ? (cl ? cl.color : 'var(--txt)') : 'var(--txt3)'}">${esc(x.n)}</span>${x.on ? ' <span style="color:var(--txt2)">Nv ' + x.lv + '</span>' : ''}`,
         x.on ? esc((cl ? cl.nombre + ' · ' : '') + x.mapa + (x.g ? ' · en grupo' : '')) : 'Desconectado',
-        (puede ? `<button class="btn" data-inv="${x.id}">Invitar</button>` : '') + (x.on ? `<button class="btn sec" data-sus="${esc(x.n)}">💬</button>` : '') + `<button class="btn sec" data-qamigo="${esc(x.uid)}" title="Quitar de amigos">✕</button>`);
+        (puede ? `<button class="btn" data-inv="${x.id}">Invitar</button>` : '') + (x.on ? `<button class="btn sec" data-sus="${esc(x.n)}">Susurrar</button>` : '') + `<button class="btn sec" data-qamigo="${esc(x.uid)}" title="Quitar de amigos">✕</button>`);
     }).join('') : '<p style="font-size:12px;color:var(--txt2);margin-bottom:8px">Elige a otro jugador y pulsa «Amigo» en su marco para ver cuándo se conecta.</p>';
     h += '<p style="font:600 13px var(--sans);color:var(--txt);margin:10px 0 6px">Conectados</p>';
     if (!quienLista.length) { L.innerHTML = h + '<p class="centro">No hay nadie más conectado ahora mismo.</p>'; conectarListaSocial(L); return; }
@@ -1567,7 +1567,7 @@ function pintarSocial() {
       const puede = !x.g && (!grupo || soyLider());
       return tarjeta(`<img src="${A}items/equipo/${cl ? cl.icono : 'S_Buff06'}.png">`, `<span style="color:${cl ? cl.color : 'var(--txt2)'}">${esc(x.n)}</span> <span style="color:var(--txt2)">Nv ${x.lv}</span>`,
         esc((cl ? cl.nombre + ' · ' : '') + x.mapa + (x.h ? ' · <' + x.h + '>' : '') + (x.g ? ' · en grupo' : '')),
-        (puede ? `<button class="btn" data-inv="${x.id}">Invitar</button>` : '') + `<button class="btn sec" data-sus="${esc(x.n)}">💬</button>`);
+        (puede ? `<button class="btn" data-inv="${x.id}">Invitar</button>` : '') + `<button class="btn sec" data-sus="${esc(x.n)}">Susurrar</button>`);
     }).join('');
     conectarListaSocial(L);
   } else if (tabSocial === 'amigos') {
@@ -1618,7 +1618,7 @@ function compartirPresumir(info) {
   const txt = presumirTxt + ' Juega gratis conmigo a DUENDE QUEST ONLINE. 🧝';
   if (TG && TG.openTelegramLink) return TG.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(enlTg) + '&text=' + encodeURIComponent(txt));
   const enlWeb = location.origin + '/mmo/?ref=' + info.ref;
-  const copiar = () => { try { navigator.clipboard.writeText(txt + ' ' + enlWeb).then(() => aviso('📋 Texto y enlace copiados: pégalo donde quieras.', 'ok'), () => {}); } catch (e) {} };
+  const copiar = () => { try { navigator.clipboard.writeText(txt + ' ' + enlWeb).then(() => aviso('Texto y enlace copiados.', 'ok'), () => {}); } catch (e) {} };
   if (navigator.share) navigator.share({ title: 'DUENDE QUEST ONLINE', text: txt, url: enlWeb }).catch(e => { if (!e || e.name !== 'AbortError') copiar(); });
   else window.open('https://t.me/share/url?url=' + encodeURIComponent(enlWeb) + '&text=' + encodeURIComponent(txt), '_blank');
 }
@@ -1907,7 +1907,7 @@ function abrirBuscador() {
     }
   }
   if (yo.nivel >= NIVEL_MAX) {
-    h += '<p style="font-size:12px;color:var(--txt2);margin-top:6px">⚡ Desafíos: la misma mazmorra a Nv 60 con monstruos más duros en cada paso. Vencer el +k abre el siguiente y da oro y un objeto de nivel 60+k (se equipa a Nv 60). Logros a +5, +10 y +20.</p>';
+    h += '<p style="font-size:12px;color:var(--txt2);margin-top:6px">⚡ Desafíos: la misma mazmorra a Nv 60 con monstruos más duros en cada paso. Vencer un nivel de Desafío abre el siguiente y da oro y un objeto de nivel superior a 60 (se equipa a Nv 60). Logros a +5, +10 y +20.</p>';
     h += htmlAfijos(afijosSemana());
   }
   // A Nv 60 la banda va arriba (abajo quedaba tras 5 mazmorras y los afijos).
@@ -1931,7 +1931,7 @@ function htmlBanda(id, mz, bloq) {
   const lleva = b.t >= BANDA_MONTURA || (yo.monturas || []).includes('abismo');
   const tj = tarjeta(`<img src="${A}items/equipo/${mz.icono}.png" style="${bloq ? 'filter:grayscale(1);opacity:.4' : ''}">`,
     `⚔️ ${esc(mz.nombre)} <span style="color:${bloq ? 'var(--warn)' : 'var(--txt2)'}">BANDA · Nv ${mz.nv[0]} · 1-${BANDA_MAX}</span>`,
-    `${esc(mz.desc.replace(/^BANDA de 1 a 10 jugadores\. /, ''))}<br><span style="color:var(--txt2)">Botín de esta semana (✓ = cobrado): ${jefes}</span><br><span style="color:${lleva ? 'var(--ok)' : 'var(--txt2)'}">🦇 ${esc(MONTURAS.abismo.nombre)}: ${lleva ? '¡ya es tuyo!' : 'Titán vencido ' + b.t + '/' + BANDA_MONTURA + ' semanas'}</span>`,
+    `${esc(mz.desc.replace(/^BANDA de 1 a 10 jugadores\. /, ''))}<br><span style="color:var(--txt2)">Botín de esta semana (✓ = cobrado): ${jefes}</span><br><span style="color:${lleva ? 'var(--ok)' : 'var(--txt2)'}">🦇 ${esc(MONTURAS.abismo.nombre)}: ${lleva ? 'conseguida' : 'Titán vencido ' + b.t + '/' + BANDA_MONTURA + ' semanas'}</span>`,
     bloq ? `<span class="precio" style="color:var(--txt3)">🔒 Nv ${mz.nv[0]}</span>` : `<button class="btn" data-maz="${id}">Entrar</button>`);
   return '<p style="font:600 13px var(--sans);color:var(--txt);margin:12px 0 6px">⚔️ Banda</p>' + (bloq ? tj.replace('<div class="item">', '<div class="item" style="opacity:.55">') : tj)
     + (grupo && !grupo.banda && soyLider() && !bloq ? '<p style="font-size:12px;color:var(--txt2);margin:-4px 0 10px">Para ser más de 5, convierte tu grupo en banda (👥 Social > Grupo) o anúnciate para la banda en el buscador.</p>' : '');
@@ -1940,7 +1940,7 @@ function htmlBanda(id, mz, bloq) {
 function htmlAfijos(af) {
   return '<div class="mis-caja" style="margin-top:8px;font-size:12px"><b style="color:var(--txt)">Afijos de esta semana</b>'
     + af.map(a => `<div style="margin-top:4px">${AFIJOS[a].emoji} <b style="color:var(--txt)">${AFIJOS[a].nombre}</b> <span style="color:var(--txt3)">(desde +${AFIJOS[a].desde})</span><br><span style="color:var(--txt2)">${esc(AFIJOS[a].desc)}</span></div>`).join('')
-    + `<div style="margin-top:6px;color:var(--txt2)">El mejor +k de la semana entra al ranking semanal de Desafíos (🏆 en el pueblo): el top 3 desde el +${DES_SEM_MIN} gana oro cada lunes.</div></div>`;
+    + `<div style="margin-top:6px;color:var(--txt2)">Tu mejor nivel de Desafío de la semana entra al ranking semanal (botón Ranking): el top 3 desde el +${DES_SEM_MIN} gana oro cada lunes.</div></div>`;
 }
 // Aviso grande en naranja (las mecanicas de los jefes), como los avisos de banda de WoW.
 function emote(txt) {
@@ -2402,7 +2402,7 @@ function viajePorBorde(izq, der) {
   if (i < 0) return;
   bordeT = performance.now(); bordeSoltar = true;
   const dest = MAPAS[mp.portales[i].a];
-  if (dest && dest.nv && yo.nivel < dest.nv[0] - 5) { errorRojo(`⚠️ ${dest.nombre} es de nivel ${dest.nv[0]}-${dest.nv[1]}. Si de verdad quieres ir, entra por su portal (E).`); return; }
+  if (dest && dest.nv && yo.nivel < dest.nv[0] - 5) { errorRojo(`${dest.nombre}: zona de nivel ${dest.nv[0]}-${dest.nv[1]}. Para entrar igual, usa su portal (E).`); return; }
   mandar({ t: 'portal', i });
 }
 
@@ -2492,7 +2492,7 @@ function pintarChicha() {
   const cuenta = TG || !soyInvitado;
   // Invitado: el aviso va arriba, con el boton para seguir en Telegram.
   let h = cuenta ? '' : '<div class="seguridad centro" style="margin-top:0;color:var(--txt)">Juegas como invitado: los puntos de chicha se juntan solo con cuenta de Telegram.<a class="btn" href="https://t.me/duendequest_bot" target="_blank" rel="noopener" style="display:block;margin-top:10px;text-decoration:none;color:#fff">Abrir en Telegram</a></div>';
-  h += `<div class="mis-caja" style="margin-top:0;text-align:center"><div style="font-size:40px">🥤</div><b style="color:var(--txt);font:600 16px/1.35 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;margin-bottom:0">Un litro de chicha morada, enviado a tu casa</b>
+  h += `<div class="mis-caja" style="margin-top:0;text-align:center"><b style="color:var(--txt);font:600 16px/1.35 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;margin-bottom:0">Un litro de chicha morada, enviado a tu casa</b>
     <p style="font-size:12px;color:var(--txt2);margin-top:4px">Promoción gratuita y opcional: no hay que comprar nada.</p>
     <p style="font-size:12px;margin-top:6px">Cada monstruo que cazas suelta su chicha: <b style="display:inline">1 punto</b>, <b style="display:inline">3</b> si es de tu nivel o más, <b style="display:inline">25</b> un jefe. Desde nivel ${CHICHA.nvPuntos}, hasta ${CHICHA.porDia} puntos al día.</p>
     <p style="font-size:22px;color:var(--oro);margin:8px 0">${ch.p.toLocaleString('es', { useGrouping: 'always' })} puntos</p>
@@ -2785,7 +2785,7 @@ function htmlPremium() {
     let acc;
     if (pq.skin && yo && (yo.skins || []).includes(pq.skin)) acc = '<span class="precio" style="color:var(--ok)">✓ Ya la tienes</span>';
     else if (!cuenta) acc = '<a class="btn sec" href="/game.html" style="text-decoration:none">Iniciar sesión</a>';
-    else if (cuentaTg) acc = `<span class="precio">⭐ ${estrellasDe(pq.usd)}</span><button class="btn" data-premium="${pq.id}" data-metodo="stars">Pagar con Stars</button>`;
+    else if (cuentaTg) acc = `<span class="precio">${estrellasDe(pq.usd)} Stars</span><button class="btn" data-premium="${pq.id}" data-metodo="stars">Pagar con Stars</button>`;
     else acc = `<span class="precio">~$${pq.usd} en SOL</span><button class="btn" data-premium="${pq.id}" data-metodo="sol">Pagar con SOL</button>`;
     const ico = pq.skin ? `<img src="${A}skins/${pq.img}.png">` : `<img src="${A}items/equipo/${pq.icono}.png">`;
     h += tarjeta(ico, esc(pq.nombre), esc(pq.desc) + (pq.skin ? '<br><span style="color:var(--txt2)">Skin con poderes: también se consigue con oro.</span>' : ''), acc);
@@ -3610,7 +3610,7 @@ function dibujar() {
   ponCss(bi, 'display', 'block');
   if (c && yo && !P.muerto) {
     ponCss(bi, 'visibility', 'visible');
-    ponTxt(bi, c.tipo === 'res' ? 'RESUCITAR' : c.tipo === 'portal' ? (c.p.etiqueta === 'Salida' ? (TACTIL ? 'SALIR' : 'E · SALIR') : (TACTIL ? 'ENTRAR' : 'E · ENTRAR')) : c.tipo === 'cofre' ? (TACTIL ? 'ABRIR' : 'E · ABRIR') : c.tipo === 'vitrina' ? (TACTIL ? 'VER SKINS' : 'E · VER SKINS') : c.tipo === 'nodo' ? (TACTIL ? 'RECOGER' : 'E · RECOGER') : c.tipo === 'pesca' ? (castYo && castYo.id === 'pica' ? (TACTIL ? '¡TIRA!' : 'E · ¡TIRA!') : castYo && castYo.id === 'pescar' ? 'Espera…' : (TACTIL ? 'PESCAR' : 'E · PESCAR')) : (TACTIL ? 'HABLAR' : 'E · HABLAR'));
+    ponTxt(bi, c.tipo === 'res' ? 'RESUCITAR' : c.tipo === 'portal' ? (c.p.etiqueta === 'Salida' ? (TACTIL ? 'SALIR' : 'E · SALIR') : (TACTIL ? 'ENTRAR' : 'E · ENTRAR')) : c.tipo === 'cofre' ? (TACTIL ? 'ABRIR' : 'E · ABRIR') : c.tipo === 'vitrina' ? (TACTIL ? 'VER SKINS' : 'E · VER SKINS') : c.tipo === 'nodo' ? (TACTIL ? 'RECOGER' : 'E · RECOGER') : c.tipo === 'pesca' ? (castYo && castYo.id === 'pica' ? (TACTIL ? 'TIRAR' : 'E · TIRAR') : castYo && castYo.id === 'pescar' ? 'Espera…' : (TACTIL ? 'PESCAR' : 'E · PESCAR')) : (TACTIL ? 'HABLAR' : 'E · HABLAR'));
   } else ponCss(bi, 'visibility', 'hidden');
 }
 
@@ -3654,7 +3654,7 @@ function pintarHud() {
   if (T) {
     const hd = T.dia.l.filter(t => t.ok).length, hs = T.sem.l.filter(t => t.ok).length;
     const sig = T.dia.l.find(t => !t.ok);
-    ponTxt($('h-tareas'), 'Diarias ' + hd + '/' + T.dia.l.length + ' · Semana ' + hs + '/' + T.sem.l.length + (sig ? ' — ' + sig.txt + ' ' + sig.p + '/' + sig.n : '') + (temporadaYa() ? ' · ' + temporadaYa().emoji + ' ' + (yo[temporadaYa().campo] || 0) : ''));
+    ponTxt($('h-tareas'), 'Diarias ' + hd + '/' + T.dia.l.length + ' · Semana ' + hs + '/' + T.sem.l.length + (sig ? ' — ' + sig.txt + ' ' + sig.p + '/' + sig.n : '') + (temporadaYa() ? ' · ' + temporadaYa().cosas.charAt(0).toUpperCase() + temporadaYa().cosas.slice(1) + ' ' + (yo[temporadaYa().campo] || 0) : ''));
   }
   pintarPoderes();
   pintarAcciones();
@@ -3796,7 +3796,7 @@ function pintarMision() {
   const def = MONSTRUOS[q.tipo];
   const zona = MAPAS[zonaDe(q.tipo)];
   const lista = yo.mis.p >= q.n;
-  const extra = q.pw ? ' · ' + Object.entries(q.pw).map(([k, v]) => v + ' ' + PODERES.find(p => p.id === k).nombre).join(', ') : '';
+  const extra = q.pw ? ' · ' + Object.entries(q.pw).map(([k, v]) => { const p = PODERES.find(p => p.id === k); return v + ' ' + (v === 1 ? p.nombre : p.plural); }).join(', ') : '';
   const pide = def.jefe ? 'Participa en la caída de <b style="display:inline;color:var(--txt)">' + esc(def.nombre) + '</b>' : 'Derrota a ' + q.n + ' <b style="display:inline;color:var(--txt)">' + esc(def.nombre) + '</b>';
   cuerpo.innerHTML =
     '<p>Misión ' + (i + 1) + ' de ' + MISIONES.length + '</p>' +
@@ -3940,7 +3940,7 @@ function pintarLanzar() {
   const ahora = performance.now();
   const k = Math.min(1, (ahora - castYo.ini) / (castYo.fin - castYo.ini));
   if (castYo.id === 'pescar') { rellenar($('lanzar').querySelector('i'), .5 + Math.sin(ahora / 300) * .1); ponTxt($('lanzar-t'), '🎣 Espera a que pique…'); return; }
-  if (castYo.id === 'pica') { rellenar($('lanzar').querySelector('i'), 1 - k); ponTxt($('lanzar-t'), 'Pica: pulsa ' + (TACTIL ? '¡TIRA!' : 'E')); return; }
+  if (castYo.id === 'pica') { rellenar($('lanzar').querySelector('i'), 1 - k); ponTxt($('lanzar-t'), 'Pica: pulsa ' + (TACTIL ? 'TIRAR' : 'E')); return; }
   rellenar($('lanzar').querySelector('i'), k);
   ponTxt($('lanzar-t'), castYo.nombre + '  ' + Math.max(0, (castYo.fin - ahora) / 1000).toFixed(1) + ' s');
 }
@@ -4115,7 +4115,7 @@ function pintarTienda() {
         acc = `<span class="precio">🪙 ${d.precio.toLocaleString('es', { useGrouping: 'always' })}</span><button class="btn" data-comprar="${tabTienda}" data-id="${id}" ${yo.oro < d.precio ? 'disabled' : ''}>Comprar</button>`;
         // Skins: tambien con dinero; el pago lo revisa El Duende y la entrega a mano.
         if (tabTienda === 'skin' && d.usd && yo.p2e && yo.p2e.cuenta) acc += (TG && !forzarInvitado)
-          ? `<button class="btn sec" data-premium="skin_${id}" data-metodo="stars">⭐ ${estrellasDe(d.usd)}</button>`
+          ? `<button class="btn sec" data-premium="skin_${id}" data-metodo="stars">${estrellasDe(d.usd)} Stars</button>`
           : `<button class="btn sec" data-premium="skin_${id}" data-metodo="sol">◎ ~$${d.usd} en SOL</button>`;
       }
       if (tabTienda === 'skin' && !tiene.includes(id)) acc += `<button class="btn sec" data-probar="${id}">Probar</button>`;
@@ -4218,7 +4218,7 @@ function resumenMuerte(m) {
   if (ult) h += `<p>Te venció: <b style="color:var(--err)">${esc(ult.n)}${ult.nv ? ' (Nv ' + ult.nv + ')' : ''}</b></p>`;
   if (g.length) h += '<p style="font-size:12px;color:var(--txt2)">Últimos golpes: ' + g.map(x => esc(x.n) + ' −' + x.d).join(' · ') + '</p>';
   let consejo = '';
-  if (ult && ult.nv && yo && ult.nv >= yo.nivel + 3) consejo = 'Ese enemigo es de nivel bastante más alto que tú: sube un par de niveles en una zona de tu nivel (🗺️ tecla M).';
+  if (ult && ult.nv && yo && ult.nv >= yo.nivel + 3) consejo = 'Ese enemigo te supera en nivel: sube un par de niveles en una zona de tu nivel' + (TACTIL ? ' (botón Mapa).' : ' (mapa: tecla M).');
   else if (m.pw > 0) consejo = 'Tenías ' + m.pw + ' pociones: úsalas (' + (TACTIL ? 'el primer consumible de la barra' : 'tecla Q') + ') cuando tu vida baje de la mitad.';
   else if (!m.pw) consejo = 'Sin pociones: cómpralas en el Mercader o fabrícalas en la Artesana.';
   if (m.inst) consejo = 'En las mazmorras, sal de las zonas marcadas en el suelo e interrumpe los hechizos con barra naranja. Revives junto a la última barrera abierta.';
@@ -4228,6 +4228,7 @@ function resumenMuerte(m) {
   const novato = yo && yo.nivel < 10 && MAPAS[mapaId] && MAPAS[mapaId].zona && mapaId !== 'coliseo';
   $('b-revivir').textContent = m.inst ? '↺ Revivir junto a la última barrera' : novato ? '↺ Revivir aquí (entrada de la zona)' : '↺ Revivir en el pueblo';
   if (novato && !m.inst) h += '<p style="margin-top:6px;font-size:12px;color:var(--ok)">Hasta nivel 10 morir no te quita experiencia.</p>';
+  ponCss($('muerte-xp'), 'display', novato && !m.inst ? 'none' : 'block');
   $('muerte-info').innerHTML = h;
 }
 function morir() {

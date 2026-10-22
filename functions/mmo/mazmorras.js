@@ -41,7 +41,7 @@ export const Mazmorras = {
     // La del grupo, si sigue abierta y es esta mazmorra: se entra a ella
     // (tambien a su Desafio, con nivel 60) sin mirar lo que pide el cliente.
     const gi = this.grupoDe(s);
-    if (gi && !mz.banda && gi.uids.length > GRUPO_MAX) return this.no(s, `Las mazmorras son para ${GRUPO_MAX}: son ${gi.uids.length}. Solo la banda admite hasta ${BANDA_MAX}.`);
+    if (gi && !mz.banda && gi.uids.length > GRUPO_MAX) return this.no(s, `Las mazmorras son para grupos de hasta ${GRUPO_MAX} (son ${gi.uids.length}). Para más, conviertan el grupo en banda (hasta ${BANDA_MAX}).`);
     const wg = gi && gi.inst && this.mundo[gi.inst];
     if (wg && wg.inst && !wg.inst.completada && wg.inst.id === id) {
       if (wg.inst.k && s.c.nivel < NIVEL_MAX) return this.no(s, `Tu grupo está en un Desafío: hace falta nivel ${NIVEL_MAX}.`);
@@ -64,7 +64,7 @@ export const Mazmorras = {
       if (this.jugadoresEn(previa)) return this.no(s, 'Todavía tienes otra mazmorra abierta.');
       this.cerrarInstancia(previa);
     } else if (wp && wp.inst.completada) {
-      if (this.jugadoresEn(previa)) return this.no(s, 'Tu grupo acaba de completarla: esperad a que se cierre (unos segundos).');
+      if (this.jugadoresEn(previa)) return this.no(s, 'Tu grupo acaba de completarla. Esperen unos segundos a que se cierre.');
       this.cerrarInstancia(previa);
     }
     // Limites: cada instancia son ~20 monstruos en memoria.
@@ -129,7 +129,7 @@ export const Mazmorras = {
     w.inst.vacioDesde = 0;
     const af = (w.inst.af || []).map(a => AFIJOS[a].emoji + ' ' + AFIJOS[a].nombre).join(', ');
     if (w.inst.banda) return this.enviar(s, { t: 'toast', ok: true, m: `⚔️ ${mz.nombre} (banda, Nv ${w.inst.nv}). Las zonas DORADAS se aguantan juntos: entren todos para repartir el golpe.` });
-    this.enviar(s, { t: 'toast', m: w.inst.k ? `⚡ ${mz.nombre} — Desafío +${w.inst.k}: monstruos con ${Math.round(w.inst.mv * 100)}% de vida y ${Math.round(w.inst.ma * 100)}% de daño.${af ? ' Afijos: ' + af + '.' : ''}` : `🏰 ${mz.nombre} (Nv ${w.inst.nv}). Aquí los monstruos atacan solos y en grupo: ¡con cuidado!`, ok: true });
+    this.enviar(s, { t: 'toast', m: w.inst.k ? `⚡ ${mz.nombre} — Desafío +${w.inst.k}: monstruos con ${Math.round(w.inst.mv * 100)}% de vida y ${Math.round(w.inst.ma * 100)}% de daño.${af ? ' Afijos: ' + af + '.' : ''}` : `${mz.nombre} (Nv ${w.inst.nv}). Los monstruos atacan en grupo.`, ok: true });
   },
 
   // Tope de jugadores dentro de una instancia (5, o 10 la banda).
@@ -372,7 +372,7 @@ export const Mazmorras = {
     else for (let i = 0; i < (m.n || 1); i++) cs.push(o.casaX + rnd(-420, 420));
     w.sigZona = w.sigZona || 1;
     for (const c of cs) w.zonas.push({ id: w.sigZona++, x0: c - m.ancho / 2, x1: c + m.ancho / 2, act: ahora + m.aviso, fin: ahora + m.aviso + 500, dano: m.dano, color: m.color, de: o.id, junta: m.junta || 0 });
-    this.aClave(o.cl, { t: 'emote', m: m.junta ? `⚠️ ${MONSTRUOS[o.k].nombre} lanza ${m.nombre}: Reúnanse en la marca dorada para repartir el golpe!` : `⚠️ ${MONSTRUOS[o.k].nombre} prepara ${m.nombre}: ¡sal de la zona marcada!` });
+    this.aClave(o.cl, { t: 'emote', m: m.junta ? `⚠️ ${MONSTRUOS[o.k].nombre} lanza ${m.nombre}: ¡reúnanse en la marca dorada!` : `⚠️ ${MONSTRUOS[o.k].nombre} prepara ${m.nombre}: ¡sal de la zona marcada!` });
   },
 
   invocarEsbirros(o, m) {

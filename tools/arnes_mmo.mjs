@@ -451,7 +451,7 @@ async function pruebas() {
   guardado.salida = Date.now() - 10 * 3600000;
   await state.storage.put('c:' + dz.c.uid, guardado);
   dz = await entrar('Dormilon', '2e');
-  chequear(dz.c.descanso > 0 && dz.ultimos('toast').some(x => /Descansaste/.test(x.m)), 'tras 10 h fuera hay XP de descanso (' + dz.c.descanso + ')');
+  chequear(dz.c.descanso > 0 && dz.ultimos('toast').some(x => /XP extra en tus próximas cazas/.test(x.m)), 'tras 10 h fuera hay XP de descanso (' + dz.c.descanso + ')');
   await aMapa(dz, 'noche', 700); limpiarMapa(dz);
   const xpA = dz.c.xp, desA = dz.c.descanso;
   const gd = monstruo(dz, 'goblin_normal', 30); dz.f = 1;
@@ -1944,7 +1944,7 @@ async function pruebasBanda() {
   chequear(g.banda, 'con más de 5 no vuelve a ser grupo');
   L.limpiar();
   await L.mandar({ t: 'mazmorra', id: 'ciudadela', k: 3 });
-  chequear(!L.k.includes('#') && L.ultimos('no').some(x => /son para 5/.test(x.m)), 'una banda de 6 no entra a una mazmorra de 5 (ni a sus Desafíos)');
+  chequear(!L.k.includes('#') && L.ultimos('no').some(x => /hasta 5/.test(x.m)), 'una banda de 6 no entra a una mazmorra de 5 (ni a sus Desafíos)');
   // Entrar (un Desafio no aplica a la banda)
   await L.mandar({ t: 'mazmorra', id: 'santuario', k: 3 });
   const w = mundo.mundoDe(L);

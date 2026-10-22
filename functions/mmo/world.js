@@ -480,8 +480,8 @@ export class MmoWorld {
     this.enviar(s, { t: 'bienvenido', id: s.id, yo: this.datosPropios(s), nuevo, heredado, regaladas, on: this.contarOnline() });
     if (login) this.enviar(s, { t: 'login', ...login });
     const tp = temporadaDe();
-    if (ambulanteActivo() && c.nivel >= 15) this.enviar(s, { t: 'toast', m: '🧳 Este fin de semana el Mercader trae género del ambulante: colores y una mascota que no vende el resto de la semana (pestaña AMBULANTE).', ok: true });
-    if (tp) this.enviar(s, { t: 'toast', m: `${tp.nombre}: hasta el ${tp.hasta} los monstruos sueltan ${tp.cosas} (los jefes, ${TEMP_JEFE}). 50 = título «${tp.titulos[0]}», 200 = «${tp.titulos[1]}». Llevas ${c[tp.campo] || 0}.`, ok: true });
+    if (ambulanteActivo() && c.nivel >= 15) this.enviar(s, { t: 'toast', m: 'Mercader ambulante en el pueblo este fin de semana: colores y una mascota exclusivos (pestaña «Ambulante»).', ok: true });
+    if (tp) this.enviar(s, { t: 'toast', m: `${tp.nombre}: hasta el ${tp.hasta} los monstruos sueltan ${tp.cosas}; con 50 y 200 hay títulos. Llevas ${c[tp.campo] || 0}.`, ok: true });
     else {
       // Sin evento: si el siguiente empieza en 10 dias o menos, se anuncia
       // (un motivo para volver ese dia).
@@ -493,7 +493,7 @@ export class MmoWorld {
         this.enviar(s, { t: 'toast', m: `${prox.emoji} Próximo evento: ${prox.nombre}, desde el ${fecha} (en ${dias} día${dias > 1 ? 's' : ''}). Los monstruos soltarán ${prox.cosas} y habrá dos títulos.` });
       }
     }
-    if (descansado > 0) this.enviar(s, { t: 'toast', m: `😴 Descansaste: tus próximas cazas dan el DOBLE de experiencia (+${c.descanso.toLocaleString('es', { useGrouping: 'always' })} XP de descanso).`, ok: true });
+    if (descansado > 0) this.enviar(s, { t: 'toast', m: `Descanso: +${c.descanso.toLocaleString('es', { useGrouping: 'always' })} XP extra en tus próximas cazas.`, ok: true });
     this.enviar(s, this.estadoMundial());
     this.entrarMapa(s, c.mapa, s.x, true);
     this.reengancharGrupo(s);
@@ -595,7 +595,7 @@ export class MmoWorld {
       if (!f.avisados) f.avisados = {};
       if (el.cuenta && !f.avisados[c.uid]) {
         f.avisados[c.uid] = 1;
-        this.enviar(s, { t: 'toast', m: !el.nivel ? `💎 Desde nivel ${MTON_NIVEL_MIN} ganas mTON (TON real) en jefes y misiones, los días que hay fondo (mira 💎).` : '💎 Tu personaje gana mTON a partir de su 2º día de vida.' });
+        this.enviar(s, { t: 'toast', m: !el.nivel ? `💎 Desde nivel ${MTON_NIVEL_MIN} ganas mTON (TON real) en jefes y misiones, los días que hay fondo (botón mTON).` : '💎 Tu personaje gana mTON a partir de su 2º día de vida.' });
       }
       return 0;
     }
@@ -1616,7 +1616,7 @@ export class MmoWorld {
       return;
     }
     const q = MISIONES[c.mis.i];
-    if (!q) return this.enviar(s, { t: 'toast', m: 'Ya completaste todas las misiones. Has completado todas las misiones del Guardia Tito.' });
+    if (!q) return this.enviar(s, { t: 'toast', m: 'Ya completaste todas las misiones del Guardia Tito.' });
     if (c.mis.p < q.n) return this.enviar(s, { t: 'toast', m: `Todavía te faltan ${q.n - c.mis.p} para "${q.nombre}".` });
     c.oro += q.oro;
     for (const k in (q.pw || {})) c.pw[k] = Math.min(99, (c.pw[k] || 0) + q.pw[k]);
@@ -1736,7 +1736,7 @@ export class MmoWorld {
     const def = PODERES[m.i | 0];
     if (!def) return;
     const ahora = Date.now();
-    if ((s.c.pw[def.id] || 0) <= 0) return this.enviar(s, { t: 'toast', m: `No te quedan ${def.nombre}s. Cómpralos al Mercader del pueblo.` });
+    if ((s.c.pw[def.id] || 0) <= 0) return this.enviar(s, { t: 'toast', m: `No te quedan ${(def.plural || def.nombre).toLowerCase()}. El Mercader del pueblo las vende.` });
     if (ahora < (s.cdPw[def.id] || 0)) return;
     s.c.pw[def.id]--;
     s.cdPw[def.id] = ahora + def.cd;
@@ -1779,7 +1779,7 @@ export class MmoWorld {
       if (!def) return;
       const costo = def.precio * n;
       if (c.oro < costo) return this.enviar(s, { t: 'toast', m: 'No te alcanza el oro.' });
-      if ((c.pw[def.id] || 0) + n > 99) return this.enviar(s, { t: 'toast', m: 'Máximo 99 por poder.' });
+      if ((c.pw[def.id] || 0) + n > 99) return this.enviar(s, { t: 'toast', m: 'Máximo 99 de cada consumible.' });
       c.oro -= costo; c.pw[def.id] = (c.pw[def.id] || 0) + n;
     } else if (m.k === 'forja') {
       if (typeof m.id !== 'string' || !Object.hasOwn(ARMAS, m.id) || !c.armas.includes(m.id)) return;

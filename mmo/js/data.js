@@ -500,7 +500,7 @@ export const NOVEDADES = [
     '🟡 Zonas doradas: hay que aguantarlas juntos, el golpe se reparte entre los que estén dentro.',
     '🐸 Monturas nuevas en el Mercader: Sapo Gigante (Nv 25) y Águila Real (Nv 50). Y cuatro mascotas más: Arañita, Cangrejito, Pulpito y Fantasmita.',
     '📅 Temporadas de 2027: Verano Duende (enero), Vendimia (marzo), Lluvia de Estrellas (abril), Fiesta del Sol (junio) y Fiestas Patrias (julio).',
-    '🏆 Gesta semanal de hermandad: entre todos sumad puntos cazando, venciendo jefes y completando mazmorras; Bronce, Plata y Oro dan oro a quien aportó.',
+    '🏆 Gesta semanal de hermandad: entre todos suman puntos cazando, venciendo jefes y completando mazmorras; Bronce, Plata y Oro dan oro a quien aportó.',
     '✨ Runas en la Artesana (desde Nv 40): +2% de ataque, defensa o vida por rango, hasta +10%. Piden Flor de Luna y Mithril (zonas Nv 30+) y Esencia Abisal (jefes de mazmorras de Nv 40+).',
   ] },
   { n: 2, fecha: '21 oct 2026', items: [
@@ -781,7 +781,7 @@ export const LOGROS = [
   { id: 'forja10',   titulo: 'Herrero Maestro',    desc: 'Forja un arma a +10',            oro: 5000,  cond: c => Object.values(c.forja || {}).some(n => n >= 10) },
   { id: 'skins',     titulo: 'Coleccionista',      desc: 'Consigue las 6 skins',           oro: 10000, cond: c => (c.skins || []).length >= 6 },
   { id: 'misiones',  titulo: 'Leyenda del Pueblo', desc: 'Completa todas las misiones',    oro: 20000, cond: c => ((c.mis || {}).i || 0) >= MISIONES.length },
-  { id: 'mundial1',  titulo: 'Cazador de Titanes', desc: 'Vence al jefe mundial',          oro: 2000,  cond: c => (c.mundiales || 0) >= 1 },
+  { id: 'mundial1',  titulo: 'Azote del Coliseo',  desc: 'Vence al jefe mundial',          oro: 2000,  cond: c => (c.mundiales || 0) >= 1 },
   { id: 'torre10',   titulo: 'Escalador',          desc: 'Supera el piso 10 de la Torre',  oro: 3000,  cond: c => (c.torreMax || 0) >= 10 },
   { id: 'torre25',   titulo: 'Señor de la Torre',  desc: 'Supera el piso 25 de la Torre',  oro: 12000, cond: c => (c.torreMax || 0) >= 25 },
   { id: 'reytorre',  titulo: 'Rey de la Torre',    desc: 'Gana el ranking semanal de la Torre (desde el piso 10)', oro: 10000, cond: c => (c.reyTorre || 0) >= 1 },
@@ -885,10 +885,10 @@ export const COMBO_MULT = [1, 1.15, 1.45];
 
 // ── PODERES (los 4 objetos del juego) ──
 export const PODERES = [
-  { id: 'pocion', nombre: 'Poción',  icono: 'item_potion', precio: 30,  cd: 3000,  tecla: 'Q', desc: 'Cura el 50% de la vida y el 30% del maná' },
-  { id: 'escudo', nombre: 'Escudo',  icono: 'item_shield', precio: 120, cd: 20000, tecla: 'F', desc: 'Invulnerable 5 segundos' },
-  { id: 'rayo',   nombre: 'Rayo',    icono: 'item_skill',  precio: 350, cd: 15000, tecla: 'G', desc: 'Fulmina a todo lo que esté cerca' },
-  { id: 'fuego',  nombre: 'Fuego',   icono: 'skill_fire',  precio: 200, cd: 20000, tecla: 'T', desc: 'Golpes de fuego (+50%) por 8 s' },
+  { id: 'pocion', nombre: 'Poción', plural: 'Pociones',  icono: 'item_potion', precio: 30,  cd: 3000,  tecla: 'Q', desc: 'Cura el 50% de la vida y el 30% del maná' },
+  { id: 'escudo', nombre: 'Escudo', plural: 'Escudos',  icono: 'item_shield', precio: 120, cd: 20000, tecla: 'F', desc: 'Invulnerable 5 segundos' },
+  { id: 'rayo',   nombre: 'Rayo',   plural: 'Rayos',  icono: 'item_skill',  precio: 350, cd: 15000, tecla: 'G', desc: 'Fulmina a todo lo que esté cerca' },
+  { id: 'fuego',  nombre: 'Fuego',  plural: 'Fuegos',  icono: 'skill_fire',  precio: 200, cd: 20000, tecla: 'T', desc: 'Golpes de fuego (+50%) por 8 s' },
 ];
 
 // ── MISIONES ──
