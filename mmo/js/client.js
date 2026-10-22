@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=90';
+} from './data.js?v=92';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -923,7 +923,7 @@ addEventListener('keydown', e => {
     return;
   }
   if (document.querySelector('.modal.on')) {
-    if (e.key === 'Escape' && !$('m-clase').classList.contains('on')) cerrarModales();
+    if (e.key === 'Escape' && !($('m-clase').classList.contains('on') && yo && !yo.clase)) cerrarModales();
     if (e.code === 'KeyP' && $('m-libro').classList.contains('on')) cerrarModales();
     if (e.code === 'KeyO' && $('m-social').classList.contains('on')) cerrarModales();
     if (e.code === 'KeyM' && $('m-mapa').classList.contains('on')) cerrarModales();
@@ -960,8 +960,10 @@ function abrirChat() {
   // En el movil, frases de un toque encima del teclado.
   if (TACTIL) {
     const f = $('frases');
-    if (!f.children.length) for (const [k, gs] of Object.entries(GESTOS)) { const b = document.createElement('button'); b.className = 'bt'; b.textContent = gs.e; b.title = '/' + k; b.onmousedown = b.ontouchstart = e => { e.preventDefault(); mandar({ t: 'gesto', id: k }); cerrarChat(); }; f.appendChild(b); }
-    if (f.children.length <= Object.keys(GESTOS).length) FRASES.forEach(t => { const b = document.createElement('button'); b.className = 'bt'; b.textContent = t; b.onmousedown = b.ontouchstart = e => { e.preventDefault(); mandar({ t: 'chat', canal: 'general', m: t }); cerrarChat(); }; f.appendChild(b); });
+    const rotulo = t => { const d = document.createElement('div'); d.style.cssText = 'flex-basis:100%;font:600 11px var(--sans);color:#e2e8f0;margin:2px 0 0;text-shadow:1px 1px 0 #000,0 0 4px #000'; d.textContent = t; return d; };
+    if (!f.children.length) f.appendChild(rotulo('Gestos (solo se ven sobre tu duende):'));
+    if (f.children.length === 1) for (const [k, gs] of Object.entries(GESTOS)) { const b = document.createElement('button'); b.className = 'bt'; b.textContent = gs.e; b.title = '/' + k; b.onmousedown = b.ontouchstart = e => { e.preventDefault(); mandar({ t: 'gesto', id: k }); cerrarChat(); }; f.appendChild(b); }
+    if (f.children.length <= Object.keys(GESTOS).length + 1) { f.appendChild(rotulo('Frases al chat general:')); FRASES.forEach(t => { const b = document.createElement('button'); b.className = 'bt'; b.textContent = t; b.onmousedown = b.ontouchstart = e => { e.preventDefault(); mandar({ t: 'chat', canal: 'general', m: t }); cerrarChat(); }; f.appendChild(b); }); }
     ponCss(f, 'display', 'flex');
   }
 }
@@ -1393,10 +1395,11 @@ function difSkin(id) {
   const a = statsJugador(yo.nivel, yo.skin, yo.eq, yo.clase, yo.espec, yo.tal, yo.runas);
   const b = statsJugador(yo.nivel, id, yo.eq, yo.clase, yo.espec, yo.tal, yo.runas);
   const l = [];
-  if (b.atk !== a.atk) l.push(`Ataque ${a.atk} → <b style="color:${b.atk > a.atk ? 'var(--ok)' : 'var(--err)'}">${b.atk}</b>`);
-  if (b.maxHp !== a.maxHp) l.push(`Vida ${a.maxHp} → <b style="color:${b.maxHp > a.maxHp ? 'var(--ok)' : 'var(--err)'}">${b.maxHp}</b>`);
-  if (b.def !== a.def) l.push(`Defensa ${a.def} → <b style="color:${b.def > a.def ? 'var(--ok)' : 'var(--err)'}">${b.def}</b>`);
-  if (Math.abs(b.crit - a.crit) > 0.001) l.push(`Crítico ${Math.round(a.crit * 100)}% → <b style="color:${b.crit > a.crit ? 'var(--ok)' : 'var(--err)'}">${Math.round(b.crit * 100)}%</b>`);
+  const v = (x, y, t) => `<span style="font-weight:700;color:${y > x ? 'var(--ok)' : 'var(--err)'}">${t}</span>`;
+  if (b.atk !== a.atk) l.push(`Ataque ${a.atk} → ${v(a.atk, b.atk, b.atk)}`);
+  if (b.maxHp !== a.maxHp) l.push(`Vida ${a.maxHp} → ${v(a.maxHp, b.maxHp, b.maxHp)}`);
+  if (b.def !== a.def) l.push(`Defensa ${a.def} → ${v(a.def, b.def, b.def)}`);
+  if (Math.abs(b.crit - a.crit) > 0.001) l.push(`Crítico ${Math.round(a.crit * 100)}% → ${v(a.crit, b.crit, Math.round(b.crit * 100) + '%')}`);
   return l.length ? '<br><span style="font-size:12px">' + l.join(' · ') + '</span>' : '';
 }
 const gestos = new Map();   // id de jugador -> { id del gesto, t }
@@ -1662,7 +1665,7 @@ function revisarBoveda() {
 function htmlProgresoBoveda() {
   const b = yo.boveda || { n: 0 };
   const sig = BOVEDA_UMBRALES.find(u => b.n < u);
-  return `🗝️ <b style="color:var(--txt)">Bóveda semanal:</b> ${b.n} mazmorra${b.n === 1 ? '' : 's'} esta semana → ${opcionesBoveda(b.n)} de 3 objetos para elegir el lunes${sig ? ` (el siguiente con ${sig})` : ''}.${b.k ? ' Desafío +' + b.k + ': objetos de nivel ' + (NIVEL_MAX + b.k) + '.' : ''}`;
+  return `🗝️ <span style="font-weight:700;color:var(--txt)">Bóveda semanal:</span> ${b.n} mazmorra${b.n === 1 ? '' : 's'} esta semana → ${opcionesBoveda(b.n)} de 3 objetos para elegir el lunes${sig ? ` (el siguiente con ${sig})` : ''}.${b.k ? ' Desafío +' + b.k + ': objetos de nivel ' + (NIVEL_MAX + b.k) + '.' : ''}`;
 }
 function abrirBoveda() {
   if (!yo) return;
@@ -2569,7 +2572,7 @@ function htmlPremium() {
   for (const pq of PAQUETES) {
     let acc;
     if (pq.skin && yo && (yo.skins || []).includes(pq.skin)) acc = '<span class="precio" style="color:var(--ok)">✓ Ya la tienes</span>';
-    else if (!cuenta) acc = '<span class="precio sans" style="color:var(--txt2)">Inicia sesión</span>';
+    else if (!cuenta) acc = '<a class="btn sec" href="/game.html" style="text-decoration:none">Iniciar sesión</a>';
     else if (cuentaTg) acc = `<span class="precio">⭐ ${estrellasDe(pq.usd)}</span><button class="btn" data-premium="${pq.id}" data-metodo="stars">Pagar con Stars</button>`;
     else acc = `<span class="precio">~$${pq.usd} en SOL</span><button class="btn" data-premium="${pq.id}" data-metodo="sol">Pagar con SOL</button>`;
     const ico = pq.skin ? `<img src="${A}skins/${pq.img}.png">` : `<img src="${A}items/equipo/${pq.icono}.png">`;

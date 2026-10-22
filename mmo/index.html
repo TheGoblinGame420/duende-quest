@@ -346,7 +346,12 @@ body.tactil #lanzar{bottom:16px;}
 .ventana p,.ventana li{font-family:var(--sans);font-size:14px;line-height:1.5;color:#c9cfdb;}
 .ventana li{margin-bottom:6px;}
 .ventana li b,.ventana p b{color:var(--txt);}
-.ventana .cerrar{float:right;min-width:40px;min-height:40px;font-size:14px;padding:0;display:inline-flex;align-items:center;justify-content:center;margin:-6px -6px 4px 8px;}
+.ventana{position:relative;}
+/* El ✕ va en una esquina fija (flotando, encogia las listas que empezaban a su lado). */
+.ventana .cerrar{position:absolute;top:10px;right:10px;z-index:2;min-width:40px;min-height:40px;font-size:14px;padding:0;display:inline-flex;align-items:center;justify-content:center;margin:0;}
+.ventana h2{padding:0 46px;}
+/* Ventanas con pestañas: alto fijo, asi las pestañas no saltan bajo el dedo al cambiar. */
+#m-tienda .ventana,#m-social .ventana{height:min(88vh,760px);}
 .ventana{scrollbar-width:thin;scrollbar-color:var(--borde) transparent;scrollbar-gutter:stable;}
 .ventana::-webkit-scrollbar{width:8px;height:8px;}
 .ventana::-webkit-scrollbar-track{background:transparent;}
@@ -772,6 +777,6 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=90"></script>
+<script type="module" src="/mmo/js/client.js?v=92"></script>
 </body>
 </html>
