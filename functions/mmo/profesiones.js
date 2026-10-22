@@ -125,6 +125,7 @@ export const Profesiones = {
     this.enviar(s, { t: 'pescado', cant, dorado, oro, hoy: c.pescaHoy.n });
     this.enviar(s, { t: 'toast', m: txt, ok: true });
     this.progresoTarea && this.progresoTarea(s, 'pescar');
+    this.puntoGesta && this.puntoGesta(s, 'pesca');
     this.revisarLogros(s);
     this.actualizarYo(s);
   },

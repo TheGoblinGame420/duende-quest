@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=118';
+} from './data.js?v=120';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1613,7 +1613,7 @@ function htmlGesta(hm) {
     `<span style="flex:1;color:${G.p >= u ? 'var(--ok)' : 'var(--txt2)'}">${GESTA_NOMBRES[i]} ${u.toLocaleString('es')}<br><span style="color:var(--txt3)">🪙 ${premioGesta(i, yo.nivel).oro.toLocaleString('es')}</span>${G.p >= u ? `<br><span style="color:${i < cob ? 'var(--ok)' : 'var(--warn)'}">${i < cob ? '✓ cobrado' : 'por cobrar'}</span>` : ''}</span>`).join('') + '</div>';
   h += `<p style="font-size:12px;margin-top:6px">${G.p.toLocaleString('es')} puntos · tu aporte: <b style="display:inline;color:${mio >= GESTA_MIN ? 'var(--ok)' : 'var(--warn)'}">${mio}</b>${mio < GESTA_MIN ? ` (cobras desde ${GESTA_MIN})` : ''}</p><p style="font-size:11px;color:var(--txt3)">Se cobra al aportar ${GESTA_MIN} puntos y llevar un día en la hermandad (si no, al volver a entrar o al seguir sumando).</p>`;
   if (top.length) h += '<p style="font-size:12px;color:var(--txt2)">Más aportan: ' + top.map(([u, p]) => `${esc(nombre(u))} ${p}`).join(' · ') + '</p>';
-  h += `<p style="font-size:11px;color:var(--txt3);margin-top:4px">${GESTA_PUNTOS.caza} punto por monstruo de tu nivel (o hasta 10 por debajo), ${GESTA_PUNTOS.jefe} por jefe y ${GESTA_PUNTOS.mazmorra} por mazmorra completada. Se reinicia el lunes.</p></div>`;
+  h += `<p style="font-size:11px;color:var(--txt3);margin-top:4px">${GESTA_PUNTOS.caza} punto por monstruo de tu nivel (o hasta 10 por debajo), ${GESTA_PUNTOS.jefe} por jefe, ${GESTA_PUNTOS.mazmorra} por mazmorra completada y ${GESTA_PUNTOS.pesca} por pez. Se reinicia el lunes.</p></div>`;
   return h;
 }
 let hermandad = null;           // { id, nombre, motd, m: [{ uid, n, lv, cl, r, on }] }

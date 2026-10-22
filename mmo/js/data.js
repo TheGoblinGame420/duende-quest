@@ -1106,7 +1106,7 @@ export const HERM_MAX = 50;
 // reinicia el lunes (UTC). Solo oro y un logro.
 export const GESTA_UMBRALES = [500, 1500, 4000];
 export const GESTA_NOMBRES = ['🥉 Bronce', '🥈 Plata', '🥇 Oro'];
-export const GESTA_PUNTOS = { caza: 1, jefe: 10, mazmorra: 25 };
+export const GESTA_PUNTOS = { caza: 1, jefe: 10, mazmorra: 25, pesca: 1 };
 export const GESTA_MIN = 20;
 export const GESTA_ANTIG_MS = 24 * 3600000;   // un dia en la hermandad para cobrar
 export const premioGesta = (i, nivel) => ({ oro: [100, 250, 500][i] * Math.max(1, nivel) });
