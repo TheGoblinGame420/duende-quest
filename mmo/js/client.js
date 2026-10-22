@@ -444,7 +444,7 @@ function recibir(m) {
       }
       P.x = m.x; P.y = m.y; P.vx = 0; P.vy = 0; if (m.f) P.f = m.f;
       break;
-    case 'ranking': pintarRanking(m.r); break;
+    case 'ranking': pintarRanking(m.r, m.sem, m.finSem); break;
     case 'err':
       if (m.auth && m.auth !== 'inv' && !forzarInvitado) {
         // El servidor cierra el socket; onclose reconecta solo, ya como invitado.
@@ -2666,10 +2666,16 @@ function pintarInventario() {
 }
 
 function abrirRanking() { abrir('m-rank'); $('rank-lista').innerHTML = '<p class="centro">Cargando…</p>'; mandar({ t: 'ranking' }); }
-function pintarRanking(r) {
-  if (!r.length) { $('rank-lista').innerHTML = '<p class="centro">Todavía nadie sube de nivel. ¡Sé el primero!</p>'; return; }
+// Dos rankings: el de la semana (experiencia ganada; premia al top 3 cada
+// lunes, asi un jugador nuevo tambien puede ganar) y el de siempre (nivel).
+function pintarRanking(r, sem, finSem) {
   const med = ['🥇', '🥈', '🥉'];
-  $('rank-lista').innerHTML = r.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>Nv ${x.lv} · ${x.k} caz.</span></div>`).join('');
+  let h = '<p style="font-size:12px;color:#ffe600;margin-bottom:4px">🏆 Esta semana (experiencia ganada)</p>';
+  if (finSem) { const ms = finSem - Date.now(); const d = Math.floor(ms / 86400000), hh = Math.floor(ms / 3600000) % 24; h += `<p style="font-size:11px;color:rgba(255,255,255,.55);margin-bottom:6px">Termina en ${d} d ${hh} h. Premios: 🥇 oro ×400 tu nivel, objeto épico y título · 🥈 ×200 · 🥉 ×100.</p>`; }
+  h += (sem && sem.length) ? sem.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>${x.xp.toLocaleString('es')} XP · Nv ${x.lv}</span></div>`).join('') : '<p class="centro">Nadie ha cazado aún esta semana. ¡Es tu oportunidad!</p>';
+  h += '<p style="font-size:12px;color:#c084fc;margin:12px 0 4px">⭐ Los más fuertes (nivel)</p>';
+  h += r.length ? r.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>Nv ${x.lv} · ${x.k} caz.</span></div>`).join('') : '<p class="centro">Todavía nadie sube de nivel.</p>';
+  $('rank-lista').innerHTML = h;
 }
 
 function morir() {

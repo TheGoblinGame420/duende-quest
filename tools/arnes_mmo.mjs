@@ -473,6 +473,17 @@ async function pruebas() {
   chequear(tz.c.tareas.l[1].p === 0, 'cazar monstruos muy bajos no cuenta');
   chequear(tz.ultimos('mton').length === 0, 'las diarias no dan mTON');
 
+  console.log('Ranking semanal');
+  const cw = await entrar('Campeona', '4a'), sw = await entrar('Segundo', '4b');
+  mundo.rs = { sem: '2000-01-03', l: {} };
+  mundo.sumarXp(cw, 500); mundo.sumarXp(sw, 100);
+  chequear(mundo.topSemana()[0][1].n === 'Campeona', 'el ranking semanal ordena por XP de la semana');
+  const oroC = cw.c.oro;
+  await mundo.revisarSemana(Date.now());
+  chequear(cw.c.campeon === 1 && cw.c.oro > oroC, 'al cambiar la semana el primero recibe premio y título');
+  chequear(mundo.rs.sem !== '2000-01-03' && !Object.keys(mundo.rs.l).length, 'la semana nueva empieza de cero');
+  chequear(cw.ultimos('logro').some(x => x.id === 'campeon'), 'logro Campeón Semanal');
+
   console.log('Monstruos pasivos no pegan a quien no les ataca');
   const t2 = await entrar('Turista', 5);
   await aMapa(t2, 'noche', 2000);

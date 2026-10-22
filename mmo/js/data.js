@@ -534,6 +534,7 @@ export const LOGROS = [
   { id: 'legend',    titulo: 'Bendecido',          desc: 'Consigue un objeto legendario',  oro: 3000,  cond: c => !!c.tuvoLegendario },
   { id: 'racha7',    titulo: 'Fiel al Duende',     desc: 'Entra 7 días seguidos',          oro: 3000,  cond: c => ((c.login || {}).racha || 0) >= 7 },
   { id: 'equipo5',   titulo: 'Bien Equipado',      desc: 'Lleva puestas las 5 piezas de equipo', oro: 2000, cond: c => Object.keys(RANURAS).every(k => c.eq && c.eq[k]) },
+  { id: 'campeon',   titulo: 'Campeón Semanal',     desc: 'Gana el ranking semanal de experiencia', oro: 5000, cond: c => (c.campeon || 0) >= 1 },
   { id: 'herm',      titulo: 'Hermano de Armas',    desc: 'Únete a una hermandad (o funda la tuya)', oro: 1000, cond: c => !!c.herm },
   { id: 'mazmorra1', titulo: 'Explorador de Criptas', desc: 'Completa una mazmorra',             oro: 2000,  cond: c => (c.mazmorras || 0) >= 1 },
   { id: 'mazmorra10', titulo: 'Conquistador',       desc: 'Completa 10 mazmorras',             oro: 10000, cond: c => (c.mazmorras || 0) >= 10 },

@@ -19,7 +19,7 @@ import {
   LOGIN_PREMIOS, multLogin, LOGROS, MUNDIAL_DURA_MS, proximoMundial,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, MTON_EDAD_MIN_MS, WALLET_ESPERA_MS, FONDO_REFERENCIA_MTON, tonAmigable,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, FONDO_PCT_INGRESOS, PAQUETES, estrellasDe, PEDIDO_VIGENCIA_MS,
-  SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX,
+  semanaUTC, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX,
 } from '../../mmo/js/data.js';
 import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery, tg, getSolPriceUsd, SOL_DEV_WALLET } from '../api/lib.js';
 import { Combate } from './combate.js';
@@ -121,6 +121,7 @@ export class MmoWorld {
       this.retiros = (await this.state.storage.get('retiros')) || [];
       this.pedidos = (await this.state.storage.get('pedidos')) || [];
       this.ingresosSol = (await this.state.storage.get('ingresosSol')) || [];
+      this.rs = (await this.state.storage.get('rankSem')) || { sem: semanaUTC(), l: {} };
       // Los personajes de prueba de las verificaciones en produccion del
       // 30-sep-2026 ("Bot Prueba" subio a Nv 2) no deben salir en el ranking real.
       if (!(await this.state.storage.get('mig:ranking-pruebas'))) {
@@ -1157,6 +1158,7 @@ export class MmoWorld {
     if (c.nivel >= NIVEL_MAX) return false;
     let subio = false;
     c.xp += xp;
+    this.sumarXpSemana(s, xp);
     while (c.nivel < NIVEL_MAX && c.xp >= xpParaSubir(c.nivel)) {
       c.xp -= xpParaSubir(c.nivel);
       c.nivel++;
@@ -1458,7 +1460,58 @@ export class MmoWorld {
 
   async enviarRanking(s) {
     const r = ((await this.state.storage.get('ranking')) || []).filter(x => !UIDS_PRUEBA.has(x.uid));
-    this.enviar(s, { t: 'ranking', r: r.slice(0, 20).map(x => ({ n: x.n, lv: x.lv, k: x.k, yo: x.uid === s.c.uid })) });
+    const sem = this.topSemana().slice(0, 20).map(([uid, x]) => ({ n: x.n, lv: x.lv, xp: x.xp, yo: uid === s.c.uid }));
+    this.enviar(s, { t: 'ranking', r: r.slice(0, 20).map(x => ({ n: x.n, lv: x.lv, k: x.k, yo: x.uid === s.c.uid })), sem, finSem: Date.parse(this.rs.sem + 'T00:00:00Z') + 7 * 86400000 });
+  }
+
+  // ── RANKING SEMANAL ──
+  // La experiencia ganada en la semana (lunes a domingo, UTC). Se lleva en
+  // memoria y se guarda cada minuto; al cambiar la semana se premia al top 3
+  // (oro, un objeto y el titulo de Campeon) y empieza de cero. Cualquiera
+  // puede ganarla, no solo los de nivel alto: cuenta lo que juegas.
+  sumarXpSemana(s, xp) {
+    if (!this.rs || UIDS_PRUEBA.has(s.c.uid) || xp <= 0) return;
+    const f = this.rs.l[s.c.uid] || (this.rs.l[s.c.uid] = { xp: 0 });
+    f.xp += xp; f.n = s.c.nombre; f.lv = s.c.nivel;
+    this.rsSucio = true;
+  }
+  topSemana() { return Object.entries((this.rs && this.rs.l) || {}).sort((a, b) => b[1].xp - a[1].xp); }
+  async revisarSemana(ahora) {
+    if (!this.rs) return;
+    const sem = semanaUTC();
+    if (this.rs.sem !== sem) {
+      const vieja = this.rs;
+      this.rs = { sem, l: {} };
+      await this.state.storage.put('rankSem', this.rs);
+      await this.premiarSemana(vieja);
+      return;
+    }
+    if (this.rsSucio && ahora - (this.rsT || 0) > 60000) {
+      this.rsT = ahora; this.rsSucio = false;
+      const top = Object.fromEntries(this.topSemana().slice(0, 100));
+      this.rs.l = top;
+      await this.state.storage.put('rankSem', this.rs);
+    }
+  }
+  async premiarSemana(rs) {
+    const top = Object.entries(rs.l).sort((a, b) => b[1].xp - a[1].xp).slice(0, 3);
+    const nombres = [];
+    for (let i = 0; i < top.length; i++) {
+      const [uid, f] = top[i];
+      const s = this.porUid.get(uid);
+      const c = s ? s.c : await this.state.storage.get('c:' + uid);
+      if (!c) continue;
+      const oro = [400, 200, 100][i] * c.nivel;
+      c.oro += oro;
+      if (i === 0) c.campeon = (c.campeon || 0) + 1;
+      const it = generarItem(c.nivel, i === 0 ? 2 : 1);
+      if ((c.bolsa || []).length < BOLSA_MAX) c.bolsa.push(it); else c.oro += precioVenta(it);
+      if (s) { this.actualizarYo(s); this.revisarLogros(s); await this.guardar(s); }
+      else await this.state.storage.put('c:' + uid, c);
+      nombres.push(['🥇', '🥈', '🥉'][i] + ' ' + f.n);
+      await this.avisarJugador(uid, `🏆 ¡Quedaste ${['1º', '2º', '3º'][i]} en el ranking semanal de DUENDE QUEST ONLINE! Premio: +${oro.toLocaleString('es')} oro y ${RAREZAS[it.r].nombre.toLowerCase()}: ${nombreItem(it)}${i === 0 ? ' y el título de Campeón Semanal' : ''}. Ya empezó la nueva semana: ¡a defenderlo!`);
+    }
+    if (nombres.length) this.aTodos({ t: 'aviso', m: `🏆 Ranking semanal: ${nombres.join(' · ')}. ¡Empieza una semana nueva!` });
   }
 
   // ── GUARDADO ──
@@ -1489,6 +1542,7 @@ export class MmoWorld {
         }
       }
       this.aTodos({ t: 'on', n: this.contarOnline() });
+      this.revisarSemana(ahora).catch(e => console.error('[MMO semana]', e));
     }
     this.revisarMundial(ahora);
     this.tickGrupos(ahora);
