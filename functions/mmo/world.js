@@ -38,6 +38,7 @@ import { Chicha } from './chicha.js';
 import { Retencion } from './retencion.js';
 import { Eventos } from './eventos.js';
 import { Pase } from './pase.js';
+import { Torre } from './torre.js';
 
 const MAX_JUGADORES = 300;
 const GUARDAR_CADA_MS = 20000;
@@ -289,6 +290,7 @@ export class MmoWorld {
       case 'retar': return this.retarDuelo(s, m);
       case 'retoResp': return this.respuestaDuelo(s, m);
       case 'mazmorra': return this.entrarMazmorra(s, m);
+      case 'torre': return this.entrarTorre(s);
       case 'hermCrear': return this.crearHermandad(s, m);
       case 'hermInvitar': return this.invitarHerm(s, m);
       case 'hermResp': return this.respuestaHerm(s, m);
@@ -1013,7 +1015,7 @@ export class MmoWorld {
       arma: c.arma, armas: c.armas, skin: c.skin, skins: c.skins, pw: c.pw,
       kills: c.kills, jefes: c.jefes, muerto: s.muerto, mis: c.mis, forja: c.forja,
       eq: c.eq, bolsa: c.bolsa, logros: c.logros, titulo: c.titulo, mundiales: c.mundiales, login: c.login, crit: s.st.crit,
-      clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, desafio: c.desafio || {}, ...Object.fromEntries(TEMPORADAS.map(t => [t.campo, c[t.campo] || 0])), chicha: this.infoChicha(c), temp: (temporadaDe() || {}).id || '', herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, best: c.best || {},
+      clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, torreSem: this.torreSem(c).max, torreMax: c.torreMax || 0, desafio: c.desafio || {}, ...Object.fromEntries(TEMPORADAS.map(t => [t.campo, c[t.campo] || 0])), chicha: this.infoChicha(c), temp: (temporadaDe() || {}).id || '', herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, best: c.best || {},
       boveda: c.boveda, bovedaOpc: c.bovedaOpc || null, pase: this.infoPase(c), banda: this.infoBanda(c), runas: c.runas || {}, gestaCob: c.gestaCob || null,
       espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, tintes: c.tintes || [], tinte: c.tinte || '', mascotas: c.mascotas || [], mascota: c.mascota || '', montado: s.montado || null,
       mton: c.mton, wallet: c.wallet ? { a: tonAmigable(c.wallet.a), desde: c.wallet.desde } : null,
@@ -1768,7 +1770,8 @@ export class MmoWorld {
     const des = ((await this.state.storage.get('rankDes')) || []).slice(0, 10).map(x => ({ n: x.n, k: x.k, yo: x.uid === s.c.uid }));
     const dsem = this.topDesSem().slice(0, 10).map(([uid, x]) => ({ n: x.n, k: x.k, yo: uid === s.c.uid }));
     const duel = ((await this.state.storage.get('rankDuelo')) || []).slice(0, 10).map(x => ({ n: x.n, e: x.e, g: x.g, yo: x.uid === s.c.uid }));
-    this.enviar(s, { t: 'ranking', r: r.slice(0, 20).map(x => ({ n: x.n, lv: x.lv, k: x.k, yo: x.uid === s.c.uid })), sem, des, dsem, duel, elo: s.c.elo || 0, af: afijosSemana(), finSem: Date.parse(this.rs.sem + 'T00:00:00Z') + 7 * 86400000 });
+    const torre = (await this.topTorre()).slice(0, 10).map(([uid, x]) => ({ n: x.n, p: x.p, yo: uid === s.c.uid }));
+    this.enviar(s, { t: 'ranking', r: r.slice(0, 20).map(x => ({ n: x.n, lv: x.lv, k: x.k, yo: x.uid === s.c.uid })), sem, des, dsem, duel, elo: s.c.elo || 0, torre, tmax: this.torreSem(s.c).max, af: afijosSemana(), finSem: Date.parse(this.rs.sem + 'T00:00:00Z') + 7 * 86400000 });
   }
 
   // Ranking semanal de Desafios: el mejor +k vencido esta semana (con los
@@ -1936,6 +1939,7 @@ export class MmoWorld {
     for (const k in porClave) this.simularMapa(k, porClave[k], ahora);
     // Instancias vacias (todos salieron): se cierran solas.
     if (this.limpiarInstancias) this.limpiarInstancias(porClave, ahora);
+    this.limpiarTorres(porClave, ahora);
   }
 
   simularMapa(clave, jugadores, ahora) {
@@ -1943,7 +1947,8 @@ export class MmoWorld {
     const mapa = MAPAS[w.mapa];
     const dt = TICK_MS / 1000;
 
-    if (w.inst) { if (this.tickMazmorra) this.tickMazmorra(w, jugadores, ahora); }
+    if (w.torre) this.tickTorre(w, jugadores, ahora);
+    else if (w.inst) { if (this.tickMazmorra) this.tickMazmorra(w, jugadores, ahora); }
     else if (mapa.zona && mapa.monstruos.length) {
       // Reponer monstruos poco a poco (no todos de golpe).
       // Mas jugadores en la zona, mas monstruos (hasta el doble), para que no
@@ -2252,4 +2257,6 @@ MmoWorld.prototype.uidsPrueba = UIDS_PRUEBA;
 Object.assign(MmoWorld.prototype, Eventos);
 // Pase de temporada mensual: functions/mmo/pase.js
 Object.assign(MmoWorld.prototype, Pase);
+// La Torre del Duende: functions/mmo/torre.js
+Object.assign(MmoWorld.prototype, Torre);
 MmoWorld.prototype.generarItem = generarItem;

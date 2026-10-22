@@ -11,12 +11,12 @@ import {
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
-  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe,
+  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe, TORRE,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=106';
+} from './data.js?v=108';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -475,6 +475,11 @@ function recibir(m) {
       break;
     }
     // Pesca: pico. Hay que tirar (E o el boton) antes de que acabe la ventana.
+    // Torre del Duende: el piso en el que vais (y cuanto le queda).
+    case 'torre':
+      torreInfo = { piso: m.piso, fin: m.limpio ? 0 : m.en ? performance.now() + m.en : (torreInfo ? torreInfo.fin : 0), mejor: m.mejor !== undefined ? m.mejor : (torreInfo ? torreInfo.mejor : 0) };
+      pintarSubMapa();
+      break;
     case 'pica':
       castYo = { id: 'pica', nombre: '🐟 ¡PICA!', ini: performance.now(), fin: performance.now() + m.ms, tg: 0 };
       verLanzar(true); $('lanzar').classList.remove('mal');
@@ -573,7 +578,7 @@ function recibir(m) {
       }
       P.x = m.x; P.y = m.y; P.vx = 0; P.vy = 0; if (m.f) P.f = m.f;
       break;
-    case 'ranking': pintarRanking(m.r, m.sem, m.finSem, m.des, m.dsem, m.af, m.duel, m.elo); break;
+    case 'ranking': pintarRanking(m.r, m.sem, m.finSem, m.des, m.dsem, m.af, m.duel, m.elo, m.torre, m.tmax); break;
     case 'err':
       if (m.auth && m.auth !== 'inv' && !forzarInvitado) {
         // El servidor cierra el socket; onclose reconecta solo, ya como invitado.
@@ -607,9 +612,12 @@ function entrarMapa(m) {
 }
 
 let online = 0;
+let torreInfo = null;   // { piso, fin, mejor } dentro de la Torre
+const textoMinutos = ms => Math.floor(ms / 60000) + ' min' + (ms % 60000 ? ' y ' + Math.round(ms % 60000 / 1000) + ' s' : '');
 function pintarSubMapa() {
   const mp = MAPAS[mapaId];
-  const base = mp.instancia ? (MAZMORRAS[mp.mazmorra] && MAZMORRAS[mp.mazmorra].banda ? 'Banda' : 'Mazmorra') + (instancia ? ' · Nv ' + instancia.nv + (instancia.k ? ' · ⚡+' + instancia.k : '') : '') : mp.zona && mp.nv ? 'Nivel ' + mp.nv[0] + '-' + mp.nv[1] : 'Zona segura';
+  if (!mp.torre) torreInfo = null;
+  const base = mp.torre ? '🗼 Piso ' + (torreInfo ? torreInfo.piso : 0) + (torreInfo && torreInfo.mejor ? ' · tu marca: ' + torreInfo.mejor : '') : mp.instancia ? (MAZMORRAS[mp.mazmorra] && MAZMORRAS[mp.mazmorra].banda ? 'Banda' : 'Mazmorra') + (instancia ? ' · Nv ' + instancia.nv + (instancia.k ? ' · ⚡+' + instancia.k : '') : '') : mp.zona && mp.nv ? 'Nivel ' + mp.nv[0] + '-' + mp.nv[1] : 'Zona segura';
   $('h-mapa-sub').textContent = base + (online ? ' · 👥 ' + online + ' en línea' : '') + (jugaronHoy > online ? ' · ' + jugaronHoy + ' hoy' : '');
 }
 
@@ -1774,6 +1782,14 @@ function abrirBuscador() {
   let h = `<p class="centro" style="margin-bottom:8px;font-size:12px">${grupo ? '👥 Entraréis juntos los del grupo que estén en el pueblo (los demás podrán unirse después por este portal).' : 'Entras solo: la mazmorra se ajusta a ti. Con un grupo es más fácil y más divertido (👥).'}</p>`;
   h += '<div class="mis-caja" id="maz-lfg"></div>';
   h += `<div class="mis-caja" style="font-size:13px;color:var(--txt2)">${htmlProgresoBoveda()}${yo.bovedaOpc && yo.bovedaOpc.length ? '<br><button class="btn" id="b-boveda" style="margin-top:8px">🗝️ Abrir la Bóveda</button>' : ''}</div>`;
+  // Torre del Duende: pisos sin fin (functions/mmo/torre.js).
+  {
+    const bloq = yo.nivel < TORRE.nv;
+    const tj = tarjeta('<div style="font-size:34px;line-height:52px;text-align:center">🗼</div>', `Torre del Duende <span style="color:${bloq ? 'var(--warn)' : 'var(--txt2)'}">Nv ${TORRE.nv}+</span>`,
+      `Pisos sin fin: oleadas de monstruos de tu nivel cada vez más duras y un jefe cada ${TORRE.jefeCada}. Limpia cada piso en ${textoMinutos(TORRE.tiempo)}. Solo o con tu grupo.<br><span style="color:var(--txt2)">Esta semana: piso ${yo.torreSem || 0} · tu récord: ${yo.torreMax || 0}</span><br><span style="color:var(--ok)">Cada 5 pisos nuevos de la semana: cofre con oro y equipo (épico desde el 15).</span>`,
+      bloq ? `<span class="precio" style="color:var(--txt3)">🔒 Nv ${TORRE.nv}</span>` : '<button class="btn" data-torre="1">Subir</button>');
+    h += bloq ? tj.replace('<div class="item">', '<div class="item" style="opacity:.55">') : tj;
+  }
   let hBanda = '';
   const posBanda = h.length;
   for (const id in MAZMORRAS) {
@@ -1806,6 +1822,7 @@ function abrirBuscador() {
   h += '<ul style="padding-left:18px;margin-top:10px;font-size:12px"><li>Aquí los monstruos atacan solos y en packs: tira de uno y vendrá todo su grupo.</li><li>Cada jefe guarda una barrera. Lee sus avisos: <b style="color:var(--warn)">sal de las zonas marcadas</b> en el suelo e <b>interrumpe</b> (Patada, Zurrar, Contrahechizo o Silencio) los hechizos con barra naranja.</li><li>Si caéis todos, revivís en la entrada y el jefe se recupera.</li><li>Cada jefe da equipo a cada uno; el último, épico.</li><li>En la banda, las <b style="color:#facc15">zonas doradas</b> se aguantan <b>juntos</b>: el golpe se reparte entre los que estén dentro.</li></ul>';
   L.innerHTML = h;
   L.querySelectorAll('[data-maz]').forEach(b => b.onclick = () => { sfx('explosion', .3); mandar({ t: 'mazmorra', id: b.dataset.maz }); cerrarModales(); });
+  L.querySelectorAll('[data-torre]').forEach(b => b.onclick = () => { sfx('explosion', .3); mandar({ t: 'torre' }); cerrarModales(); });
   pintarLfg();
   mandar({ t: 'lfgLista' });
   const bb = $('b-boveda'); if (bb) bb.onclick = abrirBoveda;
@@ -2210,6 +2227,7 @@ function guiaActual() {
   return ob;
 }
 function dibujarGuia() {
+  if (MAPAS[mapaId].torre) return;   // en la Torre solo cuenta el piso
   const ob = guiaActual();
   if (!ob) return;
   const x = ob.x - camX;
@@ -2530,6 +2548,13 @@ let mundial = { vivo: false, en: 0 };
 function pintarMundial() {
   const el = $('h-mundial');
   if (!yo) return;
+  // En la Torre: el piso y el tiempo que le queda.
+  if (MAPAS[mapaId].torre && torreInfo) {
+    const ms = Math.max(0, torreInfo.fin - performance.now()), mm = Math.floor(ms / 60000), ss = Math.floor(ms / 1000) % 60;
+    ponTxt(el, '🗼 Piso ' + torreInfo.piso + (torreInfo.piso && ms ? ' · ⏳ ' + mm + ':' + String(ss).padStart(2, '0') : ''));
+    el.className = ms && ms < 30000 ? '' : 'lista';
+    return;
+  }
   // Hora Feliz: mientras dura, manda en esta linea (y 30 min antes, avisa).
   const hf = horaFelizTiempos(Date.now());
   const msM = mundial.en ? mundial.en - performance.now() : 0;
@@ -3877,7 +3902,7 @@ function pintarInventario() {
 function abrirRanking() { abrir('m-rank'); $('rank-lista').innerHTML = '<p class="centro">Cargando…</p>'; mandar({ t: 'ranking' }); }
 // Dos rankings: el de la semana (experiencia ganada; premia al top 3 cada
 // lunes, asi un jugador nuevo tambien puede ganar) y el de siempre (nivel).
-function pintarRanking(r, sem, finSem, des, dsem, af, duel, elo) {
+function pintarRanking(r, sem, finSem, des, dsem, af, duel, elo, torre, tmax) {
   const med = ['🥇', '🥈', '🥉'];
   let h = '<p style="font-size:12px;color:var(--txt);font-weight:600;margin-bottom:4px">🏆 Esta semana (experiencia ganada)</p>';
   if (finSem) { const ms = finSem - Date.now(); const d = Math.floor(ms / 86400000), hh = Math.floor(ms / 3600000) % 24; h += `<p style="font-size:12px;color:var(--txt2);margin-bottom:6px">Termina en ${d} d ${hh} h. Premios: 🥇 oro ×400 tu nivel, objeto épico y título · 🥈 ×200 · 🥉 ×100.</p>`; }
@@ -3890,6 +3915,9 @@ function pintarRanking(r, sem, finSem, des, dsem, af, duel, elo) {
   h += (dsem && dsem.length) ? dsem.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>⚡ +${x.k}</span></div>`).join('') : '<p class="centro" style="font-size:12px">Nadie ha vencido un Desafío esta semana.</p>';
   h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">⚡ Desafíos de mazmorra (mejor +k de siempre)</p>';
   h += (des && des.length) ? des.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>⚡ +${x.k}</span></div>`).join('') : '<p class="centro" style="font-size:12px">Nadie ha vencido aún un Desafío. Se abren a nivel 60 en el portal de mazmorras.</p>';
+  // Torre del Duende: mejor piso de la semana.
+  h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">🗼 Torre del Duende (esta semana)' + (tmax ? ' · tu marca: piso ' + tmax : '') + '</p>';
+  h += (torre && torre.length) ? torre.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>piso ${x.p}</span></div>`).join('') : '<p class="centro" style="font-size:12px">Nadie ha subido aún esta semana. Entra por el portal de mazmorras del pueblo (Nv 10+).</p>';
   // Duelos (Elo): se cuenta con cuenta y desde Nv 10; 3 al dia por pareja.
   h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">⚔️ Duelistas (Elo)' + (elo ? ' · tu Elo: ' + elo : '') + '</p>';
   h += (duel && duel.length) ? duel.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>${x.e} · ${x.g} victorias</span></div>`).join('') : '<p class="centro" style="font-size:12px">Nadie ha ganado aún un duelo que cuente. Reta a alguien desde su marco (⚔️): con cuenta y desde Nv 10.</p>';

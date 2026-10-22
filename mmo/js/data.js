@@ -440,6 +440,7 @@ export const TINTES = {
 // subir 'n' al añadir una.
 export const NOVEDADES = [
   { n: 6, fecha: '22 de octubre (tarde)', items: [
+    '🗼 Torre del Duende (Nv 10+, portal de mazmorras): pisos sin fin cada vez más duros, un jefe cada 5, cofres y ranking semanal.',
     '🎣 Pesca: hay un pesquero en el pueblo y en cada zona. Lanza el sedal y TIRA cuando pique.',
     '🍲 La Artesana cocina Ceviche del Duende (+10% oro) y Sudado Dorado (+5% daño y defensa) con lo que pesques.',
     '🏅 Logros Pescador y Maestro Pescador, y una misión diaria nueva.',
@@ -744,6 +745,8 @@ export const LOGROS = [
   { id: 'skins',     titulo: 'Coleccionista',      desc: 'Consigue las 6 skins',           oro: 10000, cond: c => (c.skins || []).length >= 6 },
   { id: 'misiones',  titulo: 'Leyenda del Pueblo', desc: 'Completa todas las misiones',    oro: 20000, cond: c => ((c.mis || {}).i || 0) >= MISIONES.length },
   { id: 'mundial1',  titulo: 'Cazador de Titanes', desc: 'Vence al jefe mundial',          oro: 2000,  cond: c => (c.mundiales || 0) >= 1 },
+  { id: 'torre10',   titulo: 'Escalador',          desc: 'Supera el piso 10 de la Torre',  oro: 3000,  cond: c => (c.torreMax || 0) >= 10 },
+  { id: 'torre25',   titulo: 'Señor de la Torre',  desc: 'Supera el piso 25 de la Torre',  oro: 12000, cond: c => (c.torreMax || 0) >= 25 },
   { id: 'pesca50',   titulo: 'Pescador',           desc: 'Pesca 50 peces',                 oro: 1500,  cond: c => (c.peces || 0) >= 50 },
   { id: 'pesca500',  titulo: 'Maestro Pescador',   desc: 'Pesca 500 peces',                oro: 8000,  cond: c => (c.peces || 0) >= 500 },
   { id: 'mundial10', titulo: 'Titán',              desc: 'Vence 10 veces al jefe mundial', oro: 15000, cond: c => (c.mundiales || 0) >= 10 },
@@ -1393,6 +1396,14 @@ jefe: 'jefe_rey',
     monstruos: [], max: 0,
   },
   // Arena del jefe mundial (para todos los niveles): sin monstruos propios.
+  // ── TORRE DEL DUENDE (functions/mmo/torre.js): una sala por piso ──
+  torre: {
+    nombre: 'Torre del Duende', fondo: 'tormenta2', ancho: 1400, zona: true, instancia: true, torre: true,
+    paleta: { cielo: ['#0d0a1a', '#2a1440'], suelo: '#160f22', linea: '#c084fc' },
+    plataformas: [[350, 285, 200], [1050, 285, 200], [700, 225, 180]],
+    portales: [{ x: 60, a: 'pueblo', ax: 795, etiqueta: 'Salida' }],
+    monstruos: [], max: 0,
+  },
   coliseo: {
     nombre: 'Coliseo del Duende', fondo: 'tormenta2', ancho: 1600, zona: true, coliseo: true, nv: [1, 60],
     paleta: { cielo: ['#14051f', '#3a0a3a'], suelo: '#1a0a1a', linea: '#ff3cf0' },
@@ -1541,7 +1552,7 @@ export const mundialDe = t => MUNDIALES[Math.floor(t / 1800000) % MUNDIALES.leng
 // mundial); cada 75 puntos, un nivel con premio que se cobra a mano en el
 // registro de misiones (L). Al nivel 20, una mascota que no se vende. Sin
 // compra y sin mTON.
-export const PASE = { niveles: 20, porNivel: 75, puntos: { diaria: 10, semanal: 30, bono: 15, mazmorra: 6, mundial: 10 } };
+export const PASE = { niveles: 20, porNivel: 75, puntos: { diaria: 10, semanal: 30, bono: 15, mazmorra: 6, mundial: 10, torre: 4 } };
 export const paseMes = (t = Date.now()) => new Date(t).toISOString().slice(0, 7);
 export function premioPase(n, nivel) {
   const oro = k => Math.round(k * Math.max(1, nivel));
@@ -1557,4 +1568,12 @@ LOGROS.push(
   { id: 'pase10', titulo: 'Aventurero del Pase', desc: 'Llega al nivel 10 del pase de temporada', oro: 2000, cond: c => (c.paseMax || 0) >= 10 },
   { id: 'pase20', titulo: 'Leyenda del Pase',    desc: 'Completa los 20 niveles del pase de temporada', oro: 5000, cond: c => (c.paseMax || 0) >= 20 },
 );
+
+// ── TORRE DEL DUENDE ── (functions/mmo/torre.js)
+// Pisos con oleadas de monstruos de tu nivel, cada uno mas duro; un jefe
+// cada jefeCada. tiempo por piso; porHora subidas por jugador; max por grupo.
+export const TORRE = { nv: 10, max: 5, jefeCada: 5, pausa: 3500, tiempo: 150000, porHora: 12, instancias: 30, vidaJefe: 0.35, atkJefe: 0.8 };
+export const pisoTorre = p => ({ n: Math.min(6, 2 + Math.floor((p - 1) / 3)), vida: 1.2 + 0.15 * (p - 1), atk: 1 + 0.06 * (p - 1), jefe: p % 5 === 0 });
+// Cofre de cada 5 pisos nuevos de la semana: oro (hasta el piso 50) y equipo (epico desde el 15).
+export const premioTorre = (p, nivel) => ({ oro: Math.round(40 * nivel * Math.min(10, p / 5)), rMin: p >= 15 ? 2 : 1 });
 

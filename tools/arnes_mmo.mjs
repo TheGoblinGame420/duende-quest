@@ -589,6 +589,7 @@ async function pruebas() {
   await pruebasMundiales();
   await pruebasPase();
   await pruebasPesca();
+  await pruebasTorre();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -1344,6 +1345,53 @@ async function pruebasTintes() {
   await dejar(t); await dejar(v);
 }
 
+
+async function pruebasTorre() {
+  console.log('Torre del Duende');
+  const D = await import('../mmo/js/data.js');
+  const j = await entrar('Escaladora', '84');
+  ponerNivel(j, 5, 'guerrero');
+  await aMapa(j, 'pueblo', 795);
+  j.limpiar(); await j.mandar({ t: 'torre' });
+  chequear(!j.k.startsWith('torre#') && j.ultimos('no').some(x => /nivel 10/.test(x.m)), 'a Nv 5 no se entra');
+  ponerNivel(j, 25, 'guerrero');
+  await aMapa(j, 'pueblo', 795);
+  j.limpiar(); await j.mandar({ t: 'torre' });
+  chequear(j.k.startsWith('torre#'), 'a Nv 25 entra a su Torre');
+  const w = mundo.mundoDe(j);
+  const vivos = () => [...w.mons.values()].filter(o => !o.muere);
+  const limpiar = () => { for (const o of vivos()) { mundo.danar(o, 1, j); mundo.danar(o, o.hp + 1, j); } };
+  j.inv = Infinity;
+  tick(40);
+  chequear(w.torre.piso === 1 && vivos().length === D.pisoTorre(1).n, 'el piso 1 trae su oleada');
+  const mton0 = j.c.mton || 0, oro0 = j.c.oro;
+  for (let p = 1; p <= 5; p++) {
+    if (p === 5) chequear(vivos().some(o => o.jefe && o.mazmorra), 'el piso 5 tiene un jefe (de los que no dan mTON)');
+    limpiar(); tick(2);
+    chequear(w.torre.piso === p && j.c.torre.max === p, 'piso ' + p + ' superado y anotado');
+    tick(40);
+  }
+  chequear(w.torre.piso === 6 && j.c.oro - oro0 >= D.premioTorre(5, 25).oro && j.ultimos('toast').some(x => /Cofre del piso 5/.test(x.m)), 'cada 5 pisos nuevos, un cofre');
+  chequear((j.c.mton || 0) === mton0, 'los jefes de la Torre no dan mTON');
+  // Se acaba el tiempo: fuera.
+  tick(Math.ceil(D.TORRE.tiempo / 100) + 5);
+  chequear(j.k === 'pueblo' && w.torre.fin, 'si se acaba el tiempo, al pueblo');
+  tick(70);
+  chequear(!mundo.mundo[w.clave], 'la Torre vacía se cierra');
+  // Ranking semanal.
+  const top = await mundo.topTorre();
+  chequear(top.some(([uid, x]) => uid === j.c.uid && x.p === 5), 'sale en el ranking de la semana');
+  // Otra subida: empieza en el piso 1, sin cofre por repetir los mismos pisos.
+  await aMapa(j, 'pueblo', 795);
+  await j.mandar({ t: 'torre' }); tick(40);
+  const w2 = mundo.mundoDe(j);
+  chequear(w2.torre && w2.torre.piso === 1, 'cada subida empieza en el piso 1');
+  // Caer: se acaba.
+  j.inv = 0; mundo.herir(j, 1e9, { id: 0, pct: 0 }); if (!j.muerto) { j.hp = 0; mundo.morir && mundo.morir(j); }
+  tick(2);
+  chequear(w2.torre.fin, 'si caen todos, se acaba');
+  await dejar(j);
+}
 
 async function pruebasPesca() {
   console.log('Pesca');
