@@ -1349,6 +1349,20 @@ cada uno (`rankDes` en el storage, top 30, se actualiza al batir la marca;
 `actualizarRankDes`). Y el botón de la muerte dice "revivir aquí" a los
 novatos (Nv < 10), que reviven en la entrada de la zona sin perder XP.
 
+**Premio físico: chicha morada (?v=42, pedido del dueño 22-oct):**
+`functions/mmo/chicha.js` + `CHICHA` en data.js. Cada caza suma puntos SIEMPRE
+(1, 3 si es de tu nivel o más, 25 un jefe; no al azar para que no sea un
+sorteo, que en Perú requiere autorización), desde Nv 10, solo cuentas, tope
+600/día. Con 10.000 y con 50.000 puntos se reclama un litro (🎒 → 🥤 CHICHA):
+hace falta Nv 15, 48 h de personaje y entrar por Telegram. El bot avisa al
+dueño con el contacto (`tg://user?id=`) y él pide la dirección por privado
+(el juego NO guarda direcciones). Comandos: /chicha, /chichaok CODIGO,
+/chichano CODIGO motivo [trampa]. Tope `mesMax` = 10 litros al mes. Los
+puntos no se compran ni se gastan. Reclamos en el storage `chichas`.
+Arreglos de la cuarta revisión: «equipar lo mejor» no rompe un conjunto
+activo; piezas de conjunto ya no se autovenden con la bolsa llena;
+probabilidad de pieza 25%; la temporada la manda el servidor (`yo.temp`).
+
 Sin hacer: avisos a la hora habitual de cada uno (el cron de las 17 UTC ya
 usa 4 de 5 disparadores del plan gratis), y final de juego para D30 (1→60 se
 juega en 5-8 h). Ojo: la bienvenida del bot aún habla de $DUENDE en Solana

@@ -290,6 +290,22 @@ async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
     const r = await mmoInterno(env, 'anular', { codigo: arg1, motivo });
     return enviar(r.ok ? `❌ Pedido #${r.pedido.codigo} anulado.${r.reembolso || (r.pedido.metodo === 'sol' ? ' Si llegó SOL, devuélvelo tú desde tu wallet.' : '')}` : '❌ ' + r.error);
   }
+  // Premio de chicha morada (functions/mmo/chicha.js).
+  if (cmd === '/chicha') {
+    const r = await mmoInterno(env, 'chichas');
+    if (!r.ok) return enviar('❌ ' + (r.error || 'error'));
+    const cab = `🥤 Litros de este mes: ${r.mes}/${r.mesMax}\n\n`;
+    if (!r.pendientes.length) return enviar(cab + '✅ No hay premios de chicha por enviar.');
+    const lineas = r.pendientes.map(x => `#${x.id} · ${x.nombre} Nv${x.nivel} · ${x.meta.toLocaleString('es')} pts\nContacto: tg://user?id=${x.uid.slice(3)} (id ${x.uid.slice(3)})`);
+    return enviar(cab + lineas.join('\n\n') + '\n\nEscríbele para pedir la dirección. Enviado: /chichaok CODIGO · No se puede: /chichano CODIGO motivo (añade "trampa" al final para que no pueda volver a reclamarlo).');
+  }
+  if (cmd === '/chichaok' || cmd === '/chichano') {
+    if (!arg1) return enviar('Uso: ' + cmd + ' CODIGO' + (cmd === '/chichano' ? ' motivo' : ''));
+    const resto = payload.trim().split(/\s+/).slice(1);
+    const trampa = resto[resto.length - 1] === 'trampa';
+    const r = await mmoInterno(env, cmd === '/chichaok' ? 'chichaOk' : 'chichaNo', { id: arg1, motivo: resto.filter(x => x !== 'trampa').join(' '), trampa });
+    return enviar(r.ok ? `🥤 Premio #${r.chicha.id} marcado como ${r.chicha.estado}. Se le avisó al jugador.` : '❌ ' + r.error);
+  }
   if (cmd === '/mmostats') {
     const r = await mmoInterno(env, 'stats');
     return enviar(r && r.ok ? textoMmoStats(r) : '❌ ' + ((r && r.error) || 'error'));
@@ -622,7 +638,7 @@ async function onRequestPost(context) {
         case '/buy': case '/comprar': case '/stars': await handleBuy(token, chatId, user.id); break;
         case '/help': case '/ayuda': await handleHelp(token, chatId); break;
         case '/creador': case '/creator': case '/oficial': await handleCreador(token, chatId); break;
-        case '/retiros': case '/pagado': case '/rechazar': case '/fondo': case '/pedidos': case '/entregar': case '/anular': case '/mmostats': await handleMmoAdmin(token, context, chatId, user.id, cmd, payload); break;
+        case '/retiros': case '/pagado': case '/rechazar': case '/fondo': case '/pedidos': case '/entregar': case '/anular': case '/mmostats': case '/chicha': case '/chichaok': case '/chichano': await handleMmoAdmin(token, context, chatId, user.id, cmd, payload); break;
         case '/avisos': await handleAvisos(token, context, chatId, user.id, payload); break;
         case '/admin': await handleAdmin(token, env, context, chatId, user.id); break;
         case '/live': case '/envivo': await handleLive(token, env, context, chatId, user.id, payload); break;

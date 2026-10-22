@@ -33,6 +33,7 @@ import { Tareas } from './tareas.js';
 import { Profesiones } from './profesiones.js';
 import { Amigos } from './amigos.js';
 import { Duelos } from './duelos.js';
+import { Chicha } from './chicha.js';
 import { Retencion } from './retencion.js';
 import { Eventos } from './eventos.js';
 
@@ -128,6 +129,7 @@ export class MmoWorld {
     try {
       this.fondo = (await this.state.storage.get('fondo')) || null;
       this.retiros = (await this.state.storage.get('retiros')) || [];
+      this.chichas = (await this.state.storage.get('chichas')) || [];
       this.pedidos = (await this.state.storage.get('pedidos')) || [];
       this.ingresosSol = (await this.state.storage.get('ingresosSol')) || [];
       this.rs = (await this.state.storage.get('rankSem')) || { sem: semanaUTC(), l: {} };
@@ -260,6 +262,7 @@ export class MmoWorld {
       case 'liderGrupo': return this.liderGrupo(s, m);
       case 'quien': return this.quien(s);
       case 'amigos': return this.infoAmigos(s);
+      case 'chicha': return this.reclamarChicha(s, m);
       case 'retar': return this.retarDuelo(s, m);
       case 'retoResp': return this.respuestaDuelo(s, m);
       case 'mazmorra': return this.entrarMazmorra(s, m);
@@ -795,6 +798,7 @@ export class MmoWorld {
       this.guardarFondo();
       return json({ ok: true, ...this.infoFondo() });
     }
+    if (accion === 'chichas' || accion === 'chichaOk' || accion === 'chichaNo') return json(await this.internoChicha(accion, b));
     if (accion === 'retiros') return json({ ok: true, pendientes: this.retiros.filter(x => x.estado === 'pendiente'), fondo: this.infoFondo() });
     if (accion === 'pedidoValido') {
       const pd = this.buscarPedido(b.codigo);
@@ -860,6 +864,12 @@ export class MmoWorld {
       c.tuvoLegendario = true;
       this.aTodos({ t: 'aviso', m: `🌟 ¡${c.nombre} encontró un objeto LEGENDARIO: ${nombreItem(it)}!` });
     }
+    // Una pieza de conjunto no se vende sola: se cambia por la comun mas
+    // barata de la bolsa (son de coleccion; perderlas dolia mucho).
+    if (c.bolsa.length >= BOLSA_MAX && it.cj) {
+      const i = c.bolsa.reduce((m, x, k) => (!x.cj && (m < 0 || precioVenta(x) < precioVenta(c.bolsa[m])) ? k : m), -1);
+      if (i >= 0) { const v0 = precioVenta(c.bolsa[i]); c.oro += v0; c.bolsa.splice(i, 1); if (!silencioso) this.enviar(s, { t: 'toast', m: `🎒 Bolsa llena: vendí lo más barato (+${v0} oro) para guardar tu pieza de conjunto.` }); }
+    }
     if (c.bolsa.length >= BOLSA_MAX) {
       const v = precioVenta(it);
       c.oro += v;
@@ -903,7 +913,7 @@ export class MmoWorld {
       arma: c.arma, armas: c.armas, skin: c.skin, skins: c.skins, pw: c.pw,
       kills: c.kills, jefes: c.jefes, muerto: s.muerto, mis: c.mis, forja: c.forja,
       eq: c.eq, bolsa: c.bolsa, logros: c.logros, titulo: c.titulo, mundiales: c.mundiales, login: c.login, crit: s.st.crit,
-      clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, desafio: c.desafio || {}, calabazas: c.calabazas || 0, regalos: c.regalos || 0, herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, best: c.best || {},
+      clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, desafio: c.desafio || {}, calabazas: c.calabazas || 0, regalos: c.regalos || 0, chicha: this.infoChicha(c), temp: (temporadaDe() || {}).id || '', herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, best: c.best || {},
       espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, tintes: c.tintes || [], tinte: c.tinte || '', montado: s.montado || null,
       mton: c.mton, wallet: c.wallet ? { a: tonAmigable(c.wallet.a), desde: c.wallet.desde } : null,
       p2e: this.elegibilidad(c), creado: c.creado,
@@ -1281,6 +1291,8 @@ export class MmoWorld {
     this.sumarXp(s, xp);
     // Drops: pociones y, en jefes, poderes raros.
     const drops = [];
+    // Premio de chicha morada: cada caza suma sus puntos (no es al azar).
+    const chi = participo !== false ? this.sumarChicha(s, o) : 0;
     // Temporada (Halloween, Navidad...): su objeto para los logros con titulo.
     let cal = 0;
     const tp = o && participo !== false ? temporadaDe() : null;
@@ -1338,7 +1350,7 @@ export class MmoWorld {
       if (c.mis.p === q.n) this.enviar(s, { t: 'toast', m: `📜 ¡"${q.nombre}" cumplida! Vuelve con el Guardia Tito del pueblo.`, ok: true });
     }
     s.sucio = true;
-    this.enviar(s, { t: 'gana', xp, oro, drops, item, cal: cal || undefined, x: Math.round(o ? o.x : s.x), y: Math.round(o ? o.y - o.h : s.y - 60) });
+    this.enviar(s, { t: 'gana', xp, oro, drops, item, cal: cal || undefined, tp: cal ? tp.id : undefined, chi: chi || undefined, x: Math.round(o ? o.x : s.x), y: Math.round(o ? o.y - o.h : s.y - 60) });
     this.revisarLogros(s);
     this.actualizarYo(s);
   }
@@ -2007,6 +2019,8 @@ Object.assign(MmoWorld.prototype, Profesiones);
 Object.assign(MmoWorld.prototype, Amigos);
 // Duelos entre jugadores: functions/mmo/duelos.js
 Object.assign(MmoWorld.prototype, Duelos);
+// Premio fisico de chicha morada: functions/mmo/chicha.js
+Object.assign(MmoWorld.prototype, Chicha);
 // Estadisticas de retencion y avisos de vuelta por Telegram: functions/mmo/retencion.js
 Object.assign(MmoWorld.prototype, Retencion);
 MmoWorld.prototype.uidsPrueba = UIDS_PRUEBA;

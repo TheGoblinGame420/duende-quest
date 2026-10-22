@@ -570,6 +570,7 @@ async function pruebas() {
   await pruebasTemporada();
   await pruebasConjuntos();
   await pruebasTintes();
+  await pruebasChicha();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -1244,4 +1245,46 @@ async function pruebasTintes() {
   await t.mandar({ t: 'comprar', k: 'tinte', id: '__proto__' });
   chequear(t.c.oro === 10000, 'ids raros no hacen nada');
   await dejar(t); await dejar(v);
+}
+
+async function pruebasChicha() {
+  console.log('Premio de chicha morada');
+  const D = await import('../mmo/js/data.js');
+  const avisos = [];
+  const tgReal = mundo.tgEnviar, adminReal = mundo.avisarAdmin;
+  mundo.tgEnviar = async (met, cuerpo) => { avisos.push(JSON.stringify(cuerpo)); return { ok: true }; };
+  mundo.avisarAdmin = async txt => { avisos.push('ADMIN ' + txt); };
+  try {
+    const inv = await entrar('Invitadin', '66');
+    ponerNivel(inv, 20, 'guerrero'); await aMapa(inv, 'noche', 600); limpiarMapa(inv);
+    for (let i = 0; i < 5; i++) { const o = monstruo(inv, 'goblin_normal', 30); mundo.danar(o, o.hp + 1, inv); tick(1); }
+    chequear(!(inv.c.chicha && inv.c.chicha.p), 'un invitado no junta puntos de chicha');
+    const j = await entrarTg('Chichero', 7101);
+    ponerNivel(j, 20, 'guerrero'); await aMapa(j, 'noche', 600); limpiarMapa(j);
+    const o1 = monstruo(j, 'goblin_normal', 30); mundo.danar(o1, o1.hp + 1, j); tick(1);
+    chequear(j.c.chicha && j.c.chicha.p === 1, 'con cuenta, cada caza suma (1 punto un monstruo bajo)');
+    j.c.chicha.hoy = D.CHICHA.porDia - 2;
+    const o2 = monstruo(j, 'jefe_sabueso', 30); mundo.danar(o2, o2.hp + 1, j); tick(1);
+    chequear(j.c.chicha.hoy === D.CHICHA.porDia && j.c.chicha.p === 3, 'el tope diario se respeta');
+    // Reclamar
+    j.c.chicha.p = 10000;
+    j.c.creado = Date.now() - 3 * 86400000;
+    await j.mandar({ t: 'chicha', meta: 50000 });
+    chequear(!(j.c.chicha.rec || []).includes(50000), 'sin puntos suficientes no se reclama');
+    await j.mandar({ t: 'chicha', meta: 10000 });
+    for (let i = 0; i < 20; i++) await espera();
+    const r = (mundo.chichas || []).find(x => x.uid === j.c.uid);
+    chequear(r && r.estado === 'pendiente' && j.c.chicha.rec.includes(10000), 'con 10.000 puntos se reclama el litro');
+    chequear(avisos.some(a => a.startsWith('ADMIN') && a.includes(r.id) && a.includes('7101')), 'al dueño le llega el aviso con el contacto');
+    await j.mandar({ t: 'chicha', meta: 10000 });
+    chequear(mundo.chichas.filter(x => x.uid === j.c.uid).length === 1, 'no se reclama dos veces');
+    const ok = await mundo.internoChicha('chichaNo', { id: r.id, motivo: 'sin dirección' });
+    chequear(ok.ok && !j.c.chicha.rec.includes(10000), 'rechazado sin trampa: puede volver a reclamar');
+    await j.mandar({ t: 'chicha', meta: 10000 });
+    for (let i = 0; i < 20; i++) await espera();
+    const r2 = mundo.chichas.find(x => x.uid === j.c.uid && x.estado === 'pendiente');
+    const env = await mundo.internoChicha('chichaOk', { id: r2.id });
+    chequear(env.ok && r2.estado === 'enviado', 'el dueño lo marca como enviado');
+    await dejar(inv); await dejar(j);
+  } finally { mundo.tgEnviar = tgReal; mundo.avisarAdmin = adminReal; }
 }

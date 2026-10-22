@@ -529,7 +529,7 @@ export const CONJUNTOS = {
   templo:     { nombre: 'Marea Hundida',       color: '#38bdf8', b2: { hp: 0.10 },  b4: { atk: 0.10, crit: 0.04 } },
   ciudadela:  { nombre: 'Escamas del Dragón',  color: '#f97316', b2: { atk: 0.08 }, b4: { atk: 0.08, def: 0.10, hp: 0.10 } },
 };
-export const CONJUNTO_PROB = 0.45;
+export const CONJUNTO_PROB = 0.25;
 export function piezasConjunto(eq) {
   const n = {};
   for (const k in eq || {}) { const it = eq[k]; if (it && it.cj && CONJUNTOS[it.cj]) n[it.cj] = (n[it.cj] || 0) + 1; }
@@ -546,7 +546,7 @@ export function bonoConjuntos(eq) {
 }
 export function textoConjunto(cj) {
   const pct = b => Object.entries(b).map(([k, v]) => '+' + Math.round(v * 100) + '% ' + { hp: 'vida', atk: 'ataque', def: 'defensa', crit: 'crítico' }[k]).join(', ');
-  return '2 piezas: ' + pct(cj.b2) + ' · 4 piezas: ' + pct(cj.b4);
+  return '2 piezas: ' + pct(cj.b2) + ' · 4 piezas (además): ' + pct(cj.b4);
 }
 export function iconoItem(it) { const r = RANURAS[it.s]; return r ? r.iconos[tierItem(it.nv)] : 'I_Chest01'; }
 export function precioVenta(it) { return Math.round((20 + it.nv * 6) * Math.pow(RAREZAS[it.r].mult, 2)); }
@@ -803,6 +803,12 @@ export const TEMPORADAS = [
 export const temporadaDe = (t = Date.now()) => TEMPORADAS.find(x => t >= x.ini && t < x.fin) || null;
 export const temporadaActiva = (t = Date.now()) => !!temporadaDe(t);
 export const TEMP_PROB = 0.2, TEMP_JEFE = 5;
+
+// ── PREMIO FISICO: CHICHA MORADA (functions/mmo/chicha.js) ──
+// niveles: puntos para cada litro (dos premios por jugador como mucho).
+// porDia: tope diario de puntos (10.000 = unas semanas de juego, frena bots).
+// mesMax: litros al mes para todo el juego (el dueño lo cambia aqui).
+export const CHICHA = { niveles: [10000, 50000], porDia: 600, nvPuntos: 10, nvReclamo: 15, mesMax: 10 };
 
 // ── BESTIARIO ──
 // Cuantos de cada monstruo has cazado. Cada tipo tiene 3 hitos con premio

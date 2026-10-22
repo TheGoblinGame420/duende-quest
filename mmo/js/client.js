@@ -7,13 +7,13 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, ALCANCE_BASE, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
-  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, temporadaDe, TINTES, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio,
+  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TINTES, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
-} from './data.js?v=41';
+} from './data.js?v=42';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -346,7 +346,8 @@ function recibir(m) {
       if (m.coop) { flotante(m.x, m.y, '+' + m.xp + ' XP (grupo)', '#00eeff', 9); break; }
       for (let i = 0; i < Math.min(8, 2 + Math.floor(m.oro / 15)); i++) monedas.push({ x: m.x, y: m.y + 20, vx: (Math.random() - .5) * 5, vy: -4 - Math.random() * 3, t: 0 });
       flotante(m.x, m.y, '+' + m.xp + ' XP', '#c084fc', 10);
-      if (m.cal) { const tp = temporadaDe() || { emoji: '🎃', color: '#ff9a3c', campo: 'calabazas' }; flotante(m.x + 18, m.y - 30, '+' + m.cal + ' ' + tp.emoji, tp.color, 10); if (yo) yo[tp.campo] = (yo[tp.campo] || 0) + m.cal; }
+      if (m.chi) { flotante(m.x - 18, m.y - 44, '+' + m.chi + ' 🥤', '#c084fc', 9); if (yo && yo.chicha) { yo.chicha.p += m.chi; yo.chicha.hoy += m.chi; } }
+      if (m.cal) { const tp = TEMPORADAS.find(x => x.id === m.tp) || temporadaDe() || TEMPORADAS[0]; flotante(m.x + 18, m.y - 30, '+' + m.cal + ' ' + tp.emoji, tp.color, 10); if (yo) yo[tp.campo] = (yo[tp.campo] || 0) + m.cal; }
       if (m.oro > 0) flotante(m.x, m.y + 14, '+' + m.oro + ' oro', '#ffe600', 10);
       if (m.drops && m.drops.length) m.drops.forEach(d => { const pd = PODERES.find(p => p.id === d); if (pd) aviso('🎁 Encontraste: ' + pd.nombre, 'ok'); });
       if (m.item) {
@@ -471,7 +472,7 @@ function recibir(m) {
     case 'dueloFin': finDuelo(m); break;
     case 'critDuelo': break;
     case 'buscador': abrirBuscador(); break;
-    case 'amigos': pintarAmigos(m); if (presumirPend && m.ref) { presumirPend = false; compartirPresumir(m); } break;
+    case 'amigos': pintarAmigos(m); if (presumirPend && m.ref) { presumirPend = false; ofrecerPresumir(presumirTxt); aviso('📣 Listo: toca PRESUMIR otra vez para compartir.'); } break;
     case 'muerte': resumenMuerte(m); break;
     case 'nodos': recibirNodos(m.l); break;
     case 'recogido': { const n = nodos.find(x => x.i === m.i); if (n) { n.listo = performance.now() + m.en; for (let k = 0; k < 14; k++) particula(n.x, SUELO - 14, m.tipo === 'hierba' ? '#4ade80' : '#cbd5e1', 3); } sfx('moneda', .3); break; }
@@ -1345,7 +1346,7 @@ function compartirPresumir(info) {
   const txt = presumirTxt + ' ¡Juega gratis conmigo a DUENDE QUEST ONLINE! 🧝⚔️';
   if (TG && TG.openTelegramLink) return TG.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(enlTg) + '&text=' + encodeURIComponent(txt));
   const enlWeb = location.origin + '/mmo/?ref=' + info.ref;
-  const copiar = () => { try { navigator.clipboard.writeText(txt + ' ' + enlWeb); aviso('📋 Texto y enlace copiados: pégalo donde quieras.', 'ok'); } catch (e) {} };
+  const copiar = () => { try { navigator.clipboard.writeText(txt + ' ' + enlWeb).then(() => aviso('📋 Texto y enlace copiados: pégalo donde quieras.', 'ok'), () => {}); } catch (e) {} };
   if (navigator.share) navigator.share({ title: 'DUENDE QUEST ONLINE', text: txt, url: enlWeb }).catch(e => { if (!e || e.name !== 'AbortError') copiar(); });
   else window.open('https://t.me/share/url?url=' + encodeURIComponent(enlWeb) + '&text=' + encodeURIComponent(txt), '_blank');
 }
@@ -1942,6 +1943,30 @@ function abrirArtesana() {
 }
 
 // ── BESTIARIO ──
+// Premio fisico: un litro de chicha morada (functions/mmo/chicha.js).
+function pintarChicha() {
+  const ch = yo.chicha || { p: 0, hoy: 0, rec: [] };
+  const cuenta = TG || !soyInvitado;
+  let h = `<div class="mis-caja" style="margin-top:0;text-align:center"><div style="font-size:40px">🥤</div><b style="color:#c084fc">UN LITRO DE CHICHA MORADA HASTA TU CASA</b>
+    <p style="font-size:12px;margin-top:6px">Cada monstruo que cazas suelta su chicha: <b>1 punto</b>, <b>3</b> si es de tu nivel o más, <b>25</b> un jefe. Desde nivel ${CHICHA.nvPuntos}, hasta ${CHICHA.porDia} puntos al día.</p>
+    <p style="font-size:22px;color:#ffd84a;margin:8px 0">${ch.p.toLocaleString('es')} puntos</p>
+    <p style="font-size:12px;color:rgba(255,255,255,.6)">Hoy: ${ch.hoy}/${CHICHA.porDia}</p></div>`;
+  for (const meta of CHICHA.niveles) {
+    const hecho = (ch.rec || []).includes(meta);
+    const pct = Math.min(100, Math.round(ch.p / meta * 100));
+    const acc = hecho ? '<span class="precio" style="color:#00ff88">✓ RECLAMADO</span>'
+      : ch.p >= meta ? `<button class="btn" data-chicha="${meta}">RECLAMAR</button>` : `<span class="precio">${pct}%</span>`;
+    h += tarjeta('<div style="font-size:30px">🥤</div>', `${meta.toLocaleString('es')} puntos`, `Un litro de chicha morada peruana enviado a tu casa.<div class="mis-barra"><i style="width:${pct}%"></i></div>`, acc);
+  }
+  if (!cuenta) h += '<p class="centro" style="color:#ffae00;font-size:12px">Juegas como invitado: los puntos de chicha se juntan solo con cuenta. Entra desde @duendequest_bot en Telegram.</p>';
+  h += `<ul style="padding-left:18px;margin-top:8px;font-size:11px;color:rgba(255,255,255,.6)">
+    <li>Promoción gratuita: no hay que comprar nada. Los puntos no se compran, no se venden y no se gastan al reclamar.</li>
+    <li>Para reclamar: nivel ${CHICHA.nvReclamo}, personaje de 2 días y entrar con Telegram. El equipo te escribirá por Telegram para pedirte la dirección; nunca te pediremos pagos ni contraseñas.</li>
+    <li>Envíos desde Perú, revisados uno a uno (las trampas o bots quedan fuera). Hay ${CHICHA.mesMax} litros al mes: si se acaban, tus puntos te esperan al mes siguiente.</li></ul>`;
+  $('inv-lista').innerHTML = h;
+  $('inv-lista').querySelectorAll('[data-chicha]').forEach(b => b.onclick = () => { if (confirm('¿Reclamar tu litro de chicha morada? El equipo te escribirá por Telegram.')) { mandar({ t: 'chicha', meta: +b.dataset.chicha }); b.disabled = true; } });
+}
+
 function pintarBestiario() {
   const best = yo.best || {};
   const lista = Object.entries(MONSTRUOS).filter(([, m]) => !m.mundial).sort((a, b) => a[1].nivel - b[1].nivel);
@@ -2014,7 +2039,9 @@ function pintarEquipo() {
   // Lo mejor de la bolsa para cada ranura (que se pueda usar a tu nivel).
   const mejoras = Object.keys(RANURAS).map(k => {
     const puesto = eq[k];
-    const cand = bolsa.filter(x => x.s === k && puedeUsar(x)).sort((a, b) => puntaje(b.b) - puntaje(a.b))[0];
+    // No se rompe un conjunto activo (2+ piezas) por una pieza suelta.
+    const protege = puesto && puesto.cj && piezasConjunto(eq)[puesto.cj] >= 2;
+    const cand = bolsa.filter(x => x.s === k && puedeUsar(x) && (!protege || x.cj === puesto.cj)).sort((a, b) => puntaje(b.b) - puntaje(a.b))[0];
     return cand && (!puesto || puntaje(cand.b) > puntaje(puesto.b)) ? cand : null;
   }).filter(Boolean);
   if (mejoras.length) h += `<button class="btn" id="b-equipar-mejor" style="width:100%;margin-bottom:8px">▲ EQUIPAR LO MEJOR (${mejoras.length})</button>`;
@@ -2025,7 +2052,8 @@ function pintarEquipo() {
     const rz = RAREZAS[it.r];
     const puesto = eq[it.s];
     const dif = puntaje(it.b) - (puesto ? puntaje(puesto.b) : 0);
-    const flecha = dif > 0 ? '<span style="color:#00ff88"> ▲ MEJOR</span>' : '';
+    const rompe = puesto && puesto.cj && puesto.cj !== it.cj && piezasConjunto(eq)[puesto.cj] >= 2;
+    const flecha = dif > 0 && !rompe ? '<span style="color:#00ff88"> ▲ MEJOR</span>' : dif > 0 ? '<span style="color:#ffae00"> ⚠ rompe tu conjunto</span>' : '';
     const puede = puedeUsar(it);
     const acc = (puede ? `<button class="btn" data-eq="${it.id}">EQUIPAR</button>` : `<span class="precio" style="color:#ff3344">Nv ${it.nv}</span>`)
       + `<button class="btn sec" data-vender="${it.id}">VENDER ${precioVenta(it)}</button>`;
@@ -2306,9 +2334,12 @@ function dibujarSuelo(mp) {
   }
 }
 
+// La temporada activa: la que dice el servidor (si el reloj del movil va mal,
+// igual se ve la correcta); sin dato, la del reloj local.
+function temporadaYa() { return yo && yo.temp !== undefined ? TEMPORADAS.find(x => x.id === yo.temp) || null : temporadaDe(); }
 // Temporada: su adorno (calabazas, arboles...) por el suelo de cada mapa.
 function dibujarTemporada(mp) {
-  const tp = temporadaDe();
+  const tp = temporadaYa();
   if (!tp) return;
   const spr = spriteTexto(tp.deco, 28, '#fff', false, false);
   for (let x = 170; x < mp.ancho; x += 520) {
@@ -2835,7 +2866,7 @@ function pintarHud() {
   if (T) {
     const hd = T.dia.l.filter(t => t.ok).length, hs = T.sem.l.filter(t => t.ok).length;
     const sig = T.dia.l.find(t => !t.ok);
-    ponTxt($('h-tareas'), '☀️ Diarias ' + hd + '/' + T.dia.l.length + ' · 📆 ' + hs + '/' + T.sem.l.length + (sig ? ' — ' + sig.txt + ' ' + sig.p + '/' + sig.n : '') + (temporadaDe() ? ' · ' + temporadaDe().emoji + ' ' + (yo[temporadaDe().campo] || 0) : ''));
+    ponTxt($('h-tareas'), '☀️ Diarias ' + hd + '/' + T.dia.l.length + ' · 📆 ' + hs + '/' + T.sem.l.length + (sig ? ' — ' + sig.txt + ' ' + sig.p + '/' + sig.n : '') + (temporadaYa() ? ' · ' + temporadaYa().emoji + ' ' + (yo[temporadaYa().campo] || 0) : ''));
   }
   pintarPoderes();
   pintarAcciones();
@@ -3129,7 +3160,7 @@ document.querySelectorAll('[data-itab]').forEach(b => b.onclick = () => { tabInv
 function abrirInventario() { if (!yo) return; abrir('m-inv'); pintarInventario(); }
 function pintarInventario() {
   if (!yo) return;
-  if (tabInv === 'equipo' || tabInv === 'logros' || tabInv === 'bestiario') $('inv-stats').innerHTML = '';
+  if (tabInv === 'equipo' || tabInv === 'logros' || tabInv === 'bestiario' || tabInv === 'chicha') $('inv-stats').innerHTML = '';
   else $('inv-stats').innerHTML =
     `<div class="fila"><span>NIVEL</span><span>${yo.nivel}</span></div>` +
     `<div class="fila"><span>VIDA</span><span>${yo.maxHp}</span></div>` +
@@ -3141,6 +3172,7 @@ function pintarInventario() {
   if (tabInv === 'equipo') return pintarEquipo();
   if (tabInv === 'logros') return pintarLogros();
   if (tabInv === 'bestiario') return pintarBestiario();
+  if (tabInv === 'chicha') return pintarChicha();
   const tabla = tabInv === 'arma' ? ARMAS : SKINS;
   const tiene = tabInv === 'arma' ? yo.armas : yo.skins;
   const puesto = tabInv === 'arma' ? yo.arma : yo.skin;
