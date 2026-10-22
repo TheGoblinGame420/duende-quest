@@ -3,7 +3,7 @@
 //
 // Se mezcla en MmoWorld (Object.assign sobre su prototipo).
 //
-// Grupos de hasta 5: se invita desde el marco del objetivo o desde la lista
+// Grupos de hasta 5 (una banda, hasta 10): se invita desde el marco del objetivo o desde la lista
 // de jugadores. Los miembros se guardan por uid (no por sesion), asi quien se
 // desconecta un momento vuelve a su grupo al entrar. Viven en memoria: un
 // despliegue (que reinicia el Durable Object) los disuelve.
@@ -14,9 +14,12 @@
 // Buscar grupo: te anuncias para una mazmorra (10 min) y quien tenga nivel
 // se une con un toque, sin esperar a que aceptes (el lider puede expulsar).
 // ═══════════════════════════════════════════════════════
-import { MAPAS, MAZMORRAS } from '../../mmo/js/data.js';
+import { MAPAS, MAZMORRAS, BANDA_MAX } from '../../mmo/js/data.js';
 
 export const GRUPO_MAX = 5;
+// Un grupo convertido en banda (boton del lider o al buscar gente para la
+// banda) admite hasta 10.
+export const maxGrupo = g => (g && g.banda ? BANDA_MAX : GRUPO_MAX);
 // Identificador publico de un personaje: el uid real es "tg:<id de
 // Telegram>" o el de la cuenta web, y no debe llegar a otros jugadores.
 // FNV-1a de 32 bits con una sal al azar de este arranque del servidor: sin
@@ -52,7 +55,7 @@ export const Social = {
     if (!t || !t.c || t === s) return;
     const g = this.grupoDe(s);
     if (g && g.lider !== s.c.uid) return this.no(s, 'Solo el líder del grupo puede invitar.');
-    if (g && g.uids.length >= GRUPO_MAX) return this.no(s, `El grupo ya está lleno (${GRUPO_MAX}).`);
+    if (g && g.uids.length >= maxGrupo(g)) return this.no(s, g.banda ? `La banda ya está llena (${BANDA_MAX}).` : `El grupo ya está lleno (${GRUPO_MAX}). El líder puede convertirlo en banda (hasta ${BANDA_MAX}).`);
     if (t.gid) return this.no(s, `${t.c.nombre} ya está en un grupo.`);
     if (t.invitacion && t.invitacion.hasta > Date.now() && t.invitacion.de !== s.c.uid) return this.no(s, `${t.c.nombre} ya tiene una invitación pendiente.`);
     t.invitacion = { de: s.c.uid, hasta: Date.now() + INVITACION_MS };
@@ -75,7 +78,7 @@ export const Social = {
       this.grupos.set(g.id, g);
       lider.gid = g.id;
     }
-    if (g.uids.length >= GRUPO_MAX) return this.no(s, 'El grupo ya está lleno.');
+    if (g.uids.length >= maxGrupo(g)) return this.no(s, 'El grupo ya está lleno.');
     g.uids.push(s.c.uid);
     s.gid = g.id;
     this.avisarGrupo(g, `👥 ${s.c.nombre} se unió al grupo.`);
@@ -114,6 +117,18 @@ export const Social = {
     const t = this.porUid.get(uid);
     if (t) { this.salirGrupo(t, 'expulsado'); this.enviar(t, { t: 'toast', m: '👥 Te expulsaron del grupo.' }); }
     else { g.uids = g.uids.filter(u => u !== uid); this.avisarGrupo(g, '👥 Un miembro desconectado fue expulsado del grupo.'); this.ordenarGrupo(g); }
+  },
+  // Convertir el grupo en banda (hasta 10) o volver a grupo (si son 5 o menos).
+  bandaGrupo(s, m) {
+    const g = this.grupoDe(s);
+    if (!g) return this.no(s, 'Primero forma un grupo: invita a alguien desde su marco.');
+    if (g.lider !== s.c.uid) return this.no(s, 'Solo el líder puede convertir el grupo en banda.');
+    const si = !!m.si;
+    if (!si && g.uids.length > GRUPO_MAX) return this.no(s, `Sois más de ${GRUPO_MAX}: no puede volver a ser un grupo.`);
+    if (g.banda === si) return;
+    g.banda = si;
+    this.avisarGrupo(g, si ? `⚔️ El grupo ahora es una BANDA (hasta ${BANDA_MAX}).` : '👥 La banda vuelve a ser un grupo (hasta 5).');
+    this.enviarGrupo(g);
   },
   liderGrupo(s, m) {
     const g = this.grupoDe(s);
@@ -156,7 +171,7 @@ export const Social = {
   // Estado del grupo a todos sus miembros (vida y mana de los que estan en
   // otro mapa no llegan por la foto del mapa: van aqui).
   enviarGrupo(g, excepto) {
-    const info = { id: g.id, lider: pub(g.lider), m: g.uids.map(u => this.infoMiembro(u, excepto)) };
+    const info = { id: g.id, lider: pub(g.lider), banda: g.banda ? 1 : 0, m: g.uids.map(u => this.infoMiembro(u, excepto)) };
     const nombres = g.nombres || (g.nombres = {});
     for (const x of info.m) if (x.n) nombres[x.uid] = x.n; else x.n = nombres[x.uid] || '?';
     const txt = JSON.stringify({ t: 'grupo', g: info });
@@ -218,7 +233,8 @@ export const Social = {
     if (s.c.nivel < mz.nv[0]) return this.no(s, `Necesitas nivel ${mz.nv[0]} para ${mz.nombre}.`);
     const g = this.grupoDe(s);
     if (g && g.lider !== s.c.uid) return this.no(s, 'Solo el líder del grupo puede buscar más gente.');
-    if (g && g.uids.length >= GRUPO_MAX) return this.no(s, 'Tu grupo ya está lleno.');
+    if (g && mz.banda && !g.banda) { g.banda = true; this.avisarGrupo(g, `⚔️ El grupo ahora es una BANDA (hasta ${BANDA_MAX}).`); this.enviarGrupo(g); }
+    if (g && g.uids.length >= maxGrupo(g)) return this.no(s, 'Tu grupo ya está lleno.');
     const ahora = Date.now();
     // El limite va aparte: quitar la busqueda no lo reinicia (si no, anunciar
     // y quitar en bucle inundaba de avisos a todos los conectados).
@@ -243,7 +259,7 @@ export const Social = {
   infoLfg(uid, e) {
     const x = this.porUid.get(uid);
     const g = x && this.grupoDe(x);
-    return { pid: pub(uid), n: x.c.nombre, nv: x.c.nivel, cl: x.c.clase || '', id: e.id, m: g ? g.uids.length : 1 };
+    return { pid: pub(uid), n: x.c.nombre, nv: x.c.nivel, cl: x.c.clase || '', id: e.id, m: g ? g.uids.length : 1, mx: MAZMORRAS[e.id] && MAZMORRAS[e.id].banda ? BANDA_MAX : GRUPO_MAX };
   },
   // Las busquedas que siguen en pie (se borran las caducadas, las de quien
   // se fue y las de grupos llenos o que ya no lleva esa persona).
@@ -252,7 +268,7 @@ export const Social = {
     for (const [uid, e] of this.lfg || []) {
       const x = this.porUid.get(uid);
       const g = x && this.grupoDe(x);
-      if (!x || !x.c || e.hasta < ahora || (g && (g.lider !== uid || g.uids.length >= GRUPO_MAX))) { this.lfg.delete(uid); continue; }
+      if (!x || !x.c || e.hasta < ahora || (g && (g.lider !== uid || g.uids.length >= maxGrupo(g)))) { this.lfg.delete(uid); continue; }
       r.push([uid, e]);
     }
     return r;
@@ -278,10 +294,11 @@ export const Social = {
     const wi = g && g.inst && this.mundo[g.inst];
     if (wi && wi.inst && wi.inst.k && !wi.inst.completada) return this.no(s, 'Ese grupo ya está dentro de un Desafío: pide a la líder que te invite.');
     if (!g) {
-      g = { id: this.sigGrupo++, lider: uid, uids: [uid] };
+      g = { id: this.sigGrupo++, lider: uid, uids: [uid], banda: !!mz.banda };
       this.grupos.set(g.id, g);
       lider.gid = g.id;
     }
+    if (g.uids.length >= maxGrupo(g)) return this.no(s, 'Ese grupo ya está lleno.');
     g.uids.push(s.c.uid);
     s.gid = g.id;
     s.invitacion = null;
@@ -289,7 +306,7 @@ export const Social = {
     this.enviarGrupo(g);
     this.enviar(lider, { t: 'toast', ok: true, m: `📢 ${s.c.nombre} (Nv ${s.c.nivel}) se unió a tu grupo para ${mz.nombre}.` });
     this.enviar(s, { t: 'toast', ok: true, m: `👥 Te uniste al grupo de ${lider.c.nombre} para ${mz.nombre}. Id juntos al portal de mazmorras del pueblo.` });
-    if (g.uids.length >= GRUPO_MAX) this.lfg.delete(uid);
+    if (g.uids.length >= maxGrupo(g)) this.lfg.delete(uid);
   },
 
   // ── AMIGOS (lista de contactos, como en WoW) ──

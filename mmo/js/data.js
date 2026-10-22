@@ -225,6 +225,39 @@ export const MONSTRUOS = {
       { tipo: 'adds', en: [0.66, 0.33], k: 'aguila', n: 2 },
       { tipo: 'enrage', en: 0.2, atkX: 1.6 },
     ] },
+  // Banda: Santuario del Titán (Nv 60, de 1 a 10). 'junta': zona dorada que
+  // hay que aguantar JUNTOS: el golpe vale dano x jugadores (hasta `junta`)
+  // y se reparte entre los de dentro (bien hecho, cada uno recibe `dano`);
+  // si no entra nadie, estalla sobre todos con `dano`. Ver tickMazmorra.
+  mz_coloso_ab:  { nombre: 'Coloso Sísmico',        hoja: 'coloso',         nivel: 60, jefe: true, mazmorra: true, alto: 205, w: 110, h: 185, tinte: '#94a3b8',
+    guion: [
+      { tipo: 'embestida' },
+      { tipo: 'zona', nombre: 'Pisotón Sísmico', cada: 11000, primero: 5000, aviso: 1700, ancho: 340, donde: 'jefe', dano: 0.4, color: '#94a3b8' },
+      { tipo: 'zona', nombre: 'Roca Gigante', cada: 16000, primero: 9000, aviso: 2600, ancho: 190, donde: 'uno', junta: 3, dano: 0.4, color: '#facc15' },
+      { tipo: 'enrage', en: 0.2, atkX: 1.5 },
+    ] },
+  mz_madre_baba: { nombre: 'Madre Babosa',          hoja: 'baba',           nivel: 60, jefe: true, mazmorra: true, alto: 165, w: 140, h: 145, tinte: '#4ade80',
+    guion: [
+      { tipo: 'zona', nombre: 'Charcos de Ácido', cada: 10000, primero: 4000, aviso: 1500, ancho: 190, donde: 'azar', n: 4, dano: 0.3, color: '#4ade80' },
+      { tipo: 'adds', en: [0.75, 0.5, 0.25], k: 'baba', n: 2 },
+      { tipo: 'escudo', nombre: 'Membrana Viscosa', cada: 21000, primero: 12000, dura: 4000, reduce: 0.8 },
+    ] },
+  mz_serafin:    { nombre: 'Serafín Corrupto',      hoja: 'angel',          nivel: 60, jefe: true, mazmorra: true, alto: 170, w: 120, h: 150, tinte: '#fbbf24', vuela: true, dispara: true,
+    guion: [
+      { tipo: 'cast', nombre: 'Juicio Final', cada: 14000, primero: 7000, dura: 2600, int: true, a: 'todos', aturde: 1500, dano: 0.4 },
+      { tipo: 'zona', nombre: 'Plumas Ardientes', cada: 9000, primero: 4000, aviso: 1500, ancho: 160, donde: 'jugadores', dano: 0.28, color: '#fb923c' },
+      { tipo: 'zona', nombre: 'Luz Purificadora', cada: 17000, primero: 11000, aviso: 2600, ancho: 190, donde: 'uno', junta: 3, dano: 0.4, color: '#fde047' },
+      { tipo: 'adds', en: [0.5], k: 'fantasma_halo', n: 3 },
+    ] },
+  mz_titan:      { nombre: 'Titán del Abismo',      hoja: 'goblin_lord',    nivel: 60, jefe: true, mazmorra: true, alto: 250, w: 120, h: 225, tinte: '#4338ca', dispara: true,
+    guion: [
+      { tipo: 'embestida' },
+      { tipo: 'zona', nombre: 'Puño del Abismo', cada: 10000, primero: 5000, aviso: 1500, ancho: 300, donde: 'frente', dano: 0.45, color: '#818cf8' },
+      { tipo: 'cast', nombre: 'Ola de Corrupción', cada: 15000, primero: 8000, dura: 2500, int: true, a: 'todos', dano: 0.35 },
+      { tipo: 'zona', nombre: 'Meteoro del Vacío', cada: 18000, primero: 12000, aviso: 2600, ancho: 190, donde: 'uno', junta: 3, dano: 0.45, color: '#facc15' },
+      { tipo: 'adds', en: [0.66, 0.33], k: 'paladin_goblin', n: 2 },
+      { tipo: 'enrage', en: 0.2, atkX: 1.7 },
+    ] },
   // Jefe mundial: aparece cada 30 min en el Coliseo para TODOS los niveles.
   // Su daño es un % de la vida de cada jugador (no su ataque), asi un Nv 5 y
   // un Nv 60 pelean juntos; su vida crece con los jugadores conectados.
@@ -385,6 +418,8 @@ export const MONTURAS = {
   hellhound: { nombre: 'Sabueso Infernal',     hoja: 'hellhound', nv: 40, precio: 60000,  vel: 1.8, alto: 52, dy: 26 },
   aguila:    { nombre: 'Águila Real',          hoja: 'aguila',    nv: 50, precio: 150000, vel: 1.9, alto: 70, dy: 38 },
   dragon:    { nombre: 'Dragón Ancestral',     hoja: 'dragon',    nv: 60, precio: 300000, vel: 2,   alto: 84, dy: 40 },
+  // No se vende: se gana venciendo al Titan de la banda en 3 semanas.
+  abismo:    { nombre: 'Murciélago del Abismo', hoja: 'murcielago', nv: 60, precio: 0, banda: true, vel: 2, alto: 76, dy: 30 },
 };
 export const MONTAR_MS = 1500;
 // Colores del nombre (solo se ven, no dan nada): metas de oro a largo plazo
@@ -400,6 +435,13 @@ export const TINTES = {
 // enseñan una vez (lo nuevo para los que vuelven). La mas reciente arriba;
 // subir 'n' al añadir una.
 export const NOVEDADES = [
+  { n: 3, fecha: '22 de octubre (noche)', items: [
+    '⚔️ Primera BANDA: el Santuario del Titán (Nv 60, de 1 a 10 jugadores). Cuatro jefes, botín de nivel 64-66 una vez por semana y el Murciélago del Abismo si vences al Titán en 3 semanas.',
+    '👥 El líder puede convertir su grupo en banda (hasta 10) desde Social > Grupo.',
+    '🟡 Zonas doradas: hay que aguantarlas juntos, el golpe se reparte entre los que estén dentro.',
+    '🐸 Monturas nuevas en el Mercader: Sapo Gigante (Nv 25) y Águila Real (Nv 50).',
+    '📅 Temporadas de 2027: Verano Duende (enero), Vendimia (marzo), Lluvia de Estrellas (abril), Fiesta del Sol (junio) y Fiestas Patrias (julio).',
+  ] },
   { n: 2, fecha: '22 de octubre', items: [
     '🏰 Dos mazmorras nuevas: la Fortaleza Goblin (Nv 20-40) y el Nido de la Reina Araña (Nv 40-58).',
     '🗝️ Bóveda semanal: cuantas más mazmorras hagas en la semana, más objetos para elegir el lunes.',
@@ -600,6 +642,7 @@ export const CONJUNTOS = {
   templo:     { nombre: 'Marea Hundida',       color: '#38bdf8', b2: { hp: 0.10 },  b4: { atk: 0.10, crit: 0.04 } },
   nido:       { nombre: 'Seda de la Reina',    color: '#a3e635', b2: { hp: 0.08 },  b4: { crit: 0.04, def: 0.10 } },
   ciudadela:  { nombre: 'Escamas del Dragón',  color: '#f97316', b2: { atk: 0.08 }, b4: { atk: 0.08, def: 0.10, hp: 0.10 } },
+  santuario:  { nombre: 'Corona del Titán',    color: '#818cf8', b2: { atk: 0.06, hp: 0.06 }, b4: { atk: 0.08, def: 0.08, crit: 0.04 } },
 };
 export const CONJUNTO_PROB = 0.25;
 export function piezasConjunto(eq) {
@@ -709,6 +752,8 @@ export const LOGROS = [
   { id: 'reygoblin', titulo: 'Azote Goblin',        desc: 'Vence al Rey Goblin Barrigón de la Fortaleza', oro: 6000, cond: c => !!(c.mzJefes && c.mzJefes.mz_rey_goblin) },
   { id: 'cancerbero', titulo: 'Domador del Infierno', desc: 'Vence al Cancerbero del Nido de la Reina Araña', oro: 12000, cond: c => !!(c.mzJefes && c.mzJefes.mz_cancerbero) },
   { id: 'dragon',    titulo: 'Matadragones',        desc: 'Vence al Dragón Carmesí de la Ciudadela', oro: 15000, cond: c => !!(c.mzJefes && c.mzJefes.mz_dragon) },
+  { id: 'titan',     titulo: 'Azote del Titán',     desc: 'Vence al Titán del Abismo en la banda del Santuario', oro: 25000, cond: c => !!(c.mzJefes && c.mzJefes.mz_titan) },
+  { id: 'abismo',    titulo: 'Jinete del Abismo',   desc: 'Gana el Murciélago del Abismo (vence al Titán en 3 semanas distintas)', oro: 20000, cond: c => (c.monturas || []).includes('abismo') },
 ];
 
 // ── JEFE MUNDIAL ──
@@ -994,7 +1039,27 @@ export const MAZMORRAS = {
     ],
     jefes: [{ k: 'mz_caballero', x: 1620, muro: 1820 }, { k: 'mz_archimago', x: 2800, muro: 3000 }, { k: 'mz_dragon', x: 3950, muro: 4200, final: true }],
   },
+  // BANDA (como las de WoW): Nv 60, de 1 a 10 jugadores (un grupo se
+  // convierte en banda para pasar de 5). Cuatro jefes con mecanicas que se
+  // hacen en equipo; su botin (nivel 64-66, epico) se cobra UNA vez por
+  // semana y jefe; el Titan, vencido en 3 semanas distintas, da su montura.
+  // Sin Desafios. Nunca mTON.
+  santuario: {
+    nombre: 'Santuario del Titán', mapa: 'santuario', nv: [60, 60], banda: true, icono: 'S_Shadow07',
+    dif: { vida: 1.5, atk: 1.2 },
+    desc: 'BANDA de 1 a 10 jugadores. Bajo el Coliseo despierta el Titán que corrompió al Gran Duende. Su botín se cobra una vez por semana.',
+    packs: [
+      { x: 520, k: ['caballero_negro', 'caballero_negro'] }, { x: 900, k: ['paladin_goblin', 'hechicero_corte', 'paladin_goblin'] },
+      { x: 2050, k: ['baba', 'baba'] }, { x: 2400, k: ['espectro', 'fantasma_halo', 'espectro'] },
+      { x: 3450, k: ['fantasma_halo', 'fantasma_halo'] }, { x: 3800, k: ['aguila', 'paladin_goblin', 'aguila'] },
+      { x: 4800, k: ['paladin_goblin', 'caballero_negro', 'hechicero_corte'] },
+    ],
+    jefes: [{ k: 'mz_coloso_ab', x: 1620, muro: 1820 }, { k: 'mz_madre_baba', x: 2900, muro: 3100 }, { k: 'mz_serafin', x: 4250, muro: 4450 }, { k: 'mz_titan', x: 5300, muro: 5560, final: true }],
+  },
 };
+export const BANDA_MAX = 10;     // jugadores en una banda (un grupo normal: 5)
+export const BANDA_MONTURA = 3;  // semanas venciendo al Titan para su montura
+export const botinBandaNv = final => NIVEL_MAX + (final ? 6 : 4);
 // Escala por jugadores dentro (n): la vida crece con cada uno, el daño poco.
 // Medido con tools/sim_mazmorra.mjs: solo, cada jefe dura ~30 s; en grupo
 // la vida crece mas que el daño del grupo (uno suele curar) y el combate
@@ -1188,6 +1253,13 @@ jefe: 'jefe_rey',
     paleta: { cielo: ['#0a0a18', '#1c1430'], suelo: '#10141a', linea: '#a3e635' },
     plataformas: [[690, 285, 210], [1270, 245, 190], [2220, 280, 210], [3330, 250, 210]],
     portales: [{ x: 60, a: 'pueblo', ax: 795, etiqueta: 'Salida' }, { x: 4340, a: 'pueblo', ax: 795, etiqueta: 'Salida', fin: 1 }],
+    monstruos: [], max: 0,
+  },
+  santuario: {
+    nombre: 'Santuario del Titán', fondo: 'amanecer2', ancho: 5800, zona: true, instancia: true, mazmorra: 'santuario',
+    paleta: { cielo: ['#0b0820', '#2a1d5c'], suelo: '#0d0a1f', linea: '#818cf8' },
+    plataformas: [[700, 290, 200], [1250, 245, 200], [2230, 280, 220], [3600, 250, 210], [4900, 285, 200]],
+    portales: [{ x: 60, a: 'pueblo', ax: 795, etiqueta: 'Salida' }, { x: 5740, a: 'pueblo', ax: 795, etiqueta: 'Salida', fin: 1 }],
     monstruos: [], max: 0,
   },
   ciudadela: {

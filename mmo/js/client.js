@@ -13,8 +13,8 @@ import {
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
-  premioAmigo,
-} from './data.js?v=69';
+  premioAmigo, BANDA_MAX, BANDA_MONTURA,
+} from './data.js?v=70';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -640,7 +640,7 @@ function snapshot(m) {
   }
   for (const [id, o] of mons) if (!vistos.has(id) && (!o.muereT || t - o.muereT > 2000)) { mons.delete(id); aurasM.delete(id); }
   balas = (m.b || []).map(([id, x, y, vx, vy, jefe]) => ({ id, x, y, vx, vy, jefe, t }));
-  zonas = (m.z || []).map(([id, x0, x1, act, color]) => ({ id, x0, x1, act, color }));
+  zonas = (m.z || []).map(([id, x0, x1, act, color, j]) => ({ id, x0, x1, act, color, j }));
   if (jefeVivo && !mons.has(jefeVivo.id)) jefeVivo = null;
   if (objetivo && objetivo.k === 'm' && !mons.has(objetivo.id)) objetivo = null;
 }
@@ -1269,6 +1269,7 @@ function pintarGrupo() {
     });
   }
   ponCss(cont, 'display', lista.length ? 'block' : 'none');
+  ponClase(cont, 'compacto', lista.length > 4);
   lista.forEach((x, i) => {
     const d = cont.children[i];
     if (!d) return;
@@ -1376,7 +1377,10 @@ function pintarSocial() {
       L.innerHTML = '<p class="centro" style="margin:10px 0">No estás en un grupo.</p><p class="centro" style="font-size:12px;color:var(--txt2)">Toca a otro jugador y pulsa ➕ en su marco, o búscalo en la pestaña «En línea». En grupo compartís la experiencia y las misiones de cada presa (con un 10% extra por miembro) y podéis entrar juntos a las mazmorras.</p>';
       return;
     }
-    let h = '';
+    const tope = grupo.banda ? BANDA_MAX : 5;
+    let h = `<p style="font:600 13px var(--sans);color:var(--txt);margin:2px 0 6px">${grupo.banda ? '⚔️ Banda' : '👥 Grupo'} (${grupo.m.length}/${tope})</p>`;
+    if (soyLider() && !grupo.banda) h += `<button class="btn sec" id="b-banda" style="width:100%;margin-bottom:8px">⚔️ Convertir en banda (hasta ${BANDA_MAX})</button>`;
+    else if (soyLider() && grupo.m.length <= 5) h += '<button class="btn sec" id="b-banda" style="width:100%;margin-bottom:8px">👥 Volver a grupo (hasta 5)</button>';
     for (const x of grupo.m) {
       const cl = CLASES[x.cl];
       const yoEs = x.id === miId && x.on;
@@ -1390,6 +1394,7 @@ function pintarSocial() {
     L.querySelectorAll('[data-lider]').forEach(b => b.onclick = () => mandar({ t: 'liderGrupo', uid: b.dataset.lider }));
     L.querySelectorAll('[data-echar]').forEach(b => b.onclick = () => mandar({ t: 'expulsarGrupo', uid: b.dataset.echar }));
     $('b-salir-grupo').onclick = () => { mandar({ t: 'salirGrupo' }); };
+    const bb = $('b-banda'); if (bb) bb.onclick = () => { mandar({ t: 'banda', si: !grupo.banda }); sfx('boton', .3); };
   } else if (tabSocial === 'online') {
     // Arriba, tus amigos (conectados o no); debajo, todos los conectados.
     let h = '<p style="font:600 13px var(--sans);color:var(--txt);margin:2px 0 6px">⭐ Tus amigos</p>';
@@ -1621,10 +1626,10 @@ function pintarLfg() {
   const abiertas = Object.keys(MAZMORRAS).filter(id => yo.nivel >= MAZMORRAS[id].nv[0]);
   let h = '<b>👥 Buscar grupo</b>';
   if (!abiertas.length) h += `<p style="color:var(--txt2)">Se abre con la primera mazmorra (Nv ${MAZMORRAS[Object.keys(MAZMORRAS)[0]].nv[0]}).</p>`;
-  else if (mio) h += `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span style="flex:1;font-size:13px;color:var(--ok)">📢 Buscas grupo para ${esc(MAZMORRAS[mio.id].nombre)} (${mio.m}/5)</span><button class="btn sec" id="lfg-quitar">Dejar de buscar</button></div>`;
+  else if (mio) h += `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span style="flex:1;font-size:13px;color:var(--ok)">📢 Buscas grupo para ${esc(MAZMORRAS[mio.id].nombre)} (${mio.m}/${mio.mx || 5})</span><button class="btn sec" id="lfg-quitar">Dejar de buscar</button></div>`;
   else if (!grupo || grupo.lider === yo.pid) h += `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><select id="lfg-maz" style="flex:1;min-width:120px">${abiertas.map(id => `<option value="${id}">${esc(MAZMORRAS[id].nombre)}</option>`).join('')}</select><button class="btn" id="lfg-anunciar">📢 Anunciarme</button></div><p style="font-size:12px;color:var(--txt2);margin-top:4px">Se avisa a los conectados con nivel; quien quiera se une a tu grupo con un toque.</p>`;
   const otros = lfgLista.filter(x => !x.yo);
-  if (otros.length) h += otros.map(x => { const cl = CLASES[x.cl]; return `<div class="fila" style="align-items:center"><span><b style="color:${cl ? cl.color : 'var(--txt)'}">${esc(x.n)}</b> Nv ${x.nv} · ${esc(MAZMORRAS[x.id].nombre)} · ${x.m}/5</span>${grupo ? '' : `<button class="btn" data-lfg="${esc(x.pid)}">Unirme</button>`}</div>`; }).join('');
+  if (otros.length) h += otros.map(x => { const cl = CLASES[x.cl]; return `<div class="fila" style="align-items:center"><span><b style="color:${cl ? cl.color : 'var(--txt)'}">${esc(x.n)}</b> Nv ${x.nv} · ${esc(MAZMORRAS[x.id].nombre)} · ${x.m}/${x.mx || 5}</span>${grupo ? '' : `<button class="btn" data-lfg="${esc(x.pid)}">Unirme</button>`}</div>`; }).join('');
   else h += '<p style="font-size:12px;color:var(--txt2);margin-top:6px">Nadie más está buscando grupo ahora.</p>';
   L.innerHTML = h;
   const an = $('lfg-anunciar'); if (an) an.onclick = () => { mandar({ t: 'lfg', id: $('lfg-maz').value }); sfx('boton', .3); };
@@ -1637,9 +1642,11 @@ function abrirBuscador() {
   let h = `<p class="centro" style="margin-bottom:8px;font-size:12px">${grupo ? '👥 Entraréis juntos los del grupo que estén en el pueblo (los demás podrán unirse después por este portal).' : 'Entras solo: la mazmorra se ajusta a ti. Con un grupo es más fácil y más divertido (👥).'}</p>`;
   h += '<div class="mis-caja" id="maz-lfg"></div>';
   h += `<div class="mis-caja" style="font-size:13px;color:var(--txt2)">${htmlProgresoBoveda()}${yo.bovedaOpc && yo.bovedaOpc.length ? '<br><button class="btn" id="b-boveda" style="margin-top:8px">🗝️ Abrir la Bóveda</button>' : ''}</div>`;
+  let hBanda = '';
   for (const id in MAZMORRAS) {
     const mz = MAZMORRAS[id];
     const bloq = yo.nivel < mz.nv[0];
+    if (mz.banda) { hBanda += htmlBanda(id, mz, bloq); continue; }
     const jefes = mz.jefes.map(j => MONSTRUOS[j.k].nombre).join(' · ');
     const hecha = yo.mazDia && yo.mazDia.d === new Date().toISOString().slice(0, 10) && (yo.mazDia.hechas || []).includes(id);
     const estado = bloq ? `<span style="color:var(--warn)">🔒 Se abre a Nv ${mz.nv[0]} (te faltan ${mz.nv[0] - yo.nivel})</span>`
@@ -1661,7 +1668,8 @@ function abrirBuscador() {
     h += '<p style="font-size:12px;color:var(--txt2);margin-top:6px">⚡ Desafíos: la misma mazmorra a Nv 60 con monstruos más duros en cada paso. Vencer el +k abre el siguiente y da oro y un objeto de nivel 60+k (se equipa a Nv 60). Logros a +5, +10 y +20.</p>';
     h += htmlAfijos(afijosSemana());
   }
-  h += '<ul style="padding-left:18px;margin-top:10px;font-size:12px"><li>Aquí los monstruos atacan solos y en packs: tira de uno y vendrá todo su grupo.</li><li>Cada jefe guarda una barrera. Lee sus avisos: <b style="color:var(--warn)">sal de las zonas marcadas</b> en el suelo e <b>interrumpe</b> (Patada, Zurrar, Contrahechizo o Silencio) los hechizos con barra naranja.</li><li>Si caéis todos, revivís en la entrada y el jefe se recupera.</li><li>Cada jefe da equipo a cada uno; el último, épico.</li></ul>';
+  h += hBanda;
+  h += '<ul style="padding-left:18px;margin-top:10px;font-size:12px"><li>Aquí los monstruos atacan solos y en packs: tira de uno y vendrá todo su grupo.</li><li>Cada jefe guarda una barrera. Lee sus avisos: <b style="color:var(--warn)">sal de las zonas marcadas</b> en el suelo e <b>interrumpe</b> (Patada, Zurrar, Contrahechizo o Silencio) los hechizos con barra naranja.</li><li>Si caéis todos, revivís en la entrada y el jefe se recupera.</li><li>Cada jefe da equipo a cada uno; el último, épico.</li><li>En la banda, las <b style="color:#facc15">zonas doradas</b> se aguantan <b>juntos</b>: el golpe se reparte entre los que estén dentro.</li></ul>';
   L.innerHTML = h;
   L.querySelectorAll('[data-maz]').forEach(b => b.onclick = () => { sfx('explosion', .3); mandar({ t: 'mazmorra', id: b.dataset.maz }); cerrarModales(); });
   pintarLfg();
@@ -1669,6 +1677,19 @@ function abrirBuscador() {
   const bb = $('b-boveda'); if (bb) bb.onclick = abrirBoveda;
   L.querySelectorAll('[data-mazk]').forEach(b => b.onclick = () => { const sel = L.querySelector(`[data-dk="${b.dataset.mazk}"]`); sfx('explosion', .35); mandar({ t: 'mazmorra', id: b.dataset.mazk, k: +sel.value }); cerrarModales(); });
   abrir('m-mazmorras');
+}
+// La banda en el portal: sus jefes con el botin de la semana ya cobrado
+// (✓), la montura del Titan y el boton para entrar.
+function htmlBanda(id, mz, bloq) {
+  const b = yo.banda || { j: [], t: 0 };
+  const jefes = mz.jefes.map(j => `${b.j.includes(j.k) ? '✓' : '·'} ${esc(MONSTRUOS[j.k].nombre)}`).join('<br>');
+  const lleva = b.t >= BANDA_MONTURA || (yo.monturas || []).includes('abismo');
+  const tj = tarjeta(`<img src="${A}items/equipo/${mz.icono}.png" style="${bloq ? 'filter:grayscale(1);opacity:.4' : ''}">`,
+    `⚔️ ${esc(mz.nombre)} <span style="color:${bloq ? 'var(--warn)' : 'var(--txt2)'}">BANDA · Nv ${mz.nv[0]} · 1-${BANDA_MAX}</span>`,
+    `${esc(mz.desc)}<br><span style="color:var(--txt2)">Botín de esta semana (✓ = ya cobrado):<br>${jefes}</span><br><span style="color:${lleva ? 'var(--ok)' : 'var(--txt2)'}">🦇 ${esc(MONTURAS.abismo.nombre)}: ${lleva ? '¡ya es tuyo!' : 'Titán vencido ' + b.t + '/' + BANDA_MONTURA + ' semanas'}</span>`,
+    bloq ? `<span class="precio" style="color:var(--txt3)">🔒 Nv ${mz.nv[0]}</span>` : `<button class="btn" data-maz="${id}">Entrar</button>`);
+  return '<p style="font:600 13px var(--sans);color:var(--txt);margin:12px 0 6px">⚔️ Banda</p>' + (bloq ? tj.replace('<div class="item">', '<div class="item" style="opacity:.55">') : tj)
+    + (grupo && !grupo.banda && soyLider() && !bloq ? '<p style="font-size:12px;color:var(--txt2);margin:-4px 0 10px">Para ser más de 5, convierte tu grupo en banda (👥 Social > Grupo) o anúnciate para la banda en el buscador.</p>' : '');
 }
 // Afijos de la semana de los Desafios (cambian cada lunes UTC).
 function htmlAfijos(af) {
@@ -1735,7 +1756,7 @@ function abrirMapaMundo() {
   for (const id in MAZMORRAS) {
     const mz = MAZMORRAS[id];
     const mp = MAPAS[mz.mapa];
-    h += fila(mz.mapa, mp, mz.jefes.map(j => esc(MONSTRUOS[j.k].nombre)).join(' · '), 'Nv ' + mz.nv[0] + '-' + mz.nv[1]);
+    h += fila(mz.mapa, mp, (mz.banda ? '⚔️ Banda (1-10) · ' : '') + mz.jefes.map(j => esc(MONSTRUOS[j.k].nombre)).join(' · '), mz.nv[0] === mz.nv[1] ? 'Nv ' + mz.nv[0] : 'Nv ' + mz.nv[0] + '-' + mz.nv[1]);
   }
   h += '</div>';
   h += fila('coliseo', MAPAS.coliseo, '👹 Jefe mundial a las :00 y :30 — todos los niveles', '').replace('class="zm', 'style="margin-top:8px" class="zm');
@@ -3113,6 +3134,11 @@ function dibujarZonas() {
     if (z.act) {
       g.globalAlpha = .35 + Math.random() * .15; g.fillStyle = col; g.fillRect(x0, SUELO - 130, x1 - x0, 132);
       g.globalAlpha = .9; g.fillRect(x0, SUELO - 4, x1 - x0, 6);
+    } else if (z.j) {
+      // Zona para aguantar JUNTOS (banda): columna dorada que llama a entrar.
+      g.globalAlpha = .16 + Math.abs(Math.sin(frame * .12)) * .14; g.fillStyle = col; g.fillRect(x0, SUELO - 120, x1 - x0, 122);
+      g.globalAlpha = .95; g.strokeStyle = col; g.lineWidth = 3; g.strokeRect(x0, SUELO - 120, x1 - x0, 122);
+      g.globalAlpha = 1; etiqueta((x0 + x1) / 2, SUELO - 128 - Math.abs(Math.sin(frame * .15)) * 6, 'JUNTAOS AQUI', col, 8);
     } else {
       g.globalAlpha = .18 + Math.abs(Math.sin(frame * .2)) * .25; g.fillStyle = col; g.fillRect(x0, SUELO - 6, x1 - x0, 8);
       g.globalAlpha = .9; g.strokeStyle = col; g.lineWidth = 2; g.setLineDash([6, 4]); g.strokeRect(x0, SUELO - 120, x1 - x0, 122);
@@ -3475,9 +3501,10 @@ function pintarTienda() {
       const tiene = (yo.monturas || []).includes(id);
       const ico = `<canvas data-montura="${id}" width="52" height="52"></canvas>`;
       const acc = tiene ? (yo.montura === id ? '<span class="precio" style="color:var(--ok)">✓ En uso</span>' : `<button class="btn sec" data-comprar="montura" data-id="${id}">Usar</button>`)
+        : mo.banda ? `<span class="precio" style="color:var(--txt2)">⚔️ Banda ${(yo.banda || {}).t || 0}/${BANDA_MONTURA}</span>`
         : yo.nivel < mo.nv ? `<span class="precio" style="color:var(--warn)">Nv ${mo.nv}</span><span class="precio">🪙 ${mo.precio.toLocaleString('es')}</span>`
         : `<span class="precio">🪙 ${mo.precio.toLocaleString('es')}</span><button class="btn" data-comprar="montura" data-id="${id}" ${yo.oro < mo.precio ? 'disabled' : ''}>Comprar</button>`;
-      h += tarjeta(ico, esc(mo.nombre), `+${Math.round((mo.vel - 1) * 100)}% de velocidad · desde Nv ${mo.nv}`, acc);
+      h += tarjeta(ico, esc(mo.nombre), `+${Math.round((mo.vel - 1) * 100)}% de velocidad · ` + (mo.banda ? `no se vende: vence al Titán de la banda en ${BANDA_MONTURA} semanas distintas` : `desde Nv ${mo.nv}`), acc);
     }
     h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Monta con la tecla Y o el botón 🐎 (1,5 s, fuera de combate). No se puede montar en mazmorras ni en el Coliseo.</p>';
   } else if (tabTienda === 'pw') {

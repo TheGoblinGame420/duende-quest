@@ -18,7 +18,7 @@
 // ultimo, epica). NUNCA mTON: ese dinero sale de un fondo limitado y sumar
 // fuentes nuevas se habla antes con el dueño.
 // ═══════════════════════════════════════════════════════
-import { MAPAS, MONSTRUOS, MAZMORRAS, escalaMazmorra, premioMazmorraDia, nivelMazmorra, statsMonstruo, SUELO, hoyUTC, NIVEL_MAX, DESAFIO_MAX, multDesafio, premioDesafio, AFIJOS, afijosDe, multAfijos, opcionesBoveda, semanaUTC, nombreItem } from '../../mmo/js/data.js';
+import { MAPAS, MONSTRUOS, MAZMORRAS, MONTURAS, escalaMazmorra, premioMazmorraDia, nivelMazmorra, statsMonstruo, SUELO, hoyUTC, NIVEL_MAX, DESAFIO_MAX, multDesafio, premioDesafio, AFIJOS, afijosDe, multAfijos, opcionesBoveda, semanaUTC, nombreItem, BANDA_MONTURA, botinBandaNv, CONJUNTO_PROB } from '../../mmo/js/data.js';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const VACIA_MS = 300000;   // una instancia sin nadie se cierra a los 5 min (en el movil se corta mucho: da tiempo a reconectar)
@@ -46,7 +46,7 @@ export const Mazmorras = {
       return this.unirAInstancia(s, wg);
     }
     // Desafio +k: solo a Nv 60 y hasta uno mas que el mejor vencido.
-    const k = Math.max(0, Math.min(DESAFIO_MAX, m.k | 0));
+    const k = mz.banda ? 0 : Math.max(0, Math.min(DESAFIO_MAX, m.k | 0));
     if (k && s.c.nivel < NIVEL_MAX) return this.no(s, `Los Desafíos se abren a nivel ${NIVEL_MAX}.`);
     if (k > ((s.c.desafio || {})[id] || 0) + 1) return this.no(s, `Primero vence el Desafío +${k - 1} de ${mz.nombre}.`);
     const g = this.grupoDe(s);
@@ -96,8 +96,10 @@ export const Mazmorras = {
     // de la partida no la cambia).
     const af = afijosDe(k);
     const ma = multAfijos(af);
-    w.inst = { id, nv: nivel, creado: Date.now(), vacioDesde: 0, hechos: 0, completada: false, k, mv: md.vida, ma: md.atk, af,
-      mvP: md.vida * ma.vidaPack, maP: md.atk * ma.atkPack, mvJ: md.vida * ma.vidaJefe, maJ: md.atk * ma.atkJefe };
+    // La banda es mas dura de por si (se hace con el mejor equipo).
+    const dv = (mz.dif && mz.dif.vida) || 1, da = (mz.dif && mz.dif.atk) || 1;
+    w.inst = { id, nv: nivel, creado: Date.now(), vacioDesde: 0, hechos: 0, completada: false, k, mv: md.vida, ma: md.atk, af, banda: !!mz.banda,
+      mvP: md.vida * ma.vidaPack * dv, maP: md.atk * ma.atkPack * da, mvJ: md.vida * ma.vidaJefe * dv, maJ: md.atk * ma.atkJefe * da };
     const I = w.inst;
     w.muros = mz.jefes.map(j => j.muro);
     const esc = escalaMazmorra(n);
@@ -184,9 +186,19 @@ export const Mazmorras = {
     w.zonas = w.zonas.filter(z => {
       if (!z.hecho && ahora >= z.act) {
         z.hecho = true;
-        for (const s of jugadores) {
-          if (!s.muerto && s.x >= z.x0 - 8 && s.x <= z.x1 + 8 && s.y > SUELO - 150) this.herir(s, 0, { id: z.de, jefe: true, pct: z.dano, zona: true });
-        }
+        const dentro = jugadores.filter(s => !s.muerto && s.x >= z.x0 - 8 && s.x <= z.x1 + 8 && s.y > SUELO - 150);
+        if (z.junta) {
+          // Hay que aguantarla juntos: el golpe (que crece con la gente, hasta
+          // `junta` veces) se reparte entre los de dentro. Si no entra nadie,
+          // estalla sobre todos.
+          const vivos = jugadores.filter(s => !s.muerto);
+          const total = z.dano * Math.min(Math.max(1, vivos.length), z.junta);
+          if (dentro.length) for (const s of dentro) this.herir(s, 0, { id: z.de, jefe: true, pct: total / dentro.length, zona: true });
+          else {
+            for (const s of vivos) this.herir(s, 0, { id: z.de, jefe: true, pct: z.dano, zona: true });
+            this.aClave(w.clave, { t: 'emote', m: '💥 ¡Nadie la aguantó y estalla sobre todos!' });
+          }
+        } else for (const s of dentro) this.herir(s, 0, { id: z.de, jefe: true, pct: z.dano, zona: true });
       }
       return ahora < z.fin;
     });
@@ -294,10 +306,16 @@ export const Mazmorras = {
       const f = t ? (t.x >= o.x ? 1 : -1) : o.f;
       cs.push(o.x + f * (m.ancho / 2 + 10));
     } else if (m.donde === 'jugadores') { for (const s of jugadores) if (!s.muerto) cs.push(s.x); }
+    else if (m.donde === 'uno') {
+      // Bajo un jugador al azar (sin salirse de la sala del jefe).
+      const vivos = jugadores.filter(s => !s.muerto && Math.abs(s.x - o.casaX) < 900);
+      const t = vivos[Math.floor(Math.random() * vivos.length)];
+      cs.push(t ? t.x : o.x);
+    }
     else for (let i = 0; i < (m.n || 1); i++) cs.push(o.casaX + rnd(-420, 420));
     w.sigZona = w.sigZona || 1;
-    for (const c of cs) w.zonas.push({ id: w.sigZona++, x0: c - m.ancho / 2, x1: c + m.ancho / 2, act: ahora + m.aviso, fin: ahora + m.aviso + 500, dano: m.dano, color: m.color, de: o.id });
-    this.aClave(o.cl, { t: 'emote', m: `⚠️ ${MONSTRUOS[o.k].nombre} prepara ${m.nombre}: ¡sal de la zona marcada!` });
+    for (const c of cs) w.zonas.push({ id: w.sigZona++, x0: c - m.ancho / 2, x1: c + m.ancho / 2, act: ahora + m.aviso, fin: ahora + m.aviso + 500, dano: m.dano, color: m.color, de: o.id, junta: m.junta || 0 });
+    this.aClave(o.cl, { t: 'emote', m: m.junta ? `⚠️ ${MONSTRUOS[o.k].nombre} lanza ${m.nombre}: ¡JUNTAOS en la marca dorada para repartir el golpe!` : `⚠️ ${MONSTRUOS[o.k].nombre} prepara ${m.nombre}: ¡sal de la zona marcada!` });
   },
 
   invocarEsbirros(o, m) {
@@ -399,7 +417,7 @@ export const Mazmorras = {
         } else extra += ` Desafío +${I.k} vencido (el premio de esta mazmorra ya lo cobraste hoy: bate tu marca para otro).`;
         extra += ` Tu marca aquí: +${c.desafio[I.id]}.`;
       }
-      this.progresoBoveda(s, kBoveda);
+      this.progresoBoveda(s, I.banda ? 5 : kBoveda);
       s.sucio = true;
       this.enviar(s, { t: 'completada', id: I.id, txt: `🏆 ¡${mz.nombre}${I.k ? ' +' + I.k : ''} completada!${extra}` });
       this.revisarLogros(s);
@@ -408,6 +426,39 @@ export const Mazmorras = {
       nombres.push(c.nombre);
     }
     this.aTodos({ t: 'aviso', m: `🏰 ${nombres.join(', ')} ${nombres.length > 1 ? 'completaron' : 'completó'} ${mz.nombre} ${I.k ? '— ⚡ Desafío +' + I.k : '(Nv ' + I.nv + ')'}.` });
+  },
+
+  // ── BANDA ──
+  // c.bandaSem = { sem, j: { idJefe: 1 } }: los jefes de la banda cuyo botin
+  // ya cobraste esta semana (lunes a domingo UTC). c.titanes = semanas que
+  // venciste al jefe final cobrando su botin: a BANDA_MONTURA, su montura.
+  bloqueoBanda(c) {
+    const sem = semanaUTC();
+    if (!c.bandaSem || c.bandaSem.sem !== sem) c.bandaSem = { sem, j: {} };
+    return c.bandaSem;
+  },
+  infoBanda(c) { const b = this.bloqueoBanda(c); return { j: Object.keys(b.j), t: c.titanes || 0 }; },
+  esJefeBanda(o) { const w = o.mazmorra && this.mundo[o.cl]; return !!(w && w.inst && w.inst.banda); },
+  // Llamado desde dar() al caer un jefe de la banda, para cada uno que cobra.
+  botinBanda(s, o) {
+    const c = s.c;
+    const b = this.bloqueoBanda(c);
+    if (b.j[o.k]) { this.enviar(s, { t: 'toast', m: `🔒 Ya cobraste el botín de ${MONSTRUOS[o.k].nombre} esta semana (vuelve el lunes).` }); return null; }
+    b.j[o.k] = 1;
+    const it = this.generarItem(botinBandaNv(o.final), o.final && Math.random() < 0.15 ? 3 : 2);
+    it.des = 1;
+    if (Math.random() < CONJUNTO_PROB * 2) it.cj = this.mundo[o.cl].inst.id;
+    const dado = this.darItem(s, it);
+    if (o.final) {
+      c.titanes = (c.titanes || 0) + 1;
+      c.monturas = c.monturas || [];
+      if (c.titanes >= BANDA_MONTURA && !c.monturas.includes('abismo')) {
+        c.monturas.push('abismo');
+        this.enviar(s, { t: 'toast', ok: true, m: `🦇 ¡El ${MONTURAS.abismo.nombre} es tuyo! Lo tienes en el Mercader (pestaña Monturas).` });
+        this.aTodos({ t: 'aviso', m: `🦇 ${c.nombre} ganó el ${MONTURAS.abismo.nombre} en la banda del Santuario.` });
+      } else if (c.titanes < BANDA_MONTURA) this.enviar(s, { t: 'toast', m: `🦇 Titán vencido ${c.titanes}/${BANDA_MONTURA} semanas: a la ${BANDA_MONTURA}ª te llevas su montura.` });
+    }
+    return dado;
   },
 
   // ── BOVEDA SEMANAL ──

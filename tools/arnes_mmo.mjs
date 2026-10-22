@@ -575,6 +575,7 @@ async function pruebas() {
   await pruebasLfg();
   await pruebasBoveda();
   await pruebasFortaleza();
+  await pruebasBanda();
   await pruebasMascotas();
   await pruebasContactos();
 }
@@ -1270,7 +1271,7 @@ async function pruebasTemporada() {
   const sinLogros = T.filter(x => [50, 200].some((n, i) => { const L = D.LOGROS.find(l => l.titulo === x.titulos[i]); return !L || L.cond({ [x.campo]: n - 1 }) || !L.cond({ [x.campo]: n }); }));
   chequear(!sinLogros.length, 'cada temporada tiene sus logros de 50 y 200 ' + sinLogros.map(x => x.id).join(','));
   chequear(new Date(T[T.length - 1].fin).getUTCFullYear() === 2027 && T.some(x => new Date(x.ini).getUTCMonth() === 0) && T.some(x => new Date(x.ini).getUTCMonth() >= 2), 'hay temporadas en enero y de marzo en adelante');
-  chequear(Object.values(D.MONTURAS).every(mo => D.HOJAS[mo.hoja] && mo.precio > 0 && mo.vel > 1), 'todas las monturas tienen hoja, precio y velocidad');
+  chequear(Object.values(D.MONTURAS).every(mo => D.HOJAS[mo.hoja] && (mo.precio > 0 || mo.banda) && mo.vel > 1), 'todas las monturas tienen hoja, precio y velocidad');
   reloj = Math.max(relojAntes, reloj);
   await dejar(t);
 }
@@ -1439,6 +1440,101 @@ async function pruebasFortaleza() {
   mundo.danar(finN, 1, f); mundo.danar(finN, finN.hp + 1, f); tick(2);
   chequear(wn.inst.completada && f.c.logros.includes('cancerbero'), 'se completa y da el logro Domador del Infierno');
   await dejar(f);
+}
+
+async function pruebasBanda() {
+  console.log('Banda: Santuario del Titán');
+  const D = await import('../mmo/js/data.js');
+  const px = D.MAPAS.pueblo.portales.find(p => p.buscador).x;
+  const js = [];
+  for (let i = 1; i <= 7; i++) {
+    const j = await entrar('Bandido' + i, 'c' + i);
+    ponerNivel(j, 60, ['guerrero', 'sacerdote', 'mago', 'picaro'][i % 4]);
+    await aMapa(j, 'pueblo', px);
+    js.push(j);
+  }
+  const [L] = js;
+  for (let i = 1; i <= 4; i++) { await L.mandar({ t: 'invitar', p: js[i].id }); await js[i].mandar({ t: 'grupoResp', si: true }); }
+  const g = mundo.grupoDe(L);
+  chequear(g && g.uids.length === 5 && !g.banda, 'un grupo normal llega a 5');
+  L.limpiar();
+  await L.mandar({ t: 'invitar', p: js[5].id });
+  chequear(!js[5].invitacion && L.ultimos('no').some(x => /convertirlo en banda/.test(x.m)), 'el 6º no entra y se ofrece convertir en banda');
+  await js[1].mandar({ t: 'banda', si: true });
+  chequear(!g.banda, 'solo el líder convierte el grupo en banda');
+  await L.mandar({ t: 'banda', si: true });
+  chequear(g.banda && L.ultimos('grupo').some(x => x.g && x.g.banda === 1), 'el líder lo convierte en banda y el cliente lo sabe');
+  await L.mandar({ t: 'invitar', p: js[5].id }); await js[5].mandar({ t: 'grupoResp', si: true });
+  chequear(g.uids.length === 6, 'la banda admite a un 6º');
+  await L.mandar({ t: 'banda', si: false });
+  chequear(g.banda, 'con más de 5 no vuelve a ser grupo');
+  // Entrar (un Desafio no aplica a la banda)
+  await L.mandar({ t: 'mazmorra', id: 'santuario', k: 3 });
+  const w = mundo.mundoDe(L);
+  const dentro = js.slice(0, 6).filter(x => x.k === w.clave);
+  chequear(w.inst && w.inst.id === 'santuario' && w.inst.banda && w.inst.k === 0 && dentro.length === 6, 'entran los 6 a la banda, sin Desafío');
+  const jefes = [...w.mons.values()].filter(o => o.jefe);
+  chequear(jefes.length === 4 && jefes.filter(o => o.final).length === 1, 'la banda tiene 4 jefes');
+  // Zona para aguantar juntos: el golpe se reparte entre los de dentro.
+  const coloso = jefes.find(o => o.k === 'mz_coloso_ab');
+  for (const o of [...w.mons.values()]) if (!o.jefe) w.mons.delete(o.id);   // que los packs no peguen a los de fuera
+  for (const x of dentro) { x.x = coloso.x - 300; x.hp = x.st.maxHp; x.inv = 0; x.escudo = 0; }
+  const enZona = dentro.slice(0, 3);
+  for (const x of dentro.slice(3)) x.x = coloso.x - 700;
+  const ahora = Date.now();
+  w.zonas.push({ id: 999, x0: coloso.x - 400, x1: coloso.x - 200, act: ahora + 100, fin: ahora + 600, dano: 0.6, color: '#facc15', de: coloso.id, junta: 3 });
+  tick(2);
+  const perd = enZona.map(x => 1 - x.hp / x.st.maxHp);
+  chequear(perd.every(p => p > 0.5 && p < 0.7) && dentro.slice(3).every(x => x.hp === x.st.maxHp), 'zona dorada: 3 dentro se reparten el golpe (' + perd.map(p => Math.round(p * 100) + '%').join(', ') + ') y fuera no se recibe');
+  for (const x of dentro) { x.hp = x.st.maxHp; x.x = coloso.x - 700; }
+  w.zonas.push({ id: 998, x0: coloso.x - 400, x1: coloso.x - 200, act: Date.now() + 100, fin: Date.now() + 600, dano: 0.6, color: '#facc15', de: coloso.id, junta: 3 });
+  tick(2);
+  chequear(dentro.every(x => x.hp < x.st.maxHp * 0.45 && x.hp > x.st.maxHp * 0.35), 'si nadie la aguanta, estalla sobre todos (con su golpe entero)');
+  // Botin: una vez por semana y jefe.
+  for (const x of dentro) { x.hp = x.st.maxHp; x.x = coloso.x - 100; x.c.bolsa = []; }
+  mundo.danar(coloso, 1, L); mundo.danar(coloso, coloso.hp + 1, L); tick(1);
+  const botin = dentro.map(x => x.c.bolsa.find(it => it.nv === D.botinBandaNv(false)));
+  chequear(botin.every(it => it && it.r >= 2 && it.des), 'cada uno se lleva un objeto épico de nivel ' + D.botinBandaNv(false));
+  chequear(dentro.every(x => x.c.bandaSem && x.c.bandaSem.j.mz_coloso_ab), 'queda anotado el botín de la semana');
+  mundo.actualizarYo(L);
+  chequear(L.ultimos('yo').some(x => x.yo && x.yo.banda && x.yo.banda.j.includes('mz_coloso_ab')), 'el cliente recibe el bloqueo semanal');
+  // Otra instancia la misma semana: el jefe ya no da botin.
+  const w2 = mundo.crearInstancia('santuario', 60, 1);
+  const c2 = [...w2.mons.values()].find(o => o.k === 'mz_coloso_ab');
+  const solo = js[6];
+  mundo.unirAInstancia(L, w2);
+  L.x = c2.x - 100; L.c.bolsa = []; L.limpiar();
+  mundo.danar(c2, 1, L); mundo.danar(c2, c2.hp + 1, L); tick(1);
+  chequear(!L.c.bolsa.length && L.ultimos('toast').some(x => /Ya cobraste el botín/.test(x.m)), 'la misma semana el jefe ya no da botín');
+  L.c.bandaSem.sem = '2000-01-03';
+  const c3 = mundo.crearMonstruo(w2.clave, 'mz_coloso_ab', L.x + 50, { nv: 62, mazmorra: true, jefeMaz: 0 });
+  mundo.danar(c3, 1, L); mundo.danar(c3, c3.hp + 1, L); tick(1);
+  chequear(L.c.bolsa.length === 1, 'la semana siguiente vuelve a dar botín');
+  // El Titan: logro, y a la 3ª semana su montura.
+  mundo.unirAInstancia(L, w);
+  const titan = jefes.find(o => o.final);
+  for (const o of jefes) if (o !== titan && !o.muere) { mundo.danar(o, 1, L); mundo.danar(o, o.hp + 1, L); tick(1); }
+  for (const x of dentro) { x.x = titan.x - 100; x.hp = x.st.maxHp; }
+  dentro[1].c.titanes = 2;
+  mundo.danar(titan, 1, L); mundo.danar(titan, titan.hp + 1, L); tick(2);
+  chequear(w.inst.completada && L.c.logros.includes('titan') && L.c.titanes === 1, 'vencer al Titán completa la banda y da su logro');
+  chequear(dentro[1].c.monturas.includes('abismo') && dentro[1].c.logros.includes('abismo'), 'a la 3ª semana se gana el Murciélago del Abismo');
+  chequear(dentro[1].c.boveda && dentro[1].c.boveda.k === 5, 'la banda cuenta en la Bóveda como un Desafío +5');
+  // No se vende.
+  await aMapa(solo, 'pueblo', px);
+  solo.c.oro = 1e7; solo.limpiar();
+  await solo.mandar({ t: 'comprar', k: 'montura', id: 'abismo' });
+  chequear(!(solo.c.monturas || []).includes('abismo'), 'la montura de la banda no se compra');
+  // Buscar gente para la banda la convierte en banda.
+  for (const x of js.slice(0, 6)) await dejar(x);
+  const l2 = await entrar('Bandido8', 'c8');
+  ponerNivel(l2, 60, 'guerrero');
+  await aMapa(l2, 'pueblo', px);
+  await solo.mandar({ t: 'lfg', id: 'santuario' });
+  await l2.mandar({ t: 'lfgUnir', pid: pub(solo.c.uid) });
+  const g2 = mundo.grupoDe(solo);
+  chequear(g2 && g2.banda && g2.uids.length === 2, 'quien se une desde el buscador de la banda forma una banda');
+  await dejar(l2); await dejar(solo);
 }
 
 async function pruebasBoveda() {

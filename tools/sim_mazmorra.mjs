@@ -42,7 +42,16 @@ function decidir(mundo, s, jefe, w) {
   if (s.muerto) return;
   const ahora = Date.now();
   // 1) Salir de las zonas que estan por estallar.
-  const z = w.zonas.find(z => !z.hecho && s.x > z.x0 - 30 && s.x < z.x1 + 30);
+  // Zonas doradas (banda): se aguantan juntos, hay que entrar.
+  const zj = w.zonas.find(z => !z.hecho && z.junta);
+  if (zj && (s.x < zj.x0 + 25 || s.x > zj.x1 - 25)) {
+    const meta = (zj.x0 + zj.x1) / 2;
+    const paso = Math.sign(meta - s.x) * Math.min(Math.abs(meta - s.x), FIS.vel * 6);
+    s.movT = ahora - 100;
+    s.mandar({ t: 'mv', x: Math.round(s.x + paso), y: SUELO, f: paso > 0 ? 1 : -1, a: 1 });
+    return;
+  }
+  const z = w.zonas.find(z => !z.hecho && !z.junta && s.x > z.x0 - 30 && s.x < z.x1 + 30);
   if (z) {
     const izq = z.x0 - 40, der = z.x1 + 40;
     const meta = Math.abs(s.x - izq) < Math.abs(s.x - der) ? izq : der;
@@ -171,6 +180,22 @@ if (modo === 'desafio') {
   }
   process.exit(0);
 }
+// Banda (Nv 60): node tools/sim_mazmorra.mjs santuario 60 banda
+if (modo === 'banda') {
+  const id = soloMaz || 'santuario';
+  const comps = [['guerrero'], ['mago'], ['guerrero', 'sacerdote', 'mago'], ['guerrero', 'sacerdote', 'mago', 'picaro', 'mago'],
+    ['guerrero', 'guerrero', 'sacerdote', 'sacerdote', 'mago', 'mago', 'mago', 'picaro', 'picaro', 'picaro']];
+  for (const comp of comps) {
+    const r = await completa(id, 60, comp);
+    console.log(`${id.padEnd(10)} ${String(comp.length).padStart(2)} jug. ${comp.join('+').slice(0, 40).padEnd(40)} ${r.gana ? '✓ completada' : '✗ jefes ' + r.jefes + '/' + MAZMORRAS[id].jefes.length} en ${Math.floor(r.seg / 60)}m${String(r.seg % 60).padStart(2, '0')}s · muertes ${r.muertes} · pociones ${r.pociones}`);
+  }
+  for (const comp of [['guerrero'], ['guerrero', 'sacerdote', 'mago', 'picaro', 'mago']]) {
+    const res = [];
+    for (let j = 0; j < MAZMORRAS[id].jefes.length; j++) res.push(await pelea(id, 60, comp, j));
+    console.log(`${String(comp.length).padStart(2)} jug. ` + res.map((r, j) => `${MONSTRUOS[MAZMORRAS[id].jefes[j].k].nombre.slice(0, 14).padEnd(14)} ${r.gana ? '✓' : '✗'} ${String(r.seg).padStart(3)}s ☠${r.muertes}`).join(' | '));
+  }
+  process.exit(0);
+}
 if (modo === 'completa') {
   for (const id in MAZMORRAS) {
     if (soloMaz && soloMaz !== 'todas' && id !== soloMaz) continue;
@@ -194,7 +219,7 @@ for (const id in MAZMORRAS) {
 }
 for (const [id, nv, comp] of pruebas) {
   const res = [];
-  for (let j = 0; j < 3; j++) res.push(await pelea(id, nv, comp, j));
+  for (let j = 0; j < MAZMORRAS[id].jefes.length; j++) res.push(await pelea(id, nv, comp, j));
   console.log(`${id.padEnd(10)} Nv${String(nv).padEnd(3)} ${comp.join('+').padEnd(26)} ` + res.map((r, j) => `${MONSTRUOS[MAZMORRAS[id].jefes[j].k].nombre.slice(0, 14).padEnd(14)} ${r.gana ? '✓' : '✗'} ${String(r.seg).padStart(3)}s ☠${r.muertes} 🧪${r.pociones}`).join(' | '));
 }
 process.exit(0);

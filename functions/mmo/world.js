@@ -261,6 +261,7 @@ export class MmoWorld {
       case 'invitar': return this.invitar(s, m);
       case 'grupoResp': return this.respuestaGrupo(s, m);
       case 'salirGrupo': return this.salirGrupo(s);
+      case 'banda': return this.bandaGrupo(s, m);
       case 'expulsarGrupo': return this.expulsarGrupo(s, m);
       case 'liderGrupo': return this.liderGrupo(s, m);
       case 'lfg': return this.buscarGrupo(s, m);
@@ -941,7 +942,7 @@ export class MmoWorld {
       kills: c.kills, jefes: c.jefes, muerto: s.muerto, mis: c.mis, forja: c.forja,
       eq: c.eq, bolsa: c.bolsa, logros: c.logros, titulo: c.titulo, mundiales: c.mundiales, login: c.login, crit: s.st.crit,
       clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, desafio: c.desafio || {}, ...Object.fromEntries(TEMPORADAS.map(t => [t.campo, c[t.campo] || 0])), chicha: this.infoChicha(c), temp: (temporadaDe() || {}).id || '', herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, best: c.best || {},
-      boveda: c.boveda, bovedaOpc: c.bovedaOpc || null,
+      boveda: c.boveda, bovedaOpc: c.bovedaOpc || null, banda: this.infoBanda(c),
       espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, tintes: c.tintes || [], tinte: c.tinte || '', mascotas: c.mascotas || [], mascota: c.mascota || '', montado: s.montado || null,
       mton: c.mton, wallet: c.wallet ? { a: tonAmigable(c.wallet.a), desde: c.wallet.desde } : null,
       p2e: this.elegibilidad(c), creado: c.creado,
@@ -1344,7 +1345,10 @@ export class MmoWorld {
     let item = null;
     if (o) {
       const nvM = o.nv || MONSTRUOS[o.k].nivel;
-      if (o.jefe) {
+      if (o.jefe && this.esJefeBanda(o)) {
+        // Banda: botin propio, una vez por semana y jefe (mazmorras.js).
+        item = this.botinBanda(s, o);
+      } else if (o.jefe) {
         const it0 = generarItem(nvM, o.final ? 2 : 1);
         // Jefe de mazmorra: a veces la pieza es de su conjunto.
         const idMaz = o.mazmorra && this.mundo[o.cl] && this.mundo[o.cl].inst && this.mundo[o.cl].inst.id;
@@ -1588,6 +1592,7 @@ export class MmoWorld {
       const mo = MONTURAS[m.id];
       c.monturas = c.monturas || [];
       if (c.monturas.includes(m.id)) { c.montura = m.id; this.actualizarYo(s); return this.enviar(s, { t: 'toast', m: `🐎 Ahora usas: ${mo.nombre}.`, ok: true }); }
+      if (mo.banda) return this.enviar(s, { t: 'toast', m: 'Esa montura no se vende: se gana en la banda del Santuario del Titán.' });
       if (c.nivel < mo.nv) return this.enviar(s, { t: 'toast', m: `Necesitas nivel ${mo.nv} para esa montura.` });
       if (c.oro < mo.precio) return this.enviar(s, { t: 'toast', m: 'No te alcanza el oro.' });
       c.oro -= mo.precio;
@@ -1926,7 +1931,7 @@ export class MmoWorld {
       b: w.balas.map(b => [b.id, Math.round(b.x), Math.round(b.y), Math.round(b.vx), Math.round(b.vy), b.jefe ? 1 : 0]),
     };
     // Zonas de peligro en el suelo (jefes de mazmorra): [id, x0, x1, activa, color].
-    if (w.zonas && w.zonas.length) snap.z = w.zonas.map(z => [z.id, Math.round(z.x0), Math.round(z.x1), z.act <= ahora ? 1 : 0, z.color || '']);
+    if (w.zonas && w.zonas.length) snap.z = w.zonas.map(z => [z.id, Math.round(z.x0), Math.round(z.x1), z.act <= ahora ? 1 : 0, z.color || '', z.junta ? 1 : 0]);
     const txt = JSON.stringify(snap);
     for (const s of jugadores) this.enviar(s, txt);
   }
