@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=144';
+} from './data.js?v=146';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -944,6 +944,27 @@ function dibujarPesquero() {
   g.beginPath(); g.ellipse(x + 10, SUELO - 3, 6 + r * 22, 1.5 + r * 4, 0, 0, Math.PI * 2); g.stroke();
   g.globalAlpha = 1;
   emoji('🎣', 24, x - 60, SUELO - 6);
+}
+// Vitrina del pueblo, junto al Mercader: una skin con poderes que cambia
+// cada 5 s (solo se ve; se compran en el Mercader, pestaña SKINS).
+const VITRINA_X = 1065;
+function dibujarVitrina() {
+  if (mapaId !== 'pueblo') return;
+  const x = VITRINA_X - camX;
+  if (x < -60 || x > VW + 60) return;
+  const ids = Object.keys(SKINS).filter(k => SKINS[k].usd);
+  if (!ids.length) return;
+  const sk = SKINS[ids[Math.floor(performance.now() / 5000) % ids.length]];
+  const img = IMG[sk.img];
+  g.fillStyle = '#2a2238'; g.fillRect(x - 22, SUELO - 10, 44, 10);
+  g.fillStyle = sk.color || '#ffd84a'; g.fillRect(x - 22, SUELO - 10, 44, 2);
+  if (img && img.naturalWidth) {
+    const e = Math.min(56 / img.naturalWidth, 56 / img.naturalHeight);
+    g.globalAlpha = .9;
+    g.drawImage(img, x - img.naturalWidth * e / 2, SUELO - 10 - img.naturalHeight * e + Math.sin(frame * .05) * 1.5, img.naturalWidth * e, img.naturalHeight * e);
+    g.globalAlpha = 1;
+  }
+  etiqueta(x, SUELO - 118, '✨ ' + sk.nombre, sk.color || '#ffd84a', 6);
 }
 // El sedal y el corcho de quien pesca (el corcho se hunde al picar).
 function dibujarSedal(x, pies, f, pica) {
@@ -3480,6 +3501,7 @@ function dibujar() {
   dibujarCofres();
   dibujarNodos();
   dibujarPesquero();
+  dibujarVitrina();
   if (frame % 6 === 0) escalonarEtiquetas();
   for (const o of mons.values()) dibujarMonstruo(o);
   dibujarMarcasEspeciales();
