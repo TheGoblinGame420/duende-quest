@@ -13,7 +13,8 @@ import {
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
-} from './data.js?v=43';
+  premioAmigo,
+} from './data.js?v=44';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -108,6 +109,9 @@ function ajustarVista() {
   hud.classList.toggle('estrecho', w < 600);
 }
 addEventListener('resize', ajustarVista);
+// La barra de abajo (#pie) toma su alto final despues del primer ajuste: si
+// #escena cambia de tamaño sin que cambie la ventana, se vuelve a encajar.
+if (typeof ResizeObserver === 'function') new ResizeObserver(() => ajustarVista()).observe($('escena'));
 
 // ── ASSETS ──
 const IMG = {};
@@ -472,7 +476,7 @@ function recibir(m) {
     case 'dueloFin': finDuelo(m); break;
     case 'critDuelo': break;
     case 'buscador': abrirBuscador(); break;
-    case 'amigos': pintarAmigos(m); if (presumirPend && m.ref) { presumirPend = false; ofrecerPresumir(presumirTxt); aviso('📣 Listo: toca PRESUMIR otra vez para compartir.'); } break;
+    case 'amigos': pintarAmigos(m); if (presumirPend && m.ref) { presumirPend = false; ofrecerPresumir(presumirTxt); aviso('📣 Listo: toca «Compartir logro» otra vez para compartir.'); } break;
     case 'muerte': resumenMuerte(m); break;
     case 'nodos': recibirNodos(m.l); break;
     case 'recogido': { const n = nodos.find(x => x.i === m.i); if (n) { n.listo = performance.now() + m.en; for (let k = 0; k < 14; k++) particula(n.x, SUELO - 14, m.tipo === 'hierba' ? '#4ade80' : '#cbd5e1', 3); } sfx('moneda', .3); break; }
@@ -1316,7 +1320,7 @@ function pintarAmigos(m) {
   const enlWeb = location.origin + '/mmo/?ref=' + m.ref;
   const texto = 'Juguemos juntos a DUENDE QUEST ONLINE, el MMORPG de duendes: gratis, en Telegram o en el navegador. 🧝';
   L.innerHTML = `<div class="mis-caja" style="margin-top:0"><b>🤝 Invita a tus amigos</b>
-    <p style="font-size:12px">Cuando un amigo que entre con tu enlace llegue a <b style="display:inline">nivel ${m.nivel}</b>, los dos ganáis oro. Al 5º amigo te regalamos el <b style="display:inline">Conejo Saltarín</b> de montura y un título.</p>
+    <p style="font-size:12px">Cuando un amigo que entre con tu enlace llegue a <b style="display:inline">nivel ${m.nivel}</b>, los dos ganan oro: tu amigo, <b style="display:inline">${premioAmigo(m.nivel).oro.toLocaleString('es')} oro</b>, y tú, <b style="display:inline">${premioAmigo(yo ? yo.nivel : 1).oro.toLocaleString('es')} oro</b> a tu nivel actual (sube con tu nivel)${m.max ? ', por tus primeros ' + m.max + ' amigos' : ''}. Al 5º amigo te regalamos el <b style="display:inline">Conejo Saltarín</b> de montura y un título.</p>
     <p style="font-size:12px;margin-top:6px">Amigos que ya llegaron: <b style="display:inline;color:var(--ok)">${m.amigos}</b></p></div>
     <button class="btn" id="b-comp-tg" style="width:100%;padding:12px;margin-bottom:8px">Compartir por Telegram</button>
     <button class="btn sec" id="b-comp-copiar" style="width:100%;margin-bottom:6px">Copiar enlace</button>
@@ -1424,10 +1428,13 @@ function abrirBuscador() {
     const bloq = yo.nivel < mz.nv[0];
     const jefes = mz.jefes.map(j => MONSTRUOS[j.k].nombre).join(' · ');
     const hecha = yo.mazDia && yo.mazDia.d === new Date().toISOString().slice(0, 10) && (yo.mazDia.hechas || []).includes(id);
-    h += tarjeta(`<img src="${A}items/equipo/${mz.icono}.png" style="${bloq ? 'filter:grayscale(1);opacity:.4' : ''}">`,
+    const estado = bloq ? `<span style="color:var(--warn)">🔒 Se abre a Nv ${mz.nv[0]} (te faltan ${mz.nv[0] - yo.nivel})</span>`
+      : `<span style="color:${hecha ? 'var(--txt2)' : 'var(--ok)'}">${hecha ? '✓ Premio del día cobrado' : 'Premio del día disponible: XP, oro y un objeto épico'}</span>`;
+    const tj = tarjeta(`<img src="${A}items/equipo/${mz.icono}.png" style="${bloq ? 'filter:grayscale(1);opacity:.4' : ''}">`,
       `${esc(mz.nombre)} <span style="color:${bloq ? 'var(--warn)' : 'var(--txt2)'}">Nv ${mz.nv[0]}-${mz.nv[1]}</span>`,
-      `${esc(mz.desc)}<br><span style="color:var(--txt2)">👑 ${esc(jefes)}</span><br><span style="color:${hecha ? 'var(--txt2)' : 'var(--ok)'}">${hecha ? '✓ Premio del día cobrado' : 'Premio del día disponible: XP, oro y un objeto épico'}</span>`,
+      `${esc(mz.desc)}<br><span style="color:var(--txt2)">👑 ${esc(jefes)}</span><br>${estado}`,
       bloq ? `<span class="precio" style="color:var(--txt3)">🔒 Nv ${mz.nv[0]}</span>` : `<button class="btn" data-maz="${id}">Entrar</button>`);
+    h += bloq ? tj.replace('<div class="item">', '<div class="item" style="opacity:.55">') : tj;
     // Desafios a Nv 60: elegir el +k (hasta uno mas que el mejor vencido).
     if (yo.nivel >= NIVEL_MAX) {
       const mejor = (yo.desafio || {})[id] || 0, tope = Math.min(DESAFIO_MAX, mejor + 1);
@@ -1489,7 +1496,7 @@ function abrirMapaMundo() {
     const aqui = mapaId === id;
     const grupoAqui = enGrupo[id] ? `<br><span style="color:var(--cian)">👥 ${esc(enGrupo[id].join(', '))}</span>` : '';
     const nivelOk = !mp.nv || (yo.nivel >= mp.nv[0] - 2 && yo.nivel <= mp.nv[1] + 4);
-    return `<div class="zm ${aqui ? 'aqui' : ''}" style="border-color:${mp.paleta.linea}">
+    return `<div class="zm ${aqui ? 'aqui' : ''}">
       <b style="color:${mp.paleta.linea}">${aqui ? '📍 ' : ''}${esc(mp.nombre)}</b><small>${sub}${grupoAqui}</small>${extra ? `<i style="color:${nivelOk ? 'var(--ok)' : 'var(--txt2)'}">${extra}</i>` : ''}</div>`;
   };
   let h = '<p class="centro" style="font-size:12px;margin-bottom:8px">Del pueblo salen portales a cada zona; cada zona lleva a la siguiente. En verde, las de tu nivel.</p><div class="mapa-mundo">';
@@ -1696,8 +1703,9 @@ function abrirClases(obligatorio) {
     const habs = habsDe(id).map(h => `<img src="${A}items/equipo/${h.icono}.png" title="${esc(h.nombre)} (Nv ${h.nv})">`).join('');
     return `<div class="clase ${yo.clase === id ? 'sel' : ''}" data-clase="${id}" style="--c:${cl.color}">
       <div class="cab"><img src="${A}items/equipo/${cl.icono}.png" alt=""><div><b>${esc(cl.nombre)}</b><small>${esc(cl.rol)} · ${esc(RECURSOS[cl.recurso].nombre)}</small></div></div>
-      <p>${esc(cl.desc)}</p><div class="habs">${habs}</div></div>`;
+      ${!yo.clase && id === 'guerrero' ? '<span class="reco">Recomendada para empezar</span>' : ''}<p>${esc(cl.desc)}</p><div class="habs">${habs}</div></div>`;
   }).join('');
+  if (!yo.clase) cont.insertAdjacentHTML('afterbegin', '<p class="centro" style="grid-column:1/-1;font-size:13px;color:var(--txt2);margin:0">Toca una clase para elegirla.</p>');
   cont.querySelectorAll('[data-clase]').forEach(b => b.onclick = () => {
     const id = b.dataset.clase;
     if (id === yo.clase) { cerrarModales(); return; }
@@ -1717,6 +1725,8 @@ function abrirLibro() {
 function pintarLibro() {
   const cl = CLASES[yo.clase];
   $('libro-t').innerHTML = `📖 <span style="color:${cl.color}">${esc(cl.nombre.toUpperCase())}</span>`;
+  // "PÍCARO": la fuente pixel no tiene letras con tilde.
+  $('libro-t').classList.toggle('sans', /[^ -~]/.test(cl.nombre));
   const rec = RECURSOS[cl.recurso].nombre;
   let h = `<p class="centro" style="margin-bottom:6px">${esc(cl.rol)} · recurso: <b style="color:${RECURSOS[cl.recurso].color}">${esc(rec)}</b></p>`;
   // Especializaciones (desde Nv 10).
@@ -1742,7 +1752,7 @@ function pintarLibro() {
   h += `<p style="font-size:12px;margin:12px 0 4px;color:var(--txt);font-weight:600">🌟 Talentos ${yo.nivel < TALENTO_NIVEL ? '(desde nivel ' + TALENTO_NIVEL + ')' : '· puntos libres: <b>' + libres + '</b>'}</p><div class="talentos">`;
   for (const t of TALENTOS) {
     const r = tal[t.id] || 0;
-    h += `<div class="tal ${r ? 'on' : ''}"><img src="${A}items/equipo/${t.icono}.png" alt=""><div><b>${esc(t.nombre)} ${r}/${TALENTO_MAX}</b><small>${esc(t.txt)} por rango</small></div><button class="btn" data-tal="${t.id}" ${libres > 0 && r < TALENTO_MAX ? '' : 'disabled'}>+</button></div>`;
+    h += `<div class="tal ${r ? 'on' : ''}"><img src="${A}items/equipo/${t.icono}.png" alt=""><div><b>${esc(t.nombre)} ${r}/${TALENTO_MAX}</b><small>${esc(t.txt)} por rango</small></div><button class="btn sec" data-tal="${t.id}" ${libres > 0 && r < TALENTO_MAX ? '' : 'disabled'}>+</button></div>`;
   }
   h += '</div>';
   if (Object.keys(tal).length) h += `<button class="btn sec" id="b-tal-reset" style="width:100%;margin-top:6px">Reiniciar talentos (${costoReinicioTalentos(yo.nivel).toLocaleString('es')} oro)</button>`;
@@ -1947,7 +1957,9 @@ function abrirArtesana() {
 function pintarChicha() {
   const ch = yo.chicha || { p: 0, hoy: 0, rec: [] };
   const cuenta = TG || !soyInvitado;
-  let h = `<div class="mis-caja" style="margin-top:0;text-align:center"><div style="font-size:40px">🥤</div><b style="color:var(--txt);font:600 16px/1.35 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;margin-bottom:0">Un litro de chicha morada, enviado a tu casa</b>
+  // Invitado: el aviso va arriba, con el boton para seguir en Telegram.
+  let h = cuenta ? '' : '<div class="seguridad centro" style="margin-top:0;color:var(--txt)">Juegas como invitado: los puntos de chicha se juntan solo con cuenta de Telegram.<a class="btn" href="https://t.me/duendequest_bot" target="_blank" rel="noopener" style="display:block;margin-top:10px;text-decoration:none;color:#fff">Abrir en Telegram</a></div>';
+  h += `<div class="mis-caja" style="margin-top:0;text-align:center"><div style="font-size:40px">🥤</div><b style="color:var(--txt);font:600 16px/1.35 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;margin-bottom:0">Un litro de chicha morada, enviado a tu casa</b>
     <p style="font-size:12px;color:var(--txt2);margin-top:4px">Promoción gratuita y opcional: no hay que comprar nada.</p>
     <p style="font-size:12px;margin-top:6px">Cada monstruo que cazas suelta su chicha: <b style="display:inline">1 punto</b>, <b style="display:inline">3</b> si es de tu nivel o más, <b style="display:inline">25</b> un jefe. Desde nivel ${CHICHA.nvPuntos}, hasta ${CHICHA.porDia} puntos al día.</p>
     <p style="font-size:22px;color:var(--oro);margin:8px 0">${ch.p.toLocaleString('es')} puntos</p>
@@ -1959,7 +1971,6 @@ function pintarChicha() {
       : ch.p >= meta ? `<button class="btn" data-chicha="${meta}">Reclamar</button>` : `<span class="precio">${pct}%</span>`;
     h += tarjeta('<div style="font-size:30px">🥤</div>', `${meta.toLocaleString('es')} puntos`, `Un litro de chicha morada peruana enviado a tu casa.<div class="mis-barra"><i style="width:${pct}%"></i></div>`, acc);
   }
-  if (!cuenta) h += '<p class="centro" style="color:var(--warn);font-size:12px">Juegas como invitado: los puntos de chicha se juntan solo con cuenta. Entra desde @duendequest_bot en Telegram.</p>';
   h += `<ul style="padding-left:18px;margin-top:8px;font-size:12px;line-height:1.45;color:var(--txt2)">
     <li>Promoción gratuita: no hay que comprar nada. Los puntos no se compran, no se venden y no se gastan al reclamar.</li>
     <li>Para reclamar: nivel ${CHICHA.nvReclamo}, personaje de 2 días y entrar con Telegram. El equipo te escribirá por Telegram para pedirte la dirección; nunca te pediremos pagos ni contraseñas.</li>
@@ -2083,11 +2094,12 @@ function mostrarLogin(m) {
   LOGIN_PREMIOS.forEach((pr, i) => {
     const n = i + 1;
     const cls = n < m.racha ? 'hecho' : n === m.racha ? 'hoy' : '';
-    h += `<div class="dia ${cls}"><b>DÍA ${n}</b><span>${n === 7 ? '🎁' : pr.oro ? '🪙' : '🧪'}</span><small>${esc(pr.txt)}</small></div>`;
+    h += `<div class="dia ${cls}"><b>Día ${n}</b><span>${n === 7 ? '🎁' : pr.oro ? '🪙' : '🧪'}</span><small>${esc(pr.txt)}</small></div>`;
   });
   h += '</div>';
   let txt = 'Hoy recibes ' + m.txt + '.';
   if (m.oro) txt = 'Hoy recibes ' + m.oro.toLocaleString('es') + ' oro' + (m.item ? ' y ' + RAREZAS[m.item.r].nombre.toLowerCase() + ': ' + nombreItem(m.item) : '') + '.';
+  ponTxt($('login-ok'), m.oro ? 'Recoger ' + m.oro.toLocaleString('es') + ' oro' : 'Recoger');
   $('login-cuerpo').innerHTML = h + `<p class="centro" style="margin-top:12px;color:var(--ok);font-weight:600">${esc(txt)}</p><p class="centro" style="font-size:12px;color:var(--txt2)">Vuelve mañana para el día ${m.racha % 7 + 1}. Si faltas un día, retrocede dos; si faltas más, vuelve a empezar. El oro crece con tu nivel.</p>`;
   abrir('m-login');
   sfx('moneda', .5);
@@ -2098,6 +2110,8 @@ let mundial = { vivo: false, en: 0 };
 function pintarMundial() {
   const el = $('h-mundial');
   if (!yo) return;
+  // Al novato el contador del jefe mundial solo le distrae de su mision.
+  if (yo.nivel < 10) { ponTxt(el, ''); el.className = ''; return; }
   if (mundial.vivo) { ponTxt(el, '👹 Jefe mundial activo en el Coliseo (portal del pueblo)'); el.className = 'lista'; return; }
   const ms = mundial.en - performance.now();
   if (mundial.en && ms > 0) {
@@ -2182,7 +2196,6 @@ function pintarWallet() {
     `<li>Cada día se reparte un fondo limitado entre todos y nadie se lleva más del ${Math.round(TOPE_DIARIO_PCT * 100)}%: cuando se acaba, vuelve mañana.</li>` +
     `<li>Un retiro por semana, de ${RETIRO_MIN_MTON / MTON_POR_TON} a ${RETIRO_MAX_MTON / MTON_POR_TON} TON (lo que pase de ${RETIRO_MAX_MTON / MTON_POR_TON} queda para el siguiente).</li>` +
     '<li>Los retiros los revisa el equipo y se pagan a tu wallet en 24-48 h. Usar bots o varias cuentas anula el retiro.</li></ul>';
-  h += '<p class="centro" style="font-size:12px;color:var(--txt2);margin-top:10px">🔒 Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado.</p>';
   $('wallet-cuerpo').innerHTML = h;
   const bc = $('b-conectar'); if (bc) bc.onclick = () => { sfx('boton', .3); conectarWallet(); };
   const bp = $('b-premium'); if (bp) bp.onclick = abrirPremium;
@@ -2202,7 +2215,7 @@ function htmlPremium() {
   let h = '<p style="font-size:13px;line-height:1.45;color:var(--txt2);margin-bottom:10px">Compras opcionales para apoyar el juego: recibes oro y poderes en tu personaje. Cada pago lo revisa <b>El Duende</b> en persona y te lo entrega en tu personaje (te avisamos aquí y por Telegram). Con dinero <b>no</b> se compran mTON: los TON solo se ganan jugando.</p>';
   for (const pq of PAQUETES) {
     let acc;
-    if (!cuenta) acc = '<span class="precio" style="color:var(--txt2)">Inicia sesión</span>';
+    if (!cuenta) acc = '<span class="precio sans" style="color:var(--txt2)">Inicia sesión</span>';
     else if (cuentaTg) acc = `<span class="precio">⭐ ${estrellasDe(pq.usd)}</span><button class="btn" data-premium="${pq.id}" data-metodo="stars">Pagar con Stars</button>`;
     else acc = `<span class="precio">~$${pq.usd} en SOL</span><button class="btn" data-premium="${pq.id}" data-metodo="sol">Pagar con SOL</button>`;
     h += tarjeta(`<img src="${A}items/equipo/${pq.icono}.png">`, esc(pq.nombre), esc(pq.desc), acc);
@@ -2213,7 +2226,6 @@ function htmlPremium() {
     const txt = { pagado: 'Por entregar', por_verificar: 'En revisión', entregado: 'Entregado', anulado: 'Anulado' };
     h += '<p style="margin:12px 0 4px;font-size:12px">Tus compras:</p>' + ps.slice().reverse().map(x => `<div class="fila"><span>#${esc(x.codigo)} · ${esc(x.nombre)}</span><span style="color:${col[x.estado] || 'var(--txt)'}">${txt[x.estado] || esc(x.estado)}</span></div>`).join('');
   }
-  h += '<p class="centro" style="font-size:12px;color:var(--txt2);margin-top:10px">🔒 Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado.</p>';
   return h;
 }
 function conectarPremium(L) {
@@ -2247,8 +2259,7 @@ function mostrarPedidoSol(m) {
     `<p style="font-size:12px;margin-top:8px">Y pega aquí la firma (signature) de la transacción:</p>` +
     `<input class="nombre" id="in-firma" placeholder="Firma de la transacción" style="font-size:10px;margin:6px 0">` +
     `<button class="btn sec" id="b-firma" style="width:100%">Enviar comprobante</button>` +
-    `<p style="font-size:12px;color:var(--txt2);margin-top:8px">Tienes 30 minutos. El pago va directo a la wallet de El Duende y él te entrega la compra a mano.</p>` +
-    '<p class="centro" style="font-size:12px;color:var(--txt2);margin-top:10px;margin-top:6px">🔒 Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado.</p>';
+    `<p style="font-size:12px;color:var(--txt2);margin-top:8px">Tienes 30 minutos. El pago va directo a la wallet de El Duende y él te entrega la compra a mano.</p>`;
   abrir('m-sol');
   const copiar = t => { try { navigator.clipboard.writeText(t); aviso('📋 Copiado', 'ok'); } catch (e) {} };
   $('b-copia-w').onclick = () => copiar(m.wallet);
@@ -2881,6 +2892,8 @@ function pintarHud() {
 
 // ── MISIONES ──
 function abrirMision() { if (!yo) return; abrir('m-mision'); pintarMision(); }
+// Tocar la mision o las tareas del seguimiento (derecha) abre el registro.
+$('seguimiento').addEventListener('click', e => { if (e.target.closest('#h-mision,#h-tareas')) abrirMision(); });
 function cajaDiaria() {
   const d = yo.diaria || { p: 0, ok: false };
   const pr = premioDiaria(yo.nivel);

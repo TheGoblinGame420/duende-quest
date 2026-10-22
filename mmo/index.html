@@ -58,8 +58,8 @@
    apuntan a tonos sobrios. ── */
 :root{
   --bg:#0b0f17;--panel:#121826;--panel2:#182033;--borde:#263049;
-  --txt:#e6e9f0;--txt2:#9aa3b5;--txt3:#6b7489;
-  --pri:#3b82f6;--pri2:#2563eb;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444;--oro:#f2c14e;
+  --txt:#e6e9f0;--txt2:#9aa3b5;--txt3:#8a93a6;
+  --pri:#2563eb;--pri2:#1d4ed8;--pri-txt:#60a5fa;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444;--oro:#f2c14e;
   --verde:#22c55e;--amarillo:#f2c14e;--rosa:#a78bfa;--cian:#60a5fa;--rojo:#ef4444;
   --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --pixel:'Press Start 2P',monospace;
@@ -81,8 +81,11 @@ a{color:var(--cian);}
 .uf .ret img,.uf .ret canvas{position:absolute;inset:2px;width:calc(100% - 4px);height:calc(100% - 4px);object-fit:contain;image-rendering:pixelated;border-radius:50%;}
 .uf .ret b{position:absolute;left:-5px;bottom:-5px;min-width:17px;height:17px;padding:0 3px;border-radius:9px;background:var(--panel2);border:1px solid var(--oro);font-size:6px;line-height:15px;text-align:center;color:var(--oro);}
 .uf .cu{flex:1;min-width:0;}
-.uf .nm{font-size:7px;display:flex;justify-content:space-between;gap:6px;margin:1px 0 4px;white-space:nowrap;overflow:hidden;}
-.uf .nm small{font-size:6px;color:var(--txt2);}
+.uf .nm{font-size:9px;display:flex;justify-content:space-between;gap:6px;margin:1px 0 4px;white-space:nowrap;overflow:hidden;}
+.uf .nm span{min-width:0;overflow:hidden;text-overflow:ellipsis;}
+.uf .nm small{font-size:8px;color:var(--txt2);flex:0 0 auto;}
+#hud.estrecho .uf .nm{font-size:8px;}
+#hud.estrecho .uf .nm small{font-size:7px;}
 #uf-yo{left:8px;top:8px;width:206px;}
 #uf-obj{left:222px;top:8px;width:206px;display:none;}
 #uf-obj.hostil .ret{border-color:var(--err);}
@@ -120,9 +123,14 @@ a{color:var(--cian);}
 .saldo b{display:block;font-size:16px;color:var(--cian);}
 .saldo small{display:block;margin-top:6px;font-family:var(--sans);font-size:13px;line-height:1.45;color:var(--txt2);}
 /* seguimiento de misiones (derecha, bajo el minimapa) */
-#seguimiento{right:8px;top:100px;max-width:200px;text-align:right;pointer-events:none!important;}
-#h-tareas{font-size:6px;line-height:1.6;color:#fde68a;margin-top:3px;text-shadow:1px 1px 0 #000,0 0 3px #000;}
-#h-mision,#h-mundial{font-size:8px;line-height:1.6;text-shadow:1px 1px 0 #000,0 0 3px #000;}
+/* El texto (mision y tareas) se puede tocar para abrir el registro de misiones;
+   el resto de la caja deja pasar los clics al lienzo. */
+#seguimiento{right:8px;top:106px;max-width:220px;text-align:right;pointer-events:none!important;}
+#seguimiento #h-mision,#seguimiento #h-tareas{pointer-events:auto;cursor:pointer;}
+#h-tareas{font:11px/1.4 var(--sans);color:var(--txt2);margin-top:3px;text-shadow:1px 1px 0 #000,0 0 3px #000;}
+#h-mision{font:600 12px/1.35 var(--sans);text-shadow:1px 1px 0 #000,0 0 3px #000;}
+#h-mundial{font-size:8px;line-height:1.6;text-shadow:1px 1px 0 #000,0 0 3px #000;}
+#h-mundial:empty{display:none;}
 #h-mision{color:var(--oro);}
 /* Aviso de estado (mision lista, jefe mundial): un cambio de opacidad suave, sin destellos. */
 #h-mision.lista{color:var(--ok);animation:parp 1.6s ease-in-out infinite alternate;}
@@ -135,23 +143,27 @@ a{color:var(--cian);}
 #h-evento u{display:block;height:100%;width:0;background:linear-gradient(90deg,#ea580c,var(--oro));transition:width .3s;}
 #h-evento.aqui b{color:var(--oro);}
 #h-evento.lista{animation:parp 1.6s ease-in-out infinite alternate;}
-#hud.estrecho #seguimiento{top:112px;max-width:150px;}
-#hud.estrecho #h-mision{font-size:7px;}
+#hud.estrecho #seguimiento{top:122px;max-width:150px;}
+#hud.estrecho #h-mision{font-size:11px;}
+#hud.estrecho #h-tareas{font-size:10px;}
 @keyframes parp{to{opacity:.7}}
-#minimapa{right:8px;top:62px;background:var(--panel);border:1px solid var(--borde);border-radius:8px;padding:4px;}
+#minimapa{right:8px;top:66px;background:var(--panel);border:1px solid var(--borde);border-radius:8px;padding:4px;}
 #minimapa canvas{display:block;image-rendering:pixelated;}
-#hud.estrecho #minimapa{top:72px;}
+#hud.estrecho #minimapa{top:86px;}
 #hud.estrecho #minimapa canvas{width:140px;}
 .mis-caja{border:1px solid var(--borde);border-radius:var(--radio);padding:12px 14px;background:var(--panel2);margin:10px 0;}
-.mis-caja>b{font-size:9px;color:var(--txt);display:block;margin-bottom:8px;line-height:1.6;}
+.mis-caja>b{font:700 14px/1.4 var(--sans);color:var(--txt);display:block;margin-bottom:8px;}
 .mis-caja p{font-size:13px;}
 .mis-barra{height:10px;background:rgba(255,255,255,.08);border-radius:5px;overflow:hidden;margin:8px 0;}
 .mis-barra i{display:block;height:100%;background:var(--ok);}
-#mapa-nom{right:8px;top:42px;font-size:7px;color:#f3e3b5;white-space:nowrap;text-align:right;text-shadow:1px 1px 0 #000,0 0 4px #000;pointer-events:none!important;}
-#mapa-nom small{display:block;font-size:5px;color:var(--txt2);margin-top:3px;}
+#mapa-nom{right:8px;top:42px;font-size:8px;color:#f3e3b5;white-space:nowrap;text-align:right;text-shadow:1px 1px 0 #000,0 0 4px #000;pointer-events:none!important;}
+#mapa-nom small{display:block;font-size:7px;color:var(--txt2);margin-top:3px;}
 #hud.estrecho #mapa-nom{display:none;}
 #botones{right:8px;top:8px;display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;}
-#hud.estrecho #botones{max-width:150px;}
+/* Movil: dos filas de 5 botones de 34 px, sin pisar el marco del jugador. */
+#hud.estrecho #botones{max-width:186px;gap:3px;}
+#hud.estrecho #botones .bt{width:34px;height:34px;padding:0;font-size:13px;line-height:1;display:inline-flex;align-items:center;justify-content:center;}
+@media (max-width:370px){#hud.estrecho #botones{gap:2px;max-width:180px;}#hud.estrecho #uf-yo,#hud.estrecho #uf-obj{width:160px;}}
 /* .bt: botones pequenos del HUD (iconos y etiquetas cortas en pixel) */
 .bt{font-family:inherit;font-size:9px;line-height:1.2;background:var(--panel);color:var(--txt);border:1px solid var(--borde);border-radius:8px;padding:7px 8px;cursor:pointer;transition:background .15s,border-color .15s;}
 .bt:hover{background:var(--panel2);border-color:#34405e;}
@@ -204,7 +216,7 @@ body.tactil #pie{display:none;}
 #invitacion span{display:block;font-family:var(--sans);font-size:14px;line-height:1.4;color:var(--txt);margin-bottom:8px;}
 #invitacion .btn{margin:0 3px;}
 .oacc{display:none;gap:4px;margin-top:4px;}
-.oacc .bt{font-size:6px;padding:4px 6px;}
+.oacc .bt{font-size:7px;padding:4px 7px;min-height:32px;min-width:32px;}
 #emotes{left:50%;transform:translateX(-50%);top:36%;pointer-events:none!important;text-align:center;width:92%;}
 #emotes div{font-size:9px;color:#fbbf24;text-shadow:1px 1px 0 #000,0 0 6px #000;margin:4px 0;animation:av 3.2s forwards;line-height:1.6;}
 #hud.estrecho #emotes div{font-size:7px;}
@@ -212,7 +224,8 @@ body.tactil #pie{display:none;}
 #consejo{left:50%;transform:translateX(-50%);top:128px;display:none;font-family:var(--sans);font-size:14px;font-weight:600;line-height:1.4;color:#f5e6bd;background:rgba(18,24,38,.95);border:1px solid rgba(242,193,78,.55);border-radius:var(--radio);padding:9px 14px;white-space:nowrap;pointer-events:none!important;box-shadow:var(--sombra);}
 /* En el movil los avisos bajan al cielo vacio: arriba pisaban el seguimiento. */
 /* Tras un logro o una mazmorra: compartirlo con tu enlace de invitacion. */
-#presumir{left:50%;transform:translateX(-50%);bottom:170px;display:none;z-index:6;font-family:var(--sans);font-size:14px;font-weight:600;padding:10px 16px;background:var(--panel);border-color:var(--pri);color:var(--txt);box-shadow:var(--sombra);}
+#presumir{left:50%;transform:translateX(-50%);top:172px;bottom:auto;display:none;z-index:6;font-family:var(--sans);font-size:14px;font-weight:600;padding:10px 16px;background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:var(--sombra);animation:none;}
+#presumir:hover{background:var(--pri2);border-color:var(--pri2);}
 #hud.estrecho #presumir{bottom:auto;top:470px;}
 #hud.estrecho #avisos{top:250px;width:90%;}
 #hud.estrecho #consejo{top:200px;font-size:13px;white-space:normal;width:86%;text-align:center;line-height:1.45;}
@@ -224,12 +237,13 @@ body.tactil #pie{display:none;}
 .ranuras{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
 .ranura{border:1px solid var(--borde);border-radius:8px;background:var(--panel2);aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:2px;}
 .ranura img{width:60%;image-rendering:pixelated;}
-.ranura small{font-size:5px;color:var(--txt2);}
+.ranura small{font-size:8px;color:var(--txt2);}
+@media (max-width:520px){.ranura small{font:600 10px var(--sans);}}
 .ranura.vacia{cursor:default;border-style:dashed;background:transparent;}
 .ranura.vacia span{color:var(--txt3);font-size:10px;}
 .dias{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
 .dia{border:1px solid var(--borde);border-radius:8px;padding:6px 2px;text-align:center;display:flex;flex-direction:column;gap:4px;align-items:center;background:var(--panel2);}
-.dia b{font-size:5px;}
+.dia b{font:700 10px var(--sans);white-space:nowrap;}
 .dia span{font-size:16px;}
 .dia small{font-family:var(--sans);font-size:10px;color:var(--txt2);line-height:1.2;}
 .dia.hecho{opacity:.45;}
@@ -240,14 +254,14 @@ body.tactil #pie{display:none;}
 .tal.on{border-color:rgba(242,193,78,.55);}
 .tal img{width:26px;height:26px;image-rendering:pixelated;}
 .tal div{flex:1;min-width:0;}
-.tal b{display:block;font-size:7px;line-height:1.5;margin-bottom:3px;}
+.tal b{display:block;font:700 13px/1.35 var(--sans);margin-bottom:3px;}
 .tal small{font-family:var(--sans);font-size:12px;line-height:1.35;color:var(--txt2);}
 .tal .btn{padding:6px 10px;min-height:34px;}
 @media (max-width:520px){.talentos{grid-template-columns:1fr;}}
 /* mapa del mundo */
 .mapa-mundo{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;}
-.zm{border:1px solid;border-radius:var(--radio);padding:10px;background:var(--panel2);display:flex;flex-direction:column;gap:5px;}
-.zm b{font-size:8px;line-height:1.5;}
+.zm{border:1px solid var(--borde);border-radius:var(--radio);padding:10px;background:var(--panel2);display:flex;flex-direction:column;gap:5px;}
+.zm b{font:700 14px/1.35 var(--sans);}
 .zm small{font-family:var(--sans);font-size:12px;line-height:1.4;color:var(--txt2);}
 .zm i{font-style:normal;font-size:7px;}
 .zm.aqui{box-shadow:inset 0 0 0 1px var(--oro);background:rgba(242,193,78,.07);}
@@ -258,9 +272,10 @@ body.tactil #pie{display:none;}
 .clase:hover,.clase.sel{border-color:var(--c);box-shadow:inset 0 0 0 1px var(--c);}
 .clase .cab{display:flex;gap:8px;align-items:center;}
 .clase .cab img{width:36px;height:36px;image-rendering:pixelated;}
-.clase .cab b{font-size:10px;color:var(--c);display:block;margin-bottom:4px;}
-.clase .cab small{font-size:6px;color:var(--txt2);line-height:1.5;}
+.clase .cab b{font:700 16px/1.3 var(--sans);color:var(--c);display:block;margin-bottom:2px;}
+.clase .cab small{font:12px/1.4 var(--sans);color:var(--txt2);}
 .clase p{font-size:13px!important;}
+.clase .reco{align-self:flex-start;font:600 11px var(--sans);color:var(--ok);background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.45);border-radius:999px;padding:2px 8px;}
 .clase .habs{display:flex;gap:3px;flex-wrap:wrap;}
 .clase .habs img{width:22px;height:22px;image-rendering:pixelated;border:1px solid var(--borde);border-radius:4px;}
 /* En el movil tambien se ve que hace cada clase (antes solo el nombre). */
@@ -276,7 +291,7 @@ body.tactil #pie{display:none;}
 #frases{display:none;flex-wrap:wrap;gap:4px;margin-bottom:4px;}
 #frases .bt{font-family:var(--sans);font-size:13px;padding:7px 10px;}
 #chat-in{width:100%;font-family:var(--sans);font-size:14px;background:var(--panel2);border:1px solid var(--borde);color:var(--txt);border-radius:8px;padding:7px 9px;outline:none;display:none;}
-#chat-in:focus{border-color:var(--pri);}
+#chat-in:focus{border-color:var(--pri-txt);}
 
 /* avisos (aviso.ok / aviso.jefe: variantes de color para client.js) */
 #avisos{left:50%;transform:translateX(-50%);top:86px;display:flex;flex-direction:column;align-items:center;gap:5px;pointer-events:none!important;}
@@ -293,7 +308,7 @@ body.tactil #pie{display:none;}
 .tf{display:flex;justify-content:space-between;align-items:center;gap:8px;}
 .tc{font-family:inherit;width:56px;height:56px;border-radius:50%;border:1px solid var(--borde);background:var(--panel2);color:var(--txt);font-size:17px;touch-action:none;flex:0 0 auto;}
 .tc:active{background:#22304d;}
-.tc.on{background:rgba(59,130,246,.28);border-color:var(--pri);}
+.tc.on{background:rgba(59,130,246,.28);border-color:var(--pri-txt);}
 .tc.grande{width:74px;height:74px;font-size:25px;background:rgba(239,68,68,.16);border-color:rgba(239,68,68,.55);}
 .tc.chico{width:40px;height:40px;font-size:14px;}
 #t-izq,#t-der{display:flex;gap:8px;align-items:center;}
@@ -306,7 +321,8 @@ body.tactil #t-fila0 #acciones{position:static;gap:5px;}
 body.tactil #t-fila0 .pw{width:40px;height:40px;}
 body.tactil #t-fila0 .pw img{width:26px;height:26px;}
 body.tactil #t-fila0 #acciones{gap:4px;}
-body.tactil #t-fila1 #interactuar{position:static;transform:none;font-size:12px;padding:8px 9px;min-height:40px;}
+body.tactil #t-fila1{gap:4px;}
+body.tactil #t-fila1 #interactuar{position:static;transform:none;font-size:12px;padding:8px 6px;min-height:40px;}
 body.tactil #chat{width:70%;bottom:12px;}
 body.tactil #lanzar{bottom:16px;}
 
@@ -318,20 +334,29 @@ body.tactil #lanzar{bottom:16px;}
 .ventana p,.ventana li{font-family:var(--sans);font-size:14px;line-height:1.5;color:#c9cfdb;}
 .ventana li{margin-bottom:6px;}
 .ventana li b,.ventana p b{color:var(--txt);}
-.ventana .cerrar{float:right;}
+.ventana .cerrar{float:right;min-width:40px;min-height:40px;font-size:14px;padding:0;display:inline-flex;align-items:center;justify-content:center;margin:-6px -6px 4px 8px;}
+.ventana{scrollbar-width:thin;scrollbar-color:var(--borde) transparent;scrollbar-gutter:stable;}
+.ventana::-webkit-scrollbar{width:8px;height:8px;}
+.ventana::-webkit-scrollbar-track{background:transparent;}
+.ventana::-webkit-scrollbar-thumb{background:var(--borde);border-radius:4px;}
+.ventana::-webkit-scrollbar-thumb:hover{background:#34405e;}
+/* Titulos con tildes: Press Start 2P no tiene esas letras y las mezcla con otra fuente. */
+.ventana h2.sans,.sans{font-family:var(--sans);font-weight:700;}
+.ventana h2.sans{font-size:17px;letter-spacing:.02em;}
+.precio.sans{font-size:13px;}
 .ventana h2 small{display:block;font-family:var(--sans);font-size:13px;font-weight:400;color:var(--txt2);margin-top:6px;}
 /* linea de seguridad (wallet, premios, tienda) */
 .seguridad{font-family:var(--sans);font-size:13px;line-height:1.45;color:var(--txt2);background:var(--panel2);border:1px solid var(--borde);border-radius:8px;padding:9px 12px;margin:10px 0;}
 .tabs{display:flex;gap:6px;margin-bottom:14px;justify-content:center;flex-wrap:wrap;}
 .tab{font-family:var(--sans);font-size:13px;font-weight:600;min-height:36px;padding:7px 12px;border-radius:8px;border:1px solid var(--borde);background:transparent;color:var(--txt2);cursor:pointer;transition:background .15s,color .15s;}
 .tab:hover{color:var(--txt);background:var(--panel2);}
-.tab.on{background:var(--pri);color:#fff;border-color:var(--pri);}
+.tab.on{background:var(--pri);color:#fff;border-color:var(--pri-txt);}
 .lista{display:flex;flex-direction:column;gap:8px;}
 .item{display:flex;gap:10px;align-items:center;border:1px solid var(--borde);border-radius:var(--radio);padding:10px;background:var(--panel2);}
 .item .ico{width:56px;height:56px;flex:0 0 56px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.25);border-radius:8px;overflow:hidden;}
 .item .ico img{max-width:52px;max-height:52px;image-rendering:pixelated;}
 .item .txt{flex:1;min-width:0;}
-.item .txt b{display:block;font-size:9px;line-height:1.5;margin-bottom:5px;}
+.item .txt b{display:block;font:700 14px/1.35 var(--sans);margin-bottom:4px;}
 .item .txt small{font-family:var(--sans);font-size:13px;line-height:1.4;color:var(--txt2);}
 .item .acc{display:flex;flex-direction:column;gap:6px;align-items:flex-end;}
 .precio{font-size:9px;color:var(--oro);white-space:nowrap;}
@@ -344,15 +369,13 @@ body.tactil #lanzar{bottom:16px;}
 .btn.sec:hover{background:var(--panel2);border-color:#34405e;}
 .btn.peligro{background:transparent;color:#f87171;border-color:rgba(239,68,68,.6);}
 .btn.peligro:hover{background:rgba(239,68,68,.1);}
-.btn[disabled],.btn[disabled]:hover{opacity:.45;cursor:not-allowed;transform:none;}
-.btn.sec[disabled],.btn.sec[disabled]:hover{background:transparent;}
-.btn:not(.sec):not(.peligro)[disabled]:hover{background:var(--pri);}
+.btn:disabled,button:disabled,.btn:disabled:hover,button:disabled:hover{background:var(--panel2);color:var(--txt3);border-color:var(--borde);cursor:not-allowed;transform:none;}
 .oro-top{text-align:center;font-size:9px;color:var(--oro);margin-bottom:12px;}
 .fila{display:flex;justify-content:space-between;gap:8px;font-family:var(--sans);font-size:13px;line-height:1.4;padding:7px 4px;border-bottom:1px solid var(--borde);font-variant-numeric:tabular-nums;}
 .fila.yo{color:var(--verde);font-weight:600;}
 input.nombre{width:100%;font-family:var(--sans);font-size:16px;padding:12px;border-radius:8px;border:1px solid var(--borde);background:var(--bg);color:var(--txt);text-align:center;margin:14px 0 10px;outline:none;user-select:text;-webkit-user-select:text;}
 input.nombre::placeholder{color:var(--txt3);}
-input.nombre:focus{border-color:var(--pri);}
+input.nombre:focus{border-color:var(--pri-txt);}
 .centro{text-align:center;}
 #carga{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:60;}
 #carga .t{font-size:14px;color:var(--txt);text-align:center;line-height:1.7;}
@@ -361,6 +384,7 @@ input.nombre:focus{border-color:var(--pri);}
 #carga .barra>i{background:var(--pri);}
 @media (max-width:600px){
   .bt{padding:6px 6px;font-size:8px;}
+  .ventana .cerrar{font-size:14px;}
   #chat{width:62%;}
   #chat-log{font-size:11px;max-height:80px;}
 }
@@ -373,8 +397,9 @@ input.nombre:focus{border-color:var(--pri);}
 #m-inicio h1{font-size:15px;line-height:1.6;color:var(--txt);margin-bottom:10px;}
 #m-inicio h1 span{display:block;font-size:10px;color:var(--oro);margin-top:6px;letter-spacing:.08em;}
 #m-inicio .lema{font-size:15px;color:var(--txt);margin-bottom:6px;}
-#m-inicio .ventajas{list-style:none;display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:12px 0 4px;}
-#m-inicio .ventajas li{font-family:var(--sans);font-size:13px;font-weight:600;color:var(--txt);background:var(--panel2);border:1px solid var(--borde);border-radius:999px;padding:5px 11px;margin:0;}
+#m-inicio .ventajas{list-style:none;display:flex;flex-wrap:wrap;justify-content:center;gap:4px 16px;margin:12px 0 4px;}
+#m-inicio .ventajas li{font-family:var(--sans);font-size:13px;font-weight:600;color:var(--txt2);margin:0;}
+#m-inicio .ventajas li::before{content:'✓ ';color:var(--ok);}
 #m-inicio .btn-grande{width:100%;min-height:48px;font-size:16px;}
 #m-inicio .nota{margin-top:12px;font-size:13px;color:var(--txt2);}
 #m-inicio .nota a{color:var(--cian);}
@@ -439,7 +464,7 @@ input.nombre:focus{border-color:var(--pri);}
       <div class="caja" id="errores"></div>
       <div class="caja" id="emotes"></div>
       <div class="caja" id="consejo"></div>
-      <button class="caja bt" id="presumir">📣 Compartir</button>
+      <button class="caja bt" id="presumir">📣 Compartir logro</button>
       <div class="caja" id="chat"><div id="chat-log"></div><div id="frases"></div><input id="chat-in" maxlength="120" placeholder="Escribe y pulsa Enter…" autocomplete="off"></div>
       <button class="caja btn" id="interactuar">E · ENTRAR</button>
       <div class="caja" id="lanzar"><div class="barra"><i style="width:0%"></i><span id="lanzar-t"></span></div></div>
@@ -486,7 +511,7 @@ input.nombre:focus{border-color:var(--pri);}
       <button class="btn btn-grande" id="b-jugar2">Entrar al mundo</button>
     </div>
     <div class="confianza">
-      <a href="/terminos.html" target="_blank" rel="noopener">Términos</a> · <a href="/privacidad.html" target="_blank" rel="noopener">Privacidad</a> · 🔒 Nunca te pediremos contraseñas ni frases semilla.
+      <a href="/terminos.html" target="_blank" rel="noopener">Términos</a> · <a href="/privacidad.html" target="_blank" rel="noopener">Privacidad</a> · <a href="/seguridad.html" target="_blank" rel="noopener">Seguridad</a> · 🔒 Nunca te pediremos contraseñas ni frases semilla.
       <p class="creador">Creado por <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial</a> (cuenta oficial) · <a href="https://t.me/elduende420peru" target="_blank" rel="noopener">Canal</a> · <a href="https://t.me/duendesolana420" target="_blank" rel="noopener">Grupo</a></p>
     </div>
   </div>
@@ -553,7 +578,7 @@ input.nombre:focus{border-color:var(--pri);}
 <div class="modal" id="m-ayuda">
   <div class="ventana">
     <button class="bt cerrar" data-cerrar>✕</button>
-    <h2 id="ayuda-t">❔ CÓMO SE JUEGA</h2>
+    <h2 id="ayuda-t" class="sans">❔ Cómo se juega</h2>
     <ul style="padding-left:18px" id="ayuda-lista">
       <li><b>Moverse:</b> ← → o A / D · <b>Saltar:</b> ↑, W o Espacio (doble salto)</li>
       <li><b>Ataque básico:</b> Z o J (combo de 3 golpes; magos y sacerdotes disparan con la vara) · <b>Dash:</b> X o K</li>
@@ -618,7 +643,7 @@ input.nombre:focus{border-color:var(--pri);}
     <button class="bt cerrar" data-cerrar>✕</button>
     <h2>🎁 RECOMPENSA DIARIA</h2>
     <div id="login-cuerpo"></div>
-    <button class="btn" data-cerrar style="width:100%;margin-top:12px">A cazar</button>
+    <button class="btn" data-cerrar id="login-ok" style="width:100%;margin-top:12px">Recoger</button>
   </div>
 </div>
 
@@ -686,7 +711,7 @@ input.nombre:focus{border-color:var(--pri);}
 <!-- Muerte -->
 <div class="modal" id="m-muerte">
   <div class="ventana centro">
-    <h2 style="color:#f87171">💀 HAS CAÍDO</h2>
+    <h2 class="sans" style="color:#f87171">💀 Has caído</h2>
     <div id="muerte-info"></div>
     <p style="margin-top:8px">Pierdes un 5% de la experiencia de tu nivel.</p>
     <p style="margin-top:8px;color:var(--oro)">✝ Si hay un sacerdote cerca, puede resucitarte aquí mismo: espera en vez de volver.</p>
@@ -697,7 +722,7 @@ input.nombre:focus{border-color:var(--pri);}
 <!-- Desconexion -->
 <div class="modal" id="m-error">
   <div class="ventana centro">
-    <h2 style="color:var(--warn)">⚠️ CONEXIÓN</h2>
+    <h2 class="sans" style="color:var(--warn)">⚠️ Conexión</h2>
     <p id="error-txt">Se perdió la conexión con el servidor.</p>
     <button class="btn" id="b-reconectar" style="margin-top:14px;width:100%;min-height:46px">Reconectar</button>
   </div>
@@ -706,6 +731,6 @@ input.nombre:focus{border-color:var(--pri);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=43"></script>
+<script type="module" src="/mmo/js/client.js?v=44"></script>
 </body>
 </html>
