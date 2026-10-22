@@ -146,6 +146,7 @@ export const Hermandades = {
       await this.state.storage.delete('h:' + h.id);
       await this.state.storage.delete('hn:' + h.nombre.toLowerCase());
       this.herms.delete(h.id);
+      this.cargarRankHerm().then(rh => { if (!rh.l[h.id]) return; delete rh.l[h.id]; return this.state.storage.put('rankHerm', rh); }).catch(e => console.error('[MMO rankHerm]', e));
       return;
     }
     if (m.r === 'lider') {
@@ -282,7 +283,7 @@ export const Hermandades = {
   // Ranking semanal de hermandades por puntos de la gesta: 'rankHerm' =
   // { sem, l: { id: { n, p, m } } }. Se pone al dia al guardar las gestas.
   async cargarRankHerm() {
-    if (!this.rh) { this.rhP = this.rhP || this.state.storage.get('rankHerm'); const r = await this.rhP; if (!this.rh) this.rh = r || { sem: semanaUTC(), l: {} }; }
+    if (!this.rh) { this.rhP = this.rhP || this.state.storage.get('rankHerm').catch(e => { this.rhP = null; throw e; }); const r = await this.rhP; if (!this.rh) this.rh = r || { sem: semanaUTC(), l: {} }; }
     if (this.rh.sem !== semanaUTC()) this.rh = { sem: semanaUTC(), l: {} };
     return this.rh;
   },

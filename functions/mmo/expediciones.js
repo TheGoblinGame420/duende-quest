@@ -8,7 +8,7 @@
 // que jugar esas horas. Nunca mTON.
 // c.exped = { h, ini, fin, nv }   (nv: tu nivel al salir, fija el premio)
 // ═══════════════════════════════════════════════════════
-import { EXPEDICION, premioExpedicion, MATERIALES, MASCOTAS } from '../../mmo/js/data.js';
+import { EXPEDICION, premioExpedicion, MATERIALES, MASCOTAS, NIVEL_MAX } from '../../mmo/js/data.js';
 
 export const Expediciones = {
   expedicion(s, m) {
@@ -20,14 +20,16 @@ export const Expediciones = {
       if (ahora < e.fin) return this.no(s, 'Tu expedición aún no ha vuelto.');
       c.exped = null;
       const pr = premioExpedicion(e.h, e.nv);
+      // A nivel maximo la XP no sirve: se cambia por oro (1 por 2 de XP).
+      if (c.nivel >= NIVEL_MAX) { pr.oro += Math.round(pr.xp / 2); pr.xp = 0; }
       c.oro += pr.oro;
-      this.sumarXp(s, pr.xp);
+      if (pr.xp) this.sumarXp(s, pr.xp);
       c.mat = c.mat || {};
       for (const k in pr.mat) c.mat[k] = Math.min(999, (c.mat[k] || 0) + pr.mat[k]);
       c.expediciones = (c.expediciones || 0) + 1;
       s.sucio = true;
       const mats = Object.entries(pr.mat).map(([k, n]) => `${n} ${MATERIALES[k].nombre}`).join(', ');
-      this.enviar(s, { t: 'toast', ok: true, m: `🧭 Volvió la expedición: +${pr.oro.toLocaleString('es')} oro, +${pr.xp.toLocaleString('es')} XP y ${mats}.` });
+      this.enviar(s, { t: 'toast', ok: true, m: `🧭 Volvió la expedición: +${pr.oro.toLocaleString('es')} oro${pr.xp ? ', +' + pr.xp.toLocaleString('es') + ' XP' : ''} y ${mats}.` });
       this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });   // vuelve la mascota
       this.revisarLogros(s);
       this.actualizarYo(s);

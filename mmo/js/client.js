@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=132';
+} from './data.js?v=134';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1833,7 +1833,7 @@ function abrirBuscador() {
       bloq ? `<span class="precio" style="color:var(--txt3)">🔒 Nv ${mz.nv[0]}</span>` : `<button class="btn" data-maz="${id}">Entrar</button>`);
     h += bloq ? tj.replace('<div class="item">', '<div class="item" style="opacity:.55">') : tj;
     // Desafios a Nv 60: elegir el +k (hasta uno mas que el mejor vencido).
-    if (yo.nivel >= NIVEL_MAX) {
+    if (yo.nivel >= NIVEL_MAX && !mz.sinDesafio) {
       const mejor = (yo.desafio || {})[id] || 0, tope = Math.min(DESAFIO_MAX, mejor + 1);
       let ops = '';
       for (let k = tope; k >= 1; k--) ops += `<option value="${k}">+${k} · vida ×${multDesafio(k).vida.toFixed(1)}</option>`;

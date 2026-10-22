@@ -49,7 +49,7 @@ export const Mazmorras = {
       return this.unirAInstancia(s, wg);
     }
     // Desafio +k: solo a Nv 60 y hasta uno mas que el mejor vencido.
-    const k = mz.banda ? 0 : Math.max(0, Math.min(DESAFIO_MAX, m.k | 0));
+    const k = mz.banda || mz.sinDesafio ? 0 : Math.max(0, Math.min(DESAFIO_MAX, m.k | 0));
     if (k && s.c.nivel < NIVEL_MAX) return this.no(s, `Los Desafíos se abren a nivel ${NIVEL_MAX}.`);
     if (k > ((s.c.desafio || {})[id] || 0) + 1) return this.no(s, `Primero vence el Desafío +${k - 1} de ${mz.nombre}.`);
     const g = this.grupoDe(s);
@@ -445,14 +445,14 @@ export const Mazmorras = {
       c.mazmorras = (c.mazmorras || 0) + 1;
       if (this.puntoPase) this.puntoPase(s, PASE.puntos.mazmorra);
       this.progresoTarea(s, 'mazmorra');
-      if (peleo(s)) this.puntoGesta(s, 'mazmorra');
+      if (peleo(s) && I.nv >= c.nivel - 10) this.puntoGesta(s, 'mazmorra');
       if (!c.mazDia || c.mazDia.d !== hoy) c.mazDia = { d: hoy, hechas: [] };
       let extra = '';
       let kBoveda = 0;
       // La primera vez del dia en cada mazmorra trae un premio extra.
       if (!c.mazDia.hechas.includes(I.id)) {
         c.mazDia.hechas.push(I.id);
-        const pr = premioMazmorraDia(c.nivel);
+        const pr = premioMazmorraDia(Math.min(c.nivel, I.nv + 10));   // una muy por debajo de tu nivel da menos
         c.oro += pr.oro;
         this.sumarXp(s, pr.xp);
         const it = this.darItem(s, this.generarItem(I.nv, 2));

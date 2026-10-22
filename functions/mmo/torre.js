@@ -149,7 +149,7 @@ export const Torre = {
   // Al cambiar la semana se premia a los 3 primeros (cerrarSemanaTorre).
   async cargarRankTorre() {
     if (!this.rt) {
-      this.rtP = this.rtP || this.state.storage.get('rankTorre');
+      this.rtP = this.rtP || this.state.storage.get('rankTorre').catch(e => { this.rtP = null; throw e; });
       const r = await this.rtP;
       if (!this.rt) this.rt = r || { sem: semanaUTC(), l: {} };
     }

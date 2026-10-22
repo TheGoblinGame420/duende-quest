@@ -458,15 +458,19 @@ export const TINTES = {
 // enseñan una vez (lo nuevo para los que vuelven). La mas reciente arriba;
 // subir 'n' al añadir una.
 export const NOVEDADES = [
-  { n: 6, fecha: '22 de octubre (tarde)', items: [
+  { n: 7, fecha: '22 de octubre (mediodía)', items: [
     '🏰 Madriguera Goblin: una mazmorra nueva desde Nv 6 para aprender las mecánicas (portal de mazmorras del pueblo).',
     '🧭 Expediciones (Nv 5+): manda a tu mascota 1, 4 u 8 horas y vuelve con oro, experiencia y materiales (registro de misiones, L).',
+    '🐟 Pececito Dorado: una mascota que solo se consigue pescando (muy rara).',
+    '🦎 Lagarto de la Torre: una montura que solo se gana superando el piso 30 de la Torre.',
+    '🛡️ Ranking semanal de hermandades y /topmmo en el bot con los rankings de la semana.',
+    '📅 Calendario en Novedades y barras de progreso en los logros.',
+  ] },
+  { n: 6, fecha: '22 de octubre (mañana, 2)', items: [
     '🗼 Torre del Duende (Nv 10+, portal de mazmorras): pisos sin fin cada vez más duros, un jefe cada 5, cofres y ranking semanal.',
     '🎣 Pesca: hay un pesquero en el pueblo y en cada zona. Lanza el sedal y TIRA cuando pique.',
     '🍲 La Artesana cocina Ceviche del Duende (+10% oro) y Sudado Dorado (+5% daño y defensa) con lo que pesques.',
     '🏅 Logros Pescador y Maestro Pescador, y una misión diaria nueva.',
-    '🐟 Pececito Dorado: una mascota que solo se consigue pescando (muy rara).',
-    '📅 Calendario en Novedades y barras de progreso en los logros.',
   ] },
   { n: 5, fecha: '22 de octubre (mediodía)', items: [
     '🎟️ Pase de temporada mensual y gratis: misiones, mazmorras y jefe mundial dan puntos; 20 niveles de premios y una mascota exclusiva (registro de misiones, L).',
@@ -1144,8 +1148,8 @@ export const premioGesta = (i, nivel) => ({ oro: [100, 250, 500][i] * Math.max(1
 // abre la barrera que guarda. Dan experiencia, oro y equipo (nunca mTON).
 export const MAZMORRAS = {
   madriguera: {
-    nombre: 'Madriguera Goblin', mapa: 'madriguera', nv: [6, 16], icono: 'I_Torch01',
-    desc: 'La primera mazmorra: los goblins del bosque esconden aquí lo que roban. Ideal para aprender a esquivar zonas e interrumpir.',
+    nombre: 'Madriguera Goblin', mapa: 'madriguera', nv: [6, 16], icono: 'I_Torch01', sinDesafio: true,
+    desc: 'La primera mazmorra: los goblins del bosque esconden aquí lo que roban. Ideal para aprender a esquivar las zonas del suelo.',
     packs: [
       { x: 520, k: ['goblin_normal', 'goblin_normal'] }, { x: 900, k: ['goblin_peasant', 'goblin_normal'] }, { x: 1250, k: ['goblin_assassin', 'goblin_peasant', 'goblin_normal'] },
       { x: 2050, k: ['goblin_guard', 'hechicero'] }, { x: 2400, k: ['goblin_peasant', 'goblin_assassin', 'goblin_peasant'] },
