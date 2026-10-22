@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=100';
+} from './data.js?v=102';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -517,7 +517,7 @@ function recibir(m) {
       sfx('explosion', .35);
       for (let i = 0; i < 30; i++) particula(P.x, P.y - 40, ['#ffe600', '#ff3cf0', '#00ff88'][i % 3], 5);
       break;
-    case 'mundial': mundial = { vivo: m.vivo, en: m.en ? m.en - Date.now() + performance.now() : 0 }; break;
+    case 'mundial': mundial = { vivo: m.vivo, en: m.en ? m.en - Date.now() + performance.now() : 0, k: m.k || '' }; break;
     case 'pw': efectoPoder(m.p, m.i); break;
     case 'cd': cdPoder[m.id] = performance.now() + m.hasta; break;
     case 'chat': mensajeChat(m); break;
@@ -2476,11 +2476,12 @@ function pintarMundial() {
   }
   // Al novato el contador del jefe mundial solo le distrae de su mision.
   if (yo.nivel < 10) { ponTxt(el, ''); el.className = ''; return; }
-  if (mundial.vivo) { ponTxt(el, '👹 Jefe mundial activo en el Coliseo (portal del pueblo)'); el.className = 'lista'; return; }
+  const nomM = (MONSTRUOS[mundial.k] || {}).nombre || 'Jefe mundial';
+  if (mundial.vivo) { ponTxt(el, '👹 ' + nomM + ' en el Coliseo (portal del pueblo)'); el.className = 'lista'; return; }
   const ms = mundial.en - performance.now();
   if (mundial.en && ms > 0) {
     const mm = Math.floor(ms / 60000), ss = Math.floor(ms / 1000) % 60;
-    ponTxt(el, '👹 Jefe mundial en ' + mm + ':' + String(ss).padStart(2, '0'));
+    ponTxt(el, '👹 ' + nomM + ' en ' + mm + ':' + String(ss).padStart(2, '0'));
     el.className = ms < 120000 ? 'lista' : '';
   } else { ponTxt(el, ''); el.className = ''; }
 }

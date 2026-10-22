@@ -20,7 +20,7 @@ import {
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, MTON_EDAD_MIN_MS, WALLET_ESPERA_MS, FONDO_REFERENCIA_MTON, tonAmigable,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, FONDO_PCT_INGRESOS, PAQUETES, estrellasDe, PEDIDO_VIGENCIA_MS,
   temporadaDe, TEMPORADAS, TEMP_PROB, TEMP_JEFE,
-  TINTES, MASCOTAS, enOfertaAmbulante, ambulanteActivo,
+  TINTES, MASCOTAS, enOfertaAmbulante, ambulanteActivo, mundialDe,
   CONJUNTOS, CONJUNTO_PROB,
   semanaUTC, horaFelizActiva, HORA_FELIZ, afijosSemana, DES_SEM_MIN, premioDesSem, BESTIARIO_HITOS, premioBestiario, talento, TALENTOS, TALENTO_MAX, puntosTalento, costoReinicioTalentos, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX,
 } from '../../mmo/js/data.js';
@@ -1185,7 +1185,8 @@ export class MmoWorld {
   // ── JEFE MUNDIAL ──
   estadoMundial() {
     const m = this.mundial;
-    return { t: 'mundial', vivo: !!(m && m.o && !m.o.muere), en: m && m.o ? 0 : proximoMundial(Date.now()) };
+    const vivo = !!(m && m.o && !m.o.muere);
+    return { t: 'mundial', vivo, en: m && m.o ? 0 : proximoMundial(Date.now()), k: vivo ? m.o.k : mundialDe(proximoMundial(Date.now()) + 1000) };
   }
 
   revisarMundial(ahora) {
@@ -1197,8 +1198,9 @@ export class MmoWorld {
       if (ahora > M.hasta) {
         this.mundo.coliseo.mons.delete(M.o.id);
         this.aClave('coliseo', { t: 'md', id: M.o.id, pr: [], huye: true });
+        const nomHuye = MONSTRUOS[M.o.k].nombre;
         M.o = null;
-        this.aTodos({ t: 'aviso', m: '👹 El Gran Duende Corrupto escapó del Coliseo… vuelve en 30 minutos.' });
+        this.aTodos({ t: 'aviso', m: `👹 ${nomHuye} escapó del Coliseo… otro jefe llega en 30 minutos.` });
         this.aTodos(this.estadoMundial());
       }
       return;
@@ -1206,18 +1208,18 @@ export class MmoWorld {
     // Aviso 2 minutos antes, a todos los conectados.
     if (prox - ahora <= 120000 && prox - ahora > 5000 && M.avisado !== prox) {
       M.avisado = prox;
-      this.aTodos({ t: 'aviso', m: '👹 ¡El Gran Duende Corrupto llega al Coliseo en 2 minutos! Entra por el portal del pueblo: todos los niveles ganan.' });
+      this.aTodos({ t: 'aviso', m: `👹 ¡${MONSTRUOS[mundialDe(prox + 1000)].nombre} llega al Coliseo en 2 minutos! Entra por el portal del pueblo: todos los niveles ganan.` });
     }
     // Aparece en la media hora en punto (con margen de un tick).
     const ult = prox - (prox - ahora > 1000 ? 30 * 60 * 1000 : 0);
     if (ahora >= ult && ahora - ult < 5000 && M.ultimo !== ult) {
       M.ultimo = ult;
-      const o = this.crearMonstruo('coliseo', 'jefe_mundial', 800);
+      const o = this.crearMonstruo('coliseo', mundialDe(ult + 1000), 800);
       const n = Math.max(1, this.contarOnline());
       o.hp = o.max = 20000 + 15000 * n;
       M.o = o; M.hasta = ahora + MUNDIAL_DURA_MS;
       this.aClave('coliseo', { t: 'ms', m: this.infoMonstruo(o) });
-      this.aTodos({ t: 'aviso', m: '👹 ¡EL GRAN DUENDE CORRUPTO APARECIÓ EN EL COLISEO! Tienes 10 minutos.' });
+      this.aTodos({ t: 'aviso', m: `👹 ¡${MONSTRUOS[o.k].nombre.toUpperCase()} APARECIÓ EN EL COLISEO! Tienes 10 minutos.` });
       this.aTodos(this.estadoMundial());
     }
   }
@@ -1247,7 +1249,7 @@ export class MmoWorld {
       this.actualizarYo(s);
       nombres.push(c.nombre);
     }
-    this.aTodos({ t: 'aviso', m: `🏆 ¡El Gran Duende Corrupto cayó! Héroes: ${nombres.slice(0, 6).join(', ')}${nombres.length > 6 ? ' y ' + (nombres.length - 6) + ' más' : ''}` });
+    this.aTodos({ t: 'aviso', m: `🏆 ¡${MONSTRUOS[o.k].nombre} cayó! Héroes: ${nombres.slice(0, 6).join(', ')}${nombres.length > 6 ? ' y ' + (nombres.length - 6) + ' más' : ''}` });
   }
 
   // amen = multiplicador de amenaza de la habilidad (el guerrero ademas

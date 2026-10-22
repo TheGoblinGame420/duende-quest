@@ -262,6 +262,9 @@ export const MONSTRUOS = {
   // Su daño es un % de la vida de cada jugador (no su ataque), asi un Nv 5 y
   // un Nv 60 pelean juntos; su vida crece con los jugadores conectados.
   jefe_mundial:  { nombre: 'Gran Duende Corrupto',   hoja: 'goblin_lord',       nivel: 30, jefe: true, mundial: true, alto: 230, w: 100, h: 200, tinte: '#5a0f96', dispara: true },
+  // Rotan con el Gran Duende cada media hora (MUNDIALES): mismas reglas y premios.
+  mundial_tormenta: { nombre: 'Dragón de la Tormenta', hoja: 'dragon',          nivel: 30, jefe: true, mundial: true, alto: 210, w: 170, h: 150, tinte: '#38bdf8', dispara: true },
+  mundial_coloso:   { nombre: 'Coloso de Obsidiana',   hoja: 'coloso',          nivel: 30, jefe: true, mundial: true, alto: 240, w: 120, h: 220, tinte: '#7c2d12', dispara: true },
 };
 
 // nivel: para las mazmorras, que se ajustan al nivel del grupo.
@@ -1491,4 +1494,9 @@ export function ambulanteOferta(sem = semanaUTC()) {
   return { tintes: [AMB_TINTES[(2 * n) % 6], AMB_TINTES[(2 * n + 1) % 6]], mascotas: [AMB_MASCOTAS[n % 4]] };
 }
 export const enOfertaAmbulante = (k, id) => ambulanteActivo() && ambulanteOferta()[k === 'tinte' ? 'tintes' : 'mascotas'].includes(id);
+
+// ── JEFES MUNDIALES QUE ROTAN ──
+// Cada media hora sale otro (el que toca en el instante t).
+export const MUNDIALES = ['jefe_mundial', 'mundial_tormenta', 'mundial_coloso'];
+export const mundialDe = t => MUNDIALES[Math.floor(t / 1800000) % MUNDIALES.length];
 

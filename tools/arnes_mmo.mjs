@@ -586,6 +586,7 @@ async function pruebas() {
   await pruebasHoraFeliz();
   await pruebasElo();
   await pruebasAmbulante();
+  await pruebasMundiales();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -1341,6 +1342,22 @@ async function pruebasTintes() {
   await dejar(t); await dejar(v);
 }
 
+
+async function pruebasMundiales() {
+  console.log('Jefes mundiales que rotan');
+  const D = await import('../mmo/js/data.js');
+  const base = Math.ceil(Date.now() / 1800000) * 1800000;
+  const tres = [0, 1, 2].map(i => D.mundialDe(base + i * 1800000 + 1000));
+  chequear(new Set(tres).size === 3 && tres.every(k => D.MONSTRUOS[k] && D.MONSTRUOS[k].mundial), 'cada media hora toca otro de los tres');
+  const v = await entrar('Mirador2', '87');
+  reloj = Math.max(reloj, base + 2 * 1800000 + 500); v.actT = reloj;
+  if (mundo.mundial && mundo.mundial.o) { mundo.mundo.coliseo.mons.delete(mundo.mundial.o.id); mundo.mundial.o = null; }
+  v.limpiar(); mundo.revisarMundial(reloj);
+  const o = mundo.mundial && mundo.mundial.o;
+  chequear(o && o.k === D.mundialDe(base + 2 * 1800000 + 1000) && v.ultimos('aviso').some(x => x.m.includes(D.MONSTRUOS[o.k].nombre.toUpperCase())), 'aparece el que toca y el aviso dice su nombre (' + (o && o.k) + ')');
+  if (o) { mundo.mundo.coliseo.mons.delete(o.id); mundo.mundial.o = null; }
+  await dejar(v);
+}
 
 async function pruebasAmbulante() {
   console.log('Mercader ambulante (fines de semana)');
