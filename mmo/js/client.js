@@ -7,14 +7,14 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, ALCANCE_BASE, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
-  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TINTES, MASCOTAS, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
+  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TINTES, MASCOTAS, NOVEDADES, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo,
-} from './data.js?v=61';
+} from './data.js?v=62';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -366,6 +366,7 @@ function recibir(m) {
       if ($('m-arte').classList.contains('on')) abrirArtesana();
       if ($('m-boveda').classList.contains('on')) abrirBoveda();
       revisarBoveda();
+      revisarNovedades();
       break;
     }
     case 's': snapshot(m); break;
@@ -1498,6 +1499,35 @@ $('o-herm').onclick = () => { const q = jugObjetivo(); if (q) { mandar({ t: 'her
 let muros = [];                 // barreras cerradas de la instancia (x)
 let instancia = null;           // { id, nv, hechos }
 function topeMuros() { return muros.length ? Math.min(...muros) - 22 : Infinity; }
+// Novedades: una vez por dispositivo y version de NOVEDADES, cuando no hay
+// otra ventana abierta (la clase, la recompensa diaria...). Al personaje
+// recien creado no: para el todo es nuevo.
+// Ventanas que se abren solas (Bóveda, Novedades): una cada vez, con aire entre ellas.
+let ventanaAutoT = -1e9;
+function revisarNovedades() {
+  if (!yo || !yo.clase || revisarNovedades.hecho || !NOVEDADES.length) return;
+  revisarNovedades.hecho = true;
+  let visto = 0;
+  try { visto = +localStorage.getItem('dq_mmo_nov') || 0; } catch (e) {}
+  const ult = NOVEDADES[0].n;
+  const guardar = () => { try { localStorage.setItem('dq_mmo_nov', String(ult)); } catch (e) {} };
+  if (visto >= ult) return;
+  if (yo.nivel < 3 && (yo.kills || 0) < 20) { guardar(); return; }
+  let n = 0;
+  const t = setInterval(() => {
+    if (!document.querySelector('.modal.on') && performance.now() - ventanaAutoT > 3000) { clearInterval(t); ventanaAutoT = performance.now(); abrirNovedades(); guardar(); }
+    else if (++n > 60) clearInterval(t);
+  }, 2000);
+}
+function abrirNovedades() {
+  let h = '';
+  for (const nv of NOVEDADES) {
+    h += `<p style="font:600 13px var(--sans);color:var(--txt);margin:6px 0">${esc(nv.fecha)}</p><ul style="padding-left:18px;font:13px/1.5 var(--sans);color:var(--txt2)">`;
+    h += nv.items.map(x => `<li style="margin-bottom:4px">${esc(x)}</li>`).join('') + '</ul>';
+  }
+  $('nov-lista').innerHTML = h;
+  abrir('m-novedades');
+}
 // Boveda semanal: elegir UNO de los objetos que abrieron tus mazmorras de
 // la semana pasada. Se ofrece sola una vez por sesion al entrar.
 function revisarBoveda() {
@@ -1507,7 +1537,7 @@ function revisarBoveda() {
   // clase...); si tarda mucho, queda el aviso.
   let n = 0;
   const t = setInterval(() => {
-    if (!document.querySelector('.modal.on')) { clearInterval(t); if (yo.bovedaOpc && yo.bovedaOpc.length) abrirBoveda(); }
+    if (!document.querySelector('.modal.on') && performance.now() - ventanaAutoT > 3000) { clearInterval(t); if (yo.bovedaOpc && yo.bovedaOpc.length) { ventanaAutoT = performance.now(); abrirBoveda(); } }
     else if (++n > 45) { clearInterval(t); aviso('🗝️ Tu Bóveda semanal te espera: ábrela en el portal de mazmorras del pueblo.', 'ok'); }
   }, 2000);
 }

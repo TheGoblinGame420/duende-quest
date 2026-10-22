@@ -1538,6 +1538,18 @@ k:'mascota'; id '' la guarda), `c.mascotas`/`c.mascota`, se ve en
 `infoApariencia.ma`; en el cliente `dibujarMascota` (estado en `q.pet`). Solo
 estética, gasto de oro a largo plazo.
 
+**Segunda revisión (agente) y Novedades (?v=61-62):** fundido del fondo solo
+en mazmorras (en mapas abiertos hacía una banda), la foto del mundo mantiene
+`yo.hp/rec/combo` al día (si no, la vida del HUD volvía un instante a un valor
+viejo), etiquetas con letra del sistema alineadas a la línea base (`c._by`),
+barra del jefe oculta en duelo, byte NUL quitado de client.js, `entrarMapa`
+con un mapa inexistente manda al pueblo (tumbaba el bucle). Ventana
+**📰 Novedades** (`NOVEDADES` en data.js; subir `n` al añadir una): se abre una
+vez por dispositivo a quien vuelve (no a personajes nuevos), sin pisarse con
+la Bóveda (`ventanaAutoT`). El consejo del tutorial en PC baja a top:236px
+(tapaba el cartel de la zona). Recorrido del novato del QA tras todo esto:
+Nv 4 y 2 misiones en 70 s, sin errores.
+
 **Pendiente / ideas para la siguiente sesión:**
 - Probar FPS en un teléfono real (sigue sin hacerse; en Chrome con CPU 4×
   lenta ya va a ~37 FPS en combate).

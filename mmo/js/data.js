@@ -374,6 +374,21 @@ export const TINTES = {
   amatista:  { nombre: 'Amatista',   color: '#c084fc', nv: 40, precio: 100000 },
   arcoiris:  { nombre: 'Arcoíris',   color: 'arcoiris', nv: 60, precio: 500000 },
 };
+// Novedades: al entrar, a quien no las vio en este dispositivo se le
+// enseñan una vez (lo nuevo para los que vuelven). La mas reciente arriba;
+// subir 'n' al añadir una.
+export const NOVEDADES = [
+  { n: 2, fecha: '22 de octubre', items: [
+    '🏰 Nueva mazmorra: la Fortaleza Goblin (Nv 20-40), con el Rey Goblin Barrigón.',
+    '🗝️ Bóveda semanal: cuantas más mazmorras hagas en la semana, más objetos para elegir el lunes.',
+    '📢 Buscador de grupo en el portal de mazmorras: anúnciate y otros se unen con un toque.',
+    '⚡ Desafíos con afijos que cambian cada lunes y su propio ranking semanal.',
+    '🐾 Mascotas y 🎨 colores de nombre en el Mercader (solo estética).',
+    '🎩 Cada clase se distingue: sombrero de mago, aureola de sacerdote, capucha de pícaro.',
+    '🌽 Del 13 al 30 de noviembre: Cosecha del Maíz Morado.',
+    '📱 El juego va mucho más fluido en el móvil y la música suena en iPhone.',
+  ] },
+];
 // Mascotas (solo se ven, no dan nada): te siguen a todas partes. Otra meta
 // de oro a largo plazo. Usan las hojas de los monstruos, en pequeño.
 export const MASCOTAS = {

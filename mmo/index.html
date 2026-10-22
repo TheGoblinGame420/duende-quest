@@ -223,7 +223,8 @@ body.tactil #pie{display:none;}
 #emotes div{font-size:9px;color:#fbbf24;text-shadow:1px 1px 0 #000,0 0 6px #000;margin:4px 0;animation:av 3.2s forwards;line-height:1.6;}
 #hud.estrecho #emotes div{font-size:7px;}
 /* Consejo del tutorial: legible, quieto (sin parpadeo). */
-#consejo{left:50%;transform:translateX(-50%);top:128px;display:none;font-family:var(--sans);font-size:14px;font-weight:600;line-height:1.4;color:#f5e6bd;background:rgba(18,24,38,.95);border:1px solid rgba(242,193,78,.55);border-radius:var(--radio);padding:9px 14px;white-space:nowrap;pointer-events:none!important;box-shadow:var(--sombra);}
+/* Debajo de los avisos (hasta 4 desde top:86px): antes tapaba el cartel de la zona. */
+#consejo{left:50%;transform:translateX(-50%);top:236px;display:none;font-family:var(--sans);font-size:14px;font-weight:600;line-height:1.4;color:#f5e6bd;background:rgba(18,24,38,.95);border:1px solid rgba(242,193,78,.55);border-radius:var(--radio);padding:9px 14px;white-space:nowrap;pointer-events:none!important;box-shadow:var(--sombra);}
 /* En el movil los avisos bajan al cielo vacio: arriba pisaban el seguimiento. */
 /* Tras un logro o una mazmorra: compartirlo con tu enlace de invitacion. */
 #presumir{left:50%;transform:translateX(-50%);top:172px;bottom:auto;display:none;z-index:6;font-family:var(--sans);font-size:14px;font-weight:600;padding:10px 16px;background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:var(--sombra);animation:none;}
@@ -568,6 +569,14 @@ input.nombre:focus{border-color:var(--pri-txt);}
   </div>
 </div>
 
+<div class="modal" id="m-novedades">
+  <div class="ventana">
+    <button class="bt cerrar" data-cerrar>✕</button>
+    <h2>📰 NOVEDADES</h2>
+    <div class="lista" id="nov-lista"></div>
+  </div>
+</div>
+
 <!-- Ranking -->
 <div class="modal" id="m-rank">
   <div class="ventana">
@@ -742,6 +751,6 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=61"></script>
+<script type="module" src="/mmo/js/client.js?v=62"></script>
 </body>
 </html>
