@@ -156,7 +156,7 @@ async function handleStart(token, env, chatId, user, startPayload) {
   const referralLink = `https://t.me/duendequest_bot?start=ref_${user.id}`;
   await tg(token, 'sendMessage', {
     chat_id: chatId,
-    text: `🧌 *¡Bienvenido a DUENDE QUEST, ${user.first_name || 'Duende'}!*\n\n⚔️ Juego arcade play-to-earn en Solana\n💰 Gana tokens $DUENDE jugando\n🗺 Campaña de 15 etapas con jefes\n🌍 *DUENDE QUEST ONLINE* — el MMORPG estilo WoW: 4 clases, grupos, mazmorras con jefes, hermandades y 10 zonas hasta Nv 60\n💎 *Gana TON jugando:* desde Nv 15 los jefes dan mTON (1.000 = 1 TON), retiro desde 5 TON\n🏆 Compite en el ranking global\n\n${TEXTO_CREADOR}\n\n🎁 *Tu link de referido:*\n\`${referralLink}\`\n_Invita amigos y ambos ganan 500 $DUENDE_`,
+    text: `🧌 *¡Bienvenido a DUENDE QUEST, ${user.first_name || 'Duende'}!*\n\n⚔️ Juego arcade play-to-earn en Solana\n💰 Gana tokens $DUENDE jugando\n🗺 Campaña de 15 etapas con jefes\n🌍 *DUENDE QUEST ONLINE* — el MMORPG estilo WoW: 4 clases, grupos, mazmorras con jefes, hermandades y 10 zonas hasta Nv 60\n💎 *Gana TON jugando:* desde Nv 15 los jefes dan mTON del fondo del día, si lo hay (1.000 = 1 TON), retiro desde 5 TON\n🏆 Compite en el ranking global\n\n${TEXTO_CREADOR}\n\n🎁 *Tu link de referido:*\n\`${referralLink}\`\n_Invita amigos y ambos ganan 500 $DUENDE_`,
     parse_mode: 'Markdown',
     reply_markup: { inline_keyboard: [
       [{ text: '🎮 JUGAR AHORA', web_app: { url: WEBAPP_URL } }],

@@ -1073,6 +1073,22 @@ async function pruebasNovato() {
   ponerNivel(n, 12); n.c.xp = 500; n.inv = 0;
   mundo.herir(n, 1e6, { id: 0, jefe: true }); mundo.revivir(n);
   chequear(n.c.xp < 500 && n.c.mapa === 'pueblo', 'desde Nv 10, como antes (pueblo y -5% XP)');
+  // Reconectar dentro de una mazmorra
+  ponerNivel(n, 12, 'guerrero');
+  await aMapa(n, 'pueblo', 800);
+  await n.mandar({ t: 'mazmorra', id: 'catacumbas' });
+  const claveI = n.k;
+  chequear(claveI.includes('#'), '(entra a su mazmorra)');
+  n.x = 640; await mundo.guardar(n);
+  await dejar(n);
+  avanzar(60000); tick(1);
+  const n3 = await entrar('Novato', '5d');
+  chequear(n3.k === claveI && Math.abs(n3.x - 640) < 5, 'al reconectar vuelve a su mazmorra (si sigue abierta)');
+  await dejar(n3);
+  tick(1); avanzar(301000); tick(1);
+  const n4 = await entrar('Novato', '5d');
+  chequear(n4.k === 'pueblo', 'si ya se cerró (5 min vacía), al pueblo');
+  Object.assign(n, n4);
   // Racha que perdona
   const hoy = new Date(Date.now()).toISOString().slice(0, 10);
   const hace = d => new Date(Date.now() - d * 86400000).toISOString().slice(0, 10);

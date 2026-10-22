@@ -1264,11 +1264,21 @@ que seguía la flecha moría 75-94 veces en 40 min y no pasaba de Nv 2-5
 Además se validó la altura en `mover` (`techoEn`: doble salto ≈183 px,
 tope 215 sobre el suelo o una plataforma cercana).
 
-Otros hallazgos del informe aún sin hacer: misiones de jefe que bloquean la
-cadena jugando solo, `requestWriteAccess`/`addToHomeScreen` en Telegram,
-avisos a la hora habitual de cada uno, mantener la instancia ~5 min al
-reconectar, desconexión a los 3 min con la pestaña oculta, ser claros con el
-fondo de mTON en 0, y final de juego para D30 (1→60 se juega en 5-8 h).
+Segunda tanda (?v=33):
+- `tools/sim_jefe_solo.mjs`: todos los jefes de zona se vencen SOLO con
+  cualquier clase incluso 4 niveles por debajo (9-29 s); las misiones de
+  jefe no bloquean (las muertes del informe eran de Nv 1-3 quietos).
+- Telegram: `requestWriteAccess` al llegar a Nv 3 y `addToHomeScreen` a Nv 5
+  (una vez por dispositivo; `permisosTg` en client.js).
+- Reconectar dentro de una mazmorra abierta te devuelve a ella
+  (`volverAInstancia`); una vacía aguanta 5 min; con la pestaña oculta en
+  una mazmorra la desconexión es a los 8 min (3 fuera).
+- mTON: aviso claro en 💎 cuando el fondo del día está vacío; el toast de
+  Nv 15 y la bienvenida del bot dicen "los días que hay fondo".
+Sin hacer: avisos a la hora habitual de cada uno (el cron de las 17 UTC ya
+usa 4 de 5 disparadores del plan gratis), y final de juego para D30 (1→60 se
+juega en 5-8 h). Ojo: la bienvenida del bot aún habla de $DUENDE en Solana
+dentro de Telegram (decisión del dueño; ver memoria de restricciones).
 Metas realistas: D1 30-35%, D7 10-12%, D30 4-6% (el 100% no existe; con
 menos de ~100 altas por cohorte los porcentajes no significan nada).
 

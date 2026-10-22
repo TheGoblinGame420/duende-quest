@@ -380,6 +380,8 @@ export class MmoWorld {
     if (!Object.hasOwn(CLASES, c.clase || '')) c.clase = null;
     // Las mazmorras son instancias que no sobreviven a una desconexion: se
     // vuelve a la puerta (en el pueblo).
+    // (Si la instancia sigue abierta se le devuelve a ella mas abajo.)
+    const instGuardada = MAPAS[c.mapa] && MAPAS[c.mapa].instancia && !c.muerto ? { mapa: c.mapa, x: c.x || 150 } : null;
     if (!MAPAS[c.mapa] || MAPAS[c.mapa].instancia) { c.mapa = 'pueblo'; c.x = MAPAS.pueblo.spawn; }
 
     // Skins pagadas con dinero real en el juego principal: se regalan aqui.
@@ -428,6 +430,7 @@ export class MmoWorld {
     this.enviar(s, this.estadoMundial());
     this.entrarMapa(s, c.mapa, s.x, true);
     this.reengancharGrupo(s);
+    if (instGuardada) this.volverAInstancia(s, instGuardada.mapa, instGuardada.x);
     this.reponerElixires(s);
     await this.cargarHermandadDe(s);
     if (c.herm) this.refrescarApariencia(s);
@@ -523,7 +526,7 @@ export class MmoWorld {
       if (!f.avisados) f.avisados = {};
       if (el.cuenta && !f.avisados[c.uid]) {
         f.avisados[c.uid] = 1;
-        this.enviar(s, { t: 'toast', m: !el.nivel ? `💎 Desde nivel ${MTON_NIVEL_MIN} ganas mTON (TON real) en jefes y misiones.` : '💎 Tu personaje gana mTON a partir de su 2º día de vida.' });
+        this.enviar(s, { t: 'toast', m: !el.nivel ? `💎 Desde nivel ${MTON_NIVEL_MIN} ganas mTON (TON real) en jefes y misiones, los días que hay fondo (mira 💎).` : '💎 Tu personaje gana mTON a partir de su 2º día de vida.' });
       }
       return 0;
     }

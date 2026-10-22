@@ -13,7 +13,7 @@ import {
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
-} from './data.js?v=32';
+} from './data.js?v=33';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -33,6 +33,24 @@ if (TG) {
   try { TG.BackButton.show(); TG.BackButton.onClick(volver); } catch (e) {}
   const casa = document.querySelector('#botones a[href="/game.html"]');
   if (casa) casa.href = '/telegram/index.html' + (location.hash || '');
+}
+
+// Telegram: al llegar a Nv 3 se pide permiso para que el bot pueda escribir
+// (sin el, quien abrio el juego por un enlace nunca recibe los avisos de
+// vuelta) y a Nv 5 se ofrece ponerlo en la pantalla de inicio. Una vez por
+// dispositivo y solo si la version de Telegram lo admite.
+function permisosTg(nv) {
+  if (!TG || !TG.isVersionAtLeast) return;
+  const visto = k => { try { return !!localStorage.getItem(k); } catch (e) { return true; } };
+  const marcar = k => { try { localStorage.setItem(k, '1'); } catch (e) {} };
+  try {
+    if (nv >= 3 && !visto('dq_tg_escribir') && TG.isVersionAtLeast('6.9') && TG.requestWriteAccess) { marcar('dq_tg_escribir'); TG.requestWriteAccess(); return; }
+    if (nv >= 5 && !visto('dq_tg_inicio') && TG.isVersionAtLeast('8.0') && TG.addToHomeScreen) {
+      marcar('dq_tg_inicio');
+      if (TG.checkHomeScreenStatus) TG.checkHomeScreenStatus(st => { if (st === 'missed') TG.addToHomeScreen(); });
+      else TG.addToHomeScreen();
+    }
+  } catch (e) {}
 }
 
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -287,6 +305,7 @@ function recibir(m) {
       if (yo.muerto && !(antes && antes.muerto)) morir();
       if (!yo.muerto) { $('m-muerte').classList.remove('on'); P.muerto = false; }
       if (!antes || antes.clase !== yo.clase || antes.nivel !== yo.nivel) $('acciones').innerHTML = '';
+      if (antes && yo.nivel > antes.nivel) setTimeout(() => permisosTg(yo.nivel), 2500);
       if ($('m-libro').classList.contains('on')) pintarLibro();
       if (yo.clase && $('m-clase').classList.contains('on') && antes && !antes.clase) cerrarModales();
       if (yo.clase && loginPend) { const lp = loginPend; loginPend = null; setTimeout(() => mostrarLogin(lp), 900); }
@@ -2058,6 +2077,8 @@ function pintarWallet() {
   if (fondoInfo) {
     const resta = Math.max(0, fondoInfo.total - fondoInfo.gastado);
     h += `<p class="centro" style="margin-top:10px;font-size:12px;color:rgba(255,255,255,.6)">Fondo de hoy para todos: ${tonTxt(resta)} de ${tonTxt(fondoInfo.total)} TON por repartir</p>`;
+    // Claridad: con el fondo a cero no se gana mTON, y se dice sin rodeos.
+    if (!fondoInfo.total) h += `<p class="centro" style="font-size:12px;color:#ffd84a">⚠️ Hoy el fondo está vacío: nadie gana mTON hasta que entren ingresos al juego. El oro, los objetos y todo lo demás siguen igual.</p>`;
   }
   const rs = yo.retiros || [];
   if (rs.length) {
@@ -3130,7 +3151,9 @@ setInterval(() => mandar({ t: 'ping', ts: Date.now() }), 20000);
 let pausado = false, timerOculta = null;
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
-    timerOculta = setTimeout(() => { if (ws && ws.readyState === 1) { pausado = true; ws.close(4100, 'oculta'); } }, 180000);
+    // En una mazmorra se espera mas (8 min): en Telegram se cambia de chat a
+    // menudo y perder la mazmorra por eso echaba a la gente.
+    timerOculta = setTimeout(() => { if (ws && ws.readyState === 1) { pausado = true; ws.close(4100, 'oculta'); } }, instancia ? 480000 : 180000);
   } else {
     clearTimeout(timerOculta);
     if (pausado) { pausado = false; reintentos = 0; aviso('Reconectando…'); conectar(); }

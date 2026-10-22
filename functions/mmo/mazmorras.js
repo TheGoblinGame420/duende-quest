@@ -21,7 +21,7 @@
 import { MAPAS, MONSTRUOS, MAZMORRAS, escalaMazmorra, premioMazmorraDia, nivelMazmorra, statsMonstruo, SUELO, hoyUTC } from '../../mmo/js/data.js';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
-const VACIA_MS = 120000;   // una instancia sin nadie se cierra a los 2 min (por si alguien se reconecta)
+const VACIA_MS = 300000;   // una instancia sin nadie se cierra a los 5 min (en el movil se corta mucho: da tiempo a reconectar)
 const MAX_INSTANCIAS = 40;      // en todo el servidor a la vez
 const CREAR_POR_HORA = 8;       // instancias nuevas por jugador y hora
 
@@ -102,6 +102,19 @@ export const Mazmorras = {
     this.entrarMapa(s, mz.mapa, 150, false, w.clave);
     w.inst.vacioDesde = 0;
     this.enviar(s, { t: 'toast', m: `🏰 ${mz.nombre} (Nv ${w.inst.nv}). Aquí los monstruos atacan solos y en grupo: ¡con cuidado!`, ok: true });
+  },
+
+  // Al reconectar: si estaba en una mazmorra que sigue abierta (la suya o la
+  // de su grupo), vuelve a ella donde estaba en vez de aparecer en el pueblo.
+  volverAInstancia(s, mapa, x) {
+    const g = this.grupoDe(s);
+    const previa = g ? g.inst : this.instDe && this.instDe.get(s.c.uid);
+    const w = previa && this.mundo[previa];
+    if (!w || !w.inst || w.inst.completada || w.mapa !== mapa) return false;
+    this.entrarMapa(s, mapa, x, false, w.clave);
+    w.inst.vacioDesde = 0;
+    this.enviar(s, { t: 'toast', m: `🏰 Volviste a ${MAZMORRAS[w.inst.id].nombre}.`, ok: true });
+    return true;
   },
 
   jugadoresEn(clave) { for (const x of this.sesiones.values()) if (x.c && x.k === clave) return true; return false; },
