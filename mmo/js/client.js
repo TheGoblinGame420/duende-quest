@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=210';
+} from './data.js?v=212';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1865,7 +1865,7 @@ function abrirBuscador() {
   let hTorreBloq = '';
   {
     const bloq = yo.nivel < TORRE.nv;
-    const tj = tarjeta('<div style="font-size:34px;line-height:52px;text-align:center">🗼</div>', `Torre del Duende <span style="color:${bloq ? 'var(--warn)' : 'var(--txt2)'}">Nv ${TORRE.nv}+</span>`,
+    const tj = tarjeta(icoPack('I_Torch02'), `Torre del Duende <span style="color:${bloq ? 'var(--warn)' : 'var(--txt2)'}">Nv ${TORRE.nv}+</span>`,
       `Pisos sin fin: oleadas de monstruos de tu nivel cada vez más duras y un jefe cada ${TORRE.jefeCada}. Limpia cada piso en ${textoMinutos(TORRE.tiempo)}. Solo o con tu grupo.<br><span style="color:var(--txt2)">Esta semana: piso ${yo.torreSem || 0} · tu récord: ${yo.torreMax || 0}</span><br><span style="color:var(--ok)">Cada 5 pisos nuevos de la semana: cofre con oro y equipo (épico desde el 15).</span>`,
       bloq ? `<span class="precio" style="color:var(--txt3)">🔒 Nv ${TORRE.nv} (te faltan ${TORRE.nv - yo.nivel})</span>`
         : '<button class="btn" data-torre="0">Subir</button>' + (atajoTorre(yo.torreSem || 0) ? `<button class="btn sec" data-torre="${atajoTorre(yo.torreSem || 0)}" style="margin-top:4px">Desde el piso ${atajoTorre(yo.torreSem || 0) + 1}</button>` : ''));
@@ -2491,7 +2491,7 @@ function pintarChicha() {
     const pct = Math.min(100, Math.round(ch.p / meta * 100));
     const acc = hecho ? '<span class="precio" style="color:var(--ok)">✓ Reclamado</span>'
       : ch.p >= meta ? `<button class="btn" data-chicha="${meta}">Reclamar</button>` : `<span class="precio">${pct}%</span>`;
-    h += tarjeta('<div style="font-size:30px">🥤</div>', `${meta.toLocaleString('es', { useGrouping: 'always' })} puntos`, `Un litro de chicha morada peruana enviado a tu casa.<div class="mis-barra"><i style="width:${pct}%"></i></div>`, acc);
+    h += tarjeta(icoPack('I_Bottle02'), `${meta.toLocaleString('es', { useGrouping: 'always' })} puntos`, `Un litro de chicha morada peruana enviado a tu casa.<div class="mis-barra"><i style="width:${pct}%"></i></div>`, acc);
   }
   h += `<ul style="padding-left:18px;margin-top:8px;font-size:12px;line-height:1.45;color:var(--txt2)">
     <li>Promoción gratuita: no hay que comprar nada. Los puntos no se compran, no se venden y no se gastan al reclamar.</li>
@@ -2512,7 +2512,7 @@ function pintarBestiario() {
     const sig = BESTIARIO_HITOS.find(x => x > n);
     const i = BESTIARIO_HITOS.indexOf(sig);
     const desc = n ? (sig ? `${n} / ${sig} · próximo premio: ${premioBestiario(m.nivel, i).toLocaleString('es', { useGrouping: 'always' })} oro` : `${n} · ✓ completo`) : `Sin cazar · Nv ${m.nivel}${m.jefe ? ' · jefe' : ''}`;
-    h += tarjeta(n ? `<canvas data-best="${k}" width="52" height="52"></canvas>` : '❔', n ? esc(m.nombre) + ` <span style="color:var(--txt2)">Nv ${m.nivel}</span>` : '<span style="color:var(--txt3)">???</span>', desc,
+    h += tarjeta(n ? `<canvas data-best="${k}" width="52" height="52"></canvas>` : '<span style="font:700 22px var(--sans);color:var(--txt3)">?</span>', n ? esc(m.nombre) + ` <span style="color:var(--txt2)">Nv ${m.nivel}</span>` : '<span style="color:var(--txt3)">???</span>', desc,
       `<span class="precio" style="color:${!sig && n ? 'var(--ok)' : 'var(--oro)'}">${'★'.repeat(BESTIARIO_HITOS.filter(x => x <= n).length)}${'☆'.repeat(BESTIARIO_HITOS.filter(x => x > n).length)}</span>`);
   }
   // Especies de peces (una por pesquero).
@@ -2520,7 +2520,7 @@ function pintarBestiario() {
   h += `<p style="font:600 13px var(--sans);color:var(--txt);margin:14px 0 6px">🐟 Especies de peces · ${Object.keys(esp).length} de ${Object.keys(ESPECIES).length}</p>`;
   for (const [z, nom] of Object.entries(ESPECIES)) {
     const n = esp[z] || 0, mp = MAPAS[z];
-    h += tarjeta(n ? '<div style="font-size:30px;text-align:center">🐟</div>' : '❔', n ? esc(nom) : '<span style="color:var(--txt3)">???</span>',
+    h += tarjeta(icoPack('I_C_Fish', !n), n ? esc(nom) : '<span style="color:var(--txt3)">???</span>',
       n ? `${n} pescado${n === 1 ? '' : 's'} · ${esc(mp.nombre)}` : `Pesca en el pesquero de ${esc(mp.nombre)} (primera vez: +${premioEspecie(z === 'pueblo' ? 1 : mp.nv[0]).toLocaleString('es', { useGrouping: 'always' })} oro)`,
       `<span class="precio" style="color:${n ? 'var(--ok)' : 'var(--txt3)'}">${n ? '✓' : '—'}</span>`);
   }
@@ -2551,7 +2551,7 @@ function pintarLogros() {
     // Los que se cuentan: barra de progreso mientras no se tienen.
     const pr = !ok && progresoLogro(L.id, { ...yo, amigos: yo.amigosN || 0 });
     const barra = pr && pr[0] > 0 ? `<div class="mis-barra"><i style="width:${Math.round(pr[0] / pr[1] * 100)}%"></i></div><small style="color:var(--txt2)">${pr[0].toLocaleString('es', { useGrouping: 'always' })} / ${pr[1].toLocaleString('es', { useGrouping: 'always' })}</small>` : '';
-    h += tarjeta(ok ? '🏅' : '🔒', esc(L.titulo), esc(L.desc) + barra, acc);
+    h += tarjeta(icoPack('Ac_Medal02', !ok), esc(L.titulo), esc(L.desc) + barra, acc);
   }
   $('inv-lista').innerHTML = h;
   $('inv-lista').querySelectorAll('[data-titulo]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'titulo', id: b.dataset.titulo }); });
@@ -2631,7 +2631,7 @@ function mostrarLogin(m) {
   LOGIN_PREMIOS.forEach((pr, i) => {
     const n = i + 1;
     const cls = n < m.racha ? 'hecho' : n === m.racha ? 'hoy' : '';
-    h += `<div class="dia ${cls}"><b>Día ${n}</b><span>${n === 7 ? '🎁' : pr.oro ? '🪙' : '🧪'}</span><small>${esc(pr.txt)}</small></div>`;
+    h += `<div class="dia ${cls}"><b>Día ${n}</b><span>${icoPack(n === 7 ? 'I_Chest01' : pr.oro ? 'I_GoldCoin' : 'P_Red01').replace('width:36px;height:36px', 'width:24px;height:24px')}</span><small>${esc(pr.txt)}</small></div>`;
   });
   h += '</div>';
   let txt = 'Hoy recibes ' + m.txt + '.';
@@ -4013,6 +4013,8 @@ document.querySelectorAll('.modal').forEach(m => { limpiarEmojis(m); obsVentanas
 let tabTienda = 'pw';
 document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { tabTienda = b.dataset.tab; document.querySelectorAll('[data-tab]').forEach(x => x.classList.toggle('on', x === b)); pintarTienda(); });
 function abrirTienda() { abrir('m-tienda'); pintarTienda(); }
+// Icono del pack para las tarjetas (gris si esta bloqueado).
+const icoPack = (n, gris) => `<img src="${A}items/equipo/${n}.png" alt="" style="width:36px;height:36px;image-rendering:pixelated${gris ? ';filter:grayscale(1);opacity:.45' : ''}">`;
 function tarjeta(ico, nombre, desc, derecha) {
   return `<div class="item"><div class="ico">${ico}</div><div class="txt"><b>${nombre}</b><small>${desc}</small></div><div class="acc">${derecha}</div></div>`;
 }
