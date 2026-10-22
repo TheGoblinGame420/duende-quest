@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=224';
+} from './data.js?v=226';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -2367,7 +2367,7 @@ const TUTORIAL = [
 const tuto = { i: -1, x0: 0, k0: 0, usoHab: false, clave: '' };
 function pintarTutorial() {
   const el = $('consejo');
-  if (!yo || !yo.clase || yo.nivel > 6 || $('m-clase').classList.contains('on')) { ponCss(el, 'display', 'none'); return; }
+  if (!yo || !yo.clase || yo.nivel > 6 || $('m-clase').classList.contains('on')) { ponCss(el, 'display', 'none'); ponClase($('hud'), 'tuto', false); return; }
   const clave = 'dq_tuto_' + (yo.pid || '');
   if (tuto.clave !== clave) {
     tuto.clave = clave;
@@ -2375,14 +2375,14 @@ function pintarTutorial() {
     tuto.i = i; tuto.x0 = P.x; tuto.k0 = yo.kills || 0; tuto.usoHab = false;
   }
   const paso = TUTORIAL[tuto.i];
-  if (!paso) { ponCss(el, 'display', 'none'); return; }
+  if (!paso) { ponCss(el, 'display', 'none'); ponClase($('hud'), 'tuto', false); return; }
   if (paso.hecho(tuto)) {
     tuto.i++; tuto.x0 = P.x; tuto.k0 = yo.kills || 0;
     try { localStorage.setItem(clave, String(tuto.i)); } catch (e) {}
     sfx('moneda', .3);
     return;
   }
-  ponCss(el, 'display', 'block');
+  ponCss(el, 'display', 'block'); ponClase($('hud'), 'tuto', true);
   ponTxt(el, sinEmoji(paso.txt()) + '  (' + (tuto.i + 1) + '/' + TUTORIAL.length + ')');
 }
 
