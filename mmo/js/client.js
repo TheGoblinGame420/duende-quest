@@ -1876,18 +1876,36 @@ function dibujarPortales(mp) {
   });
 }
 
-const _anchos = new Map();
-// Medidas tomadas antes de que cargue la fuente pixel salen con la de
-// respaldo: se tiran cuando ya esta lista.
-if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => _anchos.clear()).catch(() => {});
+// Textos ya dibujados en un lienzo aparte: dibujar letras con fillText en
+// cada fotograma era lo mas caro del juego en un movil lento (medido con
+// la CPU 4x mas lenta). Una etiqueta se pinta una vez y luego solo se copia.
+const _textos = new Map();
+function spriteTexto(txt, tam, color, fondo, sombra) {
+  const k = tam + '|' + color + '|' + (fondo ? 1 : 0) + (sombra ? 1 : 0) + '|' + txt;
+  let c = _textos.get(k);
+  if (c) return c;
+  c = document.createElement('canvas');
+  const x = c.getContext('2d');
+  const fu = tam + 'px "Press Start 2P", monospace';
+  x.font = fu;
+  const w = Math.ceil(x.measureText(txt).width);
+  c.width = w + (fondo ? 8 : 2); c.height = tam + (fondo ? 7 : 3);
+  x.font = fu; x.textBaseline = 'alphabetic'; x.textAlign = 'left';
+  if (fondo) { x.fillStyle = 'rgba(0,0,0,.6)'; x.fillRect(0, 0, c.width, c.height); }
+  const bx = fondo ? 4 : 0, by = fondo ? tam + 3 : tam;
+  if (sombra) { x.fillStyle = '#000'; x.fillText(txt, bx + 1, by + 1); }
+  x.fillStyle = color; x.fillText(txt, bx, by);
+  if (_textos.size > 600) _textos.delete(_textos.keys().next().value);
+  _textos.set(k, c);
+  return c;
+}
+// Las medidas tomadas antes de cargar la fuente pixel salen con la de
+// respaldo: al cargarse, se tira la cache.
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => _textos.clear()).catch(() => {});
 function etiqueta(x, y, txt, color, tam) {
-  g.font = (tam || 7) + 'px "Press Start 2P", monospace';
-  g.textAlign = 'center';
-  const kw = (tam || 7) + txt;
-  let w = _anchos.get(kw);
-  if (w === undefined) { w = g.measureText(txt).width; if (_anchos.size > 300) _anchos.clear(); _anchos.set(kw, w); }
-  g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(x - w / 2 - 4, y - (tam || 7) - 3, w + 8, (tam || 7) + 7);
-  g.fillStyle = color || '#fff'; g.fillText(txt, x, y);
+  tam = tam || 7;
+  const c = spriteTexto(txt, tam, color || '#fff', true, false);
+  g.drawImage(c, Math.round(x - c.width / 2), Math.round(y - tam - 3));
 }
 
 function dibujarHoja(k, hoja, fila, col, alto, x, y, f, alpha, tinte, blancoFlash) {
@@ -2011,10 +2029,9 @@ function dibujarMonstruo(o) {
   if (!def.jefe) {
     const w = 40, y = o.y - o.alto - 12;
     if (o.hp < o.mx || elegido) barraMini(x, y, w, o.hp / o.mx, '#ff3344');
-    g.font = '6px "Press Start 2P", monospace'; g.textAlign = 'center';
-    g.fillStyle = colorNivel(o.nv);
     // Con el nombre solo cuando esta herido o elegido: todos a la vez llenaban la pantalla.
-    g.fillText('Nv' + o.nv + (o.hp < o.mx || elegido ? ' ' + def.nombre : ''), x, y - 4);
+    const tn = spriteTexto('Nv' + o.nv + (o.hp < o.mx || elegido ? ' ' + def.nombre : ''), 6, colorNivel(o.nv), false, false);
+    g.drawImage(tn, Math.round(x - tn.width / 2), Math.round(y - 4 - 6));
     if (cm) barraMini(x, y + 7, w, (ahora - cm.ini) / (cm.fin - cm.ini), cm.int ? '#ffae00' : '#aaa');
   } else {
     etiqueta(x, o.y - o.alto - 10, '👑 ' + def.nombre, '#ff3cf0', 7);
@@ -2200,16 +2217,12 @@ function dibujarEfectos() {
     if (img && img.naturalWidth) { const s = 11 * Math.abs(Math.cos(c.t * .25)) + 2; g.drawImage(img, c.x - camX - s / 2, c.y - 6, s, 12); }
     return true;
   });
-  g.textAlign = 'center';
-  let fuenteAct = '';
   filtrar(textos, t => {
     t.t++; t.y -= .7;
     if (t.t > 60) return false;
     g.globalAlpha = Math.min(1, (60 - t.t) / 20);
-    const fu = t.tam + 'px "Press Start 2P", monospace';
-    if (fu !== fuenteAct) { g.font = fu; fuenteAct = fu; }
-    g.fillStyle = '#000'; g.fillText(t.txt, t.x - camX + 1, t.y + 1);
-    g.fillStyle = t.color; g.fillText(t.txt, t.x - camX, t.y);
+    const c = t.spr || (t.spr = spriteTexto(t.txt, t.tam, t.color, false, true));
+    g.drawImage(c, Math.round(t.x - camX - c.width / 2), Math.round(t.y - t.tam));
     return true;
   });
   g.globalAlpha = 1;
