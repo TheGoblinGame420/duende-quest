@@ -1504,8 +1504,37 @@ Nada de esto da mTON.
   (`foto_afijos.mjs`, `foto_lfg.mjs` con dos jugadores, `foto_boveda.mjs`,
   `foto_fort.mjs`) y `deploy.sh <sha>` (espera Workers Builds y corre el humo).
 
+**Hallazgos del QA de jugador (22-oct de madrugada, ?v=53 → ?v=59):** la
+sesión principal lanzó un agente que jugó con Chrome sin ventana (informe y
+scripts en su scratchpad `qa_gamer_mmo/`: `fps.mjs`, `h.mjs`, combate,
+duelo...) y pasó los hallazgos a esta sesión. Arreglado y publicado:
+- **Rendimiento móvil** (medido con su `fps.mjs`, 390×844, CPU 4× lenta, 14
+  monstruos): combate **13,2 → 37 FPS**, reposo 41 → 58. Causas: emojis con
+  `fillText` en cada fotograma (ahora `emoji()` con sprite cacheado), barras
+  y recargas con `width/height` (ahora `transform`, `rellenar()`),
+  `querySelector` por fotograma, flecha guía con BFS cada fotograma (ahora
+  `guiaActual()` cada 250 ms), burbujas medidas cada fotograma, nodos con
+  `lighter`, `yo` completo tras cada golpe recibido (ya no: la vida va en la
+  foto `s`). Modo `ligero` automático si la media baja de ~35 FPS.
+- Lanzamientos cortados por el retroceso (`castPend`), símbolos fuera de la
+  letra pixel (`FUERA_PIXEL` → letra del sistema), etiquetas mínimo 7 px en
+  móvil, textos que se pisaban (números de daño sobre el nombre, barra del
+  jefe, barra de lanzamiento en móvil), flecha "reaparecen aquí".
+- Accesorio por clase (sombrero/aureola/capucha: todas usaban el sprite del
+  guerrero), lagarto a escala, franja negra en mazmorras (cielo + fundido).
+- Música: `audio/bg_music.mp3` para iPhone y carga perezosa; tonos
+  sintetizados (`TONOS`/`tono()`) para lanzar, interrumpido, error, nivel,
+  portal, esquiva, montar, curar. **Ojo: `bg_music.ogg` no está en
+  CREDITOS.md (licencia desconocida): que el dueño confirme su origen.**
+- Duelos ×2,5 de daño (~40-50 s) con marcador arriba; crítico de duelo visible;
+  "¡CRÍTICO!" + retroceso del monstruo + pausa de 70 ms en tus críticos.
+- Diaria del jefe mundial desde Nv 5; Bloque de Hielo avisa; consejo de
+  muerte sin "tecla Q" en móvil.
+
 **Pendiente / ideas para la siguiente sesión:**
-- Probar FPS en un teléfono real (sigue sin hacerse).
+- Probar FPS en un teléfono real (sigue sin hacerse; en Chrome con CPU 4×
+  lenta ya va a ~37 FPS en combate).
+- Sprites propios por clase (ahora es un accesorio dibujado encima).
 - Temporadas desde marzo de 2027 (y quizá mediados de enero).
 - Más final de juego para D30: profesiones de nivel alto, cosméticos con
   oro (mascotas/monturas de oro), una banda de 10, transfiguración.
