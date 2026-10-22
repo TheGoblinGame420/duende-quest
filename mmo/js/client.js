@@ -11,12 +11,12 @@ import {
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
-  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe, TORRE, premioTorreSem, zonaDeNivel,
+  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe, TORRE, premioTorreSem, zonaDeNivel, EXPEDICION, premioExpedicion,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=120';
+} from './data.js?v=122';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -3553,6 +3553,8 @@ function cajaSemana() {
 // tienes pendiente (hay muchos sistemas y el novato no sabe por donde ir).
 function sugerencias() {
   const l = [];
+  const ex = yo.exped;
+  if (ex && Date.now() >= ex.fin) l.push('🧭 Tu expedición volvió: recógela aquí abajo.');
   const pa = yo.pase;
   if (pa) { const nv = Math.min(PASE.niveles, Math.floor(pa.p / PASE.porNivel)), sin = nv - (pa.cob || []).filter(n => n <= nv).length; if (sin > 0) l.push(`🎟️ Cobra ${sin} premio${sin > 1 ? 's' : ''} del pase (más abajo).`); }
   if (yo.bovedaOpc && yo.bovedaOpc.length) l.push('🗝️ Elige tu objeto de la Bóveda semanal (portal de mazmorras).');
@@ -3570,12 +3572,32 @@ function sugerencias() {
   }
   const z = zonaDeNivel(yo.nivel);
   if (MAPAS[z] && mapaId !== z) l.push(`🗺️ Tu zona ahora: ${esc(MAPAS[z].nombre)} (Nv ${MAPAS[z].nv[0]}-${MAPAS[z].nv[1]}).`);
+  if (!ex && yo.nivel >= EXPEDICION.nv) l.push('🧭 Antes de irte, manda una expedición (aquí abajo).');
   l.push('🎣 Para descansar: pesca en el estanque del pueblo y cocina con la Artesana.');
   return l.slice(0, 3);
 }
 function cajaSugerencias() {
   if (!yo || !yo.clase) return '';
   return '<div class="mis-caja"><b>💡 Qué hacer ahora</b><ul style="padding-left:18px;margin-top:4px;font-size:13px;line-height:1.45">' + sugerencias().map(x => `<li>${x}</li>`).join('') + '</ul></div>';
+}
+function cajaExpedicion() {
+  if (!yo || yo.nivel < EXPEDICION.nv) return '';
+  const ex = yo.exped;
+  const quien = yo.mascota && MASCOTAS[yo.mascota] ? MASCOTAS[yo.mascota].nombre : 'Un duendecillo explorador';
+  let h = '<div class="mis-caja"><b>🧭 Expedición</b>';
+  if (!ex) {
+    h += `<p style="font-size:12px;color:var(--txt2)">${esc(quien)} puede salir a explorar mientras no juegas. Vuelve con oro, experiencia y materiales.</p><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">`;
+    for (const hh of EXPEDICION.horas) { const pr = premioExpedicion(hh, yo.nivel); h += `<button class="btn sec" data-exped="${hh}" style="flex:1;min-width:90px">${hh} h<br><small>🪙 ${pr.oro.toLocaleString('es')}</small></button>`; }
+    h += '</div>';
+  } else {
+    const ms = ex.fin - Date.now();
+    if (ms <= 0) h += `<p>${esc(quien)} ya volvió.</p><button class="btn" id="b-exped" style="width:100%;margin-top:6px">Recoger</button>`;
+    else {
+      const hh = Math.floor(ms / 3600000), mm = Math.ceil(ms % 3600000 / 60000);
+      h += `<p style="font-size:12px;color:var(--txt2)">${esc(quien)} vuelve en ${hh ? hh + ' h ' : ''}${mm} min.</p><div class="mis-barra"><i style="width:${Math.round((1 - ms / (ex.fin - ex.ini)) * 100)}%"></i></div>`;
+    }
+  }
+  return h + '</div>';
 }
 function cajaPase() {
   if (!yo || !yo.pase) return '';
@@ -3595,8 +3617,12 @@ function pintarMision() {
   const i = yo.mis ? yo.mis.i : 0, q = MISIONES[i];
   const cuerpo = $('mision-cuerpo');
   const conectarDiaria = () => { const b = $('b-diaria'); if (b) b.onclick = () => { sfx('boton', .3); mandar({ t: 'mision', diaria: true }); }; };
-  const conectarPase = () => cuerpo.querySelectorAll('[data-pase]').forEach(b => b.onclick = () => { sfx('moneda', .4); mandar({ t: 'pase', n: +b.dataset.pase }); });
-  if (!q) { cuerpo.innerHTML = '<p class="centro">Completaste las ' + MISIONES.length + ' misiones. Eres una leyenda del Pueblo Duende. 👑</p>' + cajaSugerencias() + cajaPase() + cajaSemana() + cajaDiaria() + cajaTareas(); conectarDiaria(); conectarPase(); return; }
+  const conectarPase = () => {
+    cuerpo.querySelectorAll('[data-pase]').forEach(b => b.onclick = () => { sfx('moneda', .4); mandar({ t: 'pase', n: +b.dataset.pase }); });
+    cuerpo.querySelectorAll('[data-exped]').forEach(b => b.onclick = () => { sfx('boton', .4); mandar({ t: 'exped', h: +b.dataset.exped }); });
+    const be = $('b-exped'); if (be) be.onclick = () => { sfx('moneda', .5); mandar({ t: 'exped', recoger: 1 }); };
+  };
+  if (!q) { cuerpo.innerHTML = '<p class="centro">Completaste las ' + MISIONES.length + ' misiones. Eres una leyenda del Pueblo Duende. 👑</p>' + cajaSugerencias() + cajaExpedicion() + cajaPase() + cajaSemana() + cajaDiaria() + cajaTareas(); conectarDiaria(); conectarPase(); return; }
   const def = MONSTRUOS[q.tipo];
   const zona = MAPAS[zonaDe(q.tipo)];
   const lista = yo.mis.p >= q.n;
@@ -3610,7 +3636,7 @@ function pintarMision() {
     '<p>' + yo.mis.p + ' / ' + q.n + '</p>' +
     '<p style="color:var(--oro)">Recompensa: +' + q.xp + ' XP · +' + q.oro + ' oro' + esc(extra) + '</p></div>' +
     (lista ? '<button class="btn" id="b-entregar" style="width:100%;padding:12px">Entregar misión</button>' : '<p class="centro">Vuelve cuando la termines.</p>') +
-    cajaSugerencias() + cajaPase() + cajaSemana() + cajaDiaria() + cajaTareas();
+    cajaSugerencias() + cajaExpedicion() + cajaPase() + cajaSemana() + cajaDiaria() + cajaTareas();
   conectarPase();
   const b = $('b-entregar');
   if (b) b.onclick = () => { sfx('boton', .3); mandar({ t: 'mision' }); };

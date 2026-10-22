@@ -440,6 +440,7 @@ export const TINTES = {
 // subir 'n' al añadir una.
 export const NOVEDADES = [
   { n: 6, fecha: '22 de octubre (tarde)', items: [
+    '🧭 Expediciones (Nv 5+): manda a tu mascota 1, 4 u 8 horas y vuelve con oro, experiencia y materiales (registro de misiones, L).',
     '🗼 Torre del Duende (Nv 10+, portal de mazmorras): pisos sin fin cada vez más duros, un jefe cada 5, cofres y ranking semanal.',
     '🎣 Pesca: hay un pesquero en el pueblo y en cada zona. Lanza el sedal y TIRA cuando pique.',
     '🍲 La Artesana cocina Ceviche del Duende (+10% oro) y Sudado Dorado (+5% daño y defensa) con lo que pesques.',
@@ -748,6 +749,7 @@ export const LOGROS = [
   { id: 'torre10',   titulo: 'Escalador',          desc: 'Supera el piso 10 de la Torre',  oro: 3000,  cond: c => (c.torreMax || 0) >= 10 },
   { id: 'torre25',   titulo: 'Señor de la Torre',  desc: 'Supera el piso 25 de la Torre',  oro: 12000, cond: c => (c.torreMax || 0) >= 25 },
   { id: 'reytorre',  titulo: 'Rey de la Torre',    desc: 'Gana el ranking semanal de la Torre (desde el piso 10)', oro: 10000, cond: c => (c.reyTorre || 0) >= 1 },
+  { id: 'exped25',   titulo: 'Explorador',         desc: 'Completa 25 expediciones',       oro: 3000,  cond: c => (c.expediciones || 0) >= 25 },
   { id: 'pesca50',   titulo: 'Pescador',           desc: 'Pesca 50 peces',                 oro: 1500,  cond: c => (c.peces || 0) >= 50 },
   { id: 'pesca500',  titulo: 'Maestro Pescador',   desc: 'Pesca 500 peces',                oro: 8000,  cond: c => (c.peces || 0) >= 500 },
   { id: 'mundial10', titulo: 'Titán',              desc: 'Vence 10 veces al jefe mundial', oro: 15000, cond: c => (c.mundiales || 0) >= 10 },
@@ -1581,4 +1583,15 @@ export const premioTorreSem = i => [15000, 7500, 3500][i] || 0;
 export const pisoTorre = p => ({ n: Math.min(6, 2 + Math.floor((p - 1) / 3)), vida: 1.2 * Math.pow(1.07, p - 1), atk: Math.pow(1.045, p - 1), jefe: p % 5 === 0 });
 // Cofre de cada 5 pisos nuevos de la semana: oro (hasta el piso 50) y equipo (epico desde el 15).
 export const premioTorre = (p, nivel) => ({ oro: Math.round(40 * nivel * Math.min(10, p / 5)), rMin: p >= 15 ? 2 : 1 });
+
+// ── EXPEDICIONES ── (functions/mmo/expediciones.js)
+// Tu mascota (o un duendecillo) sale 1, 4 u 8 horas y vuelve con oro, algo
+// de experiencia y materiales. Da menos que jugar esas horas. Nunca mTON.
+export const EXPEDICION = { nv: 5, horas: [1, 4, 8] };
+export const premioExpedicion = (h, nv) => {
+  const k = Math.pow(h, 0.75);
+  const mat = { hierba: Math.ceil(h * 1.5), mineral: Math.ceil(h * 1.5), pescado: h };
+  if (h >= 8) mat.cristal = 1;
+  return { oro: Math.round(40 * nv * k), xp: Math.round(xpParaSubir(nv) * 0.02 * k), mat };
+};
 

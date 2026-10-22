@@ -39,6 +39,7 @@ import { Retencion } from './retencion.js';
 import { Eventos } from './eventos.js';
 import { Pase } from './pase.js';
 import { Torre } from './torre.js';
+import { Expediciones } from './expediciones.js';
 
 const MAX_JUGADORES = 300;
 const GUARDAR_CADA_MS = 20000;
@@ -291,6 +292,7 @@ export class MmoWorld {
       case 'retoResp': return this.respuestaDuelo(s, m);
       case 'mazmorra': return this.entrarMazmorra(s, m);
       case 'torre': return this.entrarTorre(s);
+      case 'exped': return this.expedicion(s, m);
       case 'hermCrear': return this.crearHermandad(s, m);
       case 'hermInvitar': return this.invitarHerm(s, m);
       case 'hermResp': return this.respuestaHerm(s, m);
@@ -1024,7 +1026,7 @@ export class MmoWorld {
       arma: c.arma, armas: c.armas, skin: c.skin, skins: c.skins, pw: c.pw,
       kills: c.kills, jefes: c.jefes, muerto: s.muerto, mis: c.mis, forja: c.forja,
       eq: c.eq, bolsa: c.bolsa, logros: c.logros, titulo: c.titulo, mundiales: c.mundiales, login: c.login, crit: s.st.crit,
-      clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, torreSem: this.torreSem(c).max, torreMax: c.torreMax || 0, desafio: c.desafio || {}, ...Object.fromEntries(TEMPORADAS.map(t => [t.campo, c[t.campo] || 0])), chicha: this.infoChicha(c), temp: (temporadaDe() || {}).id || '', herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, best: c.best || {},
+      clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, torreSem: this.torreSem(c).max, torreMax: c.torreMax || 0, exped: c.exped || null, desafio: c.desafio || {}, ...Object.fromEntries(TEMPORADAS.map(t => [t.campo, c[t.campo] || 0])), chicha: this.infoChicha(c), temp: (temporadaDe() || {}).id || '', herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, best: c.best || {},
       boveda: c.boveda, bovedaOpc: c.bovedaOpc || null, pase: this.infoPase(c), banda: this.infoBanda(c), runas: c.runas || {}, gestaCob: c.gestaCob || null,
       espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, tintes: c.tintes || [], tinte: c.tinte || '', mascotas: c.mascotas || [], mascota: c.mascota || '', montado: s.montado || null,
       mton: c.mton, wallet: c.wallet ? { a: tonAmigable(c.wallet.a), desde: c.wallet.desde } : null,
@@ -2269,4 +2271,6 @@ Object.assign(MmoWorld.prototype, Eventos);
 Object.assign(MmoWorld.prototype, Pase);
 // La Torre del Duende: functions/mmo/torre.js
 Object.assign(MmoWorld.prototype, Torre);
+// Expediciones de la mascota: functions/mmo/expediciones.js
+Object.assign(MmoWorld.prototype, Expediciones);
 MmoWorld.prototype.generarItem = generarItem;

@@ -590,6 +590,7 @@ async function pruebas() {
   await pruebasPase();
   await pruebasPesca();
   await pruebasTorre();
+  await pruebasExpedicion();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -1345,6 +1346,31 @@ async function pruebasTintes() {
   await dejar(t); await dejar(v);
 }
 
+
+async function pruebasExpedicion() {
+  console.log('Expediciones');
+  const D = await import('../mmo/js/data.js');
+  const j = await entrar('Exploradora', '83');
+  ponerNivel(j, 3, 'mago');
+  j.limpiar(); await j.mandar({ t: 'exped', h: 4 });
+  chequear(!j.c.exped && j.ultimos('no').some(x => /nivel 5/.test(x.m)), 'a Nv 3 no hay expediciones');
+  ponerNivel(j, 20, 'mago');
+  await j.mandar({ t: 'exped', h: 3 });
+  chequear(!j.c.exped, 'solo 1, 4 u 8 horas');
+  await j.mandar({ t: 'exped', h: 4 });
+  chequear(j.c.exped && j.c.exped.h === 4, 'sale una de 4 h');
+  j.limpiar(); await j.mandar({ t: 'exped', h: 1 });
+  chequear(j.c.exped.h === 4 && j.ultimos('no').some(x => /en camino/.test(x.m)), 'solo una a la vez');
+  j.limpiar(); await j.mandar({ t: 'exped', recoger: 1 });
+  chequear(j.c.exped && j.ultimos('no').some(x => /aún no/.test(x.m)), 'no se recoge antes de que vuelva');
+  avanzar(4 * 3600000 + 1000); j.actT = reloj; mundo.revisarLogros(j);
+  const oro0 = j.c.oro, pr = D.premioExpedicion(4, 20), pes0 = (j.c.mat || {}).pescado || 0;
+  await j.mandar({ t: 'exped', recoger: 1 });
+  chequear(!j.c.exped && j.c.oro - oro0 === pr.oro && j.c.mat.pescado - pes0 === pr.mat.pescado && j.c.expediciones === 1, 'al volver: oro, XP y materiales');
+  await j.mandar({ t: 'exped', recoger: 1 });
+  chequear(j.c.oro - oro0 === pr.oro, 'no se cobra dos veces');
+  await dejar(j);
+}
 
 async function pruebasTorre() {
   console.log('Torre del Duende');

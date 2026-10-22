@@ -380,6 +380,8 @@ export const Retencion = {
   // Texto plano, sin Markdown: el nombre lo eligio el jugador.
   async mensajeAviso(c, hoy) {
     const lineas = [];
+    // Expedicion (expediciones.js) que ya volvio y espera a que la recoja.
+    if (c.exped && c.exped.fin <= Date.now()) lineas.push(`🧭 Tu expedición de ${c.exped.h} h ya volvió con oro y materiales: recógela en el registro de misiones.`);
     if (horaFelizActiva()) lineas.push('⚡ Ahora mismo es la Hora Feliz: +50% de experiencia por caza hasta las 21:00 (hora de Perú).');
     const L = c.login;
     if (L && L.d === diaISO(hoy - 1) && L.racha >= 1 && L.racha < LOGIN_PREMIOS.length) {
