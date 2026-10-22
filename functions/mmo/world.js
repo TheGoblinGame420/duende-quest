@@ -263,6 +263,10 @@ export class MmoWorld {
       case 'salirGrupo': return this.salirGrupo(s);
       case 'expulsarGrupo': return this.expulsarGrupo(s, m);
       case 'liderGrupo': return this.liderGrupo(s, m);
+      case 'lfg': return this.buscarGrupo(s, m);
+      case 'lfgLista': return this.lfgLista(s);
+      case 'lfgQuitar': return this.quitarLfg(s);
+      case 'lfgUnir': return this.unirseLfg(s, m);
       case 'quien': return this.quien(s);
       case 'amigos': return this.infoAmigos(s);
       case 'chicha': return this.reclamarChicha(s, m);

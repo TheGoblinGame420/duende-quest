@@ -10,8 +10,11 @@
 //
 // Chat: general (todo el servidor), decir (/d, solo tu mapa), grupo (/g),
 // hermandad (/h) y susurro (/s Nombre texto).
+//
+// Buscar grupo: te anuncias para una mazmorra (10 min) y quien tenga nivel
+// se une con un toque, sin esperar a que aceptes (el lider puede expulsar).
 // ═══════════════════════════════════════════════════════
-import { MAPAS } from '../../mmo/js/data.js';
+import { MAPAS, MAZMORRAS } from '../../mmo/js/data.js';
 
 export const GRUPO_MAX = 5;
 // Identificador publico de un personaje: el uid real es "tg:<id de
@@ -28,6 +31,8 @@ export function pub(uid) {
   return h.toString(36);
 }
 const INVITACION_MS = 60000;
+export const LFG_MS = 10 * 60000;       // cuanto dura un anuncio de "busco grupo"
+const LFG_CADA_MS = 60000;              // y cada cuanto se puede volver a anunciar
 const limpiar = t => String(t || '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 120);
 
 export const Social = {
@@ -200,6 +205,75 @@ export const Social = {
     }
     // General: todo el servidor. Las burbujas solo se ven en el mismo mapa.
     this.aTodos({ ...base, canal: 'general' });
+  },
+
+  // ── BUSCAR GRUPO ──
+  buscarGrupo(s, m) {
+    this.iniciarSocial();
+    this.lfg = this.lfg || new Map();   // uid -> { id de mazmorra, t, hasta }
+    const mz = typeof m.id === 'string' && Object.hasOwn(MAZMORRAS, m.id) ? MAZMORRAS[m.id] : null;
+    if (!mz) return;
+    if (s.c.nivel < mz.nv[0]) return this.no(s, `Necesitas nivel ${mz.nv[0]} para ${mz.nombre}.`);
+    const g = this.grupoDe(s);
+    if (g && g.lider !== s.c.uid) return this.no(s, 'Solo el líder del grupo puede buscar más gente.');
+    if (g && g.uids.length >= GRUPO_MAX) return this.no(s, 'Tu grupo ya está lleno.');
+    const ahora = Date.now();
+    const prev = this.lfg.get(s.c.uid);
+    if (prev && ahora - prev.t < LFG_CADA_MS) return this.no(s, 'Ya anunciaste tu búsqueda hace nada: espera un minuto.');
+    const e = { id: m.id, t: ahora, hasta: ahora + LFG_MS };
+    this.lfg.set(s.c.uid, e);
+    const aviso = JSON.stringify({ t: 'lfgAviso', ...this.infoLfg(s.c.uid, e) });
+    let n = 0;
+    for (const x of this.sesiones.values()) if (x.c && x !== s && !x.gid && x.c.nivel >= mz.nv[0]) { this.enviar(x, aviso); n++; }
+    this.enviar(s, { t: 'toast', ok: true, m: `📢 Buscas grupo para ${mz.nombre} (10 min). ` + (n ? `Se avisó a ${n} jugador${n > 1 ? 'es' : ''} con nivel.` : 'Ahora no hay nadie más conectado con nivel: queda en la lista del portal de mazmorras.') });
+    this.lfgLista(s);
+  },
+  infoLfg(uid, e) {
+    const x = this.porUid.get(uid);
+    const g = x && this.grupoDe(x);
+    return { pid: pub(uid), n: x.c.nombre, nv: x.c.nivel, cl: x.c.clase || '', id: e.id, m: g ? g.uids.length : 1 };
+  },
+  // Las busquedas que siguen en pie (se borran las caducadas, las de quien
+  // se fue y las de grupos llenos o que ya no lleva esa persona).
+  lfgVigentes() {
+    const ahora = Date.now(), r = [];
+    for (const [uid, e] of this.lfg || []) {
+      const x = this.porUid.get(uid);
+      const g = x && this.grupoDe(x);
+      if (!x || !x.c || e.hasta < ahora || (g && (g.lider !== uid || g.uids.length >= GRUPO_MAX))) { this.lfg.delete(uid); continue; }
+      r.push([uid, e]);
+    }
+    return r;
+  },
+  lfgLista(s) { this.enviar(s, { t: 'lfg', l: this.lfgVigentes().map(([u, e]) => ({ ...this.infoLfg(u, e), yo: u === s.c.uid ? 1 : 0 })) }); },
+  quitarLfg(s) {
+    if (this.lfg && this.lfg.delete(s.c.uid)) this.enviar(s, { t: 'toast', m: 'Dejaste de buscar grupo.' });
+    this.lfgLista(s);
+  },
+  unirseLfg(s, m) {
+    this.iniciarSocial();
+    const par = this.lfgVigentes().find(([u]) => pub(u) === m.pid);
+    if (!par) return this.no(s, 'Esa búsqueda ya terminó (o el grupo se llenó).');
+    const [uid, e] = par;
+    const lider = this.porUid.get(uid);
+    if (lider === s) return;
+    const mz = MAZMORRAS[e.id];
+    if (s.gid) return this.no(s, 'Ya estás en un grupo: sal de él para unirte a otro.');
+    if (s.c.nivel < mz.nv[0]) return this.no(s, `Necesitas nivel ${mz.nv[0]} para ${mz.nombre}.`);
+    let g = this.grupoDe(lider);
+    if (!g) {
+      g = { id: this.sigGrupo++, lider: uid, uids: [uid] };
+      this.grupos.set(g.id, g);
+      lider.gid = g.id;
+    }
+    g.uids.push(s.c.uid);
+    s.gid = g.id;
+    s.invitacion = null;
+    this.avisarGrupo(g, `👥 ${s.c.nombre} se unió al grupo desde el buscador (${mz.nombre}).`);
+    this.enviarGrupo(g);
+    this.enviar(lider, { t: 'toast', ok: true, m: `📢 ${s.c.nombre} (Nv ${s.c.nivel}) se unió a tu grupo para ${mz.nombre}.` });
+    this.enviar(s, { t: 'toast', ok: true, m: `👥 Te uniste al grupo de ${lider.c.nombre} para ${mz.nombre}. Id juntos al portal de mazmorras del pueblo.` });
+    if (g.uids.length >= GRUPO_MAX) this.lfg.delete(uid);
   },
 
   // Lista de quien esta conectado (para invitar o susurrar).

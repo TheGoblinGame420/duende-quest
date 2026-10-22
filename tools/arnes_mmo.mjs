@@ -572,6 +572,7 @@ async function pruebas() {
   await pruebasTintes();
   await pruebasChicha();
   await pruebasAfijos();
+  await pruebasLfg();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -1280,6 +1281,40 @@ async function pruebasTintes() {
   await dejar(t); await dejar(v);
 }
 
+
+async function pruebasLfg() {
+  console.log('Buscar grupo para una mazmorra');
+  const { LFG_MS } = await import('../functions/mmo/social.js');
+  const a = await entrar('Buscadora', '70'), b = await entrar('Voluntario', '71'), c = await entrar('Pequeno', '72');
+  const d = await entrar('Agrupado', '73'), e = await entrar('Agrupada', '74');
+  ponerNivel(a, 12, 'sacerdote'); ponerNivel(b, 15, 'guerrero'); ponerNivel(c, 5, 'mago'); ponerNivel(d, 20, 'mago'); ponerNivel(e, 20, 'picaro');
+  await d.mandar({ t: 'invitar', p: e.id }); await e.mandar({ t: 'grupoResp', si: true });
+  for (const x of [a, b, c, d, e]) x.limpiar();
+  await a.mandar({ t: 'lfg', id: 'nada' });
+  chequear(!a.ultimos('lfg').length, 'una mazmorra que no existe se ignora');
+  await a.mandar({ t: 'lfg', id: 'catacumbas' });
+  const av = b.ultimos('lfgAviso')[0];
+  chequear(av && av.n === 'Buscadora' && av.id === 'catacumbas' && av.m === 1 && av.pid === pub(a.c.uid), 'se avisa a quien tiene nivel y no tiene grupo');
+  chequear(!c.ultimos('lfgAviso').length && !d.ultimos('lfgAviso').length, 'no a quien no tiene nivel ni a quien ya está en un grupo');
+  chequear(!JSON.stringify(av).includes(a.c.uid), 'el aviso no lleva el uid real');
+  a.limpiar(); await a.mandar({ t: 'lfg', id: 'catacumbas' });
+  chequear(a.ultimos('no').length === 1, 'no se puede anunciar otra vez en menos de un minuto');
+  await c.mandar({ t: 'lfgUnir', pid: av.pid });
+  chequear(!c.gid, 'sin nivel no se une');
+  await b.mandar({ t: 'lfgUnir', pid: av.pid });
+  chequear(a.gid && a.gid === b.gid && mundo.grupoDe(a).lider === a.c.uid, 'quien se une entra al grupo de quien busca (y esa persona es la líder)');
+  b.limpiar(); await b.mandar({ t: 'lfg', id: 'catacumbas' });
+  chequear(b.ultimos('no').some(x => /líder/.test(x.m)), 'solo la líder puede seguir buscando gente');
+  b.limpiar(); await b.mandar({ t: 'lfgLista' });
+  const l = b.ultimos('lfg').pop();
+  chequear(l && l.l.length === 1 && l.l[0].m === 2, 'la búsqueda sigue en la lista con 2/5');
+  await d.mandar({ t: 'lfgUnir', pid: av.pid });
+  chequear(d.gid === e.gid && d.gid !== a.gid, 'quien ya tiene grupo no se une a otro');
+  avanzar(LFG_MS + 1000);
+  b.limpiar(); await b.mandar({ t: 'lfgLista' });
+  chequear(b.ultimos('lfg').pop().l.length === 0, 'a los 10 minutos la búsqueda caduca');
+  for (const x of [a, b, c, d, e]) await dejar(x);
+}
 
 async function pruebasAfijos() {
   console.log('Afijos semanales y ranking semanal de Desafíos');

@@ -14,7 +14,7 @@ import {
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo,
-} from './data.js?v=47';
+} from './data.js?v=48';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -469,6 +469,8 @@ function recibir(m) {
     case 'chat': mensajeChat(m); break;
     case 'grupo': grupo = m.g; pintarSocial(); break;
     case 'invitacion': mostrarInvitacion(m); break;
+    case 'lfgAviso': if (!grupo) mostrarInvitacion({ ...m, lfg: 1, ms: 30000 }); break;
+    case 'lfg': lfgLista = m.l || []; pintarLfg(); break;
     case 'herm': hermandad = m.h; pintarSocial(); break;
     case 'hermInv': mostrarInvitacion({ ...m, herm: 1 }); break;
     case 'reto': mostrarInvitacion({ ...m, duelo: 1 }); break;
@@ -1162,8 +1164,13 @@ function mensajeChat(m) {
 // seguir jugando mientras tanto).
 function mostrarInvitacion(m) {
   const cl = CLASES[m.cl];
-  $('invitacion').dataset.tipo = m.duelo ? 'duelo' : m.herm ? 'herm' : 'grupo';
-  $('inv-txt').innerHTML = m.duelo
+  $('invitacion').dataset.tipo = m.lfg ? 'lfg' : m.duelo ? 'duelo' : m.herm ? 'herm' : 'grupo';
+  $('invitacion').dataset.pid = m.pid || '';
+  $('inv-si').textContent = m.lfg ? 'Unirme' : 'Aceptar';
+  $('inv-no').textContent = m.lfg ? 'Ahora no' : 'Rechazar';
+  $('inv-txt').innerHTML = m.lfg
+    ? `📢 <b style="color:${cl ? cl.color : 'var(--txt)'}">${esc(m.n)}</b> (Nv ${m.nv}${cl ? ' ' + esc(cl.nombre) : ''}) busca grupo para <b style="color:var(--ok)">${esc((MAZMORRAS[m.id] || {}).nombre || 'una mazmorra')}</b> (${m.m}/5)`
+    : m.duelo
     ? `⚔️ <b style="color:${cl ? cl.color : 'var(--txt)'}">${esc(m.de)}</b> (Nv ${m.nv}${cl ? ' ' + esc(cl.nombre) : ''}) te reta a un <b style="color:var(--err)">duelo</b>`
     : m.herm
     ? `<b>${esc(m.de)}</b> te invita a la hermandad <b style="color:var(--ok)">&lt;${esc(m.nombre)}&gt;</b>`
@@ -1173,7 +1180,12 @@ function mostrarInvitacion(m) {
   clearTimeout(mostrarInvitacion.t);
   mostrarInvitacion.t = setTimeout(() => ponCss($('invitacion'), 'display', 'none'), m.ms || 60000);
 }
-const respInv = si => { mandar({ t: { herm: 'hermResp', duelo: 'retoResp' }[$('invitacion').dataset.tipo] || 'grupoResp', si }); ponCss($('invitacion'), 'display', 'none'); if (si) sfx('boton', .3); };
+const respInv = si => {
+  const tipo = $('invitacion').dataset.tipo;
+  if (tipo === 'lfg') { if (si) mandar({ t: 'lfgUnir', pid: $('invitacion').dataset.pid }); }
+  else mandar({ t: { herm: 'hermResp', duelo: 'retoResp' }[tipo] || 'grupoResp', si });
+  ponCss($('invitacion'), 'display', 'none'); if (si) sfx('boton', .3);
+};
 $('inv-si').onclick = () => respInv(true);
 $('inv-no').onclick = () => respInv(false);
 
@@ -1419,10 +1431,30 @@ $('o-herm').onclick = () => { const q = jugObjetivo(); if (q) { mandar({ t: 'her
 let muros = [];                 // barreras cerradas de la instancia (x)
 let instancia = null;           // { id, nv, hechos }
 function topeMuros() { return muros.length ? Math.min(...muros) - 22 : Infinity; }
+// Buscar grupo: anunciarse para una mazmorra y la lista de quien busca.
+let lfgLista = [];
+function pintarLfg() {
+  const L = $('maz-lfg');
+  if (!L || !yo) return;
+  const mio = lfgLista.find(x => x.yo);
+  const abiertas = Object.keys(MAZMORRAS).filter(id => yo.nivel >= MAZMORRAS[id].nv[0]);
+  let h = '<b>👥 Buscar grupo</b>';
+  if (!abiertas.length) h += `<p style="color:var(--txt2)">Se abre con la primera mazmorra (Nv ${MAZMORRAS[Object.keys(MAZMORRAS)[0]].nv[0]}).</p>`;
+  else if (mio) h += `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span style="flex:1;font-size:13px;color:var(--ok)">📢 Buscas grupo para ${esc(MAZMORRAS[mio.id].nombre)} (${mio.m}/5)</span><button class="btn sec" id="lfg-quitar">Dejar de buscar</button></div>`;
+  else if (!grupo || grupo.lider === yo.pid) h += `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><select id="lfg-maz" style="flex:1;min-width:120px">${abiertas.map(id => `<option value="${id}">${esc(MAZMORRAS[id].nombre)}</option>`).join('')}</select><button class="btn" id="lfg-anunciar">📢 Anunciarme</button></div><p style="font-size:12px;color:var(--txt2);margin-top:4px">Se avisa a los conectados con nivel; quien quiera se une a tu grupo con un toque.</p>`;
+  const otros = lfgLista.filter(x => !x.yo);
+  if (otros.length) h += otros.map(x => { const cl = CLASES[x.cl]; return `<div class="fila" style="align-items:center"><span><b style="color:${cl ? cl.color : 'var(--txt)'}">${esc(x.n)}</b> Nv ${x.nv} · ${esc(MAZMORRAS[x.id].nombre)} · ${x.m}/5</span>${grupo ? '' : `<button class="btn" data-lfg="${esc(x.pid)}">Unirme</button>`}</div>`; }).join('');
+  else h += '<p style="font-size:12px;color:var(--txt2);margin-top:6px">Nadie más está buscando grupo ahora.</p>';
+  L.innerHTML = h;
+  const an = $('lfg-anunciar'); if (an) an.onclick = () => { mandar({ t: 'lfg', id: $('lfg-maz').value }); sfx('boton', .3); };
+  const qu = $('lfg-quitar'); if (qu) qu.onclick = () => mandar({ t: 'lfgQuitar' });
+  L.querySelectorAll('[data-lfg]').forEach(b => b.onclick = () => { mandar({ t: 'lfgUnir', pid: b.dataset.lfg }); sfx('boton', .3); });
+}
 function abrirBuscador() {
   if (!yo) return;
   const L = $('maz-lista');
   let h = `<p class="centro" style="margin-bottom:8px;font-size:12px">${grupo ? '👥 Entraréis juntos los del grupo que estén en el pueblo (los demás podrán unirse después por este portal).' : 'Entras solo: la mazmorra se ajusta a ti. Con un grupo es más fácil y más divertido (👥).'}</p>`;
+  h += '<div class="mis-caja" id="maz-lfg"></div>';
   for (const id in MAZMORRAS) {
     const mz = MAZMORRAS[id];
     const bloq = yo.nivel < mz.nv[0];
@@ -1450,6 +1482,8 @@ function abrirBuscador() {
   h += '<ul style="padding-left:18px;margin-top:10px;font-size:12px"><li>Aquí los monstruos atacan solos y en packs: tira de uno y vendrá todo su grupo.</li><li>Cada jefe guarda una barrera. Lee sus avisos: <b style="color:var(--warn)">sal de las zonas marcadas</b> en el suelo e <b>interrumpe</b> (Patada, Zurrar, Contrahechizo o Silencio) los hechizos con barra naranja.</li><li>Si caéis todos, revivís en la entrada y el jefe se recupera.</li><li>Cada jefe da equipo a cada uno; el último, épico.</li></ul>';
   L.innerHTML = h;
   L.querySelectorAll('[data-maz]').forEach(b => b.onclick = () => { sfx('explosion', .3); mandar({ t: 'mazmorra', id: b.dataset.maz }); cerrarModales(); });
+  pintarLfg();
+  mandar({ t: 'lfgLista' });
   L.querySelectorAll('[data-mazk]').forEach(b => b.onclick = () => { const sel = L.querySelector(`[data-dk="${b.dataset.mazk}"]`); sfx('explosion', .35); mandar({ t: 'mazmorra', id: b.dataset.mazk, k: +sel.value }); cerrarModales(); });
   abrir('m-mazmorras');
 }
