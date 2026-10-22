@@ -591,6 +591,7 @@ async function pruebas() {
   await pruebasPesca();
   await pruebasTorre();
   await pruebasExpedicion();
+  await pruebasEvadir();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -1346,6 +1347,20 @@ async function pruebasTintes() {
   await dejar(t); await dejar(v);
 }
 
+
+async function pruebasEvadir() {
+  console.log('Mazmorras: los packs vuelven a su sitio');
+  const j = await entrar('Evasora', '7b');
+  ponerNivel(j, 8, 'guerrero');
+  await aMapa(j, 'pueblo', 795);
+  await j.mandar({ t: 'mazmorra', id: 'madriguera' });
+  const w = mundo.mundoDe(j);
+  const o = [...w.mons.values()].find(x => x.grupo && Math.abs(x.casaX - 900) < 80);
+  o.x = o.casaX + 260; o.hp = 1; o.amen.clear(); o.obj = 0;
+  tick(60);
+  chequear(Math.abs(o.x - o.casaX) <= 60 && o.hp === o.max, 'un pack sin presa vuelve a su sitio y se cura');
+  await dejar(j);
+}
 
 async function pruebasExpedicion() {
   console.log('Expediciones');

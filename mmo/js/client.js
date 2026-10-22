@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=158';
+} from './data.js?v=160';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -370,7 +370,7 @@ function recibir(m) {
         const abre = { 5: '🧭 ¡Ya puedes mandar expediciones! Tu mascota (o un duendecillo) explora mientras no juegas: registro de misiones (L).',
           6: '🏰 ¡Se abrió tu primera mazmorra, la Madriguera Goblin! Entra por el portal de mazmorras del pueblo, solo o en grupo.',
           10: '🗼 ¡Se abrió la Torre del Duende! Pisos sin fin con cofres cada 5: portal de mazmorras del pueblo.' };
-        for (const nv of Object.keys(abre)) if (antes.nivel < +nv && yo.nivel >= +nv) setTimeout(() => aviso(abre[nv], 'ok'), 3500);
+        for (const nv of Object.keys(abre)) if (antes.nivel < +nv && yo.nivel >= +nv) setTimeout(() => aviso(abre[nv], 'ok', 10000), 3500);
       }
       // Invitado: su personaje vive solo en este navegador. Se le recuerda
       // en algunos niveles como no perderlo (y recibir avisos y mTON).
@@ -964,15 +964,16 @@ function dibujarVitrina() {
   if (!ids.length) return;
   const sk = SKINS[ids[Math.floor(performance.now() / 5000) % ids.length]];
   const img = IMG[sk.img];
-  g.fillStyle = '#2a2238'; g.fillRect(x - 22, SUELO - 10, 44, 10);
-  g.fillStyle = sk.color || '#ffd84a'; g.fillRect(x - 22, SUELO - 10, 44, 2);
+  g.fillStyle = '#2a2238'; g.fillRect(x - 24, SUELO - 34, 48, 34);
+  g.fillStyle = '#3b3050'; g.fillRect(x - 20, SUELO - 30, 40, 26);
+  g.fillStyle = sk.color || '#ffd84a'; g.fillRect(x - 24, SUELO - 34, 48, 3);
   if (img && img.naturalWidth) {
-    const e = Math.min(56 / img.naturalWidth, 56 / img.naturalHeight);
+    const e = Math.min(50 / img.naturalWidth, 50 / img.naturalHeight);
     g.globalAlpha = .9;
-    g.drawImage(img, x - img.naturalWidth * e / 2, SUELO - 10 - img.naturalHeight * e + Math.sin(frame * .05) * 1.5, img.naturalWidth * e, img.naturalHeight * e);
+    g.drawImage(img, x - img.naturalWidth * e / 2, SUELO - 34 - img.naturalHeight * e + Math.sin(frame * .05) * 1.5, img.naturalWidth * e, img.naturalHeight * e);
     g.globalAlpha = 1;
   }
-  etiqueta(x, SUELO - 118, '✨ ' + sk.nombre, sk.color || '#ffd84a', 6);
+  etiqueta(x, SUELO - 128, '✨ ' + sk.nombre, sk.color || '#ffd84a', 6);
 }
 // El sedal y el corcho de quien pesca (el corcho se hunde al picar).
 function dibujarSedal(x, pies, f, pica) {
@@ -3668,10 +3669,10 @@ function sugerencias() {
     if (!yo.torreSem && yo.nivel >= TORRE.nv) l.push('🗼 Sube la Torre del Duende: cada 5 pisos nuevos de la semana, un cofre.');
   }
   const z = zonaDeNivel(yo.nivel);
-  if (MAPAS[z] && mapaId !== z) l.push(`🗺️ Tu zona ahora: ${esc(MAPAS[z].nombre)} (Nv ${MAPAS[z].nv[0]}-${MAPAS[z].nv[1]}).`);
+  if (MAPAS[z] && mapaId !== z && !(qm && yo.mis.p < qm.n)) l.push(`🗺️ Tu zona ahora: ${esc(MAPAS[z].nombre)} (Nv ${MAPAS[z].nv[0]}-${MAPAS[z].nv[1]}).`);
   if (!ex && yo.nivel >= EXPEDICION.nv) l.push('🧭 Antes de irte, manda una expedición (aquí abajo).');
   l.push('🎣 Para descansar: pesca en el estanque del pueblo y cocina con la Artesana.');
-  return l.slice(0, 3);
+  return l.slice(0, 4);
 }
 function cajaSugerencias() {
   if (!yo || !yo.clase) return '';
@@ -3694,8 +3695,8 @@ function cajaExpedicion() {
     const ms = ex.fin - Date.now();
     if (ms <= 0) h += `<p>${esc(quien)} ya volvió.</p><button class="btn" id="b-exped" style="width:100%;margin-top:6px">Recoger</button>`;
     else {
-      const hh = Math.floor(ms / 3600000), mm = Math.ceil(ms % 3600000 / 60000);
-      h += `<p style="font-size:12px;color:var(--txt2)">${esc(quien)} está ${esc(((EXPEDICION.destinos[ex.d] || EXPEDICION.destinos.bosque).a).replace(/^al /, 'en el ').replace(/^a la /, 'en la '))}: vuelve en ${hh ? hh + ' h ' : ''}${mm} min.</p><div class="mis-barra"><i style="width:${Math.round((1 - ms / (ex.fin - ex.ini)) * 100)}%"></i></div>`;
+      const tot = Math.ceil(ms / 60000), hh = Math.floor(tot / 60), mm = tot % 60;
+      h += `<p style="font-size:12px;color:var(--txt2)">${esc(quien)} está ${esc(((EXPEDICION.destinos[ex.d] || EXPEDICION.destinos.bosque).a).replace(/^al /, 'en el ').replace(/^a la /, 'en la '))}: vuelve en ${hh ? hh + ' h' : ''}${hh && mm ? ' ' : ''}${mm || !hh ? mm + ' min' : ''}.</p><div class="mis-barra"><i style="width:${Math.round((1 - ms / (ex.fin - ex.ini)) * 100)}%"></i></div>`;
     }
   }
   return h + '</div>';
@@ -3878,15 +3879,18 @@ function pintarLanzar() {
   ponTxt($('lanzar-t'), castYo.nombre + '  ' + Math.max(0, (castYo.fin - ahora) / 1000).toFixed(1) + ' s');
 }
 
-function aviso(txt, tipo) {
+// ms: lo que dura (los importantes, mas). Los importantes no los echa el
+// botin que llega detras.
+function aviso(txt, tipo, ms) {
   const d = document.createElement('div');
   d.className = 'aviso';
+  if (ms) d.dataset.imp = '1';
   if (tipo === 'ok') d.style.borderColor = 'var(--ok)';
   if (tipo === 'jefe') { d.style.borderColor = 'var(--warn)'; d.style.color = 'var(--txt)'; }
   d.textContent = txt;
   $('avisos').appendChild(d);
-  setTimeout(() => d.remove(), 3700);
-  while ($('avisos').children.length > 4) $('avisos').firstChild.remove();
+  setTimeout(() => d.remove(), ms || 3700);
+  while ($('avisos').children.length > 4) { const v = [...$('avisos').children].find(x => !x.dataset.imp) || $('avisos').firstChild; v.remove(); }
 }
 
 function lineaChat(nombre, txt, canal, colorNombre) {

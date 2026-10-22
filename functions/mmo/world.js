@@ -2282,6 +2282,11 @@ export class MmoWorld {
       const lejos = def.dispara ? 170 : 20;
       o.f = obj.x > o.x ? 1 : -1;
       if (Math.abs(obj.x - o.x) > lejos) vx = o.f * o.vel * 1.35 * 60 * dt;
+    } else if (o.grupo && !obj && Math.abs(o.x - o.casaX) > 60) {
+      // Mazmorra: el pack que pierde a su presa vuelve a su sitio y se cura
+      // (como en WoW). Antes se quedaba donde mato y atacaba al revivir.
+      o.f = o.casaX > o.x ? 1 : -1; vx = o.f * o.vel * 1.35 * 60 * dt;
+      if (o.hp < o.max) { o.hp = o.max; o.dano.clear(); }
     } else if (!golpeado && !obj) {
       // Pasear: tramos cortos a un lado y pausas.
       if (ahora >= o.pasoEn) { o.dir = Math.random() < 0.35 ? 0 : (Math.random() < 0.5 ? -1 : 1); o.pasoEn = ahora + rnd(1200, 3200); }

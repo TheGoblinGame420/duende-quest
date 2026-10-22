@@ -597,7 +597,9 @@ export const Mazmorras = {
     // volvia a la entrada y habia que cruzar toda la mazmorra otra vez.
     const mz = MAZMORRAS[w.inst.id];
     const abiertas = mz ? mz.jefes.map(j => j.muro).filter(mu => !(w.muros || []).includes(mu)) : [];
-    const x = abiertas.length ? Math.max(...abiertas) + 60 : 150;
+    // Dentro de la sala ya limpia (antes de la barrera): pasada la barrera el
+    // siguiente pack quedaba a menos de su radio de agro.
+    const x = abiertas.length ? Math.max(...abiertas) - 120 : 150;
     this.entrarMapa(s, w.mapa, x, false, s.k);
     return true;
   },
