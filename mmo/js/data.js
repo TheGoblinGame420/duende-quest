@@ -438,6 +438,8 @@ export const AURAS = {
   silencio:    { nombre: 'Interrumpido', icono: 'S_Dagger06', mala: true },
   provoca:     { nombre: 'Provocado', icono: 'S_Buff14', mala: true },
   caparazon:   { nombre: 'Caparazón (casi inmune)', icono: 'E_Metal05' },
+  elixirF:     { nombre: 'Elixir de Fuerza (+10% daño)', icono: 'P_Red03' },
+  elixirP:     { nombre: 'Elixir de Piel de Piedra (-10% daño recibido)', icono: 'P_Blue05' },
 };
 
 // ── EQUIPO ──
@@ -659,6 +661,7 @@ export const TAREAS_DIA = [
   { id: 'mazmorra', tipo: 'mazmorra', n: 1, txt: 'Completa una mazmorra', nv: 10 },
   { id: 'mundial', tipo: 'mundial', n: 1, txt: 'Vence al jefe mundial del Coliseo' },
   { id: 'hab', tipo: 'hab', n: 50, txt: 'Usa 50 habilidades en combate' },
+  { id: 'recoger', tipo: 'recoger', n: 6, txt: 'Recoge 6 plantas o vetas de mineral' },
 ];
 export const TAREAS_SEMANA = [
   { id: 'caza300', tipo: 'caza', n: 300, txt: 'Caza 300 monstruos de tu nivel' },
@@ -677,6 +680,34 @@ export function zonaDeNivel(nivel) {
   }
   return mejor;
 }
+
+// ── RECOLECCION Y ARTESANIA ──
+// En cada zona hay plantas y vetas para recoger (1,5 s quieto; cada jugador
+// puede recoger cada una cada 5 min). Con los materiales, la Artesana Lila
+// del pueblo fabrica consumibles y elixires. Otro motivo para recorrer el
+// mundo, que no depende de matar.
+export const MATERIALES = {
+  hierba:  { nombre: 'Hierba Duende',     icono: 'I_Leaf' },
+  mineral: { nombre: 'Mineral de Hierro', icono: 'I_Rock01' },
+  cristal: { nombre: 'Cristal Arcano',    icono: 'I_Crystal01' },
+};
+export const NODO_CADA_MS = 5 * 60000;
+export const RECOLECTAR_MS = 1500;
+export const ELIXIR_MS = 30 * 60000;
+// Vetas y plantas de una zona: posiciones fijas segun su ancho.
+export function nodosDe(mapaId) {
+  const m = MAPAS[mapaId];
+  if (!m || !m.zona || m.instancia || m.coliseo) return [];
+  return [0.16, 0.36, 0.57, 0.8].map((k, i) => ({ i, x: Math.round(m.ancho * k + (i % 2 ? 40 : -40)), tipo: i % 2 ? 'mineral' : 'hierba' }));
+}
+export const RECETAS = [
+  { id: 'pociones', nombre: 'Pociones ×3', icono: 'item_potion', dir: 'items/', pide: { hierba: 3 }, da: { pw: { pocion: 3 } }, desc: 'Tres pociones de vida' },
+  { id: 'escudos', nombre: 'Escudos ×2', icono: 'item_shield', dir: 'items/', pide: { mineral: 4 }, da: { pw: { escudo: 2 } }, desc: 'Dos escudos de invulnerabilidad' },
+  { id: 'fuego', nombre: 'Pólvora de fuego ×2', icono: 'skill_fire', dir: 'items/', pide: { hierba: 2, mineral: 2 }, da: { pw: { fuego: 2 } }, desc: 'Dos golpes de fuego' },
+  { id: 'refinar', nombre: 'Refinar cristal', icono: 'I_Crystal01', pide: { mineral: 8 }, da: { mat: { cristal: 1 } }, desc: '8 minerales se funden en 1 Cristal Arcano' },
+  { id: 'elixirF', nombre: 'Elixir de Fuerza', icono: 'P_Red03', pide: { hierba: 6, cristal: 1 }, da: { elixir: 'elixirF' }, desc: '+10% de daño durante 30 min (aguanta la muerte)' },
+  { id: 'elixirP', nombre: 'Elixir de Piel de Piedra', icono: 'P_Blue05', pide: { mineral: 6, cristal: 1 }, da: { elixir: 'elixirP' }, desc: 'Recibes un 10% menos de daño durante 30 min' },
+];
 
 // ── HERMANDADES ──
 export const HERM_COSTO = 5000;   // oro para fundar una
@@ -760,6 +791,7 @@ export const MAPAS = {
       { id: 'mercader', nombre: 'Mercader Grumo', hoja: 'goblin_peasant', x: 950, tipo: 'tienda' },
       { id: 'guia', nombre: 'Guardia Tito', hoja: 'goblin_guard', x: 640, tipo: 'guia' },
       { id: 'sabio', nombre: 'Sabio Hechicero', hoja: 'hechicero', x: 1180, tipo: 'ranking' },
+      { id: 'artesana', nombre: 'Artesana Lila', hoja: 'goblin_mage', x: 1680, tipo: 'artesania' },
     ],
     spawn: 950,
   },

@@ -488,6 +488,38 @@ async function pruebas() {
   chequear(mundo.rs.sem !== '2000-01-03' && !Object.keys(mundo.rs.l).length, 'la semana nueva empieza de cero');
   chequear(cw.ultimos('logro').some(x => x.id === 'campeon'), 'logro Campeón Semanal');
 
+  console.log('Recolección y artesanía');
+  const rc = await entrar('Recolectora', '7a');
+  ponerNivel(rc, 10, 'sacerdote');
+  await aMapa(rc, 'noche', 800); limpiarMapa(rc);
+  const { nodosDe } = await import('../mmo/js/data.js');
+  const nd = nodosDe('noche')[0];
+  await rc.mandar({ t: 'recolectar', i: 0 });
+  chequear(!rc.cast, 'lejos del nodo no se recoge');
+  rc.x = nd.x; avanzar(3000);
+  await rc.mandar({ t: 'recolectar', i: 0 });
+  chequear(rc.cast && rc.cast.h === 'recolectar', 'recoger es un lanzamiento');
+  tick(16);
+  chequear((rc.c.mat.hierba || 0) >= 1, 'da hierba (' + rc.c.mat.hierba + ')');
+  avanzar(2000);
+  await rc.mandar({ t: 'recolectar', i: 0 });
+  chequear(!rc.cast, 'el mismo nodo no se recoge otra vez enseguida');
+  await rc.mandar({ t: 'fabricar', id: 'pociones' });
+  chequear(rc.ultimos('no').some(x => /Artesana/.test(x.m)), 'fabricar solo junto a la Artesana');
+  await aMapa(rc, 'pueblo', 1680);
+  rc.c.mat = { hierba: 6, mineral: 0, cristal: 1 }; const pots = rc.c.pw.pocion;
+  await rc.mandar({ t: 'fabricar', id: 'pociones' });
+  chequear(rc.c.pw.pocion === pots + 3 && rc.c.mat.hierba === 3, 'fabrica 3 pociones con 3 hierbas');
+  await rc.mandar({ t: 'fabricar', id: 'elixirF' });
+  chequear(rc.c.mat.hierba === 3 && !rc.c.elix, 'sin materiales suficientes no fabrica');
+  rc.c.mat.hierba = 6;
+  await rc.mandar({ t: 'fabricar', id: '__proto__' });
+  await rc.mandar({ t: 'fabricar', id: 'elixirF' });
+  chequear(mundo.elixir(rc, 'elixirF'), 'el elixir de fuerza queda activo');
+  rc.inv = 0; rc.escudo = 0; mundo.herir(rc, 1e7, { id: 0, jefe: true });
+  await rc.mandar({ t: 'revivir' });
+  chequear(mundo.elixir(rc, 'elixirF') && mundo.aura(rc, 'elixirF'), 'el elixir sigue tras morir');
+
   console.log('Monstruos pasivos no pegan a quien no les ataca');
   const t2 = await entrar('Turista', 5);
   await aMapa(t2, 'noche', 2000);

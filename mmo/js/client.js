@@ -11,7 +11,7 @@ import {
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
-  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura,
+  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
 } from './data.js?v=28';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
@@ -288,6 +288,7 @@ function recibir(m) {
       pintarHud(); if ($('m-tienda').classList.contains('on')) pintarTienda(); if ($('m-inv').classList.contains('on')) pintarInventario();
       if ($('m-mision').classList.contains('on')) pintarMision();
       if ($('m-wallet').classList.contains('on')) pintarWallet();
+      if ($('m-arte').classList.contains('on')) abrirArtesana();
       break;
     }
     case 's': snapshot(m); break;
@@ -371,7 +372,7 @@ function recibir(m) {
     case 'pa': { const o = otros.get(m.p); if (o) { o.sk = m.sk; o.ar = m.ar; o.mx = m.mx; o.ti = m.ti || ''; o.cl = m.cl || ''; o.rmx = m.rmx || 0; o.hn = m.hn || ''; o.mo = m.mo || ''; o.es = m.es || ''; } break; }
     case 'hb': habilidadRemota(m); break;
     case 'cast': {
-      const h = m.id === 'hogar' ? { nombre: 'Piedra de Hogar' } : m.id === 'montar' ? { nombre: 'Invocar montura' } : habPorId(m.id);
+      const h = m.id === 'hogar' ? { nombre: 'Piedra de Hogar' } : m.id === 'montar' ? { nombre: 'Invocar montura' } : m.id === 'recolectar' ? { nombre: 'Recogiendo' } : habPorId(m.id);
       const c = { id: m.id, nombre: h ? h.nombre : '', ini: performance.now(), fin: performance.now() + m.ms, tg: m.tg };
       if (m.p === miId) { castYo = c; verLanzar(true); $('lanzar').classList.remove('mal'); }
       else castOtros.set(m.p, c);
@@ -427,6 +428,8 @@ function recibir(m) {
     case 'herm': hermandad = m.h; pintarSocial(); break;
     case 'hermInv': mostrarInvitacion({ ...m, herm: 1 }); break;
     case 'buscador': abrirBuscador(); break;
+    case 'nodos': recibirNodos(m.l); break;
+    case 'recogido': { const n = nodos.find(x => x.i === m.i); if (n) { n.listo = performance.now() + m.en; for (let k = 0; k < 14; k++) particula(n.x, SUELO - 14, m.tipo === 'hierba' ? '#4ade80' : '#cbd5e1', 3); } sfx('moneda', .3); break; }
     case 'tareas': if (yo) { yo.tareas = m; pintarHud(); if ($('m-mision').classList.contains('on')) pintarMision(); } break;
     case 'muros': muros = m.muros || []; if (instancia) instancia.hechos = m.hechos; pintarHud(); break;
     case 'mmx': { const o = mons.get(m.id); if (o) { o.mx = m.mx; o.hp = m.hp; } break; }
@@ -465,7 +468,7 @@ function entrarMapa(m) {
   mapaId = m.mapa;
   otros.clear(); mons.clear(); efectos = []; textos = []; balas = []; burbujas.clear(); jefeVivo = null;
   objetivo = null; castOtros.clear(); castMon.clear(); aurasM.clear(); proyectiles = []; zonas = [];
-  muros = m.muros || []; instancia = m.inst || null;
+  muros = m.muros || []; instancia = m.inst || null; nodos = [];
   for (const id of [...aurasP.keys()]) if (id !== miId) aurasP.delete(id);
   P.x = m.x; P.y = SUELO; P.vx = 0; P.vy = 0; P.suelo = true;
   m.jugadores.forEach(agregarOtro);
@@ -769,7 +772,7 @@ function cercano() {
   }
   for (let i = 0; i < mp.portales.length; i++) if (Math.abs(P.x - mp.portales[i].x) < 70) return { tipo: 'portal', i, p: mp.portales[i] };
   for (const n of (mp.npcs || [])) if (Math.abs(P.x - n.x) < 90) return { tipo: 'npc', n };
-  return cofreCercano();
+  return nodoCercano() || cofreCercano();
 }
 function interactuar() {
   if (!yo || P.muerto) return;
@@ -778,10 +781,12 @@ function interactuar() {
   sfx('boton', .3);
   if (c.tipo === 'res') { usarHabDef(habPorId('resurreccion'), c.q.id); return; }
   if (c.tipo === 'cofre') { abrirCofre(c.c); return; }
+  if (c.tipo === 'nodo') { if (performance.now() < c.n.listo) errorRojo('Todavía no ha vuelto a crecer.'); else mandar({ t: 'recolectar', i: c.n.i }); return; }
   if (c.tipo === 'portal' && c.p.buscador) { abrirBuscador(); return; }
   if (c.tipo === 'portal') { mandar({ t: 'portal', i: c.i }); }
   else if (c.n.tipo === 'tienda') abrirTienda();
   else if (c.n.tipo === 'ranking') abrirRanking();
+  else if (c.n.tipo === 'artesania') abrirArtesana();
   else abrirMision();
 }
 
@@ -1709,6 +1714,53 @@ function pintarDescanso() {
   b.title = 'Experiencia: ' + yo.xp.toLocaleString('es') + ' / ' + yo.xpSig.toLocaleString('es') + ((yo.descanso || 0) > 0 ? ' · 😴 descanso: +' + yo.descanso.toLocaleString('es') + ' XP (cazas al doble)' : '');
 }
 
+// ── RECOLECCION Y ARTESANIA ──
+// Plantas y vetas de la zona (el servidor dice cuando vuelve a estar lista
+// cada una para ti) y la ventana de la Artesana Lila.
+let nodos = [];
+['I_Leaf', 'I_Rock01', 'I_Crystal01'].forEach(k => cargar('ico_' + k, A + 'items/equipo/' + k + '.png'));
+function recibirNodos(l) { const t = performance.now(); nodos = (l || []).map(n => ({ ...n, listo: t + (n.en || 0) })); }
+function nodoCercano() {
+  for (const n of nodos) if (Math.abs(P.x - n.x) < 55) return { tipo: 'nodo', n };
+  return null;
+}
+function dibujarNodos() {
+  const ahora = performance.now();
+  for (const n of nodos) {
+    const x = n.x - camX;
+    if (x < -30 || x > VW + 30) continue;
+    const listo = ahora >= n.listo;
+    const img = IMG['ico_' + MATERIALES[n.tipo].icono];
+    g.save();
+    if (listo) {
+      g.globalCompositeOperation = 'lighter';
+      g.globalAlpha = .35 + Math.sin(frame * .08 + n.i) * .15;
+      g.fillStyle = n.tipo === 'hierba' ? '#4ade80' : '#cbd5e1';
+      g.beginPath(); g.ellipse(x, SUELO - 10, 18, 7, 0, 0, Math.PI * 2); g.fill();
+      g.globalCompositeOperation = 'source-over';
+    }
+    g.globalAlpha = listo ? 1 : .3;
+    if (img && img.naturalWidth) g.drawImage(img, x - 12, SUELO - 26 + (listo ? Math.sin(frame * .05 + n.i) * 1.5 : 0), 24, 24);
+    g.restore();
+  }
+}
+function abrirArtesana() {
+  if (!yo) return;
+  const mat = yo.mat || {};
+  let h = '<div style="display:flex;gap:10px;justify-content:center;margin-bottom:10px;flex-wrap:wrap">' +
+    Object.entries(MATERIALES).map(([k, m]) => `<span class="precio" style="display:flex;align-items:center;gap:4px"><img src="${A}items/equipo/${m.icono}.png" style="width:22px;height:22px;image-rendering:pixelated">${esc(m.nombre)}: ${mat[k] || 0}</span>`).join('') + '</div>';
+  for (const r of RECETAS) {
+    const pide = Object.entries(r.pide).map(([k, n]) => `<span style="color:${(mat[k] || 0) >= n ? '#4ade80' : '#ff7777'}">${n} ${esc(MATERIALES[k].nombre)}</span>`).join(' + ');
+    const puede = Object.entries(r.pide).every(([k, n]) => (mat[k] || 0) >= n);
+    h += tarjeta(`<img src="${A}${r.dir || 'items/equipo/'}${r.icono}.png">`, esc(r.nombre), esc(r.desc) + '<br>' + pide,
+      `<button class="btn" data-receta="${r.id}" ${puede ? '' : 'disabled'}>FABRICAR</button>`);
+  }
+  h += '<p style="margin-top:8px;font-size:12px;color:rgba(255,255,255,.55)">Las plantas 🌿 y vetas ⛏️ brillan en el suelo de cada zona: acércate y pulsa E (o RECOGER). Cada una vuelve a crecer a los 5 minutos. El Cristal Arcano sale a veces al recoger, o se refina con 8 minerales.</p>';
+  $('arte-lista').innerHTML = h;
+  $('arte-lista').querySelectorAll('[data-receta]').forEach(b => b.onclick = () => { sfx('moneda', .4); mandar({ t: 'fabricar', id: b.dataset.receta }); });
+  abrir('m-arte');
+}
+
 // ── TITULOS / LOGROS ──
 function tituloDe(id) { const L = LOGROS.find(x => x.id === id); return L ? L.titulo : ''; }
 function pintarLogros() {
@@ -2111,6 +2163,7 @@ function dibujarNPCs(mp) {
     etiqueta(x, SUELO - 72, n.nombre, activo ? '#ffe600' : '#00ff88', 7);
     if (n.tipo === 'tienda') { g.font = '14px sans-serif'; g.textAlign = 'center'; g.fillText('🛒', x, SUELO - 90 + Math.sin(frame * .1) * 3); }
     if (n.tipo === 'ranking') { g.font = '14px sans-serif'; g.textAlign = 'center'; g.fillText('🏆', x, SUELO - 90 + Math.sin(frame * .1) * 3); }
+    if (n.tipo === 'artesania') { g.font = '14px sans-serif'; g.textAlign = 'center'; g.fillText('⚗️', x, SUELO - 90 + Math.sin(frame * .1) * 3); }
     if (n.tipo === 'guia') {
       // ❗ cuando hay una mision lista para entregar, como la bombilla de MapleStory.
       const q = yo && MISIONES[yo.mis.i];
@@ -2461,6 +2514,7 @@ function dibujar() {
   dibujarPortales(mp);
   dibujarNPCs(mp);
   dibujarCofres();
+  dibujarNodos();
   for (const o of mons.values()) dibujarMonstruo(o);
   dibujarMarcasEspeciales();
   for (const q of otros.values()) { interpolar(q); if (q.atk > 0) q.atk--; if (q.herido > 0) q.herido--; dibujarDuende(q, false); }
@@ -2489,7 +2543,7 @@ function dibujar() {
   ponCss(bi, 'display', 'block');
   if (c && yo && !P.muerto) {
     ponCss(bi, 'visibility', 'visible');
-    ponTxt(bi, c.tipo === 'res' ? '✝ RESUCITAR' : c.tipo === 'portal' ? (TACTIL ? '🚪 ENTRAR' : 'E · ENTRAR') : c.tipo === 'cofre' ? (TACTIL ? '🗝️ ABRIR' : 'E · ABRIR') : (TACTIL ? '💬 HABLAR' : 'E · HABLAR'));
+    ponTxt(bi, c.tipo === 'res' ? '✝ RESUCITAR' : c.tipo === 'portal' ? (TACTIL ? '🚪 ENTRAR' : 'E · ENTRAR') : c.tipo === 'cofre' ? (TACTIL ? '🗝️ ABRIR' : 'E · ABRIR') : c.tipo === 'nodo' ? (TACTIL ? '⛏️ RECOGER' : 'E · RECOGER') : (TACTIL ? '💬 HABLAR' : 'E · HABLAR'));
   } else ponCss(bi, 'visibility', 'hidden');
 }
 

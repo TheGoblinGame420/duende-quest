@@ -27,6 +27,7 @@ import { Social, pub } from './social.js';
 import { Mazmorras } from './mazmorras.js';
 import { Hermandades } from './hermandades.js';
 import { Tareas } from './tareas.js';
+import { Profesiones } from './profesiones.js';
 import { Retencion } from './retencion.js';
 import { Eventos } from './eventos.js';
 
@@ -259,6 +260,8 @@ export class MmoWorld {
       case 'hermMotd': return this.motdHerm(s, m);
       case 'herm': return this.verHerm(s);
       case 'cofre': return this.abrirCofre(s, m);
+      case 'recolectar': return this.recolectar(s, m);
+      case 'fabricar': return this.fabricar(s, m);
       case 'cancelar': return this.cancelarCast(s);
       case 'pw': return this.poder(s, m);
       case 'portal': return this.portal(s, m);
@@ -403,6 +406,7 @@ export class MmoWorld {
     this.enviar(s, this.estadoMundial());
     this.entrarMapa(s, c.mapa, s.x, true);
     this.reengancharGrupo(s);
+    this.reponerElixires(s);
     await this.cargarHermandadDe(s);
     if (c.herm) this.refrescarApariencia(s);
     this.revisarLogros(s);
@@ -833,7 +837,7 @@ export class MmoWorld {
       arma: c.arma, armas: c.armas, skin: c.skin, skins: c.skins, pw: c.pw,
       kills: c.kills, jefes: c.jefes, muerto: s.muerto, mis: c.mis, forja: c.forja,
       eq: c.eq, bolsa: c.bolsa, logros: c.logros, titulo: c.titulo, mundiales: c.mundiales, login: c.login, crit: s.st.crit,
-      clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c),
+      clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {},
       espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, montado: s.montado || null,
       mton: c.mton, wallet: c.wallet ? { a: tonAmigable(c.wallet.a), desde: c.wallet.desde } : null,
       p2e: this.elegibilidad(c), creado: c.creado,
@@ -899,6 +903,7 @@ export class MmoWorld {
       muros: w.muros || [], inst: w.inst ? { id: w.inst.id, nv: w.inst.nv, hechos: w.inst.hechos } : null });
     this.aClave(k, { t: 'pj', p: this.infoJugador(s) }, s);
     this.eventosAlEntrar(s, mapaId);
+    this.nodosAlEntrar(s, mapaId);
   }
 
   portal(s, m) {
@@ -1299,6 +1304,7 @@ export class MmoWorld {
     if (!(fuente && fuente.jefe)) real = Math.min(real, Math.ceil(s.st.maxHp * 0.3));
     if (this.aura(s, 'muro')) real = Math.round(real * (1 - REDUCE_MURO));
     if (this.aura(s, 'supresion')) real = Math.round(real * (1 - REDUCE_SUPRESION));
+    if (this.elixir(s, 'elixirP')) real = Math.round(real * 0.9);
     // El escudo del sacerdote absorbe antes que la vida.
     let abs = 0;
     const esc = this.aura(s, 'escudoPoder');
@@ -1317,7 +1323,7 @@ export class MmoWorld {
     if (CLASES[s.c.clase] && CLASES[s.c.clase].recurso === 'ira' && real > 0) s.rec = Math.min(100, s.rec + 1 + real / s.st.maxHp * 150);
     if (this.aura(s, 'sigilo')) this.quitarAura(s, 'sigilo');
     if (s.montado) this.desmontar(s);
-    if (s.cast && (s.cast.h === 'hogar' || s.cast.h === 'montar')) this.cancelarCast(s, 'Te golpearon: se canceló.');
+    if (s.cast && (s.cast.h === 'hogar' || s.cast.h === 'montar' || s.cast.h === 'recolectar')) this.cancelarCast(s, 'Te golpearon: se canceló.');
     this.aClave(s.k, { t: 'ph', p: s.id, d: real, ab: abs || undefined, from: fuente ? fuente.id : 0 });
     if (s.hp <= 0) this.morir(s);
     this.actualizarYo(s);
@@ -1345,6 +1351,7 @@ export class MmoWorld {
     this.recursoInicial(s);
     s.inv = Date.now() + 2000;
     if (!this.revivirEnInstancia(s)) this.entrarMapa(s, 'pueblo', MAPAS.pueblo.spawn);
+    this.reponerElixires(s);
     this.actualizarYo(s);
     this.guardar(s);
   }
@@ -1807,6 +1814,8 @@ Object.assign(MmoWorld.prototype, Mazmorras);
 Object.assign(MmoWorld.prototype, Hermandades);
 // Misiones diarias y semanales: functions/mmo/tareas.js
 Object.assign(MmoWorld.prototype, Tareas);
+// Recoleccion y artesania: functions/mmo/profesiones.js
+Object.assign(MmoWorld.prototype, Profesiones);
 // Estadisticas de retencion y avisos de vuelta por Telegram: functions/mmo/retencion.js
 Object.assign(MmoWorld.prototype, Retencion);
 MmoWorld.prototype.uidsPrueba = UIDS_PRUEBA;

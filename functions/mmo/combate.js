@@ -203,7 +203,7 @@ export const Combate = {
     const crit = Math.random() < s.st.crit;
     const forja = multForja((s.c.forja || {})[s.c.arma]);
     const dmg = Math.max(1, Math.round(s.st.atk * mult * forja * rnd(0.9, 1.1) * (crit ? 1.8 : 1)
-      * (ahora < s.fuego ? 1.5 : 1) * (this.aura(s, 'grito') ? 1.1 : 1) * k));
+      * (ahora < s.fuego ? 1.5 : 1) * (this.aura(s, 'grito') ? 1.1 : 1) * (this.elixir(s, 'elixirF') ? 1.1 : 1) * k));
     const real = this.danar(o, dmg, s, amen);
     return [o.id, real || dmg, crit ? 1 : basico ? 0 : 4];
   },
@@ -360,6 +360,11 @@ export const Combate = {
     const ca = s.cast;
     if (!ca || ahora < ca.fin) return;
     s.cast = null;
+    if (ca.h === 'recolectar') {
+      this.aClave(s.k, { t: 'castFin', p: s.id, ok: true });
+      if (!s.muerto) this.terminarRecoleccion(s, ca);
+      return;
+    }
     if (ca.h === 'montar') {
       this.aClave(s.k, { t: 'castFin', p: s.id, ok: true });
       if (!s.muerto && s.c.montura && !s.k.includes('#')) {
@@ -547,6 +552,7 @@ export const Combate = {
     a.inv = Date.now() + 2000;
     a.golpeT = Date.now();
     this.aClave(a.k, { t: 'res', p: a.id, de: de ? de.c.nombre : '' });
+    this.reponerElixires(a);
     this.actualizarYo(a);
     this.guardar(a);
   },
