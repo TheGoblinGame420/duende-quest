@@ -442,6 +442,7 @@ export const NOVEDADES = [
     '🟡 Zonas doradas: hay que aguantarlas juntos, el golpe se reparte entre los que estén dentro.',
     '🐸 Monturas nuevas en el Mercader: Sapo Gigante (Nv 25) y Águila Real (Nv 50).',
     '📅 Temporadas de 2027: Verano Duende (enero), Vendimia (marzo), Lluvia de Estrellas (abril), Fiesta del Sol (junio) y Fiestas Patrias (julio).',
+    '🏆 Gesta semanal de hermandad: entre todos sumad puntos cazando, venciendo jefes y completando mazmorras; Bronce, Plata y Oro dan oro a quien aportó.',
     '✨ Runas en la Artesana (desde Nv 40): +2% de ataque, defensa o vida por rango, hasta +10%. Piden Flor de Luna y Mithril (zonas Nv 30+) y Esencia Abisal (jefes de mazmorra).',
   ] },
   { n: 2, fecha: '22 de octubre', items: [
@@ -724,6 +725,7 @@ export const LOGROS = [
   { id: 'duelista',  titulo: 'Duelista',           desc: 'Gana 10 duelos', oro: 3000, cond: c => (c.duelosG || 0) >= 10 },
   { id: 'amigo1',    titulo: 'Buen Compañero',     desc: 'Un amigo que invitaste llegó a nivel 10', oro: 1000, cond: c => (c.amigos || 0) >= 1 },
   { id: 'amigo5',    titulo: 'Líder de la Manada', desc: '5 amigos invitados llegaron a nivel 10', oro: 8000, cond: c => (c.amigos || 0) >= 5 },
+  { id: 'gesta',     titulo: 'Gesta Dorada',        desc: 'Ayuda a tu hermandad a llegar al Oro de la gesta semanal', oro: 8000, cond: c => (c.gestaOro || 0) >= 1 },
   { id: 'herm',      titulo: 'Hermano de Armas',    desc: 'Únete a una hermandad (o funda la tuya)', oro: 1000, cond: c => !!c.herm },
   { id: 'mazmorra1', titulo: 'Explorador de Criptas', desc: 'Completa una mazmorra',             oro: 2000,  cond: c => (c.mazmorras || 0) >= 1 },
   { id: 'desafio5',  titulo: 'Desafiante',          desc: 'Vence un Desafío +5',               oro: 8000,  cond: c => (c.desafioMax || 0) >= 5 },
@@ -1011,6 +1013,15 @@ export const premioAmigo = nivel => ({ oro: 1500 + 150 * nivel });
 export const HERM_COSTO = 5000;   // oro para fundar una
 export const HERM_NIVEL = 10;
 export const HERM_MAX = 50;
+// Gesta semanal: toda la hermandad suma puntos (1 por monstruo, 10 por
+// jefe, 25 por mazmorra completada) y cada nivel alcanzado (Bronce, Plata,
+// Oro) da oro a quien aporto al menos GESTA_MIN puntos esa semana. Se
+// reinicia el lunes (UTC). Solo oro y un logro.
+export const GESTA_UMBRALES = [500, 1500, 4000];
+export const GESTA_NOMBRES = ['🥉 Bronce', '🥈 Plata', '🥇 Oro'];
+export const GESTA_PUNTOS = { caza: 1, jefe: 10, mazmorra: 25 };
+export const GESTA_MIN = 20;
+export const premioGesta = (i, nivel) => ({ oro: [100, 250, 500][i] * Math.max(1, nivel) });
 
 // ── MAZMORRAS ──
 // Instancias privadas: cada grupo (o cada jugador solo) entra a su propia

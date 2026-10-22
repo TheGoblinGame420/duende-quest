@@ -18,7 +18,8 @@
 // ultimo, epica). NUNCA mTON: ese dinero sale de un fondo limitado y sumar
 // fuentes nuevas se habla antes con el dueño.
 // ═══════════════════════════════════════════════════════
-import { MAPAS, MONSTRUOS, MAZMORRAS, MONTURAS, MATERIALES, esenciaJefe, escalaMazmorra, premioMazmorraDia, nivelMazmorra, statsMonstruo, SUELO, hoyUTC, NIVEL_MAX, DESAFIO_MAX, multDesafio, premioDesafio, AFIJOS, afijosDe, multAfijos, opcionesBoveda, semanaUTC, nombreItem, BANDA_MONTURA, botinBandaNv, CONJUNTO_PROB } from '../../mmo/js/data.js';
+import { MAPAS, MONSTRUOS, MAZMORRAS, MONTURAS, MATERIALES, esenciaJefe, escalaMazmorra, premioMazmorraDia, nivelMazmorra, statsMonstruo, SUELO, hoyUTC, NIVEL_MAX, DESAFIO_MAX, multDesafio, premioDesafio, AFIJOS, afijosDe, multAfijos, opcionesBoveda, semanaUTC, nombreItem, BANDA_MONTURA, botinBandaNv, CONJUNTO_PROB, BANDA_MAX, BOLSA_MAX } from '../../mmo/js/data.js';
+import { GRUPO_MAX } from './social.js';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const VACIA_MS = 300000;   // una instancia sin nadie se cierra a los 5 min (en el movil se corta mucho: da tiempo a reconectar)
@@ -40,9 +41,11 @@ export const Mazmorras = {
     // La del grupo, si sigue abierta y es esta mazmorra: se entra a ella
     // (tambien a su Desafio, con nivel 60) sin mirar lo que pide el cliente.
     const gi = this.grupoDe(s);
+    if (gi && !mz.banda && gi.uids.length > GRUPO_MAX) return this.no(s, `Las mazmorras son para ${GRUPO_MAX}: sois ${gi.uids.length}. Solo la banda admite hasta ${BANDA_MAX}.`);
     const wg = gi && gi.inst && this.mundo[gi.inst];
     if (wg && wg.inst && !wg.inst.completada && wg.inst.id === id) {
       if (wg.inst.k && s.c.nivel < NIVEL_MAX) return this.no(s, `Tu grupo está en un Desafío: hace falta nivel ${NIVEL_MAX}.`);
+      if (this.llenaInst(wg, s)) return this.no(s, `${mz.nombre} ya tiene ${this.capInst(wg)} jugadores dentro.`);
       return this.unirAInstancia(s, wg);
     }
     // Desafio +k: solo a Nv 60 y hasta uno mas que el mejor vencido.
@@ -56,7 +59,7 @@ export const Mazmorras = {
     const previa = g ? g.inst : this.instDe.get(s.c.uid);
     const wp = previa && this.mundo[previa] && this.mundo[previa].inst ? this.mundo[previa] : null;
     if (wp && !wp.inst.completada) {
-      if (wp.inst.id === id && (wp.inst.k || 0) === k) return this.unirAInstancia(s, wp);
+      if (wp.inst.id === id && (wp.inst.k || 0) === k) return this.llenaInst(wp, s) ? this.no(s, `${mz.nombre} ya tiene ${this.capInst(wp)} jugadores dentro.`) : this.unirAInstancia(s, wp);
       if (g) return this.no(s, `Tu grupo está en ${MAZMORRAS[wp.inst.id].nombre}${wp.inst.k ? ' (Desafío +' + wp.inst.k + ')' : ''}: entra a esa o sal del grupo.`);
       if (this.jugadoresEn(previa)) return this.no(s, 'Todavía tienes otra mazmorra abierta.');
       this.cerrarInstancia(previa);
@@ -73,8 +76,9 @@ export const Mazmorras = {
     hechas.push(ahora);
     this.creadas.set(s.c.uid, hechas);
     // Entran juntos los del grupo que estan junto al portal, vivos y con nivel.
-    const quienes = g ? this.sesionesGrupo(g).filter(x => !x.muerto && this.cercaDelBuscador(x) && x.c.nivel >= (k ? NIVEL_MAX : mz.nv[0])) : [];
-    if (!quienes.includes(s)) quienes.push(s);
+    const quienes = g ? this.sesionesGrupo(g).filter(x => x !== s && !x.muerto && this.cercaDelBuscador(x) && x.c.nivel >= (k ? NIVEL_MAX : mz.nv[0])) : [];
+    quienes.unshift(s);
+    quienes.length = Math.min(quienes.length, mz.banda ? BANDA_MAX : GRUPO_MAX);
     const nivel = k ? NIVEL_MAX : nivelMazmorra(mz, Math.max(...quienes.map(x => x.c.nivel)));
     const w = this.crearInstancia(id, nivel, quienes.length, k);
     if (g) g.inst = w.clave; else this.instDe.set(s.c.uid, w.clave);
@@ -127,12 +131,40 @@ export const Mazmorras = {
     this.enviar(s, { t: 'toast', m: w.inst.k ? `⚡ ${mz.nombre} — Desafío +${w.inst.k}: monstruos con ${Math.round(w.inst.mv * 100)}% de vida y ${Math.round(w.inst.ma * 100)}% de daño.${af ? ' Afijos: ' + af + '.' : ''}` : `🏰 ${mz.nombre} (Nv ${w.inst.nv}). Aquí los monstruos atacan solos y en grupo: ¡con cuidado!`, ok: true });
   },
 
+  // Tope de jugadores dentro de una instancia (5, o 10 la banda).
+  capInst(w) { return w.inst.banda ? BANDA_MAX : GRUPO_MAX; },
+  llenaInst(w, s) {
+    let n = 0;
+    for (const x of this.sesiones.values()) if (x.c && x !== s && x.k === w.clave) n++;
+    return n >= this.capInst(w);
+  },
+  // Un grupo que se disuelve (o se queda sin nadie conectado) deja su
+  // instancia a cada uno de sus miembros, para volver a ella al reconectar.
+  alDisolverGrupo(g) {
+    if (!g.inst || !this.mundo[g.inst]) return;
+    this.instDe = this.instDe || new Map();
+    for (const u of g.uids) this.instDe.set(u, g.inst);
+  },
+  // Quien sale de un grupo (o es expulsado) estando en su instancia, al
+  // pueblo: si no, seguia dentro y se podia meter a mas gente.
+  sacarDeInstancia(s, clave) {
+    const w = clave && this.mundo[clave];
+    if (!w || !w.inst || s.k !== clave) return;
+    if (s.c.inst === clave) s.c.inst = null;
+    this.entrarMapa(s, 'pueblo', 795);
+    this.enviar(s, { t: 'toast', m: '🏰 Saliste del grupo: vuelves al pueblo.' });
+  },
+
   // Al reconectar: si estaba en una mazmorra que sigue abierta (la suya o la
   // de su grupo), vuelve a ella donde estaba en vez de aparecer en el pueblo.
   volverAInstancia(s, mapa, x) {
     const w = s.c.inst && this.mundo[s.c.inst];
     if (!w || !w.inst || w.inst.completada || w.mapa !== mapa) return false;
     if (s.c.nivel < (w.inst.k ? NIVEL_MAX : MAZMORRAS[w.inst.id].nv[0])) return false;
+    // Solo a la de tu grupo o a la tuya (no a la de un grupo que dejaste).
+    const g = this.grupoDe(s);
+    if (!((g && g.inst === w.clave) || (!g && this.instDe && this.instDe.get(s.c.uid) === w.clave))) return false;
+    if (this.llenaInst(w, s)) return false;
     this.entrarMapa(s, mapa, x, false, w.clave);
     w.inst.vacioDesde = 0;
     this.enviar(s, { t: 'toast', m: `🏰 Volviste a ${MAZMORRAS[w.inst.id].nombre}.`, ok: true });
@@ -175,6 +207,7 @@ export const Mazmorras = {
     o.max = Math.round(statsMonstruo(o.k, o.nv).hp * esc.vidaJefe * (I.mvJ || I.mv || 1));
     o.hp = Math.max(1, Math.round(o.max * pct));
     o.atk = Math.round(o.atk0 * esc.atkJefe * (I.maJ || I.ma || 1));
+    o.nEsc = n;
     o.combateDesde = ahora;
     o.gs = {};
     this.aClave(o.cl, { t: 'mmx', id: o.id, mx: o.max, hp: Math.ceil(o.hp) });
@@ -191,7 +224,8 @@ export const Mazmorras = {
           // Hay que aguantarla juntos: el golpe (que crece con la gente, hasta
           // `junta` veces) se reparte entre los de dentro. Si no entra nadie,
           // estalla sobre todos.
-          const vivos = jugadores.filter(s => !s.muerto);
+          const jf = w.mons.get(z.de);
+          const vivos = jugadores.filter(s => !s.muerto && (!jf || Math.abs(s.x - jf.casaX) < 900));
           const total = z.dano * Math.min(Math.max(1, vivos.length), z.junta);
           if (dentro.length) for (const s of dentro) this.herir(s, 0, { id: z.de, jefe: true, pct: total / dentro.length, zona: true });
           else {
@@ -254,6 +288,18 @@ export const Mazmorras = {
       return;
     }
     o.soloDesde = 0;
+    // Si llegan mas a la sala con el combate empezado, su vida crece (con el
+    // mismo %): tirar del jefe solo y que entren los demas no lo abarata.
+    const nSala = jugadores.filter(s => !s.muerto && Math.abs(s.x - o.casaX) < 1300).length;
+    if (nSala > (o.nEsc || 1)) {
+      const esc = escalaMazmorra(nSala), I = w.inst || {};
+      const pct = o.hp / o.max;
+      o.max = Math.round(statsMonstruo(o.k, o.nv).hp * esc.vidaJefe * (I.mvJ || I.mv || 1));
+      o.hp = Math.max(1, Math.round(o.max * pct));
+      o.atk = Math.round(o.atk0 * esc.atkJefe * (I.maJ || I.ma || 1) * (o.enfurecido ? 1.5 : 1));
+      o.nEsc = nSala;
+      this.aClave(o.cl, { t: 'mmx', id: o.id, mx: o.max, hp: Math.ceil(o.hp) });
+    }
     if (o.cast && ahora >= o.cast.fin) this.terminarCastJefe(o, jugadores);
     const G = def.guion || [];
     o.gs = o.gs || {};
@@ -384,6 +430,7 @@ export const Mazmorras = {
       const c = s.c;
       c.mazmorras = (c.mazmorras || 0) + 1;
       this.progresoTarea(s, 'mazmorra');
+      this.puntoGesta(s, 'mazmorra');
       if (!c.mazDia || c.mazDia.d !== hoy) c.mazDia = { d: hoy, hechas: [] };
       let extra = '';
       let kBoveda = 0;
@@ -425,7 +472,8 @@ export const Mazmorras = {
         } else extra += ` Desafío +${I.k} vencido (el premio de esta mazmorra ya lo cobraste hoy: bate tu marca para otro).`;
         extra += ` Tu marca aquí: +${c.desafio[I.id]}.`;
       }
-      this.progresoBoveda(s, I.banda ? 5 : kBoveda);
+      if (I.banda) { const b = this.bloqueoBanda(c); kBoveda = b.bov ? 0 : 5; b.bov = 1; }
+      this.progresoBoveda(s, kBoveda);
       s.sucio = true;
       this.enviar(s, { t: 'completada', id: I.id, txt: `🏆 ¡${mz.nombre}${I.k ? ' +' + I.k : ''} completada!${extra}` });
       this.revisarLogros(s);
@@ -448,13 +496,18 @@ export const Mazmorras = {
   infoBanda(c) { const b = this.bloqueoBanda(c); return { j: Object.keys(b.j), t: c.titanes || 0 }; },
   esJefeBanda(o) { const w = o.mazmorra && this.mundo[o.cl]; return !!(w && w.inst && w.inst.banda); },
   // Llamado desde dar() al caer un jefe de la banda, para cada uno que cobra.
-  botinBanda(s, o) {
+  botinBanda(s, o, participo) {
     const c = s.c;
     const b = this.bloqueoBanda(c);
     if (b.j[o.k]) { this.enviar(s, { t: 'toast', m: `🔒 Ya cobraste el botín de ${MONSTRUOS[o.k].nombre} esta semana (vuelve el lunes).` }); return null; }
+    // Solo quien pego o curo; y sin bolsa llena (no se vende solo ni se
+    // gasta la semana): asi se puede volver a intentar.
+    if (!participo) { this.enviar(s, { t: 'toast', m: `Para el botín de ${MONSTRUOS[o.k].nombre} hay que pelear (golpear o curar).` }); return null; }
+    if ((c.bolsa || []).length >= BOLSA_MAX && !(c.bolsa || []).some(x => !x.cj && !x.banda)) { this.enviar(s, { t: 'toast', m: '🎒 Bolsa llena: haz sitio para cobrar el botín de la banda (sigue disponible esta semana).' }); return null; }
     b.j[o.k] = 1;
     const it = this.generarItem(botinBandaNv(o.final), o.final && Math.random() < 0.15 ? 3 : 2);
     it.des = 1;
+    it.banda = 1;   // como las de conjunto: con la bolsa llena no se vende sola
     if (Math.random() < CONJUNTO_PROB * 2) it.cj = this.mundo[o.cl].inst.id;
     const dado = this.darItem(s, it);
     if (o.final) {

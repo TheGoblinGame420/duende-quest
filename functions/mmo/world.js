@@ -894,8 +894,8 @@ export class MmoWorld {
     }
     // Una pieza de conjunto no se vende sola: se cambia por la comun mas
     // barata de la bolsa (son de coleccion; perderlas dolia mucho).
-    if (c.bolsa.length >= BOLSA_MAX && it.cj) {
-      const i = c.bolsa.reduce((m, x, k) => (!x.cj && (m < 0 || precioVenta(x) < precioVenta(c.bolsa[m])) ? k : m), -1);
+    if (c.bolsa.length >= BOLSA_MAX && (it.cj || it.banda)) {
+      const i = c.bolsa.reduce((m, x, k) => (!x.cj && !x.banda && (m < 0 || precioVenta(x) < precioVenta(c.bolsa[m])) ? k : m), -1);
       if (i >= 0) { const v0 = precioVenta(c.bolsa[i]); c.oro += v0; c.bolsa.splice(i, 1); if (!silencioso) this.enviar(s, { t: 'toast', m: `🎒 Bolsa llena: vendí lo más barato (+${v0} oro) para guardar tu pieza de conjunto.` }); }
     }
     if (c.bolsa.length >= BOLSA_MAX) {
@@ -1348,7 +1348,7 @@ export class MmoWorld {
       const nvM = o.nv || MONSTRUOS[o.k].nivel;
       if (o.jefe && this.esJefeBanda(o)) {
         // Banda: botin propio, una vez por semana y jefe (mazmorras.js).
-        item = this.botinBanda(s, o);
+        item = this.botinBanda(s, o, participo !== false);
       } else if (o.jefe) {
         const it0 = generarItem(nvM, o.final ? 2 : 1);
         // Jefe de mazmorra: a veces la pieza es de su conjunto.
@@ -1379,6 +1379,7 @@ export class MmoWorld {
     }
     // Misiones diarias y semanales (solo quien peleo de verdad).
     if (o && participo !== false) {
+      this.puntoGesta(s, o.jefe ? 'jefe' : 'caza');
       this.progresoTarea(s, 'caza', o, n || 1);
       if (o.jefe && !o.mazmorra && !MONSTRUOS[o.k].mundial) this.progresoTarea(s, 'jefe', o);
     }
@@ -1821,6 +1822,7 @@ export class MmoWorld {
     }
     this.revisarMundial(ahora);
     this.tickGrupos(ahora);
+    this.guardarHermsSucias(ahora);
     this.tickDuelos(ahora);
     const porClave = {};
     for (const s of this.sesiones.values()) {
