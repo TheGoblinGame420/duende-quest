@@ -1369,6 +1369,12 @@ async function pruebasExpedicion() {
   chequear(!j.c.exped && j.c.oro - oro0 === pr.oro && j.c.mat.pescado - pes0 === pr.mat.pescado && j.c.expediciones === 1, 'al volver: oro, XP y materiales');
   await j.mandar({ t: 'exped', recoger: 1 });
   chequear(j.c.oro - oro0 === pr.oro, 'no se cobra dos veces');
+  await j.mandar({ t: 'exped', h: 1, d: 'lago' });
+  chequear(j.c.exped && j.c.exped.d === 'lago', 'se elige el destino (Lago)');
+  avanzar(3600000 + 1000); j.actT = reloj;
+  const pesc1 = j.c.mat.pescado || 0;
+  await j.mandar({ t: 'exped', recoger: 1 });
+  chequear(j.c.mat.pescado - pesc1 === D.premioExpedicion(1, 20, 'lago').mat.pescado && D.premioExpedicion(1, 20, 'lago').mat.pescado === 2, 'el Lago trae el doble de pescado');
   await dejar(j);
 }
 

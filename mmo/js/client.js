@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=140';
+} from './data.js?v=142';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -3635,8 +3635,12 @@ function cajaExpedicion() {
   const quien = yo.mascota && MASCOTAS[yo.mascota] ? MASCOTAS[yo.mascota].nombre : 'Un duendecillo explorador';
   let h = '<div class="mis-caja"><b>🧭 Expedición</b>';
   if (!ex) {
-    h += `<p style="font-size:12px;color:var(--txt2)">${esc(quien)} puede salir a explorar mientras no juegas. Vuelve con oro, experiencia y materiales.</p><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">`;
-    for (const hh of EXPEDICION.horas) { const pr = premioExpedicion(hh, yo.nivel); h += `<button class="btn sec" data-exped="${hh}" style="flex:1;min-width:90px">${hh} h<br><small>🪙 ${pr.oro.toLocaleString('es')}</small></button>`; }
+    let dest = 'bosque'; try { dest = localStorage.getItem('dq_exped') || 'bosque'; } catch (e) {}
+    if (!EXPEDICION.destinos[dest]) dest = 'bosque';
+    h += `<p style="font-size:12px;color:var(--txt2)">${esc(quien)} puede salir a explorar mientras no juegas. Vuelve con oro, experiencia y materiales (el doble de los de su destino).</p>`;
+    h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">' + Object.entries(EXPEDICION.destinos).map(([id, d]) => `<button class="btn ${id === dest ? '' : 'sec'}" data-exdest="${id}" style="flex:1;min-width:80px;padding:6px">${d.emoji} ${esc(d.nombre)}<br><small>×2 ${esc(MATERIALES[d.mat].nombre)}</small></button>`).join('') + '</div>';
+    h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">';
+    for (const hh of EXPEDICION.horas) { const pr = premioExpedicion(hh, yo.nivel, dest); h += `<button class="btn sec" data-exped="${hh}" data-d="${dest}" style="flex:1;min-width:90px">${hh} h<br><small>🪙 ${pr.oro.toLocaleString('es')}</small></button>`; }
     h += '</div>';
   } else {
     const ms = ex.fin - Date.now();
@@ -3669,7 +3673,8 @@ function pintarMision() {
   const conectarDiaria = () => { const b = $('b-diaria'); if (b) b.onclick = () => { sfx('boton', .3); mandar({ t: 'mision', diaria: true }); }; };
   const conectarPase = () => {
     cuerpo.querySelectorAll('[data-pase]').forEach(b => b.onclick = () => { sfx('moneda', .4); mandar({ t: 'pase', n: +b.dataset.pase }); });
-    cuerpo.querySelectorAll('[data-exped]').forEach(b => b.onclick = () => { sfx('boton', .4); mandar({ t: 'exped', h: +b.dataset.exped }); });
+    cuerpo.querySelectorAll('[data-exped]').forEach(b => b.onclick = () => { sfx('boton', .4); mandar({ t: 'exped', h: +b.dataset.exped, d: b.dataset.d }); });
+    cuerpo.querySelectorAll('[data-exdest]').forEach(b => b.onclick = () => { sfx('boton', .3); try { localStorage.setItem('dq_exped', b.dataset.exdest); } catch (e) {} pintarMision(); });
     const be = $('b-exped'); if (be) be.onclick = () => { sfx('moneda', .5); mandar({ t: 'exped', recoger: 1 }); };
   };
   if (!q) { cuerpo.innerHTML = '<p class="centro">Completaste las ' + MISIONES.length + ' misiones. Eres una leyenda del Pueblo Duende. 👑</p>' + cajaSugerencias() + cajaExpedicion() + cajaPase() + cajaSemana() + cajaDiaria() + cajaTareas(); conectarDiaria(); conectarPase(); return; }

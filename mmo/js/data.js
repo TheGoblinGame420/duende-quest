@@ -1641,10 +1641,14 @@ export const premioTorre = (p, nivel) => ({ oro: Math.round(40 * nivel * Math.mi
 // ── EXPEDICIONES ── (functions/mmo/expediciones.js)
 // Tu mascota (o un duendecillo) sale 1, 4 u 8 horas y vuelve con oro, algo
 // de experiencia y materiales. Da menos que jugar esas horas. Nunca mTON.
-export const EXPEDICION = { nv: 5, horas: [1, 4, 8] };
-export const premioExpedicion = (h, nv) => {
+export const EXPEDICION = { nv: 5, horas: [1, 4, 8],
+  // Cada destino trae el doble de su material.
+  destinos: { bosque: { nombre: 'Bosque', emoji: '🌲', mat: 'hierba' }, mina: { nombre: 'Mina', emoji: '⛏️', mat: 'mineral' }, lago: { nombre: 'Lago', emoji: '🎣', mat: 'pescado' } } };
+export const premioExpedicion = (h, nv, dest) => {
   const k = Math.pow(h, 0.75);
   const mat = { hierba: Math.ceil(h * 1.5), mineral: Math.ceil(h * 1.5), pescado: h };
+  const d = EXPEDICION.destinos[dest];
+  if (d) mat[d.mat] *= 2;
   if (h >= 8) mat.cristal = 1;
   return { oro: Math.round(40 * nv * k), xp: Math.round(xpParaSubir(nv) * 0.02 * k), mat };
 };

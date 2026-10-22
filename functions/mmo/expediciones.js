@@ -19,7 +19,7 @@ export const Expediciones = {
       if (!e) return;
       if (ahora < e.fin) return this.no(s, 'Tu expedición aún no ha vuelto.');
       c.exped = null;
-      const pr = premioExpedicion(e.h, e.nv);
+      const pr = premioExpedicion(e.h, e.nv, e.d);
       // A nivel maximo la XP no sirve: se cambia por oro (1 por 2 de XP).
       if (c.nivel >= NIVEL_MAX) { pr.oro += Math.round(pr.xp / 2); pr.xp = 0; }
       c.oro += pr.oro;
@@ -40,11 +40,12 @@ export const Expediciones = {
     if (!h) return;
     if (c.nivel < EXPEDICION.nv) return this.no(s, `Las expediciones se abren a nivel ${EXPEDICION.nv}.`);
     if (c.exped) return this.no(s, c.exped.fin <= ahora ? 'Recoge antes la expedición que ya volvió.' : 'Ya tienes una expedición en camino.');
-    c.exped = { h, ini: ahora, fin: ahora + h * 3600000, nv: c.nivel };
+    const d = typeof m.d === 'string' && Object.hasOwn(EXPEDICION.destinos, m.d) ? m.d : 'bosque';
+    c.exped = { h, d, ini: ahora, fin: ahora + h * 3600000, nv: c.nivel };
     s.sucio = true;
     const quien = c.mascota && MASCOTAS[c.mascota] ? MASCOTAS[c.mascota].nombre : 'Un duendecillo explorador';
     this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });   // la mascota se va
-    this.enviar(s, { t: 'toast', ok: true, m: `🧭 ${quien} sale de expedición: vuelve en ${h} h. Recógela en el registro de misiones (L).` });
+    this.enviar(s, { t: 'toast', ok: true, m: `🧭 ${quien} sale de expedición al ${EXPEDICION.destinos[d].nombre}: vuelve en ${h} h. Recógela en el registro de misiones (L).` });
     this.actualizarYo(s);
     this.guardar(s);
   },
