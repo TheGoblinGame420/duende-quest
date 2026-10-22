@@ -1818,3 +1818,27 @@ Esta sesión lleva la tienda (pares del `?v=`), la otra lo demás (impares).
     veces (`anulando`); el chat del móvil ya no se come toques (se despliega
     solo al abrirlo con 💬).
   - Arnés: **500 bien, 0 mal**.
+- **?v=106-114 (22-oct, media mañana):**
+  - **Pesca** (`PESCA`, `pesqueroDe` en data.js; `pescar`/`finPesca`/`tirar`
+    en profesiones.js): estanque en el pueblo (x 475) y en cada zona abierta
+    (68% del ancho). Lanzar es un "cast" 'pescar' que acaba al picar (3-9 s,
+    el cliente no lo sabe) y pasa a 'pica' 2 s: hay que tirar. Tirar antes
+    asusta al pez; moverse o un golpe corta el sedal. 80 capturas al día.
+    Pescado / Pez Dorado / cofre hundido (poco oro). La Artesana cocina
+    Ceviche (+10% oro de caza) y Sudado Dorado (+5% daño, -5% recibido).
+    Misión diaria y semanal, logros Pescador / Maestro Pescador. Sin mTON.
+  - **Torre del Duende** (functions/mmo/torre.js, `MAPAS.torre`, `TORRE`):
+    instancia 'torre#xxxx' con `w.torre` (NO `w.inst`). Desde Nv 10, solo o
+    con el grupo junto al portal de mazmorras. Oleada por piso (2:30 para
+    limpiarla), jefe de zona cada 5 marcado `mazmorra:true` para que no dé
+    mTON (y `alAgro` solo arranca el combate de mazmorra si hay `w.inst`).
+    Cofre cada 5 pisos nuevos de la semana; ranking semanal 'rankTorre' con
+    premio al top 3 al cambiar la semana (`cerrarSemanaTorre`). Curva medida
+    con `node tools/sim_mazmorra.mjs torre 30` (EQ=1 con equipo): solo Nv 30,
+    pisos 12-24 sin equipo y 17-34 con equipo épico.
+  - Arreglos del QA de producción ronda 2 (?v=110): mascotas con color en
+    la tienda, Novedades solo en el pueblo, inventario de alto fijo, consejo
+    del tutorial bajo el seguimiento en el móvil, rótulos de portales
+    vecinos escalonados, no viajar por el borde a zonas 5+ niveles arriba,
+    semanales nuevas (recoger, pescar), montura "Sabueso de Guerra".
+  - Arnés: **530 bien, 0 mal**.
