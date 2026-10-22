@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=236';
+} from './data.js?v=238';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -2236,7 +2236,7 @@ function pintarLibro() {
     const datos = [hb.costo ? costo + ' ' + rec.toLowerCase() : 'sin costo', hb.cast ? (hb.cast / 1000).toLocaleString('es', { useGrouping: 'always' }) + ' s de lanzamiento' : 'instantánea', hb.cd ? 'recarga ' + Math.round(hb.cd / 1000) + ' s' : '', hb.rango ? 'alcance ' + hb.rango : ''].filter(Boolean).join(' · ');
     const ico = `<img src="${A}items/equipo/${hb.icono}.png" style="${bloq ? 'filter:grayscale(1);opacity:.4' : ''}">`;
     const tecla = hb.barra === false ? 'Botón de acción' : (TACTIL ? 'Barra ' : 'Tecla ') + (habsDe(yo.clase).indexOf(hb) + 1);
-    h += tarjeta(ico, esc(hb.nombre) + ` <span style="color:${bloq ? 'var(--warn)' : 'var(--txt2)'}">Nv ${hb.nv}</span>`, esc(hb.desc.replace(/\s*[\d,]+ s de lanzamiento\./, '')) + '<br><span style="color:var(--txt2)">' + esc(datos) + '</span>',
+    h += tarjeta(ico, esc(hb.nombre) + ` <span style="white-space:nowrap;color:${bloq ? 'var(--warn)' : 'var(--txt2)'}">Nv ${hb.nv}</span>`, esc(hb.desc.replace(/\s*[\d,]+ s de lanzamiento\./, '')) + '<br><span style="color:var(--txt2)">' + esc(datos) + '</span>',
       `<span class="precio" style="color:${bloq ? 'var(--txt3)' : 'var(--txt)'}">${bloq ? 'Bloqueada' : esc(tecla)}</span>`);
   }
   // Talentos: un punto por nivel desde el 10.
@@ -2748,7 +2748,7 @@ function pintarWallet() {
   h += `<button class="btn" id="b-retirar" style="width:100%;padding:12px" ${puede ? '' : 'disabled'}>Retirar ${tonTxt(aRetirar)} TON</button>`;
   h += '<button class="btn sec" id="b-premium" style="width:100%;margin-top:8px">Tienda premium (oro y poderes)</button>';
   const tr = yo.transparencia;
-  if (tr) h += `<div class="mis-caja" style="margin-top:12px"><b>Transparencia</b><p style="font-size:12px;color:var(--txt2)">${tr.pct ? 'El fondo de cada día es el <b style="display:inline;color:var(--txt)">' + tr.pct + '%</b> de lo que entró al juego la semana anterior, más lo que aporta El Duende.' : 'El fondo de cada día lo aporta El Duende, el creador: no sale de lo que pagan otros jugadores.'} Nunca se reparte más de lo que hay. Pagado a jugadores hasta hoy: <b style="display:inline;color:var(--txt)">${tonTxt(tr.tonPagados * MTON_POR_TON)} TON</b> en ${tr.retirosPagados} retiro(s).</p></div>`;
+  if (tr) h += `<div class="mis-caja" style="margin-top:12px"><b>Transparencia</b><p style="font-size:12px;color:var(--txt2)">${tr.pct ? 'El fondo de cada día es el <b style="display:inline;color:var(--txt)">' + tr.pct + '%</b> de lo que entró al juego la semana anterior, más lo que aporta El Duende.' : 'El fondo de cada día lo aporta El Duende, el creador: no sale de lo que pagan otros jugadores.'} Nunca se reparte más de lo que hay. Pagado a jugadores hasta hoy: <b style="display:inline;color:var(--txt)">${tonTxt(tr.tonPagados * MTON_POR_TON)} TON</b> en ${tr.retirosPagados} ${tr.retirosPagados === 1 ? 'retiro' : 'retiros'}.</p></div>`;
   if (fondoInfo) {
     const resta = Math.max(0, fondoInfo.total - fondoInfo.gastado);
     h += `<p class="centro" style="margin-top:10px;font-size:12px;color:var(--txt2)">Fondo de hoy para todos: ${tonTxt(resta)} de ${tonTxt(fondoInfo.total)} TON por repartir</p>`;
@@ -3777,7 +3777,7 @@ function cajaPase() {
   h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin-top:8px">';
   for (let n = 1; n <= PASE.niveles; n++) {
     const pr = premioPase(n, yo.nivel), cob = pa.cob.includes(n), listo = nv >= n && !cob;
-    h += `<div style="border:1px solid ${listo ? 'var(--ok)' : 'var(--borde)'};border-radius:8px;padding:6px;font-size:12px;${cob ? 'opacity:.5' : ''}"><b style="display:inline;color:var(--txt)">${n}</b> ${esc(pr.txt)}${listo ? `<br><button class="btn" data-pase="${n}" style="margin-top:4px;padding:4px 10px">Cobrar</button>` : cob ? ' ✓' : ''}</div>`;
+    h += `<div style="border:1px solid ${listo ? 'var(--ok)' : 'var(--borde)'};border-radius:8px;padding:6px;font-size:12px;${cob ? 'opacity:.5' : ''}"><b style="display:inline;color:var(--txt)">Nv ${n}</b> · ${esc(pr.txt)}${listo ? `<br><button class="btn" data-pase="${n}" style="margin-top:4px;padding:4px 10px">Cobrar</button>` : cob ? ' ✓' : ''}</div>`;
   }
   return h + '</div></div>';
 }
@@ -3981,7 +3981,7 @@ function lineaChat(nombre, txt, canal, colorNombre) {
 }
 
 // ── VENTANAS ──
-function abrir(id) { document.querySelectorAll('.modal.on').forEach(m => { if (m.id !== 'm-muerte') m.classList.remove('on'); }); $(id).classList.add('on'); for (const k in teclas) teclas[k] = false; tIzq = tDer = false; }
+function abrir(id) { document.querySelectorAll('.modal.on').forEach(m => { if (m.id !== 'm-muerte') m.classList.remove('on'); }); $(id).classList.add('on'); const vn = $(id).querySelector('.ventana'); if (vn) vn.scrollTop = 0; for (const k in teclas) teclas[k] = false; tIzq = tDer = false; }
 function cerrarModales() { document.querySelectorAll('.modal.on').forEach(m => { if (m.id !== 'm-muerte' && m.id !== 'm-inicio' && m.id !== 'm-error' && !(m.id === 'm-clase' && yo && !yo.clase)) m.classList.remove('on'); }); }
 document.querySelectorAll('[data-cerrar]').forEach(b => b.onclick = cerrarModales);
 document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m) cerrarModales(); }));
@@ -4043,7 +4043,7 @@ function pintarTienda() {
     for (const id of yo.armas) {
       const d = ARMAS[id], n = nvF(id);
       const ico = `<img src="${A}armas/${d.icono}_item.png" style="${id !== 'katana' ? 'filter:drop-shadow(0 0 4px ' + d.color + ')' : ''}">`;
-      const desc = 'Daño ×' + multForja(n).toFixed(2) + (n < FORJA_MAX ? ' → ×' + multForja(n + 1).toFixed(2) : ' · máximo');
+      const desc = 'Daño ×' + multForja(n).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + (n < FORJA_MAX ? ' → ×' + multForja(n + 1).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ' · máximo');
       const acc = n >= FORJA_MAX ? '<span class="precio" style="color:var(--ok)">✓ +' + FORJA_MAX + '</span>'
         : `<span class="precio">🪙 ${costoForja(n).toLocaleString('es', { useGrouping: 'always' })}</span><button class="btn" data-comprar="forja" data-id="${id}" ${yo.oro < costoForja(n) ? 'disabled' : ''}>Mejorar a +${n + 1}</button>`;
       h += tarjeta(ico, d.nombre + ' +' + n, desc, acc);

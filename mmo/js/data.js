@@ -1637,12 +1637,12 @@ export const PASE = { niveles: 20, porNivel: 75, puntos: { diaria: 10, semanal: 
 export const paseMes = (t = Date.now()) => new Date(t).toISOString().slice(0, 7);
 export function premioPase(n, nivel) {
   const oro = k => Math.round(k * Math.max(1, nivel));
-  if (n === PASE.niveles) return { mascota: 'duende_pase', oro: oro(600), txt: 'la mascota Duendecillo Dorado y ' + oro(600).toLocaleString('es') + ' de oro' };
-  if (n === 10) return { item: 2, oro: oro(300), txt: 'un objeto épico y ' + oro(300).toLocaleString('es') + ' de oro' };
-  if (n % 5 === 0) return { item: 1, oro: oro(200), txt: 'un objeto raro y ' + oro(200).toLocaleString('es') + ' de oro' };
+  if (n === PASE.niveles) return { mascota: 'duende_pase', oro: oro(600), txt: 'la mascota Duendecillo Dorado y ' + oro(600).toLocaleString('es', { useGrouping: 'always' }) + ' de oro' };
+  if (n === 10) return { item: 2, oro: oro(300), txt: 'un objeto épico y ' + oro(300).toLocaleString('es', { useGrouping: 'always' }) + ' de oro' };
+  if (n % 5 === 0) return { item: 1, oro: oro(200), txt: 'un objeto raro y ' + oro(200).toLocaleString('es', { useGrouping: 'always' }) + ' de oro' };
   if (n % 3 === 0) return { pw: { pocion: 5, escudo: 2 }, txt: '5 pociones y 2 escudos' };
   if (n % 3 === 2) return { pw: { rayo: 2, fuego: 2 }, txt: '2 rayos y 2 fuegos' };
-  return { oro: oro(60 + 15 * n), txt: oro(60 + 15 * n).toLocaleString('es') + ' de oro' };
+  return { oro: oro(60 + 15 * n), txt: oro(60 + 15 * n).toLocaleString('es', { useGrouping: 'always' }) + ' de oro' };
 }
 MASCOTAS.duende_pase = { nombre: 'Duendecillo Dorado', hoja: 'goblin_normal', alto: 26, nv: 1, precio: 0, tinte: '#facc15', pase: true };
 // Solo pescando (PESCA.mascota por captura; segura a las mascotaSeguro capturas).
