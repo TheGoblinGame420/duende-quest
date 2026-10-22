@@ -1982,3 +1982,24 @@ Esta sesión lleva la tienda (pares del `?v=`), la otra lo demás (impares).
     Telegram y web» en una línea; en PC los avisos bajan (`#hud.tuto`)
     mientras se ve el consejo del tutorial.
   - Arnés: **562 bien, 0 mal**.
+- **?v=228-236 (22-oct, tarde) — auditoría de textos (agente) y pulido:**
+  - Botones que quedaban **vacíos** al quitar el emoji: susurro en Social
+    («Susurrar»), precio en Stars («N Stars»), contador de la temporada en
+    el HUD («Calabazas 12»), «(mira 💎)», «(o usa 👥)», «(🏆 en el
+    pueblo)», «(🏠)». Regla: nombrar los botones por su nombre.
+  - Quedaban «vosotros» en social.js, mazmorras.js, torre.js y una nota del
+    parche → «ustedes». Plurales de consumibles (`PODERES[].plural`):
+    «3 Pociones», «No te quedan pociones».
+  - Logro del jefe mundial: «Azote del Coliseo» (antes «Cazador de
+    Titanes», se confundía con el Titán de la banda). Pesca: «TIRAR».
+  - La pantalla de muerte ya no dice «Pierdes un 5%…» a los novatos
+    (`#muerte-xp`); «NV» en mayúsculas en el lienzo (en la letra pixel la v
+    parecía u); flecha guía «Ir a Bosque Nocturno».
+  - PREMIUM enseña el precio también a invitados ($ en la web, Stars en
+    Telegram) junto a «Iniciar sesión».
+  - Recompensa diaria con el icono de lo que da cada día; pantalla de carga
+    con el duende y un consejo al azar (lista en `mmo/index.html`, script en
+    línea junto a `#carga`).
+  - Parche 1.9 en las notas del parche (interfaz renovada).
+  - El arnés busca ahora «XP extra en tus próximas cazas» y «hasta 5».
+  - Resistencia 20 bots / 3 min: 0 errores. Arnés: **562 bien, 0 mal**.
