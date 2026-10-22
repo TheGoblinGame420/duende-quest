@@ -427,6 +427,7 @@ function recibir(m) {
     case 'herm': hermandad = m.h; pintarSocial(); break;
     case 'hermInv': mostrarInvitacion({ ...m, herm: 1 }); break;
     case 'buscador': abrirBuscador(); break;
+    case 'tareas': if (yo) { yo.tareas = m; pintarHud(); if ($('m-mision').classList.contains('on')) pintarMision(); } break;
     case 'muros': muros = m.muros || []; if (instancia) instancia.hechos = m.hechos; pintarHud(); break;
     case 'mmx': { const o = mons.get(m.id); if (o) { o.mx = m.mx; o.hp = m.hp; } break; }
     case 'emote': emote(m.m); break;
@@ -795,6 +796,7 @@ addEventListener('keydown', e => {
     if (e.code === 'KeyP' && $('m-libro').classList.contains('on')) cerrarModales();
     if (e.code === 'KeyO' && $('m-social').classList.contains('on')) cerrarModales();
     if (e.code === 'KeyM' && $('m-mapa').classList.contains('on')) cerrarModales();
+    if (e.code === 'KeyL' && $('m-mision').classList.contains('on')) cerrarModales();
     return;
   }
   if (e.code === 'Tab') { e.preventDefault(); if (!e.repeat) cicloObjetivo(); return; }
@@ -808,6 +810,7 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyP') abrirLibro();
   if (e.code === 'KeyO') abrirSocial();
   if (e.code === 'KeyM') abrirMapaMundo();
+  if (e.code === 'KeyL') abrirMision();
   if (e.code === 'KeyY') montar();
   if (e.code === 'KeyR') volverAlPueblo();
   if (e.code === 'Escape') objetivo = null;
@@ -2335,6 +2338,12 @@ function pintarHud() {
     hm.textContent = lista ? '📜 ' + q.nombre + ' ✓ — vuelve con Tito' : '📜 ' + q.nombre + ' ' + yo.mis.p + '/' + q.n;
     hm.className = lista ? 'lista' : '';
   }
+  const T = yo.tareas;
+  if (T) {
+    const hd = T.dia.l.filter(t => t.ok).length, hs = T.sem.l.filter(t => t.ok).length;
+    const sig = T.dia.l.find(t => !t.ok);
+    ponTxt($('h-tareas'), '☀️ Diarias ' + hd + '/' + T.dia.l.length + ' · 📆 ' + hs + '/' + T.sem.l.length + (sig ? ' — ' + sig.txt + ' ' + sig.p + '/' + sig.n : ''));
+  }
   pintarPoderes();
   pintarAcciones();
   pintarDescanso();
@@ -2353,11 +2362,21 @@ function cajaDiaria() {
     '<p style="color:#ffe600">Recompensa: +' + pr.xp + ' XP · +' + pr.oro + ' oro · +' + pr.pocion + ' pociones</p>' +
     (lista ? '<button class="btn" id="b-diaria" style="width:100%;padding:10px;margin-top:6px">✅ COBRAR CAZA DEL DÍA</button>' : '') + '</div>';
 }
+// Diarias y semanales: se cobran solas, aqui solo se ven.
+function cajaTareas() {
+  const T = yo.tareas;
+  if (!T) return '';
+  const fila = t => `<div class="fila" style="${t.ok ? 'color:#4ade80' : ''}"><span>${t.ok ? '✓' : '•'} ${esc(t.txt)}</span><span>${t.p}/${t.n}</span></div>`;
+  return '<div class="mis-caja" style="border-color:rgba(255,230,0,.35)"><b>☀️ Misiones del día</b>' + T.dia.l.map(fila).join('') +
+    `<p style="font-size:12px;margin-top:6px">Cada una: +${T.premio.xp.toLocaleString('es')} XP y +${T.premio.oro.toLocaleString('es')} oro. Las 3: ${T.dia.bono ? '✓ bono cobrado' : 'objeto raro + pociones y escudos'}. Se renuevan cada día.</p></div>` +
+    '<div class="mis-caja" style="border-color:rgba(192,132,252,.45)"><b>📆 Misiones de la semana</b>' + T.sem.l.map(fila).join('') +
+    `<p style="font-size:12px;margin-top:6px">Cada una: +${T.premioSem.xp.toLocaleString('es')} XP y +${T.premioSem.oro.toLocaleString('es')} oro. Las 2: ${T.sem.bono ? '✓ bono cobrado' : 'objeto ÉPICO'}. Se renuevan los lunes.</p></div>`;
+}
 function pintarMision() {
   const i = yo.mis ? yo.mis.i : 0, q = MISIONES[i];
   const cuerpo = $('mision-cuerpo');
   const conectarDiaria = () => { const b = $('b-diaria'); if (b) b.onclick = () => { sfx('boton', .3); mandar({ t: 'mision', diaria: true }); }; };
-  if (!q) { cuerpo.innerHTML = '<p class="centro">¡Completaste las ' + MISIONES.length + ' misiones! Eres una leyenda del Pueblo Duende. 👑</p>' + cajaDiaria(); conectarDiaria(); return; }
+  if (!q) { cuerpo.innerHTML = '<p class="centro">¡Completaste las ' + MISIONES.length + ' misiones! Eres una leyenda del Pueblo Duende. 👑</p>' + cajaDiaria() + cajaTareas(); conectarDiaria(); return; }
   const def = MONSTRUOS[q.tipo];
   const zona = MAPAS[zonaDe(q.tipo)];
   const lista = yo.mis.p >= q.n;
@@ -2371,7 +2390,7 @@ function pintarMision() {
     '<p>' + yo.mis.p + ' / ' + q.n + '</p>' +
     '<p style="color:#ffe600">Recompensa: +' + q.xp + ' XP · +' + q.oro + ' oro' + esc(extra) + '</p></div>' +
     (lista ? '<button class="btn" id="b-entregar" style="width:100%;padding:12px">✅ ENTREGAR MISIÓN</button>' : '<p class="centro">Vuelve cuando la termines.</p>') +
-    cajaDiaria();
+    cajaDiaria() + cajaTareas();
   const b = $('b-entregar');
   if (b) b.onclick = () => { sfx('boton', .3); mandar({ t: 'mision' }); };
   conectarDiaria();

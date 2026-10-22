@@ -26,6 +26,7 @@ import { Combate } from './combate.js';
 import { Social, pub } from './social.js';
 import { Mazmorras } from './mazmorras.js';
 import { Hermandades } from './hermandades.js';
+import { Tareas } from './tareas.js';
 
 const MAX_JUGADORES = 300;
 const GUARDAR_CADA_MS = 20000;
@@ -821,7 +822,7 @@ export class MmoWorld {
       arma: c.arma, armas: c.armas, skin: c.skin, skins: c.skins, pw: c.pw,
       kills: c.kills, jefes: c.jefes, muerto: s.muerto, mis: c.mis, forja: c.forja,
       eq: c.eq, bolsa: c.bolsa, logros: c.logros, titulo: c.titulo, mundiales: c.mundiales, login: c.login, crit: s.st.crit,
-      clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0,
+      clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c),
       espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, montado: s.montado || null,
       mton: c.mton, wallet: c.wallet ? { a: tonAmigable(c.wallet.a), desde: c.wallet.desde } : null,
       p2e: this.elegibilidad(c), creado: c.creado,
@@ -1029,6 +1030,7 @@ export class MmoWorld {
       const oro = Math.round(80 * c.nivel * (1 + Math.min(1, parte * 3)));
       c.oro += oro;
       c.mundiales = (c.mundiales || 0) + 1;
+      this.progresoTarea(s, 'mundial');
       const it = this.darItem(s, generarItem(c.nivel, parte > 0.15 ? 2 : 1));
       // Premio fijo para todos los que ayudaron: si dependiera del daño, una
       // skin pagada con mas ataque daria mas mTON (y se pagaria para ganar).
@@ -1201,6 +1203,11 @@ export class MmoWorld {
     if (o && participo !== false && !d.ok && d.p < DIARIA.n && (o.nv || MONSTRUOS[o.k].nivel) >= c.nivel - 5) {
       d.p++;
       if (d.p === DIARIA.n) this.enviar(s, { t: 'toast', m: `📅 ¡"${DIARIA.nombre}" cumplida! Cóbrala con el Guardia Tito.`, ok: true });
+    }
+    // Misiones diarias y semanales (solo quien peleo de verdad).
+    if (o && participo !== false) {
+      this.progresoTarea(s, 'caza', o, n || 1);
+      if (o.jefe && !o.mazmorra && !MONSTRUOS[o.k].mundial) this.progresoTarea(s, 'jefe', o);
     }
     // Mision en curso: cuenta si el monstruo es el que pide.
     const q = MISIONES[c.mis.i];
@@ -1728,4 +1735,6 @@ Object.assign(MmoWorld.prototype, Social);
 Object.assign(MmoWorld.prototype, Mazmorras);
 // Hermandades: functions/mmo/hermandades.js
 Object.assign(MmoWorld.prototype, Hermandades);
+// Misiones diarias y semanales: functions/mmo/tareas.js
+Object.assign(MmoWorld.prototype, Tareas);
 MmoWorld.prototype.generarItem = generarItem;

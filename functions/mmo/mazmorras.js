@@ -283,6 +283,7 @@ export const Mazmorras = {
     for (const s of jugadores) {
       const c = s.c;
       c.mazmorras = (c.mazmorras || 0) + 1;
+      this.progresoTarea(s, 'mazmorra');
       if (!c.mazDia || c.mazDia.d !== hoy) c.mazDia = { d: hoy, hechas: [] };
       let extra = '';
       // La primera vez del dia en cada mazmorra trae un premio extra.

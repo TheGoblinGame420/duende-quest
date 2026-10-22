@@ -48,7 +48,7 @@ export async function entrar(nombre, n) {
   const s = [...mundo.sesiones.values()].pop();
   const tok = String(n).repeat(32).slice(0, 32).replace(/[^a-f0-9]/g, 'a');
   ws.emitir('message', { data: JSON.stringify({ t: 'hola', auth: { k: 'inv', tok }, nombre }) });
-  for (let i = 0; i < 20 && !s.c; i++) await espera();
+  for (let i = 0; i < 300 && !s.c; i++) await espera();
   if (mundo.bucle) { clearInterval(mundo.bucle); mundo.bucle = 1; }
   s.ws = ws;
   s.mandar = o => { s.cuenta = 0; return mundo.recibir(s, JSON.stringify(o)); };
@@ -452,6 +452,25 @@ async function pruebas() {
   const gd = monstruo(dz, 'goblin_normal', 30); dz.f = 1;
   for (let i = 0; i < 12 && !gd.muere; i++) { avanzar(400); await dz.mandar({ t: 'atk', s: i % 3 }); }
   chequear(gd.muere && dz.c.descanso < desA, 'cazar gasta el descanso y da el doble');
+
+  console.log('Misiones diarias y semanales');
+  const tz = await entrar('Diario', '3f');
+  ponerNivel(tz, 12, 'picaro');
+  const inf = mundo.infoTareas(tz.c);
+  chequear(inf.dia.l.length === 3 && inf.sem.l.length === 2, '3 diarias y 2 semanales');
+  chequear(JSON.stringify(mundo.infoTareas(tz.c)) === JSON.stringify(inf), 'son las mismas durante el día');
+  // Forzamos una diaria de caza para probar el cobro.
+  tz.c.tareas.l[0] = { id: 'caza', p: 29, ok: false };
+  const oroT = tz.c.oro;
+  await aMapa(tz, 'amanecer', 700); limpiarMapa(tz);
+  const pz = monstruo(tz, 'goblin_guard', 30); tz.f = 1;
+  for (let i = 0; i < 20 && !pz.muere; i++) { avanzar(400); await tz.mandar({ t: 'atk', s: i % 3 }); }
+  chequear(tz.c.tareas.l[0].ok && tz.c.oro > oroT, 'la diaria se cobra sola al cumplirse');
+  const bajo2 = monstruo(tz, 'goblin_normal', 30, { nv: 1 });
+  tz.c.tareas.l[1] = { id: 'caza', p: 0, ok: false };
+  for (let i = 0; i < 20 && !bajo2.muere; i++) { avanzar(400); await tz.mandar({ t: 'atk', s: i % 3 }); }
+  chequear(tz.c.tareas.l[1].p === 0, 'cazar monstruos muy bajos no cuenta');
+  chequear(tz.ultimos('mton').length === 0, 'las diarias no dan mTON');
 
   console.log('Monstruos pasivos no pegan a quien no les ataca');
   const t2 = await entrar('Turista', 5);

@@ -80,6 +80,7 @@ html,body{height:100%;background:var(--bg);color:#fff;font-family:'Press Start 2
 .saldo small{font-family:system-ui,sans-serif;font-size:12px;color:rgba(255,255,255,.6);}
 /* seguimiento de misiones (derecha, bajo el minimapa) */
 #seguimiento{right:8px;top:100px;max-width:200px;text-align:right;pointer-events:none!important;}
+#h-tareas{font-size:6px;line-height:1.6;color:#fde68a;margin-top:3px;text-shadow:1px 1px 0 #000,0 0 3px #000;}
 #h-mision,#h-mundial{font-size:6px;line-height:1.6;text-shadow:1px 1px 0 #000,0 0 3px #000;}
 #h-mision{color:#ffd84a;}
 #h-mision.lista{color:var(--verde);animation:parp 1s infinite alternate;}
@@ -309,7 +310,7 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
       <div class="caja" id="grupo"></div>
       <div class="caja" id="invitacion"><span id="inv-txt"></span><button class="btn" id="inv-si">ACEPTAR</button><button class="btn sec" id="inv-no">RECHAZAR</button></div>
       <div class="caja" id="minimapa"><canvas id="mini" width="170" height="26"></canvas></div>
-      <div class="caja" id="seguimiento"><div id="h-mision"></div><div id="h-mundial"></div></div>
+      <div class="caja" id="seguimiento"><div id="h-mision"></div><div id="h-tareas"></div><div id="h-mundial"></div></div>
       <div class="caja" id="mapa-nom"><span id="h-mapa">—</span><small id="h-mapa-sub"></small></div>
       <div class="caja" id="botones">
         <button class="bt" id="b-libro" title="Hechizos y clase (P)">📖</button>
@@ -443,9 +444,10 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
       <li><b>Entrar a portales / hablar:</b> E o ↑ encima</li>
       <li><b>Grupos:</b> toca a otro jugador y pulsa ➕ en su marco, o usa 👥 (tecla O). En grupo compartís la experiencia y las misiones de cada presa (+10% por miembro), veis la vida de todos y el sacerdote puede curar a cualquiera tocando su marco.</li>
       <li><b>🏰 Mazmorras:</b> el portal de mazmorras del pueblo (junto al Guardia Tito) abre el buscador. Son copias privadas para tu grupo (o para ti solo, se ajustan) con packs de monstruos agresivos y 3 jefes con mecánicas: sal de las zonas marcadas en el suelo, interrumpe los hechizos con barra naranja y cuidado con sus esbirros. Cada jefe da equipo y la primera de cada día trae un premio extra.</li>
+      <li><b>☀️ Misiones diarias y semanales:</b> cada día 3 tareas y cada semana 2, según tu nivel (tecla L para verlas). Se cobran solas al cumplirlas y completarlas todas da un bono de equipo. <b>😴 Descanso:</b> si pasas horas fuera, tus próximas cazas dan el doble de experiencia (la parte azul de la barra).</li>
       <li><b>🛡️ Hermandades:</b> tu clan, con chat propio (/h) y su nombre bajo el tuyo. Fúndala desde 👥 → HERMANDAD (nivel 10 y 5.000 oro) o pide que te inviten.</li>
       <li><b>Chat:</b> Enter. Sin nada delante habla a todo el servidor; <b>/d</b> solo a tu mapa, <b>/g</b> a tu grupo, <b>/h</b> a tu hermandad, <b>/s Nombre</b> susurra y <b>/r</b> responde.</li>
-      <li><b>Inventario:</b> I · <b>Hechizos:</b> P · <b>Piedra de Hogar:</b> R o 🌀 (6 s quieto y sin recibir golpes)</li>
+      <li><b>Misiones:</b> L · <b>Mapa:</b> M · <b>Social:</b> O · <b>Inventario:</b> I · <b>Hechizos:</b> P · <b>Piedra de Hogar:</b> R o 🌀 (6 s quieto y sin recibir golpes)</li>
       <li>Los hechiceros, magos y algunos jefes lanzan <b>bolas de fuego</b>: salta o apártate de su línea.</li>
       <li>El <b>Guardia Tito</b> del pueblo te da una cadena de 40 misiones que recorre las 10 zonas (hasta los Acantilados Mágicos y su Dragón Ancestral): entrégaselas para cobrar experiencia, oro y poderes.</li>
       <li><b>Equipo:</b> los monstruos sueltan cascos, armaduras, botas, anillos y amuletos (los jefes siempre). Hay 4 rarezas: <span style="color:#d0d0d0">común</span>, <span style="color:#33aaff">raro</span>, <span style="color:#c084fc">épico</span> y <span style="color:#ffae00">legendario</span>. Equípalos o véndelos en 🎒 → EQUIPO.</li>

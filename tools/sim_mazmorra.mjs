@@ -26,7 +26,7 @@ async function bot(mundo, clase, nivel) {
   const s = [...mundo.sesiones.values()].pop();
   const tok = (sig++).toString(16).padStart(32, '0').slice(-32);
   ws.emitir('message', { data: JSON.stringify({ t: 'hola', auth: { k: 'inv', tok }, nombre: 'Bot' + clase + sig }) });
-  for (let i = 0; i < 20 && !s.c; i++) await espera();
+  for (let i = 0; i < 300 && !s.c; i++) await espera();
   if (mundo.bucle) { clearInterval(mundo.bucle); mundo.bucle = 1; }
   s.c.clase = clase; s.c.nivel = nivel; s.c.pw = { pocion: 10, escudo: 0, rayo: 0, fuego: 0 };
   s.st = mundo.stats(s.c); s.hp = s.st.maxHp; mundo.recursoInicial(s);

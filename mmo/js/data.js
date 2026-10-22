@@ -638,6 +638,44 @@ export const MISIONES = [
 export const DIARIA = { nombre: 'Caza del día', n: 25 };
 export function premioDiaria(nivel) { return { xp: Math.round(xpParaSubir(nivel) * 0.3), oro: 40 * nivel, pocion: 3 }; }
 export const hoyUTC = () => new Date(Date.now()).toISOString().slice(0, 10);
+// Semana (lunes UTC) como "AAAA-MM-DD" de su lunes.
+export function semanaUTC() {
+  const d = new Date(Date.now());
+  const dia = (d.getUTCDay() + 6) % 7;
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - dia)).toISOString().slice(0, 10);
+}
+
+// ── MISIONES DIARIAS Y SEMANALES ──
+// Cada dia, 3 tareas al azar segun tu nivel; cada semana, 2 mas grandes. Se
+// cobran solas al cumplirse y completar todas da un bono. Solo XP, oro,
+// poderes y equipo: NUNCA mTON (eso es solo la Caza del dia del Guardia).
+// tipo: lo que cuenta (caza, zona, grupo, jefe, mazmorra, mundial, hab).
+export const TAREAS_DIA = [
+  { id: 'caza', tipo: 'caza', n: 30, txt: 'Caza 30 monstruos de tu nivel' },
+  { id: 'zona', tipo: 'zona', n: 20, txt: 'Caza 20 monstruos en ' },
+  { id: 'grupo', tipo: 'grupo', n: 15, txt: 'Caza 15 monstruos en grupo' },
+  { id: 'jefe', tipo: 'jefe', n: 1, txt: 'Derrota a un jefe de zona', nv: 6 },
+  { id: 'mazmorra', tipo: 'mazmorra', n: 1, txt: 'Completa una mazmorra', nv: 10 },
+  { id: 'mundial', tipo: 'mundial', n: 1, txt: 'Vence al jefe mundial del Coliseo' },
+  { id: 'hab', tipo: 'hab', n: 50, txt: 'Usa 50 habilidades en combate' },
+];
+export const TAREAS_SEMANA = [
+  { id: 'caza300', tipo: 'caza', n: 300, txt: 'Caza 300 monstruos de tu nivel' },
+  { id: 'maz3', tipo: 'mazmorra', n: 3, txt: 'Completa 3 mazmorras', nv: 10 },
+  { id: 'jefes5', tipo: 'jefe', n: 5, txt: 'Derrota a 5 jefes de zona', nv: 6 },
+  { id: 'mundial3', tipo: 'mundial', n: 3, txt: 'Vence 3 veces al jefe mundial' },
+];
+export const premioTarea = (nivel, semanal) => ({ xp: Math.round(xpParaSubir(nivel) * (semanal ? 0.8 : 0.25)), oro: (semanal ? 300 : 40) * nivel });
+// La zona "de tu nivel" (para la tarea de zona).
+export function zonaDeNivel(nivel) {
+  let mejor = 'noche';
+  for (const id in MAPAS) {
+    const m = MAPAS[id];
+    if (!m.zona || m.instancia || m.coliseo || !m.nv) continue;
+    if (m.nv[0] <= nivel && m.nv[0] >= MAPAS[mejor].nv[0]) mejor = id;
+  }
+  return mejor;
+}
 
 // ── HERMANDADES ──
 export const HERM_COSTO = 5000;   // oro para fundar una

@@ -524,6 +524,7 @@ export const Combate = {
         break;
     }
     this.robarVida(s, golpes.reduce((a, x) => a + x[1], 0));
+    if (ahora - (s.combateT || 0) < 5000) this.progresoTarea(s, 'hab');
     s.sucio = true;
     this.aClave(s.k, ev);
     if (h.cd) this.enviar(s, { t: 'cd', id: 'h_' + h.id, hasta: h.cd });
