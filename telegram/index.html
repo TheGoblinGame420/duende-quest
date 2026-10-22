@@ -4,21 +4,43 @@
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, viewport-fit=cover">
 <title>DUENDE QUEST — Telegram</title>
 <!-- Página interna de la Mini App de Telegram: no debe salir en buscadores -->
 <meta name="robots" content="noindex">
 <meta name="description" content="Duende Quest en Telegram: juega gratis el MMO y el arcade, mira tu perfil, skins y ranking.">
 <meta name="theme-color" content="#0b0f17">
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<meta name="color-scheme" content="dark">
+<!-- La fuente pixel ya no bloquea el primer pintado: se carga aparte
+     (display=swap) y mientras tanto se ve la de reserva. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="../js/dom-utils.js"></script>
-<script src="../js/missions.js"></script>
-<script src="../js/streak.js"></script>
-<script src="../js/achievements.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tonconnect/ui@2/dist/tonconnect-ui.min.js"></script>
-<script src="../js/config.js"></script>
+<script>
+// ── ARRANQUE TEMPRANO DE TELEGRAM ──
+// Va aquí, antes de cargar Supabase/TON Connect/el motor, para que Telegram
+// quite su pantalla de carga y pinte la cabecera con nuestros colores en
+// cuanto llega el HTML (antes esperaba a ~1 MB de scripts).
+(function(){
+  var w=window.Telegram&&window.Telegram.WebApp; if(!w) return;
+  var v=function(x){try{return !!(w.isVersionAtLeast&&w.isVersionAtLeast(x));}catch(e){return false;}};
+  try{w.ready();}catch(e){}
+  try{w.expand();}catch(e){}
+  // Colores propios (el diseño es oscuro siempre; no se adopta el tema claro
+  // del usuario para no romper el contraste). Hex directos desde la 6.9.
+  try{ if(v('6.9')) w.setHeaderColor('#0b0f17'); else if(v('6.1')) w.setHeaderColor('bg_color'); }catch(e){}
+  try{ if(v('6.1')) w.setBackgroundColor('#0b0f17'); }catch(e){}
+  try{ if(v('7.10')&&w.setBottomBarColor) w.setBottomBarColor('#121826'); }catch(e){}
+  // Un gesto hacia arriba durante la partida minimizaba la Mini App.
+  try{ if(v('7.7')&&w.disableVerticalSwipes) w.disableVerticalSwipes(); }catch(e){}
+})();
+// ¿Es la primera vez en este dispositivo? Se mira ANTES de que la racha diaria
+// guarde progreso al cargar (si no, todo jugador nuevo parecería veterano).
+try{ window._dqPrimeraVez=!localStorage.getItem('dq_tg_bienvenida')&&!localStorage.getItem('dq_save'); }catch(e){ window._dqPrimeraVez=false; }
+</script>
 <style>
 /* ── PALETA SOBRIA (guía de diseño, oct-2026) ──
    Antes: neones (#00ff88, #ffe600, #ff3cf0) con brillos en botones y textos.
@@ -32,6 +54,13 @@
   --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --pixel:"Press Start 2P",monospace;
   --sombra:0 4px 16px rgba(0,0,0,.35);
+  /* Zonas seguras (notch, isla, barra de inicio). Telegram 8+ publica las
+     suyas como --tg-safe-area-inset-* y --tg-content-safe-area-inset-* (y las
+     actualiza solo en cada cambio); fuera de Telegram quedan las del sistema. */
+  --sa-top:max(env(safe-area-inset-top,0px),calc(var(--tg-safe-area-inset-top,0px) + var(--tg-content-safe-area-inset-top,0px)));
+  --sa-bot:max(env(safe-area-inset-bottom,0px),calc(var(--tg-safe-area-inset-bottom,0px) + var(--tg-content-safe-area-inset-bottom,0px)));
+  --sa-izq:max(env(safe-area-inset-left,0px),calc(var(--tg-safe-area-inset-left,0px) + var(--tg-content-safe-area-inset-left,0px)));
+  --sa-der:max(env(safe-area-inset-right,0px),calc(var(--tg-safe-area-inset-right,0px) + var(--tg-content-safe-area-inset-right,0px)));
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{width:100%;height:100%;overflow-x:hidden;overflow-y:auto;background:var(--bg);color:var(--txt);touch-action:manipulation;-webkit-overflow-scrolling:touch;}
@@ -40,13 +69,13 @@ html,body{width:100%;height:100%;overflow-x:hidden;overflow-y:auto;background:va
    sans-serif del sistema (ver #tg-header, #hub, #tabbar). */
 body{display:flex;flex-direction:column;align-items:center;font-family:var(--pixel);min-height:100vh;min-height:100dvh;}
 
-#tg-header{display:flex;align-items:center;justify-content:space-between;width:100%;padding:8px 12px;background:var(--panel);border-bottom:1px solid var(--borde);gap:8px;flex-shrink:0;font-family:var(--sans);}
+#tg-header{display:flex;align-items:center;justify-content:space-between;width:100%;padding:calc(8px + var(--sa-top)) calc(12px + var(--sa-der)) 8px calc(12px + var(--sa-izq));background:var(--panel);border-bottom:1px solid var(--borde);gap:8px;flex-shrink:0;font-family:var(--sans);}
 .tg-user{display:flex;align-items:center;gap:8px;min-width:0;}
 .tg-avatar{width:32px;height:32px;border-radius:50%;background:var(--panel2);border:1px solid var(--borde);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--txt);overflow:hidden;flex-shrink:0;}
 .tg-name{font-size:14px;font-weight:600;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .tg-bal{font-size:14px;font-weight:600;color:var(--oro);white-space:nowrap;}
 .tg-price{font-size:12px;color:var(--txt3);}
-#ton-btn{font-family:var(--sans);font-size:13px;font-weight:600;padding:6px 10px;min-height:40px;background:transparent;border:1px solid var(--borde);color:var(--txt);border-radius:8px;cursor:pointer;white-space:nowrap;}
+#ton-btn{font-family:var(--sans);font-size:13px;font-weight:600;padding:6px 10px;min-height:44px;background:transparent;border:1px solid var(--borde);color:var(--txt);border-radius:8px;cursor:pointer;white-space:nowrap;}
 #ton-btn:active{transform:scale(.98);}
 
 /* En un movil de 812px el juego ocupaba 150px y quedaban ~500px de vacio negro
@@ -63,7 +92,7 @@ body{display:flex;flex-direction:column;align-items:center;font-family:var(--pix
    sobrante se lo quedan los controles: en un movil es mejor tener botones
    enormes en la zona del pulgar que un hueco negro en medio. Es el reparto
    clasico de un arcade de movil. */
-#mbtns{flex:0 0 auto;align-items:stretch;padding:8px 6px calc(10px + env(safe-area-inset-bottom,0px));}
+#mbtns{flex:0 0 auto;align-items:stretch;padding:8px calc(6px + var(--sa-der)) calc(10px + var(--sa-bot)) calc(6px + var(--sa-izq));}
 .mb{height:100%;min-height:72px;max-height:104px;}
 /* El hueco entre el juego y los controles deja de ser negro: muestra las
    metas del dia, que hasta ahora solo se veian en la pantalla de inicio y
@@ -102,7 +131,7 @@ body{display:flex;flex-direction:column;align-items:center;font-family:var(--pix
 #level-badge{position:absolute;right:4px;top:-9px;font-size:7px;color:var(--rosa);}
 
 /* Aviso flotante: antes texto amarillo con brillo; ahora una pastilla legible */
-#pu-notif{position:fixed;top:56px;left:50%;transform:translateX(-50%);font-family:var(--sans);font-size:13px;font-weight:600;color:var(--txt);background:var(--panel2);border:1px solid var(--borde);border-radius:8px;padding:8px 12px;box-shadow:var(--sombra);pointer-events:none;opacity:0;z-index:50;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis;transition:opacity .3s;}
+#pu-notif{position:fixed;top:calc(56px + var(--sa-top));left:50%;transform:translateX(-50%);font-family:var(--sans);font-size:13px;font-weight:600;color:var(--txt);background:var(--panel2);border:1px solid var(--borde);border-radius:8px;padding:8px 12px;box-shadow:var(--sombra);pointer-events:none;opacity:0;z-index:50;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis;transition:opacity .3s;}
 #pu-notif.show{opacity:1;}
 
 #mbtns{display:grid;grid-template-columns:1fr 1.8fr 1fr 1fr 1fr;padding:6px 4px;background:var(--panel);border-top:1px solid var(--borde);gap:4px;width:100%;flex-shrink:0;}
@@ -142,7 +171,7 @@ body{display:flex;flex-direction:column;align-items:center;font-family:var(--pix
 
 /* Staking panel */
 .stake-lock-row{display:flex;gap:8px;margin-bottom:16px;justify-content:center;flex-wrap:wrap;}
-.stake-lock-btn{background:transparent;border:1px solid var(--borde);border-radius:8px;padding:10px 12px;cursor:pointer;text-align:center;font-family:var(--sans);font-weight:600;color:var(--txt);font-size:13px;min-width:75px;}
+.stake-lock-btn{background:transparent;border:1px solid var(--borde);border-radius:8px;padding:10px 12px;min-height:44px;cursor:pointer;text-align:center;font-family:var(--sans);font-weight:600;color:var(--txt);font-size:13px;min-width:75px;}
 .stake-lock-btn:active{transform:scale(.98);}
 .stake-lock-btn.active{border-color:var(--pri-txt);background:rgba(59,130,246,.12);}
 .donate-input{width:100%;max-width:250px;padding:12px;background:var(--panel);border:1px solid var(--borde);border-radius:8px;color:var(--txt);font-family:var(--sans);font-size:18px;text-align:center;outline:none;}
@@ -163,12 +192,14 @@ body{display:flex;flex-direction:column;align-items:center;font-family:var(--pix
    ilegibles en un movil. Con 24 px de raiz pasan a 5,3-9,6 px, y lo nuevo usa px. */
 html{font-size:24px;}
 /* Pantallas encima del juego: fondo OPACO (antes se transparentaba el juego). */
-.ov{background:var(--bg);}
+.ov{background:var(--bg);padding-top:calc(16px + var(--sa-top));padding-bottom:calc(16px + var(--sa-bot));}
+/* El mapa lo crea el motor con estilos en línea: solo se le suma la zona segura */
+#ov-niveles{padding-top:calc(16px + var(--sa-top))!important;padding-bottom:calc(16px + var(--sa-bot))!important;}
 
 /* ── MENU EN PESTAÑAS ── */
-#ov-start{justify-content:flex-start;padding:0;overflow:hidden;}
+#ov-start{justify-content:flex-start;padding:var(--sa-top) var(--sa-der) 0 var(--sa-izq);overflow:hidden;}
 #hub{width:100%;max-width:480px;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;font-family:var(--sans);color:var(--txt);
-  padding:0 16px calc(88px + env(safe-area-inset-bottom,0px));}
+  padding:0 16px calc(88px + var(--sa-bot));}
 #hub-top{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:10px;padding:10px 0;
   background:var(--bg);border-bottom:1px solid var(--borde);margin-bottom:14px;cursor:pointer;}
 .hub-av,.perfil-av{border-radius:50%;background:var(--panel2);border:1px solid var(--borde);color:var(--txt);display:flex;
@@ -178,7 +209,7 @@ html{font-size:24px;}
 .hub-nombre{font-size:15px;font-weight:600;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .hub-mini{font-size:12px;color:var(--txt2);line-height:1.45;letter-spacing:.02em;}
 .hub-dq{font-size:15px;font-weight:600;color:var(--oro);white-space:nowrap;}
-.hub-logo{font-family:var(--pixel);font-size:16px;color:var(--txt);text-align:center;margin:8px 0 4px;}
+.hub-logo{font-family:var(--pixel);font-size:16px;font-weight:400;color:var(--txt);text-align:center;margin:8px 0 4px;}
 .hub-lema{font-size:13px;color:var(--txt2);text-align:center;margin-bottom:6px;}
 .tab{display:none;flex-direction:column;align-items:stretch;gap:10px;}
 .tab.on{display:flex;}
@@ -203,8 +234,8 @@ html{font-size:24px;}
 
 /* Pie: legales y seguridad */
 #hub-pie{margin-top:18px;padding-top:12px;border-top:1px solid var(--borde);display:flex;flex-direction:column;gap:8px;align-items:center;}
-#hub-pie nav{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;font-size:12px;}
-#hub-pie a{color:var(--txt2);text-decoration:none;}
+#hub-pie nav{display:flex;flex-wrap:wrap;justify-content:center;gap:0 10px;font-size:13px;}
+#hub-pie a{color:var(--txt2);text-decoration:none;display:inline-flex;align-items:center;min-height:44px;padding:0 4px;}
 #hub-pie a:active{color:var(--txt);}
 #hub-pie small{font-size:12px;color:var(--txt3);text-align:center;line-height:1.45;}
 
@@ -235,7 +266,7 @@ html{font-size:24px;}
 .skin .b{font-size:12px;color:var(--ok);margin-top:4px;line-height:1.45;}
 .skin .p{font-size:12px;color:var(--oro);margin-top:4px;line-height:1.45;}
 .skin .acc{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
-.skin button{font-family:var(--sans);font-weight:600;font-size:13px;min-height:40px;padding:6px 10px;border-radius:8px;cursor:pointer;}
+.skin button{font-family:var(--sans);font-weight:600;font-size:13px;min-height:44px;padding:6px 10px;border-radius:8px;cursor:pointer;}
 
 /* Ranking */
 .rk{display:flex;align-items:center;gap:8px;padding:10px;border-radius:8px;background:var(--panel);border:1px solid transparent;font-size:14px;margin-bottom:6px;}
@@ -247,7 +278,7 @@ html{font-size:24px;}
 
 /* Barra de pestañas */
 #tabbar{position:fixed;left:0;right:0;bottom:0;z-index:45;display:grid;grid-template-columns:repeat(5,1fr);
-  background:var(--panel);border-top:1px solid var(--borde);padding-bottom:env(safe-area-inset-bottom,0px);}
+  background:var(--panel);border-top:1px solid var(--borde);padding:0 var(--sa-der) var(--sa-bot) var(--sa-izq);}
 #tabbar button{background:none;border:none;color:var(--txt2);font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:.03em;
   display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 10px;min-height:56px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
 #tabbar button span{font-size:20px;filter:grayscale(1);opacity:.8;}
@@ -256,8 +287,41 @@ html{font-size:24px;}
 /* En pantallas anchas la barra ocupaba 1920px; se alinea con el menú (480px) */
 @media (min-width:481px){#tabbar{max-width:480px;left:50%;right:auto;width:100%;transform:translateX(-50%);border-left:1px solid var(--borde);border-right:1px solid var(--borde);}}
 
-/* Foco visible para teclado */
+/* Foco visible para teclado (y sin anillo al tocar con el dedo) */
 :focus-visible{outline:2px solid #60a5fa;outline-offset:2px;}
+:focus:not(:focus-visible){outline:none;}
+
+/* ── INICIO: jerarquía ──
+   1º el MMO (tarjeta destacada con el único botón primario), 2º el arcade,
+   3º el progreso (racha, misiones, logros) y 4º comunidad. */
+.hero-mmo{background:var(--panel);border:1px solid rgba(59,130,246,.45);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--sombra);}
+.hero-cab{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.hero-t{font-size:16px;font-weight:700;color:var(--txt);}
+.hero-tag{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--pri-txt);border:1px solid rgba(96,165,250,.4);border-radius:999px;padding:3px 8px;white-space:nowrap;}
+.hero-d{font-size:13px;color:var(--txt2);line-height:1.45;}
+.hero-mmo .ob.big{min-height:56px;font-size:17px;}
+/* Resalte de UNA sola vez (no animación infinita) al saltar la bienvenida */
+.hero-mmo.resalta{animation:resalta 1.4s ease-out 1;}
+@keyframes resalta{0%{box-shadow:0 0 0 0 rgba(96,165,250,.7);}100%{box-shadow:0 0 0 14px rgba(96,165,250,0);}}
+
+/* ── BIENVENIDA (primera vez) ── hoja inferior, cerca del pulgar */
+#bienvenida{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center;
+  background:rgba(4,7,12,.72);padding:calc(16px + var(--sa-top)) calc(12px + var(--sa-der)) calc(12px + var(--sa-bot)) calc(12px + var(--sa-izq));font-family:var(--sans);}
+#bienvenida[hidden]{display:none;}
+.bv-hoja{width:100%;max-width:440px;max-height:100%;overflow-y:auto;background:var(--panel);border:1px solid var(--borde);border-radius:14px;
+  padding:20px 16px 14px;box-shadow:var(--sombra);display:flex;flex-direction:column;gap:10px;animation:bvSube .22s ease-out;}
+@keyframes bvSube{from{transform:translateY(24px);opacity:0;}to{transform:none;opacity:1;}}
+.bv-titulo{font-size:19px;font-weight:700;color:var(--txt);line-height:1.3;}
+.bv-sub{font-size:14px;color:var(--txt2);line-height:1.45;}
+.bv-lista{list-style:none;display:flex;flex-direction:column;gap:8px;margin:2px 0 4px;}
+.bv-lista li{display:flex;gap:12px;align-items:flex-start;background:var(--panel2);border:1px solid var(--borde);border-radius:10px;padding:10px 12px;}
+.bv-ic{font-size:22px;line-height:1;width:28px;text-align:center;flex-shrink:0;margin-top:2px;}
+.bv-lista b{display:block;font-size:15px;font-weight:600;color:var(--txt);margin-bottom:2px;}
+.bv-lista div span{display:block;font-size:13px;color:var(--txt2);line-height:1.45;}
+.bv-hoja .ob{margin:0;width:100%;}
+.bv-hoja .ob.big{min-height:52px;font-size:16px;}
+.bv-nota{font-size:12px;color:var(--txt3);text-align:center;line-height:1.45;}
+@media (prefers-reduced-motion:reduce){.bv-hoja,.hero-mmo.resalta{animation:none;}}
 
 /* ── Pantallas viejas (Exchange, Stars, Canje, Donar, Staking) ──
    Ya no se abren desde ningún botón, pero si alguien llega a ellas no deben
@@ -271,7 +335,7 @@ html{font-size:24px;}
 .vj-input{width:100%;max-width:330px;font-family:var(--sans);font-size:15px;padding:10px 12px;border-radius:8px;border:1px solid var(--borde);background:var(--panel);color:var(--txt);margin-bottom:8px;outline:none;}
 .vj-input:focus{border-color:var(--pri-txt);}
 .vj-seg{display:flex;gap:6px;margin-bottom:12px;width:100%;max-width:320px;}
-.vj-seg button{flex:1;font-family:var(--sans);font-size:13px;font-weight:600;padding:8px;min-height:40px;border-radius:8px;cursor:pointer;border:1px solid var(--borde);background:transparent;color:var(--txt2);}
+.vj-seg button{flex:1;font-family:var(--sans);font-size:13px;font-weight:600;padding:8px;min-height:44px;border-radius:8px;cursor:pointer;border:1px solid var(--borde);background:transparent;color:var(--txt2);}
 .vj-caja{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--borde);border-radius:8px;padding:8px 10px;font-family:var(--sans);}
 .vj-caja input,.vj-caja .vj-out{flex:1;width:100%;background:none;border:none;outline:none;color:var(--txt);font-family:var(--sans);font-size:16px;font-weight:600;}
 .vj-caja .vj-u{font-size:13px;color:var(--txt2);font-weight:600;}
@@ -323,24 +387,42 @@ html{font-size:24px;}
 
       <!-- JUGAR -->
       <section class="tab on" id="tab-jugar">
-        <div class="hub-logo">DUENDE QUEST</div>
+        <h1 class="hub-logo">DUENDE QUEST</h1>
         <div class="hub-lema">Gratis · Sin descargas · Juega en Telegram</div>
-        <!-- Acción principal: el MMO. El hash lleva tgWebAppData: pasarlo asegura
-             que /mmo/ reciba la identidad de Telegram aunque el SDK no la recupere
-             de sessionStorage. -->
-        <button class="ob big" onclick="location.href='/mmo/'+(location.hash||'')" style="width:100%">▶ Jugar online gratis</button>
-        <div class="hub-mini" style="text-align:center;margin-top:-4px">Mundo en línea con otros jugadores (MMO)</div>
+        <!-- 1) Acción principal: el MMO. El hash lleva tgWebAppData: pasarlo
+             asegura que /mmo/ reciba la identidad de Telegram aunque el SDK no
+             la recupere de sessionStorage (ver irMMO). -->
+        <div class="hero-mmo" id="hero-mmo">
+          <div class="hero-cab"><span class="hero-t">Mundo online</span><span class="hero-tag">MMO</span></div>
+          <div class="hero-d">Explora y lucha junto a otros jugadores en tiempo real, sin salir de Telegram.</div>
+          <button class="ob big" id="btn-mmo" type="button" onclick="irMMO()" style="width:100%">▶ Jugar online gratis</button>
+        </div>
 
-        <div class="seccion-t">Arcade</div>
+        <!-- Premio fisico: chicha morada (se juntan puntos en el MMO, ver functions/mmo/chicha.js) -->
+        <div class="card" id="hub-chicha" style="display:flex;gap:12px;align-items:center;text-align:left">
+          <div style="font-size:34px;line-height:1" aria-hidden="true">🥤</div>
+          <div style="flex:1;min-width:0">
+            <div class="card-t" style="margin-bottom:4px">Gana chicha morada jugando</div>
+            <div class="hub-sub">Cada monstruo que cazas en el mundo online suma puntos. Con 10.000 puntos te enviamos <b>un litro de chicha morada</b> a tu casa. No es un sorteo: lo ganas jugando.</div>
+            <button class="ob sec" type="button" onclick="irMMO()" style="width:100%;margin-top:8px">Empezar a juntar puntos</button>
+          </div>
+        </div>
+
+        <!-- 2) Arcade -->
+        <h2 class="seccion-t">Arcade</h2>
         <div class="card" id="hub-campana"></div>
         <button class="ob big sec" id="btn-jugar" onclick="jugar()">Jugar arcade</button>
         <div class="fila2">
           <button class="ob sec" onclick="abrirMapa()">🗺 Mapa</button>
           <button class="ob sec" id="btn-sinfin" onclick="jugarSinFin()">∞ Sin fin</button>
         </div>
+        <!-- 3) Progreso del día -->
+        <h2 class="seccion-t">Tu progreso</h2>
         <div class="card" id="streak-banner"></div>
         <div class="card" id="daily-missions"></div>
         <div class="card" id="achievements-panel"></div>
+        <!-- 4) Comunidad -->
+        <h2 class="seccion-t">Comunidad</h2>
         <div class="card" style="text-align:center">
           <div class="card-t">Canales oficiales</div>
           <div class="hub-sub" style="margin-bottom:10px">Creador del juego: @ElDuendeOficial. Desconfía de cualquier otra cuenta que diga ser nosotros.</div>
@@ -431,12 +513,12 @@ html{font-size:24px;}
       </footer>
     </div>
 
-    <nav id="tabbar">
-      <button data-tab="jugar" class="on" onclick="irTab('jugar')"><span>🎮</span>JUGAR</button>
-      <button data-tab="perfil" onclick="irTab('perfil')"><span>👤</span>PERFIL</button>
-      <button data-tab="skins" onclick="irTab('skins')"><span>🎨</span>SKINS</button>
-      <button data-tab="ranking" onclick="irTab('ranking')"><span>🏆</span>RANKING</button>
-      <button data-tab="wallet" onclick="irTab('wallet')"><span>💎</span>WALLET</button>
+    <nav id="tabbar" aria-label="Secciones">
+      <button type="button" data-tab="jugar" class="on" aria-current="page" onclick="irTab('jugar')"><span aria-hidden="true">🎮</span>JUGAR</button>
+      <button type="button" data-tab="perfil" onclick="irTab('perfil')"><span aria-hidden="true">👤</span>PERFIL</button>
+      <button type="button" data-tab="skins" onclick="irTab('skins')"><span aria-hidden="true">🎨</span>SKINS</button>
+      <button type="button" data-tab="ranking" onclick="irTab('ranking')"><span aria-hidden="true">🏆</span>RANKING</button>
+      <button type="button" data-tab="wallet" onclick="irTab('wallet')"><span aria-hidden="true">💎</span>WALLET</button>
     </nav>
   </div>
 
@@ -628,14 +710,43 @@ html{font-size:24px;}
   </div>
 
   <div id="mbtns">
-    <button class="mb" ontouchstart="moveLeft(true)" ontouchend="moveLeft(false)" ontouchcancel="moveLeft(false)" onmousedown="moveLeft(true)" onmouseup="moveLeft(false)" onmouseleave="moveLeft(false)">◀</button>
+    <button class="mb" aria-label="Izquierda" ontouchstart="moveLeft(true)" ontouchend="moveLeft(false)" ontouchcancel="moveLeft(false)" onmousedown="moveLeft(true)" onmouseup="moveLeft(false)" onmouseleave="moveLeft(false)">◀</button>
     <button class="mb j" ontouchstart="jump()" onmousedown="jump()">▲ SALTAR</button>
-    <button class="mb att" ontouchstart="attack()" onmousedown="attack()">⚔</button>
-    <button class="mb" ontouchstart="dash()" onmousedown="dash()">💨</button>
-    <button class="mb" ontouchstart="moveRight(true)" ontouchend="moveRight(false)" ontouchcancel="moveRight(false)" onmousedown="moveRight(true)" onmouseup="moveRight(false)" onmouseleave="moveRight(false)">▶</button>
+    <button class="mb att" aria-label="Atacar" ontouchstart="attack()" onmousedown="attack()">⚔</button>
+    <button class="mb" aria-label="Esquivar" ontouchstart="dash()" onmousedown="dash()">💨</button>
+    <button class="mb" aria-label="Derecha" ontouchstart="moveRight(true)" ontouchend="moveRight(false)" ontouchcancel="moveRight(false)" onmousedown="moveRight(true)" onmouseup="moveRight(false)" onmouseleave="moveRight(false)">▶</button>
   </div>
 </div>
 
+<!-- ══ BIENVENIDA (solo la primera vez) ══
+     Tarjeta corta y saltable: qué se puede hacer aquí y cuál es el botón
+     principal. Se recuerda en localStorage ('dq_tg_bienvenida'). -->
+<div id="bienvenida" role="dialog" aria-modal="true" aria-labelledby="bv-titulo" hidden>
+  <div class="bv-hoja">
+    <h2 id="bv-titulo" class="bv-titulo">Bienvenido a Duende Quest</h2>
+    <p class="bv-sub">Un juego de duendes gratis dentro de Telegram. Esto es lo que puedes hacer:</p>
+    <ol class="bv-lista">
+      <li><span class="bv-ic" aria-hidden="true">🌍</span><div><b>Jugar online</b><span>Un mundo MMO con otros jugadores en tiempo real.</span></div></li>
+      <li><span class="bv-ic" aria-hidden="true">🕹</span><div><b>Arcade</b><span>Campaña con jefes y modo Sin fin con ranking.</span></div></li>
+      <li><span class="bv-ic" aria-hidden="true">🎁</span><div><b>Recompensas diarias</b><span>Misiones, racha y logros te dan monedas del juego (DQ).</span></div></li>
+    </ol>
+    <button class="ob big" id="bv-jugar" type="button">▶ Jugar online gratis</button>
+    <button class="ob sec" id="bv-saltar" type="button">Ver el menú primero</button>
+    <p class="bv-nota">Sin descargas · Todo lo de pago es opcional</p>
+  </div>
+</div>
+
+<!-- Scripts que no hacen falta para el primer pintado: antes estaban en el
+     <head> y bloqueaban la pantalla hasta descargarse (Supabase y TON Connect
+     pesan cientos de KB). Aquí se ejecutan en el MISMO orden y antes que el
+     código de la página, así que nada de lo que los usa cambia. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="../js/dom-utils.js"></script>
+<script src="../js/missions.js"></script>
+<script src="../js/streak.js"></script>
+<script src="../js/achievements.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tonconnect/ui@2/dist/tonconnect-ui.min.js"></script>
+<script src="../js/config.js"></script>
 <script>
 'use strict';
 
@@ -643,11 +754,18 @@ html{font-size:24px;}
 // TELEGRAM WEBAPP INIT
 // ═══════════════════════════════════════
 const tg = window.Telegram?.WebApp;
-// disableVerticalSwipes: sin esto, un gesto hacia arriba durante la partida
-// MINIMIZA la Mini App (el pad de movimiento vive justo en esa zona).
-if(tg){tg.ready();tg.expand();try{tg.enableClosingConfirmation();}catch(e){}try{tg.disableVerticalSwipes();}catch(e){}}
+// ready(), expand(), colores y disableVerticalSwipes ya se llaman en el <head>
+// (antes de descargar Supabase/TON Connect). Aquí solo se repite ready() por si
+// el <head> no llegó a ver el SDK.
+if(tg){try{tg.ready();}catch(e){}}
+// Cada método nuevo de Telegram se usa solo si la versión del cliente lo
+// tiene: en clientes viejos llamarlo sin más deja avisos en la consola.
+function tgVer(v){try{return !!(tg&&tg.isVersionAtLeast&&tg.isVersionAtLeast(v));}catch(e){return false;}}
+// "¿Seguro que quieres cerrar?" solo DURANTE la partida: en el menú molestaba
+// cada vez que el jugador quería salir (ver onStartGame / onToMenu).
+function tgConfirmarCierre(si){ if(!tgVer('6.2'))return; try{ si?tg.enableClosingConfirmation():tg.disableClosingConfirmation(); }catch(e){} }
 const TG_USER = tg?.initDataUnsafe?.user || {};
-function tgHaptic(type){try{tg?.HapticFeedback?.impactOccurred(type||'medium');}catch(e){}}
+function tgHaptic(type){ if(!tgVer('6.1'))return; try{tg.HapticFeedback.impactOccurred(type||'medium');}catch(e){}}
 
 // Set TG header + estado de sesión visible
 function updateLoginUI(){
@@ -656,17 +774,17 @@ function updateLoginUI(){
   if(!TG_USER.id){
     // Abierto fuera de Telegram
     nameEl.textContent='Invitado';
-    nameEl.style.color='rgba(255,255,255,.5)';
+    nameEl.style.color='var(--txt2)';
     return;
   }
   const display=TG_USER.first_name||TG_USER.username||'Duende';
   // ✅ = perfil sincronizado en la nube; sino sigue intentando
   nameEl.textContent=display+(tgProfile&&tgProfile.id?' ✅':'');
-  nameEl.style.color='#00ff88';
+  nameEl.style.color='var(--txt)';
   avEl.textContent=TG_USER.first_name?TG_USER.first_name[0].toUpperCase():'🧝';
   if(TG_USER.photo_url){ avEl.style.background='none'; avEl.innerHTML='<img src="'+TG_USER.photo_url+'" style="width:100%;height:100%;border-radius:50%;object-fit:cover">'; }
 }
-updateLoginUI();
+// (la primera llamada a updateLoginUI va tras declarar tgProfile, más abajo)
 
 // Perfil rápido al tocar el header (interactivo)
 function showProfile(){
@@ -687,6 +805,11 @@ function showProfile(){
 // ═══════════════════════════════════════
 let _sb=null;
 let tgProfile=null;
+// BUG viejo: updateLoginUI() se llamaba ANTES de esta línea. Dentro de
+// Telegram (hay usuario) leía tgProfile en su zona muerta, lanzaba
+// ReferenceError y abortaba TODO este script: sin login, TON Connect, skins
+// ni Stars. Ahora se llama aquí, ya declarada.
+updateLoginUI();
 function initSB(){
   if(!window.SUPABASE_URL||!window.supabase) return false;
   try{_sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);window.supabaseClient=_sb;return true;}catch(e){return false;}
@@ -1041,7 +1164,7 @@ function renderSkinShop(){
       :`<button class="compra" onclick="buySkinStars('${s.id}')">⭐ Stars</button>
         <button onclick="buySkinTon('${s.id}')">💎 TON</button>`;
     return `<div class="skin" style="border-color:${equipped?'rgba(34,197,94,.45)':'var(--borde)'}">
-      <img src="${s.preview}" alt="Skin ${s.name}" onerror="this.style.display='none'">
+      <img src="${s.preview}" alt="Skin ${s.name}" width="72" height="72" loading="lazy" decoding="async" onerror="this.style.display='none'">
       <div style="flex:1;min-width:0">
         <div class="n"><span class="rar" style="background:${s.color}"></span>${s.name}</div>
         <div class="d">${s.desc}</div>
@@ -1490,6 +1613,8 @@ const _alPulsarAtras=()=>{
   if(state==='playing')pauseGame();
   else if(state==='paused')resumeGame();
   else if(state==='eligiendo'||state==='descanso'){ try{tgHaptic('light');}catch(e){} showPUNotif('Termina de elegir para continuar'); }
+  // En el menú: cierra la bienvenida, sale del mapa o vuelve a la pestaña JUGAR
+  else if(state==='menu'&&typeof atrasEnMenu==='function'&&atrasEnMenu()){}
   else toMenu();
 };
 const _alPulsarPrincipal=()=>{showOverlay('ov-rank');loadRanking();};
@@ -1509,9 +1634,11 @@ window.DQE={
   getSkinBuffs:()=>{try{return activeSkinBuffs||null;}catch(e){return null;}},
   getPlayerImgKey:()=>{try{return ({comun:'duende_hero',tactico:'skin_tactico',necro:'skin_necromancer',king:'skin_king',berserker:'skin_berserker',legendaria:'skin_legendariafull'})[equippedSkin]||'duende_hero';}catch(e){return 'duende_hero';}},
   fitCanvas:cv2=>{cv2.style.width='100%';cv2.style.height='auto';},
-  onStartGame:()=>{enviarScorePendiente();if(tgProfile)pedirTicket();if(tg){try{tg.MainButton.hide();tg.BackButton.show();registrarAtras();}catch(e){}}},
+  onStartGame:()=>{enviarScorePendiente();if(tgProfile)pedirTicket();tgConfirmarCierre(true);if(tg){try{tg.MainButton.hide();tg.BackButton.show();registrarAtras();}catch(e){}}},
   onVictoria:()=>{try{syncProgressToCloud();}catch(e){}},
-  onToMenu:()=>{enviarScorePendiente();pintarCabecera();pintarResumenCampana();if(tg){try{tg.MainButton.hide();tg.BackButton.hide();}catch(e){}}},
+  // El mapa también pasa por aquí (y se abre justo después): por eso el botón
+  // Atrás se recalcula en el siguiente tick, cuando ya se sabe qué se ve.
+  onToMenu:()=>{enviarScorePendiente();pintarCabecera();pintarResumenCampana();tgConfirmarCierre(false);if(tg){try{tg.MainButton.hide();tg.BackButton.hide();}catch(e){}}setTimeout(()=>{try{actualizarAtras();}catch(e){}},0);},
   onEndGame:stats=>{
     if(stats.modo==='sinfin'){
       const entry={score:stats.score,wave:stats.wave,coins:stats.coins,date:new Date().toLocaleDateString()};
@@ -1544,8 +1671,9 @@ window.DQE={
 // conectar wallet) vive en una de ellas.
 function irTab(nombre){
   document.querySelectorAll('#hub .tab').forEach(t=>t.classList.toggle('on', t.id==='tab-'+nombre));
-  document.querySelectorAll('#tabbar button').forEach(b=>b.classList.toggle('on', b.dataset.tab===nombre));
+  document.querySelectorAll('#tabbar button').forEach(b=>{ const on=b.dataset.tab===nombre; b.classList.toggle('on',on); if(on)b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
   document.getElementById('hub').scrollTop=0;
+  actualizarAtras();
   if(nombre==='perfil') pintarPerfil();
   if(nombre==='skins') renderSkinShop();
   if(nombre==='ranking') pintarRankingHub();
@@ -1597,9 +1725,9 @@ function pintarPerfil(){
   ];
   document.getElementById('perfil-stats').innerHTML=stats.map(s=>'<div class="stat"><b>'+s[0]+' '+s[1]+'</b><span>'+s[2]+'</span></div>').join('');
   const skin=SKINS.find(s=>s.id===equippedSkin);
-  document.getElementById('perfil-skin').innerHTML=skin?('<div class="hub-mini">SKIN EQUIPADA</div><div style="display:flex;align-items:center;gap:8px;margin-top:6px"><img src="'+skin.preview+'" alt="" style="width:40px;height:40px;image-rendering:pixelated;border-radius:6px;background:#0a0a1a"><div style="font-size:15px;font-weight:600;color:var(--txt);display:flex;align-items:center;gap:6px"><span class="rar" style="background:'+skin.color+'"></span>'+skin.name+'</div></div>'):'';
+  document.getElementById('perfil-skin').innerHTML=skin?('<div class="hub-mini">SKIN EQUIPADA</div><div style="display:flex;align-items:center;gap:8px;margin-top:6px"><img src="'+skin.preview+'" alt="" width="40" height="40" decoding="async" style="width:40px;height:40px;image-rendering:pixelated;border-radius:6px;background:#0a0a1a"><div style="font-size:15px;font-weight:600;color:var(--txt);display:flex;align-items:center;gap:6px"><span class="rar" style="background:'+skin.color+'"></span>'+skin.name+'</div></div>'):'';
   const w=window._tonAddr||tonWalletAddr;
-  document.getElementById('perfil-wallet').innerHTML='<div class="hub-mini">WALLET TON</div><div style="margin-top:4px">'+(w?('<span class="addr">'+w.slice(0,8)+'...'+w.slice(-6)+'</span>'):'<span class="estado" style="color:rgba(255,255,255,.4)">No conectada — ve a WALLET</span>')+'</div>';
+  document.getElementById('perfil-wallet').innerHTML='<div class="hub-mini">WALLET TON</div><div style="margin-top:4px">'+(w?('<span class="addr">'+w.slice(0,8)+'...'+w.slice(-6)+'</span>'):'<span class="estado" style="color:var(--txt2)">No conectada — ve a WALLET</span>')+'</div>';
   document.getElementById('perfil-sync').textContent=tgProfile&&tgProfile.id?'✅ Progreso sincronizado':'⏳ Sincronizando…';
 }
 
@@ -1646,7 +1774,66 @@ function pintarResumenCampana(){
          :'<div style="font-size:13px;color:var(--oro);margin-top:4px">🏆 ¡Campaña completa! Prueba el SIN FIN</div>');
 }
 
+// ══ NAVEGACIÓN NATIVA: botón Atrás de Telegram dentro del menú ══
+// En la pestaña JUGAR no hay a dónde volver y Telegram muestra "Cerrar"; en
+// las demás pestañas, en el mapa o en la bienvenida aparece "Atrás".
+// Se usa el MISMO callback que la partida (_alPulsarAtras): Telegram apila
+// los callbacks y dos a la vez se pisarían (ver registrarAtras).
+function _mapaAbierto(){ const m=document.getElementById('ov-niveles'); return !!(m&&m.style.display&&m.style.display!=='none'); }
+function _tabActual(){ const t=document.querySelector('#hub .tab.on'); return t?t.id.replace('tab-',''):'jugar'; }
+function _hubVisible(){ const o=document.getElementById('ov-start'); return !!(o&&o.classList.contains('show')); }
+function _bienvenidaAbierta(){ const b=document.getElementById('bienvenida'); return !!(b&&!b.hidden); }
+function atrasEnMenu(){
+  if(_bienvenidaAbierta()){ cerrarBienvenida(false); return true; }
+  if(_mapaAbierto()){ toMenu(); return true; }
+  if(_hubVisible()&&_tabActual()!=='jugar'){ irTab('jugar'); return true; }
+  return false;
+}
+function actualizarAtras(){
+  if(!tg||!tg.BackButton||!tgVer('6.1'))return;
+  if(typeof state!=='undefined'&&state!=='menu')return;   // en partida lo lleva el motor
+  try{
+    const hayAtras=_bienvenidaAbierta()||_mapaAbierto()||(_hubVisible()&&_tabActual()!=='jugar');
+    if(hayAtras){ registrarAtras(); tg.BackButton.show(); } else tg.BackButton.hide();
+  }catch(e){}
+}
+
+// Ir al MMO conservando el hash (lleva tgWebAppData: identidad de Telegram).
+function irMMO(){ location.href='/mmo/'+(location.hash||''); }
+
+// Vibración ligera al pulsar un botón principal; "selección" en la barra de
+// pestañas. Solo en clientes de Telegram que la soportan.
+document.addEventListener('click',e=>{
+  const b=e.target&&e.target.closest?e.target.closest('button'):null;
+  if(!b||b.disabled||!tg)return;
+  if(b.closest('#tabbar')){ if(tgVer('6.1')){ try{tg.HapticFeedback.selectionChanged();}catch(_){} } return; }
+  if(b.classList.contains('ob')&&!b.matches('.sec,.azul,.purple,.gris,.yellow,.red')) tgHaptic('light');
+},true);
+
+// ── Bienvenida (solo la primera vez en este dispositivo) ──
+function abrirBienvenida(){
+  const b=document.getElementById('bienvenida'); if(!b)return;
+  b.hidden=false; actualizarAtras();
+  setTimeout(()=>{ try{document.getElementById('bv-jugar').focus({preventScroll:true});}catch(e){} },60);
+}
+function cerrarBienvenida(alMMO){
+  const b=document.getElementById('bienvenida'); if(!b||b.hidden)return;
+  b.hidden=true;
+  try{ localStorage.setItem('dq_tg_bienvenida','1'); }catch(e){}
+  if(alMMO){ irMMO(); return; }
+  actualizarAtras();
+  // Señala UNA vez dónde está el botón principal
+  const h=document.getElementById('hero-mmo');
+  if(h){ h.classList.remove('resalta'); void h.offsetWidth; h.classList.add('resalta'); }
+  try{ document.getElementById('btn-mmo').focus({preventScroll:true}); }catch(e){}
+}
+document.getElementById('bv-jugar').addEventListener('click',()=>cerrarBienvenida(true));
+document.getElementById('bv-saltar').addEventListener('click',()=>cerrarBienvenida(false));
+document.getElementById('bienvenida').addEventListener('click',e=>{ if(e.target.id==='bienvenida')cerrarBienvenida(false); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&_bienvenidaAbierta())cerrarBienvenida(false); });
+
 pintarCabecera();pintarResumenCampana();
+if(window._dqPrimeraVez&&typeof state!=='undefined'&&state==='menu') setTimeout(abrirBienvenida,300);
 </script>
 <script>
 'use strict';
@@ -1691,7 +1878,7 @@ function showOverlay(id){hideAll();document.getElementById(id).classList.add('sh
 
 async function loadRanking(){
   const list=document.getElementById('rank-list');
-  list.innerHTML='<div style="font-size:.32rem;color:rgba(255,255,255,.3);text-align:center;padding:.8rem">⌛ Cargando...</div>';
+  list.innerHTML='<div style="font-family:var(--sans);font-size:13px;color:var(--txt2);text-align:center;padding:16px">⌛ Cargando...</div>';
   if(_sb){
     try{
       const{data:raw}=await _sb.from('game_scores').select('username,score,wave,created_at').order('score',{ascending:false}).limit(50);
@@ -1705,7 +1892,7 @@ async function loadRanking(){
     }catch(e){}
   }
   // Fallback local
-  if(ranking.length===0){list.innerHTML='<div style="font-size:.32rem;color:rgba(255,255,255,.3);text-align:center;padding:.8rem">SIN PARTIDAS AÚN</div>';}
+  if(ranking.length===0){list.innerHTML='<div style="font-family:var(--sans);font-size:13px;color:var(--txt2);text-align:center;padding:16px">Sin partidas aún</div>';}
   else{list.innerHTML=ranking.map((r,i)=>{const medals=['🥇','🥈','🥉'];return '<div class="rank-row"><span class="rank-pos">'+(medals[i]||'#'+(i+1))+'</span><span class="rank-name">W'+r.wave+'</span><span class="rank-score">'+r.score.toLocaleString()+'</span></div>';}).join('');}
 }
 
