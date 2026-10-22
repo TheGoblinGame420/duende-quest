@@ -630,7 +630,9 @@ export const PODERES = [
 // Una cadena que recorre el mundo en orden: cada zona pide cazar a sus
 // criaturas y cierra con su jefe. Se aceptan y entregan al Guardia Tito del
 // pueblo. La recompensa ronda lo que da la propia caza, asi que se nota
-// pero no reemplaza a jugar.
+// pero no reemplaza a jugar. Entre Nv 10 y 30 (misiones 9-23) la XP de las
+// de caza va ×1,8 desde el 22-oct-2026: ahi solo daban ~20% de un nivel y
+// es donde mas se estancaban los jugadores (auditoria de retencion).
 export const MISIONES = [
   { nombre: 'Limpieza nocturna',        tipo: 'goblin_normal',     n: 8,  xp: 60,    oro: 80 },
   { nombre: 'Huesos inquietos',         tipo: 'esqueleto',         n: 10, xp: 130,   oro: 150 },
@@ -640,21 +642,21 @@ export const MISIONES = [
   { nombre: 'La guardia roja',          tipo: 'goblin_guard',      n: 10, xp: 330,   oro: 380 },
   { nombre: 'Plumas de hueso',          tipo: 'pajaro',            n: 8,  xp: 340,   oro: 400, pw: { fuego: 1 } },
   { nombre: 'La corona del caballero',  tipo: 'jefe_caballero',    n: 1,  xp: 1200,  oro: 1400, pw: { rayo: 2 } },
-  { nombre: 'Esporas gigantes',         tipo: 'hongo',             n: 10, xp: 500,   oro: 560 },
-  { nombre: 'Coro de la charca',        tipo: 'rana',              n: 10, xp: 550,   oro: 600 },
-  { nombre: 'Tambores de guerra',       tipo: 'goblin_battlelord', n: 8,  xp: 560,   oro: 650, pw: { pocion: 5 } },
+  { nombre: 'Esporas gigantes',         tipo: 'hongo',             n: 10, xp: 900,   oro: 560 },
+  { nombre: 'Coro de la charca',        tipo: 'rana',              n: 10, xp: 990,   oro: 600 },
+  { nombre: 'Tambores de guerra',       tipo: 'goblin_battlelord', n: 8,  xp: 1010,   oro: 650, pw: { pocion: 5 } },
   { nombre: 'El Señor de la Guerra',    tipo: 'jefe_senor',        n: 1,  xp: 2500,  oro: 2800, pw: { escudo: 2, rayo: 1 } },
-  { nombre: 'Magia prohibida',          tipo: 'goblin_mage',       n: 10, xp: 700,   oro: 800 },
-  { nombre: 'Huesos arcanos',           tipo: 'esqueleto_arcano',  n: 10, xp: 760,   oro: 860 },
-  { nombre: 'Fuego que camina',         tipo: 'ghoul_ardiente',    n: 8,  xp: 700,   oro: 900, pw: { fuego: 2 } },
+  { nombre: 'Magia prohibida',          tipo: 'goblin_mage',       n: 10, xp: 1260,   oro: 800 },
+  { nombre: 'Huesos arcanos',           tipo: 'esqueleto_arcano',  n: 10, xp: 1370,   oro: 860 },
+  { nombre: 'Fuego que camina',         tipo: 'ghoul_ardiente',    n: 8,  xp: 1260,   oro: 900, pw: { fuego: 2 } },
   { nombre: 'El Ghoul Infernal',        tipo: 'jefe_ghoul',        n: 1,  xp: 4000,  oro: 4500, pw: { rayo: 2, escudo: 2 } },
-  { nombre: 'Filo del desierto',        tipo: 'goblin_samurai',    n: 10, xp: 900,   oro: 1100 },
-  { nombre: 'Escamas al sol',           tipo: 'lagarto',           n: 10, xp: 950,   oro: 1150 },
-  { nombre: 'Conejos salvajes',         tipo: 'conejo',            n: 10, xp: 1000,  oro: 1200, pw: { pocion: 10 } },
+  { nombre: 'Filo del desierto',        tipo: 'goblin_samurai',    n: 10, xp: 1620,   oro: 1100 },
+  { nombre: 'Escamas al sol',           tipo: 'lagarto',           n: 10, xp: 1710,   oro: 1150 },
+  { nombre: 'Conejos salvajes',         tipo: 'conejo',            n: 10, xp: 1800,  oro: 1200, pw: { pocion: 10 } },
   { nombre: 'La caída del Ángel',       tipo: 'jefe_angel',        n: 1,  xp: 8000,  oro: 10000, pw: { rayo: 3, escudo: 3, fuego: 3 } },
-  { nombre: 'Las puertas del castillo', tipo: 'guardia_real',      n: 10, xp: 1300,  oro: 1500 },
-  { nombre: 'Armadura negra',           tipo: 'caballero_negro',   n: 10, xp: 1400,  oro: 1600 },
-  { nombre: 'Huesos de la corona',      tipo: 'esqueleto_real',    n: 10, xp: 1500,  oro: 1700, pw: { pocion: 10 } },
+  { nombre: 'Las puertas del castillo', tipo: 'guardia_real',      n: 10, xp: 2340,  oro: 1500 },
+  { nombre: 'Armadura negra',           tipo: 'caballero_negro',   n: 10, xp: 2520,  oro: 1600 },
+  { nombre: 'Huesos de la corona',      tipo: 'esqueleto_real',    n: 10, xp: 2700,  oro: 1700, pw: { pocion: 10 } },
   { nombre: 'El Rey Goblin',            tipo: 'jefe_rey',          n: 1,  xp: 15000, oro: 20000, pw: { rayo: 5, escudo: 5, fuego: 5 } },
   { nombre: 'Alas en el ocaso',         tipo: 'murcielago',        n: 12, xp: 2600,  oro: 2200 },
   { nombre: 'Telarañas de ceniza',      tipo: 'arana',             n: 12, xp: 2800,  oro: 2300 },
