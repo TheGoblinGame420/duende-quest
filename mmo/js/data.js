@@ -439,6 +439,11 @@ export const TINTES = {
 // enseñan una vez (lo nuevo para los que vuelven). La mas reciente arriba;
 // subir 'n' al añadir una.
 export const NOVEDADES = [
+  { n: 6, fecha: '22 de octubre (tarde)', items: [
+    '🎣 Pesca: hay un pesquero en el pueblo y en cada zona. Lanza el sedal y TIRA cuando pique.',
+    '🍲 La Artesana cocina Ceviche del Duende (+10% oro) y Sudado Dorado (+5% daño y defensa) con lo que pesques.',
+    '🏅 Logros Pescador y Maestro Pescador, y una misión diaria nueva.',
+  ] },
   { n: 5, fecha: '22 de octubre (mediodía)', items: [
     '🎟️ Pase de temporada mensual y gratis: misiones, mazmorras y jefe mundial dan puntos; 20 niveles de premios y una mascota exclusiva (registro de misiones, L).',
     '👹 Jefes mundiales que rotan: el Gran Duende, el Dragón de la Tormenta y el Coloso de Obsidiana.',
@@ -613,6 +618,8 @@ export const AURAS = {
   elixirF:     { nombre: 'Elixir de Fuerza (+10% daño)', icono: 'P_Red03' },
   elixirP:     { nombre: 'Elixir de Piel de Piedra (-10% daño recibido)', icono: 'P_Blue05' },
   elixirX:     { nombre: 'Elixir de Sabiduría (+10% experiencia de caza)', icono: 'I_Book' },
+  ceviche:     { nombre: 'Ceviche del Duende (+10% oro de caza)', icono: 'I_C_Fish' },
+  sudado:      { nombre: 'Sudado Dorado (+5% daño, -5% daño recibido)', icono: 'I_C_Pie' },
 };
 
 // ── EQUIPO ──
@@ -737,6 +744,8 @@ export const LOGROS = [
   { id: 'skins',     titulo: 'Coleccionista',      desc: 'Consigue las 6 skins',           oro: 10000, cond: c => (c.skins || []).length >= 6 },
   { id: 'misiones',  titulo: 'Leyenda del Pueblo', desc: 'Completa todas las misiones',    oro: 20000, cond: c => ((c.mis || {}).i || 0) >= MISIONES.length },
   { id: 'mundial1',  titulo: 'Cazador de Titanes', desc: 'Vence al jefe mundial',          oro: 2000,  cond: c => (c.mundiales || 0) >= 1 },
+  { id: 'pesca50',   titulo: 'Pescador',           desc: 'Pesca 50 peces',                 oro: 1500,  cond: c => (c.peces || 0) >= 50 },
+  { id: 'pesca500',  titulo: 'Maestro Pescador',   desc: 'Pesca 500 peces',                oro: 8000,  cond: c => (c.peces || 0) >= 500 },
   { id: 'mundial10', titulo: 'Titán',              desc: 'Vence 10 veces al jefe mundial', oro: 15000, cond: c => (c.mundiales || 0) >= 10 },
   { id: 'legend',    titulo: 'Bendecido',          desc: 'Consigue un objeto legendario',  oro: 3000,  cond: c => !!c.tuvoLegendario },
   { id: 'racha7',    titulo: 'Fiel al Duende',     desc: 'Entra 7 días seguidos',          oro: 3000,  cond: c => ((c.login || {}).racha || 0) >= 7 },
@@ -912,6 +921,7 @@ export const TAREAS_DIA = [
   { id: 'mundial', tipo: 'mundial', n: 1, txt: 'Vence al jefe mundial del Coliseo', nv: 5 },
   { id: 'hab', tipo: 'hab', n: 50, txt: 'Usa 50 habilidades en combate' },
   { id: 'recoger', tipo: 'recoger', n: 6, txt: 'Recoge 6 plantas o vetas de mineral' },
+  { id: 'pescar', tipo: 'pescar', n: 5, txt: 'Pesca 5 peces (pesquero 🎣 del pueblo o de una zona)' },
 ];
 export const TAREAS_SEMANA = [
   { id: 'caza300', tipo: 'caza', n: 300, txt: 'Caza 300 monstruos de tu nivel' },
@@ -945,6 +955,9 @@ export const MATERIALES = {
   flor:    { nombre: 'Flor de Luna',      icono: 'S_Magic02' },
   mithril: { nombre: 'Mithril',           icono: 'E_Metal07' },
   esencia: { nombre: 'Esencia Abisal',    icono: 'S_Shadow06' },
+  // De la pesca (PESCA): el pescado en cualquier pesquero, el dorado a veces.
+  pescado:    { nombre: 'Pescado',    icono: 'I_C_RawFish' },
+  pez_dorado: { nombre: 'Pez Dorado', icono: 'I_FishTail' },
 };
 // Material raro de las zonas altas: [nivel minimo de la zona, probabilidad]
 // de uno extra por recogida (se tiran los dos).
@@ -973,7 +986,24 @@ export const RECETAS = [
   { id: 'elixirP', nombre: 'Elixir de Piel de Piedra', icono: 'P_Blue05', pide: { mineral: 6, cristal: 1 }, da: { elixir: 'elixirP' }, desc: 'Recibes un 10% menos de daño durante 30 min' },
   { id: 'destilar', nombre: 'Destilar Flor de Luna', icono: 'S_Magic02', pide: { hierba: 10, cristal: 1 }, da: { mat: { flor: 1 } }, desc: '10 hierbas y un cristal se destilan en 1 Flor de Luna' },
   { id: 'elixirX', nombre: 'Elixir de Sabiduría', icono: 'I_Book', pide: { hierba: 4, mineral: 2, cristal: 1 }, da: { elixir: 'elixirX' }, desc: '+10% de experiencia por caza durante 30 min (aguanta la muerte)' },
+  // Con lo que se pesca (PESCA).
+  { id: 'ceviche', nombre: 'Ceviche del Duende', icono: 'I_C_Fish', pide: { pescado: 5, hierba: 2 }, da: { elixir: 'ceviche' }, desc: '+10% de oro por caza durante 30 min (aguanta la muerte)' },
+  { id: 'sudado', nombre: 'Sudado Dorado', icono: 'I_C_Pie', pide: { pescado: 3, pez_dorado: 1 }, da: { elixir: 'sudado' }, desc: '+5% de daño y -5% de daño recibido durante 30 min' },
 ];
+
+// ── PESCA ──
+// Un pesquero en el pueblo y uno en cada zona abierta. Lanzas el sedal y, a
+// los pocos segundos (al azar), pica: hay que TIRAR a tiempo (2 s). Tirar
+// antes de que pique lo asusta; moverse o recibir un golpe corta el sedal.
+// Da Pescado (y a veces Pez Dorado o un cofre hundido con un poco de oro)
+// para la Artesana. Hasta porDia capturas al dia. Nunca mTON.
+export const PESCA = { min: 3000, max: 9000, ventana: 2000, porDia: 80, dorado: 0.05, cofre: 0.02, radio: 80 };
+export function pesqueroDe(mapaId) {
+  if (mapaId === 'pueblo') return { x: 475, nv: 1 };   // entre el portal de las Colinas y el Guardia
+  const m = MAPAS[mapaId];
+  if (!m || !m.zona || m.instancia || m.coliseo || !m.nv) return null;
+  return { x: Math.round(m.ancho * 0.68), nv: m.nv[0] };
+}
 
 // ── RUNAS (artesania de nivel alto) ──
 // Mejoras PERMANENTES que graba la Artesana desde Nv 40: cada rango da +2%

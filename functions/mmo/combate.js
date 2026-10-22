@@ -203,7 +203,7 @@ export const Combate = {
     const crit = Math.random() < s.st.crit;
     const forja = multForja((s.c.forja || {})[s.c.arma]);
     const dmg = Math.max(1, Math.round(s.st.atk * mult * forja * rnd(0.9, 1.1) * (crit ? 1.8 : 1)
-      * (ahora < s.fuego ? 1.5 : 1) * (this.aura(s, 'grito') ? 1.1 : 1) * (this.elixir(s, 'elixirF') ? 1.1 : 1) * k));
+      * (ahora < s.fuego ? 1.5 : 1) * (this.aura(s, 'grito') ? 1.1 : 1) * (this.elixir(s, 'elixirF') ? 1.1 : 1) * (this.elixir(s, 'sudado') ? 1.05 : 1) * k));
     const real = this.danar(o, dmg, s, amen);
     return [o.id, real || dmg, crit ? 1 : basico ? 0 : 4];
   },
@@ -391,6 +391,7 @@ export const Combate = {
     const ca = s.cast;
     if (!ca || ahora < ca.fin) return;
     s.cast = null;
+    if (ca.h === 'pescar' || ca.h === 'pica') return this.finPesca(s, ca, ahora);
     if (ca.h === 'recolectar') {
       this.aClave(s.k, { t: 'castFin', p: s.id, ok: true });
       if (!s.muerto) this.terminarRecoleccion(s, ca);

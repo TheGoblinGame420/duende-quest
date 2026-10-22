@@ -299,6 +299,8 @@ export class MmoWorld {
       case 'herm': return this.verHerm(s);
       case 'cofre': return this.abrirCofre(s, m);
       case 'recolectar': return this.recolectar(s, m);
+      case 'pescar': return this.pescar(s);
+      case 'tirar': return this.tirar(s);
       case 'fabricar': return this.fabricar(s, m);
       case 'cancelar': return this.cancelarCast(s);
       case 'pw': return this.poder(s, m);
@@ -1389,6 +1391,8 @@ export class MmoWorld {
   // n = miembros del grupo que cobran esta presa (reparte el botin).
   dar(s, xp, oro, o, n, participo) {
     const c = s.c;
+    // Ceviche del Duende (pesca + artesania): +10% del oro de caza.
+    if (this.elixir(s, 'ceviche')) oro = Math.round(oro * 1.1);
     c.oro += oro;
     c.kills++;
     if (o && o.jefe) c.jefes++;
@@ -1540,6 +1544,7 @@ export class MmoWorld {
     if (this.aura(s, 'muro')) real = Math.round(real * (1 - REDUCE_MURO));
     if (this.aura(s, 'supresion')) real = Math.round(real * (1 - REDUCE_SUPRESION));
     if (this.elixir(s, 'elixirP')) real = Math.round(real * 0.9);
+    if (this.elixir(s, 'sudado')) real = Math.round(real * 0.95);
     // El escudo del sacerdote absorbe antes que la vida.
     let abs = 0;
     const esc = this.aura(s, 'escudoPoder');
@@ -1564,7 +1569,7 @@ export class MmoWorld {
     if (CLASES[s.c.clase] && CLASES[s.c.clase].recurso === 'ira' && real > 0) s.rec = Math.min(100, s.rec + 1 + real / s.st.maxHp * 150);
     if (this.aura(s, 'sigilo')) this.quitarAura(s, 'sigilo');
     if (s.montado) this.desmontar(s);
-    if (s.cast && (s.cast.h === 'hogar' || s.cast.h === 'montar' || s.cast.h === 'recolectar')) this.cancelarCast(s, 'Te golpearon: se canceló.');
+    if (s.cast && (s.cast.h === 'hogar' || s.cast.h === 'montar' || s.cast.h === 'recolectar' || s.cast.h === 'pescar' || s.cast.h === 'pica')) this.cancelarCast(s, s.cast.h === 'pescar' || s.cast.h === 'pica' ? 'Te golpearon: se cortó el sedal.' : 'Te golpearon: se canceló.');
     this.aClave(s.k, { t: 'ph', p: s.id, d: real, ab: abs || undefined, from: fuente ? fuente.id : 0 });
     // La vida ya va en cada foto del mundo: el "yo" entero (bolsa, equipo...)
     // tras cada golpe pesaba en la red y repintaba las ventanas del movil.

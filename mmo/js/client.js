@@ -11,12 +11,12 @@ import {
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
-  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
+  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=104';
+} from './data.js?v=106';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -468,10 +468,24 @@ function recibir(m) {
     case 'pa': { const o = otros.get(m.p); if (o) { o.sk = m.sk; o.ar = m.ar; o.mx = m.mx; o.ti = m.ti || ''; o.cl = m.cl || ''; o.rmx = m.rmx || 0; o.hn = m.hn || ''; o.mo = m.mo || ''; o.es = m.es || ''; o.tn = m.tn || ''; o.ma = m.ma || ''; } break; }
     case 'hb': habilidadRemota(m); break;
     case 'cast': {
-      const h = m.id === 'hogar' ? { nombre: 'Piedra de Hogar' } : m.id === 'montar' ? { nombre: 'Invocar montura' } : m.id === 'recolectar' ? { nombre: 'Recogiendo' } : habPorId(m.id);
+      const h = m.id === 'hogar' ? { nombre: 'Piedra de Hogar' } : m.id === 'montar' ? { nombre: 'Invocar montura' } : m.id === 'recolectar' ? { nombre: 'Recogiendo' } : m.id === 'pescar' ? { nombre: '🎣 Pescando' } : habPorId(m.id);
       const c = { id: m.id, nombre: h ? h.nombre : '', ini: performance.now(), fin: performance.now() + m.ms, tg: m.tg };
       if (m.p === miId) { castYo = c; castPend = 0; verLanzar(true); $('lanzar').classList.remove('mal'); tono(m.id === 'montar' ? 'montar' : 'lanzar'); }
       else castOtros.set(m.p, c);
+      break;
+    }
+    // Pesca: pico. Hay que tirar (E o el boton) antes de que acabe la ventana.
+    case 'pica':
+      castYo = { id: 'pica', nombre: '🐟 ¡PICA!', ini: performance.now(), fin: performance.now() + m.ms, tg: 0 };
+      verLanzar(true); $('lanzar').classList.remove('mal');
+      tono('nivel'); vibrar('warning');
+      { const p = pesqueroDe(mapaId); if (p) for (let k = 0; k < 10; k++) particula(p.x, SUELO - 6, '#93c5fd', 2.5); }
+      break;
+    case 'pescado': {
+      const p = pesqueroDe(mapaId);
+      if (p) for (let k = 0; k < 18; k++) particula(p.x, SUELO - 8, m.dorado ? '#facc15' : '#93c5fd', 3);
+      flotante(P.x, P.y - 80, m.dorado ? '🐟 ¡Pez Dorado!' : '🐟 +' + m.cant, m.dorado ? '#facc15' : '#93c5fd', 12);
+      sfx('moneda', .4);
       break;
     }
     case 'castFin':
@@ -896,7 +910,46 @@ function cercano() {
   }
   for (let i = 0; i < mp.portales.length; i++) if (Math.abs(P.x - mp.portales[i].x) < 70) return { tipo: 'portal', i, p: mp.portales[i] };
   for (const n of (mp.npcs || [])) if (Math.abs(P.x - n.x) < 90) return { tipo: 'npc', n };
-  return nodoCercano() || cofreCercano();
+  return nodoCercano() || pesqueroCercano() || cofreCercano();
+}
+// ── PESCA ── (ver PESCA en data.js)
+function pesqueroCercano() {
+  const p = pesqueroDe(mapaId);
+  return p && Math.abs(P.x - p.x) < PESCA.radio - 10 ? { tipo: 'pesca', p } : null;
+}
+function dibujarPesquero() {
+  const p = pesqueroDe(mapaId);
+  if (!p) return;
+  const x = p.x - camX;
+  if (x < -80 || x > VW + 80) return;
+  g.globalAlpha = .85;
+  g.fillStyle = '#1e40af';
+  g.beginPath(); g.ellipse(x, SUELO - 2, 48, 9, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#3b82f6';
+  g.beginPath(); g.ellipse(x, SUELO - 3, 40, 6, 0, 0, Math.PI * 2); g.fill();
+  // Ondas
+  const r = (frame % 90) / 90;
+  g.globalAlpha = .5 * (1 - r);
+  g.strokeStyle = '#bfdbfe'; g.lineWidth = 1;
+  g.beginPath(); g.ellipse(x + 10, SUELO - 3, 6 + r * 22, 1.5 + r * 4, 0, 0, Math.PI * 2); g.stroke();
+  g.globalAlpha = 1;
+  emoji('🎣', 24, x - 60, SUELO - 6);
+}
+// El sedal y el corcho de quien pesca (el corcho se hunde al picar).
+function dibujarSedal(x, pies, f, pica) {
+  const p = pesqueroDe(mapaId);
+  if (!p) return;
+  // El corcho cae delante, dentro del agua; la caña apunta hacia el.
+  const cx = p.x - camX, d = Math.abs(x - cx) < 12 ? f : (cx > x ? 1 : -1);
+  const bx = Math.max(cx - 38, Math.min(cx + 38, x + d * 55));
+  const by = SUELO - 5 + (pica ? 3 + Math.sin(frame * .9) * 2 : Math.sin(frame * .08) * 1.2);
+  const px = x + d * 22, py = pies - 52;
+  g.strokeStyle = '#8b5a2b'; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(x + d * 6, pies - 28); g.lineTo(px, py); g.stroke();
+  g.strokeStyle = 'rgba(229,231,235,.8)'; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(px, py); g.quadraticCurveTo((px + bx) / 2, by - 10, bx, by); g.stroke();
+  g.fillStyle = '#ef4444'; g.beginPath(); g.arc(bx, by - 2, 3, Math.PI, 0); g.fill();
+  g.fillStyle = '#fff'; g.beginPath(); g.arc(bx, by - 2, 3, 0, Math.PI); g.fill();
 }
 function interactuar() {
   if (!yo || P.muerto) return;
@@ -906,6 +959,13 @@ function interactuar() {
   if (c.tipo === 'res') { usarHabDef(habPorId('resurreccion'), c.q.id); return; }
   if (c.tipo === 'cofre') { abrirCofre(c.c); return; }
   if (c.tipo === 'nodo') { if (performance.now() < c.n.listo) errorRojo('Todavía no ha vuelto a crecer.'); else mandar({ t: 'recolectar', i: c.n.i }); return; }
+  if (c.tipo === 'pesca') {
+    // Tirar si esta pescando (antes de que pique, el servidor dice que se asusto).
+    if (castYo && (castYo.id === 'pica' || castYo.id === 'pescar')) { mandar({ t: 'tirar' }); return; }
+    P.f = c.p.x >= P.x ? 1 : -1;
+    mandar({ t: 'pescar' });
+    return;
+  }
   if (c.tipo === 'portal' && c.p.buscador) { abrirBuscador(); return; }
   if (c.tipo === 'portal') { mandar({ t: 'portal', i: c.i }); }
   else if (c.n.tipo === 'tienda') abrirTienda();
@@ -2298,7 +2358,7 @@ function abrirArtesana() {
     }
     h += tarjeta(`<img src="${A}items/equipo/${ru.icono}.png">`, esc(ru.nombre), det, acc);
   }
-  h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Las plantas 🌿 y vetas ⛏️ brillan en el suelo de cada zona: acércate y pulsa E (o RECOGER). Cada una vuelve a crecer a los 5 minutos. El Cristal Arcano sale a veces al recoger, o se refina con 8 minerales. En las zonas de Nv 30+ salen también Flor de Luna y Mithril; la Esencia Abisal la sueltan los jefes de mazmorras de nivel 40 o más a quien pelea (y el doble los de la banda).</p>';
+  h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Las plantas 🌿 y vetas ⛏️ brillan en el suelo de cada zona: acércate y pulsa E (o RECOGER). El pescado sale de los pesqueros 🎣 (uno en el pueblo y otro en cada zona). Cada una vuelve a crecer a los 5 minutos. El Cristal Arcano sale a veces al recoger, o se refina con 8 minerales. En las zonas de Nv 30+ salen también Flor de Luna y Mithril; la Esencia Abisal la sueltan los jefes de mazmorras de nivel 40 o más a quien pelea (y el doble los de la banda).</p>';
   const ven = $('arte-lista').closest('.ventana'), sc = ven ? ven.scrollTop : 0, scl = $('arte-lista').scrollTop;
   $('arte-lista').innerHTML = h;
   $('arte-lista').querySelectorAll('[data-receta]').forEach(b => b.onclick = () => { sfx('moneda', .4); mandar({ t: 'fabricar', id: b.dataset.receta }); });
@@ -3129,6 +3189,7 @@ function dibujarDuende(q, esYo) {
   if (fuego) { for (let i = 0; i < 2; i++) particula(q.x + (Math.random() - .5) * 20, pies - 20 - Math.random() * 30, Math.random() < .5 ? '#ff6400' : '#ffe600', 1.5); }
   // Lanzando: chispas en las manos (el color de la clase).
   const lanza = esYo ? castYo : castOtros.get(q.id);
+  if (lanza && (lanza.id === 'pescar' || lanza.id === 'pica')) dibujarSedal(x, pies, f, lanza.id === 'pica');
   if (lanza && frame % 3 === 0) particula(q.x + f * 12, pies - 34, CLASES[clase] ? CLASES[clase].color : '#fff', 1.2);
   // Nombre y nivel
   const nom = esYo ? yo.nombre : q.n, lv = esYo ? yo.nivel : q.lv;
@@ -3327,6 +3388,7 @@ function dibujar() {
   dibujarNPCs(mp);
   dibujarCofres();
   dibujarNodos();
+  dibujarPesquero();
   if (frame % 6 === 0) escalonarEtiquetas();
   for (const o of mons.values()) dibujarMonstruo(o);
   dibujarMarcasEspeciales();
@@ -3357,7 +3419,7 @@ function dibujar() {
   ponCss(bi, 'display', 'block');
   if (c && yo && !P.muerto) {
     ponCss(bi, 'visibility', 'visible');
-    ponTxt(bi, c.tipo === 'res' ? '✝ RESUCITAR' : c.tipo === 'portal' ? (TACTIL ? '🚪 ENTRAR' : 'E · ENTRAR') : c.tipo === 'cofre' ? (TACTIL ? '🗝️ ABRIR' : 'E · ABRIR') : c.tipo === 'nodo' ? (TACTIL ? '⛏️ RECOGER' : 'E · RECOGER') : (TACTIL ? '💬 HABLAR' : 'E · HABLAR'));
+    ponTxt(bi, c.tipo === 'res' ? '✝ RESUCITAR' : c.tipo === 'portal' ? (TACTIL ? '🚪 ENTRAR' : 'E · ENTRAR') : c.tipo === 'cofre' ? (TACTIL ? '🗝️ ABRIR' : 'E · ABRIR') : c.tipo === 'nodo' ? (TACTIL ? '⛏️ RECOGER' : 'E · RECOGER') : c.tipo === 'pesca' ? (castYo && castYo.id === 'pica' ? (TACTIL ? '🐟 ¡TIRA!' : 'E · ¡TIRA!') : castYo && castYo.id === 'pescar' ? '🎣 Espera…' : (TACTIL ? '🎣 PESCAR' : 'E · PESCAR')) : (TACTIL ? '💬 HABLAR' : 'E · HABLAR'));
   } else ponCss(bi, 'visibility', 'hidden');
 }
 
@@ -3622,6 +3684,8 @@ function pintarLanzar() {
   if (!castYo) return;
   const ahora = performance.now();
   const k = Math.min(1, (ahora - castYo.ini) / (castYo.fin - castYo.ini));
+  if (castYo.id === 'pescar') { rellenar($('lanzar').querySelector('i'), .5 + Math.sin(ahora / 300) * .1); ponTxt($('lanzar-t'), '🎣 Espera a que pique…'); return; }
+  if (castYo.id === 'pica') { rellenar($('lanzar').querySelector('i'), 1 - k); ponTxt($('lanzar-t'), '🐟 ¡PICA! Pulsa ' + (TACTIL ? '¡TIRA!' : 'E')); return; }
   rellenar($('lanzar').querySelector('i'), k);
   ponTxt($('lanzar-t'), castYo.nombre + '  ' + Math.max(0, (castYo.fin - ahora) / 1000).toFixed(1) + ' s');
 }

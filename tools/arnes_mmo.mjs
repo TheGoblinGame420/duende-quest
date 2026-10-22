@@ -588,6 +588,7 @@ async function pruebas() {
   await pruebasAmbulante();
   await pruebasMundiales();
   await pruebasPase();
+  await pruebasPesca();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -1343,6 +1344,53 @@ async function pruebasTintes() {
   await dejar(t); await dejar(v);
 }
 
+
+async function pruebasPesca() {
+  console.log('Pesca');
+  const D = await import('../mmo/js/data.js');
+  const j = await entrar('Pescadora', '85');
+  ponerNivel(j, 12, 'guerrero');
+  await aMapa(j, 'pueblo', 900);
+  j.limpiar(); await j.mandar({ t: 'pescar' });
+  chequear(!j.cast && j.ultimos('no').some(x => /Acércate/.test(x.m)), 'lejos del agua no se pesca');
+  const p = D.pesqueroDe('pueblo');
+  await aMapa(j, 'pueblo', p.x + 30);
+  const esperarPica = async () => { for (let i = 0; i < 120 && !j.ultimos('pica').length; i++) tick(1); return j.ultimos('pica').length > 0; };
+  // Tirar antes de que pique: se asusta.
+  j.limpiar(); await j.mandar({ t: 'pescar' });
+  chequear(j.cast && j.cast.h === 'pescar', 'al lanzar queda pescando');
+  await j.mandar({ t: 'tirar' });
+  chequear(!j.cast && j.ultimos('no').some(x => /asustó/.test(x.m)), 'tirar antes de que pique lo asusta');
+  // Picar y tirar a tiempo.
+  j.limpiar(); await j.mandar({ t: 'pescar' });
+  chequear(await esperarPica(), 'a los pocos segundos pica');
+  const pesc0 = (j.c.mat || {}).pescado || 0;
+  await j.mandar({ t: 'tirar' });
+  chequear(((j.c.mat || {}).pescado || 0) > pesc0 && j.c.peces === 1 && j.ultimos('pescado').length === 1, 'tirar a tiempo da pescado');
+  // Dejarlo pasar: se escapa.
+  j.limpiar(); await j.mandar({ t: 'pescar' });
+  await esperarPica(); tick(25);
+  chequear(!j.cast && j.ultimos('toast').some(x => /escapó/.test(x.m)), 'si no tiras a tiempo, se escapa');
+  // Un golpe corta el sedal.
+  j.limpiar(); await j.mandar({ t: 'pescar' });
+  j.inv = 0; mundo.herir(j, 5, { id: 0 });
+  chequear(!j.cast && j.ultimos('no').some(x => /sedal/.test(x.m)), 'un golpe corta el sedal');
+  // Tope diario.
+  j.c.pescaHoy = { d: D.hoyUTC(), n: D.PESCA.porDia };
+  j.limpiar(); tick(10); await j.mandar({ t: 'pescar' });
+  chequear(!j.cast && j.ultimos('no').some(x => /descansan/.test(x.m)), 'hay tope de capturas al día');
+  // Cocina: ceviche (+10% oro de caza).
+  j.c.mat.pescado = 10; j.c.mat.hierba = 5;
+  await aMapa(j, 'pueblo', 1680);
+  await j.mandar({ t: 'fabricar', id: 'ceviche' });
+  chequear(j.c.mat.pescado === 5 && mundo.elixir(j, 'ceviche'), 'la Artesana cocina el ceviche');
+  const oro0 = j.c.oro; mundo.dar(j, 1, 100, null, 1, false);
+  chequear(j.c.oro - oro0 === 110, 'el ceviche da +10% de oro de caza');
+  chequear(D.TAREAS_DIA.some(t => t.tipo === 'pescar') && D.LOGROS.some(l => l.id === 'pesca50'), 'misión diaria y logros de pesca');
+  // En una zona tambien hay pesquero; en una mazmorra no.
+  chequear(D.pesqueroDe('selva') && !D.pesqueroDe('catacumbas') && !D.pesqueroDe('coliseo'), 'pesqueros en zonas, no en mazmorras ni Coliseo');
+  await dejar(j);
+}
 
 async function pruebasPase() {
   console.log('Pase de temporada (mensual, gratis)');

@@ -14,7 +14,7 @@
 // ellos (y la Esencia Abisal de los jefes de mazmorra) la Artesana graba
 // RUNAS permanentes desde Nv 40 (+2% por rango, 5 rangos).
 // ═══════════════════════════════════════════════════════
-import { MAPAS, MATERIALES, NODO_CADA_MS, RECOLECTAR_MS, ELIXIR_MS, RECETAS, nodosDe, RARO_ZONA, raroDe, RUNAS, RUNA_NIVEL, RUNA_MAX, costoRuna } from '../../mmo/js/data.js';
+import { MAPAS, MATERIALES, NODO_CADA_MS, RECOLECTAR_MS, ELIXIR_MS, RECETAS, nodosDe, RARO_ZONA, raroDe, RUNAS, RUNA_NIVEL, RUNA_MAX, costoRuna, PESCA, pesqueroDe, hoyUTC } from '../../mmo/js/data.js';
 
 export const Profesiones = {
   // Al entrar a un mapa: sus nodos y cuando vuelve a estar listo cada uno.
@@ -69,6 +69,63 @@ export const Profesiones = {
     this.enviar(s, { t: 'recogido', i: n.i, en: NODO_CADA_MS, tipo: n.tipo, cant, cristal: !!extra });
     this.enviar(s, { t: 'toast', m: `🌿 +${cant} ${MATERIALES[n.tipo].nombre}${extra}`, ok: true });
     this.progresoTarea && this.progresoTarea(s, 'recoger');
+    this.actualizarYo(s);
+  },
+
+  // ── PESCA ── (ver PESCA en data.js)
+  // Lanzar: un "lanzamiento" que acaba cuando pica (el cliente no sabe
+  // cuando). Al picar pasa a 'pica' durante PESCA.ventana: hay que tirar.
+  pescar(s) {
+    const c = s.c;
+    if (s.muerto || s.cast || this.aura(s, 'aturdido')) return;
+    const p = pesqueroDe(c.mapa);
+    if (!p || s.k !== c.mapa) return;
+    if (Math.abs(s.x - p.x) > PESCA.radio) return this.no(s, 'Acércate más al agua.');
+    const hoy = hoyUTC();
+    if (c.pescaHoy && c.pescaHoy.d === hoy && c.pescaHoy.n >= PESCA.porDia) return this.no(s, `Hoy ya pescaste ${PESCA.porDia} veces: los peces descansan hasta mañana.`);
+    this.desmontar(s);
+    const ahora = Date.now();
+    s.cast = { h: 'pescar', fin: ahora + PESCA.min + Math.random() * (PESCA.max - PESCA.min), x: s.x, y: s.y, tg: 0 };
+    this.aClave(s.k, { t: 'cast', p: s.id, id: 'pescar', ms: PESCA.max + PESCA.ventana });
+  },
+
+  // Llamado desde revisarCast: pico (pasa a 'pica') o se escapo.
+  finPesca(s, ca, ahora) {
+    if (s.muerto) return this.aClave(s.k, { t: 'castFin', p: s.id, ok: false });
+    if (ca.h === 'pescar') {
+      s.cast = { h: 'pica', fin: ahora + PESCA.ventana, x: ca.x, y: ca.y, tg: 0 };
+      return this.enviar(s, { t: 'pica', ms: PESCA.ventana });
+    }
+    this.aClave(s.k, { t: 'castFin', p: s.id, ok: false });
+    this.enviar(s, { t: 'toast', m: '🐟 Se escapó… tira en cuanto pique.' });
+  },
+
+  tirar(s) {
+    const ca = s.cast;
+    if (!ca) return;
+    if (ca.h === 'pescar') return this.cancelarCast(s, 'Tiraste antes de que picara: el pez se asustó.');
+    if (ca.h !== 'pica' || s.muerto) return;
+    s.cast = null;
+    this.aClave(s.k, { t: 'castFin', p: s.id, ok: true });
+    const c = s.c;
+    const p = pesqueroDe(c.mapa);
+    if (!p) return;
+    const hoy = hoyUTC();
+    if (!c.pescaHoy || c.pescaHoy.d !== hoy) c.pescaHoy = { d: hoy, n: 0 };
+    if (c.pescaHoy.n >= PESCA.porDia) return;
+    c.pescaHoy.n++;
+    c.peces = (c.peces || 0) + 1;
+    c.mat = c.mat || {};
+    const cant = 1 + (p.nv >= 30 ? 1 : 0);
+    c.mat.pescado = Math.min(999, (c.mat.pescado || 0) + cant);
+    let txt = `🎣 +${cant} ${MATERIALES.pescado.nombre}`, dorado = false, oro = 0;
+    if (Math.random() < PESCA.dorado + p.nv / 1500) { c.mat.pez_dorado = Math.min(999, (c.mat.pez_dorado || 0) + 1); dorado = true; txt += ' y ¡1 Pez Dorado!'; }
+    if (Math.random() < PESCA.cofre) { oro = 30 * Math.max(5, p.nv); c.oro += oro; txt += ` y un cofre hundido (+${oro} oro)`; }
+    s.sucio = true;
+    this.enviar(s, { t: 'pescado', cant, dorado, oro, hoy: c.pescaHoy.n });
+    this.enviar(s, { t: 'toast', m: txt, ok: true });
+    this.progresoTarea && this.progresoTarea(s, 'pescar');
+    this.revisarLogros(s);
     this.actualizarYo(s);
   },
 
