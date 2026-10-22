@@ -11,12 +11,12 @@ import {
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
-  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe, TORRE, premioTorreSem, zonaDeNivel, progresoLogro, proximoMundial, mundialDe, HORA_FELIZ, EXPEDICION, premioExpedicion,
+  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe, climaDe, TORRE, premioTorreSem, zonaDeNivel, progresoLogro, proximoMundial, mundialDe, HORA_FELIZ, EXPEDICION, premioExpedicion,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=164';
+} from './data.js?v=166';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -2937,13 +2937,7 @@ function dibujarSuelo(mp) {
 // igual se ve la correcta); sin dato, la del reloj local.
 function temporadaYa() { return yo && yo.temp !== undefined ? TEMPORADAS.find(x => x.id === yo.temp) || null : temporadaDe(); }
 // Temporada: su adorno (calabazas, arboles...) por el suelo de cada mapa.
-// ── CLIMA ── (solo se ve) Algunas horas llueve o nieva en ciertas zonas;
-// cambia cada hora y es igual para todos. Pocas lineas (ligero en el movil).
-const CLIMA = { selva: 'lluvia', tormenta: 'lluvia', abismo: 'lluvia', acantilados: 'lluvia', cumbres: 'nieve' };
-function climaDe(id, t = Date.now()) {
-  const c = CLIMA[id];
-  return c && (Math.floor(t / 3600000) + [...id].reduce((a, ch) => a + ch.charCodeAt(0), 0)) % 3 === 0 ? c : null;
-}
+// ── CLIMA ── (climaDe en data.js) Pocas lineas: ligero en el movil.
 function dibujarClima() {
   const c = climaDe(mapaId);
   if (!c) return;

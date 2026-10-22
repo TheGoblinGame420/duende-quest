@@ -1677,3 +1677,11 @@ export function progresoLogro(id, c) {
   return [Math.min(c[p[0]] || 0, p[1]), p[1]];
 }
 
+// ── CLIMA ── Algunas horas llueve o nieva en ciertas zonas; cambia cada
+// hora y es igual para todos. Con lluvia el Pez Dorado sale el doble.
+export const CLIMA = { selva: 'lluvia', tormenta: 'lluvia', abismo: 'lluvia', acantilados: 'lluvia', cumbres: 'nieve' };
+export function climaDe(id, t = Date.now()) {
+  const c = CLIMA[id];
+  return c && (Math.floor(t / 3600000) + [...id].reduce((a, ch) => a + ch.charCodeAt(0), 0)) % 3 === 0 ? c : null;
+}
+

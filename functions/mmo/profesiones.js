@@ -14,7 +14,7 @@
 // ellos (y la Esencia Abisal de los jefes de mazmorra) la Artesana graba
 // RUNAS permanentes desde Nv 40 (+2% por rango, 5 rangos).
 // ═══════════════════════════════════════════════════════
-import { MAPAS, MATERIALES, NODO_CADA_MS, RECOLECTAR_MS, ELIXIR_MS, RECETAS, nodosDe, RARO_ZONA, raroDe, RUNAS, RUNA_NIVEL, RUNA_MAX, costoRuna, PESCA, pesqueroDe, hoyUTC } from '../../mmo/js/data.js';
+import { MAPAS, MATERIALES, NODO_CADA_MS, RECOLECTAR_MS, ELIXIR_MS, RECETAS, nodosDe, RARO_ZONA, raroDe, RUNAS, RUNA_NIVEL, RUNA_MAX, costoRuna, PESCA, pesqueroDe, hoyUTC, climaDe } from '../../mmo/js/data.js';
 
 export const Profesiones = {
   // Al entrar a un mapa: sus nodos y cuando vuelve a estar listo cada uno.
@@ -119,7 +119,8 @@ export const Profesiones = {
     const cant = 1 + (p.nv >= 30 ? 1 : 0);
     c.mat.pescado = Math.min(999, (c.mat.pescado || 0) + cant);
     let txt = `🎣 +${cant} ${MATERIALES.pescado.nombre}`, dorado = false, oro = 0;
-    if (Math.random() < PESCA.dorado + p.nv / 1500) { c.mat.pez_dorado = Math.min(999, (c.mat.pez_dorado || 0) + 1); dorado = true; txt += ' y ¡1 Pez Dorado!'; }
+    // Con lluvia (CLIMA) los dorados pican el doble.
+    if (Math.random() < (PESCA.dorado + p.nv / 1500) * (climaDe(c.mapa) === 'lluvia' ? 2 : 1)) { c.mat.pez_dorado = Math.min(999, (c.mat.pez_dorado || 0) + 1); dorado = true; txt += ' y ¡1 Pez Dorado!'; }
     if (Math.random() < PESCA.cofre) { oro = 30 * Math.max(5, p.nv); c.oro += oro; txt += ` y un cofre hundido (+${oro} oro)`; }
     // La mascota que solo se pesca: muy rara, segura a las mascotaSeguro capturas.
     c.mascotas = c.mascotas || [];
