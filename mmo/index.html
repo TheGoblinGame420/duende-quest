@@ -240,6 +240,8 @@ body.tactil #pie{display:none;}
 .bt svg.ico-bt{width:18px;height:18px;margin:2px;}
 #avisos-modal{position:fixed;left:50%;transform:translateX(-50%);top:14px;z-index:80;display:flex;flex-direction:column;align-items:center;gap:5px;pointer-events:none;width:min(92vw,520px);}
 #m-tienda:not(.tab-premium) .seguridad{display:none;}
+.tc .ico-tc{display:block;margin:auto;pointer-events:none;}
+#t-auto .ico-tc{display:inline-block;vertical-align:-4px;}
 img.moneda{width:14px;height:14px;image-rendering:pixelated;vertical-align:-2px;margin:0 2px;}
 /* Guia del juego: secciones con titulo, definiciones para los controles. */
 .guia h3{font:700 13px var(--sans);color:var(--txt);text-transform:uppercase;letter-spacing:.08em;margin:16px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--borde);}
@@ -482,7 +484,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
           <div class="barra rc" id="orec"><i></i><span id="o-rec"></span></div>
           <div class="barra castm" id="ocast"><i style="transform:scaleX(0)"></i><span id="o-cast"></span></div>
           <div class="auras" id="au-obj"></div>
-          <div class="oacc" id="o-acc"><button class="bt" id="o-invitar">➕ GRUPO</button><button class="bt" id="o-herm">🛡️</button><button class="bt" id="o-susurrar">💬</button><button class="bt" id="o-duelo" title="Retar a un duelo">⚔️</button><button class="bt" id="o-amigo" title="Añadir a tu lista de amigos">☆</button><button class="bt" id="o-insp" title="Inspeccionar su equipo">🔍</button></div>
+          <div class="oacc" id="o-acc"><button class="bt" id="o-invitar">Grupo</button><button class="bt" id="o-herm" title="Invitar a tu hermandad">Herm.</button><button class="bt" id="o-susurrar" title="Susurrar">Mensaje</button><button class="bt" id="o-duelo" title="Retar a un duelo">Duelo</button><button class="bt" id="o-amigo" title="Añadir a tu lista de amigos">Amigo</button><button class="bt" id="o-insp" title="Inspeccionar su equipo">Ver</button></div>
         </div>
       </div>
       <div class="caja" id="grupo"></div>
@@ -518,8 +520,8 @@ input.nombre:focus{border-color:var(--pri-txt);}
   <div id="tactil">
     <div class="tf" id="t-fila0"></div>
     <div class="tf" id="t-fila1">
-      <button class="tc chico" id="t-chat">💬</button>
-      <button class="tc chico" id="t-auto" title="Ataque automático (H)" style="width:auto;padding:0 8px;border-radius:20px;font-size:11px">🔁</button>
+      <button class="tc chico" id="t-chat" aria-label="Chat"><svg class="ico-tc" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg></button>
+      <button class="tc chico" id="t-auto" title="Ataque automático (H)" style="width:auto;padding:0 8px;border-radius:20px;font-size:11px" aria-label="Ataque automático"><svg class="ico-tc" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 013-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 01-3 3H3"/></svg></button>
     </div>
     <div class="tf">
       <div id="t-izq">
@@ -527,9 +529,9 @@ input.nombre:focus{border-color:var(--pri-txt);}
         <button class="tc" id="t-r">▶</button>
       </div>
       <div id="t-der">
-        <button class="tc" id="t-dash">💨</button>
-        <button class="tc" id="t-jump">⤴</button>
-        <button class="tc grande" id="t-atk">⚔</button>
+        <button class="tc" id="t-dash" aria-label="Esquivar"><svg class="ico-tc" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h11"/><path d="M3 12h15"/><path d="M3 16h9"/><path d="M16 6l5 6-5 6"/></svg></button>
+        <button class="tc" id="t-jump" aria-label="Saltar"><svg class="ico-tc" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V5"/><path d="M5 12l7-7 7 7"/></svg></button>
+        <button class="tc grande" id="t-atk" aria-label="Atacar"><svg class="ico-tc" viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 19l6-6"/><path d="M16 16l4 4"/><path d="M19 21l2-2"/></svg></button>
       </div>
     </div>
   </div>
@@ -606,7 +608,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
     <button class="bt cerrar" data-cerrar>✕</button>
     <h2>GUARDIA TITO</h2>
     <div id="mision-cuerpo"></div>
-    <p style="margin-top:10px;font-size:13px;color:var(--txt2)">¿Dudas con los controles? Pulsa ❔ arriba a la derecha.</p>
+    <p style="margin-top:10px;font-size:13px;color:var(--txt2)">Controles y sistemas: Guía del juego (libro, arriba a la derecha).</p>
   </div>
 </div>
 
@@ -639,7 +641,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <div class="modal" id="m-ayuda">
   <div class="ventana">
     <button class="bt cerrar" data-cerrar>✕</button>
-    <h2 id="ayuda-t">GUÍA DEL JUEGO</h2>
+    <h2 id="ayuda-t">GUIA DEL JUEGO</h2>
     <button class="btn sec" id="b-novedades" style="width:100%;margin-bottom:10px">Notas del parche y calendario</button>
     <div id="ayuda-lista" class="guia">
       <h3>Controles</h3>
@@ -795,7 +797,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <div class="modal" id="m-boveda">
   <div class="ventana">
     <button class="bt cerrar" data-cerrar>✕</button>
-    <h2>BÓVEDA SEMANAL</h2>
+    <h2>BOVEDA SEMANAL</h2>
     <div class="lista" id="boveda-lista"></div>
   </div>
 </div>
@@ -840,6 +842,6 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=216"></script>
+<script type="module" src="/mmo/js/client.js?v=218"></script>
 </body>
 </html>

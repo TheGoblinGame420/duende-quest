@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=216';
+} from './data.js?v=218';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1435,7 +1435,7 @@ function pintarAccionesObjetivo() {
   ponCss($('o-invitar'), 'display', !enMiGrupo && (!grupo || soyLider()) ? 'block' : 'none');
   const r = miRangoHerm();
   ponCss($('o-herm'), 'display', (r === 'lider' || r === 'oficial') && !q.hn ? 'block' : 'none');
-  { const q = jugObjetivo(); const ya = q && contactos.some(x => x.on && x.id === q.id); ponTxt($('o-amigo'), ya ? '★' : '☆'); $('o-amigo').title = ya ? 'Quitar de tus amigos' : 'Añadir a tu lista de amigos'; }
+  { const q = jugObjetivo(); const ya = q && contactos.some(x => x.on && x.id === q.id); ponTxt($('o-amigo'), ya ? 'Amigo ✓' : 'Amigo'); $('o-amigo').title = ya ? 'Quitar de tus amigos' : 'Añadir a tu lista de amigos'; }
   ponCss($('o-duelo'), 'display', !duelo && !instancia && !MAPAS[mapaId].instancia ? 'block' : 'none');
 }
 $('o-insp').onclick = () => { const q = jugObjetivo(); if (q) { mandar({ t: 'inspeccionar', p: q.id }); sfx('boton', .3); } };
@@ -1528,7 +1528,7 @@ function pintarSocial() {
   const L = $('social-lista');
   if (tabSocial === 'grupo') {
     if (!grupo) {
-      L.innerHTML = '<p class="centro" style="margin:10px 0">No estás en un grupo.</p><p class="centro" style="font-size:12px;color:var(--txt2)">Toca a otro jugador y pulsa ➕ en su marco, o búscalo en la pestaña «En línea». En grupo comparten la experiencia y las misiones de cada presa (con un 10% extra por miembro) y pueden entrar juntos a las mazmorras.</p>';
+      L.innerHTML = '<p class="centro" style="margin:10px 0">No estás en un grupo.</p><p class="centro" style="font-size:12px;color:var(--txt2)">Elige a otro jugador y pulsa «Grupo» en su marco, o búscalo en la pestaña «En línea». En grupo comparten la experiencia y las misiones de cada presa (con un 10% extra por miembro) y pueden entrar juntos a las mazmorras.</p>';
       return;
     }
     const tope = grupo.banda ? BANDA_MAX : 5;
@@ -1559,7 +1559,7 @@ function pintarSocial() {
         `<span style="color:${x.on ? (cl ? cl.color : 'var(--txt)') : 'var(--txt3)'}">${esc(x.n)}</span>${x.on ? ' <span style="color:var(--txt2)">Nv ' + x.lv + '</span>' : ''}`,
         x.on ? esc((cl ? cl.nombre + ' · ' : '') + x.mapa + (x.g ? ' · en grupo' : '')) : 'Desconectado',
         (puede ? `<button class="btn" data-inv="${x.id}">Invitar</button>` : '') + (x.on ? `<button class="btn sec" data-sus="${esc(x.n)}">💬</button>` : '') + `<button class="btn sec" data-qamigo="${esc(x.uid)}" title="Quitar de amigos">✕</button>`);
-    }).join('') : '<p style="font-size:12px;color:var(--txt2);margin-bottom:8px">Toca a otro jugador y pulsa ⭐ en su marco: verás cuándo se conecta.</p>';
+    }).join('') : '<p style="font-size:12px;color:var(--txt2);margin-bottom:8px">Elige a otro jugador y pulsa «Amigo» en su marco para ver cuándo se conecta.</p>';
     h += '<p style="font:600 13px var(--sans);color:var(--txt);margin:10px 0 6px">Conectados</p>';
     if (!quienLista.length) { L.innerHTML = h + '<p class="centro">No hay nadie más conectado ahora mismo.</p>'; conectarListaSocial(L); return; }
     L.innerHTML = h + quienLista.map(x => {
@@ -1797,7 +1797,9 @@ function sinEmojiC(t) {
   if (r === undefined) { r = sinEmoji(t); if (m.size > 3000) m.clear(); m.set(t, r); }
   return r;
 }
-function sinEmoji(t) { return String(t).replace(/(\p{Extended_Pictographic}|\uFE0F|\u200D)+/gu, '').replace(/\s{2,}/g, ' ').replace(/^[\s·:\-—]+/, '').trim(); }
+function sinEmoji(t) { return limpiarRestos(String(t).replace(/(\p{Extended_Pictographic}|\uFE0F|\u200D)+/gu, '')).replace(/^[\s·:\-—]+/, '').trim(); }
+// Lo que queda al quitar un emoji: "( tecla M)", "()", dobles espacios.
+function limpiarRestos(t) { return t.replace(/\s*\(\s*\)/g, '').replace(/\(\s+/g, '(').replace(/\s+\)/g, ')').replace(/ {2,}/g, ' '); }
 function abrirNovedades() {
   let h = htmlCalendario() + '<h3>Notas del parche</h3>';
   for (const nv of NOVEDADES) {
@@ -2356,11 +2358,11 @@ function dibujarGuia() {
 // Tutorial de los primeros minutos: un consejo cada vez, que se cumple solo
 // al hacerlo. Se guarda por personaje en este dispositivo.
 const TUTORIAL = [
-  { id: 'mover', txt: () => TACTIL ? '👆 Muévete con ◀ ▶' : '⌨️ Muévete con ← → (o A / D)', hecho: t => Math.abs(P.x - t.x0) > 120 },
-  { id: 'ir', txt: () => '🟡 Sigue la flecha amarilla: te lleva a tu misión', hecho: t => (yo.kills || 0) > t.k0 || (MAPAS[mapaId].zona && !instancia) },
-  { id: 'atacar', txt: () => TACTIL ? '⚔️ Pega con el botón rojo (mantenlo pulsado)' : '⚔️ Pega con Z (o J); Tab elige al enemigo', hecho: t => (yo.kills || 0) > t.k0 },
-  { id: 'habilidad', txt: () => '✨ Usa tu habilidad: ' + (TACTIL ? 'el primer botón de la barra' : 'tecla 1'), hecho: t => t.usoHab },
-  { id: 'mision', txt: () => (yo.mis && MISIONES[yo.mis.i] && yo.mis.p >= MISIONES[yo.mis.i].n ? '✅ ¡Misión cumplida! Sigue la flecha y entrégasela al Guardia Tito' : '📜 Completa la misión y la flecha te llevará al Guardia Tito'), hecho: () => (yo.mis && yo.mis.i >= 1) },
+  { id: 'mover', txt: () => TACTIL ? 'Muévete con los botones de dirección' : 'Muévete con las flechas o A / D', hecho: t => Math.abs(P.x - t.x0) > 120 },
+  { id: 'ir', txt: () => 'Sigue la flecha amarilla hasta tu misión', hecho: t => (yo.kills || 0) > t.k0 || (MAPAS[mapaId].zona && !instancia) },
+  { id: 'atacar', txt: () => TACTIL ? 'Ataca con el botón rojo (mantenlo pulsado)' : 'Ataca con Z o J. Tab cambia de objetivo', hecho: t => (yo.kills || 0) > t.k0 },
+  { id: 'habilidad', txt: () => 'Usa una habilidad: ' + (TACTIL ? 'primer botón de la barra' : 'tecla 1'), hecho: t => t.usoHab },
+  { id: 'mision', txt: () => (yo.mis && MISIONES[yo.mis.i] && yo.mis.p >= MISIONES[yo.mis.i].n ? 'Misión cumplida. Entrégala al Guardia Tito' : 'Completa la misión y vuelve con el Guardia Tito'), hecho: () => (yo.mis && yo.mis.i >= 1) },
 ];
 const tuto = { i: -1, x0: 0, k0: 0, usoHab: false, clave: '' };
 function pintarTutorial() {
@@ -2554,7 +2556,7 @@ function pintarLogros() {
   if (yo.titulo) h += `<button class="btn sec" data-titulo="" style="width:100%;margin-bottom:8px">Quitar título</button>`;
   for (const L of LOGROS) {
     const ok = tienen.includes(L.id);
-    const acc = !ok ? `<span class="precio" style="color:var(--txt3)">🔒 +${L.oro.toLocaleString('es', { useGrouping: 'always' })}</span>`
+    const acc = !ok ? `<span class="precio" style="color:var(--txt3)">+${L.oro.toLocaleString('es', { useGrouping: 'always' })} oro</span>`
       : yo.titulo === L.id ? '<span class="precio" style="color:var(--ok)">✓ En uso</span>'
       : `<button class="btn sec" data-titulo="${L.id}">Usar título</button>`;
     // Los que se cuentan: barra de progreso mientras no se tienen.
@@ -4009,12 +4011,12 @@ function limpiarTexto(n) {
     const frag = document.createDocumentFragment();
     partes.forEach((x, i) => {
       if (i) { const im = document.createElement('img'); im.src = A + 'items/equipo/I_GoldCoin.png'; im.alt = 'oro'; im.className = 'moneda'; frag.appendChild(im); }
-      frag.appendChild(document.createTextNode(x.replace(EMOJI_RX, '').replace(/ {2,}/g, ' ')));
+      frag.appendChild(document.createTextNode(limpiarRestos(x.replace(EMOJI_RX, ''))));
     });
     pa.replaceChild(frag, n);
     return;
   }
-  const limpio = t.replace(EMOJI_RX, '').replace(/ {2,}/g, ' ');
+  const limpio = limpiarRestos(t.replace(EMOJI_RX, ''));
   if (limpio !== t) n.nodeValue = /^\s/.test(t) ? limpio : limpio.replace(/^\s+/, '');
 }
 const obsVentanas = new MutationObserver(ms => { for (const m of ms) m.addedNodes.forEach(limpiarEmojis); });
@@ -4094,7 +4096,7 @@ function pintarTienda() {
         : `<span class="precio">🪙 ${mo.precio.toLocaleString('es', { useGrouping: 'always' })}</span><button class="btn" data-comprar="montura" data-id="${id}" ${yo.oro < mo.precio ? 'disabled' : ''}>Comprar</button>`;
       h += tarjeta(ico, esc(mo.nombre), `+${Math.round((mo.vel - 1) * 100)}% de velocidad · ` + (mo.banda ? `no se vende: vence al Titán de la banda en ${BANDA_MONTURA} semanas distintas` : mo.torre ? `no se vende: supera el piso ${TORRE.montura} de la Torre del Duende` : `desde Nv ${mo.nv}`), acc);
     }
-    h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Monta con la tecla Y o el botón 🐎 (1,5 s, fuera de combate). No se puede montar en mazmorras ni en el Coliseo.</p>';
+    h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Monta con la tecla Y o el botón de montura (1,5 s, fuera de combate). No se puede montar en mazmorras ni en el Coliseo.</p>';
   } else if (tabTienda === 'pw') {
     PODERES.forEach(p => {
       h += tarjeta(`<img src="${A}items/${p.icono}.png">`, p.nombre + ` <span style="color:var(--txt2)">(tienes ${yo.pw[p.id] || 0})</span>`, p.desc,
@@ -4184,19 +4186,19 @@ function abrirRanking() { abrir('m-rank'); $('rank-lista').innerHTML = '<p class
 function pintarRanking(r, sem, finSem, des, dsem, af, duel, elo, torre, tmax, herm) {
   const med = ['#1', '#2', '#3'];
   let h = '<p style="font-size:12px;color:var(--txt);font-weight:600;margin-bottom:4px">Esta semana (experiencia ganada)</p>';
-  if (finSem) { const ms = finSem - Date.now(); const d = Math.floor(ms / 86400000), hh = Math.floor(ms / 3600000) % 24; h += `<p style="font-size:12px;color:var(--txt2);margin-bottom:6px">Termina en ${d} d ${hh} h. Premios: 🥇 oro ×400 tu nivel, objeto épico y título · 🥈 ×200 · 🥉 ×100.</p>`; }
+  if (finSem) { const ms = finSem - Date.now(); const d = Math.floor(ms / 86400000), hh = Math.floor(ms / 3600000) % 24; h += `<p style="font-size:12px;color:var(--txt2);margin-bottom:6px">Termina en ${d} d ${hh} h. Premios: 1.º, 400 × tu nivel en oro, objeto épico y título · 2.º, ×200 · 3.º, ×100.</p>`; }
   h += (sem && sem.length) ? sem.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>${x.xp.toLocaleString('es', { useGrouping: 'always' })} XP · Nv ${x.lv}</span></div>`).join('') : '<p class="centro">Nadie ha cazado aún esta semana.</p>';
   h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">Los más fuertes (nivel)</p>';
   h += r.length ? r.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>Nv ${x.lv} · ${x.k} caz.</span></div>`).join('') : '<p class="centro">Todavía nadie sube de nivel.</p>';
   // Desafios de la semana (con sus afijos) y de siempre: el mejor +k de cada uno.
   h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">⚡ Desafíos de esta semana</p>';
-  if (af && af.length) h += `<p style="font-size:12px;color:var(--txt2);margin-bottom:6px">Afijos: ${af.map(a => AFIJOS[a] ? AFIJOS[a].emoji + ' ' + AFIJOS[a].nombre : '').join(' · ')}. Premios desde el +${DES_SEM_MIN}: 🥇 ${premioDesSem(0).toLocaleString('es', { useGrouping: 'always' })} oro y título · 🥈 ${premioDesSem(1).toLocaleString('es', { useGrouping: 'always' })} · 🥉 ${premioDesSem(2).toLocaleString('es', { useGrouping: 'always' })}.</p>`;
+  if (af && af.length) h += `<p style="font-size:12px;color:var(--txt2);margin-bottom:6px">Afijos: ${af.map(a => AFIJOS[a] ? AFIJOS[a].emoji + ' ' + AFIJOS[a].nombre : '').join(' · ')}. Premios desde el +${DES_SEM_MIN}: 1.º ${premioDesSem(0).toLocaleString('es', { useGrouping: 'always' })} oro y título · 2.º ${premioDesSem(1).toLocaleString('es', { useGrouping: 'always' })} · 3.º ${premioDesSem(2).toLocaleString('es', { useGrouping: 'always' })}.</p>`;
   h += (dsem && dsem.length) ? dsem.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>⚡ +${x.k}</span></div>`).join('') : '<p class="centro" style="font-size:12px">Nadie ha vencido un Desafío esta semana.</p>';
   h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">⚡ Desafíos de mazmorra (mejor +k de siempre)</p>';
   h += (des && des.length) ? des.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>⚡ +${x.k}</span></div>`).join('') : '<p class="centro" style="font-size:12px">Nadie ha vencido aún un Desafío. Se abren a nivel 60 en el portal de mazmorras.</p>';
   // Torre del Duende: mejor piso de la semana.
   h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">Torre del Duende (esta semana)' + (tmax ? ' · tu marca: piso ' + tmax : '') + '</p>';
-  h += `<p style="font-size:12px;color:var(--txt2);margin-bottom:4px">Premios el lunes (desde el piso ${TORRE.semMin}): 🥇 ${premioTorreSem(0).toLocaleString('es', { useGrouping: 'always' })} oro y título Rey de la Torre · 🥈 ${premioTorreSem(1).toLocaleString('es', { useGrouping: 'always' })} · 🥉 ${premioTorreSem(2).toLocaleString('es', { useGrouping: 'always' })}.</p>`;
+  h += `<p style="font-size:12px;color:var(--txt2);margin-bottom:4px">Premios el lunes (desde el piso ${TORRE.semMin}): 1.º ${premioTorreSem(0).toLocaleString('es', { useGrouping: 'always' })} oro y título Rey de la Torre · 2.º ${premioTorreSem(1).toLocaleString('es', { useGrouping: 'always' })} · 3.º ${premioTorreSem(2).toLocaleString('es', { useGrouping: 'always' })}.</p>`;
   h += (torre && torre.length) ? torre.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>piso ${x.p}</span></div>`).join('') : '<p class="centro" style="font-size:12px">Nadie ha subido aún esta semana. Entra por el portal de mazmorras del pueblo (Nv 10+).</p>';
   // Hermandades: puntos de la gesta de esta semana.
   h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">Hermandades (gesta de esta semana)</p>';
@@ -4350,7 +4352,7 @@ function ataqueAuto() {
   if (!(cl && cl.basico === 'vara')) P.f = o.x >= P.x ? 1 : -1;
   atacar();
 }
-function pintarAuto() { const b = $('t-auto'); b.classList.toggle('on', autoAtk); b.textContent = autoAtk ? '🔁 AUTO' : '🔁'; }
+function pintarAuto() { const b = $('t-auto'); b.classList.toggle('on', autoAtk); b.innerHTML = '<svg class="ico-tc" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 013-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 01-3 3H3"/></svg>' + (autoAtk ? ' AUTO' : ''); }
 $('t-auto').onclick = () => {
   autoAtk = !autoAtk;
   try { localStorage.setItem('dq_auto', autoAtk ? '1' : '0'); } catch (e) {}
