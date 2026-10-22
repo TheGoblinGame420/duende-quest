@@ -308,8 +308,8 @@ export function statsJugador(nivel, skin, eq, clase, espec, tal, runas) {
   return {
     maxHp: Math.round((100 + 30 * (nivel - 1) + (b.bonusHp || 0) * Math.max(1, Math.floor(nivel / 5)) + e.hp) * m.hp * (sp.hp || 1) * (1 + talento(t, 'vida')) * (1 + cj.hp) * (1 + ru.hp)),
     atk: Math.round((10 + 3 * (nivel - 1) + e.atk) * (b.atkMult || 1) * m.atk * (sp.atk || 1) * (1 + talento(t, 'fuerza')) * (1 + cj.atk) * (1 + ru.atk)),
-    def: Math.floor((Math.floor(nivel * 1.5) + e.def) * m.def * (sp.def || 1) * (1 + talento(t, 'defensa')) * (1 + cj.def) * (1 + ru.def)),
-    crit: 0.12 + e.crit + m.crit + (sp.crit || 0) + talento(t, 'critico') + cj.crit,
+    def: Math.floor((Math.floor(nivel * 1.5) + e.def) * m.def * (sp.def || 1) * (1 + talento(t, 'defensa')) * (1 + cj.def) * (1 + ru.def) * (b.defMult || 1)),
+    crit: 0.12 + e.crit + m.crit + (sp.crit || 0) + talento(t, 'critico') + cj.crit + (b.critBonus || 0),
     recMax: recursoMax(clase, nivel),
   };
 }
@@ -769,11 +769,13 @@ export const proximoMundial = ahora => Math.ceil(ahora / MUNDIAL_CADA_MS) * MUND
 // juego principal se desbloquean solas (ver world.js, skinsPagadas()).
 export const SKINS = {
   comun:      { nombre: 'Duende',      img: 'skin_hero',           precio: 0,      color: '#00eeff', buffs: null, desc: 'El duende de siempre' },
-  tactico:    { nombre: 'Táctico',     img: 'skin_tactico',        precio: 3000,   color: '#00ff88', buffs: { oroMult: 1.1 }, desc: '+10% oro' },
-  necro:      { nombre: 'Necromancer', img: 'skin_necromancer',    precio: 9000,   color: '#b44cff', buffs: { oroMult: 1.2, robo: .05 }, desc: '+20% oro · roba 5% de vida' },
-  king:       { nombre: 'King',        img: 'skin_king',           precio: 20000,  color: '#ffd84a', buffs: { oroMult: 1.3, bonusHp: 20 }, desc: '+30% oro · +HP extra' },
-  berserker:  { nombre: 'Berserker',   img: 'skin_berserker',      precio: 45000,  color: '#ff3344', buffs: { oroMult: 1.4, atkMult: 1.3 }, desc: '+40% oro · +30% ataque' },
-  legendaria: { nombre: 'Legendaria',  img: 'skin_legendariafull', precio: 100000, color: '#ff3cf0', buffs: { oroMult: 1.5, bonusHp: 50, aura: true }, desc: '+50% oro · +HP · aura que quema' },
+  // usd: tambien se venden con dinero (SOL en la web, Stars en Telegram); el
+  // pago va a la wallet de El Duende y el la entrega a mano (/entregar).
+  tactico:    { nombre: 'Táctico',     img: 'skin_tactico',        precio: 3000,   usd: 2,  color: '#00ff88', buffs: { oroMult: 1.1, critBonus: .03 }, desc: '+10% oro · +3% crítico' },
+  necro:      { nombre: 'Necromancer', img: 'skin_necromancer',    precio: 9000,   usd: 4,  color: '#b44cff', buffs: { oroMult: 1.2, robo: .05, xpMult: 1.05 }, desc: '+20% oro · roba 5% de vida · +5% experiencia' },
+  king:       { nombre: 'King',        img: 'skin_king',           precio: 20000,  usd: 7,  color: '#ffd84a', buffs: { oroMult: 1.3, bonusHp: 20, defMult: 1.1 }, desc: '+30% oro · +HP extra · +10% defensa' },
+  berserker:  { nombre: 'Berserker',   img: 'skin_berserker',      precio: 45000,  usd: 12, color: '#ff3344', buffs: { oroMult: 1.4, atkMult: 1.3, critBonus: .03 }, desc: '+40% oro · +30% ataque · +3% crítico' },
+  legendaria: { nombre: 'Legendaria',  img: 'skin_legendariafull', precio: 100000, usd: 20, color: '#ff3cf0', buffs: { oroMult: 1.5, bonusHp: 50, aura: true, atkMult: 1.1, xpMult: 1.1 }, desc: '+50% oro · +HP · +10% ataque · +10% experiencia · aura que quema' },
 };
 
 // ── ARMAS (las 4 del juego, mismos multiplicadores) ──
@@ -1375,5 +1377,10 @@ export const PAQUETES = [
   { id: 'oro5',  nombre: 'Saco de oro',        usd: 5,  oro: 30000,  icono: 'I_GoldBar',  desc: '30.000 oro (+20% de regalo)' },
   { id: 'oro20', nombre: 'Cofre de oro',       usd: 20, oro: 140000, icono: 'I_Chest02', desc: '140.000 oro (+40% de regalo)' },
 ];
+// Las skins con precio en dolares tambien son paquetes de la tienda premium
+// (id 'skin_<id>'); al entregarlas se añaden a tus skins.
+for (const [id, sk] of Object.entries(SKINS)) {
+  if (sk.usd) PAQUETES.push({ id: 'skin_' + id, nombre: 'Skin ' + sk.nombre, usd: sk.usd, skin: id, img: sk.img, desc: sk.desc });
+}
 export const estrellasDe = usd => Math.ceil(usd / STAR_USD);
 export const PEDIDO_VIGENCIA_MS = 30 * 60 * 1000;   // 30 min para pagar

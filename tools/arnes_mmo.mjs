@@ -579,6 +579,7 @@ async function pruebas() {
   await pruebasRunas();
   await pruebasMascotas();
   await pruebasContactos();
+  await pruebasSkinsDinero();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -1331,6 +1332,47 @@ async function pruebasTintes() {
   await dejar(t); await dejar(v);
 }
 
+
+async function pruebasSkinsDinero() {
+  console.log('Skins con poderes, también con dinero (SOL / Stars, entrega manual)');
+  const D = await import('../mmo/js/data.js');
+  const pq = D.PAQUETES.find(x => x.id === 'skin_king');
+  chequear(pq && pq.skin === 'king' && pq.usd === D.SKINS.king.usd, 'cada skin con precio en dólares es un paquete de la tienda premium');
+  const base = D.statsJugador(30, 'comun', {}, 'guerrero', null, {}, {});
+  const king = D.statsJugador(30, 'king', {}, 'guerrero', null, {}, {});
+  const ber = D.statsJugador(30, 'berserker', {}, 'guerrero', null, {}, {});
+  chequear(king.def > base.def && king.maxHp > base.maxHp && ber.crit > base.crit && ber.atk > base.atk, 'los poderes nuevos se notan (King: defensa y vida; Berserker: ataque y crítico)');
+  const j = await entrar('Comprador', '7f');
+  ponerNivel(j, 20, 'guerrero');
+  // Pedido pagado (como si hubiera llegado el SOL) y El Duende lo entrega.
+  j.c.skins = ['comun'];
+  mundo.pedidos.push({ codigo: 'SKN001', uid: j.c.uid, jugador: j.c.nombre, paquete: 'skin_king', nombre: pq.nombre, usd: pq.usd, metodo: 'sol', creado: Date.now(), estado: 'por_verificar' });
+  const avisosJ = []; const avisoReal = mundo.avisarJugador; mundo.avisarJugador = async (u, t) => { avisosJ.push(t); };
+  try {
+    const r = await mundo.entregarPedido({ codigo: 'SKN001' });
+    chequear(r.ok && j.c.skins.includes('king') && j.c.skin === 'king', '/entregar le da la skin y se la pone');
+    chequear(j.st.def === mundo.stats(j.c).def && avisosJ.some(t => /Skin King/.test(t)), 'sus poderes se aplican al momento y se le avisa');
+    // Otra vez la misma (ya la tiene): se le devuelve el precio en oro.
+    const oro0 = j.c.oro;
+    mundo.pedidos.push({ codigo: 'SKN002', uid: j.c.uid, jugador: j.c.nombre, paquete: 'skin_king', nombre: pq.nombre, usd: pq.usd, metodo: 'sol', creado: Date.now(), estado: 'pagado' });
+    await mundo.entregarPedido({ codigo: 'SKN002' });
+    chequear(j.c.oro === oro0 + D.SKINS.king.precio, 'si ya la tenía, recibe su precio en oro');
+  } finally { mundo.avisarJugador = avisoReal; }
+  // Pedir una skin que ya tienes: no.
+  j.c.uid = 'web:prueba-skin'; j.limpiar();
+  await mundo.pedido(j, { id: 'skin_king', metodo: 'sol' });
+  chequear(j.ultimos('toast').some(x => /Ya tienes esa skin/.test(x.m)), 'no se puede pedir una skin que ya tienes');
+  // Experiencia: Necromancer +5%.
+  j.c.uid = 'inv:' + 'skin-prueba'; j.c.skin = 'necro'; j.st = mundo.stats(j.c); j.c.descanso = 0; j.c.elix = {};
+  await aMapa(j, 'noche', 600); limpiarMapa(j);
+  const x0 = j.c.xp, nv0 = j.c.nivel; const o = monstruo(j, 'goblin_normal', 30, { nv: 20 }); mundo.danar(o, o.hp + 1, j); tick(1);
+  const conN = j.c.xp - x0;
+  j.c.skin = 'comun';
+  const x1 = j.c.xp; const o2 = monstruo(j, 'goblin_normal', 30, { nv: 20 }); mundo.danar(o2, o2.hp + 1, j); tick(1);
+  const sinN = j.c.xp - x1;
+  chequear(j.c.nivel === nv0 && Math.abs(conN / sinN - 1.05) < 0.03, 'Necromancer da +5% de experiencia (' + conN + ' frente a ' + sinN + ')');
+  await dejar(j);
+}
 
 async function pruebasContactos() {
   console.log('Lista de amigos');

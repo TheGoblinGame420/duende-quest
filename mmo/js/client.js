@@ -14,7 +14,7 @@ import {
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
-} from './data.js?v=71';
+} from './data.js?v=72';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -2497,11 +2497,14 @@ function htmlPremium() {
   let h = '<p style="font-size:13px;line-height:1.45;color:var(--txt2);margin-bottom:10px">Compras opcionales para apoyar el juego: recibes oro y poderes en tu personaje. Cada pago lo revisa <b>El Duende</b> en persona y te lo entrega en tu personaje (te avisamos aquí y por Telegram). Con dinero <b>no</b> se compran mTON: los TON solo se ganan jugando.</p>';
   for (const pq of PAQUETES) {
     let acc;
-    if (!cuenta) acc = '<span class="precio sans" style="color:var(--txt2)">Inicia sesión</span>';
+    if (pq.skin && yo && (yo.skins || []).includes(pq.skin)) acc = '<span class="precio" style="color:var(--ok)">✓ Ya la tienes</span>';
+    else if (!cuenta) acc = '<span class="precio sans" style="color:var(--txt2)">Inicia sesión</span>';
     else if (cuentaTg) acc = `<span class="precio">⭐ ${estrellasDe(pq.usd)}</span><button class="btn" data-premium="${pq.id}" data-metodo="stars">Pagar con Stars</button>`;
     else acc = `<span class="precio">~$${pq.usd} en SOL</span><button class="btn" data-premium="${pq.id}" data-metodo="sol">Pagar con SOL</button>`;
-    h += tarjeta(`<img src="${A}items/equipo/${pq.icono}.png">`, esc(pq.nombre), esc(pq.desc), acc);
+    const ico = pq.skin ? `<img src="${A}skins/${pq.img}.png">` : `<img src="${A}items/equipo/${pq.icono}.png">`;
+    h += tarjeta(ico, esc(pq.nombre), esc(pq.desc) + (pq.skin ? '<br><span style="color:var(--txt2)">Skin con poderes: también se consigue con oro.</span>' : ''), acc);
   }
+  if (cuentaTg) h += '<p style="font-size:12px;color:var(--txt2);margin-top:6px">¿Prefieres pagar con SOL? Entra al juego desde la web (duende-quest.alfonso12hc.workers.dev/mmo) con tu cuenta.</p>';
   const ps = (yo && yo.pedidos) || [];
   if (ps.length) {
     const col = { pagado: 'var(--warn)', por_verificar: 'var(--warn)', entregado: 'var(--ok)', anulado: 'var(--err)' };
@@ -3542,10 +3545,16 @@ function pintarTienda() {
       const ico = tabTienda === 'arma' ? `<img src="${A}armas/${d.icono}_item.png" style="${d.color && id !== 'katana' ? 'filter:drop-shadow(0 0 4px ' + d.color + ')' : ''}">` : `<img src="${A}skins/${d.img}.png">`;
       let acc;
       if (tiene.includes(id)) acc = puesto === id ? '<span class="precio" style="color:var(--ok)">✓ Equipado</span>' : `<button class="btn sec" data-equipar="${tabTienda}" data-id="${id}">Equipar</button>`;
-      else acc = `<span class="precio">🪙 ${d.precio.toLocaleString('es')}</span><button class="btn" data-comprar="${tabTienda}" data-id="${id}" ${yo.oro < d.precio ? 'disabled' : ''}>Comprar</button>`;
+      else {
+        acc = `<span class="precio">🪙 ${d.precio.toLocaleString('es')}</span><button class="btn" data-comprar="${tabTienda}" data-id="${id}" ${yo.oro < d.precio ? 'disabled' : ''}>Comprar</button>`;
+        // Skins: tambien con dinero; el pago lo revisa El Duende y la entrega a mano.
+        if (tabTienda === 'skin' && d.usd && yo.p2e && yo.p2e.cuenta) acc += (TG && !forzarInvitado)
+          ? `<button class="btn sec" data-premium="skin_${id}" data-metodo="stars">⭐ ${estrellasDe(d.usd)}</button>`
+          : `<button class="btn sec" data-premium="skin_${id}" data-metodo="sol">◎ ~$${d.usd} en SOL</button>`;
+      }
       h += tarjeta(ico, d.nombre, d.desc, acc);
     }
-    if (tabTienda === 'skin') h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Las skins que ya pagaste en el juego principal se desbloquean solas al entrar con tu cuenta.</p>';
+    if (tabTienda === 'skin') h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Cada skin da sus poderes mientras la llevas. Se compran con oro o, con tu cuenta, con dinero: ' + ((TG && !forzarInvitado) ? 'Stars aquí en Telegram o SOL desde la web' : 'SOL a la wallet de El Duende (o Stars dentro de Telegram)') + '; El Duende revisa el pago y te la entrega en tu personaje. Las skins que ya pagaste en el juego principal se desbloquean solas al entrar con tu cuenta.</p>';
   }
   L.innerHTML = h;
   // Retratos de las monturas (primer cuadro de su hoja).
@@ -3560,6 +3569,7 @@ function pintarTienda() {
     x.restore();
   });
   L.querySelectorAll('[data-comprar]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'comprar', k: b.dataset.comprar, id: b.dataset.id, n: +b.dataset.n || 1 }); });
+  conectarPremium(L);   // skins: el boton de pagar con dinero
   L.querySelectorAll('[data-equipar]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'equipar', k: b.dataset.equipar, id: b.dataset.id }); });
 }
 
