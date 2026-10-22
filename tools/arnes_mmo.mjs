@@ -1287,7 +1287,7 @@ async function pruebasTemporada() {
   const sinLogros = T.filter(x => [50, 200].some((n, i) => { const L = D.LOGROS.find(l => l.titulo === x.titulos[i]); return !L || L.cond({ [x.campo]: n - 1 }) || !L.cond({ [x.campo]: n }); }));
   chequear(!sinLogros.length, 'cada temporada tiene sus logros de 50 y 200 ' + sinLogros.map(x => x.id).join(','));
   chequear(new Date(T[T.length - 1].fin).getUTCFullYear() >= 2027 && T.some(x => new Date(x.ini).getUTCMonth() === 0) && T.some(x => new Date(x.ini).getUTCMonth() >= 2), 'hay temporadas en enero y de marzo en adelante');
-  chequear(Object.values(D.MONTURAS).every(mo => D.HOJAS[mo.hoja] && (mo.precio > 0 || mo.banda) && mo.vel > 1), 'todas las monturas tienen hoja, precio y velocidad');
+  chequear(Object.values(D.MONTURAS).every(mo => D.HOJAS[mo.hoja] && (mo.precio > 0 || mo.banda || mo.torre) && mo.vel > 1), 'todas las monturas tienen hoja, precio y velocidad');
   reloj = Math.max(relojAntes, reloj);
   await dejar(t);
 }
@@ -1417,6 +1417,13 @@ async function pruebasTorre() {
   j.inv = 0; mundo.herir(j, 1e9, { id: 0, pct: 0 }); if (!j.muerto) { j.hp = 0; mundo.morir && mundo.morir(j); }
   tick(2);
   chequear(w2.torre.fin, 'si caen todos, se acaba');
+  // Montura de la Torre: al superar el piso TORRE.montura (y no se vende).
+  mundo.anotarTorre(j, D.TORRE.montura);
+  chequear(j.c.monturas.includes('torre'), 'el piso ' + D.TORRE.montura + ' da el Lagarto de la Torre');
+  const km = await entrar('Jinete', '81'); ponerNivel(km, 40, 'guerrero'); km.c.oro = 1e7; await aMapa(km, 'pueblo', 900);
+  await km.mandar({ t: 'comprar', k: 'montura', id: 'torre' });
+  chequear(!(km.c.monturas || []).includes('torre'), 'la montura de la Torre no se vende');
+  await dejar(km);
   const tp = await interno('tops');
   chequear(tp.ok && Array.isArray(tp.torre) && Array.isArray(tp.xp) && Array.isArray(tp.duel) && typeof tp.online === 'number', 'el bot puede leer los rankings de la semana (/topmmo)');
   chequear((await interno('tops', {}, 'mal')).ok === undefined, 'sin la cabecera del bot no responde');

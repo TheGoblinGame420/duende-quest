@@ -441,6 +441,8 @@ export const MONTURAS = {
   dragon:    { nombre: 'Dragón Ancestral',     hoja: 'dragon',    nv: 60, precio: 300000, vel: 2,   alto: 84, dy: 40 },
   // No se vende: se gana venciendo al Titan de la banda en 3 semanas.
   abismo:    { nombre: 'Murciélago del Abismo', hoja: 'murcielago', nv: 60, precio: 0, banda: true, vel: 2, alto: 76, dy: 30 },
+  // No se vende: se gana superando el piso TORRE.montura de la Torre del Duende.
+  torre:     { nombre: 'Lagarto de la Torre',   hoja: 'lagarto',   nv: 10, precio: 0, torre: true, vel: 1.8, alto: 52, dy: 23, tinte: '#c084fc' },
 };
 export const MONTAR_MS = 1500;
 // Colores del nombre (solo se ven, no dan nada): metas de oro a largo plazo
@@ -1617,7 +1619,7 @@ LOGROS.push(
 // ── TORRE DEL DUENDE ── (functions/mmo/torre.js)
 // Pisos con oleadas de monstruos de tu nivel, cada uno mas duro; un jefe
 // cada jefeCada. tiempo por piso; porHora subidas por jugador; max por grupo.
-export const TORRE = { nv: 10, max: 5, jefeCada: 5, pausa: 3500, tiempo: 150000, porHora: 12, instancias: 30, vidaJefe: 0.35, atkJefe: 0.8, semMin: 10 };
+export const TORRE = { nv: 10, max: 5, jefeCada: 5, pausa: 3500, tiempo: 150000, porHora: 12, instancias: 30, vidaJefe: 0.35, atkJefe: 0.8, semMin: 10, montura: 30 };
 // Premio del ranking semanal (desde el piso semMin): 1º, 2º y 3º.
 export const premioTorreSem = i => [15000, 7500, 3500][i] || 0;
 export const pisoTorre = p => ({ n: Math.min(6, 2 + Math.floor((p - 1) / 3)), vida: 1.2 * Math.pow(1.07, p - 1), atk: Math.pow(1.045, p - 1), jefe: p % 5 === 0 });

@@ -120,6 +120,14 @@ export const Torre = {
     const c = s.c;
     const t = this.torreSem(c);
     c.torreMax = Math.max(c.torreMax || 0, piso);
+    // Montura que solo da la Torre (piso TORRE.montura, de una vez para siempre).
+    c.monturas = c.monturas || [];
+    if (c.torreMax >= TORRE.montura && !c.monturas.includes('torre')) {
+      c.monturas.push('torre');
+      s.sucio = true;
+      this.enviar(s, { t: 'toast', ok: true, m: `🦎 ¡Superaste el piso ${TORRE.montura}: el Lagarto de la Torre es tuyo! Elígelo en el Mercader (MONTURAS).` });
+      this.aTodos({ t: 'aviso', m: `🦎 ${c.nombre} ganó el Lagarto de la Torre (piso ${TORRE.montura}).` });
+    }
     if (piso <= t.max) { this.revisarLogros(s); return; }
     const antes = t.max;
     t.max = piso;

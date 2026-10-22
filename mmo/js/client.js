@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=130';
+} from './data.js?v=132';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -3921,9 +3921,10 @@ function pintarTienda() {
       const ico = `<canvas data-montura="${id}" width="52" height="52"></canvas>`;
       const acc = tiene ? (yo.montura === id ? '<span class="precio" style="color:var(--ok)">✓ En uso</span>' : `<button class="btn sec" data-comprar="montura" data-id="${id}">Usar</button>`)
         : mo.banda ? `<span class="precio" style="color:var(--txt2)">⚔️ Banda ${(yo.banda || {}).t || 0}/${BANDA_MONTURA}</span>`
+        : mo.torre ? `<span class="precio" style="color:var(--txt2)">🗼 Piso ${yo.torreMax || 0}/${TORRE.montura}</span>`
         : yo.nivel < mo.nv ? `<span class="precio" style="color:var(--warn)">Nv ${mo.nv}</span><span class="precio">🪙 ${mo.precio.toLocaleString('es')}</span>`
         : `<span class="precio">🪙 ${mo.precio.toLocaleString('es')}</span><button class="btn" data-comprar="montura" data-id="${id}" ${yo.oro < mo.precio ? 'disabled' : ''}>Comprar</button>`;
-      h += tarjeta(ico, esc(mo.nombre), `+${Math.round((mo.vel - 1) * 100)}% de velocidad · ` + (mo.banda ? `no se vende: vence al Titán de la banda en ${BANDA_MONTURA} semanas distintas` : `desde Nv ${mo.nv}`), acc);
+      h += tarjeta(ico, esc(mo.nombre), `+${Math.round((mo.vel - 1) * 100)}% de velocidad · ` + (mo.banda ? `no se vende: vence al Titán de la banda en ${BANDA_MONTURA} semanas distintas` : mo.torre ? `no se vende: supera el piso ${TORRE.montura} de la Torre del Duende` : `desde Nv ${mo.nv}`), acc);
     }
     h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Monta con la tecla Y o el botón 🐎 (1,5 s, fuera de combate). No se puede montar en mazmorras ni en el Coliseo.</p>';
   } else if (tabTienda === 'pw') {

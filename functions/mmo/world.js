@@ -1691,6 +1691,7 @@ export class MmoWorld {
       c.monturas = c.monturas || [];
       if (c.monturas.includes(m.id)) { c.montura = m.id; this.actualizarYo(s); return this.enviar(s, { t: 'toast', m: `🐎 Ahora usas: ${mo.nombre}.`, ok: true }); }
       if (mo.banda) return this.enviar(s, { t: 'toast', m: 'Esa montura no se vende: se gana en la banda del Santuario del Titán.' });
+      if (mo.torre) return this.enviar(s, { t: 'toast', m: 'Esa montura no se vende: se gana en la Torre del Duende.' });
       if (c.nivel < mo.nv) return this.enviar(s, { t: 'toast', m: `Necesitas nivel ${mo.nv} para esa montura.` });
       if (c.oro < mo.precio) return this.enviar(s, { t: 'toast', m: 'No te alcanza el oro.' });
       c.oro -= mo.precio;
