@@ -11,12 +11,12 @@ import {
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
-  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe, climaDe, TORRE, premioTorreSem, zonaDeNivel, progresoLogro, proximoMundial, mundialDe, HORA_FELIZ, EXPEDICION, premioExpedicion,
+  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe, climaDe, ESPECIES, premioEspecie, TORRE, premioTorreSem, zonaDeNivel, progresoLogro, proximoMundial, mundialDe, HORA_FELIZ, EXPEDICION, premioExpedicion,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=172';
+} from './data.js?v=174';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -2490,6 +2490,15 @@ function pintarBestiario() {
     const desc = n ? (sig ? `${n} / ${sig} · próximo premio: ${premioBestiario(m.nivel, i).toLocaleString('es')} oro` : `${n} · ✓ completo`) : `Sin cazar · Nv ${m.nivel}${m.jefe ? ' · jefe' : ''}`;
     h += tarjeta(n ? `<canvas data-best="${k}" width="52" height="52"></canvas>` : '❔', n ? esc(m.nombre) + ` <span style="color:var(--txt2)">Nv ${m.nivel}</span>` : '<span style="color:var(--txt3)">???</span>', desc,
       `<span class="precio" style="color:${!sig && n ? 'var(--ok)' : 'var(--oro)'}">${'★'.repeat(BESTIARIO_HITOS.filter(x => x <= n).length)}${'☆'.repeat(BESTIARIO_HITOS.filter(x => x > n).length)}</span>`);
+  }
+  // Especies de peces (una por pesquero).
+  const esp = yo.especies || {};
+  h += `<p style="font:600 13px var(--sans);color:var(--txt);margin:14px 0 6px">🐟 Especies de peces · ${Object.keys(esp).length} de ${Object.keys(ESPECIES).length}</p>`;
+  for (const [z, nom] of Object.entries(ESPECIES)) {
+    const n = esp[z] || 0, mp = MAPAS[z];
+    h += tarjeta(n ? '<div style="font-size:30px;text-align:center">🐟</div>' : '❔', n ? esc(nom) : '<span style="color:var(--txt3)">???</span>',
+      n ? `${n} pescado${n === 1 ? '' : 's'} · ${esc(mp.nombre)}` : `Pesca en el pesquero de ${esc(mp.nombre)} (primera vez: +${premioEspecie(z === 'pueblo' ? 1 : mp.nv[0]).toLocaleString('es')} oro)`,
+      `<span class="precio" style="color:${n ? 'var(--ok)' : 'var(--txt3)'}">${n ? '✓' : '—'}</span>`);
   }
   $('inv-lista').innerHTML = h;
   $('inv-lista').querySelectorAll('canvas[data-best]').forEach(c => {

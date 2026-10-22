@@ -1479,6 +1479,7 @@ async function pruebasPesca() {
   const pesc0 = (j.c.mat || {}).pescado || 0;
   await j.mandar({ t: 'tirar' });
   chequear(((j.c.mat || {}).pescado || 0) > pesc0 && j.c.peces === 1 && j.ultimos('pescado').length === 1, 'tirar a tiempo da pescado');
+  chequear(j.c.especies && j.c.especies.pueblo === 1 && j.ultimos('toast').some(x => /Nueva especie: Carpa del Pueblo/.test(x.m)), 'la primera captura de una especie se anuncia y da oro');
   // Dejarlo pasar: se escapa.
   j.limpiar(); await j.mandar({ t: 'pescar' });
   await esperarPica(); tick(25);

@@ -14,7 +14,7 @@
 // ellos (y la Esencia Abisal de los jefes de mazmorra) la Artesana graba
 // RUNAS permanentes desde Nv 40 (+2% por rango, 5 rangos).
 // ═══════════════════════════════════════════════════════
-import { MAPAS, MATERIALES, NODO_CADA_MS, RECOLECTAR_MS, ELIXIR_MS, RECETAS, nodosDe, RARO_ZONA, raroDe, RUNAS, RUNA_NIVEL, RUNA_MAX, costoRuna, PESCA, pesqueroDe, hoyUTC, climaDe } from '../../mmo/js/data.js';
+import { MAPAS, MATERIALES, NODO_CADA_MS, RECOLECTAR_MS, ELIXIR_MS, RECETAS, nodosDe, RARO_ZONA, raroDe, RUNAS, RUNA_NIVEL, RUNA_MAX, costoRuna, PESCA, pesqueroDe, hoyUTC, climaDe, ESPECIES, premioEspecie } from '../../mmo/js/data.js';
 
 export const Profesiones = {
   // Al entrar a un mapa: sus nodos y cuando vuelve a estar listo cada uno.
@@ -122,6 +122,18 @@ export const Profesiones = {
     // Con lluvia (CLIMA) los dorados pican el doble.
     if (Math.random() < (PESCA.dorado + p.nv / 1500) * (climaDe(c.mapa) === 'lluvia' ? 2 : 1)) { c.mat.pez_dorado = Math.min(999, (c.mat.pez_dorado || 0) + 1); dorado = true; txt += ' y ¡1 Pez Dorado!'; }
     if (Math.random() < PESCA.cofre) { oro = 30 * Math.max(5, p.nv); c.oro += oro; txt += ` y un cofre hundido (+${oro} oro)`; }
+    // La especie de este pesquero: la primera vez, oro.
+    c.especies = c.especies || {};
+    const esp = ESPECIES[c.mapa];
+    if (esp) {
+      if (!c.especies[c.mapa]) {
+        const pe = premioEspecie(p.nv);
+        c.oro += pe;
+        txt += ` · 🆕 ¡Nueva especie: ${esp}! (+${pe} oro)`;
+      }
+      c.especies[c.mapa] = (c.especies[c.mapa] || 0) + 1;
+      c.nEspecies = Object.keys(c.especies).length;
+    }
     // La mascota que solo se pesca: muy rara, segura a las mascotaSeguro capturas.
     c.mascotas = c.mascotas || [];
     if (!c.mascotas.includes('pececito') && (Math.random() < PESCA.mascota || c.peces >= PESCA.mascotaSeguro)) {

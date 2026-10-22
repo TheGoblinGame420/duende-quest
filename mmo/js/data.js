@@ -460,6 +460,7 @@ export const TINTES = {
 export const NOVEDADES = [
   { n: 8, fecha: '22 de octubre (tarde)', items: [
     '🌧️ Clima: algunas horas llueve o nieva en ciertas zonas; con lluvia el Pez Dorado sale el doble.',
+    '🐟 Colección de especies de peces: una por pesquero, oro la primera vez y el logro Ictiólogo.',
     '🧭 Expediciones con destino (Bosque, Mina o Lago) y misión diaria nueva; semanal de la Torre.',
     '🗼 Torre: pisos con modificadores (Veloces, Blindados, Élite) y el Lagarto de la Torre al piso 30.',
     '🏰 En las mazmorras revives junto a la última barrera abierta y los packs vuelven a su sitio.',
@@ -785,6 +786,7 @@ export const LOGROS = [
   { id: 'reytorre',  titulo: 'Rey de la Torre',    desc: 'Gana el ranking semanal de la Torre (desde el piso 10)', oro: 10000, cond: c => (c.reyTorre || 0) >= 1 },
   { id: 'zonas10',   titulo: 'Trotamundos',        desc: 'Visita las 10 zonas del mundo',  oro: 5000,  cond: c => (c.nVisitadas || 0) >= 10 },
   { id: 'exped25',   titulo: 'Explorador',         desc: 'Completa 25 expediciones',       oro: 3000,  cond: c => (c.expediciones || 0) >= 25 },
+  { id: 'especies',  titulo: 'Ictiólogo',          desc: 'Pesca las 11 especies (una por pesquero)', oro: 10000, cond: c => Object.keys(c.especies || {}).length >= 11 },
   { id: 'pesca50',   titulo: 'Pescador',           desc: 'Pesca 50 peces',                 oro: 1500,  cond: c => (c.peces || 0) >= 50 },
   { id: 'pesca500',  titulo: 'Maestro Pescador',   desc: 'Pesca 500 peces',                oro: 8000,  cond: c => (c.peces || 0) >= 500 },
   { id: 'mundial10', titulo: 'Titán',              desc: 'Vence 10 veces al jefe mundial', oro: 15000, cond: c => (c.mundiales || 0) >= 10 },
@@ -1044,6 +1046,13 @@ export const RECETAS = [
 // Da Pescado (y a veces Pez Dorado o un cofre hundido con un poco de oro)
 // para la Artesana. Hasta porDia capturas al dia. Nunca mTON.
 export const PESCA = { min: 3000, max: 9000, ventana: 2000, porDia: 80, dorado: 0.05, cofre: 0.02, radio: 80, mascota: 1 / 250, mascotaSeguro: 300 };
+// Una especie por pesquero: la primera captura de cada una da oro (ver la
+// coleccion en Inventario > BESTIARIO) y completarlas, un logro.
+export const ESPECIES = {
+  pueblo: 'Carpa del Pueblo', noche: 'Trucha Nocturna', amanecer: 'Perca Roja', selva: 'Pez Esmeralda', tormenta: 'Anguila Eléctrica',
+  desierto: 'Pez Arena', castillo: 'Lucio Real', cumbres: 'Salmón de las Cumbres', cavernas: 'Pez Ciego', abismo: 'Rape Abisal', acantilados: 'Pez Arcoíris',
+};
+export const premioEspecie = nv => 200 + 40 * nv;
 export function pesqueroDe(mapaId) {
   if (mapaId === 'pueblo') return { x: 475, nv: 1 };   // entre el portal de las Colinas y el Guardia
   const m = MAPAS[mapaId];
@@ -1670,7 +1679,7 @@ const PROG_LOGRO = {
   nv20: ['nivel', 20], nv40: ['nivel', 40], nv60: ['nivel', 60], mundial1: ['mundiales', 1], mundial10: ['mundiales', 10],
   duelista: ['duelosG', 10], mazmorra1: ['mazmorras', 1], desafio5: ['desafioMax', 5], desafio10: ['desafioMax', 10], desafio20: ['desafioMax', 20],
   pesca50: ['peces', 50], pesca500: ['peces', 500], torre10: ['torreMax', 10], torre25: ['torreMax', 25], exped25: ['expediciones', 25],
-  amigo1: ['amigos', 1], amigo5: ['amigos', 5], zonas10: ['nVisitadas', 10],
+  amigo1: ['amigos', 1], amigo5: ['amigos', 5], zonas10: ['nVisitadas', 10], especies: ['nEspecies', 11],
 };
 export function progresoLogro(id, c) {
   let p = PROG_LOGRO[id];
