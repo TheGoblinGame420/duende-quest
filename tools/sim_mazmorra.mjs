@@ -132,12 +132,12 @@ async function pelea(idMaz, nivel, clases, iJefe) {
 }
 
 // Recorrido completo: los bots avanzan pack a pack y jefe a jefe.
-async function completa(idMaz, nivel, clases) {
+async function completa(idMaz, nivel, clases, k = 0) {
   const mundo = new MmoWorld(state, {});
   const bots = [];
   for (const cl of clases) bots.push(await bot(mundo, cl, nivel));
   for (const b of bots) { b.bot.grupo = bots; b.c.pw.pocion = 20; }
-  const w = mundo.crearInstancia(idMaz, nivel, bots.length);
+  const w = mundo.crearInstancia(idMaz, nivel, bots.length, k);
   for (const b of bots) mundo.unirAInstancia(b, w);
   const t0 = Date.now();
   let muertes = 0;
@@ -159,6 +159,16 @@ async function completa(idMaz, nivel, clases) {
 }
 
 const [, , soloMaz, soloNivel, modo] = process.argv;
+// Desafios (Nv 60, sin equipo: pesimista):  node tools/sim_mazmorra.mjs ciudadela 0,3,6,10 desafio
+if (modo === 'desafio') {
+  for (const k of String(soloNivel || '0,3,6,10').split(',').map(Number)) {
+    for (const comp of [['guerrero'], ['mago'], ['guerrero', 'sacerdote', 'mago']]) {
+      const r = await completa(soloMaz || 'ciudadela', 60, comp, k);
+      console.log(`${(soloMaz || 'ciudadela').padEnd(10)} +${String(k).padEnd(3)} ${comp.join('+').padEnd(26)} ${r.gana ? '✓ completada' : '✗ jefes ' + r.jefes + '/3'} en ${Math.floor(r.seg / 60)}m${String(r.seg % 60).padStart(2, '0')}s · muertes ${r.muertes} · pociones ${r.pociones}`);
+    }
+  }
+  process.exit(0);
+}
 if (modo === 'completa') {
   for (const id in MAZMORRAS) {
     if (soloMaz && soloMaz !== 'todas' && id !== soloMaz) continue;

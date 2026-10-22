@@ -570,6 +570,9 @@ export const LOGROS = [
   { id: 'amigo5',    titulo: 'Líder de la Manada', desc: '5 amigos invitados llegaron a nivel 10', oro: 8000, cond: c => (c.amigos || 0) >= 5 },
   { id: 'herm',      titulo: 'Hermano de Armas',    desc: 'Únete a una hermandad (o funda la tuya)', oro: 1000, cond: c => !!c.herm },
   { id: 'mazmorra1', titulo: 'Explorador de Criptas', desc: 'Completa una mazmorra',             oro: 2000,  cond: c => (c.mazmorras || 0) >= 1 },
+  { id: 'desafio5',  titulo: 'Desafiante',          desc: 'Vence un Desafío +5',               oro: 8000,  cond: c => (c.desafioMax || 0) >= 5 },
+  { id: 'desafio10', titulo: 'Implacable',          desc: 'Vence un Desafío +10',              oro: 20000, cond: c => (c.desafioMax || 0) >= 10 },
+  { id: 'desafio20', titulo: 'Leyenda del Duende',  desc: 'Vence un Desafío +20',              oro: 50000, cond: c => (c.desafioMax || 0) >= 20 },
   { id: 'mazmorra10', titulo: 'Conquistador',       desc: 'Completa 10 mazmorras',             oro: 10000, cond: c => (c.mazmorras || 0) >= 10 },
   { id: 'kraken',    titulo: 'Azote del Abismo',    desc: 'Vence al Kraken del Templo Hundido', oro: 8000,  cond: c => !!(c.mzJefes && c.mzJefes.mz_kraken) },
   { id: 'dragon',    titulo: 'Matadragones',        desc: 'Vence al Dragón Carmesí de la Ciudadela', oro: 15000, cond: c => !!(c.mzJefes && c.mzJefes.mz_dragon) },
@@ -801,6 +804,12 @@ export const MAZMORRAS = {
 export const escalaMazmorra = n => ({ vidaPack: 2.2 * (1 + 0.8 * (n - 1)), vidaJefe: 26 * (1 + 1.5 * (n - 1)), atkPack: 1, atkJefe: 1.15 + 0.1 * (n - 1) });
 // Primera vez de cada dia que completas una mazmorra: premio extra.
 export const premioMazmorraDia = nivel => ({ xp: Math.round(xpParaSubir(nivel) * 0.5), oro: 150 * nivel });
+// Desafios (final de juego, Nv 60): cualquier mazmorra a Nv 60 con los
+// monstruos mas duros en cada paso. Vencer el +k abre el +k+1. Premio: oro y
+// un objeto de nivel 60+k (se equipa a Nv 60). Nunca mTON.
+export const DESAFIO_MAX = 30;
+export const multDesafio = k => ({ vida: 1 + 0.2 * k, atk: 1 + 0.1 * k });
+export const premioDesafio = k => ({ oro: 500 * (k + 4), nvItem: 60 + Math.min(k, DESAFIO_MAX), rMin: k >= 10 ? 2 : 1 });
 export const nivelMazmorra = (mz, nivelGrupo) => Math.max(mz.nv[0], Math.min(mz.nv[1], nivelGrupo));
 
 export function zonaDe(tipoMonstruo) {

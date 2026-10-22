@@ -566,6 +566,7 @@ async function pruebas() {
   await pruebasAmigos();
   await pruebasDuelos();
   await pruebasNovato();
+  await pruebasDesafios();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -1099,4 +1100,39 @@ async function pruebasNovato() {
   n.c.login = { d: hace(1), racha: 5, total: 5 };
   chequear(mundo.procesarLogin(n).racha === 6 && n.c.login.d === hoy, 'jugar seguido la sube');
   await dejar(n);
+}
+
+async function pruebasDesafios() {
+  console.log('Desafíos de mazmorra (Nv 60)');
+  const d = await entrar('Desafiante', '5f');
+  ponerNivel(d, 59, 'guerrero');
+  await aMapa(d, 'pueblo', 800);
+  d.limpiar();
+  await d.mandar({ t: 'mazmorra', id: 'catacumbas', k: 1 });
+  chequear(!d.k.includes('#') && d.ultimos('no').some(x => /nivel 60/.test(x.m)), 'antes de Nv 60 no hay desafíos');
+  ponerNivel(d, 60);
+  await d.mandar({ t: 'mazmorra', id: 'catacumbas', k: 2 });
+  chequear(!d.k.includes('#'), 'no se salta niveles (+2 sin vencer el +1)');
+  await d.mandar({ t: 'mazmorra', id: 'catacumbas', k: 1 });
+  const w = mundo.mundoDe(d);
+  chequear(w.inst && w.inst.k === 1 && w.inst.nv === 60, 'el +1 de Catacumbas va a Nv 60');
+  const pack = [...w.mons.values()].find(o => !o.jefe);
+  const base = mundo.crearMonstruo('pueblo', pack.k, 100, { nv: pack.nv, hpX: 2.2 });
+  chequear(Math.abs(pack.max / base.max - 1.2) < 0.05, 'los monstruos tienen más vida (×' + (pack.max / base.max).toFixed(2) + ')');
+  mundo.mundoK('pueblo').mons.delete(base.id);
+  // Vencer al jefe final
+  const fin = [...w.mons.values()].find(o => o.final);
+  const oro0 = d.c.oro, bolsa0 = d.c.bolsa.length;
+  for (const o of [...w.mons.values()]) if (o.jefe && o !== fin) { mundo.danar(o, o.hp + 1, d); tick(1); }
+  mundo.danar(fin, fin.hp + 1, d); tick(2);
+  chequear(w.inst.completada && d.c.desafio && d.c.desafio.catacumbas === 1, 'vencido: queda anotado el +1');
+  const it = d.c.bolsa.find(x => x.des);
+  chequear(d.c.oro > oro0 && it && it.nv === 61, 'premio: oro y un objeto de nivel 61');
+  await mundo.recibir(d, JSON.stringify({ t: 'item', id: it.id, a: 'equipar' }));
+  chequear(Object.values(d.c.eq).some(x => x && x.id === it.id), 'el objeto de desafío se equipa a Nv 60');
+  avanzar(10000); tick(1);
+  await aMapa(d, 'pueblo', 800);
+  await d.mandar({ t: 'mazmorra', id: 'catacumbas', k: 2 });
+  chequear(mundo.mundoDe(d).inst && mundo.mundoDe(d).inst.k === 2, 'ahora se abre el +2');
+  await dejar(d);
 }

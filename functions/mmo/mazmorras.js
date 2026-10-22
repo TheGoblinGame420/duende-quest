@@ -18,7 +18,7 @@
 // ultimo, epica). NUNCA mTON: ese dinero sale de un fondo limitado y sumar
 // fuentes nuevas se habla antes con el dueño.
 // ═══════════════════════════════════════════════════════
-import { MAPAS, MONSTRUOS, MAZMORRAS, escalaMazmorra, premioMazmorraDia, nivelMazmorra, statsMonstruo, SUELO, hoyUTC } from '../../mmo/js/data.js';
+import { MAPAS, MONSTRUOS, MAZMORRAS, escalaMazmorra, premioMazmorraDia, nivelMazmorra, statsMonstruo, SUELO, hoyUTC, NIVEL_MAX, DESAFIO_MAX, multDesafio, premioDesafio } from '../../mmo/js/data.js';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const VACIA_MS = 300000;   // una instancia sin nadie se cierra a los 5 min (en el movil se corta mucho: da tiempo a reconectar)
@@ -37,6 +37,10 @@ export const Mazmorras = {
     const mz = MAZMORRAS[id];
     if (!this.cercaDelBuscador(s)) return this.no(s, 'Ve al portal de mazmorras del pueblo.');
     if (s.c.nivel < mz.nv[0]) return this.no(s, `Necesitas nivel ${mz.nv[0]} para ${mz.nombre}.`);
+    // Desafio +k: solo a Nv 60 y hasta uno mas que el mejor vencido.
+    const k = Math.max(0, Math.min(DESAFIO_MAX, m.k | 0));
+    if (k && s.c.nivel < NIVEL_MAX) return this.no(s, `Los Desafíos se abren a nivel ${NIVEL_MAX}.`);
+    if (k > ((s.c.desafio || {})[id] || 0) + 1) return this.no(s, `Primero vence el Desafío +${k - 1} de ${mz.nombre}.`);
     const g = this.grupoDe(s);
     this.instDe = this.instDe || new Map();   // uid -> clave de su instancia (jugando solo)
     // El grupo (o el jugador solo) vuelve a SU instancia si sigue abierta:
@@ -44,8 +48,8 @@ export const Mazmorras = {
     const previa = g ? g.inst : this.instDe.get(s.c.uid);
     const wp = previa && this.mundo[previa] && this.mundo[previa].inst ? this.mundo[previa] : null;
     if (wp && !wp.inst.completada) {
-      if (wp.inst.id === id) return this.unirAInstancia(s, wp);
-      if (g) return this.no(s, `Tu grupo está en ${MAZMORRAS[wp.inst.id].nombre}: entra a esa o sal del grupo.`);
+      if (wp.inst.id === id && (wp.inst.k || 0) === k) return this.unirAInstancia(s, wp);
+      if (g) return this.no(s, `Tu grupo está en ${MAZMORRAS[wp.inst.id].nombre}${wp.inst.k ? ' (Desafío +' + wp.inst.k + ')' : ''}: entra a esa o sal del grupo.`);
       if (this.jugadoresEn(previa)) return this.no(s, 'Todavía tienes otra mazmorra abierta.');
       this.cerrarInstancia(previa);
     } else if (wp && wp.inst.completada) {
@@ -61,10 +65,10 @@ export const Mazmorras = {
     hechas.push(ahora);
     this.creadas.set(s.c.uid, hechas);
     // Entran juntos los del grupo que estan junto al portal, vivos y con nivel.
-    const quienes = g ? this.sesionesGrupo(g).filter(x => !x.muerto && this.cercaDelBuscador(x) && x.c.nivel >= mz.nv[0]) : [];
+    const quienes = g ? this.sesionesGrupo(g).filter(x => !x.muerto && this.cercaDelBuscador(x) && x.c.nivel >= (k ? NIVEL_MAX : mz.nv[0])) : [];
     if (!quienes.includes(s)) quienes.push(s);
-    const nivel = nivelMazmorra(mz, Math.max(...quienes.map(x => x.c.nivel)));
-    const w = this.crearInstancia(id, nivel, quienes.length);
+    const nivel = k ? NIVEL_MAX : nivelMazmorra(mz, Math.max(...quienes.map(x => x.c.nivel)));
+    const w = this.crearInstancia(id, nivel, quienes.length, k);
     if (g) g.inst = w.clave; else this.instDe.set(s.c.uid, w.clave);
     for (const x of quienes) this.unirAInstancia(x, w);
     if (g) for (const x of this.sesionesGrupo(g)) {
@@ -72,23 +76,24 @@ export const Mazmorras = {
     }
   },
 
-  crearInstancia(id, nivel, n) {
+  crearInstancia(id, nivel, n, k = 0) {
     const mz = MAZMORRAS[id];
     this.sigInst = (this.sigInst || 0) + 1;
     const clave = mz.mapa + '#' + this.sigInst.toString(36) + Math.random().toString(36).slice(2, 6);
     const w = this.mundoK(clave);
     w.spawnEn = Infinity;
     w.zonas = [];
-    w.inst = { id, nv: nivel, creado: Date.now(), vacioDesde: 0, hechos: 0, completada: false };
+    const md = multDesafio(k);
+    w.inst = { id, nv: nivel, creado: Date.now(), vacioDesde: 0, hechos: 0, completada: false, k, mv: md.vida, ma: md.atk };
     w.muros = mz.jefes.map(j => j.muro);
     const esc = escalaMazmorra(n);
     mz.packs.forEach((pk, ip) => {
       const grupo = clave + ':' + ip;
       pk.k.forEach((k, i) => this.crearMonstruo(clave, k, pk.x + i * 48 - (pk.k.length - 1) * 24,
-        { nv: nivel + (i === 0 ? 1 : 0), hpX: esc.vidaPack, atkX: esc.atkPack, agresivo: true, radioAgro: 230, grupo }));
+        { nv: nivel + (i === 0 ? 1 : 0), hpX: esc.vidaPack * md.vida, atkX: esc.atkPack * md.atk, agresivo: true, radioAgro: 230, grupo }));
     });
     mz.jefes.forEach((j, i) => {
-      const o = this.crearMonstruo(clave, j.k, j.x, { nv: nivel + 2, hpX: esc.vidaJefe, atkX: esc.atkJefe, agresivo: true, radioAgro: 260, mazmorra: true, jefeMaz: i });
+      const o = this.crearMonstruo(clave, j.k, j.x, { nv: nivel + 2, hpX: esc.vidaJefe * md.vida, atkX: esc.atkJefe * md.atk, agresivo: true, radioAgro: 260, mazmorra: true, jefeMaz: i });
       o.final = !!j.final;
       o.atk0 = statsMonstruo(j.k, nivel + 2).atk;
       o.vel0 = o.vel;
@@ -101,7 +106,7 @@ export const Mazmorras = {
     const mz = MAZMORRAS[w.inst.id];
     this.entrarMapa(s, mz.mapa, 150, false, w.clave);
     w.inst.vacioDesde = 0;
-    this.enviar(s, { t: 'toast', m: `🏰 ${mz.nombre} (Nv ${w.inst.nv}). Aquí los monstruos atacan solos y en grupo: ¡con cuidado!`, ok: true });
+    this.enviar(s, { t: 'toast', m: w.inst.k ? `⚡ ${mz.nombre} — Desafío +${w.inst.k}: monstruos con ${Math.round(w.inst.mv * 100)}% de vida y ${Math.round(w.inst.ma * 100)}% de daño.` : `🏰 ${mz.nombre} (Nv ${w.inst.nv}). Aquí los monstruos atacan solos y en grupo: ¡con cuidado!`, ok: true });
   },
 
   // Al reconectar: si estaba en una mazmorra que sigue abierta (la suya o la
@@ -149,9 +154,10 @@ export const Mazmorras = {
     const n = [...this.sesiones.values()].filter(s => s.c && s.k === o.cl && !s.muerto).length || 1;
     const esc = escalaMazmorra(n);
     const pct = o.hp / o.max;
-    o.max = Math.round(statsMonstruo(o.k, o.nv).hp * esc.vidaJefe);
+    const I = (w && w.inst) || {};
+    o.max = Math.round(statsMonstruo(o.k, o.nv).hp * esc.vidaJefe * (I.mv || 1));
     o.hp = Math.max(1, Math.round(o.max * pct));
-    o.atk = Math.round(o.atk0 * esc.atkJefe);
+    o.atk = Math.round(o.atk0 * esc.atkJefe * (I.ma || 1));
     o.combateDesde = ahora;
     o.gs = {};
     this.aClave(o.cl, { t: 'mmx', id: o.id, mx: o.max, hp: Math.ceil(o.hp) });
@@ -243,8 +249,9 @@ export const Mazmorras = {
   invocarEsbirros(o, m) {
     const vivos = [...this.sesiones.values()].filter(s => s.c && s.k === o.cl && !s.muerto);
     const esc = escalaMazmorra(Math.max(1, vivos.length));
+    const I = (this.mundo[o.cl] && this.mundo[o.cl].inst) || {};
     for (let i = 0; i < m.n; i++) {
-      const a = this.crearMonstruo(o.cl, m.k, o.x + (i % 2 ? 1 : -1) * (90 + i * 30), { nv: o.nv - 2, hpX: esc.vidaPack * 0.5, atkX: 1, agresivo: true, radioAgro: 700 });
+      const a = this.crearMonstruo(o.cl, m.k, o.x + (i % 2 ? 1 : -1) * (90 + i * 30), { nv: o.nv - 2, hpX: esc.vidaPack * 0.5 * (I.mv || 1), atkX: I.ma || 1, agresivo: true, radioAgro: 700 });
       a.esbirroDe = o.id;
       const t = vivos[Math.floor(Math.random() * vivos.length)];
       if (t) a.amen.set(t.id, 1);
@@ -308,14 +315,27 @@ export const Mazmorras = {
         const it = this.darItem(s, this.generarItem(I.nv, 2));
         extra = ` Premio del día: +${pr.xp.toLocaleString('es')} XP, +${pr.oro.toLocaleString('es')} oro y ${it.r >= 3 ? 'un LEGENDARIO' : 'un objeto ÉPICO'}.`;
       }
+      // Desafio vencido: abre el siguiente y da su premio (oro y un objeto
+      // de nivel 60+k que se puede equipar a Nv 60).
+      if (I.k) {
+        c.desafio = c.desafio || {};
+        c.desafio[I.id] = Math.max(c.desafio[I.id] || 0, I.k);
+        c.desafioMax = Math.max(c.desafioMax || 0, I.k);
+        const pd = premioDesafio(I.k);
+        c.oro += pd.oro;
+        const it = this.generarItem(pd.nvItem, pd.rMin);
+        it.des = 1;
+        this.darItem(s, it);
+        extra += ` Desafío +${I.k} vencido: +${pd.oro.toLocaleString('es')} oro y un objeto de nivel ${pd.nvItem}. Ya puedes intentar el +${Math.min(DESAFIO_MAX, I.k + 1)}.`;
+      }
       s.sucio = true;
-      this.enviar(s, { t: 'completada', id: I.id, txt: `🏆 ¡${mz.nombre} completada!${extra}` });
+      this.enviar(s, { t: 'completada', id: I.id, txt: `🏆 ¡${mz.nombre}${I.k ? ' +' + I.k : ''} completada!${extra}` });
       this.revisarLogros(s);
       this.actualizarYo(s);
       this.guardar(s);
       nombres.push(c.nombre);
     }
-    this.aTodos({ t: 'aviso', m: `🏰 ${nombres.join(', ')} ${nombres.length > 1 ? 'completaron' : 'completó'} ${mz.nombre} (Nv ${I.nv}).` });
+    this.aTodos({ t: 'aviso', m: `🏰 ${nombres.join(', ')} ${nombres.length > 1 ? 'completaron' : 'completó'} ${mz.nombre} ${I.k ? '— ⚡ Desafío +' + I.k : '(Nv ' + I.nv + ')'}.` });
   },
 
   // Morir en una mazmorra: se revive en su entrada (si sigue abierta).

@@ -1275,6 +1275,16 @@ Segunda tanda (?v=33):
   una mazmorra la desconexión es a los 8 min (3 fuera).
 - mTON: aviso claro en 💎 cuando el fondo del día está vacío; el toast de
   Nv 15 y la bienvenida del bot dicen "los días que hay fondo".
+**Desafíos de mazmorra (final de juego, ?v=34):** a Nv 60, en el buscador
+cada mazmorra tiene "⚡ DESAFÍO +k": la mazmorra a Nv 60 con vida ×(1+0,2k) y
+daño ×(1+0,1k) (`multDesafio`, `w.inst.k/mv/ma`, también en `empezarJefe` y
+los esbirros). Vencer el +k abre el +k+1 (`c.desafio[id]`, `c.desafioMax`),
+da 500·(k+4) de oro y un objeto de nivel 60+k (`it.des`, se equipa a Nv 60;
+épico garantizado desde +10). Logros +5/+10/+20. Tope +30. Sin mTON (los
+jefes de mazmorra nunca dan). Simulación sin equipo
+(`node tools/sim_mazmorra.mjs ciudadela 0,3,6,10 desafio`): guerrero solo
+hasta +3, grupo de 3 hasta +10 en ~9 min; con equipo se llega más lejos.
+
 Sin hacer: avisos a la hora habitual de cada uno (el cron de las 17 UTC ya
 usa 4 de 5 disparadores del plan gratis), y final de juego para D30 (1→60 se
 juega en 5-8 h). Ojo: la bienvenida del bot aún habla de $DUENDE en Solana

@@ -7,13 +7,13 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, ALCANCE_BASE, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
-  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, LOGIN_PREMIOS, multLogin, NIVEL_MAX,
+  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
-} from './data.js?v=33';
+} from './data.js?v=34';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -515,7 +515,7 @@ function entrarMapa(m) {
 let online = 0;
 function pintarSubMapa() {
   const mp = MAPAS[mapaId];
-  const base = mp.instancia ? 'Mazmorra' + (instancia ? ' · Nv ' + instancia.nv : '') : mp.zona && mp.nv ? 'Nivel ' + mp.nv[0] + '-' + mp.nv[1] : 'Zona segura';
+  const base = mp.instancia ? 'Mazmorra' + (instancia ? ' · Nv ' + instancia.nv + (instancia.k ? ' · ⚡+' + instancia.k : '') : '') : mp.zona && mp.nv ? 'Nivel ' + mp.nv[0] + '-' + mp.nv[1] : 'Zona segura';
   $('h-mapa-sub').textContent = base + (online ? ' · 👥 ' + online + ' en línea' : '');
 }
 
@@ -1383,10 +1383,19 @@ function abrirBuscador() {
       `${esc(mz.nombre)} <span style="color:${bloq ? '#ff7777' : '#888'}">Nv ${mz.nv[0]}-${mz.nv[1]}</span>`,
       `${esc(mz.desc)}<br><span style="color:#ffae00">👑 ${esc(jefes)}</span><br><span style="color:${hecha ? '#888' : '#4ade80'}">${hecha ? '✓ Premio del día cobrado' : '🎁 Premio del día disponible: XP, oro y un objeto épico'}</span>`,
       bloq ? `<span class="precio" style="color:#666">🔒 Nv ${mz.nv[0]}</span>` : `<button class="btn" data-maz="${id}">ENTRAR</button>`);
+    // Desafios a Nv 60: elegir el +k (hasta uno mas que el mejor vencido).
+    if (yo.nivel >= NIVEL_MAX) {
+      const mejor = (yo.desafio || {})[id] || 0, tope = Math.min(DESAFIO_MAX, mejor + 1);
+      let ops = '';
+      for (let k = tope; k >= 1; k--) ops += `<option value="${k}">+${k} · vida ×${multDesafio(k).vida.toFixed(1)}</option>`;
+      h += `<div class="mis-caja" style="margin:-4px 0 10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap"><b style="color:#ffd84a">⚡ DESAFÍO</b><span style="font-size:12px;color:#aaa">${mejor ? 'Mejor: +' + mejor : 'Aún ninguno'}</span><select data-dk="${id}" style="flex:1;min-width:120px">${ops}</select><button class="btn" data-mazk="${id}">ENTRAR</button></div>`;
+    }
   }
+  if (yo.nivel >= NIVEL_MAX) h += '<p style="font-size:12px;color:#ffd84a;margin-top:6px">⚡ Desafíos: la misma mazmorra a Nv 60 con monstruos más duros en cada paso. Vencer el +k abre el siguiente y da oro y un objeto de nivel 60+k (se equipa a Nv 60). Logros a +5, +10 y +20.</p>';
   h += '<ul style="padding-left:18px;margin-top:10px;font-size:12px"><li>Aquí los monstruos atacan solos y en packs: tira de uno y vendrá todo su grupo.</li><li>Cada jefe guarda una barrera. Lee sus avisos: <b style="color:#ff7a1a">sal de las zonas marcadas</b> en el suelo e <b>interrumpe</b> (Patada, Zurrar, Contrahechizo o Silencio) los hechizos con barra naranja.</li><li>Si caéis todos, revivís en la entrada y el jefe se recupera.</li><li>Cada jefe da equipo a cada uno; el último, épico.</li></ul>';
   L.innerHTML = h;
   L.querySelectorAll('[data-maz]').forEach(b => b.onclick = () => { sfx('explosion', .3); mandar({ t: 'mazmorra', id: b.dataset.maz }); cerrarModales(); });
+  L.querySelectorAll('[data-mazk]').forEach(b => b.onclick = () => { const sel = L.querySelector(`[data-dk="${b.dataset.mazk}"]`); sfx('explosion', .35); mandar({ t: 'mazmorra', id: b.dataset.mazk, k: +sel.value }); cerrarModales(); });
   abrir('m-mazmorras');
 }
 // Aviso grande en naranja (las mecanicas de los jefes), como los avisos de banda de WoW.
