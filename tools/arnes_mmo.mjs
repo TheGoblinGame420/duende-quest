@@ -584,6 +584,7 @@ async function pruebas() {
   await pruebasSkinsDinero();
   await pruebasPagoSol();
   await pruebasHoraFeliz();
+  await pruebasElo();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -1339,6 +1340,27 @@ async function pruebasTintes() {
   await dejar(t); await dejar(v);
 }
 
+
+async function pruebasElo() {
+  console.log('Ranking de duelos (Elo)');
+  const a = await entrarTg('Gladiadora', 7201), b = await entrarTg('Gladiador', 7202), inv = await entrar('Invitadito', '85');
+  for (const x of [a, b, inv]) ponerNivel(x, 15, 'guerrero');
+  const duelo = (g, p) => { g.duelo = { con: p.id }; p.duelo = { con: g.id }; mundo.terminarDuelo(g, g, 'prueba'); };
+  duelo(a, b);
+  chequear(a.c.elo === 1016 && b.c.elo === 984, 'ganar a un igual da +16 y quitar -16 (' + a.c.elo + ' / ' + b.c.elo + ')');
+  duelo(a, b); duelo(a, b);
+  const e3 = a.c.elo;
+  duelo(a, b);
+  chequear(a.c.elo === e3, 'como mucho 3 duelos contados al día por pareja');
+  duelo(inv, a);
+  chequear(!inv.c.elo, 'los invitados no puntúan');
+  for (let i = 0; i < 20; i++) await espera();
+  a.ws.rec.length = 0; await a.mandar({ t: 'ranking' });
+  for (let i = 0; i < 20; i++) await espera();
+  const rk = a.ws.rec.filter(m => m.t === 'ranking').pop();
+  chequear(rk && rk.duel && rk.duel[0] && rk.duel[0].yo && rk.elo === a.c.elo, 'el ranking muestra los duelistas por Elo');
+  for (const x of [a, b, inv]) await dejar(x);
+}
 
 async function pruebasHoraFeliz() {
   console.log('Hora Feliz (01-02 UTC, +50% XP de caza)');

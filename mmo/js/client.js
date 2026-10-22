@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=96';
+} from './data.js?v=98';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -558,7 +558,7 @@ function recibir(m) {
       }
       P.x = m.x; P.y = m.y; P.vx = 0; P.vy = 0; if (m.f) P.f = m.f;
       break;
-    case 'ranking': pintarRanking(m.r, m.sem, m.finSem, m.des, m.dsem, m.af); break;
+    case 'ranking': pintarRanking(m.r, m.sem, m.finSem, m.des, m.dsem, m.af, m.duel, m.elo); break;
     case 'err':
       if (m.auth && m.auth !== 'inv' && !forzarInvitado) {
         // El servidor cierra el socket; onclose reconecta solo, ya como invitado.
@@ -3773,7 +3773,7 @@ function pintarInventario() {
 function abrirRanking() { abrir('m-rank'); $('rank-lista').innerHTML = '<p class="centro">Cargando…</p>'; mandar({ t: 'ranking' }); }
 // Dos rankings: el de la semana (experiencia ganada; premia al top 3 cada
 // lunes, asi un jugador nuevo tambien puede ganar) y el de siempre (nivel).
-function pintarRanking(r, sem, finSem, des, dsem, af) {
+function pintarRanking(r, sem, finSem, des, dsem, af, duel, elo) {
   const med = ['🥇', '🥈', '🥉'];
   let h = '<p style="font-size:12px;color:var(--txt);font-weight:600;margin-bottom:4px">🏆 Esta semana (experiencia ganada)</p>';
   if (finSem) { const ms = finSem - Date.now(); const d = Math.floor(ms / 86400000), hh = Math.floor(ms / 3600000) % 24; h += `<p style="font-size:12px;color:var(--txt2);margin-bottom:6px">Termina en ${d} d ${hh} h. Premios: 🥇 oro ×400 tu nivel, objeto épico y título · 🥈 ×200 · 🥉 ×100.</p>`; }
@@ -3786,6 +3786,9 @@ function pintarRanking(r, sem, finSem, des, dsem, af) {
   h += (dsem && dsem.length) ? dsem.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>⚡ +${x.k}</span></div>`).join('') : '<p class="centro" style="font-size:12px">Nadie ha vencido un Desafío esta semana.</p>';
   h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">⚡ Desafíos de mazmorra (mejor +k de siempre)</p>';
   h += (des && des.length) ? des.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>⚡ +${x.k}</span></div>`).join('') : '<p class="centro" style="font-size:12px">Nadie ha vencido aún un Desafío. Se abren a nivel 60 en el portal de mazmorras.</p>';
+  // Duelos (Elo): se cuenta con cuenta y desde Nv 10; 3 al dia por pareja.
+  h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">⚔️ Duelistas (Elo)' + (elo ? ' · tu Elo: ' + elo : '') + '</p>';
+  h += (duel && duel.length) ? duel.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>${x.e} · ${x.g} victorias</span></div>`).join('') : '<p class="centro" style="font-size:12px">Nadie ha ganado aún un duelo que cuente. Reta a alguien desde su marco (⚔️): con cuenta y desde Nv 10.</p>';
   $('rank-lista').innerHTML = h;
 }
 

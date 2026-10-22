@@ -12,7 +12,7 @@
 // empezar ni al acabar): si no, retarse servia de cura gratis contra jefes.
 // Hay que llevar 5 s fuera de combate para retar y para aceptar.
 // ═══════════════════════════════════════════════════════
-import { CLASES, costoHab, multForja, talento } from '../../mmo/js/data.js';
+import { CLASES, costoHab, multForja, talento, hoyUTC } from '../../mmo/js/data.js';
 
 const RETO_MS = 30000, CUENTA_MS = 3000, DUELO_MS = 90000, LEJOS = 900, CALMA_MS = 5000, RETO_CD_MS = 10000;
 const mapaDuelo = k => !k.includes('#') && k !== 'coliseo';
@@ -24,6 +24,9 @@ const mapaDuelo = k => !k.includes('#') && k !== 'coliseo';
 // la vara ×2,25: ~25-45 s a igual nivel segun las clases (QA de jugador).
 const ESCALA = 0.16, ESCALA_VARA = 0.45;
 const rnd = (a, b) => a + Math.random() * (b - a);
+// Puntuacion Elo de duelos: solo cuentas (no invitados), ambos Nv 10+, y como
+// mucho 3 duelos contados al dia por pareja (que dos amigos no se inflen).
+export const ELO_BASE = 1000, ELO_K = 32, ELO_PAR_DIA = 3;
 
 export const Duelos = {
   // El rival de s si el duelo ya empezo (pasada la cuenta atras).
@@ -71,17 +74,38 @@ export const Duelos = {
     a.duelo = null;
     if (b) b.duelo = null;
     const g = ganador && ganador.c ? ganador : null;
+    let elo = '';
     if (g) {
       g.c.duelosG = (g.c.duelosG || 0) + 1;
       g.sucio = true;
       this.revisarLogros(g);
+      const r = this.puntuarDuelo(g, g === a ? b : a);
+      if (r && !r.sin) elo = ` Elo: ${g.c.nombre} ${r.g} (+${r.d}).`;
     }
     for (const x of [a, b]) if (x && !x.muerto) x.inv = Date.now() + 1500;
-    const txt = g ? `⚔️ ${g.c.nombre} gana el duelo${motivo ? ' (' + motivo + ')' : ''}.` : `⚔️ El duelo terminó en empate${motivo ? ' (' + motivo + ')' : ''}.`;
+    const txt = g ? `⚔️ ${g.c.nombre} gana el duelo${motivo ? ' (' + motivo + ')' : ''}.${elo}` : `⚔️ El duelo terminó en empate${motivo ? ' (' + motivo + ')' : ''}.`;
     const fin = { t: 'dueloFin', a: a.id, b: b ? b.id : 0, g: g ? g.id : 0, m: txt };
     this.aClave(a.k, fin);
     // Si ya estaban en mapas distintos, el otro tambien debe enterarse.
     if (b && b.k !== a.k) this.enviar(b, fin);
+  },
+
+  puntuarDuelo(g, p) {
+    if (!g || !p || !g.c || !p.c) return null;
+    if (g.c.uid.startsWith('inv:') || p.c.uid.startsWith('inv:') || g.c.nivel < 10 || p.c.nivel < 10) return null;
+    if (this.esPrueba && (this.esPrueba(g.c) || this.esPrueba(p.c))) return null;
+    const hoy = hoyUTC(), par = [g.c.uid, p.c.uid].sort().join('|');
+    if (!this.dueloPares || this.dueloPares.d !== hoy) this.dueloPares = { d: hoy, l: {} };
+    if ((this.dueloPares.l[par] || 0) >= ELO_PAR_DIA) return { sin: true };
+    this.dueloPares.l[par] = (this.dueloPares.l[par] || 0) + 1;
+    const rg = g.c.elo || ELO_BASE, rp = p.c.elo || ELO_BASE;
+    const d = Math.max(1, Math.round(ELO_K * (1 - 1 / (1 + Math.pow(10, (rp - rg) / 400)))));
+    g.c.elo = rg + d; p.c.elo = Math.max(100, rp - d);
+    g.sucio = p.sucio = true;
+    // Uno tras otro (y en cola con los anteriores): a la vez, el segundo
+    // guardado pisaba al primero.
+    this.colaRankDuelo = (this.colaRankDuelo || Promise.resolve()).then(() => this.actualizarRankDuelo(g)).then(() => this.actualizarRankDuelo(p)).catch(e => console.error('[MMO rankDuelo]', e));
+    return { d, g: g.c.elo, p: p.c.elo };
   },
 
   // Cada tick: fin por tiempo, distancia o desconexion.
