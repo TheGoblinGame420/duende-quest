@@ -477,6 +477,8 @@ function recibir(m) {
     // Pesca: pico. Hay que tirar (E o el boton) antes de que acabe la ventana.
     // Torre del Duende: el piso en el que vais (y cuanto le queda).
     case 'torre':
+      // Marca nueva de la semana cada 5 pisos: ofrecer presumirla (con tu enlace).
+      if (m.mejor >= 5 && m.mejor % 5 === 0 && m.piso === m.mejor && m.mejor > ((torreInfo && torreInfo.mejor) || 0)) ofrecerPresumir(`🗼 ¡Llegué al piso ${m.mejor} de la Torre del Duende! ¿Me superas?`);
       torreInfo = { piso: m.piso, fin: m.limpio ? 0 : m.en ? performance.now() + m.en : (torreInfo ? torreInfo.fin : 0), mejor: m.mejor !== undefined ? m.mejor : (torreInfo ? torreInfo.mejor : 0) };
       pintarSubMapa();
       break;
