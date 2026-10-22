@@ -3771,7 +3771,17 @@ cv.addEventListener('click', () => { if (state === 'menu') jugar(); else if (sta
   #ctl-jmp{right:95px;bottom:calc(148px + env(safe-area-inset-bottom,0px));width:96px;height:96px;font-size:26px;background:rgba(0,255,136,.13);border-color:rgba(0,255,136,.5);color:#00ff88;box-shadow:0 0 16px rgba(0,255,136,.2);}
   #ctl-item{right:6px;bottom:calc(192px + env(safe-area-inset-bottom,0px));width:68px;height:68px;background:rgba(0,238,255,.13);border-color:rgba(0,238,255,.55);box-shadow:0 0 14px rgba(0,238,255,.3);display:none;}
   #ctl-item img{width:38px;height:38px;image-rendering:pixelated;pointer-events:none;}
-  #ctl-pausa{left:12px;bottom:calc(206px + env(safe-area-inset-bottom,0px));width:52px;height:52px;border-radius:12px;border-width:1px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:18px;font-weight:700;letter-spacing:2px;background:rgba(18,24,38,.88);border-color:rgba(154,163,181,.5);color:#e6e9f0;}`;
+  #ctl-pausa{left:12px;bottom:calc(206px + env(safe-area-inset-bottom,0px));width:52px;height:52px;border-radius:12px;border-width:1px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:18px;font-weight:700;letter-spacing:2px;background:rgba(18,24,38,.88);border-color:rgba(154,163,181,.5);color:#e6e9f0;}
+  /* Moviles bajitos (p. ej. 360x640): controles compactos y la pausa arriba a
+     la derecha; si no, la pausa tapaba el objeto 1 y el salto pisaba el HUD. */
+  @media (max-height:700px){
+    #ctl3{height:214px;}
+    #ctl-pad{width:150px;height:150px;}
+    #ctl-atk{width:90px;height:90px;font-size:28px;bottom:calc(22px + env(safe-area-inset-bottom,0px));}
+    #ctl-jmp{width:78px;height:78px;font-size:22px;right:84px;bottom:calc(112px + env(safe-area-inset-bottom,0px));}
+    #ctl-item{width:58px;height:58px;bottom:calc(140px + env(safe-area-inset-bottom,0px));}
+    #ctl-pausa{left:auto;right:8px;top:calc(8px + env(safe-area-inset-top,0px));bottom:auto;width:44px;height:44px;font-size:15px;}
+  }`;
   document.head.appendChild(css);
 
   const capa = document.createElement('div');

@@ -695,7 +695,8 @@ h1.ov-title{font-weight:normal;}
 // proporcion se mantiene sola. El motor no traduce coordenadas del raton
 // (clic en el lienzo = atacar/jugar, toque = saltar), asi que escalar por CSS
 // no afecta a la entrada.
-const _RESERVA_TACTIL = 252;   // alto de los controles tactiles fijos (js/engine.js, #ctl3)
+// alto de los controles tactiles fijos (js/engine.js, #ctl3; compactos en pantallas de <=700 px de alto)
+const _RESERVA_TACTIL_N = 252, _RESERVA_TACTIL_BAJA = 200;
 function ajustarLienzo(cv, W, H) {
   const wrap = cv.parentElement;
   if (!wrap) return;
@@ -713,7 +714,7 @@ function ajustarLienzo(cv, W, H) {
   }, 0);
   const aplicar = () => {
     let s = libreW / W;
-    const altoUtil = libreH - resto() - (tactil ? _RESERVA_TACTIL : 0) - 2;
+    const altoUtil = libreH - resto() - (tactil ? (window.innerHeight <= 700 ? _RESERVA_TACTIL_BAJA : _RESERVA_TACTIL_N) : 0) - 2;
     // En tactil manda el ancho (los controles flotan debajo); solo se encoge
     // un poco si el HUD acabaria tapado por los botones en moviles bajitos.
     if (tactil) s = Math.max(Math.min(s, altoUtil / H), s * .85);
@@ -743,7 +744,7 @@ window.DQE = {
   altoVertical: (W) => {
     const tactil = matchMedia('(pointer:coarse)').matches && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
     const ancho = document.documentElement.clientWidth || window.innerWidth;
-    const libre = window.innerHeight - 120 - (tactil ? _RESERVA_TACTIL + 8 : 24);
+    const libre = window.innerHeight - 120 - (tactil ? (window.innerHeight <= 700 ? _RESERVA_TACTIL_BAJA : _RESERVA_TACTIL_N) + 8 : 24);
     return libre * W / Math.max(1, Math.min(ancho, W * 4));
   },
   assetBase: 'assets/',
