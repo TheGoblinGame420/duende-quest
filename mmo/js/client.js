@@ -15,7 +15,7 @@ import {
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
-} from './data.js?v=74';
+} from './data.js?v=76';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -30,8 +30,13 @@ function ponCss(el, prop, v) { const k = '_c' + prop; if (el[k] !== v) { el[k] =
 const TG = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? window.Telegram.WebApp : null;
 if (TG) {
   try { TG.ready(); TG.expand(); TG.disableVerticalSwipes && TG.disableVerticalSwipes(); TG.setHeaderColor && TG.setHeaderColor('#0a0418'); } catch (e) {}
-  // Dentro de Telegram, "volver" lleva al hub de la Mini App, no a la web.
-  const volver = () => { location.href = '/telegram/index.html' + (location.hash || ''); };
+  // Dentro de Telegram, "volver" cierra primero la ventana abierta (tienda,
+  // equipo...) y, si no hay ninguna, lleva al hub de la Mini App.
+  const volver = () => {
+    const abierta = document.querySelector('.modal.on:not(#m-inicio):not(#m-muerte):not(#m-error)');
+    if (abierta && !(abierta.id === 'm-clase' && yo && !yo.clase)) { cerrarModales(); return; }
+    location.href = '/telegram/index.html' + (location.hash || '');
+  };
   try { TG.BackButton.show(); TG.BackButton.onClick(volver); } catch (e) {}
   const casa = document.querySelector('#botones a[href="/game.html"]');
   if (casa) casa.href = '/telegram/index.html' + (location.hash || '');
@@ -2527,13 +2532,18 @@ function htmlPremium() {
   if (cuentaTg) h += '<p style="font-size:12px;color:var(--txt2);margin-top:6px">¿Prefieres pagar con SOL? Entra al juego desde la web (duende-quest.alfonso12hc.workers.dev/mmo) con tu cuenta.</p>';
   const ps = (yo && yo.pedidos) || [];
   if (ps.length) {
-    const col = { pagado: 'var(--warn)', por_verificar: 'var(--warn)', entregado: 'var(--ok)', anulado: 'var(--err)' };
-    const txt = { pagado: 'Por entregar', por_verificar: 'En revisión', entregado: 'Entregado', anulado: 'Anulado' };
-    h += '<p style="margin:12px 0 4px;font-size:12px">Tus compras:</p>' + ps.slice().reverse().map(x => `<div class="fila"><span>#${esc(x.codigo)} · ${esc(x.nombre)}</span><span style="color:${col[x.estado] || 'var(--txt)'}">${txt[x.estado] || esc(x.estado)}</span></div>`).join('');
+    const col = { pagado: 'var(--warn)', por_verificar: 'var(--warn)', entregado: 'var(--ok)', anulado: 'var(--err)', esperando_pago: 'var(--txt2)' };
+    const txt = { pagado: 'Por entregar', por_verificar: 'En revisión', entregado: 'Entregado', anulado: 'Anulado', esperando_pago: 'Sin pagar' };
+    h += '<p style="margin:12px 0 4px;font-size:12px">Tus compras:</p>' + ps.slice().reverse().map(x => `<div class="fila"><span>#${esc(x.codigo)} · ${esc(x.nombre)}</span><span style="color:${col[x.estado] || 'var(--txt)'}">${txt[x.estado] || esc(x.estado)}${x.estado === 'esperando_pago' && x.lamports ? ` <button class="btn sec" data-retomar="${esc(x.codigo)}" style="padding:4px 8px">Pagar</button>` : ''}</span></div>`).join('');
   }
   return h;
 }
 function conectarPremium(L) {
+  // Retomar un pago con SOL que quedo a medias (p. ej. tras abrir el juego en Phantom).
+  L.querySelectorAll('[data-retomar]').forEach(b => b.onclick = () => {
+    const x = ((yo && yo.pedidos) || []).find(p => p.codigo === b.dataset.retomar);
+    if (x && x.lamports) mostrarPedidoSol({ codigo: x.codigo, lamports: x.lamports, wallet: x.wallet, usd: x.usd, nombre: x.nombre });
+  });
   L.querySelectorAll('[data-premium]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'pedido', id: b.dataset.premium, metodo: b.dataset.metodo }); });
 }
 function abrirPremium() {
@@ -2583,7 +2593,7 @@ async function pagarConPhantom(m) {
     // la app de Phantom (enlace universal), donde si se puede firmar; alli
     // se vuelve a pedir la compra (el pedido sin pagar caduca solo).
     if (TACTIL) {
-      aviso('Abriendo el juego dentro de Phantom: entra con tu cuenta y vuelve a pedir la compra en la tienda; ahí se paga con un toque.', 'ok');
+      aviso('Abriendo el juego dentro de Phantom: entra con tu cuenta y, en la tienda premium → Tus compras, pulsa «Pagar» en el pedido #' + m.codigo + '.', 'ok');
       window.location.href = 'https://phantom.app/ul/browse/' + encodeURIComponent(location.href) + '?ref=' + encodeURIComponent(location.origin);
       return;
     }

@@ -11,6 +11,7 @@ const url = process.argv[2] || 'wss://duende-quest.alfonso12hc.workers.dev/mmo/w
 const ws = new WebSocket(url);
 const vistos = {};
 let yo = null;
+const toasts = [];
 const fin = (ok, txt) => { console.log((ok ? 'OK  ' : 'MAL ') + txt); };
 const mandar = o => ws.send(JSON.stringify(o));
 const esperar = ms => new Promise(r => setTimeout(r, ms));
@@ -19,6 +20,7 @@ ws.onmessage = ev => {
   vistos[m.t] = (vistos[m.t] || 0) + 1;
   if (m.t === 'bienvenido' || m.t === 'yo') yo = m.yo;
   if (m.t === 'err') console.log('err:', m.m);
+  if (m.t === 'toast') toasts.push(m.m);
 };
 ws.onopen = async () => {
   mandar({ t: 'hola', auth: { k: 'inv', tok: '8'.repeat(32) }, nombre: 'Probador' });
@@ -31,10 +33,14 @@ ws.onopen = async () => {
   fin(yo && yo.boveda && yo.boveda.sem, 'la Bóveda semanal llega en "yo" (semana ' + (yo && yo.boveda && yo.boveda.sem) + ')');
   mandar({ t: 'quien' });
   mandar({ t: 'lfgLista' });
+  mandar({ t: 'contactos' });
+  mandar({ t: 'pedido', id: 'skin_king', metodo: 'sol' });
   mandar({ t: 'atk', s: 0 });
   await esperar(1000);
   fin(!!vistos.quien, 'responde la lista de jugadores');
   fin(!!vistos.lfg, 'responde la lista del buscador de grupo');
+  fin(!!vistos.contactos, 'responde la lista de amigos');
+  fin(toasts.some(t => /cuenta/.test(t)), 'la tienda premium pide cuenta a un invitado (skins con SOL)');
   ws.close();
   setTimeout(() => process.exit(0), 300);
 };

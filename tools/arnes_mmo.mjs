@@ -1360,6 +1360,10 @@ async function pruebasSkinsDinero() {
     await mundo.entregarPedido({ codigo: 'SKN002' });
     chequear(j.c.oro === oro0 + D.SKINS.king.precio, 'si ya la tenía, recibe su precio en oro');
   } finally { mundo.avisarJugador = avisoReal; }
+  // Un pedido con SOL sin pagar sale en "Tus compras" con lo necesario para retomarlo.
+  mundo.pedidos.push({ codigo: 'SKN003', uid: j.c.uid, jugador: j.c.nombre, paquete: 'skin_necro', nombre: 'Skin Necromancer', usd: 4, metodo: 'sol', lamports: 12345678, creado: Date.now(), estado: 'esperando_pago' });
+  const pp = mundo.datosPropios(j).pedidos.find(x => x.codigo === 'SKN003');
+  chequear(pp && pp.lamports === 12345678 && pp.wallet && pp.estado === 'esperando_pago', 'el pedido con SOL sin pagar se puede retomar desde Tus compras');
   // Pedir una skin que ya tienes: no.
   j.c.uid = 'web:prueba-skin'; j.limpiar();
   await mundo.pedido(j, { id: 'skin_king', metodo: 'sol' });
