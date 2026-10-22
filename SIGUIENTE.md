@@ -1319,6 +1319,13 @@ una nueva: añadirla a la lista con su `campo`, sus dos logros en LOGROS y
 el campo en `datosPropios`. Además, vibración de Telegram (`vibrar`) al
 subir de nivel, ganar un logro y terminar un duelo.
 
+**Botón 📣 PRESUMIR (?v=38):** 12 s tras un logro, una mazmorra completada
+o un legendario. Comparte el logro con TU enlace de invitación (Telegram:
+t.me/share; web: `navigator.share` o, si falla, copia texto y enlace). El
+enlace se pide al servidor al mostrar el botón, porque compartir tras
+esperar una respuesta lo bloquea el navegador. Es la vía para traer
+jugadores: sin gente, los % de retención no significan nada.
+
 Sin hacer: avisos a la hora habitual de cada uno (el cron de las 17 UTC ya
 usa 4 de 5 disparadores del plan gratis), y final de juego para D30 (1→60 se
 juega en 5-8 h). Ojo: la bienvenida del bot aún habla de $DUENDE en Solana

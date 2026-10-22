@@ -13,7 +13,7 @@ import {
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
-} from './data.js?v=37';
+} from './data.js?v=38';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -354,6 +354,7 @@ function recibir(m) {
         flotante(m.x, m.y - 16, '★ ' + nombreItem(m.item), rz.color, m.item.r >= 2 ? 11 : 9);
         aviso('🎁 ' + rz.nombre + ': ' + nombreItem(m.item) + ' Nv' + m.item.nv + ' (' + textoBonos(m.item.b) + ')', m.item.r >= 2 ? 'jefe' : 'ok');
         if (m.item.r >= 2) { sfx('explosion', .3); for (let i = 0; i < 24; i++) particula(m.x, m.y, rz.color, 4); }
+        if (m.item.r >= 3) ofrecerPresumir('🌟 ¡Me cayó un objeto LEGENDARIO: ' + nombreItem(m.item) + '!');
       }
       sfx('moneda', .3);
       break;
@@ -453,6 +454,7 @@ function recibir(m) {
     case 'logro':
       aviso('🏅 ¡Logro: "' + m.titulo + '"! +' + m.oro.toLocaleString('es') + ' oro · ponte el título en 🎒', 'ok');
       vibrar();
+      ofrecerPresumir('🏅 ¡Conseguí el logro «' + m.titulo + '»!');
       sfx('explosion', .35);
       for (let i = 0; i < 30; i++) particula(P.x, P.y - 40, ['#ffe600', '#ff3cf0', '#00ff88'][i % 3], 5);
       break;
@@ -469,7 +471,7 @@ function recibir(m) {
     case 'dueloFin': finDuelo(m); break;
     case 'critDuelo': break;
     case 'buscador': abrirBuscador(); break;
-    case 'amigos': pintarAmigos(m); break;
+    case 'amigos': pintarAmigos(m); if (presumirPend && m.ref) { presumirPend = false; compartirPresumir(m); } break;
     case 'muerte': resumenMuerte(m); break;
     case 'nodos': recibirNodos(m.l); break;
     case 'recogido': { const n = nodos.find(x => x.i === m.i); if (n) { n.listo = performance.now() + m.en; for (let k = 0; k < 14; k++) particula(n.x, SUELO - 14, m.tipo === 'hierba' ? '#4ade80' : '#cbd5e1', 3); } sfx('moneda', .3); break; }
@@ -1324,6 +1326,35 @@ function pintarAmigos(m) {
   };
   $('b-comp-copiar').onclick = () => { try { navigator.clipboard.writeText(TG ? enlTg : enlWeb); aviso('📋 Enlace copiado', 'ok'); } catch (e) {} };
 }
+// ── PRESUMIR ──
+// Tras un logro, una mazmorra o un objeto legendario sale un boton unos
+// segundos para compartirlo con tu enlace de invitacion (si el amigo llega a
+// Nv 10, premio para los dos). Es la forma de que el mundo tenga mas gente.
+let presumirTxt = '', presumirPend = false;
+function ofrecerPresumir(txt) {
+  presumirTxt = txt;
+  // El enlace se pide ya: al pulsar, compartir debe ser inmediato (el
+  // navegador bloquea compartir si espera a una respuesta del servidor).
+  if (!(amigosInfo && amigosInfo.ref) && performance.now() - amigosPedidoT > 10000) { amigosPedidoT = performance.now(); mandar({ t: 'amigos' }); }
+  ponCss($('presumir'), 'display', 'block');
+  clearTimeout(ofrecerPresumir.t);
+  ofrecerPresumir.t = setTimeout(() => ponCss($('presumir'), 'display', 'none'), 12000);
+}
+function compartirPresumir(info) {
+  const enlTg = 'https://t.me/duendequest_bot?start=mmo_' + info.ref;
+  const txt = presumirTxt + ' ¡Juega gratis conmigo a DUENDE QUEST ONLINE! 🧝⚔️';
+  if (TG && TG.openTelegramLink) return TG.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(enlTg) + '&text=' + encodeURIComponent(txt));
+  const enlWeb = location.origin + '/mmo/?ref=' + info.ref;
+  const copiar = () => { try { navigator.clipboard.writeText(txt + ' ' + enlWeb); aviso('📋 Texto y enlace copiados: pégalo donde quieras.', 'ok'); } catch (e) {} };
+  if (navigator.share) navigator.share({ title: 'DUENDE QUEST ONLINE', text: txt, url: enlWeb }).catch(e => { if (!e || e.name !== 'AbortError') copiar(); });
+  else window.open('https://t.me/share/url?url=' + encodeURIComponent(enlWeb) + '&text=' + encodeURIComponent(txt), '_blank');
+}
+$('presumir').onclick = () => {
+  ponCss($('presumir'), 'display', 'none');
+  if (amigosInfo && amigosInfo.ref) compartirPresumir(amigosInfo);
+  else { presumirPend = true; mandar({ t: 'amigos' }); }
+};
+
 $('b-social').onclick = () => abrirSocial();
 $('b-mapa').onclick = () => abrirMapaMundo();
 
@@ -1423,6 +1454,7 @@ function emote(txt) {
 }
 function completada(m) {
   emote(m.txt);
+  ofrecerPresumir('🏆 ' + (MAZMORRAS[m.id] ? '¡Completé ' + MAZMORRAS[m.id].nombre + '!' : '¡Completé una mazmorra!'));
   aviso(m.txt, 'ok');
   sfx('explosion', .5);
   for (let i = 0; i < 80; i++) particula(P.x + (Math.random() - .5) * 200, P.y - 40 - Math.random() * 60, ['#ffe600', '#ff3cf0', '#00ff88', '#00eeff'][i % 4], 6);
