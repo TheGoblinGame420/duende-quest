@@ -1912,3 +1912,17 @@ Esta sesión lleva la tienda (pares del `?v=`), la otra lo demás (impares).
   - Resistencia: 30 bots al azar, 10 min simulados, 0 excepciones
     (scratchpad/soak.mjs de esta sesión).
   - Arnés: **558 bien, 0 mal**.
+- **?v=178-186 (22-oct, tarde):**
+  - Revisión de la tarde: si caen todos, el jefe de mazmorra se recupera al
+    momento (con el punto de control cerca se le ganaba por desgaste); un
+    pedido «comprobando» atascado vuelve a esperar el pago; packs que se
+    curan aunque estén cerca y pierden la furia; filtro de Telegram que no
+    oculta «Fiesta del Sol».
+  - Bot: **/yo** (interno 'perfil': tu personaje, solo el tuyo) y botón
+    «Mi personaje» en /mmo.
+  - Pronóstico del clima en el calendario; logros Buscador de Oro (25 Peces
+    Dorados) y Gran Viajero (10 expediciones de 8 h); la vitrina se toca
+    («VER SKINS»); **color de hermandad** (`HERM_COLORES`, lo elige el
+    líder, mensaje 'hermColor'); «Compartir logro» anclado abajo en el móvil.
+  - Resistencia 40 bots / 6 min: 0 errores. FPS móvil CPU 4×: 60.
+  - Arnés: **562 bien, 0 mal**.
