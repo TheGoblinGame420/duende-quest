@@ -14,7 +14,7 @@ import {
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo,
-} from './data.js?v=54';
+} from './data.js?v=55';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -204,11 +204,47 @@ function sfx(k, vol) {
     src.connect(gan); gan.connect(actx.destination); src.start();
   } catch (e) {}
 }
-const musica = new Audio('/audio/bg_music.ogg'); musica.loop = true; musica.volume = .25;
+// Tonos sintetizados para lo que no tiene archivo de sonido (lanzar,
+// interrumpido, error, subir de nivel, portal, esquiva, montar, curar):
+// osciladores de Web Audio, sin descargar nada.
+const TONOS = {
+  lanzar:  [['sine', 320, 620, .22, .10]],
+  cortado: [['square', 420, 140, .16, .06]],
+  error:   [['square', 190, 170, .07, .05], ['square', 160, 150, .08, .05, .1]],
+  nivel:   [['triangle', 523, 523, .12, .12], ['triangle', 659, 659, .12, .12, .11], ['triangle', 784, 784, .12, .12, .22], ['triangle', 1047, 1047, .3, .12, .33]],
+  portal:  [['sine', 200, 900, .4, .08], ['triangle', 300, 1200, .4, .04]],
+  esquiva: [['sine', 900, 1500, .09, .06]],
+  montar:  [['triangle', 330, 330, .08, .1], ['triangle', 440, 440, .1, .1, .1]],
+  cura:    [['sine', 880, 880, .25, .07], ['sine', 1320, 1320, .3, .05, .05]],
+};
+const tonoUltimo = {};
+function tono(k) {
+  if (!sonido || !actx || actx.state !== 'running' || !TONOS[k]) return;
+  const ahora = performance.now();
+  if (ahora - (tonoUltimo[k] || 0) < 120) return;
+  tonoUltimo[k] = ahora;
+  try {
+    const t0 = actx.currentTime;
+    for (const [tipo, f0, f1, dura, vol, ret] of TONOS[k]) {
+      const o = actx.createOscillator(), gan = actx.createGain();
+      const t = t0 + (ret || 0);
+      o.type = tipo; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dura);
+      gan.gain.setValueAtTime(vol, t); gan.gain.exponentialRampToValueAtTime(0.001, t + dura);
+      o.connect(gan); gan.connect(actx.destination); o.start(t); o.stop(t + dura + .02);
+    }
+  } catch (e) {}
+}
+// Musica: se pide al darle al sonido o al entrar (no al cargar la pagina:
+// pesa ~600 KB) y en mp3 donde no hay Ogg (Safari de iPhone).
+const musica = new Audio(); musica.preload = 'none'; musica.loop = true; musica.volume = .25;
+function sonarMusica() {
+  if (!musica.src) musica.src = musica.canPlayType('audio/ogg; codecs="vorbis"') ? '/audio/bg_music.ogg' : '/audio/bg_music.mp3';
+  musica.play().catch(() => {});
+}
 function pintarSonido() { $('b-sonido').textContent = sonido ? '🔊' : '🔇'; }
 $('b-sonido').onclick = () => {
   sonido = !sonido; localStorage.setItem('dq_mmo_sonido', sonido ? '1' : '0'); pintarSonido();
-  if (sonido) musica.play().catch(() => {}); else musica.pause();
+  if (sonido) sonarMusica(); else musica.pause();
 };
 pintarSonido();
 
@@ -370,11 +406,11 @@ function recibir(m) {
       const yoMismo = m.p === miId;
       const q = yoMismo ? P : otros.get(m.p);
       if (!q) break;
-      if (m.esq) { flotante(q.x, q.y - 70, 'ESQUIVA', '#ffffff', 9); break; }
+      if (m.esq) { flotante(q.x, q.y - 70, 'ESQUIVA', '#ffffff', 9); if (yoMismo) tono('esquiva'); break; }
       if (m.ab) flotante(q.x + 14, q.y - 84, '(' + m.ab + ' absorbido)', '#ffe9a8', 7);
       if (!m.d) break;
       if (yoMismo) {
-        P.herido = 18; sfx('golpe', .45); flotante(P.x, P.y - 70, '-' + m.d, '#ff3344', 11);
+        P.herido = 18; sfx('caida', .5); flotante(P.x, P.y - 70, '-' + m.d, '#ff3344', 11);
         // Retroceso: el golpe te aparta del monstruo (y corta el combo de pegado).
         const o = mons.get(m.from);
         // Ni durante un lanzamiento ni mientras llega su confirmacion: el
@@ -390,6 +426,7 @@ function recibir(m) {
       const q = m.p === miId ? P : otros.get(m.p);
       if (q) {
         flotante(q.x + (Math.random() - .5) * 14, q.y - 78, '+' + m.n + (m.c ? '!' : ''), '#4ade80', m.c ? 12 : 10);
+        if (q === P || m.de === miId) tono('cura');
         for (let i = 0; i < 8; i++) particula(q.x + (Math.random() - .5) * 26, q.y - 10 - Math.random() * 40, '#4ade80', 1.5);
       }
       break;
@@ -412,7 +449,7 @@ function recibir(m) {
         for (let i = 0; i < 40; i++) particula(quien.x, quien.y - 30, ['#ffe600', '#00ff88', '#ff3cf0'][i % 3], 5);
         flotante(quien.x, quien.y - 95, '¡NIVEL ' + m.lv + '!', '#ffe600', 14);
       }
-      if (m.p === miId) { aviso('⬆️ ¡Subiste a nivel ' + m.lv + '!', 'ok'); sfx('explosion', .4); }
+      if (m.p === miId) { aviso('⬆️ ¡Subiste a nivel ' + m.lv + '!', 'ok'); tono('nivel'); }
       else if (quien) { quien.lv = m.lv; if (m.mx) quien.mx = m.mx; if (m.rmx) quien.rmx = m.rmx; }
       break;
     }
@@ -421,13 +458,13 @@ function recibir(m) {
     case 'cast': {
       const h = m.id === 'hogar' ? { nombre: 'Piedra de Hogar' } : m.id === 'montar' ? { nombre: 'Invocar montura' } : m.id === 'recolectar' ? { nombre: 'Recogiendo' } : habPorId(m.id);
       const c = { id: m.id, nombre: h ? h.nombre : '', ini: performance.now(), fin: performance.now() + m.ms, tg: m.tg };
-      if (m.p === miId) { castYo = c; verLanzar(true); $('lanzar').classList.remove('mal'); }
+      if (m.p === miId) { castYo = c; castPend = 0; verLanzar(true); $('lanzar').classList.remove('mal'); tono(m.id === 'montar' ? 'montar' : 'lanzar'); }
       else castOtros.set(m.p, c);
       break;
     }
     case 'castFin':
       if (m.p === miId) {
-        if (castYo && !m.ok) { $('lanzar').classList.add('mal'); ponTxt($('lanzar-t'), 'Interrumpido'); setTimeout(() => { if (!castYo) verLanzar(false); }, 450); }
+        if (castYo && !m.ok) { tono('cortado'); $('lanzar').classList.add('mal'); ponTxt($('lanzar-t'), 'Interrumpido'); setTimeout(() => { if (!castYo) verLanzar(false); }, 450); }
         else verLanzar(false);
         castYo = null;
       } else castOtros.delete(m.p);
@@ -522,7 +559,7 @@ function recibir(m) {
 
 let fundido = 0;
 function entrarMapa(m) {
-  if (m.mapa !== mapaId) fundido = 1;
+  if (m.mapa !== mapaId) { fundido = 1; if (mapaId) tono('portal'); }
   mapaId = m.mapa;
   otros.clear(); mons.clear(); efectos = []; textos = []; balas = []; burbujas.clear(); jefeVivo = null;
   objetivo = null; duelo = null; castOtros.clear(); castMon.clear(); aurasM.clear(); proyectiles = []; zonas = [];
@@ -1127,6 +1164,7 @@ function errorRojo(txt) {
   const d = document.createElement('div');
   d.textContent = txt; d._t = performance.now();
   c.appendChild(d);
+  tono('error');
   setTimeout(() => d.remove(), 1600);
   while (c.children.length > 2) c.firstChild.remove();
 }
@@ -3441,7 +3479,7 @@ async function inicio() {
       localStorage.setItem('dq_mmo_nombre', n);
     }
     $('carga').style.display = 'flex'; $('carga-s').textContent = 'Entrando al mundo…';
-    if (sonido) musica.play().catch(() => {});
+    if (sonido) sonarMusica();
     conectar();
   };
   $('b-jugar').onclick = entrar; $('b-jugar2').onclick = entrar;
