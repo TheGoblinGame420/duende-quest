@@ -184,6 +184,9 @@ export const Torre = {
     this.cargarRankTorre().then(rt => {
       const f = rt.l[s.c.uid];
       if (f && f.p >= piso) return;
+      // Nuevo record de la semana del servidor (desde el piso semMin, cada 5): a todos.
+      const mejor = Math.max(0, ...Object.entries(rt.l).filter(([u]) => u !== s.c.uid).map(([, x]) => x.p));
+      if (piso >= TORRE.semMin && piso % 5 === 0 && piso > mejor) this.aTodos({ t: 'aviso', m: `🗼 ¡${s.c.nombre} llegó al piso ${piso} de la Torre del Duende: récord de la semana!` });
       rt.l[s.c.uid] = { n: s.c.nombre, p: piso, k: s.c.clase || '', t: Date.now() };
       return this.state.storage.put('rankTorre', rt);
     }).catch(e => console.error('[MMO rankTorre]', e));
