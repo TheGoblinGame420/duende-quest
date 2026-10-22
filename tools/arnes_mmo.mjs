@@ -1386,6 +1386,9 @@ async function pruebasPagoSol() {
     tx = txDe(pC.lamports);
     await mundo.pedidoFirma(C, { codigo: pC.codigo, firma: '6'.repeat(88) });
     chequear(mundo.buscarPedido(pC.codigo).estado === 'por_verificar' && admin.some(t => t.includes(pC.codigo)), 'pagar después de los 30 min igual llega al dueño');
+    // /ventas: lo entregado (las skins King de las pruebas anteriores) y lo pendiente.
+    const vt = await interno('ventas');
+    chequear(vt.ok && vt.d7.n >= 1 && vt.d7.sol >= 1 && vt.d7.top.some(x => /Skin King/.test(x.nombre)) && vt.pendientes >= 1, '/ventas resume lo entregado (7 y 30 días, por método y lo más vendido) y lo pendiente');
     // Anular libera la firma.
     await mundo.anularPedido({ codigo: pC.codigo, motivo: 'prueba' });
     chequear(!(await state.storage.get('firma:' + '6'.repeat(88))), 'anular un pedido deja libre su firma');
