@@ -14,7 +14,7 @@ import {
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo,
-} from './data.js?v=57';
+} from './data.js?v=58';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -677,6 +677,11 @@ function ataqueRemoto(m) {
     const o = mons.get(id);
     if (!o) continue;
     o.golpeT = ahora;
+    if (m.p === miId && quien) {
+      o.empuje = { t: ahora, d: o.x >= quien.x ? 1 : -1 };
+      // Pausa de impacto en el critico: un instante quieto que se siente.
+      if (tipo === 1) pausaGolpe = ahora + 70;
+    }
     const col = COLOR_GOLPE[tipo] || '#ffffff';
     const retraso = m.vara ? 170 : 0;
     const pintar = () => {
@@ -2666,7 +2671,10 @@ function barraMini(x, y, w, k, color) {
 
 function dibujarMonstruo(o) {
   interpolar(o);
-  const x = o.x - camX;
+  // Retroceso visual al recibir un golpe tuyo (se recupera en ~150 ms).
+  let rx = 0;
+  if (o.empuje) { const k = 1 - (performance.now() - o.empuje.t) / 150; if (k > 0) rx = o.empuje.d * 9 * k; else o.empuje = null; }
+  const x = o.x - camX + rx;
   if (x < -150 || x > VW + 150) return;
   const def = MONSTRUOS[o.k];
   const hoja = HOJAS[def.hoja];
@@ -3531,8 +3539,10 @@ let ultimoT = performance.now(), acum = 0;
 // menos particulas y los efectos sin mezcla aditiva (lo mas caro medido en
 // un movil lento). Se decide solo una vez.
 let ligero = false, mediaDt = 16, muestrasDt = 0;
+let pausaGolpe = 0;
 function bucle(t) {
   requestAnimationFrame(bucle);
+  if (t < pausaGolpe) { ultimoT = t; return; }
   const dt = t - ultimoT;
   if (!ligero && dt > 0 && dt < 250 && !document.hidden) {
     mediaDt = mediaDt * 0.97 + dt * 0.03;
