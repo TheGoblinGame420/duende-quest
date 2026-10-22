@@ -1785,4 +1785,13 @@ Esta sesión lleva la tienda (pares del `?v=`), la otra lo demás (impares).
 - Ojo (del revisor): las skins del juego principal cuestan $25-$250 y pagar
   allí desbloquea la del MMO, que aquí cuesta $2-$20: decisión de precios
   del dueño.
+- Más de la mañana (?v=84-90): etiquetas que no se salen del borde; flecha
+  del borde más arriba; estadísticas del personaje en el inventario; aviso
+  informativo de las skins a Nv 8; botones «Entregar/Anular» en el aviso de
+  pedido del bot (`mmoent:`/`mmoanu:`/`mmoanu2:`, solo ADMIN_TG_ID);
+  **/ventas** en el bot (interno `ventas`: 7 y 30 días, SOL/Stars, lo más
+  vendido, pendientes); la factura de Stars de una skin lleva su imagen; /mmo
+  del bot menciona skins y banda; en el móvil tocar el chat lo despliega.
+- FPS (fps.mjs del QA, móvil 390×844 con CPU 4×, 14 monstruos): combate
+  **59 FPS** con ?v=90 (13 a la 1 am).
 
