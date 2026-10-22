@@ -20,6 +20,8 @@ export const Expediciones = {
       if (ahora < e.fin) return this.no(s, 'Tu expedición aún no ha vuelto.');
       c.exped = null;
       const pr = premioExpedicion(e.h, e.nv, e.d);
+      // Con una mascota (y no el duendecillo de siempre) vuelve con un 15% mas de oro.
+      if (e.m) pr.oro = Math.round(pr.oro * 1.15);
       // A nivel maximo la XP no sirve: se cambia por oro (1 por 2 de XP).
       if (c.nivel >= NIVEL_MAX) { pr.oro += Math.round(pr.xp / 2); pr.xp = 0; }
       c.oro += pr.oro;
@@ -44,7 +46,7 @@ export const Expediciones = {
     if (c.nivel < EXPEDICION.nv) return this.no(s, `Las expediciones se abren a nivel ${EXPEDICION.nv}.`);
     if (c.exped) return this.no(s, c.exped.fin <= ahora ? 'Recoge antes la expedición que ya volvió.' : 'Ya tienes una expedición en camino.');
     const d = typeof m.d === 'string' && Object.hasOwn(EXPEDICION.destinos, m.d) ? m.d : 'bosque';
-    c.exped = { h, d, ini: ahora, fin: ahora + h * 3600000, nv: c.nivel };
+    c.exped = { h, d, ini: ahora, fin: ahora + h * 3600000, nv: c.nivel, m: c.mascota && MASCOTAS[c.mascota] ? 1 : 0 };
     s.sucio = true;
     const quien = c.mascota && MASCOTAS[c.mascota] ? MASCOTAS[c.mascota].nombre : 'Un duendecillo explorador';
     this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });   // la mascota se va
