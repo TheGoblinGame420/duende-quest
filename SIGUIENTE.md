@@ -1795,3 +1795,26 @@ Esta sesión lleva la tienda (pares del `?v=`), la otra lo demás (impares).
 - FPS (fps.mjs del QA, móvil 390×844 con CPU 4×, 14 monstruos): combate
   **59 FPS** con ?v=90 (13 a la 1 am).
 
+- **?v=92-104 (mañana, más tarde):**
+  - QA en producción: ventanas con la X fija y título sin pisarla; pestañas
+    de tienda/social de alto fijo; nombres de monstruos amontonados se
+    escalonan; errores iguales no se repiten en 1,5 s.
+  - **Hora Feliz** (`HORA_FELIZ`, 20-21 h de Perú = 1-2 UTC): +50% XP; aviso
+    al empezar/acabar; los avisos de vuelta (retencion.js) lo mencionan.
+  - **Elo de duelos** (duelos.js): solo cuentas Nv 10+, 3 duelos contados al
+    día por pareja, sin cuentas de prueba; huir (cambiar de mapa o alejarse
+    más del punto de inicio) o desconectarse pierde. Ranking `rankDuelo`
+    (top 30, escrituras en cola) en la ventana de ranking.
+  - **Mercader ambulante** (viernes-domingo UTC): 2 colores + 1 mascota
+    exclusivos por semana (`ambulanteOferta`), solo estética y con oro.
+  - **Jefes mundiales que rotan** cada media hora (`MUNDIALES`/`mundialDe`):
+    Gran Duende Corrupto, Dragón de la Tormenta, Coloso de Obsidiana.
+  - **Pase de temporada mensual gratis** (`PASE`, functions/mmo/pase.js):
+    20 niveles, puntos por diarias/semanales/bono/mazmorra/jefe mundial;
+    premios oro/elixires/polvo + mascota «Duende del Pase» y logros. Sin
+    mTON y sin versión de pago.
+  - Revisión 4: retratos de mascotas con su color; Hora Feliz y jefe
+    mundial juntos en el cartel; anular un pedido dos veces no devuelve dos
+    veces (`anulando`); el chat del móvil ya no se come toques (se despliega
+    solo al abrirlo con 💬).
+  - Arnés: **500 bien, 0 mal**.
