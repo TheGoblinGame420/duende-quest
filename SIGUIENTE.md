@@ -1861,3 +1861,18 @@ Esta sesión lleva la tienda (pares del `?v=`), la otra lo demás (impares).
   - QA ronda 3: avisos por encima de ventanas, «Entregar misión» solo junto
     a Tito, cabecera de la Artesana, barra de lanzamiento en el móvil.
   - Arnés: **542 bien, 0 mal**.
+- **?v=128-142 (22-oct, mediodía):**
+  - Ranking semanal de **hermandades** por puntos de gesta ('rankHerm', se
+    pone al día al guardar las gestas; una disuelta sale del ranking).
+  - **Madriguera Goblin** (MAZMORRAS.madriguera, Nv 6-16, `sinDesafio`):
+    la primera mazmorra; jefes mz_hongo / mz_rana / mz_cabecilla con avisos
+    largos. Una mazmorra 10+ niveles por debajo de ti ya no suma gesta y su
+    premio del día va por su nivel (+10).
+  - **Lagarto de la Torre** (MONTURAS.torre, no se vende): al superar el
+    piso 30 (`TORRE.montura`). Modificadores de piso (`modTorre`: Veloces,
+    Blindados, Élite). Inspeccionar muestra Torre y peces.
+  - Expediciones con **destino** (Bosque/Mina/Lago, doble de su material);
+    a Nv 60 dan oro en vez de XP. Receta Pescado frito.
+  - Avisos de Telegram: recuerdan la Torre si no subiste esta semana.
+  - FPS móvil (CPU 4×, 14 monstruos): 59,5 en combate con ?v=132.
+  - Arnés: **549 bien, 0 mal**.
