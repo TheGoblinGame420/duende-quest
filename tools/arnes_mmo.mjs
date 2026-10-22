@@ -520,6 +520,22 @@ async function pruebas() {
   await rc.mandar({ t: 'revivir' });
   chequear(mundo.elixir(rc, 'elixirF') && mundo.aura(rc, 'elixirF'), 'el elixir sigue tras morir');
 
+  console.log('Talentos');
+  const tl = await entrar('Talentosa', '7b');
+  ponerNivel(tl, 9, 'guerrero');
+  await tl.mandar({ t: 'talento', id: 'fuerza' });
+  chequear(!(tl.c.tal && tl.c.tal.fuerza), 'antes de Nv 10 no hay puntos');
+  ponerNivel(tl, 11, 'guerrero');
+  const a0 = tl.st.atk;
+  await tl.mandar({ t: 'talento', id: 'fuerza' }); await tl.mandar({ t: 'talento', id: 'fuerza' });
+  await tl.mandar({ t: 'talento', id: 'fuerza' });
+  chequear(tl.c.tal.fuerza === 2, 'Nv 11 = 2 puntos, no más');
+  chequear(tl.st.atk > a0, 'Fuerza sube el ataque (' + a0 + ' → ' + tl.st.atk + ')');
+  await tl.mandar({ t: 'talento', id: '__proto__' });
+  tl.c.oro = 5000;
+  await tl.mandar({ t: 'talentoReset' });
+  chequear(!Object.keys(tl.c.tal).length && tl.c.oro === 5000 - 1100, 'reiniciar cuesta 100 × nivel y devuelve los puntos');
+
   console.log('Monstruos pasivos no pegan a quien no les ataca');
   const t2 = await entrar('Turista', 5);
   await aMapa(t2, 'noche', 2000);

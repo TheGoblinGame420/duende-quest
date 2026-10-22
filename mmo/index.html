@@ -181,6 +181,16 @@ body.tactil #pie{display:none;}
 .dia small{font-family:system-ui,sans-serif;font-size:9px;color:rgba(255,255,255,.6);line-height:1.2;}
 .dia.hecho{opacity:.45;}
 .dia.hoy{border-color:var(--verde);background:rgba(0,255,136,.12);box-shadow:0 0 12px rgba(0,255,136,.35);}
+/* talentos */
+.talentos{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;}
+.tal{display:flex;gap:6px;align-items:center;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:6px;background:rgba(0,0,0,.3);}
+.tal.on{border-color:rgba(255,216,74,.55);}
+.tal img{width:26px;height:26px;image-rendering:pixelated;}
+.tal div{flex:1;min-width:0;}
+.tal b{display:block;font-size:7px;margin-bottom:3px;}
+.tal small{font-family:system-ui,sans-serif;font-size:10px;color:rgba(255,255,255,.6);}
+.tal .btn{padding:6px 9px;}
+@media (max-width:520px){.talentos{grid-template-columns:1fr;}}
 /* mapa del mundo */
 .mapa-mundo{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;}
 .zm{border:1px solid;border-radius:8px;padding:8px;background:rgba(0,0,0,.3);display:flex;flex-direction:column;gap:4px;}
@@ -446,6 +456,7 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
       <li><b>Objetivo:</b> toca o haz clic en un monstruo (o en otro jugador para curarlo). <b>Tab</b> cambia al enemigo más cercano y <b>Esc</b> lo quita. Si no eliges ninguno, las habilidades apuntan solas al enemigo más cercano.</li>
       <li><b>Amenaza:</b> los monstruos atacan a quien más los enfureció. El guerrero genera el doble y puede <b>Provocar</b>; curar también enfurece.</li>
       <li><b>Consumibles:</b> Q Poción · F Escudo · G Rayo · T Fuego</li>
+      <li><b>🌟 Talentos:</b> desde Nv 10 ganas un punto por nivel para repartir en 📖 (fuerza, vida, crítico, defensa, recargas, recurso, curas, oro, experiencia y velocidad; 5 rangos cada uno).</li>
       <li><b>Especializaciones:</b> desde Nv 10 cada clase elige una de dos en 📖 (Armas o Protección, Fuego o Escarcha, Sagrado o Sombras, Asesinato o Combate). Se cambia gratis fuera de combate.</li>
       <li><b>🐎 Monturas:</b> el Mercader las vende desde Nv 20. Tecla <b>Y</b> o el botón 🐎 para montar (1,5 s, fuera de combate): corres mucho más rápido. Atacar o recibir un golpe te baja. <b>Mapa del mundo:</b> tecla M o 🗺️.</li>
       <li><b>Entrar a portales / hablar:</b> E o ↑ encima</li>

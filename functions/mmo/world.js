@@ -19,7 +19,7 @@ import {
   LOGIN_PREMIOS, multLogin, LOGROS, MUNDIAL_DURA_MS, proximoMundial,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, MTON_EDAD_MIN_MS, WALLET_ESPERA_MS, FONDO_REFERENCIA_MTON, tonAmigable,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, FONDO_PCT_INGRESOS, PAQUETES, estrellasDe, PEDIDO_VIGENCIA_MS,
-  semanaUTC, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX,
+  semanaUTC, talento, TALENTOS, TALENTO_MAX, puntosTalento, costoReinicioTalentos, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX,
 } from '../../mmo/js/data.js';
 import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery, tg, getSolPriceUsd, SOL_DEV_WALLET } from '../api/lib.js';
 import { Combate } from './combate.js';
@@ -243,6 +243,8 @@ export class MmoWorld {
       case 'atk': return this.atacar(s, m);
       case 'clase': return this.elegirClase(s, m);
       case 'espec': return this.elegirEspec(s, m);
+      case 'talento': return this.subirTalento(s, m);
+      case 'talentoReset': return this.reiniciarTalentos(s);
       case 'montar': return this.montar(s);
       case 'invitar': return this.invitar(s, m);
       case 'grupoResp': return this.respuestaGrupo(s, m);
@@ -431,7 +433,38 @@ export class MmoWorld {
     return [];
   }
 
-  stats(c) { return statsJugador(c.nivel, c.skin, c.eq, c.clase, c.espec); }
+  // ── TALENTOS ──
+  subirTalento(s, m) {
+    const c = s.c;
+    const t = TALENTOS.find(x => x.id === m.id);
+    if (!t || s.muerto) return;
+    c.tal = c.tal || {};
+    const usados = Object.values(c.tal).reduce((a, b) => a + b, 0);
+    if (usados >= puntosTalento(c.nivel)) return this.no(s, 'No te quedan puntos de talento: ganas uno por nivel desde el 10.');
+    if ((c.tal[t.id] || 0) >= TALENTO_MAX) return this.no(s, 'Ese talento ya está al máximo.');
+    c.tal[t.id] = (c.tal[t.id] || 0) + 1;
+    this.recalcular(s);
+  }
+  reiniciarTalentos(s) {
+    const c = s.c;
+    if (!c.tal || !Object.keys(c.tal).length) return;
+    const costo = costoReinicioTalentos(c.nivel);
+    if (c.oro < costo) return this.no(s, `Reiniciar los talentos cuesta ${costo.toLocaleString('es')} oro.`);
+    c.oro -= costo;
+    c.tal = {};
+    this.recalcular(s);
+    this.enviar(s, { t: 'toast', m: '🌀 Talentos reiniciados: vuelve a repartir tus puntos.', ok: true });
+  }
+  recalcular(s) {
+    const pct = s.hp / s.st.maxHp;
+    s.st = this.stats(s.c);
+    s.hp = Math.max(1, Math.round(s.st.maxHp * pct));
+    s.sucio = true;
+    this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });
+    this.actualizarYo(s);
+  }
+
+  stats(c) { return statsJugador(c.nivel, c.skin, c.eq, c.clase, c.espec, c.tal); }
 
   // ── mTON / PLAY TO EARN ──
   // Quien puede ganar: cuenta real (Telegram o web, no invitado), Nv 15+ y
@@ -837,7 +870,7 @@ export class MmoWorld {
       arma: c.arma, armas: c.armas, skin: c.skin, skins: c.skins, pw: c.pw,
       kills: c.kills, jefes: c.jefes, muerto: s.muerto, mis: c.mis, forja: c.forja,
       eq: c.eq, bolsa: c.bolsa, logros: c.logros, titulo: c.titulo, mundiales: c.mundiales, login: c.login, crit: s.st.crit,
-      clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {},
+      clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {},
       espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, montado: s.montado || null,
       mton: c.mton, wallet: c.wallet ? { a: tonAmigable(c.wallet.a), desde: c.wallet.desde } : null,
       p2e: this.elegibilidad(c), creado: c.creado,
@@ -931,7 +964,7 @@ export class MmoWorld {
     if (this.aura(s, 'bloque') || this.aura(s, 'aturdido')) { if (Math.abs(x - s.x) > 4) this.enviar(s, { t: 'snap', x: Math.round(s.x), y: Math.round(s.y) }); return; }
     const dt = Math.max(16, ahora - s.movT);
     // Maximo posible: correr + un dash entero + margen por latencia.
-    const maxDx = (FIS.vel * velMontura(s.montado) * 60 * dt / 1000) + FIS.dashVel * FIS.dashT + 60;
+    const maxDx = (FIS.vel * velMontura(s.montado) * (1 + talento(s.c, 'agilidad')) * 60 * dt / 1000) + FIS.dashVel * FIS.dashT + 60;
     const ancho = MAPAS[s.c.mapa].ancho;
     if (Math.abs(x - s.x) > maxDx * 1.25) {
       this.enviar(s, { t: 'snap', x: Math.round(s.x), y: Math.round(s.y) });
@@ -1129,8 +1162,8 @@ export class MmoWorld {
       // En jefes cada bando se lleva al menos un tercio: pelear juntos compensa.
       const k = (o.jefe ? Math.max(parte, 1 / 3) : parte) * (1 + 0.1 * (n - 1)) / n;
       for (const s of b.miembros) {
-        const mult = ((SKINS[s.c.skin].buffs || {}).oroMult) || 1;
-        const xp = Math.max(1, Math.round(base.xp * k));
+        const mult = (((SKINS[s.c.skin].buffs || {}).oroMult) || 1) * (1 + talento(s.c, 'fortuna'));
+        const xp = Math.max(1, Math.round(base.xp * k * (1 + talento(s.c, 'erudicion'))));
         const oro = Math.max(1, Math.round(base.oro * k * rnd(0.8, 1.2) * mult));
         premios.push([s.id, xp, oro]);
         cobraron.add(s.id);

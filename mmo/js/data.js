@@ -223,17 +223,18 @@ export function descansoGanado(nivel, msFuera) {
   const horas = msFuera / 3600000;
   return horas < 1 ? 0 : Math.round(xpParaSubir(nivel) * DESCANSO_POR_HORA * horas);
 }
-export function statsJugador(nivel, skin, eq, clase, espec) {
+export function statsJugador(nivel, skin, eq, clase, espec, tal) {
   const b = (SKINS[skin] && SKINS[skin].buffs) || {};
   const e = bonoEquipo(eq);
   const cl = CLASES[clase];
   const m = (cl && cl.mod) || { hp: 1, def: 1, atk: 1, crit: 0 };
   const sp = (nivel >= ESPEC_NIVEL && especDe(clase, espec) && especDe(clase, espec).mod) || {};
+  const t = { tal };
   return {
-    maxHp: Math.round((100 + 30 * (nivel - 1) + (b.bonusHp || 0) * Math.max(1, Math.floor(nivel / 5)) + e.hp) * m.hp * (sp.hp || 1)),
-    atk: Math.round((10 + 3 * (nivel - 1) + e.atk) * (b.atkMult || 1) * m.atk * (sp.atk || 1)),
-    def: Math.floor((Math.floor(nivel * 1.5) + e.def) * m.def * (sp.def || 1)),
-    crit: 0.12 + e.crit + m.crit + (sp.crit || 0),
+    maxHp: Math.round((100 + 30 * (nivel - 1) + (b.bonusHp || 0) * Math.max(1, Math.floor(nivel / 5)) + e.hp) * m.hp * (sp.hp || 1) * (1 + talento(t, 'vida'))),
+    atk: Math.round((10 + 3 * (nivel - 1) + e.atk) * (b.atkMult || 1) * m.atk * (sp.atk || 1) * (1 + talento(t, 'fuerza'))),
+    def: Math.floor((Math.floor(nivel * 1.5) + e.def) * m.def * (sp.def || 1) * (1 + talento(t, 'defensa'))),
+    crit: 0.12 + e.crit + m.crit + (sp.crit || 0) + talento(t, 'critico'),
     recMax: recursoMax(clase, nivel),
   };
 }
@@ -304,6 +305,32 @@ export const ESPECS = {
   },
 };
 export const especDe = (clase, espec) => (ESPECS[clase] && ESPECS[clase][espec]) || null;
+
+// ── TALENTOS ──
+// Desde Nv 10, cada nivel da 1 punto para repartir (51 a Nv 60). Cada
+// talento tiene 5 rangos. Reiniciarlos cuesta oro. Pequeños pero suman:
+// cada nivel trae una decision propia ademas de la experiencia.
+export const TALENTO_NIVEL = 10;
+export const TALENTO_MAX = 5;
+export const TALENTOS = [
+  { id: 'fuerza',    nombre: 'Fuerza',       icono: 'S_Sword19', por: 0.02, txt: '+2% de ataque' },
+  { id: 'vida',      nombre: 'Vitalidad',    icono: 'S_Holy10',  por: 0.03, txt: '+3% de vida' },
+  { id: 'critico',   nombre: 'Precisión',    icono: 'S_Bow09',   por: 0.01, txt: '+1% de crítico' },
+  { id: 'defensa',   nombre: 'Armadura',     icono: 'E_Metal07', por: 0.03, txt: '+3% de defensa' },
+  { id: 'celeridad', nombre: 'Celeridad',    icono: 'S_Thunder03', por: 0.03, txt: '-3% de recarga de habilidades' },
+  { id: 'sabiduria', nombre: 'Sabiduría',    icono: 'S_Magic03', por: 0.08, txt: '+8% de regeneración de maná, ira o energía' },
+  { id: 'sanacion',  nombre: 'Sanación',     icono: 'S_Holy02',  por: 0.04, txt: '+4% a tus curas y escudos' },
+  { id: 'fortuna',   nombre: 'Fortuna',      icono: 'I_GoldCoin', por: 0.03, txt: '+3% de oro de los monstruos' },
+  { id: 'erudicion', nombre: 'Erudición',    icono: 'I_Book',    por: 0.02, txt: '+2% de experiencia' },
+  { id: 'agilidad',  nombre: 'Agilidad',     icono: 'S_Wind03',  por: 0.02, txt: '+2% de velocidad al caminar' },
+];
+export const puntosTalento = nivel => Math.max(0, nivel - TALENTO_NIVEL + 1);
+export const costoReinicioTalentos = nivel => 100 * nivel;
+// Bonus de un talento (0 si no tiene rangos).
+export function talento(c, id) {
+  const t = TALENTOS.find(x => x.id === id);
+  return t ? t.por * Math.min(TALENTO_MAX, ((c && c.tal) || {})[id] || 0) : 0;
+}
 
 // ── MONTURAS ──
 // Se compran con oro al Mercader y se invocan en 1,5 s fuera de combate (no

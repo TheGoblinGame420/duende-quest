@@ -13,7 +13,7 @@
 import {
   MAPAS, CLASES, RECURSOS, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, HOGAR_CD_MS,
   ARMAS, SKINS, ATAQUE_CD_MS, ALCANCE_BASE, COMBO_MULT, multForja, FIS, FJ, FM,
-  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, MONTAR_MS,
+  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, MONTAR_MS, talento,
 } from '../../mmo/js/data.js';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -212,6 +212,7 @@ export const Combate = {
     if (!a || a.muerto || !a.st) return 0;
     const sp = s && s.c ? this.especDe(s) : null;
     if (sp && sp.cura) cant *= sp.cura;
+    if (s && s.c) cant *= 1 + talento(s.c, 'sanacion');
     const crit = Math.random() < ((s && s.st) ? s.st.crit : 0.1);
     const n = Math.max(1, Math.round(cant * rnd(0.92, 1.08) * (crit ? 1.5 : 1)));
     const real = Math.min(n, Math.max(0, a.st.maxHp - a.hp));
@@ -414,7 +415,9 @@ export const Combate = {
     const cl = CLASES[c.clase];
     s.rec = Math.max(0, s.rec - costoHab(h, s.st.recMax, s.c.espec));
     if (cl.recurso === 'mana' && h.costo) s.gastoT = ahora;
-    if (h.cd) s.cdHab[h.id] = ahora + h.cd;
+    // Celeridad (talento) acorta las recargas.
+    const cdReal = h.cd ? Math.round(h.cd * (1 - talento(c, 'celeridad'))) : 0;
+    if (cdReal) s.cdHab[h.id] = ahora + cdReal;
     const w = this.mundoDe(s);
     const golpes = [];
     const ev = { t: 'hb', p: s.id, id: h.id, f: s.f, h: golpes };
@@ -480,7 +483,7 @@ export const Combate = {
       // Sacerdote
       case 'sanar': this.curar(s, obj, s.st.atk * h.cura); break;
       case 'escudo_poder': {
-        const abs = Math.round(s.st.atk * h.absorbe * ((sp && sp.cura) || 1));
+        const abs = Math.round(s.st.atk * h.absorbe * ((sp && sp.cura) || 1) * (1 + talento(c, 'sanacion')));
         // La amenaza y la participacion llegan cuando absorbe (ver herir).
         this.ponerAura(obj, 'escudoPoder', h.dura, { abs, de: s.id });
         this.ponerAura(obj, 'almaDebil', 12000);
@@ -532,7 +535,7 @@ export const Combate = {
     if (ahora - (s.combateT || 0) < 5000) this.progresoTarea(s, 'hab');
     s.sucio = true;
     this.aClave(s.k, ev);
-    if (h.cd) this.enviar(s, { t: 'cd', id: 'h_' + h.id, hasta: h.cd });
+    if (cdReal) this.enviar(s, { t: 'cd', id: 'h_' + h.id, hasta: cdReal });
   },
 
   // Solo los hechizos con barra naranja (int) se pueden cortar.
@@ -575,12 +578,13 @@ export const Combate = {
     const cl = CLASES[s.c.clase];
     if (cl) {
       const max = s.st.recMax;
+      const sab = 1 + talento(s.c, 'sabiduria');
       if (cl.recurso === 'mana') {
         // La regla de los 5 segundos de WoW: el mana vuelve rapido si llevas
         // 5 s sin gastar, y casi nada mientras lanzas sin parar.
         const k = seguro ? 0.1 : (ahora - (s.gastoT || 0) > 5000 ? 0.04 : 0.008);
-        s.rec = Math.min(max, s.rec + max * k * dt);
-      } else if (cl.recurso === 'energia') { const sp = this.especDe(s); s.rec = Math.min(max, s.rec + 20 * ((sp && sp.energia) || 1) * dt); }
+        s.rec = Math.min(max, s.rec + max * k * sab * dt);
+      } else if (cl.recurso === 'energia') { const sp = this.especDe(s); s.rec = Math.min(max, s.rec + 20 * ((sp && sp.energia) || 1) * sab * dt); }
       else if (cl.recurso === 'ira' && ahora - (s.combateT || 0) > 6000) s.rec = Math.max(0, s.rec - 3 * dt);
     }
     const r = s.au && s.au.renovar;

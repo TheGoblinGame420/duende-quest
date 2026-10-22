@@ -12,6 +12,7 @@ import {
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
+  TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento,
 } from './data.js?v=28';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
@@ -283,7 +284,8 @@ function recibir(m) {
       const antes = yo; yo = m.yo;
       if (yo.muerto && !(antes && antes.muerto)) morir();
       if (!yo.muerto) { $('m-muerte').classList.remove('on'); P.muerto = false; }
-      if (!antes || antes.clase !== yo.clase || antes.nivel !== yo.nivel) { $('acciones').innerHTML = ''; if ($('m-libro').classList.contains('on')) pintarLibro(); }
+      if (!antes || antes.clase !== yo.clase || antes.nivel !== yo.nivel) $('acciones').innerHTML = '';
+      if ($('m-libro').classList.contains('on')) pintarLibro();
       if (yo.clase && $('m-clase').classList.contains('on') && antes && !antes.clase) cerrarModales();
       pintarHud(); if ($('m-tienda').classList.contains('on')) pintarTienda(); if ($('m-inv').classList.contains('on')) pintarInventario();
       if ($('m-mision').classList.contains('on')) pintarMision();
@@ -618,7 +620,7 @@ function fisica() {
   const izq = !congelado() && (teclas.ArrowLeft || teclas.KeyA || tIzq);
   const der = !congelado() && (teclas.ArrowRight || teclas.KeyD || tDer);
   let obj = 0;
-  const vel = FIS.vel * velMontura(yo.montado);
+  const vel = FIS.vel * velMontura(yo.montado) * (1 + talento(yo, 'agilidad'));
   if (izq) obj -= vel; if (der) obj += vel;
   if (obj) P.f = obj > 0 ? 1 : -1;
   // Moverse cancela el lanzamiento (el servidor tambien lo hace; aqui se
@@ -1571,10 +1573,22 @@ function pintarLibro() {
     h += tarjeta(ico, esc(hb.nombre) + ` <span style="color:${bloq ? '#ff7777' : '#888'}">Nv ${hb.nv}</span>`, esc(hb.desc) + '<br><span style="color:#888">' + esc(datos) + '</span>',
       `<span class="precio" style="color:${bloq ? '#666' : '#00ff88'}">${bloq ? '🔒' : esc(tecla)}</span>`);
   }
+  // Talentos: un punto por nivel desde el 10.
+  const tal = yo.tal || {};
+  const libres = puntosTalento(yo.nivel) - Object.values(tal).reduce((a, b) => a + b, 0);
+  h += `<p style="font-size:12px;margin:12px 0 4px;color:#ffd84a">🌟 Talentos ${yo.nivel < TALENTO_NIVEL ? '(desde nivel ' + TALENTO_NIVEL + ')' : '· puntos libres: <b>' + libres + '</b>'}</p><div class="talentos">`;
+  for (const t of TALENTOS) {
+    const r = tal[t.id] || 0;
+    h += `<div class="tal ${r ? 'on' : ''}"><img src="${A}items/equipo/${t.icono}.png" alt=""><div><b>${esc(t.nombre)} ${r}/${TALENTO_MAX}</b><small>${esc(t.txt)} por rango</small></div><button class="btn" data-tal="${t.id}" ${libres > 0 && r < TALENTO_MAX ? '' : 'disabled'}>+</button></div>`;
+  }
+  h += '</div>';
+  if (Object.keys(tal).length) h += `<button class="btn sec" id="b-tal-reset" style="width:100%;margin-top:6px">REINICIAR TALENTOS (${costoReinicioTalentos(yo.nivel).toLocaleString('es')} oro)</button>`;
   const costoC = costoCambioClase(yo.nivel);
   h += `<button class="btn sec" id="b-cambiar-clase" style="width:100%;margin-top:8px">CAMBIAR DE CLASE${costoC ? ' (' + costoC.toLocaleString('es') + ' oro)' : ' (gratis hasta Nv 10)'}</button>`;
   $('libro-lista').innerHTML = h;
   $('b-cambiar-clase').onclick = () => abrirClases(false);
+  $('libro-lista').querySelectorAll('[data-tal]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'talento', id: b.dataset.tal }); });
+  const br = $('b-tal-reset'); if (br) br.onclick = () => { if (confirm('¿Reiniciar todos tus talentos por ' + costoReinicioTalentos(yo.nivel).toLocaleString('es') + ' oro?')) mandar({ t: 'talentoReset' }); };
   $('libro-lista').querySelectorAll('[data-espec]').forEach(b => b.onclick = () => { if (yo.nivel >= ESPEC_NIVEL && yo.espec !== b.dataset.espec) { sfx('explosion', .3); mandar({ t: 'espec', id: b.dataset.espec }); } });
 }
 
