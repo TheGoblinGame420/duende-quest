@@ -660,6 +660,7 @@ export class MmoWorld {
     if (c.uid.startsWith('inv:')) return no('Para comprar entra con tu cuenta de Telegram o inicia sesión en el juego web.');
     if (metodo === 'stars' && !c.uid.startsWith('tg:')) return no('Las Stars solo se pueden usar dentro de Telegram. En la web se paga con SOL.');
     if (metodo === 'sol' && c.uid.startsWith('tg:')) return no('Dentro de Telegram se paga con Stars.');
+    if (pq.skin && (c.skins || []).includes(pq.skin)) return no('Ya tienes esa skin.');
     await this.guardarPedidos();
     if (this.pedidos.filter(x => x.uid === c.uid && x.estado === 'esperando_pago').length >= 3) return no('Tienes compras sin pagar: termina o espera 30 minutos.');
     const env = getEnv({ env: this.env });
@@ -763,6 +764,15 @@ export class MmoWorld {
     if (!c || !pq) return { ok: false, error: 'No encontré al jugador o el paquete.' };
     c.oro += pq.oro || 0;
     for (const k in (pq.pw || {})) c.pw[k] = Math.min(99, (c.pw[k] || 0) + pq.pw[k]);
+    // Skin: a sus skins y puesta. Si ya la tenia (la compro con oro mientras
+    // tanto), se le devuelve su precio en oro para que no pierda nada.
+    let notaSkin = '';
+    if (pq.skin && SKINS[pq.skin]) {
+      c.skins = c.skins || ['comun'];
+      if (c.skins.includes(pq.skin)) { c.oro += SKINS[pq.skin].precio; notaSkin = ` Ya la tenías: te dimos ${SKINS[pq.skin].precio.toLocaleString('es')} de oro.`; }
+      else { c.skins.push(pq.skin); c.skin = pq.skin; notaSkin = ' Ya la llevas puesta.'; }
+      if (s) { s.st = this.stats(c); this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) }); this.actualizarYo(s); }
+    }
     pd.estado = 'entregado'; pd.entregado = Date.now();
     if (pd.metodo === 'sol') {
       this.ingresosSol.push({ usd: pd.usd, t: Date.now() });
@@ -771,7 +781,7 @@ export class MmoWorld {
     }
     if (s) await this.guardar(s); else await this.state.storage.put('c:' + pd.uid, c);
     await this.guardarPedidos();
-    await this.avisarJugador(pd.uid, `🎁 ¡Tu compra "${pd.nombre}" ya está en tu personaje! Gracias por apoyar DUENDE QUEST.`);
+    await this.avisarJugador(pd.uid, `🎁 ¡Tu compra "${pd.nombre}" ya está en tu personaje!${notaSkin} Gracias por apoyar DUENDE QUEST.`);
     return { ok: true, pedido: pd };
   }
 
@@ -1319,8 +1329,10 @@ export class MmoWorld {
     c.oro += oro;
     c.kills++;
     if (o && o.jefe) c.jefes++;
-    // Elixir de Sabiduria (artesania): +10% de la XP de caza.
+    // Elixir de Sabiduria (artesania): +10% de la XP de caza. Skins con xpMult.
     if (this.elixir(s, 'elixirX')) xp = Math.round(xp * 1.1);
+    const xpSkin = ((SKINS[c.skin] || {}).buffs || {}).xpMult;
+    if (xpSkin) xp = Math.round(xp * xpSkin);
     // El descanso duplica la experiencia de cada caza hasta gastarse.
     const extra = Math.min(c.descanso || 0, xp);
     if (extra > 0) { c.descanso -= extra; xp += extra; }
