@@ -2313,6 +2313,8 @@ async function pruebasAfijos() {
   w.inst.af = ['furioso'];
   const atk0 = pack.atk;
   pack.hp = pack.max * 0.25;
+  // En combate con alguien (sin presa, el pack se cura y se le pasa la furia).
+  d.inv = Infinity; pack.amen.set(d.id, 1); pack.x = d.x + 40;
   tick(1);
   chequear(pack.furia && pack.atk === Math.round(atk0 * 1.5), 'Furioso: bajo el 30% pega un 50% más');
   // Sanguinario

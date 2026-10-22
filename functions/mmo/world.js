@@ -148,6 +148,7 @@ export class MmoWorld {
       this.retiros = (await this.state.storage.get('retiros')) || [];
       this.chichas = (await this.state.storage.get('chichas')) || [];
       this.pedidos = (await this.state.storage.get('pedidos')) || [];
+      for (const x of this.pedidos) if (x.estado === 'comprobando') { x.estado = x.antesComp || 'esperando_pago'; x.firma = ''; }
       this.ingresosSol = (await this.state.storage.get('ingresosSol')) || [];
       this.rs = (await this.state.storage.get('rankSem')) || { sem: semanaUTC(), l: {} };
       this.rds = (await this.state.storage.get('rankDesSem')) || { sem: semanaUTC(), l: {} };
@@ -670,6 +671,9 @@ export class MmoWorld {
   async guardarPedidos() {
     // Los que nunca se pagaron caducan; se guardan los ultimos 300.
     const ahora = Date.now();
+    // Uno que se quedo 'comprobando' (el servidor se reinicio mientras se
+    // miraba la cadena) vuelve a esperar el pago.
+    for (const x of this.pedidos) if (x.estado === 'comprobando' && ahora - (x.compT || 0) > 120000) { x.estado = x.antesComp || 'esperando_pago'; x.firma = ''; }
     for (const x of this.pedidos) if (x.estado === 'esperando_pago' && ahora - x.creado > PEDIDO_VIGENCIA_MS) x.estado = 'vencido';
     this.pedidos = this.pedidos.filter(x => x.estado !== 'vencido' || ahora - x.creado < 86400000);
     let sobran = this.pedidos.length - 300;
@@ -749,7 +753,7 @@ export class MmoWorld {
     const antes = pd.estado;
     let cadena = null;
     try {
-      pd.firma = firma; pd.estado = 'comprobando';   // ni /pedidos ni /entregar lo ven hasta confirmar
+      pd.firma = firma; pd.estado = 'comprobando'; pd.compT = Date.now(); pd.antesComp = antes;   // ni /pedidos ni /entregar lo ven hasta confirmar
       // Recien enviada, la transaccion tarda unos segundos en confirmarse.
       for (let i = 0; i < 4; i++) {
         cadena = await this.verificarSol(firma, pd.lamports, pd.creado);
@@ -2282,11 +2286,13 @@ export class MmoWorld {
       const lejos = def.dispara ? 170 : 20;
       o.f = obj.x > o.x ? 1 : -1;
       if (Math.abs(obj.x - o.x) > lejos) vx = o.f * o.vel * 1.35 * 60 * dt;
-    } else if (o.grupo && !obj && Math.abs(o.x - o.casaX) > 60) {
+    } else if (o.grupo && !obj && (Math.abs(o.x - o.casaX) > 60 || o.hp < o.max)) {
       // Mazmorra: el pack que pierde a su presa vuelve a su sitio y se cura
-      // (como en WoW). Antes se quedaba donde mato y atacaba al revivir.
-      o.f = o.casaX > o.x ? 1 : -1; vx = o.f * o.vel * 1.35 * 60 * dt;
+      // (como en WoW), tambien la furia del afijo Furioso. Antes se quedaba
+      // donde mato y atacaba al revivir.
+      if (Math.abs(o.x - o.casaX) > 60) { o.f = o.casaX > o.x ? 1 : -1; vx = o.f * o.vel * 1.35 * 60 * dt; }
       if (o.hp < o.max) { o.hp = o.max; o.dano.clear(); }
+      if (o.furia) { o.furia = false; o.atk = Math.round(o.atk / 1.5); }
     } else if (!golpeado && !obj) {
       // Pasear: tramos cortos a un lado y pausas.
       if (ahora >= o.pasoEn) { o.dir = Math.random() < 0.35 ? 0 : (Math.random() < 0.5 ? -1 : 1); o.pasoEn = ahora + rnd(1200, 3200); }

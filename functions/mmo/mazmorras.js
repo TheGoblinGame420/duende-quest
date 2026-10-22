@@ -291,6 +291,7 @@ export const Mazmorras = {
     const def = MONSTRUOS[o.k];
     // Si no queda nadie vivo en su sala, se recupera y todo vuelve a empezar
     // (el "wipe" de WoW: se revive en la entrada y se intenta otra vez).
+    if (!jugadores.some(s => !s.muerto)) { o.soloDesde = 0; this.reiniciarJefe(o, w); return; }
     if (!jugadores.some(s => !s.muerto && Math.abs(s.x - o.casaX) < 1300)) {
       if (!o.soloDesde) o.soloDesde = ahora;
       else if (ahora - o.soloDesde > 3000) this.reiniciarJefe(o, w);

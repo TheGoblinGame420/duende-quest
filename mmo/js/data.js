@@ -464,7 +464,8 @@ export const NOVEDADES = [
     '🧭 Expediciones con destino (Bosque, Mina o Lago) y misión diaria nueva; semanal de la Torre.',
     '🗼 Torre: pisos con modificadores (Veloces, Blindados, Élite) y el Lagarto de la Torre al piso 30.',
     '🏰 En las mazmorras revives junto a la última barrera abierta y los packs vuelven a su sitio.',
-    '✨ Vitrina de skins junto al Mercader. En la web, las skins se pueden pagar escaneando un QR con tu wallet.',
+    '✨ Vitrina de skins junto al Mercader.',
+    '◎ En la web, las skins se pueden pagar escaneando un QR con tu wallet.',
   ] },
   { n: 7, fecha: '22 de octubre (mediodía, 2)', items: [
     '🏰 Madriguera Goblin: una mazmorra nueva desde Nv 6 para aprender las mecánicas (portal de mazmorras del pueblo).',
