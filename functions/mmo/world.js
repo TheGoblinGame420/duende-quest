@@ -1811,10 +1811,23 @@ export class MmoWorld {
       // Mas jugadores en la zona, mas monstruos (hasta el doble), para que no
       // se queden esperando reapariciones peleandose por los mismos.
       const max = Math.min(mapa.max * 2, mapa.max + 4 * (jugadores.length - 1));
-      const vivos = [...w.mons.values()].filter(m => !m.jefe).length;
-      if (vivos < max && ahora >= w.spawnEn) {
-        this.crearMonstruo(clave, this.tipoAReponer(w, mapa, jugadores, max));
-        w.spawnEn = ahora + (vivos < max / 2 ? 700 : 2500);
+      // Los invasores de un evento (o.ex) no cuentan: tienen su propio final.
+      const vivos = [...w.mons.values()].filter(m => !m.jefe && !m.ex).length;
+      // Lo que piden las misiones de los presentes y no queda vivo en la zona:
+      // sin esto, un bosque lleno de tipos que el novato no mata dejaba la
+      // mision 1 sin goblins durante minutos (medido por el QA de jugador).
+      const faltan = this.tiposQueFaltan(w, mapa, jugadores);
+      if (faltan.length && vivos >= max) {
+        const lejos = m => jugadores.every(s => Math.abs(s.x - m.x) > 350);
+        // Se retiran los que hagan falta (hasta 3 por tick) para abrir hueco.
+        const sobran = [...w.mons.values()].filter(m => !m.jefe && !m.ex && !m.muere && !m.amen.size && !faltan.includes(m.k) && lejos(m)).slice(0, Math.min(3, vivos - max + 1));
+        for (const m of sobran) { w.mons.delete(m.id); this.aClave(clave, { t: 'md', id: m.id, pr: [], fuera: 1 }); }
+        if (sobran.length) w.spawnEn = 0;
+      }
+      const vivos2 = [...w.mons.values()].filter(m => !m.jefe && !m.ex).length;
+      if (vivos2 < max && ahora >= w.spawnEn) {
+        this.crearMonstruo(clave, faltan.length ? faltan[Math.floor(Math.random() * faltan.length)] : this.tipoAReponer(w, mapa, jugadores, max));
+        w.spawnEn = ahora + (vivos2 < max / 2 ? 700 : 2500);
       }
       // Zona llena de monstruos que nadie toca (p. ej. fantasmas que un
       // novato no alcanza): los que llevan 3 min sin pelear se retiran para
@@ -1893,6 +1906,18 @@ export class MmoWorld {
   // Que tipo reponer: ninguno pasa de su parte del cupo (si no, la zona se
   // llenaba de un tipo que el novato no mata y dejaban de salir los de su
   // mision), y el que piden las misiones de los presentes sale el doble.
+  // Tipos de mision de los presentes que no tienen ningun ejemplar vivo aqui.
+  tiposQueFaltan(w, mapa, jugadores) {
+    const hay = new Set();
+    for (const m of w.mons.values()) if (!m.muere) hay.add(m.k);
+    const f = [];
+    for (const s of jugadores) {
+      const q = MISIONES[s.c.mis && s.c.mis.i];
+      if (q && !MONSTRUOS[q.tipo].jefe && mapa.monstruos.includes(q.tipo) && s.c.mis.p < q.n && !hay.has(q.tipo) && !f.includes(q.tipo)) f.push(q.tipo);
+    }
+    return f;
+  }
+
   tipoAReponer(w, mapa, jugadores, max) {
     const tipos = mapa.monstruos;
     const cuenta = {};

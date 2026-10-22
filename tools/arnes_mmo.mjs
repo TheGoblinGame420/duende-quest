@@ -1118,6 +1118,13 @@ async function pruebasNovato() {
   for (const o of w.mons.values()) if (!o.jefe) cuenta[o.k] = (cuenta[o.k] || 0) + 1;
   const maxTipo = Math.max(...Object.values(cuenta));
   chequear(maxTipo <= Math.ceil(12 / 5) + 1, 'ningún tipo acapara la zona (' + JSON.stringify(cuenta) + ')');
+  // Mision sin presa: si falta su tipo, sale aunque la zona este llena
+  w.mons.clear();
+  n.c.mis = { i: 0, p: 0 };   // mision 1: goblin_normal
+  n.x = 100;
+  for (let i = 0; i < 14; i++) monstruo(n, 'hechicero', 1500 + i * 30);
+  w.spawnEn = 0; tick(2);
+  chequear([...w.mons.values()].some(o => o.k === 'goblin_normal' && !o.muere), 'zona llena: aparece igual el monstruo que pide la misión');
   // Retiro de los que nadie toca
   const antes = w.mons.size;
   avanzar(200000); w.retiroEn = 0; n.x = 100; tick(1);
