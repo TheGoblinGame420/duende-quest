@@ -370,7 +370,7 @@ function recibir(m) {
       if (!antes || antes.clase !== yo.clase || antes.nivel !== yo.nivel) $('acciones').innerHTML = '';
       if (antes && yo.nivel > antes.nivel) { vibrar(); setTimeout(() => permisosTg(yo.nivel), 2500); }
       // Una vez, a Nv 8: que existen las skins con poderes (informativo).
-      if (antes && antes.nivel < 8 && yo.nivel >= 8 && (yo.skins || []).length <= 1) setTimeout(() => aviso('🎭 ¿Sabías? Las skins del Mercader dan poderes (más oro, ataque, defensa...). Míralas en su pestaña SKINS; con «Probar» te ves con ellas.', 'ok'), 6000);
+      if (antes && antes.nivel < 8 && yo.nivel >= 8 && (yo.skins || []).length <= 1) setTimeout(() => aviso('Las skins del Mercader dan bonificaciones (oro, ataque, defensa, experiencia). Puedes probarlas antes de comprarlas en la pestaña SKINS.', 'ok'), 6000);
       // Lo que se abre con el nivel: avisarlo justo al llegar.
       if (antes && yo.nivel > antes.nivel) {
         const abre = { 5: '🧭 ¡Ya puedes mandar expediciones! Tu mascota (o un duendecillo) explora mientras no juegas: registro de misiones (L).',
