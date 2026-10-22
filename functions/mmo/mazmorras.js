@@ -18,7 +18,7 @@
 // ultimo, epica). NUNCA mTON: ese dinero sale de un fondo limitado y sumar
 // fuentes nuevas se habla antes con el dueño.
 // ═══════════════════════════════════════════════════════
-import { MAPAS, MONSTRUOS, MAZMORRAS, MONTURAS, escalaMazmorra, premioMazmorraDia, nivelMazmorra, statsMonstruo, SUELO, hoyUTC, NIVEL_MAX, DESAFIO_MAX, multDesafio, premioDesafio, AFIJOS, afijosDe, multAfijos, opcionesBoveda, semanaUTC, nombreItem, BANDA_MONTURA, botinBandaNv, CONJUNTO_PROB } from '../../mmo/js/data.js';
+import { MAPAS, MONSTRUOS, MAZMORRAS, MONTURAS, MATERIALES, esenciaJefe, escalaMazmorra, premioMazmorraDia, nivelMazmorra, statsMonstruo, SUELO, hoyUTC, NIVEL_MAX, DESAFIO_MAX, multDesafio, premioDesafio, AFIJOS, afijosDe, multAfijos, opcionesBoveda, semanaUTC, nombreItem, BANDA_MONTURA, botinBandaNv, CONJUNTO_PROB } from '../../mmo/js/data.js';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const VACIA_MS = 300000;   // una instancia sin nadie se cierra a los 5 min (en el movil se corta mucho: da tiempo a reconectar)
@@ -364,7 +364,15 @@ export const Mazmorras = {
     this.quitarEsbirros(o, w);
     this.aClave(o.cl, { t: 'muros', muros: w.muros, hechos: I.hechos });
     const jugadores = [...this.sesiones.values()].filter(s => s.c && s.k === o.cl);
-    for (const s of jugadores) { s.c.mzJefes = s.c.mzJefes || {}; s.c.mzJefes[o.k] = (s.c.mzJefes[o.k] || 0) + 1; }
+    const es = esenciaJefe(I.banda, I.k);
+    for (const s of jugadores) {
+      s.c.mzJefes = s.c.mzJefes || {}; s.c.mzJefes[o.k] = (s.c.mzJefes[o.k] || 0) + 1;
+      // Esencia Abisal (para las runas de la Artesana), a todos los de dentro.
+      s.c.mat = s.c.mat || {};
+      s.c.mat.esencia = Math.min(999, (s.c.mat.esencia || 0) + es);
+      s.sucio = true;
+      this.enviar(s, { t: 'toast', ok: true, m: `🟣 +${es} ${MATERIALES.esencia.nombre}` });
+    }
     if (!j.final) {
       this.aClave(o.cl, { t: 'emote', m: `✨ ¡${MONSTRUOS[o.k].nombre} cae! La barrera se abre.` });
       return;

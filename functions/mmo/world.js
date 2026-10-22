@@ -262,6 +262,7 @@ export class MmoWorld {
       case 'grupoResp': return this.respuestaGrupo(s, m);
       case 'salirGrupo': return this.salirGrupo(s);
       case 'banda': return this.bandaGrupo(s, m);
+      case 'runa': return this.grabarRuna(s, m);
       case 'expulsarGrupo': return this.expulsarGrupo(s, m);
       case 'liderGrupo': return this.liderGrupo(s, m);
       case 'lfg': return this.buscarGrupo(s, m);
@@ -525,7 +526,7 @@ export class MmoWorld {
     this.actualizarYo(s);
   }
 
-  stats(c) { return statsJugador(c.nivel, c.skin, c.eq, c.clase, c.espec, c.tal); }
+  stats(c) { return statsJugador(c.nivel, c.skin, c.eq, c.clase, c.espec, c.tal, c.runas); }
 
   // ── mTON / PLAY TO EARN ──
   // Quien puede ganar: cuenta real (Telegram o web, no invitado), Nv 15+ y
@@ -942,7 +943,7 @@ export class MmoWorld {
       kills: c.kills, jefes: c.jefes, muerto: s.muerto, mis: c.mis, forja: c.forja,
       eq: c.eq, bolsa: c.bolsa, logros: c.logros, titulo: c.titulo, mundiales: c.mundiales, login: c.login, crit: s.st.crit,
       clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, desafio: c.desafio || {}, ...Object.fromEntries(TEMPORADAS.map(t => [t.campo, c[t.campo] || 0])), chicha: this.infoChicha(c), temp: (temporadaDe() || {}).id || '', herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, best: c.best || {},
-      boveda: c.boveda, bovedaOpc: c.bovedaOpc || null, banda: this.infoBanda(c),
+      boveda: c.boveda, bovedaOpc: c.bovedaOpc || null, banda: this.infoBanda(c), runas: c.runas || {},
       espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, tintes: c.tintes || [], tinte: c.tinte || '', mascotas: c.mascotas || [], mascota: c.mascota || '', montado: s.montado || null,
       mton: c.mton, wallet: c.wallet ? { a: tonAmigable(c.wallet.a), desde: c.wallet.desde } : null,
       p2e: this.elegibilidad(c), creado: c.creado,

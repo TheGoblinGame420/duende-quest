@@ -9,8 +9,12 @@
 // en el personaje: reiniciar el servidor no la borra). Los materiales van a
 // c.mat y la Artesana del pueblo los convierte en consumibles y elixires.
 // Nada de esto da mTON.
+//
+// Nivel alto: en zonas Nv 30+ sale ademas Flor de Luna o Mithril, y con
+// ellos (y la Esencia Abisal de los jefes de mazmorra) la Artesana graba
+// RUNAS permanentes desde Nv 40 (+2% por rango, 5 rangos).
 // ═══════════════════════════════════════════════════════
-import { MAPAS, MATERIALES, NODO_CADA_MS, RECOLECTAR_MS, ELIXIR_MS, RECETAS, nodosDe } from '../../mmo/js/data.js';
+import { MAPAS, MATERIALES, NODO_CADA_MS, RECOLECTAR_MS, ELIXIR_MS, RECETAS, nodosDe, RARO_ZONA, raroDe, RUNAS, RUNA_NIVEL, RUNA_MAX, costoRuna } from '../../mmo/js/data.js';
 
 export const Profesiones = {
   // Al entrar a un mapa: sus nodos y cuando vuelve a estar listo cada uno.
@@ -53,6 +57,14 @@ export const Profesiones = {
     let extra = '';
     // Cristal: raro, algo mas en zonas altas.
     if (Math.random() < 0.06 + nv / 800) { c.mat.cristal = Math.min(999, (c.mat.cristal || 0) + 1); extra = ' y ¡1 Cristal Arcano!'; }
+    // Zonas altas: Flor de Luna (plantas) o Mithril (vetas).
+    let raros = 0;
+    for (const [nvMin, p] of RARO_ZONA) if (nv >= nvMin && Math.random() < p) raros++;
+    if (raros) {
+      const r = raroDe(n.tipo);
+      c.mat[r] = Math.min(999, (c.mat[r] || 0) + raros);
+      extra += ` y +${raros} ${MATERIALES[r].nombre}`;
+    }
     s.sucio = true;
     this.enviar(s, { t: 'recogido', i: n.i, en: NODO_CADA_MS, tipo: n.tipo, cant, cristal: !!extra });
     this.enviar(s, { t: 'toast', m: `🌿 +${cant} ${MATERIALES[n.tipo].nombre}${extra}`, ok: true });
@@ -83,6 +95,32 @@ export const Profesiones = {
     }
     s.sucio = true;
     this.enviar(s, { t: 'toast', m: `⚗️ Fabricaste: ${r.nombre}`, ok: true });
+    this.actualizarYo(s);
+    this.guardar(s);
+  },
+
+  // Grabar (subir) una runa: rango siguiente con sus materiales y su oro.
+  grabarRuna(s, m) {
+    const c = s.c;
+    const id = typeof m.id === 'string' && Object.hasOwn(RUNAS, m.id) ? m.id : null;
+    if (!id || s.muerto) return;
+    if (!this.cercaDeArtesana(s)) return this.no(s, 'Habla con la Artesana Lila en el pueblo.');
+    if (c.nivel < RUNA_NIVEL) return this.no(s, `Las runas se graban desde nivel ${RUNA_NIVEL}.`);
+    c.runas = c.runas || {};
+    const r = (c.runas[id] || 0) + 1;
+    if (r > RUNA_MAX) return this.no(s, 'Esa runa ya está al máximo.');
+    const cos = costoRuna(id, r);
+    c.mat = c.mat || {};
+    for (const k in cos.mat) if ((c.mat[k] || 0) < cos.mat[k]) return this.no(s, `Te faltan materiales: ${MATERIALES[k].nombre}.`);
+    if (c.oro < cos.oro) return this.no(s, 'No te alcanza el oro.');
+    for (const k in cos.mat) c.mat[k] -= cos.mat[k];
+    c.oro -= cos.oro;
+    c.runas[id] = r;
+    s.st = this.stats(c);
+    s.hp = Math.min(s.hp, s.st.maxHp);
+    s.sucio = true;
+    this.enviar(s, { t: 'toast', ok: true, m: `✨ ${RUNAS[id].nombre} grabada a rango ${r}: +${r * 2}% de ${RUNAS[id].desc}.` });
+    this.revisarLogros(s);
     this.actualizarYo(s);
     this.guardar(s);
   },

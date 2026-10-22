@@ -576,6 +576,7 @@ async function pruebas() {
   await pruebasBoveda();
   await pruebasFortaleza();
   await pruebasBanda();
+  await pruebasRunas();
   await pruebasMascotas();
   await pruebasContactos();
 }
@@ -1535,6 +1536,65 @@ async function pruebasBanda() {
   const g2 = mundo.grupoDe(solo);
   chequear(g2 && g2.banda && g2.uids.length === 2, 'quien se une desde el buscador de la banda forma una banda');
   await dejar(l2); await dejar(solo);
+}
+
+async function pruebasRunas() {
+  console.log('Artesanía de nivel alto: materiales raros y runas');
+  const D = await import('../mmo/js/data.js');
+  const r = await entrar('Runero', 'd1');
+  ponerNivel(r, 47, 'mago');
+  // Recoger en una zona alta da Flor de Luna o Mithril.
+  await aMapa(r, 'cavernas', 300);
+  r.c.mat = {};
+  const ns = D.nodosDe('cavernas');
+  for (let i = 0; i < 12; i++) {
+    const n = ns[i % ns.length];
+    r.c.nodos = {}; r.x = n.x;
+    mundo.terminarRecoleccion(r, { nodo: n.i });
+  }
+  chequear((r.c.mat.flor || 0) > 0 && (r.c.mat.mithril || 0) > 0, 'en zonas Nv 30+ salen Flor de Luna (' + (r.c.mat.flor || 0) + ') y Mithril (' + (r.c.mat.mithril || 0) + ')');
+  await aMapa(r, 'noche', 300);
+  const f0 = r.c.mat.flor, m0 = r.c.mat.mithril;
+  for (let i = 0; i < 8; i++) { const n = D.nodosDe('noche')[i % 4]; r.c.nodos = {}; r.x = n.x; mundo.terminarRecoleccion(r, { nodo: n.i }); }
+  chequear(r.c.mat.flor === f0 && r.c.mat.mithril === m0, 'en zonas bajas no salen');
+  // Esencia Abisal de los jefes de mazmorra.
+  const w = mundo.crearInstancia('catacumbas', 30, 1);
+  mundo.unirAInstancia(r, w);
+  const jefe = [...w.mons.values()].find(o => o.jefe && !o.final);
+  r.x = jefe.x - 80;
+  const e0 = r.c.mat.esencia || 0;
+  mundo.danar(jefe, 1, r); mundo.danar(jefe, jefe.hp + 1, r); tick(1);
+  chequear(r.c.mat.esencia === e0 + 1, 'un jefe de mazmorra da 1 Esencia Abisal');
+  // Grabar runas en la Artesana.
+  const ax = D.MAPAS.pueblo.npcs.find(x => x.tipo === 'artesania').x;
+  await aMapa(r, 'pueblo', ax);
+  ponerNivel(r, 39);
+  r.c.mat = { mithril: 999, flor: 999, esencia: 999, cristal: 999 }; r.c.oro = 1e7;
+  r.limpiar();
+  await r.mandar({ t: 'runa', id: 'fuerza' });
+  chequear(!(r.c.runas && r.c.runas.fuerza) && r.ultimos('no').some(x => /nivel 40/.test(x.m)), 'las runas se graban desde Nv 40');
+  ponerNivel(r, 60);
+  const atk0 = r.st.atk;
+  r.c.mat = { mithril: 4, esencia: 1, cristal: 1 };
+  await r.mandar({ t: 'runa', id: 'fuerza' });
+  chequear(!(r.c.runas && r.c.runas.fuerza), 'sin materiales suficientes no se graba');
+  r.c.mat = { mithril: 5, esencia: 2, cristal: 1 };
+  mundo.revisarLogros(r);   // los de nivel dan oro: que no cuenten aqui
+  const oro0 = r.c.oro;
+  await r.mandar({ t: 'runa', id: 'fuerza' });
+  chequear(r.c.runas.fuerza === 1 && r.c.mat.mithril === 1 && r.c.mat.esencia === 0 && r.c.oro === oro0 - 2500, 'rango 1: gasta 4 Mithril, 2 Esencias, 1 Cristal y 2.500 oro');
+  chequear(Math.abs(r.st.atk / atk0 - 1.02) < 0.01, 'y da +2% de ataque (' + atk0 + ' → ' + r.st.atk + ')');
+  r.c.mat = { mithril: 999, flor: 999, esencia: 999, cristal: 999 };
+  for (let i = 0; i < 6; i++) await r.mandar({ t: 'runa', id: 'fuerza' });
+  chequear(r.c.runas.fuerza === D.RUNA_MAX, 'no pasa del rango ' + D.RUNA_MAX);
+  for (let i = 0; i < 5; i++) { await r.mandar({ t: 'runa', id: 'piedra' }); await r.mandar({ t: 'runa', id: 'vida' }); }
+  chequear(r.c.logros.includes('runas'), 'las tres al máximo dan el logro Maestro Rúnico');
+  await aMapa(r, 'noche', 300);
+  await r.mandar({ t: 'runa', id: 'fuerza' });
+  chequear(r.ultimos('no').some(x => /Artesana/.test(x.m)), 'solo junto a la Artesana');
+  mundo.actualizarYo(r);
+  chequear(r.ultimos('yo').some(x => x.yo && x.yo.runas && x.yo.runas.vida === 5), 'el cliente recibe sus runas');
+  await dejar(r);
 }
 
 async function pruebasBoveda() {

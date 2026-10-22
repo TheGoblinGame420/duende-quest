@@ -13,8 +13,8 @@ import {
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
-  premioAmigo, BANDA_MAX, BANDA_MONTURA,
-} from './data.js?v=70';
+  premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
+} from './data.js?v=71';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -2207,10 +2207,31 @@ function abrirArtesana() {
     h += tarjeta(`<img src="${A}${r.dir || 'items/equipo/'}${r.icono}.png">`, esc(r.nombre), esc(r.desc) + '<br>' + pide,
       `<button class="btn" data-receta="${r.id}" ${puede ? '' : 'disabled'}>Fabricar</button>`);
   }
-  h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Las plantas 🌿 y vetas ⛏️ brillan en el suelo de cada zona: acércate y pulsa E (o RECOGER). Cada una vuelve a crecer a los 5 minutos. El Cristal Arcano sale a veces al recoger, o se refina con 8 minerales.</p>';
+  // Runas: mejoras permanentes de nivel alto (+2% por rango).
+  h += `<p style="font:600 13px var(--sans);color:var(--txt);margin:12px 0 6px">✨ Runas permanentes${yo.nivel < RUNA_NIVEL ? ` <span style="color:var(--warn)">(desde Nv ${RUNA_NIVEL})</span>` : ''}</p>`;
+  for (const [id, ru] of Object.entries(RUNAS)) {
+    const r = (yo.runas || {})[id] || 0;
+    let det = `Rango ${r}/${RUNA_MAX}: +${Math.round(r * RUNA_PCT * 100)}% de ${ru.desc}.`;
+    let acc = '<span class="precio" style="color:var(--ok)">✓ Máxima</span>';
+    if (r < RUNA_MAX) {
+      const cos = costoRuna(id, r + 1);
+      const pide = Object.entries(cos.mat).map(([k, n]) => `<span style="color:${(mat[k] || 0) >= n ? 'var(--ok)' : 'var(--err)'}">${n} ${esc(MATERIALES[k].nombre)}</span>`).join(' + ')
+        + ` + <span style="color:${yo.oro >= cos.oro ? 'var(--ok)' : 'var(--err)'}">🪙 ${cos.oro.toLocaleString('es')}</span>`;
+      const puede = yo.nivel >= RUNA_NIVEL && yo.oro >= cos.oro && Object.entries(cos.mat).every(([k, n]) => (mat[k] || 0) >= n);
+      det += `<br>Rango ${r + 1} (+${Math.round((r + 1) * RUNA_PCT * 100)}%): ${pide}`;
+      acc = `<button class="btn" data-runa="${id}" ${puede ? '' : 'disabled'}>Grabar</button>`;
+    }
+    h += tarjeta(`<img src="${A}items/equipo/${ru.icono}.png">`, esc(ru.nombre), det, acc);
+  }
+  h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Las plantas 🌿 y vetas ⛏️ brillan en el suelo de cada zona: acércate y pulsa E (o RECOGER). Cada una vuelve a crecer a los 5 minutos. El Cristal Arcano sale a veces al recoger, o se refina con 8 minerales. En las zonas de Nv 30+ salen también Flor de Luna y Mithril; la Esencia Abisal la sueltan los jefes de mazmorra (y el doble los de la banda).</p>';
+  const ven = $('arte-lista').closest('.ventana'), sc = ven ? ven.scrollTop : 0, scl = $('arte-lista').scrollTop;
   $('arte-lista').innerHTML = h;
   $('arte-lista').querySelectorAll('[data-receta]').forEach(b => b.onclick = () => { sfx('moneda', .4); mandar({ t: 'fabricar', id: b.dataset.receta }); });
+  $('arte-lista').querySelectorAll('[data-runa]').forEach(b => b.onclick = () => { sfx('moneda', .5); mandar({ t: 'runa', id: b.dataset.runa }); });
   abrir('m-arte');
+  // Al recibir "yo" se repinta: que no salte arriba (las runas van al final).
+  if (ven) ven.scrollTop = sc;
+  $('arte-lista').scrollTop = scl;
 }
 
 // ── BESTIARIO ──

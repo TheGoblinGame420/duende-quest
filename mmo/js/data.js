@@ -296,8 +296,9 @@ export function descansoGanado(nivel, msFuera) {
   const horas = msFuera / 3600000;
   return horas < 1 ? 0 : Math.round(xpParaSubir(nivel) * DESCANSO_POR_HORA * horas);
 }
-export function statsJugador(nivel, skin, eq, clase, espec, tal) {
+export function statsJugador(nivel, skin, eq, clase, espec, tal, runas) {
   const b = (SKINS[skin] && SKINS[skin].buffs) || {};
+  const ru = bonoRunas(runas);
   const e = bonoEquipo(eq);
   const cj = bonoConjuntos(eq);
   const cl = CLASES[clase];
@@ -305,9 +306,9 @@ export function statsJugador(nivel, skin, eq, clase, espec, tal) {
   const sp = (nivel >= ESPEC_NIVEL && especDe(clase, espec) && especDe(clase, espec).mod) || {};
   const t = { tal };
   return {
-    maxHp: Math.round((100 + 30 * (nivel - 1) + (b.bonusHp || 0) * Math.max(1, Math.floor(nivel / 5)) + e.hp) * m.hp * (sp.hp || 1) * (1 + talento(t, 'vida')) * (1 + cj.hp)),
-    atk: Math.round((10 + 3 * (nivel - 1) + e.atk) * (b.atkMult || 1) * m.atk * (sp.atk || 1) * (1 + talento(t, 'fuerza')) * (1 + cj.atk)),
-    def: Math.floor((Math.floor(nivel * 1.5) + e.def) * m.def * (sp.def || 1) * (1 + talento(t, 'defensa')) * (1 + cj.def)),
+    maxHp: Math.round((100 + 30 * (nivel - 1) + (b.bonusHp || 0) * Math.max(1, Math.floor(nivel / 5)) + e.hp) * m.hp * (sp.hp || 1) * (1 + talento(t, 'vida')) * (1 + cj.hp) * (1 + ru.hp)),
+    atk: Math.round((10 + 3 * (nivel - 1) + e.atk) * (b.atkMult || 1) * m.atk * (sp.atk || 1) * (1 + talento(t, 'fuerza')) * (1 + cj.atk) * (1 + ru.atk)),
+    def: Math.floor((Math.floor(nivel * 1.5) + e.def) * m.def * (sp.def || 1) * (1 + talento(t, 'defensa')) * (1 + cj.def) * (1 + ru.def)),
     crit: 0.12 + e.crit + m.crit + (sp.crit || 0) + talento(t, 'critico') + cj.crit,
     recMax: recursoMax(clase, nivel),
   };
@@ -441,6 +442,7 @@ export const NOVEDADES = [
     '🟡 Zonas doradas: hay que aguantarlas juntos, el golpe se reparte entre los que estén dentro.',
     '🐸 Monturas nuevas en el Mercader: Sapo Gigante (Nv 25) y Águila Real (Nv 50).',
     '📅 Temporadas de 2027: Verano Duende (enero), Vendimia (marzo), Lluvia de Estrellas (abril), Fiesta del Sol (junio) y Fiestas Patrias (julio).',
+    '✨ Runas en la Artesana (desde Nv 40): +2% de ataque, defensa o vida por rango, hasta +10%. Piden Flor de Luna y Mithril (zonas Nv 30+) y Esencia Abisal (jefes de mazmorra).',
   ] },
   { n: 2, fecha: '22 de octubre', items: [
     '🏰 Dos mazmorras nuevas: la Fortaleza Goblin (Nv 20-40) y el Nido de la Reina Araña (Nv 40-58).',
@@ -748,6 +750,7 @@ export const LOGROS = [
   { id: 'regalo200',   titulo: 'Santa Duende',       desc: 'Junta 200 regalos en la Navidad Duende',     oro: 12000, cond: c => (c.regalos || 0) >= 200 },
   { id: 'mazmorra10', titulo: 'Conquistador',       desc: 'Completa 10 mazmorras',             oro: 10000, cond: c => (c.mazmorras || 0) >= 10 },
   { id: 'kraken',    titulo: 'Azote del Abismo',    desc: 'Vence al Kraken del Templo Hundido', oro: 8000,  cond: c => !!(c.mzJefes && c.mzJefes.mz_kraken) },
+  { id: 'runas',     titulo: 'Maestro Rúnico',      desc: 'Graba las tres runas de la Artesana a rango 5', oro: 20000, cond: c => !!c.runas && Object.keys(RUNAS).every(k => (c.runas[k] || 0) >= RUNA_MAX) },
   { id: 'mascotas3', titulo: 'Cuidador de Bichos',  desc: 'Consigue 3 mascotas', oro: 3000, cond: c => (c.mascotas || []).length >= 3 },
   { id: 'reygoblin', titulo: 'Azote Goblin',        desc: 'Vence al Rey Goblin Barrigón de la Fortaleza', oro: 6000, cond: c => !!(c.mzJefes && c.mzJefes.mz_rey_goblin) },
   { id: 'cancerbero', titulo: 'Domador del Infierno', desc: 'Vence al Cancerbero del Nido de la Reina Araña', oro: 12000, cond: c => !!(c.mzJefes && c.mzJefes.mz_cancerbero) },
@@ -904,7 +907,18 @@ export const MATERIALES = {
   hierba:  { nombre: 'Hierba Duende',     icono: 'I_Leaf' },
   mineral: { nombre: 'Mineral de Hierro', icono: 'I_Rock01' },
   cristal: { nombre: 'Cristal Arcano',    icono: 'I_Crystal01' },
+  // De nivel alto: en las zonas Nv 30+ las plantas dan Flor de Luna y las
+  // vetas Mithril; la Esencia la sueltan los jefes de mazmorra y de banda.
+  flor:    { nombre: 'Flor de Luna',      icono: 'S_Magic02' },
+  mithril: { nombre: 'Mithril',           icono: 'E_Metal07' },
+  esencia: { nombre: 'Esencia Abisal',    icono: 'S_Shadow06' },
 };
+// Material raro de las zonas altas: [nivel minimo de la zona, probabilidad]
+// de uno extra por recogida (se tiran los dos).
+export const RARO_ZONA = [[30, 0.6], [45, 0.4]];
+export const raroDe = tipo => (tipo === 'hierba' ? 'flor' : 'mithril');
+// Esencia Abisal por jefe: mazmorra 1 (+1 en Desafio), banda 2.
+export const esenciaJefe = (banda, k) => (banda ? 2 : 1 + (k ? 1 : 0));
 export const NODO_CADA_MS = 5 * 60000;
 export const RECOLECTAR_MS = 1500;
 export const ELIXIR_MS = 30 * 60000;
@@ -921,8 +935,24 @@ export const RECETAS = [
   { id: 'refinar', nombre: 'Refinar cristal', icono: 'I_Crystal01', pide: { mineral: 8 }, da: { mat: { cristal: 1 } }, desc: '8 minerales se funden en 1 Cristal Arcano' },
   { id: 'elixirF', nombre: 'Elixir de Fuerza', icono: 'P_Red03', pide: { hierba: 6, cristal: 1 }, da: { elixir: 'elixirF' }, desc: '+10% de daño durante 30 min (aguanta la muerte)' },
   { id: 'elixirP', nombre: 'Elixir de Piel de Piedra', icono: 'P_Blue05', pide: { mineral: 6, cristal: 1 }, da: { elixir: 'elixirP' }, desc: 'Recibes un 10% menos de daño durante 30 min' },
+  { id: 'destilar', nombre: 'Destilar Flor de Luna', icono: 'S_Magic02', pide: { hierba: 10, cristal: 1 }, da: { mat: { flor: 1 } }, desc: '10 hierbas y un cristal se destilan en 1 Flor de Luna' },
   { id: 'elixirX', nombre: 'Elixir de Sabiduría', icono: 'I_Book', pide: { hierba: 4, mineral: 2, cristal: 1 }, da: { elixir: 'elixirX' }, desc: '+10% de experiencia por caza durante 30 min (aguanta la muerte)' },
 ];
+
+// ── RUNAS (artesania de nivel alto) ──
+// Mejoras PERMANENTES que graba la Artesana desde Nv 40: cada rango da +2%
+// a su estadistica, hasta 5 rangos (+10%). Piden materiales de zonas altas,
+// Esencia Abisal de las mazmorras y oro: una meta de semanas, sin azar y
+// sin compra.
+export const RUNA_NIVEL = 40, RUNA_MAX = 5, RUNA_PCT = 0.02;
+export const RUNAS = {
+  fuerza: { nombre: 'Runa de Fuerza', icono: 'S_Buff14',  st: 'atk', desc: 'ataque',  pide: r => ({ mithril: 4 * r, esencia: 2 * r, cristal: r }) },
+  piedra: { nombre: 'Runa de Piedra', icono: 'E_Metal06', st: 'def', desc: 'defensa', pide: r => ({ mithril: 6 * r, esencia: 2 * r }) },
+  vida:   { nombre: 'Runa de Vida',   icono: 'S_Holy01',  st: 'hp',  desc: 'vida máxima', pide: r => ({ flor: 6 * r, esencia: 2 * r }) },
+};
+// Lo que cuesta subir una runa AL rango r (1..5).
+export const costoRuna = (id, r) => ({ mat: RUNAS[id].pide(r), oro: 2500 * r * r });
+export const bonoRunas = ru => ({ atk: RUNA_PCT * ((ru && ru.fuerza) || 0), def: RUNA_PCT * ((ru && ru.piedra) || 0), hp: RUNA_PCT * ((ru && ru.vida) || 0) });
 
 // ── TEMPORADAS ──
 // Eventos con fecha real: se encienden solos y dan motivo para volver esos
