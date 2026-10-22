@@ -178,6 +178,26 @@ export const MONSTRUOS = {
       { tipo: 'zona', nombre: 'Runas Arcanas', cada: 11000, primero: 7000, aviso: 1500, ancho: 170, donde: 'jugadores', dano: 0.3, color: '#c084fc' },
       { tipo: 'adds', en: [0.5], k: 'hechicero_corte', n: 2 },
     ] },
+  // Fortaleza Goblin (Nv 20-40)
+  mz_capataz:    { nombre: 'Capataz Gruñido',       hoja: 'goblin_battlelord', nivel: 28, jefe: true, mazmorra: true, alto: 150, w: 75, h: 135, tinte: '#eab308',
+    guion: [
+      { tipo: 'embestida' },
+      { tipo: 'zona', nombre: 'Pisotón', cada: 11000, primero: 6000, aviso: 1700, ancho: 280, donde: 'jefe', dano: 0.35, color: '#eab308' },
+      { tipo: 'adds', en: [0.6, 0.3], k: 'goblin_peasant', n: 2 },
+    ] },
+  mz_chaman:     { nombre: 'Chamán de las Brasas',  hoja: 'goblin_mage',  nivel: 28, jefe: true, mazmorra: true, alto: 140, w: 70, h: 125, tinte: '#f97316', dispara: true,
+    guion: [
+      { tipo: 'cast', nombre: 'Bola de Fuego Mayor', cada: 8500, primero: 4500, dura: 2300, int: true, a: 'objetivo', dano: 0.5 },
+      { tipo: 'zona', nombre: 'Lluvia de Brasas', cada: 12000, primero: 7000, aviso: 1500, ancho: 160, donde: 'jugadores', dano: 0.25, color: '#f97316' },
+      { tipo: 'escudo', nombre: 'Escudo de Llamas', cada: 20000, primero: 12000, dura: 4000, reduce: 0.8 },
+    ] },
+  mz_rey_goblin: { nombre: 'Rey Goblin Barrigón',   hoja: 'goblin_lord',  nivel: 30, jefe: true, mazmorra: true, alto: 185, w: 100, h: 165, tinte: '#facc15',
+    guion: [
+      { tipo: 'cast', nombre: 'Grito de Guerra', cada: 15000, primero: 8000, dura: 2500, int: true, a: 'todos', aturde: 1800, dano: 0.15 },
+      { tipo: 'zona', nombre: 'Martillazo', cada: 10000, primero: 5000, aviso: 1500, ancho: 260, donde: 'frente', dano: 0.4, color: '#facc15' },
+      { tipo: 'adds', en: [0.5], k: 'goblin_samurai', n: 2 },
+      { tipo: 'enrage', en: 0.25, atkX: 1.5 },
+    ] },
   mz_dragon:     { nombre: 'Dragón Carmesí',        hoja: 'dragon',       nivel: 58, jefe: true, mazmorra: true, alto: 200, w: 170, h: 140, tinte: '#dc2626', vuela: true, dispara: true,
     guion: [
       { tipo: 'zona', nombre: 'Aliento de Fuego', cada: 12000, primero: 7000, aviso: 2000, ancho: 560, donde: 'frente', dano: 0.5, color: '#ef4444' },
@@ -526,6 +546,7 @@ export function nombreItem(it) { const r = RANURAS[it.s]; return r ? r.nombres[t
 // coleccion a largo plazo que obliga a repetir cada mazmorra.
 export const CONJUNTOS = {
   catacumbas: { nombre: 'Huesos del Guardián', color: '#a3e635', b2: { def: 0.08 }, b4: { atk: 0.08, hp: 0.10 } },
+  fortaleza:  { nombre: 'Botín del Rey Goblin', color: '#eab308', b2: { crit: 0.03 }, b4: { atk: 0.10, hp: 0.08 } },
   templo:     { nombre: 'Marea Hundida',       color: '#38bdf8', b2: { hp: 0.10 },  b4: { atk: 0.10, crit: 0.04 } },
   ciudadela:  { nombre: 'Escamas del Dragón',  color: '#f97316', b2: { atk: 0.08 }, b4: { atk: 0.08, def: 0.10, hp: 0.10 } },
 };
@@ -621,6 +642,7 @@ export const LOGROS = [
   { id: 'regalo200',   titulo: 'Santa Duende',       desc: 'Junta 200 regalos en la Navidad Duende',     oro: 12000, cond: c => (c.regalos || 0) >= 200 },
   { id: 'mazmorra10', titulo: 'Conquistador',       desc: 'Completa 10 mazmorras',             oro: 10000, cond: c => (c.mazmorras || 0) >= 10 },
   { id: 'kraken',    titulo: 'Azote del Abismo',    desc: 'Vence al Kraken del Templo Hundido', oro: 8000,  cond: c => !!(c.mzJefes && c.mzJefes.mz_kraken) },
+  { id: 'reygoblin', titulo: 'Azote Goblin',        desc: 'Vence al Rey Goblin Barrigón de la Fortaleza', oro: 6000, cond: c => !!(c.mzJefes && c.mzJefes.mz_rey_goblin) },
   { id: 'dragon',    titulo: 'Matadragones',        desc: 'Vence al Dragón Carmesí de la Ciudadela', oro: 15000, cond: c => !!(c.mzJefes && c.mzJefes.mz_dragon) },
 ];
 
@@ -849,6 +871,16 @@ export const MAZMORRAS = {
     ],
     jefes: [{ k: 'mz_guardian', x: 1620, muro: 1820 }, { k: 'mz_bruja', x: 2800, muro: 3000 }, { k: 'mz_senor', x: 3950, muro: 4200, final: true }],
   },
+  fortaleza: {
+    nombre: 'Fortaleza Goblin', mapa: 'fortaleza', nv: [20, 40], icono: 'I_GoldBar',
+    desc: 'El Rey Goblin guarda aquí todo lo que robó al pueblo. Sus capitanes no lo sueltan sin pelear.',
+    packs: [
+      { x: 520, k: ['goblin_guard', 'goblin_guard'] }, { x: 900, k: ['goblin_centurion', 'goblin_mage'] }, { x: 1250, k: ['goblin_knight', 'goblin_guard', 'goblin_mage'] },
+      { x: 2050, k: ['goblin_battlelord', 'goblin_centurion'] }, { x: 2400, k: ['ghoul_ardiente', 'goblin_mage', 'ghoul_ardiente'] },
+      { x: 3250, k: ['goblin_samurai', 'goblin_samurai'] }, { x: 3550, k: ['goblin_battlelord', 'goblin_mage', 'goblin_knight'] },
+    ],
+    jefes: [{ k: 'mz_capataz', x: 1620, muro: 1820 }, { k: 'mz_chaman', x: 2800, muro: 3000 }, { k: 'mz_rey_goblin', x: 3950, muro: 4200, final: true }],
+  },
   templo: {
     nombre: 'Templo Hundido', mapa: 'templo', nv: [30, 48], icono: 'S_Water07',
     desc: 'Un templo tragado por el mar. Algo enorme se mueve entre sus columnas.',
@@ -1041,6 +1073,13 @@ jefe: 'jefe_rey',
     nombre: 'Catacumbas del Duende', fondo: 'cavernas', ancho: 4400, zona: true, instancia: true, mazmorra: 'catacumbas',
     paleta: { cielo: ['#07030f', '#1a0b2e'], suelo: '#120a1c', linea: '#a8a29e' },
     plataformas: [[700, 290, 200], [1250, 250, 180], [2200, 285, 220], [3300, 260, 200]],
+    portales: [{ x: 60, a: 'pueblo', ax: 795, etiqueta: 'Salida' }, { x: 4340, a: 'pueblo', ax: 795, etiqueta: 'Salida', fin: 1 }],
+    monstruos: [], max: 0,
+  },
+  fortaleza: {
+    nombre: 'Fortaleza Goblin', fondo: 'cumbres', ancho: 4400, zona: true, instancia: true, mazmorra: 'fortaleza',
+    paleta: { cielo: ['#140e04', '#33240a'], suelo: '#1a1307', linea: '#eab308' },
+    plataformas: [[680, 285, 210], [1280, 245, 190], [2230, 280, 210], [3320, 255, 210]],
     portales: [{ x: 60, a: 'pueblo', ax: 795, etiqueta: 'Salida' }, { x: 4340, a: 'pueblo', ax: 795, etiqueta: 'Salida', fin: 1 }],
     monstruos: [], max: 0,
   },

@@ -574,6 +574,7 @@ async function pruebas() {
   await pruebasAfijos();
   await pruebasLfg();
   await pruebasBoveda();
+  await pruebasFortaleza();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -1301,6 +1302,28 @@ async function pruebasTintes() {
   await dejar(t); await dejar(v);
 }
 
+
+async function pruebasFortaleza() {
+  console.log('Cuarta mazmorra: Fortaleza Goblin');
+  const D = await import('../mmo/js/data.js');
+  const mz = D.MAZMORRAS.fortaleza;
+  chequear(mz && D.MAPAS[mz.mapa] && D.MAPAS[mz.mapa].instancia && D.CONJUNTOS.fortaleza, 'tiene mapa de instancia y conjunto propio');
+  chequear(mz.jefes.every(j => D.MONSTRUOS[j.k] && D.MONSTRUOS[j.k].mazmorra && D.MONSTRUOS[j.k].guion) && mz.packs.every(p => p.k.every(k => D.MONSTRUOS[k])), 'jefes con guion y packs de monstruos que existen');
+  const f = await entrar('Fortalecido', '7a');
+  ponerNivel(f, 19, 'guerrero');
+  await aMapa(f, 'pueblo', 800);
+  f.limpiar(); await f.mandar({ t: 'mazmorra', id: 'fortaleza' });
+  chequear(!f.k.includes('#') && f.ultimos('no').some(x => /nivel 20/.test(x.m)), 'se abre a Nv 20');
+  ponerNivel(f, 24);
+  await f.mandar({ t: 'mazmorra', id: 'fortaleza' });
+  const w = mundo.mundoDe(f);
+  chequear(w.inst && w.inst.id === 'fortaleza' && w.inst.nv === 24 && [...w.mons.values()].filter(o => o.jefe).length === 3, 'a Nv 24 entra a su instancia con 3 jefes');
+  const fin = [...w.mons.values()].find(o => o.final);
+  for (const o of [...w.mons.values()]) if (o.jefe && o !== fin) { mundo.danar(o, 1, f); mundo.danar(o, o.hp + 1, f); tick(1); }
+  mundo.danar(fin, 1, f); mundo.danar(fin, fin.hp + 1, f); tick(2);
+  chequear(w.inst.completada && f.c.logros.includes('reygoblin'), 'se completa y da el logro Azote Goblin');
+  await dejar(f);
+}
 
 async function pruebasBoveda() {
   console.log('Bóveda semanal');
