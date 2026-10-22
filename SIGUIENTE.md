@@ -1386,6 +1386,22 @@ legales se pusieron valores prudentes que el dueño debe confirmar: titular
 caso), la conversación con la dirección se borra al confirmar la entrega,
 y se escribe a ganadores desde @ElDuendeOficial.
 
+**Revisión de diseño en 3 fases (22-oct, ?v=44):** 8 agentes implementaron
+por archivo, 5 revisaron (móvil, PC, confianza, conversión, accesibilidad+SEO)
+y 5 corrigieron por archivo. Tokens finales: --pri #2563eb (texto blanco
+AA), --pri2 #1d4ed8, --pri-txt #60a5fa (azul para TEXTO sobre oscuro),
+--txt3 #8a93a6. Cloudflare sirve las páginas sin .html (/game, /seguridad,
+/terminos, /privacidad redirigen 307): canonical y sitemap usan esas URLs.
+Pendiente del DUEÑO (no se tocó, son decisiones de negocio/legales; ver el
+informe de confianza en la conversación del 22-oct): venta directa
+SOL→$DUENDE a tasa fija en la portada (riesgo PSAV, contradice Términos),
+"Revenue share"/DAO del nivel Duende ∞, tokenomics contradictoria (vesting
+vs sin tokens bloqueados), /buy de $DUENDE con Stars en el bot (política de
+Telegram y Términos §2), fondo de mTON hecho con lo que pagan otros jugadores
+mientras la tienda vende poderes, bonos de skins vs "solo cosméticos" en
+Términos, torneos con pozo que no existe, identidad del proveedor (nombre/RUC
+y Libro de Reclamaciones si vende a consumidores en Perú).
+
 Sin hacer: avisos a la hora habitual de cada uno (el cron de las 17 UTC ya
 usa 4 de 5 disparadores del plan gratis), y final de juego para D30 (1→60 se
 juega en 5-8 h). Ojo: la bienvenida del bot aún habla de $DUENDE en Solana
