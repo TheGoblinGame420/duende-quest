@@ -14,7 +14,7 @@ import {
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo,
-} from './data.js?v=55';
+} from './data.js?v=56';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1308,6 +1308,16 @@ function empiezaDuelo(m) {
   aviso(`⚔️ Duelo contra ${n}: 90 s, gana quien deje al otro a 1 de vida.`, 'jefe');
   for (let i = 0; i < 3; i++) setTimeout(() => { if (duelo) { flotante(P.x, P.y - 110, String(3 - i), '#ffe600', 18); sfx('boton', .4); } }, i * 1000);
   setTimeout(() => { if (duelo) { flotante(P.x, P.y - 110, '¡A LUCHAR!', '#ff3344', 16); sfx('explosion', .3); } }, m.en);
+}
+// Marcador del duelo arriba: tiempo que queda y la vida de los dos.
+function dibujarDuelo() {
+  if (!duelo) return;
+  const ahora = performance.now();
+  const r = otros.get(duelo.con);
+  const pct = q => q && q.mx ? Math.max(0, Math.round(q.hp / q.mx * 100)) : 0;
+  const txt = ahora < duelo.ini ? '⚔️ El duelo empieza en ' + Math.ceil((duelo.ini - ahora) / 1000)
+    : '⚔️ ' + Math.max(0, Math.ceil((duelo.fin - ahora) / 1000)) + ' s · Tú ' + Math.round(P.hp / (P.maxHp || 1) * 100) + '% · ' + ((r && r.n) || 'Rival') + ' ' + pct(r) + '%';
+  etiqueta(VW / 2, 74, txt, '#ffd34d', 8);
 }
 function finDuelo(m) {
   if (m.a !== miId && m.b !== miId) return;
@@ -3001,6 +3011,7 @@ function dibujar() {
   dibujarProyectiles();
   dibujarEfectos();
   dibujarGuia();
+  dibujarDuelo();
   g.restore();
   // Fundido al cruzar un portal.
   if (fundido > 0) { g.fillStyle = `rgba(7,3,15,${fundido})`; g.fillRect(0, 0, cv.width, cv.height); fundido = Math.max(0, fundido - .05); }

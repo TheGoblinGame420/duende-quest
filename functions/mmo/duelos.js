@@ -18,7 +18,9 @@ const RETO_MS = 30000, CUENTA_MS = 3000, DUELO_MS = 90000, LEJOS = 900, CALMA_MS
 const mapaDuelo = k => !k.includes('#') && k !== 'coliseo';
 // El golpe de espada sale cada ~0,33 s y el disparo de vara cada 0,7 s: la
 // vara pega mas por golpe para que ninguna clase gane solo por cadencia.
-const ESCALA = 0.12, ESCALA_VARA = 0.2;
+// ×2,5 desde el 22-oct: con 0,12/0,2 a los 25 s ambos seguian al ~80% (el QA
+// de jugador) y casi todos acababan por tiempo. Ahora ~40-50 s a igual nivel.
+const ESCALA = 0.3, ESCALA_VARA = 0.5;
 const rnd = (a, b) => a + Math.random() * (b - a);
 
 export const Duelos = {
