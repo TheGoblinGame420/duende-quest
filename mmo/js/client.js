@@ -13,7 +13,7 @@ import {
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
-} from './data.js?v=42';
+} from './data.js?v=43';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1160,10 +1160,10 @@ function mostrarInvitacion(m) {
   const cl = CLASES[m.cl];
   $('invitacion').dataset.tipo = m.duelo ? 'duelo' : m.herm ? 'herm' : 'grupo';
   $('inv-txt').innerHTML = m.duelo
-    ? `⚔️ <b style="color:${cl ? cl.color : '#fff'}">${esc(m.de)}</b> (Nv ${m.nv}${cl ? ' ' + esc(cl.nombre) : ''}) te reta a un <b style="color:#ff6677">duelo</b>`
+    ? `⚔️ <b style="color:${cl ? cl.color : 'var(--txt)'}">${esc(m.de)}</b> (Nv ${m.nv}${cl ? ' ' + esc(cl.nombre) : ''}) te reta a un <b style="color:var(--err)">duelo</b>`
     : m.herm
-    ? `<b>${esc(m.de)}</b> te invita a la hermandad <b style="color:#4ade80">&lt;${esc(m.nombre)}&gt;</b>`
-    : `<b style="color:${cl ? cl.color : '#fff'}">${esc(m.de)}</b> (Nv ${m.nv}${cl ? ' ' + esc(cl.nombre) : ''}) te invita a su grupo`;
+    ? `<b>${esc(m.de)}</b> te invita a la hermandad <b style="color:var(--ok)">&lt;${esc(m.nombre)}&gt;</b>`
+    : `<b style="color:${cl ? cl.color : 'var(--txt)'}">${esc(m.de)}</b> (Nv ${m.nv}${cl ? ' ' + esc(cl.nombre) : ''}) te invita a su grupo`;
   ponCss($('invitacion'), 'display', 'block');
   sfx('moneda', .4);
   clearTimeout(mostrarInvitacion.t);
@@ -1182,8 +1182,8 @@ function pintarGrupo() {
     cont._clave = clave;
     cont.innerHTML = lista.map(x => {
       const cl = CLASES[x.cl];
-      return `<div class="gm" data-uid="${esc(x.uid)}"><div class="nm"><span style="color:${cl ? cl.color : '#aaa'}">${grupo.lider === x.uid ? '👑 ' : ''}${esc(x.n || '?')}</span><small></small></div>
-        <div class="barra hp"><i></i><span></span></div><div class="barra rc"><i style="background:${cl ? RECURSOS[cl.recurso].color : '#555'}"></i></div></div>`;
+      return `<div class="gm" data-uid="${esc(x.uid)}"><div class="nm"><span style="color:${cl ? cl.color : 'var(--txt2)'}">${grupo.lider === x.uid ? '👑 ' : ''}${esc(x.n || '?')}</span><small></small></div>
+        <div class="barra hp"><i></i><span></span></div><div class="barra rc"><i style="background:${cl ? RECURSOS[cl.recurso].color : 'var(--borde)'}"></i></div></div>`;
     }).join('');
     cont.querySelectorAll('.gm').forEach(d => d.onclick = () => {
       const x = grupo && grupo.m.find(y => y.uid === d.dataset.uid);
@@ -1270,19 +1270,19 @@ function pintarSocial() {
   const L = $('social-lista');
   if (tabSocial === 'grupo') {
     if (!grupo) {
-      L.innerHTML = '<p class="centro" style="margin:10px 0">No estás en un grupo.</p><p class="centro" style="font-size:12px;color:rgba(255,255,255,.6)">Toca a otro jugador y pulsa ➕ en su marco, o búscalo en la pestaña EN LÍNEA. En grupo compartís la experiencia y las misiones de cada presa (con un 10% extra por miembro) y podéis entrar juntos a las mazmorras.</p>';
+      L.innerHTML = '<p class="centro" style="margin:10px 0">No estás en un grupo.</p><p class="centro" style="font-size:12px;color:var(--txt2)">Toca a otro jugador y pulsa ➕ en su marco, o búscalo en la pestaña «En línea». En grupo compartís la experiencia y las misiones de cada presa (con un 10% extra por miembro) y podéis entrar juntos a las mazmorras.</p>';
       return;
     }
     let h = '';
     for (const x of grupo.m) {
       const cl = CLASES[x.cl];
       const yoEs = x.id === miId && x.on;
-      const acc = !soyLider() || yoEs ? '' : `<button class="btn sec" data-lider="${esc(x.uid)}">👑 LÍDER</button><button class="btn sec" data-echar="${esc(x.uid)}">EXPULSAR</button>`;
+      const acc = !soyLider() || yoEs ? '' : `<button class="btn sec" data-lider="${esc(x.uid)}">Hacer líder</button><button class="btn sec" data-echar="${esc(x.uid)}" style="color:var(--err);border-color:var(--err)">Expulsar</button>`;
       h += tarjeta(`<img src="${A}items/equipo/${cl ? cl.icono : 'S_Buff06'}.png">`,
-        `<span style="color:${cl ? cl.color : '#aaa'}">${grupo.lider === x.uid ? '👑 ' : ''}${esc(x.n || '?')}${yoEs ? ' (tú)' : ''}</span>`,
+        `<span style="color:${cl ? cl.color : 'var(--txt2)'}">${grupo.lider === x.uid ? '👑 ' : ''}${esc(x.n || '?')}${yoEs ? ' (tú)' : ''}</span>`,
         x.on ? `Nv ${x.lv} ${cl ? esc(cl.nombre) : ''} · ${esc(MAPAS[x.mapa] ? MAPAS[x.mapa].nombre : '')}` : 'Desconectado', acc);
     }
-    h += '<button class="btn sec" id="b-salir-grupo" style="width:100%;margin-top:8px">SALIR DEL GRUPO</button>';
+    h += '<button class="btn sec" id="b-salir-grupo" style="width:100%;margin-top:8px">Salir del grupo</button>';
     L.innerHTML = h;
     L.querySelectorAll('[data-lider]').forEach(b => b.onclick = () => mandar({ t: 'liderGrupo', uid: b.dataset.lider }));
     L.querySelectorAll('[data-echar]').forEach(b => b.onclick = () => mandar({ t: 'expulsarGrupo', uid: b.dataset.echar }));
@@ -1292,9 +1292,9 @@ function pintarSocial() {
     L.innerHTML = quienLista.map(x => {
       const cl = CLASES[x.cl];
       const puede = !x.g && (!grupo || soyLider());
-      return tarjeta(`<img src="${A}items/equipo/${cl ? cl.icono : 'S_Buff06'}.png">`, `<span style="color:${cl ? cl.color : '#aaa'}">${esc(x.n)}</span> <span style="color:#888">Nv ${x.lv}</span>`,
+      return tarjeta(`<img src="${A}items/equipo/${cl ? cl.icono : 'S_Buff06'}.png">`, `<span style="color:${cl ? cl.color : 'var(--txt2)'}">${esc(x.n)}</span> <span style="color:var(--txt2)">Nv ${x.lv}</span>`,
         esc((cl ? cl.nombre + ' · ' : '') + x.mapa + (x.h ? ' · <' + x.h + '>' : '') + (x.g ? ' · en grupo' : '')),
-        (puede ? `<button class="btn" data-inv="${x.id}">➕ INVITAR</button>` : '') + `<button class="btn sec" data-sus="${esc(x.n)}">💬</button>`);
+        (puede ? `<button class="btn" data-inv="${x.id}">Invitar</button>` : '') + `<button class="btn sec" data-sus="${esc(x.n)}">💬</button>`);
     }).join('');
     L.querySelectorAll('[data-inv]').forEach(b => b.onclick = () => { mandar({ t: 'invitar', p: +b.dataset.inv }); b.disabled = true; });
     L.querySelectorAll('[data-sus]').forEach(b => b.onclick = () => { cerrarModales(); abrirChat(); $('chat-in').value = '/s ' + b.dataset.sus + ' '; });
@@ -1314,13 +1314,13 @@ function pintarAmigos(m) {
   if (!m.ref) { L.innerHTML = '<p class="centro">No se pudo crear tu enlace ahora. Prueba en un momento.</p>'; return; }
   const enlTg = 'https://t.me/duendequest_bot?start=mmo_' + m.ref;
   const enlWeb = location.origin + '/mmo/?ref=' + m.ref;
-  const texto = '¡Juguemos juntos DUENDE QUEST ONLINE, el MMORPG de los duendes! 🧝⚔️';
+  const texto = 'Juguemos juntos a DUENDE QUEST ONLINE, el MMORPG de duendes: gratis, en Telegram o en el navegador. 🧝';
   L.innerHTML = `<div class="mis-caja" style="margin-top:0"><b>🤝 Invita a tus amigos</b>
-    <p style="font-size:12px">Cuando un amigo que entre con tu enlace llegue a <b>nivel ${m.nivel}</b>, los dos ganáis oro. Al 5º amigo te regalamos el <b>Conejo Saltarín</b> de montura y un título.</p>
-    <p style="font-size:12px;margin-top:6px">Amigos que ya llegaron: <b style="color:#4ade80">${m.amigos}</b></p></div>
-    <button class="btn" id="b-comp-tg" style="width:100%;padding:12px;margin-bottom:8px">📨 COMPARTIR POR TELEGRAM</button>
-    <button class="btn sec" id="b-comp-copiar" style="width:100%;margin-bottom:6px">📋 COPIAR ENLACE</button>
-    <p style="font-size:11px;word-break:break-all;color:rgba(255,255,255,.55)">${esc(TG ? enlTg : enlWeb)}</p>`;
+    <p style="font-size:12px">Cuando un amigo que entre con tu enlace llegue a <b style="display:inline">nivel ${m.nivel}</b>, los dos ganáis oro. Al 5º amigo te regalamos el <b style="display:inline">Conejo Saltarín</b> de montura y un título.</p>
+    <p style="font-size:12px;margin-top:6px">Amigos que ya llegaron: <b style="display:inline;color:var(--ok)">${m.amigos}</b></p></div>
+    <button class="btn" id="b-comp-tg" style="width:100%;padding:12px;margin-bottom:8px">Compartir por Telegram</button>
+    <button class="btn sec" id="b-comp-copiar" style="width:100%;margin-bottom:6px">Copiar enlace</button>
+    <p style="font-size:11px;word-break:break-all;color:var(--txt2)">${esc(TG ? enlTg : enlWeb)}</p>`;
   $('b-comp-tg').onclick = () => {
     const u = 'https://t.me/share/url?url=' + encodeURIComponent(enlTg) + '&text=' + encodeURIComponent(texto);
     if (TG && TG.openTelegramLink) TG.openTelegramLink(u); else window.open(u, '_blank');
@@ -1343,7 +1343,7 @@ function ofrecerPresumir(txt) {
 }
 function compartirPresumir(info) {
   const enlTg = 'https://t.me/duendequest_bot?start=mmo_' + info.ref;
-  const txt = presumirTxt + ' ¡Juega gratis conmigo a DUENDE QUEST ONLINE! 🧝⚔️';
+  const txt = presumirTxt + ' Juega gratis conmigo a DUENDE QUEST ONLINE. 🧝';
   if (TG && TG.openTelegramLink) return TG.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(enlTg) + '&text=' + encodeURIComponent(txt));
   const enlWeb = location.origin + '/mmo/?ref=' + info.ref;
   const copiar = () => { try { navigator.clipboard.writeText(txt + ' ' + enlWeb).then(() => aviso('📋 Texto y enlace copiados: pégalo donde quieras.', 'ok'), () => {}); } catch (e) {} };
@@ -1374,10 +1374,10 @@ pintarHermandad = L => {
   if (!hermandad) {
     const puede = yo.nivel >= HERM_NIVEL;
     L.innerHTML = `<p class="centro" style="margin:8px 0">No estás en una hermandad.</p>
-      <p class="centro" style="font-size:12px;color:rgba(255,255,255,.65)">Una hermandad es tu clan: chat propio (/h), su nombre bajo el tuyo y compañeros con quienes hacer mazmorras. Pide a un líder u oficial que te invite, o funda la tuya.</p>
+      <p class="centro" style="font-size:12px;color:var(--txt2)">Una hermandad es tu clan: chat propio (/h), su nombre bajo el tuyo y compañeros con quienes hacer mazmorras. Pide a un líder u oficial que te invite, o funda la tuya.</p>
       <input class="nombre" id="in-herm" maxlength="20" placeholder="Nombre de tu hermandad" ${puede ? '' : 'disabled'}>
-      <button class="btn" id="b-herm-crear" style="width:100%;padding:12px" ${puede && yo.oro >= HERM_COSTO ? '' : 'disabled'}>🛡️ FUNDAR (${HERM_COSTO.toLocaleString('es')} oro)</button>
-      ${puede ? '' : `<p class="centro" style="font-size:12px;color:#ff7777;margin-top:6px">Necesitas nivel ${HERM_NIVEL} para fundar una.</p>`}`;
+      <button class="btn" id="b-herm-crear" style="width:100%;padding:12px" ${puede && yo.oro >= HERM_COSTO ? '' : 'disabled'}>Fundar (${HERM_COSTO.toLocaleString('es')} oro)</button>
+      ${puede ? '' : `<p class="centro" style="font-size:12px;color:var(--warn);margin-top:6px">Necesitas nivel ${HERM_NIVEL} para fundar una.</p>`}`;
     const i = $('in-herm');
     i.addEventListener('keydown', e => e.stopPropagation());
     $('b-herm-crear').onclick = () => { const n = i.value.trim(); if (n.length < 3) { i.focus(); return; } if (confirm('¿Fundar la hermandad "' + n + '" por ' + HERM_COSTO.toLocaleString('es') + ' oro?')) mandar({ t: 'hermCrear', nombre: n }); };
@@ -1387,20 +1387,20 @@ pintarHermandad = L => {
   const manda = r === 'lider' || r === 'oficial';
   const on = hermandad.m.filter(x => x.on).length;
   let h = `<div class="mis-caja" style="margin-top:0"><b>🛡️ &lt;${esc(hermandad.nombre)}&gt;</b><p style="font-size:12px">${hermandad.m.length} miembros · ${on} en línea · tu rango: ${esc(RANGO[r] || '—')}</p>`;
-  h += `<p style="font-size:12px;margin-top:6px;color:#4ade80">📜 ${esc(hermandad.motd || 'Sin mensaje del día.')}</p>`;
-  if (manda) h += `<div style="display:flex;gap:6px;margin-top:6px"><input class="nombre" id="in-motd" maxlength="140" placeholder="Nuevo mensaje del día" style="margin:0;font-size:9px;padding:8px"><button class="btn sec" id="b-motd">OK</button></div>`;
+  h += `<p style="font-size:12px;margin-top:6px;color:var(--txt2)">📜 ${esc(hermandad.motd || 'Sin mensaje del día.')}</p>`;
+  if (manda) h += `<div style="display:flex;gap:6px;margin-top:6px"><input class="nombre" id="in-motd" maxlength="140" placeholder="Nuevo mensaje del día" style="margin:0;font-size:9px;padding:8px"><button class="btn sec" id="b-motd">Guardar</button></div>`;
   h += '</div>';
   for (const x of hermandad.m) {
     const cl = CLASES[x.cl];
     const yoEs = x.on && x.n === yo.nombre;
     let acc = '';
-    if (!yoEs && r === 'lider') acc += x.r === 'miembro' ? `<button class="btn sec" data-hr="${esc(x.uid)}" data-r="oficial">⭐ ASCENDER</button>` : x.r === 'oficial' ? `<button class="btn sec" data-hr="${esc(x.uid)}" data-r="miembro">DEGRADAR</button><button class="btn sec" data-hr="${esc(x.uid)}" data-r="lider">👑 LÍDER</button>` : '';
-    if (!yoEs && manda && x.r !== 'lider' && !(r === 'oficial' && x.r === 'oficial')) acc += `<button class="btn sec" data-hx="${esc(x.uid)}">EXPULSAR</button>`;
+    if (!yoEs && r === 'lider') acc += x.r === 'miembro' ? `<button class="btn sec" data-hr="${esc(x.uid)}" data-r="oficial">Ascender</button>` : x.r === 'oficial' ? `<button class="btn sec" data-hr="${esc(x.uid)}" data-r="miembro">Degradar</button><button class="btn sec" data-hr="${esc(x.uid)}" data-r="lider">Hacer líder</button>` : '';
+    if (!yoEs && manda && x.r !== 'lider' && !(r === 'oficial' && x.r === 'oficial')) acc += `<button class="btn sec" data-hx="${esc(x.uid)}" style="color:var(--err);border-color:var(--err)">Expulsar</button>`;
     h += tarjeta(`<img src="${A}items/equipo/${cl ? cl.icono : 'S_Buff06'}.png" style="${x.on ? '' : 'filter:grayscale(1);opacity:.5'}">`,
-      `<span style="color:${cl ? cl.color : '#aaa'}">${esc(x.n)}</span>${yoEs ? ' (tú)' : ''} <span style="color:#888">Nv ${x.lv}</span>`,
-      `${esc(RANGO[x.r] || '')}${cl ? ' · ' + esc(cl.nombre) : ''} · ${x.on ? '<span style="color:#4ade80">en línea</span>' : 'desconectado'}`, acc);
+      `<span style="color:${cl ? cl.color : 'var(--txt2)'}">${esc(x.n)}</span>${yoEs ? ' (tú)' : ''} <span style="color:var(--txt2)">Nv ${x.lv}</span>`,
+      `${esc(RANGO[x.r] || '')}${cl ? ' · ' + esc(cl.nombre) : ''} · ${x.on ? '<span style="color:var(--ok)">en línea</span>' : 'desconectado'}`, acc);
   }
-  h += `<button class="btn sec" id="b-herm-salir" style="width:100%;margin-top:8px">DEJAR LA HERMANDAD</button>`;
+  h += `<button class="btn sec" id="b-herm-salir" style="width:100%;margin-top:8px">Dejar la hermandad</button>`;
   L.innerHTML = h;
   L.querySelectorAll('[data-hr]').forEach(b => b.onclick = () => { if (b.dataset.r !== 'lider' || confirm('¿Pasarle el liderazgo?')) mandar({ t: 'hermRango', uid: b.dataset.hr, r: b.dataset.r }); });
   L.querySelectorAll('[data-hx]').forEach(b => b.onclick = () => { if (confirm('¿Expulsar de la hermandad?')) mandar({ t: 'hermExpulsar', uid: b.dataset.hx }); });
@@ -1425,19 +1425,19 @@ function abrirBuscador() {
     const jefes = mz.jefes.map(j => MONSTRUOS[j.k].nombre).join(' · ');
     const hecha = yo.mazDia && yo.mazDia.d === new Date().toISOString().slice(0, 10) && (yo.mazDia.hechas || []).includes(id);
     h += tarjeta(`<img src="${A}items/equipo/${mz.icono}.png" style="${bloq ? 'filter:grayscale(1);opacity:.4' : ''}">`,
-      `${esc(mz.nombre)} <span style="color:${bloq ? '#ff7777' : '#888'}">Nv ${mz.nv[0]}-${mz.nv[1]}</span>`,
-      `${esc(mz.desc)}<br><span style="color:#ffae00">👑 ${esc(jefes)}</span><br><span style="color:${hecha ? '#888' : '#4ade80'}">${hecha ? '✓ Premio del día cobrado' : '🎁 Premio del día disponible: XP, oro y un objeto épico'}</span>`,
-      bloq ? `<span class="precio" style="color:#666">🔒 Nv ${mz.nv[0]}</span>` : `<button class="btn" data-maz="${id}">ENTRAR</button>`);
+      `${esc(mz.nombre)} <span style="color:${bloq ? 'var(--warn)' : 'var(--txt2)'}">Nv ${mz.nv[0]}-${mz.nv[1]}</span>`,
+      `${esc(mz.desc)}<br><span style="color:var(--txt2)">👑 ${esc(jefes)}</span><br><span style="color:${hecha ? 'var(--txt2)' : 'var(--ok)'}">${hecha ? '✓ Premio del día cobrado' : 'Premio del día disponible: XP, oro y un objeto épico'}</span>`,
+      bloq ? `<span class="precio" style="color:var(--txt3)">🔒 Nv ${mz.nv[0]}</span>` : `<button class="btn" data-maz="${id}">Entrar</button>`);
     // Desafios a Nv 60: elegir el +k (hasta uno mas que el mejor vencido).
     if (yo.nivel >= NIVEL_MAX) {
       const mejor = (yo.desafio || {})[id] || 0, tope = Math.min(DESAFIO_MAX, mejor + 1);
       let ops = '';
       for (let k = tope; k >= 1; k--) ops += `<option value="${k}">+${k} · vida ×${multDesafio(k).vida.toFixed(1)}</option>`;
-      h += `<div class="mis-caja" style="margin:-4px 0 10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap"><b style="color:#ffd84a">⚡ DESAFÍO</b><span style="font-size:12px;color:#aaa">${mejor ? 'Mejor: +' + mejor : 'Aún ninguno'}</span><select data-dk="${id}" style="flex:1;min-width:120px">${ops}</select><button class="btn" data-mazk="${id}">ENTRAR</button></div>`;
+      h += `<div class="mis-caja" style="margin:-4px 0 10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap"><b style="color:var(--txt)">⚡ Desafío</b><span style="font-size:12px;color:var(--txt2)">${mejor ? 'Mejor: +' + mejor : 'Aún ninguno'}</span><select data-dk="${id}" style="flex:1;min-width:120px">${ops}</select><button class="btn sec" data-mazk="${id}">Entrar</button></div>`;
     }
   }
-  if (yo.nivel >= NIVEL_MAX) h += '<p style="font-size:12px;color:#ffd84a;margin-top:6px">⚡ Desafíos: la misma mazmorra a Nv 60 con monstruos más duros en cada paso. Vencer el +k abre el siguiente y da oro y un objeto de nivel 60+k (se equipa a Nv 60). Logros a +5, +10 y +20.</p>';
-  h += '<ul style="padding-left:18px;margin-top:10px;font-size:12px"><li>Aquí los monstruos atacan solos y en packs: tira de uno y vendrá todo su grupo.</li><li>Cada jefe guarda una barrera. Lee sus avisos: <b style="color:#ff7a1a">sal de las zonas marcadas</b> en el suelo e <b>interrumpe</b> (Patada, Zurrar, Contrahechizo o Silencio) los hechizos con barra naranja.</li><li>Si caéis todos, revivís en la entrada y el jefe se recupera.</li><li>Cada jefe da equipo a cada uno; el último, épico.</li></ul>';
+  if (yo.nivel >= NIVEL_MAX) h += '<p style="font-size:12px;color:var(--txt2);margin-top:6px">⚡ Desafíos: la misma mazmorra a Nv 60 con monstruos más duros en cada paso. Vencer el +k abre el siguiente y da oro y un objeto de nivel 60+k (se equipa a Nv 60). Logros a +5, +10 y +20.</p>';
+  h += '<ul style="padding-left:18px;margin-top:10px;font-size:12px"><li>Aquí los monstruos atacan solos y en packs: tira de uno y vendrá todo su grupo.</li><li>Cada jefe guarda una barrera. Lee sus avisos: <b style="color:var(--warn)">sal de las zonas marcadas</b> en el suelo e <b>interrumpe</b> (Patada, Zurrar, Contrahechizo o Silencio) los hechizos con barra naranja.</li><li>Si caéis todos, revivís en la entrada y el jefe se recupera.</li><li>Cada jefe da equipo a cada uno; el último, épico.</li></ul>';
   L.innerHTML = h;
   L.querySelectorAll('[data-maz]').forEach(b => b.onclick = () => { sfx('explosion', .3); mandar({ t: 'mazmorra', id: b.dataset.maz }); cerrarModales(); });
   L.querySelectorAll('[data-mazk]').forEach(b => b.onclick = () => { const sel = L.querySelector(`[data-dk="${b.dataset.mazk}"]`); sfx('explosion', .35); mandar({ t: 'mazmorra', id: b.dataset.mazk, k: +sel.value }); cerrarModales(); });
@@ -1455,7 +1455,7 @@ function emote(txt) {
 }
 function completada(m) {
   emote(m.txt);
-  ofrecerPresumir('🏆 ' + (MAZMORRAS[m.id] ? '¡Completé ' + MAZMORRAS[m.id].nombre + '!' : '¡Completé una mazmorra!'));
+  ofrecerPresumir('🏆 ' + (MAZMORRAS[m.id] ? 'Completé ' + MAZMORRAS[m.id].nombre + '.' : 'Completé una mazmorra.'));
   aviso(m.txt, 'ok');
   sfx('explosion', .5);
   for (let i = 0; i < 80; i++) particula(P.x + (Math.random() - .5) * 200, P.y - 40 - Math.random() * 60, ['#ffe600', '#ff3cf0', '#00ff88', '#00eeff'][i % 4], 6);
@@ -1487,10 +1487,10 @@ function abrirMapaMundo() {
   const zonas = Object.entries(MAPAS).filter(([, m]) => m.zona && !m.instancia && !m.coliseo).sort((a, b) => a[1].nv[0] - b[1].nv[0]);
   const fila = (id, mp, sub, extra) => {
     const aqui = mapaId === id;
-    const grupoAqui = enGrupo[id] ? `<br><span style="color:#7dd3fc">👥 ${esc(enGrupo[id].join(', '))}</span>` : '';
+    const grupoAqui = enGrupo[id] ? `<br><span style="color:var(--cian)">👥 ${esc(enGrupo[id].join(', '))}</span>` : '';
     const nivelOk = !mp.nv || (yo.nivel >= mp.nv[0] - 2 && yo.nivel <= mp.nv[1] + 4);
     return `<div class="zm ${aqui ? 'aqui' : ''}" style="border-color:${mp.paleta.linea}">
-      <b style="color:${mp.paleta.linea}">${aqui ? '📍 ' : ''}${esc(mp.nombre)}</b><small>${sub}${grupoAqui}</small>${extra ? `<i style="color:${nivelOk ? '#4ade80' : '#888'}">${extra}</i>` : ''}</div>`;
+      <b style="color:${mp.paleta.linea}">${aqui ? '📍 ' : ''}${esc(mp.nombre)}</b><small>${sub}${grupoAqui}</small>${extra ? `<i style="color:${nivelOk ? 'var(--ok)' : 'var(--txt2)'}">${extra}</i>` : ''}</div>`;
   };
   let h = '<p class="centro" style="font-size:12px;margin-bottom:8px">Del pueblo salen portales a cada zona; cada zona lleva a la siguiente. En verde, las de tu nivel.</p><div class="mapa-mundo">';
   h += fila('pueblo', MAPAS.pueblo, 'Zona segura · Mercader, Guardia Tito, Sabio y portales', '');
@@ -1498,7 +1498,7 @@ function abrirMapaMundo() {
     const jefe = mp.jefe ? MONSTRUOS[mp.jefe] : null;
     h += fila(id, mp, jefe ? '👑 ' + esc(jefe.nombre) + ' (Nv ' + jefe.nivel + ')' : '', 'Nv ' + mp.nv[0] + '-' + mp.nv[1]);
   }
-  h += '</div><p style="margin:12px 0 6px;font-size:12px;color:#ffd84a">🏰 Mazmorras (portal dorado del pueblo)</p><div class="mapa-mundo">';
+  h += '</div><p style="margin:12px 0 6px;font-size:12px;color:var(--txt);font-weight:600">🏰 Mazmorras (portal dorado del pueblo)</p><div class="mapa-mundo">';
   for (const id in MAZMORRAS) {
     const mz = MAZMORRAS[id];
     const mp = MAPAS[mz.mapa];
@@ -1720,7 +1720,7 @@ function pintarLibro() {
   const rec = RECURSOS[cl.recurso].nombre;
   let h = `<p class="centro" style="margin-bottom:6px">${esc(cl.rol)} · recurso: <b style="color:${RECURSOS[cl.recurso].color}">${esc(rec)}</b></p>`;
   // Especializaciones (desde Nv 10).
-  h += `<p style="font-size:12px;margin:6px 0 4px;color:#ffd84a">✨ Especialización ${yo.nivel < ESPEC_NIVEL ? '(desde nivel ' + ESPEC_NIVEL + ')' : '(cambio gratis fuera de combate)'}</p><div class="clases" style="margin-bottom:10px">`;
+  h += `<p style="font-size:12px;margin:6px 0 4px;color:var(--txt);font-weight:600">✨ Especialización ${yo.nivel < ESPEC_NIVEL ? '(desde nivel ' + ESPEC_NIVEL + ')' : '(cambio gratis fuera de combate)'}</p><div class="clases" style="margin-bottom:10px">`;
   for (const [id, e] of Object.entries(ESPECS[yo.clase])) {
     const sel = yo.espec === id && yo.nivel >= ESPEC_NIVEL;
     h += `<div class="clase ${sel ? 'sel' : ''}" data-espec="${id}" style="--c:${cl.color};${yo.nivel < ESPEC_NIVEL ? 'opacity:.5;cursor:default' : ''}">
@@ -1733,21 +1733,21 @@ function pintarLibro() {
     const datos = [hb.costo ? costo + ' ' + rec.toLowerCase() : 'sin costo', hb.cast ? (hb.cast / 1000).toLocaleString('es') + ' s de lanzamiento' : 'instantánea', hb.cd ? 'recarga ' + Math.round(hb.cd / 1000) + ' s' : '', hb.rango ? 'alcance ' + hb.rango : ''].filter(Boolean).join(' · ');
     const ico = `<img src="${A}items/equipo/${hb.icono}.png" style="${bloq ? 'filter:grayscale(1);opacity:.4' : ''}">`;
     const tecla = hb.barra === false ? 'Botón de acción' : 'Tecla ' + (habsDe(yo.clase).indexOf(hb) + 1);
-    h += tarjeta(ico, esc(hb.nombre) + ` <span style="color:${bloq ? '#ff7777' : '#888'}">Nv ${hb.nv}</span>`, esc(hb.desc) + '<br><span style="color:#888">' + esc(datos) + '</span>',
-      `<span class="precio" style="color:${bloq ? '#666' : '#00ff88'}">${bloq ? '🔒' : esc(tecla)}</span>`);
+    h += tarjeta(ico, esc(hb.nombre) + ` <span style="color:${bloq ? 'var(--warn)' : 'var(--txt2)'}">Nv ${hb.nv}</span>`, esc(hb.desc) + '<br><span style="color:var(--txt2)">' + esc(datos) + '</span>',
+      `<span class="precio" style="color:${bloq ? 'var(--txt3)' : 'var(--txt)'}">${bloq ? '🔒' : esc(tecla)}</span>`);
   }
   // Talentos: un punto por nivel desde el 10.
   const tal = yo.tal || {};
   const libres = puntosTalento(yo.nivel) - Object.values(tal).reduce((a, b) => a + b, 0);
-  h += `<p style="font-size:12px;margin:12px 0 4px;color:#ffd84a">🌟 Talentos ${yo.nivel < TALENTO_NIVEL ? '(desde nivel ' + TALENTO_NIVEL + ')' : '· puntos libres: <b>' + libres + '</b>'}</p><div class="talentos">`;
+  h += `<p style="font-size:12px;margin:12px 0 4px;color:var(--txt);font-weight:600">🌟 Talentos ${yo.nivel < TALENTO_NIVEL ? '(desde nivel ' + TALENTO_NIVEL + ')' : '· puntos libres: <b>' + libres + '</b>'}</p><div class="talentos">`;
   for (const t of TALENTOS) {
     const r = tal[t.id] || 0;
     h += `<div class="tal ${r ? 'on' : ''}"><img src="${A}items/equipo/${t.icono}.png" alt=""><div><b>${esc(t.nombre)} ${r}/${TALENTO_MAX}</b><small>${esc(t.txt)} por rango</small></div><button class="btn" data-tal="${t.id}" ${libres > 0 && r < TALENTO_MAX ? '' : 'disabled'}>+</button></div>`;
   }
   h += '</div>';
-  if (Object.keys(tal).length) h += `<button class="btn sec" id="b-tal-reset" style="width:100%;margin-top:6px">REINICIAR TALENTOS (${costoReinicioTalentos(yo.nivel).toLocaleString('es')} oro)</button>`;
+  if (Object.keys(tal).length) h += `<button class="btn sec" id="b-tal-reset" style="width:100%;margin-top:6px">Reiniciar talentos (${costoReinicioTalentos(yo.nivel).toLocaleString('es')} oro)</button>`;
   const costoC = costoCambioClase(yo.nivel);
-  h += `<button class="btn sec" id="b-cambiar-clase" style="width:100%;margin-top:8px">CAMBIAR DE CLASE${costoC ? ' (' + costoC.toLocaleString('es') + ' oro)' : ' (gratis hasta Nv 10)'}</button>`;
+  h += `<button class="btn sec" id="b-cambiar-clase" style="width:100%;margin-top:8px">Cambiar de clase${costoC ? ' (' + costoC.toLocaleString('es') + ' oro)' : ' (gratis hasta Nv 10)'}</button>`;
   $('libro-lista').innerHTML = h;
   $('b-cambiar-clase').onclick = () => abrirClases(false);
   $('libro-lista').querySelectorAll('[data-tal]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'talento', id: b.dataset.tal }); });
@@ -1931,12 +1931,12 @@ function abrirArtesana() {
   let h = '<div style="display:flex;gap:10px;justify-content:center;margin-bottom:10px;flex-wrap:wrap">' +
     Object.entries(MATERIALES).map(([k, m]) => `<span class="precio" style="display:flex;align-items:center;gap:4px"><img src="${A}items/equipo/${m.icono}.png" style="width:22px;height:22px;image-rendering:pixelated">${esc(m.nombre)}: ${mat[k] || 0}</span>`).join('') + '</div>';
   for (const r of RECETAS) {
-    const pide = Object.entries(r.pide).map(([k, n]) => `<span style="color:${(mat[k] || 0) >= n ? '#4ade80' : '#ff7777'}">${n} ${esc(MATERIALES[k].nombre)}</span>`).join(' + ');
+    const pide = Object.entries(r.pide).map(([k, n]) => `<span style="color:${(mat[k] || 0) >= n ? 'var(--ok)' : 'var(--err)'}">${n} ${esc(MATERIALES[k].nombre)}</span>`).join(' + ');
     const puede = Object.entries(r.pide).every(([k, n]) => (mat[k] || 0) >= n);
     h += tarjeta(`<img src="${A}${r.dir || 'items/equipo/'}${r.icono}.png">`, esc(r.nombre), esc(r.desc) + '<br>' + pide,
-      `<button class="btn" data-receta="${r.id}" ${puede ? '' : 'disabled'}>FABRICAR</button>`);
+      `<button class="btn" data-receta="${r.id}" ${puede ? '' : 'disabled'}>Fabricar</button>`);
   }
-  h += '<p style="margin-top:8px;font-size:12px;color:rgba(255,255,255,.55)">Las plantas 🌿 y vetas ⛏️ brillan en el suelo de cada zona: acércate y pulsa E (o RECOGER). Cada una vuelve a crecer a los 5 minutos. El Cristal Arcano sale a veces al recoger, o se refina con 8 minerales.</p>';
+  h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Las plantas 🌿 y vetas ⛏️ brillan en el suelo de cada zona: acércate y pulsa E (o RECOGER). Cada una vuelve a crecer a los 5 minutos. El Cristal Arcano sale a veces al recoger, o se refina con 8 minerales.</p>';
   $('arte-lista').innerHTML = h;
   $('arte-lista').querySelectorAll('[data-receta]').forEach(b => b.onclick = () => { sfx('moneda', .4); mandar({ t: 'fabricar', id: b.dataset.receta }); });
   abrir('m-arte');
@@ -1947,22 +1947,24 @@ function abrirArtesana() {
 function pintarChicha() {
   const ch = yo.chicha || { p: 0, hoy: 0, rec: [] };
   const cuenta = TG || !soyInvitado;
-  let h = `<div class="mis-caja" style="margin-top:0;text-align:center"><div style="font-size:40px">🥤</div><b style="color:#c084fc">UN LITRO DE CHICHA MORADA HASTA TU CASA</b>
-    <p style="font-size:12px;margin-top:6px">Cada monstruo que cazas suelta su chicha: <b>1 punto</b>, <b>3</b> si es de tu nivel o más, <b>25</b> un jefe. Desde nivel ${CHICHA.nvPuntos}, hasta ${CHICHA.porDia} puntos al día.</p>
-    <p style="font-size:22px;color:#ffd84a;margin:8px 0">${ch.p.toLocaleString('es')} puntos</p>
-    <p style="font-size:12px;color:rgba(255,255,255,.6)">Hoy: ${ch.hoy}/${CHICHA.porDia}</p></div>`;
+  let h = `<div class="mis-caja" style="margin-top:0;text-align:center"><div style="font-size:40px">🥤</div><b style="color:var(--txt);font:600 16px/1.35 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;margin-bottom:0">Un litro de chicha morada, enviado a tu casa</b>
+    <p style="font-size:12px;color:var(--txt2);margin-top:4px">Promoción gratuita y opcional: no hay que comprar nada.</p>
+    <p style="font-size:12px;margin-top:6px">Cada monstruo que cazas suelta su chicha: <b style="display:inline">1 punto</b>, <b style="display:inline">3</b> si es de tu nivel o más, <b style="display:inline">25</b> un jefe. Desde nivel ${CHICHA.nvPuntos}, hasta ${CHICHA.porDia} puntos al día.</p>
+    <p style="font-size:22px;color:var(--oro);margin:8px 0">${ch.p.toLocaleString('es')} puntos</p>
+    <p style="font-size:12px;color:var(--txt2)">Hoy: ${ch.hoy}/${CHICHA.porDia}</p></div>`;
   for (const meta of CHICHA.niveles) {
     const hecho = (ch.rec || []).includes(meta);
     const pct = Math.min(100, Math.round(ch.p / meta * 100));
-    const acc = hecho ? '<span class="precio" style="color:#00ff88">✓ RECLAMADO</span>'
-      : ch.p >= meta ? `<button class="btn" data-chicha="${meta}">RECLAMAR</button>` : `<span class="precio">${pct}%</span>`;
+    const acc = hecho ? '<span class="precio" style="color:var(--ok)">✓ Reclamado</span>'
+      : ch.p >= meta ? `<button class="btn" data-chicha="${meta}">Reclamar</button>` : `<span class="precio">${pct}%</span>`;
     h += tarjeta('<div style="font-size:30px">🥤</div>', `${meta.toLocaleString('es')} puntos`, `Un litro de chicha morada peruana enviado a tu casa.<div class="mis-barra"><i style="width:${pct}%"></i></div>`, acc);
   }
-  if (!cuenta) h += '<p class="centro" style="color:#ffae00;font-size:12px">Juegas como invitado: los puntos de chicha se juntan solo con cuenta. Entra desde @duendequest_bot en Telegram.</p>';
-  h += `<ul style="padding-left:18px;margin-top:8px;font-size:11px;color:rgba(255,255,255,.6)">
+  if (!cuenta) h += '<p class="centro" style="color:var(--warn);font-size:12px">Juegas como invitado: los puntos de chicha se juntan solo con cuenta. Entra desde @duendequest_bot en Telegram.</p>';
+  h += `<ul style="padding-left:18px;margin-top:8px;font-size:12px;line-height:1.45;color:var(--txt2)">
     <li>Promoción gratuita: no hay que comprar nada. Los puntos no se compran, no se venden y no se gastan al reclamar.</li>
     <li>Para reclamar: nivel ${CHICHA.nvReclamo}, personaje de 2 días y entrar con Telegram. El equipo te escribirá por Telegram para pedirte la dirección; nunca te pediremos pagos ni contraseñas.</li>
     <li>Envíos desde Perú, revisados uno a uno (las trampas o bots quedan fuera). Hay ${CHICHA.mesMax} litros al mes: si se acaban, tus puntos te esperan al mes siguiente.</li></ul>`;
+  h += '<p class="centro" style="font-size:12px;color:var(--txt2);margin-top:10px">🔒 Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado.</p>';
   $('inv-lista').innerHTML = h;
   $('inv-lista').querySelectorAll('[data-chicha]').forEach(b => b.onclick = () => { if (confirm('¿Reclamar tu litro de chicha morada? El equipo te escribirá por Telegram.')) { mandar({ t: 'chicha', meta: +b.dataset.chicha }); b.disabled = true; } });
 }
@@ -1977,8 +1979,8 @@ function pintarBestiario() {
     const sig = BESTIARIO_HITOS.find(x => x > n);
     const i = BESTIARIO_HITOS.indexOf(sig);
     const desc = n ? (sig ? `${n} / ${sig} · próximo premio: ${premioBestiario(m.nivel, i).toLocaleString('es')} oro` : `${n} · ✓ completo`) : `Sin cazar · Nv ${m.nivel}${m.jefe ? ' · jefe' : ''}`;
-    h += tarjeta(n ? `<canvas data-best="${k}" width="52" height="52"></canvas>` : '❔', n ? esc(m.nombre) + ` <span style="color:#888">Nv ${m.nivel}</span>` : '<span style="color:#666">???</span>', desc,
-      `<span class="precio" style="color:${!sig && n ? '#00ff88' : '#ffe600'}">${'★'.repeat(BESTIARIO_HITOS.filter(x => x <= n).length)}${'☆'.repeat(BESTIARIO_HITOS.filter(x => x > n).length)}</span>`);
+    h += tarjeta(n ? `<canvas data-best="${k}" width="52" height="52"></canvas>` : '❔', n ? esc(m.nombre) + ` <span style="color:var(--txt2)">Nv ${m.nivel}</span>` : '<span style="color:var(--txt3)">???</span>', desc,
+      `<span class="precio" style="color:${!sig && n ? 'var(--ok)' : 'var(--oro)'}">${'★'.repeat(BESTIARIO_HITOS.filter(x => x <= n).length)}${'☆'.repeat(BESTIARIO_HITOS.filter(x => x > n).length)}</span>`);
   }
   $('inv-lista').innerHTML = h;
   $('inv-lista').querySelectorAll('canvas[data-best]').forEach(c => {
@@ -1998,12 +2000,12 @@ function tituloDe(id) { const L = LOGROS.find(x => x.id === id); return L ? L.ti
 function pintarLogros() {
   const tienen = yo.logros || [];
   let h = `<p class="centro" style="margin-bottom:8px">${tienen.length} de ${LOGROS.length} logros · cada uno da oro y un título para lucir sobre tu nombre</p>`;
-  if (yo.titulo) h += `<button class="btn sec" data-titulo="" style="width:100%;margin-bottom:8px">QUITAR TÍTULO</button>`;
+  if (yo.titulo) h += `<button class="btn sec" data-titulo="" style="width:100%;margin-bottom:8px">Quitar título</button>`;
   for (const L of LOGROS) {
     const ok = tienen.includes(L.id);
-    const acc = !ok ? `<span class="precio" style="color:#666">🔒 +${L.oro.toLocaleString('es')}</span>`
-      : yo.titulo === L.id ? '<span class="precio" style="color:#00ff88">✓ EN USO</span>'
-      : `<button class="btn sec" data-titulo="${L.id}">USAR TÍTULO</button>`;
+    const acc = !ok ? `<span class="precio" style="color:var(--txt3)">🔒 +${L.oro.toLocaleString('es')}</span>`
+      : yo.titulo === L.id ? '<span class="precio" style="color:var(--ok)">✓ En uso</span>'
+      : `<button class="btn sec" data-titulo="${L.id}">Usar título</button>`;
     h += tarjeta(ok ? '🏅' : '🔒', esc(L.titulo), esc(L.desc), acc);
   }
   $('inv-lista').innerHTML = h;
@@ -2032,7 +2034,7 @@ function pintarEquipo() {
   const pz = piezasConjunto(eq);
   for (const id in pz) {
     const cj = CONJUNTOS[id];
-    h += `<p class="centro" style="margin:4px 0;font-size:12px;color:${cj.color}">◆ ${esc(cj.nombre)} ${pz[id]}/5 — ${pz[id] >= 4 ? '¡bono completo!' : pz[id] >= 2 ? 'bono de 2 activo' : 'sin bono aún'}<br><span style="color:#aaa">${esc(textoConjunto(cj))}</span></p>`;
+    h += `<p class="centro" style="margin:4px 0;font-size:12px;color:${cj.color}">◆ ${esc(cj.nombre)} ${pz[id]}/5 — ${pz[id] >= 4 ? 'bono completo' : pz[id] >= 2 ? 'bono de 2 activo' : 'sin bono aún'}<br><span style="color:var(--txt2)">${esc(textoConjunto(cj))}</span></p>`;
   }
   h += `<p class="centro" style="margin:6px 0">🎒 Bolsa ${bolsa.length}/${BOLSA_MAX} · toca una pieza puesta para quitarla</p>`;
   const comunes = bolsa.filter(x => x.r === 0);
@@ -2044,20 +2046,20 @@ function pintarEquipo() {
     const cand = bolsa.filter(x => x.s === k && puedeUsar(x) && (!protege || x.cj === puesto.cj)).sort((a, b) => puntaje(b.b) - puntaje(a.b))[0];
     return cand && (!puesto || puntaje(cand.b) > puntaje(puesto.b)) ? cand : null;
   }).filter(Boolean);
-  if (mejoras.length) h += `<button class="btn" id="b-equipar-mejor" style="width:100%;margin-bottom:8px">▲ EQUIPAR LO MEJOR (${mejoras.length})</button>`;
-  if (comunes.length) h += `<button class="btn sec" id="b-vender-comunes" style="width:100%;margin-bottom:8px">VENDER ${comunes.length} COMUNES (+${comunes.reduce((a, x) => a + precioVenta(x), 0).toLocaleString('es')} oro)</button>`;
-  if (!bolsa.length) h += '<p class="centro" style="color:rgba(255,255,255,.5)">Los monstruos sueltan equipo al morir, y los jefes siempre. ¡A cazar!</p>';
+  if (mejoras.length) h += `<button class="btn" id="b-equipar-mejor" style="width:100%;margin-bottom:8px">▲ Equipar lo mejor (${mejoras.length})</button>`;
+  if (comunes.length) h += `<button class="btn sec" id="b-vender-comunes" style="width:100%;margin-bottom:8px">Vender ${comunes.length} comunes (+${comunes.reduce((a, x) => a + precioVenta(x), 0).toLocaleString('es')} oro)</button>`;
+  if (!bolsa.length) h += '<p class="centro" style="color:var(--txt2)">Los monstruos sueltan equipo al morir, y los jefes siempre.</p>';
   const orden = [...bolsa].sort((a, b) => b.r - a.r || b.nv - a.nv);
   for (const it of orden) {
     const rz = RAREZAS[it.r];
     const puesto = eq[it.s];
     const dif = puntaje(it.b) - (puesto ? puntaje(puesto.b) : 0);
     const rompe = puesto && puesto.cj && puesto.cj !== it.cj && piezasConjunto(eq)[puesto.cj] >= 2;
-    const flecha = dif > 0 && !rompe ? '<span style="color:#00ff88"> ▲ MEJOR</span>' : dif > 0 ? '<span style="color:#ffae00"> ⚠ rompe tu conjunto</span>' : '';
+    const flecha = dif > 0 && !rompe ? '<span style="color:var(--ok)"> ▲ Mejor</span>' : dif > 0 ? '<span style="color:var(--warn)"> ⚠ rompe tu conjunto</span>' : '';
     const puede = puedeUsar(it);
-    const acc = (puede ? `<button class="btn" data-eq="${it.id}">EQUIPAR</button>` : `<span class="precio" style="color:#ff3344">Nv ${it.nv}</span>`)
-      + `<button class="btn sec" data-vender="${it.id}">VENDER ${precioVenta(it)}</button>`;
-    h += tarjeta(htmlItem(it), `<span style="color:${rz.color}">${esc(nombreItem(it))}</span> <span style="color:#888">Nv${it.nv}</span>${flecha}`,
+    const acc = (puede ? `<button class="btn" data-eq="${it.id}">Equipar</button>` : `<span class="precio" style="color:var(--warn)">Nv ${it.nv}</span>`)
+      + `<button class="btn sec" data-vender="${it.id}">Vender ${precioVenta(it)}</button>`;
+    h += tarjeta(htmlItem(it), `<span style="color:${rz.color}">${esc(nombreItem(it))}</span> <span style="color:var(--txt2)">Nv${it.nv}</span>${flecha}`,
       `${rz.nombre} · ${RANURAS[it.s].nombre} · ${textoBonos(it.b)}${it.cj && CONJUNTOS[it.cj] ? '<br><span style="color:' + CONJUNTOS[it.cj].color + '">Conjunto: ' + esc(textoConjunto(CONJUNTOS[it.cj])) + '</span>' : ''}`, acc);
   }
   $('inv-lista').innerHTML = h;
@@ -2084,9 +2086,9 @@ function mostrarLogin(m) {
     h += `<div class="dia ${cls}"><b>DÍA ${n}</b><span>${n === 7 ? '🎁' : pr.oro ? '🪙' : '🧪'}</span><small>${esc(pr.txt)}</small></div>`;
   });
   h += '</div>';
-  let txt = '¡Hoy recibes ' + m.txt + '!';
-  if (m.oro) txt = '¡Hoy recibes ' + m.oro.toLocaleString('es') + ' oro' + (m.item ? ' y ' + RAREZAS[m.item.r].nombre.toLowerCase() + ': ' + nombreItem(m.item) : '') + '!';
-  $('login-cuerpo').innerHTML = h + `<p class="centro" style="margin-top:12px;color:#00ff88">${esc(txt)}</p><p class="centro" style="font-size:12px;color:rgba(255,255,255,.55)">Vuelve mañana para el día ${m.racha % 7 + 1}. Si faltas un día, retrocede dos; si faltas más, vuelve a empezar. El oro crece con tu nivel.</p>`;
+  let txt = 'Hoy recibes ' + m.txt + '.';
+  if (m.oro) txt = 'Hoy recibes ' + m.oro.toLocaleString('es') + ' oro' + (m.item ? ' y ' + RAREZAS[m.item.r].nombre.toLowerCase() + ': ' + nombreItem(m.item) : '') + '.';
+  $('login-cuerpo').innerHTML = h + `<p class="centro" style="margin-top:12px;color:var(--ok);font-weight:600">${esc(txt)}</p><p class="centro" style="font-size:12px;color:var(--txt2)">Vuelve mañana para el día ${m.racha % 7 + 1}. Si faltas un día, retrocede dos; si faltas más, vuelve a empezar. El oro crece con tu nivel.</p>`;
   abrir('m-login');
   sfx('moneda', .5);
 }
@@ -2096,7 +2098,7 @@ let mundial = { vivo: false, en: 0 };
 function pintarMundial() {
   const el = $('h-mundial');
   if (!yo) return;
-  if (mundial.vivo) { ponTxt(el, '👹 ¡Jefe mundial en el Coliseo! (portal del pueblo)'); el.className = 'lista'; return; }
+  if (mundial.vivo) { ponTxt(el, '👹 Jefe mundial activo en el Coliseo (portal del pueblo)'); el.className = 'lista'; return; }
   const ms = mundial.en - performance.now();
   if (mundial.en && ms > 0) {
     const mm = Math.floor(ms / 60000), ss = Math.floor(ms / 1000) % 60;
@@ -2144,10 +2146,11 @@ function pintarWallet() {
   const w = yo.wallet;
   const lista = w && Date.now() - w.desde >= WALLET_ESPERA_MS;
   const fila = (ok, txt) => `<div class="req"><span>${txt}</span><span class="${ok ? 'si' : 'no'}">${ok ? '✓' : '✗'}</span></div>`;
-  let h = `<div class="saldo"><b>${mton.toLocaleString('es')} mTON</b><small>= ${tonTxt(mton)} TON · 1.000 mTON = 1 TON</small></div>`;
+  let h = '<p class="centro" style="font-size:12px;color:var(--txt2);margin-bottom:8px">Recompensa opcional: los mTON solo se ganan jugando (no se compran) y salen de un fondo diario limitado.</p>';
+  h += `<div class="saldo"><b>${mton.toLocaleString('es')} mTON</b><small>= ${tonTxt(mton)} TON · 1.000 mTON = 1 TON</small></div>`;
   h += `<div class="mis-barra"><i style="width:${pct}%"></i></div><p class="centro" style="font-size:12px">${pct}% del retiro mínimo (${RETIRO_MIN_MTON / MTON_POR_TON} TON)</p>`;
   if (!el.cuenta) {
-    h += '<p class="centro" style="margin:12px 0;color:#ffae00">Juegas como invitado: para ganar y retirar TON entra desde el bot de Telegram (@duendequest_bot) o inicia sesión en el juego web.</p>';
+    h += '<p class="centro" style="margin:12px 0;font-size:13px;color:var(--warn)">Juegas como invitado. Para recibir mTON y retirar TON, entra desde el bot de Telegram (@duendequest_bot) o inicia sesión en el juego web.</p>';
   }
   h += '<div style="margin:10px 0">' +
     fila(el.cuenta, 'Cuenta de Telegram o web') +
@@ -2157,28 +2160,29 @@ function pintarWallet() {
     fila(lista, 'Wallet conectada hace 3 días (seguridad)') +
     fila(mton >= RETIRO_MIN_MTON, 'Saldo de ' + (RETIRO_MIN_MTON / MTON_POR_TON) + ' TON') + '</div>';
   if (w) h += `<p class="centro" style="font-size:12px;word-break:break-all;margin-bottom:8px">👛 ${esc(w.a)}</p>`;
-  if (el.cuenta) h += `<button class="btn sec" id="b-conectar" style="width:100%;margin-bottom:8px">${w ? 'CAMBIAR WALLET TON' : 'CONECTAR WALLET TON'}</button>`;
+  if (el.cuenta) h += `<button class="btn sec" id="b-conectar" style="width:100%;margin-bottom:8px">${w ? 'Cambiar wallet TON' : 'Conectar wallet TON'}</button>`;
   const puede = el.cuenta && el.nivel && lista && mton >= RETIRO_MIN_MTON;
   const aRetirar = Math.min(Math.floor(mton), RETIRO_MAX_MTON);
-  h += `<button class="btn" id="b-retirar" style="width:100%;padding:12px" ${puede ? '' : 'disabled'}>RETIRAR ${tonTxt(aRetirar)} TON</button>`;
-  h += '<button class="btn sec" id="b-premium" style="width:100%;margin-top:8px">⭐ TIENDA PREMIUM (oro y poderes)</button>';
+  h += `<button class="btn" id="b-retirar" style="width:100%;padding:12px" ${puede ? '' : 'disabled'}>Retirar ${tonTxt(aRetirar)} TON</button>`;
+  h += '<button class="btn sec" id="b-premium" style="width:100%;margin-top:8px">Tienda premium (oro y poderes)</button>';
   const tr = yo.transparencia;
-  if (tr) h += `<div class="mis-caja" style="margin-top:12px"><b>📊 TRANSPARENCIA</b><p style="font-size:12px">El fondo de cada día es el <span style="color:#ffe600">${tr.pct}%</span> de lo que entró al juego la semana anterior (Stars y cripto) dividido entre 7, más lo que aporta El Duende. Nunca se reparte más de lo que entra. Pagado a jugadores hasta hoy: <span style="color:#00eeff">${tonTxt(tr.tonPagados * MTON_POR_TON)} TON</span> en ${tr.retirosPagados} retiro(s).</p></div>`;
+  if (tr) h += `<div class="mis-caja" style="margin-top:12px"><b>📊 Transparencia</b><p style="font-size:12px;color:var(--txt2)">El fondo de cada día es el <b style="display:inline;color:var(--txt)">${tr.pct}%</b> de lo que entró al juego la semana anterior (Stars y cripto) dividido entre 7, más lo que aporta El Duende. Nunca se reparte más de lo que entra. Pagado a jugadores hasta hoy: <b style="display:inline;color:var(--txt)">${tonTxt(tr.tonPagados * MTON_POR_TON)} TON</b> en ${tr.retirosPagados} retiro(s).</p></div>`;
   if (fondoInfo) {
     const resta = Math.max(0, fondoInfo.total - fondoInfo.gastado);
-    h += `<p class="centro" style="margin-top:10px;font-size:12px;color:rgba(255,255,255,.6)">Fondo de hoy para todos: ${tonTxt(resta)} de ${tonTxt(fondoInfo.total)} TON por repartir</p>`;
+    h += `<p class="centro" style="margin-top:10px;font-size:12px;color:var(--txt2)">Fondo de hoy para todos: ${tonTxt(resta)} de ${tonTxt(fondoInfo.total)} TON por repartir</p>`;
     // Claridad: con el fondo a cero no se gana mTON, y se dice sin rodeos.
-    if (!fondoInfo.total) h += `<p class="centro" style="font-size:12px;color:#ffd84a">⚠️ Hoy el fondo está vacío: nadie gana mTON hasta que entren ingresos al juego. El oro, los objetos y todo lo demás siguen igual.</p>`;
+    if (!fondoInfo.total) h += `<p class="centro" style="font-size:12px;color:var(--warn)">⚠️ Hoy el fondo está vacío: nadie gana mTON hasta que entren ingresos al juego. El oro, los objetos y todo lo demás siguen igual.</p>`;
   }
   const rs = yo.retiros || [];
   if (rs.length) {
-    h += '<div style="margin-top:10px">' + rs.slice().reverse().map(x => `<div class="fila"><span>#${esc(x.id)} · ${x.ton} TON</span><span style="color:${x.estado === 'pagado' ? '#00ff88' : x.estado === 'rechazado' ? '#ff7777' : '#ffe600'}">${x.estado.toUpperCase()}</span></div>`).join('') + '</div>';
+    h += '<div style="margin-top:10px">' + rs.slice().reverse().map(x => `<div class="fila"><span>#${esc(x.id)} · ${x.ton} TON</span><span style="color:${x.estado === 'pagado' ? 'var(--ok)' : x.estado === 'rechazado' ? 'var(--err)' : 'var(--warn)'}">${esc(x.estado.charAt(0).toUpperCase() + x.estado.slice(1).replace(/_/g, ' '))}</span></div>`).join('') + '</div>';
   }
-  h += '<ul style="padding-left:18px;margin-top:12px;font-size:12px">' +
+  h += '<ul style="padding-left:18px;margin-top:12px;font-size:12px;line-height:1.45;color:var(--txt2)">' +
     '<li>Ganas mTON derrotando <b>jefes</b> (si haces al menos el 10% del daño), en el <b>jefe mundial</b> y al cobrar la <b>caza del día</b>.</li>' +
     `<li>Cada día se reparte un fondo limitado entre todos y nadie se lleva más del ${Math.round(TOPE_DIARIO_PCT * 100)}%: cuando se acaba, vuelve mañana.</li>` +
     `<li>Un retiro por semana, de ${RETIRO_MIN_MTON / MTON_POR_TON} a ${RETIRO_MAX_MTON / MTON_POR_TON} TON (lo que pase de ${RETIRO_MAX_MTON / MTON_POR_TON} queda para el siguiente).</li>` +
     '<li>Los retiros los revisa el equipo y se pagan a tu wallet en 24-48 h. Usar bots o varias cuentas anula el retiro.</li></ul>';
+  h += '<p class="centro" style="font-size:12px;color:var(--txt2);margin-top:10px">🔒 Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado.</p>';
   $('wallet-cuerpo').innerHTML = h;
   const bc = $('b-conectar'); if (bc) bc.onclick = () => { sfx('boton', .3); conectarWallet(); };
   const bp = $('b-premium'); if (bp) bp.onclick = abrirPremium;
@@ -2195,20 +2199,21 @@ function pintarWallet() {
 function htmlPremium() {
   const cuentaTg = !!TG && !forzarInvitado;
   const cuenta = yo && yo.p2e && yo.p2e.cuenta;
-  let h = '<p style="font-size:12px;color:rgba(255,255,255,.65);margin-bottom:10px">Apoya el juego y llévate oro y poderes. Cada pago lo revisa <b>El Duende</b> en persona y te lo entrega en tu personaje (te avisamos aquí y por Telegram). Con dinero <b>no</b> se compran mTON: los TON solo se ganan jugando.</p>';
+  let h = '<p style="font-size:13px;line-height:1.45;color:var(--txt2);margin-bottom:10px">Compras opcionales para apoyar el juego: recibes oro y poderes en tu personaje. Cada pago lo revisa <b>El Duende</b> en persona y te lo entrega en tu personaje (te avisamos aquí y por Telegram). Con dinero <b>no</b> se compran mTON: los TON solo se ganan jugando.</p>';
   for (const pq of PAQUETES) {
     let acc;
-    if (!cuenta) acc = '<span class="precio" style="color:#666">Inicia sesión</span>';
-    else if (cuentaTg) acc = `<span class="precio">⭐ ${estrellasDe(pq.usd)}</span><button class="btn" data-premium="${pq.id}" data-metodo="stars">PAGAR CON STARS</button>`;
-    else acc = `<span class="precio">~$${pq.usd} en SOL</span><button class="btn" data-premium="${pq.id}" data-metodo="sol">PAGAR CON SOL</button>`;
+    if (!cuenta) acc = '<span class="precio" style="color:var(--txt2)">Inicia sesión</span>';
+    else if (cuentaTg) acc = `<span class="precio">⭐ ${estrellasDe(pq.usd)}</span><button class="btn" data-premium="${pq.id}" data-metodo="stars">Pagar con Stars</button>`;
+    else acc = `<span class="precio">~$${pq.usd} en SOL</span><button class="btn" data-premium="${pq.id}" data-metodo="sol">Pagar con SOL</button>`;
     h += tarjeta(`<img src="${A}items/equipo/${pq.icono}.png">`, esc(pq.nombre), esc(pq.desc), acc);
   }
   const ps = (yo && yo.pedidos) || [];
   if (ps.length) {
-    const col = { pagado: '#ffe600', por_verificar: '#ffe600', entregado: '#00ff88', anulado: '#ff7777' };
-    const txt = { pagado: 'POR ENTREGAR', por_verificar: 'EN REVISIÓN', entregado: 'ENTREGADO', anulado: 'ANULADO' };
-    h += '<p style="margin:12px 0 4px;font-size:12px">Tus compras:</p>' + ps.slice().reverse().map(x => `<div class="fila"><span>#${esc(x.codigo)} · ${esc(x.nombre)}</span><span style="color:${col[x.estado] || '#fff'}">${txt[x.estado] || x.estado}</span></div>`).join('');
+    const col = { pagado: 'var(--warn)', por_verificar: 'var(--warn)', entregado: 'var(--ok)', anulado: 'var(--err)' };
+    const txt = { pagado: 'Por entregar', por_verificar: 'En revisión', entregado: 'Entregado', anulado: 'Anulado' };
+    h += '<p style="margin:12px 0 4px;font-size:12px">Tus compras:</p>' + ps.slice().reverse().map(x => `<div class="fila"><span>#${esc(x.codigo)} · ${esc(x.nombre)}</span><span style="color:${col[x.estado] || 'var(--txt)'}">${txt[x.estado] || esc(x.estado)}</span></div>`).join('');
   }
+  h += '<p class="centro" style="font-size:12px;color:var(--txt2);margin-top:10px">🔒 Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado.</p>';
   return h;
 }
 function conectarPremium(L) {
@@ -2223,7 +2228,7 @@ function abrirPremium() {
 function abrirFactura(m) {
   if (!TG || !TG.openInvoice) { window.open(m.link, '_blank'); return; }
   TG.openInvoice(m.link, st => {
-    if (st === 'paid') aviso('⭐ ¡Pago recibido! El Duende te entregará tu compra en breve.', 'ok');
+    if (st === 'paid') aviso('Pago recibido. El Duende te entregará tu compra en breve.', 'ok');
     else if (st === 'failed') aviso('El pago no se completó.');
   });
 }
@@ -2234,15 +2239,16 @@ function mostrarPedidoSol(m) {
   const sol = (m.lamports / 1e9).toFixed(9);
   $('sol-cuerpo').innerHTML =
     `<p class="centro" style="margin-bottom:8px">${esc(m.nombre)} · pedido <b>#${esc(m.codigo)}</b></p>` +
-    `<div class="saldo"><b>${sol} SOL</b><small>(~$${m.usd}) · paga el monto EXACTO: sus últimas cifras identifican tu pedido</small></div>` +
-    `<button class="btn" id="b-phantom" style="width:100%;padding:12px;margin-bottom:10px">PAGAR CON PHANTOM</button>` +
+    `<div class="saldo"><b>${sol} SOL</b><small>(~$${m.usd}) · paga el monto <b>exacto</b>: sus últimas cifras identifican tu pedido</small></div>` +
+    `<button class="btn" id="b-phantom" style="width:100%;padding:12px;margin-bottom:10px">Pagar con Phantom</button>` +
     `<p style="font-size:12px;margin:6px 0">¿Otra wallet? Envía <b>${sol} SOL</b> a la wallet de El Duende:</p>` +
-    `<p style="font-size:11px;word-break:break-all;background:rgba(0,0,0,.35);padding:8px;border-radius:6px">${esc(m.wallet)}</p>` +
-    `<div style="display:flex;gap:6px;margin:6px 0"><button class="btn sec" id="b-copia-w" style="flex:1">COPIAR WALLET</button><button class="btn sec" id="b-copia-m" style="flex:1">COPIAR MONTO</button></div>` +
+    `<p style="font-size:11px;word-break:break-all;background:var(--bg);border:1px solid var(--borde);padding:8px;border-radius:6px">${esc(m.wallet)}</p>` +
+    `<div style="display:flex;gap:6px;margin:6px 0"><button class="btn sec" id="b-copia-w" style="flex:1">Copiar wallet</button><button class="btn sec" id="b-copia-m" style="flex:1">Copiar monto</button></div>` +
     `<p style="font-size:12px;margin-top:8px">Y pega aquí la firma (signature) de la transacción:</p>` +
     `<input class="nombre" id="in-firma" placeholder="Firma de la transacción" style="font-size:10px;margin:6px 0">` +
-    `<button class="btn" id="b-firma" style="width:100%">ENVIAR COMPROBANTE</button>` +
-    `<p style="font-size:11px;color:rgba(255,255,255,.5);margin-top:8px">Tienes 30 minutos. El pago va directo a la wallet de El Duende y él te entrega la compra a mano.</p>`;
+    `<button class="btn sec" id="b-firma" style="width:100%">Enviar comprobante</button>` +
+    `<p style="font-size:12px;color:var(--txt2);margin-top:8px">Tienes 30 minutos. El pago va directo a la wallet de El Duende y él te entrega la compra a mano.</p>` +
+    '<p class="centro" style="font-size:12px;color:var(--txt2);margin-top:10px;margin-top:6px">🔒 Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado.</p>';
   abrir('m-sol');
   const copiar = t => { try { navigator.clipboard.writeText(t); aviso('📋 Copiado', 'ok'); } catch (e) {} };
   $('b-copia-w').onclick = () => copiar(m.wallet);
@@ -2836,7 +2842,7 @@ function pintarHud() {
   const cl = CLASES[yo.clase];
   const sp = cl && yo.nivel >= ESPEC_NIVEL ? especDe(yo.clase, yo.espec) : null;
   ponTxt($('h-clase'), cl ? (sp ? sp.nombre : cl.nombre) : 'Sin clase');
-  ponCss($('h-clase'), 'color', cl ? cl.color : '#888');
+  ponCss($('h-clase'), 'color', cl ? cl.color : 'var(--txt2)');
   const imgSkin = A + 'skins/' + (SKINS[yo.skin] ? SKINS[yo.skin].img : 'skin_hero') + '.png';
   if ($('ret-yo')._src !== imgSkin) { $('ret-yo')._src = imgSkin; $('ret-yo').src = imgSkin; }
   ponCss($('brec'), 'display', cl ? 'block' : 'none');
@@ -2879,41 +2885,41 @@ function cajaDiaria() {
   const d = yo.diaria || { p: 0, ok: false };
   const pr = premioDiaria(yo.nivel);
   const lista = d.p >= DIARIA.n && !d.ok;
-  return '<div class="mis-caja" style="border-color:rgba(0,238,255,.35)"><b>📅 ' + esc(DIARIA.nombre) + '</b>' +
+  return '<div class="mis-caja"><b>📅 ' + esc(DIARIA.nombre) + '</b>' +
     '<p>Derrota ' + DIARIA.n + ' monstruos de tu nivel (o hasta 5 por debajo). Se renueva cada día.</p>' +
-    '<div class="mis-barra"><i style="width:' + Math.round(Math.min(1, d.p / DIARIA.n) * 100) + '%;background:linear-gradient(90deg,#00eeff,#00ff88)"></i></div>' +
+    '<div class="mis-barra"><i style="width:' + Math.round(Math.min(1, d.p / DIARIA.n) * 100) + '%;background:var(--ok)"></i></div>' +
     '<p>' + Math.min(d.p, DIARIA.n) + ' / ' + DIARIA.n + (d.ok ? ' · ✓ cobrada hoy' : '') + '</p>' +
-    '<p style="color:#ffe600">Recompensa: +' + pr.xp + ' XP · +' + pr.oro + ' oro · +' + pr.pocion + ' pociones</p>' +
-    (lista ? '<button class="btn" id="b-diaria" style="width:100%;padding:10px;margin-top:6px">✅ COBRAR CAZA DEL DÍA</button>' : '') + '</div>';
+    '<p style="color:var(--oro)">Recompensa: +' + pr.xp + ' XP · +' + pr.oro + ' oro · +' + pr.pocion + ' pociones</p>' +
+    (lista ? '<button class="btn" id="b-diaria" style="width:100%;padding:10px;margin-top:6px">Cobrar caza del día</button>' : '') + '</div>';
 }
 // Diarias y semanales: se cobran solas, aqui solo se ven.
 function cajaTareas() {
   const T = yo.tareas;
   if (!T) return '';
-  const fila = t => `<div class="fila" style="${t.ok ? 'color:#4ade80' : ''}"><span>${t.ok ? '✓' : '•'} ${esc(t.txt)}</span><span>${t.p}/${t.n}</span></div>`;
-  return '<div class="mis-caja" style="border-color:rgba(255,230,0,.35)"><b>☀️ Misiones del día</b>' + T.dia.l.map(fila).join('') +
+  const fila = t => `<div class="fila" style="${t.ok ? 'color:var(--ok)' : ''}"><span>${t.ok ? '✓' : '•'} ${esc(t.txt)}</span><span>${t.p}/${t.n}</span></div>`;
+  return '<div class="mis-caja"><b>☀️ Misiones del día</b>' + T.dia.l.map(fila).join('') +
     `<p style="font-size:12px;margin-top:6px">Cada una: +${T.premio.xp.toLocaleString('es')} XP y +${T.premio.oro.toLocaleString('es')} oro. Las 3: ${T.dia.bono ? '✓ bono cobrado' : 'objeto raro + pociones y escudos'}. Se renuevan cada día.</p></div>` +
-    '<div class="mis-caja" style="border-color:rgba(192,132,252,.45)"><b>📆 Misiones de la semana</b>' + T.sem.l.map(fila).join('') +
-    `<p style="font-size:12px;margin-top:6px">Cada una: +${T.premioSem.xp.toLocaleString('es')} XP y +${T.premioSem.oro.toLocaleString('es')} oro. Las 2: ${T.sem.bono ? '✓ bono cobrado' : 'objeto ÉPICO'}. Se renuevan los lunes.</p></div>`;
+    '<div class="mis-caja"><b>📆 Misiones de la semana</b>' + T.sem.l.map(fila).join('') +
+    `<p style="font-size:12px;margin-top:6px">Cada una: +${T.premioSem.xp.toLocaleString('es')} XP y +${T.premioSem.oro.toLocaleString('es')} oro. Las 2: ${T.sem.bono ? '✓ bono cobrado' : 'objeto épico'}. Se renuevan los lunes.</p></div>`;
 }
 function pintarMision() {
   const i = yo.mis ? yo.mis.i : 0, q = MISIONES[i];
   const cuerpo = $('mision-cuerpo');
   const conectarDiaria = () => { const b = $('b-diaria'); if (b) b.onclick = () => { sfx('boton', .3); mandar({ t: 'mision', diaria: true }); }; };
-  if (!q) { cuerpo.innerHTML = '<p class="centro">¡Completaste las ' + MISIONES.length + ' misiones! Eres una leyenda del Pueblo Duende. 👑</p>' + cajaDiaria() + cajaTareas(); conectarDiaria(); return; }
+  if (!q) { cuerpo.innerHTML = '<p class="centro">Completaste las ' + MISIONES.length + ' misiones. Eres una leyenda del Pueblo Duende. 👑</p>' + cajaDiaria() + cajaTareas(); conectarDiaria(); return; }
   const def = MONSTRUOS[q.tipo];
   const zona = MAPAS[zonaDe(q.tipo)];
   const lista = yo.mis.p >= q.n;
   const extra = q.pw ? ' · ' + Object.entries(q.pw).map(([k, v]) => v + ' ' + PODERES.find(p => p.id === k).nombre).join(', ') : '';
-  const pide = def.jefe ? 'Participa en la caída de <b style="display:inline;color:#fff">' + esc(def.nombre) + '</b>' : 'Derrota ' + q.n + ' × <b style="display:inline;color:#fff">' + esc(def.nombre) + '</b>';
+  const pide = def.jefe ? 'Participa en la caída de <b style="display:inline;color:var(--txt)">' + esc(def.nombre) + '</b>' : 'Derrota ' + q.n + ' × <b style="display:inline;color:var(--txt)">' + esc(def.nombre) + '</b>';
   cuerpo.innerHTML =
     '<p>Misión ' + (i + 1) + ' de ' + MISIONES.length + '</p>' +
     '<div class="mis-caja"><b>' + esc(q.nombre) + '</b>' +
     '<p>' + pide + ' en ' + esc(zona ? zona.nombre : '?') + ' (Nv ' + def.nivel + ').</p>' +
     '<div class="mis-barra"><i style="width:' + Math.round(yo.mis.p / q.n * 100) + '%"></i></div>' +
     '<p>' + yo.mis.p + ' / ' + q.n + '</p>' +
-    '<p style="color:#ffe600">Recompensa: +' + q.xp + ' XP · +' + q.oro + ' oro' + esc(extra) + '</p></div>' +
-    (lista ? '<button class="btn" id="b-entregar" style="width:100%;padding:12px">✅ ENTREGAR MISIÓN</button>' : '<p class="centro">Vuelve cuando la termines.</p>') +
+    '<p style="color:var(--oro)">Recompensa: +' + q.xp + ' XP · +' + q.oro + ' oro' + esc(extra) + '</p></div>' +
+    (lista ? '<button class="btn" id="b-entregar" style="width:100%;padding:12px">Entregar misión</button>' : '<p class="centro">Vuelve cuando la termines.</p>') +
     cajaDiaria() + cajaTareas();
   const b = $('b-entregar');
   if (b) b.onclick = () => { sfx('boton', .3); mandar({ t: 'mision' }); };
@@ -3049,8 +3055,8 @@ function pintarLanzar() {
 function aviso(txt, tipo) {
   const d = document.createElement('div');
   d.className = 'aviso';
-  if (tipo === 'ok') d.style.borderColor = '#00ff88';
-  if (tipo === 'jefe') { d.style.borderColor = '#ff3cf0'; d.style.color = '#ff9cf5'; }
+  if (tipo === 'ok') d.style.borderColor = 'var(--ok)';
+  if (tipo === 'jefe') { d.style.borderColor = 'var(--warn)'; d.style.color = 'var(--txt)'; }
   d.textContent = txt;
   $('avisos').appendChild(d);
   setTimeout(() => d.remove(), 3700);
@@ -3095,36 +3101,36 @@ function pintarTienda() {
       const d = ARMAS[id], n = nvF(id);
       const ico = `<img src="${A}armas/${d.icono}_item.png" style="${id !== 'katana' ? 'filter:drop-shadow(0 0 4px ' + d.color + ')' : ''}">`;
       const desc = 'Daño ×' + multForja(n).toFixed(2) + (n < FORJA_MAX ? ' → ×' + multForja(n + 1).toFixed(2) : ' · máximo');
-      const acc = n >= FORJA_MAX ? '<span class="precio" style="color:#00ff88">✓ +' + FORJA_MAX + '</span>'
-        : `<span class="precio">🪙 ${costoForja(n).toLocaleString('es')}</span><button class="btn" data-comprar="forja" data-id="${id}" ${yo.oro < costoForja(n) ? 'disabled' : ''}>MEJORAR A +${n + 1}</button>`;
+      const acc = n >= FORJA_MAX ? '<span class="precio" style="color:var(--ok)">✓ +' + FORJA_MAX + '</span>'
+        : `<span class="precio">🪙 ${costoForja(n).toLocaleString('es')}</span><button class="btn" data-comprar="forja" data-id="${id}" ${yo.oro < costoForja(n) ? 'disabled' : ''}>Mejorar a +${n + 1}</button>`;
       h += tarjeta(ico, d.nombre + ' +' + n, desc, acc);
     }
-    h += '<p style="margin-top:8px;font-size:12px;color:rgba(255,255,255,.5)">Cada mejora sale siempre bien: +7% de daño por nivel, hasta +' + FORJA_MAX + '. Compra más armas en la pestaña ARMAS para forjarlas también.</p>';
+    h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Cada mejora sale siempre bien: +7% de daño por nivel, hasta +' + FORJA_MAX + '. Compra más armas en la pestaña «Armas» para forjarlas también.</p>';
   } else if (tabTienda === 'tinte') {
     for (const [id, tn] of Object.entries(TINTES)) {
       const tiene = (yo.tintes || []).includes(id);
       const muestra = tn.color === 'arcoiris' ? 'background:linear-gradient(90deg,#f43f5e,#facc15,#34d399,#38bdf8,#c084fc)' : 'background:' + tn.color;
       const ico = `<div style="width:40px;height:40px;border-radius:8px;${muestra}"></div>`;
-      const acc = tiene ? (yo.tinte === id ? '<span class="precio" style="color:#00ff88">✓ EN USO</span>' : `<button class="btn sec" data-comprar="tinte" data-id="${id}">USAR</button>`)
-        : yo.nivel < tn.nv ? `<span class="precio" style="color:#ff7777">Nv ${tn.nv}</span><span class="precio">🪙 ${tn.precio.toLocaleString('es')}</span>`
-        : `<span class="precio">🪙 ${tn.precio.toLocaleString('es')}</span><button class="btn" data-comprar="tinte" data-id="${id}" ${yo.oro < tn.precio ? 'disabled' : ''}>COMPRAR</button>`;
+      const acc = tiene ? (yo.tinte === id ? '<span class="precio" style="color:var(--ok)">✓ En uso</span>' : `<button class="btn sec" data-comprar="tinte" data-id="${id}">Usar</button>`)
+        : yo.nivel < tn.nv ? `<span class="precio" style="color:var(--warn)">Nv ${tn.nv}</span><span class="precio">🪙 ${tn.precio.toLocaleString('es')}</span>`
+        : `<span class="precio">🪙 ${tn.precio.toLocaleString('es')}</span><button class="btn" data-comprar="tinte" data-id="${id}" ${yo.oro < tn.precio ? 'disabled' : ''}>Comprar</button>`;
       h += tarjeta(ico, `<span style="color:${tn.color === 'arcoiris' ? '#facc15' : tn.color}">${esc(tn.nombre)}</span>`, 'Color de tu nombre sobre tu duende: lo ven todos. Solo estética.', acc);
     }
-    if (yo.tinte) h += `<button class="btn sec" data-comprar="tinte" data-id="" style="width:100%;margin-top:6px">VOLVER AL COLOR DE MI CLASE</button>`;
+    if (yo.tinte) h += `<button class="btn sec" data-comprar="tinte" data-id="" style="width:100%;margin-top:6px">Volver al color de mi clase</button>`;
   } else if (tabTienda === 'montura') {
     for (const [id, mo] of Object.entries(MONTURAS)) {
       const tiene = (yo.monturas || []).includes(id);
       const ico = `<canvas data-montura="${id}" width="52" height="52"></canvas>`;
-      const acc = tiene ? (yo.montura === id ? '<span class="precio" style="color:#00ff88">✓ EN USO</span>' : `<button class="btn sec" data-comprar="montura" data-id="${id}">USAR</button>`)
-        : yo.nivel < mo.nv ? `<span class="precio" style="color:#ff7777">Nv ${mo.nv}</span><span class="precio">🪙 ${mo.precio.toLocaleString('es')}</span>`
-        : `<span class="precio">🪙 ${mo.precio.toLocaleString('es')}</span><button class="btn" data-comprar="montura" data-id="${id}" ${yo.oro < mo.precio ? 'disabled' : ''}>COMPRAR</button>`;
+      const acc = tiene ? (yo.montura === id ? '<span class="precio" style="color:var(--ok)">✓ En uso</span>' : `<button class="btn sec" data-comprar="montura" data-id="${id}">Usar</button>`)
+        : yo.nivel < mo.nv ? `<span class="precio" style="color:var(--warn)">Nv ${mo.nv}</span><span class="precio">🪙 ${mo.precio.toLocaleString('es')}</span>`
+        : `<span class="precio">🪙 ${mo.precio.toLocaleString('es')}</span><button class="btn" data-comprar="montura" data-id="${id}" ${yo.oro < mo.precio ? 'disabled' : ''}>Comprar</button>`;
       h += tarjeta(ico, esc(mo.nombre), `+${Math.round((mo.vel - 1) * 100)}% de velocidad · desde Nv ${mo.nv}`, acc);
     }
-    h += '<p style="margin-top:8px;font-size:12px;color:rgba(255,255,255,.5)">Monta con la tecla Y o el botón 🐎 (1,5 s, fuera de combate). No se puede montar en mazmorras ni en el Coliseo.</p>';
+    h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Monta con la tecla Y o el botón 🐎 (1,5 s, fuera de combate). No se puede montar en mazmorras ni en el Coliseo.</p>';
   } else if (tabTienda === 'pw') {
     PODERES.forEach(p => {
-      h += tarjeta(`<img src="${A}items/${p.icono}.png">`, p.nombre + ` <span style="color:#888">(tienes ${yo.pw[p.id] || 0})</span>`, p.desc,
-        `<span class="precio">🪙 ${p.precio}</span><button class="btn" data-comprar="pw" data-id="${p.id}" data-n="1" ${yo.oro < p.precio ? 'disabled' : ''}>COMPRAR</button><button class="btn sec" data-comprar="pw" data-id="${p.id}" data-n="5" ${yo.oro < p.precio * 5 ? 'disabled' : ''}>x5</button>`);
+      h += tarjeta(`<img src="${A}items/${p.icono}.png">`, p.nombre + ` <span style="color:var(--txt2)">(tienes ${yo.pw[p.id] || 0})</span>`, p.desc,
+        `<span class="precio">🪙 ${p.precio}</span><button class="btn" data-comprar="pw" data-id="${p.id}" data-n="1" ${yo.oro < p.precio ? 'disabled' : ''}>Comprar</button><button class="btn sec" data-comprar="pw" data-id="${p.id}" data-n="5" ${yo.oro < p.precio * 5 ? 'disabled' : ''}>×5</button>`);
     });
   } else {
     const tabla = tabTienda === 'arma' ? ARMAS : SKINS;
@@ -3134,11 +3140,11 @@ function pintarTienda() {
       const d = tabla[id];
       const ico = tabTienda === 'arma' ? `<img src="${A}armas/${d.icono}_item.png" style="${d.color && id !== 'katana' ? 'filter:drop-shadow(0 0 4px ' + d.color + ')' : ''}">` : `<img src="${A}skins/${d.img}.png">`;
       let acc;
-      if (tiene.includes(id)) acc = puesto === id ? '<span class="precio" style="color:#00ff88">✓ EQUIPADO</span>' : `<button class="btn sec" data-equipar="${tabTienda}" data-id="${id}">EQUIPAR</button>`;
-      else acc = `<span class="precio">🪙 ${d.precio.toLocaleString('es')}</span><button class="btn" data-comprar="${tabTienda}" data-id="${id}" ${yo.oro < d.precio ? 'disabled' : ''}>COMPRAR</button>`;
+      if (tiene.includes(id)) acc = puesto === id ? '<span class="precio" style="color:var(--ok)">✓ Equipado</span>' : `<button class="btn sec" data-equipar="${tabTienda}" data-id="${id}">Equipar</button>`;
+      else acc = `<span class="precio">🪙 ${d.precio.toLocaleString('es')}</span><button class="btn" data-comprar="${tabTienda}" data-id="${id}" ${yo.oro < d.precio ? 'disabled' : ''}>Comprar</button>`;
       h += tarjeta(ico, d.nombre, d.desc, acc);
     }
-    if (tabTienda === 'skin') h += '<p style="margin-top:8px;font-size:12px;color:rgba(255,255,255,.5)">Las skins que ya pagaste en el juego principal se desbloquean solas al entrar con tu cuenta.</p>';
+    if (tabTienda === 'skin') h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Las skins que ya pagaste en el juego principal se desbloquean solas al entrar con tu cuenta.</p>';
   }
   L.innerHTML = h;
   // Retratos de las monturas (primer cuadro de su hoja).
@@ -3162,13 +3168,13 @@ function pintarInventario() {
   if (!yo) return;
   if (tabInv === 'equipo' || tabInv === 'logros' || tabInv === 'bestiario' || tabInv === 'chicha') $('inv-stats').innerHTML = '';
   else $('inv-stats').innerHTML =
-    `<div class="fila"><span>NIVEL</span><span>${yo.nivel}</span></div>` +
-    `<div class="fila"><span>VIDA</span><span>${yo.maxHp}</span></div>` +
-    `<div class="fila"><span>ATAQUE</span><span>${yo.atk}</span></div>` +
-    `<div class="fila"><span>DEFENSA</span><span>${yo.def}</span></div>` +
-    `<div class="fila"><span>CRÍTICO</span><span>${Math.round((yo.crit || .12) * 100)}%</span></div>` +
-    `<div class="fila"><span>ARMA</span><span>${esc(ARMAS[yo.arma].nombre)} +${(yo.forja || {})[yo.arma] || 0}</span></div>` +
-    `<div class="fila"><span>MONSTRUOS / JEFES</span><span>${yo.kills} / ${yo.jefes}</span></div>`;
+    `<div class="fila"><span>Nivel</span><span>${yo.nivel}</span></div>` +
+    `<div class="fila"><span>Vida</span><span>${yo.maxHp}</span></div>` +
+    `<div class="fila"><span>Ataque</span><span>${yo.atk}</span></div>` +
+    `<div class="fila"><span>Defensa</span><span>${yo.def}</span></div>` +
+    `<div class="fila"><span>Crítico</span><span>${Math.round((yo.crit || .12) * 100)}%</span></div>` +
+    `<div class="fila"><span>Arma</span><span>${esc(ARMAS[yo.arma].nombre)} +${(yo.forja || {})[yo.arma] || 0}</span></div>` +
+    `<div class="fila"><span>Monstruos / jefes</span><span>${yo.kills} / ${yo.jefes}</span></div>`;
   if (tabInv === 'equipo') return pintarEquipo();
   if (tabInv === 'logros') return pintarLogros();
   if (tabInv === 'bestiario') return pintarBestiario();
@@ -3180,9 +3186,9 @@ function pintarInventario() {
   for (const id in tabla) {
     const d = tabla[id];
     const ico = tabInv === 'arma' ? `<img src="${A}armas/${d.icono}_item.png">` : `<img src="${A}skins/${d.img}.png">`;
-    const acc = !tiene.includes(id) ? '<span class="precio" style="color:#666">🔒 Mercader</span>'
-      : puesto === id ? '<span class="precio" style="color:#00ff88">✓ EQUIPADO</span>'
-      : `<button class="btn sec" data-equipar="${tabInv}" data-id="${id}">EQUIPAR</button>`;
+    const acc = !tiene.includes(id) ? '<span class="precio" style="color:var(--txt3)">🔒 Mercader</span>'
+      : puesto === id ? '<span class="precio" style="color:var(--ok)">✓ Equipado</span>'
+      : `<button class="btn sec" data-equipar="${tabInv}" data-id="${id}">Equipar</button>`;
     const mas = tabInv === 'arma' && tiene.includes(id) ? ' +' + ((yo.forja || {})[id] || 0) : '';
     h += tarjeta(ico, d.nombre + mas, d.desc, acc);
   }
@@ -3195,13 +3201,13 @@ function abrirRanking() { abrir('m-rank'); $('rank-lista').innerHTML = '<p class
 // lunes, asi un jugador nuevo tambien puede ganar) y el de siempre (nivel).
 function pintarRanking(r, sem, finSem, des) {
   const med = ['🥇', '🥈', '🥉'];
-  let h = '<p style="font-size:12px;color:#ffe600;margin-bottom:4px">🏆 Esta semana (experiencia ganada)</p>';
-  if (finSem) { const ms = finSem - Date.now(); const d = Math.floor(ms / 86400000), hh = Math.floor(ms / 3600000) % 24; h += `<p style="font-size:11px;color:rgba(255,255,255,.55);margin-bottom:6px">Termina en ${d} d ${hh} h. Premios: 🥇 oro ×400 tu nivel, objeto épico y título · 🥈 ×200 · 🥉 ×100.</p>`; }
-  h += (sem && sem.length) ? sem.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>${x.xp.toLocaleString('es')} XP · Nv ${x.lv}</span></div>`).join('') : '<p class="centro">Nadie ha cazado aún esta semana. ¡Es tu oportunidad!</p>';
-  h += '<p style="font-size:12px;color:#c084fc;margin:12px 0 4px">⭐ Los más fuertes (nivel)</p>';
+  let h = '<p style="font-size:12px;color:var(--txt);font-weight:600;margin-bottom:4px">🏆 Esta semana (experiencia ganada)</p>';
+  if (finSem) { const ms = finSem - Date.now(); const d = Math.floor(ms / 86400000), hh = Math.floor(ms / 3600000) % 24; h += `<p style="font-size:12px;color:var(--txt2);margin-bottom:6px">Termina en ${d} d ${hh} h. Premios: 🥇 oro ×400 tu nivel, objeto épico y título · 🥈 ×200 · 🥉 ×100.</p>`; }
+  h += (sem && sem.length) ? sem.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>${x.xp.toLocaleString('es')} XP · Nv ${x.lv}</span></div>`).join('') : '<p class="centro">Nadie ha cazado aún esta semana.</p>';
+  h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">⭐ Los más fuertes (nivel)</p>';
   h += r.length ? r.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>Nv ${x.lv} · ${x.k} caz.</span></div>`).join('') : '<p class="centro">Todavía nadie sube de nivel.</p>';
   // Desafios de mazmorra (Nv 60): el mejor +k de cada uno.
-  h += '<p style="font-size:12px;color:#ffd84a;margin:12px 0 4px">⚡ Desafíos de mazmorra (mejor +k)</p>';
+  h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">⚡ Desafíos de mazmorra (mejor +k)</p>';
   h += (des && des.length) ? des.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>⚡ +${x.k}</span></div>`).join('') : '<p class="centro" style="font-size:12px">Nadie ha vencido aún un Desafío. Se abren a nivel 60 en el portal de mazmorras.</p>';
   $('rank-lista').innerHTML = h;
 }
@@ -3212,19 +3218,19 @@ function resumenMuerte(m) {
   const g = m.golpes || [];
   const ult = g[g.length - 1];
   let h = '';
-  if (ult) h += `<p>Te venció: <b style="color:#ff7777">${esc(ult.n)}${ult.nv ? ' (Nv ' + ult.nv + ')' : ''}</b></p>`;
-  if (g.length) h += '<p style="font-size:12px;color:rgba(255,255,255,.6)">Últimos golpes: ' + g.map(x => esc(x.n) + ' −' + x.d).join(' · ') + '</p>';
+  if (ult) h += `<p>Te venció: <b style="color:var(--err)">${esc(ult.n)}${ult.nv ? ' (Nv ' + ult.nv + ')' : ''}</b></p>`;
+  if (g.length) h += '<p style="font-size:12px;color:var(--txt2)">Últimos golpes: ' + g.map(x => esc(x.n) + ' −' + x.d).join(' · ') + '</p>';
   let consejo = '';
   if (ult && ult.nv && yo && ult.nv >= yo.nivel + 3) consejo = 'Ese enemigo es de nivel bastante más alto que tú: sube un par de niveles en una zona de tu nivel (🗺️ tecla M).';
   else if (m.pw > 0) consejo = 'Tenías ' + m.pw + ' pociones: úsalas (tecla Q o el primer consumible) cuando tu vida baje de la mitad.';
   else if (!m.pw) consejo = 'Te quedaste sin pociones: compra en el Mercader o fabrícalas con hierbas en la Artesana Lila.';
   if (m.inst) consejo = 'En las mazmorras, sal de las zonas marcadas en el suelo e interrumpe los hechizos con barra naranja. Revives en la entrada.';
-  if (consejo) h += `<p style="margin-top:8px;color:#ffe600">💡 ${esc(consejo)}</p>`;
+  if (consejo) h += `<p style="margin-top:8px;color:var(--txt)">💡 ${esc(consejo)}</p>`;
   $('muerte-info').innerHTML = h;
   // Hasta Nv 10 se revive en la entrada de la misma zona (y sin perder XP).
   const novato = yo && yo.nivel < 10 && MAPAS[mapaId] && MAPAS[mapaId].zona && mapaId !== 'coliseo';
-  $('b-revivir').textContent = m.inst ? '↺ REVIVIR EN LA ENTRADA' : novato ? '↺ REVIVIR AQUÍ (ENTRADA DE LA ZONA)' : '↺ REVIVIR EN EL PUEBLO';
-  if (novato && !m.inst) h += '<p style="margin-top:6px;font-size:12px;color:#4ade80">Hasta nivel 10 morir no te quita experiencia.</p>';
+  $('b-revivir').textContent = m.inst ? '↺ Revivir en la entrada' : novato ? '↺ Revivir aquí (entrada de la zona)' : '↺ Revivir en el pueblo';
+  if (novato && !m.inst) h += '<p style="margin-top:6px;font-size:12px;color:var(--ok)">Hasta nivel 10 morir no te quita experiencia.</p>';
   $('muerte-info').innerHTML = h;
 }
 function morir() {
@@ -3268,7 +3274,7 @@ async function inicio() {
   const entrar = () => {
     const n = $('in-nombre').value.trim();
     if (!TG && !tokWeb) {
-      if (n.length < 3) { $('in-nombre').focus(); $('in-nombre').style.borderColor = '#ff3344'; return; }
+      if (n.length < 3) { $('in-nombre').focus(); $('in-nombre').style.borderColor = 'var(--err)'; return; }
       localStorage.setItem('dq_mmo_nombre', n);
     }
     $('carga').style.display = 'flex'; $('carga-s').textContent = 'Entrando al mundo…';

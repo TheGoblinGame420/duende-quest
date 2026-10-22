@@ -1,13 +1,13 @@
 {
-  "name": "DUENDE QUEST",
+  "name": "DUENDE QUEST — Juego de duendes gratis",
   "short_name": "Duende Quest",
-  "description": "Arcade shooter pixel-art de DUENDE QUEST: sobrevive oleadas, sube de nivel y gana $DUENDE.",
+  "description": "Juego arcade pixel-art gratis de duendes en el navegador: sobrevive oleadas, vence jefes y sube de nivel. Hecho en Perú.",
   "start_url": "/game.html",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#02020a",
-  "theme_color": "#00ff88",
+  "background_color": "#0b0f17",
+  "theme_color": "#0b0f17",
   "lang": "es",
   "icons": [
     {

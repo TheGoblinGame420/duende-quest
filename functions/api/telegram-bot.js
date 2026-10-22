@@ -16,6 +16,11 @@ const BOTONES_CREADOR = [
   [{ text: '👤 Creador: @ElDuendeOficial', url: CREADOR_TG }],
   [{ text: '📢 Canal oficial', url: CANAL_TG }, { text: '💬 Grupo oficial', url: GRUPO_TG }],
 ];
+// Seguridad: la misma frase en /start, /help y /mmo, y la pagina que la explica.
+// La URL no lleva guiones bajos: se puede poner tal cual en mensajes Markdown.
+const SEGURIDAD_URL = SITE_URL + '/seguridad.html';
+const TEXTO_SEGURIDAD = '🔒 Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado.';
+const BOTON_SEGURIDAD = [{ text: '🔒 Seguridad', url: SEGURIDAD_URL }];
 const DEXSCREENER_URL = 'https://api.dexscreener.com/latest/dex/tokens/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump';
 const PUMP_FUN_URL = 'https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump';
 
@@ -94,10 +99,10 @@ function fmtNum(n) {
 // ── Stars pricing ──
 const STAR_USD = 0.013;
 const STARS_PACKAGES = [
-  { label: '🌟 Starter', usd: 10 },
-  { label: '💎 Pro', usd: 25 },
-  { label: '🔥 Mega', usd: 50 },
-  { label: '👑 Whale', usd: 100 },
+  { label: 'Básico', usd: 10 },
+  { label: 'Estándar', usd: 25 },
+  { label: 'Grande', usd: 50 },
+  { label: 'Máximo', usd: 100 },
 ];
 
 function calcStarsPackages(priceUsd) {
@@ -125,8 +130,9 @@ async function createStarsInvoice(token, env, pkgIndex, tgId) {
   const firstBuy = await isFirstPurchase(env, tgId);
   const tokens = firstBuy ? pkg.tokens * 2 : pkg.tokens;
   const result = await tg(token, 'createInvoiceLink', {
-    title: `${firstBuy ? '🎁 OFERTA 1ª COMPRA 2x — ' : ''}${pkg.label} — ${tokens.toLocaleString()} $DUENDE`,
-    description: `${firstBuy ? '¡Bienvenida 2x! ' : ''}Compra ${tokens.toLocaleString()} tokens $DUENDE por ${pkg.stars} Stars (~$${pkg.usd} USD)`,
+    // Telegram rechaza la factura si el titulo pasa de 32 caracteres.
+    title: `${pkg.label}${firstBuy ? ' x2' : ''} · ${tokens.toLocaleString()} $DUENDE`.slice(0, 32),
+    description: `${firstBuy ? 'Primera compra: cantidad doble. ' : ''}${tokens.toLocaleString()} tokens $DUENDE por ${pkg.stars} Stars (~$${pkg.usd} USD). Se acreditan al instante en tu saldo del juego.`,
     payload: JSON.stringify({ pkg: pkgIndex, tokens, usd: pkg.usd, first_buy: firstBuy }),
     currency: 'XTR',
     prices: [{ label: `${tokens.toLocaleString()} $DUENDE`, amount: pkg.stars }],
@@ -156,15 +162,17 @@ async function handleStart(token, env, chatId, user, startPayload) {
   const referralLink = `https://t.me/duendequest_bot?start=ref_${user.id}`;
   await tg(token, 'sendMessage', {
     chat_id: chatId,
-    text: `🧌 *¡Bienvenido a DUENDE QUEST, ${user.first_name || 'Duende'}!*\n\n⚔️ Juego arcade play-to-earn en Solana\n💰 Gana tokens $DUENDE jugando\n🗺 Campaña de 15 etapas con jefes\n🌍 *DUENDE QUEST ONLINE* — el MMORPG estilo WoW: 4 clases, grupos, mazmorras con jefes, hermandades y 10 zonas hasta Nv 60\n💎 *Gana TON jugando:* desde Nv 15 los jefes dan mTON del fondo del día, si lo hay (1.000 = 1 TON), retiro desde 5 TON\n🏆 Compite en el ranking global\n\n${TEXTO_CREADOR}\n\n🎁 *Tu link de referido:*\n\`${referralLink}\`\n_Invita amigos y ambos ganan 500 $DUENDE_`,
+    text: `🧌 *Bienvenido a DUENDE QUEST, ${mdSeguro(user.first_name || 'Duende')}*\n\nJuego de duendes gratis y sin descargas: juega aquí en Telegram o en el navegador.\n\n🎮 *Arcade:* campaña de 15 etapas con jefes y ranking global.\n🌍 *DUENDE QUEST ONLINE:* MMORPG estilo WoW con 4 clases, grupos, mazmorras con jefes, hermandades y 10 zonas hasta el nivel 60.\n💎 *Recompensas en TON (opcional):* desde el nivel 15, los jefes del MMO dan mTON del fondo del día, si lo hay (1.000 mTON = 1 TON). Retiro desde 5 TON.\n🪙 *$DUENDE:* token del juego en Solana; también se gana jugando.\n\n${TEXTO_SEGURIDAD}\nMás información: ${SEGURIDAD_URL}\n\n${TEXTO_CREADOR}\n\n*Invita a un amigo* (500 $DUENDE para cada uno):\n\`${referralLink}\``,
     parse_mode: 'Markdown',
+    disable_web_page_preview: true,
     reply_markup: { inline_keyboard: [
-      [{ text: '🎮 JUGAR AHORA', web_app: { url: WEBAPP_URL } }],
-      [{ text: '🌍 DUENDE QUEST ONLINE (MMO)', web_app: { url: MMO_URL } }],
-      [{ text: '⭐ Comprar con Stars', callback_data: 'buy' }, { text: '🚀 Pump.fun', url: PUMP_FUN_URL }],
-      [{ text: '🏆 Ranking', callback_data: 'ranking' }, { text: '💹 Precio', callback_data: 'price' }],
-      [{ text: '📊 Mis Stats', callback_data: 'stats' }, { text: '🎁 Referidos', callback_data: 'referral' }],
+      [{ text: '🎮 Jugar', web_app: { url: WEBAPP_URL } }],
+      [{ text: '🌍 Jugar el MMO online', web_app: { url: MMO_URL } }],
+      [{ text: '🏆 Ranking', callback_data: 'ranking' }, { text: '📊 Mis estadísticas', callback_data: 'stats' }],
+      [{ text: '🎁 Invitar amigos', callback_data: 'referral' }, { text: '💹 Precio', callback_data: 'price' }],
+      [{ text: '⭐ Comprar con Stars', callback_data: 'buy' }, { text: '🪙 Pump.fun', url: PUMP_FUN_URL }],
       ...BOTONES_CREADOR,
+      BOTON_SEGURIDAD,
     ]},
   });
 }
@@ -180,19 +188,19 @@ async function handleRanking(token, env, chatId, messageId) {
   const best = new Map();
   if (Array.isArray(rows)) for (const s of rows) { const k = (s.username || '?').toLowerCase(); if (!best.has(k) || s.score > best.get(k).score) best.set(k, s); }
   const scores = [...best.values()].sort((a, b) => b.score - a.score).slice(0, 10);
-  let text = '🏆 *TOP 10 — DUENDE QUEST*\n\n';
+  let text = '🏆 *Top 10 — DUENDE QUEST*\n\n';
   if (scores.length === 0) text += '_Aún no hay puntuaciones._';
-  else { const medals = ['🥇','🥈','🥉']; scores.forEach((s,i) => { text += `${medals[i]||`${i+1}.`} *${mdSeguro(s.username)}* — ${s.score.toLocaleString()} pts (Wave ${s.wave})\n`; }); }
-  const opts = { chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 JUGAR', web_app: { url: WEBAPP_URL } }],[{ text: '🔄 Actualizar', callback_data: 'ranking' }, { text: '⌂ Menú', callback_data: 'menu' }]] } };
+  else { const medals = ['🥇','🥈','🥉']; scores.forEach((s,i) => { text += `${medals[i]||`${i+1}.`} *${mdSeguro(s.username)}* — ${s.score.toLocaleString()} pts (oleada ${s.wave})\n`; }); }
+  const opts = { chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 Jugar', web_app: { url: WEBAPP_URL } }],[{ text: '🔄 Actualizar', callback_data: 'ranking' }, { text: '⌂ Menú', callback_data: 'menu' }]] } };
   if (messageId) { opts.message_id = messageId; await tg(token, 'editMessageText', opts); } else await tg(token, 'sendMessage', opts);
 }
 
 async function handlePrice(token, chatId, messageId) {
   const p = await getPrice();
   let text;
-  if (!p || p.priceUsd === 0) text = '💹 *$DUENDE — Precio*\n\n_No se pudo obtener._';
-  else { const arrow = p.priceChange24h >= 0 ? '🟢 📈' : '🔴 📉'; text = `💹 *$DUENDE — Precio en vivo*\n\n💰 Precio: *$${p.priceUsd.toFixed(8)}*\n${arrow} 24h: *${p.priceChange24h >= 0 ? '+' : ''}${p.priceChange24h.toFixed(2)}%*\n📊 Vol 24h: *$${fmtNum(p.volume24h)}*\n🏦 Market Cap: *$${fmtNum(p.marketCap)}*\n💧 Liquidez: *$${fmtNum(p.liquidity)}*\n\n_Fuente: ${p.source}_`; }
-  const opts = { chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🚀 Comprar $DUENDE', url: PUMP_FUN_URL }],[{ text: '🔄 Actualizar', callback_data: 'price' }, { text: '⌂ Menú', callback_data: 'menu' }]] } };
+  if (!p || p.priceUsd === 0) text = '💹 *$DUENDE — Precio*\n\n_No se pudo obtener el precio ahora. Inténtalo en un momento._';
+  else { const arrow = p.priceChange24h >= 0 ? '📈' : '📉'; text = `💹 *$DUENDE — Precio de mercado*\n\nPrecio: *$${p.priceUsd.toFixed(8)}*\n${arrow} 24h: *${p.priceChange24h >= 0 ? '+' : ''}${p.priceChange24h.toFixed(2)}%*\nVolumen 24h: *$${fmtNum(p.volume24h)}*\nCapitalización: *$${fmtNum(p.marketCap)}*\nLiquidez: *$${fmtNum(p.liquidity)}*\n\nFuente: ${p.source}. El precio puede subir o bajar mucho; no es una inversión ni una recomendación.`; }
+  const opts = { chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🪙 Ver $DUENDE en Pump.fun', url: PUMP_FUN_URL }],[{ text: '🔄 Actualizar', callback_data: 'price' }, { text: '⌂ Menú', callback_data: 'menu' }]] } };
   if (messageId) { opts.message_id = messageId; await tg(token, 'editMessageText', opts); } else await tg(token, 'sendMessage', opts);
 }
 
@@ -200,15 +208,15 @@ async function handleStats(token, env, chatId, userId, messageId) {
   const tgId = String(userId);
   let profiles; try { profiles = await supabaseQuery(env, `profiles?telegram_id=eq.${tgId}&select=username,best_score,best_wave,total_coins,games_played,duende_balance`); } catch(e) { profiles = []; }
   let text;
-  if (!Array.isArray(profiles) || profiles.length === 0) text = '📊 *Tus Stats*\n\n_No tienes perfil. ¡Juega tu primera partida!_';
-  else { const p = profiles[0]; text = `📊 *Stats de ${p.username||'Duende'}*\n\n🏆 Mejor Score: *${Number(p.best_score||0).toLocaleString()}*\n🌊 Mejor Wave: *${p.best_wave||0}*\n🪙 Monedas: *${Number(p.total_coins||0).toLocaleString()}*\n🎮 Partidas: *${p.games_played||0}*\n💎 $DUENDE: *${Number(p.duende_balance||0).toLocaleString()}*`; }
-  const opts = { chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 JUGAR', web_app: { url: WEBAPP_URL } }],[{ text: '🔄 Actualizar', callback_data: 'stats' }, { text: '⌂ Menú', callback_data: 'menu' }]] } };
+  if (!Array.isArray(profiles) || profiles.length === 0) text = '📊 *Tus estadísticas*\n\n_Aún no tienes perfil. Juega una partida para crearlo._';
+  else { const p = profiles[0]; text = `📊 *Estadísticas de ${mdSeguro(p.username||'Duende')}*\n\n🏆 Mejor puntuación: *${Number(p.best_score||0).toLocaleString()}*\n🌊 Mejor oleada: *${p.best_wave||0}*\n🪙 Monedas: *${Number(p.total_coins||0).toLocaleString()}*\n🎮 Partidas: *${p.games_played||0}*\n💎 $DUENDE: *${Number(p.duende_balance||0).toLocaleString()}*`; }
+  const opts = { chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 Jugar', web_app: { url: WEBAPP_URL } }],[{ text: '🔄 Actualizar', callback_data: 'stats' }, { text: '⌂ Menú', callback_data: 'menu' }]] } };
   if (messageId) { opts.message_id = messageId; await tg(token, 'editMessageText', opts); } else await tg(token, 'sendMessage', opts);
 }
 
 async function handleReferralCmd(token, chatId, userId, messageId) {
   const referralLink = `https://t.me/duendequest_bot?start=ref_${userId}`;
-  await tg(token, 'sendMessage', { chat_id: chatId, text: `🎁 *Referidos*\n\n📎 *Tu link:*\n\`${referralLink}\`\n\n_Comparte tu link. Ambos ganan 500 $DUENDE._`, parse_mode: 'Markdown' });
+  await tg(token, 'sendMessage', { chat_id: chatId, text: `🎁 *Invita a un amigo*\n\nTu link:\n\`${referralLink}\`\n\nCuando alguien nuevo entra con tu link, cada uno recibe 500 $DUENDE (hasta 20 amigos).`, parse_mode: 'Markdown' });
 }
 
 async function handleReferral(token, env, referrerId, newUser) {
@@ -230,7 +238,7 @@ async function handleReferral(token, env, referrerId, newUser) {
     if (!Array.isArray(ins) || ins.length !== 1) return;
     await supabaseQuery(env, 'rpc/add_duende_by_tgid', { method: 'POST', body: { p_tg_id: String(referrerId), p_amount: 500 } });
     await supabaseQuery(env, 'rpc/add_duende_by_tgid', { method: 'POST', body: { p_tg_id: String(newUser.id), p_amount: 500 } });
-    await tg(token, 'sendMessage', { chat_id: referrerId, text: `🎉 *¡Nuevo referido!*\n\n${newUser.first_name||'Alguien'} se unió.\n💎 +500 $DUENDE`, parse_mode: 'Markdown' });
+    await tg(token, 'sendMessage', { chat_id: referrerId, text: `🎁 *Nuevo referido*\n\n${mdSeguro(newUser.first_name||'Alguien')} se unió con tu link.\n+500 $DUENDE añadidos a tu saldo.`, parse_mode: 'Markdown' });
   } catch(e) {}
 }
 
@@ -238,10 +246,10 @@ async function handleBuy(token, chatId, userId, messageId) {
   const price = await getPrice();
   const priceUsd = price?.priceUsd || 0.0000001;
   const packages = calcStarsPackages(priceUsd);
-  let text = `⭐ *COMPRAR $DUENDE CON STARS*\n\n💰 Precio actual: *$${priceUsd.toFixed(8)}*\n_Paga con tarjeta de crédito via Telegram Stars_\n\n`;
-  packages.forEach(pkg => { text += `${pkg.label}\n   ⭐ ${pkg.stars} Stars (~$${pkg.usd}) → *${pkg.tokens.toLocaleString()} $DUENDE*\n\n`; });
-  text += '_Los tokens se acreditan al instante_';
-  const opts = { chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: { inline_keyboard: packages.map((pkg,i) => [{ text: `${pkg.label} — ⭐${pkg.stars} Stars`, callback_data: `buy_${i}` }]) } };
+  let text = `⭐ *Comprar $DUENDE con Telegram Stars*\n\nPrecio actual: *$${priceUsd.toFixed(8)}*\nPagas con Stars dentro de Telegram (las Stars se compran con tarjeta en Telegram).\n\n`;
+  packages.forEach(pkg => { text += `*${pkg.label}:* ${pkg.stars} Stars (~$${pkg.usd}) → ${pkg.tokens.toLocaleString()} $DUENDE\n`; });
+  text += '\nLos tokens se acreditan al instante en tu saldo del juego. La cantidad depende del precio del momento, que puede variar mucho: compra solo lo que estés dispuesto a gastar.';
+  const opts = { chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: { inline_keyboard: packages.map((pkg,i) => [{ text: `⭐ ${pkg.label} · ${pkg.stars} Stars`, callback_data: `buy_${i}` }]) } };
   if (messageId) { opts.message_id = messageId; await tg(token, 'editMessageText', opts); } else await tg(token, 'sendMessage', opts);
 }
 
@@ -361,11 +369,11 @@ async function handleAvisos(token, context, chatId, userId, payload) {
 }
 
 async function handleCreador(token, chatId) {
-  await tg(token, 'sendMessage', { chat_id: chatId, text: `🧌 *DUENDE QUEST — ¿Quién está detrás?*\n\nEl juego lo crea y mantiene *El Duende* desde Perú 🇵🇪. Estos son los únicos canales oficiales: desconfía de cualquier otra cuenta que diga ser del juego.\n\n${TEXTO_CREADOR}\n🤖 *Bot oficial:* @duendequest\\_bot`, parse_mode: 'Markdown', disable_web_page_preview: true, reply_markup: { inline_keyboard: [...BOTONES_CREADOR, [{ text: '⌂ Menú', callback_data: 'menu' }]] } });
+  await tg(token, 'sendMessage', { chat_id: chatId, text: `🧌 *DUENDE QUEST — ¿Quién está detrás?*\n\nEl juego lo crea y mantiene *El Duende* desde Perú 🇵🇪. Estos son los únicos canales oficiales: desconfía de cualquier otra cuenta que diga ser del juego.\n\n${TEXTO_CREADOR}\n🤖 *Bot oficial:* @duendequest\\_bot\n\n${TEXTO_SEGURIDAD}`, parse_mode: 'Markdown', disable_web_page_preview: true, reply_markup: { inline_keyboard: [...BOTONES_CREADOR, BOTON_SEGURIDAD, [{ text: '⌂ Menú', callback_data: 'menu' }]] } });
 }
 
 async function handleHelp(token, chatId) {
-  await tg(token, 'sendMessage', { chat_id: chatId, text: `🧌 *DUENDE QUEST — Comandos*\n\n/start — Menú principal\n/play — Abrir el juego\n/mmo — DUENDE QUEST ONLINE (MMORPG)\n/avisos — Avisos para volver al MMO (on / off)\n/ranking — Top 10\n/price — Precio $DUENDE\n/stats — Tus estadísticas\n/buy — Comprar $DUENDE con Stars 💳\n/referral — Tu link de referidos\n/creador — Creador y canales oficiales\n/help — Comandos\n\n${TEXTO_CREADOR}`, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 JUGAR', web_app: { url: WEBAPP_URL } }]] } });
+  await tg(token, 'sendMessage', { chat_id: chatId, text: `🧌 *DUENDE QUEST — Comandos*\n\n/start — Menú principal\n/play — Abrir el juego\n/mmo — DUENDE QUEST ONLINE (MMORPG)\n/avisos — Avisos para volver al MMO (on / off)\n/ranking — Top 10\n/stats — Tus estadísticas\n/referral — Tu link para invitar amigos\n/price — Precio de $DUENDE\n/buy — Comprar $DUENDE con Stars\n/creador — Creador y canales oficiales\n/help — Esta ayuda\n\n${TEXTO_SEGURIDAD}\nMás información: ${SEGURIDAD_URL}\n\n${TEXTO_CREADOR}`, parse_mode: 'Markdown', disable_web_page_preview: true, reply_markup: { inline_keyboard: [[{ text: '🎮 Jugar', web_app: { url: WEBAPP_URL } }], BOTON_SEGURIDAD] } });
 }
 
 // ── /admin: métricas privadas (solo el dueño, via env ADMIN_TG_ID) ──
@@ -419,7 +427,7 @@ async function handlePay(token, env, context, chatId, userId, payload) {
   // avisar al jugador
   if (r.telegram_id && /^\d+$/.test(String(r.telegram_id))) {
     try {
-      await tg(token, 'sendMessage', { chat_id: r.telegram_id, text: `🎉 *¡Tu canje fue enviado!*\n\n💎 ${Number(r.duende_amount).toLocaleString()} $DUENDE están en camino a tu wallet${txsig ? `\n🔗 https://solscan.io/tx/${txsig}` : ''}\n\n¡Gracias por jugar, duende! 🧝`, parse_mode: 'Markdown' });
+      await tg(token, 'sendMessage', { chat_id: r.telegram_id, text: `✅ *Canje enviado*\n\n${Number(r.duende_amount).toLocaleString()} $DUENDE están en camino a tu wallet.${txsig ? `\nComprobante: https://solscan.io/tx/${txsig}` : ''}\n\nGracias por jugar.`, parse_mode: 'Markdown' });
     } catch (e) {}
   }
 }
@@ -446,24 +454,24 @@ async function handleLive(token, env, context, chatId, userId, payload) {
 
   // HTML: no se rompe con los guiones bajos de las URLs
   const msgHtml =
-    `🔴🔴 <b>¡EL DUENDE ESTÁ EN VIVO!</b> 🔴🔴\n\n` +
+    `🔴 <b>El Duende está en vivo</b>\n\n` +
     `${playingLine}${noteLine}\n\n` +
-    `🧝 Mientras ves, juega <b>DUENDE QUEST</b> y gana $DUENDE\n` +
+    `🧝 Mientras ves, puedes jugar <b>DUENDE QUEST</b> gratis en Telegram (con recompensas en $DUENDE)\n` +
     `🪙 $DUENDE en pump.fun`;
   // Versión Discord (texto plano con ** y links visibles)
   const msgDiscord =
-    `🔴🔴 **¡EL DUENDE ESTÁ EN VIVO!** 🔴🔴\n\n` +
+    `🔴 **El Duende está en vivo**\n\n` +
     `${(game ? `${emoji} Jugando: **${game}**` : '🎮 Stream en vivo')}${noteLine}\n\n` +
-    `👉 **Entra ahora:** ${kick}\n` +
-    `🧝 Juega y gana $DUENDE: https://t.me/duendequest_bot\n` +
-    `🪙 Compra $DUENDE: ${PUMP_FUN_URL}`;
+    `**Ver el stream:** ${kick}\n` +
+    `🧝 Jugar DUENDE QUEST (gratis, con recompensas en $DUENDE): https://t.me/duendequest_bot\n` +
+    `🪙 $DUENDE en pump.fun: ${PUMP_FUN_URL}`;
 
   const okD = await postDiscord(env, msgDiscord);
   let okT = false;
   if (context.env.TG_CHANNEL_ID) {
     try {
       const r = await tg(token, 'sendMessage', { chat_id: context.env.TG_CHANNEL_ID, text: msgHtml, parse_mode: 'HTML', disable_web_page_preview: true,
-        reply_markup: { inline_keyboard: [[{ text: '🔴 VER STREAM EN KICK', url: kick }], [{ text: '🎮 JUGAR DUENDE QUEST', url: 'https://t.me/duendequest_bot' }]] } });
+        reply_markup: { inline_keyboard: [[{ text: '🔴 Ver en Kick', url: kick }], [{ text: '🎮 Jugar DUENDE QUEST', url: 'https://t.me/duendequest_bot' }]] } });
       okT = !!r.ok;
     } catch (e) {}
   }
@@ -471,7 +479,7 @@ async function handleLive(token, env, context, chatId, userId, payload) {
 }
 
 async function handlePlay(token, chatId) {
-  await tg(token, 'sendMessage', { chat_id: chatId, text: '🎮 *¡A jugar!*', parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 ABRIR JUEGO', web_app: { url: WEBAPP_URL } }]] } });
+  await tg(token, 'sendMessage', { chat_id: chatId, text: '🎮 *DUENDE QUEST*\n\nToca el botón para abrir el juego.', parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 Abrir el juego', web_app: { url: WEBAPP_URL } }]] } });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -532,7 +540,7 @@ async function onRequestPost(context) {
           const reg = await supabaseQuery(env, 'stars_purchases', { method: 'POST', body: { telegram_id: tgId, amount_usd: +(starsPaid * STAR_USD).toFixed(2), amount_stars: starsPaid, tokens_credited: 0, tx_id: chargeId } });
           if (!Array.isArray(reg) || reg.length !== 1) return new Response('OK');
           const rsp = await mmoInterno(context.env, 'pedidoPagado', { codigo: payload.mmo, stars: starsPaid, charge: chargeId, tgId });
-          await tg(token, 'sendMessage', { chat_id: chatId, text: `✅ *Pago recibido* (${starsPaid} ⭐)\n\nTu compra "${(rsp && rsp.nombre) || 'del MMO'}" (pedido #${payload.mmo}) la entrega El Duende en persona. Te avisamos aquí apenas esté en tu personaje.`, parse_mode: 'Markdown' });
+          await tg(token, 'sendMessage', { chat_id: chatId, text: `✅ *Pago recibido* (${starsPaid} Stars)\n\nCompra: "${(rsp && rsp.nombre) || 'del MMO'}" · pedido #${payload.mmo}\n\nLa entrega es manual: El Duende la revisa y la añade a tu personaje. Te avisaremos aquí apenas esté lista. Guarda el número de pedido por si necesitas reclamar.`, parse_mode: 'Markdown' });
           return new Response('OK');
         }
 
@@ -541,7 +549,7 @@ async function onRequestPost(context) {
           const reg = await supabaseQuery(env, 'stars_purchases', { method: 'POST', body: { telegram_id: tgId, amount_usd: starsPaid * STAR_USD, amount_stars: starsPaid, tokens_credited: 0, tx_id: chargeId } });
           if (!Array.isArray(reg) || reg.length !== 1) return new Response('OK');   // reintento del webhook
           await supabaseQuery(env, 'skin_purchases', { method: 'POST', body: { telegram_id: tgId, skin_id: payload.skin_id, payment_type: 'stars', amount_paid: starsPaid, tx_signature: chargeId } });
-          await tg(token, 'sendMessage', { chat_id: chatId, text: `✅ *¡Skin desbloqueada!*\n\n🎨 Ya puedes equiparla en el juego\n⭐ ${starsPaid} Stars`, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 JUGAR', web_app: { url: WEBAPP_URL } }]] } });
+          await tg(token, 'sendMessage', { chat_id: chatId, text: `✅ *Skin desbloqueada*\n\nYa puedes equiparla en el juego.\nPagado: ${starsPaid} Stars`, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 Jugar', web_app: { url: WEBAPP_URL } }]] } });
           return new Response('OK');
         }
 
@@ -561,9 +569,9 @@ async function onRequestPost(context) {
           if (!Array.isArray(reg) || reg.length !== 1) return new Response('OK');
           await supabaseQuery(env, 'rpc/add_duende_by_tgid', { method: 'POST', body: { p_tg_id: tgId, p_amount: tokens } });
         }
-        await tg(token, 'sendMessage', { chat_id: chatId, text: `✅ *¡Pago exitoso!*\n\n💎 +${tokens.toLocaleString()} $DUENDE acreditados\n⭐ ${starsPaid} Stars`, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 JUGAR', web_app: { url: WEBAPP_URL } }],[{ text: '⭐ Comprar más', callback_data: 'buy' }]] } });
+        await tg(token, 'sendMessage', { chat_id: chatId, text: `✅ *Pago completado*\n\n+${tokens.toLocaleString()} $DUENDE añadidos a tu saldo del juego.\nPagado: ${starsPaid} Stars`, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 Jugar', web_app: { url: WEBAPP_URL } }],[{ text: '⭐ Comprar más', callback_data: 'buy' }]] } });
       } catch(e) {
-        await tg(token, 'sendMessage', { chat_id: chatId, text: '⚠️ Pago recibido pero error acreditando tokens.' });
+        await tg(token, 'sendMessage', { chat_id: chatId, text: '⚠️ Recibimos tu pago, pero hubo un error al acreditar los tokens. Escribe a @ElDuendeOficial (creador oficial) con la fecha y la cantidad de Stars para resolverlo.' });
       }
       return new Response('OK');
     }
@@ -580,8 +588,8 @@ async function onRequestPost(context) {
       if (data.startsWith('buy_')) {
         const pkgIndex = parseInt(data.replace('buy_', ''), 10);
         const invoiceUrl = await createStarsInvoice(token, env, pkgIndex, String(user.id));
-        if (invoiceUrl) await tg(token, 'sendMessage', { chat_id: chatId, text: '⭐ Toca para pagar:', reply_markup: { inline_keyboard: [[{ text: '💳 Pagar con Stars', url: invoiceUrl }]] } });
-        else await tg(token, 'sendMessage', { chat_id: chatId, text: '❌ Error creando factura.' });
+        if (invoiceUrl) await tg(token, 'sendMessage', { chat_id: chatId, text: '⭐ Toca el botón para pagar con Stars. El pago se hace dentro de Telegram.', reply_markup: { inline_keyboard: [[{ text: '💳 Pagar con Stars', url: invoiceUrl }]] } });
+        else await tg(token, 'sendMessage', { chat_id: chatId, text: '❌ No se pudo crear la factura. Inténtalo de nuevo en un momento.' });
         return new Response('OK');
       }
 
@@ -623,13 +631,13 @@ async function onRequestPost(context) {
         case '/start':
           // Invitacion al MMO: t.me/duendequest_bot?start=mmo_<codigo>
           if (/^mmo_[a-z0-9]{6}$/.test(payload || '')) {
-            await tg(token, 'sendMessage', { chat_id: chatId, text: '🤝 *¡Un amigo te invita a DUENDE QUEST ONLINE!*\n\nEl MMORPG de los duendes al estilo WoW: elige tu clase, haz grupo con tu amigo y entrad juntos a las mazmorras. Cuando llegues a nivel 10, los dos ganáis oro.', parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🌍 ENTRAR AL MUNDO', web_app: { url: MMO_URL + '?ref=' + payload.slice(4) } }]] } });
+            await tg(token, 'sendMessage', { chat_id: chatId, text: '🤝 *Un amigo te invita a DUENDE QUEST ONLINE*\n\nMMORPG de duendes al estilo WoW, gratis y sin descargas: elige tu clase, haz grupo con tu amigo y entren juntos a las mazmorras. Cuando llegues al nivel 10, los dos reciben oro del juego.\n\n' + TEXTO_SEGURIDAD, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🌍 Entrar al mundo', web_app: { url: MMO_URL + '?ref=' + payload.slice(4) } }]] } });
             break;
           }
           await handleStart(token, env, chatId, user, payload); break;
         case '/play': case '/jugar': await handlePlay(token, chatId); break;
         case '/mmo': case '/online':
-          await tg(token, 'sendMessage', { chat_id: chatId, text: '🌍 *DUENDE QUEST ONLINE*\n\nEl MMORPG de los duendes, al estilo World of Warcraft: elige tu clase (Guerrero, Mago, Sacerdote o Pícaro), forma grupo con amigos, entra a 3 mazmorras con jefes que hay que esquivar e interrumpir, funda tu hermandad, consigue montura y sube hasta el nivel 60 en 10 zonas. Jefe mundial cada 30 minutos.\n\n💎 *Play to earn:* desde nivel 15 los jefes, el jefe mundial y la caza del día dan mTON (1.000 mTON = 1 TON). Desde 5 TON retiras a tu wallet TON.', parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🌍 ENTRAR AL MUNDO', web_app: { url: MMO_URL } }]] } });
+          await tg(token, 'sendMessage', { chat_id: chatId, text: '🌍 *DUENDE QUEST ONLINE*\n\nMMORPG de duendes al estilo World of Warcraft, gratis y sin descargas. Elige tu clase (Guerrero, Mago, Sacerdote o Pícaro), forma grupo con amigos, entra a 3 mazmorras con jefes que hay que esquivar e interrumpir, funda tu hermandad, consigue montura y sube hasta el nivel 60 en 10 zonas. Jefe mundial cada 30 minutos.\n\n💎 *Recompensas en TON (opcional):* desde el nivel 15, los jefes, el jefe mundial y la caza del día dan mTON del fondo del día, si lo hay (1.000 mTON = 1 TON). Desde 5 TON puedes pedir el retiro a tu wallet TON; cada retiro se revisa y se paga a mano.\n\n' + TEXTO_SEGURIDAD, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🌍 Entrar al mundo', web_app: { url: MMO_URL } }], BOTON_SEGURIDAD] } });
           break;
         case '/ranking': case '/top': await handleRanking(token, env, chatId); break;
         case '/price': case '/precio': await handlePrice(token, chatId); break;

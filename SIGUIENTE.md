@@ -1369,6 +1369,23 @@ Sabueso) vencida y ya en las Colinas Rojas. Antes: 75 muertes en 40 min y
 Nv 5. Script: `ret/jugar.mjs` en el scratchpad de la sesión (variable PJ =
 puerto del servidor local).
 
+**Diseño serio y confiable + SEO (22-oct, ?v=43):** el dueño dijo que se veía
+"a estafa e inseguro". Guía común: paleta sobria (fondo #0b0f17, primario
+azul #3b82f6, oro solo para recompensas), sans-serif para leer y pixel solo
+en títulos, un botón principal por vista, sin brillos ni parpadeos en
+dinero, textos sin hype y la frase "🔒 Nunca te pediremos contraseñas,
+frases semilla ni pagos por mensaje privado." en wallet, tienda, premios y
+bot. Agentes por archivo: mmo/index.html (tokens CSS nuevos, inicio, SEO),
+mmo/js/client.js (vistas y textos con var(--...)), telegram/index.html,
+game.html, index.html, terminos/privacidad + seguridad.html (nueva),
+telegram-bot.js (textos; además mdSeguro en nombres y título de factura
+≤32), robots.txt + sitemap.xml + manifest.json. Se quitaron mensajes de
+"Game Over" con cifras inventadas al azar (hub y arcade). En las páginas
+legales se pusieron valores prudentes que el dueño debe confirmar: titular
+"su creador", envíos de chicha dentro del Perú (otros países caso por
+caso), la conversación con la dirección se borra al confirmar la entrega,
+y se escribe a ganadores desde @ElDuendeOficial.
+
 Sin hacer: avisos a la hora habitual de cada uno (el cron de las 17 UTC ya
 usa 4 de 5 disparadores del plan gratis), y final de juego para D30 (1→60 se
 juega en 5-8 h). Ojo: la bienvenida del bot aún habla de $DUENDE en Solana

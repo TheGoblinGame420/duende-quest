@@ -5,16 +5,44 @@
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Duende Quest Online</title>
-<meta name="description" content="DUENDE QUEST ONLINE — el MMORPG de los duendes al estilo WoW: 4 clases con su papel (tanque, sanador, daño), grupos, mazmorras con jefes, hermandades, monturas y 10 zonas hasta el nivel 60. Gratis en el navegador o en Telegram.">
-<meta name="theme-color" content="#0a0418">
+<title>Duende Quest Online · MMORPG gratis en el navegador</title>
+<meta name="description" content="Juego RPG online gratis en el navegador o en Telegram, sin descargas: 4 clases, grupos, mazmorras con jefes y 10 zonas hasta el nivel 60. Hecho en Perú.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://duende-quest.alfonso12hc.workers.dev/mmo/">
+<meta name="theme-color" content="#0b0f17">
 <meta property="og:type" content="website">
-<meta property="og:title" content="DUENDE QUEST ONLINE — el MMORPG de los duendes">
-<meta property="og:description" content="Elige Guerrero, Mago, Sacerdote o Pícaro, forma grupo y entra a mazmorras con jefes de verdad. Hermandades, monturas, 10 zonas hasta Nv 60 y jefe mundial cada 30 minutos. Gratis en el navegador o en Telegram.">
+<meta property="og:locale" content="es_PE">
+<meta property="og:site_name" content="Duende Quest">
+<meta property="og:title" content="Duende Quest Online · MMORPG gratis en el navegador">
+<meta property="og:description" content="Elige Guerrero, Mago, Sacerdote o Pícaro, forma grupo y entra a mazmorras con jefes. Gratis, sin descargas, en el navegador o en Telegram.">
 <meta property="og:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/mmo_banner.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Duende Quest Online: duendes en pixel art en un mundo de fantasía">
 <meta property="og:url" content="https://duende-quest.alfonso12hc.workers.dev/mmo/">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Duende Quest Online · MMORPG gratis en el navegador">
+<meta name="twitter:description" content="Juego RPG online gratis: clases, grupos, mazmorras y 10 zonas. Sin descargas, en el navegador o en Telegram.">
 <meta name="twitter:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/mmo_banner.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Duende Quest Online",
+  "url": "https://duende-quest.alfonso12hc.workers.dev/mmo/",
+  "image": "https://duende-quest.alfonso12hc.workers.dev/assets/mmo_banner.png",
+  "description": "MMORPG gratuito de duendes en pixel art: 4 clases, grupos, mazmorras con jefes, hermandades y 10 zonas hasta el nivel 60. Se juega en el navegador o en Telegram, sin descargas.",
+  "genre": ["RPG", "MMORPG"],
+  "gamePlatform": ["Web Browser", "Telegram"],
+  "applicationCategory": "Game",
+  "operatingSystem": "Any",
+  "playMode": ["SinglePlayer", "MultiPlayer", "CoOp"],
+  "inLanguage": "es",
+  "isAccessibleForFree": true,
+  "author": { "@type": "Person", "name": "El Duende", "url": "https://t.me/ElDuendeOficial" },
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "availability": "https://schema.org/InStock" }
+}
+</script>
 <link rel="manifest" href="/mmo/manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Duende Online">
@@ -25,27 +53,40 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="/js/config.js"></script>
 <style>
-:root{--bg:#07030f;--panel:rgba(12,6,26,.94);--borde:rgba(192,132,252,.35);--verde:#00ff88;--amarillo:#ffe600;--rosa:#ff3cf0;--cian:#00eeff;--rojo:#ff3344;}
+/* ── Tokens (guia de diseno, oct 2026). Las variables viejas (--verde, --amarillo,
+   --rosa, --cian, --rojo) siguen existiendo porque client.js las usa, pero ahora
+   apuntan a tonos sobrios. ── */
+:root{
+  --bg:#0b0f17;--panel:#121826;--panel2:#182033;--borde:#263049;
+  --txt:#e6e9f0;--txt2:#9aa3b5;--txt3:#6b7489;
+  --pri:#3b82f6;--pri2:#2563eb;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444;--oro:#f2c14e;
+  --verde:#22c55e;--amarillo:#f2c14e;--rosa:#a78bfa;--cian:#60a5fa;--rojo:#ef4444;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --pixel:'Press Start 2P',monospace;
+  --sombra:0 4px 16px rgba(0,0,0,.35);
+  --radio:10px;
+}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-html,body{height:100%;background:var(--bg);color:#fff;font-family:'Press Start 2P',monospace;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;}
+html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--pixel);overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;}
+a{color:var(--cian);}
 #app{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;}
 #escena{position:relative;width:100%;flex:1 1 auto;display:flex;align-items:center;justify-content:center;min-height:0;}
-#gc{display:block;image-rendering:pixelated;image-rendering:crisp-edges;background:#000;box-shadow:0 0 40px rgba(124,58,237,.25);}
+#gc{display:block;image-rendering:pixelated;image-rendering:crisp-edges;background:#000;box-shadow:var(--sombra);}
 #hud{position:absolute;inset:0;pointer-events:none;}
 #hud .caja{position:absolute;pointer-events:auto;}
 
 /* marcos de unidad (jugador, objetivo, grupo) al estilo WoW */
-.uf{display:flex;gap:6px;align-items:flex-start;background:var(--panel);border:1px solid var(--borde);border-radius:9px;padding:5px 8px 5px 5px;}
-.uf .ret{position:relative;width:42px;height:42px;flex:0 0 42px;border-radius:50%;border:2px solid #ffd84a;background:radial-gradient(circle at 50% 35%,#2a1846,#0b0616);}
+.uf{display:flex;gap:6px;align-items:flex-start;background:var(--panel);border:1px solid var(--borde);border-radius:var(--radio);padding:5px 8px 5px 5px;box-shadow:var(--sombra);}
+.uf .ret{position:relative;width:42px;height:42px;flex:0 0 42px;border-radius:50%;border:2px solid rgba(242,193,78,.75);background:radial-gradient(circle at 50% 35%,#1f2a42,#0b0f17);}
 .uf .ret img,.uf .ret canvas{position:absolute;inset:2px;width:calc(100% - 4px);height:calc(100% - 4px);object-fit:contain;image-rendering:pixelated;border-radius:50%;}
-.uf .ret b{position:absolute;left:-5px;bottom:-5px;min-width:17px;height:17px;padding:0 3px;border-radius:9px;background:#120a20;border:1px solid #ffd84a;font-size:6px;line-height:15px;text-align:center;color:#ffe600;}
+.uf .ret b{position:absolute;left:-5px;bottom:-5px;min-width:17px;height:17px;padding:0 3px;border-radius:9px;background:var(--panel2);border:1px solid var(--oro);font-size:6px;line-height:15px;text-align:center;color:var(--oro);}
 .uf .cu{flex:1;min-width:0;}
 .uf .nm{font-size:7px;display:flex;justify-content:space-between;gap:6px;margin:1px 0 4px;white-space:nowrap;overflow:hidden;}
-.uf .nm small{font-size:6px;opacity:.85;}
+.uf .nm small{font-size:6px;color:var(--txt2);}
 #uf-yo{left:8px;top:8px;width:206px;}
 #uf-obj{left:222px;top:8px;width:206px;display:none;}
-#uf-obj.hostil .ret{border-color:#ff3344;}
-#uf-obj.amigo .ret{border-color:#00ff88;}
+#uf-obj.hostil .ret{border-color:var(--err);}
+#uf-obj.amigo .ret{border-color:var(--ok);}
 #hud.estrecho #uf-yo{width:172px;}
 #hud.estrecho #uf-obj{left:8px;top:66px;width:172px;}
 .barra{height:9px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;margin-bottom:3px;position:relative;}
@@ -55,195 +96,205 @@ html,body{height:100%;background:var(--bg);color:#fff;font-family:'Press Start 2
 .barra.hp.bajo>i{background:linear-gradient(90deg,#b91c1c,#f87171);}
 .barra.rc{height:7px;}
 .barra.rc>span{line-height:7px;font-size:5px;}
-.barra.rc>i{background:#3b82f6;}
+.barra.rc>i{background:var(--pri);}
 .cps{display:flex;gap:3px;height:7px;margin-top:1px;}
 .cps:empty{display:none;}
 .cps i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(0,0,0,.6);}
-.cps i.on{background:#ff3344;box-shadow:0 0 5px #ff3344;}
+.cps i.on{background:var(--err);}
 .auras{display:flex;gap:2px;flex-wrap:wrap;margin-top:3px;}
 .au{width:17px;height:17px;position:relative;border:1px solid #16a34a;border-radius:3px;background:#000;overflow:hidden;}
-.au.mala{border-color:#ef4444;}
+.au.mala{border-color:var(--err);}
 .au img{width:100%;height:100%;image-rendering:pixelated;}
 .au span{position:absolute;right:0;bottom:0;font-size:5px;line-height:6px;background:rgba(0,0,0,.7);padding:0 1px;color:#fff;}
-.castm{display:none;height:8px;margin-top:3px;border:1px solid rgba(255,153,0,.6);}
-.castm>i{background:linear-gradient(90deg,#ff9900,#ffe600);transition:none;}
+.castm{display:none;height:8px;margin-top:3px;border:1px solid rgba(245,158,11,.6);}
+.castm>i{background:linear-gradient(90deg,#d97706,var(--warn));transition:none;}
 .castm.noint{border-color:rgba(160,160,160,.6);}
 .castm.noint>i{background:linear-gradient(90deg,#888,#ccc);}
-#monedero{left:8px;top:64px;font-size:7px;color:var(--amarillo);display:flex;align-items:center;gap:5px;background:var(--panel);border:1px solid var(--borde);border-radius:6px;padding:3px 7px;}
+#monedero{left:8px;top:64px;font-size:7px;color:var(--oro);display:flex;align-items:center;gap:5px;background:var(--panel);border:1px solid var(--borde);border-radius:8px;padding:3px 7px;}
 #monedero img{width:12px;height:12px;image-rendering:pixelated;}
 #monedero .mton{color:var(--cian);cursor:pointer;margin-left:6px;}
 #hud.estrecho #monedero{display:none;}
-.req{display:flex;justify-content:space-between;font-size:8px;padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.06);}
-.req .si{color:var(--verde);} .req .no{color:#ff7777;}
+.req{display:flex;justify-content:space-between;gap:8px;font-family:var(--sans);font-size:13px;line-height:1.4;padding:7px 4px;border-bottom:1px solid var(--borde);}
+.req .si{color:var(--ok);font-weight:600;} .req .no{color:#f87171;font-weight:600;}
 .saldo{text-align:center;margin:6px 0 12px;}
-.saldo b{display:block;font-size:16px;color:var(--cian);text-shadow:0 0 12px rgba(0,238,255,.5);}
-.saldo small{font-family:system-ui,sans-serif;font-size:12px;color:rgba(255,255,255,.6);}
+.saldo b{display:block;font-size:16px;color:var(--cian);}
+.saldo small{display:block;margin-top:6px;font-family:var(--sans);font-size:13px;line-height:1.45;color:var(--txt2);}
 /* seguimiento de misiones (derecha, bajo el minimapa) */
 #seguimiento{right:8px;top:100px;max-width:200px;text-align:right;pointer-events:none!important;}
 #h-tareas{font-size:6px;line-height:1.6;color:#fde68a;margin-top:3px;text-shadow:1px 1px 0 #000,0 0 3px #000;}
 #h-mision,#h-mundial{font-size:8px;line-height:1.6;text-shadow:1px 1px 0 #000,0 0 3px #000;}
-#h-mision{color:#ffd84a;}
-#h-mision.lista{color:var(--verde);animation:parp 1s infinite alternate;}
+#h-mision{color:var(--oro);}
+/* Aviso de estado (mision lista, jefe mundial): un cambio de opacidad suave, sin destellos. */
+#h-mision.lista{color:var(--ok);animation:parp 1.6s ease-in-out infinite alternate;}
 #h-mundial{color:var(--rosa);margin-top:4px;}
-#h-mundial.lista{animation:parp .8s infinite alternate;}
+#h-mundial.lista{animation:parp 1.6s ease-in-out infinite alternate;}
 /* invasion en curso (functions/mmo/eventos.js): nombre, tiempo y progreso */
-#h-evento{display:none;font-size:6px;line-height:1.6;color:#ff9a3c;margin-top:5px;text-shadow:1px 1px 0 #000,0 0 3px #000;}
+#h-evento{display:none;font-size:6px;line-height:1.6;color:#fb923c;margin-top:5px;text-shadow:1px 1px 0 #000,0 0 3px #000;}
 #h-evento b,#h-evento span{display:block;font-weight:normal;}
 #h-evento i{display:block;height:3px;margin:2px 0 0 auto;width:110px;max-width:100%;background:rgba(0,0,0,.55);border-radius:2px;overflow:hidden;}
-#h-evento u{display:block;height:100%;width:0;background:linear-gradient(90deg,#ff5a1f,#ffd84a);transition:width .3s;}
-#h-evento.aqui b{color:#ffd84a;}
-#h-evento.lista{animation:parp .8s infinite alternate;}
+#h-evento u{display:block;height:100%;width:0;background:linear-gradient(90deg,#ea580c,var(--oro));transition:width .3s;}
+#h-evento.aqui b{color:var(--oro);}
+#h-evento.lista{animation:parp 1.6s ease-in-out infinite alternate;}
 #hud.estrecho #seguimiento{top:112px;max-width:150px;}
 #hud.estrecho #h-mision{font-size:7px;}
-@keyframes parp{to{opacity:.55}}
-#minimapa{right:8px;top:62px;background:var(--panel);border:1px solid var(--borde);border-radius:6px;padding:4px;}
+@keyframes parp{to{opacity:.7}}
+#minimapa{right:8px;top:62px;background:var(--panel);border:1px solid var(--borde);border-radius:8px;padding:4px;}
 #minimapa canvas{display:block;image-rendering:pixelated;}
 #hud.estrecho #minimapa{top:72px;}
 #hud.estrecho #minimapa canvas{width:140px;}
-.mis-caja{border:1px solid rgba(192,132,252,.3);border-radius:8px;padding:12px;background:rgba(124,58,237,.08);margin:10px 0;}
-.mis-caja b{font-size:10px;color:var(--amarillo);display:block;margin-bottom:8px;line-height:1.5;}
-.mis-barra{height:10px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden;margin:8px 0;}
-.mis-barra i{display:block;height:100%;background:linear-gradient(90deg,#7c3aed,#00ff88);}
-#mapa-nom{right:8px;top:42px;font-size:7px;color:#ffe9a8;white-space:nowrap;text-align:right;text-shadow:1px 1px 0 #000,0 0 4px #000;pointer-events:none!important;}
-#mapa-nom small{display:block;font-size:5px;color:rgba(255,255,255,.55);margin-top:3px;}
+.mis-caja{border:1px solid var(--borde);border-radius:var(--radio);padding:12px 14px;background:var(--panel2);margin:10px 0;}
+.mis-caja>b{font-size:9px;color:var(--txt);display:block;margin-bottom:8px;line-height:1.6;}
+.mis-caja p{font-size:13px;}
+.mis-barra{height:10px;background:rgba(255,255,255,.08);border-radius:5px;overflow:hidden;margin:8px 0;}
+.mis-barra i{display:block;height:100%;background:var(--ok);}
+#mapa-nom{right:8px;top:42px;font-size:7px;color:#f3e3b5;white-space:nowrap;text-align:right;text-shadow:1px 1px 0 #000,0 0 4px #000;pointer-events:none!important;}
+#mapa-nom small{display:block;font-size:5px;color:var(--txt2);margin-top:3px;}
 #hud.estrecho #mapa-nom{display:none;}
 #botones{right:8px;top:8px;display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;}
 #hud.estrecho #botones{max-width:150px;}
-.bt{font-family:inherit;font-size:9px;background:var(--panel);color:#fff;border:1px solid var(--borde);border-radius:6px;padding:7px 8px;cursor:pointer;}
-.bt:active{transform:scale(.95);}
+/* .bt: botones pequenos del HUD (iconos y etiquetas cortas en pixel) */
+.bt{font-family:inherit;font-size:9px;line-height:1.2;background:var(--panel);color:var(--txt);border:1px solid var(--borde);border-radius:8px;padding:7px 8px;cursor:pointer;transition:background .15s,border-color .15s;}
+.bt:hover{background:var(--panel2);border-color:#34405e;}
+.bt:active{transform:scale(.96);}
 #jefe-bar{left:50%;transform:translateX(-50%);top:84px;width:min(420px,50%);display:none;text-align:center;}
-#jefe-bar .n{font-size:8px;color:var(--rosa);text-shadow:0 0 8px var(--rosa);margin-bottom:4px;}
-#jefe-bar .barra{height:10px;border:1px solid rgba(255,60,240,.5);}
-#jefe-bar .barra>i{background:linear-gradient(90deg,#ff3cf0,#ff3344);}
+#jefe-bar .n{font-size:8px;color:#f1d4ff;text-shadow:1px 1px 0 #000,0 0 3px #000;margin-bottom:4px;}
+#jefe-bar .barra{height:10px;border:1px solid rgba(239,68,68,.55);}
+#jefe-bar .barra>i{background:linear-gradient(90deg,#b91c1c,var(--err));}
 #hud.estrecho #jefe-bar{top:150px;bottom:auto;width:80%;}
 
 /* barra de accion: 7 habilidades de la clase + 4 consumibles */
-#pie{flex:0 0 auto;width:100%;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 8px 7px;background:linear-gradient(180deg,rgba(20,8,40,.55),rgba(20,8,40,.95));border-top:1px solid rgba(192,132,252,.2);}
+#pie{flex:0 0 auto;width:100%;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 8px 7px;background:var(--panel);border-top:1px solid var(--borde);}
 #barra{display:flex;gap:8px;align-items:flex-end;}
 #pie #lanzar{position:relative;left:auto;bottom:auto;transform:none;}
 body.tactil #pie{display:none;}
 #acciones,#consumibles{display:flex;gap:4px;}
-.pw{width:40px;height:40px;border:1px solid var(--borde);border-radius:7px;background:var(--panel);position:relative;cursor:pointer;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.pw{width:40px;height:40px;border:1px solid var(--borde);border-radius:8px;background:var(--panel2);position:relative;cursor:pointer;display:flex;align-items:center;justify-content:center;overflow:hidden;}
 .pw img{width:30px;height:30px;object-fit:contain;image-rendering:pixelated;}
 .pw .k{position:absolute;left:3px;top:3px;font-size:6px;color:rgba(255,255,255,.8);text-shadow:1px 1px 0 #000;z-index:2;}
-.pw .k.lejos{color:#ff4444;}
-.pw .n{position:absolute;right:3px;bottom:3px;font-size:7px;color:var(--amarillo);text-shadow:1px 1px 0 #000;z-index:2;}
+.pw .k.lejos{color:#f87171;}
+.pw .n{position:absolute;right:3px;bottom:3px;font-size:7px;color:var(--oro);text-shadow:1px 1px 0 #000;z-index:2;}
 .pw .cd{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.65);}
 .pw .cdt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;text-shadow:1px 1px 0 #000;z-index:2;pointer-events:none;}
 .pw.vacio img{filter:grayscale(1);opacity:.35;}
 .pw.sinrec img{filter:grayscale(.6) brightness(.55) sepia(1) hue-rotate(185deg) saturate(3);}
-.pw.listo{box-shadow:0 0 8px #ffe600,inset 0 0 6px rgba(255,230,0,.6);border-color:#ffe600;}
-.pw.ac{border-color:rgba(255,216,74,.45);}
+.pw.listo{border-color:var(--oro);box-shadow:inset 0 0 0 1px var(--oro);}
+.pw.ac{border-color:rgba(242,193,78,.4);}
 .pw.ac .n{left:0;right:0;text-align:center;bottom:13px;font-size:6px;color:#fff;}
 .pw.on{transform:scale(.92);}
 #bxp{left:0;right:0;bottom:0;height:5px;margin:0;border-radius:0;background:rgba(0,0,0,.55);}
-#bxp>i{background:linear-gradient(90deg,#7c3aed,#c084fc);}
+#bxp>i{background:linear-gradient(90deg,#6d5bd0,var(--rosa));}
 #bxp>span{display:none;}
 #lanzar{left:50%;transform:translateX(-50%);bottom:14px;width:230px;display:none;}
-#lanzar .barra{height:12px;border:1px solid rgba(255,216,74,.6);margin:0;}
-#lanzar .barra>i{background:linear-gradient(90deg,#ffb700,#ffe600);transition:none;}
+#lanzar .barra{height:12px;border:1px solid rgba(242,193,78,.55);margin:0;}
+#lanzar .barra>i{background:linear-gradient(90deg,#d99a1e,var(--oro));transition:none;}
 #lanzar .barra>span{font-size:6px;line-height:12px;}
-#lanzar.mal .barra>i{background:#ff3344;}
+#lanzar.mal .barra>i{background:var(--err);}
 #hud.estrecho #lanzar{bottom:44px;width:60%;}
 /* grupo */
 #grupo{left:8px;top:92px;width:150px;display:none;}
 #hud.estrecho #grupo{top:142px;width:128px;}
-.gm{background:var(--panel);border:1px solid var(--borde);border-radius:7px;padding:4px 6px 3px;margin-bottom:4px;cursor:pointer;}
+.gm{background:var(--panel);border:1px solid var(--borde);border-radius:8px;padding:4px 6px 3px;margin-bottom:4px;cursor:pointer;}
 .gm .nm{font-size:6px;display:flex;justify-content:space-between;gap:4px;margin-bottom:3px;white-space:nowrap;overflow:hidden;}
-.gm .nm small{font-size:5px;color:rgba(255,255,255,.55);}
+.gm .nm small{font-size:5px;color:var(--txt2);}
 .gm .barra.hp{height:7px;margin-bottom:2px;}
 .gm .barra.hp>span{font-size:5px;line-height:7px;}
 .gm .barra.rc{height:3px;margin:0;}
-.gm.lejos{opacity:.8;} .gm.caido{opacity:.45;} .gm.sel{border-color:#00ff88;box-shadow:0 0 6px rgba(0,255,136,.4);}
-#invitacion{left:50%;transform:translateX(-50%);top:58px;display:none;background:var(--panel);border:1px solid #7dd3fc;border-radius:8px;padding:8px 10px;text-align:center;z-index:5;box-shadow:0 0 16px rgba(125,211,252,.35);}
-#invitacion span{display:block;font-family:system-ui,sans-serif;font-size:12px;margin-bottom:6px;}
+.gm.lejos{opacity:.8;} .gm.caido{opacity:.45;} .gm.sel{border-color:var(--ok);}
+#invitacion{left:50%;transform:translateX(-50%);top:58px;display:none;background:var(--panel);border:1px solid var(--pri);border-radius:var(--radio);padding:10px 12px;text-align:center;z-index:5;box-shadow:var(--sombra);}
+#invitacion span{display:block;font-family:var(--sans);font-size:14px;line-height:1.4;color:var(--txt);margin-bottom:8px;}
 #invitacion .btn{margin:0 3px;}
 .oacc{display:none;gap:4px;margin-top:4px;}
 .oacc .bt{font-size:6px;padding:4px 6px;}
 #emotes{left:50%;transform:translateX(-50%);top:36%;pointer-events:none!important;text-align:center;width:92%;}
-#emotes div{font-size:9px;color:#ffae00;text-shadow:1px 1px 0 #000,0 0 8px #000,0 0 14px rgba(255,120,0,.6);margin:4px 0;animation:av 3.2s forwards;line-height:1.6;}
+#emotes div{font-size:9px;color:#fbbf24;text-shadow:1px 1px 0 #000,0 0 6px #000;margin:4px 0;animation:av 3.2s forwards;line-height:1.6;}
 #hud.estrecho #emotes div{font-size:7px;}
-#consejo{left:50%;transform:translateX(-50%);top:128px;display:none;font-size:8px;color:#ffe600;background:rgba(10,4,24,.85);border:1px solid #ffe600;border-radius:8px;padding:8px 12px;white-space:nowrap;pointer-events:none!important;animation:brilla 1.4s infinite alternate;}
+/* Consejo del tutorial: legible, quieto (sin parpadeo). */
+#consejo{left:50%;transform:translateX(-50%);top:128px;display:none;font-family:var(--sans);font-size:14px;font-weight:600;line-height:1.4;color:#f5e6bd;background:rgba(18,24,38,.95);border:1px solid rgba(242,193,78,.55);border-radius:var(--radio);padding:9px 14px;white-space:nowrap;pointer-events:none!important;box-shadow:var(--sombra);}
 /* En el movil los avisos bajan al cielo vacio: arriba pisaban el seguimiento. */
 /* Tras un logro o una mazmorra: compartirlo con tu enlace de invitacion. */
-#presumir{left:50%;transform:translateX(-50%);bottom:170px;display:none;z-index:6;font-size:9px;padding:9px 14px;border-color:#ffd84a;color:#ffd84a;box-shadow:0 0 14px rgba(255,216,74,.35);animation:brilla 1.4s infinite alternate;}
+#presumir{left:50%;transform:translateX(-50%);bottom:170px;display:none;z-index:6;font-family:var(--sans);font-size:14px;font-weight:600;padding:10px 16px;background:var(--panel);border-color:var(--pri);color:var(--txt);box-shadow:var(--sombra);}
 #hud.estrecho #presumir{bottom:auto;top:470px;}
 #hud.estrecho #avisos{top:250px;width:90%;}
-#hud.estrecho #consejo{top:200px;font-size:7px;white-space:normal;width:86%;text-align:center;line-height:1.6;}
-@keyframes brilla{to{box-shadow:0 0 14px rgba(255,230,0,.55)}}
-#bxp b.desc{position:absolute;top:0;bottom:0;background:rgba(56,189,248,.55);}
+#hud.estrecho #consejo{top:200px;font-size:13px;white-space:normal;width:86%;text-align:center;line-height:1.45;}
+/* "brilla" ya no destella: se deja definida por si algun estilo en linea la usa. */
+@keyframes brilla{to{box-shadow:var(--sombra)}}
+#bxp b.desc{position:absolute;top:0;bottom:0;background:rgba(96,165,250,.5);}
 #errores{left:50%;transform:translateX(-50%);top:28%;pointer-events:none!important;text-align:center;}
-#errores div{font-size:8px;color:#ff3344;text-shadow:1px 1px 0 #000,0 0 6px #000;margin:3px 0;animation:av 1.6s forwards;white-space:nowrap;}
+#errores div{font-size:8px;color:#f87171;text-shadow:1px 1px 0 #000,0 0 6px #000;margin:3px 0;animation:av 1.6s forwards;white-space:nowrap;}
 .ranuras{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
-.ranura{border:2px solid rgba(255,255,255,.15);border-radius:8px;background:rgba(0,0,0,.35);aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:2px;}
+.ranura{border:1px solid var(--borde);border-radius:8px;background:var(--panel2);aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:2px;}
 .ranura img{width:60%;image-rendering:pixelated;}
-.ranura small{font-size:5px;color:rgba(255,255,255,.6);}
-.ranura.vacia{cursor:default;border-style:dashed;}
-.ranura.vacia span{color:rgba(255,255,255,.25);font-size:10px;}
+.ranura small{font-size:5px;color:var(--txt2);}
+.ranura.vacia{cursor:default;border-style:dashed;background:transparent;}
+.ranura.vacia span{color:var(--txt3);font-size:10px;}
 .dias{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
-.dia{border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:6px 2px;text-align:center;display:flex;flex-direction:column;gap:4px;align-items:center;background:rgba(0,0,0,.3);}
+.dia{border:1px solid var(--borde);border-radius:8px;padding:6px 2px;text-align:center;display:flex;flex-direction:column;gap:4px;align-items:center;background:var(--panel2);}
 .dia b{font-size:5px;}
 .dia span{font-size:16px;}
-.dia small{font-family:system-ui,sans-serif;font-size:9px;color:rgba(255,255,255,.6);line-height:1.2;}
+.dia small{font-family:var(--sans);font-size:10px;color:var(--txt2);line-height:1.2;}
 .dia.hecho{opacity:.45;}
-.dia.hoy{border-color:var(--verde);background:rgba(0,255,136,.12);box-shadow:0 0 12px rgba(0,255,136,.35);}
+.dia.hoy{border-color:var(--ok);background:rgba(34,197,94,.1);}
 /* talentos */
 .talentos{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;}
-.tal{display:flex;gap:6px;align-items:center;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:6px;background:rgba(0,0,0,.3);}
-.tal.on{border-color:rgba(255,216,74,.55);}
+.tal{display:flex;gap:8px;align-items:center;border:1px solid var(--borde);border-radius:var(--radio);padding:8px;background:var(--panel2);}
+.tal.on{border-color:rgba(242,193,78,.55);}
 .tal img{width:26px;height:26px;image-rendering:pixelated;}
 .tal div{flex:1;min-width:0;}
-.tal b{display:block;font-size:7px;margin-bottom:3px;}
-.tal small{font-family:system-ui,sans-serif;font-size:10px;color:rgba(255,255,255,.6);}
-.tal .btn{padding:6px 9px;}
+.tal b{display:block;font-size:7px;line-height:1.5;margin-bottom:3px;}
+.tal small{font-family:var(--sans);font-size:12px;line-height:1.35;color:var(--txt2);}
+.tal .btn{padding:6px 10px;min-height:34px;}
 @media (max-width:520px){.talentos{grid-template-columns:1fr;}}
 /* mapa del mundo */
 .mapa-mundo{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;}
-.zm{border:1px solid;border-radius:8px;padding:8px;background:rgba(0,0,0,.3);display:flex;flex-direction:column;gap:4px;}
-.zm b{font-size:8px;line-height:1.4;}
-.zm small{font-family:system-ui,sans-serif;font-size:11px;color:rgba(255,255,255,.65);}
+.zm{border:1px solid;border-radius:var(--radio);padding:10px;background:var(--panel2);display:flex;flex-direction:column;gap:5px;}
+.zm b{font-size:8px;line-height:1.5;}
+.zm small{font-family:var(--sans);font-size:12px;line-height:1.4;color:var(--txt2);}
 .zm i{font-style:normal;font-size:7px;}
-.zm.aqui{box-shadow:0 0 12px rgba(255,230,0,.45);background:rgba(255,230,0,.08);}
+.zm.aqui{box-shadow:inset 0 0 0 1px var(--oro);background:rgba(242,193,78,.07);}
 @media (max-width:520px){.mapa-mundo{grid-template-columns:1fr;}}
 /* eleccion de clase y libro de hechizos */
 .clases{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
-.clase{border:2px solid rgba(255,255,255,.12);border-radius:10px;padding:10px;background:rgba(0,0,0,.35);cursor:pointer;display:flex;flex-direction:column;gap:6px;text-align:left;}
-.clase:hover,.clase.sel{border-color:var(--c);box-shadow:0 0 14px rgba(255,255,255,.15);}
+.clase{border:1px solid var(--borde);border-radius:var(--radio);padding:12px;background:var(--panel2);cursor:pointer;display:flex;flex-direction:column;gap:6px;text-align:left;transition:border-color .15s;}
+.clase:hover,.clase.sel{border-color:var(--c);box-shadow:inset 0 0 0 1px var(--c);}
 .clase .cab{display:flex;gap:8px;align-items:center;}
 .clase .cab img{width:36px;height:36px;image-rendering:pixelated;}
 .clase .cab b{font-size:10px;color:var(--c);display:block;margin-bottom:4px;}
-.clase .cab small{font-size:6px;color:rgba(255,255,255,.6);line-height:1.5;}
-.clase p{font-size:12px!important;}
+.clase .cab small{font-size:6px;color:var(--txt2);line-height:1.5;}
+.clase p{font-size:13px!important;}
 .clase .habs{display:flex;gap:3px;flex-wrap:wrap;}
-.clase .habs img{width:22px;height:22px;image-rendering:pixelated;border:1px solid rgba(255,255,255,.15);border-radius:3px;}
+.clase .habs img{width:22px;height:22px;image-rendering:pixelated;border:1px solid var(--borde);border-radius:4px;}
 /* En el movil tambien se ve que hace cada clase (antes solo el nombre). */
-@media (max-width:520px){.clases{grid-template-columns:1fr;}.clase p{font-size:11px!important;line-height:1.35;margin:4px 0 2px;}.clase .habs img{width:18px;height:18px;}}
+@media (max-width:520px){.clases{grid-template-columns:1fr;}.clase p{font-size:12px!important;line-height:1.4;margin:4px 0 2px;}.clase .habs img{width:18px;height:18px;}}
 
 /* chat */
 #chat{left:8px;bottom:10px;width:min(320px,42%);}
-#chat-log{font-family:system-ui,-apple-system,Segoe UI,sans-serif;font-size:12px;line-height:1.35;max-height:118px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;text-shadow:1px 1px 0 #000,0 0 3px #000;pointer-events:none;margin-bottom:4px;}
+#chat-log{font-family:var(--sans);font-size:12px;line-height:1.35;max-height:118px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;text-shadow:1px 1px 0 #000,0 0 3px #000;pointer-events:none;margin-bottom:4px;}
 #chat-log div{word-break:break-word;}
 #chat-log b{color:var(--cian);font-weight:600;}
 #chat-log .sis{color:var(--amarillo);}
 #chat-log .ok{color:var(--verde);}
 #frases{display:none;flex-wrap:wrap;gap:4px;margin-bottom:4px;}
-#frases .bt{font-family:system-ui,sans-serif;font-size:12px;padding:6px 8px;}
-#chat-in{width:100%;font-family:system-ui,sans-serif;font-size:13px;background:rgba(0,0,0,.6);border:1px solid var(--borde);color:#fff;border-radius:5px;padding:6px 8px;outline:none;display:none;}
+#frases .bt{font-family:var(--sans);font-size:13px;padding:7px 10px;}
+#chat-in{width:100%;font-family:var(--sans);font-size:14px;background:var(--panel2);border:1px solid var(--borde);color:var(--txt);border-radius:8px;padding:7px 9px;outline:none;display:none;}
+#chat-in:focus{border-color:var(--pri);}
 
-/* avisos */
+/* avisos (aviso.ok / aviso.jefe: variantes de color para client.js) */
 #avisos{left:50%;transform:translateX(-50%);top:86px;display:flex;flex-direction:column;align-items:center;gap:5px;pointer-events:none!important;}
-.aviso{font-size:8px;background:rgba(0,0,0,.75);border:1px solid var(--borde);padding:7px 11px;border-radius:6px;animation:av 3.6s forwards;text-align:center;max-width:90vw;line-height:1.6;}
+.aviso{font-family:var(--sans);font-size:13px;font-weight:600;line-height:1.4;color:var(--txt);background:rgba(18,24,38,.94);border:1px solid var(--borde);padding:7px 12px;border-radius:8px;animation:av 3.6s forwards;text-align:center;max-width:90vw;box-shadow:var(--sombra);}
+.aviso.ok{border-color:rgba(34,197,94,.6);}
+.aviso.jefe{border-color:rgba(167,139,250,.6);color:#ddd6fe;}
 @keyframes av{0%{opacity:0;transform:translateY(-6px)}8%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}
 
 /* interaccion */
-#interactuar{right:10px;bottom:12px;display:none;font-size:9px;}
+#interactuar{right:10px;bottom:12px;display:none;}
 
 /* controles tactiles: fila 1 = poderes + accion + chat, fila 2 = mover / saltar / atacar */
-#tactil{display:none;width:100%;flex:0 0 auto;flex-direction:column;gap:10px;padding:8px 12px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(20,8,40,.6),rgba(20,8,40,.95));border-top:1px solid rgba(192,132,252,.2);}
+#tactil{display:none;width:100%;flex:0 0 auto;flex-direction:column;gap:10px;padding:8px 12px calc(12px + env(safe-area-inset-bottom));background:var(--panel);border-top:1px solid var(--borde);}
 .tf{display:flex;justify-content:space-between;align-items:center;gap:8px;}
-.tc{font-family:inherit;width:56px;height:56px;border-radius:50%;border:2px solid rgba(255,255,255,.2);background:rgba(255,255,255,.07);color:#fff;font-size:17px;touch-action:none;flex:0 0 auto;}
-.tc.on{background:rgba(0,255,136,.25);border-color:var(--verde);}
-.tc.grande{width:74px;height:74px;font-size:25px;background:rgba(255,60,60,.18);border-color:rgba(255,60,60,.5);}
+.tc{font-family:inherit;width:56px;height:56px;border-radius:50%;border:1px solid var(--borde);background:var(--panel2);color:var(--txt);font-size:17px;touch-action:none;flex:0 0 auto;}
+.tc:active{background:#22304d;}
+.tc.on{background:rgba(59,130,246,.28);border-color:var(--pri);}
+.tc.grande{width:74px;height:74px;font-size:25px;background:rgba(239,68,68,.16);border-color:rgba(239,68,68,.55);}
 .tc.chico{width:40px;height:40px;font-size:14px;}
 #t-izq,#t-der{display:flex;gap:8px;align-items:center;}
 body.tactil #tactil{display:flex;}
@@ -255,49 +306,82 @@ body.tactil #t-fila0 #acciones{position:static;gap:5px;}
 body.tactil #t-fila0 .pw{width:40px;height:40px;}
 body.tactil #t-fila0 .pw img{width:26px;height:26px;}
 body.tactil #t-fila0 #acciones{gap:4px;}
-body.tactil #t-fila1 #interactuar{position:static;transform:none;font-size:7px;padding:10px 7px;}
+body.tactil #t-fila1 #interactuar{position:static;transform:none;font-size:12px;padding:8px 9px;min-height:40px;}
 body.tactil #chat{width:70%;bottom:12px;}
 body.tactil #lanzar{bottom:16px;}
 
-/* modales */
-.modal{position:fixed;inset:0;background:rgba(3,0,10,.8);display:none;align-items:center;justify-content:center;z-index:50;padding:12px;}
+/* modales: opacos, radio 10px, borde sutil y sombra suave */
+.modal{position:fixed;inset:0;background:rgba(5,8,14,.8);display:none;align-items:center;justify-content:center;z-index:50;padding:12px;}
 .modal.on{display:flex;}
-.ventana{background:var(--panel);border:1px solid var(--borde);border-radius:10px;width:min(560px,100%);max-height:92vh;overflow:auto;padding:16px;box-shadow:0 0 40px rgba(124,58,237,.35);}
-.ventana h2{font-size:12px;color:var(--amarillo);margin-bottom:12px;text-align:center;line-height:1.5;}
-.ventana p,.ventana li{font-family:system-ui,sans-serif;font-size:13px;line-height:1.5;color:rgba(255,255,255,.8);}
+.ventana{background:var(--panel);border:1px solid var(--borde);border-radius:var(--radio);width:min(560px,100%);max-height:92vh;overflow:auto;padding:18px;box-shadow:0 12px 32px rgba(0,0,0,.5);}
+.ventana h2{font-size:12px;color:var(--txt);margin-bottom:14px;text-align:center;line-height:1.6;}
+.ventana p,.ventana li{font-family:var(--sans);font-size:14px;line-height:1.5;color:#c9cfdb;}
+.ventana li{margin-bottom:6px;}
+.ventana li b,.ventana p b{color:var(--txt);}
 .ventana .cerrar{float:right;}
-.tabs{display:flex;gap:6px;margin-bottom:12px;justify-content:center;flex-wrap:wrap;}
-.tab{font-family:inherit;font-size:8px;padding:8px 10px;border-radius:6px;border:1px solid var(--borde);background:transparent;color:rgba(255,255,255,.6);cursor:pointer;}
-.tab.on{background:linear-gradient(135deg,#7c3aed,#c084fc);color:#fff;border-color:transparent;}
+.ventana h2 small{display:block;font-family:var(--sans);font-size:13px;font-weight:400;color:var(--txt2);margin-top:6px;}
+/* linea de seguridad (wallet, premios, tienda) */
+.seguridad{font-family:var(--sans);font-size:13px;line-height:1.45;color:var(--txt2);background:var(--panel2);border:1px solid var(--borde);border-radius:8px;padding:9px 12px;margin:10px 0;}
+.tabs{display:flex;gap:6px;margin-bottom:14px;justify-content:center;flex-wrap:wrap;}
+.tab{font-family:var(--sans);font-size:13px;font-weight:600;min-height:36px;padding:7px 12px;border-radius:8px;border:1px solid var(--borde);background:transparent;color:var(--txt2);cursor:pointer;transition:background .15s,color .15s;}
+.tab:hover{color:var(--txt);background:var(--panel2);}
+.tab.on{background:var(--pri);color:#fff;border-color:var(--pri);}
 .lista{display:flex;flex-direction:column;gap:8px;}
-.item{display:flex;gap:10px;align-items:center;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:8px;background:rgba(255,255,255,.03);}
-.item .ico{width:56px;height:56px;flex:0 0 56px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35);border-radius:6px;overflow:hidden;}
+.item{display:flex;gap:10px;align-items:center;border:1px solid var(--borde);border-radius:var(--radio);padding:10px;background:var(--panel2);}
+.item .ico{width:56px;height:56px;flex:0 0 56px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.25);border-radius:8px;overflow:hidden;}
 .item .ico img{max-width:52px;max-height:52px;image-rendering:pixelated;}
 .item .txt{flex:1;min-width:0;}
-.item .txt b{display:block;font-size:9px;margin-bottom:5px;}
-.item .txt small{font-family:system-ui,sans-serif;font-size:12px;color:rgba(255,255,255,.6);}
-.item .acc{display:flex;flex-direction:column;gap:5px;align-items:flex-end;}
-.precio{font-size:8px;color:var(--amarillo);white-space:nowrap;}
-.btn{font-family:inherit;font-size:8px;padding:8px 10px;border-radius:6px;border:none;cursor:pointer;background:linear-gradient(135deg,#00ff88,#00b862);color:#02140a;white-space:nowrap;}
-.btn.sec{background:rgba(255,255,255,.1);color:#fff;}
-.btn[disabled]{opacity:.4;cursor:not-allowed;}
-.oro-top{text-align:center;font-size:9px;color:var(--amarillo);margin-bottom:10px;}
-.fila{display:flex;justify-content:space-between;font-size:8px;padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.06);}
-.fila.yo{color:var(--verde);}
-input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-radius:7px;border:1px solid var(--borde);background:rgba(0,0,0,.4);color:#fff;text-align:center;margin:12px 0;outline:none;}
+.item .txt b{display:block;font-size:9px;line-height:1.5;margin-bottom:5px;}
+.item .txt small{font-family:var(--sans);font-size:13px;line-height:1.4;color:var(--txt2);}
+.item .acc{display:flex;flex-direction:column;gap:6px;align-items:flex-end;}
+.precio{font-size:9px;color:var(--oro);white-space:nowrap;}
+/* .btn primario (uno por vista), .btn.sec secundario, .btn.peligro para borrar/rechazar */
+.btn{font-family:var(--sans);font-size:14px;font-weight:600;line-height:1.2;letter-spacing:.01em;min-height:40px;padding:9px 14px;border-radius:8px;border:1px solid var(--pri);cursor:pointer;background:var(--pri);color:#fff;white-space:nowrap;transition:background .15s,border-color .15s,transform .1s;}
+.btn:hover{background:var(--pri2);border-color:var(--pri2);}
+.btn:active{transform:scale(.98);}
+.btn:focus-visible,.bt:focus-visible,.tab:focus-visible{outline:2px solid var(--cian);outline-offset:2px;}
+.btn.sec{background:transparent;color:var(--txt);border-color:var(--borde);}
+.btn.sec:hover{background:var(--panel2);border-color:#34405e;}
+.btn.peligro{background:transparent;color:#f87171;border-color:rgba(239,68,68,.6);}
+.btn.peligro:hover{background:rgba(239,68,68,.1);}
+.btn[disabled],.btn[disabled]:hover{opacity:.45;cursor:not-allowed;transform:none;}
+.btn.sec[disabled],.btn.sec[disabled]:hover{background:transparent;}
+.btn:not(.sec):not(.peligro)[disabled]:hover{background:var(--pri);}
+.oro-top{text-align:center;font-size:9px;color:var(--oro);margin-bottom:12px;}
+.fila{display:flex;justify-content:space-between;gap:8px;font-family:var(--sans);font-size:13px;line-height:1.4;padding:7px 4px;border-bottom:1px solid var(--borde);font-variant-numeric:tabular-nums;}
+.fila.yo{color:var(--verde);font-weight:600;}
+input.nombre{width:100%;font-family:var(--sans);font-size:16px;padding:12px;border-radius:8px;border:1px solid var(--borde);background:var(--bg);color:var(--txt);text-align:center;margin:14px 0 10px;outline:none;user-select:text;-webkit-user-select:text;}
+input.nombre::placeholder{color:var(--txt3);}
+input.nombre:focus{border-color:var(--pri);}
 .centro{text-align:center;}
 #carga{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:60;}
-#carga .t{font-size:14px;color:var(--amarillo);text-shadow:0 0 16px rgba(255,230,0,.5);text-align:center;line-height:1.6;}
-#carga .s{font-size:8px;color:rgba(255,255,255,.5);}
+#carga .t{font-size:14px;color:var(--txt);text-align:center;line-height:1.7;}
+#carga .s{font-family:var(--sans);font-size:13px;color:var(--txt2);}
 #carga .barra{width:220px;}
-#carga .barra>i{background:linear-gradient(90deg,#7c3aed,#00ff88);}
+#carga .barra>i{background:var(--pri);}
 @media (max-width:600px){
   .bt{padding:6px 6px;font-size:8px;}
   #chat{width:62%;}
   #chat-log{font-size:11px;max-height:80px;}
 }
-.creador{margin-top:14px;font-size:12px;color:rgba(255,255,255,.6);line-height:1.7}
-.creador a{color:#00ff88;text-decoration:none;font-weight:700}
+.ventana .creador,.creador{margin-top:14px;font-family:var(--sans);font-size:13px;color:var(--txt2);line-height:1.7}
+.creador a{color:var(--cian);text-decoration:none;font-weight:600}
+.creador a:hover{text-decoration:underline}
+
+/* pantalla de inicio */
+#m-inicio .ventana{width:min(440px,100%);padding:24px 20px 16px;}
+#m-inicio h1{font-size:15px;line-height:1.6;color:var(--txt);margin-bottom:10px;}
+#m-inicio h1 span{display:block;font-size:10px;color:var(--oro);margin-top:6px;letter-spacing:.08em;}
+#m-inicio .lema{font-size:15px;color:var(--txt);margin-bottom:6px;}
+#m-inicio .ventajas{list-style:none;display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:12px 0 4px;}
+#m-inicio .ventajas li{font-family:var(--sans);font-size:13px;font-weight:600;color:var(--txt);background:var(--panel2);border:1px solid var(--borde);border-radius:999px;padding:5px 11px;margin:0;}
+#m-inicio .btn-grande{width:100%;min-height:48px;font-size:16px;}
+#m-inicio .nota{margin-top:12px;font-size:13px;color:var(--txt2);}
+#m-inicio .nota a{color:var(--cian);}
+.confianza{margin-top:16px;padding-top:12px;border-top:1px solid var(--borde);font-family:var(--sans);font-size:12px;line-height:1.7;color:var(--txt2);}
+.confianza a{color:var(--txt2);text-decoration:underline;text-underline-offset:2px;}
+.confianza a:hover{color:var(--txt);}
+.ventana .confianza .creador{margin-top:4px;font-size:12px;}
 </style>
 </head>
 <body>
@@ -334,7 +418,7 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
         </div>
       </div>
       <div class="caja" id="grupo"></div>
-      <div class="caja" id="invitacion"><span id="inv-txt"></span><button class="btn" id="inv-si">ACEPTAR</button><button class="btn sec" id="inv-no">RECHAZAR</button></div>
+      <div class="caja" id="invitacion"><span id="inv-txt"></span><button class="btn" id="inv-si">Aceptar</button><button class="btn sec" id="inv-no">Rechazar</button></div>
       <div class="caja" id="minimapa"><canvas id="mini" width="170" height="26"></canvas></div>
       <div class="caja" id="seguimiento"><div id="h-mision"></div><div id="h-tareas"></div><div id="h-mundial"></div><div id="h-evento"></div></div>
       <div class="caja" id="mapa-nom"><span id="h-mapa">—</span><small id="h-mapa-sub"></small></div>
@@ -355,7 +439,7 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
       <div class="caja" id="errores"></div>
       <div class="caja" id="emotes"></div>
       <div class="caja" id="consejo"></div>
-      <button class="caja bt" id="presumir">📣 PRESUMIR</button>
+      <button class="caja bt" id="presumir">📣 Compartir</button>
       <div class="caja" id="chat"><div id="chat-log"></div><div id="frases"></div><input id="chat-in" maxlength="120" placeholder="Escribe y pulsa Enter…" autocomplete="off"></div>
       <button class="caja btn" id="interactuar">E · ENTRAR</button>
       <div class="caja" id="lanzar"><div class="barra"><i style="width:0%"></i><span id="lanzar-t"></span></div></div>
@@ -386,18 +470,25 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
 <!-- Inicio -->
 <div class="modal" id="m-inicio">
   <div class="ventana centro">
-    <h2>⚔️ DUENDE QUEST ONLINE ⚔️</h2>
-    <p>Elige tu clase, forma grupo con otros jugadores y entra a mazmorras con jefes que hay que esquivar e interrumpir. Hermandades, monturas, equipo legendario y 10 zonas hasta el nivel 60.</p>
+    <h1>DUENDE QUEST<span>ONLINE</span></h1>
+    <p class="lema">El juego de rol online de los duendes.</p>
+    <p>Elige tu clase, forma grupo y entra a mazmorras con jefes. Hermandades, monturas y 10 zonas hasta el nivel 60.</p>
+    <ul class="ventajas" aria-label="Ventajas">
+      <li>Gratis</li><li>Sin descargas</li><li>Telegram o navegador</li>
+    </ul>
     <div id="inicio-invitado">
-      <input class="nombre" id="in-nombre" maxlength="16" placeholder="Nombre de tu duende">
-      <button class="btn" id="b-jugar" style="width:100%;padding:14px;font-size:10px">▶ ENTRAR AL MUNDO</button>
-      <p style="margin-top:12px;font-size:12px;color:rgba(255,255,255,.5)">Si tienes cuenta en DUENDE QUEST, <a href="/game.html" style="color:#c084fc">inicia sesión en el juego</a> y vuelve: tu personaje quedará ligado a tu cuenta y tus skins pagadas se desbloquean aquí.</p>
+      <input class="nombre" id="in-nombre" maxlength="16" placeholder="Nombre de tu duende" aria-label="Nombre de tu duende">
+      <button class="btn btn-grande" id="b-jugar">Entrar al mundo</button>
+      <p class="nota">¿Ya tienes cuenta en Duende Quest? <a href="/game.html">Inicia sesión en el juego</a> y vuelve: tu personaje quedará ligado a tu cuenta y tus skins compradas se desbloquean aquí.</p>
     </div>
     <div id="inicio-cuenta" style="display:none">
-      <p style="margin:10px 0" id="inicio-quien"></p>
-      <button class="btn" id="b-jugar2" style="width:100%;padding:14px;font-size:10px">▶ ENTRAR AL MUNDO</button>
+      <p style="margin:14px 0 12px" id="inicio-quien"></p>
+      <button class="btn btn-grande" id="b-jugar2">Entrar al mundo</button>
     </div>
-    <p class="creador">👤 Creado por <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial</a> · <a href="https://t.me/elduende420peru" target="_blank" rel="noopener">📢 Canal</a> · <a href="https://t.me/duendesolana420" target="_blank" rel="noopener">💬 Grupo</a></p>
+    <div class="confianza">
+      <a href="/terminos.html" target="_blank" rel="noopener">Términos</a> · <a href="/privacidad.html" target="_blank" rel="noopener">Privacidad</a> · 🔒 Nunca te pediremos contraseñas ni frases semilla.
+      <p class="creador">Creado por <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial</a> (cuenta oficial) · <a href="https://t.me/elduende420peru" target="_blank" rel="noopener">Canal</a> · <a href="https://t.me/duendesolana420" target="_blank" rel="noopener">Grupo</a></p>
+    </div>
   </div>
 </div>
 
@@ -417,6 +508,7 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
       <button class="tab" data-tab="premium">⭐ PREMIUM</button>
     </div>
     <div class="lista" id="tienda-lista"></div>
+    <p class="seguridad">🔒 Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado.</p>
   </div>
 </div>
 
@@ -444,7 +536,7 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
     <button class="bt cerrar" data-cerrar>✕</button>
     <h2>📜 GUARDIA TITO</h2>
     <div id="mision-cuerpo"></div>
-    <p style="margin-top:10px;font-size:12px;color:rgba(255,255,255,.5)">¿Dudas con los controles? Pulsa ❔ arriba a la derecha.</p>
+    <p style="margin-top:10px;font-size:13px;color:var(--txt2)">¿Dudas con los controles? Pulsa ❔ arriba a la derecha.</p>
   </div>
 </div>
 
@@ -491,9 +583,10 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
       <li>La vida se recupera sola si pasas 4 segundos sin recibir golpes, y rápido en el pueblo.</li>
       <li>El <b>Mercader</b> del pueblo vende poderes, armas y las 7 skins. Las skins que ya compraste en el juego principal se desbloquean solas.</li>
       <li>El oro del MMO es solo del juego: no se canjea por dinero ni por $DUENDE.</li>
-      <li><b>💎 mTON (play to earn):</b> desde nivel 15, con cuenta de Telegram o web, los jefes, el jefe mundial y la caza del día dan mTON. 1.000 mTON = 1 TON y desde 5 TON puedes retirar a tu wallet TON (botón 💎), una vez por semana y hasta 10 TON por retiro. Cada día se reparte un fondo limitado.</li>
+      <li><b>💎 Recompensas en mTON (opcional):</b> desde nivel 15, con cuenta de Telegram o web, los jefes, el jefe mundial y la caza del día dan mTON. 1.000 mTON = 1 TON y desde 5 TON puedes retirar a tu wallet TON (botón 💎), una vez por semana y hasta 10 TON por retiro. Cada día se reparte un fondo limitado.</li>
       <li><b>⭐ Tienda premium</b> (Mercader o botón 💎): oro y poderes con Stars en Telegram o con SOL en la web. El Duende revisa cada pago y te lo entrega en persona. Con dinero nunca se compran mTON.</li>
-      <li style="font-size:11px;color:rgba(255,255,255,.5)"><b>Créditos de arte:</b> Luis Zuno (ansimuz) — Magic Cliffs y Warped Caves (CC-BY 3.0), Mountain Dusk, Underwater, GothicVania y Sunny Land (CC0); Moikmellah, Ashuuya, Scratchio y 7Soul1 (CC0). Sonidos: Juhani Junkala (CC0).</li>
+      <li><b>🔒 Seguridad:</b> nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado. El único contacto oficial es @ElDuendeOficial.</li>
+      <li style="font-size:12px;color:var(--txt2)"><b>Créditos de arte:</b> Luis Zuno (ansimuz) — Magic Cliffs y Warped Caves (CC-BY 3.0), Mountain Dusk, Underwater, GothicVania y Sunny Land (CC0); Moikmellah, Ashuuya, Scratchio y 7Soul1 (CC0). Sonidos: Juhani Junkala (CC0).</li>
     </ul>
     <p class="creador">👤 Creado por <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial</a> · <a href="https://t.me/elduende420peru" target="_blank" rel="noopener">📢 Canal</a> · <a href="https://t.me/duendesolana420" target="_blank" rel="noopener">💬 Grupo</a></p>
   </div>
@@ -503,8 +596,9 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
 <div class="modal" id="m-wallet">
   <div class="ventana">
     <button class="bt cerrar" data-cerrar>✕</button>
-    <h2>💎 GANA TON JUGANDO</h2>
+    <h2>💎 RECOMPENSAS EN TON<small>Opcionales · con límites diarios y semanales</small></h2>
     <div id="wallet-cuerpo"></div>
+    <p class="seguridad">🔒 Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado.</p>
   </div>
 </div>
 
@@ -514,6 +608,7 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
     <button class="bt cerrar" data-cerrar>✕</button>
     <h2>◎ PAGAR CON SOL</h2>
     <div id="sol-cuerpo"></div>
+    <p class="seguridad">🔒 Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado.</p>
   </div>
 </div>
 
@@ -523,7 +618,7 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
     <button class="bt cerrar" data-cerrar>✕</button>
     <h2>🎁 RECOMPENSA DIARIA</h2>
     <div id="login-cuerpo"></div>
-    <button class="btn" data-cerrar style="width:100%;margin-top:12px;padding:12px">¡A CAZAR!</button>
+    <button class="btn" data-cerrar style="width:100%;margin-top:12px">A cazar</button>
   </div>
 </div>
 
@@ -591,26 +686,26 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
 <!-- Muerte -->
 <div class="modal" id="m-muerte">
   <div class="ventana centro">
-    <h2 style="color:#ff3344">💀 HAS CAÍDO</h2>
+    <h2 style="color:#f87171">💀 HAS CAÍDO</h2>
     <div id="muerte-info"></div>
     <p style="margin-top:8px">Pierdes un 5% de la experiencia de tu nivel.</p>
-    <p style="margin-top:8px;color:#ffe600">✝ Si hay un sacerdote cerca, puede resucitarte aquí mismo: espera en vez de volver.</p>
-    <button class="btn" id="b-revivir" style="margin-top:14px;padding:14px;font-size:10px;width:100%">↺ REVIVIR EN EL PUEBLO</button>
+    <p style="margin-top:8px;color:var(--oro)">✝ Si hay un sacerdote cerca, puede resucitarte aquí mismo: espera en vez de volver.</p>
+    <button class="btn" id="b-revivir" style="margin-top:14px;width:100%;min-height:46px">↺ Revivir en el pueblo</button>
   </div>
 </div>
 
 <!-- Desconexion -->
 <div class="modal" id="m-error">
   <div class="ventana centro">
-    <h2 style="color:#ff9900">⚠️ CONEXIÓN</h2>
+    <h2 style="color:var(--warn)">⚠️ CONEXIÓN</h2>
     <p id="error-txt">Se perdió la conexión con el servidor.</p>
-    <button class="btn" id="b-reconectar" style="margin-top:14px;padding:12px;width:100%">RECONECTAR</button>
+    <button class="btn" id="b-reconectar" style="margin-top:14px;width:100%;min-height:46px">Reconectar</button>
   </div>
 </div>
 
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=42"></script>
+<script type="module" src="/mmo/js/client.js?v=43"></script>
 </body>
 </html>
