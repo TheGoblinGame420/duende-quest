@@ -272,6 +272,16 @@ function animEnemigo(e) {
     return a;
   }
 
+  // VOLADOR: tiembla y se encoge antes de la picada; en la picada se inclina
+  // hacia donde cae. Es el aviso visual que acompaña a la marca del suelo.
+  if (e.vuelo && e.vuelo.estado === 'aviso') {
+    const k = 1 - e.vuelo.t / e.vuelo.max;
+    a.dx = Math.sin(frame * 1.7) * 2.5 * k;
+    a.escalaY = 1 - k * .12; a.escalaX = 1 + k * .1;
+    return a;
+  }
+  if (e.vuelo && e.vuelo.estado === 'picada') { a.giro = e.facing > 0 ? .45 : -.45; return a; }
+
   // JEFE: se agacha durante el aviso y se tambalea aturdido.
   if (e.jefe) {
     const j = e.jefe;
@@ -715,6 +725,9 @@ const GY = H - 80;
 // Línea de suelo real: es donde draw() pinta el borde y donde apoyan los pies
 // del jugador (PL.y = GY, PL.h = 68). Todo lo que "esté en el suelo" usa esto.
 const GROUND = GY + 68;
+// Letra de los rotulos pequeños del lienzo (arma, sellos, "MEJORA N"). En el
+// movil vertical el lienzo se dibuja al ~75% y 8 px quedaban en 6 px reales.
+const FS_LIENZO_CHICO = _esVertical ? 12 : 9;
 cv.width = W; cv.height = H;
 function fitCanvas() {
   if (DQE.fitCanvas) { DQE.fitCanvas(cv, W, H); return; }
@@ -748,6 +761,10 @@ const ITEM_SHOPS = [
 
 // ── GAME STATE (globals — las páginas leen/escriben estos) ──
 let state = 'menu';
+// Momento en que se abrio la pantalla de muerte/victoria/mejora: Enter y las
+// teclas 1-3 esperan un instante para no dispararse con una tecla que el
+// jugador ya tenia pulsada en plena accion.
+let _estadoDesde = 0;
 // Campaña: nivel = null es SIN FIN. Ver LEVELS mas abajo.
 let nivel = null, ultimoInicio = null;
 let sellos = 0, sellosPuestos = 0, victoriaEn = 0, jefeInvocado = false, jefeOleada = 0;
@@ -791,8 +808,11 @@ let runXP = 0;   // XP ganado en la partida actual, para enseñarlo al morir
 // partida. Ahi es donde nacen las decisiones y la variedad entre partidas.
 let mej = null;
 function mejorasBase() {
+  // vidaExtra: la vida maxima ganada con CORAZON en esta partida. Va aparte
+  // porque onLevelUp() recalcula maxHp desde la base, y sin guardarla el
+  // +40 se perdia en cuanto subias de nivel permanente.
   return { dano: 1, vidaPorMuerte: 0, cadencia: 1, alcance: 1, velocidad: 1,
-           monedas: 1, iman: 0, espinas: 0, dashRapido: 1, critico: 0, curaCombo: 0 };
+           monedas: 1, iman: 0, espinas: 0, dashRapido: 1, critico: 0, curaCombo: 0, vidaExtra: 0 };
 }
 
 const MEJORAS = [
@@ -801,7 +821,7 @@ const MEJORAS = [
   { id: 'furia',   icono: '⚡', nombre: 'FURIA',         desc: '+25% de cadencia',        usar: () => { mej.cadencia += .25; } },
   { id: 'guadana', icono: '🌙', nombre: 'GUADANA',       desc: '+30% de alcance',         usar: () => { mej.alcance += .30; } },
   { id: 'botas',   icono: '👟', nombre: 'BOTAS VELOCES', desc: '+20% de velocidad',       usar: () => { mej.velocidad += .20; } },
-  { id: 'corazon', icono: '❤', nombre: 'CORAZON',       desc: '+40 vida maxima y cura',  usar: () => { PL.maxHp += 40; PL.hp = Math.min(PL.maxHp, PL.hp + 40); updateHpHUD(); } },
+  { id: 'corazon', icono: '❤', nombre: 'CORAZON',       desc: '+40 vida maxima y cura',  usar: () => { mej.vidaExtra += 40; PL.maxHp += 40; PL.hp = Math.min(PL.maxHp, PL.hp + 40); updateHpHUD(); } },
   { id: 'iman',    icono: '🧲', nombre: 'IMAN',          desc: 'Atrae monedas de lejos',  usar: () => { mej.iman += 1; } },
   { id: 'espinas', icono: '🌵', nombre: 'ESPINAS',       desc: 'Danas a quien te toca',   usar: () => { mej.espinas += 2; } },
   { id: 'critico', icono: '💥', nombre: 'GOLPE CRITICO', desc: '+20% de critico (x2)',    usar: () => { mej.critico += .20; } },
@@ -812,7 +832,11 @@ const MEJORAS = [
 
 let mejorasElegidas = [];
 let runLevel = 1, runXPAcc = 0;
-function runXPNecesario(l) { return 55 + (l - 1) * 42; }
+// Con 55 + 42 por nivel salia una eleccion cada ~11 s (15 en las tres
+// primeras etapas): la pantalla de mejora cortaba la accion mas que el propio
+// juego y cada mejora pesaba poco. Con esta curva salen ~3-5 por etapa y en
+// SIN FIN se espacian a medida que la partida se alarga.
+function runXPNecesario(l) { return 80 + (l - 1) * 70; }
 function addXP(amt) {
   playerXP += amt;
   runXP += amt;
@@ -856,7 +880,7 @@ function onLevelUp() {
   // Efecto inmediato (se nota ya en esta partida) + el perk permanente, que se
   // aplica de verdad al empezar la siguiente.
   const p = levelPerks(playerLevel);
-  PL.maxHp = 100 + (_buffs()?.bonusHp || 0) + p.bonusHp;
+  PL.maxHp = 100 + (_buffs()?.bonusHp || 0) + p.bonusHp + ((mej && mej.vidaExtra) || 0);
   PL.hp = Math.min(PL.hp + 20, PL.maxHp);
   comboCap = p.comboCap;
   PL.items[0][0] = Math.max(PL.items[0][0], p.potions);
@@ -878,104 +902,161 @@ function showPUNotif(msg) {
 }
 
 // ── AUDIO ──
+// Todo el audio va por UN AudioContext con compresor y volumen maestro.
+//  · El contexto se crea en el PRIMER GESTO del jugador (toque, clic o tecla),
+//    nunca dentro de update(): crearlo alli congelaba el juego 1,6-1,9 s justo
+//    en el primer golpe, y fuera de un gesto el navegador lo deja mudo.
+//  · Los efectos grabados se descargan UNA vez y se decodifican a AudioBuffer:
+//    antes eran 4 <audio> por efecto (36 descargas en vez de 9) y cada moneda
+//    hacia un play() de un elemento multimedia, caro en moviles.
+//  · Si un efecto no esta listo se usa la sintesis de siempre, que tampoco
+//    crea el contexto: sin gesto previo simplemente no suena.
 let audioCtx = null, masterGain = null;
+let _mudo = false;
+try { _mudo = localStorage.getItem('dq_mudo') === '1'; } catch (e) {}
 
-// Tres problemas reales del audio, arreglados aqui:
-//  1. Cada sonido se conectaba DIRECTO a destination, sin control de volumen
-//     ni compresor: en oleadas densas, diez efectos a la vez saturaban.
-//  2. No habia ni un solo resume(): en el WebView de iOS y de Telegram el
-//     contexto nace suspendido y el juego se quedaba mudo para siempre.
-//  3. Varias ramas creaban un oscilador que luego no usaban (fuga silenciosa).
-function getAudio() {
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const comp = audioCtx.createDynamicsCompressor();
-    comp.threshold.value = -18; comp.knee.value = 12; comp.ratio.value = 8;
-    comp.attack.value = .003; comp.release.value = .12;
-    masterGain = audioCtx.createGain();
-    masterGain.gain.value = .85;
-    masterGain.connect(comp); comp.connect(audioCtx.destination);
-  }
-  if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+function _crearAudio() {
+  if (audioCtx) return audioCtx;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return null;
+  audioCtx = new AC();
+  const comp = audioCtx.createDynamicsCompressor();
+  comp.threshold.value = -18; comp.knee.value = 12; comp.ratio.value = 8;
+  comp.attack.value = .003; comp.release.value = .12;
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = _mudo ? 0 : .85;
+  masterGain.connect(comp); comp.connect(audioCtx.destination);
+  _pedirSfx();
+  SFX_ARCHIVOS.forEach(_decodificar);
   return audioCtx;
 }
-// El navegador solo permite arrancar el audio dentro de un gesto del usuario.
-['pointerdown', 'keydown', 'touchstart'].forEach(ev =>
-  window.addEventListener(ev, () => { try { getAudio(); } catch (e) {} }, { once: false, passive: true }));
+// Compatibilidad: otras paginas llamaban getAudio(). Solo debe usarse desde
+// un gesto del usuario.
+function getAudio() {
+  const ac = _crearAudio();
+  if (ac && ac.state === 'suspended' && !document.hidden) ac.resume().catch(() => {});
+  return ac;
+}
+function _desbloquearAudio() { try { getAudio(); } catch (e) {} }
+['pointerdown', 'touchstart', 'touchend', 'keydown', 'click'].forEach(ev =>
+  window.addEventListener(ev, _desbloquearAudio, { passive: true, capture: true }));
+function _audioListo() { return !!(audioCtx && audioCtx.state === 'running' && masterGain); }
 
 // ── EFECTOS GRABADOS ──
-// Sustituyen a los bips de oscilador en los eventos que mas se repiten. Son 9
-// archivos CC0 del pack retro de Juhani Junkala (dominio publico), convertidos
-// a ogg mono de 22 kHz: 37 KB los nueve juntos. Si alguno no carga, el motor
-// sigue usando la sintesis de siempre, asi que nunca se queda sin sonido.
-const SFX_ARCHIVOS = {
-  corte: 'corte', corte2: 'corte2', golpe: 'golpe', muerte: 'muerte',
-  explosion: 'explosion', moneda: 'moneda', salto: 'salto', caida: 'caida', boton: 'boton',
-};
-// Pool fijo de 4 <audio> por efecto, en rotacion. Antes cada reproduccion
-// hacia cloneNode(): mas de mil elementos <audio> por partida, y en iOS hay un
-// tope de decodificadores de audio — al pasarlo el juego se queda mudo sin
-// ningun error. Cuatro bastan para solapar el mismo efecto sin cortarlo.
-const SFX = {};
-Object.entries(SFX_ARCHIVOS).forEach(([k, f]) => {
-  const src = (DQE.audioBase || 'audio/') + 'sfx/' + f + '.ogg';
-  const pool = [];
-  for (let i = 0; i < 4; i++) {
-    const a = new Audio(src);
-    a.preload = 'auto'; a.volume = .55;
-    pool.push(a);
-  }
-  SFX[k] = { pool, idx: 0 };
-});
-function reproducir(clave, volumen) {
-  const s = SFX[clave];
-  if (!s) return false;
-  const a = s.pool[s.idx];
-  if (!a.duration && a.readyState < 2) return false;
-  s.idx = (s.idx + 1) % s.pool.length;
+// 9 archivos CC0 del pack retro de Juhani Junkala (dominio publico). Hay .ogg
+// y .mp3 de cada uno: Safari en iOS no decodifica ogg, asi que alli va mp3.
+const SFX_ARCHIVOS = ['corte', 'corte2', 'golpe', 'muerte', 'explosion', 'moneda', 'salto', 'caida', 'boton'];
+// Ganancia por archivo, medida: todos rondan -10/-12 dB RMS salvo 'caida'
+// (-26,5 dB, inaudible: se sube ~16 dB). 'moneda' es la que mas se repite y
+// la mas aguda, asi que tapaba al resto: se baja y se varia el tono.
+const SFX_GANANCIA = { corte: .55, corte2: .55, golpe: .8, muerte: .6, explosion: .75, moneda: .26, salto: .38, caida: 5, boton: .45 };
+const _oggOk = (() => { try { return !!document.createElement('audio').canPlayType('audio/ogg; codecs="vorbis"'); } catch (e) { return false; } })();
+const _sfxDatos = {};      // clave -> ArrayBuffer descargado, pendiente de decodificar
+const SFX_BUF = {};        // clave -> AudioBuffer listo
+const _sfxExt = {};        // clave -> extension usada
+let _sfxPedido = false;
+function _bajarSfx(k, ext) {
+  _sfxExt[k] = ext;
+  fetch((DQE.audioBase || 'audio/') + 'sfx/' + k + '.' + ext)
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+    .then(ab => { _sfxDatos[k] = ab; _decodificar(k); })
+    .catch(() => { if (ext === 'ogg') _bajarSfx(k, 'mp3'); });
+}
+function _pedirSfx() {
+  if (_sfxPedido) return;
+  _sfxPedido = true;
+  SFX_ARCHIVOS.forEach(k => _bajarSfx(k, _oggOk ? 'ogg' : 'mp3'));
+}
+function _decodificar(k) {
+  const ab = _sfxDatos[k];
+  if (!audioCtx || !ab || SFX_BUF[k]) return;
+  _sfxDatos[k] = null;
+  const mal = () => { if (_sfxExt[k] === 'ogg') _bajarSfx(k, 'mp3'); };   // ogg que el navegador no sabe decodificar
   try {
-    a.currentTime = 0;
-    a.volume = Math.max(0, Math.min(1, volumen === undefined ? .55 : volumen));
-    a.play().catch(() => {});
+    const p = audioCtx.decodeAudioData(ab, b => { SFX_BUF[k] = b; }, mal);   // callbacks: Safari antiguo
+    if (p && p.catch) p.catch(() => {});
+  } catch (e) { mal(); }
+}
+// La descarga (37 KB) empieza cuando la pagina ya cargo sus imagenes; la
+// decodificacion espera al primer gesto.
+window.addEventListener('load', () => setTimeout(_pedirSfx, 600));
+
+const _voces = {};
+function reproducir(clave, volumen, tono) {
+  if (_mudo) return true;                       // mudo: "sonó", no caer a la sintesis
+  const buf = SFX_BUF[clave];
+  if (!buf || !_audioListo()) return false;
+  if ((_voces[clave] || 0) >= 4) return true;   // tope de voces por efecto
+  try {
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    if (tono && tono !== 1) src.playbackRate.value = tono;
+    const g = audioCtx.createGain();
+    g.gain.value = Math.max(0, (volumen === undefined ? 1 : volumen) * (SFX_GANANCIA[clave] || .5));
+    src.connect(g); g.connect(masterGain);
+    _voces[clave] = (_voces[clave] || 0) + 1;
+    src.onended = () => { _voces[clave] = Math.max(0, (_voces[clave] || 1) - 1); try { src.disconnect(); g.disconnect(); } catch (e) {} };
+    src.start();
     return true;
   } catch (e) { return false; }
 }
-// Mapa de evento -> efecto grabado. Lo que no este aqui usa la sintesis.
+// Evento -> [efecto, volumen, tono]. Lo que no este aqui usa la sintesis.
 const SFX_POR_EVENTO = {
-  slash: 'corte', attack: 'corte2', hit: 'golpe', crunch: 'muerte',
-  coin: 'moneda', jump: 'salto', land: 'caida', die: 'explosion',
+  slash: ['corte'], attack: ['corte2', .7], hurt: ['golpe', 1, .9], crunch: ['muerte'],
+  coin: ['moneda'], jump: ['salto'], land: ['caida'], die: ['explosion', 1, .8],
+  boton: ['boton'], explota: ['explosion', 1, 1.05],
+  jefe: ['explosion', 1, .55],            // aparicion del jefe: estampido grave
+  aviso: ['boton', .9, .62],              // el jefe telegrafia un ataque
+  avisoVolador: ['boton', .5, 1.35],      // un volador va a lanzarse en picada
 };
+let _ultimaMoneda = 0;
 function playSound(type, power) {
-  const grabado = SFX_POR_EVENTO[type];
-  if (grabado) {
+  const ev = SFX_POR_EVENTO[type];
+  if (ev) {
     // El corte alterna entre dos muestras para que machacar el boton no suene
     // a repeticion mecanica.
-    const clave = (type === 'slash' && frame % 2) ? 'corte2' : grabado;
-    const vol = type === 'land' ? Math.min(.6, .18 + (power || 0) * .03) : undefined;
-    if (reproducir(clave, vol)) return;
+    const clave = (type === 'slash' && frame % 2) ? 'corte2' : ev[0];
+    let vol = ev[1], tono = ev[2];
+    if (type === 'land') vol = Math.min(1, .28 + (power || 0) * .05);
+    if (type === 'coin') {
+      // Diez monedas en el mismo frame sonaban como una sola rafaga saturada.
+      const ahora = performance.now();
+      if (ahora - _ultimaMoneda < 45) return;
+      _ultimaMoneda = ahora;
+      tono = .93 + Math.random() * .16;
+    }
+    if (reproducir(clave, vol, tono)) return;
   }
   return _playSoundSintetico(type, power);
 }
 function _playSoundSintetico(type, power) {
+  // Sin contexto ya creado por un gesto no se crea aqui (esto corre dentro de
+  // update()): simplemente no suena.
+  if (_mudo || !_audioListo()) return;
+  const SINT = ['jump', 'attack', 'hit', 'hurt', 'coin', 'dash', 'levelup', 'boss', 'die', 'powerup', 'achievement', 'slash', 'crunch', 'land', 'boton', 'explota', 'jefe', 'aviso'];
+  if (!SINT.includes(type)) return;
   try {
-    const ac = getAudio();
+    const ac = audioCtx;
     const o = ac.createOscillator(), g = ac.createGain();
-    o.connect(g); g.connect(masterGain || ac.destination);
+    o.connect(g); g.connect(masterGain);
     const now = ac.currentTime;
     if (type === 'jump') { o.frequency.setValueAtTime(220, now); o.frequency.exponentialRampToValueAtTime(440, now + .1); g.gain.setValueAtTime(.15, now); g.gain.exponentialRampToValueAtTime(.001, now + .15); o.start(now); o.stop(now + .15); }
     else if (type === 'attack') { o.type = 'sawtooth'; o.frequency.setValueAtTime(180, now); o.frequency.exponentialRampToValueAtTime(80, now + .08); g.gain.setValueAtTime(.2, now); g.gain.exponentialRampToValueAtTime(.001, now + .1); o.start(now); o.stop(now + .1); }
-    else if (type === 'hit') { o.type = 'square'; o.frequency.setValueAtTime(120, now); g.gain.setValueAtTime(.25, now); g.gain.exponentialRampToValueAtTime(.001, now + .12); o.start(now); o.stop(now + .12); }
-    else if (type === 'coin') { o.frequency.setValueAtTime(660, now); o.frequency.exponentialRampToValueAtTime(880, now + .06); g.gain.setValueAtTime(.1, now); g.gain.exponentialRampToValueAtTime(.001, now + .1); o.start(now); o.stop(now + .1); }
+    else if (type === 'hit' || type === 'hurt') { o.type = 'square'; o.frequency.setValueAtTime(120, now); g.gain.setValueAtTime(.25, now); g.gain.exponentialRampToValueAtTime(.001, now + .12); o.start(now); o.stop(now + .12); }
+    else if (type === 'coin') { o.frequency.setValueAtTime(660, now); o.frequency.exponentialRampToValueAtTime(880, now + .06); g.gain.setValueAtTime(.08, now); g.gain.exponentialRampToValueAtTime(.001, now + .1); o.start(now); o.stop(now + .1); }
     else if (type === 'dash') { o.type = 'triangle'; o.frequency.setValueAtTime(300, now); o.frequency.exponentialRampToValueAtTime(600, now + .12); g.gain.setValueAtTime(.15, now); g.gain.exponentialRampToValueAtTime(.001, now + .15); o.start(now); o.stop(now + .15); }
-    else if (type === 'levelup') { [261, 329, 392, 523].forEach((f, i) => { const o2 = ac.createOscillator(), g2 = ac.createGain(); o2.connect(g2); g2.connect(masterGain || ac.destination); o2.frequency.value = f; g2.gain.setValueAtTime(.12, now + i * .08); g2.gain.exponentialRampToValueAtTime(.001, now + i * .08 + .15); o2.start(now + i * .08); o2.stop(now + i * .08 + .15); }); return; }
-    else if (type === 'boss') { o.type = 'sawtooth'; o.frequency.setValueAtTime(60, now); g.gain.setValueAtTime(.3, now); g.gain.exponentialRampToValueAtTime(.001, now + .4); o.start(now); o.stop(now + .4); }
-    else if (type === 'die') { o.type = 'sawtooth'; o.frequency.setValueAtTime(200, now); o.frequency.exponentialRampToValueAtTime(30, now + .5); g.gain.setValueAtTime(.3, now); g.gain.exponentialRampToValueAtTime(.001, now + .5); o.start(now); o.stop(now + .5); }
+    else if (type === 'boton') { o.type = 'square'; o.frequency.setValueAtTime(520, now); g.gain.setValueAtTime(.08, now); g.gain.exponentialRampToValueAtTime(.001, now + .06); o.start(now); o.stop(now + .06); }
+    else if (type === 'aviso') { o.type = 'square'; o.frequency.setValueAtTime(330, now); o.frequency.setValueAtTime(247, now + .09); g.gain.setValueAtTime(.12, now); g.gain.exponentialRampToValueAtTime(.001, now + .2); o.start(now); o.stop(now + .2); }
+    else if (type === 'levelup') { o.disconnect(); g.disconnect(); [261, 329, 392, 523].forEach((f, i) => { const o2 = ac.createOscillator(), g2 = ac.createGain(); o2.connect(g2); g2.connect(masterGain); o2.frequency.value = f; g2.gain.setValueAtTime(.12, now + i * .08); g2.gain.exponentialRampToValueAtTime(.001, now + i * .08 + .15); o2.start(now + i * .08); o2.stop(now + i * .08 + .15); }); return; }
+    else if (type === 'boss' || type === 'jefe') { o.type = 'sawtooth'; o.frequency.setValueAtTime(60, now); g.gain.setValueAtTime(.3, now); g.gain.exponentialRampToValueAtTime(.001, now + .4); o.start(now); o.stop(now + .4); }
+    else if (type === 'die' || type === 'explota') { o.type = 'sawtooth'; o.frequency.setValueAtTime(200, now); o.frequency.exponentialRampToValueAtTime(30, now + .5); g.gain.setValueAtTime(.3, now); g.gain.exponentialRampToValueAtTime(.001, now + .5); o.start(now); o.stop(now + .5); }
     else if (type === 'powerup') { // arpegio ascendente brillante
-      [523, 659, 784, 1047].forEach((f, i) => { const o2 = ac.createOscillator(), g2 = ac.createGain(); o2.type = 'triangle'; o2.connect(g2); g2.connect(masterGain || ac.destination); o2.frequency.value = f; g2.gain.setValueAtTime(.13, now + i * .05); g2.gain.exponentialRampToValueAtTime(.001, now + i * .05 + .18); o2.start(now + i * .05); o2.stop(now + i * .05 + .18); }); return; }
+      o.disconnect(); g.disconnect();
+      [523, 659, 784, 1047].forEach((f, i) => { const o2 = ac.createOscillator(), g2 = ac.createGain(); o2.type = 'triangle'; o2.connect(g2); g2.connect(masterGain); o2.frequency.value = f; g2.gain.setValueAtTime(.13, now + i * .05); g2.gain.exponentialRampToValueAtTime(.001, now + i * .05 + .18); o2.start(now + i * .05); o2.stop(now + i * .05 + .18); }); return; }
     else if (type === 'achievement') { // fanfarria de logro
-      [659, 784, 988, 1319].forEach((f, i) => { const o2 = ac.createOscillator(), g2 = ac.createGain(); o2.type = 'square'; o2.connect(g2); g2.connect(masterGain || ac.destination); o2.frequency.value = f; g2.gain.setValueAtTime(.1, now + i * .1); g2.gain.exponentialRampToValueAtTime(.001, now + i * .1 + .25); o2.start(now + i * .1); o2.stop(now + i * .1 + .25); }); return; }
-    // 'slash' es el corte que CONECTA: sube de tono con el paso del combo, así
-    // el oído distingue el 1º del 3º golpe. Antes el melee no sonaba nunca.
+      o.disconnect(); g.disconnect();
+      [659, 784, 988, 1319].forEach((f, i) => { const o2 = ac.createOscillator(), g2 = ac.createGain(); o2.type = 'square'; o2.connect(g2); g2.connect(masterGain); o2.frequency.value = f; g2.gain.setValueAtTime(.1, now + i * .1); g2.gain.exponentialRampToValueAtTime(.001, now + i * .1 + .25); o2.start(now + i * .1); o2.stop(now + i * .1 + .25); }); return; }
+    // 'slash' es el corte que CONECTA: sube de tono con el paso del combo.
     else if (type === 'slash') { const f = [900, 700, 520][PL.comboStep] || 900; o.type = 'square'; o.frequency.setValueAtTime(f, now); o.frequency.exponentialRampToValueAtTime(f * .35, now + .06); g.gain.setValueAtTime(.2, now); g.gain.exponentialRampToValueAtTime(.001, now + .08); o.start(now); o.stop(now + .08); }
     // 'crunch' es la muerte del enemigo: grave y con cuerpo, distinto del corte.
     else if (type === 'crunch') { o.type = 'sawtooth'; o.frequency.setValueAtTime(90, now); o.frequency.exponentialRampToValueAtTime(40, now + .16); g.gain.setValueAtTime(.26, now); g.gain.exponentialRampToValueAtTime(.001, now + .18); o.start(now); o.stop(now + .18); }
@@ -985,11 +1066,51 @@ function _playSoundSintetico(type, power) {
 }
 
 // ── MUSIC (opcional via DQE.music) ──
-let bgMusic = null;
-function initMusic() { if (bgMusic || !DQE.music) return; bgMusic = new Audio(DQE.music); bgMusic.loop = true; bgMusic.volume = 0.35; }
-function playMusic() { initMusic(); if (bgMusic) bgMusic.play().catch(() => {}); }
-function pauseMusic() { if (bgMusic) bgMusic.pause(); }
-function stopMusic() { if (bgMusic) { bgMusic.pause(); bgMusic.currentTime = 0; } }
+// La pista solo existe en .ogg: donde no se puede reproducir (Safari iOS) se
+// omite en vez de dejar un elemento multimedia fallando.
+let bgMusic = null, _musicaRota = false;
+function initMusic() {
+  if (bgMusic || _musicaRota || !DQE.music) return;
+  try {
+    const a = new Audio();
+    if (/\.ogg(\?|$)/i.test(DQE.music) && !_oggOk) { _musicaRota = true; return; }
+    a.loop = true; a.volume = 0.35; a.preload = 'auto'; a.muted = _mudo;
+    a.addEventListener('error', () => { _musicaRota = true; if (bgMusic === a) bgMusic = null; }, { once: true });
+    a.src = DQE.music;
+    bgMusic = a;
+  } catch (e) { _musicaRota = true; bgMusic = null; }
+}
+function playMusic() {
+  if (_mudo || document.hidden) return;
+  initMusic();
+  if (!bgMusic) return;
+  try { const p = bgMusic.play(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
+}
+function pauseMusic() { if (bgMusic) { try { bgMusic.pause(); } catch (e) {} } }
+function stopMusic() { if (bgMusic) { try { bgMusic.pause(); bgMusic.currentTime = 0; } catch (e) {} } }
+
+// ── SONIDO SI/NO ──
+// Boton en el menu y en la pausa (clase .btn-sonido; textos en data-on /
+// data-off) y tecla M. Se recuerda en este dispositivo.
+function _pintarSonido() {
+  document.querySelectorAll('.btn-sonido').forEach(b => {
+    const t = _mudo ? (b.dataset.off || '🔇 Sonido apagado') : (b.dataset.on || '🔊 Sonido activado');
+    if (b.textContent !== t) b.textContent = t;
+    b.setAttribute('aria-label', _mudo ? 'Activar el sonido' : 'Silenciar el juego');
+  });
+}
+function alternarSonido(forzar) {
+  _mudo = typeof forzar === 'boolean' ? forzar : !_mudo;
+  try { localStorage.setItem('dq_mudo', _mudo ? '1' : '0'); } catch (e) {}
+  if (masterGain) masterGain.gain.value = _mudo ? 0 : .85;
+  if (bgMusic) bgMusic.muted = _mudo;
+  if (_mudo) pauseMusic();
+  else if (state === 'playing' || state === 'descanso') playMusic();
+  _pintarSonido();
+  if (!_mudo) playSound('boton');
+  return !_mudo;
+}
+window.addEventListener('DOMContentLoaded', _pintarSonido);
 
 // ── PLAYER ──
 const PL = {
@@ -1075,7 +1196,7 @@ function efectoArma(e, dmg) {
     const cx0 = e.x + e.w / 2, cy0 = e.y + e.h / 2;
     let otro = null, mejor = 150;
     for (const o of enemies) {
-      if (o === e || o.hp <= 0 || o.muriendo) continue;
+      if (o === e || o.hp <= 0 || o.muriendo || (o.jefe && o.jefe.estado === 'entrada')) continue;
       const d = Math.hypot(o.x + o.w / 2 - cx0, o.y + o.h / 2 - cy0);
       if (d < mejor) { mejor = d; otro = o; }
     }
@@ -1134,7 +1255,17 @@ function spawnPFX(x, y, color, n, spd, sz = 4) {
     particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, color, life: 1, decay: .035 + Math.random() * .03, sz: sz * (.5 + Math.random()) });
   }
 }
-function spawnFT(x, y, txt, color, big = false) { fTexts.push({ x, y, txt, color, life: 1, decay: .022, vy: -1.8, big }); }
+// Como mucho 5 textos flotantes a la vez: en oleadas densas se apilaban 20-30
+// (+pts, combo, CRITICO...) ilegibles y cada uno con strokeText, que es caro.
+// Sale primero el mas viejo de los pequeños; los grandes (avisos) aguantan.
+const FT_MAX = 5;
+function spawnFT(x, y, txt, color, big = false) {
+  while (fTexts.length >= FT_MAX) {
+    const i = fTexts.findIndex(t => !t.big);
+    fTexts.splice(i < 0 ? 0 : i, 1);
+  }
+  fTexts.push({ x, y, txt, color, life: 1, decay: .022, vy: -1.8, big });
+}
 
 function initBg() {
   bgStars = []; for (let i = 0; i < 90; i++) bgStars.push({ x: Math.random() * W, y: Math.random() * GY, s: .5 + Math.random() * 2, sp: .1 + Math.random() * .4 });
@@ -1219,8 +1350,14 @@ function spawnEnemy(forceBoss = false) {
     nuevo.elite = a;
     nuevo.hp = nuevo.maxHp = Math.ceil(nuevo.maxHp * a.hp);
     nuevo.spd = Math.min(nuevo.spd * a.vel, nuevo.isCharger ? 7.5 : 4.6);
-    if (a.escala) { nuevo.w = Math.round(nuevo.w * a.escala); nuevo.h = Math.round(nuevo.h * a.escala); nuevo.y = GROUND - nuevo.h; }
+    if (a.escala) {
+      nuevo.w = Math.round(nuevo.w * a.escala); nuevo.h = Math.round(nuevo.h * a.escala);
+      // Un volador COLOSAL se recolocaba en el suelo como cualquier otro: se
+      // quedaba "volando" a ras de tierra. Sigue en el aire, sin tocar el suelo.
+      nuevo.y = nuevo.isFlyer ? Math.min(nuevo.y, GROUND - nuevo.h - 50) : GROUND - nuevo.h;
+    }
   }
+  if (nuevo.isFlyer) nuevo.vuelo = { estado: 'vuela', t: 70 + Math.random() * 80, y0: nuevo.y };
   if (isBoss) { bossActive = true; spawnFT(W / 2 - 60, 80, '★ BOSS FIGHT ★', '#ff00cc', true); _hap('heavy'); }
   if (isMagmar) spawnFT(W / 2 - 60, 80, '🔥 MAGMAR!', '#ff4400', true);
 }
@@ -1312,7 +1449,9 @@ function moveRight(on) { mRight = on; }
 
 // ── ITEMS ──
 function useItem(slot) {
-  if (state !== 'playing' && state !== 'paused') return;
+  // Solo jugando: en pausa (con la tienda abierta) se podia beber una pocion
+  // o lanzar el rayo y la partida seguia congelada, gastando el objeto gratis.
+  if (state !== 'playing') return;
   const it = PL.items[slot];
   if (it[0] <= 0 || it[1] > 0) return;
   it[0]--; it[1] = it[2];
@@ -1325,7 +1464,7 @@ function useItem(slot) {
 }
 function killAllEnemies() {
   const jefes = enemies.filter(e => e.jefe && e.hp > 8);
-  jefes.forEach(e => { e.hp -= 8; e.flashTimer = 12; spawnPFX(e.x + e.w / 2, e.y + e.h / 2, '#00eeff', 20, 7); });
+  jefes.forEach(e => { if (e.jefe.estado === 'entrada') return; e.hp -= 8; e.flashTimer = 12; spawnPFX(e.x + e.w / 2, e.y + e.h / 2, '#00eeff', 20, 7); });
   enemies.filter(e => !jefes.includes(e)).forEach(e => {
     const pts = (e.isBoss ? 300 : e.isMagmar ? 150 : e.type === 'charger' ? 80 : 60) * comboMultiplier;
     addScore(pts);
@@ -1433,12 +1572,21 @@ function updateHpHUD() {
     if (f) { f.classList.remove('hp-ok', 'hp-mid', 'hp-low'); f.classList.add(clase); }
   }
 }
-function updateHUD() {
-  _hTxt('h-score', Math.floor(score).toLocaleString());
-  _hTxt('h-hi', Math.floor(hiScore).toLocaleString());
+// El score sube +1 CADA frame, asi que "escribir solo si cambia" no evitaba
+// nada: toLocaleString() y una escritura al DOM 60 veces por segundo (y otra
+// por cada golpe o moneda, que llamaban a updateHUD() aparte). Ahora el texto
+// se refresca como mucho 10 veces por segundo y solo si el numero cambio.
+let _hudScoreFrame = -1e9;
+function updateHUD(forzar) {
+  if (forzar || frame - _hudScoreFrame >= 6 || frame < _hudScoreFrame) {
+    _hudScoreFrame = frame;
+    const s = Math.floor(score), h = Math.floor(hiScore);
+    if (_hud.ult.score !== s) { _hud.ult.score = s; _hTxt('h-score', s.toLocaleString()); }
+    if (_hud.ult.hi !== h) { _hud.ult.hi = h; _hTxt('h-hi', h.toLocaleString()); }
+  }
   _hTxt('h-wave', wave);
   _hTxt('h-coins', sessionCoins);
-  _hW('combo-fill', Math.round(comboTimer / COMBO_WINDOW * 100) + '%');
+  _hW('combo-fill', Math.round(comboTimer / COMBO_WINDOW * 20) * 5 + '%');
   _hTxt('h-combo-x', comboCount > 1 ? 'x' + comboMultiplier : '');
   for (let i = 0; i < 4; i++) {
     const it = PL.items[i];
@@ -1522,7 +1670,7 @@ function spawnJefe(tipo, extraHp, bioma, nombreOverride) {
   bossActive = true;
   spawnFT(W / 2, 80, '★ ' + nombre + ' ★', '#ff00cc', true);
   showPUNotif('☠ ¡JEFE! Esquiva cuando veas el rojo');
-  shake(10); _hap('heavy');
+  shake(10); _hap('heavy'); playSound('jefe');
 }
 
 function _jefeElegirAtaque(j) {
@@ -1567,7 +1715,7 @@ function actualizarJefe(e) {
           j.huecos.push(x);
         }
       }
-      _hap('light');
+      _hap('light'); playSound('aviso');
     }
     return;
   }
@@ -1592,7 +1740,7 @@ function actualizarJefe(e) {
         if (j.ataque === 'doble' && !j.rebotado) {
           // Vuelta: nuevo aviso (mas corto, pero nunca menos de 40 f) y al otro lado.
           j.rebotado = true; j.dir = -j.dir; e.facing = j.dir;
-          j.estado = 'aviso'; j.t = j.max = 40;
+          j.estado = 'aviso'; j.t = j.max = 40; playSound('aviso');
           return;
         }
         spawnFT(e.x + e.w / 2, e.y - 30, 'ATURDIDO', '#ffe600', true);
@@ -1631,7 +1779,7 @@ function golpearJugador(dmg, txt) {
   shake(8); freeze(6);
   spawnPFX(PL.x + PL.w / 2, PL.y + PL.h / 2, '#ff3333', 14, 5);
   spawnFT(PL.x, PL.y - 20, '-' + dmg + (txt ? ' ' + txt : ' HP'), '#ff3333');
-  updateHpHUD(); _hap('heavy');
+  updateHpHUD(); _hap('heavy'); playSound('hurt');
   if (PL.hp <= 0) endGame();
 }
 
@@ -1706,7 +1854,7 @@ function matarEnemigo(e) {
   }
   missionEvent('kill', 1); achEvent('onKill');
   if (e.isBoss) { bossActive = false; bossKilled++; missionEvent('boss', 1); achEvent('onBoss'); spawnFT(e.x, e.y - 30, 'BOSS MUERTO!', '#ff00cc', true); playSound('boss'); addXP(80); _hap('heavy'); }
-  else { addXP(e.isMagmar ? 30 : e.isCharger ? 20 : e.isExploder ? 15 : 10); playSound('crunch'); _hap('medium'); }
+  else { addXP(e.isMagmar ? 30 : e.isCharger ? 20 : e.isExploder ? 15 : 10); playSound(e.isExploder ? 'explota' : 'crunch'); _hap('medium'); }
   spawnPFX(e.x + e.w / 2, e.y + e.h / 2, e.isBoss ? '#ff00cc' : e.isMagmar ? '#ff4400' : e.isCharger ? '#ff9900' : '#ff3333', e.isBoss ? 35 : e.isMagmar ? 28 : 20, e.isBoss ? 9 : 6);
   const coinDrop = e.isBoss ? 5 : e.isMagmar ? 3 : e.isCharger ? 2 : 1;
   for (let c = 0; c < coinDrop; c++) spawnCoin(e.x + Math.random() * e.w, e.y);
@@ -1734,6 +1882,74 @@ function matarEnemigo(e) {
     // frames de celebracion (antes un esbirro o una roca en vuelo daban GAME OVER).
     PL.invTimer = 9999;
     bullets = bullets.filter(b => !b.enemy);
+  }
+}
+
+// ══ VOLADORES EN PICADA ══
+// El volador flotaba por encima del alcance de la espada y del cuerpo del
+// jugador: ni hacia daño ni se le podia pegar desde el suelo, era decorado.
+// Ahora, cuando pasa cerca, AVISA (42 frames: tiembla, "!" encima y una marca
+// roja en el suelo donde va a caer), se lanza en picada hacia esa marca, se
+// queda un momento posado (ahi se le pega desde el suelo) y vuelve a subir.
+// Solo hace daño durante la picada y solo uno se lanza a la vez: apartarse de
+// la marca basta para esquivarlo.
+const PICADA_AVISO = 42, PICADA_VEL = 6.5, PICADA_DANO = 10;
+function moverVolador(e) {
+  const v = e.vuelo || (e.vuelo = { estado: 'vuela', t: 60, y0: e.y });
+  const cxE = e.x + e.w / 2, px = PL.x + PL.w / 2;
+  v.t--;
+  if (v.estado === 'vuela') {
+    e.x -= e.spd;
+    e.bobTimer += .07; e.y += Math.sin(e.bobTimer) * .8;
+    const otro = enemies.some(o => o !== e && o.vuelo && (o.vuelo.estado === 'aviso' || o.vuelo.estado === 'picada'));
+    if (v.t <= 0 && !otro && !e.aparicion && Math.abs(px - cxE) < 210 && cxE > 30 && cxE < W - 30 && !victoriaEn) {
+      v.estado = 'aviso'; v.t = v.max = PICADA_AVISO;
+      v.objX = Math.max(e.w / 2, Math.min(W - e.w / 2, px));
+      e.facing = v.objX > cxE ? 1 : -1;
+      playSound('avisoVolador');
+    } else if (v.t <= 0) v.t = 20;
+  } else if (v.estado === 'aviso') {
+    e.y = Math.max(8, e.y - .5);                 // coge impulso hacia arriba
+    if (v.t <= 0) {
+      const objY = GROUND - e.h - 4;
+      const dx = v.objX - cxE, dy = objY - e.y, d = Math.hypot(dx, dy) || 1;
+      v.vx = dx / d * PICADA_VEL; v.vy = dy / d * PICADA_VEL;
+      v.t = Math.ceil(d / PICADA_VEL) + 2;
+      v.estado = 'picada';
+    }
+  } else if (v.estado === 'picada') {
+    e.x += v.vx; e.y += v.vy;
+    if (v.t <= 0 || e.y >= GROUND - e.h - 4) {
+      e.y = GROUND - e.h - 4;
+      v.estado = 'posado'; v.t = 50;
+      spawnPFX(e.x + e.w / 2, GROUND - 4, 'rgba(255,255,255,.5)', 6, 2.4, 3);
+      playSound('land', 8);
+    }
+  } else if (v.estado === 'posado') {
+    e.x -= e.spd * .25;
+    if (v.t <= 0) { v.estado = 'sube'; v.t = 60; e.facing = -1; }
+  } else if (v.estado === 'sube') {
+    e.x -= e.spd * .6;
+    e.y += (v.y0 - e.y) * .06;
+    if (v.t <= 0) { v.estado = 'vuela'; v.t = 170 + Math.random() * 100; }
+  }
+}
+// Marca en el suelo de la picada (por debajo de los sprites, como los avisos del jefe).
+function dibujarAvisosVoladores() {
+  for (const e of enemies) {
+    const v = e.vuelo;
+    if (!v || v.estado !== 'aviso' || e.muriendo) continue;
+    const k = 1 - v.t / v.max;
+    cx.save();
+    cx.globalAlpha = .18 + .24 * ((frame >> (k > .7 ? 1 : 3)) & 1);
+    cx.fillStyle = '#ff2244';
+    cx.beginPath(); cx.ellipse(v.objX, GROUND, e.w * .55, 9, 0, 0, Math.PI * 2); cx.fill();
+    cx.globalAlpha = 1;
+    cx.font = '18px "Press Start 2P"'; cx.textAlign = 'center';
+    cx.lineWidth = 4; cx.lineJoin = 'round'; cx.strokeStyle = '#000';
+    cx.strokeText('!', e.x + e.w / 2, e.y - 6);
+    cx.fillStyle = '#ffe600'; cx.fillText('!', e.x + e.w / 2, e.y - 6);
+    cx.restore();
   }
 }
 
@@ -1951,10 +2167,11 @@ function update() {
       // 7,5 es rapido pero legible, y con 78 frames de aviso es justo.
       e.spd = Math.min(e.spd + .05, 7.5);
       e.x += e.chargeDir * e.spd;
+    } else if (e.isFlyer) {
+      moverVolador(e);
     } else {
       e.x -= e.spd;
     }
-    if (e.isFlyer) { e.bobTimer += .07; e.y = e.y + (Math.sin(e.bobTimer) * .8); }
     if (e.isMagmar) { e.bobTimer += .04; spawnPFX(e.x + e.w / 2, e.y + e.h * .8, '#ff4400', 1, 1.5, 3); }
     if (e.isCharger && e.chargeTimer > 0) e.chargeTimer--;
     if (e.isExploder) { const dx2 = PL.x - e.x; if (!e.rushDir && Math.abs(dx2) < 180) e.rushDir = dx2 > 0 ? 1 : -1; if (e.rushDir) { e.spd = Math.min(e.spd + .15, 6.5); e.x += e.rushDir * e.spd; spawnPFX(e.x + e.w / 2, e.y + e.h / 2, '#ff6400', 2, 2, 3); } }
@@ -1977,7 +2194,10 @@ function update() {
     // Un swing puede tocar a VARIOS enemigos: antes se desactivaba la hitbox
     // con el primero, así que cortabas a través de tres bichos y solo moría uno.
     // e.hitBy evita que el mismo swing golpee dos veces al mismo enemigo.
-    if (attackBox.active && e.hitBy !== PL.swingId && overlap(attackBox, { x: e.x + 6, y: e.y + 6, w: e.w - 12, h: e.h - 12 })) {
+    // Jefe entrando en escena: intocable. Antes el golpe "acertaba", daba
+    // puntos y combo, pero hacia 0 de daño.
+    const jefeEntrando = e.jefe && e.jefe.estado === 'entrada';
+    if (!jefeEntrando && attackBox.active && e.hitBy !== PL.swingId && overlap(attackBox, { x: e.x + 6, y: e.y + 6, w: e.w - 12, h: e.h - 12 })) {
       e.hitBy = PL.swingId;
       swingHits++;
       const atkMult = skinBuffs?.atkMult || 1;
@@ -1985,10 +2205,7 @@ function update() {
       let dmg = Math.max(1, Math.ceil((1 + PL.comboStep) * atkMult * mej.dano * arma.dano * (critico ? 2 : 1)));
       // Golpe aereo: premia usar el salto y las plataformas para atacar.
       if (!PL.onGround) dmg = Math.ceil(dmg * 1.25);
-      if (e.jefe) {
-        if (e.jefe.estado === 'entrada') dmg = 0;
-        else if (e.jefe.estado === 'aturdido') dmg = Math.ceil(dmg * 1.5);
-      }
+      if (e.jefe && e.jefe.estado === 'aturdido') dmg = Math.ceil(dmg * 1.5);
       if (critico) spawnFT(e.x + e.w / 2, e.y - 34, 'CRITICO!', '#ffe600', true);
       e.hp -= dmg; e.flashTimer = 10;
       // Retroceso fuerte a proposito: con 5 de empuje el desplazamiento total
@@ -2002,8 +2219,7 @@ function update() {
       const pts = hitCombo(e.isBoss ? 120 : e.isCharger ? 80 : 60);
       spawnPFX(attackBox.x + attackBox.w / 2, e.y + e.h / 2, ['#ffe600', '#ff9900', '#ff3333'][PL.comboStep], 8 + PL.comboStep * 5, 4 + PL.comboStep * 2);
       spawnFT(e.x, e.y - 20, '+' + pts, ['#ffe600', '#ff9900', '#ff3333'][PL.comboStep]);
-      updateHUD();
-      playSound('slash');              // el impacto melee no sonaba en absoluto
+      playSound('slash');             // el impacto melee no sonaba en absoluto
       freeze(3 + PL.comboStep);
       shake(2 + PL.comboStep);
       _hap('light');
@@ -2014,16 +2230,28 @@ function update() {
 
     // ── PLAYER DAMAGE ──
     if (e.isExploder && overlap({ x: PL.x - 20, y: PL.y - 20, w: PL.w + 40, h: PL.h + 40 }, { x: e.x, y: e.y, w: e.w, h: e.h })) {
-      shake(15); e.hp = -1;
+      // Explota contra ti: desaparece aqui mismo. Antes se marcaba con hp -1 y
+      // el frame siguiente pasaba por matarEnemigo(): contaba como baja, daba
+      // XP, monedas y avanzaba la mision de "matar" aunque te hubiera volado.
+      shake(15);
       freeze(8);
       spawnPFX(e.x + e.w / 2, e.y + e.h / 2, '#ff6400', 40, 8, 8);
       spawnPFX(e.x + e.w / 2, e.y + e.h / 2, '#ffe600', 25, 6, 6);
       particles.push({ x: e.x + e.w / 2, y: e.y + e.h / 2, vx: 0, vy: 0, color: '#ff6400', life: 1, decay: .06, sz: 80, ring: true });
-      if (PL.invTimer <= 0) { PL.hp -= 30; PL.invTimer = 60; PL.flashTimer = 20; shake(12); spawnFT(PL.x, PL.y - 20, '-30 EXPLOSION!', '#ff6400', true); updateHpHUD(); _hap('heavy'); if (PL.hp <= 0) { endGame(); } }
+      playSound('explota');
+      if (PL.invTimer <= 0) {
+        PL.hp -= 30; PL.invTimer = 60; PL.flashTimer = 20; shake(12);
+        comboCount = 0; comboMultiplier = 1;
+        spawnFT(PL.x, PL.y - 20, '-30 EXPLOSION!', '#ff6400', true); updateHpHUD(); _hap('heavy'); playSound('hurt');
+        if (PL.hp <= 0) endGame();
+      }
+      return false;
     }
     const jefeInofensivo = e.jefe && e.jefe.estado !== 'pausa' && e.jefe.estado !== 'ejecuta';
-    if (PL.invTimer <= 0 && !e.isExploder && !jefeInofensivo && overlap({ x: PL.x + 6, y: PL.y + 6, w: PL.w - 12, h: PL.h - 12 }, { x: e.x + 8, y: e.y + 8, w: e.w - 16, h: e.h - 16 })) {
-      const dmg = e.jefe ? (e.jefe.estado === 'pausa' ? 10 : 25) : e.isBoss ? 22 : e.isCharger ? 15 : 12;
+    // El volador solo hace daño mientras cae en picada (ver moverVolador).
+    const voladorInofensivo = e.isFlyer && !(e.vuelo && e.vuelo.estado === 'picada');
+    if (PL.invTimer <= 0 && !e.isExploder && !jefeInofensivo && !voladorInofensivo && overlap({ x: PL.x + 6, y: PL.y + 6, w: PL.w - 12, h: PL.h - 12 }, { x: e.x + 8, y: e.y + 8, w: e.w - 16, h: e.h - 16 })) {
+      const dmg = e.jefe ? (e.jefe.estado === 'pausa' ? 10 : 25) : e.isBoss ? 22 : e.isCharger ? 15 : e.isFlyer ? PICADA_DANO : 12;
       PL.hp -= dmg;
       PL.invTimer = 60; PL.flashTimer = 20;
       comboCount = 0; comboMultiplier = 1;
@@ -2032,7 +2260,7 @@ function update() {
       spawnPFX(PL.x + PL.w / 2, PL.y + PL.h / 2, '#ff3333', 14, 5);
       spawnFT(PL.x, PL.y - 20, '-' + dmg + ' HP', '#ff3333');
       updateHpHUD();
-      _hap('heavy');
+      _hap('heavy'); playSound('hurt');
       if (PL.hp <= 0) { endGame(); return true; }
     }
     return e.x > -120 && e.x < W + 260; // cull on both sides (chargers/exploders can run off the right edge)
@@ -2053,13 +2281,13 @@ function update() {
     if (!b.enemy) {
       for (let i = enemies.length - 1; i >= 0; i--) {
         const e = enemies[i];
+        if (e.jefe && e.jefe.estado === 'entrada') continue;   // intocable mientras entra
         if (overlap(b, { x: e.x + 6, y: e.y + 6, w: e.w - 12, h: e.h - 12 })) {
           e.hp -= 1.5; e.flashTimer = 8;
           const pts = hitCombo(40);
           spawnPFX(e.x + e.w / 2, e.y + e.h / 2, '#ff6400', 8, 4);
           spawnFT(e.x, e.y - 15, '+' + pts, '#ff6400');
           if (e.hp <= 0) { matarEnemigo(e); enemies.splice(i, 1); }
-          updateHUD();
           return false;
         }
       }
@@ -2072,7 +2300,7 @@ function update() {
         spawnFT(PL.x, PL.y - 15, '-' + bd + ' HP', '#ff3333');
         shake(5);
         updateHpHUD();
-        _hap('heavy');
+        _hap('heavy'); playSound('hurt');
         if (PL.hp <= 0) { endGame(); return false; }
         return false;
       }
@@ -2112,7 +2340,6 @@ function update() {
       spawnPFX(c.x + c.w / 2, c.y + c.h / 2, '#ffe600', 6, 3, 3);
       if (totalCoins % 10 === 0) spawnFT(PL.x, PL.y - 20, 'x' + comboMultiplier + ' COINS!', '#ffe600');
       achEvent('onSessionCoins', sessionCoins);
-      updateHUD();
       return false;
     }
     return c.x > -40;
@@ -2141,7 +2368,7 @@ function update() {
       }
       missionEvent('chest', 1);
       _hap('medium');
-      updateHUD(); updateHpHUD();
+      updateHpHUD();
       return false;
     }
     return ch.x > -50;
@@ -2326,7 +2553,7 @@ function sinFinDesbloqueado(est) { return (est['1-3'] || 0) >= 1; }
 // Recompensa en DQ solo por estrellas NUEVAS, para que repetir la 1-1 no se
 // pueda farmear.
 function ganarNivel() {
-  state = 'victoria';
+  state = 'victoria'; _estadoDesde = performance.now();
   if (raf) { cancelAnimationFrame(raf); raf = null; }
   stopMusic();
   playSound('levelup'); _hap('heavy');
@@ -2584,6 +2811,7 @@ function draw() {
   cx.restore();
 
   dibujarAvisosJefe();
+  dibujarAvisosVoladores();
 
   // Coins
   coins.forEach(c => {
@@ -2862,7 +3090,7 @@ function draw() {
   // Arma equipada y sellos de la etapa (esquina inferior izquierda)
   if (state === 'playing' || state === 'paused') {
     cx.save();
-    cx.font = '8px "Press Start 2P"'; cx.textAlign = 'left';
+    cx.font = FS_LIENZO_CHICO + 'px "Press Start 2P"'; cx.textAlign = 'left';
     cx.lineWidth = 3; cx.lineJoin = 'round'; cx.strokeStyle = '#000';
     const txtArma = '🗡 ' + arma.nombre + (nivel ? '   ✦ ' + sellos + '/3   ' + nivel.id : '');
     cx.strokeText(txtArma, 8, H - 8);
@@ -2898,11 +3126,11 @@ function draw() {
     cx.fillStyle = 'rgba(0,0,0,.45)'; cx.fillRect(W / 2 - 70, 8, 140, 7);
     cx.fillStyle = '#c084fc'; cx.fillRect(W / 2 - 70, 8, 140 * pct, 7);
     cx.strokeStyle = 'rgba(192,132,252,.5)'; cx.lineWidth = 1; cx.strokeRect(W / 2 - 70, 8, 140, 7);
-    cx.font = '8px "Press Start 2P"'; cx.textAlign = 'center'; cx.fillStyle = 'rgba(255,255,255,.55)';
-    cx.fillText('MEJORA ' + runLevel, W / 2, 26);
+    cx.font = FS_LIENZO_CHICO + 'px "Press Start 2P"'; cx.textAlign = 'center'; cx.fillStyle = 'rgba(255,255,255,.7)';
+    cx.fillText('MEJORA ' + runLevel, W / 2, 20 + FS_LIENZO_CHICO);
     if (mejorasElegidas.length) {
-      cx.font = '13px sans-serif'; cx.textAlign = 'right';
-      cx.fillText(mejorasElegidas.slice(-8).join(' '), W - 8, 26);
+      cx.font = (FS_LIENZO_CHICO + 5) + 'px sans-serif'; cx.textAlign = 'right';
+      cx.fillText(mejorasElegidas.slice(-8).join(' '), W - 8, 20 + FS_LIENZO_CHICO);
     }
     cx.restore();
   }
@@ -3034,7 +3262,32 @@ function arrancarAtraccion() {
   if (!bgStars.length) initBg();
   atraccionRaf = requestAnimationFrame(bucleAtraccion);
 }
-document.addEventListener('visibilitychange', () => { if (!document.hidden && state === 'menu') arrancarAtraccion(); });
+// ── PAUSA AUTOMATICA ──
+// Cambiar de app, bloquear el movil o abrir otra pestaña seguia corriendo la
+// partida (o la dejaba a medias con la musica sonando). Ahora se pausa sola
+// y se para el audio; volver NO reanuda: el jugador pulsa CONTINUAR cuando
+// esta listo. Lo mismo al girar el movil (sale el aviso "GIRA EL MÓVIL"
+// encima del juego y antes la partida seguia por debajo).
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (state === 'playing') pauseGame();
+    pauseMusic();
+    if (audioCtx && audioCtx.state === 'running') audioCtx.suspend().catch(() => {});
+  } else {
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+    if (state === 'descanso') playMusic();
+    if (state === 'menu') arrancarAtraccion();
+  }
+});
+window.addEventListener('pagehide', () => { if (state === 'playing') pauseGame(); pauseMusic(); });
+const _mqGirar = window.matchMedia ? matchMedia('(orientation:landscape) and (max-height:520px)') : null;
+function comprobarGiro() { if (_mqGirar && _mqGirar.matches && state === 'playing') pauseGame(); }
+if (_mqGirar) {
+  try { _mqGirar.addEventListener('change', comprobarGiro); }
+  catch (e) { try { _mqGirar.addListener(comprobarGiro); } catch (e2) {} }
+}
+window.addEventListener('resize', comprobarGiro);
+window.addEventListener('orientationchange', comprobarGiro);
 
 // ── LIFECYCLE ──
 function startGame(opts) {
@@ -3078,7 +3331,7 @@ function startGame(opts) {
 
   initBg();
   initPlataformas();
-  updateHpHUD(); updateHUD(); updateXPBar();
+  updateHpHUD(); updateHUD(true); updateXPBar();
   for (let i = 0; i < 4; i++) updateItemHUD(i);
   state = 'playing';
   if (atraccionRaf) { cancelAnimationFrame(atraccionRaf); atraccionRaf = null; }
@@ -3087,18 +3340,23 @@ function startGame(opts) {
   if (raf) cancelAnimationFrame(raf);
   resetLoopClock();
   raf = requestAnimationFrame(loop);
+  comprobarGiro();
 }
 
 function pauseGame() {
   if (state !== 'playing') return;
   pauseMusic();
   state = 'paused';
-  cancelAnimationFrame(raf);
+  cancelAnimationFrame(raf); raf = null;
+  keys = {}; setMove(0); mLeft = mRight = false;   // nada de teclas "pegadas" al volver
   const el = $id('shop-coins-val'); if (el) el.textContent = sessionCoins;
   const ov = $id('ov-pause'); if (ov) ov.classList.add('show');
+  _pintarSonido();
 }
 
 function resumeGame() {
+  if (state !== 'paused') return;
+  if (_mqGirar && _mqGirar.matches) return;   // sigue en apaisado: el aviso tapa el juego
   playMusic();
   const ov = $id('ov-pause'); if (ov) ov.classList.remove('show');
   state = 'playing';
@@ -3113,7 +3371,7 @@ function resumeGame() {
 function endGame() {
   if (victoriaEn > 0 && nivel) { ganarNivel(); return; }   // el jefe ya cayo
   stopMusic();
-  state = 'dead';
+  state = 'dead'; _estadoDesde = performance.now();
   cancelAnimationFrame(raf);
   playSound('die');
   _hap('heavy');
@@ -3160,48 +3418,55 @@ function abrirDescanso() {
     ov = document.createElement('div');
     ov.id = 'ov-descanso';
     ov.style.cssText = 'position:fixed;inset:0;z-index:58;display:flex;flex-direction:column;' +
-      'align-items:center;justify-content:center;background:rgba(5,5,16,.93);padding:16px;gap:8px';
+      'align-items:center;justify-content:center;background:rgba(11,15,23,.96);padding:16px;gap:8px';
     document.body.appendChild(ov);
   }
   pintarDescanso(ov, ganadas);
   ov.style.display = 'flex';
 }
 
+// Textos en px y en sans-serif: en rem salian de 5,7-7,5 px en el movil
+// (la raiz es 22-24 px y la fuente pixel a .26rem no se lee).
+// Comillas simples dentro: esto va metido en atributos style="..." del HTML.
+const _SANS = "var(--sans,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif)";
+const ITEM_TXT = [['Energía', '+50 de vida'], ['Escudo', '5 s invencible'], ['Rayo', 'Limpia la pantalla'], ['Fuego', 'Disparo automático']];
+function _esTactil() { return document.body.classList.contains('ctl3'); }
+
 function pintarDescanso(ov, ganadas) {
   const b = currentBiome();
   ov.innerHTML =
-    '<div style="font-size:.56rem;color:' + b.line + ';text-shadow:3px 3px 0 #000">OLEADA ' + (wave - 1) + ' SUPERADA</div>' +
-    '<div style="font-size:.34rem;color:#ffe600;margin:2px 0 8px">🪙 +' + ganadas + '  ·  total ' + sessionCoins + '</div>' +
-    '<div style="font-size:.26rem;color:rgba(255,255,255,.4);letter-spacing:.1em;margin-bottom:4px">TIENDA</div>' +
-    '<div id="tienda-descanso" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;width:min(430px,94%)"></div>' +
-    '<button id="seguir-descanso" style="margin-top:12px;width:min(430px,94%);min-height:56px;' +
-    'background:linear-gradient(135deg,#00ff88,#00cc6a);color:#000;font-family:inherit;font-size:.42rem;' +
-    'border:none;border-radius:8px;cursor:pointer;box-shadow:0 0 20px rgba(0,255,136,.4)">▶ OLEADA ' + wave + '</button>';
+    '<div style="font-size:13px;line-height:1.5;color:' + b.line + ';text-align:center">OLEADA ' + (wave - 1) + ' SUPERADA</div>' +
+    '<div style="font-family:' + _SANS + ';font-size:15px;font-weight:600;color:var(--oro,#f2c14e);margin:2px 0 8px">🪙 +' + ganadas + ' · total ' + sessionCoins + '</div>' +
+    '<div style="font-family:' + _SANS + ';font-size:12px;font-weight:600;color:var(--txt3,#8a93a6);letter-spacing:.08em;margin-bottom:2px">TIENDA</div>' +
+    '<div id="tienda-descanso" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;width:min(430px,94%)"></div>' +
+    '<button id="seguir-descanso" class="ob" style="margin-top:12px;width:min(430px,94%);min-height:52px">▶ OLEADA ' + wave + '</button>' +
+    (_esTactil() ? '' : '<div style="font-family:' + _SANS + ';font-size:12px;color:var(--txt3,#8a93a6)">o pulsa Enter</div>');
 
   const rejilla = ov.querySelector('#tienda-descanso');
   ITEM_SHOPS.forEach((it, i) => {
     const lleno = PL.items[i][0] >= it.maxStock;
     const puedo = sessionCoins >= it.price && !lleno;
     const btn = document.createElement('button');
-    btn.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 6px;' +
-      'background:' + (puedo ? 'rgba(0,255,136,.13)' : 'rgba(255,255,255,.05)') + ';' +
-      'border:2px solid ' + (puedo ? 'rgba(0,255,136,.45)' : 'rgba(255,255,255,.12)') + ';' +
-      'border-radius:6px;color:#fff;font-family:inherit;cursor:' + (puedo ? 'pointer' : 'default') + ';' +
-      'opacity:' + (puedo ? '1' : '.55');
-    btn.innerHTML = '<span style="font-size:.32rem;color:#00ff88">' + it.name + '</span>' +
-      '<span style="font-size:.26rem;color:rgba(255,255,255,.55)">' +
-      (lleno ? 'MAXIMO' : '🪙 ' + it.price) + '  ·  x' + PL.items[i][0] + '</span>';
+    btn.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 6px;min-height:64px;' +
+      'background:var(--panel,#121826);border:1px solid ' + (puedo ? 'rgba(34,197,94,.55)' : 'var(--borde,#263049)') + ';' +
+      'border-radius:8px;color:var(--txt,#e6e9f0);font-family:' + _SANS + ';cursor:' + (puedo ? 'pointer' : 'default') + ';' +
+      'opacity:' + (puedo ? '1' : '.6');
+    btn.innerHTML = '<span style="font-size:14px;font-weight:600">' + ITEM_TXT[i][0] + ' <span style="font-weight:400;color:var(--txt2,#9aa3b5)">x' + PL.items[i][0] + '</span></span>' +
+      '<span style="font-size:12px;color:var(--txt2,#9aa3b5)">' + ITEM_TXT[i][1] + '</span>' +
+      '<span style="font-size:14px;font-weight:600;color:var(--oro,#f2c14e)">' + (lleno ? 'Máximo' : '🪙 ' + it.price) + '</span>';
     if (puedo) btn.onclick = () => { buyItem(i); playSound('boton'); pintarDescanso(ov, ganadas); };
     rejilla.appendChild(btn);
   });
 
   ov.querySelector('#seguir-descanso').onclick = () => {
+    if (state !== 'descanso') return;
     ov.style.display = 'none';
     state = 'playing';
     resetLoopClock();
     if (raf) cancelAnimationFrame(raf);
     raf = requestAnimationFrame(loop);
     spawnFT(W / 2, 80, '— OLEADA ' + wave + ' —', '#ffe600', true);
+    comprobarGiro();
   };
 }
 
@@ -3220,7 +3485,7 @@ function ofrecerMejoras() {
   }
   const opciones = disponibles.slice(0, 3);
 
-  state = 'eligiendo';
+  state = 'eligiendo'; _estadoDesde = performance.now();
   if (raf) { cancelAnimationFrame(raf); raf = null; }
   pauseMusic();
   playSound('levelup');
@@ -3232,19 +3497,21 @@ function ofrecerMejoras() {
     ov.id = 'ov-mejora';
     ov.className = 'ov';
     ov.style.cssText = 'position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;' +
-      'align-items:center;justify-content:center;background:rgba(5,5,16,.94);padding:16px;gap:10px';
+      'align-items:center;justify-content:center;background:rgba(11,15,23,.96);padding:16px;gap:10px';
     document.body.appendChild(ov);
   }
+  const teclado = !_esTactil();
   ov.innerHTML =
-    '<div style="font-size:.62rem;color:#c084fc;text-shadow:3px 3px 0 #000">NIVEL ' + runLevel + '</div>' +
-    '<div style="font-size:.34rem;color:rgba(255,255,255,.5);margin-bottom:6px">ELIGE UNA MEJORA</div>' +
+    '<div style="font-size:14px;line-height:1.5;color:var(--rosa,#a78bfa)">NIVEL ' + runLevel + '</div>' +
+    '<div style="font-family:' + _SANS + ';font-size:14px;color:var(--txt2,#9aa3b5);margin-bottom:4px">Elige una mejora' + (teclado ? ' · teclas 1, 2 y 3' : '') + '</div>' +
     opciones.map((m, i) =>
-      '<button data-i="' + i + '" style="width:min(420px,92%);min-height:66px;display:flex;align-items:center;gap:12px;' +
-      'background:linear-gradient(135deg,rgba(124,58,237,.28),rgba(0,255,136,.10));border:2px solid rgba(0,255,136,.45);' +
-      'border-radius:8px;color:#fff;font-family:inherit;padding:10px 14px;cursor:pointer;text-align:left">' +
-        '<span style="font-size:26px;line-height:1">' + m.icono + '</span>' +
-        '<span><span style="font-size:.38rem;color:#00ff88">' + m.nombre + '</span><br>' +
-        '<span style="font-size:.30rem;color:rgba(255,255,255,.65)">' + m.desc + '</span></span>' +
+      '<button data-i="' + i + '" style="width:min(420px,92%);min-height:68px;display:flex;align-items:center;gap:12px;' +
+      'background:var(--panel2,#182033);border:1px solid var(--borde,#263049);' +
+      'border-radius:10px;color:var(--txt,#e6e9f0);font-family:inherit;padding:10px 14px;cursor:pointer;text-align:left">' +
+        '<span style="font-size:26px;line-height:1;flex-shrink:0;width:34px;text-align:center">' + m.icono + '</span>' +
+        '<span style="flex:1;min-width:0"><span style="font-size:11px;line-height:1.6;color:var(--ok,#22c55e)">' + m.nombre + '</span><br>' +
+        '<span style="font-family:' + _SANS + ';font-size:14px;line-height:1.4;color:var(--txt2,#9aa3b5)">' + m.desc + '</span></span>' +
+        (teclado ? '<kbd style="font-family:' + _SANS + ';font-size:12px;font-weight:600;color:var(--txt,#e6e9f0);border:1px solid var(--borde,#263049);border-bottom-width:2px;border-radius:4px;padding:1px 7px;flex-shrink:0">' + (i + 1) + '</kbd>' : '') +
       '</button>').join('');
 
   ov.querySelectorAll('button').forEach(b => {
@@ -3261,6 +3528,7 @@ function ofrecerMejoras() {
       resetLoopClock();
       if (raf) cancelAnimationFrame(raf);
       raf = requestAnimationFrame(loop);
+      comprobarGiro();
     };
   });
   ov.style.display = 'flex';
@@ -3355,7 +3623,7 @@ function reviveGame() {
   showPUNotif('💖 SEGUNDA OPORTUNIDAD — ¡dale con todo!');
   _hap('heavy');
   const ov = $id('ov-dead'); if (ov) ov.classList.remove('show');
-  updateHpHUD(); updateHUD();
+  updateHpHUD(); updateHUD(true);
   playMusic();
   state = 'playing';
   if (atraccionRaf) { cancelAnimationFrame(atraccionRaf); atraccionRaf = null; }
@@ -3388,8 +3656,53 @@ function hideAll() {
 }
 
 // ── INPUT ──
+// Enter segun la pantalla: JUGAR desde la portada, CONTINUAR en la pausa y en
+// el descanso, REINTENTAR al morir y SIGUIENTE tras una victoria. Antes solo
+// existia el de la portada, y se disparaba tambien con el MAPA (u otra
+// pantalla del menu) abierto: arrancaba la etapa que quedaba por detras.
+function _menuLibre() {
+  const id = DQE.menuOverlayId || 'ov-menu';
+  const abiertos = [...document.querySelectorAll('.ov.show')].map(o => o.id);
+  if (abiertos.length !== 1 || abiertos[0] !== id) return false;
+  for (const x of ['ov-niveles', 'ov-victoria', 'ov-descanso', 'ov-mejora']) {
+    const o = $id(x); if (o && o.style.display && o.style.display !== 'none') return false;
+  }
+  const bv = $id('bienvenida'); if (bv && !bv.hidden) return false;
+  const tab = document.querySelector('#hub .tab.on'); if (tab && tab.id !== 'tab-jugar') return false;
+  return true;
+}
+function _enterSegunPantalla() {
+  const listo = performance.now() - _estadoDesde > 600;   // no saltarse la pantalla con un Enter ya pulsado
+  if (state === 'menu') { if (_menuLibre()) { jugar(); return true; } return false; }
+  if (state === 'paused') { resumeGame(); return true; }
+  if (state === 'descanso') { const b = $id('seguir-descanso'); if (b) { b.click(); return true; } return false; }
+  if (state === 'dead' && listo) {
+    const ov = $id('ov-dead'); if (ov && !ov.classList.contains('show')) return false;
+    reintentar(); return true;
+  }
+  if (state === 'victoria' && listo) { const b = $id('vic-sig'); if (b) { b.click(); return true; } }
+  return false;
+}
 document.addEventListener('keydown', e => {
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  const t = e.target;
+  if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable) return;
+  // Mejora con 1/2/3: es la unica entrada mientras se elige (ni objetos ni ataques).
+  if (state === 'eligiendo') {
+    const n = { Digit1: 0, Digit2: 1, Digit3: 2, Numpad1: 0, Numpad2: 1, Numpad3: 2 }[e.code];
+    if (n !== undefined && !e.repeat && performance.now() - _estadoDesde > 350) {
+      e.preventDefault();
+      const b = document.querySelector('#ov-mejora button[data-i="' + n + '"]');
+      if (b) b.click();
+    }
+    return;
+  }
+  if (e.code === 'Enter' || e.code === 'NumpadEnter') {
+    // Con un boton enfocado (navegacion por teclado) manda el boton.
+    if (t !== document.body && t.closest && t.closest('button,a,summary,[role=button]')) return;
+    if (!e.repeat && _enterSegunPantalla()) e.preventDefault();
+    return;
+  }
+  if (e.code === 'KeyM' && !e.repeat) { alternarSonido(); return; }
   keys[e.code] = true;
   if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') { e.preventDefault(); jump(); }
   if (e.code === 'KeyZ' || e.code === 'KeyJ') { e.preventDefault(); attack(); }
@@ -3399,8 +3712,7 @@ document.addEventListener('keydown', e => {
   if (e.code === 'Digit2') useItem(1);
   if (e.code === 'Digit3') useItem(2);
   if (e.code === 'Digit4') useItem(3);
-  if (e.code === 'KeyP' || e.code === 'Escape') { if (state === 'playing') pauseGame(); else if (state === 'paused') resumeGame(); }
-  if (e.code === 'Enter' && state === 'menu') jugar();
+  if ((e.code === 'KeyP' || e.code === 'Escape') && !e.repeat) { if (state === 'playing') pauseGame(); else if (state === 'paused') resumeGame(); }
 });
 document.addEventListener('keyup', e => { keys[e.code] = false; });
 cv.addEventListener('touchstart', e => { e.preventDefault(); jump(); }, { passive: false });
@@ -3440,7 +3752,8 @@ cv.addEventListener('click', () => { if (state === 'menu') jugar(); else if (sta
   #ctl-atk{right:13px;bottom:calc(34px + env(safe-area-inset-bottom,0px));width:112px;height:112px;font-size:34px;background:rgba(255,230,0,.13);border-color:rgba(255,230,0,.5);color:#ffe600;box-shadow:0 0 18px rgba(255,230,0,.2);}
   #ctl-jmp{right:95px;bottom:calc(148px + env(safe-area-inset-bottom,0px));width:96px;height:96px;font-size:26px;background:rgba(0,255,136,.13);border-color:rgba(0,255,136,.5);color:#00ff88;box-shadow:0 0 16px rgba(0,255,136,.2);}
   #ctl-item{right:6px;bottom:calc(192px + env(safe-area-inset-bottom,0px));width:68px;height:68px;background:rgba(0,238,255,.13);border-color:rgba(0,238,255,.55);box-shadow:0 0 14px rgba(0,238,255,.3);display:none;}
-  #ctl-item img{width:38px;height:38px;image-rendering:pixelated;pointer-events:none;}`;
+  #ctl-item img{width:38px;height:38px;image-rendering:pixelated;pointer-events:none;}
+  #ctl-pausa{left:12px;bottom:calc(206px + env(safe-area-inset-bottom,0px));width:52px;height:52px;border-radius:12px;border-width:1px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:18px;font-weight:700;letter-spacing:2px;background:rgba(18,24,38,.88);border-color:rgba(154,163,181,.5);color:#e6e9f0;}`;
   document.head.appendChild(css);
 
   const capa = document.createElement('div');
@@ -3449,7 +3762,10 @@ cv.addEventListener('click', () => { if (state === 'menu') jugar(); else if (sta
     '<div id="ctl-pad"><div class="pista">◂ MOVER ▸</div><div id="ctl-base"></div><div id="ctl-nub"></div></div>' +
     '<button class="ctl-btn" id="ctl-jmp">▲</button>' +
     '<button class="ctl-btn" id="ctl-atk">⚔</button>' +
-    '<button class="ctl-btn" id="ctl-item"><img alt=""></button>';
+    '<button class="ctl-btn" id="ctl-item"><img alt=""></button>' +
+    // En tactil no habia forma de pausar (P/Esc son de teclado y el boton
+    // Atras de Telegram no existe en el navegador): abre la pausa con tienda.
+    '<button class="ctl-btn" id="ctl-pausa" aria-label="Pausa">II</button>';
   document.body.appendChild(capa);
 
   const pad = $id('ctl-pad'), base = $id('ctl-base'), nub = $id('ctl-nub');
@@ -3492,11 +3808,15 @@ cv.addEventListener('click', () => { if (state === 'menu') jugar(); else if (sta
       if (t.identifier !== padId) continue;
       const ahora = performance.now();
       hist.push({ x: t.clientX, t: ahora });
-      while (hist.length > 1 && ahora - hist[0].t > 150) hist.shift();
-      // FLICK = dash: mas de 55 px recorridos en menos de 140 ms.
+      // FLICK = dash: 55 px o mas recorridos en los ultimos ~150 ms.
+      // Se conserva como ancla la ultima muestra ANTERIOR a la ventana: con
+      // el dedo quieto no llega ningun touchmove, asi que esa muestra es el
+      // punto de reposo. Antes se descartaba (tenia mas de 150 ms) y el flick
+      // se medía desde el primer movimiento: casi nunca llegaba a 55 px.
+      while (hist.length > 2 && ahora - hist[1].t >= 150) hist.shift();
       const viejo = hist[0];
       if (state === 'playing' && !PL.dashing && PL.dashCd <= 0 &&
-          Math.abs(t.clientX - viejo.x) > 55 && ahora - viejo.t < 140) {
+          Math.abs(t.clientX - viejo.x) >= 55) {
         PL.facing = t.clientX > viejo.x ? 1 : -1;   // el flick manda la direccion
         dash();                                      // dash() confirma con haptica media
         origen.x = t.clientX; origen.y = t.clientY;  // reanclar: se sigue corriendo
@@ -3526,6 +3846,7 @@ cv.addEventListener('click', () => { if (state === 'menu') jugar(); else if (sta
   alTocar($id('ctl-jmp'), jump);
   alTocar($id('ctl-atk'), attack);
   alTocar(btnItem, () => { if (_slotCtx >= 0) useItem(_slotCtx); });
+  alTocar($id('ctl-pausa'), () => { soltarPad(); pauseGame(); });
 
   // ── ITEM CONTEXTUAL + VISIBILIDAD ──
   // El boton de item solo existe cuando hay algo usable Y la situacion lo
