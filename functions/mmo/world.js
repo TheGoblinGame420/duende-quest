@@ -25,6 +25,7 @@ import {
   semanaUTC, afijosSemana, DES_SEM_MIN, premioDesSem, BESTIARIO_HITOS, premioBestiario, talento, TALENTOS, TALENTO_MAX, puntosTalento, costoReinicioTalentos, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX,
 } from '../../mmo/js/data.js';
 import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery, tg, getSolPriceUsd, SOL_DEV_WALLET } from '../api/lib.js';
+import { MMO_URL } from '../api/telegram-bot.js';
 import { Combate } from './combate.js';
 import { Social, pub } from './social.js';
 import { Mazmorras } from './mazmorras.js';
@@ -682,6 +683,8 @@ export class MmoWorld {
         const rsp = await tg(env.BOT_TOKEN, 'createInvoiceLink', {
           title: `🌍 ${pq.nombre}`, description: `DUENDE QUEST ONLINE — ${pq.desc}. Pedido #${pd.codigo}.`,
           payload: JSON.stringify({ mmo: pd.codigo }), currency: 'XTR', prices: [{ label: pq.nombre, amount: pd.stars }],
+          // Las skins se ven en la factura de Telegram.
+          ...(pq.img ? { photo_url: new URL('/assets/skins/' + pq.img + '.png', MMO_URL).href, photo_width: 256, photo_height: 256 } : {}),
         });
         link = rsp && rsp.result;
       } catch (e) {}
