@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=230';
+} from './data.js?v=232';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -2642,7 +2642,7 @@ function mostrarLogin(m) {
   LOGIN_PREMIOS.forEach((pr, i) => {
     const n = i + 1;
     const cls = n < m.racha ? 'hecho' : n === m.racha ? 'hoy' : '';
-    h += `<div class="dia ${cls}"><b>Día ${n}</b><span>${icoPack(n === 7 ? 'I_Chest01' : pr.oro ? 'I_GoldCoin' : 'P_Red01').replace('width:36px;height:36px', 'width:24px;height:24px')}</span><small>${esc(pr.txt)}</small></div>`;
+    h += `<div class="dia ${cls}"><b>Día ${n}</b><span>${icoPack(n === 7 ? 'I_Chest01' : pr.oro ? 'I_GoldCoin' : pr.pw && pr.pw.fuego ? 'S_Fire03' : pr.pw && pr.pw.rayo ? 'S_Thunder03' : 'P_Red01').replace('width:36px;height:36px', 'width:24px;height:24px')}</span><small>${esc(pr.txt)}</small></div>`;
   });
   h += '</div>';
   let txt = 'Hoy recibes ' + m.txt + '.';
@@ -2780,11 +2780,11 @@ function pintarWallet() {
 function htmlPremium() {
   const cuentaTg = !!TG && !forzarInvitado;
   const cuenta = yo && yo.p2e && yo.p2e.cuenta;
-  let h = '<p style="font-size:13px;line-height:1.45;color:var(--txt2);margin-bottom:10px">Compras opcionales para apoyar el juego: recibes oro y poderes en tu personaje. Cada pago lo revisa <b>El Duende</b> en persona y te lo entrega en tu personaje (te avisamos aquí y por Telegram). Con dinero <b>no</b> se compran mTON: los TON solo se ganan jugando.</p>';
+  let h = '<p style="font-size:13px;line-height:1.45;color:var(--txt2);margin-bottom:10px">Compras opcionales para apoyar el juego. <b>El Duende</b> revisa cada pago y lo entrega en tu personaje; te avisamos aquí y por Telegram. Con dinero <b>no</b> se compran mTON: solo se ganan jugando.</p>';
   for (const pq of PAQUETES) {
     let acc;
     if (pq.skin && yo && (yo.skins || []).includes(pq.skin)) acc = '<span class="precio" style="color:var(--ok)">✓ Ya la tienes</span>';
-    else if (!cuenta) acc = '<a class="btn sec" href="/game.html" style="text-decoration:none">Iniciar sesión</a>';
+    else if (!cuenta) acc = `<span class="precio">${cuentaTg ? estrellasDe(pq.usd) + ' Stars' : '$' + pq.usd}</span><a class="btn sec" href="/game.html" style="text-decoration:none">Iniciar sesión</a>`;
     else if (cuentaTg) acc = `<span class="precio">${estrellasDe(pq.usd)} Stars</span><button class="btn" data-premium="${pq.id}" data-metodo="stars">Pagar con Stars</button>`;
     else acc = `<span class="precio">~$${pq.usd} en SOL</span><button class="btn" data-premium="${pq.id}" data-metodo="sol">Pagar con SOL</button>`;
     const ico = pq.skin ? `<img src="${A}skins/${pq.img}.png">` : `<img src="${A}items/equipo/${pq.icono}.png">`;
