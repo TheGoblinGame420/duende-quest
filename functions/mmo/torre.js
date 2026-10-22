@@ -78,7 +78,7 @@ export const Torre = {
     if (T.sem === semanaUTC()) for (const s of vivos) this.anotarTorre(s, T.piso);
     for (const s of vivos) this.progresoTarea(s, 'torre');
     this.aClave(w.clave, { t: 'torre', piso: T.piso, limpio: 1 });
-    this.aClave(w.clave, { t: 'emote', m: `✅ ¡Piso ${T.piso} superado!${(T.piso + 1) % TORRE.jefeCada === 0 ? ' El siguiente tiene jefe.' : ''}` });
+    this.aClave(w.clave, { t: 'emote', m: `Piso ${T.piso} superado.${(T.piso + 1) % TORRE.jefeCada === 0 ? ' El siguiente tiene jefe.' : ''}` });
     T.sigEn = ahora + TORRE.pausa;
   },
 
@@ -113,7 +113,7 @@ export const Torre = {
     }
     this.aClave(w.clave, { t: 'torre', piso: T.piso, nv: T.nv, en: TORRE.tiempo, mod: mod || '', jefe: P.jefe ? 1 : 0 });
     const M = mod && MODS_TORRE[mod];
-    this.aClave(w.clave, { t: 'emote', m: P.jefe ? `👑 Piso ${T.piso}: ¡un jefe!` : M ? `🗼 Piso ${T.piso} · ${M.emoji} ${M.nombre}: ${M.desc}` : `🗼 Piso ${T.piso}` });
+    this.aClave(w.clave, { t: 'emote', m: P.jefe ? `Piso ${T.piso} · Jefe` : M ? `🗼 Piso ${T.piso} · ${M.emoji} ${M.nombre}: ${M.desc}` : `🗼 Piso ${T.piso}` });
   },
 
   // Fin de la subida: los que siguen dentro vuelven al pueblo (los caidos,
@@ -138,7 +138,7 @@ export const Torre = {
     if (c.torreMax >= TORRE.montura && !c.monturas.includes('torre')) {
       c.monturas.push('torre');
       s.sucio = true;
-      this.enviar(s, { t: 'toast', ok: true, m: `🦎 ¡Superaste el piso ${TORRE.montura}: el Lagarto de la Torre es tuyo! Elígelo en el Mercader (MONTURAS).` });
+      this.enviar(s, { t: 'toast', ok: true, m: `Nueva montura: Lagarto de la Torre. Mercader → Monturas.` });
       this.aTodos({ t: 'aviso', m: `🦎 ${c.nombre} ganó el Lagarto de la Torre (piso ${TORRE.montura}).` });
     }
     if (piso <= t.max) { this.revisarLogros(s); return; }
@@ -207,7 +207,7 @@ export const Torre = {
       if (f && f.p >= piso) return;
       // Nuevo record de la semana del servidor (desde el piso semMin, cada 5): a todos.
       const mejor = Math.max(0, ...Object.entries(rt.l).filter(([u]) => u !== s.c.uid).map(([, x]) => x.p));
-      if (piso >= TORRE.semMin && piso % 5 === 0 && piso > mejor) this.aTodos({ t: 'aviso', m: `🗼 ¡${s.c.nombre} llegó al piso ${piso} de la Torre del Duende: récord de la semana!` });
+      if (piso >= TORRE.semMin && piso % 5 === 0 && piso > mejor) this.aTodos({ t: 'aviso', m: `${s.c.nombre} ha llegado al piso ${piso} de la Torre del Duende. Récord de la semana.` });
       rt.l[s.c.uid] = { n: s.c.nombre, p: piso, k: s.c.clase || '', t: Date.now() };
       return this.state.storage.put('rankTorre', rt);
     }).catch(e => console.error('[MMO rankTorre]', e));

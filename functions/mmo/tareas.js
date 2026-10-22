@@ -99,7 +99,7 @@ export const Tareas = {
     const it = this.darItem(s, this.generarItem(c.nivel, semanal ? 2 : 1));
     c.pw.escudo = Math.min(99, (c.pw.escudo || 0) + (semanal ? 5 : 2));
     c.pw.pocion = Math.min(99, (c.pw.pocion || 0) + (semanal ? 10 : 5));
-    this.enviar(s, { t: 'toast', m: `🎁 ¡${semanal ? 'Semana' : 'Día'} completo! Bono: ${it.r >= 2 ? 'objeto ÉPICO' : 'objeto raro'}, ${semanal ? 5 : 2} escudos y ${semanal ? 10 : 5} pociones.`, ok: true });
+    this.enviar(s, { t: 'toast', m: `${semanal ? 'Semana' : 'Día'} completo. Bono: ${it.r >= 2 ? 'objeto ÉPICO' : 'objeto raro'}, ${semanal ? 5 : 2} escudos y ${semanal ? 10 : 5} pociones.`, ok: true });
     c.diasCompletos = (c.diasCompletos || 0) + (semanal ? 0 : 1);
     this.revisarLogros(s);
     this.guardar(s);

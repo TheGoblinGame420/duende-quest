@@ -88,7 +88,7 @@ export const Hermandades = {
     c.herm = id;
     await this.guardar(s);
     this.enviar(s, { t: 'herm', h: this.infoHerm(h) });
-    this.enviar(s, { t: 'toast', m: `🛡️ ¡Fundaste la hermandad <${nombre}>! Invita a otros desde su marco o desde 👥.`, ok: true });
+    this.enviar(s, { t: 'toast', m: `Hermandad <${nombre}> fundada. Invita a otros desde su marco o desde la lista de jugadores.`, ok: true });
     this.refrescarApariencia(s);
     this.actualizarYo(s);
     this.revisarLogros(s);
@@ -121,7 +121,7 @@ export const Hermandades = {
     c.herm = h.id;
     await this.guardarHerm(h);
     await this.guardar(s);
-    this.avisarHerm(h, `🛡️ ¡${c.nombre} se unió a la hermandad!`);
+    this.avisarHerm(h, `${c.nombre} se ha unido a la hermandad.`);
     this.enviarHerm(h);
     this.refrescarApariencia(s);
     this.actualizarYo(s);
@@ -251,7 +251,7 @@ export const Hermandades = {
     (this.hermSucias = this.hermSucias || new Set()).add(h);
     const n0 = GESTA_UMBRALES.filter(u => antes >= u).length, n1 = GESTA_UMBRALES.filter(u => G.p >= u).length;
     if (n1 > n0) {
-      this.avisarHerm(h, `🏆 ¡Gesta semanal: ${GESTA_NOMBRES[n1 - 1]} conseguido! Quien aportó ${GESTA_MIN}+ puntos cobra su oro.`);
+      this.avisarHerm(h, `Gesta semanal: ${GESTA_NOMBRES[n1 - 1]} conseguido. Quien aportó ${GESTA_MIN}+ puntos cobra su oro.`);
       for (const x of this.conectadosHerm(h)) this.cobrarGesta(x, h);
       this.guardarHerm(h);
       this.anotarRankHerm([h]);

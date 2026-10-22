@@ -115,7 +115,7 @@ export const Eventos = {
       meta: clamp(12 + 8 * n, 20, 60), hechos: 0, fase: 'oleadas', oleadaEn: ahora,
       capitan: 0, part: new Set(),
     };
-    this.aTodos({ t: 'aviso', m: `🔥 ¡${ev.nombre} en ${mp.nombre}! Derroten a ${ev.meta} invasores en 5 minutos.` });
+    this.aTodos({ t: 'aviso', m: `${ev.nombre} en ${mp.nombre}. Derroten a ${ev.meta} invasores en 5 minutos.` });
     this.aTodos(this.estadoEvento());
     return ev;
   },
@@ -217,12 +217,12 @@ export const Eventos = {
       this.sumarXp(s, xp);
       s.sucio = true;
       this.enviar(s, { t: 'gana', xp, oro, drops: [], item: it, x: Math.round(s.x), y: Math.round(s.y - 80) });
-      this.enviar(s, { t: 'toast', m: `🏆 ¡Invasión rechazada! +${xp} XP · +${oro} oro · ${RAREZAS[it.r].nombre}: ${nombreItem(it)}`, ok: true });
+      this.enviar(s, { t: 'toast', m: `Invasión rechazada. +${xp} XP · +${oro} oro · ${RAREZAS[it.r].nombre}: ${nombreItem(it)}`, ok: true });
       this.revisarLogros(s);
       this.actualizarYo(s);
       nombres.push(c.nombre);
     }
-    this.aTodos({ t: 'aviso', m: `🏆 ¡${ev.nombre} rechazada en ${mp.nombre}! Héroes: ${nombres.slice(0, 6).join(', ') || '—'}${nombres.length > 6 ? ' y ' + (nombres.length - 6) + ' más' : ''}` });
+    this.aTodos({ t: 'aviso', m: `${ev.nombre} rechazada en ${mp.nombre}. Héroes: ${nombres.slice(0, 6).join(', ') || '—'}${nombres.length > 6 ? ' y ' + (nombres.length - 6) + ' más' : ''}` });
     this.aTodos({ t: 'ev', on: false, fin: 'ganada', mapa: ev.mapa });
   },
 

@@ -853,7 +853,7 @@ async function pruebasMundoAbierto() {
   const ev0 = mundo.evento;
   chequear(ev0 && esZonaAbierta(ev0.mapa) && mundo.presentesEn(ev0.mapa).length > 0, 'la invasión elige una zona abierta con jugadores (' + (ev0 && ev0.mapa) + ')');
   chequear(ev0 && !['pueblo', 'coliseo'].includes(ev0.mapa) && !ev0.mapa.includes('#'), 'nunca en el pueblo, el Coliseo ni una mazmorra');
-  chequear(h1.ultimos('aviso').some(x => /🔥/.test(x.m)), 'se avisa a todo el servidor');
+  chequear(h1.ultimos('aviso').some(x => /invasores en 5 minutos/.test(x.m)), 'se avisa a todo el servidor');
   mundo.terminarEvento(false);
   const falta = mundo.proxEvento - Date.now();
   chequear(!mundo.evento && falta >= 12 * 60000 && falta <= 15 * 60000, 'la siguiente invasión queda a 12-15 min');

@@ -45,7 +45,7 @@ export const Amigos = {
     s.sucio = true;
     const pr = premioAmigo(c.nivel);
     c.oro += pr.oro;
-    this.enviar(s, { t: 'toast', m: `🤝 ¡Llegaste a nivel ${AMIGO_NIVEL}! Premio por venir invitado: +${pr.oro.toLocaleString('es', { useGrouping: 'always' })} oro.`, ok: true });
+    this.enviar(s, { t: 'toast', m: `Nivel ${AMIGO_NIVEL} alcanzado. Premio de invitado: +${pr.oro.toLocaleString('es', { useGrouping: 'always' })} oro.`, ok: true });
     const otro = this.porUid.get(c.invitadoPor);
     const co = otro ? otro.c : await this.state.storage.get('c:' + c.invitadoPor);
     if (!co) return;

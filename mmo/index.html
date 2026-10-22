@@ -328,7 +328,9 @@ body.tg .solo-web{display:none;}
 #chat-log b{color:var(--cian);font-weight:600;}
 #chat-log .sis{color:var(--amarillo);}
 #chat-log .ok{color:var(--verde);}
-#frases{display:none;flex-wrap:wrap;gap:4px;margin-bottom:4px;}
+#frases{display:none;flex-wrap:wrap;gap:5px;margin-bottom:6px;padding:8px;background:rgba(10,14,24,.92);border:1px solid rgba(255,255,255,.12);border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.4);pointer-events:auto;}
+#frases .rotulo{flex-basis:100%;font:600 10px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--txt3,#94a3b8);margin:2px 0 0;}
+#frases .rotulo:not(:first-child){margin-top:6px;}
 #frases .bt{font-family:var(--sans);font-size:13px;padding:7px 10px;}
 #chat-in{width:100%;font-family:var(--sans);font-size:14px;background:var(--panel2);border:1px solid var(--borde);color:var(--txt);border-radius:8px;padding:7px 9px;outline:none;display:none;}
 #chat-in:focus{border-color:var(--pri-txt);}
@@ -842,6 +844,6 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=218"></script>
+<script type="module" src="/mmo/js/client.js?v=220"></script>
 </body>
 </html>

@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=218';
+} from './data.js?v=220';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -355,7 +355,7 @@ function recibir(m) {
       miId = m.id; yo = m.yo; online = m.on || 0; reintentos = 0;
       $('m-inicio').classList.remove('on');
       pintarHud();
-      if (m.nuevo) aviso('¡Bienvenido, ' + yo.nombre + '! Habla con el Guardia Tito si necesitas ayuda.');
+      if (m.nuevo) aviso('Bienvenido a Pueblo Duende, ' + yo.nombre + '. El Guardia Tito tiene tu primera misión.');
       if (m.heredado) { aviso('☁️ Tu progreso de invitado pasó a tu cuenta.', 'ok'); try { localStorage.removeItem('dq_mmo_tok'); } catch (e) {} }
       if (m.regaladas && m.regaladas.length) aviso('🎁 Skins de tu cuenta desbloqueadas: ' + m.regaladas.map(k => SKINS[k].nombre).join(', '), 'ok');
       // Personaje sin clase (nuevo, o de antes de las clases): a elegir.
@@ -373,9 +373,9 @@ function recibir(m) {
       if (antes && antes.nivel < 8 && yo.nivel >= 8 && (yo.skins || []).length <= 1) setTimeout(() => aviso('Las skins del Mercader dan bonificaciones (oro, ataque, defensa, experiencia). Puedes probarlas antes de comprarlas en la pestaña SKINS.', 'ok'), 6000);
       // Lo que se abre con el nivel: avisarlo justo al llegar.
       if (antes && yo.nivel > antes.nivel) {
-        const abre = { 5: '🧭 ¡Ya puedes mandar expediciones! Tu mascota (o un duendecillo) explora mientras no juegas: registro de misiones (L).',
-          6: '🏰 ¡Se abrió tu primera mazmorra, la Madriguera Goblin! Entra por el portal de mazmorras del pueblo, solo o en grupo.',
-          10: '🗼 ¡Se abrió la Torre del Duende! Pisos sin fin con cofres cada 5: portal de mazmorras del pueblo.' };
+        const abre = { 5: 'Desbloqueado: Expediciones. Tu mascota explora mientras no juegas (registro de misiones, L).',
+          6: 'Desbloqueada: Madriguera Goblin, tu primera mazmorra. Portal de mazmorras del pueblo.',
+          10: 'Desbloqueada: Torre del Duende. Pisos sin fin y un cofre cada 5. Portal de mazmorras del pueblo.' };
         for (const nv of Object.keys(abre)) if (antes.nivel < +nv && yo.nivel >= +nv) setTimeout(() => aviso(abre[nv], 'ok', 10000), 3500);
       }
       // Invitado: su personaje vive solo en este navegador. Se le recuerda
@@ -474,7 +474,7 @@ function recibir(m) {
         for (let i = 0; i < 40; i++) particula(quien.x, quien.y - 30, ['#ffe600', '#00ff88', '#ff3cf0'][i % 3], 5);
         flotante(quien.x, quien.y - 95, '¡NIVEL ' + m.lv + '!', '#ffe600', 14);
       }
-      if (m.p === miId) { aviso('⬆️ ¡Subiste a nivel ' + m.lv + '!', 'ok'); tono('nivel'); }
+      if (m.p === miId) { aviso('Has alcanzado el nivel ' + m.lv + '.', 'ok'); tono('nivel'); }
       else if (quien) { quien.lv = m.lv; if (m.mx) quien.mx = m.mx; if (m.rmx) quien.rmx = m.rmx; }
       break;
     }
@@ -1065,7 +1065,7 @@ addEventListener('keydown', e => {
 addEventListener('keyup', e => { teclas[e.code] = false; });
 addEventListener('blur', () => { for (const k in teclas) teclas[k] = false; tIzq = tDer = false; });
 
-const FRASES = ['¡Hola! 👋', '¿Hacemos grupo?', '¿Mazmorra? 🏰', '¡Gracias! 🙏', '¡Bien jugado! ⚔️', '¡Ayuda aquí!', 'Me voy, ¡nos vemos! 👋'];
+const FRASES = ['¡Hola!', '¿Hacemos grupo?', '¿Alguien para mazmorra?', 'Gracias', 'Bien jugado', 'Necesito ayuda aquí', 'Me voy, nos vemos'];
 function abrirChat() {
   const i = $('chat-in'); i.style.display = 'block'; i.focus();
   // Movil: con el chat abierto se ve el historial entero.
@@ -1073,10 +1073,10 @@ function abrirChat() {
   // En el movil, frases de un toque encima del teclado.
   if (TACTIL) {
     const f = $('frases');
-    const rotulo = t => { const d = document.createElement('div'); d.style.cssText = 'flex-basis:100%;font:600 11px var(--sans);color:#e2e8f0;margin:2px 0 0;padding:2px 6px;background:rgba(10,14,24,.85);border-radius:6px;text-shadow:1px 1px 0 #000'; d.textContent = t; return d; };
-    if (!f.children.length) f.appendChild(rotulo('Gestos (solo se ven sobre tu duende):'));
+    const rotulo = t => { const d = document.createElement('div'); d.className = 'rotulo'; d.textContent = t; return d; };
+    if (!f.children.length) f.appendChild(rotulo('Gestos'));
     if (f.children.length === 1) for (const [k, gs] of Object.entries(GESTOS)) { const b = document.createElement('button'); b.className = 'bt'; b.textContent = gs.e; b.title = '/' + k; b.onmousedown = b.ontouchstart = e => { e.preventDefault(); mandar({ t: 'gesto', id: k }); cerrarChat(); }; f.appendChild(b); }
-    if (f.children.length <= Object.keys(GESTOS).length + 1) { f.appendChild(rotulo('Frases al chat general:')); FRASES.forEach(t => { const b = document.createElement('button'); b.className = 'bt'; b.textContent = t; b.onmousedown = b.ontouchstart = e => { e.preventDefault(); mandar({ t: 'chat', canal: 'general', m: t }); cerrarChat(); }; f.appendChild(b); }); }
+    if (f.children.length <= Object.keys(GESTOS).length + 1) { f.appendChild(rotulo('Chat general')); FRASES.forEach(t => { const b = document.createElement('button'); b.className = 'bt'; b.textContent = t; b.onmousedown = b.ontouchstart = e => { e.preventDefault(); mandar({ t: 'chat', canal: 'general', m: t }); cerrarChat(); }; f.appendChild(b); }); }
     ponCss(f, 'display', 'flex');
   }
 }
@@ -1869,7 +1869,7 @@ function pintarLfg() {
 function abrirBuscador() {
   if (!yo) return;
   const L = $('maz-lista');
-  let h = `<p class="centro" style="margin-bottom:8px;font-size:12px">${grupo ? '👥 Entrarán juntos los del grupo que estén en el pueblo (los demás podrán unirse después por este portal).' : 'En solitario la dificultad se ajusta a ti; en grupo entran juntos.'}</p>`;
+  let h = `<p class="centro" style="margin-bottom:8px;font-size:12px">${grupo ? 'Entra el grupo que esté en el pueblo; el resto puede unirse después por el portal.' : 'En solitario la dificultad se ajusta a ti.'}</p>`;
   h += '<div class="mis-caja" id="maz-lfg"></div>';
   h += `<div class="mis-caja" style="font-size:13px;color:var(--txt2)">${htmlProgresoBoveda()}${yo.bovedaOpc && yo.bovedaOpc.length ? '<br><button class="btn" id="b-boveda" style="margin-top:8px">🗝️ Abrir la Bóveda</button>' : ''}</div>`;
   // Torre del Duende: pisos sin fin (functions/mmo/torre.js).
@@ -1879,7 +1879,7 @@ function abrirBuscador() {
     const tj = tarjeta(icoPack('I_Torch02'), `Torre del Duende <span style="color:${bloq ? 'var(--warn)' : 'var(--txt2)'}">Nv ${TORRE.nv}+</span>`,
       `Pisos sin fin: oleadas de monstruos de tu nivel cada vez más duras y un jefe cada ${TORRE.jefeCada}. Limpia cada piso en ${textoMinutos(TORRE.tiempo)}. Solo o con tu grupo.<br><span style="color:var(--txt2)">Esta semana: piso ${yo.torreSem || 0} · tu récord: ${yo.torreMax || 0}</span><br><span style="color:var(--ok)">Cada 5 pisos nuevos de la semana: cofre con oro y equipo (épico desde el 15).</span>`,
       bloq ? `<span class="precio" style="color:var(--txt3)">🔒 Nv ${TORRE.nv} (te faltan ${TORRE.nv - yo.nivel})</span>`
-        : '<button class="btn" data-torre="0">Subir</button>' + (atajoTorre(yo.torreSem || 0) ? `<button class="btn sec" data-torre="${atajoTorre(yo.torreSem || 0)}" style="margin-top:4px">Desde el piso ${atajoTorre(yo.torreSem || 0) + 1}</button>` : ''));
+        : '<button class="btn" data-torre="0">Piso 1</button>' + (atajoTorre(yo.torreSem || 0) ? `<button class="btn sec" data-torre="${atajoTorre(yo.torreSem || 0)}" style="margin-top:4px" title="Empezar desde el piso ${atajoTorre(yo.torreSem || 0) + 1}">Piso ${atajoTorre(yo.torreSem || 0) + 1}</button>` : ''));
     // Bloqueada, al final (arriba quedaba antes que la mazmorra que si puedes hacer).
     if (bloq) hTorreBloq = tj.replace('<div class="item">', '<div class="item" style="opacity:.55">'); else h += tj;
   }
@@ -2524,7 +2524,7 @@ function pintarBestiario() {
     const i = BESTIARIO_HITOS.indexOf(sig);
     const desc = n ? (sig ? `${n} / ${sig} · próximo premio: ${premioBestiario(m.nivel, i).toLocaleString('es', { useGrouping: 'always' })} oro` : `${n} · ✓ completo`) : `Sin cazar · Nv ${m.nivel}${m.jefe ? ' · jefe' : ''}`;
     h += tarjeta(n ? `<canvas data-best="${k}" width="52" height="52"></canvas>` : '<span style="font:700 22px var(--sans);color:var(--txt3)">?</span>', n ? esc(m.nombre) + ` <span style="color:var(--txt2)">Nv ${m.nivel}</span>` : '<span style="color:var(--txt3)">???</span>', desc,
-      `<span class="precio" style="color:${!sig && n ? 'var(--ok)' : 'var(--oro)'}">${'★'.repeat(BESTIARIO_HITOS.filter(x => x <= n).length)}${'☆'.repeat(BESTIARIO_HITOS.filter(x => x > n).length)}</span>`);
+      `<span class="precio" style="font-size:15px;letter-spacing:1px;color:${!sig && n ? 'var(--ok)' : 'var(--oro)'}">${'★'.repeat(BESTIARIO_HITOS.filter(x => x <= n).length)}${'☆'.repeat(BESTIARIO_HITOS.filter(x => x > n).length)}</span>`);
   }
   // Especies de peces (una por pesquero).
   const esp = yo.especies || {};

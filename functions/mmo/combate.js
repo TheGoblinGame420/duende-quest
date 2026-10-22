@@ -39,7 +39,7 @@ export const Combate = {
     this.recursoInicial(s);
     s.sucio = true;
     this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });
-    this.enviar(s, { t: 'toast', m: `⚔️ ¡Ahora eres ${CLASES[m.id].nombre}! `, ok: true });
+    this.enviar(s, { t: 'toast', m: `Ahora eres ${CLASES[m.id].nombre}.`, ok: true });
     this.actualizarYo(s);
     this.guardar(s);
   },

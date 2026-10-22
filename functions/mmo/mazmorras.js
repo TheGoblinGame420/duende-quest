@@ -492,7 +492,7 @@ export const Mazmorras = {
       this.progresoBoveda(s, kBoveda);
       if (s.esenciaFin) { extra += ` +${s.esenciaFin} ${MATERIALES.esencia.nombre}.`; s.esenciaFin = 0; }
       s.sucio = true;
-      this.enviar(s, { t: 'completada', id: I.id, txt: `🏆 ¡${mz.nombre}${I.k ? ' +' + I.k : ''} completada!${extra}` });
+      this.enviar(s, { t: 'completada', id: I.id, txt: `${mz.nombre}${I.k ? ' +' + I.k : ''} completada.${extra}` });
       this.revisarLogros(s);
       this.actualizarYo(s);
       this.guardar(s);
@@ -507,7 +507,7 @@ export const Mazmorras = {
       this.primeros[o.k] = { t: Date.now(), n: reales.map(s => s.c.nombre) };
       this.state.storage.put('primeros', this.primeros);
       for (const s of reales) { s.c.pionero = 1; this.revisarLogros(s); this.actualizarYo(s); }
-      this.aTodos({ t: 'aviso', m: `🌟 ¡PRIMERA VICTORIA DEL SERVIDOR! ${reales.map(s => s.c.nombre).join(', ')} ${reales.length > 1 ? 'vencieron' : 'venció'} a ${MONSTRUOS[o.k].nombre} por primera vez.` });
+      this.aTodos({ t: 'aviso', m: `Primera victoria del servidor: ${reales.map(s => s.c.nombre).join(', ')} ${reales.length > 1 ? 'vencieron' : 'venció'} a ${MONSTRUOS[o.k].nombre} por primera vez.` });
     }
   },
 
@@ -542,7 +542,7 @@ export const Mazmorras = {
       c.monturas = c.monturas || [];
       if (c.titanes >= BANDA_MONTURA && !c.monturas.includes('abismo')) {
         c.monturas.push('abismo');
-        this.enviar(s, { t: 'toast', ok: true, m: `🦇 ¡El ${MONTURAS.abismo.nombre} es tuyo! Lo tienes en el Mercader (pestaña Monturas).` });
+        this.enviar(s, { t: 'toast', ok: true, m: `Nueva montura: ${MONTURAS.abismo.nombre}. Mercader → Monturas.` });
         this.aTodos({ t: 'aviso', m: `🦇 ${c.nombre} ganó el ${MONTURAS.abismo.nombre} en la banda del Santuario.` });
       } else if (c.titanes < BANDA_MONTURA) this.enviar(s, { t: 'toast', m: `🦇 Titán vencido ${c.titanes}/${BANDA_MONTURA} semanas: a la ${BANDA_MONTURA}ª te llevas su montura.` });
     }

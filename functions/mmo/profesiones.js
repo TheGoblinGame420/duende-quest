@@ -56,7 +56,7 @@ export const Profesiones = {
     c.mat[n.tipo] = Math.min(999, (c.mat[n.tipo] || 0) + cant);
     let extra = '';
     // Cristal: raro, algo mas en zonas altas.
-    if (Math.random() < 0.06 + nv / 800) { c.mat.cristal = Math.min(999, (c.mat.cristal || 0) + 1); extra = ' y ¡1 Cristal Arcano!'; }
+    if (Math.random() < 0.06 + nv / 800) { c.mat.cristal = Math.min(999, (c.mat.cristal || 0) + 1); extra = ' y 1 Cristal Arcano'; }
     // Zonas altas: Flor de Luna (plantas) o Mithril (vetas).
     let raros = 0;
     for (const [nvMin, p] of RARO_ZONA) if (nv >= nvMin && Math.random() < p) raros++;
@@ -138,8 +138,8 @@ export const Profesiones = {
     c.mascotas = c.mascotas || [];
     if (!c.mascotas.includes('pececito') && (Math.random() < PESCA.mascota || c.peces >= PESCA.mascotaSeguro)) {
       c.mascotas.push('pececito');
-      txt += ' ¡Y un PECECITO DORADO! Ahora es tu mascota (Mercader → MASCOTAS).';
-      this.aTodos({ t: 'aviso', m: `🐟 ¡${c.nombre} pescó el Pececito Dorado!` });
+      txt += ' Nueva mascota: Pececito Dorado (Mercader → Mascotas).';
+      this.aTodos({ t: 'aviso', m: `${c.nombre} ha pescado el Pececito Dorado.` });
     }
     s.sucio = true;
     this.enviar(s, { t: 'pescado', cant, dorado, oro, hoy: c.pescaHoy.n });

@@ -40,7 +40,7 @@ export const Chicha = {
     // Aviso al cruzar un nivel de premio.
     for (const meta of CHICHA.niveles) {
       if (ch.p >= meta && ch.p - n < meta && !(ch.rec || []).includes(meta)) {
-        this.enviar(s, { t: 'toast', m: `🥤 ¡${meta.toLocaleString('es', { useGrouping: 'always' })} puntos de chicha! Puedes reclamar tu litro de chicha morada en 🎒 → 🥤 CHICHA.`, ok: true });
+        this.enviar(s, { t: 'toast', m: `${meta.toLocaleString('es', { useGrouping: 'always' })} puntos de chicha. Reclama tu litro de chicha morada en Inventario → CHICHA.`, ok: true });
       }
     }
     return n;
@@ -75,7 +75,7 @@ export const Chicha = {
     const tgId = c.uid.slice(3);
     this.avisarAdmin(`🥤 *Premio de chicha #${r.id}* — ${meta.toLocaleString('es', { useGrouping: 'always' })} puntos\n👤 ${c.nombre.replace(/[^\p{L}\p{N} ]/gu, '')} · Nv ${c.nivel} · ${c.kills} cazas\n📨 Contacto: [abrir chat](tg://user?id=${tgId}) (id ${tgId})\n\nEscríbele para pedirle la dirección. Al enviarlo: /chichaok ${r.id}\nSi es trampa o no se puede: /chichano ${r.id} motivo`);
     try { await this.tgEnviar('sendMessage', { chat_id: tgId, text: `🥤 ¡Reclamaste tu litro de chicha morada (premio de ${meta.toLocaleString('es', { useGrouping: 'always' })} puntos)! Código #${r.id}. El equipo de DUENDE QUEST te escribirá por Telegram para coordinar el envío. Nunca te pediremos pagos ni contraseñas.` }); } catch (e) {}
-    this.enviar(s, { t: 'toast', m: `🥤 ¡Reclamo #${r.id} enviado! El equipo te escribirá por Telegram para coordinar la entrega.`, ok: true });
+    this.enviar(s, { t: 'toast', m: `Reclamo #${r.id} enviado. Te escribiremos por Telegram para coordinar la entrega.`, ok: true });
   },
 
   // Ordenes del dueño desde el bot: /chicha, /chichaok, /chichano.

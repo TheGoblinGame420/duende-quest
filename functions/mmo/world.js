@@ -481,7 +481,7 @@ export class MmoWorld {
     if (login) this.enviar(s, { t: 'login', ...login });
     const tp = temporadaDe();
     if (ambulanteActivo() && c.nivel >= 15) this.enviar(s, { t: 'toast', m: '🧳 Este fin de semana el Mercader trae género del ambulante: colores y una mascota que no vende el resto de la semana (pestaña AMBULANTE).', ok: true });
-    if (tp) this.enviar(s, { t: 'toast', m: `${tp.emoji} ¡${tp.nombre}! Hasta el ${tp.hasta} los monstruos sueltan ${tp.cosas} (los jefes, ${TEMP_JEFE}). 50 = título «${tp.titulos[0]}», 200 = «${tp.titulos[1]}». Llevas ${c[tp.campo] || 0}.`, ok: true });
+    if (tp) this.enviar(s, { t: 'toast', m: `${tp.nombre}: hasta el ${tp.hasta} los monstruos sueltan ${tp.cosas} (los jefes, ${TEMP_JEFE}). 50 = título «${tp.titulos[0]}», 200 = «${tp.titulos[1]}». Llevas ${c[tp.campo] || 0}.`, ok: true });
     else {
       // Sin evento: si el siguiente empieza en 10 dias o menos, se anuncia
       // (un motivo para volver ese dia).
@@ -1073,7 +1073,7 @@ export class MmoWorld {
     const c = s.c;
     if (it.r === 3) {
       c.tuvoLegendario = true;
-      this.aTodos({ t: 'aviso', m: `🌟 ¡${c.nombre} encontró un objeto LEGENDARIO: ${nombreItem(it)}!` });
+      this.aTodos({ t: 'aviso', m: `${c.nombre} ha encontrado un objeto legendario: ${nombreItem(it)}.` });
     }
     // Una pieza de conjunto no se vende sola: se cambia por la comun mas
     // barata de la bolsa (son de coleccion; perderlas dolia mucho).
@@ -1332,7 +1332,7 @@ export class MmoWorld {
     // Aviso 2 minutos antes, a todos los conectados.
     if (prox - ahora <= 120000 && prox - ahora > 5000 && M.avisado !== prox) {
       M.avisado = prox;
-      this.aTodos({ t: 'aviso', m: `👹 ¡${MONSTRUOS[mundialDe(prox + 1000)].nombre} llega al Coliseo en 2 minutos! Entra por el portal del pueblo: todos los niveles ganan.` });
+      this.aTodos({ t: 'aviso', m: `${MONSTRUOS[mundialDe(prox + 1000)].nombre} llega al Coliseo en 2 minutos. Portal del pueblo; todos los niveles reciben premio.` });
     }
     // Aparece en la media hora en punto (con margen de un tick).
     const ult = prox - (prox - ahora > 1000 ? 30 * 60 * 1000 : 0);
@@ -1368,13 +1368,13 @@ export class MmoWorld {
       if (parte >= 0.02) this.darMton(s, 80, 'mundial');
       this.sumarXp(s, xp);
       this.enviar(s, { t: 'gana', xp, oro, drops: [], item: it, x: Math.round(o.x), y: Math.round(o.y - o.h) });
-      this.enviar(s, { t: 'toast', m: `👹 ¡Venciste al jefe mundial! +${xp} XP · +${oro} oro · ${RAREZAS[it.r].nombre}: ${nombreItem(it)}`, ok: true });
+      this.enviar(s, { t: 'toast', m: `Jefe mundial derrotado. +${xp} XP · +${oro} oro · ${RAREZAS[it.r].nombre}: ${nombreItem(it)}`, ok: true });
       s.sucio = true;
       this.revisarLogros(s);
       this.actualizarYo(s);
       nombres.push(c.nombre);
     }
-    this.aTodos({ t: 'aviso', m: `🏆 ¡${MONSTRUOS[o.k].nombre} cayó! Héroes: ${nombres.slice(0, 6).join(', ')}${nombres.length > 6 ? ' y ' + (nombres.length - 6) + ' más' : ''}` });
+    this.aTodos({ t: 'aviso', m: `${MONSTRUOS[o.k].nombre} ha caído. Héroes: ${nombres.slice(0, 6).join(', ')}${nombres.length > 6 ? ' y ' + (nombres.length - 6) + ' más' : ''}` });
   }
 
   // amen = multiplicador de amenaza de la habilidad (el guerrero ademas
@@ -1495,7 +1495,7 @@ export class MmoWorld {
       s.st = this.stats(c);
       s.hp = s.st.maxHp;
       const nueva = HABS.find(h => h.clase === c.clase && h.nv === c.nivel);
-      if (nueva) this.enviar(s, { t: 'toast', m: `✨ ¡Nueva habilidad: ${nueva.nombre}! `, ok: true, hab: nueva.id });
+      if (nueva) this.enviar(s, { t: 'toast', m: `Nueva habilidad: ${nueva.nombre}`, ok: true, hab: nueva.id });
       this.revisarLogros(s);
       this.hermSubioNivel(s);
       this.revisarAmigo(s).catch(e => console.error('[MMO amigo]', e));
@@ -1563,7 +1563,7 @@ export class MmoWorld {
     const d = this.diariaDe(c);
     if (o && participo !== false && !d.ok && d.p < DIARIA.n && (o.nv || MONSTRUOS[o.k].nivel) >= c.nivel - 5) {
       d.p++;
-      if (d.p === DIARIA.n) this.enviar(s, { t: 'toast', m: `📅 ¡"${DIARIA.nombre}" cumplida! Cóbrala con el Guardia Tito.`, ok: true });
+      if (d.p === DIARIA.n) this.enviar(s, { t: 'toast', m: `«${DIARIA.nombre}» cumplida. Cóbrala con el Guardia Tito.`, ok: true });
     }
     // Bestiario: cada tipo cazado suma; los hitos dan oro.
     if (o && participo !== false && !MONSTRUOS[o.k].mundial) {
@@ -1851,7 +1851,7 @@ export class MmoWorld {
       this.equipar(s, { k: m.k, id: m.id });
     } else return;
     this.revisarLogros(s);
-    this.enviar(s, { t: 'toast', m: m.k === 'forja' ? `⚒️ ¡${ARMAS[m.id].nombre} +${c.forja[m.id]}!` : m.k === 'montura' ? `🐎 ¡${MONTURAS[m.id].nombre} es tuya! Móntala con la tecla Y o el botón 🐎.` : m.k === 'tinte' ? (c.tinte ? `🎨 Tu nombre ahora es ${TINTES[c.tinte].nombre}.` : '🎨 Tu nombre vuelve al color de tu clase.') : m.k === 'mascota' ? (c.mascota ? `🐾 ${MASCOTAS[c.mascota].nombre} te acompaña.` : '🐾 Guardaste a tu mascota.') : '✅ Compra realizada', ok: true });
+    this.enviar(s, { t: 'toast', m: m.k === 'forja' ? `${ARMAS[m.id].nombre} mejorada a +${c.forja[m.id]}.` : m.k === 'montura' ? `Nueva montura: ${MONTURAS[m.id].nombre}. Tecla Y o botón de montura.` : m.k === 'tinte' ? (c.tinte ? `🎨 Tu nombre ahora es ${TINTES[c.tinte].nombre}.` : '🎨 Tu nombre vuelve al color de tu clase.') : m.k === 'mascota' ? (c.mascota ? `🐾 ${MASCOTAS[c.mascota].nombre} te acompaña.` : '🐾 Guardaste a tu mascota.') : '✅ Compra realizada', ok: true });
     this.actualizarYo(s);
     this.guardar(s);
   }
@@ -2007,7 +2007,7 @@ export class MmoWorld {
       if (s) this.enviar(s, { t: 'toast', m: txt, ok: true });
       if (await this.quiereAvisos(uid)) { try { const env = getEnv({ env: this.env }); await tg(env.BOT_TOKEN, 'sendMessage', { chat_id: uid.slice(3), text: txt }); } catch (e) {} }
     }
-    if (nombres.length) this.aTodos({ t: 'aviso', m: `🏆 Ranking semanal: ${nombres.join(' · ')}. ¡Empieza una semana nueva!` });
+    if (nombres.length) this.aTodos({ t: 'aviso', m: `🏆 Ranking semanal: ${nombres.join(' · ')}. Empieza una semana nueva.` });
   }
 
   // ── GUARDADO ──
@@ -2030,7 +2030,7 @@ export class MmoWorld {
       this.onT = ahora;
       // Aviso a todos al empezar y al acabar la Hora Feliz.
       const hf = horaFelizActiva(ahora);
-      if (this.hfAntes !== undefined && hf !== this.hfAntes) this.aTodos({ t: 'aviso', m: hf ? '⚡ ¡Empieza la Hora Feliz! Durante una hora, +50% de experiencia por caza.' : '⚡ Terminó la Hora Feliz.' });
+      if (this.hfAntes !== undefined && hf !== this.hfAntes) this.aTodos({ t: 'aviso', m: hf ? 'Empieza la Hora Feliz: +50% de experiencia por caza durante una hora.' : '⚡ Terminó la Hora Feliz.' });
       this.hfAntes = hf;
       // Una pestaña abierta sin jugar mantiene vivo el objeto (y cobra tiempo
       // de CPU del cupo diario) todo el dia: fuera tras 10 min sin actividad.
@@ -2103,7 +2103,7 @@ export class MmoWorld {
       if (mapa.jefe && w.jefeEn && ahora >= w.jefeEn && ![...w.mons.values()].some(m => m.jefe)) {
         w.jefeEn = 0;
         const j = this.crearMonstruo(clave, mapa.jefe, mapa.jefeX || mapa.ancho * 0.62);
-        this.aTodos({ t: 'aviso', m: `👑 ¡${MONSTRUOS[j.k].nombre} apareció en ${mapa.nombre}!` });
+        this.aTodos({ t: 'aviso', m: `${MONSTRUOS[j.k].nombre} ha aparecido en ${mapa.nombre}.` });
       }
     }
 
