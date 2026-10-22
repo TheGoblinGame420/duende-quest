@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=82';
+} from './data.js?v=83';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -172,6 +172,7 @@ function precalentarTintes() {
   const tareas = [];
   for (const k in HOJAS) { tareas.push(['sh_' + k, '#ffffff'], ['sh_' + k, '#ff3344']); }
   for (const k in MONSTRUOS) if (MONSTRUOS[k].tinte) tareas.push(['sh_' + MONSTRUOS[k].hoja, MONSTRUOS[k].tinte]);
+  for (const k in MONTURAS) if (MONTURAS[k].tinte) tareas.push(['sh_' + MONTURAS[k].hoja, MONTURAS[k].tinte]);
   for (const f in FX) for (const sk in SKINS) if (sk !== 'comun') tareas.push(['fx_' + f, SKINS[sk].color]);
   const paso = () => { const t0 = performance.now(); while (tareas.length && performance.now() - t0 < 8) { const [k, c] = tareas.shift(); tenido(k, c); } if (tareas.length) setTimeout(paso, 16); };
   paso();
@@ -591,7 +592,7 @@ function entrarMapa(m) {
 let online = 0;
 function pintarSubMapa() {
   const mp = MAPAS[mapaId];
-  const base = mp.instancia ? 'Mazmorra' + (instancia ? ' · Nv ' + instancia.nv + (instancia.k ? ' · ⚡+' + instancia.k : '') : '') : mp.zona && mp.nv ? 'Nivel ' + mp.nv[0] + '-' + mp.nv[1] : 'Zona segura';
+  const base = mp.instancia ? (MAZMORRAS[mp.mazmorra] && MAZMORRAS[mp.mazmorra].banda ? 'Banda' : 'Mazmorra') + (instancia ? ' · Nv ' + instancia.nv + (instancia.k ? ' · ⚡+' + instancia.k : '') : '') : mp.zona && mp.nv ? 'Nivel ' + mp.nv[0] + '-' + mp.nv[1] : 'Zona segura';
   $('h-mapa-sub').textContent = base + (online ? ' · 👥 ' + online + ' en línea' : '') + (jugaronHoy > online ? ' · ' + jugaronHoy + ' hoy' : '');
 }
 
@@ -992,6 +993,7 @@ $('b-inv').onclick = abrirInventario;
 $('b-libro').onclick = () => abrirLibro();
 $('b-rank').onclick = abrirRanking;
 $('b-ayuda').onclick = () => abrir('m-ayuda');
+{ const bn = $('b-novedades'); if (bn) bn.onclick = () => abrirNovedades(); }
 $('b-wallet').onclick = abrirWallet;
 $('h-mton-c').onclick = abrirWallet;
 $('uf-yo').addEventListener('click', () => { objetivo = { k: 'p', id: miId }; });
@@ -1515,12 +1517,18 @@ function htmlGesta(hm) {
   const nombre = uid => { const x = hm.m.find(y => y.uid === uid); return x ? x.n : '?'; };
   const top = Object.entries(G.c).sort((a, b) => b[1] - a[1]).slice(0, 5);
   let h = '<div style="margin-top:8px;border-top:1px solid var(--borde);padding-top:8px"><b>🏆 Gesta semanal</b>';
-  h += `<div class="mis-barra" style="margin:6px 0"><i style="width:${Math.min(100, G.p / tope * 100)}%"></i></div>`;
-  h += '<div style="display:flex;justify-content:space-between;gap:4px;font-size:11px;flex-wrap:wrap">' + GESTA_UMBRALES.map((u, i) =>
-    `<span style="color:${G.p >= u ? 'var(--ok)' : 'var(--txt2)'}">${GESTA_NOMBRES[i]} ${u.toLocaleString('es')}${G.p >= u ? ' ✓' : ''}<br><span style="color:var(--txt3)">🪙 ${premioGesta(i, yo.nivel).oro.toLocaleString('es')}</span></span>`).join('') + '</div>';
-  h += `<p style="font-size:12px;margin-top:6px">${G.p.toLocaleString('es')} puntos · tu aporte: <b style="display:inline;color:${mio >= GESTA_MIN ? 'var(--ok)' : 'var(--warn)'}">${mio}</b>${mio < GESTA_MIN ? ` (cobras desde ${GESTA_MIN})` : ''}</p><p style="font-size:11px;color:var(--txt3)">Para cobrar hay que llevar un día en la hermandad.</p>`;
+  // Una barra por tramo (Bronce, Plata, Oro): cada etiqueta bajo el suyo.
+  const cob = yo.gestaCob && yo.gestaCob.sem === G.sem ? yo.gestaCob.n : 0;
+  h += '<div style="display:flex;gap:4px;margin:6px 0">' + GESTA_UMBRALES.map((u, i) => {
+    const ant = i ? GESTA_UMBRALES[i - 1] : 0;
+    const pc = Math.max(0, Math.min(100, (G.p - ant) / (u - ant) * 100));
+    return `<div class="mis-barra" style="flex:1;margin:0"><i style="width:${pc}%"></i></div>`;
+  }).join('') + '</div>';
+  h += '<div style="display:flex;gap:4px;font-size:11px">' + GESTA_UMBRALES.map((u, i) =>
+    `<span style="flex:1;color:${G.p >= u ? 'var(--ok)' : 'var(--txt2)'}">${GESTA_NOMBRES[i]} ${u.toLocaleString('es')}<br><span style="color:var(--txt3)">🪙 ${premioGesta(i, yo.nivel).oro.toLocaleString('es')}</span>${G.p >= u ? `<br><span style="color:${i < cob ? 'var(--ok)' : 'var(--warn)'}">${i < cob ? '✓ cobrado' : 'por cobrar'}</span>` : ''}</span>`).join('') + '</div>';
+  h += `<p style="font-size:12px;margin-top:6px">${G.p.toLocaleString('es')} puntos · tu aporte: <b style="display:inline;color:${mio >= GESTA_MIN ? 'var(--ok)' : 'var(--warn)'}">${mio}</b>${mio < GESTA_MIN ? ` (cobras desde ${GESTA_MIN})` : ''}</p><p style="font-size:11px;color:var(--txt3)">Se cobra al aportar ${GESTA_MIN} puntos y llevar un día en la hermandad (si no, al volver a entrar o al seguir sumando).</p>`;
   if (top.length) h += '<p style="font-size:12px;color:var(--txt2)">Más aportan: ' + top.map(([u, p]) => `${esc(nombre(u))} ${p}`).join(' · ') + '</p>';
-  h += `<p style="font-size:11px;color:var(--txt3);margin-top:4px">${GESTA_PUNTOS.caza} punto por monstruo, ${GESTA_PUNTOS.jefe} por jefe y ${GESTA_PUNTOS.mazmorra} por mazmorra completada. Se reinicia el lunes.</p></div>`;
+  h += `<p style="font-size:11px;color:var(--txt3);margin-top:4px">${GESTA_PUNTOS.caza} punto por monstruo de tu nivel (o hasta 10 por debajo), ${GESTA_PUNTOS.jefe} por jefe y ${GESTA_PUNTOS.mazmorra} por mazmorra completada. Se reinicia el lunes.</p></div>`;
   return h;
 }
 let hermandad = null;           // { id, nombre, motd, m: [{ uid, n, lv, cl, r, on }] }
@@ -1687,6 +1695,7 @@ function abrirBuscador() {
   h += '<div class="mis-caja" id="maz-lfg"></div>';
   h += `<div class="mis-caja" style="font-size:13px;color:var(--txt2)">${htmlProgresoBoveda()}${yo.bovedaOpc && yo.bovedaOpc.length ? '<br><button class="btn" id="b-boveda" style="margin-top:8px">🗝️ Abrir la Bóveda</button>' : ''}</div>`;
   let hBanda = '';
+  const posBanda = h.length;
   for (const id in MAZMORRAS) {
     const mz = MAZMORRAS[id];
     const bloq = yo.nivel < mz.nv[0];
@@ -1712,7 +1721,8 @@ function abrirBuscador() {
     h += '<p style="font-size:12px;color:var(--txt2);margin-top:6px">⚡ Desafíos: la misma mazmorra a Nv 60 con monstruos más duros en cada paso. Vencer el +k abre el siguiente y da oro y un objeto de nivel 60+k (se equipa a Nv 60). Logros a +5, +10 y +20.</p>';
     h += htmlAfijos(afijosSemana());
   }
-  h += hBanda;
+  // A Nv 60 la banda va arriba (abajo quedaba tras 5 mazmorras y los afijos).
+  if (yo.nivel >= NIVEL_MAX) h = h.slice(0, posBanda) + hBanda + h.slice(posBanda); else h += hBanda;
   h += '<ul style="padding-left:18px;margin-top:10px;font-size:12px"><li>Aquí los monstruos atacan solos y en packs: tira de uno y vendrá todo su grupo.</li><li>Cada jefe guarda una barrera. Lee sus avisos: <b style="color:var(--warn)">sal de las zonas marcadas</b> en el suelo e <b>interrumpe</b> (Patada, Zurrar, Contrahechizo o Silencio) los hechizos con barra naranja.</li><li>Si caéis todos, revivís en la entrada y el jefe se recupera.</li><li>Cada jefe da equipo a cada uno; el último, épico.</li><li>En la banda, las <b style="color:#facc15">zonas doradas</b> se aguantan <b>juntos</b>: el golpe se reparte entre los que estén dentro.</li></ul>';
   L.innerHTML = h;
   L.querySelectorAll('[data-maz]').forEach(b => b.onclick = () => { sfx('explosion', .3); mandar({ t: 'mazmorra', id: b.dataset.maz }); cerrarModales(); });
@@ -1726,11 +1736,11 @@ function abrirBuscador() {
 // (✓), la montura del Titan y el boton para entrar.
 function htmlBanda(id, mz, bloq) {
   const b = yo.banda || { j: [], t: 0 };
-  const jefes = mz.jefes.map(j => `${b.j.includes(j.k) ? '✓' : '·'} ${esc(MONSTRUOS[j.k].nombre)}`).join('<br>');
+  const jefes = mz.jefes.map(j => `${b.j.includes(j.k) ? '✓' : '·'} ${esc(MONSTRUOS[j.k].nombre)}`).join(' ');
   const lleva = b.t >= BANDA_MONTURA || (yo.monturas || []).includes('abismo');
   const tj = tarjeta(`<img src="${A}items/equipo/${mz.icono}.png" style="${bloq ? 'filter:grayscale(1);opacity:.4' : ''}">`,
     `⚔️ ${esc(mz.nombre)} <span style="color:${bloq ? 'var(--warn)' : 'var(--txt2)'}">BANDA · Nv ${mz.nv[0]} · 1-${BANDA_MAX}</span>`,
-    `${esc(mz.desc)}<br><span style="color:var(--txt2)">Botín de esta semana (✓ = ya cobrado):<br>${jefes}</span><br><span style="color:${lleva ? 'var(--ok)' : 'var(--txt2)'}">🦇 ${esc(MONTURAS.abismo.nombre)}: ${lleva ? '¡ya es tuyo!' : 'Titán vencido ' + b.t + '/' + BANDA_MONTURA + ' semanas'}</span>`,
+    `${esc(mz.desc.replace(/^BANDA de 1 a 10 jugadores\. /, ''))}<br><span style="color:var(--txt2)">Botín de esta semana (✓ = cobrado): ${jefes}</span><br><span style="color:${lleva ? 'var(--ok)' : 'var(--txt2)'}">🦇 ${esc(MONTURAS.abismo.nombre)}: ${lleva ? '¡ya es tuyo!' : 'Titán vencido ' + b.t + '/' + BANDA_MONTURA + ' semanas'}</span>`,
     bloq ? `<span class="precio" style="color:var(--txt3)">🔒 Nv ${mz.nv[0]}</span>` : `<button class="btn" data-maz="${id}">Entrar</button>`);
   return '<p style="font:600 13px var(--sans);color:var(--txt);margin:12px 0 6px">⚔️ Banda</p>' + (bloq ? tj.replace('<div class="item">', '<div class="item" style="opacity:.55">') : tj)
     + (grupo && !grupo.banda && soyLider() && !bloq ? '<p style="font-size:12px;color:var(--txt2);margin:-4px 0 10px">Para ser más de 5, convierte tu grupo en banda (👥 Social > Grupo) o anúnciate para la banda en el buscador.</p>' : '');
@@ -2243,7 +2253,7 @@ function dibujarNodos() {
 function abrirArtesana() {
   if (!yo) return;
   const mat = yo.mat || {};
-  let h = '<div style="display:flex;gap:10px;justify-content:center;margin-bottom:10px;flex-wrap:wrap">' +
+  let h = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin-bottom:10px">' +
     Object.entries(MATERIALES).map(([k, m]) => `<span class="precio" style="display:flex;align-items:center;gap:4px"><img src="${A}items/equipo/${m.icono}.png" style="width:22px;height:22px;image-rendering:pixelated">${esc(m.nombre)}: ${mat[k] || 0}</span>`).join('') + '</div>';
   for (const r of RECETAS) {
     const pide = Object.entries(r.pide).map(([k, n]) => `<span style="color:${(mat[k] || 0) >= n ? 'var(--ok)' : 'var(--err)'}">${n} ${esc(MATERIALES[k].nombre)}</span>`).join(' + ');
@@ -2255,7 +2265,7 @@ function abrirArtesana() {
   h += `<p style="font:600 13px var(--sans);color:var(--txt);margin:12px 0 6px">✨ Runas permanentes${yo.nivel < RUNA_NIVEL ? ` <span style="color:var(--warn)">(desde Nv ${RUNA_NIVEL})</span>` : ''}</p>`;
   for (const [id, ru] of Object.entries(RUNAS)) {
     const r = (yo.runas || {})[id] || 0;
-    let det = `Rango ${r}/${RUNA_MAX}: +${Math.round(r * RUNA_PCT * 100)}% de ${ru.desc}.`;
+    let det = r ? `Rango ${r}/${RUNA_MAX}: +${Math.round(r * RUNA_PCT * 100)}% de ${ru.desc}.` : `Sin grabar (hasta +${Math.round(RUNA_MAX * RUNA_PCT * 100)}% de ${ru.desc}).`;
     let acc = '<span class="precio" style="color:var(--ok)">✓ Máxima</span>';
     if (r < RUNA_MAX) {
       const cos = costoRuna(id, r + 1);
@@ -3002,7 +3012,7 @@ function dibujarDuende(q, esYo) {
     // La montura camina bajo el duende, que va subido encima.
     const hm = HOJAS[mo.hoja];
     const col = anda ? hm.mov[1] + Math.floor(frame / 5) % hm.mov[2] : hm.mov[1];
-    dibujarHoja(mo.hoja, hm, hm.mov[0], col, mo.alto, x, pies, f, 1, null, false);
+    dibujarHoja(mo.hoja, hm, hm.mov[0], col, mo.alto, x, pies, f, 1, mo.tinte || null, false);
   }
   const piesOrig = pies;
   const masc = esYo ? yo.mascota : q.ma;
@@ -3216,6 +3226,15 @@ function dibujarProyectiles() {
 function dibujarZonas() {
   for (const z of zonas) {
     const x0 = z.x0 - camX, x1 = z.x1 - camX;
+    if (z.j && !z.act && (x1 < 0 || x0 > VW)) {
+      // Zona dorada fuera de la pantalla: flecha en el borde.
+      const der = x0 > VW, ax = der ? VW - 16 : 16, ay = SUELO - 70 + Math.sin(frame * .2) * 4;
+      g.save(); g.fillStyle = '#facc15';
+      g.beginPath(); g.moveTo(ax + (der ? 12 : -12), ay); g.lineTo(ax - (der ? 6 : -6), ay - 12); g.lineTo(ax - (der ? 6 : -6), ay + 12); g.fill();
+      g.restore();
+      etiqueta(der ? VW - 54 : 54, ay - 18, 'JUNTAOS', '#facc15', 7);
+      continue;
+    }
     if (x1 < -10 || x0 > VW + 10) continue;
     const col = z.color || '#ff3344';
     g.save();

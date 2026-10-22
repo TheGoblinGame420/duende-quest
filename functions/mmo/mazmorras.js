@@ -128,6 +128,7 @@ export const Mazmorras = {
     this.entrarMapa(s, mz.mapa, 150, false, w.clave);
     w.inst.vacioDesde = 0;
     const af = (w.inst.af || []).map(a => AFIJOS[a].emoji + ' ' + AFIJOS[a].nombre).join(', ');
+    if (w.inst.banda) return this.enviar(s, { t: 'toast', ok: true, m: `⚔️ ${mz.nombre} (banda, Nv ${w.inst.nv}). Las zonas DORADAS se aguantan juntos: entrad todos para repartir el golpe.` });
     this.enviar(s, { t: 'toast', m: w.inst.k ? `⚡ ${mz.nombre} — Desafío +${w.inst.k}: monstruos con ${Math.round(w.inst.mv * 100)}% de vida y ${Math.round(w.inst.ma * 100)}% de daño.${af ? ' Afijos: ' + af + '.' : ''}` : `🏰 ${mz.nombre} (Nv ${w.inst.nv}). Aquí los monstruos atacan solos y en grupo: ¡con cuidado!`, ok: true });
   },
 
@@ -222,16 +223,18 @@ export const Mazmorras = {
         z.hecho = true;
         const dentro = jugadores.filter(s => !s.muerto && s.x >= z.x0 - 8 && s.x <= z.x1 + 8 && s.y > SUELO - 150);
         if (z.junta) {
-          // Hay que aguantarla juntos: el golpe (que crece con la gente, hasta
-          // `junta` veces) se reparte entre los de dentro. Si no entra nadie,
-          // estalla sobre todos.
+          // Hay que aguantarla juntos: el golpe vale `dano` por cada uno de los
+          // que hacen falta (los de la sala, hasta `junta`) y se reparte entre
+          // los de dentro: con los justos o mas, cada uno recibe `dano` o menos;
+          // con menos, mas. Si no entra nadie, estalla sobre todos con el doble
+          // (asi entrar compensa siempre, tambien jugando solo).
           const jf = w.mons.get(z.de);
           const vivos = jugadores.filter(s => !s.muerto && (!jf || Math.abs(s.x - jf.casaX) < 900));
           const total = z.dano * Math.min(Math.max(1, vivos.length), z.junta);
           if (dentro.length) for (const s of dentro) this.herir(s, 0, { id: z.de, jefe: true, pct: total / dentro.length, zona: true });
           else {
-            for (const s of vivos) this.herir(s, 0, { id: z.de, jefe: true, pct: z.dano, zona: true });
-            this.aClave(w.clave, { t: 'emote', m: '💥 ¡Nadie la aguantó y estalla sobre todos!' });
+            for (const s of vivos) this.herir(s, 0, { id: z.de, jefe: true, pct: z.dano * 2, zona: true });
+            this.aClave(w.clave, { t: 'emote', m: '💥 ¡Nadie la aguantó y estalla sobre todos con el doble de fuerza!' });
           }
         } else for (const s of dentro) this.herir(s, 0, { id: z.de, jefe: true, pct: z.dano, zona: true });
       }
@@ -425,7 +428,8 @@ export const Mazmorras = {
       s.c.mat = s.c.mat || {};
       s.c.mat.esencia = Math.min(999, (s.c.mat.esencia || 0) + es);
       s.sucio = true;
-      this.enviar(s, { t: 'toast', ok: true, m: `🟣 +${es} ${MATERIALES.esencia.nombre}` });
+      if (!j.final) { this.enviar(s, { t: 'toast', ok: true, m: `🟣 +${es} ${MATERIALES.esencia.nombre}` }); this.actualizarYo(s); }
+      else s.esenciaFin = es;   // va en el mensaje de completada
     }
     if (!j.final) {
       this.aClave(o.cl, { t: 'emote', m: `✨ ¡${MONSTRUOS[o.k].nombre} cae! La barrera se abre.` });
@@ -482,6 +486,7 @@ export const Mazmorras = {
       }
       if (I.banda) { const b = this.bloqueoBanda(c); kBoveda = b.bov ? 0 : 5; b.bov = 1; }
       this.progresoBoveda(s, kBoveda);
+      if (s.esenciaFin) { extra += ` +${s.esenciaFin} ${MATERIALES.esencia.nombre}.`; s.esenciaFin = 0; }
       s.sucio = true;
       this.enviar(s, { t: 'completada', id: I.id, txt: `🏆 ¡${mz.nombre}${I.k ? ' +' + I.k : ''} completada!${extra}` });
       this.revisarLogros(s);

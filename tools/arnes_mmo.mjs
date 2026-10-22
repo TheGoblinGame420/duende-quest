@@ -1600,9 +1600,9 @@ async function pruebasBanda() {
   const perd = enZona.map(x => 1 - x.hp / x.st.maxHp);
   chequear(perd.every(p => p > 0.5 && p < 0.7) && dentro.slice(3).every(x => x.hp === x.st.maxHp), 'zona dorada: 3 dentro se reparten el golpe (' + perd.map(p => Math.round(p * 100) + '%').join(', ') + ') y fuera no se recibe');
   for (const x of dentro) { x.hp = x.st.maxHp; x.x = coloso.x - 700; }
-  w.zonas.push({ id: 998, x0: coloso.x - 400, x1: coloso.x - 200, act: Date.now() + 100, fin: Date.now() + 600, dano: 0.6, color: '#facc15', de: coloso.id, junta: 3 });
+  w.zonas.push({ id: 998, x0: coloso.x - 400, x1: coloso.x - 200, act: Date.now() + 100, fin: Date.now() + 600, dano: 0.25, color: '#facc15', de: coloso.id, junta: 3 });
   tick(2);
-  chequear(dentro.every(x => x.hp < x.st.maxHp * 0.45 && x.hp > x.st.maxHp * 0.35), 'si nadie la aguanta, estalla sobre todos (con su golpe entero)');
+  chequear(dentro.every(x => x.hp < x.st.maxHp * 0.56 && x.hp > x.st.maxHp * 0.44), 'si nadie la aguanta, estalla sobre todos con el doble');
   // Botin: una vez por semana y jefe.
   for (const x of dentro) { x.hp = x.st.maxHp; x.x = coloso.x - 100; x.c.bolsa = []; }
   // Uno que no pelea no cobra; uno con la bolsa llena (de piezas de banda) tampoco, y no gasta la semana.
