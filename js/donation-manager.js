@@ -68,7 +68,7 @@ const DonationManager = {
       const sol = parseFloat(input.value) || 0;
       if (sol > 0) {
         const duende = this.calculateReward(sol);
-        preview.textContent = 'Recibiras: ' + duende.toLocaleString() + ' $DUENDE';
+        preview.textContent = 'Recibirás ' + duende.toLocaleString() + ' $DUENDE (te los envía el creador a mano)';
       }
     }
   },
