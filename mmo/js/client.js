@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=198';
+} from './data.js?v=200';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -545,7 +545,7 @@ function recibir(m) {
     case 'fondo': fondoInfo = m; if ($('m-wallet').classList.contains('on')) pintarWallet(); break;
     case 'login': mostrarLogin(m); break;
     case 'logro':
-      aviso('🏅 ¡Logro: "' + m.titulo + '"! +' + m.oro.toLocaleString('es') + ' oro · ponte el título en 🎒', 'ok');
+      aviso('Logro desbloqueado: ' + m.titulo + ' · +' + m.oro.toLocaleString('es') + ' oro. Puedes llevar el título desde el inventario.', 'ok', 6000);
       vibrar();
       ofrecerPresumir('🏅 ¡Conseguí el logro «' + m.titulo + '»!');
       sfx('explosion', .35);
@@ -584,7 +584,7 @@ function recibir(m) {
     case 'gesto': if (GESTOS[m.id]) { gestos.set(m.p, { id: m.id, t: performance.now() }); if (m.p === miId) sfx('boton', .25); } break;
     case 'on': online = m.n; if (m.h) jugaronHoy = m.h; pintarSubMapa(); break;
     case 'toast': aviso(m.m, m.ok ? 'ok' : ''); if (m.hab) { $('acciones').innerHTML = ''; pintarHud(); } break;
-    case 'aviso': aviso(m.m, 'jefe'); lineaChat(null, m.m); sfx('explosion', .3); break;
+    case 'aviso': aviso(m.m, 'jefe'); lineaChat(null, sinEmoji(m.m)); sfx('explosion', .3); break;
     case 'snap':
       if (m.carga) {
         // Carga del guerrero: estela desde donde estaba hasta el objetivo.
