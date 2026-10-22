@@ -294,6 +294,12 @@ async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
       : `◎ ${(x.lamports / 1e9).toFixed(9)} SOL · ${x.cadena ? (x.cadena.ok ? '✅ visto en la cadena' : '❌ ' + x.cadena.motivo) : '⚠️ sin comprobar'}\nhttps://solscan.io/tx/${x.firma}`));
     return enviar('🛒 Compras por entregar:\n\n' + lineas.join('\n\n') + '\n\n/entregar CODIGO para darle lo que compró · /anular CODIGO motivo para cancelar (las Stars se devuelven solas; el SOL lo devuelves tú).');
   }
+  if (cmd === '/ventas') {
+    const r = await mmoInterno(env, 'ventas');
+    if (!r.ok) return enviar('❌ ' + (r.error || 'error'));
+    const bloque = (t, x) => `${t}: ${x.n} venta${x.n === 1 ? '' : 's'} · $${x.usd} (◎ ${x.sol} con SOL · ⭐ ${x.stars} con Stars)` + (x.top.length ? '\n' + x.top.map(y => `  · ${y.nombre}: ${y.n} ($${Math.round(y.usd * 100) / 100})`).join('\n') : '');
+    return enviar('🛒 Ventas del MMO (entregadas)\n\n' + bloque('Últimos 7 días', r.d7) + '\n\n' + bloque('Últimos 30 días', r.d30) + `\n\n⏳ Por entregar: ${r.pendientes}` + (r.pendientes ? ' (/pedidos)' : '') + ` · ❌ Anuladas (30 d): ${r.anulados30}`);
+  }
   if (cmd === '/entregar') {
     if (!arg1) return enviar('Uso: /entregar CODIGO');
     const r = await mmoInterno(env, 'entregar', { codigo: arg1 });
@@ -674,7 +680,7 @@ async function onRequestPost(context) {
         case '/buy': case '/comprar': case '/stars': await handleBuy(token, chatId, user.id); break;
         case '/help': case '/ayuda': await handleHelp(token, chatId); break;
         case '/creador': case '/creator': case '/oficial': await handleCreador(token, chatId); break;
-        case '/retiros': case '/pagado': case '/rechazar': case '/fondo': case '/pedidos': case '/entregar': case '/anular': case '/mmostats': case '/chicha': case '/chichaok': case '/chichano': await handleMmoAdmin(token, context, chatId, user.id, cmd, payload); break;
+        case '/retiros': case '/pagado': case '/rechazar': case '/fondo': case '/pedidos': case '/ventas': case '/entregar': case '/anular': case '/mmostats': case '/chicha': case '/chichaok': case '/chichano': await handleMmoAdmin(token, context, chatId, user.id, cmd, payload); break;
         case '/avisos': await handleAvisos(token, context, chatId, user.id, payload); break;
         case '/admin': await handleAdmin(token, env, context, chatId, user.id); break;
         case '/live': case '/envivo': await handleLive(token, env, context, chatId, user.id, payload); break;

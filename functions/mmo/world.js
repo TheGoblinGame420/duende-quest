@@ -811,6 +811,24 @@ export class MmoWorld {
     return { ok: true, pedido: pd };
   }
 
+  // /ventas (solo el dueño): lo entregado en 7 y 30 dias, por metodo y lo
+  // mas vendido, y lo que queda por entregar. Sale de los ultimos 300 pedidos.
+  resumenVentas() {
+    const ahora = Date.now();
+    const ent = this.pedidos.filter(x => x.estado === 'entregado');
+    const tramo = dias => {
+      const l = ent.filter(x => ahora - (x.entregado || x.creado) < dias * 86400000);
+      const por = {};
+      for (const x of l) { const k = x.nombre; por[k] = por[k] || { n: 0, usd: 0 }; por[k].n++; por[k].usd += x.usd; }
+      return {
+        n: l.length, usd: Math.round(l.reduce((a, x) => a + x.usd, 0) * 100) / 100,
+        sol: l.filter(x => x.metodo === 'sol').length, stars: l.filter(x => x.metodo === 'stars').length,
+        top: Object.entries(por).sort((a, b) => b[1].usd - a[1].usd).slice(0, 5).map(([nombre, v]) => ({ nombre, ...v })),
+      };
+    };
+    return { ok: true, d7: tramo(7), d30: tramo(30), pendientes: this.pedidos.filter(x => x.estado === 'pagado' || x.estado === 'por_verificar').length, anulados30: this.pedidos.filter(x => x.estado === 'anulado' && ahora - x.creado < 30 * 86400000).length };
+  }
+
   async anularPedido(b) {
     const pd = this.buscarPedido(b.codigo);
     if (!pd || pd.estado === 'entregado' || pd.estado === 'anulado') return { ok: false, error: 'Ese pedido no se puede anular (no existe, ya se entregó o ya se anuló).' };
@@ -874,6 +892,7 @@ export class MmoWorld {
     }
     if (accion === 'pedidoPagado') return json(await this.pedidoPagadoStars(b));
     if (accion === 'pedidos') return json({ ok: true, pedidos: this.pedidos.filter(x => x.estado === 'pagado' || x.estado === 'por_verificar') });
+    if (accion === 'ventas') return json(this.resumenVentas());
     if (accion === 'entregar') return json(await this.entregarPedido(b));
     if (accion === 'anular') return json(await this.anularPedido(b));
     if (accion === 'pagado' || accion === 'rechazar') {
