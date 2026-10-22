@@ -22,6 +22,8 @@ const SEGURIDAD_URL = SITE_URL + '/seguridad.html';
 const TEXTO_SEGURIDAD = '🔒 Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado.';
 const BOTON_SEGURIDAD = [{ text: '🔒 Seguridad', url: SEGURIDAD_URL }];
 const DEXSCREENER_URL = 'https://api.dexscreener.com/latest/dex/tokens/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump';
+// Trailer de la portada (assets/video/; cambiar el numero al regenerarlo).
+const TRAILER_URL = 'https://duende-quest.alfonso12hc.workers.dev/assets/video/trailer-2.mp4';
 const PUMP_FUN_URL = 'https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump';
 
 function getEnv(context) {
@@ -160,6 +162,11 @@ async function handleStart(token, env, chatId, user, startPayload) {
     await handleReferral(token, env, startPayload.replace('ref_', ''), user);
   }
   const referralLink = `https://t.me/duendequest_bot?start=ref_${user.id}`;
+  // A quien llega por primera vez: el trailer de 30 s (juego real, generado con
+  // tools/promo/) antes de la bienvenida. Si falla, la bienvenida sale igual.
+  if (esNuevo) {
+    try { await tg(token, 'sendVideo', { chat_id: chatId, video: TRAILER_URL, caption: '🎬 Así se juega DUENDE QUEST (30 s de juego real)', supports_streaming: true }); } catch (e) {}
+  }
   await tg(token, 'sendMessage', {
     chat_id: chatId,
     text: `🧌 *Bienvenido a DUENDE QUEST, ${mdSeguro(user.first_name || 'Duende')}*\n\nJuego de duendes gratis y sin descargas: juega aquí en Telegram o en el navegador.\n\n🎮 *Arcade:* campaña de 15 etapas con jefes y ranking global.\n🌍 *DUENDE QUEST ONLINE:* MMORPG estilo WoW con 4 clases, grupos, mazmorras con jefes, hermandades y 10 zonas hasta el nivel 60.\n🥤 *Premio:* junta 10.000 puntos cazando en el MMO y te enviamos un litro de chicha morada a tu casa. No es un sorteo: lo ganas jugando.\n💎 *Recompensas en TON (opcional):* desde el nivel 15, los jefes del MMO dan mTON del fondo del día, si lo hay (1.000 mTON = 1 TON). Retiro desde 5 TON.\n🪙 *$DUENDE:* token del juego en Solana; también se gana jugando.\n\n${TEXTO_SEGURIDAD}\nMás información: ${SEGURIDAD_URL}\n\n${TEXTO_CREADOR}\n\n*Invita a un amigo* (500 $DUENDE para cada uno):\n\`${referralLink}\``,
