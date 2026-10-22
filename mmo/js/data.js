@@ -564,6 +564,7 @@ export const LOGROS = [
   { id: 'racha7',    titulo: 'Fiel al Duende',     desc: 'Entra 7 días seguidos',          oro: 3000,  cond: c => ((c.login || {}).racha || 0) >= 7 },
   { id: 'equipo5',   titulo: 'Bien Equipado',      desc: 'Lleva puestas las 5 piezas de equipo', oro: 2000, cond: c => Object.keys(RANURAS).every(k => c.eq && c.eq[k]) },
   { id: 'campeon',   titulo: 'Campeón Semanal',     desc: 'Gana el ranking semanal de experiencia', oro: 5000, cond: c => (c.campeon || 0) >= 1 },
+  { id: 'bestiario20', titulo: 'Naturalista',     desc: 'Completa el primer hito de 20 monstruos del bestiario', oro: 4000, cond: c => Object.values(c.best || {}).filter(n => n >= 25).length >= 20 },
   { id: 'amigo1',    titulo: 'Buen Compañero',     desc: 'Un amigo que invitaste llegó a nivel 10', oro: 1000, cond: c => (c.amigos || 0) >= 1 },
   { id: 'amigo5',    titulo: 'Líder de la Manada', desc: '5 amigos invitados llegaron a nivel 10', oro: 8000, cond: c => (c.amigos || 0) >= 5 },
   { id: 'herm',      titulo: 'Hermano de Armas',    desc: 'Únete a una hermandad (o funda la tuya)', oro: 1000, cond: c => !!c.herm },
@@ -737,6 +738,12 @@ export const RECETAS = [
   { id: 'elixirF', nombre: 'Elixir de Fuerza', icono: 'P_Red03', pide: { hierba: 6, cristal: 1 }, da: { elixir: 'elixirF' }, desc: '+10% de daño durante 30 min (aguanta la muerte)' },
   { id: 'elixirP', nombre: 'Elixir de Piel de Piedra', icono: 'P_Blue05', pide: { mineral: 6, cristal: 1 }, da: { elixir: 'elixirP' }, desc: 'Recibes un 10% menos de daño durante 30 min' },
 ];
+
+// ── BESTIARIO ──
+// Cuantos de cada monstruo has cazado. Cada tipo tiene 3 hitos con premio
+// de oro: decenas de colecciones a largo plazo, por todas las zonas.
+export const BESTIARIO_HITOS = [25, 100, 300];
+export const premioBestiario = (nivelMonstruo, i) => Math.round((60 + nivelMonstruo * 25) * [1, 3, 8][i]);
 
 // ── INVITA A UN AMIGO ──
 export const AMIGO_NIVEL = 10;      // el premio llega cuando el amigo llega aqui

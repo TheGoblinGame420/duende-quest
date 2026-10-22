@@ -12,7 +12,7 @@ import {
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS,
-  TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento,
+  TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
 } from './data.js?v=29';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
@@ -1817,6 +1817,33 @@ function abrirArtesana() {
   abrir('m-arte');
 }
 
+// ── BESTIARIO ──
+function pintarBestiario() {
+  const best = yo.best || {};
+  const lista = Object.entries(MONSTRUOS).filter(([, m]) => !m.mundial).sort((a, b) => a[1].nivel - b[1].nivel);
+  const vistos = lista.filter(([k]) => best[k]).length;
+  let h = `<p class="centro" style="margin-bottom:8px">${vistos} de ${lista.length} monstruos cazados · hitos de ${BESTIARIO_HITOS.join(', ')} con premio de oro</p>`;
+  for (const [k, m] of lista) {
+    const n = best[k] || 0;
+    const sig = BESTIARIO_HITOS.find(x => x > n);
+    const i = BESTIARIO_HITOS.indexOf(sig);
+    const desc = n ? (sig ? `${n} / ${sig} · próximo premio: ${premioBestiario(m.nivel, i).toLocaleString('es')} oro` : `${n} · ✓ completo`) : `Sin cazar · Nv ${m.nivel}${m.jefe ? ' · jefe' : ''}`;
+    h += tarjeta(n ? `<canvas data-best="${k}" width="52" height="52"></canvas>` : '❔', n ? esc(m.nombre) + ` <span style="color:#888">Nv ${m.nivel}</span>` : '<span style="color:#666">???</span>', desc,
+      `<span class="precio" style="color:${!sig && n ? '#00ff88' : '#ffe600'}">${'★'.repeat(BESTIARIO_HITOS.filter(x => x <= n).length)}${'☆'.repeat(BESTIARIO_HITOS.filter(x => x > n).length)}</span>`);
+  }
+  $('inv-lista').innerHTML = h;
+  $('inv-lista').querySelectorAll('canvas[data-best]').forEach(c => {
+    const m = MONSTRUOS[c.dataset.best], hoja = HOJAS[m.hoja];
+    const img = m.tinte ? tenido('sh_' + m.hoja, m.tinte) : IMG['sh_' + m.hoja];
+    if (!img || !(img.naturalWidth || img.width)) return;
+    const x = c.getContext('2d'); x.imageSmoothingEnabled = false;
+    const e = Math.min(46 / hoja.ideal, 70 / hoja.fw);
+    x.save(); x.translate(26, 50); if (hoja.izq) x.scale(-1, 1);
+    x.drawImage(img, hoja.mov[1] * hoja.fw, hoja.mov[0] * hoja.fh, hoja.fw, hoja.fh, -hoja.fw * e / 2, -hoja.fh * e, hoja.fw * e, hoja.fh * e);
+    x.restore();
+  });
+}
+
 // ── TITULOS / LOGROS ──
 function tituloDe(id) { const L = LOGROS.find(x => x.id === id); return L ? L.titulo : ''; }
 function pintarLogros() {
@@ -2935,7 +2962,7 @@ document.querySelectorAll('[data-itab]').forEach(b => b.onclick = () => { tabInv
 function abrirInventario() { if (!yo) return; abrir('m-inv'); pintarInventario(); }
 function pintarInventario() {
   if (!yo) return;
-  if (tabInv === 'equipo' || tabInv === 'logros') $('inv-stats').innerHTML = '';
+  if (tabInv === 'equipo' || tabInv === 'logros' || tabInv === 'bestiario') $('inv-stats').innerHTML = '';
   else $('inv-stats').innerHTML =
     `<div class="fila"><span>NIVEL</span><span>${yo.nivel}</span></div>` +
     `<div class="fila"><span>VIDA</span><span>${yo.maxHp}</span></div>` +
@@ -2946,6 +2973,7 @@ function pintarInventario() {
     `<div class="fila"><span>MONSTRUOS / JEFES</span><span>${yo.kills} / ${yo.jefes}</span></div>`;
   if (tabInv === 'equipo') return pintarEquipo();
   if (tabInv === 'logros') return pintarLogros();
+  if (tabInv === 'bestiario') return pintarBestiario();
   const tabla = tabInv === 'arma' ? ARMAS : SKINS;
   const tiene = tabInv === 'arma' ? yo.armas : yo.skins;
   const puesto = tabInv === 'arma' ? yo.arma : yo.skin;
