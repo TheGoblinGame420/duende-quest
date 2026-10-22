@@ -795,6 +795,7 @@ section[id]{scroll-margin-top:72px;}
 <section class="hero" aria-labelledby="hero-h1">
   <img class="hero-coin" src="assets/ui/coin.png" alt="Logo de Duende Quest: la moneda pixel art del duende" id="hero-coin" width="88" height="88">
   <p class="hero-blink">Juego peruano · Pixel art · Multijugador</p>
+  <a class="hero-nuevo" href="/novedades">Nuevo: 5 mazmorras · Noche de Duendes <span aria-hidden="true">›</span></a>
   <h1 class="hero-title" id="hero-h1">Duende Quest<span class="hero-h1-sub">Juego RPG y MMORPG gratis en el navegador y en Telegram</span></h1>
   <p class="hero-sub">Crea tu duende, explora zonas, entra a mazmorras y vence jefes junto a otros jugadores en tiempo real. Funciona en el móvil y en el PC, sin instalar nada.</p>
   <ul class="hero-benef">
@@ -819,6 +820,27 @@ section[id]{scroll-margin-top:72px;}
     <div class="stat" data-jugadores hidden><span class="stat-n" id="live-players-2"></span><span class="stat-l">Jugadores registrados</span></div>
   </div>
 </div>
+
+<!-- ========== LO NUEVO (resumen de /novedades) ========== -->
+<section class="section" id="lo-nuevo" aria-labelledby="lo-nuevo-h">
+  <style>
+    .hero-nuevo{display:inline-flex;align-items:center;gap:.4rem;min-height:40px;margin:.2rem auto .6rem;padding:.35rem .9rem;border:1px solid var(--borde);border-radius:999px;background:var(--panel);color:var(--txt);font:600 13px var(--sans);text-decoration:none}
+    .hero-nuevo:hover{border-color:var(--pri-txt);color:var(--pri-txt)}
+    .nuevo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;max-width:960px;margin:0 auto}
+    @media (max-width:820px){.nuevo-grid{grid-template-columns:1fr}}
+    .nuevo-card{background:var(--panel);border:1px solid var(--borde);border-radius:12px;padding:1.1rem;text-align:left}
+    .nuevo-card b{display:block;font:700 16px var(--sans);color:var(--txt);margin:.3rem 0}
+    .nuevo-card p{font-size:14px;color:var(--txt2);line-height:1.5}
+    .nuevo-card .ico{font-size:26px}
+  </style>
+  <h2 class="px-title" id="lo-nuevo-h">Lo nuevo</h2>
+  <div class="nuevo-grid">
+    <div class="nuevo-card"><span class="ico" aria-hidden="true">🥤</span><b>Gana chicha morada jugando</b><p>Cada monstruo que cazas en el mundo online suma puntos. Con 10.000 puntos te enviamos un litro de chicha morada a tu casa. No es un sorteo.</p></div>
+    <div class="nuevo-card"><span class="ico" aria-hidden="true">🏰</span><b>5 mazmorras y Desafíos</b><p>Fortaleza Goblin y Nido de la Reina Araña se suman a las mazmorras. A nivel 60, los Desafíos +k suben la dificultad sin límite.</p></div>
+    <div class="nuevo-card"><span class="ico" aria-hidden="true">🎃</span><b>Temporadas con premios</b><p>Noche de Duendes (25 oct – 2 nov), Cosecha del Maíz Morado, Navidad y Carnaval: objetos para juntar y títulos únicos.</p></div>
+  </div>
+  <p style="text-align:center;margin-top:1rem"><a href="/novedades">Ver todas las novedades</a> · <a href="/guia">Guía del juego</a></p>
+</section>
 
 <!-- ========== QUE ES DUENDE QUEST ========== -->
 <section class="section" id="que-es" aria-labelledby="que-es-h">
