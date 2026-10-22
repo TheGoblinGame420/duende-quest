@@ -604,7 +604,13 @@ async function onRequestPost(context) {
       const payload = pp.join(' ');
 
       switch (cmd) {
-        case '/start': await handleStart(token, env, chatId, user, payload); break;
+        case '/start':
+          // Invitacion al MMO: t.me/duendequest_bot?start=mmo_<codigo>
+          if (/^mmo_[a-z0-9]{6}$/.test(payload || '')) {
+            await tg(token, 'sendMessage', { chat_id: chatId, text: '🤝 *¡Un amigo te invita a DUENDE QUEST ONLINE!*\n\nEl MMORPG de los duendes al estilo WoW: elige tu clase, haz grupo con tu amigo y entrad juntos a las mazmorras. Cuando llegues a nivel 10, los dos ganáis oro.', parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🌍 ENTRAR AL MUNDO', web_app: { url: MMO_URL + '?ref=' + payload.slice(4) } }]] } });
+            break;
+          }
+          await handleStart(token, env, chatId, user, payload); break;
         case '/play': case '/jugar': await handlePlay(token, chatId); break;
         case '/mmo': case '/online':
           await tg(token, 'sendMessage', { chat_id: chatId, text: '🌍 *DUENDE QUEST ONLINE*\n\nEl MMORPG de los duendes, al estilo World of Warcraft: elige tu clase (Guerrero, Mago, Sacerdote o Pícaro), forma grupo con amigos, entra a 3 mazmorras con jefes que hay que esquivar e interrumpir, funda tu hermandad, consigue montura y sube hasta el nivel 60 en 10 zonas. Jefe mundial cada 30 minutos.\n\n💎 *Play to earn:* desde nivel 15 los jefes, el jefe mundial y la caza del día dan mTON (1.000 mTON = 1 TON). Desde 5 TON retiras a tu wallet TON.', parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🌍 ENTRAR AL MUNDO', web_app: { url: MMO_URL } }]] } });

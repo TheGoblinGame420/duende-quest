@@ -546,6 +546,7 @@ async function pruebas() {
 
   await pruebasMundoAbierto();
   await pruebasRetencion();
+  await pruebasAmigos();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -569,11 +570,11 @@ async function initDataTg(id, nombre) {
   p.set('hash', [...new Uint8Array(firma)].map(b => b.toString(16).padStart(2, '0')).join(''));
   return p.toString();
 }
-async function entrarTg(nombre, id) {
+async function entrarTg(nombre, id, extra) {
   const ws = new WsFalso();
   mundo.abrir(ws);
   const s = [...mundo.sesiones.values()].pop();
-  ws.emitir('message', { data: JSON.stringify({ t: 'hola', auth: { k: 'tg', d: await initDataTg(id, nombre) } }) });
+  ws.emitir('message', { data: JSON.stringify({ t: 'hola', auth: { k: 'tg', d: await initDataTg(id, nombre) }, ...(extra || {}) }) });
   for (let i = 0; i < 200 && !s.c; i++) await espera();
   if (mundo.bucle) { clearInterval(mundo.bucle); mundo.bucle = 1; }
   s.ws = ws;
@@ -914,3 +915,32 @@ async function pruebasMundoAbierto() {
 }
 
 pruebas().then(resumen).catch(e => { console.error(e); process.exit(1); });
+
+// ── INVITA A UN AMIGO (functions/mmo/amigos.js) ──
+async function pruebasAmigos() {
+  console.log('Invita a un amigo');
+  const fetchReal = globalThis.fetch;
+  const avisos = [];
+  globalThis.fetch = async (url, init) => { avisos.push(String(url) + ' ' + (init && init.body || '')); return new Response('{"ok":true}'); };
+  try {
+    const host = await entrarTg('Anfitrion', 7001);
+    host.limpiar = () => { host.ws.rec.length = 0; };
+    await host.mandar({ t: 'amigos' });
+    const info = host.ws.rec.filter(m => m.t === 'amigos').pop();
+    chequear(info && /^[a-z0-9]{6}$/.test(info.ref), 'cada personaje tiene su código de invitación');
+    const nuevo = await entrarTg('Invitado', 7002, { ref: info.ref });
+    chequear(nuevo.c.invitadoPor === host.c.uid, 'el amigo nuevo queda anotado');
+    const viejo = await entrarTg('Anfitrion', 7001, { ref: info.ref });
+    chequear(!viejo.c.invitadoPor, 'uno no se invita a sí mismo');
+    const oro0 = viejo.c.oro, oroN = nuevo.c.oro;
+    nuevo.c.nivel = 9; nuevo.c.xp = 0;
+    mundo.sumarXp(nuevo, 100000);
+    for (let i = 0; i < 50; i++) await espera();
+    chequear(nuevo.c.refPagado && nuevo.c.oro > oroN, 'al llegar a nivel 10 el invitado cobra');
+    chequear(viejo.c.amigos === 1 && viejo.c.oro > oro0, 'y quien lo invitó también');
+    mundo.sumarXp(nuevo, 100000);
+    for (let i = 0; i < 50; i++) await espera();
+    chequear(viejo.c.amigos === 1, 'el premio se paga una sola vez');
+    chequear(avisos.some(a => /sendMessage/.test(a) && /7001/.test(a)), 'se avisa por Telegram a quien invitó');
+  } finally { globalThis.fetch = fetchReal; }
+}

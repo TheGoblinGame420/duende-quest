@@ -28,6 +28,7 @@ import { Mazmorras } from './mazmorras.js';
 import { Hermandades } from './hermandades.js';
 import { Tareas } from './tareas.js';
 import { Profesiones } from './profesiones.js';
+import { Amigos } from './amigos.js';
 import { Retencion } from './retencion.js';
 import { Eventos } from './eventos.js';
 
@@ -252,6 +253,7 @@ export class MmoWorld {
       case 'expulsarGrupo': return this.expulsarGrupo(s, m);
       case 'liderGrupo': return this.liderGrupo(s, m);
       case 'quien': return this.quien(s);
+      case 'amigos': return this.infoAmigos(s);
       case 'mazmorra': return this.entrarMazmorra(s, m);
       case 'hermCrear': return this.crearHermandad(s, m);
       case 'hermInvitar': return this.invitarHerm(s, m);
@@ -350,7 +352,7 @@ export class MmoWorld {
       }
     }
     const nuevo = !c;
-    if (!c) c = personajeNuevo(uid, nombre);
+    if (!c) { c = personajeNuevo(uid, nombre); await this.anotarInvitacion(c, typeof m.ref === 'string' ? m.ref : ''); }
     c.skins = c.skins || ['comun']; c.armas = c.armas || ['katana']; c.pw = c.pw || {};
     c.mis = c.mis || { i: 0, p: 0 };
     c.forja = c.forja || {};
@@ -1215,6 +1217,7 @@ export class MmoWorld {
       if (nueva) this.enviar(s, { t: 'toast', m: `✨ ¡Nueva habilidad: ${nueva.nombre}! Ya está en tu barra de acción.`, ok: true, hab: nueva.id });
       this.revisarLogros(s);
       this.hermSubioNivel(s);
+      this.revisarAmigo(s).catch(e => console.error('[MMO amigo]', e));
       this.aClave(s.k, { t: 'lv', p: s.id, lv: c.nivel, mx: s.st.maxHp, rmx: s.st.recMax });
       this.actualizarRanking(s);
       this.guardar(s);
@@ -1855,6 +1858,8 @@ Object.assign(MmoWorld.prototype, Hermandades);
 Object.assign(MmoWorld.prototype, Tareas);
 // Recoleccion y artesania: functions/mmo/profesiones.js
 Object.assign(MmoWorld.prototype, Profesiones);
+// Invita a un amigo: functions/mmo/amigos.js
+Object.assign(MmoWorld.prototype, Amigos);
 // Estadisticas de retencion y avisos de vuelta por Telegram: functions/mmo/retencion.js
 Object.assign(MmoWorld.prototype, Retencion);
 MmoWorld.prototype.uidsPrueba = UIDS_PRUEBA;

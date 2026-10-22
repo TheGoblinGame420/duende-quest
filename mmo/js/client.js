@@ -257,7 +257,8 @@ async function conectar() {
   ws = new WebSocket(urlWs());
   // reintentos se reinicia al recibir 'bienvenido', no al abrir: si el
   // servidor aceptaba el socket y lo cerraba enseguida, se reintentaba sin fin.
-  ws.onopen = () => { conectado = true; mandar({ t: 'hola', ...hola }); };
+  const ref = (/[?&]ref=([a-z0-9]{6})/.exec(location.search) || [])[1];
+  ws.onopen = () => { conectado = true; mandar({ t: 'hola', ...hola, ref }); };
   ws.onmessage = ev => { let m; try { m = JSON.parse(ev.data); } catch (e) { return; } recibir(m); };
   ws.onclose = () => {
     conectado = false;
@@ -430,6 +431,7 @@ function recibir(m) {
     case 'herm': hermandad = m.h; pintarSocial(); break;
     case 'hermInv': mostrarInvitacion({ ...m, herm: 1 }); break;
     case 'buscador': abrirBuscador(); break;
+    case 'amigos': pintarAmigos(m); break;
     case 'muerte': resumenMuerte(m); break;
     case 'nodos': recibirNodos(m.l); break;
     case 'recogido': { const n = nodos.find(x => x.i === m.i); if (n) { n.listo = performance.now() + m.en; for (let k = 0; k < 14; k++) particula(n.x, SUELO - 14, m.tipo === 'hierba' ? '#4ade80' : '#cbd5e1', 3); } sfx('moneda', .3); break; }
@@ -1213,7 +1215,34 @@ function pintarSocial() {
     }).join('');
     L.querySelectorAll('[data-inv]').forEach(b => b.onclick = () => { mandar({ t: 'invitar', p: +b.dataset.inv }); b.disabled = true; });
     L.querySelectorAll('[data-sus]').forEach(b => b.onclick = () => { cerrarModales(); abrirChat(); $('chat-in').value = '/s ' + b.dataset.sus + ' '; });
-  } else if (pintarHermandad) pintarHermandad(L);
+  } else if (tabSocial === 'amigos') {
+    // Se pide una vez (pintarSocial se llama a menudo, p. ej. con el grupo).
+    if (amigosInfo) pintarAmigos(amigosInfo); else L.innerHTML = '<p class="centro">Cargando…</p>';
+    if (performance.now() - amigosPedidoT > 10000) { amigosPedidoT = performance.now(); mandar({ t: 'amigos' }); }
+  }
+  else if (pintarHermandad) pintarHermandad(L);
+}
+// Invita a un amigo: enlace propio (por el bot en Telegram, directo en la web).
+let amigosInfo = null, amigosPedidoT = -1e9;
+function pintarAmigos(m) {
+  amigosInfo = m;
+  if (!$('m-social').classList.contains('on') || tabSocial !== 'amigos') return;
+  const L = $('social-lista');
+  if (!m.ref) { L.innerHTML = '<p class="centro">No se pudo crear tu enlace ahora. Prueba en un momento.</p>'; return; }
+  const enlTg = 'https://t.me/duendequest_bot?start=mmo_' + m.ref;
+  const enlWeb = location.origin + '/mmo/?ref=' + m.ref;
+  const texto = '¡Juguemos juntos DUENDE QUEST ONLINE, el MMORPG de los duendes! 🧝⚔️';
+  L.innerHTML = `<div class="mis-caja" style="margin-top:0"><b>🤝 Invita a tus amigos</b>
+    <p style="font-size:12px">Cuando un amigo que entre con tu enlace llegue a <b>nivel ${m.nivel}</b>, los dos ganáis oro. Al 5º amigo te regalamos el <b>Conejo Saltarín</b> de montura y un título.</p>
+    <p style="font-size:12px;margin-top:6px">Amigos que ya llegaron: <b style="color:#4ade80">${m.amigos}</b></p></div>
+    <button class="btn" id="b-comp-tg" style="width:100%;padding:12px;margin-bottom:8px">📨 COMPARTIR POR TELEGRAM</button>
+    <button class="btn sec" id="b-comp-copiar" style="width:100%;margin-bottom:6px">📋 COPIAR ENLACE</button>
+    <p style="font-size:11px;word-break:break-all;color:rgba(255,255,255,.55)">${esc(TG ? enlTg : enlWeb)}</p>`;
+  $('b-comp-tg').onclick = () => {
+    const u = 'https://t.me/share/url?url=' + encodeURIComponent(enlTg) + '&text=' + encodeURIComponent(texto);
+    if (TG && TG.openTelegramLink) TG.openTelegramLink(u); else window.open(u, '_blank');
+  };
+  $('b-comp-copiar').onclick = () => { try { navigator.clipboard.writeText(TG ? enlTg : enlWeb); aviso('📋 Enlace copiado', 'ok'); } catch (e) {} };
 }
 $('b-social').onclick = () => abrirSocial();
 $('b-mapa').onclick = () => abrirMapaMundo();
