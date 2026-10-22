@@ -48,7 +48,8 @@ export async function entrar(nombre, n) {
   const s = [...mundo.sesiones.values()].pop();
   const tok = String(n).repeat(32).slice(0, 32).replace(/[^a-f0-9]/g, 'a');
   ws.emitir('message', { data: JSON.stringify({ t: 'hola', auth: { k: 'inv', tok }, nombre }) });
-  for (let i = 0; i < 20 && !s.c; i++) await espera();
+  // sha256 de crypto.subtle va por el pool de hilos: puede tardar mas de 20 vueltas.
+  for (let i = 0; i < 500 && !s.c; i++) await espera();
   if (mundo.bucle) { clearInterval(mundo.bucle); mundo.bucle = 1; }
   s.ws = ws;
   s.mandar = o => { s.cuenta = 0; return mundo.recibir(s, JSON.stringify(o)); };
@@ -445,6 +446,209 @@ async function pruebas() {
   const hpT = t2.hp;
   tick(30);
   chequear(t2.hp === hpT, 'el turista no recibe daño de un goblin pasivo');
+
+  await pruebasRetencion();
+}
+
+// ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
+const DIA = 86400000;
+// Solo hacia adelante: el resto del mundo no sabe volver atras en el tiempo.
+const irA = (dia, hora = 10) => { reloj = Math.max(reloj, dia * DIA + hora * 3600000 + 7 * 60000); };
+const calma = async () => { for (let i = 0; i < 10; i++) await espera(); };
+const dejar = async s => { await mundo.cerrar(s); await calma(); };
+// hola no espera a los agregados de retencion: se deja que terminen.
+const entrarR = async (nombre, n) => { const s = await entrar(nombre, n); await calma(); return s; };
+const TOKEN_BOT = 'tok-prueba';
+
+// initData firmado como lo firma Telegram (HMAC con el token del bot), para
+// entrar con una cuenta 'tg:' por el hola real.
+async function initDataTg(id, nombre) {
+  const p = new URLSearchParams({ auth_date: String(Math.floor(Date.now() / 1000)), user: JSON.stringify({ id, first_name: nombre, username: nombre }) });
+  const datos = [...p.entries()].map(([k, v]) => `${k}=${v}`).sort().join('\n');
+  const enc = new TextEncoder();
+  const hmac = async (clave, txt) => crypto.subtle.sign('HMAC', await crypto.subtle.importKey('raw', clave, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']), enc.encode(txt));
+  const firma = await hmac(await hmac(enc.encode('WebAppData'), TOKEN_BOT), datos);
+  p.set('hash', [...new Uint8Array(firma)].map(b => b.toString(16).padStart(2, '0')).join(''));
+  return p.toString();
+}
+async function entrarTg(nombre, id) {
+  const ws = new WsFalso();
+  mundo.abrir(ws);
+  const s = [...mundo.sesiones.values()].pop();
+  ws.emitir('message', { data: JSON.stringify({ t: 'hola', auth: { k: 'tg', d: await initDataTg(id, nombre) } }) });
+  for (let i = 0; i < 200 && !s.c; i++) await espera();
+  if (mundo.bucle) { clearInterval(mundo.bucle); mundo.bucle = 1; }
+  s.ws = ws;
+  s.mandar = o => { s.cuenta = 0; return mundo.recibir(s, JSON.stringify(o)); };
+  return s;
+}
+// Rutas internas por el interno() real (con la cabecera x-interno).
+async function interno(accion, body, clave = TOKEN_BOT) {
+  const r = await mundo.interno(new Request('https://mmo/interno/' + accion, { method: 'POST', headers: { 'x-interno': clave }, body: JSON.stringify(body || {}) }), accion);
+  return r.status === 200 ? r.json() : { status: r.status };
+}
+
+async function pruebasRetencion() {
+  console.log('Retención: altas, minutos, D1 y D7');
+  // Se empieza de cero: lo que sumaron las pruebas de arriba no cuenta (antes
+  // se deja terminar lo que sus guardados dejaron en curso).
+  await calma();
+  for (const k of [...almacen.keys()]) if (k.startsWith('ret:')) almacen.delete(k);
+  mundo._retIdx = null; mundo._retDias = null;
+  mundo.env.TELEGRAM_BOT_TOKEN = TOKEN_BOT;
+  const D = Math.floor(Date.now() / DIA) + 1;
+  irA(D);
+  const h1 = await entrarR('Cohorte1', '2a'), h2 = await entrarR('Cohorte2', '2b'), h3 = await entrarR('Cohorte3', '2c');
+  const bot = await entrarR('BotPrueba', '9');
+  chequear(mundo.uidsPrueba.has(bot.c.uid), 'el token 9 es un bot de prueba');
+  let d0 = await mundo.retDia(D);
+  chequear(d0.n === 3 && d0.a === 3 && d0.ses === 3, `altas, activos y sesiones del día sin el bot de prueba (${d0.n}/${d0.a}/${d0.ses})`);
+  chequear(h1.c.ret && h1.c.ret.alta === 1 && h1.c.ret.ses === 1 && h1.c.ret.d.length === 1 && h1.c.ret.d[0] === D, 'el personaje guarda su primer día y su sesión');
+  avanzar(5 * 60000);
+  h1.actT = Date.now();
+  for (const x of [h1, h2, h3, bot]) await dejar(x);
+  const g1 = almacen.get('c:' + h1.c.uid);
+  chequear(Math.abs(g1.ret.min - 5) < 0.05, 'al cerrar suma los minutos jugados (' + g1.ret.min + ')');
+  chequear(Math.abs(h2.c.ret.min - 1) < 0.05, 'una pestaña quieta suma solo 1 minuto (' + h2.c.ret.min + ')');
+  d0 = await mundo.retDia(D);
+  chequear(Math.abs(d0.min - 7) < 0.1, 'los minutos del día van al agregado sin el bot (' + d0.min + ')');
+
+  irA(D + 1);
+  const h1b = await entrarR('Cohorte1', '2a'), h2b = await entrarR('Cohorte2', '2b');
+  chequear(h1b.c.ret.ses === 2 && h1b.c.ret.dt === 2 && h1b.c.ret.alta === 1, 'al volver suma sesión y día distinto');
+  chequear((await mundo.retDia(D)).r1 === 2, 'D1: 2 de los 3 volvieron al día siguiente');
+  await dejar(h1b);
+  const h1c = await entrarR('Cohorte1', '2a');
+  const d1 = await mundo.retDia(D + 1);
+  chequear((await mundo.retDia(D)).r1 === 2 && d1.a === 2 && d1.ses === 3 && d1.n === 0, 'otra sesión el mismo día no se cuenta doble');
+  await dejar(h1c); await dejar(h2b);
+
+  irA(D + 7);
+  const h1d = await entrarR('Cohorte1', '2a');
+  chequear((await mundo.retDia(D)).r7 === 1, 'D7: 1 volvió a los 7 días');
+  // Sigue conectado pasada la medianoche: el guardado periodico anota el dia nuevo.
+  irA(D + 8, 0);
+  h1d.actT = Date.now();
+  await mundo.guardar(h1d);
+  for (let i = 0; i < 10; i++) await espera();
+  chequear((await mundo.retDia(D + 8)).a === 1 && h1d.c.ret.d.at(-1) === D + 8, 'quien cruza la medianoche jugando cuenta como activo del día nuevo');
+  await dejar(h1d);
+  irA(D + 8, 10);
+  const h3b = await entrarR('Cohorte3', '2c');
+  await dejar(h3b);
+
+  const st = await interno('stats');
+  chequear((await interno('stats', {}, 'mala')).status === 403, 'sin la clave interna no hay estadísticas');
+  chequear(st.ok && st.activos.hoy === 2 && st.activos.d7 === 2 && st.activos.d30 === 3, `activos hoy/7/30 (${st.activos && [st.activos.hoy, st.activos.d7, st.activos.d30]})`);
+  chequear(st.retencion.d1.base === 3 && st.retencion.d1.vuelven === 2 && st.retencion.d1.pct === 66.7, 'retención D1 = 66,7% (2 de 3)');
+  chequear(st.retencion.d7.vuelven === 1 && st.retencion.d7.pct === 33.3, 'retención D7 = 33,3% (1 de 3)');
+  chequear(st.retencion.d30.pct === null, 'D30 aún sin cohortes completas');
+  const co = st.cohortes.find(x => x.n === 3);
+  chequear(co && co.d1 === 2 && co.d7 === 1 && co.d30 === null, 'la cohorte muestra D1/D7 y deja D30 pendiente');
+  chequear(st.altas.some(x => x.n === 3) && st.sesion.sesiones7 === 2 && st.sesion.media > 0, 'altas por día y sesión media');
+  chequear(Array.isArray(st.top) && !st.top.some(x => x.n === 'BotPrueba'), 'el top de niveles no incluye bots de prueba');
+
+  console.log('Avisos de vuelta por Telegram');
+  const salidos = [];
+  const bloquean = new Set(['3003']);
+  let fallaUna = null;
+  mundo.tgEnviar = async (metodo, b) => {
+    salidos.push(b);
+    if (bloquean.has(String(b.chat_id))) return { ok: false, error_code: 403, description: 'Forbidden: bot was blocked by the user' };
+    if (fallaUna === String(b.chat_id)) return { ok: false, error_code: 502, description: 'Bad Gateway' };
+    return { ok: true, result: {} };
+  };
+  mundo.dormir = async () => {};
+  const ids = () => salidos.map(x => String(x.chat_id)).sort().join(',');
+  const deQuien = id => salidos.find(x => String(x.chat_id) === id);
+  const A = D + 10;
+  irA(A);
+  const t1 = await entrarTg('Rachero', 3001), t2 = await entrarTg('Callado', 3002), t3 = await entrarTg('Bloqueador', 3003);
+  const t4 = await entrarTg('SinAvisos', 3004), t5 = await entrarTg('Diario', 3005);
+  const gA = await entrarTg('Lider', 3006), gB = await entrarTg('Amigo', 3007);
+  const i1 = await entrarR('Invitado', '2d');
+  chequear(t1.c && t1.c.uid === 'tg:3001' && t1.c.login && t1.c.login.racha === 1, 'entra con Telegram (initData firmado) y cobra el día 1 de la racha');
+  await gA.mandar({ t: 'invitar', p: gB.id });
+  await gB.mandar({ t: 'grupoResp', si: true });
+  chequear(gA.gid && gA.gid === gB.gid, 'Líder y Amigo en grupo');
+  for (const x of [t1, t2, t3, t4, t5, gB, i1]) await dejar(x);   // el Líder sigue conectado
+  const off = await interno('avisos', { tgId: '3004', on: false });
+  chequear(off.ok && off.on === false, '/avisos off se guarda');
+
+  irA(A + 1, 17);
+  const t5b = await entrarTg('Diario', 3005);
+  await dejar(t5b);
+  let r = await interno('recordatorios');
+  chequear(ids() === '3001,3002,3003,3007', 'avisa solo a cuentas de Telegram de los últimos 14 días que hoy no entraron (' + ids() + ')');
+  chequear(!deQuien('3005'), 'no avisa a quien ya jugó hoy');
+  chequear(!deQuien('3006'), 'no avisa a quien está conectado');
+  chequear(!deQuien('3004'), 'respeta /avisos off');
+  chequear(!salidos.some(x => !/^\d+$/.test(String(x.chat_id))), 'nunca escribe a invitados');
+  chequear(r.enviados === 3 && r.bloqueados === 1, `cuenta enviados y bloqueados (${r.enviados}/${r.bloqueados})`);
+  const idx = await mundo.retIdx();
+  chequear(idx['tg:3003'].bloq === 1, 'marca a quien bloqueó al bot');
+  chequear(r.callar.includes('3003') && r.callar.includes('3004') && !r.callar.includes('3001'), 'devuelve a quién no escribirle (para el recordatorio del arcade)');
+  const m1 = deQuien('3001');
+  chequear(/Rachero/.test(m1.text) && /Llevas 1 día seguido/.test(m1.text) && /premio del día 2/.test(m1.text), 'el aviso habla de su racha que se pierde hoy');
+  chequear(/Caza del día sin cobrar/.test(m1.text) && /Te faltan .* XP para el nivel 2/.test(m1.text), 'y de la caza del día y lo que falta para subir');
+  chequear(/grupo te espera: 1 compañero/.test(deQuien('3007').text), 'a quien tiene el grupo conectado se lo dice');
+  const kb = m1.reply_markup.inline_keyboard.flat();
+  chequear(kb.some(b => b.web_app && /\/mmo\/$/.test(b.web_app.url)) && kb.some(b => b.callback_data === 'mmoavisos:off'), 'botones: abrir el MMO y dejar de recibir avisos');
+  chequear(!m1.parse_mode, 'texto plano (el nombre lo elige el jugador)');
+  salidos.length = 0;
+  r = await interno('recordatorios');
+  chequear(salidos.length === 0 && r.enviados === 0, 'no avisa dos veces el mismo día');
+
+  irA(A + 2, 17);
+  salidos.length = 0;
+  await interno('recordatorios');
+  // Diario jugo ayer (A+1) y hoy no: tambien le toca su primer aviso.
+  chequear(ids() === '3001,3002,3005,3007', 'segundo día: otro aviso, y nunca más al que bloqueó (' + ids() + ')');
+  chequear(!/racha/.test(deQuien('3001').text), 'la racha ya se perdió: no se menciona');
+
+  irA(A + 3, 17);
+  salidos.length = 0;
+  await interno('recordatorios');
+  chequear(ids() === '3005', 'tras 2 avisos sin volver, se pausa: solo Diario recibe su segundo (' + ids() + ')');
+  const t1b = await entrarTg('Rachero', 3001);
+  await dejar(t1b);
+  const on = await interno('avisos', { tgId: '3004', on: true });
+  chequear(on.ok && on.on === true && on.jugo === true, '/avisos on vuelve a activarlos');
+
+  irA(A + 4, 17);
+  salidos.length = 0;
+  await interno('recordatorios');
+  chequear(ids() === '3001,3004', 'al volver se reanudan sus avisos; los demás siguen en pausa (' + ids() + ')');
+
+  irA(A + 5, 17);
+  salidos.length = 0;
+  fallaUna = '3004';
+  await interno('recordatorios');
+  chequear(idx['tg:3004'].a === 1 && idx['tg:3004'].ad === A + 4, 'un fallo pasajero de Telegram no cuenta como aviso');
+  fallaUna = null;
+  const hoy = Math.floor(Date.now() / DIA);
+  chequear(mundo.puedeAvisar('tg:1', { v: hoy - 14 }, hoy) && !mundo.puedeAvisar('tg:1', { v: hoy - 15 }, hoy), 'solo a quien jugó en los últimos 14 días');
+  chequear(!mundo.puedeAvisar('inv:abc', { v: hoy - 1 }, hoy) && !mundo.puedeAvisar('web:abc', { v: hoy - 1 }, hoy), 'nunca a invitados ni cuentas web');
+
+  console.log('Cron de las 17:00: un solo mensaje por persona');
+  irA(A + 6, 17);
+  const { runCron } = await import('../functions/api/cron.js');
+  const fetchReal = globalThis.fetch;
+  const arcade = [];
+  globalThis.fetch = async (url, init) => {
+    const u = String(url);
+    if (u.includes('/rest/v1/profiles')) return new Response(JSON.stringify([{ telegram_id: '3001' }, { telegram_id: '3003' }, { telegram_id: '3004' }, { telegram_id: '9999' }]));
+    if (u.includes('api.telegram.org')) { arcade.push(String(JSON.parse(init.body).chat_id)); return new Response('{"ok":true}'); }
+    return new Response('{}');
+  };
+  salidos.length = 0;
+  const envCron = {
+    TELEGRAM_BOT_TOKEN: TOKEN_BOT, SUPABASE_URL: 'https://supabase.test', SUPABASE_SERVICE_KEY: 'x',
+    MMO: { idFromName: () => 'mundo-1', get: () => ({ fetch: (url, init) => mundo.interno(new Request(url, init), url.split('/interno/')[1]) }) },
+  };
+  try { await runCron('0 17 * * *', envCron); } finally { globalThis.fetch = fetchReal; }
+  chequear(ids() === '3004', 'el MMO avisa a quien le toca (' + ids() + ')');
+  chequear(arcade.sort().join(',') === '3001,9999', 'el recordatorio del arcade se salta al avisado, al que bloqueó y a quien pidió no recibir avisos (' + arcade + ')');
 }
 
 pruebas().then(resumen).catch(e => { console.error(e); process.exit(1); });

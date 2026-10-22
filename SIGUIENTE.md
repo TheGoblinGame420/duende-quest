@@ -1113,3 +1113,45 @@ recargas, la Carga cruzando barreras, aturdir no cortaba lanzamientos, y
 casa de subastas o comercio entre jugadores, profesiones, talentos con
 puntos. Con 2-3 jugadores reales, lo que más rinde es que se jueguen las
 mazmorras en grupo.
+
+### DUENDE QUEST ONLINE — retención medida y avisos de vuelta (21-oct-2026)
+
+Módulo nuevo `functions/mmo/retencion.js` (mezclado en `MmoWorld`). En
+`world.js` solo hay ganchos: `retEntrar` en `hola` (sin await),
+`retAlGuardar` en `guardar` (cubre el guardado periódico y el cierre),
+`internoRetencion` en `interno` y el `Object.assign` del final.
+
+- **Por personaje** (`c.ret`): últimos 60 días UTC jugados (`d`, número de
+  día), días distintos (`dt`), sesiones, minutos jugados (solo hasta 1 min
+  después de la última acción: una pestaña olvidada no suma), última vez
+  visto y si se contó como alta. Primera vez = `c.creado`; nivel = `c.nivel`.
+- **Agregados** en el storage del DO: `ret:dia:<YYYY-MM-DD>` = `{ n altas, a
+  activos, ses, min, r1, r7, r30 }` (rN = de las altas de ese día, cuántos
+  volvieron exactamente N días después) y `ret:idx` = `{ uid: { v último día,
+  l nivel, a avisos sin respuesta, ad día del último aviso, off, bloq } }`.
+  No se lista ningún `c:<uid>`. Los `UIDS_PRUEBA` no cuentan.
+- **Solo cuentan como altas los personajes creados desde este despliegue**:
+  los que ya existían no tienen día de alta fiable. D1/D7/D30 empiezan a
+  tener datos 2, 8 y 31 días después de desplegar; los activos, en cuanto
+  cada jugador vuelva a entrar.
+- **/mmostats** (solo ADMIN_TG_ID): activos hoy/7/30 días (por tipo de cuenta
+  y tramo de nivel), altas por día, retención D1/D7/D30 de las últimas 30
+  cohortes ya cumplidas, tabla de cohortes, sesión media de 7 días y top 10.
+- **Avisos de vuelta** (cron de las 17:00 UTC → ruta interna
+  `recordatorios`): solo cuentas `tg:` que jugaron en los últimos 14 días, no
+  entraron hoy y no están conectadas; 1 al día; tras 2 sin volver se pausa
+  hasta que vuelva. El texto sale de su estado: racha de login que se pierde
+  hoy, grupo u hermandad conectados, premio diario de mazmorra (Nv 10+), caza
+  del día y XP para el siguiente nivel/habilidad (máximo 3 líneas, texto
+  plano). Botones: abrir el MMO (web_app) y "No quiero más avisos"
+  (`callback_data` `mmoavisos:off`). Tandas de 25 con pausa de 1,1 s; un 429
+  espera `retry_after`; un 403 marca `bloq` y no se le vuelve a escribir.
+- **Un solo mensaje por persona a las 17:00**: el cron manda primero los del
+  MMO y el recordatorio del arcade se salta a los avisados, a los que
+  bloquearon el bot y a los que pidieron **/avisos off** (el opt-out vale
+  para los dos). **/avisos on** los reactiva (y quita la marca de bloqueo).
+- Arnés (`node tools/arnes_mmo.mjs`): 149 comprobaciones, 46 nuevas
+  (cohortes D1/D7, minutos, cambio de día conectado, rutas internas con
+  clave, opt-out, pausa, bloqueo, ventana de 14 días y el cron completo con
+  `fetch` simulado). Entra con cuentas `tg:` firmando el initData como
+  Telegram. El envío es `tgEnviar` y la pausa `dormir`: las pruebas los cambian.

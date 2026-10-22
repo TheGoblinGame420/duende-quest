@@ -4,7 +4,8 @@
 
 const WEBAPP_URL = 'https://duende-quest.alfonso12hc.workers.dev/telegram/index.html';
 const SITE_URL = 'https://duende-quest.alfonso12hc.workers.dev';
-const MMO_URL = 'https://duende-quest.alfonso12hc.workers.dev/mmo/';
+// Exportada: los avisos de vuelta del MMO (functions/mmo/retencion.js) usan la misma.
+export const MMO_URL = 'https://duende-quest.alfonso12hc.workers.dev/mmo/';
 // El creador del juego y sus canales oficiales: se muestran en /start y
 // /creador para que cualquiera pueda comprobar quién está detrás del juego.
 const CREADOR_TG = 'https://t.me/ElDuendeOficial';
@@ -289,6 +290,10 @@ async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
     const r = await mmoInterno(env, 'anular', { codigo: arg1, motivo });
     return enviar(r.ok ? `❌ Pedido #${r.pedido.codigo} anulado.${r.reembolso || (r.pedido.metodo === 'sol' ? ' Si llegó SOL, devuélvelo tú desde tu wallet.' : '')}` : '❌ ' + r.error);
   }
+  if (cmd === '/mmostats') {
+    const r = await mmoInterno(env, 'stats');
+    return enviar(r && r.ok ? textoMmoStats(r) : '❌ ' + ((r && r.error) || 'error'));
+  }
   if (cmd === '/fondo') {
     if (arg1 !== undefined) {
       const ton = Number(String(arg1).replace(',', '.'));
@@ -301,12 +306,50 @@ async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
   }
 }
 
+// /mmostats: la retencion real del MMO (la calcula functions/mmo/retencion.js).
+// Texto plano: los nombres del top los eligen los jugadores.
+function textoMmoStats(r) {
+  const dm = d => d.slice(8, 10) + '/' + d.slice(5, 7);
+  const ret = x => x.pct === null ? '— (aún sin cohortes completas)' : `${String(x.pct).replace('.', ',')}% (${x.vuelven} de ${x.base})`;
+  const dato = v => v === null ? '…' : v;
+  const a = r.activos, t = r.tipos30;
+  const tramos = Object.entries(r.niveles30).sort((x, y) => parseInt(x[0]) - parseInt(y[0])).map(([k, v]) => `Nv ${k}: ${v}`).join(' · ') || '—';
+  const altas = r.altas.map(x => `${dm(x.dia)} ${x.n}`).join(' · ');
+  const cohortes = r.cohortes.slice(0, 10).map(x => `${dm(x.dia)}: ${x.n} alta${x.n === 1 ? '' : 's'} → D1 ${dato(x.d1)} · D7 ${dato(x.d7)} · D30 ${dato(x.d30)}`).join('\n') || 'Aún no hay altas registradas.';
+  const top = r.top.map((x, i) => `${i + 1}. ${String(x.n || '?').slice(0, 20)} — Nv ${x.lv}`).join('\n') || '—';
+  return `📊 DUENDE QUEST ONLINE — retención (${r.hoy}, días UTC)\n\n` +
+    `👥 Activos: hoy ${a.hoy} · 7 días ${a.d7} · 30 días ${a.d30} (en línea ahora: ${r.online})\n` +
+    `   En 30 días: ${t.tg} Telegram · ${t.web} web · ${t.inv} invitados\n` +
+    `   Niveles: ${tramos}\n` +
+    `⏱️ Sesión media (7 días): ${String(r.sesion.media).replace('.', ',')} min · ${r.sesion.sesiones7} sesiones · ${r.sesion.minutos7} min en total\n\n` +
+    `🆕 Altas por día (últimos 14):\n${altas}\n\n` +
+    `🔁 Retención (últimas 30 cohortes con el día ya cumplido):\n` +
+    `D1: ${ret(r.retencion.d1)}\nD7: ${ret(r.retencion.d7)}\nD30: ${ret(r.retencion.d30)}\n\n` +
+    `📅 Cohortes recientes (cuántos volvieron ese día exacto; … = aún no llega):\n${cohortes}\n\n` +
+    `🏆 Top niveles:\n${top}\n\n` +
+    `Se cuenta desde que se activó la medición; no incluye a los bots de prueba.`;
+}
+
+// /avisos on|off: avisos para volver al MMO (y el recordatorio diario del
+// arcade, que el cron tambien se salta para quien pidio no recibir avisos).
+async function handleAvisos(token, context, chatId, userId, payload) {
+  const arg = (payload || '').trim().toLowerCase();
+  const on = ['on', 'si', 'sí', 'activar'].includes(arg) ? true : ['off', 'no', 'desactivar'].includes(arg) ? false : undefined;
+  let r = null;
+  try { r = await mmoInterno(context.env, 'avisos', { tgId: String(userId), on }); } catch (e) {}
+  if (!r || !r.ok) { await tg(token, 'sendMessage', { chat_id: chatId, text: '❌ No se pudo guardar ahora. Intenta de nuevo en un rato.' }); return; }
+  const texto = on === true ? '🔔 Listo: te avisaremos (como mucho una vez al día) cuando tengas algo pendiente en DUENDE QUEST ONLINE.\n\nPara dejar de recibirlos: /avisos off'
+    : on === false ? '🔕 Listo: no te mandaremos más avisos para volver al juego.\n\nSi cambias de idea: /avisos on'
+    : `Avisos para volver al juego: ${r.on ? '🔔 activados' : '🔕 desactivados'}.\n\n/avisos on — activarlos\n/avisos off — desactivarlos`;
+  await tg(token, 'sendMessage', { chat_id: chatId, text: texto });
+}
+
 async function handleCreador(token, chatId) {
   await tg(token, 'sendMessage', { chat_id: chatId, text: `🧌 *DUENDE QUEST — ¿Quién está detrás?*\n\nEl juego lo crea y mantiene *El Duende* desde Perú 🇵🇪. Estos son los únicos canales oficiales: desconfía de cualquier otra cuenta que diga ser del juego.\n\n${TEXTO_CREADOR}\n🤖 *Bot oficial:* @duendequest\\_bot`, parse_mode: 'Markdown', disable_web_page_preview: true, reply_markup: { inline_keyboard: [...BOTONES_CREADOR, [{ text: '⌂ Menú', callback_data: 'menu' }]] } });
 }
 
 async function handleHelp(token, chatId) {
-  await tg(token, 'sendMessage', { chat_id: chatId, text: `🧌 *DUENDE QUEST — Comandos*\n\n/start — Menú principal\n/play — Abrir el juego\n/mmo — DUENDE QUEST ONLINE (MMORPG)\n/ranking — Top 10\n/price — Precio $DUENDE\n/stats — Tus estadísticas\n/buy — Comprar $DUENDE con Stars 💳\n/referral — Tu link de referidos\n/creador — Creador y canales oficiales\n/help — Comandos\n\n${TEXTO_CREADOR}`, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 JUGAR', web_app: { url: WEBAPP_URL } }]] } });
+  await tg(token, 'sendMessage', { chat_id: chatId, text: `🧌 *DUENDE QUEST — Comandos*\n\n/start — Menú principal\n/play — Abrir el juego\n/mmo — DUENDE QUEST ONLINE (MMORPG)\n/avisos — Avisos para volver al MMO (on / off)\n/ranking — Top 10\n/price — Precio $DUENDE\n/stats — Tus estadísticas\n/buy — Comprar $DUENDE con Stars 💳\n/referral — Tu link de referidos\n/creador — Creador y canales oficiales\n/help — Comandos\n\n${TEXTO_CREADOR}`, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 JUGAR', web_app: { url: WEBAPP_URL } }]] } });
 }
 
 // ── /admin: métricas privadas (solo el dueño, via env ADMIN_TG_ID) ──
@@ -526,6 +569,18 @@ async function onRequestPost(context) {
         return new Response('OK');
       }
 
+      // Boton "No quiero más avisos" de los avisos de vuelta del MMO.
+      if (data === 'mmoavisos:off') {
+        let r = null;
+        try { r = await mmoInterno(context.env, 'avisos', { tgId: String(user.id), on: false }); } catch (e) {}
+        if (r && r.ok) {
+          // Se quita el boton del aviso para que no quede algo que ya no hace nada.
+          await tg(token, 'editMessageReplyMarkup', { chat_id: chatId, message_id: messageId, reply_markup: { inline_keyboard: [[{ text: '🌍 Volver al mundo', web_app: { url: MMO_URL } }]] } }).catch(() => {});
+        }
+        await tg(token, 'sendMessage', { chat_id: chatId, text: r && r.ok ? '🔕 Listo: no te mandaremos más avisos para volver al juego.\n\nSi cambias de idea: /avisos on' : '❌ No se pudo guardar ahora. Prueba otra vez o escribe /avisos off' });
+        return new Response('OK');
+      }
+
       switch (data) {
         case 'ranking': await handleRanking(token, env, chatId, messageId); break;
         case 'price': await handlePrice(token, chatId, messageId); break;
@@ -561,7 +616,8 @@ async function onRequestPost(context) {
         case '/buy': case '/comprar': case '/stars': await handleBuy(token, chatId, user.id); break;
         case '/help': case '/ayuda': await handleHelp(token, chatId); break;
         case '/creador': case '/creator': case '/oficial': await handleCreador(token, chatId); break;
-        case '/retiros': case '/pagado': case '/rechazar': case '/fondo': case '/pedidos': case '/entregar': case '/anular': await handleMmoAdmin(token, context, chatId, user.id, cmd, payload); break;
+        case '/retiros': case '/pagado': case '/rechazar': case '/fondo': case '/pedidos': case '/entregar': case '/anular': case '/mmostats': await handleMmoAdmin(token, context, chatId, user.id, cmd, payload); break;
+        case '/avisos': await handleAvisos(token, context, chatId, user.id, payload); break;
         case '/admin': await handleAdmin(token, env, context, chatId, user.id); break;
         case '/live': case '/envivo': await handleLive(token, env, context, chatId, user.id, payload); break;
         case '/pay': case '/pagar': await handlePay(token, env, context, chatId, user.id, payload); break;

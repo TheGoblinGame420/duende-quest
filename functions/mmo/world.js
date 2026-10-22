@@ -26,6 +26,7 @@ import { Combate } from './combate.js';
 import { Social, pub } from './social.js';
 import { Mazmorras } from './mazmorras.js';
 import { Hermandades } from './hermandades.js';
+import { Retencion } from './retencion.js';
 
 const MAX_JUGADORES = 300;
 const GUARDAR_CADA_MS = 20000;
@@ -379,6 +380,10 @@ export class MmoWorld {
     s.sucio = true; s.guardadoT = Date.now(); s.actT = Date.now();
     this.porUid.set(uid, s);
     const login = this.procesarLogin(s);
+    // Estadisticas de retencion y avisos de vuelta: functions/mmo/retencion.js
+    // Sin await: lo que toca al personaje es inmediato y los agregados no
+    // deben retrasar la entrada al mundo.
+    this.retEntrar(s, nuevo);
     if (nuevo || heredado || login) await this.guardar(s);
 
     this.enviar(s, { t: 'bienvenido', id: s.id, yo: this.datosPropios(s), nuevo, heredado, regaladas, on: this.contarOnline() });
@@ -741,6 +746,9 @@ export class MmoWorld {
         : `❌ Tu retiro de ${r.ton} TON fue rechazado${b.trampa ? ' por uso de trampas.' : '. Los mTON volvieron a tu saldo.'}`);
       return json({ ok: true, retiro: r });
     }
+    // stats, recordatorios y avisos (functions/mmo/retencion.js)
+    const ret = await this.internoRetencion(accion, b);
+    if (ret) return json(ret);
     return json({ ok: false, error: 'acción desconocida' });
   }
 
@@ -1443,6 +1451,7 @@ export class MmoWorld {
     s.c.muerto = !!s.muerto;
     s.guardadoT = Date.now();
     s.sucio = false;
+    this.retAlGuardar(s);
     try { await this.state.storage.put('c:' + s.c.uid, s.c); } catch (e) { console.error('[MMO guardar]', e); }
   }
 
@@ -1716,4 +1725,7 @@ Object.assign(MmoWorld.prototype, Social);
 Object.assign(MmoWorld.prototype, Mazmorras);
 // Hermandades: functions/mmo/hermandades.js
 Object.assign(MmoWorld.prototype, Hermandades);
+// Estadisticas de retencion y avisos de vuelta por Telegram: functions/mmo/retencion.js
+Object.assign(MmoWorld.prototype, Retencion);
+MmoWorld.prototype.uidsPrueba = UIDS_PRUEBA;
 MmoWorld.prototype.generarItem = generarItem;
