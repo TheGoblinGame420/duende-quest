@@ -128,15 +128,73 @@ export const MONSTRUOS = {
   jefe_cangrejo: { nombre: 'Rey Cangrejo',           hoja: 'cangrejo',          nivel: 53, jefe: true, alto: 140, hpX: 30, atkX: 1.65, w: 130, h: 125, tinte: '#ff3cf0', dispara: true },
   jefe_leviatan: { nombre: 'Leviatán',               hoja: 'pez_grande',        nivel: 58, jefe: true, alto: 150, hpX: 32, atkX: 1.7, w: 170, h: 120, vuela: true, tinte: '#00eeff', dispara: true },
   jefe_dragon:   { nombre: 'Dragón Ancestral',       hoja: 'dragon',            nivel: 64, jefe: true, alto: 175, hpX: 36, atkX: 1.8, w: 170, h: 130, vuela: true, dispara: true },
+  // ── Jefes de MAZMORRA (ver MAZMORRAS): su nivel lo pone la instancia y su
+  // guion son las mecanicas del combate (zonas en el suelo, hechizos que se
+  // pueden interrumpir, esbirros, enfurecer...).
+  mz_guardian:   { nombre: 'Guardián Óseo',        hoja: 'esqueleto',    nivel: 20, jefe: true, mazmorra: true, alto: 150, w: 70, h: 135, tinte: '#d6d3d1',
+    guion: [
+      { tipo: 'zona', nombre: 'Golpe Sísmico', cada: 11000, primero: 6000, aviso: 1800, ancho: 300, donde: 'jefe', dano: 0.35, color: '#ff7a1a' },
+      { tipo: 'adds', en: [0.5], k: 'esqueleto', n: 2 },
+    ] },
+  mz_bruja:      { nombre: 'Bruja de la Cripta',    hoja: 'hechicero',    nivel: 20, jefe: true, mazmorra: true, alto: 140, w: 80, h: 125, tinte: '#4ade80', dispara: true,
+    guion: [
+      { tipo: 'cast', nombre: 'Rayo de las Sombras', cada: 9000, primero: 5000, dura: 2500, int: true, a: 'objetivo', dano: 0.55 },
+      { tipo: 'zona', nombre: 'Charco Venenoso', cada: 13000, primero: 8000, aviso: 1500, ancho: 200, donde: 'azar', n: 2, dano: 0.25, color: '#4ade80' },
+      { tipo: 'adds', en: [0.6, 0.3], k: 'fantasma', n: 2 },
+    ] },
+  mz_senor:      { nombre: 'Señor de los Huesos',   hoja: 'coloso',       nivel: 22, jefe: true, mazmorra: true, alto: 180, w: 100, h: 160, tinte: '#a8a29e',
+    guion: [
+      { tipo: 'embestida' },
+      { tipo: 'cast', nombre: 'Aplastar', cada: 14000, primero: 7000, dura: 2000, int: false, a: 'objetivo', dano: 0.5 },
+      { tipo: 'zona', nombre: 'Lluvia de Huesos', cada: 10000, primero: 4000, aviso: 1600, ancho: 170, donde: 'jugadores', dano: 0.3, color: '#e5e7eb' },
+      { tipo: 'enrage', en: 0.3, atkX: 1.5 },
+    ] },
+  mz_cangrejo:   { nombre: 'Cangrejo Acorazado',    hoja: 'cangrejo',     nivel: 38, jefe: true, mazmorra: true, alto: 140, w: 130, h: 125, tinte: '#60a5fa',
+    guion: [
+      { tipo: 'escudo', nombre: 'Caparazón', cada: 18000, primero: 9000, dura: 5000, reduce: 0.9 },
+      { tipo: 'zona', nombre: 'Marea', cada: 12000, primero: 5000, aviso: 1600, ancho: 340, donde: 'jefe', dano: 0.35, color: '#38bdf8' },
+    ] },
+  mz_sirena:     { nombre: 'Sirena Abisal',         hoja: 'espectro',     nivel: 38, jefe: true, mazmorra: true, alto: 130, w: 70, h: 120, tinte: '#f0abfc', vuela: true, dispara: true,
+    guion: [
+      { tipo: 'cast', nombre: 'Canto Hipnótico', cada: 13000, primero: 6000, dura: 2500, int: true, a: 'todos', aturde: 2000, dano: 0.15 },
+      { tipo: 'adds', en: [0.5], k: 'pez', n: 3 },
+    ] },
+  mz_kraken:     { nombre: 'Kraken',                hoja: 'pulpo',        nivel: 40, jefe: true, mazmorra: true, alto: 190, w: 150, h: 170, tinte: '#a855f7',
+    guion: [
+      { tipo: 'zona', nombre: 'Tentáculos', cada: 9000, primero: 4000, aviso: 1500, ancho: 150, donde: 'jugadores', dano: 0.3, color: '#a855f7' },
+      { tipo: 'cast', nombre: 'Chorro de Tinta', cada: 13000, primero: 8000, dura: 2200, int: true, a: 'todos', dano: 0.35 },
+      { tipo: 'adds', en: [0.7, 0.4], k: 'pulpo', n: 2 },
+      { tipo: 'enrage', en: 0.25, atkX: 1.5 },
+    ] },
+  mz_caballero:  { nombre: 'Caballero Dracónico',   hoja: 'goblin_knight', nivel: 52, jefe: true, mazmorra: true, alto: 150, w: 75, h: 135, tinte: '#ef4444',
+    guion: [
+      { tipo: 'embestida' },
+      { tipo: 'cast', nombre: 'Tajo Brutal', cada: 12000, primero: 6000, dura: 1800, int: false, a: 'objetivo', dano: 0.45 },
+      { tipo: 'zona', nombre: 'Estandarte de Fuego', cada: 14000, primero: 9000, aviso: 1600, ancho: 240, donde: 'azar', n: 2, dano: 0.3, color: '#f97316' },
+    ] },
+  mz_archimago:  { nombre: 'Archimago Traidor',     hoja: 'hechicero',    nivel: 54, jefe: true, mazmorra: true, alto: 140, w: 80, h: 125, tinte: '#8b5cf6', dispara: true,
+    guion: [
+      { tipo: 'cast', nombre: 'Piroexplosión', cada: 9000, primero: 4000, dura: 2500, int: true, a: 'objetivo', dano: 0.5 },
+      { tipo: 'zona', nombre: 'Runas Arcanas', cada: 11000, primero: 7000, aviso: 1500, ancho: 170, donde: 'jugadores', dano: 0.3, color: '#c084fc' },
+      { tipo: 'adds', en: [0.5], k: 'hechicero_corte', n: 2 },
+    ] },
+  mz_dragon:     { nombre: 'Dragón Carmesí',        hoja: 'dragon',       nivel: 58, jefe: true, mazmorra: true, alto: 200, w: 170, h: 140, tinte: '#dc2626', vuela: true, dispara: true,
+    guion: [
+      { tipo: 'zona', nombre: 'Aliento de Fuego', cada: 12000, primero: 7000, aviso: 2000, ancho: 560, donde: 'frente', dano: 0.5, color: '#ef4444' },
+      { tipo: 'zona', nombre: 'Lluvia de Brasas', cada: 9000, primero: 4000, aviso: 1500, ancho: 160, donde: 'jugadores', dano: 0.25, color: '#f97316' },
+      { tipo: 'adds', en: [0.66, 0.33], k: 'aguila', n: 2 },
+      { tipo: 'enrage', en: 0.2, atkX: 1.6 },
+    ] },
   // Jefe mundial: aparece cada 30 min en el Coliseo para TODOS los niveles.
   // Su daño es un % de la vida de cada jugador (no su ataque), asi un Nv 5 y
   // un Nv 60 pelean juntos; su vida crece con los jugadores conectados.
   jefe_mundial:  { nombre: 'Gran Duende Corrupto',   hoja: 'goblin_lord',       nivel: 30, jefe: true, mundial: true, alto: 230, w: 100, h: 200, tinte: '#5a0f96', dispara: true },
 };
 
-export function statsMonstruo(key) {
+// nivel: para las mazmorras, que se ajustan al nivel del grupo.
+export function statsMonstruo(key, nivel) {
   const m = MONSTRUOS[key];
-  const L = m.nivel;
+  const L = nivel || m.nivel;
   const hp = Math.round((30 + 15 * L) * (m.hpX || 1));
   // 6+4L mataba a un nivel 1 en 6 golpes de un Nv3. Con 4+3L seguia siendo
   // facil morir: el ataque crecia mas rapido que la vida del jugador y desde
@@ -155,16 +213,222 @@ export function statsMonstruo(key) {
 
 // ── PROGRESION DEL JUGADOR ──
 export function xpParaSubir(nivel) { return Math.round(40 * Math.pow(nivel, 1.5)); }
-export function statsJugador(nivel, skin, eq) {
+export function statsJugador(nivel, skin, eq, clase, espec) {
   const b = (SKINS[skin] && SKINS[skin].buffs) || {};
   const e = bonoEquipo(eq);
+  const cl = CLASES[clase];
+  const m = (cl && cl.mod) || { hp: 1, def: 1, atk: 1, crit: 0 };
+  const sp = (nivel >= ESPEC_NIVEL && especDe(clase, espec) && especDe(clase, espec).mod) || {};
   return {
-    maxHp: 100 + 30 * (nivel - 1) + (b.bonusHp || 0) * Math.max(1, Math.floor(nivel / 5)) + e.hp,
-    atk: Math.round((10 + 3 * (nivel - 1) + e.atk) * (b.atkMult || 1)),
-    def: Math.floor(nivel * 1.5) + e.def,
-    crit: 0.12 + e.crit,
+    maxHp: Math.round((100 + 30 * (nivel - 1) + (b.bonusHp || 0) * Math.max(1, Math.floor(nivel / 5)) + e.hp) * m.hp * (sp.hp || 1)),
+    atk: Math.round((10 + 3 * (nivel - 1) + e.atk) * (b.atkMult || 1) * m.atk * (sp.atk || 1)),
+    def: Math.floor((Math.floor(nivel * 1.5) + e.def) * m.def * (sp.def || 1)),
+    crit: 0.12 + e.crit + m.crit + (sp.crit || 0),
+    recMax: recursoMax(clase, nivel),
   };
 }
+
+// ── CLASES (al estilo World of Warcraft) ──
+// Cada clase tiene su recurso, su papel en el grupo y 7-8 habilidades que se
+// aprenden al subir de nivel. El ataque basico (Z) sigue siendo el combo de
+// siempre para los de cuerpo a cuerpo; los magos y sacerdotes disparan con
+// su vara al objetivo. Las habilidades van APARTE del ataque basico: gastan
+// recurso y comparten un tiempo global de reutilizacion (GCD) de 1 s.
+export const GCD_MS = 1000;
+export const RECURSOS = {
+  mana:    { nombre: 'Maná',    color: '#3b82f6' },
+  ira:     { nombre: 'Ira',     color: '#ef4444' },
+  energia: { nombre: 'Energía', color: '#facc15' },
+};
+export function recursoMax(clase, nivel) {
+  const cl = CLASES[clase];
+  if (!cl) return 0;
+  return cl.recurso === 'mana' ? 100 + 12 * (nivel - 1) : 100;
+}
+// mod: multiplicadores de vida, defensa, ataque y critico extra.
+// amenaza: cuanto odio genera su daño (el guerrero hace de tanque).
+export const CLASES = {
+  guerrero: {
+    nombre: 'Guerrero', rol: 'Tanque', color: '#c79c6e', recurso: 'ira', icono: 'S_Sword15', basico: 'melee',
+    mod: { hp: 1.2, def: 1.25, atk: 1, crit: 0 }, amenaza: 2,
+    desc: 'Aguanta los golpes y protege al grupo. Gana Ira al pegar y al recibir daño, y la gasta en golpes brutales.',
+  },
+  mago: {
+    nombre: 'Mago', rol: 'Daño a distancia', color: '#69ccf0', recurso: 'mana', icono: 'S_Fire03', basico: 'vara',
+    mod: { hp: 0.85, def: 0.7, atk: 1.12, crit: 0 }, amenaza: 1,
+    desc: 'Fuego, escarcha y arcano desde lejos. Frágil, pero nada pega tan fuerte como una Bola de Fuego.',
+  },
+  sacerdote: {
+    nombre: 'Sacerdote', rol: 'Sanador', color: '#f5f5f5', recurso: 'mana', icono: 'S_Holy03', basico: 'vara',
+    mod: { hp: 0.95, def: 0.9, atk: 1, crit: 0 }, amenaza: 1,
+    desc: 'Cura, protege con escudos y devuelve la vida a los caídos. Ningún grupo sobrevive sin uno.',
+  },
+  picaro: {
+    nombre: 'Pícaro', rol: 'Daño cuerpo a cuerpo', color: '#fff569', recurso: 'energia', icono: 'S_Dagger02', basico: 'melee',
+    mod: { hp: 1, def: 1, atk: 1.08, crit: 0.05 }, amenaza: 1,
+    desc: 'Sigilo, venenos y puntos de combo. Acumula combos con golpes rápidos y remata con Eviscerar.',
+  },
+};
+// ── ESPECIALIZACIONES ──
+// Desde Nv 10 cada clase elige una de dos (como las "specs" de WoW). Se
+// cambia gratis, fuera de combate. mod: multiplicadores de vida/defensa/
+// ataque y critico extra; hab: daño extra de habilidades concretas; cura:
+// multiplicador de curas y escudos; costo: habilidades mas baratas.
+export const ESPEC_NIVEL = 10;
+export const ESPECS = {
+  guerrero: {
+    armas:      { nombre: 'Armas',      icono: 'S_Sword17', rol: 'Daño',    desc: '+15% de daño y el Golpe Heroico cuesta 10 de Ira.', mod: { atk: 1.15 }, costo: { golpe_heroico: 10 } },
+    proteccion: { nombre: 'Protección', icono: 'E_Metal08', rol: 'Tanque',  desc: '+15% de vida, +20% de defensa y +50% de amenaza: el tanque del grupo.', mod: { hp: 1.15, def: 1.2 }, amenaza: 1.5 },
+  },
+  mago: {
+    fuego:    { nombre: 'Fuego',    icono: 'S_Fire02', rol: 'Daño',    desc: '+8% de crítico; Bola de Fuego y Lluvia de Meteoros hacen +20%.', mod: { crit: 0.08 }, hab: { bola_fuego: 1.2, meteoros: 1.2 } },
+    escarcha: { nombre: 'Escarcha', icono: 'S_Ice05',  rol: 'Control', desc: 'La Nova congela el doble y hace +50%; +10% de vida y +15% de defensa.', mod: { hp: 1.1, def: 1.15 }, hab: { nova: 1.5 }, raiz: 2 },
+  },
+  sacerdote: {
+    sagrado: { nombre: 'Sagrado', icono: 'S_Holy04',   rol: 'Sanador', desc: 'Tus curas y escudos son un 25% más fuertes.', cura: 1.25 },
+    sombras: { nombre: 'Sombras', icono: 'S_Shadow03', rol: 'Daño',    desc: '+20% de daño y Dolor hace +50%, pero curas un 20% menos.', mod: { atk: 1.2 }, hab: { dolor: 1.5 }, cura: 0.8 },
+  },
+  picaro: {
+    asesinato: { nombre: 'Asesinato', icono: 'S_Poison03', rol: 'Daño', desc: '+5% de crítico y Eviscerar hace +25%.', mod: { crit: 0.05 }, hab: { eviscerar: 1.25 } },
+    combate:   { nombre: 'Combate',   icono: 'S_Sword18',  rol: 'Daño', desc: '+10% de daño y la energía vuelve un 25% más rápido.', mod: { atk: 1.1 }, energia: 1.25 },
+  },
+};
+export const especDe = (clase, espec) => (ESPECS[clase] && ESPECS[clase][espec]) || null;
+
+// ── MONTURAS ──
+// Se compran con oro al Mercader y se invocan en 1,5 s fuera de combate (no
+// en mazmorras ni en el Coliseo). Atacar, usar una habilidad o recibir un
+// golpe te baja. dy: cuanto se eleva el jinete sobre la montura.
+export const MONTURAS = {
+  lagarto:   { nombre: 'Lagarto del Desierto', hoja: 'lagarto',   nv: 20, precio: 8000,   vel: 1.5, alto: 30, dy: 16 },
+  conejo:    { nombre: 'Conejo Saltarín',      hoja: 'conejo',    nv: 20, precio: 8000,   vel: 1.5, alto: 40, dy: 24 },
+  hellgato:  { nombre: 'Gato Infernal',        hoja: 'hellgato',  nv: 35, precio: 35000,  vel: 1.7, alto: 44, dy: 22 },
+  hellhound: { nombre: 'Sabueso Infernal',     hoja: 'hellhound', nv: 40, precio: 60000,  vel: 1.8, alto: 52, dy: 26 },
+  dragon:    { nombre: 'Dragón Ancestral',     hoja: 'dragon',    nv: 60, precio: 300000, vel: 2,   alto: 84, dy: 40 },
+};
+export const MONTAR_MS = 1500;
+export const velMontura = id => (MONTURAS[id] ? MONTURAS[id].vel : 1);
+
+// Cambiar de clase: gratis hasta Nv 10, luego cuesta oro (asi se puede
+// probar sin miedo, pero no se cambia por capricho a nivel alto).
+export const costoCambioClase = nivel => (nivel < 10 ? 0 : 200 * nivel);
+
+// Habilidades. costo: puntos de ira/energia, o % del mana maximo.
+// rango: px desde el jugador al objetivo ('melee' = 100). obj: 'enemigo',
+// 'aliado' (otro jugador o uno mismo), 'yo' o 'area' (alrededor).
+// mult: daño = ataque × mult (× forja del arma). cura: ataque × cura.
+export const MELEE = 105;
+export const HABS = [
+  // ── GUERRERO ──
+  { id: 'golpe_heroico', clase: 'guerrero', nombre: 'Golpe Heroico', nv: 1, icono: 'S_Sword15', costo: 15, cd: 0, rango: MELEE, obj: 'enemigo', mult: 3, amenaza: 2.5,
+    desc: 'Un golpe brutal (×3) que genera muchísima amenaza.' },
+  { id: 'carga', clase: 'guerrero', nombre: 'Carga', nv: 4, icono: 'S_Dagger03', costo: 0, genera: 20, cd: 12000, rango: 380, min: 60, obj: 'enemigo', aturde: 1500, gcd: false,
+    desc: 'Cargas contra el enemigo, lo aturdes 1,5 s y ganas 20 de Ira.' },
+  { id: 'provocar', clase: 'guerrero', nombre: 'Provocar', nv: 8, icono: 'S_Buff14', costo: 0, cd: 8000, rango: 320, obj: 'enemigo', gcd: false,
+    desc: 'Obligas al enemigo a atacarte a ti durante 3 s y te pones primero en su lista de odio.' },
+  { id: 'zurrar', clase: 'guerrero', nombre: 'Zurrar', nv: 12, icono: 'S_Sword07', costo: 10, cd: 12000, rango: MELEE, obj: 'enemigo', mult: 0.6, interrumpe: 4000, gcd: false,
+    desc: 'Un golpe seco que interrumpe el hechizo que el enemigo esté lanzando (y no puede lanzar otro en 4 s).' },
+  { id: 'torbellino', clase: 'guerrero', nombre: 'Torbellino', nv: 14, icono: 'S_Wind02', costo: 25, cd: 6000, radio: 150, obj: 'area', mult: 2.2, amenaza: 1.5,
+    desc: 'Giras con el arma y golpeas a todo lo que te rodea (×2,2).' },
+  { id: 'grito', clase: 'guerrero', nombre: 'Grito de Batalla', nv: 20, icono: 'S_Buff08', costo: 10, cd: 30000, radio: 500, obj: 'yo', dura: 120000,
+    desc: '+10% de ataque para ti y los aliados cercanos durante 2 minutos.' },
+  { id: 'muro', clase: 'guerrero', nombre: 'Muro de Escudo', nv: 28, icono: 'E_Metal06', costo: 0, cd: 45000, obj: 'yo', dura: 8000, reduce: 0.6, gcd: false,
+    desc: 'Recibes un 60% menos de daño durante 8 s.' },
+  { id: 'ejecutar', clase: 'guerrero', nombre: 'Ejecutar', nv: 36, icono: 'S_Sword10', costo: 30, cd: 0, rango: MELEE, obj: 'enemigo', mult: 9, bajo: 0.25,
+    desc: 'Remata a un enemigo con menos del 25% de vida (×9).' },
+  // ── MAGO ──
+  { id: 'bola_fuego', clase: 'mago', nombre: 'Bola de Fuego', nv: 1, icono: 'S_Fire03', costo: 7, cd: 0, cast: 1500, rango: 430, obj: 'enemigo', mult: 5.5,
+    desc: 'Lanzas una bola de fuego (×5,5). 1,5 s de lanzamiento.' },
+  { id: 'nova', clase: 'mago', nombre: 'Nova de Escarcha', nv: 4, icono: 'S_Ice02', costo: 9, cd: 14000, radio: 160, obj: 'area', mult: 1.5, raiz: 5000,
+    desc: 'Congelas en el sitio a todo lo cercano 5 s (×1,5). Ideal para escapar.' },
+  { id: 'misiles', clase: 'mago', nombre: 'Misiles Arcanos', nv: 8, icono: 'S_Magic02', costo: 10, cd: 6000, rango: 430, obj: 'enemigo', mult: 6, golpes: 3,
+    desc: 'Tres misiles al instante (×2 cada uno).' },
+  { id: 'polimorfia', clase: 'mago', nombre: 'Polimorfia', nv: 14, icono: 'S_Magic01', costo: 6, cd: 0, cast: 1500, rango: 380, obj: 'enemigo', dura: 15000,
+    desc: 'Conviertes al enemigo en oveja 15 s (se rompe si recibe daño). No afecta a jefes.' },
+  { id: 'contrahechizo', clase: 'mago', nombre: 'Contrahechizo', nv: 16, icono: 'S_Magic11', costo: 8, cd: 20000, rango: 410, obj: 'enemigo', mult: 0.3, interrumpe: 5000, gcd: false,
+    desc: 'Cortas el hechizo que el enemigo esté lanzando, desde lejos (y no puede lanzar otro en 5 s).' },
+  { id: 'evocacion', clase: 'mago', nombre: 'Evocación', nv: 20, icono: 'S_Magic04', costo: 0, cd: 60000, cast: 4000, obj: 'yo', gcd: true,
+    desc: 'Te concentras 4 s y recuperas el 60% del maná.' },
+  { id: 'bloque', clase: 'mago', nombre: 'Bloque de Hielo', nv: 28, icono: 'S_Ice07', costo: 0, cd: 60000, obj: 'yo', dura: 6000, gcd: false,
+    desc: 'Te encierras en hielo: inmune a todo 6 s, pero no puedes actuar.' },
+  { id: 'meteoros', clase: 'mago', nombre: 'Lluvia de Meteoros', nv: 36, icono: 'S_Fire05', costo: 20, cd: 18000, cast: 2000, radio: 430, obj: 'area', mult: 7, multJefe: 4,
+    desc: 'Llueven meteoros sobre todo lo que ves (×7; ×4 a jefes).' },
+  // ── SACERDOTE ──
+  { id: 'castigo', clase: 'sacerdote', nombre: 'Castigo', nv: 1, icono: 'S_Light01', costo: 6, cd: 0, cast: 1500, rango: 410, obj: 'enemigo', mult: 5.5,
+    desc: 'Luz sagrada contra el enemigo (×5,5). 1,5 s de lanzamiento.' },
+  { id: 'sanar', clase: 'sacerdote', nombre: 'Sanar', nv: 1, icono: 'S_Holy03', costo: 10, cd: 0, cast: 1800, rango: 420, obj: 'aliado', cura: 3.2,
+    desc: 'Curas a un aliado (o a ti) ataque ×3,2. 1,8 s de lanzamiento.' },
+  { id: 'escudo_poder', clase: 'sacerdote', nombre: 'Palabra de Poder: Escudo', nv: 4, icono: 'S_Holy09', costo: 12, cd: 4000, rango: 420, obj: 'aliado', absorbe: 4, dura: 15000,
+    desc: 'Un escudo que absorbe daño (ataque ×4) durante 15 s. El mismo aliado no puede recibir otro en 12 s.' },
+  { id: 'dolor', clase: 'sacerdote', nombre: 'Palabra de las Sombras: Dolor', nv: 8, icono: 'S_Shadow06', costo: 5, cd: 0, rango: 410, obj: 'enemigo', mult: 9, dura: 15000,
+    desc: 'Dolor oscuro que hace ataque ×9 en 15 s.' },
+  { id: 'renovar', clase: 'sacerdote', nombre: 'Renovar', nv: 14, icono: 'S_Holy01', costo: 9, cd: 0, rango: 420, obj: 'aliado', cura: 4, dura: 12000,
+    desc: 'Curación continua: ataque ×4 repartido en 12 s.' },
+  { id: 'silencio', clase: 'sacerdote', nombre: 'Silencio', nv: 18, icono: 'S_Shadow07', costo: 6, cd: 30000, rango: 400, obj: 'enemigo', mult: 0.3, interrumpe: 5000, gcd: false,
+    desc: 'Silencias al enemigo: interrumpe su hechizo y no puede lanzar ni disparar en 5 s.' },
+  { id: 'rezo', clase: 'sacerdote', nombre: 'Rezo de Sanación', nv: 22, icono: 'S_Holy06', costo: 22, cd: 0, cast: 2500, radio: 480, obj: 'yo', cura: 2.6,
+    desc: 'Curas a todos los aliados cercanos ataque ×2,6. 2,5 s de lanzamiento.' },
+  { id: 'supresion', clase: 'sacerdote', nombre: 'Supresión de Dolor', nv: 32, icono: 'S_Holy08', costo: 8, cd: 60000, rango: 420, obj: 'aliado', dura: 8000, reduce: 0.4, gcd: false,
+    desc: 'El aliado recibe un 40% menos de daño durante 8 s.' },
+  // Resurreccion: no va en la barra, sale en el boton de accion junto a un
+  // aliado caido (como "hablar" o "entrar").
+  { id: 'resurreccion', clase: 'sacerdote', nombre: 'Resurrección', nv: 10, icono: 'S_Holy05', costo: 30, cd: 0, cast: 4000, rango: 160, obj: 'muerto', barra: false,
+    desc: 'Devuelves la vida a un aliado caído (con la mitad de su vida). Ponte junto a él y pulsa el botón de acción.' },
+  // ── PICARO ──
+  { id: 'siniestro', clase: 'picaro', nombre: 'Golpe Siniestro', nv: 1, icono: 'S_Dagger02', costo: 40, cd: 0, rango: MELEE, obj: 'enemigo', mult: 2.6, combo: 1,
+    desc: 'Una puñalada rápida (×2,6) que suma 1 punto de combo.' },
+  { id: 'eviscerar', clase: 'picaro', nombre: 'Eviscerar', nv: 3, icono: 'S_Dagger05', costo: 35, cd: 0, rango: MELEE, obj: 'enemigo', mult: 1.2, porCombo: 1.6, remate: true,
+    desc: 'Remate: gasta los puntos de combo (×1,2 + ×1,6 por punto). Con 5 puntos, ×9,2.' },
+  { id: 'sigilo', clase: 'picaro', nombre: 'Sigilo', nv: 6, icono: 'S_Buff06', costo: 0, cd: 4000, obj: 'yo', gcd: false,
+    desc: 'Te vuelves casi invisible: los monstruos no te ven. Tu primer golpe desde el sigilo hace ×2 y da 2 puntos de combo. Solo fuera de combate.' },
+  { id: 'patada', clase: 'picaro', nombre: 'Patada', nv: 10, icono: 'S_Dagger06', costo: 25, cd: 10000, rango: MELEE, obj: 'enemigo', mult: 0.8, interrumpe: 4000, gcd: false,
+    desc: 'Interrumpe el hechizo que el enemigo esté lanzando (y no puede volver a lanzarlo en 4 s).' },
+  { id: 'abanico', clase: 'picaro', nombre: 'Abanico de Cuchillas', nv: 16, icono: 'S_Dagger04', costo: 50, cd: 0, radio: 150, obj: 'area', mult: 2, combo: 1,
+    desc: 'Lanzas cuchillas a todos los enemigos cercanos (×2) y sumas 1 punto de combo.' },
+  { id: 'evasion', clase: 'picaro', nombre: 'Evasión', nv: 24, icono: 'S_Wind05', costo: 0, cd: 40000, obj: 'yo', dura: 10000, esquiva: 0.6, gcd: false,
+    desc: 'Esquivas el 60% de los golpes durante 10 s.' },
+  { id: 'desvanecer', clase: 'picaro', nombre: 'Desvanecerse', nv: 34, icono: 'S_Shadow16', costo: 0, cd: 90000, obj: 'yo', gcd: false,
+    desc: 'Desapareces: los monstruos se olvidan de ti y entras en Sigilo aunque estés en combate.' },
+];
+export const habsDe = clase => HABS.filter(h => h.clase === clase && h.barra !== false);
+export const habPorId = id => HABS.find(h => h.id === id);
+// Costo real de una habilidad (el mana va en % del maximo; algunas
+// especializaciones abaratan habilidades concretas).
+export function costoHab(h, recMax, espec) {
+  const cl = CLASES[h.clase];
+  const sp = especDe(h.clase, espec);
+  const base = sp && sp.costo && sp.costo[h.id] !== undefined ? sp.costo[h.id] : h.costo;
+  return cl && cl.recurso === 'mana' ? Math.round(base / 100 * recMax) : base;
+}
+// Ataque basico de vara (magos y sacerdotes): dispara al objetivo.
+export const VARA = { rango: 430, cdMs: 700, mult: 1.1 };
+// Piedra de hogar: volver al pueblo tras 6 s quieto.
+export const HOGAR_MS = 6000;
+export const HOGAR_CD_MS = 60000;
+// Estados que viajan en cada foto del servidor (bits).
+export const FJ = { escudo: 1, fuego: 2, muerto: 4, escudoPoder: 8, renovar: 16, muro: 32, evasion: 64, bloque: 128, sigilo: 256, lanza: 512, grito: 1024, supresion: 2048, aturdido: 4096 };
+export const FM = { raiz: 1, aturdido: 2, oveja: 4, dolor: 8, lanza: 16 };
+// Auras que se ven en los marcos (icono y si es buena o mala).
+export const AURAS = {
+  escudo:      { nombre: 'Escudo (invulnerable)', icono: 'item_shield', dir: 'items/' },
+  fuego:       { nombre: 'Golpes de fuego', icono: 'skill_fire', dir: 'items/' },
+  escudoPoder: { nombre: 'Palabra de Poder: Escudo', icono: 'S_Holy09' },
+  almaDebil:   { nombre: 'Alma Debilitada', icono: 'S_Shadow11', mala: true },
+  renovar:     { nombre: 'Renovar', icono: 'S_Holy01' },
+  muro:        { nombre: 'Muro de Escudo', icono: 'E_Metal06' },
+  supresion:   { nombre: 'Supresión de Dolor', icono: 'S_Holy08' },
+  evasion:     { nombre: 'Evasión', icono: 'S_Wind05' },
+  bloque:      { nombre: 'Bloque de Hielo', icono: 'S_Ice07' },
+  sigilo:      { nombre: 'Sigilo', icono: 'S_Buff06' },
+  grito:       { nombre: 'Grito de Batalla', icono: 'S_Buff08' },
+  raiz:        { nombre: 'Congelado', icono: 'S_Ice02', mala: true },
+  aturdido:    { nombre: 'Aturdido', icono: 'S_Dagger03', mala: true },
+  oveja:       { nombre: 'Polimorfia', icono: 'S_Magic01', mala: true },
+  dolor:       { nombre: 'Dolor', icono: 'S_Shadow06', mala: true },
+  silencio:    { nombre: 'Interrumpido', icono: 'S_Dagger06', mala: true },
+  provoca:     { nombre: 'Provocado', icono: 'S_Buff14', mala: true },
+  caparazon:   { nombre: 'Caparazón (casi inmune)', icono: 'E_Metal05' },
+};
 
 // ── EQUIPO ──
 // Cinco ranuras. Los objetos los sueltan los monstruos (los jefes siempre) y
@@ -228,15 +492,6 @@ export function textoBonos(b) {
   return l.join(' · ');
 }
 
-// ── HABILIDADES (se aprenden solas al subir de nivel) ──
-export const HABILIDADES = [
-  { id: 'torbellino', nombre: 'Torbellino',         nv: 10, cd: 6000,  icono: 'S_Wind02',   tecla: 'C', desc: 'Giras con la espada y dañas a todo lo que te rodea (x2,2).' },
-  { id: 'estocada',   nombre: 'Estocada Fantasma',  nv: 20, cd: 9000,  icono: 'S_Shadow05', tecla: 'V', desc: 'Un tajo enorme atraviesa a los enemigos de delante (x3).' },
-  { id: 'meteoro',    nombre: 'Lluvia de Meteoros', nv: 30, cd: 18000, icono: 'S_Fire05',   tecla: 'B', desc: 'Llueven meteoros sobre todo lo que ves (x3,5).' },
-  { id: 'furia',      nombre: 'Furia del Duende',   nv: 45, cd: 45000, icono: 'S_Buff03',   tecla: 'N', desc: '10 s con +50% de ataque y robo de vida del 15%.' },
-];
-export const FURIA_MS = 10000;
-
 // ── RECOMPENSA DIARIA (racha de 7 dias; si faltas un dia vuelve al 1) ──
 export const LOGIN_PREMIOS = [
   { oro: 300, txt: '300 oro' },
@@ -269,6 +524,11 @@ export const LOGROS = [
   { id: 'legend',    titulo: 'Bendecido',          desc: 'Consigue un objeto legendario',  oro: 3000,  cond: c => !!c.tuvoLegendario },
   { id: 'racha7',    titulo: 'Fiel al Duende',     desc: 'Entra 7 días seguidos',          oro: 3000,  cond: c => ((c.login || {}).racha || 0) >= 7 },
   { id: 'equipo5',   titulo: 'Bien Equipado',      desc: 'Lleva puestas las 5 piezas de equipo', oro: 2000, cond: c => Object.keys(RANURAS).every(k => c.eq && c.eq[k]) },
+  { id: 'herm',      titulo: 'Hermano de Armas',    desc: 'Únete a una hermandad (o funda la tuya)', oro: 1000, cond: c => !!c.herm },
+  { id: 'mazmorra1', titulo: 'Explorador de Criptas', desc: 'Completa una mazmorra',             oro: 2000,  cond: c => (c.mazmorras || 0) >= 1 },
+  { id: 'mazmorra10', titulo: 'Conquistador',       desc: 'Completa 10 mazmorras',             oro: 10000, cond: c => (c.mazmorras || 0) >= 10 },
+  { id: 'kraken',    titulo: 'Azote del Abismo',    desc: 'Vence al Kraken del Templo Hundido', oro: 8000,  cond: c => !!(c.mzJefes && c.mzJefes.mz_kraken) },
+  { id: 'dragon',    titulo: 'Matadragones',        desc: 'Vence al Dragón Carmesí de la Ciudadela', oro: 15000, cond: c => !!(c.mzJefes && c.mzJefes.mz_dragon) },
 ];
 
 // ── JEFE MUNDIAL ──
@@ -309,10 +569,10 @@ export const COMBO_MULT = [1, 1.15, 1.45];
 
 // ── PODERES (los 4 objetos del juego) ──
 export const PODERES = [
-  { id: 'pocion', nombre: 'Poción',  icono: 'item_potion', precio: 30,  cd: 3000,  desc: 'Cura el 50% de la vida' },
-  { id: 'escudo', nombre: 'Escudo',  icono: 'item_shield', precio: 120, cd: 20000, desc: 'Invulnerable 5 segundos' },
-  { id: 'rayo',   nombre: 'Rayo',    icono: 'item_skill',  precio: 350, cd: 15000, desc: 'Fulmina a todo lo que esté cerca' },
-  { id: 'fuego',  nombre: 'Fuego',   icono: 'skill_fire',  precio: 200, cd: 20000, desc: 'Golpes de fuego (+50%) por 8 s' },
+  { id: 'pocion', nombre: 'Poción',  icono: 'item_potion', precio: 30,  cd: 3000,  tecla: 'Q', desc: 'Cura el 50% de la vida y el 30% del maná' },
+  { id: 'escudo', nombre: 'Escudo',  icono: 'item_shield', precio: 120, cd: 20000, tecla: 'F', desc: 'Invulnerable 5 segundos' },
+  { id: 'rayo',   nombre: 'Rayo',    icono: 'item_skill',  precio: 350, cd: 15000, tecla: 'G', desc: 'Fulmina a todo lo que esté cerca' },
+  { id: 'fuego',  nombre: 'Fuego',   icono: 'skill_fire',  precio: 200, cd: 20000, tecla: 'T', desc: 'Golpes de fuego (+50%) por 8 s' },
 ];
 
 // ── MISIONES ──
@@ -369,6 +629,58 @@ export const DIARIA = { nombre: 'Caza del día', n: 25 };
 export function premioDiaria(nivel) { return { xp: Math.round(xpParaSubir(nivel) * 0.3), oro: 40 * nivel, pocion: 3 }; }
 export const hoyUTC = () => new Date(Date.now()).toISOString().slice(0, 10);
 
+// ── HERMANDADES ──
+export const HERM_COSTO = 5000;   // oro para fundar una
+export const HERM_NIVEL = 10;
+export const HERM_MAX = 50;
+
+// ── MAZMORRAS ──
+// Instancias privadas: cada grupo (o cada jugador solo) entra a su propia
+// copia. El nivel de la mazmorra se ajusta al del grupo dentro de su tramo y
+// la vida de los monstruos al numero de jugadores, asi se pueden hacer solo
+// o con amigos. Grupos de monstruos ("packs") agresivos y 3 jefes; cada jefe
+// abre la barrera que guarda. Dan experiencia, oro y equipo (nunca mTON).
+export const MAZMORRAS = {
+  catacumbas: {
+    nombre: 'Catacumbas del Duende', mapa: 'catacumbas', nv: [10, 30], icono: 'E_Bones02',
+    desc: 'Bajo el pueblo duerme un ejército de huesos. Tres guardianes custodian la cripta.',
+    packs: [
+      { x: 520, k: ['esqueleto', 'esqueleto'] }, { x: 900, k: ['fantasma', 'esqueleto'] }, { x: 1250, k: ['goblin_assassin', 'esqueleto', 'fantasma'] },
+      { x: 2050, k: ['esqueleto', 'hechicero'] }, { x: 2400, k: ['fantasma', 'fantasma', 'esqueleto'] },
+      { x: 3250, k: ['goblin_assassin', 'goblin_assassin'] }, { x: 3550, k: ['esqueleto', 'hechicero', 'esqueleto'] },
+    ],
+    jefes: [{ k: 'mz_guardian', x: 1620, muro: 1820 }, { k: 'mz_bruja', x: 2800, muro: 3000 }, { k: 'mz_senor', x: 3950, muro: 4200, final: true }],
+  },
+  templo: {
+    nombre: 'Templo Hundido', mapa: 'templo', nv: [30, 48], icono: 'S_Water07',
+    desc: 'Un templo tragado por el mar. Algo enorme se mueve entre sus columnas.',
+    packs: [
+      { x: 520, k: ['cangrejo', 'cangrejo'] }, { x: 900, k: ['pez', 'pez_dardo', 'pez'] }, { x: 1250, k: ['pulpo', 'cosa'] },
+      { x: 2050, k: ['baba', 'espectro'] }, { x: 2400, k: ['saltador', 'saltador', 'pulpo'] },
+      { x: 3250, k: ['pez_grande', 'espectro'] }, { x: 3550, k: ['cosa', 'baba', 'pulpo'] },
+    ],
+    jefes: [{ k: 'mz_cangrejo', x: 1620, muro: 1820 }, { k: 'mz_sirena', x: 2800, muro: 3000 }, { k: 'mz_kraken', x: 3950, muro: 4200, final: true }],
+  },
+  ciudadela: {
+    nombre: 'Ciudadela del Dragón', mapa: 'ciudadela', nv: [45, 60], icono: 'S_Fire06',
+    desc: 'La fortaleza del Dragón Carmesí. Solo los duendes más fuertes vuelven a contarlo.',
+    packs: [
+      { x: 520, k: ['guardia_real', 'guardia_real'] }, { x: 900, k: ['caballero_negro', 'hechicero_corte'] }, { x: 1250, k: ['paladin_goblin', 'guardia_real', 'hechicero_corte'] },
+      { x: 2050, k: ['aguila', 'aguila'] }, { x: 2400, k: ['caballero_negro', 'paladin_goblin', 'hechicero_corte'] },
+      { x: 3250, k: ['hellgato', 'hellgato'] }, { x: 3550, k: ['paladin_goblin', 'caballero_negro', 'aguila'] },
+    ],
+    jefes: [{ k: 'mz_caballero', x: 1620, muro: 1820 }, { k: 'mz_archimago', x: 2800, muro: 3000 }, { k: 'mz_dragon', x: 3950, muro: 4200, final: true }],
+  },
+};
+// Escala por jugadores dentro (n): la vida crece con cada uno, el daño poco.
+// Medido con tools/sim_mazmorra.mjs: solo, cada jefe dura ~30 s; en grupo
+// la vida crece mas que el daño del grupo (uno suele curar) y el combate
+// dura ~45-50 s, con tiempo para que sus mecanicas importen.
+export const escalaMazmorra = n => ({ vidaPack: 2.2 * (1 + 0.8 * (n - 1)), vidaJefe: 26 * (1 + 1.5 * (n - 1)), atkPack: 1, atkJefe: 1.15 + 0.1 * (n - 1) });
+// Primera vez de cada dia que completas una mazmorra: premio extra.
+export const premioMazmorraDia = nivel => ({ xp: Math.round(xpParaSubir(nivel) * 0.5), oro: 150 * nivel });
+export const nivelMazmorra = (mz, nivelGrupo) => Math.max(mz.nv[0], Math.min(mz.nv[1], nivelGrupo));
+
 export function zonaDe(tipoMonstruo) {
   for (const id in MAPAS) if (MAPAS[id].monstruos && (MAPAS[id].monstruos.includes(tipoMonstruo) || MAPAS[id].jefe === tipoMonstruo)) return id;
   return null;
@@ -393,6 +705,7 @@ export const MAPAS = {
       { x: 3000, a: 'abismo',    ax: 150,  etiqueta: 'Abismo Marino', nv: '50-55' },
       { x: 3240, a: 'acantilados', ax: 150, etiqueta: 'Acantilados Mágicos', nv: '55-60' },
       { x: 1400, a: 'coliseo',   ax: 300,  etiqueta: '👹 Coliseo', nv: 'Jefe mundial' },
+      { x: 795,  buscador: 1,             etiqueta: '🏰 Mazmorras', nv: 'Solo o en grupo' },
     ],
     npcs: [
       { id: 'mercader', nombre: 'Mercader Grumo', hoja: 'goblin_peasant', x: 950, tipo: 'tienda' },
@@ -483,6 +796,29 @@ jefe: 'jefe_rey',
     portales: [{ x: 60, a: 'abismo', ax: 2650, etiqueta: 'Abismo Marino', nv: '50-55' }, { x: 2940, a: 'pueblo', ax: 950, etiqueta: 'Pueblo Duende' }],
     monstruos: ['zarigueya', 'aguila', 'fantasma_halo', 'paladin_goblin'], max: 13,
     jefe: 'jefe_dragon',
+  },
+  // ── MAZMORRAS (instancias privadas para tu grupo o para ti solo) ──
+  // muros: barreras magicas que se abren al vencer al jefe que las guarda.
+  catacumbas: {
+    nombre: 'Catacumbas del Duende', fondo: 'cavernas', ancho: 4400, zona: true, instancia: true, mazmorra: 'catacumbas',
+    paleta: { cielo: ['#07030f', '#1a0b2e'], suelo: '#120a1c', linea: '#a8a29e' },
+    plataformas: [[700, 290, 200], [1250, 250, 180], [2200, 285, 220], [3300, 260, 200]],
+    portales: [{ x: 60, a: 'pueblo', ax: 795, etiqueta: 'Salida' }, { x: 4340, a: 'pueblo', ax: 795, etiqueta: 'Salida', fin: 1 }],
+    monstruos: [], max: 0,
+  },
+  templo: {
+    nombre: 'Templo Hundido', fondo: 'abismo', ancho: 4400, zona: true, instancia: true, mazmorra: 'templo',
+    paleta: { cielo: ['#02101c', '#0b3550'], suelo: '#06141c', linea: '#38bdf8' },
+    plataformas: [[650, 285, 220], [1300, 245, 180], [2250, 280, 200], [3350, 250, 220]],
+    portales: [{ x: 60, a: 'pueblo', ax: 795, etiqueta: 'Salida' }, { x: 4340, a: 'pueblo', ax: 795, etiqueta: 'Salida', fin: 1 }],
+    monstruos: [], max: 0,
+  },
+  ciudadela: {
+    nombre: 'Ciudadela del Dragón', fondo: 'tormenta2', ancho: 4400, zona: true, instancia: true, mazmorra: 'ciudadela',
+    paleta: { cielo: ['#1a0505', '#3a0a0a'], suelo: '#1a0a0a', linea: '#f97316' },
+    plataformas: [[700, 290, 200], [1250, 240, 200], [2200, 285, 220], [3300, 245, 200]],
+    portales: [{ x: 60, a: 'pueblo', ax: 795, etiqueta: 'Salida' }, { x: 4340, a: 'pueblo', ax: 795, etiqueta: 'Salida', fin: 1 }],
+    monstruos: [], max: 0,
   },
   // Arena del jefe mundial (para todos los niveles): sin monstruos propios.
   coliseo: {

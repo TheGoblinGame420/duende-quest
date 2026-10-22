@@ -1033,3 +1033,83 @@ compras por Stars y SOL a su cuenta, todo manual y transparente (3 jugadores).
 - **Transparencia** en la ventana 💎: fórmula del fondo y total pagado a
   jugadores; cada jugador ve el estado de sus compras y retiros.
 - Arnés: 54 comprobaciones del dinero/tienda + 44 del juego.
+
+### DUENDE QUEST ONLINE — sistemas de World of Warcraft (21-oct-2026)
+
+Pedido del dueño: "que sea como WoW para navegador y Telegram". Se le
+preguntó 2D o 3D y eligió **mantener el mundo 2D y añadir los sistemas de
+WoW** (los personajes, el arte y el dinero no se tocan). El servidor se partió
+en módulos que se mezclan en `MmoWorld` con `Object.assign` (al final de
+`world.js`):
+
+- `functions/mmo/combate.js` — **clases** (Guerrero/Ira, Mago/Maná,
+  Sacerdote/Maná, Pícaro/Energía + combos), 7-8 habilidades por clase en
+  `HABS` (data.js) con GCD de 1 s, tiempos de lanzamiento que se cancelan al
+  moverse, recargas, **objetivo** (el cliente manda `tg`; sin objetivo se
+  elige el enemigo más cercano), **amenaza** (`o.amen`: los monstruos van por
+  quien más los enfureció; el guerrero genera ×2 y tiene Provocar; curar
+  enfurece), **auras** (escudos, curas en el tiempo, raíz, aturdir, oveja,
+  silencio...), **interrupciones** (Patada, Zurrar, Contrahechizo, Silencio;
+  solo cortan hechizos con barra naranja = `int`), resurrección del
+  sacerdote, Piedra de Hogar (6 s quieto), **especializaciones** (2 por clase
+  desde Nv 10, `ESPECS`) y **monturas** (`MONTURAS`, Mercader, tecla Y,
+  ×1,5-×2 de velocidad; atacar o recibir un golpe te baja).
+  Los monstruos del mundo abierto siguen pasivos, pero ahora solo pegan a su
+  objetivo (antes rozar a uno pasivo hacía daño).
+- `functions/mmo/social.js` — **grupos** de 5 (por uid, sobreviven a una
+  reconexión, se disuelven en un despliegue), XP/oro/misión compartidos con
+  +10% por miembro, **chat por canales** (general, /d decir, /g grupo,
+  /h hermandad, /s susurro, /r), lista de jugadores en línea. A los clientes
+  solo llega `pub(uid)` (hash FNV): el uid real es "tg:<id de Telegram>".
+- `functions/mmo/mazmorras.js` — **3 mazmorras instanciadas** (Catacumbas
+  Nv 10-30, Templo Hundido 30-48, Ciudadela del Dragón 45-60; `MAZMORRAS`):
+  copia privada por grupo (clave de mundo `mapa#id`, `s.k`/`o.cl`), packs
+  agresivos enlazados, 3 jefes con **guion** (zonas en el suelo en % de la
+  vida, hechizos interrumpibles, esbirros, enfurecer, caparazón), barreras que
+  abre cada jefe, revivir en la entrada, reinicio si todos caen, premio del
+  día (XP + oro + épico). Nivel = el del más alto (dentro del tramo) y la vida
+  de los jefes según los vivos al empezar (`escalaMazmorra`).
+- `functions/mmo/hermandades.js` — **hermandades** guardadas en el storage del
+  DO (`h:<id>`, `hn:<nombre>`), rangos líder/oficial/miembro, mensaje del día,
+  chat /h, nombre bajo el personaje. Fundar: Nv 10 y 5.000 oro.
+
+Cliente: marcos de jugador/objetivo/grupo con auras y barras de recurso,
+barra de acción (1-8 + consumibles Q F G T + 🐎), barra de lanzamiento,
+errores en rojo y avisos de jefe en naranja, ventanas de clase, libro de
+hechizos (P), social (O), buscador de mazmorras (portal dorado del pueblo),
+mapa del mundo (M). En PC la barra va en una franja bajo el lienzo; en
+móvil, en las filas táctiles. **?v= va en 27** (subir los dos juntos).
+
+**Dinero (sin cambios de política):** las mazmorras, grupos y hermandades
+NO dan mTON (`!o.mazmorra` en `darMton`). Curar cuenta para repartir XP y oro
+(`o.cura`, aparte), pero el mTON y la caza del día siguen saliendo solo de lo
+propio: el daño hecho (`o.dano`) y, en la diaria, haber peleado o curado de
+verdad (un compañero quieto en el grupo no la avanza). Un escudo solo cuenta
+por lo que absorbe.
+
+**Revisión independiente (agente):** encontró y se arreglaron: crear
+mazmorras sin límite tumbaba el DO por memoria (ahora una instancia por
+jugador/grupo que se reutiliza, 8 por hora y 40 en total), saltarse el GCD
+con Piedra de Hogar + cancelar, cambiar de clase en combate para reiniciar
+recargas, la Carga cruzando barreras, aturdir no cortaba lanzamientos, y
+`pub()` lleva sal al azar por arranque. Arnés: 103 comprobaciones.
+
+**Cómo probar (todo en `tools/`, que no se publica):**
+- `node tools/mmo_local.mjs` — servidor local con el `world.js` real
+  (WebSocket a mano) en http://localhost:8787/mmo/; config `mmo-local` en
+  `.claude/launch.json`. `/__dev?js=...` ejecuta código sobre el mundo
+  (`jug('Nombre')` da su sesión) para preparar pruebas. Solo local.
+- `node tools/arnes_mmo.mjs` — 103 comprobaciones del servidor (clases,
+  amenaza, curas, grupos, mazmorras, especializaciones, monturas).
+- `node tools/sim_mazmorra.mjs [mazmorra] [nivel] [completa]` — bots de cada
+  clase contra los jefes (o la mazmorra entera), solo y en grupo. Con los
+  números actuales: solo ~20-55 s por jefe, en grupo de 3 ~40-58 s, y los 15
+  recorridos completos (5 composiciones × 3 mazmorras) terminan.
+- `tools/cdp.mjs` — Chrome sin ventana por el protocolo de DevTools (sin
+  librerías) para capturas en PC y móvil. El panel de navegador de Claude
+  suele estar oculto y sus capturas salen viejas: usar esto.
+
+**Ideas siguientes (no hechas):** duelos/PvP, más mazmorras y una banda de 10,
+casa de subastas o comercio entre jugadores, profesiones, talentos con
+puntos. Con 2-3 jugadores reales, lo que más rinde es que se jueguen las
+mazmorras en grupo.

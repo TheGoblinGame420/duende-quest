@@ -7,10 +7,12 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, ALCANCE_BASE, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
-  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, HABILIDADES, LOGROS, LOGIN_PREMIOS, multLogin, NIVEL_MAX,
+  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, LOGIN_PREMIOS, multLogin, NIVEL_MAX,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
-} from './data.js?v=22';
+  CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
+  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura,
+} from './data.js?v=27';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -50,9 +52,20 @@ const g = cv.getContext('2d', { alpha: false });
 if (TACTIL) {
   const f1 = $('t-fila1');
   f1.insertBefore($('interactuar'), f1.firstChild);
-  f1.insertBefore($('poderes'), f1.firstChild);
-  $('t-fila0').appendChild($('habs'));
+  f1.insertBefore($('consumibles'), f1.firstChild);
+  $('t-fila0').appendChild($('acciones'));
+} else {
+  // En PC la barra de accion y la de lanzamiento van en una franja bajo el
+  // mundo (asi no tapan los nombres que se dibujan en el suelo).
+  $('pie').insertBefore($('lanzar'), $('pie').firstChild);
 }
+// La barra de lanzamiento: en PC su hueco queda reservado (visibility) para
+// que el lienzo no cambie de tamaño cada vez que aparece.
+function verLanzar(si) {
+  if (TACTIL) ponCss($('lanzar'), 'display', si ? 'block' : 'none');
+  else { ponCss($('lanzar'), 'display', 'block'); ponCss($('lanzar'), 'visibility', si ? 'visible' : 'hidden'); }
+}
+verLanzar(false);
 function ajustarVista() {
   const vertical = innerHeight > innerWidth * 1.1;
   VW = vertical ? 400 : 800;
@@ -68,6 +81,9 @@ function ajustarVista() {
   hud.style.left = ((aw - w) / 2) + 'px'; hud.style.top = ((ah - h) / 2) + 'px';
   hud.style.width = w + 'px'; hud.style.height = h + 'px';
   hud.style.right = 'auto'; hud.style.bottom = 'auto';
+  // Pantalla angosta (movil en vertical): el marco del objetivo baja bajo
+  // el del jugador y el minimapa se achica.
+  hud.classList.toggle('estrecho', w < 600);
 }
 addEventListener('resize', ajustarVista);
 
@@ -182,11 +198,22 @@ let jefeVivo = null;
 const cdPoder = {};        // id -> ms fin
 let frame = 0;
 
+// ── OBJETIVO, LANZAMIENTOS Y AURAS (estilo WoW) ──
+let objetivo = null;            // { k: 'm' (monstruo) | 'p' (jugador), id }
+let castYo = null;              // { id, nombre, ini, fin } (tiempos de performance.now)
+const castOtros = new Map();    // id de jugador -> { id, ini, fin }
+const castMon = new Map();      // id de monstruo -> { nombre, ini, fin, int }
+let gcdHasta = 0;
+const aurasP = new Map();       // id de jugador -> { aura: fin }
+const aurasM = new Map();       // id de monstruo -> { aura: fin }
+let proyectiles = [];           // disparos de vara y hechizos en vuelo
+let zonas = [];                 // zonas de peligro en el suelo (jefes de mazmorra)
+
 // Jugador local
 const P = {
   x: 950, y: SUELO, vx: 0, vy: 0, suelo: true, saltos: 0, f: 1,
   dash: 0, dashCd: 0, atk: 0, paso: 0, comboT: 0, atkCdHasta: 0, herido: 0, muerto: false,
-  hp: 100, maxHp: 100, escudo: false, fuego: false,
+  hp: 100, maxHp: 100, escudo: false, fuego: false, rec: 0, recMax: 0, combo: 0, fl: 0,
 };
 let camX = 0;
 
@@ -248,12 +275,16 @@ function recibir(m) {
       if (m.nuevo) aviso('¡Bienvenido, ' + yo.nombre + '! Habla con el Guardia Tito si necesitas ayuda.');
       if (m.heredado) { aviso('☁️ Tu progreso de invitado pasó a tu cuenta.', 'ok'); try { localStorage.removeItem('dq_mmo_tok'); } catch (e) {} }
       if (m.regaladas && m.regaladas.length) aviso('🎁 Skins de tu cuenta desbloqueadas: ' + m.regaladas.map(k => SKINS[k].nombre).join(', '), 'ok');
+      // Personaje sin clase (nuevo, o de antes de las clases): a elegir.
+      if (!yo.clase) setTimeout(() => abrirClases(true), 300);
       break;
     case 'mapa': entrarMapa(m); break;
     case 'yo': {
       const antes = yo; yo = m.yo;
       if (yo.muerto && !(antes && antes.muerto)) morir();
-      if (!yo.muerto) $('m-muerte').classList.remove('on');
+      if (!yo.muerto) { $('m-muerte').classList.remove('on'); P.muerto = false; }
+      if (!antes || antes.clase !== yo.clase || antes.nivel !== yo.nivel) { $('acciones').innerHTML = ''; if ($('m-libro').classList.contains('on')) pintarLibro(); }
+      if (yo.clase && $('m-clase').classList.contains('on') && antes && !antes.clase) cerrarModales();
       pintarHud(); if ($('m-tienda').classList.contains('on')) pintarTienda(); if ($('m-inv').classList.contains('on')) pintarInventario();
       if ($('m-mision').classList.contains('on')) pintarMision();
       if ($('m-wallet').classList.contains('on')) pintarWallet();
@@ -261,19 +292,24 @@ function recibir(m) {
     }
     case 's': snapshot(m); break;
     case 'pj': agregarOtro(m.p); break;
-    case 'pl': otros.delete(m.id); break;
+    case 'pl':
+      otros.delete(m.id); castOtros.delete(m.id); aurasP.delete(m.id);
+      if (objetivo && objetivo.k === 'p' && objetivo.id === m.id) objetivo = null;
+      break;
     case 'ms': agregarMon(m.m); break;
     case 'md': {
       const o = mons.get(m.id);
       if (o) { o.muereT = performance.now(); o.st = 2; lanzarFX('muerte', o.x, o.y - o.alto * .45, o.alto / 60, false); sfx('muerte', .35); }
       if (o && MONSTRUOS[o.k].jefe) jefeVivo = null;
+      castMon.delete(m.id); aurasM.delete(m.id);
+      if (objetivo && objetivo.k === 'm' && objetivo.id === m.id) objetivo = null;
       break;
     }
     case 'at': ataqueRemoto(m); break;
     case 'gana':
       if (m.coop) { flotante(m.x, m.y, '+' + m.xp + ' XP (grupo)', '#00eeff', 9); break; }
       for (let i = 0; i < Math.min(8, 2 + Math.floor(m.oro / 15)); i++) monedas.push({ x: m.x, y: m.y + 20, vx: (Math.random() - .5) * 5, vy: -4 - Math.random() * 3, t: 0 });
-      flotante(m.x, m.y, '+' + m.xp + ' XP', '#00ff88', 10);
+      flotante(m.x, m.y, '+' + m.xp + ' XP', '#c084fc', 10);
       if (m.oro > 0) flotante(m.x, m.y + 14, '+' + m.oro + ' oro', '#ffe600', 10);
       if (m.drops && m.drops.length) m.drops.forEach(d => { const pd = PODERES.find(p => p.id === d); if (pd) aviso('🎁 Encontraste: ' + pd.nombre, 'ok'); });
       if (m.item) {
@@ -285,18 +321,43 @@ function recibir(m) {
       sfx('moneda', .3);
       break;
     case 'ph': {
-      if (m.p === miId) {
+      const yoMismo = m.p === miId;
+      const q = yoMismo ? P : otros.get(m.p);
+      if (!q) break;
+      if (m.esq) { flotante(q.x, q.y - 70, 'ESQUIVA', '#ffffff', 9); break; }
+      if (m.ab) flotante(q.x + 14, q.y - 84, '(' + m.ab + ' absorbido)', '#ffe9a8', 7);
+      if (!m.d) break;
+      if (yoMismo) {
         P.herido = 18; sfx('golpe', .45); flotante(P.x, P.y - 70, '-' + m.d, '#ff3344', 11);
         // Retroceso: el golpe te aparta del monstruo (y corta el combo de pegado).
         const o = mons.get(m.from);
-        if (o) { P.vx = (P.x < o.x ? -1 : 1) * 7; if (P.suelo) { P.vy = -4; P.suelo = false; } }
+        if (o && !castYo) { P.vx = (P.x < o.x ? -1 : 1) * 7; if (P.suelo) { P.vy = -4; P.suelo = false; } }
         sacudir = Math.max(sacudir, 4);
         if (TG && TG.HapticFeedback) try { TG.HapticFeedback.impactOccurred('medium'); } catch (e) {}
-      }
-      else { const o = otros.get(m.p); if (o) { o.herido = 18; flotante(o.x, o.y - 70, '-' + m.d, '#ff7777', 9); } }
+      } else { q.herido = 18; flotante(q.x, q.y - 70, '-' + m.d, '#ff7777', 9); }
       break;
     }
-    case 'pm': if (m.p !== miId) { const o = otros.get(m.p); if (o) o.muerto = true; } break;
+    case 'cu': {
+      // Curacion: numero verde sobre el curado (como en WoW).
+      const q = m.p === miId ? P : otros.get(m.p);
+      if (q) {
+        flotante(q.x + (Math.random() - .5) * 14, q.y - 78, '+' + m.n + (m.c ? '!' : ''), '#4ade80', m.c ? 12 : 10);
+        for (let i = 0; i < 8; i++) particula(q.x + (Math.random() - .5) * 26, q.y - 10 - Math.random() * 40, '#4ade80', 1.5);
+      }
+      break;
+    }
+    case 'pm':
+      if (m.p !== miId) { const o = otros.get(m.p); if (o) o.muerto = true; }
+      castOtros.delete(m.p); aurasP.delete(m.p);
+      if (m.p === miId) castYo = null;
+      break;
+    case 'res': {
+      const q = m.p === miId ? P : otros.get(m.p);
+      if (q) { for (let i = 0; i < 40; i++) particula(q.x, q.y - 30, i % 2 ? '#ffe600' : '#ffffff', 4); flotante(q.x, q.y - 90, '¡RESUCITADO!', '#ffe600', 12); }
+      if (m.p === miId) { P.muerto = false; $('m-muerte').classList.remove('on'); aviso('✝ ' + (m.de || 'Un sacerdote') + ' te devolvió la vida.', 'ok'); sfx('explosion', .4); }
+      else { const o = otros.get(m.p); if (o) o.muerto = false; }
+      break;
+    }
     case 'lv': {
       const quien = m.p === miId ? P : otros.get(m.p);
       if (quien) {
@@ -304,11 +365,42 @@ function recibir(m) {
         flotante(quien.x, quien.y - 95, '¡NIVEL ' + m.lv + '!', '#ffe600', 14);
       }
       if (m.p === miId) { aviso('⬆️ ¡Subiste a nivel ' + m.lv + '!', 'ok'); sfx('explosion', .4); }
-      else if (quien) quien.lv = m.lv;
+      else if (quien) { quien.lv = m.lv; if (m.mx) quien.mx = m.mx; if (m.rmx) quien.rmx = m.rmx; }
       break;
     }
-    case 'pa': { const o = otros.get(m.p); if (o) { o.sk = m.sk; o.ar = m.ar; o.mx = m.mx; o.ti = m.ti || ''; } break; }
+    case 'pa': { const o = otros.get(m.p); if (o) { o.sk = m.sk; o.ar = m.ar; o.mx = m.mx; o.ti = m.ti || ''; o.cl = m.cl || ''; o.rmx = m.rmx || 0; o.hn = m.hn || ''; o.mo = m.mo || ''; o.es = m.es || ''; } break; }
     case 'hb': habilidadRemota(m); break;
+    case 'cast': {
+      const h = m.id === 'hogar' ? { nombre: 'Piedra de Hogar' } : m.id === 'montar' ? { nombre: 'Invocar montura' } : habPorId(m.id);
+      const c = { id: m.id, nombre: h ? h.nombre : '', ini: performance.now(), fin: performance.now() + m.ms, tg: m.tg };
+      if (m.p === miId) { castYo = c; verLanzar(true); $('lanzar').classList.remove('mal'); }
+      else castOtros.set(m.p, c);
+      break;
+    }
+    case 'castFin':
+      if (m.p === miId) {
+        if (castYo && !m.ok) { $('lanzar').classList.add('mal'); ponTxt($('lanzar-t'), 'Interrumpido'); setTimeout(() => { if (!castYo) verLanzar(false); }, 450); }
+        else verLanzar(false);
+        castYo = null;
+      } else castOtros.delete(m.p);
+      break;
+    case 'mcast': castMon.set(m.id, { nombre: m.nombre, ini: performance.now(), fin: performance.now() + m.ms, int: !!m.int }); break;
+    case 'mcastFin': {
+      castMon.delete(m.id);
+      const o = mons.get(m.id);
+      if (o && m.int) { flotante(o.x, o.y - o.alto - 20, '¡INTERRUMPIDO!', '#ffae00', 10); sfx('golpe', .4); }
+      break;
+    }
+    case 'au': {
+      const mapaA = m.k === 'm' ? aurasM : aurasP;
+      const id = m.k === 'p' && m.id === miId ? miId : m.id;
+      let a = mapaA.get(id);
+      if (!a) { a = {}; mapaA.set(id, a); }
+      if (m.ms === 0) delete a[m.a];
+      else a[m.a] = m.ms < 0 ? Infinity : performance.now() + m.ms;
+      break;
+    }
+    case 'no': errorRojo(m.m); break;
     case 'mton':
       if (yo) yo.mton = m.total;
       flotante(P.x, P.y - 110, '+' + m.n + ' mTON', '#00eeff', 12);
@@ -329,14 +421,28 @@ function recibir(m) {
     case 'mundial': mundial = { vivo: m.vivo, en: m.en ? m.en - Date.now() + performance.now() : 0 }; break;
     case 'pw': efectoPoder(m.p, m.i); break;
     case 'cd': cdPoder[m.id] = performance.now() + m.hasta; break;
-    case 'chat':
-      lineaChat(m.mapa && m.mapa !== mapaId && MAPAS[m.mapa] ? m.n + ' (' + MAPAS[m.mapa].nombre + ')' : m.n, m.m);
-      if (!m.mapa || m.mapa === mapaId) burbujas.set(m.p, { txt: m.m, hasta: performance.now() + 5000 });
-      break;
+    case 'chat': mensajeChat(m); break;
+    case 'grupo': grupo = m.g; pintarSocial(); break;
+    case 'invitacion': mostrarInvitacion(m); break;
+    case 'herm': hermandad = m.h; pintarSocial(); break;
+    case 'hermInv': mostrarInvitacion({ ...m, herm: 1 }); break;
+    case 'buscador': abrirBuscador(); break;
+    case 'muros': muros = m.muros || []; if (instancia) instancia.hechos = m.hechos; pintarHud(); break;
+    case 'mmx': { const o = mons.get(m.id); if (o) { o.mx = m.mx; o.hp = m.hp; } break; }
+    case 'emote': emote(m.m); break;
+    case 'completada': completada(m); break;
+    case 'quien': quienLista = m.r || []; pintarSocial(); break;
     case 'on': online = m.n; pintarSubMapa(); break;
-    case 'toast': aviso(m.m, m.ok ? 'ok' : ''); break;
+    case 'toast': aviso(m.m, m.ok ? 'ok' : ''); if (m.hab) { $('acciones').innerHTML = ''; pintarHud(); } break;
     case 'aviso': aviso(m.m, 'jefe'); lineaChat(null, m.m); sfx('explosion', .3); break;
-    case 'snap': P.x = m.x; P.y = m.y; P.vx = 0; P.vy = 0; break;
+    case 'snap':
+      if (m.carga) {
+        // Carga del guerrero: estela desde donde estaba hasta el objetivo.
+        for (let i = 0; i < 18; i++) { const k = i / 18; particula(P.x + (m.x - P.x) * k, P.y - 30, '#c79c6e', 2); }
+        sfx('corte2', .45); sacudir = Math.max(sacudir, 6);
+      }
+      P.x = m.x; P.y = m.y; P.vx = 0; P.vy = 0; if (m.f) P.f = m.f;
+      break;
     case 'ranking': pintarRanking(m.r); break;
     case 'err':
       if (m.auth && m.auth !== 'inv' && !forzarInvitado) {
@@ -356,6 +462,9 @@ function entrarMapa(m) {
   if (m.mapa !== mapaId) fundido = 1;
   mapaId = m.mapa;
   otros.clear(); mons.clear(); efectos = []; textos = []; balas = []; burbujas.clear(); jefeVivo = null;
+  objetivo = null; castOtros.clear(); castMon.clear(); aurasM.clear(); proyectiles = []; zonas = [];
+  muros = m.muros || []; instancia = m.inst || null;
+  for (const id of [...aurasP.keys()]) if (id !== miId) aurasP.delete(id);
   P.x = m.x; P.y = SUELO; P.vx = 0; P.vy = 0; P.suelo = true;
   m.jugadores.forEach(agregarOtro);
   m.mons.forEach(agregarMon);
@@ -370,49 +479,62 @@ function entrarMapa(m) {
 let online = 0;
 function pintarSubMapa() {
   const mp = MAPAS[mapaId];
-  const base = mp.zona ? 'Nivel ' + mp.nv[0] + '-' + mp.nv[1] : 'Zona segura';
+  const base = mp.instancia ? 'Mazmorra' + (instancia ? ' · Nv ' + instancia.nv : '') : mp.zona && mp.nv ? 'Nivel ' + mp.nv[0] + '-' + mp.nv[1] : 'Zona segura';
   $('h-mapa-sub').textContent = base + (online ? ' · 👥 ' + online + ' en línea' : '');
+}
+
+// Auras que llegan con el jugador/monstruo (las que ya tenia puestas).
+function aurasDeServidor(au) {
+  const r = {}, ahora = performance.now();
+  for (const a in (au || {})) r[a] = au[a] < 0 ? Infinity : ahora + au[a];
+  return r;
 }
 
 function agregarOtro(p) {
   if (p.id === miId) return;
-  otros.set(p.id, { id: p.id, n: p.n, lv: p.lv, sk: p.sk, ar: p.ar, ti: p.ti || '', x: p.x, y: p.y, f: p.f, a: 0, hp: p.hp, mx: p.mx, muerto: p.muerto, buf: [{ t: performance.now(), x: p.x, y: p.y }], herido: 0, atk: 0, paso: 0 });
+  otros.set(p.id, { id: p.id, n: p.n, lv: p.lv, sk: p.sk, ar: p.ar, ti: p.ti || '', cl: p.cl || '', hn: p.hn || '', mo: p.mo || '', es: p.es || '', rmx: p.rmx || 0, rec: 0, fl: 0, x: p.x, y: p.y, f: p.f, a: 0, hp: p.hp, mx: p.mx, muerto: p.muerto, buf: [{ t: performance.now(), x: p.x, y: p.y }], herido: 0, atk: 0, paso: 0 });
+  aurasP.set(p.id, aurasDeServidor(p.au));
 }
 
 function agregarMon(d) {
-  const st = statsMonstruo(d.k);
-  const o = { id: d.id, k: d.k, x: d.x, y: d.y, f: d.f, hp: d.hp, mx: d.mx, st: d.st, alto: st.alto, w: st.w, h: st.h, buf: [{ t: performance.now(), x: d.x, y: d.y }], nace: performance.now(), muereT: 0, golpeT: 0 };
+  const st = statsMonstruo(d.k, d.nv);
+  const o = { id: d.id, k: d.k, nv: d.nv || MONSTRUOS[d.k].nivel, x: d.x, y: d.y, f: d.f, hp: d.hp, mx: d.mx, st: d.st, fl: 0, alto: st.alto, w: st.w, h: st.h, buf: [{ t: performance.now(), x: d.x, y: d.y }], nace: performance.now(), muereT: 0, golpeT: 0 };
   mons.set(d.id, o);
+  aurasM.set(d.id, aurasDeServidor(d.au));
   if (MONSTRUOS[d.k].jefe) jefeVivo = o;
 }
 
 function snapshot(m) {
   const t = performance.now();
   for (const r of m.p) {
-    const [id, x, y, f, a, hp, mx, fl] = r;
+    const [id, x, y, f, a, hp, mx, fl, rec, rmx, cp] = r;
     if (id === miId) {
-      P.hp = hp; P.maxHp = mx; P.escudo = !!(fl & 1); P.fuego = !!(fl & 2);
+      P.hp = hp; P.maxHp = mx; P.fl = fl; P.escudo = !!(fl & FJ.escudo); P.fuego = !!(fl & FJ.fuego);
+      P.rec = rec || 0; P.recMax = rmx || 0; P.combo = cp || 0;
       continue;
     }
     const o = otros.get(id);
     if (!o) continue;
     o.buf.push({ t, x, y }); if (o.buf.length > 4) o.buf.shift();
-    o.f = f; o.a = a; o.hp = hp; o.mx = mx; o.escudo = !!(fl & 1); o.fuego = !!(fl & 2); o.muerto = !!(fl & 4);
+    o.f = f; o.a = a; o.hp = hp; o.mx = mx; o.fl = fl; o.escudo = !!(fl & FJ.escudo); o.fuego = !!(fl & FJ.fuego); o.muerto = !!(fl & FJ.muerto);
+    o.rec = rec || 0; o.rmx = rmx || 0;
   }
   const vistos = new Set();
   for (const r of m.m) {
-    const [id, x, y, f, st, hp] = r;
+    const [id, x, y, f, st, hp, fl] = r;
     vistos.add(id);
     const o = mons.get(id);
     if (!o) continue;
     o.buf.push({ t, x, y }); if (o.buf.length > 4) o.buf.shift();
-    o.f = f; if (hp < o.hp) o.golpeT = t; o.hp = hp;
+    o.f = f; if (hp < o.hp) o.golpeT = t; o.hp = hp; o.fl = fl || 0;
     if (st === 2 && !o.muereT) o.muereT = t;
     o.st = st;
   }
-  for (const [id, o] of mons) if (!vistos.has(id) && (!o.muereT || t - o.muereT > 2000)) mons.delete(id);
+  for (const [id, o] of mons) if (!vistos.has(id) && (!o.muereT || t - o.muereT > 2000)) { mons.delete(id); aurasM.delete(id); }
   balas = (m.b || []).map(([id, x, y, vx, vy, jefe]) => ({ id, x, y, vx, vy, jefe, t }));
+  zonas = (m.z || []).map(([id, x0, x1, act, color]) => ({ id, x0, x1, act, color }));
   if (jefeVivo && !mons.has(jefeVivo.id)) jefeVivo = null;
+  if (objetivo && objetivo.k === 'm' && !mons.has(objetivo.id)) objetivo = null;
 }
 
 // Posicion interpolada ~110 ms en el pasado: los otros se ven suaves aunque
@@ -431,20 +553,39 @@ function interpolar(o) {
   }
 }
 
+// Colores de los numeros de daño: 0 normal, 1 critico, 2 rayo/chispa,
+// 3 aura de skin, 4 habilidad, 5 daño en el tiempo (sombras).
+const COLOR_GOLPE = ['#ffffff', '#ff9900', '#00eeff', '#ff3cf0', '#ffe600', '#c084fc'];
 function ataqueRemoto(m) {
   const quien = m.p === miId ? P : otros.get(m.p);
-  if (m.p !== miId && quien && m.s >= 0) {
+  const ahora = performance.now();
+  if (m.vara) {
+    // Disparo de vara: un proyectil del color de la clase hasta el objetivo.
+    const o = mons.get(m.vara);
+    if (quien && o) {
+      const cl = m.p === miId ? (yo && yo.clase) : quien.cl;
+      proyectiles.push({ x0: quien.x + (m.f || 1) * 14, y0: quien.y - 36, o, ini: ahora, dur: 180, color: cl === 'sacerdote' ? '#ffe9a8' : '#a78bfa', r: 4 });
+      if (m.p === miId) sfx('corte2', .2);
+      if (quien !== P) { quien.atk = 10; quien.f = m.f; }
+    }
+  } else if (m.p !== miId && quien && m.s >= 0) {
     quien.atk = 14; quien.paso = m.s; quien.f = m.f;
     lanzarFX(['corte_h', 'corte_arriba', 'corte_giro'][m.s], quien.x + m.f * 42, quien.y - 32, 1.05, m.f < 0, false, colorCorte(quien.sk));
   }
   for (const [id, dmg, tipo] of m.h) {
     const o = mons.get(id);
     if (!o) continue;
-    o.golpeT = performance.now();
-    const col = tipo === 1 ? '#ff9900' : tipo === 2 ? '#00eeff' : tipo === 3 ? '#ff3cf0' : tipo === 4 ? '#ffe600' : '#ffffff';
-    flotante(o.x + (Math.random() - .5) * 16, o.y - o.alto - 6, (tipo === 1 ? '¡' : '') + dmg + (tipo === 1 ? '!' : ''), col, tipo === 1 ? 13 : 10);
-    for (let i = 0; i < 4; i++) particula(o.x, o.y - o.alto / 2, col, 3);
+    o.golpeT = ahora;
+    const col = COLOR_GOLPE[tipo] || '#ffffff';
+    const retraso = m.vara ? 170 : 0;
+    const pintar = () => {
+      flotante(o.x + (Math.random() - .5) * 16, o.y - o.alto - 6, (tipo === 1 ? '¡' : '') + dmg + (tipo === 1 ? '!' : ''), col, tipo === 1 ? 13 : tipo === 5 ? 9 : 10);
+      for (let i = 0; i < 4; i++) particula(o.x, o.y - o.alto / 2, col, 3);
+    };
+    if (retraso) setTimeout(pintar, retraso); else pintar();
     if (tipo === 2 && m.s !== -1) lanzarFX('rayo', o.x, o.y - o.alto / 2, .5, false);
+    // Sin objetivo elegido, el primero que golpeas pasa a serlo.
+    if (m.p === miId && !objetivo && tipo !== 5) objetivo = { k: 'm', id };
   }
   if (m.h.length && m.p === miId && !(performance.now() - (P.golpePredicho || 0) < 600)) sfx('golpe', .35);
 }
@@ -464,20 +605,25 @@ let tIzq = false, tDer = false;
 let enviadoT = 0, ultimoEnviado = '';
 let sacudir = 0;
 
+function congelado() { return !!(P.fl & FJ.bloque); }
 function fisica() {
   if (!yo || P.muerto) return;
   const mp = MAPAS[mapaId];
-  const izq = teclas.ArrowLeft || teclas.KeyA || tIzq;
-  const der = teclas.ArrowRight || teclas.KeyD || tDer;
+  const izq = !congelado() && (teclas.ArrowLeft || teclas.KeyA || tIzq);
+  const der = !congelado() && (teclas.ArrowRight || teclas.KeyD || tDer);
   let obj = 0;
-  if (izq) obj -= FIS.vel; if (der) obj += FIS.vel;
+  const vel = FIS.vel * velMontura(yo.montado);
+  if (izq) obj -= vel; if (der) obj += vel;
   if (obj) P.f = obj > 0 ? 1 : -1;
+  // Moverse cancela el lanzamiento (el servidor tambien lo hace; aqui se
+  // ve al instante).
+  if (obj && castYo) { castYo = null; mandar({ t: 'cancelar' }); verLanzar(false); }
   if (P.dash > 0) { P.dash--; P.vx = P.f * FIS.dashVel; }
   else P.vx += (obj - P.vx) * .3;
   if (P.dashCd > 0) P.dashCd--;
   P.vy += FIS.grav; if (P.vy > 16) P.vy = 16;
   const antesY = P.y;
-  P.x = Math.max(12, Math.min(mp.ancho - 12, P.x + P.vx));
+  P.x = Math.max(12, Math.min(mp.ancho - 12, Math.min(topeMuros(), P.x + P.vx)));
   P.y += P.vy;
   const piso = sueloEn(mp, P.x, antesY, P.vy >= 0);
   if (P.y >= piso && antesY <= piso + 1 && P.vy >= 0) {
@@ -500,20 +646,32 @@ function fisica() {
 }
 
 function saltar() {
-  if (!yo || P.muerto || chatAbierto()) return;
+  if (!yo || P.muerto || chatAbierto() || congelado()) return;
+  if (castYo) { castYo = null; mandar({ t: 'cancelar' }); verLanzar(false); }
   if (P.suelo) { P.vy = FIS.salto; P.suelo = false; P.saltos = 1; sfx('salto', .3); }
   else if (P.saltos < 2) { P.vy = FIS.dobleSalto; P.saltos = 2; sfx('salto', .25); for (let i = 0; i < 8; i++) particula(P.x, P.y, '#c084fc', 3); }
 }
 function dash() {
-  if (!yo || P.muerto || P.dashCd > 0) return;
+  if (!yo || P.muerto || P.dashCd > 0 || congelado()) return;
   P.dash = FIS.dashT; P.dashCd = FIS.dashCd;
   for (let i = 0; i < 10; i++) particula(P.x - P.f * 10, P.y - 25, '#00eeff', 3);
 }
 function atacar() {
-  if (!yo || P.muerto || chatAbierto()) return;
+  if (!yo || P.muerto || chatAbierto() || congelado()) return;
   const ahora = performance.now();
   const arma = ARMAS[yo.arma] || ARMAS.katana;
   if (ahora < P.atkCdHasta) return;
+  const cl = CLASES[yo.clase];
+  if (cl && cl.basico === 'vara') {
+    // Magos y sacerdotes: disparo de vara al objetivo (o al mas cercano).
+    if (castYo) return;
+    const o = enemigoParaUsar(VARA.rango);
+    if (!o) { errorRojo('No hay ningún enemigo al alcance de tu vara.'); P.atkCdHasta = ahora + 400; return; }
+    P.atkCdHasta = ahora + VARA.cdMs * arma.cd;
+    P.atk = 10; P.f = o.x >= P.x ? 1 : -1;
+    mandar({ t: 'atk', s: 0, tg: o.id });
+    return;
+  }
   P.paso = P.comboT > 0 ? (P.paso + 1) % 3 : 0;
   P.comboT = 40;
   P.atk = 14;
@@ -543,9 +701,68 @@ function usarPoder(i) {
 }
 function colorCorte(skin) { return (SKINS[skin] && skin !== 'comun') ? SKINS[skin].color : null; }
 
-// Portales / NPCs cercanos
+// ── OBJETIVO ──
+// Misma medida que el servidor: del centro del duende al borde del monstruo.
+function distMon(o) {
+  const dx = Math.max(0, Math.abs(o.x - P.x) - o.w / 2);
+  const dy = Math.max(0, Math.abs((o.y - o.h / 2) - (P.y - FIS.jugH / 2)) - o.h / 2);
+  return Math.hypot(dx, dy);
+}
+function distJug(q) { return Math.hypot(q.x - P.x, (q.y - P.y) * 0.7); }
+function monObjetivo() { return objetivo && objetivo.k === 'm' ? mons.get(objetivo.id) : null; }
+function jugObjetivo() { return objetivo && objetivo.k === 'p' ? (objetivo.id === miId ? null : otros.get(objetivo.id)) : null; }
+// Enemigo para una habilidad: el objetivo elegido (aunque este lejos: el
+// servidor dira "fuera de alcance", como en WoW), o si no hay ninguno el mas
+// cercano al alcance, que pasa a ser el objetivo.
+function enemigoParaUsar(rango) {
+  const o = monObjetivo();
+  if (o && !o.muereT) return o;
+  let mejor = null, md = Infinity;
+  for (const m of mons.values()) {
+    if (m.muereT) continue;
+    const d = distMon(m);
+    if (d > rango) continue;
+    const k = d + ((m.x - P.x) * P.f < 0 ? 150 : 0);
+    if (k < md) { md = k; mejor = m; }
+  }
+  if (mejor) objetivo = { k: 'm', id: mejor.id };
+  return mejor;
+}
+function cicloObjetivo() {
+  const lista = [...mons.values()].filter(o => !o.muereT && Math.abs(o.x - P.x) < 650).sort((a, b) => distMon(a) - distMon(b));
+  if (!lista.length) { objetivo = null; return; }
+  const i = objetivo && objetivo.k === 'm' ? lista.findIndex(o => o.id === objetivo.id) : -1;
+  objetivo = { k: 'm', id: lista[(i + 1) % lista.length].id };
+  sfx('boton', .2);
+}
+// Tocar o hacer clic en el lienzo elige lo que haya debajo.
+function elegirEnPantalla(ev) {
+  if (!yo) return;
+  const r = cv.getBoundingClientRect();
+  const lx = (ev.clientX - r.left) * cv.width / r.width;
+  const ly = (ev.clientY - r.top) * cv.height / r.height - OY;
+  const wx = lx + camX, wy = ly;
+  let mejor = null, md = Infinity;
+  for (const o of mons.values()) {
+    if (o.muereT) continue;
+    const dx = Math.abs(wx - o.x), arriba = o.y - Math.max(o.alto, o.h) - 12;
+    if (dx < Math.max(o.w / 2, 22) + 10 && wy > arriba && wy < o.y + 14 && dx < md) { md = dx; mejor = { k: 'm', id: o.id }; }
+  }
+  for (const q of [...otros.values(), P]) {
+    const dx = Math.abs(wx - q.x);
+    if (dx < 26 && wy > q.y - 72 && wy < q.y + 20 && dx < md) { md = dx; mejor = { k: 'p', id: q === P ? miId : q.id }; }
+  }
+  if (mejor) { objetivo = mejor; sfx('boton', .2); }
+}
+cv.addEventListener('pointerdown', elegirEnPantalla);
+
+// Portales / NPCs / aliados caidos cercanos
 function cercano() {
   const mp = MAPAS[mapaId];
+  // El sacerdote ve "Resucitar" junto a un aliado caido.
+  if (yo && yo.clase === 'sacerdote' && yo.nivel >= habPorId('resurreccion').nv) {
+    for (const q of otros.values()) if (q.muerto && distJug(q) < habPorId('resurreccion').rango) return { tipo: 'res', q };
+  }
   for (let i = 0; i < mp.portales.length; i++) if (Math.abs(P.x - mp.portales[i].x) < 70) return { tipo: 'portal', i, p: mp.portales[i] };
   for (const n of (mp.npcs || [])) if (Math.abs(P.x - n.x) < 90) return { tipo: 'npc', n };
   return null;
@@ -555,6 +772,8 @@ function interactuar() {
   const c = cercano();
   if (!c) return;
   sfx('boton', .3);
+  if (c.tipo === 'res') { usarHabDef(habPorId('resurreccion'), c.q.id); return; }
+  if (c.tipo === 'portal' && c.p.buscador) { abrirBuscador(); return; }
   if (c.tipo === 'portal') { mandar({ t: 'portal', i: c.i }); }
   else if (c.n.tipo === 'tienda') abrirTienda();
   else if (c.n.tipo === 'ranking') abrirRanking();
@@ -563,13 +782,21 @@ function interactuar() {
 
 // ── ENTRADA ──
 function chatAbierto() { return document.activeElement === $('chat-in'); }
+const TECLAS_PODER = { KeyQ: 0, KeyF: 1, KeyG: 2, KeyT: 3 };
 addEventListener('keydown', e => {
   if (chatAbierto()) {
-    if (e.key === 'Enter') { const v = $('chat-in').value.trim(); if (v) mandar({ t: 'chat', m: v }); $('chat-in').value = ''; $('chat-in').blur(); $('chat-in').style.display = 'none'; }
+    if (e.key === 'Enter') { const v = $('chat-in').value.trim(); if (v) enviarChat(v); $('chat-in').value = ''; $('chat-in').blur(); $('chat-in').style.display = 'none'; }
     if (e.key === 'Escape') { $('chat-in').blur(); $('chat-in').style.display = 'none'; }
     return;
   }
-  if (document.querySelector('.modal.on')) { if (e.key === 'Escape') cerrarModales(); return; }
+  if (document.querySelector('.modal.on')) {
+    if (e.key === 'Escape' && !$('m-clase').classList.contains('on')) cerrarModales();
+    if (e.code === 'KeyP' && $('m-libro').classList.contains('on')) cerrarModales();
+    if (e.code === 'KeyO' && $('m-social').classList.contains('on')) cerrarModales();
+    if (e.code === 'KeyM' && $('m-mapa').classList.contains('on')) cerrarModales();
+    return;
+  }
+  if (e.code === 'Tab') { e.preventDefault(); if (!e.repeat) cicloObjetivo(); return; }
   if (e.repeat && ['KeyZ', 'KeyJ'].indexOf(e.code) < 0) { teclas[e.code] = true; return; }
   teclas[e.code] = true;
   if (['Space', 'ArrowUp', 'KeyW'].includes(e.code)) { e.preventDefault(); const c = cercano(); if (e.code !== 'Space' && c && c.tipo === 'portal') interactuar(); else saltar(); }
@@ -577,11 +804,15 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyX' || e.code === 'KeyK' || e.code === 'ShiftLeft') dash();
   if (e.code === 'KeyE') interactuar();
   if (e.code === 'KeyI') abrirInventario();
+  if (e.code === 'KeyP') abrirLibro();
+  if (e.code === 'KeyO') abrirSocial();
+  if (e.code === 'KeyM') abrirMapaMundo();
+  if (e.code === 'KeyY') montar();
   if (e.code === 'KeyR') volverAlPueblo();
+  if (e.code === 'Escape') objetivo = null;
   if (e.code === 'Enter') { e.preventDefault(); abrirChat(); }
-  if (/^Digit[1-4]$/.test(e.code)) usarPoder(+e.code.slice(5) - 1);
-  const ih = ['KeyC', 'KeyV', 'KeyB', 'KeyN'].indexOf(e.code);
-  if (ih >= 0) usarHab(ih);
+  if (/^Digit[1-8]$/.test(e.code)) usarHab(+e.code.slice(5) - 1);
+  if (e.code in TECLAS_PODER) usarPoder(TECLAS_PODER[e.code]);
   if (e.code.startsWith('Arrow')) e.preventDefault();
 });
 addEventListener('keyup', e => { teclas[e.code] = false; });
@@ -608,29 +839,50 @@ $('interactuar').onclick = interactuar;
 function volverAlPueblo() {
   if (!yo || P.muerto) return;
   if (mapaId === 'pueblo') { aviso('Ya estás en el pueblo.'); return; }
+  if (castYo) return;
   sfx('boton', .3); mandar({ t: 'regreso' });
 }
 $('b-regreso').onclick = volverAlPueblo;
 $('b-inv').onclick = abrirInventario;
+$('b-libro').onclick = () => abrirLibro();
 $('b-rank').onclick = abrirRanking;
 $('b-ayuda').onclick = () => abrir('m-ayuda');
 $('b-wallet').onclick = abrirWallet;
 $('h-mton-c').onclick = abrirWallet;
+$('uf-yo').addEventListener('click', () => { objetivo = { k: 'p', id: miId }; });
 
-// Poderes (HUD)
+// ── BARRA DE ACCION ──
+// 7 habilidades de la clase (teclas 1-7) y 4 consumibles (Q F G T). Cada
+// boton muestra su enfriamiento, si falta recurso (azulado), si el objetivo
+// esta lejos (tecla en rojo) y si un remate esta listo (brillo).
+function boton(icono, tecla, titulo, alUsar) {
+  const d = document.createElement('div');
+  d.className = 'pw';
+  d.title = titulo;
+  d.innerHTML = `<span class="k">${tecla}</span><img src="${icono}" alt=""><span class="n"></span><div class="cd" style="height:0"></div><span class="cdt"></span>`;
+  const usar = e => { e.preventDefault(); d.classList.add('on'); setTimeout(() => d.classList.remove('on'), 120); alUsar(); };
+  d.addEventListener('touchstart', usar, { passive: false });
+  d.addEventListener('mousedown', usar);
+  return d;
+}
+function montar() {
+  if (!yo || P.muerto || chatAbierto()) return;
+  if (!yo.montado && !(yo.monturas || []).length) { errorRojo('No tienes montura: el Mercader las vende desde nivel 20.'); return; }
+  if (castYo) return;
+  mandar({ t: 'montar' });
+}
 function pintarPoderes() {
-  const cont = $('poderes');
+  const cont = $('consumibles');
   if (!cont.children.length) {
-    PODERES.forEach((p, i) => {
-      const d = document.createElement('div');
-      d.className = 'pw'; d.title = p.nombre + ' — ' + p.desc;
-      d.innerHTML = `<span class="k">${i + 1}</span><img src="${A}items/${p.icono}.png" alt=""><span class="n">0</span><div class="cd" style="height:0"></div>`;
-      d.addEventListener('click', () => usarPoder(i));
-      d.addEventListener('touchstart', e => { e.preventDefault(); usarPoder(i); }, { passive: false });
-      cont.appendChild(d);
-    });
+    PODERES.forEach((p, i) => cont.appendChild(boton(A + 'items/' + p.icono + '.png', p.tecla, p.nombre + ' (' + p.tecla + ') — ' + p.desc, () => usarPoder(i))));
+    const bm = boton(A + 'items/equipo/S_Buff09.png', 'Y', 'Montar / desmontar (Y)', montar);
+    bm.id = 'b-montar';
+    cont.appendChild(bm);
   }
   if (!yo) return;
+  const bm = $('b-montar');
+  ponCss(bm, 'display', (yo.monturas || []).length ? 'flex' : 'none');
+  ponClase(bm, 'listo', !!yo.montado);
   PODERES.forEach((p, i) => {
     const d = cont.children[i];
     const n = yo.pw[p.id] || 0;
@@ -638,75 +890,506 @@ function pintarPoderes() {
     d.classList.toggle('vacio', n <= 0);
   });
 }
-function pintarCooldowns() {
-  const ahora = performance.now();
-  const ch = $('habs');
-  if (ch.children.length) HABILIDADES.forEach((h, i) => {
-    const fin = cdPoder['h_' + h.id] || 0;
-    ponCss(ch.children[i].querySelector('.cd'), 'height', Math.round((fin > ahora ? (fin - ahora) / h.cd : 0) * 100) + '%');
-  });
-  if (frame % 30 === 0) pintarMundial();
-  const cont = $('poderes'); if (!cont.children.length) return;
-  PODERES.forEach((p, i) => {
-    const fin = cdPoder[p.id] || 0;
-    const k = fin > ahora ? (fin - ahora) / p.cd : 0;
-    ponCss(cont.children[i].querySelector('.cd'), 'height', Math.round(k * 100) + '%');
-  });
-}
-
-// ── HABILIDADES ──
-// Se aprenden solas al subir de nivel (Nv 10/20/30/45). Teclas C V B N o
-// los botones redondos (en movil, una fila encima de los poderes).
-function pintarHabs() {
-  const cont = $('habs');
+function pintarAcciones() {
+  const cont = $('acciones');
+  if (!yo || !yo.clase) { if (cont.children.length) cont.innerHTML = ''; return; }
+  const habs = habsDe(yo.clase);
   if (!cont.children.length) {
-    HABILIDADES.forEach((h, i) => {
-      const d = document.createElement('div');
-      d.className = 'pw hab'; d.title = h.nombre + ' — ' + h.desc;
-      d.innerHTML = `<span class="k">${h.tecla}</span><img src="${A}items/equipo/${h.icono}.png" alt=""><span class="n"></span><div class="cd" style="height:0"></div>`;
-      d.addEventListener('click', () => usarHab(i));
-      d.addEventListener('touchstart', e => { e.preventDefault(); usarHab(i); }, { passive: false });
+    habs.forEach((h, i) => {
+      const d = boton(A + 'items/equipo/' + h.icono + '.png', i + 1, h.nombre + ' — ' + h.desc, () => usarHab(i));
+      d.classList.add('ac');
       cont.appendChild(d);
     });
   }
-  if (!yo) return;
-  HABILIDADES.forEach((h, i) => {
+  habs.forEach((h, i) => {
     const d = cont.children[i];
     const bloq = yo.nivel < h.nv;
     d.classList.toggle('vacio', bloq);
     ponTxt(d.querySelector('.n'), bloq ? 'Nv' + h.nv : '');
   });
-  // Hasta Nv 10 no hay ninguna: la fila no ocupa sitio.
-  ponCss($('t-fila0'), 'display', yo.nivel >= HABILIDADES[0].nv ? 'flex' : 'none');
-  ponCss(cont, 'display', yo.nivel >= HABILIDADES[0].nv ? 'flex' : 'none');
 }
 function usarHab(i) {
-  const h = HABILIDADES[i];
-  if (!yo || !h || P.muerto || chatAbierto()) return;
-  if (yo.nivel < h.nv) { aviso('🔒 ' + h.nombre + ' se aprende a nivel ' + h.nv + '.'); return; }
-  if (performance.now() < (cdPoder['h_' + h.id] || 0)) return;
-  // La estocada lleva al duende hacia delante (el servidor ya admite un dash).
-  if (h.id === 'estocada' && P.dashCd <= 0) { P.dash = FIS.dashT; P.dashCd = FIS.dashCd; }
-  mandar({ t: 'hab', id: h.id });
+  if (!yo || !yo.clase) { if (yo) abrirClases(true); return; }
+  const h = habsDe(yo.clase)[i];
+  if (h) usarHabDef(h);
 }
+function usarHabDef(h, tgForzado) {
+  if (!yo || P.muerto || chatAbierto() || !h) return;
+  const ahora = performance.now();
+  if (yo.nivel < h.nv) { errorRojo('Aprendes ' + h.nombre + ' a nivel ' + h.nv + '.'); return; }
+  if (congelado()) return;
+  if (castYo) { errorRojo('Ya estás lanzando otro hechizo.'); return; }
+  if (ahora < (cdPoder['h_' + h.id] || 0)) { errorRojo(h.nombre + ' todavía no está lista.'); return; }
+  if (h.gcd !== false && ahora < gcdHasta) return;
+  const costo = costoHab(h, P.recMax || 0, yo.espec);
+  if (P.rec < costo) { errorRojo('No tienes suficiente ' + RECURSOS[CLASES[yo.clase].recurso].nombre.toLowerCase() + '.'); return; }
+  let tg = 0;
+  if (h.obj === 'enemigo') {
+    const o = enemigoParaUsar(h.rango);
+    if (!o) { errorRojo('No hay ningún enemigo al alcance.'); return; }
+    if (distMon(o) > h.rango + 20) { errorRojo('Fuera de alcance.'); return; }
+    tg = o.id;
+    if (h.cast) P.f = o.x >= P.x ? 1 : -1;
+  } else if (h.obj === 'aliado' || h.obj === 'muerto') {
+    tg = tgForzado || (objetivo && objetivo.k === 'p' ? objetivo.id : 0);
+    const q = tg && tg !== miId ? otros.get(tg) : null;
+    if (q && distJug(q) > h.rango + 20) { errorRojo('Tu aliado está demasiado lejos.'); return; }
+  }
+  if (h.id === 'eviscerar' && !(P.combo > 0)) { errorRojo('Necesitas puntos de combo (usa Golpe Siniestro).'); return; }
+  if (h.gcd !== false) gcdHasta = ahora + GCD_MS;
+  // La carga mueve al guerrero: el servidor lo pone junto al objetivo.
+  mandar({ t: 'hab', id: h.id, tg });
+}
+function pintarCooldowns() {
+  const ahora = performance.now();
+  const cont = $('acciones');
+  if (yo && yo.clase && cont.children.length) {
+    const habs = habsDe(yo.clase);
+    const o = monObjetivo();
+    habs.forEach((h, i) => {
+      const d = cont.children[i];
+      if (!d) return;
+      const fin = cdPoder['h_' + h.id] || 0;
+      const enCd = fin > ahora;
+      const gcd = h.gcd !== false && gcdHasta > ahora && !enCd;
+      const k = enCd ? (fin - ahora) / h.cd : gcd ? (gcdHasta - ahora) / GCD_MS : 0;
+      ponCss(d.querySelector('.cd'), 'height', Math.round(k * 100) + '%');
+      ponTxt(d.querySelector('.cdt'), enCd && fin - ahora > 1500 ? String(Math.ceil((fin - ahora) / 1000)) : '');
+      const bloq = yo.nivel < h.nv;
+      d.classList.toggle('sinrec', !bloq && P.rec < costoHab(h, P.recMax || 0, yo.espec));
+      const lejos = h.obj === 'enemigo' && o && !o.muereT && distMon(o) > h.rango;
+      d.querySelector('.k').classList.toggle('lejos', !!lejos);
+      const listo = !bloq && ((h.id === 'eviscerar' && P.combo >= 5) || (h.bajo && o && !o.muereT && o.hp / o.mx <= h.bajo));
+      d.classList.toggle('listo', !!listo);
+    });
+  }
+  if (frame % 30 === 0) pintarMundial();
+  const pc = $('consumibles'); if (!pc.children.length) return;
+  PODERES.forEach((p, i) => {
+    const fin = cdPoder[p.id] || 0;
+    const k = fin > ahora ? (fin - ahora) / p.cd : 0;
+    ponCss(pc.children[i].querySelector('.cd'), 'height', Math.round(k * 100) + '%');
+  });
+}
+
+// Efectos de las habilidades (propias y de los demas).
 function habilidadRemota(m) {
   const mio = m.p === miId;
   const quien = mio ? P : otros.get(m.p);
+  const o = m.tk === 'm' || (!m.tk && m.tg) ? mons.get(m.tg) : null;
+  const aliado = m.tk === 'p' ? (m.tg === miId ? P : otros.get(m.tg)) : null;
   if (quien) {
     const col = colorCorte(mio ? yo.skin : quien.sk);
-    if (m.id === 'torbellino') { lanzarFX('corte_giro', quien.x, quien.y - 34, 3, false, mio, col); lanzarFX('corte_giro', quien.x, quien.y - 34, 2.2, true, mio, col); sfx('corte2', .4); }
-    if (m.id === 'estocada') { lanzarFX('corte_h', quien.x + m.f * 130, quien.y - 32, 3.4, m.f < 0, false, col); sfx('corte', .45); }
-    if (m.id === 'meteoro') {
-      for (let k = 0; k < 8; k++) lanzarFX('rayo', quien.x + (k - 3.5) * 105, quien.y - 70 - (k % 2) * 40, 1.3, k % 2 === 0);
-      sfx('explosion', .5); if (mio) sacudir = 12;
-    }
-    if (m.id === 'furia') {
-      for (let k = 0; k < 40; k++) particula(quien.x, quien.y - 30, k % 2 ? '#ff3344' : '#ff9900', 5);
-      flotante(quien.x, quien.y - 90, '¡FURIA!', '#ff3344', 13); sfx('explosion', .4);
-      if (mio) P.furiaHasta = performance.now() + 10000;
+    if (!mio) { quien.atk = 14; quien.f = m.f; }
+    else P.atk = 14;
+    switch (m.id) {
+      case 'golpe_heroico': if (o) lanzarFX('corte_h', o.x, o.y - o.alto / 2, 1.8, m.f < 0, false, '#ff9933'); sfx('corte2', .45); break;
+      case 'ejecutar': if (o) { lanzarFX('corte_giro', o.x, o.y - o.alto / 2, 2.4, false, false, '#ff3344'); flotante(o.x, o.y - o.alto - 24, '¡EJECUTAR!', '#ff3344', 10); } sfx('explosion', .45); if (mio) sacudir = 8; break;
+      case 'carga': if (o) lanzarFX('corte_h', o.x, o.y - o.alto / 2, 1.4, m.f < 0, false, '#c79c6e'); break;
+      case 'provocar': if (o) { flotante(o.x, o.y - o.alto - 24, '¡PROVOCADO!', '#ff3344', 9); for (let k = 0; k < 16; k++) particula(o.x, o.y - o.alto, '#ff3344', 3); } flotante(quien.x, quien.y - 90, '¡AQUÍ!', '#c79c6e', 10); sfx('golpe', .4); break;
+      case 'torbellino': lanzarFX('corte_giro', quien.x, quien.y - 34, 3, false, mio, col); lanzarFX('corte_giro', quien.x, quien.y - 34, 2.2, true, mio, col); sfx('corte2', .4); break;
+      case 'grito': for (let k = 0; k < 36; k++) particula(quien.x + Math.cos(k / 36 * 6.28) * 30, quien.y - 40 + Math.sin(k / 36 * 6.28) * 30, '#ff6633', 4); flotante(quien.x, quien.y - 95, '¡POR EL DUENDE!', '#ff9933', 10); sfx('explosion', .35); break;
+      case 'muro': for (let k = 0; k < 20; k++) particula(quien.x, quien.y - 30, '#cbd5e1', 3); sfx('golpe', .4); break;
+      case 'bola_fuego': if (o) proyectiles.push({ x0: quien.x + m.f * 16, y0: quien.y - 40, o, ini: performance.now(), dur: 260, color: '#ff7a1a', r: 8, fuego: 1 }); sfx('explosion', .3); break;
+      case 'misiles': if (o) for (let k = 0; k < 3; k++) proyectiles.push({ x0: quien.x + m.f * 14, y0: quien.y - 40 - k * 8, o, ini: performance.now() + k * 110, dur: 200, color: '#c084fc', r: 5 }); sfx('corte2', .35); break;
+      case 'nova': for (let k = 0; k < 48; k++) particula(quien.x + Math.cos(k / 48 * 6.28) * 22, quien.y - 20, '#9be7ff', 6); sfx('explosion', .35); if (mio) sacudir = 5; break;
+      case 'polimorfia': if (o) for (let k = 0; k < 24; k++) particula(o.x, o.y - o.alto / 2, '#ff9cf5', 4); sfx('boton', .5); break;
+      case 'evocacion': for (let k = 0; k < 30; k++) particula(quien.x, quien.y - 30, '#60a5fa', 4); break;
+      case 'bloque': for (let k = 0; k < 30; k++) particula(quien.x, quien.y - 30, '#9be7ff', 4); sfx('golpe', .4); break;
+      case 'meteoros':
+        for (let k = 0; k < 8; k++) lanzarFX('rayo', quien.x + (k - 3.5) * 105, quien.y - 70 - (k % 2) * 40, 1.3, k % 2 === 0, false, '#ff7a1a');
+        sfx('explosion', .5); if (mio) sacudir = 12; break;
+      case 'castigo': if (o) { for (let k = 0; k < 22; k++) particula(o.x + (Math.random() - .5) * 20, o.y - o.alto - 30 + k * 4, '#ffe9a8', 2); lanzarFX('rayo', o.x, o.y - o.alto / 2, .8, false, false, '#ffe9a8'); } sfx('explosion', .25); break;
+      case 'sanar': case 'renovar': case 'escudo_poder': case 'supresion': {
+        const q = aliado || quien;
+        const c = m.id === 'escudo_poder' ? '#ffe9a8' : m.id === 'supresion' ? '#e0e7ff' : '#4ade80';
+        for (let k = 0; k < 18; k++) particula(q.x + (Math.random() - .5) * 30, q.y - Math.random() * 50, c, 2.5);
+        sfx('moneda', .25); break;
+      }
+      case 'rezo': for (let k = 0; k < 50; k++) particula(quien.x + (Math.random() - .5) * 300, quien.y - Math.random() * 60, '#4ade80', 2.5); sfx('moneda', .35); break;
+      case 'dolor': if (o) for (let k = 0; k < 18; k++) particula(o.x, o.y - o.alto / 2, '#7c3aed', 3); break;
+      case 'resurreccion': break;
+      case 'siniestro': if (o) lanzarFX('corte_h', o.x, o.y - o.alto / 2, 1.2, m.f < 0, false, '#fff569'); sfx('corte', .4); break;
+      case 'eviscerar': if (o) { lanzarFX('corte_giro', o.x, o.y - o.alto / 2, 1.2 + (m.cp || 0) * .25, false, false, '#ff3344'); if (m.cp >= 5) flotante(o.x, o.y - o.alto - 24, '¡5 COMBOS!', '#fff569', 10); } sfx('corte2', .45); break;
+      case 'patada': case 'zurrar': if (o) lanzarFX('corte_arriba', o.x, o.y - o.alto / 2, 1, false, false, m.id === 'zurrar' ? '#c79c6e' : '#fff569'); sfx('golpe', .4); break;
+      case 'contrahechizo': if (o) { for (let k = 0; k < 20; k++) particula(o.x, o.y - o.alto / 2, '#69ccf0', 4); flotante(o.x, o.y - o.alto - 30, '¡CONTRAHECHIZO!', '#69ccf0', 9); } sfx('boton', .5); break;
+      case 'silencio': if (o) { for (let k = 0; k < 20; k++) particula(o.x, o.y - o.alto / 2, '#7c3aed', 4); flotante(o.x, o.y - o.alto - 30, '¡SILENCIO!', '#c084fc', 9); } sfx('boton', .5); break;
+      case 'abanico': for (let k = 0; k < 24; k++) particula(quien.x, quien.y - 30, '#e5e7eb', 6); lanzarFX('corte_giro', quien.x, quien.y - 34, 2.4, false, mio, '#e5e7eb'); sfx('corte', .45); break;
+      case 'evasion': case 'sigilo': case 'desvanecer': for (let k = 0; k < 20; k++) particula(quien.x, quien.y - 30, '#64748b', 3); sfx('salto', .3); break;
     }
   }
-  ataqueRemoto({ p: m.p, s: -1, f: m.f, h: m.h });
+  // Los proyectiles marcan su daño al llegar; lo demas, en el acto.
+  const viaja = m.id === 'bola_fuego' || m.id === 'misiles';
+  if (viaja) setTimeout(() => ataqueRemoto({ p: m.p, s: -1, f: m.f, h: m.h }), 240);
+  else ataqueRemoto({ p: m.p, s: -1, f: m.f, h: m.h });
+}
+
+// Error corto en rojo arriba al centro (como "No tienes suficiente maná").
+function errorRojo(txt) {
+  const c = $('errores');
+  if (c.lastChild && c.lastChild.textContent === txt && performance.now() - (c.lastChild._t || 0) < 700) return;
+  const d = document.createElement('div');
+  d.textContent = txt; d._t = performance.now();
+  c.appendChild(d);
+  setTimeout(() => d.remove(), 1600);
+  while (c.children.length > 2) c.firstChild.remove();
+}
+
+// ── GRUPO, CHAT POR CANALES Y LISTA DE JUGADORES ──
+let grupo = null;               // { id, lider (uid), m: [{ uid, on, id, n, lv, cl, hp, mx, rec, rmx, mapa, muerto }] }
+let ultimoSusurro = '';
+const COLOR_CANAL = { general: '#e9d5ff', decir: '#ffffff', grupo: '#7dd3fc', hermandad: '#4ade80', susurro: '#f9a8d4' };
+const ETIQUETA_CANAL = { general: '', decir: '', grupo: '[Grupo] ', hermandad: '[Hermandad] ', susurro: '' };
+
+function miUid() { return yo ? yo.pid : null; }
+function soyLider() { return !!(grupo && grupo.lider === miUid()); }
+
+// Lo que se escribe en el chat: /d decir (tu mapa), /g grupo, /h hermandad,
+// /s Nombre susurro, /r responder al ultimo susurro. Sin barra: general.
+function enviarChat(v) {
+  const m = /^\/(\w+)\s*(.*)$/s.exec(v);
+  if (!m) { mandar({ t: 'chat', canal: 'general', m: v }); return; }
+  const cmd = m[1].toLowerCase(), resto = m[2].trim();
+  if (['d', 'decir'].includes(cmd)) return resto && mandar({ t: 'chat', canal: 'decir', m: resto });
+  if (['g', 'grupo', 'p'].includes(cmd)) return resto && mandar({ t: 'chat', canal: 'grupo', m: resto });
+  if (['h', 'hermandad'].includes(cmd)) return resto && mandar({ t: 'chat', canal: 'hermandad', m: resto });
+  if (['s', 'susurrar', 'w'].includes(cmd)) {
+    const sp = resto.indexOf(' ');
+    if (sp < 1) { errorRojo('Escribe: /s Nombre mensaje'); return; }
+    return mandar({ t: 'chat', canal: 'susurro', a: resto.slice(0, sp), m: resto.slice(sp + 1) });
+  }
+  if (cmd === 'r') { if (!ultimoSusurro) { errorRojo('Nadie te ha susurrado todavía.'); return; } return resto && mandar({ t: 'chat', canal: 'susurro', a: ultimoSusurro, m: resto }); }
+  if (cmd === 'invitar' || cmd === 'inv') { const q = [...otros.values()].find(x => x.n.toLowerCase() === resto.toLowerCase()); if (q) mandar({ t: 'invitar', p: q.id }); else errorRojo('Para invitar, ese jugador tiene que estar en tu mapa (o usa 👥).'); return; }
+  if (cmd === 'salir') { mandar({ t: 'salirGrupo' }); return; }
+  errorRojo('Comandos: /d decir · /g grupo · /h hermandad · /s Nombre susurro · /r responder');
+}
+function mensajeChat(m) {
+  const canal = m.canal || 'general';
+  if (m.sis) { lineaChat(null, m.m, canal); return; }
+  let quien = m.n;
+  if (canal === 'susurro') {
+    if (m.de) { quien = m.de + ' te susurra'; ultimoSusurro = m.de; sfx('boton', .4); }
+    else quien = 'Susurras a ' + m.a;
+  } else if (canal === 'general' && m.mapa && m.mapa !== mapaId && MAPAS[m.mapa]) quien = m.n + ' (' + MAPAS[m.mapa].nombre + ')';
+  lineaChat(ETIQUETA_CANAL[canal] + quien, m.m, canal, CLASES[m.cl] ? CLASES[m.cl].color : null);
+  if (canal !== 'susurro' && (!m.mapa || m.mapa === mapaId)) burbujas.set(m.p, { txt: m.m, hasta: performance.now() + 5000 });
+}
+
+// Invitacion a un grupo: aviso arriba con Aceptar / Rechazar (se puede
+// seguir jugando mientras tanto).
+function mostrarInvitacion(m) {
+  const cl = CLASES[m.cl];
+  $('invitacion').dataset.tipo = m.herm ? 'herm' : 'grupo';
+  $('inv-txt').innerHTML = m.herm
+    ? `<b>${esc(m.de)}</b> te invita a la hermandad <b style="color:#4ade80">&lt;${esc(m.nombre)}&gt;</b>`
+    : `<b style="color:${cl ? cl.color : '#fff'}">${esc(m.de)}</b> (Nv ${m.nv}${cl ? ' ' + esc(cl.nombre) : ''}) te invita a su grupo`;
+  ponCss($('invitacion'), 'display', 'block');
+  sfx('moneda', .4);
+  clearTimeout(mostrarInvitacion.t);
+  mostrarInvitacion.t = setTimeout(() => ponCss($('invitacion'), 'display', 'none'), m.ms || 60000);
+}
+const respInv = si => { mandar({ t: $('invitacion').dataset.tipo === 'herm' ? 'hermResp' : 'grupoResp', si }); ponCss($('invitacion'), 'display', 'none'); if (si) sfx('boton', .3); };
+$('inv-si').onclick = () => respInv(true);
+$('inv-no').onclick = () => respInv(false);
+
+// Marcos del grupo (a la izquierda): vida y recurso de cada compañero.
+function pintarGrupo() {
+  const cont = $('grupo');
+  const lista = grupo ? grupo.m.filter(x => x.id !== miId) : [];
+  const clave = lista.map(x => x.uid + (x.on ? 1 : 0) + (x.cl || '')).join('|') + (grupo ? grupo.lider : '');
+  if (cont._clave !== clave) {
+    cont._clave = clave;
+    cont.innerHTML = lista.map(x => {
+      const cl = CLASES[x.cl];
+      return `<div class="gm" data-uid="${esc(x.uid)}"><div class="nm"><span style="color:${cl ? cl.color : '#aaa'}">${grupo.lider === x.uid ? '👑 ' : ''}${esc(x.n || '?')}</span><small></small></div>
+        <div class="barra hp"><i></i><span></span></div><div class="barra rc"><i style="background:${cl ? RECURSOS[cl.recurso].color : '#555'}"></i></div></div>`;
+    }).join('');
+    cont.querySelectorAll('.gm').forEach(d => d.onclick = () => {
+      const x = grupo && grupo.m.find(y => y.uid === d.dataset.uid);
+      if (x && x.on && otros.has(x.id)) { objetivo = { k: 'p', id: x.id }; sfx('boton', .2); }
+      else if (x && x.on) errorRojo((x.n || 'Tu compañero') + ' está en otro mapa.');
+    });
+  }
+  ponCss(cont, 'display', lista.length ? 'block' : 'none');
+  lista.forEach((x, i) => {
+    const d = cont.children[i];
+    if (!d) return;
+    // En el mismo mapa la foto del servidor es mas fresca que el aviso del grupo.
+    const q = x.on ? otros.get(x.id) : null;
+    const hp = q ? q.hp : x.hp, mx = q ? q.mx : x.mx, rec = q ? q.rec : x.rec, rmx = q ? q.rmx : x.rmx, muerto = q ? q.muerto : x.muerto;
+    const sub = !x.on ? 'Desconectado' : muerto ? 'Caído' : (!q && x.mapa && MAPAS[x.mapa] ? MAPAS[x.mapa].nombre : 'Nv ' + x.lv);
+    ponTxt(d.querySelector('small'), sub);
+    ponClase(d, 'lejos', !q);
+    ponClase(d, 'caido', !x.on || !!muerto);
+    pintarBarra(d.querySelector('.hp'), x.on && !muerto && mx ? hp / mx : 0, x.on && mx ? Math.max(0, Math.ceil(hp)) + '/' + mx : '');
+    ponClase(d.querySelector('.hp'), 'bajo', mx && hp / mx < .3);
+    pintarBarra(d.querySelector('.rc'), x.on && rmx ? rec / rmx : 0);
+    ponClase(d, 'sel', !!(objetivo && objetivo.k === 'p' && objetivo.id === x.id));
+  });
+}
+
+// Botones del marco del objetivo cuando es otro jugador.
+function pintarAccionesObjetivo() {
+  const q = jugObjetivo();
+  const ver = !!(q && !q.muerto);
+  ponCss($('o-acc'), 'display', ver ? 'flex' : 'none');
+  if (!ver) return;
+  const enMiGrupo = grupo && grupo.m.some(x => x.id === q.id);
+  ponCss($('o-invitar'), 'display', !enMiGrupo && (!grupo || soyLider()) ? 'block' : 'none');
+  const r = miRangoHerm();
+  ponCss($('o-herm'), 'display', (r === 'lider' || r === 'oficial') && !q.hn ? 'block' : 'none');
+}
+$('o-invitar').onclick = () => { const q = jugObjetivo(); if (q) { mandar({ t: 'invitar', p: q.id }); sfx('boton', .3); } };
+$('o-susurrar').onclick = () => { const q = jugObjetivo(); if (!q) return; abrirChat(); $('chat-in').value = '/s ' + q.n + ' '; };
+
+// ── VENTANA SOCIAL (👥, tecla O) ──
+let tabSocial = 'grupo', quienLista = [];
+document.querySelectorAll('[data-stab]').forEach(b => b.onclick = () => { tabSocial = b.dataset.stab; document.querySelectorAll('[data-stab]').forEach(x => x.classList.toggle('on', x === b)); if (tabSocial === 'online') mandar({ t: 'quien' }); pintarSocial(); });
+function abrirSocial(tab) {
+  if (!yo) return;
+  if (tab) { tabSocial = tab; document.querySelectorAll('[data-stab]').forEach(x => x.classList.toggle('on', x.dataset.stab === tab)); }
+  abrir('m-social');
+  if (tabSocial === 'online') mandar({ t: 'quien' });
+  if (tabSocial === 'hermandad') mandar({ t: 'herm' });
+  pintarSocial();
+}
+function pintarSocial() {
+  if (!$('m-social').classList.contains('on')) return;
+  const L = $('social-lista');
+  if (tabSocial === 'grupo') {
+    if (!grupo) {
+      L.innerHTML = '<p class="centro" style="margin:10px 0">No estás en un grupo.</p><p class="centro" style="font-size:12px;color:rgba(255,255,255,.6)">Toca a otro jugador y pulsa ➕ en su marco, o búscalo en la pestaña EN LÍNEA. En grupo compartís la experiencia y las misiones de cada presa (con un 10% extra por miembro) y podéis entrar juntos a las mazmorras.</p>';
+      return;
+    }
+    let h = '';
+    for (const x of grupo.m) {
+      const cl = CLASES[x.cl];
+      const yoEs = x.id === miId && x.on;
+      const acc = !soyLider() || yoEs ? '' : `<button class="btn sec" data-lider="${esc(x.uid)}">👑 LÍDER</button><button class="btn sec" data-echar="${esc(x.uid)}">EXPULSAR</button>`;
+      h += tarjeta(`<img src="${A}items/equipo/${cl ? cl.icono : 'S_Buff06'}.png">`,
+        `<span style="color:${cl ? cl.color : '#aaa'}">${grupo.lider === x.uid ? '👑 ' : ''}${esc(x.n || '?')}${yoEs ? ' (tú)' : ''}</span>`,
+        x.on ? `Nv ${x.lv} ${cl ? esc(cl.nombre) : ''} · ${esc(MAPAS[x.mapa] ? MAPAS[x.mapa].nombre : '')}` : 'Desconectado', acc);
+    }
+    h += '<button class="btn sec" id="b-salir-grupo" style="width:100%;margin-top:8px">SALIR DEL GRUPO</button>';
+    L.innerHTML = h;
+    L.querySelectorAll('[data-lider]').forEach(b => b.onclick = () => mandar({ t: 'liderGrupo', uid: b.dataset.lider }));
+    L.querySelectorAll('[data-echar]').forEach(b => b.onclick = () => mandar({ t: 'expulsarGrupo', uid: b.dataset.echar }));
+    $('b-salir-grupo').onclick = () => { mandar({ t: 'salirGrupo' }); };
+  } else if (tabSocial === 'online') {
+    if (!quienLista.length) { L.innerHTML = '<p class="centro">No hay nadie más conectado ahora mismo.</p>'; return; }
+    L.innerHTML = quienLista.map(x => {
+      const cl = CLASES[x.cl];
+      const puede = !x.g && (!grupo || soyLider());
+      return tarjeta(`<img src="${A}items/equipo/${cl ? cl.icono : 'S_Buff06'}.png">`, `<span style="color:${cl ? cl.color : '#aaa'}">${esc(x.n)}</span> <span style="color:#888">Nv ${x.lv}</span>`,
+        esc((cl ? cl.nombre + ' · ' : '') + x.mapa + (x.h ? ' · <' + x.h + '>' : '') + (x.g ? ' · en grupo' : '')),
+        (puede ? `<button class="btn" data-inv="${x.id}">➕ INVITAR</button>` : '') + `<button class="btn sec" data-sus="${esc(x.n)}">💬</button>`);
+    }).join('');
+    L.querySelectorAll('[data-inv]').forEach(b => b.onclick = () => { mandar({ t: 'invitar', p: +b.dataset.inv }); b.disabled = true; });
+    L.querySelectorAll('[data-sus]').forEach(b => b.onclick = () => { cerrarModales(); abrirChat(); $('chat-in').value = '/s ' + b.dataset.sus + ' '; });
+  } else if (pintarHermandad) pintarHermandad(L);
+}
+$('b-social').onclick = () => abrirSocial();
+$('b-mapa').onclick = () => abrirMapaMundo();
+
+// Hermandades: se completa en su seccion (justo debajo).
+let pintarHermandad = L => { L.innerHTML = ''; };
+// ── HERMANDAD ──
+let hermandad = null;           // { id, nombre, motd, m: [{ uid, n, lv, cl, r, on }] }
+const RANGO = { lider: '👑 Líder', oficial: '⭐ Oficial', miembro: 'Miembro' };
+function miRangoHerm() {
+  if (!hermandad || !yo) return null;
+  const yoM = hermandad.m.find(x => x.on && x.n === yo.nombre);
+  return yoM ? yoM.r : null;
+}
+pintarHermandad = L => {
+  if (!yo) return;
+  if (!hermandad) {
+    const puede = yo.nivel >= HERM_NIVEL;
+    L.innerHTML = `<p class="centro" style="margin:8px 0">No estás en una hermandad.</p>
+      <p class="centro" style="font-size:12px;color:rgba(255,255,255,.65)">Una hermandad es tu clan: chat propio (/h), su nombre bajo el tuyo y compañeros con quienes hacer mazmorras. Pide a un líder u oficial que te invite, o funda la tuya.</p>
+      <input class="nombre" id="in-herm" maxlength="20" placeholder="Nombre de tu hermandad" ${puede ? '' : 'disabled'}>
+      <button class="btn" id="b-herm-crear" style="width:100%;padding:12px" ${puede && yo.oro >= HERM_COSTO ? '' : 'disabled'}>🛡️ FUNDAR (${HERM_COSTO.toLocaleString('es')} oro)</button>
+      ${puede ? '' : `<p class="centro" style="font-size:12px;color:#ff7777;margin-top:6px">Necesitas nivel ${HERM_NIVEL} para fundar una.</p>`}`;
+    const i = $('in-herm');
+    i.addEventListener('keydown', e => e.stopPropagation());
+    $('b-herm-crear').onclick = () => { const n = i.value.trim(); if (n.length < 3) { i.focus(); return; } if (confirm('¿Fundar la hermandad "' + n + '" por ' + HERM_COSTO.toLocaleString('es') + ' oro?')) mandar({ t: 'hermCrear', nombre: n }); };
+    return;
+  }
+  const r = miRangoHerm();
+  const manda = r === 'lider' || r === 'oficial';
+  const on = hermandad.m.filter(x => x.on).length;
+  let h = `<div class="mis-caja" style="margin-top:0"><b>🛡️ &lt;${esc(hermandad.nombre)}&gt;</b><p style="font-size:12px">${hermandad.m.length} miembros · ${on} en línea · tu rango: ${esc(RANGO[r] || '—')}</p>`;
+  h += `<p style="font-size:12px;margin-top:6px;color:#4ade80">📜 ${esc(hermandad.motd || 'Sin mensaje del día.')}</p>`;
+  if (manda) h += `<div style="display:flex;gap:6px;margin-top:6px"><input class="nombre" id="in-motd" maxlength="140" placeholder="Nuevo mensaje del día" style="margin:0;font-size:9px;padding:8px"><button class="btn sec" id="b-motd">OK</button></div>`;
+  h += '</div>';
+  for (const x of hermandad.m) {
+    const cl = CLASES[x.cl];
+    const yoEs = x.on && x.n === yo.nombre;
+    let acc = '';
+    if (!yoEs && r === 'lider') acc += x.r === 'miembro' ? `<button class="btn sec" data-hr="${esc(x.uid)}" data-r="oficial">⭐ ASCENDER</button>` : x.r === 'oficial' ? `<button class="btn sec" data-hr="${esc(x.uid)}" data-r="miembro">DEGRADAR</button><button class="btn sec" data-hr="${esc(x.uid)}" data-r="lider">👑 LÍDER</button>` : '';
+    if (!yoEs && manda && x.r !== 'lider' && !(r === 'oficial' && x.r === 'oficial')) acc += `<button class="btn sec" data-hx="${esc(x.uid)}">EXPULSAR</button>`;
+    h += tarjeta(`<img src="${A}items/equipo/${cl ? cl.icono : 'S_Buff06'}.png" style="${x.on ? '' : 'filter:grayscale(1);opacity:.5'}">`,
+      `<span style="color:${cl ? cl.color : '#aaa'}">${esc(x.n)}</span>${yoEs ? ' (tú)' : ''} <span style="color:#888">Nv ${x.lv}</span>`,
+      `${esc(RANGO[x.r] || '')}${cl ? ' · ' + esc(cl.nombre) : ''} · ${x.on ? '<span style="color:#4ade80">en línea</span>' : 'desconectado'}`, acc);
+  }
+  h += `<button class="btn sec" id="b-herm-salir" style="width:100%;margin-top:8px">DEJAR LA HERMANDAD</button>`;
+  L.innerHTML = h;
+  L.querySelectorAll('[data-hr]').forEach(b => b.onclick = () => { if (b.dataset.r !== 'lider' || confirm('¿Pasarle el liderazgo?')) mandar({ t: 'hermRango', uid: b.dataset.hr, r: b.dataset.r }); });
+  L.querySelectorAll('[data-hx]').forEach(b => b.onclick = () => { if (confirm('¿Expulsar de la hermandad?')) mandar({ t: 'hermExpulsar', uid: b.dataset.hx }); });
+  const bm = $('b-motd');
+  if (bm) { $('in-motd').addEventListener('keydown', e => e.stopPropagation()); bm.onclick = () => mandar({ t: 'hermMotd', m: $('in-motd').value }); }
+  $('b-herm-salir').onclick = () => { if (confirm('¿Dejar la hermandad?' + (r === 'lider' && hermandad.m.length > 1 ? ' El liderazgo pasará a otro miembro.' : r === 'lider' ? ' Eres el último: se disolverá.' : ''))) mandar({ t: 'hermSalir' }); };
+};
+$('o-herm').onclick = () => { const q = jugObjetivo(); if (q) { mandar({ t: 'hermInvitar', p: q.id }); sfx('boton', .3); } };
+
+
+// ── MAZMORRAS ──
+let muros = [];                 // barreras cerradas de la instancia (x)
+let instancia = null;           // { id, nv, hechos }
+function topeMuros() { return muros.length ? Math.min(...muros) - 22 : Infinity; }
+function abrirBuscador() {
+  if (!yo) return;
+  const L = $('maz-lista');
+  let h = `<p class="centro" style="margin-bottom:8px;font-size:12px">${grupo ? '👥 Entraréis juntos los del grupo que estén en el pueblo (los demás podrán unirse después por este portal).' : 'Entras solo: la mazmorra se ajusta a ti. Con un grupo es más fácil y más divertido (👥).'}</p>`;
+  for (const id in MAZMORRAS) {
+    const mz = MAZMORRAS[id];
+    const bloq = yo.nivel < mz.nv[0];
+    const jefes = mz.jefes.map(j => MONSTRUOS[j.k].nombre).join(' · ');
+    const hecha = yo.mazDia && yo.mazDia.d === new Date().toISOString().slice(0, 10) && (yo.mazDia.hechas || []).includes(id);
+    h += tarjeta(`<img src="${A}items/equipo/${mz.icono}.png" style="${bloq ? 'filter:grayscale(1);opacity:.4' : ''}">`,
+      `${esc(mz.nombre)} <span style="color:${bloq ? '#ff7777' : '#888'}">Nv ${mz.nv[0]}-${mz.nv[1]}</span>`,
+      `${esc(mz.desc)}<br><span style="color:#ffae00">👑 ${esc(jefes)}</span><br><span style="color:${hecha ? '#888' : '#4ade80'}">${hecha ? '✓ Premio del día cobrado' : '🎁 Premio del día disponible: XP, oro y un objeto épico'}</span>`,
+      bloq ? `<span class="precio" style="color:#666">🔒 Nv ${mz.nv[0]}</span>` : `<button class="btn" data-maz="${id}">ENTRAR</button>`);
+  }
+  h += '<ul style="padding-left:18px;margin-top:10px;font-size:12px"><li>Aquí los monstruos atacan solos y en packs: tira de uno y vendrá todo su grupo.</li><li>Cada jefe guarda una barrera. Lee sus avisos: <b style="color:#ff7a1a">sal de las zonas marcadas</b> en el suelo e <b>interrumpe</b> (Patada, Zurrar, Contrahechizo o Silencio) los hechizos con barra naranja.</li><li>Si caéis todos, revivís en la entrada y el jefe se recupera.</li><li>Cada jefe da equipo a cada uno; el último, épico.</li></ul>';
+  L.innerHTML = h;
+  L.querySelectorAll('[data-maz]').forEach(b => b.onclick = () => { sfx('explosion', .3); mandar({ t: 'mazmorra', id: b.dataset.maz }); cerrarModales(); });
+  abrir('m-mazmorras');
+}
+// Aviso grande en naranja (las mecanicas de los jefes), como los avisos de banda de WoW.
+function emote(txt) {
+  const c = $('emotes');
+  const d = document.createElement('div');
+  d.textContent = txt;
+  c.appendChild(d);
+  setTimeout(() => d.remove(), 3200);
+  while (c.children.length > 3) c.firstChild.remove();
+  sfx('boton', .35);
+}
+function completada(m) {
+  emote(m.txt);
+  aviso(m.txt, 'ok');
+  sfx('explosion', .5);
+  for (let i = 0; i < 80; i++) particula(P.x + (Math.random() - .5) * 200, P.y - 40 - Math.random() * 60, ['#ffe600', '#ff3cf0', '#00ff88', '#00eeff'][i % 4], 6);
+  sacudir = 10;
+}
+// Barreras magicas: cortinas de luz que se abren al caer su jefe.
+function dibujarMuros() {
+  for (const mx of muros) {
+    const x = mx - camX;
+    if (x < -40 || x > VW + 40) continue;
+    g.save();
+    g.globalCompositeOperation = 'lighter';
+    const gr = g.createLinearGradient(x - 18, 0, x + 18, 0);
+    gr.addColorStop(0, 'rgba(192,132,252,0)'); gr.addColorStop(.5, 'rgba(192,132,252,.55)'); gr.addColorStop(1, 'rgba(192,132,252,0)');
+    g.fillStyle = gr; g.fillRect(x - 18, -OY, 36, SUELO + OY);
+    g.fillStyle = '#e9d5ff';
+    for (let i = 0; i < 9; i++) { const y = (SUELO - ((frame * 1.6 + i * 47) % SUELO)); g.globalAlpha = .7; g.fillRect(x - 2 + Math.sin(frame * .1 + i) * 6, y, 3, 8); }
+    g.restore();
+  }
+}
+
+// ── MAPA DEL MUNDO (tecla M o 🗺️) ──
+// Las zonas en orden de nivel, con su jefe; donde estas tu y tu grupo; y las
+// mazmorras. Desde aqui se ve de un vistazo a donde ir.
+function abrirMapaMundo() {
+  if (!yo) return;
+  const enGrupo = {};
+  if (grupo) for (const x of grupo.m) if (x.on && x.id !== miId && x.mapa) (enGrupo[x.mapa] = enGrupo[x.mapa] || []).push(x.n);
+  const zonas = Object.entries(MAPAS).filter(([, m]) => m.zona && !m.instancia && !m.coliseo).sort((a, b) => a[1].nv[0] - b[1].nv[0]);
+  const fila = (id, mp, sub, extra) => {
+    const aqui = mapaId === id;
+    const grupoAqui = enGrupo[id] ? `<br><span style="color:#7dd3fc">👥 ${esc(enGrupo[id].join(', '))}</span>` : '';
+    const nivelOk = !mp.nv || (yo.nivel >= mp.nv[0] - 2 && yo.nivel <= mp.nv[1] + 4);
+    return `<div class="zm ${aqui ? 'aqui' : ''}" style="border-color:${mp.paleta.linea}">
+      <b style="color:${mp.paleta.linea}">${aqui ? '📍 ' : ''}${esc(mp.nombre)}</b><small>${sub}${grupoAqui}</small>${extra ? `<i style="color:${nivelOk ? '#4ade80' : '#888'}">${extra}</i>` : ''}</div>`;
+  };
+  let h = '<p class="centro" style="font-size:12px;margin-bottom:8px">Del pueblo salen portales a cada zona; cada zona lleva a la siguiente. En verde, las de tu nivel.</p><div class="mapa-mundo">';
+  h += fila('pueblo', MAPAS.pueblo, 'Zona segura · Mercader, Guardia Tito, Sabio y portales', '');
+  for (const [id, mp] of zonas) {
+    const jefe = mp.jefe ? MONSTRUOS[mp.jefe] : null;
+    h += fila(id, mp, jefe ? '👑 ' + esc(jefe.nombre) + ' (Nv ' + jefe.nivel + ')' : '', 'Nv ' + mp.nv[0] + '-' + mp.nv[1]);
+  }
+  h += '</div><p style="margin:12px 0 6px;font-size:12px;color:#ffd84a">🏰 Mazmorras (portal dorado del pueblo)</p><div class="mapa-mundo">';
+  for (const id in MAZMORRAS) {
+    const mz = MAZMORRAS[id];
+    const mp = MAPAS[mz.mapa];
+    h += fila(mz.mapa, mp, mz.jefes.map(j => esc(MONSTRUOS[j.k].nombre)).join(' · '), 'Nv ' + mz.nv[0] + '-' + mz.nv[1]);
+  }
+  h += '</div>';
+  h += fila('coliseo', MAPAS.coliseo, '👹 Jefe mundial a las :00 y :30 — todos los niveles', '').replace('class="zm', 'style="margin-top:8px" class="zm');
+  $('mapa-lista').innerHTML = h;
+  abrir('m-mapa');
+}
+
+// ── CLASES Y LIBRO DE HECHIZOS ──
+function abrirClases(obligatorio) {
+  if (!yo) return;
+  const cont = $('clases');
+  const costo = yo.clase ? costoCambioClase(yo.nivel) : 0;
+  $('clase-cerrar').style.display = obligatorio ? 'none' : '';
+  $('clase-txt').textContent = yo.clase
+    ? (costo ? 'Cambiar de clase a tu nivel cuesta ' + costo.toLocaleString('es') + ' oro.' : 'Hasta nivel 10 cambiar de clase es gratis.')
+    : 'Cada clase juega distinto y cumple un papel en el grupo: el tanque aguanta, el sanador cura y los demás hacen daño. Hasta nivel 10 puedes cambiarla gratis.';
+  cont.innerHTML = Object.entries(CLASES).map(([id, cl]) => {
+    const habs = habsDe(id).map(h => `<img src="${A}items/equipo/${h.icono}.png" title="${esc(h.nombre)} (Nv ${h.nv})">`).join('');
+    return `<div class="clase ${yo.clase === id ? 'sel' : ''}" data-clase="${id}" style="--c:${cl.color}">
+      <div class="cab"><img src="${A}items/equipo/${cl.icono}.png" alt=""><div><b>${esc(cl.nombre)}</b><small>${esc(cl.rol)} · ${esc(RECURSOS[cl.recurso].nombre)}</small></div></div>
+      <p>${esc(cl.desc)}</p><div class="habs">${habs}</div></div>`;
+  }).join('');
+  cont.querySelectorAll('[data-clase]').forEach(b => b.onclick = () => {
+    const id = b.dataset.clase;
+    if (id === yo.clase) { cerrarModales(); return; }
+    if (yo.clase && costo && !confirm('¿Cambiar a ' + CLASES[id].nombre + ' por ' + costo.toLocaleString('es') + ' oro?')) return;
+    sfx('explosion', .35);
+    mandar({ t: 'clase', id });
+    cerrarModales();
+  });
+  abrir('m-clase');
+}
+function abrirLibro() {
+  if (!yo) return;
+  if (!yo.clase) { abrirClases(true); return; }
+  abrir('m-libro');
+  pintarLibro();
+}
+function pintarLibro() {
+  const cl = CLASES[yo.clase];
+  $('libro-t').innerHTML = `📖 <span style="color:${cl.color}">${esc(cl.nombre.toUpperCase())}</span>`;
+  const rec = RECURSOS[cl.recurso].nombre;
+  let h = `<p class="centro" style="margin-bottom:6px">${esc(cl.rol)} · recurso: <b style="color:${RECURSOS[cl.recurso].color}">${esc(rec)}</b></p>`;
+  // Especializaciones (desde Nv 10).
+  h += `<p style="font-size:12px;margin:6px 0 4px;color:#ffd84a">✨ Especialización ${yo.nivel < ESPEC_NIVEL ? '(desde nivel ' + ESPEC_NIVEL + ')' : '(cambio gratis fuera de combate)'}</p><div class="clases" style="margin-bottom:10px">`;
+  for (const [id, e] of Object.entries(ESPECS[yo.clase])) {
+    const sel = yo.espec === id && yo.nivel >= ESPEC_NIVEL;
+    h += `<div class="clase ${sel ? 'sel' : ''}" data-espec="${id}" style="--c:${cl.color};${yo.nivel < ESPEC_NIVEL ? 'opacity:.5;cursor:default' : ''}">
+      <div class="cab"><img src="${A}items/equipo/${e.icono}.png" alt=""><div><b>${esc(e.nombre)}${sel ? ' ✓' : ''}</b><small>${esc(e.rol)}</small></div></div><p style="display:block">${esc(e.desc)}</p></div>`;
+  }
+  h += '</div>';
+  for (const hb of HABS.filter(x => x.clase === yo.clase)) {
+    const bloq = yo.nivel < hb.nv;
+    const costo = costoHab(hb, P.recMax || yo.recMax || 0, yo.espec);
+    const datos = [hb.costo ? costo + ' ' + rec.toLowerCase() : 'sin costo', hb.cast ? (hb.cast / 1000).toLocaleString('es') + ' s de lanzamiento' : 'instantánea', hb.cd ? 'recarga ' + Math.round(hb.cd / 1000) + ' s' : '', hb.rango ? 'alcance ' + hb.rango : ''].filter(Boolean).join(' · ');
+    const ico = `<img src="${A}items/equipo/${hb.icono}.png" style="${bloq ? 'filter:grayscale(1);opacity:.4' : ''}">`;
+    const tecla = hb.barra === false ? 'Botón de acción' : 'Tecla ' + (habsDe(yo.clase).indexOf(hb) + 1);
+    h += tarjeta(ico, esc(hb.nombre) + ` <span style="color:${bloq ? '#ff7777' : '#888'}">Nv ${hb.nv}</span>`, esc(hb.desc) + '<br><span style="color:#888">' + esc(datos) + '</span>',
+      `<span class="precio" style="color:${bloq ? '#666' : '#00ff88'}">${bloq ? '🔒' : esc(tecla)}</span>`);
+  }
+  const costoC = costoCambioClase(yo.nivel);
+  h += `<button class="btn sec" id="b-cambiar-clase" style="width:100%;margin-top:8px">CAMBIAR DE CLASE${costoC ? ' (' + costoC.toLocaleString('es') + ' oro)' : ' (gratis hasta Nv 10)'}</button>`;
+  $('libro-lista').innerHTML = h;
+  $('b-cambiar-clase').onclick = () => abrirClases(false);
+  $('libro-lista').querySelectorAll('[data-espec]').forEach(b => b.onclick = () => { if (yo.nivel >= ESPEC_NIVEL && yo.espec !== b.dataset.espec) { sfx('explosion', .3); mandar({ t: 'espec', id: b.dataset.espec }); } });
 }
 
 // ── TITULOS / LOGROS ──
@@ -1033,7 +1716,7 @@ function dibujarPortales(mp) {
     g.translate(x, y);
     g.globalCompositeOperation = 'lighter';
     for (let k = 0; k < 3; k++) {
-      g.strokeStyle = ['#c084fc', '#00eeff', '#ff3cf0'][k];
+      g.strokeStyle = (p.buscador ? ['#ffd84a', '#ff9900', '#ffe9a8'] : ['#c084fc', '#00eeff', '#ff3cf0'])[k];
       g.lineWidth = 3; g.globalAlpha = .55;
       g.beginPath();
       g.ellipse(0, 0, 24 - k * 5, 44 - k * 8, 0, frame * .05 * (k % 2 ? -1 : 1) + k, frame * .05 * (k % 2 ? -1 : 1) + k + Math.PI * 1.5);
@@ -1048,7 +1731,7 @@ function dibujarPortales(mp) {
     // Dos lineas (nombre / nivel): en una sola, los portales vecinos del
     // pueblo se pisaban las etiquetas.
     etiqueta(x, y - 72, p.etiqueta, activo ? '#ffe600' : '#c084fc', 7);
-    if (p.nv) etiqueta(x, y - 58, 'Nv ' + p.nv, activo ? '#ffe600' : 'rgba(255,255,255,.7)', 6);
+    if (p.nv) etiqueta(x, y - 58, /^\d/.test(p.nv) ? 'Nv ' + p.nv : p.nv, activo ? '#ffe600' : 'rgba(255,255,255,.7)', 6);
   });
 }
 
@@ -1111,6 +1794,25 @@ function sombra(x, pies, ancho) {
   g.beginPath(); g.ellipse(x, sueloEn(MAPAS[mapaId], x + camX, pies, true) + 2, ancho * k, 5 * k, 0, 0, Math.PI * 2); g.fill(); g.restore();
 }
 
+// Color del nivel segun la diferencia con el tuyo (gris = no da casi nada,
+// rojo = peligro), como en WoW.
+function colorNivel(nv) {
+  const dif = nv - (yo ? yo.nivel : 1);
+  return dif >= 5 ? '#ff3344' : dif >= 2 ? '#ff9900' : dif <= -8 ? '#888' : dif <= -3 ? '#4ade80' : '#ffe600';
+}
+// Anillo de seleccion bajo los pies del objetivo (rojo enemigo, verde aliado).
+function anilloSeleccion(x, pies, ancho, color) {
+  g.save();
+  g.strokeStyle = color; g.lineWidth = 2; g.globalAlpha = .65 + Math.sin(frame * .15) * .25;
+  g.beginPath(); g.ellipse(x, pies + 2, ancho, ancho * .28, 0, 0, Math.PI * 2); g.stroke();
+  g.globalAlpha = .18; g.fillStyle = color; g.fill();
+  g.restore();
+}
+function barraMini(x, y, w, k, color) {
+  g.fillStyle = 'rgba(0,0,0,.65)'; g.fillRect(x - w / 2 - 1, y - 1, w + 2, 6);
+  g.fillStyle = color; g.fillRect(x - w / 2, y, w * Math.max(0, Math.min(1, k)), 4);
+}
+
 function dibujarMonstruo(o) {
   interpolar(o);
   const x = o.x - camX;
@@ -1118,17 +1820,20 @@ function dibujarMonstruo(o) {
   const def = MONSTRUOS[o.k];
   const hoja = HOJAS[def.hoja];
   const ahora = performance.now();
+  const elegido = objetivo && objetivo.k === 'm' && objetivo.id === o.id;
   let fila = hoja.mov[0], col = hoja.mov[1] + Math.floor(frame / 6) % hoja.mov[2], alpha = 1;
   const golpeado = ahora - o.golpeT < 260;
+  const aturdido = o.fl & FM.aturdido, oveja = o.fl & FM.oveja, raiz = o.fl & FM.raiz;
   if (o.muereT) {
     const k = Math.min(1, (ahora - o.muereT) / 1500);
     fila = hoja.golpe[0]; col = hoja.muerte[0] + Math.min(hoja.muerte[1] - 1, Math.floor(k * hoja.muerte[1]));
     alpha = 1 - k;
   } else if (golpeado || o.st === 3) {
     fila = hoja.golpe[0]; col = hoja.golpe[1] + Math.floor((ahora - o.golpeT) / 130) % hoja.golpe[2];
-  }
-  if (!def.vuela) sombra(x + camX - camX, o.y, o.w * .45);
+  } else if (aturdido || raiz) col = hoja.mov[1];
+  if (!def.vuela) sombra(x, o.y, o.w * .45);
   else sombra(x, o.y, o.w * .3);
+  if (elegido && !o.muereT) anilloSeleccion(x, def.vuela ? sueloEn(MAPAS[mapaId], o.x, o.y, true) : o.y, Math.max(22, o.w * .6), '#ff3344');
   const nace = Math.min(1, (ahora - o.nace) / 400);
   const temblor = o.st === 3 ? (Math.random() - .5) * 5 : 0;
   if (def.jefe && !o.muereT) {
@@ -1139,27 +1844,46 @@ function dibujarMonstruo(o) {
     rg.addColorStop(0, `rgba(${c},.28)`); rg.addColorStop(1, `rgba(${c},0)`);
     g.fillStyle = rg; g.fillRect(x - o.alto, o.y - o.alto * 1.4, o.alto * 2, o.alto * 1.6); g.restore();
   }
-  dibujarHoja(def.hoja, hoja, fila, col, o.alto * (0.4 + 0.6 * nace), x + temblor, o.y, o.f, alpha * nace, def.tinte || (o.st === 3 ? '#ff3344' : null), golpeado && !o.muereT && (ahora - o.golpeT) < 70);
+  if (oveja && !o.muereT) {
+    // Polimorfia: una oveja que pasea (se rompe al pegarle).
+    g.save(); g.font = '30px sans-serif'; g.textAlign = 'center';
+    g.translate(x, o.y - 4 + Math.abs(Math.sin(frame * .2)) * -3); if (o.f < 0) g.scale(-1, 1);
+    g.fillText('🐑', 0, 0); g.restore();
+  } else {
+    dibujarHoja(def.hoja, hoja, fila, col, o.alto * (0.4 + 0.6 * nace), x + temblor, o.y, o.f, alpha * nace, def.tinte || (o.st === 3 ? '#ff3344' : null), golpeado && !o.muereT && (ahora - o.golpeT) < 70);
+  }
   if (o.muereT) return;
+  if (raiz) {
+    // Congelado: escarcha a los pies.
+    g.save(); g.globalAlpha = .55; g.fillStyle = '#9be7ff';
+    for (let i = -2; i <= 2; i++) { g.beginPath(); g.moveTo(x + i * 9 - 5, o.y + 2); g.lineTo(x + i * 9, o.y - 14 - (i & 1) * 6); g.lineTo(x + i * 9 + 5, o.y + 2); g.fill(); }
+    g.globalAlpha = .25; g.fillRect(x - o.w / 2, o.y - o.h, o.w, o.h); g.restore();
+  }
+  if (aturdido) {
+    // Aturdido: estrellitas girando sobre la cabeza.
+    g.fillStyle = '#ffe600';
+    for (let i = 0; i < 3; i++) { const a = frame * .12 + i * 2.1; g.fillRect(x + Math.cos(a) * 14 - 2, o.y - o.alto - 6 + Math.sin(a) * 4, 4, 4); }
+  }
+  if ((o.fl & FM.dolor) && frame % 9 === 0) particula(o.x + (Math.random() - .5) * o.w * .6, o.y - o.alto * Math.random(), '#7c3aed', 1);
+  const cm = castMon.get(o.id);
   // Vida y nivel
   if (!def.jefe) {
     const w = 40, y = o.y - o.alto - 12;
-    if (o.hp < o.mx) {
-      g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(x - w / 2 - 1, y - 1, w + 2, 6);
-      g.fillStyle = '#ff3344'; g.fillRect(x - w / 2, y, w * Math.max(0, o.hp / o.mx), 4);
-    }
+    if (o.hp < o.mx || elegido) barraMini(x, y, w, o.hp / o.mx, '#ff3344');
     g.font = '6px "Press Start 2P", monospace'; g.textAlign = 'center';
-    const dif = def.nivel - (yo ? yo.nivel : 1);
-    g.fillStyle = dif >= 5 ? '#ff3344' : dif >= 2 ? '#ff9900' : dif <= -5 ? '#888' : '#fff';
-    // Con el nombre solo cuando esta herido: todos a la vez llenaban la pantalla.
-    g.fillText('Nv' + def.nivel + (o.hp < o.mx ? ' ' + def.nombre : ''), x, y - 4);
+    g.fillStyle = colorNivel(o.nv);
+    // Con el nombre solo cuando esta herido o elegido: todos a la vez llenaban la pantalla.
+    g.fillText('Nv' + o.nv + (o.hp < o.mx || elegido ? ' ' + def.nombre : ''), x, y - 4);
+    if (cm) barraMini(x, y + 7, w, (ahora - cm.ini) / (cm.fin - cm.ini), cm.int ? '#ffae00' : '#aaa');
   } else {
     etiqueta(x, o.y - o.alto - 10, '👑 ' + def.nombre, '#ff3cf0', 7);
+    if (cm) barraMini(x, o.y - o.alto - 4, 70, (ahora - cm.ini) / (cm.fin - cm.ini), cm.int ? '#ffae00' : '#aaa');
   }
 }
 
 function dibujarDuende(q, esYo) {
-  const x = q.x - camX, pies = q.y;
+  const x = q.x - camX;
+  let pies = q.y;
   if (x < -120 || x > VW + 120) return;
   const skin = esYo ? yo.skin : q.sk;
   const muerto = esYo ? P.muerto : q.muerto;
@@ -1168,9 +1892,24 @@ function dibujarDuende(q, esYo) {
   const atk = esYo ? P.atk : q.atk;
   const anda = esYo ? Math.abs(P.vx) > .5 && P.suelo : q.a === 1;
   const enAire = esYo ? !P.suelo : q.a === 2;
-  sombra(x, pies, 18);
+  const fl = esYo ? P.fl : (q.fl || 0);
+  const id = esYo ? miId : q.id;
+  const elegido = objetivo && objetivo.k === 'p' && objetivo.id === id;
+  const clase = esYo ? yo.clase : q.cl;
+  const mo = !muerto && MONTURAS[esYo ? yo.montado : q.mo];
+  sombra(x, pies, mo ? 30 : 18);
+  if (elegido) anilloSeleccion(x, pies, mo ? 34 : 24, '#00ff88');
+  if (mo) {
+    // La montura camina bajo el duende, que va subido encima.
+    const hm = HOJAS[mo.hoja];
+    const col = anda ? hm.mov[1] + Math.floor(frame / 5) % hm.mov[2] : hm.mov[1];
+    dibujarHoja(mo.hoja, hm, hm.mov[0], col, mo.alto, x, pies, f, 1, null, false);
+  }
+  const piesOrig = pies;
+  pies = pies - (mo ? mo.dy : 0);
   g.save();
   if (muerto) g.globalAlpha = .35;
+  else if (fl & FJ.sigilo) g.globalAlpha = esYo ? .45 : .2;
   else if (herido && Math.floor(frame / 3) % 2) g.globalAlpha = .55;
   const escudo = esYo ? P.escudo : q.escudo;
   const fuego = esYo ? P.fuego : q.fuego;
@@ -1183,7 +1922,7 @@ function dibujarDuende(q, esYo) {
   if (skin === 'comun' && ANIM && IMG.anim.naturalWidth) {
     // Duende base: la hoja animada de verdad (reposo / caminar / atacar / herido).
     let lista = ANIM_IDX.reposo, vel = 14;
-    if (atk > 0) { const t = 1 - atk / 14; lista = ANIM_IDX.ataca; }
+    if (atk > 0) lista = ANIM_IDX.ataca;
     else if (herido) { lista = ANIM_IDX.herido; vel = 6; }
     else if (anda || enAire) { lista = ANIM_IDX.camina; vel = 5; }
     const idx = atk > 0 ? lista[Math.min(lista.length - 1, Math.floor((1 - atk / 14) * lista.length))] : lista[Math.floor(frame / vel) % lista.length];
@@ -1210,21 +1949,36 @@ function dibujarDuende(q, esYo) {
   }
   g.restore();
   if (escudo) { g.save(); g.strokeStyle = '#00eeff'; g.globalAlpha = .6 + Math.sin(frame * .2) * .2; g.lineWidth = 2; g.beginPath(); g.ellipse(x, pies - 30, 30, 40, 0, 0, Math.PI * 2); g.stroke(); g.restore(); }
+  if (fl & FJ.escudoPoder) { g.save(); g.strokeStyle = '#ffe9a8'; g.fillStyle = 'rgba(255,233,168,.12)'; g.globalAlpha = .7 + Math.sin(frame * .12) * .2; g.lineWidth = 2; g.beginPath(); g.ellipse(x, pies - 30, 27, 37, 0, 0, Math.PI * 2); g.fill(); g.stroke(); g.restore(); }
+  if (fl & FJ.bloque) { g.save(); g.globalAlpha = .55; g.fillStyle = '#9be7ff'; g.fillRect(x - 22, pies - 66, 44, 68); g.globalAlpha = .9; g.strokeStyle = '#e0f7ff'; g.lineWidth = 2; g.strokeRect(x - 22, pies - 66, 44, 68); g.restore(); }
+  if (fl & FJ.muro) { g.save(); g.fillStyle = '#cbd5e1'; g.strokeStyle = '#475569'; g.globalAlpha = .85; const sx = x + f * 18; g.beginPath(); g.moveTo(sx - 9, pies - 46); g.lineTo(sx + 9, pies - 46); g.lineTo(sx + 9, pies - 26); g.lineTo(sx, pies - 16); g.lineTo(sx - 9, pies - 26); g.closePath(); g.fill(); g.stroke(); g.restore(); }
+  if ((fl & FJ.renovar) && frame % 8 === 0) particula(q.x + (Math.random() - .5) * 24, pies - Math.random() * 50, '#4ade80', 1);
+  if ((fl & FJ.supresion) && frame % 6 === 0) particula(q.x + (Math.random() - .5) * 24, pies - Math.random() * 60, '#e0e7ff', 1);
+  if ((fl & FJ.grito) && frame % 14 === 0) particula(q.x + (Math.random() - .5) * 20, pies - 4, '#ff6633', 1);
+  if ((fl & FJ.evasion) && frame % 5 === 0) particula(q.x - f * 14, pies - 20 - Math.random() * 30, '#94a3b8', 1);
   if (fuego) { for (let i = 0; i < 2; i++) particula(q.x + (Math.random() - .5) * 20, pies - 20 - Math.random() * 30, Math.random() < .5 ? '#ff6400' : '#ffe600', 1.5); }
+  // Lanzando: chispas en las manos (el color de la clase).
+  const lanza = esYo ? castYo : castOtros.get(q.id);
+  if (lanza && frame % 3 === 0) particula(q.x + f * 12, pies - 34, CLASES[clase] ? CLASES[clase].color : '#fff', 1.2);
   // Nombre y nivel
   const nom = esYo ? yo.nombre : q.n, lv = esYo ? yo.nivel : q.lv;
   // Si otro duende esta pegado al propio, su nombre baja una linea: antes
   // se encimaban ("ClaudeTest · Nv1Duendecillo Bot").
   const baja = !esYo && Math.abs(q.x - P.x) < 110 && Math.abs(q.y - P.y) < 40 ? 13 : 0;
-  etiqueta(x, pies + 16 + baja, nom + ' · Nv' + lv, esYo ? '#ffe600' : (SKINS[skin] ? SKINS[skin].color : '#fff'), 6);
-  const ti = esYo ? tituloDe(yo.titulo) : q.ti;
-  if (ti) etiqueta(x, pies + 29 + baja, '« ' + ti + ' »', '#c084fc', 5);
-  if (!esYo && q.hp < q.mx) {
-    g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(x - 18, pies - 76, 36, 5);
-    g.fillStyle = '#ff3344'; g.fillRect(x - 17, pies - 75, 34 * Math.max(0, q.hp / q.mx), 3);
-  }
+  const colNom = esYo ? '#ffe600' : (CLASES[clase] ? CLASES[clase].color : (SKINS[skin] ? SKINS[skin].color : '#fff'));
+  pies = piesOrig;
+  etiqueta(x, pies + 16 + baja, (muerto ? '💀 ' : '') + nom + ' · Nv' + lv, colNom, 6);
+  // Hermandad y titulo debajo; si otro duende esta pegado al tuyo, solo su
+  // nombre (en el suelo no caben dos pilas de etiquetas).
+  const hn = esYo ? (hermandad ? hermandad.nombre : '') : (baja ? '' : q.hn);
+  let linea = pies + 29 + baja;
+  if (hn) { etiqueta(x, linea, '<' + hn + '>', '#4ade80', 5); linea += 12; }
+  const ti = esYo ? tituloDe(yo.titulo) : (baja ? '' : q.ti);
+  if (ti) etiqueta(x, linea, '« ' + ti + ' »', '#c084fc', 5);
+  if (!esYo && (q.hp < q.mx || elegido) && !muerto) barraMini(x, pies - 78, 36, q.hp / q.mx, '#4ade80');
+  if (!esYo && lanza) barraMini(x, pies - 71, 36, (performance.now() - lanza.ini) / (lanza.fin - lanza.ini), '#ffe600');
   const bb = burbujas.get(esYo ? miId : q.id);
-  if (bb && performance.now() < bb.hasta) burbuja(x, pies - 82, bb.txt);
+  if (bb && performance.now() < bb.hasta) burbuja(x, pies - 84, bb.txt);
 }
 
 function burbuja(x, y, txt) {
@@ -1320,6 +2074,48 @@ function dibujarEfectos() {
   g.globalAlpha = 1;
 }
 
+// Proyectiles de vara y hechizos: viajan del lanzador al objetivo (aunque
+// este se mueva) y estallan al llegar.
+function dibujarProyectiles() {
+  const ahora = performance.now();
+  if (!proyectiles.length) return;
+  g.save(); g.globalCompositeOperation = 'lighter';
+  filtrar(proyectiles, p => {
+    const k = (ahora - p.ini) / p.dur;
+    if (k < 0) return true;
+    const tx = p.o.x, ty = p.o.y - (p.o.alto || 50) / 2;
+    if (k >= 1) {
+      for (let i = 0; i < (p.fuego ? 16 : 6); i++) particula(tx, ty, p.color, p.fuego ? 4 : 2.5);
+      return false;
+    }
+    const x = p.x0 + (tx - p.x0) * k - camX, y = p.y0 + (ty - p.y0) * k - Math.sin(k * Math.PI) * 14;
+    g.globalAlpha = .35; g.fillStyle = p.color; g.beginPath(); g.arc(x, y, p.r * 1.9, 0, 7); g.fill();
+    g.globalAlpha = 1; g.beginPath(); g.arc(x, y, p.r, 0, 7); g.fill();
+    g.fillStyle = '#fff'; g.beginPath(); g.arc(x, y, p.r * .45, 0, 7); g.fill();
+    if (frame % 2 === 0) particula(x + camX, y, p.color, .8);
+    return true;
+  });
+  g.restore();
+}
+// Zonas de peligro en el suelo (jefes de mazmorra): primero el aviso
+// (borde rojo que parpadea), despues el golpe (relleno). Hay que salir.
+function dibujarZonas() {
+  for (const z of zonas) {
+    const x0 = z.x0 - camX, x1 = z.x1 - camX;
+    if (x1 < -10 || x0 > VW + 10) continue;
+    const col = z.color || '#ff3344';
+    g.save();
+    if (z.act) {
+      g.globalAlpha = .35 + Math.random() * .15; g.fillStyle = col; g.fillRect(x0, SUELO - 130, x1 - x0, 132);
+      g.globalAlpha = .9; g.fillRect(x0, SUELO - 4, x1 - x0, 6);
+    } else {
+      g.globalAlpha = .18 + Math.abs(Math.sin(frame * .2)) * .25; g.fillStyle = col; g.fillRect(x0, SUELO - 6, x1 - x0, 8);
+      g.globalAlpha = .9; g.strokeStyle = col; g.lineWidth = 2; g.setLineDash([6, 4]); g.strokeRect(x0, SUELO - 120, x1 - x0, 122);
+    }
+    g.restore();
+  }
+}
+
 function dibujar() {
   const mp = MAPAS[mapaId];
   const objCam = Math.max(0, Math.min(mp.ancho - VW, P.x - VW / 2));
@@ -1330,19 +2126,26 @@ function dibujar() {
   if (sacudir > 0) { g.translate((Math.random() - .5) * sacudir, (Math.random() - .5) * sacudir); sacudir *= .85; if (sacudir < .5) sacudir = 0; }
   dibujarFondo(mp);
   dibujarSuelo(mp);
+  dibujarZonas();
+  dibujarMuros();
   dibujarPortales(mp);
   dibujarNPCs(mp);
   for (const o of mons.values()) dibujarMonstruo(o);
   for (const q of otros.values()) { interpolar(q); if (q.atk > 0) q.atk--; if (q.herido > 0) q.herido--; dibujarDuende(q, false); }
   if (yo) dibujarDuende(P, true);
+  dibujarProyectiles();
   dibujarEfectos();
   g.restore();
   // Fundido al cruzar un portal.
   if (fundido > 0) { g.fillStyle = `rgba(7,3,15,${fundido})`; g.fillRect(0, 0, cv.width, cv.height); fundido = Math.max(0, fundido - .05); }
   // Barra del jefe
+  // La barra de arriba es la del jefe mas cercano (en una mazmorra hay tres).
+  let jc = null, dj = 1100;
+  for (const o of mons.values()) if (MONSTRUOS[o.k].jefe && !o.muereT && Math.abs(o.x - P.x) < dj) { dj = Math.abs(o.x - P.x); jc = o; }
+  jefeVivo = jc;
   if (jefeVivo && !jefeVivo.muereT) {
     ponCss($('jefe-bar'), 'display', 'block');
-    ponTxt($('jefe-n'), '👑 ' + MONSTRUOS[jefeVivo.k].nombre + ' · Nv ' + MONSTRUOS[jefeVivo.k].nivel);
+    ponTxt($('jefe-n'), '👑 ' + MONSTRUOS[jefeVivo.k].nombre + ' · Nv ' + jefeVivo.nv);
     ponCss($('jefe-bar').querySelector('i'), 'width', Math.max(0, Math.round(jefeVivo.hp / jefeVivo.mx * 100)) + '%');
   } else ponCss($('jefe-bar'), 'display', 'none');
   // Boton contextual
@@ -1353,7 +2156,7 @@ function dibujar() {
   ponCss(bi, 'display', 'block');
   if (c && yo && !P.muerto) {
     ponCss(bi, 'visibility', 'visible');
-    ponTxt(bi, c.tipo === 'portal' ? (TACTIL ? '🚪 ENTRAR' : 'E · ENTRAR') : (TACTIL ? '💬 HABLAR' : 'E · HABLAR'));
+    ponTxt(bi, c.tipo === 'res' ? '✝ RESUCITAR' : c.tipo === 'portal' ? (TACTIL ? '🚪 ENTRAR' : 'E · ENTRAR') : (TACTIL ? '💬 HABLAR' : 'E · HABLAR'));
   } else ponCss(bi, 'visibility', 'hidden');
 }
 
@@ -1361,16 +2164,29 @@ function dibujar() {
 function pintarHud() {
   if (!yo) return;
   P.maxHp = yo.maxHp; P.hp = yo.hp; P.muerto = yo.muerto;
+  if (yo.recMax !== undefined) { P.recMax = yo.recMax; P.rec = yo.rec; P.combo = yo.combo || 0; }
   ponTxt($('h-nombre'), yo.nombre);
-  ponTxt($('h-nivel'), 'Nv ' + yo.nivel);
+  ponTxt($('h-nivel'), String(yo.nivel));
+  const cl = CLASES[yo.clase];
+  const sp = cl && yo.nivel >= ESPEC_NIVEL ? especDe(yo.clase, yo.espec) : null;
+  ponTxt($('h-clase'), cl ? (sp ? sp.nombre : cl.nombre) : 'Sin clase');
+  ponCss($('h-clase'), 'color', cl ? cl.color : '#888');
+  const imgSkin = A + 'skins/' + (SKINS[yo.skin] ? SKINS[yo.skin].img : 'skin_hero') + '.png';
+  if ($('ret-yo')._src !== imgSkin) { $('ret-yo')._src = imgSkin; $('ret-yo').src = imgSkin; }
+  ponCss($('brec'), 'display', cl ? 'block' : 'none');
+  if (cl) ponCss($('brec').querySelector('i'), 'background', RECURSOS[cl.recurso].color);
   ponTxt($('h-oro'), yo.oro.toLocaleString('es'));
   ponTxt($('h-mton'), (yo.mton || 0).toLocaleString('es') + ' mTON');
   const pxp = yo.xpSig ? Math.floor(yo.xp / yo.xpSig * 100) : 100;
   ponCss($('bxp').querySelector('i'), 'width', pxp + '%');
-  ponTxt($('h-xp'), 'XP ' + pxp + '%');
+  $('bxp').title = 'Experiencia: ' + yo.xp.toLocaleString('es') + ' / ' + (yo.xpSig || 0).toLocaleString('es') + ' (' + pxp + '%)';
   const q = MISIONES[yo.mis ? yo.mis.i : 0];
   const hm = $('h-mision');
-  if (!q) {
+  if (instancia && MAZMORRAS[instancia.id]) {
+    const mz = MAZMORRAS[instancia.id];
+    hm.textContent = '🏰 ' + mz.nombre + ' (Nv ' + instancia.nv + ') · Jefes ' + (instancia.hechos || 0) + '/' + mz.jefes.length;
+    hm.className = '';
+  } else if (!q) {
     const d = yo.diaria || { p: 0, ok: false };
     hm.textContent = d.ok ? '📅 Caza del día ✓ — vuelve mañana' : '📅 ' + DIARIA.nombre + ' ' + Math.min(d.p, DIARIA.n) + '/' + DIARIA.n;
     hm.className = !d.ok && d.p >= DIARIA.n ? 'lista' : '';
@@ -1381,7 +2197,7 @@ function pintarHud() {
     hm.className = lista ? 'lista' : '';
   }
   pintarPoderes();
-  pintarHabs();
+  pintarAcciones();
 }
 
 // ── MISIONES ──
@@ -1430,15 +2246,119 @@ function dibujarMinimapa() {
   mg.fillStyle = 'rgba(255,255,255,.12)'; mg.fillRect(4, y - 1, W - 8, 2);
   mg.strokeStyle = 'rgba(255,255,255,.3)'; mg.lineWidth = 1; mg.strokeRect(4 + camX * k + .5, 2.5, Math.min(W - 8, VW * k), H - 5);
   for (const p of mp.portales) { mg.fillStyle = '#c084fc'; mg.fillRect(4 + p.x * k - 2, y - 5, 4, 10); }
+  for (const mx of muros) { mg.fillStyle = '#e9d5ff'; mg.fillRect(4 + mx * k - 1, 2, 2, H - 4); }
   for (const n of (mp.npcs || [])) { mg.fillStyle = '#00ff88'; mg.fillRect(4 + n.x * k - 1.5, y - 2, 3, 4); }
   for (const o of mons.values()) if (MONSTRUOS[o.k].jefe && !o.muereT) { mg.fillStyle = '#ff3cf0'; mg.beginPath(); mg.arc(4 + o.x * k, y, 4, 0, 7); mg.fill(); }
   for (const q of otros.values()) { mg.fillStyle = '#00eeff'; mg.fillRect(4 + q.x * k - 1.5, y - 3, 3, 6); }
   mg.fillStyle = '#ffe600'; mg.fillRect(4 + P.x * k - 2, y - 4, 4, 8);
 }
+// ── MARCOS DE UNIDAD (cada fotograma; solo tocan el DOM si algo cambia) ──
+function ponClase(el, c, on) { const k = '_cl' + c; if (el[k] !== on) { el[k] = on; el.classList.toggle(c, on); } }
+function pintarBarra(el, k, txt) {
+  ponCss(el.querySelector('i'), 'width', Math.max(0, Math.min(100, Math.round(k * 100))) + '%');
+  if (txt !== undefined) ponTxt(el.querySelector('span'), txt);
+}
+// Iconos de auras con los segundos que les quedan (verde = buena, rojo = mala).
+function pintarAuras(el, au, extra) {
+  const ahora = performance.now();
+  const lista = [];
+  for (const a of (extra || [])) lista.push([a, Infinity]);
+  for (const a in (au || {})) if (au[a] > ahora && AURAS[a]) lista.push([a, au[a]]);
+  const clave = lista.map(x => x[0]).join(',');
+  if (el._clave !== clave) {
+    el._clave = clave;
+    el.innerHTML = lista.map(([a]) => { const d = AURAS[a]; return `<div class="au ${d.mala ? 'mala' : ''}" title="${esc(d.nombre)}"><img src="${A}${d.dir || 'items/equipo/'}${d.icono}.png" alt=""><span></span></div>`; }).join('');
+  }
+  if (frame % 10 === 0) lista.forEach(([, fin], i) => {
+    const sp = el.children[i] && el.children[i].querySelector('span');
+    if (sp) ponTxt(sp, fin === Infinity ? '' : String(Math.max(0, Math.ceil((fin - ahora) / 1000))));
+  });
+}
 function pintarVida() {
   const k = P.maxHp ? P.hp / P.maxHp : 1;
-  ponCss($('bhp').querySelector('i'), 'width', Math.max(0, Math.round(k * 100)) + '%');
-  ponTxt($('h-hp'), Math.max(0, Math.ceil(P.hp)) + '/' + P.maxHp);
+  pintarBarra($('bhp'), k, Math.max(0, Math.ceil(P.hp)) + '/' + P.maxHp);
+  ponClase($('bhp'), 'bajo', k < .3);
+  if (P.recMax) pintarBarra($('brec'), P.rec / P.recMax, Math.floor(P.rec) + '/' + P.recMax);
+  const cps = $('h-combo');
+  if (yo && yo.clase === 'picaro') {
+    if (cps.children.length !== 5) cps.innerHTML = '<i></i>'.repeat(5);
+    for (let i = 0; i < 5; i++) ponClase(cps.children[i], 'on', i < P.combo);
+  } else if (cps.children.length) cps.innerHTML = '';
+  pintarAuras($('au-yo'), aurasP.get(miId), [P.escudo ? 'escudo' : '', P.fuego ? 'fuego' : ''].filter(Boolean));
+  pintarObjetivo();
+  pintarAccionesObjetivo();
+  pintarGrupo();
+  pintarLanzar();
+}
+let retratoDe = '';
+function pintarObjetivo() {
+  const uf = $('uf-obj');
+  const o = monObjetivo();
+  const q = !o && objetivo && objetivo.k === 'p' ? (objetivo.id === miId ? P : otros.get(objetivo.id)) : null;
+  if ((!o || o.muereT) && !q) { ponCss(uf, 'display', 'none'); return; }
+  ponCss(uf, 'display', 'flex');
+  ponClase(uf, 'hostil', !!o); ponClase(uf, 'amigo', !o);
+  const clave = o ? 'm' + o.id : 'p' + objetivo.id + (q === P ? yo.skin : q.sk);
+  if (retratoDe !== clave) { retratoDe = clave; dibujarRetrato(o, q); }
+  if (o) {
+    const def = MONSTRUOS[o.k];
+    ponTxt($('o-nombre'), def.nombre);
+    ponCss($('o-nombre'), 'color', colorNivel(o.nv));
+    ponTxt($('o-nivel'), def.jefe ? '☠' : String(o.nv));
+    ponTxt($('o-tipo'), def.jefe ? 'Jefe' : 'Nv ' + o.nv);
+    pintarBarra($('ohp'), o.hp / o.mx, Math.max(0, o.hp).toLocaleString('es') + '/' + o.mx.toLocaleString('es'));
+    ponCss($('orec'), 'display', 'none');
+    const cm = castMon.get(o.id);
+    ponCss($('ocast'), 'display', cm ? 'block' : 'none');
+    if (cm) {
+      ponClase($('ocast'), 'noint', !cm.int);
+      pintarBarra($('ocast'), (performance.now() - cm.ini) / (cm.fin - cm.ini), cm.nombre);
+    }
+    pintarAuras($('au-obj'), aurasM.get(o.id));
+  } else {
+    const yoMismo = q === P;
+    const cl = CLASES[yoMismo ? yo.clase : q.cl];
+    ponTxt($('o-nombre'), yoMismo ? yo.nombre : q.n);
+    ponCss($('o-nombre'), 'color', cl ? cl.color : '#fff');
+    ponTxt($('o-nivel'), String(yoMismo ? yo.nivel : q.lv));
+    ponTxt($('o-tipo'), cl ? cl.nombre : 'Jugador');
+    const hp = yoMismo ? P.hp : q.hp, mx = yoMismo ? P.maxHp : q.mx;
+    pintarBarra($('ohp'), (q.muerto ? 0 : hp) / mx, q.muerto ? 'Caído' : Math.max(0, Math.ceil(hp)) + '/' + mx);
+    const rec = yoMismo ? P.rec : q.rec, rmx = yoMismo ? P.recMax : q.rmx;
+    ponCss($('orec'), 'display', cl && rmx ? 'block' : 'none');
+    if (cl && rmx) { ponCss($('orec').querySelector('i'), 'background', RECURSOS[cl.recurso].color); pintarBarra($('orec'), rec / rmx, Math.floor(rec) + '/' + rmx); }
+    ponCss($('ocast'), 'display', 'none');
+    pintarAuras($('au-obj'), aurasP.get(objetivo.id));
+  }
+}
+// Retrato del objetivo: el primer cuadro de su hoja (o la skin del jugador).
+function dibujarRetrato(o, q) {
+  const c = $('ret-obj'), x = c.getContext('2d');
+  x.clearRect(0, 0, 64, 64);
+  x.imageSmoothingEnabled = false;
+  if (o) {
+    const def = MONSTRUOS[o.k], hoja = HOJAS[def.hoja];
+    const img = def.tinte ? tenido('sh_' + def.hoja, def.tinte) : IMG['sh_' + def.hoja];
+    if (!img || !(img.naturalWidth || img.width)) return;
+    const e = Math.min(52 / hoja.ideal, 80 / hoja.fw);
+    const dw = hoja.fw * e, dh = hoja.fh * e;
+    x.save(); x.translate(32, 60); if ((o.f > 0) === !!hoja.izq) x.scale(-1, 1);
+    x.drawImage(img, hoja.mov[1] * hoja.fw, hoja.mov[0] * hoja.fh, hoja.fw, hoja.fh, -dw / 2, -dh, dw, dh);
+    x.restore();
+  } else {
+    const skin = q === P ? yo.skin : q.sk;
+    const img = IMG[SKINS[skin] ? SKINS[skin].img : 'skin_hero'];
+    if (!img || !img.naturalWidth) return;
+    const e = Math.min(60 / img.naturalWidth, 60 / img.naturalHeight);
+    x.drawImage(img, 32 - img.naturalWidth * e / 2, 62 - img.naturalHeight * e, img.naturalWidth * e, img.naturalHeight * e);
+  }
+}
+function pintarLanzar() {
+  if (!castYo) return;
+  const ahora = performance.now();
+  const k = Math.min(1, (ahora - castYo.ini) / (castYo.fin - castYo.ini));
+  ponCss($('lanzar').querySelector('i'), 'width', Math.round(k * 100) + '%');
+  ponTxt($('lanzar-t'), castYo.nombre + '  ' + Math.max(0, (castYo.fin - ahora) / 1000).toFixed(1) + ' s');
 }
 
 function aviso(txt, tipo) {
@@ -1452,17 +2372,22 @@ function aviso(txt, tipo) {
   while ($('avisos').children.length > 4) $('avisos').firstChild.remove();
 }
 
-function lineaChat(nombre, txt) {
+function lineaChat(nombre, txt, canal, colorNombre) {
   const d = document.createElement('div');
-  if (nombre) { const b = document.createElement('b'); b.textContent = nombre + ': '; d.appendChild(b); d.appendChild(document.createTextNode(txt)); }
-  else { d.className = 'sis'; d.textContent = txt; }
+  if (nombre) {
+    const b = document.createElement('b'); b.textContent = nombre + ': ';
+    if (colorNombre) b.style.color = colorNombre;
+    d.appendChild(b); d.appendChild(document.createTextNode(txt));
+    if (canal && COLOR_CANAL[canal]) d.style.color = COLOR_CANAL[canal];
+  }
+  else { d.className = 'sis'; d.textContent = txt; if (canal && COLOR_CANAL[canal]) d.style.color = COLOR_CANAL[canal]; }
   $('chat-log').appendChild(d);
   while ($('chat-log').children.length > 8) $('chat-log').firstChild.remove();
 }
 
 // ── VENTANAS ──
 function abrir(id) { document.querySelectorAll('.modal.on').forEach(m => { if (m.id !== 'm-muerte') m.classList.remove('on'); }); $(id).classList.add('on'); for (const k in teclas) teclas[k] = false; tIzq = tDer = false; }
-function cerrarModales() { document.querySelectorAll('.modal.on').forEach(m => { if (m.id !== 'm-muerte' && m.id !== 'm-inicio' && m.id !== 'm-error') m.classList.remove('on'); }); }
+function cerrarModales() { document.querySelectorAll('.modal.on').forEach(m => { if (m.id !== 'm-muerte' && m.id !== 'm-inicio' && m.id !== 'm-error' && !(m.id === 'm-clase' && yo && !yo.clase)) m.classList.remove('on'); }); }
 document.querySelectorAll('[data-cerrar]').forEach(b => b.onclick = cerrarModales);
 document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m) cerrarModales(); }));
 
@@ -1490,6 +2415,16 @@ function pintarTienda() {
       h += tarjeta(ico, d.nombre + ' +' + n, desc, acc);
     }
     h += '<p style="margin-top:8px;font-size:12px;color:rgba(255,255,255,.5)">Cada mejora sale siempre bien: +7% de daño por nivel, hasta +' + FORJA_MAX + '. Compra más armas en la pestaña ARMAS para forjarlas también.</p>';
+  } else if (tabTienda === 'montura') {
+    for (const [id, mo] of Object.entries(MONTURAS)) {
+      const tiene = (yo.monturas || []).includes(id);
+      const ico = `<canvas data-montura="${id}" width="52" height="52"></canvas>`;
+      const acc = tiene ? (yo.montura === id ? '<span class="precio" style="color:#00ff88">✓ EN USO</span>' : `<button class="btn sec" data-comprar="montura" data-id="${id}">USAR</button>`)
+        : yo.nivel < mo.nv ? `<span class="precio" style="color:#ff7777">Nv ${mo.nv}</span><span class="precio">🪙 ${mo.precio.toLocaleString('es')}</span>`
+        : `<span class="precio">🪙 ${mo.precio.toLocaleString('es')}</span><button class="btn" data-comprar="montura" data-id="${id}" ${yo.oro < mo.precio ? 'disabled' : ''}>COMPRAR</button>`;
+      h += tarjeta(ico, esc(mo.nombre), `+${Math.round((mo.vel - 1) * 100)}% de velocidad · desde Nv ${mo.nv}`, acc);
+    }
+    h += '<p style="margin-top:8px;font-size:12px;color:rgba(255,255,255,.5)">Monta con la tecla Y o el botón 🐎 (1,5 s, fuera de combate). No se puede montar en mazmorras ni en el Coliseo.</p>';
   } else if (tabTienda === 'pw') {
     PODERES.forEach(p => {
       h += tarjeta(`<img src="${A}items/${p.icono}.png">`, p.nombre + ` <span style="color:#888">(tienes ${yo.pw[p.id] || 0})</span>`, p.desc,
@@ -1510,6 +2445,16 @@ function pintarTienda() {
     if (tabTienda === 'skin') h += '<p style="margin-top:8px;font-size:12px;color:rgba(255,255,255,.5)">Las skins que ya pagaste en el juego principal se desbloquean solas al entrar con tu cuenta.</p>';
   }
   L.innerHTML = h;
+  // Retratos de las monturas (primer cuadro de su hoja).
+  L.querySelectorAll('canvas[data-montura]').forEach(c => {
+    const mo = MONTURAS[c.dataset.montura], hm = HOJAS[mo.hoja], img = IMG['sh_' + mo.hoja];
+    if (!img || !img.naturalWidth) return;
+    const x = c.getContext('2d'); x.imageSmoothingEnabled = false;
+    const e = Math.min(48 / hm.fw, 48 / hm.fh);
+    x.save(); x.translate(26, 50); if (hm.izq) x.scale(-1, 1);
+    x.drawImage(img, hm.mov[1] * hm.fw, hm.mov[0] * hm.fh, hm.fw, hm.fh, -hm.fw * e / 2, -hm.fh * e, hm.fw * e, hm.fh * e);
+    x.restore();
+  });
   L.querySelectorAll('[data-comprar]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'comprar', k: b.dataset.comprar, id: b.dataset.id, n: +b.dataset.n || 1 }); });
   L.querySelectorAll('[data-equipar]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'equipar', k: b.dataset.equipar, id: b.dataset.id }); });
 }
@@ -1635,3 +2580,6 @@ function bucle(t) {
 }
 inicio();
 requestAnimationFrame(bucle);
+// Solo en el servidor local de pruebas (tools/mmo_local.mjs): acceso al
+// estado para los scripts que prueban el juego.
+if (location.hostname === 'localhost') window.__dq = { mandar, P, mons, otros, get yo() { return yo; }, get objetivo() { return objetivo; }, set objetivo(v) { objetivo = v; }, usarHab, usarHabDef, atacar };

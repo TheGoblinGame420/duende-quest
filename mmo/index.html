@@ -6,11 +6,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Duende Quest Online</title>
-<meta name="description" content="DUENDE QUEST ONLINE — el MMORPG de los duendes: explora 10 zonas hasta el nivel 60, caza monstruos con otros jugadores, consigue equipo legendario, aprende habilidades y derrota al jefe mundial.">
+<meta name="description" content="DUENDE QUEST ONLINE — el MMORPG de los duendes al estilo WoW: 4 clases con su papel (tanque, sanador, daño), grupos, mazmorras con jefes, hermandades, monturas y 10 zonas hasta el nivel 60. Gratis en el navegador o en Telegram.">
 <meta name="theme-color" content="#0a0418">
 <meta property="og:type" content="website">
 <meta property="og:title" content="DUENDE QUEST ONLINE — el MMORPG de los duendes">
-<meta property="og:description" content="10 zonas hasta Nv 60, 40 misiones, equipo con rarezas, habilidades, logros y un jefe mundial cada 30 minutos. Caza en tiempo real con otros jugadores, gratis en el navegador o en Telegram.">
+<meta property="og:description" content="Elige Guerrero, Mago, Sacerdote o Pícaro, forma grupo y entra a mazmorras con jefes de verdad. Hermandades, monturas, 10 zonas hasta Nv 60 y jefe mundial cada 30 minutos. Gratis en el navegador o en Telegram.">
 <meta property="og:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/mmo_banner.png">
 <meta property="og:url" content="https://duende-quest.alfonso12hc.workers.dev/mmo/">
 <meta name="twitter:card" content="summary_large_image">
@@ -34,54 +34,128 @@ html,body{height:100%;background:var(--bg);color:#fff;font-family:'Press Start 2
 #hud{position:absolute;inset:0;pointer-events:none;}
 #hud .caja{position:absolute;pointer-events:auto;}
 
-/* barras */
-#stat{left:8px;top:8px;background:var(--panel);border:1px solid var(--borde);border-radius:6px;padding:7px 9px;min-width:190px;}
-#stat .nom{font-size:8px;color:var(--amarillo);margin-bottom:6px;display:flex;justify-content:space-between;gap:8px;}
-.barra{height:9px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;margin-bottom:4px;position:relative;}
+/* marcos de unidad (jugador, objetivo, grupo) al estilo WoW */
+.uf{display:flex;gap:6px;align-items:flex-start;background:var(--panel);border:1px solid var(--borde);border-radius:9px;padding:5px 8px 5px 5px;}
+.uf .ret{position:relative;width:42px;height:42px;flex:0 0 42px;border-radius:50%;border:2px solid #ffd84a;background:radial-gradient(circle at 50% 35%,#2a1846,#0b0616);}
+.uf .ret img,.uf .ret canvas{position:absolute;inset:2px;width:calc(100% - 4px);height:calc(100% - 4px);object-fit:contain;image-rendering:pixelated;border-radius:50%;}
+.uf .ret b{position:absolute;left:-5px;bottom:-5px;min-width:17px;height:17px;padding:0 3px;border-radius:9px;background:#120a20;border:1px solid #ffd84a;font-size:6px;line-height:15px;text-align:center;color:#ffe600;}
+.uf .cu{flex:1;min-width:0;}
+.uf .nm{font-size:7px;display:flex;justify-content:space-between;gap:6px;margin:1px 0 4px;white-space:nowrap;overflow:hidden;}
+.uf .nm small{font-size:6px;opacity:.85;}
+#uf-yo{left:8px;top:8px;width:206px;}
+#uf-obj{left:222px;top:8px;width:206px;display:none;}
+#uf-obj.hostil .ret{border-color:#ff3344;}
+#uf-obj.amigo .ret{border-color:#00ff88;}
+#hud.estrecho #uf-yo{width:172px;}
+#hud.estrecho #uf-obj{left:8px;top:66px;width:172px;}
+.barra{height:9px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;margin-bottom:3px;position:relative;}
 .barra>i{display:block;height:100%;transition:width .15s;}
 .barra>span{position:absolute;inset:0;font-size:6px;line-height:9px;text-align:center;color:#fff;text-shadow:1px 1px 0 #000;}
-#bhp>i{background:linear-gradient(90deg,#ff3344,#ff7766);}
-#bxp>i{background:linear-gradient(90deg,#00ff88,#ffe600);}
-#stat .oro{font-size:8px;color:var(--amarillo);display:flex;align-items:center;gap:5px;margin-top:3px;}
-#stat .oro img{width:14px;height:14px;image-rendering:pixelated;}
-#stat .mton{margin-left:auto;color:var(--cian);cursor:pointer;}
+.barra.hp>i{background:linear-gradient(90deg,#16a34a,#4ade80);}
+.barra.hp.bajo>i{background:linear-gradient(90deg,#b91c1c,#f87171);}
+.barra.rc{height:7px;}
+.barra.rc>span{line-height:7px;font-size:5px;}
+.barra.rc>i{background:#3b82f6;}
+.cps{display:flex;gap:3px;height:7px;margin-top:1px;}
+.cps:empty{display:none;}
+.cps i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(0,0,0,.6);}
+.cps i.on{background:#ff3344;box-shadow:0 0 5px #ff3344;}
+.auras{display:flex;gap:2px;flex-wrap:wrap;margin-top:3px;}
+.au{width:17px;height:17px;position:relative;border:1px solid #16a34a;border-radius:3px;background:#000;overflow:hidden;}
+.au.mala{border-color:#ef4444;}
+.au img{width:100%;height:100%;image-rendering:pixelated;}
+.au span{position:absolute;right:0;bottom:0;font-size:5px;line-height:6px;background:rgba(0,0,0,.7);padding:0 1px;color:#fff;}
+.castm{display:none;height:8px;margin-top:3px;border:1px solid rgba(255,153,0,.6);}
+.castm>i{background:linear-gradient(90deg,#ff9900,#ffe600);transition:none;}
+.castm.noint{border-color:rgba(160,160,160,.6);}
+.castm.noint>i{background:linear-gradient(90deg,#888,#ccc);}
+#monedero{left:8px;top:64px;font-size:7px;color:var(--amarillo);display:flex;align-items:center;gap:5px;background:var(--panel);border:1px solid var(--borde);border-radius:6px;padding:3px 7px;}
+#monedero img{width:12px;height:12px;image-rendering:pixelated;}
+#monedero .mton{color:var(--cian);cursor:pointer;margin-left:6px;}
+#hud.estrecho #monedero{display:none;}
 .req{display:flex;justify-content:space-between;font-size:8px;padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.06);}
 .req .si{color:var(--verde);} .req .no{color:#ff7777;}
 .saldo{text-align:center;margin:6px 0 12px;}
 .saldo b{display:block;font-size:16px;color:var(--cian);text-shadow:0 0 12px rgba(0,238,255,.5);}
 .saldo small{font-family:system-ui,sans-serif;font-size:12px;color:rgba(255,255,255,.6);}
-#h-mision{font-size:6px;color:#c084fc;margin-top:6px;line-height:1.6;max-width:210px;}
+/* seguimiento de misiones (derecha, bajo el minimapa) */
+#seguimiento{right:8px;top:100px;max-width:200px;text-align:right;pointer-events:none!important;}
+#h-mision,#h-mundial{font-size:6px;line-height:1.6;text-shadow:1px 1px 0 #000,0 0 3px #000;}
+#h-mision{color:#ffd84a;}
 #h-mision.lista{color:var(--verde);animation:parp 1s infinite alternate;}
+#h-mundial{color:var(--rosa);margin-top:4px;}
+#h-mundial.lista{animation:parp .8s infinite alternate;}
+#hud.estrecho #seguimiento{top:112px;max-width:150px;}
 @keyframes parp{to{opacity:.55}}
-#minimapa{right:8px;top:46px;background:var(--panel);border:1px solid var(--borde);border-radius:6px;padding:4px;}
+#minimapa{right:8px;top:62px;background:var(--panel);border:1px solid var(--borde);border-radius:6px;padding:4px;}
 #minimapa canvas{display:block;image-rendering:pixelated;}
+#hud.estrecho #minimapa{top:72px;}
+#hud.estrecho #minimapa canvas{width:140px;}
 .mis-caja{border:1px solid rgba(192,132,252,.3);border-radius:8px;padding:12px;background:rgba(124,58,237,.08);margin:10px 0;}
 .mis-caja b{font-size:10px;color:var(--amarillo);display:block;margin-bottom:8px;line-height:1.5;}
 .mis-barra{height:10px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden;margin:8px 0;}
 .mis-barra i{display:block;height:100%;background:linear-gradient(90deg,#7c3aed,#00ff88);}
-#mapa-nom{left:50%;transform:translateX(-50%);top:8px;font-size:8px;color:#fff;background:var(--panel);border:1px solid var(--borde);border-radius:6px;padding:6px 10px;white-space:nowrap;text-align:center;}
-#mapa-nom small{display:block;font-size:6px;color:rgba(255,255,255,.45);margin-top:3px;}
-#botones{right:8px;top:8px;display:flex;gap:5px;}
+#mapa-nom{right:8px;top:42px;font-size:7px;color:#ffe9a8;white-space:nowrap;text-align:right;text-shadow:1px 1px 0 #000,0 0 4px #000;pointer-events:none!important;}
+#mapa-nom small{display:block;font-size:5px;color:rgba(255,255,255,.55);margin-top:3px;}
+#hud.estrecho #mapa-nom{display:none;}
+#botones{right:8px;top:8px;display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;}
+#hud.estrecho #botones{max-width:150px;}
 .bt{font-family:inherit;font-size:9px;background:var(--panel);color:#fff;border:1px solid var(--borde);border-radius:6px;padding:7px 8px;cursor:pointer;}
 .bt:active{transform:scale(.95);}
-#jefe-bar{left:50%;transform:translateX(-50%);top:46px;width:min(420px,70%);display:none;text-align:center;}
+#jefe-bar{left:50%;transform:translateX(-50%);top:84px;width:min(420px,50%);display:none;text-align:center;}
 #jefe-bar .n{font-size:8px;color:var(--rosa);text-shadow:0 0 8px var(--rosa);margin-bottom:4px;}
 #jefe-bar .barra{height:10px;border:1px solid rgba(255,60,240,.5);}
 #jefe-bar .barra>i{background:linear-gradient(90deg,#ff3cf0,#ff3344);}
+#hud.estrecho #jefe-bar{top:150px;bottom:auto;width:80%;}
 
-/* poderes */
-#poderes{right:8px;bottom:8px;display:flex;gap:6px;}
-.pw{width:46px;height:46px;border:1px solid var(--borde);border-radius:7px;background:var(--panel);position:relative;cursor:pointer;display:flex;align-items:center;justify-content:center;overflow:hidden;}
-.pw img{width:32px;height:32px;object-fit:contain;image-rendering:pixelated;}
-.pw .k{position:absolute;left:3px;top:3px;font-size:6px;color:rgba(255,255,255,.55);}
-.pw .n{position:absolute;right:3px;bottom:3px;font-size:7px;color:var(--amarillo);text-shadow:1px 1px 0 #000;}
+/* barra de accion: 7 habilidades de la clase + 4 consumibles */
+#pie{flex:0 0 auto;width:100%;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 8px 7px;background:linear-gradient(180deg,rgba(20,8,40,.55),rgba(20,8,40,.95));border-top:1px solid rgba(192,132,252,.2);}
+#barra{display:flex;gap:8px;align-items:flex-end;}
+#pie #lanzar{position:relative;left:auto;bottom:auto;transform:none;}
+body.tactil #pie{display:none;}
+#acciones,#consumibles{display:flex;gap:4px;}
+.pw{width:40px;height:40px;border:1px solid var(--borde);border-radius:7px;background:var(--panel);position:relative;cursor:pointer;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.pw img{width:30px;height:30px;object-fit:contain;image-rendering:pixelated;}
+.pw .k{position:absolute;left:3px;top:3px;font-size:6px;color:rgba(255,255,255,.8);text-shadow:1px 1px 0 #000;z-index:2;}
+.pw .k.lejos{color:#ff4444;}
+.pw .n{position:absolute;right:3px;bottom:3px;font-size:7px;color:var(--amarillo);text-shadow:1px 1px 0 #000;z-index:2;}
 .pw .cd{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.65);}
+.pw .cdt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;text-shadow:1px 1px 0 #000;z-index:2;pointer-events:none;}
 .pw.vacio img{filter:grayscale(1);opacity:.35;}
-#habs{right:8px;bottom:62px;display:none;gap:6px;}
-.pw.hab{border-radius:50%;border-color:rgba(255,230,0,.45);}
-.pw.hab .n{left:0;right:0;text-align:center;bottom:15px;font-size:6px;color:#fff;}
-#h-mundial{font-size:6px;color:var(--rosa);margin-top:5px;line-height:1.6;max-width:210px;}
-#h-mundial.lista{animation:parp .8s infinite alternate;}
+.pw.sinrec img{filter:grayscale(.6) brightness(.55) sepia(1) hue-rotate(185deg) saturate(3);}
+.pw.listo{box-shadow:0 0 8px #ffe600,inset 0 0 6px rgba(255,230,0,.6);border-color:#ffe600;}
+.pw.ac{border-color:rgba(255,216,74,.45);}
+.pw.ac .n{left:0;right:0;text-align:center;bottom:13px;font-size:6px;color:#fff;}
+.pw.on{transform:scale(.92);}
+#bxp{left:0;right:0;bottom:0;height:5px;margin:0;border-radius:0;background:rgba(0,0,0,.55);}
+#bxp>i{background:linear-gradient(90deg,#7c3aed,#c084fc);}
+#bxp>span{display:none;}
+#lanzar{left:50%;transform:translateX(-50%);bottom:14px;width:230px;display:none;}
+#lanzar .barra{height:12px;border:1px solid rgba(255,216,74,.6);margin:0;}
+#lanzar .barra>i{background:linear-gradient(90deg,#ffb700,#ffe600);transition:none;}
+#lanzar .barra>span{font-size:6px;line-height:12px;}
+#lanzar.mal .barra>i{background:#ff3344;}
+#hud.estrecho #lanzar{bottom:44px;width:60%;}
+/* grupo */
+#grupo{left:8px;top:92px;width:150px;display:none;}
+#hud.estrecho #grupo{top:142px;width:128px;}
+.gm{background:var(--panel);border:1px solid var(--borde);border-radius:7px;padding:4px 6px 3px;margin-bottom:4px;cursor:pointer;}
+.gm .nm{font-size:6px;display:flex;justify-content:space-between;gap:4px;margin-bottom:3px;white-space:nowrap;overflow:hidden;}
+.gm .nm small{font-size:5px;color:rgba(255,255,255,.55);}
+.gm .barra.hp{height:7px;margin-bottom:2px;}
+.gm .barra.hp>span{font-size:5px;line-height:7px;}
+.gm .barra.rc{height:3px;margin:0;}
+.gm.lejos{opacity:.8;} .gm.caido{opacity:.45;} .gm.sel{border-color:#00ff88;box-shadow:0 0 6px rgba(0,255,136,.4);}
+#invitacion{left:50%;transform:translateX(-50%);top:58px;display:none;background:var(--panel);border:1px solid #7dd3fc;border-radius:8px;padding:8px 10px;text-align:center;z-index:5;box-shadow:0 0 16px rgba(125,211,252,.35);}
+#invitacion span{display:block;font-family:system-ui,sans-serif;font-size:12px;margin-bottom:6px;}
+#invitacion .btn{margin:0 3px;}
+.oacc{display:none;gap:4px;margin-top:4px;}
+.oacc .bt{font-size:6px;padding:4px 6px;}
+#emotes{left:50%;transform:translateX(-50%);top:36%;pointer-events:none!important;text-align:center;width:92%;}
+#emotes div{font-size:9px;color:#ffae00;text-shadow:1px 1px 0 #000,0 0 8px #000,0 0 14px rgba(255,120,0,.6);margin:4px 0;animation:av 3.2s forwards;line-height:1.6;}
+#hud.estrecho #emotes div{font-size:7px;}
+#errores{left:50%;transform:translateX(-50%);top:28%;pointer-events:none!important;text-align:center;}
+#errores div{font-size:8px;color:#ff3344;text-shadow:1px 1px 0 #000,0 0 6px #000;margin:3px 0;animation:av 1.6s forwards;white-space:nowrap;}
 .ranuras{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
 .ranura{border:2px solid rgba(255,255,255,.15);border-radius:8px;background:rgba(0,0,0,.35);aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:2px;}
 .ranura img{width:60%;image-rendering:pixelated;}
@@ -95,9 +169,29 @@ html,body{height:100%;background:var(--bg);color:#fff;font-family:'Press Start 2
 .dia small{font-family:system-ui,sans-serif;font-size:9px;color:rgba(255,255,255,.6);line-height:1.2;}
 .dia.hecho{opacity:.45;}
 .dia.hoy{border-color:var(--verde);background:rgba(0,255,136,.12);box-shadow:0 0 12px rgba(0,255,136,.35);}
+/* mapa del mundo */
+.mapa-mundo{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;}
+.zm{border:1px solid;border-radius:8px;padding:8px;background:rgba(0,0,0,.3);display:flex;flex-direction:column;gap:4px;}
+.zm b{font-size:8px;line-height:1.4;}
+.zm small{font-family:system-ui,sans-serif;font-size:11px;color:rgba(255,255,255,.65);}
+.zm i{font-style:normal;font-size:7px;}
+.zm.aqui{box-shadow:0 0 12px rgba(255,230,0,.45);background:rgba(255,230,0,.08);}
+@media (max-width:520px){.mapa-mundo{grid-template-columns:1fr;}}
+/* eleccion de clase y libro de hechizos */
+.clases{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.clase{border:2px solid rgba(255,255,255,.12);border-radius:10px;padding:10px;background:rgba(0,0,0,.35);cursor:pointer;display:flex;flex-direction:column;gap:6px;text-align:left;}
+.clase:hover,.clase.sel{border-color:var(--c);box-shadow:0 0 14px rgba(255,255,255,.15);}
+.clase .cab{display:flex;gap:8px;align-items:center;}
+.clase .cab img{width:36px;height:36px;image-rendering:pixelated;}
+.clase .cab b{font-size:10px;color:var(--c);display:block;margin-bottom:4px;}
+.clase .cab small{font-size:6px;color:rgba(255,255,255,.6);line-height:1.5;}
+.clase p{font-size:12px!important;}
+.clase .habs{display:flex;gap:3px;flex-wrap:wrap;}
+.clase .habs img{width:22px;height:22px;image-rendering:pixelated;border:1px solid rgba(255,255,255,.15);border-radius:3px;}
+@media (max-width:520px){.clases{grid-template-columns:1fr;}.clase p{display:none;}}
 
 /* chat */
-#chat{left:8px;bottom:8px;width:min(340px,48%);}
+#chat{left:8px;bottom:10px;width:min(320px,42%);}
 #chat-log{font-family:system-ui,-apple-system,Segoe UI,sans-serif;font-size:12px;line-height:1.35;max-height:118px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;text-shadow:1px 1px 0 #000,0 0 3px #000;pointer-events:none;margin-bottom:4px;}
 #chat-log div{word-break:break-word;}
 #chat-log b{color:var(--cian);font-weight:600;}
@@ -111,7 +205,7 @@ html,body{height:100%;background:var(--bg);color:#fff;font-family:'Press Start 2
 @keyframes av{0%{opacity:0;transform:translateY(-6px)}8%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}
 
 /* interaccion */
-#interactuar{left:50%;transform:translateX(-50%);bottom:70px;display:none;font-size:9px;}
+#interactuar{right:10px;bottom:12px;display:none;font-size:9px;}
 
 /* controles tactiles: fila 1 = poderes + accion + chat, fila 2 = mover / saltar / atacar */
 #tactil{display:none;width:100%;flex:0 0 auto;flex-direction:column;gap:10px;padding:8px 12px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(20,8,40,.6),rgba(20,8,40,.95));border-top:1px solid rgba(192,132,252,.2);}
@@ -122,15 +216,17 @@ html,body{height:100%;background:var(--bg);color:#fff;font-family:'Press Start 2
 .tc.chico{width:40px;height:40px;font-size:14px;}
 #t-izq,#t-der{display:flex;gap:8px;align-items:center;}
 body.tactil #tactil{display:flex;}
-body.tactil #t-fila1 #poderes{position:static;display:flex;gap:5px;}
-body.tactil #t-fila1 .pw{width:42px;height:42px;}
-body.tactil #t-fila1 .pw img{width:28px;height:28px;}
-body.tactil #t-fila0{display:none;justify-content:flex-end;}
-body.tactil #t-fila0 #habs{position:static;gap:6px;}
-body.tactil #t-fila0 .pw{width:44px;height:44px;}
-body.tactil #t-fila0 .pw img{width:28px;height:28px;}
+body.tactil #t-fila1 #consumibles{position:static;display:flex;gap:5px;}
+body.tactil #t-fila1 .pw{width:40px;height:40px;}
+body.tactil #t-fila1 .pw img{width:26px;height:26px;}
+body.tactil #t-fila0{display:flex;justify-content:center;}
+body.tactil #t-fila0 #acciones{position:static;gap:5px;}
+body.tactil #t-fila0 .pw{width:40px;height:40px;}
+body.tactil #t-fila0 .pw img{width:26px;height:26px;}
+body.tactil #t-fila0 #acciones{gap:4px;}
 body.tactil #t-fila1 #interactuar{position:static;transform:none;font-size:7px;padding:10px 7px;}
-body.tactil #chat{width:70%;bottom:6px;}
+body.tactil #chat{width:70%;bottom:12px;}
+body.tactil #lanzar{bottom:16px;}
 
 /* modales */
 .modal{position:fixed;inset:0;background:rgba(3,0,10,.8);display:none;align-items:center;justify-content:center;z-index:50;padding:12px;}
@@ -165,8 +261,6 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
 #carga .barra{width:220px;}
 #carga .barra>i{background:linear-gradient(90deg,#7c3aed,#00ff88);}
 @media (max-width:600px){
-  #stat{min-width:150px;padding:5px 7px;}
-  #mapa-nom{top:auto;bottom:calc(100% - 40px);display:none;}
   .bt{padding:6px 6px;font-size:8px;}
   #chat{width:62%;}
   #chat-log{font-size:11px;max-height:80px;}
@@ -186,18 +280,38 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
   <div id="escena">
     <canvas id="gc"></canvas>
     <div id="hud">
-      <div class="caja" id="stat">
-        <div class="nom"><span id="h-nombre">—</span><span id="h-nivel">Nv 1</span></div>
-        <div class="barra" id="bhp"><i style="width:100%"></i><span id="h-hp">100/100</span></div>
-        <div class="barra" id="bxp"><i style="width:0%"></i><span id="h-xp">0%</span></div>
-        <div class="oro"><img src="/assets/ui/coin.png" alt=""><span id="h-oro">0</span><span id="h-mton-c" class="mton" title="Tu mTON (1.000 = 1 TON)">💎 <span id="h-mton">0 mTON</span></span></div>
-        <div id="h-mision"></div>
-        <div id="h-mundial"></div>
+      <div class="caja uf" id="uf-yo">
+        <div class="ret"><img id="ret-yo" src="/assets/skins/skin_hero.png" alt=""><b id="h-nivel">1</b></div>
+        <div class="cu">
+          <div class="nm"><span id="h-nombre">—</span><small id="h-clase"></small></div>
+          <div class="barra hp" id="bhp"><i style="width:100%"></i><span id="h-hp">100/100</span></div>
+          <div class="barra rc" id="brec"><i style="width:100%"></i><span id="h-rec"></span></div>
+          <div class="cps" id="h-combo"></div>
+          <div class="auras" id="au-yo"></div>
+        </div>
       </div>
+      <div class="caja" id="monedero"><img src="/assets/ui/coin.png" alt=""><span id="h-oro">0</span><span id="h-mton-c" class="mton" title="Tu mTON (1.000 = 1 TON)">💎 <span id="h-mton">0 mTON</span></span></div>
+      <div class="caja uf" id="uf-obj">
+        <div class="ret"><canvas id="ret-obj" width="64" height="64"></canvas><b id="o-nivel">1</b></div>
+        <div class="cu">
+          <div class="nm"><span id="o-nombre">—</span><small id="o-tipo"></small></div>
+          <div class="barra hp" id="ohp"><i style="width:100%"></i><span id="o-hp"></span></div>
+          <div class="barra rc" id="orec"><i style="width:100%"></i><span id="o-rec"></span></div>
+          <div class="barra castm" id="ocast"><i style="width:0%"></i><span id="o-cast"></span></div>
+          <div class="auras" id="au-obj"></div>
+          <div class="oacc" id="o-acc"><button class="bt" id="o-invitar">➕ GRUPO</button><button class="bt" id="o-herm">🛡️</button><button class="bt" id="o-susurrar">💬</button></div>
+        </div>
+      </div>
+      <div class="caja" id="grupo"></div>
+      <div class="caja" id="invitacion"><span id="inv-txt"></span><button class="btn" id="inv-si">ACEPTAR</button><button class="btn sec" id="inv-no">RECHAZAR</button></div>
       <div class="caja" id="minimapa"><canvas id="mini" width="170" height="26"></canvas></div>
+      <div class="caja" id="seguimiento"><div id="h-mision"></div><div id="h-mundial"></div></div>
       <div class="caja" id="mapa-nom"><span id="h-mapa">—</span><small id="h-mapa-sub"></small></div>
       <div class="caja" id="botones">
-        <button class="bt" id="b-regreso" title="Volver al pueblo (R)">🌀</button>
+        <button class="bt" id="b-libro" title="Hechizos y clase (P)">📖</button>
+        <button class="bt" id="b-mapa" title="Mapa del mundo (M)">🗺️</button>
+        <button class="bt" id="b-social" title="Grupo, jugadores y hermandad (O)">👥</button>
+        <button class="bt" id="b-regreso" title="Piedra de Hogar: volver al pueblo (R)">🌀</button>
         <button class="bt" id="b-inv" title="Inventario (I)">🎒</button>
         <button class="bt" id="b-wallet" title="mTON y retiros">💎</button>
         <button class="bt" id="b-rank" title="Ranking">🏆</button>
@@ -207,12 +321,15 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
       </div>
       <div class="caja" id="jefe-bar"><div class="n" id="jefe-n">JEFE</div><div class="barra"><i style="width:100%"></i></div></div>
       <div class="caja" id="avisos"></div>
+      <div class="caja" id="errores"></div>
+      <div class="caja" id="emotes"></div>
       <div class="caja" id="chat"><div id="chat-log"></div><input id="chat-in" maxlength="120" placeholder="Escribe y pulsa Enter…" autocomplete="off"></div>
       <button class="caja btn" id="interactuar">E · ENTRAR</button>
-      <div class="caja" id="poderes"></div>
-      <div class="caja" id="habs"></div>
+      <div class="caja" id="lanzar"><div class="barra"><i style="width:0%"></i><span id="lanzar-t"></span></div></div>
+      <div class="caja barra" id="bxp"><i style="width:0%"></i><span id="h-xp"></span></div>
     </div>
   </div>
+  <div id="pie"><div id="barra"><div id="acciones"></div><div id="consumibles"></div></div></div>
   <div id="tactil">
     <div class="tf" id="t-fila0"></div>
     <div class="tf" id="t-fila1">
@@ -236,7 +353,7 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
 <div class="modal" id="m-inicio">
   <div class="ventana centro">
     <h2>⚔️ DUENDE QUEST ONLINE ⚔️</h2>
-    <p>Explora 10 zonas hasta el nivel 60 con otros jugadores: caza monstruos, consigue equipo legendario, aprende habilidades y derrota al jefe mundial cada 30 minutos.</p>
+    <p>Elige tu clase, forma grupo con otros jugadores y entra a mazmorras con jefes que hay que esquivar e interrumpir. Hermandades, monturas, equipo legendario y 10 zonas hasta el nivel 60.</p>
     <div id="inicio-invitado">
       <input class="nombre" id="in-nombre" maxlength="16" placeholder="Nombre de tu duende">
       <button class="btn" id="b-jugar" style="width:100%;padding:14px;font-size:10px">▶ ENTRAR AL MUNDO</button>
@@ -261,6 +378,7 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
       <button class="tab" data-tab="arma">ARMAS</button>
       <button class="tab" data-tab="forja">FORJA</button>
       <button class="tab" data-tab="skin">SKINS</button>
+      <button class="tab" data-tab="montura">🐎 MONTURAS</button>
       <button class="tab" data-tab="premium">⭐ PREMIUM</button>
     </div>
     <div class="lista" id="tienda-lista"></div>
@@ -309,11 +427,20 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
     <h2 id="ayuda-t">❔ CÓMO SE JUEGA</h2>
     <ul style="padding-left:18px" id="ayuda-lista">
       <li><b>Moverse:</b> ← → o A / D · <b>Saltar:</b> ↑, W o Espacio (doble salto)</li>
-      <li><b>Atacar:</b> Z o J (combo de 3 golpes) · <b>Dash:</b> X o K</li>
-      <li><b>Poderes:</b> 1 Poción · 2 Escudo · 3 Rayo · 4 Fuego</li>
-      <li><b>Habilidades</b> (se aprenden solas): C Torbellino (Nv 10) · V Estocada (Nv 20) · B Meteoros (Nv 30) · N Furia (Nv 45)</li>
+      <li><b>Ataque básico:</b> Z o J (combo de 3 golpes; magos y sacerdotes disparan con la vara) · <b>Dash:</b> X o K</li>
+      <li><b>Clases:</b> Guerrero (tanque, Ira), Mago (daño a distancia, Maná), Sacerdote (sanador, Maná) y Pícaro (daño cuerpo a cuerpo, Energía y puntos de combo). Se elige al entrar; cambiarla es gratis hasta Nv 10 (📖).</li>
+      <li><b>Habilidades:</b> teclas <b>1-8</b> o la barra de acción. Comparten 1 s de tiempo global; las que tienen lanzamiento se cancelan si te mueves. Se aprenden solas al subir de nivel.</li>
+      <li><b>Objetivo:</b> toca o haz clic en un monstruo (o en otro jugador para curarlo). <b>Tab</b> cambia al enemigo más cercano y <b>Esc</b> lo quita. Si no eliges ninguno, las habilidades apuntan solas al enemigo más cercano.</li>
+      <li><b>Amenaza:</b> los monstruos atacan a quien más los enfureció. El guerrero genera el doble y puede <b>Provocar</b>; curar también enfurece.</li>
+      <li><b>Consumibles:</b> Q Poción · F Escudo · G Rayo · T Fuego</li>
+      <li><b>Especializaciones:</b> desde Nv 10 cada clase elige una de dos en 📖 (Armas o Protección, Fuego o Escarcha, Sagrado o Sombras, Asesinato o Combate). Se cambia gratis fuera de combate.</li>
+      <li><b>🐎 Monturas:</b> el Mercader las vende desde Nv 20. Tecla <b>Y</b> o el botón 🐎 para montar (1,5 s, fuera de combate): corres mucho más rápido. Atacar o recibir un golpe te baja. <b>Mapa del mundo:</b> tecla M o 🗺️.</li>
       <li><b>Entrar a portales / hablar:</b> E o ↑ encima</li>
-      <li><b>Chat:</b> Enter · <b>Inventario:</b> I · <b>Volver al pueblo:</b> R o 🌀 (fuera de combate)</li>
+      <li><b>Grupos:</b> toca a otro jugador y pulsa ➕ en su marco, o usa 👥 (tecla O). En grupo compartís la experiencia y las misiones de cada presa (+10% por miembro), veis la vida de todos y el sacerdote puede curar a cualquiera tocando su marco.</li>
+      <li><b>🏰 Mazmorras:</b> el portal de mazmorras del pueblo (junto al Guardia Tito) abre el buscador. Son copias privadas para tu grupo (o para ti solo, se ajustan) con packs de monstruos agresivos y 3 jefes con mecánicas: sal de las zonas marcadas en el suelo, interrumpe los hechizos con barra naranja y cuidado con sus esbirros. Cada jefe da equipo y la primera de cada día trae un premio extra.</li>
+      <li><b>🛡️ Hermandades:</b> tu clan, con chat propio (/h) y su nombre bajo el tuyo. Fúndala desde 👥 → HERMANDAD (nivel 10 y 5.000 oro) o pide que te inviten.</li>
+      <li><b>Chat:</b> Enter. Sin nada delante habla a todo el servidor; <b>/d</b> solo a tu mapa, <b>/g</b> a tu grupo, <b>/h</b> a tu hermandad, <b>/s Nombre</b> susurra y <b>/r</b> responde.</li>
+      <li><b>Inventario:</b> I · <b>Hechizos:</b> P · <b>Piedra de Hogar:</b> R o 🌀 (6 s quieto y sin recibir golpes)</li>
       <li>Los hechiceros, magos y algunos jefes lanzan <b>bolas de fuego</b>: salta o apártate de su línea.</li>
       <li>El <b>Guardia Tito</b> del pueblo te da una cadena de 40 misiones que recorre las 10 zonas (hasta los Acantilados Mágicos y su Dragón Ancestral): entrégaselas para cobrar experiencia, oro y poderes.</li>
       <li><b>Equipo:</b> los monstruos sueltan cascos, armaduras, botas, anillos y amuletos (los jefes siempre). Hay 4 rarezas: <span style="color:#d0d0d0">común</span>, <span style="color:#33aaff">raro</span>, <span style="color:#c084fc">épico</span> y <span style="color:#ffae00">legendario</span>. Equípalos o véndelos en 🎒 → EQUIPO.</li>
@@ -359,11 +486,63 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
   </div>
 </div>
 
+<!-- Elegir clase -->
+<div class="modal" id="m-clase">
+  <div class="ventana">
+    <button class="bt cerrar" data-cerrar id="clase-cerrar">✕</button>
+    <h2>⚔️ ELIGE TU CLASE</h2>
+    <p class="centro" id="clase-txt" style="margin-bottom:10px">Cada clase juega distinto y cumple un papel en el grupo: el tanque aguanta, el sanador cura y los demás hacen daño.</p>
+    <div class="clases" id="clases"></div>
+  </div>
+</div>
+
+<!-- Social: grupo, jugadores en linea, hermandad -->
+<div class="modal" id="m-social">
+  <div class="ventana">
+    <button class="bt cerrar" data-cerrar>✕</button>
+    <h2>👥 SOCIAL</h2>
+    <div class="tabs">
+      <button class="tab on" data-stab="grupo">GRUPO</button>
+      <button class="tab" data-stab="online">EN LÍNEA</button>
+      <button class="tab" data-stab="hermandad">HERMANDAD</button>
+    </div>
+    <div class="lista" id="social-lista"></div>
+  </div>
+</div>
+
+<!-- Mapa del mundo -->
+<div class="modal" id="m-mapa">
+  <div class="ventana">
+    <button class="bt cerrar" data-cerrar>✕</button>
+    <h2>🗺️ MAPA DEL MUNDO</h2>
+    <div id="mapa-lista"></div>
+  </div>
+</div>
+
+<!-- Buscador de mazmorras -->
+<div class="modal" id="m-mazmorras">
+  <div class="ventana">
+    <button class="bt cerrar" data-cerrar>✕</button>
+    <h2>🏰 MAZMORRAS</h2>
+    <div class="lista" id="maz-lista"></div>
+  </div>
+</div>
+
+<!-- Libro de hechizos -->
+<div class="modal" id="m-libro">
+  <div class="ventana">
+    <button class="bt cerrar" data-cerrar>✕</button>
+    <h2 id="libro-t">📖 HECHIZOS</h2>
+    <div class="lista" id="libro-lista"></div>
+  </div>
+</div>
+
 <!-- Muerte -->
 <div class="modal" id="m-muerte">
   <div class="ventana centro">
     <h2 style="color:#ff3344">💀 HAS CAÍDO</h2>
     <p>Pierdes un 5% de la experiencia de tu nivel. Los amigos del pueblo te curarán.</p>
+    <p style="margin-top:8px;color:#ffe600">✝ Si hay un sacerdote cerca, puede resucitarte aquí mismo: espera en vez de volver.</p>
     <button class="btn" id="b-revivir" style="margin-top:14px;padding:14px;font-size:10px;width:100%">↺ REVIVIR EN EL PUEBLO</button>
   </div>
 </div>
@@ -380,6 +559,6 @@ input.nombre{width:100%;font-family:inherit;font-size:11px;padding:12px;border-r
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=22"></script>
+<script type="module" src="/mmo/js/client.js?v=27"></script>
 </body>
 </html>

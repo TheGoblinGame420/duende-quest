@@ -15,13 +15,17 @@
 import {
   MAPAS, MONSTRUOS, statsMonstruo, statsJugador, xpParaSubir, SKINS, ARMAS, PODERES, MISIONES, DIARIA, premioDiaria, hoyUTC,
   FORJA_MAX, costoForja, multForja,
-  RANURAS, RAREZAS, BOLSA_MAX, baseItem, precioVenta, nombreItem, HABILIDADES, FURIA_MS,
+  RANURAS, RAREZAS, BOLSA_MAX, baseItem, precioVenta, nombreItem,
   LOGIN_PREMIOS, multLogin, LOGROS, MUNDIAL_DURA_MS, proximoMundial,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, MTON_EDAD_MIN_MS, WALLET_ESPERA_MS, FONDO_REFERENCIA_MTON, tonAmigable,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, FONDO_PCT_INGRESOS, PAQUETES, estrellasDe, PEDIDO_VIGENCIA_MS,
-  ATAQUE_CD_MS, ALCANCE_BASE, COMBO_MULT, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre,
+  SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura,
 } from '../../mmo/js/data.js';
 import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery, tg, getSolPriceUsd, SOL_DEV_WALLET } from '../api/lib.js';
+import { Combate } from './combate.js';
+import { Social, pub } from './social.js';
+import { Mazmorras } from './mazmorras.js';
+import { Hermandades } from './hermandades.js';
 
 const MAX_JUGADORES = 300;
 const GUARDAR_CADA_MS = 20000;
@@ -31,6 +35,9 @@ const ESCUDO_MS = 5000;
 const FUEGO_MS = 8000;
 const INVULNERABLE_GOLPE_MS = 900;
 const INACTIVO_MS = 10 * 60 * 1000;
+const EVASION = HABS.find(h => h.id === 'evasion').esquiva;
+const REDUCE_MURO = HABS.find(h => h.id === 'muro').reduce;
+const REDUCE_SUPRESION = HABS.find(h => h.id === 'supresion').reduce;
 // Bots de las pruebas en produccion (sus tokens de invitado son fijos): juegan
 // de verdad pero no deben aparecer en el ranking de los jugadores reales.
 const UIDS_PRUEBA = new Set(['inv:db4c11dc0a66af5e7b009f14', 'inv:145ca8bcf50bad57e9077518']);
@@ -54,6 +61,7 @@ function personajeNuevo(uid, nombre) {
     mis: { i: 0, p: 0 },
     eq: {}, bolsa: [], logros: [], titulo: '', mundiales: 0, login: null,
     mton: 0, mtonTotal: 0, wallet: null,
+    clase: null, herm: null,
   };
 }
 
@@ -88,8 +96,11 @@ export class MmoWorld {
     this.env = env;
     this.sesiones = new Map();          // id de sesion -> sesion
     this.porUid = new Map();            // uid -> sesion
+    // Cada "clave" es un mundo vivo con sus monstruos: un mapa abierto
+    // ('noche') o una instancia privada de mazmorra ('cripta#a1b2'). Los
+    // jugadores llevan la suya en s.k y los monstruos en o.cl.
     this.mundo = {};
-    for (const id in MAPAS) this.mundo[id] = { mons: new Map(), balas: [], jefeEn: 0, spawnEn: 0 };
+    for (const id in MAPAS) if (!MAPAS[id].instancia) this.mundoK(id);
     this.sigBala = 1;
     this.sigSesion = 1;
     this.sigMon = 1;
@@ -165,7 +176,10 @@ export class MmoWorld {
     this.sesiones.delete(s.id);
     if (s.c) {
       if (this.porUid.get(s.c.uid) === s) this.porUid.delete(s.c.uid);
-      this.aMapa(s.c.mapa, { t: 'pl', id: s.id }, s);
+      this.desconectarDeGrupo(s);
+      this.aClave(s.k, { t: 'pl', id: s.id }, s);
+      this.olvidar(s);
+      this.salirDeMundo(s);
       await this.guardar(s);
     }
     if (this.contarOnline() === 0 && this.bucle) { clearInterval(this.bucle); this.bucle = null; }
@@ -176,10 +190,30 @@ export class MmoWorld {
     try { s.ws.send(typeof obj === 'string' ? obj : JSON.stringify(obj)); } catch (e) {}
   }
 
-  aMapa(mapa, obj, excepto) {
+  // A todos los que estan en el mismo mundo (mapa abierto o instancia).
+  aClave(clave, obj, excepto) {
     const txt = JSON.stringify(obj);
-    for (const s of this.sesiones.values()) if (s.c && s.c.mapa === mapa && s !== excepto) this.enviar(s, txt);
+    for (const s of this.sesiones.values()) if (s.c && s.k === clave && s !== excepto) this.enviar(s, txt);
   }
+
+  mundoK(clave) {
+    let w = this.mundo[clave];
+    if (!w) w = this.mundo[clave] = { clave, mapa: clave.split('#')[0], mons: new Map(), balas: [], jefeEn: 0, spawnEn: 0 };
+    return w;
+  }
+  mundoDe(s) { return this.mundoK(s.k); }
+
+  // Los monstruos se olvidan de quien muere, se va o se desconecta.
+  olvidar(s) {
+    const w = this.mundo[s.k];
+    if (!w) return;
+    for (const o of w.mons.values()) {
+      o.amen.delete(s.id);
+      if (o.au.provoca && o.au.provoca.sid === s.id) delete o.au.provoca;
+    }
+  }
+  // Gancho para las instancias (mazmorras): se sobreescribe en su modulo.
+  salirDeMundo(s) {}
 
   aTodos(obj) {
     const txt = JSON.stringify(obj);
@@ -202,6 +236,25 @@ export class MmoWorld {
     switch (m.t) {
       case 'mv': return this.mover(s, m);
       case 'atk': return this.atacar(s, m);
+      case 'clase': return this.elegirClase(s, m);
+      case 'espec': return this.elegirEspec(s, m);
+      case 'montar': return this.montar(s);
+      case 'invitar': return this.invitar(s, m);
+      case 'grupoResp': return this.respuestaGrupo(s, m);
+      case 'salirGrupo': return this.salirGrupo(s);
+      case 'expulsarGrupo': return this.expulsarGrupo(s, m);
+      case 'liderGrupo': return this.liderGrupo(s, m);
+      case 'quien': return this.quien(s);
+      case 'mazmorra': return this.entrarMazmorra(s, m);
+      case 'hermCrear': return this.crearHermandad(s, m);
+      case 'hermInvitar': return this.invitarHerm(s, m);
+      case 'hermResp': return this.respuestaHerm(s, m);
+      case 'hermSalir': return this.salirHerm(s);
+      case 'hermExpulsar': return this.expulsarHerm(s, m);
+      case 'hermRango': return this.rangoHerm(s, m);
+      case 'hermMotd': return this.motdHerm(s, m);
+      case 'herm': return this.verHerm(s);
+      case 'cancelar': return this.cancelarCast(s);
       case 'pw': return this.poder(s, m);
       case 'portal': return this.portal(s, m);
       case 'chat': return this.chat(s, m);
@@ -294,7 +347,10 @@ export class MmoWorld {
     c.mton = c.mton || 0; c.mtonTotal = c.mtonTotal || 0; c.wallet = c.wallet || null;
     c.eq = c.eq || {}; c.bolsa = c.bolsa || []; c.logros = c.logros || []; c.titulo = c.titulo || ''; c.mundiales = c.mundiales || 0;
     for (const p of PODERES) if (typeof c.pw[p.id] !== 'number') c.pw[p.id] = 0;
-    if (!MAPAS[c.mapa]) c.mapa = 'pueblo';
+    if (!Object.hasOwn(CLASES, c.clase || '')) c.clase = null;
+    // Las mazmorras son instancias que no sobreviven a una desconexion: se
+    // vuelve a la puerta (en el pueblo).
+    if (!MAPAS[c.mapa] || MAPAS[c.mapa].instancia) { c.mapa = 'pueblo'; c.x = MAPAS.pueblo.spawn; }
 
     // Skins pagadas con dinero real en el juego principal: se regalan aqui.
     const extra = pagadas ? await this.skinsPagadas(env, pagadas) : [];
@@ -314,9 +370,12 @@ export class MmoWorld {
     }
     s.muerto = false;
     s.golpeT = 0;
+    s.k = c.mapa;
     s.x = clamp(c.x || 200, 20, MAPAS[c.mapa].ancho - 20);
     s.y = SUELO; s.f = 1; s.a = 0;
-    s.movT = Date.now(); s.atkT = 0; s.chatT = 0; s.cdPw = {}; s.cdHab = {}; s.inv = 0; s.escudo = 0; s.fuego = 0; s.furia = 0; s.auraT = 0;
+    s.movT = Date.now(); s.atkT = 0; s.chatT = 0; s.cdPw = {}; s.cdHab = {}; s.inv = 0; s.escudo = 0; s.fuego = 0; s.auraT = 0;
+    s.au = {}; s.combo = 0; s.cast = null; s.gcdHasta = 0; s.combateT = 0; s.gastoT = 0; s.cdHogar = 0;
+    this.recursoInicial(s);
     s.sucio = true; s.guardadoT = Date.now(); s.actT = Date.now();
     this.porUid.set(uid, s);
     const login = this.procesarLogin(s);
@@ -326,6 +385,9 @@ export class MmoWorld {
     if (login) this.enviar(s, { t: 'login', ...login });
     this.enviar(s, this.estadoMundial());
     this.entrarMapa(s, c.mapa, s.x, true);
+    this.reengancharGrupo(s);
+    await this.cargarHermandadDe(s);
+    if (c.herm) this.refrescarApariencia(s);
     this.revisarLogros(s);
     if (!this.bucle) this.bucle = setInterval(() => this.tick(), TICK_MS);
   }
@@ -348,7 +410,7 @@ export class MmoWorld {
     return [];
   }
 
-  stats(c) { return statsJugador(c.nivel, c.skin, c.eq); }
+  stats(c) { return statsJugador(c.nivel, c.skin, c.eq, c.clase, c.espec); }
 
   // ── mTON / PLAY TO EARN ──
   // Quien puede ganar: cuenta real (Telegram o web, no invitado), Nv 15+ y
@@ -751,6 +813,8 @@ export class MmoWorld {
       arma: c.arma, armas: c.armas, skin: c.skin, skins: c.skins, pw: c.pw,
       kills: c.kills, jefes: c.jefes, muerto: s.muerto, mis: c.mis, forja: c.forja,
       eq: c.eq, bolsa: c.bolsa, logros: c.logros, titulo: c.titulo, mundiales: c.mundiales, login: c.login, crit: s.st.crit,
+      clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, herm: c.herm || null, pid: pub(c.uid),
+      espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, montado: s.montado || null,
       mton: c.mton, wallet: c.wallet ? { a: tonAmigable(c.wallet.a), desde: c.wallet.desde } : null,
       p2e: this.elegibilidad(c), creado: c.creado,
       retiros: this.retiros.filter(x => x.uid === c.uid).slice(-5).map(x => ({ id: x.id, ton: x.ton, estado: x.estado, creado: x.creado })),
@@ -762,13 +826,23 @@ export class MmoWorld {
   actualizarYo(s) { this.enviar(s, { t: 'yo', yo: this.datosPropios(s) }); }
 
   infoJugador(s) {
-    return { id: s.id, n: s.c.nombre, lv: s.c.nivel, sk: s.c.skin, ar: s.c.arma, ti: this.textoTitulo(s.c), x: Math.round(s.x), y: Math.round(s.y), f: s.f, hp: Math.ceil(s.hp), mx: s.st.maxHp, muerto: s.muerto };
+    return { ...this.infoApariencia(s), n: s.c.nombre, lv: s.c.nivel, x: Math.round(s.x), y: Math.round(s.y), f: s.f, hp: Math.ceil(s.hp), muerto: s.muerto, au: this.aurasVivas(s.au) };
+  }
+  // Lo que cambia al equiparse o elegir clase (mensaje 'pa').
+  infoApariencia(s) {
+    return { p: s.id, id: s.id, sk: s.c.skin, ar: s.c.arma, mx: s.st.maxHp, ti: this.textoTitulo(s.c), cl: s.c.clase || '', rmx: s.st.recMax, hn: this.nombreHermandad(s.c.herm), mo: s.montado || '', es: s.c.espec || '' };
+  }
+  // Auras con su tiempo restante, para quien llega al mapa y no vio cuando se pusieron.
+  aurasVivas(au) {
+    const r = {}, ahora = Date.now();
+    for (const a in (au || {})) if (au[a].hasta > ahora) r[a] = au[a].hasta === Infinity ? -1 : au[a].hasta - ahora;
+    return r;
   }
   textoTitulo(c) { const L = LOGROS.find(x => x.id === c.titulo); return L ? L.titulo : '';
   }
 
   infoMonstruo(m) {
-    return { id: m.id, k: m.k, x: Math.round(m.x), y: Math.round(m.y), f: m.f, hp: Math.ceil(m.hp), mx: m.max, st: this.codigoEstado(m) };
+    return { id: m.id, k: m.k, x: Math.round(m.x), y: Math.round(m.y), f: m.f, hp: Math.ceil(m.hp), mx: m.max, st: this.codigoEstado(m), au: this.aurasVivas(m.au), nv: m.nv || undefined };
   }
 
   codigoEstado(m) {
@@ -780,29 +854,30 @@ export class MmoWorld {
   }
 
   // ── MAPAS ──
-  entrarMapa(s, mapaId, x, primeraVez) {
-    const antes = s.c.mapa;
-    if (!primeraVez) this.aMapa(antes, { t: 'pl', id: s.id }, s);
+  // clave = mundo vivo (por defecto el mismo id del mapa; las mazmorras
+  // pasan una clave de instancia propia).
+  entrarMapa(s, mapaId, x, primeraVez, clave) {
+    const k = clave || mapaId;
+    if (!primeraVez) {
+      this.cancelarCast(s);
+      this.aClave(s.k, { t: 'pl', id: s.id }, s);
+      this.olvidar(s);
+      if (s.k !== k) this.salirDeMundo(s, k);
+    }
+    if (s.montado && (k.includes('#') || mapaId === 'coliseo')) s.montado = null;
     s.c.mapa = mapaId;
+    s.k = k;
     s.x = clamp(x, 20, MAPAS[mapaId].ancho - 20);
     s.y = SUELO;
     s.movT = Date.now();
     s.sucio = true;
-    const w = this.mundo[mapaId];
+    const w = this.mundoK(k);
     if (MAPAS[mapaId].jefe && !w.jefeEn) w.jefeEn = Date.now() + JEFE_PRIMERO_MS;
     const jugadores = [];
-    for (const o of this.sesiones.values()) if (o.c && o !== s && o.c.mapa === mapaId) jugadores.push(this.infoJugador(o));
-    this.enviar(s, { t: 'mapa', mapa: mapaId, x: Math.round(s.x), jugadores, mons: [...w.mons.values()].map(m => this.infoMonstruo(m)) });
-    this.aMapa(mapaId, { t: 'pj', p: this.infoJugador(s) }, s);
-  }
-
-  // Volver al pueblo desde cualquier zona (antes habia que desandar todas
-  // las anteriores a pie). Solo fuera de combate, para que no sirva de huida.
-  regreso(s) {
-    if (s.muerto || s.c.mapa === 'pueblo') return;
-    if (Date.now() - (s.golpeT || 0) < 8000) return this.enviar(s, { t: 'toast', m: 'No puedes volver en pleno combate: aléjate unos segundos.' });
-    this.entrarMapa(s, 'pueblo', MAPAS.pueblo.spawn);
-    this.guardar(s);
+    for (const o of this.sesiones.values()) if (o.c && o !== s && o.k === k) jugadores.push(this.infoJugador(o));
+    this.enviar(s, { t: 'mapa', mapa: mapaId, clave: k, x: Math.round(s.x), jugadores, mons: [...w.mons.values()].map(m => this.infoMonstruo(m)),
+      muros: w.muros || [], inst: w.inst ? { id: w.inst.id, nv: w.inst.nv, hechos: w.inst.hechos } : null });
+    this.aClave(k, { t: 'pj', p: this.infoJugador(s) }, s);
   }
 
   portal(s, m) {
@@ -810,6 +885,9 @@ export class MmoWorld {
     const mapa = MAPAS[s.c.mapa];
     const p = mapa.portales[m.i | 0];
     if (!p || Math.abs(s.x - p.x) > 90) return;
+    // El portal de mazmorras abre el buscador (el cliente elige cual).
+    if (p.buscador) return this.enviar(s, { t: 'buscador' });
+    // Salir de una mazmorra lleva de vuelta a su puerta del mundo abierto.
     this.entrarMapa(s, p.a, p.ax);
     this.guardar(s);
   }
@@ -820,113 +898,34 @@ export class MmoWorld {
     const x = num(m.x), y = num(m.y);
     if (x === null || y === null) return;
     const ahora = Date.now();
+    // Justo despues de que el servidor lo mueve (Carga), llegan posiciones
+    // viejas que el cliente mando antes de enterarse: se ignoran.
+    if (ahora < (s.snapHasta || 0)) return;
+    // Encerrado en un Bloque de Hielo no se mueve.
+    if (this.aura(s, 'bloque') || this.aura(s, 'aturdido')) { if (Math.abs(x - s.x) > 4) this.enviar(s, { t: 'snap', x: Math.round(s.x), y: Math.round(s.y) }); return; }
     const dt = Math.max(16, ahora - s.movT);
     // Maximo posible: correr + un dash entero + margen por latencia.
-    const maxDx = (FIS.vel * 60 * dt / 1000) + FIS.dashVel * FIS.dashT + 60;
+    const maxDx = (FIS.vel * velMontura(s.montado) * 60 * dt / 1000) + FIS.dashVel * FIS.dashT + 60;
     const ancho = MAPAS[s.c.mapa].ancho;
     if (Math.abs(x - s.x) > maxDx * 1.25) {
       this.enviar(s, { t: 'snap', x: Math.round(s.x), y: Math.round(s.y) });
       s.movT = ahora;
       return;
     }
-    s.x = clamp(x, 10, ancho - 10);
+    // Las barreras de las mazmorras no se cruzan hasta vencer a su jefe.
+    const tope = this.topeMuros(s);
+    if (x > tope) {
+      if (x > tope + 40) this.enviar(s, { t: 'snap', x: Math.round(Math.min(s.x, tope)), y: Math.round(s.y) });
+      m = { ...m, x: Math.min(s.x, tope) };
+    }
+    // Moverse cancela el hechizo que se esta lanzando (como en WoW).
+    if (s.cast && (Math.abs(m.x - s.cast.x) > 6 || Math.abs(y - s.cast.y) > 6)) this.cancelarCast(s, s.cast.h === 'hogar' ? 'Te moviste: la Piedra de Hogar se canceló.' : '');
+    s.x = clamp(m.x, 10, ancho - 10);
     s.y = clamp(y, 40, SUELO);
     s.f = m.f === -1 ? -1 : 1;
     s.a = clamp(m.a | 0, 0, 6);
     s.movT = ahora;
     s.c.x = Math.round(s.x);
-  }
-
-  // ── COMBATE ──
-  atacar(s, m) {
-    if (s.muerto) return;
-    const ahora = Date.now();
-    const arma = ARMAS[s.c.arma] || ARMAS.katana;
-    if (ahora - s.atkT < ATAQUE_CD_MS * arma.cd * 0.8) return;
-    s.atkT = ahora;
-    const paso = clamp(m.s | 0, 0, 2);
-    const alcance = ALCANCE_BASE[paso] * arma.alcance;
-    const alto = 72 * (s.c.arma === 'odachi' ? 1.4 : 1);
-    const x0 = s.f > 0 ? s.x - 8 : s.x - 8 - alcance;
-    const x1 = s.f > 0 ? s.x + 8 + alcance : s.x + 8;
-    const y0 = s.y - alto, y1 = s.y + 8;
-    const w = this.mundo[s.c.mapa];
-    const golpes = [];
-    const maxObjetivos = s.c.arma === 'odachi' ? 6 : 4;
-    const lista = [...w.mons.values()]
-      .filter(o => !o.muere && o.x + o.w / 2 > x0 && o.x - o.w / 2 < x1 && o.y > y0 && o.y - o.h < y1)
-      .sort((a, b) => Math.abs(a.x - s.x) - Math.abs(b.x - s.x))
-      .slice(0, maxObjetivos);
-    let curado = 0;
-    const forja = multForja((s.c.forja || {})[s.c.arma]);
-    for (const o of lista) {
-      const crit = Math.random() < s.st.crit;
-      let dmg = s.st.atk * arma.dano * forja * COMBO_MULT[paso] * rnd(0.9, 1.1) * (crit ? 1.8 : 1) * (ahora < s.fuego ? 1.5 : 1) * (ahora < s.furia ? 1.5 : 1);
-      dmg = Math.max(1, Math.round(dmg));
-      golpes.push([o.id, dmg, crit ? 1 : 0]);
-      curado += dmg;
-      this.danar(o, dmg, s);
-    }
-    // CHISPA: el rayo salta al enemigo mas cercano del primero golpeado.
-    if (s.c.arma === 'chispa' && lista.length) {
-      const pri = lista[0];
-      let otro = null, mejor = 170;
-      for (const o of w.mons.values()) {
-        if (o === pri || o.muere || lista.includes(o)) continue;
-        const d = Math.hypot(o.x - pri.x, o.y - pri.y);
-        if (d < mejor) { mejor = d; otro = o; }
-      }
-      if (otro) {
-        const dmg = Math.max(1, Math.round(s.st.atk * 0.5 * forja * COMBO_MULT[paso]));
-        golpes.push([otro.id, dmg, 2]);
-        this.danar(otro, dmg, s);
-      }
-    }
-    this.robarVida(s, curado);
-    this.aMapa(s.c.mapa, { t: 'at', p: s.id, s: paso, f: s.f, h: golpes });
-  }
-
-  robarVida(s, curado) {
-    const robo = ((SKINS[s.c.skin].buffs || {}).robo || 0) + (Date.now() < s.furia ? 0.15 : 0);
-    if (robo && curado) s.hp = Math.min(s.st.maxHp, s.hp + curado * robo);
-  }
-
-  // ── HABILIDADES ──
-  habilidad(s, m) {
-    if (s.muerto) return;
-    const h = HABILIDADES.find(x => x.id === m.id);
-    if (!h || s.c.nivel < h.nv) return;
-    const ahora = Date.now();
-    if (ahora < (s.cdHab[h.id] || 0)) return;
-    s.cdHab[h.id] = ahora + h.cd;
-    const w = this.mundo[s.c.mapa];
-    const forja = multForja((s.c.forja || {})[s.c.arma]);
-    const golpes = [];
-    let curado = 0;
-    const pegar = (o, mult) => {
-      const crit = Math.random() < s.st.crit;
-      const dmg = Math.max(1, Math.round(s.st.atk * mult * forja * rnd(0.9, 1.1) * (crit ? 1.8 : 1) * (ahora < s.fuego ? 1.5 : 1) * (ahora < s.furia ? 1.5 : 1)));
-      golpes.push([o.id, dmg, crit ? 1 : 4]);
-      curado += dmg;
-      this.danar(o, dmg, s);
-    };
-    const vivos = [...w.mons.values()].filter(o => !o.muere);
-    if (h.id === 'torbellino') {
-      for (const o of vivos) if (Math.abs(o.x - s.x) < 150 + o.w / 2 && Math.abs((o.y - o.h / 2) - (s.y - 30)) < 110) pegar(o, 2.2);
-    } else if (h.id === 'estocada') {
-      for (const o of vivos) {
-        const dx = (o.x - s.x) * s.f;
-        if (dx > -30 && dx < 270 + o.w / 2 && Math.abs((o.y - o.h / 2) - (s.y - 30)) < 110) pegar(o, 3);
-      }
-    } else if (h.id === 'meteoro') {
-      for (const o of vivos) if (Math.abs(o.x - s.x) < 430) pegar(o, o.jefe ? 2.2 : 3.5);
-    } else if (h.id === 'furia') {
-      s.furia = ahora + FURIA_MS;
-    }
-    this.robarVida(s, curado);
-    s.sucio = true;
-    this.aMapa(s.c.mapa, { t: 'hb', p: s.id, id: h.id, f: s.f, h: golpes });
-    this.enviar(s, { t: 'cd', id: 'h_' + h.id, hasta: h.cd });
   }
 
   // ── EQUIPO ──
@@ -956,7 +955,7 @@ export class MmoWorld {
     s.st = this.stats(c);
     s.hp = Math.max(1, Math.min(s.st.maxHp, Math.round(s.st.maxHp * pct)));
     s.sucio = true;
-    this.aMapa(c.mapa, { t: 'pa', p: s.id, sk: c.skin, ar: c.arma, mx: s.st.maxHp, ti: this.textoTitulo(c) });
+    this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });
     this.revisarLogros(s);
     this.actualizarYo(s);
   }
@@ -966,7 +965,7 @@ export class MmoWorld {
     if (m.id !== '' && !(typeof m.id === 'string' && c.logros.includes(m.id))) return;
     c.titulo = m.id;
     s.sucio = true;
-    this.aMapa(c.mapa, { t: 'pa', p: s.id, sk: c.skin, ar: c.arma, mx: s.st.maxHp, ti: this.textoTitulo(c) });
+    this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });
     this.actualizarYo(s);
   }
 
@@ -984,7 +983,7 @@ export class MmoWorld {
       if (M.o.muere) { M.o = null; this.aTodos(this.estadoMundial()); return; }
       if (ahora > M.hasta) {
         this.mundo.coliseo.mons.delete(M.o.id);
-        this.aMapa('coliseo', { t: 'md', id: M.o.id, pr: [], huye: true });
+        this.aClave('coliseo', { t: 'md', id: M.o.id, pr: [], huye: true });
         M.o = null;
         this.aTodos({ t: 'aviso', m: '👹 El Gran Duende Corrupto escapó del Coliseo… vuelve en 30 minutos.' });
         this.aTodos(this.estadoMundial());
@@ -1004,7 +1003,7 @@ export class MmoWorld {
       const n = Math.max(1, this.contarOnline());
       o.hp = o.max = 20000 + 15000 * n;
       M.o = o; M.hasta = ahora + MUNDIAL_DURA_MS;
-      this.aMapa('coliseo', { t: 'ms', m: this.infoMonstruo(o) });
+      this.aClave('coliseo', { t: 'ms', m: this.infoMonstruo(o) });
       this.aTodos({ t: 'aviso', m: '👹 ¡EL GRAN DUENDE CORRUPTO APARECIÓ EN EL COLISEO! Tienes 10 minutos.' });
       this.aTodos(this.estadoMundial());
     }
@@ -1015,7 +1014,7 @@ export class MmoWorld {
     const nombres = [];
     for (const [sid, d] of o.dano) {
       const s = this.sesiones.get(sid);
-      if (!s || !s.c || s.c.mapa !== 'coliseo') continue;
+      if (!s || !s.c || s.k !== 'coliseo') continue;
       const c = s.c;
       const parte = d / total;
       const xp = Math.round(xpParaSubir(c.nivel) * (0.25 + Math.min(0.25, parte)));
@@ -1037,16 +1036,29 @@ export class MmoWorld {
     this.aTodos({ t: 'aviso', m: `🏆 ¡El Gran Duende Corrupto cayó! Héroes: ${nombres.slice(0, 6).join(', ')}${nombres.length > 6 ? ' y ' + (nombres.length - 6) + ' más' : ''}` });
   }
 
-  danar(o, dmg, s) {
-    if (o.muere) return;
+  // amen = multiplicador de amenaza de la habilidad (el guerrero ademas
+  // genera el doble por ser tanque, ver CLASES[].amenaza).
+  danar(o, dmg, s, amen) {
+    if (o.muere) return 0;
+    const ahora = Date.now();
+    // Caparazon (jefes de mazmorra): casi no recibe daño mientras dura.
+    const cap = this.auraMon(o, 'caparazon');
+    if (cap) dmg = Math.max(1, Math.round(dmg * (1 - (cap.reduce || 0.9))));
+    if (o.agresivo && s) this.alPegar(o, s);
     o.hp -= dmg;
-    o.golpeHasta = Date.now() + 280;
+    o.golpeHasta = ahora + 280;
+    // La oveja se rompe al recibir daño.
+    if (o.au.oveja) this.quitarAuraMon(o, 'oveja');
     if (s) {
       o.dano.set(s.id, (o.dano.get(s.id) || 0) + dmg);
-      o.obj = s.id;
-      if (!o.jefe) o.x = clamp(o.x + (o.x > s.x ? 7 : -7), 20, MAPAS[o.mapa].ancho - 20);
+      const cl = CLASES[s.c.clase];
+      const sp = this.especDe(s);
+      o.amen.set(s.id, (o.amen.get(s.id) || 0) + dmg * (cl ? cl.amenaza : 1) * ((sp && sp.amenaza) || 1) * (amen || 1));
+      s.combateT = ahora;
+      if (!o.jefe && !this.auraMon(o, 'raiz') && !this.auraMon(o, 'aturdido')) o.x = clamp(o.x + (o.x > s.x ? 7 : -7), 20, MAPAS[o.mapa].ancho - 20);
     }
     if (o.hp <= 0) this.matar(o);
+    return dmg;
   }
 
   matar(o) {
@@ -1055,38 +1067,67 @@ export class MmoWorld {
     o.borrarEn = Date.now() + 1600;
     if (MONSTRUOS[o.k].mundial) {
       this.premiosMundial(o);
-      this.aMapa(o.mapa, { t: 'md', id: o.id, pr: [] });
+      this.aClave(o.cl, { t: 'md', id: o.id, pr: [] });
       return;
     }
-    const base = statsMonstruo(o.k);
+    const base = statsMonstruo(o.k, o.nv);
     const total = [...o.dano.values()].reduce((a, b) => a + b, 0) || 1;
-    const premios = [];
-    for (const [sid, d] of o.dano) {
+    // Quien cobra: cada participante y, si esta en un grupo, sus compañeros
+    // vivos y cerca (como en WoW, la caza de uno cuenta para todo el grupo).
+    // Cada "bando" (un grupo o alguien solo) se lleva su parte del daño; dentro
+    // del grupo se reparte a partes iguales con un 10% extra por cada miembro
+    // (agruparse siempre compensa). Curar cuenta como participar para la XP y
+    // el oro (o.cura), pero NO para el mTON ni la caza del dia.
+    const bandos = new Map();
+    const peso = new Map(o.dano);
+    for (const [sid, c] of (o.cura || [])) peso.set(sid, (peso.get(sid) || 0) + c);
+    const totalPeso = [...peso.values()].reduce((a, b) => a + b, 0) || 1;
+    for (const [sid, d] of peso) {
       const s = this.sesiones.get(sid);
-      if (!s || !s.c || s.c.mapa !== o.mapa || s.muerto) continue;
-      const parte = d / total;
-      const mult = ((SKINS[s.c.skin].buffs || {}).oroMult) || 1;
-      // En jefes cada participante se lleva al menos un tercio: pelear en grupo compensa.
-      const k = o.jefe ? Math.max(parte, 1 / 3) : parte;
-      const xp = Math.max(1, Math.round(base.xp * k));
-      const oro = Math.max(1, Math.round(base.oro * k * rnd(0.8, 1.2) * mult));
-      premios.push([sid, xp, oro]);
-      this.dar(s, xp, oro, o);
-      if (o.jefe && parte >= 0.1) this.darMton(s, 20 * Math.max(0.3, MONSTRUOS[o.k].nivel / 30), 'jefe');
+      if (!s || !s.c || s.k !== o.cl || s.muerto) continue;
+      const clave = s.gid ? 'g' + s.gid : 's' + sid;
+      let b = bandos.get(clave);
+      if (!b) { b = { dano: 0, miembros: new Set(), g: s.gid ? this.grupoDe(s) : null }; bandos.set(clave, b); }
+      b.dano += d;
+      b.miembros.add(s);
+    }
+    for (const b of bandos.values()) {
+      if (b.g) for (const x of this.sesionesGrupo(b.g)) if (x.k === o.cl && !x.muerto && Math.abs(x.x - o.x) < 1000) b.miembros.add(x);
+    }
+    const premios = [];
+    const cobraron = new Set();
+    for (const b of bandos.values()) {
+      const parte = b.dano / totalPeso;
+      const n = b.miembros.size;
+      // En jefes cada bando se lleva al menos un tercio: pelear juntos compensa.
+      const k = (o.jefe ? Math.max(parte, 1 / 3) : parte) * (1 + 0.1 * (n - 1)) / n;
+      for (const s of b.miembros) {
+        const mult = ((SKINS[s.c.skin].buffs || {}).oroMult) || 1;
+        const xp = Math.max(1, Math.round(base.xp * k));
+        const oro = Math.max(1, Math.round(base.oro * k * rnd(0.8, 1.2) * mult));
+        premios.push([s.id, xp, oro]);
+        cobraron.add(s.id);
+        // Solo quien peleo de verdad (pego o curo) avanza la caza del dia:
+        // un compañero quieto en el grupo no la cumple sin jugar.
+        this.dar(s, xp, oro, o, n, o.dano.has(s.id) || !!(o.cura && o.cura.has(s.id)));
+        // mTON: como siempre, por la parte PROPIA de daño de cada uno.
+        if (o.jefe && !o.mazmorra && (o.dano.get(s.id) || 0) / total >= 0.1) this.darMton(s, 20 * Math.max(0.3, MONSTRUOS[o.k].nivel / 30), 'jefe');
+      }
     }
     // Caza cooperativa: quien este cerca y vivo se lleva el 25% de la
     // experiencia aunque no le haya pegado (cazar juntos siempre compensa).
     for (const s of this.sesiones.values()) {
-      if (!s.c || s.c.mapa !== o.mapa || s.muerto || o.dano.has(s.id) || Math.abs(s.x - o.x) > 500) continue;
+      if (!s.c || s.k !== o.cl || s.muerto || cobraron.has(s.id) || Math.abs(s.x - o.x) > 500) continue;
       const xp = Math.max(1, Math.round(base.xp * 0.25));
       this.sumarXp(s, xp);
       s.sucio = true;
       this.enviar(s, { t: 'gana', xp, oro: 0, drops: [], x: Math.round(o.x), y: Math.round(o.y - o.h), coop: true });
       this.actualizarYo(s);
     }
-    this.aMapa(o.mapa, { t: 'md', id: o.id, pr: premios });
-    if (o.jefe) {
-      this.mundo[o.mapa].jefeEn = Date.now() + JEFE_REAPARECE_MS;
+    if (o.jefe && o.mazmorra) this.alMorirJefeMaz(o);
+    this.aClave(o.cl, { t: 'md', id: o.id, pr: premios });
+    if (o.jefe && !o.mazmorra) {
+      this.mundoK(o.cl).jefeEn = Date.now() + JEFE_REAPARECE_MS;
       const quien = premios.map(p => this.sesiones.get(p[0])?.c?.nombre).filter(Boolean).slice(0, 4).join(', ');
       this.aTodos({ t: 'aviso', m: `⚔️ ${MONSTRUOS[o.k].nombre} fue derrotado${quien ? ' por ' + quien : ''}` });
     }
@@ -1107,17 +1148,19 @@ export class MmoWorld {
     if (subio) {
       s.st = this.stats(c);
       s.hp = s.st.maxHp;
-      const nueva = HABILIDADES.find(h => h.nv === c.nivel);
-      if (nueva) this.enviar(s, { t: 'toast', m: `✨ ¡Nueva habilidad: ${nueva.nombre}! (tecla ${nueva.tecla} o su botón)`, ok: true });
+      const nueva = HABS.find(h => h.clase === c.clase && h.nv === c.nivel);
+      if (nueva) this.enviar(s, { t: 'toast', m: `✨ ¡Nueva habilidad: ${nueva.nombre}! Ya está en tu barra de acción.`, ok: true, hab: nueva.id });
       this.revisarLogros(s);
-      this.aMapa(c.mapa, { t: 'lv', p: s.id, lv: c.nivel });
+      this.hermSubioNivel(s);
+      this.aClave(s.k, { t: 'lv', p: s.id, lv: c.nivel, mx: s.st.maxHp, rmx: s.st.recMax });
       this.actualizarRanking(s);
       this.guardar(s);
     }
     return subio;
   }
 
-  dar(s, xp, oro, o) {
+  // n = miembros del grupo que cobran esta presa (reparte el botin).
+  dar(s, xp, oro, o, n, participo) {
     const c = s.c;
     c.oro += oro;
     c.kills++;
@@ -1134,17 +1177,17 @@ export class MmoWorld {
     // siempre sueltan uno raro o mejor, y a veces dos.
     let item = null;
     if (o) {
-      const nvM = MONSTRUOS[o.k].nivel;
+      const nvM = o.nv || MONSTRUOS[o.k].nivel;
       if (o.jefe) {
-        item = this.darItem(s, generarItem(nvM, 1));
-        if (Math.random() < 0.3) this.darItem(s, generarItem(nvM, 0));
-      } else if (nvM >= c.nivel - 10 && Math.random() < 0.06) {
+        item = this.darItem(s, generarItem(nvM, o.final ? 2 : 1));
+        if ((n || 1) === 1 && Math.random() < 0.3) this.darItem(s, generarItem(nvM, 0));
+      } else if (nvM >= c.nivel - 10 && Math.random() < 0.06 * ((n || 1) > 1 ? 1.2 / n : 1)) {
         item = this.darItem(s, generarItem(nvM, 0));
       }
     }
     // Diaria: monstruos de su nivel o hasta 5 por debajo.
     const d = this.diariaDe(c);
-    if (o && !d.ok && d.p < DIARIA.n && MONSTRUOS[o.k].nivel >= c.nivel - 5) {
+    if (o && participo !== false && !d.ok && d.p < DIARIA.n && (o.nv || MONSTRUOS[o.k].nivel) >= c.nivel - 5) {
       d.p++;
       if (d.p === DIARIA.n) this.enviar(s, { t: 'toast', m: `📅 ¡"${DIARIA.nombre}" cumplida! Cóbrala con el Guardia Tito.`, ok: true });
     }
@@ -1164,7 +1207,7 @@ export class MmoWorld {
   mision(s, m) {
     const c = s.c;
     const npc = MAPAS.pueblo.npcs.find(n => n.tipo === 'guia');
-    if (c.mapa !== 'pueblo' || !npc || Math.abs(s.x - npc.x) > 200) return this.enviar(s, { t: 'toast', m: 'Habla con el Guardia Tito en el pueblo.' });
+    if (s.k !== 'pueblo' || !npc || Math.abs(s.x - npc.x) > 200) return this.enviar(s, { t: 'toast', m: 'Habla con el Guardia Tito en el pueblo.' });
     if (m && m.diaria) {
       const d = this.diariaDe(c);
       if (d.ok) return this.enviar(s, { t: 'toast', m: 'Ya cobraste la de hoy. ¡Vuelve mañana!' });
@@ -1198,26 +1241,65 @@ export class MmoWorld {
   herir(s, dmg, fuente) {
     if (s.muerto) return;
     const ahora = Date.now();
-    if (ahora < s.inv || ahora < s.escudo) return;
-    let real = Math.max(1, Math.round(dmg * rnd(0.9, 1.1) - s.st.def * 0.6));
+    const pct = fuente && fuente.pct;
+    if ((ahora < s.inv && !pct) || ahora < s.escudo || this.aura(s, 'bloque')) return;
+    // Evasion del picaro: esquiva golpes cuerpo a cuerpo (las bolas y las
+    // zonas no).
+    if (!(fuente && (fuente.bala || fuente.zona)) && this.aura(s, 'evasion') && Math.random() < EVASION) {
+      s.inv = ahora + 400;
+      this.aClave(s.k, { t: 'ph', p: s.id, d: 0, esq: 1, from: fuente ? fuente.id : 0 });
+      return;
+    }
+    const bruto = dmg * rnd(0.9, 1.1);
+    // La defensa resta, pero el golpe nunca baja del 25%: con las clases un
+    // guerrero bien equipado llegaba a no recibir daño de nada.
+    let real = Math.max(1, Math.round(Math.max(bruto * 0.25, bruto - s.st.def * 0.6)));
     // Jefe mundial: un % de la vida de cada uno, asi todos los niveles
     // pueden pelear juntos (y ninguno muere de un toque).
     if (fuente && fuente.mundial) real = Math.round(s.st.maxHp * (fuente.embiste ? 0.15 : fuente.bala ? 0.06 : 0.04) * rnd(0.9, 1.1));
+    // Mecanicas de jefes de mazmorra: un % de TU vida (justo para todos los
+    // niveles y clases); se evitan saliendo de la zona o interrumpiendo.
+    if (pct) real = Math.round(s.st.maxHp * pct * rnd(0.95, 1.05));
     // Un monstruo comun nunca quita mas de un 30% de la vida de un golpe: en
     // una zona algo alta se sufre, pero ya no se muere en tres toques. Los
     // jefes quedan fuera (su embestida avisada es el peligro de verdad).
     if (!(fuente && fuente.jefe)) real = Math.min(real, Math.ceil(s.st.maxHp * 0.3));
-    s.hp -= real;
-    s.inv = ahora + INVULNERABLE_GOLPE_MS;
-    s.golpeT = ahora;
-    this.aMapa(s.c.mapa, { t: 'ph', p: s.id, d: real, from: fuente ? fuente.id : 0 });
-    if (s.hp <= 0) {
-      s.hp = 0;
-      s.muerto = true;
-      this.aMapa(s.c.mapa, { t: 'pm', p: s.id });
-      this.guardar(s);
+    if (this.aura(s, 'muro')) real = Math.round(real * (1 - REDUCE_MURO));
+    if (this.aura(s, 'supresion')) real = Math.round(real * (1 - REDUCE_SUPRESION));
+    // El escudo del sacerdote absorbe antes que la vida.
+    let abs = 0;
+    const esc = this.aura(s, 'escudoPoder');
+    if (esc) {
+      abs = Math.min(esc.abs, real);
+      esc.abs -= abs; real -= abs;
+      const de = this.sesiones.get(esc.de);
+      if (abs > 0 && de && de.c) this.amenazaCura(de, s, abs);
+      if (esc.abs <= 0) this.quitarAura(s, 'escudoPoder');
     }
+    s.hp -= real;
+    if (!pct) s.inv = ahora + INVULNERABLE_GOLPE_MS;
+    s.golpeT = ahora;
+    s.combateT = ahora;
+    // El guerrero se enfurece al recibir golpes.
+    if (CLASES[s.c.clase] && CLASES[s.c.clase].recurso === 'ira' && real > 0) s.rec = Math.min(100, s.rec + 1 + real / s.st.maxHp * 150);
+    if (this.aura(s, 'sigilo')) this.quitarAura(s, 'sigilo');
+    if (s.montado) this.desmontar(s);
+    if (s.cast && (s.cast.h === 'hogar' || s.cast.h === 'montar')) this.cancelarCast(s, 'Te golpearon: se canceló.');
+    this.aClave(s.k, { t: 'ph', p: s.id, d: real, ab: abs || undefined, from: fuente ? fuente.id : 0 });
+    if (s.hp <= 0) this.morir(s);
     this.actualizarYo(s);
+  }
+
+  morir(s) {
+    s.hp = 0;
+    s.muerto = true;
+    s.montado = null;
+    s.combo = 0;
+    this.cancelarCast(s);
+    this.limpiarAuras(s);
+    this.olvidar(s);
+    this.aClave(s.k, { t: 'pm', p: s.id });
+    this.guardar(s);
   }
 
   revivir(s) {
@@ -1227,15 +1309,16 @@ export class MmoWorld {
     c.xp = Math.max(0, c.xp - Math.round(xpParaSubir(c.nivel) * 0.05));
     s.muerto = false;
     s.hp = s.st.maxHp;
+    this.recursoInicial(s);
     s.inv = Date.now() + 2000;
-    this.entrarMapa(s, 'pueblo', MAPAS.pueblo.spawn);
+    if (!this.revivirEnInstancia(s)) this.entrarMapa(s, 'pueblo', MAPAS.pueblo.spawn);
     this.actualizarYo(s);
     this.guardar(s);
   }
 
-  // ── PODERES ──
+  // ── PODERES (consumibles) ──
   poder(s, m) {
-    if (s.muerto) return;
+    if (s.muerto || this.aura(s, 'bloque') || this.aura(s, 'aturdido')) return;
     const def = PODERES[m.i | 0];
     if (!def) return;
     const ahora = Date.now();
@@ -1243,40 +1326,32 @@ export class MmoWorld {
     if (ahora < (s.cdPw[def.id] || 0)) return;
     s.c.pw[def.id]--;
     s.cdPw[def.id] = ahora + def.cd;
-    if (def.id === 'pocion') s.hp = Math.min(s.st.maxHp, s.hp + s.st.maxHp * 0.5);
+    if (def.id === 'rayo' || def.id === 'fuego') this.desmontar(s);
+    if (def.id === 'pocion') {
+      s.hp = Math.min(s.st.maxHp, s.hp + s.st.maxHp * 0.5);
+      if (CLASES[s.c.clase] && CLASES[s.c.clase].recurso === 'mana') s.rec = Math.min(s.st.recMax, s.rec + s.st.recMax * 0.3);
+    }
     if (def.id === 'escudo') s.escudo = ahora + ESCUDO_MS;
     if (def.id === 'fuego') s.fuego = ahora + FUEGO_MS;
     if (def.id === 'rayo') {
       const golpes = [];
-      for (const o of this.mundo[s.c.mapa].mons.values()) {
+      for (const o of this.mundoDe(s).mons.values()) {
         if (o.muere || Math.abs(o.x - s.x) > 450) continue;
         const dmg = Math.round(s.st.atk * (o.jefe ? 2 : 4));
         golpes.push([o.id, dmg, 2]);
         this.danar(o, dmg, s);
       }
-      this.aMapa(s.c.mapa, { t: 'at', p: s.id, s: -1, f: s.f, h: golpes });
+      this.aClave(s.k, { t: 'at', p: s.id, s: -1, f: s.f, h: golpes });
     }
     s.sucio = true;
-    this.aMapa(s.c.mapa, { t: 'pw', p: s.id, i: m.i | 0 });
+    this.aClave(s.k, { t: 'pw', p: s.id, i: m.i | 0 });
     this.enviar(s, { t: 'cd', id: def.id, hasta: def.cd });
     this.actualizarYo(s);
   }
 
-  // ── CHAT ──
-  chat(s, m) {
-    const ahora = Date.now();
-    if (ahora - s.chatT < 900) return;
-    const txt = String(m.m || '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 120);
-    if (!txt) return;
-    s.chatT = ahora;
-    // Global y no por mapa: con pocos jugadores a la vez, un chat por mapa
-    // estaria casi siempre vacio. Las burbujas solo se ven en el mismo mapa.
-    this.aTodos({ t: 'chat', p: s.id, n: s.c.nombre, m: txt, mapa: s.c.mapa });
-  }
-
   // ── TIENDA ──
   cercaDelMercader(s) {
-    if (s.c.mapa !== 'pueblo') return false;
+    if (s.k !== 'pueblo') return false;
     const npc = MAPAS.pueblo.npcs.find(n => n.tipo === 'tienda');
     return npc && Math.abs(s.x - npc.x) < 200;
   }
@@ -1300,6 +1375,16 @@ export class MmoWorld {
       if (c.oro < costo) return this.enviar(s, { t: 'toast', m: 'No te alcanza el oro.' });
       c.oro -= costo;
       c.forja[m.id] = nv + 1;
+    } else if (m.k === 'montura') {
+      if (typeof m.id !== 'string' || !Object.hasOwn(MONTURAS, m.id)) return;
+      const mo = MONTURAS[m.id];
+      c.monturas = c.monturas || [];
+      if (c.monturas.includes(m.id)) { c.montura = m.id; this.actualizarYo(s); return this.enviar(s, { t: 'toast', m: `🐎 Ahora usas: ${mo.nombre}.`, ok: true }); }
+      if (c.nivel < mo.nv) return this.enviar(s, { t: 'toast', m: `Necesitas nivel ${mo.nv} para esa montura.` });
+      if (c.oro < mo.precio) return this.enviar(s, { t: 'toast', m: 'No te alcanza el oro.' });
+      c.oro -= mo.precio;
+      c.monturas.push(m.id);
+      c.montura = m.id;
     } else if (m.k === 'arma' || m.k === 'skin') {
       const tabla = m.k === 'arma' ? ARMAS : SKINS;
       const lista = m.k === 'arma' ? c.armas : c.skins;
@@ -1314,7 +1399,7 @@ export class MmoWorld {
       this.equipar(s, { k: m.k, id: m.id });
     } else return;
     this.revisarLogros(s);
-    this.enviar(s, { t: 'toast', m: m.k === 'forja' ? `⚒️ ¡${ARMAS[m.id].nombre} +${c.forja[m.id]}!` : '✅ Compra realizada', ok: true });
+    this.enviar(s, { t: 'toast', m: m.k === 'forja' ? `⚒️ ¡${ARMAS[m.id].nombre} +${c.forja[m.id]}!` : m.k === 'montura' ? `🐎 ¡${MONTURAS[m.id].nombre} es tuya! Móntala con la tecla Y o el botón 🐎.` : '✅ Compra realizada', ok: true });
     this.actualizarYo(s);
     this.guardar(s);
   }
@@ -1330,7 +1415,7 @@ export class MmoWorld {
       s.hp = Math.max(1, Math.round(s.st.maxHp * pct));
     } else return;
     s.sucio = true;
-    this.aMapa(c.mapa, { t: 'pa', p: s.id, sk: c.skin, ar: c.arma, mx: s.st.maxHp, ti: this.textoTitulo(c) });
+    this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });
     this.actualizarYo(s);
   }
 
@@ -1378,44 +1463,52 @@ export class MmoWorld {
       this.aTodos({ t: 'on', n: this.contarOnline() });
     }
     this.revisarMundial(ahora);
-    const porMapa = {};
+    this.tickGrupos(ahora);
+    const porClave = {};
     for (const s of this.sesiones.values()) {
       if (!s.c) continue;
-      (porMapa[s.c.mapa] = porMapa[s.c.mapa] || []).push(s);
+      (porClave[s.k] = porClave[s.k] || []).push(s);
       if (s.sucio && ahora - s.guardadoT > GUARDAR_CADA_MS) this.guardar(s);
     }
-    for (const mapaId in porMapa) this.simularMapa(mapaId, porMapa[mapaId], ahora);
+    for (const k in porClave) this.simularMapa(k, porClave[k], ahora);
+    // Instancias vacias (todos salieron): se cierran solas.
+    if (this.limpiarInstancias) this.limpiarInstancias(porClave, ahora);
   }
 
-  simularMapa(mapaId, jugadores, ahora) {
-    const mapa = MAPAS[mapaId];
-    const w = this.mundo[mapaId];
+  simularMapa(clave, jugadores, ahora) {
+    const w = this.mundoK(clave);
+    const mapa = MAPAS[w.mapa];
     const dt = TICK_MS / 1000;
 
-    if (mapa.zona && mapa.monstruos.length) {
+    if (w.inst) { if (this.tickMazmorra) this.tickMazmorra(w, jugadores, ahora); }
+    else if (mapa.zona && mapa.monstruos.length) {
       // Reponer monstruos poco a poco (no todos de golpe).
       // Mas jugadores en la zona, mas monstruos (hasta el doble), para que no
       // se queden esperando reapariciones peleandose por los mismos.
       const max = Math.min(mapa.max * 2, mapa.max + 4 * (jugadores.length - 1));
       const vivos = [...w.mons.values()].filter(m => !m.jefe).length;
       if (vivos < max && ahora >= w.spawnEn) {
-        this.crearMonstruo(mapaId, mapa.monstruos[Math.floor(Math.random() * mapa.monstruos.length)]);
+        this.crearMonstruo(clave, mapa.monstruos[Math.floor(Math.random() * mapa.monstruos.length)]);
         w.spawnEn = ahora + (vivos < max / 2 ? 700 : 2500);
       }
       if (mapa.jefe && w.jefeEn && ahora >= w.jefeEn && ![...w.mons.values()].some(m => m.jefe)) {
         w.jefeEn = 0;
-        const j = this.crearMonstruo(mapaId, mapa.jefe, mapa.ancho * 0.62);
+        const j = this.crearMonstruo(clave, mapa.jefe, mapa.ancho * 0.62);
         this.aTodos({ t: 'aviso', m: `👑 ¡${MONSTRUOS[j.k].nombre} apareció en ${mapa.nombre}!` });
       }
     }
 
-    // Regeneracion: rapida en zona segura, y en las zonas solo tras 4 s sin
-    // recibir golpes (descansar entre peleas en vez de volver al pueblo).
+    // Recursos, lanzamientos, curas en el tiempo; y la vida: rapida en zona
+    // segura y en las zonas solo tras 4 s sin recibir golpes (descansar
+    // entre peleas en vez de volver al pueblo).
     for (const s of jugadores) {
+      this.tickJugador(s, ahora, dt, !mapa.zona);
       if (s.muerto || s.hp >= s.st.maxHp) continue;
       const k = !mapa.zona ? 0.12 : (ahora - (s.golpeT || 0) > 4000 ? 0.04 : 0);
       if (k) s.hp = Math.min(s.st.maxHp, s.hp + s.st.maxHp * k * dt);
     }
+    // La Piedra de Hogar pudo sacar a alguien de aqui en este mismo tick.
+    jugadores = jugadores.filter(s => s.k === clave && !s.cerrado);
 
     // Aura de la skin legendaria: quema lo que esta pegado al jugador.
     for (const s of jugadores) {
@@ -1428,12 +1521,13 @@ export class MmoWorld {
         golpes.push([o.id, dmg, 3]);
         this.danar(o, dmg, s);
       }
-      if (golpes.length) this.aMapa(mapaId, { t: 'at', p: s.id, s: -2, f: s.f, h: golpes });
+      if (golpes.length) this.aClave(clave, { t: 'at', p: s.id, s: -2, f: s.f, h: golpes });
     }
 
     for (const o of [...w.mons.values()]) {
       if (o.muere) { if (ahora >= o.borrarEn) w.mons.delete(o.id); continue; }
-      this.pensar(o, jugadores, ahora, dt, mapa);
+      this.tickMonstruo(o, ahora);
+      if (!o.muere) this.pensar(o, jugadores, ahora, dt, mapa);
     }
 
     // Proyectiles: vuelan en linea recta y se esquivan saltando o alejandose.
@@ -1452,17 +1546,21 @@ export class MmoWorld {
 
     const snap = {
       t: 's',
-      p: jugadores.map(s => [s.id, Math.round(s.x), Math.round(s.y), s.f, s.a, Math.ceil(s.hp), s.st.maxHp, (ahora < s.escudo ? 1 : 0) | (ahora < s.fuego ? 2 : 0) | (s.muerto ? 4 : 0)]),
-      m: [...w.mons.values()].map(o => [o.id, Math.round(o.x), Math.round(o.y), o.f, this.codigoEstado(o), Math.max(0, Math.ceil(o.hp))]),
+      p: jugadores.map(s => [s.id, Math.round(s.x), Math.round(s.y), s.f, s.a, Math.ceil(s.hp), s.st.maxHp, this.banderasJugador(s, ahora), Math.round(s.rec || 0), s.st.recMax, s.combo || 0]),
+      m: [...w.mons.values()].map(o => [o.id, Math.round(o.x), Math.round(o.y), o.f, this.codigoEstado(o), Math.max(0, Math.ceil(o.hp)), this.banderasMonstruo(o, ahora)]),
       b: w.balas.map(b => [b.id, Math.round(b.x), Math.round(b.y), Math.round(b.vx), Math.round(b.vy), b.jefe ? 1 : 0]),
     };
+    // Zonas de peligro en el suelo (jefes de mazmorra): [id, x0, x1, activa, color].
+    if (w.zonas && w.zonas.length) snap.z = w.zonas.map(z => [z.id, Math.round(z.x0), Math.round(z.x1), z.act <= ahora ? 1 : 0, z.color || '']);
     const txt = JSON.stringify(snap);
     for (const s of jugadores) this.enviar(s, txt);
   }
 
-  crearMonstruo(mapaId, k, xFija) {
-    const mapa = MAPAS[mapaId];
-    const st = statsMonstruo(k);
+  // op (mazmorras): { nv, hpX, atkX, agresivo, mazmorra, ... } se copian al monstruo.
+  crearMonstruo(clave, k, xFija, op) {
+    const w = this.mundoK(clave);
+    const mapa = MAPAS[w.mapa];
+    const st = statsMonstruo(k, op && op.nv);
     const def = MONSTRUOS[k];
     // Cada zona va de menos a mas: la lista de monstruos esta ordenada por
     // nivel y cada uno aparece en su tramo del mapa, asi el mas facil queda
@@ -1472,43 +1570,73 @@ export class MmoWorld {
     const tramo = (mapa.ancho - 500) / n;
     const x = xFija || (250 + tramo * i + rnd(0, tramo));
     const alturaVuelo = def.vuela ? rnd(90, 170) : 0;
+    const hp = Math.round(st.hp * ((op && op.hpX) || 1));
     const o = {
-      id: this.sigMon++, k, mapa: mapaId, jefe: !!def.jefe, vuela: !!def.vuela,
+      id: this.sigMon++, k, mapa: w.mapa, cl: clave, jefe: !!def.jefe, vuela: !!def.vuela,
       x, casaX: x, y: SUELO - alturaVuelo, baseY: SUELO - alturaVuelo, f: Math.random() < 0.5 ? 1 : -1,
-      hp: st.hp, max: st.hp, atk: st.atk, vel: st.vel, w: st.w, h: st.h,
-      dano: new Map(), obj: 0, golpeHasta: 0, ataqueEn: 0, pasoEn: 0, dir: 0,
+      hp, max: hp, atk: Math.round(st.atk * ((op && op.atkX) || 1)), vel: st.vel, w: st.w, h: st.h,
+      dano: new Map(), amen: new Map(), au: {}, cast: null, obj: 0, golpeHasta: 0, ataqueEn: 0, pasoEn: 0, dir: 0,
       aviso: false, embiste: false, faseEn: Date.now() + 4000, fase: 0,
     };
-    this.mundo[mapaId].mons.set(o.id, o);
-    this.aMapa(mapaId, { t: 'ms', m: this.infoMonstruo(o) });
+    if (op) for (const kk of ['nv', 'agresivo', 'mazmorra', 'radioAgro', 'grupo', 'guion', 'xpX', 'sinEmbestida', 'jefeMaz']) if (op[kk] !== undefined) o[kk] = op[kk];
+    w.mons.set(o.id, o);
+    this.aClave(clave, { t: 'ms', m: this.infoMonstruo(o) });
     return o;
   }
 
   pensar(o, jugadores, ahora, dt, mapa) {
-    // Objetivo: quien le pego (si sigue cerca) o el jugador vivo mas cercano
-    // dentro del radio de agresion.
-    // Los normales son pasivos (como en MapleStory): solo persiguen a quien
-    // les pego. Asi el jugador elige sus peleas; los jefes si cazan.
-    // Los jefes tienen territorio: solo cazan a quien entra a ~520 px de su
-    // guarida. Antes perseguian a 700 px de donde estuvieran, y en el Bosque
-    // Nocturno eso llegaba a la entrada: un nivel 1 recien llegado moria una
-    // y otra vez a manos de un Nv 8 que no habia ido a buscar.
+    const def = MONSTRUOS[o.k];
+    const aturdido = this.auraMon(o, 'aturdido');
+    const oveja = this.auraMon(o, 'oveja');
+    const raiz = this.auraMon(o, 'raiz');
+    // Objetivo: quien le genero mas AMENAZA (el tanque, si hace bien su
+    // trabajo; curar y pegar fuerte tambien enoja). Provocar obliga a
+    // atacar al guerrero unos segundos.
+    // Los normales del mundo abierto son pasivos (como en MapleStory): solo
+    // persiguen a quien les pega. Los jefes de zona tienen territorio y los
+    // de mazmorra son agresivos: atacan a quien se acerque (salvo sigilo).
     let obj = null;
-    const radio = o.jefe ? 700 : (o.obj ? 420 : 0);
-    let mejor = radio;
-    for (const s of jugadores) {
-      if (s.muerto) continue;
-      if (!o.jefe && s.id !== o.obj) continue;
-      if (o.jefe && Math.abs(s.x - o.casaX) > 520 && s.id !== o.obj) continue;
-      const d = Math.abs(s.x - o.x);
-      const bonus = s.id === o.obj ? -120 : 0;
-      if (d + bonus < mejor) { mejor = d + bonus; obj = s; }
+    const prov = o.au.provoca;
+    if (prov && prov.hasta > ahora) {
+      const s = this.sesiones.get(prov.sid);
+      if (s && s.c && s.k === o.cl && !s.muerto) obj = s;
     }
-    if (!obj) o.obj = 0;
+    if (!obj && o.amen.size) {
+      let mejor = 0;
+      for (const s of jugadores) {
+        if (s.muerto) continue;
+        const a = o.amen.get(s.id) || 0;
+        if (a <= 0 || Math.abs(s.x - o.x) > 900) continue;
+        if (a > mejor) { mejor = a; obj = s; }
+      }
+      if (!obj) o.amen.clear();
+    }
+    if (!obj && (o.jefe || o.agresivo) && !oveja && !aturdido) {
+      const territorio = o.jefe && !o.mazmorra;
+      let md = territorio ? 520 : (o.radioAgro || 230);
+      for (const s of jugadores) {
+        if (s.muerto || this.aura(s, 'sigilo') || Math.abs(s.y - o.y) > 220) continue;
+        const d = Math.abs(s.x - (territorio ? o.casaX : o.x));
+        if (d < md) { md = d; obj = s; }
+      }
+      if (obj) {
+        o.amen.set(obj.id, 1);
+        if (this.alAgro) this.alAgro(o, obj, ahora);
+      }
+    }
+    o.obj = obj ? obj.id : 0;
 
     const golpeado = ahora < o.golpeHasta;
     let vx = 0;
-    if (o.jefe && !obj && Math.abs(o.x - o.casaX) > 20 && !o.embiste) {
+    if (aturdido) { o.aviso = false; o.embiste = false; }
+    else if (oveja) {
+      // Oveja: pasea despacito, sin atacar a nadie.
+      if (ahora >= o.pasoEn) { o.dir = Math.random() < 0.4 ? 0 : (Math.random() < 0.5 ? -1 : 1); o.pasoEn = ahora + rnd(800, 2000); }
+      if (o.dir) { o.f = o.dir; vx = o.dir * 0.5 * 60 * dt; }
+    } else if (o.cast) {
+      // Lanzando un hechizo (jefes de mazmorra): quieto mirando al objetivo.
+      if (obj) o.f = obj.x > o.x ? 1 : -1;
+    } else if (o.jefe && !obj && Math.abs(o.x - o.casaX) > 20 && !o.embiste) {
       // Sin nadie en su territorio vuelve a la guarida.
       o.aviso = false;
       o.f = o.casaX > o.x ? 1 : -1; vx = o.f * o.vel * 60 * dt;
@@ -1520,45 +1648,49 @@ export class MmoWorld {
         vx = o.f * 9 * 60 * dt;
         if (ahora >= o.faseEn) { o.embiste = false; o.faseEn = ahora + rnd(3500, 5500); }
       } else {
-        if (ahora >= o.faseEn) { o.aviso = true; o.faseEn = ahora + 900; }
+        if (ahora >= o.faseEn && !o.sinEmbestida) { o.aviso = true; o.faseEn = ahora + 900; }
         else if (Math.abs(obj.x - o.x) > 30) { o.f = obj.x > o.x ? 1 : -1; vx = o.f * o.vel * 60 * dt; }
       }
     } else if (obj && !golpeado) {
       // Los que disparan guardan la distancia en vez de pegarse.
-      const lejos = MONSTRUOS[o.k].dispara ? 170 : 20;
+      const lejos = def.dispara ? 170 : 20;
       o.f = obj.x > o.x ? 1 : -1;
       if (Math.abs(obj.x - o.x) > lejos) vx = o.f * o.vel * 1.35 * 60 * dt;
-    } else if (!golpeado) {
+    } else if (!golpeado && !obj) {
       // Pasear: tramos cortos a un lado y pausas.
       if (ahora >= o.pasoEn) { o.dir = Math.random() < 0.35 ? 0 : (Math.random() < 0.5 ? -1 : 1); o.pasoEn = ahora + rnd(1200, 3200); }
       if (o.dir) { o.f = o.dir; vx = o.dir * o.vel * 0.6 * 60 * dt; }
     }
+    if (raiz && !o.embiste) vx = 0;
     o.x = clamp(o.x + vx, 30, mapa.ancho - 30);
-    if (o.jefe) o.x = clamp(o.x, o.casaX - 600, o.casaX + 600);   // no se le puede arrastrar a la entrada
+    if (o.jefe) o.x = clamp(o.x, o.casaX - (o.mazmorra ? 450 : 600), o.casaX + (o.mazmorra ? 450 : 600));   // no se le puede arrastrar a la entrada
     if (o.x <= 30 || o.x >= mapa.ancho - 30) o.dir = -o.dir;
     if (o.vuela) {
       const objetivoY = obj ? clamp(obj.y - 30, SUELO - 200, SUELO - 20) : o.baseY;
       o.y += (objetivoY + Math.sin(ahora / 400 + o.id) * 14 - o.y) * 0.08;
     }
+    if (aturdido || oveja || o.cast) return;
 
     // Disparo: bola de fuego hacia el objetivo (los jefes, tres en abanico).
-    if (MONSTRUOS[o.k].dispara && obj && !o.aviso && !o.embiste && ahora >= (o.disparoEn || 0) && Math.abs(obj.x - o.x) < 430) {
+    if (def.dispara && obj && !o.aviso && !o.embiste && ahora >= (o.disparoEn || 0) && Math.abs(obj.x - o.x) < 430 && !this.auraMon(o, 'silencio')) {
       o.disparoEn = ahora + (o.jefe ? 3200 : 2600) + rnd(0, 600);
       const oy = o.y - o.h * 0.55;
       const base = Math.atan2((obj.y - 30) - oy, obj.x - o.x);
       const angs = o.jefe ? [base - 0.22, base, base + 0.22] : [o.vuela ? base : (obj.x > o.x ? 0 : Math.PI)];
       for (const a of angs) {
-        this.mundo[o.mapa].balas.push({
+        this.mundoK(o.cl).balas.push({
           id: this.sigBala++, x: o.x + Math.cos(a) * 20, y: oy, vx: Math.cos(a) * 260, vy: Math.sin(a) * 260,
-          dmg: o.atk * (o.jefe ? 1 : 0.6), hasta: ahora + 2200, dueno: o.id, jefe: o.jefe, mundial: !!MONSTRUOS[o.k].mundial,
+          dmg: o.atk * (o.jefe ? 1 : 0.6), hasta: ahora + 2200, dueno: o.id, jefe: o.jefe, mundial: !!def.mundial,
         });
       }
       o.golpeHasta = Math.max(o.golpeHasta, ahora + 200);  // pose de "lanzar" (frame de golpe)
     }
 
-    // Daño por contacto.
+    // Daño por contacto: solo a su objetivo, como en WoW (el tanque recibe y
+    // el resto pega tranquilo). La embestida de un jefe arrolla a todos.
     if (ahora >= o.ataqueEn) {
-      for (const s of jugadores) {
+      const victimas = o.embiste ? jugadores : obj ? [obj] : [];
+      for (const s of victimas) {
         if (s.muerto) continue;
         const toca = Math.abs(s.x - o.x) < (o.w / 2 + FIS.jugW / 2 - 4) && s.y > o.y - o.h && s.y - FIS.jugH < o.y;
         if (toca) {
@@ -1566,8 +1698,8 @@ export class MmoWorld {
           // (avisada con el temblor rojo, se esquiva saltando por encima).
           // Con el roce a atk entero cada 0,7 s ningun jugador podia hacer
           // la mision del jefe en solitario, y hoy casi siempre se juega solo.
-          const dmg = o.jefe ? (o.embiste ? o.atk * 2.4 : o.atk * 0.7) : o.atk;
-          this.herir(s, dmg, { id: o.id, jefe: o.jefe, mundial: !!MONSTRUOS[o.k].mundial, embiste: o.embiste });
+          const dmg = o.jefe ? (o.embiste ? o.atk * 2.4 : o.atk * (o.mazmorra ? 1 : 0.7)) : o.atk;
+          this.herir(s, dmg, { id: o.id, jefe: o.jefe, mundial: !!def.mundial, embiste: o.embiste });
           o.ataqueEn = ahora + (o.jefe ? 1250 : 1300);
           break;
         }
@@ -1575,3 +1707,13 @@ export class MmoWorld {
     }
   }
 }
+
+// Combate al estilo WoW (clases, habilidades, amenaza, auras): functions/mmo/combate.js
+Object.assign(MmoWorld.prototype, Combate);
+// Grupos y chat por canales: functions/mmo/social.js
+Object.assign(MmoWorld.prototype, Social);
+// Mazmorras instanciadas con jefes de guion: functions/mmo/mazmorras.js
+Object.assign(MmoWorld.prototype, Mazmorras);
+// Hermandades: functions/mmo/hermandades.js
+Object.assign(MmoWorld.prototype, Hermandades);
+MmoWorld.prototype.generarItem = generarItem;
