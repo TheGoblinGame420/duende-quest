@@ -14,7 +14,7 @@
 // los de dentro (pieza de equipo rara o mejor, XP y oro) y cuenta como
 // mazmorra completada. Una instancia vacia 5 minutos se borra.
 // ═══════════════════════════════════════════════════════
-import { MONSTRUOS, statsMonstruo, xpParaSubir, RAREZAS, nombreItem } from '../../mmo/js/data.js';
+import { MONSTRUOS, statsMonstruo, xpParaSubir, RAREZAS, nombreItem, ALAS } from '../../mmo/js/data.js';
 import { CUEVA, CUEVA_X0, PORTAL_PUEBLO, nivelCueva } from '../../mmo/js/cueva3d.js';
 
 const VACIA_MS = 5 * 60 * 1000;
@@ -156,6 +156,11 @@ export const Cueva3D = {
       const oro = 50 * inst.nv;
       c.oro += oro;
       c.mazmorras = (c.mazmorras || 0) + 1;
+      c.alas = c.alas || ['aprendiz'];
+      if (c.mazmorras >= ALAS.cueva.mazmorras && !c.alas.includes('cueva')) {
+        c.alas.push('cueva');
+        this.enviar(s, { t: 'toast', ok: true, m: `🪽 ¡Ganaste las ${ALAS.cueva.nombre}! Póntelas en el Mercader → ALAS.` });
+      }
       const it = this.darItem(s, this.nuevoItem(c.nivel, 2));
       this.sumarXp(s, xp);
       this.progresoTarea && this.progresoTarea(s, 'mazmorra');

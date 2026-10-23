@@ -22,7 +22,7 @@ import {
   temporadaDe, TEMPORADAS, TEMP_PROB, TEMP_JEFE,
   TINTES, MASCOTAS, enOfertaAmbulante, ambulanteActivo, mundialDe,
   CONJUNTOS, CONJUNTO_PROB,
-  semanaUTC, horaFelizActiva, HORA_FELIZ, PASE, afijosSemana, DES_SEM_MIN, premioDesSem, BESTIARIO_HITOS, premioBestiario, talento, TALENTOS, TALENTO_MAX, puntosTalento, costoReinicioTalentos, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX, limpiarLook,
+  semanaUTC, horaFelizActiva, HORA_FELIZ, PASE, afijosSemana, DES_SEM_MIN, premioDesSem, BESTIARIO_HITOS, premioBestiario, talento, TALENTOS, TALENTO_MAX, puntosTalento, costoReinicioTalentos, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX, limpiarLook, ALAS,
 } from '../../mmo/js/data.js';
 import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery, tg, getSolPriceUsd, getDuendePriceUsd, SOL_DEV_WALLET } from '../api/lib.js';
 import { MMO_URL } from '../api/telegram-bot.js';
@@ -752,6 +752,7 @@ export class MmoWorld {
     if (metodo === 'stars' && !c.uid.startsWith('tg:')) return no('Las Stars solo se pueden usar dentro de Telegram. En la web se paga con SOL o $DUENDE.');
     if (metodo !== 'stars' && c.uid.startsWith('tg:')) return no('Dentro de Telegram se paga con Stars.');
     if (pq.skin && (c.skins || []).includes(pq.skin)) return no('Ya tienes esa skin.');
+    if (pq.alas && (c.alas || []).includes(pq.alas)) return no('Ya tienes esas alas.');
     if (pq.skin && this.pedidos.some(x => x.uid === c.uid && x.paquete === pq.id && (x.estado === 'pagado' || x.estado === 'por_verificar' || x.estado === 'comprobando'))) return no('Ya pagaste esa skin: El Duende te la entrega en breve.');
     await this.guardarPedidos();
     if (this.pedidos.filter(x => x.uid === c.uid && (x.estado === 'esperando_pago' || x.estado === 'comprobando' || x.estado === 'por_verificar')).length >= 3) return no('Tienes compras sin pagar: termina o espera 30 minutos.');
@@ -1016,6 +1017,13 @@ export class MmoWorld {
       else { c.skins.push(pq.skin); c.skin = pq.skin; notaSkin = ' Ya la llevas puesta.'; }
       if (s) { s.st = this.stats(c); this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) }); this.actualizarYo(s); }
     }
+    if (pq.alas && ALAS[pq.alas]) {
+      c.alas = c.alas || ['aprendiz'];
+      if (!c.alas.includes(pq.alas)) c.alas.push(pq.alas);
+      c.ala = pq.alas;
+      notaSkin = ' Ya las llevas puestas (vuela con V en el mundo 3D).';
+      if (s) { this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) }); this.actualizarYo(s); }
+    }
     pd.estado = 'entregado'; pd.entregado = Date.now(); pd.por = b.por || 'bot';
     if (pd.metodo === 'sol' || pd.metodo === 'duende') {
       this.ingresosSol.push({ usd: pd.usd, t: Date.now() });
@@ -1244,7 +1252,7 @@ export class MmoWorld {
       eq: c.eq, bolsa: c.bolsa, logros: c.logros, titulo: c.titulo, mundiales: c.mundiales, login: c.login, crit: s.st.crit,
       clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, torreSem: this.torreSem(c).max, torreMax: c.torreMax || 0, exped: c.exped || null, nVisitadas: c.nVisitadas || 0, visitadas: c.visitadas || [], especies: c.especies || {}, nEspecies: c.nEspecies || 0, dorados: c.dorados || 0, exped8: c.exped8 || 0, peces: c.peces || 0, expediciones: c.expediciones || 0, duelosG: c.duelosG || 0, desafioMax: c.desafioMax || 0, amigosN: c.amigos || 0, desafio: c.desafio || {}, ...Object.fromEntries(TEMPORADAS.map(t => [t.campo, c[t.campo] || 0])), chicha: this.infoChicha(c), temp: (temporadaDe() || {}).id || '', herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, best: c.best || {},
       boveda: c.boveda, bovedaOpc: c.bovedaOpc || null, pase: this.infoPase(c), banda: this.infoBanda(c), runas: c.runas || {}, gestaCob: c.gestaCob || null,
-      look: c.look || null, espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, tintes: c.tintes || [], tinte: c.tinte || '', mascotas: c.mascotas || [], mascota: c.mascota || '', montado: s.montado || null,
+      look: c.look || null, alas: c.alas || ['aprendiz'], ala: c.ala || 'aprendiz', espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, tintes: c.tintes || [], tinte: c.tinte || '', mascotas: c.mascotas || [], mascota: c.mascota || '', montado: s.montado || null,
       mton: c.mton, wallet: c.wallet ? { a: tonAmigable(c.wallet.a), desde: c.wallet.desde } : null,
       p2e: this.elegibilidad(c), creado: c.creado,
       retiros: this.retiros.filter(x => x.uid === c.uid).slice(-5).map(x => ({ id: x.id, ton: x.ton, estado: x.estado, creado: x.creado })),
@@ -1264,7 +1272,7 @@ export class MmoWorld {
   }
   // Lo que cambia al equiparse o elegir clase (mensaje 'pa').
   infoApariencia(s) {
-    return { p: s.id, id: s.id, sk: s.c.skin, ar: s.c.arma, mx: s.st.maxHp, ti: this.textoTitulo(s.c), cl: s.c.clase || '', rmx: s.st.recMax, hn: this.nombreHermandad(s.c.herm), hc: this.colorHermandad(s.c.herm), mo: s.montado || '', es: s.c.espec || '', lk: s.c.look || undefined, tn: s.c.tinte || '', ma: s.c.exped ? '' : s.c.mascota || '', gm: s.dios ? 1 : 0, gi: s.dios && s.diosModo && s.diosModo.inv ? 1 : 0 };
+    return { p: s.id, id: s.id, sk: s.c.skin, ar: s.c.arma, mx: s.st.maxHp, ti: this.textoTitulo(s.c), cl: s.c.clase || '', rmx: s.st.recMax, hn: this.nombreHermandad(s.c.herm), hc: this.colorHermandad(s.c.herm), mo: s.montado || '', es: s.c.espec || '', lk: s.c.look || undefined, al: s.c.ala && s.c.ala !== 'aprendiz' ? s.c.ala : undefined, tn: s.c.tinte || '', ma: s.c.exped ? '' : s.c.mascota || '', gm: s.dios ? 1 : 0, gi: s.dios && s.diosModo && s.diosModo.inv ? 1 : 0 };
   }
   // Auras con su tiempo restante, para quien llega al mapa y no vio cuando se pusieron.
   aurasVivas(au) {
@@ -1949,6 +1957,19 @@ export class MmoWorld {
       c.oro -= mo.precio;
       c.monturas.push(m.id);
       c.montura = m.id;
+    } else if (m.k === 'alas') {
+      if (typeof m.id !== 'string' || !Object.hasOwn(ALAS, m.id)) return;
+      const al = ALAS[m.id];
+      c.alas = c.alas || ['aprendiz'];
+      if (c.alas.includes(m.id)) { c.ala = m.id; this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) }); this.actualizarYo(s); return this.enviar(s, { t: 'toast', m: `🪽 Ahora llevas: ${al.nombre}.`, ok: true }); }
+      if (al.premium) return this.enviar(s, { t: 'toast', m: 'Esas alas son premium: están en la tienda PREMIUM.' });
+      if (al.mazmorras) return this.enviar(s, { t: 'toast', m: `Esas alas no se venden: se ganan completando ${al.mazmorras} mazmorras.` });
+      if (c.nivel < al.nv) return this.enviar(s, { t: 'toast', m: `Necesitas nivel ${al.nv} para esas alas.` });
+      if (c.oro < al.precio) return this.enviar(s, { t: 'toast', m: 'No te alcanza el oro.' });
+      c.oro -= al.precio;
+      c.alas.push(m.id);
+      c.ala = m.id;
+      this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });
     } else if (m.k === 'tinte') {
       // Color del nombre: '' lo quita; si ya lo tienes, solo se cambia.
       c.tintes = c.tintes || [];

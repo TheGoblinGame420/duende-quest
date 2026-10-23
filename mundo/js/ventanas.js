@@ -18,8 +18,8 @@ import {
   HABS, habsDe, costoHab, CLASES, RECURSOS, ESPECS, ESPEC_NIVEL, costoCambioClase,
   ARMAS, SKINS, PODERES, MONTURAS, TINTES, MASCOTAS, HOJAS, FORJA_MAX, costoForja, multForja,
   BANDA_MONTURA, TORRE, ambulanteActivo, ambulanteOferta,
-  PAQUETES, estrellasDe, LOGROS, progresoLogro, statsJugador,
-} from '/mmo/js/data.js?v=254';
+  PAQUETES, estrellasDe, LOGROS, progresoLogro, statsJugador, ALAS,
+} from '/mmo/js/data.js?v=255';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -511,7 +511,7 @@ function htmlClases(y) {
 }
 
 // ═══════════════════ MERCADER ═══════════════════
-const TABS_TIENDA = [['pw', 'PODERES'], ['arma', 'ARMAS'], ['forja', 'FORJA'], ['skin', 'SKINS'], ['montura', 'MONTURAS'], ['tinte', 'COLORES'], ['mascota', 'MASCOTAS'], ['ambulante', 'AMBULANTE'], ['premium', 'PREMIUM']];
+const TABS_TIENDA = [['pw', 'PODERES'], ['arma', 'ARMAS'], ['forja', 'FORJA'], ['skin', 'SKINS'], ['montura', 'MONTURAS'], ['alas', 'ALAS'], ['tinte', 'COLORES'], ['mascota', 'MASCOTAS'], ['ambulante', 'AMBULANTE'], ['premium', 'PREMIUM']];
 const esTg = () => (H && typeof H.telegram === 'function' ? !!H.telegram() : !!TG());
 function pintarTienda() {
   const y = H.yo(); if (!y) return;
@@ -521,7 +521,7 @@ function pintarTienda() {
   const c = parte(id, 'cuerpo');
   const t = est.tienda;
   c.innerHTML = t === 'premium' ? htmlPremium(y) : t === 'forja' ? htmlForja(y) : t === 'tinte' ? htmlTintes(y) : t === 'mascota' ? htmlMascotas(y)
-    : t === 'ambulante' ? htmlAmbulante(y) : t === 'montura' ? htmlMonturas(y) : t === 'pw' ? htmlPoderes(y) : htmlArmasSkins(y, t);
+    : t === 'ambulante' ? htmlAmbulante(y) : t === 'montura' ? htmlMonturas(y) : t === 'alas' ? htmlAlas(y) : t === 'pw' ? htmlPoderes(y) : htmlArmasSkins(y, t);
   dibujarHojas(c);
 }
 const precioYBoton = (y, precio, k, id, nv, txt) => (nv && y.nivel < nv)
@@ -598,6 +598,19 @@ function htmlMonturas(y) {
     h += tarjeta(icoHoja(mo.hoja, mo.tinte), esc(mo.nombre), `+${Math.round((mo.vel - 1) * 100)}% de velocidad · ` + (mo.banda ? `no se vende: vence al Titán de la banda en ${BANDA_MONTURA} semanas distintas` : mo.torre ? `no se vende: supera el piso ${TORRE.montura} de la Torre del Duende` : `desde Nv ${mo.nv}`), acc);
   }
   return h + '</div><p class="vv-nota">Se monta en 1,5 s fuera de combate. No se puede montar en mazmorras ni en el Coliseo.</p>';
+}
+function htmlAlas(y) {
+  let h = '<div class="vv-lista">';
+  for (const [id, al] of Object.entries(ALAS)) {
+    const tiene = (y.alas || ['aprendiz']).includes(id);
+    const acc = tiene ? ((y.ala || 'aprendiz') === id ? etq('✓ Puestas', 'vv-ok') : btn('Ponérmelas', 'comprar', { k: 'alas', id }, 'sec'))
+      : al.premium ? btn('Ver en PREMIUM', 'ttab', { id: 'premium' }, 'sec')
+      : al.mazmorras ? etq(`🏆 Mazmorras ${y.mazmorras || 0}/${al.mazmorras}`)
+      : precioYBoton(y, al.precio, 'alas', id, al.nv);
+    const ico = `<span style="display:inline-block;width:34px;height:34px;border-radius:50%;background:radial-gradient(circle,${al.color},transparent 70%);box-shadow:0 0 ${al.brillo ? 12 : 4}px ${al.color}"></span>`;
+    h += tarjeta(ico, `<span style="color:${al.color}">${esc(al.nombre)}</span>`, `${al.vuelo} s de vuelo · +${Math.round((al.vel - 1) * 100)}% en el aire · ` + (al.premium ? 'premium (SOL o $DUENDE)' : al.mazmorras ? `se ganan con ${al.mazmorras} mazmorras` : al.precio ? `desde Nv ${al.nv}` : 'las de todos'), acc);
+  }
+  return h + '</div><p class="vv-nota">En el mundo 3D: V o doble salto para volar; mantén Espacio al caer para planear gratis.</p>';
 }
 // Botones de pago con dinero (SOL / $DUENDE en la web, Stars en Telegram).
 function botonesPago(y, pid, usd, principal) {

@@ -603,6 +603,29 @@ async function pruebas() {
   await pruebasLook3d();
   await pruebasCueva3d();
   await pruebasDueloPesca3d();
+  await pruebasAlas3d();
+}
+
+// ── ALAS (vuelo de AION) ──
+async function pruebasAlas3d() {
+  console.log('Mundo 3D: alas');
+  const W = await import('../mmo/js/mundo3d.js');
+  const mer = W.NPCS3D.find(x => x.tipo === 'tienda');
+  const a = await entrar3d('Alado3D', '4i1'); ponerNivel(a, 20, 'mago');
+  a.p = { x: mer.x + 1, z: mer.z }; a.c.oro = 10000;
+  await a.mandar({ t: 'comprar', k: 'alas', id: 'pluma' });
+  chequear(a.c.alas.includes('pluma') && a.c.ala === 'pluma' && a.c.oro === 4000, 'se compran alas de oro y quedan puestas');
+  await a.mandar({ t: 'comprar', k: 'alas', id: 'hada' });
+  chequear(!a.c.alas.includes('hada'), 'las de nivel alto piden su nivel');
+  await a.mandar({ t: 'comprar', k: 'alas', id: 'duende' });
+  chequear(!a.c.alas.includes('duende'), 'las premium no se compran con oro');
+  await a.mandar({ t: 'comprar', k: 'alas', id: 'aprendiz' });
+  chequear(a.c.ala === 'aprendiz', 'se pueden cambiar por otras que tengas');
+  // Energia: el servidor corta el vuelo pasado el tope de las alas.
+  a.p = { x: 120, z: 120 }; a.movBud = undefined; a.limpiar();
+  for (let i = 0; i < 700; i++) { avanzar(100); a.movBud = undefined; await a.mandar({ t: 'mv3', x: 120 + (i % 2) * 0.2, z: 120, a: 3, h: 10 }); }
+  chequear(a.ultimos('alasAgotadas').length >= 1 && !(a.h > 0), 'sin energía de alas el servidor te baja');
+  await dejar(a);
 }
 
 // ── DUELOS Y PESCA EN EL 3D ──

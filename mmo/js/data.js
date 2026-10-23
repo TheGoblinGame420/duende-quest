@@ -483,6 +483,11 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 23, fecha: '23 oct 2026', items: [
+    'Alas como en AION: 8 tipos con su forma (luz, plumas, mariposa, membrana de dragón) y más tiempo y velocidad de vuelo. Mercader → ALAS.',
+    'Las Alas del Rey Goblin se ganan completando 5 mazmorras; las de $DUENDE y las Solares son premium (SOL o $DUENDE).',
+    'Planeo: mantén Espacio al caer y planeas sin gastar energía de alas.',
+  ] },
   { n: 22, fecha: '23 oct 2026', items: [
     'Calidad gráfica en el mundo 3D (botón ?): Baja para móviles lentos, Media o Alta con sombras reales del sol.',
     'Más fluido: lo lejano se anima a medias y lo que queda tras la niebla no se dibuja. En el móvil, botones en dos columnas y paneles que ya no tapan los controles.',
@@ -1666,6 +1671,22 @@ export const TOPE_DIARIO_PCT = 0.2;    // ningun jugador se lleva mas del 20% de
 // cadenas en sus Mini Apps). El dueño revisa cada pago y entrega a mano con
 // /entregar en el bot: con pocos jugadores es lo mas transparente.
 export const STAR_USD = 0.013;   // lo mismo que usa el bot para las skins
+// ── ALAS (el vuelo de AION) ──
+// vuelo: segundos de energia; vel: velocidad en el aire (multiplica la de a
+// pie). Las de oro se compran al Mercader; las del Rey Goblin se ganan con 5
+// mazmorras completadas; las de $DUENDE y Solares son premium (pago con SOL o
+// $DUENDE): algo mejores, nada que rompa el juego.
+export const ALAS = {
+  aprendiz: { nombre: 'Alas de Aprendiz',    forma: 'luz',      color: '#c4b5fd', vuelo: 60,  vel: 1.25, nv: 1,  precio: 0, icono: 'S_Wind02' },
+  pluma:    { nombre: 'Alas de Pluma Blanca', forma: 'pluma',   color: '#f5f5f4', vuelo: 80,  vel: 1.3,  nv: 15, precio: 6000, icono: 'S_Holy01' },
+  hada:     { nombre: 'Alas de Hada',         forma: 'mariposa', color: '#f0abfc', vuelo: 95,  vel: 1.33, nv: 25, precio: 20000, icono: 'S_Magic02' },
+  fenix:    { nombre: 'Alas de Fénix',        forma: 'pluma',   color: '#fb923c', vuelo: 110, vel: 1.36, nv: 35, precio: 50000, brillo: true, icono: 'S_Fire02' },
+  dragon:   { nombre: 'Alas de Dragón',       forma: 'membrana', color: '#7c3aed', vuelo: 130, vel: 1.4,  nv: 45, precio: 120000, icono: 'S_Shadow06' },
+  cueva:    { nombre: 'Alas del Rey Goblin',  forma: 'membrana', color: '#ffd84a', vuelo: 100, vel: 1.35, nv: 1,  precio: 0, mazmorras: 5, icono: 'S_Buff14' },
+  duende:   { nombre: 'Alas de $DUENDE',      forma: 'luz',      color: '#22d3ee', vuelo: 120, vel: 1.4,  nv: 1,  usd: 4, brillo: true, premium: true, icono: 'I_Crystal01' },
+  solar:    { nombre: 'Alas Solares',         forma: 'pluma',    color: '#facc15', vuelo: 140, vel: 1.42, nv: 1,  usd: 8, brillo: true, premium: true, icono: 'S_Fire02' },
+};
+export const alaDe = c => ALAS[c && c.ala] || ALAS.aprendiz;
 export const PAQUETES = [
   { id: 'oro1',  nombre: 'Bolsita de oro',     usd: 1,  oro: 5000,   icono: 'I_GoldCoin',  desc: '5.000 oro' },
   { id: 'kit',   nombre: 'Kit del aventurero', usd: 3,  pw: { pocion: 20, escudo: 8, rayo: 8, fuego: 8 }, icono: 'I_Chest01', desc: '20 pociones, 8 escudos, 8 rayos y 8 fuegos' },
@@ -1676,6 +1697,10 @@ export const PAQUETES = [
 // (id 'skin_<id>'); al entregarlas se añaden a tus skins.
 for (const [id, sk] of Object.entries(SKINS)) {
   if (sk.usd) PAQUETES.push({ id: 'skin_' + id, nombre: 'Skin ' + sk.nombre, usd: sk.usd, skin: id, img: sk.img, desc: sk.desc + (sk.premium ? ' · exclusiva' : '') });
+}
+// Alas premium (mundo 3D).
+for (const [id, al] of Object.entries(ALAS)) {
+  if (al.usd) PAQUETES.push({ id: 'alas_' + id, nombre: al.nombre, usd: al.usd, alas: id, icono: al.icono, desc: `${al.vuelo} s de vuelo y +${Math.round((al.vel - 1) * 100)}% de velocidad en el aire · exclusivas` });
 }
 // $DUENDE: el token del juego (SPL de pump.fun, 6 decimales). Pagar con el
 // token tiene un 10% de descuento sobre el precio en dolares.

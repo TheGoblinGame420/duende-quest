@@ -19,7 +19,7 @@
 // ═══════════════════════════════════════════════════════
 import {
   MAPAS, MONSTRUOS, SKINS, ARMAS, CLASES, PODERES, VARA, statsMonstruo, multForja, talento, velMontura, xpParaSubir,
-  MATERIALES, NODO_CADA_MS, RECOLECTAR_MS, RARO_ZONA, raroDe, PESCA, hoyUTC,
+  MATERIALES, NODO_CADA_MS, RECOLECTAR_MS, RARO_ZONA, raroDe, PESCA, hoyUTC, alaDe,
   habPorId, costoHab, GCD_MS, RECURSOS, MELEE, limpiarLook, MUNDIAL_CADA_MS, MUNDIAL_DURA_MS, proximoMundial, mundialDe,
 } from '../../mmo/js/data.js';
 import { MUNDO, NPCS3D, NPC_DIST, SPAWN3D, ARENA3D, campamentos, zonaEn, esNoche, nodos3d, RECOGER_DIST, alturaEn } from '../../mmo/js/mundo3d.js';
@@ -149,7 +149,7 @@ export const Mundo3D = {
     if (s.i3 && !caminable(nx, nz, 0.2)) { this.enviar(s, { t: 'snap3', x: r1(s.p.x), z: r1(s.p.z) }); return; }
     const d = Math.hypot(nx - s.p.x, nz - s.p.z);
     if (!(s.dios && s.diosModo && s.diosModo.vel)) {
-      const vel = MUNDO.velocidad * (m.a === 3 ? 1.3 : velMontura(s.montado)) * (1 + talento(s.c, 'agilidad'));
+      const vel = MUNDO.velocidad * (m.a === 3 ? alaDe(s.c).vel + 0.05 : m.a === 4 ? 1.4 : velMontura(s.montado)) * (1 + talento(s.c, 'agilidad'));
       const tope = vel + 4;
       s.movBud = Math.min(tope, (s.movBud === undefined ? tope : s.movBud) + vel * 1.25 * dt / 1000);
       if (d > s.movBud + 1) { this.enviar(s, { t: 'snap3', x: r1(s.p.x), z: r1(s.p.z) }); return; }
@@ -159,8 +159,15 @@ export const Mundo3D = {
     s.p.x = nx; s.p.z = nz;
     s.ry = num(m.r) || 0;
     s.a = clamp(m.a | 0, 0, 4);
+    // Energia de las alas (a = 3 vuela, a = 4 planea gratis): se gasta volando
+    // y vuelve en el suelo, como en el cliente; si se acaba, a tierra.
+    const dtS = dt / 1000, ala = alaDe(s.c);
+    if (s.a === 3) {
+      s.vueloS = (s.vueloS || 0) + dtS;
+      if (s.vueloS > ala.vuelo + 8) { s.a = 0; if (!s.alasAvisadas) { s.alasAvisadas = true; this.enviar(s, { t: 'alasAgotadas' }); } }
+    } else { s.vueloS = Math.max(0, (s.vueloS || 0) - dtS * 3); if (s.vueloS < ala.vuelo) s.alasAvisadas = false; }
     // Altura de vuelo (las alas): en el pueblo no se vuela.
-    s.h = s.a === 3 && !s.i3 && zonaEn(nx, nz) !== 'pueblo' ? clamp(num(m.h) || 0, 0, 50) : 0;
+    s.h = (s.a === 3 || s.a === 4) && !s.i3 && zonaEn(nx, nz) !== 'pueblo' ? clamp(num(m.h) || 0, 0, 50) : 0;
     if (!s.i3) s.c.p3 = { x: Math.round(nx * 10) / 10, z: Math.round(nz * 10) / 10 };
     s.sucio = true;
   },

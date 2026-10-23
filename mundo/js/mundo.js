@@ -13,13 +13,13 @@
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
-  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook } from '/mmo/js/data.js?v=254';
-import { iniciarVentanas } from './ventanas.js?v=254';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=254';
-import { crearMusica } from './musica.js?v=254';
-import { construirCueva } from './cueva.js?v=254';
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=254';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=254';
+  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS } from '/mmo/js/data.js?v=255';
+import { iniciarVentanas } from './ventanas.js?v=255';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=255';
+import { crearMusica } from './musica.js?v=255';
+import { construirCueva } from './cueva.js?v=255';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=255';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=255';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -474,21 +474,62 @@ const anillo = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.15, 32).rotateX(-Mat
 anillo.visible = false;
 escena.add(anillo);
 
-// Alas de luz (vuelo estilo AION).
-function nuevasAlas() {
+// ── ALAS (vuelo estilo AION) ──
+// Cada tipo de ALAS (data.js) tiene su forma: luz, plumas, mariposa o
+// membrana de dragon; las que brillan suman luz (mezcla aditiva).
+const GEO_ALA = {};
+function geoAla(forma) {
+  if (GEO_ALA[forma]) return GEO_ALA[forma];
+  const S = () => new THREE.Shape();
+  let formas;
+  if (forma === 'pluma') {
+    const s = S(); s.moveTo(0, 0); s.quadraticCurveTo(0.6, 0.9, 1.6, 1.05); s.quadraticCurveTo(2.3, 1.0, 2.5, 0.65);
+    // Borde de plumas: dientes hacia atras.
+    const p = [[2.25, 0.25], [2.05, 0.5], [1.85, 0.0], [1.6, 0.3], [1.35, -0.25], [1.1, 0.1], [0.85, -0.4], [0.55, -0.05], [0.3, -0.35], [0, 0]];
+    for (const [x, y] of p) s.lineTo(x, y);
+    formas = [s];
+  } else if (forma === 'mariposa') {
+    const a = S(); a.absellipse(1.05, 0.65, 1.0, 0.72, 0, Math.PI * 2, false, 0.35);
+    const b = S(); b.absellipse(0.7, -0.45, 0.62, 0.45, 0, Math.PI * 2, false, -0.4);
+    formas = [a, b];
+  } else if (forma === 'membrana') {
+    const s = S(); s.moveTo(0, 0.15); s.quadraticCurveTo(0.6, 1.0, 1.5, 1.2); s.lineTo(2.6, 0.95); s.lineTo(2.55, 0.25);
+    s.quadraticCurveTo(2.1, 0.15, 1.9, -0.45); s.quadraticCurveTo(1.5, -0.2, 1.15, -0.75); s.quadraticCurveTo(0.8, -0.35, 0.4, -0.5); s.quadraticCurveTo(0.2, -0.15, 0, 0.15);
+    formas = [s];
+  } else {
+    const s = S(); s.moveTo(0, 0); s.quadraticCurveTo(0.9, 0.9, 2.1, 0.7); s.quadraticCurveTo(1.4, 0.1, 1.9, -0.4); s.quadraticCurveTo(0.9, -0.3, 0, 0);
+    formas = [s];
+  }
+  return (GEO_ALA[forma] = new THREE.ShapeGeometry(formas));
+}
+function nuevasAlas(id) {
+  const A = ALAS[id] || ALAS.aprendiz;
   const g = new THREE.Group();
-  const forma = new THREE.Shape();
-  forma.moveTo(0, 0); forma.quadraticCurveTo(0.9, 0.9, 2.1, 0.7); forma.quadraticCurveTo(1.4, 0.1, 1.9, -0.4); forma.quadraticCurveTo(0.9, -0.3, 0, 0);
-  const geo = new THREE.ShapeGeometry(forma);
-  const mat = new THREE.MeshBasicMaterial({ color: 0xc4b5fd, transparent: true, opacity: 0.75, side: THREE.DoubleSide, depthWrite: false });
+  const mat = A.brillo || A.forma === 'luz'
+    ? new THREE.MeshBasicMaterial({ color: A.color, transparent: true, opacity: A.brillo ? 0.9 : 0.75, side: THREE.DoubleSide, depthWrite: false, blending: A.brillo ? THREE.AdditiveBlending : THREE.NormalBlending })
+    : new THREE.MeshLambertMaterial({ color: A.color, side: THREE.DoubleSide, transparent: A.forma === 'mariposa', opacity: A.forma === 'mariposa' ? 0.88 : 1 });
+  const geo = geoAla(A.forma);
   const izq = new THREE.Mesh(geo, mat), der = new THREE.Mesh(geo, mat);
   der.scale.x = -1;
+  // Huesos de la membrana (dragon): varillas oscuras.
+  if (A.forma === 'membrana') for (const m of [izq, der]) for (const [x, y] of [[2.55, 0.25], [1.9, -0.45], [1.15, -0.75]]) {
+    const v = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, Math.hypot(x, y), 4), new THREE.MeshBasicMaterial({ color: 0x1b1030 }));
+    v.position.set(x / 2, y / 2, 0.01); v.rotation.z = Math.atan2(y, x) - Math.PI / 2; m.add(v);
+  }
   g.add(izq, der);
   g.visible = false;
+  g.userData.id = id || 'aprendiz';
   escena.add(g);
   return g;
 }
-const alasMesh = nuevasAlas();
+// Las alas propias se rehacen si cambias de alas.
+let alasMesh = nuevasAlas('aprendiz');
+function alasPropias() {
+  const id = (yo && yo.ala) || 'aprendiz';
+  if (alasMesh.userData.id === id) return;
+  escena.remove(alasMesh);
+  alasMesh = nuevasAlas(id);
+}
 // Alas en la espalda (ry = hacia donde mira; con sprites, hacia la camara).
 function ponerAlas(g, x, y, z, ry, t) {
   const bat = Math.sin(t / 120) * 0.5;
@@ -587,7 +628,7 @@ function estadoJugador(q, esYo, t, anda) {
   if (t - (q.atkT || 0) < 420) return 'ataca';
   if (esYo ? !!lanzando : (q.lanza || 0) > t) return 'lanza';
   if (t - (q.heridoT || 0) < 250) return 'herido';
-  if (esYo ? P.vuela : q.a === 3) return 'vuela';
+  if (esYo ? P.vuela || P.planea : q.a === 3 || q.a === 4) return 'vuela';
   if (esYo && !P.suelo && P.vy > -6) return 'salta';
   if (anda && alturaEn(q.x, q.z) < -0.7) return 'nada';
   return anda ? 'corre' : 'quieto';
@@ -731,6 +772,7 @@ function recibir(m) {
       break;
     case 'yo': {
       const antes = yo; yo = m.yo;
+      ALAS_MAX = (ALAS[yo.ala] || ALAS.aprendiz).vuelo; if (!antes) P.alas = ALAS_MAX; alasPropias();
       V.actualizar();
       if (antes && (yo.skin !== antes.skin || yo.clase !== antes.clase || yo.arma !== antes.arma || JSON.stringify(yo.look) !== JSON.stringify(antes.look))) cambiarSkinPropia();
       if (!antes && !yo.look) { let visto = false; try { visto = localStorage.getItem('dq3_look_visto') === '1'; } catch (e) {} if (!visto) { const intentar = n => { if (!hayVentana()) abrirLook(); else if (n < 20) setTimeout(() => intentar(n + 1), 1500); }; setTimeout(() => intentar(0), 1500); } }
@@ -744,7 +786,7 @@ function recibir(m) {
     case 's3': foto(m); break;
     case 'pj3': agregarOtro(m.p); break;
     case 'pl': quitarOtro(m.id); break;
-    case 'pa': { const o = otros.get(m.p); if (o) { const cambia = o.sk !== m.sk || o.cl !== (m.cl || '') || o.ar !== (m.ar || 'katana') || JSON.stringify(o.lk) !== JSON.stringify(m.lk || null); Object.assign(o, { sk: m.sk, cl: m.cl || '', ar: m.ar || 'katana', mo: m.mo || '', lk: m.lk || null, gm: m.gm || 0 }); if (cambia) rehacerFiguraOtro(o); } break; }
+    case 'pa': { const o = otros.get(m.p); if (o) { const cambia = o.sk !== m.sk || o.cl !== (m.cl || '') || o.ar !== (m.ar || 'katana') || JSON.stringify(o.lk) !== JSON.stringify(m.lk || null); Object.assign(o, { sk: m.sk, cl: m.cl || '', ar: m.ar || 'katana', mo: m.mo || '', lk: m.lk || null, al: m.al || '', gm: m.gm || 0 }); if (cambia) rehacerFiguraOtro(o); } break; }
     case 'mundial3': mundial3 = { ...m, recibido: Date.now() }; break;
     case 'zona3': {
       // Pisoton: el circulo rojo se llena y, al llenarse, golpea.
@@ -789,6 +831,7 @@ function recibir(m) {
     case 'no': aviso(m.m, 'err'); break;
     case 'chat': lineaChat(m); break;
     case 'grupo': grupo3 = m.g; pintarGrupo(); break;
+    case 'alasAgotadas': if (P.vuela) { volar(false); aviso('Tus alas se cansaron.'); } P.alas = 0; break;
     case 'pica': pica = performance.now() + m.ms; aviso('🎣 ¡Pica! Pulsa E para tirar', 'ok'); sfx('boton', 0.7); break;
     case 'pescado': quitarCorcho(); sfx('moneda', 0.5); break;
     case 'duelo':
@@ -862,7 +905,7 @@ async function agregarOtro(p) {
   if (!p || p.id === miId || p.p === miId) return;
   const id = p.id || p.p;
   quitarOtro(id);
-  const o = { id, x: p.x, z: p.z, tx: p.x, tz: p.z, ry: p.r || 0, a: 0, hp: p.hp, mx: p.mx, n: p.n, lv: p.lv, cl: p.cl || '', sk: p.sk || 'comun', ar: p.ar || 'katana', mo: p.mo || '', lk: p.lk || null, gm: p.gm || 0, muerto: !!p.muerto, fig: null, lbl: etiqueta('pj'), f: 1 };
+  const o = { id, x: p.x, z: p.z, tx: p.x, tz: p.z, ry: p.r || 0, a: 0, hp: p.hp, mx: p.mx, n: p.n, lv: p.lv, cl: p.cl || '', sk: p.sk || 'comun', ar: p.ar || 'katana', mo: p.mo || '', lk: p.lk || null, al: p.al || '', gm: p.gm || 0, muerto: !!p.muerto, fig: null, lbl: etiqueta('pj'), f: 1 };
   otros.set(id, o);
   rehacerFiguraOtro(o);
 }
@@ -979,7 +1022,7 @@ function pintarAuras() {
   const alas = $('alas');
   const verAlas = P.vuela || P.alas < ALAS_MAX - 0.5;
   alas.style.display = verAlas ? 'block' : 'none';
-  if (verAlas) alas.firstElementChild.style.transform = `scaleX(${(P.alas / ALAS_MAX).toFixed(3)})`;
+  if (verAlas) { alas.firstElementChild.style.transform = `scaleX(${(P.alas / ALAS_MAX).toFixed(3)})`; const mc = $('marco'); alas.style.top = (mc.offsetTop + mc.offsetHeight + 4) + 'px'; }
 }
 function proyectil(de, a, color) {
   const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), new THREE.MeshBasicMaterial({ color }));
@@ -1355,7 +1398,7 @@ addEventListener('keydown', e => {
     return;
   }
   teclas[e.code] = true;
-  if (e.code === 'Space') { e.preventDefault(); saltar(); }
+  if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) saltar(); }
   if (e.code === 'Tab') { e.preventDefault(); if (!e.repeat) cicloObjetivo(); }
   if ((e.code === 'Digit1' || e.code === 'KeyZ') && !e.repeat) alternarAtaque();
   const nh = /^Digit([2-9])$/.exec(e.code);
@@ -1459,8 +1502,8 @@ function montar() { if (!yo || P.muerto) return; if (P.vuela) return aviso('Ater
 // ── VUELO (como las alas de AION) ──
 // Fuera del pueblo, V (o doble salto en el aire) despliega las alas: Espacio
 // sube, C baja. Las alas tienen 60 s de energia que se recarga en el suelo.
-const ALAS_MAX = 60;
-P.alas = ALAS_MAX; P.vuela = false;
+let ALAS_MAX = 60;
+P.alas = ALAS_MAX; P.vuela = false; P.planea = false;
 function volar(on) {
   if (on === undefined) on = !P.vuela;
   if (on) {
@@ -1477,8 +1520,9 @@ function volar(on) {
 function saltar() {
   if (P.muerto) return;
   if (P.suelo) { P.vy = 8; P.suelo = false; sfx('salto', 0.25); return; }
-  // Segundo salto en el aire: se despliegan las alas.
-  if (!P.vuela) volar(true);
+  // Segundo salto en lo alto del salto: se despliegan las alas para volar;
+  // si ya caes, Espacio mantenido es planear (fisica).
+  if (!P.vuela && P.vy > -2.5) volar(true);
 }
 function npcCercano() {
   if (enCueva(P.x)) return Math.hypot(P.x - CUEVA_X0 - CUEVA.salida.x, P.z - CUEVA.salida.z) < 4 ? { tipo: 'salida', nombre: 'Salir de la cueva' } : null;
@@ -1570,7 +1614,7 @@ function fisica(dt) {
   if (P.anda) {
     mx /= Math.max(1, mag); mz /= Math.max(1, mag);
     const nadando = !P.vuela && alturaEn(P.x, P.z) < -0.7;
-    const vel = MUNDO.velocidad * (nadando ? 0.55 : 1) * (P.vuela ? 1.25 : velMontura(yo.montado)) * (yo.dios && yo.diosModo && yo.diosModo.vel ? 3 : 1);
+    const vel = MUNDO.velocidad * (nadando ? 0.55 : 1) * (P.vuela ? (ALAS[yo.ala] || ALAS.aprendiz).vel : P.planea ? 1.35 : velMontura(yo.montado)) * (yo.dios && yo.diosModo && yo.diosModo.vel ? 3 : 1);
     const enC = enCueva(P.x);
     let nx = enC ? P.x + mx * vel * dt : clamp(P.x + mx * vel * dt, -MUNDO.limite, MUNDO.limite), nz = enC ? P.z + mz * vel * dt : clamp(P.z + mz * vel * dt, -MUNDO.limite, MUNDO.limite);
     // En la cueva se resbala por las paredes en vez de atravesarlas.
@@ -1592,17 +1636,21 @@ function fisica(dt) {
     if (P.alas <= 0) { volar(false); aviso('Tus alas se cansaron: planeas hacia el suelo.'); }
     if (P.y <= suelo + 0.05) { P.y = suelo; volar(false); P.suelo = true; }
   } else {
-    // Sin alas se cae, pero planeando si aun queda energia (caida suave).
-    P.vy -= (P.alas > 0 && P.vy < -6 ? 6 : 22) * dt; P.y += P.vy * dt;
-    if (P.y <= suelo) { P.y = suelo; P.vy = 0; P.suelo = true; }
+    // Planeo (AION): manteniendo Espacio al caer se abren las alas y se
+    // baja despacio sin gastar energia. Sin planear se cae (suave si quedan alas).
+    P.planea = !P.suelo && P.vy < 0 && (teclas.Space || tocandoSubir) && !enCueva(P.x) && P.y - suelo > 1.2;
+    if (P.planea) P.vy = Math.max(P.vy - 22 * dt, -2.2);
+    else P.vy -= (P.alas > 0 && P.vy < -6 ? 6 : 22) * dt;
+    P.y += P.vy * dt;
+    if (P.y <= suelo) { P.y = suelo; P.vy = 0; P.suelo = true; P.planea = false; }
     if (P.suelo) P.alas = Math.min(ALAS_MAX, P.alas + dt * 3);
   }
   if (P.vuela && zonaEn(P.x, P.z) === 'pueblo') { volar(false); aviso('En el pueblo no se puede volar: bajas.'); }
   // Enviar la posicion (hasta ~10 por segundo).
   const ahora = performance.now();
   const alt = Math.max(0, P.y - suelo);
-  const clave = P.x.toFixed(1) + ',' + P.z.toFixed(1) + ',' + (P.anda ? 1 : 0) + ',' + alt.toFixed(0);
-  if (ahora - enviadoT > 100 && clave !== ultimoEnv) { mandar({ t: 'mv3', x: +P.x.toFixed(2), z: +P.z.toFixed(2), r: +P.ry.toFixed(2), a: P.vuela ? 3 : P.anda ? 1 : 0, h: +alt.toFixed(1) }); enviadoT = ahora; ultimoEnv = clave; }
+  const clave = P.x.toFixed(1) + ',' + P.z.toFixed(1) + ',' + (P.anda ? 1 : 0) + ',' + alt.toFixed(0) + (P.planea ? 'p' : '');
+  if (ahora - enviadoT > 100 && clave !== ultimoEnv) { mandar({ t: 'mv3', x: +P.x.toFixed(2), z: +P.z.toFixed(2), r: +P.ry.toFixed(2), a: P.vuela ? 3 : P.planea ? 4 : P.anda ? 1 : 0, h: +alt.toFixed(1) }); enviadoT = ahora; ultimoEnv = clave; }
 }
 function rangoAtaque(o) {
   const arma = ARMAS[yo.arma] || ARMAS.katana;
@@ -1645,8 +1693,10 @@ function animarJugador(q, esYo, t) {
     if ((q.heridoT || 0) !== f.heridoVisto) { f.heridoVisto = q.heridoT || 0; if (t - f.heridoVisto < 300) f.modelo.golpe(); }
     f.poner(q.x, y, q.z, esYo ? P.ry : q.ry, t);
     if (!esYo) {
-      const vuela = q.a === 3;
-      if (vuela && !q.alas) q.alas = nuevasAlas();
+      const vuela = q.a === 3 || q.a === 4;
+      const tipoAla = q.al || 'aprendiz';
+      if (q.alas && q.alas.userData.id !== tipoAla) { escena.remove(q.alas); q.alas = null; }
+      if (vuela && !q.alas) q.alas = nuevasAlas(tipoAla);
       if (q.alas) { q.alas.visible = vuela; if (vuela) ponerAlas(q.alas, q.x, y, q.z, q.ry, t); }
     }
     return;
@@ -1848,7 +1898,7 @@ function bucle(t) {
   });
   for (const z of zonas3.values()) { const k = clamp((performance.now() - z.ini) / z.ms, 0, 1); z.disco.material.opacity = 0.12 + 0.4 * k; z.disco.scale.setScalar(Math.max(0.05, k)); }
   if (sacudir > 0) { sacudir = Math.max(0, sacudir - dt); camara.position.x += (Math.random() - 0.5) * sacudir; camara.position.y += (Math.random() - 0.5) * sacudir; }
-  alasMesh.visible = P.vuela && !!yo;
+  alasMesh.visible = (P.vuela || P.planea) && !!yo;
   if (alasMesh.visible) ponerAlas(alasMesh, P.x, P.y, P.z, P.fig && P.fig.tipo === 'modelo' ? P.ry : camYaw, t);
   etiquetas(t);
   numeros = numeros.filter(n => {

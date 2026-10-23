@@ -2351,3 +2351,18 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
   alternos lo que está a más de 45 m. Medido: baja 1,9 ms, alta 3,0 ms.
 - Móvil: botones en rejilla de 2 columnas; misiones y chat apilados bajo el
   marco por código (no tapan los controles táctiles).
+
+### Alas y planeo (23-oct-2026, `?v=255`). Arnés **687**
+
+- data.js `ALAS` (vuelo s, vel, forma, color, brillo; precio en oro, por
+  mazmorras o premium con `usd` → paquetes `alas_<id>`), `alaDe(c)`.
+- world.js: `comprar` k 'alas' (comprar o ponerse), `c.alas`/`c.ala` en
+  datosPropios, `al` en infoApariencia; los pedidos premium de alas se
+  entregan como las skins. cueva3d.js da 'cueva' al llegar a 5 mazmorras.
+- mundo3d.js: velocidad en el aire según las alas (a = 3) y planeo (a = 4,
+  ×1,4); energía controlada en el servidor (`vueloS`, tope vuelo + 8 s →
+  'alasAgotadas').
+- Cliente: `geoAla(forma)` + `nuevasAlas(id)` (membrana con huesos, brillo
+  aditivo); las propias se rehacen al cambiar; las de otros por `q.al`.
+  Planeo: Espacio mantenido cayendo (sin gastar); doble salto solo vuela si
+  aún subes. Barra ALAS bajo el marco.
