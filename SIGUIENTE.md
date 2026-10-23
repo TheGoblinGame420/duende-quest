@@ -2455,3 +2455,22 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
   joystick con z-index por debajo de los paneles; #botones 3×3 de 38 px (2D y
   portada pasan a la ayuda); columna izquierda apilada por código; botón
   táctil #t-usar; #lanzar e #invit3 fuera de los controles.
+
+### El Abismo de Éter: islas, facciones y viaje (23-oct-2026, `?v=261`)
+
+- mmo/js/abismo3d.js (compartido): `ABISMO_X0=6000`, 13 islas `{x,z,r,h}`,
+  `FACCIONES` luz/sombra, `alturaAbismo` (VACIO=-140 fuera de las islas),
+  `islaEn`, `baseDe`, `portalBase`, `camposAbismo` (zona 'eter').
+  mundo3d.js: `zonaEn` x>4000 → 'eter'; `alturaEn` lo delega.
+- `enCueva` ahora es `2800 <= x < 4000` (antes el Abismo contaba como cueva).
+- Servidor: `faccion` (una vez, nv 20), `abismo` (portal del pueblo, sin
+  combate), `salirAbismo` (portal del bastión), `caida` (sin isla debajo y
+  sin volar → muere). Fuera del límite del mundo en el Abismo; `c.p3` no se
+  guarda allí; se revive en el bastión. Los monstruos no salen de su isla
+  (`fueraDeIsla`).
+- Cliente: mundo/js/abismo.js dibuja islas, bastiones, Núcleo, portales y
+  nubes. Cielo/niebla 'eter', panel de objetivo, minimapa de islas, nombres
+  enemigos en rojo. El import map de mundo/index.html versiona
+  `/mmo/js/abismo3d.js` (mundo3d.js lo importa sin `?v`; así hay una sola
+  instancia del módulo).
+- Próximo (v262): PvP entre facciones en el Abismo, Puntos del Abismo y rangos.

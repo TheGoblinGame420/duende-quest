@@ -604,6 +604,7 @@ async function pruebas() {
   await pruebasCueva3d();
   await pruebasDueloPesca3d();
   await pruebasAlas3d();
+  await pruebasAbismo3d();
 }
 
 // ── ALAS (vuelo de AION) ──
@@ -625,6 +626,47 @@ async function pruebasAlas3d() {
   a.p = { x: 120, z: 120 }; a.movBud = undefined; a.limpiar();
   for (let i = 0; i < 700; i++) { avanzar(100); a.movBud = undefined; await a.mandar({ t: 'mv3', x: 120 + (i % 2) * 0.2, z: 120, a: 3, h: 10 }); }
   chequear(a.ultimos('alasAgotadas').length >= 1 && a.a !== 3, 'sin energía de alas el servidor te baja (planeando)');
+  await dejar(a);
+}
+
+// ── EL ABISMO DE ETER (facciones) ──
+async function pruebasAbismo3d() {
+  console.log('Mundo 3D: Abismo de Éter');
+  const W = await import('../mmo/js/mundo3d.js');
+  const AB = await import('../mmo/js/abismo3d.js');
+  const { PORTAL_PUEBLO, enCueva } = await import('../mmo/js/cueva3d.js');
+  chequear(!enCueva(AB.ABISMO_X0) && W.zonaEn(AB.ABISMO_X0, -200) === 'eter', 'el Abismo no se confunde con la cueva');
+  chequear(W.alturaEn(AB.ABISMO_X0, -200) > 25 && W.alturaEn(AB.ABISMO_X0 + 60, -200) === AB.VACIO, 'islas con altura y vacío entre ellas');
+  const a = await entrar3d('Abisal3D', '4j1'); ponerNivel(a, 12, 'guerrero');
+  a.p = { x: PORTAL_PUEBLO.x, z: PORTAL_PUEBLO.z }; a.combateT = 0;
+  await a.mandar({ t: 'faccion', f: 'luz' });
+  chequear(!a.c.faccion, 'antes de nivel 20 no se elige facción');
+  ponerNivel(a, 22, 'guerrero');
+  await a.mandar({ t: 'abismo' });
+  chequear(!AB.enAbismo(a.p.x), 'sin facción no se entra al Abismo');
+  await a.mandar({ t: 'faccion', f: 'luz' });
+  await a.mandar({ t: 'faccion', f: 'sombra' });
+  chequear(a.c.faccion === 'luz', 'se elige facción una sola vez');
+  a.limpiar();
+  await a.mandar({ t: 'abismo' });
+  chequear(AB.enAbismo(a.p.x) && a.ultimos('tp3').some(m => m.abismo === 1), 'el portal del pueblo lleva al bastión de la Luz');
+  // Moverse por el Abismo no lo recorta el limite del mundo ni guarda la posicion
+  const p3 = { ...a.c.p3 }; a.movBud = undefined; avanzar(1000);
+  await a.mandar({ t: 'mv3', x: a.p.x + 1, z: a.p.z, a: 1 });
+  chequear(AB.enAbismo(a.p.x) && a.c.p3.x === p3.x, 'en el Abismo se anda y no se guarda la posición');
+  await a.mandar({ t: 'caida' });
+  chequear(!a.muerto, 'sobre una isla no se muere por “caída”');
+  a.p = { x: AB.ABISMO_X0 + 60, z: -200 }; a.a = 1;
+  await a.mandar({ t: 'caida' });
+  chequear(a.muerto, 'caer al vacío mata');
+  await a.mandar({ t: 'revivir' }); avanzar(31000); await a.mandar({ t: 'revivir' });
+  const base = AB.baseDe('luz');
+  chequear(!a.muerto && Math.hypot(a.p.x - base.x, a.p.z - base.z) < 1, 'se revive en el bastión de la facción');
+  await a.mandar({ t: 'salirAbismo' });
+  chequear(AB.enAbismo(a.p.x), 'lejos del portal del bastión no se sale');
+  const pb = AB.portalBase('luz'); a.p = { ...pb };
+  await a.mandar({ t: 'salirAbismo' });
+  chequear(!AB.enAbismo(a.p.x) && Math.hypot(a.p.x - PORTAL_PUEBLO.x, a.p.z - PORTAL_PUEBLO.z) < 6, 'el portal del bastión devuelve al pueblo');
   await dejar(a);
 }
 

@@ -36,7 +36,7 @@ export const CUEVA = {
 };
 // Portal del pueblo (el mismo arco violeta del cliente).
 export const PORTAL_PUEBLO = { x: 22, z: -18 };
-export const enCueva = x => x >= CUEVA_X0 - 200;
+export const enCueva = x => x >= CUEVA_X0 - 200 && x < 4000;   // mas alla empieza el Abismo de Eter
 export function caminable(x, z, margen = 0.6) {
   const lx = x - CUEVA_X0;
   for (const [x0, z0, x1, z1] of CUEVA.salas) if (lx >= x0 + margen && lx <= x1 - margen && z >= z0 + margen && z <= z1 - margen) return true;

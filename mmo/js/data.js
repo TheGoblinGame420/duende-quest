@@ -483,6 +483,12 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 29, fecha: '23 oct 2026', items: [
+    '¡Nuevo: el Abismo de Éter! Un archipiélago de islas flotantes sobre el vacío (desde nivel 20). Se entra por el portal del pueblo.',
+    'Elige tu facción para siempre: Guardianes de la Luz o Hijos de la Sombra. Cada una tiene su bastión, y la Fortaleza del Núcleo queda en medio.',
+    'Entre las islas solo se pasa volando o planeando: caer al vacío mata. Hay campamentos de élite en las islas y se revive en el bastión propio.',
+    'En el Abismo, los nombres de la otra facción se ven en rojo.',
+  ] },
   { n: 28, fecha: '23 oct 2026', items: [
     'Lo que tapa a tu duende (árboles, casas, rocas de la cueva) se vuelve transparente, como en WoW.',
     'Luz más viva: el sol marca los volúmenes y el cielo de cada zona tiñe la sombra.',

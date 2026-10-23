@@ -23,7 +23,9 @@ import {
   habPorId, costoHab, GCD_MS, RECURSOS, MELEE, limpiarLook, MUNDIAL_CADA_MS, MUNDIAL_DURA_MS, proximoMundial, mundialDe,
 } from '../../mmo/js/data.js';
 import { MUNDO, NPCS3D, NPC_DIST, SPAWN3D, ARENA3D, CASAS, campamentos, zonaEn, esNoche, nodos3d, RECOGER_DIST, alturaEn } from '../../mmo/js/mundo3d.js';
-import { CUEVA, CUEVA_X0, caminable, enCueva, vistaCueva, pasoCueva } from '../../mmo/js/cueva3d.js';
+import { CUEVA, CUEVA_X0, caminable, enCueva, vistaCueva, pasoCueva, PORTAL_PUEBLO } from '../../mmo/js/cueva3d.js';
+import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, baseDe, portalBase, VACIO } from '../../mmo/js/abismo3d.js';
+const fueraDeIsla = (x, z) => { const is = islaEn(x, z); return !is || Math.hypot(x - ABISMO_X0 - is.x, z - is.z) > is.r * 0.85; };
 // Misma instancia (0 = mundo abierto; si no, la cueva de un grupo).
 const mismo = (a, b) => (a.i3 || 0) === (b.i3 || 0);
 
@@ -83,7 +85,7 @@ export const Mundo3D = {
     const c = s.c;
     s.m3 = true;
     s.k = K3;
-    const p = c.p3 && num(c.p3.x) !== null && num(c.p3.z) !== null && !enCueva(c.p3.x) ? c.p3 : SPAWN3D;
+    const p = c.p3 && num(c.p3.x) !== null && num(c.p3.z) !== null && !enCueva(c.p3.x) && !enAbismo(c.p3.x) ? c.p3 : SPAWN3D;
     s.p = { x: clamp(p.x, -MUNDO.limite, MUNDO.limite), z: clamp(p.z, -MUNDO.limite, MUNDO.limite) };
     s.i3 = 0;
     s.vistosP = new Set();
@@ -125,6 +127,10 @@ export const Mundo3D = {
       case 'equipar': return this.equipar(s, m);
       case 'item': return this.item(s, m);
       case 'titulo': return this.ponerTitulo(s, m);
+      case 'faccion': return this.elegirFaccion(s, m);
+      case 'abismo': return this.entrarAbismo(s);
+      case 'salirAbismo': return this.salirAbismo(s);
+      case 'caida': return this.caidaAbismo(s);
       case 'cueva': return this.entrarCueva(s);
       case 'salirCueva':
         if (s.i3 && !s.muerto && Math.hypot(s.p.x - CUEVA_X0 - CUEVA.salida.x, s.p.z - CUEVA.salida.z) < 6) return this.salirCueva(s);
@@ -170,7 +176,8 @@ export const Mundo3D = {
     const ahora = Date.now();
     const dt = clamp(ahora - s.movT, 0, 1000);
     s.movT = ahora;
-    const nx = s.i3 ? x : clamp(x, -MUNDO.limite, MUNDO.limite), nz = s.i3 ? z : clamp(z, -MUNDO.limite, MUNDO.limite);
+    const libre = s.i3 || enAbismo(s.p.x);
+    const nx = libre ? x : clamp(x, -MUNDO.limite, MUNDO.limite), nz = libre ? z : clamp(z, -MUNDO.limite, MUNDO.limite);
     // En la cueva solo se camina por salas y pasillos (si ya estas en roca, se
     // acepta el paso que te saca).
     if (s.i3 && !caminable(nx, nz, 0.2) && caminable(s.p.x, s.p.z, 0.2)) { this.enviar(s, { t: 'snap3', x: r1(s.p.x), z: r1(s.p.z) }); return; }
@@ -216,7 +223,7 @@ export const Mundo3D = {
     s.p.x = nx; s.p.z = nz;
     s.ry = num(m.r) || 0;
     s.a = a; s.h = Math.max(0, h);
-    if (!s.i3) s.c.p3 = { x: Math.round(nx * 10) / 10, z: Math.round(nz * 10) / 10 };
+    if (!s.i3 && !enAbismo(nx)) s.c.p3 = { x: Math.round(nx * 10) / 10, z: Math.round(nz * 10) / 10 };
     s.sucio = true;
   },
 
@@ -385,8 +392,9 @@ export const Mundo3D = {
     s.hp = s.st.maxHp;
     this.recursoInicial(s);
     s.inv = Date.now() + 2000;
-    s.p = { x: SPAWN3D.x, z: SPAWN3D.z };
-    c.p3 = { ...s.p };
+    const enAb = enAbismo(s.p.x) && c.faccion;
+    s.p = enAb ? baseDe(c.faccion) : { x: SPAWN3D.x, z: SPAWN3D.z };
+    if (!enAb) c.p3 = { ...s.p };
     s.movBud = undefined;
     this.enviar(s, { t: 'tp3', x: s.p.x, z: s.p.z, ...(estabaCueva ? { cueva: null } : {}) });
     this.aClave(K3, { t: 'pj3', p: this.info3d(s) }, s);
@@ -481,6 +489,48 @@ export const Mundo3D = {
     this.aClave(K3, { t: 'pa', ...this.infoApariencia(s) });
     this.actualizarYo(s);
     this.guardar(s);
+  },
+
+  // ── EL ABISMO DE ETER (facciones) ──
+  elegirFaccion(s, m) {
+    const c = s.c;
+    if (c.faccion) return this.no(s, `Ya perteneces a la ${FACCIONES[c.faccion].nombre}.`);
+    if (!Object.hasOwn(FACCIONES, m.f)) return;
+    if (c.nivel < ABISMO.nvMin) return this.no(s, `Podrás elegir facción a nivel ${ABISMO.nvMin}.`);
+    c.faccion = m.f;
+    s.sucio = true;
+    this.aClave(K3, { t: 'pa', ...this.infoApariencia(s) });
+    this.aTodos({ t: 'aviso', m: `⚔️ ${c.nombre} se une a los ${FACCIONES[m.f].titulo}.` });
+    this.actualizarYo(s);
+    this.guardar(s);
+  },
+  entrarAbismo(s) {
+    const c = s.c;
+    if (s.muerto || s.i3 || enAbismo(s.p.x)) return;
+    if (Math.hypot(s.p.x - PORTAL_PUEBLO.x, s.p.z - PORTAL_PUEBLO.z) > 9) return this.no(s, 'Ve al portal del pueblo.');
+    if (c.nivel < ABISMO.nvMin) return this.no(s, `El Abismo se abre a nivel ${ABISMO.nvMin}.`);
+    if (!c.faccion) return this.no(s, 'Antes elige tu facción en el portal.');
+    if (Date.now() - (s.combateT || 0) < 5000) return this.no(s, 'No puedes cruzar en pleno combate.');
+    this.desmontar(s);
+    s.p = baseDe(c.faccion); s.h = 0; s.a = 0; s.movBud = undefined; s.cast = null;
+    this.enviar(s, { t: 'tp3', x: r1(s.p.x), z: r1(s.p.z), abismo: 1 });
+    this.enviar(s, { t: 'toast', m: `🌌 ${ABISMO.nombre}: entre las islas solo se pasa volando. ¡Cuidado con el vacío!` });
+    this.aClave(K3, { t: 'pj3', p: this.info3d(s) }, s);
+  },
+  salirAbismo(s) {
+    if (s.muerto || !enAbismo(s.p.x) || !s.c.faccion) return;
+    const pb = portalBase(s.c.faccion);
+    if (Math.hypot(s.p.x - pb.x, s.p.z - pb.z) > 7) return this.no(s, 'Vuelve al portal de tu bastión.');
+    s.p = { x: PORTAL_PUEBLO.x + 3, z: PORTAL_PUEBLO.z + 3 }; s.h = 0; s.a = 0; s.movBud = undefined;
+    s.c.p3 = { x: r1(s.p.x), z: r1(s.p.z) };
+    this.enviar(s, { t: 'tp3', x: r1(s.p.x), z: r1(s.p.z), abismo: 0 });
+    this.aClave(K3, { t: 'pj3', p: this.info3d(s) }, s);
+  },
+  // El cliente avisa de que cayo al vacio: si de verdad no hay isla debajo y no vuela, muere.
+  caidaAbismo(s) {
+    if (s.muerto || !enAbismo(s.p.x) || islaEn(s.p.x, s.p.z) || s.a === 3) return;
+    s.hp = 0; this.morir(s); this.actualizarYo(s);   // el vacio no perdona (ni escudos ni hielo)
+    this.aTodos({ t: 'aviso', m: `🌌 ${s.c.nombre} cayó al vacío del Abismo.` });
   },
 
   // ── RECOLECCION ──
@@ -679,6 +729,7 @@ export const Mundo3D = {
       }
     }
     const velC = 4.2 * (o.vel || 1);
+    const enA = enAbismo(o.x);   // en el Abismo no se sale de su isla
     // Paso hacia (tx, tz): en la cueva por las puertas y resbalando por la roca.
     const mover = (tx, tz, v) => {
       if (enC) [tx, tz] = pasoCueva(o.x, o.z, tx, tz);
@@ -686,7 +737,7 @@ export const Mundo3D = {
       if (d < 0.05) return 0;
       const paso = Math.min(d, v * dt);
       let nx = o.x + dx / d * paso, nz = o.z + dz / d * paso;
-      const bloquea = (x, z) => enC ? !caminable(x, z, 0.5) : CASAS.some(c => { const ddx = x - c.x, ddz = z - c.z; if (Math.abs(ddx) > 12 || Math.abs(ddz) > 12) return false;
+      const bloquea = (x, z) => enC ? !caminable(x, z, 0.5) : enA ? fueraDeIsla(x, z) : CASAS.some(c => { const ddx = x - c.x, ddz = z - c.z; if (Math.abs(ddx) > 12 || Math.abs(ddz) > 12) return false;
         const co = Math.cos(c.r), si = Math.sin(c.r); return Math.abs(ddx * co - ddz * si) < c.w / 2 + 0.3 && Math.abs(ddx * si + ddz * co) < c.d / 2 + 0.3; });
       if (bloquea(nx, nz)) { if (!bloquea(nx, o.z)) nz = o.z; else if (!bloquea(o.x, nz)) nx = o.x; else return d; }
       o.ry = Math.atan2(nx - o.x, nz - o.z); o.x = nx; o.z = nz;

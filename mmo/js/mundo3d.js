@@ -17,6 +17,7 @@
 // navegador cargan data.js por rutas distintas y asi no se duplica).
 // ═══════════════════════════════════════════════════════
 
+import { alturaAbismo, camposAbismo } from './abismo3d.js';
 export const MUNDO = {
   lado: 1320,          // el mapa va de -660 a 660 en x y en z
   limite: 640,         // hasta aqui se puede caminar (el borde es montaña)
@@ -68,6 +69,7 @@ function fbm(x, z) {
 // ── REGIONES ──
 // La zona de un punto es la del centro mas cercano; el pueblo, un circulo.
 export function zonaEn(x, z) {
+  if (x > 4000) return 'eter';    // el Abismo de Eter (mmo/js/abismo3d.js)
   if (x > 2000) return 'cueva';   // la Cueva de los Goblins (mmo/js/cueva3d.js)
   if (Math.hypot(x - MUNDO.pueblo.x, z - MUNDO.pueblo.z) < MUNDO.pueblo.radio) return 'pueblo';
   let mejor = null, md = Infinity;
@@ -86,6 +88,7 @@ export function mezclaEn(x, z) {
 
 // ── ALTURA DEL TERRENO ──
 export function alturaEn(x, z) {
+  if (x > 4000) return alturaAbismo(x, z);
   if (x > 2000) return 0;
   let h = 0;
   for (const [id, k] of mezclaEn(x, z)) {
@@ -186,6 +189,7 @@ export function campamentos(MAPAS, MONSTRUOS) {
     if (jefe) l.push({ id: l.length, zona: id, x: jefe.x, z: jefe.z, k: mp.jefe, n: 1, jefe: true });
     n++;
   }
+  l.push(...camposAbismo(l.length));   // los de elite del Abismo de Eter
   return (_campos = l);
 }
 

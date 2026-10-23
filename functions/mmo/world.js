@@ -1252,7 +1252,7 @@ export class MmoWorld {
       eq: c.eq, bolsa: c.bolsa, logros: c.logros, titulo: c.titulo, mundiales: c.mundiales, login: c.login, crit: s.st.crit,
       clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, torreSem: this.torreSem(c).max, torreMax: c.torreMax || 0, exped: c.exped || null, nVisitadas: c.nVisitadas || 0, visitadas: c.visitadas || [], especies: c.especies || {}, nEspecies: c.nEspecies || 0, dorados: c.dorados || 0, exped8: c.exped8 || 0, peces: c.peces || 0, expediciones: c.expediciones || 0, duelosG: c.duelosG || 0, desafioMax: c.desafioMax || 0, amigosN: c.amigos || 0, desafio: c.desafio || {}, ...Object.fromEntries(TEMPORADAS.map(t => [t.campo, c[t.campo] || 0])), chicha: this.infoChicha(c), temp: (temporadaDe() || {}).id || '', herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, best: c.best || {},
       boveda: c.boveda, bovedaOpc: c.bovedaOpc || null, pase: this.infoPase(c), banda: this.infoBanda(c), runas: c.runas || {}, gestaCob: c.gestaCob || null,
-      look: c.look || null, alas: c.alas || ['aprendiz'], ala: c.ala || 'aprendiz', espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, tintes: c.tintes || [], tinte: c.tinte || '', mascotas: c.mascotas || [], mascota: c.mascota || '', montado: s.montado || null,
+      faccion: c.faccion || null, look: c.look || null, alas: c.alas || ['aprendiz'], ala: c.ala || 'aprendiz', espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, tintes: c.tintes || [], tinte: c.tinte || '', mascotas: c.mascotas || [], mascota: c.mascota || '', montado: s.montado || null,
       mton: c.mton, wallet: c.wallet ? { a: tonAmigable(c.wallet.a), desde: c.wallet.desde } : null,
       p2e: this.elegibilidad(c), creado: c.creado,
       retiros: this.retiros.filter(x => x.uid === c.uid).slice(-5).map(x => ({ id: x.id, ton: x.ton, estado: x.estado, creado: x.creado })),
@@ -1284,7 +1284,7 @@ export class MmoWorld {
   }
   // Lo que cambia al equiparse o elegir clase (mensaje 'pa').
   infoApariencia(s) {
-    return { p: s.id, id: s.id, sk: s.c.skin, ar: s.c.arma, mx: s.st.maxHp, ti: this.textoTitulo(s.c), cl: s.c.clase || '', rmx: s.st.recMax, hn: this.nombreHermandad(s.c.herm), hc: this.colorHermandad(s.c.herm), mo: s.montado || '', es: s.c.espec || '', lk: s.c.look || undefined, al: s.c.ala && s.c.ala !== 'aprendiz' ? s.c.ala : undefined, tn: s.c.tinte || '', ma: s.c.exped ? '' : s.c.mascota || '', gm: s.dios ? 1 : 0, gi: s.dios && s.diosModo && s.diosModo.inv ? 1 : 0 };
+    return { p: s.id, id: s.id, sk: s.c.skin, ar: s.c.arma, mx: s.st.maxHp, ti: this.textoTitulo(s.c), cl: s.c.clase || '', rmx: s.st.recMax, hn: this.nombreHermandad(s.c.herm), hc: this.colorHermandad(s.c.herm), mo: s.montado || '', es: s.c.espec || '', lk: s.c.look || undefined, al: s.c.ala && s.c.ala !== 'aprendiz' ? s.c.ala : undefined, fc: s.c.faccion || undefined, tn: s.c.tinte || '', ma: s.c.exped ? '' : s.c.mascota || '', gm: s.dios ? 1 : 0, gi: s.dios && s.diosModo && s.diosModo.inv ? 1 : 0 };
   }
   // Auras con su tiempo restante, para quien llega al mapa y no vio cuando se pusieron.
   aurasVivas(au) {
