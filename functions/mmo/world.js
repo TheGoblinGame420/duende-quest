@@ -41,6 +41,7 @@ import { Pase } from './pase.js';
 import { Torre } from './torre.js';
 import { Expediciones } from './expediciones.js';
 import { Dios } from './dios.js';
+import { Viajes } from './viajes.js';
 
 const MAX_JUGADORES = 300;
 const GUARDAR_CADA_MS = 20000;
@@ -352,6 +353,7 @@ export class MmoWorld {
       case 'pedidoBuscar': return this.pedidoBuscar(s, m);
       case 'ping': return this.enviar(s, { t: 'pong', ts: m.ts });
       case 'dios': return this.dios(s, m);
+      case 'viajar': return this.viajar(s, m);
     }
   }
 
@@ -1235,7 +1237,7 @@ export class MmoWorld {
       arma: c.arma, armas: c.armas, skin: c.skin, skins: c.skins, pw: c.pw,
       kills: c.kills, jefes: c.jefes, muerto: s.muerto, mis: c.mis, forja: c.forja,
       eq: c.eq, bolsa: c.bolsa, logros: c.logros, titulo: c.titulo, mundiales: c.mundiales, login: c.login, crit: s.st.crit,
-      clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, torreSem: this.torreSem(c).max, torreMax: c.torreMax || 0, exped: c.exped || null, nVisitadas: c.nVisitadas || 0, especies: c.especies || {}, nEspecies: c.nEspecies || 0, dorados: c.dorados || 0, exped8: c.exped8 || 0, peces: c.peces || 0, expediciones: c.expediciones || 0, duelosG: c.duelosG || 0, desafioMax: c.desafioMax || 0, amigosN: c.amigos || 0, desafio: c.desafio || {}, ...Object.fromEntries(TEMPORADAS.map(t => [t.campo, c[t.campo] || 0])), chicha: this.infoChicha(c), temp: (temporadaDe() || {}).id || '', herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, best: c.best || {},
+      clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, torreSem: this.torreSem(c).max, torreMax: c.torreMax || 0, exped: c.exped || null, nVisitadas: c.nVisitadas || 0, visitadas: c.visitadas || [], especies: c.especies || {}, nEspecies: c.nEspecies || 0, dorados: c.dorados || 0, exped8: c.exped8 || 0, peces: c.peces || 0, expediciones: c.expediciones || 0, duelosG: c.duelosG || 0, desafioMax: c.desafioMax || 0, amigosN: c.amigos || 0, desafio: c.desafio || {}, ...Object.fromEntries(TEMPORADAS.map(t => [t.campo, c[t.campo] || 0])), chicha: this.infoChicha(c), temp: (temporadaDe() || {}).id || '', herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, best: c.best || {},
       boveda: c.boveda, bovedaOpc: c.bovedaOpc || null, pase: this.infoPase(c), banda: this.infoBanda(c), runas: c.runas || {}, gestaCob: c.gestaCob || null,
       espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, tintes: c.tintes || [], tinte: c.tinte || '', mascotas: c.mascotas || [], mascota: c.mascota || '', montado: s.montado || null,
       mton: c.mton, wallet: c.wallet ? { a: tonAmigable(c.wallet.a), desde: c.wallet.desde } : null,
@@ -1313,6 +1315,7 @@ export class MmoWorld {
     const jugadores = [];
     for (const o of this.sesiones.values()) if (o.c && o !== s && o.k === k) jugadores.push(this.infoJugador(o));
     this.enviar(s, { t: 'mapa', mapa: mapaId, clave: k, x: Math.round(s.x), jugadores, mons: [...w.mons.values()].map(m => this.infoMonstruo(m)),
+      sc: s.sinCorte ? 1 : undefined,
       muros: w.muros || [], inst: w.inst ? { id: w.inst.id, nv: w.inst.nv, hechos: w.inst.hechos, k: w.inst.k || 0 } : null });
     this.aClave(k, { t: 'pj', p: this.infoJugador(s) }, s);
     this.eventosAlEntrar(s, mapaId);
@@ -1327,7 +1330,14 @@ export class MmoWorld {
     // El portal de mazmorras abre el buscador (el cliente elige cual).
     if (p.buscador) return this.enviar(s, { t: 'buscador' });
     // Salir de una mazmorra lleva de vuelta a su puerta del mundo abierto.
-    this.entrarMapa(s, p.a, p.ax);
+    // Por el borde (caminando) se cruza sin corte: se aparece junto al borde
+    // de entrada de la zona nueva y el cliente sigue andando sin fundido.
+    const dest = MAPAS[p.a];
+    const borde = !!m.borde && dest && !dest.instancia;
+    const x = borde ? (p.ax < dest.ancho / 2 ? 70 : dest.ancho - 70) : p.ax;
+    s.sinCorte = borde;
+    this.entrarMapa(s, p.a, x);
+    s.sinCorte = false;
     this.guardar(s);
   }
 
@@ -2532,4 +2542,6 @@ Object.assign(MmoWorld.prototype, Torre);
 Object.assign(MmoWorld.prototype, Expediciones);
 // Modo Dios del dueño (moderacion) y nombres unicos: functions/mmo/dios.js
 Object.assign(MmoWorld.prototype, Dios);
+// Piedras de viaje entre zonas visitadas: functions/mmo/viajes.js
+Object.assign(MmoWorld.prototype, Viajes);
 MmoWorld.prototype.generarItem = generarItem;

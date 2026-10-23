@@ -2114,3 +2114,22 @@ Cliente **?v=240**, arnés 580.
   memorizado 8 fotogramas antes de aterrizar, salto corto al soltar la
   tecla (también el botón táctil) y golpe memorizado en los últimos 180 ms
   de recarga.
+
+### Mundo abierto sin cortes, piedras de viaje y Marcha de invasores (23-oct-2026)
+
+Cliente **?v=242**, arnés **597**.
+- **Cruce por el borde sin corte**: `viajePorBorde` manda `{t:'portal', i, borde:1}`
+  (sin tener que soltar la tecla; sigue el aviso de nivel alto). `portal()` en
+  world.js coloca al jugador a 70 px del borde de entrada y marca `sc:1` en el
+  mensaje 'mapa'. El cliente no hace fundido: guarda una foto de la escena y
+  la funde (`cruce`), conserva la velocidad y arranca la cámara donde estaba
+  el duende en pantalla. Ahora también vale en el pueblo (borde izquierdo →
+  Bosque; el derecho lo frena el aviso de nivel).
+- **Piedras de viaje** (`functions/mmo/viajes.js`, `PIEDRA_X`, `costoViaje`,
+  `tienePiedra` en data.js): una por zona abierta en x 230; viaja a zonas de
+  `c.visitadas` (se envía en `yo.visitadas`), fuera de combate, 20 oro × nivel
+  mínimo de la zona, 8 s de recarga. Ventana `m-viaje`.
+- **Marcha de invasores** (eventos.js): ganar una invasión agenda `this.marcha`
+  en `zonaSiguiente()` (portal del borde derecho) a 25 s; hasta 3 etapas,
+  premio ×1 / ×1,3 / ×1,6 y la 3.ª da objeto épico+. Perder no marcha.
+- Novedades n=10 y la guía del juego explican todo esto.

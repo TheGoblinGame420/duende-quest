@@ -707,6 +707,8 @@ input.nombre:focus{border-color:var(--pri-txt);}
 
       <h3>Contenido</h3>
       <ul>
+        <li><b>Mundo abierto.</b> Las zonas se cruzan caminando por sus bordes, sin pantalla de carga. Cada zona tiene una piedra de viaje junto a la entrada para saltar a las zonas que ya descubriste.</li>
+        <li><b>Marcha de invasores.</b> Si se gana una invasión, los supervivientes huyen a la zona vecina y la persecución sigue hasta 3 etapas, con más premio en cada una.</li>
         <li><b>Mazmorras.</b> Desde Nv 6 en el portal de mazmorras del pueblo. Instancias para tu grupo o en solitario (se ajustan), con 3 jefes. Premio extra la primera vez cada día. Si todo el grupo cae, el jefe se recupera y reaparecen en la última barrera abierta.</li>
         <li><b>Torre del Duende.</b> Desde Nv 10. Oleadas por piso con un jefe cada 5 y 2:30 para limpiar cada piso. Cofre cada 5 pisos nuevos de la semana, ranking semanal y montura al piso 30.</li>
         <li><b>Banda.</b> Santuario del Titán, Nv 60, de 1 a 10 jugadores. Botín semanal por jefe.</li>
@@ -752,6 +754,15 @@ input.nombre:focus{border-color:var(--pri-txt);}
     <h2>RECOMPENSAS EN TON<small>Opcionales · con límites diarios y semanales</small></h2>
     <div id="wallet-cuerpo"></div>
     <p class="seguridad">🔒 Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado.</p>
+  </div>
+</div>
+
+<!-- Piedra de viaje: atajos a las zonas ya visitadas -->
+<div class="modal" id="m-viaje">
+  <div class="ventana">
+    <button class="bt cerrar" data-cerrar>✕</button>
+    <h2>PIEDRA DE VIAJE</h2>
+    <div id="viaje-cuerpo"></div>
   </div>
 </div>
 
@@ -886,6 +897,6 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=241"></script>
+<script type="module" src="/mmo/js/client.js?v=242"></script>
 </body>
 </html>

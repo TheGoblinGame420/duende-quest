@@ -11,6 +11,10 @@
 //  2. ELITES RAROS: de vez en cuando aparece en una zona un monstruo con
 //     nombre propio y tinte dorado/plateado. Suelta un objeto raro o mejor
 //     seguro a cada uno que lo peleo.
+//     MARCHA: si se gana, los supervivientes huyen a la zona vecina (la del
+//     borde derecho) y 25 s despues la invasion sigue alli, hasta 3 etapas,
+//     con mas premio en cada una. Como las zonas se cruzan caminando sin
+//     corte, se les persigue de zona en zona.
 //  3. COFRES: 3 por zona en sitios fijos (lo alto de las plataformas y el
 //     fondo del mapa). Cada jugador abre cada uno una vez cada 30 min.
 //
@@ -86,6 +90,18 @@ export function cofresDe(id) {
 
 const nivelZona = id => { const nv = MAPAS[id].nv; return (nv[0] + nv[1]) / 2; };
 
+// Marcha de invasores: etapas, espera entre zonas y premio de cada etapa.
+export const MARCHA_ETAPAS = 3;
+export const MARCHA_ESPERA_MS = 25 * 1000;
+export const MARCHA_MULT = [1, 1.3, 1.6];
+// La zona vecina hacia adelante: la del portal del borde derecho.
+export function zonaSiguiente(id) {
+  const m = MAPAS[id];
+  if (!m) return null;
+  const p = [...(m.portales || [])].filter(x => x.a && esZonaAbierta(x.a) && x.a !== id).sort((a, b) => b.x - a.x)[0];
+  return p && p.x > m.ancho / 2 ? p.a : null;
+}
+
 export const Eventos = {
   // ── CADA TICK ──
   // porClave: jugadores por mundo vivo (lo arma tick()).
@@ -93,7 +109,11 @@ export const Eventos = {
     if (!this.proxEvento) this.proxEvento = ahora + rnd(EVENTO_CADA_MIN[0], EVENTO_CADA_MIN[1]) * 60000;
     const ev = this.evento;
     if (ev) this.tickInvasion(ev, ahora, porClave);
-    else if (ahora >= this.proxEvento) {
+    else if (this.marcha && ahora >= this.marcha.en) {
+      const mc = this.marcha;
+      this.marcha = null;
+      this.empezarEvento(mc.mapa, ahora, mc.etapa);
+    } else if (!this.marcha && ahora >= this.proxEvento) {
       const zonas = Object.keys(porClave).filter(k => esZonaAbierta(k) && porClave[k].length);
       if (zonas.length) this.empezarEvento(azar(zonas), ahora);
       else this.proxEvento = ahora + EVENTO_REINTENTO_MS;
@@ -102,14 +122,16 @@ export const Eventos = {
   },
 
   // ── INVASIONES ──
-  empezarEvento(mapaId, ahora) {
+  empezarEvento(mapaId, ahora, etapa) {
     ahora = ahora || Date.now();
     if (this.evento || !esZonaAbierta(mapaId)) return null;
     const mp = MAPAS[mapaId];
     const n = Math.max(1, this.presentesEn(mapaId).length);
     this.sigEvento = (this.sigEvento || 0) + 1;
+    etapa = Math.max(1, Math.min(MARCHA_ETAPAS, etapa | 0 || 1));
     const ev = this.evento = {
-      id: this.sigEvento, mapa: mapaId, nombre: INVASION[mapaId] || 'Invasión',
+      id: this.sigEvento, mapa: mapaId, etapa,
+      nombre: (INVASION[mapaId] || 'Invasión') + (etapa > 1 ? ` · Marcha ${etapa}/${MARCHA_ETAPAS}` : ''),
       inicio: ahora, fin: ahora + EVENTO_DURA_MS, n,
       // Solo: 20 invasores; cada jugador mas suma 8 (hasta 60).
       meta: clamp(12 + 8 * n, 20, 60), hechos: 0, fase: 'oleadas', oleadaEn: ahora,
@@ -129,7 +151,7 @@ export const Eventos = {
   estadoEvento() {
     const ev = this.evento;
     if (!ev) return { t: 'ev', on: false };
-    return { t: 'ev', on: true, id: ev.id, mapa: ev.mapa, nombre: ev.nombre, ms: Math.max(0, ev.fin - Date.now()), meta: ev.meta, hechos: ev.hechos, fase: ev.fase };
+    return { t: 'ev', on: true, id: ev.id, mapa: ev.mapa, nombre: ev.nombre, ms: Math.max(0, ev.fin - Date.now()), meta: ev.meta, hechos: ev.hechos, fase: ev.fase, etapa: ev.etapa || 1 };
   },
 
   tickInvasion(ev, ahora, porClave) {
@@ -209,11 +231,13 @@ export const Eventos = {
       // Premio con el nivel de la zona (tope: el tuyo): un Nv 60 ayudando en
       // el Bosque no se lleva el equipo ni la XP de su nivel.
       const nv = clamp(c.nivel, mp.nv[0], mp.nv[1]);
-      const xp = Math.round(xpParaSubir(nv) * 0.35);
-      const oro = Math.round(40 * nv * rnd(0.9, 1.1));
+      const mult = MARCHA_MULT[(ev.etapa || 1) - 1] || 1;
+      const xp = Math.round(xpParaSubir(nv) * 0.35 * mult);
+      const oro = Math.round(40 * nv * rnd(0.9, 1.1) * mult);
       c.oro += oro;
       c.invasiones = (c.invasiones || 0) + 1;
-      const it = this.darItem(s, this.generarItem(nv, 1));
+      // La ultima etapa de la marcha garantiza un objeto epico o mejor.
+      const it = this.darItem(s, this.generarItem(nv, (ev.etapa || 1) >= MARCHA_ETAPAS ? 2 : 1));
       this.sumarXp(s, xp);
       s.sucio = true;
       this.enviar(s, { t: 'gana', xp, oro, drops: [], item: it, x: Math.round(s.x), y: Math.round(s.y - 80) });
@@ -224,6 +248,15 @@ export const Eventos = {
     }
     this.aTodos({ t: 'aviso', m: `${ev.nombre} rechazada en ${mp.nombre}. Héroes: ${nombres.slice(0, 6).join(', ') || '—'}${nombres.length > 6 ? ' y ' + (nombres.length - 6) + ' más' : ''}` });
     this.aTodos({ t: 'ev', on: false, fin: 'ganada', mapa: ev.mapa });
+    // La marcha sigue en la zona vecina (se les persigue caminando).
+    const sig = (ev.etapa || 1) < MARCHA_ETAPAS ? zonaSiguiente(ev.mapa) : null;
+    if (sig) {
+      const etapa = (ev.etapa || 1) + 1;
+      this.marcha = { mapa: sig, etapa, en: Date.now() + MARCHA_ESPERA_MS };
+      this.aTodos({ t: 'aviso', m: `Los supervivientes huyen hacia ${MAPAS[sig].nombre}. La marcha sigue allí en ${MARCHA_ESPERA_MS / 1000} s (etapa ${etapa}/${MARCHA_ETAPAS}, premio +${Math.round((MARCHA_MULT[etapa - 1] - 1) * 100)}%). Cruza el borde de la zona para perseguirlos.` });
+    } else if ((ev.etapa || 1) >= MARCHA_ETAPAS) {
+      this.aTodos({ t: 'aviso', m: `¡Marcha de invasores derrotada en ${mp.nombre}! Las tres zonas quedaron a salvo.` });
+    }
   },
 
   // ── ELITES RAROS ──

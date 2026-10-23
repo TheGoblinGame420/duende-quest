@@ -458,6 +458,14 @@ export const TINTES = {
 // enseñan una vez (lo nuevo para los que vuelven). La mas reciente arriba;
 // subir 'n' al añadir una.
 export const NOVEDADES = [
+  { n: 10, fecha: '23 oct 2026', items: [
+    'Mundo abierto: las zonas se cruzan caminando por sus bordes, sin pantalla de carga.',
+    'Piedras de viaje en cada zona: viaja al instante a las zonas que ya descubriste.',
+    'Marcha de invasores: si ganas una invasión, huyen a la zona vecina y la persecución sigue hasta 3 etapas, con más premio en cada una.',
+    'Cuenta con correo y contraseña dentro del juego: crea tu cuenta, recupera la contraseña y guarda tu personaje de invitado.',
+    'Salto más preciso: margen al caer de un borde, salto memorizado y salto corto al soltar.',
+    '4 skins exclusivas animadas (Esmeralda, Sombrío, Solar y Cósmico).',
+  ] },
   { n: 9, fecha: '22 oct 2026', items: [
     'Interfaz renovada: iconos dibujados en el HUD, botones táctiles nuevos y avisos más claros.',
     'Guía del juego por secciones y pantalla de carga con consejos.',
@@ -856,6 +864,18 @@ export const LOGROS = [
 export const MUNDIAL_CADA_MS = 30 * 60 * 1000;   // a las :00 y :30 (UTC)
 export const MUNDIAL_DURA_MS = 10 * 60 * 1000;
 export const proximoMundial = ahora => Math.ceil(ahora / MUNDIAL_CADA_MS) * MUNDIAL_CADA_MS;
+
+// ── PIEDRAS DE VIAJE (atajos del mundo abierto) ──
+// Una en cada zona abierta, cerca de la entrada. Desde cualquiera se viaja a
+// las zonas que ya pisaste a pie (c.visitadas), fuera de combate y por un
+// poco de oro. Las zonas siguen unidas por sus bordes: se cruza caminando.
+export const PIEDRA_X = 230;
+export const PIEDRA_DIST = 90;
+export const costoViaje = nvZona => 20 * nvZona;
+export function tienePiedra(id) {
+  const m = MAPAS[id];
+  return !!(m && m.zona && !m.instancia && !m.coliseo && !m.torre && m.monstruos && m.monstruos.length);
+}
 
 // ── SKINS (las mismas 7 del juego, con sus mismos poderes) ──
 // Se compran con oro del MMO. Las que ya se pagaron con dinero real en el

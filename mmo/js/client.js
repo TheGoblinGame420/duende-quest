@@ -16,7 +16,8 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=241';
+  PIEDRA_X, costoViaje, tienePiedra,
+} from './data.js?v=242';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -636,23 +637,33 @@ function recibir(m) {
 }
 
 let fundido = 0;
+// Cruce de zona sin corte (por el borde, caminando): sin fundido a negro. Se
+// guarda una foto de la escena y se funde con la zona nueva mientras la
+// camara parte de donde estaba el duende en pantalla, asi el mundo "sigue".
+let cruce = 0, cruceC = null;
 function entrarMapa(m) {
-  if (m.mapa !== mapaId) { fundido = 1; if (mapaId) tono('portal'); }
+  const sinCorte = !!(m.sc && mapaId && m.mapa !== mapaId && MAPAS[mapaId]);
+  const enPantalla = P.x - camX, vx = P.vx;
+  if (m.mapa !== mapaId) {
+    if (sinCorte) {
+      try { cruceC = cruceC || document.createElement('canvas'); cruceC.width = cv.width; cruceC.height = cv.height; cruceC.getContext('2d').drawImage(cv, 0, 0); cruce = 1; } catch (e) { cruce = 0; }
+    } else { fundido = 1; if (mapaId) tono('portal'); }
+  }
   mapaId = m.mapa;
   otros.clear(); mons.clear(); efectos = []; textos = []; balas = []; burbujas.clear(); jefeVivo = null;
   objetivo = null; duelo = null; castOtros.clear(); castMon.clear(); aurasM.clear(); proyectiles = []; zonas = [];
   muros = m.muros || []; instancia = m.inst || null; nodos = [];
   for (const id of [...aurasP.keys()]) if (id !== miId) aurasP.delete(id);
-  P.x = m.x; P.y = SUELO; P.vx = 0; P.vy = 0; P.suelo = true;
+  P.x = m.x; P.y = SUELO; P.vx = sinCorte ? vx : 0; P.vy = 0; P.suelo = true; P.px = P.x; P.py = P.y;
   m.jugadores.forEach(agregarOtro);
   m.mons.forEach(agregarMon);
   const mp = MAPAS[mapaId];
   $('h-mapa').textContent = mp.nombre;
   pintarSubMapa();
   if (yo) pintarHud();   // la linea de mision/mazmorra cambia con el mapa
-  camX = Math.max(0, Math.min(mp.ancho - VW, P.x - VW / 2));
+  camX = sinCorte ? P.x - enPantalla : Math.max(0, Math.min(mp.ancho - VW, P.x - VW / 2));
   $('carga').style.display = 'none';
-  aviso('📍 ' + mp.nombre);
+  aviso('📍 ' + mp.nombre + (sinCorte && mp.nv ? ' · Nivel ' + mp.nv[0] + '-' + mp.nv[1] : ''));
 }
 
 let online = 0;
@@ -985,6 +996,7 @@ function cercano() {
   }
   for (let i = 0; i < mp.portales.length; i++) if (Math.abs(P.x - mp.portales[i].x) < 70) return { tipo: 'portal', i, p: mp.portales[i] };
   for (const n of (mp.npcs || [])) if (Math.abs(P.x - n.x) < 90) return { tipo: 'npc', n };
+  if (tienePiedra(mapaId) && !instancia && Math.abs(P.x - PIEDRA_X) < 60) return { tipo: 'piedra' };
   if (mapaId === 'pueblo' && Math.abs(P.x - VITRINA_X) < 40) return { tipo: 'vitrina' };
   return nodoCercano() || pesqueroCercano() || cofreCercano();
 }
@@ -1057,6 +1069,7 @@ function interactuar() {
   sfx('boton', .3);
   if (c.tipo === 'res') { usarHabDef(habPorId('resurreccion'), c.q.id); return; }
   if (c.tipo === 'cofre') { abrirCofre(c.c); return; }
+  if (c.tipo === 'piedra') { abrirViajes(); return; }
   if (c.tipo === 'vitrina') { tabTienda = 'skin'; document.querySelectorAll('[data-tab]').forEach(x => x.classList.toggle('on', x.dataset.tab === 'skin')); abrirTienda(); return; }
   if (c.tipo === 'nodo') { if (performance.now() < c.n.listo) errorRojo('Todavía no ha vuelto a crecer.'); else mandar({ t: 'recolectar', i: c.n.i }); return; }
   if (c.tipo === 'pesca') {
@@ -2452,15 +2465,15 @@ function viajePorBorde(izq, der) {
   if (!izq && !der) { bordeSoltar = false; return; }
   // Solo en zonas de caza: en el pueblo los bordes son portales a zonas de
   // nivel alto (Acantilados 55-60) y caminar hasta el final te metia ahi.
-  if (!mp.zona || bordeSoltar || instancia || mp.instancia || castYo || P.muerto || performance.now() - bordeT < 1500) return;
+  if (bordeSoltar || instancia || mp.instancia || castYo || P.muerto || performance.now() - bordeT < 1200) return;
   const enBorde = (izq && P.x <= 16) || (der && P.x >= mp.ancho - 16);
   if (!enBorde) return;
   const i = mp.portales.findIndex(p => p.a && !p.buscador && !p.fin && Math.abs(p.x - P.x) < 85);
   if (i < 0) return;
-  bordeT = performance.now(); bordeSoltar = true;
+  bordeT = performance.now();
   const dest = MAPAS[mp.portales[i].a];
-  if (dest && dest.nv && yo.nivel < dest.nv[0] - 5) { errorRojo(`${dest.nombre}: zona de nivel ${dest.nv[0]}-${dest.nv[1]}. Para entrar igual, usa su portal (E).`); return; }
-  mandar({ t: 'portal', i });
+  if (dest && dest.nv && yo.nivel < dest.nv[0] - 5) { bordeSoltar = true; errorRojo(`${dest.nombre}: zona de nivel ${dest.nv[0]}-${dest.nv[1]}. Para entrar igual, usa su portal (E).`); return; }
+  mandar({ t: 'portal', i, borde: 1 });
 }
 
 // Barra de XP: la parte de descanso se ve en azul por delante de la tuya.
@@ -3140,6 +3153,45 @@ function pintarDios(d) {
     if (a === 'anular') { const motivo = prompt('Motivo de la anulación (lo verá el jugador):', ''); if (motivo !== null) dios({ a, codigo, motivo }); }
   });
   C.querySelectorAll('[data-dban]').forEach(b => b.onclick = () => dios({ a: 'desbanear', t: +b.dataset.dban }));
+}
+
+// ── PIEDRA DE VIAJE (atajos) ──
+// Un monolito con una runa que late; quien esta al lado ve su nombre.
+function dibujarPiedra() {
+  if (!tienePiedra(mapaId) || instancia) return;
+  const x = PIEDRA_X - camX;
+  if (x < -60 || x > VW + 60) return;
+  const y = SUELO, lat = .55 + Math.sin(frame * .06) * .25, col = '#7dd3fc';
+  sombra(x, y, 22);
+  g.save();
+  g.fillStyle = '#2b2440'; g.strokeStyle = '#0b0614'; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(x - 15, y); g.lineTo(x - 11, y - 58); g.lineTo(x, y - 70); g.lineTo(x + 11, y - 58); g.lineTo(x + 15, y); g.closePath(); g.fill(); g.stroke();
+  g.fillStyle = '#3d3459'; g.fillRect(x - 9, y - 54, 4, 46);
+  g.globalAlpha = lat; g.globalCompositeOperation = aditivo();
+  g.strokeStyle = col; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(x, y - 52); g.lineTo(x - 6, y - 40); g.lineTo(x, y - 28); g.lineTo(x + 6, y - 40); g.closePath(); g.stroke();
+  g.beginPath(); g.moveTo(x, y - 24); g.lineTo(x, y - 12); g.stroke();
+  const halo = haloSkin('cosmico'); g.globalAlpha = lat * .6; g.drawImage(halo, x - 40, y - 80, 80, 80);
+  g.restore();
+  if (frame % 20 === 0 && !ligero) particula(PIEDRA_X + (Math.random() - .5) * 20, y - 40 - Math.random() * 20, col, .6);
+  const cerca = Math.abs(P.x - PIEDRA_X) < 60;
+  etiqueta(x, y - 82, 'Piedra de viaje', cerca ? '#ffe600' : '#7dd3fc', 6);
+}
+function abrirViajes() {
+  if (!yo) return;
+  const vis = yo.visitadas || [];
+  let h = '<p style="font-size:13px;color:var(--txt2);margin-bottom:8px">Viaja al instante a cualquier zona que ya hayas pisado caminando. Fuera de combate; cuesta un poco de oro. Las zonas también se cruzan andando por sus bordes, sin pantalla de carga.</p>';
+  for (const id in MAPAS) {
+    if (!tienePiedra(id)) continue;
+    const mp = MAPAS[id], costo = costoViaje(mp.nv[0]), aqui = id === mapaId, ya = vis.includes(id);
+    const acc = aqui ? '<span class="precio" style="color:var(--ok)">Estás aquí</span>'
+      : !ya ? '<span class="precio" style="color:var(--txt3)">Sin descubrir</span>'
+      : `<span class="precio">🪙 ${costo.toLocaleString('es', { useGrouping: 'always' })}</span><button class="btn" data-viaje="${id}" ${yo.oro < costo ? 'disabled' : ''}>Viajar</button>`;
+    h += tarjeta(`<div style="width:40px;height:40px;border-radius:8px;background:${mp.paleta.cielo[1]};border:2px solid ${mp.paleta.linea}"></div>`, esc(mp.nombre), 'Nivel ' + mp.nv[0] + '-' + mp.nv[1], acc);
+  }
+  $('viaje-cuerpo').innerHTML = h;
+  $('viaje-cuerpo').querySelectorAll('[data-viaje]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'viajar', mapa: b.dataset.viaje }); cerrarModales(); });
+  abrir('m-viaje');
 }
 
 // ── EFECTOS ──
@@ -3911,6 +3963,7 @@ function dibujar() {
   dibujarMuros();
   dibujarTemporada(mp);
   dibujarPortales(mp);
+  dibujarPiedra();
   dibujarNPCs(mp);
   dibujarCofres();
   dibujarNodos();
@@ -3929,6 +3982,7 @@ function dibujar() {
   g.restore();
   // Fundido al cruzar un portal.
   if (fundido > 0) { g.fillStyle = `rgba(7,3,15,${fundido})`; g.fillRect(0, 0, cv.width, cv.height); fundido = Math.max(0, fundido - .05); }
+  if (cruce > 0 && cruceC) { g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = cruce; g.drawImage(cruceC, 0, 0); g.restore(); cruce = Math.max(0, cruce - .07); }
   // Barra del jefe
   // La barra de arriba es la del jefe mas cercano (en una mazmorra hay tres).
   let jc = null, dj = 1100;
@@ -3947,7 +4001,7 @@ function dibujar() {
   ponCss(bi, 'display', 'block');
   if (c && yo && !P.muerto) {
     ponCss(bi, 'visibility', 'visible');
-    ponTxt(bi, c.tipo === 'res' ? 'RESUCITAR' : c.tipo === 'portal' ? (c.p.etiqueta === 'Salida' ? (TACTIL ? 'SALIR' : 'E · SALIR') : (TACTIL ? 'ENTRAR' : 'E · ENTRAR')) : c.tipo === 'cofre' ? (TACTIL ? 'ABRIR' : 'E · ABRIR') : c.tipo === 'vitrina' ? (TACTIL ? 'VER SKINS' : 'E · VER SKINS') : c.tipo === 'nodo' ? (TACTIL ? 'RECOGER' : 'E · RECOGER') : c.tipo === 'pesca' ? (castYo && castYo.id === 'pica' ? (TACTIL ? 'TIRAR' : 'E · TIRAR') : castYo && castYo.id === 'pescar' ? 'Espera…' : (TACTIL ? 'PESCAR' : 'E · PESCAR')) : (TACTIL ? 'HABLAR' : 'E · HABLAR'));
+    ponTxt(bi, c.tipo === 'res' ? 'RESUCITAR' : c.tipo === 'portal' ? (c.p.etiqueta === 'Salida' ? (TACTIL ? 'SALIR' : 'E · SALIR') : (TACTIL ? 'ENTRAR' : 'E · ENTRAR')) : c.tipo === 'cofre' ? (TACTIL ? 'ABRIR' : 'E · ABRIR') : c.tipo === 'vitrina' ? (TACTIL ? 'VER SKINS' : 'E · VER SKINS') : c.tipo === 'piedra' ? (TACTIL ? 'VIAJAR' : 'E · VIAJAR') : c.tipo === 'nodo' ? (TACTIL ? 'RECOGER' : 'E · RECOGER') : c.tipo === 'pesca' ? (castYo && castYo.id === 'pica' ? (TACTIL ? 'TIRAR' : 'E · TIRAR') : castYo && castYo.id === 'pescar' ? 'Espera…' : (TACTIL ? 'PESCAR' : 'E · PESCAR')) : (TACTIL ? 'HABLAR' : 'E · HABLAR'));
   } else ponCss(bi, 'visibility', 'hidden');
 }
 

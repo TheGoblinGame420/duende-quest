@@ -593,6 +593,7 @@ async function pruebas() {
   await pruebasExpedicion();
   await pruebasEvadir();
   await pruebasDios();
+  await pruebasSinCortes();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -2481,4 +2482,73 @@ async function pruebasDios() {
   avanzar(16); await dios.mandar({ t: 'mv', x: 2000, y: 400, f: 1, a: 1 });
   chequear(dios.x === 2000, 'el dios con velocidad libre se mueve sin límite');
   for (const s of [n1b, n2, n3, n4, dios, pobre, rap, leg]) await dejar(s);
+}
+
+// ── MUNDO ABIERTO SIN CORTES: borde, piedras de viaje y Marcha de invasores ──
+async function pruebasSinCortes() {
+  console.log('Mundo abierto sin cortes');
+  const D = await import('../mmo/js/data.js');
+  const EV = await import('../functions/mmo/eventos.js');
+  const a = await entrar('Caminante', 'e1');
+  ponerNivel(a, 12, 'guerrero');
+  await aMapa(a, 'noche', 2560); a.ws.rec.length = 0;
+  const iDer = D.MAPAS.noche.portales.findIndex(p => p.a === 'amanecer');
+  await a.mandar({ t: 'portal', i: iDer, borde: 1 });
+  const mp = a.ultimos('mapa').pop();
+  chequear(a.c.mapa === 'amanecer' && mp && mp.sc === 1 && a.x === 70, 'cruzar el borde derecho entra a la zona siguiente por su borde izquierdo, sin corte (x ' + a.x + ')');
+  a.ws.rec.length = 0;
+  const iIzq = D.MAPAS.amanecer.portales.findIndex(p => p.a === 'noche');
+  await a.mandar({ t: 'portal', i: iIzq, borde: 1 });
+  chequear(a.c.mapa === 'noche' && a.x === D.MAPAS.noche.ancho - 70 && a.ultimos('mapa').pop().sc === 1, 'y hacia atrás aparece junto al borde derecho');
+  await aMapa(a, 'noche', 2560); a.ws.rec.length = 0;
+  await a.mandar({ t: 'portal', i: iDer });
+  chequear(a.ultimos('mapa').pop().sc === undefined, 'el portal normal (E) sigue con su transición');
+
+  console.log('Piedras de viaje');
+  chequear(D.tienePiedra('noche') && D.tienePiedra('acantilados') && !D.tienePiedra('pueblo') && !D.tienePiedra('coliseo'), 'hay piedra en las zonas abiertas, no en el pueblo ni el Coliseo');
+  await aMapa(a, 'amanecer', D.PIEDRA_X); limpiarMapa(a);
+  a.c.visitadas = ['noche', 'amanecer']; a.c.oro = 10000; avanzar(20000);
+  a.ws.rec.length = 0;
+  await a.mandar({ t: 'viajar', mapa: 'selva' });
+  chequear(a.c.mapa === 'amanecer' && a.ultimos('no').length, 'no se viaja a una zona sin descubrir');
+  await a.mandar({ t: 'viajar', mapa: 'noche' });
+  chequear(a.c.mapa === 'noche' && a.c.oro === 10000 - D.costoViaje(D.MAPAS.noche.nv[0]), 'se viaja a una zona visitada pagando su costo');
+  avanzar(20000);
+  await aMapa(a, 'noche', 1500); a.ws.rec.length = 0;
+  await a.mandar({ t: 'viajar', mapa: 'amanecer' });
+  chequear(a.c.mapa === 'noche', 'lejos de la piedra no se viaja');
+  await aMapa(a, 'noche', D.PIEDRA_X); a.combateT = Date.now();
+  await a.mandar({ t: 'viajar', mapa: 'amanecer' });
+  chequear(a.c.mapa === 'noche', 'en combate no se viaja');
+  a.combateT = 0; a.c.oro = 0;
+  await a.mandar({ t: 'viajar', mapa: 'amanecer' });
+  chequear(a.c.mapa === 'noche', 'sin oro no se viaja');
+  await a.mandar({ t: 'viajar', mapa: '__proto__' });
+  chequear(a.c.mapa === 'noche', 'un destino raro no rompe nada');
+
+  console.log('Marcha de invasores');
+  if (mundo.evento) mundo.terminarEvento(false);
+  mundo.marcha = null;
+  chequear(EV.zonaSiguiente('noche') === 'amanecer' && EV.zonaSiguiente('amanecer') === 'selva', 'la zona siguiente es la del borde derecho');
+  await aMapa(a, 'noche', 900); limpiarMapa(a);
+  const ev = mundo.empezarEvento('noche');
+  ev.part.add(a.c.uid); a.ws.rec.length = 0;
+  mundo.terminarEvento(true);
+  const g1 = a.ultimos('gana').pop();
+  chequear(!mundo.evento && mundo.marcha && mundo.marcha.mapa === 'amanecer' && mundo.marcha.etapa === 2, 'al ganar, la invasión huye a la zona siguiente (etapa 2)');
+  avanzar(EV.MARCHA_ESPERA_MS + 1000); mundo.tickEventos(Date.now(), {});
+  chequear(mundo.evento && mundo.evento.mapa === 'amanecer' && mundo.evento.etapa === 2 && /Marcha 2\/3/.test(mundo.evento.nombre), 'pasados 25 s la marcha empieza allí');
+  mundo.evento.part.add(a.c.uid); a.ws.rec.length = 0;
+  mundo.terminarEvento(true);
+  const g2 = a.ultimos('gana').pop();
+  chequear(g1 && g2 && g2.oro > g1.oro * 1.1, 'la etapa 2 paga más (' + (g1 && g1.oro) + ' → ' + (g2 && g2.oro) + ')');
+  avanzar(EV.MARCHA_ESPERA_MS + 1000); mundo.tickEventos(Date.now(), {});
+  chequear(mundo.evento && mundo.evento.etapa === 3, 'llega a la etapa 3');
+  mundo.evento.part.add(a.c.uid); a.ws.rec.length = 0;
+  mundo.terminarEvento(true);
+  const g3 = a.ultimos('gana').pop();
+  chequear(g3 && g3.item && g3.item.r >= 2 && !mundo.marcha, 'la etapa 3 da un objeto épico o mejor y la marcha termina');
+  const ev4 = mundo.empezarEvento('noche'); mundo.terminarEvento(false);
+  chequear(ev4 && !mundo.marcha, 'perder una invasión no la hace marchar');
+  await dejar(a);
 }
