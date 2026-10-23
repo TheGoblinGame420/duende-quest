@@ -20,7 +20,7 @@
 import {
   MAPAS, MONSTRUOS, SKINS, ARMAS, CLASES, PODERES, VARA, statsMonstruo, multForja, talento, velMontura, xpParaSubir,
   MATERIALES, NODO_CADA_MS, RECOLECTAR_MS, RARO_ZONA, raroDe,
-  habPorId, costoHab, GCD_MS, RECURSOS, MELEE, MUNDIAL_CADA_MS, MUNDIAL_DURA_MS, proximoMundial, mundialDe,
+  habPorId, costoHab, GCD_MS, RECURSOS, MELEE, limpiarLook, MUNDIAL_CADA_MS, MUNDIAL_DURA_MS, proximoMundial, mundialDe,
 } from '../../mmo/js/data.js';
 import { MUNDO, NPCS3D, NPC_DIST, SPAWN3D, ARENA3D, campamentos, zonaEn, esNoche, nodos3d, RECOGER_DIST } from '../../mmo/js/mundo3d.js';
 
@@ -100,6 +100,7 @@ export const Mundo3D = {
       case 'equipar': return this.equipar(s, m);
       case 'item': return this.item(s, m);
       case 'titulo': return this.ponerTitulo(s, m);
+      case 'look': return this.cambiarLook(s, m);
       case 'recolectar': return this.recolectar3d(s, m);
       case 'fabricar': return this.fabricar(s, m);   // cercaDeArtesana() sabe del 3D
       case 'invitar': return this.invitar(s, m);
@@ -362,6 +363,19 @@ export const Mundo3D = {
 
   // Inteligencia: pasea por su campamento; si le pegan (o es un jefe y te
   // acercas) persigue y ataca; si se aleja demasiado de casa, vuelve y se cura.
+  // ── APARIENCIA ──
+  // Cara, cuerpo, altura y pelo: gratis, validado con limpiarLook.
+  cambiarLook(s, m) {
+    const ahora = Date.now();
+    if (ahora - (s.lookT || 0) < 1500) return;
+    s.lookT = ahora;
+    s.c.look = limpiarLook(m.look);
+    s.sucio = true;
+    this.aClave(K3, { t: 'pa', ...this.infoApariencia(s) });
+    this.actualizarYo(s);
+    this.guardar(s);
+  },
+
   // ── RECOLECCION ──
   // Las mismas reglas que el 2D (1,5 s quieto, cada punto cada 5 min por
   // jugador, materiales raros en zonas altas); la marca va en c.nodos con la

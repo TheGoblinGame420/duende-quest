@@ -38,8 +38,8 @@ h2{font-size:14px;margin:14px 0 6px;color:var(--txt2)}
 <canvas id="lienzo"></canvas>
 <script type="module">
 import * as THREE from 'three';
-import { MONSTRUOS, SKINS, CLASES, ARMAS, MONTURAS } from '/mmo/js/data.js?v=250';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './js/modelos.js?v=250';
+import { MONSTRUOS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE } from '/mmo/js/data.js?v=251';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './js/modelos.js?v=251';
 
 // Parametros: ?filtro=texto&estado=quieto&gira=0&ry=1.57&compacta=1
 const Q = new URLSearchParams(location.search);
@@ -72,6 +72,16 @@ for (const cl of Object.keys(CLASES)) for (const a of (CLASES[cl].basico === 'va
   duendes.push({ nombre: `${CLASES[cl].nombre} · ${CLASES[cl].basico === 'vara' ? 'vara' : ARMAS[a].nombre}`, sub: `clase ${cl} · arma ${a}`, crear: () => crearDuende({ skin: 'comun', clase: cl, arma: a }) });
 for (const a of Object.keys(ARMAS)) duendes.push({ nombre: 'Duende · ' + ARMAS[a].nombre, sub: `skin legendaria · ${a}`, crear: () => crearDuende({ skin: 'legendaria', arma: a }) });
 grupos.push(['Jugador (crearDuende)', duendes]);
+// Apariencia: caras, cuerpos, alturas, peinados (con cada tocado) y colores de pelo.
+const look = (o, cl = null) => () => crearDuende({ skin: 'comun', clase: cl, arma: 'katana', look: Object.assign({}, LOOK_BASE, o) });
+const apa = [];
+APARIENCIA.cara.forEach((n, i) => apa.push({ nombre: 'Cara: ' + n, sub: `look.cara ${i}`, crear: look({ cara: i }) }));
+APARIENCIA.cuerpo.forEach((n, i) => apa.push({ nombre: 'Cuerpo: ' + n, sub: `look.cuerpo ${i}`, crear: look({ cuerpo: i }) }));
+for (const a of [0.9, 1, 1.12]) apa.push({ nombre: 'Altura ×' + a, sub: `look.altura ${a}`, marco: 2.1, crear: look({ altura: a }) });
+for (const cl of [null, 'guerrero', 'mago', 'sacerdote', 'picaro'])
+  APARIENCIA.pelo.forEach((n, i) => apa.push({ nombre: `Pelo: ${n}${cl ? ' + ' + CLASES[cl].nombre : ''}`, sub: `look.pelo ${i} · ${cl || 'gorra'}`, crear: look({ pelo: i }, cl) }));
+APARIENCIA.colorPelo.forEach((c, i) => apa.push({ nombre: 'Color de pelo ' + i, sub: `look.colorPelo ${i} ${c}`, crear: look({ pelo: 4, colorPelo: i, cara: 4 }) }));
+grupos.push(['Apariencia (crearDuende({ look }))', apa]);
 grupos.push(['Monstruos (crearMonstruo)', Object.keys(MONSTRUOS).map(k => ({ nombre: MONSTRUOS[k].nombre, sub: `${k} · ${MONSTRUOS[k].hoja}${MONSTRUOS[k].jefe ? ' · JEFE' : ''}`, crear: () => crearMonstruo(k) }))]);
 grupos.push(['NPC (crearNpc)', ['goblin_guard', 'goblin_peasant', 'hechicero', 'goblin_mage'].map(h => ({ nombre: 'NPC ' + h, sub: h, crear: () => crearNpc(h) }))]);
 grupos.push(['Monturas (crearMontura) con jinete en .silla (estado «monta»)', Object.keys(MONTURAS).map(id => ({ nombre: MONTURAS[id].nombre, sub: `${id} · ${MONTURAS[id].hoja}`, montura: id, crear: () => crearMontura(id) }))]);
@@ -114,7 +124,7 @@ for (const [titulo, lista] of grupos) {
       suelo.scale.setScalar(Math.max(0.6, m.ancho * 0.6));
       total++; mallasTotal += nMallas;
     }
-    const alto = m ? Math.max(m.alto * (jinete ? 1.6 : 1), (m.ancho || 1) * 0.45) : 1.8;
+    const alto = it.marco || (m ? Math.max(m.alto * (jinete ? 1.6 : 1), (m.ancho || 1) * 0.45) : 1.8);
     const cam = new THREE.PerspectiveCamera(32, 1, 0.05, 200);
     const dist = alto * 2.3 + 0.8;
     cam.position.set(dist * 0.55, alto * 0.75, dist);

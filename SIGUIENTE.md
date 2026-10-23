@@ -2288,3 +2288,17 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
 - `faro`: cilindro de luz sobre la meta (dorado; verde si es el Guardia).
   Minimapa: `!`/`?` en la meta o en el borde si está lejos; mapa grande
   también. El Guardia muestra `?` cuando hay algo que entregar.
+
+### Editor de apariencia (23-oct-2026, `?v=251`). Arnés **664**
+
+- data.js: `APARIENCIA` (6 caras, 3 cuerpos, altura 0,9-1,12, 8 peinados, 8
+  colores), `LOOK_BASE` y `limpiarLook` (valida todo lo del cliente).
+- Servidor: `look` en `recibir3d` → `cambiarLook` (cada 1,5 s como mucho)
+  guarda `c.look` limpio, va en `datosPropios.look` y en
+  `infoApariencia.lk` (los demás reconstruyen el modelo con `pa`).
+- modelos.js: `crearDuende({ skin, clase, arma, look })`; `m.alto` =
+  1,75 × altura; el pelo asoma bajo cascos y capuchas; galería
+  `?filtro=look`.
+- Cliente: panel `#v-look` (cámara de frente, vista previa en vivo sobre
+  el propio modelo, al azar / guardar / cancelar), botón 🪞; se abre solo
+  la primera vez (`dq3_look_visto`).

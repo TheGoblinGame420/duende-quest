@@ -600,6 +600,21 @@ async function pruebas() {
   await pruebasGrupo3d();
   await pruebasAmbiente3d();
   await pruebasRecoleccion3d();
+  await pruebasLook3d();
+}
+
+// ── APARIENCIA (editor del 3D) ──
+async function pruebasLook3d() {
+  console.log('Mundo 3D: apariencia');
+  const a = await entrar3d('Modelo3D', '4f1'), b = await entrar3d('Mirón3D', '4f2');
+  b.limpiar();
+  await a.mandar({ t: 'look', look: { cara: 4, cuerpo: 2, altura: 1.05, pelo: 6, colorPelo: 3 } });
+  chequear(a.c.look && a.c.look.cara === 4 && a.c.look.pelo === 6 && a.c.look.altura === 1.05, 'se guarda la apariencia');
+  chequear(b.ultimos('pa').some(x => x.p === a.id && x.lk && x.lk.cuerpo === 2), 'los demás reciben la apariencia nueva');
+  avanzar(2000);
+  await a.mandar({ t: 'look', look: { cara: 99, cuerpo: -1, altura: 9, pelo: 'x', colorPelo: 2.5, extra: 'hack' } });
+  chequear(a.c.look.cara === 0 && a.c.look.cuerpo === 1 && a.c.look.altura === 1.12 && a.c.look.pelo === 1 && a.c.look.colorPelo === 1 && !('extra' in a.c.look), 'valores inválidos se limpian');
+  for (const s of [a, b]) await dejar(s);
 }
 
 // ── RECOLECCION Y ARTESANIA EN EL 3D ──

@@ -81,6 +81,17 @@ body.movil #misiones{top:auto;bottom:96px;right:8px;width:150px;font-size:10px;}
 #hablar{left:50%;bottom:96px;transform:translateX(-50%);padding:8px 16px;font:700 14px var(--sans);display:none;cursor:pointer;color:var(--txt);}
 .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(5,2,14,.55);pointer-events:auto;z-index:10;}
 .modal.on{display:flex;}
+#v-look.modal{background:none;justify-content:flex-start;padding-left:16px;}
+#v-look .ventana{width:min(300px,86vw);background:rgba(20,12,44,.93);}
+#v-look .op{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0;font:600 12px var(--sans);}
+#v-look .op .sel{display:flex;align-items:center;gap:6px;}
+#v-look .op .sel span{min-width:96px;text-align:center;color:#fff;}
+#v-look .flecha{width:30px;height:30px;border-radius:8px;border:1px solid var(--borde);background:#22164a;color:#fff;font-size:14px;cursor:pointer;}
+#v-look .colores{display:flex;flex-wrap:wrap;gap:6px;}
+#v-look .colores button{width:24px;height:24px;border-radius:50%;border:2px solid transparent;cursor:pointer;}
+#v-look .colores button.on{border-color:#fff;box-shadow:0 0 0 2px #7c3aed;}
+#v-look input[type=range]{width:150px;}
+body.movil #v-look.modal{align-items:flex-end;padding:0 0 8px 8px;}
 .ventana{position:relative;background:#140c2c;border:1px solid var(--borde);border-radius:14px;padding:18px;width:min(460px,92vw);max-height:86vh;overflow:auto;}
 .ventana h2{font:400 14px var(--px);text-align:center;margin-bottom:12px;}
 .ventana p{font:500 14px/1.5 var(--sans);color:var(--txt2);margin-bottom:8px;}
@@ -157,6 +168,16 @@ body.movil #titulo-zona b{font-size:16px;}
   <div class="fila-b"><button class="btn" id="op-inv">Invitar al grupo</button><button class="btn sec" id="op-sus">Susurrar</button></div>
 </div>
 <div class="caja" id="invit3"><p id="invit3-t"></p><div class="fila-b"><button class="btn" id="invit3-si">Aceptar</button><button class="btn sec" id="invit3-no">Rechazar</button></div></div>
+<div class="modal" id="v-look"><div class="ventana">
+  <h3 style="margin-bottom:6px">Tu duende</h3>
+  <p style="font-size:11px;color:var(--txt2)">La ropa sale de tu skin y el casco o sombrero, de tu clase.</p>
+  <div class="op"><span>Cara</span><div class="sel"><button class="flecha" data-k="cara" data-d="-1">◀</button><span id="lk-cara"></span><button class="flecha" data-k="cara" data-d="1">▶</button></div></div>
+  <div class="op"><span>Cuerpo</span><div class="sel"><button class="flecha" data-k="cuerpo" data-d="-1">◀</button><span id="lk-cuerpo"></span><button class="flecha" data-k="cuerpo" data-d="1">▶</button></div></div>
+  <div class="op"><span>Altura</span><input type="range" id="lk-altura"></div>
+  <div class="op"><span>Pelo</span><div class="sel"><button class="flecha" data-k="pelo" data-d="-1">◀</button><span id="lk-pelo"></span><button class="flecha" data-k="pelo" data-d="1">▶</button></div></div>
+  <div class="op" style="align-items:flex-start"><span>Color</span><div class="colores" id="lk-color"></div></div>
+  <div style="display:flex;gap:6px;margin-top:12px"><button class="btn sec" id="lk-azar" style="flex:1">🎲 Al azar</button><button class="btn sec" id="lk-cancelar" style="flex:1">Cancelar</button><button class="btn" id="lk-guardar" style="flex:1.3">Guardar</button></div>
+</div></div>
 <div class="caja" id="obj">
   <div class="nm"><span id="o-nombre">—</span><small id="o-nivel"></small></div>
   <div class="barra hpo" id="o-hp"><i></i><span></span></div>
@@ -166,6 +187,7 @@ body.movil #titulo-zona b{font-size:16px;}
   <button class="bt" id="b-libro" title="Habilidades y talentos (P)">📖</button>
   <button class="bt" id="b-logros" title="Logros (L)">🏆</button>
   <button class="bt" id="b-premium" title="Skins premium">💎</button>
+  <button class="bt" id="b-look" title="Apariencia (cara, cuerpo, altura y pelo)">🪞</button>
   <button class="bt" id="b-mapa" title="Mapa del mundo (M)">🗺</button>
   <button class="bt" id="b-son" title="Música y sonido">🔊</button>
   <button class="bt" id="b-chat" title="Chat (Enter)">💬</button>
@@ -257,6 +279,6 @@ body.movil #titulo-zona b{font-size:16px;}
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script src="/js/config.js"></script>
-<script type="module" src="/mundo/js/mundo.js?v=250"></script>
+<script type="module" src="/mundo/js/mundo.js?v=251"></script>
 </body>
 </html>

@@ -18,7 +18,7 @@
 // ninguna sombra y menos de ~30 mallas por modelo.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, statsMonstruo } from '/mmo/js/data.js?v=250';
+import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo } from '/mmo/js/data.js?v=251';
 
 const PX_M = 34;                 // pixeles del 2D por metro
 const PI = Math.PI;
@@ -83,7 +83,7 @@ const MATS = new Map();
 function mat(color, o) {
   o = o || {};
   const c = col(color);
-  const k = c.getHexString() + '|' + (o.e || 0) + '|' + (o.op || 1) + '|' + (o.ds ? 1 : 0) + '|' + (o.aura ? 1 : 0);
+  const k = c.getHexString() + '|' + (o.e || 0) + '|' + (o.op || 1) + '|' + (o.ds ? 1 : 0) + '|' + (o.aura ? 1 : 0) + '|' + (o.vc ? 1 : 0);
   let m = MATS.get(k);
   if (m) return m;
   const op = o.op || 1;
@@ -94,6 +94,7 @@ function mat(color, o) {
       color: c, flatShading: true, transparent: op < 1, opacity: op, depthWrite: op >= 1,
       side: o.ds ? THREE.DoubleSide : THREE.FrontSide,
       emissive: o.e ? c : new THREE.Color(0), emissiveIntensity: o.e || 0,
+      vertexColors: !!o.vc,
     });
   }
   m.userData.compartido = true;
@@ -115,6 +116,51 @@ function M(padre, g, c, pos, esc, rot, o) {
   padre.add(me);
   return me;
 }
+// ── MALLAS FUSIONADAS ──
+// Varias piezas en UNA malla (un solo draw call) con color por vertice.
+// partes: [[geometria, color, pos, escala, rot], ...]. Se cachea por contenido.
+// (Sin escalas negativas: invertirian las caras.)
+const FUS = new Map();
+const _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _v = new THREE.Vector3(), _s = new THREE.Vector3(), _c = new THREE.Color();
+function fusion(partes) {
+  const clave = JSON.stringify(partes);
+  let g = FUS.get(clave);
+  if (g) return g;
+  const pos = [], cols = [];
+  for (const [gk, color, p, es, ro] of partes) {
+    const src = geo(gk), gg = src.index ? src.toNonIndexed() : src.clone();
+    _e.set(ro ? ro[0] : 0, ro ? ro[1] : 0, ro ? ro[2] : 0);
+    _q.setFromEuler(_e);
+    if (es == null) _s.set(1, 1, 1); else if (typeof es === 'number') _s.setScalar(es); else _s.set(es[0], es[1], es[2]);
+    _m4.compose(_v.set(p ? p[0] : 0, p ? p[1] : 0, p ? p[2] : 0), _q, _s);
+    gg.applyMatrix4(_m4);
+    const a = gg.attributes.position.array;
+    _c.set(color == null ? '#ffffff' : color);
+    for (let i = 0; i < a.length; i += 3) { pos.push(a[i], a[i + 1], a[i + 2]); cols.push(_c.r, _c.g, _c.b); }
+    gg.dispose();
+  }
+  g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+  g.computeVertexNormals();
+  g.computeBoundingBox();
+  FUS.set(clave, g);
+  return g;
+}
+// MF(padre, partes, color?, opciones?, pos?, escala?): sin color usa el de cada pieza.
+function MF(padre, partes, c, o, pos, esc) {
+  const m = c ? (c.isMaterial ? c : mat(c, o)) : mat('#ffffff', Object.assign({ vc: true }, o));
+  const me = new THREE.Mesh(fusion(partes), m);
+  if (pos) me.position.set(pos[0], pos[1], pos[2]);
+  if (esc != null) typeof esc === 'number' ? me.scale.setScalar(esc) : me.scale.set(esc[0], esc[1], esc[2]);
+  me.matrixAutoUpdate = false;
+  me.updateMatrix();
+  padre.add(me);
+  return me;
+}
+// Hex de un color (para las claves de fusion).
+const hx = c => '#' + col(c).getHexString();
+
 // Grupo (pivote) en una posicion y giro.
 function G(padre, pos, rot) {
   const g = new THREE.Group();
@@ -473,9 +519,9 @@ function humano(r, o) {
     if (o.cinto && !o.sinCinto) M(cu, 'cil', o.cinto, [0, T * 0.18, 0], [0.235 * W * P, 0.06, 0.19 * P]);
   }
   // Brazos (pivote en el hombro). D = derecho (en -x), I = izquierdo (en +x).
-  const hy = T * 0.84, hx = (o.huesos ? 0.2 : 0.25) * W * Math.sqrt(P) + 0.05;
+  const hy = T * 0.84, hom = o.huesos ? 0.2 * W + 0.05 : 0.27 * W * P * 0.8 + 0.09;
   for (const lado of [1, -1]) {
-    const b = piv(r, G(cu, [hx * lado, hy, 0], [0, 0, 0.12 * lado]));
+    const b = piv(r, G(cu, [hom * lado, hy, 0], [0, 0, 0.12 * lado]));
     M(b, 'cilT', o.mangas ?? mRopa, [0, 0, 0], [gr * 0.8, Ab, gr * 0.8]);
     M(b, 'esfera', o.manos ?? piel, [0, -Ab - 0.02, 0], (o.huesos ? 0.06 : 0.085) * (o.manoG ?? 1));
     const mano = G(b, [0, -Ab - 0.02, 0]);
@@ -498,10 +544,7 @@ function humano(r, o) {
   if (o.nariz === 'bola') M(cb, 'esfera', osc(piel, 0.92), [0, 0.21 * H, 0.27 * H], [0.08 * H, 0.07 * H, 0.09 * H]);
   else if (o.nariz === 'pico') M(cb, 'cono', piel, [0, 0.22 * H, 0.23 * H], [0.06 * H, 0.22 * H, 0.06 * H], [PI / 2 + 0.25, 0, 0]);
   if (o.ojos === 'duende') {
-    for (const x of [-1, 1]) {
-      M(cb, 'esfera', '#ffffff', [x * 0.1 * H, 0.3 * H, 0.245 * H], [0.07 * H, 0.075 * H, 0.04 * H]);
-      M(cb, 'esferaB', '#1b1430', [x * 0.1 * H, 0.3 * H, 0.283 * H], [0.042 * H, 0.05 * H, 0.02 * H]);
-    }
+    MF(cb, partesOjos(!!o.ojosGrandes), null, null, null, H);
   } else if (o.ojos) {
     const ojo = mat(o.ojos, { e: 1 });
     for (const x of [-1, 1]) M(cb, 'esferaB', ojo, [x * 0.1 * H, 0.31 * H, 0.25 * H], [0.06 * H, 0.045 * H, 0.03 * H]);
@@ -509,6 +552,22 @@ function humano(r, o) {
   if (o.colmillos) for (const x of [-1, 1]) M(cb, 'cono', '#f4efd8', [x * 0.07 * H, 0.1 * H, 0.22 * H], [0.025 * H, 0.08 * H, 0.025 * H]);
   r.topeCabeza = 0.54 * H;
   return r;
+}
+
+// Ojos del duende en unidades de cabeza (H = 1).
+function partesOjos(grandes) {
+  const P = [];
+  for (const x of [-1, 1]) {
+    if (grandes) {
+      P.push(['esfera', '#ffffff', [x * 0.115, 0.31, 0.24], [0.1, 0.112, 0.055]]);
+      P.push(['esferaB', '#1b1430', [x * 0.112, 0.305, 0.29], [0.065, 0.078, 0.028]]);
+      P.push(['esferaB', '#ffffff', [x * 0.095, 0.335, 0.312], [0.022, 0.022, 0.012]]);
+    } else {
+      P.push(['esfera', '#ffffff', [x * 0.1, 0.3, 0.245], [0.07, 0.075, 0.04]]);
+      P.push(['esferaB', '#1b1430', [x * 0.1, 0.3, 0.283], [0.042, 0.05, 0.02]]);
+    }
+  }
+  return P;
 }
 
 // ── ACCESORIOS DE CABEZA (todos fuera de la medida de altura) ──
@@ -605,10 +664,14 @@ function capa(r, c, T = 0.5, L = 0.5) {
 function grupoArma(mano, inclina = -0.55) { return fuera(G(mano, [0, 0, 0.02], [inclina, 0, 0])); }
 function espada(mano, o = {}) {
   const g = grupoArma(mano), L = o.largo ?? 0.75;
-  M(g, 'caja', o.mango ?? '#3b2a1e', [0, 0, -0.05], [0.04, 0.04, 0.2]);
-  M(g, 'caja', o.guarda ?? '#c9a227', [0, 0, 0.07], [o.daga ? 0.1 : 0.15, 0.05, 0.035]);
-  const hoja = M(g, 'caja', o.hoja ?? '#d7dde4', [0, 0, 0.09 + L / 2], [0.025, o.ancho ?? 0.07, L], null, o.e ? { e: o.e } : null);
-  if (o.e) hoja.userData.sinFlash = true;
+  const P = [
+    ['caja', hx(o.mango ?? '#3b2a1e'), [0, 0, -0.05], [0.04, 0.04, 0.2]],
+    ['caja', hx(o.guarda ?? '#c9a227'), [0, 0, 0.07], [o.daga ? 0.1 : 0.15, 0.05, 0.035]],
+  ];
+  const hoja = ['caja', hx(o.hoja ?? '#d7dde4'), [0, 0, 0.09 + L / 2], [0.025, o.ancho ?? 0.07, L]];
+  if (o.e) M(g, 'caja', mat(o.hoja, { e: o.e }), hoja[2], hoja[3]).userData.sinFlash = true;
+  else P.push(hoja);
+  MF(g, P);
   return g;
 }
 function garrote(mano, c = '#6b4a2b') {
@@ -677,23 +740,40 @@ function auraSuelo(r, c, radio = 0.6) {
 
 // ═══════════ EL DUENDE (jugador) ═══════════
 const PIEL_DUENDE = '#6cc644';
-export function crearDuende({ skin = 'comun', clase = null, arma = 'katana' } = {}) {
+// Complexion: ancho de hombros, barriga y grosor de brazos y piernas.
+const CUERPOS = [
+  { ancho: 0.8, panza: 0.78, grueso: 0.75 },   // Delgado
+  { ancho: 1, panza: 1, grueso: 1 },           // Normal
+  { ancho: 1.2, panza: 1.42, grueso: 1.32 },   // Robusto
+];
+// look = { cara 0-5, cuerpo 0-2, altura 0.9-1.12, pelo 0-7, colorPelo (indice) }
+export function crearDuende({ skin = 'comun', clase = null, arma = 'katana', look = null } = {}) {
   const sk = SKINS[skin] || SKINS.comun;
   const cl = clase && CLASES[clase] ? clase : null;
+  const lk = limpiarLook(look || LOOK_BASE);
   const ropa = !SKINS[skin] || skin === 'comun' ? '#8b5a2b' : sk.color;     // comun = cuero marron
   const brilla = !!(sk.premium || skin === 'legendaria');
   const r = nuevoRig('bipedo');
+  const cpo = CUERPOS[lk.cuerpo] || CUERPOS[1];
   humano(r, {
     piel: PIEL_DUENDE, ropa, ropaMat: mat(ropa, brilla ? { e: 0.35 } : null),
     pantalon: osc(ropa, 0.55), botas: '#4a2e18', cinto: '#3a2412',
-    cabeza: 'duende', ojos: 'duende', nariz: 'bola', orejas: 0.42, cab: 1.18, L: 0.45, T: 0.46, A: 0.38,
+    cabeza: 'duende', ojos: 'duende', ojosGrandes: lk.cara === 5, nariz: 'bola', orejas: 0.42, cab: 1.18, L: 0.45, T: 0.46, A: 0.38,
+    ancho: cpo.ancho, panza: cpo.panza, grueso: cpo.grueso,
   });
   const cc = cl ? CLASES[cl].color : ropa;
-  if (cl === 'guerrero') { ACC.casco(r, '#9aa3ad', '#efe6cf'); escudo(r.manoI, '#7a4a26', 'redondo', null); }
-  else if (cl === 'mago') ACC.sombrero(r, osc(cc, 0.75), 0.8);
-  else if (cl === 'sacerdote') { ACC.capucha(r, '#f2efe6'); ACC.halo(r); }
-  else if (cl === 'picaro') { ACC.capucha(r, '#3d3550'); ACC.mascara(r); }
-  else ACC.gorra(r, ropa);
+  // Sin clase no lleva nada en la cabeza: se ve el peinado entero.
+  let tocado = '';
+  if (cl === 'guerrero') { ACC.casco(r, '#9aa3ad', '#efe6cf'); escudo(r.manoI, '#7a4a26', 'redondo', null); tocado = 'casco'; }
+  else if (cl === 'mago') { ACC.sombrero(r, osc(cc, 0.75), 0.8); tocado = 'sombrero'; }
+  else if (cl === 'sacerdote') { ACC.capucha(r, '#f2efe6'); ACC.halo(r); tocado = 'capucha'; }
+  else if (cl === 'picaro') { ACC.capucha(r, '#3d3550'); ACC.mascara(r); tocado = 'capucha'; }
+  // Pelo y rasgos de la cara (una malla cada uno, fuera de la medida de alto).
+  const colorPelo = hx(APARIENCIA.colorPelo[lk.colorPelo] || APARIENCIA.colorPelo[1]);
+  const pelo = partesPelo(lk.pelo, tocado);
+  if (pelo.length) fuera(MF(r.cabeza, pelo, colorPelo, null, null, r.H));
+  const cara = partesCara(lk.cara, colorPelo);
+  if (cara.length) fuera(MF(r.cabeza, cara, null, null, null, r.H));
   // Arma: los de vara (mago, sacerdote) llevan baston.
   if (cl && CLASES[cl].basico === 'vara') baston(r, r.manoD, cl === 'sacerdote' ? '#fff3b0' : cc);
   else if (arma === 'dagas') {
@@ -704,9 +784,109 @@ export function crearDuende({ skin = 'comun', clase = null, arma = 'katana' } = 
   else if (arma === 'chispa') espada(r.manoD, { largo: 0.8, hoja: ARMAS.chispa.color, e: 0.9, guarda: '#1e3a5f' });
   else espada(r.manoD, { largo: 0.75, guarda: ARMAS.katana.color });
   if (brilla) auraSuelo(r, sk.color, 0.55);
-  const m = new Modelo(r, 1.75);
+  const m = new Modelo(r, 1.75 * lk.altura);
   m.tipo = 'duende';
+  m.look = lk;
   return m;
+}
+
+// ── PELO (unidades de cabeza: centro (0, .26, 0), radios .3/.28/.28) ──
+// tocado: 'gorra' | 'casco' | 'sombrero' | 'capucha'. Con tocado solo se
+// pone lo que asoma por debajo (nuca, coleta, melena, rastas, puntas).
+// Pua que sale de la cabeza en la direccion (theta desde arriba, phi: 0 = atras).
+const _arriba = new THREE.Vector3(0, 1, 0), _dir = new THREE.Vector3(), _eu = new THREE.Euler(), _qq = new THREE.Quaternion();
+function puaPelo(P, th, ph, rad, largo, ancho = 0.07, dy = 0) {
+  _dir.set(Math.sin(th) * Math.sin(ph), Math.cos(th), -Math.sin(th) * Math.cos(ph));
+  _qq.setFromUnitVectors(_arriba, _dir);
+  _eu.setFromQuaternion(_qq);
+  const r3 = v => Math.round(v * 1000) / 1000;
+  P.push(['cono4', null, [r3(_dir.x * rad), r3(0.26 + dy + _dir.y * rad), r3(_dir.z * rad)], [ancho, largo, ancho], [r3(_eu.x), r3(_eu.y), r3(_eu.z)]]);
+}
+function partesPelo(estilo, tocado) {
+  const P = [];
+  const libre = tocado === 'gorra' ? false : !tocado;
+  const capu = tocado === 'capucha', casco = tocado === 'casco', sombrero = tocado === 'sombrero';
+  // Nuca: punto de la cabeza por donde asoma el pelo bajo el tocado.
+  const ny = capu ? 0.1 : casco ? 0.2 : 0.27, nz = capu ? -0.38 : casco ? -0.31 : -0.29;
+  // Casquete inclinado: alto por delante (deja ver los ojos) y bajo por la nuca.
+  const casquete = () => { if (libre) P.push(['semi', null, [0, 0.33, -0.03], [0.32, 0.24, 0.31], [-0.35, 0, 0]]); };
+  const nuca = (w = 0.36) => P.push(['esfera', null, [0, ny, nz + 0.03], [w * 0.7, 0.1, 0.08]]);
+  switch (estilo) {
+    case 1:   // Corto
+      if (libre) { casquete(); P.push(['caja', null, [0, 0.46, 0.2], [0.36, 0.07, 0.12], [0.5, 0, 0]]); }
+      else nuca();
+      break;
+    case 2:   // Cresta (atraviesa casco y gorra; con capucha o sombrero solo la nuca)
+      if (capu || sombrero) { nuca(0.18); break; }
+      for (let i = 0; i < 6; i++) {
+        const a = -0.75 + i * 0.4, rr = libre ? 0.26 : 0.33, h = 0.3 - Math.abs(i - 2) * 0.03;
+        P.push(['cono4', null, [0, Math.round((0.26 + rr * Math.cos(a)) * 1000) / 1000, Math.round(-rr * Math.sin(a) * 1000) / 1000], [0.045, h, 0.12], [-a, 0, 0]]);
+      }
+      break;
+    case 3:   // Coleta
+      casquete();
+      if (!libre) nuca(0.24);
+      P.push(['esferaB', null, [0, ny + 0.05, nz - 0.02], 0.075]);
+      P.push(['cono', null, [0, ny + 0.05, nz - 0.03], [0.1, 0.55, 0.08], [-2.75, 0, 0]]);
+      break;
+    case 4:   // Melena
+      casquete();
+      P.push(['esfera', null, [0, libre ? 0.18 : ny - 0.02, libre ? -0.17 : nz + 0.05], [0.33, 0.32, 0.15]]);
+      for (const x of [-1, 1]) P.push(['caja', null, [x * 0.27, capu ? 0.02 : 0.1, -0.02], [0.08, 0.32, 0.17]]);
+      break;
+    case 5:   // Moño
+      casquete();
+      if (libre) P.push(['esfera', null, [0, 0.6, -0.1], 0.15]);
+      else { nuca(0.24); P.push(['esfera', null, [0, ny + 0.06, nz - 0.07], 0.14]); }
+      break;
+    case 6:   // Rastas
+      casquete();
+      for (let i = 0; i < 7; i++) {
+        const a = -1.35 + i * 0.45, rr = capu ? 0.36 : 0.29;
+        const x = Math.round(Math.sin(a) * rr * 1000) / 1000, z = Math.round((-Math.cos(a) * rr + (capu ? -0.03 : 0)) * 1000) / 1000;
+        P.push(['cilT', null, [x, libre ? 0.32 : ny + 0.08, z], [0.04, 0.46, 0.04], [Math.round(Math.cos(a) * 25) / 100, 0, Math.round(Math.sin(a) * 25) / 100]]);
+      }
+      break;
+    case 7:   // Puntas
+      casquete();
+      if (libre) {
+        for (const [th, ph] of [[0.15, 0], [0.75, 0], [0.75, 1.25], [0.75, -1.25], [1.25, 0.55], [1.25, -0.55], [1.0, 2.3], [1.0, -2.3]]) puaPelo(P, th, ph, 0.27, 0.3);
+      } else {
+        const rad = capu ? 0.4 : 0.33, dy = ny - 0.26;
+        for (const ph of [-1.45, -0.75, 0, 0.75, 1.45]) puaPelo(P, 1.7, ph, rad, 0.26, 0.08, dy);
+        if (!capu) for (const x of [-1, 1]) puaPelo(P, 1.5, x * 2.2, rad, 0.2, 0.07, dy);    // mechones de delante
+      }
+      break;
+  }
+  return P;
+}
+// ── CARA (unidades de cabeza). Rasgos grandes para verlos de lejos. ──
+function partesCara(cara, colorPelo) {
+  const P = [];
+  if (cara === 1) {          // Pecosa
+    for (const x of [-1, 1]) for (const [px, py] of [[0.1, 0.2], [0.155, 0.215], [0.13, 0.17], [0.19, 0.18]])
+      P.push(['esferaB', '#9a3b14', [x * px, py, Math.round((zCara(px, py) + 0.004) * 1000) / 1000], [0.03, 0.03, 0.014]]);
+  } else if (cara === 2) {   // Cicatriz: tajo que cruza el ojo izquierdo, de la frente a la mejilla
+    for (const [px, py, zz] of [[0.055, 0.45, 0], [0.085, 0.37, 0], [0.1, 0.3, 0.3], [0.13, 0.22, 0], [0.16, 0.14, 0]]) {
+      P.push(['caja', '#9e1f33', [px, py, Math.max(zz, zCara(px, py) + 0.005)], [0.05, 0.1, 0.035], [0, 0, 0.38]]);
+    }
+    for (const [px, py] of [[0.07, 0.41], [0.145, 0.18]]) P.push(['caja', '#f2c6cc', [px, py, zCara(px, py) + 0.02], [0.11, 0.018, 0.02], [0, 0, 0.38]]);
+  } else if (cara === 3) {   // Bigotes: mostacho de manillar que sobresale por los lados
+    for (const x of [-1, 1]) {
+      P.push(['esfera', colorPelo, [x * 0.12, 0.145, 0.25], [0.15, 0.045, 0.06], [0, 0, x * 0.3]]);
+      P.push(['cono', colorPelo, [x * 0.25, 0.18, 0.2], [0.03, 0.12, 0.03], [0, 0, -x * 0.6]]);
+    }
+  } else if (cara === 4) {   // Barba: barba ancha y de patillas
+    P.push(['esfera', colorPelo, [0, 0.11, 0.12], [0.28, 0.13, 0.19]]);
+    P.push(['cono', colorPelo, [0, 0.07, 0.19], [0.2, 0.36, 0.11], [PI + 0.25, 0, 0]]);
+    for (const x of [-1, 1]) P.push(['caja', colorPelo, [x * 0.27, 0.2, 0.02], [0.05, 0.2, 0.12]]);
+  }
+  return P;
+}
+// Profundidad de la cara (z de la superficie de la cabeza en x, y).
+function zCara(x, y) {
+  const k = 1 - (x / 0.3) ** 2 - ((y - 0.26) / 0.28) ** 2;
+  return Math.round((k > 0 ? 0.28 * Math.sqrt(k) : 0) * 1000) / 1000;
 }
 
 // ═══════════ ARQUETIPOS DE MONSTRUOS ═══════════

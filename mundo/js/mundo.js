@@ -13,11 +13,11 @@
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
-  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS } from '/mmo/js/data.js?v=250';
-import { iniciarVentanas } from './ventanas.js?v=250';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=250';
-import { crearMusica } from './musica.js?v=250';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=250';
+  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook } from '/mmo/js/data.js?v=251';
+import { iniciarVentanas } from './ventanas.js?v=251';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=251';
+import { crearMusica } from './musica.js?v=251';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=251';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -695,7 +695,8 @@ function recibir(m) {
     case 'yo': {
       const antes = yo; yo = m.yo;
       V.actualizar();
-      if (antes && (yo.skin !== antes.skin || yo.clase !== antes.clase || yo.arma !== antes.arma)) cambiarSkinPropia();
+      if (antes && (yo.skin !== antes.skin || yo.clase !== antes.clase || yo.arma !== antes.arma || JSON.stringify(yo.look) !== JSON.stringify(antes.look))) cambiarSkinPropia();
+      if (!antes && !yo.look) { let visto = false; try { visto = localStorage.getItem('dq3_look_visto') === '1'; } catch (e) {} if (!visto) { const intentar = n => { if (!hayVentana()) abrirLook(); else if (n < 20) setTimeout(() => intentar(n + 1), 1500); }; setTimeout(() => intentar(0), 1500); } }
       if (yo.muerto && !(antes && antes.muerto)) morir();
       if (!yo.muerto) { cerrar('v-muerte'); P.muerto = false; }
       if (yo.clase) cerrar('v-clase');
@@ -706,7 +707,7 @@ function recibir(m) {
     case 's3': foto(m); break;
     case 'pj3': agregarOtro(m.p); break;
     case 'pl': quitarOtro(m.id); break;
-    case 'pa': { const o = otros.get(m.p); if (o) { const cambia = o.sk !== m.sk || o.cl !== (m.cl || '') || o.ar !== (m.ar || 'katana'); Object.assign(o, { sk: m.sk, cl: m.cl || '', ar: m.ar || 'katana', mo: m.mo || '', gm: m.gm || 0 }); if (cambia) rehacerFiguraOtro(o); } break; }
+    case 'pa': { const o = otros.get(m.p); if (o) { const cambia = o.sk !== m.sk || o.cl !== (m.cl || '') || o.ar !== (m.ar || 'katana') || JSON.stringify(o.lk) !== JSON.stringify(m.lk || null); Object.assign(o, { sk: m.sk, cl: m.cl || '', ar: m.ar || 'katana', mo: m.mo || '', lk: m.lk || null, gm: m.gm || 0 }); if (cambia) rehacerFiguraOtro(o); } break; }
     case 'mundial3': mundial3 = { ...m, recibido: Date.now() }; break;
     case 'zona3': {
       // Pisoton: el circulo rojo se llena y, al llenarse, golpea.
@@ -779,13 +780,15 @@ function recibir(m) {
 }
 
 // ── JUGADORES Y MONSTRUOS ──
-const claveYo = () => yo.skin + '|' + (yo.clase || '') + '|' + (yo.arma || '');
+let lookEditor = null;
+const lookYo = () => lookEditor || (yo && yo.look) || LOOK_BASE;
+const claveYo = () => yo.skin + '|' + (yo.clase || '') + '|' + (yo.arma || '') + '|' + JSON.stringify(lookYo());
 async function cambiarSkinPropia() {
   if (!yo) return;
   const clave = claveYo();
   if (P.cargando === clave || (P.fig && P.skin === clave)) return;
   P.cargando = clave;
-  const f = figuraModelo(() => crearDuende({ skin: yo.skin, clase: yo.clase || null, arma: yo.arma || 'katana' })) || await figuraJugador(yo.skin);
+  const f = figuraModelo(() => crearDuende({ skin: yo.skin, clase: yo.clase || null, arma: yo.arma || 'katana', look: lookYo() })) || await figuraJugador(yo.skin);
   P.cargando = '';
   if (!f) return;
   if (P.fig) P.fig.quitar();
@@ -795,12 +798,12 @@ async function agregarOtro(p) {
   if (!p || p.id === miId || p.p === miId) return;
   const id = p.id || p.p;
   quitarOtro(id);
-  const o = { id, x: p.x, z: p.z, tx: p.x, tz: p.z, ry: p.r || 0, a: 0, hp: p.hp, mx: p.mx, n: p.n, lv: p.lv, cl: p.cl || '', sk: p.sk || 'comun', ar: p.ar || 'katana', mo: p.mo || '', gm: p.gm || 0, muerto: !!p.muerto, fig: null, lbl: etiqueta('pj'), f: 1 };
+  const o = { id, x: p.x, z: p.z, tx: p.x, tz: p.z, ry: p.r || 0, a: 0, hp: p.hp, mx: p.mx, n: p.n, lv: p.lv, cl: p.cl || '', sk: p.sk || 'comun', ar: p.ar || 'katana', mo: p.mo || '', lk: p.lk || null, gm: p.gm || 0, muerto: !!p.muerto, fig: null, lbl: etiqueta('pj'), f: 1 };
   otros.set(id, o);
   rehacerFiguraOtro(o);
 }
 async function rehacerFiguraOtro(o) {
-  const f = figuraModelo(() => crearDuende({ skin: o.sk, clase: o.cl || null, arma: o.ar || 'katana' })) || await figuraJugador(o.sk);
+  const f = figuraModelo(() => crearDuende({ skin: o.sk, clase: o.cl || null, arma: o.ar || 'katana', look: o.lk || LOOK_BASE })) || await figuraJugador(o.sk);
   if (!otros.has(o.id)) { if (f) f.quitar(); return; }
   if (o.fig) o.fig.quitar();
   o.fig = f;
@@ -1121,6 +1124,50 @@ $('b-inv').onclick = () => V.abrirInventario();
 $('b-libro').onclick = () => V.abrirLibro();
 $('b-logros').onclick = () => V.abrirLogros();
 $('b-premium').onclick = () => V.abrirTienda('premium');
+// ── EDITOR DE APARIENCIA ──
+// Cambia el modelo propio en vivo; la camara se pone de frente.
+let camAntes = null;
+function pintarLook() {
+  const l = lookEditor;
+  $('lk-cara').textContent = APARIENCIA.cara[l.cara];
+  $('lk-cuerpo').textContent = APARIENCIA.cuerpo[l.cuerpo];
+  $('lk-pelo').textContent = APARIENCIA.pelo[l.pelo];
+  const r = $('lk-altura'); r.min = APARIENCIA.altura.min; r.max = APARIENCIA.altura.max; r.step = APARIENCIA.altura.paso; r.value = l.altura;
+  $('lk-color').innerHTML = APARIENCIA.colorPelo.map((c, i) => `<button style="background:${c}" class="${i === l.colorPelo ? 'on' : ''}" data-i="${i}" aria-label="Color ${i + 1}"></button>`).join('');
+  $('lk-color').querySelectorAll('button').forEach(b => b.onclick = () => { lookEditor.colorPelo = +b.dataset.i; pintarLook(); cambiarSkinPropia(); });
+}
+function abrirLook() {
+  if (!yo || hayVentana()) return;
+  try { localStorage.setItem('dq3_look_visto', '1'); } catch (e) {}
+  lookEditor = { ...LOOK_BASE, ...(yo.look || {}) };
+  camAntes = { camYaw, camPitch, camDist };
+  camYaw = P.ry; camPitch = 0.12; camDist = 4.6;
+  pintarLook();
+  abrir('v-look');
+}
+function cerrarLook(guardar) {
+  if (guardar && lookEditor) mandar({ t: 'look', look: limpiarLook(lookEditor) });
+  if (guardar && yo) yo.look = limpiarLook(lookEditor);
+  lookEditor = null;
+  if (camAntes) ({ camYaw, camPitch, camDist } = camAntes);
+  camAntes = null;
+  cerrar('v-look');
+  cambiarSkinPropia();
+}
+document.querySelectorAll('#v-look .flecha').forEach(b => b.onclick = () => {
+  const k = b.dataset.k, n = APARIENCIA[k].length;
+  lookEditor[k] = (lookEditor[k] + +b.dataset.d + n) % n;
+  pintarLook(); cambiarSkinPropia(); sfx('boton', 0.2);
+});
+$('lk-altura').oninput = e => { lookEditor.altura = +e.target.value; cambiarSkinPropia(); };
+$('lk-azar').onclick = () => {
+  lookEditor = { cara: Math.floor(Math.random() * APARIENCIA.cara.length), cuerpo: Math.floor(Math.random() * 3), altura: Math.round((APARIENCIA.altura.min + Math.random() * (APARIENCIA.altura.max - APARIENCIA.altura.min)) * 100) / 100, pelo: Math.floor(Math.random() * APARIENCIA.pelo.length), colorPelo: Math.floor(Math.random() * APARIENCIA.colorPelo.length) };
+  pintarLook(); cambiarSkinPropia();
+};
+$('lk-guardar').onclick = () => { cerrarLook(true); aviso('Apariencia guardada.', 'ok'); };
+$('lk-cancelar').onclick = () => cerrarLook(false);
+$('v-look').addEventListener('click', e => { if (e.target.id === 'v-look') cerrarLook(false); });
+$('b-look').onclick = () => abrirLook();
 $('b-mapa').onclick = () => abrirMapa();
 function pintarSon() { $('b-son').textContent = sonido ? '🔊' : '🔇'; }
 $('b-son').onclick = () => { sonido = !sonido; try { localStorage.setItem('dq_mmo_sonido', sonido ? '1' : '0'); } catch (e) {} musica.activo(sonido); pintarSon(); };
@@ -1199,6 +1246,7 @@ addEventListener('keydown', e => {
     return;
   }
   if (hayVentana()) {
+    if (e.key === 'Escape' && $('v-look').classList.contains('on')) return cerrarLook(false);
     if (e.key === 'Escape') document.querySelectorAll('.modal.on').forEach(m => { if (!['v-clase', 'v-muerte', 'v-inicio', 'v-error'].includes(m.id)) cerrar(m.id); });
     if (e.code === 'KeyM' && $('v-mapa').classList.contains('on')) cerrar('v-mapa');
     for (const [k, id] of [['KeyI', 'v-inv'], ['KeyP', 'v-libro'], ['KeyL', 'v-logros']]) if (e.code === k && $(id) && $(id).classList.contains('on')) cerrar(id);

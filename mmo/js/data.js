@@ -457,7 +457,36 @@ export const TINTES = {
 // Novedades: al entrar, a quien no las vio en este dispositivo se le
 // enseñan una vez (lo nuevo para los que vuelven). La mas reciente arriba;
 // subir 'n' al añadir una.
+// ── APARIENCIA DEL DUENDE (editor del mundo 3D) ──
+// Solo cara, cuerpo, altura y pelo (estilo y color): la ropa sale de la skin
+// y el casco/sombrero, de la clase. El servidor guarda c.look ya limpio.
+export const APARIENCIA = {
+  cara: ['Clásica', 'Pecosa', 'Cicatriz', 'Bigotes', 'Barba', 'Ojos grandes'],
+  cuerpo: ['Delgado', 'Normal', 'Robusto'],
+  altura: { min: 0.9, max: 1.12, paso: 0.01 },
+  pelo: ['Calvo', 'Corto', 'Cresta', 'Coleta', 'Melena', 'Moño', 'Rastas', 'Puntas'],
+  colorPelo: ['#2b1d14', '#6b3f1f', '#c98a3c', '#e8d27a', '#d9442b', '#f4f4f4', '#3b82f6', '#a855f7'],
+};
+export const LOOK_BASE = { cara: 0, cuerpo: 1, altura: 1, pelo: 1, colorPelo: 1 };
+// Deja solo valores validos (lo que llegue del cliente no se cree tal cual).
+export function limpiarLook(l) {
+  l = l && typeof l === 'object' ? l : {};
+  const ent = (v, n, d) => (Number.isInteger(v) && v >= 0 && v < n ? v : d);
+  const alt = typeof l.altura === 'number' && Number.isFinite(l.altura) ? Math.round(Math.min(APARIENCIA.altura.max, Math.max(APARIENCIA.altura.min, l.altura)) * 100) / 100 : 1;
+  return {
+    cara: ent(l.cara, APARIENCIA.cara.length, LOOK_BASE.cara),
+    cuerpo: ent(l.cuerpo, APARIENCIA.cuerpo.length, LOOK_BASE.cuerpo),
+    altura: alt,
+    pelo: ent(l.pelo, APARIENCIA.pelo.length, LOOK_BASE.pelo),
+    colorPelo: ent(l.colorPelo, APARIENCIA.colorPelo.length, LOOK_BASE.colorPelo),
+  };
+}
+
 export const NOVEDADES = [
+  { n: 19, fecha: '23 oct 2026', items: [
+    'Editor de personaje en el mundo 3D (botón 🪞): elige cara, forma del cuerpo, altura, peinado y color de pelo. Todos lo ven.',
+    'Seis caras (pecosa, cicatriz, bigotes, barba…), tres cuerpos y ocho peinados que asoman bajo el casco o la capucha de tu clase.',
+  ] },
   { n: 18, fecha: '23 oct 2026', items: [
     'Rastreador de misiones en el 3D: tu misión y la caza del día bajo el minimapa, con flecha y distancia.',
     'Una columna de luz marca el campamento al que tienes que ir y el minimapa muestra ! (o ? cuando toca volver con el Guardia).',
