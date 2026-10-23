@@ -22,14 +22,30 @@ const DonationManager = {
       if (typeof showNotification === 'function') showNotification('Mínimo ' + this.MIN_SOL + ' SOL', 'warning');
       return { success: false, reason: 'min' };
     }
+    // La wallet del proyecto no puede enviarse SOL a si misma (pasaba al
+    // probar la pagina con la wallet de desarrollo conectada).
+    if (WalletManager.walletAddress === this.DEV_WALLET) {
+      if (typeof showNotification === 'function') showNotification('Tienes conectada la wallet del proyecto: conecta otra wallet para enviar SOL.', 'warning');
+      return { success: false, reason: 'self' };
+    }
     const provider = WalletManager.provider;
+    let firma = null;
     try {
       const { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } = solanaWeb3;
-      const connection = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
       const fromPubKey = new PublicKey(WalletManager.walletAddress);
       const toPubKey = new PublicKey(this.DEV_WALLET);
       const lamports = Math.floor(solAmount * LAMPORTS_PER_SOL);
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+      // Varios servidores publicos de Solana: si uno rechaza la peticion del
+      // navegador (pasa con api.mainnet-beta), se prueba el siguiente.
+      let connection = null, blockhash = null, lastValidBlockHeight = 0;
+      for (const rpc of ['https://api.mainnet-beta.solana.com', 'https://solana-rpc.publicnode.com']) {
+        try {
+          const c = new Connection(rpc, 'confirmed');
+          ({ blockhash, lastValidBlockHeight } = await c.getLatestBlockhash());
+          connection = c; break;
+        } catch (e) { console.warn('[Donación] RPC sin respuesta:', rpc, e && e.message); }
+      }
+      if (!connection) throw new Error('No hay conexión con la red de Solana');
       const tx = new Transaction({
         recentBlockhash: blockhash,
         feePayer: fromPubKey,
@@ -37,25 +53,29 @@ const DonationManager = {
         SystemProgram.transfer({ fromPubkey: fromPubKey, toPubkey: toPubKey, lamports })
       );
       const signed = await provider.signAndSendTransaction(tx);
-      await connection.confirmTransaction({
-        signature: signed.signature,
-        blockhash,
-        lastValidBlockHeight,
-      });
+      firma = typeof signed === 'string' ? signed : signed && signed.signature;
+      if (!firma) throw new Error('La wallet no devolvió la firma');
+      // Con la firma en la mano el pago YA salio: si la confirmacion tarda o
+      // falla la consulta, no se dice "no se pudo enviar" (antes se decia, y
+      // la persona podia volver a pagar).
+      try { await connection.confirmTransaction({ signature: firma, blockhash, lastValidBlockHeight }); }
+      catch (e) { console.warn('[Donación] confirmación lenta:', e && e.message); }
+      const signed2 = { signature: firma };
       const duendeEarned = this.calculateReward(solAmount);
       await this.registerDonation({
         wallet: WalletManager.walletAddress,
         sol_amount: solAmount,
         duende_earned: duendeEarned,
-        tx_signature: signed.signature,
-      });
-      return { success: true, signature: signed.signature, duendeEarned };
+        tx_signature: signed2.signature,
+      }).catch(() => {});
+      return { success: true, signature: signed2.signature, duendeEarned };
     } catch (err) {
-      if (err.code === 4001) {
+      if (err && (err.code === 4001 || /reject|cancel/i.test(err.message || ''))) {
         return { success: false, reason: 'user_rejected' };
       }
       console.error('Donation error:', err);
-      return { success: false, reason: 'error', message: err.message };
+      if (firma) return { success: true, signature: firma, duendeEarned: this.calculateReward(solAmount) };
+      return { success: false, reason: 'error', message: (err && err.message) || '' };
     }
   },
 
@@ -124,12 +144,14 @@ function initDonationPanel() {
         showTxLink(result.signature);
         input.value = '';
         preview.textContent = 'Elige un monto para ver cuánto recibes';
-      } else if (result.reason === 'no_wallet' || result.reason === 'min') {
+      } else if (result.reason === 'no_wallet' || result.reason === 'min' || result.reason === 'self') {
         // ya se avisó dentro de sendDonation
       } else if (result.reason === 'user_rejected') {
         if (typeof showNotification === 'function') showNotification('Transacción cancelada', 'warning');
       } else {
-        if (typeof showNotification === 'function') showNotification('No se pudo enviar la transacción. Intenta de nuevo.', 'error');
+        const m = result.message || '';
+        const porque = /insufficient|lamports|0x1/i.test(m) ? ' No tienes SOL suficiente (cuenta también la comisión de la red).' : /conexi|network|fetch|403|429/i.test(m) ? ' La red de Solana no respondió: espera un minuto.' : '';
+        if (typeof showNotification === 'function') showNotification('No se pudo enviar la transacción.' + porque + ' No se cobró nada.', 'error');
       }
       btnSend.disabled = false;
       btnSend.textContent = 'Enviar SOL y recibir $DUENDE';
