@@ -18,7 +18,7 @@
 // ninguna sombra y menos de ~30 mallas por modelo.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, statsMonstruo } from '/mmo/js/data.js?v=249';
+import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, statsMonstruo } from '/mmo/js/data.js?v=250';
 
 const PX_M = 34;                 // pixeles del 2D por metro
 const PI = Math.PI;

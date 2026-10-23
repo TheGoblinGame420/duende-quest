@@ -13,11 +13,11 @@
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
-  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS } from '/mmo/js/data.js?v=249';
-import { iniciarVentanas } from './ventanas.js?v=249';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=249';
-import { crearMusica } from './musica.js?v=249';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=249';
+  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS } from '/mmo/js/data.js?v=250';
+import { iniciarVentanas } from './ventanas.js?v=250';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=250';
+import { crearMusica } from './musica.js?v=250';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=250';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1156,6 +1156,14 @@ function pintarMini() {
   for (const o of mons.values()) if (!o.muereT) punto(o.x, o.z, o.j ? '#ffd84a' : '#ff4455', o.j ? 3.5 : 2);
   for (const o of otros.values()) punto(o.x, o.z, enGrupo(o.id) ? '#7dd3fc' : '#4ade80', enGrupo(o.id) ? 3.5 : 2.5);
   { const ah = performance.now(); for (const n of NODOS) if (Math.abs(n.x - P.x) < 130 && Math.abs(n.z - P.z) < 130 && !(nodoListo.get(n.i) > ah)) punto(n.x, n.z, n.tipo === 'hierba' ? '#c084fc' : '#fbbf24', 1.6); }
+  if (metaMision) {
+    let px = (metaMision.x - P.x) * k + S / 2, pz = (metaMision.z - P.z) * k + S / 2;
+    const fuera = px < 6 || pz < 6 || px > S - 6 || pz > S - 6;
+    if (fuera) { const a = Math.atan2(pz - S / 2, px - S / 2); px = S / 2 + Math.cos(a) * (S / 2 - 8); pz = S / 2 + Math.sin(a) * (S / 2 - 8); }
+    x.fillStyle = metaMision.guia ? '#4ade80' : '#ffd84a'; x.strokeStyle = '#000'; x.lineWidth = 2;
+    x.font = 'bold 14px system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.strokeText(metaMision.guia ? '?' : '!', px, pz); x.fillText(metaMision.guia ? '?' : '!', px, pz);
+  }
   for (const n of NPCS3D) punto(n.x, n.z, '#7dd3fc', 2);
   if (mundial3 && mundial3.vivo) punto(ARENA3D.x, ARENA3D.z, '#ff6b3d', 5);
   // Flecha propia (hacia donde mira la camara).
@@ -1176,6 +1184,7 @@ function abrirMapa() {
   for (const cp of campamentos(MAPAS, MONSTRUOS)) if (cp.jefe) { const [px, pz] = aMapa(cp.x, cp.z, S); x.fillStyle = '#ffd84a'; x.beginPath(); x.arc(px, pz, 5, 0, 7); x.fill(); }
   const [ux, uz] = aMapa(0, 0, S); x.fillStyle = '#fff'; x.fillText('Pueblo Duende', ux, uz - 8);
   { const [ax, az] = aMapa(ARENA3D.x, ARENA3D.z, S); x.fillStyle = mundial3 && mundial3.vivo ? '#ff6b3d' : '#c4a484'; x.beginPath(); x.arc(ax, az, 7, 0, 7); x.fill(); x.fillText(ARENA3D.nombre, ax, az - 11); }
+  if (metaMision) { const [mx2, mz2] = aMapa(metaMision.x, metaMision.z, S); x.font = 'bold 22px system-ui'; x.fillStyle = metaMision.guia ? '#4ade80' : '#ffd84a'; x.strokeStyle = '#000'; x.lineWidth = 3; x.strokeText(metaMision.guia ? '?' : '!', mx2, mz2 + 7); x.fillText(metaMision.guia ? '?' : '!', mx2, mz2 + 7); x.font = '600 12px system-ui'; }
   const [yx, yz] = aMapa(P.x, P.z, S); x.fillStyle = '#4ade80'; x.beginPath(); x.arc(yx, yz, 6, 0, 7); x.fill(); x.strokeStyle = '#000'; x.stroke();
   abrir('v-mapa');
 }
@@ -1537,8 +1546,45 @@ function etiquetas(t) {
     const herido = o.hp < o.mx || el;
     ponLbl(o.lbl, o.x, alturaEn(o.x, o.z) + alto + 0.2, o.z, `<span style="color:${o.j ? '#ff6bf0' : colorNivel(o.nv)}">${o.j ? '★ ' : ''}${herido || o.j ? esc(def.nombre) + ' ' : ''}Nv${o.nv}</span>${herido ? `<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>` : ''}`, el ? 90 : (o.j ? 70 : 38));
   }
-  for (const n of npcs) ponLbl(n.lbl, n.x, n.y + 2.4, n.z, `${n.tipo === 'guia' && misionLista() ? '<b style="color:#ffd84a;font-size:18px">!</b><br>' : ''}<span style="color:#4ade80">${esc(n.nombre)}</span>`, 60);
+  for (const n of npcs) ponLbl(n.lbl, n.x, n.y + 2.4, n.z, `${n.tipo === 'guia' && misionLista() ? '<b style="color:#ffd84a;font-size:22px;text-shadow:0 0 6px #000">?</b><br>' : ''}<span style="color:#4ade80">${esc(n.nombre)}</span>`, 60);
 }
+// ── RASTREADOR DE MISIONES ──
+// La mision de la cadena y la caza del dia, con flecha y distancia al
+// campamento mas cercano del monstruo pedido (o al Guardia si ya esta lista).
+const CAMPOS3D = campamentos(MAPAS, MONSTRUOS);
+const guiaNpc = NPCS3D.find(n => n.tipo === 'guia');
+let metaMision = null;
+const flechaDir = (x, z) => { const a = Math.atan2(x - P.x, z - P.z) - camYaw + Math.PI; return ['⬆', '↗', '➡', '↘', '⬇', '↙', '⬅', '↖'][((Math.round(a / (Math.PI / 4)) % 8) + 8) % 8]; };
+function pintarMisiones() {
+  const c = $('misiones');
+  if (!yo || !yo.mis) { c.style.display = 'none'; return; }
+  const q = MISIONES[yo.mis.i], d = yo.diaria || {};
+  let h = '';
+  metaMision = null;
+  if (q) {
+    const lista = yo.mis.p >= q.n;
+    if (lista) metaMision = { x: guiaNpc.x, z: guiaNpc.z, guia: true };
+    else {
+      let mejor = null, md = Infinity;
+      for (const cp of CAMPOS3D) if (cp.k === q.tipo) { const dd = Math.hypot(cp.x - P.x, cp.z - P.z); if (dd < md) { md = dd; mejor = cp; } }
+      if (mejor) metaMision = { x: mejor.x, z: mejor.z, jefe: mejor.jefe };
+    }
+    const dist = metaMision ? Math.hypot(metaMision.x - P.x, metaMision.z - P.z) : 0;
+    const donde = metaMision ? (dist < 25 ? ' · aquí' : ` · ${flechaDir(metaMision.x, metaMision.z)} ${Math.round(dist)} m`) : '';
+    h += `<div class="q"><b>📜 ${esc(q.nombre)}</b>${lista ? `<span class="ok">¡Lista! Vuelve con el Guardia Tito</span><small>${donde}</small>` : `${(MONSTRUOS[q.tipo] || {}).nombre || q.tipo}: ${Math.min(yo.mis.p, q.n)}/${q.n}<small>${donde}</small>`}</div>`;
+  }
+  if (!d.ok) h += `<div class="q"><b>☀ ${DIARIA.nombre}</b>${(d.p || 0) >= DIARIA.n ? '<span class="ok">¡Lista! Cóbrala con el Guardia</span>' : `Monstruos de tu nivel: ${Math.min(d.p || 0, DIARIA.n)}/${DIARIA.n}`}</div>`;
+  c.style.display = h ? 'block' : 'none';
+  if (c._h !== h) { c.innerHTML = h; c._h = h; }
+  // Columna de luz sobre la meta (como las zonas de mision de WoW).
+  faro.visible = !!metaMision && Math.hypot(metaMision.x - P.x, metaMision.z - P.z) > 12;
+  if (metaMision) { faro.position.set(metaMision.x, alturaEn(metaMision.x, metaMision.z), metaMision.z); faro.material.color.set(metaMision.guia ? '#4ade80' : '#ffd84a'); }
+}
+const faro = (() => {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 2.4, 90, 12, 1, true).translate(0, 45, 0), new THREE.MeshBasicMaterial({ color: '#ffd84a', transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+  m.visible = false; escena.add(m); return m;
+})();
+$('misiones').onclick = () => abrirMapa();
 function misionLista() { if (!yo) return false; const q = MISIONES[yo.mis.i]; const d = yo.diaria || {}; return (q && yo.mis.p >= q.n) || (!d.ok && (d.p || 0) >= DIARIA.n); }
 function colorNivel(nv) { const d = nv - (yo ? yo.nivel : 1); return d >= 5 ? '#ff3344' : d >= 2 ? '#ff9900' : d <= -8 ? '#9a9a9a' : d <= -3 ? '#4ade80' : '#ffe600'; }
 const cieloAct = C(CIELO.pueblo), cieloObj = C(CIELO.pueblo);
@@ -1604,6 +1650,7 @@ function bucle(t) {
   if (portal) portal.velo.material.opacity = 0.45 + Math.sin(t / 300) * 0.15;
   pintarObjetivo();
   if (cuadro % 6 === 0) { pintarMini(); pintarCds(); pintarAuras(); pintarObjetivoP(); }
+  if (cuadro % 20 === 0) pintarMisiones();
   efectos = efectos.filter(e => {
     e.t += dt / e.dura;
     const r = 0.5 + e.radio * Math.min(1, e.t);

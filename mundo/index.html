@@ -45,6 +45,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .hpo i{background:linear-gradient(#ff5a6a,#b91c1c);}
 #oro{margin-top:6px;font:600 12px var(--sans);color:var(--oro);}
 #mini{right:12px;top:12px;padding:6px;}
+#misiones{right:12px;top:212px;padding:7px 9px;width:174px;font:600 11px var(--sans);pointer-events:auto;cursor:pointer;display:none;}
+#misiones b{display:block;color:#ffd84a;font-size:11px;margin-bottom:1px;}
+#misiones .q{margin-bottom:6px;}
+#misiones .q:last-child{margin-bottom:0;}
+#misiones .ok{color:#4ade80;}
+#misiones small{color:var(--txt2);}
+body.movil #misiones{top:auto;bottom:96px;right:8px;width:150px;font-size:10px;}
 #mini canvas{display:block;width:150px;height:150px;border-radius:8px;}
 #mini .z{font:600 11px var(--sans);text-align:center;margin-top:4px;color:var(--cian);}
 #botones{right:174px;top:12px;padding:4px;display:flex;gap:4px;}
@@ -166,6 +173,7 @@ body.movil #titulo-zona b{font-size:16px;}
   <a class="bt" href="/mmo/" title="Juego 2D: mazmorras, Torre y banda">2D</a>
   <a class="bt" href="/" title="Portada">⌂</a>
 </div>
+<div class="caja" id="misiones"></div>
 <div class="caja" id="mini"><canvas id="mini-c" width="150" height="150"></canvas><div class="z" id="mini-z">—</div><div class="z" id="mini-r" style="color:var(--txt2);font-weight:600"></div></div>
 <div class="caja" id="barra"></div>
 <div class="caja" id="lanzar"><div class="barra"><i></i><span id="lanzar-t"></span></div></div>
@@ -249,6 +257,6 @@ body.movil #titulo-zona b{font-size:16px;}
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script src="/js/config.js"></script>
-<script type="module" src="/mundo/js/mundo.js?v=249"></script>
+<script type="module" src="/mundo/js/mundo.js?v=250"></script>
 </body>
 </html>

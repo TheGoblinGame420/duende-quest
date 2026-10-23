@@ -458,6 +458,10 @@ export const TINTES = {
 // enseñan una vez (lo nuevo para los que vuelven). La mas reciente arriba;
 // subir 'n' al añadir una.
 export const NOVEDADES = [
+  { n: 18, fecha: '23 oct 2026', items: [
+    'Rastreador de misiones en el 3D: tu misión y la caza del día bajo el minimapa, con flecha y distancia.',
+    'Una columna de luz marca el campamento al que tienes que ir y el minimapa muestra ! (o ? cuando toca volver con el Guardia).',
+  ] },
   { n: 17, fecha: '23 oct 2026', items: [
     'Recolección en el mundo 3D: 228 hierbas y vetas repartidas por las zonas (salen en el minimapa). Acércate y pulsa E.',
     'La Artesana Lila del pueblo 3D ya fabrica pociones, escudos, elixires y recetas de pescado con lo que recojas.',

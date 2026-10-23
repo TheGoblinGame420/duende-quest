@@ -2278,3 +2278,13 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
 - Cliente: los puntos son 4 InstancedMesh (mata, flores, roca, vetas); los
   recogidos se esconden (escala ~0) hasta que vuelven. E o el botón inferior
   recoge. La Artesana muestra materiales y las RECETAS.
+
+### Rastreador de misiones (23-oct-2026, `?v=250`)
+
+- `pintarMisiones()` cada 20 cuadros: misión de la cadena (`yo.mis`) y la
+  diaria; meta = campamento más cercano con `k === MISIONES[i].tipo` (las 40
+  tienen campamento en el 3D) o el Guardia si ya está lista. Flecha relativa
+  a la cámara y distancia.
+- `faro`: cilindro de luz sobre la meta (dorado; verde si es el Guardia).
+  Minimapa: `!`/`?` en la meta o en el borde si está lejos; mapa grande
+  también. El Guardia muestra `?` cuando hay algo que entregar.
