@@ -458,6 +458,10 @@ export const TINTES = {
 // enseñan una vez (lo nuevo para los que vuelven). La mas reciente arriba;
 // subir 'n' al añadir una.
 export const NOVEDADES = [
+  { n: 13, fecha: '23 oct 2026', items: [
+    'Jefe mundial del 3D: a las :15 y :45 aparece en el Claro del Titán. ¡Esquiva sus pisotones saliendo del círculo rojo!',
+    'Todos los niveles reciben premio: XP, oro, una pieza de equipo y mTON.',
+  ] },
   { n: 12, fecha: '23 oct 2026', items: [
     'Mundo 3D: tus habilidades de clase (teclas 2 a 9) con lanzamientos, combos y efectos.',
     '¡Vuela! Pulsa V o salta dos veces para desplegar las alas: Espacio sube y C baja. En el pueblo no se vuela.',

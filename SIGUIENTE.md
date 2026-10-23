@@ -2198,3 +2198,21 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
 - Pendiente: modelos 3D de verdad para duende/monstruos/monturas (en curso),
   mazmorras como instancias 3D, jefe mundial, artesanía/pesca/duelos en 3D.
 
+### Jefe mundial del 3D (23-oct-2026, `?v=245`). Arnés **645**
+
+- Claro del Titán (`ARENA3D` en mmo/js/mundo3d.js, (82, −47), Amanecer):
+  círculo de menhires. El jefe sale a las **:15 y :45** (el del Coliseo 2D
+  sigue a las :00 y :30), rota entre los 3 `MUNDIALES`, vida
+  20.000 + 15.000 × jugadores del 3D, 10 minutos para matarlo.
+- Pega a quien más amenaza tiene; sus golpes quitan un % de la vida (todos
+  los niveles juntos). Cada 12 s un **pisotón**: círculo rojo de 9 m en el
+  suelo (`zona3`) que se llena en 2,5 s y luego quita el 30 % a quien siga
+  dentro (`zona3f`, sacudida de cámara). Por debajo del 30 % se enfurece
+  (pisotones más seguidos y del 45 %).
+- Premios: `premiosMundial(o, K3)` (mismo premio que el Coliseo: XP, oro,
+  pieza, pase, tareas, mTON con ≥2 % del daño).
+- Cliente: cuenta atrás en el HUD (`mundial3`), marca en minimapa y mapa,
+  jefe 2,4 veces más grande.
+- Moderadores: escribir `/jefe` en el chat del 3D lo invoca ya (acción
+  `dios` `mundial3`).
+

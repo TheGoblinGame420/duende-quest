@@ -23,7 +23,7 @@
 // "El Duende"...) quedan reservados. Antes un invitado podia entrar con el
 // nombre de cualquiera.
 // ═══════════════════════════════════════════════════════
-import { MAPAS, SKINS, limpiarNombre } from '../../mmo/js/data.js';
+import { MAPAS, SKINS, MONSTRUOS, MUNDIALES, limpiarNombre } from '../../mmo/js/data.js';
 import { getEnv } from '../api/lib.js';
 
 const RESERVADO = /admin|moderador|^mod|mod$|^gm|gm$|staff|soporte|sistema|oficial|elduende|duendequest|dios/;
@@ -133,6 +133,14 @@ export const Dios = {
         this.entrarMapa(objetivo, s.c.mapa, s.x);
         this.enviar(objetivo, { t: 'toast', m: '🌀 Un moderador te trajo a su lado.' });
         return ok('🌀 Trajiste a ' + objetivo.c.nombre + '.');
+      }
+      case 'mundial3': {
+        // Invoca ya al jefe mundial del 3D (si no hay uno vivo).
+        const W = this.iniciar3d();
+        if (W.mundial && W.mundial.o && !W.mundial.o.muere) return this.no(s, 'Ya hay un jefe mundial en el mundo 3D.');
+        const k = MUNDIALES.includes(m.k) ? m.k : MUNDIALES[Math.floor(Math.random() * MUNDIALES.length)];
+        this.aparecerMundial3(k, this.sesiones3d().length);
+        return ok('👹 Invocaste a ' + MONSTRUOS[k].nombre + ' en el mundo 3D.');
       }
       case 'anuncio': {
         const txt = String(m.m || '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 200);

@@ -117,6 +117,9 @@ export const NPCS3D = [
 ];
 export const NPC_DIST = 6;            // metros para hablar
 export const SPAWN3D = { x: 0, z: 22 };
+// Claro del Titan: donde aparece el jefe mundial del 3D (llano, en el
+// Amanecer para que lleguen todos los niveles).
+export const ARENA3D = { x: 82, z: -47, r: 22, nombre: 'Claro del Titán' };
 // Casas del pueblo (decorado; el servidor no las necesita).
 export const CASAS = [
   { x: -34, z: 18, w: 10, d: 8, r: 0.3 }, { x: 36, z: 22, w: 9, d: 9, r: -0.4 }, { x: -30, z: -34, w: 11, d: 8, r: 0.9 },

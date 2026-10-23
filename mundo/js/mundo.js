@@ -13,9 +13,9 @@
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
-  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura } from '/mmo/js/data.js?v=244';
-import { iniciarVentanas } from './ventanas.js?v=244';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=244';
+  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura } from '/mmo/js/data.js?v=245';
+import { iniciarVentanas } from './ventanas.js?v=245';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=245';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -208,6 +208,24 @@ function crearPueblo() {
   escena.add(p1, p2, arco, velo);
   return { x: px, z: pz, velo };
 }
+
+// Claro del Titan: circulo de menhires donde aparece el jefe mundial.
+(() => {
+  const piedra = new THREE.MeshLambertMaterial({ color: 0x6b6478 });
+  const runa = new THREE.MeshBasicMaterial({ color: 0xff6b3d });
+  for (let i = 0; i < 12; i++) {
+    const a = i / 12 * Math.PI * 2, x = ARENA3D.x + Math.cos(a) * ARENA3D.r, z = ARENA3D.z + Math.sin(a) * ARENA3D.r;
+    const alto = 4 + (i % 3) * 1.2;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(1.4, alto, 1), piedra);
+    m.position.set(x, alturaEn(x, z) + alto / 2 - 0.3, z); m.rotation.y = -a; m.rotation.z = (i % 2 ? 0.06 : -0.05);
+    const r = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.9), runa);
+    r.position.set(0, alto * 0.15, 0.51); m.add(r);
+    escena.add(m);
+  }
+  const suelo = new THREE.Mesh(new THREE.RingGeometry(ARENA3D.r - 1.2, ARENA3D.r - 0.6, 64).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xff6b3d, transparent: true, opacity: 0.35, depthWrite: false }));
+  suelo.position.set(ARENA3D.x, alturaEn(ARENA3D.x, ARENA3D.z) + 0.2, ARENA3D.z);
+  escena.add(suelo);
+})();
 
 // ── SPRITES (planos que miran a la camara, con la hoja de animacion) ──
 const imagenes = {};
@@ -441,6 +459,23 @@ function recibir(m) {
     case 'pj3': agregarOtro(m.p); break;
     case 'pl': quitarOtro(m.id); break;
     case 'pa': { const o = otros.get(m.p); if (o) { const cambia = o.sk !== m.sk; Object.assign(o, { sk: m.sk, cl: m.cl || '', gm: m.gm || 0 }); if (cambia) rehacerFiguraOtro(o); } break; }
+    case 'mundial3': mundial3 = { ...m, recibido: Date.now() }; break;
+    case 'zona3': {
+      // Pisoton: el circulo rojo se llena y, al llenarse, golpea.
+      const y = alturaEn(m.x, m.z) + 0.18;
+      const disco = new THREE.Mesh(new THREE.CircleGeometry(m.r, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xff2a2a, transparent: true, opacity: 0.12, depthWrite: false }));
+      const borde = new THREE.Mesh(new THREE.RingGeometry(m.r - 0.35, m.r, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xff2a2a, transparent: true, opacity: 0.9, depthWrite: false }));
+      disco.position.set(m.x, y, m.z); borde.position.set(m.x, y + 0.01, m.z);
+      escena.add(disco, borde);
+      zonas3.set(m.id, { disco, borde, x: m.x, z: m.z, r: m.r, ini: performance.now(), ms: m.ms });
+      if (Math.hypot(P.x - m.x, P.z - m.z) < m.r + 3) aviso('¡Pisotón! Sal del círculo rojo.', 'err');
+      break;
+    }
+    case 'zona3f': {
+      const z = zonas3.get(m.id);
+      if (z) { escena.remove(z.disco, z.borde); z.disco.geometry.dispose(); z.borde.geometry.dispose(); onda(z.x, z.z, z.r, '#ff5a2a'); zonas3.delete(m.id); sacudir = 0.5; sfx('explosion', 0.45); }
+      break;
+    }
     case 'md3': { const o = mons.get(m.id); if (o) { o.muereT = performance.now(); o.st = 3; sfx('muerte', 0.3); } if (objetivo === m.id) { objetivo = 0; autoAtk = false; pintarBarra(); } break; }
     case 'at3': ataqueVisto(m); break;
     case 'ph': golpeJugador(m); break;
@@ -518,7 +553,8 @@ async function agregarMon(d) {
   const st = statsMonstruo(d.k, d.nv);
   const o = { id: d.id, k: d.k, nv: d.nv, x: d.x, z: d.z, tx: d.x, tz: d.z, ry: 0, hp: d.hp, mx: d.mx, st: 0, j: d.j, fig: null, lbl: etiqueta(d.j ? 'jefe' : ''), nace: performance.now(), muereT: 0, golpeT: 0, f: 1 };
   mons.set(d.id, o);
-  o.fig = await figuraHoja(def.hoja, st.alto * (d.j ? 1.15 : 1));
+  o.mu = !!d.mu;
+  o.fig = await figuraHoja(def.hoja, st.alto * (d.mu ? 2.4 : d.j ? 1.15 : 1));
   if (!mons.has(d.id) && o.fig) { o.fig.quitar(); o.fig = null; }
 }
 function quitarMon(id) { const o = mons.get(id); if (!o) return; if (o.fig) o.fig.quitar(); o.lbl.remove(); mons.delete(id); if (objetivo === id) { objetivo = 0; autoAtk = false; pintarBarra(); } }
@@ -555,7 +591,8 @@ function golpeJugador(m) {
   if (m.d > 0) numero(q.x, (q.y || alturaEn(q.x, q.z)) + 2.3, q.z, '-' + m.d, '#ff5a6a');
   if (m.p === miId) { P.heridoT = performance.now(); sfx('golpe', 0.25); }
 }
-let proyectiles = [], efectos = [], lanzando = null, objetivoP = 0;
+let proyectiles = [], efectos = [], lanzando = null, objetivoP = 0, mundial3 = null, sacudir = 0;
+const zonas3 = new Map();
 let tocandoSubir = false, tocandoBajar = false;
 // Anillo que se expande (habilidades de area, curas en grupo...).
 function onda(x, z, radio, color) {
@@ -586,6 +623,15 @@ function pintarAuras() {
   const l = Object.entries(P.au || {}).filter(([a, fin]) => fin > ahora && NOMBRE_AURA[a]);
   const html = l.map(([a, fin]) => `<span>${NOMBRE_AURA[a]}${fin !== Infinity ? ' ' + Math.ceil((fin - ahora) / 1000) + 's' : ''}</span>`).join('');
   if ($('auras')._h !== html) { $('auras').innerHTML = html; $('auras')._h = html; }
+  if (mundial3) {
+    const def = MONSTRUOS[mundial3.k] || {};
+    const desfase = Date.now() - mundial3.recibido;
+    const ms = mundial3.vivo ? mundial3.hasta - Date.now() : mundial3.en - Date.now();
+    const mmss = ms > 0 ? Math.floor(ms / 60000) + ':' + String(Math.floor(ms / 1000) % 60).padStart(2, '0') : '';
+    const txt = mundial3.vivo ? `👹 ¡${def.nombre} en el ${ARENA3D.nombre}! ${mmss}` : ms > 0 && ms < 30 * 60000 ? `👹 ${def.nombre}: ${mmss}` : '';
+    if ($('mundial')._h !== txt) { $('mundial').textContent = txt; $('mundial')._h = txt; }
+    void desfase;
+  }
   const cb = yo && yo.clase === 'picaro' ? yo.combo || 0 : 0;
   const ch = '<i></i>'.repeat(cb);
   if ($('combo')._h !== ch) { $('combo').innerHTML = ch; $('combo')._h = ch; }
@@ -793,6 +839,7 @@ function pintarMini() {
   for (const o of mons.values()) if (!o.muereT) punto(o.x, o.z, o.j ? '#ffd84a' : '#ff4455', o.j ? 3.5 : 2);
   for (const o of otros.values()) punto(o.x, o.z, '#4ade80', 2.5);
   for (const n of NPCS3D) punto(n.x, n.z, '#7dd3fc', 2);
+  if (mundial3 && mundial3.vivo) punto(ARENA3D.x, ARENA3D.z, '#ff6b3d', 5);
   // Flecha propia (hacia donde mira la camara).
   x.save(); x.translate(S / 2, S / 2); x.rotate(-camYaw + Math.PI);
   x.fillStyle = '#fff'; x.beginPath(); x.moveTo(0, -7); x.lineTo(5, 5); x.lineTo(-5, 5); x.closePath(); x.fill(); x.restore();
@@ -810,6 +857,7 @@ function abrirMapa() {
   }
   for (const cp of campamentos(MAPAS, MONSTRUOS)) if (cp.jefe) { const [px, pz] = aMapa(cp.x, cp.z, S); x.fillStyle = '#ffd84a'; x.beginPath(); x.arc(px, pz, 5, 0, 7); x.fill(); }
   const [ux, uz] = aMapa(0, 0, S); x.fillStyle = '#fff'; x.fillText('Pueblo Duende', ux, uz - 8);
+  { const [ax, az] = aMapa(ARENA3D.x, ARENA3D.z, S); x.fillStyle = mundial3 && mundial3.vivo ? '#ff6b3d' : '#c4a484'; x.beginPath(); x.arc(ax, az, 7, 0, 7); x.fill(); x.fillText(ARENA3D.nombre, ax, az - 11); }
   const [yx, yz] = aMapa(P.x, P.z, S); x.fillStyle = '#4ade80'; x.beginPath(); x.arc(yx, yz, 6, 0, 7); x.fill(); x.strokeStyle = '#000'; x.stroke();
   abrir('v-mapa');
 }
@@ -1192,6 +1240,8 @@ function bucle(t) {
     if (e.t >= 1) { escena.remove(e.m); e.m.geometry.dispose(); e.m.material.dispose(); return false; }
     return true;
   });
+  for (const z of zonas3.values()) { const k = clamp((performance.now() - z.ini) / z.ms, 0, 1); z.disco.material.opacity = 0.12 + 0.4 * k; z.disco.scale.setScalar(Math.max(0.05, k)); }
+  if (sacudir > 0) { sacudir = Math.max(0, sacudir - dt); camara.position.x += (Math.random() - 0.5) * sacudir; camara.position.y += (Math.random() - 0.5) * sacudir; }
   alasMesh.visible = P.vuela && !!yo;
   if (alasMesh.visible) {
     const bat = Math.sin(t / 120) * 0.5;
@@ -1211,7 +1261,7 @@ function bucle(t) {
 }
 
 // Estado visible en la consola para depurar (solo lectura).
-window.__dq3 = { P, mons, otros, get objetivo() { return objetivo; }, get autoAtk() { return autoAtk; }, get yo() { return yo; }, cuadro: () => bucle(performance.now()) };
+window.__dq3 = { P, mons, otros, get objetivo() { return objetivo; }, get autoAtk() { return autoAtk; }, get yo() { return yo; }, cuadro: () => bucle(performance.now()), recibir };
 
 // ── INICIO ──
 async function inicio() {

@@ -1491,12 +1491,12 @@ export class MmoWorld {
     }
   }
 
-  premiosMundial(o) {
+  premiosMundial(o, clave = 'coliseo') {
     const total = [...o.dano.values()].reduce((a, b) => a + b, 0) || 1;
     const nombres = [];
     for (const [sid, d] of o.dano) {
       const s = this.sesiones.get(sid);
-      if (!s || !s.c || s.k !== 'coliseo') continue;
+      if (!s || !s.c || s.k !== clave) continue;
       const c = s.c;
       const parte = d / total;
       const xp = Math.round(xpParaSubir(c.nivel) * (0.25 + Math.min(0.25, parte)));

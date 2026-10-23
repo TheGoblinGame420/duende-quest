@@ -19,9 +19,9 @@
 // ═══════════════════════════════════════════════════════
 import {
   MAPAS, MONSTRUOS, SKINS, ARMAS, CLASES, PODERES, VARA, statsMonstruo, multForja, talento, velMontura, xpParaSubir,
-  habPorId, costoHab, GCD_MS, RECURSOS, MELEE,
+  habPorId, costoHab, GCD_MS, RECURSOS, MELEE, MUNDIAL_CADA_MS, MUNDIAL_DURA_MS, proximoMundial, mundialDe,
 } from '../../mmo/js/data.js';
-import { MUNDO, NPCS3D, NPC_DIST, SPAWN3D, campamentos, zonaEn } from '../../mmo/js/mundo3d.js';
+import { MUNDO, NPCS3D, NPC_DIST, SPAWN3D, ARENA3D, campamentos, zonaEn } from '../../mmo/js/mundo3d.js';
 
 export const K3 = '~3d';
 const VISTA_MON = 120;          // m: monstruos que ve cada jugador
@@ -34,6 +34,10 @@ const MELEE3D = 3.2;              // m: alcance del golpe cuerpo a cuerpo (x arm
 const RANGO_VARA = 24;          // m: disparo de vara de magos y sacerdotes
 const MON_MELEE = 2.4, MON_DISPARO = 15;
 const FOTO_CADA = 2;            // ticks entre fotos (200 ms)
+// Jefe mundial del 3D: a las :15 y :45 (el del Coliseo 2D sale a las :00 y :30).
+const DESFASE_MUNDIAL3 = 15 * 60 * 1000;
+const PISOTON_CADA = 12000, PISOTON_AVISO = 2500, PISOTON_R = 9;
+export const proximoMundial3 = ahora => proximoMundial(ahora - DESFASE_MUNDIAL3) + DESFASE_MUNDIAL3;
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -57,9 +61,10 @@ export const Mundo3D = {
     s.k = K3;
     const p = c.p3 && num(c.p3.x) !== null && num(c.p3.z) !== null ? c.p3 : SPAWN3D;
     s.p = { x: clamp(p.x, -MUNDO.limite, MUNDO.limite), z: clamp(p.z, -MUNDO.limite, MUNDO.limite) };
-    s.ry = 0; s.a = 0; s.movT = Date.now(); s.movBud = undefined; s.vistos = new Set(); s.atkT = 0;
+    s.ry = 0; s.a = 0; s.h = 0; s.movT = Date.now(); s.movBud = undefined; s.vistos = new Set(); s.atkT = 0;
     const jugadores = this.sesiones3d().filter(x => x !== s).map(x => this.info3d(x));
     this.enviar(s, { t: 'm3', id: s.id, x: r1(s.p.x), z: r1(s.p.z), jugadores });
+    this.enviar(s, this.estadoMundial3());
     this.aClave(K3, { t: 'pj3', p: this.info3d(s) }, s);
   },
   info3d(s) {
@@ -82,7 +87,10 @@ export const Mundo3D = {
       case 'revivir': return this.revivir3d(s);
       case 'mision': if (this.cerca3d(s, 'guia')) return this.mision(s, m, true); return this.no(s, 'Habla con el Guardia Tito en el pueblo.');
       case 'comprar': return this.comprar(s, m);   // cercaDelMercader() sabe del 3D
-      case 'chat': return this.chat(s, m);
+      case 'chat':
+        // Moderadores: /jefe invoca al jefe mundial del 3D.
+        if (String(m.m || '').trim() === '/jefe' && this.esDios(s)) return this.dios(s, { a: 'mundial3' });
+        return this.chat(s, m);
       case 'clase': return this.elegirClase(s, m);
       case 'espec': return this.elegirEspec(s, m);
       case 'talento': return this.subirTalento(s, m);
@@ -183,6 +191,13 @@ export const Mundo3D = {
   matar3d(o) {
     const W = this.iniciar3d();
     o.muere = true; o.hp = 0; o.borrarEn = Date.now() + 1600;
+    if (o.mundial3) {
+      this.premiosMundial(o, K3);
+      this.aClave(K3, { t: 'md3', id: o.id });
+      W.mundial.o = null;
+      this.aClave(K3, this.estadoMundial3());
+      return;
+    }
     const base = statsMonstruo(o.k, o.nv);
     const total = [...o.dano.values()].reduce((a, b) => a + b, 0) || 1;
     const cobraron = new Set();
@@ -291,11 +306,12 @@ export const Mundo3D = {
         c.prox = ahora + 1500;
       }
     }
+    this.revisarMundial3(ahora, jugadores);
     // Monstruos.
     for (const o of [...W.mons.values()]) {
       if (o.muere) { if (ahora >= o.borrarEn) W.mons.delete(o.id); continue; }
       // Nadie cerca: se retira (vuelve a aparecer cuando alguien se acerque).
-      if (!o.obj && !vivos.some(s => dist(s.p, o) < RETIRAR)) {
+      if (!o.obj && !o.mundial3 && !vivos.some(s => dist(s.p, o) < RETIRAR)) {
         W.mons.delete(o.id);
         const c = W.campos[o.campo]; if (c) c.vivos.delete(o.id);
         continue;
@@ -325,6 +341,84 @@ export const Mundo3D = {
 
   // Inteligencia: pasea por su campamento; si le pegan (o es un jefe y te
   // acercas) persigue y ataca; si se aleja demasiado de casa, vuelve y se cura.
+  // ── JEFE MUNDIAL DEL 3D ──
+  // Mismo calendario que el del Coliseo pero desfasado 15 min; vida segun
+  // los jugadores del 3D; cada golpe quita un % de la vida (todos los niveles
+  // pelean juntos) y cada 12 s un pisoton que se ve venir en el suelo.
+  estadoMundial3() {
+    const M = this.iniciar3d().mundial;
+    const vivo = !!(M && M.o && !M.o.muere);
+    const en = proximoMundial3(Date.now());
+    return { t: 'mundial3', vivo, en: vivo ? 0 : en, k: vivo ? M.o.k : mundialDe(en - DESFASE_MUNDIAL3 + 1000), x: ARENA3D.x, z: ARENA3D.z, hasta: vivo ? M.hasta : 0 };
+  },
+  revisarMundial3(ahora, jugadores) {
+    const W = this.iniciar3d();
+    const M = W.mundial || (W.mundial = { avisado: 0, ultimo: 0, o: null, hasta: 0 });
+    if (M.o) {
+      const o = M.o;
+      if (o.muere) return;
+      if (ahora > M.hasta) {
+        W.mons.delete(o.id);
+        this.aClave(K3, { t: 'md3', id: o.id, huye: 1 });
+        M.o = null;
+        this.aClave(K3, { t: 'aviso', m: `${MONSTRUOS[o.k].nombre} se marchó del ${ARENA3D.nombre}… vuelve en 30 minutos.` });
+        this.aClave(K3, this.estadoMundial3());
+        return;
+      }
+      // Pisoton: aviso en el suelo y, 2,5 s despues, daño a quien siga dentro.
+      if (o.pisa && ahora >= o.pisa.en) {
+        for (const s of jugadores) {
+          if (s.muerto || s.h > 4 || Math.hypot(s.p.x - o.pisa.x, s.p.z - o.pisa.z) > PISOTON_R) continue;
+          this.herir(s, 1, { zona: true, pct: o.enfurecido ? 0.45 : 0.3, id: o.id });
+        }
+        this.aClave(K3, { t: 'zona3f', id: o.id });
+        o.pisa = null;
+      }
+      if (!o.pisa && ahora >= o.pisaProx && o.obj) {
+        const s = this.sesiones.get(o.obj);
+        if (s && s.m3) {
+          o.pisa = { x: s.p.x, z: s.p.z, en: ahora + PISOTON_AVISO };
+          o.pisaProx = ahora + PISOTON_CADA * (o.enfurecido ? 0.6 : 1);
+          this.aClave(K3, { t: 'zona3', id: o.id, x: r1(s.p.x), z: r1(s.p.z), r: PISOTON_R, ms: PISOTON_AVISO });
+        }
+      }
+      if (!o.enfurecido && o.hp < o.max * 0.3) {
+        o.enfurecido = true;
+        this.aClave(K3, { t: 'aviso', m: `¡${MONSTRUOS[o.k].nombre} se enfurece! Sus pisotones son más rápidos.` });
+      }
+      return;
+    }
+    const prox = proximoMundial3(ahora);
+    if (prox - ahora <= 120000 && prox - ahora > 5000 && M.avisado !== prox) {
+      M.avisado = prox;
+      this.aClave(K3, { t: 'aviso', m: `${MONSTRUOS[mundialDe(prox - DESFASE_MUNDIAL3 + 1000)].nombre} llega al ${ARENA3D.nombre} en 2 minutos (marcado en el mapa).` });
+    }
+    const ult = prox - (prox - ahora > 1000 ? MUNDIAL_CADA_MS : 0);
+    if (ahora >= ult && ahora - ult < 5000 && M.ultimo !== ult && jugadores.length) {
+      M.ultimo = ult;
+      this.aparecerMundial3(mundialDe(ult - DESFASE_MUNDIAL3 + 1000), jugadores.length);
+    }
+  },
+  aparecerMundial3(k, n) {
+    const W = this.iniciar3d();
+    const M = W.mundial || (W.mundial = { avisado: 0, ultimo: 0, o: null, hasta: 0 });
+    const def = MONSTRUOS[k];
+    const st = statsMonstruo(k, def.nivel);
+    const o = {
+      id: W.sig++, k, nv: def.nivel, campo: -1, jefe: true, mundial3: true, dispara: !!def.dispara,
+      x: ARENA3D.x, z: ARENA3D.z, hx: ARENA3D.x, hz: ARENA3D.z, ry: 0,
+      hp: 20000 + 15000 * Math.max(1, n), max: 0, atk: st.atk, vel: st.vel, y: 0, h: 0,
+      dano: new Map(), amen: new Map(), au: {}, cl: K3, obj: 0, atkEn: 0, golpeT: 0, st: 0, paseo: 0, destino: null,
+      pisa: null, pisaProx: Date.now() + 8000, enfurecido: false,
+    };
+    o.max = o.hp;
+    W.mons.set(o.id, o);
+    M.o = o; M.hasta = Date.now() + MUNDIAL_DURA_MS;
+    this.aClave(K3, { t: 'aviso', m: `${def.nombre} ha aparecido en el ${ARENA3D.nombre}. Tienes 10 minutos: ¡todos los niveles reciben premio!` });
+    this.aClave(K3, this.estadoMundial3());
+    return o;
+  },
+
   ia3d(o, vivos, ahora) {
     const dt = 0.1;
     const casa = { x: o.hx, z: o.hz };
@@ -340,6 +434,11 @@ export const Mundo3D = {
     for (const a in o.au) if (o.au[a].hasta < ahora) delete o.au[a];
     if (this.auraMon(o, 'aturdido') || this.auraMon(o, 'oveja')) { o.st = 0; return; }
     const prov = this.auraMon(o, 'provoca');
+    if (o.mundial3 && !prov) {
+      let mejor = 0, quien = 0;
+      for (const [sid, a] of o.amen) { const x = this.sesiones.get(sid); if (a > mejor && x && x.m3 && !x.muerto && !(x.h > 8) && dist(x.p, casa) < CORREA + 20) { mejor = a; quien = sid; } }
+      if (quien) o.obj = quien;
+    }
     if (prov) o.obj = prov.sid;
     let s = o.obj ? this.sesiones.get(o.obj) : null;
     if (s && (!s.m3 || s.muerto || s.cerrado || s.h > 8 || dist(s.p, casa) > CORREA + 20)) { s = null; o.obj = 0; o.vuelve = true; }
@@ -368,7 +467,7 @@ export const Mundo3D = {
           o.atkEn = ahora + (o.jefe ? 1250 : 1600);
           const golpe = o.atk * (o.jefe ? 0.7 : 1) * (o.dispara ? 0.9 : 1);
           if (o.dispara) this.aClave(K3, { t: 'b3', de: o.id, a: s.id });
-          this.herir(s, golpe, { jefe: o.jefe, bala: o.dispara });
+          this.herir(s, golpe, { jefe: o.jefe, bala: o.dispara, mundial: o.mundial3, id: o.id });
         }
       }
       if (dist(o, casa) > CORREA) { o.obj = 0; o.vuelve = true; }
@@ -609,7 +708,7 @@ export const Mundo3D = {
       for (const o of W.mons.values()) {
         if (dist(o, s.p) > VISTA_MON) continue;
         ve.add(o.id);
-        if (!s.vistos.has(o.id)) n.push({ id: o.id, k: o.k, nv: o.nv, x: r1(o.x), z: r1(o.z), hp: Math.ceil(o.hp), mx: o.max, j: o.jefe ? 1 : 0 });
+        if (!s.vistos.has(o.id)) n.push({ id: o.id, k: o.k, nv: o.nv, x: r1(o.x), z: r1(o.z), hp: Math.ceil(o.hp), mx: o.max, j: o.jefe ? 1 : 0, mu: o.mundial3 ? 1 : undefined });
         else ms.push([o.id, r1(o.x), r1(o.z), Math.round(o.ry * 100) / 100, Math.ceil(o.hp), o.muere ? 3 : o.st]);
       }
       for (const id of s.vistos) if (!ve.has(id)) q.push(id);

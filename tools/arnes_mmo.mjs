@@ -596,6 +596,39 @@ async function pruebas() {
   await pruebasSinCortes();
   await pruebas3d();
   await pruebasHabs3d();
+  await pruebasMundial3d();
+}
+
+// ── JEFE MUNDIAL DEL 3D (functions/mmo/mundo3d.js) ──
+async function pruebasMundial3d() {
+  console.log('Mundo 3D: jefe mundial');
+  const { proximoMundial3 } = await import('../functions/mmo/mundo3d.js');
+  const pr = proximoMundial3(Date.now());
+  chequear(pr % 1800000 === 900000, 'el jefe del 3D sale a las :15 y :45');
+  const a = await entrar3d('Heroe3D', '4c1'); ponerNivel(a, 20, 'guerrero');
+  const b = await entrar3d('Novato3D', '4c2'); ponerNivel(b, 3, 'mago');
+  avanzar(pr - Date.now()); tick(1);
+  const M = mundo.m3.mundial, o = M && M.o;
+  chequear(o && o.mundial3, 'aparece a su hora');
+  chequear(a.ultimos('mundial3').some(x => x.vivo), 'avisa a los del 3D');
+  for (const s of [a, b]) { s.p = { x: o.x + 2, z: o.z }; s.movBud = undefined; s.inv = 0; s.hp = s.st.maxHp; }
+  a.atkT = 0; await a.mandar({ t: 'atk3', tg: o.id });
+  chequear(o.hp < o.max, 'se le puede pegar');
+  b.atkT = 0; await b.mandar({ t: 'atk3', tg: o.id });
+  b.p = { x: o.x + 16, z: o.z };
+  a.limpiar();
+  for (let i = 0; i < 120 && !o.pisa; i++) tick(1);
+  chequear(!!o.pisa && a.ultimos('zona3').length === 1, 'el pisotón se avisa en el suelo');
+  a.hp = a.st.maxHp; const hpB = b.hp;
+  tick(26);
+  chequear(a.hp <= a.st.maxHp * 0.75 && !a.muerto, 'quien se queda dentro del pisotón pierde ~30% (sin morir de golpe)');
+  chequear(b.hp === hpB, 'quien sale del círculo no recibe el pisotón');
+  o.hp = 1; a.atkT = 0; a.hp = a.st.maxHp; a.p = { x: o.x + 2, z: o.z };
+  await a.mandar({ t: 'atk3', tg: o.id });
+  chequear(o.muere && !M.o, 'el jefe mundial cae');
+  chequear(a.c.mundiales === 1 && b.c.mundiales === 1, 'premio de jefe mundial para todos los que pegaron');
+  chequear(a.ultimos('mundial3').some(x => !x.vivo), 'avisa que ya no está');
+  for (const s of [a, b]) await dejar(s);
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
