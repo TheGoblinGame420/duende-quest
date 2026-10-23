@@ -21,7 +21,7 @@ import {
   MAPAS, MONSTRUOS, SKINS, ARMAS, CLASES, PODERES, VARA, statsMonstruo, multForja, talento, velMontura, xpParaSubir,
   habPorId, costoHab, GCD_MS, RECURSOS, MELEE, MUNDIAL_CADA_MS, MUNDIAL_DURA_MS, proximoMundial, mundialDe,
 } from '../../mmo/js/data.js';
-import { MUNDO, NPCS3D, NPC_DIST, SPAWN3D, ARENA3D, campamentos, zonaEn } from '../../mmo/js/mundo3d.js';
+import { MUNDO, NPCS3D, NPC_DIST, SPAWN3D, ARENA3D, campamentos, zonaEn, esNoche } from '../../mmo/js/mundo3d.js';
 
 export const K3 = '~3d';
 const VISTA_MON = 120;          // m: monstruos que ve cada jugador
@@ -212,7 +212,8 @@ export const Mundo3D = {
       const parte = d / total;
       const k = o.jefe ? Math.max(parte, 1 / 3) : parte;
       const mult = (((SKINS[s.c.skin] || {}).buffs || {}).oroMult || 1) * (1 + talento(s.c, 'fortuna'));
-      const xp = Math.max(1, Math.round(base.xp * k * (1 + talento(s.c, 'erudicion'))));
+      // De noche los monstruos dan un 10% mas de experiencia.
+      const xp = Math.max(1, Math.round(base.xp * k * (1 + talento(s.c, 'erudicion')) * (esNoche(Date.now()) ? 1.1 : 1)));
       const oro = Math.max(1, Math.round(base.oro * k * rnd(0.8, 1.2) * mult));
       // dar(): misiones, diarias, bestiario, chicha, pase, botin... lo mismo que el 2D.
       this.dar(s, xp, oro, o, 1, true);

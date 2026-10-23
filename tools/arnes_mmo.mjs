@@ -598,6 +598,19 @@ async function pruebas() {
   await pruebasHabs3d();
   await pruebasMundial3d();
   await pruebasGrupo3d();
+  await pruebasAmbiente3d();
+}
+
+// ── HORA Y CLIMA DEL 3D (mmo/js/mundo3d.js) ──
+async function pruebasAmbiente3d() {
+  console.log('Mundo 3D: hora y clima');
+  const W = await import('../mmo/js/mundo3d.js');
+  const t = 1792789000000;
+  chequear(W.climaEn('selva', t) === W.climaEn('selva', t + 1000), 'el clima es el mismo para todos dentro de su tanda');
+  chequear(W.climaEn('pueblo', t) === 'despejado', 'en el pueblo nunca llueve');
+  const vistos = new Set(); for (let i = 0; i < 300; i++) vistos.add(W.climaEn('selva', t + i * 720000));
+  chequear(vistos.has('despejado') && vistos.has('lluvia'), 'la selva alterna lluvia y cielo despejado');
+  chequear(W.esNoche(W.DIA_MS * 3) && !W.esNoche(W.DIA_MS * 3 + W.DIA_MS / 2), 'medianoche es de noche y mediodía de día');
 }
 
 // ── GRUPO EN EL 3D ──

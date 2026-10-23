@@ -115,6 +115,26 @@ export const NPCS3D = [
   { id: 'sabio',    nombre: 'Sabio Hechicero', hoja: 'hechicero',      tipo: 'ranking',   x: 2,   z: -20 },
   { id: 'artesana', nombre: 'Artesana Lila',   hoja: 'goblin_mage',    tipo: 'artesania', x: -20, z: -12 },
 ];
+// ── HORA Y CLIMA DEL MUNDO ──
+// Un dia del mundo dura 48 minutos y es el mismo para todos (sale del reloj).
+export const DIA_MS = 48 * 60 * 1000;
+export const horaMundo = t => (t % DIA_MS) / DIA_MS * 24;
+export const esNoche = t => { const h = horaMundo(t); return h < 5.5 || h >= 19.5; };
+// Clima por zona en tandas de 12 minutos (determinista: todos ven lo mismo).
+const CLIMAS = {
+  amanecer: ['lluvia'], selva: ['lluvia', 'lluvia', 'tormenta'], tormenta: ['tormenta', 'lluvia'],
+  noche: ['niebla'], cumbres: ['nieve'], desierto: ['arena'], castillo: ['niebla', 'lluvia'],
+  abismo: ['niebla'], acantilados: ['lluvia', 'niebla'],
+};
+const NOMBRE_ZONA_N = z => [...z].reduce((a, c) => a * 31 + c.charCodeAt(0), 7) | 0;
+export function climaEn(zona, t) {
+  const l = CLIMAS[zona];
+  if (!l) return 'despejado';
+  const tanda = Math.floor(t / (12 * 60 * 1000));
+  const r = hash(tanda, NOMBRE_ZONA_N(zona));
+  if (r > (zona === 'tormenta' ? 0.75 : 0.4)) return 'despejado';
+  return l[Math.floor(hash(tanda + 7, NOMBRE_ZONA_N(zona)) * l.length)];
+}
 export const NPC_DIST = 6;            // metros para hablar
 export const SPAWN3D = { x: 0, z: 22 };
 // Claro del Titan: donde aparece el jefe mundial del 3D (llano, en el

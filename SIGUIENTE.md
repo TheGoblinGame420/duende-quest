@@ -2249,3 +2249,18 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
   hechizos de aliado usan ese jugador. Marco de grupo `#grupo3` (clic en un
   miembro para elegirlo), invitación `#invit3`, compañeros en celeste en el
   minimapa, chat `/g` y `/s nombre`.
+
+### Día, noche, clima y música (23-oct-2026, `?v=248`). Arnés **655**
+
+- `mmo/js/mundo3d.js`: `DIA_MS` (48 min), `horaMundo(t)`, `esNoche(t)` y
+  `climaEn(zona, t)` (tandas de 12 min, deterministas: todos ven lo mismo;
+  el pueblo, siempre despejado). Servidor: +10 % de XP de noche en `matar3d`.
+- Cliente: `ambiente(z)` cada 15 cuadros (luz, color del sol, cielo con
+  ocaso y noche, estrellas, niebla por clima, faroles del pueblo); lluvia y
+  nieve como segmentos alrededor de la cámara (`moverLluvia`), relámpagos
+  en la tormenta. Hora y clima bajo el minimapa (`#mini-r`).
+- `mundo/js/musica.js`: música generada con WebAudio (escala, nota base y
+  ritmo por zona; bordón, acordes y notas con eco; más lenta de noche),
+  lluvia de ruido filtrado y truenos. Arranca con el primer gesto; botón
+  `#b-son` (guarda `dq_mmo_sonido`).
+- Para probar: `/mundo/?clima=lluvia|tormenta|nieve|niebla|arena&hora=0..24`.

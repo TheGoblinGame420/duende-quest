@@ -13,10 +13,11 @@
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
-  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura } from '/mmo/js/data.js?v=247';
-import { iniciarVentanas } from './ventanas.js?v=247';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=247';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=247';
+  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura } from '/mmo/js/data.js?v=248';
+import { iniciarVentanas } from './ventanas.js?v=248';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=248';
+import { crearMusica } from './musica.js?v=248';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=248';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -55,6 +56,83 @@ const hemi = new THREE.HemisphereLight(0xffffff, 0x8a9a78, 1.0);
 const sol = new THREE.DirectionalLight(0xfff2dd, 1.0);
 sol.position.set(120, 200, 80);
 escena.add(hemi, sol);
+// ── DIA, NOCHE Y CLIMA ──
+const NOCHE_CIELO = C('#0b1030'), OCASO = C('#ff8a5c'), GRIS = C('#6c7380'), ARENA = C('#c9a46a');
+const estrellas = (() => {
+  const n = 700, pos = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, e = Math.asin(Math.random() * 0.95 + 0.05);
+    pos[i * 3] = Math.cos(a) * Math.cos(e) * 420; pos[i * 3 + 1] = Math.sin(e) * 420; pos[i * 3 + 2] = Math.sin(a) * Math.cos(e) * 420;
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const p = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xffffff, size: 1.7, sizeAttenuation: false, transparent: true, opacity: 0, fog: false, depthWrite: false }));
+  escena.add(p);
+  return p;
+})();
+// Gotas (o copos): segmentos en una caja que sigue a la camara.
+const lluvia = (() => {
+  const n = MOVIL ? 700 : 1600, pos = new Float32Array(n * 6);
+  for (let i = 0; i < n; i++) { const x = (Math.random() - 0.5) * 60, y = Math.random() * 30, z = (Math.random() - 0.5) * 60; pos.set([x, y, z, x, y + 0.7, z], i * 6); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const m = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0xaabbdd, transparent: true, opacity: 0.5, depthWrite: false }));
+  m.frustumCulled = false; m.visible = false;
+  escena.add(m);
+  return { m, n, pos };
+})();
+let climaAct = 'despejado', nocheK = 0, relampagoT = -1e9, sigRelampago = 0, hemiBase = 1, nieblaObj = [40, MOVIL ? 170 : 230];
+const musica = crearMusica();
+const NOMBRE_CLIMA = { despejado: '', lluvia: '🌧 Lluvia', tormenta: '⛈ Tormenta', nieve: '❄ Nieve', niebla: '🌫 Niebla', arena: '🌪 Tormenta de arena' };
+// Para probar: ?clima=lluvia|tormenta|nieve|niebla|arena y ?hora=0..24
+const PRUEBA = new URLSearchParams(location.search);
+function ambiente(z) {
+  const ahora = Date.now(), h = PRUEBA.has('hora') ? +PRUEBA.get('hora') : horaMundo(ahora);
+  const dia = clamp(Math.sin((h - 5) / 14.5 * Math.PI) * 1.5, 0, 1);   // amanece a las 5, anochece a las 19:30
+  nocheK = 1 - dia;
+  const ocaso = Math.min(1, Math.max(0, 1 - Math.abs(h - 18.8) / 1.3) + Math.max(0, 1 - Math.abs(h - 5.8) / 1.1));
+  const luz = LUZ[z] || 1;
+  const cl = PRUEBA.get('clima') || climaEn(z, ahora);
+  const nub = cl === 'tormenta' ? 0.55 : cl === 'lluvia' || cl === 'nieve' ? 0.75 : cl === 'niebla' || cl === 'arena' ? 0.85 : 1;
+  hemiBase = 0.9 * luz * (0.32 + 0.68 * dia) * (0.6 + 0.4 * nub);
+  sol.intensity = luz * (0.12 + 0.88 * dia) * nub;
+  sol.color.set(dia < 0.25 ? 0x9fb4ff : 0xfff2dd).lerp(OCASO, ocaso * 0.6);
+  const a = (h - 6) / 24 * Math.PI * 2;
+  sol.position.set(Math.cos(a) * 200, Math.max(60, Math.abs(Math.sin(a)) * 220), 80);
+  cieloObj.set(CIELO[z] || CIELO.pueblo).lerp(OCASO, ocaso * 0.35).lerp(NOCHE_CIELO, nocheK * 0.85);
+  if (nub < 1) cieloObj.lerp(cl === 'arena' ? ARENA : GRIS, (1 - nub) * 1.2);
+  estrellas.material.opacity = nocheK * (cl === 'despejado' ? 0.9 : 0.2);
+  const lejos = MOVIL ? 170 : 230;
+  nieblaObj = cl === 'niebla' ? [6, 75] : cl === 'arena' ? [5, 60] : cl === 'lluvia' || cl === 'tormenta' ? [25, lejos * 0.6] : cl === 'nieve' ? [20, lejos * 0.55] : [40, lejos];
+  farolMat.color.set(nocheK > 0.45 ? '#ffd27a' : '#7a6a48');
+  if (cl !== climaAct) {
+    climaAct = cl;
+    lluvia.m.visible = cl === 'lluvia' || cl === 'tormenta' || cl === 'nieve';
+    lluvia.m.material.color.set(cl === 'nieve' ? 0xffffff : 0xaabbdd);
+    lluvia.m.material.opacity = cl === 'nieve' ? 0.9 : 0.5;
+    if (NOMBRE_CLIMA[cl]) aviso(NOMBRE_CLIMA[cl] + ' en ' + (MAPAS[z] ? MAPAS[z].nombre : 'la zona'));
+  }
+  musica.zona(z); musica.noche(nocheK > 0.5); musica.clima(cl);
+  const hh = Math.floor(h), mm = Math.floor((h - hh) * 60);
+  const txt = (nocheK > 0.5 ? '🌙 ' : '☀ ') + String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0') + (NOMBRE_CLIMA[cl] ? ' · ' + NOMBRE_CLIMA[cl] : '');
+  if ($('mini-r')._h !== txt) { $('mini-r').textContent = txt; $('mini-r')._h = txt; }
+}
+// Cae la lluvia (o la nieve): cada segmento baja y vuelve arriba al salir.
+function moverLluvia(dt, t) {
+  if (!lluvia.m.visible) return;
+  const nieve = climaAct === 'nieve';
+  const v = nieve ? 2.4 : climaAct === 'tormenta' ? 34 : 26, largo = nieve ? 0.09 : 0.7, p = lluvia.pos;
+  for (let i = 0; i < lluvia.n; i++) {
+    const k = i * 6;
+    let y = p[k + 1] - v * dt;
+    if (y < 0) y += 30;
+    const dx = nieve ? Math.sin(t / 900 + i) * 0.3 * dt : -0.25 * v * dt * 0.05;
+    p[k] += dx; p[k + 3] = p[k] + (nieve ? 0.04 : -0.12);
+    p[k + 1] = y; p[k + 4] = y + largo;
+  }
+  lluvia.m.geometry.attributes.position.needsUpdate = true;
+  lluvia.m.position.set(camara.position.x, camara.position.y - 12, camara.position.z);
+  // Relampagos en la tormenta.
+  if (climaAct === 'tormenta' && t > sigRelampago) { relampagoT = t; sigRelampago = t + 7000 + Math.random() * 12000; musica.trueno(); }
+}
 function ajustar() {
   const w = innerWidth, h = innerHeight;
   render.setSize(w, h, false);
@@ -234,6 +312,17 @@ function crearPueblo() {
   return { x: px, z: pz, velo };
 }
 
+// Faroles del pueblo: se encienden de noche.
+const farolMat = new THREE.MeshBasicMaterial({ color: '#7a6a48' });
+(() => {
+  const palo = new THREE.MeshLambertMaterial({ color: 0x3b2a1a });
+  for (let i = 0; i < 10; i++) {
+    const a = i / 10 * Math.PI * 2 + 0.3, x = Math.cos(a) * 27, z = Math.sin(a) * 27, y = alturaEn(x, z);
+    const p = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 3.2, 6), palo); p.position.set(x, y + 1.6, z);
+    const f = new THREE.Mesh(new THREE.OctahedronGeometry(0.38, 0), farolMat); f.position.set(x, y + 3.35, z);
+    escena.add(p, f);
+  }
+})();
 // Claro del Titan: circulo de menhires donde aparece el jefe mundial.
 (() => {
   const piedra = new THREE.MeshLambertMaterial({ color: 0x6b6478 });
@@ -960,6 +1049,10 @@ $('b-libro').onclick = () => V.abrirLibro();
 $('b-logros').onclick = () => V.abrirLogros();
 $('b-premium').onclick = () => V.abrirTienda('premium');
 $('b-mapa').onclick = () => abrirMapa();
+function pintarSon() { $('b-son').textContent = sonido ? '🔊' : '🔇'; }
+$('b-son').onclick = () => { sonido = !sonido; try { localStorage.setItem('dq_mmo_sonido', sonido ? '1' : '0'); } catch (e) {} musica.activo(sonido); pintarSon(); };
+pintarSon(); if (!sonido) musica.activo(false);
+for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, () => { if (sonido) musica.arrancar(); }, { once: true });
 $('b-ayuda').onclick = () => abrir('v-ayuda');
 $('b-chat').onclick = () => { const i = $('chat-in'); i.style.display = 'block'; i.focus(); };
 $('b-reconectar').onclick = () => location.reload();
@@ -1414,11 +1507,18 @@ function bucle(t) {
   // Zona actual: titulo, cielo y niebla de su color.
   if (cuadro % 15 === 0) {
     const z = zonaEn(P.x, P.z);
-    if (z !== zonaActual) { zonaActual = z; tituloZona(z); cieloObj.set(CIELO[z] || CIELO.pueblo); const luz = LUZ[z] || 1; hemi.intensity = 0.9 * luz; sol.intensity = 1.0 * luz; }
+    if (z !== zonaActual) { zonaActual = z; tituloZona(z); }
+    ambiente(z);
     if (yo) { const n = npcCercano(); const b = $('hablar'); b.style.display = n ? 'block' : 'none'; if (n) b.textContent = (MOVIL ? '' : 'E · ') + (n.tipo === 'portal' ? 'Mazmorras' : 'Hablar con ' + n.nombre); }
   }
   cieloAct.lerp(cieloObj, Math.min(1, dt * 1.5));
   escena.background.copy(cieloAct); escena.fog.color.copy(cieloAct);
+  escena.fog.near = lerp(escena.fog.near, nieblaObj[0], Math.min(1, dt)); escena.fog.far = lerp(escena.fog.far, nieblaObj[1], Math.min(1, dt));
+  const flash = t - relampagoT < 120 || (t - relampagoT > 220 && t - relampagoT < 300);
+  hemi.intensity = hemiBase + (flash ? 1.6 : 0);
+  if (flash) escena.background.lerp(C('#e8ecff'), 0.5);
+  estrellas.position.copy(camara.position);
+  moverLluvia(dt, t);
   if (agua) agua.material.opacity = 0.7 + Math.sin(t / 900) * 0.04;
   if (portal) portal.velo.material.opacity = 0.45 + Math.sin(t / 300) * 0.15;
   pintarObjetivo();

@@ -458,6 +458,11 @@ export const TINTES = {
 // enseñan una vez (lo nuevo para los que vuelven). La mas reciente arriba;
 // subir 'n' al añadir una.
 export const NOVEDADES = [
+  { n: 16, fecha: '23 oct 2026', items: [
+    'Día y noche en el mundo 3D (un día dura 48 minutos): amaneceres, ocasos, estrellas y faroles en el pueblo. De noche los monstruos dan +10% de experiencia.',
+    'Clima por zona: lluvia, tormentas con relámpagos, nieve en las cumbres, niebla y tormentas de arena. La hora y el clima salen bajo el minimapa.',
+    'Música propia para cada zona, más tranquila de noche, y sonido de lluvia y truenos. Botón 🔊 para silenciar.',
+  ] },
   { n: 15, fecha: '23 oct 2026', items: [
     'Grupos en el mundo 3D: haz clic en otro jugador para invitarlo; marcos de grupo con la vida de cada uno.',
     'Cazar en grupo cuenta para todos: los compañeros cerca cobran la caza para sus misiones y diarias.',
