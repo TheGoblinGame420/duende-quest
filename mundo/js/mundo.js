@@ -13,16 +13,17 @@
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
-  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS } from '/mmo/js/data.js?v=262';
-import { iniciarVentanas } from './ventanas.js?v=262';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=262';
-import { crearMusica } from './musica.js?v=262';
-import { construirCueva } from './cueva.js?v=262';
-import { TAPA, transparentar } from './tapa.js?v=262';
-import { construirAbismo } from './abismo.js?v=262';
+  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS } from '/mmo/js/data.js?v=263';
+import { iniciarVentanas } from './ventanas.js?v=263';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=263';
+import { crearMusica } from './musica.js?v=263';
+import { construirCueva } from './cueva.js?v=263';
+import { TAPA, transparentar } from './tapa.js?v=263';
+import { construirAbismo } from './abismo.js?v=263';
+import { crearParticulas } from './particulas.js?v=263';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario } from '/mmo/js/abismo3d.js';
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=262';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=262';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=263';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=263';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -56,7 +57,7 @@ const lienzo = $('lienzo');
 const CALIDADES = {
   baja:  { px: 0.75, lejos: 130, aa: false, sombras: false },
   media: { px: 1,    lejos: 170, aa: false, sombras: false },
-  alta:  { px: 1.5,  lejos: 230, aa: true,  sombras: true },
+  alta:  { px: 1.5,  lejos: 230, aa: true,  sombras: true, post: true },
 };
 let CAL = MOVIL ? 'media' : 'alta';
 try { const g = localStorage.getItem('dq3_calidad'); if (CALIDADES[g]) CAL = g; } catch (e) {}
@@ -80,6 +81,46 @@ if (Q.sombras) {
   sol.shadow.bias = -0.0015; sol.shadow.normalBias = 0.04;
 }
 const solDir = new THREE.Vector3(120, 200, 80);
+// ── POST-PROCESO (solo en alta): resplandor de lo brillante (cristales,
+// magia, portales), viñeta suave y algo mas de color. Se carga aparte: en
+// baja y media no se descarga nada.
+let composer = null;
+const GRADO = {
+  uniforms: { tDiffuse: { value: null }, uVig: { value: 0.32 }, uSat: { value: 1.08 } },
+  vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float uVig; uniform float uSat; varying vec2 vUv;
+    void main() { vec4 c = texture2D(tDiffuse, vUv); float l = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
+      c.rgb = mix(vec3(l), c.rgb, uSat); vec2 d = vUv - 0.5; c.rgb *= 1.0 - uVig * smoothstep(0.25, 0.75, dot(d, d) * 2.0); gl_FragColor = c; }`,
+};
+if (Q.post && !PRUEBA_SIN_POST()) {
+  Promise.all(['EffectComposer', 'RenderPass', 'UnrealBloomPass', 'OutputPass', 'ShaderPass'].map(n => import('three/addons/postprocessing/' + n + '.js'))).then(([E, R, B, O, S]) => {
+    const w = innerWidth, h = innerHeight;
+    const rt = new THREE.WebGLRenderTarget(w, h, { type: THREE.HalfFloatType, samples: 4 });
+    const c = new E.EffectComposer(render, rt);
+    c.addPass(new R.RenderPass(escena, camara));
+    c.addPass(new B.UnrealBloomPass(new THREE.Vector2(w / 2, h / 2), 0.32, 0.45, 0.92));
+    c.addPass(new S.ShaderPass(GRADO));
+    c.addPass(new O.OutputPass());
+    c.setPixelRatio(render.getPixelRatio()); c.setSize(w, h);
+    composer = c;
+  }).catch(e => console.warn('[3D] sin post-proceso', e));
+}
+function PRUEBA_SIN_POST() { return /[?&]sinPost=1/.test(location.search); }
+// Resolucion dinamica: si el movil no llega a ~40 fps baja la resolucion
+// (hasta un 60%) y la sube cuando sobra.
+let pxAct = Math.min(devicePixelRatio || 1, Q.px), dtProm = 16, resT = 0;
+function resolucionDinamica(ms) {
+  if (document.hidden || ms > 200) return;
+  dtProm += (ms - dtProm) * 0.05; resT += ms;
+  if (resT < 2000) return;
+  resT = 0;
+  const max = Math.min(devicePixelRatio || 1, Q.px), min = max * 0.6;
+  // Ya en el minimo y aun lento: fuera el post-proceso (es lo mas caro).
+  if (composer && dtProm > 28 && pxAct <= min + 0.01) { composer = null; console.info('[3D] post-proceso desactivado por rendimiento'); return; }
+  const n = dtProm > 25 ? Math.max(min, pxAct - 0.1) : dtProm < 15 ? Math.min(max, pxAct + 0.05) : pxAct;
+  if (Math.abs(n - pxAct) < 0.01) return;
+  pxAct = n; render.setPixelRatio(n); if (composer) composer.setPixelRatio(n); ajustar();
+}
 // ── DIA, NOCHE Y CLIMA ──
 const BLANCO_H = C('#ffffff'), NOCHE_CIELO = C('#0b1030'), OCASO = C('#ff8a5c'), GRIS = C('#6c7380'), ARENA = C('#c9a46a');
 const estrellas = (() => {
@@ -93,6 +134,7 @@ const estrellas = (() => {
   escena.add(p);
   return p;
 })();
+const FX = crearParticulas(escena, MOVIL ? 900 : 1800, MOVIL);
 // Gotas (o copos): segmentos en una caja que sigue a la camara.
 const lluvia = (() => {
   const n = MOVIL ? 700 : 1600, pos = new Float32Array(n * 6);
@@ -163,6 +205,7 @@ function moverLluvia(dt, t) {
 function ajustar() {
   const w = innerWidth, h = innerHeight;
   render.setSize(w, h, false);
+  if (composer) composer.setSize(w, h);
   camara.aspect = w / h; camara.updateProjectionMatrix();
 }
 addEventListener('resize', ajustar);
@@ -752,12 +795,13 @@ function aPantalla(x, y, z) {
   if (vtmp.z > 1 || vtmp.z < -1) return null;
   return [(vtmp.x + 1) / 2 * innerWidth, (1 - vtmp.y) / 2 * innerHeight];
 }
+const poolNum = [];
 function numero(x, y, z, txt, color, grande) {
-  const d = document.createElement('div'); d.className = 'num'; d.textContent = txt; d.style.color = color || '#fff';
-  if (grande) d.style.fontSize = '22px';
-  capa.appendChild(d);
-  numeros.push({ d, x, y, z, t: 0 });
-  if (numeros.length > 24) numeros.shift().d.remove();
+  if (numeros.length >= 24) { const v = numeros.shift(); v.d.style.display = 'none'; poolNum.push(v.d); }
+  let d = poolNum.pop();
+  if (!d) { d = document.createElement('div'); d.className = 'num'; capa.appendChild(d); }
+  d.textContent = txt; d.style.color = color || '#fff'; d.style.fontSize = grande ? '22px' : ''; d.style.display = ''; d.style.opacity = 1;
+  numeros.push({ d, x, y, z, t: 0, dx: (Math.random() - 0.5) * 0.8, g: !!grande });
 }
 let numeros = [];
 
@@ -909,7 +953,7 @@ function recibir(m) {
       break;
     }
     case 'zona3f': quitarZona3(m.id, true); break;
-    case 'md3': { const o = mons.get(m.id); if (o) { o.muereT = performance.now(); o.st = 3; sfx('muerte', 0.3); } if (objetivo === m.id) { objetivo = 0; autoAtk = false; pintarBarra(); } break; }
+    case 'md3': { const o = mons.get(m.id); if (o) { o.muereT = performance.now(); o.st = 3; sfx('muerte', 0.3); const y = (o.y || alturaEn(o.x, o.z)) + 1; FX.emitir(o.x, y, o.z, { n: 30, color: '#c084fc', vel: 5, vida: 0.9, grav: 3, sube: 1.5 }); FX.emitir(o.x, y, o.z, { n: 14, color: '#fde68a', vel: 1.6, vida: 1.4, grav: -2, tam: 0.8 }); } if (objetivo === m.id) { objetivo = 0; autoAtk = false; pintarBarra(); } break; }
     case 'at3': ataqueVisto(m); break;
     case 'ph': golpeJugador(m); break;
     case 'b3': { const o = mons.get(m.de), q = m.a === miId ? P : otros.get(m.a); if (o && q) proyectil(o, q, '#c084fc'); break; }
@@ -1091,6 +1135,7 @@ function ataqueVisto(m) {
   const de = m.p === miId ? P : otros.get(m.p);
   if (de) { if (!(de === P && performance.now() - P.atkT < 350)) de.atkT = performance.now(); if (m.v) proyectil(de, o, CLASES[(m.p === miId ? yo.clase : de.cl)] ? CLASES[(m.p === miId ? yo.clase : de.cl)].color : '#fff'); }
   if (m.d > 0) o.hp = Math.max(0, o.hp - m.d);
+  if (m.d > 0 && Math.hypot(o.x - P.x, o.z - P.z) < 45) FX.emitir(o.x, (o.y || alturaEn(o.x, o.z)) + 1.1, o.z, { n: m.c ? 24 : 10, color: m.c ? '#ffd34d' : m.rayo ? '#7dd3fc' : '#fff1c1', vel: m.c ? 6.5 : 4, vida: 0.45 });
   if (m.p === miId || o.id === objetivo) {
     numero(o.x + (Math.random() - 0.5), alturaEn(o.x, o.z) + 2.2, o.z, (m.c ? '¡' : '') + m.d + (m.c ? '!' : ''), m.c ? '#ffd34d' : m.rayo ? '#7dd3fc' : '#fff', m.c);
     if (m.p === miId) { sfx(m.c ? 'corte2' : 'golpe', 0.35); if (m.c) sacudir = Math.max(sacudir, 0.15); }
@@ -1107,7 +1152,7 @@ function golpeJugador(m) {
   }
   const q = m.p === miId ? P : otros.get(m.p);
   if (!q) return;
-  if (m.d > 0) numero(q.x, (q.y || alturaEn(q.x, q.z)) + 2.3, q.z, '-' + m.d, '#ff5a6a');
+  if (m.d > 0) { numero(q.x, (q.y || alturaEn(q.x, q.z)) + 2.3, q.z, '-' + m.d, '#ff5a6a'); FX.emitir(q.x, (q.y || alturaEn(q.x, q.z)) + 1.1, q.z, { n: 8, color: '#ff4d5e', vel: 3.5, vida: 0.4 }); }
   if (m.esq && m.p === miId) numero(P.x, P.y + 2.3, P.z, 'Esquiva', '#7dd3fc');
   if (m.p === miId) { P.heridoT = performance.now(); sfx('golpe', 0.25); if (yo && m.d > 0) { yo.hp = Math.max(0, yo.hp - m.d); pintarVida(); } }
 }
@@ -1913,7 +1958,8 @@ function fisica(dt) {
     // Pegado al suelo al bajar cuestas (sin saltitos) y caida al salir de un borde.
     const pegar = P.suelo && P.vy <= 0 && P.y - suelo < FIS.escalon * 0.5 + rapidez * dt * 1.5;
     if (P.y <= suelo || pegar) {
-      const aterriza = !P.suelo;
+      const aterriza = !P.suelo, vAnt = P.vy;
+      if (aterriza && vAnt < -7) FX.emitir(P.x, suelo + 0.1, P.z, { n: 16, color: '#bfae8e', vel: 2.5 - vAnt * 0.15, vida: 0.5, grav: 2, plano: true, radio: 0.4, tam: 1.6 });
       P.y = suelo; P.vy = 0; P.suelo = true; P.planea = false; P.planeoAuto = false; P.coyote = FIS.coyote;
       if (aterriza && P.buffer > 0 && !sinControl) { P.buffer = 0; saltar(); }
     } else { P.suelo = false; P.coyote = Math.max(0, P.coyote - dt); }
@@ -2112,6 +2158,7 @@ function colorNivel(nv) { const d = nv - (yo ? yo.nivel : 1); return d >= 5 ? '#
 const cieloAct = C(CIELO.pueblo), cieloObj = C(CIELO.pueblo);
 function bucle(t) {
   requestAnimationFrame(bucle);
+  resolucionDinamica(t - ultimoT);
   const dt = Math.min(0.05, (t - ultimoT) / 1000); ultimoT = t;
   cuadro++;
   fisica(dt);
@@ -2159,6 +2206,9 @@ function bucle(t) {
   cy = Math.max(cy, alturaEn(cx, cz) + 0.8, MUNDO.agua + 0.5);
   if (enCv) cy = Math.min(cy, 7.2);   // bajo el techo de la cueva
   camara.position.set(cx, cy, cz); camara.lookAt(tx, ty, tz);
+  // Sensacion de velocidad: el campo de vision se abre un poco al galopar o volar rapido.
+  const fovObj = 60 + clamp((Math.hypot(P.vx, P.vz) / MUNDO.velocidad - 1.1) * 8, 0, 10);
+  if (Math.abs(camara.fov - fovObj) > 0.05) { camara.fov += (fovObj - camara.fov) * Math.min(1, dt * 3); camara.updateProjectionMatrix(); }
   TAPA.uCam.value.set(cx, cy, cz); TAPA.uTgt.value.set(tx, ty, tz);
   // Zona actual: titulo, cielo y niebla de su color.
   if (cuadro % 15 === 0) {
@@ -2210,14 +2260,18 @@ function bucle(t) {
   etiquetas(t);
   numeros = numeros.filter(n => {
     n.t += dt;
-    const s = aPantalla(n.x, n.y + n.t * 1.2, n.z);
-    if (!s || n.t > 1.1) { n.d.remove(); return false; }
-    n.d.style.transform = `translate(${s[0].toFixed(1)}px,${s[1].toFixed(1)}px) translate(-50%,-50%)`;
+    const s = aPantalla(n.x + n.dx * n.t, n.y + n.t * 1.2 - n.t * n.t * 0.35, n.z);
+    if (!s || n.t > 1.1) { n.d.style.display = 'none'; poolNum.push(n.d); return false; }
+    const k = n.t < 0.12 ? 1 + (n.g ? 0.8 : 0.4) * (1 - n.t / 0.12) : 1;
+    n.d.style.transform = `translate(${s[0].toFixed(1)}px,${s[1].toFixed(1)}px) translate(-50%,-50%) scale(${k.toFixed(2)})`;
     n.d.style.opacity = 1 - Math.max(0, n.t - 0.7) / 0.4;
     return true;
   });
-  render.render(escena, camara);
+  if (cuadro % 30 === 0) { const z = zonaEn(P.x, P.z); FX.ambiente(z === 'eter' ? 'eter' : z === 'cueva' ? 'polvo' : nocheK > 0.5 && z !== 'pueblo' ? 'luciernagas' : ''); }
+  vFX.set(P.x, P.y, P.z); FX.actualizar(dt, vFX, lienzo.height);
+  if (composer) composer.render(dt); else render.render(escena, camara);
 }
+const vFX = new THREE.Vector3();
 
 // Estado visible en la consola para depurar (solo lectura).
 window.__dq3 = { P, mons, otros, get objetivo() { return objetivo; }, get autoAtk() { return autoAtk; }, get yo() { return yo; }, cuadro: () => bucle(performance.now()), recibir };

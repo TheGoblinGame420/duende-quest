@@ -483,6 +483,12 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 31, fecha: '23 oct 2026', items: [
+    'Efectos nuevos: chispas al golpear (doradas en los críticos), estallido de luz al vencer a un monstruo y polvo al aterrizar de un salto alto.',
+    'Ambiente vivo: luciérnagas de noche, motas de éter en el Abismo y polvo en la cueva.',
+    'Calidad alta: resplandor en cristales, magia y portales, con viñeta y color más vivos.',
+    'Más fluido: la resolución se ajusta sola si el dispositivo va justo, los números de daño saltan con fuerza y el campo de visión se abre al galopar o volar rápido.',
+  ] },
   { n: 30, fecha: '23 oct 2026', items: [
     '¡PvP de facciones en el Abismo! Selecciona a un jugador de la otra facción (nombre en rojo) y atácalo como a un monstruo. Allí sí se muere.',
     'Puntos del Abismo y 8 rangos, de Recluta a Héroe del Éter. Se ganan abatiendo enemigos (con asistencias para tu grupo) y cazando élites; morir cuesta algunos.',

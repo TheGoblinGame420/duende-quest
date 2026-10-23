@@ -2491,3 +2491,19 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
 - Cliente: `enemigoP/rivalP` (el blanco puede ser un enemigo de faccion),
   rango bajo el nombre en el Abismo, panel con rango y PA, `pvpBaja`.
 - Bot de Telegram: botón «🌌 Mundo abierto 3D» en /start y /mmo, comando /mundo.
+
+### Partículas, post-proceso y resolución dinámica (23-oct-2026, `?v=263`)
+
+- mundo/js/particulas.js: `crearParticulas(escena, N, movil)` → `emitir(x,y,z,
+  {n,color,vel,vida,tam,grav,sube,plano,radio})` (anillo de N puntos; la
+  posicion se calcula en el shader; solo se sube el tramo emitido) y
+  `ambiente('luciernagas'|'eter'|'polvo'|'')` (nube que sigue al jugador).
+  Ganchos: at3 (chispas), ph (sangre), md3 (estallido), aterrizaje (polvo).
+- Calidad alta: EffectComposer (RenderPass → UnrealBloomPass 0,32/0,45/0,92
+  a media resolucion → grado: viñeta 0,32 y saturacion 1,08 → OutputPass),
+  cargado con import() dinamico desde `three/addons/` (import map).
+  `?sinPost=1` lo quita. Medido en el iGPU: ~+4 ms por cuadro.
+- `resolucionDinamica`: media de dt; >25 ms baja el pixelRatio 0,1 (hasta el
+  60%), <15 ms lo sube; si ya esta al minimo y >28 ms, quita el post-proceso.
+- FOV 60→70 segun la velocidad. Numeros de daño en pool (sin crear/borrar
+  nodos) con 'pop' de escala y deriva lateral.
