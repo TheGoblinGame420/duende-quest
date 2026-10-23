@@ -595,6 +595,7 @@ async function pruebas() {
   await pruebasDios();
   await pruebasSinCortes();
   await pruebas3d();
+  await pruebasHabs3d();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -2635,4 +2636,89 @@ async function pruebas3d() {
   chequear(mundo.sesiones3d().length === 0, 'al salir, el mundo 3D queda vacío');
   tick(2);
   chequear(mundo.m3.mons.size === 0, 'y sin nadie, los monstruos se retiran');
+}
+
+// ── HABILIDADES Y MONTURAS EN EL MUNDO 3D ──
+async function pruebasHabs3d() {
+  console.log('Mundo 3D: habilidades de clase');
+  const W = await import('../mmo/js/mundo3d.js');
+  const D = await import('../mmo/js/data.js');
+  const campo = W.campamentos(D.MAPAS, D.MONSTRUOS).find(c => c.zona === 'amanecer' && !c.jefe);
+  const prepara = async (nombre, tok, clase, nv) => {
+    const s = await entrar3d(nombre, tok);
+    ponerNivel(s, nv, clase);
+    s.p = { x: campo.x + 30, z: campo.z }; s.movBud = undefined; s.rec = s.st.recMax || 100;
+    return s;
+  };
+  const muneco = (s, dx) => {
+    const o = mundo.crear3d({ id: -1, x: s.p.x + dx, z: s.p.z, k: campo.k, n: 1, jefe: false, vivos: new Set(), zona: 'amanecer' });
+    o.x = s.p.x + dx; o.z = s.p.z; o.hx = o.x; o.hz = o.z;   // crear3d lo desplaza al azar 1-5 m
+    o.hp = o.max = 1e6; o.paseo = Date.now() + 1e9; o.destino = null;
+    return o;
+  };
+  const g = await prepara('Guerrero3D', '4b1', 'guerrero', 40);
+  let o = muneco(g, 1.5);
+  g.rec = 50; g.cdHab = {}; g.gcdHasta = 0;
+  await g.mandar({ t: 'hab3', id: 'golpe_heroico', tg: o.id });
+  chequear(o.hp < o.max && g.rec === 35, 'Golpe Heroico pega y gasta 15 de Ira');
+  g.limpiar(); avanzar(1100);
+  const lejos = muneco(g, 40);
+  await g.mandar({ t: 'hab3', id: 'golpe_heroico', tg: lejos.id });
+  chequear(lejos.hp === lejos.max && g.ultimos('no').length, 'fuera de alcance no se lanza');
+  avanzar(1100); o.au = {}; const x0 = g.p.x;
+  const lejano = muneco(g, 12);
+  await g.mandar({ t: 'hab3', id: 'carga', tg: lejano.id });
+  chequear(Math.abs(g.p.x - x0) > 8 && mundo.auraMon(lejano, 'aturdido'), 'Carga lleva junto al enemigo y lo aturde');
+
+  const m = await prepara('Mago3D', '4b2', 'mago', 40);
+  o = muneco(m, 15);
+  m.cdHab = {}; m.gcdHasta = 0;
+  await m.mandar({ t: 'hab3', id: 'bola_fuego', tg: o.id });
+  chequear(m.cast && m.cast.h === 'bola_fuego' && o.hp === o.max, 'Bola de Fuego empieza a lanzarse');
+  for (let i = 0; i < 17; i++) tick(1);
+  chequear(!m.cast && o.hp < o.max, 'al acabar el lanzamiento, la bola pega');
+  avanzar(1100); m.limpiar();
+  await m.mandar({ t: 'hab3', id: 'bola_fuego', tg: o.id });
+  avanzar(200); await m.mandar({ t: 'mv3', x: m.p.x + 2, z: m.p.z });
+  chequear(!m.cast && m.ultimos('castFin').some(x => x.ok === false), 'moverse cancela el lanzamiento');
+  avanzar(15000); m.gcdHasta = 0; m.cdHab = {};
+  const cerca = muneco(m, 3);
+  await m.mandar({ t: 'hab3', id: 'nova' });
+  chequear(mundo.auraMon(cerca, 'raiz') && cerca.hp < cerca.max, 'Nova de Escarcha congela a los de alrededor');
+
+  const p = await prepara('Cura3D', '4b3', 'sacerdote', 40);
+  p.hp = 10; p.cdHab = {}; p.gcdHasta = 0;
+  await p.mandar({ t: 'hab3', id: 'sanar' });
+  for (let i = 0; i < 20; i++) tick(1);
+  chequear(p.hp > 10, 'Sanar cura al sacerdote');
+
+  const r = await prepara('Picaro3D', '4b4', 'picaro', 40);
+  o = muneco(r, 1.5);
+  r.rec = 100; r.combo = 0; r.cdHab = {}; r.gcdHasta = 0;
+  await r.mandar({ t: 'hab3', id: 'siniestro', tg: o.id });
+  chequear(r.combo === 1, 'Golpe Siniestro suma un punto de combo');
+  avanzar(1100); r.rec = 100; const hp1 = o.hp;
+  await r.mandar({ t: 'hab3', id: 'eviscerar', tg: o.id });
+  chequear(r.combo === 0 && o.hp < hp1, 'Eviscerar gasta los puntos de combo');
+
+  console.log('Mundo 3D: monturas');
+  mundo.m3.mons.clear(); for (const c of mundo.m3.campos) { c.vivos.clear(); c.prox = Date.now() + 1e9; }
+  g.c.monturas = [Object.keys(D.MONTURAS)[0]]; g.c.montura = g.c.monturas[0]; g.combateT = 0; g.cast = null;
+  await g.mandar({ t: 'montar' });
+  for (let i = 0; i < 17; i++) tick(1);
+  chequear(g.montado === g.c.montura, 'se monta en el mundo 3D');
+
+  console.log('Mundo 3D: vuelo');
+  avanzar(1000); r.movBud = undefined;
+  await r.mandar({ t: 'mv3', x: r.p.x + 1, z: r.p.z, a: 3, h: 20 });
+  chequear(r.h === 20, 'la altura de vuelo llega al servidor');
+  avanzar(200); r.limpiar(); const hpV = o.hp; r.cdHab = {}; r.gcdHasta = 0; r.rec = 100;
+  await r.mandar({ t: 'hab3', id: 'siniestro', tg: o.id });
+  chequear(o.hp === hpV && r.ultimos('no').length, 'desde el cielo no se combate');
+  await r.mandar({ t: 'mv3', x: r.p.x, z: r.p.z, a: 3, h: 999 });
+  chequear(r.h === 50, 'la altura de vuelo tiene tope');
+  avanzar(200); r.p = { x: 5, z: 5 }; r.movBud = undefined;
+  await r.mandar({ t: 'mv3', x: 5.5, z: 5, a: 3, h: 20 });
+  chequear(r.p.x === 5.5 && !(r.h > 0), 'en el pueblo no se vuela');
+  for (const s of [g, m, p, r]) await dejar(s);
 }

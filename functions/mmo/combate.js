@@ -224,7 +224,8 @@ export const Combate = {
   // Curar a alguien que pelea enoja a los monstruos que pelean contra el (y
   // cuenta como participar: el sanador tambien cobra su parte del botin).
   amenazaCura(s, a, cant) {
-    const w = this.mundoDe(a);
+    // En el mundo 3D los monstruos viven en this.m3 (functions/mmo/mundo3d.js).
+    const w = a.m3 ? this.iniciar3d() : this.mundoDe(a);
     let pelea = false;
     for (const o of w.mons.values()) {
       if (o.muere || !o.amen.has(a.id)) continue;

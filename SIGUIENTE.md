@@ -2171,3 +2171,30 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
   duelos, hermandades, monturas, tienda completa. Siguientes fases: llevar
   las habilidades de clase al 3D, mazmorras como instancias 3D, ventanas de
   inventario/talentos, monturas y vuelo (AION), jefe mundial.
+
+### Fase 2 del 3D (23-oct-2026, `?v=244`) — habilidades, vuelo, monturas y ventanas. Arnés **635**
+
+- **Habilidades de clase en el 3D** (`hab3d`/`aplicar3d` en
+  functions/mmo/mundo3d.js): las 32 de HABS con los mismos datos que el 2D
+  (alcance `rango/17` m; cuerpo a cuerpo `MELEE/33*alcance+0.6`), GCD 1 s,
+  lanzamientos que se cancelan al moverse (>0,3 m), auras, combo del pícaro,
+  carga, polimorfia, sigilo, resurrección… Mensajes: `cast`, `castFin`, `hb`,
+  `cd` (`h_<id>`), `au`, `cu`. `amenazaCura` (combate.js) sabe del 3D.
+- **Cliente**: barra con ataque (1), habilidades 2-9 (bloqueadas hasta su
+  nivel), consumibles Q F G T; barra de lanzamiento, puntos de combo, auras
+  propias, color del recurso de la clase, ondas de área y proyectiles.
+- **Monturas**: Y (`montar`, mismo lanzamiento de 1,5 s que el 2D;
+  `velMontura`).
+- **Vuelo estilo AION**: V o doble salto despliega alas de luz; Espacio sube,
+  C/Mayús baja; 60 s de energía que se recarga en el suelo; planeo al
+  acabarse. Prohibido en el pueblo. El servidor recibe la altura (`mv3.h`,
+  tope 50 m, `a:3`), da +30 % de velocidad volando, no deja combatir por
+  encima de 4 m y los monstruos sueltan a quien vuela por encima de 8 m. Los
+  demás jugadores ven la altura (9º campo de `s3.p`).
+- **Ventanas** (mundo/js/ventanas.js): inventario (I), libro de clase con
+  habilidades, talentos y especialización (P), logros (L), tienda completa
+  (desde el Mercader) y tienda premium (💎) con pagos SOL/$DUENDE/Stars
+  (`pedido`, `pedidoFirma`, `pedidoBuscar` ya entran por `recibir3d`).
+- Pendiente: modelos 3D de verdad para duende/monstruos/monturas (en curso),
+  mazmorras como instancias 3D, jefe mundial, artesanía/pesca/duelos en 3D.
+

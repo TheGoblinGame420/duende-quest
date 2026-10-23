@@ -82,6 +82,17 @@ input.nombre{width:100%;padding:12px;border-radius:8px;border:1px solid var(--bo
 .clases button{padding:12px 8px;border-radius:10px;border:1px solid var(--borde);background:rgba(255,255,255,.05);color:var(--txt);font:700 14px var(--sans);cursor:pointer;}
 .clases button small{display:block;font-weight:500;color:var(--txt2);margin-top:4px;font-size:12px;}
 #mapa-grande canvas{width:100%;border-radius:10px;display:block;}
+#lanzar{left:50%;bottom:100px;transform:translateX(-50%);width:280px;padding:6px 8px;display:none;}
+#lanzar .barra i{background:linear-gradient(90deg,#f59e0b,#ffe600);transform:scaleX(0);}
+#alas{position:fixed;left:12px;top:120px;width:120px;height:10px;background:rgba(0,0,0,.6);border-radius:5px;overflow:hidden;display:none;pointer-events:none;}
+#alas i{position:absolute;inset:0;background:linear-gradient(90deg,#c084fc,#7dd3fc);transform-origin:left;}
+#alas span{position:relative;display:block;font:700 8px/10px var(--sans);text-align:center;letter-spacing:1px;}
+#combo{display:flex;gap:4px;margin-top:5px;}
+#combo i{width:10px;height:10px;border-radius:50%;background:#ffe600;box-shadow:0 0 4px #ffe600;}
+#auras{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;font:600 10px var(--sans);}
+#auras span{padding:2px 5px;border-radius:5px;background:rgba(124,58,237,.35);border:1px solid rgba(192,132,252,.4);}
+.acc.bloq{opacity:.35;}
+.acc .lv{position:absolute;left:0;right:0;bottom:2px;font:700 9px var(--sans);color:var(--warn);text-align:center;}
 /* Movil: joystick a la izquierda, botones a la derecha */
 #joy{position:fixed;left:0;bottom:0;width:45%;height:55%;pointer-events:auto;display:none;}
 #joy .base{position:absolute;width:120px;height:120px;border-radius:50%;border:2px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);display:none;}
@@ -116,20 +127,28 @@ body.movil #titulo-zona b{font-size:16px;}
   <div class="barra hp" id="m-hp"><i></i><span></span></div>
   <div class="barra rc" id="m-rec"><i></i><span></span></div>
   <div id="oro">0 oro</div>
+  <div id="combo"></div>
+  <div id="auras"></div>
 </div>
 <div class="caja" id="obj">
   <div class="nm"><span id="o-nombre">—</span><small id="o-nivel"></small></div>
   <div class="barra hpo" id="o-hp"><i></i><span></span></div>
 </div>
 <div class="caja" id="botones">
+  <button class="bt" id="b-inv" title="Inventario (I)">🎒</button>
+  <button class="bt" id="b-libro" title="Habilidades y talentos (P)">📖</button>
+  <button class="bt" id="b-logros" title="Logros (L)">🏆</button>
+  <button class="bt" id="b-premium" title="Skins premium">💎</button>
   <button class="bt" id="b-mapa" title="Mapa del mundo (M)">🗺</button>
   <button class="bt" id="b-chat" title="Chat (Enter)">💬</button>
   <button class="bt" id="b-ayuda" title="Controles">?</button>
-  <a class="bt" href="/mmo/" title="Juego 2D: inventario, talentos, mazmorras">2D</a>
+  <a class="bt" href="/mmo/" title="Juego 2D: mazmorras, Torre y banda">2D</a>
   <a class="bt" href="/" title="Portada">⌂</a>
 </div>
 <div class="caja" id="mini"><canvas id="mini-c" width="150" height="150"></canvas><div class="z" id="mini-z">—</div></div>
 <div class="caja" id="barra"></div>
+<div class="caja" id="lanzar"><div class="barra"><i></i><span id="lanzar-t"></span></div></div>
+<div id="alas"><i></i><span>ALAS</span></div>
 <div class="caja" id="chat"><div id="chat-log"></div><input id="chat-in" maxlength="120" placeholder="Escribe y pulsa Enter…" autocomplete="off"></div>
 <div id="avisos"></div>
 <div id="titulo-zona"><b id="tz-n"></b><small id="tz-s"></small></div>
@@ -138,6 +157,7 @@ body.movil #titulo-zona b{font-size:16px;}
 
 <div id="joy"><div class="base"><div class="pomo"></div></div></div>
 <div id="tactil">
+  <button id="t-volar">VOLAR</button><button id="t-bajar" style="visibility:hidden">BAJAR</button><button id="t-montar">MONTAR</button>
   <button id="t-obj">OBJ</button><button id="t-salto">SALTO</button><button class="grande" id="t-atk">ATACAR</button>
 </div>
 
@@ -188,10 +208,14 @@ body.movil #titulo-zona b{font-size:16px;}
   <div class="fila"><span>Saltar</span><b>Espacio</b></div>
   <div class="fila"><span>Elegir objetivo</span><b>Clic o Tab</b></div>
   <div class="fila"><span>Ataque automático</span><b>1 o Z</b></div>
+  <div class="fila"><span>Habilidades de clase</span><b>2 a 9</b></div>
+  <div class="fila"><span>Volar (alas)</span><b>V o doble salto · Espacio sube · C baja</b></div>
+  <div class="fila"><span>Montura</span><b>Y</b></div>
+  <div class="fila"><span>Inventario · Libro · Logros</span><b>I · P · L</b></div>
   <div class="fila"><span>Consumibles</span><b>Q F G T</b></div>
   <div class="fila"><span>Hablar</span><b>E</b></div>
   <div class="fila"><span>Mapa · Chat</span><b>M · Enter</b></div>
-  <p style="margin-top:10px">En el móvil: joystick a la izquierda, arrastra a la derecha para girar la cámara y toca un monstruo para elegirlo. El inventario, los talentos y las mazmorras están por ahora en el juego 2D (botón 2D): es el mismo personaje.</p>
+  <p style="margin-top:10px">En el móvil: joystick a la izquierda, arrastra a la derecha para girar la cámara y toca un monstruo para elegirlo. Las mazmorras, la Torre y la banda están por ahora en el juego 2D (botón 2D): es el mismo personaje.</p>
 </div></div>
 
 <div class="modal" id="v-error"><div class="ventana" style="text-align:center">
@@ -203,6 +227,6 @@ body.movil #titulo-zona b{font-size:16px;}
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script src="/js/config.js"></script>
-<script type="module" src="/mundo/js/mundo.js?v=243"></script>
+<script type="module" src="/mundo/js/mundo.js?v=244"></script>
 </body>
 </html>

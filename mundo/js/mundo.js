@@ -12,8 +12,10 @@
 // mmo/js/mundo3d.js, igual que en el servidor.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir } from '/mmo/js/data.js?v=243';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=243';
+import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
+  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura } from '/mmo/js/data.js?v=244';
+import { iniciarVentanas } from './ventanas.js?v=244';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=244';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -247,6 +249,20 @@ const anillo = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.15, 32).rotateX(-Mat
 anillo.visible = false;
 escena.add(anillo);
 
+// Alas de luz (vuelo estilo AION).
+const alasMesh = (() => {
+  const g = new THREE.Group();
+  const forma = new THREE.Shape();
+  forma.moveTo(0, 0); forma.quadraticCurveTo(0.9, 0.9, 2.1, 0.7); forma.quadraticCurveTo(1.4, 0.1, 1.9, -0.4); forma.quadraticCurveTo(0.9, -0.3, 0, 0);
+  const geo = new THREE.ShapeGeometry(forma);
+  const mat = new THREE.MeshBasicMaterial({ color: 0xc4b5fd, transparent: true, opacity: 0.75, side: THREE.DoubleSide, depthWrite: false });
+  const izq = new THREE.Mesh(geo, mat), der = new THREE.Mesh(geo, mat);
+  der.scale.x = -1;
+  g.add(izq, der);
+  g.visible = false;
+  escena.add(g);
+  return g;
+})();
 class Figura {
   // ancho/alto en metros del cuadro entero de la hoja.
   constructor(mat, ancho, alto, cols, filas) {
@@ -412,6 +428,7 @@ function recibir(m) {
       break;
     case 'yo': {
       const antes = yo; yo = m.yo;
+      V.actualizar();
       if (antes && yo.skin !== antes.skin) cambiarSkinPropia();
       if (yo.muerto && !(antes && antes.muerto)) morir();
       if (!yo.muerto) { cerrar('v-muerte'); P.muerto = false; }
@@ -433,7 +450,7 @@ function recibir(m) {
     case 'gana':
       if (m.xp) numero(P.x, P.y + 2.6, P.z, '+' + m.xp + ' XP', '#c084fc');
       if (m.oro) { numero(P.x + 0.6, P.y + 2.2, P.z, '+' + m.oro + ' oro', '#ffd84a'); sfx('moneda', 0.35); }
-      if (m.item) aviso('Botín: ' + (m.item.nombre || 'equipo nuevo') + ' (míralo en el inventario del juego 2D)', 'ok');
+      if (m.item) aviso('Botín: ' + (m.item.nombre || 'equipo nuevo') + ' (pulsa I para verlo)', 'ok');
       break;
     case 'lv': if (m.p === miId) { aviso('¡Subiste al nivel ' + m.lv + '!', 'ok'); numero(P.x, P.y + 3, P.z, 'NIVEL ' + m.lv, '#ffe600', true); } else { const o = otros.get(m.p); if (o) o.lv = m.lv; } break;
     case 'toast': aviso(m.m, m.ok ? 'ok' : ''); break;
@@ -441,7 +458,25 @@ function recibir(m) {
     case 'no': aviso(m.m, 'err'); break;
     case 'chat': lineaChat(m); break;
     case 'cd': cdPoder[m.id] = performance.now() + m.hasta; break;
+    case 'pedidoSol': case 'factura': V.alPedido(m); break;
     case 'pw': if (m.p === miId) sfx(m.i === 2 ? 'explosion' : 'boton', 0.4); break;
+    case 'cast':
+      if (m.p === miId) { lanzando = { id: m.id, ini: performance.now(), fin: performance.now() + m.ms }; $('lanzar').style.display = 'block'; $('lanzar-t').textContent = m.id === 'montar' ? 'Invocar montura' : (habPorId(m.id) || {}).nombre || ''; }
+      else { const o = otros.get(m.p); if (o) o.lanza = performance.now() + m.ms; }
+      break;
+    case 'castFin':
+      if (m.p === miId) { lanzando = null; $('lanzar').style.display = 'none'; }
+      else { const o = otros.get(m.p); if (o) o.lanza = 0; }
+      break;
+    case 'hb': efectoHab(m); break;
+    case 'cu': { const q = m.p === miId ? P : otros.get(m.p); if (q) numero(q.x, (q.y || alturaEn(q.x, q.z)) + 2.4, q.z, '+' + m.n, '#4ade80', m.c); break; }
+    case 'au': {
+      const fin = m.ms < 0 ? Infinity : m.ms === 0 ? 0 : performance.now() + m.ms;
+      const u = m.k === 'm' ? mons.get(m.id) : m.id === miId ? P : otros.get(m.id);
+      if (u) { u.au = u.au || {}; if (fin) u.au[m.a] = fin; else delete u.au[m.a]; }
+      break;
+    }
+    case 'res': if (m.p === miId) { aviso((m.de || 'Alguien') + ' te resucitó.', 'ok'); cerrar('v-muerte'); } break;
     case 'ranking': if (npcAbierto === 'ranking') pintarRanking(m.r); break;
     case 'err':
       if (m.auth && m.auth !== 'inv' && !forzarInvitado) { forzarInvitado = true; aviso('No pudimos verificar tu cuenta: entras como invitado.', 'err'); return; }
@@ -488,11 +523,11 @@ async function agregarMon(d) {
 }
 function quitarMon(id) { const o = mons.get(id); if (!o) return; if (o.fig) o.fig.quitar(); o.lbl.remove(); mons.delete(id); if (objetivo === id) { objetivo = 0; autoAtk = false; pintarBarra(); } }
 function foto(m) {
-  for (const [id, x, z, ry, a, hp, mx, muerto] of m.p) {
+  for (const [id, x, z, ry, a, hp, mx, muerto, h] of m.p) {
     if (id === miId) continue;
     const o = otros.get(id);
     if (!o) continue;
-    o.tx = x; o.tz = z; o.ry = ry; o.a = a; o.hp = hp; o.mx = mx; o.muerto = !!muerto;
+    o.tx = x; o.tz = z; o.ry = ry; o.a = a; o.hp = hp; o.mx = mx; o.muerto = !!muerto; o.h = h || 0;
   }
   if (m.n) for (const d of m.n) agregarMon(d);
   for (const [id, x, z, ry, hp, st] of m.m) {
@@ -501,7 +536,7 @@ function foto(m) {
     o.tx = x; o.tz = z; o.ry = ry; if (hp < o.hp) o.golpeT = performance.now(); o.hp = hp; o.st = st;
   }
   if (m.q) for (const id of m.q) quitarMon(id);
-  if (yo) { yo.hp = m.hp; yo.rec = m.rec; pintarVida(); }
+  if (yo) { yo.hp = m.hp; yo.rec = m.rec; P.rec = m.rec; yo.combo = m.cb || 0; pintarVida(); }
 }
 function ataqueVisto(m) {
   const o = mons.get(m.tg);
@@ -520,7 +555,46 @@ function golpeJugador(m) {
   if (m.d > 0) numero(q.x, (q.y || alturaEn(q.x, q.z)) + 2.3, q.z, '-' + m.d, '#ff5a6a');
   if (m.p === miId) { P.heridoT = performance.now(); sfx('golpe', 0.25); }
 }
-let proyectiles = [];
+let proyectiles = [], efectos = [], lanzando = null, objetivoP = 0;
+let tocandoSubir = false, tocandoBajar = false;
+// Anillo que se expande (habilidades de area, curas en grupo...).
+function onda(x, z, radio, color) {
+  const m = new THREE.Mesh(new THREE.RingGeometry(0.85, 1, 40).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.8, depthWrite: false, side: THREE.DoubleSide }));
+  m.position.set(x, alturaEn(x, z) + 0.15, z);
+  escena.add(m);
+  efectos.push({ m, t: 0, dura: 0.5, radio });
+}
+const AREA = { torbellino: '#ff6633', abanico: '#cbd5e1', nova: '#9be7ff', meteoros: '#ff7a1a', rezo: '#4ade80', grito: '#ff3344' };
+const A_DISTANCIA = { bola_fuego: '#ff7a1a', castigo: '#ffe9a8', misiles: '#c084fc', dolor: '#7c3aed', contrahechizo: '#7dd3fc', silencio: '#a78bfa', polimorfia: '#f9a8d4' };
+function efectoHab(m) {
+  const de = m.p === miId ? P : otros.get(m.p);
+  const h = habPorId(m.id);
+  if (de) de.atkT = performance.now();
+  if (de && AREA[m.id]) onda(de.x, de.z, (h && h.radio ? h.radio / 17 : 6), AREA[m.id]);
+  for (const [id, d, tipo] of m.h || []) {
+    const o = mons.get(id);
+    if (!o) continue;
+    if (de && A_DISTANCIA[m.id]) proyectil(de, o, A_DISTANCIA[m.id]);
+    if (m.p === miId || id === objetivo) numero(o.x + (Math.random() - 0.5), alturaEn(o.x, o.z) + 2.3, o.z, (tipo === 1 ? '¡' : '') + d + (tipo === 1 ? '!' : ''), tipo === 1 ? '#ffd34d' : '#ffe600', tipo === 1);
+    o.golpeT = performance.now();
+  }
+  if (m.p === miId) { sfx(AREA[m.id] ? 'explosion' : 'corte2', 0.35); if (m.cp) aviso('Eviscerar con ' + m.cp + ' puntos de combo', 'ok'); }
+}
+const NOMBRE_AURA = { grito: 'Grito', muro: 'Muro', bloque: 'Hielo', escudoPoder: 'Escudo', renovar: 'Renovar', supresion: 'Supresión', evasion: 'Evasión', sigilo: 'Sigilo', aturdido: 'Aturdido', almaDebil: 'Alma débil' };
+function pintarAuras() {
+  const ahora = performance.now();
+  const l = Object.entries(P.au || {}).filter(([a, fin]) => fin > ahora && NOMBRE_AURA[a]);
+  const html = l.map(([a, fin]) => `<span>${NOMBRE_AURA[a]}${fin !== Infinity ? ' ' + Math.ceil((fin - ahora) / 1000) + 's' : ''}</span>`).join('');
+  if ($('auras')._h !== html) { $('auras').innerHTML = html; $('auras')._h = html; }
+  const cb = yo && yo.clase === 'picaro' ? yo.combo || 0 : 0;
+  const ch = '<i></i>'.repeat(cb);
+  if ($('combo')._h !== ch) { $('combo').innerHTML = ch; $('combo')._h = ch; }
+  if (lanzando) { const k = clamp((ahora - lanzando.ini) / (lanzando.fin - lanzando.ini), 0, 1); $('lanzar').querySelector('i').style.transform = `scaleX(${k})`; if (k >= 1 && ahora > lanzando.fin + 600) { lanzando = null; $('lanzar').style.display = 'none'; } }
+  const alas = $('alas');
+  const verAlas = P.vuela || P.alas < ALAS_MAX - 0.5;
+  alas.style.display = verAlas ? 'block' : 'none';
+  if (verAlas) alas.firstElementChild.style.transform = `scaleX(${(P.alas / ALAS_MAX).toFixed(3)})`;
+}
 function proyectil(de, a, color) {
   const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), new THREE.MeshBasicMaterial({ color }));
   escena.add(mesh);
@@ -541,6 +615,7 @@ function pintarHud() {
   $('m-nivel').textContent = 'Nv ' + yo.nivel + (cl ? ' · ' + cl.nombre : '');
   $('oro').textContent = Number(yo.oro || 0).toLocaleString('es') + ' oro';
   $('m-rec').style.display = cl ? '' : 'none';
+  if (cl) $('m-rec').firstElementChild.style.background = RECURSOS[cl.recurso].color;
   $('xp').firstElementChild.style.transform = `scaleX(${clamp(yo.xp / (yo.xpSig || xpParaSubir(yo.nivel)), 0, 1)})`;
   pintarVida(); pintarBarra();
   if (!P.fig || P.skin !== yo.skin) cambiarSkinPropia();
@@ -552,17 +627,28 @@ function pintarVida() {
   hp.lastElementChild.textContent = Math.ceil(yo.hp) + ' / ' + yo.maxHp;
   if (yo.recMax) { rc.firstElementChild.style.transform = `scaleX(${clamp((yo.rec || 0) / yo.recMax, 0, 1)})`; rc.lastElementChild.textContent = Math.round(yo.rec || 0) + ' / ' + yo.recMax; }
 }
-const cdPoder = {};
+const cdPoder = {}, cdHab = {};
+let gcdHasta = 0, misHabs = [];
 function pintarBarra() {
   if (!yo) return;
   const b = $('barra');
-  if (!b.dataset.hecho) {
-    b.dataset.hecho = 1;
+  const clave = (yo.clase || '') + ':' + yo.nivel;
+  if (b.dataset.hecho !== clave) {
+    b.dataset.hecho = clave;
+    b.innerHTML = '';
+    misHabs = yo.clase ? habsDe(yo.clase).slice(0, 8) : [];
     const atk = document.createElement('button'); atk.className = 'acc'; atk.id = 'acc-atk';
     atk.innerHTML = '<span class="t">1</span><img src="' + A + 'armas/katana_comun_item.png" alt=""><span class="cd"></span>';
     atk.title = 'Ataque automático (1 o Z)';
     atk.onclick = () => alternarAtaque();
     b.appendChild(atk);
+    misHabs.forEach((h, i) => {
+      const d = document.createElement('button'); d.className = 'acc' + (yo.nivel < h.nv ? ' bloq' : ''); d.dataset.hab = h.id;
+      d.innerHTML = `<span class="t">${i + 2}</span><img src="${A}items/equipo/${h.icono}.png" alt="">${yo.nivel < h.nv ? '<span class="lv">Nv ' + h.nv + '</span>' : ''}<span class="cd"></span>`;
+      d.title = h.nombre + ' (' + (i + 2) + ') — ' + h.desc;
+      d.onclick = () => usarHab(h);
+      b.appendChild(d);
+    });
     PODERES.forEach((p, i) => {
       const d = document.createElement('button'); d.className = 'acc'; d.dataset.pw = p.id;
       d.innerHTML = `<span class="t">${p.tecla}</span><img src="${A}items/${p.icono}.png" alt=""><span class="n"></span><span class="cd"></span>`;
@@ -576,6 +662,14 @@ function pintarBarra() {
 }
 function pintarCds() {
   const ahora = performance.now();
+  $('barra').querySelectorAll('[data-hab]').forEach(d => {
+    const h = habPorId(d.dataset.hab), c = cdHab[h.id];
+    let k = c && c.fin > ahora ? (c.fin - ahora) / c.ms : 0;
+    if (h.gcd !== false && gcdHasta > ahora) k = Math.max(k, (gcdHasta - ahora) / GCD_MS);
+    d.querySelector('.cd').style.transform = `scaleY(${k})`;
+    const sin = yo && yo.recMax !== undefined && (P.rec || 0) < costoHab(h, yo.recMax || 100, yo.espec);
+    d.style.filter = sin && yo.nivel >= h.nv ? 'grayscale(.8) brightness(.7)' : '';
+  });
   $('barra').querySelectorAll('[data-pw]').forEach(d => {
     const p = PODERES.find(x => x.id === d.dataset.pw), fin = cdPoder[p.id] || 0;
     d.querySelector('.cd').style.transform = `scaleY(${fin > ahora ? (fin - ahora) / p.cd : 0})`;
@@ -648,8 +742,9 @@ function abrirNpc(tipo) {
     const b = $('n-mision'); if (b) b.onclick = () => { mandar({ t: 'mision' }); sfx('moneda', 0.4); };
     $('n-diaria').onclick = () => mandar({ t: 'mision', diaria: true });
   } else if (tipo === 'tienda') {
-    cu.innerHTML = '<p>Consumibles para el camino. Armas, forja, skins y monturas: en el Mercader del juego 2D (mismo personaje).</p>' + PODERES.map(p => `<div class="fila"><span><img src="${A}items/${p.icono}.png" style="width:22px;vertical-align:middle;image-rendering:pixelated"> ${esc(p.nombre)} <small style="color:var(--txt3)">(${(yo.pw && yo.pw[p.id]) || 0})</small></span><span><b style="color:var(--oro)">${p.precio}</b> <button class="btn" data-c="${p.id}" data-n="1">×1</button> <button class="btn sec" data-c="${p.id}" data-n="5">×5</button></span></div>`).join('');
+    cu.innerHTML = '<button class="btn" id="n-tienda" style="width:100%;margin-bottom:8px">Ver toda la tienda: armas, forja, skins, monturas…</button><p>Consumibles para el camino:</p>' + PODERES.map(p => `<div class="fila"><span><img src="${A}items/${p.icono}.png" style="width:22px;vertical-align:middle;image-rendering:pixelated"> ${esc(p.nombre)} <small style="color:var(--txt3)">(${(yo.pw && yo.pw[p.id]) || 0})</small></span><span><b style="color:var(--oro)">${p.precio}</b> <button class="btn" data-c="${p.id}" data-n="1">×1</button> <button class="btn sec" data-c="${p.id}" data-n="5">×5</button></span></div>`).join('');
     cu.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { mandar({ t: 'comprar', k: 'pw', id: b.dataset.c, n: +b.dataset.n }); sfx('moneda', 0.3); });
+    $('n-tienda').onclick = () => { cerrar('v-npc'); V.abrirTienda('arma'); };
   } else if (tipo === 'ranking') {
     cu.innerHTML = '<p>Cargando el ranking…</p>';
     mandar({ t: 'ranking' });
@@ -661,6 +756,12 @@ function abrirNpc(tipo) {
 function pintarRanking(r) {
   $('npc-c').innerHTML = (r || []).slice(0, 15).map((x, i) => `<div class="fila"><span>${i + 1}. ${esc(x.n)}</span><b style="color:${x.yo ? 'var(--ok)' : 'var(--txt)'}">Nv ${x.lv}</b></div>`).join('') || '<p>Aún no hay nadie.</p>';
 }
+// Inventario, libro de clase, tienda completa y logros (mundo/js/ventanas.js).
+const V = iniciarVentanas({ mandar, yo: () => yo, aviso, sfx, abrir, cerrar, telegram: () => !!TG && !forzarInvitado });
+$('b-inv').onclick = () => V.abrirInventario();
+$('b-libro').onclick = () => V.abrirLibro();
+$('b-logros').onclick = () => V.abrirLogros();
+$('b-premium').onclick = () => V.abrirTienda('premium');
 $('b-mapa').onclick = () => abrirMapa();
 $('b-ayuda').onclick = () => abrir('v-ayuda');
 $('b-chat').onclick = () => { const i = $('chat-in'); i.style.display = 'block'; i.focus(); };
@@ -725,16 +826,24 @@ addEventListener('keydown', e => {
   if (hayVentana()) {
     if (e.key === 'Escape') document.querySelectorAll('.modal.on').forEach(m => { if (!['v-clase', 'v-muerte', 'v-inicio', 'v-error'].includes(m.id)) cerrar(m.id); });
     if (e.code === 'KeyM' && $('v-mapa').classList.contains('on')) cerrar('v-mapa');
+    for (const [k, id] of [['KeyI', 'v-inv'], ['KeyP', 'v-libro'], ['KeyL', 'v-logros']]) if (e.code === k && $(id) && $(id).classList.contains('on')) cerrar(id);
     return;
   }
   teclas[e.code] = true;
   if (e.code === 'Space') { e.preventDefault(); saltar(); }
   if (e.code === 'Tab') { e.preventDefault(); if (!e.repeat) cicloObjetivo(); }
   if ((e.code === 'Digit1' || e.code === 'KeyZ') && !e.repeat) alternarAtaque();
+  const nh = /^Digit([2-9])$/.exec(e.code);
+  if (nh && !e.repeat) usarHab(misHabs[+nh[1] - 2]);
+  if (e.code === 'KeyY' && !e.repeat) montar();
+  if (e.code === 'KeyV' && !e.repeat) volar();
   const i = { KeyQ: 0, KeyF: 1, KeyG: 2, KeyT: 3 }[e.code];
   if (i !== undefined && !e.repeat) usarPoder(i);
   if (e.code === 'KeyE' && !e.repeat) hablar();
   if (e.code === 'KeyM' && !e.repeat) abrirMapa();
+  if (e.code === 'KeyI' && !e.repeat) V.abrirInventario();
+  if (e.code === 'KeyP' && !e.repeat) V.abrirLibro();
+  if (e.code === 'KeyL' && !e.repeat) V.abrirLogros();
   if (e.code === 'Enter') { e.preventDefault(); $('chat-in').style.display = 'block'; $('chat-in').focus(); }
   if (e.code === 'Escape') { objetivo = 0; autoAtk = false; pintarBarra(); }
 });
@@ -796,7 +905,43 @@ function alternarAtaque() {
   pintarBarra();
 }
 function usarPoder(i) { if (!yo || P.muerto) return; mandar({ t: 'pw', i }); }
-function saltar() { if (P.suelo && !P.muerto) { P.vy = 8; P.suelo = false; sfx('salto', 0.25); } }
+function usarHab(h) {
+  if (!yo || P.muerto || !h) return;
+  if (yo.nivel < h.nv) return aviso(`Aprendes ${h.nombre} a nivel ${h.nv}.`, 'err');
+  const ahora = performance.now();
+  if (h.gcd !== false && ahora < gcdHasta) return;
+  if (cdHab[h.id] && cdHab[h.id].fin > ahora) return aviso(h.nombre + ' todavía no está lista.', 'err');
+  // Enemigo: el objetivo elegido (o el servidor busca el mas cercano).
+  // Aliado: el jugador elegido o uno mismo.
+  if (h.obj === 'enemigo' && !objetivo) cicloObjetivo();
+  mandar({ t: 'hab3', id: h.id, tg: h.obj === 'enemigo' ? objetivo : 0, tp: h.obj === 'aliado' || h.obj === 'muerto' ? objetivoP : 0 });
+  if (h.gcd !== false) gcdHasta = ahora + GCD_MS;
+  if (h.obj === 'enemigo' && objetivo && !autoAtk && h.id !== 'polimorfia') { autoAtk = true; pintarBarra(); }
+}
+function montar() { if (!yo || P.muerto) return; if (P.vuela) return aviso('Aterriza antes de montar.', 'err'); mandar({ t: 'montar' }); }
+// ── VUELO (como las alas de AION) ──
+// Fuera del pueblo, V (o doble salto en el aire) despliega las alas: Espacio
+// sube, C baja. Las alas tienen 60 s de energia que se recarga en el suelo.
+const ALAS_MAX = 60;
+P.alas = ALAS_MAX; P.vuela = false;
+function volar(on) {
+  if (on === undefined) on = !P.vuela;
+  if (on) {
+    if (P.muerto || !yo) return;
+    if (yo.montado) return aviso('Bájate de la montura para volar.', 'err');
+    if (zonaEn(P.x, P.z) === 'pueblo') return aviso('En el pueblo no se puede volar.', 'err');
+    if (P.alas < 3) return aviso('Tus alas necesitan descansar.', 'err');
+    P.vuela = true; P.vy = 0; if (P.suelo) P.y += 1.5; P.suelo = false;
+    sfx('salto', 0.3);
+  } else P.vuela = false;
+  if (MOVIL) $('t-bajar').style.visibility = P.vuela ? 'visible' : 'hidden';
+}
+function saltar() {
+  if (P.muerto) return;
+  if (P.suelo) { P.vy = 8; P.suelo = false; sfx('salto', 0.25); return; }
+  // Segundo salto en el aire: se despliegan las alas.
+  if (!P.vuela) volar(true);
+}
 function npcCercano() { return npcs.find(n => Math.hypot(P.x - n.x, P.z - n.z) < NPC_DIST) || (portal && Math.hypot(P.x - portal.x, P.z - portal.z) < 5 ? { tipo: 'portal', nombre: 'Mazmorras' } : null); }
 function hablar() {
   const n = npcCercano();
@@ -836,7 +981,12 @@ if (MOVIL) {
   }, { passive: true });
   lienzo.addEventListener('touchend', e => { for (const t of e.changedTouches) if (t.identifier === camTouch.id) { if (camTouch.mov < 10) elegirEn(t.clientX, t.clientY, false); camTouch.id = null; } }, { passive: true });
   $('t-atk').addEventListener('touchstart', e => { e.preventDefault(); alternarAtaque(); }, { passive: false });
-  $('t-salto').addEventListener('touchstart', e => { e.preventDefault(); saltar(); }, { passive: false });
+  $('t-salto').addEventListener('touchstart', e => { e.preventDefault(); if (P.vuela) tocandoSubir = true; else saltar(); }, { passive: false });
+  $('t-salto').addEventListener('touchend', () => { tocandoSubir = false; });
+  $('t-bajar').addEventListener('touchstart', e => { e.preventDefault(); tocandoBajar = true; }, { passive: false });
+  $('t-bajar').addEventListener('touchend', () => { tocandoBajar = false; });
+  $('t-volar').addEventListener('touchstart', e => { e.preventDefault(); volar(); }, { passive: false });
+  $('t-montar').addEventListener('touchstart', e => { e.preventDefault(); montar(); }, { passive: false });
   $('t-obj').addEventListener('touchstart', e => { e.preventDefault(); cicloObjetivo(); }, { passive: false });
 }
 
@@ -866,23 +1016,37 @@ function fisica(dt) {
   P.anda = mag > 0.15;
   if (P.anda) {
     mx /= Math.max(1, mag); mz /= Math.max(1, mag);
-    const nadando = alturaEn(P.x, P.z) < -0.7;
-    const vel = MUNDO.velocidad * (nadando ? 0.55 : 1) * (yo.dios && yo.diosModo && yo.diosModo.vel ? 3 : 1);
+    const nadando = !P.vuela && alturaEn(P.x, P.z) < -0.7;
+    const vel = MUNDO.velocidad * (nadando ? 0.55 : 1) * (P.vuela ? 1.25 : velMontura(yo.montado)) * (yo.dios && yo.diosModo && yo.diosModo.vel ? 3 : 1);
     const nx = clamp(P.x + mx * vel * dt, -MUNDO.limite, MUNDO.limite), nz = clamp(P.z + mz * vel * dt, -MUNDO.limite, MUNDO.limite);
     // Las laderas muy empinadas (la cordillera del borde) no se suben.
     const sube = alturaEn(nx, nz) - alturaEn(P.x, P.z);
-    if (sube / (vel * dt + 1e-3) < 1.4) { P.x = nx; P.z = nz; }
+    if (P.vuela || sube / (vel * dt + 1e-3) < 1.4) { P.x = nx; P.z = nz; }
     P.ry = Math.atan2(mx, mz);
     if (mx * der.x + mz * der.z > 0.05) P.f = 1; else if (mx * der.x + mz * der.z < -0.05) P.f = -1;
   }
   // Gravedad y suelo (en el agua se nada en la superficie).
   const suelo = Math.max(alturaEn(P.x, P.z), MUNDO.agua - 0.9);
-  P.vy -= 22 * dt; P.y += P.vy * dt;
-  if (P.y <= suelo) { P.y = suelo; P.vy = 0; P.suelo = true; }
+  if (P.vuela) {
+    // Volando: Espacio sube, C (o Mayus) baja; las alas se cansan.
+    const arriba = teclas.Space || tocandoSubir, abajo = teclas.KeyC || teclas.ShiftLeft || tocandoBajar;
+    P.vy = arriba ? 6 : abajo ? -7 : Math.sin(performance.now() / 500) * 0.3;
+    P.y = Math.min(P.y + P.vy * dt, suelo + 45);
+    P.alas = Math.max(0, P.alas - dt);
+    if (P.alas <= 0) { volar(false); aviso('Tus alas se cansaron: planeas hacia el suelo.'); }
+    if (P.y <= suelo + 0.05) { P.y = suelo; volar(false); P.suelo = true; }
+  } else {
+    // Sin alas se cae, pero planeando si aun queda energia (caida suave).
+    P.vy -= (P.alas > 0 && P.vy < -6 ? 6 : 22) * dt; P.y += P.vy * dt;
+    if (P.y <= suelo) { P.y = suelo; P.vy = 0; P.suelo = true; }
+    if (P.suelo) P.alas = Math.min(ALAS_MAX, P.alas + dt * 3);
+  }
+  if (P.vuela && zonaEn(P.x, P.z) === 'pueblo') { volar(false); aviso('En el pueblo no se puede volar: bajas.'); }
   // Enviar la posicion (hasta ~10 por segundo).
   const ahora = performance.now();
-  const clave = P.x.toFixed(1) + ',' + P.z.toFixed(1) + ',' + (P.anda ? 1 : 0);
-  if (ahora - enviadoT > 100 && clave !== ultimoEnv) { mandar({ t: 'mv3', x: +P.x.toFixed(2), z: +P.z.toFixed(2), r: +P.ry.toFixed(2), a: P.anda ? 1 : 0 }); enviadoT = ahora; ultimoEnv = clave; }
+  const alt = Math.max(0, P.y - suelo);
+  const clave = P.x.toFixed(1) + ',' + P.z.toFixed(1) + ',' + (P.anda ? 1 : 0) + ',' + alt.toFixed(0);
+  if (ahora - enviadoT > 100 && clave !== ultimoEnv) { mandar({ t: 'mv3', x: +P.x.toFixed(2), z: +P.z.toFixed(2), r: +P.ry.toFixed(2), a: P.vuela ? 3 : P.anda ? 1 : 0, h: +alt.toFixed(1) }); enviadoT = ahora; ultimoEnv = clave; }
 }
 function rangoAtaque(o) {
   const arma = ARMAS[yo.arma] || ARMAS.katana;
@@ -911,7 +1075,8 @@ function ataqueAuto() {
 function animarJugador(q, esYo, t) {
   const f = q.fig;
   if (!f) return;
-  const y = esYo ? P.y : Math.max(alturaEn(q.x, q.z), MUNDO.agua - 0.9);
+  if (!esYo) q.y = Math.max(alturaEn(q.x, q.z), MUNDO.agua - 0.9) + (q.vh = lerp(q.vh || 0, q.h || 0, 0.15));
+  const y = esYo ? P.y : q.y;
   const anda = esYo ? P.anda : q.a === 1;
   if (!esYo) { const dx = q.tx - q.x, dz = q.tz - q.z; if (Math.abs(dx * der.x + dz * der.z) > 0.02) q.f = (dx * der.x + dz * der.z) > 0 ? 1 : -1; }
   const mira = (esYo ? P.f : q.f) !== -1;
@@ -965,7 +1130,7 @@ function etiquetas(t) {
   if (yo && P.lbl) ponLbl(P.lbl, P.x, P.y + 2.15, P.z, `<span style="color:${yo.dios ? '#ffd84a' : '#ffe600'}">${yo.dios ? 'GM ' : ''}${esc(yo.nombre)}</span>`, 999);
   for (const o of otros.values()) {
     const cl = CLASES[o.cl];
-    ponLbl(o.lbl, o.x, alturaEn(o.x, o.z) + 2.15, o.z, `<span style="color:${o.gm ? '#ffd84a' : cl ? cl.color : '#fff'}">${o.gm ? 'GM ' : ''}${esc(o.n)} · Nv${o.lv}</span><span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>`, 70);
+    ponLbl(o.lbl, o.x, (o.y || alturaEn(o.x, o.z)) + 2.15, o.z, `<span style="color:${o.gm ? '#ffd84a' : cl ? cl.color : '#fff'}">${o.gm ? 'GM ' : ''}${esc(o.n)} · Nv${o.lv}</span><span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>`, 70);
   }
   for (const o of mons.values()) {
     const def = MONSTRUOS[o.k], el = o.id === objetivo;
@@ -1019,7 +1184,20 @@ function bucle(t) {
   if (agua) agua.material.opacity = 0.7 + Math.sin(t / 900) * 0.04;
   if (portal) portal.velo.material.opacity = 0.45 + Math.sin(t / 300) * 0.15;
   pintarObjetivo();
-  if (cuadro % 6 === 0) { pintarMini(); pintarCds(); }
+  if (cuadro % 6 === 0) { pintarMini(); pintarCds(); pintarAuras(); }
+  efectos = efectos.filter(e => {
+    e.t += dt / e.dura;
+    const r = 0.5 + e.radio * Math.min(1, e.t);
+    e.m.scale.set(r, r, r); e.m.material.opacity = 0.8 * (1 - e.t);
+    if (e.t >= 1) { escena.remove(e.m); e.m.geometry.dispose(); e.m.material.dispose(); return false; }
+    return true;
+  });
+  alasMesh.visible = P.vuela && !!yo;
+  if (alasMesh.visible) {
+    const bat = Math.sin(t / 120) * 0.5;
+    alasMesh.position.set(P.x, P.y + 1.15, P.z); alasMesh.rotation.set(0, camYaw, 0);
+    alasMesh.children[0].rotation.y = 0.5 + bat; alasMesh.children[1].rotation.y = -0.5 - bat;
+  }
   etiquetas(t);
   numeros = numeros.filter(n => {
     n.t += dt;

@@ -458,6 +458,11 @@ export const TINTES = {
 // enseñan una vez (lo nuevo para los que vuelven). La mas reciente arriba;
 // subir 'n' al añadir una.
 export const NOVEDADES = [
+  { n: 12, fecha: '23 oct 2026', items: [
+    'Mundo 3D: tus habilidades de clase (teclas 2 a 9) con lanzamientos, combos y efectos.',
+    '¡Vuela! Pulsa V o salta dos veces para desplegar las alas: Espacio sube y C baja. En el pueblo no se vuela.',
+    'Monturas en el 3D (Y) e inventario (I), talentos (P), logros (L) y tienda completa sin salir del mundo.',
+  ] },
   { n: 11, fecha: '23 oct 2026', items: [
     'Duende Quest 3D (beta): un mundo abierto en 3D, sin pantallas de carga, con el pueblo y las 10 zonas en un solo mapa. Botón 3D o duende-quest/mundo.',
     'Es tu mismo personaje: nivel, clase, oro, skins, misiones y diarias avanzan en los dos mundos.',
