@@ -13,13 +13,14 @@
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
-  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS } from '/mmo/js/data.js?v=259';
-import { iniciarVentanas } from './ventanas.js?v=259';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=259';
-import { crearMusica } from './musica.js?v=259';
-import { construirCueva } from './cueva.js?v=259';
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=259';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=259';
+  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS } from '/mmo/js/data.js?v=260';
+import { iniciarVentanas } from './ventanas.js?v=260';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=260';
+import { crearMusica } from './musica.js?v=260';
+import { construirCueva } from './cueva.js?v=260';
+import { TAPA, transparentar } from './tapa.js?v=260';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=260';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=260';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -78,7 +79,7 @@ if (Q.sombras) {
 }
 const solDir = new THREE.Vector3(120, 200, 80);
 // ── DIA, NOCHE Y CLIMA ──
-const NOCHE_CIELO = C('#0b1030'), OCASO = C('#ff8a5c'), GRIS = C('#6c7380'), ARENA = C('#c9a46a');
+const BLANCO_H = C('#ffffff'), NOCHE_CIELO = C('#0b1030'), OCASO = C('#ff8a5c'), GRIS = C('#6c7380'), ARENA = C('#c9a46a');
 const estrellas = (() => {
   const n = 700, pos = new Float32Array(n * 3);
   for (let i = 0; i < n; i++) {
@@ -114,14 +115,16 @@ function ambiente(z) {
   const cl = z === 'cueva' ? 'despejado' : PRUEBA.get('clima') || climaEn(z, ahora);
   const nub = cl === 'tormenta' ? 0.55 : cl === 'lluvia' || cl === 'nieve' ? 0.75 : cl === 'niebla' || cl === 'arena' ? 0.85 : 1;
   hemiBase = 0.9 * luz * (0.32 + 0.68 * dia) * (0.6 + 0.4 * nub);
-  sol.intensity = luz * (0.12 + 0.88 * dia) * nub;
+  sol.intensity = 2.0 * luz * (0.12 + 0.88 * dia) * nub;
   sol.color.set(dia < 0.25 ? 0x9fb4ff : 0xfff2dd).lerp(OCASO, ocaso * 0.6);
   const a = (h - 6) / 24 * Math.PI * 2;
   solDir.set(Math.cos(a) * 200, Math.max(60, Math.abs(Math.sin(a)) * 220), 80);
   cieloObj.set(CIELO[z] || CIELO.pueblo).lerp(OCASO, z === 'cueva' ? 0 : ocaso * 0.35).lerp(NOCHE_CIELO, z === 'cueva' ? 0 : nocheK * 0.85);
   if (nub < 1) cieloObj.lerp(cl === 'arena' ? ARENA : GRIS, (1 - nub) * 1.2);
   estrellas.material.opacity = z === 'cueva' ? 0 : nocheK * (cl === 'despejado' ? 0.9 : 0.2);
-  if (z === 'cueva') { hemiBase = 0.55; sol.intensity = 0.15; }
+  if (z === 'cueva') { hemiBase = 0.55; sol.intensity = 0.3; }
+  hemi.color.copy(cieloObj).lerp(BLANCO_H, 0.55);
+  hemi.groundColor.set(SUELO[z] || '#3a3040').multiplyScalar(0.5);
   const lejos = Q.lejos;
   nieblaObj = z === 'cueva' ? [6, 55] : cl === 'niebla' ? [6, 75] : cl === 'arena' ? [5, 60] : cl === 'lluvia' || cl === 'tormenta' ? [25, lejos * 0.6] : cl === 'nieve' ? [20, lejos * 0.55] : [40, lejos];
   farolMat.color.set(nocheK > 0.45 ? '#ffd27a' : '#7a6a48');
@@ -340,11 +343,16 @@ function crearFlora() {
     roca: [[new THREE.DodecahedronGeometry(1.3, 0), '#77716b', 0.5]],
   };
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), sc = new THREE.Vector3(), col = new THREE.Color();
+  const matsF = {}, celdas = new Map();
   for (const tipo in tipos) {
-    const l = tipos[tipo];
-    for (const [geo, colorFijo, alto] of piezas[tipo]) {
-      const im = new THREE.InstancedMesh(geo, mat.clone(), l.length);
-      if (tipo === 'cristal' || tipo === 'magico') im.material.emissive = C(l[0].color).multiplyScalar(0.35);
+    const todos = tipos[tipo];
+    const porCelda = new Map();
+    for (const t of todos) { const ck = Math.floor(t.x / TROZO) + '|' + Math.floor(t.z / TROZO); let l = porCelda.get(ck); if (!l) porCelda.set(ck, l = []); l.push(t); }
+    for (const [ck, l] of porCelda) piezas[tipo].forEach(([geo, colorFijo, alto], pi) => {
+      const mk = tipo + pi;
+      const mt = matsF[mk] || (matsF[mk] = transparentar(mat.clone()));
+      if (tipo === 'cristal' || tipo === 'magico') mt.emissive = C(l[0].color).multiplyScalar(0.35);
+      const im = new THREE.InstancedMesh(geo, mt, l.length);
       l.forEach((t, i) => {
         e.set(0, t.rot, 0); q.setFromEuler(e);
         sc.set(t.s, t.s, t.s);
@@ -354,13 +362,24 @@ function crearFlora() {
         col.set(colorFijo || t.color || '#888888').offsetHSL(0, 0, (hashR(t.x | 0, t.z | 0, 9) - 0.5) * 0.12);
         im.setColorAt(i, col);
       });
+      im.computeBoundingSphere();
+      let c = celdas.get(ck);
+      if (!c) { const [kx, kz] = ck.split('|').map(Number); celdas.set(ck, c = { x: (kx + 0.5) * TROZO, z: (kz + 0.5) * TROZO, mallas: [] }); }
+      c.mallas.push(im);
       escena.add(im);
-    }
+    });
   }
+  trozosFlora.push(...celdas.values());
+}
+const TROZO = 96, trozosFlora = [];
+// Las celdas de flora mas alla de la niebla no se dibujan.
+function cullFlora() {
+  const lim2 = (escena.fog.far + TROZO * 0.75) ** 2;
+  for (const c of trozosFlora) { const v = (c.x - P.x) ** 2 + (c.z - P.z) ** 2 < lim2; if (c.mallas[0].visible !== v) for (const im of c.mallas) im.visible = v; }
 }
 // El pueblo: casas, plaza, pozo y el portal a las mazmorras.
 function crearPueblo() {
-  const pared = new THREE.MeshLambertMaterial({ color: 0xd9c39a }), techo = new THREE.MeshLambertMaterial({ color: 0xa04a3a }), madera = new THREE.MeshLambertMaterial({ color: 0x5a3c25 });
+  const pared = transparentar(new THREE.MeshLambertMaterial({ color: 0xd9c39a })), techo = transparentar(new THREE.MeshLambertMaterial({ color: 0xa04a3a })), madera = transparentar(new THREE.MeshLambertMaterial({ color: 0x5a3c25 }));
   for (const c of CASAS) {
     const y = alturaEn(c.x, c.z);
     const g = new THREE.Group();
@@ -1143,11 +1162,11 @@ function pintarAuras() {
   if (grupo3 && !MOVIL) { const mc = $('marco'); $('grupo3').style.top = (mc.offsetTop + mc.offsetHeight + 8) + 'px'; }
   // Movil: misiones y chat apilados bajo el marco (que crece con auras y avisos).
   if (MOVIL) {
-    const mc = $('marco'), mi = $('misiones');
-    let y = mc.offsetTop + mc.offsetHeight + 6;
-    mi.style.top = y + 'px';
-    if (mi.style.display !== 'none') y += mi.offsetHeight + 6;
-    $('chat').style.top = y + 'px';
+    const mc = $('marco'); let y = mc.offsetTop + mc.offsetHeight + 6;
+    for (const id of ['alas', 'obj', 'objp', 'grupo3', 'misiones', 'chat']) {
+      const e = $(id), h = e.offsetHeight; if (!h) continue;
+      e.style.top = y + 'px'; e.style.bottom = 'auto'; y += h + 6;
+    }
   }
   const cb = yo && yo.clase === 'picaro' ? yo.combo || 0 : 0;
   const ch = '<i></i>'.repeat(cb);
@@ -1156,7 +1175,7 @@ function pintarAuras() {
   const alas = $('alas');
   const verAlas = P.vuela || P.alas < ALAS_MAX - 0.5;
   alas.style.display = verAlas ? 'block' : 'none';
-  if (verAlas) { alas.firstElementChild.style.transform = `scaleX(${(P.alas / ALAS_MAX).toFixed(3)})`; const mc = $('marco'); alas.style.top = (mc.offsetTop + mc.offsetHeight + 4) + 'px'; }
+  if (verAlas) { alas.firstElementChild.style.transform = `scaleX(${(P.alas / ALAS_MAX).toFixed(3)})`; if (!MOVIL) { const mc = $('marco'); alas.style.top = (mc.offsetTop + mc.offsetHeight + 4) + 'px'; } }
 }
 const GEO_BALA = new THREE.SphereGeometry(0.22, 8, 6), MAT_BALA = new Map();
 const matBala = c => { if (!MAT_BALA.has(c)) MAT_BALA.set(c, new THREE.MeshBasicMaterial({ color: c })); return MAT_BALA.get(c); };
@@ -1767,6 +1786,7 @@ if (MOVIL) {
   $('t-bajar').addEventListener('touchstart', e => { e.preventDefault(); tocandoBajar = true; }, { passive: false });
   $('t-bajar').addEventListener('touchend', () => { tocandoBajar = false; });
   $('t-volar').addEventListener('touchstart', e => { e.preventDefault(); volar(); }, { passive: false });
+  $('t-usar').addEventListener('touchstart', e => { e.preventDefault(); hablar(); }, { passive: false });
   $('t-montar').addEventListener('touchstart', e => { e.preventDefault(); montar(); }, { passive: false });
   $('t-obj').addEventListener('touchstart', e => { e.preventDefault(); cicloObjetivo(); }, { passive: false });
 }
@@ -2104,11 +2124,13 @@ function bucle(t) {
   cy = Math.max(cy, alturaEn(cx, cz) + 0.8, MUNDO.agua + 0.5);
   if (enCv) cy = Math.min(cy, 7.2);   // bajo el techo de la cueva
   camara.position.set(cx, cy, cz); camara.lookAt(tx, ty, tz);
+  TAPA.uCam.value.set(cx, cy, cz); TAPA.uTgt.value.set(tx, ty, tz);
   // Zona actual: titulo, cielo y niebla de su color.
   if (cuadro % 15 === 0) {
     const z = zonaEn(P.x, P.z);
     if (z !== zonaActual) { zonaActual = z; tituloZona(z); }
     ambiente(z);
+    cullFlora();
     if (yo) {
       const n = npcCercano(), nd = n ? null : nodoCercano(); const b = $('hablar');
       b.style.display = n || nd ? 'block' : 'none';
@@ -2117,13 +2139,14 @@ function bucle(t) {
       else if (!enCueva(P.x) && aguaCerca()) { b.style.display = 'block'; b.textContent = (MOVIL ? '' : 'E · ') + (pica > performance.now() ? '¡TIRAR!' : lanzando && lanzando.id === 'pescar' ? 'Esperando que pique…' : 'Pescar'); }
     }
     if (cuadro % 60 === 0) revisarNodos();
+    if (MOVIL) { const u = $('t-usar'), b = $('hablar'), ver = b.style.display === 'block' && !P.vuela; u.style.visibility = ver ? 'visible' : 'hidden'; if (ver) u.textContent = /Recoger/.test(b.textContent) ? 'RECOGER' : /Pescar|TIRAR|pique/.test(b.textContent) ? (/TIRAR/.test(b.textContent) ? '¡TIRAR!' : 'PESCAR') : /Salir/.test(b.textContent) ? 'SALIR' : 'HABLAR'; }
     if (npcAbierto && $('v-npc').classList.contains('on')) { const n = NPCS3D.find(x => x.tipo === npcAbierto); if (n && Math.hypot(P.x - n.x, P.z - n.z) > NPC_DIST + 6) cerrar('v-npc'); }
   }
   cieloAct.lerp(cieloObj, Math.min(1, dt * 1.5));
   escena.background.copy(cieloAct); escena.fog.color.copy(cieloAct);
   escena.fog.near = lerp(escena.fog.near, nieblaObj[0], Math.min(1, dt)); escena.fog.far = lerp(escena.fog.far, nieblaObj[1], Math.min(1, dt));
   const flash = t - relampagoT < 120 || (t - relampagoT > 220 && t - relampagoT < 300);
-  hemi.intensity = hemiBase + (flash ? 1.6 : 0);
+  hemi.intensity = 1.5 * hemiBase + (flash ? 2.4 : 0);
   if (flash) escena.background.lerp(C('#e8ecff'), 0.5);
   estrellas.position.copy(camara.position);
   // El sol (y su sombra) siguen al duende.

@@ -139,16 +139,35 @@ body.movil #joy,body.movil #tactil{display:grid;}
 body.movil #joy{display:block;}
 body.movil #chat{width:min(260px,60vw);bottom:auto;top:204px;}
 body.movil #chat-log{max-height:70px;font-size:11px;}
-body.movil #obj,body.movil #objp{left:12px;top:96px;}
+body.movil #marco,body.movil #obj,body.movil #objp,body.movil #grupo3,body.movil #misiones{left:8px;width:min(186px,50vw);min-width:0;}
+body.movil #alas{left:8px;width:min(186px,50vw);}
+body.movil #misiones{max-height:84px;overflow:hidden;}
+body.movil #chat{pointer-events:none;} body.movil #chat-in{pointer-events:auto;}
+body.movil #chat-log{max-height:54px;}
+body.movil #combo:empty,body.movil #auras:empty,body.movil #mundial:empty{display:none;}
 body.movil #avisos{left:8px;bottom:auto;top:46%;max-width:62vw;}
 body.movil #avisos div{font-size:11px;padding:4px 8px;}
 body.movil #titulo-zona{top:17%;}
 body.movil #titulo-zona b{font-size:14px;}
-body.movil #grupo3{top:auto;bottom:210px;min-width:150px;}
 body.movil #marco{min-width:180px;}
-body.movil #botones{right:8px;top:186px;display:grid;grid-template-columns:repeat(2,32px);gap:3px;}
-body.movil #botones .bt{width:32px;height:32px;font-size:13px;}
-body.movil #barra{bottom:14px;left:auto;right:auto;transform:none;left:50%;transform:translateX(-50%) scale(.85);transform-origin:bottom center;}
+body.movil #mini{top:calc(8px + env(safe-area-inset-top));right:8px;}
+body.movil #botones{right:8px;top:calc(176px + env(safe-area-inset-top));display:grid;grid-template-columns:repeat(3,38px);gap:4px;}
+body.movil #botones .bt{width:38px;height:38px;font-size:15px;}
+body.movil #botones a.bt{display:none;}
+body.movil #barra{left:8px;right:8px;bottom:calc(10px + env(safe-area-inset-bottom));transform:none;display:grid;grid-template-columns:repeat(6,1fr);gap:4px;padding:4px;z-index:2;}
+body.movil #barra .acc{width:auto;height:auto;aspect-ratio:1;max-height:48px;border-radius:8px;}
+body.movil #barra .acc img{width:24px;height:24px;}
+body.movil #acc-atk{display:none;}
+body.movil #tactil{bottom:calc(126px + env(safe-area-inset-bottom));grid-template-columns:repeat(3,54px);gap:6px;}
+body.movil #tactil button{width:54px;height:54px;}
+body.movil #joy{bottom:124px;height:calc(55% - 124px);}
+/* El joystick por debajo de los paneles (antes se tragaba los toques) */
+body.movil #joy{z-index:1;}
+body.movil .caja,body.movil #tactil{z-index:2;}
+#tactil #t-bajar,#tactil #t-usar{grid-column:2;grid-row:1;}
+body.movil #hablar{display:none!important;}
+body.movil #lanzar{bottom:auto;top:50%;width:min(220px,58vw);pointer-events:none;}
+body.movil #invit3{left:8px;right:8px;bottom:auto;top:calc(176px + env(safe-area-inset-top));transform:none;z-index:6;}
 body.movil #mini canvas{width:110px;height:110px;}
 body.movil #titulo-zona b{font-size:16px;}
 </style>
@@ -220,7 +239,7 @@ body.movil #titulo-zona b{font-size:16px;}
 
 <div id="joy"><div class="base"><div class="pomo"></div></div></div>
 <div id="tactil">
-  <button id="t-volar">VOLAR</button><button id="t-bajar" style="visibility:hidden">BAJAR</button><button id="t-montar">MONTAR</button>
+  <button id="t-volar">VOLAR</button><button id="t-bajar" style="visibility:hidden">BAJAR</button><button id="t-usar" style="visibility:hidden">HABLAR</button><button id="t-montar">MONTAR</button>
   <button id="t-obj">OBJ</button><button id="t-salto">SALTO</button><button class="grande" id="t-atk">ATACAR</button>
 </div>
 
@@ -282,6 +301,8 @@ body.movil #titulo-zona b{font-size:16px;}
   <div class="fila"><span>Hablar</span><b>E</b></div>
   <div class="fila"><span>Mapa · Chat</span><b>M · Enter</b></div>
   <p style="margin-top:10px">En el móvil: joystick a la izquierda, arrastra a la derecha para girar la cámara y toca un monstruo para elegirlo. Las mazmorras, la Torre y la banda están por ahora en el juego 2D (botón 2D): es el mismo personaje.</p>
+
+  <p style="margin-top:10px;display:flex;gap:6px"><a class="btn sec" href="/mmo/" style="flex:1;text-align:center;text-decoration:none">Juego 2D</a><a class="btn sec" href="/" style="flex:1;text-align:center;text-decoration:none">Portada</a></p>
 </div></div>
 
 <div class="modal" id="v-error"><div class="ventana" style="text-align:center">
@@ -293,6 +314,6 @@ body.movil #titulo-zona b{font-size:16px;}
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script src="/js/config.js"></script>
-<script type="module" src="/mundo/js/mundo.js?v=259"></script>
+<script type="module" src="/mundo/js/mundo.js?v=260"></script>
 </body>
 </html>

@@ -483,6 +483,11 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 28, fecha: '23 oct 2026', items: [
+    'Lo que tapa a tu duende (árboles, casas, rocas de la cueva) se vuelve transparente, como en WoW.',
+    'Luz más viva: el sol marca los volúmenes y el cielo de cada zona tiñe la sombra.',
+    'Móvil: la barra de habilidades en dos filas (antes se salía de la pantalla), botones más grandes, botón HABLAR/RECOGER/PESCAR y nada tapa los controles.',
+  ] },
   { n: 27, fecha: '23 oct 2026', items: [
     'El doble de fluido: los modelos 3D se dibujan con un tercio de las piezas y el combate va a 1-2 ms por cuadro.',
     'Monstruos más listos: siguen al que más amenaza genera (el tanque puede quitarles el foco), rodean al jugador, no atraviesan casas ni las paredes de la cueva y no se reinician mientras el grupo siga peleando.',

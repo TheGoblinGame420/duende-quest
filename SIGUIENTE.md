@@ -2441,3 +2441,17 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
 - modelos.js (agente): `fusionarRig` funde las piezas fijas por pivote
   (3426 → 1321 mallas en la galería; duende 23 → 6); `?sinFusion=1` lo
   desactiva. Medido en combate: 1,4 ms de mediana, p95 2,4 ms.
+
+### Transparencia de lo que tapa, luz y móvil (23-oct-2026, `?v=260`)
+
+- mundo/js/tapa.js: `transparentar(mat)` agujerea con tramado lo que queda en
+  el tubo cámara→duende (uniforms `TAPA.uCam/uTgt`, actualizados tras colocar
+  la cámara). Aplicado a la flora, las casas y las rocas de la cueva.
+- Luz: sol ×2, hemisferio ×1,5 teñido con el cielo de la zona (y el suelo
+  de la zona abajo).
+- Flora troceada en celdas de 96 m (InstancedMesh por celda, un material por
+  tipo y pieza); `cullFlora()` oculta las celdas tras la niebla.
+- Móvil: #barra en rejilla de 6 columnas a todo el ancho; #tactil más arriba;
+  joystick con z-index por debajo de los paneles; #botones 3×3 de 38 px (2D y
+  portada pasan a la ayuda); columna izquierda apilada por código; botón
+  táctil #t-usar; #lanzar e #invit3 fuera de los controles.
