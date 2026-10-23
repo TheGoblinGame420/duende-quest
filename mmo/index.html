@@ -510,6 +510,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
         <button class="bt" id="b-wallet" title="mTON y retiros" aria-label="mTON"><img class="ico-bt" src="/assets/items/equipo/I_Sapphire.png" alt=""></button>
         <button class="bt" id="b-rank" title="Ranking" aria-label="Ranking"><img class="ico-bt" src="/assets/items/equipo/Ac_Medal01.png" alt=""></button>
         <button class="bt" id="b-ayuda" title="Guía del juego" aria-label="Guía"><img class="ico-bt" src="/assets/items/equipo/I_Book.png" alt=""></button>
+        <button class="bt" id="b-dios" title="Modo Dios (F2)" aria-label="Modo Dios" style="display:none"><img class="ico-bt" src="/assets/items/equipo/Ac_Medal04.png" alt=""></button>
         <button class="bt" id="b-sonido" title="Sonido">🔊</button>
         <a class="bt" href="/game.html" title="Volver al juego arcade" aria-label="Inicio" style="text-decoration:none"><svg class="ico-bt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></a>
       </div>
@@ -557,12 +558,21 @@ input.nombre:focus{border-color:var(--pri-txt);}
     </ul>
     <div id="inicio-invitado">
       <input class="nombre" id="in-nombre" maxlength="16" placeholder="Nombre de tu duende" aria-label="Nombre de tu duende">
-      <button class="btn btn-grande" id="b-jugar">Entrar al mundo</button>
-      <p class="nota">¿Ya tienes cuenta en Duende Quest? <a href="/game.html">Inicia sesión</a> para vincular tu personaje y tus skins.</p>
+      <button class="btn btn-grande" id="b-jugar">Entrar como invitado</button>
+      <p class="nota">Como invitado tu personaje vive solo en este navegador. Con cuenta lo guardas en la nube, puedes comprar y ganar mTON.</p>
+      <details id="inicio-login" style="margin-top:10px;text-align:left">
+        <summary style="cursor:pointer;font-family:var(--sans);font-size:14px;color:var(--cian)">Entrar con mi cuenta de Duende Quest</summary>
+        <input class="nombre" id="in-email" type="email" autocomplete="email" placeholder="Correo" aria-label="Correo" style="margin:10px 0 6px">
+        <input class="nombre" id="in-pass" type="password" autocomplete="current-password" placeholder="Contraseña" aria-label="Contraseña" style="margin:0 0 8px">
+        <button class="btn btn-grande" id="b-login">Entrar con mi cuenta</button>
+        <p class="nota" id="login-err" style="color:var(--err);display:none"></p>
+        <p class="nota">¿No tienes cuenta? <a href="/game.html">Créala gratis aquí</a> y vuelve. Tu sesión queda guardada en este navegador.</p>
+      </details>
     </div>
     <div id="inicio-cuenta" style="display:none">
       <p style="margin:14px 0 12px" id="inicio-quien"></p>
       <button class="btn btn-grande" id="b-jugar2">Entrar al mundo</button>
+      <p class="nota"><a href="#" id="b-salir-cuenta">Cerrar sesión / usar otra cuenta</a></p>
     </div>
     <div class="confianza">
       <a href="/terminos.html" target="_blank" rel="noopener">Términos</a> · <a href="/privacidad.html" target="_blank" rel="noopener">Privacidad</a> · <a href="/seguridad.html" target="_blank" rel="noopener">Seguridad</a> · 🔒 Nunca te pediremos contraseñas ni frases semilla.
@@ -739,11 +749,20 @@ input.nombre:focus{border-color:var(--pri-txt);}
   </div>
 </div>
 
+<!-- Modo Dios: solo lo ve el dueño (el servidor decide quien es dios) -->
+<div class="modal" id="m-dios">
+  <div class="ventana">
+    <button class="bt cerrar" data-cerrar>✕</button>
+    <h2>👑 MODO DIOS</h2>
+    <div id="dios-cuerpo"></div>
+  </div>
+</div>
+
 <!-- Pago en SOL (solo web) -->
 <div class="modal" id="m-sol">
   <div class="ventana">
     <button class="bt cerrar" data-cerrar>✕</button>
-    <h2>PAGAR CON SOL</h2>
+    <h2 id="sol-titulo">PAGAR CON SOL</h2>
     <div id="sol-cuerpo"></div>
     <p class="seguridad">🔒 Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado.</p>
   </div>
@@ -851,6 +870,6 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=238"></script>
+<script type="module" src="/mmo/js/client.js?v=239"></script>
 </body>
 </html>

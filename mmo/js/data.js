@@ -860,15 +860,26 @@ export const proximoMundial = ahora => Math.ceil(ahora / MUNDIAL_CADA_MS) * MUND
 // ── SKINS (las mismas 7 del juego, con sus mismos poderes) ──
 // Se compran con oro del MMO. Las que ya se pagaron con dinero real en el
 // juego principal se desbloquean solas (ver world.js, skinsPagadas()).
+// premium: solo con dinero (SOL, $DUENDE o Stars; precio null = no se vende
+// por oro). Las premium usan la hoja animada del duende teñida
+// (hue en grados, sat multiplicador) y un aura de su color. Sus ventajas
+// suben con el precio pero sin pasar a las de oro de final de juego (la
+// Berserker sigue con mas ataque y la Legendaria con mas oro): pagar acelera,
+// no gana solo. Ninguna skin cambia lo que se gana en mTON.
 export const SKINS = {
   comun:      { nombre: 'Duende',      img: 'skin_hero',           precio: 0,      color: '#00eeff', buffs: null, desc: 'El duende de siempre' },
-  // usd: tambien se venden con dinero (SOL en la web, Stars en Telegram); el
-  // pago va a la wallet de El Duende y el la entrega a mano (/entregar).
+  // usd: tambien se venden con dinero (SOL o $DUENDE en la web, Stars en
+  // Telegram); el pago va a la wallet de El Duende y el la entrega a mano
+  // (/entregar o Modo Dios).
   tactico:    { nombre: 'Táctico',     img: 'skin_tactico',        precio: 3000,   usd: 2,  color: '#00ff88', buffs: { oroMult: 1.1, critBonus: .03 }, desc: '+10% oro · +3% crítico' },
   necro:      { nombre: 'Nigromante', img: 'skin_necromancer',    precio: 9000,   usd: 4,  color: '#b44cff', buffs: { oroMult: 1.2, robo: .05, xpMult: 1.05 }, desc: '+20% oro · roba 5% de vida · +5% experiencia' },
   king:       { nombre: 'Rey',        img: 'skin_king',           precio: 20000,  usd: 7,  color: '#ffd84a', buffs: { oroMult: 1.3, bonusHp: 20, defMult: 1.1 }, desc: '+30% oro · +HP extra · +10% defensa' },
   berserker:  { nombre: 'Berserker',   img: 'skin_berserker',      precio: 45000,  usd: 12, color: '#ff3344', buffs: { oroMult: 1.4, atkMult: 1.3, critBonus: .03 }, desc: '+40% oro · +30% ataque · +3% crítico' },
   legendaria: { nombre: 'Legendaria',  img: 'skin_legendariafull', precio: 100000, usd: 20, color: '#ff3cf0', buffs: { oroMult: 1.5, bonusHp: 50, aura: true, atkMult: 1.1, xpMult: 1.1 }, desc: '+50% oro · +HP · +10% ataque · +10% experiencia · aura que quema' },
+  esmeralda:  { nombre: 'Duende Esmeralda', img: 'skin_hero', anim: true, hue: 40,  sat: 1.3, precio: null, premium: true, usd: 5,  color: '#34d399', buffs: { oroMult: 1.15, atkMult: 1.06, robo: .02 }, desc: '+15% oro · +6% ataque · roba 2% de vida' },
+  sombra:     { nombre: 'Duende Sombrío',   img: 'skin_hero', anim: true, hue: 200, sat: .55, precio: null, premium: true, usd: 10, color: '#a78bfa', buffs: { oroMult: 1.25, atkMult: 1.1, robo: .03, bonusHp: 10 }, desc: '+25% oro · +10% ataque · roba 3% · +HP' },
+  solar:      { nombre: 'Duende Solar',     img: 'skin_hero', anim: true, hue: 22, sat: 1.9, precio: null, premium: true, usd: 25, color: '#fbbf24', buffs: { oroMult: 1.3, atkMult: 1.14, bonusHp: 25, aura: true }, desc: '+30% oro · +14% ataque · +HP · aura que quema' },
+  cosmico:    { nombre: 'Duende Cósmico',   img: 'skin_hero', anim: true, hue: 150, sat: 1.5, precio: null, premium: true, usd: 50, color: '#38bdf8', buffs: { oroMult: 1.35, atkMult: 1.18, bonusHp: 35, robo: .04, aura: true }, desc: '+35% oro · +18% ataque · +HP · roba 4% · aura' },
 };
 
 // ── ARMAS (las 4 del juego, mismos multiplicadores) ──
@@ -1505,7 +1516,9 @@ export function sueloEn(mapa, x, yPies, cayendo) {
 
 // Nombre visible: letras, numeros, espacio y _ ; 3-16 caracteres.
 export function limpiarNombre(s) {
-  const n = String(s || '').normalize('NFC').replace(/[^\p{L}\p{N} _]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 16);
+  // Solo letras latinas (con tildes y ñ), cifras, espacio y '_': las letras
+  // cirilicas o griegas identicas a las latinas servian para suplantar.
+  const n = String(s || '').normalize('NFC').replace(/[^A-Za-z0-9À-ÖØ-öø-ÿ _]/g, '').replace(/\s+/g, ' ').trim().slice(0, 16);
   return n.length >= 3 ? n : '';
 }
 
@@ -1563,8 +1576,13 @@ export const PAQUETES = [
 // Las skins con precio en dolares tambien son paquetes de la tienda premium
 // (id 'skin_<id>'); al entregarlas se añaden a tus skins.
 for (const [id, sk] of Object.entries(SKINS)) {
-  if (sk.usd) PAQUETES.push({ id: 'skin_' + id, nombre: 'Skin ' + sk.nombre, usd: sk.usd, skin: id, img: sk.img, desc: sk.desc });
+  if (sk.usd) PAQUETES.push({ id: 'skin_' + id, nombre: 'Skin ' + sk.nombre, usd: sk.usd, skin: id, img: sk.img, desc: sk.desc + (sk.premium ? ' · exclusiva' : '') });
 }
+// $DUENDE: el token del juego (SPL de pump.fun, 6 decimales). Pagar con el
+// token tiene un 10% de descuento sobre el precio en dolares.
+export const DUENDE_MINT = 'HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump';
+export const DUENDE_DECIMALES = 6;
+export const DUENDE_DESCUENTO = 0.9;
 export const estrellasDe = usd => Math.ceil(usd / STAR_USD);
 export const PEDIDO_VIGENCIA_MS = 30 * 60 * 1000;   // 30 min para pagar
 

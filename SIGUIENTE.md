@@ -2028,3 +2028,66 @@ Esta sesión lleva la tienda (pares del `?v=`), la otra lo demás (impares).
   del juego en local con `Page.startScreencast` (405×720, ~55 fps) y
   rótulos en el DOM con Press Start 2P; ffmpeg las une con fundidos a
   1080×1920 (24 s, sin música).
+### DUENDE QUEST ONLINE — Modo Dios, skins premium con SOL/$DUENDE y auditoría (22-oct-2026, tarde)
+
+Pedido del dueño: probar la seguridad con agentes, que nadie entre con
+cualquier nombre, ser moderador con modo dios, vender skins directo con SOL o
+$DUENDE (entrega manual desde el modo dios), mejores gráficos de enemigos,
+duende más fluido, mundo más vivo y arreglar que ↑ metía en mazmorras.
+Cliente **?v=239** (integrado sobre el ?v=238 de la otra sesión).
+
+- **↑ / W ya no entran a portales** (solo saltan; se entra con E). En el pueblo
+  caminar hasta el borde ya no te manda a Acantilados (`viajePorBorde` solo en zonas).
+- **Nombres únicos y reservados** (`functions/mmo/dios.js`): clave `n:<nombre
+  normalizado>` (sin tildes, espacios ni '_'); "admin", "moderador", "El Duende",
+  "GM"... reservados; `limpiarNombre` solo deja letras latinas (el cirílico
+  igual al latino servía para suplantar). Los nombres viejos se reservan
+  cuando su dueño vuelve a entrar (no hay migración de duplicados antiguos).
+- **Login con correo dentro del MMO** (Supabase; la sesión queda guardada en
+  el navegador) y "Cerrar sesión / usar otra cuenta".
+- **Modo Dios** (F2 o botón 👑, solo lo ve el dios; lo decide el servidor):
+  dios = `tg:ADMIN_TG_ID` o lo que diga el secreto **`MMO_ADMINS`** (uids
+  `web:<id>` o correos web CONFIRMADOS, separados por comas). Poderes:
+  invencible, golpe divino, velocidad libre, curarse, viajar a cualquier mapa;
+  jugadores: ir, traer, dar/quitar oro, dar/quitar skin, renombrar, silenciar,
+  expulsar, banear (storage `mod`); pedidos: entregar/anular desde el juego;
+  anuncios; registro de las últimas acciones. Con un poder encendido no se
+  gana mTON ni se sube en el ranking. Etiqueta "👑 GM" sobre el nombre y en el chat.
+  **Para activarlo en la web:** `npx wrangler secret put MMO_ADMINS` con tu
+  correo de la cuenta web (o `web:<uuid>`). Por Telegram ya funciona con ADMIN_TG_ID.
+- **Skins premium** (`SKINS` en data.js, `premium: true`, precio null = no se
+  venden por oro): Esmeralda $5, Sombrío $10, Solar $25, Cósmico $50; usan la
+  hoja ANIMADA del duende teñida (`hue`, `sat`) + aura. Las 5 de oro también
+  se pueden comprar directo (`usd`). Paquetes `skin_<id>` en `PAQUETES`.
+  Ninguna skin cambia los mTON. **Bloqueado**: comprar una premium por oro
+  (`c.oro -= null` no restaba nada).
+- **Pago con $DUENDE** (`metodo: 'duende'`, 10% de descuento): precio = el MÁS
+  BAJO de las últimas 6 h (`precioDuendeSeguro`, la capitalización es pequeña y
+  se podía inflar un momento), monto en unidades mínimas con 4 cifras propias;
+  Phantom arma un TransferChecked leyendo cuentas y programa de la cadena.
+- **Verificación de pagos SOL y $DUENDE**: ahora exige una transferencia EXACTA
+  del monto del pedido a la wallet del dueño (`leerTx` con jsonParsed); antes
+  valía cualquier pago ≥99% que entrara (se podía reclamar el pago de otro).
+  La firma solo se "quema" si el pago es válido.
+- **Auditoría (5 agentes, informes en la conversación)**, arreglado:
+  speed-hack por mensajes cortos (`movBud`, presupuesto que se recarga),
+  carrera en `pedido()` (1 a la vez y cada 10 s) y poda que borraba pedidos
+  pagados, tope de sockets sin identificar (40) y por IP (8), máx. 6 invitados
+  nuevos por IP y hora, guardados sin cambio (tinte/mascota ''), ranking y
+  `quien` con límite, Stars que no cuadran quedan "por revisar", webhook del
+  bot CERRADO si falta el secreto, sin precio de respaldo fijo en Stars,
+  `constructor`/`__proto__` como skin en la API, el MMO ya no regala skins por
+  `profiles.wallet_solana` (se podía poner la wallet de otro comprador), la
+  Mini App no lee `telegram_id` del ranking.
+- **Pendiente del dueño — ejecutar `sql/05-auditoria-oct.sql`** en Supabase
+  tras el push (cierra la lectura pública de tablas de dinero y de telegram_id).
+- **Pendiente (no hecho):** CSP completa en worker.js, ligar compras SOL web a
+  la cuenta (`create_sol_order` sin identidad en helius-verify), `ton_proof`
+  para la wallet TON, migrar nombres duplicados antiguos, sybil de mTON con
+  cuentas web, límites por tipo de mensaje restantes, `ret:idx` que crece.
+- **Gráficos**: monstruos con contorno (dorado en élites, magenta en jefes),
+  respiran, se aplastan al recibir golpes, los voladores aletean y estallan en
+  chispas al morir; ambiente por bioma (luciérnagas, ceniza, chispas,
+  burbujas) y hierba que se aparta al pasar; polvo al correr/aterrizar y estela
+  del dash; el duende se dibuja interpolado entre pasos de física (sin tirones).
+- Textos para foros: `promo/POSTS_FOROS.md` (no se sube a git).

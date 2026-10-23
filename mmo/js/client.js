@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=238';
+} from './data.js?v=239';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -166,16 +166,31 @@ function tenido(k, hex) {
   return c;
 }
 function blanco(k) { return tenido(k, '#ffffff'); }
+// Silueta maciza de un color (para el contorno de los monstruos).
+const _silueta = new Map();
+function silueta(k, hex) {
+  const key = k + hex;
+  if (_silueta.has(key)) return _silueta.get(key);
+  const src = IMG[k];
+  if (!src || !src.naturalWidth) return null;
+  const c = document.createElement('canvas');
+  c.width = src.naturalWidth; c.height = src.naturalHeight;
+  const x = c.getContext('2d');
+  x.drawImage(src, 0, 0);
+  x.globalCompositeOperation = 'source-in'; x.fillStyle = hex; x.fillRect(0, 0, c.width, c.height);
+  _silueta.set(key, c);
+  return c;
+}
 // Crear una copia teñida es caro (un lienzo del tamaño de toda la hoja): si
 // se hacia la primera vez que se golpeaba a cada monstruo, ese golpe daba un
 // tiron. Se preparan todas mientras carga, de a poco para no congelar.
 function precalentarTintes() {
   const tareas = [];
-  for (const k in HOJAS) { tareas.push(['sh_' + k, '#ffffff'], ['sh_' + k, '#ff3344']); }
+  for (const k in HOJAS) { tareas.push(['sh_' + k, '#ffffff'], ['sh_' + k, '#ff3344'], ['sh_' + k, CONTORNO, 1]); }
   for (const k in MONSTRUOS) if (MONSTRUOS[k].tinte) tareas.push(['sh_' + MONSTRUOS[k].hoja, MONSTRUOS[k].tinte]);
   for (const k in MONTURAS) if (MONTURAS[k].tinte) tareas.push(['sh_' + MONTURAS[k].hoja, MONTURAS[k].tinte]);
   for (const f in FX) for (const sk in SKINS) if (sk !== 'comun') tareas.push(['fx_' + f, SKINS[sk].color]);
-  const paso = () => { const t0 = performance.now(); while (tareas.length && performance.now() - t0 < 8) { const [k, c] = tareas.shift(); tenido(k, c); } if (tareas.length) setTimeout(paso, 16); };
+  const paso = () => { const t0 = performance.now(); while (tareas.length && performance.now() - t0 < 8) { const [k, c, sil] = tareas.shift(); if (sil) silueta(k, c); else tenido(k, c); } if (tareas.length) setTimeout(paso, 16); };
   paso();
 }
 
@@ -356,6 +371,8 @@ function recibir(m) {
       $('m-inicio').classList.remove('on');
       pintarHud();
       if (m.nuevo) aviso('Bienvenido al Pueblo Duende, ' + yo.nombre + '. El Guardia Tito tiene tu primera misión.');
+      // El servidor puede cambiar el nombre pedido (ya era de otro o imita al equipo).
+      if (soyInvitado) { try { if (localStorage.getItem('dq_mmo_nombre') !== yo.nombre) { if (m.nuevo && localStorage.getItem('dq_mmo_nombre')) aviso('Ese nombre ya estaba en uso o está reservado: te llamas ' + yo.nombre + '.'); localStorage.setItem('dq_mmo_nombre', yo.nombre); } } catch (e) {} }
       if (m.heredado) { aviso('☁️ Tu progreso de invitado pasó a tu cuenta.', 'ok'); try { localStorage.removeItem('dq_mmo_tok'); } catch (e) {} }
       if (m.regaladas && m.regaladas.length) aviso('🎁 Skins de tu cuenta desbloqueadas: ' + m.regaladas.map(k => SKINS[k].nombre).join(', '), 'ok');
       // Personaje sin clase (nuevo, o de antes de las clases): a elegir.
@@ -478,7 +495,7 @@ function recibir(m) {
       else if (quien) { quien.lv = m.lv; if (m.mx) quien.mx = m.mx; if (m.rmx) quien.rmx = m.rmx; }
       break;
     }
-    case 'pa': { const o = otros.get(m.p); if (o) { o.sk = m.sk; o.ar = m.ar; o.mx = m.mx; o.ti = m.ti || ''; o.cl = m.cl || ''; o.rmx = m.rmx || 0; o.hn = m.hn || ''; o.hc = m.hc | 0; o.mo = m.mo || ''; o.es = m.es || ''; o.tn = m.tn || ''; o.ma = m.ma || ''; } break; }
+    case 'pa': { const o = otros.get(m.p); if (o) { o.sk = m.sk; o.ar = m.ar; o.mx = m.mx; o.ti = m.ti || ''; o.cl = m.cl || ''; o.rmx = m.rmx || 0; o.hn = m.hn || ''; o.hc = m.hc | 0; o.mo = m.mo || ''; o.es = m.es || ''; o.tn = m.tn || ''; o.ma = m.ma || ''; o.gm = m.gm || 0; o.gi = m.gi || 0; } break; }
     case 'hb': habilidadRemota(m); break;
     case 'cast': {
       const h = m.id === 'hogar' ? { nombre: 'Piedra de Hogar' } : m.id === 'montar' ? { nombre: 'Invocar montura' } : m.id === 'recolectar' ? { nombre: 'Recogiendo' } : m.id === 'pescar' ? { nombre: '🎣 Pescando' } : habPorId(m.id);
@@ -567,6 +584,8 @@ function recibir(m) {
     case 'dueloFin': finDuelo(m); break;
     case 'critDuelo': { const q = m.p === miId ? P : otros.get(m.p); if (q) flotante(q.x, q.y - 92, '¡CRÍTICO!', '#ffd34d', 10); break; }
     case 'buscador': abrirBuscador(); break;
+    case 'diosPanel': pintarDios(m); break;
+    case 'diosModo': if (yo) { yo.diosModo = m.modo; pintarDiosModos(); } break;
     case 'amigos': pintarAmigos(m); if (presumirPend && m.ref) { presumirPend = false; ofrecerPresumir(presumirTxt); aviso('Enlace preparado. Pulsa «Compartir logro».'); } break;
     case 'muerte': resumenMuerte(m); break;
     case 'nodos': recibirNodos(m.l); break;
@@ -647,7 +666,7 @@ function aurasDeServidor(au) {
 
 function agregarOtro(p) {
   if (p.id === miId) return;
-  otros.set(p.id, { id: p.id, n: p.n, lv: p.lv, sk: p.sk, ar: p.ar, ti: p.ti || '', cl: p.cl || '', hn: p.hn || '', hc: p.hc | 0, mo: p.mo || '', es: p.es || '', tn: p.tn || '', ma: p.ma || '', rmx: p.rmx || 0, rec: 0, fl: 0, x: p.x, y: p.y, f: p.f, a: 0, hp: p.hp, mx: p.mx, muerto: p.muerto, buf: [{ t: performance.now(), x: p.x, y: p.y }], herido: 0, atk: 0, paso: 0 });
+  otros.set(p.id, { id: p.id, n: p.n, lv: p.lv, sk: p.sk, ar: p.ar, ti: p.ti || '', cl: p.cl || '', hn: p.hn || '', hc: p.hc | 0, mo: p.mo || '', es: p.es || '', tn: p.tn || '', ma: p.ma || '', gm: p.gm || 0, gi: p.gi || 0, rmx: p.rmx || 0, rec: 0, fl: 0, x: p.x, y: p.y, f: p.f, a: 0, hp: p.hp, mx: p.mx, muerto: p.muerto, buf: [{ t: performance.now(), x: p.x, y: p.y }], herido: 0, atk: 0, paso: 0 });
   aurasP.set(p.id, aurasDeServidor(p.au));
 }
 
@@ -779,7 +798,7 @@ function fisica() {
   const izq = !congelado() && (teclas.ArrowLeft || teclas.KeyA || tIzq);
   const der = !congelado() && (teclas.ArrowRight || teclas.KeyD || tDer);
   let obj = 0;
-  const vel = FIS.vel * velMontura(yo.montado) * (1 + talento(yo, 'agilidad'));
+  const vel = FIS.vel * velMontura(yo.montado) * (1 + talento(yo, 'agilidad')) * (yo.dios && yo.diosModo && yo.diosModo.vel ? 3 : 1);
   if (izq) obj -= vel; if (der) obj += vel;
   if (obj) P.f = obj > 0 ? 1 : -1;
   // Moverse cancela el lanzamiento (el servidor tambien lo hace; aqui se
@@ -795,10 +814,13 @@ function fisica() {
   P.y += P.vy;
   const piso = sueloEn(mp, P.x, antesY, P.vy >= 0);
   if (P.y >= piso && antesY <= piso + 1 && P.vy >= 0) {
-    if (!P.suelo && P.vy > 6) sfx('caida', .2);
+    if (!P.suelo && P.vy > 6) { sfx('caida', .2); for (let i = 0; i < 8; i++) particula(P.x + (i - 3.5) * 4, piso - 2, 'rgba(220,210,190,.8)', 1.6); }
     P.y = piso; P.vy = 0; P.suelo = true; P.saltos = 0;
   } else if (P.y < piso) P.suelo = false;
   if (P.y > SUELO) { P.y = SUELO; P.vy = 0; P.suelo = true; P.saltos = 0; }
+  // Polvo bajo los pies al correr (y una estela al hacer dash).
+  if (P.suelo && Math.abs(P.vx) > 2.5 && frame % 7 === 0 && !ligero) particula(P.x - P.f * 10, P.y - 2, 'rgba(220,210,190,.6)', .9);
+  if (P.dash > 0 && frame % 2 === 0) particula(P.x - P.f * 14, P.y - 20 - Math.random() * 20, '#00eeff', 1.5);
   if (P.atk > 0) P.atk--;
   if (P.comboT > 0) P.comboT--;
   if (P.herido > 0) P.herido--;
@@ -1042,9 +1064,13 @@ addEventListener('keydown', e => {
     return;
   }
   if (e.code === 'Tab') { e.preventDefault(); if (!e.repeat) cicloObjetivo(); return; }
+  if (e.code === 'F2' && yo && yo.dios) { e.preventDefault(); abrirDios(); return; }
   if (e.repeat && ['KeyZ', 'KeyJ'].indexOf(e.code) < 0) { teclas[e.code] = true; return; }
   teclas[e.code] = true;
-  if (['Space', 'ArrowUp', 'KeyW'].includes(e.code)) { e.preventDefault(); const c = cercano(); if (e.code !== 'Space' && c && c.tipo === 'portal') interactuar(); else saltar(); }
+  // ↑ / W solo saltan: antes, encima de un portal lo atravesaban, y quien
+  // saltaba o avanzaba por el pueblo acababa metido en una mazmorra sin
+  // querer. Para entrar se usa E (o el boton de interactuar).
+  if (['Space', 'ArrowUp', 'KeyW'].includes(e.code)) { e.preventDefault(); saltar(); }
   if (e.code === 'KeyZ' || e.code === 'KeyJ') atacar();
   if (e.code === 'KeyX' || e.code === 'KeyK' || e.code === 'ShiftLeft') dash();
   if (e.code === 'KeyE') interactuar();
@@ -1118,6 +1144,7 @@ $('b-regreso').onclick = volverAlPueblo;
 $('b-inv').onclick = abrirInventario;
 $('b-libro').onclick = () => abrirLibro();
 $('b-rank').onclick = abrirRanking;
+$('b-dios').onclick = abrirDios;
 $('b-ayuda').onclick = () => abrir('m-ayuda');
 { const bn = $('b-novedades'); if (bn) bn.onclick = () => abrirNovedades(); }
 $('b-wallet').onclick = abrirWallet;
@@ -1355,7 +1382,7 @@ function mensajeChat(m) {
     if (m.de) { quien = m.de + ' te susurra'; ultimoSusurro = m.de; sfx('boton', .4); }
     else quien = 'Susurras a ' + m.a;
   } else if (canal === 'general' && m.mapa && m.mapa !== mapaId && MAPAS[m.mapa]) quien = m.n + ' (' + MAPAS[m.mapa].nombre + ')';
-  lineaChat(ETIQUETA_CANAL[canal] + quien, m.m, canal, CLASES[m.cl] ? CLASES[m.cl].color : null);
+  lineaChat(ETIQUETA_CANAL[canal] + (m.gm ? '👑 [GM] ' : '') + quien, m.m, canal, m.gm ? '#ffd84a' : CLASES[m.cl] ? CLASES[m.cl].color : null);
   if (canal !== 'susurro' && (!m.mapa || m.mapa === mapaId)) burbujas.set(m.p, { txt: m.m, hasta: performance.now() + 5000 });
 }
 
@@ -2395,7 +2422,9 @@ let bordeT = 0, bordeSoltar = false;
 function viajePorBorde(izq, der) {
   const mp = MAPAS[mapaId];
   if (!izq && !der) { bordeSoltar = false; return; }
-  if (bordeSoltar || instancia || mp.instancia || castYo || P.muerto || performance.now() - bordeT < 1500) return;
+  // Solo en zonas de caza: en el pueblo los bordes son portales a zonas de
+  // nivel alto (Acantilados 55-60) y caminar hasta el final te metia ahi.
+  if (!mp.zona || bordeSoltar || instancia || mp.instancia || castYo || P.muerto || performance.now() - bordeT < 1500) return;
   const enBorde = (izq && P.x <= 16) || (der && P.x >= mp.ancho - 16);
   if (!enBorde) return;
   const i = mp.portales.findIndex(p => p.a && !p.buscador && !p.fin && Math.abs(p.x - P.x) < 85);
@@ -2777,24 +2806,30 @@ function pintarWallet() {
 // ── TIENDA PREMIUM (Stars en Telegram, SOL en la web) ──
 // Con dinero se compran cosas del juego, nunca mTON. Cada compra la revisa y
 // entrega El Duende a mano: aqui solo se pide y se paga.
+let premiumFoco = '';
 function htmlPremium() {
   const cuentaTg = !!TG && !forzarInvitado;
   const cuenta = yo && yo.p2e && yo.p2e.cuenta;
-  let h = '<p style="font-size:13px;line-height:1.45;color:var(--txt2);margin-bottom:10px">Compras opcionales para apoyar el juego. <b>El Duende</b> revisa cada pago y lo entrega en tu personaje; te avisamos aquí y por Telegram. Con dinero <b>no</b> se compran mTON: solo se ganan jugando.</p>';
-  for (const pq of PAQUETES) {
+  let h = '<p style="font-size:13px;line-height:1.45;color:var(--txt2);margin-bottom:10px">Compras opcionales para apoyar el juego. <b>El Duende</b> revisa cada pago y lo entrega en tu personaje; te avisamos aquí y por Telegram. En la web se paga con SOL o con $DUENDE (10% de descuento). Con dinero <b>no</b> se compran mTON: solo se ganan jugando.</p>';
+  // La skin elegida desde la pestaña Skins va primero.
+  const lista = PAQUETES.slice().sort((a, b) => (b.id === premiumFoco) - (a.id === premiumFoco));
+  for (const pq of lista) {
+    const sk = pq.skin && SKINS[pq.skin];
     let acc;
     if (pq.skin && yo && (yo.skins || []).includes(pq.skin)) acc = '<span class="precio" style="color:var(--ok)">✓ Ya la tienes</span>';
     else if (!cuenta) acc = `<span class="precio">${cuentaTg ? estrellasDe(pq.usd) + ' Stars' : '$' + pq.usd}</span><a class="btn sec" href="/game.html" style="text-decoration:none">Iniciar sesión</a>`;
     else if (cuentaTg) acc = `<span class="precio">${estrellasDe(pq.usd)} Stars</span><button class="btn" data-premium="${pq.id}" data-metodo="stars">Pagar con Stars</button>`;
-    else acc = `<span class="precio">~$${pq.usd} en SOL</span><button class="btn" data-premium="${pq.id}" data-metodo="sol">Pagar con SOL</button>`;
-    const ico = pq.skin ? `<img src="${A}skins/${pq.img}.png">` : `<img src="${A}items/equipo/${pq.icono}.png">`;
-    h += tarjeta(ico, esc(pq.nombre), esc(pq.desc) + (pq.skin ? '<br><span style="color:var(--txt2)">Skin con poderes: también se consigue con oro.</span>' : ''), acc);
+    else acc = `<span class="precio">$${pq.usd}</span><button class="btn" data-premium="${pq.id}" data-metodo="sol">Pagar con SOL</button><button class="btn sec" data-premium="${pq.id}" data-metodo="duende">$DUENDE −10%</button>`;
+    const ico = sk ? `<img src="${retratoSkin(pq.skin)}" style="${sk.premium ? 'filter:drop-shadow(0 0 5px ' + sk.color + ')' : ''}">` : `<img src="${A}items/equipo/${pq.icono}.png">`;
+    const nom = sk && sk.premium ? `<span style="color:${sk.color}">${esc(pq.nombre)}</span>` : esc(pq.nombre);
+    const nota = sk ? '<br><span style="color:var(--txt2)">' + (sk.premium ? 'Skin exclusiva: solo se consigue aquí.' : 'Skin con poderes: también se consigue con oro.') + '</span>' : '';
+    h += `<div ${pq.id === premiumFoco ? 'style="outline:2px solid var(--ok);border-radius:10px"' : ''}>` + tarjeta(ico, nom, esc(pq.desc) + nota, acc) + '</div>';
   }
   const ps = (yo && yo.pedidos) || [];
   if (ps.length) {
     const col = { pagado: 'var(--warn)', por_verificar: 'var(--warn)', entregado: 'var(--ok)', anulado: 'var(--err)', esperando_pago: 'var(--txt2)', comprobando: 'var(--txt2)' };
     const txt = { pagado: 'Por entregar', por_verificar: 'En revisión', entregado: 'Entregado', anulado: 'Anulado', esperando_pago: 'Sin pagar', comprobando: 'Comprobando…' };
-    h += '<p style="margin:12px 0 4px;font-size:12px">Tus compras:</p>' + ps.slice().reverse().map(x => `<div class="fila"><span>#${esc(x.codigo)} · ${esc(x.nombre)}</span><span style="color:${col[x.estado] || 'var(--txt)'}">${txt[x.estado] || esc(x.estado)}${x.estado === 'esperando_pago' && x.lamports ? ` <button class="btn sec" data-retomar="${esc(x.codigo)}" style="padding:4px 8px">Pagar</button>` : ''}</span></div>`).join('');
+    h += '<p style="margin:12px 0 4px;font-size:12px">Tus compras:</p>' + ps.slice().reverse().map(x => `<div class="fila"><span>#${esc(x.codigo)} · ${esc(x.nombre)}</span><span style="color:${col[x.estado] || 'var(--txt)'}">${txt[x.estado] || esc(x.estado)}${x.estado === 'esperando_pago' && (x.lamports || x.raw) ? ` <button class="btn sec" data-retomar="${esc(x.codigo)}" style="padding:4px 8px">Pagar</button>` : ''}</span></div>`).join('');
   }
   return h;
 }
@@ -2802,7 +2837,8 @@ function conectarPremium(L) {
   // Retomar un pago con SOL que quedo a medias (p. ej. tras abrir el juego en Phantom).
   L.querySelectorAll('[data-retomar]').forEach(b => b.onclick = () => {
     const x = ((yo && yo.pedidos) || []).find(p => p.codigo === b.dataset.retomar);
-    if (x && x.lamports) mostrarPedidoSol({ codigo: x.codigo, lamports: x.lamports, wallet: x.wallet, usd: x.usd, nombre: x.nombre, ref: x.ref });
+    if (x && x.raw) mostrarPedidoSol({ metodo: 'duende', codigo: x.codigo, raw: x.raw, mint: x.mint, dec: x.dec, wallet: x.wallet, usd: x.usd, nombre: x.nombre });
+    else if (x && x.lamports) mostrarPedidoSol({ codigo: x.codigo, lamports: x.lamports, wallet: x.wallet, usd: x.usd, nombre: x.nombre, ref: x.ref });
   });
   L.querySelectorAll('[data-premium]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'pedido', id: b.dataset.premium, metodo: b.dataset.metodo }); });
 }
@@ -2810,6 +2846,8 @@ function abrirPremium() {
   tabTienda = 'premium';
   document.querySelectorAll('[data-tab]').forEach(x => x.classList.toggle('on', x.dataset.tab === 'premium'));
   abrir('m-tienda'); pintarTienda();
+  $('tienda-lista').scrollTop = 0;
+  const v = $('tienda-lista').closest('.ventana'); if (v) v.scrollTop = 0;
 }
 // Telegram abre su propia ventana de pago de Stars.
 function abrirFactura(m) {
@@ -2823,17 +2861,24 @@ function abrirFactura(m) {
 let pedidoSol = null;
 function mostrarPedidoSol(m) {
   pedidoSol = m;
-  const sol = (m.lamports / 1e9).toFixed(9);
+  const esD = m.metodo === 'duende';
+  const unidad = esD ? '$DUENDE' : 'SOL';
+  // Monto exacto en texto (sin redondeos de coma flotante): sus ultimas
+  // cifras identifican el pedido.
+  const exacto = (raw, dec) => { const t = String(raw).padStart(dec + 1, '0'); return t.slice(0, -dec) + '.' + t.slice(-dec); };
+  const sol = esD ? exacto(m.raw, m.dec) : (m.lamports / 1e9).toFixed(9);
+  $('sol-titulo').textContent = esD ? 'PAGAR CON $DUENDE' : 'PAGAR CON SOL';
   $('sol-cuerpo').innerHTML =
     `<p class="centro" style="margin-bottom:8px">${esc(m.nombre)} · pedido <b>#${esc(m.codigo)}</b></p>` +
-    `<div class="saldo"><b>${sol} SOL</b><small>(~$${m.usd}) · paga el monto <b style="display:inline">exacto</b>: sus últimas cifras identifican tu pedido</small></div>` +
+    `<div class="saldo"><b>${sol} ${unidad}</b><small>(~$${m.usd}) · paga el monto <b style="display:inline">exacto</b>: sus últimas cifras identifican tu pedido</small></div>` +
     `<button class="btn" id="b-phantom" style="width:100%;padding:12px;margin-bottom:10px">Pagar con Phantom${hayWalletSol() && !window.phantom ? ' / tu wallet' : ''}</button>` +
-    (TACTIL && !hayWalletSol() ? `<button class="btn sec" id="b-solflare" style="width:100%;padding:10px;margin-bottom:10px">Pagar con Solflare</button>` : '') +
+    (esD ? `<p style="font-size:11px;color:var(--txt2);margin:4px 0">Token: <span style="word-break:break-all">${esc(m.mint)}</span></p>` : '') +
+    (!esD && TACTIL && !hayWalletSol() ? `<button class="btn sec" id="b-solflare" style="width:100%;padding:10px;margin-bottom:10px">Pagar con Solflare</button>` : '') +
     // Solana Pay: QR (escanéalo con Phantom/Solflare del móvil) con el monto exacto.
-    (TACTIL ? '' : `<p style="font-size:12px;margin:6px 0">O escanea con tu wallet del móvil (Solana Pay):</p><div id="sol-qr" style="display:flex;justify-content:center;margin:6px 0;min-height:40px"></div>`) +
-    (TACTIL ? `<a class="btn sec" id="b-solpay" href="${esc(uriSolPay(m))}" style="display:block;text-align:center;text-decoration:none;margin-bottom:6px">Abrir en mi wallet</a>` : '') +
-    `<button class="btn" id="b-buscar" style="width:100%;margin:4px 0 10px">✅ Ya pagué: comprobar</button>` +
-    `<p style="font-size:12px;margin:6px 0">¿Otra wallet? Envía <b>${sol} SOL</b> a la wallet de El Duende:</p>` +
+    (esD || TACTIL ? '' : `<p style="font-size:12px;margin:6px 0">O escanea con tu wallet del móvil (Solana Pay):</p><div id="sol-qr" style="display:flex;justify-content:center;margin:6px 0;min-height:40px"></div>`) +
+    (!esD && TACTIL ? `<a class="btn sec" id="b-solpay" href="${esc(uriSolPay(m))}" style="display:block;text-align:center;text-decoration:none;margin-bottom:6px">Abrir en mi wallet</a>` : '') +
+    (esD ? '' : `<button class="btn" id="b-buscar" style="width:100%;margin:4px 0 10px">✅ Ya pagué: comprobar</button>`) +
+    `<p style="font-size:12px;margin:6px 0">¿Otra wallet? Envía <b>${sol} ${unidad}</b> a la wallet de El Duende:</p>` +
     `<p style="font-size:11px;word-break:break-all;background:var(--bg);border:1px solid var(--borde);padding:8px;border-radius:6px">${esc(m.wallet)}</p>` +
     `<div style="display:flex;gap:6px;margin:6px 0"><button class="btn sec" id="b-copia-w" style="flex:1">Copiar wallet</button><button class="btn sec" id="b-copia-m" style="flex:1">Copiar monto</button></div>` +
     `<p style="font-size:12px;margin-top:8px">Y pega aquí la firma (signature) de la transacción:</p>` +
@@ -2847,7 +2892,7 @@ function mostrarPedidoSol(m) {
   $('b-firma').onclick = () => { const f = $('in-firma').value.trim(); if (f) mandar({ t: 'pedidoFirma', codigo: m.codigo, firma: f }); };
   $('in-firma').addEventListener('keydown', e => e.stopPropagation());
   $('b-phantom').onclick = () => pagarConPhantom(m);
-  $('b-buscar').onclick = () => { sfx('boton', .3); aviso('🔎 Buscando tu pago en la red…', 'ok'); mandar({ t: 'pedidoBuscar', codigo: m.codigo }); };
+  if ($('b-buscar')) $('b-buscar').onclick = () => { sfx('boton', .3); aviso('🔎 Buscando tu pago en la red…', 'ok'); mandar({ t: 'pedidoBuscar', codigo: m.codigo }); };
   if (!TACTIL) cargarScript('https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js', 'sha384-mZT2gIty7ZDdOGkxfP6joZcYdMW1Jvj9dRlfpTmaJAKKXTqzygtB22k7FLe+KZC1').then(() => {
     if (!$('sol-qr') || pedidoSol !== m || !window.qrcode) return;
     const q = window.qrcode(0, 'M'); q.addData(uriSolPay(m)); q.make();
@@ -2889,24 +2934,183 @@ async function pagarConPhantom(m) {
   try {
     // Version fija con SRI (en dic-2024 dos versiones 1.95.x de esta libreria venian con una puerta trasera).
     if (!window.solanaWeb3) await cargarScript('https://unpkg.com/@solana/web3.js@1.98.0/lib/index.iife.min.js', 'sha384-1/Ll6ABlJDlMx1URcif2stL9Fxod/1rg71YHzGqTl6Bwzi0Vq993Jt/oVLFXfUgQ');
-    const { Connection, PublicKey, Transaction, SystemProgram } = window.solanaWeb3;
+    const { Connection, PublicKey, Transaction, SystemProgram, TransactionInstruction } = window.solanaWeb3;
     const r = await prov.connect();
     const publicKey = (r && r.publicKey) || prov.publicKey;
     if (!publicKey) throw new Error('la wallet no dio su dirección');
     const con = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
-    const ix = SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: new PublicKey(m.wallet), lamports: m.lamports });
-    if (m.ref) ix.keys.push({ pubkey: new PublicKey(m.ref), isSigner: false, isWritable: false });
-    const tx = new Transaction().add(ix);
+    let tx;
+    if (m.metodo === 'duende') {
+      // Transferencia SPL (TransferChecked) desde tu cuenta del token a la de
+      // El Duende. Las cuentas y el programa del token se leen de la cadena.
+      const mint = new PublicKey(m.mint), dest = new PublicKey(m.wallet);
+      const [mias, suyas, infoMint] = await Promise.all([
+        con.getParsedTokenAccountsByOwner(publicKey, { mint }), con.getParsedTokenAccountsByOwner(dest, { mint }), con.getAccountInfo(mint)]);
+      const origen = mias.value.find(a => BigInt(a.account.data.parsed.info.tokenAmount.amount) >= BigInt(m.raw));
+      if (!origen) { aviso('No tienes suficientes $DUENDE en esta wallet para este pedido.'); return; }
+      if (!suyas.value.length || !infoMint) { aviso('No se pudo preparar el pago con la wallet: envía el monto a mano y pega la firma.'); return; }
+      const datos = new Uint8Array(10); datos[0] = 12;   // TransferChecked
+      let resto = BigInt(m.raw); for (let i = 1; i <= 8; i++) { datos[i] = Number(resto & 255n); resto >>= 8n; }
+      datos[9] = m.dec;
+      tx = new Transaction().add(new TransactionInstruction({ programId: infoMint.owner, data: datos, keys: [
+        { pubkey: origen.pubkey, isSigner: false, isWritable: true }, { pubkey: mint, isSigner: false, isWritable: false },
+        { pubkey: suyas.value[0].pubkey, isSigner: false, isWritable: true }, { pubkey: publicKey, isSigner: true, isWritable: false }] }));
+    } else {
+      const ix = SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: new PublicKey(m.wallet), lamports: m.lamports });
+      if (m.ref) ix.keys.push({ pubkey: new PublicKey(m.ref), isSigner: false, isWritable: false });
+      tx = new Transaction().add(ix);
+    }
     tx.feePayer = publicKey;
     tx.recentBlockhash = (await con.getLatestBlockhash()).blockhash;
     let signature;
     if (prov.signAndSendTransaction) { const res = await prov.signAndSendTransaction(tx); signature = typeof res === 'string' ? res : res && res.signature; }
     else signature = await con.sendRawTransaction((await prov.signTransaction(tx)).serialize());
     if (!signature) throw new Error('la wallet no devolvió la firma');
-    aviso('◎ Pago enviado. Comprobando…', 'ok');
+    aviso('Pago enviado. Comprobando…', 'ok');
     mandar({ t: 'pedidoFirma', codigo: m.codigo, firma: signature });
     cerrarModales();
   } catch (e) { aviso('No se completó el pago con tu wallet: ' + (e.message || e)); }
+}
+
+// ── SKINS PREMIUM ──
+// La hoja animada del duende (reposo, caminar, ataque, herido) teñida una
+// sola vez por skin: girar el tono pixel a pixel es caro, asi que se guarda
+// el lienzo. ctx.filter no sirve (Safari no lo soporta en canvas).
+const _hojasT = {}, _halos = {}, _retratos = {};
+function teñir(img, hue, sat) {
+  const c = document.createElement('canvas');
+  c.width = img.naturalWidth || img.width; c.height = img.naturalHeight || img.height;
+  const x = c.getContext('2d');
+  x.drawImage(img, 0, 0);
+  const d = x.getImageData(0, 0, c.width, c.height), p = d.data;
+  const giro = (hue || 0) / 360;
+  for (let i = 0; i < p.length; i += 4) {
+    if (!p[i + 3]) continue;
+    const r = p[i] / 255, gg = p[i + 1] / 255, b = p[i + 2] / 255;
+    const mx = Math.max(r, gg, b), mn = Math.min(r, gg, b), l = (mx + mn) / 2;
+    let h = 0, s = 0;
+    if (mx !== mn) {
+      const dd = mx - mn;
+      s = l > .5 ? dd / (2 - mx - mn) : dd / (mx + mn);
+      h = mx === r ? (gg - b) / dd + (gg < b ? 6 : 0) : mx === gg ? (b - r) / dd + 2 : (r - gg) / dd + 4;
+      h /= 6;
+    }
+    h = (h + giro) % 1; s = Math.min(1, s * (sat || 1));
+    const q2 = l < .5 ? l * (1 + s) : l + s - l * s, p2 = 2 * l - q2;
+    const k = t => { t = (t + 1) % 1; return t < 1 / 6 ? p2 + (q2 - p2) * 6 * t : t < .5 ? q2 : t < 2 / 3 ? p2 + (q2 - p2) * (2 / 3 - t) * 6 : p2; };
+    p[i] = k(h + 1 / 3) * 255; p[i + 1] = k(h) * 255; p[i + 2] = k(h - 1 / 3) * 255;
+  }
+  x.putImageData(d, 0, 0);
+  return c;
+}
+function hojaTenida(skin) {
+  if (_hojasT[skin]) return _hojasT[skin];
+  if (!IMG.anim || !IMG.anim.naturalWidth) return null;
+  const sk = SKINS[skin];
+  return (_hojasT[skin] = teñir(IMG.anim, sk.hue, sk.sat));
+}
+function haloSkin(skin) {
+  if (_halos[skin]) return _halos[skin];
+  const c = document.createElement('canvas'); c.width = c.height = 120;
+  const x = c.getContext('2d'), col = (SKINS[skin] && SKINS[skin].color) || '#ff3cf0';
+  const rgb = [1, 3, 5].map(i => parseInt(col.slice(i, i + 2), 16)).join(',');
+  const rg = x.createRadialGradient(60, 60, 4, 60, 60, 60);
+  rg.addColorStop(0, `rgba(${rgb},.38)`); rg.addColorStop(.55, `rgba(${rgb},.14)`); rg.addColorStop(1, `rgba(${rgb},0)`);
+  x.fillStyle = rg; x.fillRect(0, 0, 120, 120);
+  return (_halos[skin] = c);
+}
+// Retrato para la tienda y el marco del jugador (data URL cacheada).
+function retratoSkin(skin) {
+  const sk = SKINS[skin];
+  if (!sk || !sk.anim) return A + 'skins/' + (sk ? sk.img : 'skin_hero') + '.png';
+  if (_retratos[skin]) return _retratos[skin];
+  const img = IMG[sk.img];
+  if (!img || !img.naturalWidth) return A + 'skins/' + sk.img + '.png';
+  return (_retratos[skin] = teñir(img, sk.hue, sk.sat).toDataURL());
+}
+
+// ── MODO DIOS (solo el dueño: el servidor decide quien lo es) ──
+let diosDatos = null, diosTab = 'poderes';
+function abrirDios() {
+  if (!yo || !yo.dios) return;
+  abrir('m-dios');
+  mandar({ t: 'dios', a: 'estado' });
+  pintarDios(diosDatos);
+}
+function dios(o) { sfx('boton', .3); mandar({ t: 'dios', ...o }); }
+function pintarDiosModos() {
+  document.querySelectorAll('[data-dmodo]').forEach(b => {
+    const on = !!(yo && yo.diosModo && yo.diosModo[b.dataset.dmodo]);
+    b.classList.toggle('sec', !on); b.textContent = b.dataset.txt + (on ? ' ✓' : '');
+  });
+}
+function pintarDios(d) {
+  if (d) diosDatos = d;
+  if (!$('m-dios').classList.contains('on')) return;
+  const D = diosDatos || { jugadores: [], pedidos: [], bans: [], log: [] };
+  const C = $('dios-cuerpo');
+  let h = '<div class="tabs">' + [['poderes', '⚡ PODERES'], ['jugadores', '👥 JUGADORES'], ['pedidos', '🛒 PEDIDOS (' + D.pedidos.filter(x => x.estado !== 'esperando_pago').length + ')'], ['mod', '⛔ MODERACIÓN']]
+    .map(([k, t]) => `<button class="tab ${diosTab === k ? 'on' : ''}" data-dtab="${k}">${t}</button>`).join('') + '</div>';
+  if (diosTab === 'poderes') {
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0">'
+      + [['inv', '🛡️ Invencible'], ['golpe', '💥 Golpe divino'], ['vel', '⚡ Velocidad libre']].map(([k, t]) => `<button class="btn" data-dmodo="${k}" data-txt="${t}">${t}</button>`).join('')
+      + '<button class="btn sec" id="d-curar">✨ Curarme</button></div>'
+      + '<p style="font-size:12px;color:var(--txt2)">Con cualquier poder encendido no ganas mTON ni subes en el ranking.</p>'
+      + '<p style="margin:10px 0 4px;font-size:13px">🌀 Viajar a:</p><div style="display:flex;gap:6px;flex-wrap:wrap">'
+      + Object.entries(MAPAS).filter(([, m]) => !m.instancia).map(([id, m]) => `<button class="btn sec" data-dtp="${id}" style="padding:6px 8px;font-size:11px">${esc(m.nombre)}</button>`).join('') + '</div>'
+      + '<p style="margin:12px 0 4px;font-size:13px">📢 Anuncio a todo el servidor:</p><div style="display:flex;gap:6px"><input class="nombre" id="d-anuncio" maxlength="200" placeholder="Mensaje" style="margin:0;font-size:12px"><button class="btn" id="d-anunciar">Enviar</button></div>';
+  } else if (diosTab === 'jugadores') {
+    h += `<p style="font-size:12px;color:var(--txt2);margin:6px 0">${D.jugadores.length} conectados</p>`;
+    h += D.jugadores.map(j => `<div class="mis-caja" style="margin:6px 0;padding:8px">
+      <b>${j.gm ? '👑 ' : ''}${esc(j.n)}</b> <span style="color:var(--txt2);font-size:12px">Nv ${j.lv} · ${esc((MAPAS[j.mapa] || {}).nombre || j.mapa)}${j.inst ? ' (mazmorra)' : ''} · ${j.tipo === 'inv' ? 'invitado' : j.tipo === 'tg' ? 'Telegram' : 'web'} · ${(j.oro || 0).toLocaleString('es')} oro${j.mute ? ' · 🔇' : ''}</span>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">
+        <button class="btn sec" data-dj="irA" data-p="${j.p}">Ir</button><button class="btn sec" data-dj="traer" data-p="${j.p}">Traer</button>
+        <button class="btn sec" data-dj="oro" data-p="${j.p}">Oro</button><button class="btn sec" data-dj="skin" data-p="${j.p}">Skin</button>
+        <button class="btn sec" data-dj="renombrar" data-p="${j.p}">Renombrar</button><button class="btn sec" data-dj="silenciar" data-p="${j.p}">${j.mute ? 'Quitar silencio' : 'Silenciar'}</button>
+        <button class="btn sec" data-dj="expulsar" data-p="${j.p}">Expulsar</button>${j.gm ? '' : `<button class="btn" data-dj="banear" data-p="${j.p}" style="background:var(--err)">Banear</button>`}
+      </div></div>`).join('');
+  } else if (diosTab === 'pedidos') {
+    const estado = { pagado: '💰 Pagado', por_verificar: '🔎 Por revisar', esperando_pago: '⏳ Esperando pago' };
+    if (!D.pedidos.length) h += '<p class="centro" style="margin:16px 0;color:var(--txt2)">No hay compras pendientes.</p>';
+    h += D.pedidos.slice().reverse().map(x => `<div class="mis-caja" style="margin:6px 0;padding:8px">
+      <b>#${esc(x.codigo)} · ${esc(x.nombre)}</b> <span style="font-size:12px;color:var(--txt2)">($${x.usd}) · ${esc(x.jugador)}</span>
+      <p style="font-size:12px;margin:4px 0">${estado[x.estado] || esc(x.estado)} · ${esc(x.monto)} · ${x.cadena ? (x.cadena.ok ? '<span style="color:var(--ok)">✅ visto en la cadena</span>' : '<span style="color:var(--err)">❌ ' + esc(x.cadena.motivo) + '</span>') : x.metodo === 'stars' ? '' : '⚠️ sin comprobar'}</p>
+      ${x.firma ? `<a href="https://solscan.io/tx/${encodeURIComponent(x.firma)}" target="_blank" rel="noopener" style="font-size:11px;color:var(--cian)">Ver en Solscan ↗</a>` : ''}
+      ${x.estado !== 'esperando_pago' ? `<div style="display:flex;gap:6px;margin-top:6px"><button class="btn" data-dped="entregar" data-c="${esc(x.codigo)}">🎁 Entregar</button><button class="btn sec" data-dped="anular" data-c="${esc(x.codigo)}">Anular</button></div>` : ''}
+    </div>`).join('');
+  } else {
+    h += '<p style="margin:8px 0 4px;font-size:13px">⛔ Baneados</p>' + (D.bans.length ? D.bans.map(b => `<div class="fila"><span>${esc(b.n)} · ${b.hasta ? 'hasta ' + new Date(b.hasta).toLocaleString('es') : 'permanente'}${b.motivo ? ' · ' + esc(b.motivo) : ''}</span><button class="btn sec" data-dban="${b.t}">Quitar</button></div>`).join('') : '<p style="font-size:12px;color:var(--txt2)">Nadie.</p>');
+    h += '<p style="margin:12px 0 4px;font-size:13px">📜 Últimas acciones</p>' + (D.log.length ? D.log.slice().reverse().map(l => `<div style="font-size:12px;color:var(--txt2)">${new Date(l.t).toLocaleTimeString('es')} · ${esc(l.de)}: ${esc(l.txt)}</div>`).join('') : '<p style="font-size:12px;color:var(--txt2)">Sin acciones todavía.</p>');
+  }
+  C.innerHTML = h;
+  pintarDiosModos();
+  C.querySelectorAll('[data-dtab]').forEach(b => b.onclick = () => { diosTab = b.dataset.dtab; mandar({ t: 'dios', a: 'estado' }); pintarDios(); });
+  C.querySelectorAll('[data-dmodo]').forEach(b => b.onclick = () => dios({ a: 'modo', k: b.dataset.dmodo, v: !(yo.diosModo && yo.diosModo[b.dataset.dmodo]) }));
+  C.querySelectorAll('[data-dtp]').forEach(b => b.onclick = () => { dios({ a: 'tp', mapa: b.dataset.dtp }); cerrarModales(); });
+  const cu = $('d-curar'); if (cu) cu.onclick = () => dios({ a: 'curar' });
+  const an = $('d-anunciar'); if (an) { $('d-anuncio').addEventListener('keydown', e => e.stopPropagation()); an.onclick = () => { const v = $('d-anuncio').value.trim(); if (v) { dios({ a: 'anuncio', m: v }); $('d-anuncio').value = ''; } }; }
+  C.querySelectorAll('[data-dj]').forEach(b => b.onclick = () => {
+    const a = b.dataset.dj, p = +b.dataset.p, j = D.jugadores.find(x => x.p === p);
+    if (!j) return;
+    if (a === 'irA' || a === 'traer') { dios({ a, p }); cerrarModales(); return; }
+    if (a === 'oro') { const n = prompt('Oro para ' + j.n + ' (negativo para quitar):', '10000'); if (n) dios({ a, p, n: +n }); }
+    else if (a === 'skin') {
+      const ids = Object.keys(SKINS).filter(k => k !== 'comun');
+      const id = prompt('Skin para ' + j.n + ' (antepón "-" para quitarla):\n' + ids.map(k => k + ' — ' + SKINS[k].nombre + (j.skins.includes(k) ? ' ✓' : '')).join('\n'), ids.find(k => !j.skins.includes(k)) || '');
+      if (id) { const quitar = id.startsWith('-'), k = id.replace(/^-/, '').trim(); if (Object.hasOwn(SKINS, k)) dios({ a, p, id: k, quitar }); else errorRojo('No existe la skin «' + k + '».'); }
+    }
+    else if (a === 'renombrar') { const n = prompt('Nuevo nombre para ' + j.n + ':', j.n); if (n) dios({ a, p, n }); }
+    else if (a === 'silenciar') { const min = j.mute ? 0 : +prompt('¿Cuántos minutos silenciar a ' + j.n + '?', '30'); if (j.mute || min > 0) dios({ a, p, min }); }
+    else if (a === 'expulsar') { if (confirm('¿Expulsar a ' + j.n + '?')) dios({ a, p, motivo: prompt('Motivo (opcional):', '') || '' }); }
+    else if (a === 'banear') { const horas = prompt('¿Banear a ' + j.n + ' cuántas horas? (0 = para siempre)', '24'); if (horas !== null && confirm('¿Seguro que quieres banear a ' + j.n + '?')) dios({ a, p, horas: +horas, motivo: prompt('Motivo:', '') || '' }); }
+    setTimeout(() => mandar({ t: 'dios', a: 'estado' }), 400);
+  });
+  C.querySelectorAll('[data-dped]').forEach(b => b.onclick = () => {
+    const a = b.dataset.dped, codigo = b.dataset.c;
+    if (a === 'entregar' && confirm('¿Entregar el pedido #' + codigo + '? Revisa antes que el pago llegó a tu wallet.')) dios({ a, codigo });
+    if (a === 'anular') { const motivo = prompt('Motivo de la anulación (lo verá el jugador):', ''); if (motivo !== null) dios({ a, codigo, motivo }); }
+  });
+  C.querySelectorAll('[data-dban]').forEach(b => b.onclick = () => dios({ a: 'desbanear', t: +b.dataset.dban }));
 }
 
 // ── EFECTOS ──
@@ -2977,6 +3181,67 @@ function dibujarSuelo(mp) {
     g.fillStyle = mp.paleta.suelo; g.fillRect(x, py, pw, 14);
     g.fillStyle = mp.paleta.linea; g.fillRect(x, py, pw, 3);
     g.globalAlpha = .3; g.fillRect(x, py + 14, pw, 2); g.globalAlpha = 1;
+  }
+}
+
+// ── AMBIENTE: el mundo reacciona ──
+// Cada fondo tiene su "aire": luciernagas en el bosque y la selva, ceniza en
+// el desierto, chispas en las tormentas, burbujas en el abismo y polvo de
+// estrellas en el pueblo. Hierba en el suelo que se mece con el viento y se
+// aparta al pasar el duende o un monstruo. Todo determinista (sin guardar
+// estado por brizna) y sin degradados por fotograma.
+const AIRE = {
+  noche: { c: '#b7ff5a', n: 22, sube: -.15, brilla: 1 }, selva: { c: '#d9ff7a', n: 20, sube: -.12, brilla: 1 }, selva2: { c: '#d9ff7a', n: 20, sube: -.12, brilla: 1 },
+  amanecer: { c: '#ffb36b', n: 14, sube: -.25 }, amanecer2: { c: '#ffe9a8', n: 18, sube: -.2, brilla: 1 },
+  desierto: { c: '#f5d08a', n: 26, sube: .05, viento: 1.4 }, tormenta: { c: '#9be7ff', n: 16, sube: .4, viento: 1 }, tormenta2: { c: '#ff9a5a', n: 18, sube: -.35 },
+  cumbres: { c: '#ffffff', n: 24, sube: .35, viento: .6 }, cavernas: { c: '#7dd3fc', n: 14, sube: -.1, brilla: 1 }, abismo: { c: '#a5f3fc', n: 20, sube: -.6 },
+  acantilados: { c: '#f0abfc', n: 20, sube: -.18, brilla: 1 },
+};
+const HIERBA = { noche: 1, selva: 1, selva2: 1, amanecer: 1, amanecer2: 1, acantilados: 1, cumbres: .5 };
+function dibujarAmbiente(mp) {
+  const aire = AIRE[mp.fondo];
+  const t = frame;
+  if (aire && !ligero) {
+    g.save(); g.globalCompositeOperation = aditivo(); g.fillStyle = aire.c;
+    const n = aire.n;
+    for (let i = 0; i < n; i++) {
+      const sem = i * 7919 % 1000 / 1000, sem2 = i * 104729 % 997 / 997;
+      const vel = .3 + sem2 * .5;
+      let x = (sem * (VW + 200) + t * (aire.viento || .15) * vel * 2 - camX * (.6 + sem2 * .3)) % (VW + 200);
+      if (x < 0) x += VW + 200;
+      x -= 100;
+      let y = (sem2 * (VH + OY) + t * aire.sube * vel) % (VH + OY);
+      if (y < 0) y += VH + OY;
+      y -= OY;
+      x += Math.sin(t * .02 + i) * 14;
+      const parpadeo = aire.brilla ? .35 + .65 * Math.max(0, Math.sin(t * .05 + i * 1.7)) : .55;
+      g.globalAlpha = parpadeo * .8;
+      const r = aire.brilla ? 2 : 1.5;
+      g.fillRect(x - r / 2, y - r / 2, r, r);
+      if (aire.brilla) { g.globalAlpha = parpadeo * .18; g.fillRect(x - 3, y - 3, 6, 6); }
+    }
+    g.restore();
+  }
+  const hz = HIERBA[mp.fondo];
+  if (hz && !mp.instancia) {
+    // Briznas cada ~26 px; se apartan de quien pase cerca.
+    const pisan = [P.x];
+    for (const q of otros.values()) if (Math.abs(q.x - P.x) < VW) pisan.push(q.x);
+    for (const o of mons.values()) if (!o.muereT && !MONSTRUOS[o.k].vuela && Math.abs(o.x - P.x) < VW) pisan.push(o.x);
+    g.save(); g.strokeStyle = mp.paleta.linea; g.lineWidth = 1.5; g.globalAlpha = .55 * hz;
+    g.beginPath();
+    const x0 = Math.floor(camX / 26) * 26;
+    for (let wx = x0; wx < camX + VW + 26; wx += 26) {
+      const h = wx * 2654435761 % 97 / 97;
+      if (h < .3) continue;
+      const sx = wx - camX + h * 10;
+      let incl = Math.sin(t * .04 + wx * .013) * 3;
+      for (const px of pisan) { const d = wx - px; if (Math.abs(d) < 34) incl += Math.sign(d || 1) * (34 - Math.abs(d)) * .45; }
+      const alto = 6 + h * 8;
+      g.moveTo(sx, SUELO); g.quadraticCurveTo(sx + incl * .4, SUELO - alto * .6, sx + incl, SUELO - alto);
+      g.moveTo(sx + 3, SUELO); g.quadraticCurveTo(sx + 3 + incl * .3, SUELO - alto * .4, sx + 3 + incl * .8, SUELO - alto * .7);
+    }
+    g.stroke(); g.restore();
   }
 }
 
@@ -3096,7 +3361,11 @@ function etiqueta(x, y, txt, color, tam) {
   g.drawImage(c, Math.round(x - c.width / 2), Math.round(y - (c._by || tam + 3)));
 }
 
-function dibujarHoja(k, hoja, fila, col, alto, x, y, f, alpha, tinte, blancoFlash) {
+// extra (opcional): { sx, sy } estira/aplasta desde los pies; { borde } pinta
+// un contorno de ese color (silueta desplazada 4 veces) que despega al
+// monstruo del fondo, como en los juegos de pixel art modernos.
+const CONTORNO = '#0b0614';
+function dibujarHoja(k, hoja, fila, col, alto, x, y, f, alpha, tinte, blancoFlash, extra) {
   let img = IMG['sh_' + k];
   if (!img || !img.naturalWidth) return;
   if (blancoFlash) img = blanco('sh_' + k); else if (tinte) img = tenido('sh_' + k, tinte);
@@ -3105,8 +3374,18 @@ function dibujarHoja(k, hoja, fila, col, alto, x, y, f, alpha, tinte, blancoFlas
   g.save();
   g.globalAlpha = alpha;
   g.translate(x, y);
-  g.scale((f > 0) !== !!hoja.izq ? 1 : -1, 1);
-  g.drawImage(img, col * hoja.fw, fila * hoja.fh, hoja.fw, hoja.fh, -dw / 2, -dh, dw, dh);
+  g.scale(((f > 0) !== !!hoja.izq ? 1 : -1) * (extra && extra.sx || 1), extra && extra.sy || 1);
+  const sx = col * hoja.fw, sy = fila * hoja.fh;
+  if (extra && extra.borde) {
+    const sil = silueta('sh_' + k, extra.borde);
+    if (sil) {
+      const d = extra.grosor || Math.max(1, e * .9);
+      g.globalAlpha = alpha * (extra.bordeA || .9);
+      for (const [ox, oy] of [[-d, 0], [d, 0], [0, -d], [0, d * .6]]) g.drawImage(sil, sx, sy, hoja.fw, hoja.fh, -dw / 2 + ox, -dh + oy, dw, dh);
+      g.globalAlpha = alpha;
+    }
+  }
+  g.drawImage(img, sx, sy, hoja.fw, hoja.fh, -dw / 2, -dh, dw, dh);
   g.restore();
 }
 
@@ -3175,6 +3454,13 @@ function dibujarMonstruo(o) {
   const golpeado = ahora - o.golpeT < 260;
   const aturdido = o.fl & FM.aturdido, oveja = o.fl & FM.oveja, raiz = o.fl & FM.raiz;
   if (o.muereT) {
+    // Al morir: estallido de chispas del color del monstruo y un alma que sube.
+    if (!o.estallo) {
+      o.estallo = 1;
+      const col = (o.ex && o.ex.ti) || def.tinte || (def.jefe ? '#ff3cf0' : '#c084fc');
+      for (let i = 0; i < (ligero ? 6 : def.jefe ? 30 : 14); i++) particula(o.x + (Math.random() - .5) * o.w * .6, o.y - o.alto * (.2 + Math.random() * .6), i % 3 ? col : '#ffffff', def.jefe ? 4 : 2.6);
+      textos.push({ x: o.x, y: o.y - o.alto * .5, txt: '✦', color: col, tam: def.jefe ? 16 : 11, t: 0 });
+    }
     const k = Math.min(1, (ahora - o.muereT) / 1500);
     fila = hoja.golpe[0]; col = hoja.muerte[0] + Math.min(hoja.muerte[1] - 1, Math.floor(k * hoja.muerte[1]));
     alpha = 1 - k;
@@ -3200,7 +3486,20 @@ function dibujarMonstruo(o) {
     g.translate(x, o.y - 4 + Math.abs(Math.sin(frame * .2)) * -3); if (o.f < 0) g.scale(-1, 1);
     emoji('🐑', 30, 0, 0); g.restore();
   } else {
-    dibujarHoja(def.hoja, hoja, fila, col, o.alto * (0.4 + 0.6 * nace), x + temblor, o.y, o.f, alpha * nace, (o.ex && o.ex.ti) || def.tinte || (o.st === 3 ? '#ff3344' : null), golpeado && !o.muereT && (ahora - o.golpeT) < 70);
+    // Vida propia: respiran en reposo, se aplastan al recibir un golpe y los
+    // voladores aletean arriba y abajo. Contorno oscuro (dorado en elites,
+    // magenta en jefes) para que no se pierdan sobre los fondos.
+    const fase = frame * .09 + (o.id % 17);
+    const dg = ahora - o.golpeT;
+    let sx = 1, sy = 1;
+    if (!o.muereT) {
+      if (dg < 160) { const q = 1 - dg / 160; sx = 1 + .14 * q; sy = 1 - .12 * q; }
+      else if (o.st !== 3) { sy = 1 + Math.sin(fase) * .025; sx = 1 - Math.sin(fase) * .015; }
+    }
+    const vuelo = def.vuela && !o.muereT ? Math.sin(fase * 1.4) * 5 : 0;
+    const borde = ligero || o.muereT ? null : def.jefe ? '#ff3cf0' : o.ex ? '#ffd84a' : CONTORNO;
+    const extra = { sx, sy, borde, bordeA: def.jefe || o.ex ? .55 + Math.sin(frame * .12) * .25 : .9, grosor: def.jefe || o.ex ? 2.2 : 0 };
+    dibujarHoja(def.hoja, hoja, fila, col, o.alto * (0.4 + 0.6 * nace), x + temblor, o.y + vuelo, o.f, alpha * nace, (o.ex && o.ex.ti) || def.tinte || (o.st === 3 ? '#ff3344' : null), golpeado && !o.muereT && dg < 70, extra);
   }
   if (o.muereT) return;
   if (raiz) {
@@ -3329,13 +3628,18 @@ function dibujarDuende(q, esYo) {
   else if (herido && Math.floor(frame / 3) % 2) g.globalAlpha = .55;
   const escudo = esYo ? P.escudo : q.escudo;
   const fuego = esYo ? P.fuego : q.fuego;
-  if (skin === 'legendaria' && !muerto) {
+  const skd = SKINS[skin];
+  if ((skin === 'legendaria' || (skd && skd.premium)) && !muerto) {
+    // Aura del color de la skin: un halo cacheado que late, y chispas en las premium.
+    const halo = haloSkin(skin);
+    const lat = 1 + Math.sin(frame * .08) * .08;
     g.save(); g.globalCompositeOperation = aditivo();
-    const rg = g.createRadialGradient(x, pies - 30, 4, x, pies - 30, 60);
-    rg.addColorStop(0, 'rgba(255,60,240,.3)'); rg.addColorStop(1, 'rgba(255,60,240,0)');
-    g.fillStyle = rg; g.fillRect(x - 60, pies - 90, 120, 120); g.restore();
+    g.drawImage(halo, x - 60 * lat, pies - 90 * lat - (1 - lat) * 30, 120 * lat, 120 * lat);
+    g.restore();
+    if (skd.premium && frame % (ligero ? 14 : 6) === 0) particula(q.x + (Math.random() - .5) * 34, pies - 10 - Math.random() * 50, skd.color, .8);
   }
-  if (skin === 'comun' && ANIM && IMG.anim.naturalWidth) {
+  const hojaSkin = skd && skd.anim ? hojaTenida(skin) : skin === 'comun' ? IMG.anim : null;
+  if (hojaSkin && ANIM && IMG.anim.naturalWidth) {
     // Duende base: la hoja animada de verdad (reposo / caminar / atacar / herido).
     let lista = ANIM_IDX.reposo, vel = 14;
     if (atk > 0) lista = ANIM_IDX.ataca;
@@ -3347,7 +3651,7 @@ function dibujarDuende(q, esYo) {
     const ancho = alto * (cw / ch);
     g.translate(x, pies);
     if (f < 0) g.scale(-1, 1);
-    g.drawImage(IMG.anim, idx * cw, 0, cw, ch, -ancho / 2, -alto, ancho, alto);
+    g.drawImage(hojaSkin, idx * cw, 0, cw, ch, -ancho / 2, -alto, ancho, alto);
   } else {
     // Skins de pago: una sola imagen, animada por codigo (respira, rebota al
     // andar, se inclina al golpear) igual que en el arcade.
@@ -3366,7 +3670,9 @@ function dibujarDuende(q, esYo) {
   g.restore();
   // Todas las clases comparten el sprite del duende: un accesorio dibujado
   // las distingue de un vistazo (sombrero, aureola, capucha).
-  if (!muerto && !(fl & FJ.sigilo && !esYo)) accesorioClase(clase, x, pies - (skin === 'comun' ? FIS.jugH : 66), f);
+  if (!muerto && !(fl & FJ.sigilo && !esYo)) accesorioClase(clase, x, pies - (hojaSkin ? FIS.jugH : 66), f);
+  // Modo Dios invencible: anillo dorado.
+  if (!muerto && (esYo ? yo.dios && yo.diosModo && yo.diosModo.inv : q.gi)) { g.save(); g.strokeStyle = '#ffd84a'; g.globalAlpha = .55 + Math.sin(frame * .15) * .25; g.lineWidth = 2.5; g.beginPath(); g.ellipse(x, pies - 32, 32, 44, 0, 0, Math.PI * 2); g.stroke(); g.restore(); }
   if (escudo) { g.save(); g.strokeStyle = '#00eeff'; g.globalAlpha = .6 + Math.sin(frame * .2) * .2; g.lineWidth = 2; g.beginPath(); g.ellipse(x, pies - 30, 30, 40, 0, 0, Math.PI * 2); g.stroke(); g.restore(); }
   if (fl & FJ.escudoPoder) { g.save(); g.strokeStyle = '#ffe9a8'; g.fillStyle = 'rgba(255,233,168,.12)'; g.globalAlpha = .7 + Math.sin(frame * .12) * .2; g.lineWidth = 2; g.beginPath(); g.ellipse(x, pies - 30, 27, 37, 0, 0, Math.PI * 2); g.fill(); g.stroke(); g.restore(); }
   if (fl & FJ.bloque) { g.save(); g.globalAlpha = .55; g.fillStyle = '#9be7ff'; g.fillRect(x - 22, pies - 66, 44, 68); g.globalAlpha = .9; g.strokeStyle = '#e0f7ff'; g.lineWidth = 2; g.strokeRect(x - 22, pies - 66, 44, 68); g.restore(); }
@@ -3388,7 +3694,8 @@ function dibujarDuende(q, esYo) {
   const tn = TINTES[esYo ? yo.tinte : q.tn];
   const colNom = tn ? colorTinte(tn) : esYo ? '#ffe600' : (CLASES[clase] ? CLASES[clase].color : (SKINS[skin] ? SKINS[skin].color : '#fff'));
   pies = piesOrig;
-  etiqueta(x, pies + 16 + baja, (muerto ? '💀 ' : '') + nom + ' · NV' + lv, colNom, 6);
+  const esGm = esYo ? yo.dios : q.gm;
+  etiqueta(x, pies + 16 + baja, (muerto ? '💀 ' : '') + (esGm ? 'GM ' : '') + nom + ' · NV' + lv, esGm ? '#ffd84a' : colNom, 6);
   // Hermandad y titulo debajo; si otro duende esta pegado al tuyo, solo su
   // nombre (en el suelo no caben dos pilas de etiquetas).
   const hn = esYo ? (hermandad ? hermandad.nombre : '') : (baja ? '' : q.hn);
@@ -3570,6 +3877,7 @@ function dibujar() {
   if (sacudir > 0) { g.translate((Math.random() - .5) * sacudir, (Math.random() - .5) * sacudir); sacudir *= .85; if (sacudir < .5) sacudir = 0; }
   dibujarFondo(mp);
   dibujarSuelo(mp);
+  dibujarAmbiente(mp);
   dibujarZonas();
   dibujarMuros();
   dibujarTemporada(mp);
@@ -3625,7 +3933,8 @@ function pintarHud() {
   const sp = cl && yo.nivel >= ESPEC_NIVEL ? especDe(yo.clase, yo.espec) : null;
   ponTxt($('h-clase'), cl ? (sp ? sp.nombre : cl.nombre) : 'Sin clase');
   ponCss($('h-clase'), 'color', cl ? cl.color : 'var(--txt2)');
-  const imgSkin = A + 'skins/' + (SKINS[yo.skin] ? SKINS[yo.skin].img : 'skin_hero') + '.png';
+  const imgSkin = retratoSkin(yo.skin);
+  ponCss($('b-dios'), 'display', yo.dios ? '' : 'none');
   if ($('ret-yo')._src !== imgSkin) { $('ret-yo')._src = imgSkin; $('ret-yo').src = imgSkin; }
   ponCss($('brec'), 'display', cl ? 'block' : 'none');
   if (cl) ponCss($('brec').querySelector('i'), 'background', RECURSOS[cl.recurso].color);
@@ -4108,20 +4417,28 @@ function pintarTienda() {
     const puesto = tabTienda === 'arma' ? yo.arma : yo.skin;
     for (const id in tabla) {
       const d = tabla[id];
-      const ico = tabTienda === 'arma' ? `<img src="${A}armas/${d.icono}_item.png" style="${d.color && id !== 'katana' ? 'filter:drop-shadow(0 0 4px ' + d.color + ')' : ''}">` : `<img src="${A}skins/${d.img}.png">`;
+      const ico = tabTienda === 'arma' ? `<img src="${A}armas/${d.icono}_item.png" style="${d.color && id !== 'katana' ? 'filter:drop-shadow(0 0 4px ' + d.color + ')' : ''}">` : `<img src="${retratoSkin(id)}" style="${d.premium ? 'filter:drop-shadow(0 0 5px ' + d.color + ')' : ''}">`;
       let acc;
       if (tiene.includes(id)) acc = puesto === id ? '<span class="precio" style="color:var(--ok)">✓ Equipado</span>' : `<button class="btn sec" data-equipar="${tabTienda}" data-id="${id}">Equipar</button>`;
+      else if (typeof d.precio !== 'number') {
+        // Exclusiva: solo con dinero (no se vende por oro).
+        acc = `<span class="precio" style="color:${d.color}">Exclusiva · $${d.usd}</span>`;
+        if (yo.p2e && yo.p2e.cuenta) acc += (TG && !forzarInvitado)
+          ? `<button class="btn" data-premium="skin_${id}" data-metodo="stars">${estrellasDe(d.usd)} Stars</button>`
+          : `<button class="btn" data-premium="skin_${id}" data-metodo="sol">SOL</button><button class="btn sec" data-premium="skin_${id}" data-metodo="duende">$DUENDE −10%</button>`;
+        else acc += '<a class="btn sec" href="/game.html" style="text-decoration:none">Iniciar sesión</a>';
+      }
       else {
         acc = `<span class="precio">🪙 ${d.precio.toLocaleString('es', { useGrouping: 'always' })}</span><button class="btn" data-comprar="${tabTienda}" data-id="${id}" ${yo.oro < d.precio ? 'disabled' : ''}>Comprar</button>`;
         // Skins: tambien con dinero; el pago lo revisa El Duende y la entrega a mano.
         if (tabTienda === 'skin' && d.usd && yo.p2e && yo.p2e.cuenta) acc += (TG && !forzarInvitado)
           ? `<button class="btn sec" data-premium="skin_${id}" data-metodo="stars">${estrellasDe(d.usd)} Stars</button>`
-          : `<button class="btn sec" data-premium="skin_${id}" data-metodo="sol">◎ ~$${d.usd} en SOL</button>`;
+          : `<button class="btn sec" data-premium="skin_${id}" data-metodo="sol">~$${d.usd} en SOL</button><button class="btn sec" data-premium="skin_${id}" data-metodo="duende">$DUENDE −10%</button>`;
       }
       if (tabTienda === 'skin' && !tiene.includes(id)) acc += `<button class="btn sec" data-probar="${id}">Probar</button>`;
-      h += tarjeta(ico, d.nombre, d.desc + (tabTienda === 'skin' && puesto !== id ? difSkin(id) : ''), acc);
+      h += tarjeta(ico, d.premium ? `<span style="color:${d.color}">${esc(d.nombre)}</span>` : d.nombre, d.desc + (tabTienda === 'skin' && puesto !== id ? difSkin(id) : ''), acc);
     }
-    if (tabTienda === 'skin') h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Cada skin da sus poderes mientras la llevas. Se compran con oro o, con tu cuenta, con dinero: ' + ((TG && !forzarInvitado) ? 'Telegram Stars' : 'SOL a la wallet de El Duende') + '; El Duende revisa el pago y te la entrega en tu personaje. Las skins que ya pagaste en el juego principal se desbloquean solas al entrar con tu cuenta.</p>';
+    if (tabTienda === 'skin') h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Cada skin da sus poderes mientras la llevas. Se compran con oro o, con tu cuenta, con dinero: ' + ((TG && !forzarInvitado) ? 'Telegram Stars' : 'SOL o $DUENDE (10% de descuento) a la wallet de El Duende') + '; El Duende revisa el pago y te la entrega en tu personaje. Las cuatro exclusivas (Esmeralda, Sombrío, Solar y Cósmico) solo se consiguen así; sus ventajas suben con el precio sin superar a las de oro de final de juego, y ninguna cambia lo que se gana en mTON.</p>';
   }
   L.innerHTML = h;
   // Retratos de las monturas (primer cuadro de su hoja).
@@ -4281,6 +4598,32 @@ async function inicio() {
   };
   $('b-jugar').onclick = entrar; $('b-jugar2').onclick = entrar;
   $('in-nombre').addEventListener('keydown', e => { if (e.key === 'Enter') entrar(); e.stopPropagation(); });
+  // Entrar con la cuenta web (Supabase) sin salir del MMO. supabase-js guarda
+  // la sesion en este navegador: la proxima vez se entra directo con ella.
+  const loginCorreo = async () => {
+    const email = $('in-email').value.trim(), pass = $('in-pass').value;
+    const err = t => { $('login-err').textContent = t; $('login-err').style.display = t ? 'block' : 'none'; };
+    if (!email || !pass) return err('Escribe tu correo y tu contraseña.');
+    try {
+      if (!window.supabase || !window.SUPABASE_URL) return err('No se pudo cargar el inicio de sesión. Recarga la página.');
+      _sb = _sb || window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+      $('b-login').disabled = true;
+      const { error } = await _sb.auth.signInWithPassword({ email, password: pass });
+      $('b-login').disabled = false;
+      if (error) return err(/invalid/i.test(error.message) ? 'Correo o contraseña incorrectos.' : /confirm/i.test(error.message) ? 'Confirma tu correo antes de entrar (revisa tu bandeja).' : 'No se pudo entrar: ' + error.message);
+      err(''); $('in-pass').value = '';
+      $('carga').style.display = 'flex'; $('carga-s').textContent = 'Entrando al mundo…';
+      if (sonido) sonarMusica();
+      conectar();
+    } catch (e) { $('b-login').disabled = false; err('No se pudo entrar. Revisa tu conexión.'); }
+  };
+  $('b-login').onclick = loginCorreo;
+  ['in-email', 'in-pass'].forEach(id => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') loginCorreo(); e.stopPropagation(); }));
+  $('b-salir-cuenta').onclick = async e => {
+    e.preventDefault();
+    try { if (_sb) await _sb.auth.signOut(); } catch (er) {}
+    location.reload();
+  };
 }
 
 setInterval(() => mandar({ t: 'ping', ts: Date.now() }), 20000);
@@ -4330,9 +4673,16 @@ function bucle(t) {
   acum += Math.min(200, Math.max(0, t - ultimoT));
   ultimoT = t;
   let pasos = 0;
-  while (acum >= PASO) { frame++; fisica(); acum -= PASO; pasos++; }
+  while (acum >= PASO) { P.px = P.x; P.py = P.y; frame++; fisica(); acum -= PASO; pasos++; }
+  // Un dibujo por paso: camara, particulas y textos avanzan dentro de
+  // dibujar(), y redibujar sin paso los aceleraba en pantallas de 120 Hz.
   if (!pasos) return;
-  dibujar();
+  // Interpolacion: se dibuja al duende entre su posicion anterior y la
+  // actual segun el tiempo que sobra del paso (con fotogramas irregulares a
+  // veces avanzaba dos pasos de golpe y se notaba un tirón).
+  const rx = P.x, ry = P.y;
+  if (P.px !== undefined && Math.abs(P.x - P.px) < 60) { const k = acum / PASO; P.x = P.px + (rx - P.px) * k; P.y = P.py + (ry - P.py) * k; }
+  try { dibujar(); } finally { P.x = rx; P.y = ry; }
   if (frame % 3 === 0) dibujarMinimapa();
   pintarVida();
   pintarCooldowns();

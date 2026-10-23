@@ -200,8 +200,10 @@ export const Social = {
     if (ahora - s.chatT < 900) return;
     const txt = limpiar(m.m);
     if (!txt) return;
+    const mudo = this.silenciado ? this.silenciado(s) : 0;
+    if (mudo) return this.no(s, `🔇 Estás silenciado por un moderador ${Math.ceil((mudo - ahora) / 60000)} min más.`);
     s.chatT = ahora;
-    const base = { t: 'chat', p: s.id, n: s.c.nombre, m: txt, mapa: s.c.mapa, cl: s.c.clase || '' };
+    const base = { t: 'chat', p: s.id, n: s.c.nombre, m: txt, mapa: s.c.mapa, cl: s.c.clase || '', gm: s.dios ? 1 : undefined };
     const canal = m.canal;
     if (canal === 'decir') {
       // Solo los que estan en el mismo mapa (o la misma mazmorra).
@@ -395,6 +397,8 @@ export const Social = {
 
   // Lista de quien esta conectado (para invitar o susurrar).
   quien(s) {
+    if (Date.now() - (s.quienT || 0) < 2000) return;   // recorre a todos: con limite
+    s.quienT = Date.now();
     const r = [];
     for (const x of this.sesiones.values()) {
       if (!x.c || x === s) continue;

@@ -1831,8 +1831,8 @@ async function pintarRankingHub(){
   let data=null, fallo=!_sb;
   if(_sb){
     try{
-      const{data:raw}=await _sb.from('game_scores').select('username,score,wave,telegram_id').eq('verified',true).order('score',{ascending:false}).limit(100);
-      const best=new Map();(raw||[]).forEach(s=>{const k=String(s.telegram_id||s.username||'?').toLowerCase();if(!best.has(k)||s.score>best.get(k).score)best.set(k,s);});
+      const{data:raw}=await _sb.from('game_scores').select('username,score,wave').eq('verified',true).order('score',{ascending:false}).limit(100);
+      const best=new Map();(raw||[]).forEach(s=>{const k=String(s.username||'?').toLowerCase();if(!best.has(k)||s.score>best.get(k).score)best.set(k,s);});
       data=[...best.values()].sort((a,b)=>b.score-a.score).slice(0,20);
     }catch(e){ fallo=true; }
   }
@@ -1852,8 +1852,9 @@ async function pintarRankingHub(){
     return;
   }
   if(cab) cab.style.display='';
-  const miId=String(TG_USER.id||'');
-  el.innerHTML=data.map((r,i)=>filaRank(i,r.username,r.score,r.wave,String(r.telegram_id||'')===miId)).join('');
+  // Se resalta por nombre: el telegram_id ya no es legible desde el cliente.
+  const miNom=String((tgProfile&&tgProfile.username)||'').toLowerCase();
+  el.innerHTML=data.map((r,i)=>filaRank(i,r.username,r.score,r.wave,!!miNom&&String(r.username||'').toLowerCase()===miNom)).join('');
 }
 function filaRank(i,nombre,score,wave,esYo){
   const medals=['🥇','🥈','🥉'];

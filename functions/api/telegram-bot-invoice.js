@@ -28,7 +28,7 @@ async function onRequestPost(context) {
     if (body.skin_id) {
       // ── Skin purchase ──
       const skinId = String(body.skin_id);
-      const usd = SKIN_PRICES_USD[skinId];
+      const usd = Object.hasOwn(SKIN_PRICES_USD, skinId) ? SKIN_PRICES_USD[skinId] : undefined;
       if (!usd) return json(request, { error: 'unknown_skin' }, 400);
       const stars = Math.ceil(usd / STAR_USD);
       invoice = {
@@ -44,7 +44,9 @@ async function onRequestPost(context) {
       const pkg = STARS_PACKAGES[pkgIndex];
       if (!pkg) return json(request, { error: 'unknown_package' }, 400);
       const env = getEnv(context);
-      const [priceUsd, firstBuy] = await Promise.all([getDuendePriceUsd(), isFirstPurchase(env, tgId)]);
+      const [priceUsd, firstBuy] = await Promise.all([getDuendePriceUsd(true), isFirstPurchase(env, tgId)]);
+      // Sin precio real no se vende: el respaldo fijo daba ~20 veces mas tokens.
+      if (!priceUsd) return json(request, { error: 'price_unavailable' }, 503);
       const stars = Math.ceil(pkg.usd / STAR_USD);
       let tokens = Math.floor(pkg.usd / priceUsd);
       if (firstBuy) tokens *= 2; // oferta de bienvenida 2x (se re-verifica en el webhook)

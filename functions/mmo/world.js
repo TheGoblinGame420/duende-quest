@@ -18,13 +18,13 @@ import {
   RANURAS, RAREZAS, BOLSA_MAX, baseItem, precioVenta, nombreItem,
   LOGIN_PREMIOS, multLogin, LOGROS, MUNDIAL_DURA_MS, proximoMundial,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, MTON_EDAD_MIN_MS, WALLET_ESPERA_MS, FONDO_REFERENCIA_MTON, tonAmigable,
-  RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, FONDO_PCT_INGRESOS, PAQUETES, estrellasDe, PEDIDO_VIGENCIA_MS,
+  RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, FONDO_PCT_INGRESOS, PAQUETES, estrellasDe, PEDIDO_VIGENCIA_MS, DUENDE_MINT, DUENDE_DECIMALES, DUENDE_DESCUENTO,
   temporadaDe, TEMPORADAS, TEMP_PROB, TEMP_JEFE,
   TINTES, MASCOTAS, enOfertaAmbulante, ambulanteActivo, mundialDe,
   CONJUNTOS, CONJUNTO_PROB,
   semanaUTC, horaFelizActiva, HORA_FELIZ, PASE, afijosSemana, DES_SEM_MIN, premioDesSem, BESTIARIO_HITOS, premioBestiario, talento, TALENTOS, TALENTO_MAX, puntosTalento, costoReinicioTalentos, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX,
 } from '../../mmo/js/data.js';
-import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery, tg, getSolPriceUsd, SOL_DEV_WALLET } from '../api/lib.js';
+import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery, tg, getSolPriceUsd, getDuendePriceUsd, SOL_DEV_WALLET } from '../api/lib.js';
 import { MMO_URL } from '../api/telegram-bot.js';
 import { Combate } from './combate.js';
 import { Social, pub } from './social.js';
@@ -40,6 +40,7 @@ import { Eventos } from './eventos.js';
 import { Pase } from './pase.js';
 import { Torre } from './torre.js';
 import { Expediciones } from './expediciones.js';
+import { Dios } from './dios.js';
 
 const MAX_JUGADORES = 300;
 const GUARDAR_CADA_MS = 20000;
@@ -178,19 +179,25 @@ export class MmoWorld {
     if (request.headers.get('Upgrade') !== 'websocket') {
       return new Response(JSON.stringify({ ok: true, online: this.contarOnline() }), { headers: { 'Content-Type': 'application/json' } });
     }
-    if (this.sesiones.size >= MAX_JUGADORES) return new Response('Servidor lleno', { status: 503 });
+    if (this.contarOnline() >= MAX_JUGADORES) return new Response('Servidor lleno', { status: 503 });
+    // Sockets que aun no se identifican: tope propio y por IP. Antes 300
+    // sockets sin 'hola' llenaban el servidor y dejaban fuera a todos.
+    const ip = request.headers.get('CF-Connecting-IP') || '';
+    let sinId = 0, deIp = 0;
+    for (const x of this.sesiones.values()) { if (!x.c) sinId++; if (ip && x.ip === ip) deIp++; }
+    if (sinId >= 40 || (ip && deIp >= 8)) return new Response('Demasiadas conexiones', { status: 429 });
     const par = new WebSocketPair();
     const [cliente, servidor] = Object.values(par);
     servidor.accept();
-    this.abrir(servidor);
+    this.abrir(servidor, ip);
     return new Response(null, { status: 101, webSocket: cliente });
   }
 
   contarOnline() { let n = 0; for (const s of this.sesiones.values()) if (s.c) n++; return n; }
 
   // ── CONEXION ──
-  abrir(ws) {
-    const s = { id: this.sigSesion++, ws, c: null, cuenta: 0, ventana: Date.now(), cerrado: false };
+  abrir(ws, ip) {
+    const s = { id: this.sigSesion++, ws, ip: ip || '', c: null, cuenta: 0, ventana: Date.now(), cerrado: false };
     this.sesiones.set(s.id, s);
     ws.addEventListener('message', ev => {
       this.recibir(s, ev.data).catch(e => { console.error('[MMO]', e); this.enviar(s, { t: 'err', m: 'Error del servidor' }); });
@@ -198,7 +205,7 @@ export class MmoWorld {
     const cerrar = () => this.cerrar(s);
     ws.addEventListener('close', cerrar);
     ws.addEventListener('error', cerrar);
-    setTimeout(() => { if (!s.c && !s.cerrado) this.expulsar(s, 'Sin identificación'); }, 15000);
+    setTimeout(() => { if (!s.c && !s.cerrado) this.expulsar(s, 'Sin identificación'); }, 8000);
   }
 
   expulsar(s, motivo) {
@@ -338,6 +345,7 @@ export class MmoWorld {
       case 'pedidoFirma': return this.pedidoFirma(s, m);
       case 'pedidoBuscar': return this.pedidoBuscar(s, m);
       case 'ping': return this.enviar(s, { t: 'pong', ts: m.ts });
+      case 'dios': return this.dios(s, m);
     }
   }
 
@@ -347,7 +355,7 @@ export class MmoWorld {
     s.autenticando = true;
     const env = getEnv({ env: this.env });
     const a = m.auth || {};
-    let uid = null, nombre = null, pagadas = null;
+    let uid = null, nombre = null, pagadas = null, extra = null;
     try {
       if (a.k === 'tg' && typeof a.d === 'string') {
         // 24 h y no las 6 h de las rutas de dinero: si la Mini App quedo
@@ -366,6 +374,7 @@ export class MmoWorld {
           uid = 'web:' + u.id;
           nombre = limpiarNombre(u.user_metadata && u.user_metadata.username) || 'Duende' + u.id.slice(0, 4);
           pagadas = { webId: u.id };
+          extra = { email: u.email || '', emailOk: !!u.email_confirmed_at };
         }
       } else if (a.k === 'inv' && /^[a-f0-9]{32}$/.test(a.tok || '')) {
         uid = 'inv:' + (await sha256hex('dq-mmo:' + a.tok)).slice(0, 24);
@@ -382,6 +391,9 @@ export class MmoWorld {
       return;
     }
     if (s.cerrado) return;
+    const ban = await this.baneado(uid);
+    if (ban) { s.autenticando = false; this.expulsar(s, 'Tu cuenta está baneada' + (ban.hasta ? ' hasta el ' + new Date(ban.hasta).toLocaleString('es', { timeZone: 'America/Lima' }) : '') + (ban.motivo ? ': ' + ban.motivo : '.')); return; }
+    s.extraAuth = extra;
     // Una cuenta solo puede estar ENTRANDO por una sesion a la vez. Antes, dos
     // pestañas que mandaban el hola juntas pasaban las dos la comprobacion de
     // "misma cuenta abierta" (hay awaits en medio) y quedaban dos copias del
@@ -409,7 +421,10 @@ export class MmoWorld {
       const uidInv = 'inv:' + (await sha256hex('dq-mmo:' + m.inv)).slice(0, 24);
       const previo = uidInv !== uid && await this.state.storage.get('c:' + uidInv);
       if (previo && !this.porUid.has(uidInv)) {
-        c = { ...previo, uid, nombre };
+        const antes = previo.nombre;
+        c = { ...previo, uid, nombre: await this.nombreLibre(nombre, uid, this.calcularDios({ c: { uid } }, s.extraAuth)) };
+        nombre = c.nombre;
+        await this.reservarNombre(c, antes);
         await this.state.storage.delete('c:' + uidInv);
         heredado = true;
         this.renombrarContacto(uidInv, uid);
@@ -419,7 +434,23 @@ export class MmoWorld {
       }
     }
     const nuevo = !c;
-    if (!c) { c = personajeNuevo(uid, nombre); await this.anotarInvitacion(c, typeof m.ref === 'string' ? m.ref : ''); }
+    if (!c && uid.startsWith('inv:') && s.ip) {
+      // Cada invitado nuevo deja un personaje guardado para siempre: como
+      // mucho 6 por IP y hora (antes, un bucle llenaba el cupo de escrituras).
+      const h = Math.floor(Date.now() / 3600000);
+      this.altasIp = this.altasIp && this.altasIp.h === h ? this.altasIp : { h, n: new Map() };
+      const n = (this.altasIp.n.get(s.ip) || 0) + 1;
+      this.altasIp.n.set(s.ip, n);
+      if (n > 6) { this.expulsar(s, 'Demasiados personajes nuevos desde tu conexión. Intenta en una hora o inicia sesión.'); return; }
+    }
+    if (!c) {
+      // Nombre unico y sin imitar al equipo: un invitado ya no puede entrar
+      // con el nombre de otro jugador ni como "Admin" o "El Duende".
+      const libre = await this.nombreLibre(nombre, uid, this.calcularDios({ c: { uid } }, s.extraAuth));
+      c = personajeNuevo(uid, libre);
+      await this.anotarInvitacion(c, typeof m.ref === 'string' ? m.ref : '');
+    }
+    await this.reservarNombre(c);
     c.skins = c.skins || ['comun']; c.armas = c.armas || ['katana']; c.pw = c.pw || {};
     c.mis = c.mis || { i: 0, p: 0 };
     c.forja = c.forja || {};
@@ -439,6 +470,9 @@ export class MmoWorld {
     c.skins.push(...regaladas);
 
     s.c = c;
+    s.dios = this.calcularDios(s, s.extraAuth);
+    s.diosModo = {};
+    await this.cargarMod();
     s.st = this.stats(c);
     // Se guarda la vida y si estaba muerto: si no, cerrar la pestaña justo
     // antes de morir te devolvia con la vida llena en el mismo sitio.
@@ -513,13 +547,11 @@ export class MmoWorld {
         const d = await supabaseQuery(env, `skin_purchases?telegram_id=eq.${encodeURIComponent(p.tgId)}&select=skin_id`);
         return Array.isArray(d) ? d.map(r => r.skin_id) : [];
       }
-      if (p.webId) {
-        const prof = await supabaseQuery(env, `profiles?id=eq.${encodeURIComponent(p.webId)}&select=wallet_solana&limit=1`);
-        const w = Array.isArray(prof) && prof[0] && prof[0].wallet_solana;
-        if (!w) return [];
-        const d = await supabaseQuery(env, `skin_purchases?wallet_address=eq.${encodeURIComponent(w)}&select=skin_id`);
-        return Array.isArray(d) ? d.map(r => r.skin_id) : [];
-      }
+      // Cuentas web: ya NO se regalan por profiles.wallet_solana. Ese campo lo
+      // escribe el propio usuario sin probar que la wallet es suya, y bastaba
+      // con poner la de un comprador (se ve en Solscan) para llevarse sus
+      // skins (auditoria del 22-oct). Las ya regaladas siguen en el
+      // personaje; las compras web nuevas las entrega el dueño (Modo Dios).
     } catch (e) {}
     return [];
   }
@@ -587,6 +619,7 @@ export class MmoWorld {
 
   darMton(s, base, motivo) {
     const c = s.c;
+    if (this.diosActivo(s)) return 0;   // con poderes de dios no se gana mTON
     const el = this.elegibilidad(c);
     const f = this.fondoHoy();
     const total = (f.auto || 0) + (f.extra || 0);
@@ -670,7 +703,9 @@ export class MmoWorld {
   // ── TIENDA PREMIUM (Stars / SOL, entrega manual) ──
   buscarPedido(codigo) { return this.pedidos.find(x => x.codigo === String(codigo || '').toUpperCase()); }
   async guardarPedidos() {
-    // Los que nunca se pagaron caducan; se guardan los ultimos 300.
+    // Los que nunca se pagaron caducan. Los pagados o por revisar NUNCA se
+    // podan: antes un slice(-300) sobre todos dejaba borrar la compra pagada
+    // de otro llenando la lista de pedidos sin pagar (auditoria del 22-oct).
     const ahora = Date.now();
     // Uno que se quedo 'comprobando' (el servidor se reinicio mientras se
     // miraba la cadena) vuelve a esperar el pago.
@@ -686,19 +721,29 @@ export class MmoWorld {
     return { retirosPagados: pagados.length, tonPagados: Math.round(pagados.reduce((a, x) => a + x.ton, 0) * 1000) / 1000, pct: Math.round(FONDO_PCT_INGRESOS * 100) };
   }
 
+  // Un pedido a la vez por sesion: antes, 60 mensajes seguidos pasaban todos
+  // el tope de 3 (el push iba tras un await a CoinGecko o a Telegram). El
+  // ritmo lo pone el tope de 10 pedidos por hora y cuenta.
   async pedido(s, m) {
+    if (s.pidiendo) return this.enviar(s, { t: 'toast', m: 'Espera a que termine tu compra anterior.' });
+    s.pidiendo = true;
+    try { await this.pedidoUno(s, m); } finally { s.pidiendo = false; }
+  }
+  async pedidoUno(s, m) {
     const c = s.c;
     const pq = PAQUETES.find(x => x.id === m.id);
     if (!pq) return;
-    const metodo = m.metodo === 'sol' ? 'sol' : 'stars';
+    const metodo = m.metodo === 'sol' || m.metodo === 'duende' ? m.metodo : 'stars';
     const no = t => this.enviar(s, { t: 'toast', m: t });
     if (c.uid.startsWith('inv:')) return no('Para comprar entra con tu cuenta de Telegram o inicia sesión en el juego web.');
-    if (metodo === 'stars' && !c.uid.startsWith('tg:')) return no('Las Stars solo se pueden usar dentro de Telegram. En la web se paga con SOL.');
-    if (metodo === 'sol' && c.uid.startsWith('tg:')) return no('Dentro de Telegram se paga con Stars.');
+    if (metodo === 'stars' && !c.uid.startsWith('tg:')) return no('Las Stars solo se pueden usar dentro de Telegram. En la web se paga con SOL o $DUENDE.');
+    if (metodo !== 'stars' && c.uid.startsWith('tg:')) return no('Dentro de Telegram se paga con Stars.');
     if (pq.skin && (c.skins || []).includes(pq.skin)) return no('Ya tienes esa skin.');
+    if (pq.skin && this.pedidos.some(x => x.uid === c.uid && x.paquete === pq.id && (x.estado === 'pagado' || x.estado === 'por_verificar' || x.estado === 'comprobando'))) return no('Ya pagaste esa skin: El Duende te la entrega en breve.');
     await this.guardarPedidos();
     if (this.pedidos.filter(x => x.uid === c.uid && (x.estado === 'esperando_pago' || x.estado === 'comprobando' || x.estado === 'por_verificar')).length >= 3) return no('Tienes compras sin pagar: termina o espera 30 minutos.');
     if (this.pedidos.filter(x => x.uid === c.uid && Date.now() - x.creado < 3600000).length >= 10) return no('Has creado muchos pedidos seguidos: espera un rato.');
+    if (this.pedidos.filter(x => x.estado === 'esperando_pago').length >= 150) return no('La tienda está muy ocupada: intenta en unos minutos.');
     const env = getEnv({ env: this.env });
     const pd = {
       codigo: Math.random().toString(36).slice(2, 8).toUpperCase(), uid: c.uid, jugador: c.nombre,
@@ -721,6 +766,19 @@ export class MmoWorld {
       await this.guardarPedidos();
       return this.enviar(s, { t: 'factura', codigo: pd.codigo, link });
     }
+    if (metodo === 'duende') {
+      // Precio real del token (pump.fun / DexScreener); sin precio no se cobra.
+      const precioD = await this.precioDuendeSeguro();
+      if (!precioD) return no('No se pudo leer el precio de $DUENDE ahora. Intenta en un minuto o paga con SOL.');
+      const usd = pq.usd * DUENDE_DESCUENTO;
+      // Unidades minimas (6 decimales) con 4 cifras finales propias del pedido.
+      const raw = Math.ceil(usd / precioD * 10 ** DUENDE_DECIMALES / 1e4) * 1e4 + 1 + Math.floor(Math.random() * 9998);
+      if (!Number.isSafeInteger(raw)) return no('El precio de $DUENDE no permite calcular el monto. Paga con SOL.');
+      pd.duendeRaw = raw; pd.precioDuende = precioD;
+      this.pedidos.push(pd);
+      await this.guardarPedidos();
+      return this.enviar(s, { t: 'pedidoSol', metodo: 'duende', codigo: pd.codigo, raw, mint: DUENDE_MINT, dec: DUENDE_DECIMALES, wallet: SOL_DEV_WALLET, usd: Math.round(usd * 100) / 100, nombre: pq.nombre });
+    }
     const precio = await getSolPriceUsd();
     if (!precio) return no('No se pudo leer el precio del SOL ahora. Intenta en un minuto.');
     // Monto con 4 cifras finales propias de este pedido: si pagas desde otra
@@ -736,15 +794,29 @@ export class MmoWorld {
     this.actualizarYo(s);   // aparece en "Tus compras" para retomar el pago
   }
 
+  // Precio de $DUENDE para cobrar: el MAS BAJO de las ultimas 6 h (una
+  // muestra cada 10 min). Con una capitalizacion pequeña alguien podia subir
+  // el precio un momento justo antes de pedir y pagar menos tokens.
+  async precioDuendeSeguro() {
+    const ahora = Date.now();
+    const h = (this.preciosD = (this.preciosD || (await this.state.storage.get('preciosD')) || []).filter(x => ahora - x.t < 6 * 3600000));
+    const ult = h[h.length - 1];
+    if (!ult || ahora - ult.t > 10 * 60000) {
+      const p = await getDuendePriceUsd(true);
+      if (p) { h.push({ t: ahora, p }); await this.state.storage.put('preciosD', h); }
+    }
+    return h.length ? Math.min(...h.map(x => x.p)) : null;
+  }
+
   async pedidoFirma(s, m) {
     const c = s.c;
     const pd = this.buscarPedido(m.codigo);
     const firma = String(m.firma || '').trim();
     const no = t => this.enviar(s, { t: 'toast', m: t });
     // 'vencido' tambien: quien paga pasados los 30 min (p. ej. tras abrir el
-    // juego dentro de Phantom en el movil) no pierde su SOL; la cadena ya
+    // juego dentro de Phantom en el movil) no pierde su pago; la cadena ya
     // rechaza pagos anteriores al pedido.
-    if (!pd || pd.uid !== c.uid || pd.metodo !== 'sol' || (pd.estado !== 'esperando_pago' && pd.estado !== 'vencido')) return no('Ese pedido ya no está esperando pago.');
+    if (!pd || pd.uid !== c.uid || (pd.metodo !== 'sol' && pd.metodo !== 'duende') || (pd.estado !== 'esperando_pago' && pd.estado !== 'vencido')) return no('Ese pedido ya no está esperando pago.');
     if (!/^[1-9A-HJ-NP-Za-km-z]{60,100}$/.test(firma)) return no('Esa firma de transacción no es válida. Cópiala de Phantom o de Solscan.');
     // Una comprobacion cada pocos segundos por cuenta (no por sesion).
     if (!this.ritmoSol(c.uid, 'f', 6000)) return no('Espera unos segundos antes de volver a intentarlo.');
@@ -757,7 +829,7 @@ export class MmoWorld {
       pd.firma = firma; pd.estado = 'comprobando'; pd.compT = Date.now(); pd.antesComp = antes;   // ni /pedidos ni /entregar lo ven hasta confirmar
       // Recien enviada, la transaccion tarda unos segundos en confirmarse.
       for (let i = 0; i < 4; i++) {
-        cadena = await this.verificarSol(firma, pd.lamports, pd.creado);
+        cadena = pd.metodo === 'duende' ? await this.verificarDuende(firma, pd.duendeRaw, pd.creado) : await this.verificarSol(firma, pd.lamports, pd.creado);
         if (!cadena || cadena.ok || !/no existe/.test(cadena.motivo) || i === 3) break;
         await new Promise(r => setTimeout(r, 5000));
       }
@@ -781,7 +853,9 @@ export class MmoWorld {
     } finally { this.verificando.delete(firma); }
     no('📨 Recibimos tu pago. El Duende lo revisa y te entrega la compra (te avisamos aquí y por Telegram).');
     this.actualizarYo(s);
-    this.avisarAdmin(`◎ *Pedido #${pd.codigo}* — ${pd.nombre} ($${pd.usd})\n👤 ${pd.jugador.replace(/[^\p{L}\p{N} ]/gu, '')}\n💰 Debía pagar ${(pd.lamports / 1e9).toFixed(9)} SOL a tu wallet\n✅ En la cadena: ${(cadena.recibido / 1e9).toFixed(6)} SOL llegaron a tu wallet\n🔗 https://solscan.io/tx/${firma}\n\nSi está bien: /entregar ${pd.codigo}\nSi no: /anular ${pd.codigo}`, botonesPedido(pd.codigo));
+    const esD = pd.metodo === 'duende';
+    const monto = esD ? (pd.duendeRaw / 10 ** DUENDE_DECIMALES).toLocaleString('es', { maximumFractionDigits: 6 }) + ' $DUENDE' : (pd.lamports / 1e9).toFixed(9) + ' SOL';
+    this.avisarAdmin(`${esD ? '🍄' : '◎'} *Pedido #${pd.codigo}* — ${pd.nombre} ($${pd.usd})\n👤 ${pd.jugador.replace(/[^\p{L}\p{N} ]/gu, '')}\n💰 Debía pagar ${monto} a tu wallet\n✅ En la cadena: llegó exactamente ese monto\n🔗 https://solscan.io/tx/${firma}\n\nSi está bien: /entregar ${pd.codigo} (o desde tu Modo Dios en el juego)\nSi no: /anular ${pd.codigo}`, botonesPedido(pd.codigo));
   }
   // Ritmo de las operaciones con la red de Solana, por cuenta.
   ritmoSol(uid, tipo, ms) {
@@ -838,10 +912,39 @@ export class MmoWorld {
     } catch (e) { return null; }
   }
 
-  // Comprueba en la cadena que la transaccion existe, salio bien y dejo en la
-  // wallet del dueño al menos lo pedido. Es una AYUDA para la revision manual:
-  // la decision la toma el dueño con /entregar.
+  // Comprueba en la cadena el pago de un pedido. Es una AYUDA para la
+  // revision manual: la decision la toma el dueño (/entregar o Modo Dios).
   async verificarSol(firma, lamports, desde) {
+    const tx = await this.leerTx(firma);
+    if (tx === null) return null;
+    if (!tx.ok) return tx;
+    // Una transferencia del System Program a la wallet del dueño por EXACTAMENTE
+    // el monto del pedido (con sus 4 cifras propias), hecha despues del pedido.
+    const t = tx.instr.find(x => x && x.program === 'system' && x.parsed && x.parsed.type === 'transfer' && x.parsed.info && x.parsed.info.destination === SOL_DEV_WALLET && Number(x.parsed.info.lamports) === Number(lamports));
+    if (tx.tiempo && tx.tiempo < desde - 30000) return { ok: false, motivo: 'es un pago anterior al pedido', recibido: tx.recibidoSol };
+    if (!t) return { ok: false, motivo: tx.recibidoSol > 0 ? `monto distinto: llegaron ${(tx.recibidoSol / 1e9).toFixed(9)} SOL y el pedido es de ${(lamports / 1e9).toFixed(9)}` : 'no hay una transferencia a tu wallet', recibido: tx.recibidoSol };
+    return { ok: true, recibido: lamports, de: t.parsed.info.source };
+  }
+
+  // Igual para el token $DUENDE: una transferencia SPL del mint correcto a una
+  // cuenta de El Duende por exactamente las unidades del pedido.
+  async verificarDuende(firma, raw, desde) {
+    const tx = await this.leerTx(firma);
+    if (tx === null) return null;
+    if (!tx.ok) return tx;
+    const dueno = new Set();
+    for (const b of tx.post || []) if (b.mint === DUENDE_MINT && b.owner === SOL_DEV_WALLET) dueno.add(tx.cuentas[b.accountIndex]);
+    const t = tx.instr.find(x => x.program === 'spl-token' && x.parsed && /^transfer/.test(x.parsed.type) && dueno.has(x.parsed.info.destination)
+      && (!x.parsed.info.mint || x.parsed.info.mint === DUENDE_MINT)
+      && Number(x.parsed.info.amount || (x.parsed.info.tokenAmount && x.parsed.info.tokenAmount.amount)) === raw);
+    if (tx.tiempo && tx.tiempo < desde - 30000) return { ok: false, motivo: 'es un pago anterior al pedido', recibido: 0 };
+    if (!t) return { ok: false, motivo: `no hay una transferencia de exactamente ${(raw / 10 ** DUENDE_DECIMALES).toLocaleString('es', { maximumFractionDigits: 6 })} $DUENDE a la wallet de El Duende`, recibido: 0 };
+    return { ok: true, recibido: raw, de: t.parsed.info.authority || t.parsed.info.source };
+  }
+
+  // Lee una transaccion confirmada (jsonParsed) con todas sus instrucciones,
+  // tambien las internas. null = no se pudo consultar la cadena.
+  async leerTx(firma) {
     try {
       const key = this.env.HELIUS_API_KEY;
       const url = key ? `https://mainnet.helius-rpc.com/?api-key=${key}` : 'https://api.mainnet-beta.solana.com';
@@ -852,17 +955,12 @@ export class MmoWorld {
       const tx = d.result;
       if (!tx) return { ok: false, motivo: 'la transacción no existe (o aún no se confirma)', recibido: 0 };
       if (tx.meta && tx.meta.err) return { ok: false, motivo: 'la transacción falló', recibido: 0 };
-      const claves = (tx.transaction.message.accountKeys || []).map(k => typeof k === 'string' ? k : k.pubkey);
-      const i = claves.indexOf(SOL_DEV_WALLET);
-      const recibido = i >= 0 ? tx.meta.postBalances[i] - tx.meta.preBalances[i] : 0;
-      if (tx.blockTime && tx.blockTime * 1000 < desde - 30000) return { ok: false, motivo: 'es un pago anterior al pedido', recibido };
-      // Una transferencia de EXACTAMENTE el monto del pedido (sus ultimas 4
-      // cifras son propias de el): sin esto, cualquier pago ajeno a la misma
-      // wallet (visible en Solscan) valia para cobrar otro pedido.
-      const ins = [...((tx.transaction.message.instructions) || []), ...(((tx.meta && tx.meta.innerInstructions) || []).flatMap(x => x.instructions || []))];
-      const exacta = ins.some(x => x && x.program === 'system' && x.parsed && x.parsed.type === 'transfer' && x.parsed.info && x.parsed.info.destination === SOL_DEV_WALLET && Number(x.parsed.info.lamports) === Number(lamports));
-      if (!exacta) return { ok: false, motivo: recibido > 0 ? `monto distinto: llegaron ${(recibido / 1e9).toFixed(9)} SOL y el pedido es de ${(lamports / 1e9).toFixed(9)}` : 'no hay una transferencia a tu wallet', recibido };
-      return { ok: true, recibido };
+      const instr = [...(tx.transaction.message.instructions || [])];
+      for (const g of (tx.meta && tx.meta.innerInstructions) || []) instr.push(...(g.instructions || []));
+      const cuentas = (tx.transaction.message.accountKeys || []).map(k => typeof k === 'string' ? k : k.pubkey);
+      const i = cuentas.indexOf(SOL_DEV_WALLET);
+      const recibidoSol = i >= 0 && tx.meta ? tx.meta.postBalances[i] - tx.meta.preBalances[i] : 0;
+      return { ok: true, instr, cuentas, post: tx.meta && tx.meta.postTokenBalances, recibidoSol, tiempo: tx.blockTime ? tx.blockTime * 1000 : 0 };
     } catch (e) { return null; }
   }
 
@@ -871,7 +969,12 @@ export class MmoWorld {
     if (!pd || pd.metodo !== 'stars') return { ok: false, error: 'pedido desconocido' };
     if (pd.estado !== 'esperando_pago' && pd.estado !== 'vencido') return { ok: true, repetido: true, nombre: pd.nombre };
     if ('tg:' + b.tgId !== pd.uid || (b.stars | 0) < pd.stars) {
-      this.avisarAdmin(`⚠️ Pago de Stars raro en el pedido #${pd.codigo}: pagó ${b.stars} (se pedían ${pd.stars}) desde tg ${b.tgId}. Revísalo; para devolverlo: /anular ${pd.codigo}`);
+      // Ya no se marca como pagado: queda por revisar (el dueño decide).
+      pd.estado = 'por_verificar'; pd.charge = String(b.charge || ''); pd.tgPagador = String(b.tgId || ''); pd.starsPagadas = b.stars | 0; pd.pagadoEn = Date.now();
+      pd.cadena = { ok: false, motivo: `pagó ${b.stars} Stars (se pedían ${pd.stars}) desde otra cuenta o de menos` };
+      await this.guardarPedidos();
+      this.avisarAdmin(`⚠️ Pago de Stars raro en el pedido #${pd.codigo}: pagó ${b.stars} (se pedían ${pd.stars}) desde tg ${b.tgId}. Queda por revisar; para devolverlo: /anular ${pd.codigo}`);
+      return { ok: true, nombre: pd.nombre };
     }
     pd.estado = 'pagado'; pd.charge = String(b.charge || ''); pd.tgPagador = String(b.tgId || ''); pd.starsPagadas = b.stars | 0; pd.pagadoEn = Date.now();
     await this.guardarPedidos();
@@ -895,12 +998,13 @@ export class MmoWorld {
     let notaSkin = '';
     if (pq.skin && SKINS[pq.skin]) {
       c.skins = c.skins || ['comun'];
-      if (c.skins.includes(pq.skin)) { c.oro += SKINS[pq.skin].precio; notaSkin = ` Ya la tenías: te dimos ${SKINS[pq.skin].precio.toLocaleString('es', { useGrouping: 'always' })} de oro.`; }
+      const pOro = typeof SKINS[pq.skin].precio === 'number' ? SKINS[pq.skin].precio : Math.round(pq.usd * 10000);   // las premium no tienen precio en oro
+      if (c.skins.includes(pq.skin)) { c.oro += pOro; notaSkin = ` Ya la tenías: te dimos ${pOro.toLocaleString('es', { useGrouping: 'always' })} de oro.`; }
       else { c.skins.push(pq.skin); c.skin = pq.skin; notaSkin = ' Ya la llevas puesta.'; }
       if (s) { s.st = this.stats(c); this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) }); this.actualizarYo(s); }
     }
-    pd.estado = 'entregado'; pd.entregado = Date.now();
-    if (pd.metodo === 'sol') {
+    pd.estado = 'entregado'; pd.entregado = Date.now(); pd.por = b.por || 'bot';
+    if (pd.metodo === 'sol' || pd.metodo === 'duende') {
       this.ingresosSol.push({ usd: pd.usd, t: Date.now() });
       this.ingresosSol = this.ingresosSol.filter(x => Date.now() - x.t < 30 * 86400000);
       await this.state.storage.put('ingresosSol', this.ingresosSol);
@@ -1132,9 +1236,12 @@ export class MmoWorld {
       p2e: this.elegibilidad(c), creado: c.creado,
       retiros: this.retiros.filter(x => x.uid === c.uid).slice(-5).map(x => ({ id: x.id, ton: x.ton, estado: x.estado, creado: x.creado })),
       // Los de SOL sin pagar (y sin caducar) tambien, para poder retomar el pago.
-      pedidos: this.pedidos.filter(x => x.uid === c.uid && x.estado !== 'vencido' && (x.estado !== 'esperando_pago' || (x.metodo === 'sol' && Date.now() - x.creado < PEDIDO_VIGENCIA_MS))).slice(-5)
-        .map(x => ({ codigo: x.codigo, nombre: x.nombre, metodo: x.metodo, estado: x.estado, creado: x.creado, ...(x.estado === 'esperando_pago' ? { lamports: x.lamports, usd: x.usd, wallet: SOL_DEV_WALLET, ref: x.ref || '' } : {}) })),
+      pedidos: this.pedidos.filter(x => x.uid === c.uid && x.estado !== 'vencido' && (x.estado !== 'esperando_pago' || ((x.metodo === 'sol' || x.metodo === 'duende') && Date.now() - x.creado < PEDIDO_VIGENCIA_MS))).slice(-5)
+        .map(x => ({ codigo: x.codigo, nombre: x.nombre, metodo: x.metodo, estado: x.estado, creado: x.creado, ...(x.estado === 'esperando_pago' ? (x.metodo === 'duende'
+          ? { raw: x.duendeRaw, mint: DUENDE_MINT, dec: DUENDE_DECIMALES, usd: Math.round(x.usd * DUENDE_DESCUENTO * 100) / 100, wallet: SOL_DEV_WALLET }
+          : { lamports: x.lamports, usd: x.usd, wallet: SOL_DEV_WALLET, ref: x.ref || '' }) : {}) })),
       transparencia: this.transparencia(),
+      dios: s.dios ? 1 : 0, diosModo: s.dios ? s.diosModo || {} : undefined,
     };
   }
   actualizarYo(s) { this.enviar(s, { t: 'yo', yo: this.datosPropios(s) }); }
@@ -1144,7 +1251,7 @@ export class MmoWorld {
   }
   // Lo que cambia al equiparse o elegir clase (mensaje 'pa').
   infoApariencia(s) {
-    return { p: s.id, id: s.id, sk: s.c.skin, ar: s.c.arma, mx: s.st.maxHp, ti: this.textoTitulo(s.c), cl: s.c.clase || '', rmx: s.st.recMax, hn: this.nombreHermandad(s.c.herm), hc: this.colorHermandad(s.c.herm), mo: s.montado || '', es: s.c.espec || '', tn: s.c.tinte || '', ma: s.c.exped ? '' : s.c.mascota || '' };
+    return { p: s.id, id: s.id, sk: s.c.skin, ar: s.c.arma, mx: s.st.maxHp, ti: this.textoTitulo(s.c), cl: s.c.clase || '', rmx: s.st.recMax, hn: this.nombreHermandad(s.c.herm), hc: this.colorHermandad(s.c.herm), mo: s.montado || '', es: s.c.espec || '', tn: s.c.tinte || '', ma: s.c.exped ? '' : s.c.mascota || '', gm: s.dios ? 1 : 0, gi: s.dios && s.diosModo && s.diosModo.inv ? 1 : 0 };
   }
   // Auras con su tiempo restante, para quien llega al mapa y no vio cuando se pusieron.
   aurasVivas(au) {
@@ -1190,6 +1297,7 @@ export class MmoWorld {
       s.c.visitadas = s.c.visitadas || [];
       if (!s.c.visitadas.includes(mapaId)) { s.c.visitadas.push(mapaId); s.c.nVisitadas = s.c.visitadas.length; s.sucio = true; this.revisarLogros(s); }
     }
+    s.movBud = undefined;   // tras un viaje el presupuesto de movimiento empieza lleno
     s.x = clamp(x, 20, MAPAS[mapaId].ancho - 20);
     s.y = SUELO;
     s.movT = Date.now();
@@ -1229,13 +1337,25 @@ export class MmoWorld {
     // Encerrado en un Bloque de Hielo no se mueve.
     if (this.aura(s, 'bloque') || this.aura(s, 'aturdido')) { if (Math.abs(x - s.x) > 4) this.enviar(s, { t: 'snap', x: Math.round(s.x), y: Math.round(s.y) }); return; }
     const dt = Math.max(16, ahora - s.movT);
-    // Maximo posible: correr + un dash entero + margen por latencia.
-    const maxDx = (FIS.vel * velMontura(s.montado) * (1 + talento(s.c, 'agilidad')) * 60 * dt / 1000) + FIS.dashVel * FIS.dashT + 60;
     const ancho = MAPAS[s.c.mapa].ancho;
-    if (Math.abs(x - s.x) > maxDx * 1.25) {
-      this.enviar(s, { t: 'snap', x: Math.round(s.x), y: Math.round(s.y) });
-      s.movT = ahora;
-      return;
+    // Presupuesto de distancia que se recarga con el tiempo (correr + un dash
+    // cada dashCd + margen de latencia). Antes cada mensaje traia un dash
+    // entero y 60 px de regalo: mandando muchos 'mv' cortos se cruzaba un
+    // mapa de 2600 px en 0,2 s (speed-hack, encontrado en la auditoria).
+    // El dios con "velocidad libre" no tiene limite.
+    if (!(s.dios && s.diosModo && s.diosModo.vel)) {
+      const velPx = FIS.vel * velMontura(s.montado) * (1 + talento(s.c, 'agilidad')) * 60;
+      const dashPx = FIS.dashVel * FIS.dashT;
+      const tope = velPx + dashPx + 80;
+      const recarga = velPx * 1.2 + dashPx / (FIS.dashCd / 60);
+      s.movBud = Math.min(tope, (s.movBud === undefined ? tope : s.movBud) + recarga * dt / 1000);
+      const dx = Math.abs(x - s.x);
+      if (dx > s.movBud + 20) {
+        this.enviar(s, { t: 'snap', x: Math.round(s.x), y: Math.round(s.y) });
+        s.movT = ahora;
+        return;
+      }
+      s.movBud = Math.max(0, s.movBud - dx);
     }
     // Las barreras de las mazmorras no se cruzan hasta vencer a su jefe.
     const tope = this.topeMuros(s);
@@ -1386,6 +1506,7 @@ export class MmoWorld {
     // Caparazon (jefes de mazmorra): casi no recibe daño mientras dura.
     const cap = this.auraMon(o, 'caparazon');
     if (cap) dmg = Math.max(1, Math.round(dmg * (1 - (cap.reduce || 0.9))));
+    if (s && s.dios && s.diosModo && s.diosModo.golpe) dmg = Math.ceil(o.hp);   // Modo Dios: de un golpe
     if (o.agresivo && s) this.alPegar(o, s);
     o.hp -= dmg;
     o.golpeHasta = ahora + 280;
@@ -1635,6 +1756,7 @@ export class MmoWorld {
     const pct = fuente && fuente.pct;
     const duelo = fuente && fuente.duelo;
     if ((ahora < s.inv && !pct && !duelo) || ahora < s.escudo || this.aura(s, 'bloque')) return;
+    if (s.dios && s.diosModo && s.diosModo.inv) return;   // Modo Dios: invencible
     // Evasion del picaro: esquiva golpes cuerpo a cuerpo (las bolas y las
     // zonas no).
     if (!(fuente && (fuente.bala || fuente.zona)) && this.aura(s, 'evasion') && Math.random() < EVASION) {
@@ -1804,7 +1926,7 @@ export class MmoWorld {
     } else if (m.k === 'tinte') {
       // Color del nombre: '' lo quita; si ya lo tienes, solo se cambia.
       c.tintes = c.tintes || [];
-      if (m.id === '') { c.tinte = ''; }
+      if (m.id === '') { if (!c.tinte) return; c.tinte = ''; }   // sin cambio, sin guardar
       else {
         if (typeof m.id !== 'string' || !Object.hasOwn(TINTES, m.id)) return;
         const tn = TINTES[m.id];
@@ -1821,7 +1943,7 @@ export class MmoWorld {
     } else if (m.k === 'mascota') {
       // Mascota: '' la guarda; si ya la tienes, solo se cambia.
       c.mascotas = c.mascotas || [];
-      if (m.id === '') { c.mascota = ''; }
+      if (m.id === '') { if (!c.mascota) return; c.mascota = ''; }
       else {
         if (typeof m.id !== 'string' || !Object.hasOwn(MASCOTAS, m.id)) return;
         const ma = MASCOTAS[m.id];
@@ -1845,6 +1967,8 @@ export class MmoWorld {
       if (typeof m.id !== 'string' || !Object.hasOwn(tabla, m.id)) return;
       const def = tabla[m.id];
       if (lista.includes(m.id)) return this.enviar(s, { t: 'toast', m: 'Ya lo tienes.' });
+      // Las premium no se venden por oro (precio null: c.oro -= null no restaba nada).
+      if (typeof def.precio !== 'number') return this.enviar(s, { t: 'toast', m: 'Esta skin solo se consigue en la tienda premium (SOL o $DUENDE).' });
       if (c.oro < def.precio) return this.enviar(s, { t: 'toast', m: 'No te alcanza el oro.' });
       c.oro -= def.precio;
       lista.push(m.id);
@@ -1873,7 +1997,7 @@ export class MmoWorld {
 
   // ── RANKING ──
   async actualizarRanking(s) {
-    if (UIDS_PRUEBA.has(s.c.uid)) return;
+    if (UIDS_PRUEBA.has(s.c.uid) || this.diosActivo(s)) return;
     const r = (await this.state.storage.get('ranking')) || [];
     const i = r.findIndex(x => x.uid === s.c.uid);
     const fila = { uid: s.c.uid, n: s.c.nombre, lv: s.c.nivel, xp: s.c.xp, k: s.c.kills };
@@ -1883,6 +2007,9 @@ export class MmoWorld {
   }
 
   async enviarRanking(s) {
+    // Como mucho cada 3 s por jugador (lee el storage y ordena todo).
+    if (Date.now() - (s.rankT || 0) < 3000) return;
+    s.rankT = Date.now();
     const r = ((await this.state.storage.get('ranking')) || []).filter(x => !UIDS_PRUEBA.has(x.uid));
     const sem = this.topSemana().slice(0, 20).map(([uid, x]) => ({ n: x.n, lv: x.lv, xp: x.xp, yo: uid === s.c.uid }));
     const des = ((await this.state.storage.get('rankDes')) || []).slice(0, 10).map(x => ({ n: x.n, k: x.k, yo: x.uid === s.c.uid }));
@@ -2397,4 +2524,6 @@ Object.assign(MmoWorld.prototype, Pase);
 Object.assign(MmoWorld.prototype, Torre);
 // Expediciones de la mascota: functions/mmo/expediciones.js
 Object.assign(MmoWorld.prototype, Expediciones);
+// Modo Dios del dueño (moderacion) y nombres unicos: functions/mmo/dios.js
+Object.assign(MmoWorld.prototype, Dios);
 MmoWorld.prototype.generarItem = generarItem;

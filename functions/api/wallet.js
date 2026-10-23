@@ -308,7 +308,7 @@ async function onRequestPost(context) {
       if (!user?.id) return json(request, { error: 'auth_failed' }, 401);
       const tgId = String(user.id);
       const skinId = String(body.skin_id || '');
-      const usd = SKIN_PRICES_USD[skinId];
+      const usd = Object.hasOwn(SKIN_PRICES_USD, skinId) ? SKIN_PRICES_USD[skinId] : undefined;
       if (!usd) return json(request, { error: 'unknown_skin' }, 400);
 
       const owned = await supabaseQuery(env, `skin_purchases?telegram_id=eq.${tgId}&skin_id=eq.${skinId}&select=id`);
@@ -366,7 +366,7 @@ async function onRequestPost(context) {
         // Solo se puede equipar una skin comprada: antes bastaba con mandar
         // 'legendaria' para tenerla (y sus buffs) sin pagar.
         if (body.equipped_skin !== 'comun') {
-          if (!SKIN_PRICES_USD[body.equipped_skin]) return json(request, { error: 'unknown_skin' }, 400);
+          if (typeof body.equipped_skin !== 'string' || !Object.hasOwn(SKIN_PRICES_USD, body.equipped_skin)) return json(request, { error: 'unknown_skin' }, 400);
           const own = await supabaseQuery(env, `skin_purchases?telegram_id=eq.${tgId}&skin_id=eq.${encodeURIComponent(body.equipped_skin)}&select=id&limit=1`);
           if (!Array.isArray(own) || own.length === 0) return json(request, { error: 'not_owned' }, 403);
         }

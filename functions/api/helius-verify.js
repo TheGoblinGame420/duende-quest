@@ -132,7 +132,7 @@ async function onRequestPost(context) {
     // el cliente mete en su transaccion. ──
     if (action === 'create_sol_order') {
       const skinId = String(body.skin_id || '');
-      const usd = SKIN_PRICES_USD[skinId];
+      const usd = Object.hasOwn(SKIN_PRICES_USD, skinId) ? SKIN_PRICES_USD[skinId] : undefined;
       if (!usd) return j({ error: 'unknown_skin' }, 400);
       const solUsd = await getSolPriceUsd();
       if (!solUsd) return j({ error: 'price_unavailable', detail: 'Precio de SOL no disponible, reintenta en un minuto' }, 503);

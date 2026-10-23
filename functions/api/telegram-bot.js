@@ -125,7 +125,10 @@ async function isFirstPurchase(env, tgId) {
 
 async function createStarsInvoice(token, env, pkgIndex, tgId) {
   const price = await getPrice();
-  const priceUsd = price?.priceUsd || 0.0000001;
+  // Sin precio real no se factura (el respaldo fijo daba ~20x mas tokens). En
+  // el webhook se acredita como mucho lo de la factura (payload.tokens).
+  const priceUsd = price?.priceUsd;
+  if (!priceUsd || priceUsd <= 0) return;
   const packages = calcStarsPackages(priceUsd);
   const pkg = packages[pkgIndex];
   if (!pkg) return;
@@ -270,7 +273,8 @@ async function handleReferral(token, env, referrerId, newUser) {
 
 async function handleBuy(token, chatId, userId, messageId) {
   const price = await getPrice();
-  const priceUsd = price?.priceUsd || 0.0000001;
+  const priceUsd = price?.priceUsd;
+  if (!priceUsd || priceUsd <= 0) return tg(token, 'sendMessage', { chat_id: chatId, text: '⚠️ No pudimos leer el precio de $DUENDE ahora mismo. Intenta en unos minutos.' });
   const packages = calcStarsPackages(priceUsd);
   let text = `⭐ *Comprar $DUENDE con Telegram Stars*\n\nPrecio actual: *$${priceUsd.toFixed(8)}*\nPagas con Stars dentro de Telegram (las Stars se compran con tarjeta en Telegram).\n\n`;
   packages.forEach(pkg => { text += `*${pkg.label}:* ${pkg.stars} Stars (~$${pkg.usd}) → ${pkg.tokens.toLocaleString()} $DUENDE\n`; });
@@ -310,7 +314,7 @@ async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
     if (!r.pedidos.length) return enviar('✅ No hay compras por entregar.');
     const lineas = r.pedidos.map(x => `#${x.codigo} · ${x.nombre} ($${x.usd}) · ${x.jugador}\n` + (x.metodo === 'stars'
       ? `⭐ ${x.starsPagadas} Stars pagadas (verificado por Telegram)`
-      : `◎ ${(x.lamports / 1e9).toFixed(9)} SOL · ${x.cadena ? (x.cadena.ok ? '✅ visto en la cadena' : '❌ ' + x.cadena.motivo) : '⚠️ sin comprobar'}\nhttps://solscan.io/tx/${x.firma}`));
+      : (x.metodo === 'duende' ? `🍄 ${(x.duendeRaw / 1e6).toLocaleString('es')} $DUENDE` : `◎ ${(x.lamports / 1e9).toFixed(9)} SOL`) + ` · ${x.cadena ? (x.cadena.ok ? '✅ visto en la cadena' : '❌ ' + x.cadena.motivo) : '⚠️ sin comprobar'}\nhttps://solscan.io/tx/${x.firma}`));
     return enviar('🛒 Compras por entregar:\n\n' + lineas.join('\n\n') + '\n\n/entregar CODIGO para darle lo que compró · /anular CODIGO motivo para cancelar (las Stars se devuelven solas; el SOL lo devuelves tú).');
   }
   if (cmd === '/ventas') {
@@ -549,7 +553,10 @@ async function onRequestPost(context) {
     const got = context.request.headers.get('X-Telegram-Bot-Api-Secret-Token');
     if (got !== expectedSecret) return new Response('Unauthorized', { status: 401 });
   } else {
-    console.warn('[SECURITY] TELEGRAM_WEBHOOK_SECRET not set — webhook is unauthenticated');
+    // Sin secreto, cualquiera podria hacerse pasar por Telegram (comandos de
+    // admin, pagos falsos): mejor cerrado que abierto.
+    console.error('[SECURITY] TELEGRAM_WEBHOOK_SECRET not set — webhook closed');
+    return new Response('Webhook secret not configured', { status: 503 });
   }
 
   try {

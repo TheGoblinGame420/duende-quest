@@ -592,6 +592,7 @@ async function pruebas() {
   await pruebasTorre();
   await pruebasExpedicion();
   await pruebasEvadir();
+  await pruebasDios();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -1801,11 +1802,11 @@ async function pruebasSkinsDinero() {
 
 async function pruebasContactos() {
   console.log('Lista de amigos');
-  const a = await entrar('Amiga', '7d'), b = await entrar('Amigo', '7e');
+  const a = await entrar('Amiga', '7d'), b = await entrar('AmigoLista', '7e');
   a.limpiar(); b.limpiar();
   await a.mandar({ t: 'contactoAdd', p: b.id });
   const l = a.ultimos('contactos').pop();
-  chequear(l && l.l.length === 1 && l.l[0].n === 'Amigo' && l.l[0].on === 1 && l.l[0].uid === pub(b.c.uid), 'se añade y sale conectado');
+  chequear(l && l.l.length === 1 && l.l[0].n === 'AmigoLista' && l.l[0].on === 1 && l.l[0].uid === pub(b.c.uid), 'se añade y sale conectado');
   chequear(!JSON.stringify(l).includes(b.c.uid), 'la lista no lleva el uid real');
   chequear(b.ultimos('toast').some(x => /te añadió/.test(x.m)), 'al otro se le avisa');
   a.limpiar(); await a.mandar({ t: 'contactoAdd', p: b.id });
@@ -1815,20 +1816,20 @@ async function pruebasContactos() {
   chequear(b.ultimos('toast').filter(x => /te añadió/.test(x.m)).length === 0, 'añadir y quitar en bucle no inunda al otro de avisos');
   await dejar(b);
   a.limpiar();
-  const bR = await entrar('Amigo', '7e');
+  const bR = await entrar('AmigoLista', '7e');
   chequear(!a.ultimos('toast').some(x => /se conectó/.test(x.m)), 'una reconexión rápida no repite el aviso');
   await dejar(bR);
   avanzar(6 * 60000); a.actT = Date.now();
   a.limpiar(); await a.mandar({ t: 'contactos' });
   chequear(a.ultimos('contactos').pop().l[0].on === 0, 'al irse sale desconectado');
   a.limpiar();
-  const b2 = await entrar('Amigo', '7e');
-  chequear(a.ultimos('toast').some(x => /Tu amigo Amigo se conectó/.test(x.m)), 'al volver, aviso de que se conectó');
+  const b2 = await entrar('AmigoLista', '7e');
+  chequear(a.ultimos('toast').some(x => /Tu amigo AmigoLista se conectó/.test(x.m)), 'al volver, aviso de que se conectó');
   console.log('Inspeccionar');
   b2.c.oro = 12345; b2.c.mton = 77;
   a.limpiar(); await a.mandar({ t: 'inspeccionar', p: b2.id });
   const ins = a.ultimos('inspeccion').pop();
-  chequear(ins && ins.n === 'Amigo' && ins.eq && typeof ins.logros === 'number', 'inspeccionar devuelve nombre, equipo y logros');
+  chequear(ins && ins.n === 'AmigoLista' && ins.eq && typeof ins.logros === 'number', 'inspeccionar devuelve nombre, equipo y logros');
   chequear(!JSON.stringify(ins).includes(b2.c.uid) && ins.oro === undefined && ins.mton === undefined && ins.bolsa === undefined, 'sin uid, oro, mTON ni bolsa');
   console.log('Gestos');
   await aMapa(a, 'pueblo', 900); await aMapa(b2, 'pueblo', 950);
@@ -2412,4 +2413,72 @@ async function pruebasChicha() {
     chequear(env.ok && r2.estado === 'enviado', 'el dueño lo marca como enviado');
     await dejar(inv); await dejar(j);
   } finally { mundo.tgEnviar = tgReal; mundo.avisarAdmin = adminReal; }
+}
+
+// ── MODO DIOS, NOMBRES UNICOS, SKINS PREMIUM Y VELOCIDAD (functions/mmo/dios.js) ──
+async function pruebasDios() {
+  console.log('Nombres únicos y reservados');
+  const n1 = await entrar('Copion', 'f1'), n2 = await entrar('copion', 'f2'), n3 = await entrar('Admin', 'f3'), n4 = await entrar('El Duende', 'f4');
+  chequear(n1.c.nombre === 'Copion' && n2.c.nombre !== 'copion' && /^copion\d{4}$/i.test(n2.c.nombre), 'un invitado no puede repetir el nombre de otro (' + n1.c.nombre + ', ' + n2.c.nombre + ')');
+  chequear(!/admin/i.test(n3.c.nombre) && !/el ?duende/i.test(n4.c.nombre), 'los nombres del equipo quedan reservados (' + n3.c.nombre + ', ' + n4.c.nombre + ')');
+  await dejar(n1);
+  const n1b = await entrar('OtroNombre', 'f1');
+  chequear(n1b.c.nombre === 'Copion', 'el dueño del nombre lo conserva al volver');
+
+  console.log('Modo Dios');
+  mundo.env.ADMIN_TG_ID = '9001';
+  const dios = await entrarTg('Jefazo', 9001);
+  const nadie = await entrar('Tramposo', 'f5');
+  chequear(dios.dios && !nadie.dios, 'solo la cuenta del dueño es dios');
+  nadie.ws.rec.length = 0;
+  await nadie.mandar({ t: 'dios', a: 'oro', p: nadie.id, n: 999999 });
+  await nadie.mandar({ t: 'dios', a: 'modo', k: 'inv', v: true });
+  chequear(nadie.c.oro < 999999 && !(nadie.diosModo && nadie.diosModo.inv), 'un jugador normal no puede usar comandos de dios');
+  await dios.mandar({ t: 'dios', a: 'modo', k: 'inv', v: true });
+  await aMapa(dios, 'noche', 600); limpiarMapa(dios);
+  const hp = dios.hp; mundo.herir(dios, 99999, { jefe: true });
+  chequear(dios.hp === hp && !dios.muerto, 'invencible no recibe daño');
+  await dios.mandar({ t: 'dios', a: 'modo', k: 'golpe', v: true });
+  const o = monstruo(dios, 'jefe_sabueso', 30); mundo.danar(o, 1, dios);
+  chequear(o.hp <= 0, 'golpe divino mata de un golpe');
+  const mtonAntes = dios.c.mton; chequear(mundo.darMton(dios, 100, 'x') === 0 && dios.c.mton === mtonAntes, 'con poderes de dios no se gana mTON');
+  await dios.mandar({ t: 'dios', a: 'oro', p: nadie.id, n: 5000 });
+  chequear(nadie.c.oro >= 5000, 'el dios da oro a otro jugador');
+  await dios.mandar({ t: 'dios', a: 'skin', p: nadie.id, id: 'cosmico' });
+  chequear(nadie.c.skins.includes('cosmico') && nadie.c.skin === 'cosmico', 'el dios entrega una skin premium y queda puesta');
+  await dios.mandar({ t: 'dios', a: 'silenciar', p: nadie.id, min: 10 });
+  nadie.ws.rec.length = 0; nadie.chatT = 0;
+  await nadie.mandar({ t: 'chat', m: 'hola', canal: 'general' });
+  chequear(!nadie.ws.rec.some(x => x.t === 'chat'), 'un silenciado no puede escribir');
+  await dios.mandar({ t: 'dios', a: 'banear', p: nadie.id, horas: 1, motivo: 'pruebas' });
+  chequear(nadie.ws.cerrado, 'banear lo expulsa');
+  const vuelve = await entrar('Tramposo', 'f5');
+  chequear(!vuelve.c, 'un baneado no puede volver a entrar');
+  await calma();
+
+  console.log('Skins premium');
+  const pobre = await entrar('Pobreton', 'f6');
+  await aMapa(pobre, 'pueblo', 950);
+  pobre.c.oro = 10000000;
+  await pobre.mandar({ t: 'comprar', k: 'skin', id: 'solar' });
+  chequear(!pobre.c.skins.includes('solar') && pobre.c.oro === 10000000, 'una skin premium no se compra con oro');
+  await pobre.mandar({ t: 'pedido', id: 'skin_solar', metodo: 'duende' });
+  chequear(!mundo.pedidos.some(x => x.uid === pobre.c.uid), 'un invitado no puede hacer pedidos premium');
+
+  console.log('Velocidad (anti speed-hack)');
+  const rap = await entrar('Rapidin', 'f7');
+  await aMapa(rap, 'noche', 200); limpiarMapa(rap);
+  let x = rap.x;
+  for (let i = 0; i < 40; i++) { avanzar(16); x += 150; await rap.mandar({ t: 'mv', x, y: 400, f: 1, a: 1 }); }
+  chequear(rap.x < 200 + 1200, 'muchos mensajes cortos ya no cruzan el mapa (llegó a ' + Math.round(rap.x) + ')');
+  const leg = await entrar('Legal', 'f8');
+  await aMapa(leg, 'noche', 200);
+  let xl = leg.x, snaps = 0;
+  for (let i = 0; i < 60; i++) { avanzar(83); xl += 18; leg.ws.rec.length = 0; await leg.mandar({ t: 'mv', x: xl, y: 400, f: 1, a: 1 }); if (leg.ws.rec.some(m => m.t === 'snap')) snaps++; }
+  chequear(snaps === 0 && Math.abs(leg.x - xl) < 1, 'correr normal no se corrige');
+  await dios.mandar({ t: 'dios', a: 'modo', k: 'vel', v: true });
+  await aMapa(dios, 'noche', 200);
+  avanzar(16); await dios.mandar({ t: 'mv', x: 2000, y: 400, f: 1, a: 1 });
+  chequear(dios.x === 2000, 'el dios con velocidad libre se mueve sin límite');
+  for (const s of [n1b, n2, n3, n4, dios, pobre, rap, leg]) await dejar(s);
 }
