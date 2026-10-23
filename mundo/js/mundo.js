@@ -13,13 +13,13 @@
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
-  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook } from '/mmo/js/data.js?v=253';
-import { iniciarVentanas } from './ventanas.js?v=253';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=253';
-import { crearMusica } from './musica.js?v=253';
-import { construirCueva } from './cueva.js?v=253';
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=253';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=253';
+  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook } from '/mmo/js/data.js?v=254';
+import { iniciarVentanas } from './ventanas.js?v=254';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=254';
+import { crearMusica } from './musica.js?v=254';
+import { construirCueva } from './cueva.js?v=254';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=254';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=254';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -47,17 +47,36 @@ const C = h => new THREE.Color(h);
 
 // ── ESCENA ──
 const lienzo = $('lienzo');
-const render = new THREE.WebGLRenderer({ canvas: lienzo, antialias: !MOVIL, powerPreference: 'high-performance' });
-render.setPixelRatio(Math.min(devicePixelRatio || 1, MOVIL ? 1 : 1.5));
+// ── CALIDAD GRAFICA ──
+// baja: menos resolucion y vista corta; media: lo de siempre; alta: sombras
+// del sol y mas resolucion. Se guarda en el navegador (cambiarla recarga).
+const CALIDADES = {
+  baja:  { px: 0.75, lejos: 130, aa: false, sombras: false },
+  media: { px: 1,    lejos: 170, aa: false, sombras: false },
+  alta:  { px: 1.5,  lejos: 230, aa: true,  sombras: true },
+};
+let CAL = MOVIL ? 'media' : 'alta';
+try { const g = localStorage.getItem('dq3_calidad'); if (CALIDADES[g]) CAL = g; } catch (e) {}
+const Q = CALIDADES[CAL];
+const render = new THREE.WebGLRenderer({ canvas: lienzo, antialias: Q.aa, powerPreference: 'high-performance' });
+render.setPixelRatio(Math.min(devicePixelRatio || 1, Q.px));
+if (Q.sombras) { render.shadowMap.enabled = true; render.shadowMap.type = THREE.PCFSoftShadowMap; }
 render.outputColorSpace = THREE.SRGBColorSpace;
 const escena = new THREE.Scene();
 escena.background = C(CIELO.pueblo);
-escena.fog = new THREE.Fog(CIELO.pueblo, 40, MOVIL ? 170 : 230);
+escena.fog = new THREE.Fog(CIELO.pueblo, 40, Q.lejos);
 const camara = new THREE.PerspectiveCamera(60, 1, 0.3, 900);
 const hemi = new THREE.HemisphereLight(0xffffff, 0x8a9a78, 1.0);
 const sol = new THREE.DirectionalLight(0xfff2dd, 1.0);
 sol.position.set(120, 200, 80);
-escena.add(hemi, sol);
+escena.add(hemi, sol, sol.target);
+if (Q.sombras) {
+  sol.castShadow = true;
+  sol.shadow.mapSize.set(1024, 1024);
+  const sc = sol.shadow.camera; sc.left = -26; sc.right = 26; sc.top = 26; sc.bottom = -26; sc.near = 1; sc.far = 400;
+  sol.shadow.bias = -0.0015; sol.shadow.normalBias = 0.04;
+}
+const solDir = new THREE.Vector3(120, 200, 80);
 // ── DIA, NOCHE Y CLIMA ──
 const NOCHE_CIELO = C('#0b1030'), OCASO = C('#ff8a5c'), GRIS = C('#6c7380'), ARENA = C('#c9a46a');
 const estrellas = (() => {
@@ -81,7 +100,7 @@ const lluvia = (() => {
   escena.add(m);
   return { m, n, pos };
 })();
-let climaAct = 'despejado', nocheK = 0, relampagoT = -1e9, sigRelampago = 0, hemiBase = 1, nieblaObj = [40, MOVIL ? 170 : 230];
+let climaAct = 'despejado', nocheK = 0, relampagoT = -1e9, sigRelampago = 0, hemiBase = 1, nieblaObj = [40, Q.lejos];
 const musica = crearMusica();
 const NOMBRE_CLIMA = { despejado: '', lluvia: '🌧 Lluvia', tormenta: '⛈ Tormenta', nieve: '❄ Nieve', niebla: '🌫 Niebla', arena: '🌪 Tormenta de arena' };
 // Para probar: ?clima=lluvia|tormenta|nieve|niebla|arena y ?hora=0..24
@@ -98,12 +117,12 @@ function ambiente(z) {
   sol.intensity = luz * (0.12 + 0.88 * dia) * nub;
   sol.color.set(dia < 0.25 ? 0x9fb4ff : 0xfff2dd).lerp(OCASO, ocaso * 0.6);
   const a = (h - 6) / 24 * Math.PI * 2;
-  sol.position.set(Math.cos(a) * 200, Math.max(60, Math.abs(Math.sin(a)) * 220), 80);
+  solDir.set(Math.cos(a) * 200, Math.max(60, Math.abs(Math.sin(a)) * 220), 80);
   cieloObj.set(CIELO[z] || CIELO.pueblo).lerp(OCASO, z === 'cueva' ? 0 : ocaso * 0.35).lerp(NOCHE_CIELO, z === 'cueva' ? 0 : nocheK * 0.85);
   if (nub < 1) cieloObj.lerp(cl === 'arena' ? ARENA : GRIS, (1 - nub) * 1.2);
   estrellas.material.opacity = z === 'cueva' ? 0 : nocheK * (cl === 'despejado' ? 0.9 : 0.2);
   if (z === 'cueva') { hemiBase = 0.55; sol.intensity = 0.15; }
-  const lejos = MOVIL ? 170 : 230;
+  const lejos = Q.lejos;
   nieblaObj = z === 'cueva' ? [6, 55] : cl === 'niebla' ? [6, 75] : cl === 'arena' ? [5, 60] : cl === 'lluvia' || cl === 'tormenta' ? [25, lejos * 0.6] : cl === 'nieve' ? [20, lejos * 0.55] : [40, lejos];
   farolMat.color.set(nocheK > 0.45 ? '#ffd27a' : '#7a6a48');
   if (cl !== climaAct) {
@@ -186,6 +205,7 @@ function crearTerreno() {
   g.setAttribute('color', new THREE.BufferAttribute(col, 3));
   g.computeVertexNormals();
   const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true }));
+  m.receiveShadow = Q.sombras;
   escena.add(m);
   const agua = new THREE.Mesh(new THREE.PlaneGeometry(LADO * 1.4, LADO * 1.4).rotateX(-Math.PI / 2),
     new THREE.MeshLambertMaterial({ color: 0x3a8fd0, transparent: true, opacity: 0.72 }));
@@ -521,6 +541,7 @@ class Figura3D {
     this.m = new THREE.Mesh(golpeGeo, golpeMat); this.m.scale.set(r, modelo.alto, r); this.raiz.add(this.m);
     this.sombra = new THREE.Mesh(sombraGeo, sombraTex); this.sombra.scale.setScalar(Math.max(1.2, this.alto * 0.8));
     this.est = 'quieto'; this.tE = 0; this.montura = null; this.mId = '';
+    if (Q.sombras) { modelo.obj.traverse(o => { if (o.isMesh) o.castShadow = true; }); this.sombra.visible = false; }
     escena.add(this.raiz, this.sombra);
   }
   estado(e, t) { if (e !== this.est) { this.est = e; this.tE = t; } }
@@ -529,14 +550,20 @@ class Figura3D {
     if (id === this.mId) return;
     if (this.montura) { escena.remove(this.montura.obj); this.montura.dispose(); this.montura = null; }
     this.mId = id || '';
-    if (id) { try { this.montura = crearMontura(id); escena.add(this.montura.obj); } catch (e) { console.warn(e); this.mId = ''; } }
+    if (id) { try { this.montura = crearMontura(id); if (Q.sombras) this.montura.obj.traverse(o => { if (o.isMesh) o.castShadow = true; }); escena.add(this.montura.obj); } catch (e) { console.warn(e); this.mId = ''; } }
   }
   poner(x, y, z, ry, t, escala) {
     const ts = t / 1000;
+    const d = Math.hypot(x - P.x, z - P.z);
+    const ver = d < escena.fog.far + 15;
+    this.raiz.visible = ver; this.sombra.visible = ver && (!Q.sombras || d > 24);
+    if (this.montura) this.montura.obj.visible = ver;
+    if (!ver) return;
+    const animar = d < 45 || (cuadro + this.raiz.id) % 2 === 0;
     if (this.montura) {
       const mo = this.montura;
       mo.obj.position.set(x, y, z); mo.obj.rotation.set(0, ry, 0);
-      mo.animar(this.andaMontura ? 'corre' : 'quieto', ts, ts);
+      if (animar) mo.animar(this.andaMontura ? 'corre' : 'quieto', ts, ts);
       mo.obj.updateMatrixWorld(true);
       mo.silla.getWorldPosition(vSilla);
       this.raiz.position.copy(vSilla);
@@ -544,7 +571,7 @@ class Figura3D {
     this.raiz.rotation.set(0, ry, 0);
     const k = escala === undefined ? 1 : escala;
     this.raiz.scale.setScalar(this.escala * k);
-    this.modelo.animar(this.est, (t - this.tE) / 1000, ts);
+    if (animar) this.modelo.animar(this.est, (t - this.tE) / 1000, ts);
     this.sombra.position.set(x, alturaEn(x, z) + 0.05, z);
   }
   quitar() { this.montar(''); escena.remove(this.raiz, this.sombra); this.modelo.dispose(); }
@@ -937,6 +964,14 @@ function pintarAuras() {
   }
   // El marco del grupo va justo debajo del propio (que crece con auras y avisos).
   if (grupo3 && !MOVIL) { const mc = $('marco'); $('grupo3').style.top = (mc.offsetTop + mc.offsetHeight + 8) + 'px'; }
+  // Movil: misiones y chat apilados bajo el marco (que crece con auras y avisos).
+  if (MOVIL) {
+    const mc = $('marco'), mi = $('misiones');
+    let y = mc.offsetTop + mc.offsetHeight + 6;
+    mi.style.top = y + 'px';
+    if (mi.style.display !== 'none') y += mi.offsetHeight + 6;
+    $('chat').style.top = y + 'px';
+  }
   const cb = yo && yo.clase === 'picaro' ? yo.combo || 0 : 0;
   const ch = '<i></i>'.repeat(cb);
   if ($('combo')._h !== ch) { $('combo').innerHTML = ch; $('combo')._h = ch; }
@@ -1235,6 +1270,8 @@ $('b-son').onclick = () => { sonido = !sonido; try { localStorage.setItem('dq_mm
 pintarSon(); if (!sonido) musica.activo(false);
 for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, () => { if (sonido) musica.arrancar(); }, { once: true });
 $('b-ayuda').onclick = () => abrir('v-ayuda');
+$('sel-calidad').value = CAL;
+$('sel-calidad').onchange = e => { try { localStorage.setItem('dq3_calidad', e.target.value); } catch (er) {} location.reload(); };
 $('b-chat').onclick = () => { const i = $('chat-in'); i.style.display = 'block'; i.focus(); };
 $('b-reconectar').onclick = () => location.reload();
 
@@ -1791,6 +1828,9 @@ function bucle(t) {
   hemi.intensity = hemiBase + (flash ? 1.6 : 0);
   if (flash) escena.background.lerp(C('#e8ecff'), 0.5);
   estrellas.position.copy(camara.position);
+  // El sol (y su sombra) siguen al duende.
+  sol.target.position.set(P.x, P.y, P.z);
+  sol.position.set(P.x + solDir.x * 0.5, P.y + solDir.y * 0.5, P.z + solDir.z * 0.5);
   moverLluvia(dt, t);
   if (cueva && enCueva(P.x)) cueva.animar(t);
   if (corcho) corcho.position.y = corcho.userData.y0 + (pica > performance.now() ? -0.18 + Math.sin(t / 60) * 0.08 : Math.sin(t / 500) * 0.04);

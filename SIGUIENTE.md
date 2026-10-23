@@ -2339,3 +2339,15 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
 - Pesca: `pescar3d` (agua a <6 m, `aguaCerca3d`), la zona de la orilla es el
   pesquero (`s.pesca3`); `tirar()` usa la especie y el clima de esa zona.
   Cliente: E pesca/tira, corcho que se hunde al picar.
+
+### Calidad gráfica y rendimiento (23-oct-2026, `?v=254`)
+
+- `CALIDADES` en mundo.js (localStorage `dq3_calidad`; por defecto media en
+  móvil y alta en PC): baja (pixelRatio 0,75, niebla a 130 m), media (1,
+  170 m), alta (1,5, 230 m, antialias y sombras PCF suaves 1024 con la cámara
+  de sombra de ±26 m siguiendo al duende). En alta las figuras proyectan
+  sombra y el terreno la recibe; a más de 24 m vuelve la mancha simple.
+- `Figura3D.poner`: no dibuja lo que está tras la niebla y anima a cuadros
+  alternos lo que está a más de 45 m. Medido: baja 1,9 ms, alta 3,0 ms.
+- Móvil: botones en rejilla de 2 columnas; misiones y chat apilados bajo el
+  marco por código (no tapan los controles táctiles).

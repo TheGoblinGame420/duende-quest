@@ -51,7 +51,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 #misiones .q:last-child{margin-bottom:0;}
 #misiones .ok{color:#4ade80;}
 #misiones small{color:var(--txt2);}
-body.movil #misiones{top:auto;bottom:96px;right:8px;width:150px;font-size:10px;}
+body.movil #misiones{top:110px;bottom:auto;left:8px;right:auto;width:165px;font-size:10px;padding:5px 7px;}
 #mini canvas{display:block;width:150px;height:150px;border-radius:8px;}
 #mini .z{font:600 11px var(--sans);text-align:center;margin-top:4px;color:var(--cian);}
 #botones{right:174px;top:12px;padding:4px;display:flex;gap:4px;}
@@ -131,12 +131,13 @@ input.nombre{width:100%;padding:12px;border-radius:8px;border:1px solid var(--bo
 #tactil button.grande{background:rgba(37,99,235,.8);}
 body.movil #joy,body.movil #tactil{display:grid;}
 body.movil #joy{display:block;}
-body.movil #chat{width:min(260px,60vw);bottom:auto;top:178px;}
+body.movil #chat{width:min(260px,60vw);bottom:auto;top:204px;}
 body.movil #chat-log{max-height:70px;font-size:11px;}
 body.movil #obj,body.movil #objp{left:12px;top:96px;}
 body.movil #grupo3{top:auto;bottom:210px;min-width:150px;}
 body.movil #marco{min-width:180px;}
-body.movil #botones{right:12px;top:186px;flex-direction:column;}
+body.movil #botones{right:8px;top:186px;display:grid;grid-template-columns:repeat(2,32px);gap:3px;}
+body.movil #botones .bt{width:32px;height:32px;font-size:13px;}
 body.movil #barra{bottom:14px;left:auto;right:auto;transform:none;left:50%;transform:translateX(-50%) scale(.85);transform-origin:bottom center;}
 body.movil #mini canvas{width:110px;height:110px;}
 body.movil #titulo-zona b{font-size:16px;}
@@ -254,6 +255,7 @@ body.movil #titulo-zona b{font-size:16px;}
 <div class="modal" id="v-ayuda"><div class="ventana">
   <button class="bt cerrar" data-cerrar>✕</button>
   <h2>CONTROLES</h2>
+  <div class="fila"><span>Calidad gráfica</span><b><select id="sel-calidad" style="background:#22164a;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="baja">Baja (móviles lentos)</option><option value="media">Media</option><option value="alta">Alta (sombras)</option></select></b></div>
   <div class="fila"><span>Moverse</span><b>W A S D</b></div>
   <div class="fila"><span>Girar la cámara</span><b>Arrastrar con el ratón</b></div>
   <div class="fila"><span>Zoom</span><b>Rueda</b></div>
@@ -280,6 +282,6 @@ body.movil #titulo-zona b{font-size:16px;}
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script src="/js/config.js"></script>
-<script type="module" src="/mundo/js/mundo.js?v=253"></script>
+<script type="module" src="/mundo/js/mundo.js?v=254"></script>
 </body>
 </html>

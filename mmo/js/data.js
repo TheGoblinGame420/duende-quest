@@ -483,6 +483,10 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 22, fecha: '23 oct 2026', items: [
+    'Calidad gráfica en el mundo 3D (botón ?): Baja para móviles lentos, Media o Alta con sombras reales del sol.',
+    'Más fluido: lo lejano se anima a medias y lo que queda tras la niebla no se dibuja. En el móvil, botones en dos columnas y paneles que ya no tapan los controles.',
+  ] },
   { n: 21, fecha: '23 oct 2026', items: [
     'Los modelos 3D ahora copian a su dibujo 2D: cada monstruo y cada skin con sus colores, su forma y sus accesorios, para reconocerlos al momento.',
     'Duelos en el mundo 3D: haz clic en otro jugador y pulsa «Retar a duelo». Ataque automático y habilidades de un objetivo; nadie muere y cuenta para el Elo.',
