@@ -13,11 +13,13 @@
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
-  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook } from '/mmo/js/data.js?v=251';
-import { iniciarVentanas } from './ventanas.js?v=251';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=251';
-import { crearMusica } from './musica.js?v=251';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=251';
+  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook } from '/mmo/js/data.js?v=252';
+import { iniciarVentanas } from './ventanas.js?v=252';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=252';
+import { crearMusica } from './musica.js?v=252';
+import { construirCueva } from './cueva.js?v=252';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=252';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=252';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -38,9 +40,9 @@ const SUELO = {
 };
 const CIELO = {
   pueblo: '#9ad0ff', noche: '#1d2756', amanecer: '#ffb48f', selva: '#a6e3b8', tormenta: '#6b6f9a', desierto: '#ffd9a0',
-  castillo: '#7a6f8c', cumbres: '#c9b6e8', cavernas: '#2f4d5d', abismo: '#4a8fbf', acantilados: '#d9a8ff',
+  castillo: '#7a6f8c', cumbres: '#c9b6e8', cavernas: '#2f4d5d', abismo: '#4a8fbf', acantilados: '#d9a8ff', cueva: '#07040c',
 };
-const LUZ = { noche: 0.8, cavernas: 0.8, tormenta: 0.85 };
+const LUZ = { noche: 0.8, cavernas: 0.8, tormenta: 0.85, cueva: 0.42 };
 const C = h => new THREE.Color(h);
 
 // ── ESCENA ──
@@ -90,18 +92,19 @@ function ambiente(z) {
   nocheK = 1 - dia;
   const ocaso = Math.min(1, Math.max(0, 1 - Math.abs(h - 18.8) / 1.3) + Math.max(0, 1 - Math.abs(h - 5.8) / 1.1));
   const luz = LUZ[z] || 1;
-  const cl = PRUEBA.get('clima') || climaEn(z, ahora);
+  const cl = z === 'cueva' ? 'despejado' : PRUEBA.get('clima') || climaEn(z, ahora);
   const nub = cl === 'tormenta' ? 0.55 : cl === 'lluvia' || cl === 'nieve' ? 0.75 : cl === 'niebla' || cl === 'arena' ? 0.85 : 1;
   hemiBase = 0.9 * luz * (0.32 + 0.68 * dia) * (0.6 + 0.4 * nub);
   sol.intensity = luz * (0.12 + 0.88 * dia) * nub;
   sol.color.set(dia < 0.25 ? 0x9fb4ff : 0xfff2dd).lerp(OCASO, ocaso * 0.6);
   const a = (h - 6) / 24 * Math.PI * 2;
   sol.position.set(Math.cos(a) * 200, Math.max(60, Math.abs(Math.sin(a)) * 220), 80);
-  cieloObj.set(CIELO[z] || CIELO.pueblo).lerp(OCASO, ocaso * 0.35).lerp(NOCHE_CIELO, nocheK * 0.85);
+  cieloObj.set(CIELO[z] || CIELO.pueblo).lerp(OCASO, z === 'cueva' ? 0 : ocaso * 0.35).lerp(NOCHE_CIELO, z === 'cueva' ? 0 : nocheK * 0.85);
   if (nub < 1) cieloObj.lerp(cl === 'arena' ? ARENA : GRIS, (1 - nub) * 1.2);
-  estrellas.material.opacity = nocheK * (cl === 'despejado' ? 0.9 : 0.2);
+  estrellas.material.opacity = z === 'cueva' ? 0 : nocheK * (cl === 'despejado' ? 0.9 : 0.2);
+  if (z === 'cueva') { hemiBase = 0.55; sol.intensity = 0.15; }
   const lejos = MOVIL ? 170 : 230;
-  nieblaObj = cl === 'niebla' ? [6, 75] : cl === 'arena' ? [5, 60] : cl === 'lluvia' || cl === 'tormenta' ? [25, lejos * 0.6] : cl === 'nieve' ? [20, lejos * 0.55] : [40, lejos];
+  nieblaObj = z === 'cueva' ? [6, 55] : cl === 'niebla' ? [6, 75] : cl === 'arena' ? [5, 60] : cl === 'lluvia' || cl === 'tormenta' ? [25, lejos * 0.6] : cl === 'nieve' ? [20, lejos * 0.55] : [40, lejos];
   farolMat.color.set(nocheK > 0.45 ? '#ffd27a' : '#7a6a48');
   if (cl !== climaAct) {
     climaAct = cl;
@@ -227,6 +230,13 @@ function choqueCamara(tx, tz, cx, cz) {
     }
   }
   return clamp(k, 0.15, 1);
+}
+// En la cueva la camara no sale de salas y pasillos.
+function choqueCueva(tx, tz, cx, cz) {
+  const L = Math.hypot(cx - tx, cz - tz) || 1;
+  let ult = 0;
+  for (let d = 0.4; d <= L; d += 0.4) { const k = d / L; if (!caminable(tx + (cx - tx) * k, tz + (cz - tz) * k, 0.35)) break; ult = k; }
+  return clamp(ult - 0.25 / L, 0.12, 1);
 }
 function crearFlora() {
   const tipos = {};
@@ -625,7 +635,7 @@ const npcs = [];
 let objetivo = 0, autoAtk = false, sigAtk = 0, avisoLejosT = 0;
 let camYaw = Math.PI, camPitch = 0.42, camDist = 11, camReal = 11;
 let zonaActual = '';
-let portal = null, agua = null;
+let portal = null, agua = null, cueva = null, cuevaInfo = null;
 const teclas = {};
 
 // ── RED ──
@@ -730,7 +740,17 @@ function recibir(m) {
     case 'ph': golpeJugador(m); break;
     case 'b3': { const o = mons.get(m.de), q = m.a === miId ? P : otros.get(m.a); if (o && q) proyectil(o, q, '#c084fc'); break; }
     case 'muerte': morir(m); break;
-    case 'tp3': case 'snap3': P.x = m.x; P.z = m.z; P.y = alturaEn(P.x, P.z); break;
+    case 'tp3': case 'snap3':
+      P.x = m.x; P.z = m.z; P.y = alturaEn(P.x, P.z);
+      if (m.t === 'tp3' && m.cueva !== undefined) {
+        cuevaInfo = m.cueva;
+        if (cueva) { cueva.cofre.visible = !!(m.cueva && m.cueva.hecha); cueva.tapa.rotation.x = 0; }
+        if (P.vuela) volar(false);
+        objetivo = 0; autoAtk = false; pintarBarra();
+        if (m.cueva) { camYaw = Math.PI; zonaActual = ''; }
+      }
+      break;
+    case 'cofre3': if (cueva) { cueva.cofre.visible = true; cueva.tapa.rotation.x = 0; } sfx('moneda', 0.6); break;
     case 'gana':
       if (m.xp) numero(P.x, P.y + 2.6, P.z, '+' + m.xp + ' XP', '#c084fc');
       if (m.oro) { numero(P.x + 0.6, P.y + 2.2, P.z, '+' + m.oro + ' oro', '#ffd84a'); sfx('moneda', 0.35); }
@@ -822,12 +842,15 @@ async function agregarMon(d) {
 }
 function quitarMon(id) { const o = mons.get(id); if (!o) return; if (o.fig) o.fig.quitar(); o.lbl.remove(); mons.delete(id); if (objetivo === id) { objetivo = 0; autoAtk = false; pintarBarra(); } }
 function foto(m) {
+  const enFoto = new Set();
   for (const [id, x, z, ry, a, hp, mx, muerto, h] of m.p) {
+    enFoto.add(id);
     if (id === miId) continue;
     const o = otros.get(id);
     if (!o) continue;
     o.tx = x; o.tz = z; o.ry = ry; o.a = a; o.hp = hp; o.mx = mx; o.muerto = !!muerto; o.h = h || 0;
   }
+  for (const o of [...otros.values()]) { if (enFoto.has(o.id)) o.falta = 0; else if ((o.falta = (o.falta || 0) + 1) > 10) quitarOtro(o.id); }
   if (m.n) for (const d of m.n) agregarMon(d);
   for (const [id, x, z, ry, hp, st] of m.m) {
     const o = mons.get(id);
@@ -1059,7 +1082,7 @@ function lineaChat(m) {
   while (log.children.length > 8) log.firstChild.remove();
 }
 function tituloZona(id) {
-  const mp = MAPAS[id];
+  const mp = id === 'cueva' ? { nombre: CUEVA.nombre, nv: [cuevaInfo ? cuevaInfo.nv : 5, cuevaInfo ? cuevaInfo.nv : 60] } : MAPAS[id];
   $('tz-n').textContent = mp ? mp.nombre : 'Pueblo Duende';
   $('tz-s').textContent = mp && mp.nv ? 'Nivel ' + mp.nv[0] + '-' + mp.nv[1] : 'Zona segura';
   $('mini-z').textContent = $('tz-n').textContent;
@@ -1197,8 +1220,12 @@ function pintarMini() {
   const cv = $('mini-c'), x = cv.getContext('2d'), S = 150, vista = 240;
   const N = mapaBase.width, [mx, mz] = aMapa(P.x, P.z, N), lado = vista / LADO * N;
   x.clearRect(0, 0, S, S);
-  x.drawImage(mapaBase, mx - lado / 2, mz - lado / 2, lado, lado, 0, 0, S, S);
   const k = S / vista;
+  if (enCueva(P.x)) {
+    x.fillStyle = '#0b0814'; x.fillRect(0, 0, S, S);
+    x.fillStyle = '#4a3f5c';
+    for (const [a, b, c, d] of CUEVA.salas) x.fillRect((CUEVA_X0 + a - P.x) * k * 2.2 + S / 2, (b - P.z) * k * 2.2 + S / 2, (c - a) * k * 2.2, (d - b) * k * 2.2);
+  } else x.drawImage(mapaBase, mx - lado / 2, mz - lado / 2, lado, lado, 0, 0, S, S);
   const punto = (wx, wz, color, r) => { const px = (wx - P.x) * k + S / 2, pz = (wz - P.z) * k + S / 2; if (px < 0 || pz < 0 || px > S || pz > S) return; x.fillStyle = color; x.beginPath(); x.arc(px, pz, r, 0, 7); x.fill(); };
   for (const o of mons.values()) if (!o.muereT) punto(o.x, o.z, o.j ? '#ffd84a' : '#ff4455', o.j ? 3.5 : 2);
   for (const o of otros.values()) punto(o.x, o.z, enGrupo(o.id) ? '#7dd3fc' : '#4ade80', enGrupo(o.id) ? 3.5 : 2.5);
@@ -1357,6 +1384,7 @@ function volar(on) {
     if (P.muerto || !yo) return;
     if (yo.montado) return aviso('Bájate de la montura para volar.', 'err');
     if (zonaEn(P.x, P.z) === 'pueblo') return aviso('En el pueblo no se puede volar.', 'err');
+    if (enCueva(P.x)) return aviso('En la cueva no hay sitio para volar.', 'err');
     if (P.alas < 3) return aviso('Tus alas necesitan descansar.', 'err');
     P.vuela = true; P.vy = 0; if (P.suelo) P.y += 1.5; P.suelo = false;
     sfx('salto', 0.3);
@@ -1369,12 +1397,25 @@ function saltar() {
   // Segundo salto en el aire: se despliegan las alas.
   if (!P.vuela) volar(true);
 }
-function npcCercano() { return npcs.find(n => Math.hypot(P.x - n.x, P.z - n.z) < NPC_DIST) || (portal && Math.hypot(P.x - portal.x, P.z - portal.z) < 5 ? { tipo: 'portal', nombre: 'Mazmorras' } : null); }
+function npcCercano() {
+  if (enCueva(P.x)) return Math.hypot(P.x - CUEVA_X0 - CUEVA.salida.x, P.z - CUEVA.salida.z) < 4 ? { tipo: 'salida', nombre: 'Salir de la cueva' } : null;
+  return npcs.find(n => Math.hypot(P.x - n.x, P.z - n.z) < NPC_DIST) || (portal && Math.hypot(P.x - portal.x, P.z - portal.z) < 5 ? { tipo: 'portal', nombre: 'Mazmorras' } : null);
+}
 function hablar() {
   if (!npcCercano()) { const nd = nodoCercano(); if (nd) { mandar({ t: 'recolectar', i: nd.i }); return; } }
   const n = npcCercano();
   if (!n) return;
-  if (n.tipo === 'portal') { aviso('Las mazmorras, la Torre y la banda se juegan por ahora en el juego 2D con tu mismo personaje.', 'ok'); setTimeout(() => { location.href = '/mmo/'; }, 1500); return; }
+  if (n.tipo === 'salida') { mandar({ t: 'salirCueva' }); return; }
+  if (n.tipo === 'portal') {
+    npcAbierto = '';
+    $('npc-t').textContent = 'PORTAL DE LAS MAZMORRAS';
+    $('npc-c').innerHTML = `<p><b style="color:#ffd84a">${CUEVA.nombre}</b> · mazmorra 3D para tu grupo (o solo). Salas con goblins, el Rey Goblin en su trono y un cofre para cada uno al final. Se adapta al nivel del más alto del grupo.</p>`
+      + '<button class="btn" id="p-cueva" style="width:100%;margin:8px 0">Entrar a la cueva</button>'
+      + '<p style="font-size:12px;color:var(--txt2)">Las demás mazmorras, la Torre y la banda siguen en el juego 2D con tu mismo personaje.</p><a class="btn sec" href="/mmo/" style="display:block;text-align:center;text-decoration:none">Ir al juego 2D</a>';
+    $('p-cueva').onclick = () => { mandar({ t: 'cueva' }); cerrar('v-npc'); };
+    abrir('v-npc');
+    return;
+  }
   abrirNpc(n.tipo);
 }
 $('hablar').onclick = hablar;
@@ -1446,7 +1487,10 @@ function fisica(dt) {
     mx /= Math.max(1, mag); mz /= Math.max(1, mag);
     const nadando = !P.vuela && alturaEn(P.x, P.z) < -0.7;
     const vel = MUNDO.velocidad * (nadando ? 0.55 : 1) * (P.vuela ? 1.25 : velMontura(yo.montado)) * (yo.dios && yo.diosModo && yo.diosModo.vel ? 3 : 1);
-    const nx = clamp(P.x + mx * vel * dt, -MUNDO.limite, MUNDO.limite), nz = clamp(P.z + mz * vel * dt, -MUNDO.limite, MUNDO.limite);
+    const enC = enCueva(P.x);
+    let nx = enC ? P.x + mx * vel * dt : clamp(P.x + mx * vel * dt, -MUNDO.limite, MUNDO.limite), nz = enC ? P.z + mz * vel * dt : clamp(P.z + mz * vel * dt, -MUNDO.limite, MUNDO.limite);
+    // En la cueva se resbala por las paredes en vez de atravesarlas.
+    if (enC && !caminable(nx, nz)) { if (caminable(nx, P.z)) nz = P.z; else if (caminable(P.x, nz)) nx = P.x; else { nx = P.x; nz = P.z; } }
     // Las laderas muy empinadas (la cordillera del borde) no se suben.
     const sube = alturaEn(nx, nz) - alturaEn(P.x, P.z);
     if (P.vuela || sube / (vel * dt + 1e-3) < 1.4) { P.x = nx; P.z = nz; }
@@ -1609,6 +1653,10 @@ function pintarMisiones() {
   const q = MISIONES[yo.mis.i], d = yo.diaria || {};
   let h = '';
   metaMision = null;
+  if (enCueva(P.x)) {
+    h = `<div class="q"><b>⛏ ${CUEVA.nombre}</b>${cuevaInfo && cuevaInfo.hecha ? '<span class="ok">¡Completada! Sal por el portal de la entrada.</span>' : 'Derrota al Rey Goblin en su trono.'}</div>`;
+    c.style.display = 'block'; if (c._h !== h) { c.innerHTML = h; c._h = h; } faro.visible = false; return;
+  }
   if (q) {
     const lista = yo.mis.p >= q.n;
     if (lista) metaMision = { x: guiaNpc.x, z: guiaNpc.z, guia: true };
@@ -1667,11 +1715,13 @@ function bucle(t) {
   // Camara: detras del duende, sin meterse en el suelo.
   const tx = P.x, ty = P.y + 1.4, tz = P.z;
   // Si un arbol tapa, la camara se acerca (suave al alejarse otra vez).
-  const kChoque = choqueCamara(tx, tz, tx + Math.sin(camYaw) * Math.cos(camPitch) * camDist, tz + Math.cos(camYaw) * Math.cos(camPitch) * camDist);
+  const camX = tx + Math.sin(camYaw) * Math.cos(camPitch) * camDist, camZ = tz + Math.cos(camYaw) * Math.cos(camPitch) * camDist;
+  const kChoque = enCueva(P.x) ? choqueCueva(tx, tz, camX, camZ) : choqueCamara(tx, tz, camX, camZ);
   camReal = kChoque * camDist < camReal ? kChoque * camDist : lerp(camReal, kChoque * camDist, 0.08);
   let cx = tx + Math.sin(camYaw) * Math.cos(camPitch) * camReal, cz = tz + Math.cos(camYaw) * Math.cos(camPitch) * camReal;
   let cy = ty + Math.sin(camPitch) * camReal;
   cy = Math.max(cy, alturaEn(cx, cz) + 0.8, MUNDO.agua + 0.5);
+  if (enCueva(P.x)) cy = Math.min(cy, 5.6);   // bajo el techo de la cueva
   camara.position.set(cx, cy, cz); camara.lookAt(tx, ty, tz);
   // Zona actual: titulo, cielo y niebla de su color.
   if (cuadro % 15 === 0) {
@@ -1681,7 +1731,7 @@ function bucle(t) {
     if (yo) {
       const n = npcCercano(), nd = n ? null : nodoCercano(); const b = $('hablar');
       b.style.display = n || nd ? 'block' : 'none';
-      if (n) b.textContent = (MOVIL ? '' : 'E · ') + (n.tipo === 'portal' ? 'Mazmorras' : 'Hablar con ' + n.nombre);
+      if (n) b.textContent = (MOVIL ? '' : 'E · ') + (n.tipo === 'portal' ? 'Mazmorras' : n.tipo === 'salida' ? 'Salir de la cueva' : 'Hablar con ' + n.nombre);
       else if (nd) b.textContent = (MOVIL ? '' : 'E · ') + 'Recoger ' + MATERIALES[nd.tipo].nombre;
     }
     if (cuadro % 60 === 0) revisarNodos();
@@ -1694,6 +1744,7 @@ function bucle(t) {
   if (flash) escena.background.lerp(C('#e8ecff'), 0.5);
   estrellas.position.copy(camara.position);
   moverLluvia(dt, t);
+  if (cueva && enCueva(P.x)) cueva.animar(t);
   if (agua) agua.material.opacity = 0.7 + Math.sin(t / 900) * 0.04;
   if (portal) portal.velo.material.opacity = 0.45 + Math.sin(t / 300) * 0.15;
   pintarObjetivo();
@@ -1737,6 +1788,7 @@ async function inicio() {
   await new Promise(r => setTimeout(r, 20));
   crearFlora();
   portal = crearPueblo();
+  cueva = construirCueva(escena);
   progreso(0.75, 'Dibujando el mapa…');
   await new Promise(r => setTimeout(r, 20));
   pintarMapaBase();

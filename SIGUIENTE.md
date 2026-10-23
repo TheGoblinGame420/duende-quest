@@ -2302,3 +2302,24 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
 - Cliente: panel `#v-look` (cámara de frente, vista previa en vivo sobre
   el propio modelo, al azar / guardar / cancelar), botón 🪞; se abre solo
   la primera vez (`dq3_look_visto`).
+
+### La Cueva de los Goblins (23-oct-2026, `?v=252`). Arnés **673**
+
+- mmo/js/cueva3d.js: plano (7 salas/pasillos como rectángulos), grupos,
+  jefe (`jefe_rey`), cofre, `caminable()`, `PORTAL_PUEBLO`. La cueva está en
+  x ≥ 3000 (`CUEVA_X0`); allí `alturaEn` = 0 y `zonaEn` = 'cueva'.
+- functions/mmo/cueva3d.js (mixin `Cueva3D`): `entrarCueva` (junto al
+  portal; instancia por grupo `g<id>` o por jugador `u<uid>`, nivel del más
+  alto 5-60), `salirCueva` (portal de la entrada), `tickCuevas` (pisotón
+  cada 11 s con aviso de 2,2 s, guardia al 50 %, furia al 25 %; instancia
+  vacía 5 min → se borra) y `premiosCueva` (XP, oro, pieza rara+, mazmorra
+  +1, tarea 'mazmorra').
+- mundo3d.js: todo filtra por `mismo(a, b)` (i3): fotos (jugadores y
+  monstruos), IA, objetivos, áreas, curas, XP compartida. En la cueva todos
+  los monstruos son agresivos (11 m) y avisan a los de su sala. `mover3d`
+  solo deja caminar por `caminable`; la posición de la cueva no se guarda
+  (al reconectar, al pueblo).
+- Cliente: mundo/js/cueva.js (suelo, paredes de roca rasterizadas, techo,
+  antorchas con luz, estalagmitas, cristales, trono, portal, cofre); colisión
+  con resbalón por paredes; cámara que no sale de la cueva y bajo el techo;
+  minimapa de la cueva; el portal del pueblo abre un menú (cueva 3D o 2D).

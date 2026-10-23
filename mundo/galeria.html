@@ -16,7 +16,7 @@ h1{font-size:18px;margin-bottom:6px}
 h2{font-size:14px;margin:14px 0 6px;color:var(--txt2)}
 .rejilla{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
 .celda{background:var(--panel);border:1px solid var(--borde);border-radius:8px;overflow:hidden;cursor:pointer}
-.vista{height:190px}
+.fila{display:flex}.vista{height:190px;flex:1}.sprite{width:42%;height:190px;object-fit:contain;image-rendering:pixelated;background:#1d1735;border-right:1px solid var(--borde)}.compacta .sprite{height:130px}
 .info{padding:5px 7px;line-height:1.35}
 .info b{display:block;font-size:12px}
 .info small{color:var(--txt2);font-size:11px}
@@ -38,8 +38,8 @@ h2{font-size:14px;margin:14px 0 6px;color:var(--txt2)}
 <canvas id="lienzo"></canvas>
 <script type="module">
 import * as THREE from 'three';
-import { MONSTRUOS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE } from '/mmo/js/data.js?v=251';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './js/modelos.js?v=251';
+import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE } from '/mmo/js/data.js?v=252';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './js/modelos.js?v=252';
 
 // Parametros: ?filtro=texto&estado=quieto&gira=0&ry=1.57&compacta=1
 const Q = new URLSearchParams(location.search);
@@ -67,7 +67,14 @@ precalentar();
 // Lista de modelos a mostrar.
 const grupos = [];
 const duendes = [];
-for (const s of Object.keys(SKINS)) duendes.push({ nombre: 'Duende ' + SKINS[s].nombre, sub: `skin ${s} · sin clase · katana`, crear: () => crearDuende({ skin: s, clase: null, arma: 'katana' }) });
+// Referencia 2D de cada skin: la hoja animada (teñida en las premium) o su imagen.
+const spriteSkin = s => {
+  const sk = SKINS[s];
+  if (s === 'comun' || sk.anim) return { src: '/assets/skins/duende_anim.png', fw: 172, fh: 140, col: 0, fila: 0, filtro: sk.anim ? `hue-rotate(${sk.hue || 0}deg) saturate(${sk.sat || 1})` : '' };
+  return { src: `/assets/skins/${sk.img}.png` };
+};
+const spriteHoja = h => HOJAS[h] && { src: `/assets/enemigos/sheets/${h}.png`, fw: HOJAS[h].fw, fh: HOJAS[h].fh, col: HOJAS[h].mov[1], fila: HOJAS[h].mov[0] };
+for (const s of Object.keys(SKINS)) duendes.push({ nombre: 'Duende ' + SKINS[s].nombre, sub: `skin ${s} · sin clase · katana`, sprite: spriteSkin(s), crear: () => crearDuende({ skin: s, clase: null, arma: 'katana' }) });
 for (const cl of Object.keys(CLASES)) for (const a of (CLASES[cl].basico === 'vara' ? ['katana'] : Object.keys(ARMAS)))
   duendes.push({ nombre: `${CLASES[cl].nombre} · ${CLASES[cl].basico === 'vara' ? 'vara' : ARMAS[a].nombre}`, sub: `clase ${cl} · arma ${a}`, crear: () => crearDuende({ skin: 'comun', clase: cl, arma: a }) });
 for (const a of Object.keys(ARMAS)) duendes.push({ nombre: 'Duende · ' + ARMAS[a].nombre, sub: `skin legendaria · ${a}`, crear: () => crearDuende({ skin: 'legendaria', arma: a }) });
@@ -82,11 +89,27 @@ for (const cl of [null, 'guerrero', 'mago', 'sacerdote', 'picaro'])
   APARIENCIA.pelo.forEach((n, i) => apa.push({ nombre: `Pelo: ${n}${cl ? ' + ' + CLASES[cl].nombre : ''}`, sub: `look.pelo ${i} · ${cl || 'gorra'}`, crear: look({ pelo: i }, cl) }));
 APARIENCIA.colorPelo.forEach((c, i) => apa.push({ nombre: 'Color de pelo ' + i, sub: `look.colorPelo ${i} ${c}`, crear: look({ pelo: 4, colorPelo: i, cara: 4 }) }));
 grupos.push(['Apariencia (crearDuende({ look }))', apa]);
-grupos.push(['Monstruos (crearMonstruo)', Object.keys(MONSTRUOS).map(k => ({ nombre: MONSTRUOS[k].nombre, sub: `${k} · ${MONSTRUOS[k].hoja}${MONSTRUOS[k].jefe ? ' · JEFE' : ''}`, crear: () => crearMonstruo(k) }))]);
-grupos.push(['NPC (crearNpc)', ['goblin_guard', 'goblin_peasant', 'hechicero', 'goblin_mage'].map(h => ({ nombre: 'NPC ' + h, sub: h, crear: () => crearNpc(h) }))]);
+grupos.push(['Monstruos (crearMonstruo): a la izquierda su hoja 2D', Object.keys(MONSTRUOS).map(k => ({ nombre: MONSTRUOS[k].nombre, sub: `${k} · ${MONSTRUOS[k].hoja}${MONSTRUOS[k].jefe ? ' · JEFE' : ''}${MONSTRUOS[k].tinte ? ' · tinte ' + MONSTRUOS[k].tinte : ''}`, sprite: spriteHoja(MONSTRUOS[k].hoja), crear: () => crearMonstruo(k) }))]);
+grupos.push(['NPC (crearNpc)', ['goblin_guard', 'goblin_peasant', 'hechicero', 'goblin_mage'].map(h => ({ nombre: 'NPC ' + h, sub: h, sprite: spriteHoja(h), crear: () => crearNpc(h) }))]);
 grupos.push(['Monturas (crearMontura) con jinete en .silla (estado «monta»)', Object.keys(MONTURAS).map(id => ({ nombre: MONTURAS[id].nombre, sub: `${id} · ${MONTURAS[id].hoja}`, montura: id, crear: () => crearMontura(id) }))]);
-grupos.push(['Monturas sin jinete', Object.keys(MONTURAS).map(id => ({ nombre: MONTURAS[id].nombre, sub: `${id} · ${MONTURAS[id].hoja}`, crear: () => crearMontura(id) }))]);
+grupos.push(['Monturas sin jinete', Object.keys(MONTURAS).map(id => ({ nombre: MONTURAS[id].nombre, sub: `${id} · ${MONTURAS[id].hoja}`, sprite: spriteHoja(MONTURAS[id].hoja), crear: () => crearMontura(id) }))]);
 
+// Cuadro 2D de referencia (pixelado) a la izquierda de la vista 3D.
+function dibujarSprite(fila, sp) {
+  const cv = document.createElement('canvas');
+  cv.className = 'sprite';
+  fila.prepend(cv);
+  const img = new Image();
+  img.onload = () => {
+    const fw = sp.fw || img.width, fh = sp.fh || img.height;
+    cv.width = fw; cv.height = fh;
+    const x = cv.getContext('2d');
+    x.imageSmoothingEnabled = false;
+    if (sp.filtro) x.filter = sp.filtro;
+    x.drawImage(img, (sp.col || 0) * fw, (sp.fila || 0) * fh, fw, fh, 0, 0, fw, fh);
+  };
+  img.src = sp.src;
+}
 // Celdas: cada una con su escena, luz y camara.
 const celdas = [];
 const informe = [];
@@ -99,7 +122,8 @@ for (const [titulo, lista] of grupos) {
   for (const it of lista) {
     if (FILTRO && !(it.nombre + ' ' + it.sub).toLowerCase().includes(FILTRO)) continue;
     const d = document.createElement('div'); d.className = 'celda';
-    d.innerHTML = '<div class="vista"></div><div class="info"><b></b><small></small><small class="est"></small></div>';
+    d.innerHTML = '<div class="fila"><div class="vista"></div></div><div class="info"><b></b><small></small><small class="est"></small></div>';
+    if (it.sprite) dibujarSprite(d.querySelector('.fila'), it.sprite);
     d.querySelector('b').textContent = it.nombre;
     rej.appendChild(d);
     let m = null;

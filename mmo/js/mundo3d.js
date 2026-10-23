@@ -68,6 +68,7 @@ function fbm(x, z) {
 // ── REGIONES ──
 // La zona de un punto es la del centro mas cercano; el pueblo, un circulo.
 export function zonaEn(x, z) {
+  if (x > 2000) return 'cueva';   // la Cueva de los Goblins (mmo/js/cueva3d.js)
   if (Math.hypot(x - MUNDO.pueblo.x, z - MUNDO.pueblo.z) < MUNDO.pueblo.radio) return 'pueblo';
   let mejor = null, md = Infinity;
   for (const id of IDS) { const c = ZONAS3D[id]; const d = (c.x - x) ** 2 + (c.z - z) ** 2; if (d < md) { md = d; mejor = id; } }
@@ -85,6 +86,7 @@ export function mezclaEn(x, z) {
 
 // ── ALTURA DEL TERRENO ──
 export function alturaEn(x, z) {
+  if (x > 2000) return 0;
   let h = 0;
   for (const [id, k] of mezclaEn(x, z)) {
     const [amp, base] = RELIEVE[id];

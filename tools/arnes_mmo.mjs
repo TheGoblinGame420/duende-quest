@@ -601,6 +601,41 @@ async function pruebas() {
   await pruebasAmbiente3d();
   await pruebasRecoleccion3d();
   await pruebasLook3d();
+  await pruebasCueva3d();
+}
+
+// ── LA CUEVA DE LOS GOBLINS (mazmorra 3D instanciada) ──
+async function pruebasCueva3d() {
+  console.log('Mundo 3D: la Cueva de los Goblins');
+  const C = await import('../mmo/js/cueva3d.js');
+  const a = await entrar3d('Espeleo3D', '4g1'); ponerNivel(a, 20, 'guerrero');
+  const fuera = await entrar3d('Paseante3D', '4g2'); ponerNivel(fuera, 20, 'mago');
+  await a.mandar({ t: 'cueva' });
+  chequear(!a.i3 && a.ultimos('no').length, 'lejos del portal no se entra');
+  a.p = { x: C.PORTAL_PUEBLO.x + 1, z: C.PORTAL_PUEBLO.z }; a.movBud = undefined;
+  await a.mandar({ t: 'cueva' });
+  chequear(a.i3 && a.p.x > C.CUEVA_X0 - 50 && a.ultimos('tp3').some(x => x.cueva && x.cueva.nv === 20), 'junto al portal entra a su cueva (Nv 20)');
+  const inst = mundo.cuevas3().get(a.i3);
+  const mons = [...inst.mons].map(id => mundo.m3.mons.get(id));
+  chequear(mons.length >= 17 && mons.every(o => o.i3 === inst.id && o.nv === 20), 'la cueva tiene sus monstruos al nivel del grupo');
+  fuera.p = { x: a.p.x, z: a.p.z }; fuera.limpiar(); a.limpiar();
+  tick(3);
+  const vistoFuera = fuera.ultimos('s3').some(x => (x.n || []).some(n => inst.mons.has(n.id)) || x.p.some(p => p[0] === a.id));
+  chequear(!vistoFuera, 'desde fuera no se ven ni los monstruos ni los jugadores de la cueva');
+  chequear(a.ultimos('s3').some(x => (x.n || []).length), 'dentro sí se ven los de la cueva');
+  await a.mandar({ t: 'mv3', x: C.CUEVA_X0 + 40, z: 6, r: 0, a: 1 });
+  chequear(a.p.x < C.CUEVA_X0 + 12, 'no se atraviesan las paredes de la cueva');
+  const jefe = mundo.m3.mons.get(inst.jefe);
+  a.p = { x: jefe.x - 2, z: jefe.z }; a.movBud = undefined; a.limpiar();
+  jefe.hp = 1; a.atkT = 0; const nm0 = a.c.mazmorras || 0;
+  await a.mandar({ t: 'atk3', tg: jefe.id });
+  chequear(jefe.muere && inst.hecha && (a.c.mazmorras || 0) === nm0 + 1 && a.ultimos('cofre3').length === 1, 'el Rey Goblin cae: cofre y mazmorra completada');
+  a.p = { x: C.CUEVA_X0 + C.CUEVA.salida.x, z: C.CUEVA.salida.z + 1 };
+  await a.mandar({ t: 'salirCueva' });
+  chequear(!a.i3 && Math.abs(a.p.x - C.PORTAL_PUEBLO.x) < 6, 'por el portal de la entrada se vuelve al pueblo');
+  avanzar(6 * 60 * 1000); tick(1);
+  chequear(!mundo.cuevas3().has(inst.id) && !mundo.m3.mons.has(jefe.id + 1), 'la cueva vacía se borra a los 5 minutos');
+  for (const s of [a, fuera]) await dejar(s);
 }
 
 // ── APARIENCIA (editor del 3D) ──

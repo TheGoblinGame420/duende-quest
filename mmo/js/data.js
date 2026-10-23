@@ -483,6 +483,11 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 20, fecha: '23 oct 2026', items: [
+    '¡Primera mazmorra 3D! La Cueva de los Goblins: entra por el portal del pueblo, solo o con tu grupo (cada grupo tiene su propia cueva).',
+    'Salas con goblins que atacan en grupo y el Rey Goblin en su trono: esquiva sus pisotones, aguanta a su guardia y llévate un cofre con equipo raro o mejor.',
+    'La cueva se adapta al nivel del más alto del grupo y cuenta como mazmorra completada.',
+  ] },
   { n: 19, fecha: '23 oct 2026', items: [
     'Editor de personaje en el mundo 3D (botón 🪞): elige cara, forma del cuerpo, altura, peinado y color de pelo. Todos lo ven.',
     'Seis caras (pecosa, cicatriz, bigotes, barba…), tres cuerpos y ocho peinados que asoman bajo el casco o la capucha de tu clase.',
