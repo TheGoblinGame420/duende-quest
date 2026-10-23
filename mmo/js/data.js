@@ -458,6 +458,11 @@ export const TINTES = {
 // enseñan una vez (lo nuevo para los que vuelven). La mas reciente arriba;
 // subir 'n' al añadir una.
 export const NOVEDADES = [
+  { n: 15, fecha: '23 oct 2026', items: [
+    'Grupos en el mundo 3D: haz clic en otro jugador para invitarlo; marcos de grupo con la vida de cada uno.',
+    'Cazar en grupo cuenta para todos: los compañeros cerca cobran la caza para sus misiones y diarias.',
+    'Chat de grupo con /g y susurros con /s nombre.',
+  ] },
   { n: 14, fecha: '23 oct 2026', items: [
     'Mundo 3D con modelos 3D de verdad: tu duende lleva el casco, la capucha o el sombrero de su clase y su arma; más de 70 monstruos con su propio cuerpo y animaciones.',
     'Monturas con jinete, alas a la espalda y una cámara que ya no se queda detrás de los árboles.',

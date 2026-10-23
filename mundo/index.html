@@ -25,6 +25,16 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .caja{position:fixed;background:var(--panel);border:1px solid var(--borde);border-radius:10px;backdrop-filter:blur(4px);pointer-events:auto;}
 #marco{left:12px;top:12px;padding:8px 10px;min-width:210px;}
 #obj{left:240px;top:12px;padding:8px 10px;min-width:200px;display:none;}
+#objp{left:240px;top:12px;padding:8px 10px;min-width:200px;display:none;}
+#objp .fila-b,#invit3 .fila-b{display:flex;gap:6px;margin-top:6px;}
+#objp .btn,#invit3 .btn{flex:1;padding:6px 8px;font-size:11px;pointer-events:auto;}
+#grupo3{left:12px;top:150px;padding:6px 8px;min-width:180px;display:none;pointer-events:auto;}
+#grupo3 .mi{display:block;padding:3px 2px;border-radius:6px;cursor:pointer;font:600 11px var(--sans);}
+#grupo3 .mi:hover,#grupo3 .mi.sel{background:rgba(125,211,252,.15);}
+#grupo3 .mi .barra{height:6px;margin-top:2px;}
+#grupo3 .mi.lejos{opacity:.55;}
+#grupo3 .salir{margin-top:4px;width:100%;padding:4px;font-size:10px;}
+#invit3{left:50%;bottom:150px;transform:translateX(-50%);padding:10px 14px;display:none;pointer-events:auto;text-align:center;font:600 13px var(--sans);}
 .nm{font:600 13px var(--sans);display:flex;justify-content:space-between;gap:8px;margin-bottom:4px;}
 .nm small{color:var(--txt2);font-weight:500;}
 .barra{position:relative;height:14px;background:rgba(0,0,0,.55);border-radius:4px;overflow:hidden;margin-top:3px;}
@@ -105,7 +115,8 @@ body.movil #joy,body.movil #tactil{display:grid;}
 body.movil #joy{display:block;}
 body.movil #chat{width:min(260px,60vw);bottom:auto;top:178px;}
 body.movil #chat-log{max-height:70px;font-size:11px;}
-body.movil #obj{left:12px;top:96px;}
+body.movil #obj,body.movil #objp{left:12px;top:96px;}
+body.movil #grupo3{top:auto;bottom:210px;min-width:150px;}
 body.movil #marco{min-width:180px;}
 body.movil #botones{right:12px;top:186px;flex-direction:column;}
 body.movil #barra{bottom:14px;left:auto;right:auto;transform:none;left:50%;transform:translateX(-50%) scale(.85);transform-origin:bottom center;}
@@ -132,6 +143,13 @@ body.movil #titulo-zona b{font-size:16px;}
   <div id="auras"></div>
   <div id="mundial"></div>
 </div>
+<div class="caja" id="grupo3"></div>
+<div class="caja" id="objp">
+  <div class="nm"><span id="op-nombre">—</span><small id="op-nivel"></small></div>
+  <div class="barra hp" id="op-hp"><i></i><span></span></div>
+  <div class="fila-b"><button class="btn" id="op-inv">Invitar al grupo</button><button class="btn sec" id="op-sus">Susurrar</button></div>
+</div>
+<div class="caja" id="invit3"><p id="invit3-t"></p><div class="fila-b"><button class="btn" id="invit3-si">Aceptar</button><button class="btn sec" id="invit3-no">Rechazar</button></div></div>
 <div class="caja" id="obj">
   <div class="nm"><span id="o-nombre">—</span><small id="o-nivel"></small></div>
   <div class="barra hpo" id="o-hp"><i></i><span></span></div>
@@ -214,6 +232,7 @@ body.movil #titulo-zona b{font-size:16px;}
   <div class="fila"><span>Volar (alas)</span><b>V o doble salto · Espacio sube · C baja</b></div>
   <div class="fila"><span>Montura</span><b>Y</b></div>
   <div class="fila"><span>Inventario · Libro · Logros</span><b>I · P · L</b></div>
+  <div class="fila"><span>Grupo: clic en un jugador → Invitar · chat de grupo</span><b>/g texto</b></div>
   <div class="fila"><span>Consumibles</span><b>Q F G T</b></div>
   <div class="fila"><span>Hablar</span><b>E</b></div>
   <div class="fila"><span>Mapa · Chat</span><b>M · Enter</b></div>
@@ -229,6 +248,6 @@ body.movil #titulo-zona b{font-size:16px;}
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script src="/js/config.js"></script>
-<script type="module" src="/mundo/js/mundo.js?v=246"></script>
+<script type="module" src="/mundo/js/mundo.js?v=247"></script>
 </body>
 </html>

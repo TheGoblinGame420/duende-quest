@@ -2237,3 +2237,15 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
   duende, la cámara se acerca (`choqueCamara`).
 - Medido: 3,5 ms por cuadro con 10-12 monstruos (sprites: 2,6 ms).
 
+### Grupo en el 3D (23-oct-2026, `?v=247`). Arnés **651**
+
+- `recibir3d` acepta invitar, grupoResp, salirGrupo, expulsarGrupo y
+  liderGrupo (los mismos de social.js). `infoMiembro` lleva `p3` (posición
+  3D) para el minimapa.
+- `matar3d`: los compañeros de grupo a 60 m que no pegaron reciben `dar()`
+  con el 60 % de la XP y la mitad del oro (cuenta para misiones, diarias y
+  bestiario).
+- Cliente: clic en un jugador → marco `#objp` (Invitar / Susurrar); los
+  hechizos de aliado usan ese jugador. Marco de grupo `#grupo3` (clic en un
+  miembro para elegirlo), invitación `#invit3`, compañeros en celeste en el
+  minimapa, chat `/g` y `/s nombre`.

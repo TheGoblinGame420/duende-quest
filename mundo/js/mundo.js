@@ -13,10 +13,10 @@
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
-  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura } from '/mmo/js/data.js?v=246';
-import { iniciarVentanas } from './ventanas.js?v=246';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=246';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=246';
+  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura } from '/mmo/js/data.js?v=247';
+import { iniciarVentanas } from './ventanas.js?v=247';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=247';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=247';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -588,6 +588,14 @@ function recibir(m) {
     case 'aviso': aviso(m.m); break;
     case 'no': aviso(m.m, 'err'); break;
     case 'chat': lineaChat(m); break;
+    case 'grupo': grupo3 = m.g; pintarGrupo(); break;
+    case 'invitacion': {
+      $('invit3-t').textContent = `${m.de} (Nv ${m.nv}) te invita a su grupo.`;
+      $('invit3').style.display = 'block';
+      clearTimeout(invitT); invitT = setTimeout(() => { $('invit3').style.display = 'none'; }, m.ms || 30000);
+      sfx('boton', 0.4);
+      break;
+    }
     case 'cd': cdPoder[m.id] = performance.now() + m.hasta; break;
     case 'pedidoSol': case 'factura': V.alPedido(m); break;
     case 'pw': if (m.p === miId) sfx(m.i === 2 ? 'explosion' : 'boton', 0.4); break;
@@ -643,7 +651,7 @@ async function rehacerFiguraOtro(o) {
   if (o.fig) o.fig.quitar();
   o.fig = f;
 }
-function quitarOtro(id) { const o = otros.get(id); if (!o) return; if (o.fig) o.fig.quitar(); if (o.alas) escena.remove(o.alas); o.lbl.remove(); otros.delete(id); }
+function quitarOtro(id) { const o = otros.get(id); if (!o) return; if (objetivoP === id) objetivoP = 0; if (o.fig) o.fig.quitar(); if (o.alas) escena.remove(o.alas); o.lbl.remove(); otros.delete(id); }
 async function agregarMon(d) {
   if (mons.has(d.id)) return;
   const def = MONSTRUOS[d.k];
@@ -689,7 +697,7 @@ function golpeJugador(m) {
   if (m.d > 0) numero(q.x, (q.y || alturaEn(q.x, q.z)) + 2.3, q.z, '-' + m.d, '#ff5a6a');
   if (m.p === miId) { P.heridoT = performance.now(); sfx('golpe', 0.25); }
 }
-let proyectiles = [], efectos = [], lanzando = null, objetivoP = 0, mundial3 = null, sacudir = 0;
+let proyectiles = [], efectos = [], lanzando = null, objetivoP = 0, mundial3 = null, sacudir = 0, grupo3 = null;
 const zonas3 = new Map();
 let tocandoSubir = false, tocandoBajar = false;
 // Anillo que se expande (habilidades de area, curas en grupo...).
@@ -730,6 +738,8 @@ function pintarAuras() {
     if ($('mundial')._h !== txt) { $('mundial').textContent = txt; $('mundial')._h = txt; }
     void desfase;
   }
+  // El marco del grupo va justo debajo del propio (que crece con auras y avisos).
+  if (grupo3 && !MOVIL) { const mc = $('marco'); $('grupo3').style.top = (mc.offsetTop + mc.offsetHeight + 8) + 'px'; }
   const cb = yo && yo.clase === 'picaro' ? yo.combo || 0 : 0;
   const ch = '<i></i>'.repeat(cb);
   if ($('combo')._h !== ch) { $('combo').innerHTML = ch; $('combo')._h = ch; }
@@ -841,10 +851,53 @@ function aviso(txt, tipo) {
   while (avisos.children.length > 4) avisos.firstChild.remove();
   setTimeout(() => d.remove(), 4500);
 }
+// ── GRUPO ──
+let invitT = 0;
+const enGrupo = id => !!(grupo3 && grupo3.m.some(x => x.on && x.id === id));
+function pintarGrupo() {
+  const c = $('grupo3');
+  if (!grupo3) { c.style.display = 'none'; c.innerHTML = ''; return; }
+  c.style.display = 'block';
+  const lider = grupo3.lider;
+  c.innerHTML = `<div style="font:700 10px var(--sans);color:var(--txt3);margin-bottom:3px">${grupo3.banda ? 'BANDA' : 'GRUPO'}</div>` + grupo3.m.filter(x => x.id !== miId).map(x => {
+    const cl = CLASES[x.cl];
+    const fuera = !x.on || x.k !== '~3d';
+    return `<span class="mi${fuera ? ' lejos' : ''}${x.id === objetivoP ? ' sel' : ''}" data-id="${x.id || 0}"><b style="color:${cl ? cl.color : '#fff'}">${x.uid === lider ? '👑 ' : ''}${esc(x.n)}</b> <small>Nv${x.lv || '?'}${!x.on ? ' · desconectado' : x.k !== '~3d' ? ' · en el 2D' : x.muerto ? ' · ☠' : ''}</small>`
+      + (x.on ? `<div class="barra hp"><i style="transform:scaleX(${clamp((x.hp || 0) / (x.mx || 1), 0, 1).toFixed(2)})"></i></div>` : '') + '</span>';
+  }).join('') + '<button class="btn sec salir" id="g-salir">Salir del grupo</button>';
+  c.querySelectorAll('.mi').forEach(e => e.onclick = () => { const id = +e.dataset.id; if (id && otros.has(id)) { objetivoP = id; pintarObjetivoP(); pintarGrupo(); } });
+  $('g-salir').onclick = () => { mandar({ t: 'salirGrupo' }); };
+}
+function pintarObjetivoP() {
+  const o = otros.get(objetivoP);
+  const caja = $('objp');
+  if (!o || objetivo) { caja.style.display = 'none'; return; }
+  caja.style.display = 'block';
+  const cl = CLASES[o.cl];
+  $('op-nombre').textContent = o.n; $('op-nombre').style.color = cl ? cl.color : '#fff';
+  $('op-nivel').textContent = 'Nv ' + o.lv + (cl ? ' · ' + cl.nombre : '');
+  const hp = $('op-hp');
+  hp.firstElementChild.style.transform = `scaleX(${clamp(o.hp / o.mx, 0, 1)})`;
+  hp.lastElementChild.textContent = Math.ceil(o.hp) + ' / ' + o.mx;
+  $('op-inv').style.display = enGrupo(o.id) ? 'none' : '';
+}
+$('op-inv').onclick = () => { if (objetivoP) mandar({ t: 'invitar', p: objetivoP }); };
+$('op-sus').onclick = () => { const o = otros.get(objetivoP); if (!o) return; const i = $('chat-in'); i.style.display = 'block'; i.value = '/s ' + o.n + ' '; i.focus(); };
+$('invit3-si').onclick = () => { mandar({ t: 'grupoResp', si: true }); $('invit3').style.display = 'none'; };
+$('invit3-no').onclick = () => { mandar({ t: 'grupoResp', si: false }); $('invit3').style.display = 'none'; };
+// Chat: /g (o /p) al grupo, /s nombre texto susurra; lo demas, general.
+function enviarChat(v) {
+  const g = /^\/(g|p|grupo)\s+(.+)/i.exec(v), s = /^\/(s|w)\s+(\S+)\s+(.+)/i.exec(v);
+  if (g) return mandar({ t: 'chat', m: g[2], canal: 'grupo' });
+  if (s) return mandar({ t: 'chat', m: s[3], canal: 'susurro', a: s[2] });
+  mandar({ t: 'chat', m: v, canal: 'general' });
+}
 function lineaChat(m) {
   const d = document.createElement('div');
+  if (m.canal === 'grupo') d.style.color = '#7dd3fc';
+  if (m.canal === 'susurro') d.style.color = '#f0abfc';
   if (m.sis || !m.n) d.textContent = m.m;
-  else { const b = document.createElement('b'); b.textContent = (m.gm ? '[GM] ' : '') + m.n + ': '; b.style.color = m.gm ? '#ffd84a' : (CLASES[m.cl] ? CLASES[m.cl].color : '#fff'); d.appendChild(b); d.appendChild(document.createTextNode(m.m)); }
+  else { const b = document.createElement('b'); b.textContent = (m.canal === 'grupo' ? '[Grupo] ' : m.canal === 'susurro' ? '[Susurro] ' : '') + (m.gm ? '[GM] ' : '') + m.n + ': '; b.style.color = m.gm ? '#ffd84a' : (CLASES[m.cl] ? CLASES[m.cl].color : '#fff'); d.appendChild(b); d.appendChild(document.createTextNode(m.m)); }
   const log = $('chat-log'); log.appendChild(d);
   while (log.children.length > 8) log.firstChild.remove();
 }
@@ -935,7 +988,7 @@ function pintarMini() {
   const k = S / vista;
   const punto = (wx, wz, color, r) => { const px = (wx - P.x) * k + S / 2, pz = (wz - P.z) * k + S / 2; if (px < 0 || pz < 0 || px > S || pz > S) return; x.fillStyle = color; x.beginPath(); x.arc(px, pz, r, 0, 7); x.fill(); };
   for (const o of mons.values()) if (!o.muereT) punto(o.x, o.z, o.j ? '#ffd84a' : '#ff4455', o.j ? 3.5 : 2);
-  for (const o of otros.values()) punto(o.x, o.z, '#4ade80', 2.5);
+  for (const o of otros.values()) punto(o.x, o.z, enGrupo(o.id) ? '#7dd3fc' : '#4ade80', enGrupo(o.id) ? 3.5 : 2.5);
   for (const n of NPCS3D) punto(n.x, n.z, '#7dd3fc', 2);
   if (mundial3 && mundial3.vivo) punto(ARENA3D.x, ARENA3D.z, '#ff6b3d', 5);
   // Flecha propia (hacia donde mira la camara).
@@ -965,7 +1018,7 @@ function chatAbierto() { return document.activeElement === $('chat-in'); }
 function hayVentana() { return !!document.querySelector('.modal.on'); }
 addEventListener('keydown', e => {
   if (chatAbierto()) {
-    if (e.key === 'Enter') { const v = $('chat-in').value.trim(); if (v) mandar({ t: 'chat', m: v, canal: 'general' }); $('chat-in').value = ''; $('chat-in').blur(); $('chat-in').style.display = 'none'; }
+    if (e.key === 'Enter') { const v = $('chat-in').value.trim(); if (v) enviarChat(v); $('chat-in').value = ''; $('chat-in').blur(); $('chat-in').style.display = 'none'; }
     if (e.key === 'Escape') { $('chat-in').blur(); $('chat-in').style.display = 'none'; }
     return;
   }
@@ -991,13 +1044,13 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyP' && !e.repeat) V.abrirLibro();
   if (e.code === 'KeyL' && !e.repeat) V.abrirLogros();
   if (e.code === 'Enter') { e.preventDefault(); $('chat-in').style.display = 'block'; $('chat-in').focus(); }
-  if (e.code === 'Escape') { objetivo = 0; autoAtk = false; pintarBarra(); }
+  if (e.code === 'Escape') { objetivo = 0; objetivoP = 0; autoAtk = false; pintarBarra(); pintarGrupo(); }
 });
 addEventListener('keyup', e => { teclas[e.code] = false; });
 addEventListener('blur', () => { for (const k in teclas) teclas[k] = false; });
 $('chat-in').addEventListener('keydown', e => e.stopPropagation(), true);
 $('chat-in').addEventListener('keydown', e => {
-  if (e.key === 'Enter') { const v = $('chat-in').value.trim(); if (v) mandar({ t: 'chat', m: v, canal: 'general' }); $('chat-in').value = ''; $('chat-in').blur(); $('chat-in').style.display = 'none'; }
+  if (e.key === 'Enter') { const v = $('chat-in').value.trim(); if (v) enviarChat(v); $('chat-in').value = ''; $('chat-in').blur(); $('chat-in').style.display = 'none'; }
   if (e.key === 'Escape') { $('chat-in').blur(); $('chat-in').style.display = 'none'; }
 });
 
@@ -1035,6 +1088,10 @@ function elegirEn(cx, cy, doble) {
       return;
     }
   }
+  // Clic en otro jugador: queda elegido (curas, invitar al grupo).
+  const ls = [...otros.values()].filter(o => o.fig);
+  const hp2 = ray.intersectObjects(ls.map(o => o.fig.m), false);
+  if (hp2.length) { const o = ls.find(x => x.fig.m === hp2[0].object); if (o) { objetivoP = o.id; objetivo = 0; autoAtk = false; pintarBarra(); pintarObjetivoP(); pintarGrupo(); sfx('boton', 0.2); return; } }
   // Clic cerca de un PNJ: hablar.
   for (const n of npcs) { const s = aPantalla(n.x, n.y + 1.2, n.z); if (s && Math.hypot(s[0] - cx, s[1] - cy) < 40 && Math.hypot(P.x - n.x, P.z - n.z) < NPC_DIST + 2) { abrirNpc(n.tipo); return; } }
 }
@@ -1365,7 +1422,7 @@ function bucle(t) {
   if (agua) agua.material.opacity = 0.7 + Math.sin(t / 900) * 0.04;
   if (portal) portal.velo.material.opacity = 0.45 + Math.sin(t / 300) * 0.15;
   pintarObjetivo();
-  if (cuadro % 6 === 0) { pintarMini(); pintarCds(); pintarAuras(); }
+  if (cuadro % 6 === 0) { pintarMini(); pintarCds(); pintarAuras(); pintarObjetivoP(); }
   efectos = efectos.filter(e => {
     e.t += dt / e.dura;
     const r = 0.5 + e.radio * Math.min(1, e.t);

@@ -98,6 +98,11 @@ export const Mundo3D = {
       case 'equipar': return this.equipar(s, m);
       case 'item': return this.item(s, m);
       case 'titulo': return this.ponerTitulo(s, m);
+      case 'invitar': return this.invitar(s, m);
+      case 'grupoResp': return this.respuestaGrupo(s, m);
+      case 'salirGrupo': return this.salirGrupo(s);
+      case 'expulsarGrupo': return this.expulsarGrupo(s, m);
+      case 'liderGrupo': return this.liderGrupo(s, m);
       case 'pedido': return this.pedido(s, m);
       case 'pedidoFirma': return this.pedidoFirma(s, m);
       case 'pedidoBuscar': return this.pedidoBuscar(s, m);
@@ -213,6 +218,17 @@ export const Mundo3D = {
       this.dar(s, xp, oro, o, 1, true);
       cobraron.add(sid);
       if (o.jefe && parte >= 0.1) this.darMton(s, 20 * Math.max(0.3, MONSTRUOS[o.k].nivel / 30), 'jefe');
+    }
+    // Grupo: los compañeros cerca (60 m) cuentan la caza como suya (misiones,
+    // diarias, bestiario) y se llevan el 60% de la experiencia.
+    for (const sid of [...cobraron]) {
+      const g = this.grupoDe(this.sesiones.get(sid));
+      if (!g) continue;
+      for (const x of this.sesionesGrupo(g)) {
+        if (cobraron.has(x.id) || !x.m3 || x.muerto || dist(x.p, o) > 60) continue;
+        this.dar(x, Math.max(1, Math.round(base.xp * 0.6 * (1 + talento(x.c, 'erudicion')))), Math.max(1, Math.round(base.oro * 0.5)), o, 1, true);
+        cobraron.add(x.id);
+      }
     }
     // Caza cooperativa: quien este cerca se lleva el 25% de la experiencia.
     for (const s of this.sesiones3d()) {

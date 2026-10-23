@@ -173,6 +173,7 @@ export const Social = {
     return {
       uid: pub(uid), on: 1, id: x.id, n: x.c.nombre, lv: x.c.nivel, cl: x.c.clase || '', sk: x.c.skin,
       hp: Math.ceil(x.hp), mx: x.st.maxHp, rec: Math.round(x.rec || 0), rmx: x.st.recMax, mapa: x.c.mapa, k: x.k, muerto: !!x.muerto,
+      p3: x.m3 && x.p ? [Math.round(x.p.x), Math.round(x.p.z)] : undefined,
     };
   },
   // Estado del grupo a todos sus miembros (vida y mana de los que estan en

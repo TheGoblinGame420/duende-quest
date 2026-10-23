@@ -597,6 +597,34 @@ async function pruebas() {
   await pruebas3d();
   await pruebasHabs3d();
   await pruebasMundial3d();
+  await pruebasGrupo3d();
+}
+
+// ── GRUPO EN EL 3D ──
+async function pruebasGrupo3d() {
+  console.log('Mundo 3D: grupo');
+  const W = await import('../mmo/js/mundo3d.js');
+  const D = await import('../mmo/js/data.js');
+  const campo = W.campamentos(D.MAPAS, D.MONSTRUOS).find(c => c.zona === 'amanecer' && !c.jefe);
+  const a = await entrar3d('Lider3D', '4d1'); ponerNivel(a, 5, 'guerrero');
+  const b = await entrar3d('Amigo3D', '4d2'); ponerNivel(b, 5, 'sacerdote');
+  await a.mandar({ t: 'invitar', p: b.id });
+  chequear(b.ultimos('invitacion').length === 1, 'la invitación llega en el 3D');
+  await b.mandar({ t: 'grupoResp', si: true });
+  chequear(a.gid && a.gid === b.gid, 'se forma el grupo desde el 3D');
+  chequear(b.ultimos('grupo').some(x => x.g && x.g.m.some(y => y.p3)), 'el grupo lleva la posición 3D de cada uno');
+  mundo.m3.mons.clear();
+  for (const s of [a, b]) { s.p = { x: campo.x + 20, z: campo.z }; s.movBud = undefined; }
+  const o = mundo.crear3d({ id: -1, x: a.p.x + 1.5, z: a.p.z, k: campo.k, n: 1, jefe: false, vivos: new Set(), zona: 'amanecer' });
+  o.x = a.p.x + 1.5; o.z = a.p.z; o.hp = 1;
+  const xp0 = b.c.xp, nv0 = b.c.nivel;
+  b.limpiar();
+  a.atkT = 0; await a.mandar({ t: 'atk3', tg: o.id });
+  chequear(o.muere, 'el líder mata al monstruo');
+  chequear(b.ultimos('gana').some(x => !x.coop) && (b.c.xp > xp0 || b.c.nivel > nv0), 'el compañero cercano cobra la caza como suya');
+  await b.mandar({ t: 'salirGrupo' });
+  chequear(!a.gid && !b.gid, 'salir del grupo lo disuelve');
+  for (const s of [a, b]) await dejar(s);
 }
 
 // ── JEFE MUNDIAL DEL 3D (functions/mmo/mundo3d.js) ──
