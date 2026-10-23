@@ -2264,3 +2264,17 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
   lluvia de ruido filtrado y truenos. Arranca con el primer gesto; botón
   `#b-son` (guarda `dq_mmo_sonido`).
 - Para probar: `/mundo/?clima=lluvia|tormenta|nieve|niebla|arena&hora=0..24`.
+
+### Recolección y artesanía en el 3D (23-oct-2026, `?v=249`). Arnés **661**
+
+- `nodos3d(MAPAS, MONSTRUOS)` en mmo/js/mundo3d.js: 24 puntos por zona
+  (hierba/mineral alternos, lejos de campamentos), deterministas. 228 en
+  total. `RECOGER_DIST` = 3,5 m.
+- Servidor: `recolectar3d` (cast 'recolectar' de 1,5 s; `revisarCast`
+  llama a `terminarRecoleccion3d` si `s.m3`), marca `c.nodos['3d:<i>']`
+  de 5 min, mismos materiales y raros que el 2D. `nodos3` al entrar con los
+  que siguen recogidos. `fabricar` entra por `recibir3d` y
+  `cercaDeArtesana` sabe del 3D.
+- Cliente: los puntos son 4 InstancedMesh (mata, flores, roca, vetas); los
+  recogidos se esconden (escala ~0) hasta que vuelven. E o el botón inferior
+  recoge. La Artesana muestra materiales y las RECETAS.

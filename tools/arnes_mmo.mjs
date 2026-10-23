@@ -599,6 +599,36 @@ async function pruebas() {
   await pruebasMundial3d();
   await pruebasGrupo3d();
   await pruebasAmbiente3d();
+  await pruebasRecoleccion3d();
+}
+
+// ── RECOLECCION Y ARTESANIA EN EL 3D ──
+async function pruebasRecoleccion3d() {
+  console.log('Mundo 3D: recolección y artesanía');
+  const W = await import('../mmo/js/mundo3d.js');
+  const D = await import('../mmo/js/data.js');
+  const n = W.nodos3d(D.MAPAS, D.MONSTRUOS).find(x => x.tipo === 'hierba');
+  const s = await entrar3d('Herbolaria', '4e1'); ponerNivel(s, 5, 'mago');
+  mundo.m3.mons.clear(); for (const c of mundo.m3.campos) { c.vivos.clear(); c.prox = Date.now() + 1e9; }
+  s.p = { x: n.x + 20, z: n.z }; s.movBud = undefined; s.c.mat = {};
+  await s.mandar({ t: 'recolectar', i: n.i });
+  chequear(!s.cast && s.ultimos('no').length, 'lejos del punto no se recoge');
+  s.p = { x: n.x + 1, z: n.z };
+  await s.mandar({ t: 'recolectar', i: n.i });
+  chequear(s.cast && s.cast.h === 'recolectar', 'junto al punto empieza a recoger');
+  for (let i = 0; i < 17; i++) tick(1);
+  chequear((s.c.mat.hierba || 0) >= 1 && s.ultimos('recogido3').length === 1, 'al terminar da Hierba Duende');
+  s.limpiar();
+  await s.mandar({ t: 'recolectar', i: n.i });
+  chequear(!s.cast && s.ultimos('no').some(x => /recogiste/.test(x.m)), 'el mismo punto no se puede repetir en 5 minutos');
+  s.c.mat.hierba = 3;
+  const art = W.NPCS3D.find(x => x.tipo === 'artesania');
+  await s.mandar({ t: 'fabricar', id: 'pociones' });
+  chequear(s.c.mat.hierba === 3, 'lejos de la Artesana no se fabrica');
+  s.p = { x: art.x + 1, z: art.z }; const p0 = s.c.pw.pocion || 0;
+  await s.mandar({ t: 'fabricar', id: 'pociones' });
+  chequear(s.c.mat.hierba === 0 && (s.c.pw.pocion || 0) === p0 + 3, 'la Artesana del 3D fabrica pociones');
+  await dejar(s);
 }
 
 // ── HORA Y CLIMA DEL 3D (mmo/js/mundo3d.js) ──

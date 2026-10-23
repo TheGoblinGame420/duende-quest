@@ -395,7 +395,7 @@ export const Combate = {
     if (ca.h === 'pescar' || ca.h === 'pica') return this.finPesca(s, ca, ahora);
     if (ca.h === 'recolectar') {
       this.aClave(s.k, { t: 'castFin', p: s.id, ok: true });
-      if (!s.muerto) this.terminarRecoleccion(s, ca);
+      if (!s.muerto) { if (s.m3) this.terminarRecoleccion3d(s, ca); else this.terminarRecoleccion(s, ca); }
       return;
     }
     if (ca.h === 'montar') {

@@ -187,3 +187,33 @@ export function campamentos(MAPAS, MONSTRUOS) {
   return (_campos = l);
 }
 
+// ── RECOLECCION ──
+// 24 puntos por zona (hierbas y vetas, alternadas), lejos de los
+// campamentos y en tierra firme. Deterministas: el servidor y el cliente
+// calculan la misma lista.
+export const RECOGER_DIST = 3.5;
+let _nodos = null;
+export function nodos3d(MAPAS, MONSTRUOS) {
+  if (_nodos) return _nodos;
+  const campos = campamentos(MAPAS, MONSTRUOS);
+  const l = [];
+  let n = 0;
+  for (const id of IDS) {
+    const c = ZONAS3D[id];
+    const r = rng(4243 + n * 104729);
+    let puestos = 0;
+    for (let i = 0; i < 600 && puestos < 24; i++) {
+      const ang = r() * Math.PI * 2, dist = 15 + r() * 165;
+      const x = Math.round(c.x + Math.cos(ang) * dist), z = Math.round(c.z + Math.sin(ang) * dist);
+      if (zonaEn(x, z) !== id || Math.max(Math.abs(x), Math.abs(z)) > 570) continue;
+      if (alturaEn(x, z) < MUNDO.agua + 0.8 || pendienteEn(x, z) > 0.5) continue;
+      if (campos.some(p => Math.hypot(p.x - x, p.z - z) < 14)) continue;
+      if (l.some(p => Math.hypot(p.x - x, p.z - z) < 12)) continue;
+      l.push({ i: l.length, zona: id, x, z, tipo: puestos % 2 ? 'mineral' : 'hierba' });
+      puestos++;
+    }
+    n++;
+  }
+  return (_nodos = l);
+}
+

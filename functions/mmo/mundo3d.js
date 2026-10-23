@@ -19,9 +19,10 @@
 // ═══════════════════════════════════════════════════════
 import {
   MAPAS, MONSTRUOS, SKINS, ARMAS, CLASES, PODERES, VARA, statsMonstruo, multForja, talento, velMontura, xpParaSubir,
+  MATERIALES, NODO_CADA_MS, RECOLECTAR_MS, RARO_ZONA, raroDe,
   habPorId, costoHab, GCD_MS, RECURSOS, MELEE, MUNDIAL_CADA_MS, MUNDIAL_DURA_MS, proximoMundial, mundialDe,
 } from '../../mmo/js/data.js';
-import { MUNDO, NPCS3D, NPC_DIST, SPAWN3D, ARENA3D, campamentos, zonaEn, esNoche } from '../../mmo/js/mundo3d.js';
+import { MUNDO, NPCS3D, NPC_DIST, SPAWN3D, ARENA3D, campamentos, zonaEn, esNoche, nodos3d, RECOGER_DIST } from '../../mmo/js/mundo3d.js';
 
 export const K3 = '~3d';
 const VISTA_MON = 120;          // m: monstruos que ve cada jugador
@@ -65,6 +66,7 @@ export const Mundo3D = {
     const jugadores = this.sesiones3d().filter(x => x !== s).map(x => this.info3d(x));
     this.enviar(s, { t: 'm3', id: s.id, x: r1(s.p.x), z: r1(s.p.z), jugadores });
     this.enviar(s, this.estadoMundial3());
+    this.nodos3AlEntrar(s);
     this.aClave(K3, { t: 'pj3', p: this.info3d(s) }, s);
   },
   info3d(s) {
@@ -98,6 +100,8 @@ export const Mundo3D = {
       case 'equipar': return this.equipar(s, m);
       case 'item': return this.item(s, m);
       case 'titulo': return this.ponerTitulo(s, m);
+      case 'recolectar': return this.recolectar3d(s, m);
+      case 'fabricar': return this.fabricar(s, m);   // cercaDeArtesana() sabe del 3D
       case 'invitar': return this.invitar(s, m);
       case 'grupoResp': return this.respuestaGrupo(s, m);
       case 'salirGrupo': return this.salirGrupo(s);
@@ -358,6 +362,50 @@ export const Mundo3D = {
 
   // Inteligencia: pasea por su campamento; si le pegan (o es un jefe y te
   // acercas) persigue y ataca; si se aleja demasiado de casa, vuelve y se cura.
+  // ── RECOLECCION ──
+  // Las mismas reglas que el 2D (1,5 s quieto, cada punto cada 5 min por
+  // jugador, materiales raros en zonas altas); la marca va en c.nodos con la
+  // clave '3d:<i>'.
+  nodos3AlEntrar(s) {
+    const marcas = s.c.nodos || {}, ahora = Date.now(), l = [];
+    for (const k in marcas) if (k.startsWith('3d:') && marcas[k] > ahora) l.push([+k.slice(3), marcas[k] - ahora]);
+    this.enviar(s, { t: 'nodos3', l });
+  },
+  recolectar3d(s, m) {
+    if (s.muerto || s.cast || this.aura(s, 'aturdido')) return;
+    const n = nodos3d(MAPAS, MONSTRUOS)[m.i | 0];
+    if (!n) return;
+    if (dist(s.p, n) > RECOGER_DIST + 1) return this.no(s, 'Acércate más para recoger.');
+    if (Date.now() < ((s.c.nodos || {})['3d:' + n.i] || 0)) return this.no(s, 'Ya lo recogiste: vuelve a crecer en unos minutos.');
+    this.desmontar(s);
+    s.cast = { h: 'recolectar', fin: Date.now() + RECOLECTAR_MS, tg: 0, nodo: n.i };
+    this.aClave(K3, { t: 'cast', p: s.id, id: 'recolectar', ms: RECOLECTAR_MS });
+  },
+  terminarRecoleccion3d(s, ca) {
+    const c = s.c;
+    const n = nodos3d(MAPAS, MONSTRUOS)[ca.nodo];
+    if (!n || dist(s.p, n) > RECOGER_DIST + 2) return;
+    const clave = '3d:' + n.i, ahora = Date.now();
+    c.nodos = c.nodos || {};
+    if (ahora < (c.nodos[clave] || 0)) return;
+    for (const k in c.nodos) if (c.nodos[k] < ahora) delete c.nodos[k];
+    c.nodos[clave] = ahora + NODO_CADA_MS;
+    c.mat = c.mat || {};
+    const nv = ((MAPAS[n.zona] || {}).nv || [1])[0];
+    const cant = 1 + (Math.random() < 0.5 ? 1 : 0) + (nv >= 30 ? 1 : 0);
+    c.mat[n.tipo] = Math.min(999, (c.mat[n.tipo] || 0) + cant);
+    let extra = '';
+    if (Math.random() < 0.06 + nv / 800) { c.mat.cristal = Math.min(999, (c.mat.cristal || 0) + 1); extra = ' y 1 Cristal Arcano'; }
+    let raros = 0;
+    for (const [nvMin, p] of RARO_ZONA) if (nv >= nvMin && Math.random() < p) raros++;
+    if (raros) { const r = raroDe(n.tipo); c.mat[r] = Math.min(999, (c.mat[r] || 0) + raros); extra += ` y +${raros} ${MATERIALES[r].nombre}`; }
+    s.sucio = true;
+    this.enviar(s, { t: 'recogido3', i: n.i, en: NODO_CADA_MS, tipo: n.tipo, cant });
+    this.enviar(s, { t: 'toast', m: `${n.tipo === 'hierba' ? '🌿' : '⛏'} +${cant} ${MATERIALES[n.tipo].nombre}${extra}`, ok: true });
+    this.progresoTarea && this.progresoTarea(s, 'recoger');
+    this.actualizarYo(s);
+  },
+
   // ── JEFE MUNDIAL DEL 3D ──
   // Mismo calendario que el del Coliseo pero desfasado 15 min; vida segun
   // los jugadores del 3D; cada golpe quita un % de la vida (todos los niveles

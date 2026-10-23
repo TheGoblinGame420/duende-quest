@@ -151,6 +151,7 @@ export const Profesiones = {
   },
 
   cercaDeArtesana(s) {
+    if (s.m3) return this.cerca3d(s, 'artesania');
     const npc = MAPAS.pueblo.npcs.find(x => x.tipo === 'artesania');
     return s.k === 'pueblo' && npc && Math.abs(s.x - npc.x) < 200;
   },

@@ -13,11 +13,11 @@
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
-  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura } from '/mmo/js/data.js?v=248';
-import { iniciarVentanas } from './ventanas.js?v=248';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=248';
-import { crearMusica } from './musica.js?v=248';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=248';
+  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS } from '/mmo/js/data.js?v=249';
+import { iniciarVentanas } from './ventanas.js?v=249';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=249';
+import { crearMusica } from './musica.js?v=249';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=249';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -310,6 +310,69 @@ function crearPueblo() {
   velo.position.set(px, py + 2.9, pz);
   escena.add(p1, p2, arco, velo);
   return { x: px, z: pz, velo };
+}
+
+// ── PUNTOS DE RECOLECCION ──
+// Matas con flores (hierba) y rocas con vetas (mineral). Los recogidos se
+// esconden (escala 0) hasta que vuelven a crecer para este jugador.
+const NODOS = nodos3d(MAPAS, MONSTRUOS);
+const nodoListo = new Map();   // i -> performance.now() en que vuelve
+const nodosMesh = (() => {
+  const piezas = {
+    hierba: [[new THREE.IcosahedronGeometry(0.75, 0).scale(1, 0.6, 1), '#3f8f3a', 0.4, false], [new THREE.OctahedronGeometry(0.22, 0), '#e879f9', 0.95, true]],
+    mineral: [[new THREE.DodecahedronGeometry(0.9, 0).scale(1, 0.7, 1), '#6b6570', 0.5, false], [new THREE.OctahedronGeometry(0.3, 0).scale(0.6, 1.4, 0.6), '#fbbf24', 1.05, true]],
+  };
+  const out = {};
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sc = new THREE.Vector3(1, 1, 1);
+  for (const tipo of ['hierba', 'mineral']) {
+    const l = NODOS.filter(n => n.tipo === tipo);
+    out[tipo] = { l, mallas: [] };
+    for (const [geo, color, alto, brilla] of piezas[tipo]) {
+      const mat = brilla ? new THREE.MeshBasicMaterial({ color }) : new THREE.MeshLambertMaterial({ color, flatShading: true });
+      const im = new THREE.InstancedMesh(geo, mat, l.length * (brilla ? 3 : 1));
+      let k = 0;
+      for (const n of l) {
+        const y = alturaEn(n.x, n.z);
+        const veces = brilla ? 3 : 1;
+        for (let j = 0; j < veces; j++) {
+          const a = j * 2.1 + n.i, d = brilla ? 0.45 : 0;
+          v.set(n.x + Math.cos(a) * d, y + alto + (brilla ? j * 0.08 : 0), n.z + Math.sin(a) * d);
+          q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), a);
+          m4.compose(v, q, sc); im.setMatrixAt(k++, m4);
+        }
+      }
+      im.userData = { brilla, veces: brilla ? 3 : 1, alto };
+      escena.add(im);
+      out[tipo].mallas.push(im);
+    }
+  }
+  return out;
+})();
+// Esconde o muestra un punto (todas sus piezas).
+function mostrarNodo(n, si) {
+  const T = nodosMesh[n.tipo], idx = T.l.indexOf(n);
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sc = new THREE.Vector3();
+  for (const im of T.mallas) {
+    const { veces } = im.userData;
+    for (let j = 0; j < veces; j++) {
+      im.getMatrixAt(idx * veces + j, m4); m4.decompose(v, q, sc);
+      sc.setScalar(si ? 1 : 0.0001); m4.compose(v, q, sc); im.setMatrixAt(idx * veces + j, m4);
+    }
+    im.instanceMatrix.needsUpdate = true;
+  }
+}
+function nodoCercano() {
+  const ahora = performance.now();
+  let mejor = null, md = RECOGER_DIST;
+  for (const n of NODOS) {
+    const d = Math.hypot(n.x - P.x, n.z - P.z);
+    if (d < md && !(nodoListo.get(n.i) > ahora)) { md = d; mejor = n; }
+  }
+  return mejor;
+}
+function revisarNodos() {
+  const ahora = performance.now();
+  for (const [i, en] of nodoListo) if (en <= ahora) { nodoListo.delete(i); mostrarNodo(NODOS[i], true); }
 }
 
 // Faroles del pueblo: se encienden de noche.
@@ -678,6 +741,8 @@ function recibir(m) {
     case 'no': aviso(m.m, 'err'); break;
     case 'chat': lineaChat(m); break;
     case 'grupo': grupo3 = m.g; pintarGrupo(); break;
+    case 'nodos3': for (const [i, ms] of m.l) { if (!NODOS[i]) continue; nodoListo.set(i, performance.now() + ms); mostrarNodo(NODOS[i], false); } break;
+    case 'recogido3': if (NODOS[m.i]) { nodoListo.set(m.i, performance.now() + m.en); mostrarNodo(NODOS[m.i], false); sfx('moneda', 0.3); } break;
     case 'invitacion': {
       $('invit3-t').textContent = `${m.de} (Nv ${m.nv}) te invita a su grupo.`;
       $('invit3').style.display = 'block';
@@ -689,7 +754,7 @@ function recibir(m) {
     case 'pedidoSol': case 'factura': V.alPedido(m); break;
     case 'pw': if (m.p === miId) sfx(m.i === 2 ? 'explosion' : 'boton', 0.4); break;
     case 'cast':
-      if (m.p === miId) { lanzando = { id: m.id, ini: performance.now(), fin: performance.now() + m.ms }; $('lanzar').style.display = 'block'; $('lanzar-t').textContent = m.id === 'montar' ? 'Invocar montura' : (habPorId(m.id) || {}).nombre || ''; }
+      if (m.p === miId) { lanzando = { id: m.id, ini: performance.now(), fin: performance.now() + m.ms }; $('lanzar').style.display = 'block'; $('lanzar-t').textContent = m.id === 'montar' ? 'Invocar montura' : m.id === 'recolectar' ? 'Recolectando…' : (habPorId(m.id) || {}).nombre || ''; }
       else { const o = otros.get(m.p); if (o) o.lanza = performance.now() + m.ms; }
       break;
     case 'castFin':
@@ -1035,7 +1100,15 @@ function abrirNpc(tipo) {
     cu.innerHTML = '<p>Cargando el ranking…</p>';
     mandar({ t: 'ranking' });
   } else {
-    cu.innerHTML = '<p>La artesanía (recolectar, fabricar pociones y elixires) está por ahora en el juego 2D, con tu mismo personaje.</p><a class="btn" href="/mmo/" style="display:block;text-align:center;text-decoration:none">Abrir el juego 2D</a>';
+    const mat = yo.mat || {};
+    const tengo = Object.entries(MATERIALES).filter(([k]) => mat[k]).map(([k, d]) => `<span style="white-space:nowrap"><img src="${A}items/equipo/${d.icono}.png" style="width:18px;vertical-align:middle;image-rendering:pixelated"> ${mat[k]}</span>`).join(' · ');
+    cu.innerHTML = `<p>Recoge hierbas 🌿 y minerales ⛏ por el mundo (tecla E junto a ellos) y yo te los convierto.</p><p style="margin:6px 0"><b>Tus materiales:</b> ${tengo || 'ninguno todavía'}</p>`
+      + RECETAS.map(r => {
+        const ok = Object.entries(r.pide).every(([k, n]) => (mat[k] || 0) >= n);
+        const pide = Object.entries(r.pide).map(([k, n]) => `${n} ${MATERIALES[k].nombre}`).join(', ');
+        return `<div class="fila"><span><b>${esc(r.nombre)}</b><br><small style="color:var(--txt3)">${esc(r.desc)} · ${pide}</small></span><button class="btn${ok ? '' : ' sec'}" data-r="${r.id}" ${ok ? '' : 'disabled'}>Fabricar</button></div>`;
+      }).join('');
+    cu.querySelectorAll('[data-r]').forEach(b => b.onclick = () => { mandar({ t: 'fabricar', id: b.dataset.r }); sfx('moneda', 0.3); });
   }
   abrir('v-npc');
 }
@@ -1082,6 +1155,7 @@ function pintarMini() {
   const punto = (wx, wz, color, r) => { const px = (wx - P.x) * k + S / 2, pz = (wz - P.z) * k + S / 2; if (px < 0 || pz < 0 || px > S || pz > S) return; x.fillStyle = color; x.beginPath(); x.arc(px, pz, r, 0, 7); x.fill(); };
   for (const o of mons.values()) if (!o.muereT) punto(o.x, o.z, o.j ? '#ffd84a' : '#ff4455', o.j ? 3.5 : 2);
   for (const o of otros.values()) punto(o.x, o.z, enGrupo(o.id) ? '#7dd3fc' : '#4ade80', enGrupo(o.id) ? 3.5 : 2.5);
+  { const ah = performance.now(); for (const n of NODOS) if (Math.abs(n.x - P.x) < 130 && Math.abs(n.z - P.z) < 130 && !(nodoListo.get(n.i) > ah)) punto(n.x, n.z, n.tipo === 'hierba' ? '#c084fc' : '#fbbf24', 1.6); }
   for (const n of NPCS3D) punto(n.x, n.z, '#7dd3fc', 2);
   if (mundial3 && mundial3.vivo) punto(ARENA3D.x, ARENA3D.z, '#ff6b3d', 5);
   // Flecha propia (hacia donde mira la camara).
@@ -1240,6 +1314,7 @@ function saltar() {
 }
 function npcCercano() { return npcs.find(n => Math.hypot(P.x - n.x, P.z - n.z) < NPC_DIST) || (portal && Math.hypot(P.x - portal.x, P.z - portal.z) < 5 ? { tipo: 'portal', nombre: 'Mazmorras' } : null); }
 function hablar() {
+  if (!npcCercano()) { const nd = nodoCercano(); if (nd) { mandar({ t: 'recolectar', i: nd.i }); return; } }
   const n = npcCercano();
   if (!n) return;
   if (n.tipo === 'portal') { aviso('Las mazmorras, la Torre y la banda se juegan por ahora en el juego 2D con tu mismo personaje.', 'ok'); setTimeout(() => { location.href = '/mmo/'; }, 1500); return; }
@@ -1509,7 +1584,13 @@ function bucle(t) {
     const z = zonaEn(P.x, P.z);
     if (z !== zonaActual) { zonaActual = z; tituloZona(z); }
     ambiente(z);
-    if (yo) { const n = npcCercano(); const b = $('hablar'); b.style.display = n ? 'block' : 'none'; if (n) b.textContent = (MOVIL ? '' : 'E · ') + (n.tipo === 'portal' ? 'Mazmorras' : 'Hablar con ' + n.nombre); }
+    if (yo) {
+      const n = npcCercano(), nd = n ? null : nodoCercano(); const b = $('hablar');
+      b.style.display = n || nd ? 'block' : 'none';
+      if (n) b.textContent = (MOVIL ? '' : 'E · ') + (n.tipo === 'portal' ? 'Mazmorras' : 'Hablar con ' + n.nombre);
+      else if (nd) b.textContent = (MOVIL ? '' : 'E · ') + 'Recoger ' + MATERIALES[nd.tipo].nombre;
+    }
+    if (cuadro % 60 === 0) revisarNodos();
   }
   cieloAct.lerp(cieloObj, Math.min(1, dt * 1.5));
   escena.background.copy(cieloAct); escena.fog.color.copy(cieloAct);
