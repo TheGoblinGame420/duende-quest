@@ -2091,3 +2091,26 @@ Cliente **?v=239** (integrado sobre el ?v=238 de la otra sesión).
   burbujas) y hierba que se aparta al pasar; polvo al correr/aterrizar y estela
   del dash; el duende se dibuja interpolado entre pasos de física (sin tirones).
 - Textos para foros: `promo/POSTS_FOROS.md` (no se sube a git).
+
+### Cuentas en el MMO, portada en vivo y control del salto (23-oct-2026)
+
+Cliente **?v=240**, arnés 580.
+- **Cuenta dentro del MMO** (`pintarCuenta` en client.js, Supabase Auth): entrar,
+  crear cuenta (usuario + correo + contraseña ≥ 8), "¿Olvidaste tu
+  contraseña?" (`resetPasswordForEmail`, vuelve a /mmo/ con type=recovery →
+  formulario de contraseña nueva), entrar con enlace al correo
+  (`signInWithOtp`, sin crear cuentas) y cambiar contraseña. Botón de cuenta
+  en la barra (late mientras juegas como invitado); en partida, al entrar o
+  crear cuenta se recarga y el servidor pasa el personaje de invitado a la
+  cuenta si esta aún no tiene uno. Los "Iniciar sesión" de la tienda abren
+  esto (ya no mandan al arcade).
+- **Supabase debe permitir volver a /mmo/**: Authentication → URL
+  Configuration → Redirect URLs con `https://duende-quest.alfonso12hc.workers.dev/**`.
+- **Inicio (casa) → portada `/`** (antes iba al arcade). En la portada, panel
+  "en vivo": jugando ahora y jugaron hoy (GET /mmo/ws devuelve `online` y
+  `hoy`, este último cacheado 60 s) y cuenta atrás real del jefe mundial;
+  los contadores se ocultan si son 0 (nada inventado).
+- **Control**: tiempo de gracia de 6 fotogramas al caer de un borde, salto
+  memorizado 8 fotogramas antes de aterrizar, salto corto al soltar la
+  tecla (también el botón táctil) y golpe memorizado en los últimos 180 ms
+  de recarga.

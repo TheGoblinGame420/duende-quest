@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=239';
+} from './data.js?v=240';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -39,7 +39,7 @@ if (TG) {
     location.href = '/telegram/index.html' + (location.hash || '');
   };
   try { TG.BackButton.show(); TG.BackButton.onClick(volver); } catch (e) {}
-  const casa = document.querySelector('#botones a[href="/game.html"]');
+  const casa = document.querySelector('#botones a[href="/"]');
   if (casa) casa.href = '/telegram/index.html' + (location.hash || '');
 }
 
@@ -337,10 +337,19 @@ async function autenticacion() {
 }
 
 let _sb = null;
+// El enlace de "olvidé mi contraseña" vuelve con #...type=recovery: se mira
+// antes de que supabase-js limpie la URL.
+let recuperando = /type=recovery/.test(location.hash);
+function sb() {
+  if (_sb) return _sb;
+  if (!window.supabase || !window.SUPABASE_URL) return null;
+  _sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+  _sb.auth.onAuthStateChange(ev => { if (ev === 'PASSWORD_RECOVERY') { recuperando = true; mostrarRecuperacion(); } });
+  return _sb;
+}
 async function tokenWeb() {
   try {
-    if (!window.supabase || !window.SUPABASE_URL) return null;
-    _sb = _sb || window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+    if (!sb()) return null;
     const { data } = await _sb.auth.getSession();
     return data?.session?.access_token || null;
   } catch (e) { return null; }
@@ -397,7 +406,7 @@ function recibir(m) {
       }
       // Invitado: su personaje vive solo en este navegador. Se le recuerda
       // en algunos niveles como no perderlo (y recibir avisos y mTON).
-      if (antes && yo.nivel > antes.nivel && soyInvitado && [5, 10, 15, 25].includes(yo.nivel)) setTimeout(() => aviso('Juegas como invitado: este personaje solo existe en este navegador. Inicia sesión (botón Inicio) o entra por @duendequest_bot en Telegram para guardarlo en tu cuenta.', 'ok'), 4000);
+      if (antes && yo.nivel > antes.nivel && soyInvitado && [5, 10, 15, 25].includes(yo.nivel)) setTimeout(() => aviso('Juegas como invitado: este personaje solo existe en este navegador. Pulsa el botón de cuenta (arriba) para guardarlo gratis con tu correo, o entra por @duendequest_bot en Telegram.', 'ok'), 4000);
       if ($('m-libro').classList.contains('on')) pintarLibro();
       if (yo.clase && $('m-clase').classList.contains('on') && antes && !antes.clase) cerrarModales();
       if (yo.clase && loginPend) { const lp = loginPend; loginPend = null; setTimeout(() => mostrarLogin(lp), 900); }
@@ -815,8 +824,10 @@ function fisica() {
   const piso = sueloEn(mp, P.x, antesY, P.vy >= 0);
   if (P.y >= piso && antesY <= piso + 1 && P.vy >= 0) {
     if (!P.suelo && P.vy > 6) { sfx('caida', .2); for (let i = 0; i < 8; i++) particula(P.x + (i - 3.5) * 4, piso - 2, 'rgba(220,210,190,.8)', 1.6); }
-    P.y = piso; P.vy = 0; P.suelo = true; P.saltos = 0;
-  } else if (P.y < piso) P.suelo = false;
+    P.y = piso; P.vy = 0; P.suelo = true; P.saltos = 0; P.aire = 0;
+    if (P.bufSalto > 0) { P.bufSalto = 0; saltar(); }
+  } else if (P.y < piso) { P.suelo = false; P.aire = (P.aire || 0) + 1; }
+  if (P.bufSalto > 0) P.bufSalto--;
   if (P.y > SUELO) { P.y = SUELO; P.vy = 0; P.suelo = true; P.saltos = 0; }
   // Polvo bajo los pies al correr (y una estela al hacer dash).
   if (P.suelo && Math.abs(P.vx) > 2.5 && frame % 7 === 0 && !ligero) particula(P.x - P.f * 10, P.y - 2, 'rgba(220,210,190,.6)', .9);
@@ -835,11 +846,23 @@ function fisica() {
   }
 }
 
+// Salto con buen tacto de plataformas:
+//  - "tiempo de gracia" (coyote): 6 fotogramas despues de caer de un borde
+//    todavia vale el primer salto (antes se perdia y salia el doble salto);
+//  - salto memorizado: si pulsas justo antes de aterrizar (8 fotogramas), salta
+//    al tocar el suelo en vez de ignorar la pulsacion;
+//  - salto corto: soltar la tecla pronto corta la subida (control fino para
+//    plataformas bajas). El servidor solo limita la altura maxima.
+const COYOTE = 6, BUFFER_SALTO = 8;
 function saltar() {
   if (!yo || P.muerto || chatAbierto() || congelado()) return;
   if (castYo) { castYo = null; mandar({ t: 'cancelar' }); verLanzar(false); }
-  if (P.suelo) { P.vy = FIS.salto; P.suelo = false; P.saltos = 1; sfx('salto', .3); }
+  if (P.suelo || (P.saltos === 0 && (P.aire || 0) <= COYOTE)) { P.vy = FIS.salto; P.suelo = false; P.saltos = 1; P.aire = COYOTE + 1; sfx('salto', .3); }
   else if (P.saltos < 2) { P.vy = FIS.dobleSalto; P.saltos = 2; sfx('salto', .25); for (let i = 0; i < 8; i++) particula(P.x, P.y, '#c084fc', 3); }
+  else P.bufSalto = BUFFER_SALTO;
+}
+function soltarSalto() {
+  if (P.vy < -4 && !P.dash) P.vy *= .55;
 }
 function dash() {
   if (!yo || P.muerto || P.dashCd > 0 || congelado()) return;
@@ -850,7 +873,12 @@ function atacar() {
   if (!yo || P.muerto || chatAbierto() || congelado()) return;
   const ahora = performance.now();
   const arma = ARMAS[yo.arma] || ARMAS.katana;
-  if (ahora < P.atkCdHasta) return;
+  if (ahora < P.atkCdHasta) {
+    // Golpe memorizado: pulsar justo antes de que acabe la recarga (180 ms)
+    // lo lanza en cuanto se puede, asi el combo no pierde pulsaciones.
+    if (P.atkCdHasta - ahora < 180 && !P.atkBuf) P.atkBuf = setTimeout(() => { P.atkBuf = 0; atacar(); }, P.atkCdHasta - ahora + 5);
+    return;
+  }
   const cl = CLASES[yo.clase];
   if (cl && cl.basico === 'vara') {
     // Magos y sacerdotes: disparo de vara al objetivo (o al mas cercano).
@@ -1088,7 +1116,7 @@ addEventListener('keydown', e => {
   if (e.code in TECLAS_PODER) usarPoder(TECLAS_PODER[e.code]);
   if (e.code.startsWith('Arrow')) e.preventDefault();
 });
-addEventListener('keyup', e => { teclas[e.code] = false; });
+addEventListener('keyup', e => { teclas[e.code] = false; if (['Space', 'ArrowUp', 'KeyW'].includes(e.code)) soltarSalto(); });
 addEventListener('blur', () => { for (const k in teclas) teclas[k] = false; tIzq = tDer = false; });
 
 const FRASES = ['¡Hola!', '¿Hacemos grupo?', '¿Alguien para mazmorra?', 'Gracias', 'Bien jugado', 'Necesito ayuda aquí', 'Me voy, nos vemos'];
@@ -1130,7 +1158,7 @@ botonTactil('t-l', () => { tIzq = true; }, () => { tIzq = false; });
 botonTactil('t-r', () => { tDer = true; }, () => { tDer = false; });
 let atkRepetir = null;
 botonTactil('t-atk', () => { atacar(); atkRepetir = setInterval(atacar, 120); }, () => { clearInterval(atkRepetir); });
-botonTactil('t-jump', saltar);
+botonTactil('t-jump', saltar, soltarSalto);
 botonTactil('t-dash', dash);
 botonTactil('t-chat', abrirChat);
 $('interactuar').onclick = interactuar;
@@ -2817,7 +2845,7 @@ function htmlPremium() {
     const sk = pq.skin && SKINS[pq.skin];
     let acc;
     if (pq.skin && yo && (yo.skins || []).includes(pq.skin)) acc = '<span class="precio" style="color:var(--ok)">✓ Ya la tienes</span>';
-    else if (!cuenta) acc = `<span class="precio">${cuentaTg ? estrellasDe(pq.usd) + ' Stars' : '$' + pq.usd}</span><a class="btn sec" href="/game.html" style="text-decoration:none">Iniciar sesión</a>`;
+    else if (!cuenta) acc = `<span class="precio">${cuentaTg ? estrellasDe(pq.usd) + ' Stars' : '$' + pq.usd}</span><button class="btn sec" data-cuenta="1">Iniciar sesión</button>`;
     else if (cuentaTg) acc = `<span class="precio">${estrellasDe(pq.usd)} Stars</span><button class="btn" data-premium="${pq.id}" data-metodo="stars">Pagar con Stars</button>`;
     else acc = `<span class="precio">$${pq.usd}</span><button class="btn" data-premium="${pq.id}" data-metodo="sol">Pagar con SOL</button><button class="btn sec" data-premium="${pq.id}" data-metodo="duende">$DUENDE −10%</button>`;
     const ico = sk ? `<img src="${retratoSkin(pq.skin)}" style="${sk.premium ? 'filter:drop-shadow(0 0 5px ' + sk.color + ')' : ''}">` : `<img src="${A}items/equipo/${pq.icono}.png">`;
@@ -2841,6 +2869,7 @@ function conectarPremium(L) {
     else if (x && x.lamports) mostrarPedidoSol({ codigo: x.codigo, lamports: x.lamports, wallet: x.wallet, usd: x.usd, nombre: x.nombre, ref: x.ref });
   });
   L.querySelectorAll('[data-premium]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'pedido', id: b.dataset.premium, metodo: b.dataset.metodo }); });
+  L.querySelectorAll('[data-cuenta]').forEach(b => b.onclick = () => abrirCuenta());
 }
 function abrirPremium() {
   tabTienda = 'premium';
@@ -3935,6 +3964,7 @@ function pintarHud() {
   ponCss($('h-clase'), 'color', cl ? cl.color : 'var(--txt2)');
   const imgSkin = retratoSkin(yo.skin);
   ponCss($('b-dios'), 'display', yo.dios ? '' : 'none');
+  $('b-cuenta').classList.toggle('invitado', soyInvitado);
   if ($('ret-yo')._src !== imgSkin) { $('ret-yo')._src = imgSkin; $('ret-yo').src = imgSkin; }
   ponCss($('brec'), 'display', cl ? 'block' : 'none');
   if (cl) ponCss($('brec').querySelector('i'), 'background', RECURSOS[cl.recurso].color);
@@ -4426,7 +4456,7 @@ function pintarTienda() {
         if (yo.p2e && yo.p2e.cuenta) acc += (TG && !forzarInvitado)
           ? `<button class="btn" data-premium="skin_${id}" data-metodo="stars">${estrellasDe(d.usd)} Stars</button>`
           : `<button class="btn" data-premium="skin_${id}" data-metodo="sol">SOL</button><button class="btn sec" data-premium="skin_${id}" data-metodo="duende">$DUENDE −10%</button>`;
-        else acc += '<a class="btn sec" href="/game.html" style="text-decoration:none">Iniciar sesión</a>';
+        else acc += '<button class="btn sec" data-cuenta="1">Iniciar sesión</button>';
       }
       else {
         acc = `<span class="precio">🪙 ${d.precio.toLocaleString('es', { useGrouping: 'always' })}</span><button class="btn" data-comprar="${tabTienda}" data-id="${id}" ${yo.oro < d.precio ? 'disabled' : ''}>Comprar</button>`;
@@ -4460,6 +4490,7 @@ function pintarTienda() {
     aviso('👀 Probando ' + SKINS[b.dataset.probar].nombre + ' durante 10 s (solo lo ves tú).', 'ok');
   });
   L.querySelectorAll('[data-equipar]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'equipar', k: b.dataset.equipar, id: b.dataset.id }); });
+  L.querySelectorAll('[data-cuenta]').forEach(b => b.onclick = () => abrirCuenta());
 }
 
 let tabInv = 'skin';
@@ -4568,6 +4599,113 @@ const despertar = () => { if (dormido && $('m-error').classList.contains('on')) 
 addEventListener('pointerdown', despertar, true);
 addEventListener('keydown', despertar, true);
 
+// ── CUENTA (Supabase Auth: correo y contraseña) ──
+// La sesion la guarda supabase-js en este navegador (localStorage), asi que
+// se entra directo la proxima vez. Si juegas como invitado y creas cuenta (o
+// entras con una que aun no tiene personaje), el servidor pasa tu personaje
+// de invitado a la cuenta: no se pierde nada.
+const ERR_AUTH = [
+  [/invalid login/i, 'Correo o contraseña incorrectos.'],
+  [/not confirmed/i, 'Confirma tu correo: abre el enlace que te enviamos (revisa también spam).'],
+  [/already registered|already exists/i, 'Ese correo ya tiene cuenta: entra con él (o recupera la contraseña).'],
+  [/password should be|weak/i, 'La contraseña es muy débil: usa al menos 8 caracteres.'],
+  [/rate limit|only request this after|too many/i, 'Demasiados intentos: espera un minuto y vuelve a probar.'],
+  [/database error/i, 'Ese nombre de usuario no está disponible: prueba con otro.'],
+  [/signups not allowed|signup is disabled/i, 'El registro está cerrado por ahora.'],
+];
+const errAuth = m => (ERR_AUTH.find(([r]) => r.test(m || '')) || [0, 'No se pudo completar: ' + (m || 'error de red')])[1];
+const URL_VUELTA = () => location.origin + '/mmo/';
+function abrirCuenta() {
+  abrir('m-cuenta');
+  tokenWeb().then(t => pintarCuenta($('cuenta-cuerpo'), t ? 'cambiar' : (soyInvitado ? 'crear' : 'entrar'), true));
+}
+$('b-cuenta').onclick = abrirCuenta;
+function mostrarRecuperacion() {
+  const c = $('inicio-auth');
+  if (!c) return;
+  $('m-inicio').classList.add('on');
+  $('inicio-invitado').style.display = 'block'; $('inicio-cuenta').style.display = 'none';
+  $('b-abrir-cuenta').style.display = 'none'; c.style.display = 'block';
+  pintarCuenta(c, 'nueva', false);
+}
+// Tras iniciar sesion: en la pantalla de entrada se entra al mundo; en
+// partida (invitado) se recarga para reconectar con la cuenta y heredar.
+function sesionLista(enJuego) {
+  if (enJuego || conectado) { try { sessionStorage.setItem('dq_auto', '1'); } catch (e) {} location.reload(); return; }
+  $('carga').style.display = 'flex'; $('carga-s').textContent = 'Entrando al mundo…';
+  if (sonido) sonarMusica();
+  conectar();
+}
+function pintarCuenta(cont, modo, enJuego) {
+  const tabs = modo === 'entrar' || modo === 'crear'
+    ? `<div class="tabs"><button class="tab ${modo === 'entrar' ? 'on' : ''}" data-m="entrar">ENTRAR</button><button class="tab ${modo === 'crear' ? 'on' : ''}" data-m="crear">CREAR CUENTA</button></div>` : '';
+  const campo = (id, tipo, ph, ac) => `<input class="nombre" id="${id}" type="${tipo}" placeholder="${ph}" aria-label="${ph}" autocomplete="${ac}">`;
+  let h = tabs;
+  if (modo === 'entrar') h += campo('cu-email', 'email', 'Correo', 'email') + campo('cu-pass', 'password', 'Contraseña', 'current-password')
+    + '<button class="btn btn-grande" data-acc="entrar">Entrar</button>'
+    + '<p class="ligas"><a data-m="olvido">¿Olvidaste tu contraseña?</a> · <a data-m="enlace">Entrar con un enlace al correo</a></p>';
+  else if (modo === 'crear') h += (soyInvitado && enJuego ? '<p class="nota" style="margin:0 0 8px">Tu personaje de invitado pasa a la cuenta nueva: no pierdes nada.</p>' : '')
+    + campo('cu-user', 'text', 'Nombre de usuario (3-20 letras o números)', 'username') + campo('cu-email', 'email', 'Correo', 'email')
+    + campo('cu-pass', 'password', 'Contraseña (mínimo 8)', 'new-password') + campo('cu-pass2', 'password', 'Repite la contraseña', 'new-password')
+    + '<button class="btn btn-grande" data-acc="crear">Crear cuenta gratis</button>';
+  else if (modo === 'olvido') h += '<p class="nota" style="margin:0 0 8px">Te enviamos un enlace para poner una contraseña nueva. Ábrelo en este mismo navegador.</p>'
+    + campo('cu-email', 'email', 'Correo de tu cuenta', 'email') + '<button class="btn btn-grande" data-acc="olvido">Enviarme el enlace</button><p class="ligas"><a data-m="entrar">Volver</a></p>';
+  else if (modo === 'enlace') h += '<p class="nota" style="margin:0 0 8px">Te enviamos un enlace que te deja dentro sin contraseña. Ábrelo en este mismo navegador.</p>'
+    + campo('cu-email', 'email', 'Correo de tu cuenta', 'email') + '<button class="btn btn-grande" data-acc="enlace">Enviarme el enlace</button><p class="ligas"><a data-m="entrar">Volver</a></p>';
+  else if (modo === 'nueva' || modo === 'cambiar') h += `<p class="nota" style="margin:0 0 8px">${modo === 'nueva' ? 'Escribe tu contraseña nueva.' : 'Tu sesión está iniciada en este navegador. Puedes cambiar tu contraseña:'}</p>`
+    + campo('cu-pass', 'password', 'Contraseña nueva (mínimo 8)', 'new-password') + campo('cu-pass2', 'password', 'Repite la contraseña', 'new-password')
+    + `<button class="btn btn-grande" data-acc="${modo}">Guardar contraseña</button>` + (modo === 'cambiar' && enJuego ? '<p class="ligas"><a data-acc="salir">Cerrar sesión</a></p>' : '');
+  h += '<p class="msg"></p>';
+  cont.innerHTML = h;
+  const msg = (t, ok) => { const p = cont.querySelector('.msg'); p.textContent = t; p.className = 'msg ' + (ok ? 'ok' : 'err'); };
+  const v = id => { const e = cont.querySelector('#' + id); return e ? e.value.trim() : ''; };
+  cont.querySelectorAll('input').forEach(i => i.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') { const b = cont.querySelector('[data-acc]'); if (b) b.click(); } }));
+  cont.querySelectorAll('[data-m]').forEach(a => a.onclick = () => pintarCuenta(cont, a.dataset.m, enJuego));
+  cont.querySelectorAll('[data-acc]').forEach(b => b.onclick = async () => {
+    const acc = b.dataset.acc, cli = sb();
+    if (!cli) return msg('No se pudo cargar el inicio de sesión. Recarga la página.');
+    const email = v('cu-email'), pass = (cont.querySelector('#cu-pass') || {}).value || '', pass2 = (cont.querySelector('#cu-pass2') || {}).value || '';
+    if (['entrar', 'crear', 'olvido', 'enlace'].includes(acc) && !/^\S+@\S+\.\S+$/.test(email)) return msg('Escribe un correo válido.');
+    if (['crear', 'nueva', 'cambiar'].includes(acc)) {
+      if (pass.length < 8) return msg('La contraseña debe tener al menos 8 caracteres.');
+      if (pass !== pass2) return msg('Las dos contraseñas no coinciden.');
+    }
+    b.disabled = true;
+    try {
+      if (acc === 'entrar') {
+        if (!pass) return msg('Escribe tu contraseña.');
+        const { error } = await cli.auth.signInWithPassword({ email, password: pass });
+        if (error) return msg(errAuth(error.message));
+        msg('Sesión iniciada.', true); sesionLista(enJuego);
+      } else if (acc === 'crear') {
+        const user = v('cu-user');
+        if (!/^[a-zA-Z0-9_]{3,20}$/.test(user)) return msg('Nombre de usuario: 3-20 letras, números o _ (sin espacios).');
+        const { data, error } = await cli.auth.signUp({ email, password: pass, options: { data: { username: user }, emailRedirectTo: URL_VUELTA() } });
+        if (error) return msg(errAuth(error.message));
+        if (data && data.session) { msg('¡Cuenta creada!', true); sesionLista(enJuego); }
+        else msg('¡Listo! Te enviamos un correo para confirmar la cuenta. Ábrelo en este navegador y volverás aquí con tu personaje guardado (revisa también spam).', true);
+      } else if (acc === 'olvido') {
+        const { error } = await cli.auth.resetPasswordForEmail(email, { redirectTo: URL_VUELTA() });
+        if (error) return msg(errAuth(error.message));
+        msg('Si ese correo tiene cuenta, te llegó un enlace para cambiar la contraseña (revisa también spam).', true);
+      } else if (acc === 'enlace') {
+        const { error } = await cli.auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: URL_VUELTA() } });
+        if (error) return msg(errAuth(error.message));
+        msg('Si ese correo tiene cuenta, te llegó un enlace para entrar (revisa también spam).', true);
+      } else if (acc === 'nueva' || acc === 'cambiar') {
+        const { error } = await cli.auth.updateUser({ password: pass });
+        if (error) return msg(errAuth(error.message));
+        msg('Contraseña guardada.', true);
+        if (acc === 'nueva') { recuperando = false; history.replaceState(null, '', location.pathname); setTimeout(() => sesionLista(false), 700); }
+      } else if (acc === 'salir') {
+        await cli.auth.signOut(); location.reload();
+      }
+    } catch (e) { msg('Sin conexión. Vuelve a intentarlo.'); }
+    finally { b.disabled = false; }
+  });
+  const primero = cont.querySelector('input'); if (primero && !TACTIL) setTimeout(() => primero.focus(), 50);
+}
+
 // ── INICIO ──
 async function inicio() {
   ajustarVista();
@@ -4598,27 +4736,12 @@ async function inicio() {
   };
   $('b-jugar').onclick = entrar; $('b-jugar2').onclick = entrar;
   $('in-nombre').addEventListener('keydown', e => { if (e.key === 'Enter') entrar(); e.stopPropagation(); });
-  // Entrar con la cuenta web (Supabase) sin salir del MMO. supabase-js guarda
-  // la sesion en este navegador: la proxima vez se entra directo con ella.
-  const loginCorreo = async () => {
-    const email = $('in-email').value.trim(), pass = $('in-pass').value;
-    const err = t => { $('login-err').textContent = t; $('login-err').style.display = t ? 'block' : 'none'; };
-    if (!email || !pass) return err('Escribe tu correo y tu contraseña.');
-    try {
-      if (!window.supabase || !window.SUPABASE_URL) return err('No se pudo cargar el inicio de sesión. Recarga la página.');
-      _sb = _sb || window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-      $('b-login').disabled = true;
-      const { error } = await _sb.auth.signInWithPassword({ email, password: pass });
-      $('b-login').disabled = false;
-      if (error) return err(/invalid/i.test(error.message) ? 'Correo o contraseña incorrectos.' : /confirm/i.test(error.message) ? 'Confirma tu correo antes de entrar (revisa tu bandeja).' : 'No se pudo entrar: ' + error.message);
-      err(''); $('in-pass').value = '';
-      $('carga').style.display = 'flex'; $('carga-s').textContent = 'Entrando al mundo…';
-      if (sonido) sonarMusica();
-      conectar();
-    } catch (e) { $('b-login').disabled = false; err('No se pudo entrar. Revisa tu conexión.'); }
-  };
-  $('b-login').onclick = loginCorreo;
-  ['in-email', 'in-pass'].forEach(id => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') loginCorreo(); e.stopPropagation(); }));
+  // Cuenta (correo y contraseña) sin salir del MMO: se abre aqui mismo.
+  $('b-abrir-cuenta').onclick = () => { $('b-abrir-cuenta').style.display = 'none'; $('inicio-auth').style.display = 'block'; pintarCuenta($('inicio-auth'), 'entrar', false); };
+  $('b-cambiar-pass').onclick = e => { e.preventDefault(); $('inicio-auth2').style.display = 'block'; pintarCuenta($('inicio-auth2'), 'cambiar', false); };
+  // Vuelve de "olvide mi contraseña" o de entrar desde la partida: directo.
+  if (recuperando) mostrarRecuperacion();
+  else if (tokWeb && sessionStorage.getItem('dq_auto')) { sessionStorage.removeItem('dq_auto'); entrar(); }
   $('b-salir-cuenta').onclick = async e => {
     e.preventDefault();
     try { if (_sb) await _sb.auth.signOut(); } catch (er) {}

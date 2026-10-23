@@ -177,7 +177,13 @@ export class MmoWorld {
     const url = new URL(request.url);
     if (url.pathname.startsWith('/interno/')) return this.interno(request, url.pathname.slice(9));
     if (request.headers.get('Upgrade') !== 'websocket') {
-      return new Response(JSON.stringify({ ok: true, online: this.contarOnline() }), { headers: { 'Content-Type': 'application/json' } });
+      // Estado publico para la portada: conectados ahora y jugadores distintos
+      // de hoy (este ultimo se recalcula como mucho cada minuto).
+      if (!this.hoyCache || Date.now() - this.hoyCache.t > 60000) {
+        let h = 0; try { h = await this.contarHoy(); } catch (e) {}
+        this.hoyCache = { t: Date.now(), h };
+      }
+      return new Response(JSON.stringify({ ok: true, online: this.contarOnline(), hoy: this.hoyCache.h }), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
     }
     if (this.contarOnline() >= MAX_JUGADORES) return new Response('Servidor lleno', { status: 503 });
     // Sockets que aun no se identifican: tope propio y por IP. Antes 300
