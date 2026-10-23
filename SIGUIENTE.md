@@ -2366,3 +2366,16 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
   aditivo); las propias se rehacen al cambiar; las de otros por `q.al`.
   Planeo: Espacio mantenido cayendo (sin gastar); doble salto solo vuela si
   aún subes. Barra ALAS bajo el marco.
+
+### Interfaz sin cortes y combate más fluido (23-oct-2026, `?v=256`)
+
+- `LATERALES` (v-npc, v-ayuda, v-inv, v-libro, v-tienda, v-logros): CSS de
+  panel a la izquierda sin velo; `hayVentana()` solo cuenta las bloqueantes,
+  `hayLateral()` deja caminar (Escape/tecla las cierran). El diálogo de un
+  PNJ se cierra al alejarse.
+- `#avisos` a la izquierda sobre el chat; `#titulo-zona` arriba y más
+  pequeño.
+- Cámara: sin colisión con árboles (solo paredes de la cueva).
+- Minimapa: flecha con `rotate(PI - P.ry)` y cono de cámara con
+  `rotate(-camYaw)`; `flechaDir` del rastreador corregida (estaba en espejo).
+- `sfx()` con WebAudio: buffers decodificados una vez, 8 voces, tono ±6 %.

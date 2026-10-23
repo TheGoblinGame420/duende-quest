@@ -483,6 +483,12 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 24, fecha: '23 oct 2026', items: [
+    'Nada en medio de la pantalla: los avisos van a la izquierda sobre el chat y las ventanas (PNJ, inventario, libro, tienda, logros, ayuda) se abren a un lado y puedes seguir caminando.',
+    'La cámara ya no se pega al duende al pasar junto a casas y árboles.',
+    'La flecha del minimapa apunta hacia donde mira tu duende (y un cono muestra hacia dónde mira la cámara).',
+    'Combates más fluidos: los sonidos ya no causan tirones.',
+  ] },
   { n: 23, fecha: '23 oct 2026', items: [
     'Alas como en AION: 8 tipos con su forma (luz, plumas, mariposa, membrana de dragón) y más tiempo y velocidad de vuelo. Mercader → ALAS.',
     'Las Alas del Rey Goblin se ganan completando 5 mazmorras; las de $DUENDE y las Solares son premium (SOL o $DUENDE).',

@@ -13,13 +13,13 @@
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
-  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS } from '/mmo/js/data.js?v=255';
-import { iniciarVentanas } from './ventanas.js?v=255';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=255';
-import { crearMusica } from './musica.js?v=255';
-import { construirCueva } from './cueva.js?v=255';
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=255';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=255';
+  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS } from '/mmo/js/data.js?v=256';
+import { iniciarVentanas } from './ventanas.js?v=256';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=256';
+import { crearMusica } from './musica.js?v=256';
+import { construirCueva } from './cueva.js?v=256';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=256';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=256';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -689,10 +689,36 @@ let numeros = [];
 // ── SONIDO ──
 let sonido = (() => { try { return localStorage.getItem('dq_mmo_sonido') !== '0'; } catch (e) { return true; } })();
 const SFX = {};
+// Efectos con WebAudio: cada sonido se descarga y decodifica una vez y se
+// reproduce desde su buffer (antes cada golpe creaba un <audio> nuevo y en
+// los combates se notaban tirones). Como mucho 8 voces y algo de variacion de tono.
+let actx = null, voces = 0;
+const cargandoSfx = {};
+function ctxAudio() { if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { actx = null; } } return actx; }
+function cargarSfx(n) {
+  const c = ctxAudio();
+  if (!c || cargandoSfx[n]) return;
+  cargandoSfx[n] = fetch(A.replace('assets/', '') + 'audio/sfx/' + n + '.mp3').then(r => r.arrayBuffer()).then(b => c.decodeAudioData(b)).then(buf => { SFX[n] = buf; }).catch(() => {});
+}
 function sfx(n, vol) {
   if (!sonido) return;
-  try { const a = SFX[n] = SFX[n] || new Audio(A.replace('assets/', '') + 'audio/sfx/' + n + '.mp3'); const c = a.cloneNode(); c.volume = vol || 0.4; c.play().catch(() => {}); } catch (e) {}
+  const c = ctxAudio();
+  if (!c) return;
+  if (c.state === 'suspended') c.resume().catch(() => {});
+  const buf = SFX[n];
+  if (!buf) { cargarSfx(n); return; }
+  if (voces >= 8) return;
+  try {
+    const src = c.createBufferSource(), g = c.createGain();
+    src.buffer = buf; src.playbackRate.value = 0.94 + Math.random() * 0.12;
+    g.gain.value = vol || 0.4;
+    src.connect(g); g.connect(c.destination);
+    voces++; src.onended = () => { voces--; };
+    src.start();
+  } catch (e) {}
 }
+// Los de combate, ya listos al primer gesto (el AudioContext pide un gesto).
+for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, () => { for (const n of ['corte', 'corte2', 'golpe', 'muerte', 'moneda', 'boton', 'salto', 'explosion', 'caida']) cargarSfx(n); }, { once: true });
 
 // ── ESTADO ──
 let ws = null, miId = 0, yo = null, conectado = false, reintentos = 0, fatal = false, forzarInvitado = false;
@@ -1207,7 +1233,7 @@ function tituloZona(id) {
 }
 
 // ── VENTANAS ──
-function abrir(id) { $(id).classList.add('on'); for (const k in teclas) teclas[k] = false; }
+function abrir(id) { $(id).classList.add('on'); if (!LATERALES.includes(id)) for (const k in teclas) teclas[k] = false; }
 function cerrar(id) { $(id).classList.remove('on'); if (id === 'v-npc') npcAbierto = ''; }
 document.querySelectorAll('[data-cerrar]').forEach(b => b.onclick = () => cerrar(b.closest('.modal').id));
 function abrirClases() {
@@ -1358,9 +1384,14 @@ function pintarMini() {
   }
   for (const n of NPCS3D) punto(n.x, n.z, '#7dd3fc', 2);
   if (mundial3 && mundial3.vivo) punto(ARENA3D.x, ARENA3D.z, '#ff6b3d', 5);
-  // Flecha propia (hacia donde mira la camara).
-  x.save(); x.translate(S / 2, S / 2); x.rotate(-camYaw + Math.PI);
-  x.fillStyle = '#fff'; x.beginPath(); x.moveTo(0, -7); x.lineTo(5, 5); x.lineTo(-5, 5); x.closePath(); x.fill(); x.restore();
+  // Cono de vision de la camara (mira hacia -sin/-cos de camYaw).
+  x.save(); x.translate(S / 2, S / 2); x.rotate(-camYaw);
+  x.fillStyle = 'rgba(255,255,255,.13)'; x.beginPath(); x.moveTo(0, 0); x.arc(0, 0, 46, -Math.PI / 2 - 0.55, -Math.PI / 2 + 0.55); x.closePath(); x.fill(); x.restore();
+  // Flecha propia: hacia donde mira el duende (P.ry = atan2(dx, dz); en el
+  // mapa x es x y z va hacia abajo, asi que la rotacion es PI - ry).
+  x.save(); x.translate(S / 2, S / 2); x.rotate(Math.PI - P.ry);
+  x.fillStyle = '#fff'; x.strokeStyle = '#000'; x.lineWidth = 1.5;
+  x.beginPath(); x.moveTo(0, -8); x.lineTo(5.5, 6); x.lineTo(0, 3); x.lineTo(-5.5, 6); x.closePath(); x.fill(); x.stroke(); x.restore();
 }
 function abrirMapa() {
   const cv = $('mapa-c'), x = cv.getContext('2d'), S = cv.width;
@@ -1383,7 +1414,11 @@ function abrirMapa() {
 
 // ── ENTRADA ──
 function chatAbierto() { return document.activeElement === $('chat-in'); }
-function hayVentana() { return !!document.querySelector('.modal.on'); }
+// Ventanas laterales (como WoW): no tapan el centro y se puede seguir
+// caminando con ellas abiertas. Las demas (mapa, muerte, inicio...) si bloquean.
+const LATERALES = ['v-npc', 'v-ayuda', 'v-inv', 'v-libro', 'v-tienda', 'v-logros'];
+function hayVentana() { return [...document.querySelectorAll('.modal.on')].some(m => !LATERALES.includes(m.id)); }
+function hayLateral() { return LATERALES.some(id => $(id) && $(id).classList.contains('on')); }
 addEventListener('keydown', e => {
   if (chatAbierto()) {
     if (e.key === 'Enter') { const v = $('chat-in').value.trim(); if (v) enviarChat(v); $('chat-in').value = ''; $('chat-in').blur(); $('chat-in').style.display = 'none'; }
@@ -1396,6 +1431,13 @@ addEventListener('keydown', e => {
     if (e.code === 'KeyM' && $('v-mapa').classList.contains('on')) cerrar('v-mapa');
     for (const [k, id] of [['KeyI', 'v-inv'], ['KeyP', 'v-libro'], ['KeyL', 'v-logros']]) if (e.code === k && $(id) && $(id).classList.contains('on')) cerrar(id);
     return;
+  }
+  if (hayLateral()) {
+    // Con un panel lateral abierto se sigue jugando; Escape o su tecla lo cierran.
+    if (e.key === 'Escape') { LATERALES.forEach(id => { if ($(id) && $(id).classList.contains('on')) cerrar(id); }); return; }
+    let cerro = false;
+    for (const [k, id] of [['KeyI', 'v-inv'], ['KeyP', 'v-libro'], ['KeyL', 'v-logros']]) if (e.code === k && $(id) && $(id).classList.contains('on')) { cerrar(id); cerro = true; }
+    if (cerro) return;
   }
   teclas[e.code] = true;
   if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) saltar(); }
@@ -1780,7 +1822,7 @@ function etiquetas(t) {
 const CAMPOS3D = campamentos(MAPAS, MONSTRUOS);
 const guiaNpc = NPCS3D.find(n => n.tipo === 'guia');
 let metaMision = null;
-const flechaDir = (x, z) => { const a = Math.atan2(x - P.x, z - P.z) - camYaw + Math.PI; return ['⬆', '↗', '➡', '↘', '⬇', '↙', '⬅', '↖'][((Math.round(a / (Math.PI / 4)) % 8) + 8) % 8]; };
+const flechaDir = (x, z) => { const a = camYaw + Math.PI - Math.atan2(x - P.x, z - P.z); return ['⬆', '↗', '➡', '↘', '⬇', '↙', '⬅', '↖'][((Math.round(a / (Math.PI / 4)) % 8) + 8) % 8]; };
 function pintarMisiones() {
   const c = $('misiones');
   if (!yo || !yo.mis) { c.style.display = 'none'; return; }
@@ -1850,7 +1892,9 @@ function bucle(t) {
   const tx = P.x, ty = P.y + 1.4, tz = P.z;
   // Si un arbol tapa, la camara se acerca (suave al alejarse otra vez).
   const camX = tx + Math.sin(camYaw) * Math.cos(camPitch) * camDist, camZ = tz + Math.cos(camYaw) * Math.cos(camPitch) * camDist;
-  const kChoque = enCueva(P.x) ? choqueCueva(tx, tz, camX, camZ) : choqueCamara(tx, tz, camX, camZ);
+  // Solo las paredes de la cueva acercan la camara (los arboles no: el acercamiento
+  // brusco junto a casas y arboles molestaba mas que ayudaba).
+  const kChoque = enCueva(P.x) ? choqueCueva(tx, tz, camX, camZ) : 1;
   camReal = kChoque * camDist < camReal ? kChoque * camDist : lerp(camReal, kChoque * camDist, 0.08);
   let cx = tx + Math.sin(camYaw) * Math.cos(camPitch) * camReal, cz = tz + Math.cos(camYaw) * Math.cos(camPitch) * camReal;
   let cy = ty + Math.sin(camPitch) * camReal;
@@ -1870,6 +1914,7 @@ function bucle(t) {
       else if (!enCueva(P.x) && aguaCerca()) { b.style.display = 'block'; b.textContent = (MOVIL ? '' : 'E · ') + (pica > performance.now() ? '¡TIRAR!' : lanzando && lanzando.id === 'pescar' ? 'Esperando que pique…' : 'Pescar'); }
     }
     if (cuadro % 60 === 0) revisarNodos();
+    if (npcAbierto && $('v-npc').classList.contains('on')) { const n = NPCS3D.find(x => x.tipo === npcAbierto); if (n && Math.hypot(P.x - n.x, P.z - n.z) > NPC_DIST + 6) cerrar('v-npc'); }
   }
   cieloAct.lerp(cieloObj, Math.min(1, dt * 1.5));
   escena.background.copy(cieloAct); escena.fog.color.copy(cieloAct);

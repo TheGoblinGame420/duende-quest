@@ -70,17 +70,23 @@ body.movil #misiones{top:110px;bottom:auto;left:8px;right:auto;width:165px;font-
 #chat-log{max-height:150px;overflow:hidden;font:500 12px/1.45 var(--sans);display:flex;flex-direction:column;justify-content:flex-end;}
 #chat-log div b{font-weight:700;}
 #chat-in{display:none;width:100%;margin-top:4px;padding:6px 8px;border-radius:6px;border:1px solid var(--borde);background:rgba(0,0,0,.5);color:var(--txt);font:500 13px var(--sans);user-select:text;-webkit-user-select:text;}
-#avisos{position:fixed;left:50%;top:70px;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;z-index:5;}
-#avisos div{background:var(--panel);border:1px solid var(--borde);border-radius:8px;padding:7px 12px;font:600 13px var(--sans);max-width:min(560px,90vw);text-align:center;animation:entra .2s ease-out;}
-#avisos div.ok{border-color:rgba(74,222,128,.5);}
-#avisos div.err{border-color:rgba(255,90,106,.6);color:#ffd4d9;}
+/* Avisos a la izquierda, encima del chat (no en medio de la pantalla) */
+#avisos{position:fixed;left:12px;bottom:200px;display:flex;flex-direction:column;gap:4px;align-items:flex-start;pointer-events:none;z-index:5;max-width:min(380px,42vw);}
+#avisos div{background:rgba(14,9,30,.72);border:1px solid var(--borde);border-left:3px solid #a78bfa;border-radius:6px;padding:5px 10px;font:600 12px var(--sans);text-align:left;animation:entra .2s ease-out;}
+#avisos div.ok{border-left-color:#4ade80;}
+#avisos div.err{border-left-color:#ff5a6a;color:#ffd4d9;}
 @keyframes entra{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
-#titulo-zona{position:fixed;left:50%;top:26%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;opacity:0;transition:opacity .6s;}
-#titulo-zona b{display:block;font:400 26px var(--px);color:#fff7d6;text-shadow:0 3px 0 #000,0 0 18px rgba(255,216,74,.45);}
-#titulo-zona small{display:block;margin-top:10px;font:600 14px var(--sans);color:var(--txt2);text-shadow:0 1px 2px #000;}
+#titulo-zona{position:fixed;left:50%;top:9%;transform:translate(-50%,0);text-align:center;pointer-events:none;opacity:0;transition:opacity .6s;}
+#titulo-zona b{display:block;font:400 18px var(--px);color:#fff7d6;text-shadow:0 3px 0 #000,0 0 18px rgba(255,216,74,.45);}
+#titulo-zona small{display:block;margin-top:6px;font:600 12px var(--sans);color:var(--txt2);text-shadow:0 1px 2px #000;}
 #hablar{left:50%;bottom:96px;transform:translateX(-50%);padding:8px 16px;font:700 14px var(--sans);display:none;cursor:pointer;color:var(--txt);}
 .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(5,2,14,.55);pointer-events:auto;z-index:10;}
 .modal.on{display:flex;}
+/* Paneles laterales: a la izquierda, sin velo ni bloquear el mundo */
+#v-npc.modal,#v-ayuda.modal,#v-inv.modal,#v-libro.modal,#v-tienda.modal,#v-logros.modal{background:none;pointer-events:none;justify-content:flex-start;align-items:flex-start;padding:150px 0 0 12px;z-index:9;}
+#v-npc .ventana,#v-ayuda .ventana,#v-inv .ventana,#v-libro .ventana,#v-tienda .ventana,#v-logros .ventana{pointer-events:auto;max-height:calc(100vh - 270px);width:min(420px,40vw);box-shadow:0 10px 30px rgba(0,0,0,.5);}
+body.movil #v-npc.modal,body.movil #v-ayuda.modal,body.movil #v-inv.modal,body.movil #v-libro.modal,body.movil #v-tienda.modal,body.movil #v-logros.modal{padding:96px 0 0 6px;}
+body.movil #v-npc .ventana,body.movil #v-ayuda .ventana,body.movil #v-inv .ventana,body.movil #v-libro .ventana,body.movil #v-tienda .ventana,body.movil #v-logros .ventana{width:min(360px,72vw);max-height:calc(100vh - 330px);}
 #v-look.modal{background:none;justify-content:flex-start;padding-left:16px;}
 #v-look .ventana{width:min(300px,86vw);background:rgba(20,12,44,.93);}
 #v-look .op{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0;font:600 12px var(--sans);}
@@ -134,6 +140,10 @@ body.movil #joy{display:block;}
 body.movil #chat{width:min(260px,60vw);bottom:auto;top:204px;}
 body.movil #chat-log{max-height:70px;font-size:11px;}
 body.movil #obj,body.movil #objp{left:12px;top:96px;}
+body.movil #avisos{left:8px;bottom:auto;top:46%;max-width:62vw;}
+body.movil #avisos div{font-size:11px;padding:4px 8px;}
+body.movil #titulo-zona{top:17%;}
+body.movil #titulo-zona b{font-size:14px;}
 body.movil #grupo3{top:auto;bottom:210px;min-width:150px;}
 body.movil #marco{min-width:180px;}
 body.movil #botones{right:8px;top:186px;display:grid;grid-template-columns:repeat(2,32px);gap:3px;}
@@ -283,6 +293,6 @@ body.movil #titulo-zona b{font-size:16px;}
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script src="/js/config.js"></script>
-<script type="module" src="/mundo/js/mundo.js?v=255"></script>
+<script type="module" src="/mundo/js/mundo.js?v=256"></script>
 </body>
 </html>
