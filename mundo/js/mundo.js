@@ -13,16 +13,16 @@
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
-  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS } from '/mmo/js/data.js?v=261';
-import { iniciarVentanas } from './ventanas.js?v=261';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=261';
-import { crearMusica } from './musica.js?v=261';
-import { construirCueva } from './cueva.js?v=261';
-import { TAPA, transparentar } from './tapa.js?v=261';
-import { construirAbismo } from './abismo.js?v=261';
-import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO } from '/mmo/js/abismo3d.js';
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=261';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=261';
+  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS } from '/mmo/js/data.js?v=262';
+import { iniciarVentanas } from './ventanas.js?v=262';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=262';
+import { crearMusica } from './musica.js?v=262';
+import { construirCueva } from './cueva.js?v=262';
+import { TAPA, transparentar } from './tapa.js?v=262';
+import { construirAbismo } from './abismo.js?v=262';
+import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario } from '/mmo/js/abismo3d.js';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=262';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=262';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -895,7 +895,7 @@ function recibir(m) {
     case 's3': foto(m); break;
     case 'pj3': agregarOtro(m.p); break;
     case 'pl': quitarOtro(m.id); break;
-    case 'pa': { const o = otros.get(m.p); if (o) { const cambia = o.sk !== m.sk || o.cl !== (m.cl || '') || o.ar !== (m.ar || 'katana') || JSON.stringify(o.lk) !== JSON.stringify(m.lk || null); Object.assign(o, { sk: m.sk, cl: m.cl || '', ar: m.ar || 'katana', mo: m.mo || '', lk: m.lk || null, al: m.al || '', fc: m.fc || '', gm: m.gm || 0 }); if (cambia) rehacerFiguraOtro(o); } break; }
+    case 'pa': { const o = otros.get(m.p); if (o) { const cambia = o.sk !== m.sk || o.cl !== (m.cl || '') || o.ar !== (m.ar || 'katana') || JSON.stringify(o.lk) !== JSON.stringify(m.lk || null); Object.assign(o, { sk: m.sk, cl: m.cl || '', ar: m.ar || 'katana', mo: m.mo || '', lk: m.lk || null, al: m.al || '', fc: m.fc || '', ra: m.ra || 0, gm: m.gm || 0 }); if (cambia) rehacerFiguraOtro(o); } break; }
     case 'mundial3': mundial3 = { ...m, recibido: Date.now() }; break;
     case 'zona3': {
       // Pisoton: el circulo rojo se llena y, al llenarse, golpea.
@@ -927,6 +927,7 @@ function recibir(m) {
         if (m.cueva) { camYaw = Math.PI; zonaActual = ''; }
       }
       break;
+    case 'pvpBaja': sfx('explosion', 0.5); sacudir = Math.max(sacudir, 0.25); aviso(`⚔️ ¡Abatiste a ${m.n}!`, 'ok'); break;
     case 'cofre3': if (cueva) { cueva.cofre.visible = true; cueva.tapa.rotation.x = 0; } sfx('moneda', 0.6); break;
     case 'gana':
       if (m.xp) numero(P.x, P.y + 2.6, P.z, '+' + m.xp + ' XP', '#c084fc');
@@ -1022,7 +1023,7 @@ async function agregarOtro(p) {
   if (!p || p.id === miId || p.p === miId) return;
   const id = p.id || p.p;
   quitarOtro(id);
-  const o = { id, x: p.x, z: p.z, tx: p.x, tz: p.z, ry: p.r || 0, a: 0, hp: p.hp, mx: p.mx, n: p.n, lv: p.lv, cl: p.cl || '', sk: p.sk || 'comun', ar: p.ar || 'katana', mo: p.mo || '', lk: p.lk || null, al: p.al || '', fc: p.fc || '', gm: p.gm || 0, muerto: !!p.muerto, fig: null, lbl: etiqueta('pj'), f: 1 };
+  const o = { id, x: p.x, z: p.z, tx: p.x, tz: p.z, ry: p.r || 0, a: 0, hp: p.hp, mx: p.mx, n: p.n, lv: p.lv, cl: p.cl || '', sk: p.sk || 'comun', ar: p.ar || 'katana', mo: p.mo || '', lk: p.lk || null, al: p.al || '', fc: p.fc || '', ra: p.ra || 0, gm: p.gm || 0, muerto: !!p.muerto, fig: null, lbl: etiqueta('pj'), f: 1 };
   otros.set(id, o);
   rehacerFiguraOtro(o);
 }
@@ -1334,12 +1335,15 @@ function pintarObjetivoP() {
   if (!o || objetivo) { caja.style.display = 'none'; return; }
   caja.style.display = 'block';
   const cl = CLASES[o.cl];
-  $('op-nombre').textContent = o.n; $('op-nombre').style.color = cl ? cl.color : '#fff';
+  const ene = enemigoP(o.id);
+  $('op-nombre').textContent = (ene ? '⚔ ' : '') + o.n; $('op-nombre').style.color = ene ? '#ff4d4d' : cl ? cl.color : '#fff';
   $('op-nivel').textContent = 'Nv ' + o.lv + (cl ? ' · ' + cl.nombre : '');
   const hp = $('op-hp');
   hp.firstElementChild.style.transform = `scaleX(${clamp(o.hp / o.mx, 0, 1)})`;
   hp.lastElementChild.textContent = Math.ceil(o.hp) + ' / ' + o.mx;
-  $('op-inv').style.display = enGrupo(o.id) ? 'none' : '';
+  const otraF = o.fc && yo && yo.faccion && o.fc !== yo.faccion;
+  $('op-inv').style.display = enGrupo(o.id) || otraF ? 'none' : '';
+  $('op-duelo').style.display = otraF && enAbismo(P.x) ? 'none' : '';
 }
 $('op-inv').onclick = () => { if (objetivoP) mandar({ t: 'invitar', p: objetivoP }); };
 $('op-sus').onclick = () => { const o = otros.get(objetivoP); if (!o) return; const i = $('chat-in'); i.style.display = 'block'; i.value = '/s ' + o.n + ' '; i.focus(); };
@@ -1675,14 +1679,25 @@ function cicloObjetivo() {
   objetivo = l[(i + 1) % l.length].id;
   sfx('boton', 0.2);
 }
-// Blanco del ataque: el monstruo elegido o, en un duelo, el rival.
+// Jugador al que se puede pegar: el rival del duelo o, en el Abismo, uno de
+// la otra faccion (fuera de los bastiones).
+function enemigoP(id) {
+  const o = otros.get(id);
+  return !!(o && yo && yo.faccion && o.fc && o.fc !== yo.faccion && enAbismo(P.x) && enAbismo(o.x) && !santuario(P.x, P.z) && !santuario(o.x, o.z));
+}
+function rangoHtml() {
+  const r = rangoDe(yo.pa || 0);
+  return `<br>🎖 <span style="color:#fde68a;font-weight:700">${r.n}</span> · ${yo.pa || 0} PA${r.sig ? ` <small style="color:var(--txt3)">(siguiente: ${r.sig})</small>` : ''}`;
+}
+function rivalP() { return objetivoP && ((dueloCon && objetivoP === dueloCon) || enemigoP(objetivoP)) ? objetivoP : 0; }
+// Blanco del ataque: el monstruo elegido o el jugador rival.
 function blancoAtk() {
   if (objetivo) return mons.get(objetivo) || null;
-  if (dueloCon && objetivoP === dueloCon) return otros.get(dueloCon) || null;
-  return null;
+  const r = rivalP();
+  return r ? otros.get(r) || null : null;
 }
 function alternarAtaque() {
-  if (dueloCon && objetivoP === dueloCon && !objetivo) { autoAtk = !autoAtk; pintarBarra(); return; }
+  if (rivalP() && !objetivo) { autoAtk = !autoAtk; pintarBarra(); return; }
   if (!objetivo) cicloObjetivo();
   autoAtk = !!objetivo && !autoAtk;
   pintarBarra();
@@ -1696,10 +1711,10 @@ function usarHab(h) {
   if (cdHab[h.id] && cdHab[h.id].fin > ahora) return aviso(h.nombre + ' todavía no está lista.', 'err');
   // Enemigo: el objetivo elegido (o el servidor busca el mas cercano).
   // Aliado: el jugador elegido o uno mismo.
-  const contraRival = h.obj === 'enemigo' && !objetivo && dueloCon && objetivoP === dueloCon;
+  const contraRival = h.obj === 'enemigo' && !objetivo && rivalP() ? rivalP() : 0;
   if (h.obj === 'enemigo' && !objetivo && !contraRival) cicloObjetivo();
   mandarPos(true);
-  mandar({ t: 'hab3', id: h.id, tg: h.obj === 'enemigo' ? objetivo : 0, tp: contraRival ? dueloCon : h.obj === 'aliado' || h.obj === 'muerto' ? objetivoP : 0 });
+  mandar({ t: 'hab3', id: h.id, tg: h.obj === 'enemigo' ? objetivo : 0, tp: contraRival ? contraRival : h.obj === 'aliado' || h.obj === 'muerto' ? objetivoP : 0 });
   if (h.gcd !== false) gcdHasta = ahora + GCD_MS;
   if (h.obj === 'enemigo' && objetivo && !autoAtk && h.id !== 'polimorfia') { autoAtk = true; pintarBarra(); }
 }
@@ -2036,7 +2051,7 @@ function etiquetas(t) {
   if (yo && P.lbl) ponLbl(P.lbl, P.x, P.y + 2.15 + (P.fig && P.fig.montura ? 1.2 : 0), P.z, `<span style="color:${yo.dios ? '#ffd84a' : '#ffe600'}">${yo.dios ? 'GM ' : ''}${esc(yo.nombre)}</span>`, 999);
   for (const o of otros.values()) {
     const cl = CLASES[o.cl];
-    ponLbl(o.lbl, o.x, (o.y || alturaEn(o.x, o.z)) + 2.15 + (o.fig && o.fig.montura ? 1.2 : 0), o.z, `<span style="color:${o.gm ? '#ffd84a' : o.fc && yo && yo.faccion && o.fc !== yo.faccion && enAbismo(o.x) ? '#ff4d4d' : cl ? cl.color : '#fff'}">${o.gm ? 'GM ' : ''}${o.fc && enAbismo(o.x) ? (o.fc === 'luz' ? '☀ ' : '🌑 ') : ''}${esc(o.n)} · Nv${o.lv}</span><span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>`, 70);
+    ponLbl(o.lbl, o.x, (o.y || alturaEn(o.x, o.z)) + 2.15 + (o.fig && o.fig.montura ? 1.2 : 0), o.z, `<span style="color:${o.gm ? '#ffd84a' : o.fc && yo && yo.faccion && o.fc !== yo.faccion && enAbismo(o.x) ? '#ff4d4d' : cl ? cl.color : '#fff'}">${o.gm ? 'GM ' : ''}${o.fc && enAbismo(o.x) ? (o.fc === 'luz' ? '☀ ' : '🌑 ') : ''}${esc(o.n)} · Nv${o.lv}</span>${o.ra && enAbismo(o.x) ? `<small style="display:block;color:#c4b5fd;font-size:10px">${RANGOS[o.ra].n}</small>` : ''}<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>`, 70);
   }
   for (const o of mons.values()) {
     const def = MONSTRUOS[o.k], el = o.id === objetivo;
@@ -2061,7 +2076,7 @@ function pintarMisiones() {
   metaMision = null;
   if (enAbismo(P.x)) {
     const is = islaEn(P.x, P.z), fc = yo.faccion && FACCIONES[yo.faccion];
-    h = `<div class="q"><b>🌌 ${ABISMO.nombre}</b>${is && is.nombre ? is.nombre + ' · ' : ''}${fc ? `<span style="color:${fc.color}">${fc.titulo}</span>` : ''}<br><span style="font-size:11px">Vuela entre islas (V), caza a los élites y conquista la Fortaleza del Núcleo. Vuelve por el portal de tu bastión.</span></div>`;
+    h = `<div class="q"><b>🌌 ${ABISMO.nombre}</b>${is && is.nombre ? is.nombre + ' · ' : ''}${fc ? `<span style="color:${fc.color}">${fc.titulo}</span>` : ''}${rangoHtml()}<br><span style="font-size:11px">${santuario(P.x, P.z) ? '🛡 Santuario: aquí nadie pelea contra jugadores.' : 'Abate a la otra facción y a los élites para ganar Puntos del Abismo. Vuelve por el portal de tu bastión.'}</span></div>`;
     c.style.display = 'block'; if (c._h !== h) { c.innerHTML = h; c._h = h; } faro.visible = false; return;
   }
   if (enCueva(P.x)) {

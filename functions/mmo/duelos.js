@@ -164,9 +164,11 @@ export const Duelos = {
     const vara = basico && CLASES[s.c.clase] && CLASES[s.c.clase].basico === 'vara';
     dmg = Math.max(1, Math.round(dmg * (vara ? ESCALA_VARA : ESCALA)));
     s.combateT = ahora;
-    this.herir(t, dmg, { id: 0, duelo: s.id, bala: !basico });
+    // Sin duelo entre ellos es combate de facciones (Abismo): ahi si se muere.
+    const pvp = !(s.duelo && s.duelo.con === t.id);
+    this.herir(t, dmg, pvp ? { id: 0, pvp: s.id, bala: !basico } : { id: 0, duelo: s.id, bala: !basico });
     if (crit) this.aClave(s.k, { t: 'critDuelo', p: t.id });
-    if (t.hp <= 1 && s.duelo) this.terminarDuelo(s, s, '');
+    if (!pvp && t.hp <= 1 && s.duelo) this.terminarDuelo(s, s, '');
   },
 
   // Habilidad usada contra el rival (version simple: daño directo y sus

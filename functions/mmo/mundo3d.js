@@ -24,7 +24,8 @@ import {
 } from '../../mmo/js/data.js';
 import { MUNDO, NPCS3D, NPC_DIST, SPAWN3D, ARENA3D, CASAS, campamentos, zonaEn, esNoche, nodos3d, RECOGER_DIST, alturaEn } from '../../mmo/js/mundo3d.js';
 import { CUEVA, CUEVA_X0, caminable, enCueva, vistaCueva, pasoCueva, PORTAL_PUEBLO } from '../../mmo/js/cueva3d.js';
-import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, baseDe, portalBase, VACIO } from '../../mmo/js/abismo3d.js';
+import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, baseDe, portalBase, VACIO, rangoDe, santuario } from '../../mmo/js/abismo3d.js';
+const PVP_PAR_DIA = 4;          // victorias que puntuan al dia contra el mismo jugador
 const fueraDeIsla = (x, z) => { const is = islaEn(x, z); return !is || Math.hypot(x - ABISMO_X0 - is.x, z - is.z) > is.r * 0.85; };
 // Misma instancia (0 = mundo abierto; si no, la cueva de un grupo).
 const mismo = (a, b) => (a.i3 || 0) === (b.i3 || 0);
@@ -261,8 +262,8 @@ export const Mundo3D = {
   // monstruos; golpeDuelo escala el daño entre jugadores).
   atacarDuelo3d(s, m) {
     if (this.aura(s, 'aturdido') || this.aura(s, 'bloque') || (s.cast && habPorId(s.cast.h))) return;
-    const t = this.rivalDuelo(s);
-    if (!t || t.id !== (m.tp | 0) || !t.m3) return;
+    const t = this.rival3d(s, m.tp | 0);
+    if (!t) return;
     const ahora = Date.now();
     if (ahora < (s.atkT || 0) - JITTER_MS) return;
     const arma = ARMAS[s.c.arma] || ARMAS.katana;
@@ -318,6 +319,7 @@ export const Mundo3D = {
       // dar(): misiones, diarias, bestiario, chicha, pase, botin... lo mismo que el 2D.
       this.dar(s, xp, oro, o, 1, true);
       cobraron.add(sid);
+      if (enAbismo(o.x) && parte >= 0.1) this.sumarPA(s, o.jefe ? 10 : 3, 'élite');
       if (o.jefe && !o.cueva && parte >= 0.1) this.darMton(s, 20 * Math.max(0.3, MONSTRUOS[o.k].nivel / 30), 'jefe');
     }
     // Grupo: los compañeros cerca (60 m) cuentan la caza como suya (misiones,
@@ -492,6 +494,58 @@ export const Mundo3D = {
   },
 
   // ── EL ABISMO DE ETER (facciones) ──
+  // A quien puede pegar s en el 3D: su rival de duelo o, en el Abismo, un
+  // jugador de la otra faccion (fuera de los bastiones, que son santuario).
+  rival3d(s, id) {
+    const d = this.rivalDuelo(s);
+    if (d && d.id === id) return d.m3 ? d : null;
+    const t = this.sesiones.get(id);
+    return t && t.c && t.m3 && !t.muerto && !s.muerto && !s.i3 && !t.i3 && this.enemigoFaccion(s, t) ? t : null;
+  },
+  enemigoFaccion(s, t) {
+    return !!(s.c.faccion && t.c.faccion && s.c.faccion !== t.c.faccion && enAbismo(s.p.x) && enAbismo(t.p.x)
+      && !santuario(s.p.x, s.p.z) && !santuario(t.p.x, t.p.z));
+  },
+  aAbismo(obj) { for (const x of this.sesiones3d()) if (enAbismo(x.p.x)) this.enviar(x, obj); },
+  // Puntos del Abismo: suben el rango (aviso a todos al ascender).
+  sumarPA(s, n, por) {
+    if (!s || !s.c || !n) return;
+    const r0 = rangoDe(s.c.pa);
+    s.c.pa = Math.max(0, (s.c.pa || 0) + n);
+    s.sucio = true;
+    if (n > 0) this.enviar(s, { t: 'toast', m: `🌌 +${n} Puntos del Abismo${por ? ' (' + por + ')' : ''}` });
+    const r1 = rangoDe(s.c.pa);
+    if (r1.i !== r0.i) {
+      if (r1.i > r0.i) this.aTodos({ t: 'aviso', m: `🎖 ${s.c.nombre} asciende a ${r1.n} del Abismo.` });
+      this.aClave(K3, { t: 'pa', ...this.infoApariencia(s) });
+    }
+    this.yoLuego(s);
+  },
+  // k abatio a v en el Abismo.
+  muertePvP(k, v) {
+    if (!k || !k.c || !v || !v.c || !k.c.faccion || !v.c.faccion) return;
+    this.aAbismo({ t: 'aviso', m: `⚔️ ${k.c.nombre} (${FACCIONES[k.c.faccion].nombre}) abatió a ${v.c.nombre} (${FACCIONES[v.c.faccion].nombre}).` });
+    this.enviar(k, { t: 'pvpBaja', n: v.c.nombre });
+    // Invitados y cuentas de prueba no puntuan; tampoco la misma victima mas de 4 veces al dia.
+    if (k.c.uid.startsWith('inv:') || v.c.uid.startsWith('inv:')) return;
+    const hoy = hoyUTC(), par = k.c.uid + '>' + v.c.uid;
+    if (!this.pvpPares || this.pvpPares.d !== hoy) this.pvpPares = { d: hoy, l: {} };
+    const n = this.pvpPares.l[par] = (this.pvpPares.l[par] || 0) + 1;
+    if (n > PVP_PAR_DIA) return this.enviar(k, { t: 'toast', m: 'Hoy ya no ganas Puntos del Abismo por ese jugador.' });
+    // Vale mas cuanto mas rango y nivel tiene la victima.
+    const rv = rangoDe(v.c.pa).i;
+    let pts = 10 + rv * 5;
+    if (v.c.nivel < k.c.nivel - 8) pts = Math.ceil(pts * 0.3);
+    // Se reparte con el grupo cercano de la misma faccion.
+    const g = this.grupoDe ? this.grupoDe(k) : null;
+    const quien = (g ? this.sesionesGrupo(g) : [k]).filter(x => x.c && x.m3 && x.c.faccion === k.c.faccion && enAbismo(x.p.x) && dist(x.p, k.p) < 45);
+    if (!quien.includes(k)) quien.push(k);
+    const parte = Math.max(2, Math.ceil(pts * (quien.length > 1 ? 1.2 : 1) / quien.length));
+    for (const x of quien) { x.c.bajasPvP = (x.c.bajasPvP || 0) + (x === k ? 1 : 0); this.sumarPA(x, parte, x === k ? 'baja' : 'asistencia'); }
+    const pierde = Math.min(v.c.pa || 0, Math.ceil(pts / 2));
+    if (pierde) { this.sumarPA(v, -pierde); this.enviar(v, { t: 'toast', m: `🌌 −${pierde} Puntos del Abismo` }); }
+  },
+
   elegirFaccion(s, m) {
     const c = s.c;
     if (c.faccion) return this.no(s, `Ya perteneces a la ${FACCIONES[c.faccion].nombre}.`);
@@ -845,9 +899,9 @@ export const Mundo3D = {
     const tg = m.tg | 0;
     if (h.obj === 'enemigo' && m.tp) {
       // Contra el rival de un duelo (solo habilidades de un objetivo).
-      const t = this.rivalDuelo(s);
-      if (!t || t.id !== (m.tp | 0)) return;
-      if (h.radio || h.area) return this.no(s, 'En un duelo solo valen las habilidades de un objetivo.');
+      const t = this.rival3d(s, m.tp | 0);
+      if (!t) return this.no(s, 'No puedes atacar a ese jugador.');
+      if (h.radio || h.area) return this.no(s, 'Contra jugadores solo valen las habilidades de un objetivo.');
       if (dist(s.p, t.p) > this.metros(h.rango, s) + 0.5) return this.no(s, 'Tu rival está fuera de alcance.');
       if (h.min && dist(s.p, t.p) < h.min / 17) return this.no(s, 'Estás demasiado cerca.');
       if (h.id === 'eviscerar' && !(s.combo > 0)) return this.no(s, 'Necesitas puntos de combo (usa Golpe Siniestro).');
@@ -899,8 +953,8 @@ export const Mundo3D = {
     const h = habPorId(ca.h);
     if (ca.tk === 'd') {
       // Lanzamiento contra el rival de un duelo.
-      const riv = this.rivalDuelo(s);
-      const ok = riv && riv.id === ca.tg && riv.m3 && !s.muerto && dist(s.p, riv.p) <= this.metros(h.rango, s) + 3.5 && s.rec >= costoHab(h, s.st.recMax, s.c.espec);
+      const riv = this.rival3d(s, ca.tg);
+      const ok = riv && !s.muerto && dist(s.p, riv.p) <= this.metros(h.rango, s) + 3.5 && s.rec >= costoHab(h, s.st.recMax, s.c.espec);
       this.aCerca3d({ x: s.p.x, z: s.p.z, i3: s.i3 }, { t: 'castFin', p: s.id, ok: !!ok });
       if (ok) this.habDuelo(s, h, riv); else if (!s.muerto) this.no(s, 'Tu rival ya no está al alcance.');
       return;

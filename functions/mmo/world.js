@@ -27,6 +27,7 @@ import {
 import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery, tg, getSolPriceUsd, getDuendePriceUsd, SOL_DEV_WALLET } from '../api/lib.js';
 import { MMO_URL } from '../api/telegram-bot.js';
 import { Cueva3D } from './cueva3d.js';
+import { rangoDe } from '../../mmo/js/abismo3d.js';
 import { Combate } from './combate.js';
 import { Social, pub } from './social.js';
 import { Mazmorras } from './mazmorras.js';
@@ -1252,7 +1253,7 @@ export class MmoWorld {
       eq: c.eq, bolsa: c.bolsa, logros: c.logros, titulo: c.titulo, mundiales: c.mundiales, login: c.login, crit: s.st.crit,
       clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, torreSem: this.torreSem(c).max, torreMax: c.torreMax || 0, exped: c.exped || null, nVisitadas: c.nVisitadas || 0, visitadas: c.visitadas || [], especies: c.especies || {}, nEspecies: c.nEspecies || 0, dorados: c.dorados || 0, exped8: c.exped8 || 0, peces: c.peces || 0, expediciones: c.expediciones || 0, duelosG: c.duelosG || 0, desafioMax: c.desafioMax || 0, amigosN: c.amigos || 0, desafio: c.desafio || {}, ...Object.fromEntries(TEMPORADAS.map(t => [t.campo, c[t.campo] || 0])), chicha: this.infoChicha(c), temp: (temporadaDe() || {}).id || '', herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, best: c.best || {},
       boveda: c.boveda, bovedaOpc: c.bovedaOpc || null, pase: this.infoPase(c), banda: this.infoBanda(c), runas: c.runas || {}, gestaCob: c.gestaCob || null,
-      faccion: c.faccion || null, look: c.look || null, alas: c.alas || ['aprendiz'], ala: c.ala || 'aprendiz', espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, tintes: c.tintes || [], tinte: c.tinte || '', mascotas: c.mascotas || [], mascota: c.mascota || '', montado: s.montado || null,
+      faccion: c.faccion || null, pa: c.pa || 0, bajasPvP: c.bajasPvP || 0, look: c.look || null, alas: c.alas || ['aprendiz'], ala: c.ala || 'aprendiz', espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, tintes: c.tintes || [], tinte: c.tinte || '', mascotas: c.mascotas || [], mascota: c.mascota || '', montado: s.montado || null,
       mton: c.mton, wallet: c.wallet ? { a: tonAmigable(c.wallet.a), desde: c.wallet.desde } : null,
       p2e: this.elegibilidad(c), creado: c.creado,
       retiros: this.retiros.filter(x => x.uid === c.uid).slice(-5).map(x => ({ id: x.id, ton: x.ton, estado: x.estado, creado: x.creado })),
@@ -1284,7 +1285,7 @@ export class MmoWorld {
   }
   // Lo que cambia al equiparse o elegir clase (mensaje 'pa').
   infoApariencia(s) {
-    return { p: s.id, id: s.id, sk: s.c.skin, ar: s.c.arma, mx: s.st.maxHp, ti: this.textoTitulo(s.c), cl: s.c.clase || '', rmx: s.st.recMax, hn: this.nombreHermandad(s.c.herm), hc: this.colorHermandad(s.c.herm), mo: s.montado || '', es: s.c.espec || '', lk: s.c.look || undefined, al: s.c.ala && s.c.ala !== 'aprendiz' ? s.c.ala : undefined, fc: s.c.faccion || undefined, tn: s.c.tinte || '', ma: s.c.exped ? '' : s.c.mascota || '', gm: s.dios ? 1 : 0, gi: s.dios && s.diosModo && s.diosModo.inv ? 1 : 0 };
+    return { p: s.id, id: s.id, sk: s.c.skin, ar: s.c.arma, mx: s.st.maxHp, ti: this.textoTitulo(s.c), cl: s.c.clase || '', rmx: s.st.recMax, hn: this.nombreHermandad(s.c.herm), hc: this.colorHermandad(s.c.herm), mo: s.montado || '', es: s.c.espec || '', lk: s.c.look || undefined, al: s.c.ala && s.c.ala !== 'aprendiz' ? s.c.ala : undefined, fc: s.c.faccion || undefined, ra: s.c.faccion && s.c.pa ? rangoDe(s.c.pa).i || undefined : undefined, tn: s.c.tinte || '', ma: s.c.exped ? '' : s.c.mascota || '', gm: s.dios ? 1 : 0, gi: s.dios && s.diosModo && s.diosModo.inv ? 1 : 0 };
   }
   // Auras con su tiempo restante, para quien llega al mapa y no vio cuando se pusieron.
   aurasVivas(au) {
@@ -1805,8 +1806,8 @@ export class MmoWorld {
     if (s.muerto) return;
     const ahora = Date.now();
     const pct = fuente && fuente.pct;
-    const duelo = fuente && fuente.duelo;
-    if ((ahora < s.inv && !pct && !duelo) || ahora < s.escudo || this.aura(s, 'bloque')) return;
+    const duelo = fuente && fuente.duelo, pvp = fuente && fuente.pvp;
+    if ((ahora < s.inv && !pct && !duelo && !pvp) || ahora < s.escudo || this.aura(s, 'bloque')) return;
     if (s.dios && s.diosModo && s.diosModo.inv) return;   // Modo Dios: invencible
     // Evasion del picaro: esquiva golpes cuerpo a cuerpo (las bolas y las
     // zonas no).
@@ -1827,7 +1828,7 @@ export class MmoWorld {
     if (pct) real = Math.round(s.st.maxHp * pct * rnd(0.95, 1.05));
     // Duelo: la defensa solo amortigua un poco (si no, el guerrero no recibia
     // casi nada); la escala del daño ya la pone golpeDuelo.
-    if (duelo) real = Math.max(1, Math.round(bruto * (1 - s.st.def / (s.st.def + 120))));
+    if (duelo || pvp) real = Math.max(1, Math.round(bruto * (1 - s.st.def / (s.st.def + 120))));
     // Un monstruo comun nunca quita mas de un 30% de la vida de un golpe: en
     // una zona algo alta se sufre, pero ya no se muere en tres toques. Los
     // jefes quedan fuera (su embestida avisada es el peligro de verdad).
@@ -1852,8 +1853,9 @@ export class MmoWorld {
     // Los ultimos golpes, para explicar la muerte ("te mató...").
     const mo = fuente && fuente.id ? (s.m3 ? this.iniciar3d().mons.get(fuente.id) : this.mundoDe(s).mons.get(fuente.id)) : null;
     s.golpes = (s.golpes || []).filter(x => ahora - x.t < 12000).slice(-4);
-    s.golpes.push({ t: ahora, n: mo ? MONSTRUOS[mo.k].nombre : 'Daño', nv: mo ? (mo.nv || MONSTRUOS[mo.k].nivel) : 0, d: real });
-    if (!pct && !duelo) s.inv = ahora + INVULNERABLE_GOLPE_MS;
+    const atacante = pvp ? this.sesiones.get(pvp) : null;
+    s.golpes.push({ t: ahora, n: mo ? MONSTRUOS[mo.k].nombre : atacante && atacante.c ? atacante.c.nombre : 'Daño', nv: mo ? (mo.nv || MONSTRUOS[mo.k].nivel) : atacante && atacante.c ? atacante.c.nivel : 0, d: real });
+    if (!pct && !duelo && !pvp) s.inv = ahora + INVULNERABLE_GOLPE_MS;
     s.golpeT = ahora;
     s.combateT = ahora;
     // El guerrero se enfurece al recibir golpes.
@@ -1864,7 +1866,7 @@ export class MmoWorld {
     this.aDe(s, { t: 'ph', p: s.id, d: real, ab: abs || undefined, from: fuente ? fuente.id : 0 });
     // La vida ya va en cada foto del mundo: el "yo" entero (bolsa, equipo...)
     // tras cada golpe pesaba en la red y repintaba las ventanas del movil.
-    if (s.hp <= 0) { this.morir(s); this.actualizarYo(s); }
+    if (s.hp <= 0) { this.morir(s); if (atacante && this.muertePvP) this.muertePvP(atacante, s); this.actualizarYo(s); }
   }
 
   morir(s) {

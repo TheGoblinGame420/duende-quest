@@ -2474,3 +2474,20 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
   `/mmo/js/abismo3d.js` (mundo3d.js lo importa sin `?v`; así hay una sola
   instancia del módulo).
 - Próximo (v262): PvP entre facciones en el Abismo, Puntos del Abismo y rangos.
+
+### PvP de facciones, Puntos del Abismo y rangos (23-oct-2026, `?v=262`)
+
+- abismo3d.js: `RANGOS` (8, por PA), `rangoDe(pa)`, `santuario(x,z)` (islas
+  con `base`).
+- Servidor: `rival3d(s, id)` sustituye a `rivalDuelo` en atk3/hab3/finCast:
+  rival de duelo o enemigo de faccion en el Abismo fuera de santuario.
+  `golpeDuelo` sin duelo entre ellos usa `herir(..., {pvp})`: misma defensa que
+  el duelo pero sin tope a 1 de vida ni invulnerabilidad; al morir,
+  `muertePvP` anuncia la baja en el Abismo y reparte PA (10 + 5×rango de la
+  victima, ×0,3 si es 8+ niveles menor; con el grupo cercano ×1,2 repartido);
+  la victima pierde la mitad. Invitados no puntuan; 4 bajas puntuables al dia
+  por pareja. Elites del Abismo: 3 PA (jefe 10) con ≥10% del daño.
+  `infoApariencia.ra` (rango), `datosPropios.pa/bajasPvP`.
+- Cliente: `enemigoP/rivalP` (el blanco puede ser un enemigo de faccion),
+  rango bajo el nombre en el Abismo, panel con rango y PA, `pvpBaja`.
+- Bot de Telegram: botón «🌌 Mundo abierto 3D» en /start y /mmo, comando /mundo.

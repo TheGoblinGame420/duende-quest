@@ -6,6 +6,8 @@ const WEBAPP_URL = 'https://duende-quest.alfonso12hc.workers.dev/telegram/index.
 const SITE_URL = 'https://duende-quest.alfonso12hc.workers.dev';
 // Exportada: los avisos de vuelta del MMO (functions/mmo/retencion.js) usan la misma.
 export const MMO_URL = 'https://duende-quest.alfonso12hc.workers.dev/mmo/';
+// El mundo abierto en 3D (el mismo personaje y servidor que el MMO).
+export const MUNDO_URL = 'https://duende-quest.alfonso12hc.workers.dev/mundo/';
 // El creador del juego y sus canales oficiales: se muestran en /start y
 // /creador para que cualquiera pueda comprobar quién está detrás del juego.
 const CREADOR_TG = 'https://t.me/ElDuendeOficial';
@@ -178,6 +180,7 @@ async function handleStart(token, env, chatId, user, startPayload) {
     reply_markup: { inline_keyboard: [
       [{ text: '🎮 Jugar', web_app: { url: WEBAPP_URL } }],
       [{ text: '🌍 Jugar el MMO online', web_app: { url: MMO_URL } }],
+      [{ text: '🌌 Mundo abierto 3D', web_app: { url: MUNDO_URL } }],
       [{ text: '🏆 Ranking', callback_data: 'ranking' }, { text: '📊 Mis estadísticas', callback_data: 'stats' }],
       [{ text: '🎁 Invitar amigos', callback_data: 'referral' }, { text: '💹 Precio', callback_data: 'price' }],
       [{ text: '⭐ Comprar con Stars', callback_data: 'buy' }, { text: '🪙 Pump.fun', url: PUMP_FUN_URL }],
@@ -428,7 +431,7 @@ async function handleCreador(token, chatId) {
 }
 
 async function handleHelp(token, chatId) {
-  await tg(token, 'sendMessage', { chat_id: chatId, text: `🧌 *DUENDE QUEST — Comandos*\n\n/start — Menú principal\n/play — Abrir el juego\n/mmo — DUENDE QUEST ONLINE (MMORPG)\n/topmmo — Ranking de la semana del MMO\n/yo — Tu personaje del MMO\n/avisos — Avisos para volver al MMO (on / off)\n/ranking — Top 10\n/stats — Tus estadísticas\n/referral — Tu link para invitar amigos\n/price — Precio de $DUENDE\n/buy — Comprar $DUENDE con Stars\n/creador — Creador y canales oficiales\n/help — Esta ayuda\n\n${TEXTO_SEGURIDAD}\nMás información: ${SEGURIDAD_URL}\n\n${TEXTO_CREADOR}`, parse_mode: 'Markdown', disable_web_page_preview: true, reply_markup: { inline_keyboard: [[{ text: '🎮 Jugar', web_app: { url: WEBAPP_URL } }], BOTON_SEGURIDAD] } });
+  await tg(token, 'sendMessage', { chat_id: chatId, text: `🧌 *DUENDE QUEST — Comandos*\n\n/start — Menú principal\n/play — Abrir el juego\n/mmo — DUENDE QUEST ONLINE (MMORPG)\n/mundo — El mundo abierto en 3D\n/topmmo — Ranking de la semana del MMO\n/yo — Tu personaje del MMO\n/avisos — Avisos para volver al MMO (on / off)\n/ranking — Top 10\n/stats — Tus estadísticas\n/referral — Tu link para invitar amigos\n/price — Precio de $DUENDE\n/buy — Comprar $DUENDE con Stars\n/creador — Creador y canales oficiales\n/help — Esta ayuda\n\n${TEXTO_SEGURIDAD}\nMás información: ${SEGURIDAD_URL}\n\n${TEXTO_CREADOR}`, parse_mode: 'Markdown', disable_web_page_preview: true, reply_markup: { inline_keyboard: [[{ text: '🎮 Jugar', web_app: { url: WEBAPP_URL } }], BOTON_SEGURIDAD] } });
 }
 
 // ── /admin: métricas privadas (solo el dueño, via env ADMIN_TG_ID) ──
@@ -717,8 +720,11 @@ async function onRequestPost(context) {
           }
           await handleStart(token, env, chatId, user, payload); break;
         case '/play': case '/jugar': await handlePlay(token, chatId); break;
+        case '/mundo': case '/3d':
+          await tg(token, 'sendMessage', { chat_id: chatId, text: '🌌 *DUENDE QUEST 3D*\nEl mundo abierto con tu mismo personaje: vuela con alas, entra a la Cueva de los Goblins y, desde el nivel 20, elige facción en el Abismo de Éter.\n\n' + TEXTO_SEGURIDAD, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🌌 Entrar al mundo 3D', web_app: { url: MUNDO_URL } }], BOTON_SEGURIDAD] } });
+          break;
         case '/mmo': case '/online':
-          await tg(token, 'sendMessage', { chat_id: chatId, text: '*DUENDE QUEST ONLINE*\nRPG online de duendes. Gratis, en Telegram y en el navegador.\n\n• 4 clases, grupos y hermandades\n• 6 mazmorras, la banda del Titán y la Torre del Duende\n• Jefe mundial cada 30 minutos\n• Pesca, expediciones y artesanía\n• 10 zonas hasta el nivel 60\n\n*Skins:* dan bonificaciones; se compran con oro del juego o con Stars.\n*Chicha morada:* con 10.000 puntos de caza te enviamos un litro a casa.\n*mTON (opcional):* desde Nv 15, jefes y caza del día reparten un fondo diario. 1.000 mTON = 1 TON; retiro desde 5 TON, revisado a mano.\n\n' + TEXTO_SEGURIDAD, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🌍 Entrar al mundo', web_app: { url: MMO_URL } }], [{ text: '🏆 Ranking de la semana', callback_data: 'topmmo' }, { text: '🧝 Mi personaje', callback_data: 'yo' }], BOTON_SEGURIDAD] } });
+          await tg(token, 'sendMessage', { chat_id: chatId, text: '*DUENDE QUEST ONLINE*\nRPG online de duendes. Gratis, en Telegram y en el navegador.\n\n• 4 clases, grupos y hermandades\n• 6 mazmorras, la banda del Titán y la Torre del Duende\n• Jefe mundial cada 30 minutos\n• Pesca, expediciones y artesanía\n• 10 zonas hasta el nivel 60\n• Mundo abierto en 3D: vuelo con alas, el Abismo de Éter y PvP de facciones\n\n*Skins:* dan bonificaciones; se compran con oro del juego o con Stars.\n*Chicha morada:* con 10.000 puntos de caza te enviamos un litro a casa.\n*mTON (opcional):* desde Nv 15, jefes y caza del día reparten un fondo diario. 1.000 mTON = 1 TON; retiro desde 5 TON, revisado a mano.\n\n' + TEXTO_SEGURIDAD, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🌍 Entrar al mundo', web_app: { url: MMO_URL } }], [{ text: '🌌 Mundo abierto 3D', web_app: { url: MUNDO_URL } }], [{ text: '🏆 Ranking de la semana', callback_data: 'topmmo' }, { text: '🧝 Mi personaje', callback_data: 'yo' }], BOTON_SEGURIDAD] } });
           break;
         case '/ranking': case '/top': await handleRanking(token, env, chatId); break;
         case '/topmmo': case '/torre': await handleTopMmo(token, env, chatId); break;

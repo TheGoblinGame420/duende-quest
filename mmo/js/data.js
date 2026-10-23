@@ -483,6 +483,12 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 30, fecha: '23 oct 2026', items: [
+    '¡PvP de facciones en el Abismo! Selecciona a un jugador de la otra facción (nombre en rojo) y atácalo como a un monstruo. Allí sí se muere.',
+    'Puntos del Abismo y 8 rangos, de Recluta a Héroe del Éter. Se ganan abatiendo enemigos (con asistencias para tu grupo) y cazando élites; morir cuesta algunos.',
+    'Los bastiones son santuario: dentro nadie pelea contra jugadores.',
+    'En Telegram: nuevo botón «Mundo abierto 3D» y el comando /mundo.',
+  ] },
   { n: 29, fecha: '23 oct 2026', items: [
     '¡Nuevo: el Abismo de Éter! Un archipiélago de islas flotantes sobre el vacío (desde nivel 20). Se entra por el portal del pueblo.',
     'Elige tu facción para siempre: Guardianes de la Luz o Hijos de la Sombra. Cada una tiene su bastión, y la Fortaleza del Núcleo queda en medio.',

@@ -605,6 +605,7 @@ async function pruebas() {
   await pruebasDueloPesca3d();
   await pruebasAlas3d();
   await pruebasAbismo3d();
+  await pruebasPvP3d();
 }
 
 // ── ALAS (vuelo de AION) ──
@@ -627,6 +628,53 @@ async function pruebasAlas3d() {
   for (let i = 0; i < 700; i++) { avanzar(100); a.movBud = undefined; await a.mandar({ t: 'mv3', x: 120 + (i % 2) * 0.2, z: 120, a: 3, h: 10 }); }
   chequear(a.ultimos('alasAgotadas').length >= 1 && a.a !== 3, 'sin energía de alas el servidor te baja (planeando)');
   await dejar(a);
+}
+
+// ── PVP DE FACCIONES EN EL ABISMO ──
+async function pruebasPvP3d() {
+  console.log('Mundo 3D: PvP de facciones');
+  const AB = await import('../mmo/js/abismo3d.js');
+  const a = await entrar3d('LuzPvP', '4k1'); ponerNivel(a, 25, 'guerrero');
+  const b = await entrar3d('SombraPvP', '4k2'); ponerNivel(b, 25, 'picaro');
+  const c = await entrar3d('LuzAmiga', '4k3'); ponerNivel(c, 25, 'mago');
+  a.c.faccion = c.c.faccion = 'luz'; b.c.faccion = 'sombra';
+  mundo.m3.mons.clear(); for (const k of mundo.m3.campos) { k.vivos.clear(); k.prox = Date.now() + 1e9; }
+  // En el bastion (santuario) no se pelea
+  const base = AB.baseDe('luz');
+  a.p = { ...base }; b.p = { x: base.x + 1, z: base.z }; a.movBud = b.movBud = undefined; avanzar(3000);
+  let hp0 = b.hp; a.atkT = 0;
+  await a.mandar({ t: 'atk3', tp: b.id });
+  chequear(b.hp === hp0, 'en el bastión (santuario) no hay PvP');
+  // En una isla neutral si
+  const is = AB.ABISMO.islas[3], x0 = AB.ABISMO_X0 + is.x;
+  a.p = { x: x0, z: is.z }; b.p = { x: x0 + 1, z: is.z }; c.p = { x: x0 - 1, z: is.z };
+  await c.mandar({ t: 'atk3', tp: a.id });
+  chequear(a.hp === a.st.maxHp, 'no se pega a los de tu facción');
+  hp0 = b.hp; a.atkT = 0;
+  await a.mandar({ t: 'atk3', tp: b.id });
+  chequear(b.hp < hp0, 'se pega a la otra facción en el Abismo');
+  b.hp = 2; b.inv = 0; a.atkT = 0; a.limpiar(); b.limpiar();
+  await a.mandar({ t: 'atk3', tp: b.id });
+  chequear(b.muerto, 'en el Abismo la otra facción sí muere');
+  chequear(!a.c.pa, 'los invitados no ganan Puntos del Abismo');
+  const uids = [a.c.uid, b.c.uid]; a.c.uid = 'tg:pvp1'; b.c.uid = 'tg:pvp2';
+  b.muerto = false; b.hp = 2; b.inv = 0; a.atkT = 0; a.limpiar();
+  await a.mandar({ t: 'atk3', tp: b.id });
+  chequear((a.c.pa || 0) >= 10 && a.c.bajasPvP === 1, 'la baja da Puntos del Abismo');
+  chequear(a.ultimos('pvpBaja').length === 1 && b.ultimos('aviso').some(m => /abatió/.test(m.m)), 'se anuncia la baja en el Abismo');
+  // El mismo par puntua como mucho 4 veces al dia
+  for (let i = 0; i < 5; i++) { b.muerto = false; b.hp = 2; b.inv = 0; a.atkT = 0; await a.mandar({ t: 'atk3', tp: b.id }); }
+  const pa = a.c.pa; b.muerto = false; b.hp = 2; a.atkT = 0; await a.mandar({ t: 'atk3', tp: b.id });
+  chequear(a.c.pa === pa, 'farmear al mismo jugador deja de dar puntos');
+  // Rango
+  a.c.pa = 59; a.limpiar(); mundo.sumarPA(a, 5);
+  chequear(a.ultimos('aviso').some(m => /asciende a Soldado/.test(m.m)), 'al subir de rango se anuncia');
+  // Fuera del Abismo no hay PvP
+  a.p = { x: 30, z: 30 }; b.p = { x: 31, z: 30 }; b.muerto = false; b.hp = hp0 = b.st.maxHp; a.atkT = 0;
+  await a.mandar({ t: 'atk3', tp: b.id });
+  chequear(b.hp === hp0, 'en el mundo normal no se ataca sin duelo');
+  [a.c.uid, b.c.uid] = uids;
+  await dejar(a); await dejar(b); await dejar(c);
 }
 
 // ── EL ABISMO DE ETER (facciones) ──

@@ -33,7 +33,20 @@ export const ABISMO = {
   campos: [[3, 'caballero_negro', 2], [4, 'hechicero_corte', 2], [5, 'esqueleto_capa', 2], [6, 'guardia_real', 3],
     [11, 'murcielago', 2], [12, 'hellgato', 2], [7, 'esqueleto_real', 2], [10, 'esqueleto_real', 2]],
 };
+// Rangos por Puntos del Abismo (PA): se ganan abatiendo a la otra faccion y a
+// los elites de las islas; morir a manos del enemigo cuesta algunos.
+export const RANGOS = [
+  { pa: 0, n: 'Recluta' }, { pa: 60, n: 'Soldado' }, { pa: 200, n: 'Centinela' }, { pa: 500, n: 'Oficial' },
+  { pa: 1100, n: 'Capitán' }, { pa: 2400, n: 'Comandante' }, { pa: 5000, n: 'General' }, { pa: 10000, n: 'Héroe del Éter' },
+];
+export function rangoDe(pa) {
+  let i = 0;
+  while (i + 1 < RANGOS.length && (pa || 0) >= RANGOS[i + 1].pa) i++;
+  return { i, n: RANGOS[i].n, sig: RANGOS[i + 1] ? RANGOS[i + 1].pa : 0 };
+}
 export const enAbismo = x => x >= ABISMO_X0 - 450;
+// Los bastiones son santuario: ahi nadie pelea contra jugadores.
+export const santuario = (x, z) => { const is = islaEn(x, z); return !!(is && is.base); };
 function hsh(x, z) { let h = (x | 0) * 374761393 + (z | 0) * 668265263; h = (h ^ (h >>> 13)) * 1274126177; return ((h ^ (h >>> 16)) >>> 0) / 4294967295; }
 // Isla bajo (x, z) o null.
 export function islaEn(x, z) {
