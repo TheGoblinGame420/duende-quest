@@ -483,6 +483,10 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 25, fecha: '23 oct 2026', items: [
+    'Física nueva en el mundo 3D: ya no se atraviesan casas, troncos, rocas ni personajes; tu duende se desliza por ellos.',
+    'Movimiento con inercia ligera (arranca y frena suave, menos agarre en el aire y en el agua) y giro suave hacia donde caminas.',
+  ] },
   { n: 24, fecha: '23 oct 2026', items: [
     'Nada en medio de la pantalla: los avisos van a la izquierda sobre el chat y las ventanas (PNJ, inventario, libro, tienda, logros, ayuda) se abren a un lado y puedes seguir caminando.',
     'La cámara ya no se pega al duende al pasar junto a casas y árboles.',

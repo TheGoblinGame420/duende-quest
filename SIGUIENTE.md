@@ -2379,3 +2379,14 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
 - Minimapa: flecha con `rotate(PI - P.ry)` y cono de cámara con
   `rotate(-camYaw)`; `flechaDir` del rastreador corregida (estaba en espejo).
 - `sfx()` con WebAudio: buffers decodificados una vez, 8 voces, tono ±6 %.
+
+### Física del duende (23-oct-2026, `?v=257`)
+
+- `solidos` (rejilla de 8 m) con círculos: troncos (`SOLIDO` por tipo de
+  flora × escala), rocas, cactus, pilares, cristales, PNJ y pilares del
+  portal; casas como cajas giradas (`CASAS`). `empujarFuera(x, z)` saca el
+  círculo del duende (0,45 m) de cada uno: así resbala.
+- Inercia: `P.vx/P.vz` se acercan a la velocidad deseada con
+  `1 - exp(-agarre·dt)` (16 en el suelo, 3 en el aire, 4 volando, 5
+  nadando). Giro suave con `lerpAng`. Medido: se para en z = 48,45 contra una
+  casa con borde en 48 y resbala por la pared.

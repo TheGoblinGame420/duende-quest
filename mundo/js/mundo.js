@@ -13,13 +13,13 @@
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
-  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS } from '/mmo/js/data.js?v=256';
-import { iniciarVentanas } from './ventanas.js?v=256';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=256';
-import { crearMusica } from './musica.js?v=256';
-import { construirCueva } from './cueva.js?v=256';
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=256';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=256';
+  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS } from '/mmo/js/data.js?v=257';
+import { iniciarVentanas } from './ventanas.js?v=257';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=257';
+import { crearMusica } from './musica.js?v=257';
+import { construirCueva } from './cueva.js?v=257';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=257';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=257';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -233,6 +233,39 @@ const FLORA = {
 // entre ella y el duende (como en WoW).
 const REJ = 8, rejilla = new Map();
 const TAPAN = { pino: 1.7, nieve: 1.8, redondo: 2.1, muerto: 0.5, cactus: 0.6, pilar: 1.1, palma: 0.5, magico: 1.9 };
+// ── FISICA: colisionadores ──
+// Circulos (troncos, rocas, cactus, pilares, PNJ, pilares del portal) en la
+// rejilla de 8 m, y cajas giradas para las casas. El duende es un circulo de
+// 0,45 m que se empuja fuera de cada uno: asi resbala por ellos.
+const SOLIDO = { pino: 0.42, nieve: 0.42, redondo: 0.5, muerto: 0.4, cactus: 0.55, pilar: 0.85, palma: 0.38, magico: 0.48, roca: 1.05, cristal: 0.55 };
+const solidos = new Map();
+function ponerSolido(x, z, r) { const k = Math.floor(x / REJ) + ',' + Math.floor(z / REJ); let c = solidos.get(k); if (!c) solidos.set(k, c = []); c.push({ x, z, r }); }
+const RADIO_DUENDE = 0.45;
+function empujarFuera(x, z) {
+  // Circulos cercanos (3x3 celdas).
+  const gx = Math.floor(x / REJ), gz = Math.floor(z / REJ);
+  for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
+    const l = solidos.get((gx + i) + ',' + (gz + j));
+    if (!l) continue;
+    for (const o of l) {
+      const dx = x - o.x, dz = z - o.z, d = Math.hypot(dx, dz), m = o.r + RADIO_DUENDE;
+      if (d < m && d > 1e-4) { x = o.x + dx / d * m; z = o.z + dz / d * m; }
+    }
+  }
+  // Casas: caja girada (se pasa a coordenadas de la casa y se saca por el lado mas cercano).
+  for (const c of CASAS) {
+    const dx = x - c.x, dz = z - c.z;
+    if (Math.abs(dx) > 12 || Math.abs(dz) > 12) continue;
+    const co = Math.cos(c.r), si = Math.sin(c.r);
+    let lx = dx * co - dz * si, lz = dx * si + dz * co;
+    const hx = c.w / 2 + RADIO_DUENDE, hz = c.d / 2 + RADIO_DUENDE;
+    if (Math.abs(lx) < hx && Math.abs(lz) < hz) {
+      if (hx - Math.abs(lx) < hz - Math.abs(lz)) lx = Math.sign(lx || 1) * hx; else lz = Math.sign(lz || 1) * hz;
+      x = c.x + lx * co + lz * si; z = c.z - lx * si + lz * co;
+    }
+  }
+  return [x, z];
+}
 // Distancia (0..1 del segmento) a la que la camara choca con un arbol, o 1.
 function choqueCamara(tx, tz, cx, cz) {
   let k = 1;
@@ -277,6 +310,7 @@ function crearFlora() {
         const s = 0.75 + hashR(x, z, 4) * 0.6;
         (tipos[tipo] = tipos[tipo] || []).push({ x: jx, z: jz, y: h, s, rot: hashR(x, z, 5) * 6.28, color });
         if (TAPAN[tipo]) { const kc = Math.floor(jx / REJ) + ',' + Math.floor(jz / REJ); let c = rejilla.get(kc); if (!c) rejilla.set(kc, c = []); c.push({ x: jx, z: jz, r: TAPAN[tipo] * s }); }
+        if (SOLIDO[tipo]) ponerSolido(jx, jz, SOLIDO[tipo] * s);
         break;
       }
       r -= dens;
@@ -1652,19 +1686,29 @@ function fisica(dt) {
     }
   }
   const mag = Math.hypot(mx, mz);
-  P.anda = mag > 0.15;
-  if (P.anda) {
-    mx /= Math.max(1, mag); mz /= Math.max(1, mag);
-    const nadando = !P.vuela && alturaEn(P.x, P.z) < -0.7;
-    const vel = MUNDO.velocidad * (nadando ? 0.55 : 1) * (P.vuela ? (ALAS[yo.ala] || ALAS.aprendiz).vel : P.planea ? 1.35 : velMontura(yo.montado)) * (yo.dios && yo.diosModo && yo.diosModo.vel ? 3 : 1);
+  const quiere = mag > 0.15;
+  if (quiere) { mx /= Math.max(1, mag); mz /= Math.max(1, mag); }
+  const nadando = !P.vuela && alturaEn(P.x, P.z) < -0.7;
+  const vel = MUNDO.velocidad * (nadando ? 0.55 : 1) * (P.vuela ? (ALAS[yo.ala] || ALAS.aprendiz).vel : P.planea ? 1.35 : velMontura(yo.montado)) * (yo.dios && yo.diosModo && yo.diosModo.vel ? 3 : 1);
+  // Inercia ligera: la velocidad se acerca a la deseada (rapido en el suelo,
+  // mas lento en el aire y el agua): arranques y frenadas suaves sin perder control.
+  const agarre = P.vuela || P.planea ? 4 : nadando ? 5 : !P.suelo ? 3 : 16;
+  const kv = 1 - Math.exp(-agarre * dt);
+  P.vx = lerp(P.vx || 0, quiere ? mx * vel : 0, kv); P.vz = lerp(P.vz || 0, quiere ? mz * vel : 0, kv);
+  const rapidez = Math.hypot(P.vx, P.vz);
+  P.anda = rapidez > 0.6;
+  if (rapidez > 0.05) {
     const enC = enCueva(P.x);
-    let nx = enC ? P.x + mx * vel * dt : clamp(P.x + mx * vel * dt, -MUNDO.limite, MUNDO.limite), nz = enC ? P.z + mz * vel * dt : clamp(P.z + mz * vel * dt, -MUNDO.limite, MUNDO.limite);
+    let nx = enC ? P.x + P.vx * dt : clamp(P.x + P.vx * dt, -MUNDO.limite, MUNDO.limite), nz = enC ? P.z + P.vz * dt : clamp(P.z + P.vz * dt, -MUNDO.limite, MUNDO.limite);
+    // Choques con casas, troncos, rocas y PNJ (no al volar alto).
+    if (!enC && !(P.vuela && P.y - alturaEn(nx, nz) > 3)) [nx, nz] = empujarFuera(nx, nz);
     // En la cueva se resbala por las paredes en vez de atravesarlas.
     if (enC && !caminable(nx, nz)) { if (caminable(nx, P.z)) nz = P.z; else if (caminable(P.x, nz)) nx = P.x; else { nx = P.x; nz = P.z; } }
     // Las laderas muy empinadas (la cordillera del borde) no se suben.
     const sube = alturaEn(nx, nz) - alturaEn(P.x, P.z);
-    if (P.vuela || sube / (vel * dt + 1e-3) < 1.4) { P.x = nx; P.z = nz; }
-    P.ry = Math.atan2(mx, mz);
+    if (P.vuela || sube / (vel * dt + 1e-3) < 1.4) { P.x = nx; P.z = nz; } else { P.vx *= 0.3; P.vz *= 0.3; }
+    // Gira suave hacia donde va (no de golpe).
+    if (quiere) P.ry = lerpAng(P.ry, Math.atan2(mx, mz), 1 - Math.exp(-14 * dt));
     if (mx * der.x + mz * der.z > 0.05) P.f = 1; else if (mx * der.x + mz * der.z < -0.05) P.f = -1;
   }
   // Gravedad y suelo (en el agua se nada en la superficie).
@@ -1972,6 +2016,8 @@ async function inicio() {
   await new Promise(r => setTimeout(r, 20));
   crearFlora();
   portal = crearPueblo();
+  for (const n of NPCS3D) ponerSolido(n.x, n.z, 0.55);
+  ponerSolido(portal.x - 2.2, portal.z, 0.7); ponerSolido(portal.x + 2.2, portal.z, 0.7);
   cueva = construirCueva(escena);
   progreso(0.75, 'Dibujando el mapa…');
   await new Promise(r => setTimeout(r, 20));
