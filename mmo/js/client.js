@@ -16,7 +16,7 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-} from './data.js?v=240';
+} from './data.js?v=241';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -4612,6 +4612,9 @@ const ERR_AUTH = [
   [/rate limit|only request this after|too many/i, 'Demasiados intentos: espera un minuto y vuelve a probar.'],
   [/database error/i, 'Ese nombre de usuario no está disponible: prueba con otro.'],
   [/signups not allowed|signup is disabled/i, 'El registro está cerrado por ahora.'],
+  // "Secure password change" de Supabase: con una sesion de mas de 24 h pide
+  // volver a identificarse; el enlace de recuperacion abre una sesion nueva.
+  [/reauthenticat/i, 'Por seguridad, para cambiarla usa «¿Olvidaste tu contraseña?»: te llega un enlace al correo.'],
 ];
 const errAuth = m => (ERR_AUTH.find(([r]) => r.test(m || '')) || [0, 'No se pudo completar: ' + (m || 'error de red')])[1];
 const URL_VUELTA = () => location.origin + '/mmo/';
