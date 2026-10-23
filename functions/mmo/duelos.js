@@ -16,6 +16,9 @@ import { CLASES, costoHab, multForja, talento, hoyUTC } from '../../mmo/js/data.
 
 const RETO_MS = 30000, CUENTA_MS = 3000, DUELO_MS = 90000, LEJOS = 900, CALMA_MS = 5000, RETO_CD_MS = 10000;
 const mapaDuelo = k => !k.includes('#') && k !== 'coliseo';
+// Distancia entre dos jugadores en "pixeles del 2D" (en el 3D, metros × 17,
+// la misma escala que los alcances de las habilidades).
+const distD = (a, b) => (a.m3 ? Math.hypot(a.p.x - b.p.x, a.p.z - b.p.z) * 17 : Math.abs(a.x - b.x));
 // El golpe de espada sale cada ~0,33 s y el disparo de vara cada 0,7 s: la
 // vara pega mas por golpe para que ninguna clase gane solo por cadencia.
 // 22-oct: con 0,12/0,2 un duelo de magos (vara cada 0,7 s) seguia al ~80% a
@@ -40,9 +43,9 @@ export const Duelos = {
   retarDuelo(s, m) {
     const t = this.sesiones.get(m.p | 0);
     if (!t || !t.c || t === s || s.muerto || t.muerto) return;
-    if (!mapaDuelo(s.k) || s.k !== t.k) return this.no(s, 'Solo pueden batirse en el mismo mapa (y no en mazmorras ni en el Coliseo).');
+    if (!mapaDuelo(s.k) || s.k !== t.k || s.i3 || t.i3) return this.no(s, 'Solo pueden batirse en el mismo mapa (y no en mazmorras ni en el Coliseo).');
     if (s.duelo || t.duelo) return this.no(s, 'Uno de los dos ya está en un duelo.');
-    if (Math.abs(s.x - t.x) > 600) return this.no(s, 'Acércate más para retarlo.');
+    if (distD(s, t) > 600) return this.no(s, 'Acércate más para retarlo.');
     const ahora = Date.now();
     if (ahora - (s.combateT || 0) < CALMA_MS) return this.no(s, 'No puedes retar a nadie en mitad de un combate.');
     // Un reto cada 10 s a la misma persona (si no, se le inundaba de ventanas).
@@ -59,14 +62,15 @@ export const Duelos = {
     s.retoDuelo = null;
     const t = r && r.hasta > Date.now() ? this.sesiones.get(r.de) : null;
     if (!m.si) { if (t) this.enviar(t, { t: 'toast', m: `${s.c.nombre} rechazó el duelo.` }); return; }
-    if (!t || !t.c || t.k !== s.k || !mapaDuelo(s.k) || Math.abs(s.x - t.x) > 600 || t.muerto || s.muerto || t.duelo || s.duelo) return this.no(s, 'El duelo ya no es posible.');
+    if (!t || !t.c || t.k !== s.k || !mapaDuelo(s.k) || s.i3 || t.i3 || distD(s, t) > 600 || t.muerto || s.muerto || t.duelo || s.duelo) return this.no(s, 'El duelo ya no es posible.');
     const ahora = Date.now();
     if (ahora - (s.combateT || 0) < CALMA_MS || ahora - (t.combateT || 0) < CALMA_MS) return this.no(s, 'Ahora no: uno de los dos está en combate.');
     const ini = ahora + CUENTA_MS;
     // Donde empezo (para saber quien huyo) y el uid del rival (por si se desconecta).
     const x0 = (s.x + t.x) / 2, k0 = s.k;
-    s.duelo = { con: t.id, ini, fin: ini + DUELO_MS, x0, k0, uid: t.c.uid };
-    t.duelo = { con: s.id, ini, fin: ini + DUELO_MS, x0, k0, uid: s.c.uid };
+    const p0 = s.m3 ? { x: (s.p.x + t.p.x) / 2, z: (s.p.z + t.p.z) / 2 } : null;
+    s.duelo = { con: t.id, ini, fin: ini + DUELO_MS, x0, p0, k0, uid: t.c.uid };
+    t.duelo = { con: s.id, ini, fin: ini + DUELO_MS, x0, p0, k0, uid: s.c.uid };
     this.aClave(s.k, { t: 'duelo', a: s.id, b: t.id, en: CUENTA_MS, ms: DUELO_MS });
   },
 
@@ -138,11 +142,11 @@ export const Duelos = {
       }
       if (s.id > t.id) continue;   // cada pareja se mira una vez
       if (s.muerto || t.muerto) this.terminarDuelo(s, s.muerto ? (t.muerto ? null : t) : s, 'cayó en combate');
-      else if (t.k !== s.k || Math.abs(t.x - s.x) > LEJOS) {
+      else if (t.k !== s.k || s.i3 || t.i3 || distD(s, t) > LEJOS) {
         // Pierde el que se fue (cambio de mapa o se alejo mas del punto de inicio).
         if (ahora < d.ini) this.terminarDuelo(s, null, 'se alejaron');
         else {
-          const fuera = x => (x.k !== d.k0 ? 1e9 : Math.abs(x.x - d.x0));
+          const fuera = x => (x.k !== d.k0 || x.i3 ? 1e9 : d.p0 && x.m3 ? Math.hypot(x.p.x - d.p0.x, x.p.z - d.p0.z) * 17 : Math.abs(x.x - d.x0));
           this.terminarDuelo(s, fuera(s) > fuera(t) ? t : s, (fuera(s) > fuera(t) ? s : t).c.nombre + ' huyó');
         }
       }

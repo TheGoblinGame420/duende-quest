@@ -18,7 +18,7 @@
 // ninguna sombra y menos de ~30 mallas por modelo.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo } from '/mmo/js/data.js?v=252';
+import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo } from '/mmo/js/data.js?v=253';
 
 const PX_M = 34;                 // pixeles del 2D por metro
 const PI = Math.PI;
@@ -1050,7 +1050,7 @@ function fantasma(c, v) {
     M(cu, 'semi', osc(principal(c, '#2a1a5c'), 0.7), [0, 0.5, -0.04], [0.36, 0.42, 0.36]);
     M(cu, 'esfera', '#0c0820', [0, 0.52, 0.18], [0.22, 0.22, 0.18]);
     MF(cu, [['esferaB', '#40f0ff', [-0.08, 0.54, 0.34], [0.045, 0.035, 0.02]], ['esferaB', '#40f0ff', [0.08, 0.54, 0.34], [0.045, 0.035, 0.02]]], mat('#40f0ff', { e: 1 }));
-    const aura = M(cu, 'esfera', mat('#00c8e0', { aura: true, op: 0.22 }), [0, 0.25, 0], [0.55, 0.85, 0.52]);
+    const aura = M(cu, 'esfera', mat('#00c8e0', { aura: true, op: 0.1 }), [0, 0.25, 0], [0.6, 0.9, 0.56]);
     aura.userData.sinFlash = true; fuera(aura);
     brazos(tun);
     const farol = piv(r, G(r.bD, [0, -0.36, 0]));
@@ -1147,7 +1147,7 @@ function angel(c) {
     cabeza: 'goblin', ojos: '#ffd84a', nariz: null, orejas: 0.1, cab: 0.85, L: 0.6, T: 0.55, A: 0.45, ancho: 0.8,
   });
   fuera(MF(r.cabeza, partesPelo(4, ''), '#d89048', null, null, r.H));
-  const mA = mat('#f4f4ff', { ds: true, e: 0.15 });
+  const mA = mat('#f4f4ff', { ds: true, e: 0.4 });
   for (const lado of [1, -1]) {
     const p = piv(r, fuera(G(r.cuerpo, [0.08 * lado, 0.42, -0.2], [0, lado * 0.35, 0])));
     M(p, 'pluma', mA, [0, 0, 0], [1.7 * lado, 1, 1.0], [-1.2, 0, lado * 0.5]);
@@ -1240,7 +1240,7 @@ function baba(c) {
   M(cu, 'semi', mat(color, { op: 0.88, e: 0.15 + (c.e || 0) }), [0, 0, 0], [0.6, 0.66, 0.55]);
   M(cu, 'esfera', mez(color, '#ffffff', 0.45), [0.18, 0.5, 0.22], [0.12, 0.1, 0.1]);
   MF(cu, [['esferaB', '#1b1430', [-0.17, 0.42, 0.41], [0.05, 0.065, 0.03]], ['esferaB', '#1b1430', [0.12, 0.42, 0.44], [0.05, 0.065, 0.03]], ['esferaB', '#ffffff', [-0.16, 0.45, 0.435], 0.015], ['esferaB', '#a84860', [-0.02, 0.3, 0.5], [0.05, 0.02, 0.02]]]);
-  M(cu, 'esfera', mez(color, '#ff5f8a', 0.4), [0.28, 0.74, 0], 0.09);
+  M(cu, 'esfera', mez(color, '#ff5f8a', 0.4), [0.24, 0.66, 0], 0.09);
   r.cabeza = cu; r.H = 1; r.topeCabeza = 0.66;
   return r;
 }
@@ -1256,7 +1256,7 @@ function rana(c) {
   MF(cu, [
     ['esfera', hx(verde), [-0.16, 0.66, 0.28], 0.11], ['esfera', hx(verde), [0.16, 0.66, 0.28], 0.11],
     ['esferaB', '#1b1430', [-0.16, 0.68, 0.38], [0.06, 0.07, 0.03]], ['esferaB', '#1b1430', [0.16, 0.68, 0.38], [0.06, 0.07, 0.03]],
-    ['toro', '#e8c040', [-0.16, 0.67, 0.37], [0.12, 0.12, 0.25], [PI / 2, 0, 0]], ['toro', '#e8c040', [0.16, 0.67, 0.37], [0.12, 0.12, 0.25], [PI / 2, 0, 0]],
+    ['toro', '#e8c040', [-0.16, 0.67, 0.37], [0.12, 0.12, 0.12], [PI / 2, 0, 0]], ['toro', '#e8c040', [0.16, 0.67, 0.37], [0.12, 0.12, 0.12], [PI / 2, 0, 0]],
     ['caja', '#e8c040', [0, 0.69, 0.4], [0.1, 0.02, 0.02]],
   ]);
   const lg = r.lengua = piv(r, G(cu, [0, 0.45, 0.5]));
@@ -1645,7 +1645,7 @@ function pulpo(c) {
     ['esfera', '#1a2a0a', [-0.14, 0.72, 0.27], 0.1], ['esfera', '#1a2a0a', [0.14, 0.72, 0.27], 0.1],
     ['esferaB', '#e0208a', [-0.14, 0.72, 0.34], [0.06, 0.07, 0.04]], ['esferaB', '#e0208a', [0.14, 0.72, 0.34], [0.06, 0.07, 0.04]],
   ]);
-  if (c.k === 'pulpo') MF(cu, [['toro', '#e8c040', [-0.14, 0.72, 0.33], [0.12, 0.12, 0.3], [PI / 2, 0, 0]], ['toro', '#e8c040', [0.14, 0.72, 0.33], [0.12, 0.12, 0.3], [PI / 2, 0, 0]], ['cil', '#e8c040', [0, 0.95, 0], [0.37, 0.03, 0.35]]]);
+  if (c.k === 'pulpo') MF(cu, [['toro', '#e8c040', [-0.14, 0.72, 0.33], [0.12, 0.12, 0.12], [PI / 2, 0, 0]], ['toro', '#e8c040', [0.14, 0.72, 0.33], [0.12, 0.12, 0.12], [PI / 2, 0, 0]], ['cil', '#e8c040', [0, 0.95, 0], [0.37, 0.03, 0.35]]]);
   for (let i = 0; i < 8; i++) {
     const g = G(cu, [0, 0.5, 0], [0, (i * PI) / 4, 0]);
     const p = piv(r, G(g, [0, 0, 0.18]));

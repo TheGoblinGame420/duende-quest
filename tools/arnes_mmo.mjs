@@ -602,6 +602,45 @@ async function pruebas() {
   await pruebasRecoleccion3d();
   await pruebasLook3d();
   await pruebasCueva3d();
+  await pruebasDueloPesca3d();
+}
+
+// ── DUELOS Y PESCA EN EL 3D ──
+async function pruebasDueloPesca3d() {
+  console.log('Mundo 3D: duelos y pesca');
+  const W = await import('../mmo/js/mundo3d.js');
+  const a = await entrar3d('Duelista3D', '4h1'); ponerNivel(a, 15, 'guerrero');
+  const b = await entrar3d('Rival3D', '4h2'); ponerNivel(b, 15, 'picaro');
+  mundo.m3.mons.clear(); for (const c of mundo.m3.campos) { c.vivos.clear(); c.prox = Date.now() + 1e9; }
+  a.p = { x: 30, z: 30 }; b.p = { x: 31.5, z: 30 }; a.movBud = b.movBud = undefined;
+  avanzar(6000);
+  await a.mandar({ t: 'retar', p: b.id });
+  chequear(b.ultimos('reto').length === 1, 'el reto llega en el 3D');
+  await b.mandar({ t: 'retoResp', si: true });
+  chequear(a.duelo && b.duelo, 'empieza el duelo');
+  avanzar(3100);
+  const hp0 = b.hp; a.atkT = 0;
+  await a.mandar({ t: 'atk3', tp: b.id });
+  chequear(b.hp < hp0 && b.hp > 1, 'el ataque automático pega al rival (con daño reducido)');
+  b.p = { x: 120, z: 30 }; tick(1);
+  chequear(!a.duelo && !b.duelo && a.ultimos('dueloFin').some(x => x.g === a.id), 'quien se aleja pierde el duelo');
+  // Pesca: buscar una orilla
+  let orilla = null;
+  for (let x = -500; x < 500 && !orilla; x += 7) for (let z = -500; z < 500 && !orilla; z += 7) {
+    if (W.alturaEn(x, z) > 0.4 && W.zonaEn(x, z) !== 'pueblo' && mundo.aguaCerca3d({ x, z })) orilla = { x, z };
+  }
+  chequear(!!orilla, 'hay orillas para pescar en el mundo 3D');
+  a.p = { ...orilla }; a.c.mat = {}; a.c.pescaHoy = null; a.limpiar();
+  await a.mandar({ t: 'pescar' });
+  chequear(a.cast && a.cast.h === 'pescar', 'junto al agua se lanza el sedal');
+  avanzar(9100); tick(1);
+  chequear(a.ultimos('pica').length === 1, 'pica un pez');
+  await a.mandar({ t: 'tirar' });
+  chequear((a.c.mat.pescado || 0) >= 1 && a.ultimos('pescado').length === 1, 'al tirar a tiempo sale Pescado');
+  a.p = { x: 0, z: 22 };
+  await a.mandar({ t: 'pescar' });
+  chequear(!a.cast || a.cast.h !== 'pescar', 'lejos del agua no se pesca');
+  for (const s of [a, b]) await dejar(s);
 }
 
 // ── LA CUEVA DE LOS GOBLINS (mazmorra 3D instanciada) ──

@@ -38,10 +38,10 @@ h2{font-size:14px;margin:14px 0 6px;color:var(--txt2)}
 <canvas id="lienzo"></canvas>
 <script type="module">
 import * as THREE from 'three';
-import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE } from '/mmo/js/data.js?v=252';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './js/modelos.js?v=252';
+import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE } from '/mmo/js/data.js?v=253';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './js/modelos.js?v=253';
 
-// Parametros: ?filtro=texto&estado=quieto&gira=0&ry=1.57&compacta=1
+// Parametros: ?filtro=texto|otro&estado=quieto&gira=0&ry=1.57&compacta=1
 const Q = new URLSearchParams(location.search);
 const RY = parseFloat(Q.get('ry') || '0.5');
 const FILTRO = (Q.get('filtro') || '').toLowerCase();
@@ -120,7 +120,7 @@ for (const [titulo, lista] of grupos) {
   const h2 = document.createElement('h2'); h2.textContent = titulo; raiz.appendChild(h2);
   const rej = document.createElement('div'); rej.className = 'rejilla'; raiz.appendChild(rej);
   for (const it of lista) {
-    if (FILTRO && !(it.nombre + ' ' + it.sub).toLowerCase().includes(FILTRO)) continue;
+    if (FILTRO && !FILTRO.split('|').some(q => (it.nombre + ' ' + it.sub).toLowerCase().includes(q))) continue;
     const d = document.createElement('div'); d.className = 'celda';
     d.innerHTML = '<div class="fila"><div class="vista"></div></div><div class="info"><b></b><small></small><small class="est"></small></div>';
     if (it.sprite) dibujarSprite(d.querySelector('.fila'), it.sprite);

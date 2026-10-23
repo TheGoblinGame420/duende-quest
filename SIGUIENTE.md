@@ -2323,3 +2323,19 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
   antorchas con luz, estalagmitas, cristales, trono, portal, cofre); colisión
   con resbalón por paredes; cámara que no sale de la cueva y bajo el techo;
   minimapa de la cueva; el portal del pueblo abre un menú (cueva 3D o 2D).
+
+### Modelos fieles al 2D, duelos y pesca en el 3D (23-oct-2026, `?v=253`). Arnés **682**
+
+- modelos.js (agente): cada familia copia colores, silueta y accesorios de
+  su hoja 2D (y cada skin del duende, de su imagen). La galería pone el
+  cuadro 2D al lado de cada modelo (`?filtro=a|b`). No poner emisivo a los
+  materiales compartidos con color por vértice.
+- Duelos: duelos.js mide con `distD` (en el 3D, metros × 17) y guarda `p0`;
+  nada de duelos dentro de la cueva. `recibir3d` acepta retar/retoResp;
+  `atk3` con `tp` → `atacarDuelo3d` (golpeDuelo); `hab3` con `tp` →
+  `habDuelo` (solo habilidades de un objetivo). Cliente: botón «Retar a
+  duelo», reto con Aceptar/Rechazar, el ataque automático y las habilidades
+  van al rival (`blancoAtk`).
+- Pesca: `pescar3d` (agua a <6 m, `aguaCerca3d`), la zona de la orilla es el
+  pesquero (`s.pesca3`); `tirar()` usa la especie y el clima de esa zona.
+  Cliente: E pesca/tira, corcho que se hunde al picar.

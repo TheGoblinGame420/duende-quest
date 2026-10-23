@@ -483,6 +483,11 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 21, fecha: '23 oct 2026', items: [
+    'Los modelos 3D ahora copian a su dibujo 2D: cada monstruo y cada skin con sus colores, su forma y sus accesorios, para reconocerlos al momento.',
+    'Duelos en el mundo 3D: haz clic en otro jugador y pulsa «Retar a duelo». Ataque automático y habilidades de un objetivo; nadie muere y cuenta para el Elo.',
+    'Pesca en cualquier orilla del 3D: pulsa E junto al agua y otra vez cuando se hunda el corcho. Cada zona tiene su especie; con lluvia pican más dorados.',
+  ] },
   { n: 20, fecha: '23 oct 2026', items: [
     '¡Primera mazmorra 3D! La Cueva de los Goblins: entra por el portal del pueblo, solo o con tu grupo (cada grupo tiene su propia cueva).',
     'Salas con goblins que atacan en grupo y el Rey Goblin en su trono: esquiva sus pisotones, aguanta a su guardia y llévate un cofre con equipo raro o mejor.',

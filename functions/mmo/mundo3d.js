@@ -19,10 +19,10 @@
 // ═══════════════════════════════════════════════════════
 import {
   MAPAS, MONSTRUOS, SKINS, ARMAS, CLASES, PODERES, VARA, statsMonstruo, multForja, talento, velMontura, xpParaSubir,
-  MATERIALES, NODO_CADA_MS, RECOLECTAR_MS, RARO_ZONA, raroDe,
+  MATERIALES, NODO_CADA_MS, RECOLECTAR_MS, RARO_ZONA, raroDe, PESCA, hoyUTC,
   habPorId, costoHab, GCD_MS, RECURSOS, MELEE, limpiarLook, MUNDIAL_CADA_MS, MUNDIAL_DURA_MS, proximoMundial, mundialDe,
 } from '../../mmo/js/data.js';
-import { MUNDO, NPCS3D, NPC_DIST, SPAWN3D, ARENA3D, campamentos, zonaEn, esNoche, nodos3d, RECOGER_DIST } from '../../mmo/js/mundo3d.js';
+import { MUNDO, NPCS3D, NPC_DIST, SPAWN3D, ARENA3D, campamentos, zonaEn, esNoche, nodos3d, RECOGER_DIST, alturaEn } from '../../mmo/js/mundo3d.js';
 import { CUEVA, CUEVA_X0, caminable, enCueva } from '../../mmo/js/cueva3d.js';
 // Misma instancia (0 = mundo abierto; si no, la cueva de un grupo).
 const mismo = (a, b) => (a.i3 || 0) === (b.i3 || 0);
@@ -108,8 +108,12 @@ export const Mundo3D = {
       case 'salirCueva':
         if (s.i3 && Math.hypot(s.p.x - CUEVA_X0 - CUEVA.salida.x, s.p.z - CUEVA.salida.z) < 6) return this.salirCueva(s);
         return;
+      case 'retar': return this.retarDuelo(s, m);
+      case 'retoResp': return this.respuestaDuelo(s, m);
       case 'look': return this.cambiarLook(s, m);
       case 'recolectar': return this.recolectar3d(s, m);
+      case 'pescar': return this.pescar3d(s);
+      case 'tirar': return this.tirar(s);
       case 'fabricar': return this.fabricar(s, m);   // cercaDeArtesana() sabe del 3D
       case 'invitar': return this.invitar(s, m);
       case 'grupoResp': return this.respuestaGrupo(s, m);
@@ -168,6 +172,7 @@ export const Mundo3D = {
     if (s.muerto) return;
     // Para combatir hay que estar en el suelo (o casi).
     if (s.h > 4) return this.no(s, 'Aterriza para combatir.');
+    if (m.tp) return this.atacarDuelo3d(s, m);
     const W = this.iniciar3d();
     const o = W.mons.get(m.tg | 0);
     if (!o || o.muere || !mismo(o, s)) return;
@@ -188,6 +193,22 @@ export const Mundo3D = {
     this.aClave(K3, { t: 'at3', p: s.id, tg: o.id, d: real, c: crit ? 1 : 0, v: vara ? 1 : 0 });
     const robo = ((SKINS[s.c.skin] || {}).buffs || {}).robo || 0;
     if (robo) s.hp = Math.min(s.st.maxHp, s.hp + real * robo);
+  },
+
+  // Duelo: el ataque automatico contra el rival (mismo ritmo que contra
+  // monstruos; golpeDuelo escala el daño entre jugadores).
+  atacarDuelo3d(s, m) {
+    const t = this.rivalDuelo(s);
+    if (!t || t.id !== (m.tp | 0) || !t.m3) return;
+    const ahora = Date.now();
+    if (ahora < (s.atkT || 0)) return;
+    const arma = ARMAS[s.c.arma] || ARMAS.katana;
+    const vara = !!(CLASES[s.c.clase] && CLASES[s.c.clase].basico === 'vara');
+    if (dist(s.p, t.p) > (vara ? RANGO_VARA : MELEE3D * (arma.alcance || 1) + 0.6)) return this.no(s, 'Fuera de alcance.');
+    s.atkT = ahora + (vara ? VARA.cdMs * arma.cd : 1000 * arma.cd) - 40;
+    if (s.montado) this.desmontar(s);
+    this.aClave(K3, { t: 'atp3', p: s.id, tg: t.id, v: vara ? 1 : 0 });
+    this.golpeDuelo(s, t, vara ? VARA.mult : 3.6 * (arma.dano || 1), true);
   },
 
   danar3d(o, dmg, s) {
@@ -436,6 +457,30 @@ export const Mundo3D = {
     this.actualizarYo(s);
   },
 
+  // ── PESCA ──
+  // En cualquier orilla: hace falta agua a menos de 6 m. La zona decide el
+  // nivel y la especie (las mismas reglas y premios que el 2D: tirar()).
+  aguaCerca3d(p) {
+    for (let r = 2; r <= 6; r += 2) for (let i = 0; i < 12; i++) {
+      const a = i / 12 * Math.PI * 2, x = p.x + Math.cos(a) * r, z = p.z + Math.sin(a) * r;
+      if (alturaEn(x, z) < MUNDO.agua - 0.6) return true;
+    }
+    return false;
+  },
+  pescar3d(s) {
+    const c = s.c;
+    if (s.muerto || s.cast || this.aura(s, 'aturdido')) return;
+    if (s.i3) return this.no(s, 'En la cueva no hay dónde pescar.');
+    if (!this.aguaCerca3d(s.p)) return this.no(s, 'Acércate a la orilla para pescar.');
+    const hoy = hoyUTC();
+    if (c.pescaHoy && c.pescaHoy.d === hoy && c.pescaHoy.n >= PESCA.porDia) return this.no(s, `Hoy ya pescaste ${PESCA.porDia} veces: los peces descansan hasta mañana.`);
+    this.desmontar(s);
+    const ahora = Date.now();
+    s.pesca3 = zonaEn(s.p.x, s.p.z);
+    s.cast = { h: 'pescar', fin: ahora + PESCA.min + Math.random() * (PESCA.max - PESCA.min), tg: 0 };
+    this.aClave(K3, { t: 'cast', p: s.id, id: 'pescar', ms: PESCA.max + PESCA.ventana });
+  },
+
   // ── JEFE MUNDIAL DEL 3D ──
   // Mismo calendario que el del Coliseo pero desfasado 15 min; vida segun
   // los jugadores del 3D; cada golpe quita un % de la vida (todos los niveles
@@ -630,6 +675,16 @@ export const Mundo3D = {
     if (s.rec < costo) return this.no(s, `No tienes suficiente ${RECURSOS[CLASES[c.clase].recurso].nombre.toLowerCase()}.`);
     let obj = null;
     const tg = m.tg | 0;
+    if (h.obj === 'enemigo' && m.tp) {
+      // Contra el rival de un duelo (solo habilidades de un objetivo).
+      const t = this.rivalDuelo(s);
+      if (!t || t.id !== (m.tp | 0)) return;
+      if (h.radio || h.area) return this.no(s, 'En un duelo solo valen las habilidades de un objetivo.');
+      if (dist(s.p, t.p) > this.metros(h.rango, s) + 0.5) return this.no(s, 'Tu rival está fuera de alcance.');
+      this.desmontar(s);
+      if (h.gcd !== false) s.gcdHasta = ahora + GCD_MS;
+      return this.habDuelo(s, h, t);
+    }
     if (h.obj === 'enemigo') {
       obj = this.enemigo3d(s, tg, this.metros(h.rango, s), h.min ? h.min / 17 : 0);
       if (!obj) {

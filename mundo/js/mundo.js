@@ -13,13 +13,13 @@
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
-  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook } from '/mmo/js/data.js?v=252';
-import { iniciarVentanas } from './ventanas.js?v=252';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=252';
-import { crearMusica } from './musica.js?v=252';
-import { construirCueva } from './cueva.js?v=252';
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=252';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=252';
+  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook } from '/mmo/js/data.js?v=253';
+import { iniciarVentanas } from './ventanas.js?v=253';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=253';
+import { crearMusica } from './musica.js?v=253';
+import { construirCueva } from './cueva.js?v=253';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=253';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=253';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -762,10 +762,26 @@ function recibir(m) {
     case 'no': aviso(m.m, 'err'); break;
     case 'chat': lineaChat(m); break;
     case 'grupo': grupo3 = m.g; pintarGrupo(); break;
+    case 'pica': pica = performance.now() + m.ms; aviso('🎣 ¡Pica! Pulsa E para tirar', 'ok'); sfx('boton', 0.7); break;
+    case 'pescado': quitarCorcho(); sfx('moneda', 0.5); break;
+    case 'duelo':
+      if (m.a === miId || m.b === miId) {
+        dueloCon = m.a === miId ? m.b : m.a;
+        objetivo = 0; objetivoP = dueloCon; autoAtk = false; pintarBarra(); pintarObjetivoP();
+        aviso('⚔️ ¡Duelo! Empieza en 3 segundos. Pulsa 1 para atacar.', 'ok');
+        sfx('boton', 0.5);
+      }
+      break;
+    case 'dueloFin':
+      if (m.a === miId || m.b === miId) { dueloCon = 0; autoAtk = false; pintarBarra(); }
+      aviso(m.m, m.g === miId ? 'ok' : '');
+      break;
+    case 'atp3': { const de = m.p === miId ? P : otros.get(m.p), a = m.tg === miId ? P : otros.get(m.tg); if (de) de.atkT = performance.now(); if (de && a && m.v) proyectil(de, a, '#f0abfc'); break; }
     case 'nodos3': for (const [i, ms] of m.l) { if (!NODOS[i]) continue; nodoListo.set(i, performance.now() + ms); mostrarNodo(NODOS[i], false); } break;
     case 'recogido3': if (NODOS[m.i]) { nodoListo.set(m.i, performance.now() + m.en); mostrarNodo(NODOS[m.i], false); sfx('moneda', 0.3); } break;
-    case 'invitacion': {
-      $('invit3-t').textContent = `${m.de} (Nv ${m.nv}) te invita a su grupo.`;
+    case 'reto': case 'invitacion': {
+      invitTipo = m.t === 'reto' ? 'duelo' : 'grupo';
+      $('invit3-t').textContent = m.t === 'reto' ? `⚔️ ${m.de} (Nv ${m.nv}) te reta a un duelo.` : `${m.de} (Nv ${m.nv}) te invita a su grupo.`;
       $('invit3').style.display = 'block';
       clearTimeout(invitT); invitT = setTimeout(() => { $('invit3').style.display = 'none'; }, m.ms || 30000);
       sfx('boton', 0.4);
@@ -775,11 +791,12 @@ function recibir(m) {
     case 'pedidoSol': case 'factura': V.alPedido(m); break;
     case 'pw': if (m.p === miId) sfx(m.i === 2 ? 'explosion' : 'boton', 0.4); break;
     case 'cast':
-      if (m.p === miId) { lanzando = { id: m.id, ini: performance.now(), fin: performance.now() + m.ms }; $('lanzar').style.display = 'block'; $('lanzar-t').textContent = m.id === 'montar' ? 'Invocar montura' : m.id === 'recolectar' ? 'Recolectando…' : (habPorId(m.id) || {}).nombre || ''; }
+      if (m.p === miId) { lanzando = { id: m.id, ini: performance.now(), fin: performance.now() + m.ms }; $('lanzar').style.display = 'block'; $('lanzar-t').textContent = m.id === 'montar' ? 'Invocar montura' : m.id === 'recolectar' ? 'Recolectando…' : m.id === 'pescar' ? 'Pescando… (E para tirar cuando pique)' : (habPorId(m.id) || {}).nombre || '';
+        if (m.id === 'pescar') ponerCorcho(); }
       else { const o = otros.get(m.p); if (o) o.lanza = performance.now() + m.ms; }
       break;
     case 'castFin':
-      if (m.p === miId) { lanzando = null; $('lanzar').style.display = 'none'; }
+      if (m.p === miId) { lanzando = null; $('lanzar').style.display = 'none'; quitarCorcho(); }
       else { const o = otros.get(m.p); if (o) o.lanza = 0; }
       break;
     case 'hb': efectoHab(m); break;
@@ -1031,8 +1048,28 @@ function aviso(txt, tipo) {
   while (avisos.children.length > 4) avisos.firstChild.remove();
   setTimeout(() => d.remove(), 4500);
 }
+// ── PESCA ──
+let pica = 0, corcho = null;
+function aguaCerca() {
+  for (let r = 2; r <= 6; r += 2) for (let i = 0; i < 12; i++) {
+    const a = i / 12 * Math.PI * 2, x = P.x + Math.cos(a) * r, z = P.z + Math.sin(a) * r;
+    if (alturaEn(x, z) < MUNDO.agua - 0.6) return { x, z };
+  }
+  return null;
+}
+function ponerCorcho() {
+  const w = aguaCerca(); if (!w) return;
+  quitarCorcho();
+  corcho = new THREE.Group();
+  const a = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), new THREE.MeshLambertMaterial({ color: 0xffffff }));
+  const b = new THREE.Mesh(new THREE.SphereGeometry(0.17, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshLambertMaterial({ color: 0xe11d48 }));
+  corcho.add(a, b); corcho.position.set(w.x, MUNDO.agua + 0.05, w.z); corcho.userData.y0 = MUNDO.agua + 0.05;
+  escena.add(corcho);
+}
+function quitarCorcho() { if (corcho) { escena.remove(corcho); corcho = null; } pica = 0; }
+
 // ── GRUPO ──
-let invitT = 0;
+let invitT = 0, invitTipo = 'grupo', dueloCon = 0;
 const enGrupo = id => !!(grupo3 && grupo3.m.some(x => x.on && x.id === id));
 function pintarGrupo() {
   const c = $('grupo3');
@@ -1063,8 +1100,9 @@ function pintarObjetivoP() {
 }
 $('op-inv').onclick = () => { if (objetivoP) mandar({ t: 'invitar', p: objetivoP }); };
 $('op-sus').onclick = () => { const o = otros.get(objetivoP); if (!o) return; const i = $('chat-in'); i.style.display = 'block'; i.value = '/s ' + o.n + ' '; i.focus(); };
-$('invit3-si').onclick = () => { mandar({ t: 'grupoResp', si: true }); $('invit3').style.display = 'none'; };
-$('invit3-no').onclick = () => { mandar({ t: 'grupoResp', si: false }); $('invit3').style.display = 'none'; };
+$('invit3-si').onclick = () => { mandar({ t: invitTipo === 'duelo' ? 'retoResp' : 'grupoResp', si: true }); $('invit3').style.display = 'none'; };
+$('invit3-no').onclick = () => { mandar({ t: invitTipo === 'duelo' ? 'retoResp' : 'grupoResp', si: false }); $('invit3').style.display = 'none'; };
+$('op-duelo').onclick = () => { if (objetivoP) mandar({ t: 'retar', p: objetivoP }); };
 // Chat: /g (o /p) al grupo, /s nombre texto susurra; lo demas, general.
 function enviarChat(v) {
   const g = /^\/(g|p|grupo)\s+(.+)/i.exec(v), s = /^\/(s|w)\s+(\S+)\s+(.+)/i.exec(v);
@@ -1353,7 +1391,14 @@ function cicloObjetivo() {
   objetivo = l[(i + 1) % l.length].id;
   sfx('boton', 0.2);
 }
+// Blanco del ataque: el monstruo elegido o, en un duelo, el rival.
+function blancoAtk() {
+  if (objetivo) return mons.get(objetivo) || null;
+  if (dueloCon && objetivoP === dueloCon) return otros.get(dueloCon) || null;
+  return null;
+}
 function alternarAtaque() {
+  if (dueloCon && objetivoP === dueloCon && !objetivo) { autoAtk = !autoAtk; pintarBarra(); return; }
   if (!objetivo) cicloObjetivo();
   autoAtk = !!objetivo && !autoAtk;
   pintarBarra();
@@ -1367,8 +1412,9 @@ function usarHab(h) {
   if (cdHab[h.id] && cdHab[h.id].fin > ahora) return aviso(h.nombre + ' todavía no está lista.', 'err');
   // Enemigo: el objetivo elegido (o el servidor busca el mas cercano).
   // Aliado: el jugador elegido o uno mismo.
-  if (h.obj === 'enemigo' && !objetivo) cicloObjetivo();
-  mandar({ t: 'hab3', id: h.id, tg: h.obj === 'enemigo' ? objetivo : 0, tp: h.obj === 'aliado' || h.obj === 'muerto' ? objetivoP : 0 });
+  const contraRival = h.obj === 'enemigo' && !objetivo && dueloCon && objetivoP === dueloCon;
+  if (h.obj === 'enemigo' && !objetivo && !contraRival) cicloObjetivo();
+  mandar({ t: 'hab3', id: h.id, tg: h.obj === 'enemigo' ? objetivo : 0, tp: contraRival ? dueloCon : h.obj === 'aliado' || h.obj === 'muerto' ? objetivoP : 0 });
   if (h.gcd !== false) gcdHasta = ahora + GCD_MS;
   if (h.obj === 'enemigo' && objetivo && !autoAtk && h.id !== 'polimorfia') { autoAtk = true; pintarBarra(); }
 }
@@ -1402,7 +1448,8 @@ function npcCercano() {
   return npcs.find(n => Math.hypot(P.x - n.x, P.z - n.z) < NPC_DIST) || (portal && Math.hypot(P.x - portal.x, P.z - portal.z) < 5 ? { tipo: 'portal', nombre: 'Mazmorras' } : null);
 }
 function hablar() {
-  if (!npcCercano()) { const nd = nodoCercano(); if (nd) { mandar({ t: 'recolectar', i: nd.i }); return; } }
+  if (pica > performance.now() || (lanzando && lanzando.id === 'pescar')) { mandar({ t: 'tirar' }); return; }
+  if (!npcCercano()) { const nd = nodoCercano(); if (nd) { mandar({ t: 'recolectar', i: nd.i }); return; } if (aguaCerca()) { mandar({ t: 'pescar' }); return; } }
   const n = npcCercano();
   if (!n) return;
   if (n.tipo === 'salida') { mandar({ t: 'salirCueva' }); return; }
@@ -1475,7 +1522,7 @@ function fisica(dt) {
   // Con el ataque automatico puesto y sin mover el duende, va solo hasta su
   // objetivo (como hacer clic para atacar en WoW): comodo en el movil.
   if (!f && !s && autoAtk) {
-    const o = mons.get(objetivo);
+    const o = blancoAtk();
     if (o && !o.muereT) {
       const dx = o.x - P.x, dz = o.z - P.z, d = Math.hypot(dx, dz);
       if (d > rangoAtaque(o) * 0.85 && d < 45) { mx = dx / d; mz = dz / d; }
@@ -1527,7 +1574,7 @@ function rangoAtaque(o) {
 }
 function ataqueAuto() {
   if (!autoAtk || !yo || P.muerto) return;
-  const o = mons.get(objetivo);
+  const o = blancoAtk();
   if (!o || o.muereT) { autoAtk = false; pintarBarra(); return; }
   const arma = ARMAS[yo.arma] || ARMAS.katana;
   const vara = CLASES[yo.clase] && CLASES[yo.clase].basico === 'vara';
@@ -1537,7 +1584,7 @@ function ataqueAuto() {
   if (d > rango) { if (d > 45 && ahora - avisoLejosT > 2500) { avisoLejosT = ahora; aviso('Tu objetivo está demasiado lejos.'); } return; }
   if (ahora < sigAtk) return;
   sigAtk = ahora + (vara ? VARA.cdMs * arma.cd : 1000 * arma.cd);
-  mandar({ t: 'atk3', tg: o.id });
+  mandar(objetivo ? { t: 'atk3', tg: o.id } : { t: 'atk3', tp: o.id });
   P.atkT = ahora;
   // Mirar al objetivo.
   const dx = o.x - P.x, dz = o.z - P.z; P.ry = Math.atan2(dx, dz);
@@ -1733,6 +1780,7 @@ function bucle(t) {
       b.style.display = n || nd ? 'block' : 'none';
       if (n) b.textContent = (MOVIL ? '' : 'E · ') + (n.tipo === 'portal' ? 'Mazmorras' : n.tipo === 'salida' ? 'Salir de la cueva' : 'Hablar con ' + n.nombre);
       else if (nd) b.textContent = (MOVIL ? '' : 'E · ') + 'Recoger ' + MATERIALES[nd.tipo].nombre;
+      else if (!enCueva(P.x) && aguaCerca()) { b.style.display = 'block'; b.textContent = (MOVIL ? '' : 'E · ') + (pica > performance.now() ? '¡TIRAR!' : lanzando && lanzando.id === 'pescar' ? 'Esperando que pique…' : 'Pescar'); }
     }
     if (cuadro % 60 === 0) revisarNodos();
   }
@@ -1745,6 +1793,7 @@ function bucle(t) {
   estrellas.position.copy(camara.position);
   moverLluvia(dt, t);
   if (cueva && enCueva(P.x)) cueva.animar(t);
+  if (corcho) corcho.position.y = corcho.userData.y0 + (pica > performance.now() ? -0.18 + Math.sin(t / 60) * 0.08 : Math.sin(t / 500) * 0.04);
   if (agua) agua.material.opacity = 0.7 + Math.sin(t / 900) * 0.04;
   if (portal) portal.velo.material.opacity = 0.45 + Math.sin(t / 300) * 0.15;
   pintarObjetivo();

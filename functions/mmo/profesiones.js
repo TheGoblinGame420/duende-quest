@@ -14,6 +14,7 @@
 // ellos (y la Esencia Abisal de los jefes de mazmorra) la Artesana graba
 // RUNAS permanentes desde Nv 40 (+2% por rango, 5 rangos).
 // ═══════════════════════════════════════════════════════
+import { climaEn } from '../../mmo/js/mundo3d.js';
 import { MAPAS, MATERIALES, NODO_CADA_MS, RECOLECTAR_MS, ELIXIR_MS, RECETAS, nodosDe, RARO_ZONA, raroDe, RUNAS, RUNA_NIVEL, RUNA_MAX, costoRuna, PESCA, pesqueroDe, hoyUTC, climaDe, ESPECIES, premioEspecie } from '../../mmo/js/data.js';
 
 export const Profesiones = {
@@ -108,7 +109,9 @@ export const Profesiones = {
     s.cast = null;
     this.aClave(s.k, { t: 'castFin', p: s.id, ok: true });
     const c = s.c;
-    const p = pesqueroDe(c.mapa);
+    // En el 3D el "pesquero" es la zona de la orilla donde se lanzo.
+    const lugar = s.m3 ? (s.pesca3 || 'pueblo') : c.mapa;
+    const p = s.m3 ? { nv: lugar === 'pueblo' ? 1 : (((MAPAS[lugar] || {}).nv) || [1])[0] } : pesqueroDe(c.mapa);
     if (!p) return;
     const hoy = hoyUTC();
     if (!c.pescaHoy || c.pescaHoy.d !== hoy) c.pescaHoy = { d: hoy, n: 0 };
@@ -120,18 +123,18 @@ export const Profesiones = {
     c.mat.pescado = Math.min(999, (c.mat.pescado || 0) + cant);
     let txt = `🎣 +${cant} ${MATERIALES.pescado.nombre}`, dorado = false, oro = 0;
     // Con lluvia (CLIMA) los dorados pican el doble.
-    if (Math.random() < (PESCA.dorado + p.nv / 1500) * (climaDe(c.mapa) === 'lluvia' ? 2 : 1)) { c.mat.pez_dorado = Math.min(999, (c.mat.pez_dorado || 0) + 1); c.dorados = (c.dorados || 0) + 1; dorado = true; txt += ' y 1 Pez Dorado'; }
+    if (Math.random() < (PESCA.dorado + p.nv / 1500) * ((s.m3 ? ['lluvia', 'tormenta'].includes(climaEn(lugar, Date.now())) : climaDe(c.mapa) === 'lluvia') ? 2 : 1)) { c.mat.pez_dorado = Math.min(999, (c.mat.pez_dorado || 0) + 1); c.dorados = (c.dorados || 0) + 1; dorado = true; txt += ' y 1 Pez Dorado'; }
     if (Math.random() < PESCA.cofre) { oro = 30 * Math.max(5, p.nv); c.oro += oro; txt += ` y un cofre hundido (+${oro} oro)`; }
     // La especie de este pesquero: la primera vez, oro.
     c.especies = c.especies || {};
-    const esp = ESPECIES[c.mapa];
+    const esp = ESPECIES[lugar];
     if (esp) {
-      if (!c.especies[c.mapa]) {
+      if (!c.especies[lugar]) {
         const pe = premioEspecie(p.nv);
         c.oro += pe;
         txt += ` · Nueva especie: ${esp} (+${pe} oro)`;
       }
-      c.especies[c.mapa] = (c.especies[c.mapa] || 0) + 1;
+      c.especies[lugar] = (c.especies[lugar] || 0) + 1;
       c.nEspecies = Object.keys(c.especies).length;
     }
     // La mascota que solo se pesca: muy rara, segura a las mascotaSeguro capturas.
