@@ -129,7 +129,7 @@ export const Dios = {
       }
       case 'traer': {
         if (!objetivo || objetivo === s) return;
-        if (s.k.includes('#') || objetivo.k.includes('#') || objetivo.duelo) return this.no(s, 'No se puede traer a nadie desde o hacia una mazmorra o un duelo.');
+        if (s.k.includes('#') || objetivo.k.includes('#') || objetivo.duelo || objetivo.m3) return this.no(s, 'No se puede traer a nadie desde o hacia una mazmorra, un duelo o el mundo 3D.');
         this.entrarMapa(objetivo, s.c.mapa, s.x);
         this.enviar(objetivo, { t: 'toast', m: '🌀 Un moderador te trajo a su lado.' });
         return ok('🌀 Trajiste a ' + objetivo.c.nombre + '.');

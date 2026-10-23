@@ -42,6 +42,7 @@ import { Torre } from './torre.js';
 import { Expediciones } from './expediciones.js';
 import { Dios } from './dios.js';
 import { Viajes } from './viajes.js';
+import { Mundo3D } from './mundo3d.js';
 
 const MAX_JUGADORES = 300;
 const GUARDAR_CADA_MS = 20000;
@@ -284,6 +285,7 @@ export class MmoWorld {
     if (m.t === 'hola') return this.hola(s, m);
     if (!s.c) return;
     if (m.t !== 'ping') s.actT = ahora;
+    if (s.m3) return this.recibir3d(s, m);
     switch (m.t) {
       case 'mv': return this.mover(s, m);
       case 'atk': return this.atacar(s, m);
@@ -537,10 +539,12 @@ export class MmoWorld {
     }
     if (descansado > 0) this.enviar(s, { t: 'toast', m: `Descanso: +${c.descanso.toLocaleString('es', { useGrouping: 'always' })} XP extra en tus próximas cazas.`, ok: true });
     this.enviar(s, this.estadoMundial());
-    this.entrarMapa(s, c.mapa, s.x, true);
+    // Duende Quest 3D (/mundo/): el mismo personaje en el mundo abierto.
+    if (m.modo === '3d') this.entrar3d(s);
+    else this.entrarMapa(s, c.mapa, s.x, true);
     this.reengancharGrupo(s);
     this.avisarContactos(s, salidaAntes);
-    if (instGuardada) this.volverAInstancia(s, instGuardada.mapa, instGuardada.x);
+    if (instGuardada && !s.m3) this.volverAInstancia(s, instGuardada.mapa, instGuardada.x);
     this.reponerElixires(s);
     await this.cargarHermandadDe(s);
     if (c.herm) this.refrescarApariencia(s);
@@ -1286,6 +1290,9 @@ export class MmoWorld {
   // clave = mundo vivo (por defecto el mismo id del mapa; las mazmorras
   // pasan una clave de instancia propia).
   entrarMapa(s, mapaId, x, primeraVez, clave) {
+    // Quien esta en el mundo 3D no se mueve a un mapa 2D (p. ej. si su grupo
+    // entra a una mazmorra o a la Torre desde el 2D).
+    if (s.m3) return;
     // Un mapa que no existe (uno guardado que se quito, o una prueba) tumbaba
     // el bucle del mundo en simularMapa: al pueblo.
     if (!Object.hasOwn(MAPAS, mapaId)) { mapaId = 'pueblo'; clave = null; x = 800; }
@@ -1732,10 +1739,11 @@ export class MmoWorld {
   }
 
   // Entregar la mision (o la diaria) al Guardia Tito.
-  mision(s, m) {
+  // desde3d: recibir3d() ya comprobo que esta junto al Guardia del pueblo 3D.
+  mision(s, m, desde3d) {
     const c = s.c;
     const npc = MAPAS.pueblo.npcs.find(n => n.tipo === 'guia');
-    if (s.k !== 'pueblo' || !npc || Math.abs(s.x - npc.x) > 200) return this.enviar(s, { t: 'toast', m: 'Habla con el Guardia Tito en el pueblo.' });
+    if (!(desde3d === true && s.m3) && (s.k !== 'pueblo' || !npc || Math.abs(s.x - npc.x) > 200)) return this.enviar(s, { t: 'toast', m: 'Habla con el Guardia Tito en el pueblo.' });
     if (m && m.diaria) {
       const d = this.diariaDe(c);
       if (d.ok) return this.enviar(s, { t: 'toast', m: 'Ya cobraste la caza de hoy.' });
@@ -1903,6 +1911,7 @@ export class MmoWorld {
 
   // ── TIENDA ──
   cercaDelMercader(s) {
+    if (s.m3) return this.cerca3d(s, 'tienda');
     if (s.k !== 'pueblo') return false;
     const npc = MAPAS.pueblo.npcs.find(n => n.tipo === 'tienda');
     return npc && Math.abs(s.x - npc.x) < 200;
@@ -2191,12 +2200,14 @@ export class MmoWorld {
     this.tickGrupos(ahora);
     this.guardarHermsSucias(ahora);
     this.tickDuelos(ahora);
-    const porClave = {};
+    const porClave = {}, en3d = [];
     for (const s of this.sesiones.values()) {
       if (!s.c) continue;
-      (porClave[s.k] = porClave[s.k] || []).push(s);
       if (s.sucio && ahora - s.guardadoT > GUARDAR_CADA_MS) this.guardar(s);
+      if (s.m3) { en3d.push(s); continue; }   // el mundo 3D va aparte
+      (porClave[s.k] = porClave[s.k] || []).push(s);
     }
+    this.tick3d(ahora, en3d);
     // Invasiones, raros (functions/mmo/eventos.js): solo mira zonas con gente.
     this.tickEventos(ahora, porClave);
     for (const k in porClave) this.simularMapa(k, porClave[k], ahora);
@@ -2544,4 +2555,6 @@ Object.assign(MmoWorld.prototype, Expediciones);
 Object.assign(MmoWorld.prototype, Dios);
 // Piedras de viaje entre zonas visitadas: functions/mmo/viajes.js
 Object.assign(MmoWorld.prototype, Viajes);
+// El mundo abierto 3D (mismo personaje, otro mundo): functions/mmo/mundo3d.js
+Object.assign(MmoWorld.prototype, Mundo3D);
 MmoWorld.prototype.generarItem = generarItem;

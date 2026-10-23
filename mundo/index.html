@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Duende Quest 3D · Mundo abierto</title>
+<meta name="description" content="Duende Quest 3D: el mundo abierto del MMORPG de los duendes. Un mapa continuo con 10 zonas, jefes y otros jugadores en tiempo real, en el navegador y en Telegram.">
+<meta name="theme-color" content="#0a0418">
+<link rel="icon" href="/assets/ui/coin.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }</script>
+<style>
+:root{--bg:#0a0418;--panel:rgba(14,9,30,.86);--borde:rgba(160,140,255,.22);--txt:#f2efff;--txt2:#b8b0d8;--txt3:#7d7699;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;--oro:#ffd84a;--pri:#2563eb;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:var(--sans);touch-action:none;user-select:none;-webkit-user-select:none;}
+#lienzo{position:fixed;inset:0;display:block;width:100%;height:100%;}
+#capa{position:fixed;inset:0;pointer-events:none;overflow:hidden;}
+.lbl{position:absolute;left:0;top:0;transform:translate(-50%,-100%);white-space:nowrap;font:600 11px var(--sans);text-shadow:0 1px 2px #000,0 0 3px #000;text-align:center;will-change:transform;}
+.lbl .b{display:block;width:44px;height:4px;margin:2px auto 0;background:rgba(0,0,0,.7);border-radius:2px;overflow:hidden;}
+.lbl .b i{display:block;height:100%;background:#ff3344;transform-origin:left;}
+.lbl.yo .b i,.lbl.pj .b i{background:#4ade80;}
+.num{position:absolute;left:0;top:0;font:700 16px var(--sans);text-shadow:0 2px 3px #000;transform:translate(-50%,-50%);will-change:transform,opacity;}
+.caja{position:fixed;background:var(--panel);border:1px solid var(--borde);border-radius:10px;backdrop-filter:blur(4px);pointer-events:auto;}
+#marco{left:12px;top:12px;padding:8px 10px;min-width:210px;}
+#obj{left:240px;top:12px;padding:8px 10px;min-width:200px;display:none;}
+.nm{font:600 13px var(--sans);display:flex;justify-content:space-between;gap:8px;margin-bottom:4px;}
+.nm small{color:var(--txt2);font-weight:500;}
+.barra{position:relative;height:14px;background:rgba(0,0,0,.55);border-radius:4px;overflow:hidden;margin-top:3px;}
+.barra i{position:absolute;inset:0;transform-origin:left;}
+.barra span{position:relative;display:block;text-align:center;font:600 10px/14px var(--sans);text-shadow:0 1px 1px #000;}
+.hp i{background:linear-gradient(#4ade80,#16a34a);}
+.rc i{background:linear-gradient(#60a5fa,#2563eb);}
+.hpo i{background:linear-gradient(#ff5a6a,#b91c1c);}
+#oro{margin-top:6px;font:600 12px var(--sans);color:var(--oro);}
+#mini{right:12px;top:12px;padding:6px;}
+#mini canvas{display:block;width:150px;height:150px;border-radius:8px;}
+#mini .z{font:600 11px var(--sans);text-align:center;margin-top:4px;color:var(--cian);}
+#botones{right:174px;top:12px;padding:4px;display:flex;gap:4px;}
+.bt{width:38px;height:38px;border:1px solid var(--borde);border-radius:8px;background:rgba(255,255,255,.04);color:var(--txt);font:600 15px var(--sans);cursor:pointer;display:flex;align-items:center;justify-content:center;text-decoration:none;}
+.bt:hover{background:rgba(255,255,255,.1);}
+#barra{left:50%;bottom:22px;transform:translateX(-50%);padding:6px;display:flex;gap:6px;}
+.acc{position:relative;width:52px;height:52px;border:1px solid var(--borde);border-radius:10px;background:rgba(255,255,255,.05);color:var(--txt);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-direction:column;font:700 11px var(--sans);}
+.acc img{width:30px;height:30px;image-rendering:pixelated;}
+.acc .t{position:absolute;left:4px;top:2px;font:600 9px var(--sans);color:var(--txt2);}
+.acc .n{position:absolute;right:4px;bottom:2px;font:700 10px var(--sans);}
+.acc .cd{position:absolute;inset:0;border-radius:10px;background:rgba(0,0,0,.6);transform-origin:bottom;transform:scaleY(0);}
+.acc.on{border-color:var(--ok);box-shadow:0 0 0 2px rgba(74,222,128,.35) inset;}
+#xp{position:fixed;left:0;right:0;bottom:0;height:8px;background:rgba(0,0,0,.6);pointer-events:none;}
+#xp i{position:absolute;inset:0;background:linear-gradient(90deg,#a855f7,#c084fc);transform-origin:left;}
+#chat{left:12px;bottom:22px;width:min(380px,42vw);padding:6px 8px;}
+#chat-log{max-height:150px;overflow:hidden;font:500 12px/1.45 var(--sans);display:flex;flex-direction:column;justify-content:flex-end;}
+#chat-log div b{font-weight:700;}
+#chat-in{display:none;width:100%;margin-top:4px;padding:6px 8px;border-radius:6px;border:1px solid var(--borde);background:rgba(0,0,0,.5);color:var(--txt);font:500 13px var(--sans);user-select:text;-webkit-user-select:text;}
+#avisos{position:fixed;left:50%;top:70px;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;z-index:5;}
+#avisos div{background:var(--panel);border:1px solid var(--borde);border-radius:8px;padding:7px 12px;font:600 13px var(--sans);max-width:min(560px,90vw);text-align:center;animation:entra .2s ease-out;}
+#avisos div.ok{border-color:rgba(74,222,128,.5);}
+#avisos div.err{border-color:rgba(255,90,106,.6);color:#ffd4d9;}
+@keyframes entra{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+#titulo-zona{position:fixed;left:50%;top:26%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;opacity:0;transition:opacity .6s;}
+#titulo-zona b{display:block;font:400 26px var(--px);color:#fff7d6;text-shadow:0 3px 0 #000,0 0 18px rgba(255,216,74,.45);}
+#titulo-zona small{display:block;margin-top:10px;font:600 14px var(--sans);color:var(--txt2);text-shadow:0 1px 2px #000;}
+#hablar{left:50%;bottom:96px;transform:translateX(-50%);padding:8px 16px;font:700 14px var(--sans);display:none;cursor:pointer;color:var(--txt);}
+.modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(5,2,14,.55);pointer-events:auto;z-index:10;}
+.modal.on{display:flex;}
+.ventana{position:relative;background:#140c2c;border:1px solid var(--borde);border-radius:14px;padding:18px;width:min(460px,92vw);max-height:86vh;overflow:auto;}
+.ventana h2{font:400 14px var(--px);text-align:center;margin-bottom:12px;}
+.ventana p{font:500 14px/1.5 var(--sans);color:var(--txt2);margin-bottom:8px;}
+.cerrar{position:absolute;right:10px;top:10px;width:30px;height:30px;}
+.btn{border:0;border-radius:8px;padding:10px 14px;background:var(--pri);color:#fff;font:700 14px var(--sans);cursor:pointer;}
+.btn.sec{background:rgba(255,255,255,.08);border:1px solid var(--borde);}
+.btn:disabled{opacity:.45;cursor:default;}
+.fila{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font:500 14px var(--sans);}
+input.nombre{width:100%;padding:12px;border-radius:8px;border:1px solid var(--borde);background:#0a0418;color:var(--txt);font:500 16px var(--sans);text-align:center;margin:10px 0;user-select:text;-webkit-user-select:text;}
+#carga{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:var(--bg);z-index:20;}
+#carga .t{font:400 18px/1.5 var(--px);text-align:center;color:#fff7d6;}
+#carga .s{font:500 14px var(--sans);color:var(--txt2);}
+#carga .barra{width:220px;height:10px;}
+#carga .barra i{background:linear-gradient(90deg,#a855f7,#ffd84a);transform:scaleX(0);}
+.clases{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.clases button{padding:12px 8px;border-radius:10px;border:1px solid var(--borde);background:rgba(255,255,255,.05);color:var(--txt);font:700 14px var(--sans);cursor:pointer;}
+.clases button small{display:block;font-weight:500;color:var(--txt2);margin-top:4px;font-size:12px;}
+#mapa-grande canvas{width:100%;border-radius:10px;display:block;}
+/* Movil: joystick a la izquierda, botones a la derecha */
+#joy{position:fixed;left:0;bottom:0;width:45%;height:55%;pointer-events:auto;display:none;}
+#joy .base{position:absolute;width:120px;height:120px;border-radius:50%;border:2px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);display:none;}
+#joy .pomo{position:absolute;width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,.35);left:33px;top:33px;}
+#tactil{position:fixed;right:10px;bottom:120px;display:none;grid-template-columns:repeat(3,58px);gap:8px;pointer-events:auto;}
+#tactil button{width:58px;height:58px;border-radius:50%;border:1px solid var(--borde);background:rgba(20,12,44,.75);color:var(--txt);font:700 12px var(--sans);}
+#tactil button.grande{background:rgba(37,99,235,.8);}
+body.movil #joy,body.movil #tactil{display:grid;}
+body.movil #joy{display:block;}
+body.movil #chat{width:min(260px,60vw);bottom:auto;top:178px;}
+body.movil #chat-log{max-height:70px;font-size:11px;}
+body.movil #obj{left:12px;top:96px;}
+body.movil #marco{min-width:180px;}
+body.movil #botones{right:12px;top:186px;flex-direction:column;}
+body.movil #barra{bottom:14px;left:auto;right:auto;transform:none;left:50%;transform:translateX(-50%) scale(.85);transform-origin:bottom center;}
+body.movil #mini canvas{width:110px;height:110px;}
+body.movil #titulo-zona b{font-size:16px;}
+</style>
+</head>
+<body>
+<canvas id="lienzo"></canvas>
+<div id="capa"></div>
+
+<div id="carga">
+  <div class="t">DUENDE QUEST<br>MUNDO ABIERTO 3D</div>
+  <div class="barra"><i id="carga-i"></i></div>
+  <div class="s" id="carga-s">Preparando el mundo…</div>
+</div>
+
+<div class="caja" id="marco">
+  <div class="nm"><span id="m-nombre">—</span><small id="m-nivel"></small></div>
+  <div class="barra hp" id="m-hp"><i></i><span></span></div>
+  <div class="barra rc" id="m-rec"><i></i><span></span></div>
+  <div id="oro">0 oro</div>
+</div>
+<div class="caja" id="obj">
+  <div class="nm"><span id="o-nombre">—</span><small id="o-nivel"></small></div>
+  <div class="barra hpo" id="o-hp"><i></i><span></span></div>
+</div>
+<div class="caja" id="botones">
+  <button class="bt" id="b-mapa" title="Mapa del mundo (M)">🗺</button>
+  <button class="bt" id="b-chat" title="Chat (Enter)">💬</button>
+  <button class="bt" id="b-ayuda" title="Controles">?</button>
+  <a class="bt" href="/mmo/" title="Juego 2D: inventario, talentos, mazmorras">2D</a>
+  <a class="bt" href="/" title="Portada">⌂</a>
+</div>
+<div class="caja" id="mini"><canvas id="mini-c" width="150" height="150"></canvas><div class="z" id="mini-z">—</div></div>
+<div class="caja" id="barra"></div>
+<div class="caja" id="chat"><div id="chat-log"></div><input id="chat-in" maxlength="120" placeholder="Escribe y pulsa Enter…" autocomplete="off"></div>
+<div id="avisos"></div>
+<div id="titulo-zona"><b id="tz-n"></b><small id="tz-s"></small></div>
+<button class="caja" id="hablar">E · Hablar</button>
+<div id="xp"><i></i></div>
+
+<div id="joy"><div class="base"><div class="pomo"></div></div></div>
+<div id="tactil">
+  <button id="t-obj">OBJ</button><button id="t-salto">SALTO</button><button class="grande" id="t-atk">ATACAR</button>
+</div>
+
+<div class="modal" id="v-inicio"><div class="ventana" style="text-align:center">
+  <h2>DUENDE QUEST 3D</h2>
+  <p>El mundo abierto de los duendes: un mapa continuo con el pueblo, las 10 zonas, sus jefes y otros jugadores en tiempo real. Es tu mismo personaje del juego online.</p>
+  <div id="ini-inv">
+    <input class="nombre" id="in-nombre" maxlength="16" placeholder="Nombre de tu duende">
+    <button class="btn" id="b-entrar" style="width:100%">Entrar al mundo</button>
+    <p style="margin-top:10px;font-size:13px">¿Tienes cuenta? <a href="/mmo/" style="color:var(--cian)">Inicia sesión en el juego online</a> y vuelve: entrarás con ella.</p>
+  </div>
+  <div id="ini-cuenta" style="display:none">
+    <p id="ini-quien"></p>
+    <button class="btn" id="b-entrar2" style="width:100%">Entrar al mundo</button>
+  </div>
+</div></div>
+
+<div class="modal" id="v-clase"><div class="ventana">
+  <h2>ELIGE TU CLASE</h2>
+  <div class="clases" id="clases"></div>
+</div></div>
+
+<div class="modal" id="v-muerte"><div class="ventana" style="text-align:center">
+  <h2>HAS CAÍDO</h2>
+  <p id="muerte-txt">Vuelve al pueblo para seguir.</p>
+  <button class="btn" id="b-revivir" style="width:100%">Revivir en el pueblo</button>
+</div></div>
+
+<div class="modal" id="v-npc"><div class="ventana">
+  <button class="bt cerrar" data-cerrar>✕</button>
+  <h2 id="npc-t"></h2>
+  <div id="npc-c"></div>
+</div></div>
+
+<div class="modal" id="v-mapa"><div class="ventana" id="mapa-grande" style="width:min(640px,94vw)">
+  <button class="bt cerrar" data-cerrar>✕</button>
+  <h2>MAPA DEL MUNDO</h2>
+  <canvas id="mapa-c" width="600" height="600"></canvas>
+  <p style="margin-top:8px;font-size:12px">Las zonas de nivel bajo rodean el pueblo; las de nivel alto están en los bordes. Los puntos amarillos son jefes.</p>
+</div></div>
+
+<div class="modal" id="v-ayuda"><div class="ventana">
+  <button class="bt cerrar" data-cerrar>✕</button>
+  <h2>CONTROLES</h2>
+  <div class="fila"><span>Moverse</span><b>W A S D</b></div>
+  <div class="fila"><span>Girar la cámara</span><b>Arrastrar con el ratón</b></div>
+  <div class="fila"><span>Zoom</span><b>Rueda</b></div>
+  <div class="fila"><span>Saltar</span><b>Espacio</b></div>
+  <div class="fila"><span>Elegir objetivo</span><b>Clic o Tab</b></div>
+  <div class="fila"><span>Ataque automático</span><b>1 o Z</b></div>
+  <div class="fila"><span>Consumibles</span><b>Q F G T</b></div>
+  <div class="fila"><span>Hablar</span><b>E</b></div>
+  <div class="fila"><span>Mapa · Chat</span><b>M · Enter</b></div>
+  <p style="margin-top:10px">En el móvil: joystick a la izquierda, arrastra a la derecha para girar la cámara y toca un monstruo para elegirlo. El inventario, los talentos y las mazmorras están por ahora en el juego 2D (botón 2D): es el mismo personaje.</p>
+</div></div>
+
+<div class="modal" id="v-error"><div class="ventana" style="text-align:center">
+  <h2>DESCONECTADO</h2>
+  <p id="error-txt"></p>
+  <button class="btn" id="b-reconectar" style="width:100%">Volver a entrar</button>
+</div></div>
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
+<script src="/js/config.js"></script>
+<script type="module" src="/mundo/js/mundo.js?v=243"></script>
+</body>
+</html>

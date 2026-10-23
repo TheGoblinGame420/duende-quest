@@ -17,7 +17,7 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=242';
+} from './data.js?v=243';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -42,6 +42,8 @@ if (TG) {
   try { TG.BackButton.show(); TG.BackButton.onClick(volver); } catch (e) {}
   const casa = document.querySelector('#botones a[href="/"]');
   if (casa) casa.href = '/telegram/index.html' + (location.hash || '');
+  // El mundo 3D tambien necesita la sesion de Telegram (va en el hash).
+  document.querySelectorAll('a[href="/mundo/"]').forEach(x => { x.href = '/mundo/' + (location.hash || ''); });
 }
 
 // Telegram: al llegar a Nv 3 se pide permiso para que el bot pueda escribir

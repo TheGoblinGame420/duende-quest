@@ -521,6 +521,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
         <button class="bt" id="b-rank" title="Ranking" aria-label="Ranking"><img class="ico-bt" src="/assets/items/equipo/Ac_Medal01.png" alt=""></button>
         <button class="bt" id="b-ayuda" title="Guía del juego" aria-label="Guía"><img class="ico-bt" src="/assets/items/equipo/I_Book.png" alt=""></button>
         <button class="bt" id="b-cuenta" title="Mi cuenta: guarda tu progreso" aria-label="Mi cuenta"><svg class="ico-bt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg></button>
+        <a class="bt" href="/mundo/" title="Mundo abierto 3D (beta): tu mismo personaje" aria-label="Mundo 3D" style="text-decoration:none;font:700 12px var(--sans)">3D</a>
         <button class="bt" id="b-dios" title="Modo Dios (F2)" aria-label="Modo Dios" style="display:none"><img class="ico-bt" src="/assets/items/equipo/Ac_Medal04.png" alt=""></button>
         <button class="bt" id="b-sonido" title="Sonido">🔊</button>
         <a class="bt" href="/" title="Ir a la portada" aria-label="Inicio" style="text-decoration:none"><svg class="ico-bt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></a>
@@ -571,6 +572,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
       <input class="nombre" id="in-nombre" maxlength="16" placeholder="Nombre de tu duende" aria-label="Nombre de tu duende">
       <button class="btn btn-grande" id="b-jugar">Entrar como invitado</button>
       <p class="nota">Como invitado tu personaje vive solo en este navegador. Con una cuenta se guarda en la nube y lo recuperas desde cualquier dispositivo.</p>
+      <a class="btn btn-grande" href="/mundo/" style="display:block;margin-top:8px;text-decoration:none;text-align:center;background:linear-gradient(90deg,#7c3aed,#2563eb)">Nuevo: mundo abierto 3D (beta)</a>
       <button class="btn sec btn-grande" id="b-abrir-cuenta" style="margin-top:8px">Entrar con correo o crear cuenta</button>
       <div id="inicio-auth" class="cuenta" style="display:none"></div>
     </div>
@@ -897,6 +899,6 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=242"></script>
+<script type="module" src="/mmo/js/client.js?v=243"></script>
 </body>
 </html>

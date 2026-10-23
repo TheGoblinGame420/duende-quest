@@ -2133,3 +2133,41 @@ Cliente **?v=242**, arnés **597**.
   en `zonaSiguiente()` (portal del borde derecho) a 25 s; hasta 3 etapas,
   premio ×1 / ×1,3 / ×1,6 y la 3.ª da objeto épico+. Perder no marcha.
 - Novedades n=10 y la guía del juego explican todo esto.
+
+## DUENDE QUEST 3D — mundo abierto (23-oct-2026), fase 1 (beta) en /mundo/
+
+Pedido del dueño: "como WoW o AION". Se eligió 3D estilo Ragnarok/Octopath:
+mundo 3D (Three.js 0.160 por importmap de jsdelivr) y los sprites de siempre
+como planos que miran a la cámara. Cliente `/mundo/js/mundo.js?v=243`;
+el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
+
+- **Mismo servidor y mismo personaje**: `hola` con `modo:'3d'` → `entrar3d`
+  (functions/mmo/mundo3d.js). `s.m3 = true`, `s.k = '~3d'`; sus mensajes van
+  a `recibir3d` y `tick()` los aparta en `tick3d`. Posición en `s.p` y
+  `c.p3` (el `c.mapa`/`c.x` del 2D no se toca). `entrarMapa` no hace nada a
+  un jugador 3D (grupos que entran a mazmorras/Torre desde el 2D).
+- **Mundo** (mmo/js/mundo3d.js, compartido; recibe MAPAS/MONSTRUOS por
+  parámetro): 1.320 m de lado, pueblo en el centro y las 10 zonas en espiral
+  (Voronoi con transición de 60 m), relieve con ruido determinista, agua,
+  cordillera en el borde, 150 campamentos (15 por zona, el jefe en el más
+  lejano). Los monstruos solo existen cerca de jugadores (170 m) y se
+  retiran a 240 m; pasivos salvo jefes (16 m); correa de 50 m.
+- **Combate**: `atk3` ataque automático (cuerpo a cuerpo 1 golpe/s con el
+  mismo daño por segundo que el combo 2D; vara a su ritmo, 24 m); premios con
+  `dar()` → misiones, diarias, bestiario, chicha, pase y botín igual que el
+  2D. Consumibles (`pw`), muerte y `revivir` en el pueblo, Mercader
+  (`cercaDelMercader` sabe del 3D) y Guardia (`mision(s, m, true)`).
+- **Cliente**: terreno con colores por zona y caminos, ~5.000 árboles
+  instanciados por bioma, casas del pueblo, portal (manda al 2D), cielo y
+  niebla del color de cada zona, título al entrar a una zona, minimapa y
+  mapa del mundo, etiquetas HTML, números de daño, proyectiles. Controles
+  WASD + arrastrar cámara + rueda, Tab/clic objetivo, 1/Z ataque automático
+  (camina solo hasta el objetivo), Q F G T, E hablar, M mapa, Enter chat.
+  Móvil: joystick, arrastrar para girar, botones OBJ/SALTO/ATACAR. Medido:
+  2,6 ms por cuadro con 10 monstruos. `window.__dq3` = estado de depuración
+  (y `cuadro()` para avanzar a mano con el panel oculto).
+- **Aún en el 2D** (botón 2D, mismo personaje): inventario y equipo,
+  talentos, habilidades de clase, mazmorras/Torre/banda, artesanía, pesca,
+  duelos, hermandades, monturas, tienda completa. Siguientes fases: llevar
+  las habilidades de clase al 3D, mazmorras como instancias 3D, ventanas de
+  inventario/talentos, monturas y vuelo (AION), jefe mundial.

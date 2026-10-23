@@ -458,6 +458,11 @@ export const TINTES = {
 // enseñan una vez (lo nuevo para los que vuelven). La mas reciente arriba;
 // subir 'n' al añadir una.
 export const NOVEDADES = [
+  { n: 11, fecha: '23 oct 2026', items: [
+    'Duende Quest 3D (beta): un mundo abierto en 3D, sin pantallas de carga, con el pueblo y las 10 zonas en un solo mapa. Botón 3D o duende-quest/mundo.',
+    'Es tu mismo personaje: nivel, clase, oro, skins, misiones y diarias avanzan en los dos mundos.',
+    'Cámara libre, ataque automático que te lleva a tu objetivo, jefes de zona y otros jugadores en tiempo real. En el móvil, joystick y botones.',
+  ] },
   { n: 10, fecha: '23 oct 2026', items: [
     'Mundo abierto: las zonas se cruzan caminando por sus bordes, sin pantalla de carga.',
     'Piedras de viaje en cada zona: viaja al instante a las zonas que ya descubriste.',

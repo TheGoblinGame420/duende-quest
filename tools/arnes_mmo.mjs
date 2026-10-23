@@ -594,6 +594,7 @@ async function pruebas() {
   await pruebasEvadir();
   await pruebasDios();
   await pruebasSinCortes();
+  await pruebas3d();
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──
@@ -2551,4 +2552,87 @@ async function pruebasSinCortes() {
   const ev4 = mundo.empezarEvento('noche'); mundo.terminarEvento(false);
   chequear(ev4 && !mundo.marcha, 'perder una invasión no la hace marchar');
   await dejar(a);
+}
+
+// ── DUENDE QUEST 3D (functions/mmo/mundo3d.js) ──
+async function entrar3d(nombre, n) {
+  const ws = new WsFalso();
+  mundo.abrir(ws);
+  const s = [...mundo.sesiones.values()].pop();
+  const tok = String(n).repeat(32).slice(0, 32).replace(/[^a-f0-9]/g, 'a');
+  ws.emitir('message', { data: JSON.stringify({ t: 'hola', auth: { k: 'inv', tok }, nombre, modo: '3d' }) });
+  for (let i = 0; i < 20 && !s.c; i++) await espera();
+  for (let i = 0; i < 300 && !s.c; i++) await new Promise(r => setTimeout(r, 10));
+  if (mundo.bucle) { clearInterval(mundo.bucle); mundo.bucle = 1; }
+  s.ws = ws;
+  s.mandar = o => { s.cuenta = 0; return mundo.recibir(s, JSON.stringify(o)); };
+  s.ultimos = t => ws.rec.filter(m => m.t === t);
+  s.limpiar = () => { ws.rec.length = 0; };
+  return s;
+}
+async function pruebas3d() {
+  console.log('Mundo 3D: entrar y moverse');
+  const W = await import('../mmo/js/mundo3d.js');
+  const D = await import('../mmo/js/data.js');
+  const a = await entrar3d('Viajero3D', '3a1'), b = await entrar3d('Otro3D', '3a2');
+  const dos = await entrar('Plano2D', '3a3');
+  chequear(a.m3 && a.k === '~3d' && a.ultimos('m3').length === 1, 'entra al mundo 3D con su personaje');
+  chequear(b.ultimos('m3').pop().jugadores.some(x => x.n === 'Viajero3D'), 've a los otros jugadores del mundo 3D');
+  chequear(Math.hypot(a.p.x - W.SPAWN3D.x, a.p.z - W.SPAWN3D.z) < 1, 'aparece en el pueblo');
+  avanzar(1000); await a.mandar({ t: 'mv3', x: a.p.x + 5, z: a.p.z, r: 1.5, a: 1 });
+  chequear(Math.abs(a.p.x - (W.SPAWN3D.x + 5)) < 0.01 && a.c.p3, 'se mueve y la posición se guarda en el personaje');
+  a.limpiar(); avanzar(50); await a.mandar({ t: 'mv3', x: a.p.x + 80, z: a.p.z });
+  chequear(a.ultimos('snap3').length === 1 && a.p.x < 20, 'un salto imposible se corrige (anti speed-hack)');
+  const x2d = dos.c.x;
+  tick(3);
+  chequear(!dos.ws.rec.some(m => m.t === 's3') && a.ws.rec.some(m => m.t === 's3') && dos.c.x === x2d, 'el 2D no recibe nada del 3D y sigue igual');
+
+  console.log('Mundo 3D: monstruos y combate');
+  const campo = W.campamentos(D.MAPAS, D.MONSTRUOS).find(c => c.zona === 'noche' && !c.jefe);
+  ponerNivel(a, 6, 'guerrero');
+  a.p = { x: campo.x + 2, z: campo.z + 2 }; a.movBud = undefined;
+  for (let i = 0; i < 40; i++) tick(1);
+  const cerca = [...mundo.m3.mons.values()].filter(o => o.campo === campo.id);
+  chequear(cerca.length === campo.n, 'cerca de un campamento aparecen sus monstruos (' + cerca.length + '/' + campo.n + ')');
+  chequear(a.ws.rec.some(m => m.t === 's3' && m.n && m.n.some(x => x.k === campo.k)), 'el jugador recibe los monstruos nuevos con sus datos');
+  const o = cerca[0];
+  o.x = a.p.x + 1; o.z = a.p.z; o.destino = null; o.paseo = Date.now() + 99999; o.hp = o.max = 100000;
+  const lejos = cerca[1]; lejos.x = a.p.x + 60; lejos.z = a.p.z; lejos.paseo = Date.now() + 99999; lejos.destino = null;
+  a.limpiar(); await a.mandar({ t: 'atk3', tg: lejos.id });
+  chequear(lejos.hp === lejos.max && a.ultimos('no').length, 'fuera de alcance no se pega');
+  const hp0 = o.hp;
+  avanzar(1100); await a.mandar({ t: 'atk3', tg: o.id });
+  chequear(o.hp < hp0 && o.obj === a.id, 'el golpe hace daño y el monstruo se enfada');
+  await a.mandar({ t: 'atk3', tg: o.id });
+  const hp1 = o.hp;
+  chequear(hp1 === o.hp, 'no se pega más rápido que la recarga del arma');
+  const hpA = a.hp; a.inv = 0; a.escudo = 0;
+  for (let i = 0; i < 20; i++) tick(1);
+  chequear(a.hp < hpA, 'el monstruo enfadado persigue y pega');
+  const kills = a.c.kills, oro = a.c.oro, xpT = a.c.xp + a.c.nivel * 1e6;
+  a.c.mis = { i: D.MISIONES.findIndex(q => q.tipo === o.k), p: 0 };
+  o.hp = 1; avanzar(1100); await a.mandar({ t: 'atk3', tg: o.id });
+  chequear(o.muere && a.c.kills === kills + 1 && a.c.oro > oro && a.c.xp + a.c.nivel * 1e6 > xpT, 'al matarlo cobra XP y oro como en el 2D');
+  chequear(a.c.mis.i < 0 || a.c.mis.p === 1, 'la caza cuenta para la misión');
+  chequear(a.ws.rec.some(m => m.t === 'md3' && m.id === o.id), 'avisa de su muerte');
+
+  console.log('Mundo 3D: muerte, pueblo y tienda');
+  a.limpiar(); mundo.herir(a, 999999, { jefe: true });
+  chequear(a.muerto && a.ultimos('muerte').length, 'puede morir');
+  await a.mandar({ t: 'revivir' });
+  chequear(!a.muerto && a.ultimos('tp3').length && Math.hypot(a.p.x - W.SPAWN3D.x, a.p.z - W.SPAWN3D.z) < 1, 'revive en el pueblo');
+  const merc = W.NPCS3D.find(n => n.tipo === 'tienda');
+  a.c.oro = 1000; const pociones = a.c.pw.pocion;
+  await a.mandar({ t: 'comprar', k: 'pw', id: 'pocion', n: 1 });
+  chequear(a.c.pw.pocion === pociones, 'lejos del Mercader no se compra');
+  a.p = { x: merc.x + 1, z: merc.z }; await a.mandar({ t: 'comprar', k: 'pw', id: 'pocion', n: 1 });
+  chequear(a.c.pw.pocion === pociones + 1, 'junto al Mercader del pueblo 3D se compra');
+  a.limpiar(); await a.mandar({ t: 'portal', i: 0 }); await a.mandar({ t: 'mv', x: 500, y: 400 });
+  chequear(a.m3 && a.k === '~3d', 'los mensajes del 2D no sacan a nadie del mundo 3D');
+  mundo.entrarMapa(a, 'noche', 300);
+  chequear(a.k === '~3d', 'ni una mazmorra o la Torre de su grupo');
+  for (const s of [a, b, dos]) await dejar(s);
+  chequear(mundo.sesiones3d().length === 0, 'al salir, el mundo 3D queda vacío');
+  tick(2);
+  chequear(mundo.m3.mons.size === 0, 'y sin nadie, los monstruos se retiran');
 }
