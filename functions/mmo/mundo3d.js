@@ -38,6 +38,11 @@ const MELEE3D = 3.2;              // m: alcance del golpe cuerpo a cuerpo (x arm
 const RANGO_VARA = 24;          // m: disparo de vara de magos y sacerdotes
 const MON_MELEE = 2.4, MON_DISPARO = 15;
 const FOTO_CADA = 2;            // ticks entre fotos (200 ms)
+// Margen para el jitter de la red: un golpe o una habilidad que llega hasta
+// 150 ms antes de su recarga cuenta (la cadencia se mide desde el golpe
+// anterior, asi que no se gana dano).
+const JITTER_MS = 150;
+const VISTA_PJ = 160, SALE_PJ = 190;   // m: a que distancia se ve (y se deja de ver) a otro jugador
 // Jefe mundial del 3D: a las :15 y :45 (el del Coliseo 2D sale a las :00 y :30).
 const DESFASE_MUNDIAL3 = 15 * 60 * 1000;
 const PISOTON_CADA = 12000, PISOTON_AVISO = 2500, PISOTON_R = 9;
@@ -55,6 +60,11 @@ export const Mundo3D = {
     const campos = campamentos(MAPAS, MONSTRUOS).map(c => ({ ...c, vivos: new Set(), prox: 0 }));
     return (this.m3 = { mons: new Map(), campos, sig: 1, foto: 0 });
   },
+  // Envio solo a los del 3D cerca de c ({x, z, i3}) y en su misma instancia.
+  aCerca3d(c, obj, r = VISTA_MON + 40) {
+    const txt = JSON.stringify(obj);
+    for (const s of this.sesiones.values()) if (s.c && s.m3 && !s.cerrado && mismo(s, c) && s.p && dist(s.p, c) <= r) this.enviar(s, txt);
+  },
   sesiones3d() { const l = []; for (const s of this.sesiones.values()) if (s.c && s.m3 && !s.cerrado) l.push(s); return l; },
 
   // ── ENTRAR ──
@@ -66,6 +76,7 @@ export const Mundo3D = {
     const p = c.p3 && num(c.p3.x) !== null && num(c.p3.z) !== null && !enCueva(c.p3.x) ? c.p3 : SPAWN3D;
     s.p = { x: clamp(p.x, -MUNDO.limite, MUNDO.limite), z: clamp(p.z, -MUNDO.limite, MUNDO.limite) };
     s.i3 = 0;
+    s.vistosP = new Set();
     s.ry = 0; s.a = 0; s.h = 0; s.movT = Date.now(); s.movBud = undefined; s.vistos = new Set(); s.atkT = 0;
     const jugadores = this.sesiones3d().filter(x => x !== s).map(x => this.info3d(x));
     this.enviar(s, { t: 'm3', id: s.id, x: r1(s.p.x), z: r1(s.p.z), jugadores });
@@ -150,7 +161,7 @@ export const Mundo3D = {
     const d = Math.hypot(nx - s.p.x, nz - s.p.z);
     if (!(s.dios && s.diosModo && s.diosModo.vel)) {
       const vel = MUNDO.velocidad * (m.a === 3 ? alaDe(s.c).vel + 0.05 : m.a === 4 ? 1.4 : velMontura(s.montado)) * (1 + talento(s.c, 'agilidad'));
-      const tope = vel + 4;
+      const tope = vel * 1.5 + 4;   // margen por huecos de red (evita tirones de vuelta)
       s.movBud = Math.min(tope, (s.movBud === undefined ? tope : s.movBud) + vel * 1.25 * dt / 1000);
       if (d > s.movBud + 1) { this.enviar(s, { t: 'snap3', x: r1(s.p.x), z: r1(s.p.z) }); return; }
       s.movBud = Math.max(0, s.movBud - d);
@@ -184,12 +195,13 @@ export const Mundo3D = {
     const o = W.mons.get(m.tg | 0);
     if (!o || o.muere || !mismo(o, s)) return;
     const ahora = Date.now();
-    if (ahora < (s.atkT || 0)) return;
+    if (ahora < (s.atkT || 0) - JITTER_MS) return;
     const arma = ARMAS[s.c.arma] || ARMAS.katana;
     const vara = !!(CLASES[s.c.clase] && CLASES[s.c.clase].basico === 'vara');
     const rango = vara ? RANGO_VARA : MELEE3D * (arma.alcance || 1) + (o.jefe ? 1.2 : 0.4);
-    if (dist(s.p, o) > rango) return this.no(s, 'Fuera de alcance.');
-    s.atkT = ahora + (vara ? VARA.cdMs * arma.cd : 1000 * arma.cd) - 40;
+    // Fuera de alcance: el cliente reintenta en 150 ms (no pierde el golpe).
+    if (dist(s.p, o) > rango + 0.3) { this.enviar(s, { t: 'atkNo' }); return this.no(s, 'Fuera de alcance.'); }
+    s.atkT = Math.max(ahora, s.atkT || 0) + (vara ? VARA.cdMs * arma.cd : 1000 * arma.cd);
     const crit = Math.random() < s.st.crit;
     const forja = multForja((s.c.forja || {})[s.c.arma]);
     const mult = vara ? VARA.mult : 3.6 * (arma.dano || 1);
@@ -197,7 +209,7 @@ export const Mundo3D = {
       * (ahora < s.fuego ? 1.5 : 1) * (this.elixir(s, 'elixirF') ? 1.1 : 1)));
     if (s.montado) this.desmontar(s);
     const real = this.danar3d(o, dmg, s);
-    this.aClave(K3, { t: 'at3', p: s.id, tg: o.id, d: real, c: crit ? 1 : 0, v: vara ? 1 : 0 });
+    this.aCerca3d(o, { t: 'at3', p: s.id, tg: o.id, d: real, c: crit ? 1 : 0, v: vara ? 1 : 0 });
     const robo = ((SKINS[s.c.skin] || {}).buffs || {}).robo || 0;
     if (robo) s.hp = Math.min(s.st.maxHp, s.hp + real * robo);
   },
@@ -208,13 +220,13 @@ export const Mundo3D = {
     const t = this.rivalDuelo(s);
     if (!t || t.id !== (m.tp | 0) || !t.m3) return;
     const ahora = Date.now();
-    if (ahora < (s.atkT || 0)) return;
+    if (ahora < (s.atkT || 0) - JITTER_MS) return;
     const arma = ARMAS[s.c.arma] || ARMAS.katana;
     const vara = !!(CLASES[s.c.clase] && CLASES[s.c.clase].basico === 'vara');
-    if (dist(s.p, t.p) > (vara ? RANGO_VARA : MELEE3D * (arma.alcance || 1) + 0.6)) return this.no(s, 'Fuera de alcance.');
-    s.atkT = ahora + (vara ? VARA.cdMs * arma.cd : 1000 * arma.cd) - 40;
+    if (dist(s.p, t.p) > (vara ? RANGO_VARA : MELEE3D * (arma.alcance || 1) + 0.6) + 0.3) { this.enviar(s, { t: 'atkNo' }); return this.no(s, 'Fuera de alcance.'); }
+    s.atkT = Math.max(ahora, s.atkT || 0) + (vara ? VARA.cdMs * arma.cd : 1000 * arma.cd);
     if (s.montado) this.desmontar(s);
-    this.aClave(K3, { t: 'atp3', p: s.id, tg: t.id, v: vara ? 1 : 0 });
+    this.aCerca3d({ x: s.p.x, z: s.p.z, i3: s.i3 }, { t: 'atp3', p: s.id, tg: t.id, v: vara ? 1 : 0 });
     this.golpeDuelo(s, t, vara ? VARA.mult : 3.6 * (arma.dano || 1), true);
   },
 
@@ -278,10 +290,10 @@ export const Mundo3D = {
     for (const s of this.sesiones3d()) {
       if (cobraron.has(s.id) || s.muerto || !mismo(s, o) || dist(s.p, o) > 40) continue;
       const xp = Math.max(1, Math.round(base.xp * 0.25));
-      this.sumarXp(s, xp);
+      const subio = this.sumarXp(s, xp);
       s.sucio = true;
       this.enviar(s, { t: 'gana', xp, oro: 0, drops: [], coop: true });
-      this.actualizarYo(s);
+      this.yoLuego(s, subio);
     }
     const campo = W.campos[o.campo];
     if (campo) { campo.vivos.delete(o.id); campo.prox = Date.now() + (o.jefe ? REAPARECE_JEFE_MS : REAPARECE_MS); }
@@ -313,13 +325,13 @@ export const Mundo3D = {
       for (const o of this.iniciar3d().mons.values()) {
         if (o.muere || !mismo(o, s) || dist(o, s.p) > 14) continue;
         const d = this.danar3d(o, Math.round(s.st.atk * (o.jefe ? 2 : 4)), s);
-        this.aClave(K3, { t: 'at3', p: s.id, tg: o.id, d, c: 0, rayo: 1 });
+        this.aCerca3d(o, { t: 'at3', p: s.id, tg: o.id, d, c: 0, rayo: 1 });
       }
     }
     s.sucio = true;
-    this.aClave(K3, { t: 'pw', p: s.id, i: m.i | 0 });
+    this.aCerca3d({ x: s.p.x, z: s.p.z, i3: s.i3 }, { t: 'pw', p: s.id, i: m.i | 0 });
     this.enviar(s, { t: 'cd', id: def.id, hasta: def.cd });
-    this.actualizarYo(s);
+    this.yoLuego(s);
   },
 
   // Revivir en el cementerio del pueblo (mismo castigo que el 2D).
@@ -354,6 +366,7 @@ export const Mundo3D = {
     for (const s of jugadores) {
       const seguro = zonaEn(s.p.x, s.p.z) === 'pueblo';
       if (s.cast && habPorId(s.cast.h) && ahora >= s.cast.fin) this.finCast3d(s);
+      if (s.yoPend) this.vaciarYo(s, ahora);
       this.tickJugador(s, ahora, dt, seguro);
       if (s.muerto || s.hp >= s.st.maxHp) continue;
       const k = seguro ? 0.12 : (ahora - (s.golpeT || 0) > 4000 ? 0.04 : 0);
@@ -385,7 +398,7 @@ export const Mundo3D = {
       this.ia3d(o, porI3.get(o.i3 || 0) || [], ahora);
     }
     // Fotos del mundo (cada 200 ms).
-    if (++W.foto % FOTO_CADA === 0) this.fotos3d(W, jugadores);
+    if (++W.foto % FOTO_CADA === 0) this.fotos3d(W, jugadores, ahora);
   },
 
   crear3d(c) {
@@ -575,7 +588,7 @@ export const Mundo3D = {
       dol.prox += 3000;
       const de = this.sesiones.get(dol.de);
       const d = this.danar3d(o, dol.tick, de && de.m3 ? de : null);
-      this.aClave(K3, { t: 'at3', p: dol.de, tg: o.id, d, c: 0, dot: 1 });
+      this.aCerca3d(o, { t: 'at3', p: dol.de, tg: o.id, d, c: 0, dot: 1 });
       if (o.muere) return;
     }
     for (const a in o.au) if (o.au[a].hasta < ahora) delete o.au[a];
@@ -617,7 +630,7 @@ export const Mundo3D = {
         if (ahora >= o.atkEn) {
           o.atkEn = ahora + (o.jefe ? 1250 : 1600);
           const golpe = o.atk * (o.jefe ? 0.7 : 1) * (o.dispara ? 0.9 : 1);
-          if (o.dispara) this.aClave(K3, { t: 'b3', de: o.id, a: s.id });
+          if (o.dispara) this.aCerca3d(o, { t: 'b3', de: o.id, a: s.id });
           this.herir(s, golpe, { jefe: o.jefe, bala: o.dispara, mundial: o.mundial3, id: o.id });
         }
       }
@@ -677,7 +690,7 @@ export const Mundo3D = {
     const ahora = Date.now();
     if (s.cast) return this.no(s, 'Ya estás lanzando otro hechizo.');
     if (ahora < (s.cdHab[h.id] || 0)) return this.no(s, `${h.nombre} todavía no está lista.`);
-    if (h.gcd !== false && ahora < (s.gcdHasta || 0) - 80) return;
+    if (h.gcd !== false && ahora < (s.gcdHasta || 0) - JITTER_MS) return this.enviar(s, { t: 'habNo', id: h.id });
     const costo = costoHab(h, s.st.recMax, s.c.espec);
     if (s.rec < costo) return this.no(s, `No tienes suficiente ${RECURSOS[CLASES[c.clase].recurso].nombre.toLowerCase()}.`);
     let obj = null;
@@ -689,7 +702,7 @@ export const Mundo3D = {
       if (h.radio || h.area) return this.no(s, 'En un duelo solo valen las habilidades de un objetivo.');
       if (dist(s.p, t.p) > this.metros(h.rango, s) + 0.5) return this.no(s, 'Tu rival está fuera de alcance.');
       this.desmontar(s);
-      if (h.gcd !== false) s.gcdHasta = ahora + GCD_MS;
+      if (h.gcd !== false) s.gcdHasta = Math.max(ahora, s.gcdHasta || 0) + GCD_MS;
       return this.habDuelo(s, h, t);
     }
     if (h.obj === 'enemigo') {
@@ -714,10 +727,10 @@ export const Mundo3D = {
       if (ahora - (s.combateT || 0) < 5000) return this.no(s, 'No puedes entrar en sigilo en pleno combate.');
     }
     this.desmontar(s);
-    if (h.gcd !== false) s.gcdHasta = ahora + GCD_MS;
+    if (h.gcd !== false) s.gcdHasta = Math.max(ahora, s.gcdHasta || 0) + GCD_MS;
     if (h.cast) {
       s.cast = { h: h.id, fin: ahora + h.cast, tg: obj ? obj.id : 0, tk: h.obj === 'enemigo' ? 'm' : 'p' };
-      this.aClave(K3, { t: 'cast', p: s.id, id: h.id, ms: h.cast, tg: obj ? obj.id : 0 });
+      this.aCerca3d({ x: s.p.x, z: s.p.z, i3: s.i3 }, { t: 'cast', p: s.id, id: h.id, ms: h.cast, tg: obj ? obj.id : 0 });
       return;
     }
     this.aplicar3d(s, h, obj);
@@ -738,11 +751,11 @@ export const Mundo3D = {
     }
     const necesita = h.obj === 'enemigo' || h.obj === 'aliado' || h.obj === 'muerto';
     if (s.muerto || (necesita && !obj) || s.rec < costoHab(h, s.st.recMax, s.c.espec)) {
-      this.aClave(K3, { t: 'castFin', p: s.id, ok: false });
+      this.aCerca3d({ x: s.p.x, z: s.p.z, i3: s.i3 }, { t: 'castFin', p: s.id, ok: false });
       if (!s.muerto) this.no(s, necesita && !obj ? 'El objetivo ya no está al alcance.' : 'No tienes suficiente recurso.');
       return;
     }
-    this.aClave(K3, { t: 'castFin', p: s.id, ok: true });
+    this.aCerca3d({ x: s.p.x, z: s.p.z, i3: s.i3 }, { t: 'castFin', p: s.id, ok: true });
     this.aplicar3d(s, h, obj);
   },
 
@@ -854,23 +867,30 @@ export const Mundo3D = {
     if (robo) s.hp = Math.min(s.st.maxHp, s.hp + golpes.reduce((a, x) => a + x[1], 0) * robo);
     if (ahora - (s.combateT || 0) < 5000) this.progresoTarea(s, 'hab');
     s.sucio = true;
-    this.aClave(K3, ev);
+    this.aCerca3d({ x: s.p.x, z: s.p.z, i3: s.i3 }, ev);
     if (cdReal) this.enviar(s, { t: 'cd', id: 'h_' + h.id, hasta: cdReal });
   },
 
   // Cada jugador recibe a los demas jugadores y los monstruos que tiene cerca.
   // Los monstruos nuevos llegan con sus datos completos (n); los que salen
   // de la vista, en q.
-  fotos3d(W, jugadores) {
-    // Cada uno ve a los de su misma instancia (mundo abierto o su cueva).
-    const pjs = new Map();
+  fotos3d(W, jugadores, ahora = Date.now()) {
+    // Cada uno ve a los de su misma instancia y a menos de VISTA_PJ (los de su
+    // grupo, siempre); al entrar en vista se presentan con pj3.
+    const fila = new Map();
+    for (const s of jugadores) fila.set(s.id, [s.id, r1(s.p.x), r1(s.p.z), Math.round((s.ry || 0) * 100) / 100, s.a | 0, Math.ceil(s.hp), s.st.maxHp, s.muerto ? 1 : 0, s.h ? r1(s.h) : 0]);
     for (const s of jugadores) {
-      const k = s.i3 || 0;
-      if (!pjs.has(k)) pjs.set(k, []);
-      pjs.get(k).push([s.id, r1(s.p.x), r1(s.p.z), Math.round((s.ry || 0) * 100) / 100, s.a | 0, Math.ceil(s.hp), s.st.maxHp, s.muerto ? 1 : 0, s.h ? r1(s.h) : 0]);
-    }
-    for (const s of jugadores) {
-      const pj = pjs.get(s.i3 || 0);
+      const g = this.grupoDe(s), mios = g ? new Set(g.uids) : null;
+      const antes = s.vistosP || new Set(), veoP = new Set(), pj = [];
+      for (const x of jugadores) {
+        if (!mismo(x, s)) continue;
+        const ya = antes.has(x.id);
+        if (x !== s && !(mios && mios.has(x.c.uid)) && dist(x.p, s.p) > (ya ? SALE_PJ : VISTA_PJ)) continue;
+        veoP.add(x.id);
+        if (!ya && x !== s) this.enviar(s, { t: 'pj3', p: this.info3d(x) });
+        pj.push(fila.get(x.id));
+      }
+      s.vistosP = veoP;
       const ms = [], n = [], q = [];
       const ve = new Set();
       for (const o of W.mons.values()) {
@@ -881,7 +901,7 @@ export const Mundo3D = {
       }
       for (const id of s.vistos) if (!ve.has(id)) q.push(id);
       s.vistos = ve;
-      this.enviar(s, { t: 's3', p: pj, m: ms, n: n.length ? n : undefined, q: q.length ? q : undefined, hp: Math.ceil(s.hp), rec: Math.round(s.rec || 0), cb: s.combo || 0 });
+      this.enviar(s, { t: 's3', ts: ahora, p: pj, m: ms, n: n.length ? n : undefined, q: q.length ? q : undefined, hp: Math.ceil(s.hp), rec: Math.round(s.rec || 0), cb: s.combo || 0 });
     }
   },
 };

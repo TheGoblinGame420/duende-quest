@@ -483,6 +483,11 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 26, fecha: '23 oct 2026', items: [
+    'Combate sin lag: los golpes ya no se pierden por la red, la vida baja al instante, los monstruos se mueven suaves y la recarga de cada habilidad se ve en su botón.',
+    'Cola de hechizos como en WoW: si pulsas una habilidad justo antes de que acabe la recarga global, sale sola.',
+    'Mucho menos tráfico: el juego ya no reenvía todo tu personaje con cada monstruo que matas.',
+  ] },
   { n: 25, fecha: '23 oct 2026', items: [
     'Física nueva en el mundo 3D: ya no se atraviesan casas, troncos, rocas ni personajes; tu duende se desliza por ellos.',
     'Movimiento con inercia ligera (arranca y frena suave, menos agarre en el aire y en el agua) y giro suave hacia donde caminas.',

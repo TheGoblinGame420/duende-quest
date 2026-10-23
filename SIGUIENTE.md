@@ -2390,3 +2390,23 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
   `1 - exp(-agarre·dt)` (16 en el suelo, 3 en el aire, 4 volando, 5
   nadando). Giro suave con `lerpAng`. Medido: se para en z = 48,45 contra una
   casa con borde en 48 y resbala por la pared.
+
+### Combate sin lag (23-oct-2026, `?v=258`) — aplicado de la auditoría de 20 especialistas
+
+- Servidor: `JITTER_MS` = 150 (golpes y habilidades que llegan un poco
+  antes cuentan; la cadencia se mide desde el golpe anterior);
+  'atkNo'/'habNo' para que el cliente reintente; `aCerca3d` (at3, atp3, hb,
+  cast, castFin, b3, pw) solo a los de cerca y de la misma instancia;
+  `fotos3d` con `ts`, jugadores a < 160 m (salen a 190 m, los del grupo
+  siempre) y presentados con pj3; 'yo' diferido en el 3D (`yoLuego`,
+  `vaciarYo` cada 1 s con 'yoC' de ~250 B; 'yo' entero si hay botín,
+  subida o logro); margen de movimiento `vel*1,5+4`.
+- Cliente: `mandarPos(true)` antes de atk3/hab3; cola de hechizos (400 ms);
+  la recarga 'h_<id>' se guarda en `cdHab` (antes nunca se pintaba);
+  interpolación lineal por tramos (`fijarDestino`/`avanzarHacia`);
+  predicción del impacto y vida que baja con at3/hb/ph; balas y ondas con
+  geometría compartida; máximo 24 números; marco del objetivo solo si
+  cambia; `render.compile` al cargar; correcciones pequeñas del servidor
+  repartidas en ~150 ms.
+- Medido en una pelea: 2,5 ms de mediana por cuadro, p95 7,2 ms, sin
+  tareas largas.

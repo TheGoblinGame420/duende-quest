@@ -1217,7 +1217,7 @@ export class MmoWorld {
   }
 
   // Logros: se revisan cuando cambia algo que los pueda cumplir.
-  revisarLogros(s) {
+  revisarLogros(s, diferido) {
     const c = s.c;
     let cambio = false;
     for (const L of LOGROS) {
@@ -1230,7 +1230,7 @@ export class MmoWorld {
       cambio = true;
       this.enviar(s, { t: 'logro', id: L.id, titulo: L.titulo, oro: L.oro });
     }
-    if (cambio) { s.sucio = true; this.actualizarYo(s); }
+    if (cambio) { s.sucio = true; diferido ? this.yoLuego(s, true) : this.actualizarYo(s); }
   }
 
   diariaDe(c) {
@@ -1265,7 +1265,19 @@ export class MmoWorld {
       dios: s.dios ? 1 : 0, diosModo: s.dios ? s.diosModo || {} : undefined,
     };
   }
-  actualizarYo(s) { this.enviar(s, { t: 'yo', yo: this.datosPropios(s) }); }
+  actualizarYo(s) { s.yoPend = null; s.yoT = Date.now(); this.enviar(s, { t: 'yo', yo: this.datosPropios(s) }); }
+  // Mundo 3D: tras cada caza no se reenvia el personaje entero (2-8 KB y un
+  // repintado en el cliente): se marca y tick3d manda como mucho 1 vez/s lo
+  // que cambia al cazar ('yoC', ~250 B). full = hace falta el 'yo' entero
+  // (botin, subida de nivel, logro).
+  yoLuego(s, full) { if (!s.m3) return this.actualizarYo(s); s.yoPend = full || s.yoPend === 'full' ? 'full' : 'caza'; }
+  datosCaza(s) { const c = s.c; return { nivel: c.nivel, xp: c.xp, xpSig: xpParaSubir(c.nivel), oro: c.oro, kills: c.kills, jefes: c.jefes, mis: c.mis, diaria: c.diaria, pw: c.pw, descanso: c.descanso || 0, mat: c.mat || {} }; }
+  vaciarYo(s, ahora) {
+    if (!s.yoPend || ahora - (s.yoT || 0) < 1000) return;
+    if (s.yoPend === 'full') return this.actualizarYo(s);
+    s.yoPend = null; s.yoT = ahora;
+    this.enviar(s, { t: 'yoC', yo: this.datosCaza(s) });
+  }
 
   infoJugador(s) {
     return { ...this.infoApariencia(s), n: s.c.nombre, lv: s.c.nivel, x: Math.round(s.x), y: Math.round(s.y), f: s.f, hp: Math.ceil(s.hp), muerto: s.muerto, au: this.aurasVivas(s.au) };
@@ -1676,7 +1688,7 @@ export class MmoWorld {
     // El descanso duplica la experiencia de cada caza hasta gastarse.
     const extra = Math.min(c.descanso || 0, xp);
     if (extra > 0) { c.descanso -= extra; xp += extra; }
-    this.sumarXp(s, xp);
+    const subio = this.sumarXp(s, xp);
     // Drops: pociones y, en jefes, poderes raros.
     const drops = [];
     // Premio de chicha morada: cada caza suma sus puntos (no es al azar).
@@ -1743,8 +1755,8 @@ export class MmoWorld {
     }
     s.sucio = true;
     this.enviar(s, { t: 'gana', xp, oro, drops, item, cal: cal || undefined, tp: cal ? tp.id : undefined, chi: chi || undefined, x: Math.round(o ? o.x : s.x), y: Math.round(o ? o.y - o.h : s.y - 60) });
-    this.revisarLogros(s);
-    this.actualizarYo(s);
+    this.revisarLogros(s, true);
+    this.yoLuego(s, subio || !!item);
   }
 
   // Entregar la mision (o la diaria) al Guardia Tito.
