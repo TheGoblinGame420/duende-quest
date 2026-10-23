@@ -458,6 +458,10 @@ export const TINTES = {
 // enseñan una vez (lo nuevo para los que vuelven). La mas reciente arriba;
 // subir 'n' al añadir una.
 export const NOVEDADES = [
+  { n: 14, fecha: '23 oct 2026', items: [
+    'Mundo 3D con modelos 3D de verdad: tu duende lleva el casco, la capucha o el sombrero de su clase y su arma; más de 70 monstruos con su propio cuerpo y animaciones.',
+    'Monturas con jinete, alas a la espalda y una cámara que ya no se queda detrás de los árboles.',
+  ] },
   { n: 13, fecha: '23 oct 2026', items: [
     'Jefe mundial del 3D: a las :15 y :45 aparece en el Claro del Titán. ¡Esquiva sus pisotones saliendo del círculo rojo!',
     'Todos los niveles reciben premio: XP, oro, una pieza de equipo y mTON.',

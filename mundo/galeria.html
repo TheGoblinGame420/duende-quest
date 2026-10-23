@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Galería de modelos 3D</title>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }</script>
+<style>
+:root{--bg:#0a0418;--panel:#140c2a;--borde:rgba(160,140,255,.22);--txt:#f2efff;--txt2:#b8b0d8;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font:13px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:12px 16px 40px}
+h1{font-size:18px;margin-bottom:6px}
+.barra{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0 12px;position:sticky;top:0;background:var(--bg);padding:6px 0;z-index:3}
+.barra select,.barra button,.barra label{background:var(--panel);color:var(--txt);border:1px solid var(--borde);border-radius:6px;padding:5px 8px;font:inherit}
+#qa{background:var(--panel);border:1px solid var(--borde);border-radius:8px;padding:8px 10px;margin-bottom:12px;white-space:pre-wrap;font:12px ui-monospace,Consolas,monospace;color:var(--txt2);max-height:180px;overflow:auto}
+h2{font-size:14px;margin:14px 0 6px;color:var(--txt2)}
+.rejilla{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
+.celda{background:var(--panel);border:1px solid var(--borde);border-radius:8px;overflow:hidden;cursor:pointer}
+.vista{height:190px}
+.info{padding:5px 7px;line-height:1.35}
+.info b{display:block;font-size:12px}
+.info small{color:var(--txt2);font-size:11px}
+.info .mal{color:var(--err)}
+.compacta .rejilla{grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:3px}.compacta .vista{height:130px}.compacta .info small{display:none}.compacta .info b{font-size:10px}.compacta body{padding:2px}.compacta h1,.compacta .barra,.compacta #qa{display:none}
+#lienzo{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+</style>
+</head>
+<body>
+<h1>Duende Quest 3D: galería de modelos</h1>
+<div class="barra">
+  <label>Estado <select id="estado"><option value="auto">ciclo automático</option></select></label>
+  <label><input type="checkbox" id="gira" checked> girar</label>
+  <button id="golpes">golpe() a todos</button>
+  <span id="cuenta"></span>
+</div>
+<div id="qa">Cargando…</div>
+<div id="secciones"></div>
+<canvas id="lienzo"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { MONSTRUOS, SKINS, CLASES, ARMAS, MONTURAS } from '/mmo/js/data.js?v=246';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './js/modelos.js?v=246';
+
+// Parametros: ?filtro=texto&estado=quieto&gira=0&ry=1.57&compacta=1
+const Q = new URLSearchParams(location.search);
+const RY = parseFloat(Q.get('ry') || '0.5');
+const FILTRO = (Q.get('filtro') || '').toLowerCase();
+if (Q.get('compacta')) document.documentElement.classList.add('compacta');
+const ESTADOS = ['quieto', 'anda', 'corre', 'ataca', 'lanza', 'herido', 'muere', 'salta', 'vuela', 'nada'];
+const DUR = { ataca: 0.8, herido: 0.8, muere: 2.2 };
+const sel = document.getElementById('estado');
+for (const e of ESTADOS) sel.add(new Option(e, e));
+if (Q.get('estado')) sel.value = Q.get('estado');
+if (Q.get('gira') === '0') document.getElementById('gira').checked = false;
+const qa = document.getElementById('qa');
+const errores = [];
+addEventListener('error', e => { errores.push(String(e.message)); pintarQA(); });
+
+const lienzo = document.getElementById('lienzo');
+const render = new THREE.WebGLRenderer({ canvas: lienzo, antialias: true, alpha: true });
+render.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+render.outputColorSpace = THREE.SRGBColorSpace;
+render.setScissorTest(true);
+
+precalentar();
+
+// Lista de modelos a mostrar.
+const grupos = [];
+const duendes = [];
+for (const s of Object.keys(SKINS)) duendes.push({ nombre: 'Duende ' + SKINS[s].nombre, sub: `skin ${s} · sin clase · katana`, crear: () => crearDuende({ skin: s, clase: null, arma: 'katana' }) });
+for (const cl of Object.keys(CLASES)) for (const a of (CLASES[cl].basico === 'vara' ? ['katana'] : Object.keys(ARMAS)))
+  duendes.push({ nombre: `${CLASES[cl].nombre} · ${CLASES[cl].basico === 'vara' ? 'vara' : ARMAS[a].nombre}`, sub: `clase ${cl} · arma ${a}`, crear: () => crearDuende({ skin: 'comun', clase: cl, arma: a }) });
+for (const a of Object.keys(ARMAS)) duendes.push({ nombre: 'Duende · ' + ARMAS[a].nombre, sub: `skin legendaria · ${a}`, crear: () => crearDuende({ skin: 'legendaria', arma: a }) });
+grupos.push(['Jugador (crearDuende)', duendes]);
+grupos.push(['Monstruos (crearMonstruo)', Object.keys(MONSTRUOS).map(k => ({ nombre: MONSTRUOS[k].nombre, sub: `${k} · ${MONSTRUOS[k].hoja}${MONSTRUOS[k].jefe ? ' · JEFE' : ''}`, crear: () => crearMonstruo(k) }))]);
+grupos.push(['NPC (crearNpc)', ['goblin_guard', 'goblin_peasant', 'hechicero', 'goblin_mage'].map(h => ({ nombre: 'NPC ' + h, sub: h, crear: () => crearNpc(h) }))]);
+grupos.push(['Monturas (crearMontura) con jinete en .silla (estado «monta»)', Object.keys(MONTURAS).map(id => ({ nombre: MONTURAS[id].nombre, sub: `${id} · ${MONTURAS[id].hoja}`, montura: id, crear: () => crearMontura(id) }))]);
+grupos.push(['Monturas sin jinete', Object.keys(MONTURAS).map(id => ({ nombre: MONTURAS[id].nombre, sub: `${id} · ${MONTURAS[id].hoja}`, crear: () => crearMontura(id) }))]);
+
+// Celdas: cada una con su escena, luz y camara.
+const celdas = [];
+const informe = [];
+const raiz = document.getElementById('secciones');
+const box = new THREE.Box3();
+let total = 0, mallasTotal = 0;
+for (const [titulo, lista] of grupos) {
+  const h2 = document.createElement('h2'); h2.textContent = titulo; raiz.appendChild(h2);
+  const rej = document.createElement('div'); rej.className = 'rejilla'; raiz.appendChild(rej);
+  for (const it of lista) {
+    if (FILTRO && !(it.nombre + ' ' + it.sub).toLowerCase().includes(FILTRO)) continue;
+    const d = document.createElement('div'); d.className = 'celda';
+    d.innerHTML = '<div class="vista"></div><div class="info"><b></b><small></small><small class="est"></small></div>';
+    d.querySelector('b').textContent = it.nombre;
+    rej.appendChild(d);
+    let m = null;
+    try { m = it.crear(); } catch (e) { errores.push(it.sub + ': ' + e.message); console.error(e); }
+    const escena = new THREE.Scene();
+    escena.add(new THREE.HemisphereLight(0xffffff, 0x6a7a58, 1.1));
+    const sol = new THREE.DirectionalLight(0xfff2dd, 1.1); sol.position.set(3, 6, 4); escena.add(sol);
+    const suelo = new THREE.Mesh(new THREE.CircleGeometry(1, 24).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x2a2244 }));
+    escena.add(suelo);
+    let jinete = null, nMallas = 0, notas = [];
+    if (m) {
+      escena.add(m.obj);
+      nMallas = m.mallas.length;
+      if (it.montura && m.silla) { jinete = crearDuende({ skin: 'comun', clase: 'guerrero', arma: 'katana' }); m.silla.add(jinete.obj); }
+      // QA: pies en y = 0 y alto pedido.
+      m.animar('quieto', 0, 0);
+      m.obj.updateMatrixWorld(true);
+      box.setFromObject(m.obj, true);
+      if (m.r && m.r.modo !== 'flota' && Math.abs(box.min.y) > 0.05 * m.alto + 0.02) notas.push(`pies y=${box.min.y.toFixed(2)}`);
+      if (nMallas > 30) notas.push(`${nMallas} mallas`);
+      if (!(m.alto > 0)) notas.push('alto inválido');
+      suelo.scale.setScalar(Math.max(0.6, m.ancho * 0.6));
+      total++; mallasTotal += nMallas;
+    }
+    const alto = m ? Math.max(m.alto * (jinete ? 1.6 : 1), (m.ancho || 1) * 0.45) : 1.8;
+    const cam = new THREE.PerspectiveCamera(32, 1, 0.05, 200);
+    const dist = alto * 2.3 + 0.8;
+    cam.position.set(dist * 0.55, alto * 0.75, dist);
+    cam.lookAt(0, alto * 0.45, 0);
+    const info = d.querySelector('small');
+    info.textContent = `${it.sub} · ${m ? m.alto.toFixed(2) + ' m · ' + nMallas + ' mallas' : 'ERROR'}`;
+    if (notas.length || !m) { const s = document.createElement('small'); s.className = 'mal'; s.textContent = ' ⚠ ' + (notas.join(', ') || 'no se pudo crear'); info.after(s); }
+    informe.push({ sub: it.sub, mallas: nMallas, alto: m && m.alto, notas });
+    const c = { lista: it.crear.toString().includes('crearMontura') ? ['quieto', 'anda', 'corre'] : ESTADOS, d, vista: d.querySelector('.vista'), est: d.querySelector('.est'), escena, cam, m, jinete, fase: Math.random() * 10, estado: 'quieto', t0: 0 };
+    d.addEventListener('click', () => { if (m) m.golpe(); });
+    celdas.push(c);
+  }
+}
+document.getElementById('golpes').onclick = () => celdas.forEach(c => c.m && c.m.golpe());
+document.getElementById('cuenta').textContent = `${total} modelos · media ${(mallasTotal / Math.max(1, total)).toFixed(1)} mallas`;
+window.QA = { informe, errores };
+function pintarQA() {
+  const malos = informe.filter(x => x.notas.length);
+  const max = informe.reduce((a, x) => Math.max(a, x.mallas), 0);
+  qa.textContent = `Modelos: ${informe.length} · máx. mallas ${max} · avisos ${malos.length} · errores ${errores.length}\n` +
+    malos.map(x => `⚠ ${x.sub}: ${x.notas.join(', ')}`).join('\n') + (errores.length ? '\n' + errores.map(e => '✖ ' + e).join('\n') : '');
+}
+pintarQA();
+
+// Bucle: una sola WebGL, cada celda se dibuja en su recuadro (scissor).
+const reloj = new THREE.Clock();
+function bucle() {
+  const t = reloj.getElapsedTime();
+  const w = innerWidth, h = innerHeight;
+  if (lienzo.width !== Math.floor(w * render.getPixelRatio()) || lienzo.height !== Math.floor(h * render.getPixelRatio())) render.setSize(w, h, false);
+  render.setScissor(0, 0, w, h); render.clear();
+  const fijo = sel.value, gira = document.getElementById('gira').checked;
+  for (const c of celdas) {
+    const r = c.vista.getBoundingClientRect();
+    if (r.bottom < 0 || r.top > h || r.right < 0 || r.left > w) continue;
+    if (!c.m) continue;
+    // Estado: fijo o en ciclo.
+    let est = fijo;
+    if (fijo === 'auto') {
+      const dur = DUR[c.estado] || 1.6;
+      if (t - c.t0 > dur || c.estado === 'quieto' && c.t0 === 0) {
+        const L = c.lista, i = (L.indexOf(c.estado) + 1) % L.length;
+        c.estado = c.t0 === 0 ? L[Math.floor(c.fase) % L.length] : L[i]; c.t0 = t;
+      }
+      est = c.estado;
+    } else if (c.estado !== fijo) { c.estado = fijo; c.t0 = t; }
+    const te = t - c.t0;
+    // Ataque y herido se repiten dentro de su ventana.
+    const teA = est === 'ataca' ? te % 0.8 : est === 'herido' ? te % 0.8 : est === 'muere' ? te % 2.2 : te;
+    c.m.animar(est, teA, t + c.fase);
+    if (c.jinete) c.jinete.animar('monta', 0, t + c.fase);
+    c.m.obj.rotation.y = gira ? t * 0.6 + c.fase : RY;
+    if (c.est.textContent !== est) c.est.textContent = ' · ' + est;
+    c.cam.aspect = r.width / r.height; c.cam.updateProjectionMatrix();
+    render.setViewport(r.left, h - r.bottom, r.width, r.height);
+    render.setScissor(r.left, h - r.bottom, r.width, r.height);
+    render.render(c.escena, c.cam);
+  }
+  requestAnimationFrame(bucle);
+}
+bucle();
+</script>
+</body>
+</html>

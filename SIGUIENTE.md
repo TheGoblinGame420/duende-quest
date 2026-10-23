@@ -2216,3 +2216,24 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
 - Moderadores: escribir `/jefe` en el chat del 3D lo invoca ya (acción
   `dios` `mundial3`).
 
+### Modelos 3D (23-oct-2026, `?v=246`)
+
+- `mundo/js/modelos.js`: modelos low-poly hechos con primitivas (sin
+  texturas), con rig animado por código. API: `crearDuende({skin, clase,
+  arma})`, `crearMonstruo(k)` (las 76 claves de MONSTRUOS, 30 arquetipos),
+  `crearNpc(hoja)`, `crearMontura(id)` (con `.silla`), `precalentar()`.
+  Estados: quieto, anda, corre, ataca, lanza, herido, muere, salta, vuela,
+  nada, monta. Geometrías y materiales compartidos (≤30 mallas por modelo):
+  no tocar la opacidad/color de un material sin clonarlo.
+- `mundo/galeria.html`: los 122 modelos (`?filtro=&estado=ataca&gira=0`,
+  `window.QA` = informe de mallas).
+- `mundo.js`: `Figura3D` envuelve un Modelo con la interfaz de la Figura de
+  sprites (poner/quitar/m para el clic con un cilindro invisible). Si un
+  modelo falla, cae al sprite; `?sprites=1` (o localStorage `dq3_sprites=1`)
+  fuerza los sprites. Jinete con `'monta'` en la silla de la montura; alas
+  en la espalda (también se ven las de otros jugadores); nombre más alto al
+  ir montado.
+- Cámara: rejilla de árboles de 8 m; si uno se mete entre la cámara y el
+  duende, la cámara se acerca (`choqueCamara`).
+- Medido: 3,5 ms por cuadro con 10-12 monstruos (sprites: 2,6 ms).
+

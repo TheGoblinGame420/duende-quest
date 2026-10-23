@@ -13,9 +13,10 @@
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
-  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura } from '/mmo/js/data.js?v=245';
-import { iniciarVentanas } from './ventanas.js?v=245';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=245';
+  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura } from '/mmo/js/data.js?v=246';
+import { iniciarVentanas } from './ventanas.js?v=246';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=246';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=246';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -127,6 +128,28 @@ const FLORA = {
   acantilados: [['magico', 0.24, '#e879f9'], ['cristal', 0.07, '#c084fc']],
   pueblo:      [['redondo', 0.05, '#4cae4c']],
 };
+// Arboles altos en una rejilla de 8 m: la camara se acerca si uno se mete
+// entre ella y el duende (como en WoW).
+const REJ = 8, rejilla = new Map();
+const TAPAN = { pino: 1.7, nieve: 1.8, redondo: 2.1, muerto: 0.5, cactus: 0.6, pilar: 1.1, palma: 0.5, magico: 1.9 };
+// Distancia (0..1 del segmento) a la que la camara choca con un arbol, o 1.
+function choqueCamara(tx, tz, cx, cz) {
+  let k = 1;
+  const dx = cx - tx, dz = cz - tz, l2 = dx * dx + dz * dz || 1;
+  const x0 = Math.floor(Math.min(tx, cx) / REJ), x1 = Math.floor(Math.max(tx, cx) / REJ);
+  const z0 = Math.floor(Math.min(tz, cz) / REJ), z1 = Math.floor(Math.max(tz, cz) / REJ);
+  for (let gx = x0; gx <= x1; gx++) for (let gz = z0; gz <= z1; gz++) {
+    const l = rejilla.get(gx + ',' + gz);
+    if (!l) continue;
+    for (const a of l) {
+      const u = clamp(((a.x - tx) * dx + (a.z - tz) * dz) / l2, 0, 1);
+      if (u < 0.08) continue;   // pegado al duende: no acercar de golpe
+      const d = Math.hypot(tx + dx * u - a.x, tz + dz * u - a.z);
+      if (d < a.r) k = Math.min(k, u - a.r / Math.sqrt(l2));
+    }
+  }
+  return clamp(k, 0.15, 1);
+}
 function crearFlora() {
   const tipos = {};
   const campos = campamentos(MAPAS, MONSTRUOS);
@@ -143,7 +166,9 @@ function crearFlora() {
     for (const [tipo, dens, color] of FLORA[zona] || []) {
       if (r < dens) {
         if (campos.some(c => Math.hypot(c.x - jx, c.z - jz) < 7)) break;
-        (tipos[tipo] = tipos[tipo] || []).push({ x: jx, z: jz, y: h, s: 0.75 + hashR(x, z, 4) * 0.6, rot: hashR(x, z, 5) * 6.28, color });
+        const s = 0.75 + hashR(x, z, 4) * 0.6;
+        (tipos[tipo] = tipos[tipo] || []).push({ x: jx, z: jz, y: h, s, rot: hashR(x, z, 5) * 6.28, color });
+        if (TAPAN[tipo]) { const kc = Math.floor(jx / REJ) + ',' + Math.floor(jz / REJ); let c = rejilla.get(kc); if (!c) rejilla.set(kc, c = []); c.push({ x: jx, z: jz, r: TAPAN[tipo] * s }); }
         break;
       }
       r -= dens;
@@ -268,7 +293,7 @@ anillo.visible = false;
 escena.add(anillo);
 
 // Alas de luz (vuelo estilo AION).
-const alasMesh = (() => {
+function nuevasAlas() {
   const g = new THREE.Group();
   const forma = new THREE.Shape();
   forma.moveTo(0, 0); forma.quadraticCurveTo(0.9, 0.9, 2.1, 0.7); forma.quadraticCurveTo(1.4, 0.1, 1.9, -0.4); forma.quadraticCurveTo(0.9, -0.3, 0, 0);
@@ -280,7 +305,14 @@ const alasMesh = (() => {
   g.visible = false;
   escena.add(g);
   return g;
-})();
+}
+const alasMesh = nuevasAlas();
+// Alas en la espalda (ry = hacia donde mira; con sprites, hacia la camara).
+function ponerAlas(g, x, y, z, ry, t) {
+  const bat = Math.sin(t / 120) * 0.5;
+  g.position.set(x - Math.sin(ry) * 0.25, y + 1.15, z - Math.cos(ry) * 0.25); g.rotation.set(0, ry, 0);
+  g.children[0].rotation.y = 0.5 + bat; g.children[1].rotation.y = -0.5 - bat;
+}
 class Figura {
   // ancho/alto en metros del cuadro entero de la hoja.
   constructor(mat, ancho, alto, cols, filas) {
@@ -308,6 +340,70 @@ class Figura {
   }
   quitar() { escena.remove(this.m, this.sombra); this.g.dispose(); this.sombra.geometry.dispose(); }
 }
+// ── MODELOS 3D (mundo/js/modelos.js) ──
+// Figura3D tiene la misma interfaz que Figura (poner, quitar y 'm' para
+// elegir con el raton). Con ?sprites=1 se vuelve a los sprites de siempre.
+let USAR_MODELOS = true;
+try { if (/[?&]sprites=1/.test(location.search) || localStorage.getItem('dq3_sprites') === '1') USAR_MODELOS = false; } catch (e) {}
+const golpeGeo = new THREE.CylinderGeometry(1, 1, 1, 8).translate(0, 0.5, 0);
+const golpeMat = new THREE.MeshBasicMaterial({ visible: false });
+const sombraGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+const vSilla = new THREE.Vector3();
+class Figura3D {
+  constructor(modelo, escala) {
+    this.tipo = 'modelo'; this.modelo = modelo; this.escala = escala || 1;
+    this.raiz = new THREE.Group(); this.raiz.add(modelo.obj); this.raiz.scale.setScalar(this.escala);
+    this.alto = modelo.alto * this.escala;
+    // Cilindro invisible para el clic (mas facil de acertar que las piezas).
+    const r = Math.max(0.45, modelo.alto * 0.32);
+    this.m = new THREE.Mesh(golpeGeo, golpeMat); this.m.scale.set(r, modelo.alto, r); this.raiz.add(this.m);
+    this.sombra = new THREE.Mesh(sombraGeo, sombraTex); this.sombra.scale.setScalar(Math.max(1.2, this.alto * 0.8));
+    this.est = 'quieto'; this.tE = 0; this.montura = null; this.mId = '';
+    escena.add(this.raiz, this.sombra);
+  }
+  estado(e, t) { if (e !== this.est) { this.est = e; this.tE = t; } }
+  // Montura bajo el jinete (id de MONTURAS o '').
+  montar(id) {
+    if (id === this.mId) return;
+    if (this.montura) { escena.remove(this.montura.obj); this.montura.dispose(); this.montura = null; }
+    this.mId = id || '';
+    if (id) { try { this.montura = crearMontura(id); escena.add(this.montura.obj); } catch (e) { console.warn(e); this.mId = ''; } }
+  }
+  poner(x, y, z, ry, t, escala) {
+    const ts = t / 1000;
+    if (this.montura) {
+      const mo = this.montura;
+      mo.obj.position.set(x, y, z); mo.obj.rotation.set(0, ry, 0);
+      mo.animar(this.andaMontura ? 'corre' : 'quieto', ts, ts);
+      mo.obj.updateMatrixWorld(true);
+      mo.silla.getWorldPosition(vSilla);
+      this.raiz.position.copy(vSilla);
+    } else this.raiz.position.set(x, y - (this.est === 'nada' ? 0.45 : 0), z);
+    this.raiz.rotation.set(0, ry, 0);
+    const k = escala === undefined ? 1 : escala;
+    this.raiz.scale.setScalar(this.escala * k);
+    this.modelo.animar(this.est, (t - this.tE) / 1000, ts);
+    this.sombra.position.set(x, alturaEn(x, z) + 0.05, z);
+  }
+  quitar() { this.montar(''); escena.remove(this.raiz, this.sombra); this.modelo.dispose(); }
+}
+function figuraModelo(crear, escala) {
+  if (!USAR_MODELOS) return null;
+  try { return new Figura3D(crear(), escala); } catch (e) { console.warn('Modelo 3D:', e); return null; }
+}
+const altoFig = f => f.alto || f.g.parameters.height * 0.85;
+// Estado de animacion de un jugador.
+function estadoJugador(q, esYo, t, anda) {
+  if (esYo ? P.muerto : q.muerto) return 'muere';
+  if (t - (q.atkT || 0) < 420) return 'ataca';
+  if (esYo ? !!lanzando : (q.lanza || 0) > t) return 'lanza';
+  if (t - (q.heridoT || 0) < 250) return 'herido';
+  if (esYo ? P.vuela : q.a === 3) return 'vuela';
+  if (esYo && !P.suelo && P.vy > -6) return 'salta';
+  if (anda && alturaEn(q.x, q.z) < -0.7) return 'nada';
+  return anda ? 'corre' : 'quieto';
+}
+
 // Cuadros de la hoja del duende (los mismos del 2D).
 const ANIM_IDX = { reposo: [1, 2, 3], camina: [4, 5, 6, 7, 8, 9], ataca: [10, 11, 12, 13, 14], herido: [15, 16, 17] };
 let ANIM = null;
@@ -375,7 +471,7 @@ const otros = new Map();     // id -> { x, z, ry, a, hp, mx, n, lv, cl, sk, fig,
 const mons = new Map();      // id -> { k, nv, x, z, ry, hp, mx, st, fig, lbl, tx, tz, muereT }
 const npcs = [];
 let objetivo = 0, autoAtk = false, sigAtk = 0, avisoLejosT = 0;
-let camYaw = Math.PI, camPitch = 0.42, camDist = 11;
+let camYaw = Math.PI, camPitch = 0.42, camDist = 11, camReal = 11;
 let zonaActual = '';
 let portal = null, agua = null;
 const teclas = {};
@@ -447,7 +543,7 @@ function recibir(m) {
     case 'yo': {
       const antes = yo; yo = m.yo;
       V.actualizar();
-      if (antes && yo.skin !== antes.skin) cambiarSkinPropia();
+      if (antes && (yo.skin !== antes.skin || yo.clase !== antes.clase || yo.arma !== antes.arma)) cambiarSkinPropia();
       if (yo.muerto && !(antes && antes.muerto)) morir();
       if (!yo.muerto) { cerrar('v-muerte'); P.muerto = false; }
       if (yo.clase) cerrar('v-clase');
@@ -458,7 +554,7 @@ function recibir(m) {
     case 's3': foto(m); break;
     case 'pj3': agregarOtro(m.p); break;
     case 'pl': quitarOtro(m.id); break;
-    case 'pa': { const o = otros.get(m.p); if (o) { const cambia = o.sk !== m.sk; Object.assign(o, { sk: m.sk, cl: m.cl || '', gm: m.gm || 0 }); if (cambia) rehacerFiguraOtro(o); } break; }
+    case 'pa': { const o = otros.get(m.p); if (o) { const cambia = o.sk !== m.sk || o.cl !== (m.cl || '') || o.ar !== (m.ar || 'katana'); Object.assign(o, { sk: m.sk, cl: m.cl || '', ar: m.ar || 'katana', mo: m.mo || '', gm: m.gm || 0 }); if (cambia) rehacerFiguraOtro(o); } break; }
     case 'mundial3': mundial3 = { ...m, recibido: Date.now() }; break;
     case 'zona3': {
       // Pisoton: el circulo rojo se llena y, al llenarse, golpea.
@@ -521,31 +617,33 @@ function recibir(m) {
 }
 
 // ── JUGADORES Y MONSTRUOS ──
+const claveYo = () => yo.skin + '|' + (yo.clase || '') + '|' + (yo.arma || '');
 async function cambiarSkinPropia() {
-  if (!yo || P.cargando === yo.skin) return;
-  if (P.fig && P.skin === yo.skin) return;
-  const skin = P.cargando = yo.skin;
-  const f = await figuraJugador(skin);
+  if (!yo) return;
+  const clave = claveYo();
+  if (P.cargando === clave || (P.fig && P.skin === clave)) return;
+  P.cargando = clave;
+  const f = figuraModelo(() => crearDuende({ skin: yo.skin, clase: yo.clase || null, arma: yo.arma || 'katana' })) || await figuraJugador(yo.skin);
   P.cargando = '';
   if (!f) return;
   if (P.fig) P.fig.quitar();
-  P.fig = f; P.skin = skin;
+  P.fig = f; P.skin = clave;
 }
 async function agregarOtro(p) {
   if (!p || p.id === miId || p.p === miId) return;
   const id = p.id || p.p;
   quitarOtro(id);
-  const o = { id, x: p.x, z: p.z, tx: p.x, tz: p.z, ry: p.r || 0, a: 0, hp: p.hp, mx: p.mx, n: p.n, lv: p.lv, cl: p.cl || '', sk: p.sk || 'comun', gm: p.gm || 0, muerto: !!p.muerto, fig: null, lbl: etiqueta('pj'), f: 1 };
+  const o = { id, x: p.x, z: p.z, tx: p.x, tz: p.z, ry: p.r || 0, a: 0, hp: p.hp, mx: p.mx, n: p.n, lv: p.lv, cl: p.cl || '', sk: p.sk || 'comun', ar: p.ar || 'katana', mo: p.mo || '', gm: p.gm || 0, muerto: !!p.muerto, fig: null, lbl: etiqueta('pj'), f: 1 };
   otros.set(id, o);
   rehacerFiguraOtro(o);
 }
 async function rehacerFiguraOtro(o) {
-  const f = await figuraJugador(o.sk);
+  const f = figuraModelo(() => crearDuende({ skin: o.sk, clase: o.cl || null, arma: o.ar || 'katana' })) || await figuraJugador(o.sk);
   if (!otros.has(o.id)) { if (f) f.quitar(); return; }
   if (o.fig) o.fig.quitar();
   o.fig = f;
 }
-function quitarOtro(id) { const o = otros.get(id); if (!o) return; if (o.fig) o.fig.quitar(); o.lbl.remove(); otros.delete(id); }
+function quitarOtro(id) { const o = otros.get(id); if (!o) return; if (o.fig) o.fig.quitar(); if (o.alas) escena.remove(o.alas); o.lbl.remove(); otros.delete(id); }
 async function agregarMon(d) {
   if (mons.has(d.id)) return;
   const def = MONSTRUOS[d.k];
@@ -554,7 +652,7 @@ async function agregarMon(d) {
   const o = { id: d.id, k: d.k, nv: d.nv, x: d.x, z: d.z, tx: d.x, tz: d.z, ry: 0, hp: d.hp, mx: d.mx, st: 0, j: d.j, fig: null, lbl: etiqueta(d.j ? 'jefe' : ''), nace: performance.now(), muereT: 0, golpeT: 0, f: 1 };
   mons.set(d.id, o);
   o.mu = !!d.mu;
-  o.fig = await figuraHoja(def.hoja, st.alto * (d.mu ? 2.4 : d.j ? 1.15 : 1));
+  o.fig = figuraModelo(() => crearMonstruo(d.k), d.mu ? 2.4 : d.j ? 1.15 : 1) || await figuraHoja(def.hoja, st.alto * (d.mu ? 2.4 : d.j ? 1.15 : 1));
   if (!mons.has(d.id) && o.fig) { o.fig.quitar(); o.fig = null; }
 }
 function quitarMon(id) { const o = mons.get(id); if (!o) return; if (o.fig) o.fig.quitar(); o.lbl.remove(); mons.delete(id); if (objetivo === id) { objetivo = 0; autoAtk = false; pintarBarra(); } }
@@ -664,7 +762,7 @@ function pintarHud() {
   if (cl) $('m-rec').firstElementChild.style.background = RECURSOS[cl.recurso].color;
   $('xp').firstElementChild.style.transform = `scaleX(${clamp(yo.xp / (yo.xpSig || xpParaSubir(yo.nivel)), 0, 1)})`;
   pintarVida(); pintarBarra();
-  if (!P.fig || P.skin !== yo.skin) cambiarSkinPropia();
+  if (!P.fig || P.skin !== claveYo()) cambiarSkinPropia();
 }
 function pintarVida() {
   if (!yo) return;
@@ -1128,6 +1226,21 @@ function animarJugador(q, esYo, t) {
   const anda = esYo ? P.anda : q.a === 1;
   if (!esYo) { const dx = q.tx - q.x, dz = q.tz - q.z; if (Math.abs(dx * der.x + dz * der.z) > 0.02) q.f = (dx * der.x + dz * der.z) > 0 ? 1 : -1; }
   const mira = (esYo ? P.f : q.f) !== -1;
+  if (f.tipo === 'modelo') {
+    const mo = esYo ? (yo && yo.montado) || '' : q.mo || '';
+    f.montar(P.vuela && esYo ? '' : mo);
+    f.andaMontura = anda;
+    const e = estadoJugador(q, esYo, t, anda);
+    f.estado(f.montura && e !== 'ataca' && e !== 'lanza' && e !== 'muere' ? 'monta' : e, t);
+    if ((q.heridoT || 0) !== f.heridoVisto) { f.heridoVisto = q.heridoT || 0; if (t - f.heridoVisto < 300) f.modelo.golpe(); }
+    f.poner(q.x, y, q.z, esYo ? P.ry : q.ry, t);
+    if (!esYo) {
+      const vuela = q.a === 3;
+      if (vuela && !q.alas) q.alas = nuevasAlas();
+      if (q.alas) { q.alas.visible = vuela; if (vuela) ponerAlas(q.alas, q.x, y, q.z, q.ry, t); }
+    }
+    return;
+  }
   if (f.tipo === 'anim') {
     let lista = ANIM_IDX.reposo, vel = 0.23;
     const atk = t - (q.atkT || 0) < 350, herido = t - (q.heridoT || 0) < 250;
@@ -1145,6 +1258,19 @@ function animarJugador(q, esYo, t) {
 function animarMon(o, t) {
   const f = o.fig;
   if (!f) return;
+  if (f.tipo === 'modelo') {
+    const mueve = o.st === 1 || Math.hypot(o.tx - o.x, o.tz - o.z) > 0.05;
+    let e = o.muereT ? 'muere' : o.st === 2 ? 'ataca' : t - o.golpeT < 220 ? 'herido' : mueve ? (o.st === 1 ? 'corre' : 'anda') : 'quieto';
+    if (MONSTRUOS[o.k].vuela && !o.muereT && e !== 'ataca') e = 'vuela';
+    f.estado(e, t);
+    if (e === 'ataca' && t - f.tE > (o.j ? 1250 : 1600)) f.tE = t;   // un golpe por ataque del servidor
+    if (o.golpeT !== f.golpeVisto) { f.golpeVisto = o.golpeT; if (t - o.golpeT < 300) f.modelo.golpe(); }
+    const def = MONSTRUOS[o.k];
+    const y = Math.max(alturaEn(o.x, o.z), def.vuela ? alturaEn(o.x, o.z) + 1.2 : MUNDO.agua - 0.9);
+    o.ryV = lerpAng(o.ryV === undefined ? o.ry : o.ryV, o.ry, 0.2);
+    f.poner(o.x, y, o.z, o.ryV, t, Math.min(1, (t - o.nace) / 400));
+    return;
+  }
   const h = f.hoja;
   const dx = o.tx - o.x, dz = o.tz - o.z;
   const sx = Math.sin(o.ry), sz = Math.cos(o.ry);
@@ -1175,14 +1301,14 @@ function etiquetas(t) {
     lbl.style.transform = `translate(${s[0].toFixed(1)}px,${s[1].toFixed(1)}px) translate(-50%,-100%)`;
     if (extra) extra(lbl);
   };
-  if (yo && P.lbl) ponLbl(P.lbl, P.x, P.y + 2.15, P.z, `<span style="color:${yo.dios ? '#ffd84a' : '#ffe600'}">${yo.dios ? 'GM ' : ''}${esc(yo.nombre)}</span>`, 999);
+  if (yo && P.lbl) ponLbl(P.lbl, P.x, P.y + 2.15 + (P.fig && P.fig.montura ? 1.2 : 0), P.z, `<span style="color:${yo.dios ? '#ffd84a' : '#ffe600'}">${yo.dios ? 'GM ' : ''}${esc(yo.nombre)}</span>`, 999);
   for (const o of otros.values()) {
     const cl = CLASES[o.cl];
-    ponLbl(o.lbl, o.x, (o.y || alturaEn(o.x, o.z)) + 2.15, o.z, `<span style="color:${o.gm ? '#ffd84a' : cl ? cl.color : '#fff'}">${o.gm ? 'GM ' : ''}${esc(o.n)} · Nv${o.lv}</span><span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>`, 70);
+    ponLbl(o.lbl, o.x, (o.y || alturaEn(o.x, o.z)) + 2.15 + (o.fig && o.fig.montura ? 1.2 : 0), o.z, `<span style="color:${o.gm ? '#ffd84a' : cl ? cl.color : '#fff'}">${o.gm ? 'GM ' : ''}${esc(o.n)} · Nv${o.lv}</span><span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>`, 70);
   }
   for (const o of mons.values()) {
     const def = MONSTRUOS[o.k], el = o.id === objetivo;
-    const alto = o.fig ? o.fig.g.parameters.height * 0.85 : 2;
+    const alto = o.fig ? altoFig(o.fig) : 2;
     const herido = o.hp < o.mx || el;
     ponLbl(o.lbl, o.x, alturaEn(o.x, o.z) + alto + 0.2, o.z, `<span style="color:${o.j ? '#ff6bf0' : colorNivel(o.nv)}">${o.j ? '★ ' : ''}${herido || o.j ? esc(def.nombre) + ' ' : ''}Nv${o.nv}</span>${herido ? `<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>` : ''}`, el ? 90 : (o.j ? 70 : 38));
   }
@@ -1206,7 +1332,11 @@ function bucle(t) {
     animarMon(o, t);
   }
   if (P.fig) animarJugador(P, true, t);
-  for (const n of npcs) if (n.fig) { const h = n.fig.hoja; n.fig.cuadro(h.mov[1] + Math.floor(t / 600 + n.x) % 2, h.mov[0], P.x > n.x); n.fig.poner(n.x, n.y, n.z, camYaw); }
+  for (const n of npcs) if (n.fig && n.fig.tipo === 'modelo') {
+    const cerca = Math.hypot(P.x - n.x, P.z - n.z) < 12;
+    n.ry = lerpAng(n.ry || 0, cerca ? Math.atan2(P.x - n.x, P.z - n.z) : 0, 0.08);
+    n.fig.poner(n.x, n.y, n.z, n.ry, t);
+  } else if (n.fig) { const h = n.fig.hoja; n.fig.cuadro(h.mov[1] + Math.floor(t / 600 + n.x) % 2, h.mov[0], P.x > n.x); n.fig.poner(n.x, n.y, n.z, camYaw); }
   // Proyectiles.
   proyectiles = proyectiles.filter(p => {
     p.t += dt / 0.28;
@@ -1217,8 +1347,11 @@ function bucle(t) {
   });
   // Camara: detras del duende, sin meterse en el suelo.
   const tx = P.x, ty = P.y + 1.4, tz = P.z;
-  let cx = tx + Math.sin(camYaw) * Math.cos(camPitch) * camDist, cz = tz + Math.cos(camYaw) * Math.cos(camPitch) * camDist;
-  let cy = ty + Math.sin(camPitch) * camDist;
+  // Si un arbol tapa, la camara se acerca (suave al alejarse otra vez).
+  const kChoque = choqueCamara(tx, tz, tx + Math.sin(camYaw) * Math.cos(camPitch) * camDist, tz + Math.cos(camYaw) * Math.cos(camPitch) * camDist);
+  camReal = kChoque * camDist < camReal ? kChoque * camDist : lerp(camReal, kChoque * camDist, 0.08);
+  let cx = tx + Math.sin(camYaw) * Math.cos(camPitch) * camReal, cz = tz + Math.cos(camYaw) * Math.cos(camPitch) * camReal;
+  let cy = ty + Math.sin(camPitch) * camReal;
   cy = Math.max(cy, alturaEn(cx, cz) + 0.8, MUNDO.agua + 0.5);
   camara.position.set(cx, cy, cz); camara.lookAt(tx, ty, tz);
   // Zona actual: titulo, cielo y niebla de su color.
@@ -1243,11 +1376,7 @@ function bucle(t) {
   for (const z of zonas3.values()) { const k = clamp((performance.now() - z.ini) / z.ms, 0, 1); z.disco.material.opacity = 0.12 + 0.4 * k; z.disco.scale.setScalar(Math.max(0.05, k)); }
   if (sacudir > 0) { sacudir = Math.max(0, sacudir - dt); camara.position.x += (Math.random() - 0.5) * sacudir; camara.position.y += (Math.random() - 0.5) * sacudir; }
   alasMesh.visible = P.vuela && !!yo;
-  if (alasMesh.visible) {
-    const bat = Math.sin(t / 120) * 0.5;
-    alasMesh.position.set(P.x, P.y + 1.15, P.z); alasMesh.rotation.set(0, camYaw, 0);
-    alasMesh.children[0].rotation.y = 0.5 + bat; alasMesh.children[1].rotation.y = -0.5 - bat;
-  }
+  if (alasMesh.visible) ponerAlas(alasMesh, P.x, P.y, P.z, P.fig && P.fig.tipo === 'modelo' ? P.ry : camYaw, t);
   etiquetas(t);
   numeros = numeros.filter(n => {
     n.t += dt;
@@ -1278,8 +1407,9 @@ async function inicio() {
   progreso(0.75, 'Dibujando el mapa…');
   await new Promise(r => setTimeout(r, 20));
   pintarMapaBase();
+  if (USAR_MODELOS) try { precalentar(); } catch (e) { console.warn(e); }
   for (const n of NPCS3D) {
-    const fig = await figuraHoja(n.hoja, 62);
+    const fig = figuraModelo(() => crearNpc(n.hoja)) || await figuraHoja(n.hoja, 62);
     npcs.push({ ...n, y: alturaEn(n.x, n.z), fig, lbl: etiqueta('') });
   }
   P.lbl = etiqueta('yo');
