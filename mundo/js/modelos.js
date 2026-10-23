@@ -15,10 +15,11 @@
 //
 // Rendimiento: geometrias unitarias y materiales compartidos por cache
 // (cada pieza es una malla escalada), MeshLambertMaterial con flatShading,
-// ninguna sombra y menos de ~30 mallas por modelo.
+// ninguna sombra y menos de ~30 mallas por modelo. Al crear el Modelo, las
+// piezas fijas de cada pivote se funden en una malla (fusionarRig): ~6-14 draw calls.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo } from '/mmo/js/data.js?v=258';
+import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo } from '/mmo/js/data.js?v=259';
 
 const PX_M = 34;                 // pixeles del 2D por metro
 const PI = Math.PI;
@@ -161,6 +162,172 @@ function MF(padre, partes, c, o, pos, esc) {
 // Hex de un color (para las claves de fusion).
 const hx = c => '#' + col(c).getHexString();
 
+// ── FUSION DEL RIG POR PIVOTE (menos draw calls) ──
+// Las piezas estaticas que cuelgan de un mismo pivote animado (directamente o a
+// traves de grupos fijos: mano, arma, casco...) nunca se mueven entre si, asi que
+// se hornean en UNA malla con color por vertice. La animacion no cambia: lo que
+// se mueve son los pivotes. Solo piezas opacas de Lambert (de mat()/MF), sin
+// sinFlash, de una cara y sin espejo (determinante > 0). Las que brillan
+// (emissive = su color, como mat(c, { e })) llevan su brillo por vertice
+// (atributo 'brillo') y un material cuyo emissive = color del vertice * brillo.
+// La geometria se cachea por clave del modelo + pivote (+ brillo) y se comparte
+// entre modelos iguales; lleva cuenta de usos y las que nadie usa se sueltan
+// (se guardan las RIGF_LIBRES mas recientes por si vuelve a aparecer el modelo).
+const RIGF = new Map();          // clave -> { g, firma, usos }
+const RIGF_LIBRES = 48;
+// Para comparar en la galeria: ?sinFusion=1 desactiva la fusion.
+const FUSION = !(typeof location !== 'undefined' && /[?&]sinFusion=1(&|$)/.test(location.search));
+const _negro = new THREE.Color(0), _c2 = new THREE.Color();
+// Material blanco con color por vertice; con brillo, emissive = color del vertice * brillo.
+function matVC(brillo) {
+  if (!brillo) return mat('#ffffff', { vc: true });
+  let m = MATS.get('vcb');
+  if (m) return m;
+  m = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true, vertexColors: true, emissive: 0xffffff, emissiveIntensity: 1 });
+  m.onBeforeCompile = s => {
+    s.vertexShader = 'attribute float brillo;\nvarying float vBrillo;\n' +
+      s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n\tvBrillo = brillo;');
+    s.fragmentShader = 'varying float vBrillo;\n' +
+      s.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n\ttotalEmissiveRadiance *= vColor.rgb * vBrillo;');
+  };
+  m.customProgramCacheKey = () => 'vcb';
+  m.userData.compartido = true;
+  MATS.set('vcb', m);
+  return m;
+}
+// Brillo de una pieza fusionable (0 = sin brillo) o -1 si no se puede fusionar.
+function brilloFusion(me) {
+  const m = me.material;
+  if (!me.isMesh || me.isInstancedMesh || me.isSkinnedMesh || me.morphTargetInfluences) return -1;
+  if (me.matrixAutoUpdate !== false || me.userData.sinFlash || !me.visible || me.children.length) return -1;
+  if (!m || !m.isMeshLambertMaterial || m.transparent || m.opacity < 1 || m.side !== THREE.FrontSide || m.map || !m.flatShading) return -1;
+  if (!me.geometry.attributes.position || me.geometry.morphAttributes.position) return -1;
+  if (m.emissiveIntensity > 0 && !m.emissive.equals(_negro)) {
+    // Solo el brillo "del propio color" (mat(c, { e })) se puede llevar al vertice.
+    if (m.vertexColors || !m.emissive.equals(m.color)) return -1;
+    return m.emissiveIntensity;
+  }
+  return 0;
+}
+// Firma de las piezas (geometria, material y matriz) para no reutilizar por error.
+function firmaPiezas(piezas) {
+  let s = '';
+  for (const [me, mm] of piezas) {
+    let h = 0;
+    const el = mm.elements;
+    for (let i = 0; i < 16; i++) h += Math.round(el[i] * 1e4) * (i + 1);
+    s += me.geometry.id + ':' + me.material.id + ':' + h + ';';
+  }
+  return s;
+}
+// Hornea las piezas (con su matriz relativa al pivote) en una sola geometria.
+function hornear(piezas) {
+  const geos = piezas.map(([me]) => (me.geometry.index ? me.geometry.toNonIndexed() : me.geometry));
+  let n = 0;
+  for (const g of geos) n += g.attributes.position.count;
+  const pos = new Float32Array(n * 3), cols = new Float32Array(n * 3);
+  const br = piezas.some(x => x[2] > 0) ? new Float32Array(n) : null;
+  let j = 0;
+  piezas.forEach(([me, mm, e], i) => {
+    const g = geos[i], p = g.attributes.position, m = me.material;
+    const vc = m.vertexColors ? g.attributes.color : null;
+    for (let v = 0; v < p.count; v++, j += 3) {
+      _v.fromBufferAttribute(p, v).applyMatrix4(mm);
+      pos[j] = _v.x; pos[j + 1] = _v.y; pos[j + 2] = _v.z;
+      _c.copy(m.color);
+      if (vc) _c.multiply(_c2.setRGB(vc.getX(v), vc.getY(v), vc.getZ(v)));
+      cols[j] = _c.r; cols[j + 1] = _c.g; cols[j + 2] = _c.b;
+      if (br) br[j / 3] = e;
+    }
+    if (g !== me.geometry) g.dispose();
+  });
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+  if (br) g.setAttribute('brillo', new THREE.BufferAttribute(br, 1));
+  g.computeVertexNormals();
+  g.computeBoundingBox();
+  g.computeBoundingSphere();
+  return g;
+}
+function tomarFusion(clave, piezas) {
+  const firma = firmaPiezas(piezas);
+  let ent = clave ? RIGF.get(clave) : null;
+  if (ent && ent.firma !== firma) ent = null, clave = null;     // no coincide: geometria propia
+  if (!ent) ent = { g: hornear(piezas), firma, usos: 0, propia: !clave };
+  else RIGF.delete(clave);
+  if (clave) RIGF.set(clave, ent);                               // al final = la mas reciente
+  ent.usos++;
+  return ent;
+}
+function soltarFusion(ent) {
+  if (--ent.usos > 0) return;
+  if (ent.propia) { ent.g.dispose(); return; }
+  let libres = 0;
+  for (const e of RIGF.values()) if (!e.usos) libres++;
+  for (const [k, e] of RIGF) {
+    if (libres <= RIGF_LIBRES) break;
+    if (!e.usos) { e.g.dispose(); RIGF.delete(k); libres--; }
+  }
+}
+// Fusiona el rig r (ya en pose de reposo). Devuelve las entradas usadas (para soltarlas).
+function fusionarRig(r, clave) {
+  if (!FUSION) return [];
+  // Bordes: la raiz y los pivotes animados (animarRig solo mueve r.piv: lo vuelve
+  // a su reposo cada frame). Todo lo demas es fijo respecto a su borde.
+  // Lo que el rig nombra (manos, marca de la silla, giran, aura...) no se fusiona
+  // ni se quita aunque se quede vacio.
+  const bordes = new Set(r.piv);
+  bordes.add(r.raiz);
+  const nombrados = new Set();
+  const mirar = v => {
+    if (!v || typeof v !== 'object') return;
+    if (v.isObject3D) nombrados.add(v);
+    else if (Array.isArray(v)) v.forEach(mirar);
+  };
+  for (const k in r) if (k !== 'raiz') mirar(r[k]);
+  const lista = [];
+  r.raiz.traverse(o => { if (bordes.has(o)) lista.push(o); });
+  const usadas = [];
+  lista.forEach((piv0, i) => {
+    const piezas = [];             // [malla, matriz relativa al pivote, brillo]
+    const recorrer = (o, mo) => {
+      for (const h of o.children) {
+        if (bordes.has(h) || !h.visible) continue;
+        if (h.matrixAutoUpdate) h.updateMatrix();
+        const mh = mo ? new THREE.Matrix4().multiplyMatrices(mo, h.matrix) : h.matrix.clone();
+        const e = brilloFusion(h);
+        if (e >= 0 && !nombrados.has(h) && mh.determinant() > 0) piezas.push([h, mh, e]);
+        if (h.children.length) recorrer(h, mh);
+      }
+    };
+    recorrer(piv0, null);
+    if (piezas.length < 2) return;
+    {
+      const ent = tomarFusion(clave ? clave + '#' + i : null, piezas);
+      usadas.push(ent);
+      const me = new THREE.Mesh(ent.g, matVC(!!ent.g.attributes.brillo));
+      me.name = 'fusion';
+      me.matrixAutoUpdate = false;
+      me.updateMatrix();
+      me.castShadow = piezas.some(([p]) => p.castShadow);
+      me.receiveShadow = piezas.some(([p]) => p.receiveShadow);
+      for (const [p] of piezas) {
+        let padre = p.parent;
+        p.removeFromParent();
+        // Grupos fijos que se quedan vacios: fuera (menos matrices por frame).
+        while (padre && padre !== piv0 && !bordes.has(padre) && !nombrados.has(padre) && !padre.isMesh && !padre.children.length) {
+          const pp = padre.parent;
+          padre.removeFromParent();
+          padre = pp;
+        }
+      }
+      piv0.add(me);
+    }
+  });
+  return usadas;
+}
+
 // Grupo (pivote) en una posicion y giro.
 function G(padre, pos, rot) {
   const g = new THREE.Group();
@@ -194,7 +361,8 @@ function medir(o, box) {
 }
 
 class Modelo {
-  constructor(r, alto) {
+  // clave: identifica el modelo (mismo rig = misma clave) para compartir la fusion.
+  constructor(r, alto, clave) {
     this.r = r;
     this.alto = alto;
     this.obj = new THREE.Group();
@@ -219,6 +387,8 @@ class Modelo {
     // Altura de la cadera (para sentarse en una montura con el estado 'monta').
     this.cadera = r.pI ? r.pI.position.y * s + r.raiz.position.y : this.alto * 0.3;
     for (const o of r.piv) o.userData.reposo = [o.position.clone(), o.rotation.clone(), o.scale.clone()];
+    // Piezas fijas de cada pivote en una sola malla (antes de llenar mallas: golpe() sigue igual).
+    this._fus = fusionarRig(r, clave || null);
     this.mallas = [];
     r.raiz.traverse(o => { if (o.isMesh) this.mallas.push(o); });
     this._tf = 0;
@@ -245,10 +415,12 @@ class Modelo {
     me.userData.reposo = [me.position.clone(), me.rotation.clone(), me.scale.clone()];
     this.mallas.push(me);
   }
-  // Las geometrias y materiales son compartidos: solo se suelta el modelo.
+  // Las geometrias y materiales son compartidos: solo se suelta el modelo
+  // (y su uso de las geometrias fusionadas, que se liberan cuando nadie las usa).
   dispose() {
     clearTimeout(this._tf);
     this._restaurar();
+    if (this._fus) { for (const ent of this._fus) soltarFusion(ent); this._fus = null; }
     this.obj.removeFromParent();
     this.mallas.length = 0;
     this.r = null;
@@ -838,7 +1010,7 @@ export function crearDuende({ skin = 'comun', clase = null, arma = 'katana', loo
   else if (arma === 'chispa') espada(r.manoD, { largo: 0.8, hoja: ARMAS.chispa.color, e: 0.9, guarda: '#1e3a5f' });
   else espada(r.manoD, { largo: 0.75, guarda: ARMAS.katana.color });
   if (brilla) auraSuelo(r, sk.color, 0.55);
-  const m = new Modelo(r, 1.75 * lk.altura);
+  const m = new Modelo(r, 1.75 * lk.altura, 'd:' + JSON.stringify([skin, cl, arma, Object.assign({}, lk, { altura: 0 })]));
   m.tipo = 'duende';
   m.look = lk;
   return m;
@@ -1743,7 +1915,7 @@ export function crearMonstruo(k) {
   const c = { k, color: d.tinte || null, jefe: !!d.jefe, e: d.jefe ? 0.22 : 0, vuela: !!d.vuela };
   const r = (ARQ[d.hoja] || ARQ.goblin_normal)(c);
   if (c.jefe) decorarJefe(r);
-  const m = new Modelo(r, alto);
+  const m = new Modelo(r, alto, 'm:' + k + (c.jefe ? ':j' : ''));
   if (c.jefe) m._aura(c.color || '#ff4444');
   m.tipo = 'monstruo'; m.k = k; m.hoja = d.hoja; m.vuela = !!d.vuela; m.jefe = c.jefe;
   return m;
@@ -1758,7 +1930,7 @@ export function crearNpc(hoja) {
   else if (hoja === 'goblin_peasant') r = goblin(c, 'goblin_peasant');
   else if (hoja === 'hechicero') r = hechicero(c);
   else r = (ARQ[hoja] || ARQ.goblin_peasant)(c);
-  const m = new Modelo(r, 62 / PX_M);
+  const m = new Modelo(r, 62 / PX_M, 'n:' + hoja);
   m.tipo = 'npc'; m.hoja = hoja;
   return m;
 }
@@ -1777,7 +1949,7 @@ export function crearMontura(id) {
     r.marcaSilla = G(cu, [0, 0, 0]);
     r.marcaSilla.position.y = box.max.y * 0.8 - cu.position.y;
   }
-  const m = new Modelo(r, ALTO_MONTURA[d.hoja] || 1.5);
+  const m = new Modelo(r, ALTO_MONTURA[d.hoja] || 1.5, 'mo:' + id);
   m.obj.updateMatrixWorld(true);
   const v = r.marcaSilla.getWorldPosition(new THREE.Vector3());
   m.silla = new THREE.Object3D();

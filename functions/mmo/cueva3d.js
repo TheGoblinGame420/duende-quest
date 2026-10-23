@@ -14,7 +14,7 @@
 // los de dentro (pieza de equipo rara o mejor, XP y oro) y cuenta como
 // mazmorra completada. Una instancia vacia 5 minutos se borra.
 // ═══════════════════════════════════════════════════════
-import { MONSTRUOS, statsMonstruo, xpParaSubir, RAREZAS, nombreItem, ALAS } from '../../mmo/js/data.js';
+import { MONSTRUOS, statsMonstruo, xpParaSubir, RAREZAS, nombreItem, ALAS, hoyUTC } from '../../mmo/js/data.js';
 import { CUEVA, CUEVA_X0, PORTAL_PUEBLO, nivelCueva } from '../../mmo/js/cueva3d.js';
 
 const VACIA_MS = 5 * 60 * 1000;
@@ -31,11 +31,16 @@ export const Cueva3D = {
   entrarCueva(s) {
     if (s.i3 || s.muerto) return;
     if (Math.hypot(s.p.x - PORTAL_PUEBLO.x, s.p.z - PORTAL_PUEBLO.z) > 9) return this.no(s, 'Ve al portal del pueblo.');
+    if (Date.now() - (s.combateT || 0) < 5000) return this.no(s, 'No puedes entrar en pleno combate.');
     const g = this.grupoDe(s);
     const clave = g ? 'g' + g.id : 'u' + s.c.uid;
     const cuevas = this.cuevas3();
     let inst = [...cuevas.values()].find(i => i.clave === clave);
     if (!inst) {
+      const ahora = Date.now();
+      if (ahora - (s.c.cuevaCreadaT || 0) < 60000) return this.no(s, 'Espera un minuto antes de abrir otra cueva.');
+      if (cuevas.size >= 40) return this.no(s, 'Las cuevas están llenas: prueba en un momento.');
+      s.c.cuevaCreadaT = ahora;
       const del = g ? this.sesionesGrupo(g) : [s];
       inst = this.crearCueva(clave, nivelCueva(Math.max(...del.map(x => x.c.nivel))), del.length);
     }
@@ -44,6 +49,12 @@ export const Cueva3D = {
     s.i3 = inst.id;
     inst.dentro.add(s.id);
     inst.vacia = 0;
+    // Si entra mas gente de la que habia al crearla, el Rey sube su vida en proporcion.
+    const jf = this.iniciar3d().mons.get(inst.jefe), nDentro = this.dentroCueva(inst).length;
+    if (jf && !jf.muere && nDentro > inst.gente) {
+      const k = (1 + 0.7 * (nDentro - 1)) / (1 + 0.7 * (inst.gente - 1));
+      jf.max = Math.round(jf.max * k); jf.hp = Math.round(jf.hp * k); inst.gente = nDentro;
+    }
     s.p = { x: CUEVA_X0 + CUEVA.entrada.x + rnd(-2, 2), z: CUEVA.entrada.z + rnd(-1, 1) };
     s.h = 0; s.movBud = undefined; s.cast = null;
     this.enviar(s, { t: 'tp3', x: r1(s.p.x), z: r1(s.p.z), cueva: { id: inst.id, nv: inst.nv, hecha: inst.hecha ? 1 : 0 } });
@@ -54,7 +65,7 @@ export const Cueva3D = {
 
   crearCueva(clave, nv, gente) {
     const W = this.iniciar3d();
-    const inst = { id: W.sig++, clave, nv, dentro: new Set(), mons: new Set(), creada: Date.now(), vacia: 0, hecha: false, jefe: 0, gente: Math.max(1, gente) };
+    const inst = { id: W.sig++, clave, nv, dentro: new Set(), mons: new Set(), creada: Date.now(), vacia: 0, hecha: false, jefe: 0, gente: Math.max(1, gente), guardias: [] };
     for (const [x, z, k, n] of CUEVA.grupos) for (let i = 0; i < n; i++) this.monCueva(inst, k, x + rnd(-2.5, 2.5), z + rnd(-2.5, 2.5), false);
     inst.jefe = this.monCueva(inst, CUEVA.jefe.k, CUEVA.jefe.x, CUEVA.jefe.z, true).id;
     this.cuevas3().set(inst.id, inst);
@@ -111,6 +122,8 @@ export const Cueva3D = {
       }
       const o = W.mons.get(inst.jefe);
       if (!o || o.muere) continue;
+      // Mientras vuelve al trono no hay pisotones.
+      if (o.vuelve) { if (o.pisa) { o.pisa = null; this.aCueva(inst, { t: 'zona3f', id: o.id }); } continue; }
       if (o.pisa && ahora >= o.pisa.en) {
         for (const s of gente) {
           if (s.muerto || Math.hypot(s.p.x - o.pisa.x, s.p.z - o.pisa.z) > PISOTON.r) continue;
@@ -133,6 +146,7 @@ export const Cueva3D = {
         for (let i = 0; i < 2; i++) {
           const a = this.monCueva(inst, 'goblin_guard', CUEVA.jefe.x - 8 + i * 16 - 8, CUEVA.jefe.z + (i ? 12 : -12), false);
           a.obj = o.obj;
+          inst.guardias.push(a.id);
         }
         this.aCueva(inst, { t: 'aviso', m: '👑 «¡Guardias, a mí!» El Rey Goblin llama a su guardia.' });
       }
@@ -144,6 +158,17 @@ export const Cueva3D = {
     }
   },
 
+  // Tras una derrota del grupo, el Rey vuelve a la fase 1 (sin furia ni guardia).
+  reiniciarJefeCueva(o) {
+    if (o.enfurecido) o.atk /= 1.3;
+    o.enfurecido = false; o.llamo = false; o.pisaProx = 0;
+    const inst = this.cuevas3().get(o.i3); if (!inst) return;
+    if (o.pisa) { o.pisa = null; this.aCueva(inst, { t: 'zona3f', id: o.id }); }
+    const W = this.iniciar3d();
+    for (const id of inst.guardias || []) { W.mons.delete(id); inst.mons.delete(id); }
+    inst.guardias = [];
+  },
+
   // El Rey cae: cofre para cada uno de los de dentro.
   premiosCueva(o) {
     const inst = this.cuevas3().get(o.i3);
@@ -152,20 +177,25 @@ export const Cueva3D = {
     const nombres = [];
     for (const s of this.dentroCueva(inst)) {
       const c = s.c;
-      const xp = Math.round(xpParaSubir(c.nivel) * 0.3);
-      const oro = 50 * inst.nv;
+      const peleo = o.dano.has(s.id) || o.amen.has(s.id);
+      if (!peleo || s.muerto) { this.enviar(s, { t: 'toast', m: 'Para el cofre hay que pelear contra el Rey (y seguir vivo).' }); continue; }
+      const hoy = hoyUTC();
+      if (!c.cuevaDia || c.cuevaDia.d !== hoy) c.cuevaDia = { d: hoy, n: 0 };
+      const completo = c.cuevaDia.n++ < 3, nvOk = inst.nv >= c.nivel - 10;
+      const xp = Math.round(xpParaSubir(c.nivel) * (completo && nvOk ? 0.3 : 0.05));
+      const oro = (completo ? 50 : 10) * inst.nv;
       c.oro += oro;
-      c.mazmorras = (c.mazmorras || 0) + 1;
+      if (nvOk) c.mazmorras = (c.mazmorras || 0) + 1;
       c.alas = c.alas || ['aprendiz'];
       if (c.mazmorras >= ALAS.cueva.mazmorras && !c.alas.includes('cueva')) {
         c.alas.push('cueva');
         this.enviar(s, { t: 'toast', ok: true, m: `🪽 ¡Ganaste las ${ALAS.cueva.nombre}! Póntelas en el Mercader → ALAS.` });
       }
-      const it = this.darItem(s, this.nuevoItem(c.nivel, 2));
+      const it = completo && nvOk ? this.darItem(s, this.nuevoItem(c.nivel, 2)) : null;
       this.sumarXp(s, xp);
-      this.progresoTarea && this.progresoTarea(s, 'mazmorra');
+      if (nvOk) this.progresoTarea && this.progresoTarea(s, 'mazmorra');
       this.enviar(s, { t: 'gana', xp, oro, drops: [], item: it });
-      this.enviar(s, { t: 'toast', ok: true, m: `🏆 ¡${CUEVA.nombre} completada! +${xp} XP · +${oro} oro${it ? ' · ' + RAREZAS[it.r].nombre + ': ' + nombreItem(it) : ''}` });
+      this.enviar(s, { t: 'toast', ok: true, m: `🏆 ¡${CUEVA.nombre} completada! +${xp} XP · +${oro} oro${it ? ' · ' + RAREZAS[it.r].nombre + ': ' + nombreItem(it) : ''}${completo ? '' : ' (cofre pequeño: hoy ya abriste 3 completos)'}` });
       s.sucio = true;
       this.revisarLogros(s);
       this.actualizarYo(s);

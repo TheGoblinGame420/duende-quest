@@ -483,6 +483,12 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 27, fecha: '23 oct 2026', items: [
+    'El doble de fluido: los modelos 3D se dibujan con un tercio de las piezas y el combate va a 1-2 ms por cuadro.',
+    'Monstruos más listos: siguen al que más amenaza genera (el tanque puede quitarles el foco), rodean al jugador, no atraviesan casas ni las paredes de la cueva y no se reinician mientras el grupo siga peleando.',
+    'Mejor física: caes al salir de un borde, puedes saltar justo después (y si pulsas antes de tocar el suelo), salto corto si sueltas pronto, y planeo automático si se cansan las alas.',
+    'Cámara: ya no se pega al duende; sube por encima del hombro en los pasillos de la cueva y esquiva las colinas.',
+  ] },
   { n: 26, fecha: '23 oct 2026', items: [
     'Combate sin lag: los golpes ya no se pierden por la red, la vida baja al instante, los monstruos se mueven suaves y la recarga de cada habilidad se ve en su botón.',
     'Cola de hechizos como en WoW: si pulsas una habilidad justo antes de que acabe la recarga global, sale sola.',

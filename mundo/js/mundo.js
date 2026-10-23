@@ -13,13 +13,13 @@
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
-  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS } from '/mmo/js/data.js?v=258';
-import { iniciarVentanas } from './ventanas.js?v=258';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=258';
-import { crearMusica } from './musica.js?v=258';
-import { construirCueva } from './cueva.js?v=258';
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=258';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=258';
+  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS } from '/mmo/js/data.js?v=259';
+import { iniciarVentanas } from './ventanas.js?v=259';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=259';
+import { crearMusica } from './musica.js?v=259';
+import { construirCueva } from './cueva.js?v=259';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=259';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=259';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -288,8 +288,17 @@ function choqueCamara(tx, tz, cx, cz) {
 function choqueCueva(tx, tz, cx, cz) {
   const L = Math.hypot(cx - tx, cz - tz) || 1;
   let ult = 0;
-  for (let d = 0.4; d <= L; d += 0.4) { const k = d / L; if (!caminable(tx + (cx - tx) * k, tz + (cz - tz) * k, 0.35)) break; ult = k; }
-  return clamp(ult - 0.25 / L, 0.12, 1);
+  // La camara puede meterse en la fila de rocas (por dentro se ve a traves).
+  for (let d = 0.4; d <= L; d += 0.4) { const k = d / L; if (!caminable(tx + (cx - tx) * k, tz + (cz - tz) * k, -0.7)) break; ult = k; }
+  return clamp(ult, 0.4, 1);
+}
+// Colinas entre el duende y la camara: 8 muestras del rayo; corta en la primera bajo el suelo.
+function choqueTerreno(tx, ty, tz, cx, cy, cz) {
+  for (let i = 2; i <= 8; i++) {
+    const k = i / 8, x = tx + (cx - tx) * k, z = tz + (cz - tz) * k;
+    if (ty + (cy - ty) * k < Math.max(alturaEn(x, z), MUNDO.agua) + 0.6) return (i - 1) / 8;
+  }
+  return 1;
 }
 function crearFlora() {
   const tipos = {};
@@ -558,10 +567,19 @@ function nuevasAlas(id) {
 }
 // Las alas propias se rehacen si cambias de alas.
 let alasMesh = nuevasAlas('aprendiz');
+// Libera geometrias y materiales propios (las geometrias de ala en cache no).
+function liberar(obj) {
+  const compartidas = new Set(Object.values(GEO_ALA));
+  obj.traverse(o => {
+    if (o.geometry && !compartidas.has(o.geometry)) o.geometry.dispose();
+    if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.dispose());
+  });
+}
+function quitarAlas(g) { if (g) { escena.remove(g); liberar(g); } }
 function alasPropias() {
   const id = (yo && yo.ala) || 'aprendiz';
   if (alasMesh.userData.id === id) return;
-  escena.remove(alasMesh);
+  quitarAlas(alasMesh);
   alasMesh = nuevasAlas(id);
 }
 // Alas en la espalda (ry = hacia donde mira; con sprites, hacia la camara).
@@ -619,7 +637,7 @@ class Figura3D {
     if (Q.sombras) { modelo.obj.traverse(o => { if (o.isMesh) o.castShadow = true; }); this.sombra.visible = false; }
     escena.add(this.raiz, this.sombra);
   }
-  estado(e, t) { if (e !== this.est) { this.est = e; this.tE = t; } }
+  estado(e, t, forzar) { if (e !== this.est || forzar) { this.est = e; this.tE = t; } }
   // Montura bajo el jinete (id de MONTURAS o '').
   montar(id) {
     if (id === this.mId) return;
@@ -659,7 +677,8 @@ const altoFig = f => f.alto || f.g.parameters.height * 0.85;
 // Estado de animacion de un jugador.
 function estadoJugador(q, esYo, t, anda) {
   if (esYo ? P.muerto : q.muerto) return 'muere';
-  if (t - (q.atkT || 0) < 420) return 'ataca';
+  const dAtk = (q.fig && q.fig.modelo && q.fig.modelo.r && q.fig.modelo.r.tAtk ? q.fig.modelo.r.tAtk : 0.35) * 1250;
+  if (t - (q.atkT || 0) < dAtk) return 'ataca';
   if (esYo ? !!lanzando : (q.lanza || 0) > t) return 'lanza';
   if (t - (q.heridoT || 0) < 250) return 'herido';
   if (esYo ? P.vuela || P.planea : q.a === 3 || q.a === 4) return 'vuela';
@@ -762,7 +781,7 @@ const otros = new Map();     // id -> { x, z, ry, a, hp, mx, n, lv, cl, sk, fig,
 const mons = new Map();      // id -> { k, nv, x, z, ry, hp, mx, st, fig, lbl, tx, tz, muereT }
 const npcs = [];
 let objetivo = 0, autoAtk = false, sigAtk = 0, avisoLejosT = 0, avisoAlcT = 0, colaHab = null, colaHasta = 0;
-let camYaw = Math.PI, camPitch = 0.42, camDist = 11, camReal = 11;
+let camYaw = Math.PI, camPitch = 0.42, camDist = 11, camReal = 11, camHold = 0;
 let zonaActual = '';
 let portal = null, agua = null, cueva = null, cuevaInfo = null;
 const teclas = {};
@@ -827,21 +846,29 @@ function recibir(m) {
       if (m.nuevo) aviso('Bienvenido al mundo abierto, ' + yo.nombre + '. El Guardia Tito, en el pueblo, tiene tu primera misión.', 'ok');
       break;
     case 'm3':
-      P.x = m.x; P.z = m.z; P.y = alturaEn(P.x, P.z);
+      P.x = m.x; P.z = m.z; P.y = alturaEn(P.x, P.z); P.vx = P.vz = P.vy = 0; P.corrX = P.corrZ = 0;
       for (const o of [...otros.keys()]) quitarOtro(o);
+      for (const id of [...mons.keys()]) quitarMon(id);
+      for (const id of [...zonas3.keys()]) quitarZona3(id);
+      for (const p of proyectiles) escena.remove(p.mesh); proyectiles = []; impactos = [];
+      objetivo = 0; objetivoP = 0; autoAtk = false; dueloCon = 0; colaHab = null; gcdHasta = 0;
+      lanzando = null; $('lanzar').style.display = 'none'; quitarCorcho();
+      if (P.vuela) volar(false); P.planea = false; cuevaInfo = null; zonaActual = '';
+      camReal = camDist;
+      pintarBarra(); pintarObjetivoP();
       for (const p of m.jugadores) agregarOtro(p);
       break;
     case 'yo': {
       const antes = yo; yo = m.yo;
       ALAS_MAX = (ALAS[yo.ala] || ALAS.aprendiz).vuelo; if (!antes) P.alas = ALAS_MAX; alasPropias();
-      V.actualizar();
+      ALAS_MAX && (P.alas = Math.min(P.alas, ALAS_MAX));
       if (antes && (yo.skin !== antes.skin || yo.clase !== antes.clase || yo.arma !== antes.arma || JSON.stringify(yo.look) !== JSON.stringify(antes.look))) cambiarSkinPropia();
       if (!antes && !yo.look) { let visto = false; try { visto = localStorage.getItem('dq3_look_visto') === '1'; } catch (e) {} if (!visto) { const intentar = n => { if (!hayVentana()) abrirLook(); else if (n < 20) setTimeout(() => intentar(n + 1), 1500); }; setTimeout(() => intentar(0), 1500); } }
       if (yo.muerto && !(antes && antes.muerto)) morir();
       if (!yo.muerto) { cerrar('v-muerte'); P.muerto = false; }
       if (yo.clase) cerrar('v-clase');
       pintarHud();
-      if ($('v-npc').classList.contains('on') && npcAbierto) abrirNpc(npcAbierto);
+      refrescarVentanas(true);
       break;
     }
     case 's3': foto(m); break;
@@ -860,19 +887,16 @@ function recibir(m) {
       if (Math.hypot(P.x - m.x, P.z - m.z) < m.r + 3) aviso('¡Pisotón! Sal del círculo rojo.', 'err');
       break;
     }
-    case 'zona3f': {
-      const z = zonas3.get(m.id);
-      if (z) { escena.remove(z.disco, z.borde); z.disco.geometry.dispose(); z.borde.geometry.dispose(); onda(z.x, z.z, z.r, '#ff5a2a'); zonas3.delete(m.id); sacudir = 0.5; sfx('explosion', 0.45); }
-      break;
-    }
+    case 'zona3f': quitarZona3(m.id, true); break;
     case 'md3': { const o = mons.get(m.id); if (o) { o.muereT = performance.now(); o.st = 3; sfx('muerte', 0.3); } if (objetivo === m.id) { objetivo = 0; autoAtk = false; pintarBarra(); } break; }
     case 'at3': ataqueVisto(m); break;
     case 'ph': golpeJugador(m); break;
     case 'b3': { const o = mons.get(m.de), q = m.a === miId ? P : otros.get(m.a); if (o && q) proyectil(o, q, '#c084fc'); break; }
     case 'muerte': morir(m); break;
     case 'tp3': case 'snap3':
-      if (m.t === 'snap3' && Math.hypot(m.x - P.x, m.z - P.z) < 4) { P.corrX = (P.corrX || 0) + (m.x - P.x); P.corrZ = (P.corrZ || 0) + (m.z - P.z); break; }
-      P.x = m.x; P.z = m.z; P.y = alturaEn(P.x, P.z); P.corrX = P.corrZ = 0; P.vx = P.vz = 0;
+      if (m.t === 'snap3' && Math.hypot(m.x - P.x, m.z - P.z) < 4) { P.corrX = m.x - P.x; P.corrZ = m.z - P.z; P.vx *= 0.5; P.vz *= 0.5; break; }
+      P.x = m.x; P.z = m.z; P.y = (m.t === 'snap3' && P.vuela) ? Math.max(P.y, alturaEn(m.x, m.z) + 0.5) : alturaEn(P.x, P.z); P.corrX = P.corrZ = 0; P.vx = P.vz = 0;
+      if (m.t === 'tp3' && !m.carga) { if (P.vuela) volar(false); P.vy = 0; P.planea = false; camReal = camDist; }
       if (m.t === 'tp3' && m.cueva !== undefined) {
         cuevaInfo = m.cueva;
         if (cueva) { cueva.cofre.visible = !!(m.cueva && m.cueva.hecha); cueva.tapa.rotation.x = 0; }
@@ -894,7 +918,7 @@ function recibir(m) {
       // "Fuera de alcance" se avisa como mucho una vez cada 3 s (el auto-ataque reintenta solo).
       if (m.m === 'Fuera de alcance.') { if (performance.now() - avisoAlcT < 3000) break; avisoAlcT = performance.now(); }
       aviso(m.m, 'err'); break;
-    case 'yoC': if (yo) { Object.assign(yo, m.yo); pintarHud(); } break;
+    case 'yoC': if (yo) { Object.assign(yo, m.yo); pintarHud(); refrescarVentanas(); } break;
     case 'atkNo': sigAtk = performance.now() + 150; break;
     case 'habNo': gcdHasta = 0; break;
     case 'chat': lineaChat(m); break;
@@ -914,7 +938,7 @@ function recibir(m) {
       if (m.a === miId || m.b === miId) { dueloCon = 0; autoAtk = false; pintarBarra(); }
       aviso(m.m, m.g === miId ? 'ok' : '');
       break;
-    case 'atp3': { const de = m.p === miId ? P : otros.get(m.p), a = m.tg === miId ? P : otros.get(m.tg); if (de) de.atkT = performance.now(); if (de && a && m.v) proyectil(de, a, '#f0abfc'); break; }
+    case 'atp3': { const de = m.p === miId ? P : otros.get(m.p), a = m.tg === miId ? P : otros.get(m.tg); if (de && !(de === P && performance.now() - P.atkT < 350)) de.atkT = performance.now(); if (de && a && m.v) proyectil(de, a, '#f0abfc'); break; }
     case 'nodos3': for (const [i, ms] of m.l) { if (!NODOS[i]) continue; nodoListo.set(i, performance.now() + ms); mostrarNodo(NODOS[i], false); } break;
     case 'recogido3': if (NODOS[m.i]) { nodoListo.set(m.i, performance.now() + m.en); mostrarNodo(NODOS[m.i], false); sfx('moneda', 0.3); } break;
     case 'reto': case 'invitacion': {
@@ -986,7 +1010,7 @@ async function rehacerFiguraOtro(o) {
   if (o.fig) o.fig.quitar();
   o.fig = f;
 }
-function quitarOtro(id) { const o = otros.get(id); if (!o) return; if (objetivoP === id) objetivoP = 0; if (o.fig) o.fig.quitar(); if (o.alas) escena.remove(o.alas); o.lbl.remove(); otros.delete(id); }
+function quitarOtro(id) { const o = otros.get(id); if (!o) return; if (objetivoP === id) objetivoP = 0; if (o.fig) o.fig.quitar(); if (o.alas) quitarAlas(o.alas); o.lbl.remove(); otros.delete(id); }
 async function agregarMon(d) {
   if (mons.has(d.id)) return;
   const def = MONSTRUOS[d.k];
@@ -1042,7 +1066,7 @@ function ataqueVisto(m) {
   const o = mons.get(m.tg);
   if (!o) return;
   const de = m.p === miId ? P : otros.get(m.p);
-  if (de) { de.atkT = performance.now(); if (m.v) proyectil(de, o, CLASES[(m.p === miId ? yo.clase : de.cl)] ? CLASES[(m.p === miId ? yo.clase : de.cl)].color : '#fff'); }
+  if (de) { if (!(de === P && performance.now() - P.atkT < 350)) de.atkT = performance.now(); if (m.v) proyectil(de, o, CLASES[(m.p === miId ? yo.clase : de.cl)] ? CLASES[(m.p === miId ? yo.clase : de.cl)].color : '#fff'); }
   if (m.d > 0) o.hp = Math.max(0, o.hp - m.d);
   if (m.p === miId || o.id === objetivo) {
     numero(o.x + (Math.random() - 0.5), alturaEn(o.x, o.z) + 2.2, o.z, (m.c ? '¡' : '') + m.d + (m.c ? '!' : ''), m.c ? '#ffd34d' : m.rayo ? '#7dd3fc' : '#fff', m.c);
@@ -1052,6 +1076,12 @@ function ataqueVisto(m) {
   if (!(m.p === miId && performance.now() - (o.predT || 0) < 350)) o.golpeT = performance.now();
 }
 function golpeJugador(m) {
+  // El tajo del monstruo cae justo cuando llega su golpe.
+  const mo = m.from && mons.get(m.from);
+  if (mo && mo.fig && mo.fig.tipo === 'modelo' && !mo.muereT) {
+    const tA = (mo.fig.modelo.r && mo.fig.modelo.r.tAtk) || 0.35;
+    mo.fig.est = 'ataca'; mo.fig.tE = performance.now() - tA * 800;
+  }
   const q = m.p === miId ? P : otros.get(m.p);
   if (!q) return;
   if (m.d > 0) numero(q.x, (q.y || alturaEn(q.x, q.z)) + 2.3, q.z, '-' + m.d, '#ff5a6a');
@@ -1061,6 +1091,13 @@ function golpeJugador(m) {
 let impactos = [];
 let proyectiles = [], efectos = [], lanzando = null, objetivoP = 0, mundial3 = null, sacudir = 0, grupo3 = null;
 const zonas3 = new Map();
+function quitarZona3(id, explota) {
+  const z = zonas3.get(id); if (!z) return;
+  escena.remove(z.disco, z.borde);
+  for (const o of [z.disco, z.borde]) { o.geometry.dispose(); o.material.dispose(); }
+  zonas3.delete(id);
+  if (explota) { onda(z.x, z.z, z.r, '#ff5a2a'); sacudir = 0.5; sfx('explosion', 0.45); }
+}
 let tocandoSubir = false, tocandoBajar = false;
 // Anillo que se expande (habilidades de area, curas en grupo...).
 const GEO_ONDA = new THREE.RingGeometry(0.85, 1, 40).rotateX(-Math.PI / 2);
@@ -1075,7 +1112,7 @@ const A_DISTANCIA = { bola_fuego: '#ff7a1a', castigo: '#ffe9a8', misiles: '#c084
 function efectoHab(m) {
   const de = m.p === miId ? P : otros.get(m.p);
   const h = habPorId(m.id);
-  if (de) de.atkT = performance.now();
+  if (de && !(de === P && performance.now() - P.atkT < 350)) de.atkT = performance.now();
   if (de && AREA[m.id]) onda(de.x, de.z, (h && h.radio ? h.radio / 17 : 6), AREA[m.id]);
   for (const [id, d, tipo] of m.h || []) {
     const o = mons.get(id);
@@ -1129,6 +1166,8 @@ function proyectil(de, a, color) {
   proyectiles.push({ mesh, de: { x: de.x, z: de.z, y: (de.y || alturaEn(de.x, de.z)) + 1.2 }, a, t: 0 });
 }
 function morir(m) {
+  if (P.vuela) volar(false);
+  P.planea = false; P.planeoAuto = false; P.vx = P.vz = 0; colaHab = null;
   P.muerto = true; autoAtk = false;
   $('muerte-txt').textContent = m && m.golpes && m.golpes.length ? 'Te derribó: ' + m.golpes.map(g => g.n).filter((v, i, l) => l.indexOf(v) === i).slice(0, 2).join(', ') + '. Revives en el pueblo.' : 'Revives en el pueblo.';
   abrir('v-muerte');
@@ -1248,7 +1287,7 @@ function ponerCorcho() {
   corcho.add(a, b); corcho.position.set(w.x, MUNDO.agua + 0.05, w.z); corcho.userData.y0 = MUNDO.agua + 0.05;
   escena.add(corcho);
 }
-function quitarCorcho() { if (corcho) { escena.remove(corcho); corcho = null; } pica = 0; }
+function quitarCorcho() { if (corcho) { escena.remove(corcho); liberar(corcho); corcho = null; } pica = 0; }
 
 // ── GRUPO ──
 let invitT = 0, invitTipo = 'grupo', dueloCon = 0;
@@ -1311,7 +1350,11 @@ function tituloZona(id) {
 }
 
 // ── VENTANAS ──
-function abrir(id) { $(id).classList.add('on'); if (!LATERALES.includes(id)) for (const k in teclas) teclas[k] = false; }
+function abrir(id) {
+  if (LATERALES.includes(id)) for (const o of LATERALES) if (o !== id && $(o) && $(o).classList.contains('on')) cerrar(o);
+  $(id).classList.add('on');
+  if (!LATERALES.includes(id)) for (const k in teclas) teclas[k] = false;
+}
 function cerrar(id) { $(id).classList.remove('on'); if (id === 'v-npc') npcAbierto = ''; }
 document.querySelectorAll('[data-cerrar]').forEach(b => b.onclick = () => cerrar(b.closest('.modal').id));
 function abrirClases() {
@@ -1324,9 +1367,16 @@ function abrirClases() {
   }
   abrir('v-clase');
 }
-let npcAbierto = '';
+let npcAbierto = '', firmaNpcAnt = '';
+const firmaNpc = t => JSON.stringify(t === 'guia' ? [yo.mis, yo.diaria] : t === 'tienda' ? [yo.pw, yo.oro] : [yo.mat, yo.pw]);
+// Ventanas abiertas al dia (solo se repintan si cambia lo que muestran).
+function refrescarVentanas(lleno) {
+  if (lleno) V.actualizar();
+  if (npcAbierto && npcAbierto !== 'ranking' && $('v-npc').classList.contains('on')) { const f = firmaNpc(npcAbierto); if (f !== firmaNpcAnt) abrirNpc(npcAbierto); }
+}
 function abrirNpc(tipo) {
   npcAbierto = tipo;
+  firmaNpcAnt = firmaNpc(tipo);
   const n = NPCS3D.find(x => x.tipo === tipo);
   $('npc-t').textContent = n.nombre.toUpperCase();
   const cu = $('npc-c');
@@ -1437,6 +1487,7 @@ function pintarMapaBase() {
   mapaBase = c;
 }
 function aMapa(wx, wz, N) { return [(wx / LADO + 0.5) * N, (wz / LADO + 0.5) * N]; }
+let ryMini = 0;
 function pintarMini() {
   if (!mapaBase) return;
   const cv = $('mini-c'), x = cv.getContext('2d'), S = 150, vista = 240;
@@ -1467,7 +1518,8 @@ function pintarMini() {
   x.fillStyle = 'rgba(255,255,255,.13)'; x.beginPath(); x.moveTo(0, 0); x.arc(0, 0, 46, -Math.PI / 2 - 0.55, -Math.PI / 2 + 0.55); x.closePath(); x.fill(); x.restore();
   // Flecha propia: hacia donde mira el duende (P.ry = atan2(dx, dz); en el
   // mapa x es x y z va hacia abajo, asi que la rotacion es PI - ry).
-  x.save(); x.translate(S / 2, S / 2); x.rotate(Math.PI - P.ry);
+  ryMini = lerpAng(ryMini, P.ry, 0.5);
+  x.save(); x.translate(S / 2, S / 2); x.rotate(Math.PI - ryMini);
   x.fillStyle = '#fff'; x.strokeStyle = '#000'; x.lineWidth = 1.5;
   x.beginPath(); x.moveTo(0, -8); x.lineTo(5.5, 6); x.lineTo(0, 3); x.lineTo(-5.5, 6); x.closePath(); x.fill(); x.stroke(); x.restore();
 }
@@ -1495,6 +1547,12 @@ function chatAbierto() { return document.activeElement === $('chat-in'); }
 // Ventanas laterales (como WoW): no tapan el centro y se puede seguir
 // caminando con ellas abiertas. Las demas (mapa, muerte, inicio...) si bloquean.
 const LATERALES = ['v-npc', 'v-ayuda', 'v-inv', 'v-libro', 'v-tienda', 'v-logros'];
+addEventListener('keydown', e => {
+  const t = e.target;
+  if (!t || !t.closest || !t.closest('.modal') || t.matches('input,textarea')) return;
+  if (t.matches('select')) { if (e.key !== 'Escape') e.preventDefault(); t.blur(); }
+  else if (t.matches('button,a') && e.code !== 'Tab' && e.code !== 'Enter') t.blur();
+}, true);
 function hayVentana() { return [...document.querySelectorAll('.modal.on')].some(m => !LATERALES.includes(m.id)); }
 function hayLateral() { return LATERALES.some(id => $(id) && $(id).classList.contains('on')); }
 addEventListener('keydown', e => {
@@ -1535,8 +1593,8 @@ addEventListener('keydown', e => {
   if (e.code === 'Enter') { e.preventDefault(); $('chat-in').style.display = 'block'; $('chat-in').focus(); }
   if (e.code === 'Escape') { objetivo = 0; objetivoP = 0; autoAtk = false; pintarBarra(); pintarGrupo(); }
 });
-addEventListener('keyup', e => { teclas[e.code] = false; });
-addEventListener('blur', () => { for (const k in teclas) teclas[k] = false; });
+addEventListener('keyup', e => { teclas[e.code] = false; if (e.code === 'Space' && !P.vuela && P.vy > 0) P.vy *= 0.55; });   // salto corto si sueltas pronto
+addEventListener('blur', () => { for (const k in teclas) teclas[k] = false; arrastre = null; tocandoSubir = tocandoBajar = false; joy.id = null; joy.dx = joy.dy = 0; });
 $('chat-in').addEventListener('keydown', e => e.stopPropagation(), true);
 $('chat-in').addEventListener('keydown', e => {
   if (e.key === 'Enter') { const v = $('chat-in').value.trim(); if (v) enviarChat(v); $('chat-in').value = ''; $('chat-in').blur(); $('chat-in').style.display = 'none'; }
@@ -1552,6 +1610,7 @@ lienzo.addEventListener('pointerdown', e => {
 });
 lienzo.addEventListener('pointermove', e => {
   if (!arrastre || e.pointerType === 'touch') return;
+  if (!(e.buttons & 3)) { arrastre = null; return; }   // el boton ya se solto (alt-tab, dialogo...)
   const dx = e.clientX - arrastre.x, dy = e.clientY - arrastre.y;
   arrastre.x = e.clientX; arrastre.y = e.clientY; arrastre.mov += Math.abs(dx) + Math.abs(dy);
   camYaw -= dx * 0.006; camPitch = clamp(camPitch + dy * 0.004, 0.08, 1.25);
@@ -1640,10 +1699,11 @@ function volar(on) {
 }
 function saltar() {
   if (P.muerto) return;
-  if (P.suelo) { P.vy = 8; P.suelo = false; sfx('salto', 0.25); return; }
+  if (P.suelo || P.coyote > 0) { P.vy = FIS.salto; P.suelo = false; P.coyote = 0; P.buffer = 0; sfx('salto', 0.25); return; }
   // Segundo salto en lo alto del salto: se despliegan las alas para volar;
   // si ya caes, Espacio mantenido es planear (fisica).
-  if (!P.vuela && P.vy > -2.5) volar(true);
+  if (!P.vuela && P.vy > -2.5) { volar(true); return; }
+  P.buffer = FIS.buffer;   // pulsado justo antes de tocar el suelo: salta al aterrizar
 }
 function npcCercano() {
   if (enCueva(P.x)) return Math.hypot(P.x - CUEVA_X0 - CUEVA.salida.x, P.z - CUEVA.salida.z) < 4 ? { tipo: 'salida', nombre: 'Salir de la cueva' } : null;
@@ -1699,8 +1759,11 @@ if (MOVIL) {
   }, { passive: true });
   lienzo.addEventListener('touchend', e => { for (const t of e.changedTouches) if (t.identifier === camTouch.id) { if (camTouch.mov < 10) elegirEn(t.clientX, t.clientY, false); camTouch.id = null; } }, { passive: true });
   $('t-atk').addEventListener('touchstart', e => { e.preventDefault(); alternarAtaque(); }, { passive: false });
-  $('t-salto').addEventListener('touchstart', e => { e.preventDefault(); if (P.vuela) tocandoSubir = true; else saltar(); }, { passive: false });
+  // Mantener SALTO: sube volando y planea al caer (como Espacio).
+  $('t-salto').addEventListener('touchstart', e => { e.preventDefault(); tocandoSubir = true; if (!P.vuela) saltar(); }, { passive: false });
   $('t-salto').addEventListener('touchend', () => { tocandoSubir = false; });
+  $('t-salto').addEventListener('touchcancel', () => { tocandoSubir = false; });
+  $('t-bajar').addEventListener('touchcancel', () => { tocandoBajar = false; });
   $('t-bajar').addEventListener('touchstart', e => { e.preventDefault(); tocandoBajar = true; }, { passive: false });
   $('t-bajar').addEventListener('touchend', () => { tocandoBajar = false; });
   $('t-volar').addEventListener('touchstart', e => { e.preventDefault(); volar(); }, { passive: false });
@@ -1711,24 +1774,37 @@ if (MOVIL) {
 // ── BUCLE ──
 let ultimoT = performance.now(), enviadoT = 0, ultimoEnv = '', cuadro = 0;
 const fwd = new THREE.Vector3(), der = new THREE.Vector3();
+// Fisica del duende. Corre siempre (con una ventana abierta o muerto solo se
+// pierden los controles: se sigue cayendo y frenando). Salto con "coyote time"
+// (aun se puede saltar un instante despues de salir de un borde) y con memoria
+// (pulsado justo antes de tocar suelo, salta al aterrizar).
+const FIS = { gSube: 22, gCae: 30, vMaxCaida: 32, salto: 8.4, coyote: 0.12, buffer: 0.14, escalon: 0.45 };
+P.coyote = 0; P.buffer = 0;
 function fisica(dt) {
   if (P.corrX || P.corrZ) { const k = 1 - Math.exp(-dt * 12), cx = P.corrX * k, cz = P.corrZ * k; P.x += cx; P.z += cz; P.corrX -= cx; P.corrZ -= cz; if (Math.abs(P.corrX) + Math.abs(P.corrZ) < 0.01) P.corrX = P.corrZ = 0; }
-  if (!yo || P.muerto || hayVentana() || chatAbierto()) { P.anda = false; return; }
+  if (!yo) { P.anda = false; return; }
+  const ahoraP = performance.now();
+  const aturdido = (P.au && ((P.au.aturdido || 0) > ahoraP || (P.au.bloque || 0) > ahoraP));
+  const sinControl = P.muerto || hayVentana() || chatAbierto() || aturdido;
+  if (P.muerto && P.vuela) volar(false);
   let f = 0, s = 0;
-  if (teclas.KeyW || teclas.ArrowUp) f += 1;
-  if (teclas.KeyS || teclas.ArrowDown) f -= 1;
-  if (teclas.KeyD || teclas.ArrowRight) s += 1;
-  if (teclas.KeyA || teclas.ArrowLeft) s -= 1;
-  if (joy.id !== null) { f = -joy.dy; s = joy.dx; }
+  if (!sinControl) {
+    if (teclas.KeyW || teclas.ArrowUp) f += 1;
+    if (teclas.KeyS || teclas.ArrowDown) f -= 1;
+    if (teclas.KeyD || teclas.ArrowRight) s += 1;
+    if (teclas.KeyA || teclas.ArrowLeft) s -= 1;
+    if (joy.id !== null) { f = -joy.dy; s = joy.dx; }
+  }
   fwd.set(-Math.sin(camYaw), 0, -Math.cos(camYaw)); der.set(Math.cos(camYaw), 0, -Math.sin(camYaw));
   let mx = fwd.x * f + der.x * s, mz = fwd.z * f + der.z * s;
   // Con el ataque automatico puesto y sin mover el duende, va solo hasta su
-  // objetivo (como hacer clic para atacar en WoW): comodo en el movil.
-  if (!f && !s && autoAtk) {
+  // objetivo (como hacer clic para atacar en WoW). No mientras lanzas un hechizo.
+  if (!sinControl && !f && !s && autoAtk && !lanzando) {
     const o = blancoAtk();
     if (o && !o.muereT) {
-      const dx = o.x - P.x, dz = o.z - P.z, d = Math.hypot(dx, dz);
-      if (d > rangoAtaque(o) * 0.85 && d < 45) { mx = dx / d; mz = dz / d; }
+      const ox = o.tx ?? o.x, oz = o.tz ?? o.z;
+      const dx = ox - P.x, dz = oz - P.z, d = Math.hypot(dx, dz);
+      if (d > rangoAtaque(o) * 0.75 && d < 45) { mx = dx / d; mz = dz / d; }
     }
   }
   const mag = Math.hypot(mx, mz);
@@ -1736,51 +1812,68 @@ function fisica(dt) {
   if (quiere) { mx /= Math.max(1, mag); mz /= Math.max(1, mag); }
   const nadando = !P.vuela && alturaEn(P.x, P.z) < -0.7;
   const vel = MUNDO.velocidad * (nadando ? 0.55 : 1) * (P.vuela ? (ALAS[yo.ala] || ALAS.aprendiz).vel : P.planea ? 1.35 : velMontura(yo.montado)) * (yo.dios && yo.diosModo && yo.diosModo.vel ? 3 : 1);
-  // Inercia ligera: la velocidad se acerca a la deseada (rapido en el suelo,
-  // mas lento en el aire y el agua): arranques y frenadas suaves sin perder control.
+  // Inercia ligera (rapida en el suelo, mas suelta en el aire y el agua). Al
+  // lanzar un hechizo sin tocar las teclas, se frena en seco (no se corta).
   const agarre = P.vuela || P.planea ? 4 : nadando ? 5 : !P.suelo ? 3 : 16;
   const kv = 1 - Math.exp(-agarre * dt);
+  if (lanzando && !quiere) { P.vx = 0; P.vz = 0; }
   P.vx = lerp(P.vx || 0, quiere ? mx * vel : 0, kv); P.vz = lerp(P.vz || 0, quiere ? mz * vel : 0, kv);
   const rapidez = Math.hypot(P.vx, P.vz);
   P.anda = rapidez > 0.6;
   if (rapidez > 0.05) {
     const enC = enCueva(P.x);
-    let nx = enC ? P.x + P.vx * dt : clamp(P.x + P.vx * dt, -MUNDO.limite, MUNDO.limite), nz = enC ? P.z + P.vz * dt : clamp(P.z + P.vz * dt, -MUNDO.limite, MUNDO.limite);
-    // Choques con casas, troncos, rocas y PNJ (no al volar alto).
-    if (!enC && !(P.vuela && P.y - alturaEn(nx, nz) > 3)) [nx, nz] = empujarFuera(nx, nz);
-    // En la cueva se resbala por las paredes en vez de atravesarlas.
-    if (enC && !caminable(nx, nz)) { if (caminable(nx, P.z)) nz = P.z; else if (caminable(P.x, nz)) nx = P.x; else { nx = P.x; nz = P.z; } }
-    // Las laderas muy empinadas (la cordillera del borde) no se suben.
-    const sube = alturaEn(nx, nz) - alturaEn(P.x, P.z);
-    if (P.vuela || sube / (vel * dt + 1e-3) < 1.4) { P.x = nx; P.z = nz; } else { P.vx *= 0.3; P.vz *= 0.3; }
+    // Sub-pasos de 0,35 m: a velocidad de vuelo no se atraviesan troncos finos.
+    const pasos = Math.max(1, Math.ceil(rapidez * dt / 0.35));
+    for (let i = 0; i < pasos; i++) {
+      let nx = P.x + P.vx * dt / pasos, nz = P.z + P.vz * dt / pasos;
+      if (!enC) { nx = clamp(nx, -MUNDO.limite, MUNDO.limite); nz = clamp(nz, -MUNDO.limite, MUNDO.limite); }
+      // Choques con casas, troncos, rocas y PNJ (no al volar alto).
+      if (!enC && !(P.vuela && P.y - alturaEn(nx, nz) > 3)) [nx, nz] = empujarFuera(nx, nz);
+      // En la cueva se resbala por las paredes (y si ya estas en roca, te deja salir).
+      if (enC && caminable(P.x, P.z) && !caminable(nx, nz)) { if (caminable(nx, P.z)) nz = P.z; else if (caminable(P.x, nz)) nx = P.x; else { nx = P.x; nz = P.z; } }
+      // Volando, el borde del pueblo es una pared blanda (se aterriza fuera).
+      if (P.vuela && zonaEn(nx, nz) === 'pueblo' && zonaEn(P.x, P.z) !== 'pueblo') {
+        nx = P.x; nz = P.z; P.vx *= -0.3; P.vz *= -0.3;
+        if (ahoraP - (P.avisoPuebloT || 0) > 3000) { P.avisoPuebloT = ahoraP; aviso('En el pueblo no se vuela: aterriza fuera (C para bajar).'); }
+      }
+      // Las laderas muy empinadas (la cordillera del borde) no se suben.
+      const sube = alturaEn(nx, nz) - alturaEn(P.x, P.z);
+      if (P.vuela || sube / (vel * dt / pasos + 1e-3) < 1.4) { P.x = nx; P.z = nz; } else { P.vx *= 0.3; P.vz *= 0.3; break; }
+    }
     // Gira suave hacia donde va (no de golpe).
     if (quiere) P.ry = lerpAng(P.ry, Math.atan2(mx, mz), 1 - Math.exp(-14 * dt));
     if (mx * der.x + mz * der.z > 0.05) P.f = 1; else if (mx * der.x + mz * der.z < -0.05) P.f = -1;
   }
   // Gravedad y suelo (en el agua se nada en la superficie).
   const suelo = Math.max(alturaEn(P.x, P.z), MUNDO.agua - 0.9);
+  const espacio = !sinControl && (teclas.Space || tocandoSubir);
   if (P.vuela) {
     // Volando: Espacio sube, C (o Mayus) baja; las alas se cansan.
-    const arriba = teclas.Space || tocandoSubir, abajo = teclas.KeyC || teclas.ShiftLeft || tocandoBajar;
-    P.vy = arriba ? 6 : abajo ? -7 : Math.sin(performance.now() / 500) * 0.3;
+    const abajo = !sinControl && (teclas.KeyC || teclas.ShiftLeft || tocandoBajar);
+    P.vy = espacio ? 6 : abajo ? -7 : Math.sin(ahoraP / 500) * 0.3;
     P.y = Math.min(P.y + P.vy * dt, suelo + 45);
     P.alas = Math.max(0, P.alas - dt);
-    if (P.alas <= 0) { volar(false); aviso('Tus alas se cansaron: planeas hacia el suelo.'); }
+    if (P.alas <= 0) { volar(false); P.planeoAuto = true; aviso('Tus alas se cansaron: planeas hacia el suelo.'); }
     if (P.y <= suelo + 0.05) { P.y = suelo; volar(false); P.suelo = true; }
   } else {
-    // Planeo (AION): manteniendo Espacio al caer se abren las alas y se
-    // baja despacio sin gastar energia. Sin planear se cae (suave si quedan alas).
-    P.planea = !P.suelo && P.vy < 0 && (teclas.Space || tocandoSubir) && !enCueva(P.x) && P.y - suelo > 1.2;
-    if (P.planea) P.vy = Math.max(P.vy - 22 * dt, -2.2);
-    else P.vy -= (P.alas > 0 && P.vy < -6 ? 6 : 22) * dt;
+    // Planeo (AION): Espacio mantenido al caer (o solo, al cansarse las alas).
+    P.planea = !P.suelo && P.vy < 0 && (espacio || P.planeoAuto) && !P.muerto && !enCueva(P.x) && P.y - suelo > 1.2;
+    if (P.planea) P.vy += (-2.2 - P.vy) * Math.min(1, dt * 5);   // abre las alas sin tiron
+    else { const g = P.vy > 0 ? FIS.gSube : (P.alas > 0 && P.vy < -6 ? 6 : FIS.gCae); P.vy = Math.max(P.vy - g * dt, -FIS.vMaxCaida); }
     P.y += P.vy * dt;
-    if (P.y <= suelo) { P.y = suelo; P.vy = 0; P.suelo = true; P.planea = false; }
+    // Pegado al suelo al bajar cuestas (sin saltitos) y caida al salir de un borde.
+    const pegar = P.suelo && P.vy <= 0 && P.y - suelo < FIS.escalon * 0.5 + rapidez * dt * 1.5;
+    if (P.y <= suelo || pegar) {
+      const aterriza = !P.suelo;
+      P.y = suelo; P.vy = 0; P.suelo = true; P.planea = false; P.planeoAuto = false; P.coyote = FIS.coyote;
+      if (aterriza && P.buffer > 0 && !sinControl) { P.buffer = 0; saltar(); }
+    } else { P.suelo = false; P.coyote = Math.max(0, P.coyote - dt); }
+    P.buffer = Math.max(0, P.buffer - dt);
     if (P.suelo) P.alas = Math.min(ALAS_MAX, P.alas + dt * 3);
   }
-  if (P.vuela && zonaEn(P.x, P.z) === 'pueblo') { volar(false); aviso('En el pueblo no se puede volar: bajas.'); }
+  if (P.vuela && zonaEn(P.x, P.z) === 'pueblo') { volar(false); P.planeoAuto = true; }
   // Enviar la posicion (hasta ~10 por segundo).
-  const ahora = performance.now();
-  mandarPos(false);
+  if (!P.muerto) mandarPos(false);
 }
 // Posicion al servidor: cada 100 ms, o ya (forzar) antes de un golpe o una
 // habilidad para que mida el alcance con la posicion de verdad.
@@ -1832,13 +1925,15 @@ function animarJugador(q, esYo, t) {
     f.montar(P.vuela && esYo ? '' : mo);
     f.andaMontura = anda;
     const e = estadoJugador(q, esYo, t, anda);
-    f.estado(f.montura && e !== 'ataca' && e !== 'lanza' && e !== 'muere' ? 'monta' : e, t);
+    const golpeNuevo = e === 'ataca' && (q.atkT || 0) !== f.atkVisto;
+    if (golpeNuevo) f.atkVisto = q.atkT;
+    f.estado(f.montura && e !== 'ataca' && e !== 'lanza' && e !== 'muere' ? 'monta' : e, t, golpeNuevo);
     if ((q.heridoT || 0) !== f.heridoVisto) { f.heridoVisto = q.heridoT || 0; if (t - f.heridoVisto < 300) f.modelo.golpe(); }
     f.poner(q.x, y, q.z, esYo ? P.ry : q.ry, t);
     if (!esYo) {
       const vuela = q.a === 3 || q.a === 4;
       const tipoAla = q.al || 'aprendiz';
-      if (q.alas && q.alas.userData.id !== tipoAla) { escena.remove(q.alas); q.alas = null; }
+      if (q.alas && q.alas.userData.id !== tipoAla) { quitarAlas(q.alas); q.alas = null; }
       if (vuela && !q.alas) q.alas = nuevasAlas(tipoAla);
       if (q.alas) { q.alas.visible = vuela; if (vuela) ponerAlas(q.alas, q.x, y, q.z, q.ry, t); }
     }
@@ -1866,7 +1961,6 @@ function animarMon(o, t) {
     let e = o.muereT ? 'muere' : o.st === 2 ? 'ataca' : t - o.golpeT < 220 ? 'herido' : mueve ? (o.st === 1 ? 'corre' : 'anda') : 'quieto';
     if (MONSTRUOS[o.k].vuela && !o.muereT && e !== 'ataca') e = 'vuela';
     f.estado(e, t);
-    if (e === 'ataca' && t - f.tE > (o.j ? 1250 : 1600)) f.tE = t;   // un golpe por ataque del servidor
     if (o.golpeT !== f.golpeVisto) { f.golpeVisto = o.golpeT; if (t - o.golpeT < 300) f.modelo.golpe(); }
     const def = MONSTRUOS[o.k];
     const y = Math.max(alturaEn(o.x, o.z), def.vuela ? alturaEn(o.x, o.z) + 1.2 : MUNDO.agua - 0.9);
@@ -1923,7 +2017,7 @@ function etiquetas(t) {
 const CAMPOS3D = campamentos(MAPAS, MONSTRUOS);
 const guiaNpc = NPCS3D.find(n => n.tipo === 'guia');
 let metaMision = null;
-const flechaDir = (x, z) => { const a = camYaw + Math.PI - Math.atan2(x - P.x, z - P.z); return ['⬆', '↗', '➡', '↘', '⬇', '↙', '⬅', '↖'][((Math.round(a / (Math.PI / 4)) % 8) + 8) % 8]; };
+const flechaDir = (x, z) => { let a = camYaw - Math.PI - Math.atan2(x - P.x, z - P.z); a = Math.atan2(Math.sin(a), Math.cos(a)); return ['⬆', '↗', '➡', '↘', '⬇', '↙', '⬅', '↖'][(Math.round(a / (Math.PI / 4)) + 8) % 8]; };
 function pintarMisiones() {
   const c = $('misiones');
   if (!yo || !yo.mis) { c.style.display = 'none'; return; }
@@ -1992,16 +2086,23 @@ function bucle(t) {
   });
   // Camara: detras del duende, sin meterse en el suelo.
   const tx = P.x, ty = P.y + 1.4, tz = P.z;
-  // Si un arbol tapa, la camara se acerca (suave al alejarse otra vez).
+  // Solo el terreno (colinas entre el duende y la camara) y las paredes de la
+  // cueva la acercan; arboles y casas no (lo que tapa se ve a traves). Acercar
+  // es rapido pero suave, alejar es lento y espera un poco (sin "bombeo").
+  const enCv = enCueva(P.x);
   const camX = tx + Math.sin(camYaw) * Math.cos(camPitch) * camDist, camZ = tz + Math.cos(camYaw) * Math.cos(camPitch) * camDist;
-  // Solo las paredes de la cueva acercan la camara (los arboles no: el acercamiento
-  // brusco junto a casas y arboles molestaba mas que ayudaba).
-  const kChoque = enCueva(P.x) ? choqueCueva(tx, tz, camX, camZ) : 1;
-  camReal = kChoque * camDist < camReal ? kChoque * camDist : lerp(camReal, kChoque * camDist, 0.08);
-  let cx = tx + Math.sin(camYaw) * Math.cos(camPitch) * camReal, cz = tz + Math.cos(camYaw) * Math.cos(camPitch) * camReal;
-  let cy = ty + Math.sin(camPitch) * camReal;
+  const kChoque = enCv ? choqueCueva(tx, tz, camX, camZ) : choqueTerreno(tx, ty, tz, camX, ty + Math.sin(camPitch) * camDist, camZ);
+  const camMin = enCv ? 3.2 : 2.6;
+  const meta = Math.max(Math.min(camMin, camDist), kChoque * camDist);
+  if (meta < camReal - 0.01) { camReal += (meta - camReal) * (1 - Math.exp(-dt * 10)); camHold = 0.35; }
+  else if (camHold > 0) camHold -= dt;
+  else camReal += (meta - camReal) * (1 - Math.exp(-dt * 3));
+  // En la cueva, si la pared obliga a acercar, la camara sube (vista por encima del hombro).
+  const pitch = camPitch + (enCv ? (1 - kChoque) * 0.45 : 0);
+  let cx = tx + Math.sin(camYaw) * Math.cos(pitch) * camReal, cz = tz + Math.cos(camYaw) * Math.cos(pitch) * camReal;
+  let cy = ty + Math.sin(pitch) * camReal;
   cy = Math.max(cy, alturaEn(cx, cz) + 0.8, MUNDO.agua + 0.5);
-  if (enCueva(P.x)) cy = Math.min(cy, 5.6);   // bajo el techo de la cueva
+  if (enCv) cy = Math.min(cy, 7.2);   // bajo el techo de la cueva
   camara.position.set(cx, cy, cz); camara.lookAt(tx, ty, tz);
   // Zona actual: titulo, cielo y niebla de su color.
   if (cuadro % 15 === 0) {
@@ -2043,7 +2144,7 @@ function bucle(t) {
     if (e.t >= 1) { escena.remove(e.m); e.m.material.dispose(); return false; }
     return true;
   });
-  for (const z of zonas3.values()) { const k = clamp((performance.now() - z.ini) / z.ms, 0, 1); z.disco.material.opacity = 0.12 + 0.4 * k; z.disco.scale.setScalar(Math.max(0.05, k)); }
+  for (const [id, z] of zonas3) { const k = clamp((performance.now() - z.ini) / z.ms, 0, 1); if (performance.now() - z.ini > z.ms + 1500) { quitarZona3(id); continue; } z.disco.material.opacity = 0.12 + 0.4 * k; z.disco.scale.setScalar(Math.max(0.05, k)); }
   if (sacudir > 0) { sacudir = Math.max(0, sacudir - dt); camara.position.x += (Math.random() - 0.5) * sacudir; camara.position.y += (Math.random() - 0.5) * sacudir; }
   alasMesh.visible = (P.vuela || P.planea) && !!yo;
   if (alasMesh.visible) ponerAlas(alasMesh, P.x, P.y, P.z, P.fig && P.fig.tipo === 'modelo' ? P.ry : camYaw, t);

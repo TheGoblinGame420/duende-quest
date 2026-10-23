@@ -2410,3 +2410,34 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
   repartidas en ~150 ms.
 - Medido en una pelea: 2,5 ms de mediana por cuadro, p95 7,2 ms, sin
   tareas largas.
+
+### Auditoría de 20 especialistas aplicada (23-oct-2026, `?v=259`). Arnés **688**
+
+- Servidor: `mover3d` valida el modo de vuelo y simula la altura (sube
+  ≤6,5 m/s, el planeo siempre baja, a pie no se sube), energía contada con
+  el modo anterior y en el tick si no llegan mensajes; presupuesto `vel+3`
+  sin el mínimo de 16 ms; casas en el servidor; aturdido/bloque no mueven ni
+  pegan; el lanzamiento se corta a 0,8 m del inicio. `ia3d` reescrita:
+  amenaza para todos (110 %/130 %), solo se reinicia sin nadie en la lista,
+  inmune mientras vuelve, correa limpia, jefe mundial conserva el daño,
+  `pasoCueva`/`vistaCueva` (puertas), centinelas en la cueva, rodean al
+  jugador, 400 ms de preparación, no atraviesan casas. Duelos con
+  lanzamientos (tk 'd'), Ejecutar/Eviscerar/mínimo. `reiniciarJefeCueva`;
+  cueva: participación, 3 cofres completos al día, nivel ±10, límite de
+  instancias (1/min por personaje, 40 en total), fuera de combate, el Rey
+  escala con quien entra; sin mTON ni botín doble del Rey. Jefe mundial: 0,3 %
+  de daño mínimo y 6 premios completos al día. `aDe`/`aMon` (combate.js):
+  auras, curas, castFin y 'ph' solo a los cercanos; auras de la cueva por
+  fin llegan. `olvidar3d`; campamentos que se vaciaban para siempre;
+  revivir sale de la cueva bien.
+- Cliente: física siempre activa (sin control con ventanas), bordes, coyote,
+  memoria de salto, salto variable, sub-pasos, planeo automático, pueblo
+  como pared blanda; cámara con `choqueTerreno`, suavizado asimétrico con
+  espera y mínimo, cueva con vista alta y techo a 8 m; snap3 reemplaza;
+  'm3' limpia monstruos fantasma y combate; círculos del pisotón liberados;
+  fugas de alas/corcho; un panel lateral a la vez; 'yoC' refresca paneles;
+  selects sin robar teclas; animación de ataque reiniciada en cada golpe y
+  tajo del monstruo sincronizado con 'ph'.
+- modelos.js (agente): `fusionarRig` funde las piezas fijas por pivote
+  (3426 → 1321 mallas en la galería; duende 23 → 6); `?sinFusion=1` lo
+  desactiva. Medido en combate: 1,4 ms de mediana, p95 2,4 ms.

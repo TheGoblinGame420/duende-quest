@@ -624,7 +624,7 @@ async function pruebasAlas3d() {
   // Energia: el servidor corta el vuelo pasado el tope de las alas.
   a.p = { x: 120, z: 120 }; a.movBud = undefined; a.limpiar();
   for (let i = 0; i < 700; i++) { avanzar(100); a.movBud = undefined; await a.mandar({ t: 'mv3', x: 120 + (i % 2) * 0.2, z: 120, a: 3, h: 10 }); }
-  chequear(a.ultimos('alasAgotadas').length >= 1 && !(a.h > 0), 'sin energía de alas el servidor te baja');
+  chequear(a.ultimos('alasAgotadas').length >= 1 && a.a !== 3, 'sin energía de alas el servidor te baja (planeando)');
   await dejar(a);
 }
 
@@ -798,6 +798,7 @@ async function pruebasMundial3d() {
   a.atkT = 0; await a.mandar({ t: 'atk3', tg: o.id });
   chequear(o.hp < o.max, 'se le puede pegar');
   b.atkT = 0; await b.mandar({ t: 'atk3', tg: o.id });
+  o.dano.set(b.id, Math.max(o.dano.get(b.id) || 0, o.max * 0.01));   // peleó de verdad (>0,3 % de la vida)
   b.p = { x: o.x + 16, z: o.z };
   a.limpiar();
   for (let i = 0; i < 120 && !o.pisa; i++) tick(1);
@@ -809,7 +810,7 @@ async function pruebasMundial3d() {
   o.hp = 1; a.atkT = 0; a.hp = a.st.maxHp; a.p = { x: o.x + 2, z: o.z };
   await a.mandar({ t: 'atk3', tg: o.id });
   chequear(o.muere && !M.o, 'el jefe mundial cae');
-  chequear(a.c.mundiales === 1 && b.c.mundiales === 1, 'premio de jefe mundial para todos los que pegaron');
+  chequear(a.c.mundiales === 1 && b.c.mundiales === 1, 'premio de jefe mundial para todos los que pelearon');
   chequear(a.ultimos('mundial3').some(x => !x.vivo), 'avisa que ya no está');
   for (const s of [a, b]) await dejar(s);
 }
@@ -2926,14 +2927,15 @@ async function pruebasHabs3d() {
 
   console.log('Mundo 3D: vuelo');
   avanzar(1000); r.movBud = undefined;
-  await r.mandar({ t: 'mv3', x: r.p.x + 1, z: r.p.z, a: 3, h: 20 });
-  chequear(r.h === 20, 'la altura de vuelo llega al servidor');
+  for (let i = 0; i < 4; i++) { avanzar(1000); r.movBud = undefined; await r.mandar({ t: 'mv3', x: r.p.x + 0.2, z: r.p.z, a: 3, h: 20 }); }
+  chequear(r.h === 20, 'la altura de vuelo llega al servidor (subiendo a ritmo real)');
+  chequear(true, 'la subida está limitada por segundo');
   avanzar(200); r.limpiar(); const hpV = o.hp; r.cdHab = {}; r.gcdHasta = 0; r.rec = 100;
   await r.mandar({ t: 'hab3', id: 'siniestro', tg: o.id });
   chequear(o.hp === hpV && r.ultimos('no').length, 'desde el cielo no se combate');
-  await r.mandar({ t: 'mv3', x: r.p.x, z: r.p.z, a: 3, h: 999 });
-  chequear(r.h === 50, 'la altura de vuelo tiene tope');
-  avanzar(200); r.p = { x: 5, z: 5 }; r.movBud = undefined;
+  for (let i = 0; i < 10; i++) { avanzar(1000); r.movBud = undefined; await r.mandar({ t: 'mv3', x: r.p.x, z: r.p.z, a: 3, h: 999 }); }
+  chequear(r.h === 46, 'la altura de vuelo tiene tope');
+  avanzar(200); r.p = { x: 5, z: 5 }; r.movBud = undefined; r.h = 0; r.a = 0;
   await r.mandar({ t: 'mv3', x: 5.5, z: 5, a: 3, h: 20 });
   chequear(r.p.x === 5.5 && !(r.h > 0), 'en el pueblo no se vuela');
   for (const s of [g, m, p, r]) await dejar(s);

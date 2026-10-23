@@ -42,5 +42,26 @@ export function caminable(x, z, margen = 0.6) {
   for (const [x0, z0, x1, z1] of CUEVA.salas) if (lx >= x0 + margen && lx <= x1 - margen && z >= z0 + margen && z <= z1 - margen) return true;
   return false;
 }
+// ¿Se ve (y se puede ir en linea recta) de A a B sin atravesar roca? (coordenadas absolutas)
+export function vistaCueva(ax, az, bx, bz) {
+  const L = Math.hypot(bx - ax, bz - az);
+  for (let d = 0.5; d < L; d += 0.5) { const k = d / L; if (!caminable(ax + (bx - ax) * k, az + (bz - az) * k, 0)) return false; }
+  return true;
+}
+// Puertas entre salas y pasillos (centros de cada union, relativas a CUEVA_X0).
+const PUERTAS = [[0, 21.5], [0, 41.5], [0, 71.5], [0, 91.5], [14.5, 103.5], [35.5, 103.5]];
+// A donde ir para llegar a (tx, tz) sin atravesar roca: directo si se ve, si no
+// por la puerta visible que deja el camino mas corto.
+export function pasoCueva(x, z, tx, tz) {
+  if (vistaCueva(x, z, tx, tz)) return [tx, tz];
+  let mejor = null, md = Infinity;
+  for (const [px, pz] of PUERTAS) {
+    const ax = CUEVA_X0 + px;
+    if (Math.hypot(ax - x, pz - z) < 0.8 || !vistaCueva(x, z, ax, pz)) continue;
+    const d = Math.hypot(ax - x, pz - z) + Math.hypot(tx - ax, tz - pz);
+    if (d < md) { md = d; mejor = [ax, pz]; }
+  }
+  return mejor || [tx, tz];
+}
 // Nivel de la instancia: el del mas alto del grupo (5 a 60).
 export const nivelCueva = nv => Math.max(5, Math.min(60, nv | 0));

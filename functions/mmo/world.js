@@ -231,7 +231,7 @@ export class MmoWorld {
       if (this.porUid.get(s.c.uid) === s) this.porUid.delete(s.c.uid);
       this.desconectarDeGrupo(s);
       this.aClave(s.k, { t: 'pl', id: s.id }, s);
-      this.olvidar(s);
+      if (s.m3) this.olvidar3d(s); else this.olvidar(s);
       this.salirDeMundo(s);
       await this.guardar(s);
     }
@@ -1321,7 +1321,7 @@ export class MmoWorld {
     if (!primeraVez) {
       this.cancelarCast(s);
       this.aClave(s.k, { t: 'pl', id: s.id }, s);
-      this.olvidar(s);
+      if (s.m3) this.olvidar3d(s); else this.olvidar(s);
       if (s.k !== k) this.salirDeMundo(s, k);
     }
     if (s.montado && (k.includes('#') || mapaId === 'coliseo')) s.montado = null;
@@ -1519,20 +1519,26 @@ export class MmoWorld {
       const s = this.sesiones.get(sid);
       if (!s || !s.c || s.k !== clave) continue;
       const c = s.c;
+      // Hay que haber peleado de verdad (al menos un 0,3 % de su vida).
+      if (d < o.max * 0.003) continue;
       const parte = d / total;
-      const xp = Math.round(xpParaSubir(c.nivel) * (0.25 + Math.min(0.25, parte)));
-      const oro = Math.round(80 * c.nivel * (1 + Math.min(1, parte * 3)));
+      // Como mucho 6 premios completos al dia (Coliseo y 3D juntos); luego, uno pequeño.
+      const hoy = hoyUTC();
+      if (!c.mundDia || c.mundDia.d !== hoy) c.mundDia = { d: hoy, n: 0 };
+      const lleno = c.mundDia.n++ < 6;
+      const xp = Math.round(xpParaSubir(c.nivel) * (lleno ? 0.12 + Math.min(0.13, parte) : 0.02));
+      const oro = Math.round(80 * c.nivel * (1 + Math.min(1, parte * 3)) * (lleno ? 1 : 0.25));
       c.oro += oro;
       c.mundiales = (c.mundiales || 0) + 1;
       this.progresoTarea(s, 'mundial');
-      this.puntoPase(s, PASE.puntos.mundial);
-      const it = this.darItem(s, generarItem(c.nivel, parte > 0.15 ? 2 : 1));
+      if (lleno) this.puntoPase(s, PASE.puntos.mundial);
+      const it = lleno ? this.darItem(s, generarItem(c.nivel, parte > 0.15 ? 2 : 1)) : null;
       // Premio fijo para todos los que ayudaron: si dependiera del daño, una
       // skin pagada con mas ataque daria mas mTON (y se pagaria para ganar).
       if (parte >= 0.02) this.darMton(s, 80, 'mundial');
       this.sumarXp(s, xp);
       this.enviar(s, { t: 'gana', xp, oro, drops: [], item: it, x: Math.round(o.x), y: Math.round(o.y - o.h) });
-      this.enviar(s, { t: 'toast', m: `Jefe mundial derrotado. +${xp} XP · +${oro} oro · ${RAREZAS[it.r].nombre}: ${nombreItem(it)}`, ok: true });
+      this.enviar(s, { t: 'toast', m: `Jefe mundial derrotado. +${xp} XP · +${oro} oro` + (it ? ` · ${RAREZAS[it.r].nombre}: ${nombreItem(it)}` : ' (premio pequeño: hoy ya cobraste 6 completos)'), ok: true });
       s.sucio = true;
       this.revisarLogros(s);
       this.actualizarYo(s);
@@ -1713,7 +1719,7 @@ export class MmoWorld {
       if (o.jefe && this.esJefeBanda(o)) {
         // Banda: botin propio, una vez por semana y jefe (mazmorras.js).
         item = this.botinBanda(s, o, participo !== false);
-      } else if (o.jefe) {
+      } else if (o.jefe && !o.cueva) {
         const it0 = generarItem(nvM, o.final ? 2 : 1);
         // Jefe de mazmorra: a veces la pieza es de su conjunto.
         const idMaz = o.mazmorra && this.mundo[o.cl] && this.mundo[o.cl].inst && this.mundo[o.cl].inst.id;
@@ -1745,7 +1751,7 @@ export class MmoWorld {
     if (o && participo !== false) {
       if (o.jefe || (o.nv || MONSTRUOS[o.k].nivel) >= c.nivel - 10) this.puntoGesta(s, o.jefe ? 'jefe' : 'caza');
       this.progresoTarea(s, 'caza', o, n || 1);
-      if (o.jefe && !o.mazmorra && !MONSTRUOS[o.k].mundial) this.progresoTarea(s, 'jefe', o);
+      if (o.jefe && !o.mazmorra && !o.cueva && !MONSTRUOS[o.k].mundial) this.progresoTarea(s, 'jefe', o);
     }
     // Mision en curso: cuenta si el monstruo es el que pide.
     const q = MISIONES[c.mis.i];
@@ -1806,7 +1812,7 @@ export class MmoWorld {
     // zonas no).
     if (!(fuente && (fuente.bala || fuente.zona)) && this.aura(s, 'evasion') && Math.random() < EVASION) {
       s.inv = ahora + 400;
-      this.aClave(s.k, { t: 'ph', p: s.id, d: 0, esq: 1, from: fuente ? fuente.id : 0 });
+      this.aDe(s, { t: 'ph', p: s.id, d: 0, esq: 1, from: fuente ? fuente.id : 0 });
       return;
     }
     const bruto = dmg * rnd(0.9, 1.1);
@@ -1844,7 +1850,7 @@ export class MmoWorld {
     if (duelo) real = Math.min(real, Math.max(0, Math.ceil(s.hp) - 1));
     s.hp -= real;
     // Los ultimos golpes, para explicar la muerte ("te mató...").
-    const mo = fuente && fuente.id ? this.mundoDe(s).mons.get(fuente.id) : null;
+    const mo = fuente && fuente.id ? (s.m3 ? this.iniciar3d().mons.get(fuente.id) : this.mundoDe(s).mons.get(fuente.id)) : null;
     s.golpes = (s.golpes || []).filter(x => ahora - x.t < 12000).slice(-4);
     s.golpes.push({ t: ahora, n: mo ? MONSTRUOS[mo.k].nombre : 'Daño', nv: mo ? (mo.nv || MONSTRUOS[mo.k].nivel) : 0, d: real });
     if (!pct && !duelo) s.inv = ahora + INVULNERABLE_GOLPE_MS;
@@ -1855,7 +1861,7 @@ export class MmoWorld {
     if (this.aura(s, 'sigilo')) this.quitarAura(s, 'sigilo');
     if (s.montado) this.desmontar(s);
     if (s.cast && (s.cast.h === 'hogar' || s.cast.h === 'montar' || s.cast.h === 'recolectar' || s.cast.h === 'pescar' || s.cast.h === 'pica')) this.cancelarCast(s, s.cast.h === 'pescar' || s.cast.h === 'pica' ? 'Te golpearon: se cortó el sedal.' : 'Te golpearon: se canceló.');
-    this.aClave(s.k, { t: 'ph', p: s.id, d: real, ab: abs || undefined, from: fuente ? fuente.id : 0 });
+    this.aDe(s, { t: 'ph', p: s.id, d: real, ab: abs || undefined, from: fuente ? fuente.id : 0 });
     // La vida ya va en cada foto del mundo: el "yo" entero (bolsa, equipo...)
     // tras cada golpe pesaba en la red y repintaba las ventanas del movil.
     if (s.hp <= 0) { this.morir(s); this.actualizarYo(s); }
@@ -1868,7 +1874,7 @@ export class MmoWorld {
     s.combo = 0;
     this.cancelarCast(s);
     this.limpiarAuras(s);
-    this.olvidar(s);
+    if (s.m3) this.olvidar3d(s); else this.olvidar(s);
     this.aClave(s.k, { t: 'pm', p: s.id });
     this.enviar(s, { t: 'muerte', golpes: (s.golpes || []).map(x => ({ n: x.n, nv: x.nv, d: x.d })), pw: s.c.pw.pocion || 0, inst: !!(this.mundo[s.k] && this.mundo[s.k].inst) });
     s.golpes = [];

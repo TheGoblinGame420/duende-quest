@@ -20,6 +20,9 @@ const rnd = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
 export const Combate = {
+  // Aviso a quien ve a s: en el 3D solo a los cercanos (aCerca3d); en el 2D, a su mapa.
+  aDe(s, obj) { if (s && s.m3 && s.p && this.aCerca3d) return this.aCerca3d({ x: s.p.x, z: s.p.z, i3: s.i3 }, obj); this.aClave(s.k, obj); },
+  aMon(o, obj) { if (o && (o.cl === '~3d' || o.cueva) && this.aCerca3d) return this.aCerca3d(o, obj); this.aClave(o.cl, obj); },
   // ── CLASE ──
   elegirClase(s, m) {
     const c = s.c;
@@ -72,7 +75,7 @@ export const Combate = {
     if (s.cast) return;
     if (Date.now() - (s.combateT || 0) < 4000) return this.no(s, 'No puedes montar en pleno combate.');
     s.cast = { h: 'montar', fin: Date.now() + MONTAR_MS, x: s.x, y: s.y, tg: 0 };
-    this.aClave(s.k, { t: 'cast', p: s.id, id: 'montar', ms: MONTAR_MS });
+    this.aDe(s, { t: 'cast', p: s.id, id: 'montar', ms: MONTAR_MS });
   },
   desmontar(s) {
     if (!s.montado) return;
@@ -156,22 +159,22 @@ export const Combate = {
     s.au = s.au || {};
     if (a === 'aturdido' && s.cast) this.cancelarCast(s, 'Te aturdieron.');
     s.au[a] = { hasta: ms ? Date.now() + ms : Infinity, ...(extra || {}) };
-    this.aClave(s.k, { t: 'au', k: 'p', id: s.id, a, ms: ms || -1 });
+    this.aDe(s, { t: 'au', k: 'p', id: s.id, a, ms: ms || -1 });
   },
   quitarAura(s, a) {
     if (!s.au || !s.au[a]) return;
     delete s.au[a];
-    this.aClave(s.k, { t: 'au', k: 'p', id: s.id, a, ms: 0 });
+    this.aDe(s, { t: 'au', k: 'p', id: s.id, a, ms: 0 });
   },
   limpiarAuras(s) { for (const a in (s.au || {})) this.quitarAura(s, a); s.au = {}; },
   ponerAuraMon(o, a, ms, extra) {
     o.au[a] = { hasta: Date.now() + ms, ...(extra || {}) };
-    this.aClave(o.cl, { t: 'au', k: 'm', id: o.id, a, ms });
+    this.aMon(o, { t: 'au', k: 'm', id: o.id, a, ms });
   },
   quitarAuraMon(o, a) {
     if (!o.au[a]) return;
     delete o.au[a];
-    this.aClave(o.cl, { t: 'au', k: 'm', id: o.id, a, ms: 0 });
+    this.aMon(o, { t: 'au', k: 'm', id: o.id, a, ms: 0 });
   },
   auraMon(o, a) { const x = o.au[a]; return x && x.hasta > Date.now() ? x : null; },
 
@@ -217,7 +220,7 @@ export const Combate = {
     const n = Math.max(1, Math.round(cant * rnd(0.92, 1.08) * (crit ? 1.5 : 1)));
     const real = Math.min(n, Math.max(0, a.st.maxHp - a.hp));
     a.hp += real;
-    this.aClave(a.k, { t: 'cu', p: a.id, n, c: crit ? 1 : 0 });
+    this.aDe(a, { t: 'cu', p: a.id, n, c: crit ? 1 : 0 });
     if (real > 0 && s) this.amenazaCura(s, a, real);
     return real;
   },
@@ -394,12 +397,12 @@ export const Combate = {
     s.cast = null;
     if (ca.h === 'pescar' || ca.h === 'pica') return this.finPesca(s, ca, ahora);
     if (ca.h === 'recolectar') {
-      this.aClave(s.k, { t: 'castFin', p: s.id, ok: true });
+      this.aDe(s, { t: 'castFin', p: s.id, ok: true });
       if (!s.muerto) { if (s.m3) this.terminarRecoleccion3d(s, ca); else this.terminarRecoleccion(s, ca); }
       return;
     }
     if (ca.h === 'montar') {
-      this.aClave(s.k, { t: 'castFin', p: s.id, ok: true });
+      this.aDe(s, { t: 'castFin', p: s.id, ok: true });
       if (!s.muerto && s.c.montura && !s.k.includes('#')) {
         s.montado = s.c.montura;
         this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });
@@ -408,7 +411,7 @@ export const Combate = {
       return;
     }
     if (ca.h === 'hogar') {
-      this.aClave(s.k, { t: 'castFin', p: s.id, ok: true });
+      this.aDe(s, { t: 'castFin', p: s.id, ok: true });
       s.cdHogar = ahora + HOGAR_CD_MS;
       this.enviar(s, { t: 'cd', id: 'hogar', hasta: HOGAR_CD_MS });
       this.entrarMapa(s, 'pueblo', MAPAS.pueblo.spawn);
@@ -419,7 +422,7 @@ export const Combate = {
     if (ca.tk === 'p') {
       const riv = this.rivalDuelo(s);
       const ok = riv && riv.id === ca.tg && this.distJug(s, riv) <= h.rango + 60 && s.rec >= costoHab(h, s.st.recMax, s.c.espec) && !s.muerto;
-      this.aClave(s.k, { t: 'castFin', p: s.id, ok: !!ok });
+      this.aDe(s, { t: 'castFin', p: s.id, ok: !!ok });
       if (ok) this.habDuelo(s, h, riv);
       return;
     }
@@ -433,18 +436,18 @@ export const Combate = {
     }
     const necesita = h.obj === 'enemigo' || h.obj === 'aliado' || h.obj === 'muerto';
     if (s.muerto || (necesita && !obj) || s.rec < costoHab(h, s.st.recMax, s.c.espec)) {
-      this.aClave(s.k, { t: 'castFin', p: s.id, ok: false });
+      this.aDe(s, { t: 'castFin', p: s.id, ok: false });
       if (!s.muerto) this.no(s, necesita && !obj ? 'El objetivo ya no está al alcance.' : 'No tienes suficiente recurso.');
       return;
     }
-    this.aClave(s.k, { t: 'castFin', p: s.id, ok: true });
+    this.aDe(s, { t: 'castFin', p: s.id, ok: true });
     this.aplicarHab(s, h, obj);
   },
 
   cancelarCast(s, motivo) {
     if (!s.cast) return;
     s.cast = null;
-    this.aClave(s.k, { t: 'castFin', p: s.id, ok: false });
+    this.aDe(s, { t: 'castFin', p: s.id, ok: false });
     if (motivo) this.no(s, motivo);
   },
 
