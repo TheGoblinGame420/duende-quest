@@ -487,6 +487,12 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 35, fecha: '23 oct 2026', items: [
+    'Tu duende 3D se parece por fin al de los dibujos: nariz ganchuda, ojos ámbar con cejas fruncidas, sonrisa con dientes y orejas grandes. Los ojos grandes y tiernos siguen como opción en el editor de aspecto.',
+    'Skins rediseñadas como en su imagen: Táctico con capucha, visor y teclado holográfico; Nigromante con capucha, ojos que brillan, orbe y humo; Rey con corona de gemas, traje con neón y móvil con el gráfico.',
+    'Berserker con peluca de juez, corona, toga dorada, chorrera, mazo y anillos de runas; Legendaria con ojos de fuego, hombreras con púas, orbe y katana de neón.',
+    'Cuerpo más trabajado: hombros redondos, pulgares, punteras en las botas y manos más grandes.',
+  ] },
   { n: 34, fecha: '23 oct 2026', items: [
     'Telegram a pantalla completa en el móvil: el mundo 3D ocupa toda la pantalla y el HUD se aparta de los botones de Telegram.',
     'Vibración al golpear, al recibir daño, en los críticos, al subir de nivel y al abatir a un rival (en Telegram).',

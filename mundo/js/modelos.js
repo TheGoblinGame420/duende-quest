@@ -19,7 +19,7 @@
 // piezas fijas de cada pivote se funden en una malla (fusionarRig): ~6-14 draw calls.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo } from '/mmo/js/data.js?v=266';
+import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo } from '/mmo/js/data.js?v=267';
 
 const PX_M = 34;                 // pixeles del 2D por metro
 const PI = Math.PI;
@@ -714,11 +714,15 @@ function humano(r, o) {
     return r;
   }
   M(cb, 'esfera', piel, [0, 0.26 * H, 0], [0.3 * H, 0.28 * H, 0.28 * H]);
-  if (o.orejas) for (const x of [-1, 1]) M(cb, 'cono', piel, [x * 0.24 * H, 0.3 * H, -0.03 * H], [0.075 * H, o.orejas * H, 0.045 * H], [0, -x * 0.25, -x * 1.2]);
+  if (o.orejas) for (const x of [-1, 1]) M(cb, 'cono', piel, [x * 0.24 * H, 0.3 * H, -0.03 * H], [0.075 * H, o.orejas * H, 0.045 * H], [0, -x * 0.25, -x * (o.orejaRot || 1.2)]);
   if (o.nariz === 'bola') M(cb, 'esfera', osc(piel, 0.92), [0, 0.21 * H, 0.27 * H], [0.08 * H, 0.07 * H, 0.09 * H]);
   else if (o.nariz === 'pico') M(cb, 'cono', piel, [0, 0.22 * H, 0.23 * H], [0.06 * H, 0.22 * H, 0.06 * H], [PI / 2 + 0.25, 0, 0]);
+  else if (o.nariz === 'gancho') {   // la del duende 2D: larga, ancha en la base y caida hacia abajo
+    MF(cb, [['cono', hx(osc(piel, 0.9)), [0, 0.27, 0.22], [0.085, 0.26, 0.075], [PI / 2 + 0.5, 0, 0]],
+      ['esfera', hx(osc(piel, 0.9)), [0, 0.15, 0.4], [0.05, 0.045, 0.05]]], null, null, null, H);
+  }
   if (o.ojos === 'duende') {
-    MF(cb, partesOjos(!!o.ojosGrandes), null, null, null, H);
+    MF(cb, o.ojosGrandes ? partesOjos(true) : partesOjos2D(piel), null, null, null, H);
   } else if (o.ojos) {
     const ojo = mat(o.ojos, { e: 1 });
     for (const x of [-1, 1]) M(cb, 'esferaB', ojo, [x * 0.1 * H, 0.31 * H, 0.25 * H], [0.06 * H, 0.045 * H, 0.03 * H]);
@@ -728,6 +732,18 @@ function humano(r, o) {
   return r;
 }
 
+// Ojos como en las imagenes 2D: rasgados, iris ambar, pupila y ceja gruesa
+// de piel fruncida hacia el centro (mirada picara).
+function partesOjos2D(piel) {
+  const P = [], ceja = hx(osc(piel, 0.72));
+  for (const x of [-1, 1]) {
+    P.push(['esfera', '#fff1b8', [x * 0.105, 0.3, 0.246], [0.07, 0.042, 0.03]]);
+    P.push(['esferaB', '#f59e0b', [x * 0.1, 0.298, 0.268], [0.036, 0.036, 0.014]]);
+    P.push(['esferaB', '#1b1430', [x * 0.1, 0.298, 0.276], [0.014, 0.027, 0.008]]);
+    P.push(['caja', ceja, [x * 0.11, 0.352, 0.24], [0.15, 0.05, 0.07], [0, 0, x * 0.42]]);
+  }
+  return P;
+}
 // Ojos del duende en unidades de cabeza (H = 1).
 function partesOjos(grandes) {
   const P = [];
@@ -824,7 +840,7 @@ const ACC = {
 // Hombreras (opcionalmente con pua).
 function hombreras(r, c, pua) {
   const P = [['semi', hx(c), [0, -0.02, 0], [0.14, 0.11, 0.14]]];
-  if (pua) P.push(['cono4', hx(pua), [0, 0.06, 0], [0.05, 0.2, 0.05]]);
+  if (pua) P.push(['cono4', hx(pua), [0, 0.06, 0], [0.05, 0.2, 0.05]], ['cono4', hx(pua), [0, 0.02, -0.08], [0.035, 0.14, 0.035], [-0.6, 0, 0]]);
   for (const b of [r.bI, r.bD]) MF(b, P);
 }
 // Capa a la espalda.
@@ -917,18 +933,18 @@ const ROPA_SKIN = {
   // Duende de siempre (heroe de la hoja animada): cuero marron con hebillas de bronce.
   comun:      { ropa: '#7a5230', pantalon: '#4e3420', botas: '#3a2616', acento: '#c9a227' },
   // Tactico: sudadera verde de hacker, visor verde y lineas de codigo neon.
-  tactico:    { ropa: '#1f6b35', pantalon: '#1a2a20', botas: '#121a14', acento: '#39ff6a', neon: '#39ff6a', visor: '#1aff5a' },
+  tactico:    { ropa: '#1f6b35', pantalon: '#1a2a20', botas: '#121a14', acento: '#39ff6a', neon: '#39ff6a', visor: '#1aff5a', capucha: '#1a5a2c', teclado: '#39ff6a', codigo: '#39ff6a' },
   // Nigromante: sombras moradas con llamas violeta en las manos.
-  necro:      { ropa: '#3a1f5c', pantalon: '#1e1230', botas: '#160d22', acento: '#b44cff', llamas: '#b44cff' },
+  necro:      { ropa: '#3a1f5c', pantalon: '#1e1230', botas: '#160d22', acento: '#b44cff', llamas: '#b44cff', capucha: '#24123a', tunica: '#2a1644', ojosBrillo: '#c77dff', orbe: '#b44cff', humo: '#7c3aed' },
   // Rey: traje azul con corbata roja y corona.
-  king:       { ropa: '#22307a', pantalon: '#1a2358', botas: '#141a3a', acento: '#ffd84a', corbata: '#d22b2b', corona: true },
+  king:       { ropa: '#22307a', pantalon: '#1a2358', botas: '#141a3a', acento: '#ffd84a', corbata: '#d22b2b', corona: true, gemas: true, ribete: '#38bdf8', movil: true },
   // Berserker (el juez): toga morada con ribetes dorados, capa y corona.
-  berserker:  { ropa: '#6b2a8f', pantalon: '#3d1858', botas: '#2a1040', acento: '#ffd84a', cinto: '#ffd84a', corona: true, capa: '#4d1d6b' },
+  berserker:  { ropa: '#6b2a8f', pantalon: '#3d1858', botas: '#2a1040', acento: '#ffd84a', cinto: '#ffd84a', corona: true, capa: '#4d1d6b', tunica: '#5b2380', borde: '#ffd84a', peluca: '#f1f1f1', chorrera: '#ffffff', mazo: '#e8b923', runas: '#b44cff' },
   // Legendaria: armadura negra con circuitos neon cian y magenta.
-  legendaria: { ropa: '#1b1f33', pantalon: '#12152a', botas: '#0c0e1c', acento: '#00f0ff', neon: '#ff3cf0', hombreras: true },
+  legendaria: { ropa: '#1b1f33', pantalon: '#12152a', botas: '#0c0e1c', acento: '#00f0ff', neon: '#ff3cf0', hombreras: true, puas: '#00f0ff', ojosBrillo: '#ff9a1f', orbe: '#00f0ff', hojaNeon: '#7df9ff' },
 };
 // Detalles de la skin: cuello y hebilla, corbata, neon, visor, llamas, corona, capa.
-function vestirSkin(r, R0, cpo) {
+function vestirSkin(r, R0, cpo, tocado) {
   const T = 0.46, W = cpo.ancho, P = cpo.panza, ac = hx(R0.acento);
   const cu = r.cuerpo, H = r.H;
   const piezas = [
@@ -945,7 +961,83 @@ function vestirSkin(r, R0, cpo) {
     lineas.push(['caja', null, [0, T * 0.3, 0.215 * P], [0.18 * W, 0.02, 0.02]]);
     MF(cu, lineas, m).userData.sinFlash = true;
   }
-  if (R0.hombreras) hombreras(r, R0.neon ? mez(R0.ropa, R0.neon, 0.5) : R0.acento);
+  if (R0.hombreras) hombreras(r, R0.neon ? mez(R0.ropa, R0.neon, 0.5) : R0.acento, R0.puas);
+  // Tunica larga hasta los pies (nigromante, juez), con ribete.
+  if (R0.tunica) {
+    const L = 0.45;
+    M(cu, 'tronco', R0.tunica, [0, -L + 0.03, 0], [0.31 * W * P, L + 0.12, 0.28 * P]);
+    if (R0.borde) M(cu, 'toro', mat(R0.borde, { e: 0.25 }), [0, -L + 0.07, 0], [0.3 * W * P, 0.5, 0.27 * P]);
+  }
+  // Ribetes de neon del traje (rey): solapas y bajo de la chaqueta.
+  if (R0.ribete) {
+    const m = mat(R0.ribete, { e: 0.8 });
+    MF(cu, [['caja', null, [-0.07, T * 0.62, 0.2 * P + 0.012], [0.02, 0.28, 0.02], [0, 0, -0.35]], ['caja', null, [0.07, T * 0.62, 0.2 * P + 0.012], [0.02, 0.28, 0.02], [0, 0, 0.35]],
+      ['toro', null, [0, T * 0.06, 0], [0.24 * W * P, 0.35, 0.2 * P]]], m).userData.sinFlash = true;
+  }
+  // Lineas de codigo en la sudadera (tactico).
+  if (R0.codigo) {
+    const m = mat(R0.codigo, { e: 1 }), puntos = [];
+    for (let i = 0; i < 9; i++) puntos.push(['caja', null, [((i * 37) % 7 - 3) * 0.045 * W, T * (0.25 + (i % 5) * 0.12), 0.21 * P], [0.03 + (i % 3) * 0.015, 0.018, 0.02]]);
+    MF(cu, puntos, m).userData.sinFlash = true;
+  }
+  // Capucha puesta (si la clase no lleva ya algo en la cabeza).
+  if (R0.capucha && !tocado) { ACC.capucha(r, R0.capucha); r.tocado = true; tocado = 'capucha'; }
+  // Peluca de juez: rizos blancos a los lados y detras.
+  if (R0.peluca) {
+    const P2 = [];
+    for (const x of [-1, 1]) for (let k = 0; k < 3; k++) P2.push(['esfera', hx(R0.peluca), [x * 0.27, 0.3 - k * 0.1, -0.04 - k * 0.02], [0.085, 0.07, 0.085]]);
+    P2.push(['esfera', hx(R0.peluca), [0, 0.42, -0.12], [0.27, 0.12, 0.2]]);
+    fuera(MF(r.cabeza, P2, null, null, null, H));
+    tocado = tocado || 'peluca';
+  }
+  // Chorrera blanca del juez.
+  if (R0.chorrera) MF(cu, [['cono', hx(R0.chorrera), [0, T * 0.6, 0.2 * P + 0.02], [0.07, 0.2, 0.03], [PI, 0, 0]], ['esferaB', hx(R0.chorrera), [0, T * 0.86, 0.17 * P], [0.09, 0.05, 0.05]]]);
+  // Ojos que brillan (nigromante bajo la capucha, legendaria).
+  if (R0.ojosBrillo) {
+    const m = mat(R0.ojosBrillo, { e: 1 });
+    for (const x of [-1, 1]) fuera(M(r.cabeza, 'esferaB', m, [x * 0.1 * H, 0.3 * H, 0.27 * H], [0.05 * H, 0.04 * H, 0.03 * H])).userData.sinFlash = true;
+  }
+  // Orbe de energia que flota junto al hombro y gira.
+  if (R0.orbe) {
+    const g = piv(r, fuera(G(r.cuerpo, [-0.42, T + 0.25, 0.05])));
+    M(g, 'icos', mat(R0.orbe, { e: 1 }), [0, 0, 0], 0.09).userData.sinFlash = true;
+    M(g, 'toro', mat(R0.orbe, { e: 0.8 }), [0, 0, 0], [0.16, 0.16, 0.16], [0.6, 0, 0]).userData.sinFlash = true;
+    r.giran.push([g, 1.6]);
+  }
+  // Humo/aura oscura a los pies.
+  if (R0.humo) {
+    const m = mat(R0.humo, { aura: true, op: 0.35 }), g = piv(r, fuera(G(r.raiz, [0, 0.08, 0])));
+    for (let k = 0; k < 6; k++) { const a = k / 6 * PI * 2; M(g, 'esferaB', m, [Math.cos(a) * 0.32, 0.05 + (k % 2) * 0.06, Math.sin(a) * 0.32], [0.16, 0.1, 0.16]).userData.sinFlash = true; }
+    r.giran.push([g, 0.6]);
+  }
+  // Anillos de runas que giran alrededor del cuerpo (juez).
+  if (R0.runas) {
+    const m = mat(R0.runas, { aura: true, op: 0.28 });
+    for (const [y, inc, v] of [[0.5, 0.3, 0.9], [1.0, -0.25, -1.2]]) {
+      const g = piv(r, fuera(G(r.raiz, [0, y, 0], [inc, 0, 0])));
+      M(g, 'toro', m, [0, 0, 0], [0.66, 0.3, 0.66]).userData.sinFlash = true;
+      r.giran.push([g, v]);
+    }
+  }
+  // Teclado holografico flotando delante (tactico).
+  if (R0.teclado) {
+    const g = fuera(G(r.cuerpo, [0, T * 0.35, 0.36]));
+    M(g, 'caja', mat(R0.teclado, { e: 0.9, op: 0.75 }), [0, 0, 0], [0.42, 0.02, 0.15], [0.35, 0, 0]).userData.sinFlash = true;
+  }
+  // Movil con el grafico en verde (rey).
+  if (R0.movil) {
+    const g = fuera(G(r.manoI, [0.03, 0.08, 0.07], [0, -0.5, 0]));
+    g.scale.setScalar(1.4);
+    M(g, 'caja', '#111827', [0, 0.06, 0], [0.025, 0.2, 0.12]);
+    const pant = [['caja', null, [0.014, 0.06, 0], [0.005, 0.17, 0.1]]];
+    MF(g, pant, mat('#0b3b2a', { e: 0.6 }));
+    MF(g, [['caja', null, [0.018, 0.04, -0.02], [0.004, 0.012, 0.05], [0.7, 0, 0]], ['caja', null, [0.018, 0.09, 0.025], [0.004, 0.012, 0.05], [0.9, 0, 0]]], mat('#22ff88', { e: 1 })).userData.sinFlash = true;
+  }
+  // Mazo de juez dorado en la mano izquierda.
+  if (R0.mazo && !r.escudo) {
+    const g = fuera(G(r.manoI, [0, 0, 0.02], [-0.5, 0, 0]));
+    MF(g, [['cil', '#6b4a2b', [0, 0, 0.2], [0.025, 0.42, 0.025], [PI / 2, 0, 0]], ['cil', hx(R0.mazo), [0, 0, 0.42], [0.08, 0.24, 0.08], [0, 0, PI / 2]]]);
+  }
   if (R0.visor) {
     const v = M(r.cabeza, 'caja', mat(R0.visor, { e: 0.6, op: 0.9 }), [0, 0.31 * H, 0.27 * H], [0.42 * H, 0.1 * H, 0.08 * H]);
     v.userData.sinFlash = true; fuera(v);
@@ -959,7 +1051,26 @@ function vestirSkin(r, R0, cpo) {
     }
   }
   if (R0.capa) capa(r, R0.capa, T, 0.45);
-  if (R0.corona) ACC.corona(r, '#ffd84a');
+  if (R0.corona) {
+    const cg = ACC.corona(r, '#ffd84a');
+    if (R0.gemas) for (const [x, c] of [[0, '#e11d48'], [-0.11, '#22d3ee'], [0.11, '#22d3ee']]) M(cg, 'esferaB', mat(c, { e: 0.6 }), [x * r.H, 0.1 * r.H, 0.19 * r.H], [0.035 * r.H, 0.035 * r.H, 0.02 * r.H]);
+  }
+  return tocado;
+}
+// Forma del duende: hombros redondos, pulgares, punteras de bota, boca con
+// dientes y cejas picaras (como en las imagenes 2D).
+function formaDuende(r, R0, lk, colorPelo) {
+  for (const b of [r.bI, r.bD]) M(b, 'esfera', R0.ropa, [0, -0.01, 0], [0.1, 0.09, 0.1]);
+  for (const [mano, lado] of [[r.manoI, 1], [r.manoD, -1]]) M(mano, 'esferaB', PIEL_DUENDE, [-lado * 0.05, 0.03, 0.04], [0.035, 0.05, 0.035]);
+  for (const p of [r.pI, r.pD]) if (p) M(p, 'semi', R0.botas, [0, -0.45 + 0.02, 0.13], [0.09, 0.07, 0.1], [0, 0, 0]);
+  const H = r.H, P2 = [];
+  if (lk.cara !== 4) {
+    P2.push(['caja', '#3a0f1f', [0, 0.1, 0.25], [0.19, 0.04, 0.02]]);
+    for (const x of [-0.06, -0.02, 0.02, 0.06]) P2.push(['caja', '#fbf5e0', [x, 0.108, 0.258], [0.03, 0.022, 0.012]]);
+    for (const x of [-1, 1]) P2.push(['caja', '#3a0f1f', [x * 0.115, 0.118, 0.236], [0.06, 0.03, 0.02], [0, 0, x * 0.55]]);
+  }
+  if (lk.cara === 5) for (const x of [-1, 1]) P2.push(['caja', hx(osc(colorPelo, 0.7)), [x * 0.1, 0.39, 0.236], [0.11, 0.025, 0.025], [0, 0, x * 0.32]]);
+  fuera(MF(r.cabeza, P2, null, null, null, H));
 }
 // Complexion: ancho de hombros, barriga y grosor de brazos y piernas.
 const CUERPOS = [
@@ -983,7 +1094,7 @@ export function crearDuende({ skin = 'comun', clase = null, arma = 'katana', loo
   humano(r, {
     piel: PIEL_DUENDE, ropa, ropaMat: mat(ropa, brilla ? { e: 0.3 } : null),
     pantalon: R0.pantalon, botas: R0.botas, cinto: R0.cinto || '#3a2412',
-    cabeza: 'duende', ojos: 'duende', ojosGrandes: lk.cara === 5, nariz: 'bola', orejas: 0.42, cab: 1.18, L: 0.45, T: 0.46, A: 0.38,
+    cabeza: 'duende', ojos: 'duende', ojosGrandes: lk.cara === 5, nariz: lk.cara === 5 ? 'bola' : 'gancho', orejas: 0.56, orejaRot: 1.38, manoG: 1.18, cab: 1.18, L: 0.45, T: 0.46, A: 0.38,
     ancho: cpo.ancho, panza: cpo.panza, grueso: cpo.grueso,
   });
   const cc = cl ? CLASES[cl].color : ropa;
@@ -993,13 +1104,15 @@ export function crearDuende({ skin = 'comun', clase = null, arma = 'katana', loo
   else if (cl === 'mago') { ACC.sombrero(r, osc(cc, 0.75), 0.8); tocado = 'sombrero'; }
   else if (cl === 'sacerdote') { ACC.capucha(r, '#f2efe6'); ACC.halo(r); tocado = 'capucha'; }
   else if (cl === 'picaro') { ACC.capucha(r, '#3d3550'); ACC.mascara(r); tocado = 'capucha'; }
-  vestirSkin(r, R0, cpo);
+  if (cl === 'guerrero') r.escudo = true;
+  tocado = vestirSkin(r, R0, cpo, tocado);
   // Pelo y rasgos de la cara (una malla cada uno, fuera de la medida de alto).
   const colorPelo = hx(APARIENCIA.colorPelo[lk.colorPelo] || APARIENCIA.colorPelo[1]);
-  const pelo = partesPelo(lk.pelo, tocado);
+  const pelo = tocado === 'peluca' ? [] : partesPelo(lk.pelo, tocado);
   if (pelo.length) fuera(MF(r.cabeza, pelo, colorPelo, null, null, r.H));
   const cara = partesCara(lk.cara, colorPelo);
   if (cara.length) fuera(MF(r.cabeza, cara, null, null, null, r.H));
+  formaDuende(r, R0, lk, colorPelo);
   // Arma: los de vara (mago, sacerdote) llevan baston.
   if (cl && CLASES[cl].basico === 'vara') baston(r, r.manoD, cl === 'sacerdote' ? '#fff3b0' : cc);
   else if (arma === 'dagas') {
@@ -1008,6 +1121,7 @@ export function crearDuende({ skin = 'comun', clase = null, arma = 'katana', loo
     r.dosArmas = true;
   } else if (arma === 'odachi') espada(r.manoD, { largo: 1.25, hoja: '#ffffff', guarda: '#2b2b2b' });
   else if (arma === 'chispa') espada(r.manoD, { largo: 0.8, hoja: ARMAS.chispa.color, e: 0.9, guarda: '#1e3a5f' });
+  else if (R0.hojaNeon) espada(r.manoD, { largo: 0.95, hoja: R0.hojaNeon, e: 0.9, guarda: '#ff3cf0' });
   else espada(r.manoD, { largo: 0.75, guarda: ARMAS.katana.color });
   if (brilla) auraSuelo(r, sk.color, 0.55);
   const m = new Modelo(r, 1.75 * lk.altura, 'd:' + JSON.stringify([skin, cl, arma, Object.assign({}, lk, { altura: 0 })]));

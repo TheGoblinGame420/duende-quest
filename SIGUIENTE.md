@@ -2573,3 +2573,15 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
   t.me/share o navigator.share. Pide el codigo de amigo (`amigos`).
 - `render.compileAsync(escena, camara)` en la carga (max 4 s).
 - mundo/manifest.json (PWA, pantalla completa) y apple-touch-icon.
+
+### Duende y skins fieles al 2D (23-oct-2026, `?v=267`)
+
+- modelos.js: `partesOjos2D` (ojo rasgado, iris ambar, pupila, ceja de piel
+  fruncida), nariz 'gancho', orejas 0,56 mas horizontales (`orejaRot`),
+  `manoG` 1,18; cara 5 conserva los ojos grandes y la nariz de bola.
+- `formaDuende`: hombros, pulgares, punteras, boca ancha con 4 dientes.
+- `ROPA_SKIN` + `vestirSkin(r, R0, cpo, tocado)` → devuelve el tocado: capucha
+  (tactico, necro), tunica con ribete (necro, juez), ribetes neon (rey),
+  codigo (tactico), peluca (sin pelo), chorrera, ojos que brillan, orbe que
+  gira, humo, anillos de runas, teclado holografico, movil, mazo, gemas de la
+  corona, hombreras con puas, katana de neon (legendaria).
