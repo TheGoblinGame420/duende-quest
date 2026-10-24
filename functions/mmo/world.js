@@ -27,6 +27,7 @@ import {
 import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery, tg, getSolPriceUsd, getDuendePriceUsd, SOL_DEV_WALLET } from '../api/lib.js';
 import { MMO_URL } from '../api/telegram-bot.js';
 import { Cueva3D } from './cueva3d.js';
+import { Encargos } from './encargos.js';
 import { Eventos3D } from './eventos3d.js';
 import { Temporada } from './temporada.js';
 import { Copias } from './copias.js';
@@ -2877,6 +2878,7 @@ Object.assign(MmoWorld.prototype, Viajes);
 // El mundo abierto 3D (mismo personaje, otro mundo): functions/mmo/mundo3d.js
 Object.assign(MmoWorld.prototype, Mundo3D);
 Object.assign(MmoWorld.prototype, Cueva3D);
+Object.assign(MmoWorld.prototype, Encargos);
 // Pieza de equipo nueva (para los modulos que no ven generarItem).
 MmoWorld.prototype.nuevoItem = (nv, r) => generarItem(nv, r);
 MmoWorld.prototype.generarItem = generarItem;

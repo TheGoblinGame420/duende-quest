@@ -102,6 +102,7 @@ export const Mundo3D = {
     this.enviar(s, this.estadoInvasion3d());
     if (c.faccion || c.nivel >= ABISMO.nvMin) this.enviar(s, this.infoTemp(c));
     this.enviar(s, this.estadoAsedio());
+    if (this.infoEncargos) this.enviar(s, this.infoEncargos(c));
     this.nodos3AlEntrar(s);
     this.aClave(K3, { t: 'pj3', p: this.info3d(s) }, s);
   },
@@ -261,6 +262,7 @@ export const Mundo3D = {
     s.a = a; s.h = Math.max(0, h);
     if (this.vacio3d(s, ahora)) return;   // el vacio del Abismo lo valida el servidor
     if (!s.i3 && !enAbismo(nx)) s.c.p3 = { x: Math.round(nx * 10) / 10, z: Math.round(nz * 10) / 10 };
+    if (this.revisarExploracion) this.revisarExploracion(s, Date.now());   // encargos: hito y vuelo alto
     s.sucio = true;
   },
 

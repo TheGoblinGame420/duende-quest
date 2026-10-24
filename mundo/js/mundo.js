@@ -14,19 +14,20 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN } from '/mmo/js/data.js?v=290';
-import { iniciarVentanas } from './ventanas.js?v=290';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=290';
-import { crearMusica } from './musica.js?v=290';
-import { construirCueva } from './cueva.js?v=290';
-import { TAPA, transparentar } from './tapa.js?v=290';
-import { construirAbismo } from './abismo.js?v=290';
-import { crearParticulas } from './particulas.js?v=290';
-import { cargarKenney, piezasCasa } from './kenney.js?v=290';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN } from '/mmo/js/data.js?v=291';
+import { iniciarVentanas } from './ventanas.js?v=291';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=291';
+import { crearMusica } from './musica.js?v=291';
+import { construirCueva } from './cueva.js?v=291';
+import { TAPA, transparentar } from './tapa.js?v=291';
+import { construirAbismo } from './abismo.js?v=291';
+import { crearParticulas } from './particulas.js?v=291';
+import { cargarKenney, piezasCasa } from './kenney.js?v=291';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=290';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=290';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=291';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=291';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=291';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1226,6 +1227,7 @@ function recibir(m) {
     case 'mundial3': mundial3 = { ...m, recibido: Date.now() }; break;
     case 'mmx3': { const o = mons.get(m.id); if (o) { o.mx = m.mx; o.hp = m.hp; } break; }   // el jefe mundial crece si llegan mas a pelear
     case 'asedio': asedio = m; if (m.activo) asedioHp = asedioHp || { p: 100, g: 100 }; else asedioHp = null; if (abismo) abismo.dueno(m.dueno); break;
+    case 'enc': encargos = m.l || {}; encZonas = m.zonas || 0; $('misiones')._h = ''; break;
     case 'asedioHp': asedioHp = m; if (asedio) asedio.dormido = !!m.d; break;
     case 'asedioTiro': tiroAsedio(m); break;
     case 'zona3': {
@@ -2052,6 +2054,7 @@ function pintarMini() {
   } else x.drawImage(mapaBase, mx - lado / 2, mz - lado / 2, lado, lado, 0, 0, S, S);
   const punto = (wx, wz, color, r) => { const px = (wx - P.x) * k + S / 2, pz = (wz - P.z) * k + S / 2; if (px < 0 || pz < 0 || px > S || pz > S) return; x.fillStyle = color; x.beginPath(); x.arc(px, pz, r, 0, 7); x.fill(); };
   if (asedio && asedio.activo && asedio.puerta && enAbismo(P.x)) punto(PUERTA_NUCLEO.x, PUERTA_NUCLEO.z, '#ff3b3b', 4.5);
+  if (metaEnc) punto(metaEnc.x, metaEnc.z, '#7dd3fc', 3.5);
   if (enAbismo(P.x) && yo && yo.faccion) for (const q of MAQUINAS) if (q.f === yo.faccion) punto(q.x, q.z, '#fbbf24', 2);
   for (const o of mons.values()) if (!o.muereT) punto(o.x, o.z, o.j ? '#ffd84a' : '#ff4455', o.j ? 3.5 : 2);
   for (const o of otros.values()) punto(o.x, o.z, enGrupo(o.id) ? '#7dd3fc' : '#4ade80', enGrupo(o.id) ? 3.5 : 2.5);
@@ -2979,6 +2982,18 @@ function pintarMisiones() {
     const nvq = mq.nivel ? ` <span style="color:${colorNivel(mq.nivel)}">${marcaNivel(mq.nivel)}Nv ${mq.nivel}</span>` : '';
     h += `<div class="q"><b>📜 ${esc(q.nombre)}</b>${lista ? `<span class="ok" data-entregar="1" style="cursor:pointer;text-decoration:underline">¡Lista! Toca aquí para entregarla</span>` : `${mq.nombre || q.tipo}${nvq}: ${Math.min(yo.mis.p, q.n)}/${q.n}<small>${donde}</small>${alta ? `<small style="display:block;color:#ff9900">Muy fuerte para ti: sube antes${zt ? ' en ' + esc(zt.nombre) : ''} o ve en grupo</small>` : ''}`}</div>`;
   }
+  // Encargos de la zona (no son "mata N"): el siguiente sin hacer.
+  metaEnc = null;
+  const zE = zonaEn(P.x, P.z);
+  if (ZONAS_ENC.includes(zE) && MAPAS[zE]) {
+    const L = encargosDe(zE, MAPAS, MONSTRUOS), hechos = L.filter(e => encargos[e.id] === true).length, sig = L.find(e => encargos[e.id] !== true);
+    if (sig) {
+      let donde = '';
+      if (sig.tipo === 'explorar') { const hi = hitoDe(zE, ZONAS3D, alturaEn), dd = Math.hypot(hi.x - P.x, hi.z - P.z); metaEnc = hi; donde = dd < 12 ? ' · ¡aquí!' : ` · ${flechaDir(hi.x, hi.z)} ${Math.round(dd)} m`; }
+      const pr = sig.n > 1 ? ` ${encargos[sig.id] || 0}/${sig.n}` : '';
+      h += `<div class="q"><b style="color:#7dd3fc">🧭 Encargos de ${esc(MAPAS[zE].nombre)} ${hechos}/${L.length}</b>${esc(sig.txt)}${pr}<small>${donde}</small></div>`;
+    } else h += `<div class="q"><b style="color:#4ade80">🧭 ${esc(MAPAS[zE].nombre)}: encargos completados ✓</b></div>`;
+  }
   h = htmlTuto3() + h;   // despues de calcular metaMision: el paso 2 la mira
   if (!d.ok) h += `<div class="q"><b>☀ ${DIARIA.nombre}</b>${(d.p || 0) >= DIARIA.n ? '<span class="ok" data-entregar="diaria" style="cursor:pointer;text-decoration:underline">¡Lista! Toca aquí para cobrarla</span>' : `Monstruos de tu nivel: ${Math.min(d.p || 0, DIARIA.n)}/${DIARIA.n}`}</div>`;
   if (invasion3) {
@@ -3009,6 +3024,9 @@ function pintarMisiones() {
   // Al llegar, la columna se apaga: queda un aro en el suelo y se explica que hacer
   // (antes desaparecia sin mas y parecia que no pasaba nada).
   faroAro.visible = !!metaMision && dMeta < 40;
+  // Columna celeste sobre el hito del encargo de explorar.
+  faroEnc.visible = !!metaEnc && Math.hypot(metaEnc.x - P.x, metaEnc.z - P.z) > 12;
+  if (metaEnc) faroEnc.position.set(metaEnc.x, alturaEn(metaEnc.x, metaEnc.z), metaEnc.z);
   if (faroAro.visible) faroAro.position.set(metaMision.x, alturaEn(metaMision.x, metaMision.z) + 0.15, metaMision.z);
   if (q && metaMision && dMeta < 25 && avisoCampo !== yo.mis.i + ':' + q.tipo) {
     avisoCampo = yo.mis.i + ':' + q.tipo;
@@ -3017,7 +3035,12 @@ function pintarMisiones() {
     aviso(hay ? `📜 Aquí está tu misión: derrota ${falta} ${nom} (los marcados con ❗). ${MOVIL ? 'Tócalos' : 'Haz clic en ellos'} y ataca.` : `📜 Zona de ${nom}: aparecen en unos segundos aquí mismo. Te faltan ${falta}.`, 'ok');
   }
 }
-let avisoCampo = '';
+const cristalesHito = [];
+let avisoCampo = '', metaEnc = null, encargos = {}, encZonas = 0;
+const faroEnc = (() => {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.8, 70, 12, 1, true).translate(0, 35, 0), new THREE.MeshBasicMaterial({ color: '#7dd3fc', transparent: true, opacity: 0.18, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+  m.visible = false; escena.add(m); return m;
+})();
 const faroAro = (() => {
   const m = new THREE.Mesh(new THREE.RingGeometry(10, 11, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ffd84a', transparent: true, opacity: 0.45, depthWrite: false, side: THREE.DoubleSide }));
   m.visible = false; escena.add(m); return m;
@@ -3124,6 +3147,7 @@ function bucle(t) {
   if (cueva && enCueva(P.x)) cueva.animar(t);
   if (abismo && enAbismo(P.x)) abismo.animar(t);
   if (tirosAsedio.length) moverTirosAsedio(t);
+  for (const cr of cristalesHito) { cr.rotation.y = t / 900; cr.position.y += Math.sin(t / 500) * 0.004; }
   if (molinoAspas && Math.hypot(P.x, P.z) < 160) molinoAspas.rotation.x = t / 1400;
   if (corcho) corcho.position.y = corcho.userData.y0 + (pica > performance.now() ? -0.18 + Math.sin(t / 60) * 0.08 : Math.sin(t / 500) * 0.04);
   if (agua) agua.material.opacity = 0.7 + Math.sin(t / 900) * 0.04;
@@ -3182,6 +3206,16 @@ async function inicio() {
   progreso(0.55, 'Plantando bosques…');
   await new Promise(r => setTimeout(r, 20));
   crearFlora();
+  // Hitos de los encargos: un obelisco con un cristal que brilla en cada zona.
+  for (const zE of ZONAS_ENC) {
+    const hi = hitoDe(zE, ZONAS3D, alturaEn), y = alturaEn(hi.x, hi.z);
+    const ob = KIT ? new THREE.Mesh(KIT.geo('n_statue_obelisk'), KIT.material) : new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.9, 5, 6).translate(0, 2.5, 0), new THREE.MeshLambertMaterial({ color: 0x8b8578, flatShading: true }));
+    if (KIT) { const cj = KIT.caja('n_statue_obelisk'); ob.scale.setScalar(5.5 / (cj.max[1] - cj.min[1])); }
+    ob.position.set(hi.x, y - 0.1, hi.z);
+    const cr = new THREE.Mesh(new THREE.OctahedronGeometry(0.7, 0), new THREE.MeshBasicMaterial({ color: 0x7dd3fc }));
+    cr.position.set(hi.x, y + 6.4, hi.z); cristalesHito.push(cr);
+    escena.add(ob, cr); ponerSolido(hi.x, hi.z, 0.9);
+  }
   portal = crearPueblo();
   for (const n of NPCS3D) ponerSolido(n.x, n.z, 0.55);
   ponerSolido(portal.x - 2.2, portal.z, 0.7); ponerSolido(portal.x + 2.2, portal.z, 0.7);

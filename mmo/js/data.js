@@ -495,6 +495,10 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 59, fecha: '24 oct 2026', items: [
+    '¡Encargos de zona en ORIGINS! Cada una de las 10 zonas tiene 5 encargos que no son «mata N»: encuentra su hito (un obelisco con un cristal; sigue la columna celeste), recoge plantas o vetas, sobrevuélala a 25 m, abre uno de sus cofres y vence a su jefe.',
+    'Cada encargo da XP y oro; completar los 5 de una zona da un premio extra. Nuevos logros con título: Explorador (1 zona), Cartógrafo (5) y Leyenda de ORIGINS (las 10).',
+  ] },
   { n: 58, fecha: '24 oct 2026', items: [
     'ORIGINS más limpio en Telegram y pantallas estrechas: a la vista solo mochila, mapa, chat y ⋯ (lo demás dentro), minimapa más pequeño, misiones plegadas (tócalas para verlas) y en la barra solo la próxima habilidad por aprender.',
     'La columna amarilla de misión ya no desaparece sin más: al llegar queda un aro en el suelo, te dice qué hacer y los monstruos de tu misión llevan ❗ encima.',
@@ -1073,6 +1077,10 @@ export const LOGROS = [
   { id: 'forja10',   titulo: 'Herrero Maestro',    desc: 'Forja un arma a +10',            oro: 5000,  cond: c => Object.values(c.forja || {}).some(n => n >= 10) },
   { id: 'skins',     titulo: 'Coleccionista',      desc: 'Consigue las 6 skins',           oro: 10000, cond: c => (c.skins || []).length >= 6 },
   { id: 'misiones',  titulo: 'Leyenda del Pueblo', desc: 'Completa todas las misiones',    oro: 20000, cond: c => ((c.mis || {}).i || 0) >= MISIONES.length },
+  // Encargos de zona de ORIGINS (mmo/js/encargos3d.js).
+  { id: 'explora1',  titulo: 'Explorador',         desc: 'Completa los encargos de una zona de ORIGINS', oro: 1500,  cond: c => (c.encZonas || 0) >= 1 },
+  { id: 'explora5',  titulo: 'Cartógrafo',         desc: 'Completa los encargos de 5 zonas de ORIGINS',  oro: 8000,  cond: c => (c.encZonas || 0) >= 5 },
+  { id: 'explora10', titulo: 'Leyenda de ORIGINS', desc: 'Completa los encargos de las 10 zonas',        oro: 30000, cond: c => (c.encZonas || 0) >= 10 },
   { id: 'mundial1',  titulo: 'Azote del Coliseo',  desc: 'Vence al jefe mundial',          oro: 2000,  cond: c => (c.mundiales || 0) >= 1 },
   { id: 'torre10',   titulo: 'Escalador',          desc: 'Supera el piso 10 de la Torre',  oro: 3000,  cond: c => (c.torreMax || 0) >= 10 },
   { id: 'torre25',   titulo: 'Señor de la Torre',  desc: 'Supera el piso 25 de la Torre',  oro: 12000, cond: c => (c.torreMax || 0) >= 25 },

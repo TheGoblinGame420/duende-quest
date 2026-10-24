@@ -624,6 +624,7 @@ async function pruebas() {
   await pruebasSeguridad();
   await pruebasAsedio3d();
   await pruebasJusticia3d();
+  await pruebasEncargos3d();
 }
 
 // ── ALAS (vuelo de AION) ──
@@ -645,6 +646,38 @@ async function pruebasAlas3d() {
   a.p = { x: 120, z: 120 }; a.movBud = undefined; a.limpiar();
   for (let i = 0; i < 700; i++) { avanzar(100); a.movBud = undefined; await a.mandar({ t: 'mv3', x: 120 + (i % 2) * 0.2, z: 120, a: 3, h: 10 }); }
   chequear(a.ultimos('alasAgotadas').length >= 1 && a.a !== 3, 'sin energía de alas el servidor te baja (planeando)');
+  await dejar(a);
+}
+
+// ── v291: encargos de zona de ORIGINS ──
+async function pruebasEncargos3d() {
+  console.log('Mundo 3D: encargos de zona');
+  const E = await import('../mmo/js/encargos3d.js');
+  const W = await import('../mmo/js/mundo3d.js');
+  const a = await entrar3d('Exploradora', '4p1'); ponerNivel(a, 8, 'picaro');
+  a.c.enc = {}; a.c.encZonas = 0; a.c.logros = (a.c.logros || []).filter(x => !x.startsWith('explora'));
+  const z = 'noche', h = E.hitoDe(z, W.ZONAS3D, W.alturaEn), zc = W.ZONAS3D[z];
+  chequear(W.zonaEn(h.x, h.z) === z && W.alturaEn(h.x, h.z) > 0.5, 'el hito de la zona está en tierra firme dentro de la zona');
+  chequear(E.encargosDe(z, (await import('../mmo/js/data.js')).MAPAS, (await import('../mmo/js/data.js')).MONSTRUOS).length === 5, 'cada zona tiene 5 encargos');
+  // Recoger: 4 veces en la zona
+  a.p = { x: zc.x, z: zc.z }; a.limpiar();
+  for (let i = 0; i < 4; i++) mundo.progresoTarea(a, 'recoger');
+  chequear(a.c.enc['noche:recoger'] === true && a.ultimos('toast').some(m => /Encargo cumplido/.test(m.m)), 'recoger 4 en la zona cumple su encargo');
+  // Recoger fuera de la zona (pueblo) no cuenta
+  a.p = { x: 0, z: 20 }; const otro = { ...a.c.enc }; mundo.progresoTarea(a, 'recoger');
+  chequear(JSON.stringify(otro) === JSON.stringify(a.c.enc), 'fuera de las zonas no cuenta');
+  // Hito: al llegar
+  a.p = { x: h.x, z: h.z }; a.encT = 0; mundo.revisarExploracion(a, Date.now());
+  chequear(a.c.enc['noche:hito'] === true, 'llegar al hito cumple el encargo de explorar');
+  // Volar alto: el servidor mira la altura validada
+  a.p = { x: zc.x + 5, z: zc.z }; a.a = 3; a.h = 30; a.encT = 0; mundo.revisarExploracion(a, Date.now());
+  chequear(a.c.enc['noche:volar'] === true, 'sobrevolar a 25 m cumple el encargo de vuelo');
+  a.a = 0; a.h = 0;
+  mundo.progresoTarea(a, 'cofre');
+  a.limpiar();
+  mundo.progresoTarea(a, 'jefe', { x: zc.x, z: zc.z, k: 'jefe_sabueso', jefe: true });
+  chequear(a.c.encZonas === 1 && a.ultimos('aviso').some(m => /Completaste los encargos/.test(m.m)), 'los 5 encargos completan la zona');
+  chequear(a.c.logros.includes('explora1'), 'completar una zona da el logro Explorador');
   await dejar(a);
 }
 

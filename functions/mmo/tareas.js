@@ -67,6 +67,7 @@ export const Tareas = {
   progresoTarea(s, tipo, o, n) {
     const c = s.c;
     if (!c) return;
+    if (s.m3 && this.progresoEncargo) this.progresoEncargo(s, tipo, o);   // encargos de zona de ORIGINS
     const { dia, sem } = this.tareasDe(c);
     let cambio = false, acabada = false;
     const revisar = (bloque, defs, semanal) => {

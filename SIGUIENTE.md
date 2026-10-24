@@ -2901,3 +2901,11 @@ Primera versión de la conversación única (ver HISTORIAL-DUENDE.md). Reevaluac
 - /inicio/: jefe mundial de CLASSIC (:00/:30) u ORIGINS (:15/:45), el más cercano; «jugando ahora» solo con 5+.
 - Landing: sin «Próximamente NFTs» ni «Necesitas $DUENDE para comprar objetos NFT»; los botones de la tienda van a /inicio/. Token, staking y precios sin tocar.
 - Arnés: 828 (11 nuevas).
+
+### Encargos de zona de ORIGINS (24-oct-2026, `?v=291`)
+
+- mmo/js/encargos3d.js (compartido, sin imports): `ZONAS_ENC`, `HITOS`, `hitoDe(id, ZONAS3D, alturaEn)` (el punto mas alto en tierra entre 30 y 60 m del centro), `encargosDe(id, MAPAS, MONSTRUOS)`: hito, recoger 4, volar a 25 m, cofre y jefe; `oroEncargo`/`oroZona`.
+- functions/mmo/encargos.js (mixin `Encargos`): `progresoEncargo` (enganchado al principio de `progresoTarea` solo en 3D: recoger, cofre, jefe con la zona del monstruo), `cumplirEncargo` (XP 6 % del nivel, oro, punto de pase, premio de zona, `c.encZonas`, logros), `revisarExploracion` desde `mover3d` (1/s: hito a < 9 m, vuelo validado a >= 25 m). `infoEncargos` al entrar.
+- data.js LOGROS: explora1/5/10.
+- Cliente: linea 🧭 en el rastreador con el siguiente encargo de la zona, columna celeste y punto en el minimapa sobre el hito, obelisco del kit con cristal giratorio en cada hito.
+- Arnés: 836 (8 nuevas).

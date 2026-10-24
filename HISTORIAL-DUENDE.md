@@ -27,6 +27,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v273–v279 | Informe de 50 agentes (4,8/10) y su plan: PvP sin ventaja de pago, arreglos sociales en ORIGINS, Maestría pasado el nivel 60, rescate de invitados, cofres, élites e invasiones en 3D, temporadas del Abismo, copias de seguridad y vincular Telegram con correo | A |
 | v280–v289 | La noche del 24-oct: app instalable, auditoría de seguridad con 50 agentes, 4 rondas de mejora con más de 140 especialistas y 3 revisiones. Detalle en `INFORME-NOCHE-24OCT.md` | A |
 | v290 | HUD compacto en Telegram, zona de misión que explica qué hacer, chat antiestafa con /ignorar y /reportar, PvP sin ventajas compradas y arreglos de QA | **B (principal)** |
+| v291 | Encargos de zona en ORIGINS: 50 misiones variadas (hito, recolección, vuelo, cofre y jefe) con logros de explorador | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 
