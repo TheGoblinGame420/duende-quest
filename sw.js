@@ -3,12 +3,12 @@
 //
 // Hace que la web se pueda instalar como app (Chrome, Edge, Android) y que
 // abra rapido: guarda los archivos con version (?v=N) y las imagenes, y si no
-// hay conexion muestra /offline.html en vez del dinosaurio. NUNCA guarda:
+// hay conexion muestra /offline en vez del dinosaurio. NUNCA guarda:
 // el WebSocket del MMO, /api/ ni nada que no sea GET del propio sitio.
 // Al subir CACHE (lo hace tools/release al cambiar de version) se borra lo viejo.
 // ═══════════════════════════════════════════════════════
 const CACHE = 'dq-v280';
-const OFFLINE = '/offline.html';
+const OFFLINE = '/offline';   // Cloudflare sirve /offline.html como /offline (sin redirigir)
 const PRECARGA = [OFFLINE, '/assets/ui/icon-192.png', '/assets/ui/icon-512.png'];
 
 self.addEventListener('install', e => {
