@@ -13,19 +13,20 @@
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
-  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS } from '/mmo/js/data.js?v=268';
-import { iniciarVentanas } from './ventanas.js?v=268';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=268';
-import { crearMusica } from './musica.js?v=268';
-import { construirCueva } from './cueva.js?v=268';
-import { TAPA, transparentar } from './tapa.js?v=268';
-import { construirAbismo } from './abismo.js?v=268';
-import { crearParticulas } from './particulas.js?v=268';
-import { cargarKenney, piezasCasa } from './kenney.js?v=268';
+  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS,
+  LOGIN_PREMIOS, PASE, premioPase, paseMes } from '/mmo/js/data.js?v=269';
+import { iniciarVentanas } from './ventanas.js?v=269';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=269';
+import { crearMusica } from './musica.js?v=269';
+import { construirCueva } from './cueva.js?v=269';
+import { TAPA, transparentar } from './tapa.js?v=269';
+import { construirAbismo } from './abismo.js?v=269';
+import { crearParticulas } from './particulas.js?v=269';
+import { cargarKenney, piezasCasa } from './kenney.js?v=269';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=268';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=268';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=269';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=269';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1113,7 +1114,7 @@ function recibir(m) {
       if (yo.muerto && !(antes && antes.muerto)) morir();
       if (!yo.muerto) { cerrar('v-muerte'); P.muerto = false; }
       if (yo.clase) cerrar('v-clase');
-      pintarHud();
+      pintarHud(); marcaPase();
       refrescarVentanas(true);
       break;
     }
@@ -1171,6 +1172,8 @@ function recibir(m) {
       if (m.m === 'Fuera de alcance.') { if (performance.now() - avisoAlcT < 3000) break; avisoAlcT = performance.now(); }
       aviso(m.m, 'err'); break;
     case 'amigos': if (m.ref) refAmigo = m.ref; break;
+    case 'login': mostrarDiario(m); break;
+    case 'pase': if (yo) { yo.pase = m.pase; pintarPase(); } break;
     case 'yoC': if (yo) { Object.assign(yo, m.yo); pintarHud(); refrescarVentanas(); } break;
     case 'atkNo': sigAtk = performance.now() + 150; break;
     case 'habNo': gcdHasta = 0; break;
@@ -1787,6 +1790,7 @@ if (TG && TGV('8.0')) try {
   TG.onEvent('deactivated', () => { musica.activo(false); if (actx) actx.suspend().catch(() => {}); });
   TG.onEvent('activated', () => { if (sonido) musica.activo(true); if (actx) actx.resume().catch(() => {}); });
 } catch (e) {}
+$('b-pase').onclick = () => { if ($('v-pase').classList.contains('on')) cerrar('v-pase'); else { abrir('v-pase'); pintarPase(); } };
 $('b-compartir').onclick = () => { presumirTxt = ''; if (!refAmigo) mandar({ t: 'amigos' }); compartir(); };
 $('presumir3').onclick = () => { $('presumir3').style.display = 'none'; compartir(); };
 for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, () => { if (sonido) musica.arrancar(); }, { once: true });
@@ -1875,7 +1879,7 @@ function abrirMapa() {
 function chatAbierto() { return document.activeElement === $('chat-in'); }
 // Ventanas laterales (como WoW): no tapan el centro y se puede seguir
 // caminando con ellas abiertas. Las demas (mapa, muerte, inicio...) si bloquean.
-const LATERALES = ['v-npc', 'v-ayuda', 'v-inv', 'v-libro', 'v-tienda', 'v-logros'];
+const LATERALES = ['v-npc', 'v-ayuda', 'v-inv', 'v-libro', 'v-tienda', 'v-logros', 'v-pase', 'v-diario'];
 addEventListener('keydown', e => {
   const t = e.target;
   if (!t || !t.closest || !t.closest('.modal') || t.matches('input,textarea')) return;
@@ -1936,6 +1940,53 @@ function revisarAtrasTg() {
 if (TG && TG.BackButton) try {
   TG.BackButton.onClick(() => { document.querySelectorAll('.modal.on').forEach(m => { if (m.id !== 'v-muerte' && m.id !== 'v-clase') cerrar(m.id); }); revisarAtrasTg(); });
 } catch (e) {}
+// ── RECOMPENSA DIARIA (racha de 7 dias) ──
+// Panel lateral que se cierra solo: lo de hoy, la racha y lo que espera mañana.
+function mostrarDiario(m) {
+  const n = LOGIN_PREMIOS.length, hoy = m.racha;
+  let h = `<p class="vv-p" style="margin-bottom:8px">¡Día <b style="color:#ffd84a">${hoy}</b> de tu racha! Recibes <b>${esc(m.txt || '')}</b>${m.oro ? ` (+${m.oro.toLocaleString('es')} oro)` : ''}.</p><div class="dias7">`;
+  for (let i = 1; i <= n; i++) {
+    const pr = LOGIN_PREMIOS[i - 1];
+    h += `<div class="d7 ${i < hoy ? 'ya' : i === hoy ? 'hoy' : ''}"><small>Día ${i}</small><span>${i === n ? '🎁' : pr.item !== undefined ? '⚔️' : pr.oro ? '🪙' : '🧪'}</span><em>${esc(pr.txt)}</em></div>`;
+  }
+  const sig = LOGIN_PREMIOS[hoy % n];
+  h += `</div><p class="vv-p" style="margin-top:10px;font-size:12px">Mañana: <b style="color:#7dd3fc">${esc(sig.txt)}</b>. Si faltas un día la racha retrocede: ¡no la pierdas!</p>`;
+  $('diario-c').innerHTML = h;
+  abrir('v-diario'); vib('success'); sfxK('monedas', 0.4);
+  clearTimeout(mostrarDiario.t);
+  mostrarDiario.t = setTimeout(() => cerrar('v-diario'), 12000);
+}
+// ── PASE DE TEMPORADA (gratis, se reinicia cada mes) ──
+function nivelesPaseListos() {
+  const pa = yo && yo.pase;
+  if (!pa || pa.mes !== paseMes()) return 0;
+  const nv = Math.floor(pa.p / PASE.porNivel);
+  let k = 0;
+  for (let i = 1; i <= nv; i++) if (!pa.cob.includes(i)) k++;
+  return k;
+}
+function marcaPase() {
+  const b = $('b-pase'); if (!b) return;
+  const k = nivelesPaseListos();
+  b.dataset.n = k ? String(k) : '';
+}
+function pintarPase() {
+  marcaPase();
+  if (!$('v-pase').classList.contains('on') || !yo) return;
+  const pa = yo.pase && yo.pase.mes === paseMes() ? yo.pase : { p: 0, cob: [] };
+  const nv = Math.min(PASE.niveles, Math.floor(pa.p / PASE.porNivel)), resto = pa.p % PASE.porNivel;
+  const fin = new Date(); fin.setUTCMonth(fin.getUTCMonth() + 1, 1); fin.setUTCHours(0, 0, 0, 0);
+  const dias = Math.max(0, Math.ceil((fin - Date.now()) / 86400000));
+  let h = `<p class="vv-p">Nivel <b style="color:#ffd84a">${nv}</b> de ${PASE.niveles} · quedan <b style="color:#f87171">${dias} días</b> de temporada.</p>
+    <div class="barra" style="height:12px;margin:6px 0 4px"><i style="transform:scaleX(${nv >= PASE.niveles ? 1 : (resto / PASE.porNivel).toFixed(3)})"></i></div>
+    <p class="vv-p" style="font-size:11px;color:var(--txt3)">${nv >= PASE.niveles ? '¡Pase completo!' : `${resto} / ${PASE.porNivel} puntos para el nivel ${nv + 1}`} · Puntos: misión diaria +${PASE.puntos.diaria}, semanal +${PASE.puntos.semanal}, jefe mundial +${PASE.puntos.mundial}, mazmorra +${PASE.puntos.mazmorra}.</p><div class="pase-lista">`;
+  for (let i = 1; i <= PASE.niveles; i++) {
+    const pr = premioPase(i, yo.nivel), cob = pa.cob.includes(i), listo = i <= nv && !cob;
+    h += `<div class="pase-n ${cob ? 'ya' : listo ? 'listo' : ''} ${i % 5 === 0 ? 'gordo' : ''}"><b>${i}</b><span>${esc(pr.txt)}</span>${listo ? `<button class="btn" data-pase="${i}">Cobrar</button>` : cob ? '<i>✔</i>' : '<i>🔒</i>'}</div>`;
+  }
+  $('pase-c').innerHTML = h + '</div>';
+  $('pase-c').querySelectorAll('[data-pase]').forEach(b => b.onclick = () => { mandar({ t: 'pase', n: +b.dataset.pase }); vib('success'); sfxK('monedas', 0.35); b.disabled = true; });
+}
 function hayVentana() { return [...document.querySelectorAll('.modal.on')].some(m => !LATERALES.includes(m.id)); }
 function hayLateral() { return LATERALES.some(id => $(id) && $(id).classList.contains('on')); }
 addEventListener('keydown', e => {

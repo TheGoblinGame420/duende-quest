@@ -2595,3 +2595,13 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
 - Portada: el boton principal lleva al 3D y el video del 3D en el hero.
 - Hub de Telegram: tarjeta «Mundo abierto 3D · NUEVO» encima del MMO
   (`irMundo()` pasa el hash con la sesion de Telegram).
+
+### Retencion en el 3D: racha diaria y pase (23-oct-2026, `?v=269`)
+
+- 'login' → `mostrarDiario(m)`: panel lateral `v-diario` (se cierra a los
+  12 s) con los 7 dias de LOGIN_PREMIOS, hoy resaltado y el premio de manana.
+- Pase: boton `#b-pase` con contador de niveles por cobrar (`marcaPase`),
+  panel lateral `v-pase` (`pintarPase`: nivel, dias que quedan, barra,
+  fuentes de puntos y los 20 premios de `premioPase` con «Cobrar» →
+  {t:'pase', n}). 'pase' del servidor actualiza yo.pase.
+- #botones con flex-wrap y ancho maximo.

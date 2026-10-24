@@ -487,6 +487,11 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 37, fecha: '23 oct 2026', items: [
+    'Recompensa diaria en el mundo 3D: al entrar ves tu racha de 7 días, lo que ganas hoy y lo que te espera mañana (si faltas un día, retrocede).',
+    'Pase de temporada en el 3D (botón 🎟): 20 niveles de premios gratis que se reinician cada mes, con un aviso rojo cuando tienes premios por cobrar.',
+    'La barra de botones de arriba ya no se sale de la pantalla en ventanas estrechas.',
+  ] },
   { n: 36, fecha: '23 oct 2026', items: [
     '¡El mundo abierto 3D ya está a un toque! Botón «🌌 3D» destacado en el juego, aviso con vídeo al entrar y acceso directo en la portada y en el menú de Telegram.',
     'En el 3D: tu mismo duende (nivel, oro, equipo y skins), vuelo con alas, el Abismo de Éter con PvP de facciones y el asedio de la Fortaleza del Núcleo.',
