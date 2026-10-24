@@ -166,19 +166,23 @@ footer a{color:var(--cian);text-decoration:none;}
     try { localStorage.setItem('dq_mmo_tok', c); localStorage.removeItem('dq_mmo_nombre'); } catch (er) {}
     alert('¡Listo! Entra a cualquiera de los dos juegos y verás tu duende.');
   };
-  // Jefe mundial: a las :00 y :30 (UTC), dura 10 minutos.
+  // Jefes mundiales: CLASSIC a las :00 y :30, ORIGINS a las :15 y :45 (UTC); duran 10 minutos.
   var dos = function (n) { return (n < 10 ? '0' : '') + n; };
   function jefe() {
-    var ahora = Date.now(), ciclo = 30 * 60000, t = ahora % ciclo, enCurso = t < 10 * 60000;
-    var s = Math.floor((enCurso ? 10 * 60000 - t : ciclo - t) / 1000);
-    document.getElementById('jefe-t').textContent = enCurso ? 'Jefe mundial EN CURSO · quedan' : 'Jefe mundial en';
+    var ahora = Date.now(), ciclo = 30 * 60000, mejor = null;
+    [['CLASSIC', 0], ['ORIGINS', 15 * 60000]].forEach(function (j) {
+      var t = (ahora - j[1]) % ciclo, enCurso = t < 10 * 60000, ms = enCurso ? 10 * 60000 - t : ciclo - t;
+      if (!mejor || (enCurso && !mejor.enCurso) || (enCurso === mejor.enCurso && ms < mejor.ms)) mejor = { n: j[0], enCurso: enCurso, ms: ms };
+    });
+    var s = Math.floor(mejor.ms / 1000), enCurso = mejor.enCurso;
+    document.getElementById('jefe-t').textContent = enCurso ? 'Jefe mundial en ' + mejor.n + ' · quedan' : 'Jefe mundial (' + mejor.n + ') en';
     document.getElementById('jefe').textContent = Math.floor(s / 60) + ':' + dos(s % 60);
   }
   jefe(); setInterval(jefe, 1000);
   function vivos() {
     if (document.hidden) return;
     fetch('/mmo/ws', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
-      var el = document.getElementById('on'); if (d.online > 0) { el.hidden = false; el.querySelector('b').textContent = Number(d.online).toLocaleString('es'); }
+      var el = document.getElementById('on'); if (d.online >= 5) {   // con 1-4 desanima mas que anima el.hidden = false; el.querySelector('b').textContent = Number(d.online).toLocaleString('es'); }
     }).catch(function () {});
   }
   vivos(); setInterval(vivos, 60000);

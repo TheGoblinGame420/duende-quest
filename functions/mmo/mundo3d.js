@@ -148,6 +148,8 @@ export const Mundo3D = {
       case 'temp3': return this.enviar(s, this.infoTemp(s.c));
       case 'vincInfo': case 'vincCodigo': case 'vincUsar': case 'vincQuitar': return this.vincular(s, m);
       case 'comprar': return this.comprar(s, m);   // cercaDelMercader() sabe del 3D
+      case 'ignorar': return this.ignorar(s, m);
+      case 'reportar': return this.reportar(s, m);
       case 'chat':
         // Moderadores: /jefe invoca al jefe mundial del 3D.
         if (String(m.m || '').trim() === '/jefe' && this.esDios(s)) return this.dios(s, { a: 'mundial3' });
@@ -216,7 +218,7 @@ export const Mundo3D = {
     // acepta el paso que te saca).
     if (s.i3 && !caminable(nx, nz, 0.2) && caminable(s.p.x, s.p.z, 0.2)) { this.enviar(s, { t: 'snap3', x: r1(s.p.x), z: r1(s.p.z) }); return; }
     // Modo de vuelo VALIDADO (no el que diga el cliente): a = 3 vuela, a = 4 planea.
-    const dtS = dt / 1000, ala = alaDe(s.c);
+    const dtS = dt / 1000, ala = alaDe(s.c, enAbismo(s.p.x));
     const aire = !s.i3 && zonaEn(nx, nz) !== 'pueblo';
     const prevA = s.a;
     let a = clamp(m.a | 0, 0, 4);
@@ -364,7 +366,7 @@ export const Mundo3D = {
       this.dar(s, xp, oro, o, nG, true);
       cobraron.add(sid);
       if (enAbismo(o.x) && parte >= 0.1) this.sumarPA(s, (o.jefe ? 10 : 3) + (s.c.faccion && s.c.faccion === this.duenoNucleo() ? (o.jefe ? 2 : 1) : 0), 'élite');
-      if (o.jefe && !o.cueva && parte >= 0.1) this.darMton(s, 20 * Math.max(0.3, MONSTRUOS[o.k].nivel / 30), 'jefe');
+      if (o.jefe && !o.cueva && this.parteJusta(o, s) >= 0.1) this.darMton(s, 20 * Math.max(0.3, MONSTRUOS[o.k].nivel / 30), 'jefe');
     }
     // Grupo: los compañeros cerca (60 m) cuentan la caza como suya (misiones,
     // diarias, bestiario) y se llevan el 60% de la experiencia. El botin cuenta
@@ -437,8 +439,8 @@ export const Mundo3D = {
     s.a = 0; s.h = 0; s.vueloS = 0; s.alasAvisadas = false; s.cast = null;
     const c = s.c;
     // Caer ante la otra faccion ya cuesta Puntos del Abismo: ahi no se pierde XP.
-    if (c.nivel >= 10 && !s.muertoPvP) c.xp = Math.max(0, c.xp - Math.round(xpParaSubir(c.nivel) * 0.05));
-    s.muertoPvP = false;
+    if (c.nivel >= 10 && !s.muertoPvP && !c.muertoPvP) c.xp = Math.max(0, c.xp - Math.round(xpParaSubir(c.nivel) * 0.05));
+    s.muertoPvP = false; delete c.muertoPvP;
     // En el nivel maximo (sin XP que perder) se paga la reparacion del equipo.
     const rep = Math.min(c.oro, costoReparacion(c.nivel));
     if (rep > 0) { c.oro -= rep; this.enviar(s, { t: 'toast', m: `🔧 Reparaste tu equipo: -${rep.toLocaleString('es', { useGrouping: 'always' })} oro.` }); }
@@ -477,7 +479,7 @@ export const Mundo3D = {
       if (s.cast && habPorId(s.cast.h) && ahora >= s.cast.fin) this.finCast3d(s);
       if (s.yoPend) this.vaciarYo(s, ahora);
       if ((s.a === 3 || s.a === 4) && ahora - (s.movT || 0) > 400) {
-        const ala = alaDe(s.c);
+        const ala = alaDe(s.c, enAbismo(s.p.x));
         if (s.a === 3) { s.vueloS = (s.vueloS || 0) + dt; if (s.vueloS > ala.vuelo + 2) { s.a = 4; if (!s.alasAvisadas) { s.alasAvisadas = true; this.enviar(s, { t: 'alasAgotadas' }); } } }
         else { s.h = Math.max(0, (s.h || 0) - 2 * dt); if (!s.h && !(enAbismo(s.p.x) && !s.i3 && !islaEn(s.p.x, s.p.z))) s.a = 0; }
       } else if ((!s.a || s.a === 1) && (s.h || 0) > 2 && ahora - (s.movT || 0) > 400) s.h = Math.max(0, s.h - 9 * dt);   // quieto en el aire a pie: cae

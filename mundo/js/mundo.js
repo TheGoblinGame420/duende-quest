@@ -13,26 +13,32 @@
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
-  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN } from '/mmo/js/data.js?v=289';
-import { iniciarVentanas } from './ventanas.js?v=289';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=289';
-import { crearMusica } from './musica.js?v=289';
-import { construirCueva } from './cueva.js?v=289';
-import { TAPA, transparentar } from './tapa.js?v=289';
-import { construirAbismo } from './abismo.js?v=289';
-import { crearParticulas } from './particulas.js?v=289';
-import { cargarKenney, piezasCasa } from './kenney.js?v=289';
+  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN } from '/mmo/js/data.js?v=290';
+import { iniciarVentanas } from './ventanas.js?v=290';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=290';
+import { crearMusica } from './musica.js?v=290';
+import { construirCueva } from './cueva.js?v=290';
+import { TAPA, transparentar } from './tapa.js?v=290';
+import { construirAbismo } from './abismo.js?v=290';
+import { crearParticulas } from './particulas.js?v=290';
+import { cargarKenney, piezasCasa } from './kenney.js?v=290';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=289';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=289';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=290';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=290';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
 const $ = id => document.getElementById(id);
 const MOVIL = matchMedia('(pointer: coarse)').matches || /Android|iPhone|iPad/i.test(navigator.userAgent);
 if (MOVIL) document.body.classList.add('movil');
+// Compacto: HUD de movil tambien en ventanas estrechas sin pantalla tactil
+// (Telegram de escritorio abre una ventana de ~560 px: con el HUD de PC no
+// quedaba sitio para jugar). Los controles tactiles siguen siendo solo de MOVIL.
+let COMPACTO = false;
+function ajustarCompacto() { const c = MOVIL || innerWidth < 760; if (c === COMPACTO) return; COMPACTO = c; document.body.classList.toggle('compacto', c && !MOVIL); }
+ajustarCompacto(); addEventListener('resize', ajustarCompacto);
 // Texto de ayuda segun el control: tecla en PC, boton tactil en movil.
 const K = (pc, tactil) => MOVIL ? tactil : pc;
 const TG = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? window.Telegram.WebApp : null;
@@ -1179,7 +1185,7 @@ function recibir(m) {
     case 'bienvenido':
       miId = m.id; yo = m.yo; reintentos = 0;
       // Se guarda el nombre final (el elegido o el que puso el servidor): la proxima vez entra directo.
-      if (soyInvitado) { setTimeout(avisoInvitado, 9000); try { localStorage.setItem('dq_mmo_nombre', yo.nombre); } catch (e) {} }
+      if (soyInvitado) { setTimeout(avisoInvitado, 20000); if (!avisoInvT) avisoInvT = setInterval(avisoInvitado, 60000); try { localStorage.setItem('dq_mmo_nombre', yo.nombre); } catch (e) {} }
       $('carga').style.display = 'none';
       cerrar('v-inicio');
       pintarHud();
@@ -1264,6 +1270,7 @@ function recibir(m) {
     case 'tempFin': mostrarTempFin(m); break;
     case 'inv3': invasion3 = m.on ? { ...m, recibido: Date.now() } : null; pintarMisiones(); break;
     case 'cofre3': if (cueva) { cueva.cofre.visible = true; cueva.tapa.rotation.x = 0; } sfx('moneda', 0.6); break;
+    case 'logro': aviso('🏅 Logro: ' + m.titulo + ' · +' + (m.oro || 0).toLocaleString('es') + ' oro (llévalo como título desde la mochila)', 'ok'); sfx('moneda', 0.4); FX.emitir(P.x, P.y + 1.5, P.z, { n: 30, color: '#ffd84a', vel: 4, vida: 1, grav: -1 }); break;
     case 'gana':
       if (m.xp) numero(P.x, P.y + 2.6, P.z, '+' + m.xp + ' XP', '#c084fc');
       if (m.oro) { numero(P.x + 0.6, P.y + 2.2, P.z, '+' + m.oro + ' oro', '#ffd84a'); sfxK('monedas', 0.3); }
@@ -1565,11 +1572,12 @@ function pintarAuras() {
     void desfase;
   }
   // El marco del grupo va justo debajo del propio (que crece con auras y avisos).
-  if (grupo3 && !MOVIL) { const mc = $('marco'); $('grupo3').style.top = (mc.offsetTop + mc.offsetHeight + 8) + 'px'; }
+  if (grupo3 && !COMPACTO) { const mc = $('marco'); $('grupo3').style.top = (mc.offsetTop + mc.offsetHeight + 8) + 'px'; }
   // Movil: misiones y chat apilados bajo el marco (que crece con auras y avisos).
-  if (MOVIL) {
+  if (COMPACTO) {
     const mc = $('marco'); let y = mc.offsetTop + mc.offsetHeight + 6;
-    const tope = $('joy').getBoundingClientRect().top;   // donde empieza la zona del joystick
+    // Hasta donde empieza el joystick (movil) o la barra de acciones (compacto con raton).
+    const tope = MOVIL ? $('joy').getBoundingClientRect().top : $('barra').getBoundingClientRect().top - 8;
     for (const id of ['alas', 'obj', 'objp', 'grupo3', 'misiones', 'chat']) {
       const e = $(id); let h = e.offsetHeight; if (!h) continue;
       e.style.top = y + 'px'; e.style.bottom = 'auto';
@@ -1590,7 +1598,7 @@ function pintarAuras() {
   const alas = $('alas');
   const verAlas = P.vuela || P.alas < ALAS_MAX - 0.5;
   alas.style.display = verAlas ? 'block' : 'none';
-  if (verAlas) { alas.firstElementChild.style.transform = `scaleX(${(P.alas / ALAS_MAX).toFixed(3)})`; if (!MOVIL) { const mc = $('marco'); alas.style.top = (mc.offsetTop + mc.offsetHeight + 4) + 'px'; } }
+  if (verAlas) { alas.firstElementChild.style.transform = `scaleX(${(P.alas / ALAS_MAX).toFixed(3)})`; if (!COMPACTO) { const mc = $('marco'); alas.style.top = (mc.offsetTop + mc.offsetHeight + 4) + 'px'; } }
 }
 const GEO_BALA = new THREE.SphereGeometry(0.22, 8, 6), MAT_BALA = new Map();
 const matBala = c => { if (!MAT_BALA.has(c)) MAT_BALA.set(c, new THREE.MeshBasicMaterial({ color: c })); return MAT_BALA.get(c); };
@@ -1687,7 +1695,9 @@ function pintarBarra() {
     atk.setAttribute('aria-label', atk.title);
     atk.onclick = () => { if (MOVIL) avisoPrimeraVez(atk.title); alternarAtaque(); };
     b.appendChild(atk);
+    let bloqueadas = 0;
     misHabs.forEach((h, i) => {
+      if (yo.nivel < h.nv && ++bloqueadas > 1) return;   // menos ruido: solo la proxima por aprender
       const d = document.createElement('button'); d.className = 'acc' + (yo.nivel < h.nv ? ' bloq' : ''); d.dataset.hab = h.id;
       d.innerHTML = `<span class="t">${i + 2}</span><img src="${A}items/equipo/${h.icono}.png" alt="">${yo.nivel < h.nv ? '<span class="lv">Nv ' + h.nv + '</span>' : ''}<span class="cd"></span><span class="cs"></span>`;
       d.title = h.nombre + ' (' + (i + 2) + ') — ' + h.desc;
@@ -1835,8 +1845,13 @@ $('invit3-no').onclick = () => { mandar({ t: tipoResp(), si: false }); $('invit3
 $('op-herm').onclick = () => { if (objetivoP) mandar({ t: 'hermInvitar', p: objetivoP }); };
 $('op-duelo').onclick = () => { if (objetivoP) mandar({ t: 'retar', p: objetivoP }); };
 $('op-amigo').onclick = () => { if (objetivoP) mandar({ t: 'contactoAdd', p: objetivoP }); };
+$('op-ign').onclick = () => { const o = otros.get(objetivoP); if (o) mandar({ t: 'ignorar', n: o.n }); };
+$('op-rep').onclick = () => { const o = otros.get(objetivoP); if (!o) return; const i = $('chat-in'); i.style.display = 'block'; i.value = '/reportar ' + o.n + ' '; i.placeholder = 'Escribe el motivo y pulsa Enter'; i.focus(); };
 // Chat: /g (o /p) al grupo, /s nombre texto susurra; lo demas, general.
 function enviarChat(v) {
+  const ig = /^\/ignorar\s+(\S+)/i.exec(v), rp = /^\/reportar\s+(\S+)\s*(.*)$/i.exec(v);
+  if (ig) return mandar({ t: 'ignorar', n: ig[1] });
+  if (rp) return mandar({ t: 'reportar', n: rp[1], motivo: rp[2] });
   const g = /^\/(g|p|grupo)\s+(.+)/i.exec(v), s = /^\/(s|w)\s+(\S+)\s+(.+)/i.exec(v), hh = /^\/(h|herm|hermandad)\s+(.+)/i.exec(v);
   if (hh) return mandar({ t: 'chat', m: hh[2], canal: 'hermandad' });
   if (g) return mandar({ t: 'chat', m: g[2], canal: 'grupo' });
@@ -2097,9 +2112,12 @@ addEventListener('keydown', e => {
 // ── INVITADO: que no pierda su duende ──
 // Una vez por sesion: el duende del invitado vive en este navegador; se puede
 // guardar con una cuenta (en CLASSIC) o con el codigo de rescate.
+let avisoInvT = 0;
 function avisoInvitado() {
-  if (!soyInvitado || !yo || hayVentana()) return;
-  try { if (sessionStorage.getItem('dq_aviso_inv')) return; sessionStorage.setItem('dq_aviso_inv', '1'); } catch (e) {}
+  // Desde Nv 3 (no encima del tutorial) y como mucho una vez al dia.
+  if (!soyInvitado || !yo || yo.nivel < 3 || hayVentana()) return;
+  const hoy = new Date().toISOString().slice(0, 10);
+  try { if (localStorage.getItem('dq_aviso_inv') === hoy) return; localStorage.setItem('dq_aviso_inv', hoy); } catch (e) {}
   $('diario-c').innerHTML = `<p class="vv-p">Juegas como <b>invitado</b>: tu duende vive solo en este navegador. Para no perderlo:</p>
     <p class="vv-p">1) Crea una cuenta gratis en <a href="/mmo/" style="color:#7dd3fc">$DUENDE CLASSIC</a> (botón 👤): tu duende pasa a la nube y sirve en los dos juegos.</p>
     <p class="vv-p">2) O guarda tu <b>código de rescate</b> y úsalo en otro navegador desde la pantalla de inicio:</p>
@@ -2591,7 +2609,11 @@ const joy = { id: null, x: 0, y: 0, dx: 0, dy: 0 };
 const camTouch = { id: null, x: 0, y: 0, mov: 0 };
 if (MOVIL) {
   const base = $('joy').querySelector('.base'), pomo = base.firstElementChild;
+  // Pista hasta el primer uso: la base del joystick no se ve hasta tocar.
+  let pistaJoy = null;
+  try { if (!localStorage.getItem('dq_joy_ok')) { pistaJoy = document.createElement('div'); pistaJoy.className = 'pista-joy'; pistaJoy.innerHTML = '<i></i><span>Desliza aquí<br>para moverte</span>'; $('joy').appendChild(pistaJoy); } } catch (e) {}
   $('joy').addEventListener('touchstart', e => {
+    if (pistaJoy) { pistaJoy.remove(); pistaJoy = null; try { localStorage.setItem('dq_joy_ok', '1'); } catch (er) {} }
     const t = e.changedTouches[0]; joy.id = t.identifier; joy.x = t.clientX; joy.y = t.clientY; joy.dx = joy.dy = 0;
     const r = $('joy').getBoundingClientRect();   // la base se dibuja bajo el dedo aunque #joy no empiece en (0,0)
     base.style.display = 'block'; base.style.left = (t.clientX - r.left - 60) + 'px'; base.style.top = (t.clientY - r.top - 60) + 'px';
@@ -2683,7 +2705,7 @@ function fisica(dt) {
   const quiere = mag > 0.15;
   if (quiere) { mx /= Math.max(1, mag); mz /= Math.max(1, mag); }
   const nadando = !P.vuela && !enAbismo(P.x) && alturaEn(P.x, P.z) < -0.7;
-  const vel = MUNDO.velocidad * (nadando ? 0.55 : 1) * (P.vuela ? (ALAS[yo.ala] || ALAS.aprendiz).vel : P.planea ? 1.35 : velMontura(yo.montado)) * (yo.dios && yo.diosModo && yo.diosModo.vel ? 3 : 1);
+  const vel = MUNDO.velocidad * (nadando ? 0.55 : 1) * (P.vuela ? alaDe(yo, enAbismo(P.x)).vel : P.planea ? 1.35 : velMontura(yo.montado)) * (yo.dios && yo.diosModo && yo.diosModo.vel ? 3 : 1);
   // Inercia ligera (rapida en el suelo, mas suelta en el aire y el agua). Al
   // lanzar un hechizo sin tocar las teclas, se frena en seco (no se corta).
   const agarre = P.vuela || P.planea ? 4 : nadando ? 5 : !P.suelo ? 3 : 16;
@@ -2753,6 +2775,7 @@ function fisica(dt) {
     } else { P.suelo = false; P.coyote = Math.max(0, P.coyote - dt); }
     P.buffer = Math.max(0, P.buffer - dt);
     if (P.suelo) P.alas = Math.min(ALAS_MAX, P.alas + dt * 3);
+    if (yo) { const am = alaDe(yo, enAbismo(P.x)).vuelo; if (am !== ALAS_MAX) { ALAS_MAX = am; P.alas = Math.min(P.alas, am); } }
   }
   if (P.vuela && zonaEn(P.x, P.z) === 'pueblo') { volar(false); P.planeoAuto = true; }
   if (enAbismo(P.x) && !P.vuela && !P.muerto && P.y < -60 && !caidaEnviada) { caidaEnviada = true; mandar({ t: 'caida' }); }
@@ -2887,11 +2910,12 @@ function etiquetas(t) {
     const cl = CLASES[o.cl];
     ponLbl(o.lbl, o.x, (o.y || alturaEn(o.x, o.z)) + 2.15 + (o.fig && o.fig.montura ? 1.2 : 0), o.z, `<span style="color:${o.gm ? '#ffd84a' : o.fc && yo && yo.faccion && o.fc !== yo.faccion && enAbismo(o.x) ? '#ff4d4d' : cl ? cl.color : '#fff'}">${o.gm ? 'GM ' : ''}${o.fc && enAbismo(o.x) ? (o.fc === 'luz' ? '☀ ' : '🌑 ') : ''}${esc(o.n)} · Nv${o.lv}</span>${o.hn ? `<small style="display:block;color:${HERM_COLORES[o.hc] || '#4ade80'};font-size:10px">&lt;${esc(o.hn)}&gt;</small>` : ''}${o.ra && enAbismo(o.x) ? `<small style="display:block;color:#c4b5fd;font-size:10px">${RANGOS[o.ra].n}</small>` : ''}<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>`, 70);
   }
+  const kMis = tipoMision();
   for (const o of mons.values()) {
-    const def = MONSTRUOS[o.k], el = o.id === objetivo;
+    const def = MONSTRUOS[o.k], el = o.id === objetivo, mis = o.k === kMis;
     const alto = o.fig ? altoFig(o.fig) : 2;
     const herido = o.hp < o.mx || el;
-    ponLbl(o.lbl, o.x, alturaEn(o.x, o.z) + alto + 0.2, o.z, `<span style="color:${o.ra ? o.ti || '#ffd84a' : o.iv ? '#ff5a1f' : o.j ? '#ff6bf0' : colorNivel(o.nv)}">${o.ra ? '★ ' + esc(o.ra) + ' · ' : o.iv ? '⚔ ' : o.j ? '★ ' : ''}${asedio && asedio.dormido && o.id === asedio.guardian ? '💤 ' : ''}${herido || o.j ? esc(def.nombre) + ' ' : ''}${marcaNivel(o.nv)}Nv${o.nv}</span>${herido ? `<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>` : ''}`, el ? 90 : (o.j ? 70 : 38));
+    ponLbl(o.lbl, o.x, alturaEn(o.x, o.z) + alto + 0.2, o.z, `<span style="color:${o.ra ? o.ti || '#ffd84a' : o.iv ? '#ff5a1f' : o.j ? '#ff6bf0' : colorNivel(o.nv)}">${mis ? '<b style="color:#ffd84a;font-size:15px">❗</b>' : ''}${o.ra ? '★ ' + esc(o.ra) + ' · ' : o.iv ? '⚔ ' : o.j ? '★ ' : ''}${asedio && asedio.dormido && o.id === asedio.guardian ? '💤 ' : ''}${herido || o.j || mis ? esc(def.nombre) + ' ' : ''}${marcaNivel(o.nv)}Nv${o.nv}</span>${herido ? `<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>` : ''}`, el ? 90 : (o.j || mis ? 70 : 38));
   }
   for (const n of npcs) ponLbl(n.lbl, n.x, n.y + 2.4, n.z, `${n.tipo === 'guia' && misionLista() ? '<b style="color:#ffd84a;font-size:22px;text-shadow:0 0 6px #000">?</b><br>' : ''}<span style="color:#4ade80">${esc(n.nombre)}</span>`, 60);
 }
@@ -2962,7 +2986,7 @@ function pintarMisiones() {
     const zc = ZONAS3D[invasion3.zona], dz = zc ? Math.hypot(zc.x - P.x, zc.z - P.z) : 0;
     h = `<div class="q" style="border-left:3px solid #ff5a1f;padding-left:6px"><b style="color:#ff8a5c">⚔️ ${esc(invasion3.nombre)}</b>${invasion3.fase === 'capitan' ? '¡Derrota al Capitán!' : `Invasores: ${invasion3.hechos}/${invasion3.meta}`} · ${mm}:${String(ss).padStart(2, '0')}<small>${(MAPAS[invasion3.zona] || {}).nombre || ''}${dz > 60 && zc ? ` · ${flechaDir(zc.x, zc.z)} ${Math.round(dz)} m` : ' · ¡aquí!'}</small></div>` + h;
   }
-  if (!MOVIL) { // Tesoro cercano: el cofre disponible mas proximo (en movil ya sale en el minimapa)
+  if (!COMPACTO) { // Tesoro cercano: el cofre disponible mas proximo (en movil ya sale en el minimapa)
     let mc = null, md = 400; const ah = Date.now();
     for (const c of COFRES3) if (c.listoEn <= ah) { const d = Math.hypot(c.x - P.x, c.z - P.z); if (d < md && d > 6) { md = d; mc = c; } }
     if (mc) h += `<div class="q"><b>🧰 ${NOMBRE_COFRE[mc.tipo].replace(/^./, x => x.toUpperCase())}</b><small>${flechaDir(mc.x, mc.z)} ${Math.round(md)} m${mc.tipo === 'legendario' ? ' · en lo alto: ¡vuela!' : ''}</small></div>`;
@@ -2972,23 +2996,41 @@ function pintarMisiones() {
   if (T && T.dia) {
     const hd = T.dia.l.filter(t => t.ok).length, hs = T.sem.l.filter(t => t.ok).length;
     // Movil con la caja recortada: una sola linea; al tocarla se despliega la lista completa.
-    if (MOVIL && !c.classList.contains('abierto')) h += `<div class="q"><b>🗓 Día ${hd}/${T.dia.l.length} · Semana ${hs}/${T.sem.l.length}</b><small>Toca para ver</small></div>`;
+    if (COMPACTO && !c.classList.contains('abierto')) h += `<div class="q"><b>🗓 Día ${hd}/${T.dia.l.length} · Semana ${hs}/${T.sem.l.length}</b><small>Toca para ver</small></div>`;
     else h += `<div class="q"><b>🗓 Misiones del día ${hd}/${T.dia.l.length}</b>` + T.dia.l.map((t, i) => t.ok ? `<span class="ok">✓ ${esc(t.txt)}</span>` : `<span class="tarea">• ${esc(t.txt)} ${t.p}/${t.n}${T.dia.cambio ? '' : ` <button class="cambiar" data-cambiar="${i}" title="Cambiar esta misión (1 gratis al día)">🔄</button>`}</span>`).join('') +
       `<small>Semana ${hs}/${T.sem.l.length}${T.dia.bono ? ' · ✓ bono del día' : ''}</small></div>`;
   }
   c.style.display = h ? 'block' : 'none';
   if (c._h !== h) { c.innerHTML = h; c._h = h; }
   // Columna de luz sobre la meta (como las zonas de mision de WoW).
-  faro.visible = !!metaMision && Math.hypot(metaMision.x - P.x, metaMision.z - P.z) > 12;
+  const dMeta = metaMision ? Math.hypot(metaMision.x - P.x, metaMision.z - P.z) : Infinity;
+  faro.visible = !!metaMision && dMeta > 12;
   if (metaMision) { faro.position.set(metaMision.x, alturaEn(metaMision.x, metaMision.z), metaMision.z); faro.material.color.set(metaMision.guia ? '#4ade80' : '#ffd84a'); }
+  // Al llegar, la columna se apaga: queda un aro en el suelo y se explica que hacer
+  // (antes desaparecia sin mas y parecia que no pasaba nada).
+  faroAro.visible = !!metaMision && dMeta < 40;
+  if (faroAro.visible) faroAro.position.set(metaMision.x, alturaEn(metaMision.x, metaMision.z) + 0.15, metaMision.z);
+  if (q && metaMision && dMeta < 25 && avisoCampo !== yo.mis.i + ':' + q.tipo) {
+    avisoCampo = yo.mis.i + ':' + q.tipo;
+    const nom = (MONSTRUOS[q.tipo] || {}).nombre || q.tipo, falta = Math.max(0, q.n - yo.mis.p);
+    const hay = [...mons.values()].some(o => o.k === q.tipo && !o.muereT && Math.hypot(o.x - P.x, o.z - P.z) < 40);
+    aviso(hay ? `📜 Aquí está tu misión: derrota ${falta} ${nom} (los marcados con ❗). ${MOVIL ? 'Tócalos' : 'Haz clic en ellos'} y ataca.` : `📜 Zona de ${nom}: aparecen en unos segundos aquí mismo. Te faltan ${falta}.`, 'ok');
+  }
 }
+let avisoCampo = '';
+const faroAro = (() => {
+  const m = new THREE.Mesh(new THREE.RingGeometry(10, 11, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ffd84a', transparent: true, opacity: 0.45, depthWrite: false, side: THREE.DoubleSide }));
+  m.visible = false; escena.add(m); return m;
+})();
+// El monstruo que pide la mision activa (null si ya esta lista).
+function tipoMision() { const q = yo && yo.mis && MISIONES[yo.mis.i]; return q && yo.mis.p < q.n ? q.tipo : null; }
 const faro = (() => {
   const m = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 2.4, 90, 12, 1, true).translate(0, 45, 0), new THREE.MeshBasicMaterial({ color: '#ffd84a', transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide, fog: false }));
   m.visible = false; escena.add(m); return m;
 })();
 // Cambiar mision pide dos toques (solo hay 1 cambio gratis al dia; sin confirm(): en Telegram queda feo)
 let cambioPend = null;
-$('misiones').onclick = e => { const en = e.target.closest('[data-entregar]'); if (en) { e.stopPropagation(); mandar(en.dataset.entregar === 'diaria' ? { t: 'mision', diaria: true } : { t: 'mision' }); return; } const b = e.target.closest('[data-cambiar]'); if (b) { e.stopPropagation(); const i = +b.dataset.cambiar; if (cambioPend && cambioPend.i === i && Date.now() - cambioPend.t < 4000) { cambioPend = null; mandar({ t: 'cambiarTarea', i }); } else { cambioPend = { i, t: Date.now() }; b.textContent = '¿Seguro?'; } return; } if (MOVIL) { $('misiones').classList.toggle('abierto'); pintarMisiones(); return; } abrirMapa(); };
+$('misiones').onclick = e => { const en = e.target.closest('[data-entregar]'); if (en) { e.stopPropagation(); mandar(en.dataset.entregar === 'diaria' ? { t: 'mision', diaria: true } : { t: 'mision' }); return; } const b = e.target.closest('[data-cambiar]'); if (b) { e.stopPropagation(); const i = +b.dataset.cambiar; if (cambioPend && cambioPend.i === i && Date.now() - cambioPend.t < 4000) { cambioPend = null; mandar({ t: 'cambiarTarea', i }); } else { cambioPend = { i, t: Date.now() }; b.textContent = '¿Seguro?'; } return; } if (COMPACTO) { $('misiones').classList.toggle('abierto'); pintarMisiones(); return; } abrirMapa(); };
 function misionLista() { if (!yo) return false; const q = MISIONES[yo.mis.i]; const d = yo.diaria || {}; return (q && yo.mis.p >= q.n) || (!d.ok && (d.p || 0) >= DIARIA.n); }
 function colorNivel(nv) { const d = nv - (yo ? yo.nivel : 1); return d >= 5 ? '#ff3344' : d >= 2 ? '#ff9900' : d <= -8 ? '#9a9a9a' : d <= -3 ? '#4ade80' : '#ffe600'; }
 // Marca de peligro que no depende del color (daltonicos): ASCII porque la fuente pixel no tiene calavera.

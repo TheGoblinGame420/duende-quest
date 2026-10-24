@@ -40,6 +40,22 @@ const LFG_CADA_MS = 60000;              // y cada cuanto se puede volver a anunc
 // vuelta al texto para disfrazarlo). El U+200D se deja: lo usan los emojis compuestos.
 const limpiar = t => String(t || '').replace(/[\u0000-\u001f\u007f​‌‎‏‪-‮⁠-⁤⁦-⁩﻿]/g, '').trim().slice(0, 120);
 
+// Antiestafa (juego con cripto): ni direcciones de cartera, ni enlaces, ni
+// frases semilla en el chat. Nadie del equipo pide nunca la frase semilla.
+const RE_ESTAFA = [
+  /\b[1-9A-HJ-NP-Za-km-z]{32,44}\b/,                    // direccion Solana (base58)
+  /\b(?:EQ|UQ|kQ|0Q)[A-Za-z0-9_-]{46}\b/,               // direccion TON
+  /\b0x[a-fA-F0-9]{40}\b/,                              // direccion EVM
+  /(?:https?:\/\/|www\.|t\.me\/|telegram\.me\/|discord\.gg\/)/i,
+  /\b[a-z0-9-]{2,}\.(?:com|io|xyz|net|org|app|gg|me|link|site|fun|top|online|click|live|shop)\b/i,
+  /\b(?:seed|semilla|mnemonic|clave privada|private key|frase de recuperaci[oó]n|12 palabras|24 palabras)\b/i,
+];
+export const riesgoEstafa = t => RE_ESTAFA.some(r => r.test(t));
+export const IGNORADOS_MAX = 50;
+const REPORTE_CADA_MS = 60000;
+// No le llega a quien ignora al autor.
+const meIgnora = (x, uid) => !!(x.c && x.c.ignorados && x.c.ignorados.includes(uid));
+
 export const Social = {
   iniciarSocial() {
     if (!this.grupos) { this.grupos = new Map(); this.sigGrupo = 1; }
@@ -211,6 +227,7 @@ export const Social = {
     if (!txt) return;
     const mudo = this.silenciado ? this.silenciado(s) : 0;
     if (mudo) return this.no(s, `🔇 Estás silenciado por un moderador ${Math.ceil((mudo - ahora) / 60000)} min más.`);
+    if (!s.dios && riesgoEstafa(txt)) return this.no(s, '🛡 Por seguridad no se permiten direcciones de cartera, enlaces ni frases semilla en el chat. Nadie del equipo te pedirá nunca tu frase semilla.');
     s.chatT = ahora;
     const canal = m.canal;
     // General y susurro llegan a cualquiera: un invitado recien creado (token
@@ -219,8 +236,10 @@ export const Social = {
     if (canal !== 'decir' && canal !== 'grupo' && canal !== 'hermandad' && s.c.uid.startsWith('inv:') && s.c.nivel < 5) return this.no(s, s.m3 ? '🔒 En ORIGINS los invitados usan el chat público y el susurro desde el nivel 5 (el de grupo /g y hermandad /h ya funcionan). Sube un poco o inicia sesión.' : '🔒 Los invitados usan el canal general y el susurro desde el nivel 5. Mientras tanto escribe /d tu mensaje para hablar con los de tu mapa, o inicia sesión.');
     const base = { t: 'chat', p: s.id, n: s.c.nombre, m: txt, mapa: s.c.mapa, cl: s.c.clase || '', gm: s.dios ? 1 : undefined };
     if (canal === 'decir') {
-      // Solo los que estan en el mismo mapa (o la misma mazmorra).
-      return this.aClave(s.k, { ...base, canal: 'decir' });
+      // Solo los que estan en el mismo mapa (o la misma mazmorra), menos quien lo ignora.
+      const txtD = JSON.stringify({ ...base, canal: 'decir' });
+      for (const x of this.sesiones.values()) if (x.c && x.k === s.k && !meIgnora(x, s.c.uid)) this.enviar(x, txtD);
+      return;
     }
     if (canal === 'grupo') {
       const g = this.grupoDe(s);
@@ -238,13 +257,44 @@ export const Social = {
       const t = [...this.sesiones.values()].find(x => x.c && x.c.nombre.toLowerCase() === a);
       if (!t) return this.no(s, `No hay nadie conectado llamado "${limpiar(m.a)}".`);
       if (t === s) return;
+      if (meIgnora(t, s.c.uid)) return this.no(s, `${t.c.nombre} no recibe tus mensajes.`);
       this.enviar(t, { ...base, canal: 'susurro', de: s.c.nombre });
       this.enviar(s, { ...base, canal: 'susurro', a: t.c.nombre });
       return;
     }
     // General: todo el servidor. Las burbujas solo se ven en el mismo mapa.
     this.anotarChat(this.chatHist || (this.chatHist = []), s, base, 'general', 20);
-    this.aTodos({ ...base, canal: 'general' });
+    const txtG = JSON.stringify({ ...base, canal: 'general' });
+    for (const x of this.sesiones.values()) if (x.c && !meIgnora(x, s.c.uid)) this.enviar(x, txtG);
+  },
+  // /ignorar Nombre: deja de ver sus mensajes (otra vez lo deshace). Va con el
+  // personaje (sirve en CLASSIC y ORIGINS y en otro dispositivo).
+  ignorar(s, m) {
+    const n = limpiar(m.n).toLowerCase();
+    const t = [...this.sesiones.values()].find(x => x.c && x.c.nombre.toLowerCase() === n);
+    if (!t || t === s) return this.no(s, n ? `No hay nadie conectado llamado "${limpiar(m.n)}".` : 'Escribe: /ignorar Nombre');
+    const l = s.c.ignorados || (s.c.ignorados = []);
+    const i = l.indexOf(t.c.uid);
+    if (i >= 0) { l.splice(i, 1); s.sucio = true; return this.enviar(s, { t: 'toast', m: `🔈 Vuelves a ver los mensajes de ${t.c.nombre}.` }); }
+    if (l.length >= IGNORADOS_MAX) l.shift();
+    l.push(t.c.uid); s.sucio = true;
+    this.enviar(s, { t: 'toast', m: `🔇 Ya no ves los mensajes de ${t.c.nombre} (escribe /ignorar ${t.c.nombre} otra vez para deshacerlo).` });
+  },
+  // /reportar Nombre motivo: queda guardado (con sus ultimas frases del chat)
+  // y le llega al dueño por Telegram para que lo revise.
+  reportar(s, m) {
+    const ahora = Date.now();
+    if (ahora - (s.reporteT || 0) < REPORTE_CADA_MS) return this.no(s, 'Espera un minuto antes de enviar otro reporte.');
+    const n = limpiar(m.n).toLowerCase(), motivo = limpiar(m.motivo).slice(0, 100) || 'sin motivo';
+    const t = [...this.sesiones.values()].find(x => x.c && x.c.nombre.toLowerCase() === n);
+    if (!t || t === s) return this.no(s, n ? `No hay nadie conectado llamado "${limpiar(m.n)}".` : 'Escribe: /reportar Nombre motivo');
+    s.reporteT = ahora;
+    const frases = (this.chatHist || []).filter(x => x.u === t.c.uid).slice(-5).map(x => x.m);
+    const r = { t: ahora, de: s.c.uid, deN: s.c.nombre, a: t.c.uid, aN: t.c.nombre, motivo, frases };
+    this.reportes = (this.reportes || []).concat(r).slice(-200);
+    if (this.state && this.state.storage) this.state.storage.put('reportes', this.reportes).catch(() => {});
+    if (this.avisarAdmin) this.avisarAdmin(`⚠️ Reporte de ${s.c.nombre.replace(/[^\p{L}\p{N} ]/gu, '')} contra ${t.c.nombre.replace(/[^\p{L}\p{N} ]/gu, '')}: ${motivo.replace(/[*_`\[\]]/g, '')}${frases.length ? '\nÚltimas frases: ' + frases.map(f => '«' + f.replace(/[*_`\[\]]/g, '') + '»').join(' ') : ''}`).catch(() => {});
+    this.enviar(s, { t: 'toast', m: `⚠️ Reporte enviado. Gracias: el equipo lo revisará. Si te molesta, usa /ignorar ${t.c.nombre}.` });
   },
   // Historial corto del general y de cada hermandad, solo en memoria (si el
   // servidor se duerme se pierde). u: uid del autor, para no repetir lo de un

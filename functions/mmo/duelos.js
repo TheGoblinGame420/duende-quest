@@ -104,7 +104,8 @@ export const Duelos = {
   async eloPorAbandono(g, uid) {
     const vuelto = this.porUid.get(uid);
     if (vuelto && vuelto.c) { this.puntuarDuelo(g, vuelto); return; }
-    const c = await this.state.storage.get('c:' + uid);
+    const { s: ya, c } = this.pjDe ? await this.pjDe(uid) : { s: null, c: await this.state.storage.get('c:' + uid) };
+    if (ya) { this.puntuarDuelo(g, ya); return; }
     if (!c) return;
     const r = this.puntuarDuelo(g, { c });
     if (r && !r.sin && !this.porUid.get(uid)) await this.state.storage.put('c:' + uid, c);
@@ -169,8 +170,10 @@ export const Duelos = {
     // Sin las ventajas de combate de la skin (en PvP todos iguales).
     const sb = this.statsSinSkin ? this.statsSinSkin(s) : s.st;
     const crit = Math.random() < sb.crit;
-    const forja = multForja((s.c.forja || {})[s.c.arma]);
-    let dmg = sb.atk * mult * forja * rnd(0.9, 1.1) * (crit ? 1.8 : 1) * (ahora < s.fuego ? 1.5 : 1) * (this.aura(s, 'grito') ? 1.1 : 1) * (this.elixir(s, 'elixirF') ? 1.1 : 1) * (this.elixir(s, 'sudado') ? 1.05 : 1);
+    // Contra jugadores: la forja cuenta hasta +5 y el Fuego (consumible) no
+    // multiplica: el oro comprado no compra duelos ni el Abismo.
+    const forja = multForja(Math.min(5, (s.c.forja || {})[s.c.arma] || 0));
+    let dmg = sb.atk * mult * forja * rnd(0.9, 1.1) * (crit ? 1.8 : 1) * (this.aura(s, 'grito') ? 1.1 : 1) * (this.elixir(s, 'elixirF') ? 1.1 : 1) * (this.elixir(s, 'sudado') ? 1.05 : 1);
     if (this.aura(s, 'sigilo')) { dmg *= 2; this.quitarAura(s, 'sigilo'); }
     const vara = basico && CLASES[s.c.clase] && CLASES[s.c.clase].basico === 'vara';
     dmg = Math.max(1, Math.round(dmg * (vara ? ESCALA_VARA : ESCALA)));

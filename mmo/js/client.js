@@ -17,7 +17,7 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=289';
+} from './data.js?v=290';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1555,7 +1555,9 @@ function enviarChat(v) {
   if (cmd === 'r') { if (!ultimoSusurro) { errorRojo('Nadie te ha susurrado todavía.'); return; } return resto && mandar({ t: 'chat', canal: 'susurro', a: ultimoSusurro, m: resto }); }
   if (cmd === 'invitar' || cmd === 'inv') { const q = [...otros.values()].find(x => x.n.toLowerCase() === resto.toLowerCase()); if (q) mandar({ t: 'invitar', p: q.id }); else errorRojo('Ese jugador no está en tu mapa. Invítalo desde Social → En línea.'); return; }
   if (cmd === 'salir') { mandar({ t: 'salirGrupo' }); return; }
-  errorRojo('Comandos: /d decir · /g grupo · /h hermandad · /s Nombre susurro · /r responder · gestos: ' + Object.keys(GESTOS).map(k => '/' + k).join(' '));
+  if (cmd === 'ignorar') { if (!resto) { errorRojo('Escribe: /ignorar Nombre'); return; } return mandar({ t: 'ignorar', n: resto.split(/\s+/)[0] }); }
+  if (cmd === 'reportar') { const sp = resto.indexOf(' '); if (!resto) { errorRojo('Escribe: /reportar Nombre motivo'); return; } return mandar({ t: 'reportar', n: sp > 0 ? resto.slice(0, sp) : resto, motivo: sp > 0 ? resto.slice(sp + 1) : '' }); }
+  errorRojo('Comandos: /d decir · /g grupo · /h hermandad · /s Nombre susurro · /r responder · /ignorar Nombre · /reportar Nombre motivo · gestos: ' + Object.keys(GESTOS).map(k => '/' + k).join(' '));
 }
 function mensajeChat(m) {
   const canal = m.canal || 'general';

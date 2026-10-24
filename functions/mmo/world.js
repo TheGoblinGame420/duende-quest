@@ -378,6 +378,8 @@ export class MmoWorld {
       case 'pw': return this.poder(s, m);
       case 'portal': return this.portal(s, m);
       case 'chat': return this.chat(s, m);
+      case 'ignorar': return this.ignorar(s, m);
+      case 'reportar': return this.reportar(s, m);
       case 'comprar': return this.comprar(s, m);
       case 'equipar': return this.equipar(s, m);
       case 'revivir': return this.revivir(s);
@@ -584,7 +586,8 @@ export class MmoWorld {
     if (c.muerto) {
       // Igual que revivir(): hasta Nv 10 sin perder XP y en la entrada de la zona.
       const novato = c.nivel < 10 && MAPAS[c.mapa] && MAPAS[c.mapa].zona && c.mapa !== 'coliseo';
-      if (c.nivel >= 10) c.xp = Math.max(0, c.xp - Math.round(xpParaSubir(c.nivel) * 0.05));
+      if (c.nivel >= 10 && !c.muertoPvP) c.xp = Math.max(0, c.xp - Math.round(xpParaSubir(c.nivel) * 0.05));
+      delete c.muertoPvP;
       c.oro -= Math.min(c.oro, costoReparacion(c.nivel));   // cerrar estando muerto no se salta la reparacion
       c.muerto = false;
       if (novato) c.x = 150; else { c.mapa = 'pueblo'; c.x = MAPAS.pueblo.spawn; }
@@ -710,6 +713,17 @@ export class MmoWorld {
   statsSinSkin(s) {
     if (s._stBaseDe !== s.st) { s._stBase = statsJugador(s.c.nivel, null, s.c.eq, s.c.clase, s.c.espec, s.c.tal, s.c.runas); s._stBaseDe = s.st; }
     return s._stBase;
+  }
+  // Parte del daño de s en o como si nadie llevara skin (el ataque extra de
+  // una skin de pago no acerca al umbral de mTON de los jefes).
+  parteJusta(o, s) {
+    let tot = 0, mio = 0;
+    for (const [id, d] of o.dano) {
+      const x = this.sesiones.get(id);
+      const f = x && x.c && x.st ? Math.max(1, x.st.atk / Math.max(1, this.statsSinSkin(x).atk)) : 1;
+      tot += d / f; if (id === s.id) mio = d / f;
+    }
+    return tot ? mio / tot : 0;
   }
 
   // ── mTON / PLAY TO EARN ──
@@ -1801,7 +1815,7 @@ export class MmoWorld {
         // un compañero quieto en el grupo no la cumple sin jugar.
         this.dar(s, xp, oro, o, n, o.dano.has(s.id) || !!(o.cura && o.cura.has(s.id)));
         // mTON: como siempre, por la parte PROPIA de daño de cada uno.
-        if (o.jefe && !o.mazmorra && (o.dano.get(s.id) || 0) / total >= 0.1) this.darMton(s, 20 * Math.max(0.3, MONSTRUOS[o.k].nivel / 30), 'jefe');
+        if (o.jefe && !o.mazmorra && this.parteJusta(o, s) >= 0.1) this.darMton(s, 20 * Math.max(0.3, MONSTRUOS[o.k].nivel / 30), 'jefe');
       }
     }
     // Caza cooperativa: quien este cerca y vivo se lleva el 25% de la
@@ -2021,7 +2035,8 @@ export class MmoWorld {
     const ahora = Date.now();
     const pct = fuente && fuente.pct;
     const duelo = fuente && fuente.duelo, pvp = fuente && fuente.pvp;
-    if ((ahora < s.inv && !pct && !duelo && !pvp) || ahora < s.escudo || this.aura(s, 'bloque')) return;
+    // El Escudo (consumible que se puede comprar) protege de monstruos, no de jugadores.
+    if ((ahora < s.inv && !pct && !duelo && !pvp) || (ahora < s.escudo && !duelo && !pvp) || this.aura(s, 'bloque')) return;
     if (s.dios && s.diosModo && s.diosModo.inv) return;   // Modo Dios: invencible
     // Evasion del picaro: esquiva golpes cuerpo a cuerpo (las bolas y las
     // zonas no).
@@ -2091,6 +2106,7 @@ export class MmoWorld {
     s.hp = 0;
     s.muerto = true;
     s.muertoPvP = !!pvp;
+    if (s.c) s.c.muertoPvP = !!pvp;   // si cierra estando muerto, al volver tampoco pierde XP
     s.montado = null;
     s.combo = 0;
     this.cancelarCast(s);

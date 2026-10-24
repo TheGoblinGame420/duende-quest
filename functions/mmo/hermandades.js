@@ -162,8 +162,9 @@ export const Hermandades = {
     const t = this.porUid.get(uid);
     if (t) { t.c.herm = null; t.sucio = true; this.enviar(t, { t: 'herm', h: null }); this.refrescarApariencia(t); this.actualizarYo(t); }
     else {
-      const c = await this.state.storage.get('c:' + uid);
-      if (c && c.herm === h.id) { c.herm = null; await this.state.storage.put('c:' + uid, c); }
+      const { s: t2, c } = await this.pjDe(uid);
+      if (t2) { if (t2.c.herm === h.id) { t2.c.herm = null; t2.sucio = true; this.enviar(t2, { t: 'herm', h: null }); } }
+      else if (c && c.herm === h.id) { c.herm = null; await this.state.storage.put('c:' + uid, c); }
     }
     const quedan = Object.entries(h.miembros);
     if (!quedan.length) {

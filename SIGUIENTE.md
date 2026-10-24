@@ -2888,3 +2888,16 @@ orilla sin pegar.
 caso; texto de muerte con el bastion y sin borrar quien te derribo. CLASSIC:
 `mostrarNuevo3d` solo para no-nuevos con clase (nivel > 6 o tutorial acabado) y
 al entregar la primera mision. El botin de raros/mazmorra ya salia a tu nivel.
+
+### HUD compacto, zona de misión, chat seguro y PvP justo (24-oct-2026, `?v=290`)
+
+Primera versión de la conversación única (ver HISTORIAL-DUENDE.md). Reevaluación con el baremo del informe de 50 agentes: **5,7/10** (MMO 5,9 · F2P 5,9 · QA 5,8 · casual 5,7 · web3 5,1; antes 4,8).
+
+- `COMPACTO` (MOVIL o innerWidth < 760) y `body.compacto`: Telegram de escritorio abre una ventana de ~560 px con ratón y salía el HUD de PC. El HUD del móvil se aplica sin los controles táctiles. Móvil y compacto: solo 🎒 🗺 💬 ⋯ a la vista.
+- Zona de misión: `faroAro` (aro en el suelo a menos de 40 m), aviso al llegar y ❗ con nombre sobre `tipoMision()`.
+- social.js: `riesgoEstafa` (base58, TON, EVM, URL, dominios, semilla) en todos los canales salvo dios; `ignorar` (c.ignorados, 50) filtra general, decir y susurro; `reportar` (1 por minuto, `reportes` en storage, aviso al dueño con sus últimas frases).
+- PvP: Escudo sin inmunidad ante pvp/duelo; `golpeDuelo` sin Fuego y forja ≤ +5; `alaDe(c, abismo)` limita las alas premium a Dragón; `parteJusta(o, s)` para el umbral de mTON de jefes (2D y 3D).
+- QA: `c.muertoPvP` guardado (al volver no quita XP); hermandades y Elo por abandono usan `pjDe`; `logro` en ORIGINS.
+- /inicio/: jefe mundial de CLASSIC (:00/:30) u ORIGINS (:15/:45), el más cercano; «jugando ahora» solo con 5+.
+- Landing: sin «Próximamente NFTs» ni «Necesitas $DUENDE para comprar objetos NFT»; los botones de la tienda van a /inicio/. Token, staking y precios sin tocar.
+- Arnés: 828 (11 nuevas).

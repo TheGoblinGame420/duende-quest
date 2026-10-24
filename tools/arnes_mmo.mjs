@@ -623,6 +623,7 @@ async function pruebas() {
   await pruebasVincular();
   await pruebasSeguridad();
   await pruebasAsedio3d();
+  await pruebasJusticia3d();
 }
 
 // ── ALAS (vuelo de AION) ──
@@ -645,6 +646,51 @@ async function pruebasAlas3d() {
   for (let i = 0; i < 700; i++) { avanzar(100); a.movBud = undefined; await a.mandar({ t: 'mv3', x: 120 + (i % 2) * 0.2, z: 120, a: 3, h: 10 }); }
   chequear(a.ultimos('alasAgotadas').length >= 1 && a.a !== 3, 'sin energía de alas el servidor te baja (planeando)');
   await dejar(a);
+}
+
+// ── v290: chat seguro, ignorar/reportar y PvP sin ventajas compradas ──
+async function pruebasJusticia3d() {
+  console.log('Mundo 3D: chat seguro y PvP justo');
+  const D = await import('../mmo/js/data.js');
+  const AB = await import('../mmo/js/abismo3d.js');
+  const a = await entrar3d('ChatUno', '4n1'); ponerNivel(a, 25, 'guerrero');
+  const b = await entrar3d('ChatDos', '4n2'); ponerNivel(b, 25, 'mago');
+  a.limpiar(); b.limpiar(); avanzar(1500);
+  await a.mandar({ t: 'chat', canal: 'general', m: 'manda a 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU' });
+  chequear(a.ultimos('no').some(m => /frases semilla/.test(m.m)) && !b.ultimos('chat').length, 'el chat bloquea direcciones de cartera');
+  avanzar(1500); await a.mandar({ t: 'chat', canal: 'general', m: 'visita www.premios-gratis.xyz' });
+  chequear(!b.ultimos('chat').length, 'el chat bloquea enlaces');
+  avanzar(1500); await a.mandar({ t: 'chat', canal: 'general', m: 'hola a todos' });
+  chequear(b.ultimos('chat').some(m => m.m === 'hola a todos'), 'un mensaje normal llega');
+  b.limpiar(); await b.mandar({ t: 'ignorar', n: a.c.nombre });
+  b.limpiar(); avanzar(1500); await a.mandar({ t: 'chat', canal: 'general', m: 'otra vez' });
+  chequear(!b.ultimos('chat').length && b.c.ignorados.includes(a.c.uid), '/ignorar oculta sus mensajes');
+  a.limpiar(); avanzar(1500); await a.mandar({ t: 'chat', canal: 'susurro', a: b.c.nombre, m: 'psst' });
+  chequear(a.ultimos('no').some(m => /no recibe/.test(m.m)), 'no se susurra a quien te ignora');
+  await b.mandar({ t: 'ignorar', n: a.c.nombre });
+  chequear(!b.c.ignorados.includes(a.c.uid), '/ignorar otra vez lo deshace');
+  const n0 = (mundo.reportes || []).length;
+  await b.mandar({ t: 'reportar', n: a.c.nombre, motivo: 'estafa' });
+  await b.mandar({ t: 'reportar', n: a.c.nombre, motivo: 'otra' });
+  chequear((mundo.reportes || []).length === n0 + 1 && mundo.reportes.at(-1).aN === a.c.nombre, 'el reporte se guarda (uno por minuto)');
+  // Alas de pago: en el Abismo no superan a las de Dragon
+  chequear(D.alaDe({ ala: 'solar' }, true).vuelo === D.ALAS.dragon.vuelo && D.alaDe({ ala: 'solar' }, false).vuelo === D.ALAS.solar.vuelo, 'las alas de pago vuelan como las de Dragón en el Abismo');
+  // El Escudo no protege de jugadores
+  a.c.faccion = 'luz'; b.c.faccion = 'sombra';
+  const is = AB.ABISMO.islas[3], x0 = AB.ABISMO_X0 + is.x;
+  a.p = { x: x0, z: is.z }; b.p = { x: x0 + 1, z: is.z }; a.movBud = b.movBud = undefined;
+  b.escudo = Date.now() + 20000; const hp0 = b.hp; a.atkT = 0;
+  await a.mandar({ t: 'atk3', tp: b.id });
+  chequear(b.hp < hp0, 'el Escudo no da inmunidad contra jugadores');
+  // Morir ante la otra faccion: marcado en el personaje (no pierde XP al volver)
+  mundo.morir(b, true);
+  chequear(b.c.muertoPvP === true, 'la muerte en PvP queda guardada en el personaje');
+  // Umbral de mTON sin el ataque extra de la skin
+  const o = { dano: new Map([[a.id, 100], [b.id, 100]]) };
+  const sa = a.st; a.st = { ...a.st, atk: mundo.statsSinSkin(a).atk * 1.5 };
+  chequear(mundo.parteJusta(o, a) < 0.45 && mundo.parteJusta(o, b) > 0.55, 'el umbral de mTON no cuenta el ataque extra de las skins');
+  a.st = sa;
+  await dejar(a); await dejar(b);
 }
 
 // ── ASEDIO DE LA FORTALEZA DEL NUCLEO ──

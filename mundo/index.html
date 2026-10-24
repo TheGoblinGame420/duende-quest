@@ -13,17 +13,17 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=289" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=290" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=289">
-<link rel="modulepreload" href="/mmo/js/data.js?v=289">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=289">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=289">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=289">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=289">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=289">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=290">
+<link rel="modulepreload" href="/mmo/js/data.js?v=290">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=290">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=290">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=290">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=290">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=290">
 <style>
 :root{--bg:#0a0418;--panel:rgba(14,9,30,.86);--borde:rgba(160,140,255,.22);--txt:#f2efff;--txt2:#b8b0d8;--txt3:#7d7699;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;--oro:#ffd84a;--pri:#2563eb;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -201,6 +201,12 @@ input.nombre{width:100%;padding:12px;border-radius:8px;border:1px solid var(--bo
 /* Movil: joystick a la izquierda, botones a la derecha */
 #joy{position:fixed;left:0;bottom:0;width:45%;height:55%;pointer-events:auto;display:none;}
 #joy .base{position:absolute;width:120px;height:120px;border-radius:50%;border:2px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);display:none;}
+/* Pista del joystick (hasta el primer toque) y sin letras de teclado en el movil */
+#joy .pista-joy{position:absolute;left:28px;bottom:24px;display:flex;align-items:center;gap:10px;pointer-events:none;animation:pistaJ 1.6s ease-in-out infinite;}
+#joy .pista-joy i{width:84px;height:84px;border-radius:50%;border:2px dashed rgba(255,255,255,.45);background:rgba(255,255,255,.08);}
+#joy .pista-joy span{font:600 12px var(--sans);color:#fff;text-shadow:0 1px 3px #000;}
+@keyframes pistaJ{50%{opacity:.45}}
+body.movil .acc .t{display:none;}
 #joy .pomo{position:absolute;width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,.35);left:33px;top:33px;}
 #tactil{position:fixed;right:10px;bottom:120px;display:none;grid-template-columns:repeat(3,58px);gap:8px;pointer-events:auto;}
 #tactil button{width:58px;height:58px;border-radius:50%;border:1px solid var(--borde);background:rgba(20,12,44,.75);color:var(--txt);font:700 12px var(--sans);}
@@ -244,6 +250,33 @@ body.movil #lanzar{bottom:auto;top:50%;width:min(220px,58vw);pointer-events:none
 body.movil #invit3{left:8px;right:8px;bottom:auto;top:calc(176px + env(safe-area-inset-top));transform:none;z-index:6;}
 body.movil #mini canvas{width:110px;height:110px;}
 body.movil #titulo-zona b{font-size:16px;}
+/* Compacto: ventana estrecha SIN pantalla tactil (Telegram de escritorio, navegador pequeño).
+   El mismo HUD del movil, pero sin joystick ni botones tactiles (con raton y teclado). */
+body.compacto #marco,body.compacto #obj,body.compacto #objp,body.compacto #grupo3,body.compacto #misiones{left:8px;right:auto;width:min(186px,50vw);min-width:0;}
+body.compacto #alas{left:8px;width:min(186px,50vw);}
+body.compacto #misiones{top:110px;bottom:auto;font-size:10px;padding:5px 7px;max-height:84px;overflow:hidden;}
+body.compacto #misiones.abierto{max-height:46vh;overflow:auto;}
+body.compacto #chat{width:min(260px,60vw);}
+body.compacto #chat-log{max-height:54px;font-size:11px;}
+body.compacto #combo:empty,body.compacto #auras:empty,body.compacto #mundial:empty{display:none;}
+body.compacto #avisos{left:8px;bottom:auto;top:46%;max-width:62vw;}
+body.compacto #avisos div{font-size:11px;padding:4px 8px;}
+body.compacto #titulo-zona{top:17%;} body.compacto #titulo-zona b{font-size:16px;}
+body.compacto #mini{top:8px;right:8px;}
+body.compacto #mini canvas{width:110px;height:110px;}
+body.compacto #botones{right:8px;top:176px;display:grid;grid-template-columns:repeat(4,38px);gap:4px;max-width:none;}
+body.compacto #botones a.bt{display:none;}
+body.compacto #b-mas{display:flex;}
+body.compacto #botones .extra{display:none;} body.compacto #botones.abierto .extra{display:flex;}
+body.compacto #barra{left:8px;right:8px;bottom:10px;transform:none;display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:4px;}
+body.compacto #barra .acc{width:auto;height:auto;aspect-ratio:1;max-height:48px;border-radius:8px;}
+body.compacto #barra .acc img{width:24px;height:24px;}
+/* Movil y compacto: a la vista solo lo esencial (mochila, mapa, chat y ⋯); lo demas, dentro de ⋯ */
+body.movil #botones,body.compacto #botones{grid-template-columns:repeat(4,38px);}
+body.movil #botones:not(.abierto) #b-libro,body.movil #botones:not(.abierto) #b-pase,body.movil #botones:not(.abierto) #b-amigos,
+body.compacto #botones:not(.abierto) #b-libro,body.compacto #botones:not(.abierto) #b-pase,body.compacto #botones:not(.abierto) #b-amigos{display:none;}
+#b-mas.aviso::after{content:'';position:absolute;top:3px;right:3px;width:8px;height:8px;border-radius:50%;background:#ff4d6d;box-shadow:0 0 6px #ff4d6d;}
+#b-mas{position:relative;}
 /* Movil en horizontal: menu arriba, botones de accion sin taparse, ventanas a toda la altura y respeto del notch lateral */
 @media (orientation:landscape) and (max-height:500px){
  body.movil #mini{right:calc(8px + env(safe-area-inset-right));}
@@ -291,6 +324,7 @@ body.movil #titulo-zona b{font-size:16px;}
   <div class="barra hp" id="op-hp"><i></i><span></span></div>
   <div class="fila-b"><button class="btn" id="op-inv">Invitar al grupo</button><button class="btn sec" id="op-sus">Susurrar</button></div>
   <div class="fila-b"><button class="btn sec" id="op-duelo">⚔️ Retar a duelo</button><button class="btn sec" id="op-amigo">⭐ Amigo</button><button class="btn sec" id="op-herm" style="display:none">🛡 Hermandad</button></div>
+  <div class="fila-b"><button class="btn sec" id="op-ign" title="Dejar de ver sus mensajes">🔇 Ignorar</button><button class="btn sec" id="op-rep" title="Avisar al equipo de un abuso o una estafa">⚠️ Reportar</button></div>
 </div>
 <div class="caja" id="invit3"><p id="invit3-t"></p><div class="fila-b"><button class="btn" id="invit3-si">Aceptar</button><button class="btn sec" id="invit3-no">Rechazar</button></div></div>
 <div class="modal" id="v-look"><div class="ventana">
@@ -443,6 +477,6 @@ body.movil #titulo-zona b{font-size:16px;}
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script src="/js/config.js"></script>
-<script type="module" src="/mundo/js/mundo.js?v=289"></script>
+<script type="module" src="/mundo/js/mundo.js?v=290"></script>
 </body>
 </html>

@@ -495,6 +495,13 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 58, fecha: '24 oct 2026', items: [
+    'ORIGINS más limpio en Telegram y pantallas estrechas: a la vista solo mochila, mapa, chat y ⋯ (lo demás dentro), minimapa más pequeño, misiones plegadas (tócalas para verlas) y en la barra solo la próxima habilidad por aprender.',
+    'La columna amarilla de misión ya no desaparece sin más: al llegar queda un aro en el suelo, te dice qué hacer y los monstruos de tu misión llevan ❗ encima.',
+    'Chat seguro: se bloquean direcciones de cartera, enlaces y frases semilla. Nuevo /ignorar Nombre y /reportar Nombre motivo (también con los botones 🔇 y ⚠️ al tocar a un jugador).',
+    'PvP más justo: contra jugadores el Escudo ya no da inmunidad, el Fuego no multiplica y la forja cuenta hasta +5. En el Abismo las alas de pago vuelan como las de Dragón, y el mTON de los jefes no depende de la skin.',
+    'Logros con aviso también en ORIGINS, pista del joystick en el móvil y el aviso de «guarda tu duende» desde el nivel 3 (una vez al día).',
+  ] },
   { n: 57, fecha: '24 oct 2026', items: [
     'En el Abismo, caer ante la otra facción ya solo cuesta Puntos del Abismo (no pierdes experiencia), y la ventana de muerte dice que revives en tu bastión. En CLASSIC, la invitación a ORIGINS sale al terminar tu primera misión, no encima del selector de clase.',
   ] },
@@ -1880,7 +1887,12 @@ export const ALAS = {
   duende:   { nombre: 'Alas de $DUENDE',      forma: 'luz',      color: '#22d3ee', vuelo: 120, vel: 1.4,  nv: 1,  usd: 4, brillo: true, premium: true, icono: 'I_Crystal01' },
   solar:    { nombre: 'Alas Solares',         forma: 'pluma',    color: '#facc15', vuelo: 140, vel: 1.42, nv: 1,  usd: 8, brillo: true, premium: true, icono: 'S_Fire02' },
 };
-export const alaDe = c => ALAS[c && c.ala] || ALAS.aprendiz;
+// En el Abismo (donde caer es morir) ninguna ala de pago vuela mas ni mas
+// rapido que las mejores que se ganan jugando (Dragon): ahi son solo estetica.
+export const alaDe = (c, abismo) => {
+  const a = ALAS[c && c.ala] || ALAS.aprendiz;
+  return abismo && a.premium ? { ...a, vuelo: Math.min(a.vuelo, ALAS.dragon.vuelo), vel: Math.min(a.vel, ALAS.dragon.vel) } : a;
+};
 export const PAQUETES = [
   { id: 'oro1',  nombre: 'Bolsita de oro',     usd: 1,  oro: 5000,   icono: 'I_GoldCoin',  desc: '5.000 oro' },
   { id: 'kit',   nombre: 'Kit del aventurero', usd: 3,  pw: { pocion: 20, escudo: 8, rayo: 8, fuego: 8 }, icono: 'I_Chest01', desc: '20 pociones, 8 escudos, 8 rayos y 8 fuegos' },
