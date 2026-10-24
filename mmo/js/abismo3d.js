@@ -82,3 +82,36 @@ export function camposAbismo(desde) {
     return { id: desde + j, zona: 'eter', x: ABISMO_X0 + is.x, z: is.z, k, n, jefe: false };
   });
 }
+
+// ── ASEDIO DE LA FORTALEZA DEL NUCLEO ──
+// Cada 2 horas (a las :25 de las horas pares UTC, entre los jefes mundiales
+// del 3D de :15 y :45) hay 20 minutos de asedio. La faccion que no es dueña
+// rompe la Puerta del Nucleo; entonces despierta el Guardian, y quien mas lo
+// daña se queda la fortaleza. Si se acaba el tiempo, resiste el dueño.
+export const ASEDIO = { cada: 2 * 3600000, desfase: 25 * 60000, dura: 20 * 60000, aviso: 120000 };
+// Inicio del asedio en curso o del proximo.
+export function proximoAsedio(ahora) {
+  const ini = Math.floor((ahora - ASEDIO.desfase) / ASEDIO.cada) * ASEDIO.cada + ASEDIO.desfase;
+  return ahora < ini + ASEDIO.dura ? ini : ini + ASEDIO.cada;
+}
+const NUC = ABISMO.islas.find(i => i.nucleo);
+export const CENTRO_NUCLEO = { x: ABISMO_X0 + NUC.x, z: NUC.z };
+export const MURO_NUCLEO = NUC.r * 0.7;   // radio de la muralla de la fortaleza
+// La puerta mira al oeste: a la misma distancia de los dos bastiones.
+export const PUERTA_NUCLEO = { x: CENTRO_NUCLEO.x - MURO_NUCLEO, z: CENTRO_NUCLEO.z };
+// Maquinas de asedio de cada bastion (las dibuja el cliente y las valida el
+// servidor): % de la vida de la puerta por disparo, recarga y vuelo (s).
+export const MAQUINA = {
+  catapulta: { nombre: 'Catapulta', modelo: 'c_siege-catapult', pct: 0.003, cd: 15000, vuelo: 2.6 },
+  balista: { nombre: 'Balista', modelo: 'c_siege-ballista', pct: 0.002, cd: 10000, vuelo: 1.6 },
+  trebuchet: { nombre: 'Trebuchet', modelo: 'c_siege-trebuchet', pct: 0.006, cd: 30000, vuelo: 3.2 },
+};
+export const MAQUINA_DIST = 5;   // m: hay que estar al lado para dispararla
+export function maquinasAbismo() {
+  const l = [];
+  for (const f of ['luz', 'sombra']) {
+    const is = ABISMO.islas.find(i => i.base === f), cx = ABISMO_X0 + is.x, cz = is.z, haciaN = f === 'luz' ? 1 : -1;
+    for (const [k, dx] of [['catapulta', 9], ['balista', -9], ['trebuchet', 0]]) l.push({ i: l.length, f, k, x: cx + dx, z: cz + haciaN * (dx ? 4 : -2), ry: haciaN > 0 ? -Math.PI / 2 : Math.PI / 2 });
+  }
+  return l;
+}

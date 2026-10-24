@@ -17,7 +17,7 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=264';
+} from './data.js?v=265';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -2587,7 +2587,7 @@ function pintarChicha() {
 
 function pintarBestiario() {
   const best = yo.best || {};
-  const lista = Object.entries(MONSTRUOS).filter(([, m]) => !m.mundial).sort((a, b) => a[1].nivel - b[1].nivel);
+  const lista = Object.entries(MONSTRUOS).filter(([, m]) => !m.mundial && !m.asedio).sort((a, b) => a[1].nivel - b[1].nivel);
   const vistos = lista.filter(([k]) => best[k]).length;
   let h = `<p class="centro" style="margin-bottom:8px">${vistos} de ${lista.length} monstruos cazados · hitos de ${BESTIARIO_HITOS.join(', ')} con premio de oro</p>`;
   for (const [k, m] of lista) {

@@ -26,6 +26,7 @@ const state = {
   blockConcurrencyWhile: f => f(),
 };
 export const mundo = new MmoWorld(state, {});
+mundo.asedioAuto = false;   // el asedio del Nucleo se lanza a mano en sus pruebas (no segun la hora real)
 
 class WsFalso {
   constructor() { this.l = {}; this.rec = []; this.cerrado = false; }
@@ -606,6 +607,7 @@ async function pruebas() {
   await pruebasAlas3d();
   await pruebasAbismo3d();
   await pruebasPvP3d();
+  await pruebasAsedio3d();
 }
 
 // ── ALAS (vuelo de AION) ──
@@ -628,6 +630,68 @@ async function pruebasAlas3d() {
   for (let i = 0; i < 700; i++) { avanzar(100); a.movBud = undefined; await a.mandar({ t: 'mv3', x: 120 + (i % 2) * 0.2, z: 120, a: 3, h: 10 }); }
   chequear(a.ultimos('alasAgotadas').length >= 1 && a.a !== 3, 'sin energía de alas el servidor te baja (planeando)');
   await dejar(a);
+}
+
+// ── ASEDIO DE LA FORTALEZA DEL NUCLEO ──
+async function pruebasAsedio3d() {
+  console.log('Mundo 3D: asedio del Núcleo');
+  const AB = await import('../mmo/js/abismo3d.js');
+  chequear(AB.proximoAsedio(Date.UTC(2026, 9, 23, 22, 30)) === Date.UTC(2026, 9, 23, 22, 25), 'a las 22:30 sigue el asedio de las 22:25');
+  chequear(AB.proximoAsedio(Date.UTC(2026, 9, 23, 22, 46)) === Date.UTC(2026, 9, 24, 0, 25), 'el siguiente asedio es dos horas después');
+  const a = await entrar3d('LuzAsedio', '4m1'); ponerNivel(a, 30, 'guerrero');
+  const b = await entrar3d('SombraAsedio', '4m2'); ponerNivel(b, 30, 'mago');
+  a.c.faccion = 'luz'; b.c.faccion = 'sombra';
+  const uids = [a.c.uid, b.c.uid]; a.c.uid = 'tg:asedio1'; b.c.uid = 'tg:asedio2';
+  mundo.m3.mons.clear(); for (const k of mundo.m3.campos) { k.vivos.clear(); k.prox = Date.now() + 1e9; }
+  const antes = mundo.nucleo; mundo.nucleo = { dueno: 'sombra', desde: 0 };
+  a.p = { x: AB.PUERTA_NUCLEO.x - 2, z: 0 }; b.p = { x: AB.PUERTA_NUCLEO.x - 3, z: 1 }; a.movBud = b.movBud = undefined;
+  a.limpiar(); mundo.iniciarAsedio(Date.now());
+  const A = mundo.m3.asedio, P = A.puerta, G = A.guardian;
+  chequear(A.activo && P && G && G.dormido && a.ultimos('aviso').some(m => /Empieza el asedio/.test(m.m)), 'empieza el asedio con la puerta y el guardián dormido');
+  let hp = P.hp; b.atkT = 0; await b.mandar({ t: 'atk3', tg: P.id });
+  chequear(P.hp === hp, 'la facción dueña no daña su propia puerta');
+  hp = P.hp; a.atkT = 0; await a.mandar({ t: 'atk3', tg: P.id });
+  chequear(P.hp < hp, 'la facción atacante daña la puerta');
+  const gh = G.hp; a.p = { x: G.x + 1.5, z: G.z }; a.atkT = 0; await a.mandar({ t: 'atk3', tg: G.id });
+  chequear(G.hp === gh, 'el guardián es invulnerable mientras la puerta resiste');
+  // Maquinas de asedio
+  const M = AB.maquinasAbismo(), mL = M.find(m => m.f === 'luz' && m.k === 'catapulta'), mS = M.find(m => m.f === 'sombra');
+  a.p = { x: mL.x + 10, z: mL.z }; await a.mandar({ t: 'maquina', i: mL.i });
+  chequear(!A.tiros.length, 'lejos de la máquina no se dispara');
+  a.p = { x: mL.x + 1, z: mL.z }; await a.mandar({ t: 'maquina', i: mS.i });
+  chequear(!A.tiros.length, 'no se usan las máquinas de la otra facción');
+  await a.mandar({ t: 'maquina', i: mL.i });
+  chequear(A.tiros.length === 1, 'la catapulta dispara contra la puerta');
+  await a.mandar({ t: 'maquina', i: mL.i });
+  chequear(A.tiros.length === 1, 'la máquina tiene recarga');
+  b.p = { x: mS.x + 1, z: mS.z }; await b.mandar({ t: 'maquina', i: mS.i });
+  chequear(A.tiros.length === 1, 'los defensores no disparan contra su puerta');
+  hp = P.hp; const da = P.dano.get(a.id) || 0; tick(30);
+  chequear(P.hp < hp && (P.dano.get(a.id) || 0) > da, 'el proyectil llega y cuenta para quien disparó');
+  // Cae la puerta: despierta el guardian
+  a.p = { x: AB.PUERTA_NUCLEO.x - 2, z: 0 }; P.hp = 5; a.atkT = 0; a.limpiar(); await a.mandar({ t: 'atk3', tg: P.id });
+  chequear(P.muere && !G.dormido && a.ultimos('aviso').some(m => /Puerta del Núcleo ha caído/.test(m.m)), 'cae la puerta y despierta el guardián');
+  // Muere el guardian: la fortaleza pasa a la Luz y hay premio
+  P.dano.set(a.id, 2000);
+  a.p = { x: G.x + 1.5, z: G.z }; G.hp = 5; a.atkT = 0; a.limpiar(); b.limpiar();
+  const pa0 = a.c.pa || 0; await a.mandar({ t: 'atk3', tg: G.id });
+  chequear(G.muere && mundo.nucleo.dueno === 'luz' && !A.activo, 'quien más daña al guardián se queda la fortaleza');
+  chequear((a.c.pa || 0) - pa0 >= 120 && a.ultimos('toast').some(m => /Asedio/.test(m.m)), 'premio del asedio para quien aportó');
+  chequear(!b.ultimos('toast').some(m => /Asedio/.test(m.m)), 'sin aportar no hay premio');
+  // Como mucho 2 asedios con premio completo al dia
+  for (let k = 0; k < 2; k++) { mundo.iniciarAsedio(Date.now()); mundo.m3.asedio.puerta.dano.set(a.id, 1e6); a.limpiar(); mundo.terminarAsedio('luz'); }
+  chequear(a.ultimos('toast').some(m => /premio pequeño/.test(m.m)), 'como mucho 2 asedios con premio completo al día');
+  // Bono del Nucleo para la faccion dueña (+1 PA por elite)
+  const e = { id: 999999, k: 'guardia_real', nv: 33, campo: -1, x: AB.ABISMO_X0 - 115, z: -70, dano: new Map([[a.id, 100]]), amen: new Map(), au: {} };
+  mundo.m3.mons.set(e.id, e); const pa1 = a.c.pa; mundo.matar3d(e);
+  chequear(a.c.pa - pa1 === 4, 'la facción dueña del Núcleo gana +1 PA por élite');
+  // Si se acaba el tiempo, resiste el dueño
+  a.p = { ...AB.CENTRO_NUCLEO }; mundo.iniciarAsedio(Date.now()); a.limpiar();
+  mundo.m3.asedio.fin = Date.now() + 300; tick(5);   // (avanzar 20 min desconectaria por inactividad)
+  chequear(!mundo.m3.asedio.activo && a.ultimos('aviso').some(m => /resiste/.test(m.m)) && mundo.nucleo.dueno === 'luz', 'si se acaba el tiempo, la fortaleza resiste');
+  chequear(![...mundo.m3.mons.values()].some(o => o.asedio && !o.muere), 'al terminar no quedan puerta ni guardián');
+  mundo.nucleo = antes; [a.c.uid, b.c.uid] = uids;
+  await dejar(a); await dejar(b);
 }
 
 // ── PVP DE FACCIONES EN EL ABISMO ──

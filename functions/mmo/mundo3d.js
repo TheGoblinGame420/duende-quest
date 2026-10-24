@@ -24,7 +24,10 @@ import {
 } from '../../mmo/js/data.js';
 import { MUNDO, NPCS3D, NPC_DIST, SPAWN3D, ARENA3D, CASAS, campamentos, zonaEn, esNoche, nodos3d, RECOGER_DIST, alturaEn } from '../../mmo/js/mundo3d.js';
 import { CUEVA, CUEVA_X0, caminable, enCueva, vistaCueva, pasoCueva, PORTAL_PUEBLO } from '../../mmo/js/cueva3d.js';
-import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, baseDe, portalBase, VACIO, rangoDe, santuario } from '../../mmo/js/abismo3d.js';
+import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, baseDe, portalBase, VACIO, rangoDe, santuario, ASEDIO, proximoAsedio, CENTRO_NUCLEO, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo } from '../../mmo/js/abismo3d.js';
+const MAQUINAS = maquinasAbismo();
+const ONDA_CADA = 10000, ONDA_AVISO = 2500, ONDA_R = 8;   // la onda del Guardian
+const ASEDIO_DIA = 2;            // asedios con premio completo al dia
 const PVP_PAR_DIA = 4;          // victorias que puntuan al dia contra el mismo jugador
 const fueraDeIsla = (x, z) => { const is = islaEn(x, z); return !is || Math.hypot(x - ABISMO_X0 - is.x, z - is.z) > is.r * 0.85; };
 // Misma instancia (0 = mundo abierto; si no, la cueva de un grupo).
@@ -94,6 +97,7 @@ export const Mundo3D = {
     const jugadores = this.sesiones3d().filter(x => x !== s).map(x => this.info3d(x));
     this.enviar(s, { t: 'm3', id: s.id, x: r1(s.p.x), z: r1(s.p.z), jugadores });
     this.enviar(s, this.estadoMundial3());
+    this.enviar(s, this.estadoAsedio());
     this.nodos3AlEntrar(s);
     this.aClave(K3, { t: 'pj3', p: this.info3d(s) }, s);
   },
@@ -120,6 +124,7 @@ export const Mundo3D = {
       case 'chat':
         // Moderadores: /jefe invoca al jefe mundial del 3D.
         if (String(m.m || '').trim() === '/jefe' && this.esDios(s)) return this.dios(s, { a: 'mundial3' });
+        if (String(m.m || '').trim() === '/asedio' && this.esDios(s)) { this.iniciarAsedio(Date.now()); return; }
         return this.chat(s, m);
       case 'clase': return this.elegirClase(s, m);
       case 'espec': return this.elegirEspec(s, m);
@@ -129,6 +134,7 @@ export const Mundo3D = {
       case 'item': return this.item(s, m);
       case 'titulo': return this.ponerTitulo(s, m);
       case 'faccion': return this.elegirFaccion(s, m);
+      case 'maquina': return this.dispararMaquina(s, m);
       case 'abismo': return this.entrarAbismo(s);
       case 'salirAbismo': return this.salirAbismo(s);
       case 'caida': return this.caidaAbismo(s);
@@ -275,9 +281,10 @@ export const Mundo3D = {
     this.golpeDuelo(s, t, vara ? VARA.mult : 3.6 * (arma.dano || 1), true);
   },
 
-  danar3d(o, dmg, s) {
+  danar3d(o, dmg, s, forzar) {
     if (o.muere) return 0;
-    if (o.vuelve && !o.mundial3) return 0;
+    if (o.vuelve && !o.persiste) return 0;
+    if (o.asedio && !forzar && (o.dormido || !s || !this.puedeAsediar(s))) return 0;
     if (s && s.dios && s.diosModo && s.diosModo.golpe) dmg = Math.ceil(o.hp);
     dmg = Math.min(dmg, Math.ceil(o.hp));
     o.hp -= dmg;
@@ -297,6 +304,7 @@ export const Mundo3D = {
   matar3d(o) {
     const W = this.iniciar3d();
     o.muere = true; o.hp = 0; o.borrarEn = Date.now() + 1600;
+    if (o.asedio) return this.caeAsedio(o);
     if (o.mundial3) {
       this.premiosMundial(o, K3);
       this.aClave(K3, { t: 'md3', id: o.id });
@@ -319,7 +327,7 @@ export const Mundo3D = {
       // dar(): misiones, diarias, bestiario, chicha, pase, botin... lo mismo que el 2D.
       this.dar(s, xp, oro, o, 1, true);
       cobraron.add(sid);
-      if (enAbismo(o.x) && parte >= 0.1) this.sumarPA(s, o.jefe ? 10 : 3, 'élite');
+      if (enAbismo(o.x) && parte >= 0.1) this.sumarPA(s, (o.jefe ? 10 : 3) + (s.c.faccion && s.c.faccion === this.duenoNucleo() ? (o.jefe ? 2 : 1) : 0), 'élite');
       if (o.jefe && !o.cueva && parte >= 0.1) this.darMton(s, 20 * Math.max(0.3, MONSTRUOS[o.k].nivel / 30), 'jefe');
     }
     // Grupo: los compañeros cerca (60 m) cuentan la caza como suya (misiones,
@@ -412,6 +420,7 @@ export const Mundo3D = {
       if (W.mons.size) W.mons.clear();
       for (const c of W.campos) c.vivos.clear();   // si no, los campamentos quedan "llenos" de ids fantasma
       if (W.mundial) W.mundial.o = null;            // el jefe mundial ya no existe
+      if (W.asedio && W.asedio.activo) this.terminarAsedio(null, true);
       if (W.cuevas) W.cuevas.clear();   // sus monstruos ya no existen
       return;
     }
@@ -442,6 +451,7 @@ export const Mundo3D = {
       }
     }
     this.revisarMundial3(ahora, jugadores);
+    this.revisarAsedio(ahora, jugadores);
     this.tickCuevas(ahora);
     const porI3 = new Map();
     for (const s of vivos) { const k = s.i3 || 0; if (!porI3.has(k)) porI3.set(k, []); porI3.get(k).push(s); }
@@ -449,7 +459,8 @@ export const Mundo3D = {
     for (const o of [...W.mons.values()]) {
       if (o.muere) { if (ahora >= o.borrarEn) W.mons.delete(o.id); continue; }
       // Nadie cerca: se retira (vuelve a aparecer cuando alguien se acerque).
-      if (!o.obj && !o.mundial3 && !o.i3 && !vivos.some(s => !s.i3 && dist(s.p, o) < RETIRAR)) {
+      if (o.puerta) continue;   // la puerta no se mueve ni ataca
+      if (!o.obj && !o.persiste && !o.i3 && !vivos.some(s => !s.i3 && dist(s.p, o) < RETIRAR)) {
         W.mons.delete(o.id);
         const c = W.campos[o.campo]; if (c) c.vivos.delete(o.id);
         continue;
@@ -585,6 +596,179 @@ export const Mundo3D = {
     if (s.muerto || !enAbismo(s.p.x) || islaEn(s.p.x, s.p.z) || s.a === 3) return;
     s.hp = 0; this.morir(s); this.actualizarYo(s);   // el vacio no perdona (ni escudos ni hielo)
     this.aTodos({ t: 'aviso', m: `🌌 ${s.c.nombre} cayó al vacío del Abismo.` });
+  },
+
+  // ── ASEDIO DE LA FORTALEZA DEL NUCLEO ──
+  duenoNucleo() { return (this.nucleo && this.nucleo.dueno) || null; },
+  // Atacante: tiene faccion, no es la dueña y esta en el Abismo.
+  puedeAsediar(s) { return !!(s && s.c && s.c.faccion && s.c.faccion !== this.duenoNucleo() && enAbismo(s.p.x)); },
+  estadoAsedio() {
+    const A = this.iniciar3d().asedio;
+    const activo = !!(A && A.activo), ahora = Date.now();
+    return { t: 'asedio', activo, ini: activo ? A.ini : proximoAsedio(ahora), fin: activo ? A.fin : 0, dueno: this.duenoNucleo(),
+      puerta: activo && A.puerta && !A.puerta.muere ? A.puerta.id : 0, guardian: activo && A.guardian && !A.guardian.muere ? A.guardian.id : 0,
+      dormido: !!(activo && A.guardian && A.guardian.dormido) };
+  },
+  revisarAsedio(ahora, jugadores) {
+    const W = this.iniciar3d();
+    const A = W.asedio || (W.asedio = { ini: 0, avisado: 0, activo: false, puerta: null, guardian: null, hpT: 0, cd: {}, tiros: [] });
+    const ini = proximoAsedio(ahora), dentro = ahora >= ini && ahora < ini + ASEDIO.dura;
+    if (!A.activo) {
+      if (!dentro && ini - ahora <= ASEDIO.aviso && ini - ahora > 5000 && A.avisado !== ini) {
+        A.avisado = ini;
+        this.aTodos({ t: 'aviso', m: `⚔️ El asedio de la Fortaleza del Núcleo (Abismo de Éter) empieza en 2 minutos.` });
+      }
+      // (asedioAuto = false: el arnes de pruebas lo lanza a mano)
+      if (dentro && A.ini !== ini && jugadores.length && this.asedioAuto !== false) this.iniciarAsedio(ini);
+      return;
+    }
+    // Disparos de las maquinas que llegan a la puerta.
+    if (A.tiros.length) A.tiros = A.tiros.filter(t => {
+      if (ahora < t.en) return true;
+      const o = A.puerta;
+      if (o && !o.muere) {
+        const s = this.sesiones.get(t.sid), quien = s && s.c && s.m3 ? s : null;
+        const d = this.danar3d(o, t.dmg, quien, true);
+        this.aCerca3d(o, { t: 'at3', p: quien ? quien.id : 0, tg: o.id, d, c: 1, maq: 1 }, 260);
+      }
+      return false;
+    });
+    if (!A.activo) return;   // la puerta pudo caer con el disparo y acabar todo
+    if (ahora >= A.fin) return this.terminarAsedio(null);
+    // Vida de puerta y guardian para todos los del Abismo (cada 2 s).
+    if (ahora - A.hpT > 2000) {
+      A.hpT = ahora;
+      const pc = o => o && !o.muere ? Math.round(o.hp / o.max * 1000) / 10 : 0;
+      this.aAbismo({ t: 'asedioHp', p: pc(A.puerta), g: pc(A.guardian), d: A.guardian && A.guardian.dormido ? 1 : 0 });
+    }
+    // El Guardian despierto: onda avisada en el suelo y, al 50 %, refuerzos.
+    const g = A.guardian;
+    if (!g || g.muere || g.dormido) return;
+    if (g.onda && ahora >= g.onda.en) {
+      for (const s of jugadores) {
+        if (s.muerto || s.h > 4 || Math.hypot(s.p.x - g.onda.x, s.p.z - g.onda.z) > ONDA_R) continue;
+        this.herir(s, 1, { zona: true, pct: g.enfurecido ? 0.45 : 0.3, id: g.id });
+      }
+      this.aCerca3d(g, { t: 'zona3f', id: g.id }, 200);
+      g.onda = null;
+    }
+    if (!g.onda && ahora >= g.ondaProx && g.obj) {
+      const s = this.sesiones.get(g.obj);
+      if (s && s.m3) {
+        g.onda = { x: s.p.x, z: s.p.z, en: ahora + ONDA_AVISO };
+        g.ondaProx = ahora + ONDA_CADA * (g.enfurecido ? 0.65 : 1);
+        this.aCerca3d(g, { t: 'zona3', id: g.id, x: r1(s.p.x), z: r1(s.p.z), r: ONDA_R, ms: ONDA_AVISO }, 200);
+      }
+    }
+    if (!g.llamo && g.hp < g.max * 0.5) {
+      g.llamo = true;
+      for (let k = 0; k < 3; k++) {
+        const a = k / 3 * Math.PI * 2, def = MONSTRUOS.guardia_real, st = statsMonstruo('guardia_real', def.nivel);
+        const x = g.hx + Math.cos(a) * 6, z = g.hz + Math.sin(a) * 6;
+        const o = { id: W.sig++, k: 'guardia_real', nv: def.nivel, campo: -1, jefe: false, x, z, hx: x, hz: z, ry: 0, hp: st.hp * 2, max: st.hp * 2, atk: st.atk, vel: st.vel, y: 0, h: 0,
+          dano: new Map(), amen: new Map(), au: {}, cl: K3, obj: g.obj, atkEn: 0, golpeT: 0, st: 0, paseo: 0, destino: null };
+        W.mons.set(o.id, o);
+      }
+      this.aAbismo({ t: 'aviso', m: '🛡 ¡El Guardián del Núcleo llama a su guardia real!' });
+    }
+    if (!g.enfurecido && g.hp < g.max * 0.3) {
+      g.enfurecido = true;
+      this.aAbismo({ t: 'aviso', m: '¡El Guardián del Núcleo se enfurece! Sus ondas llegan más rápido.' });
+    }
+  },
+  iniciarAsedio(ini) {
+    const W = this.iniciar3d();
+    const A = W.asedio || (W.asedio = { ini: 0, avisado: 0, activo: false, puerta: null, guardian: null, hpT: 0, cd: {}, tiros: [] });
+    if (A.activo) return;
+    const n = Math.max(1, this.sesiones3d().filter(s => enAbismo(s.p.x)).length);
+    const nuevo = (k, x, z, hp, extra) => {
+      const def = MONSTRUOS[k], st = statsMonstruo(k, def.nivel);
+      const o = { id: W.sig++, k, nv: def.nivel, campo: -1, jefe: true, asedio: true, persiste: true, dispara: false,
+        x, z, hx: x, hz: z, ry: 0, hp, max: hp, atk: st.atk, vel: st.vel, y: 0, h: 0,
+        dano: new Map(), amen: new Map(), au: {}, cl: K3, obj: 0, atkEn: 0, golpeT: 0, st: 0, paseo: 0, destino: null, ...extra };
+      W.mons.set(o.id, o);
+      return o;
+    };
+    A.ini = ini; A.fin = ini + ASEDIO.dura; A.activo = true; A.cd = {}; A.tiros = []; A.hpT = 0;
+    A.puerta = nuevo('puerta_nucleo', PUERTA_NUCLEO.x, PUERTA_NUCLEO.z, 40000 + 8000 * n, { puerta: true });
+    A.guardian = nuevo('guardian_nucleo', CENTRO_NUCLEO.x - 8, CENTRO_NUCLEO.z, 30000 + 10000 * n, { guardian: true, dormido: true, onda: null, ondaProx: 0, enfurecido: false, llamo: false });
+    const d = this.duenoNucleo();
+    this.aTodos({ t: 'aviso', m: `⚔️ ¡Empieza el asedio de la Fortaleza del Núcleo! ${d ? 'Los ' + FACCIONES[d].titulo + ' la defienden' : 'Nadie la tiene todavía'}: rompe la puerta y vence al Guardián (20 minutos).` });
+    this.aClave(K3, this.estadoAsedio());
+  },
+  // La puerta o el guardian han caido.
+  caeAsedio(o) {
+    const A = this.iniciar3d().asedio;
+    this.aClave(K3, { t: 'md3', id: o.id });
+    if (!A || !A.activo) return;
+    if (o.puerta) {
+      const g = A.guardian;
+      if (g && !g.muere) { g.dormido = false; g.ondaProx = Date.now() + 6000; }
+      this.aTodos({ t: 'aviso', m: '🏰 ¡La Puerta del Núcleo ha caído! El Guardián del Núcleo despierta.' });
+      this.aClave(K3, this.estadoAsedio());
+      return;
+    }
+    // Guardian: se queda la fortaleza la faccion que mas daño le hizo.
+    const porF = {};
+    for (const [sid, d] of o.dano) { const s = this.sesiones.get(sid); const f = s && s.c && s.c.faccion; if (f) porF[f] = (porF[f] || 0) + d; }
+    const ganador = Object.keys(porF).sort((a, b) => porF[b] - porF[a])[0] || null;
+    this.terminarAsedio(ganador);
+  },
+  terminarAsedio(ganador, silencioso) {
+    const W = this.iniciar3d(), A = W.asedio;
+    if (!A || !A.activo) return;
+    A.activo = false;
+    const p = A.puerta, g = A.guardian, total = (p ? p.max : 0) + (g ? g.max : 0);
+    for (const o of [p, g]) if (o) {
+      if (o.onda) { this.aCerca3d(o, { t: 'zona3f', id: o.id }, 200); o.onda = null; }
+      if (!o.muere) { W.mons.delete(o.id); this.aClave(K3, { t: 'md3', id: o.id, huye: 1 }); }
+    }
+    A.tiros = [];
+    const antes = this.duenoNucleo();
+    if (!silencioso) {
+      if (ganador) {
+        this.nucleo = { dueno: ganador, desde: Date.now() };
+        if (this.state && this.state.storage) this.state.storage.put('nucleo', this.nucleo).catch(() => {});
+        this.aTodos({ t: 'aviso', m: `🏰 Los ${FACCIONES[ganador].titulo} ${antes === ganador ? 'defienden' : 'conquistan'} la Fortaleza del Núcleo.` });
+      } else this.aTodos({ t: 'aviso', m: antes ? `🏰 La Fortaleza del Núcleo resiste: sigue en manos de los ${FACCIONES[antes].titulo}.` : '🏰 Se acabó el tiempo: la Fortaleza del Núcleo sigue sin dueño.' });
+      // Premios: quien aporto al menos un 0,3 % (puerta + guardian); si resistio,
+      // los defensores que estaban en la isla del Nucleo.
+      const hoy = hoyUTC();
+      for (const s of this.sesiones3d()) {
+        const c = s.c;
+        if (!c.faccion || !enAbismo(s.p.x)) continue;
+        const aporte = (p ? p.dano.get(s.id) || 0 : 0) + (g ? g.dano.get(s.id) || 0 : 0);
+        const defensor = !ganador && antes && c.faccion === antes && dist(s.p, CENTRO_NUCLEO) < 60;
+        if (aporte < total * 0.003 && !defensor) continue;
+        const gana = (ganador && c.faccion === ganador) || defensor;
+        if (!c.asedioDia || c.asedioDia.d !== hoy) c.asedioDia = { d: hoy, n: 0 };
+        const lleno = c.asedioDia.n++ < ASEDIO_DIA;
+        const pa = lleno ? (gana ? (defensor ? 80 : 120) : 40) : 5;
+        const oro = Math.round((200 + 15 * c.nivel) * (gana ? 1 : 0.5) * (lleno ? 1 : 0.2));
+        c.oro += oro; c.asedios = (c.asedios || 0) + 1; s.sucio = true;
+        this.sumarPA(s, pa, 'asedio');
+        this.enviar(s, { t: 'gana', xp: 0, oro, drops: [] });
+        this.enviar(s, { t: 'toast', m: `🏰 Asedio: +${pa} PA · +${oro} oro` + (lleno ? '' : ` (premio pequeño: hoy ya cobraste ${ASEDIO_DIA} asedios)`), ok: true });
+        this.actualizarYo(s);
+      }
+    }
+    this.aClave(K3, this.estadoAsedio());
+  },
+  // Disparar una maquina de asedio de tu bastion contra la puerta.
+  dispararMaquina(s, m) {
+    const A = this.iniciar3d().asedio, mq = MAQUINAS[m.i | 0];
+    if (!mq || s.muerto || !s.c.faccion) return;
+    if (mq.f !== s.c.faccion) return this.no(s, 'Esa máquina es de la otra facción.');
+    if (dist(s.p, mq) > MAQUINA_DIST) return this.no(s, 'Acércate a la máquina.');
+    if (!A || !A.activo || !A.puerta || A.puerta.muere) return this.no(s, 'Las máquinas solo disparan durante el asedio, contra la Puerta del Núcleo.');
+    if (!this.puedeAsediar(s)) return this.no(s, 'Tu facción defiende la fortaleza: protege la puerta.');
+    const def = MAQUINA[mq.k], ahora = Date.now();
+    if (ahora < (A.cd[mq.i] || 0)) return this.no(s, `${def.nombre} recargando (${Math.ceil((A.cd[mq.i] - ahora) / 1000)} s).`);
+    A.cd[mq.i] = ahora + def.cd;
+    A.tiros.push({ en: ahora + def.vuelo * 1000, sid: s.id, dmg: Math.round(A.puerta.max * def.pct) });
+    s.combateT = ahora;
+    this.aAbismo({ t: 'asedioTiro', i: mq.i, x: r1(A.puerta.x), z: r1(A.puerta.z), ms: def.vuelo * 1000 });
+    this.enviar(s, { t: 'toast', m: `🎯 ${def.nombre}: ¡disparo! (recarga ${def.cd / 1000} s)` });
   },
 
   // ── RECOLECCION ──
@@ -723,7 +907,7 @@ export const Mundo3D = {
     const def = MONSTRUOS[k];
     const st = statsMonstruo(k, def.nivel);
     const o = {
-      id: W.sig++, k, nv: def.nivel, campo: -1, jefe: true, mundial3: true, dispara: !!def.dispara,
+      id: W.sig++, k, nv: def.nivel, campo: -1, jefe: true, mundial3: true, persiste: true, dispara: !!def.dispara,
       x: ARENA3D.x, z: ARENA3D.z, hx: ARENA3D.x, hz: ARENA3D.z, ry: 0,
       hp: 20000 + 15000 * Math.max(1, n), max: 0, atk: st.atk, vel: st.vel, y: 0, h: 0,
       dano: new Map(), amen: new Map(), au: {}, cl: K3, obj: 0, atkEn: 0, golpeT: 0, st: 0, paseo: 0, destino: null,
@@ -750,6 +934,7 @@ export const Mundo3D = {
       if (o.muere) return;
     }
     for (const a in o.au) if (o.au[a].hasta < ahora) delete o.au[a];
+    if (o.dormido) { o.st = 0; return; }   // el Guardian espera a que caiga la puerta
     if (this.auraMon(o, 'aturdido') || this.auraMon(o, 'oveja')) { o.st = 0; return; }
     const enC = !!o.cueva;
     const ve = (bx, bz) => !enC || vistaCueva(o.x, o.z, bx, bz);
@@ -820,24 +1005,24 @@ export const Mundo3D = {
           o.atkEn = ahora + (o.jefe ? 1250 : 1600);
           const golpe = o.atk * (o.jefe ? 0.7 : 1) * (o.dispara ? 0.9 : 1);
           if (o.dispara) this.aCerca3d(o, { t: 'b3', de: o.id, a: s.id });
-          this.herir(s, golpe, { jefe: o.jefe, bala: o.dispara, mundial: o.mundial3, id: o.id });
+          this.herir(s, golpe, { jefe: o.jefe, bala: o.dispara, mundial: o.mundial3 || o.guardian, id: o.id });
         }
       }
       if (dist(o, casa) > CORREA) {
         // Se rompe la correa: vuelve a casa y olvida el combate.
         o.obj = 0; o.vuelve = true; o.amen.clear();
-        if (!o.mundial3) o.dano.clear();
+        if (!o.persiste) o.dano.clear();
         delete o.au.dolor; delete o.au.provoca;
       }
       return;
     }
     if (o.vuelve) {
       o.st = 1;
-      if (!o.mundial3) o.hp = Math.min(o.max, o.hp + o.max * 0.15 * dt);   // se cura visiblemente al irse
+      if (!o.persiste) o.hp = Math.min(o.max, o.hp + o.max * 0.15 * dt);   // se cura visiblemente al irse
       if (mover(casa.x, casa.z, velC * 1.3) < 0.5) {
         o.vuelve = false; o.st = 0;
         // El jefe mundial conserva el daño (y su credito para el premio).
-        if (!o.mundial3) { o.hp = o.max; o.dano.clear(); o.amen.clear(); }
+        if (!o.persiste) { o.hp = o.max; o.dano.clear(); o.amen.clear(); }
         if (o.cueva && o.jefe) this.reiniciarJefeCueva(o);
       }
       return;
@@ -1121,7 +1306,7 @@ export const Mundo3D = {
       for (const o of W.mons.values()) {
         if (!mismo(o, s) || dist(o, s.p) > VISTA_MON) continue;
         ve.add(o.id);
-        if (!s.vistos.has(o.id)) n.push({ id: o.id, k: o.k, nv: o.nv, x: r1(o.x), z: r1(o.z), hp: Math.ceil(o.hp), mx: o.max, j: o.jefe ? 1 : 0, mu: o.mundial3 ? 1 : undefined });
+        if (!s.vistos.has(o.id)) n.push({ id: o.id, k: o.k, nv: o.nv, x: r1(o.x), z: r1(o.z), hp: Math.ceil(o.hp), mx: o.max, j: o.jefe ? 1 : 0, mu: o.mundial3 || o.guardian ? 1 : undefined });
         else ms.push([o.id, r1(o.x), r1(o.z), Math.round(o.ry * 100) / 100, Math.ceil(o.hp), o.muere ? 3 : o.st]);
       }
       for (const id of s.vistos) if (!ve.has(id)) q.push(id);

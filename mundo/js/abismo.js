@@ -7,7 +7,7 @@
 // por debajo. Todo low-poly con sombreado plano.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { ABISMO, ABISMO_X0, alturaAbismo, portalBase } from '/mmo/js/abismo3d.js';
+import { ABISMO, ABISMO_X0, alturaAbismo, portalBase, CENTRO_NUCLEO, MURO_NUCLEO, PUERTA_NUCLEO, MAQUINA, maquinasAbismo } from '/mmo/js/abismo3d.js';
 
 const lam = (c, extra) => new THREE.MeshLambertMaterial({ color: c, flatShading: true, ...(extra || {}) });
 
@@ -72,11 +72,10 @@ export function construirAbismo(escena, kit) {
       }
     }
     // Maquinas de asedio mirando al Nucleo.
-    const haciaN = f === 'luz' ? 1 : -1, ry = haciaN > 0 ? -Math.PI / 2 : Math.PI / 2;
-    for (const [n, dx] of [['c_siege-catapult', 9], ['c_siege-ballista', -9], ['c_siege-trebuchet', 0]]) {
-      const x = cx + dx, z = cz + haciaN * (dx ? 4 : -2);
-      piezas.push({ n, x, y: alturaAbismo(x, z) - 0.1, z, ry, s: 2.6 });
-      solidos.push({ x, z, r: 2.2 });
+    // (las mismas posiciones que valida el servidor: maquinasAbismo)
+    for (const q of maquinasAbismo()) if (q.f === f) {
+      piezas.push({ n: MAQUINA[q.k].modelo, x: q.x, y: alturaAbismo(q.x, q.z) - 0.1, z: q.z, ry: q.ry, s: 2.6 });
+      solidos.push({ x: q.x, z: q.z, r: 2.2 });
     }
     const m = new THREE.Mesh(kit.fundir(piezas), kit.material);
     m.castShadow = true;
@@ -97,8 +96,30 @@ export function construirAbismo(escena, kit) {
   else { bastion(luz, 0xf5f0e1, 0xfacc15, 6); bastion(sombra, 0x2a1838, 0xb91c1c, 9); }
   // Fortaleza del Nucleo: muralla, torre y el nucleo que brilla y gira.
   const nx = ABISMO_X0 + nucleo.x, nz = nucleo.z, ny = alturaAbismo(nx, nz);
-  const muro = new THREE.Mesh(new THREE.CylinderGeometry(nucleo.r * 0.7, nucleo.r * 0.72, 7, 16, 1, true), lam(0x6b6478, { side: THREE.DoubleSide }));
-  muro.position.set(nx, ny + 3, nz);
+  // Con el kit: muralla de castillo con hueco al oeste (ahi va la Puerta del
+  // Nucleo durante el asedio), cuatro torres y banderas del color del dueño.
+  let muro, matBandera = null;
+  if (kit) {
+    const piezas = [], banderas = [], N = Math.round(Math.PI * 2 * MURO_NUCLEO / E);
+    for (let k = 0; k < N; k++) {
+      const a = k / N * Math.PI * 2, x = CENTRO_NUCLEO.x + Math.cos(a) * MURO_NUCLEO, z = CENTRO_NUCLEO.z + Math.sin(a) * MURO_NUCLEO;
+      if (Math.hypot(x - PUERTA_NUCLEO.x, z - PUERTA_NUCLEO.z) < 4.6) continue;
+      piezas.push({ n: 'c_wall', x, y: alturaAbismo(x, z) - 0.4, z, ry: -(a + Math.PI / 2), s: E });
+      solidos.push({ x, z, r: E / 2 + 0.1 });
+    }
+    for (let k = 0; k < 4; k++) {
+      const a = Math.PI / 4 + k * Math.PI / 2, x = CENTRO_NUCLEO.x + Math.cos(a) * MURO_NUCLEO, z = CENTRO_NUCLEO.z + Math.sin(a) * MURO_NUCLEO, y = alturaAbismo(x, z) - 0.3;
+      for (const [n, h] of [['c_tower-square-base', 0], ['c_tower-square-mid-windows', 1.01], ['c_tower-square-mid', 2.02], ['c_tower-square-top', 3.03]]) piezas.push({ n, x, y: y + h * E, z, ry: -a, s: E });
+      banderas.push({ n: 'c_flag-wide', x, y: y + 3.15 * E, z, ry: -a, s: E * 1.3 });
+      solidos.push({ x, z, r: 0.5 * E + 0.2 });
+    }
+    muro = new THREE.Mesh(kit.fundir(piezas), kit.material);
+    matBandera = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+    g.add(new THREE.Mesh(kit.fundir(banderas), matBandera));
+  } else {
+    muro = new THREE.Mesh(new THREE.CylinderGeometry(nucleo.r * 0.7, nucleo.r * 0.72, 7, 16, 1, true), lam(0x6b6478, { side: THREE.DoubleSide }));
+    muro.position.set(nx, ny + 3, nz);
+  }
   const torre = new THREE.Mesh(new THREE.CylinderGeometry(5, 7, 26, 8), lam(0x4b4560)); torre.position.set(nx, ny + 13, nz);
   const nucleoM = new THREE.Mesh(new THREE.IcosahedronGeometry(3.2, 1), new THREE.MeshBasicMaterial({ color: 0xa78bfa }));
   nucleoM.position.set(nx, ny + 31, nz);
@@ -124,8 +145,15 @@ export function construirAbismo(escena, kit) {
     g.add(n); nubes.push(n);
   }
   escena.add(g);
+  const COLOR_DUENO = { luz: ['#fde68a', '#fff7d6'], sombra: ['#c084fc', '#c9a3e8'] };
   return {
     grupo: g, solidos,
+    // El nucleo y las banderas de la fortaleza toman el color del dueño.
+    dueno(f) {
+      const c = COLOR_DUENO[f] || ['#a78bfa', '#8f8aa3'];
+      nucleoM.material.color.set(c[0]); aro.material.color.set(f ? c[0] : '#fde68a');
+      if (matBandera) matBandera.color.set(c[1]);
+    },
     animar(t) {
       nucleoM.rotation.y = t / 1500; nucleoM.rotation.x = t / 2300;
       aro.rotation.x = Math.PI / 2 + Math.sin(t / 900) * 0.3; aro.rotation.z = t / 1200;

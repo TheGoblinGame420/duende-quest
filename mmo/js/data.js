@@ -282,6 +282,10 @@ export const MONSTRUOS = {
   // Rotan con el Gran Duende cada media hora (MUNDIALES): mismas reglas y premios.
   mundial_tormenta: { nombre: 'Dragón de la Tormenta', hoja: 'dragon',          nivel: 30, jefe: true, mundial: true, alto: 210, w: 170, h: 150, tinte: '#38bdf8', dispara: true },
   mundial_coloso:   { nombre: 'Coloso de Obsidiana',   hoja: 'coloso',          nivel: 30, jefe: true, mundial: true, alto: 240, w: 120, h: 220, tinte: '#7c2d12', dispara: true },
+  // Asedio de la Fortaleza del Nucleo (Abismo de Eter, 3D). No van al bestiario
+  // ni a la Torre (asedio: true); su vida la pone el asedio.
+  puerta_nucleo:    { nombre: 'Puerta del Núcleo',     hoja: 'coloso',          nivel: 50, jefe: true, asedio: true, alto: 165, w: 90, h: 150 },
+  guardian_nucleo:  { nombre: 'Guardián del Núcleo',   hoja: 'coloso',          nivel: 50, jefe: true, asedio: true, alto: 165, w: 90, h: 150, tinte: '#a78bfa', atkX: 1.6 },
 };
 
 // nivel: para las mazmorras, que se ajustan al nivel del grupo.
@@ -483,6 +487,13 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 33, fecha: '23 oct 2026', items: [
+    '¡Asedio de la Fortaleza del Núcleo! Cada 2 horas (a las :25 de las horas pares, hora UTC) hay 20 minutos de asedio en el Abismo de Éter, con aviso 2 minutos antes.',
+    'La facción que no es dueña rompe la Puerta del Núcleo. Entonces despierta el Guardián del Núcleo: ondas avisadas en el suelo, guardia real al 50% y furia al 30%. Quien más lo daña se queda la fortaleza.',
+    'Máquinas de asedio: en tu bastión, acércate a la catapulta, la balista o el trebuchet y pulsa E para disparar a la puerta desde lejos.',
+    'Premios del asedio: Puntos del Abismo y oro para quien aporte (2 completos al día). Si se acaba el tiempo, resisten los defensores. La facción dueña gana +1 PA por cada élite.',
+    'El Núcleo y las banderas de la fortaleza muestran el color de la facción dueña; el panel del Abismo enseña el tiempo, la vida de la puerta y la del Guardián.',
+  ] },
   { n: 32, fecha: '23 oct 2026', items: [
     'Mundo renovado con arte profesional CC0 de Kenney: nuevos árboles, pinos, palmeras, rocas, flores, setas y tocones, teñidos con los colores de cada zona.',
     'El pueblo, reconstruido: casas de piedra y entramado de madera con ventanas, puertas y chimeneas, una fuente en la plaza, puestos de mercado, carros, faroles y un molino de viento.',

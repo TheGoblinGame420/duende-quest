@@ -2533,3 +2533,25 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
 - Arreglos del Abismo: `aguaEn(x)` (sin agua bajo las islas), `aguaCerca`
   cliente y servidor, cielo 'eter' fijo.
 - `?sinKenney=1` vuelve a las figuras de siempre.
+
+### Asedio de la Fortaleza del Núcleo (23-oct-2026, `?v=265`)
+
+- abismo3d.js: `ASEDIO` (cada 2 h, desfase :25, 20 min, aviso 2 min),
+  `proximoAsedio`, `CENTRO_NUCLEO`, `MURO_NUCLEO`, `PUERTA_NUCLEO` (oeste),
+  `MAQUINA` (catapulta 0,3 %/15 s, balista 0,2 %/10 s, trebuchet 0,6 %/30 s
+  de la vida de la puerta), `maquinasAbismo()` (posiciones compartidas).
+- data.js: `puerta_nucleo` y `guardian_nucleo` con `asedio: true` (fuera del
+  bestiario 2D y de la Torre).
+- Servidor (mundo3d.js): `revisarAsedio` en tick3d, `iniciarAsedio`
+  (puerta 40k + 8k × jugadores del Abismo; guardian 30k + 10k ×, dormido),
+  `caeAsedio`, `terminarAsedio(ganador)` (dueño en storage 'nucleo', premios
+  ≥0,3 %, 2 al dia; defensores en la isla si resiste), `dispararMaquina`.
+  `danar3d(o, dmg, s, forzar)`: puerta/guardian solo los daña el atacante; el
+  guardian dormido nada. `o.persiste` (jefe mundial y asedio) sustituye a
+  `o.mundial3` en correa/curacion/retirada. `/asedio` para GM.
+  `asedioAuto = false` en el arnes (no depende de la hora real).
+- Cliente: muralla del Nucleo con el kit (hueco oeste, 4 torres, banderas
+  del color del dueño: `abismo.dueno(f)`), `modeloPuerta()` (reja entre dos
+  torres; se hunde al caer; `solidosExtra` cierra el paso), disparos en arco
+  con estallido, panel del asedio, punto en el minimapa, E en las maquinas.
+- Arnes: 20 pruebas nuevas (730).

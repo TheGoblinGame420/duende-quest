@@ -159,6 +159,8 @@ export class MmoWorld {
       this.rds = (await this.state.storage.get('rankDesSem')) || { sem: semanaUTC(), l: {} };
       // Primeras victorias del servidor (jefe final de la banda): { idJefe: { t, n } }.
       this.primeros = (await this.state.storage.get('primeros')) || {};
+      // Dueño de la Fortaleza del Nucleo (asedio del Abismo, mundo3d.js).
+      this.nucleo = (await this.state.storage.get('nucleo')) || { dueno: null, desde: 0 };
       // Avisos de vuelta a la hora habitual de cada uno (retencion.js).
       await this.asegurarAlarma();
       // Los personajes de prueba de las verificaciones en produccion del

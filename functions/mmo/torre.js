@@ -105,7 +105,7 @@ export const Torre = {
     }
     if (P.jefe) {
       // Jefes de zona de tu tramo, por turnos; sin territorio ni mTON.
-      const jefes = Object.keys(MONSTRUOS).filter(k => { const m = MONSTRUOS[k]; return m.jefe && !m.mazmorra && !m.mundial && m.nivel <= T.nv + 6; })
+      const jefes = Object.keys(MONSTRUOS).filter(k => { const m = MONSTRUOS[k]; return m.jefe && !m.mazmorra && !m.mundial && !m.asedio && m.nivel <= T.nv + 6; })
         .sort((a, b) => MONSTRUOS[b].nivel - MONSTRUOS[a].nivel).slice(0, 3);
       const k = jefes[(T.piso / TORRE.jefeCada) % jefes.length] || z.jefe;
       if (MONSTRUOS[k]) this.crearMonstruo(w.clave, k, 700 + (Math.random() < 0.5 ? -330 : 330),

@@ -13,18 +13,19 @@
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
-  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS } from '/mmo/js/data.js?v=264';
-import { iniciarVentanas } from './ventanas.js?v=264';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=264';
-import { crearMusica } from './musica.js?v=264';
-import { construirCueva } from './cueva.js?v=264';
-import { TAPA, transparentar } from './tapa.js?v=264';
-import { construirAbismo } from './abismo.js?v=264';
-import { crearParticulas } from './particulas.js?v=264';
-import { cargarKenney, piezasCasa } from './kenney.js?v=264';
-import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario } from '/mmo/js/abismo3d.js';
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=264';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=264';
+  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS } from '/mmo/js/data.js?v=265';
+import { iniciarVentanas } from './ventanas.js?v=265';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=265';
+import { crearMusica } from './musica.js?v=265';
+import { construirCueva } from './cueva.js?v=265';
+import { TAPA, transparentar } from './tapa.js?v=265';
+import { construirAbismo } from './abismo.js?v=265';
+import { crearParticulas } from './particulas.js?v=265';
+import { cargarKenney, piezasCasa } from './kenney.js?v=265';
+import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo } from '/mmo/js/abismo3d.js';
+const MAQUINAS = maquinasAbismo();
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=265';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=265';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -314,7 +315,12 @@ const SOLIDO = { pino: 0.42, nieve: 0.42, redondo: 0.5, muerto: 0.4, cactus: 0.5
 const solidos = new Map();
 function ponerSolido(x, z, r) { const k = Math.floor(x / REJ) + ',' + Math.floor(z / REJ); let c = solidos.get(k); if (!c) solidos.set(k, c = []); c.push({ x, z, r }); }
 const RADIO_DUENDE = 0.45;
+let solidosExtra = [];
 function empujarFuera(x, z) {
+  for (const o of solidosExtra) {
+    const dx = x - o.x, dz = z - o.z, d = Math.hypot(dx, dz), m = o.r + RADIO_DUENDE;
+    if (d < m && d > 1e-4) { x = o.x + dx / d * m; z = o.z + dz / d * m; }
+  }
   // Circulos cercanos (3x3 celdas).
   const gx = Math.floor(x / REJ), gz = Math.floor(z / REJ);
   for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
@@ -1088,6 +1094,9 @@ function recibir(m) {
     case 'pl': quitarOtro(m.id); break;
     case 'pa': { const o = otros.get(m.p); if (o) { const cambia = o.sk !== m.sk || o.cl !== (m.cl || '') || o.ar !== (m.ar || 'katana') || JSON.stringify(o.lk) !== JSON.stringify(m.lk || null); Object.assign(o, { sk: m.sk, cl: m.cl || '', ar: m.ar || 'katana', mo: m.mo || '', lk: m.lk || null, al: m.al || '', fc: m.fc || '', ra: m.ra || 0, gm: m.gm || 0 }); if (cambia) rehacerFiguraOtro(o); } break; }
     case 'mundial3': mundial3 = { ...m, recibido: Date.now() }; break;
+    case 'asedio': asedio = m; if (m.activo) asedioHp = asedioHp || { p: 100, g: 100 }; else asedioHp = null; if (abismo) abismo.dueno(m.dueno); break;
+    case 'asedioHp': asedioHp = m; if (asedio) asedio.dormido = !!m.d; break;
+    case 'asedioTiro': tiroAsedio(m); break;
     case 'zona3': {
       // Pisoton: el circulo rojo se llena y, al llenarse, golpea.
       const y = alturaEn(m.x, m.z) + 0.18;
@@ -1234,10 +1243,30 @@ async function agregarMon(d) {
   mons.set(d.id, o);
   fijarDestino(o, d.x, d.z);
   o.mu = !!d.mu;
+  if (d.k === 'puerta_nucleo') {
+    o.fig = new Figura3D(modeloPuerta(), 1);
+    solidosExtra = solidosExtra.filter(x => x.id !== d.id).concat([-2.2, 0, 2.2].map(dz => ({ x: d.x, z: d.z + dz, r: 1.5, id: d.id })));
+    return;
+  }
   o.fig = figuraModelo(() => crearMonstruo(d.k), d.mu ? 2.4 : d.j ? 1.15 : 1) || await figuraHoja(def.hoja, st.alto * (d.mu ? 2.4 : d.j ? 1.15 : 1));
   if (!mons.has(d.id) && o.fig) { o.fig.quitar(); o.fig = null; }
 }
-function quitarMon(id) { const o = mons.get(id); if (!o) return; if (o.fig) o.fig.quitar(); o.lbl.remove(); mons.delete(id); if (objetivo === id) { objetivo = 0; autoAtk = false; pintarBarra(); } }
+// La Puerta del Nucleo: reja de hierro entre dos torres del kit de castillo
+// (o un bloque si el kit no cargo). Encaja en el hueco oeste de la muralla.
+function modeloPuerta() {
+  const obj = new THREE.Group();
+  let mesh;
+  if (KIT) {
+    const t = z => [['c_tower-square-base', 0], ['c_tower-square-mid', 1.01], ['c_tower-square-top-roof', 2.02]].map(([n, h]) => ({ n, y: h * 2.6, z, s: 2.6 }));
+    mesh = new THREE.Mesh(KIT.fundir([{ n: 'c_metal-gate', sx: 8, sy: 8, sz: 6.4 }, ...t(-3.6), ...t(3.6)]), KIT.material);
+  } else { mesh = new THREE.Mesh(new THREE.BoxGeometry(0.8, 6, 5.6), new THREE.MeshLambertMaterial({ color: 0x4b4560 })); mesh.position.y = 3; }
+  if (Q.sombras) mesh.castShadow = true;
+  obj.add(mesh);
+  const x0 = mesh.position.x;
+  // Al caer se hunde (y suelta polvo con el estallido de md3).
+  return { obj, alto: 6, r: { tAtk: 0.35 }, animar(e, tt) { mesh.position.y = (KIT ? 0 : 3) - (e === 'muere' ? Math.min(7, tt * tt * 6) : 0); }, golpe() { mesh.position.x = x0 + 0.18; setTimeout(() => { mesh.position.x = x0; }, 90); }, dispose() {} };
+}
+function quitarMon(id) { solidosExtra = solidosExtra.filter(x => x.id !== id); const o = mons.get(id); if (!o) return; if (o.fig) o.fig.quitar(); o.lbl.remove(); mons.delete(id); if (objetivo === id) { objetivo = 0; autoAtk = false; pintarBarra(); } }
 function foto(m) {
   const enFoto = new Set();
   for (const [id, x, z, ry, a, hp, mx, muerto, h] of m.p) {
@@ -1305,6 +1334,7 @@ function golpeJugador(m) {
   if (m.p === miId) { P.heridoT = performance.now(); sfxK('g_carne', 0.22); if (yo && m.d > 0) { yo.hp = Math.max(0, yo.hp - m.d); pintarVida(); } }
 }
 let impactos = [];
+let asedio = null, asedioHp = null, tirosAsedio = [];
 let proyectiles = [], efectos = [], lanzando = null, objetivoP = 0, mundial3 = null, sacudir = 0, grupo3 = null;
 const zonas3 = new Map();
 function quitarZona3(id, explota) {
@@ -1376,6 +1406,42 @@ function pintarAuras() {
 }
 const GEO_BALA = new THREE.SphereGeometry(0.22, 8, 6), MAT_BALA = new Map();
 const matBala = c => { if (!MAT_BALA.has(c)) MAT_BALA.set(c, new THREE.MeshBasicMaterial({ color: c })); return MAT_BALA.get(c); };
+const GEO_PIEDRA = new THREE.DodecahedronGeometry(0.9, 0), MAT_PIEDRA = new THREE.MeshLambertMaterial({ color: 0x5b5470, flatShading: true });
+function tiroAsedio(m) {
+  const q = MAQUINAS[m.i];
+  if (!q || !enAbismo(P.x)) return;
+  const a = new THREE.Vector3(q.x, alturaEn(q.x, q.z) + 3, q.z), b = new THREE.Vector3(m.x, alturaEn(m.x, m.z) + 3, m.z);
+  const mesh = new THREE.Mesh(GEO_PIEDRA, MAT_PIEDRA); mesh.position.copy(a); escena.add(mesh);
+  tirosAsedio.push({ mesh, a, b, t0: performance.now(), ms: m.ms || 2500, alto: 25 + a.distanceTo(b) * 0.15 });
+  if (Math.hypot(q.x - P.x, q.z - P.z) < 40) { sfx('explosion', 0.25); FX.emitir(q.x, a.y - 1.5, q.z, { n: 14, color: '#bfae8e', vel: 3, vida: 0.5, grav: 2, plano: true, radio: 1 }); }
+}
+function moverTirosAsedio(t) {
+  tirosAsedio = tirosAsedio.filter(s => {
+    const k = (t - s.t0) / s.ms;
+    if (k >= 1) {
+      escena.remove(s.mesh);
+      FX.emitir(s.b.x, s.b.y, s.b.z, { n: 40, color: '#ff9a3c', vel: 8, vida: 0.8, grav: 6, sube: 2 });
+      FX.emitir(s.b.x, s.b.y, s.b.z, { n: 20, color: '#8a8094', vel: 4, vida: 1.2, grav: 3, tam: 2 });
+      const d = Math.hypot(s.b.x - P.x, s.b.z - P.z);
+      if (d < 70) { sfx('explosion', 0.5 * (1 - d / 70)); if (d < 25) sacudir = Math.max(sacudir, 0.3); }
+      return false;
+    }
+    s.mesh.position.lerpVectors(s.a, s.b, k); s.mesh.position.y += Math.sin(Math.PI * k) * s.alto;
+    s.mesh.rotation.x = t / 120; s.mesh.rotation.z = t / 170;
+    return true;
+  });
+}
+function fmtT(ms) { const s = Math.max(0, Math.round(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, ss = String(s % 60).padStart(2, '0'); return h ? `${h}:${String(m).padStart(2, '0')}:${ss}` : `${m}:${ss}`; }
+// Lineas del asedio para el rastreador.
+function asedioHtml() {
+  if (!asedio) return '';
+  const d = asedio.dueno, dn = d ? `<span style="color:${FACCIONES[d].color}">${FACCIONES[d].nombre}</span>` : 'sin dueño';
+  if (!asedio.activo) return `<br>🏰 Núcleo: ${dn} · <small>próximo asedio en ${fmtT(asedio.ini - Date.now())}</small>`;
+  const hp = asedioHp || {}, defiendo = yo && yo.faccion && yo.faccion === d;
+  return `<br><b style="color:#fca5a5">⚔ ASEDIO DEL NÚCLEO</b> ${fmtT(asedio.fin - Date.now())} · ${dn}`
+    + `<br>🚪 Puerta ${asedio.puerta ? (hp.p ?? 100) + '%' : '<b style="color:#4ade80">rota</b>'} · 🛡 Guardián ${asedio.guardian ? (asedio.dormido ? '💤 dormido' : (hp.g ?? 100) + '%') : '—'}`
+    + `<br><span style="font-size:11px">${defiendo ? 'Tu facción defiende: protege la puerta (al oeste del Núcleo).' : 'Rompe la puerta (al oeste del Núcleo) y vence al Guardián. Usa las máquinas de tu bastión (E).'}</span>`;
+}
 function proyectil(de, a, color) {
   const mesh = new THREE.Mesh(GEO_BALA, matBala(color));
   escena.add(mesh);
@@ -1724,6 +1790,8 @@ function pintarMini() {
     for (const [a, b, c, d] of CUEVA.salas) x.fillRect((CUEVA_X0 + a - P.x) * k * 2.2 + S / 2, (b - P.z) * k * 2.2 + S / 2, (c - a) * k * 2.2, (d - b) * k * 2.2);
   } else x.drawImage(mapaBase, mx - lado / 2, mz - lado / 2, lado, lado, 0, 0, S, S);
   const punto = (wx, wz, color, r) => { const px = (wx - P.x) * k + S / 2, pz = (wz - P.z) * k + S / 2; if (px < 0 || pz < 0 || px > S || pz > S) return; x.fillStyle = color; x.beginPath(); x.arc(px, pz, r, 0, 7); x.fill(); };
+  if (asedio && asedio.activo && asedio.puerta && enAbismo(P.x)) punto(PUERTA_NUCLEO.x, PUERTA_NUCLEO.z, '#ff3b3b', 4.5);
+  if (enAbismo(P.x) && yo && yo.faccion) for (const q of MAQUINAS) if (q.f === yo.faccion) punto(q.x, q.z, '#fbbf24', 2);
   for (const o of mons.values()) if (!o.muereT) punto(o.x, o.z, o.j ? '#ffd84a' : '#ff4455', o.j ? 3.5 : 2);
   for (const o of otros.values()) punto(o.x, o.z, enGrupo(o.id) ? '#7dd3fc' : '#4ade80', enGrupo(o.id) ? 3.5 : 2.5);
   { const ah = performance.now(); for (const n of NODOS) if (Math.abs(n.x - P.x) < 130 && Math.abs(n.z - P.z) < 130 && !(nodoListo.get(n.i) > ah)) punto(n.x, n.z, n.tipo === 'hierba' ? '#c084fc' : '#fbbf24', 1.6); }
@@ -1942,7 +2010,12 @@ function saltar() {
   P.buffer = FIS.buffer;   // pulsado justo antes de tocar el suelo: salta al aterrizar
 }
 function npcCercano() {
-  if (enAbismo(P.x)) { const pb = yo && yo.faccion && portalBase(yo.faccion); return pb && Math.hypot(P.x - pb.x, P.z - pb.z) < 5 ? { tipo: 'salidaAbismo', nombre: 'Volver al pueblo' } : null; }
+  if (enAbismo(P.x)) {
+    const pb = yo && yo.faccion && portalBase(yo.faccion);
+    if (pb && Math.hypot(P.x - pb.x, P.z - pb.z) < 5) return { tipo: 'salidaAbismo', nombre: 'Volver al pueblo' };
+    const q = yo && yo.faccion && MAQUINAS.find(m => m.f === yo.faccion && Math.hypot(P.x - m.x, P.z - m.z) < MAQUINA_DIST);
+    return q ? { tipo: 'maquina', nombre: MAQUINA[q.k].nombre, i: q.i } : null;
+  }
   if (enCueva(P.x)) return Math.hypot(P.x - CUEVA_X0 - CUEVA.salida.x, P.z - CUEVA.salida.z) < 4 ? { tipo: 'salida', nombre: 'Salir de la cueva' } : null;
   return npcs.find(n => Math.hypot(P.x - n.x, P.z - n.z) < NPC_DIST) || (portal && Math.hypot(P.x - portal.x, P.z - portal.z) < 5 ? { tipo: 'portal', nombre: 'Mazmorras' } : null);
 }
@@ -1953,6 +2026,7 @@ function hablar() {
   if (!n) return;
   if (n.tipo === 'salida') { mandar({ t: 'salirCueva' }); return; }
   if (n.tipo === 'salidaAbismo') { mandar({ t: 'salirAbismo' }); return; }
+  if (n.tipo === 'maquina') { mandar({ t: 'maquina', i: n.i }); return; }
   if (n.tipo === 'portal') {
     npcAbierto = '';
     $('npc-t').textContent = 'PORTAL DE LAS MAZMORRAS';
@@ -2264,7 +2338,7 @@ function etiquetas(t) {
     const def = MONSTRUOS[o.k], el = o.id === objetivo;
     const alto = o.fig ? altoFig(o.fig) : 2;
     const herido = o.hp < o.mx || el;
-    ponLbl(o.lbl, o.x, alturaEn(o.x, o.z) + alto + 0.2, o.z, `<span style="color:${o.j ? '#ff6bf0' : colorNivel(o.nv)}">${o.j ? '★ ' : ''}${herido || o.j ? esc(def.nombre) + ' ' : ''}Nv${o.nv}</span>${herido ? `<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>` : ''}`, el ? 90 : (o.j ? 70 : 38));
+    ponLbl(o.lbl, o.x, alturaEn(o.x, o.z) + alto + 0.2, o.z, `<span style="color:${o.j ? '#ff6bf0' : colorNivel(o.nv)}">${o.j ? '★ ' : ''}${asedio && asedio.dormido && o.id === asedio.guardian ? '💤 ' : ''}${herido || o.j ? esc(def.nombre) + ' ' : ''}Nv${o.nv}</span>${herido ? `<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>` : ''}`, el ? 90 : (o.j ? 70 : 38));
   }
   for (const n of npcs) ponLbl(n.lbl, n.x, n.y + 2.4, n.z, `${n.tipo === 'guia' && misionLista() ? '<b style="color:#ffd84a;font-size:22px;text-shadow:0 0 6px #000">?</b><br>' : ''}<span style="color:#4ade80">${esc(n.nombre)}</span>`, 60);
 }
@@ -2283,9 +2357,10 @@ function pintarMisiones() {
   metaMision = null;
   if (enAbismo(P.x)) {
     const is = islaEn(P.x, P.z), fc = yo.faccion && FACCIONES[yo.faccion];
-    h = `<div class="q"><b>🌌 ${ABISMO.nombre}</b>${is && is.nombre ? is.nombre + ' · ' : ''}${fc ? `<span style="color:${fc.color}">${fc.titulo}</span>` : ''}${rangoHtml()}<br><span style="font-size:11px">${santuario(P.x, P.z) ? '🛡 Santuario: aquí nadie pelea contra jugadores.' : 'Abate a la otra facción y a los élites para ganar Puntos del Abismo. Vuelve por el portal de tu bastión.'}</span></div>`;
+    h = `<div class="q"><b>🌌 ${ABISMO.nombre}</b>${is && is.nombre ? is.nombre + ' · ' : ''}${fc ? `<span style="color:${fc.color}">${fc.titulo}</span>` : ''}${rangoHtml()}${asedioHtml()}<br><span style="font-size:11px">${santuario(P.x, P.z) ? '🛡 Santuario: aquí nadie pelea contra jugadores.' : 'Abate a la otra facción y a los élites para ganar Puntos del Abismo. Vuelve por el portal de tu bastión.'}</span></div>`;
     c.style.display = 'block'; if (c._h !== h) { c.innerHTML = h; c._h = h; } faro.visible = false; return;
   }
+  if (asedio && asedio.activo && yo.nivel >= ABISMO.nvMin && !enCueva(P.x)) h += `<div class="q"><b style="color:#fca5a5">⚔ Asedio del Núcleo</b> ${fmtT(asedio.fin - Date.now())} · entra al Abismo por el portal del pueblo</div>`;
   if (enCueva(P.x)) {
     h = `<div class="q"><b>⛏ ${CUEVA.nombre}</b>${cuevaInfo && cuevaInfo.hecha ? '<span class="ok">¡Completada! Sal por el portal de la entrada.</span>' : 'Derrota al Rey Goblin en su trono.'}</div>`;
     c.style.display = 'block'; if (c._h !== h) { c.innerHTML = h; c._h = h; } faro.visible = false; return;
@@ -2380,7 +2455,7 @@ function bucle(t) {
     if (yo) {
       const n = npcCercano(), nd = n ? null : nodoCercano(); const b = $('hablar');
       b.style.display = n || nd ? 'block' : 'none';
-      if (n) b.textContent = (MOVIL ? '' : 'E · ') + (n.tipo === 'portal' ? 'Mazmorras' : n.tipo === 'salida' ? 'Salir de la cueva' : n.tipo === 'salidaAbismo' ? 'Volver al pueblo' : 'Hablar con ' + n.nombre);
+      if (n) b.textContent = (MOVIL ? '' : 'E · ') + (n.tipo === 'portal' ? 'Mazmorras' : n.tipo === 'salida' ? 'Salir de la cueva' : n.tipo === 'salidaAbismo' ? 'Volver al pueblo' : n.tipo === 'maquina' ? 'Disparar ' + n.nombre.toLowerCase() : 'Hablar con ' + n.nombre);
       else if (nd) b.textContent = (MOVIL ? '' : 'E · ') + 'Recoger ' + MATERIALES[nd.tipo].nombre;
       else if (!enCueva(P.x) && aguaCerca()) { b.style.display = 'block'; b.textContent = (MOVIL ? '' : 'E · ') + (pica > performance.now() ? '¡TIRAR!' : lanzando && lanzando.id === 'pescar' ? 'Esperando que pique…' : 'Pescar'); }
     }
@@ -2401,6 +2476,7 @@ function bucle(t) {
   moverLluvia(dt, t);
   if (cueva && enCueva(P.x)) cueva.animar(t);
   if (abismo && enAbismo(P.x)) abismo.animar(t);
+  if (tirosAsedio.length) moverTirosAsedio(t);
   if (molinoAspas && Math.hypot(P.x, P.z) < 160) molinoAspas.rotation.x = t / 1400;
   if (corcho) corcho.position.y = corcho.userData.y0 + (pica > performance.now() ? -0.18 + Math.sin(t / 60) * 0.08 : Math.sin(t / 500) * 0.04);
   if (agua) agua.material.opacity = 0.7 + Math.sin(t / 900) * 0.04;
@@ -2436,7 +2512,8 @@ function bucle(t) {
 const vFX = new THREE.Vector3();
 
 // Estado visible en la consola para depurar (solo lectura).
-window.__dq3 = { P, mons, otros, get objetivo() { return objetivo; }, get autoAtk() { return autoAtk; }, get yo() { return yo; }, cuadro: () => bucle(performance.now()), recibir };
+window.__dq3 = { P, mons, otros, get objetivo() { return objetivo; }, get autoAtk() { return autoAtk; }, get yo() { return yo; }, cuadro: () => bucle(performance.now()), recibir,
+  camara: (yaw, pitch) => { camYaw = yaw; if (pitch !== undefined) camPitch = pitch; } };
 
 // ── INICIO ──
 async function inicio() {
@@ -2460,6 +2537,7 @@ async function inicio() {
   cueva = construirCueva(escena);
   abismo = construirAbismo(escena, KIT);
   for (const c of abismo.solidos || []) ponerSolido(c.x, c.z, c.r);
+  abismo.dueno(asedio && asedio.dueno);
   progreso(0.75, 'Dibujando el mapa…');
   await new Promise(r => setTimeout(r, 20));
   pintarMapaBase();
