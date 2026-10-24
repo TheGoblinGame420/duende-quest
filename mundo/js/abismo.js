@@ -11,8 +11,9 @@ import { ABISMO, ABISMO_X0, alturaAbismo, portalBase } from '/mmo/js/abismo3d.js
 
 const lam = (c, extra) => new THREE.MeshLambertMaterial({ color: c, flatShading: true, ...(extra || {}) });
 
-export function construirAbismo(escena) {
+export function construirAbismo(escena, kit) {
   const g = new THREE.Group();
+  const solidos = [];
   const cesped = lam(0x6d5bd0), roca = lam(0x3a2f55), cristal = new THREE.MeshBasicMaterial({ color: 0x7dd3fc });
   const conoG = new THREE.ConeGeometry(1, 1, 9);
   ABISMO.islas.forEach((is, n) => {
@@ -44,6 +45,43 @@ export function construirAbismo(escena) {
     }
   });
   // Bastiones: agujas de su faccion alrededor del centro de la isla.
+  // Con el kit de castillo de Kenney: seis torres unidas por murallas (con dos
+  // puertas: hacia el portal y hacia el Nucleo), estandartes y maquinas de
+  // asedio. La Sombra lleva la piedra teñida de purpura.
+  const E = 3.6;
+  const bastionKit = (is, f) => {
+    const cx = ABISMO_X0 + is.x, cz = is.z, R = is.r * 0.62, tinte = f === 'luz' ? '#ffffff' : '#8a6a9a';
+    const pb = portalBase(f), piezas = [];
+    const torres = [];
+    for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2; torres.push([cx + Math.cos(a) * R, cz + Math.sin(a) * R, a]); }
+    for (const [x, z, a] of torres) {
+      const y = alturaAbismo(x, z) - 0.3;
+      for (const [n, h] of [['c_tower-square-base', 0], ['c_tower-square-mid-windows', 1.01], ['c_tower-square-mid', 2.02], ['c_tower-square-top-roof-high', 3.03]]) piezas.push({ n, x, y: y + h * E, z, ry: -a, s: E, color: tinte });
+      piezas.push({ n: 'c_flag-banner-long', x: x + Math.cos(a) * 0.48 * E, y: y + 0.9 * E, z: z + Math.sin(a) * 0.48 * E, ry: -a, s: E, color: f === 'luz' ? '#ffe7a3' : '#d4545c' });
+      solidos.push({ x, z, r: 0.5 * E + 0.2 });
+    }
+    for (let k = 0; k < 6; k++) {
+      const [x0, z0] = torres[k], [x1, z1] = torres[(k + 1) % 6];
+      const dx = x1 - x0, dz = z1 - z0, L = Math.hypot(dx, dz), n = Math.round(L / E), fi = Math.atan2(dz, dx);
+      for (let j = 1; j < n; j++) {
+        const x = x0 + dx * j / n, z = z0 + dz * j / n;
+        // Puertas: el tramo frente al portal y el que mira al Nucleo.
+        if (Math.hypot(x - pb.x, z - pb.z) < 7 || Math.hypot(x - cx, Math.abs(z) - Math.abs(cz) + R) < 7) continue;
+        piezas.push({ n: 'c_wall', x, y: alturaAbismo(x, z) - 0.4, z, ry: -fi, s: E, color: tinte });
+        solidos.push({ x, z, r: 0.5 * E + 0.1 });
+      }
+    }
+    // Maquinas de asedio mirando al Nucleo.
+    const haciaN = f === 'luz' ? 1 : -1, ry = haciaN > 0 ? -Math.PI / 2 : Math.PI / 2;
+    for (const [n, dx] of [['c_siege-catapult', 9], ['c_siege-ballista', -9], ['c_siege-trebuchet', 0]]) {
+      const x = cx + dx, z = cz + haciaN * (dx ? 4 : -2);
+      piezas.push({ n, x, y: alturaAbismo(x, z) - 0.1, z, ry, s: 2.6 });
+      solidos.push({ x, z, r: 2.2 });
+    }
+    const m = new THREE.Mesh(kit.fundir(piezas), kit.material);
+    m.castShadow = true;
+    g.add(m);
+  };
   const bastion = (is, colA, colB, punta) => {
     const cx = ABISMO_X0 + is.x, cz = is.z;
     for (let k = 0; k < 6; k++) {
@@ -55,8 +93,8 @@ export function construirAbismo(escena) {
     }
   };
   const luz = ABISMO.islas.find(i => i.base === 'luz'), sombra = ABISMO.islas.find(i => i.base === 'sombra'), nucleo = ABISMO.islas.find(i => i.nucleo);
-  bastion(luz, 0xf5f0e1, 0xfacc15, 6);
-  bastion(sombra, 0x2a1838, 0xb91c1c, 9);
+  if (kit) { bastionKit(luz, 'luz'); bastionKit(sombra, 'sombra'); }
+  else { bastion(luz, 0xf5f0e1, 0xfacc15, 6); bastion(sombra, 0x2a1838, 0xb91c1c, 9); }
   // Fortaleza del Nucleo: muralla, torre y el nucleo que brilla y gira.
   const nx = ABISMO_X0 + nucleo.x, nz = nucleo.z, ny = alturaAbismo(nx, nz);
   const muro = new THREE.Mesh(new THREE.CylinderGeometry(nucleo.r * 0.7, nucleo.r * 0.72, 7, 16, 1, true), lam(0x6b6478, { side: THREE.DoubleSide }));
@@ -87,7 +125,7 @@ export function construirAbismo(escena) {
   }
   escena.add(g);
   return {
-    grupo: g,
+    grupo: g, solidos,
     animar(t) {
       nucleoM.rotation.y = t / 1500; nucleoM.rotation.x = t / 2300;
       aro.rotation.x = Math.PI / 2 + Math.sin(t / 900) * 0.3; aro.rotation.z = t / 1200;

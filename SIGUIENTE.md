@@ -2507,3 +2507,29 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
   60%), <15 ms lo sube; si ya esta al minimo y >28 ms, quita el post-proceso.
 - FOV 60→70 segun la velocidad. Numeros de daño en pool (sin crear/borrar
   nodos) con 'pop' de escala y deriva lateral.
+
+### Arte y sonido CC0 de Kenney y OpenGameArt (23-oct-2026, `?v=264`)
+
+- Paquetes (CC0, descargados con permiso del usuario): Kenney Nature Kit,
+  Fantasy Town Kit 2.0, Castle Kit, RPG Audio, Impact Sounds; OpenGameArt
+  «80 CC0 creature SFX». Créditos en la ayuda del 3D.
+- tools/kenney_build.mjs <carpeta de los zips>: lee los GLB, aplica nodos,
+  hornea color (factor × paleta PNG en la UV) por vertice y marca `tinte` en
+  hojas/hierba → assets/3d/kenney.bin (+ .gz, 225 KB) y kenney.json. 148 modelos.
+- mundo/js/kenney.js: `cargarKenney` (gzip con DecompressionStream o el .bin),
+  `geo`, `fundir(piezas)`, un MeshLambert plano con tapa.js y tinte por
+  instancia solo en hojas; `piezasCasa(nx,nz,sem,techo,pisos)` (paredes del kit
+  + tejado a dos aguas y chimenea).
+- Flora: `VAR_K` (variantes y tamaño) y LOD: celdas a menos de 80/100/125 m
+  (baja/media/alta) con el kit, mas lejos las figuras sencillas. Bosque: 20 →
+  7,4 ms por cuadro (iGPU, alta). Nuevos decorados: flor, hongo, hierba, tocon.
+- Pueblo (`crearPuebloKit`): casas mirando a la plaza (giro de 180°, misma caja),
+  fuente, mercado, carros, faroles del kit y molino con aspas.
+- Abismo: `bastionKit` (6 torres, murallas con puertas al portal y al Nucleo,
+  asedio); `abismo.solidos` → colisiones del cliente.
+- Sonidos: audio/sfx/k/*.mp3 (84, mono, 500 KB, convertidos con ffmpeg).
+  `sfxK(base)` elige variante; `vozDe(k)` por tipo de monstruo. Pasos solo
+  con menos de 5 voces sonando.
+- Arreglos del Abismo: `aguaEn(x)` (sin agua bajo las islas), `aguaCerca`
+  cliente y servidor, cielo 'eter' fijo.
+- `?sinKenney=1` vuelve a las figuras de siempre.

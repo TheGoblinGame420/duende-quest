@@ -483,6 +483,13 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 32, fecha: '23 oct 2026', items: [
+    'Mundo renovado con arte profesional CC0 de Kenney: nuevos árboles, pinos, palmeras, rocas, flores, setas y tocones, teñidos con los colores de cada zona.',
+    'El pueblo, reconstruido: casas de piedra y entramado de madera con ventanas, puertas y chimeneas, una fuente en la plaza, puestos de mercado, carros, faroles y un molino de viento.',
+    'Los bastiones del Abismo, ahora fortalezas: torres con estandartes, murallas con puertas y catapultas, balistas y trebuchets.',
+    'Sonido nuevo: pasos según el suelo, impactos de golpe y de crítico, voces de los monstruos al atacar y al caer, monedas, alas que se despliegan y libros al abrir ventanas.',
+    'Arreglado: en el Abismo ya no aparece «Pescar» ni se flota sobre agua invisible al caer al vacío, y su cielo violeta ya no cambia con la hora.',
+  ] },
   { n: 31, fecha: '23 oct 2026', items: [
     'Efectos nuevos: chispas al golpear (doradas en los críticos), estallido de luz al vencer a un monstruo y polvo al aterrizar de un salto alto.',
     'Ambiente vivo: luciérnagas de noche, motas de éter en el Abismo y polvo en la cueva.',

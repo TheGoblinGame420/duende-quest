@@ -636,6 +636,7 @@ export const Mundo3D = {
   // En cualquier orilla: hace falta agua a menos de 6 m. La zona decide el
   // nivel y la especie (las mismas reglas y premios que el 2D: tirar()).
   aguaCerca3d(p) {
+    if (enAbismo(p.x)) return false;   // bajo las islas hay vacio, no agua
     for (let r = 2; r <= 6; r += 2) for (let i = 0; i < 12; i++) {
       const a = i / 12 * Math.PI * 2, x = p.x + Math.cos(a) * r, z = p.z + Math.sin(a) * r;
       if (alturaEn(x, z) < MUNDO.agua - 0.6) return true;

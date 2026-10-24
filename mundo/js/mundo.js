@@ -13,17 +13,18 @@
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
-  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS } from '/mmo/js/data.js?v=263';
-import { iniciarVentanas } from './ventanas.js?v=263';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=263';
-import { crearMusica } from './musica.js?v=263';
-import { construirCueva } from './cueva.js?v=263';
-import { TAPA, transparentar } from './tapa.js?v=263';
-import { construirAbismo } from './abismo.js?v=263';
-import { crearParticulas } from './particulas.js?v=263';
+  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS } from '/mmo/js/data.js?v=264';
+import { iniciarVentanas } from './ventanas.js?v=264';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=264';
+import { crearMusica } from './musica.js?v=264';
+import { construirCueva } from './cueva.js?v=264';
+import { TAPA, transparentar } from './tapa.js?v=264';
+import { construirAbismo } from './abismo.js?v=264';
+import { crearParticulas } from './particulas.js?v=264';
+import { cargarKenney, piezasCasa } from './kenney.js?v=264';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario } from '/mmo/js/abismo3d.js';
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=263';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=263';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=264';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=264';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -163,7 +164,8 @@ function ambiente(z) {
   sol.color.set(dia < 0.25 ? 0x9fb4ff : 0xfff2dd).lerp(OCASO, ocaso * 0.6);
   const a = (h - 6) / 24 * Math.PI * 2;
   solDir.set(Math.cos(a) * 200, Math.max(60, Math.abs(Math.sin(a)) * 220), 80);
-  cieloObj.set(CIELO[z] || CIELO.pueblo).lerp(OCASO, z === 'cueva' ? 0 : ocaso * 0.35).lerp(NOCHE_CIELO, z === 'cueva' ? 0 : nocheK * 0.85);
+  const fijo = z === 'cueva' || z === 'eter';   // ni dia ni noche: siempre su cielo
+  cieloObj.set(CIELO[z] || CIELO.pueblo).lerp(OCASO, fijo ? 0 : ocaso * 0.35).lerp(NOCHE_CIELO, fijo ? 0 : nocheK * 0.85);
   if (nub < 1) cieloObj.lerp(cl === 'arena' ? ARENA : GRIS, (1 - nub) * 1.2);
   estrellas.material.opacity = z === 'eter' ? 0.7 : z === 'cueva' ? 0 : nocheK * (cl === 'despejado' ? 0.9 : 0.2);
   if (z === 'cueva') { hemiBase = 0.55; sol.intensity = 0.3; }
@@ -263,20 +265,43 @@ function crearTerreno() {
 }
 
 // ── VEGETACION Y DECORADO (instanciado: miles de arboles en pocas llamadas) ──
+// En el Abismo no hay agua debajo (se cae al vacio).
+const aguaEn = x => enAbismo(x) ? -1e4 : MUNDO.agua;
 function hashR(x, z, s) { let h = (x | 0) * 374761393 + (z | 0) * 668265263 + s * 2654435761; h = (h ^ (h >>> 13)) * 1274126177; return ((h ^ (h >>> 16)) >>> 0) / 4294967295; }
 const FLORA = {
-  noche:       [['pino', 0.42, '#2f6e4a']],
-  amanecer:    [['redondo', 0.22, '#d9733a'], ['roca', 0.06]],
-  selva:       [['redondo', 0.45, '#2f9e44'], ['arbusto', 0.25, '#3fbf55']],
-  tormenta:    [['muerto', 0.12, '#59546e'], ['roca', 0.16]],
+  noche:       [['pino', 0.42, '#2f6e4a'], ['hongo', 0.04, '#3f7a4a'], ['tocon', 0.03, '#3f6a3a']],
+  amanecer:    [['redondo', 0.22, '#d9733a'], ['roca', 0.06], ['flor', 0.08, '#5aa845'], ['hierba', 0.08, '#8fbf4a']],
+  selva:       [['redondo', 0.45, '#2f9e44'], ['arbusto', 0.25, '#3fbf55'], ['flor', 0.05, '#3fbf55'], ['hierba', 0.08, '#3fbf55']],
+  tormenta:    [['muerto', 0.12, '#59546e'], ['roca', 0.16], ['tocon', 0.04, '#5d6b52']],
   desierto:    [['cactus', 0.07, '#4f9a3f'], ['roca', 0.07]],
-  castillo:    [['pilar', 0.05, '#8b8578'], ['pino', 0.06, '#3e5a46'], ['roca', 0.08]],
+  castillo:    [['pilar', 0.05, '#8b8578'], ['pino', 0.06, '#3e5a46'], ['roca', 0.08], ['tocon', 0.03, '#4f6a46']],
   cumbres:     [['nieve', 0.22, '#3d7458'], ['roca', 0.18]],
   cavernas:    [['cristal', 0.12, '#5eead4'], ['roca', 0.2]],
-  abismo:      [['palma', 0.09, '#3fae6a'], ['roca', 0.05]],
+  abismo:      [['palma', 0.09, '#3fae6a'], ['roca', 0.05], ['hierba', 0.05, '#7ccf6a']],
   acantilados: [['magico', 0.24, '#e879f9'], ['cristal', 0.07, '#c084fc']],
   pueblo:      [['redondo', 0.05, '#4cae4c']],
 };
+// Con los kits CC0 de Kenney (mundo/js/kenney.js): variantes por tipo y su
+// tamaño en metros (alto, o ancho si es 'a'). Las hojas se tiñen con el color
+// de la zona. Sin el kit (no cargo) se usan las figuras de siempre.
+let KIT = null;
+const VAR_K = {
+  pino: [['n_tree_pineTallA', 9], ['n_tree_pineTallC', 8.5], ['n_tree_pineTallA_detailed', 9]],
+  nieve: [['n_tree_pineTallD', 7.5], ['n_tree_pineRoundC', 7]],
+  redondo: [['n_tree_default', 7], ['n_tree_oak', 7.5], ['n_tree_tall', 7.5], ['n_tree_fat', 6.5]],
+  arbusto: [['n_plant_bushLarge', 2.6, 'a'], ['n_plant_bushDetailed', 2.4, 'a']],
+  muerto: [['n_tree_simple_dark', 6.5], ['n_tree_simple', 6]],
+  cactus: [['n_cactus_tall', 3.6], ['n_cactus_short', 2.4]],
+  pilar: [['n_statue_column', 5.5], ['n_statue_columnDamaged', 4.2], ['n_statue_obelisk', 5]],
+  palma: [['n_tree_palmTall', 8], ['n_tree_palmBend', 7]],
+  roca: [['n_rock_largeA', 2.8, 'a'], ['n_rock_largeB', 2.6, 'a'], ['n_stone_largeA', 2.6, 'a'], ['n_stone_tallA', 2.8], ['n_rock_largeC', 2.6, 'a']],
+  flor: [['n_flower_purpleA', 0.8], ['n_flower_redA', 0.8], ['n_flower_yellowA', 0.8], ['n_flower_yellowB', 0.7]],
+  hongo: [['n_mushroom_redGroup', 0.9], ['n_mushroom_tanGroup', 0.8], ['n_mushroom_red', 0.8]],
+  hierba: [['n_grass_large', 0.8], ['n_grass_leafsLarge', 0.9]],
+  tocon: [['n_stump_old', 1.1], ['n_log', 2.2, 'a'], ['n_stump_roundDetailed', 0.9]],
+};
+// La hierba de encima de las rocas, segun la zona.
+const TINTE_ROCA = { desierto: '#b9a46a', cumbres: '#e3ecf3', tormenta: '#5d6b52', cavernas: '#4f6b6b', acantilados: '#9a6fb0', amanecer: '#8fbf4a' };
 // Arboles altos en una rejilla de 8 m: la camara se acerca si uno se mete
 // entre ella y el duende (como en WoW).
 const REJ = 8, rejilla = new Map();
@@ -344,7 +369,7 @@ function choqueCueva(tx, tz, cx, cz) {
 function choqueTerreno(tx, ty, tz, cx, cy, cz) {
   for (let i = 2; i <= 8; i++) {
     const k = i / 8, x = tx + (cx - tx) * k, z = tz + (cz - tz) * k;
-    if (ty + (cy - ty) * k < Math.max(alturaEn(x, z), MUNDO.agua) + 0.6) return (i - 1) / 8;
+    if (ty + (cy - ty) * k < Math.max(alturaEn(x, z), aguaEn(x)) + 0.6) return (i - 1) / 8;
   }
   return 1;
 }
@@ -365,7 +390,7 @@ function crearFlora() {
       if (r < dens) {
         if (campos.some(c => Math.hypot(c.x - jx, c.z - jz) < 7)) break;
         const s = 0.75 + hashR(x, z, 4) * 0.6;
-        (tipos[tipo] = tipos[tipo] || []).push({ x: jx, z: jz, y: h, s, rot: hashR(x, z, 5) * 6.28, color });
+        (tipos[tipo] = tipos[tipo] || []).push({ x: jx, z: jz, y: h, s, rot: hashR(x, z, 5) * 6.28, color, zona });
         if (TAPAN[tipo]) { const kc = Math.floor(jx / REJ) + ',' + Math.floor(jz / REJ); let c = rejilla.get(kc); if (!c) rejilla.set(kc, c = []); c.push({ x: jx, z: jz, r: TAPAN[tipo] * s }); }
         if (SOLIDO[tipo]) ponerSolido(jx, jz, SOLIDO[tipo] * s);
         break;
@@ -393,6 +418,36 @@ function crearFlora() {
     const todos = tipos[tipo];
     const porCelda = new Map();
     for (const t of todos) { const ck = Math.floor(t.x / TROZO) + '|' + Math.floor(t.z / TROZO); let l = porCelda.get(ck); if (!l) porCelda.set(ck, l = []); l.push(t); }
+    let destino = 'mallas';
+    if (KIT && VAR_K[tipo]) {
+      const vars = VAR_K[tipo];
+      for (const [ck, l] of porCelda) {
+        const grupos = vars.map(() => []);
+        for (const t of l) grupos[Math.min(vars.length - 1, Math.floor(hashR(t.x | 0, t.z | 0, 11) * vars.length))].push(t);
+        grupos.forEach((g, vi) => {
+          if (!g.length) return;
+          const [n, tam, modo] = vars[vi], cj = KIT.caja(n);
+          const base = tam / (modo === 'a' ? Math.max(cj.max[0] - cj.min[0], cj.max[2] - cj.min[2]) : cj.max[1] - cj.min[1]);
+          const im = new THREE.InstancedMesh(KIT.geo(n), KIT.material, g.length);
+          g.forEach((t, i) => {
+            e.set(0, t.rot, 0); q.setFromEuler(e);
+            const k = t.s * base; sc.set(k, k, k); v.set(t.x, t.y - 0.12, t.z);
+            m4.compose(v, q, sc); im.setMatrixAt(i, m4);
+            col.set(t.color || TINTE_ROCA[t.zona] || '#5f8f4a').offsetHSL(0, 0, (hashR(t.x | 0, t.z | 0, 9) - 0.5) * 0.12);
+            im.setColorAt(i, col);
+          });
+          im.computeBoundingSphere();
+          if (Q.sombras && tam >= 5) im.castShadow = true;
+          let c = celdas.get(ck);
+          if (!c) { const [kx, kz] = ck.split('|').map(Number); celdas.set(ck, c = { x: (kx + 0.5) * TROZO, z: (kz + 0.5) * TROZO, mallas: [], cerca: [], lejos: [] }); }
+          c.cerca.push(im);
+          escena.add(im);
+        });
+      }
+      // Lejos (bajo la niebla) bastan las figuras sencillas: mucho menos vertices.
+      if (!piezas[tipo]) continue;   // decorado pequeño: solo de cerca
+      destino = 'lejos';
+    }
     for (const [ck, l] of porCelda) piezas[tipo].forEach(([geo, colorFijo, alto], pi) => {
       const mk = tipo + pi;
       const mt = matsF[mk] || (matsF[mk] = transparentar(mat.clone()));
@@ -409,8 +464,8 @@ function crearFlora() {
       });
       im.computeBoundingSphere();
       let c = celdas.get(ck);
-      if (!c) { const [kx, kz] = ck.split('|').map(Number); celdas.set(ck, c = { x: (kx + 0.5) * TROZO, z: (kz + 0.5) * TROZO, mallas: [] }); }
-      c.mallas.push(im);
+      if (!c) { const [kx, kz] = ck.split('|').map(Number); celdas.set(ck, c = { x: (kx + 0.5) * TROZO, z: (kz + 0.5) * TROZO, mallas: [], cerca: [], lejos: [] }); }
+      c[destino].push(im);
       escena.add(im);
     });
   }
@@ -418,12 +473,22 @@ function crearFlora() {
 }
 const TROZO = 96, trozosFlora = [];
 // Las celdas de flora mas alla de la niebla no se dibujan.
+// Con el kit: las celdas cercanas con sus modelos y las lejanas con figuras
+// sencillas (LOD).
+const LOD_D = { baja: 80, media: 100, alta: 125 }[CAL];
 function cullFlora() {
-  const lim2 = (escena.fog.far + TROZO * 0.75) ** 2;
-  for (const c of trozosFlora) { const v = (c.x - P.x) ** 2 + (c.z - P.z) ** 2 < lim2; if (c.mallas[0].visible !== v) for (const im of c.mallas) im.visible = v; }
+  const lim2 = (escena.fog.far + TROZO * 0.75) ** 2, lod2 = LOD_D * LOD_D;
+  const ver = (l, v) => { if (l.length && l[0].visible !== v) for (const im of l) im.visible = v; };
+  for (const c of trozosFlora) {
+    const d2 = (c.x - P.x) ** 2 + (c.z - P.z) ** 2, v = d2 < lim2, cerca = v && d2 < lod2;
+    ver(c.mallas, v); ver(c.cerca, cerca); ver(c.lejos, v && !cerca);
+  }
 }
 // El pueblo: casas, plaza, pozo y el portal a las mazmorras.
+const TECHOS = ['#c2453a', '#3aa58a', '#c2453a', '#4a78c2', '#3aa58a', '#c2453a', '#b8643a'];
+let molinoAspas = null;
 function crearPueblo() {
+  if (KIT) return crearPuebloKit();
   const pared = transparentar(new THREE.MeshLambertMaterial({ color: 0xd9c39a })), techo = transparentar(new THREE.MeshLambertMaterial({ color: 0xa04a3a })), madera = transparentar(new THREE.MeshLambertMaterial({ color: 0x5a3c25 }));
   for (const c of CASAS) {
     const y = alturaEn(c.x, c.z);
@@ -440,6 +505,72 @@ function crearPueblo() {
   // Portal de mazmorras (por ahora, en el juego 2D).
   const px = 22, pz = -18, py = alturaEn(px, pz);
   const piedra = new THREE.MeshLambertMaterial({ color: 0x5b5470 });
+  const p1 = new THREE.Mesh(new THREE.BoxGeometry(1, 6, 1), piedra); p1.position.set(px - 2.2, py + 3, pz);
+  const p2 = p1.clone(); p2.position.x = px + 2.2;
+  const arco = new THREE.Mesh(new THREE.BoxGeometry(5.4, 1, 1.2), piedra); arco.position.set(px, py + 6.3, pz);
+  const velo = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 5.4), new THREE.MeshBasicMaterial({ color: 0xa855f7, transparent: true, opacity: 0.55, side: THREE.DoubleSide }));
+  velo.position.set(px, py + 2.9, pz);
+  escena.add(p1, p2, arco, velo);
+  return { x: px, z: pz, velo };
+}
+
+// El pueblo con el kit de Kenney: casas de piedra y entramado de madera con
+// tejado a dos aguas, una fuente en la plaza, puestos de mercado, carros y un
+// molino de viento.
+function crearPuebloKit() {
+  const piedra = new THREE.MeshLambertMaterial({ color: 0x5b5470 });
+  CASAS.forEach((c, i) => {
+    const nx = Math.max(2, Math.round(c.w / 2.6)), nz = Math.max(2, Math.round(c.d / 2.6));
+    const m = new THREE.Mesh(KIT.fundir(piezasCasa(nx, nz, i + 1, TECHOS[i % TECHOS.length])), KIT.material);
+    // La puerta mira a la plaza (girar 180° no cambia la caja de choque).
+    const deEspaldas = Math.sin(c.r) * c.x + Math.cos(c.r) * c.z > 0;
+    m.scale.set(c.w / nx, 2.3, c.d / nz); m.position.set(c.x, alturaEn(c.x, c.z) - 0.25, c.z); m.rotation.y = c.r + (deEspaldas ? Math.PI : 0);
+    if (Q.sombras) { m.castShadow = true; m.receiveShadow = true; }
+    escena.add(m);
+  });
+  const pon = (piezas, x, z, ry, s, solido) => {
+    const m = new THREE.Mesh(KIT.fundir(piezas), KIT.material);
+    m.position.set(x, alturaEn(x, z) - 0.05, z); m.rotation.y = ry || 0; m.scale.setScalar(s || 1);
+    if (Q.sombras) m.castShadow = true;
+    escena.add(m);
+    if (solido) ponerSolido(x, z, solido);
+    return m;
+  };
+  // Faroles del kit (la luz de noche sigue siendo la misma pieza).
+  for (const fa of faroles) {
+    fa.p.visible = false;
+    pon([{ n: 'p_lantern' }], fa.x, fa.z, 0, 2.2, 0.3);
+    fa.f.position.y = fa.y + 2.95; fa.f.scale.setScalar(0.55);
+  }
+  // Fuente de la plaza (donde estaba el pozo).
+  pon([{ n: 'p_fountain-round-detail' }], 0, 0, 0, 2.4, 2.5);
+  // Mercado alrededor de la plaza, lejos de los PNJ y del portal.
+  const libre = (x, z) => !NPCS3D.some(n => Math.hypot(n.x - x, n.z - z) < 5) && Math.hypot(x - 22, z + 18) > 8 && Math.hypot(x - SPAWN3D.x, z - SPAWN3D.z) > 5;
+  const puestos = ['p_stall-red', 'p_stall-green', 'p_stall-red', 'p_stall-green', 'p_stall'];
+  let k = 0;
+  for (let a = 0.4; a < Math.PI * 2 && k < puestos.length; a += 0.55) {
+    const x = Math.cos(a) * 12, z = Math.sin(a) * 12;
+    if (!libre(x, z)) continue;
+    const ry = Math.atan2(x, z) + Math.PI;
+    pon([{ n: puestos[k] }, { n: 'p_stall-bench', x: 0.75 }, { n: 'p_stall-stool', x: -0.75, z: 0.2 }], x, z, ry, 2.4, 1.3);
+    k++;
+  }
+  // Carros junto a dos casas.
+  for (const [ci, n] of [[0, 'p_cart'], [3, 'p_cart-high']]) {
+    const c = CASAS[ci], x = c.x + Math.cos(c.r) * (c.w / 2 + 2.2), z = c.z - Math.sin(c.r) * (c.w / 2 + 2.2);
+    pon([{ n }], x, z, c.r + 0.4, 2.6, 1.2);
+  }
+  // Molino: torre de tres plantas con aspas que giran.
+  const mx = -17, mz = 31, my = alturaEn(mx, mz) - 0.25;
+  const g = new THREE.Group(); g.position.set(mx, my, mz); g.rotation.y = 0.6;
+  const torre = new THREE.Mesh(KIT.fundir(piezasCasa(2, 2, 9, '#c2453a', 3)), KIT.material);
+  torre.scale.set(2.4, 2.3, 2.4); if (Q.sombras) torre.castShadow = true;
+  molinoAspas = new THREE.Mesh(KIT.geo('p_windmill'), KIT.material);
+  molinoAspas.position.set(2.4 * 1.32, 2.3 * 3.7, 0); molinoAspas.scale.setScalar(3.2);
+  g.add(torre, molinoAspas); escena.add(g);
+  ponerSolido(mx, mz, 3);
+  // Portal de mazmorras.
+  const px = 22, pz = -18, py = alturaEn(px, pz);
   const p1 = new THREE.Mesh(new THREE.BoxGeometry(1, 6, 1), piedra); p1.position.set(px - 2.2, py + 3, pz);
   const p2 = p1.clone(); p2.position.x = px + 2.2;
   const arco = new THREE.Mesh(new THREE.BoxGeometry(5.4, 1, 1.2), piedra); arco.position.set(px, py + 6.3, pz);
@@ -514,13 +645,14 @@ function revisarNodos() {
 
 // Faroles del pueblo: se encienden de noche.
 const farolMat = new THREE.MeshBasicMaterial({ color: '#7a6a48' });
+const faroles = [];
 (() => {
-  const palo = new THREE.MeshLambertMaterial({ color: 0x3b2a1a });
+  const palo = transparentar(new THREE.MeshLambertMaterial({ color: 0x3b2a1a }));
   for (let i = 0; i < 10; i++) {
     const a = i / 10 * Math.PI * 2 + 0.3, x = Math.cos(a) * 27, z = Math.sin(a) * 27, y = alturaEn(x, z);
     const p = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 3.2, 6), palo); p.position.set(x, y + 1.6, z);
     const f = new THREE.Mesh(new THREE.OctahedronGeometry(0.38, 0), farolMat); f.position.set(x, y + 3.35, z);
-    escena.add(p, f);
+    escena.add(p, f); faroles.push({ p, f, x, y, z });
   }
 })();
 // Claro del Titan: circulo de menhires donde aparece el jefe mundial.
@@ -836,8 +968,23 @@ function sfx(n, vol) {
     src.start();
   } catch (e) {}
 }
+// Variantes de los paquetes CC0 (Kenney y OpenGameArt): una al azar.
+const SFX_K = { paso_h: 5, paso_p: 5, paso_m: 5, paso_n: 5, g_carne: 5, g_metal: 5, g_critico: 3, desenv: 3, monedas: 2, libro: 3, tela: 4, puerta: 1,
+  c_grunt: 5, c_hurt: 5, c_fant: 5, c_troll: 3, c_roar: 3, c_bug: 4, c_monster: 4, c_baba: 3, c_aullido: 2, c_grito: 2 };
+function sfxK(base, vol) { const n = SFX_K[base]; if (n) sfx('k/' + base + Math.floor(Math.random() * n), vol); }
+// Voz de cada monstruo segun lo que es.
+function vozDe(k) {
+  const s = k + ' ' + ((MONSTRUOS[k] || {}).nombre || '').toLowerCase();
+  if (/dragon|coloso|titan|angel|rey|lord|battlelord/.test(s)) return 'c_roar';
+  if (/goblin|orco|troll|ogro|samurai|centurion/.test(s)) return Math.random() < 0.5 ? 'c_grunt' : 'c_troll';
+  if (/esquelet|fantasma|espectro|halo|ghoul|hechicer/.test(s)) return 'c_fant';
+  if (/arana|bug|murcielago|pajaro|aguila|saltador/.test(s)) return 'c_bug';
+  if (/baba|slime|rana|pulpo|pez|cosa|hongo/.test(s)) return 'c_baba';
+  if (/hell|lobo|perro|gato|zarig|conejo|lagarto|serpiente|cangrejo/.test(s)) return 'c_aullido';
+  return 'c_monster';
+}
 // Los de combate, ya listos al primer gesto (el AudioContext pide un gesto).
-for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, () => { for (const n of ['corte', 'corte2', 'golpe', 'muerte', 'moneda', 'boton', 'salto', 'explosion', 'caida']) cargarSfx(n); }, { once: true });
+for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, () => { for (const n of ['corte', 'corte2', 'golpe', 'muerte', 'moneda', 'boton', 'salto', 'explosion', 'caida']) cargarSfx(n); for (const b of ['paso_h', 'paso_p', 'g_carne', 'g_critico', 'desenv']) for (let i = 0; i < SFX_K[b]; i++) cargarSfx('k/' + b + i); }, { once: true });
 
 // ── ESTADO ──
 let ws = null, miId = 0, yo = null, conectado = false, reintentos = 0, fatal = false, forzarInvitado = false;
@@ -953,7 +1100,7 @@ function recibir(m) {
       break;
     }
     case 'zona3f': quitarZona3(m.id, true); break;
-    case 'md3': { const o = mons.get(m.id); if (o) { o.muereT = performance.now(); o.st = 3; sfx('muerte', 0.3); const y = (o.y || alturaEn(o.x, o.z)) + 1; FX.emitir(o.x, y, o.z, { n: 30, color: '#c084fc', vel: 5, vida: 0.9, grav: 3, sube: 1.5 }); FX.emitir(o.x, y, o.z, { n: 14, color: '#fde68a', vel: 1.6, vida: 1.4, grav: -2, tam: 0.8 }); } if (objetivo === m.id) { objetivo = 0; autoAtk = false; pintarBarra(); } break; }
+    case 'md3': { const o = mons.get(m.id); if (o) { o.muereT = performance.now(); o.st = 3; sfx('muerte', 0.3); if (Math.hypot(o.x - P.x, o.z - P.z) < 30) sfxK(Math.random() < 0.7 ? 'c_hurt' : 'c_grito', 0.28); const y = (o.y || alturaEn(o.x, o.z)) + 1; FX.emitir(o.x, y, o.z, { n: 30, color: '#c084fc', vel: 5, vida: 0.9, grav: 3, sube: 1.5 }); FX.emitir(o.x, y, o.z, { n: 14, color: '#fde68a', vel: 1.6, vida: 1.4, grav: -2, tam: 0.8 }); } if (objetivo === m.id) { objetivo = 0; autoAtk = false; pintarBarra(); } break; }
     case 'at3': ataqueVisto(m); break;
     case 'ph': golpeJugador(m); break;
     case 'b3': { const o = mons.get(m.de), q = m.a === miId ? P : otros.get(m.a); if (o && q) proyectil(o, q, '#c084fc'); break; }
@@ -975,7 +1122,7 @@ function recibir(m) {
     case 'cofre3': if (cueva) { cueva.cofre.visible = true; cueva.tapa.rotation.x = 0; } sfx('moneda', 0.6); break;
     case 'gana':
       if (m.xp) numero(P.x, P.y + 2.6, P.z, '+' + m.xp + ' XP', '#c084fc');
-      if (m.oro) { numero(P.x + 0.6, P.y + 2.2, P.z, '+' + m.oro + ' oro', '#ffd84a'); sfx('moneda', 0.35); }
+      if (m.oro) { numero(P.x + 0.6, P.y + 2.2, P.z, '+' + m.oro + ' oro', '#ffd84a'); sfxK('monedas', 0.3); }
       if (m.item) aviso('Botín: ' + (m.item.nombre || 'equipo nuevo') + ' (pulsa I para verlo)', 'ok');
       break;
     case 'lv': if (m.p === miId) { aviso('¡Subiste al nivel ' + m.lv + '!', 'ok'); numero(P.x, P.y + 3, P.z, 'NIVEL ' + m.lv, '#ffe600', true); } else { const o = otros.get(m.p); if (o) o.lv = m.lv; } break;
@@ -1138,7 +1285,7 @@ function ataqueVisto(m) {
   if (m.d > 0 && Math.hypot(o.x - P.x, o.z - P.z) < 45) FX.emitir(o.x, (o.y || alturaEn(o.x, o.z)) + 1.1, o.z, { n: m.c ? 24 : 10, color: m.c ? '#ffd34d' : m.rayo ? '#7dd3fc' : '#fff1c1', vel: m.c ? 6.5 : 4, vida: 0.45 });
   if (m.p === miId || o.id === objetivo) {
     numero(o.x + (Math.random() - 0.5), alturaEn(o.x, o.z) + 2.2, o.z, (m.c ? '¡' : '') + m.d + (m.c ? '!' : ''), m.c ? '#ffd34d' : m.rayo ? '#7dd3fc' : '#fff', m.c);
-    if (m.p === miId) { sfx(m.c ? 'corte2' : 'golpe', 0.35); if (m.c) sacudir = Math.max(sacudir, 0.15); }
+    if (m.p === miId) { sfx(m.c ? 'corte2' : 'corte', 0.28); sfxK(m.c ? 'g_critico' : 'g_carne', m.c ? 0.4 : 0.3); if (m.c) sacudir = Math.max(sacudir, 0.15); }
   }
   // El destello ya salio con la prediccion: no repetirlo.
   if (!(m.p === miId && performance.now() - (o.predT || 0) < 350)) o.golpeT = performance.now();
@@ -1154,7 +1301,8 @@ function golpeJugador(m) {
   if (!q) return;
   if (m.d > 0) { numero(q.x, (q.y || alturaEn(q.x, q.z)) + 2.3, q.z, '-' + m.d, '#ff5a6a'); FX.emitir(q.x, (q.y || alturaEn(q.x, q.z)) + 1.1, q.z, { n: 8, color: '#ff4d5e', vel: 3.5, vida: 0.4 }); }
   if (m.esq && m.p === miId) numero(P.x, P.y + 2.3, P.z, 'Esquiva', '#7dd3fc');
-  if (m.p === miId) { P.heridoT = performance.now(); sfx('golpe', 0.25); if (yo && m.d > 0) { yo.hp = Math.max(0, yo.hp - m.d); pintarVida(); } }
+  if (mo && m.p === miId && performance.now() - (mo.vozT || 0) > 5000 && Math.random() < 0.6) { mo.vozT = performance.now(); sfxK(vozDe(mo.k), 0.3); }
+  if (m.p === miId) { P.heridoT = performance.now(); sfxK('g_carne', 0.22); if (yo && m.d > 0) { yo.hp = Math.max(0, yo.hp - m.d); pintarVida(); } }
 }
 let impactos = [];
 let proyectiles = [], efectos = [], lanzando = null, objetivoP = 0, mundial3 = null, sacudir = 0, grupo3 = null;
@@ -1340,6 +1488,7 @@ function aviso(txt, tipo) {
 // ── PESCA ──
 let pica = 0, corcho = null;
 function aguaCerca() {
+  if (enAbismo(P.x)) return null;   // bajo las islas no hay agua: hay vacio
   for (let r = 2; r <= 6; r += 2) for (let i = 0; i < 12; i++) {
     const a = i / 12 * Math.PI * 2, x = P.x + Math.cos(a) * r, z = P.z + Math.sin(a) * r;
     if (alturaEn(x, z) < MUNDO.agua - 0.6) return { x, z };
@@ -1422,6 +1571,7 @@ function tituloZona(id) {
 
 // ── VENTANAS ──
 function abrir(id) {
+  if (!$(id).classList.contains('on')) sfxK('libro', 0.14);
   if (LATERALES.includes(id)) for (const o of LATERALES) if (o !== id && $(o) && $(o).classList.contains('on')) cerrar(o);
   $(id).classList.add('on');
   if (!LATERALES.includes(id)) for (const k in teclas) teclas[k] = false;
@@ -1745,6 +1895,7 @@ function alternarAtaque() {
   if (rivalP() && !objetivo) { autoAtk = !autoAtk; pintarBarra(); return; }
   if (!objetivo) cicloObjetivo();
   autoAtk = !!objetivo && !autoAtk;
+  if (autoAtk) sfxK('desenv', 0.25);
   pintarBarra();
 }
 function usarPoder(i) { if (!yo || P.muerto) return; mandar({ t: 'pw', i }); }
@@ -1778,7 +1929,7 @@ function volar(on) {
     if (enCueva(P.x)) return aviso('En la cueva no hay sitio para volar.', 'err');
     if (P.alas < 3) return aviso('Tus alas necesitan descansar.', 'err');
     P.vuela = true; P.vy = 0; if (P.suelo) P.y += 1.5; P.suelo = false;
-    sfx('salto', 0.3);
+    sfx('salto', 0.2); sfxK('tela', 0.35);
   } else P.vuela = false;
   if (MOVIL) $('t-bajar').style.visibility = P.vuela ? 'visible' : 'hidden';
 }
@@ -1904,7 +2055,7 @@ function fisica(dt) {
   const mag = Math.hypot(mx, mz);
   const quiere = mag > 0.15;
   if (quiere) { mx /= Math.max(1, mag); mz /= Math.max(1, mag); }
-  const nadando = !P.vuela && alturaEn(P.x, P.z) < -0.7;
+  const nadando = !P.vuela && !enAbismo(P.x) && alturaEn(P.x, P.z) < -0.7;
   const vel = MUNDO.velocidad * (nadando ? 0.55 : 1) * (P.vuela ? (ALAS[yo.ala] || ALAS.aprendiz).vel : P.planea ? 1.35 : velMontura(yo.montado)) * (yo.dios && yo.diosModo && yo.diosModo.vel ? 3 : 1);
   // Inercia ligera (rapida en el suelo, mas suelta en el aire y el agua). Al
   // lanzar un hechizo sin tocar las teclas, se frena en seco (no se corta).
@@ -1938,8 +2089,18 @@ function fisica(dt) {
     if (quiere) P.ry = lerpAng(P.ry, Math.atan2(mx, mz), 1 - Math.exp(-14 * dt));
     if (mx * der.x + mz * der.z > 0.05) P.f = 1; else if (mx * der.x + mz * der.z < -0.05) P.f = -1;
   }
+  // Pasos: uno cada ~1,7 m andando por el suelo, con el sonido de la zona.
+  if (P.suelo && !P.vuela && !nadando && !P.muerto && !(yo && yo.montado)) {
+    P.pasoD = (P.pasoD || 0) + Math.hypot(P.vx, P.vz) * dt;
+    if (P.pasoD > 1.7) {
+      P.pasoD = 0;
+      const z = zonaEn(P.x, P.z);
+      if (voces < 5)   // los pasos nunca quitan voces al combate
+        sfxK(z === 'cumbres' || z === 'desierto' ? 'paso_n' : z === 'cueva' || z === 'eter' || z === 'castillo' || z === 'cavernas' ? 'paso_p' : z === 'pueblo' && Math.hypot(P.x, P.z) < 16 ? 'paso_p' : 'paso_h', 0.09);
+    }
+  }
   // Gravedad y suelo (en el agua se nada en la superficie).
-  const suelo = Math.max(alturaEn(P.x, P.z), MUNDO.agua - 0.9);
+  const suelo = Math.max(alturaEn(P.x, P.z), aguaEn(P.x) - 0.9);
   const espacio = !sinControl && (teclas.Space || tocandoSubir);
   if (P.vuela) {
     // Volando: Espacio sube, C (o Mayus) baja; las alas se cansan.
@@ -1974,7 +2135,7 @@ function fisica(dt) {
 // Posicion al servidor: cada 100 ms, o ya (forzar) antes de un golpe o una
 // habilidad para que mida el alcance con la posicion de verdad.
 function mandarPos(forzar) {
-  const ahora = performance.now(), suelo = Math.max(alturaEn(P.x, P.z), MUNDO.agua - 0.9), alt = Math.max(0, P.y - suelo);
+  const ahora = performance.now(), suelo = Math.max(alturaEn(P.x, P.z), aguaEn(P.x) - 0.9), alt = Math.max(0, P.y - suelo);
   const clave = P.x.toFixed(1) + ',' + P.z.toFixed(1) + ',' + (P.anda ? 1 : 0) + ',' + alt.toFixed(0) + (P.planea ? 'p' : '');
   if ((forzar || ahora - enviadoT > 100) && clave !== ultimoEnv) {
     mandar({ t: 'mv3', x: +P.x.toFixed(2), z: +P.z.toFixed(2), r: +P.ry.toFixed(2), a: P.vuela ? 3 : P.planea ? 4 : P.anda ? 1 : 0, h: +alt.toFixed(1) });
@@ -2011,7 +2172,7 @@ function ataqueAuto() {
 function animarJugador(q, esYo, t) {
   const f = q.fig;
   if (!f) return;
-  if (!esYo) q.y = Math.max(alturaEn(q.x, q.z), MUNDO.agua - 0.9) + (q.vh = lerp(q.vh || 0, q.h || 0, 0.15));
+  if (!esYo) q.y = Math.max(alturaEn(q.x, q.z), aguaEn(q.x) - 0.9) + (q.vh = lerp(q.vh || 0, q.h || 0, 0.15));
   const y = esYo ? P.y : q.y;
   const anda = esYo ? P.anda : q.a === 1;
   if (!esYo) { const dx = q.tx - q.x, dz = q.tz - q.z; if (Math.abs(dx * der.x + dz * der.z) > 0.02) q.f = (dx * der.x + dz * der.z) > 0 ? 1 : -1; }
@@ -2059,7 +2220,7 @@ function animarMon(o, t) {
     f.estado(e, t);
     if (o.golpeT !== f.golpeVisto) { f.golpeVisto = o.golpeT; if (t - o.golpeT < 300) f.modelo.golpe(); }
     const def = MONSTRUOS[o.k];
-    const y = Math.max(alturaEn(o.x, o.z), def.vuela ? alturaEn(o.x, o.z) + 1.2 : MUNDO.agua - 0.9);
+    const y = Math.max(alturaEn(o.x, o.z), def.vuela ? alturaEn(o.x, o.z) + 1.2 : aguaEn(o.x) - 0.9);
     o.ryV = lerpAng(o.ryV === undefined ? o.ry : o.ryV, o.ry, 0.2);
     f.poner(o.x, y, o.z, o.ryV, t, Math.min(1, (t - o.nace) / 400));
     return;
@@ -2080,7 +2241,7 @@ function animarMon(o, t) {
   } else col = h.mov[1] + Math.floor(t / 420) % Math.min(2, h.mov[2]);
   f.cuadro(col, fila, o.f !== -1);
   const def = MONSTRUOS[o.k];
-  const y = Math.max(alturaEn(o.x, o.z), def.vuela ? alturaEn(o.x, o.z) + 1.2 + Math.sin(t / 300 + o.id) * 0.3 : MUNDO.agua - 0.9);
+  const y = Math.max(alturaEn(o.x, o.z), def.vuela ? alturaEn(o.x, o.z) + 1.2 + Math.sin(t / 300 + o.id) * 0.3 : aguaEn(o.x) - 0.9);
   const nace = Math.min(1, (t - o.nace) / 400);
   f.poner(o.x, y, o.z, camYaw, [nace, nace]);
 }
@@ -2203,7 +2364,7 @@ function bucle(t) {
   const pitch = camPitch + (enCv ? (1 - kChoque) * 0.45 : 0);
   let cx = tx + Math.sin(camYaw) * Math.cos(pitch) * camReal, cz = tz + Math.cos(camYaw) * Math.cos(pitch) * camReal;
   let cy = ty + Math.sin(pitch) * camReal;
-  cy = Math.max(cy, alturaEn(cx, cz) + 0.8, MUNDO.agua + 0.5);
+  cy = Math.max(cy, alturaEn(cx, cz) + 0.8, aguaEn(cx) + 0.5);
   if (enCv) cy = Math.min(cy, 7.2);   // bajo el techo de la cueva
   camara.position.set(cx, cy, cz); camara.lookAt(tx, ty, tz);
   // Sensacion de velocidad: el campo de vision se abre un poco al galopar o volar rapido.
@@ -2240,6 +2401,7 @@ function bucle(t) {
   moverLluvia(dt, t);
   if (cueva && enCueva(P.x)) cueva.animar(t);
   if (abismo && enAbismo(P.x)) abismo.animar(t);
+  if (molinoAspas && Math.hypot(P.x, P.z) < 160) molinoAspas.rotation.x = t / 1400;
   if (corcho) corcho.position.y = corcho.userData.y0 + (pica > performance.now() ? -0.18 + Math.sin(t / 60) * 0.08 : Math.sin(t / 500) * 0.04);
   if (agua) agua.material.opacity = 0.7 + Math.sin(t / 900) * 0.04;
   if (portal) portal.velo.material.opacity = 0.45 + Math.sin(t / 300) * 0.15;
@@ -2284,6 +2446,11 @@ async function inicio() {
   progreso(0.3, 'Levantando montañas…');
   await new Promise(r => setTimeout(r, 20));
   agua = crearTerreno();
+  progreso(0.45, 'Trayendo árboles y casas…');
+  if (!PRUEBA.has('sinKenney')) {
+    try { KIT = await Promise.race([cargarKenney('/assets/3d/'), new Promise((_, no) => setTimeout(() => no(new Error('tiempo de espera')), 15000))]); }
+    catch (e) { console.warn('[3D] sin modelos del kit, figuras de siempre:', e); KIT = null; }
+  }
   progreso(0.55, 'Plantando bosques…');
   await new Promise(r => setTimeout(r, 20));
   crearFlora();
@@ -2291,7 +2458,8 @@ async function inicio() {
   for (const n of NPCS3D) ponerSolido(n.x, n.z, 0.55);
   ponerSolido(portal.x - 2.2, portal.z, 0.7); ponerSolido(portal.x + 2.2, portal.z, 0.7);
   cueva = construirCueva(escena);
-  abismo = construirAbismo(escena);
+  abismo = construirAbismo(escena, KIT);
+  for (const c of abismo.solidos || []) ponerSolido(c.x, c.z, c.r);
   progreso(0.75, 'Dibujando el mapa…');
   await new Promise(r => setTimeout(r, 20));
   pintarMapaBase();
