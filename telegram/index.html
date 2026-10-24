@@ -841,6 +841,23 @@ function tgVer(v){try{return !!(tg&&tg.isVersionAtLeast&&tg.isVersionAtLeast(v))
 // cada vez que el jugador quería salir (ver onStartGame / onToMenu).
 function tgConfirmarCierre(si){ if(!tgVer('6.2'))return; try{ si?tg.enableClosingConfirmation():tg.disableClosingConfirmation(); }catch(e){} }
 const TG_USER = tg?.initDataUnsafe?.user || {};
+// La foto de Telegram llega SIN firma (initDataUnsafe, que el SDK lee del hash de
+// la URL): solo se acepta una URL https de Telegram y se pinta con el DOM, nunca
+// con innerHTML (antes, un enlace con #tgWebAppData falso ejecutaba codigo).
+function tgFotoSegura(){
+  const p=TG_USER&&TG_USER.photo_url; if(!p||typeof p!=='string') return null;
+  try{ const u=new URL(p); if(u.protocol==='https:'&&/(^|\.)(t\.me|telegram\.org|telegram-cdn\.org|telesco\.pe)$/.test(u.hostname)) return u.href; }catch(e){}
+  return null;
+}
+function tgPonerAvatar(av,inicial,estilo){
+  const src=tgFotoSegura();
+  if(!src){ av.textContent=inicial; return; }
+  if(av.firstChild&&av.firstChild.tagName==='IMG'&&av.firstChild.src===src) return;
+  const im=document.createElement('img'); im.src=src; im.alt=''; im.referrerPolicy='no-referrer';
+  if(estilo) im.style.cssText=estilo;
+  im.onerror=function(){ av.textContent=inicial; };
+  av.replaceChildren(im);
+}
 function tgHaptic(type){ if(!tgVer('6.1'))return; try{tg.HapticFeedback.impactOccurred(type||'medium');}catch(e){}}
 
 // Set TG header + estado de sesión visible
@@ -858,7 +875,7 @@ function updateLoginUI(){
   nameEl.textContent=display+(tgProfile&&tgProfile.id?' ✅':'');
   nameEl.style.color='var(--txt)';
   avEl.textContent=TG_USER.first_name?TG_USER.first_name[0].toUpperCase():'🧝';
-  if(TG_USER.photo_url){ avEl.style.background='none'; avEl.innerHTML='<img src="'+TG_USER.photo_url+'" style="width:100%;height:100%;border-radius:50%;object-fit:cover">'; }
+  if(tgFotoSegura()){ avEl.style.background='none'; tgPonerAvatar(avEl, avEl.textContent, 'width:100%;height:100%;border-radius:50%;object-fit:cover'); }
 }
 // (la primera llamada a updateLoginUI va tras declarar tgProfile, más abajo)
 
@@ -1792,8 +1809,7 @@ function pintarCabecera(){
   document.getElementById('hub-dq').textContent='🪙 '+Number(totalCoins||0).toLocaleString();
   [document.getElementById('hub-avatar'), document.getElementById('perfil-avatar')].forEach(av=>{
     if(!av) return;
-    if(TG_USER.photo_url) av.innerHTML='<img src="'+TG_USER.photo_url+'">';
-    else av.textContent=inicial;
+    tgPonerAvatar(av, inicial);
   });
 }
 setInterval(pintarCabecera,4000);

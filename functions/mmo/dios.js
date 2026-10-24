@@ -5,9 +5,9 @@
 //
 // Quien es dios lo decide SOLO el servidor, nunca el cliente:
 //  - la cuenta de Telegram ADMIN_TG_ID (la misma que manda en el bot), y
-//  - lo que liste el secreto MMO_ADMINS (separado por comas): uids como
-//    "web:<id de Supabase>" o correos de cuentas web con el correo
-//    confirmado ("dueño@correo.com").
+//  - lo que liste el secreto MMO_ADMINS (separado por comas): SOLO uids como
+//    "web:<id de Supabase>" o "tg:<id>". Los correos ya no cuentan (un correo
+//    ajeno se podia registrar sin confirmar y heredar el Modo Dios).
 // Los invitados nunca lo son.
 //
 // Poderes: invencible, matar de un golpe, moverse sin limite de velocidad,
@@ -46,7 +46,12 @@ export const Dios = {
     if (env.ADMIN_TG_ID && uids.includes('tg:' + env.ADMIN_TG_ID)) return true;
     const lista = String(this.env.MMO_ADMINS || '').split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
     if (uids.some(u => lista.includes(u.toLowerCase()))) return true;
-    return !!(extra && extra.email && extra.emailOk && lista.includes(String(extra.email).toLowerCase()));
+    // El correo NO da dios: con 'Confirm email' apagado en Supabase cualquiera puede
+    // registrar un correo ajeno ya "confirmado". Solo valen uids (web:<uuid> / tg:<id>);
+    // el aviso del log dice que uid añadir a MMO_ADMINS.
+    if (extra && extra.email && lista.includes(String(extra.email).toLowerCase()))
+      console.warn('[MMO] correo de MMO_ADMINS sin su uid en la lista; añade a MMO_ADMINS:', uids.filter(u => u.startsWith('web:')).join(','));
+    return false;
   },
   diosActivo(s) { return !!(s && s.dios && s.diosModo && MODOS.some(k => s.diosModo[k])); },
 

@@ -7,7 +7,7 @@
 // el WebSocket del MMO, /api/ ni nada que no sea GET del propio sitio.
 // Al subir CACHE (lo hace tools/release al cambiar de version) se borra lo viejo.
 // ═══════════════════════════════════════════════════════
-const CACHE = 'dq-v281';
+const CACHE = 'dq-v282';
 const OFFLINE = '/offline';   // Cloudflare sirve /offline.html como /offline (sin redirigir)
 const PRECARGA = [OFFLINE, '/assets/ui/icon-192.png', '/assets/ui/icon-512.png'];
 

@@ -174,9 +174,10 @@ async function onRequestPost(context) {
       if (Array.isArray(yaLaTenia) && yaLaTenia.length > 0) return j({ success: true, already_owned: true, wallet_address: pago.wallet_address });
 
       const purchaseData = { skin_id: orden.skin_id, payment_type: 'sol', amount_paid: pago.sol, tx_signature: pago.tx_signature, wallet_address: pago.wallet_address };
-      const telegram_id = body.telegram_id;
-      const tgUser = telegram_id && body.init_data ? await verifyInitData(body.init_data, env.TELEGRAM_BOT_TOKEN) : null;
-      purchaseData.telegram_id = (tgUser && String(tgUser.id) === String(telegram_id)) ? String(telegram_id) : 'wallet_' + pago.wallet_address.slice(0, 8);
+      // El comprador se ata AL CREAR la orden, nunca a quien llama a verify: la
+      // reference es publica en la cadena en cuanto se paga, y antes quien llamaba
+      // primero con su telegram_id se quedaba la skin de un pago ajeno.
+      purchaseData.telegram_id = orden.telegram_id ? String(orden.telegram_id) : 'wallet_' + pago.wallet_address.slice(0, 8);
       await supabaseQuery(env, 'skin_purchases', { method: 'POST', body: purchaseData });
       return j({ success: true, sol: pago.sol, wallet_address: pago.wallet_address });
     }

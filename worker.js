@@ -56,7 +56,7 @@ export default {
     headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
     // frame-ancestors: sin esto Telegram podria no poder incrustar la Mini
     // App dentro de web.telegram.org en algunos clientes.
-    headers.set('Content-Security-Policy', "frame-ancestors 'self' https://web.telegram.org https://*.telegram.org");
+    headers.set('Content-Security-Policy', "frame-ancestors 'self' https://web.telegram.org https://*.telegram.org; object-src 'none'; base-uri 'self'");
     // TON Connect: las wallets externas (Tonkeeper, etc.) leen el manifiesto
     // desde su propio origen; sin CORS aqui la conexion fallaba en silencio.
     if (path === '/tonconnect-manifest.json') headers.set('Access-Control-Allow-Origin', '*');

@@ -87,6 +87,13 @@ export const Vincular = {
         if (sec === yoAuth) return this.no(s, 'No puedes desvincular la cuenta con la que has entrado: entra con la otra.');
         await this.state.storage.delete('al:' + sec);
         delete c.vinc[tipo];
+        // Las skins que trajo esa cuenta de Telegram vuelven solo a ella.
+        if (tipo === 'tg' && Array.isArray(c.skinsTg) && c.skinsTg.length) {
+          const fuera = new Set(c.skinsTg);
+          c.skins = c.skins.filter(k => !fuera.has(k));
+          if (fuera.has(c.skin)) this.equipar(s, { k: 'skin', id: 'comun' });
+          delete c.skinsTg;
+        }
         s.sucio = true; await this.guardar(s);
         this.enviar(s, this.infoVinc(s));
         return this.enviar(s, { t: 'toast', ok: true, m: `Cuenta de ${NOMBRE_TIPO[tipo] || tipo} desvinculada. Si entras con ella empezará un duende nuevo.` });

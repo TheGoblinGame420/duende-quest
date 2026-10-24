@@ -147,13 +147,19 @@ export const Retencion = {
       const idx = await this.retIdx();
       if (uidViejo) delete idx[uidViejo];
       const e = idx[c.uid] || (idx[c.uid] = { v: 0 });
+      // ret:idx solo se escribe si algo cambia (antes, en cada entrada).
+      const cambia = !!uidViejo || nuevoDia || e.v !== hoy || e.l !== c.nivel || e.a !== 0;
       e.v = hoy; e.l = c.nivel;
       e.a = 0;   // volvio: se reanudan los avisos
       // Primera entrada del dia: su hora, para avisarle a esa hora.
       if (nuevoDia) e.hs = [...(e.hs || []), horaUTC(ahora)].slice(-10);
-      await this.retGuardarIdx();
+      if (cambia) await this.retGuardarIdx();
       if (nuevo) await this.retSumar(hoy, { n: 1 });
-      await this.retSumar(hoy, { ses: 1 });
+      // Sesiones: en memoria y al storage como mucho una vez por minuto.
+      if (this._retMin && this._retMin.d !== hoy) await this.retVolcar();
+      this._retMin = this._retMin || { d: hoy, min: 0, ses: 0 };
+      this._retMin.ses = (this._retMin.ses || 0) + 1;
+      if (ahora - (this._retMinT || 0) > 60000) await this.retVolcar();
       if (nuevoDia) await this.retNuevoDia(c, hoy);
     } catch (e) { console.error('[MMO retEntrar]', e); }
   },
@@ -179,7 +185,7 @@ export const Retencion = {
     // Los minutos del dia se juntan en memoria y se escriben como mucho una
     // vez por minuto: escribir el agregado en CADA guardado doblaba las
     // escrituras al storage (que cuentan en el cupo diario del plan gratis).
-    if (min >= 0.01) this._retMin = { d: hoy, min: ((this._retMin && this._retMin.d === hoy) ? this._retMin.min : 0) + min };
+    if (min >= 0.01) { const p = (this._retMin && this._retMin.d === hoy) ? this._retMin : { d: hoy, min: 0, ses: 0 }; p.min += min; this._retMin = p; }
     (async () => {
       if (this._retMin && (ahora - (this._retMinT || 0) > 60000 || this._retMin.d !== hoy)) await this.retVolcar();
       if (nuevoDia) {
@@ -197,7 +203,7 @@ export const Retencion = {
     const pend = this._retMin;
     if (!pend) return;
     this._retMin = null; this._retMinT = Date.now();
-    await this.retSumar(pend.d, { min: Math.round(pend.min * 100) / 100 });
+    await this.retSumar(pend.d, { min: Math.round(pend.min * 100) / 100, ses: pend.ses || 0 });
   },
 
   // Rutas internas de este modulo (las llama interno() de world.js).

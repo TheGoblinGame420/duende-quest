@@ -388,6 +388,7 @@ async function pruebas() {
   await e1.mandar({ t: 'espec', id: 'escarcha' });
   chequear(e1.c.espec === 'armas', 'no se puede elegir la de otra clase');
   e1.c.oro = 10000;
+  avanzar(3500);   // espera entre cambios de clase/especializacion
   await e1.mandar({ t: 'clase', id: 'mago' });
   chequear(!e1.c.espec, 'cambiar de clase quita la especialización');
   await e1.mandar({ t: 'montar' });
@@ -614,6 +615,7 @@ async function pruebas() {
   await pruebasTempAbismo();
   await pruebasCopias();
   await pruebasVincular();
+  await pruebasSeguridad();
   await pruebasAsedio3d();
 }
 
@@ -740,6 +742,42 @@ async function pruebasEventos3d() {
   a.p = { x: 300, z: 300 }; a.limpiar(); await a.mandar({ t: 'mision' });
   chequear(!a.ultimos('no').some(m => /Guardia Tito/.test(m.m)), 'en ORIGINS la misión se entrega desde cualquier sitio');
   await dejar(a);
+}
+
+// ── SEGURIDAD (auditoria del 24-oct-2026) ──
+async function pruebasSeguridad() {
+  console.log('Seguridad (auditoría 24-oct)');
+  const AB = await import('../mmo/js/abismo3d.js');
+  const a = await entrar3d('Tramposo3D', 'e5f1'); ponerNivel(a, 25, 'guerrero');
+  // Speed hack: el metro de margen ya no se regala en cada mensaje
+  a.p = { x: 100, z: 100 }; a.movBud = 0; a.movT = Date.now(); a.h = 0; a.a = 0;
+  for (let i = 1; i <= 20; i++) await a.mandar({ t: 'mv3', x: 100 + i, z: 100, a: 0, h: 0 });
+  chequear(a.p.x - 100 <= 1.5, 'sin tiempo no se avanza más de 1 m aunque se manden 20 mensajes (avanzó ' + (a.p.x - 100) + ' m)');
+  // Flotar con a=0: a pie se cae
+  avanzar(1000); a.movBud = undefined; a.h = 30; a.a = 0;
+  await a.mandar({ t: 'mv3', x: a.p.x, z: a.p.z, a: 0, h: 30 });
+  chequear(a.h < 25, 'a pie no se puede quedar flotando en el aire (h=' + a.h + ')');
+  // El vacio del Abismo lo valida el servidor aunque el cliente no mande 'caida'
+  a.c.faccion = 'luz'; a.p = { x: AB.ABISMO_X0 + 60, z: -200 }; a.movBud = undefined; a.h = 0; a.a = 0; a.vacioT = 0;
+  chequear(!AB.islaEn(a.p.x, a.p.z), 'el punto de prueba está sobre el vacío');
+  await a.mandar({ t: 'mv3', x: a.p.x, z: a.p.z, a: 0, h: 0 });
+  chequear(!a.muerto, 'hay margen para abrir las alas al salir del borde');
+  avanzar(3500); a.movBud = undefined;
+  await a.mandar({ t: 'mv3', x: a.p.x, z: a.p.z, a: 0, h: 0 });
+  chequear(a.muerto, 'quien camina sobre el vacío sin volar cae aunque su cliente no lo diga');
+  // El correo ya no da Modo Dios (solo uids)
+  const antes = mundo.env.MMO_ADMINS;
+  mundo.env.MMO_ADMINS = 'jefe@correo.test';
+  chequear(!mundo.calcularDios({ c: { uid: 'web:otro' } }, { email: 'jefe@correo.test', emailOk: true }), 'un correo de MMO_ADMINS ya no da Modo Dios');
+  mundo.env.MMO_ADMINS = 'web:jefe-uid';
+  chequear(mundo.calcularDios({ c: { uid: 'web:jefe-uid' } }, null), 'el uid de MMO_ADMINS sí da Modo Dios');
+  mundo.env.MMO_ADMINS = antes;
+  // Cambiar de clase en bucle: espera de 3 s
+  const b = await entrar('ClaseLoca', 'e5f2'); ponerNivel(b, 5, 'guerrero'); b.c.clase = 'guerrero'; b.claseT = 0;
+  await b.mandar({ t: 'clase', id: 'mago' });
+  await b.mandar({ t: 'clase', id: 'picaro' });
+  chequear(b.c.clase === 'mago', 'no se puede cambiar de clase en bucle');
+  await dejar(a); await dejar(b);
 }
 
 // ── VINCULAR CUENTAS (Telegram + correo) ──
@@ -1048,6 +1086,7 @@ async function pruebasCueva3d() {
   await a.mandar({ t: 'atk3', tg: jefe.id });
   chequear(jefe.muere && inst.hecha && (a.c.mazmorras || 0) === nm0 + 1 && a.ultimos('cofre3').length === 1, 'el Rey Goblin cae: cofre y mazmorra completada');
   a.p = { x: C.CUEVA_X0 + C.CUEVA.salida.x, z: C.CUEVA.salida.z + 1 };
+  a.cuevaT = 0;   // entrar y salir tienen 3 s de espera
   await a.mandar({ t: 'salirCueva' });
   chequear(!a.i3 && Math.abs(a.p.x - C.PORTAL_PUEBLO.x) < 6, 'por el portal de la entrada se vuelve al pueblo');
   avanzar(6 * 60 * 1000); tick(1);
@@ -1223,6 +1262,7 @@ async function pruebasRetencion() {
   const h1 = await entrarR('Cohorte1', '6a'), h2 = await entrarR('Cohorte2', '6b'), h3 = await entrarR('Cohorte3', '6c');
   const bot = await entrarR('BotPrueba', '9');
   chequear(mundo.uidsPrueba.has(bot.c.uid), 'el token 9 es un bot de prueba');
+  await mundo.retVolcar();   // las sesiones se juntan en memoria y se escriben como mucho una vez por minuto
   let d0 = await mundo.retDia(D);
   chequear(d0.n === 3 && d0.a === 3 && d0.ses === 3, `altas, activos y sesiones del día sin el bot de prueba (${d0.n}/${d0.a}/${d0.ses})`);
   chequear(h1.c.ret && h1.c.ret.alta === 1 && h1.c.ret.ses === 1 && h1.c.ret.d.length === 1 && h1.c.ret.d[0] === D, 'el personaje guarda su primer día y su sesión');
@@ -1242,6 +1282,7 @@ async function pruebasRetencion() {
   chequear((await mundo.retDia(D)).r1 === 2, 'D1: 2 de los 3 volvieron al día siguiente');
   await dejar(h1b);
   const h1c = await entrarR('Cohorte1', '6a');
+  await mundo.retVolcar();
   const d1 = await mundo.retDia(D + 1);
   chequear((await mundo.retDia(D)).r1 === 2 && d1.a === 2 && d1.ses === 3 && d1.n === 0, 'otra sesión el mismo día no se cuenta doble');
   await dejar(h1c); await dejar(h2b);
@@ -3096,11 +3137,11 @@ async function pruebasSinCortes() {
   await a.mandar({ t: 'portal', i: iDer, borde: 1 });
   const mp = a.ultimos('mapa').pop();
   chequear(a.c.mapa === 'amanecer' && mp && mp.sc === 1 && a.x === 70, 'cruzar el borde derecho entra a la zona siguiente por su borde izquierdo, sin corte (x ' + a.x + ')');
-  a.ws.rec.length = 0;
+  a.ws.rec.length = 0; a.portalT = 0;   // un viaje cada 0,7 s
   const iIzq = D.MAPAS.amanecer.portales.findIndex(p => p.a === 'noche');
   await a.mandar({ t: 'portal', i: iIzq, borde: 1 });
   chequear(a.c.mapa === 'noche' && a.x === D.MAPAS.noche.ancho - 70 && a.ultimos('mapa').pop().sc === 1, 'y hacia atrás aparece junto al borde derecho');
-  await aMapa(a, 'noche', 2560); a.ws.rec.length = 0;
+  await aMapa(a, 'noche', 2560); a.ws.rec.length = 0; a.portalT = 0;
   await a.mandar({ t: 'portal', i: iDer });
   chequear(a.ultimos('mapa').pop().sc === undefined, 'el portal normal (E) sigue con su transición');
 

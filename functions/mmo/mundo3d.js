@@ -29,7 +29,7 @@ const MAQUINAS = maquinasAbismo();
 const ONDA_CADA = 10000, ONDA_AVISO = 2500, ONDA_R = 8;   // la onda del Guardian
 const ASEDIO_DIA = 2;            // asedios con premio completo al dia
 const PVP_PAR_DIA = 4;          // victorias que puntuan al dia contra el mismo jugador
-const fueraDeIsla = (x, z) => { const is = islaEn(x, z); return !is || Math.hypot(x - ABISMO_X0 - is.x, z - is.z) > is.r * 0.85; };
+const fueraDeIsla = (x, z) => { const is = islaEn(x, z); return !is || Math.hypot(x - ABISMO_X0 - is.x, z - is.z) > is.r - 0.6; };   // casi hasta el borde: nadie farmea a salvo desde la orilla
 // Misma instancia (0 = mundo abierto; si no, la cueva de un grupo).
 const mismo = (a, b) => (a.i3 || 0) === (b.i3 || 0);
 
@@ -166,7 +166,7 @@ export const Mundo3D = {
       case 'caida': return this.caidaAbismo(s);
       case 'cueva': return this.entrarCueva(s);
       case 'salirCueva':
-        if (s.i3 && !s.muerto && Math.hypot(s.p.x - CUEVA_X0 - CUEVA.salida.x, s.p.z - CUEVA.salida.z) < 6) return this.salirCueva(s);
+        if (s.i3 && !s.muerto && Date.now() - (s.cuevaT || 0) >= 3000 && Math.hypot(s.p.x - CUEVA_X0 - CUEVA.salida.x, s.p.z - CUEVA.salida.z) < 6) { s.cuevaT = Date.now(); return this.salirCueva(s); }
         return;
       case 'retar': return this.retarDuelo(s, m);
       case 'retoResp': return this.respuestaDuelo(s, m);
@@ -226,10 +226,10 @@ export const Mundo3D = {
     let h;
     if (a === 3) h = clamp(hq, h0 - 7.5 * dtS - 0.5, h0 + 6.5 * dtS + 0.5);
     else if (a === 4) { h = Math.min(hq, Math.max(0, h0 - 1.0 * dtS)); if (h <= 0.3) { h = 0; a = 0; } }
-    else h = hq <= 2 ? hq : Math.min(hq, h0);
+    else h = hq <= 2 && h0 <= 2.5 ? hq : Math.min(hq, Math.max(0, h0 - 9 * dtS - 0.5));   // a pie no se flota: se cae
     // Energia de las alas: se cuenta con el modo que se mantuvo hasta este mensaje.
     if (prevA === 3) s.vueloS = (s.vueloS || 0) + dtS;
-    else if (prevA !== 4) s.vueloS = Math.max(0, (s.vueloS || 0) - dtS * 3);
+    else if (prevA !== 4 && h0 <= 1.2 && !(enAbismo(nx) && !s.i3 && !islaEn(nx, nz))) s.vueloS = Math.max(0, (s.vueloS || 0) - dtS * 3);
     if ((s.vueloS || 0) > ala.vuelo + 2 && !s.alasAvisadas) { s.alasAvisadas = true; this.enviar(s, { t: 'alasAgotadas' }); }
     if (s.alasAvisadas && (s.vueloS || 0) < ala.vuelo * 0.5) s.alasAvisadas = false;
     const d = Math.hypot(nx - s.p.x, nz - s.p.z);
@@ -239,7 +239,7 @@ export const Mundo3D = {
       const tope = vel + 3;   // ~1 s de margen por huecos de red
       s.movBud = Math.min(tope, (s.movBud === undefined ? tope : s.movBud) + vel * 1.15 * dt / 1000);
       if (d > s.movBud + 1) { this.enviar(s, { t: 'snap3', x: r1(s.p.x), z: r1(s.p.z) }); return; }
-      s.movBud = Math.max(0, s.movBud - d);
+      s.movBud -= d;   // el margen de +1 m es un prestamo unico: puede quedar en -1 y la recarga lo repone
       // Las casas tampoco se atraviesan en el servidor (salvo volando por encima).
       if (!s.i3 && !(a === 3 && h > 3)) for (const c of CASAS) {
         const dx = nx - c.x, dz = nz - c.z;
@@ -256,6 +256,7 @@ export const Mundo3D = {
     s.p.x = nx; s.p.z = nz;
     s.ry = num(m.r) || 0;
     s.a = a; s.h = Math.max(0, h);
+    if (this.vacio3d(s, ahora)) return;   // el vacio del Abismo lo valida el servidor
     if (!s.i3 && !enAbismo(nx)) s.c.p3 = { x: Math.round(nx * 10) / 10, z: Math.round(nz * 10) / 10 };
     s.sucio = true;
   },
@@ -265,6 +266,7 @@ export const Mundo3D = {
   // mismo daño por segundo que el combo del 2D) y la vara a su ritmo.
   atacar3d(s, m) {
     if (s.muerto || this.aura(s, 'aturdido') || this.aura(s, 'bloque')) return;
+    if (this.vacio3d(s, Date.now())) return;
     if (s.cast && habPorId(s.cast.h)) return;   // no se pega mientras se lanza
     // Para combatir hay que estar en el suelo (o casi).
     if (s.h > 4) return this.no(s, 'Aterriza para combatir.');
@@ -467,7 +469,8 @@ export const Mundo3D = {
         const ala = alaDe(s.c);
         if (s.a === 3) { s.vueloS = (s.vueloS || 0) + dt; if (s.vueloS > ala.vuelo + 2) { s.a = 4; if (!s.alasAvisadas) { s.alasAvisadas = true; this.enviar(s, { t: 'alasAgotadas' }); } } }
         else { s.h = Math.max(0, (s.h || 0) - 2 * dt); if (!s.h) s.a = 0; }
-      }
+      } else if ((!s.a || s.a === 1) && (s.h || 0) > 2 && ahora - (s.movT || 0) > 400) s.h = Math.max(0, s.h - 9 * dt);   // quieto en el aire a pie: cae
+      if (this.vacio3d(s, ahora)) continue;
       this.tickJugador(s, ahora, dt, seguro);
       if (s.muerto || s.hp >= s.st.maxHp) continue;
       const k = seguro ? 0.12 : (ahora - (s.golpeT || 0) > 4000 ? 0.04 : 0);
@@ -632,6 +635,15 @@ export const Mundo3D = {
     this.aClave(K3, { t: 'pj3', p: this.info3d(s) }, s);
   },
   // El cliente avisa de que cayo al vacio: si de verdad no hay isla debajo y no vuela, muere.
+  // El vacio del Abismo lo valida el servidor: fuera de una isla y sin volar (a=3)
+  // ni planear (a=4) se cae. El margen de 3 s es lo que tarda en caer un cliente
+  // legitimo y le da tiempo a abrir las alas o planear tras salir del borde.
+  vacio3d(s, ahora) {
+    if (s.muerto || s.i3 || !enAbismo(s.p.x) || islaEn(s.p.x, s.p.z) || s.a === 3 || s.a === 4 || (s.dios && s.diosModo && s.diosModo.vel)) { s.vacioT = 0; return false; }
+    if (!s.vacioT) { s.vacioT = ahora; return false; }
+    if (ahora - s.vacioT < 3000) return false;
+    s.vacioT = 0; this.caidaAbismo(s); return true;
+  },
   caidaAbismo(s) {
     if (s.muerto || !enAbismo(s.p.x) || islaEn(s.p.x, s.p.z) || s.a === 3) return;
     s.hp = 0; this.morir(s); this.actualizarYo(s);   // el vacio no perdona (ni escudos ni hielo)
@@ -830,7 +842,7 @@ export const Mundo3D = {
     if (Date.now() < ((s.c.nodos || {})['3d:' + n.i] || 0)) return this.no(s, 'Ya lo recogiste: vuelve a crecer en unos minutos.');
     this.desmontar(s);
     s.cast = { h: 'recolectar', fin: Date.now() + RECOLECTAR_MS, tg: 0, nodo: n.i };
-    this.aClave(K3, { t: 'cast', p: s.id, id: 'recolectar', ms: RECOLECTAR_MS });
+    this.aDe(s, { t: 'cast', p: s.id, id: 'recolectar', ms: RECOLECTAR_MS });   // solo a quien lo ve
   },
   terminarRecoleccion3d(s, ca) {
     const c = s.c;
@@ -880,7 +892,7 @@ export const Mundo3D = {
     const ahora = Date.now();
     s.pesca3 = zonaEn(s.p.x, s.p.z);
     s.cast = { h: 'pescar', fin: ahora + PESCA.min + Math.random() * (PESCA.max - PESCA.min), tg: 0 };
-    this.aClave(K3, { t: 'cast', p: s.id, id: 'pescar', ms: PESCA.max + PESCA.ventana });
+    this.aDe(s, { t: 'cast', p: s.id, id: 'pescar', ms: PESCA.max + PESCA.ventana });
   },
 
   // ── JEFE MUNDIAL DEL 3D ──

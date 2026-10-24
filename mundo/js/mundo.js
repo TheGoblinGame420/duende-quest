@@ -14,19 +14,19 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES } from '/mmo/js/data.js?v=281';
-import { iniciarVentanas } from './ventanas.js?v=281';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=281';
-import { crearMusica } from './musica.js?v=281';
-import { construirCueva } from './cueva.js?v=281';
-import { TAPA, transparentar } from './tapa.js?v=281';
-import { construirAbismo } from './abismo.js?v=281';
-import { crearParticulas } from './particulas.js?v=281';
-import { cargarKenney, piezasCasa } from './kenney.js?v=281';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES } from '/mmo/js/data.js?v=282';
+import { iniciarVentanas } from './ventanas.js?v=282';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=282';
+import { crearMusica } from './musica.js?v=282';
+import { construirCueva } from './cueva.js?v=282';
+import { TAPA, transparentar } from './tapa.js?v=282';
+import { construirAbismo } from './abismo.js?v=282';
+import { crearParticulas } from './particulas.js?v=282';
+import { cargarKenney, piezasCasa } from './kenney.js?v=282';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=281';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=281';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=282';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=282';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro

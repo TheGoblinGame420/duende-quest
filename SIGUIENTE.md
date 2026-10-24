@@ -2761,3 +2761,35 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
   socket se cierra durante holaCuenta.
 - Movil: pad ◀▶ deslizable en CLASSIC; ORIGINS en horizontal con su propio
   diseño y la base del joystick bajo el dedo.
+
+### Auditoria de seguridad con 50 agentes (24-oct-2026, `?v=282`)
+
+64 hallazgos unicos, 24 verificados, 21 confirmados. Corregidos en codigo:
+- Movimiento: `movBud` sin regalar el +1 m por mensaje (3D) ni los 20 px (2D);
+  a pie no se flota (cae 9 m/s); las alas solo descansan en el suelo; `vacio3d`
+  mata a quien pasa 3 s sobre el vacio sin volar/planear (mover, atacar, tick).
+- Monstruos del Abismo llegan hasta `r - 0,6` (antes 0,85·r: farmeo seguro).
+- Sockets: tope 3 sin identificar por IP (IPv6 por /64 con `claveIp`), al llenarse
+  se echa al mudo mas viejo; 4 s para mandar 'hola' (30 s si se verifica);
+  20 'hola'/min por IP; 150 altas de invitado por hora en total.
+- Escrituras: ret:idx solo si cambia, sesiones agrupadas por minuto; la sesion
+  vieja no se guarda dos veces; `guardarSuave` (portales, tinte, mascota);
+  portales 0,7 s; clase/especializacion 3 s sin escritura inmediata; wallet 10 s.
+- 3D: recolectar/pescar y entrar/salir de la cueva avisan solo a los cercanos
+  (y la cueva tiene 3 s de espera).
+- /telegram/: la foto de initDataUnsafe (sin firma, del hash) ya no va a innerHTML
+  (XSS); CSP con object-src 'none' y base-uri 'self'.
+- Modo Dios: el correo de MMO_ADMINS YA NO da dios; solo uids. **Si usabas tu
+  correo, pon `web:<tu uuid>` en MMO_ADMINS** (el log lo dice al entrar).
+- Vincular: las skins de un Telegram vinculado se retiran al desvincularlo.
+- helius-verify: la skin de un pago SOL ya no se la queda quien llama primero
+  con su telegram_id.
+
+PENDIENTE DEL DUEÑO (no se puede hacer desde el codigo):
+- Ejecutar `sql/06-profiles-lectura.sql` en Supabase (profiles se lee entera con
+  la clave anon: telegram_id, wallets, saldos). La landing ya usa
+  `contar_jugadores()` y cae a la cuenta vieja mientras tanto.
+- Limite de tasa delante del Worker: `run_worker_first = ["/*", "!/assets/*",
+  "!/audio/*"]` (wrangler >= 4.20) y una regla WAF de rate limiting con dominio
+  propio. No se aplico a ciegas para no romper el despliegue.
+- Quedan 40 hallazgos medios/bajos sin verificar (lista en el informe).

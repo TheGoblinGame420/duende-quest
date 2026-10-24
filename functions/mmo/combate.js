@@ -28,8 +28,11 @@ export const Combate = {
     const c = s.c;
     if (s.muerto || typeof m.id !== 'string' || !Object.hasOwn(CLASES, m.id) || c.clase === m.id) return;
     if (c.clase && (Date.now() - (s.combateT || 0) < 5000 || s.cast)) return this.no(s, 'No puedes cambiar de clase en pleno combate.');
+    const ahoraC = Date.now();
+    if (ahoraC - (s.claseT || 0) < 3000) return this.no(s, 'Espera un momento antes de volver a cambiar de clase.');
     const costo = c.clase ? costoCambioClase(c.nivel) : 0;
     if (c.oro < costo) return this.enviar(s, { t: 'toast', m: `Cambiar de clase a tu nivel cuesta ${costo.toLocaleString('es', { useGrouping: 'always' })} oro.` });
+    s.claseT = ahoraC;
     c.oro -= costo;
     c.clase = m.id;
     c.espec = null;
@@ -44,7 +47,7 @@ export const Combate = {
     this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });
     this.enviar(s, { t: 'toast', m: `Ahora eres ${CLASES[m.id].nombre}.`, ok: true });
     this.actualizarYo(s);
-    this.guardar(s);
+    if (costo > 0) this.guardar(s);   // el gratis lo guarda el tick (antes: una escritura por mensaje)
   },
 
   // ── ESPECIALIZACION ──
@@ -54,6 +57,9 @@ export const Combate = {
     if (s.muerto || !c.clase || typeof m.id !== 'string' || !ESPECS[c.clase] || !Object.hasOwn(ESPECS[c.clase], m.id) || c.espec === m.id) return;
     if (c.nivel < ESPEC_NIVEL) return this.no(s, `Las especializaciones se eligen desde nivel ${ESPEC_NIVEL}.`);
     if (Date.now() - (s.combateT || 0) < 5000 || s.cast) return this.no(s, 'No puedes cambiar de especialización en pleno combate.');
+    const ahoraE = Date.now();
+    if (ahoraE - (s.claseT || 0) < 3000) return this.no(s, 'Espera un momento antes de volver a cambiar de especialización.');
+    s.claseT = ahoraE;
     c.espec = m.id;
     const pct = s.hp / s.st.maxHp;
     s.st = this.stats(c);
@@ -62,7 +68,6 @@ export const Combate = {
     this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });
     this.enviar(s, { t: 'toast', m: `✨ Especialización: ${ESPECS[c.clase][m.id].nombre}. ${ESPECS[c.clase][m.id].desc}`, ok: true });
     this.actualizarYo(s);
-    this.guardar(s);
   },
 
   // ── MONTURAS ──

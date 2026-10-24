@@ -30,6 +30,7 @@ export const Cueva3D = {
 
   entrarCueva(s) {
     if (s.i3 || s.muerto) return;
+    if (Date.now() - (s.cuevaT || 0) < 3000) return this.no(s, 'Espera un momento.');   // entrar/salir en bucle avisaba a todo el 3D
     if (Math.hypot(s.p.x - PORTAL_PUEBLO.x, s.p.z - PORTAL_PUEBLO.z) > 9) return this.no(s, 'Ve al portal del pueblo.');
     if (Date.now() - (s.combateT || 0) < 5000) return this.no(s, 'No puedes entrar en pleno combate.');
     const g = this.grupoDe(s);
@@ -46,6 +47,7 @@ export const Cueva3D = {
     }
     if (this.dentroCueva(inst).length >= CUEVA.max) return this.no(s, 'La cueva de tu grupo ya está llena.');
     this.desmontar(s);
+    s.cuevaT = Date.now();
     s.i3 = inst.id;
     inst.dentro.add(s.id);
     inst.vacia = 0;
@@ -60,7 +62,7 @@ export const Cueva3D = {
     this.enviar(s, { t: 'tp3', x: r1(s.p.x), z: r1(s.p.z), cueva: { id: inst.id, nv: inst.nv, hecha: inst.hecha ? 1 : 0 } });
     this.enviar(s, { t: 'toast', m: `⛏ ${CUEVA.nombre} (Nv ${inst.nv}). El Rey Goblin espera en su trono.` });
     if (g) this.avisarGrupo(g, `⛏ ${s.c.nombre} entró a la ${CUEVA.nombre}.`, s);
-    this.aClave('~3d', { t: 'pj3', p: this.info3d(s) }, s);
+    this.aDe(s, { t: 'pj3', p: this.info3d(s) });   // a los cercanos; al resto se lo presenta fotos3d
   },
 
   crearCueva(clave, nv, gente) {
@@ -103,7 +105,7 @@ export const Cueva3D = {
     s.movBud = undefined; s.cast = null;
     this.enviar(s, { t: 'tp3', x: r1(s.p.x), z: r1(s.p.z), cueva: null });
     if (!silencio) this.enviar(s, { t: 'toast', m: 'Saliste de la cueva.' });
-    this.aClave('~3d', { t: 'pj3', p: this.info3d(s) }, s);
+    this.aDe(s, { t: 'pj3', p: this.info3d(s) });   // a los cercanos; al resto se lo presenta fotos3d
   },
 
   // Cada tick: instancias vacias, mecanicas del jefe.

@@ -492,6 +492,10 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 50, fecha: '24 oct 2026', items: [
+    'Seguridad reforzada tras una auditoría completa: se cierran trampas de velocidad, de flotar en el aire y de caminar sobre el vacío del Abismo, y ya no se puede farmear a salvo desde la orilla de las islas.',
+    'El servidor resiste mejor los abusos: límites a reconexiones en bucle, a cambios de clase, portales y wallet en ráfaga, y a conexiones que no se identifican. Tu progreso se guarda igual.',
+  ] },
   { n: 49, fecha: '24 oct 2026', items: [
     'Todo carga más rápido: ORIGINS baja sus piezas en paralelo, el terreno ya no da tirones en móviles modestos y la pantalla de inicio no descarga el vídeo si tienes ahorro de datos.',
     'Conexión más fuerte: si la red se cae (cambio de wifi a datos, ascensor, Telegram minimizado) el juego lo detecta, avisa con «Reconectando…» y vuelve solo, sin quedarse congelado.',

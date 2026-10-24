@@ -2227,8 +2227,12 @@ function openPumpFun() {
 async function loadLiveStats() {
   try {
     if (!window.supabaseClient) return;
-    var resp = await window.supabaseClient.from('profiles').select('id', { count: 'exact', head: true });
-    var count = resp.count;
+    // Solo el numero (sql/06-profiles-lectura.sql): la tabla ya no se lee con la clave publica.
+    // Mientras ese SQL no este aplicado, se usa la cuenta de siempre.
+    var count = null;
+    var r1 = await window.supabaseClient.rpc('contar_jugadores');
+    if (r1 && !r1.error && r1.data != null) count = Number(r1.data);
+    else { var resp = await window.supabaseClient.from('profiles').select('id', { count: 'exact', head: true }); count = resp.count; }
     if (typeof count === 'number') {
       // jugadores registrados reales (no holders del token; eso lo maneja syncHolderProgress).
       // Sus tarjetas ([data-jugadores]) siguen ocultas si no hay número.

@@ -65,6 +65,15 @@ const REDUCE_SUPRESION = HABS.find(h => h.id === 'supresion').reduce;
 // de verdad pero no deben aparecer en el ranking de los jugadores reales.
 const UIDS_PRUEBA = new Set(['inv:db4c11dc0a66af5e7b009f14', 'inv:145ca8bcf50bad57e9077518']);
 
+// IPv6 se agrupa por /64 (un solo bloque trae miles de direcciones); IPv4 igual.
+function claveIp(ip) {
+  if (!ip || !ip.includes(':')) return ip || '';
+  const [a, b] = ip.toLowerCase().split('::');
+  const izq = a ? a.split(':') : [];
+  const der = b ? b.split(':') : [];
+  const partes = b === undefined ? izq : [...izq, ...Array(Math.max(0, 8 - izq.length - der.length)).fill('0'), ...der];
+  return partes.slice(0, 4).map(x => (parseInt(x, 16) || 0).toString(16)).join(':') + '::/64';
+}
 async function sha256hex(s) {
   const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
   return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
@@ -200,10 +209,21 @@ export class MmoWorld {
     if (this.contarOnline() >= MAX_JUGADORES) return new Response('Servidor lleno', { status: 503 });
     // Sockets que aun no se identifican: tope propio y por IP. Antes 300
     // sockets sin 'hola' llenaban el servidor y dejaban fuera a todos.
-    const ip = request.headers.get('CF-Connecting-IP') || '';
-    let sinId = 0, deIp = 0;
-    for (const x of this.sesiones.values()) { if (!x.c) sinId++; if (ip && x.ip === ip) deIp++; }
-    if (sinId >= 40 || (ip && deIp >= 8)) return new Response('Demasiadas conexiones', { status: 429 });
+    const ip = claveIp(request.headers.get('CF-Connecting-IP') || '');
+    let deIp = 0, sinIdIp = 0; const sinId = [];
+    for (const x of this.sesiones.values()) {
+      if (!x.c) sinId.push(x);
+      if (ip && x.ip === ip) { deIp++; if (!x.c) sinIdIp++; }
+    }
+    if (ip && (deIp >= 8 || sinIdIp >= 3)) return new Response('Demasiadas conexiones', { status: 429 });
+    if (sinId.length >= 40) {
+      // Se echa al socket mudo mas viejo en vez de rechazar al nuevo: un jugador
+      // real manda 'hola' nada mas abrir (antes, 40 sockets mudos dejaban fuera a todos).
+      let viejo = null;
+      for (const x of sinId) if (!x.autenticando && !x.cerrado && (!viejo || x.id < viejo.id)) viejo = x;
+      if (!viejo) return new Response('Demasiadas conexiones', { status: 429 });
+      this.expulsar(viejo, 'Sin identificación');
+    }
     const par = new WebSocketPair();
     const [cliente, servidor] = Object.values(par);
     servidor.accept();
@@ -225,7 +245,7 @@ export class MmoWorld {
     ws.addEventListener('error', cerrar);
     // A los 8 s se expulsa a quien no mando hola. A quien se esta verificando
     // (Supabase o Telegram lentos) no se le corta, pero tiene un tope de 30 s.
-    setTimeout(() => { if (!s.c && !s.cerrado && !s.autenticando) this.expulsar(s, 'Sin identificación'); }, 8000);
+    setTimeout(() => { if (!s.c && !s.cerrado && !s.autenticando) this.expulsar(s, 'Sin identificación'); }, 4000);
     setTimeout(() => { if (!s.c && !s.cerrado) this.expulsar(s, 'Sin identificación'); }, 30000);
   }
 
@@ -379,6 +399,16 @@ export class MmoWorld {
   async hola(s, m) {
     if (s.c || s.autenticando) return;
     s.autenticando = true;
+    // Como mucho 20 entradas por minuto por IP: cada entrada escribe en el
+    // storage y el cupo diario de escrituras es de todos.
+    if (s.ip) {
+      const ahoraH = Date.now();
+      this.holaIp = this.holaIp || new Map();
+      let r = this.holaIp.get(s.ip);
+      if (!r || ahoraH - r.t > 60000) { r = { t: ahoraH, n: 0 }; this.holaIp.set(s.ip, r); }
+      if (++r.n > 20) { s.autenticando = false; this.expulsar(s, 'Demasiadas reconexiones. Espera un minuto.'); return; }
+      if (this.holaIp.size > 5000) for (const [k, v] of this.holaIp) if (ahoraH - v.t > 60000) this.holaIp.delete(k);
+    }
     const env = getEnv({ env: this.env });
     const a = m.auth || {};
     let uid = null, nombre = null, pagadas = null, extra = null;
@@ -441,7 +471,7 @@ export class MmoWorld {
 
     // Misma cuenta abierta en otra pestaña: la vieja se cierra.
     const vieja = this.porUid.get(uid);
-    if (vieja && vieja !== s) { await this.guardar(vieja); this.expulsar(vieja, 'Tu cuenta se abrió en otro dispositivo'); }
+    if (vieja && vieja !== s) { await this.guardar(vieja); vieja.noGuardar = true; this.expulsar(vieja, 'Tu cuenta se abrió en otro dispositivo'); }
 
     let c = await this.state.storage.get('c:' + uid);
     let heredado = false;
@@ -469,10 +499,12 @@ export class MmoWorld {
       // Cada invitado nuevo deja un personaje guardado para siempre: como
       // mucho 6 por IP y hora (antes, un bucle llenaba el cupo de escrituras).
       const h = Math.floor(Date.now() / 3600000);
-      this.altasIp = this.altasIp && this.altasIp.h === h ? this.altasIp : { h, n: new Map() };
+      this.altasIp = this.altasIp && this.altasIp.h === h ? this.altasIp : { h, n: new Map(), total: 0 };
       const n = (this.altasIp.n.get(s.ip) || 0) + 1;
+      // Tambien un tope global por hora: corta el ataque aunque se usen muchos /64 o proxies.
+      if (n > 6 || this.altasIp.total >= 150) { this.expulsar(s, 'Demasiados personajes nuevos desde tu conexión. Intenta en una hora o inicia sesión.'); return; }
       this.altasIp.n.set(s.ip, n);
-      if (n > 6) { this.expulsar(s, 'Demasiados personajes nuevos desde tu conexión. Intenta en una hora o inicia sesión.'); return; }
+      this.altasIp.total++;
     }
     if (!c) {
       // Nombre unico y sin imitar al equipo: un invitado ya no puede entrar
@@ -499,12 +531,16 @@ export class MmoWorld {
     if (!MAPAS[c.mapa] || MAPAS[c.mapa].instancia) { c.mapa = 'pueblo'; c.x = MAPAS.pueblo.spawn; }
 
     // Con cuentas vinculadas, las compras de la cuenta de Telegram cuentan aunque entres con el correo.
-    const tgDe = c.uid.startsWith('tg:') ? c.uid.slice(3) : c.vinc && c.vinc.tg ? c.vinc.tg.slice(3) : null;
+    const tgPropio = c.uid.startsWith('tg:');
+    const tgDe = tgPropio ? c.uid.slice(3) : c.vinc && c.vinc.tg ? c.vinc.tg.slice(3) : null;
     if (tgDe) pagadas = { ...(pagadas || {}), tgId: tgDe };
     // Skins pagadas con dinero real en el juego principal: se regalan aqui.
     const extra = pagadas ? await this.skinsPagadas(env, pagadas) : [];
     const regaladas = extra.filter(k => typeof k === 'string' && Object.hasOwn(SKINS, k) && !c.skins.includes(k));
     c.skins.push(...regaladas);
+    // Las que llegan por una cuenta de Telegram VINCULADA (no propia) se apuntan:
+    // al desvincularla se retiran (si no, vincular/desvincular las copiaba a infinitos duendes).
+    if (!tgPropio && tgDe && regaladas.length) c.skinsTg = [...new Set([...(c.skinsTg || []), ...regaladas])];
 
     // Si el socket se cerro durante las esperas de arriba, cerrar() no limpio nada
     // (s.c era null): no se le mete en porUid ni en el mapa (quedaria de fantasma).
@@ -712,6 +748,8 @@ export class MmoWorld {
     if (!/^(-1|0):[0-9a-f]{64}$/.test(a)) return this.enviar(s, { t: 'toast', m: 'Dirección de wallet no válida.' });
     if (c.uid.startsWith('inv:')) return this.enviar(s, { t: 'toast', m: 'Inicia sesión con Telegram o tu cuenta para conectar una wallet.' });
     if (c.wallet && c.wallet.a === a) return;
+    // Cada cambio escribe 3 veces en el storage: como mucho uno cada 10 s por cuenta.
+    if (!this.ritmoSol(c.uid, 'w', 10000)) return this.enviar(s, { t: 'toast', m: 'Espera unos segundos antes de cambiar de wallet.' });
     if (this.retiros.some(x => x.uid === c.uid && x.estado === 'pendiente')) return this.enviar(s, { t: 'toast', m: 'No puedes cambiar de wallet con un retiro pendiente.' });
     return this.state.storage.get('w:' + a).then(async dueno => {
       if (dueno && dueno !== c.uid) return this.enviar(s, { t: 'toast', m: 'Esa wallet ya está ligada a otra cuenta del juego.' });
@@ -1410,6 +1448,9 @@ export class MmoWorld {
     if (!p || Math.abs(s.x - p.x) > 90) return;
     // El portal de mazmorras abre el buscador (el cliente elige cual).
     if (p.buscador) return this.enviar(s, { t: 'buscador' });
+    const ahoraP = Date.now();
+    if (ahoraP < (s.portalT || 0)) return;   // como mucho un viaje cada 0,7 s
+    s.portalT = ahoraP + 700;
     // Salir de una mazmorra lleva de vuelta a su puerta del mundo abierto.
     // Por el borde (caminando) se cruza sin corte: se aparece junto al borde
     // de entrada de la zona nueva y el cliente sigue andando sin fundido.
@@ -1419,7 +1460,7 @@ export class MmoWorld {
     s.sinCorte = borde;
     this.entrarMapa(s, p.a, x);
     s.sinCorte = false;
-    this.guardar(s);
+    this.guardarSuave(s);
   }
 
   // ── MOVIMIENTO ──
@@ -1452,7 +1493,7 @@ export class MmoWorld {
         s.movT = ahora;
         return;
       }
-      s.movBud = Math.max(0, s.movBud - dx);
+      s.movBud -= dx;   // el margen es un prestamo unico (antes se regalaba en cada mensaje)
     }
     // Las barreras de las mazmorras no se cruzan hasta vencer a su jefe.
     const tope = this.topeMuros(s);
@@ -1723,6 +1764,13 @@ export class MmoWorld {
       if (n % 10 === 0) this.aTodos({ t: 'aviso', m: `⭐ ${c.nombre} alcanza la Maestría ${n}.` });
       this.guardar(s);
     }
+  }
+
+  // Guardado no critico (viajes, cosmeticos): como mucho uno cada 3 s por
+  // jugador; si no, queda sucio y lo guarda el tick o cerrar().
+  guardarSuave(s) {
+    if (Date.now() - (s.guardadoT || 0) > 3000) return this.guardar(s);
+    s.sucio = true;
   }
 
   // Suma experiencia y sube de nivel si toca. Devuelve si subio.
@@ -2123,7 +2171,7 @@ export class MmoWorld {
     this.revisarLogros(s);
     this.enviar(s, { t: 'toast', m: m.k === 'forja' ? `${ARMAS[m.id].nombre} mejorada a +${c.forja[m.id]}.` : m.k === 'montura' ? `Nueva montura: ${MONTURAS[m.id].nombre}. Tecla Y o botón de montura.` : m.k === 'tinte' ? (c.tinte ? `🎨 Tu nombre ahora es ${TINTES[c.tinte].nombre}.` : '🎨 Tu nombre vuelve al color de tu clase.') : m.k === 'mascota' ? (c.mascota ? `🐾 ${MASCOTAS[c.mascota].nombre} te acompaña.` : '🐾 Guardaste a tu mascota.') : '✅ Compra realizada', ok: true });
     this.actualizarYo(s);
-    this.guardar(s);
+    if (m.k === 'tinte' || m.k === 'mascota') this.guardarSuave(s); else this.guardar(s);   // cosmeticos: sin escritura por mensaje
   }
 
   equipar(s, m) {
