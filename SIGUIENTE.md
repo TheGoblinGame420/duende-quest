@@ -2730,3 +2730,16 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
   tambien entrando con el correo; `calcularDios` mira tambien `s.uidAuth`.
 - Cliente CLASSIC: seccion «Un duende, dos formas de entrar» en 👤 (solo con
   cuenta y conectado): generar/canjear codigo, desvincular la secundaria.
+
+### App instalable desde el navegador (PWA) (24-oct-2026, `?v=280`)
+
+- /sw.js (alcance /): las paginas siempre de la red (sin red -> /offline.html);
+  JS/CSS con ?v= y /assets/, /audio/ desde la cache `dq-v<version>` (release.py
+  la sube en cada version y se borran las viejas). Nunca toca /api/ ni /mmo/ws.
+- /js/pwa.js: registra el SW (no dentro de Telegram) y muestra los
+  `[data-instalar]` cuando el navegador lo permite (beforeinstallprompt) o en
+  iOS (instrucciones de Compartir). Botones en inicio/ y en la landing.
+- inicio/manifest.json: app "$DUENDE" con atajos a ORIGINS y CLASSIC; la
+  landing usa el mismo. mmo/ y mundo/ conservan el suyo (con id).
+- worker.js: /sw.js con Cache-Control no-cache y Service-Worker-Allowed.
+- El pulso diario del precio ya no sale ni en Telegram ni en Discord.

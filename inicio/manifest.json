@@ -1,0 +1,23 @@
+{
+  "id": "/inicio/",
+  "name": "$DUENDE — CLASSIC y ORIGINS",
+  "short_name": "$DUENDE",
+  "description": "El MMORPG de los duendes: $DUENDE CLASSIC (2D) y $DUENDE ORIGINS (3D) con el mismo personaje. Gratis, sin descargas pesadas.",
+  "start_url": "/inicio/?app=1",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "any",
+  "background_color": "#0a0418",
+  "theme_color": "#0a0418",
+  "lang": "es",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    { "src": "/assets/ui/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/ui/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "$DUENDE ORIGINS (3D)", "short_name": "ORIGINS", "url": "/mundo/", "icons": [{ "src": "/assets/ui/icon-192.png", "sizes": "192x192" }] },
+    { "name": "$DUENDE CLASSIC (2D)", "short_name": "CLASSIC", "url": "/mmo/", "icons": [{ "src": "/assets/ui/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

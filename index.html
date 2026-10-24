@@ -26,6 +26,8 @@
 <meta name="twitter:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/mmo_banner.png">
 <meta name="twitter:image:alt" content="Duende Quest Online, el MMORPG de los duendes">
 <meta name="theme-color" content="#0b0f17">
+<link rel="manifest" href="/inicio/manifest.json">
+<script src="/js/pwa.js" defer></script>
 <link rel="icon" type="image/png" href="assets/ui/coin.png">
 <script type="application/ld+json">
 {
@@ -797,6 +799,7 @@ section[id]{scroll-margin-top:72px;}
     <li><a href="#faq">Preguntas</a></li>
   </ul>
   <div class="nav-right">
+    <a class="nav-play" href="#" data-instalar hidden style="display:none;background:transparent;border:1px solid #ffd84a;color:#ffd84a">⬇ Instalar</a>
     <a class="nav-play" href="/inicio/">Jugar</a>
     <button id="wallet-connect-btn" type="button">🔗 Conectar Wallet</button>
     <div class="live-price-pill" title="Precio de $DUENDE (DexScreener)" data-solo-dex hidden>

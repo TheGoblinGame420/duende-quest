@@ -9,7 +9,7 @@
 // (los troncos y piedras quedan como estan).
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { transparentar } from './tapa.js?v=279';
+import { transparentar } from './tapa.js?v=280';
 
 const LIN = new Float32Array(256);
 for (let i = 0; i < 256; i++) { const c = i / 255; LIN[i] = c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; }

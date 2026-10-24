@@ -492,6 +492,9 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 48, fecha: '24 oct 2026', items: [
+    '¡Instala $DUENDE como app! En Chrome, Edge o Android toca «⬇ Instalar app» en la pantalla de inicio; en iPhone: Compartir → «Añadir a pantalla de inicio». Abre al instante, a pantalla completa y con accesos directos a ORIGINS y CLASSIC.',
+  ] },
   { n: 47, fecha: '23 oct 2026', items: [
     'Un duende, dos formas de entrar: vincula tu cuenta de Telegram con la de correo (botón 👤 → «Generar código» en una y escríbelo en la otra). Entres por donde entres, juegas con el mismo duende en CLASSIC y ORIGINS, y tus skins compradas valen igual.',
   ] },

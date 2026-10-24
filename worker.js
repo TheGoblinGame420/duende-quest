@@ -60,6 +60,9 @@ export default {
     // TON Connect: las wallets externas (Tonkeeper, etc.) leen el manifiesto
     // desde su propio origen; sin CORS aqui la conexion fallaba en silencio.
     if (path === '/tonconnect-manifest.json') headers.set('Access-Control-Allow-Origin', '*');
+    // App instalable (PWA): el service worker se revisa siempre (si no, una
+    // version vieja quedaria pegada) y controla todo el sitio.
+    if (path === '/sw.js') { headers.set('Cache-Control', 'no-cache'); headers.set('Service-Worker-Allowed', '/'); }
     // Imagenes/audio bajo assets/ no tienen nombre de archivo con hash, asi que
     // no se puede cachear "para siempre": si se regenera un PNG con el mismo
     // nombre (ya paso con telegram_app_banner.png), un cache eterno serviria la
