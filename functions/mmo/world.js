@@ -30,6 +30,7 @@ import { Cueva3D } from './cueva3d.js';
 import { Eventos3D } from './eventos3d.js';
 import { Temporada } from './temporada.js';
 import { Copias } from './copias.js';
+import { Vincular } from './vincular.js';
 import { rangoDe } from '../../mmo/js/abismo3d.js';
 import { Combate } from './combate.js';
 import { Social, pub } from './social.js';
@@ -353,6 +354,7 @@ export class MmoWorld {
       case 'equipar': return this.equipar(s, m);
       case 'revivir': return this.revivir(s);
       case 'mision': return this.mision(s, m);
+      case 'vincInfo': case 'vincCodigo': case 'vincUsar': case 'vincQuitar': return this.vincular(s, m);
       case 'regreso': return this.regreso(s);
       case 'ranking': return this.enviarRanking(s);
       case 'hab': return this.habilidad(s, m);
@@ -412,6 +414,9 @@ export class MmoWorld {
       return;
     }
     if (s.cerrado) return;
+    // Cuentas vinculadas (vincular.js): Telegram y correo entran al mismo duende.
+    const prin = await this.uidPrincipal(uid);
+    if (prin !== uid) { s.uidAuth = uid; uid = prin; }
     const ban = await this.baneado(uid);
     if (ban) { s.autenticando = false; this.expulsar(s, 'Tu cuenta está baneada' + (ban.hasta ? ' hasta el ' + new Date(ban.hasta).toLocaleString('es', { timeZone: 'America/Lima' }) : '') + (ban.motivo ? ': ' + ban.motivo : '.')); return; }
     s.extraAuth = extra;
@@ -485,6 +490,9 @@ export class MmoWorld {
     const instGuardada = MAPAS[c.mapa] && MAPAS[c.mapa].instancia && !c.muerto ? { mapa: c.mapa, x: c.x || 150 } : null;
     if (!MAPAS[c.mapa] || MAPAS[c.mapa].instancia) { c.mapa = 'pueblo'; c.x = MAPAS.pueblo.spawn; }
 
+    // Con cuentas vinculadas, las compras de la cuenta de Telegram cuentan aunque entres con el correo.
+    const tgDe = c.uid.startsWith('tg:') ? c.uid.slice(3) : c.vinc && c.vinc.tg ? c.vinc.tg.slice(3) : null;
+    if (tgDe) pagadas = { ...(pagadas || {}), tgId: tgDe };
     // Skins pagadas con dinero real en el juego principal: se regalan aqui.
     const extra = pagadas ? await this.skinsPagadas(env, pagadas) : [];
     const regaladas = extra.filter(k => typeof k === 'string' && Object.hasOwn(SKINS, k) && !c.skins.includes(k));
@@ -2627,6 +2635,8 @@ Object.assign(MmoWorld.prototype, Eventos3D);
 Object.assign(MmoWorld.prototype, Temporada);
 // Copias de seguridad diarias (fuera de Cloudflare) y restauracion: functions/mmo/copias.js
 Object.assign(MmoWorld.prototype, Copias);
+// Vincular Telegram y correo al mismo duende: functions/mmo/vincular.js
+Object.assign(MmoWorld.prototype, Vincular);
 // Grupos y chat por canales: functions/mmo/social.js
 Object.assign(MmoWorld.prototype, Social);
 // Mazmorras instanciadas con jefes de guion: functions/mmo/mazmorras.js

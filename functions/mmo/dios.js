@@ -40,11 +40,12 @@ export const Dios = {
   esDios(s) { return !!(s && s.c && s.dios); },
   calcularDios(s, extra) {
     const env = getEnv({ env: this.env });
-    const uid = s.c.uid;
-    if (uid.startsWith('inv:')) return false;
-    if (env.ADMIN_TG_ID && uid === 'tg:' + env.ADMIN_TG_ID) return true;
+    // Con cuentas vinculadas cuenta tambien la cuenta con la que se entro.
+    const uids = [s.c.uid, s.uidAuth].filter(Boolean);
+    if (uids.every(u => u.startsWith('inv:'))) return false;
+    if (env.ADMIN_TG_ID && uids.includes('tg:' + env.ADMIN_TG_ID)) return true;
     const lista = String(this.env.MMO_ADMINS || '').split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
-    if (lista.includes(uid.toLowerCase())) return true;
+    if (uids.some(u => lista.includes(u.toLowerCase()))) return true;
     return !!(extra && extra.email && extra.emailOk && lista.includes(String(extra.email).toLowerCase()));
   },
   diosActivo(s) { return !!(s && s.dios && s.diosModo && MODOS.some(k => s.diosModo[k])); },

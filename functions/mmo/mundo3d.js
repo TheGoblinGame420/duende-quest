@@ -145,6 +145,7 @@ export const Mundo3D = {
       case 'mision': return this.mision(s, m, true);
       case 'cofre3': return this.abrirCofre3d(s, m);
       case 'temp3': return this.enviar(s, this.infoTemp(s.c));
+      case 'vincInfo': case 'vincCodigo': case 'vincUsar': case 'vincQuitar': return this.vincular(s, m);
       case 'comprar': return this.comprar(s, m);   // cercaDelMercader() sabe del 3D
       case 'chat':
         // Moderadores: /jefe invoca al jefe mundial del 3D.

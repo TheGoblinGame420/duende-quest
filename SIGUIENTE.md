@@ -2717,3 +2717,16 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
 - `guardar` respeta `s.noGuardar` para no pisar lo restaurado al expulsar.
 - Para usar R2: `wrangler r2 bucket create duende-copias` y en wrangler.toml
   `[[r2_buckets]] binding = "COPIAS" bucket_name = "duende-copias"`.
+
+### Vincular Telegram y correo (24-oct-2026, `?v=279`)
+
+- functions/mmo/vincular.js (mixin Vincular): alias `al:<uid secundario>` ->
+  uid principal; `hola` lo resuelve antes del ban y de cargar el personaje
+  (`s.uidAuth` = la cuenta con la que se entro). Codigo de 6 letras, 10 min,
+  en memoria (`this.vincs`). Solo Telegram <-> correo; invitados no.
+- Si la cuenta que canjea tiene un duende de Nv > 5 pide confirmar; ese duende
+  se archiva en `arch:<uid>` (no se borra) y libera su nombre.
+- `c.vinc = { tg, web }`; las skins compradas por Telegram se sincronizan
+  tambien entrando con el correo; `calcularDios` mira tambien `s.uidAuth`.
+- Cliente CLASSIC: seccion «Un duende, dos formas de entrar» en 👤 (solo con
+  cuenta y conectado): generar/canjear codigo, desvincular la secundaria.

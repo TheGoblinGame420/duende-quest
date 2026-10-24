@@ -612,6 +612,7 @@ async function pruebas() {
   await pruebasEventos3d();
   await pruebasTempAbismo();
   await pruebasCopias();
+  await pruebasVincular();
   await pruebasAsedio3d();
 }
 
@@ -738,6 +739,53 @@ async function pruebasEventos3d() {
   a.p = { x: 300, z: 300 }; a.limpiar(); await a.mandar({ t: 'mision' });
   chequear(!a.ultimos('no').some(m => /Guardia Tito/.test(m.m)), 'en ORIGINS la misión se entrega desde cualquier sitio');
   await dejar(a);
+}
+
+// ── VINCULAR CUENTAS (Telegram + correo) ──
+async function pruebasVincular() {
+  console.log('Vincular cuentas');
+  mundo.env.TELEGRAM_BOT_TOKEN = TOKEN_BOT;
+  const fetchReal = globalThis.fetch;
+  globalThis.fetch = async (url, init) => String(url).includes('/auth/v1/user')
+    ? new Response(JSON.stringify({ id: 'w-vinc-1', email: 'vinc@correo.test', email_confirmed_at: 'x', user_metadata: { username: 'Webby' } }))
+    : fetchReal(url, init);
+  const entrarWeb = async () => {
+    const ws = new WsFalso(); mundo.abrir(ws);
+    const s = [...mundo.sesiones.values()].pop();
+    ws.emitir('message', { data: JSON.stringify({ t: 'hola', auth: { k: 'web', tok: 'tok-web' } }) });
+    for (let i = 0; i < 300 && !s.c; i++) await new Promise(r => setTimeout(r, 5));
+    if (mundo.bucle) { clearInterval(mundo.bucle); mundo.bucle = 1; }
+    s.ws = ws; s.mandar = o => { s.cuenta = 0; return mundo.recibir(s, JSON.stringify(o)); };
+    s.ultimos = t => ws.rec.filter(m => m.t === t); s.limpiar = () => { ws.rec.length = 0; };
+    return s;
+  };
+  try {
+    const t = await entrarTg('VincTG', 77001);
+    t.ultimos = x => t.ws.rec.filter(m => m.t === x);
+    ponerNivel(t, 30, 'guerrero'); t.c.oro = 777; t.sucio = true; await mundo.guardar(t);
+    await t.mandar({ t: 'vincCodigo' });
+    const cod = (t.ultimos('vincCod')[0] || {}).cod;
+    chequear(/^[A-Z2-9]{6}$/.test(cod || ''), 'una cuenta pide un código de vinculación');
+    await t.mandar({ t: 'vincUsar', cod });
+    chequear(t.ultimos('no').some(m => /misma cuenta/.test(m.m)), 'el código no sirve en la misma cuenta');
+    const w = await entrarWeb();
+    chequear(w.c && w.c.uid === 'web:w-vinc-1', 'la cuenta de correo entra con su propio duende');
+    ponerNivel(w, 8, 'mago'); w.limpiar();
+    await w.mandar({ t: 'vincUsar', cod });
+    chequear(w.ultimos('vincConfirmar').length === 1, 'si la otra cuenta tiene progreso, pide confirmar');
+    await w.mandar({ t: 'vincUsar', cod, forzar: true });
+    chequear(w.ultimos('vincOk').length === 1 && (await mundo.state.storage.get('al:web:w-vinc-1')) === 'tg:77001' && t.c.vinc && t.c.vinc.web === 'web:w-vinc-1', 'se vinculan: el correo apunta al duende de Telegram');
+    chequear(!!(await mundo.state.storage.get('arch:web:w-vinc-1')) && !(await mundo.state.storage.get('c:web:w-vinc-1')), 'el duende que tenía el correo se archiva (no se borra)');
+    await new Promise(r => setTimeout(r, 400));
+    await dejar(t);
+    const w2 = await entrarWeb();
+    chequear(w2.c && w2.c.uid === 'tg:77001' && w2.c.nivel === 30 && w2.c.oro >= 777 && w2.uidAuth === 'web:w-vinc-1', 'entrando con el correo se juega con el mismo duende');
+    w2.limpiar(); await w2.mandar({ t: 'vincQuitar', k: 'web' });
+    chequear(w2.ultimos('no').some(m => /has entrado/.test(m.m)), 'no se desvincula la cuenta con la que entraste');
+    await w2.mandar({ t: 'vincUsar', cod: 'ZZZZZZ' });
+    chequear(w2.ultimos('no').some(m => /ya está vinculada|caducó/.test(m.m)), 'una cuenta ya vinculada no vincula otra vez');
+    await dejar(w2);
+  } finally { globalThis.fetch = fetchReal; }
 }
 
 // ── COPIAS DE SEGURIDAD ──

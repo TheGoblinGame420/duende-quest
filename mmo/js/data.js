@@ -492,6 +492,9 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 47, fecha: '23 oct 2026', items: [
+    'Un duende, dos formas de entrar: vincula tu cuenta de Telegram con la de correo (botón 👤 → «Generar código» en una y escríbelo en la otra). Entres por donde entres, juegas con el mismo duende en CLASSIC y ORIGINS, y tus skins compradas valen igual.',
+  ] },
   { n: 46, fecha: '23 oct 2026', items: [
     'Tu progreso ahora tiene copia de seguridad diaria fuera del servidor del juego: si algo fallara, tu duende, tu oro y tu equipo se pueden recuperar.',
   ] },

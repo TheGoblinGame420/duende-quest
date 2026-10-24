@@ -17,7 +17,7 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=278';
+} from './data.js?v=279';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -612,6 +612,12 @@ function recibir(m) {
     case 'buscador': abrirBuscador(); break;
     case 'diosPanel': pintarDios(m); break;
     case 'diosCopias': diosCopias = m; pintarDios(); break;
+    case 'vincInfo': vincDatos = m; pintarVinc(); break;
+    case 'vincCod': vincDatos = m; vincCod = { cod: m.cod, hasta: Date.now() + m.ms }; pintarVinc(); break;
+    case 'vincConfirmar':
+      if (confirm(`Esta cuenta ya tiene a ${m.nombre} (Nv ${m.nivel}). Si la vinculas, jugarás con ${m.destino} (Nv ${m.nivelDestino}) y ${m.nombre} quedará archivado (el equipo puede recuperarlo). ¿Seguir?`)) mandar({ t: 'vincUsar', cod: m.cod, forzar: true });
+      break;
+    case 'vincOk': aviso('🔗 ¡Cuentas vinculadas! Entrando con ' + m.nombre + '…', 'ok', 4000); setTimeout(() => location.reload(), 1500); break;
     case 'diosModo': if (yo) { yo.diosModo = m.modo; pintarDiosModos(); } break;
     case 'amigos': pintarAmigos(m); if (presumirPend && m.ref) { presumirPend = false; ofrecerPresumir(presumirTxt); aviso('Enlace preparado. Pulsa «Compartir logro».'); } break;
     case 'muerte': resumenMuerte(m); break;
@@ -4718,8 +4724,31 @@ const ERR_AUTH = [
 ];
 const errAuth = m => (ERR_AUTH.find(([r]) => r.test(m || '')) || [0, 'No se pudo completar: ' + (m || 'error de red')])[1];
 const URL_VUELTA = () => location.origin + '/mmo/';
+// ── VINCULAR CUENTAS (Telegram + correo = un duende; functions/mmo/vincular.js) ──
+let vincDatos = null, vincCod = null;
+function pintarVinc() {
+  const C = $('vinc-cuerpo');
+  if (!C) return;
+  // Solo dentro del mundo y con cuenta (los invitados heredan al crearla).
+  if (soyInvitado || !yo || !conectado) { C.innerHTML = ''; return; }
+  const L = (vincDatos && vincDatos.l) || {}, prin = vincDatos && vincDatos.principal;
+  const fila = (k, n) => `<div class="fila" style="font-size:13px"><span>${n}: ${L[k] ? '✅ vinculada' : '— sin vincular'}${prin === k ? ' (principal)' : ''}</span>${L[k] && prin !== k && vincDatos.por !== k ? `<a data-vq="${k}" style="font-size:11px;cursor:pointer">Desvincular</a>` : ''}</div>`;
+  let h = '<hr style="border-color:var(--borde);margin:14px 0 10px"><p style="font-size:14px;margin:0 0 4px"><b>🔗 Un duende, dos formas de entrar</b></p>'
+    + '<p class="nota" style="margin:0 0 8px">Vincula tu cuenta de Telegram y la de correo: entres por donde entres, juegas con este mismo duende en CLASSIC y ORIGINS.</p>'
+    + fila('tg', 'Telegram') + fila('web', 'Correo');
+  if (vincCod && vincCod.hasta > Date.now()) h += `<p style="text-align:center;margin:10px 0 2px;font:700 26px monospace;letter-spacing:4px;color:#ffd84a">${esc(vincCod.cod)}</p><p class="nota" style="margin:0 0 8px;text-align:center">Escríbelo en tu otra cuenta (👤 → «Vincular») antes de 10 minutos.</p>`;
+  else h += '<button class="btn" data-v="cod" style="width:100%;margin:8px 0">Generar código para vincular</button>';
+  h += '<div style="display:flex;gap:6px"><input class="nombre" id="vinc-in" maxlength="8" placeholder="¿Tienes un código? Escríbelo aquí" style="margin:0;text-transform:uppercase"><button class="btn" data-v="usar">Vincular</button></div>';
+  C.innerHTML = h;
+  const vi = $('vinc-in'); vi.addEventListener('keydown', e => e.stopPropagation());
+  C.querySelector('[data-v="usar"]').onclick = () => { const cod = vi.value.trim(); if (cod) mandar({ t: 'vincUsar', cod }); };
+  const bc = C.querySelector('[data-v="cod"]'); if (bc) bc.onclick = () => mandar({ t: 'vincCodigo' });
+  C.querySelectorAll('[data-vq]').forEach(a => a.onclick = () => { if (confirm('¿Desvincular esa cuenta? Si entras con ella empezarás un duende nuevo.')) mandar({ t: 'vincQuitar', k: a.dataset.vq }); });
+}
 function abrirCuenta() {
   abrir('m-cuenta');
+  if (!soyInvitado && yo) mandar({ t: 'vincInfo' });
+  pintarVinc();
   tokenWeb().then(t => pintarCuenta($('cuenta-cuerpo'), t ? 'cambiar' : (soyInvitado ? 'crear' : 'entrar'), true));
 }
 $('b-cuenta').onclick = abrirCuenta;
