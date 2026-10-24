@@ -44,8 +44,8 @@ export const Amigos = {
   // si no, un aviso por Telegram (solo si acepta avisos).
   async alLlegarInvitado(s) {
     const c = s.c, de = c.invitadoPor;
-    const otro = this.porUid.get(de);
-    const co = otro ? otro.c : await this.state.storage.get('c:' + de);
+    // pjDe: si quien invito esta ENTRANDO se espera (si no, su guardado pisaba el contacto).
+    const { s: otro, c: co } = await this.pjDe(de);
     if (!co) return;
     const add = (x, u, n) => { const l = x.contactos || (x.contactos = []); if (!l.some(a => a.u === u) && l.length < CONTACTOS_MAX) l.push({ u, n }); };
     add(c, de, co.nombre); add(co, c.uid, c.nombre);
@@ -75,8 +75,8 @@ export const Amigos = {
     const pr = premioAmigo(c.nivel);
     c.oro += pr.oro;
     this.enviar(s, { t: 'toast', m: `Nivel ${AMIGO_NIVEL} alcanzado. Premio de invitado: +${pr.oro.toLocaleString('es', { useGrouping: 'always' })} oro.`, ok: true });
-    const otro = this.porUid.get(c.invitadoPor);
-    const co = otro ? otro.c : await this.state.storage.get('c:' + c.invitadoPor);
+    // pjDe: si el invitador esta ENTRANDO se espera (si no, su guardado pisaba el premio).
+    const { s: otro, c: co } = await this.pjDe(c.invitadoPor);
     if (!co) return;
     co.amigos = (co.amigos || 0) + 1;
     if (co.amigos <= AMIGOS_MAX) {

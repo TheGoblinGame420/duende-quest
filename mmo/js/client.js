@@ -17,7 +17,7 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=285';
+} from './data.js?v=286';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1724,6 +1724,9 @@ function pintarSocial() {
         x.on ? `Nv ${x.lv} ${cl ? esc(cl.nombre) : ''} · ${esc(MAPAS[x.mapa] ? MAPAS[x.mapa].nombre : '')}` : 'Desconectado', ir + acc);
     }
     h += '<button class="btn sec" id="b-salir-grupo" style="width:100%;margin-top:8px">Salir del grupo</button>';
+    // El servidor manda 'grupo' cada 500 ms: si nada cambio no se rehace (un clic a medias se perdia).
+    if (L._grupoH === h && L.querySelector('#b-salir-grupo')) return;
+    L._grupoH = h;
     L.innerHTML = h;
     L.querySelectorAll('[data-lider]').forEach(b => b.onclick = () => mandar({ t: 'liderGrupo', uid: b.dataset.lider }));
     L.querySelectorAll('[data-echar]').forEach(b => b.onclick = () => mandar({ t: 'expulsarGrupo', uid: b.dataset.echar }));
@@ -4985,7 +4988,7 @@ async function inicio() {
   $('b-cambiar-pass').onclick = e => { e.preventDefault(); $('inicio-auth2').style.display = 'block'; pintarCuenta($('inicio-auth2'), 'cambiar', false); };
   // Vuelve de "olvide mi contraseña" o de entrar desde la partida: directo.
   if (recuperando) mostrarRecuperacion();
-  else if (tokWeb && sessionStorage.getItem('dq_auto')) { sessionStorage.removeItem('dq_auto'); entrar(); }
+  else if (sessionStorage.getItem('dq_auto')) { sessionStorage.removeItem('dq_auto'); entrar(); }
   $('b-salir-cuenta').onclick = async e => {
     e.preventDefault();
     try { if (_sb) await _sb.auth.signOut(); } catch (er) {}

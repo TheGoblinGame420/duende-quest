@@ -492,6 +492,9 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 54, fecha: '24 oct 2026', items: [
+    'Ajustes finos: los móviles con ahorro de batería (30 fps) ya no pierden distancia de visión en ORIGINS, los botones del grupo de CLASSIC ya no pierden clics, el regalo al invitador ya no se pierde si estaba entrando, y los nombres de hermandad de varias palabras (como «Hijos del Duende») vuelven a valer.',
+  ] },
   { n: 53, fecha: '24 oct 2026', items: [
     'ORIGINS va mejor en móviles modestos: empieza en calidad Baja en los Android flojos, acorta la vista sola si hace falta y el bosque lejano pesa menos. Además ya puedes acercar y alejar la cámara pellizcando con dos dedos y tocar cerca de un monstruo basta para elegirlo.',
     'Más fácil empezar: entras como invitado sin escribir nombre, al elegir clase ves para qué sirve cada una, y los avisos ya no te piden pulsar teclas si juegas en el móvil.',

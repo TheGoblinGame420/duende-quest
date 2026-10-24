@@ -79,7 +79,11 @@ export const Hermandades = {
     const nombre = limpiarNombreHerm(m.nombre);
     if (!nombre) return this.no(s, 'El nombre debe tener de 3 a 20 letras o números.');
     // Los nombres que imitan al equipo quedan reservados, igual que en los personajes.
-    if (!this.esDios(s) && this.nombreReservado(nombre)) return this.no(s, 'Ese nombre está reservado.');
+    // Palabra a palabra: si se juntan, 'del Duende' daba 'delduende' (contiene
+    // 'elduende') y bloqueaba nombres normales. 'El Duende' y 'Duende Quest' se
+    // buscan con sus espacios.
+    const llanoHerm = nombre.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    if (!this.esDios(s) && (nombre.split(' ').some(w => this.nombreReservado(w)) || /(^| )el ?duende( |$)|duende ?quest/.test(llanoHerm))) return this.no(s, 'Ese nombre está reservado.');
     const clave = 'hn:' + nombre.toLowerCase();
     // Cerrojo: un doble toque (o dos peticiones seguidas) no cobra dos veces
     // ni deja una hermandad huerfana; tampoco dos jugadores el mismo nombre.

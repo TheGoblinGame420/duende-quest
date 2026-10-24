@@ -2849,3 +2849,12 @@ Seguridad: asedio sin premio desde el santuario; cuevas con tope por cuenta;
 alt llevado sin premio completo de Desafio; invitaciones viejas caducan y con
 freno; nombres de hermandad solo latinos y sin reservados; `pub()` aleatorio
 (no invertible); copia externa grande restaurable por trozos.
+
+### Revision de la ronda 3 (24-oct-2026, `?v=286`)
+
+7 revisores + esceptico por hallazgo: 6 confirmados y aplicados. Vista dinamica
+solo con < 26 fps (un movil topado a 30 Hz da ~33 ms); aviso de calidad con la
+ruta real en movil (Mas → ?); la pestaña Grupo del 2D no se repinta si el HTML
+es igual; premios de amigos con `pjDe`; filtro de nombres reservados de
+hermandad sin falsos positivos; recarga por version nueva sin perder la entrada
+automatica en Telegram/invitado.

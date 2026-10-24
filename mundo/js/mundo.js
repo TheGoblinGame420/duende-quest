@@ -14,19 +14,19 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES } from '/mmo/js/data.js?v=285';
-import { iniciarVentanas } from './ventanas.js?v=285';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=285';
-import { crearMusica } from './musica.js?v=285';
-import { construirCueva } from './cueva.js?v=285';
-import { TAPA, transparentar } from './tapa.js?v=285';
-import { construirAbismo } from './abismo.js?v=285';
-import { crearParticulas } from './particulas.js?v=285';
-import { cargarKenney, piezasCasa } from './kenney.js?v=285';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES } from '/mmo/js/data.js?v=286';
+import { iniciarVentanas } from './ventanas.js?v=286';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=286';
+import { crearMusica } from './musica.js?v=286';
+import { construirCueva } from './cueva.js?v=286';
+import { TAPA, transparentar } from './tapa.js?v=286';
+import { construirAbismo } from './abismo.js?v=286';
+import { crearParticulas } from './particulas.js?v=286';
+import { cargarKenney, piezasCasa } from './kenney.js?v=286';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=285';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=285';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=286';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=286';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -159,9 +159,10 @@ function resolucionDinamica(ms) {
   const max = Math.min(devicePixelRatio || 1, Q.px), min = max * 0.6;
   // Ya en el minimo y aun lento: fuera el post-proceso (es lo mas caro).
   if (composer && dtProm > 28 && pxAct <= min + 0.01) { composer = null; console.info('[3D] post-proceso desactivado por rendimiento'); return; }
-  if (dtProm > 30 && pxAct <= min + 0.01 && lejosDin > 95) {
+  // > 38 ms (< 26 fps): un movil topado a 30 Hz (ahorro de bateria) da ~33 ms aunque vaya sobrado; a ese no se le acorta la vista.
+  if (dtProm > 38 && pxAct <= min + 0.01 && lejosDin > 95) {
     lejosDin -= 20;
-    if (!avisoCal && CAL !== 'baja') { avisoCal = true; aviso('El juego va justo: acortamos la vista. En Controles (?) puedes poner la calidad Baja.'); }
+    if (!avisoCal && CAL !== 'baja') { avisoCal = true; aviso('El juego va justo: acortamos la vista. En ' + K('Ajustes (?)', 'Más (⋯) → ?') + ' puedes poner la calidad Baja.'); }
     return;
   }
   if (dtProm < 18 && lejosDin < Q.lejos) lejosDin = Math.min(Q.lejos, lejosDin + 10);
