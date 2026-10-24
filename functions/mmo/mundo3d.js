@@ -436,7 +436,9 @@ export const Mundo3D = {
     if (s.i3) { const inst = this.cuevas3().get(s.i3); if (inst) inst.dentro.delete(s.id); s.i3 = 0; }
     s.a = 0; s.h = 0; s.vueloS = 0; s.alasAvisadas = false; s.cast = null;
     const c = s.c;
-    if (c.nivel >= 10) c.xp = Math.max(0, c.xp - Math.round(xpParaSubir(c.nivel) * 0.05));
+    // Caer ante la otra faccion ya cuesta Puntos del Abismo: ahi no se pierde XP.
+    if (c.nivel >= 10 && !s.muertoPvP) c.xp = Math.max(0, c.xp - Math.round(xpParaSubir(c.nivel) * 0.05));
+    s.muertoPvP = false;
     // En el nivel maximo (sin XP que perder) se paga la reparacion del equipo.
     const rep = Math.min(c.oro, costoReparacion(c.nivel));
     if (rep > 0) { c.oro -= rep; this.enviar(s, { t: 'toast', m: `🔧 Reparaste tu equipo: -${rep.toLocaleString('es', { useGrouping: 'always' })} oro.` }); }

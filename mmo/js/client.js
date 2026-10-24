@@ -17,7 +17,7 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=288';
+} from './data.js?v=289';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -432,9 +432,12 @@ function recibir(m) {
       verLanzar(false); $('lanzar').classList.remove('mal');
       for (const k in cdPoder) delete cdPoder[k];
       clearTimeout(mostrarInvitacion.t); ponCss($('invitacion'), 'display', 'none');
-      mostrarNuevo3d();
       setTimeout(() => { if (yo) { revisarBoveda(); revisarNovedades(); } }, 1500);
       miId = m.id; yo = m.yo; online = m.on || 0; reintentos = 0; if (ws) ws._listo = true;
+      // Aviso de ORIGINS: al jugador nuevo no se le saca hacia el 3D antes de
+      // acabar el tutorial (se le ofrece al terminarlo, en pintarTutorial).
+      { let tH = false; try { tH = +(localStorage.getItem('dq_tuto_' + (yo.pid || '')) || 0) >= TUTORIAL.length; } catch (e) {}
+        if (!m.nuevo && yo.clase && (yo.nivel > 6 || tH)) mostrarNuevo3d(); }
       $('m-error').classList.remove('on');
       $('m-inicio').classList.remove('on');
       pintarHud();
@@ -2593,6 +2596,8 @@ function pintarTutorial() {
   if (paso.hecho(tuto)) {
     tuto.i++; tuto.x0 = P.x; tuto.k0 = yo.kills || 0;
     try { localStorage.setItem(clave, String(tuto.i)); } catch (e) {}
+    // Recien entregada la primera mision: ahora si se ofrece ORIGINS (una vez).
+    if (tuto.i === TUTORIAL.length) setTimeout(mostrarNuevo3d, 5000);
     sfx('moneda', .3);
     return;
   }

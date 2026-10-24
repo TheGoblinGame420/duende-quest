@@ -1,6 +1,6 @@
 # Informe de la noche · 24-oct-2026 (01:05 → 05:00)
 
-Producción: **v288** (https://duende-quest.alfonso12hc.workers.dev). Arnés: **817 pruebas en verde**.
+Producción: **v289** (https://duende-quest.alfonso12hc.workers.dev). Arnés: **817 pruebas en verde**.
 Cada versión: arnés + prueba en el navegador (sin sonido) + prueba de humo en producción.
 
 ## Lo que se publicó
@@ -17,6 +17,7 @@ Cada versión: arnés + prueba en el navegador (sin sonido) + prueba de humo en 
 | v286 | Revisión de v285: 6 fallos. |
 | v287 | 14 especialistas nuevos: sensación de combate, IA de monstruos, juego para pocos jugadores, misiones más claras, Torre tras cortes, audio, paneles móviles. |
 | v288 | Revisión de v287: sonido en segundo plano y élites del Abismo en la orilla. |
+| v289 | Caer ante la otra facción ya no quita XP (solo PA); la invitación a ORIGINS sale al terminar el tutorial de CLASSIC. |
 
 ## Pendiente de ti (no se puede desde el código)
 

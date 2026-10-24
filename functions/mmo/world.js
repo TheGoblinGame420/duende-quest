@@ -2083,19 +2083,21 @@ export class MmoWorld {
     this.aDe(s, { t: 'ph', p: s.id, d: real, ab: abs || undefined, from: fuente ? fuente.id : 0 });
     // La vida ya va en cada foto del mundo: el "yo" entero (bolsa, equipo...)
     // tras cada golpe pesaba en la red y repintaba las ventanas del movil.
-    if (s.hp <= 0) { this.morir(s); if (atacante && this.muertePvP) this.muertePvP(atacante, s); this.actualizarYo(s); }
+    if (s.hp <= 0) { this.morir(s, !!pvp); if (atacante && this.muertePvP) this.muertePvP(atacante, s); this.actualizarYo(s); }
   }
 
-  morir(s) {
+  // pvp: abatido por la otra faccion (ya paga Puntos del Abismo, no XP).
+  morir(s, pvp) {
     s.hp = 0;
     s.muerto = true;
+    s.muertoPvP = !!pvp;
     s.montado = null;
     s.combo = 0;
     this.cancelarCast(s);
     this.limpiarAuras(s);
     if (s.m3) this.olvidar3d(s); else this.olvidar(s);
     this.aClave(s.k, { t: 'pm', p: s.id });
-    this.enviar(s, { t: 'muerte', golpes: (s.golpes || []).map(x => ({ n: x.n, nv: x.nv, d: x.d })), pw: s.c.pw.pocion || 0, inst: !!(this.mundo[s.k] && this.mundo[s.k].inst), rep: costoReparacion(s.c.nivel) });
+    this.enviar(s, { t: 'muerte', golpes: (s.golpes || []).map(x => ({ n: x.n, nv: x.nv, d: x.d })), pw: s.c.pw.pocion || 0, inst: !!(this.mundo[s.k] && this.mundo[s.k].inst), rep: costoReparacion(s.c.nivel), pvp: pvp ? 1 : undefined });
     s.golpes = [];
     this.guardar(s);
   }

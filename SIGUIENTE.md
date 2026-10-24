@@ -2881,3 +2881,10 @@ que no se queda pegado, particulas con gravedad, vincQuitar validado) y textos
 no reanudan el AudioContext con la pagina oculta ni tras Telegram 'deactivated'
 (`fuera3`); rodear al jugador no deja a los elites del Abismo atascados en la
 orilla sin pegar.
+
+### Ultima ronda de la noche (24-oct-2026, `?v=289`)
+
+`morir(s, pvp)` marca `s.muertoPvP` y revivir3d no quita el 5 % de XP en ese
+caso; texto de muerte con el bastion y sin borrar quien te derribo. CLASSIC:
+`mostrarNuevo3d` solo para no-nuevos con clase (nivel > 6 o tutorial acabado) y
+al entregar la primera mision. El botin de raros/mazmorra ya salia a tu nivel.

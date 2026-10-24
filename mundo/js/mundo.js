@@ -14,19 +14,19 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN } from '/mmo/js/data.js?v=288';
-import { iniciarVentanas } from './ventanas.js?v=288';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=288';
-import { crearMusica } from './musica.js?v=288';
-import { construirCueva } from './cueva.js?v=288';
-import { TAPA, transparentar } from './tapa.js?v=288';
-import { construirAbismo } from './abismo.js?v=288';
-import { crearParticulas } from './particulas.js?v=288';
-import { cargarKenney, piezasCasa } from './kenney.js?v=288';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN } from '/mmo/js/data.js?v=289';
+import { iniciarVentanas } from './ventanas.js?v=289';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=289';
+import { crearMusica } from './musica.js?v=289';
+import { construirCueva } from './cueva.js?v=289';
+import { TAPA, transparentar } from './tapa.js?v=289';
+import { construirAbismo } from './abismo.js?v=289';
+import { crearParticulas } from './particulas.js?v=289';
+import { cargarKenney, piezasCasa } from './kenney.js?v=289';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=288';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=288';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=289';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=289';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1205,7 +1205,7 @@ function recibir(m) {
       ALAS_MAX && (P.alas = Math.min(P.alas, ALAS_MAX));
       if (antes && (yo.skin !== antes.skin || yo.clase !== antes.clase || yo.arma !== antes.arma || JSON.stringify(yo.look) !== JSON.stringify(antes.look))) cambiarSkinPropia();
       if (!antes && !yo.look) { let visto = false; try { visto = localStorage.getItem('dq3_look_visto') === '1'; } catch (e) {} if (!visto) { const intentar = n => { if (!hayVentana()) abrirLook(); else if (n < 20) setTimeout(() => intentar(n + 1), 1500); }; setTimeout(() => intentar(0), 1500); } }
-      if (yo.muerto && !(antes && antes.muerto)) morir();
+      if (yo.muerto && !(antes && antes.muerto) && !P.muerto) morir();   // tras 'muerte' no borra su texto
       if (!yo.muerto) { cerrar('v-muerte'); P.muerto = false; }
       if (yo.clase) cerrar('v-clase');
       if (yo.clase && loginPend3) { const lp = loginPend3; loginPend3 = null; setTimeout(() => mostrarDiario(lp), 900); }
@@ -1642,7 +1642,9 @@ function morir(m) {
   if (P.vuela) volar(false);
   P.planea = false; P.planeoAuto = false; P.vx = P.vz = 0; colaHab = null;
   P.muerto = true; autoAtk = false;
-  $('muerte-txt').textContent = (m && m.golpes && m.golpes.length ? 'Te derribó: ' + m.golpes.map(g => g.n).filter((v, i, l) => l.indexOf(v) === i).slice(0, 2).join(', ') + '. Revives en el pueblo.' : 'Revives en el pueblo.') + (m && m.rep > 0 ? ' Reparar tu equipo cuesta ' + m.rep + ' oro.' : '');
+  // En el Abismo se revive en el bastion de tu faccion (como revivir3d).
+  const dondeRev = enAbismo(P.x) && yo && yo.faccion ? 'Revives en tu bastión.' : 'Revives en el pueblo.';
+  $('muerte-txt').textContent = (m && m.golpes && m.golpes.length ? 'Te derribó: ' + m.golpes.map(g => g.n).filter((v, i, l) => l.indexOf(v) === i).slice(0, 2).join(', ') + '. ' + dondeRev : dondeRev) + (m && m.pvp ? ' Ante la otra facción no pierdes experiencia.' : '') + (m && m.rep > 0 ? ' Reparar tu equipo cuesta ' + m.rep + ' oro.' : '');
   abrir('v-muerte');
 }
 $('b-revivir').onclick = () => { mandar({ t: 'revivir' }); cerrar('v-muerte'); };

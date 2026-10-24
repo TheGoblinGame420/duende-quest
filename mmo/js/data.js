@@ -495,6 +495,9 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 57, fecha: '24 oct 2026', items: [
+    'En el Abismo, caer ante la otra facción ya solo cuesta Puntos del Abismo (no pierdes experiencia), y la ventana de muerte dice que revives en tu bastión. En CLASSIC, la invitación a ORIGINS sale al terminar tu primera misión, no encima del selector de clase.',
+  ] },
   { n: 56, fecha: '24 oct 2026', items: [
     'ORIGINS ya no suena de fondo: con la app minimizada o en otra pestaña, los golpes y la fanfarria se callan de verdad. Y los élites del Abismo vuelven a poder alcanzarte en la orilla de las islas.',
   ] },
