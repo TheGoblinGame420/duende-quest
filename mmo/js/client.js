@@ -17,7 +17,7 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=267';
+} from './data.js?v=268';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -44,6 +44,19 @@ if (TG) {
   if (casa) casa.href = '/telegram/index.html' + (location.hash || '');
   // El mundo 3D tambien necesita la sesion de Telegram (va en el hash).
   document.querySelectorAll('a[href="/mundo/"]').forEach(x => { x.href = '/mundo/' + (location.hash || ''); });
+}
+
+// Aviso del mundo 3D al entrar, hasta que se visite una vez (el 3D guarda
+// dq_visto3d) o se cierre en esta sesion.
+function mostrarNuevo3d() {
+  const c = $('nuevo3d'); if (!c) return;
+  let visto = false, cerrado = false;
+  try { visto = !!localStorage.getItem('dq_visto3d'); cerrado = !!sessionStorage.getItem('dq_cerro3d'); } catch (e) {}
+  if (visto || cerrado) return;
+  $('nuevo3d-ir').href = '/mundo/' + (location.hash || '');
+  c.style.display = 'block';
+  const v = c.querySelector('video'); if (v) { v.preload = 'auto'; v.play().catch(() => {}); }
+  $('nuevo3d-no').onclick = () => { c.style.display = 'none'; if (v) v.pause(); try { sessionStorage.setItem('dq_cerro3d', '1'); } catch (e) {} };
 }
 
 // Telegram: al llegar a Nv 3 se pide permiso para que el bot pueda escribir
@@ -378,6 +391,7 @@ async function conectar() {
 function recibir(m) {
   switch (m.t) {
     case 'bienvenido':
+      mostrarNuevo3d();
       setTimeout(() => { if (yo) { revisarBoveda(); revisarNovedades(); } }, 1500);
       miId = m.id; yo = m.yo; online = m.on || 0; reintentos = 0;
       $('m-inicio').classList.remove('on');

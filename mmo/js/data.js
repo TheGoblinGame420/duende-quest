@@ -487,6 +487,10 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 36, fecha: '23 oct 2026', items: [
+    '¡El mundo abierto 3D ya está a un toque! Botón «🌌 3D» destacado en el juego, aviso con vídeo al entrar y acceso directo en la portada y en el menú de Telegram.',
+    'En el 3D: tu mismo duende (nivel, oro, equipo y skins), vuelo con alas, el Abismo de Éter con PvP de facciones y el asedio de la Fortaleza del Núcleo.',
+  ] },
   { n: 35, fecha: '23 oct 2026', items: [
     'Tu duende 3D se parece por fin al de los dibujos: nariz ganchuda, ojos ámbar con cejas fruncidas, sonrisa con dientes y orejas grandes. Los ojos grandes y tiernos siguen como opción en el editor de aspecto.',
     'Skins rediseñadas como en su imagen: Táctico con capucha, visor y teclado holográfico; Nigromante con capucha, ojos que brillan, orbe y humo; Rey con corona de gemas, traje con neón y móvil con el gráfico.',

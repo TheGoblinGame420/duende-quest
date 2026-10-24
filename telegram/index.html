@@ -434,6 +434,11 @@ html{font-size:24px;}
         <!-- 1) Acción principal: el MMO. El hash lleva tgWebAppData: pasarlo
              asegura que /mmo/ reciba la identidad de Telegram aunque el SDK no
              la recupere de sessionStorage (ver irMMO). -->
+        <div class="hero-mmo" id="hero-3d" style="background:linear-gradient(135deg,rgba(124,58,237,.35),rgba(37,99,235,.3));border-color:#a78bfa">
+          <div class="hero-cab"><span class="hero-t">Mundo abierto 3D</span><span class="hero-tag" style="background:#db2777">NUEVO</span></div>
+          <div class="hero-d">Tu mismo duende en 3D: vuela con alas, PvP de facciones en el Abismo y asedios. A pantalla completa.</div>
+          <button class="ob big" type="button" onclick="irMundo()" style="width:100%;background:linear-gradient(90deg,#7c3aed,#2563eb)">🌌 Entrar al mundo 3D</button>
+        </div>
         <div class="hero-mmo" id="hero-mmo">
           <div class="hero-cab"><span class="hero-t">Mundo online</span><span class="hero-tag">MMO</span></div>
           <div class="hero-d">Explora y lucha junto a otros jugadores en tiempo real, sin salir de Telegram.</div>
@@ -1922,6 +1927,7 @@ function actualizarAtras(){
 
 // Ir al MMO conservando el hash (lleva tgWebAppData: identidad de Telegram).
 function irMMO(){ location.href='/mmo/'+(location.hash||''); }
+function irMundo(){ location.href='/mundo/'+(location.hash||''); }
 
 // Vibración ligera al pulsar un botón principal; "selección" en la barra de
 // pestañas. Solo en clientes de Telegram que la soportan.

@@ -13,19 +13,19 @@
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
-  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS } from '/mmo/js/data.js?v=267';
-import { iniciarVentanas } from './ventanas.js?v=267';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=267';
-import { crearMusica } from './musica.js?v=267';
-import { construirCueva } from './cueva.js?v=267';
-import { TAPA, transparentar } from './tapa.js?v=267';
-import { construirAbismo } from './abismo.js?v=267';
-import { crearParticulas } from './particulas.js?v=267';
-import { cargarKenney, piezasCasa } from './kenney.js?v=267';
+  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS } from '/mmo/js/data.js?v=268';
+import { iniciarVentanas } from './ventanas.js?v=268';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=268';
+import { crearMusica } from './musica.js?v=268';
+import { construirCueva } from './cueva.js?v=268';
+import { TAPA, transparentar } from './tapa.js?v=268';
+import { construirAbismo } from './abismo.js?v=268';
+import { crearParticulas } from './particulas.js?v=268';
+import { cargarKenney, piezasCasa } from './kenney.js?v=268';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=267';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=267';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=268';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=268';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -34,6 +34,7 @@ const MOVIL = matchMedia('(pointer: coarse)').matches || /Android|iPhone|iPad/i.
 if (MOVIL) document.body.classList.add('movil');
 const TG = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? window.Telegram.WebApp : null;
 const TGV = v => !!(TG && TG.isVersionAtLeast && TG.isVersionAtLeast(v));
+try { localStorage.setItem('dq_visto3d', '1'); } catch (e) {}
 if (TG) {
   try { TG.ready(); TG.expand(); TG.disableVerticalSwipes && TG.disableVerticalSwipes(); } catch (e) {}
   try { if (TGV('6.1')) { TG.setHeaderColor('#0a0418'); TG.setBackgroundColor('#0a0418'); } if (TGV('7.10') && TG.setBottomBarColor) TG.setBottomBarColor('#0a0418'); } catch (e) {}

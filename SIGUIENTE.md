@@ -2585,3 +2585,13 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
   codigo (tactico), peluca (sin pelo), chorrera, ojos que brillan, orbe que
   gira, humo, anillos de runas, teclado holografico, movil, mazo, gemas de la
   corona, hombreras con puas, katana de neon (legendaria).
+
+### El 3D a la vista (23-oct-2026, `?v=268`)
+
+- 2D (mmo/): boton `.bt3d` con brillo; boton grande en el inicio; aviso
+  `#nuevo3d` con video (assets/video/promo3d.mp4, 540×960, 1,3 MB) tras
+  'bienvenido' hasta visitar el 3D (`dq_visto3d`, lo pone mundo.js) o
+  cerrarlo en la sesion (`dq_cerro3d`).
+- Portada: el boton principal lleva al 3D y el video del 3D en el hero.
+- Hub de Telegram: tarjeta «Mundo abierto 3D · NUEVO» encima del MMO
+  (`irMundo()` pasa el hash con la sesion de Telegram).
