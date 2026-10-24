@@ -13,19 +13,19 @@
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
-  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS } from '/mmo/js/data.js?v=265';
-import { iniciarVentanas } from './ventanas.js?v=265';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=265';
-import { crearMusica } from './musica.js?v=265';
-import { construirCueva } from './cueva.js?v=265';
-import { TAPA, transparentar } from './tapa.js?v=265';
-import { construirAbismo } from './abismo.js?v=265';
-import { crearParticulas } from './particulas.js?v=265';
-import { cargarKenney, piezasCasa } from './kenney.js?v=265';
+  habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS } from '/mmo/js/data.js?v=266';
+import { iniciarVentanas } from './ventanas.js?v=266';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=266';
+import { crearMusica } from './musica.js?v=266';
+import { construirCueva } from './cueva.js?v=266';
+import { TAPA, transparentar } from './tapa.js?v=266';
+import { construirAbismo } from './abismo.js?v=266';
+import { crearParticulas } from './particulas.js?v=266';
+import { cargarKenney, piezasCasa } from './kenney.js?v=266';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=265';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=265';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=266';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=266';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -33,7 +33,34 @@ const $ = id => document.getElementById(id);
 const MOVIL = matchMedia('(pointer: coarse)').matches || /Android|iPhone|iPad/i.test(navigator.userAgent);
 if (MOVIL) document.body.classList.add('movil');
 const TG = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? window.Telegram.WebApp : null;
-if (TG) { try { TG.ready(); TG.expand(); TG.disableVerticalSwipes && TG.disableVerticalSwipes(); } catch (e) {} }
+const TGV = v => !!(TG && TG.isVersionAtLeast && TG.isVersionAtLeast(v));
+if (TG) {
+  try { TG.ready(); TG.expand(); TG.disableVerticalSwipes && TG.disableVerticalSwipes(); } catch (e) {}
+  try { if (TGV('6.1')) { TG.setHeaderColor('#0a0418'); TG.setBackgroundColor('#0a0418'); } if (TGV('7.10') && TG.setBottomBarColor) TG.setBottomBarColor('#0a0418'); } catch (e) {}
+  // Pantalla completa en el movil (Bot API 8.0): el HUD se aparta de los
+  // botones de Telegram (zona segura del sistema + la de Telegram).
+  const zonas = () => {
+    const a = TG.safeAreaInset || {}, b = TG.contentSafeAreaInset || {}, fs = !!TG.isFullscreen, st = document.documentElement.style;
+    document.body.classList.toggle('tgfs', fs);
+    st.setProperty('--tg-top', fs ? ((a.top || 0) + (b.top || 0)) + 'px' : '0px');
+    st.setProperty('--tg-bot', fs ? ((a.bottom || 0) + (b.bottom || 0)) + 'px' : '0px');
+  };
+  try {
+    if (TGV('8.0') && /android|ios/.test(TG.platform || '') && TG.requestFullscreen) {
+      for (const ev of ['safeAreaChanged', 'contentSafeAreaChanged', 'fullscreenChanged']) TG.onEvent(ev, zonas);
+      TG.requestFullscreen();
+    }
+  } catch (e) {}
+}
+// Vibracion de Telegram: golpes (suaves), criticos, heridas, nivel, muerte.
+let vibT = 0;
+function vib(t) {
+  if (!TG || !TG.HapticFeedback || !TGV('6.1')) return;
+  const ahora = performance.now();
+  if (ahora - vibT < 70) return;
+  vibT = ahora;
+  try { if (t === 'success' || t === 'error' || t === 'warning') TG.HapticFeedback.notificationOccurred(t); else TG.HapticFeedback.impactOccurred(t || 'light'); } catch (e) {}
+}
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, k) => a + (b - a) * k;
@@ -1127,20 +1154,22 @@ function recibir(m) {
         if (m.cueva) { camYaw = Math.PI; zonaActual = ''; }
       }
       break;
-    case 'pvpBaja': sfx('explosion', 0.5); sacudir = Math.max(sacudir, 0.25); aviso(`⚔️ ¡Abatiste a ${m.n}!`, 'ok'); break;
+    case 'pvpBaja': vib('heavy'); sfx('explosion', 0.5); sacudir = Math.max(sacudir, 0.25); aviso(`⚔️ ¡Abatiste a ${m.n}!`, 'ok'); break;
     case 'cofre3': if (cueva) { cueva.cofre.visible = true; cueva.tapa.rotation.x = 0; } sfx('moneda', 0.6); break;
     case 'gana':
       if (m.xp) numero(P.x, P.y + 2.6, P.z, '+' + m.xp + ' XP', '#c084fc');
       if (m.oro) { numero(P.x + 0.6, P.y + 2.2, P.z, '+' + m.oro + ' oro', '#ffd84a'); sfxK('monedas', 0.3); }
+      if (m.item) vib('success');
       if (m.item) aviso('Botín: ' + (m.item.nombre || 'equipo nuevo') + ' (pulsa I para verlo)', 'ok');
       break;
-    case 'lv': if (m.p === miId) { aviso('¡Subiste al nivel ' + m.lv + '!', 'ok'); numero(P.x, P.y + 3, P.z, 'NIVEL ' + m.lv, '#ffe600', true); } else { const o = otros.get(m.p); if (o) o.lv = m.lv; } break;
+    case 'lv': if (m.p === miId) { aviso('¡Subiste al nivel ' + m.lv + '!', 'ok'); numero(P.x, P.y + 3, P.z, 'NIVEL ' + m.lv, '#ffe600', true); subiNivel(m.lv); } else { const o = otros.get(m.p); if (o) o.lv = m.lv; } break;
     case 'toast': aviso(m.m, m.ok ? 'ok' : ''); break;
     case 'aviso': aviso(m.m); break;
     case 'no':
       // "Fuera de alcance" se avisa como mucho una vez cada 3 s (el auto-ataque reintenta solo).
       if (m.m === 'Fuera de alcance.') { if (performance.now() - avisoAlcT < 3000) break; avisoAlcT = performance.now(); }
       aviso(m.m, 'err'); break;
+    case 'amigos': if (m.ref) refAmigo = m.ref; break;
     case 'yoC': if (yo) { Object.assign(yo, m.yo); pintarHud(); refrescarVentanas(); } break;
     case 'atkNo': sigAtk = performance.now() + 150; break;
     case 'habNo': gcdHasta = 0; break;
@@ -1314,7 +1343,7 @@ function ataqueVisto(m) {
   if (m.d > 0 && Math.hypot(o.x - P.x, o.z - P.z) < 45) FX.emitir(o.x, (o.y || alturaEn(o.x, o.z)) + 1.1, o.z, { n: m.c ? 24 : 10, color: m.c ? '#ffd34d' : m.rayo ? '#7dd3fc' : '#fff1c1', vel: m.c ? 6.5 : 4, vida: 0.45 });
   if (m.p === miId || o.id === objetivo) {
     numero(o.x + (Math.random() - 0.5), alturaEn(o.x, o.z) + 2.2, o.z, (m.c ? '¡' : '') + m.d + (m.c ? '!' : ''), m.c ? '#ffd34d' : m.rayo ? '#7dd3fc' : '#fff', m.c);
-    if (m.p === miId) { sfx(m.c ? 'corte2' : 'corte', 0.28); sfxK(m.c ? 'g_critico' : 'g_carne', m.c ? 0.4 : 0.3); if (m.c) sacudir = Math.max(sacudir, 0.15); }
+    if (m.p === miId) { vib(m.c ? 'medium' : 'light'); sfx(m.c ? 'corte2' : 'corte', 0.28); sfxK(m.c ? 'g_critico' : 'g_carne', m.c ? 0.4 : 0.3); if (m.c) sacudir = Math.max(sacudir, 0.15); }
   }
   // El destello ya salio con la prediccion: no repetirlo.
   if (!(m.p === miId && performance.now() - (o.predT || 0) < 350)) o.golpeT = performance.now();
@@ -1331,7 +1360,7 @@ function golpeJugador(m) {
   if (m.d > 0) { numero(q.x, (q.y || alturaEn(q.x, q.z)) + 2.3, q.z, '-' + m.d, '#ff5a6a'); FX.emitir(q.x, (q.y || alturaEn(q.x, q.z)) + 1.1, q.z, { n: 8, color: '#ff4d5e', vel: 3.5, vida: 0.4 }); }
   if (m.esq && m.p === miId) numero(P.x, P.y + 2.3, P.z, 'Esquiva', '#7dd3fc');
   if (mo && m.p === miId && performance.now() - (mo.vozT || 0) > 5000 && Math.random() < 0.6) { mo.vozT = performance.now(); sfxK(vozDe(mo.k), 0.3); }
-  if (m.p === miId) { P.heridoT = performance.now(); sfxK('g_carne', 0.22); if (yo && m.d > 0) { yo.hp = Math.max(0, yo.hp - m.d); pintarVida(); } }
+  if (m.p === miId) { P.heridoT = performance.now(); if (m.d > 0) vib('rigid'); sfxK('g_carne', 0.22); if (yo && m.d > 0) { yo.hp = Math.max(0, yo.hp - m.d); pintarVida(); } }
 }
 let impactos = [];
 let asedio = null, asedioHp = null, tirosAsedio = [];
@@ -1448,6 +1477,7 @@ function proyectil(de, a, color) {
   proyectiles.push({ mesh, de: { x: de.x, z: de.z, y: (de.y || alturaEn(de.x, de.z)) + 1.2 }, a, t: 0 });
 }
 function morir(m) {
+  vib('error');
   if (P.vuela) volar(false);
   P.planea = false; P.planeoAuto = false; P.vx = P.vz = 0; colaHab = null;
   P.muerto = true; autoAtk = false;
@@ -1752,6 +1782,12 @@ $('b-mapa').onclick = () => abrirMapa();
 function pintarSon() { $('b-son').textContent = sonido ? '🔊' : '🔇'; }
 $('b-son').onclick = () => { sonido = !sonido; try { localStorage.setItem('dq_mmo_sonido', sonido ? '1' : '0'); } catch (e) {} musica.activo(sonido); pintarSon(); };
 pintarSon(); if (!sonido) musica.activo(false);
+if (TG && TGV('8.0')) try {
+  TG.onEvent('deactivated', () => { musica.activo(false); if (actx) actx.suspend().catch(() => {}); });
+  TG.onEvent('activated', () => { if (sonido) musica.activo(true); if (actx) actx.resume().catch(() => {}); });
+} catch (e) {}
+$('b-compartir').onclick = () => { presumirTxt = ''; if (!refAmigo) mandar({ t: 'amigos' }); compartir(); };
+$('presumir3').onclick = () => { $('presumir3').style.display = 'none'; compartir(); };
 for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, () => { if (sonido) musica.arrancar(); }, { once: true });
 $('b-ayuda').onclick = () => abrir('v-ayuda');
 $('sel-calidad').value = CAL;
@@ -1845,6 +1881,60 @@ addEventListener('keydown', e => {
   if (t.matches('select')) { if (e.key !== 'Escape') e.preventDefault(); t.blur(); }
   else if (t.matches('button,a') && e.code !== 'Tab' && e.code !== 'Enter') t.blur();
 }, true);
+// ── SUBIR DE NIVEL, PRESUMIR Y TELEGRAM ──
+function subiNivel(lv) {
+  vib('success'); sfxK('monedas', 0.4);
+  FX.emitir(P.x, P.y + 0.2, P.z, { n: 46, color: '#ffe066', vel: 2.4, vida: 1.6, grav: -3.5, radio: 0.7, tam: 1.3 });
+  FX.emitir(P.x, P.y + 1, P.z, { n: 30, color: '#ffffff', vel: 6, vida: 0.6, grav: 2 });
+  if (lv >= 5 && lv % 5 === 0) ofrecerPresumir(`¡Llegué al nivel ${lv} en Duende Quest 3D!`);
+  // A partir del nivel 5, una vez: acceso directo en la pantalla de inicio (Bot API 8.0).
+  if (lv >= 5 && TGV('8.0') && TG.addToHomeScreen) {
+    let visto = true; try { visto = !!localStorage.getItem('dq_tg_inicio'); } catch (e) {}
+    if (!visto) try {
+      const marcar = () => { try { localStorage.setItem('dq_tg_inicio', '1'); } catch (e) {} };
+      if (TG.checkHomeScreenStatus) TG.checkHomeScreenStatus(st => { if (st === 'unknown') return; marcar(); if (st === 'missed') TG.addToHomeScreen(); });
+      else { marcar(); TG.addToHomeScreen(); }
+    } catch (e) {}
+  }
+}
+// Presumir: historia de Telegram (Bot API 7.8) con una imagen del juego; si
+// no se puede, el compartir de Telegram o el del sistema.
+let presumirTxt = '', refAmigo = '';
+function ofrecerPresumir(txt) {
+  presumirTxt = txt || '';
+  if (!refAmigo) mandar({ t: 'amigos' });
+  const b = $('presumir3'); if (!b) return;
+  b.style.display = 'block'; clearTimeout(ofrecerPresumir.t);
+  ofrecerPresumir.t = setTimeout(() => { b.style.display = 'none'; }, 12000);
+}
+function compartir() {
+  const enl = 'https://t.me/duendequest_bot' + (refAmigo ? '?start=mmo_' + refAmigo : '');
+  const txt = (presumirTxt ? presumirTxt + ' ' : '') + '¡Juega gratis conmigo a Duende Quest 3D en Telegram! 🧝';
+  const img = location.origin + '/assets/promo/historia_' + (1 + Math.floor(Math.random() * 3)) + '.jpg';
+  try {
+    if (TG && TGV('7.8') && TG.shareToStory) {
+      const premium = !!(TG.initDataUnsafe && TG.initDataUnsafe.user && TG.initDataUnsafe.user.is_premium);
+      TG.shareToStory(img, premium ? { text: txt, widget_link: { url: enl, name: 'Jugar gratis' } } : { text: (txt + ' ' + enl).slice(0, 200) });
+      return;
+    }
+    if (TG && TG.openTelegramLink) return TG.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(enl) + '&text=' + encodeURIComponent(txt));
+  } catch (e) {}
+  const web = location.origin + '/mundo/' + (refAmigo ? '?ref=' + refAmigo : '');
+  if (navigator.share) navigator.share({ title: 'Duende Quest 3D', text: txt, url: web }).catch(() => {});
+  else try { navigator.clipboard.writeText(txt + ' ' + web).then(() => aviso('Texto y enlace copiados.', 'ok')); } catch (e) {}
+}
+// Boton Atras de Telegram: cierra la ventana abierta.
+let tgAtras = false;
+function revisarAtrasTg() {
+  if (!TG || !TG.BackButton || !TGV('6.1')) return;
+  const abierta = hayVentana() || hayLateral();
+  if (abierta === tgAtras) return;
+  tgAtras = abierta;
+  try { abierta ? TG.BackButton.show() : TG.BackButton.hide(); } catch (e) {}
+}
+if (TG && TG.BackButton) try {
+  TG.BackButton.onClick(() => { document.querySelectorAll('.modal.on').forEach(m => { if (m.id !== 'v-muerte' && m.id !== 'v-clase') cerrar(m.id); }); revisarAtrasTg(); });
+} catch (e) {}
 function hayVentana() { return [...document.querySelectorAll('.modal.on')].some(m => !LATERALES.includes(m.id)); }
 function hayLateral() { return LATERALES.some(id => $(id) && $(id).classList.contains('on')); }
 addEventListener('keydown', e => {
@@ -2483,7 +2573,7 @@ function bucle(t) {
   if (portal) portal.velo.material.opacity = 0.45 + Math.sin(t / 300) * 0.15;
   pintarObjetivo();
   if (cuadro % 6 === 0) { pintarMini(); pintarCds(); pintarAuras(); pintarObjetivoP(); }
-  if (cuadro % 20 === 0) pintarMisiones();
+  if (cuadro % 20 === 0) { pintarMisiones(); revisarAtrasTg(); }
   efectos = efectos.filter(e => {
     e.t += dt / e.dura;
     const r = 0.5 + e.radio * Math.min(1, e.t);
@@ -2538,6 +2628,8 @@ async function inicio() {
   abismo = construirAbismo(escena, KIT);
   for (const c of abismo.solidos || []) ponerSolido(c.x, c.z, c.r);
   abismo.dueno(asedio && asedio.dueno);
+  progreso(0.7, 'Preparando los gráficos…');
+  try { if (render.compileAsync) await Promise.race([render.compileAsync(escena, camara), new Promise(r => setTimeout(r, 4000))]); } catch (e) {}
   progreso(0.75, 'Dibujando el mapa…');
   await new Promise(r => setTimeout(r, 20));
   pintarMapaBase();

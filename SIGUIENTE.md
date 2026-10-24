@@ -2555,3 +2555,21 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
   torres; se hunde al caer; `solidosExtra` cierra el paso), disparos en arco
   con estallido, panel del asedio, punto en el minimapa, E en las maquinas.
 - Arnes: 20 pruebas nuevas (730).
+
+### Telegram nativo y arranque sin tirones (23-oct-2026, `?v=266`)
+
+- Bot API 8.0: `requestFullscreen()` en android/ios; `safeAreaInset` +
+  `contentSafeAreaInset` → `--tg-top/--tg-bot` y `body.tgfs` (margin-top/bottom
+  en el HUD). Colores de cabecera, fondo y barra inferior.
+- `vib(t)`: HapticFeedback (golpe light/medium, herida rigid, nivel success,
+  muerte error, baja PvP heavy, botin success), como mucho cada 70 ms.
+- `TG.BackButton` visible solo con una ventana abierta; la cierra.
+- `deactivated/activated`: musica y AudioContext en pausa.
+- Nivel: `subiNivel(lv)` (particulas, sonido, presumir cada 5, acceso directo
+  a nivel 5 con la misma marca `dq_tg_inicio` que el 2D).
+- Compartir: `shareToStory` (7.8) con assets/promo/historia_{1,2,3}.jpg
+  (1080×1920, hechas de las tomas del video); widget_link solo para premium
+  (la API lo exige), si no el enlace va en el texto. Sin Telegram:
+  t.me/share o navigator.share. Pide el codigo de amigo (`amigos`).
+- `render.compileAsync(escena, camara)` en la carga (max 4 s).
+- mundo/manifest.json (PWA, pantalla completa) y apple-touch-icon.

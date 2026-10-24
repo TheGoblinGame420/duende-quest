@@ -487,6 +487,13 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 34, fecha: '23 oct 2026', items: [
+    'Telegram a pantalla completa en el móvil: el mundo 3D ocupa toda la pantalla y el HUD se aparta de los botones de Telegram.',
+    'Vibración al golpear, al recibir daño, en los críticos, al subir de nivel y al abatir a un rival (en Telegram).',
+    'Nuevo botón 📣 para invitar amigos: en Telegram publica una historia con una imagen del juego y el enlace del bot.',
+    'Al subir de nivel: lluvia de luz dorada y, cada 5 niveles, «Presúmelo en tu historia». El botón Atrás de Telegram cierra las ventanas.',
+    'Más fluido al empezar: los gráficos se preparan durante la carga y la música se pausa si minimizas Telegram.',
+  ] },
   { n: 33, fecha: '23 oct 2026', items: [
     '¡Asedio de la Fortaleza del Núcleo! Cada 2 horas (a las :25 de las horas pares, hora UTC) hay 20 minutos de asedio en el Abismo de Éter, con aviso 2 minutos antes.',
     'La facción que no es dueña rompe la Puerta del Núcleo. Entonces despierta el Guardián del Núcleo: ondas avisadas en el suelo, guardia real al 50% y furia al 30%. Quien más lo daña se queda la fortaleza.',

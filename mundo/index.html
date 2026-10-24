@@ -6,11 +6,13 @@
 <title>Duende Quest 3D · Mundo abierto</title>
 <meta name="description" content="Duende Quest 3D: el mundo abierto del MMORPG de los duendes. Un mapa continuo con 10 zonas, jefes y otros jugadores en tiempo real, en el navegador y en Telegram.">
 <meta name="theme-color" content="#0a0418">
+<link rel="manifest" href="/mundo/manifest.json">
+<link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
 <link rel="icon" href="/assets/ui/coin.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=265" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=266" } }</script>
 <style>
 :root{--bg:#0a0418;--panel:rgba(14,9,30,.86);--borde:rgba(160,140,255,.22);--txt:#f2efff;--txt2:#b8b0d8;--txt3:#7d7699;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;--oro:#ffd84a;--pri:#2563eb;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -76,6 +78,12 @@ body.movil #misiones{top:110px;bottom:auto;left:8px;right:auto;width:165px;font-
 #avisos div.ok{border-left-color:#4ade80;}
 #avisos div.err{border-left-color:#ff5a6a;color:#ffd4d9;}
 @keyframes entra{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+/* Pantalla completa de Telegram: el HUD se aparta de sus botones */
+body.tgfs #marco,body.tgfs #obj,body.tgfs #objp,body.tgfs #grupo3,body.tgfs #mini,body.tgfs #misiones,body.tgfs #botones,body.tgfs #alas,body.tgfs #titulo-zona,body.tgfs.movil #chat{margin-top:var(--tg-top,0px);}
+body.tgfs #barra,body.tgfs #tactil,body.tgfs #hablar,body.tgfs #lanzar,body.tgfs #invit3,body.tgfs #joy{margin-bottom:var(--tg-bot,0px);}
+#presumir3{position:fixed;left:50%;bottom:190px;transform:translateX(-50%);display:none;z-index:6;pointer-events:auto;cursor:pointer;padding:10px 18px;border-radius:999px;border:1px solid rgba(255,216,74,.6);background:linear-gradient(90deg,#7c3aed,#db2777);color:#fff;font:700 14px var(--sans);box-shadow:0 6px 20px rgba(0,0,0,.45);animation:latir 1.2s ease-in-out infinite;}
+@keyframes latir{50%{transform:translateX(-50%) scale(1.06);}}
+body.movil #presumir3{bottom:auto;top:calc(36% + var(--tg-top,0px));font-size:13px;padding:8px 14px;}
 #titulo-zona{position:fixed;left:50%;top:9%;transform:translate(-50%,0);text-align:center;pointer-events:none;opacity:0;transition:opacity .6s;}
 #titulo-zona b{display:block;font:400 18px var(--px);color:#fff7d6;text-shadow:0 3px 0 #000,0 0 18px rgba(255,216,74,.45);}
 #titulo-zona small{display:block;margin-top:6px;font:600 12px var(--sans);color:var(--txt2);text-shadow:0 1px 2px #000;}
@@ -213,6 +221,7 @@ body.movil #titulo-zona b{font-size:16px;}
   <div class="nm"><span id="o-nombre">—</span><small id="o-nivel"></small></div>
   <div class="barra hpo" id="o-hp"><i></i><span></span></div>
 </div>
+<button id="presumir3">📸 Presúmelo en tu historia</button>
 <div class="caja" id="botones">
   <button class="bt" id="b-inv" title="Inventario (I)">🎒</button>
   <button class="bt" id="b-libro" title="Habilidades y talentos (P)">📖</button>
@@ -221,6 +230,7 @@ body.movil #titulo-zona b{font-size:16px;}
   <button class="bt" id="b-look" title="Apariencia (cara, cuerpo, altura y pelo)">🪞</button>
   <button class="bt" id="b-mapa" title="Mapa del mundo (M)">🗺</button>
   <button class="bt" id="b-son" title="Música y sonido">🔊</button>
+  <button class="bt" id="b-compartir" title="Invitar a un amigo / compartir">📣</button>
   <button class="bt" id="b-chat" title="Chat (Enter)">💬</button>
   <button class="bt" id="b-ayuda" title="Controles">?</button>
   <a class="bt" href="/mmo/" title="Juego 2D: mazmorras, Torre y banda">2D</a>
@@ -315,6 +325,6 @@ body.movil #titulo-zona b{font-size:16px;}
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script src="/js/config.js"></script>
-<script type="module" src="/mundo/js/mundo.js?v=265"></script>
+<script type="module" src="/mundo/js/mundo.js?v=266"></script>
 </body>
 </html>
