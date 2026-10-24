@@ -27,7 +27,8 @@ const state = {
   blockConcurrencyWhile: f => f(),
 };
 export const mundo = new MmoWorld(state, {});
-mundo.asedioAuto = false;   // el asedio del Nucleo se lanza a mano en sus pruebas (no segun la hora real)
+mundo.asedioAuto = false;
+mundo.estricto = true;      // paso() relanza las excepciones del tick: un fallo hace fallar la prueba   // el asedio del Nucleo se lanza a mano en sus pruebas (no segun la hora real)
 
 class WsFalso {
   constructor() { this.l = {}; this.rec = []; this.cerrado = false; }

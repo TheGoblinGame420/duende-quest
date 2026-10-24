@@ -77,24 +77,34 @@ export function zonaEn(x, z) {
   return mejor;
 }
 // Pesos de las dos zonas mas cercanas (para fundir colores y relieve en los
-// limites: no hay bordes duros entre zonas).
+// limites: no hay bordes duros entre zonas). Sin reservar memoria: se llama
+// cientos de miles de veces al cargar y decenas por cuadro. El desempate con
+// `<` estricto en el orden de IDS equivale al sort estable de antes.
+let _a = IDS[0], _b = IDS[1], _k = 1;
+function cercanas(x, z) {
+  let da = Infinity, db = Infinity, ia = IDS[0], ib = IDS[1];   // con NaN queda como antes (noche/amanecer)
+  for (let i = 0; i < IDS.length; i++) {
+    const id = IDS[i], c = ZONAS3D[id], d = Math.hypot(c.x - x, c.z - z);
+    if (d < da) { db = da; ib = ia; da = d; ia = id; } else if (d < db) { db = d; ib = id; }
+  }
+  _a = ia; _b = ib;
+  _k = 0.5 + 0.5 * suave(Math.max(0, Math.min(1, (db - da) / 60)));   // 60 m de transicion
+}
 export function mezclaEn(x, z) {
-  const d = IDS.map(id => [id, Math.hypot(ZONAS3D[id].x - x, ZONAS3D[id].z - z)]).sort((a, b) => a[1] - b[1]);
-  const [a, b] = d;
-  const t = Math.max(0, Math.min(1, (b[1] - a[1]) / 60));   // 60 m de transicion
-  const k = 0.5 + 0.5 * suave(t);
-  return [[a[0], k], [b[0], 1 - k]];
+  cercanas(x, z);
+  return [[_a, _k], [_b, 1 - _k]];
 }
 
 // ── ALTURA DEL TERRENO ──
 export function alturaEn(x, z) {
   if (x > 4000) return alturaAbismo(x, z);
   if (x > 2000) return 0;
+  cercanas(x, z);
+  // El relieve grande se calcula una vez (antes, una por zona con los mismos argumentos).
+  const f = fbm(x / 70 + 13, z / 70 - 7), A = RELIEVE[_a], B = RELIEVE[_b];
   let h = 0;
-  for (const [id, k] of mezclaEn(x, z)) {
-    const [amp, base] = RELIEVE[id];
-    h += k * (base + amp * fbm(x / 70 + 13, z / 70 - 7));
-  }
+  h += _k * (A[1] + A[0] * f);
+  h += (1 - _k) * (B[1] + B[0] * f);
   h += 1.2 * fbm(x / 9, z / 9);   // detalle fino
   // El pueblo es llano y algo elevado (se ve desde las zonas).
   const dp = Math.hypot(x - MUNDO.pueblo.x, z - MUNDO.pueblo.z);

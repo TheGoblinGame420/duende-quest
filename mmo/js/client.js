@@ -17,7 +17,7 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=280';
+} from './data.js?v=281';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -55,7 +55,9 @@ function mostrarNuevo3d() {
   if (visto || cerrado) return;
   $('nuevo3d-ir').href = '/mundo/' + (location.hash || '');
   c.style.display = 'block';
-  const v = c.querySelector('video'); if (v) { v.preload = 'auto'; v.play().catch(() => {}); }
+  const v = c.querySelector('video');
+  const cx = navigator.connection, lento = !!(cx && (cx.saveData || /2g/.test(cx.effectiveType || '')));
+  if (v && !lento) { v.preload = 'auto'; v.play().catch(() => {}); }   // con ahorro de datos, solo el poster
   $('nuevo3d-no').onclick = () => { c.style.display = 'none'; if (v) v.pause(); try { sessionStorage.setItem('dq_cerro3d', '1'); } catch (e) {} };
 }
 
@@ -293,7 +295,8 @@ $('b-sonido').onclick = () => {
 pintarSonido();
 
 // ── ESTADO ──
-let ws = null, miId = 0, yo = null, mapaId = 'pueblo', conectado = false, reintentos = 0, fatal = false;
+let ws = null, miId = 0, yo = null, mapaId = 'pueblo', conectado = false, reintentos = 0, fatal = false, timerRec = 0, conectando = false;
+let ultimoMsgT = 0;   // performance.now() del ultimo mensaje del servidor (vigilante de conexion)
 // Si el servidor no logra verificar la cuenta (initData de Telegram viejo,
 // sesion web caducada), se entra como invitado en vez de quedar bloqueado.
 let forzarInvitado = false;
@@ -372,19 +375,32 @@ async function tokenWeb() {
 }
 
 async function conectar() {
+  // Un solo intento a la vez: en web autenticacion() espera a supabase y, mientras,
+  // ws sigue en null. Un doble toque en «Jugar», 'online', volver a la pestaña o
+  // el temporizador podian abrir dos sockets y el servidor echaba a uno con error.
+  if (conectando || (ws && ws.readyState <= 1)) return;
+  clearTimeout(timerRec);
+  conectando = true;
+  let hola;
+  try { hola = await autenticacion(); } finally { conectando = false; }
   if (ws && ws.readyState <= 1) return;
-  const hola = await autenticacion();
-  ws = new WebSocket(urlWs());
+  const s = new WebSocket(urlWs());
+  ws = s;
   // reintentos se reinicia al recibir 'bienvenido', no al abrir: si el
   // servidor aceptaba el socket y lo cerraba enseguida, se reintentaba sin fin.
   const ref = (/[?&]ref=([a-z0-9]{6})/.exec(location.search) || [])[1];
-  ws.onopen = () => { conectado = true; mandar({ t: 'hola', ...hola, ref }); };
-  ws.onmessage = ev => { let m; try { m = JSON.parse(ev.data); } catch (e) { return; } recibir(m); };
-  ws.onclose = () => {
+  // Cada manejador solo actua si su socket sigue siendo el actual.
+  s.onopen = () => { if (ws !== s) return; conectado = true; ultimoMsgT = performance.now(); mandar({ t: 'hola', ...hola, ref }); };
+  s.onmessage = ev => { if (ws !== s) return; ultimoMsgT = performance.now(); let m; try { m = JSON.parse(ev.data); } catch (e) { return; } recibir(m); };
+  s.onclose = () => {
+    if (ws !== s) return;
     conectado = false;
     if (fatal || pausado) return;
-    if (reintentos++ < 6) setTimeout(conectar, Math.min(8000, 600 * reintentos));
-    else mostrarError('No se pudo conectar con el servidor. Revisa tu conexión a internet y pulsa «Reconectar».');
+    reintentos++;
+    if (reintentos === 7) mostrarError('Sin conexión con el servidor. Seguimos intentándolo solos; también puedes pulsar «Reconectar».');
+    // Visible: se sigue intentando cada 8 s (tunel, cambio de red, despliegue).
+    // Oculta: se para a los 6 y se reintenta al volver o al recuperar la red.
+    if (reintentos <= 6 || !document.hidden) timerRec = setTimeout(conectar, Math.min(8000, 600 * reintentos));
   };
 }
 
@@ -394,6 +410,7 @@ function recibir(m) {
       mostrarNuevo3d();
       setTimeout(() => { if (yo) { revisarBoveda(); revisarNovedades(); } }, 1500);
       miId = m.id; yo = m.yo; online = m.on || 0; reintentos = 0;
+      $('m-error').classList.remove('on');
       $('m-inicio').classList.remove('on');
       pintarHud();
       if (m.nuevo) aviso('Bienvenido al Pueblo Duende, ' + yo.nombre + '. El Guardia Tito tiene tu primera misión.');
@@ -1192,8 +1209,23 @@ function botonTactil(id, abajo, arriba) {
   b.addEventListener('touchcancel', off, { passive: false });
   b.addEventListener('mousedown', on); b.addEventListener('mouseup', off); b.addEventListener('mouseleave', e => { if (b.classList.contains('on')) off(e); });
 }
-botonTactil('t-l', () => { tIzq = true; }, () => { tIzq = false; });
-botonTactil('t-r', () => { tDer = true; }, () => { tDer = false; });
+// Pad ◀▶ como una sola zona: al deslizar el pulgar de una flecha a la otra cambia la direccion
+// sin levantarlo; el hueco entre flechas tambien cuenta.
+(() => {
+  const zona = $('t-izq'), bl = $('t-l'), br = $('t-r');
+  let id = null, raton = false;
+  zona.style.touchAction = 'none';
+  const poner = x => { const r = zona.getBoundingClientRect(), izq = x < r.left + r.width / 2; tIzq = izq; tDer = !izq; bl.classList.toggle('on', izq); br.classList.toggle('on', !izq); };
+  const soltar = () => { id = null; raton = false; tIzq = tDer = false; bl.classList.remove('on'); br.classList.remove('on'); };
+  zona.addEventListener('touchstart', e => { e.preventDefault(); if (id !== null) return; const t = e.changedTouches[0]; id = t.identifier; poner(t.clientX); }, { passive: false });
+  zona.addEventListener('touchmove', e => { e.preventDefault(); for (const t of e.changedTouches) if (t.identifier === id) poner(t.clientX); }, { passive: false });
+  const fin = e => { for (const t of e.changedTouches) if (t.identifier === id) soltar(); };
+  zona.addEventListener('touchend', fin); zona.addEventListener('touchcancel', fin);
+  // Portatiles tactiles con raton: el raton sigue funcionando.
+  zona.addEventListener('mousedown', e => { if (id !== null) return; e.preventDefault(); raton = true; poner(e.clientX); });
+  zona.addEventListener('mousemove', e => { if (raton) poner(e.clientX); });
+  addEventListener('mouseup', () => { if (raton) soltar(); });
+})();
 let atkRepetir = null;
 botonTactil('t-atk', () => { atacar(); atkRepetir = setInterval(atacar, 120); }, () => { clearInterval(atkRepetir); });
 botonTactil('t-jump', saltar, soltarSalto);
@@ -3472,7 +3504,13 @@ function spriteTexto(txt, tam, color, fondo, sombra) {
 }
 // Las medidas tomadas antes de cargar la fuente pixel salen con la de
 // respaldo: al cargarse, se tira la cache.
-if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => _textos.clear()).catch(() => {});
+// La fuente se carga sin bloquear (media=print): puede llegar despues de ready, asi que la cache de textos
+// tambien se vacia cada vez que termina de cargar una fuente.
+if (document.fonts) {
+  const limpiaTextos = () => _textos.clear();
+  if (document.fonts.ready) document.fonts.ready.then(limpiaTextos).catch(() => {});
+  if (document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', limpiaTextos);
+}
 // Arcoiris: 12 tonos que van rotando (pocos, para no llenar la cache de textos).
 function colorTinte(tn) { return tn.color === 'arcoiris' ? 'hsl(' + (Math.floor(frame / 8) % 12) * 30 + ',90%,68%)' : tn.color; }
 // Emoji ya dibujado en su lienzo (fillText de un emoji en cada fotograma es caro).
@@ -4704,6 +4742,9 @@ let dormido = false;
 const despertar = () => { if (dormido && $('m-error').classList.contains('on')) $('b-reconectar').onclick(); };
 addEventListener('pointerdown', despertar, true);
 addEventListener('keydown', despertar, true);
+// Vuelve la red o la pestaña con el aviso de «Sin conexión» abierto: reintento inmediato.
+const reintentarYa = () => { if (!fatal && !pausado && !(ws && ws.readyState <= 1) && $('m-error').classList.contains('on')) $('b-reconectar').onclick(); };
+addEventListener('online', reintentarYa);
 
 // ── CUENTA (Supabase Auth: correo y contraseña) ──
 // La sesion la guarda supabase-js en este navegador (localStorage), asi que
@@ -4881,7 +4922,25 @@ async function inicio() {
   };
 }
 
-setInterval(() => mandar({ t: 'ping', ts: Date.now() }), 20000);
+// Vigilante de conexion: el servidor manda un 's' 10 veces por segundo, asi que
+// 12 s sin nada con la pestaña visible es un socket medio abierto (cambio de
+// wifi a 4G, ascensor, vuelta de segundo plano en iOS) que nunca dispara onclose.
+let pingN = 0, vigT = performance.now();
+setInterval(() => {
+  const ahora = performance.now();
+  // Si el vigilante estuvo parado (app suspendida, confirm() abierto), se da margen.
+  if (ahora - vigT > 9000) ultimoMsgT = ahora;
+  vigT = ahora;
+  if (!ws || ws.readyState !== 1 || document.hidden) return;
+  if (conectado && yo && ahora - ultimoMsgT > 12000) {
+    const s = ws; ws = null; conectado = false;
+    s.onopen = s.onmessage = s.onclose = null;
+    try { s.close(4001, 'mudo'); } catch (e) {}
+    if (!fatal && !pausado) { reintentos = 0; aviso('Conexión perdida: reconectando…'); conectar(); }
+    return;
+  }
+  if (++pingN % 4 === 0) mandar({ t: 'ping', ts: Date.now() });
+}, 5000);
 
 // Pestaña oculta mas de 3 minutos (otra app, pantalla apagada): se suelta la
 // conexion para no tener el servidor encendido por nadie, y al volver se
@@ -4894,7 +4953,9 @@ document.addEventListener('visibilitychange', () => {
     timerOculta = setTimeout(() => { if (ws && ws.readyState === 1) { pausado = true; ws.close(4100, 'oculta'); } }, instancia ? 480000 : 180000);
   } else {
     clearTimeout(timerOculta);
+    ultimoMsgT = performance.now();
     if (pausado) { pausado = false; reintentos = 0; aviso('Reconectando…'); conectar(); }
+    else reintentarYa();
   }
 });
 

@@ -223,7 +223,10 @@ export class MmoWorld {
     const cerrar = () => this.cerrar(s);
     ws.addEventListener('close', cerrar);
     ws.addEventListener('error', cerrar);
-    setTimeout(() => { if (!s.c && !s.cerrado) this.expulsar(s, 'Sin identificación'); }, 8000);
+    // A los 8 s se expulsa a quien no mando hola. A quien se esta verificando
+    // (Supabase o Telegram lentos) no se le corta, pero tiene un tope de 30 s.
+    setTimeout(() => { if (!s.c && !s.cerrado && !s.autenticando) this.expulsar(s, 'Sin identificación'); }, 8000);
+    setTimeout(() => { if (!s.c && !s.cerrado) this.expulsar(s, 'Sin identificación'); }, 30000);
   }
 
   expulsar(s, motivo) {
@@ -433,6 +436,8 @@ export class MmoWorld {
   }
 
   async holaCuenta(s, m, env, uid, nombre, pagadas) {
+    // El socket se cerro mientras se verificaba: no se expulsa a la sesion buena que ya esta jugando.
+    if (s.cerrado) return;
 
     // Misma cuenta abierta en otra pestaña: la vieja se cierra.
     const vieja = this.porUid.get(uid);
@@ -484,6 +489,9 @@ export class MmoWorld {
     c.eq = c.eq || {}; c.bolsa = c.bolsa || []; c.logros = c.logros || []; c.titulo = c.titulo || ''; c.mundiales = c.mundiales || 0;
     for (const p of PODERES) if (typeof c.pw[p.id] !== 'number') c.pw[p.id] = 0;
     if (!Object.hasOwn(CLASES, c.clase || '')) c.clase = null;
+    // Skin o arma que ya no existe en data.js (renombrada, quitada o de una copia vieja): se vuelve a la basica.
+    if (!Object.hasOwn(SKINS, c.skin || '')) c.skin = 'comun';
+    if (!Object.hasOwn(ARMAS, c.arma || '')) c.arma = 'katana';
     // Las mazmorras son instancias que no sobreviven a una desconexion: se
     // vuelve a la puerta (en el pueblo).
     // (Si la instancia sigue abierta se le devuelve a ella mas abajo.)
@@ -498,6 +506,13 @@ export class MmoWorld {
     const regaladas = extra.filter(k => typeof k === 'string' && Object.hasOwn(SKINS, k) && !c.skins.includes(k));
     c.skins.push(...regaladas);
 
+    // Si el socket se cerro durante las esperas de arriba, cerrar() no limpio nada
+    // (s.c era null): no se le mete en porUid ni en el mapa (quedaria de fantasma).
+    // El personaje nuevo o heredado se guarda igual (el del invitado ya se borro).
+    if (s.cerrado) {
+      if (nuevo || heredado) { try { await this.state.storage.put('c:' + uid, c); } catch (e) { console.error('[MMO guardar]', e); } }
+      return;
+    }
     s.c = c;
     s.dios = this.calcularDios(s, s.extraAuth);
     s.diosModo = {};
@@ -541,6 +556,7 @@ export class MmoWorld {
     // deben retrasar la entrada al mundo.
     this.retEntrar(s, nuevo);
     if (nuevo || heredado || login) await this.guardar(s);
+    if (s.cerrado) return;   // cerrado durante el guardado: cerrar() ya limpio todo
 
     this.enviar(s, { t: 'bienvenido', id: s.id, yo: this.datosPropios(s), nuevo, heredado, regaladas, on: this.contarOnline() });
     if (login) this.enviar(s, { t: 'login', ...login });
@@ -568,6 +584,7 @@ export class MmoWorld {
     if (instGuardada && !s.m3) this.volverAInstancia(s, instGuardada.mapa, instGuardada.x);
     this.reponerElixires(s);
     await this.cargarHermandadDe(s);
+    if (s.cerrado) return;
     if (c.herm) this.refrescarApariencia(s);
     this.revisarLogros(s);
     if (!this.bucle) this.bucle = setInterval(() => this.tick(), TICK_MS);
@@ -1651,7 +1668,7 @@ export class MmoWorld {
       // En jefes cada bando se lleva al menos un tercio: pelear juntos compensa.
       const k = (o.jefe ? Math.max(parte, 1 / 3) : parte) * (1 + 0.1 * (n - 1)) / n;
       for (const s of b.miembros) {
-        const mult = (((SKINS[s.c.skin].buffs || {}).oroMult) || 1) * (1 + talento(s.c, 'fortuna'));
+        const mult = ((((SKINS[s.c.skin] || {}).buffs || {}).oroMult) || 1) * (1 + talento(s.c, 'fortuna'));
         const xp = Math.max(1, Math.round(base.xp * k * (1 + talento(s.c, 'erudicion')) * (o.xpX || 1)));
         const oro = Math.max(1, Math.round(base.oro * k * rnd(0.8, 1.2) * mult));
         premios.push([s.id, xp, oro]);
@@ -2281,30 +2298,46 @@ export class MmoWorld {
   }
 
   // ── SIMULACION ──
+  // Cada subsistema y cada mapa va aislado: una excepcion con un monstruo,
+  // evento o personaje raro ya no congela el resto del mundo (sale en el log
+  // como mucho una vez cada 30 s por subsistema). En el arnes (estricto) se
+  // relanza para que la prueba falle en el sitio.
+  paso(n, fn) {
+    try { fn(); }
+    catch (e) {
+      if (this.estricto) throw e;
+      const t = Date.now();
+      this.errT = this.errT || {};
+      if (t - (this.errT[n] || 0) > 30000) { this.errT[n] = t; console.error('[MMO tick ' + n + ']', e); }
+    }
+  }
+
   tick() {
     const ahora = Date.now();
     if (ahora - (this.onT || 0) > 10000) {
       this.onT = ahora;
-      // Aviso a todos al empezar y al acabar la Hora Feliz.
-      const hf = horaFelizActiva(ahora);
-      if (this.hfAntes !== undefined && hf !== this.hfAntes) this.aTodos({ t: 'aviso', m: hf ? 'Empieza la Hora Feliz: +50% de experiencia por caza durante una hora.' : '⚡ Terminó la Hora Feliz.' });
-      this.hfAntes = hf;
-      // Una pestaña abierta sin jugar mantiene vivo el objeto (y cobra tiempo
-      // de CPU del cupo diario) todo el dia: fuera tras 10 min sin actividad.
-      for (const s of [...this.sesiones.values()]) {
-        if (s.c && ahora - (s.actT || 0) > INACTIVO_MS) {
-          this.enviar(s, { t: 'err', m: 'Te desconectamos por inactividad. Toca la pantalla o pulsa una tecla para volver.', fatal: true, inactivo: true });
-          try { s.ws.close(4001, 'inactivo'); } catch (e) {}
-          this.cerrar(s);
+      this.paso('10s', () => {
+        // Aviso a todos al empezar y al acabar la Hora Feliz.
+        const hf = horaFelizActiva(ahora);
+        if (this.hfAntes !== undefined && hf !== this.hfAntes) this.aTodos({ t: 'aviso', m: hf ? 'Empieza la Hora Feliz: +50% de experiencia por caza durante una hora.' : '⚡ Terminó la Hora Feliz.' });
+        this.hfAntes = hf;
+        // Una pestaña abierta sin jugar mantiene vivo el objeto (y cobra tiempo
+        // de CPU del cupo diario) todo el dia: fuera tras 10 min sin actividad.
+        for (const s of [...this.sesiones.values()]) {
+          if (s.c && ahora - (s.actT || 0) > INACTIVO_MS) {
+            this.enviar(s, { t: 'err', m: 'Te desconectamos por inactividad. Toca la pantalla o pulsa una tecla para volver.', fatal: true, inactivo: true });
+            try { s.ws.close(4001, 'inactivo'); } catch (e) {}
+            this.cerrar(s);
+          }
         }
-      }
-      this.contarHoy().then(h => this.aTodos({ t: 'on', n: this.contarOnline(), h }), () => this.aTodos({ t: 'on', n: this.contarOnline() }));
-      this.revisarSemana(ahora).catch(e => console.error('[MMO semana]', e));
+        this.contarHoy().then(h => this.aTodos({ t: 'on', n: this.contarOnline(), h }), () => this.aTodos({ t: 'on', n: this.contarOnline() }));
+        this.revisarSemana(ahora).catch(e => console.error('[MMO semana]', e));
+      });
     }
-    this.revisarMundial(ahora);
-    this.tickGrupos(ahora);
-    this.guardarHermsSucias(ahora);
-    this.tickDuelos(ahora);
+    this.paso('mundial', () => this.revisarMundial(ahora));
+    this.paso('grupos', () => this.tickGrupos(ahora));
+    this.paso('herms', () => this.guardarHermsSucias(ahora));
+    this.paso('duelos', () => this.tickDuelos(ahora));
     const porClave = {}, en3d = [];
     for (const s of this.sesiones.values()) {
       if (!s.c) continue;
@@ -2312,13 +2345,13 @@ export class MmoWorld {
       if (s.m3) { en3d.push(s); continue; }   // el mundo 3D va aparte
       (porClave[s.k] = porClave[s.k] || []).push(s);
     }
-    this.tick3d(ahora, en3d);
+    this.paso('3d', () => this.tick3d(ahora, en3d));
     // Invasiones, raros (functions/mmo/eventos.js): solo mira zonas con gente.
-    this.tickEventos(ahora, porClave);
-    for (const k in porClave) this.simularMapa(k, porClave[k], ahora);
+    this.paso('eventos', () => this.tickEventos(ahora, porClave));
+    for (const k in porClave) this.paso('mapa:' + k, () => this.simularMapa(k, porClave[k], ahora));
     // Instancias vacias (todos salieron): se cierran solas.
-    if (this.limpiarInstancias) this.limpiarInstancias(porClave, ahora);
-    this.limpiarTorres(porClave, ahora);
+    this.paso('inst', () => { if (this.limpiarInstancias) this.limpiarInstancias(porClave, ahora); });
+    this.paso('torres', () => this.limpiarTorres(porClave, ahora));
   }
 
   simularMapa(clave, jugadores, ahora) {
@@ -2380,7 +2413,7 @@ export class MmoWorld {
 
     // Aura de la skin legendaria: quema lo que esta pegado al jugador.
     for (const s of jugadores) {
-      if (s.muerto || !(SKINS[s.c.skin].buffs || {}).aura || ahora < s.auraT) continue;
+      if (s.muerto || !((SKINS[s.c.skin] || {}).buffs || {}).aura || ahora < s.auraT) continue;
       s.auraT = ahora + 1000;
       const golpes = [];
       for (const o of w.mons.values()) {

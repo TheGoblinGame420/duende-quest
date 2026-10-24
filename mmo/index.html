@@ -48,11 +48,15 @@
 <meta name="apple-mobile-web-app-title" content="Duende Online">
 <link rel="icon" type="image/png" href="/assets/ui/coin.png">
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
+<!-- defer se ejecuta en orden: Telegram ANTES que pwa.js (mira window.Telegram para no mostrar "Instalar" dentro de Telegram) y todo antes del modulo client.js -->
+<script src="https://telegram.org/js/telegram-web-app.js" defer></script>
 <script src="/js/pwa.js" defer></script>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="/js/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
+<script src="/js/config.js" defer></script>
 <style>
 /* ── Tokens (guia de diseno, oct 2026). Las variables viejas (--verde, --amarillo,
    --rosa, --cian, --rojo) siguen existiendo porque client.js las usa, pero ahora
@@ -913,9 +917,9 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=280"></script>
+<script type="module" src="/mmo/js/client.js?v=281"></script>
 <div id="nuevo3d" role="dialog" aria-label="Nuevo mundo 3D">
-  <video src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" autoplay muted loop playsinline preload="none"></video>
+  <video src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" muted loop playsinline preload="none"></video>
   <div class="t">🌌 NUEVO: $DUENDE ORIGINS, el mundo abierto en 3D</div>
   <div class="d">Tu mismo duende, con su nivel, oro y skins: vuela con alas, elige Luz o Sombra en el Abismo, asedia la Fortaleza del Núcleo y caza en un mundo enorme.</div>
   <div class="b"><a id="nuevo3d-ir" href="/mundo/">Jugar ORIGINS</a><button id="nuevo3d-no" type="button">Ahora no</button></div>

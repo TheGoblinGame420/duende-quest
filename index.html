@@ -827,7 +827,7 @@ section[id]{scroll-margin-top:72px;}
   <div class="juegos" aria-label="Elige tu juego">
     <article class="juego origins">
       <div class="juego-media">
-        <video id="hero-video" src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" autoplay muted loop playsinline preload="metadata" aria-label="Tráiler de $DUENDE ORIGINS"></video>
+        <video id="hero-video" data-src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" muted loop playsinline preload="none" aria-label="Tráiler de $DUENDE ORIGINS"></video>
         <button type="button" class="juego-son" id="hero-son" aria-label="Activar sonido del tráiler">🔇 Activar sonido</button>
         <span class="juego-tag">NUEVO · 3D</span>
       </div>
@@ -2347,7 +2347,12 @@ window.addEventListener('load', cargarRankingLanding);
 // Sonido del tráiler de ORIGINS: los navegadores solo dejan reproducir con
 // sonido tras un toque, así que el vídeo empieza mudo.
 (function(){var v=document.getElementById('hero-video'),b=document.getElementById('hero-son');if(!v||!b)return;
-b.onclick=function(){v.muted=!v.muted;if(!v.muted){v.currentTime=0;v.volume=0.8;v.play().catch(function(){});}b.textContent=v.muted?'🔇 Activar sonido':'🔊 Sonido activado';};})();
+var cx=navigator.connection,lento=matchMedia('(prefers-reduced-motion: reduce)').matches||!!(cx&&(cx.saveData||/2g/.test(cx.effectiveType||''))),visible=true;
+function cargar(){if(v.src)return;v.src=v.dataset.src;if(visible)v.play().catch(function(){});}
+function tras(){if(window.requestIdleCallback)requestIdleCallback(cargar,{timeout:2000});else setTimeout(cargar,300);}
+if(!lento){if(document.readyState==='complete')tras();else addEventListener('load',tras);}
+if('IntersectionObserver' in window)new IntersectionObserver(function(es){visible=es[0].isIntersecting;if(!v.src)return;if(visible)v.play().catch(function(){});else v.pause();}).observe(v);
+b.onclick=function(){if(!v.src)v.src=v.dataset.src;v.muted=!v.muted;if(!v.muted){v.currentTime=0;v.volume=0.8;v.play().catch(function(){});}b.textContent=v.muted?'🔇 Activar sonido':'🔊 Sonido activado';};})();
 </script>
 </body>
 </html>

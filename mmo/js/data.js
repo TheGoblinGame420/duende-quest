@@ -492,6 +492,11 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 49, fecha: '24 oct 2026', items: [
+    'Todo carga más rápido: ORIGINS baja sus piezas en paralelo, el terreno ya no da tirones en móviles modestos y la pantalla de inicio no descarga el vídeo si tienes ahorro de datos.',
+    'Conexión más fuerte: si la red se cae (cambio de wifi a datos, ascensor, Telegram minimizado) el juego lo detecta, avisa con «Reconectando…» y vuelve solo, sin quedarse congelado.',
+    'Móvil: en CLASSIC puedes deslizar el pulgar de ◀ a ▶ sin levantarlo, y ORIGINS en horizontal coloca el menú arriba y las acciones a la derecha sin taparse.',
+  ] },
   { n: 48, fecha: '24 oct 2026', items: [
     '¡Instala $DUENDE como app! En Chrome, Edge o Android toca «⬇ Instalar app» en la pantalla de inicio; en iPhone: Compartir → «Añadir a pantalla de inicio». Abre al instante, a pantalla completa y con accesos directos a ORIGINS y CLASSIC.',
   ] },

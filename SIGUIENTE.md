@@ -2743,3 +2743,21 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
   landing usa el mismo. mmo/ y mundo/ conservan el suyo (con id).
 - worker.js: /sw.js con Cache-Control no-cache y Service-Worker-Allowed.
 - El pulso diario del precio ya no sale ni en Telegram ni en Discord.
+
+### Mejoras del equipo de especialistas (24-oct-2026, `?v=281`)
+
+- mmo/js/mundo3d.js: `cercanas()` sin reservar memoria y un solo fbm grande
+  en `alturaEn` (identico bit a bit: 972.406 puntos comparados).
+- mundo: colores del suelo precalculados; kit de Kenney en paralelo con el
+  terreno; hoja del duende solo sin modelos; modulepreload de three y modulos.
+- Fuentes sin bloquear (media=print) en mmo/inicio/mundo; scripts de CLASSIC con
+  defer (Telegram antes que pwa.js); video promo solo tras cargar y nunca con
+  ahorro de datos.
+- Conexion (2D y 3D): cerrojo `conectando`, manejadores atados a su socket,
+  vigilante de socket mudo (12 s en 2D, 8 s en 3D) y banda «Reconectando…»;
+  el 2D sigue reintentando visible y reintenta al volver la red.
+- Servidor: `paso()` aísla cada subsistema/mapa del tick (estricto en el arnes);
+  skin/arma inexistente se corrige al entrar; sin sesiones fantasma si el
+  socket se cierra durante holaCuenta.
+- Movil: pad ◀▶ deslizable en CLASSIC; ORIGINS en horizontal con su propio
+  diseño y la base del joystick bajo el dedo.

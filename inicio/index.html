@@ -16,7 +16,7 @@
 <meta name="apple-mobile-web-app-title" content="$DUENDE">
 <script src="/js/pwa.js" defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <style>
 :root{--bg:#0a0418;--txt:#f2efff;--txt2:#b8b0d8;--oro:#ffd84a;--mor:#a78bfa;--ros:#f472b6;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -94,7 +94,7 @@ footer a{color:var(--cian);text-decoration:none;}
   <section class="cartas">
     <a class="carta origins" data-ir="/mundo/">
       <div class="vista">
-        <video src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" autoplay muted loop playsinline preload="metadata" aria-label="Vista de $DUENDE ORIGINS"></video>
+        <video data-src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" muted loop playsinline preload="none" aria-label="Vista de $DUENDE ORIGINS"></video>
         <span class="etq">NUEVO · 3D</span>
       </div>
       <h2>$DUENDE ORIGINS</h2>
@@ -181,6 +181,21 @@ footer a{color:var(--cian);text-decoration:none;}
     requestAnimationFrame(cuadro);
   }
   requestAnimationFrame(cuadro);
+  // Video de ORIGINS: al abrir solo se ve el poster (42 KB). El mp4 (1,7 MB) se pide cuando la pagina ya cargo,
+  // nunca con ahorro de datos, 2G o "reducir movimiento", y se pausa cuando la carta no se ve.
+  var vid = document.querySelector('video[data-src]');
+  if (vid) {
+    var cx = navigator.connection, lento = reducir || !!(cx && (cx.saveData || /2g/.test(cx.effectiveType || '')));
+    var visible = true;
+    var cargarV = function () { if (vid.src) return; vid.src = vid.dataset.src; if (visible) vid.play().catch(function () {}); };
+    var tras = function () { if (window.requestIdleCallback) requestIdleCallback(cargarV, { timeout: 2000 }); else setTimeout(cargarV, 300); };
+    if (!lento) { if (document.readyState === 'complete') tras(); else addEventListener('load', tras); }
+    if ('IntersectionObserver' in window) new IntersectionObserver(function (es) {
+      visible = es[0].isIntersecting;
+      if (!vid.src) return;
+      if (visible) vid.play().catch(function () {}); else vid.pause();
+    }).observe(vid);
+  }
 })();
 </script>
 </body>

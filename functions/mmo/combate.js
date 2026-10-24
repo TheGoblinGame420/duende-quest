@@ -243,7 +243,7 @@ export const Combate = {
   sumarCombo(s, n) { s.combo = Math.min(5, (s.combo || 0) + n); },
 
   robarVida(s, curado) {
-    const robo = (SKINS[s.c.skin].buffs || {}).robo || 0;
+    const robo = ((SKINS[s.c.skin] || {}).buffs || {}).robo || 0;
     if (robo && curado) s.hp = Math.min(s.st.maxHp, s.hp + curado * robo);
   },
 

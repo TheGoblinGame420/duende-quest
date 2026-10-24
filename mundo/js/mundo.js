@@ -14,19 +14,19 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES } from '/mmo/js/data.js?v=280';
-import { iniciarVentanas } from './ventanas.js?v=280';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=280';
-import { crearMusica } from './musica.js?v=280';
-import { construirCueva } from './cueva.js?v=280';
-import { TAPA, transparentar } from './tapa.js?v=280';
-import { construirAbismo } from './abismo.js?v=280';
-import { crearParticulas } from './particulas.js?v=280';
-import { cargarKenney, piezasCasa } from './kenney.js?v=280';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES } from '/mmo/js/data.js?v=281';
+import { iniciarVentanas } from './ventanas.js?v=281';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=281';
+import { crearMusica } from './musica.js?v=281';
+import { construirCueva } from './cueva.js?v=281';
+import { TAPA, transparentar } from './tapa.js?v=281';
+import { construirAbismo } from './abismo.js?v=281';
+import { crearParticulas } from './particulas.js?v=281';
+import { cargarKenney, piezasCasa } from './kenney.js?v=281';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=280';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=280';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=281';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=281';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -79,6 +79,9 @@ const CIELO = {
 };
 const LUZ = { noche: 0.8, cavernas: 0.8, tormenta: 0.85, cueva: 0.42 };
 const C = h => new THREE.Color(h);
+// Colores del suelo ya convertidos (colorSuelo corre en cada vertice del terreno y pixel del minimapa).
+const SUELO_C = Object.fromEntries(Object.entries(SUELO).map(([k, v]) => [k, C(v)]));
+const C_PLAZA = C('#cdb98a'), C_ROCA = C('#6b6460'), C_NIEVE = C('#f2f4ff'), C_ARENA = C('#e0cf96'), C_CAMINO = C('#a8865a');
 
 // ── ESCENA ──
 const lienzo = $('lienzo');
@@ -256,18 +259,17 @@ const CAMINOS = Object.values(ZONAS3D).map(c => [0, 0, c.x * 0.72, c.z * 0.72]);
 function enCamino(x, z) { let m = Infinity; for (const [a, b, c, d] of CAMINOS) m = Math.min(m, distSeg(x, z, a, b, c, d)); return m; }
 function colorSuelo(x, z, h, out) {
   out.setRGB(0, 0, 0);
-  const t = new THREE.Color();
-  for (const [id, k] of mezclaEn(x, z)) { t.set(SUELO[id]); out.r += t.r * k; out.g += t.g * k; out.b += t.b * k; }
+  for (const [id, k] of mezclaEn(x, z)) { const t = SUELO_C[id]; out.r += t.r * k; out.g += t.g * k; out.b += t.b * k; }
   // El pueblo: cesped claro que se funde con las zonas de alrededor y la plaza.
   const dp = Math.hypot(x, z);
-  if (dp < MUNDO.pueblo.radio + 40) out.lerp(C(SUELO.pueblo), 1 - clamp((dp - MUNDO.pueblo.radio) / 40, 0, 1));
-  if (dp < 26) out.lerp(C('#cdb98a'), 0.7);
+  if (dp < MUNDO.pueblo.radio + 40) out.lerp(SUELO_C.pueblo, 1 - clamp((dp - MUNDO.pueblo.radio) / 40, 0, 1));
+  if (dp < 26) out.lerp(C_PLAZA, 0.7);
   const p = pendienteEn(x, z);
-  if (p > 0.6) out.lerp(C('#6b6460'), clamp((p - 0.6) * 1.5, 0, 0.85));       // roca en las laderas
-  if (h > 26) out.lerp(C('#f2f4ff'), clamp((h - 26) / 10, 0, 0.9));           // nieve en las cumbres
-  if (h < 1.2 && h > -3) out.lerp(C('#e0cf96'), clamp((1.2 - h) / 1.5, 0, 0.8)); // arena junto al agua
+  if (p > 0.6) out.lerp(C_ROCA, clamp((p - 0.6) * 1.5, 0, 0.85));       // roca en las laderas
+  if (h > 26) out.lerp(C_NIEVE, clamp((h - 26) / 10, 0, 0.9));           // nieve en las cumbres
+  if (h < 1.2 && h > -3) out.lerp(C_ARENA, clamp((1.2 - h) / 1.5, 0, 0.8)); // arena junto al agua
   const cam = enCamino(x, z);
-  if (cam < 4 && Math.hypot(x, z) > 20) out.lerp(C('#a8865a'), (1 - cam / 4) * 0.75);
+  if (cam < 4 && Math.hypot(x, z) > 20) out.lerp(C_CAMINO, (1 - cam / 4) * 0.75);
   const v = 0.92 + 0.16 * (((x * 73856093 ^ z * 19349663) >>> 0) % 100) / 100;
   out.multiplyScalar(v);
   return out;
@@ -920,13 +922,15 @@ function estadoJugador(q, esYo, t, anda) {
 
 // Cuadros de la hoja del duende (los mismos del 2D).
 const ANIM_IDX = { reposo: [1, 2, 3], camina: [4, 5, 6, 7, 8, 9], ataca: [10, 11, 12, 13, 14], herido: [15, 16, 17] };
-let ANIM = null;
+let ANIM = null, animP = null;
+// La hoja del duende (472 KB) solo hace falta como plan B (sin modelos 3D): se pide al usarla.
+const cargarAnim = () => animP || (animP = fetch(A + 'skins/duende_anim.json').then(r => r.json()).then(j => { ANIM = j; }).catch(() => {}));
 
 // Figura de un jugador segun su skin.
 async function figuraJugador(skin) {
   const sk = SKINS[skin] || SKINS.comun;
   if (skin === 'comun' || sk.anim) {
-    const img = await cargarImg(A + 'skins/duende_anim.png');
+    const [img] = await Promise.all([cargarImg(A + 'skins/duende_anim.png'), cargarAnim()]);
     if (!img || !ANIM) return null;
     const fuente = sk.anim ? (imagenes['t:' + skin] = imagenes['t:' + skin] || teñir(img, sk.hue, sk.sat)) : img;
     const [cw, ch] = ANIM.celda;
@@ -1067,13 +1071,20 @@ async function autenticacion() {
   soyInvitado = true;
   return { auth: { k: 'inv', tok: tokInvitado() }, nombre };
 }
+let ultimoMsgT = performance.now(), conectando = false;
 async function conectar() {
+  // Un solo intento a la vez (volver a la app, 'online' y el temporizador podian
+  // coincidir durante el await y abrir dos sockets: el servidor echaba a uno).
+  if (conectando || (ws && ws.readyState <= 1)) return;
+  conectando = true;
+  let hola;
+  try { hola = await autenticacion(); } finally { conectando = false; }
   if (ws && ws.readyState <= 1) return;
-  const hola = await autenticacion();
-  ws = new WebSocket(urlWs());
-  ws.onopen = () => { conectado = true; mandar({ t: 'hola', ...hola, modo: '3d' }); };
-  ws.onmessage = ev => { let m; try { m = JSON.parse(ev.data); } catch (e) { return; } recibir(m); };
-  ws.onclose = () => {
+  const este = ws = new WebSocket(urlWs());
+  este.onopen = () => { if (ws !== este) return; conectado = true; ultimoMsgT = performance.now(); mandar({ t: 'hola', ...hola, modo: '3d' }); };
+  este.onmessage = ev => { if (ws !== este) return; ultimoMsgT = performance.now(); let m; try { m = JSON.parse(ev.data); } catch (e) { return; } recibir(m); };
+  este.onclose = () => {
+    if (ws !== este) return;   // un socket viejo que el vigilante ya cambio por otro: no toca nada
     conectado = false;
     if (fatal) return;
     // En segundo plano (Telegram minimizado, pantalla bloqueada) no se cuentan
@@ -1094,6 +1105,29 @@ function volverAConectar() {
 let errorRed = false;
 document.addEventListener('visibilitychange', volverAConectar);
 addEventListener('online', volverAConectar);
+// Vigilante de la conexion: el servidor manda una foto 's3' varias veces por
+// segundo. Si en 8 s no llega nada, el socket esta medio abierto (cambio de wifi
+// a datos, Telegram minimizado...): se cierra y se abre otro. A los 4 s se avisa.
+const bandaRed = document.createElement('div');
+bandaRed.textContent = 'Reconectando…';
+bandaRed.setAttribute('role', 'status');
+bandaRed.style.cssText = 'position:fixed;top:calc(8px + max(var(--tg-top, 0px), env(safe-area-inset-top, 0px)));left:50%;transform:translateX(-50%);z-index:60;padding:6px 14px;border-radius:8px;background:rgba(180,30,40,.85);color:#fff;font:600 13px system-ui,sans-serif;display:none;pointer-events:none';
+document.body.appendChild(bandaRed);
+let vigiaT = performance.now();
+setInterval(() => {
+  const ahora = performance.now();
+  // El propio intervalo llego tarde (segundo plano o un tiron del hilo): se da margen.
+  if (ahora - vigiaT > 4000) ultimoMsgT = ahora;
+  vigiaT = ahora;
+  bandaRed.style.display = yo && !fatal && (!conectado || ahora - ultimoMsgT > 4000) ? 'block' : 'none';
+  if (document.hidden || fatal || !yo || !ws || ws.readyState !== 1) return;
+  if (ahora - ultimoMsgT > 8000) {
+    const viejo = ws; ws = null; conectado = false;
+    try { viejo.close(); } catch (e) {}
+    reintentos = 0; conectar();
+  }
+}, 2000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) ultimoMsgT = performance.now(); });
 addEventListener('focus', volverAConectar);
 function error(txt, red) { fatal = true; errorRed = !!red; $('error-txt').textContent = txt; abrir('v-error'); }
 setInterval(() => mandar({ t: 'ping', ts: Date.now() }), 20000);
@@ -2392,7 +2426,8 @@ if (MOVIL) {
   const base = $('joy').querySelector('.base'), pomo = base.firstElementChild;
   $('joy').addEventListener('touchstart', e => {
     const t = e.changedTouches[0]; joy.id = t.identifier; joy.x = t.clientX; joy.y = t.clientY; joy.dx = joy.dy = 0;
-    base.style.display = 'block'; base.style.left = (t.clientX - 60) + 'px'; base.style.top = (t.clientY - 60) + 'px';
+    const r = $('joy').getBoundingClientRect();   // la base se dibuja bajo el dedo aunque #joy no empiece en (0,0)
+    base.style.display = 'block'; base.style.left = (t.clientX - r.left - 60) + 'px'; base.style.top = (t.clientY - r.top - 60) + 'px';
     e.preventDefault();
   }, { passive: false });
   $('joy').addEventListener('touchmove', e => {
@@ -2876,14 +2911,16 @@ window.__dq3 = { P, mons, otros, get objetivo() { return objetivo; }, get autoAt
 // ── INICIO ──
 async function inicio() {
   progreso(0.1, 'Cargando el arte del juego…');
-  try { ANIM = await (await fetch(A + 'skins/duende_anim.json')).json(); } catch (e) {}
-  await cargarImg(A + 'skins/duende_anim.png');
+  // El kit de Kenney se baja mientras se construye el terreno (antes, despues).
+  const kitP = PRUEBA.has('sinKenney') ? null : cargarKenney('/assets/3d/');
+  if (kitP) kitP.catch(() => {});   // el fallo se trata abajo
+  if (!USAR_MODELOS) { await cargarAnim(); await cargarImg(A + 'skins/duende_anim.png'); }
   progreso(0.3, 'Levantando montañas…');
   await new Promise(r => setTimeout(r, 20));
   agua = crearTerreno();
   progreso(0.45, 'Trayendo árboles y casas…');
-  if (!PRUEBA.has('sinKenney')) {
-    try { KIT = await Promise.race([cargarKenney('/assets/3d/'), new Promise((_, no) => setTimeout(() => no(new Error('tiempo de espera')), 15000))]); }
+  if (kitP) {
+    try { KIT = await Promise.race([kitP, new Promise((_, no) => setTimeout(() => no(new Error('tiempo de espera')), 15000))]); }
     catch (e) { console.warn('[3D] sin modelos del kit, figuras de siempre:', e); KIT = null; }
   }
   progreso(0.55, 'Plantando bosques…');
