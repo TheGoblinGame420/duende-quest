@@ -17,7 +17,7 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=282';
+} from './data.js?v=283';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -336,6 +336,7 @@ function mandar(o) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); 
 let soyInvitado = false;
 async function autenticacion() {
   soyInvitado = false;
+  try { localStorage.setItem('dq_ultimo_juego', '/mmo/'); } catch (e) {}   // /inicio/ lo ofrece como CONTINUAR
   // Si hubo partida de invitado en este dispositivo, su token viaja tambien:
   // la cuenta nueva hereda ese personaje en vez de empezar de cero.
   const previo = localStorage.getItem('dq_mmo_tok');
@@ -3595,6 +3596,11 @@ function colorNivel(nv) {
   const dif = nv - (yo ? yo.nivel : 1);
   return dif >= 5 ? '#ff3344' : dif >= 2 ? '#ff9900' : dif <= -8 ? '#888' : dif <= -3 ? '#4ade80' : '#ffe600';
 }
+// Marca de peligro que no depende del color (daltonicos): ASCII porque la fuente pixel no tiene calavera.
+function marcaNivel(nv) {
+  const dif = nv - (yo ? yo.nivel : 1);
+  return dif >= 5 ? '!! ' : dif >= 2 ? '! ' : '';
+}
 // Anillo de seleccion bajo los pies del objetivo (rojo enemigo, verde aliado).
 function anilloSeleccion(x, pies, ancho, color) {
   g.save();
@@ -3689,7 +3695,7 @@ function dibujarMonstruo(o) {
     const w = 40, y = o.y - o.alto - 12;
     if (o.hp < o.mx || elegido) barraMini(x, y, w, o.hp / o.mx, '#ff3344');
     // Con el nombre solo cuando esta herido o elegido: todos a la vez llenaban la pantalla.
-    const tn = spriteTexto('NV' + o.nv + (o.hp < o.mx || elegido ? ' ' + def.nombre : ''), 6, colorNivel(o.nv), false, false);
+    const tn = spriteTexto(marcaNivel(o.nv) + 'NV' + o.nv + (o.hp < o.mx || elegido ? ' ' + def.nombre : ''), 6, colorNivel(o.nv), false, false);
     g.drawImage(tn, Math.round(x - tn.width / 2), Math.round(y - 4 - 6 - (o.etqNivel || 0) * 10));
     if (cm) barraMini(x, y + 7, w, (ahora - cm.ini) / (cm.fin - cm.ini), cm.int ? '#ffae00' : '#aaa');
   } else {
@@ -4370,7 +4376,7 @@ function pintarObjetivo() {
     ponTxt($('o-nombre'), def.nombre);
     ponCss($('o-nombre'), 'color', colorNivel(o.nv));
     ponTxt($('o-nivel'), def.jefe ? '☠' : String(o.nv));
-    ponTxt($('o-tipo'), def.jefe ? 'Jefe' : 'Nv ' + o.nv);
+    ponTxt($('o-tipo'), def.jefe ? 'Jefe' : marcaNivel(o.nv) + 'Nv ' + o.nv);
     pintarBarra($('ohp'), o.hp / o.mx, Math.max(0, o.hp).toLocaleString('es', { useGrouping: 'always' }) + '/' + o.mx.toLocaleString('es', { useGrouping: 'always' }));
     ponCss($('orec'), 'display', 'none');
     const cm = castMon.get(o.id);

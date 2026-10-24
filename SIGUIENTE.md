@@ -2734,8 +2734,11 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
 ### App instalable desde el navegador (PWA) (24-oct-2026, `?v=280`)
 
 - /sw.js (alcance /): las paginas siempre de la red (sin red -> /offline.html);
-  JS/CSS con ?v= y /assets/, /audio/ desde la cache `dq-v<version>` (release.py
-  la sube en cada version y se borran las viejas). Nunca toca /api/ ni /mmo/ws.
+  JS/CSS con ?v= desde la cache `dq-v<version>` (cache-first); /assets/ y
+  /audio/ desde la cache y revalidados en segundo plano (stale-while-revalidate,
+  como mucho 1 vez al dia por la cache HTTP). El script de publicacion sube
+  CACHE en sw.js con cada ?v= (a mano si se publica a mano; se borran las viejas). Peticiones con Range y
+  respuestas HTML no se guardan. Nunca toca /api/ ni /mmo/ws.
 - /js/pwa.js: registra el SW (no dentro de Telegram) y muestra los
   `[data-instalar]` cuando el navegador lo permite (beforeinstallprompt) o en
   iOS (instrucciones de Compartir). Botones en inicio/ y en la landing.
@@ -2793,3 +2796,24 @@ PENDIENTE DEL DUEÑO (no se puede hacer desde el codigo):
   "!/audio/*"]` (wrangler >= 4.20) y una regla WAF de rate limiting con dominio
   propio. No se aplico a ciegas para no romper el despliegue.
 - Quedan 40 hallazgos medios/bajos sin verificar (lista en el informe).
+
+### Ronda 2: 32 agentes con parches exactos (24-oct-2026, `?v=283`)
+
+Cada agente verifico un elemento pendiente contra el codigo actual y entrego
+ediciones exactas; se aplicaron todo-o-nada con `aplicar.py` (node --check antes
+de escribir). Aplicados 30 de 32: no se aplico «Llamar a mis amigos por
+Telegram» (manda mensajes de Telegram por iniciativa del juego: necesita el visto
+bueno del dueño) y el botin de raros/mazmorra no equipable (choco con otro parche
+que ya acota ese botin). La proteccion de mTON al restaurar copias se integro a
+mano (`sinRetirosPosteriores`, los retiros no vuelven atras).
+
+Seguridad: facturas de Stars solo con initData firmado (freno 3 s y precio
+cacheado 60 s); webhook del bot con limite por usuario; mdSeguro sin @menciones
+ni URLs; supabase-js fijado en 2.117.3; hermandad (color/MOTD/rango) con freno;
+invitados sin chat general ni susurros hasta Nv 5 y silencio tambien por IP;
+sin caracteres invisibles en el chat; cambiarLook con freno; copias con id por
+minuto y volcado por paginas.
+
+Juego: XP/oro en grupo del 3D (quien pega cobra al menos el 70 %); objetos de
+raros y premio de mazmorra acotados a tu nivel; sw.js revalida /assets/ y
+/audio/ en segundo plano y no guarda peticiones con Range ni HTML.

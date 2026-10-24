@@ -456,7 +456,7 @@ export const Mazmorras = {
         const pr = premioMazmorraDia(Math.min(c.nivel, I.nv + 10));   // una muy por debajo de tu nivel da menos
         c.oro += pr.oro;
         this.sumarXp(s, pr.xp);
-        const it = this.darItem(s, this.generarItem(I.nv, 2));
+        const it = this.darItem(s, this.generarItem(Math.min(I.nv, c.nivel), 2));   // I.nv va con el mas alto del grupo: el resto tambien puede equiparlo
         extra = ` Premio del día: ${c.nivel < NIVEL_MAX ? '+' + pr.xp.toLocaleString('es', { useGrouping: 'always' }) + ' XP, ' : ''}+${pr.oro.toLocaleString('es', { useGrouping: 'always' })} oro y ${it.r >= 3 ? 'un LEGENDARIO' : 'un objeto ÉPICO'}.`;
       }
       // Desafio vencido: abre el siguiente y da su premio (oro y un objeto

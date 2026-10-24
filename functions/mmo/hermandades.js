@@ -147,6 +147,7 @@ export const Hermandades = {
       await this.state.storage.delete('h:' + h.id);
       await this.state.storage.delete('hn:' + h.nombre.toLowerCase());
       this.herms.delete(h.id);
+      if (this.chatHistH) this.chatHistH.delete(h.id);
       this.cargarRankHerm().then(rh => { if (!rh.l[h.id]) return; delete rh.l[h.id]; return this.state.storage.put('rankHerm', rh); }).catch(e => console.error('[MMO rankHerm]', e));
       return;
     }
@@ -169,6 +170,14 @@ export const Hermandades = {
 
   // Los clientes solo conocen el id publico de cada miembro.
   uidDePub(h, p) { return h ? Object.keys(h.miembros).find(u => pub(u) === p) : null; },
+  // Enfriamiento comun a color, MOTD y rangos: cada uno guarda la hermandad
+  // entera y avisa a todos sus miembros (el color, ademas, a sus mapas).
+  esperaHerm(s) {
+    const ahora = Date.now();
+    if (ahora - (s.hermT || 0) < 1500) { this.no(s, 'Espera un momento.'); return true; }
+    s.hermT = ahora;
+    return false;
+  },
 
   async expulsarHerm(s, m) {
     const h = await this.hermandad(s.c.herm);
@@ -184,6 +193,7 @@ export const Hermandades = {
     const h = await this.hermandad(s.c.herm);
     const uid = this.uidDePub(h, m.uid);
     if (!h || this.rangoEn(h, s.c.uid) !== 'lider' || !uid || uid === s.c.uid) return;
+    if (m.r === h.miembros[uid].r || this.esperaHerm(s)) return;
     if (m.r === 'lider') {
       h.miembros[s.c.uid].r = 'oficial';
       h.miembros[uid].r = 'lider';
@@ -202,6 +212,7 @@ export const Hermandades = {
     if (!h || this.rangoEn(h, s.c.uid) !== 'lider') return;
     const i = m.i | 0;
     if (i < 0 || i >= HERM_COLORES.length || i === (h.color | 0)) return;
+    if (this.esperaHerm(s)) return;
     h.color = i;
     await this.guardarHerm(h);
     this.enviarHerm(h);
@@ -211,6 +222,10 @@ export const Hermandades = {
     const h = await this.hermandad(s.c.herm);
     const r = this.rangoEn(h, s.c.uid);
     if (!h || !r || r === 'miembro') return;
+    // El MOTD sale en el chat de hermandad: un silenciado tampoco puede usarlo.
+    const mudo = this.silenciado ? this.silenciado(s) : 0;
+    if (mudo) return this.no(s, `🔇 Estás silenciado por un moderador ${Math.ceil((mudo - Date.now()) / 60000)} min más.`);
+    if (this.esperaHerm(s)) return;
     h.motd = String(m.m || '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 140);
     await this.guardarHerm(h);
     this.avisarHerm(h, `📜 Nuevo mensaje del día: ${h.motd || '(vacío)'}`);
@@ -227,6 +242,10 @@ export const Hermandades = {
     if (!h) return this.no(s, 'No estás en una hermandad.');
     const txt = JSON.stringify({ ...base, canal: 'hermandad' });
     for (const x of this.conectadosHerm(h)) this.enviar(x, txt);
+    // Para los miembros que entren luego (social.js, enviarHistorialChat).
+    this.chatHistH = this.chatHistH || new Map();
+    if (!this.chatHistH.has(h.id)) this.chatHistH.set(h.id, []);
+    this.anotarChat(this.chatHistH.get(h.id), s, base, 'hermandad', 10);
   },
 
   // ── GESTA SEMANAL ──

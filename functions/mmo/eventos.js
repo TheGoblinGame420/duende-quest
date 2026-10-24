@@ -316,7 +316,7 @@ export const Eventos = {
       s.c.oro += oro;
       s.c.raros = (s.c.raros || 0) + 1;
       this.progresoTarea && this.progresoTarea(s, 'raro');
-      const it = this.darItem(s, this.generarItem(o.nv, 1));
+      const it = this.darItem(s, this.generarItem(Math.min(o.nv, s.c.nivel), 1));   // nunca por encima de tu nivel: que se pueda equipar ya
       this.sumarXp(s, xp);
       s.sucio = true;
       this.enviar(s, { t: 'gana', xp, oro, drops: [], item: it, x: Math.round(o.x), y: Math.round(o.y - o.h - 20) });

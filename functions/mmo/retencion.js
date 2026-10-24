@@ -28,10 +28,13 @@
 // Object (alarm(), cada hora en punto), sin gastar otro disparador de cron.
 // Reglas para no hacer spam: solo cuentas de Telegram que jugaron en los
 // ultimos 14 dias y no entraron hoy, 1 aviso al dia como mucho, y tras 2
-// avisos sin volver se pausa hasta que vuelva.
+// avisos sin volver se pausa hasta que vuelva. Excepcion: al empezar un evento
+// de temporada (data TEMPORADAS) se manda UN aviso extra por evento aunque
+// este en pausa o lleve hasta OLVIDAR_DIAS sin jugar (e.ev = id del ultimo
+// evento avisado); off y bloq se respetan siempre.
 // ═══════════════════════════════════════════════════════
 
-import { xpParaSubir, premioDiaria, premioMazmorraDia, LOGIN_PREMIOS, multLogin, HABS, CLASES, NIVEL_MAX, DIARIA, horaFelizActiva, TORRE, semanaUTC } from '../../mmo/js/data.js';
+import { xpParaSubir, premioDiaria, premioMazmorraDia, LOGIN_PREMIOS, multLogin, HABS, CLASES, NIVEL_MAX, DIARIA, horaFelizActiva, TORRE, semanaUTC, temporadaDe } from '../../mmo/js/data.js';
 import { getEnv, tg } from '../api/lib.js';
 import { MMO_URL } from '../api/telegram-bot.js';
 
@@ -181,6 +184,20 @@ export const Retencion = {
     c.ret.visto = ahora;
     const hoy = diaNum(ahora);
     const nuevoDia = this.retMarcarDia(c, hoy);
+    // Sigue conectado al cambiar el dia UTC (19:00 en Peru): cobra la diaria y
+    // ve las tareas nuevas sin reconectar. Lo que cambia en c entra en el put
+    // de guardar(), que viene justo despues. Al cerrar no: lo cobra al volver.
+    if (nuevoDia && !s.cerrado && this.procesarLogin) {
+      const lg = this.procesarLogin(s);
+      if (lg) {
+        // En pleno combate no se abre la ventana del premio: solo el aviso.
+        if (ahora - (s.combateT || 0) < 5000) this.enviar(s, { t: 'toast', ok: true, m: `☀️ ¡Nuevo día! Recompensa diaria (día ${lg.racha}): ${lg.oro ? '+' + lg.oro.toLocaleString('es', { useGrouping: 'always' }) + ' oro' : lg.txt}. Misiones diarias renovadas.` });
+        else { this.enviar(s, { t: 'login', ...lg }); this.enviar(s, { t: 'toast', ok: true, m: '☀️ ¡Nuevo día! Misiones diarias renovadas.' }); }
+        if (this.infoTareas) this.enviar(s, { t: 'tareas', ...this.infoTareas(c) });
+        if (this.infoPase) this.enviar(s, { t: 'pase', pase: this.infoPase(c) });
+        this.actualizarYo(s);
+      }
+    }
     if (this.uidsPrueba.has(c.uid)) return;
     // Los minutos del dia se juntan en memoria y se escriben como mucho una
     // vez por minuto: escribir el agregado en CADA guardado doblaba las
@@ -276,11 +293,15 @@ export const Retencion = {
     return tg(env.BOT_TOKEN, metodo, cuerpo);
   },
   dormir(ms) { return new Promise(r => setTimeout(r, ms)); },
+  // El evento de temporada activo (aparte para que las pruebas lo fijen).
+  temporadaAviso() { return temporadaDe(); },
 
   puedeAvisar(uid, e, hoy) {
-    return /^tg:\d{1,15}$/.test(uid) && !!e && !e.off && !e.bloq
-      && e.v > 0 && e.v < hoy && hoy - e.v <= VENTANA_AVISO
-      && e.ad !== hoy && (e.a || 0) < AVISOS_SIN_RESPUESTA
+    if (!/^tg:\d{1,15}$/.test(uid) || !e || e.off || e.bloq) return false;
+    // Evento nuevo para el: un aviso extra aunque este en pausa.
+    const tp = this.temporadaAviso(), extra = !!tp && e.ev !== tp.id;
+    return e.v > 0 && e.v < hoy && hoy - e.v <= (extra ? OLVIDAR_DIAS : VENTANA_AVISO)
+      && e.ad !== hoy && ((e.a || 0) < AVISOS_SIN_RESPUESTA || extra)
       && !this.porUid.has(uid) && !this.uidsPrueba.has(uid);
   },
 
@@ -314,8 +335,10 @@ export const Retencion = {
       const texto = await this.mensajeAviso(c, hoy);
       // Se marca antes de enviar: aunque el envio tarde, nada lo vuelve a
       // elegir hoy. Si falla por algo pasajero se deshace.
-      const antes = { ad: e.ad, a: e.a };
+      const antes = { ad: e.ad, a: e.a, ev: e.ev };
       e.ad = hoy; e.a = (e.a || 0) + 1;
+      const tpA = this.temporadaAviso();
+      if (tpA) e.ev = tpA.id;   // un solo aviso extra por evento
       let r = null;
       try {
         r = await this.tgEnviar('sendMessage', {
@@ -330,10 +353,10 @@ export const Retencion = {
       else if (r && r.error_code === 403) {
         // Bloqueo al bot (o borro su cuenta / nunca abrio el chat): no se le
         // vuelve a escribir hasta que el mismo pida /avisos on.
-        e.bloq = 1; e.ad = antes.ad; e.a = antes.a;
+        e.bloq = 1; e.ad = antes.ad; e.a = antes.a; e.ev = antes.ev;
         res.bloqueados++;
       } else {
-        e.ad = antes.ad; e.a = antes.a;
+        e.ad = antes.ad; e.a = antes.a; e.ev = antes.ev;
         res.fallidos++;
         if (r && r.error_code === 429) await this.dormir(Math.min(30, (r.parameters && r.parameters.retry_after) || 1) * 1000);
       }
@@ -388,6 +411,13 @@ export const Retencion = {
   // Texto plano, sin Markdown: el nombre lo eligio el jugador.
   async mensajeAviso(c, hoy) {
     const lineas = [];
+    // Evento de temporada: primero, para que siempre entre en las 3 lineas.
+    const tp = this.temporadaAviso();
+    if (tp) {
+      const n = c[tp.campo] || 0;
+      const tit = n < 50 ? `: con 50 y 200 ganas los títulos «${tp.titulos[0]}» y «${tp.titulos[1]}»` : n < 200 ? `: con 200 ganas el título «${tp.titulos[1]}»` : '';
+      lineas.push(`${tp.emoji} ¡${tp.nombre}! Hasta el ${tp.hasta} los monstruos sueltan ${tp.cosas}. Llevas ${fmt(n)}${tit}.`);
+    }
     // Expedicion (expediciones.js) que ya volvio y espera a que la recoja.
     if (c.exped && c.exped.fin <= Date.now()) lineas.push(`🧭 Tu expedición de ${c.exped.h} h ya volvió con oro y materiales: recógela en el registro de misiones.`);
     if (horaFelizActiva()) lineas.push('⚡ Ahora mismo es la Hora Feliz: +50% de experiencia por caza hasta las 21:00 (hora de Perú).');
@@ -395,7 +425,10 @@ export const Retencion = {
     if (L && L.d === diaISO(hoy - 1) && L.racha >= 1 && L.racha < LOGIN_PREMIOS.length) {
       const pr = LOGIN_PREMIOS[L.racha];
       const premio = pr.oro ? `${fmt(pr.oro * multLogin(c.nivel))} oro${pr.item !== undefined ? ' + objeto ÉPICO' : ''}` : pr.txt;
-      lineas.push(`🔥 Llevas ${L.racha} ${L.racha === 1 ? 'día seguido' : 'días seguidos'}: si entras hoy cobras el premio del día ${L.racha + 1} (${premio}). Si no, tu racha vuelve a empezar.`);
+      lineas.push(`🔥 Llevas ${L.racha} ${L.racha === 1 ? 'día seguido' : 'días seguidos'}: si entras hoy cobras el premio del día ${L.racha + 1} (${premio}). Si no, tu racha retrocede.`);
+    } else if (L && L.d === diaISO(hoy - 2) && L.racha > 2 && L.racha < LOGIN_PREMIOS.length) {
+      // Falto ayer: si entra hoy solo retrocede (o la conserva por el margen de 30 h).
+      lineas.push(`🔥 Ayer no entraste: si entras HOY salvas tu racha de ${L.racha} días (como mucho baja a ${L.racha - 1}). Mañana vuelve al día 1.`);
     }
     const g = this.grupos && [...this.grupos.values()].find(x => x.uids.includes(c.uid));
     const enGrupo = g ? g.uids.filter(u => u !== c.uid && this.porUid.has(u)).length : 0;

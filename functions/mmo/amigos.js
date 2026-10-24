@@ -12,6 +12,8 @@
 // cuentas vacias. Premios del juego (oro, titulo, montura). Nunca mTON.
 // ═══════════════════════════════════════════════════════
 import { AMIGO_NIVEL, premioAmigo, AMIGOS_MAX } from '../../mmo/js/data.js';
+import { CONTACTOS_MAX, maxGrupo } from './social.js';
+import { MMO_URL } from '../api/telegram-bot.js';
 
 const CODIGO = /^[a-z0-9]{6}$/;
 
@@ -35,6 +37,33 @@ export const Amigos = {
     const de = await this.state.storage.get('ref:' + ref);
     if (!de || de === c.uid) return;
     c.invitadoPor = de;
+  },
+
+  // Al entrar por primera vez con el enlace: los dos quedan en la lista de
+  // amigos; si quien invito esta conectado le llega su invitacion de grupo y,
+  // si no, un aviso por Telegram (solo si acepta avisos).
+  async alLlegarInvitado(s) {
+    const c = s.c, de = c.invitadoPor;
+    const otro = this.porUid.get(de);
+    const co = otro ? otro.c : await this.state.storage.get('c:' + de);
+    if (!co) return;
+    const add = (x, u, n) => { const l = x.contactos || (x.contactos = []); if (!l.some(a => a.u === u) && l.length < CONTACTOS_MAX) l.push({ u, n }); };
+    add(c, de, co.nombre); add(co, c.uid, c.nombre);
+    s.sucio = true;
+    if (!s.cerrado) this.enviarContactos(s);
+    if (otro) {
+      otro.sucio = true; this.enviarContactos(otro);
+      const g = this.grupoDe(otro);
+      const invita = !s.cerrado && (!g || (g.lider === de && g.uids.length < maxGrupo(g)));
+      this.enviar(otro, { t: 'toast', ok: true, m: `🤝 ${c.nombre} entró con tu enlace: ya está en tu lista de amigos${invita ? ' y le mandamos tu invitación de grupo' : ''}.` });
+      if (invita) {
+        s.invitacion = { de, hasta: Date.now() + 120000 };
+        this.enviar(s, { t: 'invitacion', de: co.nombre, nv: co.nivel, cl: co.clase || '', ms: 120000 });
+      }
+    } else {
+      await this.state.storage.put('c:' + de, co);
+      if (await this.quiereAvisos(de)) { try { await this.tgEnviar('sendMessage', { chat_id: de.slice(3), text: `🤝 ${c.nombre} acaba de crear su duende con tu enlace y ya está en tu lista de amigos. Entra ahora y jueguen juntos en grupo.`, reply_markup: { inline_keyboard: [[{ text: '🌍 Jugar con mi amigo', web_app: { url: MMO_URL } }]] } }); } catch (e) {} }
+    }
   },
 
   // Al subir de nivel: si llega a AMIGO_NIVEL, premio para los dos.

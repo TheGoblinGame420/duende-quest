@@ -13,17 +13,17 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=282" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=283" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=282">
-<link rel="modulepreload" href="/mmo/js/data.js?v=282">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=282">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=282">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=282">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=282">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=282">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=283">
+<link rel="modulepreload" href="/mmo/js/data.js?v=283">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=283">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=283">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=283">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=283">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=283">
 <style>
 :root{--bg:#0a0418;--panel:rgba(14,9,30,.86);--borde:rgba(160,140,255,.22);--txt:#f2efff;--txt2:#b8b0d8;--txt3:#7d7699;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;--oro:#ffd84a;--pri:#2563eb;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -107,7 +107,7 @@ body.movil #presumir3{bottom:auto;top:calc(36% + var(--tg-top,0px));font-size:13
 .d7.ya{opacity:.45;}
 .d7.hoy{border-color:#ffd84a;background:rgba(255,216,74,.15);color:#fff;box-shadow:0 0 10px rgba(255,216,74,.4);}
 #herm-c .barra i,#pase-c .barra i{position:absolute;inset:0;display:block;background:linear-gradient(90deg,#a78bfa,#ffd84a);transform-origin:left center;}
-#v-herm .ventana,#v-rank .ventana{overflow-x:hidden;}
+#v-herm .ventana,#v-rank .ventana,#v-amigos .ventana{overflow-x:hidden;}
 .herm-cols{display:flex;gap:5px;margin:2px 0 8px;}
 .herm-cols button{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;}
 .herm-cols button.on{border-color:#fff;}
@@ -141,9 +141,9 @@ body.movil #presumir3{bottom:auto;top:calc(36% + var(--tg-top,0px));font-size:13
 .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(5,2,14,.55);pointer-events:auto;z-index:10;}
 .modal.on{display:flex;}
 /* Paneles laterales: a la izquierda, sin velo ni bloquear el mundo */
-#v-npc.modal,#v-ayuda.modal,#v-inv.modal,#v-libro.modal,#v-tienda.modal,#v-logros.modal,#v-pase.modal,#v-diario.modal,#v-herm.modal,#v-rank.modal{background:none;pointer-events:none;justify-content:flex-start;align-items:flex-start;padding:150px 0 0 12px;z-index:9;}
-#v-npc .ventana,#v-ayuda .ventana,#v-inv .ventana,#v-libro .ventana,#v-tienda .ventana,#v-logros .ventana,#v-pase .ventana,#v-diario .ventana,#v-herm .ventana,#v-rank .ventana{pointer-events:auto;max-height:calc(100vh - 270px);width:min(420px,40vw);box-shadow:0 10px 30px rgba(0,0,0,.5);}
-body.movil #v-npc.modal,body.movil #v-ayuda.modal,body.movil #v-inv.modal,body.movil #v-libro.modal,body.movil #v-tienda.modal,body.movil #v-logros.modal,body.movil #v-pase.modal,body.movil #v-diario.modal,body.movil #v-herm.modal,body.movil #v-rank.modal{padding:96px 0 0 6px;}
+#v-npc.modal,#v-ayuda.modal,#v-inv.modal,#v-libro.modal,#v-tienda.modal,#v-logros.modal,#v-pase.modal,#v-diario.modal,#v-herm.modal,#v-rank.modal,#v-amigos.modal{background:none;pointer-events:none;justify-content:flex-start;align-items:flex-start;padding:150px 0 0 12px;z-index:9;}
+#v-npc .ventana,#v-ayuda .ventana,#v-inv .ventana,#v-libro .ventana,#v-tienda .ventana,#v-logros .ventana,#v-pase .ventana,#v-diario .ventana,#v-herm .ventana,#v-rank .ventana,#v-amigos .ventana{pointer-events:auto;max-height:calc(100vh - 270px);width:min(420px,40vw);box-shadow:0 10px 30px rgba(0,0,0,.5);}
+body.movil #v-npc.modal,body.movil #v-ayuda.modal,body.movil #v-inv.modal,body.movil #v-libro.modal,body.movil #v-tienda.modal,body.movil #v-logros.modal,body.movil #v-pase.modal,body.movil #v-diario.modal,body.movil #v-herm.modal,body.movil #v-rank.modal,body.movil #v-amigos.modal{padding:96px 0 0 6px;}
 body.movil #v-npc .ventana,body.movil #v-ayuda .ventana,body.movil #v-inv .ventana,body.movil #v-libro .ventana,body.movil #v-tienda .ventana,body.movil #v-logros .ventana{width:min(360px,72vw);max-height:calc(100vh - 330px);}
 #v-look.modal{background:none;justify-content:flex-start;padding-left:16px;}
 #v-look .ventana{width:min(300px,86vw);background:rgba(20,12,44,.93);}
@@ -200,6 +200,7 @@ body.movil #chat-log{max-height:70px;font-size:11px;}
 body.movil #marco,body.movil #obj,body.movil #objp,body.movil #grupo3,body.movil #misiones{left:8px;width:min(186px,50vw);min-width:0;}
 body.movil #alas{left:8px;width:min(186px,50vw);}
 body.movil #misiones{max-height:84px;overflow:hidden;}
+body.movil #misiones.abierto{max-height:46vh;overflow:auto;touch-action:pan-y;}
 body.movil #chat{pointer-events:none;} body.movil #chat-in{pointer-events:auto;}
 body.movil #chat-log{max-height:54px;}
 body.movil #combo:empty,body.movil #auras:empty,body.movil #mundial:empty{display:none;}
@@ -212,6 +213,9 @@ body.movil #mini{top:calc(8px + env(safe-area-inset-top));right:8px;}
 body.movil #botones{right:8px;top:calc(176px + env(safe-area-inset-top));display:grid;grid-template-columns:repeat(3,38px);gap:4px;}
 body.movil #botones .bt{width:38px;height:38px;font-size:15px;}
 body.movil #botones a.bt{display:none;}
+/* Movil: los botones secundarios van dentro de "⋯" para que el menu quede en 2 filas */
+#b-mas{display:none;} body.movil #b-mas{display:flex;}
+body.movil #botones .extra{display:none;} body.movil #botones.abierto .extra{display:flex;}
 body.movil #barra{left:8px;right:8px;bottom:calc(10px + env(safe-area-inset-bottom));transform:none;display:grid;grid-template-columns:repeat(6,1fr);gap:4px;padding:4px;z-index:2;}
 body.movil #barra .acc{width:auto;height:auto;aspect-ratio:1;max-height:48px;border-radius:8px;}
 body.movil #barra .acc img{width:24px;height:24px;}
@@ -244,8 +248,8 @@ body.movil #titulo-zona b{font-size:16px;}
  body.movil #chat{top:auto;bottom:calc(12px + env(safe-area-inset-bottom));left:calc(8px + env(safe-area-inset-left));width:min(240px,34vw);}
  body.movil #avisos{top:auto;bottom:calc(84px + env(safe-area-inset-bottom));left:calc(8px + env(safe-area-inset-left));max-width:40vw;}
  body.movil #invit3{left:50%;right:auto;width:min(340px,46vw);transform:translateX(-50%);top:calc(104px + env(safe-area-inset-top));}
- body.movil #v-npc.modal,body.movil #v-ayuda.modal,body.movil #v-inv.modal,body.movil #v-libro.modal,body.movil #v-tienda.modal,body.movil #v-logros.modal,body.movil #v-pase.modal,body.movil #v-diario.modal,body.movil #v-herm.modal,body.movil #v-rank.modal{padding:calc(8px + env(safe-area-inset-top)) 0 0 calc(6px + env(safe-area-inset-left));}
- body.movil #v-npc .ventana,body.movil #v-ayuda .ventana,body.movil #v-inv .ventana,body.movil #v-libro .ventana,body.movil #v-tienda .ventana,body.movil #v-logros .ventana,body.movil #v-pase .ventana,body.movil #v-diario .ventana,body.movil #v-herm .ventana,body.movil #v-rank .ventana{max-height:calc(100vh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));width:min(400px,48vw);}
+ body.movil #v-npc.modal,body.movil #v-ayuda.modal,body.movil #v-inv.modal,body.movil #v-libro.modal,body.movil #v-tienda.modal,body.movil #v-logros.modal,body.movil #v-pase.modal,body.movil #v-diario.modal,body.movil #v-herm.modal,body.movil #v-rank.modal,body.movil #v-amigos.modal{padding:calc(8px + env(safe-area-inset-top)) 0 0 calc(6px + env(safe-area-inset-left));}
+ body.movil #v-npc .ventana,body.movil #v-ayuda .ventana,body.movil #v-inv .ventana,body.movil #v-libro .ventana,body.movil #v-tienda .ventana,body.movil #v-logros .ventana,body.movil #v-pase .ventana,body.movil #v-diario .ventana,body.movil #v-herm .ventana,body.movil #v-rank .ventana,body.movil #v-amigos .ventana{max-height:calc(100vh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));width:min(400px,48vw);}
 }
 </style>
 </head>
@@ -273,7 +277,7 @@ body.movil #titulo-zona b{font-size:16px;}
   <div class="nm"><span id="op-nombre">—</span><small id="op-nivel"></small></div>
   <div class="barra hp" id="op-hp"><i></i><span></span></div>
   <div class="fila-b"><button class="btn" id="op-inv">Invitar al grupo</button><button class="btn sec" id="op-sus">Susurrar</button></div>
-  <div class="fila-b"><button class="btn sec" id="op-duelo">⚔️ Retar a duelo</button><button class="btn sec" id="op-herm" style="display:none">🛡 Hermandad</button></div>
+  <div class="fila-b"><button class="btn sec" id="op-duelo">⚔️ Retar a duelo</button><button class="btn sec" id="op-amigo">⭐ Amigo</button><button class="btn sec" id="op-herm" style="display:none">🛡 Hermandad</button></div>
 </div>
 <div class="caja" id="invit3"><p id="invit3-t"></p><div class="fila-b"><button class="btn" id="invit3-si">Aceptar</button><button class="btn sec" id="invit3-no">Rechazar</button></div></div>
 <div class="modal" id="v-look"><div class="ventana">
@@ -291,22 +295,25 @@ body.movil #titulo-zona b{font-size:16px;}
   <div class="barra hpo" id="o-hp"><i></i><span></span></div>
 </div>
 <button id="presumir3">📸 Presúmelo en tu historia</button>
-<div class="caja" id="botones">
+<!-- Movil: "⋯" despliega los botones .extra y se recogen al elegir uno (en linea: no depende de la cache de mundo.js) -->
+<div class="caja" id="botones" onclick="if(event.target.closest('#b-mas'))this.classList.toggle('abierto');else if(event.target.closest('.extra'))this.classList.remove('abierto')">
   <button class="bt" id="b-inv" title="Inventario (I)">🎒</button>
   <button class="bt" id="b-libro" title="Habilidades y talentos (P)">📖</button>
-  <button class="bt" id="b-logros" title="Logros (L)">🏆</button>
-  <button class="bt" id="b-premium" title="Skins premium">💎</button>
-  <button class="bt" id="b-look" title="Apariencia (cara, cuerpo, altura y pelo)">🪞</button>
+  <button class="bt extra" id="b-logros" title="Logros (L)">🏆</button>
+  <button class="bt extra" id="b-premium" title="Skins premium">💎</button>
+  <button class="bt extra" id="b-look" title="Apariencia (cara, cuerpo, altura y pelo)">🪞</button>
   <button class="bt" id="b-mapa" title="Mapa del mundo (M)">🗺</button>
-  <button class="bt" id="b-herm" title="Hermandad">🛡</button>
-  <button class="bt" id="b-rank" title="Ranking">🏅</button>
+  <button class="bt extra" id="b-herm" title="Hermandad">🛡</button>
+  <button class="bt extra" id="b-rank" title="Ranking">🏅</button>
   <button class="bt" id="b-pase" title="Pase de temporada (premios gratis)">🎟</button>
-  <button class="bt" id="b-son" title="Música y sonido">🔊</button>
-  <button class="bt" id="b-compartir" title="Invitar a un amigo / compartir">📣</button>
+  <button class="bt extra" id="b-son" title="Música y sonido">🔊</button>
+  <button class="bt extra" id="b-compartir" title="Invitar a un amigo / compartir">📣</button>
+  <button class="bt" id="b-amigos" title="Amigos y jugadores en línea">👥</button>
   <button class="bt" id="b-chat" title="Chat (Enter)">💬</button>
-  <button class="bt" id="b-ayuda" title="Controles">?</button>
+  <button class="bt extra" id="b-ayuda" title="Controles">?</button>
   <a class="bt" href="/mmo/" title="$DUENDE CLASSIC (2D): mazmorras, Torre y banda, con tu mismo personaje">2D</a>
   <a class="bt" href="/inicio/" title="Inicio: elige tu juego">⌂</a>
+  <button class="bt" id="b-mas" title="Más" aria-label="Más">⋯</button>
 </div>
 <div class="caja" id="misiones"></div>
 <div class="caja" id="mini"><canvas id="mini-c" width="150" height="150"></canvas><div class="z" id="mini-z">—</div><div class="z" id="mini-r" style="color:var(--txt2);font-weight:600"></div></div>
@@ -373,6 +380,11 @@ body.movil #titulo-zona b{font-size:16px;}
   <h2>RANKING</h2>
   <div id="rank-c"></div>
 </div></div>
+<div class="modal" id="v-amigos"><div class="ventana">
+  <button class="bt cerrar" data-cerrar>✕</button>
+  <h2>AMIGOS</h2>
+  <div id="amigos-c"></div>
+</div></div>
 <div class="modal" id="v-pase"><div class="ventana">
   <button class="bt cerrar" data-cerrar>✕</button>
   <h2>PASE DE TEMPORADA</h2>
@@ -391,7 +403,7 @@ body.movil #titulo-zona b{font-size:16px;}
   <div class="fila"><span>Girar la cámara</span><b>Arrastrar con el ratón</b></div>
   <div class="fila"><span>Zoom</span><b>Rueda</b></div>
   <div class="fila"><span>Saltar</span><b>Espacio</b></div>
-  <div class="fila"><span>Elegir objetivo</span><b>Clic o Tab</b></div>
+  <div class="fila"><span>Elegir objetivo</span><b>Clic o Tab · !! = mucho más fuerte que tú</b></div>
   <div class="fila"><span>Ataque automático</span><b>1 o Z</b></div>
   <div class="fila"><span>Habilidades de clase</span><b>2 a 9</b></div>
   <div class="fila"><span>Volar (alas)</span><b>V o doble salto · Espacio sube · C baja</b></div>
@@ -405,7 +417,7 @@ body.movil #titulo-zona b{font-size:16px;}
   <p style="margin-top:10px">En el móvil: joystick a la izquierda, arrastra a la derecha para girar la cámara y toca un monstruo para elegirlo. Las mazmorras, la Torre y la banda están por ahora en el juego 2D (botón 2D): es el mismo personaje.</p>
 
   <p style="margin-top:10px;font-size:11px;color:var(--txt3)">Créditos de arte y sonido (CC0): árboles, casas, castillos y efectos de <a href="https://kenney.nl" target="_blank" rel="noopener" style="color:var(--cian)">Kenney</a> (Nature Kit, Fantasy Town Kit, Castle Kit, RPG Audio, Impact Sounds) y voces de criaturas de «80 CC0 creature SFX» en OpenGameArt. ¡Gracias!</p>
-  <p style="margin-top:10px;display:flex;gap:6px"><a class="btn sec" href="/mmo/" style="flex:1;text-align:center;text-decoration:none">Juego 2D</a><a class="btn sec" href="/inicio/" style="flex:1;text-align:center;text-decoration:none">Inicio</a></p>
+  <p style="margin-top:10px;display:flex;gap:6px"><a class="btn sec" href="/mmo/" style="flex:1;text-align:center;text-decoration:none">Juego 2D</a><a class="btn sec" href="/inicio/" style="flex:1;text-align:center;text-decoration:none">Inicio</a><a class="btn sec" href="#" data-instalar hidden style="display:none;flex:1;text-align:center;text-decoration:none">⬇ Instalar</a></p>
 </div></div>
 
 <div class="modal" id="v-error"><div class="ventana" style="text-align:center">
@@ -417,6 +429,6 @@ body.movil #titulo-zona b{font-size:16px;}
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script src="/js/config.js"></script>
-<script type="module" src="/mundo/js/mundo.js?v=282"></script>
+<script type="module" src="/mundo/js/mundo.js?v=283"></script>
 </body>
 </html>

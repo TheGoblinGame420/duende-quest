@@ -113,7 +113,7 @@ export const Eventos3D = {
       const xp = base.xp * 4, oro = base.oro * 5;
       s.c.oro += oro;
       s.c.raros = (s.c.raros || 0) + 1;
-      const it = this.darItem(s, this.generarItem(o.nv, 1));
+      const it = this.darItem(s, this.generarItem(Math.min(o.nv, s.c.nivel), 1));   // nunca por encima de tu nivel: que se pueda equipar ya
       this.sumarXp(s, xp);
       this.progresoTarea && this.progresoTarea(s, 'raro');
       s.sucio = true;

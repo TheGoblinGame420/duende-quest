@@ -4,7 +4,7 @@
   "short_name": "Duende Online",
   "description": "El MMORPG de los duendes: 5 zonas, jefes, misiones y las 7 skins.",
   "start_url": "/mmo/",
-  "scope": "/mmo/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#07030f",

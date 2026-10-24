@@ -93,9 +93,17 @@ export const Dios = {
     return b;
   },
   silenciado(s) {
-    const h = this.mod && this.mod.mute[s.c.uid];
-    if (!h) return 0;
-    if (h < Date.now()) { delete this.mod.mute[s.c.uid]; this.guardarMod(); return 0; }
+    const mod = this.mod;
+    if (!mod) return 0;
+    let h = mod.mute[s.c.uid] || 0;
+    if (h && h < Date.now()) { delete mod.mute[s.c.uid]; this.guardarMod(); h = 0; }
+    // El silencio queda tambien en la IP (o su /64): un invitado no se libra
+    // entrando con otro token. Solo para invitados: una IP de movil la
+    // comparten muchas cuentas reales.
+    if (!h && s.ip && mod.muteIp && s.c.uid.startsWith('inv:')) {
+      const hi = mod.muteIp[s.ip] || 0;
+      if (hi && hi < Date.now()) { delete mod.muteIp[s.ip]; this.guardarMod(); } else h = hi;
+    }
     return h;
   },
 
@@ -204,6 +212,9 @@ export const Dios = {
         const min = Math.max(0, Math.min(7 * 24 * 60, Math.floor(Number(m.min) || 0)));
         const mod = await this.cargarMod();
         if (min) mod.mute[objetivo.c.uid] = Date.now() + min * 60000; else delete mod.mute[objetivo.c.uid];
+        mod.muteIp = mod.muteIp || {};
+        for (const k in mod.muteIp) if (mod.muteIp[k] < Date.now()) delete mod.muteIp[k];
+        if (objetivo.ip) { if (min) mod.muteIp[objetivo.ip] = Date.now() + min * 60000; else delete mod.muteIp[objetivo.ip]; }
         this.guardarMod();
         this.enviar(objetivo, { t: 'toast', m: min ? `🔇 Un moderador te silenció ${min} min.` : '🔊 Ya puedes volver a escribir en el chat.' });
         this.registrarMod(s, `${min ? 'silenció ' + min + ' min' : 'quitó silencio'} a ${objetivo.c.nombre}`);

@@ -14,19 +14,19 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES } from '/mmo/js/data.js?v=282';
-import { iniciarVentanas } from './ventanas.js?v=282';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=282';
-import { crearMusica } from './musica.js?v=282';
-import { construirCueva } from './cueva.js?v=282';
-import { TAPA, transparentar } from './tapa.js?v=282';
-import { construirAbismo } from './abismo.js?v=282';
-import { crearParticulas } from './particulas.js?v=282';
-import { cargarKenney, piezasCasa } from './kenney.js?v=282';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES } from '/mmo/js/data.js?v=283';
+import { iniciarVentanas } from './ventanas.js?v=283';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=283';
+import { crearMusica } from './musica.js?v=283';
+import { construirCueva } from './cueva.js?v=283';
+import { TAPA, transparentar } from './tapa.js?v=283';
+import { construirAbismo } from './abismo.js?v=283';
+import { crearParticulas } from './particulas.js?v=283';
+import { cargarKenney, piezasCasa } from './kenney.js?v=283';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=282';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=282';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=283';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=283';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1062,6 +1062,7 @@ function tokInvitado() {
 let soyInvitado = false;
 const codigoRescate = () => (tokInvitado().match(/.{4}/g) || []).join('-').toUpperCase();
 async function autenticacion() {
+  try { localStorage.setItem('dq_ultimo_juego', '/mundo/'); } catch (e) {}   // /inicio/ lo ofrece como CONTINUAR
   let previo = null; try { previo = localStorage.getItem('dq_mmo_tok'); } catch (e) {}
   const inv0 = /^[a-f0-9]{32}$/.test(previo || '') ? previo : undefined;
   if (TG && !forzarInvitado) return { auth: { k: 'tg', d: TG.initData }, inv: inv0 };
@@ -1142,7 +1143,7 @@ function recibir(m) {
       cerrar('v-inicio');
       pintarHud();
       if (!yo.clase) abrirClases();
-      if (m.nuevo) aviso('Bienvenido al mundo abierto, ' + yo.nombre + '. El Guardia Tito, en el pueblo, tiene tu primera misión.', 'ok');
+      if (m.nuevo) aviso('Bienvenido al mundo abierto, ' + yo.nombre + '. Tu primera misión ya está en marcha: sigue la luz amarilla.', 'ok');
       break;
     case 'm3':
       P.x = m.x; P.z = m.z; P.y = alturaEn(P.x, P.z); P.vx = P.vz = P.vy = 0; P.corrX = P.corrZ = 0;
@@ -1249,7 +1250,9 @@ function recibir(m) {
     case 'atkNo': sigAtk = performance.now() + 150; break;
     case 'habNo': gcdHasta = 0; break;
     case 'chat': lineaChat(m); break;
-    case 'grupo': grupo3 = m.g; pintarGrupo(); break;
+    case 'grupo': grupo3 = m.g; pintarGrupo(); pintarAmigos3(); break;
+    case 'contactos': contactos3 = m.l || []; pintarAmigos3(); pintarObjetivoP(); break;
+    case 'quien': quien3 = m.r || []; pintarAmigos3(); break;
     case 'alasAgotadas': if (P.vuela) { volar(false); aviso('Tus alas se cansaron.'); } P.alas = 0; break;
     case 'pica': pica = performance.now() + m.ms; aviso('🎣 ¡Pica! Pulsa E para tirar', 'ok'); sfx('boton', 0.7); break;
     case 'pescado': quitarCorcho(); sfx('moneda', 0.5); break;
@@ -1635,13 +1638,13 @@ function pintarObjetivo() {
   const o = mons.get(objetivo);
   const caja = $('obj');
   if (!o) { if (objPintado !== '-') { caja.style.display = 'none'; anillo.visible = false; objPintado = '-'; } return; }
-  const clave = o.id + '|' + Math.ceil(o.hp) + '|' + o.mx;
+  const clave = o.id + '|' + Math.ceil(o.hp) + '|' + o.mx + '|' + (yo ? yo.nivel : 0);
   if (clave !== objPintado) {
     objPintado = clave;
     const def = MONSTRUOS[o.k];
     caja.style.display = 'block';
     $('o-nombre').textContent = (o.j ? '★ ' : '') + def.nombre;
-    $('o-nivel').textContent = 'Nv ' + o.nv;
+    $('o-nivel').textContent = marcaNivel(o.nv) + 'Nv ' + o.nv;
     const hp = $('o-hp');
     hp.firstElementChild.style.transform = `scaleX(${clamp(o.hp / o.mx, 0, 1)})`;
     hp.lastElementChild.textContent = Math.ceil(o.hp) + ' / ' + o.mx;
@@ -1680,6 +1683,7 @@ function quitarCorcho() { if (corcho) { escena.remove(corcho); liberar(corcho); 
 
 // ── GRUPO ──
 let invitT = 0, invitTipo = 'grupo', dueloCon = 0;
+let contactos3 = [], quien3 = null;   // ventana 👥: tus amigos y quien esta en linea (null: aun no llego)
 const enGrupo = id => !!(grupo3 && grupo3.m.some(x => x.on && x.id === id));
 function pintarGrupo() {
   const c = $('grupo3');
@@ -1709,6 +1713,7 @@ function pintarObjetivoP() {
   hp.lastElementChild.textContent = Math.ceil(o.hp) + ' / ' + o.mx;
   const otraF = o.fc && yo && yo.faccion && o.fc !== yo.faccion;
   $('op-inv').style.display = enGrupo(o.id) || otraF ? 'none' : '';
+  $('op-amigo').style.display = contactos3.some(a => a.on && a.id === o.id) ? 'none' : '';
   const miRango = hermInfo && yo && (hermInfo.m.find(x => x.uid === yo.pid) || {}).r;
   $('op-herm').style.display = hermInfo && miRango && miRango !== 'miembro' && !o.hn && !otraF ? '' : 'none';
   $('op-duelo').style.display = otraF && enAbismo(P.x) ? 'none' : '';
@@ -1720,6 +1725,7 @@ $('invit3-si').onclick = () => { mandar({ t: tipoResp(), si: true }); $('invit3'
 $('invit3-no').onclick = () => { mandar({ t: tipoResp(), si: false }); $('invit3').style.display = 'none'; };
 $('op-herm').onclick = () => { if (objetivoP) mandar({ t: 'hermInvitar', p: objetivoP }); };
 $('op-duelo').onclick = () => { if (objetivoP) mandar({ t: 'retar', p: objetivoP }); };
+$('op-amigo').onclick = () => { if (objetivoP) mandar({ t: 'contactoAdd', p: objetivoP }); };
 // Chat: /g (o /p) al grupo, /s nombre texto susurra; lo demas, general.
 function enviarChat(v) {
   const g = /^\/(g|p|grupo)\s+(.+)/i.exec(v), s = /^\/(s|w)\s+(\S+)\s+(.+)/i.exec(v), hh = /^\/(h|herm|hermandad)\s+(.+)/i.exec(v);
@@ -1877,6 +1883,7 @@ for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, () => { if (so
 $('b-ayuda').onclick = () => abrir('v-ayuda');
 $('sel-calidad').value = CAL;
 $('sel-calidad').onchange = e => { try { localStorage.setItem('dq3_calidad', e.target.value); } catch (er) {} location.reload(); };
+$('b-amigos').onclick = () => { if ($('v-amigos').classList.contains('on')) return cerrar('v-amigos'); abrir('v-amigos'); mandar({ t: 'contactos' }); mandar({ t: 'quien' }); pintarAmigos3(); };
 $('b-chat').onclick = () => { const i = $('chat-in'); i.style.display = 'block'; i.focus(); };
 $('b-reconectar').onclick = () => location.reload();
 
@@ -1962,7 +1969,7 @@ function abrirMapa() {
 function chatAbierto() { return document.activeElement === $('chat-in'); }
 // Ventanas laterales (como WoW): no tapan el centro y se puede seguir
 // caminando con ellas abiertas. Las demas (mapa, muerte, inicio...) si bloquean.
-const LATERALES = ['v-npc', 'v-ayuda', 'v-inv', 'v-libro', 'v-tienda', 'v-logros', 'v-pase', 'v-diario', 'v-herm', 'v-rank'];
+const LATERALES = ['v-npc', 'v-ayuda', 'v-inv', 'v-libro', 'v-tienda', 'v-logros', 'v-pase', 'v-diario', 'v-herm', 'v-rank', 'v-amigos'];
 addEventListener('keydown', e => {
   const t = e.target;
   if (!t || !t.closest || !t.closest('.modal') || t.matches('input,textarea')) return;
@@ -2147,6 +2154,36 @@ function pintarHerm() {
   c.querySelectorAll('[data-hr]').forEach(b => b.onclick = () => mandar({ t: 'hermRango', uid: b.dataset.u, r: b.dataset.hr }));
   c.querySelectorAll('[data-hx]').forEach(b => b.onclick = () => { if (b.dataset.ok) mandar({ t: 'hermExpulsar', uid: b.dataset.hx }); else { b.dataset.ok = 1; b.textContent = '¿?'; } });
   $('herm-salir').onclick = () => { if (hermSalirT > Date.now()) { hermSalirT = 0; mandar({ t: 'hermSalir' }); } else { hermSalirT = Date.now() + 4000; pintarHerm(); } };
+}
+// ── AMIGOS Y EN LINEA (como la ventana social del 2D) ──
+// Arriba tus amigos (en gris si no estan) y debajo quien esta conectado en
+// los dos juegos: invitar al grupo o susurrar sin tenerlo delante.
+function pintarAmigos3() {
+  if (!$('v-amigos').classList.contains('on')) return;
+  const c = $('amigos-c'), lider = !grupo3 || !!(yo && grupo3.lider === yo.pid);
+  const fila = (x, amigo) => {
+    const cl = CLASES[x.cl];
+    let acc = '';
+    if (x.on && x.id && !x.g && lider) acc += `<button data-ai="${x.id}">Invitar</button>`;
+    if (x.on) acc += `<button data-as="${esc(x.n)}">Susurrar</button>`;
+    if (amigo) acc += `<button data-aq="${esc(x.uid)}" title="Quitar de amigos">✕</button>`;
+    const donde = !x.on ? 'desconectado' : x.m3 ? 'ORIGINS' : 'CLASSIC' + (x.mapa ? ' · ' + x.mapa : '');
+    return `<div class="hm ${x.on ? 'on' : ''}"><span class="pt"></span><b style="color:${cl ? cl.color : '#fff'}">${esc(x.n)}</b><small>${x.on ? 'Nv ' + (x.lv | 0) + ' · ' : ''}${esc(donde)}</small><span class="acc">${acc}</span></div>`;
+  };
+  const tit = t => `<div style="font:700 10px var(--sans);color:var(--txt3);margin:8px 0 3px">${t}</div>`;
+  // Los amigos conectados ya salen arriba: no se repiten en la lista de abajo.
+  const ids = new Set(contactos3.filter(a => a.on).map(a => a.id));
+  const resto = (quien3 || []).filter(x => !ids.has(x.id));
+  let s = tit(`AMIGOS (${ids.size}/${contactos3.length})`);
+  s += contactos3.length ? '<div class="herm-lista">' + contactos3.map(x => fila(x, true)).join('') + '</div>' : '<p class="vv-p" style="font-size:12px">Aún no tienes amigos: elige a un jugador y pulsa «⭐ Amigo» en su marco. Verás cuándo se conecta.</p>';
+  s += tit(`EN LÍNEA${quien3 ? ` (${resto.length})` : ''}`);
+  s += !quien3 ? '<p class="vv-p">Cargando…</p>' : resto.length ? '<div class="herm-lista">' + resto.map(x => fila({ ...x, on: 1 }, false)).join('') + '</div>' : '<p class="vv-p" style="font-size:12px">No hay nadie más conectado ahora mismo.</p>';
+  s += '<button class="btn sec" id="am-act" style="width:100%;margin-top:8px">↻ Actualizar</button>';
+  c.innerHTML = s;
+  c.querySelectorAll('[data-ai]').forEach(b => b.onclick = () => { mandar({ t: 'invitar', p: +b.dataset.ai }); b.disabled = true; });
+  c.querySelectorAll('[data-as]').forEach(b => b.onclick = () => { cerrar('v-amigos'); const i = $('chat-in'); i.style.display = 'block'; i.value = '/s ' + b.dataset.as + ' '; i.focus(); });
+  c.querySelectorAll('[data-aq]').forEach(b => b.onclick = () => mandar({ t: 'contactoQuitar', uid: b.dataset.aq }));
+  $('am-act').onclick = () => { mandar({ t: 'contactos' }); mandar({ t: 'quien' }); };
 }
 // ── RANKING (general, semana, duelos, hermandades, torre) ──
 let rankDatos = null, rankTab = 'sem';
@@ -2351,6 +2388,7 @@ function usarHab(h) {
   if (h.obj === 'enemigo' && !objetivo && !contraRival) cicloObjetivo();
   mandarPos(true);
   mandar({ t: 'hab3', id: h.id, tg: h.obj === 'enemigo' ? objetivo : 0, tp: contraRival ? contraRival : h.obj === 'aliado' || h.obj === 'muerto' ? objetivoP : 0 });
+  tuto3.hab = true;
   if (h.gcd !== false) gcdHasta = ahora + GCD_MS;
   if (h.obj === 'enemigo' && objetivo && !autoAtk && h.id !== 'polimorfia') { autoAtk = true; pintarBarra(); }
 }
@@ -2711,7 +2749,7 @@ function etiquetas(t) {
     const def = MONSTRUOS[o.k], el = o.id === objetivo;
     const alto = o.fig ? altoFig(o.fig) : 2;
     const herido = o.hp < o.mx || el;
-    ponLbl(o.lbl, o.x, alturaEn(o.x, o.z) + alto + 0.2, o.z, `<span style="color:${o.ra ? o.ti || '#ffd84a' : o.iv ? '#ff5a1f' : o.j ? '#ff6bf0' : colorNivel(o.nv)}">${o.ra ? '★ ' + esc(o.ra) + ' · ' : o.iv ? '⚔ ' : o.j ? '★ ' : ''}${asedio && asedio.dormido && o.id === asedio.guardian ? '💤 ' : ''}${herido || o.j ? esc(def.nombre) + ' ' : ''}Nv${o.nv}</span>${herido ? `<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>` : ''}`, el ? 90 : (o.j ? 70 : 38));
+    ponLbl(o.lbl, o.x, alturaEn(o.x, o.z) + alto + 0.2, o.z, `<span style="color:${o.ra ? o.ti || '#ffd84a' : o.iv ? '#ff5a1f' : o.j ? '#ff6bf0' : colorNivel(o.nv)}">${o.ra ? '★ ' + esc(o.ra) + ' · ' : o.iv ? '⚔ ' : o.j ? '★ ' : ''}${asedio && asedio.dormido && o.id === asedio.guardian ? '💤 ' : ''}${herido || o.j ? esc(def.nombre) + ' ' : ''}${marcaNivel(o.nv)}Nv${o.nv}</span>${herido ? `<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>` : ''}`, el ? 90 : (o.j ? 70 : 38));
   }
   for (const n of npcs) ponLbl(n.lbl, n.x, n.y + 2.4, n.z, `${n.tipo === 'guia' && misionLista() ? '<b style="color:#ffd84a;font-size:22px;text-shadow:0 0 6px #000">?</b><br>' : ''}<span style="color:#4ade80">${esc(n.nombre)}</span>`, 60);
 }
@@ -2721,6 +2759,26 @@ function etiquetas(t) {
 const CAMPOS3D = campamentos(MAPAS, MONSTRUOS);
 const guiaNpc = NPCS3D.find(n => n.tipo === 'guia');
 let metaMision = null;
+// Tutorial de los primeros minutos (como el de CLASSIC): el paso actual va como
+// primera fila del rastreador y se cumple solo al hacerlo. Por personaje y dispositivo.
+const TUTO3 = [
+  { txt: () => MOVIL ? 'Muévete con el joystick y arrastra a la derecha para girar la cámara' : 'Muévete con W A S D y arrastra con el ratón para girar la cámara', hecho: t => { const d = Math.hypot(P.x - t.x0, P.z - t.z0); if (d > 60) { t.x0 = P.x; t.z0 = P.z; } return d > 8 && d <= 60; } },   // un salto grande es un teletransporte: no cuenta
+  { txt: () => 'Sigue la columna de luz amarilla hasta tu presa', hecho: t => (yo.kills || 0) > t.k0 || (metaMision && Math.hypot(metaMision.x - P.x, metaMision.z - P.z) < 30) },
+  { txt: () => MOVIL ? 'Toca un monstruo y pulsa ATACAR' : 'Clic en un monstruo (o Tab) y pulsa 1 o Z para atacar', hecho: t => (yo.kills || 0) > t.k0 },
+  { txt: () => 'Usa una habilidad de clase: ' + (MOVIL ? 'segundo botón de la barra' : 'tecla 2'), hecho: t => t.hab },
+  { txt: () => 'Fuera del pueblo, despliega las alas: ' + (MOVIL ? 'botón VOLAR' : 'V o doble salto'), hecho: () => P.vuela },
+  { txt: () => MISIONES[yo.mis.i] && yo.mis.p >= MISIONES[yo.mis.i].n ? '¡Misión lista! Toca su fila 📜 para entregarla' : 'Completa tu misión 📜 y entrégala tocando su fila', hecho: () => yo.mis.i >= 1 },
+];
+const tuto3 = { i: -1, x0: 0, z0: 0, k0: 0, hab: false, clave: '' };
+function htmlTuto3() {
+  if (!yo.clase || yo.nivel > 6) return '';
+  const clave = 'dq3_tuto_' + (yo.pid || '');
+  if (tuto3.clave !== clave) { let i = 0; try { i = +(localStorage.getItem(clave) || 0); } catch (e) {} Object.assign(tuto3, { clave, i, x0: P.x, z0: P.z, k0: yo.kills || 0, hab: false }); }
+  // k0 no se reinicia al avanzar: la primera caza cumple a la vez "sigue la luz" y "ataca".
+  if (TUTO3[tuto3.i] && TUTO3[tuto3.i].hecho(tuto3)) { tuto3.i++; tuto3.x0 = P.x; tuto3.z0 = P.z; try { localStorage.setItem(clave, String(tuto3.i)); } catch (e) {} sfx('moneda', 0.3); }
+  const p = TUTO3[tuto3.i]; if (!p) return '';
+  return `<div class="q" style="border-left:3px solid #4ade80;padding-left:6px"><b style="color:#4ade80">💡 Paso ${tuto3.i + 1}/${TUTO3.length}</b>${esc(p.txt())}</div>`;
+}
 const flechaDir = (x, z) => { let a = camYaw - Math.PI - Math.atan2(x - P.x, z - P.z); a = Math.atan2(Math.sin(a), Math.cos(a)); return ['⬆', '↗', '➡', '↘', '⬇', '↙', '⬅', '↖'][(Math.round(a / (Math.PI / 4)) + 8) % 8]; };
 function pintarMisiones() {
   const c = $('misiones');
@@ -2750,13 +2808,14 @@ function pintarMisiones() {
     const donde = metaMision ? (dist < 25 ? ' · aquí' : ` · ${flechaDir(metaMision.x, metaMision.z)} ${Math.round(dist)} m`) : '';
     h += `<div class="q"><b>📜 ${esc(q.nombre)}</b>${lista ? `<span class="ok" data-entregar="1" style="cursor:pointer;text-decoration:underline">¡Lista! Toca aquí para entregarla</span>` : `${(MONSTRUOS[q.tipo] || {}).nombre || q.tipo}: ${Math.min(yo.mis.p, q.n)}/${q.n}<small>${donde}</small>`}</div>`;
   }
-  if (!d.ok) h += `<div class="q"><b>☀ ${DIARIA.nombre}</b>${(d.p || 0) >= DIARIA.n ? '<span class="ok">¡Lista! Cóbrala con el Guardia</span>' : `Monstruos de tu nivel: ${Math.min(d.p || 0, DIARIA.n)}/${DIARIA.n}`}</div>`;
+  h = htmlTuto3() + h;   // despues de calcular metaMision: el paso 2 la mira
+  if (!d.ok) h += `<div class="q"><b>☀ ${DIARIA.nombre}</b>${(d.p || 0) >= DIARIA.n ? '<span class="ok" data-entregar="diaria" style="cursor:pointer;text-decoration:underline">¡Lista! Toca aquí para cobrarla</span>' : `Monstruos de tu nivel: ${Math.min(d.p || 0, DIARIA.n)}/${DIARIA.n}`}</div>`;
   if (invasion3) {
     const ms = Math.max(0, invasion3.ms - (Date.now() - invasion3.recibido)), mm = Math.floor(ms / 60000), ss = Math.floor(ms % 60000 / 1000);
     const zc = ZONAS3D[invasion3.zona], dz = zc ? Math.hypot(zc.x - P.x, zc.z - P.z) : 0;
     h = `<div class="q" style="border-left:3px solid #ff5a1f;padding-left:6px"><b style="color:#ff8a5c">⚔️ ${esc(invasion3.nombre)}</b>${invasion3.fase === 'capitan' ? '¡Derrota al Capitán!' : `Invasores: ${invasion3.hechos}/${invasion3.meta}`} · ${mm}:${String(ss).padStart(2, '0')}<small>${(MAPAS[invasion3.zona] || {}).nombre || ''}${dz > 60 && zc ? ` · ${flechaDir(zc.x, zc.z)} ${Math.round(dz)} m` : ' · ¡aquí!'}</small></div>` + h;
   }
-  { // Tesoro cercano: el cofre disponible mas proximo (invita a explorar)
+  if (!MOVIL) { // Tesoro cercano: el cofre disponible mas proximo (en movil ya sale en el minimapa)
     let mc = null, md = 400; const ah = Date.now();
     for (const c of COFRES3) if (c.listoEn <= ah) { const d = Math.hypot(c.x - P.x, c.z - P.z); if (d < md && d > 6) { md = d; mc = c; } }
     if (mc) h += `<div class="q"><b>🧰 ${NOMBRE_COFRE[mc.tipo].replace(/^./, x => x.toUpperCase())}</b><small>${flechaDir(mc.x, mc.z)} ${Math.round(md)} m${mc.tipo === 'legendario' ? ' · en lo alto: ¡vuela!' : ''}</small></div>`;
@@ -2765,7 +2824,9 @@ function pintarMisiones() {
   const T = yo.tareas;
   if (T && T.dia) {
     const hd = T.dia.l.filter(t => t.ok).length, hs = T.sem.l.filter(t => t.ok).length;
-    h += `<div class="q"><b>🗓 Misiones del día ${hd}/${T.dia.l.length}</b>` + T.dia.l.map((t, i) => t.ok ? `<span class="ok">✓ ${esc(t.txt)}</span>` : `<span class="tarea">• ${esc(t.txt)} ${t.p}/${t.n}${T.dia.cambio ? '' : ` <button class="cambiar" data-cambiar="${i}" title="Cambiar esta misión (1 gratis al día)">🔄</button>`}</span>`).join('') +
+    // Movil con la caja recortada: una sola linea; al tocarla se despliega la lista completa.
+    if (MOVIL && !c.classList.contains('abierto')) h += `<div class="q"><b>🗓 Día ${hd}/${T.dia.l.length} · Semana ${hs}/${T.sem.l.length}</b><small>Toca para ver</small></div>`;
+    else h += `<div class="q"><b>🗓 Misiones del día ${hd}/${T.dia.l.length}</b>` + T.dia.l.map((t, i) => t.ok ? `<span class="ok">✓ ${esc(t.txt)}</span>` : `<span class="tarea">• ${esc(t.txt)} ${t.p}/${t.n}${T.dia.cambio ? '' : ` <button class="cambiar" data-cambiar="${i}" title="Cambiar esta misión (1 gratis al día)">🔄</button>`}</span>`).join('') +
       `<small>Semana ${hs}/${T.sem.l.length}${T.dia.bono ? ' · ✓ bono del día' : ''}</small></div>`;
   }
   c.style.display = h ? 'block' : 'none';
@@ -2778,9 +2839,11 @@ const faro = (() => {
   const m = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 2.4, 90, 12, 1, true).translate(0, 45, 0), new THREE.MeshBasicMaterial({ color: '#ffd84a', transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide, fog: false }));
   m.visible = false; escena.add(m); return m;
 })();
-$('misiones').onclick = e => { if (e.target.closest('[data-entregar]')) { e.stopPropagation(); mandar({ t: 'mision' }); return; } const b = e.target.closest('[data-cambiar]'); if (b) { e.stopPropagation(); mandar({ t: 'cambiarTarea', i: +b.dataset.cambiar }); return; } abrirMapa(); };
+$('misiones').onclick = e => { const en = e.target.closest('[data-entregar]'); if (en) { e.stopPropagation(); mandar(en.dataset.entregar === 'diaria' ? { t: 'mision', diaria: true } : { t: 'mision' }); return; } const b = e.target.closest('[data-cambiar]'); if (b) { e.stopPropagation(); mandar({ t: 'cambiarTarea', i: +b.dataset.cambiar }); return; } if (MOVIL) { $('misiones').classList.toggle('abierto'); pintarMisiones(); return; } abrirMapa(); };
 function misionLista() { if (!yo) return false; const q = MISIONES[yo.mis.i]; const d = yo.diaria || {}; return (q && yo.mis.p >= q.n) || (!d.ok && (d.p || 0) >= DIARIA.n); }
 function colorNivel(nv) { const d = nv - (yo ? yo.nivel : 1); return d >= 5 ? '#ff3344' : d >= 2 ? '#ff9900' : d <= -8 ? '#9a9a9a' : d <= -3 ? '#4ade80' : '#ffe600'; }
+// Marca de peligro que no depende del color (daltonicos): ASCII porque la fuente pixel no tiene calavera.
+function marcaNivel(nv) { const d = nv - (yo ? yo.nivel : 1); return d >= 5 ? '!! ' : d >= 2 ? '! ' : ''; }
 const cieloAct = C(CIELO.pueblo), cieloObj = C(CIELO.pueblo);
 function bucle(t) {
   requestAnimationFrame(bucle);

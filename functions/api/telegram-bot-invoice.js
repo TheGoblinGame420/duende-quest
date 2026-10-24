@@ -5,9 +5,21 @@
 // ═══════════════════════════════════════════════════════
 
 import {
-  tg, json, corsHeaders, getDuendePriceUsd, getEnv, supabaseQuery,
+  tg, json, corsHeaders, getDuendePriceUsd, getEnv, supabaseQuery, verifyInitData,
   STAR_USD, STARS_PACKAGES, SKIN_PRICES_USD,
 } from './lib.js';
+
+// Precio en memoria del isolate 60 s: cada factura ya no pega a pump.fun/DexScreener.
+// Solo se guarda un precio real (estricto); el webhook recalcula al acreditar.
+let _precio = { v: 0, t: 0 };
+async function precioCacheado() {
+  if (_precio.v && Date.now() - _precio.t < 60000) return _precio.v;
+  const p = await getDuendePriceUsd(true);
+  if (p) _precio = { v: p, t: Date.now() };
+  return p;
+}
+// Freno por usuario (memoria del isolate): una factura cada 3 s
+const _ultimaFactura = new Map();
 
 // ¿Primera compra de este usuario? (server-side, se re-verifica al acreditar)
 export async function isFirstPurchase(env, tgId) {
@@ -22,7 +34,15 @@ async function onRequestPost(context) {
 
   try {
     const body = await request.json();
-    const tgId = String(body.tg_id || '');
+    // Identidad firmada por Telegram (initData). Antes valia cualquier tg_id del
+    // body: sin auth y la factura revelaba si esa persona ya compro (oferta 2x).
+    const user = await verifyInitData(body.init_data, token);
+    if (!user?.id) return json(request, { error: 'auth_failed' }, 401);
+    const tgId = String(user.id);
+    const ahora = Date.now();
+    if (ahora - (_ultimaFactura.get(tgId) || 0) < 3000) return json(request, { error: 'rate_limited' }, 429);
+    if (_ultimaFactura.size > 5000) _ultimaFactura.clear();
+    _ultimaFactura.set(tgId, ahora);
 
     let invoice;
     if (body.skin_id) {
@@ -44,7 +64,7 @@ async function onRequestPost(context) {
       const pkg = STARS_PACKAGES[pkgIndex];
       if (!pkg) return json(request, { error: 'unknown_package' }, 400);
       const env = getEnv(context);
-      const [priceUsd, firstBuy] = await Promise.all([getDuendePriceUsd(true), isFirstPurchase(env, tgId)]);
+      const [priceUsd, firstBuy] = await Promise.all([precioCacheado(), isFirstPurchase(env, tgId)]);
       // Sin precio real no se vende: el respaldo fijo daba ~20 veces mas tokens.
       if (!priceUsd) return json(request, { error: 'price_unavailable' }, 503);
       const stars = Math.ceil(pkg.usd / STAR_USD);

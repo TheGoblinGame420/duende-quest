@@ -125,7 +125,9 @@ async function isFirstPurchase(env, tgId) {
   return Array.isArray(rows) && rows.length === 0;
 }
 
-async function createStarsInvoice(token, env, pkgIndex, tgId) {
+async function createStarsInvoice(token, env, pkgIndex, tgId) {
+  // Paquete inexistente (buy_99 a mano): ni se consulta el precio.
+  if (!(pkgIndex >= 0 && pkgIndex < STARS_PACKAGES.length)) return;
   const price = await getPrice();
   // Sin precio real no se factura (el respaldo fijo daba ~20x mas tokens). En
   // el webhook se acredita como mucho lo de la factura (payload.tokens).
@@ -151,7 +153,11 @@ async function createStarsInvoice(token, env, pkgIndex, tgId) {
 // COMMAND HANDLERS
 // ═══════════════════════════════════════════════════════
 
-async function handleStart(token, env, chatId, user, startPayload) {
+// Trailer ya enviado (por isolate): un /start en bucle de alguien sin perfil
+// mandaba el video cada vez. Desde el boton Menu no se manda nunca.
+const trailerEnviado = new Set();
+
+async function handleStart(token, env, chatId, user, startPayload, desdeMenu) {
   const tgId = String(user.id);
   // SEGURIDAD: aqui habia un PATCH que movia a este telegram_id el perfil
   // cuyo username coincidiera con user.username || user.first_name. El
@@ -169,7 +175,9 @@ async function handleStart(token, env, chatId, user, startPayload) {
   const referralLink = `https://t.me/duendequest_bot?start=ref_${user.id}`;
   // A quien llega por primera vez: el trailer de 30 s (juego real, generado con
   // tools/promo/) antes de la bienvenida. Si falla, la bienvenida sale igual.
-  if (esNuevo) {
+  if (esNuevo && !desdeMenu && !trailerEnviado.has(tgId)) {
+    if (trailerEnviado.size > 5000) trailerEnviado.clear();
+    trailerEnviado.add(tgId);
     try { await tg(token, 'sendVideo', { chat_id: chatId, video: TRAILER_URL, caption: '🎬 Así se juega DUENDE QUEST (30 s de juego real)', supports_streaming: true }); } catch (e) {}
   }
   await tg(token, 'sendMessage', {
@@ -193,7 +201,10 @@ async function handleStart(token, env, chatId, user, startPayload) {
 // Los nombres del ranking los escriben los jugadores: un nombre con * _ [ `
 // rompia el Markdown (Telegram rechazaba el mensaje y /ranking dejaba de
 // funcionar para todos) o colaba un enlace en un mensaje oficial del bot.
-function mdSeguro(t) { return String(t || '?').replace(/[*_\[\]`()]/g, '').slice(0, 20); }
+// Ademas Telegram vuelve clicable cualquier @usuario, dominio o t.me/... del
+// texto (un first_name '@SoporteVIP' salia como enlace en el aviso de
+// referido o en el Top 10): solo letras, numeros y espacios, como world.js.
+function mdSeguro(t) { return String(t || '').normalize('NFC').replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 20) || '?'; }
 
 async function handleRanking(token, env, chatId, messageId) {
   const rows = await supabaseQuery(env, 'game_scores?select=username,score,wave&order=score.desc&limit=50');
@@ -544,6 +555,21 @@ async function handlePlay(token, chatId) {
 // MAIN HANDLER
 // ═══════════════════════════════════════════════════════
 
+// Anti-abuso: tope de actualizaciones por usuario (por isolate). Sin esto, un
+// cliente a mano podia mandar /start o botones en bucle y gastar el limite de
+// envios del bot para todos. Los pagos salen antes y nunca se cortan.
+const RL_VENTANA = 10000, RL_MAX = 8;
+const rlUsuarios = new Map();
+function demasiadas(id) {
+  const ahora = Date.now();
+  let e = rlUsuarios.get(id);
+  if (!e || ahora - e.t > RL_VENTANA) {
+    if (rlUsuarios.size > 5000) { for (const [k, v] of rlUsuarios) if (ahora - v.t > RL_VENTANA) rlUsuarios.delete(k); if (rlUsuarios.size > 5000) rlUsuarios.clear(); }
+    e = { t: ahora, n: 0 }; rlUsuarios.set(id, e);
+  }
+  return ++e.n > RL_MAX;
+}
+
 async function onRequestPost(context) {
   const env = getEnv(context);
   const token = env.BOT_TOKEN;
@@ -637,6 +663,11 @@ async function onRequestPost(context) {
       return new Response('OK');
     }
 
+    // Anti-abuso: quien manda demasiadas actualizaciones seguidas se ignora un
+    // rato (el admin nunca; pre-checkout y pagos ya respondieron arriba).
+    const deId = body.callback_query?.from?.id ?? body.message?.from?.id;
+    if (deId && String(deId) !== String(context.env.ADMIN_TG_ID || '') && demasiadas(String(deId))) return new Response('OK');
+
     // Callback queries
     if (body.callback_query) {
       const cb = body.callback_query;
@@ -695,7 +726,7 @@ async function onRequestPost(context) {
         case 'stats': await handleStats(token, env, chatId, user.id, messageId); break;
         case 'referral': await handleReferralCmd(token, chatId, user.id, messageId); break;
         case 'buy': await handleBuy(token, chatId, user.id, messageId); break;
-        case 'menu': await handleStart(token, env, chatId, user, ''); break;
+        case 'menu': await handleStart(token, env, chatId, user, '', true); break;
         case 'creador': await handleCreador(token, chatId); break;
       }
       return new Response('OK');

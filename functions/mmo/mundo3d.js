@@ -348,13 +348,15 @@ export const Mundo3D = {
       const s = this.sesiones.get(sid);
       if (!s || !s.c || !s.m3 || s.muerto) continue;
       const parte = d / total;
-      const k = o.jefe ? Math.max(parte, 1 / 3) : parte;
+      // En grupo, quien pega cobra al menos el 70%: siempre mas que el 60% del
+      // compañero que solo mira (antes pegar poco daba menos que no pegar).
+      const gr = this.grupoDe ? this.grupoDe(s) : null;
+      const k = Math.max(o.jefe ? Math.max(parte, 1 / 3) : parte, gr ? 0.7 : 0);
       const mult = (((SKINS[s.c.skin] || {}).buffs || {}).oroMult || 1) * (1 + talento(s.c, 'fortuna'));
       // De noche los monstruos dan un 10% mas de experiencia.
       const xp = Math.max(1, Math.round(base.xp * k * (1 + talento(s.c, 'erudicion')) * (esNoche(Date.now()) ? 1.1 : 1)));
       const oro = Math.max(1, Math.round(base.oro * k * rnd(0.8, 1.2) * mult));
       // dar(): misiones, diarias, bestiario, chicha, pase, botin... lo mismo que el 2D.
-      const gr = this.grupoDe ? this.grupoDe(s) : null;
       const nG = gr ? Math.max(1, this.sesionesGrupo(gr).filter(x => x.m3 && !x.muerto && o.dano.has(x.id)).length) : 1;
       this.dar(s, xp, oro, o, nG, true);
       cobraron.add(sid);
@@ -362,13 +364,14 @@ export const Mundo3D = {
       if (o.jefe && !o.cueva && parte >= 0.1) this.darMton(s, 20 * Math.max(0.3, MONSTRUOS[o.k].nivel / 30), 'jefe');
     }
     // Grupo: los compañeros cerca (60 m) cuentan la caza como suya (misiones,
-    // diarias, bestiario) y se llevan el 60% de la experiencia.
+    // diarias, bestiario) y se llevan el 60% de la experiencia. El botin cuenta
+    // como en grupo (n=2): sin pegar no sacan mas equipo que los que pegan.
     for (const sid of [...cobraron]) {
       const g = this.grupoDe(this.sesiones.get(sid));
       if (!g) continue;
       for (const x of this.sesionesGrupo(g)) {
         if (cobraron.has(x.id) || !x.m3 || x.muerto || !mismo(x, o) || dist(x.p, o) > 60) continue;
-        this.dar(x, Math.max(1, Math.round(base.xp * 0.6 * (1 + talento(x.c, 'erudicion')))), Math.max(1, Math.round(base.oro * 0.5)), o, 1, true);
+        this.dar(x, Math.max(1, Math.round(base.xp * 0.6 * (1 + talento(x.c, 'erudicion')))), Math.max(1, Math.round(base.oro * 0.5)), o, 2, true);
         cobraron.add(x.id);
       }
     }
@@ -535,11 +538,13 @@ export const Mundo3D = {
     const ahora = Date.now();
     if (ahora - (s.lookT || 0) < 1500) return;
     s.lookT = ahora;
-    s.c.look = limpiarLook(m.look);
+    // Si no cambia nada no se difunde; el guardado lo hace el autoguardado (sucio)
+    const nl = limpiarLook(m.look);
+    if (JSON.stringify(nl) === JSON.stringify(s.c.look)) return;
+    s.c.look = nl;
     s.sucio = true;
     this.aClave(K3, { t: 'pa', ...this.infoApariencia(s) });
     this.actualizarYo(s);
-    this.guardar(s);
   },
 
   // ── EL ABISMO DE ETER (facciones) ──

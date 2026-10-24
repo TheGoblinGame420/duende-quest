@@ -37,7 +37,9 @@ const INVITACION_MS = 60000;
 export const CONTACTOS_MAX = 50;      // amigos en la lista de cada personaje
 export const LFG_MS = 10 * 60000;       // cuanto dura un anuncio de "busco grupo"
 const LFG_CADA_MS = 60000;              // y cada cuanto se puede volver a anunciar
-const limpiar = t => String(t || '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 120);
+// Fuera tambien los invisibles: ancho cero y marcas bidi (U+202E daba la
+// vuelta al texto para disfrazarlo). El U+200D se deja: lo usan los emojis compuestos.
+const limpiar = t => String(t || '').replace(/[\u0000-\u001f\u007f​‌‎‏‪-‮⁠-⁤⁦-⁩﻿]/g, '').trim().slice(0, 120);
 
 export const Social = {
   iniciarSocial() {
@@ -204,8 +206,12 @@ export const Social = {
     const mudo = this.silenciado ? this.silenciado(s) : 0;
     if (mudo) return this.no(s, `🔇 Estás silenciado por un moderador ${Math.ceil((mudo - ahora) / 60000)} min más.`);
     s.chatT = ahora;
-    const base = { t: 'chat', p: s.id, n: s.c.nombre, m: txt, mapa: s.c.mapa, cl: s.c.clase || '', gm: s.dios ? 1 : undefined };
     const canal = m.canal;
+    // General y susurro llegan a cualquiera: un invitado recien creado (token
+    // nuevo, gratis) no los usa hasta el nivel 5. Si no, silenciarlo no servia:
+    // reconectaba con otro token y seguia.
+    if (canal !== 'decir' && canal !== 'grupo' && canal !== 'hermandad' && s.c.uid.startsWith('inv:') && s.c.nivel < 5) return this.no(s, '🔒 Los invitados hablan en el canal general y por susurro desde el nivel 5. Sube un poco o inicia sesión.');
+    const base = { t: 'chat', p: s.id, n: s.c.nombre, m: txt, mapa: s.c.mapa, cl: s.c.clase || '', gm: s.dios ? 1 : undefined };
     if (canal === 'decir') {
       // Solo los que estan en el mismo mapa (o la misma mazmorra).
       return this.aClave(s.k, { ...base, canal: 'decir' });
@@ -231,7 +237,31 @@ export const Social = {
       return;
     }
     // General: todo el servidor. Las burbujas solo se ven en el mismo mapa.
+    this.anotarChat(this.chatHist || (this.chatHist = []), s, base, 'general', 20);
     this.aTodos({ ...base, canal: 'general' });
+  },
+  // Historial corto del general y de cada hermandad, solo en memoria (si el
+  // servidor se duerme se pierde). u: uid del autor, para no repetir lo de un
+  // silenciado o baneado; no sale al cliente.
+  anotarChat(l, s, base, canal, max) {
+    l.push({ ...base, canal, u: s.c.uid, t0: Date.now() });
+    if (l.length > max) l.shift();
+  },
+  // Al entrar: lo que se dijo mientras no estaba (desde que se guardo al
+  // salir, como mucho 24 h): una reconexion no repite lo que ya vio. Los
+  // clientes muestran 8 lineas: cabecera, 6 mensajes y el mensaje del dia.
+  // Con p: 0 y sin mapa no salen burbujas sobre nadie.
+  enviarHistorialChat(s, desde) {
+    const c = s.c, ahora = Date.now(), mod = this.mod || { ban: {}, mute: {} };
+    const lim = Math.max(desde || 0, ahora - 24 * 3600000);
+    const h = c.herm && this.herms && this.herms.get(c.herm);
+    const deHerm = (h && h.miembros[c.uid] && this.chatHistH && this.chatHistH.get(c.herm)) || [];
+    const l = [...(this.chatHist || []), ...deHerm]
+      .filter(x => x.t0 > lim && !mod.ban[x.u] && !((mod.mute[x.u] || 0) > ahora))
+      .sort((a, b) => a.t0 - b.t0).slice(-6);
+    if (!l.length) return;
+    this.enviar(s, { t: 'chat', canal: 'general', sis: 1, m: '— Mensajes recientes del chat —' });
+    for (const { t0, u, ...x } of l) this.enviar(s, { ...x, p: 0, mapa: '' });
   },
 
   // ── BUSCAR GRUPO ──
@@ -360,7 +390,7 @@ export const Social = {
       const x = this.porUid.get(a.u);
       const on = !!(x && x.c && !x.cerrado);
       if (on) a.n = x.c.nombre;
-      return { uid: pub(a.u), n: a.n, on: on ? 1 : 0, id: on ? x.id : 0, lv: on ? x.c.nivel : 0, cl: on ? x.c.clase || '' : '', mapa: on && MAPAS[x.c.mapa] ? MAPAS[x.c.mapa].nombre : '', g: on && x.gid ? 1 : 0 };
+      return { uid: pub(a.u), n: a.n, on: on ? 1 : 0, id: on ? x.id : 0, lv: on ? x.c.nivel : 0, cl: on ? x.c.clase || '' : '', mapa: on && MAPAS[x.c.mapa] ? MAPAS[x.c.mapa].nombre : '', g: on && x.gid ? 1 : 0, m3: on && x.m3 ? 1 : 0 };
     }).sort((a, b) => b.on - a.on || a.n.localeCompare(b.n));
     this.enviar(s, { t: 'contactos', l });
   },
@@ -403,7 +433,7 @@ export const Social = {
     const r = [];
     for (const x of this.sesiones.values()) {
       if (!x.c || x === s) continue;
-      r.push({ id: x.id, n: x.c.nombre, lv: x.c.nivel, cl: x.c.clase || '', mapa: MAPAS[x.c.mapa] ? MAPAS[x.c.mapa].nombre : '', g: x.gid ? 1 : 0, h: x.c.herm ? (this.nombreHermandad ? this.nombreHermandad(x.c.herm) : '') : '' });
+      r.push({ id: x.id, n: x.c.nombre, lv: x.c.nivel, cl: x.c.clase || '', mapa: MAPAS[x.c.mapa] ? MAPAS[x.c.mapa].nombre : '', g: x.gid ? 1 : 0, m3: x.m3 ? 1 : 0, h: x.c.herm ? (this.nombreHermandad ? this.nombreHermandad(x.c.herm) : '') : '' });
       if (r.length >= 100) break;
     }
     r.sort((a, b) => b.lv - a.lv);

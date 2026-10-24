@@ -55,7 +55,7 @@
 <!-- defer se ejecuta en orden: Telegram ANTES que pwa.js (mira window.Telegram para no mostrar "Instalar" dentro de Telegram) y todo antes del modulo client.js -->
 <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
 <script src="/js/pwa.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
 <script src="/js/config.js" defer></script>
 <style>
 /* ── Tokens (guia de diseno, oct 2026). Las variables viejas (--verde, --amarillo,
@@ -84,7 +84,7 @@ a{color:var(--cian);}
 .uf{display:flex;gap:6px;align-items:flex-start;background:var(--panel);border:1px solid var(--borde);border-radius:var(--radio);padding:5px 8px 5px 5px;box-shadow:var(--sombra);}
 .uf .ret{position:relative;width:42px;height:42px;flex:0 0 42px;border-radius:50%;border:2px solid rgba(242,193,78,.75);background:radial-gradient(circle at 50% 35%,#1f2a42,#0b0f17);}
 .uf .ret img,.uf .ret canvas{position:absolute;inset:2px;width:calc(100% - 4px);height:calc(100% - 4px);object-fit:contain;image-rendering:pixelated;border-radius:50%;}
-.uf .ret b{position:absolute;left:-5px;bottom:-5px;min-width:17px;height:17px;padding:0 3px;border-radius:9px;background:var(--panel2);border:1px solid var(--oro);font-size:6px;line-height:15px;text-align:center;color:var(--oro);}
+.uf .ret b{position:absolute;left:-5px;bottom:-5px;min-width:17px;height:17px;padding:0 3px;border-radius:9px;background:var(--panel2);border:1px solid var(--oro);font:700 10px/15px var(--sans);text-align:center;color:var(--oro);}
 .uf .cu{flex:1;min-width:0;}
 .uf .nm{font-size:9px;display:flex;justify-content:space-between;gap:6px;margin:1px 0 4px;white-space:nowrap;overflow:hidden;}
 .uf .nm span{min-width:0;overflow:hidden;text-overflow:ellipsis;}
@@ -97,25 +97,27 @@ a{color:var(--cian);}
 #uf-obj.amigo .ret{border-color:var(--ok);}
 #hud.estrecho #uf-yo{width:172px;}
 #hud.estrecho #uf-obj{left:8px;top:66px;width:172px;}
-.barra{height:9px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;margin-bottom:3px;position:relative;}
+/* Numeros del HUD en fuente del sistema: a 5-8 px la pixel art no se lee en el movil. */
+.barra{height:11px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;margin-bottom:3px;position:relative;}
 /* El relleno se escala (transform) en vez de cambiar su ancho: no obliga a recalcular el diseño en cada golpe. */
 .barra>i{display:block;height:100%;width:100%;transform-origin:0 50%;transition:transform .15s;}
-.barra>span{position:absolute;inset:0;font-size:6px;line-height:9px;text-align:center;color:#fff;text-shadow:1px 1px 0 #000;}
+.barra>span{position:absolute;inset:0;font:700 9px/11px var(--sans);text-align:center;color:#fff;text-shadow:1px 1px 0 #000;}
 .barra.hp>i{background:linear-gradient(90deg,#16a34a,#4ade80);}
 .barra.hp.bajo>i{background:linear-gradient(90deg,#b91c1c,#f87171);}
-.barra.rc{height:7px;}
-.barra.rc>span{line-height:7px;font-size:5px;}
+.barra.rc{height:9px;}
+.barra.rc>span{font:700 8px/9px var(--sans);}
 .barra.rc>i{background:var(--pri);}
 .cps{display:flex;gap:3px;height:7px;margin-top:1px;}
 .cps:empty{display:none;}
 .cps i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(0,0,0,.6);}
 .cps i.on{background:var(--err);}
 .auras{display:flex;gap:2px;flex-wrap:wrap;margin-top:3px;}
-.au{width:17px;height:17px;position:relative;border:1px solid #16a34a;border-radius:3px;background:#000;overflow:hidden;}
+.au{width:20px;height:20px;position:relative;border:1px solid #16a34a;border-radius:3px;background:#000;overflow:hidden;}
 .au.mala{border-color:var(--err);}
 .au img{width:100%;height:100%;image-rendering:pixelated;}
-.au span{position:absolute;right:0;bottom:0;font-size:5px;line-height:6px;background:rgba(0,0,0,.7);padding:0 1px;color:#fff;}
-.castm{display:none;height:8px;margin-top:3px;border:1px solid rgba(245,158,11,.6);}
+.au span{position:absolute;right:0;bottom:0;font:700 9px/10px var(--sans);background:rgba(0,0,0,.7);padding:0 1px;color:#fff;}
+.castm{display:none;height:12px;margin-top:3px;border:1px solid rgba(245,158,11,.6);}
+.castm>span{line-height:10px;}
 .castm>i{background:linear-gradient(90deg,#d97706,var(--warn));transition:none;}
 .castm.noint{border-color:rgba(160,160,160,.6);}
 .castm.noint>i{background:linear-gradient(90deg,#888,#ccc);}
@@ -143,7 +145,7 @@ a{color:var(--cian);}
 #h-mundial{color:var(--rosa);margin-top:4px;}
 #h-mundial.lista{animation:parp 1.6s ease-in-out infinite alternate;}
 /* invasion en curso (functions/mmo/eventos.js): nombre, tiempo y progreso */
-#h-evento{display:none;font-size:6px;line-height:1.6;color:#fb923c;margin-top:5px;text-shadow:1px 1px 0 #000,0 0 3px #000;}
+#h-evento{display:none;font:600 11px/1.4 var(--sans);color:#fb923c;margin-top:5px;text-shadow:1px 1px 0 #000,0 0 3px #000;}
 #h-evento b,#h-evento span{display:block;font-weight:normal;}
 #h-evento i{display:block;height:3px;margin:2px 0 0 auto;width:110px;max-width:100%;background:rgba(0,0,0,.55);border-radius:2px;overflow:hidden;}
 #h-evento u{display:block;height:100%;width:0;background:linear-gradient(90deg,#ea580c,var(--oro));transition:width .3s;}
@@ -170,6 +172,9 @@ a{color:var(--cian);}
 #hud.estrecho #botones{max-width:186px;gap:3px;}
 #hud.estrecho #botones .bt{width:34px;height:34px;padding:0;font-size:13px;line-height:1;display:inline-flex;align-items:center;justify-content:center;}
 @media (max-width:370px){#hud.estrecho #botones{gap:2px;max-width:180px;}#hud.estrecho #uf-yo,#hud.estrecho #uf-obj{width:160px;}}
+/* Ayuda, sonido e inicio van dentro de "⋯" para no pasar de 2 filas ni tapar el minimapa */
+#hud:not(.estrecho) #b-mas{display:none;}
+#hud.estrecho #botones:not(.abierto) .extra{display:none;}
 /* .bt: botones pequenos del HUD (iconos y etiquetas cortas en pixel) */
 .bt3d{background:linear-gradient(135deg,#7c3aed,#2563eb)!important;border-color:#c4b5fd!important;color:#fff!important;box-shadow:0 0 12px rgba(124,58,237,.8);animation:pulso3d 1.6s ease-in-out infinite;}
 @keyframes pulso3d{50%{box-shadow:0 0 24px rgba(167,139,250,1);}}
@@ -200,16 +205,16 @@ body.tactil #pie{display:none;}
 #acciones,#consumibles{display:flex;gap:4px;}
 .pw{width:40px;height:40px;border:1px solid var(--borde);border-radius:8px;background:var(--panel2);position:relative;cursor:pointer;display:flex;align-items:center;justify-content:center;overflow:hidden;}
 .pw img{width:30px;height:30px;object-fit:contain;image-rendering:pixelated;}
-.pw .k{position:absolute;left:3px;top:3px;font-size:6px;color:rgba(255,255,255,.8);text-shadow:1px 1px 0 #000;z-index:2;}
+.pw .k{position:absolute;left:3px;top:3px;font:700 10px var(--sans);color:rgba(255,255,255,.8);text-shadow:1px 1px 0 #000;z-index:2;}
 .pw .k.lejos{color:#f87171;}
-.pw .n{position:absolute;right:3px;bottom:3px;font-size:7px;color:var(--oro);text-shadow:1px 1px 0 #000;z-index:2;}
+.pw .n{position:absolute;right:3px;bottom:3px;font:700 11px var(--sans);color:var(--oro);text-shadow:1px 1px 0 #000;z-index:2;}
 .pw .cd{position:absolute;left:0;right:0;bottom:0;top:0;background:rgba(0,0,0,.65);transform-origin:50% 100%;transform:scaleY(0);}
-.pw .cdt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;text-shadow:1px 1px 0 #000;z-index:2;pointer-events:none;}
+.pw .cdt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:800 13px var(--sans);color:#fff;text-shadow:1px 1px 0 #000;z-index:2;pointer-events:none;}
 .pw.vacio img{filter:grayscale(1);opacity:.35;}
 .pw.sinrec img{filter:grayscale(.6) brightness(.55) sepia(1) hue-rotate(185deg) saturate(3);}
 .pw.listo{border-color:var(--oro);box-shadow:inset 0 0 0 1px var(--oro);}
 .pw.ac{border-color:rgba(242,193,78,.4);}
-.pw.ac .n{left:0;right:0;text-align:center;bottom:13px;font-size:6px;color:#fff;}
+.pw.ac .n{left:0;right:0;text-align:center;bottom:13px;font:700 10px var(--sans);color:#fff;}
 .pw.on{transform:scale(.92);}
 #bxp{left:0;right:0;bottom:0;height:5px;margin:0;border-radius:0;background:rgba(0,0,0,.55);}
 #bxp>i{background:linear-gradient(90deg,#6d5bd0,var(--rosa));}
@@ -217,9 +222,9 @@ body.tactil #pie{display:none;}
 #lanzar{left:50%;transform:translateX(-50%);bottom:14px;width:230px;display:none;}
 #lanzar .barra{height:12px;border:1px solid rgba(242,193,78,.55);margin:0;}
 #lanzar .barra>i{background:linear-gradient(90deg,#d99a1e,var(--oro));transition:none;}
-#lanzar .barra>span{font-size:7px;line-height:12px;}
+#lanzar .barra>span{font-size:9px;line-height:10px;}
 #hud.estrecho #lanzar .barra{height:16px;}
-#hud.estrecho #lanzar .barra>span{font-size:8px;line-height:16px;}
+#hud.estrecho #lanzar .barra>span{font-size:10px;line-height:14px;}
 #lanzar.mal .barra>i{background:var(--err);}
 /* Encima de la cabeza del duende (abajo tapaba su nombre). */
 #hud.estrecho #lanzar{bottom:150px;width:60%;}
@@ -227,10 +232,10 @@ body.tactil #pie{display:none;}
 #grupo{left:8px;top:92px;width:150px;display:none;}
 #hud.estrecho #grupo{top:142px;width:128px;}
 .gm{background:var(--panel);border:1px solid var(--borde);border-radius:8px;padding:4px 6px 3px;margin-bottom:4px;cursor:pointer;}
-.gm .nm{font-size:6px;display:flex;justify-content:space-between;gap:4px;margin-bottom:3px;white-space:nowrap;overflow:hidden;}
-.gm .nm small{font-size:5px;color:var(--txt2);}
-.gm .barra.hp{height:7px;margin-bottom:2px;}
-.gm .barra.hp>span{font-size:5px;line-height:7px;}
+.gm .nm{font:600 11px var(--sans);display:flex;justify-content:space-between;gap:4px;margin-bottom:3px;white-space:nowrap;overflow:hidden;}
+.gm .nm small{font-size:10px;color:var(--txt2);}
+.gm .barra.hp{height:10px;margin-bottom:2px;}
+.gm .barra.hp>span{font:700 9px/10px var(--sans);}
 .gm .barra.rc{height:3px;margin:0;}
 #grupo.compacto .gm{padding:2px 5px;margin-bottom:2px;break-inside:avoid;}
 #hud.estrecho #grupo.compacto{width:236px;column-count:2;column-gap:4px;} #grupo.compacto .gm .nm{margin-bottom:1px;} #grupo.compacto .gm .nm small,#grupo.compacto .gm .barra.rc{display:none;} #grupo.compacto .gm .barra.hp{height:5px;margin:0;} #grupo.compacto .gm .barra.hp>span{display:none;}
@@ -291,7 +296,7 @@ body.tg .solo-web{display:none;}
 #hud.estrecho #chat-log:empty{background:none;padding:0;}
 /* Con el chat abierto (💬) se despliega el historial (con fondo para leerlo). */
 #hud.estrecho #chat-log.abierto{max-height:150px;background:rgba(10,14,22,.88);border-radius:8px;padding:4px 6px;}
-#errores div{font-size:8px;color:#f87171;text-shadow:1px 1px 0 #000,0 0 6px #000;margin:3px 0;animation:av 1.6s forwards;white-space:nowrap;}
+#errores div{font:700 13px/1.35 var(--sans);color:#f87171;text-shadow:1px 1px 0 #000,0 0 6px #000;margin:3px 0;animation:av 1.6s forwards;white-space:nowrap;}
 .ranuras{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
 .ranura{border:1px solid var(--borde);border-radius:8px;background:var(--panel2);aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:2px;}
 .ranura img{width:60%;image-rendering:pixelated;}
@@ -451,7 +456,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 #carga .consejo-carga{position:absolute;bottom:max(32px,env(safe-area-inset-bottom));left:24px;right:24px;margin:0;text-align:center;font-family:var(--sans);font-size:12px;line-height:1.5;color:var(--txt3);}
 #carga .barra>i{background:var(--pri);}
 @media (max-width:600px){
-  .bt{padding:6px 6px;font-size:8px;}
+  .bt{padding:6px 6px;font-size:9px;}
   .ventana .cerrar{font-size:14px;}
   #chat{width:62%;}
   #chat-log{font-size:11px;max-height:80px;}
@@ -528,7 +533,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
       <div class="caja" id="minimapa"><canvas id="mini" width="170" height="26"></canvas></div>
       <div class="caja" id="seguimiento"><div id="h-mision"></div><div id="h-tareas"></div><div id="h-mundial"></div><div id="h-evento"></div></div>
       <div class="caja" id="mapa-nom"><span id="h-mapa">—</span><small id="h-mapa-sub"></small></div>
-      <div class="caja" id="botones">
+      <div class="caja" id="botones" onclick="if(event.target.closest('#b-mas'))this.classList.toggle('abierto');else if(event.target.closest('.extra'))this.classList.remove('abierto')">
         <button class="bt" id="b-libro" title="Hechizos y clase (P)" aria-label="Hechizos"><img class="ico-bt" src="/assets/items/equipo/W_Book01.png" alt=""></button>
         <button class="bt" id="b-mapa" title="Mapa del mundo (M)" aria-label="Mapa"><img class="ico-bt" src="/assets/items/equipo/I_Map.png" alt=""></button>
         <button class="bt" id="b-social" title="Grupo, jugadores y hermandad (O)" aria-label="Social"><img class="ico-bt" src="/assets/items/equipo/I_Scroll.png" alt=""></button>
@@ -536,12 +541,13 @@ input.nombre:focus{border-color:var(--pri-txt);}
         <button class="bt" id="b-inv" title="Inventario (I)" aria-label="Inventario"><img class="ico-bt" src="/assets/items/equipo/I_Chest02.png" alt=""></button>
         <button class="bt" id="b-wallet" title="mTON y retiros" aria-label="mTON"><img class="ico-bt" src="/assets/items/equipo/I_Sapphire.png" alt=""></button>
         <button class="bt" id="b-rank" title="Ranking" aria-label="Ranking"><img class="ico-bt" src="/assets/items/equipo/Ac_Medal01.png" alt=""></button>
-        <button class="bt" id="b-ayuda" title="Guía del juego" aria-label="Guía"><img class="ico-bt" src="/assets/items/equipo/I_Book.png" alt=""></button>
+        <button class="bt extra" id="b-ayuda" title="Guía del juego" aria-label="Guía"><img class="ico-bt" src="/assets/items/equipo/I_Book.png" alt=""></button>
         <button class="bt" id="b-cuenta" title="Mi cuenta: guarda tu progreso" aria-label="Mi cuenta"><svg class="ico-bt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg></button>
         <a class="bt bt3d" href="/mundo/" title="$DUENDE ORIGINS: el mundo abierto 3D con tu mismo personaje" aria-label="Mundo 3D" style="text-decoration:none;font:800 12px var(--sans)">🌌 3D</a>
         <button class="bt" id="b-dios" title="Modo Dios (F2)" aria-label="Modo Dios" style="display:none"><img class="ico-bt" src="/assets/items/equipo/Ac_Medal04.png" alt=""></button>
-        <button class="bt" id="b-sonido" title="Sonido">🔊</button>
-        <a class="bt" href="/inicio/" title="Inicio: elige tu juego" aria-label="Inicio" style="text-decoration:none"><svg class="ico-bt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></a>
+        <button class="bt extra" id="b-sonido" title="Sonido">🔊</button>
+        <a class="bt extra" href="/inicio/" title="Inicio: elige tu juego" aria-label="Inicio" style="text-decoration:none"><svg class="ico-bt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></a>
+        <button class="bt" id="b-mas" title="Más" aria-label="Más">⋯</button>
       </div>
       <div class="caja" id="jefe-bar"><div class="n" id="jefe-n">JEFE</div><div class="barra"><i></i></div></div>
       <div class="caja" id="avisos"></div>
@@ -599,6 +605,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
       <p class="nota"><a href="#" id="b-cambiar-pass">Cambiar contraseña</a> · <a href="#" id="b-salir-cuenta">Cerrar sesión / usar otra cuenta</a></p>
       <div id="inicio-auth2" class="cuenta" style="display:none"></div>
     </div>
+    <button class="btn sec btn-grande" data-instalar hidden style="display:none;margin-top:8px">⬇ Instalar la app</button>
     <div class="confianza">
       <a href="/terminos.html" target="_blank" rel="noopener">Términos</a> · <a href="/privacidad.html" target="_blank" rel="noopener">Privacidad</a> · <a href="/seguridad.html" target="_blank" rel="noopener">Seguridad</a> · 🔒 Nunca te pediremos contraseñas ni frases semilla.
       <p class="creador">Creado por <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial</a> (cuenta oficial) · <a href="https://t.me/elduende420peru" target="_blank" rel="noopener">Canal</a> · <a href="https://t.me/duendesolana420" target="_blank" rel="noopener">Grupo</a></p>
@@ -917,7 +924,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=282"></script>
+<script type="module" src="/mmo/js/client.js?v=283"></script>
 <div id="nuevo3d" role="dialog" aria-label="Nuevo mundo 3D">
   <video src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" muted loop playsinline preload="none"></video>
   <div class="t">🌌 NUEVO: $DUENDE ORIGINS, el mundo abierto en 3D</div>

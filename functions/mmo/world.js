@@ -617,8 +617,13 @@ export class MmoWorld {
     else this.entrarMapa(s, c.mapa, s.x, true);
     this.reengancharGrupo(s);
     this.avisarContactos(s, salidaAntes);
+    if (nuevo && c.invitadoPor) this.alLlegarInvitado(s).catch(e => console.error('[MMO invitado]', e));
     if (instGuardada && !s.m3) this.volverAInstancia(s, instGuardada.mapa, instGuardada.x);
     this.reponerElixires(s);
+    // Lo que se dijo mientras no estaba (social.js), antes del mensaje del dia.
+    if (c.herm) await this.hermandad(c.herm);
+    if (s.cerrado) return;
+    this.enviarHistorialChat(s, salidaAntes);
     await this.cargarHermandadDe(s);
     if (s.cerrado) return;
     if (c.herm) this.refrescarApariencia(s);
@@ -1254,7 +1259,7 @@ export class MmoWorld {
   }
 
   // Recompensa por entrar: una por dia UTC, racha de 7 (faltar un dia la
-  // reinicia). Devuelve lo que se dio, o null si hoy ya se cobro.
+  // hace retroceder). Devuelve lo que se dio, o null si hoy ya se cobro.
   procesarLogin(s) {
     const c = s.c;
     const hoy = hoyUTC();
@@ -1263,7 +1268,11 @@ export class MmoWorld {
     const ayer = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
     const anteayer = new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10);
     // Faltar UN dia no borra la racha: retrocede dos dias (antes volvia al 1).
-    const racha = L.d === ayer ? (L.racha % LOGIN_PREMIOS.length) + 1 : L.d === anteayer && L.racha < LOGIN_PREMIOS.length ? Math.max(1, (L.racha || 1) - 1) : 1;
+    // Margen de 30 h: quien estuvo conectado hace menos de 30 h (c.salida = ultimo
+    // guardado) sigue la racha aunque se salte un dia UTC (en Peru la medianoche
+    // UTC cae a las 19:00, en plena hora punta).
+    const seguido = L.d === ayer || (L.d === anteayer && c.salida > 0 && Date.now() - c.salida < 30 * 3600000);
+    const racha = seguido ? (L.racha % LOGIN_PREMIOS.length) + 1 : L.d === anteayer && L.racha < LOGIN_PREMIOS.length ? Math.max(1, (L.racha || 1) - 1) : 1;
     const pr = LOGIN_PREMIOS[racha - 1];
     const oro = Math.round((pr.oro || 0) * multLogin(c.nivel));
     c.oro += oro;
@@ -1882,7 +1891,11 @@ export class MmoWorld {
     const q = MISIONES[c.mis.i];
     if (o && q && o.k === q.tipo && !(o.torre && o.jefe) && c.mis.p < q.n) {
       c.mis.p++;
-      if (c.mis.p === q.n) this.enviar(s, { t: 'toast', m: `Misión cumplida: «${q.nombre}». Entrégala al Guardia Tito.`, ok: true });
+      if (c.mis.p === q.n) {
+        // ORIGINS: se entrega sola al cumplirla (alli ya valia desde cualquier sitio).
+        if (s.m3) { this.enviar(s, { t: 'toast', m: `Misión cumplida: «${q.nombre}».`, ok: true }); this.mision(s, null, true); }
+        else this.enviar(s, { t: 'toast', m: `Misión cumplida: «${q.nombre}». Entrégala al Guardia Tito.`, ok: true });
+      }
     }
     s.sucio = true;
     this.enviar(s, { t: 'gana', xp, oro, drops, item, cal: cal || undefined, tp: cal ? tp.id : undefined, chi: chi || undefined, x: Math.round(o ? o.x : s.x), y: Math.round(o ? o.y - o.h : s.y - 60) });
@@ -1891,7 +1904,7 @@ export class MmoWorld {
   }
 
   // Entregar la mision (o la diaria) al Guardia Tito.
-  // desde3d: recibir3d() ya comprobo que esta junto al Guardia del pueblo 3D.
+  // desde3d: en ORIGINS se entrega desde cualquier sitio (recibir3d o dar() al cumplirla).
   mision(s, m, desde3d) {
     const c = s.c;
     const npc = MAPAS.pueblo.npcs.find(n => n.tipo === 'guia');

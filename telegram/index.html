@@ -816,7 +816,7 @@ html{font-size:24px;}
      <head> y bloqueaban la pantalla hasta descargarse (Supabase y TON Connect
      pesan cientos de KB). Aquí se ejecutan en el MISMO orden y antes que el
      código de la página, así que nada de lo que los usa cambia. -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script src="../js/dom-utils.js"></script>
 <script src="../js/missions.js"></script>
 <script src="../js/streak.js"></script>
@@ -1297,6 +1297,7 @@ async function buySkinStars(skinId){
         usd:skin.usd,
         label:'🎨 Skin: '+skin.name,
         tg_id:String(TG_USER.id||''),
+        init_data:(window.Telegram?.WebApp?.initData)||'',
         skin_id:skinId,
       }),
     });
@@ -1668,6 +1669,7 @@ async function buyWithStars(pkgIndex){
         usd:pkg.usd,
         label:pkg.label,
         tg_id:String(TG_USER.id||''),
+        init_data:(window.Telegram?.WebApp?.initData)||'',
       }),
     });
     const data=await resp.json();

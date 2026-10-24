@@ -4,7 +4,7 @@
   "short_name": "ORIGINS",
   "description": "El mundo abierto 3D del MMO de los duendes: vuela, caza y pelea por tu facción en el Abismo.",
   "start_url": "/mundo/",
-  "scope": "/mundo/",
+  "scope": "/",
   "display": "fullscreen",
   "orientation": "any",
   "background_color": "#0a0418",

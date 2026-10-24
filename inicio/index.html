@@ -44,6 +44,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:10px;ma
 .carta:hover::before{opacity:1;}
 .carta:hover{border-color:var(--mor);box-shadow:0 22px 60px rgba(124,58,237,.45);}
 .carta.origins{border-color:rgba(244,114,182,.5);}
+.carta.ultimo{border-color:var(--oro);box-shadow:0 0 0 2px rgba(255,216,74,.7),0 18px 50px rgba(0,0,0,.45);}
 .vista{position:relative;border-radius:16px;overflow:hidden;aspect-ratio:16/12;max-height:42vh;width:100%;background:#0b0718;transform:translateZ(30px);}
 .vista video{width:100%;height:100%;object-fit:cover;object-position:center 60%;display:block;}
 .classic .vista{background:linear-gradient(180deg,#7ec8f0 0%,#bfe6ff 55%,#5fae4a 55%,#3d8a34 100%);}
@@ -124,7 +125,17 @@ footer a{color:var(--cian);text-decoration:none;}
 (function () {
   // Los enlaces llevan el hash (sesion de Telegram, si la hay).
   var h = location.hash || '';
-  document.querySelectorAll('[data-ir]').forEach(function (a) { a.href = a.dataset.ir + h; });
+  // El ultimo juego (lo guarda cada juego al entrar) va primero y dice CONTINUAR.
+  var ult = null; try { ult = localStorage.getItem('dq_ultimo_juego'); } catch (e) {}
+  document.querySelectorAll('[data-ir]').forEach(function (a) {
+    a.href = a.dataset.ir + h;
+    a.addEventListener('click', function () { try { localStorage.setItem('dq_ultimo_juego', a.dataset.ir); } catch (e) {} });
+    if (ult === a.dataset.ir) {
+      a.classList.add('ultimo');
+      a.querySelector('.jugar').textContent = '▶ CONTINUAR ' + (ult === '/mundo/' ? 'ORIGINS' : 'CLASSIC');
+      a.parentNode.insertBefore(a, a.parentNode.firstChild);
+    }
+  });
   // Saludo con el nombre del duende, si este navegador ya jugo.
   try { var n = localStorage.getItem('dq_mmo_nombre'); if (n) document.getElementById('saludo').innerHTML = '¡Hola, <span>' + n.replace(/[<>&"]/g, '') + '</span>! ¿A qué mundo vas?'; } catch (e) {}
   // Cartas que se inclinan hacia el puntero.

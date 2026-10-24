@@ -22,7 +22,7 @@ const state = {
     get: async k => (almacen.has(k) ? structuredClone(almacen.get(k)) : undefined),
     put: async (k, v) => { almacen.set(k, structuredClone(v)); },
     delete: async k => almacen.delete(k),
-    list: async (o = {}) => new Map([...almacen].filter(([k]) => !o.prefix || k.startsWith(o.prefix)).sort((x, y) => (x[0] < y[0] ? -1 : 1)).map(([k, v]) => [k, structuredClone(v)])),
+    list: async (o = {}) => new Map([...almacen].filter(([k]) => (!o.prefix || k.startsWith(o.prefix)) && (o.start === undefined || k >= o.start) && (o.startAfter === undefined || k > o.startAfter) && (o.end === undefined || k < o.end)).sort((x, y) => (x[0] < y[0] ? -1 : 1)).slice(0, o.limit || Infinity).map(([k, v]) => [k, structuredClone(v)])),
   },
   blockConcurrencyWhile: f => f(),
 };
@@ -275,6 +275,10 @@ async function pruebas() {
   avanzar(1000);
   await a3.mandar({ t: 'chat', canal: 'decir', m: 'aqui' });
   chequear(a1.ultimos('chat').some(x => x.canal === 'decir'), 'decir llega a los del mapa');
+  avanzar(1000); a3.c.nivel = 1; a1.limpiar(); a3.limpiar();
+  await a3.mandar({ t: 'chat', canal: 'general', m: 'spam' });
+  chequear(!a1.ultimos('chat').some(x => x.canal === 'general') && a3.ultimos('no').length === 1, 'un invitado de nivel bajo no habla en el canal general');
+  a3.c.nivel = 10;
   await a1.mandar({ t: 'liderGrupo', uid: pub(a2.c.uid) });
   chequear(mundo.grupoDe(a1).lider === a2.c.uid, 'el líder pasa el mando');
   await a2.mandar({ t: 'salirGrupo' });
@@ -851,7 +855,13 @@ async function pruebasCopias() {
   const r2 = await mundo.restaurarSubida(b64);
   chequear(r2.ok && !(await mundo.state.storage.get('c:zz-prueba-borrar')) && (await mundo.state.storage.get('c:' + a.c.uid)).oro === 4321, 'restaurar el mundo desde el archivo vuelve exactamente a la copia');
   chequear((await mundo.indiceCopias()).some(x => x.motivo === 'antes de restaurar'), 'antes de restaurar se guarda una copia de lo actual');
+  chequear(((await mundo.indiceCopias()).find(x => x.id === e.id) || {}).motivo === 'prueba', 'una copia nueva de la misma hora no pisa a la anterior');
   chequear(!(await mundo.restaurarSubida('no-es-una-copia')).ok, 'un archivo que no es copia se rechaza');
+  // Mas claves que una pagina del storage: la copia las recorre todas
+  for (let i = 0; i < 1200; i++) almacen.set('zzpag:' + String(i).padStart(4, '0'), { i });
+  const e3 = await mundo.hacerCopia('paginas'), cp3 = e3 && await mundo.leerCopia(e3.id);
+  chequear(cp3 && Object.keys(cp3.datos).filter(k => k.startsWith('zzpag:')).length === 1200 && cp3.datos['zzpag:1199'].i === 1199 && cp3.datos['c:' + a.c.uid], 'la copia recorre el storage por paginas sin perder claves');
+  for (const k of [...almacen.keys()]) if (k.startsWith('zzpag:')) almacen.delete(k);
   for (let i = 0; i < CP.BK_MAX + 2; i++) { reloj += 3600000; await mundo.hacerCopia('rotacion'); }
   const idx2 = await mundo.indiceCopias();
   chequear(idx2.length === CP.BK_MAX && ![...almacen.keys()].some(k => k.startsWith('bk:' + e.id + ':')), 'solo se guardan las últimas copias y las viejas se borran');
@@ -1323,6 +1333,8 @@ async function pruebasRetencion() {
     return { ok: true, result: {} };
   };
   mundo.dormir = async () => {};
+  // Las fechas de estas pruebas caen en eventos de temporada: se prueban aparte.
+  mundo.temporadaAviso = () => null;
   const ids = () => salidos.map(x => String(x.chat_id)).sort().join(',');
   const deQuien = id => salidos.find(x => String(x.chat_id) === id);
   const A = D + 10;
@@ -1393,6 +1405,13 @@ async function pruebasRetencion() {
   const hoy = Math.floor(Date.now() / DIA);
   chequear(mundo.puedeAvisar('tg:1', { v: hoy - 14 }, hoy) && !mundo.puedeAvisar('tg:1', { v: hoy - 15 }, hoy), 'solo a quien jugó en los últimos 14 días');
   chequear(!mundo.puedeAvisar('inv:abc', { v: hoy - 1 }, hoy) && !mundo.puedeAvisar('web:abc', { v: hoy - 1 }, hoy), 'nunca a invitados ni cuentas web');
+  // Evento de temporada: un aviso extra por evento aunque este en pausa.
+  mundo.temporadaAviso = () => ({ id: 'evPrueba', nombre: 'Evento de Prueba', emoji: '🎃', hasta: '2 de noviembre', cosas: 'calabazas', campo: 'calabazas', titulos: ['Cazacalabazas', 'Rey de las Calabazas'] });
+  chequear(mundo.puedeAvisar('tg:1', { v: hoy - 3, a: 2 }, hoy) && mundo.puedeAvisar('tg:1', { v: hoy - 30 }, hoy), 'evento nuevo: avisa aunque esté en pausa o lleve 30 días sin jugar');
+  chequear(!mundo.puedeAvisar('tg:1', { v: hoy - 3, a: 2, ev: 'evPrueba' }, hoy) && !mundo.puedeAvisar('tg:1', { v: hoy - 3, off: 1 }, hoy) && !mundo.puedeAvisar('tg:1', { v: hoy - 36 }, hoy), 'un solo aviso extra por evento, respeta /avisos off y no pasa de 35 días');
+  const tEv = await mundo.mensajeAviso({ nombre: 'Rachero', nivel: 1, xp: 0, calabazas: 7 }, hoy);
+  chequear(tEv.split('\n\n')[1].startsWith('🎃 ¡Evento de Prueba!') && /Llevas 7: con 50 y 200/.test(tEv), 'el aviso empieza por el evento y cuánto lleva');
+  mundo.temporadaAviso = () => null;
 
   console.log('Cron de las 17:00: un solo mensaje por persona');
   irA(A + 6, 17);
@@ -1637,6 +1656,9 @@ async function pruebasAmigos() {
     chequear(info && /^[a-z0-9]{6}$/.test(info.ref), 'cada personaje tiene su código de invitación');
     const nuevo = await entrarTg('Invitado', 7002, { ref: info.ref });
     chequear(nuevo.c.invitadoPor === host.c.uid, 'el amigo nuevo queda anotado');
+    for (let i = 0; i < 50; i++) await espera();
+    chequear((nuevo.c.contactos || []).some(a => a.u === host.c.uid) && (host.c.contactos || []).some(a => a.u === nuevo.c.uid), 'los dos quedan en la lista de amigos');
+    chequear(nuevo.ws.rec.some(m => m.t === 'invitacion') && nuevo.invitacion && nuevo.invitacion.de === host.c.uid, 'al amigo nuevo le llega la invitación de grupo');
     const viejo = await entrarTg('Anfitrion', 7001, { ref: info.ref });
     chequear(!viejo.c.invitadoPor, 'uno no se invita a sí mismo');
     const oro0 = viejo.c.oro, oroN = nuevo.c.oro;
@@ -1791,6 +1813,7 @@ async function pruebasNovato() {
   // Racha que perdona
   const hoy = new Date(Date.now()).toISOString().slice(0, 10);
   const hace = d => new Date(Date.now() - d * 86400000).toISOString().slice(0, 10);
+  n.c.salida = Date.now() - 40 * 3600000;   // fuera del margen de 30 h
   n.c.login = { d: hace(2), racha: 5, total: 5 };
   chequear(mundo.procesarLogin(n).racha === 4, 'faltar un día retrocede dos en la racha');
   n.c.login = { d: hace(2), racha: 7, total: 7 };
@@ -1799,6 +1822,9 @@ async function pruebasNovato() {
   chequear(mundo.procesarLogin(n).racha === 1, 'faltar más vuelve a empezar');
   n.c.login = { d: hace(1), racha: 5, total: 5 };
   chequear(mundo.procesarLogin(n).racha === 6 && n.c.login.d === hoy, 'jugar seguido la sube');
+  n.c.login = { d: hace(2), racha: 5, total: 5 }; n.c.salida = Date.now() - 26 * 3600000;
+  chequear(mundo.procesarLogin(n).racha === 6, 'margen de 30 h: jugar hace 26 h no corta la racha aunque falte un día UTC');
+  n.c.salida = Date.now() - 40 * 3600000;
   { // Regalo de bienvenida al volver tras 3+ dias
     n.c.login = { d: hace(1), racha: 2, total: 2 };
     chequear(!mundo.procesarLogin(n).vuelta, 'volver al día siguiente no da regalo de bienvenida');

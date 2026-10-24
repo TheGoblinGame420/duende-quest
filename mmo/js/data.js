@@ -492,6 +492,12 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 51, fecha: '24 oct 2026', items: [
+    'ORIGINS para nuevos: tutorial de los primeros minutos, la misión del Guardia Tito se cobra sola al cumplirla y la caza del día se cobra tocando el rastreador (en móvil, el rastreador muestra también el progreso del día).',
+    'Rachas y diarias justas para Perú: la recompensa diaria y las misiones nuevas llegan en vivo a las 19:00, y la racha no se pierde por la medianoche UTC si jugaste en las últimas 30 h.',
+    'Social: el amigo que entra con tu enlace queda en tu lista de amigos, al entrar ves los últimos mensajes del chat y de tu hermandad, y ORIGINS tiene lista de amigos y conectados.',
+    'App instalable también desde CLASSIC y ORIGINS (botón «⬇ Instalar»), la pantalla de inicio te ofrece CONTINUAR en tu último juego y los números pequeños del HUD de CLASSIC se leen mejor en el móvil. El nivel de los monstruos peligrosos lleva «!» o «!!» (no solo color).',
+  ] },
   { n: 50, fecha: '24 oct 2026', items: [
     'Seguridad reforzada tras una auditoría completa: se cierran trampas de velocidad, de flotar en el aire y de caminar sobre el vacío del Abismo, y ya no se puede farmear a salvo desde la orilla de las islas.',
     'El servidor resiste mejor los abusos: límites a reconexiones en bucle, a cambios de clase, portales y wallet en ráfaga, y a conexiones que no se identifican. Tu progreso se guarda igual.',

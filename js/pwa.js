@@ -37,9 +37,10 @@
   };
 
   addEventListener('beforeinstallprompt', function (e) {
+    if (enTelegram || !botones().length) return;   // sin boton propio: que el navegador muestre su aviso
     e.preventDefault();
     aviso = e;
-    if (!enTelegram) mostrar(true);
+    mostrar(true);
   });
   addEventListener('appinstalled', function () { aviso = null; mostrar(false); });
 
