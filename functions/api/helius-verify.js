@@ -18,7 +18,7 @@
 // CADA compra es impredecible y solo la genera el propio comprador al
 // empezar su compra.
 
-import { verifySupabaseUser, verifyInitData, getSolPriceUsd, SOL_DEV_WALLET } from './lib.js';
+import { verifySupabaseUser, verifyInitData, getSolPriceUsd, SOL_DEV_WALLET, SKIN_PRICES_USD } from './lib.js';
 
 const DEV_WALLET = SOL_DEV_WALLET;
 // Direccion Solana en base58 (32-44 caracteres, sin 0 O I l).
@@ -52,7 +52,7 @@ async function supabaseQuery(env, path, options = {}) {
 }
 
 // SECURITY: skin prices live server-side; the client's `expected_sol` is ignored.
-const SKIN_PRICES_USD = { tactico: 25, necro: 50, king: 75, berserker: 120, legendaria: 250 };
+// SKIN_PRICES_USD: del catalogo unico (mmo/js/data.js, via lib.js).
 
 // ── Base58 (alfabeto de Bitcoin/Solana) — solo para fabricar la referencia.
 // No hace falta ninguna libreria: una clave publica de Solana es, para este

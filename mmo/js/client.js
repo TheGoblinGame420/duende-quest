@@ -17,7 +17,7 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=291';
+} from './data.js?v=292';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -3004,12 +3004,12 @@ function pintarWallet() {
 
 // ── TIENDA PREMIUM (Stars en Telegram, SOL en la web) ──
 // Con dinero se compran cosas del juego, nunca mTON. Cada compra la revisa y
-// entrega El Duende a mano: aqui solo se pide y se paga.
+// entregan solas al confirmarse el pago exacto: aqui solo se pide y se paga.
 let premiumFoco = '';
 function htmlPremium() {
   const cuentaTg = !!TG && !forzarInvitado;
   const cuenta = yo && yo.p2e && yo.p2e.cuenta;
-  let h = '<p style="font-size:13px;line-height:1.45;color:var(--txt2);margin-bottom:10px">Compras opcionales para apoyar el juego. <b>El Duende</b> revisa cada pago y lo entrega en tu personaje; te avisamos aquí y por Telegram. En la web se paga con SOL o con $DUENDE (10% de descuento). Con dinero <b>no</b> se compran mTON: solo se ganan jugando.</p>';
+  let h = '<p style="font-size:13px;line-height:1.45;color:var(--txt2);margin-bottom:10px">Compras opcionales para apoyar el juego. En cuanto se confirma el pago, la compra se entrega sola en tu personaje (vale en CLASSIC y ORIGINS); te avisamos aquí y por Telegram. En la web se paga con SOL o con $DUENDE (10% de descuento). Con dinero <b>no</b> se compran mTON: solo se ganan jugando.</p>';
   // La skin elegida desde la pestaña Skins va primero.
   const lista = PAQUETES.slice().sort((a, b) => (b.id === premiumFoco) - (a.id === premiumFoco));
   for (const pq of lista) {
@@ -3084,7 +3084,7 @@ function mostrarPedidoSol(m) {
     `<p style="font-size:12px;margin-top:8px">Y pega aquí la firma (signature) de la transacción:</p>` +
     `<input class="nombre" id="in-firma" placeholder="Firma de la transacción" style="font-size:10px;margin:6px 0">` +
     `<button class="btn sec" id="b-firma" style="width:100%">Enviar comprobante</button>` +
-    `<p style="font-size:12px;color:var(--txt2);margin-top:8px">Tienes 30 minutos. El pago va directo a la wallet de El Duende y él te entrega la compra a mano.</p>`;
+    `<p style="font-size:12px;color:var(--txt2);margin-top:8px">Tienes 30 minutos. El pago va directo a la wallet de El Duende; en cuanto se confirma en la red, la compra se entrega sola.</p>`;
   abrir('m-sol');
   const copiar = t => { try { navigator.clipboard.writeText(t); aviso('📋 Copiado', 'ok'); } catch (e) {} };
   $('b-copia-w').onclick = () => copiar(m.wallet);
@@ -4732,7 +4732,7 @@ function pintarTienda() {
       }
       else {
         acc = `<span class="precio">🪙 ${d.precio.toLocaleString('es', { useGrouping: 'always' })}</span><button class="btn" data-comprar="${tabTienda}" data-id="${id}" ${yo.oro < d.precio ? 'disabled' : ''}>Comprar</button>`;
-        // Skins: tambien con dinero; el pago lo revisa El Duende y la entrega a mano.
+        // Skins: tambien con dinero; confirmado el pago exacto se entrega sola.
         if (tabTienda === 'skin' && d.usd && yo.p2e && yo.p2e.cuenta) acc += (TG && !forzarInvitado)
           ? `<button class="btn sec" data-premium="skin_${id}" data-metodo="stars">${estrellasDe(d.usd)} Stars</button>`
           : `<button class="btn sec" data-premium="skin_${id}" data-metodo="sol">~$${d.usd} en SOL</button><button class="btn sec" data-premium="skin_${id}" data-metodo="duende">$DUENDE −10%</button>`;
@@ -4740,7 +4740,7 @@ function pintarTienda() {
       if (tabTienda === 'skin' && !tiene.includes(id)) acc += `<button class="btn sec" data-probar="${id}">Probar</button>`;
       h += tarjeta(ico, d.premium ? `<span style="color:${d.color}">${esc(d.nombre)}</span>` : d.nombre, d.desc + (tabTienda === 'skin' && puesto !== id ? difSkin(id) : ''), acc);
     }
-    if (tabTienda === 'skin') h += '<p style="margin-top:8px;font-size:12px;color:#fde68a"><b>Una skin, dos juegos:</b> la que compres la llevas también en $DUENDE ORIGINS (3D), con los mismos poderes. En PvP (duelos y Abismo) sus ventajas de combate no cuentan: ahí todos pelean igual.</p><p style="margin-top:6px;font-size:12px;color:var(--txt2)">Cada skin da sus poderes mientras la llevas. Se compran con oro o, con tu cuenta, con dinero: ' + ((TG && !forzarInvitado) ? 'Telegram Stars' : 'SOL o $DUENDE (10% de descuento) a la wallet de El Duende') + '; El Duende revisa el pago y te la entrega en tu personaje. Las cuatro exclusivas (Esmeralda, Sombrío, Solar y Cósmico) solo se consiguen así; sus ventajas suben con el precio sin superar a las de oro de final de juego, y ninguna cambia lo que se gana en mTON.</p>';
+    if (tabTienda === 'skin') h += '<p style="margin-top:8px;font-size:12px;color:#fde68a"><b>Una skin, dos juegos:</b> la que compres la llevas también en $DUENDE ORIGINS (3D), con los mismos poderes. En PvP (duelos y Abismo) sus ventajas de combate no cuentan: ahí todos pelean igual.</p><p style="margin-top:6px;font-size:12px;color:var(--txt2)">Cada skin da sus poderes mientras la llevas. Se compran con oro o, con tu cuenta, con dinero: ' + ((TG && !forzarInvitado) ? 'Telegram Stars' : 'SOL o $DUENDE (10% de descuento) a la wallet de El Duende') + '; confirmado el pago, se activa sola en tu personaje. Las cuatro exclusivas (Esmeralda, Sombrío, Solar y Cósmico) solo se consiguen así; sus ventajas suben con el precio sin superar a las de oro de final de juego, y ninguna cambia lo que se gana en mTON.</p>';
   }
   L.innerHTML = h;
   // Retratos de las monturas (primer cuadro de su hoja).

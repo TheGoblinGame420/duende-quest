@@ -880,7 +880,7 @@ export class MmoWorld {
     if (metodo !== 'stars' && c.uid.startsWith('tg:')) return no('Dentro de Telegram se paga con Stars.');
     if (pq.skin && (c.skins || []).includes(pq.skin)) return no('Ya tienes esa skin.');
     if (pq.alas && (c.alas || []).includes(pq.alas)) return no('Ya tienes esas alas.');
-    if (pq.skin && this.pedidos.some(x => x.uid === c.uid && x.paquete === pq.id && (x.estado === 'pagado' || x.estado === 'por_verificar' || x.estado === 'comprobando'))) return no('Ya pagaste esa skin: El Duende te la entrega en breve.');
+    if (pq.skin && this.pedidos.some(x => x.uid === c.uid && x.paquete === pq.id && (x.estado === 'pagado' || x.estado === 'por_verificar' || x.estado === 'comprobando'))) return no('Ya pagaste esa skin: se activa en cuanto se confirme el pago.');
     await this.guardarPedidos();
     if (this.pedidos.filter(x => x.uid === c.uid && (x.estado === 'esperando_pago' || x.estado === 'comprobando' || x.estado === 'por_verificar')).length >= 3) return no('Tienes compras sin pagar: termina o espera 30 minutos.');
     if (this.pedidos.filter(x => x.uid === c.uid && Date.now() - x.creado < 3600000).length >= 10) return no('Has creado muchos pedidos seguidos: espera un rato.');
@@ -992,11 +992,15 @@ export class MmoWorld {
       pd.estado = 'por_verificar'; pd.cadena = cadena; pd.pagadoEn = Date.now();
       await this.guardarPedidos();
     } finally { this.verificando.delete(firma); }
-    no('📨 Recibimos tu pago. El Duende lo revisa y te entrega la compra (te avisamos aquí y por Telegram).');
-    this.actualizarYo(s);
+    // Entrega automatica: la verificacion de arriba (monto exacto confirmado en
+    // la cadena, firma no usada antes) ya paso; el dueño solo recibe el aviso.
     const esD = pd.metodo === 'duende';
     const monto = esD ? (pd.duendeRaw / 10 ** DUENDE_DECIMALES).toLocaleString('es', { maximumFractionDigits: 6 }) + ' $DUENDE' : (pd.lamports / 1e9).toFixed(9) + ' SOL';
-    this.avisarAdmin(`${esD ? '🍄' : '◎'} *Pedido #${pd.codigo}* — ${pd.nombre} ($${pd.usd})\n👤 ${pd.jugador.replace(/[^\p{L}\p{N} ]/gu, '')}\n💰 Debía pagar ${monto} a tu wallet\n✅ En la cadena: llegó exactamente ese monto\n🔗 https://solscan.io/tx/${firma}\n\nSi está bien: /entregar ${pd.codigo} (o desde tu Modo Dios en el juego)\nSi no: /anular ${pd.codigo}`, botonesPedido(pd.codigo));
+    const ent = await this.entregarPedido({ codigo: pd.codigo, por: 'auto' });
+    if (ent.ok) no('✅ Pago confirmado en la cadena: tu compra ya está en tu personaje (vale en CLASSIC y ORIGINS).');
+    else no('📨 Recibimos tu pago. Lo entregamos en breve (te avisamos aquí y por Telegram).');
+    this.actualizarYo(s);
+    this.avisarAdmin(`${esD ? '🍄' : '◎'} *Pedido #${pd.codigo}* — ${pd.nombre} ($${pd.usd})\n👤 ${pd.jugador.replace(/[^\p{L}\p{N} ]/gu, '')}\n💰 Pagó ${monto} (monto exacto, confirmado en la cadena)\n🔗 https://solscan.io/tx/${firma}\n\n${ent.ok ? '✅ Entregado automáticamente.' : `⚠️ No se pudo entregar solo (${ent.error}): /entregar ${pd.codigo}`}`, ent.ok ? undefined : botonesPedido(pd.codigo));
   }
   // Ritmo de las operaciones con la red de Solana, por cuenta.
   ritmoSol(uid, tipo, ms) {
@@ -1119,7 +1123,10 @@ export class MmoWorld {
     }
     pd.estado = 'pagado'; pd.charge = String(b.charge || ''); pd.tgPagador = String(b.tgId || ''); pd.starsPagadas = b.stars | 0; pd.pagadoEn = Date.now();
     await this.guardarPedidos();
-    this.avisarAdmin(`⭐ *Pedido #${pd.codigo}* pagado — ${pd.nombre} (${pd.starsPagadas} Stars, ya están en tu bot)\n👤 ${pd.jugador.replace(/[^\p{L}\p{N} ]/gu, '')}\n\nEntrégalo: /entregar ${pd.codigo}\nO devuelve las Stars: /anular ${pd.codigo}`, botonesPedido(pd.codigo));
+    // Entrega automatica: Telegram ya confirmo el cobro, de la misma cuenta y
+    // por las Stars pedidas (los pagos raros de arriba siguen a mano).
+    const ent = await this.entregarPedido({ codigo: pd.codigo, por: 'auto' });
+    this.avisarAdmin(`⭐ *Pedido #${pd.codigo}* — ${pd.nombre} (${pd.starsPagadas} Stars, ya están en tu bot)\n👤 ${pd.jugador.replace(/[^\p{L}\p{N} ]/gu, '')}\n\n${ent.ok ? '✅ Entregado automáticamente.' : `⚠️ No se pudo entregar solo (${ent.error}): /entregar ${pd.codigo}`}`, ent.ok ? undefined : botonesPedido(pd.codigo));
     const s = this.porUid.get(pd.uid);
     if (s) this.actualizarYo(s);
     return { ok: true, nombre: pd.nombre };

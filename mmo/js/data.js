@@ -495,6 +495,11 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 60, fecha: '24 oct 2026', items: [
+    'Un solo precio para cada skin, igual en la web, el arcade, Telegram y los dos juegos: Táctico US$1, Nigromante US$2, Rey US$3, Berserker US$7 y Legendaria US$15. Comprarla directa nunca sale más caro que comprar oro para ella.',
+    'Las compras se entregan solas: en cuanto el pago con SOL o $DUENDE se confirma en la red (monto exacto) o Telegram confirma tus Stars, la compra aparece en tu personaje en CLASSIC y ORIGINS.',
+    'Fuera de la web la sección de staking que estaba oculta.',
+  ] },
   { n: 59, fecha: '24 oct 2026', items: [
     '¡Encargos de zona en ORIGINS! Cada una de las 10 zonas tiene 5 encargos que no son «mata N»: encuentra su hito (un obelisco con un cristal; sigue la columna celeste), recoge plantas o vetas, sobrevuélala a 25 m, abre uno de sus cofres y vence a su jefe.',
     'Cada encargo da XP y oro; completar los 5 de una zona da un premio extra. Nuevos logros con título: Explorador (1 zona), Cartógrafo (5) y Leyenda de ORIGINS (las 10).',
@@ -1177,8 +1182,8 @@ export function tienePiedra(id) {
 export const SKINS = {
   comun:      { nombre: 'Duende',      img: 'skin_hero',           precio: 0,      color: '#00eeff', buffs: null, desc: 'El duende de siempre' },
   // usd: tambien se venden con dinero (SOL o $DUENDE en la web, Stars en
-  // Telegram); el pago va a la wallet de El Duende y el la entrega a mano
-  // (/entregar o Modo Dios).
+  // Telegram); el pago va a la wallet de El Duende y, confirmado el pago
+  // exacto, se entrega solo (entregarPedido por 'auto' en world.js).
   tactico:    { nombre: 'Táctico',     img: 'skin_tactico',        precio: 3000,   usd: 2,  color: '#00ff88', buffs: { oroMult: 1.1, critBonus: .03 }, desc: '+10% oro · +3% crítico' },
   necro:      { nombre: 'Nigromante', img: 'skin_necromancer',    precio: 9000,   usd: 4,  color: '#b44cff', buffs: { oroMult: 1.2, robo: .05, xpMult: 1.05 }, desc: '+20% oro · roba 5% de vida · +5% experiencia' },
   king:       { nombre: 'Rey',        img: 'skin_king',           precio: 20000,  usd: 7,  color: '#ffd84a', buffs: { oroMult: 1.3, bonusHp: 20, defMult: 1.1 }, desc: '+30% oro · +HP extra · +10% defensa' },
@@ -1907,6 +1912,17 @@ export const PAQUETES = [
   { id: 'oro5',  nombre: 'Saco de oro',        usd: 5,  oro: 30000,  icono: 'I_GoldBar',  desc: '30.000 oro (+20% de regalo)' },
   { id: 'oro20', nombre: 'Cofre de oro',       usd: 20, oro: 140000, icono: 'I_Chest02', desc: '140.000 oro (+40% de regalo)' },
 ];
+// UN SOLO CATALOGO (24-oct-2026): este archivo manda en todos los precios
+// (web, arcade, Mini App, Stars, SOL y $DUENDE leen o copian de aqui). Las
+// skins que tambien se compran con oro cuestan en dolares lo mismo que su oro
+// al mejor cambio de los paquetes: comprar oro y luego la skin nunca sale
+// mas barato que comprarla directa.
+export const ORO_POR_USD = Math.max(...PAQUETES.filter(p => p.oro).map(p => p.oro / p.usd));
+export const usdDeOro = oro => Math.max(1, Math.ceil(oro / ORO_POR_USD));
+for (const sk of Object.values(SKINS)) if (sk.usd && typeof sk.precio === 'number' && sk.precio > 0) sk.usd = usdDeOro(sk.precio);
+// Precio en dolares de las skins que existen tambien en el arcade y la Mini
+// App (las 5 de siempre): lo usan las APIs de pago (functions/api/lib.js).
+export const PRECIOS_SKIN_USD = Object.fromEntries(Object.entries(SKINS).filter(([, s]) => s.usd && !s.premium).map(([k, s]) => [k, s.usd]));
 // Las skins con precio en dolares tambien son paquetes de la tienda premium
 // (id 'skin_<id>'); al entregarlas se añaden a tus skins.
 for (const [id, sk] of Object.entries(SKINS)) {

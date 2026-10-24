@@ -17,10 +17,11 @@ export const STARS_PACKAGES = [
   { label: '🔥 Mega', usd: 50 },
   { label: '👑 Whale', usd: 100 },
 ];
-// Single source of truth for skin prices (USD). Clients only display these.
-export const SKIN_PRICES_USD = {
-  tactico: 25, necro: 50, king: 75, berserker: 120, legendaria: 250,
-};
+// Precios de las skins (USD): salen del catalogo unico del juego
+// (mmo/js/data.js, PRECIOS_SKIN_USD). Antes aqui eran US$25-250 y en el juego
+// US$2-20 por las mismas skins.
+import { PRECIOS_SKIN_USD } from '../../mmo/js/data.js';
+export const SKIN_PRICES_USD = PRECIOS_SKIN_USD;
 
 const ALLOWED_ORIGINS = [
   'https://duende-quest.alfonso12hc.workers.dev',

@@ -28,6 +28,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v280–v289 | La noche del 24-oct: app instalable, auditoría de seguridad con 50 agentes, 4 rondas de mejora con más de 140 especialistas y 3 revisiones. Detalle en `INFORME-NOCHE-24OCT.md` | A |
 | v290 | HUD compacto en Telegram, zona de misión que explica qué hacer, chat antiestafa con /ignorar y /reportar, PvP sin ventajas compradas y arreglos de QA | **B (principal)** |
 | v291 | Encargos de zona en ORIGINS: 50 misiones variadas (hito, recolección, vuelo, cofre y jefe) con logros de explorador | **B** |
+| v292 | Un solo catálogo de precios (US$1-15 las skins con oro), entrega automática de pagos ya verificados y fuera el staking oculto de la web (autorizado por el dueño) | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 
@@ -54,4 +55,4 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 ### Qué falta para un 9 real (según la reevaluación)
 
 - **Se puede hacer sin decisión del dueño:** misiones variadas en ORIGINS (no solo «mata N»), talentos con elección real, Torre/Desafíos o segunda mazmorra en 3D, grupos que sobrevivan a los despliegues, pase con premio distinto cada mes, login propio en ORIGINS, no caer a invitado si falla el login, prueba de carga del 3D, recibos de compra visibles.
-- **Necesita decisión del dueño** (sin esto, Pago y NFT/web3 no pasan de ~6-7): un solo catálogo de precios (hoy US$25-250 en la web frente a US$2-20 en el juego), entrega automática de pagos ya verificados, quitar el staking oculto con APY de la web, NFT real (cNFT) o dejar de mencionarlo, y skins solo estéticas también en PvE.
+- **Necesita decisión del dueño:** ~~catálogo único~~, ~~entrega automática~~ y ~~staking de la web~~ (hechos en v292). Quedan: NFT real (cNFT) o dejar de mencionarlo en la hoja de ruta, la venta SOL→$DUENDE a tasa fija de la FAQ (token) y skins solo estéticas también en PvE.

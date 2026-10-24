@@ -645,25 +645,6 @@ footer{
 .ls-val{font-family:var(--px);font-size:clamp(11px,2vw,14px);color:var(--txt);display:block;margin-bottom:.45rem;}
 .ls-label{font-family:var(--sans);font-size:12px;color:var(--txt2);display:block;}
 .ls-change{font-size:12px;}
-/* ── STAKING (seccion oculta) ── */
-.staking-section{background:none;}
-.staking-stats-bar{display:flex;justify-content:center;gap:2rem;flex-wrap:wrap;margin-bottom:2rem;}
-.sstat{text-align:center;}.sstat span{font-family:var(--px);font-size:14px;color:var(--txt);display:block;margin-bottom:.3rem;}
-.sstat small{font-family:var(--sans);font-size:12px;color:var(--txt2);}
-.staking-panel{max-width:500px;margin:0 auto;background:var(--panel);border:1px solid var(--borde);border-radius:10px;padding:2rem;}
-.stake-lock-row{display:flex;gap:.8rem;margin-bottom:1.5rem;justify-content:center;}
-.stake-lock-btn{background:var(--panel2);border:1px solid var(--borde);border-radius:8px;padding:.8rem 1rem;cursor:pointer;text-align:center;font-family:var(--sans);color:var(--txt);min-width:100px;}
-.stake-lock-btn:hover,.stake-lock-btn.active{border-color:var(--pri-txt);}
-.slb-days{font-size:13px;display:block;margin-bottom:.3rem;}
-.slb-badge{font-size:11px;display:block;color:var(--txt2);margin-bottom:.2rem;}
-.slb-mult{font-size:14px;color:var(--txt);display:block;}
-.staking-panel label{font-family:var(--sans);font-size:13px;color:var(--txt2);display:block;margin-bottom:.5rem;}
-.staking-panel input{width:100%;padding:.8rem;background:var(--panel2);border:1px solid var(--borde);border-radius:8px;color:var(--txt);font-family:var(--sans);font-size:1.1rem;text-align:center;outline:none;margin-bottom:1rem;}
-.stake-preview{text-align:center;margin-bottom:1.5rem;font-family:var(--sans);font-size:13px;color:var(--txt2);line-height:1.8;}
-.stake-preview strong{color:var(--txt);}
-.btn-primary{width:100%;padding:.8rem;background:var(--pri);color:#fff;font-family:var(--sans);font-size:15px;font-weight:600;border:none;border-radius:8px;cursor:pointer;}
-.stake-note{font-family:var(--sans);font-size:12px;color:var(--txt2);text-align:center;margin-top:1rem;line-height:1.6;}
-.staking-fomo{max-width:600px;margin:2rem auto 0;padding:1rem;border:1px solid var(--borde);border-radius:10px;background:var(--panel);font-family:var(--sans);font-size:13px;color:var(--txt2);text-align:center;line-height:1.6;}
 /* ── Piezas nuevas de la landing sobria ── */
 .nav-play{display:inline-flex;align-items:center;min-height:44px;padding:.4rem .95rem;border-radius:8px;background:var(--pri);color:#fff;font-family:var(--sans);font-size:14px;font-weight:600;text-decoration:none;}
 .nav-play:hover{background:var(--pri2);}
@@ -1117,7 +1098,7 @@ section[id]{scroll-margin-top:72px;}
   <!-- SKINS: antes aqui habia precios en SOL (0.5 / 0.3 / 0.2 SOL "para holders
        de NFT") que contradecian la tienda real. Ahora una sola presentacion:
        la coleccion de #nfts, con los precios de game.html / telegram. -->
-  <p class="px-sub" style="margin-top:2.5rem">Skins opcionales de US$25 a US$250, con Telegram Stars o TON en la tienda del juego. <a href="#nfts" style="color:var(--pri-txt);font-weight:600">Ver la colección de skins</a></p>
+  <p class="px-sub" style="margin-top:2.5rem">Skins opcionales desde US$1 (o con el oro que ganas jugando), con Telegram Stars, SOL o $DUENDE. Una compra vale en CLASSIC y ORIGINS y se activa sola al confirmarse el pago. <a href="#nfts" style="color:var(--pri-txt);font-weight:600">Ver la colección de skins</a></p>
 </section>
 
 <!-- ========== TELEGRAM MINI APP ========== -->
@@ -1341,7 +1322,7 @@ section[id]{scroll-margin-top:72px;}
         <li>+10% monedas en el arcade</li>
         <li>Se compra en la tienda del juego (Stars o TON)</li>
       </ul>
-      <div class="tier-price" style="color:var(--green)">US$25</div>
+      <div class="tier-price" style="color:var(--green)">US$1</div>
     </div>
     <!-- SPECIAL -->
     <div class="tier-card tier-special">
@@ -1359,7 +1340,7 @@ section[id]{scroll-margin-top:72px;}
         <li>Robo de vida del 5%</li>
         <li>Se compra en la tienda del juego (Stars o TON)</li>
       </ul>
-      <div class="tier-price" style="color:var(--green)">US$50</div>
+      <div class="tier-price" style="color:var(--green)">US$2</div>
     </div>
 
     <!-- ELITE -->
@@ -1378,7 +1359,7 @@ section[id]{scroll-margin-top:72px;}
         <li>+20 de vida</li>
         <li>Se compra en la tienda del juego (Stars o TON)</li>
       </ul>
-      <div class="tier-price" style="color:#a78bfa">US$75</div>
+      <div class="tier-price" style="color:#a78bfa">US$3</div>
     </div>
 
     <!-- BERSERKER -->
@@ -1397,7 +1378,7 @@ section[id]{scroll-margin-top:72px;}
         <li>+30% de ataque</li>
         <li>Se compra en la tienda del juego (Stars o TON)</li>
       </ul>
-      <div class="tier-price" style="color:#a78bfa">US$120</div>
+      <div class="tier-price" style="color:#a78bfa">US$7</div>
     </div>
     <!-- INFINITO -->
     <div class="tier-card tier-infinito">
@@ -1415,7 +1396,7 @@ section[id]{scroll-margin-top:72px;}
         <li>+50 de vida y aura que quema</li>
         <li>Se compra en la tienda del juego (Stars o TON)</li>
       </ul>
-      <div class="tier-price" style="color:var(--yellow)">US$250</div>
+      <div class="tier-price" style="color:var(--yellow)">US$15</div>
     </div>
 
   </div>
@@ -1996,54 +1977,7 @@ section[id]{scroll-margin-top:72px;}
 })();
 </script>
 
-<!-- ========== STAKING ========== -->
-<!-- OCULTO el 28-sep-2026 (reversible: quita style="display:none").
-     Anunciaba 120-240% APY y "cuanto antes entres, mas ganas" por enviar SOL a
-     la wallet personal del dueño. Captar fondos de terceros prometiendo
-     devolverlos con rendimiento es la conducta del art. 11 de la Ley 26702 y
-     el art. 246 del Codigo Penal (ver ESTRATEGIA-TOKEN.md). El staking TON ya
-     estaba apagado por lo mismo. No reactivar sin consultar a un abogado. -->
-<section id="staking" class="section staking-section" style="display:none">
-  <div class="px-title" style="color:#c084fc">⚡ STAKING $DUENDE</div>
-  <p class="px-sub">Bloquea SOL → recibe $DUENDE. APY en vivo según precio del token.</p>
-  <div class="staking-stats-bar">
-    <div class="sstat"><span data-staking-apy>120%</span><small>APY ACTUAL</small></div>
-    <div class="sstat"><span id="total-sol-staked">—</span><small>SOL STAKEADO</small></div>
-    <div class="sstat"><span id="active-stakers">—</span><small>STAKERS ACTIVOS</small></div>
-  </div>
-  <div class="staking-panel">
-    <div class="stake-lock-row">
-      <button class="stake-lock-btn" data-days="7">
-        <span class="slb-days">7 DÍAS</span>
-        <span class="slb-badge">FLEXIBLE</span>
-        <span class="slb-mult">1x</span>
-      </button>
-      <button class="stake-lock-btn active" data-days="30">
-        <span class="slb-days">30 DÍAS</span>
-        <span class="slb-badge" style="color:#f2c14e">★ POPULAR</span>
-        <span class="slb-mult">1.5x</span>
-      </button>
-      <button class="stake-lock-btn" data-days="90">
-        <span class="slb-days">90 DÍAS</span>
-        <span class="slb-badge" style="color:#ef4444">🔥 MÁXIMO</span>
-        <span class="slb-mult">2.5x</span>
-      </button>
-    </div>
-    <label>Cantidad en SOL (mínimo 1 SOL):</label>
-    <input type="number" id="stake-sol-input" min="1" step="0.5" placeholder="1.0">
-    <div class="stake-preview">
-      <p>Recibirás: <strong id="stake-reward-preview">---</strong></p>
-      <p>Se desbloquea: <span id="stake-unlock-date">---</span></p>
-      <p style="font-size:14px;color:var(--txt2)">APY: <span data-staking-apy>120%</span> · Precio actual: <span data-price-usd>---</span></p>
-    </div>
-    <button id="btn-stake" class="btn-primary">🔒 STAKEAR AHORA</button>
-    <p class="stake-note">⚠ Los SOL van al Dev wallet. Los $DUENDE se acreditan al desbloquear.</p>
-  </div>
-  <div class="staking-fomo">
-    🔥 <strong>El APY baja cuando el precio sube.</strong> Cuanto antes entres, más ganas.
-    Los que stakearon en el lanzamiento tienen APY del <span style="color:#f2c14e">240%</span>.
-  </div>
-</section>
+<!-- El staking (oculto desde el 28-sep-2026, con APY) se quitó de la web el 24-oct-2026 a pedido del dueño. -->
 
 </main>
 
@@ -2355,7 +2289,6 @@ window.addEventListener('load', cargarRankingLanding);
 <script src="js/price-feed.js"></script>
 <script src="js/wallet-manager.js"></script>
 <script src="js/donation-manager.js"></script>
-<script src="js/staking-manager.js"></script>
 <script>
 // Sonido del tráiler de ORIGINS: los navegadores solo dejan reproducir con
 // sonido tras un toque, así que el vídeo empieza mudo.

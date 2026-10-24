@@ -2909,3 +2909,13 @@ Primera versión de la conversación única (ver HISTORIAL-DUENDE.md). Reevaluac
 - data.js LOGROS: explora1/5/10.
 - Cliente: linea 🧭 en el rastreador con el siguiente encargo de la zona, columna celeste y punto en el minimapa sobre el hito, obelisco del kit con cristal giratorio en cada hito.
 - Arnés: 836 (8 nuevas).
+
+### Catálogo único, entrega automática y sin staking en la web (24-oct-2026, `?v=292`)
+
+Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y quitar el staking oculto con APY. El token y la verificación de pagos no se tocaron.
+
+- data.js manda: `ORO_POR_USD` (mejor cambio de los paquetes de oro: 7.000), `usdDeOro(oro)` y las skins que también van por oro cuestan `ceil(precio / ORO_POR_USD)` (mín. US$1): Táctico 1, Nigromante 2, Rey 3, Berserker 7, Legendaria 15. Las exclusivas (5/10/25/50) igual. `PRECIOS_SKIN_USD` para las APIs.
+- functions/api/lib.js `SKIN_PRICES_USD = PRECIOS_SKIN_USD`; helius-verify.js lo importa (antes tenía su copia de US$25-250). game.html, telegram/index.html (usd y Stars = ceil(usd/0,013)) e index.html con los mismos números.
+- Entrega automática: `pedidoFirma` (tras la comprobación en cadena de monto exacto y firma nueva) y `pedidoPagadoStars` (misma cuenta y Stars pedidas) llaman a `entregarPedido({ por: 'auto' })`; el dueño recibe aviso informativo (o botones si falla). Los pagos raros siguen en `por_verificar`.
+- Web: fuera `#staking` (APY 120-240 %), `js/staking-manager.js` y su CSS; en la Mini App, el panel `ov-staking` (sin botón que lo abriera), su JS y los mensajes FOMO inventados. Textos de tienda: «se entrega sola».
+- Arnés: 840 (4 nuevas).

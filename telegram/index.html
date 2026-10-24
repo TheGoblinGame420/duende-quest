@@ -737,30 +737,7 @@ html{font-size:24px;}
     <button class="ob sec" onclick="toMenu()" style="margin-top:8px">← Volver</button>
   </div>
 
-  <div class="ov" id="ov-staking">
-    <div class="ov-title">STAKING</div>
-    <!-- Tab selector -->
-    <div class="vj-seg" style="max-width:260px">
-      <button id="stake-tab-ton" onclick="switchStakeTab('ton')" style="border-color:#60a5fa;background:rgba(59,130,246,.12);color:#e6e9f0">💎 TON</button>
-      <button id="stake-tab-sol" onclick="switchStakeTab('sol')" style="border-color:#263049;background:transparent;color:#9aa3b5">☀ SOL</button>
-    </div>
-    <p class="vj-txt" style="margin-bottom:16px">APY actual: <span id="tg-staking-apy" class="vj-val">120%</span></p>
-    <div class="stake-lock-row">
-      <button class="stake-lock-btn" data-days="7" onclick="tgSelectLock(7,this)">7D · 1x</button>
-      <button class="stake-lock-btn active" data-days="30" onclick="tgSelectLock(30,this)">30D · 1.5x</button>
-      <button class="stake-lock-btn" data-days="90" onclick="tgSelectLock(90,this)">90D · 2.5x</button>
-    </div>
-    <input type="number" class="donate-input" id="tg-stake-input" min="1" step="0.5" placeholder="1.0">
-    <p id="tg-stake-preview" class="vj-txt" style="color:var(--txt);margin:10px 0;min-height:20px">---</p>
-    <!-- TON staking button (default) -->
-    <button class="ob" id="stake-btn-ton" onclick="tonStake()">Stakear TON</button>
-    <!-- SOL staking button (hidden by default) -->
-    <button class="ob" id="stake-btn-sol" onclick="tgStake()" style="display:none">Stakear SOL</button>
-    <div id="stake-ton-info" class="vj-small" style="text-align:center;margin-top:8px">Requiere wallet TON conectada</div>
-    <!-- Active stakes -->
-    <div id="active-stakes" style="width:100%;max-width:320px;margin-top:12px"></div>
-    <button class="ob sec" onclick="toMenu()" style="margin-top:8px">← Volver</button>
-  </div>
+  <!-- Panel de staking (con APY) quitado el 24-oct-2026: no se abria desde ningun boton. -->
   <div id="canvas-container"><canvas id="gc" width="800" height="320"></canvas></div>
 
   <div id="hud">
@@ -996,37 +973,8 @@ function openPumpFun(){
 }
 
 // ═══════════════════════════════════════
-// DONATE / STAKING (Phantom deep link)
+// DONATE (Phantom deep link)
 // ═══════════════════════════════════════
-let tgStakeLockDays=30;
-function tgSelectLock(days,btn){
-  tgStakeLockDays=days;
-  document.querySelectorAll('.stake-lock-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  tgUpdateStakePreview();
-}
-function tgUpdateStakePreview(){
-  const amt=parseFloat(document.getElementById('tg-stake-input')?.value)||0;
-  const mult=tgStakeLockDays===7?1:tgStakeLockDays===30?1.5:2.5;
-  const duendePrice=tgPriceUsd||0.0000001;
-  if(stakeMode==='ton'){
-    const tonP=tonPriceUsd||3.5;
-    const minTon=10/tonP;
-    if(amt<minTon){document.getElementById('tg-stake-preview').textContent='Mínimo '+minTon.toFixed(2)+' TON (~$10)';return;}
-    const baseTokens=Math.floor(amt*tonP/duendePrice);
-    const apy=Math.min(240,Math.max(50,Math.floor(1000*tonP/duendePrice/1000000)));
-    const reward=Math.floor(baseTokens*(apy/100)*(tgStakeLockDays/365)*mult);
-    document.getElementById('tg-stake-preview').textContent=reward.toLocaleString()+' $DUENDE (~$'+(amt*tonP).toFixed(2)+')';
-    document.getElementById('tg-staking-apy').textContent=apy+'%';
-  }else{
-    if(amt<1){document.getElementById('tg-stake-preview').textContent='Mínimo 1 SOL';return;}
-    const apy=duendePrice>0?Math.min(240,Math.max(50,Math.floor(1000/duendePrice))):120;
-    const reward=Math.floor(amt*10000*(apy/100)*(tgStakeLockDays/365)*mult);
-    document.getElementById('tg-stake-preview').textContent=reward.toLocaleString()+' $DUENDE';
-    document.getElementById('tg-staking-apy').textContent=apy+'%';
-  }
-}
-document.getElementById('tg-stake-input')?.addEventListener('input',tgUpdateStakePreview);
 document.getElementById('tg-donate-input')?.addEventListener('input',function(){
   const sol=parseFloat(this.value)||0;
   document.getElementById('tg-donate-preview').textContent=sol>0?'Recibirás: '+(sol*10000).toLocaleString()+' $DUENDE':'Ingresa cantidad en SOL';
@@ -1036,12 +984,6 @@ function tgDonate(){
   const sol=parseFloat(document.getElementById('tg-donate-input')?.value)||0;
   if(sol<0.2){showPUNotif('Mínimo 0.2 SOL');return;}
   const url='https://phantom.app/ul/transfer?recipient='+window.DUENDE_CFG.DEV_WALLET+'&amount='+sol+'&label=Duende+Donation';
-  if(tg){tg.openLink(url);}else{window.open(url,'_blank');}
-}
-function tgStake(){
-  const sol=parseFloat(document.getElementById('tg-stake-input')?.value)||0;
-  if(sol<1){showPUNotif('Mínimo 1 SOL');return;}
-  const url='https://phantom.app/ul/transfer?recipient='+window.DUENDE_CFG.DEV_WALLET+'&amount='+sol+'&label=Duende+Stake+'+tgStakeLockDays+'d';
   if(tg){tg.openLink(url);}else{window.open(url,'_blank');}
 }
 
@@ -1200,11 +1142,11 @@ async function sendTonPayment(){
 // ═══════════════════════════════════════
 const SKINS=[
   {id:'comun',name:'Común',img:'../assets/skins/skin_hero.png',preview:'../assets/skins/duende_comun.png',usd:0,stars:0,buffs:null,desc:'Skin base gratis',color:'#888'},
-  {id:'tactico',name:'Táctico',img:'../assets/skins/skin_tactico.png',preview:'../assets/skins/skin_tactico.png',usd:25,stars:1925,buffs:{coinMult:1.1,label:'+10% monedas'},desc:'Operador especial',color:'#00ff88'},
-  {id:'necro',name:'Necromancer',img:'../assets/skins/skin_king.png',preview:'../assets/skins/skin_necromancer.png',usd:50,stars:3850,buffs:{coinMult:1.2,lifesteal:0.05,label:'+20% monedas · Lifesteal'},desc:'Roba vida al atacar',color:'#9333ea'},
-  {id:'king',name:'King',img:'../assets/skins/skin_king.png',preview:'../assets/skins/skin_king.png',usd:75,stars:5770,buffs:{coinMult:1.3,bonusHp:20,label:'+30% monedas · +20 HP'},desc:'Corona de poder',color:'#ffe600'},
-  {id:'berserker',name:'Berserker',img:'../assets/skins/skin_berserker.png',preview:'../assets/skins/skin_berserker.png',usd:120,stars:9230,buffs:{coinMult:1.4,atkMult:1.3,label:'+40% monedas · +30% ataque'},desc:'Furia desatada',color:'#ff4400'},
-  {id:'legendaria',name:'Legendaria',img:'../assets/skins/skin_berserker.png',preview:'../assets/skins/skin_legendariafull.png',usd:250,stars:19230,buffs:{coinMult:1.5,bonusHp:50,aura:true,label:'+50% monedas · +50 HP · Aura'},desc:'La skin definitiva',color:'#ff00cc'},
+  {id:'tactico',name:'Táctico',img:'../assets/skins/skin_tactico.png',preview:'../assets/skins/skin_tactico.png',usd:1,stars:77,buffs:{coinMult:1.1,label:'+10% monedas'},desc:'Operador especial',color:'#00ff88'},
+  {id:'necro',name:'Necromancer',img:'../assets/skins/skin_king.png',preview:'../assets/skins/skin_necromancer.png',usd:2,stars:154,buffs:{coinMult:1.2,lifesteal:0.05,label:'+20% monedas · Lifesteal'},desc:'Roba vida al atacar',color:'#9333ea'},
+  {id:'king',name:'King',img:'../assets/skins/skin_king.png',preview:'../assets/skins/skin_king.png',usd:3,stars:231,buffs:{coinMult:1.3,bonusHp:20,label:'+30% monedas · +20 HP'},desc:'Corona de poder',color:'#ffe600'},
+  {id:'berserker',name:'Berserker',img:'../assets/skins/skin_berserker.png',preview:'../assets/skins/skin_berserker.png',usd:7,stars:539,buffs:{coinMult:1.4,atkMult:1.3,label:'+40% monedas · +30% ataque'},desc:'Furia desatada',color:'#ff4400'},
+  {id:'legendaria',name:'Legendaria',img:'../assets/skins/skin_berserker.png',preview:'../assets/skins/skin_legendariafull.png',usd:15,stars:1154,buffs:{coinMult:1.5,bonusHp:50,aura:true,label:'+50% monedas · +50 HP · Aura'},desc:'La skin definitiva',color:'#ff00cc'},
 ];
 
 let ownedSkins=['comun'];
@@ -1528,94 +1470,6 @@ async function exSell(){
     statusEl.textContent='❌ Error procesando retiro';statusEl.style.color='#ff3333';
     setTimeout(()=>{statusEl.style.color='#00eeff';statusEl.textContent='';},3000);
   }
-}
-
-// ═══════════════════════════════════════
-// STAKING TABS + TON STAKING
-// ═══════════════════════════════════════
-let stakeMode='ton';
-function switchStakeTab(mode){
-  stakeMode=mode;
-  const tonTab=document.getElementById('stake-tab-ton');
-  const solTab=document.getElementById('stake-tab-sol');
-  const tonBtn=document.getElementById('stake-btn-ton');
-  const solBtn=document.getElementById('stake-btn-sol');
-  const info=document.getElementById('stake-ton-info');
-  if(mode==='ton'){
-    tonTab.style.borderColor='#60a5fa';tonTab.style.background='rgba(59,130,246,.12)';tonTab.style.color='#e6e9f0';
-    solTab.style.borderColor='#263049';solTab.style.background='transparent';solTab.style.color='#9aa3b5';
-    tonBtn.style.display='';solBtn.style.display='none';
-    info.textContent=tonWalletAddr?'Wallet: '+tonWalletAddr.slice(0,6)+'...'+tonWalletAddr.slice(-4):'Requiere wallet TON conectada';
-    document.getElementById('tg-stake-input').placeholder='1.0';
-    document.getElementById('tg-stake-input').min='0.5';
-  }else{
-    solTab.style.borderColor='#60a5fa';solTab.style.background='rgba(59,130,246,.12)';solTab.style.color='#e6e9f0';
-    tonTab.style.borderColor='#263049';tonTab.style.background='transparent';tonTab.style.color='#9aa3b5';
-    solBtn.style.display='';tonBtn.style.display='none';
-    info.textContent='Abre Phantom wallet para stakear SOL';
-    document.getElementById('tg-stake-input').placeholder='1.0';
-    document.getElementById('tg-stake-input').min='1';
-  }
-  tgUpdateStakePreview();
-}
-
-async function tonStake(){
-  if(!tonUI||!tonWalletAddr){showPUNotif('Conecta tu wallet TON primero');toggleTonWallet();return;}
-  const ton=parseFloat(document.getElementById('tg-stake-input')?.value)||0;
-  const minTon=10/(tonPriceUsd||3.5);
-  if(ton<minTon){showPUNotif('Mínimo ~$10 ('+minTon.toFixed(2)+' TON)');return;}
-  const duendePrice=tgPriceUsd||0.0000001;
-  const tonP=tonPriceUsd||3.5;
-  const mult=tgStakeLockDays===7?1:tgStakeLockDays===30?1.5:2.5;
-  const apy=Math.min(240,Math.max(50,Math.floor(1000*tonP/duendePrice/1000000)));
-  const baseTokens=Math.floor(ton*tonP/duendePrice);
-  const reward=Math.floor(baseTokens*(apy/100)*(tgStakeLockDays/365)*mult);
-  try{
-    const nanotons=await importeFirmado(ton,'ton_stake');
-    const tx={
-      validUntil:Math.floor(Date.now()/1000)+300,
-      messages:[{address:TON_DEV_WALLET,amount:nanotons}],
-    };
-    document.getElementById('tg-stake-preview').textContent='⏳ Confirmando en wallet...';
-    await tonUI.sendTransaction(tx);
-    document.getElementById('tg-stake-preview').textContent='✅ TX enviada! Verificando on-chain...';
-    document.getElementById('tg-stake-preview').style.color='#00ff88';
-    tgHaptic('heavy');
-    const res=await walletApi('ton_stake',{wallet_ton:tonWalletAddr,ton,lock_days:tgStakeLockDays});
-    if(!res.success){
-      document.getElementById('tg-stake-preview').textContent='⏳ '+(res.detail||'Verificación pendiente, reintenta en 1 min');
-      document.getElementById('tg-stake-preview').style.color='#ffe600';
-      return;
-    }
-    document.getElementById('tg-stake-preview').textContent='✅ Stake registrado!';
-    showPUNotif('⚡ +'+Number(res.reward).toLocaleString()+' $DUENDE staked!');
-    loadActiveStakes();
-    setTimeout(()=>{document.getElementById('tg-stake-preview').style.color='#c084fc';document.getElementById('tg-stake-preview').textContent='---';},4000);
-  }catch(e){
-    console.warn('[TON Stake]',e);
-    document.getElementById('tg-stake-preview').textContent='❌ Transacción cancelada';
-    document.getElementById('tg-stake-preview').style.color='#ff3333';
-    setTimeout(()=>{document.getElementById('tg-stake-preview').style.color='#c084fc';},3000);
-  }
-}
-
-async function loadActiveStakes(){
-  const el=document.getElementById('active-stakes');if(!el||!TG_USER.id)return;
-  try{
-    const data=((await misDatos(true))||{}).stakes;
-    if(!data||data.length===0){el.innerHTML='';return;}
-    el.innerHTML='<div style="font-family:var(--sans);font-size:13px;font-weight:600;color:var(--txt2);margin-bottom:6px;text-align:center">📋 Tus Stakes</div>'+
-      data.map(s=>{
-        const unlock=new Date(s.unlock_at);
-        const now=new Date();
-        const active=unlock>now;
-        const daysLeft=Math.max(0,Math.ceil((unlock-now)/(1000*60*60*24)));
-        return '<div style="background:var(--panel);border:1px solid var(--borde);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12px;display:flex;justify-content:space-between;align-items:center">'+
-          '<div><span style="color:var(--txt);font-weight:600">'+s.amount_ton+' TON</span> · '+s.lock_days+'D · '+s.multiplier+'x</div>'+
-          '<div style="text-align:right"><div style="color:var(--txt)">+'+Number(s.reward_duende).toLocaleString()+' $DUENDE</div>'+
-          '<div style="color:'+(active?'var(--txt2)':'var(--ok)')+'">'+(active?daysLeft+'d restantes':'✅ Completado')+'</div></div></div>';
-      }).join('');
-  }catch(e){}
 }
 
 // ═══════════════════════════════════════
@@ -1987,7 +1841,7 @@ let ranking=JSON.parse(localStorage.getItem('dq_rank')||'[]');
 let equippedSkin=localStorage.getItem('dq_skin')||'comun';
 
 // FOMO
-const FOMO_MSGS=['🚀 Mientras jugabas, $DUENDE subió {x}%','💎 {n} jugadores stakearon SOL esta hora','🔥 Solo quedan {left} NFTs Especiales','⚡ NFT Elite = +30% más monedas','👑 Top player tiene {score} pts'];
+const FOMO_MSGS=['💡 Tu skin vale en $DUENDE CLASSIC y $DUENDE ORIGINS','🎮 El juego completo es gratis: las skins son opcionales','⚔️ En duelos y en el Abismo todos pelean igual'];   // sin cifras inventadas ni staking
 function showFomoMsg(){let msg=FOMO_MSGS[Math.floor(Math.random()*FOMO_MSGS.length)];msg=msg.replace('{x}',(Math.random()*10+1).toFixed(1)).replace('{n}',Math.floor(Math.random()*20+5)).replace('{left}',Math.floor(Math.random()*100+50)).replace('{score}',(Math.random()*50000+10000).toFixed(0));const el=document.getElementById('fomo-death-msg');if(el){el.textContent=msg;el.style.display='block';}}
 
 // Ticket firmado por el servidor al empezar una partida de SIN FIN: con el

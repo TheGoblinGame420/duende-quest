@@ -2610,6 +2610,22 @@ async function pruebasSkinsDinero() {
     mundo.pedidos.push({ codigo: 'SKN002', uid: j.c.uid, jugador: j.c.nombre, paquete: 'skin_king', nombre: pq.nombre, usd: pq.usd, metodo: 'sol', creado: Date.now(), estado: 'pagado' });
     await mundo.entregarPedido({ codigo: 'SKN002' });
     chequear(j.c.oro === oro0 + D.SKINS.king.precio, 'si ya la tenía, recibe su precio en oro');
+    // v292: un pago de Stars correcto (misma cuenta y Stars pedidas) se entrega solo.
+    const uid0 = j.c.uid, avisoAdm = mundo.avisarAdmin, admin = []; mundo.avisarAdmin = async t => { admin.push(t); };
+    const skins0 = [...j.c.skins], skin0 = j.c.skin;
+    j.c.uid = 'tg:7770001'; mundo.porUid.set(j.c.uid, j); j.c.skins = ['comun'];
+    mundo.pedidos.push({ codigo: 'STR001', uid: j.c.uid, jugador: j.c.nombre, paquete: 'skin_necro', nombre: 'Skin Nigromante', usd: D.SKINS.necro.usd, metodo: 'stars', stars: 154, creado: Date.now(), estado: 'esperando_pago' });
+    const rs = await mundo.pedidoPagadoStars({ codigo: 'STR001', tgId: '7770001', stars: 154, charge: 'ch1' });
+    chequear(rs.ok && j.c.skins.includes('necro') && mundo.buscarPedido('STR001').estado === 'entregado' && admin.some(t => /Entregado automáticamente/.test(t)), 'un pago de Stars correcto se entrega solo');
+    // De otra cuenta: no se entrega, queda para revisar.
+    mundo.pedidos.push({ codigo: 'STR002', uid: j.c.uid, jugador: j.c.nombre, paquete: 'skin_tactico', nombre: 'Skin Táctico', usd: 1, metodo: 'stars', stars: 77, creado: Date.now(), estado: 'esperando_pago' });
+    await mundo.pedidoPagadoStars({ codigo: 'STR002', tgId: '999', stars: 77, charge: 'ch2' });
+    chequear(mundo.buscarPedido('STR002').estado === 'por_verificar' && !j.c.skins.includes('tactico'), 'un pago raro de Stars no se entrega solo');
+    mundo.porUid.delete(j.c.uid); j.c.uid = uid0; mundo.avisarAdmin = avisoAdm; j.c.skins = skins0; j.c.skin = skin0;
+    // Catalogo unico: comprar oro y luego la skin nunca sale mas barato que directa.
+    chequear(Object.values(D.SKINS).every(k => !(k.usd && k.precio > 0) || k.usd >= k.precio / D.ORO_POR_USD), 'comprar oro y luego la skin nunca es más barato que comprarla directa');
+    const lib = await import('../functions/api/lib.js');
+    chequear(Object.entries(lib.SKIN_PRICES_USD).every(([k, v]) => D.SKINS[k].usd === v), 'las APIs de pago usan los mismos precios que el juego');
   } finally { mundo.avisarJugador = avisoReal; }
   // Un pedido con SOL sin pagar sale en "Tus compras" con lo necesario para retomarlo.
   mundo.pedidos.push({ codigo: 'SKN003', uid: j.c.uid, jugador: j.c.nombre, paquete: 'skin_necro', nombre: 'Skin Necromancer', usd: 4, metodo: 'sol', lamports: 12345678, creado: Date.now(), estado: 'esperando_pago' });
