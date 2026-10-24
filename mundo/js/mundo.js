@@ -14,19 +14,19 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN } from '/mmo/js/data.js?v=287';
-import { iniciarVentanas } from './ventanas.js?v=287';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=287';
-import { crearMusica } from './musica.js?v=287';
-import { construirCueva } from './cueva.js?v=287';
-import { TAPA, transparentar } from './tapa.js?v=287';
-import { construirAbismo } from './abismo.js?v=287';
-import { crearParticulas } from './particulas.js?v=287';
-import { cargarKenney, piezasCasa } from './kenney.js?v=287';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN } from '/mmo/js/data.js?v=288';
+import { iniciarVentanas } from './ventanas.js?v=288';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=288';
+import { crearMusica } from './musica.js?v=288';
+import { construirCueva } from './cueva.js?v=288';
+import { TAPA, transparentar } from './tapa.js?v=288';
+import { construirAbismo } from './abismo.js?v=288';
+import { crearParticulas } from './particulas.js?v=288';
+import { cargarKenney, piezasCasa } from './kenney.js?v=288';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=287';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=287';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=288';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=288';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1000,7 +1000,7 @@ const SFX = {};
 // Efectos con WebAudio: cada sonido se descarga y decodifica una vez y se
 // reproduce desde su buffer (antes cada golpe creaba un <audio> nuevo y en
 // los combates se notaban tirones). Como mucho 8 voces y algo de variacion de tono.
-let actx = null, voces = 0;
+let actx = null, voces = 0, fuera3 = false;   // fuera3: Telegram 'deactivated' (los efectos no deben reanudar el audio)
 const cargandoSfx = {};
 function ctxAudio() { if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { actx = null; } } return actx; }
 function cargarSfx(n) {
@@ -1011,7 +1011,7 @@ function cargarSfx(n) {
 function sfx(n, vol) {
   if (!sonido) return;
   const c = ctxAudio();
-  if (!c) return;
+  if (!c || fuera3 || document.hidden) return;
   if (c.state === 'suspended') c.resume().catch(() => {});
   const buf = SFX[n];
   if (!buf) { cargarSfx(n); return; }
@@ -1035,7 +1035,7 @@ let fanfarriaT = 0;
 function fanfarria() {
   if (!sonido) return;
   const c = ctxAudio();
-  if (!c || c.state === 'closed') return;
+  if (!c || c.state === 'closed' || fuera3 || document.hidden) return;
   if (c.state === 'suspended') c.resume().catch(() => {});
   const ahora = performance.now();
   if (ahora - fanfarriaT < 400) return;
@@ -1979,8 +1979,8 @@ function pintarSon() { $('b-son').textContent = sonido ? '🔊' : '🔇'; }
 $('b-son').onclick = () => { sonido = !sonido; try { localStorage.setItem('dq_mmo_sonido', sonido ? '1' : '0'); } catch (e) {} musica.activo(sonido); pintarSon(); };
 pintarSon(); if (!sonido) musica.activo(false);
 if (TG && TGV('8.0')) try {
-  TG.onEvent('deactivated', () => { musica.activo(false); if (actx) actx.suspend().catch(() => {}); });
-  TG.onEvent('activated', () => { if (sonido) musica.activo(true); if (actx) actx.resume().catch(() => {}); });
+  TG.onEvent('deactivated', () => { fuera3 = true; musica.activo(false); if (actx) actx.suspend().catch(() => {}); });
+  TG.onEvent('activated', () => { fuera3 = false; if (sonido) musica.activo(true); if (actx) actx.resume().catch(() => {}); });
 } catch (e) {}
 $('b-herm').onclick = () => { if ($('v-herm').classList.contains('on')) return cerrar('v-herm'); abrir('v-herm'); mandar({ t: 'herm' }); pintarHerm(); };
 $('b-rank').onclick = () => { if ($('v-rank').classList.contains('on')) return cerrar('v-rank'); abrir('v-rank'); mandar({ t: 'ranking' }); pintarRankPanel(); };
@@ -1994,7 +1994,7 @@ for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, () => { if (so
 // la musica y los golpes seguian sonando de fondo.
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) { musica.activo(false); if (actx) actx.suspend().catch(() => {}); }
-  else if (sonido) { musica.activo(true); if (actx) actx.resume().catch(() => {}); }
+  else { fuera3 = false; if (sonido) { musica.activo(true); if (actx) actx.resume().catch(() => {}); } }
 });
 $('b-ayuda').onclick = () => abrir('v-ayuda');
 $('sel-calidad').value = CAL;

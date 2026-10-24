@@ -1093,6 +1093,8 @@ export const Mundo3D = {
           if (k && !o.dispara && !o.jefe && !enC && d < 8) {
             if (o.lado == null || o.ladoDe !== s.id) { o.lado = Math.atan2(o.z - s.p.z, o.x - s.p.x) + ((o.id % 5) - 2) * 0.6; o.ladoDe = s.id; }
             ox = Math.cos(o.lado) * alcance * 0.8; oz = Math.sin(o.lado) * alcance * 0.8;
+            // En el Abismo, si su lado cae fuera de la isla (jugador en la orilla), va derecho como antes.
+            if (enA && fueraDeIsla(s.p.x + ox, s.p.z + oz)) { ox = (o.x - s.p.x) * k; oz = (o.z - s.p.z) * k; }
           } else o.lado = null;
           mover(s.p.x + ox, s.p.z + oz, velC);
         }

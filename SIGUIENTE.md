@@ -2874,3 +2874,10 @@ grupo), pocos jugadores (jefe mundial por participantes, sanador cobra, Capitan
 fuera del pueblo), movil ORIGINS (paneles, ✕ mas grande), estabilidad (ATACAR
 que no se queda pegado, particulas con gravedad, vincQuitar validado) y textos
 (ORIGINS en avisos, aviso de mTON). 817 pruebas.
+
+### Revision de la ronda 4 (24-oct-2026, `?v=288`)
+
+5 revisores + esceptico: 3 confirmados (2 eran el mismo). sfx() y fanfarria()
+no reanudan el AudioContext con la pagina oculta ni tras Telegram 'deactivated'
+(`fuera3`); rodear al jugador no deja a los elites del Abismo atascados en la
+orilla sin pegar.

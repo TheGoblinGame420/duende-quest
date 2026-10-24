@@ -495,6 +495,9 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 56, fecha: '24 oct 2026', items: [
+    'ORIGINS ya no suena de fondo: con la app minimizada o en otra pestaña, los golpes y la fanfarria se callan de verdad. Y los élites del Abismo vuelven a poder alcanzarte en la orilla de las islas.',
+  ] },
   { n: 55, fecha: '24 oct 2026', items: [
     'Combate con más sensación en ORIGINS: el borde de la pantalla destella en rojo hacia quien te pega (y late con poca vida), los botones muestran los segundos de enfriamiento, quien te ataca pasa a ser tu objetivo y los jefes de zona avisan su pisotón. Los monstruos te rodean en vez de amontonarse y los élites del Abismo ya no se atascan en la orilla.',
     'Hecho para pocos jugadores: el jefe mundial escala con quienes pelean (no con todos los conectados), el sanador cobra en jefes, invasiones y raros, y el Capitán de la invasión ya no aparece en medio del pueblo.',
