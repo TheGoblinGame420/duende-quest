@@ -236,6 +236,7 @@ export const Eventos = {
       const oro = Math.round(40 * nv * rnd(0.9, 1.1) * mult);
       c.oro += oro;
       c.invasiones = (c.invasiones || 0) + 1;
+      this.progresoTarea && this.progresoTarea(s, 'invasion');
       // La ultima etapa de la marcha garantiza un objeto epico o mejor.
       const it = this.darItem(s, this.generarItem(nv, (ev.etapa || 1) >= MARCHA_ETAPAS ? 2 : 1));
       this.sumarXp(s, xp);
@@ -314,6 +315,7 @@ export const Eventos = {
       const xp = base.xp * 4, oro = base.oro * 5;
       s.c.oro += oro;
       s.c.raros = (s.c.raros || 0) + 1;
+      this.progresoTarea && this.progresoTarea(s, 'raro');
       const it = this.darItem(s, this.generarItem(o.nv, 1));
       this.sumarXp(s, xp);
       s.sucio = true;
@@ -359,6 +361,7 @@ export const Eventos = {
       item = this.darItem(s, this.generarItem(clamp(c.nivel, nv[0], nv[1]), T.r));
     }
     c.cofresAbiertos = (c.cofresAbiertos || 0) + 1;
+    this.progresoTarea && this.progresoTarea(s, 'cofre');
     this.enviar(s, { t: 'cofreA', id: cf.i, ms: COFRE_CADA_MS, oro, pociones, item, tipo: cf.tipo });
     this.revisarLogros(s);
     this.actualizarYo(s);

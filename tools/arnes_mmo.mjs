@@ -608,6 +608,7 @@ async function pruebas() {
   await pruebasAbismo3d();
   await pruebasPvP3d();
   await pruebasSocial3d();
+  await pruebasEventos3d();
   await pruebasAsedio3d();
 }
 
@@ -693,6 +694,47 @@ async function pruebasAsedio3d() {
   chequear(![...mundo.m3.mons.values()].some(o => o.asedio && !o.muere), 'al terminar no quedan puerta ni guardián');
   mundo.nucleo = antes; [a.c.uid, b.c.uid] = uids;
   await dejar(a); await dejar(b);
+}
+
+// ── RAROS, INVASIONES Y COFRES DEL 3D ──
+async function pruebasEventos3d() {
+  console.log('Mundo 3D: raros, invasiones y cofres');
+  const W3 = await import('../mmo/js/mundo3d.js');
+  const D = await import('../mmo/js/data.js');
+  const a = await entrar3d('Cazatesoros3D', '4n1'); ponerNivel(a, 20, 'guerrero');
+  const Z = W3.ZONAS3D.amanecer; a.p = { x: Z.x, z: Z.z }; a.movBud = undefined;
+  // Raro: aparece cerca, avisa y al morir da un objeto raro seguro
+  const bolsa0 = a.c.bolsa.length, raros0 = a.c.raros || 0; a.limpiar();
+  const r = mundo.crearRaro3d('amanecer', a);
+  chequear(r && r.ex3.raro && r.max >= D.statsMonstruo(r.k, r.nv).hp * 5 && a.ultimos('aviso').some(m => /raro/.test(m.m)), 'aparece un élite raro con aviso');
+  mundo.danar3d(r, r.hp + 1, a);
+  chequear((a.c.raros || 0) === raros0 + 1 && (a.c.bolsa.length > bolsa0 || a.ultimos('toast').some(m => /derrotado/.test(m.m))), 'el raro da botín seguro a quien lo pelea');
+  // Invasion: oleadas, meta, capitan y premio
+  const W = mundo.iniciar3d(); W.inv3 = null;
+  const ev = mundo.empezarInvasion3d('amanecer', { amanecer: [a] }, Date.now());
+  chequear(ev && ev.meta >= 12 && a.ultimos('inv3').some(m => m.on), 'empieza una invasión en el 3D');
+  mundo.tickInvasion3d(ev, Date.now(), [a]);
+  const inv = [...W.mons.values()].filter(o => o.ex3 && o.ex3.ev === ev.id);
+  chequear(inv.length >= 2 && inv.every(o => o.agresivo), 'llegan invasores agresivos cerca');
+  const oro0 = a.c.oro, n0 = a.c.invasiones || 0;
+  for (let i = 0; i < ev.meta; i++) { let o = [...W.mons.values()].find(x => x.ex3 && x.ex3.ev === ev.id && !x.muere && !x.ex3.cap); if (!o) { ev.oleadaEn = 0; mundo.tickInvasion3d(ev, Date.now(), [a]); o = [...W.mons.values()].find(x => x.ex3 && x.ex3.ev === ev.id && !x.muere && !x.ex3.cap); } mundo.danar3d(o, o.hp + 1, a); }
+  chequear(ev.fase === 'capitan' && W.mons.get(ev.capitan), 'al cumplir la meta llega el Capitán');
+  const cap = W.mons.get(ev.capitan); mundo.danar3d(cap, cap.hp + 1, a);
+  chequear(!W.inv3 && (a.c.invasiones || 0) === n0 + 1 && a.c.oro > oro0, 'derrotar al Capitán gana la invasión y paga');
+  // Cofres: hay que estar cerca, una vez cada 30 min
+  const cf = W3.cofres3d(D.MAPAS, D.MONSTRUOS).find(x => x.zona === 'amanecer' && x.tipo === 'comun');
+  a.p = { x: cf.x + 20, z: cf.z }; a.limpiar();
+  await a.mandar({ t: 'cofre3', id: cf.i });
+  chequear(a.ultimos('no').some(m => /Acércate/.test(m.m)), 'el cofre pide estar cerca');
+  a.p = { x: cf.x + 1, z: cf.z }; const oroC = a.c.oro; a.limpiar();
+  await a.mandar({ t: 'cofre3', id: cf.i });
+  chequear(a.c.oro > oroC && a.ultimos('cofre3A').length === 1, 'se abre el cofre y da oro');
+  a.limpiar(); await a.mandar({ t: 'cofre3', id: cf.i });
+  chequear(a.ultimos('no').some(m => /Ya abriste/.test(m.m)), 'el mismo cofre no se abre dos veces seguidas');
+  // Mision del Guardia entregada a distancia
+  a.p = { x: 300, z: 300 }; a.limpiar(); await a.mandar({ t: 'mision' });
+  chequear(!a.ultimos('no').some(m => /Guardia Tito/.test(m.m)), 'en ORIGINS la misión se entrega desde cualquier sitio');
+  await dejar(a);
 }
 
 // ── LO SOCIAL DESDE EL 3D (hermandad, pase, amigos) ──
@@ -1598,6 +1640,14 @@ async function pruebasNovato() {
   chequear(mundo.procesarLogin(n).racha === 1, 'faltar más vuelve a empezar');
   n.c.login = { d: hace(1), racha: 5, total: 5 };
   chequear(mundo.procesarLogin(n).racha === 6 && n.c.login.d === hoy, 'jugar seguido la sube');
+  { // Regalo de bienvenida al volver tras 3+ dias
+    n.c.login = { d: hace(1), racha: 2, total: 2 };
+    chequear(!mundo.procesarLogin(n).vuelta, 'volver al día siguiente no da regalo de bienvenida');
+    const oro0 = n.c.oro, po0 = n.c.pw.pocion || 0;
+    n.c.login = { d: hace(8), racha: 4, total: 4 };
+    const v = mundo.procesarLogin(n).vuelta;
+    chequear(v && v.dias === 8 && n.c.oro > oro0 + v.oro - 1 && (n.c.pw.pocion || 0) >= Math.min(99, po0 + 5) && v.item, 'volver tras 8 días da regalo de bienvenida (oro, pociones y objeto)');
+  }
   await dejar(n);
 }
 

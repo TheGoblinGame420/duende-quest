@@ -14,19 +14,19 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES } from '/mmo/js/data.js?v=275';
-import { iniciarVentanas } from './ventanas.js?v=275';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=275';
-import { crearMusica } from './musica.js?v=275';
-import { construirCueva } from './cueva.js?v=275';
-import { TAPA, transparentar } from './tapa.js?v=275';
-import { construirAbismo } from './abismo.js?v=275';
-import { crearParticulas } from './particulas.js?v=275';
-import { cargarKenney, piezasCasa } from './kenney.js?v=275';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES } from '/mmo/js/data.js?v=276';
+import { iniciarVentanas } from './ventanas.js?v=276';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=276';
+import { crearMusica } from './musica.js?v=276';
+import { construirCueva } from './cueva.js?v=276';
+import { TAPA, transparentar } from './tapa.js?v=276';
+import { construirAbismo } from './abismo.js?v=276';
+import { crearParticulas } from './particulas.js?v=276';
+import { cargarKenney, piezasCasa } from './kenney.js?v=276';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=275';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=275';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=276';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=276';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1175,6 +1175,14 @@ function recibir(m) {
       }
       break;
     case 'pvpBaja': vib('heavy'); sfx('explosion', 0.5); sacudir = Math.max(sacudir, 0.25); aviso(`⚔️ ¡Abatiste a ${m.n}!`, 'ok'); break;
+    case 'cofres3': (m.l || []).forEach((ms, i) => { if (COFRES3[i]) COFRES3[i].listoEn = Date.now() + ms; }); break;
+    case 'cofre3A': {
+      const c = COFRES3[m.id]; if (c) { c.listoEn = Date.now() + m.ms; FX.emitir(c.x, alturaEn(c.x, c.z) + 0.8, c.z, { n: 40, color: '#ffd84a', vel: 4, vida: 1, grav: 4, sube: 2 }); }
+      vib('success'); sfxK('monedas', 0.45);
+      aviso(`🧰 ¡${(NOMBRE_COFRE[m.tipo] || 'cofre').replace(/^./, x => x.toUpperCase())} abierto! +${m.oro} oro${m.pociones ? ` · +${m.pociones} pociones` : ''}${m.item ? ' · ' + m.item : ''}`, 'ok');
+      break;
+    }
+    case 'inv3': invasion3 = m.on ? { ...m, recibido: Date.now() } : null; pintarMisiones(); break;
     case 'cofre3': if (cueva) { cueva.cofre.visible = true; cueva.tapa.rotation.x = 0; } sfx('moneda', 0.6); break;
     case 'gana':
       if (m.xp) numero(P.x, P.y + 2.6, P.z, '+' + m.xp + ' XP', '#c084fc');
@@ -1302,13 +1310,14 @@ async function agregarMon(d) {
   const o = { id: d.id, k: d.k, nv: d.nv, x: d.x, z: d.z, tx: d.x, tz: d.z, ry: 0, hp: d.hp, mx: d.mx, st: 0, j: d.j, fig: null, lbl: etiqueta(d.j ? 'jefe' : ''), nace: performance.now(), muereT: 0, golpeT: 0, f: 1 };
   mons.set(d.id, o);
   fijarDestino(o, d.x, d.z);
-  o.mu = !!d.mu;
+  o.mu = !!d.mu; o.ra = d.ra || ''; o.ti = d.ti || ''; o.iv = !!d.iv;
   if (d.k === 'puerta_nucleo') {
     o.fig = new Figura3D(modeloPuerta(), 1);
     solidosExtra = solidosExtra.filter(x => x.id !== d.id).concat([-2.2, 0, 2.2].map(dz => ({ x: d.x, z: d.z + dz, r: 1.5, id: d.id })));
     return;
   }
-  o.fig = figuraModelo(() => crearMonstruo(d.k), d.mu ? 2.4 : d.j ? 1.15 : 1) || await figuraHoja(def.hoja, st.alto * (d.mu ? 2.4 : d.j ? 1.15 : 1));
+  const esc3 = d.mu ? 2.4 : d.ra ? 1.35 : d.j ? 1.15 : 1;
+  o.fig = figuraModelo(() => crearMonstruo(d.k), esc3) || await figuraHoja(def.hoja, st.alto * esc3);
   if (!mons.has(d.id) && o.fig) { o.fig.quitar(); o.fig = null; }
 }
 // La Puerta del Nucleo: reja de hierro entre dos torres del kit de castillo
@@ -1870,6 +1879,9 @@ function pintarMini() {
   if (enAbismo(P.x) && yo && yo.faccion) for (const q of MAQUINAS) if (q.f === yo.faccion) punto(q.x, q.z, '#fbbf24', 2);
   for (const o of mons.values()) if (!o.muereT) punto(o.x, o.z, o.j ? '#ffd84a' : '#ff4455', o.j ? 3.5 : 2);
   for (const o of otros.values()) punto(o.x, o.z, enGrupo(o.id) ? '#7dd3fc' : '#4ade80', enGrupo(o.id) ? 3.5 : 2.5);
+  { const ah = Date.now(); for (const c of COFRES3) if (c.listoEn <= ah && Math.abs(c.x - P.x) < 130 && Math.abs(c.z - P.z) < 130) punto(c.x, c.z, c.tipo === 'legendario' ? '#ffd84a' : c.tipo === 'epico' ? '#c084fc' : '#d6a35c', c.tipo === 'legendario' ? 3.2 : 2.4); }
+  if (invasion3 && ZONAS3D[invasion3.zona]) punto(ZONAS3D[invasion3.zona].x, ZONAS3D[invasion3.zona].z, '#ff5a1f', 5);
+  for (const o of mons.values()) if (o.ra && !o.muereT) punto(o.x, o.z, o.ti || '#ffd84a', 4);
   { const ah = performance.now(); for (const n of NODOS) if (Math.abs(n.x - P.x) < 130 && Math.abs(n.z - P.z) < 130 && !(nodoListo.get(n.i) > ah)) punto(n.x, n.z, n.tipo === 'hierba' ? '#c084fc' : '#fbbf24', 1.6); }
   if (metaMision) {
     let px = (metaMision.x - P.x) * k + S / 2, pz = (metaMision.z - P.z) * k + S / 2;
@@ -1935,6 +1947,48 @@ function avisoInvitado() {
   abrir('v-diario');
   $('copiar-rescate').onclick = () => { try { navigator.clipboard.writeText(codigoRescate()).then(() => aviso('Código copiado. Guárdalo en un lugar seguro.', 'ok')); } catch (e) {} };
 }
+// ── COFRES DEL TESORO (3 por zona; el legendario, en lo alto) ──
+const COFRES3 = cofres3d(MAPAS, MONSTRUOS).map(c => ({ ...c, listoEn: 0, g: null, tapa: null, gema: null }));
+const COLOR_COFRE = { comun: '#8b5a2b', epico: '#6b21a8', legendario: '#b45309' };
+const NOMBRE_COFRE = { comun: 'cofre', epico: 'cofre épico', legendario: 'cofre legendario' };
+function crearCofres3() {
+  const oro = new THREE.MeshLambertMaterial({ color: '#facc15', flatShading: true });
+  for (const c of COFRES3) {
+    const g = new THREE.Group(), madera = new THREE.MeshLambertMaterial({ color: COLOR_COFRE[c.tipo], flatShading: true });
+    const caja = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.6, 0.75), madera); caja.position.y = 0.3;
+    for (const x of [-0.4, 0.4]) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.62, 0.78), oro); b.position.set(x, 0.31, 0); g.add(b); }
+    const tapa = new THREE.Group(); tapa.position.set(0, 0.6, -0.375);
+    const t = new THREE.Mesh(new THREE.CylinderGeometry(0.375, 0.375, 1.1, 8, 1, false, 0, Math.PI).rotateZ(Math.PI / 2), madera); t.position.set(0, 0, 0.375); tapa.add(t);
+    const cierre = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.2, 0.06), oro); cierre.position.set(0, -0.02, 0.76); tapa.add(cierre);
+    const gema = new THREE.Mesh(new THREE.OctahedronGeometry(c.tipo === 'legendario' ? 0.28 : 0.2, 0), new THREE.MeshBasicMaterial({ color: c.tipo === 'legendario' ? '#ffd84a' : c.tipo === 'epico' ? '#c084fc' : '#fde68a' }));
+    gema.position.y = 1.5;
+    g.add(caja, tapa, gema);
+    g.position.set(c.x, alturaEn(c.x, c.z) - 0.05, c.z); g.rotation.y = Math.atan2(-c.x, -c.z);
+    if (c.tipo === 'legendario') g.scale.setScalar(1.25);
+    escena.add(g);
+    c.g = g; c.tapa = tapa; c.gema = gema;
+    ponerSolido(c.x, c.z, 0.55);
+  }
+}
+function cofreCercano() {
+  const ahora = Date.now();
+  let mejor = null, md = COFRE3D_DIST;
+  for (const c of COFRES3) { const d = Math.hypot(c.x - P.x, c.z - P.z); if (d < md && c.listoEn <= ahora) { md = d; mejor = c; } }
+  return mejor;
+}
+function animarCofres(t) {
+  const ahora = Date.now();
+  for (const c of COFRES3) {
+    if (!c.g || Math.abs(c.x - P.x) > 90 || Math.abs(c.z - P.z) > 90) continue;
+    const listo = c.listoEn <= ahora;
+    c.tapa.rotation.x += ((listo ? 0 : -1.15) - c.tapa.rotation.x) * 0.12;
+    c.gema.visible = listo;
+    if (listo) { c.gema.position.y = 1.45 + Math.sin(t / 400 + c.i) * 0.12; c.gema.rotation.y = t / 600; }
+    if (listo && cuadro % 45 === c.i % 45) FX.emitir(c.x, alturaEn(c.x, c.z) + 0.9, c.z, { n: c.tipo === 'legendario' ? 8 : 4, color: c.tipo === 'epico' ? '#c084fc' : '#ffd84a', vel: 1, vida: 1.2, grav: -1.5, tam: 0.7 });
+  }
+}
+// ── INVASION DEL 3D ──
+let invasion3 = null;
 // ── SUBIR DE NIVEL, PRESUMIR Y TELEGRAM ──
 function subiNivel(lv) {
   vib('success'); sfxK('monedas', 0.4);
@@ -2051,7 +2105,8 @@ function pintarRankPanel() {
 // Panel lateral que se cierra solo: lo de hoy, la racha y lo que espera mañana.
 function mostrarDiario(m) {
   const n = LOGIN_PREMIOS.length, hoy = m.racha;
-  let h = `<p class="vv-p" style="margin-bottom:8px">¡Día <b style="color:#ffd84a">${hoy}</b> de tu racha! Recibes <b>${esc(m.txt || '')}</b>${m.oro ? ` (+${m.oro.toLocaleString('es')} oro)` : ''}.</p><div class="dias7">`;
+  let h = m.vuelta ? `<p class="vv-p" style="margin-bottom:8px;padding:8px;border-radius:10px;background:rgba(255,216,74,.12);border:1px solid rgba(255,216,74,.4)">🎉 <b>¡Te echábamos de menos!</b> ${m.vuelta.dias} días fuera. Regalo de bienvenida: <b>+${m.vuelta.oro.toLocaleString('es')} oro</b>, ${m.vuelta.pociones} pociones y <b>${esc(m.vuelta.item)}</b>.</p>` : '';
+  h += `<p class="vv-p" style="margin-bottom:8px">¡Día <b style="color:#ffd84a">${hoy}</b> de tu racha! Recibes <b>${esc(m.txt || '')}</b>${m.oro ? ` (+${m.oro.toLocaleString('es')} oro)` : ''}.</p><div class="dias7">`;
   for (let i = 1; i <= n; i++) {
     const pr = LOGIN_PREMIOS[i - 1];
     h += `<div class="d7 ${i < hoy ? 'ya' : i === hoy ? 'hoy' : ''}"><small>Día ${i}</small><span>${i === n ? '🎁' : pr.item !== undefined ? '⚔️' : pr.oro ? '🪙' : '🧪'}</span><em>${esc(pr.txt)}</em></div>`;
@@ -2059,7 +2114,7 @@ function mostrarDiario(m) {
   const sig = LOGIN_PREMIOS[hoy % n];
   h += `</div><p class="vv-p" style="margin-top:10px;font-size:12px">Mañana: <b style="color:#7dd3fc">${esc(sig.txt)}</b>. Si faltas un día la racha retrocede: ¡no la pierdas!</p>`;
   $('diario-c').innerHTML = h;
-  $('v-diario').querySelector('h2').textContent = 'RECOMPENSA DIARIA';
+  $('v-diario').querySelector('h2').textContent = m.vuelta ? '¡BIENVENIDO DE VUELTA!' : 'RECOMPENSA DIARIA';
   abrir('v-diario'); vib('success'); sfxK('monedas', 0.4);
   clearTimeout(mostrarDiario.t);
   mostrarDiario.t = setTimeout(() => cerrar('v-diario'), 12000);
@@ -2271,7 +2326,7 @@ function npcCercano() {
 }
 function hablar() {
   if (pica > performance.now() || (lanzando && lanzando.id === 'pescar')) { mandar({ t: 'tirar' }); return; }
-  if (!npcCercano()) { const nd = nodoCercano(); if (nd) { mandar({ t: 'recolectar', i: nd.i }); return; } if (aguaCerca()) { mandar({ t: 'pescar' }); return; } }
+  if (!npcCercano()) { const cf = cofreCercano(); if (cf) { mandar({ t: 'cofre3', id: cf.i }); return; } const nd = nodoCercano(); if (nd) { mandar({ t: 'recolectar', i: nd.i }); return; } if (aguaCerca()) { mandar({ t: 'pescar' }); return; } }
   const n = npcCercano();
   if (!n) return;
   if (n.tipo === 'salida') { mandar({ t: 'salirCueva' }); return; }
@@ -2588,7 +2643,7 @@ function etiquetas(t) {
     const def = MONSTRUOS[o.k], el = o.id === objetivo;
     const alto = o.fig ? altoFig(o.fig) : 2;
     const herido = o.hp < o.mx || el;
-    ponLbl(o.lbl, o.x, alturaEn(o.x, o.z) + alto + 0.2, o.z, `<span style="color:${o.j ? '#ff6bf0' : colorNivel(o.nv)}">${o.j ? '★ ' : ''}${asedio && asedio.dormido && o.id === asedio.guardian ? '💤 ' : ''}${herido || o.j ? esc(def.nombre) + ' ' : ''}Nv${o.nv}</span>${herido ? `<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>` : ''}`, el ? 90 : (o.j ? 70 : 38));
+    ponLbl(o.lbl, o.x, alturaEn(o.x, o.z) + alto + 0.2, o.z, `<span style="color:${o.ra ? o.ti || '#ffd84a' : o.iv ? '#ff5a1f' : o.j ? '#ff6bf0' : colorNivel(o.nv)}">${o.ra ? '★ ' + esc(o.ra) + ' · ' : o.iv ? '⚔ ' : o.j ? '★ ' : ''}${asedio && asedio.dormido && o.id === asedio.guardian ? '💤 ' : ''}${herido || o.j ? esc(def.nombre) + ' ' : ''}Nv${o.nv}</span>${herido ? `<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>` : ''}`, el ? 90 : (o.j ? 70 : 38));
   }
   for (const n of npcs) ponLbl(n.lbl, n.x, n.y + 2.4, n.z, `${n.tipo === 'guia' && misionLista() ? '<b style="color:#ffd84a;font-size:22px;text-shadow:0 0 6px #000">?</b><br>' : ''}<span style="color:#4ade80">${esc(n.nombre)}</span>`, 60);
 }
@@ -2617,7 +2672,7 @@ function pintarMisiones() {
   }
   if (q) {
     const lista = yo.mis.p >= q.n;
-    if (lista) metaMision = { x: guiaNpc.x, z: guiaNpc.z, guia: true };
+    if (lista) metaMision = null;   // en ORIGINS se entrega desde cualquier sitio
     else {
       let mejor = null, md = Infinity;
       for (const cp of CAMPOS3D) if (cp.k === q.tipo) { const dd = Math.hypot(cp.x - P.x, cp.z - P.z); if (dd < md) { md = dd; mejor = cp; } }
@@ -2625,9 +2680,19 @@ function pintarMisiones() {
     }
     const dist = metaMision ? Math.hypot(metaMision.x - P.x, metaMision.z - P.z) : 0;
     const donde = metaMision ? (dist < 25 ? ' · aquí' : ` · ${flechaDir(metaMision.x, metaMision.z)} ${Math.round(dist)} m`) : '';
-    h += `<div class="q"><b>📜 ${esc(q.nombre)}</b>${lista ? `<span class="ok">¡Lista! Vuelve con el Guardia Tito</span><small>${donde}</small>` : `${(MONSTRUOS[q.tipo] || {}).nombre || q.tipo}: ${Math.min(yo.mis.p, q.n)}/${q.n}<small>${donde}</small>`}</div>`;
+    h += `<div class="q"><b>📜 ${esc(q.nombre)}</b>${lista ? `<span class="ok" data-entregar="1" style="cursor:pointer;text-decoration:underline">¡Lista! Toca aquí para entregarla</span>` : `${(MONSTRUOS[q.tipo] || {}).nombre || q.tipo}: ${Math.min(yo.mis.p, q.n)}/${q.n}<small>${donde}</small>`}</div>`;
   }
   if (!d.ok) h += `<div class="q"><b>☀ ${DIARIA.nombre}</b>${(d.p || 0) >= DIARIA.n ? '<span class="ok">¡Lista! Cóbrala con el Guardia</span>' : `Monstruos de tu nivel: ${Math.min(d.p || 0, DIARIA.n)}/${DIARIA.n}`}</div>`;
+  if (invasion3) {
+    const ms = Math.max(0, invasion3.ms - (Date.now() - invasion3.recibido)), mm = Math.floor(ms / 60000), ss = Math.floor(ms % 60000 / 1000);
+    const zc = ZONAS3D[invasion3.zona], dz = zc ? Math.hypot(zc.x - P.x, zc.z - P.z) : 0;
+    h = `<div class="q" style="border-left:3px solid #ff5a1f;padding-left:6px"><b style="color:#ff8a5c">⚔️ ${esc(invasion3.nombre)}</b>${invasion3.fase === 'capitan' ? '¡Derrota al Capitán!' : `Invasores: ${invasion3.hechos}/${invasion3.meta}`} · ${mm}:${String(ss).padStart(2, '0')}<small>${(MAPAS[invasion3.zona] || {}).nombre || ''}${dz > 60 && zc ? ` · ${flechaDir(zc.x, zc.z)} ${Math.round(dz)} m` : ' · ¡aquí!'}</small></div>` + h;
+  }
+  { // Tesoro cercano: el cofre disponible mas proximo (invita a explorar)
+    let mc = null, md = 400; const ah = Date.now();
+    for (const c of COFRES3) if (c.listoEn <= ah) { const d = Math.hypot(c.x - P.x, c.z - P.z); if (d < md && d > 6) { md = d; mc = c; } }
+    if (mc) h += `<div class="q"><b>🧰 ${NOMBRE_COFRE[mc.tipo].replace(/^./, x => x.toUpperCase())}</b><small>${flechaDir(mc.x, mc.z)} ${Math.round(md)} m${mc.tipo === 'legendario' ? ' · en lo alto: ¡vuela!' : ''}</small></div>`;
+  }
   // Misiones del dia y de la semana (se cobran solas); 🔄 cambia una gratis al dia.
   const T = yo.tareas;
   if (T && T.dia) {
@@ -2645,7 +2710,7 @@ const faro = (() => {
   const m = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 2.4, 90, 12, 1, true).translate(0, 45, 0), new THREE.MeshBasicMaterial({ color: '#ffd84a', transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide, fog: false }));
   m.visible = false; escena.add(m); return m;
 })();
-$('misiones').onclick = e => { const b = e.target.closest('[data-cambiar]'); if (b) { e.stopPropagation(); mandar({ t: 'cambiarTarea', i: +b.dataset.cambiar }); return; } abrirMapa(); };
+$('misiones').onclick = e => { if (e.target.closest('[data-entregar]')) { e.stopPropagation(); mandar({ t: 'mision' }); return; } const b = e.target.closest('[data-cambiar]'); if (b) { e.stopPropagation(); mandar({ t: 'cambiarTarea', i: +b.dataset.cambiar }); return; } abrirMapa(); };
 function misionLista() { if (!yo) return false; const q = MISIONES[yo.mis.i]; const d = yo.diaria || {}; return (q && yo.mis.p >= q.n) || (!d.ok && (d.p || 0) >= DIARIA.n); }
 function colorNivel(nv) { const d = nv - (yo ? yo.nivel : 1); return d >= 5 ? '#ff3344' : d >= 2 ? '#ff9900' : d <= -8 ? '#9a9a9a' : d <= -3 ? '#4ade80' : '#ffe600'; }
 const cieloAct = C(CIELO.pueblo), cieloObj = C(CIELO.pueblo);
@@ -2710,14 +2775,17 @@ function bucle(t) {
     ambiente(z);
     cullFlora();
     if (yo) {
-      const n = npcCercano(), nd = n ? null : nodoCercano(); const b = $('hablar');
-      b.style.display = n || nd ? 'block' : 'none';
+      const n = npcCercano(), cf = n ? null : cofreCercano(), nd = n || cf ? null : nodoCercano(); const b = $('hablar');
+      b.style.display = n || cf || nd ? 'block' : 'none';
       if (n) b.textContent = (MOVIL ? '' : 'E · ') + (n.tipo === 'portal' ? 'Mazmorras' : n.tipo === 'salida' ? 'Salir de la cueva' : n.tipo === 'salidaAbismo' ? 'Volver al pueblo' : n.tipo === 'maquina' ? 'Disparar ' + n.nombre.toLowerCase() : 'Hablar con ' + n.nombre);
+      else if (cf) b.textContent = (MOVIL ? '' : 'E · ') + 'Abrir ' + NOMBRE_COFRE[cf.tipo];
       else if (nd) b.textContent = (MOVIL ? '' : 'E · ') + 'Recoger ' + MATERIALES[nd.tipo].nombre;
       else if (!enCueva(P.x) && aguaCerca()) { b.style.display = 'block'; b.textContent = (MOVIL ? '' : 'E · ') + (pica > performance.now() ? '¡TIRAR!' : lanzando && lanzando.id === 'pescar' ? 'Esperando que pique…' : 'Pescar'); }
     }
     if (cuadro % 60 === 0) revisarNodos();
-    if (MOVIL) { const u = $('t-usar'), b = $('hablar'), ver = b.style.display === 'block' && !P.vuela; u.style.visibility = ver ? 'visible' : 'hidden'; if (ver) u.textContent = /Recoger/.test(b.textContent) ? 'RECOGER' : /Pescar|TIRAR|pique/.test(b.textContent) ? (/TIRAR/.test(b.textContent) ? '¡TIRAR!' : 'PESCAR') : /Salir/.test(b.textContent) ? 'SALIR' : 'HABLAR'; }
+    animarCofres(t);
+    for (const o of mons.values()) if (o.ra && !o.muereT && Math.abs(o.x - P.x) < 60 && Math.abs(o.z - P.z) < 60) FX.emitir(o.x, alturaEn(o.x, o.z) + 0.3, o.z, { n: 5, color: o.ti || '#ffd84a', vel: 1.2, vida: 1, grav: -2.5, radio: 0.8, tam: 0.8 });
+    if (MOVIL) { const u = $('t-usar'), b = $('hablar'), ver = b.style.display === 'block' && !P.vuela; u.style.visibility = ver ? 'visible' : 'hidden'; if (ver) u.textContent = /Abrir/.test(b.textContent) ? 'ABRIR' : /Recoger/.test(b.textContent) ? 'RECOGER' : /Pescar|TIRAR|pique/.test(b.textContent) ? (/TIRAR/.test(b.textContent) ? '¡TIRAR!' : 'PESCAR') : /Salir/.test(b.textContent) ? 'SALIR' : 'HABLAR'; }
     if (npcAbierto && $('v-npc').classList.contains('on')) { const n = NPCS3D.find(x => x.tipo === npcAbierto); if (n && Math.hypot(P.x - n.x, P.z - n.z) > NPC_DIST + 6) cerrar('v-npc'); }
   }
   cieloAct.lerp(cieloObj, Math.min(1, dt * 1.5));
@@ -2793,6 +2861,7 @@ async function inicio() {
   ponerSolido(portal.x - 2.2, portal.z, 0.7); ponerSolido(portal.x + 2.2, portal.z, 0.7);
   cueva = construirCueva(escena);
   abismo = construirAbismo(escena, KIT);
+  crearCofres3();
   for (const c of abismo.solidos || []) ponerSolido(c.x, c.z, c.r);
   abismo.dueno(asedio && asedio.dueno);
   progreso(0.7, 'Preparando los gráficos…');

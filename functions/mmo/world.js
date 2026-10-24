@@ -27,6 +27,7 @@ import {
 import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery, tg, getSolPriceUsd, getDuendePriceUsd, SOL_DEV_WALLET } from '../api/lib.js';
 import { MMO_URL } from '../api/telegram-bot.js';
 import { Cueva3D } from './cueva3d.js';
+import { Eventos3D } from './eventos3d.js';
 import { rangoDe } from '../../mmo/js/abismo3d.js';
 import { Combate } from './combate.js';
 import { Social, pub } from './social.js';
@@ -1201,7 +1202,17 @@ export class MmoWorld {
     let item = null;
     if (pr.item !== undefined) item = this.darItem(s, generarItem(c.nivel, pr.item), true);
     c.login = { d: hoy, racha, total: (L.total || 0) + 1 };
-    return { racha, oro, pw: pr.pw || null, item, txt: pr.txt };
+    // Regalo de bienvenida al volver tras 3+ dias fuera: que regresar compense.
+    let vuelta = null;
+    const dias = L.d ? Math.round((Date.parse(hoy) - Date.parse(L.d)) / 86400000) : 0;
+    if (dias >= 3) {
+      const vOro = Math.round(400 * Math.min(dias, 7) * multLogin(c.nivel));
+      c.oro += vOro;
+      c.pw.pocion = Math.min(99, (c.pw.pocion || 0) + 5);
+      const vIt = this.darItem(s, generarItem(c.nivel, dias >= 7 ? 2 : 1), true);
+      vuelta = { dias, oro: vOro, pociones: 5, item: nombreItem(vIt) };
+    }
+    return { racha, oro, pw: pr.pw || null, item, txt: pr.txt, vuelta };
   }
 
   // Mete un objeto en la bolsa (si esta llena se vende solo).
@@ -2604,6 +2615,8 @@ export class MmoWorld {
 
 // Combate al estilo WoW (clases, habilidades, amenaza, auras): functions/mmo/combate.js
 Object.assign(MmoWorld.prototype, Combate);
+// Raros, invasiones y cofres del mundo 3D: functions/mmo/eventos3d.js
+Object.assign(MmoWorld.prototype, Eventos3D);
 // Grupos y chat por canales: functions/mmo/social.js
 Object.assign(MmoWorld.prototype, Social);
 // Mazmorras instanciadas con jefes de guion: functions/mmo/mazmorras.js

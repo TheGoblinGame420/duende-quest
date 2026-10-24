@@ -197,6 +197,38 @@ export function campamentos(MAPAS, MONSTRUOS) {
 // 24 puntos por zona (hierbas y vetas, alternadas), lejos de los
 // campamentos y en tierra firme. Deterministas: el servidor y el cliente
 // calculan la misma lista.
+// ── COFRES DEL TESORO (3 por zona) ──
+// El legendario en el punto mas alto que se encuentra (hay que trepar o
+// volar), el epico lejos del centro y el comun cerca. Iguales en servidor y
+// cliente (semilla fija).
+export const COFRE3D_DIST = 3.5;
+let _cofres3 = null;
+export function cofres3d(MAPAS, MONSTRUOS) {
+  if (_cofres3) return _cofres3;
+  const campos = campamentos(MAPAS, MONSTRUOS);
+  const l = [];
+  let n = 0;
+  for (const id of IDS) {
+    const c = ZONAS3D[id], r = rng(9157 + n * 7919), cand = [];
+    for (let i = 0; i < 500; i++) {
+      const ang = r() * Math.PI * 2, dist = 20 + r() * 160;
+      const x = Math.round(c.x + Math.cos(ang) * dist), z = Math.round(c.z + Math.sin(ang) * dist);
+      if (zonaEn(x, z) !== id || Math.max(Math.abs(x), Math.abs(z)) > 560) continue;
+      if (alturaEn(x, z) < MUNDO.agua + 1 || pendienteEn(x, z) > 0.9) continue;
+      if (campos.some(p => Math.hypot(p.x - x, p.z - z) < 12)) continue;
+      cand.push({ x, z, h: alturaEn(x, z), d: dist });
+    }
+    if (cand.length >= 3) {
+      const alto = cand.reduce((a, b) => (b.h > a.h ? b : a));
+      const resto = cand.filter(p => Math.hypot(p.x - alto.x, p.z - alto.z) > 40);
+      const lejos = resto.reduce((a, b) => (b.d > a.d ? b : a), resto[0]);
+      const cerca = resto.filter(p => p !== lejos && Math.hypot(p.x - lejos.x, p.z - lejos.z) > 30).reduce((a, b) => (b.d < a.d ? b : a), resto[1] || resto[0]);
+      for (const [p, tipo] of [[alto, 'legendario'], [lejos, 'epico'], [cerca, 'comun']]) if (p) l.push({ i: l.length, zona: id, x: p.x, z: p.z, tipo });
+    }
+    n++;
+  }
+  return (_cofres3 = l);
+}
 export const RECOGER_DIST = 3.5;
 let _nodos = null;
 export function nodos3d(MAPAS, MONSTRUOS) {

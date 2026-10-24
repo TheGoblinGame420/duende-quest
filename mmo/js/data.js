@@ -492,6 +492,11 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 44, fecha: '23 oct 2026', items: [
+    'ORIGINS tiene 30 cofres del tesoro escondidos (3 por zona): comunes, épicos y uno legendario en lo más alto de cada zona, con equipo seguro. Aparecen en el minimapa y el seguimiento te señala el más cercano.',
+    'Élites raros ★ en el mundo 3D: brillan, salen en el minimapa y dan 4× XP, 5× oro y un objeto raro. Y cada 15-20 minutos llega una invasión a una zona: frena a los invasores, derrota a su Capitán y llévate el botín.',
+    'Las misiones de ORIGINS se entregan desde cualquier sitio (toca «¡Lista!»), hay misiones del día nuevas (cofres, élites raros, invasiones) y si vuelves tras 3 días o más te espera un regalo de bienvenida.',
+  ] },
   { n: 43, fecha: '23 oct 2026', items: [
     'ORIGINS ya no se desconecta para siempre al minimizar Telegram o bloquear el móvil: al volver se reconecta solo, al momento.',
     'Si juegas como invitado, el juego te avisa de cómo no perder tu duende: crear cuenta o guardar tu código de rescate. En la pantalla de inicio puedes usar ese código en otro navegador.',
@@ -1209,6 +1214,9 @@ export const TAREAS_DIA = [
   { id: 'recoger', tipo: 'recoger', n: 6, txt: 'Recoge 6 plantas o vetas de mineral' },
   { id: 'pescar', tipo: 'pescar', n: 5, txt: 'Pesca 5 peces (pesquero 🎣 del pueblo o de una zona)' },
   { id: 'exped', tipo: 'exped', n: 1, txt: 'Recoge una expedición (registro de misiones)', nv: 5 },
+  { id: 'cofres', tipo: 'cofre', n: 2, txt: 'Abre 2 cofres del tesoro' },
+  { id: 'raro', tipo: 'raro', n: 1, txt: 'Derrota a un élite raro (★)', nv: 5 },
+  { id: 'invasion', tipo: 'invasion', n: 1, txt: 'Ayuda a rechazar una invasión', nv: 5 },
 ];
 export const TAREAS_SEMANA = [
   { id: 'caza300', tipo: 'caza', n: 300, txt: 'Caza 300 monstruos de tu nivel' },

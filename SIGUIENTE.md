@@ -2673,3 +2673,19 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
   `codigoRescate()` (el dq_mmo_tok en grupos de 4) y copia. inicio/: enlace
   «¿Tienes un código de rescate?» que lo guarda en dq_mmo_tok (el uid del
   invitado sale de sha256 del token: mismo duende en otro navegador).
+
+### Contenido propio de ORIGINS + retencion (23-oct-2026, `?v=276`)
+
+- functions/mmo/eventos3d.js (mixin Eventos3D): raros por zona (tirada cada 60 s,
+  15 %, reaparecen a los 15 min), invasiones cada 14-18 min (5 min, oleada +
+  Capitan), cofres del mundo (`cofres3d` en mmo/js/mundo3d.js, 30 deterministas;
+  enfriamiento por jugador en `c.cofres3`; pagan x3/x4/x5 del 2D, el legendario
+  siempre da equipo).
+- mundo3d.js: `mision` se entrega sin estar junto al Guardia; `cofre3`;
+  snapshot `ra/ti/iv`; los invasores son agresivos (radio 20).
+- Tareas nuevas (2D y 3D): cofres, raro, invasion.
+- mundo.js: modelos de cofre con tapa y gema, `cofreCercano` en `hablar()`,
+  minimapa (cofres, raros, zona invadida), etiquetas ★/⚔, chispas en raros,
+  linea de invasion y de tesoro cercano en el seguimiento, `data-entregar`.
+- world.js `procesarLogin`: regalo de bienvenida si `L.d` tiene 3+ dias
+  (400 x min(dias,7) x multLogin oro, 5 pociones, objeto raro/epico) → `vuelta`.

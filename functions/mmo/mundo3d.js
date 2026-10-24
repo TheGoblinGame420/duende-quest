@@ -97,6 +97,8 @@ export const Mundo3D = {
     const jugadores = this.sesiones3d().filter(x => x !== s).map(x => this.info3d(x));
     this.enviar(s, { t: 'm3', id: s.id, x: r1(s.p.x), z: r1(s.p.z), jugadores });
     this.enviar(s, this.estadoMundial3());
+    this.enviar(s, { t: 'cofres3', l: this.infoCofres3d(c) });
+    this.enviar(s, this.estadoInvasion3d());
     this.enviar(s, this.estadoAsedio());
     this.nodos3AlEntrar(s);
     this.aClave(K3, { t: 'pj3', p: this.info3d(s) }, s);
@@ -138,7 +140,9 @@ export const Mundo3D = {
       case 'cancelar': return this.cancelarCast(s);
       case 'montar': return this.montar(s);   // mismo lanzamiento de 1,5 s que el 2D
       case 'revivir': return this.revivir3d(s);
-      case 'mision': if (this.cerca3d(s, 'guia')) return this.mision(s, m, true); return this.no(s, 'Habla con el Guardia Tito en el pueblo.');
+      // En ORIGINS las misiones se entregan desde cualquier sitio (el mundo es grande).
+      case 'mision': return this.mision(s, m, true);
+      case 'cofre3': return this.abrirCofre3d(s, m);
       case 'comprar': return this.comprar(s, m);   // cercaDelMercader() sabe del 3D
       case 'chat':
         // Moderadores: /jefe invoca al jefe mundial del 3D.
@@ -324,6 +328,7 @@ export const Mundo3D = {
     const W = this.iniciar3d();
     o.muere = true; o.hp = 0; o.borrarEn = Date.now() + 1600;
     if (o.asedio) return this.caeAsedio(o);
+    if (o.ex3 && o.ex3.raro) { this.premioRaro3d(o); this.aClave(K3, { t: 'md3', id: o.id }); return; }
     if (o.mundial3) {
       this.premiosMundial(o, K3);
       this.aClave(K3, { t: 'md3', id: o.id });
@@ -374,7 +379,9 @@ export const Mundo3D = {
     const campo = W.campos[o.campo];
     if (campo) { campo.vivos.delete(o.id); campo.prox = Date.now() + (o.jefe ? REAPARECE_JEFE_MS : REAPARECE_MS); }
     this.aClave(K3, { t: 'md3', id: o.id });
+    if (o.ex3 && o.ex3.ev) this.muereInvasor3d(o);
     if (o.cueva && o.jefe) this.premiosCueva(o);
+    else if (o.ex3 && o.ex3.cap) { /* el aviso lo da la invasion */ }
     else if (o.jefe) {
       const quien = [...cobraron].map(id => this.sesiones.get(id)?.c?.nombre).filter(Boolean).slice(0, 4).join(', ');
       this.aTodos({ t: 'aviso', m: `${MONSTRUOS[o.k].nombre} fue derrotado en el mundo 3D${quien ? ' por ' + quien : ''}.` });
@@ -443,6 +450,8 @@ export const Mundo3D = {
       if (W.mundial) W.mundial.o = null;            // el jefe mundial ya no existe
       if (W.asedio && W.asedio.activo) this.terminarAsedio(null, true);
       if (W.cuevas) W.cuevas.clear();   // sus monstruos ya no existen
+      if (W.inv3) { W.inv3 = null; W.inv3prox = 0; }   // sin nadie, la invasion se va
+      W.raros = {};
       return;
     }
     const dt = 0.1;
@@ -462,6 +471,7 @@ export const Mundo3D = {
       if (k) s.hp = Math.min(s.st.maxHp, s.hp + s.st.maxHp * k * dt);
     }
     const vivos = jugadores.filter(s => !s.muerto);
+    this.tickEventos3d(ahora, jugadores);
     // Campamentos: se pueblan cerca de alguien.
     for (const c of W.campos) {
       let cerca = Infinity;
@@ -981,8 +991,8 @@ export const Mundo3D = {
     if (s && !valido(s)) { s = null; o.obj = 0; }
     // Solo se reinicia cuando ya no queda nadie en su lista.
     if (!s && teniaObj && !o.amen.size && !o.vuelve) o.vuelve = true;
-    if (!s && (o.jefe || o.cueva) && !o.vuelve) {
-      const cerca = vivos.find(x => dist(x.p, o) < (o.jefe ? 16 : 11) && !this.aura(x, 'sigilo') && !(x.h > 8) && ve(x.p.x, x.p.z));
+    if (!s && (o.jefe || o.cueva || o.agresivo) && !o.vuelve) {
+      const cerca = vivos.find(x => dist(x.p, o) < (o.agresivo ? 20 : o.jefe ? 16 : 11) && !this.aura(x, 'sigilo') && !(x.h > 8) && ve(x.p.x, x.p.z));
       if (cerca) {
         o.obj = cerca.id; s = cerca;
         // En la cueva acude el grupo entero de esa sala.
@@ -1327,7 +1337,7 @@ export const Mundo3D = {
       for (const o of W.mons.values()) {
         if (!mismo(o, s) || dist(o, s.p) > VISTA_MON) continue;
         ve.add(o.id);
-        if (!s.vistos.has(o.id)) n.push({ id: o.id, k: o.k, nv: o.nv, x: r1(o.x), z: r1(o.z), hp: Math.ceil(o.hp), mx: o.max, j: o.jefe ? 1 : 0, mu: o.mundial3 || o.guardian ? 1 : undefined });
+        if (!s.vistos.has(o.id)) n.push({ id: o.id, k: o.k, nv: o.nv, x: r1(o.x), z: r1(o.z), hp: Math.ceil(o.hp), mx: o.max, j: o.jefe ? 1 : 0, mu: o.mundial3 || o.guardian ? 1 : undefined, ra: o.ex3 && o.ex3.nom ? o.ex3.nom : undefined, ti: o.ex3 && o.ex3.ti ? o.ex3.ti : undefined, iv: o.ex3 && o.ex3.ev ? 1 : undefined });
         else ms.push([o.id, r1(o.x), r1(o.z), Math.round(o.ry * 100) / 100, Math.ceil(o.hp), o.muere ? 3 : o.st]);
       }
       for (const id of s.vistos) if (!ve.has(id)) q.push(id);

@@ -17,7 +17,7 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=275';
+} from './data.js?v=276';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -586,7 +586,7 @@ function recibir(m) {
     case 'factura': abrirFactura(m); break;
     case 'pedidoSol': mostrarPedidoSol(m); break;
     case 'fondo': fondoInfo = m; if ($('m-wallet').classList.contains('on')) pintarWallet(); break;
-    case 'login': mostrarLogin(m); break;
+    case 'login': mostrarLogin(m); if (m.vuelta) aviso(`🎉 ¡Bienvenido de vuelta! ${m.vuelta.dias} días fuera: +${m.vuelta.oro.toLocaleString('es', { useGrouping: 'always' })} oro, ${m.vuelta.pociones} pociones y ${m.vuelta.item}.`, 'ok', 8000); break;
     case 'logro':
       aviso('Logro desbloqueado: ' + m.titulo + ' · +' + m.oro.toLocaleString('es', { useGrouping: 'always' }) + ' oro. Puedes llevar el título desde el inventario.', 'ok', 6000);
       vibrar();
