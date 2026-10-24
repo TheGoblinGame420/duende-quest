@@ -99,6 +99,7 @@ export const Mundo3D = {
     this.enviar(s, this.estadoMundial3());
     this.enviar(s, { t: 'cofres3', l: this.infoCofres3d(c) });
     this.enviar(s, this.estadoInvasion3d());
+    if (c.faccion || c.nivel >= ABISMO.nvMin) this.enviar(s, this.infoTemp(c));
     this.enviar(s, this.estadoAsedio());
     this.nodos3AlEntrar(s);
     this.aClave(K3, { t: 'pj3', p: this.info3d(s) }, s);
@@ -143,6 +144,7 @@ export const Mundo3D = {
       // En ORIGINS las misiones se entregan desde cualquier sitio (el mundo es grande).
       case 'mision': return this.mision(s, m, true);
       case 'cofre3': return this.abrirCofre3d(s, m);
+      case 'temp3': return this.enviar(s, this.infoTemp(s.c));
       case 'comprar': return this.comprar(s, m);   // cercaDelMercader() sabe del 3D
       case 'chat':
         // Moderadores: /jefe invoca al jefe mundial del 3D.
@@ -472,6 +474,7 @@ export const Mundo3D = {
     }
     const vivos = jugadores.filter(s => !s.muerto);
     this.tickEventos3d(ahora, jugadores);
+    if (!this.tempT || ahora - this.tempT > 60000) { this.tempT = ahora; this.temporadaA(); }   // cierre del mes
     // Campamentos: se pueblan cerca de alguien.
     for (const c of W.campos) {
       let cerca = Infinity;
@@ -553,9 +556,12 @@ export const Mundo3D = {
   sumarPA(s, n, por) {
     if (!s || !s.c || !n) return;
     const r0 = rangoDe(s.c.pa);
+    // Equilibrio de facciones (temporada.js): la faccion con menos miembros o en inferioridad gana mas.
+    const mx = n > 0 ? this.multPA(s) : { x: 1 };
+    if (mx.x > 1) n = Math.round(n * mx.x);
     s.c.pa = Math.max(0, (s.c.pa || 0) + n);
     s.sucio = true;
-    if (n > 0) this.enviar(s, { t: 'toast', m: `🌌 +${n} Puntos del Abismo${por ? ' (' + por + ')' : ''}` });
+    if (n > 0) { this.anotarTemp(s, n); this.enviar(s, { t: 'toast', m: `🌌 +${n} Puntos del Abismo${por ? ' (' + por + ')' : ''}${mx.por ? ` · ×${String(mx.x).replace('.', ',')} ${mx.por}` : ''}` }); }
     const r1 = rangoDe(s.c.pa);
     if (r1.i !== r0.i) {
       if (r1.i > r0.i) this.aTodos({ t: 'aviso', m: `🎖 ${s.c.nombre} asciende a ${r1.n} del Abismo.` });
@@ -595,8 +601,10 @@ export const Mundo3D = {
     if (c.nivel < ABISMO.nvMin) return this.no(s, `Podrás elegir facción a nivel ${ABISMO.nvMin}.`);
     c.faccion = m.f;
     s.sucio = true;
+    this.unirseFaccion(s, m.f);
     this.aClave(K3, { t: 'pa', ...this.infoApariencia(s) });
     this.aTodos({ t: 'aviso', m: `⚔️ ${c.nombre} se une a los ${FACCIONES[m.f].titulo}.` });
+    this.enviar(s, this.infoTemp(c));
     this.actualizarYo(s);
     this.guardar(s);
   },
@@ -759,6 +767,7 @@ export const Mundo3D = {
     if (!silencioso) {
       if (ganador) {
         this.nucleo = { dueno: ganador, desde: Date.now() };
+        this.anotarAsedioTemp(ganador);
         if (this.state && this.state.storage) this.state.storage.put('nucleo', this.nucleo).catch(() => {});
         this.aTodos({ t: 'aviso', m: `🏰 Los ${FACCIONES[ganador].titulo} ${antes === ganador ? 'defienden' : 'conquistan'} la Fortaleza del Núcleo.` });
       } else this.aTodos({ t: 'aviso', m: antes ? `🏰 La Fortaleza del Núcleo resiste: sigue en manos de los ${FACCIONES[antes].titulo}.` : '🏰 Se acabó el tiempo: la Fortaleza del Núcleo sigue sin dueño.' });

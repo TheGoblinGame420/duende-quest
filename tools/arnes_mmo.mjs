@@ -609,6 +609,7 @@ async function pruebas() {
   await pruebasPvP3d();
   await pruebasSocial3d();
   await pruebasEventos3d();
+  await pruebasTempAbismo();
   await pruebasAsedio3d();
 }
 
@@ -735,6 +736,42 @@ async function pruebasEventos3d() {
   a.p = { x: 300, z: 300 }; a.limpiar(); await a.mandar({ t: 'mision' });
   chequear(!a.ultimos('no').some(m => /Guardia Tito/.test(m.m)), 'en ORIGINS la misión se entrega desde cualquier sitio');
   await dejar(a);
+}
+
+// ── EQUILIBRIO DE FACCIONES Y TEMPORADA DEL ABISMO ──
+async function pruebasTempAbismo() {
+  console.log('Mundo 3D: equilibrio de facciones y temporada');
+  const AB = await import('../mmo/js/abismo3d.js');
+  chequear(AB.faccionDebil({ luz: 3, sombra: 3 }) === null && AB.faccionDebil({ luz: 1, sombra: 0 }) === 'sombra' && AB.faccionDebil({ luz: 5, sombra: 4 }) === null && AB.faccionDebil({ luz: 4, sombra: 6 }) === 'luz', 'la facción débil se calcula bien');
+  const F = mundo.faccEstado(); F.n = { luz: 3, sombra: 1 };
+  const a = await entrar3d('Recluta Sombra', 'c7e1'); ponerNivel(a, 25, 'guerrero');
+  const oro0 = a.c.oro, bolsa0 = a.c.bolsa.length; a.limpiar();
+  await a.mandar({ t: 'faccion', f: 'sombra' });
+  chequear(a.c.faccion === 'sombra' && a.c.oro > oro0 && a.c.bolsa.length > bolsa0 && a.ultimos('toast').some(m => /reclutamiento/.test(m.m)) && F.n.sombra === 2, 'unirse a la facción con menos miembros da bono de reclutamiento');
+  const b = await entrar3d('Recluta Luz', 'c7e2'); ponerNivel(b, 25, 'guerrero');
+  const oroB = b.c.oro; b.limpiar(); await b.mandar({ t: 'faccion', f: 'luz' });
+  chequear(b.c.faccion === 'luz' && b.c.oro === oroB && F.n.luz === 4, 'la facción grande no da bono');
+  const pa0 = a.c.pa || 0, pb0 = b.c.pa || 0;
+  mundo.sumarPA(a, 10, 'prueba'); mundo.sumarPA(b, 10, 'prueba');
+  chequear(a.c.pa - pa0 === 15 && b.c.pa - pb0 === 10, 'la facción débil gana PA ×1,5');
+  chequear(a.c.tempA && a.c.tempA.p >= 15 + 40 && F.pts.sombra >= 55, 'los PA cuentan para la temporada');
+  // Cierre de la temporada: liga, facción ganadora, podio y logros
+  const mesAhora = F.mes;
+  a.c.tempA.p = 600; F.l[a.c.uid].p = 600; F.pts.sombra = 600; F.pts.luz = 50;
+  F.mes = '2000-01'; a.c.tempA.mes = '2000-01'; b.c.tempA.mes = '2000-01';
+  const oroA = a.c.oro; a.limpiar(); b.limpiar();
+  mundo.temporadaA();
+  const fin = a.ultimos('tempFin')[0];
+  chequear(F.mes === mesAhora && F.hist[0].mes === '2000-01' && F.hist[0].ganador === 'sombra', 'al cambiar el mes se cierra la temporada y gana la facción con más puntos');
+  chequear(fin && fin.liga === 'Oro' && fin.gana && fin.puesto === 0 && a.c.oro > oroA && !a.c.tempA, 'el jugador cobra liga, victoria y podio');
+  chequear(['tempOro', 'tempGana', 'tempTop'].every(id => a.c.logros.includes(id)), 'la temporada da sus títulos');
+  chequear(b.ultimos('tempFin').length === 1 && !b.ultimos('tempFin')[0].gana, 'el de la otra facción cobra su parte sin la victoria');
+  a.limpiar(); mundo.cobrarTemporada(a);
+  chequear(!a.ultimos('tempFin').length, 'la temporada no se cobra dos veces');
+  const it = mundo.infoTemp(a.c);
+  chequear(it.t === 'temp3' && it.ult && it.ult.ganador === 'sombra' && it.fin > Date.now(), 'el marcador de la temporada llega al cliente');
+  F.n = { luz: 0, sombra: 0 };
+  await dejar(a); await dejar(b);
 }
 
 // ── LO SOCIAL DESDE EL 3D (hermandad, pase, amigos) ──

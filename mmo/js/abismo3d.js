@@ -45,6 +45,25 @@ export function rangoDe(pa) {
   return { i, n: RANGOS[i].n, sig: RANGOS[i + 1] ? RANGOS[i + 1].pa : 0 };
 }
 export const enAbismo = x => x >= ABISMO_X0 - 450;
+// ── EQUILIBRIO Y TEMPORADA DEL ABISMO (functions/mmo/temporada.js) ──
+// Faccion "debil": la que tiene menos miembros (2 menos, o la otra la supera
+// en un 50 %). Sus miembros ganan PA x FACC_BONO y quien se une cobra RECLUTA.
+export const FACC_BONO = 1.5;
+export const RECLUTA = { oro: 3000, pa: 40, item: 2 };   // oro x multLogin(nivel); item epico
+export function faccionDebil(n) {
+  const a = (n && n.luz) || 0, b = (n && n.sombra) || 0;
+  if (a === b) return null;
+  const chica = a < b ? 'luz' : 'sombra', mn = Math.min(a, b), mx = Math.max(a, b);
+  return mx - mn >= 2 || mx >= mn * 1.5 ? chica : null;
+}
+// Ligas de la temporada mensual por PA ganados en ella (oro x multLogin(nivel)).
+export const TEMP_ABISMO = [
+  { pa: 30,   n: 'Bronce',   oro: 1500,  pociones: 5,  item: 1 },
+  { pa: 150,  n: 'Plata',    oro: 4000,  pociones: 10, item: 2 },
+  { pa: 500,  n: 'Oro',      oro: 9000,  pociones: 15, item: 2 },
+  { pa: 1500, n: 'Diamante', oro: 20000, pociones: 20, item: 3 },
+];
+export function tierTemp(pa) { let t = -1; for (let i = 0; i < TEMP_ABISMO.length; i++) if ((pa || 0) >= TEMP_ABISMO[i].pa) t = i; return t; }
 // Los bastiones son santuario: ahi nadie pelea contra jugadores.
 export const santuario = (x, z) => { const is = islaEn(x, z); return !!(is && is.base); };
 function hsh(x, z) { let h = (x | 0) * 374761393 + (z | 0) * 668265263; h = (h ^ (h >>> 13)) * 1274126177; return ((h ^ (h >>> 16)) >>> 0) / 4294967295; }

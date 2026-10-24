@@ -492,6 +492,11 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 45, fecha: '23 oct 2026', items: [
+    'Temporada del Abismo: cada mes compiten la Luz y la Sombra. Tus Puntos del Abismo te suben de liga (Bronce, Plata, Oro y Diamante) y al cerrar el mes cobras oro, pociones y equipo; aunque entres semanas después, el premio te espera.',
+    'La facción ganadora cobra un 50 % más y el podio se lleva un legendario y el título «Campeón del Éter». Nuevos títulos: «Vencedor del Éter» y «Señor del Éter». Mira el marcador en 🏆 Ranking → Abismo.',
+    'Equilibrio de facciones: la facción con menos miembros recibe la Bendición del Éter (PA ×1,5) y quien se une a ella cobra un bono de reclutamiento (oro, objeto épico y 40 PA). Si en el Abismo sois la mitad que el enemigo, PA ×2.',
+  ] },
   { n: 44, fecha: '23 oct 2026', items: [
     'ORIGINS tiene 30 cofres del tesoro escondidos (3 por zona): comunes, épicos y uno legendario en lo más alto de cada zona, con equipo seguro. Aparecen en el minimapa y el seguimiento te señala el más cercano.',
     'Élites raros ★ en el mundo 3D: brillan, salen en el minimapa y dan 4× XP, 5× oro y un objeto raro. Y cada 15-20 minutos llega una invasión a una zona: frena a los invasores, derrota a su Capitán y llévate el botín.',
@@ -1064,6 +1069,9 @@ export const LOGROS = [
   { id: 'dragon',    titulo: 'Matadragones',        desc: 'Vence al Dragón Carmesí de la Ciudadela', oro: 15000, cond: c => !!(c.mzJefes && c.mzJefes.mz_dragon) },
   { id: 'titan',     titulo: 'Azote del Titán',     desc: 'Vence al Titán del Abismo en la banda del Santuario', oro: 25000, cond: c => !!(c.mzJefes && c.mzJefes.mz_titan) },
   { id: 'pionero',   titulo: 'Pionero del Abismo',  desc: 'Forma parte de la primera victoria del servidor contra el Titán del Abismo', oro: 30000, cond: c => !!c.pionero },
+  { id: 'tempOro',   titulo: 'Señor del Éter',      desc: 'Termina una Temporada del Abismo en la liga Oro o mejor', oro: 8000, cond: c => (c.tempMejor ?? -1) >= 2 },
+  { id: 'tempGana',  titulo: 'Vencedor del Éter',   desc: 'Gana una Temporada del Abismo con tu facción', oro: 5000, cond: c => (c.tempGanadas || 0) >= 1 },
+  { id: 'tempTop',   titulo: 'Campeón del Éter',    desc: 'Termina primero en una Temporada del Abismo', oro: 20000, cond: c => (c.tempCampeon || 0) >= 1 },
   { id: 'abismo',    titulo: 'Jinete del Abismo',   desc: 'Gana el Murciélago del Abismo (vence al Titán en 3 semanas distintas)', oro: 20000, cond: c => (c.monturas || []).includes('abismo') },
 ];
 

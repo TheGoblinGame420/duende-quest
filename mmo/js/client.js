@@ -17,7 +17,7 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=276';
+} from './data.js?v=277';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -616,6 +616,7 @@ function recibir(m) {
     case 'muerte': resumenMuerte(m); break;
     case 'nodos': recibirNodos(m.l); break;
     case 'recogido': { const n = nodos.find(x => x.i === m.i); if (n) { n.listo = performance.now() + m.en; for (let k = 0; k < 14; k++) particula(n.x, SUELO - 14, m.tipo === 'hierba' ? '#4ade80' : '#cbd5e1', 3); } sfx('moneda', .3); break; }
+    case 'tempFin': aviso(`🏆 Fin de la Temporada del Abismo ${m.mes}: ${m.liga ? 'liga ' + m.liga + ' · ' : ''}${m.gana ? '¡tu facción ganó! · ' : ''}+${m.oro.toLocaleString('es', { useGrouping: 'always' })} oro${m.items && m.items.length ? ' · ' + m.items.join(', ') : ''}.`, 'ok', 9000); vibrar(); break;
     case 'mae': if (yo) { yo.mae = m.n; aviso('⭐ ¡Maestría ' + m.n + '! Tu XP del nivel 60 ya no se pierde.', 'ok'); vibrar(); pintarHud(); } break;
     case 'tareas': if (yo) { yo.tareas = m; pintarHud(); if ($('m-mision').classList.contains('on')) pintarMision(); } break;
     case 'muros': muros = m.muros || []; if (instancia) instancia.hechos = m.hechos; pintarHud(); break;

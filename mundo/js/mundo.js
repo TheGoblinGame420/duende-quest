@@ -14,19 +14,19 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES } from '/mmo/js/data.js?v=276';
-import { iniciarVentanas } from './ventanas.js?v=276';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=276';
-import { crearMusica } from './musica.js?v=276';
-import { construirCueva } from './cueva.js?v=276';
-import { TAPA, transparentar } from './tapa.js?v=276';
-import { construirAbismo } from './abismo.js?v=276';
-import { crearParticulas } from './particulas.js?v=276';
-import { cargarKenney, piezasCasa } from './kenney.js?v=276';
-import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo } from '/mmo/js/abismo3d.js';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES } from '/mmo/js/data.js?v=277';
+import { iniciarVentanas } from './ventanas.js?v=277';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=277';
+import { crearMusica } from './musica.js?v=277';
+import { construirCueva } from './cueva.js?v=277';
+import { TAPA, transparentar } from './tapa.js?v=277';
+import { construirAbismo } from './abismo.js?v=277';
+import { crearParticulas } from './particulas.js?v=277';
+import { cargarKenney, piezasCasa } from './kenney.js?v=277';
+import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=276';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=276';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=277';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=277';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1182,6 +1182,8 @@ function recibir(m) {
       aviso(`🧰 ¡${(NOMBRE_COFRE[m.tipo] || 'cofre').replace(/^./, x => x.toUpperCase())} abierto! +${m.oro} oro${m.pociones ? ` · +${m.pociones} pociones` : ''}${m.item ? ' · ' + m.item : ''}`, 'ok');
       break;
     }
+    case 'temp3': temp3 = m; pintarRankPanel(); break;
+    case 'tempFin': mostrarTempFin(m); break;
     case 'inv3': invasion3 = m.on ? { ...m, recibido: Date.now() } : null; pintarMisiones(); break;
     case 'cofre3': if (cueva) { cueva.cofre.visible = true; cueva.tapa.rotation.x = 0; } sfx('moneda', 0.6); break;
     case 'gana':
@@ -1987,6 +1989,36 @@ function animarCofres(t) {
     if (listo && cuadro % 45 === c.i % 45) FX.emitir(c.x, alturaEn(c.x, c.z) + 0.9, c.z, { n: c.tipo === 'legendario' ? 8 : 4, color: c.tipo === 'epico' ? '#c084fc' : '#ffd84a', vel: 1, vida: 1.2, grav: -1.5, tam: 0.7 });
   }
 }
+// ── TEMPORADA DEL ABISMO Y EQUILIBRIO DE FACCIONES ──
+let temp3 = null;
+const ICO_F = { luz: '☀', sombra: '🌑' };
+const fmtN = n => (n || 0).toLocaleString('es');
+// Marcador de la temporada (pestaña «Abismo» del ranking).
+function htmlTemp(T) {
+  if (!T) return '<p class="vv-p">Cargando…</p>';
+  const fin = Math.max(0, T.fin - Date.now()), dd = Math.floor(fin / 86400000), hh = Math.floor(fin % 86400000 / 3600000);
+  const sl = T.sc.luz || 0, ss = T.sc.sombra || 0, tot = Math.max(1, sl + ss), pl = Math.round(sl / tot * 100);
+  let h = `<p class="vv-p">🏆 <b>Temporada del Abismo</b> · cierra en <b style="color:#f87171">${dd} d ${hh} h</b>. La facción con más puntos gana un 50 % más de premio (los puntos se dividen por la raíz de sus participantes: no gana solo la más numerosa).</p>`;
+  h += `<div style="display:flex;justify-content:space-between;font-size:12px;margin:6px 0 3px"><b style="color:${FACCIONES.luz.color}">☀ Luz ${fmtN(sl)}</b><b style="color:${FACCIONES.sombra.color}">${fmtN(ss)} Sombra 🌑</b></div>`;
+  h += `<div style="height:10px;border-radius:6px;overflow:hidden;display:flex;background:#222"><i style="width:${sl + ss ? pl : 50}%;background:linear-gradient(90deg,#fde68a,#60a5fa)"></i><i style="flex:1;background:linear-gradient(90deg,#c084fc,#ef4444)"></i></div>`;
+  h += `<p class="vv-p" style="font-size:11px;margin-top:4px">Miembros: ☀ ${T.n.luz || 0} · 🌑 ${T.n.sombra || 0} · Asedios ganados: ☀ ${T.as.luz || 0} · 🌑 ${T.as.sombra || 0}${T.debil ? `<br>✨ <b style="color:${FACCIONES[T.debil].color}">Bendición del Éter</b>: los ${esc(FACCIONES[T.debil].titulo)} son menos y ganan PA ×${String(FACC_BONO).replace('.', ',')}.` : ''}</p>`;
+  const sig = TEMP_ABISMO[T.tier + 1], act = TEMP_ABISMO[T.tier];
+  if (yo && yo.faccion) h += `<p class="vv-p">Tus PA de la temporada: <b style="color:#ffd84a">${fmtN(T.p)}</b> · liga <b>${act ? act.n : 'sin liga'}</b>${sig ? ` · te faltan <b>${fmtN(sig.pa - T.p)}</b> para ${sig.n}` : ' · ¡la más alta!'}</p>`;
+  else h += '<p class="vv-p">Elige tu facción en el portal del pueblo (nivel 20) para competir.</p>';
+  h += '<div class="dias7">' + TEMP_ABISMO.map((x, i) => `<div class="d7 ${i <= T.tier ? 'ya' : i === T.tier + 1 ? 'hoy' : ''}"><small>${x.n}</small><span>${['🥉', '🥈', '🥇', '💎'][i]}</span><em>${fmtN(x.pa)} PA</em></div>`).join('') + '</div>';
+  h += '<div class="rank-lista" style="margin-top:8px">' + (T.top.length ? T.top.map((x, i) => `<div class="rk ${x.yo ? 'yo' : ''}"><span class="pos">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><b>${ICO_F[x.f] || ''} ${esc(x.n)}</b><span>${fmtN(x.p)} PA</span></div>`).join('') : '<p class="vv-p">Nadie ha ganado PA este mes: ¡estrena el podio!</p>') + '</div>';
+  h += '<p class="vv-p" style="font-size:11px">Podio: 1.º un objeto legendario y el título «Campeón del Éter»; 2.º y 3.º, un épico y oro extra.</p>';
+  if (T.ult) h += `<p class="vv-p" style="font-size:11px;color:var(--txt3)">Temporada ${esc(T.ult.mes)}: ${T.ult.ganador ? `ganaron los <b style="color:${FACCIONES[T.ult.ganador].color}">${esc(FACCIONES[T.ult.ganador].titulo)}</b>` : 'empate'}${T.ult.tops && T.ult.tops[0] ? ` · campeón: ${esc(T.ult.tops[0].n)}` : ''}.</p>`;
+  return h;
+}
+function mostrarTempFin(m) {
+  let h = `<p class="vv-p">Terminó la <b>Temporada del Abismo ${esc(m.mes)}</b>. Ganaste <b style="color:#ffd84a">${fmtN(m.p)} PA</b>${m.liga ? ` y llegaste a la liga <b>${esc(m.liga)}</b>` : ''}.</p>`;
+  h += `<p class="vv-p">${m.ganador ? (m.gana ? `🏆 ¡Tu facción ganó la temporada! Premio +50 %.` : `Ganaron los ${esc(FACCIONES[m.ganador].titulo)}. ¡Este mes os toca a vosotros!`) : 'La temporada terminó en empate.'}${m.puesto >= 0 ? ` Quedaste <b>${['1.º 🥇', '2.º 🥈', '3.º 🥉'][m.puesto]}</b> del podio.` : ''}</p>`;
+  h += `<p class="vv-p">Recibes: <b>+${fmtN(m.oro)} oro</b>${m.pociones ? `, ${m.pociones} pociones` : ''}${m.items && m.items.length ? ', ' + m.items.map(esc).join(', ') : ''}.</p><p class="vv-p" style="font-size:12px">La nueva temporada ya empezó: los PA vuelven a contar desde cero.</p>`;
+  $('diario-c').innerHTML = h;
+  $('v-diario').querySelector('h2').textContent = 'FIN DE TEMPORADA';
+  abrir('v-diario'); vib('success'); sfxK('monedas', 0.5);
+}
 // ── INVASION DEL 3D ──
 let invasion3 = null;
 // ── SUBIR DE NIVEL, PRESUMIR Y TELEGRAM ──
@@ -2087,9 +2119,10 @@ let rankDatos = null, rankTab = 'sem';
 function pintarRankPanel() {
   if (!$('v-rank').classList.contains('on')) return;
   const d = rankDatos, c = $('rank-c');
-  const tabs = [['sem', 'Semana'], ['r', 'Nivel'], ['duel', 'Duelos'], ['herm', 'Hermandades'], ['torre', 'Torre']];
+  const tabs = [['sem', 'Semana'], ['abismo', 'Abismo'], ['r', 'Nivel'], ['duel', 'Duelos'], ['herm', 'Hermandades'], ['torre', 'Torre']];
   let s = '<div class="rank-tabs">' + tabs.map(([k, n]) => `<button data-rt="${k}" class="${k === rankTab ? 'on' : ''}">${n}</button>`).join('') + '</div>';
-  if (!d) { c.innerHTML = s + '<p class="vv-p">Cargando…</p>'; }
+  if (rankTab === 'abismo') s += htmlTemp(temp3 || (d && d.temp));
+  else if (!d) { c.innerHTML = s + '<p class="vv-p">Cargando…</p>'; }
   else {
     const fin = d.finSem ? Math.max(0, d.finSem - Date.now()) : 0, dd = Math.floor(fin / 86400000), hh = Math.floor(fin % 86400000 / 3600000);
     if (rankTab === 'sem' && fin) s += `<p class="vv-p">⏳ La semana cierra en <b style="color:#f87171">${dd} d ${hh} h</b>: los mejores se llevan premio.</p>`;
@@ -2099,7 +2132,7 @@ function pintarRankPanel() {
     if (rankTab === 'duel') s += `<p class="vv-p" style="font-size:11px">Tu Elo: <b>${d.elo || 1000}</b>. Reta a alguien desde su marco.</p>`;
   }
   c.innerHTML = s;
-  c.querySelectorAll('[data-rt]').forEach(b => b.onclick = () => { rankTab = b.dataset.rt; pintarRankPanel(); });
+  c.querySelectorAll('[data-rt]').forEach(b => b.onclick = () => { rankTab = b.dataset.rt; if (rankTab === 'abismo') mandar({ t: 'temp3' }); pintarRankPanel(); });
 }
 // ── RECOMPENSA DIARIA (racha de 7 dias) ──
 // Panel lateral que se cierra solo: lo de hoy, la racha y lo que espera mañana.
@@ -2338,8 +2371,8 @@ function hablar() {
     $('npc-c').innerHTML = `<p><b style="color:#ffd84a">${CUEVA.nombre}</b> · mazmorra 3D para tu grupo (o solo). Salas con goblins, el Rey Goblin en su trono y un cofre para cada uno al final. Se adapta al nivel del más alto del grupo.</p>`
       + '<button class="btn" id="p-cueva" style="width:100%;margin:8px 0">Entrar a la cueva</button>'
       + `<hr style="border-color:var(--borde);margin:10px 0"><p><b style="color:#c4b5fd">🌌 ${ABISMO.nombre}</b> · islas flotantes donde la Luz y la Sombra se disputan el Núcleo (desde nivel ${ABISMO.nvMin}).</p>`
-      + (yo.faccion ? `<p style="font-size:12px">Tu facción: <b style="color:${FACCIONES[yo.faccion].color}">${FACCIONES[yo.faccion].titulo}</b></p><button class="btn" id="p-abismo" style="width:100%;margin:6px 0;background:linear-gradient(90deg,#7c3aed,#2563eb)">Ir al Abismo</button>`
-        : yo.nivel >= ABISMO.nvMin ? '<p style="font-size:12px">Elige tu facción (para siempre):</p><div style="display:flex;gap:6px;margin:6px 0"><button class="btn" id="p-luz" style="flex:1;background:#b8860b">☀ Luz</button><button class="btn" id="p-sombra" style="flex:1;background:#6b21a8">🌑 Sombra</button></div>'
+      + (yo.faccion ? `<p style="font-size:12px">Tu facción: <b style="color:${FACCIONES[yo.faccion].color}">${FACCIONES[yo.faccion].titulo}</b>${temp3 && temp3.debil === yo.faccion ? ' · ✨ Bendición del Éter (PA ×' + String(FACC_BONO).replace('.', ',') + ')' : ''}</p>${temp3 ? `<p style="font-size:11px;color:var(--txt2)">🏆 Temporada: tus PA ${fmtN(temp3.p)} · liga ${TEMP_ABISMO[temp3.tier] ? TEMP_ABISMO[temp3.tier].n : 'sin liga'} (ver en 🏆 Ranking → Abismo)</p>` : ''}<button class="btn" id="p-abismo" style="width:100%;margin:6px 0;background:linear-gradient(90deg,#7c3aed,#2563eb)">Ir al Abismo</button>`
+        : yo.nivel >= ABISMO.nvMin ? `<p style="font-size:12px">Elige tu facción (para siempre):</p><div style="display:flex;gap:6px;margin:6px 0"><button class="btn" id="p-luz" style="flex:1;background:#b8860b">☀ Luz${temp3 ? ` (${temp3.n.luz || 0})` : ''}${temp3 && temp3.debil === 'luz' ? ' ★' : ''}</button><button class="btn" id="p-sombra" style="flex:1;background:#6b21a8">🌑 Sombra${temp3 ? ` (${temp3.n.sombra || 0})` : ''}${temp3 && temp3.debil === 'sombra' ? ' ★' : ''}</button></div>${temp3 && temp3.debil ? `<p style="font-size:12px;color:#ffd84a">★ Los ${esc(FACCIONES[temp3.debil].titulo)} son menos: si te unes cobras <b>${fmtN(RECLUTA.oro * Math.max(1, Math.floor(yo.nivel / 10)))} oro, un objeto épico y ${RECLUTA.pa} PA</b>, y ganáis PA ×${String(FACC_BONO).replace('.', ',')} mientras lo seáis.</p>` : ''}`
         : `<p style="font-size:12px;color:var(--txt3)">Se abre a nivel ${ABISMO.nvMin}.</p>`)
       + '<p style="font-size:12px;color:var(--txt2)">Las demás mazmorras, la Torre y la banda siguen en el juego 2D con tu mismo personaje.</p><a class="btn sec" href="/mmo/" style="display:block;text-align:center;text-decoration:none">Ir al juego 2D</a>';
     $('p-cueva').onclick = () => { mandar({ t: 'cueva' }); cerrar('v-npc'); };
@@ -2662,7 +2695,7 @@ function pintarMisiones() {
   metaMision = null;
   if (enAbismo(P.x)) {
     const is = islaEn(P.x, P.z), fc = yo.faccion && FACCIONES[yo.faccion];
-    h = `<div class="q"><b>🌌 ${ABISMO.nombre}</b>${is && is.nombre ? is.nombre + ' · ' : ''}${fc ? `<span style="color:${fc.color}">${fc.titulo}</span>` : ''}${rangoHtml()}${asedioHtml()}<br><span style="font-size:11px">${santuario(P.x, P.z) ? '🛡 Santuario: aquí nadie pelea contra jugadores.' : 'Abate a la otra facción y a los élites para ganar Puntos del Abismo. Vuelve por el portal de tu bastión.'}</span></div>`;
+    h = `<div class="q"><b>🌌 ${ABISMO.nombre}</b>${is && is.nombre ? is.nombre + ' · ' : ''}${fc ? `<span style="color:${fc.color}">${fc.titulo}</span>` : ''}${temp3 && fc && temp3.debil === yo.faccion ? ' <span style="color:#ffd84a">✨ PA ×' + String(FACC_BONO).replace('.', ',') + '</span>' : ''}${rangoHtml()}${asedioHtml()}<br><span style="font-size:11px">${santuario(P.x, P.z) ? '🛡 Santuario: aquí nadie pelea contra jugadores.' : 'Abate a la otra facción y a los élites para ganar Puntos del Abismo. Vuelve por el portal de tu bastión.'}</span></div>`;
     c.style.display = 'block'; if (c._h !== h) { c.innerHTML = h; c._h = h; } faro.visible = false; return;
   }
   if (asedio && asedio.activo && yo.nivel >= ABISMO.nvMin && !enCueva(P.x)) h += `<div class="q"><b style="color:#fca5a5">⚔ Asedio del Núcleo</b> ${fmtT(asedio.fin - Date.now())} · entra al Abismo por el portal del pueblo</div>`;

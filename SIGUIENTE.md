@@ -2689,3 +2689,17 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
   linea de invasion y de tesoro cercano en el seguimiento, `data-entregar`.
 - world.js `procesarLogin`: regalo de bienvenida si `L.d` tiene 3+ dias
   (400 x min(dias,7) x multLogin oro, 5 pociones, objeto raro/epico) → `vuelta`.
+
+### Equilibrio de facciones y Temporada del Abismo (23-oct-2026, `?v=277`)
+
+- functions/mmo/temporada.js (mixin Temporada), storage `facc`: miembros por
+  faccion (se cuentan una vez con storage.list), PA de la temporada por faccion
+  y por jugador, asedios ganados e historial de 4 temporadas.
+- `faccionDebil(n)` en mmo/js/abismo3d.js: 2 miembros menos o la otra la supera
+  en un 50 %. `multPA`: x1,5 (debil) o x2 (inferioridad 2 a 1 en el Abismo).
+  Sin cambios de estadisticas (el PvP sigue justo).
+- Puntuacion: PA / raiz(participantes) + 100 por asedio ganado.
+- Cierre mensual (`temporadaA`, tick3d cada 60 s y al entrar): `cobrarTemporada`
+  paga por liga (`TEMP_ABISMO`), +50 % si gano su faccion, podio. c.tempA.
+- Logros tempOro, tempGana, tempTop. Cliente: pestaña Abismo del ranking
+  (`htmlTemp`), ventana `mostrarTempFin`, portal con recuento y bono, HUD.

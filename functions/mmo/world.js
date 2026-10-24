@@ -28,6 +28,7 @@ import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery, tg, getSolPr
 import { MMO_URL } from '../api/telegram-bot.js';
 import { Cueva3D } from './cueva3d.js';
 import { Eventos3D } from './eventos3d.js';
+import { Temporada } from './temporada.js';
 import { rangoDe } from '../../mmo/js/abismo3d.js';
 import { Combate } from './combate.js';
 import { Social, pub } from './social.js';
@@ -162,6 +163,8 @@ export class MmoWorld {
       this.primeros = (await this.state.storage.get('primeros')) || {};
       // Dueño de la Fortaleza del Nucleo (asedio del Abismo, mundo3d.js).
       this.nucleo = (await this.state.storage.get('nucleo')) || { dueno: null, desde: 0 };
+      // Miembros de cada faccion y Temporada del Abismo (temporada.js).
+      await this.cargarFacc();
       // Avisos de vuelta a la hora habitual de cada uno (retencion.js).
       await this.asegurarAlarma();
       // Los personajes de prueba de las verificaciones en produccion del
@@ -514,6 +517,7 @@ export class MmoWorld {
     this.porUid.set(uid, s);
     const login = this.procesarLogin(s);
     if (this.cobrarPasePendiente) this.cobrarPasePendiente(s);
+    this.temporadaA(); this.cobrarTemporada(s);   // premios de la temporada del Abismo que cerro
     // XP de descanso por el tiempo fuera (c.salida se pone al guardar).
     const salidaAntes = c.salida || 0;
     let descansado = 0;
@@ -2132,7 +2136,7 @@ export class MmoWorld {
     const duel = ((await this.state.storage.get('rankDuelo')) || []).slice(0, 10).map(x => ({ n: x.n, e: x.e, g: x.g, yo: x.uid === s.c.uid }));
     const torre = (await this.topTorre()).slice(0, 10).map(([uid, x]) => ({ n: x.n, p: x.p, yo: uid === s.c.uid }));
     const herm = (await this.topHerm()).slice(0, 5).map(([id, x]) => ({ n: x.n, p: x.p, m: x.m, yo: id === s.c.herm }));
-    this.enviar(s, { t: 'ranking', r: r.slice(0, 20).map(x => ({ n: x.n, lv: x.lv, k: x.k, yo: x.uid === s.c.uid })), sem, des, dsem, duel, elo: s.c.elo || 0, torre, tmax: this.torreSem(s.c).max, herm, af: afijosSemana(), finSem: Date.parse(this.rs.sem + 'T00:00:00Z') + 7 * 86400000 });
+    this.enviar(s, { t: 'ranking', r: r.slice(0, 20).map(x => ({ n: x.n, lv: x.lv, k: x.k, yo: x.uid === s.c.uid })), sem, des, dsem, duel, elo: s.c.elo || 0, torre, tmax: this.torreSem(s.c).max, herm, temp: s.c.faccion || s.c.nivel >= 20 ? this.infoTemp(s.c) : null, af: afijosSemana(), finSem: Date.parse(this.rs.sem + 'T00:00:00Z') + 7 * 86400000 });
   }
 
   // Ranking semanal de Desafios: el mejor +k vencido esta semana (con los
@@ -2617,6 +2621,8 @@ export class MmoWorld {
 Object.assign(MmoWorld.prototype, Combate);
 // Raros, invasiones y cofres del mundo 3D: functions/mmo/eventos3d.js
 Object.assign(MmoWorld.prototype, Eventos3D);
+// Equilibrio de facciones y Temporada del Abismo: functions/mmo/temporada.js
+Object.assign(MmoWorld.prototype, Temporada);
 // Grupos y chat por canales: functions/mmo/social.js
 Object.assign(MmoWorld.prototype, Social);
 // Mazmorras instanciadas con jefes de guion: functions/mmo/mazmorras.js
