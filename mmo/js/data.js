@@ -492,6 +492,12 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 53, fecha: '24 oct 2026', items: [
+    'ORIGINS va mejor en móviles modestos: empieza en calidad Baja en los Android flojos, acorta la vista sola si hace falta y el bosque lejano pesa menos. Además ya puedes acercar y alejar la cámara pellizcando con dos dedos y tocar cerca de un monstruo basta para elegirlo.',
+    'Más fácil empezar: entras como invitado sin escribir nombre, al elegir clase ves para qué sirve cada una, y los avisos ya no te piden pulsar teclas si juegas en el móvil.',
+    'CLASSIC: el teclado del móvil ya no tapa el chat, el oro se ve en el HUD del móvil, los cofres dan el doble de oro y más equipo, y nuevo «Reforjar» para gastar oro a nivel 60. En grupo, «Ir con él» te lleva gratis a la zona de un compañero.',
+    'Cinco logros nuevos de constancia (14, 30 y 60 días jugados; 10 y 30 días con las diarias completas). La app instalada se actualiza sola al volver si salió una versión nueva.',
+  ] },
   { n: 52, fecha: '24 oct 2026', items: [
     'Arreglos tras revisar todo lo de esta noche: la reconexión ya no te echa con «tu cuenta ya está entrando» si el servidor tarda, planear desde el borde de una isla del Abismo ya no te mata, la ventana de Amigos de ORIGINS se ve bien en el móvil y la oferta de primera compra con Stars vuelve a funcionar.',
   ] },
@@ -988,6 +994,9 @@ export function textoConjunto(cj) {
 }
 export function iconoItem(it) { const r = RANURAS[it.s]; return r ? r.iconos[tierItem(it.nv)] : 'I_Chest01'; }
 export function precioVenta(it) { return Math.round((20 + it.nv * 6) * Math.pow(RAREZAS[it.r].mult, 2)); }
+// Reforjar (Nv 60, junto a la Artesana): 5 ventas de la pieza, +25% por cada
+// reforja anterior de esa misma pieza (tope x6). Un gasto de oro que se repite.
+export function costoReforja(it) { return Math.round(precioVenta(it) * 5 * (1 + 0.25 * Math.min(20, it.rf || 0))); }
 export function bonoEquipo(eq) {
   const t = { hp: 0, atk: 0, def: 0, crit: 0 };
   if (!eq) return t;
@@ -1953,6 +1962,15 @@ MASCOTAS.pececito = { nombre: 'Pececito Dorado', hoja: 'pez', alto: 22, nv: 1, p
 LOGROS.push(
   { id: 'pase10', titulo: 'Aventurero del Pase', desc: 'Llega al nivel 10 del pase de temporada', oro: 2000, cond: c => (c.paseMax || 0) >= 10 },
   { id: 'pase20', titulo: 'Leyenda del Pase',    desc: 'Completa los 20 niveles del pase de temporada', oro: 5000, cond: c => (c.paseMax || 0) >= 20 },
+);
+// Constancia mas alla de la racha de 7: dias distintos jugados (c.login.total,
+// procesarLogin) y dias con las 3 diarias hechas (c.diasCompletos, bonoTareas).
+LOGROS.push(
+  { id: 'dias14',      titulo: 'Vecino del Pueblo',      desc: 'Entra 14 días distintos',        oro: 4000,  cond: c => ((c.login || {}).total || 0) >= 14 },
+  { id: 'dias30',      titulo: 'Duende de Toda la Vida', desc: 'Entra 30 días distintos',        oro: 10000, cond: c => ((c.login || {}).total || 0) >= 30 },
+  { id: 'dias60',      titulo: 'Duende Eterno',          desc: 'Entra 60 días distintos',        oro: 25000, cond: c => ((c.login || {}).total || 0) >= 60 },
+  { id: 'completos10', titulo: 'Cumplidor',              desc: 'Completa las 3 diarias 10 días', oro: 3000,  cond: c => (c.diasCompletos || 0) >= 10 },
+  { id: 'completos30', titulo: 'Incansable',             desc: 'Completa las 3 diarias 30 días', oro: 9000,  cond: c => (c.diasCompletos || 0) >= 30 },
 );
 
 // ── TORRE DEL DUENDE ── (functions/mmo/torre.js)

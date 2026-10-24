@@ -264,8 +264,11 @@ export const Dios = {
         return;   // todos (tambien el dueño) quedan desconectados
       }
       case 'subirCopia': {
+        const u = this.juntarSubida(s, m);
+        if (!u) return;   // aun faltan trozos del archivo
+        if (u.error) return this.no(s, u.error);
         this.registrarMod(s, 'restaura el mundo desde un archivo subido');
-        const r = await this.restaurarSubida(m.b64);
+        const r = await this.restaurarSubida(u.b64);
         if (!r.ok) return this.no(s, r.error);
         return;
       }

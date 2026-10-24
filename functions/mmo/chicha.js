@@ -89,8 +89,7 @@ export const Chicha = {
     if (b.motivo) r.motivo = String(b.motivo).slice(0, 200);
     // Rechazado sin ser trampa: puede volver a reclamarlo.
     if (r.estado === 'rechazado' && !b.trampa) {
-      const s = this.porUid.get(r.uid);
-      const c = s ? s.c : await this.state.storage.get('c:' + r.uid);
+      const { s, c } = await this.pjDe(r.uid);
       if (c && c.chicha) {
         c.chicha.rec = (c.chicha.rec || []).filter(x => x !== r.meta);
         if (s) { s.sucio = true; this.actualizarYo(s); } else await this.state.storage.put('c:' + r.uid, c);

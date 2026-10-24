@@ -40,6 +40,11 @@ export const Cueva3D = {
     if (!inst) {
       const ahora = Date.now();
       if (ahora - (s.c.cuevaCreadaT || 0) < 60000) return this.no(s, 'Espera un minuto antes de abrir otra cueva.');
+      // Con el tope lleno se libera la vacia mas antigua: si no, crear y abandonar cuevas en bucle las agotaba
+      if (cuevas.size >= 40) {
+        const vieja = [...cuevas.values()].filter(i => !this.dentroCueva(i).length).sort((a, b) => (a.vacia || a.creada) - (b.vacia || b.creada))[0];
+        if (vieja) { const W = this.iniciar3d(); for (const id of vieja.mons) W.mons.delete(id); cuevas.delete(vieja.id); }
+      }
       if (cuevas.size >= 40) return this.no(s, 'Las cuevas están llenas: prueba en un momento.');
       s.c.cuevaCreadaT = ahora;
       const del = g ? this.sesionesGrupo(g) : [s];

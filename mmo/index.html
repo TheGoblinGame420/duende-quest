@@ -4,7 +4,7 @@
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <title>$DUENDE CLASSIC · MMORPG 2D gratis en el navegador</title>
 <meta name="description" content="Juego RPG online gratis en el navegador o en Telegram, sin descargas: 4 clases, grupos, mazmorras con jefes y 10 zonas hasta el nivel 60. Hecho en Perú.">
 <meta name="robots" content="index,follow">
@@ -124,7 +124,9 @@ a{color:var(--cian);}
 #monedero{left:8px;top:64px;font-size:7px;color:var(--oro);display:flex;align-items:center;gap:5px;background:var(--panel);border:1px solid var(--borde);border-radius:8px;padding:3px 7px;}
 #monedero img{width:12px;height:12px;image-rendering:pixelated;}
 #monedero .mton{color:var(--cian);cursor:pointer;margin-left:6px;}
-#hud.estrecho #monedero{display:none;}
+/* movil: el oro va abajo a la derecha (el chat ocupa el 70% izquierdo); el mTON sigue en el boton del zafiro */
+#hud.estrecho #monedero{display:flex;left:auto;right:8px;top:auto;bottom:12px;font-size:7px;padding:2px 6px;} #hud.estrecho #monedero .mton{display:none;}
+body:not(.tactil) #hud.estrecho #monedero{bottom:52px;}
 .req{display:flex;justify-content:space-between;gap:8px;font-family:var(--sans);font-size:13px;line-height:1.4;padding:7px 4px;border-bottom:1px solid var(--borde);}
 .req .si{color:var(--ok);font-weight:600;} .req .no{color:#f87171;font-weight:600;}
 .saldo{text-align:center;margin:6px 0 12px;}
@@ -378,6 +380,8 @@ body.tg .solo-web{display:none;}
 .tc.chico{width:40px;height:40px;font-size:14px;}
 #t-izq,#t-der{display:flex;gap:8px;align-items:center;}
 body.tactil #tactil{display:flex;}
+/* escribiendo en el chat: los controles dejan su alto al teclado */
+body.escribiendo #tactil{display:none!important;}
 body.tactil #t-fila1 #consumibles{position:static;display:flex;gap:5px;}
 body.tactil #t-fila1 .pw{width:40px;height:40px;}
 body.tactil #t-fila1 .pw img{width:26px;height:26px;}
@@ -550,12 +554,12 @@ input.nombre:focus{border-color:var(--pri-txt);}
         <button class="bt" id="b-mas" title="Más" aria-label="Más">⋯</button>
       </div>
       <div class="caja" id="jefe-bar"><div class="n" id="jefe-n">JEFE</div><div class="barra"><i></i></div></div>
-      <div class="caja" id="avisos"></div>
-      <div class="caja" id="errores"></div>
+      <div class="caja" id="avisos" role="status" aria-live="polite"></div>
+      <div class="caja" id="errores" role="status" aria-live="polite"></div>
       <div class="caja" id="emotes"></div>
       <div class="caja" id="consejo"></div>
       <button class="caja bt" id="presumir">Compartir logro</button>
-      <div class="caja" id="chat"><div id="chat-log"></div><div id="frases"></div><input id="chat-in" maxlength="120" placeholder="Escribe y pulsa Enter…" autocomplete="off"></div>
+      <div class="caja" id="chat"><div id="chat-log"></div><div id="frases"></div><input id="chat-in" maxlength="120" placeholder="Escribe y pulsa Enter…" autocomplete="off" enterkeyhint="send"></div>
       <button class="caja btn" id="interactuar">E · ENTRAR</button>
       <div class="caja" id="lanzar"><div class="barra"><i style="transform:scaleX(0)"></i><span id="lanzar-t"></span></div></div>
       <div class="caja barra" id="bxp"><i style="transform:scaleX(0)"></i><span id="h-xp"></span></div>
@@ -570,8 +574,8 @@ input.nombre:focus{border-color:var(--pri-txt);}
     </div>
     <div class="tf">
       <div id="t-izq">
-        <button class="tc" id="t-l">◀</button>
-        <button class="tc" id="t-r">▶</button>
+        <button class="tc" id="t-l" aria-label="Izquierda">◀</button>
+        <button class="tc" id="t-r" aria-label="Derecha">▶</button>
       </div>
       <div id="t-der">
         <button class="tc" id="t-dash" aria-label="Esquivar"><svg class="ico-tc" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h11"/><path d="M3 12h15"/><path d="M3 16h9"/><path d="M16 6l5 6-5 6"/></svg></button>
@@ -592,7 +596,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
       <li>Gratis</li><li>Sin descargas</li><li>Telegram y web</li>
     </ul>
     <div id="inicio-invitado">
-      <input class="nombre" id="in-nombre" maxlength="16" placeholder="Nombre de tu duende" aria-label="Nombre de tu duende">
+      <input class="nombre" id="in-nombre" maxlength="16" placeholder="Nombre de tu duende (opcional)" aria-label="Nombre de tu duende (opcional)">
       <button class="btn btn-grande" id="b-jugar">Entrar como invitado</button>
       <p class="nota">Como invitado tu personaje vive solo en este navegador. Con una cuenta se guarda en la nube y lo recuperas desde cualquier dispositivo.</p>
       <a class="btn btn-grande bt3d-grande" href="/mundo/" style="display:block;margin-top:8px;text-decoration:none;text-align:center">🌌 NUEVO: $DUENDE ORIGINS (3D)<small style="display:block;font-size:11px;font-weight:600;opacity:.9">Vuela con alas · PvP de facciones · Asedios · tu mismo duende</small></a>
@@ -924,7 +928,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=284"></script>
+<script type="module" src="/mmo/js/client.js?v=285"></script>
 <div id="nuevo3d" role="dialog" aria-label="Nuevo mundo 3D">
   <video src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" muted loop playsinline preload="none"></video>
   <div class="t">🌌 NUEVO: $DUENDE ORIGINS, el mundo abierto en 3D</div>

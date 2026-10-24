@@ -13,9 +13,11 @@ import { HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_N
 import { pub } from './social.js';
 
 const INV_MS = 60000;
-// Letras, numeros y espacios; 3-20 caracteres.
+// Letras latinas (con tildes y ñ), cifras y espacios; 3-20 caracteres. Como
+// limpiarNombre: el cirilico o el griego identicos a los latinos servian para
+// imitar a otra hermandad (la clave hn: era distinta y no chocaba).
 export function limpiarNombreHerm(s) {
-  const n = String(s || '').normalize('NFC').replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 20);
+  const n = String(s || '').normalize('NFC').replace(/[^A-Za-z0-9À-ÖØ-öø-ÿ ]/g, '').replace(/\s+/g, ' ').trim().slice(0, 20);
   return n.length >= 3 ? n : '';
 }
 
@@ -76,16 +78,28 @@ export const Hermandades = {
     if (c.oro < HERM_COSTO) return this.no(s, `Fundar una hermandad cuesta ${HERM_COSTO.toLocaleString('es', { useGrouping: 'always' })} oro.`);
     const nombre = limpiarNombreHerm(m.nombre);
     if (!nombre) return this.no(s, 'El nombre debe tener de 3 a 20 letras o números.');
+    // Los nombres que imitan al equipo quedan reservados, igual que en los personajes.
+    if (!this.esDios(s) && this.nombreReservado(nombre)) return this.no(s, 'Ese nombre está reservado.');
     const clave = 'hn:' + nombre.toLowerCase();
-    if (await this.state.storage.get(clave)) return this.no(s, 'Ya existe una hermandad con ese nombre.');
-    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    const h = { id, nombre, motd: '', creada: Date.now(), miembros: { [c.uid]: { n: c.nombre, lv: c.nivel, cl: c.clase || '', r: 'lider', desde: Date.now() } } };
-    await this.state.storage.put(clave, id);
-    await this.guardarHerm(h);
-    this.herms = this.herms || new Map();
-    this.herms.set(id, h);
-    c.oro -= HERM_COSTO;
-    c.herm = id;
+    // Cerrojo: un doble toque (o dos peticiones seguidas) no cobra dos veces
+    // ni deja una hermandad huerfana; tampoco dos jugadores el mismo nombre.
+    this.hnFundando = this.hnFundando || new Set();
+    if (s.fundando || this.hnFundando.has(clave)) return;
+    s.fundando = true; this.hnFundando.add(clave);
+    let h, id;
+    try {
+      if (await this.state.storage.get(clave)) return this.no(s, 'Ya existe una hermandad con ese nombre.');
+      // Durante la espera pudo cambiar: se repite antes de cobrar.
+      if (c.herm || c.oro < HERM_COSTO || s.cerrado) return;
+      id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      h = { id, nombre, motd: '', creada: Date.now(), miembros: { [c.uid]: { n: c.nombre, lv: c.nivel, cl: c.clase || '', r: 'lider', desde: Date.now() } } };
+      c.oro -= HERM_COSTO;
+      c.herm = id;
+      this.herms = this.herms || new Map();
+      this.herms.set(id, h);
+      await this.state.storage.put(clave, id);
+      await this.guardarHerm(h);
+    } finally { s.fundando = false; this.hnFundando.delete(clave); }
     await this.guardar(s);
     this.enviar(s, { t: 'herm', h: this.infoHerm(h) });
     this.enviar(s, { t: 'toast', m: `Hermandad <${nombre}> fundada. Invita a otros desde su marco o desde la lista de jugadores.`, ok: true });
@@ -103,6 +117,12 @@ export const Hermandades = {
     const t = this.sesiones.get(m.p | 0);
     if (!t || !t.c || t === s) return;
     if (t.c.herm) return this.no(s, `${t.c.nombre} ya está en una hermandad.`);
+    // No se pisa la invitacion pendiente de otra hermandad.
+    if (t.invHerm && t.invHerm.hasta > Date.now() && t.invHerm.id !== h.id) return this.no(s, `${t.c.nombre} ya tiene una invitación pendiente.`);
+    // Una invitacion cada 10 s a la misma persona (si no, se le inundaba de ventanas).
+    s.invHT = s.invHT || {};
+    if (Date.now() - (s.invHT[t.id] || 0) < 10000) return this.no(s, 'Espera un poco antes de volver a invitarlo.');
+    s.invHT[t.id] = Date.now();
     t.invHerm = { id: h.id, de: s.c.nombre, hasta: Date.now() + INV_MS };
     this.enviar(t, { t: 'hermInv', nombre: h.nombre, de: s.c.nombre, ms: INV_MS });
     this.enviar(s, { t: 'toast', m: `📨 Invitaste a ${t.c.nombre} a <${h.nombre}>.` });

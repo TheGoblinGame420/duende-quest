@@ -22,16 +22,15 @@ export const GRUPO_MAX = 5;
 export const maxGrupo = g => (g && g.banda ? BANDA_MAX : GRUPO_MAX);
 // Identificador publico de un personaje: el uid real es "tg:<id de
 // Telegram>" o el de la cuenta web, y no debe llegar a otros jugadores.
-// FNV-1a de 32 bits con una sal al azar de este arranque del servidor: sin
-// la sal no se puede probar ids de Telegram uno a uno hasta dar con el. Los
-// clientes no lo guardan, asi que cambiar en cada despliegue no molesta.
-let SAL = '';
+// Un id al azar por uid, guardado en memoria durante este arranque del
+// servidor. Antes era un hash FNV con sal, pero se podia invertir partiendo
+// del pid propio y sacar el id de Telegram de otros. Los clientes no lo
+// guardan, asi que cambiar en cada despliegue no molesta.
+const PUB = new Map();
 export function pub(uid) {
-  if (!SAL) SAL = Math.random().toString(36).slice(2) + Date.now().toString(36);
-  let h = 0x811c9dc5;
-  const t = SAL + ':' + uid;
-  for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
-  return h.toString(36);
+  let p = PUB.get(uid);
+  if (!p) { p = crypto.randomUUID().replace(/-/g, '').slice(0, 12); PUB.set(uid, p); }
+  return p;
 }
 const INVITACION_MS = 60000;
 export const CONTACTOS_MAX = 50;      // amigos en la lista de cada personaje
@@ -60,6 +59,10 @@ export const Social = {
     if (g && g.uids.length >= maxGrupo(g)) return this.no(s, g.banda ? `La banda ya está llena (${BANDA_MAX}).` : `El grupo ya está lleno (${GRUPO_MAX}). El líder puede convertirlo en banda (hasta ${BANDA_MAX}).`);
     if (t.gid) return this.no(s, `${t.c.nombre} ya está en un grupo.`);
     if (t.invitacion && t.invitacion.hasta > Date.now() && t.invitacion.de !== s.c.uid) return this.no(s, `${t.c.nombre} ya tiene una invitación pendiente.`);
+    // Una invitacion cada 10 s a la misma persona (si no, se le inundaba de ventanas).
+    s.invT = s.invT || {};
+    if (Date.now() - (s.invT[t.id] || 0) < 10000) return this.no(s, 'Espera un poco antes de volver a invitarlo.');
+    s.invT[t.id] = Date.now();
     t.invitacion = { de: s.c.uid, hasta: Date.now() + INVITACION_MS };
     this.enviar(t, { t: 'invitacion', de: s.c.nombre, nv: s.c.nivel, cl: s.c.clase || '', ms: INVITACION_MS });
     this.enviar(s, { t: 'toast', m: `📨 Invitaste a ${t.c.nombre} a tu grupo.` });
@@ -75,6 +78,9 @@ export const Social = {
     if (!lider || !lider.c) return this.no(s, 'Quien te invitó ya no está conectado.');
     if (s.gid) return this.no(s, 'Ya estás en un grupo.');
     let g = this.grupoDe(lider);
+    // Una invitacion vieja de quien luego se unio al grupo de otro no vale:
+    // solo el lider mete gente (y dentro de un Desafio, solo a quien el elige).
+    if (g && g.lider !== inv.de) return this.no(s, 'Quien te invitó ya no es el líder de su grupo.');
     if (!g) {
       g = { id: this.sigGrupo++, lider: lider.c.uid, uids: [lider.c.uid] };
       this.grupos.set(g.id, g);

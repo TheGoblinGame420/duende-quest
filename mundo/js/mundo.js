@@ -14,25 +14,27 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES } from '/mmo/js/data.js?v=284';
-import { iniciarVentanas } from './ventanas.js?v=284';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=284';
-import { crearMusica } from './musica.js?v=284';
-import { construirCueva } from './cueva.js?v=284';
-import { TAPA, transparentar } from './tapa.js?v=284';
-import { construirAbismo } from './abismo.js?v=284';
-import { crearParticulas } from './particulas.js?v=284';
-import { cargarKenney, piezasCasa } from './kenney.js?v=284';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES } from '/mmo/js/data.js?v=285';
+import { iniciarVentanas } from './ventanas.js?v=285';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=285';
+import { crearMusica } from './musica.js?v=285';
+import { construirCueva } from './cueva.js?v=285';
+import { TAPA, transparentar } from './tapa.js?v=285';
+import { construirAbismo } from './abismo.js?v=285';
+import { crearParticulas } from './particulas.js?v=285';
+import { cargarKenney, piezasCasa } from './kenney.js?v=285';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=284';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=284';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=285';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=285';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
 const $ = id => document.getElementById(id);
 const MOVIL = matchMedia('(pointer: coarse)').matches || /Android|iPhone|iPad/i.test(navigator.userAgent);
 if (MOVIL) document.body.classList.add('movil');
+// Texto de ayuda segun el control: tecla en PC, boton tactil en movil.
+const K = (pc, tactil) => MOVIL ? tactil : pc;
 const TG = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? window.Telegram.WebApp : null;
 const TGV = v => !!(TG && TG.isVersionAtLeast && TG.isVersionAtLeast(v));
 try { localStorage.setItem('dq_visto3d', '1'); } catch (e) {}
@@ -93,7 +95,10 @@ const CALIDADES = {
   media: { px: 1,    lejos: 170, aa: false, sombras: false },
   alta:  { px: 1.5,  lejos: 230, aa: true,  sombras: true, post: true },
 };
-let CAL = MOVIL ? 'media' : 'alta';
+// Android flojo (poca memoria o pocos nucleos): empieza en baja. En iOS
+// hardwareConcurrency no es fiable, asi que solo se mira Android.
+const POBRE = /Android/i.test(navigator.userAgent) && ((navigator.deviceMemory || 4) <= 3 || (navigator.hardwareConcurrency || 8) <= 4);
+let CAL = POBRE ? 'baja' : MOVIL ? 'media' : 'alta';
 try { const g = localStorage.getItem('dq3_calidad'); if (CALIDADES[g]) CAL = g; } catch (e) {}
 const Q = CALIDADES[CAL];
 const render = new THREE.WebGLRenderer({ canvas: lienzo, antialias: Q.aa, powerPreference: 'high-performance' });
@@ -143,6 +148,9 @@ function PRUEBA_SIN_POST() { return /[?&]sinPost=1/.test(location.search); }
 // Resolucion dinamica: si el movil no llega a ~40 fps baja la resolucion
 // (hasta un 60%) y la sube cuando sobra.
 let pxAct = Math.min(devicePixelRatio || 1, Q.px), dtProm = 16, resT = 0;
+// Distancia de vision dinamica: con la resolucion ya al minimo y aun lento,
+// se acorta la niebla (cullFlora y las figuras usan fog.far) y se recupera sola.
+let lejosDin = Q.lejos, avisoCal = false;
 function resolucionDinamica(ms) {
   if (document.hidden || ms > 200) return;
   dtProm += (ms - dtProm) * 0.05; resT += ms;
@@ -151,6 +159,12 @@ function resolucionDinamica(ms) {
   const max = Math.min(devicePixelRatio || 1, Q.px), min = max * 0.6;
   // Ya en el minimo y aun lento: fuera el post-proceso (es lo mas caro).
   if (composer && dtProm > 28 && pxAct <= min + 0.01) { composer = null; console.info('[3D] post-proceso desactivado por rendimiento'); return; }
+  if (dtProm > 30 && pxAct <= min + 0.01 && lejosDin > 95) {
+    lejosDin -= 20;
+    if (!avisoCal && CAL !== 'baja') { avisoCal = true; aviso('El juego va justo: acortamos la vista. En Controles (?) puedes poner la calidad Baja.'); }
+    return;
+  }
+  if (dtProm < 18 && lejosDin < Q.lejos) lejosDin = Math.min(Q.lejos, lejosDin + 10);
   const n = dtProm > 25 ? Math.max(min, pxAct - 0.1) : dtProm < 15 ? Math.min(max, pxAct + 0.05) : pxAct;
   if (Math.abs(n - pxAct) < 0.01) return;
   pxAct = n; render.setPixelRatio(n); if (composer) composer.setPixelRatio(n); ajustar();
@@ -204,7 +218,7 @@ function ambiente(z) {
   if (z === 'cueva') { hemiBase = 0.55; sol.intensity = 0.3; }
   hemi.color.copy(cieloObj).lerp(BLANCO_H, 0.55);
   hemi.groundColor.set(SUELO[z] || '#3a3040').multiplyScalar(0.5);
-  const lejos = Q.lejos;
+  const lejos = lejosDin;
   nieblaObj = z === 'eter' ? [90, 420] : z === 'cueva' ? [6, 55] : cl === 'niebla' ? [6, 75] : cl === 'arena' ? [5, 60] : cl === 'lluvia' || cl === 'tormenta' ? [25, lejos * 0.6] : cl === 'nieve' ? [20, lejos * 0.55] : [40, lejos];
   farolMat.color.set(nocheK > 0.45 ? '#ffd27a' : '#7a6a48');
   if (cl !== climaAct) {
@@ -413,7 +427,7 @@ function choqueTerreno(tx, ty, tz, cx, cy, cz) {
 function crearFlora() {
   const tipos = {};
   const campos = campamentos(MAPAS, MONSTRUOS);
-  const paso = MOVIL ? 9 : 7;
+  const paso = CAL === 'baja' ? 11 : MOVIL ? 9 : 7;   // en baja, ~33% menos arboles y rocas
   for (let x = -600; x <= 600; x += paso) for (let z = -600; z <= 600; z += paso) {
     const jx = x + (hashR(x, z, 1) - 0.5) * paso, jz = z + (hashR(x, z, 2) - 0.5) * paso;
     const zona = zonaEn(jx, jz);
@@ -486,8 +500,11 @@ function crearFlora() {
       destino = 'lejos';
     }
     for (const [ck, l] of porCelda) piezas[tipo].forEach(([geo, colorFijo, alto], pi) => {
-      const mk = tipo + pi;
-      const mt = matsF[mk] || (matsF[mk] = transparentar(mat.clone()));
+      // Lejos sin el discard de la tapa (early-Z completo): con LOD_D >= 100 esas
+      // celdas nunca quedan entre la camara (max 26 m) y el duende. En baja si.
+      const sinTapa = destino === 'lejos' && CAL !== 'baja';
+      const mk = tipo + pi + (sinTapa ? 'L' : '');
+      const mt = matsF[mk] || (matsF[mk] = sinTapa ? mat.clone() : transparentar(mat.clone()));
       if (tipo === 'cristal' || tipo === 'magico') mt.emissive = C(l[0].color).multiplyScalar(0.35);
       const im = new THREE.InstancedMesh(geo, mt, l.length);
       l.forEach((t, i) => {
@@ -1134,11 +1151,13 @@ function error(txt, red) { fatal = true; errorRed = !!red; $('error-txt').textCo
 setInterval(() => mandar({ t: 'ping', ts: Date.now() }), 20000);
 
 // ── MENSAJES DEL SERVIDOR ──
+let loginPend3 = null;   // premio diario guardado hasta que el jugador nuevo elija clase
 function recibir(m) {
   switch (m.t) {
     case 'bienvenido':
       miId = m.id; yo = m.yo; reintentos = 0;
-      if (soyInvitado) setTimeout(avisoInvitado, 9000);
+      // Se guarda el nombre final (el elegido o el que puso el servidor): la proxima vez entra directo.
+      if (soyInvitado) { setTimeout(avisoInvitado, 9000); try { localStorage.setItem('dq_mmo_nombre', yo.nombre); } catch (e) {} }
       $('carga').style.display = 'none';
       cerrar('v-inicio');
       pintarHud();
@@ -1167,6 +1186,7 @@ function recibir(m) {
       if (yo.muerto && !(antes && antes.muerto)) morir();
       if (!yo.muerto) { cerrar('v-muerte'); P.muerto = false; }
       if (yo.clase) cerrar('v-clase');
+      if (yo.clase && loginPend3) { const lp = loginPend3; loginPend3 = null; setTimeout(() => mostrarDiario(lp), 900); }
       pintarHud(); marcaPase();
       refrescarVentanas(true);
       break;
@@ -1200,7 +1220,7 @@ function recibir(m) {
       if (m.t === 'snap3' && Math.hypot(m.x - P.x, m.z - P.z) < 4) { P.corrX = m.x - P.x; P.corrZ = m.z - P.z; P.vx *= 0.5; P.vz *= 0.5; break; }
       P.x = m.x; P.z = m.z; P.y = (m.t === 'snap3' && P.vuela) ? Math.max(P.y, alturaEn(m.x, m.z) + 0.5) : alturaEn(P.x, P.z); P.corrX = P.corrZ = 0; P.vx = P.vz = 0;
       if (m.t === 'tp3' && !m.carga) { if (P.vuela) volar(false); P.vy = 0; P.planea = false; camReal = camDist; caidaEnviada = false; }
-      if (m.t === 'tp3' && m.abismo !== undefined) { zonaActual = ''; objetivo = 0; autoAtk = false; pintarBarra(); if (m.abismo) aviso('🌌 Entre las islas solo se pasa volando (V) o planeando (Espacio). ¡No caigas al vacío!', 'ok'); }
+      if (m.t === 'tp3' && m.abismo !== undefined) { zonaActual = ''; objetivo = 0; autoAtk = false; pintarBarra(); if (m.abismo) aviso('🌌 Entre las islas solo se pasa volando (' + K('V', 'VOLAR') + ') o planeando (' + K('mantén Espacio', 'mantén SALTO') + '). ¡No caigas al vacío!', 'ok'); }
       if (m.t === 'tp3' && m.cueva !== undefined) {
         cuevaInfo = m.cueva;
         if (cueva) { cueva.cofre.visible = !!(m.cueva && m.cueva.hecha); cueva.tapa.rotation.x = 0; }
@@ -1225,7 +1245,7 @@ function recibir(m) {
       if (m.xp) numero(P.x, P.y + 2.6, P.z, '+' + m.xp + ' XP', '#c084fc');
       if (m.oro) { numero(P.x + 0.6, P.y + 2.2, P.z, '+' + m.oro + ' oro', '#ffd84a'); sfxK('monedas', 0.3); }
       if (m.item) vib('success');
-      if (m.item) aviso('Botín: ' + (m.item.nombre || 'equipo nuevo') + ' (pulsa I para verlo)', 'ok');
+      if (m.item) aviso('Botín: ' + (m.item.nombre || 'equipo nuevo') + ' (' + K('pulsa I', 'toca 🎒') + ' para verlo)', 'ok');
       break;
     case 'lv': if (m.p === miId) { aviso('¡Subiste al nivel ' + m.lv + '!', 'ok'); numero(P.x, P.y + 3, P.z, 'NIVEL ' + m.lv, '#ffe600', true); subiNivel(m.lv); } else { const o = otros.get(m.p); if (o) o.lv = m.lv; } break;
     case 'toast': aviso(m.m, m.ok ? 'ok' : ''); break;
@@ -1235,7 +1255,7 @@ function recibir(m) {
       if (m.m === 'Fuera de alcance.') { if (performance.now() - avisoAlcT < 3000) break; avisoAlcT = performance.now(); }
       aviso(m.m, 'err'); break;
     case 'amigos': if (m.ref) refAmigo = m.ref; break;
-    case 'login': mostrarDiario(m); break;
+    case 'login': if (yo && yo.clase) mostrarDiario(m); else loginPend3 = m; break;
     case 'tareas': if (yo) { yo.tareas = m; pintarMisiones(); } break;
     case 'mae': if (yo) { yo.mae = m.n; aviso(`⭐ ¡Maestría ${m.n}!`, 'ok'); numero(P.x, P.y + 3, P.z, 'MAESTRÍA ' + m.n, '#ffd84a', true); subiNivel(0); pintarHud(); } break;
     case 'herm': hermInfo = m.h; if (yo) yo.herm = m.h ? m.h.id : null; pintarHerm(); break;
@@ -1254,13 +1274,13 @@ function recibir(m) {
     case 'contactos': contactos3 = m.l || []; pintarAmigos3(); pintarObjetivoP(); break;
     case 'quien': quien3 = m.r || []; pintarAmigos3(); break;
     case 'alasAgotadas': if (P.vuela) { volar(false); aviso('Tus alas se cansaron.'); } P.alas = 0; break;
-    case 'pica': pica = performance.now() + m.ms; aviso('🎣 ¡Pica! Pulsa E para tirar', 'ok'); sfx('boton', 0.7); break;
+    case 'pica': pica = performance.now() + m.ms; aviso('🎣 ¡Pica! ' + K('Pulsa E', 'Toca ¡TIRAR!') + ' para tirar', 'ok'); sfx('boton', 0.7); break;
     case 'pescado': quitarCorcho(); sfx('moneda', 0.5); break;
     case 'duelo':
       if (m.a === miId || m.b === miId) {
         dueloCon = m.a === miId ? m.b : m.a;
         objetivo = 0; objetivoP = dueloCon; autoAtk = false; pintarBarra(); pintarObjetivoP();
-        aviso('⚔️ ¡Duelo! Empieza en 3 segundos. Pulsa 1 para atacar.', 'ok');
+        aviso('⚔️ ¡Duelo! Empieza en 3 segundos. ' + K('Pulsa 1', 'Toca ATACAR') + ' para atacar.', 'ok');
         sfx('boton', 0.5);
       }
       break;
@@ -1286,7 +1306,7 @@ function recibir(m) {
     case 'pedidoSol': case 'factura': V.alPedido(m); break;
     case 'pw': if (m.p === miId) sfx(m.i === 2 ? 'explosion' : 'boton', 0.4); break;
     case 'cast':
-      if (m.p === miId) { lanzando = { id: m.id, ini: performance.now(), fin: performance.now() + m.ms }; $('lanzar').style.display = 'block'; $('lanzar-t').textContent = m.id === 'montar' ? 'Invocar montura' : m.id === 'recolectar' ? 'Recolectando…' : m.id === 'pescar' ? 'Pescando… (E para tirar cuando pique)' : (habPorId(m.id) || {}).nombre || '';
+      if (m.p === miId) { lanzando = { id: m.id, ini: performance.now(), fin: performance.now() + m.ms }; $('lanzar').style.display = 'block'; $('lanzar-t').textContent = m.id === 'montar' ? 'Invocar montura' : m.id === 'recolectar' ? 'Recolectando…' : m.id === 'pescar' ? 'Pescando… (' + K('E', '¡TIRAR!') + ' para tirar cuando pique)' : (habPorId(m.id) || {}).nombre || '';
         if (m.id === 'pescar') ponerCorcho(); }
       else { const o = otros.get(m.p); if (o) o.lanza = performance.now() + m.ms; }
       break;
@@ -1348,6 +1368,7 @@ async function agregarMon(d) {
   const st = statsMonstruo(d.k, d.nv);
   const o = { id: d.id, k: d.k, nv: d.nv, x: d.x, z: d.z, tx: d.x, tz: d.z, ry: 0, hp: d.hp, mx: d.mx, st: 0, j: d.j, fig: null, lbl: etiqueta(d.j ? 'jefe' : ''), nace: performance.now(), muereT: 0, golpeT: 0, f: 1 };
   mons.set(d.id, o);
+  if (d.hp <= 0) o.muereT = performance.now() - 800;   // llega ya muriendo: solo el final de la animacion
   fijarDestino(o, d.x, d.z);
   o.mu = !!d.mu; o.ra = d.ra || ''; o.ti = d.ti || ''; o.iv = !!d.iv;
   if (d.k === 'puerta_nucleo') {
@@ -1390,6 +1411,8 @@ function foto(m) {
     const o = mons.get(id);
     if (!o) continue;
     fijarDestino(o, x, z); o.ry = ry; o.hp = hp; o.st = st;
+    // st 3 = muriendo en el servidor: si el md3 no nos llego (entro en vista ya muerto), se marca aqui
+    if (st === 3 && !o.muereT) { o.muereT = performance.now(); if (objetivo === id) { objetivo = 0; autoAtk = false; pintarBarra(); } }
   }
   if (m.q) for (const id of m.q) quitarMon(id);
   if (yo) { yo.hp = m.hp; yo.rec = m.rec; P.rec = m.rec; yo.combo = m.cb || 0; pintarVida(); }
@@ -1548,7 +1571,7 @@ function asedioHtml() {
   const hp = asedioHp || {}, defiendo = yo && yo.faccion && yo.faccion === d;
   return `<br><b style="color:#fca5a5">⚔ ASEDIO DEL NÚCLEO</b> ${fmtT(asedio.fin - Date.now())} · ${dn}`
     + `<br>🚪 Puerta ${asedio.puerta ? (hp.p ?? 100) + '%' : '<b style="color:#4ade80">rota</b>'} · 🛡 Guardián ${asedio.guardian ? (asedio.dormido ? '💤 dormido' : (hp.g ?? 100) + '%') : '—'}`
-    + `<br><span style="font-size:11px">${defiendo ? 'Tu facción defiende: protege la puerta (al oeste del Núcleo).' : 'Rompe la puerta (al oeste del Núcleo) y vence al Guardián. Usa las máquinas de tu bastión (E).'}</span>`;
+    + `<br><span style="font-size:11px">${defiendo ? 'Tu facción defiende: protege la puerta (al oeste del Núcleo).' : 'Rompe la puerta (al oeste del Núcleo) y vence al Guardián. Usa las máquinas de tu bastión (' + K('E', 'botón FUEGO') + ').'}</span>`;
 }
 function proyectil(de, a, color) {
   const mesh = new THREE.Mesh(GEO_BALA, matBala(color));
@@ -1598,20 +1621,24 @@ function pintarBarra() {
     const atk = document.createElement('button'); atk.className = 'acc'; atk.id = 'acc-atk';
     atk.innerHTML = '<span class="t">1</span><img src="' + A + 'armas/katana_comun_item.png" alt=""><span class="cd"></span>';
     atk.title = 'Ataque automático (1 o Z)';
-    atk.onclick = () => alternarAtaque();
+    atk.setAttribute('aria-label', atk.title);
+    atk.onclick = () => { if (MOVIL) avisoPrimeraVez(atk.title); alternarAtaque(); };
     b.appendChild(atk);
     misHabs.forEach((h, i) => {
       const d = document.createElement('button'); d.className = 'acc' + (yo.nivel < h.nv ? ' bloq' : ''); d.dataset.hab = h.id;
       d.innerHTML = `<span class="t">${i + 2}</span><img src="${A}items/equipo/${h.icono}.png" alt="">${yo.nivel < h.nv ? '<span class="lv">Nv ' + h.nv + '</span>' : ''}<span class="cd"></span>`;
       d.title = h.nombre + ' (' + (i + 2) + ') — ' + h.desc;
-      d.onclick = () => usarHab(h);
+      d.setAttribute('aria-label', d.title);
+      // Bloqueada no: usarHab ya avisa del nivel y de lo que hace
+      d.onclick = () => { if (MOVIL && yo && yo.nivel >= h.nv) avisoPrimeraVez(d.title); usarHab(h); };
       b.appendChild(d);
     });
     PODERES.forEach((p, i) => {
       const d = document.createElement('button'); d.className = 'acc'; d.dataset.pw = p.id;
       d.innerHTML = `<span class="t">${p.tecla}</span><img src="${A}items/${p.icono}.png" alt=""><span class="n"></span><span class="cd"></span>`;
       d.title = p.nombre + ' (' + p.tecla + ') — ' + p.desc;
-      d.onclick = () => usarPoder(i);
+      d.setAttribute('aria-label', d.title);
+      d.onclick = () => { if (MOVIL) avisoPrimeraVez(d.title); usarPoder(i); };
       b.appendChild(d);
     });
   }
@@ -1652,6 +1679,16 @@ function pintarObjetivo() {
   anillo.visible = true;
   anillo.position.set(o.x, alturaEn(o.x, o.z) + 0.08, o.z);
   const s = o.j ? 2 : 1; anillo.scale.set(s, s, s);
+}
+// En el movil el title no se ve: la primera vez que se toca cada boton de la
+// barra se explica con un aviso (una sola vez, sin frenar el golpe).
+function avisoPrimeraVez(titulo) {
+  let v = {};
+  try { v = JSON.parse(localStorage.getItem('dq3_habVistas') || '{}') || {}; } catch (e) {}
+  if (v[titulo]) return;
+  v[titulo] = 1;
+  try { localStorage.setItem('dq3_habVistas', JSON.stringify(v)); } catch (e) {}
+  aviso(titulo);
 }
 const avisos = $('avisos');
 function aviso(txt, tipo) {
@@ -1763,10 +1800,11 @@ function abrir(id) {
 function cerrar(id) { $(id).classList.remove('on'); if (id === 'v-npc') npcAbierto = ''; }
 document.querySelectorAll('[data-cerrar]').forEach(b => b.onclick = () => cerrar(b.closest('.modal').id));
 function abrirClases() {
-  const c = $('clases'); c.innerHTML = '';
+  const c = $('clases');
+  c.innerHTML = '<p style="grid-column:1/-1;font-size:12px;margin:0;color:var(--txt2)">Toca una clase para elegirla. Hasta nivel 10 puedes cambiarla gratis.</p>';
   for (const [id, cl] of Object.entries(CLASES)) {
     const b = document.createElement('button');
-    b.innerHTML = `<span style="color:${cl.color}">${esc(cl.nombre)}</span><small>${esc(cl.rol)}</small>`;
+    b.innerHTML = `<span style="color:${cl.color}">${esc(cl.nombre)}</span><small>${esc(cl.rol)}</small>${id === 'guerrero' ? '<small style="color:#4ade80">★ Recomendada para empezar</small>' : ''}<small style="font-weight:400;line-height:1.35">${esc(cl.desc)}</small>`;
     b.onclick = () => mandar({ t: 'clase', id });
     c.appendChild(b);
   }
@@ -1803,7 +1841,7 @@ function abrirNpc(tipo) {
   } else {
     const mat = yo.mat || {};
     const tengo = Object.entries(MATERIALES).filter(([k]) => mat[k]).map(([k, d]) => `<span style="white-space:nowrap"><img src="${A}items/equipo/${d.icono}.png" style="width:18px;vertical-align:middle;image-rendering:pixelated"> ${mat[k]}</span>`).join(' · ');
-    cu.innerHTML = `<p>Recoge hierbas 🌿 y minerales ⛏ por el mundo (tecla E junto a ellos) y yo te los convierto.</p><p style="margin:6px 0"><b>Tus materiales:</b> ${tengo || 'ninguno todavía'}</p>`
+    cu.innerHTML = `<p>Recoge hierbas 🌿 y minerales ⛏ por el mundo (${K('tecla E', 'botón RECOGER')} junto a ellos) y yo te los convierto.</p><p style="margin:6px 0"><b>Tus materiales:</b> ${tengo || 'ninguno todavía'}</p>`
       + RECETAS.map(r => {
         const ok = Object.entries(r.pide).every(([k, n]) => (mat[k] || 0) >= n);
         const pide = Object.entries(r.pide).map(([k, n]) => `${n} ${MATERIALES[k].nombre}`).join(', ');
@@ -2329,20 +2367,28 @@ const ray = new THREE.Raycaster(), vec2 = new THREE.Vector2();
 function elegirEn(cx, cy, doble) {
   vec2.set(cx / innerWidth * 2 - 1, -(cy / innerHeight) * 2 + 1);
   ray.setFromCamera(vec2, camara);
-  const lista = [...mons.values()].filter(o => o.fig && !o.muereT);
+  // Sin los ocultos: el rayo no mira la visibilidad y su cilindro sigue en la escena.
+  const lista = [...mons.values()].filter(o => o.fig && !o.muereT && (!o.fig.raiz || o.fig.raiz.visible));
+  const elegirMon = o => { if (objetivo === o.id || doble) { autoAtk = true; } objetivo = o.id; pintarBarra(); sfx('boton', 0.2); };
   const hits = ray.intersectObjects(lista.map(o => o.fig.m), false);
   if (hits.length) {
     const o = lista.find(x => x.fig.m === hits[0].object);
-    if (o) {
-      if (objetivo === o.id || doble) { autoAtk = true; }
-      objetivo = o.id; pintarBarra(); sfx('boton', 0.2);
-      return;
-    }
+    if (o) { elegirMon(o); return; }
   }
   // Clic en otro jugador: queda elegido (curas, invitar al grupo).
   const ls = [...otros.values()].filter(o => o.fig);
   const hp2 = ray.intersectObjects(ls.map(o => o.fig.m), false);
   if (hp2.length) { const o = ls.find(x => x.fig.m === hp2[0].object); if (o) { objetivoP = o.id; objetivo = 0; autoAtk = false; pintarBarra(); pintarObjetivoP(); pintarGrupo(); sfx('boton', 0.2); return; } }
+  // Tolerancia (sobre todo con el dedo): el monstruo cercano cuyo centro en pantalla quede mas cerca del toque.
+  let mejor = MOVIL ? 48 : 24, cerca = null;
+  for (const m of lista) {
+    if (Math.hypot(m.x - P.x, m.z - P.z) > 60) continue;
+    const s = aPantalla(m.x, alturaEn(m.x, m.z) + altoFig(m.fig) * 0.5, m.z);
+    if (!s) continue;
+    const d = Math.hypot(s[0] - cx, s[1] - cy);
+    if (d < mejor) { mejor = d; cerca = m; }
+  }
+  if (cerca) { elegirMon(cerca); return; }
   // Clic cerca de un PNJ: hablar.
   for (const n of npcs) { const s = aPantalla(n.x, n.y + 1.2, n.z); if (s && Math.hypot(s[0] - cx, s[1] - cy) < 40 && Math.hypot(P.x - n.x, P.z - n.z) < NPC_DIST + 2) { abrirNpc(n.tipo); return; } }
 }
@@ -2380,7 +2426,7 @@ function alternarAtaque() {
 function usarPoder(i) { if (!yo || P.muerto) return; mandar({ t: 'pw', i }); }
 function usarHab(h) {
   if (!yo || P.muerto || !h) return;
-  if (yo.nivel < h.nv) return aviso(`Aprendes ${h.nombre} a nivel ${h.nv}.`, 'err');
+  if (yo.nivel < h.nv) return aviso(`Aprendes ${h.nombre} a nivel ${h.nv}: ${h.desc}`, 'err');
   const ahora = performance.now();
   if (h.gcd !== false && ahora < gcdHasta) { if (gcdHasta - ahora < 400) { colaHab = h; colaHasta = gcdHasta + 300; } return; }
   if (cdHab[h.id] && cdHab[h.id].fin > ahora) return aviso(h.nombre + ' todavía no está lista.', 'err');
@@ -2481,14 +2527,27 @@ if (MOVIL) {
   }, { passive: false });
   const finJoy = e => { for (const t of e.changedTouches) if (t.identifier === joy.id) { joy.id = null; joy.dx = joy.dy = 0; base.style.display = 'none'; pomo.style.left = pomo.style.top = '33px'; } };
   $('joy').addEventListener('touchend', finJoy); $('joy').addEventListener('touchcancel', finJoy);
-  lienzo.addEventListener('touchstart', e => { const t = e.changedTouches[0]; camTouch.id = t.identifier; camTouch.x = t.clientX; camTouch.y = t.clientY; camTouch.mov = 0; }, { passive: true });
+  // Dedos sobre el lienzo: con uno se gira la camara, con dos se pellizca para el zoom.
+  const toques = new Map(); let pinch = null;
+  const sepToques = () => { const [a, b] = [...toques.values()]; return Math.max(20, Math.hypot(a.x - b.x, a.y - b.y)); };
+  lienzo.addEventListener('touchstart', e => {
+    toques.clear(); for (const t of e.targetTouches) toques.set(t.identifier, { x: t.clientX, y: t.clientY });
+    if (toques.size >= 2) { pinch = { d: sepToques(), cam: camDist }; camTouch.id = null; return; }   // el dedo que quede no gira hasta levantarlo
+    const t = e.changedTouches[0]; camTouch.id = t.identifier; camTouch.x = t.clientX; camTouch.y = t.clientY; camTouch.mov = 0;
+  }, { passive: true });
   lienzo.addEventListener('touchmove', e => {
+    for (const t of e.changedTouches) if (toques.has(t.identifier)) toques.set(t.identifier, { x: t.clientX, y: t.clientY });
+    if (pinch && toques.size >= 2) { camDist = clamp(pinch.cam * pinch.d / sepToques(), 4, 26); return; }
     for (const t of e.changedTouches) if (t.identifier === camTouch.id) {
       const dx = t.clientX - camTouch.x, dy = t.clientY - camTouch.y; camTouch.x = t.clientX; camTouch.y = t.clientY; camTouch.mov += Math.abs(dx) + Math.abs(dy);
       camYaw -= dx * 0.008; camPitch = clamp(camPitch + dy * 0.005, 0.08, 1.25);
     }
   }, { passive: true });
-  lienzo.addEventListener('touchend', e => { for (const t of e.changedTouches) if (t.identifier === camTouch.id) { if (camTouch.mov < 10) elegirEn(t.clientX, t.clientY, false); camTouch.id = null; } }, { passive: true });
+  const finToque = e => {
+    for (const t of e.changedTouches) { toques.delete(t.identifier); if (t.identifier === camTouch.id) { if (camTouch.mov < 10 && e.type === 'touchend') elegirEn(t.clientX, t.clientY, false); camTouch.id = null; } }
+    if (toques.size < 2) pinch = null;
+  };
+  lienzo.addEventListener('touchend', finToque, { passive: true }); lienzo.addEventListener('touchcancel', finToque, { passive: true });
   $('t-atk').addEventListener('touchstart', e => { e.preventDefault(); alternarAtaque(); }, { passive: false });
   // Mantener SALTO: sube volando y planea al caer (como Espacio).
   $('t-salto').addEventListener('touchstart', e => { e.preventDefault(); tocandoSubir = true; if (!P.vuela) saltar(); }, { passive: false });
@@ -2841,7 +2900,9 @@ const faro = (() => {
   const m = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 2.4, 90, 12, 1, true).translate(0, 45, 0), new THREE.MeshBasicMaterial({ color: '#ffd84a', transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide, fog: false }));
   m.visible = false; escena.add(m); return m;
 })();
-$('misiones').onclick = e => { const en = e.target.closest('[data-entregar]'); if (en) { e.stopPropagation(); mandar(en.dataset.entregar === 'diaria' ? { t: 'mision', diaria: true } : { t: 'mision' }); return; } const b = e.target.closest('[data-cambiar]'); if (b) { e.stopPropagation(); mandar({ t: 'cambiarTarea', i: +b.dataset.cambiar }); return; } if (MOVIL) { $('misiones').classList.toggle('abierto'); pintarMisiones(); return; } abrirMapa(); };
+// Cambiar mision pide dos toques (solo hay 1 cambio gratis al dia; sin confirm(): en Telegram queda feo)
+let cambioPend = null;
+$('misiones').onclick = e => { const en = e.target.closest('[data-entregar]'); if (en) { e.stopPropagation(); mandar(en.dataset.entregar === 'diaria' ? { t: 'mision', diaria: true } : { t: 'mision' }); return; } const b = e.target.closest('[data-cambiar]'); if (b) { e.stopPropagation(); const i = +b.dataset.cambiar; if (cambioPend && cambioPend.i === i && Date.now() - cambioPend.t < 4000) { cambioPend = null; mandar({ t: 'cambiarTarea', i }); } else { cambioPend = { i, t: Date.now() }; b.textContent = '¿Seguro?'; } return; } if (MOVIL) { $('misiones').classList.toggle('abierto'); pintarMisiones(); return; } abrirMapa(); };
 function misionLista() { if (!yo) return false; const q = MISIONES[yo.mis.i]; const d = yo.diaria || {}; return (q && yo.mis.p >= q.n) || (!d.ok && (d.p || 0) >= DIARIA.n); }
 function colorNivel(nv) { const d = nv - (yo ? yo.nivel : 1); return d >= 5 ? '#ff3344' : d >= 2 ? '#ff9900' : d <= -8 ? '#9a9a9a' : d <= -3 ? '#4ade80' : '#ffe600'; }
 // Marca de peligro que no depende del color (daltonicos): ASCII porque la fuente pixel no tiene calavera.
@@ -2918,7 +2979,7 @@ function bucle(t) {
     if (cuadro % 60 === 0) revisarNodos();
     animarCofres(t);
     for (const o of mons.values()) if (o.ra && !o.muereT && Math.abs(o.x - P.x) < 60 && Math.abs(o.z - P.z) < 60) FX.emitir(o.x, alturaEn(o.x, o.z) + 0.3, o.z, { n: 5, color: o.ti || '#ffd84a', vel: 1.2, vida: 1, grav: -2.5, radio: 0.8, tam: 0.8 });
-    if (MOVIL) { const u = $('t-usar'), b = $('hablar'), ver = b.style.display === 'block' && !P.vuela; u.style.visibility = ver ? 'visible' : 'hidden'; if (ver) u.textContent = /Abrir/.test(b.textContent) ? 'ABRIR' : /Recoger/.test(b.textContent) ? 'RECOGER' : /Pescar|TIRAR|pique/.test(b.textContent) ? (/TIRAR/.test(b.textContent) ? '¡TIRAR!' : 'PESCAR') : /Salir/.test(b.textContent) ? 'SALIR' : 'HABLAR'; }
+    if (MOVIL) { const u = $('t-usar'), b = $('hablar'), ver = b.style.display === 'block' && !P.vuela; u.style.visibility = ver ? 'visible' : 'hidden'; if (ver) u.textContent = /Abrir/.test(b.textContent) ? 'ABRIR' : /Recoger/.test(b.textContent) ? 'RECOGER' : /Pescar|TIRAR|pique/.test(b.textContent) ? (/TIRAR/.test(b.textContent) ? '¡TIRAR!' : 'PESCAR') : /Salir/.test(b.textContent) ? 'SALIR' : /Disparar/.test(b.textContent) ? 'FUEGO' : 'HABLAR'; }
     if (npcAbierto && $('v-npc').classList.contains('on')) { const n = NPCS3D.find(x => x.tipo === npcAbierto); if (n && Math.hypot(P.x - n.x, P.z - n.z) > NPC_DIST + 6) cerrar('v-npc'); }
   }
   cieloAct.lerp(cieloObj, Math.min(1, dt * 1.5));
@@ -2979,7 +3040,9 @@ async function inicio() {
   // El kit de Kenney se baja mientras se construye el terreno (antes, despues).
   const kitP = PRUEBA.has('sinKenney') ? null : cargarKenney('/assets/3d/');
   if (kitP) kitP.catch(() => {});   // el fallo se trata abajo
-  if (!USAR_MODELOS) { await cargarAnim(); await cargarImg(A + 'skins/duende_anim.png'); }
+  // La sesion web (puede refrescar el token por red) se pide ya, en paralelo con el terreno; tokenWeb nunca falla.
+  const tokP = TG ? null : tokenWeb();
+  if (!USAR_MODELOS) await Promise.all([cargarAnim(), cargarImg(A + 'skins/duende_anim.png')]);
   progreso(0.3, 'Levantando montañas…');
   await new Promise(r => setTimeout(r, 20));
   agua = crearTerreno();
@@ -3020,7 +3083,7 @@ async function inicio() {
   progreso(1, 'Conectando…');
   requestAnimationFrame(bucle);
   // Quien ya tiene sesion (Telegram, cuenta web o invitado con nombre) entra directo.
-  const tok = TG ? null : await tokenWeb();
+  const tok = await tokP;
   let nombre = ''; try { nombre = localStorage.getItem('dq_mmo_nombre') || ''; } catch (e) {}
   let inv = null; try { inv = localStorage.getItem('dq_mmo_tok'); } catch (e) {}
   if (TG || tok || (inv && nombre)) { conectar(); return; }
@@ -3028,8 +3091,9 @@ async function inicio() {
   abrir('v-inicio');
   const entrar = () => {
     const n = $('in-nombre').value.trim();
-    if (n.length < 3) { $('in-nombre').focus(); return; }
-    try { localStorage.setItem('dq_mmo_nombre', n); } catch (e) {}
+    // Vacio vale: el servidor le pone 'DuendeNNNN'. Corto no: se dice por que.
+    if (n && n.length < 3) { $('in-nombre').focus(); $('in-nota').style.display = 'block'; return; }
+    try { if (n) localStorage.setItem('dq_mmo_nombre', n); } catch (e) {}
     $('carga').style.display = 'flex'; progreso(1, 'Entrando al mundo…');
     conectar();
   };

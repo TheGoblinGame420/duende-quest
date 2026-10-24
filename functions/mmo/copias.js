@@ -20,7 +20,8 @@ import { getEnv } from '../api/lib.js';
 
 export const BK_MAX = 7;
 const TROZO = 512 * 1024;          // bytes por valor del storage
-const SUBIDA_MAX = 900 * 1024;     // un mensaje WebSocket de Workers llega hasta 1 MiB
+const SUBIDA_TROZO = 600 * 1024;   // caracteres base64 por mensaje: un mensaje WebSocket de Workers llega hasta 1 MiB
+const SUBIDA_MAX = 8 * 1024 * 1024; // .json.gz entero que se acepta subir (en trozos) desde el panel
 const HORA_COPIA = 4;              // UTC
 const PAGINA = 500;                // claves por lectura del storage
 
@@ -199,8 +200,24 @@ export const Copias = {
     await this.migrar();
     return { ok: true, pj: Object.keys(copia.datos).filter(k => k.startsWith('c:')).length, t: copia.t };
   },
+  // El archivo llega en trozos de base64 ({i, n, b64}): el .json.gz crece con los
+  // personajes y un mensaje WebSocket no pasa de 1 MiB. Se juntan en la sesion del
+  // dueño (si se desconecta, se pierde). Devuelve { b64 } con el ultimo trozo, null
+  // si faltan, o { error }. Sin i/n es un trozo unico (formato viejo).
+  juntarSubida(s, m) {
+    const n = m.n === undefined ? 1 : m.n, i = m.i === undefined ? 0 : m.i;
+    if (!Number.isInteger(n) || !Number.isInteger(i) || n < 1 || n > Math.ceil(SUBIDA_MAX * 1.4 / SUBIDA_TROZO) || i < 0 || i >= n || typeof m.b64 !== 'string') { s.subida = null; return { error: 'Trozo de archivo no válido: vuelve a subirlo.' }; }
+    if (i === 0) s.subida = { n, partes: [], largo: 0 };
+    const u = s.subida;
+    if (!u || u.n !== n || u.partes.length !== i) { s.subida = null; return { error: 'Se perdió un trozo del archivo: vuelve a subirlo.' }; }
+    u.partes.push(m.b64); u.largo += m.b64.length;
+    if (u.largo > SUBIDA_MAX * 1.4) { s.subida = null; return { error: 'Archivo demasiado grande para subirlo desde el panel (máx. 8 MB).' }; }
+    if (u.partes.length < n) return null;
+    s.subida = null;
+    return { b64: u.partes.join('') };
+  },
   async restaurarSubida(b64) {
-    if (typeof b64 !== 'string' || b64.length > SUBIDA_MAX * 1.4) return { ok: false, error: 'Archivo demasiado grande para subirlo desde el panel (máx. 900 KB).' };
+    if (typeof b64 !== 'string' || b64.length > SUBIDA_MAX * 1.4) return { ok: false, error: 'Archivo demasiado grande para subirlo desde el panel (máx. 8 MB).' };
     let copia;
     try { copia = JSON.parse(await gunzip(b64aBytes(b64))); } catch (e) { return { ok: false, error: 'No se pudo leer el archivo (¿es el .json.gz de la copia?).' }; }
     return this.restaurarMundo(copia);

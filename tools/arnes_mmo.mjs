@@ -857,6 +857,12 @@ async function pruebasCopias() {
   chequear((await mundo.indiceCopias()).some(x => x.motivo === 'antes de restaurar'), 'antes de restaurar se guarda una copia de lo actual');
   chequear(((await mundo.indiceCopias()).find(x => x.id === e.id) || {}).motivo === 'prueba', 'una copia nueva de la misma hora no pisa a la anterior');
   chequear(!(await mundo.restaurarSubida('no-es-una-copia')).ok, 'un archivo que no es copia se rechaza');
+  // El archivo grande llega en trozos y se junta en la sesion del dueño
+  const ses = {}, L = Math.ceil(b64.length / 3);
+  const piezas = [0, 1, 2].map(i => mundo.juntarSubida(ses, { i, n: 3, b64: b64.slice(i * L, (i + 1) * L) }));
+  chequear(piezas[0] === null && piezas[1] === null && piezas[2] && piezas[2].b64 === b64 && !ses.subida, 'el archivo subido en trozos se junta entero');
+  mundo.juntarSubida(ses, { i: 0, n: 3, b64: 'x' });
+  chequear(mundo.juntarSubida(ses, { i: 2, n: 3, b64: 'x' }).error && !ses.subida, 'un trozo fuera de orden anula la subida');
   // Mas claves que una pagina del storage: la copia las recorre todas
   for (let i = 0; i < 1200; i++) almacen.set('zzpag:' + String(i).padStart(4, '0'), { i });
   const e3 = await mundo.hacerCopia('paginas'), cp3 = e3 && await mundo.leerCopia(e3.id);
@@ -1338,7 +1344,8 @@ async function pruebasRetencion() {
   const ids = () => salidos.map(x => String(x.chat_id)).sort().join(',');
   const deQuien = id => salidos.find(x => String(x.chat_id) === id);
   const A = D + 10;
-  irA(A);
+  // A las 17:00: con 1 o 2 dias anotados el aviso sale a la hora de su entrada.
+  irA(A, 17);
   const t1 = await entrarTg('Rachero', 3001), t2 = await entrarTg('Callado', 3002), t3 = await entrarTg('Bloqueador', 3003);
   const t4 = await entrarTg('SinAvisos', 3004), t5 = await entrarTg('Diario', 3005);
   const gA = await entrarTg('Lider', 3006), gB = await entrarTg('Amigo', 3007);
@@ -1434,7 +1441,7 @@ async function pruebasRetencion() {
   chequear(arcade.sort().join(',') === '3001,9999', 'el recordatorio del arcade se salta al avisado, al que bloqueó y a quien pidió no recibir avisos (' + arcade + ')');
   console.log('Avisos a la hora habitual de cada uno');
   const { horaHabitual, HORA_DEFECTO } = await import('../functions/mmo/retencion.js');
-  chequear(horaHabitual({ hs: [20, 20] }) === HORA_DEFECTO && horaHabitual({}) === HORA_DEFECTO, 'con menos de 3 días anotados, las 17:00');
+  chequear(horaHabitual({ hs: [20, 3] }) === 3 && horaHabitual({ hs: [9] }) === 9 && horaHabitual({}) === HORA_DEFECTO, 'con 1 o 2 días anotados, la hora de su última entrada; sin ninguno, las 17:00');
   chequear(horaHabitual({ hs: [20, 3, 20, 3, 1] }) === 3 && horaHabitual({ hs: [1, 2, 2, 1, 22, 22, 5] }) === 22 && horaHabitual({ hs: [20, 20, 9] }) === 20, 'la hora más repetida (en empate, la más reciente)');
   for (let k = 7; k <= 9; k++) { irA(A + k, 20); const n = await entrarTg('Nocturno', 3010); await dejar(n); }
   chequear(horaHabitual((await mundo.retIdx())['tg:3010']) === 20, 'se anota la hora de su primera entrada de cada día');

@@ -7,7 +7,7 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, ALCANCE_BASE, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
-  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TINTES, MASCOTAS, NOVEDADES, PASE, premioPase, ambulanteActivo, ambulanteOferta, semanaUTC, GESTOS, horaFelizTiempos, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
+  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, costoReforja, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TINTES, MASCOTAS, NOVEDADES, PASE, premioPase, ambulanteActivo, ambulanteOferta, semanaUTC, GESTOS, horaFelizTiempos, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
@@ -17,7 +17,7 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=284';
+} from './data.js?v=285';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -116,7 +116,8 @@ function verLanzar(si) {
 }
 verLanzar(false);
 function ajustarVista() {
-  const vertical = innerHeight > innerWidth * 1.1;
+  // Con el teclado abierto se mantiene la orientacion: no salta de 400 a 800 a mitad de frase.
+  const vertical = document.body.classList.contains('escribiendo') ? VW === 400 : innerHeight > innerWidth * 1.1;
   VW = vertical ? 400 : 800;
   const esc = $('escena');
   const aw = esc.clientWidth, ah = esc.clientHeight;
@@ -396,6 +397,7 @@ async function conectar() {
   s.onclose = () => {
     if (ws !== s) return;
     conectado = false;
+    castYo = null; verLanzar(false);   // sin conexion el castFin ya no llega
     if (fatal || pausado) return;
     reintentos++;
     if (reintentos === 7) mostrarError('Sin conexión con el servidor. Seguimos intentándolo solos; también puedes pulsar «Reconectar».');
@@ -408,6 +410,13 @@ async function conectar() {
 function recibir(m) {
   switch (m.t) {
     case 'bienvenido':
+      // Sesion nueva en el servidor: lanzamientos, recargas e invitaciones de la
+      // anterior ya no existen (su castFin no llegara nunca y bloquearia todo).
+      castYo = null; castPend = 0; gcdHasta = 0;
+      if (P.atkBuf) { clearTimeout(P.atkBuf); P.atkBuf = 0; }
+      verLanzar(false); $('lanzar').classList.remove('mal');
+      for (const k in cdPoder) delete cdPoder[k];
+      clearTimeout(mostrarInvitacion.t); ponCss($('invitacion'), 'display', 'none');
       mostrarNuevo3d();
       setTimeout(() => { if (yo) { revisarBoveda(); revisarNovedades(); } }, 1500);
       miId = m.id; yo = m.yo; online = m.on || 0; reintentos = 0; if (ws) ws._listo = true;
@@ -679,12 +688,29 @@ function recibir(m) {
   }
 }
 
+// Cliente viejo en cache frente a un servidor nuevo (mapa o monstruo que no
+// conoce): se recarga una sola vez cada 2 min. Si la pagina siguiera vieja
+// (cache del WebView), se pide cerrar y abrir en vez de recargar en bucle.
+function versionNueva() {
+  fatal = true;
+  try { if (ws) ws.close(); } catch (e) {}
+  let ya = 0;
+  try { ya = +sessionStorage.getItem('dq_recargaVer') || 0; } catch (e) {}
+  if (Date.now() - ya < 120000) { mostrarError('Hay una versión nueva del juego. Cierra y vuelve a abrir el juego para actualizarlo.'); return; }
+  try { sessionStorage.setItem('dq_recargaVer', String(Date.now())); } catch (e) {}
+  mostrarError('Hay una versión nueva del juego. Actualizando…');
+  setTimeout(() => location.reload(), 1200);
+}
+
 let fundido = 0;
 // Cruce de zona sin corte (por el borde, caminando): sin fundido a negro. Se
 // guarda una foto de la escena y se funde con la zona nueva mientras la
 // camara parte de donde estaba el duende en pantalla, asi el mundo "sigue".
 let cruce = 0, cruceC = null;
 function entrarMapa(m) {
+  // Antes de tocar mapaId: un mapa desconocido reventaba aqui y dejaba la
+  // pantalla de carga colgada (y el bucle de pintado fallando cada fotograma).
+  if (!MAPAS[m.mapa]) { versionNueva(); return; }
   const sinCorte = !!(m.sc && mapaId && m.mapa !== mapaId && MAPAS[mapaId]);
   const enPantalla = P.x - camX, vx = P.vx;
   if (m.mapa !== mapaId) {
@@ -734,6 +760,9 @@ function agregarOtro(p) {
 }
 
 function agregarMon(d) {
+  // Tipo nuevo que este JS no conoce: se ignora (el snapshot ya salta los ids
+  // que no estan en mons) en vez de cortar la carga del mapa.
+  if (!MONSTRUOS[d.k]) { if (!agregarMon.avisado) { agregarMon.avisado = true; aviso('Hay una versión nueva del juego: recarga para verlo todo.', 'ok', 8000); } return; }
   const st = statsMonstruo(d.k, d.nv);
   const o = { id: d.id, k: d.k, nv: d.nv || MONSTRUOS[d.k].nivel, x: d.x, y: d.y, f: d.f, hp: d.hp, mx: d.mx, st: d.st, fl: 0, alto: st.alto, w: st.w, h: st.h, buf: [{ t: performance.now(), x: d.x, y: d.y }], nace: performance.now(), muereT: 0, golpeT: 0 };
   if (d.ex) o.ex = d.ex;   // invasor, capitan o raro (ver MUNDO ABIERTO)
@@ -1176,7 +1205,10 @@ addEventListener('keyup', e => { teclas[e.code] = false; if (['Space', 'ArrowUp'
 addEventListener('blur', () => { for (const k in teclas) teclas[k] = false; tIzq = tDer = false; });
 
 const FRASES = ['¡Hola!', '¿Hacemos grupo?', '¿Alguien para mazmorra?', 'Gracias', 'Bien jugado', 'Necesito ayuda aquí', 'Me voy, nos vemos'];
+let altoChat = 0, tecladoVisto = false;
 function abrirChat() {
+  // Movil: mientras se escribe se ocultan los controles (body.escribiendo).
+  if (TACTIL && !document.body.classList.contains('escribiendo')) { document.body.classList.add('escribiendo'); altoChat = innerHeight; tecladoVisto = false; }
   const i = $('chat-in'); i.style.display = 'block'; i.focus();
   // Movil: con el chat abierto se ve el historial entero.
   if ($('hud').classList.contains('estrecho')) $('chat-log').classList.add('abierto');
@@ -1199,8 +1231,15 @@ $('chat-log').addEventListener('click', () => {
   if (l.classList.contains('abierto')) l._t = setTimeout(() => l.classList.remove('abierto'), 8000);
 });
 function cerrarChat() {
-  $('chat-log').classList.remove('abierto'); $('chat-in').value = ''; $('chat-in').blur(); $('chat-in').style.display = 'none'; ponCss($('frases'), 'display', 'none'); }
-$('chat-in').addEventListener('blur', () => setTimeout(() => ponCss($('frases'), 'display', 'none'), 150));
+  $('chat-log').classList.remove('abierto'); $('chat-in').value = ''; $('chat-in').blur(); $('chat-in').style.display = 'none'; ponCss($('frases'), 'display', 'none'); document.body.classList.remove('escribiendo'); }
+$('chat-in').addEventListener('blur', () => setTimeout(() => { if (chatAbierto()) return; ponCss($('frases'), 'display', 'none'); document.body.classList.remove('escribiendo'); }, 150));
+// Android: cerrar el teclado con el boton atras no quita el foco y los controles
+// seguirian ocultos; cuando el alto vuelve a ser el de antes se suelta el campo.
+addEventListener('resize', () => {
+  if (!document.body.classList.contains('escribiendo')) return;
+  if (innerHeight < altoChat - 120) tecladoVisto = true;
+  else if (tecladoVisto && innerHeight > altoChat - 60) $('chat-in').blur();
+});
 function botonTactil(id, abajo, arriba) {
   const b = $(id);
   const on = e => { e.preventDefault(); b.classList.add('on'); abajo && abajo(); };
@@ -1254,12 +1293,24 @@ $('uf-yo').addEventListener('click', () => { objetivo = { k: 'p', id: miId }; })
 // 7 habilidades de la clase (teclas 1-7) y 4 consumibles (Q F G T). Cada
 // boton muestra su enfriamiento, si falta recurso (azulado), si el objetivo
 // esta lejos (tecla en rojo) y si un remate esta listo (brillo).
+// En el movil el title no se ve: la primera vez que se toca cada boton se
+// explica con un aviso (una sola vez por habilidad, sin frenar el golpe).
+function avisoPrimeraVez(titulo) {
+  let v = {};
+  try { v = JSON.parse(localStorage.getItem('dq_habVistas') || '{}') || {}; } catch (e) {}
+  if (v[titulo]) return;
+  v[titulo] = 1;
+  try { localStorage.setItem('dq_habVistas', JSON.stringify(v)); } catch (e) {}
+  aviso(titulo, '', 5000);
+}
 function boton(icono, tecla, titulo, alUsar) {
   const d = document.createElement('div');
   d.className = 'pw';
   d.title = titulo;
+  d.setAttribute('role', 'button');
+  d.setAttribute('aria-label', titulo);
   d.innerHTML = `<span class="k">${tecla}</span><img src="${icono}" alt=""><span class="n"></span><div class="cd"></div><span class="cdt"></span>`;
-  const usar = e => { e.preventDefault(); d.classList.add('on'); setTimeout(() => d.classList.remove('on'), 120); alUsar(); };
+  const usar = e => { e.preventDefault(); d.classList.add('on'); setTimeout(() => d.classList.remove('on'), 120); if (e.type === 'touchstart') avisoPrimeraVez(titulo); alUsar(); };
   d.addEventListener('touchstart', usar, { passive: false });
   d.addEventListener('mousedown', usar);
   return d;
@@ -1665,14 +1716,18 @@ function pintarSocial() {
       const cl = CLASES[x.cl];
       const yoEs = x.id === miId && x.on;
       const acc = !soyLider() || yoEs ? '' : `<button class="btn sec" data-lider="${esc(x.uid)}">Hacer líder</button><button class="btn sec" data-echar="${esc(x.uid)}" style="color:var(--err);border-color:var(--err)">Expulsar</button>`;
+      // Ir con el: solo si esta en otra zona abierta (o el pueblo) del 2D y tu no estas en una mazmorra.
+      const ir = x.on && !yoEs && !x.p3 && x.k === x.mapa && x.mapa !== mapaId && !instancia && mapaId !== 'coliseo' && (tienePiedra(x.mapa) || x.mapa === 'pueblo')
+        ? `<button class="btn" data-ir="${esc(x.uid)}" title="Viaje gratis a su lado (fuera de combate, uno por minuto)">Ir a su zona</button>` : '';
       h += tarjeta(`<img src="${A}items/equipo/${cl ? cl.icono : 'S_Buff06'}.png">`,
         `<span style="color:${cl ? cl.color : 'var(--txt2)'}">${grupo.lider === x.uid ? '👑 ' : ''}${esc(x.n || '?')}${yoEs ? ' (tú)' : ''}</span>`,
-        x.on ? `Nv ${x.lv} ${cl ? esc(cl.nombre) : ''} · ${esc(MAPAS[x.mapa] ? MAPAS[x.mapa].nombre : '')}` : 'Desconectado', acc);
+        x.on ? `Nv ${x.lv} ${cl ? esc(cl.nombre) : ''} · ${esc(MAPAS[x.mapa] ? MAPAS[x.mapa].nombre : '')}` : 'Desconectado', ir + acc);
     }
     h += '<button class="btn sec" id="b-salir-grupo" style="width:100%;margin-top:8px">Salir del grupo</button>';
     L.innerHTML = h;
     L.querySelectorAll('[data-lider]').forEach(b => b.onclick = () => mandar({ t: 'liderGrupo', uid: b.dataset.lider }));
     L.querySelectorAll('[data-echar]').forEach(b => b.onclick = () => mandar({ t: 'expulsarGrupo', uid: b.dataset.echar }));
+    L.querySelectorAll('[data-ir]').forEach(b => b.onclick = () => { mandar({ t: 'irGrupo', uid: b.dataset.ir }); cerrarModales(); sfx('boton', .3); });
     $('b-salir-grupo').onclick = () => { mandar({ t: 'salirGrupo' }); };
     const bb = $('b-banda'); if (bb) bb.onclick = () => { mandar({ t: 'banda', si: !grupo.banda }); sfx('boton', .3); };
   } else if (tabSocial === 'online') {
@@ -2745,7 +2800,8 @@ function pintarEquipo() {
     const flecha = dif > 0 && !rompe ? '<span style="color:var(--ok)"> ▲ Mejor</span>' : dif > 0 ? '<span style="color:var(--warn)"> ⚠ rompe tu conjunto</span>' : '';
     const puede = puedeUsar(it);
     const acc = (puede ? `<button class="btn" data-eq="${it.id}">Equipar</button>` : `<span class="precio" style="color:var(--warn)">Nv ${it.nv}</span>`)
-      + `<button class="btn sec" data-vender="${it.id}">Vender ${precioVenta(it)}</button>`;
+      + `<button class="btn sec" data-vender="${it.id}">Vender ${precioVenta(it)}</button>`
+      + (it.r >= 1 && yo.nivel >= NIVEL_MAX ? `<button class="btn sec" data-reforjar="${it.id}" title="Vuelve a tirar su línea extra (junto a la Artesana)">Reforjar ${costoReforja(it)}</button>` : '');
     h += tarjeta(htmlItem(it), `<span style="color:${rz.color}">${esc(nombreItem(it))}</span> <span style="color:var(--txt2)">Nv${it.nv}</span>${flecha}`,
       `${rz.nombre} · ${RANURAS[it.s].nombre} · ${textoBonos(it.b)}${it.cj && CONJUNTOS[it.cj] ? '<br><span style="color:' + CONJUNTOS[it.cj].color + '">Conjunto: ' + esc(textoConjunto(CONJUNTOS[it.cj])) + '</span>' : ''}`, acc);
   }
@@ -2753,6 +2809,10 @@ function pintarEquipo() {
   const L = $('inv-lista');
   L.querySelectorAll('[data-eq]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'item', a: 'equipar', id: b.dataset.eq }); });
   L.querySelectorAll('[data-vender]').forEach(b => b.onclick = () => { sfx('moneda', .3); mandar({ t: 'item', a: 'vender', id: b.dataset.vender }); });
+  L.querySelectorAll('[data-reforjar]').forEach(b => b.onclick = () => {
+    const it = bolsa.find(x => x.id === b.dataset.reforjar);
+    if (it && confirm('¿Reforjar por ' + costoReforja(it).toLocaleString('es', { useGrouping: 'always' }) + ' oro? Su línea extra se vuelve a tirar al azar (puede salir peor). Hazlo junto a la Artesana Lila.')) { sfx('moneda', .3); mandar({ t: 'item', a: 'reforjar', id: it.id }); }
+  });
   L.querySelectorAll('[data-quitar]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'item', a: 'quitar', ranura: b.dataset.quitar }); });
   const bm = $('b-equipar-mejor');
   if (bm) bm.onclick = () => { sfx('boton', .4); mejoras.forEach(x => mandar({ t: 'item', a: 'equipar', id: x.id })); };
@@ -3183,7 +3243,7 @@ function pintarDios(d) {
     h += `<p style="font-size:12px;color:var(--txt2);margin:6px 0">Una copia al día (04:00 UTC) de todo el progreso. Fuera de Cloudflare va a: <b>${!K ? '…' : K.destino === 'r2' ? 'R2 (bucket COPIAS)' : K.destino === 'telegram' ? 'tu chat de Telegram (archivo .json.gz)' : '⚠️ ningún sitio: falta el bot o ADMIN_TG_ID'}</b>. Dentro se guardan las 7 últimas.</p>`;
     h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0"><button class="btn" id="d-copiaya">💾 Hacer copia ahora</button><button class="btn sec" id="d-subir">📤 Restaurar desde archivo…</button><input type="file" id="d-archivo" accept=".gz,application/gzip" style="display:none"></div>';
     h += !K ? '<p style="font-size:12px;color:var(--txt2)">Cargando…</p>' : !K.l.length ? '<p style="font-size:12px;color:var(--txt2)">Aún no hay copias.</p>' : K.l.map(e => `<div class="mis-caja" style="margin:6px 0;padding:8px">
-      <b>${esc(e.id)} UTC</b> <span style="font-size:12px;color:var(--txt2)">· ${e.pj} personajes · ${(e.bytes / 1024).toFixed(0)} KB · ${esc(e.motivo)} · ${e.fuera === 'telegram' ? '✅ en Telegram' : e.fuera === 'r2' ? '✅ en R2' : '⚠️ solo interna'}</span>
+      <b>${esc(e.id)} UTC</b> <span style="font-size:12px;color:var(--txt2)">· ${e.pj} personajes · ${(e.bytes / 1024).toFixed(0)} KB${e.bytes > 8 * 1024 * 1024 ? ' (⚠️ demasiado grande para subirla desde el panel)' : ''} · ${esc(e.motivo)} · ${e.fuera === 'telegram' ? '✅ en Telegram' : e.fuera === 'r2' ? '✅ en R2' : '⚠️ solo interna'}</span>
       <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px"><button class="btn sec" data-dcp="pj" data-id="${esc(e.id)}">♻️ Restaurar un jugador</button><button class="btn" data-dcp="mundo" data-id="${esc(e.id)}" style="background:var(--err)">Restaurar TODO</button></div></div>`).join('');
   } else {
     h += '<p style="margin:8px 0 4px;font-size:13px">⛔ Baneados</p>' + (D.bans.length ? D.bans.map(b => `<div class="fila"><span>${esc(b.n)} · ${b.hasta ? 'hasta ' + new Date(b.hasta).toLocaleString('es') : 'permanente'}${b.motivo ? ' · ' + esc(b.motivo) : ''}</span><button class="btn sec" data-dban="${b.t}">Quitar</button></div>`).join('') : '<p style="font-size:12px;color:var(--txt2)">Nadie.</p>');
@@ -3198,10 +3258,14 @@ function pintarDios(d) {
     $('d-archivo').onchange = e => {
       const f = e.target.files && e.target.files[0];
       if (!f) return;
-      if (f.size > 900 * 1024) return errorRojo('El archivo pasa de 900 KB: restáuralo desde una copia interna.');
+      if (f.size > 8 * 1024 * 1024) return errorRojo('El archivo pasa de 8 MB: restáuralo desde una copia interna.');
       if (!confirm('¿Restaurar TODO el mundo desde «' + f.name + '»? Todos se desconectan y el progreso vuelve a esa copia (antes se guarda una copia de lo actual).')) return;
       const r = new FileReader();
-      r.onload = () => { const b64 = String(r.result).split(',')[1] || ''; mandar({ t: 'dios', a: 'subirCopia', b64 }); };
+      // En trozos: un mensaje WebSocket no pasa de 1 MiB (copias.js los junta)
+      r.onload = () => {
+        const b64 = String(r.result).split(',')[1] || '', T = 600 * 1024, n = Math.max(1, Math.ceil(b64.length / T));
+        for (let i = 0; i < n; i++) mandar({ t: 'dios', a: 'subirCopia', i, n, b64: b64.slice(i * T, (i + 1) * T) });
+      };
       r.readAsDataURL(f);
     };
   }
@@ -4449,7 +4513,7 @@ function aviso(txt, tipo, ms) {
   let capa = $('avisos');
   if (document.querySelector('.modal.on')) {
     capa = $('avisos-modal');
-    if (!capa) { capa = document.createElement('div'); capa.id = 'avisos-modal'; document.body.appendChild(capa); }
+    if (!capa) { capa = document.createElement('div'); capa.id = 'avisos-modal'; capa.setAttribute('role', 'status'); capa.setAttribute('aria-live', 'polite'); document.body.appendChild(capa); }
   }
   capa.appendChild(d);
   setTimeout(() => d.remove(), ms || 3700);
@@ -4906,8 +4970,9 @@ async function inicio() {
   const entrar = () => {
     const n = $('in-nombre').value.trim();
     if (!TG && !tokWeb) {
-      if (n.length < 3) { $('in-nombre').focus(); $('in-nombre').style.borderColor = 'var(--err)'; return; }
-      localStorage.setItem('dq_mmo_nombre', n);
+      // Vacio vale: el servidor le pone 'DuendeNNNN'. Corto no: se dice por que.
+      if (n && n.length < 3) { $('in-nombre').focus(); $('in-nombre').style.borderColor = 'var(--err)'; aviso('El nombre necesita al menos 3 letras, o déjalo vacío.', 'error'); return; }
+      try { if (n) localStorage.setItem('dq_mmo_nombre', n); else localStorage.removeItem('dq_mmo_nombre'); } catch (e) {}
     }
     $('carga').style.display = 'flex'; $('carga-s').textContent = 'Entrando al mundo…';
     if (sonido) sonarMusica();

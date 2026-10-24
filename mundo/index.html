@@ -13,17 +13,17 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=284" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=285" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=284">
-<link rel="modulepreload" href="/mmo/js/data.js?v=284">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=284">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=284">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=284">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=284">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=284">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=285">
+<link rel="modulepreload" href="/mmo/js/data.js?v=285">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=285">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=285">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=285">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=285">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=285">
 <style>
 :root{--bg:#0a0418;--panel:rgba(14,9,30,.86);--borde:rgba(160,140,255,.22);--txt:#f2efff;--txt2:#b8b0d8;--txt3:#7d7699;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;--oro:#ffd84a;--pri:#2563eb;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -63,7 +63,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 #misiones .q{margin-bottom:6px;}
 #misiones .q:last-child{margin-bottom:0;}
 #misiones .tarea,#misiones .q .ok{display:block;font-size:10.5px;line-height:1.35;}
-#misiones .cambiar{background:rgba(255,255,255,.1);border:1px solid rgba(160,140,255,.35);border-radius:6px;color:#fff;font-size:10px;padding:0 4px;cursor:pointer;margin-left:2px;}
+#misiones .cambiar{background:rgba(255,255,255,.1);border:1px solid rgba(160,140,255,.35);border-radius:6px;color:#fff;font-size:12px;min-width:28px;min-height:24px;padding:2px 6px;cursor:pointer;margin-left:2px;}
 #misiones .ok{color:#4ade80;}
 #misiones small{color:var(--txt2);}
 body.movil #misiones{top:110px;bottom:auto;left:8px;right:auto;width:165px;font-size:10px;padding:5px 7px;}
@@ -90,6 +90,8 @@ body.movil #misiones{top:110px;bottom:auto;left:8px;right:auto;width:165px;font-
 #avisos div{background:rgba(14,9,30,.72);border:1px solid var(--borde);border-left:3px solid #a78bfa;border-radius:6px;padding:5px 10px;font:600 12px var(--sans);text-align:left;animation:entra .2s ease-out;}
 #avisos div.ok{border-left-color:#4ade80;}
 #avisos div.err{border-left-color:#ff5a6a;color:#ffd4d9;}
+/* El error no solo por el color de la barra (daltonicos) */
+#avisos div.err::before{content:'✕ ';color:#ff5a6a;font-weight:800;}
 @keyframes entra{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 /* Pantalla completa de Telegram: el HUD se aparta de sus botones */
 body.tgfs #marco,body.tgfs #obj,body.tgfs #objp,body.tgfs #grupo3,body.tgfs #mini,body.tgfs #misiones,body.tgfs #botones,body.tgfs #alas,body.tgfs #titulo-zona,body.tgfs.movil #chat{margin-top:var(--tg-top,0px);}
@@ -311,7 +313,7 @@ body.movil #titulo-zona b{font-size:16px;}
   <button class="bt extra" id="b-compartir" title="Invitar a un amigo / compartir">📣</button>
   <button class="bt" id="b-amigos" title="Amigos y jugadores en línea">👥</button>
   <button class="bt" id="b-chat" title="Chat (Enter)">💬</button>
-  <button class="bt extra" id="b-ayuda" title="Controles">?</button>
+  <button class="bt extra" id="b-ayuda" title="Ajustes y controles (calidad gráfica)" aria-label="Ajustes y controles">?</button>
   <a class="bt" href="/mmo/" title="$DUENDE CLASSIC (2D): mazmorras, Torre y banda, con tu mismo personaje">2D</a>
   <a class="bt" href="/inicio/" title="Inicio: elige tu juego">⌂</a>
   <button class="bt" id="b-mas" title="Más" aria-label="Más">⋯</button>
@@ -321,8 +323,8 @@ body.movil #titulo-zona b{font-size:16px;}
 <div class="caja" id="barra"></div>
 <div class="caja" id="lanzar"><div class="barra"><i></i><span id="lanzar-t"></span></div></div>
 <div id="alas"><i></i><span>ALAS</span></div>
-<div class="caja" id="chat"><div id="chat-log"></div><input id="chat-in" maxlength="120" placeholder="Escribe y pulsa Enter…" autocomplete="off"></div>
-<div id="avisos"></div>
+<div class="caja" id="chat"><div id="chat-log"></div><input id="chat-in" maxlength="120" placeholder="Escribe y pulsa Enter…" autocomplete="off" enterkeyhint="send"></div>
+<div id="avisos" role="status" aria-live="polite"></div>
 <div id="titulo-zona"><b id="tz-n"></b><small id="tz-s"></small></div>
 <button class="caja" id="hablar">E · Hablar</button>
 <div id="xp"><i></i></div>
@@ -330,14 +332,15 @@ body.movil #titulo-zona b{font-size:16px;}
 <div id="joy"><div class="base"><div class="pomo"></div></div></div>
 <div id="tactil">
   <button id="t-volar">VOLAR</button><button id="t-bajar" style="visibility:hidden">BAJAR</button><button id="t-usar" style="visibility:hidden">HABLAR</button><button id="t-montar">MONTAR</button>
-  <button id="t-obj">OBJ</button><button id="t-salto">SALTO</button><button class="grande" id="t-atk">ATACAR</button>
+  <button id="t-obj" aria-label="Cambiar de objetivo">FIJAR</button><button id="t-salto">SALTO</button><button class="grande" id="t-atk">ATACAR</button>
 </div>
 
 <div class="modal" id="v-inicio"><div class="ventana" style="text-align:center">
   <h2>DUENDE QUEST 3D</h2>
   <p>El mundo abierto de los duendes: un mapa continuo con el pueblo, las 10 zonas, sus jefes y otros jugadores en tiempo real. Es tu mismo personaje del juego online.</p>
   <div id="ini-inv">
-    <input class="nombre" id="in-nombre" maxlength="16" placeholder="Nombre de tu duende">
+    <input class="nombre" id="in-nombre" maxlength="16" placeholder="Nombre de tu duende (opcional)" aria-label="Nombre de tu duende (opcional)">
+    <p id="in-nota" role="status" style="display:none;margin:4px 0 8px;font-size:12px;color:#ff5a6a">El nombre necesita al menos 3 letras (o déjalo vacío y te ponemos uno).</p>
     <button class="btn" id="b-entrar" style="width:100%">Entrar al mundo</button>
     <p style="margin-top:10px;font-size:13px">¿Tienes cuenta? <a href="/mmo/" style="color:var(--cian)">Inicia sesión en el juego online</a> y vuelve: entrarás con ella.</p>
   </div>
@@ -398,7 +401,7 @@ body.movil #titulo-zona b{font-size:16px;}
 </div></div>
 <div class="modal" id="v-ayuda"><div class="ventana">
   <button class="bt cerrar" data-cerrar>✕</button>
-  <h2>CONTROLES</h2>
+  <h2>AJUSTES Y CONTROLES</h2>
   <div class="fila"><span>Calidad gráfica</span><b><select id="sel-calidad" style="background:#22164a;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="baja">Baja (móviles lentos)</option><option value="media">Media</option><option value="alta">Alta (sombras)</option></select></b></div>
   <div class="fila"><span>Moverse</span><b>W A S D</b></div>
   <div class="fila"><span>Girar la cámara</span><b>Arrastrar con el ratón</b></div>
@@ -430,6 +433,6 @@ body.movil #titulo-zona b{font-size:16px;}
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script src="/js/config.js"></script>
-<script type="module" src="/mundo/js/mundo.js?v=284"></script>
+<script type="module" src="/mundo/js/mundo.js?v=285"></script>
 </body>
 </html>

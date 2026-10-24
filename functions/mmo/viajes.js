@@ -11,9 +11,11 @@
 // que explorar a pie siga valiendo la pena.
 // ═══════════════════════════════════════════════════════
 import { MAPAS, PIEDRA_X, PIEDRA_DIST, costoViaje, tienePiedra } from '../../mmo/js/data.js';
+import { pub } from './social.js';
 
 const VIAJE_CD_MS = 8000;
 const COMBATE_MS = 8000;
+const IR_GRUPO_CD_MS = 60000;   // "Ir a su zona" del grupo: uno por minuto
 
 export const Viajes = {
   viajar(s, m) {
@@ -36,5 +38,32 @@ export const Viajes = {
     this.enviar(s, { t: 'toast', m: `Viajaste a ${MAPAS[id].nombre} (-${costo.toLocaleString('es')} oro).`, ok: true });
     this.actualizarYo(s);
     this.guardar(s);
+  },
+
+  // Ir con un compañero de grupo: salto gratis a la zona abierta (o al pueblo)
+  // donde esta, junto a el. Fuera de combate, de mazmorras y del Coliseo, y
+  // con su propia espera (no gasta la de la piedra) para que no la sustituya.
+  irConGrupo(s, m) {
+    const g = this.grupoDe(s);
+    const uid = g && typeof m.uid === 'string' && g.uids.find(u => pub(u) === m.uid);
+    const t = uid && this.porUid.get(uid);
+    if (!t || !t.c || t === s || t.cerrado) return this.no(s, 'Ese compañero no está conectado.');
+    if (t.m3) return this.no(s, `${t.c.nombre} está en ORIGINS: entra al mismo modo.`);
+    if (s.muerto || s.duelo) return;
+    if (s.k.includes('#') || s.c.mapa === 'coliseo') return this.no(s, 'Sal primero de la mazmorra o del Coliseo.');
+    const id = t.c.mapa;
+    if (t.k !== id || !(tienePiedra(id) || id === 'pueblo')) return this.no(s, `${t.c.nombre} está en una mazmorra o en una zona cerrada.`);
+    if (id === s.c.mapa) return this.no(s, `Ya estás en la zona de ${t.c.nombre}.`);
+    const ahora = Date.now();
+    if (ahora - (s.combateT || 0) < COMBATE_MS) return this.no(s, 'No puedes viajar en combate.');
+    if (ahora < (s.irGrupoT || 0)) return this.no(s, `Espera ${Math.ceil((s.irGrupoT - ahora) / 1000)} s para volver a ir con tu grupo.`);
+    s.irGrupoT = ahora + IR_GRUPO_CD_MS;
+    if (s.montado) this.desmontar(s);
+    this.entrarMapa(s, id, t.x);
+    const nv = MAPAS[id].nv;
+    const peligro = nv && s.c.nivel < nv[0] - 3;
+    this.enviar(s, { t: 'toast', ok: true, m: `👥 Fuiste con ${t.c.nombre} a ${MAPAS[id].nombre}.` + (peligro ? ` Ojo: la zona es de nivel ${nv[0]}.` : '') });
+    this.avisarGrupo(g, `👥 ${s.c.nombre} llegó a ${MAPAS[id].nombre}.`, s);
+    this.guardarSuave(s);
   },
 };

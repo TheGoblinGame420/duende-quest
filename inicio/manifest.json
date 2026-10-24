@@ -6,10 +6,6 @@
   "start_url": "/inicio/?app=1",
   "scope": "/",
   "display": "standalone",
-  "display_override": [
-    "window-controls-overlay",
-    "standalone"
-  ],
   "orientation": "any",
   "background_color": "#0a0418",
   "theme_color": "#0a0418",

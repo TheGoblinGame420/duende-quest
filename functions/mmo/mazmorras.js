@@ -478,13 +478,14 @@ export const Mazmorras = {
         if (!c.desDia || c.desDia.d !== hoy) c.desDia = { d: hoy, hechas: [] };
         if (marca || !c.desDia.hechas.includes(I.id)) {
           if (!c.desDia.hechas.includes(I.id)) c.desDia.hechas.push(I.id);
-          const pd = premioDesafio(I.k);
+          // Se paga el +k que TU bates (el llevado cobra su escalon, no el de la instancia)
+          const pd = premioDesafio(nuevo);
           c.oro += pd.oro;
           const it = this.generarItem(pd.nvItem, pd.rMin);
           it.des = 1;
           it.cj = I.id;   // el premio del Desafio siempre es del conjunto de su mazmorra
           this.darItem(s, it);
-          extra += ` Desafío +${I.k} vencido: +${pd.oro.toLocaleString('es', { useGrouping: 'always' })} oro y un objeto de nivel ${pd.nvItem}.`;
+          extra += ` Desafío +${nuevo} vencido: +${pd.oro.toLocaleString('es', { useGrouping: 'always' })} oro y un objeto de nivel ${pd.nvItem}.`;
         } else extra += ` Desafío +${I.k} vencido (el premio de esta mazmorra ya lo cobraste hoy: bate tu marca para otro).`;
         extra += ` Tu marca aquí: +${c.desafio[I.id]}.`;
       }

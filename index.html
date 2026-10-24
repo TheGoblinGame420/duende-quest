@@ -5,15 +5,15 @@
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Duende Quest: juego RPG y MMORPG gratis en web y Telegram</title>
-<meta name="description" content="Juego RPG y MMORPG gratis en el navegador y en Telegram. Pixel art de duendes hecho en Perú: mazmorras, jefes y misiones online. Sin descargas.">
+<title>Duende Quest: MMORPG gratis en 3D y 2D, en el navegador y Telegram</title>
+<meta name="description" content="MMORPG gratis sin descargas: $DUENDE ORIGINS, mundo abierto 3D con alas y PvP de facciones, y $DUENDE CLASSIC, MMO 2D en pixel art. Mismo duende. Hecho en Perú.">
 <meta name="robots" content="index,follow,max-image-preview:large">
 <link rel="canonical" href="https://duende-quest.alfonso12hc.workers.dev/">
 <meta name="author" content="El Duende (@ElDuendeOficial)">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Duende Quest">
 <meta property="og:locale" content="es_PE">
-<meta property="og:title" content="Duende Quest: RPG y MMORPG pixel art gratis">
+<meta property="og:title" content="Duende Quest: MMORPG gratis en 3D y 2D">
 <meta property="og:description" content="Juega gratis en el navegador o en Telegram. Mazmorras, jefes y misiones con otros jugadores en tiempo real. Sin descargas.">
 <meta property="og:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/mmo_banner.png">
 <meta property="og:image:width" content="1200">
@@ -21,7 +21,7 @@
 <meta property="og:image:alt" content="Duende Quest Online, el MMORPG de los duendes: juega gratis en la web y en Telegram">
 <meta property="og:url" content="https://duende-quest.alfonso12hc.workers.dev/">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Duende Quest: RPG y MMORPG pixel art gratis">
+<meta name="twitter:title" content="Duende Quest: MMORPG gratis en 3D y 2D">
 <meta name="twitter:description" content="Juega gratis en el navegador o en Telegram. Mazmorras, jefes y misiones con otros jugadores en tiempo real. Sin descargas.">
 <meta name="twitter:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/mmo_banner.png">
 <meta name="twitter:image:alt" content="Duende Quest Online, el MMORPG de los duendes">
@@ -64,10 +64,10 @@
       "alternateName": "Duende Quest Online",
       "url": "https://duende-quest.alfonso12hc.workers.dev/",
       "image": "https://duende-quest.alfonso12hc.workers.dev/assets/mmo_banner.png",
-      "screenshot": ["https://duende-quest.alfonso12hc.workers.dev/assets/capturas/mmo-dragon-acantilados.png", "https://duende-quest.alfonso12hc.workers.dev/assets/capturas/mmo-pueblo-jugadores.png", "https://duende-quest.alfonso12hc.workers.dev/assets/capturas/mmo-cavernas-combate.png", "https://duende-quest.alfonso12hc.workers.dev/assets/capturas/mmo-jefe-selva.png", "https://duende-quest.alfonso12hc.workers.dev/assets/capturas/mmo-movil.png", "https://duende-quest.alfonso12hc.workers.dev/assets/capturas/arcade-combate.png"],
+      "screenshot": ["https://duende-quest.alfonso12hc.workers.dev/assets/capturas/mmo-dragon-acantilados.png", "https://duende-quest.alfonso12hc.workers.dev/assets/capturas/mmo-pueblo-jugadores.png", "https://duende-quest.alfonso12hc.workers.dev/assets/capturas/mmo-cavernas-combate.png", "https://duende-quest.alfonso12hc.workers.dev/assets/capturas/mmo-jefe-selva.png", "https://duende-quest.alfonso12hc.workers.dev/assets/capturas/mmo-movil.png", "https://duende-quest.alfonso12hc.workers.dev/assets/capturas/arcade-combate.png", "https://duende-quest.alfonso12hc.workers.dev/assets/video/promo3d-poster.jpg"],
       "description": "RPG y MMORPG de duendes en pixel art, gratis en el navegador y en Telegram. Mazmorras, jefes y misiones con otros jugadores en tiempo real.",
       "inLanguage": "es",
-      "genre": ["RPG", "MMORPG", "Acción", "Pixel art"],
+      "genre": ["RPG", "MMORPG", "3D", "Mundo abierto", "Acción", "Pixel art"],
       "gamePlatform": ["Navegador web", "Telegram"],
       "applicationCategory": "Game",
       "operatingSystem": "Cualquiera con navegador web",
@@ -156,6 +156,8 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- El poster del trailer es lo mas grande de la primera pantalla: que baje ya, sin esperar al <video> -->
+<link rel="preload" as="image" href="/assets/video/promo3d-poster.jpg" fetchpriority="high">
 <!-- Fuente pixel sin bloquear el primer pintado (display=swap ya usa la de sistema mientras carga) -->
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
@@ -233,6 +235,7 @@ nav{
 .juego.origins{border-color:#a78bfa;box-shadow:0 12px 40px rgba(124,58,237,.35);}
 .juego-media{position:relative;border-radius:12px;overflow:hidden;aspect-ratio:9/12;background:#0b0718;}
 .juego-media video,.juego-media img{width:100%;height:100%;object-fit:cover;display:block;}
+.juego-media picture{display:contents;}
 .juego.classic .juego-media img{object-position:30% center;image-rendering:pixelated;}
 .juego-tag{position:absolute;left:8px;top:8px;background:rgba(0,0,0,.65);color:#fff;font:800 11px system-ui,sans-serif;padding:4px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.25);}
 .juego.origins .juego-tag{background:linear-gradient(90deg,#7c3aed,#db2777);}
@@ -840,7 +843,7 @@ section[id]{scroll-margin-top:72px;}
       <a href="/mundo/" class="btn-main juego-btn">🌌 Jugar ORIGINS</a>
     </article>
     <article class="juego classic">
-      <div class="juego-media"><img src="assets/capturas/mmo-dragon-acantilados.png" alt="Captura de $DUENDE CLASSIC: jefes en grupo en pixel art" loading="lazy"><span class="juego-tag">2D · PIXEL ART</span></div>
+      <div class="juego-media"><picture><source type="image/webp" srcset="assets/capturas/mmo-dragon-acantilados.webp"><img src="assets/capturas/mmo-dragon-acantilados.png" width="1160" height="720" decoding="async" alt="Captura de $DUENDE CLASSIC: jefes en grupo en pixel art"></picture><span class="juego-tag">2D · PIXEL ART</span></div>
       <h3>$DUENDE CLASSIC</h3>
       <ul><li>El MMO 2D de siempre, en pixel art</li><li>6 mazmorras, la Torre y la banda del Titán</li><li>4 clases, 10 zonas hasta el nivel 60</li></ul>
       <a href="/mmo/" class="btn-tg juego-btn">⚔️ Jugar CLASSIC</a>

@@ -49,4 +49,22 @@
     mostrar(!enTelegram && !instalada && ios);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar); else iniciar();
+
+  // Volver a la app tras mucho rato: si mientras tanto se publico otra version
+  // (el ?v= de la pagina cambio), se recarga para no seguir con el JS viejo
+  // contra el servidor nuevo. Mas de 10 min porque CLASSIC ya suelta el WS a
+  // los 3 (8 en mazmorra). Va tambien sin SW (Telegram). Sin ?v= no hace nada.
+  var guion = document.querySelector('script[src*="?v="]');
+  var verPagina = guion && (guion.getAttribute('src').match(/\?v=(\d+)/) || [])[1];
+  var ocultaDesde = 0, comprobando = false;
+  if (verPagina) document.addEventListener('visibilitychange', function () {
+    if (document.hidden) { ocultaDesde = Date.now(); return; }
+    if (!ocultaDesde || comprobando || Date.now() - ocultaDesde < 600000) return;
+    ocultaDesde = 0; comprobando = true;
+    fetch(location.pathname, { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (t) {
+      var v = (t.match(/\?v=(\d+)/) || [])[1];
+      // reload conserva query y hash (sesion de Telegram); dq_auto: la cuenta web de CLASSIC entra sola
+      if (v && v !== verPagina) { try { sessionStorage.setItem('dq_auto', '1'); } catch (e) {} location.reload(); }
+    }).catch(function () {}).then(function () { comprobando = false; });
+  });
 })();

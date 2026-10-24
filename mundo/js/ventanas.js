@@ -12,14 +12,14 @@
 //   en cada 'yo' del servidor: V.actualizar();
 //   en 'pedidoSol' y 'factura': V.alPedido(m)  (o alPedido(m) importado)
 import {
-  RANURAS, RAREZAS, BOLSA_MAX, NIVEL_MAX, nombreItem, iconoItem, precioVenta, textoBonos,
+  RANURAS, RAREZAS, BOLSA_MAX, NIVEL_MAX, nombreItem, iconoItem, precioVenta, costoReforja, textoBonos,
   CONJUNTOS, piezasConjunto, textoConjunto,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos,
   HABS, habsDe, costoHab, CLASES, RECURSOS, ESPECS, ESPEC_NIVEL, costoCambioClase,
   ARMAS, SKINS, PODERES, MONTURAS, TINTES, MASCOTAS, HOJAS, FORJA_MAX, costoForja, multForja,
   BANDA_MONTURA, TORRE, ambulanteActivo, ambulanteOferta,
   PAQUETES, estrellasDe, LOGROS, progresoLogro, statsJugador, ALAS,
-} from '/mmo/js/data.js?v=284';
+} from '/mmo/js/data.js?v=285';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -340,7 +340,7 @@ function htmlEquipo(y) {
   const sel = est.ranura && eq[est.ranura];
   if (sel) {
     const rz = RAREZAS[sel.r];
-    h += `<div class="vv-det" style="--rz:${rz.color}"><div class="vv-ico">${icoItem(sel)}</div><div class="vv-txt"><b style="color:${rz.color}">${esc(nombreItem(sel))} <span class="vv-dim">Nv${sel.nv}</span></b><small>${esc(rz.nombre)} · ${esc(RANURAS[sel.s].nombre)} · ${esc(textoBonos(sel.b || {}))}${sel.cj && CONJUNTOS[sel.cj] ? `<br><span style="color:${CONJUNTOS[sel.cj].color}">Conjunto ${esc(CONJUNTOS[sel.cj].nombre)}</span>` : ''}</small></div><div class="vv-acc">${btn('Quitar', 'quitar', { id: est.ranura }, 'sec', bolsa.length >= BOLSA_MAX)}</div></div>`;
+    h += `<div class="vv-det" style="--rz:${rz.color}"><div class="vv-ico">${icoItem(sel)}</div><div class="vv-txt"><b style="color:${rz.color}">${esc(nombreItem(sel))} <span class="vv-dim">Nv${sel.nv}</span></b><small>${esc(rz.nombre)} · ${esc(RANURAS[sel.s].nombre)} · ${esc(textoBonos(sel.b || {}))}${sel.cj && CONJUNTOS[sel.cj] ? `<br><span style="color:${CONJUNTOS[sel.cj].color}">Conjunto ${esc(CONJUNTOS[sel.cj].nombre)}</span>` : ''}</small></div><div class="vv-acc">${btn('Quitar', 'quitar', { id: est.ranura }, 'sec', bolsa.length >= BOLSA_MAX)}${sel.r >= 1 && y.nivel >= NIVEL_MAX ? btn(pidiendo('reforjar:' + sel.id) ? '¿Seguro? Toca otra vez' : `Reforjar ${MON}${fmt(costoReforja(sel))}`, 'reforjar', { id: sel.id }, pidiendo('reforjar:' + sel.id) ? 'ojo' : 'sec') : ''}</div></div>`;
   } else h += '<p class="vv-nota" style="text-align:center;margin:0 0 6px">Toca una pieza puesta para verla o quitarla.</p>';
   // Conjuntos que llevas puestos.
   for (const cid in pz) {
@@ -378,7 +378,8 @@ function htmlEquipo(y) {
     const comp = puesto ? `<br>vs puesta: ${difBonos(it.b, puesto.b) || '<span class="vv-dim">igual</span>'}` : '<br><span class="vv-ok">Ranura vacía</span>';
     const k = 'vender:' + it.id;
     const acc = (puedeUsar(it, y) ? btn('Equipar', 'equipar-item', { id: it.id }) : etq('Nv ' + it.nv, 'vv-warn'))
-      + btn(pidiendo(k) ? '¿Seguro? Toca otra vez' : `Vender ${MON}${fmt(precioVenta(it))}`, 'vender', { id: it.id }, pidiendo(k) ? 'ojo' : 'sec');
+      + btn(pidiendo(k) ? '¿Seguro? Toca otra vez' : `Vender ${MON}${fmt(precioVenta(it))}`, 'vender', { id: it.id }, pidiendo(k) ? 'ojo' : 'sec')
+      + (it.r >= 1 && y.nivel >= NIVEL_MAX ? btn(pidiendo('reforjar:' + it.id) ? '¿Seguro? Toca otra vez' : `Reforjar ${MON}${fmt(costoReforja(it))}`, 'reforjar', { id: it.id }, pidiendo('reforjar:' + it.id) ? 'ojo' : 'sec') : '');
     h += tarjeta(icoItem(it), `<span style="color:${rz.color}">${esc(nombreItem(it))}</span> <span class="vv-dim">Nv${it.nv}</span>${flecha}`,
       `${esc(rz.nombre)} · ${esc(RANURAS[it.s] ? RANURAS[it.s].nombre : '')} · ${esc(textoBonos(it.b || {}))}${comp}${it.cj && CONJUNTOS[it.cj] ? `<br><span style="color:${CONJUNTOS[it.cj].color}">Conjunto: ${esc(textoConjunto(CONJUNTOS[it.cj]))}</span>` : ''}`,
       acc, ` style="--rz:${rz.color}"`);
@@ -831,6 +832,11 @@ const ACC = {
   quitar: b => { H.sfx('boton', 0.3); H.mandar({ t: 'item', a: 'quitar', ranura: b.dataset.id }); est.ranura = ''; },
   filtro: b => { est.filtro = b.dataset.id; pintarInventario(); },
   'equipar-item': b => { H.sfx('boton', 0.3); H.mandar({ t: 'item', a: 'equipar', id: b.dataset.id }); },
+  // Reforjar (junto a la Artesana) pide un segundo toque: la linea nueva puede salir peor.
+  reforjar: b => {
+    if (!confirmar('reforjar:' + b.dataset.id)) { marcarSeguro(b); return; }
+    H.sfx('moneda', 0.3); H.mandar({ t: 'item', a: 'reforjar', id: b.dataset.id });
+  },
   vender: b => {
     const y = H.yo(), it = ((y && y.bolsa) || []).find(x => x.id === b.dataset.id);
     // Lo epico, legendario o de conjunto pide un segundo toque.

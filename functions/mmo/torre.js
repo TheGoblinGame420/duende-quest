@@ -185,8 +185,7 @@ export const Torre = {
     const nombres = [];
     for (let i = 0; i < top.length; i++) {
       const [uid, f] = top[i];
-      const s = this.porUid.get(uid);
-      const c = s ? s.c : await this.state.storage.get('c:' + uid);
+      const { s, c } = await this.pjDe(uid);
       if (!c) continue;
       const oro = premioTorreSem(i);
       c.oro += oro;

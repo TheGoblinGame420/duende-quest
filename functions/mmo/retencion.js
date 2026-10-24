@@ -22,8 +22,8 @@
 //     para contar activos o elegir a quien avisar.
 //
 // Los avisos salen a la HORA HABITUAL de cada uno (la que mas se repite en
-// sus primeras entradas del dia; con menos de 3 dias anotados, las 17:00
-// UTC). Las 17:00 las manda el cron (functions/api/cron.js) por la ruta
+// sus primeras entradas del dia; con 1 o 2 dias anotados, la de la ultima;
+// sin ninguno, las 17:00 UTC). Las 17:00 las manda el cron (functions/api/cron.js) por la ruta
 // interna 'recordatorios'; el resto de horas, la alarma del propio Durable
 // Object (alarm(), cada hora en punto), sin gastar otro disparador de cron.
 // Reglas para no hacer spam: solo cuentas de Telegram que jugaron en los
@@ -54,14 +54,16 @@ const vacio = () => ({ n: 0, a: 0, ses: 0, min: 0, r1: 0, r7: 0, r30: 0 });
 
 const MAX_ENVIOS = 40;   // avisos por llamada a 'recordatorios' (limite de subpeticiones)
 export const HORA_DEFECTO = 17;   // la del cron: para quien aun no tiene hora habitual
-const DIAS_PARA_HORA = 3;         // dias con hora anotada para fiarse de ella
+const DIAS_PARA_HORA = 3;         // dias con hora anotada para buscar la mas repetida
 const horaUTC = (t = Date.now()) => new Date(t).getUTCHours();
 
 // La hora (UTC) a la que suele volver: la mas repetida de sus primeras
-// entradas del dia; en empate, la mas reciente.
+// entradas del dia; en empate, la mas reciente. Con 1 o 2 dias (el aviso D1
+// del jugador nuevo), la de su ultima primera entrada: a la hora que jugo.
 export function horaHabitual(e) {
   const hs = (e && e.hs) || [];
-  if (hs.length < DIAS_PARA_HORA) return HORA_DEFECTO;
+  if (!hs.length) return HORA_DEFECTO;
+  if (hs.length < DIAS_PARA_HORA) return hs[hs.length - 1];
   const n = {};
   for (const h of hs) n[h] = (n[h] || 0) + 1;
   let mejor = hs[hs.length - 1];

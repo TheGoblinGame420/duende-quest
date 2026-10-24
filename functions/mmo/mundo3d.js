@@ -688,6 +688,8 @@ export const Mundo3D = {
       if (o && !o.muere) {
         const s = this.sesiones.get(t.sid), quien = s && s.c && s.m3 ? s : null;
         const d = this.danar3d(o, t.dmg, quien, true);
+        // Se apunta aparte: para el premio el daño de maquina cuenta al 25 %
+        if (quien && d && A.maq) A.maq.set(quien.id, (A.maq.get(quien.id) || 0) + d);
         this.aCerca3d(o, { t: 'at3', p: quien ? quien.id : 0, tg: o.id, d, c: 1, maq: 1 }, 260);
       }
       return false;
@@ -748,7 +750,7 @@ export const Mundo3D = {
       W.mons.set(o.id, o);
       return o;
     };
-    A.ini = ini; A.fin = ini + ASEDIO.dura; A.activo = true; A.cd = {}; A.tiros = []; A.hpT = 0;
+    A.ini = ini; A.fin = ini + ASEDIO.dura; A.activo = true; A.cd = {}; A.tiros = []; A.maq = new Map(); A.hpT = 0;
     A.puerta = nuevo('puerta_nucleo', PUERTA_NUCLEO.x, PUERTA_NUCLEO.z, 40000 + 8000 * n, { puerta: true });
     A.guardian = nuevo('guardian_nucleo', CENTRO_NUCLEO.x - 8, CENTRO_NUCLEO.z, 30000 + 10000 * n, { guardian: true, dormido: true, onda: null, ondaProx: 0, enfurecido: false, llamo: false });
     const d = this.duenoNucleo();
@@ -791,13 +793,14 @@ export const Mundo3D = {
         if (this.state && this.state.storage) this.state.storage.put('nucleo', this.nucleo).catch(() => {});
         this.aTodos({ t: 'aviso', m: `🏰 Los ${FACCIONES[ganador].titulo} ${antes === ganador ? 'defienden' : 'conquistan'} la Fortaleza del Núcleo.` });
       } else this.aTodos({ t: 'aviso', m: antes ? `🏰 La Fortaleza del Núcleo resiste: sigue en manos de los ${FACCIONES[antes].titulo}.` : '🏰 Se acabó el tiempo: la Fortaleza del Núcleo sigue sin dueño.' });
-      // Premios: quien aporto al menos un 0,3 % (puerta + guardian); si resistio,
+      // Premios: quien aporto al menos un 0,3 % (puerta + guardian; los tiros de
+      // maquina, desde el santuario del bastion, solo al 25 %); si resistio,
       // los defensores que estaban en la isla del Nucleo.
       const hoy = hoyUTC();
       for (const s of this.sesiones3d()) {
         const c = s.c;
         if (!c.faccion || !enAbismo(s.p.x)) continue;
-        const aporte = (p ? p.dano.get(s.id) || 0 : 0) + (g ? g.dano.get(s.id) || 0 : 0);
+        const aporte = (p ? p.dano.get(s.id) || 0 : 0) + (g ? g.dano.get(s.id) || 0 : 0) - 0.75 * (A.maq ? A.maq.get(s.id) || 0 : 0);
         const defensor = !ganador && antes && c.faccion === antes && dist(s.p, CENTRO_NUCLEO) < 60;
         if (aporte < total * 0.003 && !defensor) continue;
         const gana = (ganador && c.faccion === ganador) || defensor;

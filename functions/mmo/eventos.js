@@ -53,11 +53,13 @@ const NOMBRES_RARO = ['Ojoplata', 'Zarpadorada', 'Grishnak el Viejo', 'Morgra', 
 const TINTE_RARO = ['#ffd84a', '#e5e7eb'];       // dorado o plateado
 
 // Premios de cada tipo de cofre: oro = nivel medio de la zona x oro, y
-// probabilidades de pocion y de equipo (r = rareza minima).
+// probabilidades de pocion y de equipo (r = rareza minima). El equipo solo
+// lo usa el 2D (el 3D lleva el suyo en COFRE3D_X): el legendario, en lo mas
+// alto, siempre trae su pieza.
 export const COFRE_TIPOS = {
-  comun:      { oro: 8,  pocion: 0.2, pociones: 1, equipo: 0.03, r: 0 },
-  epico:      { oro: 15, pocion: 0.4, pociones: 2, equipo: 0.07, r: 0 },
-  legendario: { oro: 25, pocion: 0.6, pociones: 2, equipo: 0.12, r: 1 },
+  comun:      { oro: 8,  pocion: 0.2, pociones: 1, equipo: 0.12, r: 0 },
+  epico:      { oro: 15, pocion: 0.4, pociones: 2, equipo: 0.35, r: 0 },
+  legendario: { oro: 25, pocion: 0.6, pociones: 2, equipo: 1,    r: 1 },
 };
 
 // Zonas donde pasa todo esto: las abiertas con monstruos (ni el pueblo, ni
@@ -351,7 +353,8 @@ export const Eventos = {
     c.cofres[clave] = ahora;
     const T = COFRE_TIPOS[cf.tipo];
     const nvZ = nivelZona(mapaId);
-    const oro = Math.max(1, Math.round(nvZ * T.oro * rnd(0.85, 1.15)));
+    // x2 en el 2D (el 3D paga mas aun: sus cofres estan escondidos).
+    const oro = Math.max(1, Math.round(nvZ * T.oro * 2 * rnd(0.85, 1.15)));
     c.oro += oro;
     let pociones = 0;
     if (Math.random() < T.pocion) { pociones = T.pociones; c.pw.pocion = Math.min(99, (c.pw.pocion || 0) + pociones); }

@@ -15,7 +15,7 @@
 import {
   MAPAS, MONSTRUOS, statsMonstruo, statsJugador, xpParaSubir, SKINS, ARMAS, PODERES, MISIONES, DIARIA, premioDiaria, hoyUTC,
   FORJA_MAX, costoForja, multForja,
-  RANURAS, RAREZAS, BOLSA_MAX, baseItem, precioVenta, nombreItem,
+  RANURAS, RAREZAS, BOLSA_MAX, baseItem, precioVenta, nombreItem, costoReforja, textoBonos,
   LOGIN_PREMIOS, multLogin, LOGROS, MUNDIAL_DURA_MS, proximoMundial,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, MTON_EDAD_MIN_MS, WALLET_ESPERA_MS, FONDO_REFERENCIA_MTON, tonAmigable,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, FONDO_PCT_INGRESOS, PAQUETES, estrellasDe, PEDIDO_VIGENCIA_MS, DUENDE_MINT, DUENDE_DECIMALES, DUENDE_DESCUENTO,
@@ -108,6 +108,11 @@ function generarItem(nv, rMin) {
   let tiro = Math.random() * total, r = 0;
   for (let i = 0; i < RAREZAS.length; i++) { tiro -= RAREZAS[i].peso; if (tiro <= 0) { r = i; break; } }
   r = Math.max(r, rMin || 0);
+  return { id: idItem(), s, nv: Math.max(1, Math.round(nv)), r, b: statsItem(s, nv, r) };
+}
+// Estadisticas de una pieza: la base por su rareza (siempre igual) y, desde
+// Raro, una linea extra al azar. Reforjar vuelve a llamar a esto.
+function statsItem(s, nv, r) {
   const mult = RAREZAS[r].mult;
   const base = baseItem(s, nv);
   const b = {};
@@ -119,7 +124,7 @@ function generarItem(nv, rMin) {
     const v = extra === 'crit' ? Math.round(0.01 * r * 100) / 100 : Math.max(1, Math.round(nv * r * (extra === 'hp' ? 1.2 : extra === 'atk' ? 0.12 : 0.1)));
     b[extra] = extra === 'crit' ? Math.round(((b[extra] || 0) + v) * 100) / 100 : (b[extra] || 0) + v;
   }
-  return { id: idItem(), s, nv: Math.max(1, Math.round(nv)), r, b };
+  return b;
 }
 
 // Clave publica al azar (32 bytes en base58) para la 'reference' de Solana Pay.
@@ -392,6 +397,7 @@ export class MmoWorld {
       case 'ping': return this.enviar(s, { t: 'pong', ts: m.ts });
       case 'dios': return this.dios(s, m);
       case 'viajar': return this.viajar(s, m);
+      case 'irGrupo': return this.irConGrupo(s, m);
     }
   }
 
@@ -461,8 +467,10 @@ export class MmoWorld {
     this.entrando = this.entrando || new Map();
     if (this.entrando.has(uid)) { this.expulsar(s, 'Tu cuenta ya está entrando desde otra pestaña. Usa solo una.'); return; }
     this.entrando.set(uid, s);
+    // Premios o devoluciones que llegan mientras entra esperan a que termine (pjDe).
+    let listo; s.entrandoP = new Promise(r => { listo = r; });
     try { await this.holaCuenta(s, m, env, uid, nombre, pagadas); }
-    finally { if (this.entrando.get(uid) === s) this.entrando.delete(uid); }
+    finally { if (this.entrando.get(uid) === s) this.entrando.delete(uid); listo(); }
   }
 
   async holaCuenta(s, m, env, uid, nombre, pagadas) {
@@ -481,17 +489,26 @@ export class MmoWorld {
     if (!c && !uid.startsWith('inv:') && /^[a-f0-9]{32}$/.test(m.inv || '')) {
       const uidInv = 'inv:' + (await sha256hex('dq-mmo:' + m.inv)).slice(0, 24);
       const previo = uidInv !== uid && await this.state.storage.get('c:' + uidInv);
-      if (previo && !this.porUid.has(uidInv)) {
-        const antes = previo.nombre;
-        c = { ...previo, uid, nombre: await this.nombreLibre(nombre, uid, this.calcularDios({ c: { uid } }, s.extraAuth)) };
-        nombre = c.nombre;
-        await this.reservarNombre(c, antes);
-        await this.state.storage.delete('c:' + uidInv);
-        heredado = true;
-        this.renombrarContacto(uidInv, uid);
-        const r = (await this.state.storage.get('ranking')) || [];
-        const fila = r.find(x => x.uid === uidInv);
-        if (fila) { fila.uid = uid; fila.n = nombre; await this.state.storage.put('ranking', r); }
+      if (previo && !this.porUid.has(uidInv) && !this.entrando.has(uidInv)) {
+        // Mientras se hereda, el invitado no puede entrar (ni otra cuenta heredar):
+        // leeria el personaje que se esta moviendo y al guardarlo quedaria duplicado.
+        this.entrando.set(uidInv, s);
+        try {
+          const antes = previo.nombre;
+          c = { ...previo, uid, nombre: await this.nombreLibre(nombre, uid, this.calcularDios({ c: { uid } }, s.extraAuth)) };
+          nombre = c.nombre;
+          await this.reservarNombre(c, antes);
+          // Sin await entre las dos: el storage del DO las manda en un solo lote
+          // atomico. Antes se borraba el del invitado y el nuevo no se escribia
+          // hasta el guardar del final: un fallo o reinicio en medio lo perdia.
+          this.state.storage.put('c:' + uid, c);
+          await this.state.storage.delete('c:' + uidInv);
+          heredado = true;
+          this.renombrarContacto(uidInv, uid);
+          const r = (await this.state.storage.get('ranking')) || [];
+          const fila = r.find(x => x.uid === uidInv);
+          if (fila) { fila.uid = uid; fila.n = nombre; await this.state.storage.put('ranking', r); }
+        } finally { if (this.entrando.get(uidInv) === s) this.entrando.delete(uidInv); }
       }
     }
     const nuevo = !c;
@@ -548,6 +565,9 @@ export class MmoWorld {
     // al desvincularla se retiran (si no, vincular/desvincular las copiaba a infinitos duendes).
     if (!tgPropio && tgDe && regaladas.length) c.skinsTg = [...new Set([...(c.skinsTg || []), ...regaladas])];
 
+    // Antes de la comprobacion de abajo: desde s.c=c hasta porUid.set no puede haber awaits
+    // (si se cerrara ahi, cerrar() no lo quita de porUid y quedaria de fantasma).
+    await this.cargarMod();
     // Si el socket se cerro durante las esperas de arriba, cerrar() no limpio nada
     // (s.c era null): no se le mete en porUid ni en el mapa (quedaria de fantasma).
     // El personaje nuevo o heredado se guarda igual (el del invitado ya se borro).
@@ -558,7 +578,6 @@ export class MmoWorld {
     s.c = c;
     s.dios = this.calcularDios(s, s.extraAuth);
     s.diosModo = {};
-    await this.cargarMod();
     s.st = this.stats(c);
     // Se guarda la vida y si estaba muerto: si no, cerrar la pestaña justo
     // antes de morir te devolvia con la vida llena en el mismo sitio.
@@ -1094,8 +1113,7 @@ export class MmoWorld {
     const pd = this.buscarPedido(b.codigo);
     if (!pd || (pd.estado !== 'pagado' && pd.estado !== 'por_verificar')) return { ok: false, error: 'No hay un pedido pagado con ese código.' };
     const pq = PAQUETES.find(x => x.id === pd.paquete);
-    const s = this.porUid.get(pd.uid);
-    const c = s ? s.c : await this.state.storage.get('c:' + pd.uid);
+    const { s, c } = await this.pjDe(pd.uid);
     if (!c || !pq) return { ok: false, error: 'No encontré al jugador o el paquete.' };
     c.oro += pq.oro || 0;
     for (const k in (pq.pw || {})) c.pw[k] = Math.min(99, (c.pw[k] || 0) + pq.pw[k]);
@@ -1245,8 +1263,7 @@ export class MmoWorld {
       if (b.tx) r.tx = String(b.tx).slice(0, 120);
       if (accion === 'rechazar') {
         // Se le devuelven los mTON (salvo que el dueño lo marque como trampa).
-        const s = this.porUid.get(r.uid);
-        const c = s ? s.c : await this.state.storage.get('c:' + r.uid);
+        const { s, c } = await this.pjDe(r.uid);
         if (c && !b.trampa) {
           c.mton = (c.mton || 0) + r.mton;
           if (s) await this.guardar(s); else await this.state.storage.put('c:' + r.uid, c);
@@ -1542,6 +1559,7 @@ export class MmoWorld {
   item(s, m) {
     const c = s.c;
     if (typeof m.id !== 'string' && typeof m.ranura !== 'string') return;
+    if (m.a === 'reforjar') { if (typeof m.id === 'string') this.reforjar(s, m.id); return; }
     if (m.a === 'quitar') {
       if (!Object.hasOwn(RANURAS, m.ranura) || !c.eq[m.ranura]) return;
       if (c.bolsa.length >= BOLSA_MAX) return this.enviar(s, { t: 'toast', m: 'Tu bolsa está llena: vende algo primero.' });
@@ -1568,6 +1586,26 @@ export class MmoWorld {
     this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });
     this.revisarLogros(s);
     this.actualizarYo(s);
+  }
+
+  // Reforjar (Nv 60, junto a la Artesana): vuelve a tirar la linea extra de
+  // una pieza rara o mejor (de la bolsa o puesta). La base no cambia: nunca
+  // pasa del maximo de su rareza. Cada vez cuesta mas (costoReforja).
+  reforjar(s, id) {
+    const c = s.c;
+    if (s.muerto) return;
+    if (c.nivel < NIVEL_MAX) return this.no(s, `Reforjar se desbloquea a nivel ${NIVEL_MAX}.`);
+    if (!this.cercaDeArtesana(s)) return this.no(s, 'Habla con la Artesana Lila en el pueblo.');
+    const it = c.bolsa.find(x => x.id === id) || Object.values(c.eq || {}).find(x => x && x.id === id);
+    if (!it || !(it.r >= 1) || !RAREZAS[it.r]) return this.no(s, 'Solo se reforjan objetos raros o mejores.');
+    const costo = costoReforja(it);
+    if (c.oro < costo) return this.no(s, `Reforjar cuesta ${costo.toLocaleString('es', { useGrouping: 'always' })} oro.`);
+    c.oro -= costo;
+    it.b = statsItem(it.s, it.nv, it.r);
+    it.rf = (it.rf || 0) + 1;
+    this.enviar(s, { t: 'toast', ok: true, m: `🔨 Reforjado: ${nombreItem(it)} ahora da ${textoBonos(it.b)}.` });
+    this.recalcular(s);
+    this.guardar(s);
   }
 
   ponerTitulo(s, m) {
@@ -2249,8 +2287,7 @@ export class MmoWorld {
     const nombres = [];
     for (let i = 0; i < top.length; i++) {
       const [uid, f] = top[i];
-      const s = this.porUid.get(uid);
-      const c = s ? s.c : await this.state.storage.get('c:' + uid);
+      const { s, c } = await this.pjDe(uid);
       if (!c) continue;
       const oro = premioDesSem(i);
       c.oro += oro;
@@ -2331,8 +2368,7 @@ export class MmoWorld {
     const nombres = [];
     for (let i = 0; i < top.length; i++) {
       const [uid, f] = top[i];
-      const s = this.porUid.get(uid);
-      const c = s ? s.c : await this.state.storage.get('c:' + uid);
+      const { s, c } = await this.pjDe(uid);
       if (!c) continue;
       const oro = [400, 200, 100][i] * c.nivel;
       c.oro += oro;
@@ -2348,6 +2384,22 @@ export class MmoWorld {
       if (await this.quiereAvisos(uid)) { try { const env = getEnv({ env: this.env }); await tg(env.BOT_TOKEN, 'sendMessage', { chat_id: uid.slice(3), text: txt }); } catch (e) {} }
     }
     if (nombres.length) this.aTodos({ t: 'aviso', m: `🏆 Ranking semanal: ${nombres.join(' · ')}. Empieza una semana nueva.` });
+  }
+
+  // El personaje de uid para cambiarlo desde fuera de su sesion (premios,
+  // pedidos, devoluciones): el de la sesion si esta conectado y si no el del
+  // storage. Si esta ENTRANDO (holaCuenta ya leyo su copia pero aun no esta en
+  // porUid) se espera a que termine: escrito en el storage, su guardado lo pisaba.
+  async pjDe(uid) {
+    for (let i = 0; i < 3; i++) {
+      const e = this.entrando && this.entrando.get(uid);
+      if (e && e.entrandoP) { let t; await Promise.race([e.entrandoP, new Promise(r => { t = setTimeout(r, 20000); })]); clearTimeout(t); }
+      const s = this.porUid.get(uid);
+      if (s && s.c) return { s, c: s.c };
+      const c = await this.state.storage.get('c:' + uid);
+      // Empezo a entrar mientras se leia: otra vuelta (como mucho tres).
+      if (i === 2 || (!(this.entrando && this.entrando.has(uid)) && !this.porUid.has(uid))) return { s: null, c };
+    }
   }
 
   // ── GUARDADO ──

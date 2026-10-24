@@ -2830,3 +2830,22 @@ invitados y limitado; chat de invitados en ORIGINS; restaurar copias con los
 retiros rechazados; limite del bot solo para comandos/botones y responde al
 boton; titulo de la factura 2x <= 32 caracteres; boton movil de la landing.
 `aplicar.py` conserva los finales de linea (el del bot habia quedado mezclado).
+
+### Ronda 3: 46 agentes (24-oct-2026, `?v=285`)
+
+40 propuestas validas, 37 aplicadas (2 duplicadas y 1 que choco con 'bienvenido').
+Rendimiento 3D: `POBRE` (Android con <=3 GB o <=4 nucleos) empieza en baja;
+`lejosDin` acorta la niebla si sigue lento; flora 'lejos' sin el discard de la
+tapa en media/alta; sesion web pedida en paralelo. Movil: pellizco para zoom,
+tolerancia al tocar objetivos, chat de CLASSIC con el teclado (visualViewport),
+oro en el HUD movil. QA: barra de lanzamiento tras reconectar; cliente viejo ante
+mapas/monstruos nuevos (recarga); `pjDe(uid)` espera a que termine de entrar
+antes de escribir premios/entregas/devoluciones (no se pierden); herencia de
+invitado en una escritura atomica; fundar hermandad sin doble cobro.
+PWA: recarga al volver tras >10 min si hay version nueva; sin
+window-controls-overlay. Juego: cofres de CLASSIC x2 oro y mas equipo;
+«Reforjar» la linea extra; «Ir con el» en el grupo 2D; logros de dias.
+Seguridad: asedio sin premio desde el santuario; cuevas con tope por cuenta;
+alt llevado sin premio completo de Desafio; invitaciones viejas caducan y con
+freno; nombres de hermandad solo latinos y sin reservados; `pub()` aleatorio
+(no invertible); copia externa grande restaurable por trozos.
