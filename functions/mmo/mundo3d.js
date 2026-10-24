@@ -113,6 +113,25 @@ export const Mundo3D = {
   recibir3d(s, m) {
     switch (m.t) {
       case 'mv3': return this.mover3d(s, m);
+      // Lo social y lo de cuenta funciona igual que en el 2D (mismo personaje).
+      case 'pase': return this.cobrarPase(s, m);
+      case 'cambiarTarea': return this.cambiarTarea(s, m);
+      case 'amigos': return this.infoAmigos(s);
+      case 'herm': return this.verHerm(s);
+      case 'hermCrear': return this.crearHermandad(s, m);
+      case 'hermInvitar': return this.invitarHerm(s, m);
+      case 'hermResp': return this.respuestaHerm(s, m);
+      case 'hermSalir': return this.salirHerm(s);
+      case 'hermExpulsar': return this.expulsarHerm(s, m);
+      case 'hermRango': return this.rangoHerm(s, m);
+      case 'hermMotd': return this.motdHerm(s, m);
+      case 'hermColor': return this.colorHerm(s, m);
+      case 'contactoAdd': return this.agregarContacto(s, m);
+      case 'contactoQuitar': return this.quitarContacto(s, m);
+      case 'inspeccionar': return this.inspeccionar(s, m);
+      case 'boveda': return this.elegirBoveda(s, m);
+      case 'chicha': return this.reclamarChicha(s, m);
+      case 'wallet': return this.ponerWallet(s, m);
       case 'atk3': return this.atacar3d(s, m);
       case 'pw': return this.poder3d(s, m);
       case 'hab3': return this.hab3d(s, m);
@@ -325,7 +344,9 @@ export const Mundo3D = {
       const xp = Math.max(1, Math.round(base.xp * k * (1 + talento(s.c, 'erudicion')) * (esNoche(Date.now()) ? 1.1 : 1)));
       const oro = Math.max(1, Math.round(base.oro * k * rnd(0.8, 1.2) * mult));
       // dar(): misiones, diarias, bestiario, chicha, pase, botin... lo mismo que el 2D.
-      this.dar(s, xp, oro, o, 1, true);
+      const gr = this.grupoDe ? this.grupoDe(s) : null;
+      const nG = gr ? Math.max(1, this.sesionesGrupo(gr).filter(x => x.m3 && !x.muerto && o.dano.has(x.id)).length) : 1;
+      this.dar(s, xp, oro, o, nG, true);
       cobraron.add(sid);
       if (enAbismo(o.x) && parte >= 0.1) this.sumarPA(s, (o.jefe ? 10 : 3) + (s.c.faccion && s.c.faccion === this.duenoNucleo() ? (o.jefe ? 2 : 1) : 0), 'élite');
       if (o.jefe && !o.cueva && parte >= 0.1) this.darMton(s, 20 * Math.max(0.3, MONSTRUOS[o.k].nivel / 30), 'jefe');
@@ -478,7 +499,7 @@ export const Mundo3D = {
     const st = statsMonstruo(c.k, def.nivel);
     const ang = Math.random() * Math.PI * 2, r = c.jefe ? 0 : rnd(1, 5);
     const o = {
-      id: W.sig++, k: c.k, nv: def.nivel, campo: c.id, jefe: !!c.jefe || !!def.jefe, dispara: !!def.dispara,
+      id: W.sig++, k: c.k, nv: def.nivel, campo: c.id, mapa: c.zona, jefe: !!c.jefe || !!def.jefe, dispara: !!def.dispara,
       x: c.x + Math.cos(ang) * r, z: c.z + Math.sin(ang) * r, hx: c.x, hz: c.z, ry: 0,
       hp: st.hp, max: st.hp, atk: st.atk, vel: st.vel, y: 0, h: 0,
       dano: new Map(), amen: new Map(), au: {}, cl: K3, obj: 0, atkEn: 0, golpeT: 0, st: 0, paseo: 0, destino: null,

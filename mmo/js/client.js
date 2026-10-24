@@ -17,7 +17,7 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=272';
+} from './data.js?v=273';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -4085,14 +4085,16 @@ function cajaDiaria() {
     '<p style="color:var(--oro)">Recompensa: +' + pr.xp + ' XP · +' + pr.oro + ' oro · +' + pr.pocion + ' pociones</p>' +
     (lista ? '<button class="btn" id="b-diaria" style="width:100%;padding:10px;margin-top:6px">Cobrar caza del día</button>' : '') + '</div>';
 }
+// Cambio gratis de una diaria al dia (🔄).
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-cambiar]'); if (b && $('m-mision') && $('m-mision').contains(b)) mandar({ t: 'cambiarTarea', i: +b.dataset.cambiar }); });
 // Diarias y semanales: se cobran solas, aqui solo se ven.
 function cajaTareas() {
   const T = yo.tareas;
   if (!T) return '';
-  const fila = t => `<div class="fila" style="${t.ok ? 'color:var(--ok)' : ''}"><span>${t.ok ? '✓' : '•'} ${esc(t.txt)}</span><span>${t.p}/${t.n}</span></div>`;
-  return '<div class="mis-caja"><b>Misiones del día</b>' + T.dia.l.map(fila).join('') +
+  const fila = (t, i, dia) => `<div class="fila" style="${t.ok ? 'color:var(--ok)' : ''}"><span>${t.ok ? '✓' : '•'} ${esc(t.txt)}</span><span>${t.p}/${t.n}${dia && !t.ok && !T.dia.cambio ? ` <button class="bt" data-cambiar="${i}" title="Cambiar esta misión (1 gratis al día)" style="padding:1px 5px">🔄</button>` : ''}</span></div>`;
+  return '<div class="mis-caja"><b>Misiones del día</b>' + T.dia.l.map((t, i) => fila(t, i, true)).join('') +
     `<p style="font-size:12px;margin-top:6px">Cada una: +${T.premio.xp.toLocaleString('es', { useGrouping: 'always' })} XP y +${T.premio.oro.toLocaleString('es', { useGrouping: 'always' })} oro. Las 3: ${T.dia.bono ? '✓ bono cobrado' : 'objeto raro + pociones y escudos'}. Se renuevan cada día.</p></div>` +
-    '<div class="mis-caja"><b>Misiones de la semana</b>' + T.sem.l.map(fila).join('') +
+    '<div class="mis-caja"><b>Misiones de la semana</b>' + T.sem.l.map(t => fila(t)).join('') +
     `<p style="font-size:12px;margin-top:6px">Cada una: +${T.premioSem.xp.toLocaleString('es', { useGrouping: 'always' })} XP y +${T.premioSem.oro.toLocaleString('es', { useGrouping: 'always' })} oro. Las 2: ${T.sem.bono ? '✓ bono cobrado' : 'objeto épico'}. Se renuevan los lunes.</p></div>`;
 }
 // Final de juego: lo que queda por hacer esta semana (y hoy), de un vistazo.
@@ -4538,7 +4540,7 @@ function pintarTienda() {
       if (tabTienda === 'skin' && !tiene.includes(id)) acc += `<button class="btn sec" data-probar="${id}">Probar</button>`;
       h += tarjeta(ico, d.premium ? `<span style="color:${d.color}">${esc(d.nombre)}</span>` : d.nombre, d.desc + (tabTienda === 'skin' && puesto !== id ? difSkin(id) : ''), acc);
     }
-    if (tabTienda === 'skin') h += '<p style="margin-top:8px;font-size:12px;color:#fde68a"><b>Una skin, dos juegos:</b> la que compres la llevas también en $DUENDE ORIGINS (3D), con los mismos poderes.</p><p style="margin-top:6px;font-size:12px;color:var(--txt2)">Cada skin da sus poderes mientras la llevas. Se compran con oro o, con tu cuenta, con dinero: ' + ((TG && !forzarInvitado) ? 'Telegram Stars' : 'SOL o $DUENDE (10% de descuento) a la wallet de El Duende') + '; El Duende revisa el pago y te la entrega en tu personaje. Las cuatro exclusivas (Esmeralda, Sombrío, Solar y Cósmico) solo se consiguen así; sus ventajas suben con el precio sin superar a las de oro de final de juego, y ninguna cambia lo que se gana en mTON.</p>';
+    if (tabTienda === 'skin') h += '<p style="margin-top:8px;font-size:12px;color:#fde68a"><b>Una skin, dos juegos:</b> la que compres la llevas también en $DUENDE ORIGINS (3D), con los mismos poderes. En PvP (duelos y Abismo) sus ventajas de combate no cuentan: ahí todos pelean igual.</p><p style="margin-top:6px;font-size:12px;color:var(--txt2)">Cada skin da sus poderes mientras la llevas. Se compran con oro o, con tu cuenta, con dinero: ' + ((TG && !forzarInvitado) ? 'Telegram Stars' : 'SOL o $DUENDE (10% de descuento) a la wallet de El Duende') + '; El Duende revisa el pago y te la entrega en tu personaje. Las cuatro exclusivas (Esmeralda, Sombrío, Solar y Cósmico) solo se consiguen así; sus ventajas suben con el precio sin superar a las de oro de final de juego, y ninguna cambia lo que se gana en mTON.</p>';
   }
   L.innerHTML = h;
   // Retratos de las monturas (primer cuadro de su hoja).

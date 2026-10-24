@@ -312,6 +312,7 @@ export class MmoWorld {
       case 'inspeccionar': return this.inspeccionar(s, m);
       case 'gesto': return this.gesto(s, m);
       case 'pase': return this.cobrarPase(s, m);
+      case 'cambiarTarea': return this.cambiarTarea(s, m);
       case 'boveda': return this.elegirBoveda(s, m);
       case 'lfgLista': return this.lfgLista(s);
       case 'lfgQuitar': return this.quitarLfg(s);
@@ -511,6 +512,7 @@ export class MmoWorld {
     s.sucio = true; s.guardadoT = Date.now(); s.actT = Date.now();
     this.porUid.set(uid, s);
     const login = this.procesarLogin(s);
+    if (this.cobrarPasePendiente) this.cobrarPasePendiente(s);
     // XP de descanso por el tiempo fuera (c.salida se pone al guardar).
     const salidaAntes = c.salida || 0;
     let descansado = 0;
@@ -604,6 +606,12 @@ export class MmoWorld {
   }
 
   stats(c) { return statsJugador(c.nivel, c.skin, c.eq, c.clase, c.espec, c.tal, c.runas); }
+  // Stats sin la skin: en el PvP (duelos y Abismo) las ventajas de combate de
+  // las skins no cuentan; ahi todos pelean igual. Se recalcula si cambian.
+  statsSinSkin(s) {
+    if (s._stBaseDe !== s.st) { s._stBase = statsJugador(s.c.nivel, null, s.c.eq, s.c.clase, s.c.espec, s.c.tal, s.c.runas); s._stBaseDe = s.st; }
+    return s._stBase;
+  }
 
   // ── mTON / PLAY TO EARN ──
   // Quien puede ganar: cuenta real (Telegram o web, no invitado), Nv 15+ y
@@ -1830,7 +1838,10 @@ export class MmoWorld {
     if (pct) real = Math.round(s.st.maxHp * pct * rnd(0.95, 1.05));
     // Duelo: la defensa solo amortigua un poco (si no, el guerrero no recibia
     // casi nada); la escala del daño ya la pone golpeDuelo.
-    if (duelo || pvp) real = Math.max(1, Math.round(bruto * (1 - s.st.def / (s.st.def + 120))));
+    if (duelo || pvp) {
+      const sb = this.statsSinSkin(s);
+      real = Math.max(1, Math.round(bruto * (1 - sb.def / (sb.def + 120)) * (s.st.maxHp / Math.max(1, sb.maxHp))));
+    }
     // Un monstruo comun nunca quita mas de un 30% de la vida de un golpe: en
     // una zona algo alta se sufre, pero ya no se muere en tres toques. Los
     // jefes quedan fuera (su embestida avisada es el peligro de verdad).

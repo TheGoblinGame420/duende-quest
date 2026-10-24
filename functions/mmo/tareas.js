@@ -32,12 +32,34 @@ export const Tareas = {
     const hoy = hoyUTC(), sem = semanaUTC();
     if (!c.tareas || c.tareas.d !== hoy) {
       const zona = zonaDeNivel(c.nivel);
-      c.tareas = { d: hoy, bono: false, l: elegir(TAREAS_DIA, 3, c.uid + hoy, c.nivel).map(t => ({ id: t.id, p: 0, ok: false, zona: t.tipo === 'zona' ? zona : undefined })) };
+      c.tareas = { d: hoy, bono: false, cambio: false, l: elegir(this.tareasPosibles(), 3, c.uid + hoy, c.nivel).map(t => ({ id: t.id, p: 0, ok: false, zona: t.tipo === 'zona' ? zona : undefined })) };
     }
     if (!c.semana || c.semana.d !== sem) {
       c.semana = { d: sem, bono: false, l: elegir(TAREAS_SEMANA, 2, c.uid + 'S' + sem, c.nivel).map(t => ({ id: t.id, p: 0, ok: false })) };
     }
     return { dia: c.tareas, sem: c.semana };
+  },
+
+  // Con menos de 6 jugadores conectados no se reparten tareas que piden a otros
+  // (cazar en grupo) ni la del jefe mundial: con pocos se quedaban bloqueadas.
+  tareasPosibles() {
+    let on = 0;
+    for (const x of (this.sesiones || new Map()).values()) if (x.c) on++;
+    return on < 6 ? TAREAS_DIA.filter(t => t.tipo !== 'grupo' && t.tipo !== 'mundial') : TAREAS_DIA;
+  },
+  // Un cambio gratis al dia: una diaria sin cumplir por otra que no este ya.
+  cambiarTarea(s, m) {
+    const c = s.c, { dia } = this.tareasDe(c), i = m.i | 0, t = dia.l[i];
+    if (!t || t.ok) return;
+    if (dia.cambio) return this.no(s, 'Hoy ya cambiaste una tarea. Mañana tendrás otro cambio gratis.');
+    const usadas = new Set(dia.l.map(x => x.id));
+    const nueva = elegir(this.tareasPosibles().filter(x => !usadas.has(x.id)), 1, c.uid + hoyUTC() + 'R', c.nivel)[0];
+    if (!nueva) return this.no(s, 'No hay otra tarea disponible para tu nivel.');
+    dia.l[i] = { id: nueva.id, p: 0, ok: false, zona: nueva.tipo === 'zona' ? zonaDeNivel(c.nivel) : undefined };
+    dia.cambio = true;
+    s.sucio = true;
+    this.enviar(s, { t: 'tareas', ...this.infoTareas(c) });
+    this.enviar(s, { t: 'toast', ok: true, m: `🔄 Nueva tarea: ${this.textoTarea(nueva, c, dia.l[i])}` });
   },
 
   // Algo que cuenta para las tareas. o = monstruo (si es una caza), n =
@@ -112,6 +134,6 @@ export const Tareas = {
   infoTareas(c) {
     const { dia, sem } = this.tareasDe(c);
     const fila = (t, defs) => { const d = defs.find(x => x.id === t.id); return { id: t.id, txt: this.textoTarea(d, c, t), p: Math.min(t.p, d.n), n: d.n, ok: t.ok }; };
-    return { dia: { l: dia.l.map(t => fila(t, TAREAS_DIA)), bono: dia.bono }, sem: { l: sem.l.map(t => fila(t, TAREAS_SEMANA)), bono: sem.bono }, premio: premioTarea(c.nivel, false), premioSem: premioTarea(c.nivel, true) };
+    return { dia: { l: dia.l.map(t => fila(t, TAREAS_DIA)), bono: dia.bono, cambio: !!dia.cambio }, sem: { l: sem.l.map(t => fila(t, TAREAS_SEMANA)), bono: sem.bono }, premio: premioTarea(c.nivel, false), premioSem: premioTarea(c.nivel, true) };
   },
 };

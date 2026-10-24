@@ -607,6 +607,7 @@ async function pruebas() {
   await pruebasAlas3d();
   await pruebasAbismo3d();
   await pruebasPvP3d();
+  await pruebasSocial3d();
   await pruebasAsedio3d();
 }
 
@@ -694,6 +695,37 @@ async function pruebasAsedio3d() {
   await dejar(a); await dejar(b);
 }
 
+// ── LO SOCIAL DESDE EL 3D (hermandad, pase, amigos) ──
+async function pruebasSocial3d() {
+  console.log('Mundo 3D: hermandad, pase y amigos');
+  const a = await entrar3d('Fundador3D', '4m1'); ponerNivel(a, 15, 'guerrero');
+  const b = await entrar3d('Recluta3D', '4m2'); ponerNivel(b, 12, 'mago');
+  a.c.oro = 20000; a.limpiar();
+  await a.mandar({ t: 'hermCrear', nombre: 'Los Verdes 3D' });
+  for (let i = 0; i < 20 && !a.c.herm; i++) await espera();
+  chequear(!!a.c.herm && a.ultimos('herm').some(m => m.h && m.h.nombre === 'Los Verdes 3D'), 'se funda una hermandad desde el 3D');
+  await a.mandar({ t: 'hermInvitar', p: b.id });
+  for (let i = 0; i < 10 && !b.ultimos('hermInv').length; i++) await espera();
+  chequear(b.ultimos('hermInv').length === 1, 'la invitación llega en el 3D');
+  await b.mandar({ t: 'hermResp', si: true });
+  for (let i = 0; i < 20 && b.c.herm !== a.c.herm; i++) await espera();
+  chequear(b.c.herm === a.c.herm, 'se acepta la hermandad desde el 3D');
+  b.limpiar(); await b.mandar({ t: 'herm' });
+  for (let i = 0; i < 10 && !b.ultimos('herm').length; i++) await espera();
+  chequear(b.ultimos('herm').some(m => m.h && m.h.m.length === 2), 'el panel de la hermandad se pide desde el 3D');
+  // Pase: cobrar un nivel alcanzado
+  mundo.paseDe(a.c).p = 200; const oro0 = a.c.oro; a.limpiar();
+  await a.mandar({ t: 'pase', n: 1 });
+  chequear(mundo.paseDe(a.c).cob.includes(1), 'se cobra el pase desde el 3D');
+  // Amigos: el codigo para invitar
+  a.limpiar(); await a.mandar({ t: 'amigos' });
+  for (let i = 0; i < 10 && !a.ultimos('amigos').length; i++) await espera();
+  chequear(a.ultimos('amigos').some(m => m.ref), 'el código de amigo llega en el 3D');
+  await a.mandar({ t: 'hermSalir' }); await b.mandar({ t: 'hermSalir' });
+  for (let i = 0; i < 10; i++) await espera();
+  await dejar(a); await dejar(b);
+}
+
 // ── PVP DE FACCIONES EN EL ABISMO ──
 async function pruebasPvP3d() {
   console.log('Mundo 3D: PvP de facciones');
@@ -733,6 +765,15 @@ async function pruebasPvP3d() {
   // Rango
   a.c.pa = 59; a.limpiar(); mundo.sumarPA(a, 5);
   chequear(a.ultimos('aviso').some(m => /asciende a Soldado/.test(m.m)), 'al subir de rango se anuncia');
+  // En PvP las skins de pago no dan ventaja de combate
+  const sk0 = a.c.skin; a.c.skin = 'legendaria'; a.st = mundo.stats(a.c); const conSkin = mundo.statsSinSkin(a);
+  a.c.skin = 'comun'; a.st = mundo.stats(a.c); const sinSkin = mundo.statsSinSkin(a);
+  chequear(conSkin.atk === sinSkin.atk && conSkin.def === sinSkin.def && conSkin.crit === sinSkin.crit, 'en PvP la skin no cambia ataque, defensa ni crítico');
+  a.c.skin = 'legendaria'; a.st = mundo.stats(a.c); b.p = { x: x0 + 1, z: is.z }; a.p = { x: x0, z: is.z }; b.muerto = false;
+  const tiradas = [];
+  for (const sk of ['legendaria', 'comun']) { a.c.skin = sk; a.st = mundo.stats(a.c); let tot = 0; for (let i = 0; i < 400; i++) { b.hp = b.st.maxHp; b.inv = 0; mundo.golpeDuelo(a, b, 1, true); tot += b.st.maxHp - b.hp; } tiradas.push(tot / 400); }
+  chequear(Math.abs(tiradas[0] - tiradas[1]) / tiradas[1] < 0.08, 'una skin cara no pega más fuerte en el Abismo (media ' + tiradas.map(x => x.toFixed(1)).join(' vs ') + ')');
+  a.c.skin = sk0; a.st = mundo.stats(a.c);
   // Fuera del Abismo no hay PvP
   a.p = { x: 30, z: 30 }; b.p = { x: 31, z: 30 }; b.muerto = false; b.hp = hp0 = b.st.maxHp; a.atkT = 0;
   await a.mandar({ t: 'atk3', tp: b.id });
@@ -1913,8 +1954,10 @@ async function pruebasPase() {
   await aMapa(j, 'pueblo', 900);
   const pa = mundo.paseDe(j.c);
   chequear(pa.mes === D.paseMes() && pa.p === 0, 'empieza el mes en 0');
+  // Quien va por detras del ritmo del mes (50 por dia) gana el doble.
   mundo.puntoPase(j, D.PASE.puntos.semanal); mundo.puntoPase(j, 50);
-  chequear(j.c.pase.p === 80, 'suma puntos (80)');
+  chequear(j.c.pase.p === 160, 'suma puntos, dobles para ponerse al día (160)');
+  j.c.pase.p = 80;
   j.limpiar(); await j.mandar({ t: 'pase', n: 2 });
   chequear(j.ultimos('no').some(x => /Aún no/.test(x.m)), 'no se cobra un nivel no alcanzado');
   const oro0 = j.c.oro;
@@ -1922,6 +1965,14 @@ async function pruebasPase() {
   chequear(j.c.pase.cob.includes(1) && j.c.oro > oro0, 'el nivel 1 se cobra (oro)');
   j.limpiar(); await j.mandar({ t: 'pase', n: 1 });
   chequear(j.ultimos('no').some(x => /Ya cobraste/.test(x.m)), 'no se cobra dos veces');
+  // Lo que quedo sin cobrar del mes anterior se cobra solo.
+  { const oroA = j.c.oro; j.c.pase = { mes: '2000-01', p: 3 * D.PASE.porNivel, cob: [1] }; j.limpiar(); mundo.cobrarPasePendiente(j);
+    chequear(oroA >= 0 && j.ultimos('toast').some(x => /Cobramos por ti 2 premios/.test(x.m)) && j.c.pase.mes === D.paseMes(), 'el pase del mes pasado se cobra solo al entrar'); }
+  // Un cambio gratis de tarea al dia
+  { const T = mundo.tareasDe(j.c).dia; const antes = T.l[0].id; T.l[0].ok = false; j.limpiar(); await j.mandar({ t: 'cambiarTarea', i: 0 });
+    chequear(T.l[0].id !== antes && T.cambio, 'se cambia una diaria gratis');
+    j.limpiar(); await j.mandar({ t: 'cambiarTarea', i: 1 });
+    chequear(j.ultimos('no').some(x => /ya cambiaste/.test(x.m)), 'solo un cambio al día'); }
   // Hasta el 20: la mascota que no se vende y el logro.
   mundo.puntoPase(j, 10000);
   for (let n = 2; n <= D.PASE.niveles; n++) await j.mandar({ t: 'pase', n });

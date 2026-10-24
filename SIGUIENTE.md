@@ -2636,3 +2636,19 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
   (GET /mmo/ws). Los enlaces llevan el hash.
 - ⌂ del 3D y del 2D → /inicio/ (en Telegram el 2D sigue al hub de Telegram).
 - Portada: nav «Jugar» y «Jugar gratis ahora» → /inicio/.
+
+### Mejoras del informe de 50 agentes (23-oct-2026, `?v=273`)
+
+- PvP sin pay-to-win: `statsSinSkin(s)` (world.js); `golpeDuelo` ataca con
+  atk/crit sin skin y `herir` (duelo/pvp) usa la defensa sin skin y escala por
+  maxHp/maxHpSinSkin (la vida extra no alarga el combate). Pruebas: stats
+  iguales y daño medio igual con legendaria y comun.
+- BUG: recibir3d no enrutaba pase, amigos, herm*, contactos, inspeccionar,
+  boveda, chicha, wallet → añadidos. Prueba de servidor del flujo social 3D.
+- Tareas: `tareasPosibles()` (<6 conectados: sin 'grupo' ni 'mundial'),
+  `cambiarTarea` (1 al dia, `dia.cambio`); en el 3D los monstruos llevan
+  `mapa` (tarea de zona) y `dar()` recibe el tamaño real del grupo.
+- Pase: puntos x2 si p < dia*50; `pasePend` + `cobrarPasePendiente` al entrar;
+  `darPremioPase` compartido.
+- UI: misiones del dia/semana con 🔄 en el seguimiento del 3D y en el registro
+  del 2D; nota de PvP justo en las dos tiendas.

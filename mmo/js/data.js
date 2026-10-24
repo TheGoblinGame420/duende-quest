@@ -487,6 +487,12 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 41, fecha: '23 oct 2026', items: [
+    'PvP justo: en los duelos y en el Abismo las ventajas de combate de las skins no cuentan; todos pelean igual. Contra monstruos las skins siguen dando sus poderes.',
+    'Arreglado en ORIGINS: hermandades, cobro del pase y código de amigo ya llegan al servidor (antes no funcionaban en el 3D).',
+    'Misiones del día y de la semana visibles en ORIGINS, y un cambio gratis al día (🔄) en los dos juegos. Con poca gente conectada ya no salen misiones de grupo ni del jefe mundial.',
+    'Pase: si vas por detrás del ritmo del mes ganas puntos dobles, y lo que quede sin cobrar al cambiar de mes se cobra solo.',
+  ] },
   { n: 40, fecha: '23 oct 2026', items: [
     'Nuevo inicio: el botón ⌂ de los dos juegos te lleva a una pantalla ligera para elegir mundo, con tu nombre, el tráiler de ORIGINS, el duende de CLASSIC animado, el jefe mundial en directo y los jugadores conectados.',
     'En la web, «Jugar» y «Jugar gratis ahora» llevan a ese mismo inicio para que elijas ORIGINS o CLASSIC.',

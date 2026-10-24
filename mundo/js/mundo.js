@@ -14,19 +14,19 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES } from '/mmo/js/data.js?v=272';
-import { iniciarVentanas } from './ventanas.js?v=272';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=272';
-import { crearMusica } from './musica.js?v=272';
-import { construirCueva } from './cueva.js?v=272';
-import { TAPA, transparentar } from './tapa.js?v=272';
-import { construirAbismo } from './abismo.js?v=272';
-import { crearParticulas } from './particulas.js?v=272';
-import { cargarKenney, piezasCasa } from './kenney.js?v=272';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES } from '/mmo/js/data.js?v=273';
+import { iniciarVentanas } from './ventanas.js?v=273';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=273';
+import { crearMusica } from './musica.js?v=273';
+import { construirCueva } from './cueva.js?v=273';
+import { TAPA, transparentar } from './tapa.js?v=273';
+import { construirAbismo } from './abismo.js?v=273';
+import { crearParticulas } from './particulas.js?v=273';
+import { cargarKenney, piezasCasa } from './kenney.js?v=273';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=272';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=272';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=273';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=273';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1173,6 +1173,7 @@ function recibir(m) {
       aviso(m.m, 'err'); break;
     case 'amigos': if (m.ref) refAmigo = m.ref; break;
     case 'login': mostrarDiario(m); break;
+    case 'tareas': if (yo) { yo.tareas = m; pintarMisiones(); } break;
     case 'herm': hermInfo = m.h; if (yo) yo.herm = m.h ? m.h.id : null; pintarHerm(); break;
     case 'hermInv':
       invitTipo = 'herm';
@@ -2593,6 +2594,13 @@ function pintarMisiones() {
     h += `<div class="q"><b>📜 ${esc(q.nombre)}</b>${lista ? `<span class="ok">¡Lista! Vuelve con el Guardia Tito</span><small>${donde}</small>` : `${(MONSTRUOS[q.tipo] || {}).nombre || q.tipo}: ${Math.min(yo.mis.p, q.n)}/${q.n}<small>${donde}</small>`}</div>`;
   }
   if (!d.ok) h += `<div class="q"><b>☀ ${DIARIA.nombre}</b>${(d.p || 0) >= DIARIA.n ? '<span class="ok">¡Lista! Cóbrala con el Guardia</span>' : `Monstruos de tu nivel: ${Math.min(d.p || 0, DIARIA.n)}/${DIARIA.n}`}</div>`;
+  // Misiones del dia y de la semana (se cobran solas); 🔄 cambia una gratis al dia.
+  const T = yo.tareas;
+  if (T && T.dia) {
+    const hd = T.dia.l.filter(t => t.ok).length, hs = T.sem.l.filter(t => t.ok).length;
+    h += `<div class="q"><b>🗓 Misiones del día ${hd}/${T.dia.l.length}</b>` + T.dia.l.map((t, i) => t.ok ? `<span class="ok">✓ ${esc(t.txt)}</span>` : `<span class="tarea">• ${esc(t.txt)} ${t.p}/${t.n}${T.dia.cambio ? '' : ` <button class="cambiar" data-cambiar="${i}" title="Cambiar esta misión (1 gratis al día)">🔄</button>`}</span>`).join('') +
+      `<small>Semana ${hs}/${T.sem.l.length}${T.dia.bono ? ' · ✓ bono del día' : ''}</small></div>`;
+  }
   c.style.display = h ? 'block' : 'none';
   if (c._h !== h) { c.innerHTML = h; c._h = h; }
   // Columna de luz sobre la meta (como las zonas de mision de WoW).
@@ -2603,7 +2611,7 @@ const faro = (() => {
   const m = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 2.4, 90, 12, 1, true).translate(0, 45, 0), new THREE.MeshBasicMaterial({ color: '#ffd84a', transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide, fog: false }));
   m.visible = false; escena.add(m); return m;
 })();
-$('misiones').onclick = () => abrirMapa();
+$('misiones').onclick = e => { const b = e.target.closest('[data-cambiar]'); if (b) { e.stopPropagation(); mandar({ t: 'cambiarTarea', i: +b.dataset.cambiar }); return; } abrirMapa(); };
 function misionLista() { if (!yo) return false; const q = MISIONES[yo.mis.i]; const d = yo.diaria || {}; return (q && yo.mis.p >= q.n) || (!d.ok && (d.p || 0) >= DIARIA.n); }
 function colorNivel(nv) { const d = nv - (yo ? yo.nivel : 1); return d >= 5 ? '#ff3344' : d >= 2 ? '#ff9900' : d <= -8 ? '#9a9a9a' : d <= -3 ? '#4ade80' : '#ffe600'; }
 const cieloAct = C(CIELO.pueblo), cieloObj = C(CIELO.pueblo);

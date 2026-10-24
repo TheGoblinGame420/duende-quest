@@ -157,9 +157,11 @@ export const Duelos = {
   // Golpe de s a su rival de duelo. mult como en pegar().
   golpeDuelo(s, t, mult, basico) {
     const ahora = Date.now();
-    const crit = Math.random() < s.st.crit;
+    // Sin las ventajas de combate de la skin (en PvP todos iguales).
+    const sb = this.statsSinSkin ? this.statsSinSkin(s) : s.st;
+    const crit = Math.random() < sb.crit;
     const forja = multForja((s.c.forja || {})[s.c.arma]);
-    let dmg = s.st.atk * mult * forja * rnd(0.9, 1.1) * (crit ? 1.8 : 1) * (ahora < s.fuego ? 1.5 : 1) * (this.aura(s, 'grito') ? 1.1 : 1) * (this.elixir(s, 'elixirF') ? 1.1 : 1) * (this.elixir(s, 'sudado') ? 1.05 : 1);
+    let dmg = sb.atk * mult * forja * rnd(0.9, 1.1) * (crit ? 1.8 : 1) * (ahora < s.fuego ? 1.5 : 1) * (this.aura(s, 'grito') ? 1.1 : 1) * (this.elixir(s, 'elixirF') ? 1.1 : 1) * (this.elixir(s, 'sudado') ? 1.05 : 1);
     if (this.aura(s, 'sigilo')) { dmg *= 2; this.quitarAura(s, 'sigilo'); }
     const vara = basico && CLASES[s.c.clase] && CLASES[s.c.clase].basico === 'vara';
     dmg = Math.max(1, Math.round(dmg * (vara ? ESCALA_VARA : ESCALA)));
