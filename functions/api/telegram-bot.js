@@ -232,7 +232,7 @@ async function handlePrice(token, chatId, messageId) {
   let text;
   if (!p || p.priceUsd === 0) text = '💹 *$DUENDE — Precio*\n\n_No se pudo obtener el precio ahora. Inténtalo en un momento._';
   else { const arrow = p.priceChange24h >= 0 ? '📈' : '📉'; text = `💹 *$DUENDE — Precio de mercado*\n\nPrecio: *$${p.priceUsd.toFixed(8)}*\n${arrow} 24h: *${p.priceChange24h >= 0 ? '+' : ''}${p.priceChange24h.toFixed(2)}%*\nVolumen 24h: *$${fmtNum(p.volume24h)}*\nCapitalización: *$${fmtNum(p.marketCap)}*\nLiquidez: *$${fmtNum(p.liquidity)}*\n\nFuente: ${p.source}. El precio puede subir o bajar mucho; no es una inversión ni una recomendación.`; }
-  const opts = { chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🪙 Ver $DUENDE en Pump.fun', url: PUMP_FUN_URL }],[{ text: '🔄 Actualizar', callback_data: 'price' }, { text: '⌂ Menú', callback_data: 'menu' }]] } };
+  const opts = { chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🪙 Ver $DUENDE en Pump.fun', url: PUMP_FUN_URL }], [{ text: '⭐ Comprar con Stars (/buy)', callback_data: 'buy' }], [{ text: '🔄 Actualizar', callback_data: 'price' }, { text: '⌂ Menú', callback_data: 'menu' }]] } };
   if (messageId) { opts.message_id = messageId; await tg(token, 'editMessageText', opts); } else await tg(token, 'sendMessage', opts);
 }
 

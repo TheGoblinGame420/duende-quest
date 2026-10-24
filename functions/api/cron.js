@@ -22,23 +22,15 @@ const HYPE = [
 ];
 
 // ── Pulso diario del mercado $DUENDE (precio en vivo + gancho) ──
+// Solo a Discord. En Telegram ya NO se publica solo cada dia (molestaba en el
+// canal y el grupo): el precio sale cuando alguien escribe /price y para
+// comprar, /buy (telegram-bot.js).
 export async function marketPulse(env) {
   const price = await getDuendePriceUsd();
   const hype = HYPE[Math.floor(Date.now() / 86400000) % HYPE.length];
   const priceStr = price > 0 ? '$' + price.toFixed(8) : 'consulta el gráfico';
   const fecha = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: 'short' });
   await postDiscord(env, `📊 **PULSO $DUENDE — ${fecha}**\n\n💰 Precio: **${priceStr}**\n${hype}\n\n🪙 Comprar: ${PUMP_URL}\n🎮 Jugar y ganar: https://t.me/duendequest_bot`);
-  // Canal de Telegram (HTML para que las URLs con _ no rompan el mensaje)
-  if (env.TELEGRAM_BOT_TOKEN && env.TG_CHANNEL_ID) {
-    try {
-      await tg(env.TELEGRAM_BOT_TOKEN, 'sendMessage', {
-        chat_id: env.TG_CHANNEL_ID,
-        text: `📊 <b>PULSO $DUENDE — ${fecha}</b>\n\n💰 Precio: <b>${priceStr}</b>\n${hype}`,
-        parse_mode: 'HTML', disable_web_page_preview: true,
-        reply_markup: { inline_keyboard: [[{ text: '🪙 COMPRAR $DUENDE', url: PUMP_URL }], [{ text: '🎮 JUGAR Y GANAR', url: 'https://t.me/duendequest_bot' }]] },
-      });
-    } catch (e) {}
-  }
   console.log('[MarketPulse] posted, price', price);
 }
 
