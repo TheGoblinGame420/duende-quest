@@ -109,7 +109,7 @@ export const Tareas = {
     if (this.puntoPase) this.puntoPase(s, semanal ? PASE.puntos.semanal : PASE.puntos.diaria);
     const pr = premioTarea(c.nivel, semanal);
     c.oro += pr.oro;
-    if (c.nivel < NIVEL_MAX) this.sumarXp(s, pr.xp);
+    this.sumarXp(s, pr.xp);   // en el nivel maximo va a la maestria
     this.enviar(s, { t: 'toast', m: `${semanal ? '📆 Semanal' : '☀️ Diaria'} cumplida: "${this.textoTarea(def, c)}" · +${pr.xp.toLocaleString('es', { useGrouping: 'always' })} XP · +${pr.oro.toLocaleString('es', { useGrouping: 'always' })} oro`, ok: true });
     this.enviar(s, { t: 'gana', xp: pr.xp, oro: pr.oro, drops: [], x: Math.round(s.x), y: Math.round(s.y - 80) });
     this.actualizarYo(s);

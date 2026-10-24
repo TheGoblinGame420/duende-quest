@@ -310,6 +310,11 @@ export function statsMonstruo(key, nivel) {
 
 // ── PROGRESION DEL JUGADOR ──
 export function xpParaSubir(nivel) { return Math.round(40 * Math.pow(nivel, 1.5)); }
+// MAESTRIA (despues del nivel 60): la XP ya no se tira. Cada nivel de
+// maestria pide la mitad de la XP de un nivel 60 y da oro; cada 5, un objeto
+// epico. No da estadisticas (nada de ventaja en PvP), es progreso y botin.
+export const MAESTRIA_XP = Math.round(40 * Math.pow(60, 1.5) * 0.5);
+export const premioMaestria = n => ({ oro: 1500 + 50 * n, item: n % 5 === 0 ? 2 : 0 });
 // XP de descanso (como en WoW): estar fuera del juego acumula experiencia
 // extra que duplica la de cada caza hasta gastarse. 8% de tu nivel por hora
 // fuera (desde la primera hora), con un tope de 1,5 niveles. Un motivo
@@ -487,6 +492,10 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 42, fecha: '23 oct 2026', items: [
+    'Maestría después del nivel 60: tu experiencia ya no se pierde. Llena la barra de Maestría (★) y cada nivel te da oro; cada 5, un objeto épico. No da estadísticas, así que el PvP sigue justo.',
+    'En el nivel 60 tu XP vuelve a contar en el ranking semanal, y las misiones diarias siguen dando progreso.',
+  ] },
   { n: 41, fecha: '23 oct 2026', items: [
     'PvP justo: en los duelos y en el Abismo las ventajas de combate de las skins no cuentan; todos pelean igual. Contra monstruos las skins siguen dando sus poderes.',
     'Arreglado en ORIGINS: hermandades, cobro del pase y código de amigo ya llegan al servidor (antes no funcionaban en el 3D).',

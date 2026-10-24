@@ -17,7 +17,7 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=273';
+} from './data.js?v=274';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -616,6 +616,7 @@ function recibir(m) {
     case 'muerte': resumenMuerte(m); break;
     case 'nodos': recibirNodos(m.l); break;
     case 'recogido': { const n = nodos.find(x => x.i === m.i); if (n) { n.listo = performance.now() + m.en; for (let k = 0; k < 14; k++) particula(n.x, SUELO - 14, m.tipo === 'hierba' ? '#4ade80' : '#cbd5e1', 3); } sfx('moneda', .3); break; }
+    case 'mae': if (yo) { yo.mae = m.n; aviso('⭐ ¡Maestría ' + m.n + '! Tu XP del nivel 60 ya no se pierde.', 'ok'); vibrar(); pintarHud(); } break;
     case 'tareas': if (yo) { yo.tareas = m; pintarHud(); if ($('m-mision').classList.contains('on')) pintarMision(); } break;
     case 'muros': muros = m.muros || []; if (instancia) instancia.hechos = m.hechos; pintarHud(); break;
     case 'mmx': { const o = mons.get(m.id); if (o) { o.mx = m.mx; o.hp = m.hp; } break; }
@@ -4027,7 +4028,7 @@ function pintarHud() {
   P.maxHp = yo.maxHp; P.hp = yo.hp; P.muerto = yo.muerto;
   if (yo.recMax !== undefined) { P.recMax = yo.recMax; P.rec = yo.rec; P.combo = yo.combo || 0; }
   ponTxt($('h-nombre'), yo.nombre);
-  ponTxt($('h-nivel'), String(yo.nivel));
+  ponTxt($('h-nivel'), String(yo.nivel) + (yo.mae ? '★' + yo.mae : ''));
   const cl = CLASES[yo.clase];
   const sp = cl && yo.nivel >= ESPEC_NIVEL ? especDe(yo.clase, yo.espec) : null;
   ponTxt($('h-clase'), cl ? (sp ? sp.nombre : cl.nombre) : 'Sin clase');

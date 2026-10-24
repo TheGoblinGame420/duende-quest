@@ -22,7 +22,7 @@ import {
   temporadaDe, TEMPORADAS, TEMP_PROB, TEMP_JEFE,
   TINTES, MASCOTAS, enOfertaAmbulante, ambulanteActivo, mundialDe,
   CONJUNTOS, CONJUNTO_PROB,
-  semanaUTC, horaFelizActiva, HORA_FELIZ, PASE, afijosSemana, DES_SEM_MIN, premioDesSem, BESTIARIO_HITOS, premioBestiario, talento, TALENTOS, TALENTO_MAX, puntosTalento, costoReinicioTalentos, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX, limpiarLook, ALAS,
+  semanaUTC, horaFelizActiva, HORA_FELIZ, PASE, MAESTRIA_XP, premioMaestria, afijosSemana, DES_SEM_MIN, premioDesSem, BESTIARIO_HITOS, premioBestiario, talento, TALENTOS, TALENTO_MAX, puntosTalento, costoReinicioTalentos, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX, limpiarLook, ALAS,
 } from '../../mmo/js/data.js';
 import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery, tg, getSolPriceUsd, getDuendePriceUsd, SOL_DEV_WALLET } from '../api/lib.js';
 import { MMO_URL } from '../api/telegram-bot.js';
@@ -1256,7 +1256,7 @@ export class MmoWorld {
     if (this.rotarBoveda(c)) s.sucio = true;
     return {
       diaria: c.diaria,
-      nombre: c.nombre, nivel: c.nivel, xp: c.xp, xpSig: xpParaSubir(c.nivel), oro: c.oro,
+      nombre: c.nombre, nivel: c.nivel, xp: c.nivel >= NIVEL_MAX ? (c.mae || {}).p || 0 : c.xp, xpSig: c.nivel >= NIVEL_MAX ? MAESTRIA_XP : xpParaSubir(c.nivel), mae: (c.mae || {}).n || 0, oro: c.oro,
       hp: Math.ceil(s.hp), maxHp: s.st.maxHp, atk: s.st.atk, def: s.st.def,
       arma: c.arma, armas: c.armas, skin: c.skin, skins: c.skins, pw: c.pw,
       kills: c.kills, jefes: c.jefes, muerto: s.muerto, mis: c.mis, forja: c.forja,
@@ -1282,7 +1282,7 @@ export class MmoWorld {
   // que cambia al cazar ('yoC', ~250 B). full = hace falta el 'yo' entero
   // (botin, subida de nivel, logro).
   yoLuego(s, full) { if (!s.m3) return this.actualizarYo(s); s.yoPend = full || s.yoPend === 'full' ? 'full' : 'caza'; }
-  datosCaza(s) { const c = s.c; return { nivel: c.nivel, xp: c.xp, xpSig: xpParaSubir(c.nivel), oro: c.oro, kills: c.kills, jefes: c.jefes, mis: c.mis, diaria: c.diaria, pw: c.pw, descanso: c.descanso || 0, mat: c.mat || {} }; }
+  datosCaza(s) { const c = s.c, max = c.nivel >= NIVEL_MAX; return { nivel: c.nivel, xp: max ? (c.mae || {}).p || 0 : c.xp, xpSig: max ? MAESTRIA_XP : xpParaSubir(c.nivel), mae: (c.mae || {}).n || 0, oro: c.oro, kills: c.kills, jefes: c.jefes, mis: c.mis, diaria: c.diaria, pw: c.pw, descanso: c.descanso || 0, mat: c.mat || {} }; }
   vaciarYo(s, ahora) {
     if (!s.yoPend || ahora - (s.yoT || 0) < 1000) return;
     if (s.yoPend === 'full') return this.actualizarYo(s);
@@ -1660,10 +1660,34 @@ export class MmoWorld {
     }
   }
 
+  sumarMaestria(s, xp) {
+    const c = s.c;
+    if (!(xp > 0)) return;
+    const M = c.mae || (c.mae = { n: 0, p: 0 });
+    M.p += xp;
+    const subidos = [];
+    while (M.p >= MAESTRIA_XP) {
+      M.p -= MAESTRIA_XP; M.n++;
+      const pr = premioMaestria(M.n);
+      c.oro += pr.oro;
+      if (pr.item) this.darItem(s, this.generarItem(c.nivel, pr.item));
+      subidos.push(M.n);
+    }
+    s.sucio = true;
+    if (subidos.length) {
+      const n = M.n, pr = premioMaestria(n);
+      this.enviar(s, { t: 'mae', n });
+      this.enviar(s, { t: 'toast', ok: true, m: `⭐ Maestría ${n}: +${pr.oro.toLocaleString('es', { useGrouping: 'always' })} oro${subidos.some(k => premioMaestria(k).item) ? ' y un objeto épico' : ''}.` });
+      if (n % 10 === 0) this.aTodos({ t: 'aviso', m: `⭐ ${c.nombre} alcanza la Maestría ${n}.` });
+      this.guardar(s);
+    }
+  }
+
   // Suma experiencia y sube de nivel si toca. Devuelve si subio.
   sumarXp(s, xp) {
     const c = s.c;
-    if (c.nivel >= NIVEL_MAX) return false;
+    // En el nivel maximo la XP va a la maestria y sigue contando en el ranking semanal.
+    if (c.nivel >= NIVEL_MAX) { this.sumarXpSemana(s, xp); this.sumarMaestria(s, xp); return false; }
     let subio = false;
     c.xp += xp;
     this.sumarXpSemana(s, xp);

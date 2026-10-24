@@ -1965,6 +1965,13 @@ async function pruebasPase() {
   chequear(j.c.pase.cob.includes(1) && j.c.oro > oro0, 'el nivel 1 se cobra (oro)');
   j.limpiar(); await j.mandar({ t: 'pase', n: 1 });
   chequear(j.ultimos('no').some(x => /Ya cobraste/.test(x.m)), 'no se cobra dos veces');
+  // Maestria despues del nivel 60: la XP ya no se tira
+  { const nv0 = j.c.nivel; ponerNivel(j, 60, 'guerrero'); j.c.mae = null; const oroM = j.c.oro; j.limpiar();
+    mundo.sumarXp(j, D.MAESTRIA_XP * 2 + 5);
+    chequear(j.c.mae && j.c.mae.n === 2 && j.c.mae.p === 5 && j.c.oro > oroM && j.ultimos('mae').length === 1, 'en el nivel 60 la XP sube la maestría y da oro');
+    const yoD = mundo.datosCaza(j);
+    chequear(yoD.xp === 5 && yoD.xpSig === D.MAESTRIA_XP && yoD.mae === 2, 'la barra de XP muestra la maestría');
+    ponerNivel(j, nv0, 'guerrero'); }
   // Lo que quedo sin cobrar del mes anterior se cobra solo.
   { const oroA = j.c.oro; j.c.pase = { mes: '2000-01', p: 3 * D.PASE.porNivel, cob: [1] }; j.limpiar(); mundo.cobrarPasePendiente(j);
     chequear(oroA >= 0 && j.ultimos('toast').some(x => /Cobramos por ti 2 premios/.test(x.m)) && j.c.pase.mes === D.paseMes(), 'el pase del mes pasado se cobra solo al entrar'); }
@@ -2794,7 +2801,8 @@ async function pruebasAfijos() {
   await mundo.revisarSemana(reloj);
   for (let i = 0; i < 20; i++) await espera();
   const logro = D.LOGROS.find(l => l.id === 'maestrodes').oro;
-  chequear(d.c.oro === oro0 + D.premioDesSem(0) + logro && d.c.maestroDes === 1 && (d.c.logros || []).includes('maestrodes'), 'el lunes el 1º cobra ' + D.premioDesSem(0) + ' de oro y el título (más el oro del logro)');
+  // (a nivel 60 su XP tambien cuenta ya en el ranking semanal de XP: puede cobrar ese premio aparte)
+  chequear(d.c.oro >= oro0 + D.premioDesSem(0) + logro && d.c.maestroDes === 1 && (d.c.logros || []).includes('maestrodes'), 'el lunes el 1º cobra ' + D.premioDesSem(0) + ' de oro y el título (más el oro del logro)');
   chequear(mundo.rds.sem === D.semanaUTC() && !Object.keys(mundo.rds.l).length, 'y la tabla empieza de cero');
   await dejar(d);
 }

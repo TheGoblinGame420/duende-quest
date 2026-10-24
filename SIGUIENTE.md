@@ -2652,3 +2652,13 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
   `darPremioPase` compartido.
 - UI: misiones del dia/semana con 🔄 en el seguimiento del 3D y en el registro
   del 2D; nota de PvP justo en las dos tiendas.
+
+### Maestria (23-oct-2026, `?v=274`)
+
+- data.js: `MAESTRIA_XP` (la mitad de la XP de un nivel 60) y
+  `premioMaestria(n)` (1500 + 50n oro; cada 5, objeto epico).
+- world.js: `sumarXp` en NIVEL_MAX → `sumarXpSemana` + `sumarMaestria`
+  (c.mae = {n, p}; evento 'mae'; aviso global cada 10). datosPropios y
+  datosCaza mandan xp/xpSig de la maestria y `mae` en el nivel maximo.
+- tareas.js: la XP de las tareas cuenta siempre (va a la maestria en el 60).
+- Clientes: «Nv 60 ★n» (3D) y «60★n» (2D), aviso y efecto al subir.

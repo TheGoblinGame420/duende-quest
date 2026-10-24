@@ -14,19 +14,19 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES } from '/mmo/js/data.js?v=273';
-import { iniciarVentanas } from './ventanas.js?v=273';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=273';
-import { crearMusica } from './musica.js?v=273';
-import { construirCueva } from './cueva.js?v=273';
-import { TAPA, transparentar } from './tapa.js?v=273';
-import { construirAbismo } from './abismo.js?v=273';
-import { crearParticulas } from './particulas.js?v=273';
-import { cargarKenney, piezasCasa } from './kenney.js?v=273';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES } from '/mmo/js/data.js?v=274';
+import { iniciarVentanas } from './ventanas.js?v=274';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=274';
+import { crearMusica } from './musica.js?v=274';
+import { construirCueva } from './cueva.js?v=274';
+import { TAPA, transparentar } from './tapa.js?v=274';
+import { construirAbismo } from './abismo.js?v=274';
+import { crearParticulas } from './particulas.js?v=274';
+import { cargarKenney, piezasCasa } from './kenney.js?v=274';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=273';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=273';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=274';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=274';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1174,6 +1174,7 @@ function recibir(m) {
     case 'amigos': if (m.ref) refAmigo = m.ref; break;
     case 'login': mostrarDiario(m); break;
     case 'tareas': if (yo) { yo.tareas = m; pintarMisiones(); } break;
+    case 'mae': if (yo) { yo.mae = m.n; aviso(`⭐ ¡Maestría ${m.n}!`, 'ok'); numero(P.x, P.y + 3, P.z, 'MAESTRÍA ' + m.n, '#ffd84a', true); subiNivel(0); pintarHud(); } break;
     case 'herm': hermInfo = m.h; if (yo) yo.herm = m.h ? m.h.id : null; pintarHerm(); break;
     case 'hermInv':
       invitTipo = 'herm';
@@ -1503,7 +1504,7 @@ function pintarHud() {
   if (!yo) return;
   const cl = CLASES[yo.clase];
   $('m-nombre').textContent = (yo.dios ? 'GM ' : '') + yo.nombre;
-  $('m-nivel').textContent = 'Nv ' + yo.nivel + (cl ? ' · ' + cl.nombre : '');
+  $('m-nivel').textContent = 'Nv ' + yo.nivel + (yo.mae ? ' ★' + yo.mae : '') + (cl ? ' · ' + cl.nombre : '');
   $('oro').textContent = Number(yo.oro || 0).toLocaleString('es') + ' oro';
   $('m-rec').style.display = cl ? '' : 'none';
   if (cl) $('m-rec').firstElementChild.style.background = RECURSOS[cl.recurso].color;
