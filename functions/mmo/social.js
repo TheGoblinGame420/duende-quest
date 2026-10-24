@@ -210,7 +210,7 @@ export const Social = {
     // General y susurro llegan a cualquiera: un invitado recien creado (token
     // nuevo, gratis) no los usa hasta el nivel 5. Si no, silenciarlo no servia:
     // reconectaba con otro token y seguia.
-    if (canal !== 'decir' && canal !== 'grupo' && canal !== 'hermandad' && s.c.uid.startsWith('inv:') && s.c.nivel < 5) return this.no(s, '🔒 Los invitados hablan en el canal general y por susurro desde el nivel 5. Sube un poco o inicia sesión.');
+    if (canal !== 'decir' && canal !== 'grupo' && canal !== 'hermandad' && s.c.uid.startsWith('inv:') && s.c.nivel < 5) return this.no(s, s.m3 ? '🔒 En ORIGINS los invitados usan el chat público y el susurro desde el nivel 5 (el de grupo /g y hermandad /h ya funcionan). Sube un poco o inicia sesión.' : '🔒 Los invitados usan el canal general y el susurro desde el nivel 5. Mientras tanto escribe /d tu mensaje para hablar con los de tu mapa, o inicia sesión.');
     const base = { t: 'chat', p: s.id, n: s.c.nombre, m: txt, mapa: s.c.mapa, cl: s.c.clase || '', gm: s.dios ? 1 : undefined };
     if (canal === 'decir') {
       // Solo los que estan en el mismo mapa (o la misma mazmorra).

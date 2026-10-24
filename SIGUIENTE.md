@@ -2817,3 +2817,16 @@ minuto y volcado por paginas.
 Juego: XP/oro en grupo del 3D (quien pega cobra al menos el 70 %); objetos de
 raros y premio de mazmorra acotados a tu nivel; sw.js revalida /assets/ y
 /audio/ en segundo plano y no guarda peticiones con Range ni HTML.
+
+### Revision de lo cambiado esta noche (24-oct-2026, `?v=284`)
+
+12 revisores sobre el diff 50f8345..HEAD + un esceptico por hallazgo: 14
+confirmados, 13 aplicados (uno era duplicado). Arreglos: vigilante 2D con 35 s
+antes de 'bienvenido' (`ws._listo`); ventana Amigos 3D en movil y `.hm .acc`;
+pintarAmigos3 sin rehacer el HTML en cada 'grupo'; tope global de altas de
+invitado y plazo de 'hola' revisados; `vacio3d` respeta el planeo legitimo;
+reparto de XP en grupo sin regalar la presa ajena; silencio por IP solo para
+invitados y limitado; chat de invitados en ORIGINS; restaurar copias con los
+retiros rechazados; limite del bot solo para comandos/botones y responde al
+boton; titulo de la factura 2x <= 32 caracteres; boton movil de la landing.
+`aplicar.py` conserva los finales de linea (el del bot habia quedado mezclado).

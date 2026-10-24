@@ -14,19 +14,19 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES } from '/mmo/js/data.js?v=283';
-import { iniciarVentanas } from './ventanas.js?v=283';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=283';
-import { crearMusica } from './musica.js?v=283';
-import { construirCueva } from './cueva.js?v=283';
-import { TAPA, transparentar } from './tapa.js?v=283';
-import { construirAbismo } from './abismo.js?v=283';
-import { crearParticulas } from './particulas.js?v=283';
-import { cargarKenney, piezasCasa } from './kenney.js?v=283';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES } from '/mmo/js/data.js?v=284';
+import { iniciarVentanas } from './ventanas.js?v=284';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=284';
+import { crearMusica } from './musica.js?v=284';
+import { construirCueva } from './cueva.js?v=284';
+import { TAPA, transparentar } from './tapa.js?v=284';
+import { construirAbismo } from './abismo.js?v=284';
+import { crearParticulas } from './particulas.js?v=284';
+import { cargarKenney, piezasCasa } from './kenney.js?v=284';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=283';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=283';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=284';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=284';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1883,7 +1883,7 @@ for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, () => { if (so
 $('b-ayuda').onclick = () => abrir('v-ayuda');
 $('sel-calidad').value = CAL;
 $('sel-calidad').onchange = e => { try { localStorage.setItem('dq3_calidad', e.target.value); } catch (er) {} location.reload(); };
-$('b-amigos').onclick = () => { if ($('v-amigos').classList.contains('on')) return cerrar('v-amigos'); abrir('v-amigos'); mandar({ t: 'contactos' }); mandar({ t: 'quien' }); pintarAmigos3(); };
+$('b-amigos').onclick = () => { if ($('v-amigos').classList.contains('on')) return cerrar('v-amigos'); abrir('v-amigos'); mandar({ t: 'contactos' }); mandar({ t: 'quien' }); $('amigos-c')._h = ''; pintarAmigos3(); };
 $('b-chat').onclick = () => { const i = $('chat-in'); i.style.display = 'block'; i.focus(); };
 $('b-reconectar').onclick = () => location.reload();
 
@@ -2179,6 +2179,8 @@ function pintarAmigos3() {
   s += tit(`EN LÍNEA${quien3 ? ` (${resto.length})` : ''}`);
   s += !quien3 ? '<p class="vv-p">Cargando…</p>' : resto.length ? '<div class="herm-lista">' + resto.map(x => fila({ ...x, on: 1 }, false)).join('') + '</div>' : '<p class="vv-p" style="font-size:12px">No hay nadie más conectado ahora mismo.</p>';
   s += '<button class="btn sec" id="am-act" style="width:100%;margin-top:8px">↻ Actualizar</button>';
+  if (c._h === s) return;   // 'grupo' llega cada 500 ms: sin cambios no se rehace (se perdian clics)
+  c._h = s;
   c.innerHTML = s;
   c.querySelectorAll('[data-ai]').forEach(b => b.onclick = () => { mandar({ t: 'invitar', p: +b.dataset.ai }); b.disabled = true; });
   c.querySelectorAll('[data-as]').forEach(b => b.onclick = () => { cerrar('v-amigos'); const i = $('chat-in'); i.style.display = 'block'; i.value = '/s ' + b.dataset.as + ' '; i.focus(); });

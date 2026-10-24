@@ -214,7 +214,9 @@ export const Dios = {
         if (min) mod.mute[objetivo.c.uid] = Date.now() + min * 60000; else delete mod.mute[objetivo.c.uid];
         mod.muteIp = mod.muteIp || {};
         for (const k in mod.muteIp) if (mod.muteIp[k] < Date.now()) delete mod.muteIp[k];
-        if (objetivo.ip) { if (min) mod.muteIp[objetivo.ip] = Date.now() + min * 60000; else delete mod.muteIp[objetivo.ip]; }
+        // Solo al silenciar a un INVITADO y como mucho 1 h en la IP: una IPv4 de movil
+        // (CGNAT) la comparten muchos invitados legitimos que no hicieron nada.
+        if (objetivo.ip && (!min || objetivo.c.uid.startsWith('inv:'))) { if (min) mod.muteIp[objetivo.ip] = Date.now() + Math.min(min, 60) * 60000; else delete mod.muteIp[objetivo.ip]; }
         this.guardarMod();
         this.enviar(objetivo, { t: 'toast', m: min ? `🔇 Un moderador te silenció ${min} min.` : '🔊 Ya puedes volver a escribir en el chat.' });
         this.registrarMod(s, `${min ? 'silenció ' + min + ' min' : 'quitó silencio'} a ${objetivo.c.nombre}`);
@@ -296,7 +298,7 @@ export const Dios = {
     const ahora = Date.now();
     const jugadores = [...this.sesiones.values()].filter(x => x.c).map(x => ({
       p: x.id, n: x.c.nombre, lv: x.c.nivel, mapa: x.c.mapa, inst: x.k.includes('#') ? 1 : 0,
-      tipo: x.c.uid.split(':')[0], skins: x.c.skins, oro: x.c.oro, mute: (mod.mute[x.c.uid] || 0) > ahora ? 1 : 0, gm: x.dios ? 1 : 0,
+      tipo: x.c.uid.split(':')[0], skins: x.c.skins, oro: x.c.oro, mute: this.silenciado(x) > ahora ? 1 : 0, gm: x.dios ? 1 : 0,
     }));
     const pedidos = this.pedidos.filter(x => x.estado === 'pagado' || x.estado === 'por_verificar' || x.estado === 'esperando_pago').slice(-40).map(x => ({
       codigo: x.codigo, jugador: x.jugador, nombre: x.nombre, usd: x.usd, metodo: x.metodo, estado: x.estado, creado: x.creado,

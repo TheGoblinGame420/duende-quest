@@ -492,6 +492,9 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 52, fecha: '24 oct 2026', items: [
+    'Arreglos tras revisar todo lo de esta noche: la reconexión ya no te echa con «tu cuenta ya está entrando» si el servidor tarda, planear desde el borde de una isla del Abismo ya no te mata, la ventana de Amigos de ORIGINS se ve bien en el móvil y la oferta de primera compra con Stars vuelve a funcionar.',
+  ] },
   { n: 51, fecha: '24 oct 2026', items: [
     'ORIGINS para nuevos: tutorial de los primeros minutos, la misión del Guardia Tito se cobra sola al cumplirla y la caza del día se cobra tocando el rastreador (en móvil, el rastreador muestra también el progreso del día).',
     'Rachas y diarias justas para Perú: la recompensa diaria y las misiones nuevas llegan en vivo a las 19:00, y la racha no se pierde por la medianoche UTC si jugaste en las últimas 30 h.',

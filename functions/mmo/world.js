@@ -245,7 +245,7 @@ export class MmoWorld {
     ws.addEventListener('error', cerrar);
     // A los 8 s se expulsa a quien no mando hola. A quien se esta verificando
     // (Supabase o Telegram lentos) no se le corta, pero tiene un tope de 30 s.
-    setTimeout(() => { if (!s.c && !s.cerrado && !s.autenticando) this.expulsar(s, 'Sin identificación'); }, 4000);
+    setTimeout(() => { if (!s.c && !s.cerrado && !s.autenticando) this.expulsar(s, 'Sin identificación'); }, 8000);
     setTimeout(() => { if (!s.c && !s.cerrado) this.expulsar(s, 'Sin identificación'); }, 30000);
   }
 
@@ -501,8 +501,14 @@ export class MmoWorld {
       const h = Math.floor(Date.now() / 3600000);
       this.altasIp = this.altasIp && this.altasIp.h === h ? this.altasIp : { h, n: new Map(), total: 0 };
       const n = (this.altasIp.n.get(s.ip) || 0) + 1;
-      // Tambien un tope global por hora: corta el ataque aunque se usen muchos /64 o proxies.
-      if (n > 6 || this.altasIp.total >= 150) { this.expulsar(s, 'Demasiados personajes nuevos desde tu conexión. Intenta en una hora o inicia sesión.'); return; }
+      // IPv6: ademas un tope por /48 (un solo bloque trae 65 536 /64).
+      const k48 = s.ip.includes(':') ? s.ip.split(':').slice(0, 3).join(':') + '::/48' : '';
+      const n48 = k48 ? (this.altasIp.n.get(k48) || 0) + 1 : 0;
+      if (n > 6 || n48 > 20) { this.expulsar(s, 'Demasiados personajes nuevos desde tu conexión. Intenta en una hora o inicia sesión.'); return; }
+      // Tope global por hora: pasado 150 solo entra el primer invitado de cada conexion
+      // (un pico real no deja fuera a todos) y con 1000 se corta del todo (cupo de escrituras).
+      if ((n > 1 && this.altasIp.total >= 150) || this.altasIp.total >= 1000) { this.expulsar(s, 'Hay demasiados personajes nuevos ahora mismo. Intenta en un rato o inicia sesión.'); return; }
+      if (k48) this.altasIp.n.set(k48, n48);
       this.altasIp.n.set(s.ip, n);
       this.altasIp.total++;
     }
@@ -1235,7 +1241,7 @@ export class MmoWorld {
       const r = this.retiros.find(x => x.id === String(b.id || '').toUpperCase() && x.estado === 'pendiente');
       if (!r) return json({ ok: false, error: 'No hay un retiro pendiente con ese código.' });
       r.estado = accion === 'pagado' ? 'pagado' : 'rechazado';
-      r.cerrado = Date.now();
+      r.cerrado = Date.now(); if (accion === 'rechazar' && b.trampa) r.trampa = true;
       if (b.tx) r.tx = String(b.tx).slice(0, 120);
       if (accion === 'rechazar') {
         // Se le devuelven los mTON (salvo que el dueño lo marque como trampa).

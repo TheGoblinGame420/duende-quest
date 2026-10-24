@@ -37,8 +37,8 @@ function b64aBytes(b64) { const bin = atob(b64); const u = new Uint8Array(bin.le
 // devolveria esos mTON y se pagarian dos veces en TON real. Los rechazados ya volvieron al saldo.
 function sinRetirosPosteriores(c, retiros, t) {
   if (!c || !c.uid || !t) return c;
-  const gastado = (retiros || []).filter(r => r.uid === c.uid && r.creado > t && r.estado !== 'rechazado').reduce((a, r) => a + (r.mton || 0), 0);
-  return gastado ? { ...c, mton: Math.max(0, (c.mton || 0) - gastado) } : c;
+  const d = (retiros || []).filter(r => r.uid === c.uid).reduce((a, r) => r.creado > t ? (r.estado !== 'rechazado' || r.trampa ? a - (r.mton || 0) : a) : (r.estado === 'rechazado' && !r.trampa && (r.cerrado || 0) > t ? a + (r.mton || 0) : a), 0);
+  return d ? { ...c, mton: Math.max(0, (c.mton || 0) + d) } : c;
 }
 
 export const Copias = {

@@ -225,7 +225,7 @@ export const Mundo3D = {
     const hq = clamp(num(m.h) || 0, 0, 46), h0 = s.h || 0;
     let h;
     if (a === 3) h = clamp(hq, h0 - 7.5 * dtS - 0.5, h0 + 6.5 * dtS + 0.5);
-    else if (a === 4) { h = Math.min(hq, Math.max(0, h0 - 1.0 * dtS)); if (h <= 0.3) { h = 0; a = 0; } }
+    else if (a === 4) { h = Math.min(hq, Math.max(0, h0 - 1.0 * dtS)); if (h <= 0.3) { h = 0; if (!(enAbismo(nx) && !islaEn(nx, nz))) a = 0; } }
     else h = hq <= 2 && h0 <= 2.5 ? hq : Math.min(hq, Math.max(0, h0 - 9 * dtS - 0.5));   // a pie no se flota: se cae
     // Energia de las alas: se cuenta con el modo que se mantuvo hasta este mensaje.
     if (prevA === 3) s.vueloS = (s.vueloS || 0) + dtS;
@@ -351,7 +351,9 @@ export const Mundo3D = {
       // En grupo, quien pega cobra al menos el 70%: siempre mas que el 60% del
       // compañero que solo mira (antes pegar poco daba menos que no pegar).
       const gr = this.grupoDe ? this.grupoDe(s) : null;
-      const k = Math.max(o.jefe ? Math.max(parte, 1 / 3) : parte, gr ? 0.7 : 0);
+      // Solo si el grupo hizo la mayor parte del daño (si no, un golpe a la presa de otro daba el 70%).
+      const parteG = gr ? this.sesionesGrupo(gr).reduce((a, x) => a + (o.dano.get(x.id) || 0), 0) / total : 0;
+      const k = Math.max(o.jefe ? Math.max(parte, 1 / 3) : parte, parteG >= 0.5 ? 0.7 : 0);
       const mult = (((SKINS[s.c.skin] || {}).buffs || {}).oroMult || 1) * (1 + talento(s.c, 'fortuna'));
       // De noche los monstruos dan un 10% mas de experiencia.
       const xp = Math.max(1, Math.round(base.xp * k * (1 + talento(s.c, 'erudicion')) * (esNoche(Date.now()) ? 1.1 : 1)));
@@ -471,7 +473,7 @@ export const Mundo3D = {
       if ((s.a === 3 || s.a === 4) && ahora - (s.movT || 0) > 400) {
         const ala = alaDe(s.c);
         if (s.a === 3) { s.vueloS = (s.vueloS || 0) + dt; if (s.vueloS > ala.vuelo + 2) { s.a = 4; if (!s.alasAvisadas) { s.alasAvisadas = true; this.enviar(s, { t: 'alasAgotadas' }); } } }
-        else { s.h = Math.max(0, (s.h || 0) - 2 * dt); if (!s.h) s.a = 0; }
+        else { s.h = Math.max(0, (s.h || 0) - 2 * dt); if (!s.h && !(enAbismo(s.p.x) && !s.i3 && !islaEn(s.p.x, s.p.z))) s.a = 0; }
       } else if ((!s.a || s.a === 1) && (s.h || 0) > 2 && ahora - (s.movT || 0) > 400) s.h = Math.max(0, s.h - 9 * dt);   // quieto en el aire a pie: cae
       if (this.vacio3d(s, ahora)) continue;
       this.tickJugador(s, ahora, dt, seguro);
@@ -644,9 +646,9 @@ export const Mundo3D = {
   // ni planear (a=4) se cae. El margen de 3 s es lo que tarda en caer un cliente
   // legitimo y le da tiempo a abrir las alas o planear tras salir del borde.
   vacio3d(s, ahora) {
-    if (s.muerto || s.i3 || !enAbismo(s.p.x) || islaEn(s.p.x, s.p.z) || s.a === 3 || s.a === 4 || (s.dios && s.diosModo && s.diosModo.vel)) { s.vacioT = 0; return false; }
+    if (s.muerto || s.i3 || !enAbismo(s.p.x) || islaEn(s.p.x, s.p.z) || s.a === 3 || (s.a === 4 && s.h > 0.3) || (s.dios && s.diosModo && s.diosModo.vel)) { s.vacioT = 0; return false; }
     if (!s.vacioT) { s.vacioT = ahora; return false; }
-    if (ahora - s.vacioT < 3000) return false;
+    if (ahora - s.vacioT < (s.a === 4 ? 45000 : 3000)) return false;   // planeando (a=4) sobre el vacio: lo que tarda en bajar el cliente
     s.vacioT = 0; this.caidaAbismo(s); return true;
   },
   caidaAbismo(s) {

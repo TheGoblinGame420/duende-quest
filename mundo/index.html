@@ -13,17 +13,17 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=283" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=284" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=283">
-<link rel="modulepreload" href="/mmo/js/data.js?v=283">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=283">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=283">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=283">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=283">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=283">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=284">
+<link rel="modulepreload" href="/mmo/js/data.js?v=284">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=284">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=284">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=284">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=284">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=284">
 <style>
 :root{--bg:#0a0418;--panel:rgba(14,9,30,.86);--borde:rgba(160,140,255,.22);--txt:#f2efff;--txt2:#b8b0d8;--txt3:#7d7699;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;--oro:#ffd84a;--pri:#2563eb;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -117,6 +117,7 @@ body.movil #presumir3{bottom:auto;top:calc(36% + var(--tg-top,0px));font-size:13
 .hm .pt{width:7px;height:7px;border-radius:50%;background:#555;flex:none;}
 .hm.on .pt{background:#4ade80;box-shadow:0 0 6px #4ade80;}
 .hm small{color:var(--txt3);flex:1;}
+.hm .acc{width:auto;height:auto;border:0;background:none;flex-direction:row;flex:none;}
 .hm .acc button{background:rgba(255,255,255,.08);border:1px solid var(--borde);color:#fff;border-radius:6px;padding:1px 6px;margin-left:3px;cursor:pointer;font-size:11px;}
 .rank-tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;}
 .rank-tabs button{flex:1;padding:6px 4px;border-radius:7px;border:1px solid var(--borde);background:rgba(255,255,255,.04);color:var(--txt2);font:600 11px var(--sans);cursor:pointer;}
@@ -144,7 +145,7 @@ body.movil #presumir3{bottom:auto;top:calc(36% + var(--tg-top,0px));font-size:13
 #v-npc.modal,#v-ayuda.modal,#v-inv.modal,#v-libro.modal,#v-tienda.modal,#v-logros.modal,#v-pase.modal,#v-diario.modal,#v-herm.modal,#v-rank.modal,#v-amigos.modal{background:none;pointer-events:none;justify-content:flex-start;align-items:flex-start;padding:150px 0 0 12px;z-index:9;}
 #v-npc .ventana,#v-ayuda .ventana,#v-inv .ventana,#v-libro .ventana,#v-tienda .ventana,#v-logros .ventana,#v-pase .ventana,#v-diario .ventana,#v-herm .ventana,#v-rank .ventana,#v-amigos .ventana{pointer-events:auto;max-height:calc(100vh - 270px);width:min(420px,40vw);box-shadow:0 10px 30px rgba(0,0,0,.5);}
 body.movil #v-npc.modal,body.movil #v-ayuda.modal,body.movil #v-inv.modal,body.movil #v-libro.modal,body.movil #v-tienda.modal,body.movil #v-logros.modal,body.movil #v-pase.modal,body.movil #v-diario.modal,body.movil #v-herm.modal,body.movil #v-rank.modal,body.movil #v-amigos.modal{padding:96px 0 0 6px;}
-body.movil #v-npc .ventana,body.movil #v-ayuda .ventana,body.movil #v-inv .ventana,body.movil #v-libro .ventana,body.movil #v-tienda .ventana,body.movil #v-logros .ventana{width:min(360px,72vw);max-height:calc(100vh - 330px);}
+body.movil #v-npc .ventana,body.movil #v-ayuda .ventana,body.movil #v-inv .ventana,body.movil #v-libro .ventana,body.movil #v-tienda .ventana,body.movil #v-logros .ventana,body.movil #v-pase .ventana,body.movil #v-diario .ventana,body.movil #v-herm .ventana,body.movil #v-rank .ventana,body.movil #v-amigos .ventana{width:min(360px,72vw);max-height:calc(100vh - 330px);}
 #v-look.modal{background:none;justify-content:flex-start;padding-left:16px;}
 #v-look .ventana{width:min(300px,86vw);background:rgba(20,12,44,.93);}
 #v-look .op{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0;font:600 12px var(--sans);}
@@ -429,6 +430,6 @@ body.movil #titulo-zona b{font-size:16px;}
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script src="/js/config.js"></script>
-<script type="module" src="/mundo/js/mundo.js?v=283"></script>
+<script type="module" src="/mundo/js/mundo.js?v=284"></script>
 </body>
 </html>

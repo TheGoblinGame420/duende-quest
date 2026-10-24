@@ -17,7 +17,7 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=283';
+} from './data.js?v=284';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -410,7 +410,7 @@ function recibir(m) {
     case 'bienvenido':
       mostrarNuevo3d();
       setTimeout(() => { if (yo) { revisarBoveda(); revisarNovedades(); } }, 1500);
-      miId = m.id; yo = m.yo; online = m.on || 0; reintentos = 0;
+      miId = m.id; yo = m.yo; online = m.on || 0; reintentos = 0; if (ws) ws._listo = true;
       $('m-error').classList.remove('on');
       $('m-inicio').classList.remove('on');
       pintarHud();
@@ -4938,7 +4938,8 @@ setInterval(() => {
   if (ahora - vigT > 9000) ultimoMsgT = ahora;
   vigT = ahora;
   if (!ws || ws.readyState !== 1 || document.hidden) return;
-  if (conectado && yo && ahora - ultimoMsgT > 12000) {
+  // Antes de 'bienvenido' el servidor puede tardar hasta 30 s en verificar (no manda 's'): margen mayor.
+  if (conectado && yo && ahora - ultimoMsgT > (ws._listo ? 12000 : 35000)) {
     const s = ws; ws = null; conectado = false;
     s.onopen = s.onmessage = s.onclose = null;
     try { s.close(4001, 'mudo'); } catch (e) {}

@@ -71,7 +71,8 @@ async function onRequestPost(context) {
       let tokens = Math.floor(pkg.usd / priceUsd);
       if (firstBuy) tokens *= 2; // oferta de bienvenida 2x (se re-verifica en el webhook)
       invoice = {
-        title: `${firstBuy ? '🎁 OFERTA 1ª COMPRA 2x — ' : ''}${pkg.label} — ${tokens.toLocaleString()} $DUENDE`,
+        // Telegram rechaza la factura si el titulo pasa de 32 caracteres.
+        title: `${pkg.label}${firstBuy ? ' x2' : ''} · ${tokens.toLocaleString()} $DUENDE`.slice(0, 32),
         description: `${firstBuy ? '¡Bienvenida 2x! ' : ''}Compra ${tokens.toLocaleString()} tokens $DUENDE por ${stars} Stars (~$${pkg.usd} USD)`,
         payload: JSON.stringify({ pkg: pkgIndex, tokens, usd: pkg.usd, tg_id: tgId, first_buy: firstBuy }),
         currency: 'XTR',

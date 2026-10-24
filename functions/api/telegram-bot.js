@@ -125,8 +125,8 @@ async function isFirstPurchase(env, tgId) {
   return Array.isArray(rows) && rows.length === 0;
 }
 
-async function createStarsInvoice(token, env, pkgIndex, tgId) {
-  // Paquete inexistente (buy_99 a mano): ni se consulta el precio.
+async function createStarsInvoice(token, env, pkgIndex, tgId) {
+  // Paquete inexistente (buy_99 a mano): ni se consulta el precio.
   if (!(pkgIndex >= 0 && pkgIndex < STARS_PACKAGES.length)) return;
   const price = await getPrice();
   // Sin precio real no se factura (el respaldo fijo daba ~20x mas tokens). En
@@ -153,10 +153,10 @@ async function createStarsInvoice(token, env, pkgIndex, tgId) {
 // COMMAND HANDLERS
 // ═══════════════════════════════════════════════════════
 
-// Trailer ya enviado (por isolate): un /start en bucle de alguien sin perfil
-// mandaba el video cada vez. Desde el boton Menu no se manda nunca.
-const trailerEnviado = new Set();
-
+// Trailer ya enviado (por isolate): un /start en bucle de alguien sin perfil
+// mandaba el video cada vez. Desde el boton Menu no se manda nunca.
+const trailerEnviado = new Set();
+
 async function handleStart(token, env, chatId, user, startPayload, desdeMenu) {
   const tgId = String(user.id);
   // SEGURIDAD: aqui habia un PATCH que movia a este telegram_id el perfil
@@ -175,8 +175,8 @@ async function handleStart(token, env, chatId, user, startPayload, desdeMenu) {
   const referralLink = `https://t.me/duendequest_bot?start=ref_${user.id}`;
   // A quien llega por primera vez: el trailer de 30 s (juego real, generado con
   // tools/promo/) antes de la bienvenida. Si falla, la bienvenida sale igual.
-  if (esNuevo && !desdeMenu && !trailerEnviado.has(tgId)) {
-    if (trailerEnviado.size > 5000) trailerEnviado.clear();
+  if (esNuevo && !desdeMenu && !trailerEnviado.has(tgId)) {
+    if (trailerEnviado.size > 5000) trailerEnviado.clear();
     trailerEnviado.add(tgId);
     try { await tg(token, 'sendVideo', { chat_id: chatId, video: TRAILER_URL, caption: '🎬 Así se juega DUENDE QUEST (30 s de juego real)', supports_streaming: true }); } catch (e) {}
   }
@@ -555,21 +555,21 @@ async function handlePlay(token, chatId) {
 // MAIN HANDLER
 // ═══════════════════════════════════════════════════════
 
-// Anti-abuso: tope de actualizaciones por usuario (por isolate). Sin esto, un
-// cliente a mano podia mandar /start o botones en bucle y gastar el limite de
-// envios del bot para todos. Los pagos salen antes y nunca se cortan.
-const RL_VENTANA = 10000, RL_MAX = 8;
-const rlUsuarios = new Map();
-function demasiadas(id) {
-  const ahora = Date.now();
-  let e = rlUsuarios.get(id);
-  if (!e || ahora - e.t > RL_VENTANA) {
-    if (rlUsuarios.size > 5000) { for (const [k, v] of rlUsuarios) if (ahora - v.t > RL_VENTANA) rlUsuarios.delete(k); if (rlUsuarios.size > 5000) rlUsuarios.clear(); }
-    e = { t: ahora, n: 0 }; rlUsuarios.set(id, e);
-  }
-  return ++e.n > RL_MAX;
-}
-
+// Anti-abuso: tope de actualizaciones por usuario (por isolate). Sin esto, un
+// cliente a mano podia mandar /start o botones en bucle y gastar el limite de
+// envios del bot para todos. Los pagos salen antes y nunca se cortan.
+const RL_VENTANA = 10000, RL_MAX = 8;
+const rlUsuarios = new Map();
+function demasiadas(id) {
+  const ahora = Date.now();
+  let e = rlUsuarios.get(id);
+  if (!e || ahora - e.t > RL_VENTANA) {
+    if (rlUsuarios.size > 5000) { for (const [k, v] of rlUsuarios) if (ahora - v.t > RL_VENTANA) rlUsuarios.delete(k); if (rlUsuarios.size > 5000) rlUsuarios.clear(); }
+    e = { t: ahora, n: 0 }; rlUsuarios.set(id, e);
+  }
+  return ++e.n > RL_MAX;
+}
+
 async function onRequestPost(context) {
   const env = getEnv(context);
   const token = env.BOT_TOKEN;
@@ -663,11 +663,11 @@ async function onRequestPost(context) {
       return new Response('OK');
     }
 
-    // Anti-abuso: quien manda demasiadas actualizaciones seguidas se ignora un
-    // rato (el admin nunca; pre-checkout y pagos ya respondieron arriba).
-    const deId = body.callback_query?.from?.id ?? body.message?.from?.id;
-    if (deId && String(deId) !== String(context.env.ADMIN_TG_ID || '') && demasiadas(String(deId))) return new Response('OK');
-
+    // Anti-abuso: quien manda demasiadas actualizaciones seguidas se ignora un
+    // rato (el admin nunca; pre-checkout y pagos ya respondieron arriba).
+    const deId = body.callback_query?.from?.id ?? body.message?.from?.id;
+    if (deId && String(deId) !== String(context.env.ADMIN_TG_ID || '') && demasiadas(String(deId))) return new Response('OK');
+
     // Callback queries
     if (body.callback_query) {
       const cb = body.callback_query;
