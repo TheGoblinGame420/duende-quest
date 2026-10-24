@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Duende Quest · Elige tu juego</title>
+<meta name="description" content="Elige tu juego: $DUENDE ORIGINS, el mundo abierto 3D, o $DUENDE CLASSIC, el MMO 2D en pixel art. Mismo duende, gratis y sin descargas.">
+<meta name="theme-color" content="#0a0418">
+<meta property="og:title" content="Duende Quest · Elige tu juego">
+<meta property="og:description" content="$DUENDE ORIGINS (3D) y $DUENDE CLASSIC (2D): un mismo duende, gratis y sin descargas.">
+<meta property="og:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/video/promo3d-poster.jpg">
+<link rel="icon" href="/assets/ui/coin.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0418;--txt:#f2efff;--txt2:#b8b0d8;--oro:#ffd84a;--mor:#a78bfa;--ros:#f472b6;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{min-height:100%;background:var(--bg);color:var(--txt);font-family:var(--sans);}
+body{overflow-x:hidden;}
+#fondo{position:fixed;inset:0;width:100%;height:100%;z-index:0;}
+.aurora{position:fixed;inset:-20%;z-index:0;pointer-events:none;background:radial-gradient(40% 35% at 20% 20%,rgba(124,58,237,.35),transparent 70%),radial-gradient(35% 30% at 85% 30%,rgba(219,39,119,.22),transparent 70%),radial-gradient(45% 40% at 50% 100%,rgba(37,99,235,.25),transparent 70%);animation:aurora 18s ease-in-out infinite alternate;}
+@keyframes aurora{to{transform:translate(4%,-3%) scale(1.08);}}
+main{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom));}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:18px;}
+.marca{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--txt);}
+.marca img{width:40px;height:40px;filter:drop-shadow(0 0 10px rgba(255,216,74,.5));animation:flota 3s ease-in-out infinite;}
+@keyframes flota{50%{transform:translateY(-4px) rotate(-4deg);}}
+.marca b{font:400 13px var(--px);letter-spacing:.05em;}
+.enl{display:flex;gap:8px;}
+.enl a{color:var(--txt2);text-decoration:none;font:600 13px var(--sans);padding:8px 12px;border-radius:999px;border:1px solid rgba(167,139,250,.3);background:rgba(255,255,255,.04);}
+.enl a:hover{color:#fff;border-color:var(--mor);}
+.hola{text-align:center;margin:6px 0 20px;}
+.hola h1{font:400 clamp(13px,2.4vw,20px)/1.6 var(--px);text-shadow:0 0 18px rgba(167,139,250,.6);}
+.hola h1 span{color:var(--oro);}
+.hola p{color:var(--txt2);margin-top:8px;font-size:15px;}
+.cartas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;perspective:1100px;}
+.carta{position:relative;display:block;text-decoration:none;color:var(--txt);border-radius:22px;padding:14px;background:linear-gradient(160deg,rgba(30,20,60,.92),rgba(14,9,30,.95));border:1px solid rgba(167,139,250,.35);box-shadow:0 18px 50px rgba(0,0,0,.45);transform-style:preserve-3d;transition:transform .15s ease-out,box-shadow .25s,border-color .25s;will-change:transform;overflow:hidden;}
+.carta::before{content:"";position:absolute;inset:-40%;background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.16),transparent 35%);pointer-events:none;opacity:0;transition:opacity .25s;}
+.carta:hover::before{opacity:1;}
+.carta:hover{border-color:var(--mor);box-shadow:0 22px 60px rgba(124,58,237,.45);}
+.carta.origins{border-color:rgba(244,114,182,.5);}
+.vista{position:relative;border-radius:16px;overflow:hidden;aspect-ratio:16/12;max-height:42vh;width:100%;background:#0b0718;transform:translateZ(30px);}
+.vista video{width:100%;height:100%;object-fit:cover;object-position:center 60%;display:block;}
+.classic .vista{background:linear-gradient(180deg,#7ec8f0 0%,#bfe6ff 55%,#5fae4a 55%,#3d8a34 100%);}
+.classic .vista::after{content:"";position:absolute;left:0;right:0;bottom:0;height:45%;background:repeating-linear-gradient(90deg,rgba(0,0,0,.06) 0 16px,transparent 16px 32px);}
+.nube{position:absolute;top:14%;width:90px;height:26px;background:#fff;border-radius:20px;opacity:.85;animation:nube 22s linear infinite;}
+.nube::before,.nube::after{content:"";position:absolute;background:#fff;border-radius:50%;}
+.nube::before{width:34px;height:34px;left:14px;top:-16px;}
+.nube::after{width:26px;height:26px;left:44px;top:-10px;}
+.nube.b{top:28%;width:70px;animation-duration:30s;animation-delay:-12s;opacity:.7;}
+@keyframes nube{from{transform:translateX(-120px);}to{transform:translateX(480px);}}
+.duende{position:absolute;left:50%;bottom:8%;width:172px;height:140px;margin-left:-86px;background:url(/assets/skins/duende_anim.png) -172px 0;image-rendering:pixelated;transform:scale(1.7);transform-origin:bottom center;animation:anda 0.9s steps(9) infinite;z-index:1;filter:drop-shadow(0 6px 0 rgba(0,0,0,.25));}
+@keyframes anda{from{background-position:-172px 0;}to{background-position:-1720px 0;}}
+.etq{position:absolute;left:10px;top:10px;z-index:2;font:800 11px var(--sans);padding:5px 10px;border-radius:999px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.25);}
+.origins .etq{background:linear-gradient(90deg,#7c3aed,#db2777);border:0;}
+.carta h2{font:400 15px/1.5 var(--px);margin:14px 4px 6px;transform:translateZ(20px);}
+.origins h2{background:linear-gradient(90deg,#c4b5fd,#f9a8d4,#93c5fd);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.classic h2{color:var(--oro);}
+.carta p{color:var(--txt2);font-size:14px;line-height:1.45;margin:0 4px 12px;}
+.jugar{display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border-radius:14px;font:800 16px var(--sans);letter-spacing:.03em;transform:translateZ(25px);}
+.origins .jugar{background:linear-gradient(90deg,#7c3aed,#db2777,#2563eb);background-size:200% 100%;animation:brillo 3s linear infinite;box-shadow:0 8px 24px rgba(219,39,119,.35);}
+.classic .jugar{background:linear-gradient(90deg,#b45309,#f59e0b);box-shadow:0 8px 24px rgba(245,158,11,.3);}
+@keyframes brillo{to{background-position:200% 0;}}
+.vivo{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:20px 0 12px;}
+.chip{display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(167,139,250,.25);font:600 13px var(--sans);color:var(--txt2);}
+.chip b{color:#fff;}
+.punto{width:8px;height:8px;border-radius:50%;background:#4ade80;box-shadow:0 0 8px #4ade80;animation:latido 1.4s ease-in-out infinite;}
+@keyframes latido{50%{opacity:.35;}}
+.una{max-width:620px;margin:6px auto 0;text-align:center;font-size:14px;color:#fde68a;padding:11px 16px;border-radius:14px;background:rgba(250,204,21,.08);border:1px solid rgba(250,204,21,.35);}
+.una b{color:#fff;}
+footer{text-align:center;margin-top:22px;font-size:13px;color:var(--txt2);}
+footer a{color:var(--cian);text-decoration:none;}
+@media (max-width:680px){.cartas{grid-template-columns:1fr;}.vista{aspect-ratio:16/11;}.duende{bottom:12%;transform:scale(1.35);}.enl a.op{display:none;}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;}.carta{transition:none;}}
+</style>
+</head>
+<body>
+<canvas id="fondo" aria-hidden="true"></canvas>
+<div class="aurora" aria-hidden="true"></div>
+<main>
+  <header>
+    <a class="marca" href="/inicio/"><img src="/assets/ui/coin.png" alt=""><b>DUENDE QUEST</b></a>
+    <nav class="enl"><a href="/" class="op">La web</a><a href="https://t.me/duendequest_bot" target="_blank" rel="noopener">Telegram</a></nav>
+  </header>
+  <section class="hola">
+    <h1 id="saludo">¿A qué mundo vas <span>hoy</span>?</h1>
+    <p>Tu mismo duende en los dos juegos. Gratis y sin descargas.</p>
+  </section>
+  <section class="cartas">
+    <a class="carta origins" data-ir="/mundo/">
+      <div class="vista">
+        <video src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" autoplay muted loop playsinline preload="metadata" aria-label="Vista de $DUENDE ORIGINS"></video>
+        <span class="etq">NUEVO · 3D</span>
+      </div>
+      <h2>$DUENDE ORIGINS</h2>
+      <p>Mundo abierto 3D: vuela con alas, elige Luz o Sombra, PvP de facciones y asedios.</p>
+      <div class="jugar">🌌 JUGAR ORIGINS</div>
+    </a>
+    <a class="carta classic" data-ir="/mmo/">
+      <div class="vista">
+        <div class="nube"></div><div class="nube b"></div>
+        <div class="duende" aria-hidden="true"></div>
+        <span class="etq">2D · PIXEL ART</span>
+      </div>
+      <h2>$DUENDE CLASSIC</h2>
+      <p>El MMO de siempre: mazmorras, la Torre, la banda del Titán y 10 zonas hasta el nivel 60.</p>
+      <div class="jugar">⚔️ JUGAR CLASSIC</div>
+    </a>
+  </section>
+  <section class="vivo" aria-live="polite">
+    <span class="chip" id="on" hidden><span class="punto"></span><b></b>&nbsp;jugando ahora</span>
+    <span class="chip">👹 <span id="jefe-t">Jefe mundial en</span>&nbsp;<b id="jefe">--:--</b></span>
+    <span class="chip">🎁 Entra hoy: suma tu <b>racha diaria</b></span>
+  </section>
+  <p class="una"><b>Una skin, dos juegos:</b> lo que ganas o compras (skins, alas, oro, equipo y nivel) vale en ORIGINS y en CLASSIC.</p>
+  <footer>¿Quieres saber más? <a href="/">Ver la web completa →</a></footer>
+</main>
+<script>
+(function () {
+  // Los enlaces llevan el hash (sesion de Telegram, si la hay).
+  var h = location.hash || '';
+  document.querySelectorAll('[data-ir]').forEach(function (a) { a.href = a.dataset.ir + h; });
+  // Saludo con el nombre del duende, si este navegador ya jugo.
+  try { var n = localStorage.getItem('dq_mmo_nombre'); if (n) document.getElementById('saludo').innerHTML = '¡Hola, <span>' + n.replace(/[<>&"]/g, '') + '</span>! ¿A qué mundo vas?'; } catch (e) {}
+  // Cartas que se inclinan hacia el puntero.
+  document.querySelectorAll('.carta').forEach(function (c) {
+    c.addEventListener('pointermove', function (e) {
+      var r = c.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+      c.style.transform = 'rotateY(' + ((x - 0.5) * 12).toFixed(2) + 'deg) rotateX(' + ((0.5 - y) * 10).toFixed(2) + 'deg) translateZ(0)';
+      c.style.setProperty('--mx', (x * 100).toFixed(1) + '%'); c.style.setProperty('--my', (y * 100).toFixed(1) + '%');
+    });
+    c.addEventListener('pointerleave', function () { c.style.transform = ''; });
+  });
+  // Jefe mundial: a las :00 y :30 (UTC), dura 10 minutos.
+  var dos = function (n) { return (n < 10 ? '0' : '') + n; };
+  function jefe() {
+    var ahora = Date.now(), ciclo = 30 * 60000, t = ahora % ciclo, enCurso = t < 10 * 60000;
+    var s = Math.floor((enCurso ? 10 * 60000 - t : ciclo - t) / 1000);
+    document.getElementById('jefe-t').textContent = enCurso ? 'Jefe mundial EN CURSO · quedan' : 'Jefe mundial en';
+    document.getElementById('jefe').textContent = Math.floor(s / 60) + ':' + dos(s % 60);
+  }
+  jefe(); setInterval(jefe, 1000);
+  function vivos() {
+    if (document.hidden) return;
+    fetch('/mmo/ws', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+      var el = document.getElementById('on'); if (d.online > 0) { el.hidden = false; el.querySelector('b').textContent = Number(d.online).toLocaleString('es'); }
+    }).catch(function () {});
+  }
+  vivos(); setInterval(vivos, 60000);
+  // Fondo: motas de luz con un poco de parallax (ligero: 70 puntos).
+  var cv = document.getElementById('fondo'), x = cv.getContext('2d'), W, H, mx = 0, my = 0, P = [];
+  var colores = ['#a78bfa', '#f472b6', '#7dd3fc', '#ffd84a'];
+  function tam() { var d = Math.min(2, devicePixelRatio || 1); W = cv.width = innerWidth * d; H = cv.height = innerHeight * d; }
+  tam(); addEventListener('resize', tam);
+  for (var i = 0; i < 70; i++) P.push({ x: Math.random(), y: Math.random(), z: 0.3 + Math.random() * 0.7, r: 0.6 + Math.random() * 1.8, c: colores[i % 4], f: Math.random() * 6.28 });
+  addEventListener('pointermove', function (e) { mx = e.clientX / innerWidth - 0.5; my = e.clientY / innerHeight - 0.5; });
+  var reducir = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function cuadro(t) {
+    x.clearRect(0, 0, W, H);
+    for (var i = 0; i < P.length; i++) {
+      var p = P[i];
+      if (!reducir) { p.y -= 0.00012 * p.z; if (p.y < -0.05) { p.y = 1.05; p.x = Math.random(); } }
+      var px = (p.x + mx * 0.03 * p.z) * W, py = (p.y + my * 0.03 * p.z) * H, a = 0.35 + 0.35 * Math.sin(t / 900 + p.f);
+      x.globalAlpha = a; x.fillStyle = p.c; x.beginPath(); x.arc(px, py, p.r * p.z * (W / innerWidth), 0, 6.283); x.fill();
+    }
+    requestAnimationFrame(cuadro);
+  }
+  requestAnimationFrame(cuadro);
+})();
+</script>
+</body>
+</html>

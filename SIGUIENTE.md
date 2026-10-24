@@ -2626,3 +2626,13 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
   nombre ORIGINS. mundo/index.html y manifest: «$DUENDE ORIGINS».
 - Tiendas 2D (client.js) y 3D (ventanas.js): «Una skin, dos juegos».
 - Telegram (bot y hub) sin cambios, a peticion del usuario.
+
+### Inicio para elegir juego (23-oct-2026, `?v=272`)
+
+- inicio/index.html: pagina autocontenida (sin JS externo): fondo de motas en
+  canvas con parallax, aurora CSS, cartas que se inclinan al puntero
+  (ORIGINS con promo3d.mp4 mudo, CLASSIC con duende_anim.png cuadros 1-9),
+  saludo con dq_mmo_nombre, jefe mundial (:00/:30, 10 min) y conectados
+  (GET /mmo/ws). Los enlaces llevan el hash.
+- ⌂ del 3D y del 2D → /inicio/ (en Telegram el 2D sigue al hub de Telegram).
+- Portada: nav «Jugar» y «Jugar gratis ahora» → /inicio/.

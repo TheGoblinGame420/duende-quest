@@ -487,6 +487,10 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 40, fecha: '23 oct 2026', items: [
+    'Nuevo inicio: el botón ⌂ de los dos juegos te lleva a una pantalla ligera para elegir mundo, con tu nombre, el tráiler de ORIGINS, el duende de CLASSIC animado, el jefe mundial en directo y los jugadores conectados.',
+    'En la web, «Jugar» y «Jugar gratis ahora» llevan a ese mismo inicio para que elijas ORIGINS o CLASSIC.',
+  ] },
   { n: 39, fecha: '23 oct 2026', items: [
     'Los juegos estrenan nombre: el MMO 2D es $DUENDE CLASSIC y el mundo abierto 3D es $DUENDE ORIGINS. Mismo duende, mismo servidor.',
     'Una skin, dos juegos: lo que compras o ganas (skins, alas, oro, equipo y nivel) vale a la vez en CLASSIC y en ORIGINS.',
