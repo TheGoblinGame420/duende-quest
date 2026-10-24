@@ -328,7 +328,9 @@ export const Hermandades = {
   },
   guardarHermsSucias(ahora) {
     if (!this.hermSucias || !this.hermSucias.size || ahora - (this.hermGuardT || 0) < 30000) return;
-    this.hermGuardT = ahora;
+    // Al vaciarse el mundo llega Infinity (guardar ya): no se guarda como hora,
+    // o el resto de la vida del objeto ya no se guardarian las gestas cada 30 s.
+    this.hermGuardT = Number.isFinite(ahora) ? ahora : 0;
     const vivas = [...this.hermSucias].filter(h => this.herms && this.herms.get(h.id) === h && Object.keys(h.miembros).length);
     for (const h of vivas) this.guardarHerm(h);
     this.hermSucias.clear();
@@ -357,6 +359,10 @@ export const Hermandades = {
   // Nivel nuevo: su ficha en la hermandad se pone al dia.
   hermSubioNivel(s) {
     const h = this.herms && this.herms.get(s.c.herm);
-    if (h && h.miembros[s.c.uid]) { h.miembros[s.c.uid].lv = s.c.nivel; this.guardarHerm(h); }
+    if (h && h.miembros[s.c.uid]) {
+      h.miembros[s.c.uid].lv = s.c.nivel; this.guardarHerm(h);
+      // Lo celebra la hermandad (por debajo del nivel de fundar, cada 5: se sube muy rapido).
+      if (s.c.nivel >= HERM_NIVEL || s.c.nivel % 5 === 0) this.avisarHerm(h, `🎉 ${s.c.nombre} subió al nivel ${s.c.nivel}.`, s);
+    }
   },
 };

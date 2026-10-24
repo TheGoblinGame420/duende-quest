@@ -161,6 +161,7 @@ export const Mazmorras = {
   // de su grupo), vuelve a ella donde estaba en vez de aparecer en el pueblo.
   volverAInstancia(s, mapa, x) {
     const w = s.c.inst && this.mundo[s.c.inst];
+    if (w && w.torre) return this.volverATorre(s, w, mapa, x);
     if (!w || !w.inst || w.inst.completada || w.mapa !== mapa) return false;
     if (s.c.nivel < (w.inst.k ? NIVEL_MAX : MAZMORRAS[w.inst.id].nv[0])) return false;
     // Solo a la de tu grupo o a la tuya (no a la de un grupo que dejaste).

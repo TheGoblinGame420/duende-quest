@@ -19,7 +19,7 @@ import {
   ARMAS, SKINS, PODERES, MONTURAS, TINTES, MASCOTAS, HOJAS, FORJA_MAX, costoForja, multForja,
   BANDA_MONTURA, TORRE, ambulanteActivo, ambulanteOferta,
   PAQUETES, estrellasDe, LOGROS, progresoLogro, statsJugador, ALAS,
-} from '/mmo/js/data.js?v=286';
+} from '/mmo/js/data.js?v=287';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -895,7 +895,7 @@ const ACC = {
   },
   cuenta: () => {
     if (H.iniciarSesion) H.iniciarSesion();
-    else { H.aviso('Inicia sesión en el juego online y vuelve: entrarás con tu cuenta.', 'ok'); setTimeout(() => { location.href = '/mmo/'; }, 900); }
+    else { H.aviso('Inicia sesión en $DUENDE CLASSIC y vuelve: entrarás con tu cuenta.', 'ok'); setTimeout(() => { location.href = '/mmo/'; }, 900); }
   },
   // Logros
   lgtab: b => { est.logros = b.dataset.id; H.sfx('boton', 0.2); pintarLogros(); },

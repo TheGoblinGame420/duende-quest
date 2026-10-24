@@ -48,7 +48,7 @@ export const Viajes = {
     const uid = g && typeof m.uid === 'string' && g.uids.find(u => pub(u) === m.uid);
     const t = uid && this.porUid.get(uid);
     if (!t || !t.c || t === s || t.cerrado) return this.no(s, 'Ese compañero no está conectado.');
-    if (t.m3) return this.no(s, `${t.c.nombre} está en ORIGINS: entra al mismo modo.`);
+    if (t.m3) return this.no(s, `${t.c.nombre} está en $DUENDE ORIGINS (3D): entra en ORIGINS para ir a su lado.`);
     if (s.muerto || s.duelo) return;
     if (s.k.includes('#') || s.c.mapa === 'coliseo') return this.no(s, 'Sal primero de la mazmorra o del Coliseo.');
     const id = t.c.mapa;

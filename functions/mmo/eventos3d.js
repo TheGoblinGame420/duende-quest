@@ -107,7 +107,9 @@ export const Eventos3D = {
     const W = this.iniciar3d();
     (W.raros || (W.raros = {}))[o.mapa] = { id: 0, prox: Date.now() + RARO3D_REAPARECE_MS };
     const base = statsMonstruo(o.k, o.nv), nombres = [];
-    for (const sid of o.dano.keys()) {
+    // Quien pego o curo a quien lo peleaba (como en el 2D): el sanador del grupo tambien cobra.
+    const quienes = new Set([...o.dano.keys(), ...(o.cura ? o.cura.keys() : [])]);
+    for (const sid of quienes) {
       const s = this.sesiones.get(sid);
       if (!s || !s.c || !s.m3) continue;
       const xp = base.xp * 4, oro = base.oro * 5;
@@ -158,7 +160,11 @@ export const Eventos3D = {
   llegaCapitan3d(ev) {
     const mp = MAPAS[ev.zona], jug = this.sesiones3d().filter(s => !s.muerto && zonaEn(s.p.x, s.p.z) === ev.zona);
     const k = mp.monstruos[mp.monstruos.length - 1], n = Math.max(1, jug.length);
-    const p = jug.length ? this.puntoCerca3d(azar(jug), ev.zona) : { x: 0, z: 0 };
+    // Sin nadie vivo en la zona (el ultimo invasor cayo al otro lado del borde,
+    // o por un Dolor tras morir): en el campamento de la zona mas cercano al
+    // pueblo (no en el del jefe). Antes salia en (0, 0), en medio del pueblo.
+    const cp = jug.length ? null : this.iniciar3d().campos.find(c => c.zona === ev.zona && !c.jefe);
+    const p = jug.length ? this.puntoCerca3d(azar(jug), ev.zona) : cp ? { x: cp.x, z: cp.z } : { x: 0, z: 0 };
     const o = this.crearEspecial3d(k, p.x, p.z, { zona: ev.zona, nv: mp.nv[1], hpX: 9 * (1 + 0.5 * (n - 1)), atkX: 1.25, agresivo: true, jefe: true, ex: { ev: ev.id, cap: 1, nom: 'Capitán ' + MONSTRUOS[k].nombre, ti: '#ff5a1f' } });
     ev.fase = 'capitan'; ev.capitan = o.id;
     this.aClave(K3, { t: 'aviso', m: `⚔️ ¡${o.ex3.nom} llega a ${mp.nombre}! Derrótalo para ganar la invasión.` });
@@ -167,7 +173,8 @@ export const Eventos3D = {
   muereInvasor3d(o) {
     const ev = this.iniciar3d().inv3;
     if (!ev || o.ex3.ev !== ev.id) return;
-    for (const sid of o.dano.keys()) { const s = this.sesiones.get(sid); if (s && s.c) ev.part.add(s.c.uid); }
+    // Pegar o curar a quien pelea cuenta (como en el 2D): el sanador del grupo tambien cobra.
+    for (const m of [o.dano, o.cura]) if (m) for (const sid of m.keys()) { const s = this.sesiones.get(sid); if (s && s.c) ev.part.add(s.c.uid); }
     if (o.ex3.cap) return this.terminarInvasion3d(true);
     if (ev.fase !== 'oleadas') return;
     ev.hechos++;

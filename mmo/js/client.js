@@ -17,7 +17,7 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=286';
+} from './data.js?v=287';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -295,6 +295,21 @@ $('b-sonido').onclick = () => {
 };
 pintarSonido();
 
+// Fuera de la app (Telegram minimizado, otra pestaña, pantalla apagada) la
+// musica seguia sonando de fondo: se pausa y se retoma al volver. Si el
+// navegador no la dejo arrancar sin un gesto (entrada automatica tras iniciar
+// sesion), el primer toque la arranca (pointerup/touchend: en movil el
+// pointerdown de un dedo no cuenta como gesto para play()).
+function silencioFuera(fuera) {
+  if (fuera) { musica.pause(); if (actx && actx.state === 'running') actx.suspend().catch(() => {}); return; }
+  if (document.hidden) return;
+  if (actx && actx.state === 'suspended') actx.resume().catch(() => {});
+  if (sonido && musica.src) sonarMusica();
+}
+document.addEventListener('visibilitychange', () => silencioFuera(document.hidden));
+if (TG) try { TG.onEvent('deactivated', () => silencioFuera(true)); TG.onEvent('activated', () => silencioFuera(false)); } catch (e) {}
+['pointerup', 'touchend', 'keydown'].forEach(ev => addEventListener(ev, () => { if (sonido && musica.src && musica.paused && !document.hidden) sonarMusica(); }, { passive: true }));
+
 // ── ESTADO ──
 let ws = null, miId = 0, yo = null, mapaId = 'pueblo', conectado = false, reintentos = 0, fatal = false, timerRec = 0, conectando = false;
 let ultimoMsgT = 0;   // performance.now() del ultimo mensaje del servidor (vigilante de conexion)
@@ -508,6 +523,8 @@ function recibir(m) {
         P.herido = 18; sfx('caida', .5); flotante(P.x, P.y - 70, '-' + m.d, '#ff3344', 11);
         // Retroceso: el golpe te aparta del monstruo (y corta el combo de pegado).
         const o = mons.get(m.from);
+        // Sin objetivo, el monstruo que te pega pasa a serlo (su marco dice quien es).
+        if (o && !o.muereT && !objetivo) objetivo = { k: 'm', id: m.from };
         // Ni durante un lanzamiento ni mientras llega su confirmacion: el
         // retroceso movia al jugador y el servidor cancelaba el hechizo.
         if (o && !castYo && performance.now() > castPend) { P.vx = (P.x < o.x ? -1 : 1) * 7; if (P.suelo) { P.vy = -4; P.suelo = false; } }
@@ -1156,7 +1173,13 @@ function interactuar() {
   else if (c.n.tipo === 'tienda') abrirTienda();
   else if (c.n.tipo === 'ranking') abrirRanking();
   else if (c.n.tipo === 'artesania') abrirArtesana();
-  else abrirMision();
+  else {
+    // Tito con la mision cumplida: hablarle ya la entrega (antes habia que
+    // abrir el registro y buscar el boton "Entregar" entre las demas cajas).
+    // El candado evita un segundo envio por doble toque antes de la respuesta.
+    if (c.n.tipo === 'guia' && misionLista() && performance.now() > misEntregaT) { misEntregaT = performance.now() + 1500; mandar({ t: 'mision' }); }
+    abrirMision();
+  }
 }
 
 // ── ENTRADA ──
@@ -1267,7 +1290,14 @@ function botonTactil(id, abajo, arriba) {
   addEventListener('mouseup', () => { if (raton) soltar(); });
 })();
 let atkRepetir = null;
-botonTactil('t-atk', () => { atacar(); atkRepetir = setInterval(atacar, 120); }, () => { clearInterval(atkRepetir); });
+// Con dos dedos sobre ATACAR llegaban dos touchstart: el primer intervalo quedaba
+// huerfano (solo se borraba el ultimo) y el duende atacaba solo hasta recargar.
+// Antes de crear uno se quita el anterior; al perder el foco o minimizar (Telegram) tambien se para.
+const pararAtkRepetir = () => { clearInterval(atkRepetir); atkRepetir = null; };
+botonTactil('t-atk', () => { pararAtkRepetir(); atacar(); atkRepetir = setInterval(atacar, 120); }, pararAtkRepetir);
+const soltarAtk = () => { if (atkRepetir) { pararAtkRepetir(); $('t-atk').classList.remove('on'); } };
+addEventListener('blur', soltarAtk);
+document.addEventListener('visibilitychange', () => { if (document.hidden) soltarAtk(); });
 botonTactil('t-jump', saltar, soltarSalto);
 botonTactil('t-dash', dash);
 botonTactil('t-chat', abrirChat);
@@ -4162,7 +4192,7 @@ function dibujar() {
   ponCss(bi, 'display', 'block');
   if (c && yo && !P.muerto) {
     ponCss(bi, 'visibility', 'visible');
-    ponTxt(bi, c.tipo === 'res' ? 'RESUCITAR' : c.tipo === 'portal' ? (c.p.etiqueta === 'Salida' ? (TACTIL ? 'SALIR' : 'E · SALIR') : (TACTIL ? 'ENTRAR' : 'E · ENTRAR')) : c.tipo === 'cofre' ? (TACTIL ? 'ABRIR' : 'E · ABRIR') : c.tipo === 'vitrina' ? (TACTIL ? 'VER SKINS' : 'E · VER SKINS') : c.tipo === 'piedra' ? (TACTIL ? 'VIAJAR' : 'E · VIAJAR') : c.tipo === 'nodo' ? (TACTIL ? 'RECOGER' : 'E · RECOGER') : c.tipo === 'pesca' ? (castYo && castYo.id === 'pica' ? (TACTIL ? 'TIRAR' : 'E · TIRAR') : castYo && castYo.id === 'pescar' ? 'Espera…' : (TACTIL ? 'PESCAR' : 'E · PESCAR')) : (TACTIL ? 'HABLAR' : 'E · HABLAR'));
+    ponTxt(bi, c.tipo === 'res' ? 'RESUCITAR' : c.tipo === 'portal' ? (c.p.etiqueta === 'Salida' ? (TACTIL ? 'SALIR' : 'E · SALIR') : (TACTIL ? 'ENTRAR' : 'E · ENTRAR')) : c.tipo === 'cofre' ? (TACTIL ? 'ABRIR' : 'E · ABRIR') : c.tipo === 'vitrina' ? (TACTIL ? 'VER SKINS' : 'E · VER SKINS') : c.tipo === 'piedra' ? (TACTIL ? 'VIAJAR' : 'E · VIAJAR') : c.tipo === 'nodo' ? (TACTIL ? 'RECOGER' : 'E · RECOGER') : c.tipo === 'pesca' ? (castYo && castYo.id === 'pica' ? (TACTIL ? 'TIRAR' : 'E · TIRAR') : castYo && castYo.id === 'pescar' ? 'Espera…' : (TACTIL ? 'PESCAR' : 'E · PESCAR')) : (c.n.tipo === 'guia' && misionLista() ? (TACTIL ? 'ENTREGAR' : 'E · ENTREGAR') : (TACTIL ? 'HABLAR' : 'E · HABLAR')));
   } else ponCss(bi, 'visibility', 'hidden');
 }
 
@@ -4201,7 +4231,12 @@ function pintarHud() {
   }
   else {
     const lista = yo.mis.p >= q.n;
-    hm.textContent = lista ? q.nombre + ' ✓ — vuelve con Tito' : q.nombre + ' ' + yo.mis.p + '/' + q.n;
+    // Tambien que hay que cazar: "Huesos inquietos 2/10" no decia que eran
+    // esqueletos (la flecha solo lo nombra con uno a la vista). Si el nombre
+    // de la mision ya lo dice ("El Rey Goblin") no se repite.
+    let presa = MONSTRUOS[q.tipo] ? MONSTRUOS[q.tipo].nombre : '';
+    if (presa && q.nombre.indexOf(presa) >= 0) presa = '';
+    hm.textContent = lista ? q.nombre + ' ✓ — vuelve con Tito' : q.nombre + (presa ? ' · ' + presa : '') + ' ' + yo.mis.p + '/' + q.n;
     hm.className = lista ? 'lista' : '';
   }
   const T = yo.tareas;
@@ -4291,7 +4326,7 @@ function sugerencias() {
     if (!yo.torreSem && yo.nivel >= TORRE.nv) l.push('🗼 Sube la Torre del Duende: cada 5 pisos nuevos de la semana, un cofre.');
   }
   const z = zonaDeNivel(yo.nivel);
-  if (MAPAS[z] && mapaId !== z && !(qm && yo.mis.p < qm.n)) l.push(`🗺️ Tu zona ahora: ${esc(MAPAS[z].nombre)} (Nv ${MAPAS[z].nv[0]}-${MAPAS[z].nv[1]}).`);
+  if (MAPAS[z] && mapaId !== z && !(qm && yo.mis.p < qm.n && !misionAlta(qm))) l.push(`🗺️ Tu zona ahora: ${esc(MAPAS[z].nombre)} (Nv ${MAPAS[z].nv[0]}-${MAPAS[z].nv[1]}).`);
   if (!ex && yo.nivel >= EXPEDICION.nv) l.push('🧭 Antes de irte, manda una expedición (aquí abajo).');
   l.push('🎣 Para descansar: pesca en el estanque del pueblo y cocina con la Artesana.');
   return l.slice(0, 4);
@@ -4337,6 +4372,19 @@ function cajaPase() {
   }
   return h + '</div></div>';
 }
+// Mision muy por encima de tu nivel (jefes 5+ porque se pelean en grupo, el
+// resto 4+): que diga donde subir antes, si no el jugador se queda pegado a
+// un monstruo que lo tumba sin saber que hacer.
+function misionAlta(q) { const m = q && MONSTRUOS[q.tipo]; const d = m ? m.nivel - yo.nivel : 0; return m && d >= (m.jefe ? 5 : 4) ? d : 0; }
+function avisoMisionAlta(q, lista) {
+  const d = lista ? 0 : misionAlta(q);
+  if (!d) return '';
+  const z = MAPAS[zonaDeNivel(yo.nivel)];
+  return '<p style="color:var(--warn)">Es ' + d + ' niveles más fuerte que tú. Sube antes en ' + esc(z ? z.nombre : 'tu zona') + ' (la caza del día y las diarias ayudan) o pide ayuda en el chat: en grupo cuenta para todos.</p>';
+}
+// Mision principal cumplida y sin entregar todavia.
+let misEntregaT = 0;
+function misionLista() { const q = yo && yo.mis && MISIONES[yo.mis.i]; return !!q && yo.mis.p >= q.n; }
 function cercaDeTito() { const t = MAPAS.pueblo.npcs.find(n => n.tipo === 'guia'); return mapaId === 'pueblo' && t && Math.abs(P.x - t.x) < 190; }
 function pintarMision() {
   const i = yo.mis ? yo.mis.i : 0, q = MISIONES[i];
@@ -4357,7 +4405,7 @@ function pintarMision() {
   cuerpo.innerHTML =
     '<p>Misión ' + (i + 1) + ' de ' + MISIONES.length + '</p>' +
     '<div class="mis-caja"><b>' + esc(q.nombre) + '</b>' +
-    '<p>' + pide + ' en ' + esc(zona ? zona.nombre : '?') + ' (Nv ' + def.nivel + ').</p>' +
+    '<p>' + pide + ' en ' + esc(zona ? zona.nombre : '?') + ' (<span style="color:' + colorNivel(def.nivel) + '">' + marcaNivel(def.nivel) + 'Nv ' + def.nivel + '</span>).</p>' + avisoMisionAlta(q, lista) +
     '<div class="mis-barra"><i style="width:' + Math.round(yo.mis.p / q.n * 100) + '%"></i></div>' +
     '<p>' + yo.mis.p + ' / ' + q.n + '</p>' +
     '<p style="color:var(--oro)">Recompensa: +' + q.xp + ' XP · +' + q.oro + ' oro' + esc(extra) + '</p></div>' +
@@ -4794,6 +4842,8 @@ function resumenMuerte(m) {
   $('b-revivir').textContent = m.inst ? '↺ Revivir junto a la última barrera' : novato ? '↺ Revivir aquí (entrada de la zona)' : '↺ Revivir en el pueblo';
   if (novato && !m.inst) h += '<p style="margin-top:6px;font-size:12px;color:var(--ok)">Hasta nivel 10 morir no te quita experiencia.</p>';
   ponCss($('muerte-xp'), 'display', novato && !m.inst ? 'none' : 'block');
+  // En el nivel maximo no se pierde XP: se paga la reparacion (m.rep, del servidor).
+  $('muerte-xp').textContent = m.rep > 0 ? `En el nivel máximo no pierdes experiencia: reparar tu equipo cuesta ${m.rep} oro.` : 'Pierdes un 5% de la experiencia de tu nivel.';
   $('muerte-info').innerHTML = h;
 }
 function morir() {

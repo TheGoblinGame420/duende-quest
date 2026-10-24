@@ -314,7 +314,10 @@ export function xpParaSubir(nivel) { return Math.round(40 * Math.pow(nivel, 1.5)
 // maestria pide la mitad de la XP de un nivel 60 y da oro; cada 5, un objeto
 // epico. No da estadisticas (nada de ventaja en PvP), es progreso y botin.
 export const MAESTRIA_XP = Math.round(40 * Math.pow(60, 1.5) * 0.5);
-export const premioMaestria = n => ({ oro: 1500 + 50 * n, item: n % 5 === 0 ? 2 : 0 });
+// El oro de cada barra crece hasta la maestria 60 (4.500) y alli se queda:
+// sin tope, a maestria 200 una barra pagaba mas que toda la caza que la llena
+// y con tan pocos jugadores el oro dejaba de valer algo.
+export const premioMaestria = n => ({ oro: 1500 + 50 * Math.min(n, 60), item: n % 5 === 0 ? 2 : 0 });
 // XP de descanso (como en WoW): estar fuera del juego acumula experiencia
 // extra que duplica la de cada caza hasta gastarse. 8% de tu nivel por hora
 // fuera (desde la primera hora), con un tope de 1,5 niveles. Un motivo
@@ -492,6 +495,12 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 55, fecha: '24 oct 2026', items: [
+    'Combate con más sensación en ORIGINS: el borde de la pantalla destella en rojo hacia quien te pega (y late con poca vida), los botones muestran los segundos de enfriamiento, quien te ataca pasa a ser tu objetivo y los jefes de zona avisan su pisotón. Los monstruos te rodean en vez de amontonarse y los élites del Abismo ya no se atascan en la orilla.',
+    'Hecho para pocos jugadores: el jefe mundial escala con quienes pelean (no con todos los conectados), el sanador cobra en jefes, invasiones y raros, y el Capitán de la invasión ya no aparece en medio del pueblo.',
+    'Misiones más claras: avisan si el monstruo es demasiado fuerte y dicen dónde subir, Tito entrega la misión cumplida al hablarle, y las cazas de Nv 17-28 dan algo más de XP. La Torre te devuelve a tu subida si se corta la conexión.',
+    'Más pulido: fanfarria al subir de nivel en ORIGINS, música que se calla al salir de la app, paneles de ORIGINS que caben en el móvil sin tapar el joystick, Elo justo entre niveles distintos y tu hermandad celebra cuando subes de nivel.',
+  ] },
   { n: 54, fecha: '24 oct 2026', items: [
     'Ajustes finos: los móviles con ahorro de batería (30 fps) ya no pierden distancia de visión en ORIGINS, los botones del grupo de CLASSIC ya no pierden clics, el regalo al invitador ya no se pierde si estaba entrando, y los nombres de hermandad de varias palabras (como «Hijos del Duende») vuelven a valer.',
   ] },
@@ -799,6 +808,10 @@ export const velMontura = id => (MONTURAS[id] ? MONTURAS[id].vel : 1);
 // Cambiar de clase: gratis hasta Nv 10, luego cuesta oro (asi se puede
 // probar sin miedo, pero no se cambia por capricho a nivel alto).
 export const costoCambioClase = nivel => (nivel < 10 ? 0 : 200 * nivel);
+// Reparar el equipo al revivir en el nivel maximo: alli ya no hay XP que
+// perder y morir salia gratis. Un gasto de oro pequeño que se repite (2-3
+// presas de Nv 60); nunca deja el oro en negativo.
+export const costoReparacion = nivel => (nivel >= NIVEL_MAX ? 5 * nivel : 0);
 
 // Habilidades. costo: puntos de ira/energia, o % del mana maximo.
 // rango: px desde el jugador al objetivo ('melee' = 100). obj: 'enemigo',
@@ -1190,6 +1203,8 @@ export const PODERES = [
 // pero no reemplaza a jugar. Entre Nv 10 y 30 (misiones 9-23) la XP de las
 // de caza va ×1,8 desde el 22-oct-2026: ahi solo daban ~20% de un nivel y
 // es donde mas se estancaban los jugadores (auditoria de retencion).
+// Las de caza de Nv 17-28 (11, 15, 17, 18 y 19) suben algo mas (24-oct): con
+// el ×1,8 plano caian a ~30-36% de un nivel justo antes del Angel; ahora ~35-43%.
 export const MISIONES = [
   { nombre: 'Limpieza nocturna',        tipo: 'goblin_normal',     n: 8,  xp: 60,    oro: 80 },
   { nombre: 'Huesos inquietos',         tipo: 'esqueleto',         n: 10, xp: 130,   oro: 150 },
@@ -1201,15 +1216,15 @@ export const MISIONES = [
   { nombre: 'La corona del caballero',  tipo: 'jefe_caballero',    n: 1,  xp: 1200,  oro: 1400, pw: { rayo: 2 } },
   { nombre: 'Esporas gigantes',         tipo: 'hongo',             n: 10, xp: 900,   oro: 560 },
   { nombre: 'Coro de la charca',        tipo: 'rana',              n: 10, xp: 990,   oro: 600 },
-  { nombre: 'Tambores de guerra',       tipo: 'goblin_battlelord', n: 8,  xp: 1010,   oro: 650, pw: { pocion: 5 } },
+  { nombre: 'Tambores de guerra',       tipo: 'goblin_battlelord', n: 8,  xp: 1200,   oro: 650, pw: { pocion: 5 } },
   { nombre: 'El Señor de la Guerra',    tipo: 'jefe_senor',        n: 1,  xp: 2500,  oro: 2800, pw: { escudo: 2, rayo: 1 } },
   { nombre: 'Magia prohibida',          tipo: 'goblin_mage',       n: 10, xp: 1260,   oro: 800 },
   { nombre: 'Huesos arcanos',           tipo: 'esqueleto_arcano',  n: 10, xp: 1370,   oro: 860 },
-  { nombre: 'Fuego que camina',         tipo: 'ghoul_ardiente',    n: 8,  xp: 1260,   oro: 900, pw: { fuego: 2 } },
+  { nombre: 'Fuego que camina',         tipo: 'ghoul_ardiente',    n: 8,  xp: 1550,   oro: 900, pw: { fuego: 2 } },
   { nombre: 'El Ghoul Infernal',        tipo: 'jefe_ghoul',        n: 1,  xp: 4000,  oro: 4500, pw: { rayo: 2, escudo: 2 } },
-  { nombre: 'Filo del desierto',        tipo: 'goblin_samurai',    n: 10, xp: 1620,   oro: 1100 },
-  { nombre: 'Escamas al sol',           tipo: 'lagarto',           n: 10, xp: 1710,   oro: 1150 },
-  { nombre: 'Conejos salvajes',         tipo: 'conejo',            n: 10, xp: 1800,  oro: 1200, pw: { pocion: 10 } },
+  { nombre: 'Filo del desierto',        tipo: 'goblin_samurai',    n: 10, xp: 1850,   oro: 1100 },
+  { nombre: 'Escamas al sol',           tipo: 'lagarto',           n: 10, xp: 1950,   oro: 1150 },
+  { nombre: 'Conejos salvajes',         tipo: 'conejo',            n: 10, xp: 2100,  oro: 1200, pw: { pocion: 10 } },
   { nombre: 'La caída del Ángel',       tipo: 'jefe_angel',        n: 1,  xp: 8000,  oro: 10000, pw: { rayo: 3, escudo: 3, fuego: 3 } },
   { nombre: 'Las puertas del castillo', tipo: 'guardia_real',      n: 10, xp: 2340,  oro: 1500 },
   { nombre: 'Armadura negra',           tipo: 'caballero_negro',   n: 10, xp: 2520,  oro: 1600 },

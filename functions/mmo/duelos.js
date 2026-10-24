@@ -29,7 +29,9 @@ const ESCALA = 0.16, ESCALA_VARA = 0.45;
 const rnd = (a, b) => a + Math.random() * (b - a);
 // Puntuacion Elo de duelos: solo cuentas (no invitados), ambos Nv 10+, y como
 // mucho 3 duelos contados al dia por pareja (que dos amigos no se inflen).
-export const ELO_BASE = 1000, ELO_K = 32, ELO_PAR_DIA = 3;
+// Si el ganador tiene mas de ELO_NV niveles que el perdedor, no cambia el Elo
+// (no se farmea a los nuevos); si gana el de menos nivel, si cuenta.
+export const ELO_BASE = 1000, ELO_K = 32, ELO_PAR_DIA = 3, ELO_NV = 8;
 
 export const Duelos = {
   // El rival de s si el duelo ya empezo (pasada la cuenta atras).
@@ -54,7 +56,7 @@ export const Duelos = {
     s.retosT[t.id] = ahora;
     t.retoDuelo = { de: s.id, hasta: Date.now() + RETO_MS };
     this.enviar(t, { t: 'reto', de: s.c.nombre, nv: s.c.nivel, cl: s.c.clase || '', ms: RETO_MS });
-    this.enviar(s, { t: 'toast', m: `⚔️ Retaste a ${t.c.nombre} a un duelo.` });
+    this.enviar(s, { t: 'toast', m: `⚔️ Retaste a ${t.c.nombre} a un duelo.${s.c.nivel >= 10 && t.c.nivel >= 10 && Math.abs(s.c.nivel - t.c.nivel) > ELO_NV ? ' Hay mucha diferencia de nivel: si gana el mayor, no cuenta para el Elo.' : ''}` });
   },
 
   respuestaDuelo(s, m) {
@@ -87,6 +89,7 @@ export const Duelos = {
       this.revisarLogros(g);
       const r = this.puntuarDuelo(g, g === a ? b : a);
       if (r && !r.sin) elo = ` Elo: ${g.c.nombre} ${r.g} (+${r.d}).`;
+      else if (r && r.nv) elo = ' Sin Elo: demasiada diferencia de nivel.';
     }
     for (const x of [a, b]) if (x && !x.muerto) x.inv = Date.now() + 1500;
     const txt = g ? `⚔️ ${g.c.nombre} gana el duelo${motivo ? ' (' + motivo + ')' : ''}.${elo}` : `⚔️ El duelo terminó en empate${motivo ? ' (' + motivo + ')' : ''}.`;
@@ -111,6 +114,7 @@ export const Duelos = {
     if (!g || !p || !g.c || !p.c) return null;
     if (g.c.uid.startsWith('inv:') || p.c.uid.startsWith('inv:') || g.c.nivel < 10 || p.c.nivel < 10) return null;
     if (this.esPrueba && (this.esPrueba(g.c) || this.esPrueba(p.c))) return null;
+    if (g.c.nivel - p.c.nivel > ELO_NV) return { sin: true, nv: true };
     const hoy = hoyUTC(), par = [g.c.uid, p.c.uid].sort().join('|');
     if (!this.dueloPares || this.dueloPares.d !== hoy) this.dueloPares = { d: hoy, l: {} };
     if ((this.dueloPares.l[par] || 0) >= ELO_PAR_DIA) return { sin: true };
@@ -135,11 +139,16 @@ export const Duelos = {
         // El rival se desconecto: gana el que se quedo (tambien en el Elo, si
         // el duelo ya habia empezado; si no, huir no costaba nada).
         s.duelo = null;
+        // Si el que se fue iba ganando, se le corto la conexion (datos moviles):
+        // duelo anulado, sin Elo. Huir cuando vas perdiendo sigue restando.
+        if (ahora >= d.ini && d.el > d.yo) { this.enviar(s, { t: 'dueloFin', a: s.id, b: 0, g: 0, m: '⚔️ Tu rival perdió la conexión cuando iba ganando: duelo anulado (sin Elo).' }); continue; }
         let txt = '⚔️ Tu rival se fue: ganas el duelo.';
         if (ahora >= d.ini && d.uid) { s.c.duelosG = (s.c.duelosG || 0) + 1; s.sucio = true; this.revisarLogros(s); this.eloPorAbandono(s, d.uid).catch(e => console.error('[MMO elo abandono]', e)); }
         this.enviar(s, { t: 'dueloFin', a: s.id, b: 0, g: s.id, m: txt });
         continue;
       }
+      // Vida (en %) de cada uno en el ultimo tick: si uno se desconecta, se sabe quien iba ganando.
+      if (ahora >= d.ini) { d.yo = s.hp / s.st.maxHp; d.el = t.hp / t.st.maxHp; }
       if (s.id > t.id) continue;   // cada pareja se mira una vez
       if (s.muerto || t.muerto) this.terminarDuelo(s, s.muerto ? (t.muerto ? null : t) : s, 'cayó en combate');
       else if (t.k !== s.k || s.i3 || t.i3 || distD(s, t) > LEJOS) {

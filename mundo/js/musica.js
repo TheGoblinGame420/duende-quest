@@ -91,6 +91,14 @@ export function crearMusica() {
     const E = ESCALAS[zona] || ESCALAS.pueblo;
     const pulso = E.pulso * (noche ? 1.35 : 1);
     const hasta = ctx.currentTime + 0.6;
+    // Tras una pausa (Telegram minimizado, sonido apagado, segundo plano) no se recupera
+    // lo perdido: el bucle creaba cientos de osciladores de golpe al volver (tiron).
+    if (sigNota < ctx.currentTime) sigNota = ctx.currentTime + 0.05;
+    if (sigAcorde < ctx.currentTime) sigAcorde = ctx.currentTime + 0.05;
+    // Tras un rato sin programar (segundo plano, silencio) no se tocan de golpe
+    // todas las notas atrasadas: se sigue desde ahora.
+    if (sigNota < ctx.currentTime) sigNota = ctx.currentTime + 0.05;
+    if (sigAcorde < ctx.currentTime) sigAcorde = ctx.currentTime + 0.05;
     while (sigNota < hasta) {
       // Melodia: notas de la escala, a veces silencio; mas espaciada de noche.
       if (Math.random() < (noche ? 0.45 : 0.62)) {
@@ -122,6 +130,8 @@ export function crearMusica() {
     noche(v) { if (v === noche) return; noche = v; volumen(); },
     clima(c) { if (c === clima) return; clima = c; volumen(); },
     trueno,
-    activo(v) { activo = v; if (v) arrancar(); volumen(); },
+    // Silenciada, tras bajar el volumen se suspende el contexto: el bordon y la
+    // lluvia dejan de gastar bateria aunque no se oigan.
+    activo(v) { activo = v; if (v) arrancar(); volumen(); if (!v && ctx) setTimeout(() => { if (!activo && ctx.state === 'running') ctx.suspend().catch(() => {}); }, 1600); },
   };
 }

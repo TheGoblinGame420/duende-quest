@@ -60,7 +60,7 @@ export function crearParticulas(escena, max, movil) {
       const ce = Math.sqrt(1 - e * e);
       pos[i * 3] = x + Math.cos(a) * r; pos[i * 3 + 1] = y; pos[i * 3 + 2] = z + Math.sin(a) * r;
       vel[i * 3] = Math.cos(a) * ce * s; vel[i * 3 + 1] = (o.plano ? 0.6 : e) * s + sube; vel[i * 3 + 2] = Math.sin(a) * ce * s;
-      dat[i * 4] = t0 + Math.random() * 0.04; dat[i * 4 + 1] = vida * (0.6 + Math.random() * 0.5); dat[i * 4 + 2] = 0.16 * tam * (0.6 + Math.random() * 0.7);   // metros dat[i * 4 + 3] = gr;
+      dat[i * 4] = t0 + Math.random() * 0.04; dat[i * 4 + 1] = vida * (0.6 + Math.random() * 0.5); dat[i * 4 + 2] = 0.16 * tam * (0.6 + Math.random() * 0.7); dat[i * 4 + 3] = gr;   // tam en metros; la gravedad estaba dentro del comentario y nunca se aplicaba
       const j = 0.85 + Math.random() * 0.3;
       col[i * 3] = c.r * j; col[i * 3 + 1] = c.g * j; col[i * 3 + 2] = c.b * j;
     }

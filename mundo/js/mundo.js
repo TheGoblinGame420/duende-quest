@@ -14,19 +14,19 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES } from '/mmo/js/data.js?v=286';
-import { iniciarVentanas } from './ventanas.js?v=286';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=286';
-import { crearMusica } from './musica.js?v=286';
-import { construirCueva } from './cueva.js?v=286';
-import { TAPA, transparentar } from './tapa.js?v=286';
-import { construirAbismo } from './abismo.js?v=286';
-import { crearParticulas } from './particulas.js?v=286';
-import { cargarKenney, piezasCasa } from './kenney.js?v=286';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN } from '/mmo/js/data.js?v=287';
+import { iniciarVentanas } from './ventanas.js?v=287';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=287';
+import { crearMusica } from './musica.js?v=287';
+import { construirCueva } from './cueva.js?v=287';
+import { TAPA, transparentar } from './tapa.js?v=287';
+import { construirAbismo } from './abismo.js?v=287';
+import { crearParticulas } from './particulas.js?v=287';
+import { cargarKenney, piezasCasa } from './kenney.js?v=287';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=286';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=286';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=287';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=287';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1029,6 +1029,27 @@ function sfx(n, vol) {
 const SFX_K = { paso_h: 5, paso_p: 5, paso_m: 5, paso_n: 5, g_carne: 5, g_metal: 5, g_critico: 3, desenv: 3, monedas: 2, libro: 3, tela: 4, puerta: 1,
   c_grunt: 5, c_hurt: 5, c_fant: 5, c_troll: 3, c_roar: 3, c_bug: 4, c_monster: 4, c_baba: 3, c_aullido: 2, c_grito: 2 };
 function sfxK(base, vol) { const n = SFX_K[base]; if (n) sfx('k/' + base + Math.floor(Math.random() * n), vol); }
+// Fanfarria de subir de nivel o de maestria (las cuatro notas del tono
+// 'nivel' de CLASSIC): antes sonaba igual que recoger oro.
+let fanfarriaT = 0;
+function fanfarria() {
+  if (!sonido) return;
+  const c = ctxAudio();
+  if (!c || c.state === 'closed') return;
+  if (c.state === 'suspended') c.resume().catch(() => {});
+  const ahora = performance.now();
+  if (ahora - fanfarriaT < 400) return;
+  fanfarriaT = ahora;
+  try {
+    const t0 = c.currentTime;
+    [523, 659, 784, 1047].forEach((f, i) => {
+      const o = c.createOscillator(), g = c.createGain(), t = t0 + i * 0.11, d = i === 3 ? 0.3 : 0.12;
+      o.type = 'triangle'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.12, t); g.gain.exponentialRampToValueAtTime(0.001, t + d);
+      o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + d + 0.02);
+    });
+  } catch (e) {}
+}
 // Voz de cada monstruo segun lo que es.
 function vozDe(k) {
   const s = k + ' ' + ((MONSTRUOS[k] || {}).nombre || '').toLowerCase();
@@ -1197,6 +1218,7 @@ function recibir(m) {
     case 'pl': quitarOtro(m.id); break;
     case 'pa': { const o = otros.get(m.p); if (o) { const cambia = o.sk !== m.sk || o.cl !== (m.cl || '') || o.ar !== (m.ar || 'katana') || JSON.stringify(o.lk) !== JSON.stringify(m.lk || null); Object.assign(o, { sk: m.sk, cl: m.cl || '', ar: m.ar || 'katana', mo: m.mo || '', lk: m.lk || null, al: m.al || '', fc: m.fc || '', ra: m.ra || 0, hn: m.hn || '', hc: m.hc || 0, gm: m.gm || 0 }); if (cambia) rehacerFiguraOtro(o); } break; }
     case 'mundial3': mundial3 = { ...m, recibido: Date.now() }; break;
+    case 'mmx3': { const o = mons.get(m.id); if (o) { o.mx = m.mx; o.hp = m.hp; } break; }   // el jefe mundial crece si llegan mas a pelear
     case 'asedio': asedio = m; if (m.activo) asedioHp = asedioHp || { p: 100, g: 100 }; else asedioHp = null; if (abismo) abismo.dueno(m.dueno); break;
     case 'asedioHp': asedioHp = m; if (asedio) asedio.dormido = !!m.d; break;
     case 'asedioTiro': tiroAsedio(m); break;
@@ -1250,6 +1272,8 @@ function recibir(m) {
       break;
     case 'lv': if (m.p === miId) { aviso('¡Subiste al nivel ' + m.lv + '!', 'ok'); numero(P.x, P.y + 3, P.z, 'NIVEL ' + m.lv, '#ffe600', true); subiNivel(m.lv); } else { const o = otros.get(m.p); if (o) o.lv = m.lv; } break;
     case 'toast': aviso(m.m, m.ok ? 'ok' : ''); break;
+    // mTON ganados aqui (jefes, jefe mundial, caza del dia): antes no se avisaba nada en ORIGINS
+    case 'mton': { if (yo) yo.mton = m.total; const por = { jefe: 'por el jefe', mundial: 'por el jefe mundial', diaria: 'por la caza del día' }[m.motivo]; aviso('💎 +' + m.n + ' mTON (tienes ' + ((m.total || 0) / 1000).toLocaleString('es', { maximumFractionDigits: 3 }) + ' TON)' + (por ? ' — ' + por : ''), 'ok'); numero(P.x, P.y + 3, P.z, '+' + m.n + ' mTON', '#00eeff'); sfx('moneda', 0.5); break; }
     case 'aviso': aviso(m.m); break;
     case 'no':
       // "Fuera de alcance" se avisa como mucho una vez cada 3 s (el auto-ataque reintenta solo).
@@ -1451,6 +1475,26 @@ function ataqueVisto(m) {
   // El destello ya salio con la prediccion: no repetirlo.
   if (!(m.p === miId && performance.now() - (o.predT || 0) < 350)) o.golpeT = performance.now();
 }
+// Borde rojo al recibir un golpe: mas fuerte cuanto mas duele y cargado
+// hacia el lado de quien pega (aunque este fuera de la pantalla). Un golpe
+// que quita mas del 12 % de la vida tambien sacude la camara.
+function herida(d, mo) {
+  const el = $('herida');
+  if (!el || !el.animate || !yo) return;
+  const parte = d / Math.max(1, yo.maxHp);
+  let fondo = '';
+  if (mo) {
+    const dx = mo.x - P.x, dz = mo.z - P.z, l = Math.hypot(dx, dz) || 1;
+    const de = (dx * Math.cos(camYaw) - dz * Math.sin(camYaw)) / l, al = (-dx * Math.sin(camYaw) - dz * Math.cos(camYaw)) / l;
+    fondo = `radial-gradient(circle at ${Math.round(50 + de * 50)}% ${Math.round(50 - al * 50)}%, rgba(255,40,60,.55), transparent 45%)`;
+  }
+  el.style.background = fondo;
+  try {
+    const a = el.animate([{ opacity: clamp(parte * 4, 0.35, 1) }, { opacity: 0 }], { duration: 450, easing: 'ease-out' });
+    el._a = a; a.onfinish = () => { if (el._a === a) el.style.background = ''; };
+  } catch (e) {}
+  if (parte > 0.12) sacudir = Math.max(sacudir, 0.2);
+}
 function golpeJugador(m) {
   // El tajo del monstruo cae justo cuando llega su golpe.
   const mo = m.from && mons.get(m.from);
@@ -1462,8 +1506,11 @@ function golpeJugador(m) {
   if (!q) return;
   if (m.d > 0) { numero(q.x, (q.y || alturaEn(q.x, q.z)) + 2.3, q.z, '-' + m.d, '#ff5a6a'); FX.emitir(q.x, (q.y || alturaEn(q.x, q.z)) + 1.1, q.z, { n: 8, color: '#ff4d5e', vel: 3.5, vida: 0.4 }); }
   if (m.esq && m.p === miId) numero(P.x, P.y + 2.3, P.z, 'Esquiva', '#7dd3fc');
+  // Sin objetivo, quien te pega pasa a serlo: su marco dice quien es y el
+  // ataque (1 o Z) y las habilidades van contra el.
+  if (mo && m.p === miId && !mo.muereT && !objetivo && !objetivoP && !P.muerto) { objetivo = mo.id; pintarBarra(); }
   if (mo && m.p === miId && performance.now() - (mo.vozT || 0) > 5000 && Math.random() < 0.6) { mo.vozT = performance.now(); sfxK(vozDe(mo.k), 0.3); }
-  if (m.p === miId) { P.heridoT = performance.now(); if (m.d > 0) vib('rigid'); sfxK('g_carne', 0.22); if (yo && m.d > 0) { yo.hp = Math.max(0, yo.hp - m.d); pintarVida(); } }
+  if (m.p === miId) { P.heridoT = performance.now(); if (m.d > 0) vib('rigid'); sfxK('g_carne', 0.22); if (yo && m.d > 0) { herida(m.d, mo); yo.hp = Math.max(0, yo.hp - m.d); pintarVida(); } }
 }
 let impactos = [];
 let asedio = null, asedioHp = null, tirosAsedio = [];
@@ -1522,9 +1569,18 @@ function pintarAuras() {
   // Movil: misiones y chat apilados bajo el marco (que crece con auras y avisos).
   if (MOVIL) {
     const mc = $('marco'); let y = mc.offsetTop + mc.offsetHeight + 6;
+    const tope = $('joy').getBoundingClientRect().top;   // donde empieza la zona del joystick
     for (const id of ['alas', 'obj', 'objp', 'grupo3', 'misiones', 'chat']) {
-      const e = $(id), h = e.offsetHeight; if (!h) continue;
-      e.style.top = y + 'px'; e.style.bottom = 'auto'; y += h + 6;
+      const e = $(id); let h = e.offsetHeight; if (!h) continue;
+      e.style.top = y + 'px'; e.style.bottom = 'auto';
+      if (id === 'misiones') {   // cerrada se recorta antes del joystick: con grupo y objetivo el pulgar que iba a caminar la abria
+        const abierta = e.classList.contains('abierto'), sitio = Math.floor(tope - e.offsetTop - 4);
+        const mh = !abierta && sitio < 84 ? Math.max(28, sitio) + 'px' : '';   // 84: su alto cerrado en movil (index.html)
+        if (e.style.maxHeight !== mh) { e.style.maxHeight = mh; h = e.offsetHeight; }
+        const pe = !abierta && sitio < 28 ? 'none' : '';   // sin sitio ni para una linea: el toque pasa al joystick
+        if (e.style.pointerEvents !== pe) e.style.pointerEvents = pe;
+      }
+      y += h + 6;
     }
   }
   const cb = yo && yo.clase === 'picaro' ? yo.combo || 0 : 0;
@@ -1580,11 +1636,13 @@ function proyectil(de, a, color) {
   proyectiles.push({ mesh, de: { x: de.x, z: de.z, y: (de.y || alturaEn(de.x, de.z)) + 1.2 }, a, t: 0 });
 }
 function morir(m) {
+  // Golpe sordo al caer (una sola vez aunque lleguen 'muerte' y 'yo' seguidos).
+  if (!P.muerto) sfx('caida', 0.55);
   vib('error');
   if (P.vuela) volar(false);
   P.planea = false; P.planeoAuto = false; P.vx = P.vz = 0; colaHab = null;
   P.muerto = true; autoAtk = false;
-  $('muerte-txt').textContent = m && m.golpes && m.golpes.length ? 'Te derribó: ' + m.golpes.map(g => g.n).filter((v, i, l) => l.indexOf(v) === i).slice(0, 2).join(', ') + '. Revives en el pueblo.' : 'Revives en el pueblo.';
+  $('muerte-txt').textContent = (m && m.golpes && m.golpes.length ? 'Te derribó: ' + m.golpes.map(g => g.n).filter((v, i, l) => l.indexOf(v) === i).slice(0, 2).join(', ') + '. Revives en el pueblo.' : 'Revives en el pueblo.') + (m && m.rep > 0 ? ' Reparar tu equipo cuesta ' + m.rep + ' oro.' : '');
   abrir('v-muerte');
 }
 $('b-revivir').onclick = () => { mandar({ t: 'revivir' }); cerrar('v-muerte'); };
@@ -1607,6 +1665,8 @@ function pintarVida() {
   const hp = $('m-hp'), rc = $('m-rec');
   hp.firstElementChild.style.transform = `scaleX(${clamp(yo.hp / yo.maxHp, 0, 1)})`;
   hp.lastElementChild.textContent = Math.ceil(yo.hp) + ' / ' + yo.maxHp;
+  // Vida por debajo del 30 %: el borde rojo late hasta que te cures.
+  const hd = $('herida'); if (hd) hd.classList.toggle('bajo', yo.hp > 0 && yo.hp / yo.maxHp < 0.3);
   if (yo.recMax) { rc.firstElementChild.style.transform = `scaleX(${clamp((yo.rec || 0) / yo.recMax, 0, 1)})`; rc.lastElementChild.textContent = Math.round(yo.rec || 0) + ' / ' + yo.recMax; }
 }
 const cdPoder = {}, cdHab = {};
@@ -1627,7 +1687,7 @@ function pintarBarra() {
     b.appendChild(atk);
     misHabs.forEach((h, i) => {
       const d = document.createElement('button'); d.className = 'acc' + (yo.nivel < h.nv ? ' bloq' : ''); d.dataset.hab = h.id;
-      d.innerHTML = `<span class="t">${i + 2}</span><img src="${A}items/equipo/${h.icono}.png" alt="">${yo.nivel < h.nv ? '<span class="lv">Nv ' + h.nv + '</span>' : ''}<span class="cd"></span>`;
+      d.innerHTML = `<span class="t">${i + 2}</span><img src="${A}items/equipo/${h.icono}.png" alt="">${yo.nivel < h.nv ? '<span class="lv">Nv ' + h.nv + '</span>' : ''}<span class="cd"></span><span class="cs"></span>`;
       d.title = h.nombre + ' (' + (i + 2) + ') — ' + h.desc;
       d.setAttribute('aria-label', d.title);
       // Bloqueada no: usarHab ya avisa del nivel y de lo que hace
@@ -1636,7 +1696,7 @@ function pintarBarra() {
     });
     PODERES.forEach((p, i) => {
       const d = document.createElement('button'); d.className = 'acc'; d.dataset.pw = p.id;
-      d.innerHTML = `<span class="t">${p.tecla}</span><img src="${A}items/${p.icono}.png" alt=""><span class="n"></span><span class="cd"></span>`;
+      d.innerHTML = `<span class="t">${p.tecla}</span><img src="${A}items/${p.icono}.png" alt=""><span class="n"></span><span class="cd"></span><span class="cs"></span>`;
       d.title = p.nombre + ' (' + p.tecla + ') — ' + p.desc;
       d.setAttribute('aria-label', d.title);
       d.onclick = () => { if (MOVIL) avisoPrimeraVez(d.title); usarPoder(i); };
@@ -1653,12 +1713,17 @@ function pintarCds() {
     let k = c && c.fin > ahora ? (c.fin - ahora) / c.ms : 0;
     if (h.gcd !== false && gcdHasta > ahora) k = Math.max(k, (gcdHasta - ahora) / GCD_MS);
     d.querySelector('.cd').style.transform = `scaleY(${k})`;
+    // Segundos que faltan (como en CLASSIC), solo si queda mas de 1,5 s.
+    const cs = d.querySelector('.cs'), s = c && c.fin - ahora > 1500 ? String(Math.ceil((c.fin - ahora) / 1000)) : '';
+    if (cs && cs.textContent !== s) cs.textContent = s;
     const sin = yo && yo.recMax !== undefined && (P.rec || 0) < costoHab(h, yo.recMax || 100, yo.espec);
     d.style.filter = sin && yo.nivel >= h.nv ? 'grayscale(.8) brightness(.7)' : '';
   });
   $('barra').querySelectorAll('[data-pw]').forEach(d => {
     const p = PODERES.find(x => x.id === d.dataset.pw), fin = cdPoder[p.id] || 0;
     d.querySelector('.cd').style.transform = `scaleY(${fin > ahora ? (fin - ahora) / p.cd : 0})`;
+    const cs = d.querySelector('.cs'), s = fin - ahora > 1500 ? String(Math.ceil((fin - ahora) / 1000)) : '';
+    if (cs && cs.textContent !== s) cs.textContent = s;
   });
 }
 let objPintado = '';
@@ -1723,6 +1788,7 @@ function quitarCorcho() { if (corcho) { escena.remove(corcho); liberar(corcho); 
 let invitT = 0, invitTipo = 'grupo', dueloCon = 0;
 let contactos3 = [], quien3 = null;   // ventana 👥: tus amigos y quien esta en linea (null: aun no llego)
 const enGrupo = id => !!(grupo3 && grupo3.m.some(x => x.on && x.id === id));
+let salirPend = 0;   // "Salir del grupo" pide dos toques: el pulgar que iba al joystick lo pulsaba sin querer
 function pintarGrupo() {
   const c = $('grupo3');
   if (!grupo3) { c.style.display = 'none'; c.innerHTML = ''; return; }
@@ -1733,9 +1799,12 @@ function pintarGrupo() {
     const fuera = !x.on || x.k !== '~3d';
     return `<span class="mi${fuera ? ' lejos' : ''}${x.id === objetivoP ? ' sel' : ''}" data-id="${x.id || 0}"><b style="color:${cl ? cl.color : '#fff'}">${x.uid === lider ? '👑 ' : ''}${esc(x.n)}</b> <small>Nv${x.lv || '?'}${!x.on ? ' · desconectado' : x.k !== '~3d' ? ' · en el 2D' : x.muerto ? ' · ☠' : ''}</small>`
       + (x.on ? `<div class="barra hp"><i style="transform:scaleX(${clamp((x.hp || 0) / (x.mx || 1), 0, 1).toFixed(2)})"></i></div>` : '') + '</span>';
-  }).join('') + '<button class="btn sec salir" id="g-salir">Salir del grupo</button>';
+  }).join('') + '<button class="btn sec salir" id="g-salir">' + (Date.now() - salirPend < 4000 ? '¿Seguro? Toca otra vez' : 'Salir del grupo') + '</button>';
   c.querySelectorAll('.mi').forEach(e => e.onclick = () => { const id = +e.dataset.id; if (id && otros.has(id)) { objetivoP = id; pintarObjetivoP(); pintarGrupo(); } });
-  $('g-salir').onclick = () => { mandar({ t: 'salirGrupo' }); };
+  $('g-salir').onclick = () => {
+    if (Date.now() - salirPend < 4000) { salirPend = 0; mandar({ t: 'salirGrupo' }); return; }
+    salirPend = Date.now(); pintarGrupo(); setTimeout(() => { if (Date.now() - salirPend >= 4000) pintarGrupo(); }, 4100);
+  };
 }
 function pintarObjetivoP() {
   const o = otros.get(objetivoP);
@@ -1918,7 +1987,15 @@ $('b-rank').onclick = () => { if ($('v-rank').classList.contains('on')) return c
 $('b-pase').onclick = () => { if ($('v-pase').classList.contains('on')) cerrar('v-pase'); else { abrir('v-pase'); pintarPase(); } };
 $('b-compartir').onclick = () => { presumirTxt = ''; if (!refAmigo) mandar({ t: 'amigos' }); compartir(); };
 $('presumir3').onclick = () => { $('presumir3').style.display = 'none'; compartir(); };
-for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, () => { if (sonido) musica.arrancar(); }, { once: true });
+// Sin { once }: si el sistema dejo la musica suspendida al volver (iPhone),
+// cualquier toque la retoma; con el contexto ya creado solo mira su estado.
+for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, () => { if (sonido) musica.arrancar(); });
+// Fuera de la app (otra pestaña, pantalla apagada, Telegram sin 'deactivated')
+// la musica y los golpes seguian sonando de fondo.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { musica.activo(false); if (actx) actx.suspend().catch(() => {}); }
+  else if (sonido) { musica.activo(true); if (actx) actx.resume().catch(() => {}); }
+});
 $('b-ayuda').onclick = () => abrir('v-ayuda');
 $('sel-calidad').value = CAL;
 $('sel-calidad').onchange = e => { try { localStorage.setItem('dq3_calidad', e.target.value); } catch (er) {} location.reload(); };
@@ -2103,7 +2180,7 @@ function mostrarTempFin(m) {
 let invasion3 = null;
 // ── SUBIR DE NIVEL, PRESUMIR Y TELEGRAM ──
 function subiNivel(lv) {
-  vib('success'); sfxK('monedas', 0.4);
+  vib('success'); fanfarria();
   FX.emitir(P.x, P.y + 0.2, P.z, { n: 46, color: '#ffe066', vel: 2.4, vida: 1.6, grav: -3.5, radio: 0.7, tam: 1.3 });
   FX.emitir(P.x, P.y + 1, P.z, { n: 30, color: '#ffffff', vel: 6, vida: 0.6, grav: 2 });
   if (lv >= 5 && lv % 5 === 0) ofrecerPresumir(`¡Llegué al nivel ${lv} en Duende Quest 3D!`);
@@ -2171,12 +2248,13 @@ function pintarHerm() {
     return;
   }
   const yoM = h.m.find(x => x.uid === yo.pid) || {}, r = yoM.r, mando = r === 'lider' || r === 'oficial', col = HERM_COLORES[h.color] || '#4ade80';
-  const g = h.gesta || { p: 0 }, sig = GESTA_UMBRALES.findIndex(u => g.p < u), tope = GESTA_UMBRALES[GESTA_UMBRALES.length - 1];
+  const g = h.gesta || { p: 0 }, sig = GESTA_UMBRALES.findIndex(u => g.p < u), tope = GESTA_UMBRALES[GESTA_UMBRALES.length - 1], mio = (g.c && g.c[yo.pid]) || 0;
   const on = h.m.filter(x => x.on).length;
   let s = `<p class="vv-p" style="font-size:15px"><b style="color:${col}">&lt;${esc(h.nombre)}&gt;</b> · ${h.m.length}/${HERM_MAX} miembros · <span style="color:var(--ok)">${on} conectados</span></p>`;
   s += `<p class="vv-p" style="font-style:italic">📜 ${h.motd ? esc(h.motd) : 'Sin mensaje del día.'}</p>`;
   if (mando) s += `<div style="display:flex;gap:4px;margin:4px 0 8px"><input id="herm-motd" maxlength="140" placeholder="Mensaje del día" value="${esc(h.motd || '')}" style="flex:1;min-width:0;padding:6px;border-radius:8px;border:1px solid var(--borde);background:rgba(0,0,0,.4);color:#fff"><button class="btn" id="herm-motd-b" style="padding:6px 10px;font-size:12px">Guardar</button></div>`;
   s += `<p class="vv-p">🏆 <b>Gesta semanal</b>: ${g.p.toLocaleString('es')} puntos${sig >= 0 ? ` · siguiente premio <b style="color:#ffd84a">${GESTA_NOMBRES[sig]}</b> a ${GESTA_UMBRALES[sig].toLocaleString('es')}` : ' · ¡<b style="color:#ffd84a">Oro</b> conseguido!'}</p>
+    <p class="vv-p" style="font-size:12px">Tu aporte: <b style="color:${mio >= GESTA_MIN ? 'var(--ok)' : 'var(--warn)'}">${mio}</b>${mio < GESTA_MIN ? ` · cobras el oro desde ${GESTA_MIN} puntos` : ' · ya cobras el oro de cada premio'} (con un día en la hermandad). Suman monstruos de tu nivel, jefes, mazmorras y peces.</p>
     <div class="barra" style="height:10px;margin:2px 0 8px"><i style="transform:scaleX(${Math.min(1, g.p / tope).toFixed(3)})"></i></div>`;
   if (r === 'lider') s += `<div class="herm-cols">${HERM_COLORES.map((cc, i) => `<button data-hc="${i}" style="background:${cc}" class="${i === (h.color | 0) ? 'on' : ''}" aria-label="Color ${i + 1}"></button>`).join('')}</div>`;
   s += '<div class="herm-lista">' + h.m.map(x => {
@@ -2495,7 +2573,7 @@ function hablar() {
       + (yo.faccion ? `<p style="font-size:12px">Tu facción: <b style="color:${FACCIONES[yo.faccion].color}">${FACCIONES[yo.faccion].titulo}</b>${temp3 && temp3.debil === yo.faccion ? ' · ✨ Bendición del Éter (PA ×' + String(FACC_BONO).replace('.', ',') + ')' : ''}</p>${temp3 ? `<p style="font-size:11px;color:var(--txt2)">🏆 Temporada: tus PA ${fmtN(temp3.p)} · liga ${TEMP_ABISMO[temp3.tier] ? TEMP_ABISMO[temp3.tier].n : 'sin liga'} (ver en 🏆 Ranking → Abismo)</p>` : ''}<button class="btn" id="p-abismo" style="width:100%;margin:6px 0;background:linear-gradient(90deg,#7c3aed,#2563eb)">Ir al Abismo</button>`
         : yo.nivel >= ABISMO.nvMin ? `<p style="font-size:12px">Elige tu facción (para siempre):</p><div style="display:flex;gap:6px;margin:6px 0"><button class="btn" id="p-luz" style="flex:1;background:#b8860b">☀ Luz${temp3 ? ` (${temp3.n.luz || 0})` : ''}${temp3 && temp3.debil === 'luz' ? ' ★' : ''}</button><button class="btn" id="p-sombra" style="flex:1;background:#6b21a8">🌑 Sombra${temp3 ? ` (${temp3.n.sombra || 0})` : ''}${temp3 && temp3.debil === 'sombra' ? ' ★' : ''}</button></div>${temp3 && temp3.debil ? `<p style="font-size:12px;color:#ffd84a">★ Los ${esc(FACCIONES[temp3.debil].titulo)} son menos: si te unes cobras <b>${fmtN(RECLUTA.oro * Math.max(1, Math.floor(yo.nivel / 10)))} oro, un objeto épico y ${RECLUTA.pa} PA</b>, y ganáis PA ×${String(FACC_BONO).replace('.', ',')} mientras lo seáis.</p>` : ''}`
         : `<p style="font-size:12px;color:var(--txt3)">Se abre a nivel ${ABISMO.nvMin}.</p>`)
-      + '<p style="font-size:12px;color:var(--txt2)">Las demás mazmorras, la Torre y la banda siguen en el juego 2D con tu mismo personaje.</p><a class="btn sec" href="/mmo/" style="display:block;text-align:center;text-decoration:none">Ir al juego 2D</a>';
+      + '<p style="font-size:12px;color:var(--txt2)">Las demás mazmorras, la Torre y la banda siguen en $DUENDE CLASSIC (2D) con tu mismo personaje.</p><a class="btn sec" href="/mmo/" style="display:block;text-align:center;text-decoration:none">Ir a CLASSIC (2D)</a>';
     $('p-cueva').onclick = () => { mandar({ t: 'cueva' }); cerrar('v-npc'); };
     if ($('p-abismo')) $('p-abismo').onclick = () => { mandar({ t: 'abismo' }); cerrar('v-npc'); };
     for (const f of ['luz', 'sombra']) if ($('p-' + f)) $('p-' + f).onclick = () => { mandar({ t: 'faccion', f }); cerrar('v-npc'); };
@@ -2868,7 +2946,12 @@ function pintarMisiones() {
     }
     const dist = metaMision ? Math.hypot(metaMision.x - P.x, metaMision.z - P.z) : 0;
     const donde = metaMision ? (dist < 25 ? ' · aquí' : ` · ${flechaDir(metaMision.x, metaMision.z)} ${Math.round(dist)} m`) : '';
-    h += `<div class="q"><b>📜 ${esc(q.nombre)}</b>${lista ? `<span class="ok" data-entregar="1" style="cursor:pointer;text-decoration:underline">¡Lista! Toca aquí para entregarla</span>` : `${(MONSTRUOS[q.tipo] || {}).nombre || q.tipo}: ${Math.min(yo.mis.p, q.n)}/${q.n}<small>${donde}</small>`}</div>`;
+    // Nivel del monstruo pedido y, si es muy fuerte (jefes 5+, el resto 4+),
+    // donde subir antes: sin esto el novato se pegaba a un jefe que lo tumbaba.
+    const mq = MONSTRUOS[q.tipo] || {}, alta = !lista && mq.nivel - yo.nivel >= (mq.jefe ? 5 : 4);
+    const zt = alta ? Object.values(MAPAS).filter(m => m.zona && !m.instancia && !m.coliseo && m.nv && m.nv[0] <= yo.nivel).sort((a, b) => b.nv[0] - a.nv[0])[0] : null;
+    const nvq = mq.nivel ? ` <span style="color:${colorNivel(mq.nivel)}">${marcaNivel(mq.nivel)}Nv ${mq.nivel}</span>` : '';
+    h += `<div class="q"><b>📜 ${esc(q.nombre)}</b>${lista ? `<span class="ok" data-entregar="1" style="cursor:pointer;text-decoration:underline">¡Lista! Toca aquí para entregarla</span>` : `${mq.nombre || q.tipo}${nvq}: ${Math.min(yo.mis.p, q.n)}/${q.n}<small>${donde}</small>${alta ? `<small style="display:block;color:#ff9900">Muy fuerte para ti: sube antes${zt ? ' en ' + esc(zt.nombre) : ''} o ve en grupo</small>` : ''}`}</div>`;
   }
   h = htmlTuto3() + h;   // despues de calcular metaMision: el paso 2 la mira
   if (!d.ok) h += `<div class="q"><b>☀ ${DIARIA.nombre}</b>${(d.p || 0) >= DIARIA.n ? '<span class="ok" data-entregar="diaria" style="cursor:pointer;text-decoration:underline">¡Lista! Toca aquí para cobrarla</span>' : `Monstruos de tu nivel: ${Math.min(d.p || 0, DIARIA.n)}/${DIARIA.n}`}</div>`;

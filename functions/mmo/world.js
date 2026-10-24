@@ -22,7 +22,7 @@ import {
   temporadaDe, TEMPORADAS, TEMP_PROB, TEMP_JEFE,
   TINTES, MASCOTAS, enOfertaAmbulante, ambulanteActivo, mundialDe,
   CONJUNTOS, CONJUNTO_PROB,
-  semanaUTC, horaFelizActiva, HORA_FELIZ, PASE, MAESTRIA_XP, premioMaestria, afijosSemana, DES_SEM_MIN, premioDesSem, BESTIARIO_HITOS, premioBestiario, talento, TALENTOS, TALENTO_MAX, puntosTalento, costoReinicioTalentos, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX, limpiarLook, ALAS,
+  semanaUTC, horaFelizActiva, HORA_FELIZ, PASE, MAESTRIA_XP, premioMaestria, afijosSemana, DES_SEM_MIN, premioDesSem, BESTIARIO_HITOS, premioBestiario, talento, TALENTOS, TALENTO_MAX, puntosTalento, costoReinicioTalentos, costoReparacion, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX, limpiarLook, ALAS,
 } from '../../mmo/js/data.js';
 import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery, tg, getSolPriceUsd, getDuendePriceUsd, SOL_DEV_WALLET } from '../api/lib.js';
 import { MMO_URL } from '../api/telegram-bot.js';
@@ -585,6 +585,7 @@ export class MmoWorld {
       // Igual que revivir(): hasta Nv 10 sin perder XP y en la entrada de la zona.
       const novato = c.nivel < 10 && MAPAS[c.mapa] && MAPAS[c.mapa].zona && c.mapa !== 'coliseo';
       if (c.nivel >= 10) c.xp = Math.max(0, c.xp - Math.round(xpParaSubir(c.nivel) * 0.05));
+      c.oro -= Math.min(c.oro, costoReparacion(c.nivel));   // cerrar estando muerto no se salta la reparacion
       c.muerto = false;
       if (novato) c.x = 150; else { c.mapa = 'pueblo'; c.x = MAPAS.pueblo.spawn; }
       s.hp = s.st.maxHp;
@@ -1637,7 +1638,10 @@ export class MmoWorld {
         M.o = null;
         this.aTodos({ t: 'aviso', m: `👹 ${nomHuye} escapó del Coliseo… otro jefe llega en 30 minutos.` });
         this.aTodos(this.estadoMundial());
+        return;
       }
+      // Llegan mas a pelear: mas vida, con el mismo %.
+      if (this.escalarMundial(M.o, x => x.k === 'coliseo')) this.aClave('coliseo', { t: 'mmx', id: M.o.id, mx: M.o.max, hp: Math.ceil(M.o.hp) });
       return;
     }
     // Aviso 2 minutos antes, a todos los conectados.
@@ -1650,8 +1654,12 @@ export class MmoWorld {
     if (ahora >= ult && ahora - ult < 5000 && M.ultimo !== ult) {
       M.ultimo = ult;
       const o = this.crearMonstruo('coliseo', mundialDe(ult + 1000), 800);
-      const n = Math.max(1, this.contarOnline());
-      o.hp = o.max = 20000 + 15000 * n;
+      // Vida segun quien ya esta en el Coliseo, no segun todos los conectados
+      // (con 10 en la beta, los de ORIGINS o de otra zona le subian la vida a
+      // quien peleaba solo); si llegan mas a pelear, crece (escalarMundial).
+      const n = Math.max(1, this.presentesEn('coliseo').length);
+      o.hp = o.max = this.vidaMundial(n);
+      o.nEsc = n;
       M.o = o; M.hasta = ahora + MUNDIAL_DURA_MS;
       this.aClave('coliseo', { t: 'ms', m: this.infoMonstruo(o) });
       this.aTodos({ t: 'aviso', m: `${MONSTRUOS[o.k].nombre} ha aparecido en el Coliseo. Tienes 10 minutos.` });
@@ -1659,15 +1667,37 @@ export class MmoWorld {
     }
   }
 
+  // Vida del jefe mundial (Coliseo y 3D): 20.000 + 15.000 por cada uno que pelea.
+  vidaMundial(n) { return 20000 + 15000 * Math.max(1, n); }
+  // Si le pegan mas de los que tenia contados (y siguen alli: enSitio), su
+  // vida crece con el mismo %, como los jefes de mazmorra: empezar solo y que
+  // lleguen los demas no lo abarata, y quien pelea solo no carga con la vida
+  // de los que estan en otra parte.
+  escalarMundial(o, enSitio) {
+    let n = 0;
+    for (const sid of o.dano.keys()) { const s = this.sesiones.get(sid); if (s && s.c && !s.cerrado && enSitio(s)) n++; }
+    if (n <= (o.nEsc || 1)) return false;
+    const pct = o.hp / o.max;
+    o.nEsc = n;
+    o.max = this.vidaMundial(n);
+    o.hp = Math.max(1, Math.round(o.max * pct));
+    return true;
+  }
+
   premiosMundial(o, clave = 'coliseo') {
     const total = [...o.dano.values()].reduce((a, b) => a + b, 0) || 1;
     const nombres = [];
-    for (const [sid, d] of o.dano) {
+    // Curar a quien pelea tambien cuenta (como en las invasiones del 2D): en
+    // un grupo de 2-3 el sanador ya no se queda sin premio. El mTON sigue
+    // siendo solo para quien pega (parte = su daño).
+    const quienes = new Set([...o.dano.keys(), ...(o.cura ? o.cura.keys() : [])]);
+    for (const sid of quienes) {
+      const d = o.dano.get(sid) || 0, cu = (o.cura && o.cura.get(sid)) || 0;
       const s = this.sesiones.get(sid);
       if (!s || !s.c || s.k !== clave) continue;
       const c = s.c;
-      // Hay que haber peleado de verdad (al menos un 0,3 % de su vida).
-      if (d < o.max * 0.003) continue;
+      // Hay que haber peleado de verdad (al menos un 0,3 % de su vida, pegando o curando).
+      if (d < o.max * 0.003 && cu < o.max * 0.003) continue;
       const parte = d / total;
       // Como mucho 6 premios completos al dia (Coliseo y 3D juntos); luego, uno pequeño.
       const hoy = hoyUTC();
@@ -1832,6 +1862,7 @@ export class MmoWorld {
     // En el nivel maximo la XP va a la maestria y sigue contando en el ranking semanal.
     if (c.nivel >= NIVEL_MAX) { this.sumarXpSemana(s, xp); this.sumarMaestria(s, xp); return false; }
     let subio = false;
+    const nivel0 = c.nivel;
     c.xp += xp;
     this.sumarXpSemana(s, xp);
     while (c.nivel < NIVEL_MAX && c.xp >= xpParaSubir(c.nivel)) {
@@ -1843,8 +1874,10 @@ export class MmoWorld {
     if (subio) {
       s.st = this.stats(c);
       s.hp = s.st.maxHp;
-      const nueva = HABS.find(h => h.clase === c.clase && h.nv === c.nivel);
-      if (nueva) this.enviar(s, { t: 'toast', m: `Nueva habilidad: ${nueva.nombre}`, ok: true, hab: nueva.id });
+      // Todas las aprendidas en este salto: una mision grande (o la Hora
+      // Feliz) sube dos niveles de golpe y la del nivel saltado no se avisaba.
+      const nuevas = HABS.filter(h => h.clase === c.clase && h.nv > nivel0 && h.nv <= c.nivel).sort((a, b) => a.nv - b.nv);
+      if (nuevas.length) this.enviar(s, { t: 'toast', m: `${nuevas.length > 1 ? 'Nuevas habilidades' : 'Nueva habilidad'}: ${nuevas.map(h => h.nombre).join(', ')}`, ok: true, hab: nuevas[nuevas.length - 1].id });
       this.revisarLogros(s);
       this.hermSubioNivel(s);
       this.revisarAmigo(s).catch(e => console.error('[MMO amigo]', e));
@@ -2062,7 +2095,7 @@ export class MmoWorld {
     this.limpiarAuras(s);
     if (s.m3) this.olvidar3d(s); else this.olvidar(s);
     this.aClave(s.k, { t: 'pm', p: s.id });
-    this.enviar(s, { t: 'muerte', golpes: (s.golpes || []).map(x => ({ n: x.n, nv: x.nv, d: x.d })), pw: s.c.pw.pocion || 0, inst: !!(this.mundo[s.k] && this.mundo[s.k].inst) });
+    this.enviar(s, { t: 'muerte', golpes: (s.golpes || []).map(x => ({ n: x.n, nv: x.nv, d: x.d })), pw: s.c.pw.pocion || 0, inst: !!(this.mundo[s.k] && this.mundo[s.k].inst), rep: costoReparacion(s.c.nivel) });
     s.golpes = [];
     this.guardar(s);
   }
@@ -2075,6 +2108,9 @@ export class MmoWorld {
     // (antes: al pueblo, a 80-100 m, y la espiral de muertes echaba al novato).
     const novato = c.nivel < 10;
     if (!novato) c.xp = Math.max(0, c.xp - Math.round(xpParaSubir(c.nivel) * 0.05));
+    // En el nivel maximo (sin XP que perder) se paga la reparacion del equipo.
+    const rep = Math.min(c.oro, costoReparacion(c.nivel));
+    if (rep > 0) { c.oro -= rep; this.enviar(s, { t: 'toast', m: `🔧 Reparaste tu equipo: -${rep.toLocaleString('es', { useGrouping: 'always' })} oro.` }); }
     s.muerto = false;
     s.hp = s.st.maxHp;
     this.recursoInicial(s);

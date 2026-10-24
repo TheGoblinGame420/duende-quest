@@ -18,7 +18,7 @@
 // mundo grande no gasta CPU. Pasivos como en el 2D salvo los jefes.
 // ═══════════════════════════════════════════════════════
 import {
-  MAPAS, MONSTRUOS, SKINS, ARMAS, CLASES, PODERES, VARA, statsMonstruo, multForja, talento, velMontura, xpParaSubir,
+  MAPAS, MONSTRUOS, SKINS, ARMAS, CLASES, PODERES, VARA, statsMonstruo, multForja, talento, velMontura, xpParaSubir, costoReparacion,
   MATERIALES, NODO_CADA_MS, RECOLECTAR_MS, RARO_ZONA, raroDe, PESCA, hoyUTC, alaDe,
   habPorId, costoHab, GCD_MS, RECURSOS, MELEE, limpiarLook, MUNDIAL_CADA_MS, MUNDIAL_DURA_MS, proximoMundial, mundialDe,
 } from '../../mmo/js/data.js';
@@ -52,6 +52,7 @@ const VISTA_PJ = 160, SALE_PJ = 190;   // m: a que distancia se ve (y se deja de
 // Jefe mundial del 3D: a las :15 y :45 (el del Coliseo 2D sale a las :00 y :30).
 const DESFASE_MUNDIAL3 = 15 * 60 * 1000;
 const PISOTON_CADA = 12000, PISOTON_AVISO = 2500, PISOTON_R = 9;
+const PISOTON_JEFE_R = 5.5;     // m: el pisoton de los jefes de zona (mas chico que el del mundial)
 export const proximoMundial3 = ahora => proximoMundial(ahora - DESFASE_MUNDIAL3) + DESFASE_MUNDIAL3;
 
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -394,7 +395,7 @@ export const Mundo3D = {
     else if (o.ex3 && o.ex3.cap) { /* el aviso lo da la invasion */ }
     else if (o.jefe) {
       const quien = [...cobraron].map(id => this.sesiones.get(id)?.c?.nombre).filter(Boolean).slice(0, 4).join(', ');
-      this.aTodos({ t: 'aviso', m: `${MONSTRUOS[o.k].nombre} fue derrotado en el mundo 3D${quien ? ' por ' + quien : ''}.` });
+      this.aTodos({ t: 'aviso', m: `${MONSTRUOS[o.k].nombre} fue derrotado en ORIGINS${quien ? ' por ' + quien : ''}.` });
     }
   },
 
@@ -436,6 +437,9 @@ export const Mundo3D = {
     s.a = 0; s.h = 0; s.vueloS = 0; s.alasAvisadas = false; s.cast = null;
     const c = s.c;
     if (c.nivel >= 10) c.xp = Math.max(0, c.xp - Math.round(xpParaSubir(c.nivel) * 0.05));
+    // En el nivel maximo (sin XP que perder) se paga la reparacion del equipo.
+    const rep = Math.min(c.oro, costoReparacion(c.nivel));
+    if (rep > 0) { c.oro -= rep; this.enviar(s, { t: 'toast', m: `🔧 Reparaste tu equipo: -${rep.toLocaleString('es', { useGrouping: 'always' })} oro.` }); }
     s.muerto = false;
     s.hp = s.st.maxHp;
     this.recursoInicial(s);
@@ -528,7 +532,7 @@ export const Mundo3D = {
     };
     W.mons.set(o.id, o);
     c.vivos.add(o.id);
-    if (o.jefe) this.aTodos({ t: 'aviso', m: `${def.nombre} ha aparecido en el mundo 3D (${MAPAS[c.zona].nombre}).` });
+    if (o.jefe) this.aTodos({ t: 'aviso', m: `${def.nombre} ha aparecido en ORIGINS (${MAPAS[c.zona].nombre}).` });
     return o;
   },
 
@@ -947,6 +951,8 @@ export const Mundo3D = {
           this.aClave(K3, { t: 'zona3', id: o.id, x: r1(s.p.x), z: r1(s.p.z), r: PISOTON_R, ms: PISOTON_AVISO });
         }
       }
+      // Llegan mas a pelear: mas vida, con el mismo %.
+      if (this.escalarMundial(o, x => x.m3 && !x.i3)) this.aClave(K3, { t: 'mmx3', id: o.id, mx: o.max, hp: Math.ceil(o.hp) });
       if (!o.enfurecido && o.hp < o.max * 0.3) {
         o.enfurecido = true;
         this.aClave(K3, { t: 'aviso', m: `¡${MONSTRUOS[o.k].nombre} se enfurece! Sus pisotones son más rápidos.` });
@@ -961,7 +967,9 @@ export const Mundo3D = {
     const ult = prox - (prox - ahora > 1000 ? MUNDIAL_CADA_MS : 0);
     if (ahora >= ult && ahora - ult < 5000 && M.ultimo !== ult && jugadores.length) {
       M.ultimo = ult;
-      this.aparecerMundial3(mundialDe(ult - DESFASE_MUNDIAL3 + 1000), jugadores.length);
+      // Vida segun quien ya espera en el claro (no todo el 3D); crece si llegan mas.
+      const enClaro = jugadores.filter(s => !s.i3 && Math.hypot(s.p.x - ARENA3D.x, s.p.z - ARENA3D.z) < ARENA3D.r + 40).length;
+      this.aparecerMundial3(mundialDe(ult - DESFASE_MUNDIAL3 + 1000), enClaro);
     }
   },
   aparecerMundial3(k, n) {
@@ -972,7 +980,7 @@ export const Mundo3D = {
     const o = {
       id: W.sig++, k, nv: def.nivel, campo: -1, jefe: true, mundial3: true, persiste: true, dispara: !!def.dispara,
       x: ARENA3D.x, z: ARENA3D.z, hx: ARENA3D.x, hz: ARENA3D.z, ry: 0,
-      hp: 20000 + 15000 * Math.max(1, n), max: 0, atk: st.atk, vel: st.vel, y: 0, h: 0,
+      hp: this.vidaMundial(n), max: 0, nEsc: Math.max(1, n), atk: st.atk, vel: st.vel, y: 0, h: 0,
       dano: new Map(), amen: new Map(), au: {}, cl: K3, obj: 0, atkEn: 0, golpeT: 0, st: 0, paseo: 0, destino: null,
       pisa: null, pisaProx: Date.now() + 8000, enfurecido: false,
     };
@@ -997,11 +1005,23 @@ export const Mundo3D = {
       if (o.muere) return;
     }
     for (const a in o.au) if (o.au[a].hasta < ahora) delete o.au[a];
+    // Pisoton de jefe de zona: cae al llenarse el circulo aunque lo aturdan (el
+    // aviso ya se vio); a quien siga dentro y en el suelo, un 20 % de su vida.
+    if (o.pzj && ahora >= o.pzj.en) {
+      for (const x of vivos) if (!(x.h > 4) && Math.hypot(x.p.x - o.pzj.x, x.p.z - o.pzj.z) <= PISOTON_JEFE_R) this.herir(x, 1, { zona: true, jefe: true, pct: 0.2, id: o.id });
+      this.aCerca3d(o, { t: 'zona3f', id: o.id });
+      o.pzj = null;
+    }
     if (o.dormido) { o.st = 0; return; }   // el Guardian espera a que caiga la puerta
     if (this.auraMon(o, 'aturdido') || this.auraMon(o, 'oveja')) { o.st = 0; return; }
     const enC = !!o.cueva;
     const ve = (bx, bz) => !enC || vistaCueva(o.x, o.z, bx, bz);
-    const valido = x => x && x.m3 && !x.muerto && !x.cerrado && mismo(x, o) && !(x.h > 8) && dist(x.p, casa) < CORREA + 20;
+    // En el Abismo solo cuenta quien pisa su misma isla: planeando sobre el
+    // vacio o desde otra isla el no puede llegar (se quedaba en el borde y se
+    // le mataba a salvo); asi se reinicia y se cura como al romper la correa.
+    const isla = !enC && enAbismo(o.hx) ? islaEn(o.hx, o.hz) : null;
+    const enSuIsla = x => !isla || islaEn(x.p.x, x.p.z) === isla;
+    const valido = x => x && x.m3 && !x.muerto && !x.cerrado && mismo(x, o) && !(x.h > 8) && dist(x.p, casa) < CORREA + 20 && enSuIsla(x);
     // Objetivo: Provocar manda; si no, la tabla de amenaza (para quitarle el
     // foco hay que superar el 110 % cuerpo a cuerpo o el 130 % a distancia).
     const teniaObj = !!o.obj || o.amen.size > 0;
@@ -1024,7 +1044,7 @@ export const Mundo3D = {
     // Solo se reinicia cuando ya no queda nadie en su lista.
     if (!s && teniaObj && !o.amen.size && !o.vuelve) o.vuelve = true;
     if (!s && (o.jefe || o.cueva || o.agresivo) && !o.vuelve) {
-      const cerca = vivos.find(x => dist(x.p, o) < (o.agresivo ? 20 : o.jefe ? 16 : 11) && !this.aura(x, 'sigilo') && !(x.h > 8) && ve(x.p.x, x.p.z));
+      const cerca = vivos.find(x => dist(x.p, o) < (o.agresivo ? 20 : o.jefe ? 16 : 11) && !this.aura(x, 'sigilo') && !(x.h > 8) && ve(x.p.x, x.p.z) && enSuIsla(x));
       if (cerca) {
         o.obj = cerca.id; s = cerca;
         // En la cueva acude el grupo entero de esa sala.
@@ -1052,11 +1072,29 @@ export const Mundo3D = {
       const alcance = o.dispara && !silencio ? MON_DISPARO : MON_MELEE + (o.jefe ? 1 : 0);
       const d = dist(o, s.p);
       const veo = ve(s.p.x, s.p.z);
+      // Jefes de zona: cada 10-14 s un pisoton avisado (circulo rojo donde esta
+      // su objetivo, 2,5 s para salir). Antes solo pegaban y daba igual moverse.
+      if (o.jefe && o.campo >= 0 && !enC && !o.pzj && d < 12 && ahora >= (o.pzjProx || 0)) {
+        if (!o.pzjProx) o.pzjProx = ahora + rnd(4000, 7000);   // el primero, unos segundos despues del tiron
+        else {
+          o.pzj = { x: s.p.x, z: s.p.z, en: ahora + PISOTON_AVISO };
+          o.pzjProx = ahora + rnd(10000, 14000);
+          this.aCerca3d(o, { t: 'zona3', id: o.id, x: r1(s.p.x), z: r1(s.p.z), r: PISOTON_JEFE_R, ms: PISOTON_AVISO });
+        }
+      }
       if (d > alcance || !veo) {
         // Se acerca por su lado (rodean al jugador en vez de apilarse).
         if (!this.auraMon(o, 'raiz')) {
           const k = d > 0.01 && veo ? (alcance * 0.8) / d : 0;
-          mover(s.p.x + (o.x - s.p.x) * k, s.p.z + (o.z - s.p.z) * k, velC);
+          let ox = (o.x - s.p.x) * k, oz = (o.z - s.p.z) * k;
+          // Ya cerca, cada uno elige su lado (segun su id) y lo mantiene: los de
+          // un mismo campamento llegaban por el mismo camino y quedaban uno
+          // dentro de otro.
+          if (k && !o.dispara && !o.jefe && !enC && d < 8) {
+            if (o.lado == null || o.ladoDe !== s.id) { o.lado = Math.atan2(o.z - s.p.z, o.x - s.p.x) + ((o.id % 5) - 2) * 0.6; o.ladoDe = s.id; }
+            ox = Math.cos(o.lado) * alcance * 0.8; oz = Math.sin(o.lado) * alcance * 0.8;
+          } else o.lado = null;
+          mover(s.p.x + ox, s.p.z + oz, velC);
         }
         o.st = 1;
       } else {
@@ -1081,6 +1119,7 @@ export const Mundo3D = {
     }
     if (o.vuelve) {
       o.st = 1;
+      o.pzjProx = 0;   // la proxima pelea empieza otra vez sin pisoton inmediato
       if (!o.persiste) o.hp = Math.min(o.max, o.hp + o.max * 0.15 * dt);   // se cura visiblemente al irse
       if (mover(casa.x, casa.z, velC * 1.3) < 0.5) {
         o.vuelve = false; o.st = 0;

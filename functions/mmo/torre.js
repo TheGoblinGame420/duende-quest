@@ -47,6 +47,7 @@ export const Torre = {
     if (d0 && !desde && quienes.length > 1) this.enviar(s, { t: 'toast', m: '🗼 El atajo solo vale si todos los del grupo tienen esa marca esta semana: suben desde el piso 1.' });
     w.torre = { sem: semanaUTC(), piso: desde, nv: Math.min(NIVEL_MAX, Math.max(...quienes.map(x => x.c.nivel))), n: quienes.length, sigEn: ahora + TORRE.pausa, pisoIni: 0, fin: false, vacioDesde: 0 };
     for (const x of quienes) {
+      x.c.inst = clave;   // para volver a ESTA Torre si se corta la conexion (volverATorre)
       this.entrarMapa(x, 'torre', 700, false, clave);
       this.enviar(x, { t: 'torre', piso: desde, mejor: this.torreSem(x.c).max, nv: w.torre.nv });
       this.enviar(x, { t: 'toast', ok: true, m: `🗼 Torre del Duende (Nv ${w.torre.nv}). Limpia cada piso en ${Math.floor(TORRE.tiempo / 60000)} min y ${Math.round(TORRE.tiempo % 60000 / 1000)} s. Cada 5 pisos nuevos de la semana, un cofre.` });
@@ -61,34 +62,65 @@ export const Torre = {
     return c.torre;
   },
 
+  // Al reconectar (en el movil se corta mucho): si su subida sigue en marcha,
+  // vuelve a ella con el piso y el tiempo que le queda (el reloj no se para).
+  volverATorre(s, w, mapa, x) {
+    const T = w.torre;
+    if (T.fin || w.mapa !== mapa || s.c.nivel < TORRE.nv) return false;
+    let n = 0;
+    for (const o of this.sesiones.values()) if (o.c && o !== s && o.k === w.clave) n++;
+    if (n >= TORRE.max) return false;
+    this.entrarMapa(s, mapa, x, false, w.clave);
+    T.vacioDesde = 0;
+    const resta = T.sigEn ? 0 : Math.max(1, TORRE.tiempo - (Date.now() - T.pisoIni));
+    const info = { t: 'torre', piso: T.piso, nv: T.nv, mejor: this.torreSem(s.c).max };
+    if (resta) Object.assign(info, { en: resta, mod: modTorre(T.piso) || '', jefe: pisoTorre(T.piso).jefe ? 1 : 0 });
+    this.enviar(s, info);
+    this.enviar(s, { t: 'toast', ok: true, m: `🗼 Volviste a la Torre del Duende (piso ${T.piso}).` });
+    return true;
+  },
+
   tickTorre(w, jugadores, ahora) {
     const T = w.torre;
     if (T.fin) return;
     const vivos = jugadores.filter(s => !s.muerto);
     if (!vivos.length) return this.acabarTorre(w, jugadores, `La Torre ${jugadores.length > 1 ? 'los' : 'te'} venció en el piso ${T.piso}.`);
     if (T.sigEn) {
-      if (ahora >= T.sigEn) this.subirPiso(w, ahora);
+      if (ahora >= T.sigEn) this.subirPiso(w, ahora, vivos.length);
       return;
     }
     if (ahora - T.pisoIni > TORRE.tiempo) return this.acabarTorre(w, jugadores, `⏳ Se acabó el tiempo del piso ${T.piso}.`, true);
+    // Caido con el grupo aun en pie: se le avisa una vez por piso de que, si
+    // espera, revive al limpiarlo (revivir lo saca al pueblo).
+    for (const s of jugadores) {
+      if (!s.muerto || (T.avisados && T.avisados.has(s.id))) continue;
+      (T.avisados = T.avisados || new Set()).add(s.id);
+      this.enviar(s, { t: 'toast', m: '🗼 Tu grupo sigue en pie: espera y revives al limpiar este piso (si pulsas Revivir, vuelves al pueblo).' });
+    }
     for (const o of w.mons.values()) if (!o.muere) return;
     // Piso limpio: cuenta para todos los que siguen en pie.
     // Una subida que cruza el lunes no cuenta para la semana nueva (ni da
     // otra vez los cofres de la anterior).
     if (T.sem === semanaUTC()) for (const s of vivos) this.anotarTorre(s, T.piso);
     for (const s of vivos) this.progresoTarea(s, 'torre');
+    // Los caidos que esperaron dentro vuelven a la subida (con media vida):
+    // con 2-3 jugadores, una muerte ya no los deja fuera hasta el final.
+    for (const s of jugadores) if (s.muerto) this.resucitar(s, { c: { nombre: 'La Torre' } });
     this.aClave(w.clave, { t: 'torre', piso: T.piso, limpio: 1 });
     this.aClave(w.clave, { t: 'emote', m: `Piso ${T.piso} superado.${(T.piso + 1) % TORRE.jefeCada === 0 ? ' El siguiente tiene jefe.' : ''}` });
     T.sigEn = ahora + TORRE.pausa;
   },
 
-  subirPiso(w, ahora) {
+  subirPiso(w, ahora, nVivos) {
     const T = w.torre;
     T.piso++;
     T.sigEn = 0;
     T.pisoIni = ahora;
+    T.avisados = null;
     const P = pisoTorre(T.piso);
-    const n = T.n;
+    // La vida va con los que siguen dentro y en pie (nunca mas que al entrar):
+    // si de 3 se van 2, el que queda no carga con monstruos para 3.
+    const n = Math.max(1, Math.min(T.n, nVivos || T.n));
     const z = MAPAS[zonaDeNivel(T.nv)];
     const pool = z.monstruos;
     const vida = P.vida * (1 + 0.8 * (n - 1));
@@ -223,7 +255,8 @@ export const Torre = {
       if (!w.torre) continue;
       if (porClave[k] && porClave[k].length) { w.torre.vacioDesde = 0; continue; }
       if (!w.torre.vacioDesde) { w.torre.vacioDesde = ahora; continue; }
-      if (ahora - w.torre.vacioDesde > 5000) delete this.mundo[k];
+      // Sin terminar se espera 1 min: da tiempo a reconectar (volverATorre).
+      if (ahora - w.torre.vacioDesde > (w.torre.fin ? 5000 : 60000)) delete this.mundo[k];
     }
   },
 };

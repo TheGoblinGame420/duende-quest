@@ -81,8 +81,12 @@ export const Vincular = {
         return;
       }
       case 'vincQuitar': {
-        const tipo = String(m.k || '');
-        const sec = (c.vinc || {})[tipo];
+        // Solo 'tg' o 'web', y con hasOwn: '__proto__' o 'constructor' existen en
+        // cualquier objeto y pasaban por cuenta vinculada. Cada mensaje borraba y
+        // guardaba en el storage (o fallaba si no habia c.vinc): a 60 por segundo
+        // un solo jugador gastaba el cupo diario de escrituras de todos.
+        const tipo = m.k === 'tg' || m.k === 'web' ? m.k : '';
+        const sec = tipo && c.vinc && Object.hasOwn(c.vinc, tipo) && typeof c.vinc[tipo] === 'string' ? c.vinc[tipo] : '';
         if (!sec) return;
         if (sec === yoAuth) return this.no(s, 'No puedes desvincular la cuenta con la que has entrado: entra con la otra.');
         await this.state.storage.delete('al:' + sec);

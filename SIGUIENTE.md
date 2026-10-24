@@ -2858,3 +2858,19 @@ ruta real en movil (Mas → ?); la pestaña Grupo del 2D no se repinta si el HTM
 es igual; premios de amigos con `pjDe`; filtro de nombres reservados de
 hermandad sin falsos positivos; recarga por version nueva sin perder la entrada
 automatica en Telegram/invitado.
+
+### Ronda 4: 14 especialistas nuevos + verificador por parche (24-oct-2026, `?v=287`)
+
+38 parches verificados, 37 aplicados (el de 'morir ante la otra faccion no
+quita XP' no encajo). Areas: sensacion de combate (#herida, segundos de
+enfriamiento, objetivo automatico), IA (orilla del Abismo, rodear, pisoton de
+jefes), economia (reparacion al revivir en nivel maximo, tope de oro de
+Maestria), progresion (aviso de mision fuerte, nivel en el rastreador, XP Nv
+17-28), PvP (Elo por niveles, corte en duelo ganado), hermandad (gesta se
+guarda tras vaciarse el mundo, aporte en ORIGINS, celebrar subidas), audio
+(silencio en segundo plano, fanfarria, muerte), CLASSIC inicio (Tito entrega,
+rastreador dice cazar, todas las habilidades nuevas), Torre (volver tras corte,
+grupo), pocos jugadores (jefe mundial por participantes, sanador cobra, Capitan
+fuera del pueblo), movil ORIGINS (paneles, ✕ mas grande), estabilidad (ATACAR
+que no se queda pegado, particulas con gravedad, vincQuitar validado) y textos
+(ORIGINS en avisos, aviso de mTON). 817 pruebas.

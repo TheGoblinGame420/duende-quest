@@ -598,7 +598,9 @@ async function pruebas() {
   await pruebasPase();
   await pruebasPesca();
   await pruebasTorre();
+  await pruebasTorreGrupo();
   await pruebasExpedicion();
+  await pruebasTorreVuelta();
   await pruebasEvadir();
   await pruebasDios();
   await pruebasSinCortes();
@@ -732,6 +734,10 @@ async function pruebasEventos3d() {
   chequear(ev.fase === 'capitan' && W.mons.get(ev.capitan), 'al cumplir la meta llega el Capitán');
   const cap = W.mons.get(ev.capitan); mundo.danar3d(cap, cap.hp + 1, a);
   chequear(!W.inv3 && (a.c.invasiones || 0) === n0 + 1 && a.c.oro > oro0, 'derrotar al Capitán gana la invasión y paga');
+  const ev2 = mundo.empezarInvasion3d('amanecer', { amanecer: [a] }, Date.now()); const pA = a.p; a.p = { x: 0, z: 0 };
+  mundo.llegaCapitan3d(ev2); const cap2 = W.mons.get(ev2.capitan);
+  chequear(cap2 && W3.zonaEn(cap2.x, cap2.z) === 'amanecer', 'sin nadie vivo en la zona, el Capitán sale en ella (no en el pueblo)');
+  mundo.terminarInvasion3d(false); a.p = pA;
   // Cofres: hay que estar cerca, una vez cada 30 min
   const cf = W3.cofres3d(D.MAPAS, D.MONSTRUOS).find(x => x.zona === 'amanecer' && x.tipo === 'comun');
   a.p = { x: cf.x + 20, z: cf.z }; a.limpiar();
@@ -825,6 +831,8 @@ async function pruebasVincular() {
     chequear(w2.c && w2.c.uid === 'tg:77001' && w2.c.nivel === 30 && w2.c.oro >= 777 && w2.uidAuth === 'web:w-vinc-1', 'entrando con el correo se juega con el mismo duende');
     w2.limpiar(); await w2.mandar({ t: 'vincQuitar', k: 'web' });
     chequear(w2.ultimos('no').some(m => /has entrado/.test(m.m)), 'no se desvincula la cuenta con la que entraste');
+    w2.limpiar(); for (const k of ['__proto__', 'constructor', 'toString']) await w2.mandar({ t: 'vincQuitar', k });
+    chequear(!w2.ultimos('toast').length && !w2.ultimos('err').length && w2.c.vinc && w2.c.vinc.web === 'web:w-vinc-1', 'vincQuitar con __proto__ o constructor no hace nada (ni error ni escritura)');
     await w2.mandar({ t: 'vincUsar', cod: 'ZZZZZZ' });
     chequear(w2.ultimos('no').some(m => /ya está vinculada|caducó/.test(m.m)), 'una cuenta ya vinculada no vincula otra vez');
     await dejar(w2);
@@ -1213,6 +1221,7 @@ async function pruebasMundial3d() {
   a.limpiar();
   for (let i = 0; i < 120 && !o.pisa; i++) tick(1);
   chequear(!!o.pisa && a.ultimos('zona3').length === 1, 'el pisotón se avisa en el suelo');
+  chequear(o.nEsc === 2 && o.max === mundo.vidaMundial(2) && a.ultimos('mmx3').some(x => x.id === o.id && x.mx === o.max), 'si llega otro a pelear, su vida crece (' + o.max + ')');
   a.hp = a.st.maxHp; const hpB = b.hp;
   tick(26);
   chequear(a.hp <= a.st.maxHp * 0.75 && !a.muerto, 'quien se queda dentro del pisotón pierde ~30% (sin morir de golpe)');
@@ -2020,6 +2029,29 @@ async function pruebasEvadir() {
   await dejar(j);
 }
 
+async function pruebasTorreVuelta() {
+  console.log('Torre: reconexión a mitad de la subida');
+  const D = await import('../mmo/js/data.js');
+  const a = await entrar('Torrista', 'e7');
+  ponerNivel(a, 25, 'guerrero');
+  await aMapa(a, 'pueblo', 795);
+  await a.mandar({ t: 'torre' });
+  const w = mundo.mundoDe(a);
+  a.inv = Infinity; tick(40);
+  chequear(w.torre && w.torre.piso === 1, '(sube a su Torre)');
+  a.x = 700; await mundo.guardar(a);
+  await dejar(a);
+  avanzar(30000); tick(1);
+  chequear(mundo.mundo[w.clave], 'una Torre sin terminar espera a que vuelvan');
+  const a2 = await entrar('Torrista', 'e7');
+  const tm = a2.ultimos('torre').pop();
+  chequear(a2.k === w.clave && tm && tm.piso === 1 && tm.en > 0 && tm.en < D.TORRE.tiempo, 'al reconectar vuelve a su Torre, en su piso y con el tiempo que le queda');
+  await aMapa(a2, 'pueblo', 795);
+  await dejar(a2);
+  tick(1); avanzar(61000); tick(1);
+  chequear(!mundo.mundo[w.clave], 'vacía más de 1 min, se cierra');
+}
+
 async function pruebasExpedicion() {
   console.log('Expediciones');
   const D = await import('../mmo/js/data.js');
@@ -2128,6 +2160,32 @@ async function pruebasTorre() {
   await mundo.cargarRankTorre();
   chequear(j.c.oro - oroT === D.premioTorreSem(0) + D.LOGROS.find(l => l.id === 'reytorre').oro && j.c.logros.includes('reytorre') && mundo.rt.sem === D.semanaUTC() && !Object.keys(mundo.rt.l).length, 'al cambiar la semana: premio al 1º, título y ranking de cero');
   await dejar(j);
+}
+
+async function pruebasTorreGrupo() {
+  console.log('Torre en grupo: los caídos vuelven y la vida va con los que quedan');
+  const D = await import('../mmo/js/data.js');
+  const a = await entrar('Torrera', 'e5'), b = await entrar('Torrero', 'e6');
+  ponerNivel(a, 25, 'guerrero'); ponerNivel(b, 25, 'guerrero');
+  await aMapa(a, 'pueblo', 795); await aMapa(b, 'pueblo', 800);
+  await a.mandar({ t: 'invitar', p: b.id }); await b.mandar({ t: 'grupoResp', si: true });
+  await a.mandar({ t: 'torre' });
+  const w = mundo.mundoDe(a);
+  chequear(w.torre && b.k === w.clave && w.torre.n === 2, '(suben los dos)');
+  a.inv = Infinity; tick(40);
+  const vivos = () => [...w.mons.values()].filter(o => !o.muere);
+  const limpiar = () => { for (const o of vivos()) { mundo.danar(o, 1, a); mundo.danar(o, o.hp + 1, a); } };
+  b.inv = 0; b.limpiar(); mundo.herir(b, 1e9, { id: 0, pct: 0 }); if (!b.muerto) { b.hp = 0; mundo.morir && mundo.morir(b); }
+  tick(2);
+  chequear(b.muerto && !w.torre.fin && b.ultimos('toast').some(x => /revives al limpiar/.test(x.m)), 'caído con el grupo en pie: se le avisa de que revive al limpiar el piso');
+  limpiar(); tick(2);
+  chequear(!b.muerto && b.k === w.clave && b.hp > 0 && b.ultimos('res').length > 0, 'al limpiar el piso, el caído revive dentro de la Torre');
+  // Se va uno: el piso siguiente trae vida para uno solo.
+  await dejar(b); tick(40);
+  const m2 = vivos().find(o => !o.ex);
+  chequear(w.torre.piso === 2 && m2 && m2.max === Math.round(statsMonstruo(m2.k, m2.nv).hp * D.pisoTorre(2).vida), 'si se va uno, el piso siguiente va con la vida de los que quedan');
+  await aMapa(a, 'pueblo', 795);
+  await dejar(a);
 }
 
 async function pruebasPesca() {
@@ -2254,6 +2312,7 @@ async function pruebasMundiales() {
   v.limpiar(); mundo.revisarMundial(reloj);
   const o = mundo.mundial && mundo.mundial.o;
   chequear(o && o.k === D.mundialDe(base + 2 * 1800000 + 1000) && v.ultimos('aviso').some(x => x.m.includes(D.MONSTRUOS[o.k].nombre)), 'aparece el que toca y el aviso dice su nombre (' + (o && o.k) + ')');
+  chequear(o && o.max === mundo.vidaMundial(mundo.presentesEn('coliseo').length), 'su vida cuenta a quien está en el Coliseo, no a todos los conectados (' + (o && o.max) + ')');
   if (o) { mundo.mundo.coliseo.mons.delete(o.id); mundo.mundial.o = null; }
   await dejar(v);
 }
@@ -2300,6 +2359,14 @@ async function pruebasElo() {
   for (let i = 0; i < 20; i++) await espera();
   const rk = a.ws.rec.filter(m => m.t === 'ranking').pop();
   chequear(rk && rk.duel && rk.duel[0] && rk.duel[0].yo && rk.elo === a.c.elo, 'el ranking muestra los duelistas por Elo');
+  // Mucha diferencia de nivel: si gana el mayor no cambia el Elo; si gana el menor, si.
+  const vet = await entrarTg('Veterano', 7205), nov = await entrarTg('Novata', 7206);
+  ponerNivel(vet, 30, 'guerrero'); ponerNivel(nov, 12, 'mago');
+  duelo(vet, nov);
+  chequear(!vet.c.elo && !nov.c.elo, 'si gana el de mucho más nivel no cambia el Elo');
+  duelo(nov, vet);
+  chequear(nov.c.elo > 1000 && vet.c.elo < 1000, 'si gana el de menos nivel sí cuenta (' + nov.c.elo + ' / ' + vet.c.elo + ')');
+  await dejar(vet); await dejar(nov);
   // Huir: el que se va pierde Elo (antes, alejarse era empate y nadie perdía).
   const c1 = await entrarTg('Huidor', 7203), c2 = await entrarTg('Paciente', 7204);
   for (const x of [c1, c2]) ponerNivel(x, 15, 'mago');
@@ -2319,6 +2386,17 @@ async function pruebasElo() {
   for (let i = 0; i < 30; i++) await espera();
   const guardado = await state.storage.get('c:' + c1.c.uid);
   chequear(c2.c.elo > e2 && guardado && guardado.elo < e1, 'desconectarse en mitad del duelo también resta Elo (' + (guardado && guardado.elo) + ')');
+  // Si el que se desconecta iba ganando (corte de datos), el duelo se anula sin Elo.
+  const c3 = await entrarTg('Cortado', 7207); ponerNivel(c3, 15, 'mago');
+  await aMapa(c3, 'noche', 600); await aMapa(c2, 'noche', 640);
+  c3.duelo = { con: c2.id, ini, fin: ini + 90000, x0: 620, k0: 'noche', uid: c2.c.uid };
+  c2.duelo = { con: c3.id, ini, fin: ini + 90000, x0: 620, k0: 'noche', uid: c3.c.uid };
+  c2.hp = Math.round(c2.st.maxHp * 0.3);
+  mundo.tickDuelos(Date.now());
+  const e2b = c2.c.elo, g2 = c2.c.duelosG || 0; c2.ws.rec.length = 0;
+  await dejar(c3);
+  mundo.tickDuelos(Date.now());
+  chequear(!c2.duelo && c2.c.elo === e2b && (c2.c.duelosG || 0) === g2 && c2.ws.rec.some(m => m.t === 'dueloFin' && !m.g && /anulado/.test(m.m)), 'si se desconecta el que iba ganando, el duelo se anula sin Elo');
   await dejar(c2);
   for (const x of [a, b, inv]) await dejar(x);
 }
