@@ -3,36 +3,14 @@
 //   0 3,15 * * *  → keep-alive Supabase (no se pausa el free tier)
 //   0 17 * * *    → avisos de vuelta del MMO + recordatorio diario de misiones
 //   0 12 * * 1    → torneo semanal: premia al top 3 (lunes 12:00 UTC)
-//   0 0 * * *     → pulso del mercado + fondo diario de mTON del MMO
+//   0 0 * * *     → fondo diario de mTON del MMO
 // ═══════════════════════════════════════════════════════
 
-import { tg, supabaseQuery, postDiscord, getDuendePriceUsd } from './lib.js';
+import { tg, supabaseQuery, postDiscord } from './lib.js';
 
-const PUMP_URL = 'https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump';
-
-// Ganchos de venta rotativos (uno distinto cada día según el día del año)
-const HYPE = [
-  '💎 Manos de diamante: el que aguanta, gana. ¿Ya tienes los tuyos?',
-  '🧝 El Duende no duerme — y tu bolsa tampoco debería. HODL $DUENDE.',
-  '🎮 Cada partida te da $DUENDE GRATIS. ¿Por qué no estás jugando?',
-  '🚀 Los early siempre cuentan la mejor historia. Tú estás temprano.',
-  '🔥 Comunidad fuerte = moneda fuerte. Trae un amigo hoy.',
-  '👑 El TOP del torneo gana $DUENDE cada lunes. ¿Vas por la corona?',
-  '🪙 Acumula jugando, compra en los dips, repite. El camino del duende.',
-];
-
-// ── Pulso diario del mercado $DUENDE (precio en vivo + gancho) ──
-// Solo a Discord. En Telegram ya NO se publica solo cada dia (molestaba en el
-// canal y el grupo): el precio sale cuando alguien escribe /price y para
-// comprar, /buy (telegram-bot.js).
-export async function marketPulse(env) {
-  const price = await getDuendePriceUsd();
-  const hype = HYPE[Math.floor(Date.now() / 86400000) % HYPE.length];
-  const priceStr = price > 0 ? '$' + price.toFixed(8) : 'consulta el gráfico';
-  const fecha = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: 'short' });
-  await postDiscord(env, `📊 **PULSO $DUENDE — ${fecha}**\n\n💰 Precio: **${priceStr}**\n${hype}\n\n🪙 Comprar: ${PUMP_URL}\n🎮 Jugar y ganar: https://t.me/duendequest_bot`);
-  console.log('[MarketPulse] posted, price', price);
-}
+// El "pulso del mercado" (precio de $DUENDE publicado solo cada dia en
+// Telegram y Discord) se quito el 24-oct-2026 a pedido del dueño: molestaba.
+// El precio sale cuando alguien escribe /price en el bot, y para comprar /buy.
 
 const WEBAPP_URL = 'https://duende-quest.alfonso12hc.workers.dev/telegram/index.html';
 const TOURNAMENT_PRIZES = [1000, 500, 250]; // $DUENDE para top 1-3
@@ -228,7 +206,6 @@ export async function runCron(cronExpr, env) {
   }
   if (cronExpr === '0 12 * * 1') return weeklyTournament(env);
   if (cronExpr === '0 0 * * *') {
-    await marketPulse(env).catch(e => console.error('[Cron pulso]', e));
     return mmoFondo(env);
   }
   return keepAlive(env);
