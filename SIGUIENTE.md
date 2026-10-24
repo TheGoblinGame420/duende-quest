@@ -2605,3 +2605,13 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
   fuentes de puntos y los 20 premios de `premioPase` con «Cobrar» →
   {t:'pase', n}). 'pase' del servidor actualiza yo.pase.
 - #botones con flex-wrap y ancho maximo.
+
+### Hermandades y ranking en el 3D (23-oct-2026, `?v=270`)
+
+- Paneles laterales `v-herm` (`pintarHerm`) y `v-rank` (`pintarRankPanel`).
+  Mensajes ya existentes del servidor: herm, hermCrear, hermInvitar,
+  hermResp, hermSalir, hermExpulsar, hermRango, hermMotd, hermColor, ranking.
+- 'hermInv' usa la tarjeta #invit3 (`invitTipo = 'herm'`); boton
+  «🛡 Hermandad» en el marco del jugador (lider/oficial, sin hermandad).
+- Chat `/h` → canal 'hermandad' (verde). Etiqueta `<nombre>` bajo el nombre
+  (hn/hc de infoApariencia; propia desde hermInfo).

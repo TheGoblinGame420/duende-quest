@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=269" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=270" } }</script>
 <style>
 :root{--bg:#0a0418;--panel:rgba(14,9,30,.86);--borde:rgba(160,140,255,.22);--txt:#f2efff;--txt2:#b8b0d8;--txt3:#7d7699;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;--oro:#ffd84a;--pri:#2563eb;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -93,7 +93,26 @@ body.movil #presumir3{bottom:auto;top:calc(36% + var(--tg-top,0px));font-size:13
 .d7 em{display:block;font-style:normal;font-size:8px;line-height:1.15;}
 .d7.ya{opacity:.45;}
 .d7.hoy{border-color:#ffd84a;background:rgba(255,216,74,.15);color:#fff;box-shadow:0 0 10px rgba(255,216,74,.4);}
-#pase-c .barra i{position:absolute;inset:0;display:block;background:linear-gradient(90deg,#a78bfa,#ffd84a);transform-origin:left center;}
+#herm-c .barra i,#pase-c .barra i{position:absolute;inset:0;display:block;background:linear-gradient(90deg,#a78bfa,#ffd84a);transform-origin:left center;}
+#v-herm .ventana,#v-rank .ventana{overflow-x:hidden;}
+.herm-cols{display:flex;gap:5px;margin:2px 0 8px;}
+.herm-cols button{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;}
+.herm-cols button.on{border-color:#fff;}
+.herm-lista{display:flex;flex-direction:column;gap:3px;}
+.hm{display:flex;align-items:center;gap:6px;padding:5px 7px;border-radius:7px;background:rgba(255,255,255,.04);font:500 12px var(--sans);opacity:.6;}
+.hm.on{opacity:1;}
+.hm .pt{width:7px;height:7px;border-radius:50%;background:#555;flex:none;}
+.hm.on .pt{background:#4ade80;box-shadow:0 0 6px #4ade80;}
+.hm small{color:var(--txt3);flex:1;}
+.hm .acc button{background:rgba(255,255,255,.08);border:1px solid var(--borde);color:#fff;border-radius:6px;padding:1px 6px;margin-left:3px;cursor:pointer;font-size:11px;}
+.rank-tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;}
+.rank-tabs button{flex:1;padding:6px 4px;border-radius:7px;border:1px solid var(--borde);background:rgba(255,255,255,.04);color:var(--txt2);font:600 11px var(--sans);cursor:pointer;}
+.rank-tabs button.on{background:linear-gradient(90deg,#7c3aed,#2563eb);color:#fff;border-color:#a78bfa;}
+.rank-lista{display:flex;flex-direction:column;gap:3px;}
+.rk{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:7px;background:rgba(255,255,255,.04);font:500 12.5px var(--sans);color:var(--txt2);}
+.rk b{flex:1;color:var(--txt);}
+.rk .pos{width:24px;text-align:center;}
+.rk.yo{background:rgba(74,222,128,.14);border:1px solid #4ade80;}
 .pase-lista{display:flex;flex-direction:column;gap:4px;margin-top:8px;}
 .pase-n{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid var(--borde);font:500 12px var(--sans);color:var(--txt2);}
 .pase-n b{width:22px;text-align:center;color:var(--txt);}
@@ -109,9 +128,9 @@ body.movil #presumir3{bottom:auto;top:calc(36% + var(--tg-top,0px));font-size:13
 .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(5,2,14,.55);pointer-events:auto;z-index:10;}
 .modal.on{display:flex;}
 /* Paneles laterales: a la izquierda, sin velo ni bloquear el mundo */
-#v-npc.modal,#v-ayuda.modal,#v-inv.modal,#v-libro.modal,#v-tienda.modal,#v-logros.modal,#v-pase.modal,#v-diario.modal{background:none;pointer-events:none;justify-content:flex-start;align-items:flex-start;padding:150px 0 0 12px;z-index:9;}
-#v-npc .ventana,#v-ayuda .ventana,#v-inv .ventana,#v-libro .ventana,#v-tienda .ventana,#v-logros .ventana,#v-pase .ventana,#v-diario .ventana{pointer-events:auto;max-height:calc(100vh - 270px);width:min(420px,40vw);box-shadow:0 10px 30px rgba(0,0,0,.5);}
-body.movil #v-npc.modal,body.movil #v-ayuda.modal,body.movil #v-inv.modal,body.movil #v-libro.modal,body.movil #v-tienda.modal,body.movil #v-logros.modal,body.movil #v-pase.modal,body.movil #v-diario.modal{padding:96px 0 0 6px;}
+#v-npc.modal,#v-ayuda.modal,#v-inv.modal,#v-libro.modal,#v-tienda.modal,#v-logros.modal,#v-pase.modal,#v-diario.modal,#v-herm.modal,#v-rank.modal{background:none;pointer-events:none;justify-content:flex-start;align-items:flex-start;padding:150px 0 0 12px;z-index:9;}
+#v-npc .ventana,#v-ayuda .ventana,#v-inv .ventana,#v-libro .ventana,#v-tienda .ventana,#v-logros .ventana,#v-pase .ventana,#v-diario .ventana,#v-herm .ventana,#v-rank .ventana{pointer-events:auto;max-height:calc(100vh - 270px);width:min(420px,40vw);box-shadow:0 10px 30px rgba(0,0,0,.5);}
+body.movil #v-npc.modal,body.movil #v-ayuda.modal,body.movil #v-inv.modal,body.movil #v-libro.modal,body.movil #v-tienda.modal,body.movil #v-logros.modal,body.movil #v-pase.modal,body.movil #v-diario.modal,body.movil #v-herm.modal,body.movil #v-rank.modal{padding:96px 0 0 6px;}
 body.movil #v-npc .ventana,body.movil #v-ayuda .ventana,body.movil #v-inv .ventana,body.movil #v-libro .ventana,body.movil #v-tienda .ventana,body.movil #v-logros .ventana{width:min(360px,72vw);max-height:calc(100vh - 330px);}
 #v-look.modal{background:none;justify-content:flex-start;padding-left:16px;}
 #v-look .ventana{width:min(300px,86vw);background:rgba(20,12,44,.93);}
@@ -222,7 +241,7 @@ body.movil #titulo-zona b{font-size:16px;}
   <div class="nm"><span id="op-nombre">—</span><small id="op-nivel"></small></div>
   <div class="barra hp" id="op-hp"><i></i><span></span></div>
   <div class="fila-b"><button class="btn" id="op-inv">Invitar al grupo</button><button class="btn sec" id="op-sus">Susurrar</button></div>
-  <div class="fila-b"><button class="btn sec" id="op-duelo">⚔️ Retar a duelo</button></div>
+  <div class="fila-b"><button class="btn sec" id="op-duelo">⚔️ Retar a duelo</button><button class="btn sec" id="op-herm" style="display:none">🛡 Hermandad</button></div>
 </div>
 <div class="caja" id="invit3"><p id="invit3-t"></p><div class="fila-b"><button class="btn" id="invit3-si">Aceptar</button><button class="btn sec" id="invit3-no">Rechazar</button></div></div>
 <div class="modal" id="v-look"><div class="ventana">
@@ -247,6 +266,8 @@ body.movil #titulo-zona b{font-size:16px;}
   <button class="bt" id="b-premium" title="Skins premium">💎</button>
   <button class="bt" id="b-look" title="Apariencia (cara, cuerpo, altura y pelo)">🪞</button>
   <button class="bt" id="b-mapa" title="Mapa del mundo (M)">🗺</button>
+  <button class="bt" id="b-herm" title="Hermandad">🛡</button>
+  <button class="bt" id="b-rank" title="Ranking">🏅</button>
   <button class="bt" id="b-pase" title="Pase de temporada (premios gratis)">🎟</button>
   <button class="bt" id="b-son" title="Música y sonido">🔊</button>
   <button class="bt" id="b-compartir" title="Invitar a un amigo / compartir">📣</button>
@@ -310,6 +331,16 @@ body.movil #titulo-zona b{font-size:16px;}
   <p style="margin-top:8px;font-size:12px">Las zonas de nivel bajo rodean el pueblo; las de nivel alto están en los bordes. Los puntos amarillos son jefes.</p>
 </div></div>
 
+<div class="modal" id="v-herm"><div class="ventana">
+  <button class="bt cerrar" data-cerrar>✕</button>
+  <h2>HERMANDAD</h2>
+  <div id="herm-c"></div>
+</div></div>
+<div class="modal" id="v-rank"><div class="ventana">
+  <button class="bt cerrar" data-cerrar>✕</button>
+  <h2>RANKING</h2>
+  <div id="rank-c"></div>
+</div></div>
 <div class="modal" id="v-pase"><div class="ventana">
   <button class="bt cerrar" data-cerrar>✕</button>
   <h2>PASE DE TEMPORADA</h2>
@@ -354,6 +385,6 @@ body.movil #titulo-zona b{font-size:16px;}
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script src="/js/config.js"></script>
-<script type="module" src="/mundo/js/mundo.js?v=269"></script>
+<script type="module" src="/mundo/js/mundo.js?v=270"></script>
 </body>
 </html>

@@ -487,6 +487,11 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 38, fecha: '23 oct 2026', items: [
+    'Hermandades en el mundo 3D (botón 🛡): fúndala, invita desde el marco del jugador, ascienda oficiales, cambie el color y el mensaje del día, y siga la gesta semanal.',
+    'Chat de hermandad: escribe /h y tu mensaje. El nombre de tu hermandad sale bajo el tuyo, en su color.',
+    'Ranking en el 3D (botón 🏅): semana, nivel, duelos, hermandades y torre, con la cuenta atrás del cierre semanal.',
+  ] },
   { n: 37, fecha: '23 oct 2026', items: [
     'Recompensa diaria en el mundo 3D: al entrar ves tu racha de 7 días, lo que ganas hoy y lo que te espera mañana (si faltas un día, retrocede).',
     'Pase de temporada en el 3D (botón 🎟): 20 niveles de premios gratis que se reinician cada mes, con un aviso rojo cuando tienes premios por cobrar.',

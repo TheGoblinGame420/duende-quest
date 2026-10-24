@@ -14,19 +14,19 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes } from '/mmo/js/data.js?v=269';
-import { iniciarVentanas } from './ventanas.js?v=269';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=269';
-import { crearMusica } from './musica.js?v=269';
-import { construirCueva } from './cueva.js?v=269';
-import { TAPA, transparentar } from './tapa.js?v=269';
-import { construirAbismo } from './abismo.js?v=269';
-import { crearParticulas } from './particulas.js?v=269';
-import { cargarKenney, piezasCasa } from './kenney.js?v=269';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES } from '/mmo/js/data.js?v=270';
+import { iniciarVentanas } from './ventanas.js?v=270';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=270';
+import { crearMusica } from './musica.js?v=270';
+import { construirCueva } from './cueva.js?v=270';
+import { TAPA, transparentar } from './tapa.js?v=270';
+import { construirAbismo } from './abismo.js?v=270';
+import { crearParticulas } from './particulas.js?v=270';
+import { cargarKenney, piezasCasa } from './kenney.js?v=270';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=269';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=269';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=270';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=270';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1121,7 +1121,7 @@ function recibir(m) {
     case 's3': foto(m); break;
     case 'pj3': agregarOtro(m.p); break;
     case 'pl': quitarOtro(m.id); break;
-    case 'pa': { const o = otros.get(m.p); if (o) { const cambia = o.sk !== m.sk || o.cl !== (m.cl || '') || o.ar !== (m.ar || 'katana') || JSON.stringify(o.lk) !== JSON.stringify(m.lk || null); Object.assign(o, { sk: m.sk, cl: m.cl || '', ar: m.ar || 'katana', mo: m.mo || '', lk: m.lk || null, al: m.al || '', fc: m.fc || '', ra: m.ra || 0, gm: m.gm || 0 }); if (cambia) rehacerFiguraOtro(o); } break; }
+    case 'pa': { const o = otros.get(m.p); if (o) { const cambia = o.sk !== m.sk || o.cl !== (m.cl || '') || o.ar !== (m.ar || 'katana') || JSON.stringify(o.lk) !== JSON.stringify(m.lk || null); Object.assign(o, { sk: m.sk, cl: m.cl || '', ar: m.ar || 'katana', mo: m.mo || '', lk: m.lk || null, al: m.al || '', fc: m.fc || '', ra: m.ra || 0, hn: m.hn || '', hc: m.hc || 0, gm: m.gm || 0 }); if (cambia) rehacerFiguraOtro(o); } break; }
     case 'mundial3': mundial3 = { ...m, recibido: Date.now() }; break;
     case 'asedio': asedio = m; if (m.activo) asedioHp = asedioHp || { p: 100, g: 100 }; else asedioHp = null; if (abismo) abismo.dueno(m.dueno); break;
     case 'asedioHp': asedioHp = m; if (asedio) asedio.dormido = !!m.d; break;
@@ -1173,6 +1173,13 @@ function recibir(m) {
       aviso(m.m, 'err'); break;
     case 'amigos': if (m.ref) refAmigo = m.ref; break;
     case 'login': mostrarDiario(m); break;
+    case 'herm': hermInfo = m.h; if (yo) yo.herm = m.h ? m.h.id : null; pintarHerm(); break;
+    case 'hermInv':
+      invitTipo = 'herm';
+      $('invit3-t').textContent = `🛡️ ${m.de} te invita a la hermandad <${m.nombre}>.`;
+      $('invit3').style.display = 'block'; vib('medium');
+      clearTimeout(invitT); invitT = setTimeout(() => { $('invit3').style.display = 'none'; }, m.ms || 60000);
+      break;
     case 'pase': if (yo) { yo.pase = m.pase; pintarPase(); } break;
     case 'yoC': if (yo) { Object.assign(yo, m.yo); pintarHud(); refrescarVentanas(); } break;
     case 'atkNo': sigAtk = performance.now() + 150; break;
@@ -1229,7 +1236,7 @@ function recibir(m) {
       break;
     }
     case 'res': if (m.p === miId) { aviso((m.de || 'Alguien') + ' te resucitó.', 'ok'); cerrar('v-muerte'); } break;
-    case 'ranking': if (npcAbierto === 'ranking') pintarRanking(m.r); break;
+    case 'ranking': rankDatos = m; if (npcAbierto === 'ranking') pintarRanking(m.r); pintarRankPanel(); break;
     case 'err':
       if (m.auth && m.auth !== 'inv' && !forzarInvitado) { forzarInvitado = true; aviso('No pudimos verificar tu cuenta: entras como invitado.', 'err'); return; }
       if (m.fatal) { error(m.m || 'Desconectado.'); }
@@ -1256,7 +1263,7 @@ async function agregarOtro(p) {
   if (!p || p.id === miId || p.p === miId) return;
   const id = p.id || p.p;
   quitarOtro(id);
-  const o = { id, x: p.x, z: p.z, tx: p.x, tz: p.z, ry: p.r || 0, a: 0, hp: p.hp, mx: p.mx, n: p.n, lv: p.lv, cl: p.cl || '', sk: p.sk || 'comun', ar: p.ar || 'katana', mo: p.mo || '', lk: p.lk || null, al: p.al || '', fc: p.fc || '', ra: p.ra || 0, gm: p.gm || 0, muerto: !!p.muerto, fig: null, lbl: etiqueta('pj'), f: 1 };
+  const o = { id, x: p.x, z: p.z, tx: p.x, tz: p.z, ry: p.r || 0, a: 0, hp: p.hp, mx: p.mx, n: p.n, lv: p.lv, cl: p.cl || '', sk: p.sk || 'comun', ar: p.ar || 'katana', mo: p.mo || '', lk: p.lk || null, al: p.al || '', fc: p.fc || '', ra: p.ra || 0, hn: p.hn || '', hc: p.hc || 0, gm: p.gm || 0, muerto: !!p.muerto, fig: null, lbl: etiqueta('pj'), f: 1 };
   otros.set(id, o);
   rehacerFiguraOtro(o);
 }
@@ -1637,16 +1644,21 @@ function pintarObjetivoP() {
   hp.lastElementChild.textContent = Math.ceil(o.hp) + ' / ' + o.mx;
   const otraF = o.fc && yo && yo.faccion && o.fc !== yo.faccion;
   $('op-inv').style.display = enGrupo(o.id) || otraF ? 'none' : '';
+  const miRango = hermInfo && yo && (hermInfo.m.find(x => x.uid === yo.pid) || {}).r;
+  $('op-herm').style.display = hermInfo && miRango && miRango !== 'miembro' && !o.hn && !otraF ? '' : 'none';
   $('op-duelo').style.display = otraF && enAbismo(P.x) ? 'none' : '';
 }
 $('op-inv').onclick = () => { if (objetivoP) mandar({ t: 'invitar', p: objetivoP }); };
 $('op-sus').onclick = () => { const o = otros.get(objetivoP); if (!o) return; const i = $('chat-in'); i.style.display = 'block'; i.value = '/s ' + o.n + ' '; i.focus(); };
-$('invit3-si').onclick = () => { mandar({ t: invitTipo === 'duelo' ? 'retoResp' : 'grupoResp', si: true }); $('invit3').style.display = 'none'; };
-$('invit3-no').onclick = () => { mandar({ t: invitTipo === 'duelo' ? 'retoResp' : 'grupoResp', si: false }); $('invit3').style.display = 'none'; };
+const tipoResp = () => invitTipo === 'duelo' ? 'retoResp' : invitTipo === 'herm' ? 'hermResp' : 'grupoResp';
+$('invit3-si').onclick = () => { mandar({ t: tipoResp(), si: true }); $('invit3').style.display = 'none'; };
+$('invit3-no').onclick = () => { mandar({ t: tipoResp(), si: false }); $('invit3').style.display = 'none'; };
+$('op-herm').onclick = () => { if (objetivoP) mandar({ t: 'hermInvitar', p: objetivoP }); };
 $('op-duelo').onclick = () => { if (objetivoP) mandar({ t: 'retar', p: objetivoP }); };
 // Chat: /g (o /p) al grupo, /s nombre texto susurra; lo demas, general.
 function enviarChat(v) {
-  const g = /^\/(g|p|grupo)\s+(.+)/i.exec(v), s = /^\/(s|w)\s+(\S+)\s+(.+)/i.exec(v);
+  const g = /^\/(g|p|grupo)\s+(.+)/i.exec(v), s = /^\/(s|w)\s+(\S+)\s+(.+)/i.exec(v), hh = /^\/(h|herm|hermandad)\s+(.+)/i.exec(v);
+  if (hh) return mandar({ t: 'chat', m: hh[2], canal: 'hermandad' });
   if (g) return mandar({ t: 'chat', m: g[2], canal: 'grupo' });
   if (s) return mandar({ t: 'chat', m: s[3], canal: 'susurro', a: s[2] });
   mandar({ t: 'chat', m: v, canal: 'general' });
@@ -1655,8 +1667,9 @@ function lineaChat(m) {
   const d = document.createElement('div');
   if (m.canal === 'grupo') d.style.color = '#7dd3fc';
   if (m.canal === 'susurro') d.style.color = '#f0abfc';
+  if (m.canal === 'hermandad') d.style.color = '#4ade80';
   if (m.sis || !m.n) d.textContent = m.m;
-  else { const b = document.createElement('b'); b.textContent = (m.canal === 'grupo' ? '[Grupo] ' : m.canal === 'susurro' ? '[Susurro] ' : '') + (m.gm ? '[GM] ' : '') + m.n + ': '; b.style.color = m.gm ? '#ffd84a' : (CLASES[m.cl] ? CLASES[m.cl].color : '#fff'); d.appendChild(b); d.appendChild(document.createTextNode(m.m)); }
+  else { const b = document.createElement('b'); b.textContent = (m.canal === 'grupo' ? '[Grupo] ' : m.canal === 'susurro' ? '[Susurro] ' : m.canal === 'hermandad' ? '[Hermandad] ' : '') + (m.gm ? '[GM] ' : '') + m.n + ': '; b.style.color = m.gm ? '#ffd84a' : (CLASES[m.cl] ? CLASES[m.cl].color : '#fff'); d.appendChild(b); d.appendChild(document.createTextNode(m.m)); }
   const log = $('chat-log'); log.appendChild(d);
   while (log.children.length > 8) log.firstChild.remove();
 }
@@ -1790,6 +1803,8 @@ if (TG && TGV('8.0')) try {
   TG.onEvent('deactivated', () => { musica.activo(false); if (actx) actx.suspend().catch(() => {}); });
   TG.onEvent('activated', () => { if (sonido) musica.activo(true); if (actx) actx.resume().catch(() => {}); });
 } catch (e) {}
+$('b-herm').onclick = () => { if ($('v-herm').classList.contains('on')) return cerrar('v-herm'); abrir('v-herm'); mandar({ t: 'herm' }); pintarHerm(); };
+$('b-rank').onclick = () => { if ($('v-rank').classList.contains('on')) return cerrar('v-rank'); abrir('v-rank'); mandar({ t: 'ranking' }); pintarRankPanel(); };
 $('b-pase').onclick = () => { if ($('v-pase').classList.contains('on')) cerrar('v-pase'); else { abrir('v-pase'); pintarPase(); } };
 $('b-compartir').onclick = () => { presumirTxt = ''; if (!refAmigo) mandar({ t: 'amigos' }); compartir(); };
 $('presumir3').onclick = () => { $('presumir3').style.display = 'none'; compartir(); };
@@ -1879,7 +1894,7 @@ function abrirMapa() {
 function chatAbierto() { return document.activeElement === $('chat-in'); }
 // Ventanas laterales (como WoW): no tapan el centro y se puede seguir
 // caminando con ellas abiertas. Las demas (mapa, muerte, inicio...) si bloquean.
-const LATERALES = ['v-npc', 'v-ayuda', 'v-inv', 'v-libro', 'v-tienda', 'v-logros', 'v-pase', 'v-diario'];
+const LATERALES = ['v-npc', 'v-ayuda', 'v-inv', 'v-libro', 'v-tienda', 'v-logros', 'v-pase', 'v-diario', 'v-herm', 'v-rank'];
 addEventListener('keydown', e => {
   const t = e.target;
   if (!t || !t.closest || !t.closest('.modal') || t.matches('input,textarea')) return;
@@ -1940,6 +1955,64 @@ function revisarAtrasTg() {
 if (TG && TG.BackButton) try {
   TG.BackButton.onClick(() => { document.querySelectorAll('.modal.on').forEach(m => { if (m.id !== 'v-muerte' && m.id !== 'v-clase') cerrar(m.id); }); revisarAtrasTg(); });
 } catch (e) {}
+// ── HERMANDADES (las "guilds") ──
+let hermInfo = null, hermSalirT = 0;
+const RANGO_H = { lider: '👑 Líder', oficial: '⭐ Oficial', miembro: 'Miembro' };
+function pintarHerm() {
+  if (!$('v-herm').classList.contains('on') || !yo) return;
+  const c = $('herm-c'), h = hermInfo;
+  if (!h) {
+    const puede = yo.nivel >= HERM_NIVEL;
+    c.innerHTML = `<p class="vv-p">Una hermandad es tu clan: chat propio (<b>/h</b> mensaje), su nombre bajo el tuyo, la <b>gesta semanal</b> con premios para todos y su puesto en el ranking de hermandades.</p>
+      <p class="vv-p">Fundar una cuesta <b style="color:#ffd84a">${HERM_COSTO.toLocaleString('es')} oro</b> y pide nivel ${HERM_NIVEL}. También puedes esperar a que un líder u oficial te invite (desde tu marco).</p>
+      ${puede ? `<input id="herm-nombre" maxlength="20" placeholder="Nombre de la hermandad" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--borde);background:rgba(0,0,0,.4);color:#fff;margin:6px 0">
+      <button class="btn" id="herm-crear" style="width:100%">Fundar hermandad</button>` : `<p class="vv-p" style="color:#f87171">Llega al nivel ${HERM_NIVEL} para fundar una.</p>`}`;
+    if ($('herm-crear')) $('herm-crear').onclick = () => { const n = $('herm-nombre').value.trim(); if (n) mandar({ t: 'hermCrear', nombre: n }); };
+    return;
+  }
+  const yoM = h.m.find(x => x.uid === yo.pid) || {}, r = yoM.r, mando = r === 'lider' || r === 'oficial', col = HERM_COLORES[h.color] || '#4ade80';
+  const g = h.gesta || { p: 0 }, sig = GESTA_UMBRALES.findIndex(u => g.p < u), tope = GESTA_UMBRALES[GESTA_UMBRALES.length - 1];
+  const on = h.m.filter(x => x.on).length;
+  let s = `<p class="vv-p" style="font-size:15px"><b style="color:${col}">&lt;${esc(h.nombre)}&gt;</b> · ${h.m.length}/${HERM_MAX} miembros · <span style="color:var(--ok)">${on} conectados</span></p>`;
+  s += `<p class="vv-p" style="font-style:italic">📜 ${h.motd ? esc(h.motd) : 'Sin mensaje del día.'}</p>`;
+  if (mando) s += `<div style="display:flex;gap:4px;margin:4px 0 8px"><input id="herm-motd" maxlength="140" placeholder="Mensaje del día" value="${esc(h.motd || '')}" style="flex:1;min-width:0;padding:6px;border-radius:8px;border:1px solid var(--borde);background:rgba(0,0,0,.4);color:#fff"><button class="btn" id="herm-motd-b" style="padding:6px 10px;font-size:12px">Guardar</button></div>`;
+  s += `<p class="vv-p">🏆 <b>Gesta semanal</b>: ${g.p.toLocaleString('es')} puntos${sig >= 0 ? ` · siguiente premio <b style="color:#ffd84a">${GESTA_NOMBRES[sig]}</b> a ${GESTA_UMBRALES[sig].toLocaleString('es')}` : ' · ¡<b style="color:#ffd84a">Oro</b> conseguido!'}</p>
+    <div class="barra" style="height:10px;margin:2px 0 8px"><i style="transform:scaleX(${Math.min(1, g.p / tope).toFixed(3)})"></i></div>`;
+  if (r === 'lider') s += `<div class="herm-cols">${HERM_COLORES.map((cc, i) => `<button data-hc="${i}" style="background:${cc}" class="${i === (h.color | 0) ? 'on' : ''}" aria-label="Color ${i + 1}"></button>`).join('')}</div>`;
+  s += '<div class="herm-lista">' + h.m.map(x => {
+    const cl = CLASES[x.cl], soy = x.uid === yo.pid;
+    let acc = '';
+    if (!soy && r === 'lider') acc += x.r === 'miembro' ? `<button data-hr="oficial" data-u="${x.uid}" title="Ascender a oficial">⬆</button>` : x.r === 'oficial' ? `<button data-hr="miembro" data-u="${x.uid}" title="Bajar a miembro">⬇</button><button data-hr="lider" data-u="${x.uid}" title="Darle el liderazgo">👑</button>` : '';
+    if (!soy && mando && x.r !== 'lider' && !(r === 'oficial' && x.r === 'oficial')) acc += `<button data-hx="${x.uid}" title="Expulsar">✕</button>`;
+    return `<div class="hm ${x.on ? 'on' : ''}"><span class="pt"></span><b style="color:${cl ? cl.color : '#fff'}">${esc(x.n)}</b><small>Nv ${x.lv} · ${RANGO_H[x.r] || x.r}</small><span class="acc">${acc}</span></div>`;
+  }).join('') + '</div>';
+  s += `<p class="vv-p" style="font-size:11px">Escribe en el chat <b>/h mensaje</b> para hablar con tu hermandad.</p><button class="btn sec" id="herm-salir" style="width:100%;margin-top:6px">${hermSalirT > Date.now() ? '¿Seguro? Pulsa otra vez para salir' : 'Salir de la hermandad'}</button>`;
+  c.innerHTML = s;
+  if ($('herm-motd-b')) $('herm-motd-b').onclick = () => mandar({ t: 'hermMotd', m: $('herm-motd').value });
+  c.querySelectorAll('[data-hc]').forEach(b => b.onclick = () => mandar({ t: 'hermColor', i: +b.dataset.hc }));
+  c.querySelectorAll('[data-hr]').forEach(b => b.onclick = () => mandar({ t: 'hermRango', uid: b.dataset.u, r: b.dataset.hr }));
+  c.querySelectorAll('[data-hx]').forEach(b => b.onclick = () => { if (b.dataset.ok) mandar({ t: 'hermExpulsar', uid: b.dataset.hx }); else { b.dataset.ok = 1; b.textContent = '¿?'; } });
+  $('herm-salir').onclick = () => { if (hermSalirT > Date.now()) { hermSalirT = 0; mandar({ t: 'hermSalir' }); } else { hermSalirT = Date.now() + 4000; pintarHerm(); } };
+}
+// ── RANKING (general, semana, duelos, hermandades, torre) ──
+let rankDatos = null, rankTab = 'sem';
+function pintarRankPanel() {
+  if (!$('v-rank').classList.contains('on')) return;
+  const d = rankDatos, c = $('rank-c');
+  const tabs = [['sem', 'Semana'], ['r', 'Nivel'], ['duel', 'Duelos'], ['herm', 'Hermandades'], ['torre', 'Torre']];
+  let s = '<div class="rank-tabs">' + tabs.map(([k, n]) => `<button data-rt="${k}" class="${k === rankTab ? 'on' : ''}">${n}</button>`).join('') + '</div>';
+  if (!d) { c.innerHTML = s + '<p class="vv-p">Cargando…</p>'; }
+  else {
+    const fin = d.finSem ? Math.max(0, d.finSem - Date.now()) : 0, dd = Math.floor(fin / 86400000), hh = Math.floor(fin % 86400000 / 3600000);
+    if (rankTab === 'sem' && fin) s += `<p class="vv-p">⏳ La semana cierra en <b style="color:#f87171">${dd} d ${hh} h</b>: los mejores se llevan premio.</p>`;
+    const L = d[rankTab] || [];
+    const val = x => rankTab === 'sem' ? `${(x.xp || 0).toLocaleString('es')} XP` : rankTab === 'r' ? `Nv ${x.lv}` : rankTab === 'duel' ? `Elo ${x.e}` : rankTab === 'herm' ? `${(x.p || 0).toLocaleString('es')} pts · ${x.m} miembros` : `piso ${x.p}`;
+    s += '<div class="rank-lista">' + (L.length ? L.map((x, i) => `<div class="rk ${x.yo ? 'yo' : ''}"><span class="pos">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><b>${esc(x.n)}</b><span>${val(x)}</span></div>`).join('') : '<p class="vv-p">Aún no hay nadie: ¡sé el primero!</p>') + '</div>';
+    if (rankTab === 'duel') s += `<p class="vv-p" style="font-size:11px">Tu Elo: <b>${d.elo || 1000}</b>. Reta a alguien desde su marco.</p>`;
+  }
+  c.innerHTML = s;
+  c.querySelectorAll('[data-rt]').forEach(b => b.onclick = () => { rankTab = b.dataset.rt; pintarRankPanel(); });
+}
 // ── RECOMPENSA DIARIA (racha de 7 dias) ──
 // Panel lateral que se cierra solo: lo de hoy, la racha y lo que espera mañana.
 function mostrarDiario(m) {
@@ -2471,10 +2544,10 @@ function etiquetas(t) {
     lbl.style.transform = `translate(${s[0].toFixed(1)}px,${s[1].toFixed(1)}px) translate(-50%,-100%)`;
     if (extra) extra(lbl);
   };
-  if (yo && P.lbl) ponLbl(P.lbl, P.x, P.y + 2.15 + (P.fig && P.fig.montura ? 1.2 : 0), P.z, `<span style="color:${yo.dios ? '#ffd84a' : '#ffe600'}">${yo.dios ? 'GM ' : ''}${esc(yo.nombre)}</span>`, 999);
+  if (yo && P.lbl) ponLbl(P.lbl, P.x, P.y + 2.15 + (P.fig && P.fig.montura ? 1.2 : 0), P.z, `<span style="color:${yo.dios ? '#ffd84a' : '#ffe600'}">${yo.dios ? 'GM ' : ''}${esc(yo.nombre)}</span>${hermInfo ? `<small style="display:block;color:${HERM_COLORES[hermInfo.color] || '#4ade80'};font-size:10px">&lt;${esc(hermInfo.nombre)}&gt;</small>` : ''}`, 999);
   for (const o of otros.values()) {
     const cl = CLASES[o.cl];
-    ponLbl(o.lbl, o.x, (o.y || alturaEn(o.x, o.z)) + 2.15 + (o.fig && o.fig.montura ? 1.2 : 0), o.z, `<span style="color:${o.gm ? '#ffd84a' : o.fc && yo && yo.faccion && o.fc !== yo.faccion && enAbismo(o.x) ? '#ff4d4d' : cl ? cl.color : '#fff'}">${o.gm ? 'GM ' : ''}${o.fc && enAbismo(o.x) ? (o.fc === 'luz' ? '☀ ' : '🌑 ') : ''}${esc(o.n)} · Nv${o.lv}</span>${o.ra && enAbismo(o.x) ? `<small style="display:block;color:#c4b5fd;font-size:10px">${RANGOS[o.ra].n}</small>` : ''}<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>`, 70);
+    ponLbl(o.lbl, o.x, (o.y || alturaEn(o.x, o.z)) + 2.15 + (o.fig && o.fig.montura ? 1.2 : 0), o.z, `<span style="color:${o.gm ? '#ffd84a' : o.fc && yo && yo.faccion && o.fc !== yo.faccion && enAbismo(o.x) ? '#ff4d4d' : cl ? cl.color : '#fff'}">${o.gm ? 'GM ' : ''}${o.fc && enAbismo(o.x) ? (o.fc === 'luz' ? '☀ ' : '🌑 ') : ''}${esc(o.n)} · Nv${o.lv}</span>${o.hn ? `<small style="display:block;color:${HERM_COLORES[o.hc] || '#4ade80'};font-size:10px">&lt;${esc(o.hn)}&gt;</small>` : ''}${o.ra && enAbismo(o.x) ? `<small style="display:block;color:#c4b5fd;font-size:10px">${RANGOS[o.ra].n}</small>` : ''}<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>`, 70);
   }
   for (const o of mons.values()) {
     const def = MONSTRUOS[o.k], el = o.id === objetivo;
