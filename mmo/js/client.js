@@ -17,7 +17,7 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=270';
+} from './data.js?v=271';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -4538,7 +4538,7 @@ function pintarTienda() {
       if (tabTienda === 'skin' && !tiene.includes(id)) acc += `<button class="btn sec" data-probar="${id}">Probar</button>`;
       h += tarjeta(ico, d.premium ? `<span style="color:${d.color}">${esc(d.nombre)}</span>` : d.nombre, d.desc + (tabTienda === 'skin' && puesto !== id ? difSkin(id) : ''), acc);
     }
-    if (tabTienda === 'skin') h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Cada skin da sus poderes mientras la llevas. Se compran con oro o, con tu cuenta, con dinero: ' + ((TG && !forzarInvitado) ? 'Telegram Stars' : 'SOL o $DUENDE (10% de descuento) a la wallet de El Duende') + '; El Duende revisa el pago y te la entrega en tu personaje. Las cuatro exclusivas (Esmeralda, Sombrío, Solar y Cósmico) solo se consiguen así; sus ventajas suben con el precio sin superar a las de oro de final de juego, y ninguna cambia lo que se gana en mTON.</p>';
+    if (tabTienda === 'skin') h += '<p style="margin-top:8px;font-size:12px;color:#fde68a"><b>Una skin, dos juegos:</b> la que compres la llevas también en $DUENDE ORIGINS (3D), con los mismos poderes.</p><p style="margin-top:6px;font-size:12px;color:var(--txt2)">Cada skin da sus poderes mientras la llevas. Se compran con oro o, con tu cuenta, con dinero: ' + ((TG && !forzarInvitado) ? 'Telegram Stars' : 'SOL o $DUENDE (10% de descuento) a la wallet de El Duende') + '; El Duende revisa el pago y te la entrega en tu personaje. Las cuatro exclusivas (Esmeralda, Sombrío, Solar y Cósmico) solo se consiguen así; sus ventajas suben con el precio sin superar a las de oro de final de juego, y ninguna cambia lo que se gana en mTON.</p>';
   }
   L.innerHTML = h;
   // Retratos de las monturas (primer cuadro de su hoja).

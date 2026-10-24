@@ -487,6 +487,11 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 39, fecha: '23 oct 2026', items: [
+    'Los juegos estrenan nombre: el MMO 2D es $DUENDE CLASSIC y el mundo abierto 3D es $DUENDE ORIGINS. Mismo duende, mismo servidor.',
+    'Una skin, dos juegos: lo que compras o ganas (skins, alas, oro, equipo y nivel) vale a la vez en CLASSIC y en ORIGINS.',
+    'Portada nueva: elige tu juego con su tráiler, que ahora tiene música y sonido (toca «Activar sonido»).',
+  ] },
   { n: 38, fecha: '23 oct 2026', items: [
     'Hermandades en el mundo 3D (botón 🛡): fúndala, invita desde el marco del jugador, ascienda oficiales, cambie el color y el mensaje del día, y siga la gesta semanal.',
     'Chat de hermandad: escribe /h y tu mensaje. El nombre de tu hermandad sale bajo el tuyo, en su color.',

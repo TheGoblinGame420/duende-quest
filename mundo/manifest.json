@@ -1,6 +1,6 @@
 {
-  "name": "Duende Quest 3D",
-  "short_name": "Duende 3D",
+  "name": "$DUENDE ORIGINS",
+  "short_name": "ORIGINS",
   "description": "El mundo abierto 3D del MMO de los duendes: vuela, caza y pelea por tu facción en el Abismo.",
   "start_url": "/mundo/",
   "scope": "/mundo/",
@@ -9,7 +9,15 @@
   "background_color": "#0a0418",
   "theme_color": "#0a0418",
   "icons": [
-    { "src": "/assets/ui/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/assets/ui/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "/assets/ui/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/ui/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
   ]
 }

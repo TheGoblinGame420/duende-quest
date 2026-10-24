@@ -2615,3 +2615,14 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
   «🛡 Hermandad» en el marco del jugador (lider/oficial, sin hermandad).
 - Chat `/h` → canal 'hermandad' (verde). Etiqueta `<nombre>` bajo el nombre
   (hn/hc de infoApariencia; propia desde hermInfo).
+
+### $DUENDE CLASSIC y $DUENDE ORIGINS (23-oct-2026, `?v=271`)
+
+- Portada: tarjetas `.juegos` (ORIGINS con video + boton de sonido, CLASSIC con
+  captura) y franja `.una-skin` (tambien en la tienda #nft-store).
+- assets/video/promo3d.mp4 con audio AAC (montar.py v4: tarjeta final
+  «$DUENDE ORIGINS» y toma «Una skin, dos juegos»).
+- mmo/index.html: titulo, carga e inicio «$DUENDE CLASSIC»; aviso del 3D con el
+  nombre ORIGINS. mundo/index.html y manifest: «$DUENDE ORIGINS».
+- Tiendas 2D (client.js) y 3D (ventanas.js): «Una skin, dos juegos».
+- Telegram (bot y hub) sin cambios, a peticion del usuario.

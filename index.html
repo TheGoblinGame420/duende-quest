@@ -225,6 +225,24 @@ nav{
 .live-price-pill .dot{width:6px;height:6px;border-radius:50%;background:var(--ok);display:inline-block;}
 
 /* ============ HERO ============ */
+/* Elige tu juego: $DUENDE ORIGINS (3D) y $DUENDE CLASSIC (2D) */
+.juegos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;width:min(760px,100%);margin:0 auto 1rem;text-align:left;}
+.juego{background:rgba(20,14,40,.85);border:1px solid rgba(167,139,250,.35);border-radius:18px;padding:12px;display:flex;flex-direction:column;gap:8px;box-shadow:0 10px 30px rgba(0,0,0,.35);}
+.juego.origins{border-color:#a78bfa;box-shadow:0 12px 40px rgba(124,58,237,.35);}
+.juego-media{position:relative;border-radius:12px;overflow:hidden;aspect-ratio:9/12;background:#0b0718;}
+.juego-media video,.juego-media img{width:100%;height:100%;object-fit:cover;display:block;}
+.juego.classic .juego-media img{object-position:30% center;image-rendering:pixelated;}
+.juego-tag{position:absolute;left:8px;top:8px;background:rgba(0,0,0,.65);color:#fff;font:800 11px system-ui,sans-serif;padding:4px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.25);}
+.juego.origins .juego-tag{background:linear-gradient(90deg,#7c3aed,#db2777);}
+.juego-son{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.7);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:6px 10px;font:700 12px system-ui,sans-serif;cursor:pointer;}
+.juego h3{margin:2px 0 0;font:800 1.25rem system-ui,sans-serif;letter-spacing:.02em;color:#fff;}
+.juego.origins h3{background:linear-gradient(90deg,#c4b5fd,#f9a8d4,#93c5fd);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.juego ul{margin:0;padding-left:1.1rem;color:#cbd5e1;font-size:.92rem;line-height:1.45;}
+.juego-btn{text-align:center;margin-top:auto;}
+.juego.origins .juego-btn{background:linear-gradient(90deg,#7c3aed,#db2777,#2563eb);}
+.una-skin{width:min(760px,100%);margin:0 auto 1.1rem;padding:12px 14px;border-radius:14px;background:linear-gradient(90deg,rgba(250,204,21,.14),rgba(167,139,250,.14));border:1px solid rgba(250,204,21,.45);color:#fde68a;font-size:.95rem;line-height:1.45;}
+.una-skin b{color:#fff;}
+@media (max-width:640px){.juegos{grid-template-columns:1fr;justify-items:center;}.juego{width:min(340px,100%);}.juego-media{aspect-ratio:9/13;max-height:62vh;}}
 .hero{
   min-height:88vh;display:flex;flex-direction:column;
   align-items:center;justify-content:center;
@@ -796,17 +814,33 @@ section[id]{scroll-margin-top:72px;}
   <img class="hero-coin" src="assets/ui/coin.png" alt="Logo de Duende Quest: la moneda pixel art del duende" id="hero-coin" width="88" height="88">
   <p class="hero-blink">Juego peruano · Pixel art · Multijugador</p>
   <a class="hero-nuevo" href="/novedades">Nuevo: 5 mazmorras · Noche de Duendes <span aria-hidden="true">›</span></a>
-  <h1 class="hero-title" id="hero-h1">Duende Quest<span class="hero-h1-sub">Juego RPG y MMORPG gratis en el navegador y en Telegram</span></h1>
-  <p class="hero-sub">Crea tu duende, explora zonas, entra a mazmorras y vence jefes junto a otros jugadores en tiempo real. Funciona en el móvil y en el PC, sin instalar nada.</p>
+  <h1 class="hero-title" id="hero-h1">Duende Quest<span class="hero-h1-sub">Dos juegos, un mismo duende: $DUENDE ORIGINS (3D) y $DUENDE CLASSIC (2D)</span></h1>
+  <p class="hero-sub">Crea tu duende una vez y juega donde quieras: su nivel, su oro, su equipo y sus skins son los mismos en los dos juegos. Gratis, en el móvil o en el PC, sin instalar nada.</p>
   <ul class="hero-benef">
     <li>Gratis</li>
     <li>Sin descargas</li>
     <li>Navegador o Telegram</li>
   </ul>
-  <video src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" autoplay muted loop playsinline preload="metadata" aria-label="Video del mundo 3D" style="display:block;width:min(240px,62vw);aspect-ratio:9/16;object-fit:cover;margin:0 auto 1.2rem;border-radius:18px;border:2px solid #a78bfa;box-shadow:0 12px 40px rgba(124,58,237,.5)"></video>
+  <div class="juegos" aria-label="Elige tu juego">
+    <article class="juego origins">
+      <div class="juego-media">
+        <video id="hero-video" src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" autoplay muted loop playsinline preload="metadata" aria-label="Tráiler de $DUENDE ORIGINS"></video>
+        <button type="button" class="juego-son" id="hero-son" aria-label="Activar sonido del tráiler">🔇 Activar sonido</button>
+        <span class="juego-tag">NUEVO · 3D</span>
+      </div>
+      <h3>$DUENDE ORIGINS</h3>
+      <ul><li>Mundo abierto 3D estilo AION</li><li>Vuela con alas y elige bando: Luz o Sombra</li><li>PvP de facciones, asedios y hermandades</li></ul>
+      <a href="/mundo/" class="btn-main juego-btn">🌌 Jugar ORIGINS</a>
+    </article>
+    <article class="juego classic">
+      <div class="juego-media"><img src="assets/capturas/mmo-dragon-acantilados.png" alt="Captura de $DUENDE CLASSIC: jefes en grupo en pixel art" loading="lazy"><span class="juego-tag">2D · PIXEL ART</span></div>
+      <h3>$DUENDE CLASSIC</h3>
+      <ul><li>El MMO 2D de siempre, en pixel art</li><li>6 mazmorras, la Torre y la banda del Titán</li><li>4 clases, 10 zonas hasta el nivel 60</li></ul>
+      <a href="/mmo/" class="btn-tg juego-btn">⚔️ Jugar CLASSIC</a>
+    </article>
+  </div>
+  <div class="una-skin"><b>Una skin, dos juegos.</b> Todo lo que ganas o compras (skins, alas, oro, equipo y niveles) vale a la vez en $DUENDE CLASSIC y en $DUENDE ORIGINS: es el mismo personaje.</div>
   <div class="hero-btns">
-    <a href="/mundo/" class="btn-main" style="background:linear-gradient(90deg,#7c3aed,#db2777,#2563eb)">🌌 Jugar el mundo 3D (nuevo)</a>
-    <a href="/mmo/" class="btn-tg" target="_blank" rel="noopener">Jugar en 2D</a>
     <a href="https://t.me/duendequest_bot" target="_blank" rel="noopener" class="btn-tg">Abrir en Telegram</a>
   </div>
   <!-- En vivo: conectados y jugadores de hoy los da el servidor del MMO
@@ -1447,6 +1481,7 @@ section[id]{scroll-margin-top:72px;}
 <section class="section" id="nft-store" aria-labelledby="store-h">
   <h2 class="px-title reveal" id="store-h">Tienda: skins, armas y cofres</h2>
   <p class="px-sub reveal">Precios en $DUENDE · Compra opcional · El Duende Común es gratis</p>
+  <div class="una-skin reveal"><b>Una compra, dos juegos:</b> cada skin que consigues se lleva a la vez en $DUENDE CLASSIC (2D) y en $DUENDE ORIGINS (3D), con sus mismos poderes.</div>
 
   <div class="store-tabs reveal">
     <button class="store-tab active" type="button" onclick="filterStore('all',this)">Todo</button>
@@ -2305,5 +2340,11 @@ window.addEventListener('load', cargarRankingLanding);
 <script src="js/wallet-manager.js"></script>
 <script src="js/donation-manager.js"></script>
 <script src="js/staking-manager.js"></script>
+<script>
+// Sonido del tráiler de ORIGINS: los navegadores solo dejan reproducir con
+// sonido tras un toque, así que el vídeo empieza mudo.
+(function(){var v=document.getElementById('hero-video'),b=document.getElementById('hero-son');if(!v||!b)return;
+b.onclick=function(){v.muted=!v.muted;if(!v.muted){v.currentTime=0;v.volume=0.8;v.play().catch(function(){});}b.textContent=v.muted?'🔇 Activar sonido':'🔊 Sonido activado';};})();
+</script>
 </body>
 </html>
