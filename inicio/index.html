@@ -113,7 +113,7 @@ footer a{color:var(--cian);text-decoration:none;}
     <span class="chip">🎁 Entra hoy: suma tu <b>racha diaria</b></span>
   </section>
   <p class="una"><b>Una skin, dos juegos:</b> lo que ganas o compras (skins, alas, oro, equipo y nivel) vale en ORIGINS y en CLASSIC.</p>
-  <footer>¿Quieres saber más? <a href="/">Ver la web completa →</a></footer>
+  <footer>¿Quieres saber más? <a href="/">Ver la web completa →</a> · <a href="#" id="rescate">¿Tienes un código de rescate?</a></footer>
 </main>
 <script>
 (function () {
@@ -131,6 +131,16 @@ footer a{color:var(--cian);text-decoration:none;}
     });
     c.addEventListener('pointerleave', function () { c.style.transform = ''; });
   });
+  // Codigo de rescate: recupera en este navegador el duende de invitado de otro.
+  document.getElementById('rescate').onclick = function (e) {
+    e.preventDefault();
+    var t = prompt('Pega tu código de rescate (lo ves en el juego al jugar como invitado).\nOJO: el duende de invitado de ESTE navegador se reemplaza; guarda antes su código si lo quieres.');
+    if (!t) return;
+    var c = t.replace(/[^a-f0-9]/gi, '').toLowerCase();
+    if (!/^[a-f0-9]{32}$/.test(c)) return alert('Ese código no es válido: son 32 letras y números (puede llevar guiones).');
+    try { localStorage.setItem('dq_mmo_tok', c); localStorage.removeItem('dq_mmo_nombre'); } catch (er) {}
+    alert('¡Listo! Entra a cualquiera de los dos juegos y verás tu duende.');
+  };
   // Jefe mundial: a las :00 y :30 (UTC), dura 10 minutos.
   var dos = function (n) { return (n < 10 ? '0' : '') + n; };
   function jefe() {

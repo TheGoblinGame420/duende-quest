@@ -14,19 +14,19 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES } from '/mmo/js/data.js?v=274';
-import { iniciarVentanas } from './ventanas.js?v=274';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=274';
-import { crearMusica } from './musica.js?v=274';
-import { construirCueva } from './cueva.js?v=274';
-import { TAPA, transparentar } from './tapa.js?v=274';
-import { construirAbismo } from './abismo.js?v=274';
-import { crearParticulas } from './particulas.js?v=274';
-import { cargarKenney, piezasCasa } from './kenney.js?v=274';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES } from '/mmo/js/data.js?v=275';
+import { iniciarVentanas } from './ventanas.js?v=275';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=275';
+import { crearMusica } from './musica.js?v=275';
+import { construirCueva } from './cueva.js?v=275';
+import { TAPA, transparentar } from './tapa.js?v=275';
+import { construirAbismo } from './abismo.js?v=275';
+import { crearParticulas } from './particulas.js?v=275';
+import { cargarKenney, piezasCasa } from './kenney.js?v=275';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=274';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=274';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=275';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos } from '/mmo/js/mundo3d.js?v=275';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1055,6 +1055,8 @@ function tokInvitado() {
   }
   return inv;
 }
+let soyInvitado = false;
+const codigoRescate = () => (tokInvitado().match(/.{4}/g) || []).join('-').toUpperCase();
 async function autenticacion() {
   let previo = null; try { previo = localStorage.getItem('dq_mmo_tok'); } catch (e) {}
   const inv0 = /^[a-f0-9]{32}$/.test(previo || '') ? previo : undefined;
@@ -1062,6 +1064,7 @@ async function autenticacion() {
   const tok = forzarInvitado ? null : await tokenWeb();
   if (tok) return { auth: { k: 'web', tok }, inv: inv0 };
   let nombre = ''; try { nombre = localStorage.getItem('dq_mmo_nombre') || ''; } catch (e) {}
+  soyInvitado = true;
   return { auth: { k: 'inv', tok: tokInvitado() }, nombre };
 }
 async function conectar() {
@@ -1073,12 +1076,26 @@ async function conectar() {
   ws.onclose = () => {
     conectado = false;
     if (fatal) return;
+    // En segundo plano (Telegram minimizado, pantalla bloqueada) no se cuentan
+    // intentos: se reconecta al volver.
+    if (document.hidden) return;
     reintentos++;
-    if (reintentos > 6) return error('No se pudo conectar con el mundo. Revisa tu conexión.');
-    setTimeout(conectar, Math.min(8000, 800 * reintentos));
+    if (reintentos > 12) return error('No se pudo conectar con el mundo. Revisa tu conexión.', true);
+    setTimeout(conectar, Math.min(8000, 600 * reintentos));
   };
 }
-function error(txt) { fatal = true; $('error-txt').textContent = txt; abrir('v-error'); }
+// Al volver a la app (o recuperar la red), reconectar enseguida.
+function volverAConectar() {
+  if (document.hidden || (ws && ws.readyState <= 1)) return;
+  if (fatal && !errorRed) return;
+  if (fatal) { fatal = false; errorRed = false; cerrar('v-error'); }
+  reintentos = 0; conectar();
+}
+let errorRed = false;
+document.addEventListener('visibilitychange', volverAConectar);
+addEventListener('online', volverAConectar);
+addEventListener('focus', volverAConectar);
+function error(txt, red) { fatal = true; errorRed = !!red; $('error-txt').textContent = txt; abrir('v-error'); }
 setInterval(() => mandar({ t: 'ping', ts: Date.now() }), 20000);
 
 // ── MENSAJES DEL SERVIDOR ──
@@ -1086,6 +1103,7 @@ function recibir(m) {
   switch (m.t) {
     case 'bienvenido':
       miId = m.id; yo = m.yo; reintentos = 0;
+      if (soyInvitado) setTimeout(avisoInvitado, 9000);
       $('carga').style.display = 'none';
       cerrar('v-inicio');
       pintarHud();
@@ -1903,6 +1921,20 @@ addEventListener('keydown', e => {
   if (t.matches('select')) { if (e.key !== 'Escape') e.preventDefault(); t.blur(); }
   else if (t.matches('button,a') && e.code !== 'Tab' && e.code !== 'Enter') t.blur();
 }, true);
+// ── INVITADO: que no pierda su duende ──
+// Una vez por sesion: el duende del invitado vive en este navegador; se puede
+// guardar con una cuenta (en CLASSIC) o con el codigo de rescate.
+function avisoInvitado() {
+  if (!soyInvitado || !yo || hayVentana()) return;
+  try { if (sessionStorage.getItem('dq_aviso_inv')) return; sessionStorage.setItem('dq_aviso_inv', '1'); } catch (e) {}
+  $('diario-c').innerHTML = `<p class="vv-p">Juegas como <b>invitado</b>: tu duende vive solo en este navegador. Para no perderlo:</p>
+    <p class="vv-p">1) Crea una cuenta gratis en <a href="/mmo/" style="color:#7dd3fc">$DUENDE CLASSIC</a> (botón 👤): tu duende pasa a la nube y sirve en los dos juegos.</p>
+    <p class="vv-p">2) O guarda tu <b>código de rescate</b> y úsalo en otro navegador desde la pantalla de inicio:</p>
+    <div style="display:flex;gap:6px;align-items:center"><code style="flex:1;min-width:0;overflow-wrap:anywhere;background:rgba(0,0,0,.4);padding:8px;border-radius:8px;font-size:12px;color:#ffd84a">${codigoRescate()}</code><button class="btn" id="copiar-rescate" style="padding:8px 10px;font-size:12px">Copiar</button></div>`;
+  $('v-diario').querySelector('h2').textContent = 'GUARDA TU DUENDE';
+  abrir('v-diario');
+  $('copiar-rescate').onclick = () => { try { navigator.clipboard.writeText(codigoRescate()).then(() => aviso('Código copiado. Guárdalo en un lugar seguro.', 'ok')); } catch (e) {} };
+}
 // ── SUBIR DE NIVEL, PRESUMIR Y TELEGRAM ──
 function subiNivel(lv) {
   vib('success'); sfxK('monedas', 0.4);
@@ -2027,6 +2059,7 @@ function mostrarDiario(m) {
   const sig = LOGIN_PREMIOS[hoy % n];
   h += `</div><p class="vv-p" style="margin-top:10px;font-size:12px">Mañana: <b style="color:#7dd3fc">${esc(sig.txt)}</b>. Si faltas un día la racha retrocede: ¡no la pierdas!</p>`;
   $('diario-c').innerHTML = h;
+  $('v-diario').querySelector('h2').textContent = 'RECOMPENSA DIARIA';
   abrir('v-diario'); vib('success'); sfxK('monedas', 0.4);
   clearTimeout(mostrarDiario.t);
   mostrarDiario.t = setTimeout(() => cerrar('v-diario'), 12000);

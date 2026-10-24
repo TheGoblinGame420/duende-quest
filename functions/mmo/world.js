@@ -2251,7 +2251,8 @@ export class MmoWorld {
     s.guardadoT = Date.now();
     s.sucio = false;
     this.retAlGuardar(s);
-    try { await this.state.storage.put('c:' + s.c.uid, s.c); } catch (e) { console.error('[MMO guardar]', e); }
+    // Si el guardado falla se reintenta en el siguiente ciclo (no se pierde el progreso).
+    try { await this.state.storage.put('c:' + s.c.uid, s.c); } catch (e) { s.sucio = true; console.error('[MMO guardar]', e); }
   }
 
   // ── SIMULACION ──

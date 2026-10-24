@@ -2662,3 +2662,14 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
   datosCaza mandan xp/xpSig de la maestria y `mae` en el nivel maximo.
 - tareas.js: la XP de las tareas cuenta siempre (va a la maestria en el 60).
 - Clientes: «Nv 60 ★n» (3D) y «60★n» (2D), aviso y efecto al subir.
+
+### Proteger el progreso (23-oct-2026, `?v=275`)
+
+- world.js `guardar`: si el put falla, `s.sucio = true` (se reintenta).
+- mundo.js: en segundo plano no se cuentan reintentos; `volverAConectar` en
+  visibilitychange/online/focus (cierra el error de red y reconecta); hasta 12
+  intentos.
+- Invitado: `avisoInvitado` (una vez por sesion, 9 s tras entrar) con el
+  `codigoRescate()` (el dq_mmo_tok en grupos de 4) y copia. inicio/: enlace
+  «¿Tienes un código de rescate?» que lo guarda en dq_mmo_tok (el uid del
+  invitado sale de sha256 del token: mismo duende en otro navegador).

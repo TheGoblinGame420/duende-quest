@@ -492,6 +492,11 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 43, fecha: '23 oct 2026', items: [
+    'ORIGINS ya no se desconecta para siempre al minimizar Telegram o bloquear el móvil: al volver se reconecta solo, al momento.',
+    'Si juegas como invitado, el juego te avisa de cómo no perder tu duende: crear cuenta o guardar tu código de rescate. En la pantalla de inicio puedes usar ese código en otro navegador.',
+    'El guardado del servidor reintenta si algo falla: tu progreso no se pierde.',
+  ] },
   { n: 42, fecha: '23 oct 2026', items: [
     'Maestría después del nivel 60: tu experiencia ya no se pierde. Llena la barra de Maestría (★) y cada nivel te da oro; cada 5, un objeto épico. No da estadísticas, así que el PvP sigue justo.',
     'En el nivel 60 tu XP vuelve a contar en el ranking semanal, y las misiones diarias siguen dando progreso.',
