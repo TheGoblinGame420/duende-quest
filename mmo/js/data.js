@@ -492,6 +492,9 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 46, fecha: '23 oct 2026', items: [
+    'Tu progreso ahora tiene copia de seguridad diaria fuera del servidor del juego: si algo fallara, tu duende, tu oro y tu equipo se pueden recuperar.',
+  ] },
   { n: 45, fecha: '23 oct 2026', items: [
     'Temporada del Abismo: cada mes compiten la Luz y la Sombra. Tus Puntos del Abismo te suben de liga (Bronce, Plata, Oro y Diamante) y al cerrar el mes cobras oro, pociones y equipo; aunque entres semanas después, el premio te espera.',
     'La facción ganadora cobra un 50 % más y el podio se lleva un legendario y el título «Campeón del Éter». Nuevos títulos: «Vencedor del Éter» y «Señor del Éter». Mira el marcador en 🏆 Ranking → Abismo.',

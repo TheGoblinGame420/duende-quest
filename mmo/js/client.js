@@ -17,7 +17,7 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=277';
+} from './data.js?v=278';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -611,6 +611,7 @@ function recibir(m) {
     case 'critDuelo': { const q = m.p === miId ? P : otros.get(m.p); if (q) flotante(q.x, q.y - 92, '¡CRÍTICO!', '#ffd34d', 10); break; }
     case 'buscador': abrirBuscador(); break;
     case 'diosPanel': pintarDios(m); break;
+    case 'diosCopias': diosCopias = m; pintarDios(); break;
     case 'diosModo': if (yo) { yo.diosModo = m.modo; pintarDiosModos(); } break;
     case 'amigos': pintarAmigos(m); if (presumirPend && m.ref) { presumirPend = false; ofrecerPresumir(presumirTxt); aviso('Enlace preparado. Pulsa «Compartir logro».'); } break;
     case 'muerte': resumenMuerte(m); break;
@@ -3090,7 +3091,7 @@ function retratoSkin(skin) {
 }
 
 // ── MODO DIOS (solo el dueño: el servidor decide quien lo es) ──
-let diosDatos = null, diosTab = 'poderes';
+let diosDatos = null, diosTab = 'poderes', diosCopias = null;
 function abrirDios() {
   if (!yo || !yo.dios) return;
   abrir('m-dios');
@@ -3109,7 +3110,7 @@ function pintarDios(d) {
   if (!$('m-dios').classList.contains('on')) return;
   const D = diosDatos || { jugadores: [], pedidos: [], bans: [], log: [] };
   const C = $('dios-cuerpo');
-  let h = '<div class="tabs">' + [['poderes', '⚡ PODERES'], ['jugadores', '👥 JUGADORES'], ['pedidos', '🛒 PEDIDOS (' + D.pedidos.filter(x => x.estado !== 'esperando_pago').length + ')'], ['mod', '⛔ MODERACIÓN']]
+  let h = '<div class="tabs">' + [['poderes', '⚡ PODERES'], ['jugadores', '👥 JUGADORES'], ['pedidos', '🛒 PEDIDOS (' + D.pedidos.filter(x => x.estado !== 'esperando_pago').length + ')'], ['mod', '⛔ MODERACIÓN'], ['copias', '💾 COPIAS']]
     .map(([k, t]) => `<button class="tab ${diosTab === k ? 'on' : ''}" data-dtab="${k}">${t}</button>`).join('') + '</div>';
   if (diosTab === 'poderes') {
     h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0">'
@@ -3138,13 +3139,38 @@ function pintarDios(d) {
       ${x.firma ? `<a href="https://solscan.io/tx/${encodeURIComponent(x.firma)}" target="_blank" rel="noopener" style="font-size:11px;color:var(--cian)">Ver en Solscan ↗</a>` : ''}
       ${x.estado !== 'esperando_pago' ? `<div style="display:flex;gap:6px;margin-top:6px"><button class="btn" data-dped="entregar" data-c="${esc(x.codigo)}">🎁 Entregar</button><button class="btn sec" data-dped="anular" data-c="${esc(x.codigo)}">Anular</button></div>` : ''}
     </div>`).join('');
+  } else if (diosTab === 'copias') {
+    const K = diosCopias;
+    h += `<p style="font-size:12px;color:var(--txt2);margin:6px 0">Una copia al día (04:00 UTC) de todo el progreso. Fuera de Cloudflare va a: <b>${!K ? '…' : K.destino === 'r2' ? 'R2 (bucket COPIAS)' : K.destino === 'telegram' ? 'tu chat de Telegram (archivo .json.gz)' : '⚠️ ningún sitio: falta el bot o ADMIN_TG_ID'}</b>. Dentro se guardan las 7 últimas.</p>`;
+    h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0"><button class="btn" id="d-copiaya">💾 Hacer copia ahora</button><button class="btn sec" id="d-subir">📤 Restaurar desde archivo…</button><input type="file" id="d-archivo" accept=".gz,application/gzip" style="display:none"></div>';
+    h += !K ? '<p style="font-size:12px;color:var(--txt2)">Cargando…</p>' : !K.l.length ? '<p style="font-size:12px;color:var(--txt2)">Aún no hay copias.</p>' : K.l.map(e => `<div class="mis-caja" style="margin:6px 0;padding:8px">
+      <b>${esc(e.id)} UTC</b> <span style="font-size:12px;color:var(--txt2)">· ${e.pj} personajes · ${(e.bytes / 1024).toFixed(0)} KB · ${esc(e.motivo)} · ${e.fuera === 'telegram' ? '✅ en Telegram' : e.fuera === 'r2' ? '✅ en R2' : '⚠️ solo interna'}</span>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px"><button class="btn sec" data-dcp="pj" data-id="${esc(e.id)}">♻️ Restaurar un jugador</button><button class="btn" data-dcp="mundo" data-id="${esc(e.id)}" style="background:var(--err)">Restaurar TODO</button></div></div>`).join('');
   } else {
     h += '<p style="margin:8px 0 4px;font-size:13px">⛔ Baneados</p>' + (D.bans.length ? D.bans.map(b => `<div class="fila"><span>${esc(b.n)} · ${b.hasta ? 'hasta ' + new Date(b.hasta).toLocaleString('es') : 'permanente'}${b.motivo ? ' · ' + esc(b.motivo) : ''}</span><button class="btn sec" data-dban="${b.t}">Quitar</button></div>`).join('') : '<p style="font-size:12px;color:var(--txt2)">Nadie.</p>');
     h += '<p style="margin:12px 0 4px;font-size:13px">📜 Últimas acciones</p>' + (D.log.length ? D.log.slice().reverse().map(l => `<div style="font-size:12px;color:var(--txt2)">${new Date(l.t).toLocaleTimeString('es')} · ${esc(l.de)}: ${esc(l.txt)}</div>`).join('') : '<p style="font-size:12px;color:var(--txt2)">Sin acciones todavía.</p>');
   }
   C.innerHTML = h;
   pintarDiosModos();
-  C.querySelectorAll('[data-dtab]').forEach(b => b.onclick = () => { diosTab = b.dataset.dtab; mandar({ t: 'dios', a: 'estado' }); pintarDios(); });
+  C.querySelectorAll('[data-dtab]').forEach(b => b.onclick = () => { diosTab = b.dataset.dtab; mandar({ t: 'dios', a: diosTab === 'copias' ? 'copias' : 'estado' }); pintarDios(); });
+  const cy = $('d-copiaya'); if (cy) cy.onclick = () => { cy.disabled = true; cy.textContent = 'Copiando…'; dios({ a: 'copiaYa' }); };
+  const su = $('d-subir'); if (su) {
+    su.onclick = () => $('d-archivo').click();
+    $('d-archivo').onchange = e => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      if (f.size > 900 * 1024) return errorRojo('El archivo pasa de 900 KB: restáuralo desde una copia interna.');
+      if (!confirm('¿Restaurar TODO el mundo desde «' + f.name + '»? Todos se desconectan y el progreso vuelve a esa copia (antes se guarda una copia de lo actual).')) return;
+      const r = new FileReader();
+      r.onload = () => { const b64 = String(r.result).split(',')[1] || ''; mandar({ t: 'dios', a: 'subirCopia', b64 }); };
+      r.readAsDataURL(f);
+    };
+  }
+  C.querySelectorAll('[data-dcp]').forEach(b => b.onclick = () => {
+    const id = b.dataset.id;
+    if (b.dataset.dcp === 'pj') { const q = prompt('Nombre del jugador a restaurar desde la copia ' + id + ':', ''); if (q && confirm('¿Devolver a «' + q + '» a como estaba en ' + id + '? Pierde lo que ganó después.')) dios({ a: 'restaurarPj', id, quien: q }); }
+    else if (confirm('¿Restaurar TODO el mundo a la copia ' + id + '? Todos se desconectan y se pierde lo jugado después (antes se guarda una copia de lo actual).') && confirm('¿Seguro? Esta acción afecta a todos los jugadores.')) dios({ a: 'restaurarMundo', id });
+  });
   C.querySelectorAll('[data-dmodo]').forEach(b => b.onclick = () => dios({ a: 'modo', k: b.dataset.dmodo, v: !(yo.diosModo && yo.diosModo[b.dataset.dmodo]) }));
   C.querySelectorAll('[data-dtp]').forEach(b => b.onclick = () => { dios({ a: 'tp', mapa: b.dataset.dtp }); cerrarModales(); });
   const cu = $('d-curar'); if (cu) cu.onclick = () => dios({ a: 'curar' });

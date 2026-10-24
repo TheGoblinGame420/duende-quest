@@ -223,6 +223,33 @@ export const Dios = {
         ok('✅ Ban retirado.');
         return this.enviarPanelDios(s);
       }
+      // ── COPIAS DE SEGURIDAD (copias.js) ──
+      case 'copias': return this.enviar(s, { t: 'diosCopias', ...(await this.infoCopias()) });
+      case 'copiaYa': {
+        const e = await this.hacerCopia('manual');
+        if (!e) return this.no(s, 'No se pudo hacer la copia (mira los registros del servidor).');
+        this.registrarMod(s, `copia ${e.id}`);
+        ok(`💾 Copia ${e.id}: ${e.pj} personajes, ${(e.bytes / 1024).toFixed(0)} KB${e.fuera === 'telegram' ? ' · enviada a tu Telegram' : e.fuera === 'r2' ? ' · subida a R2' : ' · solo interna (sin destino externo)'}.`);
+        return this.enviar(s, { t: 'diosCopias', ...(await this.infoCopias()) });
+      }
+      case 'restaurarPj': {
+        const r = await this.restaurarJugador(String(m.id || ''), String(m.quien || '').slice(0, 80));
+        if (!r.ok) return this.no(s, r.error);
+        this.registrarMod(s, `restauró a ${r.nombre} desde ${m.id}`);
+        return ok(`♻️ ${r.nombre} (Nv ${r.nivel}) vuelve a como estaba en la copia ${m.id}.`);
+      }
+      case 'restaurarMundo': {
+        this.registrarMod(s, `restaura el mundo desde ${m.id}`);
+        const r = await this.restaurarMundo(await this.leerCopia(String(m.id || '')));
+        if (!r.ok) return this.no(s, r.error);
+        return;   // todos (tambien el dueño) quedan desconectados
+      }
+      case 'subirCopia': {
+        this.registrarMod(s, 'restaura el mundo desde un archivo subido');
+        const r = await this.restaurarSubida(m.b64);
+        if (!r.ok) return this.no(s, r.error);
+        return;
+      }
       case 'entregar': {
         const r = await this.entregarPedido({ codigo: m.codigo, por: 'dios' });
         if (!r.ok) return this.no(s, r.error);

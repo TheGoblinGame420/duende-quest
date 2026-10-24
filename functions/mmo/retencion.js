@@ -362,6 +362,8 @@ export const Retencion = {
         if (r.enviados || r.bloqueados) console.log('[MMO avisos ' + h + 'h]', { enviados: r.enviados, bloqueados: r.bloqueados, fallidos: r.fallidos, quedan: r.quedan });
       }
     } catch (e) { console.error('[MMO alarma]', e); }
+    // Copia de seguridad diaria (copias.js).
+    try { if (this.copiaDiariaSiToca) await this.copiaDiariaSiToca(); } catch (e) { console.error('[MMO copia diaria]', e); }
     await this.programarAlarma();
   },
   async programarAlarma() {

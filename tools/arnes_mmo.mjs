@@ -22,6 +22,7 @@ const state = {
     get: async k => (almacen.has(k) ? structuredClone(almacen.get(k)) : undefined),
     put: async (k, v) => { almacen.set(k, structuredClone(v)); },
     delete: async k => almacen.delete(k),
+    list: async (o = {}) => new Map([...almacen].filter(([k]) => !o.prefix || k.startsWith(o.prefix)).sort((x, y) => (x[0] < y[0] ? -1 : 1)).map(([k, v]) => [k, structuredClone(v)])),
   },
   blockConcurrencyWhile: f => f(),
 };
@@ -610,6 +611,7 @@ async function pruebas() {
   await pruebasSocial3d();
   await pruebasEventos3d();
   await pruebasTempAbismo();
+  await pruebasCopias();
   await pruebasAsedio3d();
 }
 
@@ -736,6 +738,36 @@ async function pruebasEventos3d() {
   a.p = { x: 300, z: 300 }; a.limpiar(); await a.mandar({ t: 'mision' });
   chequear(!a.ultimos('no').some(m => /Guardia Tito/.test(m.m)), 'en ORIGINS la misión se entrega desde cualquier sitio');
   await dejar(a);
+}
+
+// ── COPIAS DE SEGURIDAD ──
+async function pruebasCopias() {
+  console.log('Copias de seguridad');
+  const CP = await import('../functions/mmo/copias.js');
+  const a = await entrar3d('Guardado Seguro', 'b4c1'); ponerNivel(a, 15, 'guerrero');
+  a.c.oro = 4321; a.sucio = true;
+  const e = await mundo.hacerCopia('prueba');
+  chequear(e && e.pj >= 1 && e.bytes > 0 && e.trozos >= 1, 'se hace una copia comprimida de todo el progreso');
+  const idx = await mundo.indiceCopias();
+  chequear(idx[0].id === e.id, 'la copia queda en el índice');
+  const cp = await mundo.leerCopia(e.id);
+  chequear(cp && cp.datos['c:' + a.c.uid] && cp.datos['c:' + a.c.uid].oro === 4321 && !Object.keys(cp.datos).some(k => k.startsWith('bk:')), 'la copia se lee y trae al jugador con su oro');
+  // Restaurar un jugador: pierde lo ganado despues de la copia
+  a.c.oro = 999999; await mundo.guardar(a);
+  const r = await mundo.restaurarJugador(e.id, 'guardado seguro');
+  const guardado = await mundo.state.storage.get('c:' + a.c.uid);
+  chequear(r.ok && guardado.oro === 4321 && a.cerrado, 'restaurar un jugador lo devuelve a la copia (y lo desconecta sin pisarla)');
+  // Restaurar el mundo desde el archivo subido
+  const gz = await CP.gzip(JSON.stringify(cp));
+  const b64 = Buffer.from(gz).toString('base64');
+  await mundo.state.storage.put('c:zz-prueba-borrar', { uid: 'zz', nombre: 'Basura' });
+  const r2 = await mundo.restaurarSubida(b64);
+  chequear(r2.ok && !(await mundo.state.storage.get('c:zz-prueba-borrar')) && (await mundo.state.storage.get('c:' + a.c.uid)).oro === 4321, 'restaurar el mundo desde el archivo vuelve exactamente a la copia');
+  chequear((await mundo.indiceCopias()).some(x => x.motivo === 'antes de restaurar'), 'antes de restaurar se guarda una copia de lo actual');
+  chequear(!(await mundo.restaurarSubida('no-es-una-copia')).ok, 'un archivo que no es copia se rechaza');
+  for (let i = 0; i < CP.BK_MAX + 2; i++) { reloj += 3600000; await mundo.hacerCopia('rotacion'); }
+  const idx2 = await mundo.indiceCopias();
+  chequear(idx2.length === CP.BK_MAX && ![...almacen.keys()].some(k => k.startsWith('bk:' + e.id + ':')), 'solo se guardan las últimas copias y las viejas se borran');
 }
 
 // ── EQUILIBRIO DE FACCIONES Y TEMPORADA DEL ABISMO ──

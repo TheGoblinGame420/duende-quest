@@ -2703,3 +2703,17 @@ el 2D pasa a `?v=243` (comparten `data.js?v=243`). Arnés **620**.
   paga por liga (`TEMP_ABISMO`), +50 % si gano su faccion, podio. c.tempA.
 - Logros tempOro, tempGana, tempTop. Cliente: pestaña Abismo del ranking
   (`htmlTemp`), ventana `mostrarTempFin`, portal con recuento y bono, HUD.
+
+### Copias de seguridad fuera del Durable Object (24-oct-2026, `?v=278`)
+
+- functions/mmo/copias.js (mixin Copias): `hacerCopia` vuelca todo el storage
+  (menos `bk:*`) a JSON+gzip. Fuera: binding R2 `COPIAS` si existe; si no,
+  `sendDocument` al chat de ADMIN_TG_ID. Dentro: 7 copias en trozos de 512 KB
+  (`bk:<id>:<i>`, indice `bk:idx`).
+- Diaria desde las 04:00 UTC en la alarma de cada hora (retencion.js).
+- Panel de dios (CLASSIC) → 💾 Copias: copia ahora, restaurar un jugador,
+  restaurar todo (antes guarda una copia de lo actual) o desde el archivo
+  .json.gz de Telegram (max. 900 KB; el mensaje grande solo se acepta del dios).
+- `guardar` respeta `s.noGuardar` para no pisar lo restaurado al expulsar.
+- Para usar R2: `wrangler r2 bucket create duende-copias` y en wrangler.toml
+  `[[r2_buckets]] binding = "COPIAS" bucket_name = "duende-copias"`.

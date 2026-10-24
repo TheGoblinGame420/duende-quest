@@ -29,6 +29,7 @@ import { MMO_URL } from '../api/telegram-bot.js';
 import { Cueva3D } from './cueva3d.js';
 import { Eventos3D } from './eventos3d.js';
 import { Temporada } from './temporada.js';
+import { Copias } from './copias.js';
 import { rangoDe } from '../../mmo/js/abismo3d.js';
 import { Combate } from './combate.js';
 import { Social, pub } from './social.js';
@@ -286,7 +287,8 @@ export class MmoWorld {
     const ahora = Date.now();
     if (ahora - s.ventana > 1000) { s.ventana = ahora; s.cuenta = 0; }
     if (++s.cuenta > 60) { if (s.cuenta > 200) this.expulsar(s, 'Demasiados mensajes'); return; }
-    if (typeof data !== 'string' || data.length > 4000) return;
+    // Solo el dueño puede mandar un mensaje grande: el archivo de una copia de seguridad.
+    if (typeof data !== 'string' || (data.length > 4000 && !(s.dios && data.length < 1300000 && data.startsWith('{"t":"dios","a":"subirCopia"')))) return;
     let m; try { m = JSON.parse(data); } catch (e) { return; }
     if (!m || typeof m.t !== 'string') return;
 
@@ -2258,7 +2260,7 @@ export class MmoWorld {
 
   // ── GUARDADO ──
   async guardar(s) {
-    if (!s.c) return;
+    if (!s.c || s.noGuardar) return;   // noGuardar: se esta restaurando desde una copia
     s.c.x = Math.round(s.x || s.c.x || 0);
     if (typeof s.hp === 'number') s.c.hp = Math.ceil(s.hp);
     s.c.muerto = !!s.muerto;
@@ -2623,6 +2625,8 @@ Object.assign(MmoWorld.prototype, Combate);
 Object.assign(MmoWorld.prototype, Eventos3D);
 // Equilibrio de facciones y Temporada del Abismo: functions/mmo/temporada.js
 Object.assign(MmoWorld.prototype, Temporada);
+// Copias de seguridad diarias (fuera de Cloudflare) y restauracion: functions/mmo/copias.js
+Object.assign(MmoWorld.prototype, Copias);
 // Grupos y chat por canales: functions/mmo/social.js
 Object.assign(MmoWorld.prototype, Social);
 // Mazmorras instanciadas con jefes de guion: functions/mmo/mazmorras.js
