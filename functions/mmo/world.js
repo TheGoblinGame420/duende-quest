@@ -32,7 +32,7 @@ import { Eventos3D } from './eventos3d.js';
 import { Temporada } from './temporada.js';
 import { Copias } from './copias.js';
 import { Vincular } from './vincular.js';
-import { rangoDe } from '../../mmo/js/abismo3d.js';
+import { rangoDe, enAbismo, islaEn } from '../../mmo/js/abismo3d.js';
 import { Combate } from './combate.js';
 import { Social, pub } from './social.js';
 import { Mazmorras } from './mazmorras.js';
@@ -271,6 +271,12 @@ export class MmoWorld {
       if (this.porUid.get(s.c.uid) === s) this.porUid.delete(s.c.uid);
       this.desconectarDeGrupo(s);
       this.aClave(s.k, { t: 'pl', id: s.id }, s);
+      // Cerrar en el Abismo sobre el vacio o con un golpe enemigo reciente cuenta como caer
+      // (antes era una huida gratis al pueblo: sin muerte, sin perder nada).
+      if (s.m3 && !s.i3 && !s.muerto && enAbismo(s.p.x) && (!islaEn(s.p.x, s.p.z) || Date.now() - (s.pvpT || 0) < 10000)) {
+        s.muerto = true;   // guardar() lo pasa a c.muerto: al volver revive en el pueblo con su coste
+        if (islaEn(s.p.x, s.p.z)) s.c.muertoPvP = true;   // huida del PvP: como morir ante la otra faccion (sin perder XP)
+      }
       if (s.m3) this.olvidar3d(s); else this.olvidar(s);
       this.salirDeMundo(s);
       await this.guardar(s);
@@ -2067,6 +2073,7 @@ export class MmoWorld {
     const ahora = Date.now();
     const pct = fuente && fuente.pct;
     const duelo = fuente && fuente.duelo, pvp = fuente && fuente.pvp;
+    if (pvp) s.pvpT = ahora;   // para no huir del PvP cerrando el juego (cerrar())
     // El Escudo (consumible que se puede comprar) protege de monstruos, no de jugadores.
     if ((ahora < s.inv && !pct && !duelo && !pvp) || (ahora < s.escudo && !duelo && !pvp) || this.aura(s, 'bloque')) return;
     if (s.dios && s.diosModo && s.diosModo.inv) return;   // Modo Dios: invencible

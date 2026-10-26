@@ -3074,3 +3074,9 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - mundo.js: `vib()` con `navigator.vibrate` fuera de Telegram en móvil.
 - HISTORIAL: nota del panel v309 (6,0).
 - Arnés +1 prueba (embudo). 849 bien.
+
+### Seguridad: homoglifos y huida del Abismo (26-oct-2026, `?v=313`)
+
+- dios.js: `RESERVADO_ESQ` + `esqueleto()` (i/l/1/| → l, 0/ø → o, 3 → e, 4/@ → a, 5/$ → s, 7 → t, ð → d, rn → m) solo para los nombres reservados; la unicidad entre jugadores no cambia (no se tocan las claves `n:` guardadas).
+- world.js: `herir` anota `s.pvpT`; `cerrar()` en el Abismo (fuera de instancia, vivo) sobre el vacío o con `pvpT` < 10 s pone `s.muerto` (guardar lo pasa a `c.muerto`; si estaba en una isla, `muertoPvP` sin perder XP). Import de `enAbismo`/`islaEn`.
+- Arnés: prueba de cerrar sobre el vacío; las pruebas que salen del Abismo vuelven a tierra o limpian `pvpT` (muchas comparten el mismo personaje). 850 bien.

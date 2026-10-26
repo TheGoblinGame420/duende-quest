@@ -498,6 +498,10 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 81, fecha: '26 oct 2026', items: [
+    'Nadie puede hacerse pasar por el equipo con letras parecidas (Adm1n, EIDuende, M0derador…): esos nombres quedan reservados.',
+    'En el Abismo, cerrar el juego sobre el vacío o justo después de un golpe de la otra facción cuenta como caer (antes era una huida gratis al pueblo).',
+  ] },
   { n: 80, fecha: '26 oct 2026', items: [
     'En el móvil (también fuera de Telegram) el juego vibra al pegar, al dar un crítico y cuando pica un pez.',
   ] },

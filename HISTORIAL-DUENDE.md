@@ -49,6 +49,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v310 | Corrientes de viento (AION), HUD móvil por etapas, telemetría de errores, términos Nv 60 · panel v309: 6,0 | **B** |
 | v311 | Jefes de zona con el Sorbo del Cántaro (hechizo interrumpible) | **B** |
 | v312 | Embudo de nuevos en /mmostats, vibración en móvil web | **B** |
+| v313 | Homoglifos en nombres reservados, cerrar en el Abismo cuenta como caer | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

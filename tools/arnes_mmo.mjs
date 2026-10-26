@@ -656,6 +656,7 @@ async function pruebasAlas3d() {
   chequear(a.ultimos('corriente').length === 1 && (a.vueloS || 0) < 1, 'la corriente de viento recarga las alas');
   a.vueloS = 50; avanzar(100); a.movBud = undefined; await a.mandar({ t: 'mv3', x: cw.x + 1, z: cw.z, a: 3, h: 10 });
   chequear(a.ultimos('corriente').length === 1 && a.vueloS > 40, 'y no otra vez hasta pasados 20 s');
+  a.p = { x: 120, z: 120 }; a.a = 0; a.h = 0;   // sale en tierra (cerrar sobre el vacio cuenta como caer)
   await dejar(a);
 }
 
@@ -864,6 +865,10 @@ async function pruebasSeguridad() {
   avanzar(3500); a.movBud = undefined;
   await a.mandar({ t: 'mv3', x: a.p.x, z: a.p.z, a: 0, h: 0 });
   chequear(a.muerto, 'quien camina sobre el vacío sin volar cae aunque su cliente no lo diga');
+  // Cerrar el juego sobre el vacio cuenta como caer (antes era una huida gratis al pueblo).
+  const hu = await entrar3d('Huidizo', 'd9c3'); hu.p = { x: AB.ABISMO_X0 + 60, z: -200 }; hu.h = 5; hu.a = 4;
+  await dejar(hu);
+  chequear(almacen.get('c:' + hu.c.uid) && almacen.get('c:' + hu.c.uid).muerto === true, 'cerrar el juego sobre el vacío del Abismo cuenta como caer');
   // El correo ya no da Modo Dios (solo uids)
   const antes = mundo.env.MMO_ADMINS;
   mundo.env.MMO_ADMINS = 'jefe@correo.test';
@@ -1090,6 +1095,7 @@ async function pruebasPvP3d() {
   await a.mandar({ t: 'atk3', tp: b.id });
   chequear(b.hp === hp0, 'en el mundo normal no se ataca sin duelo');
   [a.c.uid, b.c.uid] = uids;
+  for (const x of [a, b, c]) x.pvpT = 0;   // salen de la prueba sin la huida del PvP (cerrar() la cuenta como caida)
   await dejar(a); await dejar(b); await dejar(c);
 }
 

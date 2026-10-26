@@ -27,6 +27,10 @@ import { MAPAS, SKINS, MONSTRUOS, MUNDIALES, limpiarNombre } from '../../mmo/js/
 import { getEnv } from '../api/lib.js';
 
 const RESERVADO = /admin|moderador|^mod|mod$|^gm|gm$|staff|soporte|sistema|oficial|elduende|duendequest|dios/;
+// Lo mismo con las letras que se confunden a la vista (Adm1n, EIDuende, Ðios, M0derador…):
+// i/l/1/| → l, 0/ø → o, 3 → e, 4/@ → a, 5/$ → s, 7 → t, ð → d, rn → m.
+const RESERVADO_ESQ = /admln|moderador|^mod|mod$|^gm|gm$|staff|soporte|slstema|oflclal|elduende|duendequest|dlos/;
+const esqueleto = n => claveNombre(n).replace(/[il1|!]/g, 'l').replace(/[0ø]/g, 'o').replace(/3/g, 'e').replace(/[4@]/g, 'a').replace(/[5$]/g, 's').replace(/7/g, 't').replace(/ð/g, 'd').replace(/rn/g, 'm');
 // Clave para comparar nombres: minusculas, sin tildes, sin espacios ni '_'
 // (asi "El_Duende", "el duende" y "ÉlDuende" son el mismo). Las letras no
 // latinas no llegan aqui: limpiarNombre las quita (el cirilico o el griego
@@ -56,7 +60,7 @@ export const Dios = {
   diosActivo(s) { return !!(s && s.dios && s.diosModo && MODOS.some(k => s.diosModo[k])); },
 
   // ── NOMBRES UNICOS ──
-  nombreReservado(n) { return RESERVADO.test(claveNombre(n)); },
+  nombreReservado(n) { return RESERVADO.test(claveNombre(n)) || RESERVADO_ESQ.test(esqueleto(n)); },
   // Devuelve un nombre libre para uid partiendo de "deseado" (le añade cifras
   // si ya es de otro). No lo reserva: eso lo hace reservarNombre al guardarse.
   async nombreLibre(deseado, uid, dios) {
