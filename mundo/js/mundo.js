@@ -14,21 +14,21 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS } from '/mmo/js/data.js?v=307';
-import { iniciarVentanas } from './ventanas.js?v=307';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=307';
-import { crearMusica } from './musica.js?v=307';
-import { construirCueva } from './cueva.js?v=307';
-import { TAPA, transparentar } from './tapa.js?v=307';
-import { construirAbismo } from './abismo.js?v=307';
-import { crearParticulas } from './particulas.js?v=307';
-import { cargarKenney, piezasCasa } from './kenney.js?v=307';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS } from '/mmo/js/data.js?v=308';
+import { iniciarVentanas } from './ventanas.js?v=308';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=308';
+import { crearMusica } from './musica.js?v=308';
+import { construirCueva } from './cueva.js?v=308';
+import { TAPA, transparentar } from './tapa.js?v=308';
+import { construirAbismo } from './abismo.js?v=308';
+import { crearParticulas } from './particulas.js?v=308';
+import { cargarKenney, piezasCasa } from './kenney.js?v=308';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=307';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=307';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=307';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS } from './lore.js?v=307';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=308';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=308';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=308';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=308';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1267,6 +1267,8 @@ function recibir(m) {
       break;
     case 'yo': {
       const antes = yo; yo = m.yo;
+      // Nueva mision de la cadena: el Guardia Tito cuenta por que importa.
+      if (antes && antes.mis && yo.mis && yo.mis.i !== antes.mis.i && LORE_MISIONES[yo.mis.i]) setTimeout(() => aviso('🛡 Tito: «' + LORE_MISIONES[yo.mis.i] + '»'), 2500);
       if (antes && antes.nivel < 60 && yo.nivel >= 60) { aviso('🏆 ' + LORE_NIVEL60, 'ok'); setTimeout(() => aviso('🥤 Toca la barra morada de la chicha para reclamar tus 2 litros.', 'ok'), 5000); }
       ALAS_MAX = (ALAS[yo.ala] || ALAS.aprendiz).vuelo; if (!antes) P.alas = ALAS_MAX; alasPropias();
       ALAS_MAX && (P.alas = Math.min(P.alas, ALAS_MAX));
@@ -2055,7 +2057,7 @@ function abrirNpc(tipo) {
   const cu = $('npc-c');
   if (tipo === 'guia') {
     const q = MISIONES[yo.mis.i];
-    let h = q ? `<p><b style="color:#fff">${esc(q.nombre)}</b><br>Caza ${q.n} × ${esc(MONSTRUOS[q.tipo].nombre)} (${Math.min(yo.mis.p, q.n)}/${q.n}). Recompensa: ${q.xp} XP y ${q.oro} oro.</p><button class="btn" id="n-mision" ${yo.mis.p >= q.n ? '' : 'disabled'} style="width:100%">Entregar misión</button>` : '<p>Completaste todas las misiones. ¡Eres una leyenda del pueblo!</p>';
+    let h = q ? `<p><b style="color:#fff">${esc(q.nombre)}</b>${LORE_MISIONES[yo.mis.i] ? `<br><i style="color:#e9d5ff">${esc(LORE_MISIONES[yo.mis.i])}</i>` : ''}<br>Caza ${q.n} × ${esc(MONSTRUOS[q.tipo].nombre)} (${Math.min(yo.mis.p, q.n)}/${q.n}). Recompensa: ${q.xp} XP y ${q.oro} oro.</p><button class="btn" id="n-mision" ${yo.mis.p >= q.n ? '' : 'disabled'} style="width:100%">Entregar misión</button>` : '<p>Completaste todas las misiones. ¡Eres una leyenda del pueblo!</p>';
     const d = yo.diaria || { p: 0 };
     h += `<p style="margin-top:14px"><b style="color:#fff">${esc(DIARIA.nombre)}</b><br>Caza ${DIARIA.n} monstruos de tu nivel (${Math.min(d.p || 0, DIARIA.n)}/${DIARIA.n}).</p><button class="btn sec" id="n-diaria" ${d.ok || (d.p || 0) < DIARIA.n ? 'disabled' : ''} style="width:100%">${d.ok ? 'Ya cobrada hoy' : 'Cobrar la caza del día'}</button>`;
     cu.innerHTML = h;

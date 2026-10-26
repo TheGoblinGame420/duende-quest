@@ -498,6 +498,9 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 76, fecha: '26 oct 2026', items: [
+    'La cadena del Guardia Tito ahora cuenta una historia: cada una de las 40 misiones explica por qué importa, desde las linternas del pueblo hasta el Dragón Ancestral que guarda el último pedazo del Cántaro.',
+  ] },
   { n: 75, fecha: '26 oct 2026', items: [
     'Los avisos largos (historia de cada zona, reliquias, premios) se quedan en pantalla el tiempo justo para leerlos.',
     'Al elegir clase se abre el editor de tu duende (cara, pelo, altura) cuando ya viste el premio del día.',

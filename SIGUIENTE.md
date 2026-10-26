@@ -3038,3 +3038,9 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - musica.js: retoma 'interrupted' (iPhone); cueva = cavernas, Éter = cumbres.
 - retencion.js: al cambiar de día/mes se cobra `pasePend` en la sesión abierta.
 - Arnés 843 bien.
+
+### Historia de la cadena principal (26-oct-2026, `?v=308`)
+
+- lore.js: `LORE_MISIONES` (40 frases, mismo orden que `MISIONES`): Larga Noche, Colinas Rojas, Selva, Picos Tormenta, Desierto, Castillo, Cumbres, Cavernas, Abismo marino y Acantilados, enlazadas con las reliquias.
+- mundo.js: al cambiar `yo.mis.i` aviso «🛡 Tito: …» y la frase en la ventana del Guardia.
+- Arnés 843 bien.
