@@ -521,14 +521,15 @@ export class MmoWorld {
     const nuevo = !c;
     if (!c && uid.startsWith('inv:') && s.ip) {
       // Cada invitado nuevo deja un personaje guardado para siempre: como
-      // mucho 6 por IP y hora (antes, un bucle llenaba el cupo de escrituras).
+      // mucho 30 por IP y hora (antes, un bucle llenaba el cupo de escrituras).
       const h = Math.floor(Date.now() / 3600000);
       this.altasIp = this.altasIp && this.altasIp.h === h ? this.altasIp : { h, n: new Map(), total: 0 };
       const n = (this.altasIp.n.get(s.ip) || 0) + 1;
       // IPv6: ademas un tope por /48 (un solo bloque trae 65 536 /64).
       const k48 = s.ip.includes(':') ? s.ip.split(':').slice(0, 3).join(':') + '::/48' : '';
       const n48 = k48 ? (this.altasIp.n.get(k48) || 0) + 1 : 0;
-      if (n > 6 || n48 > 20) { this.expulsar(s, 'Demasiados personajes nuevos desde tu conexión. Intenta en una hora o inicia sesión.'); return; }
+      // 30 por IP y hora: un grupo de amigos en la misma wifi (con 6 el 7.º quedaba fuera).
+      if (n > 30 || n48 > 60) { this.expulsar(s, 'Demasiados personajes nuevos desde tu conexión. Intenta en una hora o inicia sesión.'); return; }
       // Tope global por hora: pasado 150 solo entra el primer invitado de cada conexion
       // (un pico real no deja fuera a todos) y con 1000 se corta del todo (cupo de escrituras).
       if ((n > 1 && this.altasIp.total >= 150) || this.altasIp.total >= 1000) { this.expulsar(s, 'Hay demasiados personajes nuevos ahora mismo. Intenta en un rato o inicia sesión.'); return; }

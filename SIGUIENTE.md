@@ -3022,3 +3022,11 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - chicha.js: puntos solo para quien pegó o curó; el aviso de 10.000/50.000 en 3D apunta a la barra 🥤.
 - encargos.js: la zona del jefe sale de `MAPAS[z].jefe`.
 - Arnés 843 bien.
+
+### Sexta ronda: Telegram y grupo en la misma wifi (26-oct-2026, `?v=306`)
+
+- world.js: altas de invitado por IP y hora de 6 a 30 (/48 de 20 a 60).
+- mundo.js: en Telegram un `err` de auth muestra el error para reabrir (sin invitado silencioso); enlaces a /mmo/ y /inicio/ pasan a `/mmo/` + `location.hash` en Telegram; el Atrás de Telegram no cierra `v-error`.
+- inicio/index.html: rescate guarda `dq_mmo_tok_previo` y muestra el código anterior; aviso de que con cuenta se usa el duende de la cuenta.
+- Corregido antes de publicar: un comentario en la línea del tope se comía el `if` (el arnés lo detectó).
+- Arnés 843 bien.

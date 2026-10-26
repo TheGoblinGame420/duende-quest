@@ -163,8 +163,11 @@ footer a{color:var(--cian);text-decoration:none;}
     if (!t) return;
     var c = t.replace(/[^a-f0-9]/gi, '').toLowerCase();
     if (!/^[a-f0-9]{32}$/.test(c)) return alert('Ese código no es válido: son 32 letras y números (puede llevar guiones).');
-    try { localStorage.setItem('dq_mmo_tok', c); localStorage.removeItem('dq_mmo_nombre'); } catch (er) {}
-    alert('¡Listo! Entra a cualquiera de los dos juegos y verás tu duende.');
+    // Copia del duende anterior: su codigo se muestra para poder volver a el (antes se perdia para siempre).
+    var antes = ''; try { antes = localStorage.getItem('dq_mmo_tok') || ''; } catch (er) {}
+    if (antes === c) return alert('Ese ya es el duende de este navegador.');
+    try { if (antes) localStorage.setItem('dq_mmo_tok_previo', antes); localStorage.setItem('dq_mmo_tok', c); localStorage.removeItem('dq_mmo_nombre'); } catch (er) {}
+    alert('¡Listo! Entra a cualquiera de los dos juegos como invitado y verás tu duende (si ya entras con Telegram o con correo, se usa el duende de esa cuenta).' + (antes ? '\n\nGuarda el código de tu duende anterior por si quieres volver a él:\n' + antes.replace(/(.{4})(?=.)/g, '$1-') : ''));
   };
   // Jefes mundiales: CLASSIC a las :00 y :30, ORIGINS a las :15 y :45 (UTC); duran 10 minutos.
   var dos = function (n) { return (n < 10 ? '0' : '') + n; };

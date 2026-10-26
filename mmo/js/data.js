@@ -498,6 +498,11 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 74, fecha: '26 oct 2026', items: [
+    'Para jugar en grupo: hasta 30 personajes nuevos por conexión y hora (antes el 7.º amigo de la misma wifi quedaba fuera).',
+    'Telegram: si tu sesión caduca, el juego te pide reabrirlo desde el bot en vez de meterte en un duende nuevo de nivel 1; los botones 2D y ⌂ conservan tu sesión de Telegram, y el botón Atrás ya no deja el juego congelado.',
+    'El código de rescate de la página de inicio guarda el código de tu duende anterior para que puedas volver a él.',
+  ] },
   { n: 73, fecha: '26 oct 2026', items: [
     'Chicha morada en ORIGINS: toca la barra morada 🥤 para ver tus puntos y reclamar los tres premios (nivel 60 = 2 litros, 10.000 y 50.000 puntos = 1 litro). Al cazar verás el «+N 🥤».',
     'Las 10 reliquias del Cántaro: al reunirlas todas, la historia te lleva al Núcleo del Abismo y al premio del nivel 60. El jefe cuenta para su zona aunque pelee junto al borde.',
