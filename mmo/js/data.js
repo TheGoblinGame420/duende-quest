@@ -495,6 +495,10 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 63, fecha: '25 oct 2026', items: [
+    'Todas las ventanas (mochila, libro, tienda, pase, logros, mapa, amigos, hermandad, ranking y ayuda) se adaptan al móvil: casi todo el ancho, títulos y pestañas a escala y nada se sale.',
+    'La leyenda del Cántaro te recibe en cada sesión, y la mascota $Duende con su chicha morada aparece en la carga y en la historia.',
+  ] },
   { n: 62, fecha: '25 oct 2026', items: [
     'Cielo nuevo en ORIGINS: degradado del horizonte al cenit, halo del sol y nubes que pasan sobre el mundo.',
     'El juego se actualiza solo: si hay una versión nueva, te avisa y se recarga cuando no estás peleando (en Telegram ya no hace falta cerrarlo).',

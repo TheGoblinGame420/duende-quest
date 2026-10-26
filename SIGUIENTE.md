@@ -2930,3 +2930,8 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - `cielo`: cúpula ShaderMaterial (horizonte = color de la niebla, cenit más profundo, halo y disco del sol según `solDir`, menos de noche) que sigue a la cámara; `nubes3`: 26/44 nubes de 4 bolas icosaédricas instanciadas a 75-105 m que derivan y se recolocan alrededor del jugador (ocultas en la cueva, oscurecidas de noche).
 - `revisarVersion()`: cada 2 min y al volver a la app pide /mundo/ sin caché y compara `mundo.js?v=`; si hay nueva, avisa y recarga fuera de combate, sin ventanas abiertas y sin heridas recientes.
 - CSS: `#chat` oculto (visibility) en móvil/compacto si el registro está vacío.
+
+### Ventanas adaptadas al móvil y mascota (25-oct-2026, `?v=295`)
+
+- index.html: en `body.movil`/`body.compacto` todas las `.modal .ventana` a `calc(100vw - 12px)` (máx. 460), títulos a 11 px con margen para la ✕, pestañas, stats y párrafos a escala, sin desborde horizontal. Comprobado en 360 px con las 11 ventanas.
+- assets/lore/duende-chicha.webp (imagen del dueño, 25 KB con transparencia) en la pantalla de carga y en la leyenda; `leyendaPrimeraVez()` por sesión (sessionStorage).

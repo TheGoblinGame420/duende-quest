@@ -14,20 +14,20 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN } from '/mmo/js/data.js?v=294';
-import { iniciarVentanas } from './ventanas.js?v=294';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=294';
-import { crearMusica } from './musica.js?v=294';
-import { construirCueva } from './cueva.js?v=294';
-import { TAPA, transparentar } from './tapa.js?v=294';
-import { construirAbismo } from './abismo.js?v=294';
-import { crearParticulas } from './particulas.js?v=294';
-import { cargarKenney, piezasCasa } from './kenney.js?v=294';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN } from '/mmo/js/data.js?v=295';
+import { iniciarVentanas } from './ventanas.js?v=295';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=295';
+import { crearMusica } from './musica.js?v=295';
+import { construirCueva } from './cueva.js?v=295';
+import { TAPA, transparentar } from './tapa.js?v=295';
+import { construirAbismo } from './abismo.js?v=295';
+import { crearParticulas } from './particulas.js?v=295';
+import { cargarKenney, piezasCasa } from './kenney.js?v=295';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=294';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=294';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=294';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=295';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=295';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=295';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -2185,17 +2185,18 @@ function verLeyenda() {
   $('diario-c').innerHTML = `<img src="/assets/lore/chicha-duende-playa.jpg" alt="Chicha morada $DUENDE junto al mar" style="display:block;width:100%;max-height:170px;object-fit:cover;border-radius:10px;margin-bottom:8px">
     <p class="vv-p"><img src="/assets/lore/maiz-morado.png" alt="" style="float:left;width:34px;margin:0 6px 0 0">Hace siglos, los duendes guardaban el <b style="color:#c084fc">Maíz Morado Sagrado</b>. Con él preparaban la <b style="color:#c084fc">chicha morada</b>, la bebida que les daba su fuerza y su magia.</p>
     <p class="vv-p">El <b>Rey Goblin</b> robó el <b style="color:#ffd84a">Cántaro Eterno</b> y lo rompió en pedazos. Sin chicha, la noche cubrió el bosque, los goblins invadieron las colinas y el Éter del cielo se partió en islas flotantes: el <b>Abismo</b>.</p>
-    <p class="vv-p">Tú eres un duende joven. <b>Recupera las zonas</b> (misiones y encargos 🧭), <b>vence a sus jefes</b>, abre los cofres y junta <b>puntos de chicha</b> cazando. En el Abismo, la Luz y la Sombra luchan por el <b>Núcleo</b>, donde late el último pedazo del Cántaro.</p>
+    <p class="vv-p"><img src="/assets/lore/duende-chicha.webp" alt="" style="float:right;height:96px;margin:0 0 4px 6px">Tú eres un duende joven. <b>Recupera las zonas</b> (misiones y encargos 🧭), <b>vence a sus jefes</b>, abre los cofres y junta <b>puntos de chicha</b> cazando. En el Abismo, la Luz y la Sombra luchan por el <b>Núcleo</b>, donde late el último pedazo del Cántaro.</p>
     <p class="vv-p" style="color:#fde68a">🥤 Y es de verdad: con ${(10000).toLocaleString('es')} puntos de chicha te enviamos un litro de chicha morada a tu casa (Mochila → Chicha).</p>
 `;
   $('v-diario').querySelector('h2').textContent = 'LA LEYENDA DEL CÁNTARO';
   abrir('v-diario');
 }
 $('b-leyenda').onclick = () => { cerrar('v-ayuda'); verLeyenda(); };
+// En cada sesion (no cada reconexion): la historia es lo primero que se ve.
 function leyendaPrimeraVez() {
-  try { if (localStorage.getItem('dq_leyenda')) return; } catch (e) { return; }
+  try { if (sessionStorage.getItem('dq_leyenda')) return; } catch (e) { return; }
   if (hayVentana()) { setTimeout(leyendaPrimeraVez, 3000); return; }   // espera a que elija clase, etc.
-  try { localStorage.setItem('dq_leyenda', '1'); } catch (e) {}
+  try { sessionStorage.setItem('dq_leyenda', '1'); } catch (e) {}
   verLeyenda();
 }
 let avisoInvT = 0;

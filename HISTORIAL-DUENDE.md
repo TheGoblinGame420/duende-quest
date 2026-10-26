@@ -31,6 +31,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v292 | Un solo catálogo de precios (US$1-15 las skins con oro), entrega automática de pagos ya verificados y fuera el staking oculto de la web (autorizado por el dueño) | **B** |
 | v293 | HUD mínimo en móvil/Telegram y la leyenda del Cántaro (chicha morada, imágenes del dueño) | **B** |
 | v294 | Cielo con degradado y nubes, recarga automática con versión nueva | **B** |
+| v295 | Todas las ventanas adaptadas al móvil, leyenda en cada sesión, mascota $Duende | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 
