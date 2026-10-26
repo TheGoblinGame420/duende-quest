@@ -498,6 +498,12 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 72, fecha: '26 oct 2026', items: [
+    'Pesca y recolección sin cortes: tocar mientras esperas la picada ya no corta el sedal, la picada vibra en Telegram, y recoger o pescar para el ataque automático para que no se cancele.',
+    'Las monturas ganadas (amigos, Torre, Abismo) ya se pueden montar sin ir al Mercader, y dentro de la cueva no se monta.',
+    'El aviso de botín dice qué cayó y su rareza; «Vender comunes» ya no vende piezas que serían una mejora; otro elixir igual suma su tiempo.',
+    'Morir y cerrar Telegram ya no te revive donde caíste, y el botón Revivir no te deja atascado si se corta la conexión.',
+  ] },
   { n: 71, fecha: '26 oct 2026', items: [
     'Vuelo más seguro: cuando se cansan las alas planeas en vez de caer en picado, VOLAR pasa a PLANEAR en el aire y las alas descansan también quieto en el suelo.',
     'Susurros, /reportar e /ignorar funcionan con nombres que llevan espacios (los de Telegram). También vale escribir el nombre entre comillas.',

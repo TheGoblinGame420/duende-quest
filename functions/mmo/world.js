@@ -594,6 +594,7 @@ export class MmoWorld {
       c.oro -= Math.min(c.oro, costoReparacion(c.nivel));   // cerrar estando muerto no se salta la reparacion
       c.muerto = false;
       if (novato) c.x = 150; else { c.mapa = 'pueblo'; c.x = MAPAS.pueblo.spawn; }
+      c.p3 = null;   // en ORIGINS tambien: al pueblo, no donde caiste (cerrar Telegram muerto revivia alli gratis)
       s.hp = s.st.maxHp;
     } else {
       s.hp = typeof c.hp === 'number' ? clamp(c.hp, 1, s.st.maxHp) : s.st.maxHp;
@@ -1366,6 +1367,7 @@ export class MmoWorld {
       const v = precioVenta(it);
       c.oro += v;
       if (!silencioso) this.enviar(s, { t: 'toast', m: `🎒 Bolsa llena: ${nombreItem(it)} se vendió solo por ${v} oro.` });
+      it.vendido = 1;   // el aviso de botin del cliente lo dice
       return it;
     }
     c.bolsa.push(it);

@@ -3005,3 +3005,12 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - world.js: `comprar` sin cercanía para poner lo ya comprado; en 3D vale todo el pueblo (`zonaEn3d`).
 - social.js: al desconectarse el líder, el liderazgo pasa a otro conectado.
 - Arnés 843 bien (prueba de la tienda: fuera del pueblo no se compra).
+
+### Cuarta ronda de agentes jugando (26-oct-2026, `?v=304`)
+
+- Cliente: `hablar` no tira sin picada (aviso), `quieto()` para recolectar/pescar (sin ataque automático, `lanzando.pre`); `vib('heavy')` en la picada; Revivir sin conexión avisa y la ventana se cierra con el 'yo' vivo; botín con rareza y «vendido».
+- ventanas.js: `comunesVendibles` (sin las que mejoran lo puesto) en el botón y al vender.
+- combate.js: montar usa la primera de `c.monturas` si no hay puesta; en la cueva 3D no.
+- world.js: reconexión muerto borra `c.p3`; `darItem` marca `vendido`.
+- profesiones.js: el elixir suma tiempo (tope 3).
+- Arnés 843 bien.

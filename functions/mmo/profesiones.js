@@ -171,9 +171,11 @@ export const Profesiones = {
     if (r.da.pw) for (const k in r.da.pw) c.pw[k] = (c.pw[k] || 0) + r.da.pw[k];
     if (r.da.mat) for (const k in r.da.mat) c.mat[k] = Math.min(999, (c.mat[k] || 0) + r.da.mat[k]);
     if (r.da.elixir) {
+      // Otro igual con el elixir activo suma su tiempo (antes gastaba los materiales y no daba nada; tope 3 elixires).
       c.elix = c.elix || {};
-      c.elix[r.da.elixir] = Date.now() + ELIXIR_MS;
-      this.ponerAura(s, r.da.elixir, ELIXIR_MS);
+      const ms = Math.min(3 * ELIXIR_MS, Math.max(0, (c.elix[r.da.elixir] || 0) - Date.now()) + ELIXIR_MS);
+      c.elix[r.da.elixir] = Date.now() + ms;
+      this.ponerAura(s, r.da.elixir, ms);
     }
     s.sucio = true;
     this.enviar(s, { t: 'toast', m: `⚗️ Fabricaste: ${r.nombre}`, ok: true });

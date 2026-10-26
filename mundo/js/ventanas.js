@@ -19,7 +19,7 @@ import {
   ARMAS, SKINS, PODERES, MONTURAS, TINTES, MASCOTAS, HOJAS, FORJA_MAX, costoForja, multForja,
   BANDA_MONTURA, TORRE, ambulanteActivo, ambulanteOferta,
   PAQUETES, estrellasDe, LOGROS, progresoLogro, statsJugador, ALAS,
-} from '/mmo/js/data.js?v=303';
+} from '/mmo/js/data.js?v=304';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -295,6 +295,8 @@ function pintarTabs(id, tabs, actual, act) {
 // ═══════════════════ INVENTARIO ═══════════════════
 const puntaje = b => ((b && b.atk) || 0) * 3 + ((b && b.def) || 0) * 2 + ((b && b.hp) || 0) * 0.3 + ((b && b.crit) || 0) * 300;
 const puedeUsar = (it, y) => it.nv <= y.nivel || (!!it.des && y.nivel >= NIVEL_MAX);
+// Comunes que se pueden vender sin perder nada: no las que serian una mejora de lo que llevas.
+const comunesVendibles = y => { const eq = y.eq || {}; return (y.bolsa || []).filter(x => x.r === 0 && !(puedeUsar(x, y) && (!eq[x.s] || puntaje(x.b) > puntaje(eq[x.s].b)))); };
 // Diferencia de bonos entre una pieza y la que llevas puesta.
 function difBonos(a, b) {
   const l = [];
@@ -348,7 +350,7 @@ function htmlEquipo(y) {
     h += `<p class="vv-cj" style="color:${cj.color}">◆ ${esc(cj.nombre)} ${pz[cid]}/5 — ${pz[cid] >= 4 ? 'bono completo' : pz[cid] >= 2 ? 'bono de 2 activo' : 'sin bono aún'}<br><span>${esc(textoConjunto(cj))}</span></p>`;
   }
   // Atajos: lo mejor de la bolsa para cada ranura y vender lo comun.
-  const comunes = bolsa.filter(x => x.r === 0);
+  const comunes = comunesVendibles(y);
   const mejoras = Object.keys(RANURAS).map(k => {
     const puesto = eq[k];
     const protege = puesto && puesto.cj && pz[puesto.cj] >= 2;   // no se rompe un conjunto activo
@@ -858,7 +860,7 @@ const ACC = {
   comunes: b => {
     if (!confirmar('comunes')) { marcarSeguro(b); return; }
     const y = H.yo(); H.sfx('moneda', 0.4);
-    ((y && y.bolsa) || []).filter(x => x.r === 0).forEach(x => H.mandar({ t: 'item', a: 'vender', id: x.id }));
+    if (y) comunesVendibles(y).forEach(x => H.mandar({ t: 'item', a: 'vender', id: x.id }));
   },
   equipar: b => { H.sfx('boton', 0.3); H.mandar({ t: 'equipar', k: b.dataset.k, id: b.dataset.id }); },
   'ir-tienda': b => { abrirTienda(b.dataset.id); },

@@ -75,6 +75,9 @@ export const Combate = {
     const c = s.c;
     if (s.muerto) return;
     if (s.montado) return this.desmontar(s);
+    // Las ganadas (amigos, Torre, Abismo) entran a la lista sin ponerse: se usa la primera que tengas.
+    if ((!c.montura || !MONTURAS[c.montura]) && Array.isArray(c.monturas)) c.montura = c.monturas.find(id => MONTURAS[id]) || c.montura;
+    if (s.m3 && s.i3) return this.no(s, 'En la cueva no se puede montar.');
     if (!c.montura || !MONTURAS[c.montura]) return this.no(s, 'No tienes montura: el Mercader del pueblo las vende desde nivel 20.');
     if (s.k.includes('#') || s.k === 'coliseo') return this.no(s, 'Aquí no puedes montar.');
     if (s.cast) return;

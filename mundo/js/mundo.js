@@ -14,21 +14,21 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA } from '/mmo/js/data.js?v=303';
-import { iniciarVentanas } from './ventanas.js?v=303';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=303';
-import { crearMusica } from './musica.js?v=303';
-import { construirCueva } from './cueva.js?v=303';
-import { TAPA, transparentar } from './tapa.js?v=303';
-import { construirAbismo } from './abismo.js?v=303';
-import { crearParticulas } from './particulas.js?v=303';
-import { cargarKenney, piezasCasa } from './kenney.js?v=303';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem } from '/mmo/js/data.js?v=304';
+import { iniciarVentanas } from './ventanas.js?v=304';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=304';
+import { crearMusica } from './musica.js?v=304';
+import { construirCueva } from './cueva.js?v=304';
+import { TAPA, transparentar } from './tapa.js?v=304';
+import { construirAbismo } from './abismo.js?v=304';
+import { crearParticulas } from './particulas.js?v=304';
+import { cargarKenney, piezasCasa } from './kenney.js?v=304';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=303';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=303';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=303';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS } from './lore.js?v=303';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=304';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=304';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=304';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS } from './lore.js?v=304';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1341,7 +1341,8 @@ function recibir(m) {
       if (m.xp) numero(P.x, P.y + 2.6, P.z, '+' + m.xp + ' XP', '#c084fc');
       if (m.oro) { numero(P.x + 0.6, P.y + 2.2, P.z, '+' + m.oro + ' oro', '#ffd84a'); sfxK('monedas', 0.3); }
       if (m.item) vib('success');
-      if (m.item) aviso('Botín: ' + (m.item.nombre || 'equipo nuevo') + ' (' + K('pulsa I', 'toca 🎒') + ' para verlo)', 'ok');
+      // Botin con su nombre y rareza (antes siempre decia "equipo nuevo", tambien si se vendio por bolsa llena).
+      if (m.item) aviso('Botín: ' + (m.item.r !== undefined && RAREZAS[m.item.r] ? RAREZAS[m.item.r].nombre + ' · ' : '') + (m.item.nombre || nombreItem(m.item)) + (m.item.vendido ? ' (bolsa llena: vendido)' : ' (' + K('pulsa I', 'toca 🎒') + ' para verlo)'), 'ok');
       break;
     case 'lv': if (m.p === miId) { aviso('¡Subiste al nivel ' + m.lv + '!', 'ok'); numero(P.x, P.y + 3, P.z, 'NIVEL ' + m.lv, '#ffe600', true); subiNivel(m.lv); } else { const o = otros.get(m.p); if (o) o.lv = m.lv; } break;
     case 'toast': aviso(m.m, m.ok ? 'ok' : ''); break;
@@ -1374,7 +1375,7 @@ function recibir(m) {
     case 'quien': quien3 = m.r || []; pintarAmigos3(); break;
     // Alas agotadas segun el servidor: a planear (antes caia en picado, mortal sobre el vacio).
     case 'alasAgotadas': if (P.vuela) { volar(false); P.planeoAuto = true; aviso('Tus alas se cansaron: planeas hacia el suelo.'); } P.alas = 0; break;
-    case 'pica': pica = performance.now() + m.ms; aviso('🎣 ¡Pica! ' + K('Pulsa E', 'Toca ¡TIRAR!') + ' para tirar', 'ok'); sfx('boton', 0.7); break;
+    case 'pica': pica = performance.now() + m.ms; aviso('🎣 ¡Pica! ' + K('Pulsa E', 'Toca ¡TIRAR!') + ' para tirar', 'ok'); sfx('boton', 0.7); vib('heavy'); break;
     case 'pescado': quitarCorcho(); sfx('moneda', 0.5); break;
     case 'duelo':
       if (m.a === miId || m.b === miId) {
@@ -1723,7 +1724,8 @@ function morir(m) {
   $('muerte-txt').textContent = (m && m.golpes && m.golpes.length ? 'Te derribó: ' + m.golpes.map(g => g.n).filter((v, i, l) => l.indexOf(v) === i).slice(0, 2).join(', ') + '. ' + dondeRev : dondeRev) + (m && m.pvp ? ' Ante la otra facción no pierdes experiencia.' : '') + (m && m.rep > 0 ? ' Reparar tu equipo cuesta ' + m.rep + ' oro.' : '');
   abrir('v-muerte');
 }
-$('b-revivir').onclick = () => { mandar({ t: 'revivir' }); cerrar('v-muerte'); };
+// La ventana se cierra cuando el servidor confirma (llega 'yo' vivo): sin conexion no te quedas muerto y sin boton.
+$('b-revivir').onclick = () => { if (!ws || ws.readyState !== 1) return aviso('Sin conexión: reconectando… vuelve a intentarlo en un momento.', 'err'); mandar({ t: 'revivir' }); };
 
 // ── HUD ──
 // Premio real siempre a la vista: al llegar a nivel 60, 2 litros de chicha
@@ -2742,8 +2744,12 @@ function npcCercano() {
   return npcs.find(n => Math.hypot(P.x - n.x, P.z - n.z) < NPC_DIST) || (portal && Math.hypot(P.x - portal.x, P.z - portal.z) < 5 ? { tipo: 'portal', nombre: 'Mazmorras' } : null);
 }
 function hablar() {
-  if (pica > performance.now() || (lanzando && lanzando.id === 'pescar')) { mandar({ t: 'tirar' }); return; }
-  if (!npcCercano()) { const cf = cofreCercano(); if (cf) { mandar({ t: 'cofre3', id: cf.i }); return; } const nd = nodoCercano(); if (nd) { mandar({ t: 'recolectar', i: nd.i }); return; } if (aguaCerca()) { mandar({ t: 'pescar' }); return; } }
+  if (pica > performance.now()) { mandar({ t: 'tirar' }); return; }
+  // Esperando la picada, tocar el boton cortaba el sedal: ahora solo avisa.
+  if (lanzando && lanzando.id === 'pescar') { if (performance.now() - (hablar.esperaT || 0) > 2000) { hablar.esperaT = performance.now(); aviso('🎣 Espera a que pique: el botón se pondrá ¡TIRAR!'); } return; }
+  // Recoger o pescar: quieto y sin ataque automatico (antes se cancelaba solo con "Te moviste").
+  const quieto = id => { autoAtk = false; pintarBarra(); const t = performance.now(); lanzando = { id, ini: t, fin: t + 2500, pre: true }; P.vx = P.vz = 0; };
+  if (!npcCercano()) { const cf = cofreCercano(); if (cf) { mandar({ t: 'cofre3', id: cf.i }); return; } const nd = nodoCercano(); if (nd) { quieto('recolectar'); mandar({ t: 'recolectar', i: nd.i }); return; } if (aguaCerca()) { quieto('pescar'); mandar({ t: 'pescar' }); return; } }
   const n = npcCercano();
   if (!n) return;
   if (n.tipo === 'salida') { mandar({ t: 'salirCueva' }); return; }
