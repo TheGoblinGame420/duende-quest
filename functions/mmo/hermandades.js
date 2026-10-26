@@ -10,7 +10,7 @@
 // 'miembro'. Crear una cuesta oro (sale del juego, no de dinero real).
 // ═══════════════════════════════════════════════════════
 import { HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, GESTA_ANTIG_MS, premioGesta, semanaUTC } from '../../mmo/js/data.js';
-import { pub } from './social.js';
+import { pub, riesgoEstafa } from './social.js';
 
 const INV_MS = 60000;
 // Letras latinas (con tildes y ñ), cifras y espacios; 3-20 caracteres. Como
@@ -251,7 +251,10 @@ export const Hermandades = {
     const mudo = this.silenciado ? this.silenciado(s) : 0;
     if (mudo) return this.no(s, `🔇 Estás silenciado por un moderador ${Math.ceil((mudo - Date.now()) / 60000)} min más.`);
     if (this.esperaHerm(s)) return;
-    h.motd = String(m.m || '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 140);
+    const motd = String(m.m || '').replace(/[\u0000-\u001f\u007f­͏ᅟᅠ᠎​-‏‪-‮⁠-⁯ㅤ﻿]/g, '').trim().slice(0, 140);
+    // El mensaje del dia sale a toda la hermandad: el mismo filtro que el chat.
+    if (!s.dios && riesgoEstafa(motd)) return this.no(s, '🛡 Por seguridad no se permiten direcciones de cartera, enlaces ni frases semilla.');
+    h.motd = motd;
     await this.guardarHerm(h);
     this.avisarHerm(h, `📜 Nuevo mensaje del día: ${h.motd || '(vacío)'}`);
     this.enviarHerm(h);

@@ -54,8 +54,12 @@ export const Vincular = {
         if (yoAuth.startsWith('inv:')) return this.no(s, 'Entra primero con tu cuenta de Telegram o de correo para vincularla.');
         if (s.uidAuth && s.uidAuth !== c.uid) return this.no(s, 'Esta cuenta ya está vinculada a un duende.');
         const cod = String(m.cod || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        // Contra la fuerza bruta: 5 fallos por cuenta y 60 en todo el servidor cada 10 min.
+        const ahoraV = Date.now();
+        this.vincFallos = (this.vincFallos || []).filter(x => ahoraV - x.t < VINC_MS);
+        if (this.vincFallos.filter(x => x.u === yoAuth).length >= 5 || this.vincFallos.length >= 60) return this.no(s, 'Demasiados intentos con códigos que no existen. Espera unos minutos.');
         const v = this.vincs && this.vincs.get(cod);
-        if (!v || v.exp < Date.now()) return this.no(s, 'Ese código no existe o ya caducó (duran 10 minutos).');
+        if (!v || v.exp < ahoraV) { this.vincFallos.push({ u: yoAuth, t: ahoraV }); return this.no(s, 'Ese código no existe o ya caducó (duran 10 minutos).'); }
         if (v.uid === c.uid) return this.no(s, 'Ese código es de esta misma cuenta: escríbelo en tu OTRA cuenta.');
         const tipo = tipoUid(yoAuth);
         if (tipo === tipoUid(v.uid)) return this.no(s, `Las dos cuentas son de ${NOMBRE_TIPO[tipo] || tipo}: solo se vincula una de Telegram con una de correo.`);

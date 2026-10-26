@@ -233,6 +233,9 @@ export const Mundo3D = {
     // A pie no se flota: se cae. Sobre el vacio del Abismo ni los 2 m de
     // escalon (con a=0/a=4 alternos se caminaba sobre el vacio sin alas).
     else h = hq <= 2 && h0 <= 2.5 && !(enAbismo(nx) && !s.i3 && !islaEn(nx, nz)) ? hq : Math.min(hq, Math.max(0, h0 - 9 * dtS - 0.5));
+    // El margen largo del planeo sobre el vacio solo vale si el planeo empezo en el aire
+    // (antes, a=4 desde el suelo daba 45 s para cruzar el vacio sin alas).
+    s.planeoAlto = a === 4 && (h > 0.3 || (prevA === 4 && !!s.planeoAlto));
     // Energia de las alas: se cuenta con el modo que se mantuvo hasta este mensaje.
     if (prevA === 3) s.vueloS = (s.vueloS || 0) + dtS;
     else if (prevA !== 4 && h0 <= 1.2 && !(enAbismo(nx) && !s.i3 && !islaEn(nx, nz))) s.vueloS = Math.max(0, (s.vueloS || 0) - dtS * 3);
@@ -240,7 +243,7 @@ export const Mundo3D = {
     if (s.alasAvisadas && (s.vueloS || 0) < ala.vuelo * 0.5) s.alasAvisadas = false;
     const d = Math.hypot(nx - s.p.x, nz - s.p.z);
     if (!(s.dios && s.diosModo && s.diosModo.vel)) {
-      const modo = a === 3 ? ala.vel + 0.05 : a === 4 ? 1.4 : velMontura(s.montado);
+      const modo = a === 3 ? ala.vel + 0.05 : a === 4 && h0 > 0.3 ? 1.4 : velMontura(s.montado);   // planear desde el suelo no acelera
       const vel = MUNDO.velocidad * modo * (1 + talento(s.c, 'agilidad'));
       const tope = vel + 3;   // ~1 s de margen por huecos de red
       s.movBud = Math.min(tope, (s.movBud === undefined ? tope : s.movBud) + vel * 1.15 * dt / 1000);
@@ -660,7 +663,7 @@ export const Mundo3D = {
   vacio3d(s, ahora) {
     if (s.muerto || s.i3 || !enAbismo(s.p.x) || islaEn(s.p.x, s.p.z) || s.a === 3 || (s.a === 4 && s.h > 0.3) || (s.dios && s.diosModo && s.diosModo.vel)) { s.vacioT = 0; return false; }
     if (!s.vacioT) { s.vacioT = ahora; return false; }
-    if (ahora - s.vacioT < (s.a === 4 ? 45000 : 3000)) return false;   // planeando (a=4) sobre el vacio: lo que tarda en bajar el cliente
+    if (ahora - s.vacioT < (s.a === 4 && s.planeoAlto ? 45000 : 3000)) return false;   // planeando (a=4) sobre el vacio: lo que tarda en bajar el cliente
     s.vacioT = 0; this.caidaAbismo(s); return true;
   },
   caidaAbismo(s) {

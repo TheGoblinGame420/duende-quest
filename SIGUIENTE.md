@@ -2959,3 +2959,13 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - world.js: un invitado baneado no se hereda a una cuenta nueva; `ponerTitulo` sin difusión si no cambia o va más rápido que 1,5 s.
 - Pendiente para el dueño (no tocado por las reglas de pagos): helius-verify (una tx con varias referencias), torneo de wallet.js (puntuación por tiempo), SRI de TON Connect y @solana/web3.js, código de rescate = token permanente, homoglifos en nombres.
 - Arnés 843 bien.
+
+### Seguridad, segunda tanda (26-oct-2026, `?v=299`)
+
+- mundo3d.js: planear desde el suelo no da velocidad ×1,4; el margen de 45 s sobre el vacío solo si el planeo empezó en el aire (`s.planeoAlto`).
+- social.js: `limpiar` quita invisibles (U+00AD, U+034F, U+3164, U+200B-200F, U+2060-206F…); `/reportar` limitado por cuenta y como mucho 12 avisos al dueño cada 10 min.
+- hermandades.js: el mensaje del día pasa por `riesgoEstafa`.
+- vincular.js: 5 fallos por cuenta y 60 en el servidor cada 10 min.
+- eventos3d.js: `ev.part` es un Map de ayudas (capitán = 3): cobra quien ayudó en 3 o más; XP con `min(nivel, tope de la zona)`.
+- world.js: cerrojo `pd.entregando` en `entregarPedido` y nueva comprobación del estado tras el await (no toca la verificación de pagos).
+- Arnés 843 bien.

@@ -132,7 +132,7 @@ export const Eventos3D = {
   empezarInvasion3d(zona, porZona, ahora) {
     const W = this.iniciar3d(), mp = MAPAS[zona], n = Math.max(1, (porZona[zona] || []).length);
     W.inv3 = { id: (W.inv3n = (W.inv3n || 0) + 1), zona, nombre: INVASION[zona] || 'Invasión', inicio: ahora, fin: ahora + INV3D_DURA_MS,
-      meta: clamp(10 + 6 * n, 12, 40), hechos: 0, fase: 'oleadas', oleadaEn: ahora, capitan: 0, part: new Set() };
+      meta: clamp(10 + 6 * n, 12, 40), hechos: 0, fase: 'oleadas', oleadaEn: ahora, capitan: 0, part: new Map() };
     this.aClave(K3, { t: 'aviso', m: `⚔️ ${W.inv3.nombre} en ${mp.nombre}: derroten a ${W.inv3.meta} invasores en 5 minutos.` });
     this.aClave(K3, this.estadoInvasion3d());
     return W.inv3;
@@ -174,7 +174,10 @@ export const Eventos3D = {
     const ev = this.iniciar3d().inv3;
     if (!ev || o.ex3.ev !== ev.id) return;
     // Pegar o curar a quien pelea cuenta (como en el 2D): el sanador del grupo tambien cobra.
-    for (const m of [o.dano, o.cura]) if (m) for (const sid of m.keys()) { const s = this.sesiones.get(sid); if (s && s.c) ev.part.add(s.c.uid); }
+    // Se cuenta en cuantos invasores ayudo cada uno (el capitan vale 3): un golpe suelto no cobra.
+    const ayudo = new Set();
+    for (const m of [o.dano, o.cura]) if (m) for (const sid of m.keys()) { const s = this.sesiones.get(sid); if (s && s.c) ayudo.add(s.c.uid); }
+    for (const uid of ayudo) ev.part.set(uid, (ev.part.get(uid) || 0) + (o.ex3.cap ? 3 : 1));
     if (o.ex3.cap) return this.terminarInvasion3d(true);
     if (ev.fase !== 'oleadas') return;
     ev.hechos++;
@@ -194,10 +197,11 @@ export const Eventos3D = {
       return;
     }
     const nombres = [];
-    for (const uid of ev.part) {
+    for (const [uid, n] of ev.part) {
       const s = this.porUid.get(uid);
-      if (!s || !s.c || s.cerrado) continue;
-      const c = s.c, nv = clamp(c.nivel, mp.nv[0], mp.nv[1]);
+      if (!s || !s.c || s.cerrado || n < 3) continue;
+      // Con tu nivel (tope el de la zona): uno de nivel 1 no cobra la XP de una zona de nivel 40.
+      const c = s.c, nv = Math.min(c.nivel, mp.nv[1]);
       const xp = Math.round(xpParaSubir(nv) * 0.35), oro = Math.round(40 * nv * rnd(0.9, 1.1));
       c.oro += oro;
       c.invasiones = (c.invasiones || 0) + 1;

@@ -1137,7 +1137,13 @@ export class MmoWorld {
     const pd = this.buscarPedido(b.codigo);
     if (!pd || (pd.estado !== 'pagado' && pd.estado !== 'por_verificar')) return { ok: false, error: 'No hay un pedido pagado con ese código.' };
     const pq = PAQUETES.find(x => x.id === pd.paquete);
-    const { s, c } = await this.pjDe(pd.uid);
+    // Cerrojo: entre la comprobacion y 'entregado' hay un await; dos avisos a la vez
+    // (bot y entrega automatica) entregaban dos veces.
+    if (pd.entregando) return { ok: false, error: 'Ese pedido ya se está entregando.' };
+    pd.entregando = true;
+    let s, c;
+    try { ({ s, c } = await this.pjDe(pd.uid)); } finally { delete pd.entregando; }
+    if (pd.estado !== 'pagado' && pd.estado !== 'por_verificar') return { ok: false, error: 'No hay un pedido pagado con ese código.' };
     if (!c || !pq) return { ok: false, error: 'No encontré al jugador o el paquete.' };
     c.oro += pq.oro || 0;
     for (const k in (pq.pw || {})) c.pw[k] = Math.min(99, (c.pw[k] || 0) + pq.pw[k]);

@@ -35,6 +35,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v296 | Chicha Nv 60 = 2 litros siempre a la vista (3D y 2D), XP más lenta desde Nv 10, chat móvil con ➤, poncho | **B** |
 | v297 | Lore por zona, PNJ con frases, secretos de hitos, aventureros PNJ en la plaza | **B** |
 | v298 | Inicio arreglado (JUGAR), vacío del Abismo, canal de chat, reportes, baneo heredado, título sin spam | **B** |
+| v299 | Planeo sin atajos, invisibles, límites de reportes y vinculación, invasiones justas, cerrojo de entrega | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

@@ -38,7 +38,8 @@ export const LFG_MS = 10 * 60000;       // cuanto dura un anuncio de "busco grup
 const LFG_CADA_MS = 60000;              // y cada cuanto se puede volver a anunciar
 // Fuera tambien los invisibles: ancho cero y marcas bidi (U+202E daba la
 // vuelta al texto para disfrazarlo). El U+200D se deja: lo usan los emojis compuestos.
-const limpiar = t => String(t || '').replace(/[\u0000-\u001f\u007f​‌‎‏‪-‮⁠-⁤⁦-⁩﻿]/g, '').trim().slice(0, 120);
+// Fuera tambien los invisibles (U+00AD, U+034F, U+3164…) que partian «www» o una frase semilla y saltaban el filtro.
+const limpiar = t => String(t || '').replace(/[\u0000-\u001f\u007f­͏ᅟᅠ᠎​-‏‪-‮⁠-⁯ㅤ﻿]/g, '').trim().slice(0, 120);
 
 // Antiestafa (juego con cripto): ni direcciones de cartera, ni enlaces, ni
 // frases semilla en el chat. Nadie del equipo pide nunca la frase semilla.
@@ -288,18 +289,26 @@ export const Social = {
   // y le llega al dueño por Telegram para que lo revise.
   reportar(s, m) {
     const ahora = Date.now();
-    if (ahora - (s.reporteT || 0) < REPORTE_CADA_MS) return this.no(s, 'Espera un minuto antes de enviar otro reporte.');
+    // Limite por cuenta (no por conexion: reconectar no lo reinicia).
+    this.reporteUid = this.reporteUid || new Map();
+    if (ahora - Math.max(s.reporteT || 0, this.reporteUid.get(s.c.uid) || 0) < REPORTE_CADA_MS) return this.no(s, 'Espera un minuto antes de enviar otro reporte.');
     const n = limpiar(m.n).toLowerCase(), motivo = limpiar(m.motivo).slice(0, 100) || 'sin motivo';
     const t = [...this.sesiones.values()].find(x => x.c && x.c.nombre.toLowerCase() === n);
     if (!t || t === s) return this.no(s, n ? `No hay nadie conectado llamado "${limpiar(m.n)}".` : 'Escribe: /reportar Nombre motivo');
-    s.reporteT = ahora;
+    s.reporteT = ahora; this.reporteUid.set(s.c.uid, ahora);
+    if (this.reporteUid.size > 500) this.reporteUid.clear();
     const frases = (this.chatHist || []).filter(x => x.u === t.c.uid).slice(-5).map(x => x.m);
     const r = { t: ahora, de: s.c.uid, deN: s.c.nombre, a: t.c.uid, aN: t.c.nombre, motivo, frases };
     this.reportes = (this.reportes || []).concat(r).slice(-200);
     if (this.state && this.state.storage) this.state.storage.put('reportes', this.reportes).catch(() => {});
     // Al Telegram del dueño sin enlaces, @usuarios ni /comandos clicables.
     const plano = x => x.replace(/https?:\/\/\S+|www\.\S+|t\.me\S*/gi, '[enlace]').replace(/[*_`\[\]]/g, '').replace(/[\/@]/g, ' ');
-    if (this.avisarAdmin) this.avisarAdmin(`⚠️ Reporte de ${s.c.nombre.replace(/[^\p{L}\p{N} ]/gu, '')} contra ${t.c.nombre.replace(/[^\p{L}\p{N} ]/gu, '')}: ${plano(motivo)}${frases.length ? '\nÚltimas frases: ' + frases.map(f => '«' + plano(f) + '»').join(' ') : ''}`).catch(() => {});
+    // Al Telegram del dueño como mucho 12 reportes cada 10 min (los demas quedan
+    // guardados): asi una oleada de invitados no tapa los avisos de pagos.
+    this.reportesAviso = (this.reportesAviso || []).filter(x => ahora - x < 600000);
+    const avisar = this.reportesAviso.length < 12;
+    if (avisar) this.reportesAviso.push(ahora);
+    if (avisar && this.avisarAdmin) this.avisarAdmin(`⚠️ Reporte de ${s.c.nombre.replace(/[^\p{L}\p{N} ]/gu, '')} contra ${t.c.nombre.replace(/[^\p{L}\p{N} ]/gu, '')}: ${plano(motivo)}${frases.length ? '\nÚltimas frases: ' + frases.map(f => '«' + plano(f) + '»').join(' ') : ''}`).catch(() => {});
     this.enviar(s, { t: 'toast', m: `⚠️ Reporte enviado. Gracias: el equipo lo revisará. Si te molesta, usa /ignorar ${t.c.nombre}.` });
   },
   // Historial corto del general y de cada hermandad, solo en memoria (si el

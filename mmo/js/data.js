@@ -498,6 +498,10 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 67, fecha: '26 oct 2026', items: [
+    'Invasiones más justas: para cobrar el premio hay que ayudar de verdad (al menos 3 invasores o el capitán), y la experiencia va según tu nivel.',
+    'Más protección: el chat y el mensaje de hermandad bloquean los trucos con caracteres invisibles, y el código para vincular cuentas no se puede adivinar a base de intentos.',
+  ] },
   { n: 66, fecha: '26 oct 2026', items: [
     'Arreglada la página de inicio: los botones JUGAR vuelven a funcionar en todos los navegadores.',
     'Más seguridad: nadie puede caminar sobre el vacío del Abismo sin alas, el chat de los invitados nuevos no se puede saltar y los reportes llegan limpios al equipo.',
