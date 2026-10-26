@@ -47,6 +47,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v308 | Historia de las 40 misiones del Guardia Tito | **B** |
 | v309 | Logro de la primera caza, cueva suma a la gesta | **B** |
 | v310 | Corrientes de viento (AION), HUD móvil por etapas, telemetría de errores, términos Nv 60 · panel v309: 6,0 | **B** |
+| v311 | Jefes de zona con el Sorbo del Cántaro (hechizo interrumpible) | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

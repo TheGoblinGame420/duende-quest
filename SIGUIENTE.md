@@ -3059,3 +3059,9 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Telemetría: `window.onerror`/`unhandledrejection` → `errc` (5 por sesión) → `console.log('[errc]', …)` en el Worker y `erroresCli` (100) en memoria.
 - terminos.html: premio de nivel 60, puntos solo para quien pega o cura, límite mensual solo para los premios por puntos; fecha 26-oct-2026.
 - Arnés 845 bien.
+
+### Sorbo del Cántaro (26-oct-2026, `?v=311`)
+
+- mundo3d.js: `SORBO_MS` 3 s, `SORBO_CURA` 12 %; jefes de zona (`o.jefe && o.campo >= 0`, fuera de la cueva) bajo el 60 % y a <20 m de su objetivo lanzan cada 16-22 s; lo cortan `silencio`, `aturdido` u `oveja`; mensajes `mcast` (inicio, `cortado`, `cura` con `hp`). Ojo: `o.hz` es la casa del monstruo, por eso el estado va en `o.sorbo`.
+- Cliente: `o.cast` con barra naranja `#o-cast` en el marco del objetivo, «🥤 Sorbo del Cántaro…» sobre el jefe y avisos al empezar, al cortarlo y al curarse.
+- Arnés +3 pruebas (aviso, cura, Silencio lo corta). 848 bien.

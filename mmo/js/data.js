@@ -498,6 +498,9 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 79, fecha: '26 oct 2026', items: [
+    'Nueva mecánica de jefes en ORIGINS: por debajo del 60 % de vida, los jefes de zona intentan beber el «Sorbo del Cántaro» (3 s, con barra de lanzamiento). Córtalo con Patada, Zurrar, Contrahechizo, Silencio o un aturdimiento; si no, se curan un 12 %.',
+  ] },
   { n: 78, fecha: '26 oct 2026', items: [
     'Corrientes de viento en el Abismo (como en AION): 12 columnas de aire celeste entre las islas. Crúzalas volando o planeando y tus alas se recargan al momento.',
     'Móvil más limpio al empezar: el botón MONTAR aparece cuando tienes montura y FIJAR desde nivel 3.',

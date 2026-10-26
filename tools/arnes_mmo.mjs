@@ -3587,5 +3587,15 @@ async function pruebasHabs3d() {
   avanzar(200); r.p = { x: 5, z: 5 }; r.movBud = undefined; r.h = 0; r.a = 0;
   await r.mandar({ t: 'mv3', x: 5.5, z: 5, a: 3, h: 20 });
   chequear(r.p.x === 5.5 && !(r.h > 0), 'en el pueblo no se vuela');
+  // Jefe de zona bajo el 60 %: Sorbo del Cantaro (se cura si nadie lo corta; Patada lo corta).
+  console.log('Mundo 3D: Sorbo del Cántaro');
+  const jf = muneco(p, 2); jf.jefe = true; jf.campo = 0; jf.hp = jf.max * 0.5; jf.obj = p.id; jf.amen.set(p.id, 100); jf.pzjProx = Date.now() + 1e9;
+  p.limpiar(); tick(2);
+  chequear(!!jf.sorbo && p.ultimos('mcast').some(x => x.id === jf.id && x.ms > 0), 'el jefe herido lanza el Sorbo del Cántaro y se avisa');
+  const hpS = jf.hp; tick(32);
+  chequear(!jf.sorbo && jf.hp > hpS && p.ultimos('mcast').some(x => x.id === jf.id && x.cura), 'si nadie lo corta, se cura');
+  jf.sorboProx = 0; jf.hp = jf.max * 0.5; p.limpiar(); tick(2);
+  p.cdHab = {}; p.gcdHasta = 0; p.rec = p.st.recMax || 100; await p.mandar({ t: 'hab3', id: 'silencio', tg: jf.id }); tick(1);
+  chequear(!jf.sorbo && p.ultimos('mcast').some(x => x.id === jf.id && x.cortado), 'Silencio (o Patada, Zurrar, Contrahechizo) interrumpe el Sorbo');
   for (const s of [g, m, p, r]) await dejar(s);
 }

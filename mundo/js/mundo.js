@@ -14,22 +14,22 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS } from '/mmo/js/data.js?v=310';
-import { iniciarVentanas } from './ventanas.js?v=310';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=310';
-import { crearMusica } from './musica.js?v=310';
-import { construirCueva } from './cueva.js?v=310';
-import { TAPA, transparentar } from './tapa.js?v=310';
-import { construirAbismo } from './abismo.js?v=310';
-import { crearParticulas } from './particulas.js?v=310';
-import { cargarKenney, piezasCasa } from './kenney.js?v=310';
-import { CORRIENTES } from '/mmo/js/abismo3d.js?v=310';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS } from '/mmo/js/data.js?v=311';
+import { iniciarVentanas } from './ventanas.js?v=311';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=311';
+import { crearMusica } from './musica.js?v=311';
+import { construirCueva } from './cueva.js?v=311';
+import { TAPA, transparentar } from './tapa.js?v=311';
+import { construirAbismo } from './abismo.js?v=311';
+import { crearParticulas } from './particulas.js?v=311';
+import { cargarKenney, piezasCasa } from './kenney.js?v=311';
+import { CORRIENTES } from '/mmo/js/abismo3d.js?v=311';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=310';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=310';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=310';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=310';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=311';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=311';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=311';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=311';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1390,6 +1390,18 @@ function recibir(m) {
     case 'contactos': contactos3 = m.l || []; pintarAmigos3(); pintarObjetivoP(); break;
     case 'quien': quien3 = m.r || []; pintarAmigos3(); break;
     // Alas agotadas segun el servidor: a planear (antes caia en picado, mortal sobre el vacio).
+    // Lanzamiento de un jefe (Sorbo del Cantaro): barra en su marco y aviso sobre su cabeza.
+    case 'mcast': {
+      const o = mons.get(m.id); if (!o) break;
+      const nom = (MONSTRUOS[o.k] || {}).nombre || 'El jefe';
+      if (m.ms > 0) { o.cast = { ini: performance.now(), fin: performance.now() + m.ms, n: m.n || 'Hechizo' }; if (objetivo === m.id || Math.hypot(o.x - P.x, o.z - P.z) < 25) aviso(`🥤 ${nom} lanza ${o.cast.n}: ¡interrúmpelo!`, 'err'); }
+      else {
+        o.cast = null;
+        if (m.cortado && Math.hypot(o.x - P.x, o.z - P.z) < 30) aviso(`✋ ¡${nom} no pudo beber: lanzamiento interrumpido!`, 'ok');
+        if (m.cura) { if (m.hp) o.hp = m.hp; if (Math.hypot(o.x - P.x, o.z - P.z) < 30) aviso(`🥤 ${nom} bebió chicha robada y se curó. Córtalo con Patada, Zurrar, Contrahechizo, Silencio o un aturdimiento.`); }
+      }
+      break;
+    }
     case 'corriente': P.alas = ALAS_MAX; aviso('🌬 Corriente de viento: ¡alas recargadas!', 'ok'); sfxK('tela', 0.4); vib('light'); break;
     case 'alasAgotadas': if (P.vuela) { volar(false); P.planeoAuto = true; aviso('Tus alas se cansaron: planeas hacia el suelo.'); } P.alas = 0; break;
     case 'pica': pica = performance.now() + m.ms; aviso('🎣 ¡Pica! ' + K('Pulsa E', 'Toca ¡TIRAR!') + ' para tirar', 'ok'); sfx('boton', 0.7); vib('heavy'); break;
@@ -1890,6 +1902,10 @@ function pintarObjetivo() {
     hp.firstElementChild.style.transform = `scaleX(${clamp(o.hp / o.mx, 0, 1)})`;
     hp.lastElementChild.textContent = Math.ceil(o.hp) + ' / ' + o.mx;
   }
+  // Barra de lanzamiento del objetivo (se repinta cada cuadro mientras dura).
+  const bc = $('o-cast'), ahC = performance.now();
+  if (o.cast && o.cast.fin > ahC) { bc.style.display = 'block'; bc.firstElementChild.style.transform = `scaleX(${clamp((ahC - o.cast.ini) / (o.cast.fin - o.cast.ini), 0, 1)})`; bc.lastElementChild.textContent = '🥤 ' + o.cast.n; }
+  else if (bc.style.display !== 'none') bc.style.display = 'none';
   anillo.visible = true;
   anillo.position.set(o.x, alturaEn(o.x, o.z) + 0.08, o.z);
   const s = o.j ? 2 : 1; anillo.scale.set(s, s, s);
@@ -3167,7 +3183,7 @@ function etiquetas(t) {
     const def = MONSTRUOS[o.k], el = o.id === objetivo, mis = o.k === kMis;
     const alto = o.fig ? altoFig(o.fig) : 2;
     const herido = o.hp < o.mx || el;
-    ponLbl(o.lbl, o.x, alturaEn(o.x, o.z) + alto + 0.2, o.z, `<span style="color:${o.ra ? o.ti || '#ffd84a' : o.iv ? '#ff5a1f' : o.j ? '#ff6bf0' : colorNivel(o.nv)}">${mis ? '<b style="color:#ffd84a;font-size:15px">❗</b>' : ''}${o.ra ? '★ ' + esc(o.ra) + ' · ' : o.iv ? '⚔ ' : o.j ? '★ ' : ''}${asedio && asedio.dormido && o.id === asedio.guardian ? '💤 ' : ''}${herido || o.j || mis ? esc(def.nombre) + ' ' : ''}${marcaNivel(o.nv)}Nv${o.nv}</span>${herido ? `<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>` : ''}`, el ? 90 : (o.j || mis ? 70 : 38));
+    ponLbl(o.lbl, o.x, alturaEn(o.x, o.z) + alto + 0.2, o.z, `${o.cast && o.cast.fin > t ? `<b style="display:block;color:#fb923c;font-size:12px">🥤 ${esc(o.cast.n)}…</b>` : ''}<span style="color:${o.ra ? o.ti || '#ffd84a' : o.iv ? '#ff5a1f' : o.j ? '#ff6bf0' : colorNivel(o.nv)}">${mis ? '<b style="color:#ffd84a;font-size:15px">❗</b>' : ''}${o.ra ? '★ ' + esc(o.ra) + ' · ' : o.iv ? '⚔ ' : o.j ? '★ ' : ''}${asedio && asedio.dormido && o.id === asedio.guardian ? '💤 ' : ''}${herido || o.j || mis ? esc(def.nombre) + ' ' : ''}${marcaNivel(o.nv)}Nv${o.nv}</span>${herido ? `<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>` : ''}`, el ? 90 : (o.j || mis ? 70 : 38));
   }
   for (const av of aventureros) ponLbl(av.lbl, av.x, alturaEn(av.x, av.z) + 2.15, av.z, `${av.diceT > t ? `<span style="display:block;background:rgba(255,255,255,.92);color:#222;border-radius:8px;padding:2px 7px;margin:0 auto 2px;font-weight:600;white-space:normal;width:max-content;max-width:170px">${esc(av.dice)}</span>` : ''}<span style="color:#93c5fd">${esc(Math.hypot(av.x - P.x, av.z - P.z) < 10 ? av.n : av.n.split(' ')[0])}</span> <small style="color:#bbb;font-size:9px">PNJ</small>`, 24);
   for (const n of npcs) ponLbl(n.lbl, n.x, n.y + 2.4, n.z, `${n.tipo === 'guia' && misionLista() ? '<b style="color:#ffd84a;font-size:22px;text-shadow:0 0 6px #000">?</b><br>' : ''}<span style="color:#4ade80">${esc(n.nombre)}</span>`, 60);

@@ -53,6 +53,8 @@ const VISTA_PJ = 160, SALE_PJ = 190;   // m: a que distancia se ve (y se deja de
 // Jefe mundial del 3D: a las :15 y :45 (el del Coliseo 2D sale a las :00 y :30).
 const DESFASE_MUNDIAL3 = 15 * 60 * 1000;
 const PISOTON_CADA = 12000, PISOTON_AVISO = 2500, PISOTON_R = 9;
+// Jefes de zona bajo el 60 %: el «Sorbo del Cantaro» (se cura si nadie lo interrumpe).
+const SORBO_MS = 3000, SORBO_CURA = 0.12;
 const PISOTON_JEFE_R = 5.5;     // m: el pisoton de los jefes de zona (mas chico que el del mundial)
 export const proximoMundial3 = ahora => proximoMundial(ahora - DESFASE_MUNDIAL3) + DESFASE_MUNDIAL3;
 
@@ -1047,6 +1049,11 @@ export const Mundo3D = {
       o.pzj = null;
     }
     if (o.dormido) { o.st = 0; return; }   // el Guardian espera a que caiga la puerta
+    // Sorbo del Cantaro: lo cortan Patada, Zurrar, Contrahechizo, Silencio o un aturdimiento.
+    if (o.sorbo) {
+      if (this.auraMon(o, 'silencio') || this.auraMon(o, 'aturdido') || this.auraMon(o, 'oveja')) { o.sorbo = null; this.aCerca3d(o, { t: 'mcast', id: o.id, ms: 0, cortado: 1 }); }
+      else if (ahora >= o.sorbo.fin) { o.sorbo = null; o.hp = Math.min(o.max, o.hp + Math.round(o.max * SORBO_CURA)); this.aCerca3d(o, { t: 'mcast', id: o.id, ms: 0, cura: 1, hp: Math.ceil(o.hp) }); }
+    }
     if (this.auraMon(o, 'aturdido') || this.auraMon(o, 'oveja')) { o.st = 0; return; }
     const enC = !!o.cueva;
     const ve = (bx, bz) => !enC || vistaCueva(o.x, o.z, bx, bz);
@@ -1117,6 +1124,10 @@ export const Mundo3D = {
           o.pzjProx = ahora + rnd(10000, 14000);
           this.aCerca3d(o, { t: 'zona3', id: o.id, x: r1(s.p.x), z: r1(s.p.z), r: PISOTON_JEFE_R, ms: PISOTON_AVISO });
         }
+      }
+      if (o.jefe && o.campo >= 0 && !enC && !o.sorbo && o.hp < o.max * 0.6 && d < 20 && ahora >= (o.sorboProx || 0)) {
+        o.sorbo = { fin: ahora + SORBO_MS }; o.sorboProx = ahora + rnd(16000, 22000);
+        this.aCerca3d(o, { t: 'mcast', id: o.id, ms: SORBO_MS, n: 'Sorbo del Cántaro' });
       }
       if (d > alcance || !veo) {
         // Se acerca por su lado (rodean al jugador en vez de apilarse).
