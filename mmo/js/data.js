@@ -498,6 +498,10 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 69, fecha: '26 oct 2026', items: [
+    'Los 10 pedazos del Cántaro Eterno: vence al jefe de cada zona en sus encargos 🧭 para recuperar su pedazo. La leyenda lleva la cuenta (✓ recuperados) y cada pedazo cuenta su historia.',
+    'Si pulsas ATACAR o FIJAR sin monstruos cerca, el juego te dice adónde ir, y la bienvenida del primer día ya no queda tapada por la elección de clase.',
+  ] },
   { n: 68, fecha: '26 oct 2026', items: [
     'Móvil y Telegram más jugables: vista más amplia en vertical, la cámara se pone sola detrás de tu duende al caminar y el botón ATACAR muestra PARAR cuando el ataque automático está puesto.',
     'Tutorial arreglado en el móvil: textos cortos, el paso 4 señala tu habilidad de verdad y el último paso entrega la misión con un toque.',

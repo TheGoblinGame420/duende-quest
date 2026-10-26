@@ -37,6 +37,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v298 | Inicio arreglado (JUGAR), vacío del Abismo, canal de chat, reportes, baneo heredado, título sin spam | **B** |
 | v299 | Planeo sin atajos, invisibles, límites de reportes y vinculación, invasiones justas, cerrojo de entrega | **B** |
 | v300 | Ronda de 22 agentes jugando: tutorial móvil, cámara, FOV, ATACAR, márgenes Telegram, leyenda/diario, Ira, Bola de Fuego, Polimorfia, Carga | **B** |
+| v301 | Pedazos del Cántaro por jefe de zona (leyenda N/10), aviso sin monstruos, bienvenida visible | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

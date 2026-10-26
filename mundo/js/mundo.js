@@ -14,21 +14,21 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA } from '/mmo/js/data.js?v=300';
-import { iniciarVentanas } from './ventanas.js?v=300';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=300';
-import { crearMusica } from './musica.js?v=300';
-import { construirCueva } from './cueva.js?v=300';
-import { TAPA, transparentar } from './tapa.js?v=300';
-import { construirAbismo } from './abismo.js?v=300';
-import { crearParticulas } from './particulas.js?v=300';
-import { cargarKenney, piezasCasa } from './kenney.js?v=300';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA } from '/mmo/js/data.js?v=301';
+import { iniciarVentanas } from './ventanas.js?v=301';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=301';
+import { crearMusica } from './musica.js?v=301';
+import { construirCueva } from './cueva.js?v=301';
+import { TAPA, transparentar } from './tapa.js?v=301';
+import { construirAbismo } from './abismo.js?v=301';
+import { crearParticulas } from './particulas.js?v=301';
+import { cargarKenney, piezasCasa } from './kenney.js?v=301';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=300';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=300';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=300';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS } from './lore.js?v=300';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=301';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=301';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=301';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS } from './lore.js?v=301';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1243,7 +1243,8 @@ function recibir(m) {
       cerrar('v-inicio');
       pintarHud();
       if (!yo.clase) abrirClases();
-      if (m.nuevo) aviso('Bienvenido al mundo abierto, ' + yo.nombre + '. Tu primera misión ya está en marcha: sigue la luz amarilla.', 'ok');
+      // Al nuevo se le da la bienvenida cuando ya eligio clase (antes quedaba detras de esa ventana).
+      if (m.nuevo) { const bienv = () => { if (!yo.clase || hayVentana()) return setTimeout(bienv, 1500); aviso('Bienvenido al mundo abierto, ' + yo.nombre + '. Tu primera misión ya está en marcha: sigue la luz amarilla.', 'ok'); }; bienv(); }
       break;
     case 'm3':
       P.x = m.x; P.z = m.z; P.y = alturaEn(P.x, P.z); P.vx = P.vz = P.vy = 0; P.corrX = P.corrZ = 0;
@@ -1282,7 +1283,12 @@ function recibir(m) {
     case 'asedio': asedio = m; if (m.activo) asedioHp = asedioHp || { p: 100, g: 100 }; else asedioHp = null; if (abismo) abismo.dueno(m.dueno); break;
     case 'enc': {
       const antes = encargos, nuevos = m.l || {};
-      if (antes && Object.keys(antes).length) for (const k in nuevos) if (nuevos[k] === true && antes[k] !== true && k.endsWith(':hito') && LORE_HITOS[k.split(':')[0]]) aviso('✨ ' + LORE_HITOS[k.split(':')[0]], 'ok');
+      if (antes && Object.keys(antes).length) for (const k in nuevos) if (nuevos[k] === true && antes[k] !== true) {
+        const [zk, tipo] = k.split(':');
+        if (tipo === 'hito' && LORE_HITOS[zk]) aviso('✨ ' + LORE_HITOS[zk], 'ok');
+        // Vencer al jefe de la zona en su encargo devuelve su pedazo del Cantaro.
+        if (tipo === 'jefe' && LORE_ZONAS[zk]) { const n = Object.keys(LORE_ZONAS).filter(z => nuevos[z + ':jefe'] === true).length; setTimeout(() => aviso(`🏺 Pedazo del Cántaro ${n}/10: ${LORE_ZONAS[zk].pedazo}`, 'ok'), 1200); }
+      }
       encargos = nuevos; encZonas = m.zonas || 0; $('misiones')._h = ''; break;
     }
     case 'asedioHp': asedioHp = m; if (asedio) asedio.dormido = !!m.d; break;
@@ -2231,7 +2237,7 @@ function verLeyenda() {
     <p class="vv-p">El <b>Rey Goblin</b> robó el <b style="color:#ffd84a">Cántaro Eterno</b> y lo rompió en pedazos. Sin chicha, la noche cubrió el bosque, los goblins invadieron las colinas y el Éter del cielo se partió en islas flotantes: el <b>Abismo</b>.</p>
     <p class="vv-p"><img src="/assets/lore/duende-chicha.webp" alt="" style="float:right;height:96px;margin:0 0 4px 6px">Tú eres un duende joven. <b>Recupera las zonas</b> (misiones y encargos 🧭), <b>vence a sus jefes</b>, abre los cofres y junta <b>puntos de chicha</b> cazando. En el Abismo, la Luz y la Sombra luchan por el <b>Núcleo</b>, donde late el último pedazo del Cántaro.</p>
     <p class="vv-p" style="color:#fde68a;font-weight:700">🥤 Y es de verdad: quien llegue a nivel ${CHICHA.nv60} en este mundo se lleva ${CHICHA.litros60} litros de chicha morada a su casa. Además, con ${(10000).toLocaleString('es')} puntos de chicha cazando, otro litro (en $DUENDE CLASSIC → Mochila → Chicha). Se reclama entrando con Telegram.</p>
-<details style="margin-top:8px"><summary style="cursor:pointer;color:#c084fc;font-weight:700">🏺 Los pedazos del Cántaro (10 zonas)</summary>${Object.entries(LORE_ZONAS).map(([id, z]) => `<p class="vv-p" style="margin:6px 0"><b style="color:#fde68a">${esc((MAPAS[id] || {}).nombre || id)}:</b> ${esc(z.pedazo)}</p>`).join('')}</details>`;
+<details style="margin-top:8px"><summary style="cursor:pointer;color:#c084fc;font-weight:700">🏺 Los pedazos del Cántaro: ${Object.keys(LORE_ZONAS).filter(z => encargos[z + ':jefe'] === true).length}/10 recuperados</summary><p class="vv-p" style="font-size:12px;margin:6px 0">Cada pedazo se recupera venciendo al jefe de su zona en los encargos 🧭.</p>${Object.entries(LORE_ZONAS).map(([id, z]) => { const ok = encargos[id + ':jefe'] === true; return `<p class="vv-p" style="margin:6px 0;${ok ? '' : 'opacity:.6'}"><b style="color:${ok ? '#4ade80' : '#fde68a'}">${ok ? '✓' : '·'} ${esc((MAPAS[id] || {}).nombre || id)}:</b> ${ok ? esc(z.pedazo) : 'pedazo perdido… vence al jefe de la zona.'}</p>`; }).join('')}</details>`;
   $('v-diario').querySelector('h2').textContent = 'LA LEYENDA DEL CÁNTARO';
   abrir('v-diario');
 }
@@ -2631,7 +2637,7 @@ function elegirEn(cx, cy, doble) {
 }
 function cicloObjetivo() {
   const l = [...mons.values()].filter(o => !o.muereT && Math.hypot(o.x - P.x, o.z - P.z) < 45).sort((a, b) => Math.hypot(a.x - P.x, a.z - P.z) - Math.hypot(b.x - P.x, b.z - P.z));
-  if (!l.length) { objetivo = 0; return; }
+  if (!l.length) { objetivo = 0; if (performance.now() - (cicloObjetivo.av || 0) > 3000) { cicloObjetivo.av = performance.now(); aviso('No hay monstruos cerca: sigue la luz amarilla o mira el mapa 🗺', 'err'); } return; }
   const i = l.findIndex(o => o.id === objetivo);
   objetivo = l[(i + 1) % l.length].id;
   sfx('boton', 0.2);

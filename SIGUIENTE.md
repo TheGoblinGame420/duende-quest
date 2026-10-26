@@ -2981,3 +2981,8 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - `usarHab`: aviso de recurso insuficiente, lanzamiento previsto en local (`lanzando.pre`), Polimorfia apaga el ataque automático.
 - Servidor: Ira +9 (+4 crítico) por golpe en 3D y en duelo; la vara escala con `arma.dano`; Carga en el Abismo cae en la isla.
 - Arnés 843 bien.
+
+### Pedazos del Cántaro (26-oct-2026, `?v=301`)
+
+- mundo.js `case 'enc'`: al pasar `zona:jefe` a true, aviso «🏺 Pedazo del Cántaro N/10» con su texto de `LORE_ZONAS`; la leyenda muestra N/10 y ✓ por zona (pedazo oculto hasta recuperarlo).
+- `cicloObjetivo` sin monstruos: aviso (cada 3 s como mucho). Bienvenida del nuevo cuando ya eligió clase y no hay ventana.
