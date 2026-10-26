@@ -13,17 +13,17 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=292" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=293" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=292">
-<link rel="modulepreload" href="/mmo/js/data.js?v=292">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=292">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=292">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=292">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=292">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=292">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=293">
+<link rel="modulepreload" href="/mmo/js/data.js?v=293">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=293">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=293">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=293">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=293">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=293">
 <style>
 :root{--bg:#0a0418;--panel:rgba(14,9,30,.86);--borde:rgba(160,140,255,.22);--txt:#f2efff;--txt2:#b8b0d8;--txt3:#7d7699;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;--oro:#ffd84a;--pri:#2563eb;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -296,6 +296,28 @@ body.compacto #botones:not(.abierto) #b-libro,body.compacto #botones:not(.abiert
  body.movil #v-npc.modal,body.movil #v-ayuda.modal,body.movil #v-inv.modal,body.movil #v-libro.modal,body.movil #v-tienda.modal,body.movil #v-logros.modal,body.movil #v-pase.modal,body.movil #v-diario.modal,body.movil #v-herm.modal,body.movil #v-rank.modal,body.movil #v-amigos.modal{padding:calc(8px + env(safe-area-inset-top)) 0 0 calc(6px + env(safe-area-inset-left));}
  body.movil #v-npc .ventana,body.movil #v-ayuda .ventana,body.movil #v-inv .ventana,body.movil #v-libro .ventana,body.movil #v-tienda .ventana,body.movil #v-logros .ventana,body.movil #v-pase .ventana,body.movil #v-diario .ventana,body.movil #v-herm .ventana,body.movil #v-rank .ventana,body.movil #v-amigos .ventana{max-height:calc(100vh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));max-height:calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));width:min(400px,48vw);}
 }
+/* Telegram y movil (25-oct): paneles minimos para que el duende y el mundo se vean.
+   Marco estrecho, objetivo arriba al centro, misiones de 2 lineas, minimapa pequeño,
+   botones de 32 px y la barra de acciones en una sola fila. */
+body.movil #marco,body.compacto #marco{min-width:0;width:min(150px,40vw);padding:4px 6px;}
+body.movil .nm,body.compacto .nm{font-size:11px;margin-bottom:2px;}
+body.movil .barra,body.compacto .barra{height:11px;margin-top:2px;}
+body.movil .barra span,body.compacto .barra span{font-size:8.5px;line-height:11px;}
+body.movil #oro,body.compacto #oro{font-size:10px;margin-top:2px;}
+body.movil #mundial,body.compacto #mundial{display:none;}
+body.movil #obj,body.compacto #obj{left:50%;transform:translateX(-50%);top:calc(6px + env(safe-area-inset-top) + var(--tg-top,0px));min-width:0;width:min(160px,38vw);padding:3px 6px;}
+body.movil #misiones,body.compacto #misiones{width:min(150px,40vw);font-size:9.5px;padding:4px 6px;max-height:50px;}
+body.movil #misiones b,body.compacto #misiones b{font-size:10px;}
+body.movil #misiones.abierto,body.compacto #misiones.abierto{max-height:48vh;}
+body.movil #mini canvas,body.compacto #mini canvas{width:84px;height:84px;}
+body.movil #mini,body.compacto #mini{padding:3px;}
+body.movil #mini .z,body.compacto #mini .z{font-size:9px;margin-top:1px;}
+body.movil #botones,body.compacto #botones{top:calc(126px + env(safe-area-inset-top) + var(--tg-top,0px));grid-template-columns:repeat(4,32px);gap:3px;padding:3px;}
+body.movil #botones .bt,body.compacto #botones .bt{width:32px;height:32px;font-size:13px;}
+body.movil #barra,body.compacto #barra{display:flex;gap:3px;justify-content:center;}
+body.movil #barra .acc,body.compacto #barra .acc{flex:1 1 0;min-width:0;max-width:48px;aspect-ratio:1;max-height:44px;}
+body.movil #barra .acc img,body.compacto #barra .acc img{width:20px;height:20px;}
+body.movil #titulo-zona b,body.compacto #titulo-zona b{font-size:12px;}
 </style>
 </head>
 <body>
@@ -464,6 +486,7 @@ body.compacto #botones:not(.abierto) #b-libro,body.compacto #botones:not(.abiert
   <div class="fila"><span>Mapa · Chat</span><b>M · Enter</b></div>
   <p style="margin-top:10px">En el móvil: joystick a la izquierda, arrastra a la derecha para girar la cámara y toca un monstruo para elegirlo. Las mazmorras, la Torre y la banda están por ahora en $DUENDE CLASSIC (botón 2D): es el mismo personaje.</p>
 
+  <p style="margin-top:10px"><button class="btn sec" id="b-leyenda" style="width:100%">📜 La leyenda del Cántaro (la historia del juego)</button></p>
   <p style="margin-top:10px;font-size:11px;color:var(--txt3)">Créditos de arte y sonido (CC0): árboles, casas, castillos y efectos de <a href="https://kenney.nl" target="_blank" rel="noopener" style="color:var(--cian)">Kenney</a> (Nature Kit, Fantasy Town Kit, Castle Kit, RPG Audio, Impact Sounds) y voces de criaturas de «80 CC0 creature SFX» en OpenGameArt. ¡Gracias!</p>
   <p style="margin-top:10px;display:flex;gap:6px"><a class="btn sec" href="/mmo/" style="flex:1;text-align:center;text-decoration:none">CLASSIC (2D)</a><a class="btn sec" href="/inicio/" style="flex:1;text-align:center;text-decoration:none">Inicio</a><a class="btn sec" href="#" data-instalar hidden style="display:none;flex:1;text-align:center;text-decoration:none">⬇ Instalar</a></p>
 </div></div>
@@ -477,6 +500,6 @@ body.compacto #botones:not(.abierto) #b-libro,body.compacto #botones:not(.abiert
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script src="/js/config.js"></script>
-<script type="module" src="/mundo/js/mundo.js?v=292"></script>
+<script type="module" src="/mundo/js/mundo.js?v=293"></script>
 </body>
 </html>

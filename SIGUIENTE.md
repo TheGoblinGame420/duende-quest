@@ -2919,3 +2919,8 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Entrega automática: `pedidoFirma` (tras la comprobación en cadena de monto exacto y firma nueva) y `pedidoPagadoStars` (misma cuenta y Stars pedidas) llaman a `entregarPedido({ por: 'auto' })`; el dueño recibe aviso informativo (o botones si falla). Los pagos raros siguen en `por_verificar`.
 - Web: fuera `#staking` (APY 120-240 %), `js/staking-manager.js` y su CSS; en la Mini App, el panel `ov-staking` (sin botón que lo abriera), su JS y los mensajes FOMO inventados. Textos de tienda: «se entrega sola».
 - Arnés: 840 (4 nuevas).
+
+### HUD mínimo en móvil/Telegram y la leyenda del Cántaro (25-oct-2026, `?v=293`)
+
+- index.html: bloque final para `body.movil` y `body.compacto`: marco 150 px, barras 11 px, objetivo `#obj` arriba al centro (fuera del apilado de la columna), misiones de 50 px, minimapa 84 px, botones de 32 px, `#barra` en flex de una fila; jefe mundial oculto en el marco. `camDist` inicial 8,5 en compacto.
+- Lore: `verLeyenda()` en `#v-diario` con las imágenes del dueño (assets/lore/chicha-duende-playa.jpg y maiz-morado.png): Maíz Morado Sagrado, Cántaro Eterno roto por el Rey Goblin, noche y Abismo, la chicha real como premio. `leyendaPrimeraVez()` espera a que no haya otra ventana; botón «📜 La leyenda del Cántaro» en la ayuda.

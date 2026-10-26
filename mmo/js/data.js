@@ -495,6 +495,10 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 61, fecha: '25 oct 2026', items: [
+    'ORIGINS se ve mucho mejor en el móvil y en Telegram: paneles más pequeños, objetivo arriba al centro, minimapa reducido, barra de acciones en una sola fila y la cámara un poco más cerca para ver bien a tu duende.',
+    'Nueva historia: «La leyenda del Cántaro». El Rey Goblin rompió el Cántaro Eterno de chicha morada y tú debes devolverla al pueblo. Se cuenta al entrar por primera vez y está siempre en la ayuda (?).',
+  ] },
   { n: 60, fecha: '24 oct 2026', items: [
     'Un solo precio para cada skin, igual en la web, el arcade, Telegram y los dos juegos: Táctico US$1, Nigromante US$2, Rey US$3, Berserker US$7 y Legendaria US$15. Comprarla directa nunca sale más caro que comprar oro para ella.',
     'Las compras se entregan solas: en cuanto el pago con SOL o $DUENDE se confirma en la red (monto exacto) o Telegram confirma tus Stars, la compra aparece en tu personaje en CLASSIC y ORIGINS.',

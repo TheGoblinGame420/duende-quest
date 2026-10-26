@@ -14,20 +14,20 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN } from '/mmo/js/data.js?v=292';
-import { iniciarVentanas } from './ventanas.js?v=292';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=292';
-import { crearMusica } from './musica.js?v=292';
-import { construirCueva } from './cueva.js?v=292';
-import { TAPA, transparentar } from './tapa.js?v=292';
-import { construirAbismo } from './abismo.js?v=292';
-import { crearParticulas } from './particulas.js?v=292';
-import { cargarKenney, piezasCasa } from './kenney.js?v=292';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN } from '/mmo/js/data.js?v=293';
+import { iniciarVentanas } from './ventanas.js?v=293';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=293';
+import { crearMusica } from './musica.js?v=293';
+import { construirCueva } from './cueva.js?v=293';
+import { TAPA, transparentar } from './tapa.js?v=293';
+import { construirAbismo } from './abismo.js?v=293';
+import { crearParticulas } from './particulas.js?v=293';
+import { cargarKenney, piezasCasa } from './kenney.js?v=293';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=292';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=292';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=292';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=293';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=293';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=293';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1078,7 +1078,7 @@ const otros = new Map();     // id -> { x, z, ry, a, hp, mx, n, lv, cl, sk, fig,
 const mons = new Map();      // id -> { k, nv, x, z, ry, hp, mx, st, fig, lbl, tx, tz, muereT }
 const npcs = [];
 let objetivo = 0, autoAtk = false, sigAtk = 0, avisoLejosT = 0, avisoAlcT = 0, colaHab = null, colaHasta = 0;
-let camYaw = Math.PI, camPitch = 0.42, camDist = 11, camReal = 11, camHold = 0;
+let camYaw = Math.PI, camPitch = 0.42, camDist = COMPACTO ? 8.5 : 11, camReal = camDist, camHold = 0;
 let zonaActual = '';
 let portal = null, agua = null, cueva = null, cuevaInfo = null, abismo = null, caidaEnviada = false;
 const teclas = {};
@@ -1186,6 +1186,7 @@ function recibir(m) {
     case 'bienvenido':
       miId = m.id; yo = m.yo; reintentos = 0;
       // Se guarda el nombre final (el elegido o el que puso el servidor): la proxima vez entra directo.
+      setTimeout(leyendaPrimeraVez, 2500);
       if (soyInvitado) { setTimeout(avisoInvitado, 20000); if (!avisoInvT) avisoInvT = setInterval(avisoInvitado, 60000); try { localStorage.setItem('dq_mmo_nombre', yo.nombre); } catch (e) {} }
       $('carga').style.display = 'none';
       cerrar('v-inicio');
@@ -1580,12 +1581,12 @@ function pintarAuras() {
     const mc = $('marco'); let y = mc.offsetTop + mc.offsetHeight + 6;
     // Hasta donde empieza el joystick (movil) o la barra de acciones (compacto con raton).
     const tope = MOVIL ? $('joy').getBoundingClientRect().top : $('barra').getBoundingClientRect().top - 8;
-    for (const id of ['alas', 'obj', 'objp', 'grupo3', 'misiones', 'chat']) {
+    for (const id of ['alas', 'objp', 'grupo3', 'misiones', 'chat']) {   // (el objetivo va arriba al centro)
       const e = $(id); let h = e.offsetHeight; if (!h) continue;
       e.style.top = y + 'px'; e.style.bottom = 'auto';
       if (id === 'misiones') {   // cerrada se recorta antes del joystick: con grupo y objetivo el pulgar que iba a caminar la abria
         const abierta = e.classList.contains('abierto'), sitio = Math.floor(tope - e.offsetTop - 4);
-        const mh = !abierta && sitio < 84 ? Math.max(28, sitio) + 'px' : '';   // 84: su alto cerrado en movil (index.html)
+        const mh = !abierta && sitio < 50 ? Math.max(28, sitio) + 'px' : '';   // 50: su alto cerrado en movil (index.html)
         if (e.style.maxHeight !== mh) { e.style.maxHeight = mh; h = e.offsetHeight; }
         const pe = !abierta && sitio < 28 ? 'none' : '';   // sin sitio ni para una linea: el toque pasa al joystick
         if (e.style.pointerEvents !== pe) e.style.pointerEvents = pe;
@@ -2115,6 +2116,24 @@ addEventListener('keydown', e => {
 // ── INVITADO: que no pierda su duende ──
 // Una vez por sesion: el duende del invitado vive en este navegador; se puede
 // guardar con una cuenta (en CLASSIC) o con el codigo de rescate.
+// ── LA LEYENDA DEL CANTARO (lore): una vez al entrar y desde la ayuda ──
+function verLeyenda() {
+  $('diario-c').innerHTML = `<img src="/assets/lore/chicha-duende-playa.jpg" alt="Chicha morada $DUENDE junto al mar" style="display:block;width:100%;max-height:170px;object-fit:cover;border-radius:10px;margin-bottom:8px">
+    <p class="vv-p"><img src="/assets/lore/maiz-morado.png" alt="" style="float:left;width:34px;margin:0 6px 0 0">Hace siglos, los duendes guardaban el <b style="color:#c084fc">Maíz Morado Sagrado</b>. Con él preparaban la <b style="color:#c084fc">chicha morada</b>, la bebida que les daba su fuerza y su magia.</p>
+    <p class="vv-p">El <b>Rey Goblin</b> robó el <b style="color:#ffd84a">Cántaro Eterno</b> y lo rompió en pedazos. Sin chicha, la noche cubrió el bosque, los goblins invadieron las colinas y el Éter del cielo se partió en islas flotantes: el <b>Abismo</b>.</p>
+    <p class="vv-p">Tú eres un duende joven. <b>Recupera las zonas</b> (misiones y encargos 🧭), <b>vence a sus jefes</b>, abre los cofres y junta <b>puntos de chicha</b> cazando. En el Abismo, la Luz y la Sombra luchan por el <b>Núcleo</b>, donde late el último pedazo del Cántaro.</p>
+    <p class="vv-p" style="color:#fde68a">🥤 Y es de verdad: con ${(10000).toLocaleString('es')} puntos de chicha te enviamos un litro de chicha morada a tu casa (Mochila → Chicha).</p>
+`;
+  $('v-diario').querySelector('h2').textContent = 'LA LEYENDA DEL CÁNTARO';
+  abrir('v-diario');
+}
+$('b-leyenda').onclick = () => { cerrar('v-ayuda'); verLeyenda(); };
+function leyendaPrimeraVez() {
+  try { if (localStorage.getItem('dq_leyenda')) return; } catch (e) { return; }
+  if (hayVentana()) { setTimeout(leyendaPrimeraVez, 3000); return; }   // espera a que elija clase, etc.
+  try { localStorage.setItem('dq_leyenda', '1'); } catch (e) {}
+  verLeyenda();
+}
 let avisoInvT = 0;
 function avisoInvitado() {
   // Desde Nv 3 (no encima del tutorial) y como mucho una vez al dia.
