@@ -495,6 +495,8 @@ export const Mundo3D = {
         if (s.a === 3) { s.vueloS = (s.vueloS || 0) + dt; if (s.vueloS > ala.vuelo + 2) { s.a = 4; if (!s.alasAvisadas) { s.alasAvisadas = true; this.enviar(s, { t: 'alasAgotadas' }); } } }
         else { s.h = Math.max(0, (s.h || 0) - 2 * dt); if (!s.h && !(enAbismo(s.p.x) && !s.i3 && !islaEn(s.p.x, s.p.z))) s.a = 0; }
       } else if ((!s.a || s.a === 1) && (s.h || 0) > 2 && ahora - (s.movT || 0) > 400) s.h = Math.max(0, s.h - 9 * dt);   // quieto en el aire a pie: cae
+      // Quieto en el suelo las alas tambien descansan (el cliente no manda posicion si no se mueve).
+      if ((!s.a || s.a === 1) && (s.h || 0) <= 1.2 && ahora - (s.movT || 0) > 400 && s.vueloS && !(enAbismo(s.p.x) && !s.i3 && !islaEn(s.p.x, s.p.z))) s.vueloS = Math.max(0, s.vueloS - dt * 3);
       if (this.vacio3d(s, ahora)) continue;
       this.tickJugador(s, ahora, dt, seguro);
       if (s.muerto || s.hp >= s.st.maxHp) continue;
@@ -1037,7 +1039,9 @@ export const Mundo3D = {
     // le mataba a salvo); asi se reinicia y se cura como al romper la correa.
     const isla = !enC && enAbismo(o.hx) ? islaEn(o.hx, o.hz) : null;
     const enSuIsla = x => !isla || islaEn(x.p.x, x.p.z) === isla;
-    const valido = x => x && x.m3 && !x.muerto && !x.cerrado && mismo(x, o) && !(x.h > 8) && dist(x.p, casa) < CORREA + 20 && enSuIsla(x);
+    // Los del asedio (puerta, Guardian, guardia) no van contra la faccion duena: ella no les puede pegar.
+    const duenaN = o.asedio ? this.duenoNucleo() : null;
+    const valido = x => x && x.m3 && !x.muerto && !x.cerrado && mismo(x, o) && !(x.h > 8) && dist(x.p, casa) < CORREA + 20 && enSuIsla(x) && !(duenaN && x.c && x.c.faccion === duenaN);
     // Objetivo: Provocar manda; si no, la tabla de amenaza (para quitarle el
     // foco hay que superar el 110 % cuerpo a cuerpo o el 130 % a distancia).
     const teniaObj = !!o.obj || o.amen.size > 0;

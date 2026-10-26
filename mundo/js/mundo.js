@@ -14,21 +14,21 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA } from '/mmo/js/data.js?v=302';
-import { iniciarVentanas } from './ventanas.js?v=302';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=302';
-import { crearMusica } from './musica.js?v=302';
-import { construirCueva } from './cueva.js?v=302';
-import { TAPA, transparentar } from './tapa.js?v=302';
-import { construirAbismo } from './abismo.js?v=302';
-import { crearParticulas } from './particulas.js?v=302';
-import { cargarKenney, piezasCasa } from './kenney.js?v=302';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA } from '/mmo/js/data.js?v=303';
+import { iniciarVentanas } from './ventanas.js?v=303';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=303';
+import { crearMusica } from './musica.js?v=303';
+import { construirCueva } from './cueva.js?v=303';
+import { TAPA, transparentar } from './tapa.js?v=303';
+import { construirAbismo } from './abismo.js?v=303';
+import { crearParticulas } from './particulas.js?v=303';
+import { cargarKenney, piezasCasa } from './kenney.js?v=303';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=302';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=302';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=302';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS } from './lore.js?v=302';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=303';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=303';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=303';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS } from './lore.js?v=303';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1372,7 +1372,8 @@ function recibir(m) {
     case 'grupo': grupo3 = m.g; pintarGrupo(); pintarAmigos3(); break;
     case 'contactos': contactos3 = m.l || []; pintarAmigos3(); pintarObjetivoP(); break;
     case 'quien': quien3 = m.r || []; pintarAmigos3(); break;
-    case 'alasAgotadas': if (P.vuela) { volar(false); aviso('Tus alas se cansaron.'); } P.alas = 0; break;
+    // Alas agotadas segun el servidor: a planear (antes caia en picado, mortal sobre el vacio).
+    case 'alasAgotadas': if (P.vuela) { volar(false); P.planeoAuto = true; aviso('Tus alas se cansaron: planeas hacia el suelo.'); } P.alas = 0; break;
     case 'pica': pica = performance.now() + m.ms; aviso('🎣 ¡Pica! ' + K('Pulsa E', 'Toca ¡TIRAR!') + ' para tirar', 'ok'); sfx('boton', 0.7); break;
     case 'pescado': quitarCorcho(); sfx('moneda', 0.5); break;
     case 'duelo':
@@ -1931,14 +1932,24 @@ $('op-amigo').onclick = () => { if (objetivoP) mandar({ t: 'contactoAdd', p: obj
 $('op-ign').onclick = () => { const o = otros.get(objetivoP); if (o) mandar({ t: 'ignorar', n: o.n }); };
 $('op-rep').onclick = () => { const o = otros.get(objetivoP); if (!o) return; const i = $('chat-in'); i.style.display = 'block'; i.value = '/reportar ' + o.n + ' '; i.placeholder = 'Escribe el motivo y pulsa Enter'; i.focus(); };
 // Chat: /g (o /p) al grupo, /s nombre texto susurra; lo demas, general.
+// Nombre al principio de un comando: entre comillas, el mas largo de los jugadores
+// conocidos (los de Telegram llevan espacios) o, si no, la primera palabra.
+function nombreYResto(t) {
+  t = t.trim();
+  const q = /^"([^"]+)"\s*(.*)$/.exec(t); if (q) return [q[1], q[2]];
+  const lt = t.toLowerCase();
+  const nombres = [...otros.values()].map(o => o.n).filter(Boolean).sort((a, b) => b.length - a.length);
+  for (const n of nombres) { const ln = n.toLowerCase(); if (lt === ln || lt.startsWith(ln + ' ')) return [n, t.slice(n.length).trim()]; }
+  const i = t.search(/\s/); return i < 0 ? [t, ''] : [t.slice(0, i), t.slice(i).trim()];
+}
 function enviarChat(v) {
-  const ig = /^\/ignorar\s+(\S+)/i.exec(v), rp = /^\/reportar\s+(\S+)\s*(.*)$/i.exec(v);
-  if (ig) return mandar({ t: 'ignorar', n: ig[1] });
-  if (rp) return mandar({ t: 'reportar', n: rp[1], motivo: rp[2] });
-  const g = /^\/(g|p|grupo)\s+(.+)/i.exec(v), s = /^\/(s|w)\s+(\S+)\s+(.+)/i.exec(v), hh = /^\/(h|herm|hermandad)\s+(.+)/i.exec(v);
+  const ig = /^\/ignorar\s+(.+)$/i.exec(v), rp = /^\/reportar\s+(.+)$/i.exec(v);
+  if (ig) return mandar({ t: 'ignorar', n: nombreYResto(ig[1])[0] });
+  if (rp) { const [n, mot] = nombreYResto(rp[1]); return mandar({ t: 'reportar', n, motivo: mot }); }
+  const g = /^\/(g|p|grupo)\s+(.+)/i.exec(v), s = /^\/(s|w)\s+(.+)/i.exec(v), hh = /^\/(h|herm|hermandad)\s+(.+)/i.exec(v);
   if (hh) return mandar({ t: 'chat', m: hh[2], canal: 'hermandad' });
   if (g) return mandar({ t: 'chat', m: g[2], canal: 'grupo' });
-  if (s) return mandar({ t: 'chat', m: s[3], canal: 'susurro', a: s[2] });
+  if (s) { const [a, txt] = nombreYResto(s[2]); if (txt) return mandar({ t: 'chat', m: txt, canal: 'susurro', a }); return aviso('Escribe: /s Nombre mensaje', 'err'); }
   mandar({ t: 'chat', m: v, canal: 'general' });
 }
 function lineaChat(m) {
@@ -2710,7 +2721,7 @@ function volar(on) {
     P.vuela = true; P.vy = 0; if (P.suelo) P.y += 1.5; P.suelo = false;
     sfx('salto', 0.2); sfxK('tela', 0.35);
   } else P.vuela = false;
-  if (MOVIL) $('t-bajar').style.visibility = P.vuela ? 'visible' : 'hidden';
+  if (MOVIL) { $('t-bajar').style.visibility = P.vuela ? 'visible' : 'hidden'; $('t-volar').textContent = P.vuela ? 'PLANEAR' : 'VOLAR'; }
 }
 function saltar() {
   if (P.muerto) return;
@@ -2750,7 +2761,7 @@ function hablar() {
       + '<p style="font-size:12px;color:var(--txt2)">Las demás mazmorras, la Torre y la banda siguen en $DUENDE CLASSIC (2D) con tu mismo personaje.</p><a class="btn sec" href="/mmo/" style="display:block;text-align:center;text-decoration:none">Ir a CLASSIC (2D)</a>';
     $('p-cueva').onclick = () => { mandar({ t: 'cueva' }); cerrar('v-npc'); };
     if ($('p-abismo')) $('p-abismo').onclick = () => { mandar({ t: 'abismo' }); cerrar('v-npc'); };
-    for (const f of ['luz', 'sombra']) if ($('p-' + f)) $('p-' + f).onclick = () => { mandar({ t: 'faccion', f }); cerrar('v-npc'); };
+    for (const f of ['luz', 'sombra']) if ($('p-' + f)) $('p-' + f).onclick = () => { if (!confirm(`¿Unirte a los ${FACCIONES[f].titulo}? Es para siempre: no se puede cambiar.`)) return; mandar({ t: 'faccion', f }); cerrar('v-npc'); };
     abrir('v-npc');
     return;
   }
@@ -2819,7 +2830,8 @@ if (MOVIL) {
   $('t-bajar').addEventListener('touchcancel', () => { tocandoBajar = false; });
   $('t-bajar').addEventListener('touchstart', e => { e.preventDefault(); tocandoBajar = true; }, { passive: false });
   $('t-bajar').addEventListener('touchend', () => { tocandoBajar = false; });
-  $('t-volar').addEventListener('touchstart', e => { e.preventDefault(); volar(); }, { passive: false });
+  // En el aire, VOLAR (que pasa a decir PLANEAR) pliega las alas y planea: antes caia en picado.
+  $('t-volar').addEventListener('touchstart', e => { e.preventDefault(); if (P.vuela) { volar(false); P.planeoAuto = true; } else volar(); }, { passive: false });
   $('t-usar').addEventListener('touchstart', e => { e.preventDefault(); hablar(); }, { passive: false });
   $('t-montar').addEventListener('touchstart', e => { e.preventDefault(); montar(); }, { passive: false });
   $('t-obj').addEventListener('touchstart', e => { e.preventDefault(); cicloObjetivo(); }, { passive: false });
@@ -2858,7 +2870,8 @@ function fisica(dt) {
     if (o && !o.muereT) {
       const ox = o.tx ?? o.x, oz = o.tz ?? o.z;
       const dx = ox - P.x, dz = oz - P.z, d = Math.hypot(dx, dz);
-      if (d > rangoAtaque(o) * 0.75 && d < 45) { mx = dx / d; mz = dz / d; }
+      // En el Abismo no persigue al objetivo fuera de la isla (antes te tiraba al vacio).
+      if (d > rangoAtaque(o) * 0.75 && d < 45 && !(enAbismo(P.x) && !P.vuela && !islaEn(P.x + dx / d * 1.5, P.z + dz / d * 1.5))) { mx = dx / d; mz = dz / d; }
     }
   }
   const mag = Math.hypot(mx, mz);

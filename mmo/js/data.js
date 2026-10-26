@@ -498,6 +498,12 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 71, fecha: '26 oct 2026', items: [
+    'Vuelo más seguro: cuando se cansan las alas planeas en vez de caer en picado, VOLAR pasa a PLANEAR en el aire y las alas descansan también quieto en el suelo.',
+    'Susurros, /reportar e /ignorar funcionan con nombres que llevan espacios (los de Telegram). También vale escribir el nombre entre comillas.',
+    'En ORIGINS se compra en cualquier punto del Pueblo Duende, y ponerte una montura, alas, color o mascota que ya tienes vale en cualquier sitio.',
+    'Abismo: la facción se confirma antes de elegirla (es para siempre), el ataque automático no te lleva al vacío y el Guardián del Núcleo ya no ataca a la facción que defiende. Si el líder del grupo se desconecta, otro toma el mando.',
+  ] },
   { n: 70, fecha: '26 oct 2026', items: [
     'Misiones del día y de la semana a la vista (toca el panel): en ORIGINS ya no salen tareas de CLASSIC (expediciones, Torre) que bloqueaban el bono.',
     'Al cumplir una misión de la cadena se anuncia la siguiente; si caes peleando contra un jefe también cobras, y el primer hito ya cuenta su secreto.',

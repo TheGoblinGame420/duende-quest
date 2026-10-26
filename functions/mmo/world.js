@@ -50,6 +50,7 @@ import { Expediciones } from './expediciones.js';
 import { Dios } from './dios.js';
 import { Viajes } from './viajes.js';
 import { Mundo3D } from './mundo3d.js';
+import { zonaEn as zonaEn3d } from '../../mmo/js/mundo3d.js';
 
 const MAX_JUGADORES = 300;
 const GUARDAR_CADA_MS = 20000;
@@ -2201,7 +2202,7 @@ export class MmoWorld {
 
   // ── TIENDA ──
   cercaDelMercader(s) {
-    if (s.m3) return this.cerca3d(s, 'tienda');
+    if (s.m3) return this.cerca3d(s, 'tienda') || (!s.i3 && zonaEn3d(s.p.x, s.p.z) === 'pueblo');   // ORIGINS: todo el pueblo (el 💎 abre la tienda en cualquier sitio)
     if (s.k !== 'pueblo') return false;
     const npc = MAPAS.pueblo.npcs.find(n => n.tipo === 'tienda');
     return npc && Math.abs(s.x - npc.x) < 200;
@@ -2209,7 +2210,10 @@ export class MmoWorld {
 
   comprar(s, m) {
     const c = s.c;
-    if (!this.cercaDelMercader(s)) return this.enviar(s, { t: 'toast', m: 'Tienes que estar junto al Mercader del pueblo.' });
+    // Ponerse algo que ya es tuyo (montura, alas, color, mascota) vale en cualquier sitio.
+    const lista = { montura: c.monturas, alas: c.alas, tinte: c.tintes, mascota: c.mascotas }[m.k];
+    const soloPoner = typeof m.id === 'string' && Array.isArray(lista) && lista.includes(m.id);
+    if (!soloPoner && !this.cercaDelMercader(s)) return this.enviar(s, { t: 'toast', m: s.m3 ? 'Para comprar ve al Pueblo Duende (en cualquier punto del pueblo vale).' : 'Tienes que estar junto al Mercader del pueblo.' });
     if (m.k === 'pw') {
       const def = PODERES.find(p => p.id === m.id);
       const n = clamp(m.n | 0, 1, 10);

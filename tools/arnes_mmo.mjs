@@ -3480,8 +3480,10 @@ async function pruebas3d() {
   chequear(!a.muerto && a.ultimos('tp3').length && Math.hypot(a.p.x - W.SPAWN3D.x, a.p.z - W.SPAWN3D.z) < 1, 'revive en el pueblo');
   const merc = W.NPCS3D.find(n => n.tipo === 'tienda');
   a.c.oro = 1000; const pociones = a.c.pw.pocion;
+  const enPueblo = a.p; a.p = { x: W.ZONAS3D.noche.x, z: W.ZONAS3D.noche.z };
   await a.mandar({ t: 'comprar', k: 'pw', id: 'pocion', n: 1 });
-  chequear(a.c.pw.pocion === pociones, 'lejos del Mercader no se compra');
+  chequear(a.c.pw.pocion === pociones, 'fuera del pueblo no se compra');
+  a.p = enPueblo;
   a.p = { x: merc.x + 1, z: merc.z }; await a.mandar({ t: 'comprar', k: 'pw', id: 'pocion', n: 1 });
   chequear(a.c.pw.pocion === pociones + 1, 'junto al Mercader del pueblo 3D se compra');
   a.limpiar(); await a.mandar({ t: 'portal', i: 0 }); await a.mandar({ t: 'mv', x: 500, y: 400 });

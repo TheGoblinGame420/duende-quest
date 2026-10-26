@@ -189,6 +189,8 @@ export const Social = {
     const g = this.grupoDe(s);
     if (!g) return;
     if (!this.sesionesGrupo(g).some(x => x !== s)) { this.grupos.delete(g.id); if (this.alDisolverGrupo) this.alDisolverGrupo(g); return; }
+    // Si se va el lider (Telegram en segundo plano), lo pasa a uno conectado: si no, nadie podia invitar ni echar.
+    if (g.lider === s.c.uid) { const sig = this.sesionesGrupo(g).find(x => x !== s); if (sig) { g.lider = sig.c.uid; this.avisarGrupo(g, `👑 ${sig.c.nombre} es ahora el líder del grupo.`, s); } }
     this.enviarGrupo(g, s);
   },
 

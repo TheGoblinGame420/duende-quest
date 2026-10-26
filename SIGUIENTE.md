@@ -2997,3 +2997,11 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - cueva3d.js: cueva hecha y vacía se recrea.
 - Cliente: primer hito (`encRecibido`), aliado solo si está cerca, Sigilo espera 2,5 s, encargo de vuelo con altura y «botón VOLAR», cofre cercano en móvil (caja abierta), insignia del pase en ⋯ y el menú se cierra al elegir, texto del premio diario.
 - Arnés 843 bien.
+
+### Tercera ronda de agentes jugando (26-oct-2026, `?v=303`)
+
+- Cliente: `alasAgotadas` → `planeoAuto`; `#t-volar` en el aire pliega y planea (texto PLANEAR); `nombreYResto` (comillas o el nombre conocido más largo) para /s, /w, /reportar, /ignorar; confirmación de facción; el acercamiento automático no sale de la isla.
+- mundo3d.js: las alas descansan en el tick con el jugador quieto en el suelo; los monstruos del asedio no eligen a la facción dueña.
+- world.js: `comprar` sin cercanía para poner lo ya comprado; en 3D vale todo el pueblo (`zonaEn3d`).
+- social.js: al desconectarse el líder, el liderazgo pasa a otro conectado.
+- Arnés 843 bien (prueba de la tienda: fuera del pueblo no se compra).
