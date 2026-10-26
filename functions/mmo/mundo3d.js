@@ -230,7 +230,9 @@ export const Mundo3D = {
     let h;
     if (a === 3) h = clamp(hq, h0 - 7.5 * dtS - 0.5, h0 + 6.5 * dtS + 0.5);
     else if (a === 4) { h = Math.min(hq, Math.max(0, h0 - 1.0 * dtS)); if (h <= 0.3) { h = 0; if (!(enAbismo(nx) && !islaEn(nx, nz))) a = 0; } }
-    else h = hq <= 2 && h0 <= 2.5 ? hq : Math.min(hq, Math.max(0, h0 - 9 * dtS - 0.5));   // a pie no se flota: se cae
+    // A pie no se flota: se cae. Sobre el vacio del Abismo ni los 2 m de
+    // escalon (con a=0/a=4 alternos se caminaba sobre el vacio sin alas).
+    else h = hq <= 2 && h0 <= 2.5 && !(enAbismo(nx) && !s.i3 && !islaEn(nx, nz)) ? hq : Math.min(hq, Math.max(0, h0 - 9 * dtS - 0.5));
     // Energia de las alas: se cuenta con el modo que se mantuvo hasta este mensaje.
     if (prevA === 3) s.vueloS = (s.vueloS || 0) + dtS;
     else if (prevA !== 4 && h0 <= 1.2 && !(enAbismo(nx) && !s.i3 && !islaEn(nx, nz))) s.vueloS = Math.max(0, (s.vueloS || 0) - dtS * 3);

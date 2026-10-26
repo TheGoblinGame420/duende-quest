@@ -492,7 +492,8 @@ export class MmoWorld {
     if (!c && !uid.startsWith('inv:') && /^[a-f0-9]{32}$/.test(m.inv || '')) {
       const uidInv = 'inv:' + (await sha256hex('dq-mmo:' + m.inv)).slice(0, 24);
       const previo = uidInv !== uid && await this.state.storage.get('c:' + uidInv);
-      if (previo && !this.porUid.has(uidInv) && !this.entrando.has(uidInv)) {
+      // Un invitado baneado no se lava creando una cuenta.
+      if (previo && !this.porUid.has(uidInv) && !this.entrando.has(uidInv) && !(await this.baneado(uidInv))) {
         // Mientras se hereda, el invitado no puede entrar (ni otra cuenta heredar):
         // leeria el personaje que se esta moviendo y al guardarlo quedaria duplicado.
         this.entrando.set(uidInv, s);
@@ -1634,6 +1635,9 @@ export class MmoWorld {
   ponerTitulo(s, m) {
     const c = s.c;
     if (m.id !== '' && !(typeof m.id === 'string' && c.logros.includes(m.id))) return;
+    // Sin cambio o demasiado seguido: no se difunde (cada 'pa' va a todo el mundo 3D).
+    if ((c.titulo || '') === m.id || Date.now() - (s.tituloT || 0) < 1500) return;
+    s.tituloT = Date.now();
     c.titulo = m.id;
     s.sucio = true;
     this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });

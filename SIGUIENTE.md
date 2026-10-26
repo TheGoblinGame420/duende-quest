@@ -2950,3 +2950,12 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - mundo/js/lore.js (nuevo): `LORE_ZONAS` (intro + pedazo de las 10 zonas), `LORE_NPC`, `LORE_HITOS`, `LORE_NIVEL60`, `AVENTUREROS`, `FRASES_AVENTUREROS` (revisados a mano tras la investigación de foros).
 - mundo.js: `tituloZona` avisa la intro una vez por sesión (sessionStorage `dq3_lz`); `fraseNpc` arriba de la ventana del PNJ (y del ranking del Sabio); `case 'enc'` avisa la frase del hito al completarlo; aviso del nivel 60; leyenda con «Los pedazos del Cántaro».
 - Aventureros: 5 `crearDuende` por día en la plaza (radio 4-16 m, `empujarFuera`), etiqueta «Nombre PNJ» (≤24 m) y bocadillo cada 9-18 s. Solo cliente: no cuentan como conectados.
+
+### Seguridad (ronda de 60 agentes) e inicio arreglado (26-oct-2026, `?v=298`)
+
+- inicio/index.html: un comentario `//` se comía `}` del `if` en `vivos()` y todo el script de /inicio/ fallaba (JUGAR sin acción).
+- social.js: canal desconocido = general (con la regla del invitado < Nv 5); `/reportar` pasa por `plano()` (sin enlaces, @ ni /comandos) antes del Telegram del dueño.
+- mundo3d.js: a pie sobre el vacío del Abismo no se acepta la altura del cliente (se cae): cerraba el truco a=0/a=4.
+- world.js: un invitado baneado no se hereda a una cuenta nueva; `ponerTitulo` sin difusión si no cambia o va más rápido que 1,5 s.
+- Pendiente para el dueño (no tocado por las reglas de pagos): helius-verify (una tx con varias referencias), torneo de wallet.js (puntuación por tiempo), SRI de TON Connect y @solana/web3.js, código de rescate = token permanente, homoglifos en nombres.
+- Arnés 843 bien.

@@ -230,6 +230,8 @@ export const Social = {
     if (!s.dios && riesgoEstafa(txt)) return this.no(s, '🛡 Por seguridad no se permiten direcciones de cartera, enlaces ni frases semilla en el chat. Nadie del equipo te pedirá nunca tu frase semilla.');
     s.chatT = ahora;
     let canal = m.canal;
+    // Canal desconocido = general (y pasa por las mismas reglas de invitado).
+    if (!['general', 'decir', 'grupo', 'hermandad', 'susurro'].includes(canal)) canal = 'general';
     // General y susurro llegan a cualquiera: un invitado recien creado (token
     // nuevo, gratis) no los usa hasta el nivel 5. Si no, silenciarlo no servia:
     // reconectaba con otro token y seguia.
@@ -295,7 +297,9 @@ export const Social = {
     const r = { t: ahora, de: s.c.uid, deN: s.c.nombre, a: t.c.uid, aN: t.c.nombre, motivo, frases };
     this.reportes = (this.reportes || []).concat(r).slice(-200);
     if (this.state && this.state.storage) this.state.storage.put('reportes', this.reportes).catch(() => {});
-    if (this.avisarAdmin) this.avisarAdmin(`⚠️ Reporte de ${s.c.nombre.replace(/[^\p{L}\p{N} ]/gu, '')} contra ${t.c.nombre.replace(/[^\p{L}\p{N} ]/gu, '')}: ${motivo.replace(/[*_`\[\]]/g, '')}${frases.length ? '\nÚltimas frases: ' + frases.map(f => '«' + f.replace(/[*_`\[\]]/g, '') + '»').join(' ') : ''}`).catch(() => {});
+    // Al Telegram del dueño sin enlaces, @usuarios ni /comandos clicables.
+    const plano = x => x.replace(/https?:\/\/\S+|www\.\S+|t\.me\S*/gi, '[enlace]').replace(/[*_`\[\]]/g, '').replace(/[\/@]/g, ' ');
+    if (this.avisarAdmin) this.avisarAdmin(`⚠️ Reporte de ${s.c.nombre.replace(/[^\p{L}\p{N} ]/gu, '')} contra ${t.c.nombre.replace(/[^\p{L}\p{N} ]/gu, '')}: ${plano(motivo)}${frases.length ? '\nÚltimas frases: ' + frases.map(f => '«' + plano(f) + '»').join(' ') : ''}`).catch(() => {});
     this.enviar(s, { t: 'toast', m: `⚠️ Reporte enviado. Gracias: el equipo lo revisará. Si te molesta, usa /ignorar ${t.c.nombre}.` });
   },
   // Historial corto del general y de cada hermandad, solo en memoria (si el

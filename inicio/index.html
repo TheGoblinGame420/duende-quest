@@ -182,7 +182,8 @@ footer a{color:var(--cian);text-decoration:none;}
   function vivos() {
     if (document.hidden) return;
     fetch('/mmo/ws', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
-      var el = document.getElementById('on'); if (d.online >= 5) {   // con 1-4 desanima mas que anima el.hidden = false; el.querySelector('b').textContent = Number(d.online).toLocaleString('es'); }
+      // Con 1-4 conectados desanima mas que anima: solo se muestra desde 5.
+      var el = document.getElementById('on'); if (d.online >= 5) { el.hidden = false; el.querySelector('b').textContent = Number(d.online).toLocaleString('es'); }
     }).catch(function () {});
   }
   vivos(); setInterval(vivos, 60000);

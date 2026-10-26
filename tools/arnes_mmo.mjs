@@ -278,6 +278,9 @@ async function pruebas() {
   avanzar(1000); a3.c.nivel = 1; a1.limpiar(); a3.limpiar();
   await a3.mandar({ t: 'chat', canal: 'general', m: 'spam' });
   chequear(!a1.ultimos('chat').some(x => x.canal === 'general') && a1.ultimos('chat').some(x => x.canal === 'decir' && x.m === 'spam'), 'un invitado de nivel bajo habla en su mapa, no en el general');
+  avanzar(1000); a1.limpiar();
+  await a3.mandar({ t: 'chat', canal: 'General', m: 'truco' });
+  chequear(!a1.ultimos('chat').some(x => x.canal === 'general'), 'un canal desconocido no se salta el bloqueo del invitado');
   a3.c.nivel = 10;
   await a1.mandar({ t: 'liderGrupo', uid: pub(a2.c.uid) });
   chequear(mundo.grupoDe(a1).lider === a2.c.uid, 'el líder pasa el mando');

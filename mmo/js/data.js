@@ -498,6 +498,10 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 66, fecha: '26 oct 2026', items: [
+    'Arreglada la página de inicio: los botones JUGAR vuelven a funcionar en todos los navegadores.',
+    'Más seguridad: nadie puede caminar sobre el vacío del Abismo sin alas, el chat de los invitados nuevos no se puede saltar y los reportes llegan limpios al equipo.',
+  ] },
   { n: 65, fecha: '26 oct 2026', items: [
     'Lore en cada rincón de ORIGINS: cada zona te cuenta su historia al entrar, y la leyenda muestra los 10 pedazos del Cántaro Eterno y dónde cayó cada uno.',
     'Los PNJ del pueblo hablan: Tito, Grumo, el Sabio y Lila tienen frases propias sobre el Cántaro, la chicha y el Rey Goblin.',
