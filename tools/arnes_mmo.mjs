@@ -277,7 +277,7 @@ async function pruebas() {
   chequear(a1.ultimos('chat').some(x => x.canal === 'decir'), 'decir llega a los del mapa');
   avanzar(1000); a3.c.nivel = 1; a1.limpiar(); a3.limpiar();
   await a3.mandar({ t: 'chat', canal: 'general', m: 'spam' });
-  chequear(!a1.ultimos('chat').some(x => x.canal === 'general') && a3.ultimos('no').length === 1, 'un invitado de nivel bajo no habla en el canal general');
+  chequear(!a1.ultimos('chat').some(x => x.canal === 'general') && a1.ultimos('chat').some(x => x.canal === 'decir' && x.m === 'spam'), 'un invitado de nivel bajo habla en su mapa, no en el general');
   a3.c.nivel = 10;
   await a1.mandar({ t: 'liderGrupo', uid: pub(a2.c.uid) });
   chequear(mundo.grupoDe(a1).lider === a2.c.uid, 'el líder pasa el mando');
@@ -3259,6 +3259,14 @@ async function pruebasChicha() {
     const r2 = mundo.chichas.find(x => x.uid === j.c.uid && x.estado === 'pendiente');
     const env = await mundo.internoChicha('chichaOk', { id: r2.id });
     chequear(env.ok && r2.estado === 'enviado', 'el dueño lo marca como enviado');
+    // Nivel 60: 2 litros, una vez, fuera del tope mensual.
+    await j.mandar({ t: 'chicha', meta: 'nv60' });
+    chequear(!j.c.chicha.rec.includes('nv60'), 'antes del nivel 60 no se reclaman los 2 litros');
+    j.c.nivel = 60;
+    await j.mandar({ t: 'chicha', meta: 'nv60' });
+    for (let i = 0; i < 10; i++) await espera();
+    const r60 = mundo.chichas.find(x => x.uid === j.c.uid && x.meta === 'nv60');
+    chequear(r60 && r60.litros === 2 && j.c.chicha.rec.includes('nv60') && avisos.some(t => t.includes('2 litros por llegar a nivel 60')), 'en nivel 60 se reclaman 2 litros y el dueño recibe el aviso');
     await dejar(inv); await dejar(j);
   } finally { mundo.tgEnviar = tgReal; mundo.avisarAdmin = adminReal; }
 }

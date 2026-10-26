@@ -13,17 +13,17 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=295" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=296" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=295">
-<link rel="modulepreload" href="/mmo/js/data.js?v=295">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=295">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=295">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=295">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=295">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=295">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=296">
+<link rel="modulepreload" href="/mmo/js/data.js?v=296">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=296">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=296">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=296">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=296">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=296">
 <style>
 :root{--bg:#0a0418;--panel:rgba(14,9,30,.86);--borde:rgba(160,140,255,.22);--txt:#f2efff;--txt2:#b8b0d8;--txt3:#7d7699;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;--oro:#ffd84a;--pri:#2563eb;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -88,6 +88,8 @@ body.movil #misiones{top:110px;bottom:auto;left:8px;right:auto;width:165px;font-
 #chat{left:12px;bottom:22px;width:min(380px,42vw);padding:6px 8px;}
 #chat-log{max-height:150px;overflow:hidden;font:500 12px/1.45 var(--sans);display:flex;flex-direction:column;justify-content:flex-end;}
 #chat-log div b{font-weight:700;}
+#chat-env{display:none;flex:0 0 auto;min-width:40px;margin-top:4px;border:1px solid var(--borde);border-radius:6px;background:#2563eb;color:#fff;font:700 15px var(--sans);pointer-events:auto;}
+#chat-in[style*="block"]+#chat-env{display:block;}
 #chat-in{display:none;width:100%;margin-top:4px;padding:6px 8px;border-radius:6px;border:1px solid var(--borde);background:rgba(0,0,0,.5);color:var(--txt);font:500 13px var(--sans);user-select:text;-webkit-user-select:text;}
 /* Avisos a la izquierda, encima del chat (no en medio de la pantalla) */
 #avisos{position:fixed;left:12px;bottom:200px;display:flex;flex-direction:column;gap:4px;align-items:flex-start;pointer-events:none;z-index:5;max-width:min(380px,42vw);}
@@ -331,7 +333,12 @@ body.movil .vv-stat small,body.compacto .vv-stat small{font-size:8.5px!important
 body.movil .ventana img,body.compacto .ventana img{max-width:100%;}
 body.movil .ventana p,body.compacto .ventana p{overflow-wrap:anywhere;}
 /* Sin mensajes ni escribiendo: la caja del chat no se dibuja (era una barra vacia) */
-body.movil #chat:has(#chat-log:empty):not(:has(#chat-in:focus)),body.compacto #chat:has(#chat-log:empty):not(:has(#chat-in:focus)){visibility:hidden;}
+body.movil #chat:has(#chat-log:empty):not(:has(#chat-in[style*="block"])),body.compacto #chat:has(#chat-log:empty):not(:has(#chat-in[style*="block"])){visibility:hidden;}
+/* Premio de chicha siempre a la vista (v296) */
+#chicha3{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);z-index:3;pointer-events:auto;cursor:pointer;background:rgba(74,20,110,.82);border:1px solid #c084fc;border-radius:999px;color:#fde68a;font:700 11px var(--sans);padding:3px 10px;white-space:nowrap;max-width:calc(100vw - 16px);overflow:hidden;text-overflow:ellipsis;box-shadow:0 2px 8px rgba(0,0,0,.35);}
+#chicha3.listo{background:#7c3aed;color:#fff;animation:chichaPulso 1.6s ease-in-out infinite;}
+@keyframes chichaPulso{50%{box-shadow:0 0 14px #c084fc;}}
+body.movil #chicha3,body.compacto #chicha3{bottom:calc(62px + env(safe-area-inset-bottom));font-size:9.5px;padding:2px 8px;}
 </style>
 </head>
 <body>
@@ -402,9 +409,10 @@ body.movil #chat:has(#chat-log:empty):not(:has(#chat-in:focus)),body.compacto #c
 <div class="caja" id="misiones"></div>
 <div class="caja" id="mini"><canvas id="mini-c" width="150" height="150"></canvas><div class="z" id="mini-z">—</div><div class="z" id="mini-r" style="color:var(--txt2);font-weight:600"></div></div>
 <div class="caja" id="barra"></div>
+<button id="chicha3" title="Premio real: 2 litros de chicha morada al llegar a nivel 60">🥤 Nv 60 = 2 L de chicha morada real</button>
 <div class="caja" id="lanzar"><div class="barra"><i></i><span id="lanzar-t"></span></div></div>
 <div id="alas"><i></i><span>ALAS</span></div>
-<div class="caja" id="chat"><div id="chat-log"></div><input id="chat-in" maxlength="120" placeholder="Escribe y pulsa Enter…" autocomplete="off" enterkeyhint="send"></div>
+<div class="caja" id="chat"><div id="chat-log"></div><form id="chat-f" style="display:flex;gap:4px;margin:0" onsubmit="return false"><input id="chat-in" maxlength="120" placeholder="Escribe tu mensaje…" autocomplete="off" enterkeyhint="send"><button type="submit" id="chat-env" aria-label="Enviar">➤</button></form></div>
 <div id="avisos" role="status" aria-live="polite"></div>
 <div id="titulo-zona"><b id="tz-n"></b><small id="tz-s"></small></div>
 <button class="caja" id="hablar">E · Hablar</button>
@@ -515,6 +523,6 @@ body.movil #chat:has(#chat-log:empty):not(:has(#chat-in:focus)),body.compacto #c
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script src="/js/config.js"></script>
-<script type="module" src="/mundo/js/mundo.js?v=295"></script>
+<script type="module" src="/mundo/js/mundo.js?v=296"></script>
 </body>
 </html>

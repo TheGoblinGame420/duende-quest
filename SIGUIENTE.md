@@ -2935,3 +2935,12 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 
 - index.html: en `body.movil`/`body.compacto` todas las `.modal .ventana` a `calc(100vw - 12px)` (máx. 460), títulos a 11 px con margen para la ✕, pestañas, stats y párrafos a escala, sin desborde horizontal. Comprobado en 360 px con las 11 ventanas.
 - assets/lore/duende-chicha.webp (imagen del dueño, 25 KB con transparencia) en la pantalla de carga y en la leyenda; `leyendaPrimeraVez()` por sesión (sessionStorage).
+
+### Chicha Nv 60 = 2 litros, XP más lenta, chat y poncho (26-oct-2026, `?v=296`)
+
+- data.js `CHICHA.nv60 = 60`, `litros60 = 2`; chicha.js `reclamarChicha` acepta `meta:'nv60'` (Nv 60, una vez, fuera del tope mensual, `litros: 2` en el reclamo, aviso al dueño «2 litros por llegar a nivel 60»); `internoChicha` dice «Tus 2 litros» al enviar.
+- ORIGINS: `#chicha3` fijo sobre la barra (progreso Nv X/60, pulsa al llegar; toca → leyenda o reclamo). 2D: `#h-chicha` en el seguimiento (abre Mochila → Chicha) y tarjeta «Nivel 60: 2 litros». Leyenda actualizada.
+- `xpParaSubir`: ×(1 + 0,06·(n−10)) desde nivel 10.
+- Chat 3D: formulario con botón ➤ (`enviarInputChat`); social.js: invitado < Nv 5 en general → 'decir'.
+- modelos.js: poncho de la skin común.
+- Arnés 842 bien.

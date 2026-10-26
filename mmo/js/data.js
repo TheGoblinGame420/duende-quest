@@ -309,7 +309,10 @@ export function statsMonstruo(key, nivel) {
 }
 
 // ── PROGRESION DEL JUGADOR ──
-export function xpParaSubir(nivel) { return Math.round(40 * Math.pow(nivel, 1.5)); }
+// Hasta el 10 igual que siempre (aprender a jugar); desde ahi cada nivel pide
+// un 6 % mas por nivel pasado el 10: el 60 cuesta 4 veces lo de antes
+// (25-oct-2026: el dueño pidio un camino al 60 largo, con premio real).
+export function xpParaSubir(nivel) { return Math.round(40 * Math.pow(nivel, 1.5) * (nivel <= 10 ? 1 : 1 + (nivel - 10) * 0.06)); }
 // MAESTRIA (despues del nivel 60): la XP ya no se tira. Cada nivel de
 // maestria pide la mitad de la XP de un nivel 60 y da oro; cada 5, un objeto
 // epico. No da estadisticas (nada de ventaja en PvP), es progreso y botin.
@@ -495,6 +498,12 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 64, fecha: '26 oct 2026', items: [
+    'Premio real: quien llegue a nivel 60 se lleva 2 litros de chicha morada a su casa. Siempre a la vista en pantalla con tu progreso (Nv X/60) y se reclama con un toque al llegar.',
+    'El camino al 60 es más largo: desde el nivel 10 cada nivel pide más experiencia (el 60 cuesta 4 veces lo de antes). Las misiones, mazmorras y encargos dan más en proporción.',
+    'Chat de ORIGINS arreglado en el móvil: botón ➤ para enviar, y los invitados nuevos hablan en el chat de su zona.',
+    'Tu duende viste un poncho andino azul con franjas doradas.',
+  ] },
   { n: 63, fecha: '25 oct 2026', items: [
     'Todas las ventanas (mochila, libro, tienda, pase, logros, mapa, amigos, hermandad, ranking y ayuda) se adaptan al móvil: casi todo el ancho, títulos y pestañas a escala y nada se sale.',
     'La leyenda del Cántaro te recibe en cada sesión, y la mascota $Duende con su chicha morada aparece en la carga y en la historia.',
@@ -1484,7 +1493,8 @@ export const TEMP_PROB = 0.2, TEMP_JEFE = 5;
 // niveles: puntos para cada litro (dos premios por jugador como mucho).
 // porDia: tope diario de puntos (10.000 = unas semanas de juego, frena bots).
 // mesMax: litros al mes para todo el juego (el dueño lo cambia aqui).
-export const CHICHA = { niveles: [10000, 50000], porDia: 600, nvPuntos: 10, nvReclamo: 15, mesMax: 10 };
+// nv60: al llegar a nivel 60 (una vez por personaje) se reclaman 2 litros (25-oct-2026, decision del dueño).
+export const CHICHA = { niveles: [10000, 50000], porDia: 600, nvPuntos: 10, nvReclamo: 15, mesMax: 10, nv60: 60, litros60: 2 };
 
 // ── BESTIARIO ──
 // Cuantos de cada monstruo has cazado. Cada tipo tiene 3 hitos con premio

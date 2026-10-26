@@ -14,20 +14,20 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN } from '/mmo/js/data.js?v=295';
-import { iniciarVentanas } from './ventanas.js?v=295';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=295';
-import { crearMusica } from './musica.js?v=295';
-import { construirCueva } from './cueva.js?v=295';
-import { TAPA, transparentar } from './tapa.js?v=295';
-import { construirAbismo } from './abismo.js?v=295';
-import { crearParticulas } from './particulas.js?v=295';
-import { cargarKenney, piezasCasa } from './kenney.js?v=295';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA } from '/mmo/js/data.js?v=296';
+import { iniciarVentanas } from './ventanas.js?v=296';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=296';
+import { crearMusica } from './musica.js?v=296';
+import { construirCueva } from './cueva.js?v=296';
+import { TAPA, transparentar } from './tapa.js?v=296';
+import { construirAbismo } from './abismo.js?v=296';
+import { crearParticulas } from './particulas.js?v=296';
+import { cargarKenney, piezasCasa } from './kenney.js?v=296';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=295';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=295';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=295';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=296';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=296';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=296';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1707,6 +1707,20 @@ function morir(m) {
 $('b-revivir').onclick = () => { mandar({ t: 'revivir' }); cerrar('v-muerte'); };
 
 // ── HUD ──
+// Premio real siempre a la vista: al llegar a nivel 60, 2 litros de chicha
+// morada (functions/mmo/chicha.js, meta 'nv60'). Tocarlo cuenta la leyenda o reclama.
+let chicha3Txt = '';
+function pintarChicha3() {
+  const b = $('chicha3'), nv = yo.nivel || 1, rec = ((yo.chicha || {}).rec || []).includes('nv60');
+  const t = rec ? `🥤 ${CHICHA.litros60} L de chicha reclamados ✓` : nv >= CHICHA.nv60 ? `🥤 ¡Reclama tus ${CHICHA.litros60} L de chicha morada!` : `🥤 Nv ${CHICHA.nv60} = ${CHICHA.litros60} L de chicha morada real · Nv ${nv}/${CHICHA.nv60}`;
+  if (t === chicha3Txt) return;
+  chicha3Txt = t; b.textContent = t; b.classList.toggle('listo', !rec && nv >= CHICHA.nv60);
+}
+$('chicha3').addEventListener('click', () => {
+  if (yo && yo.nivel >= CHICHA.nv60 && !((yo.chicha || {}).rec || []).includes('nv60')) {
+    if (confirm(`¿Reclamar tus ${CHICHA.litros60} litros de chicha morada? El equipo te escribirá por Telegram para pedirte la dirección (nunca pagos ni contraseñas).`)) mandar({ t: 'chicha', meta: 'nv60' });
+  } else verLeyenda();
+});
 function pintarHud() {
   if (!yo) return;
   const cl = CLASES[yo.clase];
@@ -1716,7 +1730,7 @@ function pintarHud() {
   $('m-rec').style.display = cl ? '' : 'none';
   if (cl) $('m-rec').firstElementChild.style.background = RECURSOS[cl.recurso].color;
   $('xp').firstElementChild.style.transform = `scaleX(${clamp(yo.xp / (yo.xpSig || xpParaSubir(yo.nivel)), 0, 1)})`;
-  pintarVida(); pintarBarra();
+  pintarVida(); pintarBarra(); pintarChicha3();
   if (!P.fig || P.skin !== claveYo()) cambiarSkinPropia();
 }
 function pintarVida() {
@@ -2186,7 +2200,7 @@ function verLeyenda() {
     <p class="vv-p"><img src="/assets/lore/maiz-morado.png" alt="" style="float:left;width:34px;margin:0 6px 0 0">Hace siglos, los duendes guardaban el <b style="color:#c084fc">Maíz Morado Sagrado</b>. Con él preparaban la <b style="color:#c084fc">chicha morada</b>, la bebida que les daba su fuerza y su magia.</p>
     <p class="vv-p">El <b>Rey Goblin</b> robó el <b style="color:#ffd84a">Cántaro Eterno</b> y lo rompió en pedazos. Sin chicha, la noche cubrió el bosque, los goblins invadieron las colinas y el Éter del cielo se partió en islas flotantes: el <b>Abismo</b>.</p>
     <p class="vv-p"><img src="/assets/lore/duende-chicha.webp" alt="" style="float:right;height:96px;margin:0 0 4px 6px">Tú eres un duende joven. <b>Recupera las zonas</b> (misiones y encargos 🧭), <b>vence a sus jefes</b>, abre los cofres y junta <b>puntos de chicha</b> cazando. En el Abismo, la Luz y la Sombra luchan por el <b>Núcleo</b>, donde late el último pedazo del Cántaro.</p>
-    <p class="vv-p" style="color:#fde68a">🥤 Y es de verdad: con ${(10000).toLocaleString('es')} puntos de chicha te enviamos un litro de chicha morada a tu casa (Mochila → Chicha).</p>
+    <p class="vv-p" style="color:#fde68a;font-weight:700">🥤 Y es de verdad: quien llegue a nivel ${CHICHA.nv60} en este mundo se lleva ${CHICHA.litros60} litros de chicha morada a su casa. Además, con ${(10000).toLocaleString('es')} puntos de chicha cazando, otro litro (en $DUENDE CLASSIC → Mochila → Chicha). Se reclama entrando con Telegram.</p>
 `;
   $('v-diario').querySelector('h2').textContent = 'LA LEYENDA DEL CÁNTARO';
   abrir('v-diario');
@@ -2523,8 +2537,12 @@ addEventListener('keydown', e => {
 addEventListener('keyup', e => { teclas[e.code] = false; if (e.code === 'Space' && !P.vuela && P.vy > 0) P.vy *= 0.55; });   // salto corto si sueltas pronto
 addEventListener('blur', () => { for (const k in teclas) teclas[k] = false; arrastre = null; tocandoSubir = tocandoBajar = false; joy.id = null; joy.dx = joy.dy = 0; });
 $('chat-in').addEventListener('keydown', e => e.stopPropagation(), true);
+// Enviar: Enter, el boton ➤ o el "Enviar" del teclado del movil (en Android
+// la tecla llega como keyCode 229 y no como Enter: el submit del form si llega).
+function enviarInputChat() { const i = $('chat-in'), v = i.value.trim(); if (v) enviarChat(v); i.value = ''; i.blur(); i.style.display = 'none'; }
+$('chat-f').addEventListener('submit', e => { e.preventDefault(); enviarInputChat(); });
 $('chat-in').addEventListener('keydown', e => {
-  if (e.key === 'Enter') { const v = $('chat-in').value.trim(); if (v) enviarChat(v); $('chat-in').value = ''; $('chat-in').blur(); $('chat-in').style.display = 'none'; }
+  if (e.key === 'Enter') { e.preventDefault(); enviarInputChat(); return; }
   if (e.key === 'Escape') { $('chat-in').blur(); $('chat-in').style.display = 'none'; }
 });
 

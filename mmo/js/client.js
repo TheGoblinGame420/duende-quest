@@ -17,7 +17,7 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=295';
+} from './data.js?v=296';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -2715,11 +2715,18 @@ function pintarChicha() {
   const cuenta = TG || !soyInvitado;
   // Invitado: el aviso va arriba, con el boton para seguir en Telegram.
   let h = cuenta ? '' : '<div class="seguridad centro" style="margin-top:0;color:var(--txt)">Juegas como invitado: los puntos de chicha se juntan solo con cuenta de Telegram.<a class="btn" href="https://t.me/duendequest_bot" target="_blank" rel="noopener" style="display:block;margin-top:10px;text-decoration:none;color:#fff">Abrir en Telegram</a></div>';
-  h += `<div class="mis-caja" style="margin-top:0;text-align:center"><b style="color:var(--txt);font:600 16px/1.35 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;margin-bottom:0">Un litro de chicha morada, enviado a tu casa</b>
+  h += `<div class="mis-caja" style="margin-top:0;text-align:center"><b style="color:var(--txt);font:600 16px/1.35 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;margin-bottom:0">Chicha morada de verdad, enviada a tu casa</b>
     <p style="font-size:12px;color:var(--txt2);margin-top:4px">Promoción gratuita y opcional: no hay que comprar nada.</p>
     <p style="font-size:12px;margin-top:6px">Cada monstruo que cazas suelta su chicha: <b style="display:inline">1 punto</b>, <b style="display:inline">3</b> si es de tu nivel o más, <b style="display:inline">25</b> un jefe. Desde nivel ${CHICHA.nvPuntos}, hasta ${CHICHA.porDia} puntos al día.</p>
     <p style="font-size:22px;color:var(--oro);margin:8px 0">${ch.p.toLocaleString('es', { useGrouping: 'always' })} puntos</p>
     <p style="font-size:12px;color:var(--txt2)">Hoy: ${ch.hoy}/${CHICHA.porDia}</p></div>`;
+  // El gran premio: 2 litros por llegar a nivel 60 (siempre a la vista).
+  {
+    const nv = yo.nivel || 1, hecho = (ch.rec || []).includes('nv60'), pct = Math.min(100, Math.round(nv / CHICHA.nv60 * 100));
+    const acc = hecho ? '<span class="precio" style="color:var(--ok)">✓ Reclamado</span>'
+      : nv >= CHICHA.nv60 ? '<button class="btn" data-chicha="nv60">Reclamar</button>' : `<span class="precio">Nv ${nv}/${CHICHA.nv60}</span>`;
+    h += tarjeta(icoPack('I_Bottle02'), `Nivel ${CHICHA.nv60}: ${CHICHA.litros60} litros`, `Llega a nivel ${CHICHA.nv60} en este mundo y te llevas ${CHICHA.litros60} litros de chicha morada a tu casa.<div class="mis-barra"><i style="width:${pct}%"></i></div>`, acc);
+  }
   for (const meta of CHICHA.niveles) {
     const hecho = (ch.rec || []).includes(meta);
     const pct = Math.min(100, Math.round(ch.p / meta * 100));
@@ -2733,7 +2740,7 @@ function pintarChicha() {
     <li>Envíos desde Perú, revisados uno a uno (las trampas o bots quedan fuera). Hay ${CHICHA.mesMax} litros al mes: si se acaban, tus puntos te esperan al mes siguiente.</li></ul>`;
   h += '<p class="centro" style="font-size:12px;color:var(--txt2);margin-top:10px">🔒 Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado.</p>';
   $('inv-lista').innerHTML = h;
-  $('inv-lista').querySelectorAll('[data-chicha]').forEach(b => b.onclick = () => { if (confirm('¿Reclamar tu litro de chicha morada? El equipo te escribirá por Telegram.')) { mandar({ t: 'chicha', meta: +b.dataset.chicha }); b.disabled = true; } });
+  $('inv-lista').querySelectorAll('[data-chicha]').forEach(b => b.onclick = () => { const es60 = b.dataset.chicha === 'nv60'; if (confirm(es60 ? `¿Reclamar tus ${CHICHA.litros60} litros de chicha morada? El equipo te escribirá por Telegram.` : '¿Reclamar tu litro de chicha morada? El equipo te escribirá por Telegram.')) { mandar({ t: 'chicha', meta: es60 ? 'nv60' : +b.dataset.chicha }); b.disabled = true; } });
 }
 
 function pintarBestiario() {
@@ -4225,6 +4232,10 @@ function pintarHud() {
   const pxp = yo.xpSig ? Math.floor(yo.xp / yo.xpSig * 100) : 100;
   rellenar($('bxp').querySelector('i'), pxp / 100);
   $('bxp').title = 'Experiencia: ' + yo.xp.toLocaleString('es', { useGrouping: 'always' }) + ' / ' + (yo.xpSig || 0).toLocaleString('es', { useGrouping: 'always' }) + ' (' + pxp + '%)';
+  {
+    const rec = ((yo.chicha || {}).rec || []).includes('nv60');
+    ponTxt($('h-chicha'), rec ? `🥤 ${CHICHA.litros60} L de chicha reclamados ✓` : yo.nivel >= CHICHA.nv60 ? `🥤 ¡Reclama tus ${CHICHA.litros60} L de chicha!` : `🥤 Nv ${CHICHA.nv60} = ${CHICHA.litros60} L de chicha morada real (${yo.nivel}/${CHICHA.nv60})`);
+  }
   const q = MISIONES[yo.mis ? yo.mis.i : 0];
   const hm = $('h-mision');
   if (instancia && MAZMORRAS[instancia.id]) {
@@ -4768,6 +4779,7 @@ function pintarTienda() {
 let tabInv = 'skin';
 document.querySelectorAll('[data-itab]').forEach(b => b.onclick = () => { tabInv = b.dataset.itab; document.querySelectorAll('[data-itab]').forEach(x => x.classList.toggle('on', x === b)); pintarInventario(); });
 function abrirInventario() { if (!yo) return; abrir('m-inv'); pintarInventario(); }
+$('h-chicha').onclick = () => { if (!yo) return; const b = document.querySelector('[data-itab="chicha"]'); if (b) b.onclick(); abrirInventario(); };
 function pintarInventario() {
   if (!yo) return;
   if (tabInv === 'equipo' || tabInv === 'logros' || tabInv === 'bestiario' || tabInv === 'chicha') $('inv-stats').innerHTML = '';

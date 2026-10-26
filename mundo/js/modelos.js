@@ -19,7 +19,7 @@
 // piezas fijas de cada pivote se funden en una malla (fusionarRig): ~6-14 draw calls.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo } from '/mmo/js/data.js?v=295';
+import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo } from '/mmo/js/data.js?v=296';
 
 const PX_M = 34;                 // pixeles del 2D por metro
 const PI = Math.PI;
@@ -931,7 +931,8 @@ const PIEL_DUENDE = '#6cc644';
 // Ropa de cada skin, sacada de su imagen 2D (assets/skins/*.png).
 const ROPA_SKIN = {
   // Duende de siempre (heroe de la hoja animada): cuero marron con hebillas de bronce.
-  comun:      { ropa: '#7a5230', pantalon: '#4e3420', botas: '#3a2616', acento: '#c9a227' },
+  // (25-oct) con el poncho andino a rayas de la mascota $Duende.
+  comun:      { ropa: '#7a5230', pantalon: '#4e3420', botas: '#3a2616', acento: '#c9a227', poncho: ['#2f62c0', '#f2c23a', '#f8f4ea'] },
   // Tactico: sudadera verde de hacker, visor verde y lineas de codigo neon.
   tactico:    { ropa: '#1f6b35', pantalon: '#1a2a20', botas: '#121a14', acento: '#39ff6a', neon: '#39ff6a', visor: '#1aff5a', capucha: '#1a5a2c', teclado: '#39ff6a', codigo: '#39ff6a' },
   // Nigromante: sombras moradas con llamas violeta en las manos.
@@ -953,6 +954,14 @@ function vestirSkin(r, R0, cpo, tocado) {
   ];
   if (R0.corbata) piezas.push(['caja', hx(R0.corbata), [0, T * 0.62, 0.2 * P + 0.02], [0.06, 0.24, 0.03]], ['cono4', hx(R0.corbata), [0, T * 0.47, 0.2 * P + 0.02], [0.045, 0.08, 0.02], [PI, 0, 0]]);
   if (R0.cinto && R0.capa) piezas.push(['caja', ac, [0, T * 0.55, 0.2 * P + 0.015], [0.05, T * 0.75, 0.02]]);
+  // Poncho: un tronco de cono sobre los hombros con franjas en el borde.
+  if (R0.poncho) {
+    const [pb, pf, pf2] = R0.poncho.map(hx);
+    piezas.push(['tronco', pb, [0, T * 0.26, 0], [0.31 * W, T * 0.8, 0.29 * P]]);
+    piezas.push(['toro', pf, [0, T * 0.3, 0], [0.302 * W, 0.25, 0.283 * P]]);
+    piezas.push(['toro', pf2, [0, T * 0.4, 0], [0.285 * W, 0.22, 0.267 * P]]);
+    piezas.push(['toro', pf, [0, T * 0.5, 0], [0.267 * W, 0.22, 0.25 * P]]);
+  }
   MF(cu, piezas);
   if (R0.neon) {
     const m = mat(R0.neon, { e: 0.9 });

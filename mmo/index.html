@@ -141,6 +141,7 @@ body:not(.tactil) #hud.estrecho #monedero{bottom:52px;}
 #h-mision{font:600 12px/1.35 var(--sans);text-shadow:1px 1px 0 #000,0 0 3px #000;}
 #h-mundial{font-size:8px;line-height:1.6;text-shadow:1px 1px 0 #000,0 0 3px #000;}
 #h-mundial:empty{display:none;}
+#h-chicha{font-size:8px;line-height:1.6;color:#e9b8ff;margin-top:4px;pointer-events:auto;cursor:pointer;text-shadow:1px 1px 0 #000,0 0 3px #000;}
 #h-mision{color:var(--oro);}
 /* Aviso de estado (mision lista, jefe mundial): un cambio de opacidad suave, sin destellos. */
 #h-mision.lista{color:var(--ok);animation:parp 1.6s ease-in-out infinite alternate;}
@@ -535,7 +536,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
       <div class="caja" id="grupo"></div>
       <div class="caja" id="invitacion"><span id="inv-txt"></span><button class="btn" id="inv-si">Aceptar</button><button class="btn sec" id="inv-no">Rechazar</button></div>
       <div class="caja" id="minimapa"><canvas id="mini" width="170" height="26"></canvas></div>
-      <div class="caja" id="seguimiento"><div id="h-mision"></div><div id="h-tareas"></div><div id="h-mundial"></div><div id="h-evento"></div></div>
+      <div class="caja" id="seguimiento"><div id="h-mision"></div><div id="h-tareas"></div><div id="h-mundial"></div><div id="h-evento"></div><div id="h-chicha" title="Premio real: 2 litros de chicha morada al llegar a nivel 60"></div></div>
       <div class="caja" id="mapa-nom"><span id="h-mapa">—</span><small id="h-mapa-sub"></small></div>
       <div class="caja" id="botones" onclick="if(event.target.closest('#b-mas'))this.classList.toggle('abierto');else if(event.target.closest('.extra'))this.classList.remove('abierto')">
         <button class="bt" id="b-libro" title="Hechizos y clase (P)" aria-label="Hechizos"><img class="ico-bt" src="/assets/items/equipo/W_Book01.png" alt=""></button>
@@ -928,7 +929,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=295"></script>
+<script type="module" src="/mmo/js/client.js?v=296"></script>
 <div id="nuevo3d" role="dialog" aria-label="Nuevo mundo 3D">
   <video src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" muted loop playsinline preload="none"></video>
   <div class="t">🌌 NUEVO: $DUENDE ORIGINS, el mundo abierto en 3D</div>
