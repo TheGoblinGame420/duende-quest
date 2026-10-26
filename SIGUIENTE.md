@@ -2924,3 +2924,9 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 
 - index.html: bloque final para `body.movil` y `body.compacto`: marco 150 px, barras 11 px, objetivo `#obj` arriba al centro (fuera del apilado de la columna), misiones de 50 px, minimapa 84 px, botones de 32 px, `#barra` en flex de una fila; jefe mundial oculto en el marco. `camDist` inicial 8,5 en compacto.
 - Lore: `verLeyenda()` en `#v-diario` con las imágenes del dueño (assets/lore/chicha-duende-playa.jpg y maiz-morado.png): Maíz Morado Sagrado, Cántaro Eterno roto por el Rey Goblin, noche y Abismo, la chicha real como premio. `leyendaPrimeraVez()` espera a que no haya otra ventana; botón «📜 La leyenda del Cántaro» en la ayuda.
+
+### Cielo, nubes y recarga automática (25-oct-2026, `?v=294`)
+
+- `cielo`: cúpula ShaderMaterial (horizonte = color de la niebla, cenit más profundo, halo y disco del sol según `solDir`, menos de noche) que sigue a la cámara; `nubes3`: 26/44 nubes de 4 bolas icosaédricas instanciadas a 75-105 m que derivan y se recolocan alrededor del jugador (ocultas en la cueva, oscurecidas de noche).
+- `revisarVersion()`: cada 2 min y al volver a la app pide /mundo/ sin caché y compara `mundo.js?v=`; si hay nueva, avisa y recarga fuera de combate, sin ventanas abiertas y sin heridas recientes.
+- CSS: `#chat` oculto (visibility) en móvil/compacto si el registro está vacío.

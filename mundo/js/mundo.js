@@ -14,20 +14,20 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN } from '/mmo/js/data.js?v=293';
-import { iniciarVentanas } from './ventanas.js?v=293';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=293';
-import { crearMusica } from './musica.js?v=293';
-import { construirCueva } from './cueva.js?v=293';
-import { TAPA, transparentar } from './tapa.js?v=293';
-import { construirAbismo } from './abismo.js?v=293';
-import { crearParticulas } from './particulas.js?v=293';
-import { cargarKenney, piezasCasa } from './kenney.js?v=293';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN } from '/mmo/js/data.js?v=294';
+import { iniciarVentanas } from './ventanas.js?v=294';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=294';
+import { crearMusica } from './musica.js?v=294';
+import { construirCueva } from './cueva.js?v=294';
+import { TAPA, transparentar } from './tapa.js?v=294';
+import { construirAbismo } from './abismo.js?v=294';
+import { crearParticulas } from './particulas.js?v=294';
+import { cargarKenney, piezasCasa } from './kenney.js?v=294';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=293';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=293';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=293';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=294';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=294';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=294';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -189,6 +189,52 @@ const estrellas = (() => {
   const p = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xffffff, size: 1.7, sizeAttenuation: false, transparent: true, opacity: 0, fog: false, depthWrite: false }));
   escena.add(p);
   return p;
+})();
+// ── CIELO: cupula con degradado (horizonte → cenit), halo y disco del sol, y
+// nubes low-poly que derivan alto. La niebla usa el color del horizonte, asi
+// el mundo se funde con el cielo.
+const cielo = (() => {
+  const u = { uHor: { value: new THREE.Color() }, uTop: { value: new THREE.Color() }, uSol: { value: new THREE.Vector3(0, 1, 0) }, uSolC: { value: new THREE.Color('#fff1c9') }, uNoche: { value: 0 } };
+  const m = new THREE.Mesh(new THREE.SphereGeometry(440, 32, 16), new THREE.ShaderMaterial({
+    uniforms: u, side: THREE.BackSide, depthWrite: false, depthTest: false, fog: false,
+    vertexShader: 'varying vec3 vD; void main() { vD = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: `uniform vec3 uHor; uniform vec3 uTop; uniform vec3 uSol; uniform vec3 uSolC; uniform float uNoche; varying vec3 vD;
+      void main() {
+        float h = vD.y;
+        vec3 c = mix(uHor, uTop, smoothstep(0.0, 0.6, h));
+        c = mix(c, uHor * 0.8, smoothstep(0.0, -0.25, h));
+        float s = max(dot(normalize(vD), normalize(uSol)), 0.0);
+        c += uSolC * (pow(s, 10.0) * 0.28 + pow(s, 900.0) * 1.6) * (1.0 - uNoche);
+        gl_FragColor = vec4(c, 1.0);
+        #include <colorspace_fragment>
+      }`,
+  }));
+  m.renderOrder = -10; m.frustumCulled = false; escena.add(m);
+  return { m, u };
+})();
+const nubes3 = (() => {
+  const N = MOVIL ? 26 : 44, geo = new THREE.IcosahedronGeometry(1, 1);
+  const mat = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true, transparent: true, opacity: 0.92, fog: false });
+  const im = new THREE.InstancedMesh(geo, mat, N * 4);
+  const l = [];
+  for (let i = 0; i < N; i++) l.push({ x: (Math.random() - 0.5) * 1100, z: (Math.random() - 0.5) * 1100, y: 75 + Math.random() * 30, s: 9 + Math.random() * 10, v: 0.6 + Math.random() * 0.8 });
+  im.frustumCulled = false; im.renderOrder = -5; escena.add(im);
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), sc = new THREE.Vector3();
+  const PUFF = [[0, 0, 0, 1], [0.9, -0.15, 0.2, 0.75], [-0.85, -0.2, -0.1, 0.7], [0.2, 0.25, -0.6, 0.6]];
+  return {
+    im, mat,
+    mover(dt, cx, cz) {
+      let k = 0;
+      for (const n of l) {
+        n.x += n.v * dt * 2;
+        let dx = n.x - cx, dz = n.z - cz;
+        if (dx > 550) n.x -= 1100; else if (dx < -550) n.x += 1100;
+        if (dz > 550) n.z -= 1100; else if (dz < -550) n.z += 1100;
+        for (const [ox, oy, oz, f] of PUFF) { p.set(n.x + ox * n.s, n.y + oy * n.s, n.z + oz * n.s); sc.set(n.s * f * 1.4, n.s * f * 0.7, n.s * f); m4.compose(p, q, sc); im.setMatrixAt(k++, m4); }
+      }
+      im.instanceMatrix.needsUpdate = true;
+    },
+  };
 })();
 const FX = crearParticulas(escena, MOVIL ? 900 : 1800, MOVIL);
 // Gotas (o copos): segmentos en una caja que sigue a la camara.
@@ -2116,6 +2162,24 @@ addEventListener('keydown', e => {
 // ── INVITADO: que no pierda su duende ──
 // Una vez por sesion: el duende del invitado vive en este navegador; se puede
 // guardar con una cuenta (en CLASSIC) o con el codigo de rescate.
+// ── VERSION NUEVA: Telegram deja la pagina abierta horas; cada 2 min (y al
+// volver a la app) se mira si hay version nueva y se recarga fuera de combate.
+const MI_VER = +(/[?&]v=(\d+)/.exec(import.meta.url) || [0, 0])[1];
+let verNueva = 0, verT = 0;
+async function revisarVersion() {
+  if (!MI_VER || Date.now() - verT < 110000) return;
+  verT = Date.now();
+  try {
+    const h = await (await fetch('/mundo/?vc=' + Date.now(), { cache: 'no-store' })).text();
+    const v = +((/mundo\.js\?v=(\d+)/.exec(h) || [0, 0])[1]);
+    if (v > MI_VER && !verNueva) { verNueva = v; aviso('✨ Hay una versión nueva del juego: se actualiza en unos segundos.', 'ok'); }
+  } catch (e) {}
+}
+setInterval(() => {
+  revisarVersion();
+  if (verNueva && !P.muerto && !autoAtk && !lanzando && !P.vuela && !hayVentana() && performance.now() - (P.heridoT || 0) > 8000) location.reload();
+}, 5000);
+addEventListener('visibilitychange', () => { if (!document.hidden) { verT = 0; revisarVersion(); } });
 // ── LA LEYENDA DEL CANTARO (lore): una vez al entrar y desde la ayuda ──
 function verLeyenda() {
   $('diario-c').innerHTML = `<img src="/assets/lore/chicha-duende-playa.jpg" alt="Chicha morada $DUENDE junto al mar" style="display:block;width:100%;max-height:170px;object-fit:cover;border-radius:10px;margin-bottom:8px">
@@ -3154,6 +3218,14 @@ function bucle(t) {
   }
   cieloAct.lerp(cieloObj, Math.min(1, dt * 1.5));
   escena.background.copy(cieloAct); escena.fog.color.copy(cieloAct);
+  // Cupula: horizonte = niebla; cenit mas profundo (de dia azul intenso, de noche casi negro).
+  cielo.m.position.copy(camara.position);
+  cielo.u.uHor.value.copy(cieloAct);
+  cielo.u.uTop.value.copy(cieloAct).lerp(C('#2a4fb8'), 0.45 * (1 - nocheK)).multiplyScalar(0.62 + 0.2 * (1 - nocheK));
+  cielo.u.uSol.value.copy(solDir); cielo.u.uNoche.value = nocheK;
+  const zC = zonaEn(P.x, P.z);
+  nubes3.im.visible = zC !== 'cueva';
+  if (nubes3.im.visible) { nubes3.mover(dt, P.x, P.z); nubes3.mat.color.setRGB(1 - nocheK * 0.72, 1 - nocheK * 0.7, 1 - nocheK * 0.6); }
   escena.fog.near = lerp(escena.fog.near, nieblaObj[0], Math.min(1, dt)); escena.fog.far = lerp(escena.fog.far, nieblaObj[1], Math.min(1, dt));
   const flash = t - relampagoT < 120 || (t - relampagoT > 220 && t - relampagoT < 300);
   hemi.intensity = 1.5 * hemiBase + (flash ? 2.4 : 0);

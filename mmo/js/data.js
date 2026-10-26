@@ -495,6 +495,11 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 62, fecha: '25 oct 2026', items: [
+    'Cielo nuevo en ORIGINS: degradado del horizonte al cenit, halo del sol y nubes que pasan sobre el mundo.',
+    'El juego se actualiza solo: si hay una versión nueva, te avisa y se recarga cuando no estás peleando (en Telegram ya no hace falta cerrarlo).',
+    'En el móvil desaparece la barra vacía del chat cuando no hay mensajes.',
+  ] },
   { n: 61, fecha: '25 oct 2026', items: [
     'ORIGINS se ve mucho mejor en el móvil y en Telegram: paneles más pequeños, objetivo arriba al centro, minimapa reducido, barra de acciones en una sola fila y la cámara un poco más cerca para ver bien a tu duende.',
     'Nueva historia: «La leyenda del Cántaro». El Rey Goblin rompió el Cántaro Eterno de chicha morada y tú debes devolverla al pueblo. Se cuenta al entrar por primera vez y está siempre en la ayuda (?).',

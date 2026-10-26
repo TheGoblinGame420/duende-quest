@@ -30,6 +30,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v291 | Encargos de zona en ORIGINS: 50 misiones variadas (hito, recolección, vuelo, cofre y jefe) con logros de explorador | **B** |
 | v292 | Un solo catálogo de precios (US$1-15 las skins con oro), entrega automática de pagos ya verificados y fuera el staking oculto de la web (autorizado por el dueño) | **B** |
 | v293 | HUD mínimo en móvil/Telegram y la leyenda del Cántaro (chicha morada, imágenes del dueño) | **B** |
+| v294 | Cielo con degradado y nubes, recarga automática con versión nueva | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 
