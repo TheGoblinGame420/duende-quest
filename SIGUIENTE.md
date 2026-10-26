@@ -2986,3 +2986,14 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 
 - mundo.js `case 'enc'`: al pasar `zona:jefe` a true, aviso «🏺 Pedazo del Cántaro N/10» con su texto de `LORE_ZONAS`; la leyenda muestra N/10 y ✓ por zona (pedazo oculto hasta recuperarlo).
 - `cicloObjetivo` sin monstruos: aviso (cada 3 s como mucho). Bienvenida del nuevo cuando ya eligió clase y no hay ventana.
+
+### Segunda ronda de agentes jugando (26-oct-2026, `?v=302`)
+
+- tareas.js: `SOLO_2D` (exped, torre) fuera para `c.en3d` (se fija en el hola); `quitarSolo2d` cambia las ya asignadas. Panel: semanales con su lista; texto de renovación 19:00 Perú.
+- world.js: anuncio de la siguiente misión; diaria en 3D «toca su fila ☀»; `darItem` hace hueco a épicos/legendarios con aviso; login con `itemNom`.
+- mundo3d.js: crédito de jefe a quien cae con ≥15 % del daño; `hostil3d` (rival de duelo, otra facción en el Abismo) para curas/escudos/resurrección; Dolor/Renovar conservan el próximo tick; Siniestro ×1,6; Eviscerar no deja combos del Sigilo.
+- eventos3d.js: raro con ≥10 % del daño o cura ≥5 % y a ≤80 m, cuenta para la misión; Capitán solo con ≥10 % del daño, reloj mínimo 3 min, aviso a quien no llegó a 3.
+- encargos.js: `jefe` solo con `MAPAS[zona].jefe`.
+- cueva3d.js: cueva hecha y vacía se recrea.
+- Cliente: primer hito (`encRecibido`), aliado solo si está cerca, Sigilo espera 2,5 s, encargo de vuelo con altura y «botón VOLAR», cofre cercano en móvil (caja abierta), insignia del pase en ⋯ y el menú se cierra al elegir, texto del premio diario.
+- Arnés 843 bien.

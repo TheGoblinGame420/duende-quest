@@ -498,6 +498,13 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 70, fecha: '26 oct 2026', items: [
+    'Misiones del día y de la semana a la vista (toca el panel): en ORIGINS ya no salen tareas de CLASSIC (expediciones, Torre) que bloqueaban el bono.',
+    'Al cumplir una misión de la cadena se anuncia la siguiente; si caes peleando contra un jefe también cobras, y el primer hito ya cuenta su secreto.',
+    'Más justo: el encargo del jefe de zona pide al jefe de verdad, los élites raros y el Capitán de invasión premian a quien ayudó de verdad (con aviso si te faltó), y el Capitán llega con al menos 3 minutos de reloj.',
+    'Sacerdote: las curas nunca van al enemigo ni a un aliado lejano; Dolor y Renovar ya no se anulan al repetirlos. Pícaro: Golpe Siniestro pega más que un golpe normal y el Sigilo espera tu habilidad.',
+    'El objeto épico del día 7 ya no se vende solo con la bolsa llena, el pase avisa en ⋯ en el móvil y la cueva del Rey Goblin se puede repetir.',
+  ] },
   { n: 69, fecha: '26 oct 2026', items: [
     'Los 10 pedazos del Cántaro Eterno: vence al jefe de cada zona en sus encargos 🧭 para recuperar su pedazo. La leyenda lleva la cuenta (✓ recuperados) y cada pedazo cuenta su historia.',
     'Si pulsas ATACAR o FIJAR sin monstruos cerca, el juego te dice adónde ir, y la bienvenida del primer día ya no queda tapada por la elección de clase.',

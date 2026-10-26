@@ -14,7 +14,7 @@
 //     cada uno una vez cada 30 min.
 // Lo decide el servidor; nada de esto da mTON.
 // ═══════════════════════════════════════════════════════
-import { MAPAS, MONSTRUOS, RAREZAS, statsMonstruo, xpParaSubir, nombreItem } from '../../mmo/js/data.js';
+import { MAPAS, MONSTRUOS, RAREZAS, statsMonstruo, xpParaSubir, nombreItem, MISIONES } from '../../mmo/js/data.js';
 import { zonaEn, cofres3d, COFRE3D_DIST, alturaEn, MUNDO } from '../../mmo/js/mundo3d.js';
 import { COFRE_TIPOS, COFRE_CADA_MS } from './eventos.js';
 // Los cofres del 3D estan escondidos (hay que explorar y, el legendario, volar
@@ -108,10 +108,17 @@ export const Eventos3D = {
     (W.raros || (W.raros = {}))[o.mapa] = { id: 0, prox: Date.now() + RARO3D_REAPARECE_MS };
     const base = statsMonstruo(o.k, o.nv), nombres = [];
     // Quien pego o curo a quien lo peleaba (como en el 2D): el sanador del grupo tambien cobra.
+    // Solo quien ayudo de verdad (10 % del daño o una cura que se note) y sigue cerca: un golpe suelto no cobra.
+    const total = [...o.dano.values()].reduce((a, b) => a + b, 0) || 1;
     const quienes = new Set([...o.dano.keys(), ...(o.cura ? o.cura.keys() : [])]);
     for (const sid of quienes) {
       const s = this.sesiones.get(sid);
       if (!s || !s.c || !s.m3) continue;
+      if ((o.dano.get(sid) || 0) < total * 0.1 && !((o.cura && o.cura.get(sid)) >= (o.max || 1) * 0.05)) continue;
+      if (dist(s.p, o) > 80) continue;
+      // Tambien cuenta para la mision de la cadena si es el monstruo que pide.
+      const q = MISIONES[s.c.mis.i];
+      if (q && o.k === q.tipo && s.c.mis.p < q.n) { s.c.mis.p++; if (s.c.mis.p === q.n) this.mision(s, null, true); }
       const xp = base.xp * 4, oro = base.oro * 5;
       s.c.oro += oro;
       s.c.raros = (s.c.raros || 0) + 1;
@@ -167,6 +174,7 @@ export const Eventos3D = {
     const p = jug.length ? this.puntoCerca3d(azar(jug), ev.zona) : cp ? { x: cp.x, z: cp.z } : { x: 0, z: 0 };
     const o = this.crearEspecial3d(k, p.x, p.z, { zona: ev.zona, nv: mp.nv[1], hpX: 9 * (1 + 0.5 * (n - 1)), atkX: 1.25, agresivo: true, jefe: true, ex: { ev: ev.id, cap: 1, nom: 'Capitán ' + MONSTRUOS[k].nombre, ti: '#ff5a1f' } });
     ev.fase = 'capitan'; ev.capitan = o.id;
+    ev.fin = Math.max(ev.fin, Date.now() + 3 * 60000);   // al menos 3 minutos para el Capitan
     this.aClave(K3, { t: 'aviso', m: `⚔️ ¡${o.ex3.nom} llega a ${mp.nombre}! Derrótalo para ganar la invasión.` });
     this.aClave(K3, this.estadoInvasion3d());
   },
@@ -175,8 +183,14 @@ export const Eventos3D = {
     if (!ev || o.ex3.ev !== ev.id) return;
     // Pegar o curar a quien pelea cuenta (como en el 2D): el sanador del grupo tambien cobra.
     // Se cuenta en cuantos invasores ayudo cada uno (el capitan vale 3): un golpe suelto no cobra.
-    const ayudo = new Set();
-    for (const m of [o.dano, o.cura]) if (m) for (const sid of m.keys()) { const s = this.sesiones.get(sid); if (s && s.c) ayudo.add(s.c.uid); }
+    // Con el Capitan solo cuenta quien le hizo el 10 % del daño o curo de verdad (un golpe suelto no).
+    const ayudo = new Set(), totalD = [...o.dano.values()].reduce((a, b) => a + b, 0) || 1;
+    for (const m of [o.dano, o.cura]) if (m) for (const [sid, v] of m) {
+      const s = this.sesiones.get(sid);
+      if (!s || !s.c) continue;
+      if (o.ex3.cap && !(m === o.dano ? v >= totalD * 0.1 : v >= o.max * 0.03)) continue;
+      ayudo.add(s.c.uid);
+    }
     for (const uid of ayudo) ev.part.set(uid, (ev.part.get(uid) || 0) + (o.ex3.cap ? 3 : 1));
     if (o.ex3.cap) return this.terminarInvasion3d(true);
     if (ev.fase !== 'oleadas') return;
@@ -199,7 +213,8 @@ export const Eventos3D = {
     const nombres = [];
     for (const [uid, n] of ev.part) {
       const s = this.porUid.get(uid);
-      if (!s || !s.c || s.cerrado || n < 3) continue;
+      if (!s || !s.c || s.cerrado) continue;
+      if (n < 3) { this.enviar(s, { t: 'toast', m: '⚔️ Invasión rechazada. Para cobrar el premio hay que ayudar contra 3 invasores o contra el Capitán: ¡la próxima!' }); continue; }
       // Con tu nivel (tope el de la zona): uno de nivel 1 no cobra la XP de una zona de nivel 40.
       const c = s.c, nv = Math.min(c.nivel, mp.nv[1]);
       const xp = Math.round(xpParaSubir(nv) * 0.35), oro = Math.round(40 * nv * rnd(0.9, 1.1));

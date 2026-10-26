@@ -37,6 +37,8 @@ export const Cueva3D = {
     const clave = g ? 'g' + g.id : 'u' + s.c.uid;
     const cuevas = this.cuevas3();
     let inst = [...cuevas.values()].find(i => i.clave === clave);
+    // Ya vencido el Rey y sin nadie dentro: se abre una cueva nueva (antes volvias a la misma, vacia).
+    if (inst && inst.hecha && !this.dentroCueva(inst).length) { const W = this.iniciar3d(); for (const id of inst.mons) W.mons.delete(id); cuevas.delete(inst.id); inst = null; }
     if (!inst) {
       const ahora = Date.now();
       if (ahora - (s.c.cuevaCreadaT || 0) < 60000) return this.no(s, 'Espera un minuto antes de abrir otra cueva.');

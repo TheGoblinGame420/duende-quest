@@ -38,6 +38,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v299 | Planeo sin atajos, invisibles, límites de reportes y vinculación, invasiones justas, cerrojo de entrega | **B** |
 | v300 | Ronda de 22 agentes jugando: tutorial móvil, cámara, FOV, ATACAR, márgenes Telegram, leyenda/diario, Ira, Bola de Fuego, Polimorfia, Carga | **B** |
 | v301 | Pedazos del Cántaro por jefe de zona (leyenda N/10), aviso sin monstruos, bienvenida visible | **B** |
+| v302 | 2.ª ronda de jugadores: tareas sin CLASSIC, semanales, siguiente misión, premios por ayuda real, sacerdote, pícaro, pase móvil, cueva repetible | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

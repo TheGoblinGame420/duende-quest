@@ -625,6 +625,7 @@ export class MmoWorld {
     if (nuevo || heredado || login) await this.guardar(s);
     if (s.cerrado) return;   // cerrado durante el guardado: cerrar() ya limpio todo
 
+    c.en3d = m.modo === '3d';   // las tareas que solo existen en CLASSIC (expediciones, Torre) no le tocan en ORIGINS
     this.enviar(s, { t: 'bienvenido', id: s.id, yo: this.datosPropios(s), nuevo, heredado, regaladas, on: this.contarOnline() });
     if (login) this.enviar(s, { t: 'login', ...login });
     const tp = temporadaDe();
@@ -1343,7 +1344,7 @@ export class MmoWorld {
       const vIt = this.darItem(s, generarItem(c.nivel, dias >= 7 ? 2 : 1), true);
       vuelta = { dias, oro: vOro, pociones: 5, item: nombreItem(vIt) };
     }
-    return { racha, oro, pw: pr.pw || null, item, txt: pr.txt, vuelta };
+    return { racha, oro, pw: pr.pw || null, item, itemNom: item ? nombreItem(item) : undefined, txt: pr.txt, vuelta };
   }
 
   // Mete un objeto en la bolsa (si esta llena se vende solo).
@@ -1355,9 +1356,10 @@ export class MmoWorld {
     }
     // Una pieza de conjunto no se vende sola: se cambia por la comun mas
     // barata de la bolsa (son de coleccion; perderlas dolia mucho).
-    if (c.bolsa.length >= BOLSA_MAX && (it.cj || it.banda)) {
-      const i = c.bolsa.reduce((m, x, k) => (!x.cj && !x.banda && (m < 0 || precioVenta(x) < precioVenta(c.bolsa[m])) ? k : m), -1);
-      if (i >= 0) { const v0 = precioVenta(c.bolsa[i]); c.oro += v0; c.bolsa.splice(i, 1); if (!silencioso) this.enviar(s, { t: 'toast', m: `🎒 Bolsa llena: se vendió tu objeto más barato (+${v0} oro) para guardar tu pieza de conjunto.` }); }
+    // Lo mismo con un epico o legendario (el del dia 7 se vendia en silencio con la bolsa llena).
+    if (c.bolsa.length >= BOLSA_MAX && (it.cj || it.banda || (it.r || 0) >= 2)) {
+      const i = c.bolsa.reduce((m, x, k) => (!x.cj && !x.banda && (x.r || 0) < Math.max(2, it.r || 0) && (m < 0 || precioVenta(x) < precioVenta(c.bolsa[m])) ? k : m), -1);
+      if (i >= 0) { const v0 = precioVenta(c.bolsa[i]); c.oro += v0; c.bolsa.splice(i, 1); this.enviar(s, { t: 'toast', m: `🎒 Bolsa llena: se vendió tu objeto más barato (+${v0} oro) para guardar ${it.cj || it.banda ? 'tu pieza de conjunto' : nombreItem(it)}.` }); }
     }
     if (c.bolsa.length >= BOLSA_MAX) {
       const v = precioVenta(it);
@@ -1977,7 +1979,7 @@ export class MmoWorld {
     const d = this.diariaDe(c);
     if (o && participo !== false && !d.ok && d.p < DIARIA.n && (o.nv || MONSTRUOS[o.k].nivel) >= c.nivel - 5) {
       d.p++;
-      if (d.p === DIARIA.n) this.enviar(s, { t: 'toast', m: `«${DIARIA.nombre}» cumplida. Cóbrala con el Guardia Tito.`, ok: true });
+      if (d.p === DIARIA.n) this.enviar(s, { t: 'toast', m: `«${DIARIA.nombre}» cumplida. ${s.m3 ? 'Toca su fila ☀ en el panel de misiones para cobrarla.' : 'Cóbrala con el Guardia Tito.'}`, ok: true });
     }
     // Bestiario: cada tipo cazado suma; los hitos dan oro.
     if (o && participo !== false && !MONSTRUOS[o.k].mundial) {
@@ -2043,6 +2045,9 @@ export class MmoWorld {
     this.sumarXp(s, q.xp);
     this.revisarLogros(s);
     this.enviar(s, { t: 'toast', m: `✅ Recompensa: +${q.xp} XP · +${q.oro} oro`, ok: true });
+    // La siguiente de la cadena, dicha en el momento (antes el jugador no sabia que seguia).
+    const sig = MISIONES[c.mis.i], ms = sig && MONSTRUOS[sig.tipo];
+    if (sig && ms) this.enviar(s, { t: 'toast', m: `📜 Nueva misión: «${sig.nombre}» — caza ${sig.n} × ${ms.nombre} (Nv ${ms.nivel}).${s.m3 ? ' Sigue la luz amarilla.' : ''}` });
     this.enviar(s, { t: 'gana', xp: q.xp, oro: q.oro, drops: Object.keys(q.pw || {}), x: Math.round(s.x), y: Math.round(s.y - 80) });
     this.actualizarYo(s);
     this.guardar(s);

@@ -12,6 +12,8 @@
 // ═══════════════════════════════════════════════════════
 import { TAREAS_DIA, TAREAS_SEMANA, premioTarea, zonaDeNivel, hoyUTC, semanaUTC, MAPAS, MONSTRUOS, NIVEL_MAX , PASE } from '../../mmo/js/data.js';
 
+// Solo existen en CLASSIC (2D): en ORIGINS no se reparten y, si ya tocaron, se cambian.
+const SOLO_2D = new Set(['exped', 'torre']);
 // Hash entero pequeño y estable (para elegir las tareas del dia).
 function hash(t) { let h = 2166136261; for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h; }
 function elegir(lista, n, semilla, nivel) {
@@ -32,12 +34,28 @@ export const Tareas = {
     const hoy = hoyUTC(), sem = semanaUTC();
     if (!c.tareas || c.tareas.d !== hoy) {
       const zona = zonaDeNivel(c.nivel);
-      c.tareas = { d: hoy, bono: false, cambio: false, l: elegir(this.tareasPosibles(), 3, c.uid + hoy, c.nivel).map(t => ({ id: t.id, p: 0, ok: false, zona: t.tipo === 'zona' ? zona : undefined })) };
+      c.tareas = { d: hoy, bono: false, cambio: false, l: elegir(this.tareasPosibles().filter(t => !c.en3d || !SOLO_2D.has(t.tipo)), 3, c.uid + hoy, c.nivel).map(t => ({ id: t.id, p: 0, ok: false, zona: t.tipo === 'zona' ? zona : undefined })) };
     }
     if (!c.semana || c.semana.d !== sem) {
-      c.semana = { d: sem, bono: false, l: elegir(TAREAS_SEMANA, 2, c.uid + 'S' + sem, c.nivel).map(t => ({ id: t.id, p: 0, ok: false })) };
+      c.semana = { d: sem, bono: false, l: elegir(c.en3d ? TAREAS_SEMANA.filter(t => !SOLO_2D.has(t.tipo)) : TAREAS_SEMANA, 2, c.uid + 'S' + sem, c.nivel).map(t => ({ id: t.id, p: 0, ok: false })) };
     }
+    if (c.en3d) this.quitarSolo2d(c);
     return { dia: c.tareas, sem: c.semana };
+  },
+  // Jugando en ORIGINS: una tarea de solo CLASSIC sin hacer se cambia por otra (no gasta el cambio gratis).
+  quitarSolo2d(c) {
+    for (const [bloque, defs, sem] of [[c.tareas, TAREAS_DIA, false], [c.semana, TAREAS_SEMANA, true]]) {
+      const usadas = new Set(bloque.l.map(x => x.id));
+      bloque.l.forEach((t, i) => {
+        const def = defs.find(d => d.id === t.id);
+        if (!def || t.ok || !SOLO_2D.has(def.tipo)) return;
+        const pos = (sem ? TAREAS_SEMANA : this.tareasPosibles()).filter(x => !usadas.has(x.id) && !SOLO_2D.has(x.tipo));
+        const nueva = elegir(pos, 1, c.uid + bloque.d + 'O3' + i, c.nivel)[0];
+        if (!nueva) return;
+        usadas.add(nueva.id);
+        bloque.l[i] = { id: nueva.id, p: 0, ok: false, zona: nueva.tipo === 'zona' ? zonaDeNivel(c.nivel) : undefined };
+      });
+    }
   },
 
   // Con menos de 6 jugadores conectados no se reparten tareas que piden a otros

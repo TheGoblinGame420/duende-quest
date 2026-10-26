@@ -14,21 +14,21 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA } from '/mmo/js/data.js?v=301';
-import { iniciarVentanas } from './ventanas.js?v=301';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=301';
-import { crearMusica } from './musica.js?v=301';
-import { construirCueva } from './cueva.js?v=301';
-import { TAPA, transparentar } from './tapa.js?v=301';
-import { construirAbismo } from './abismo.js?v=301';
-import { crearParticulas } from './particulas.js?v=301';
-import { cargarKenney, piezasCasa } from './kenney.js?v=301';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA } from '/mmo/js/data.js?v=302';
+import { iniciarVentanas } from './ventanas.js?v=302';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=302';
+import { crearMusica } from './musica.js?v=302';
+import { construirCueva } from './cueva.js?v=302';
+import { TAPA, transparentar } from './tapa.js?v=302';
+import { construirAbismo } from './abismo.js?v=302';
+import { crearParticulas } from './particulas.js?v=302';
+import { cargarKenney, piezasCasa } from './kenney.js?v=302';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=301';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=301';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=301';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS } from './lore.js?v=301';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=302';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=302';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=302';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS } from './lore.js?v=302';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1283,13 +1283,14 @@ function recibir(m) {
     case 'asedio': asedio = m; if (m.activo) asedioHp = asedioHp || { p: 100, g: 100 }; else asedioHp = null; if (abismo) abismo.dueno(m.dueno); break;
     case 'enc': {
       const antes = encargos, nuevos = m.l || {};
-      if (antes && Object.keys(antes).length) for (const k in nuevos) if (nuevos[k] === true && antes[k] !== true) {
+      // Desde el segundo 'enc' (el primero es el estado al entrar): con {} vacio tambien, para el primer hito del novato.
+      if (encRecibido) for (const k in nuevos) if (nuevos[k] === true && antes[k] !== true) {
         const [zk, tipo] = k.split(':');
         if (tipo === 'hito' && LORE_HITOS[zk]) aviso('✨ ' + LORE_HITOS[zk], 'ok');
         // Vencer al jefe de la zona en su encargo devuelve su pedazo del Cantaro.
         if (tipo === 'jefe' && LORE_ZONAS[zk]) { const n = Object.keys(LORE_ZONAS).filter(z => nuevos[z + ':jefe'] === true).length; setTimeout(() => aviso(`🏺 Pedazo del Cántaro ${n}/10: ${LORE_ZONAS[zk].pedazo}`, 'ok'), 1200); }
       }
-      encargos = nuevos; encZonas = m.zonas || 0; $('misiones')._h = ''; break;
+      encargos = nuevos; encRecibido = true; encZonas = m.zonas || 0; $('misiones')._h = ''; break;
     }
     case 'asedioHp': asedioHp = m; if (asedio) asedio.dormido = !!m.d; break;
     case 'asedioTiro': tiroAsedio(m); break;
@@ -2489,7 +2490,7 @@ function mostrarDiario(m) {
   if ($('v-diario').classList.contains('on') && !mostrarDiario.t) { setTimeout(() => mostrarDiario(m), 2000); return; }   // no pisa la leyenda
   const n = LOGIN_PREMIOS.length, hoy = m.racha;
   let h = m.vuelta ? `<p class="vv-p" style="margin-bottom:8px;padding:8px;border-radius:10px;background:rgba(255,216,74,.12);border:1px solid rgba(255,216,74,.4)">🎉 <b>¡Te echábamos de menos!</b> ${m.vuelta.dias} días fuera. Regalo de bienvenida: <b>+${m.vuelta.oro.toLocaleString('es')} oro</b>, ${m.vuelta.pociones} pociones y <b>${esc(m.vuelta.item)}</b>.</p>` : '';
-  h += `<p class="vv-p" style="margin-bottom:8px">¡Día <b style="color:#ffd84a">${hoy}</b> de tu racha! Recibes <b>${esc(m.txt || '')}</b>${m.oro ? ` (+${m.oro.toLocaleString('es')} oro)` : ''}.</p><div class="dias7">`;
+  h += `<p class="vv-p" style="margin-bottom:8px">¡Día <b style="color:#ffd84a">${hoy}</b> de tu racha! Recibes <b>${m.oro && /oro/.test(m.txt || '') ? m.oro.toLocaleString('es') + ' oro' : esc(m.txt || '')}</b>${m.oro && !/oro/.test(m.txt || '') ? ` (+${m.oro.toLocaleString('es')} oro)` : ''}${m.itemNom ? `: <b>${esc(m.itemNom)}</b>` : ''}.</p><div class="dias7">`;
   for (let i = 1; i <= n; i++) {
     const pr = LOGIN_PREMIOS[i - 1];
     h += `<div class="d7 ${i < hoy ? 'ya' : i === hoy ? 'hoy' : ''}"><small>Día ${i}</small><span>${i === n ? '🎁' : pr.item !== undefined ? '⚔️' : pr.oro ? '🪙' : '🧪'}</span><em>${esc(pr.txt)}</em></div>`;
@@ -2515,6 +2516,7 @@ function marcaPase() {
   const b = $('b-pase'); if (!b) return;
   const k = nivelesPaseListos();
   b.dataset.n = k ? String(k) : '';
+  const mas = $('b-mas'); if (mas) mas.dataset.n = k ? String(k) : '';
 }
 function pintarPase() {
   marcaPase();
@@ -2680,7 +2682,9 @@ function usarHab(h) {
   // Sin recurso: se explica aqui (antes el tutorial lo daba por hecho y llegaba un "no" del servidor).
   if (yo.recMax !== undefined && (P.rec || 0) < costoHab(h, yo.recMax || 100, yo.espec)) { const cl = CLASES[yo.clase], rc = cl && RECURSOS[cl.recurso]; return aviso(`${h.nombre} necesita más ${rc ? rc.nombre.toLowerCase() : 'recurso'}${cl && cl.recurso === 'ira' ? ': la Ira sube al pegar y al recibir golpes' : ''}.`, 'err'); }
   mandarPos(true);
-  mandar({ t: 'hab3', id: h.id, tg: h.obj === 'enemigo' ? objetivo : 0, tp: contraRival ? contraRival : h.obj === 'aliado' || h.obj === 'muerto' ? objetivoP : 0 });
+  // Aliado elegido solo si sigue cerca (en movil no habia forma de soltarlo y la cura iba a un "fantasma").
+  const qa = objetivoP && otros.get(objetivoP), aliadoOk = qa && Math.hypot(qa.x - P.x, qa.z - P.z) <= (h.rango || 400) / 17 + 2;
+  mandar({ t: 'hab3', id: h.id, tg: h.obj === 'enemigo' ? objetivo : 0, tp: contraRival ? contraRival : (h.obj === 'aliado' || h.obj === 'muerto') && aliadoOk ? objetivoP : 0 });
   // Con lanzamiento: quieto desde el toque (el acercamiento automatico lo movia antes de
   // que llegara el 'cast' y el servidor lo cancelaba con "Te moviste").
   if (h.cast) { lanzando = { id: h.id, ini: ahora, fin: ahora + h.cast, pre: true }; P.vx = 0; P.vz = 0; }
@@ -2970,6 +2974,12 @@ function ataqueAuto() {
   const ahora = performance.now();
   if (d > rango) { if (d > 45 && ahora - avisoLejosT > 2500) { avisoLejosT = ahora; aviso('Tu objetivo está demasiado lejos.'); } return; }
   if (ahora < sigAtk) return;
+  // En Sigilo el primer golpe vale x2 y da combos: se espera 2,5 s a que lo abra una habilidad
+  // (antes el ataque automatico lo gastaba en un golpe basico).
+  if (P.au && P.au.sigilo) {
+    if (!P.sigiloT) { P.sigiloT = ahora; aviso('🗡 En Sigilo: abre con Golpe Siniestro para pegar el doble.', 'ok'); }
+    if (ahora - P.sigiloT < 2500) return;
+  } else P.sigiloT = 0;
   sigAtk = ahora + (vara ? VARA.cdMs * arma.cd : 1000 * arma.cd);
   mandarPos(true);
   mandar(objetivo ? { t: 'atk3', tg: o.id } : { t: 'atk3', tp: o.id });
@@ -3196,7 +3206,9 @@ function pintarMisiones() {
       let donde = '';
       if (sig.tipo === 'explorar') { const hi = hitoDe(zE, ZONAS3D, alturaEn), dd = Math.hypot(hi.x - P.x, hi.z - P.z); metaEnc = hi; donde = dd < 12 ? ' · ¡aquí!' : ` · ${flechaDir(hi.x, hi.z)} ${Math.round(dd)} m`; }
       const pr = sig.n > 1 ? ` ${encargos[sig.id] || 0}/${sig.n}` : '';
-      h += `<div class="q"><b style="color:#7dd3fc">🧭 Encargos de ${esc(MAPAS[zE].nombre)} ${hechos}/${L.length}</b>${esc(sig.txt)}${pr}<small>${donde}</small></div>`;
+      if (sig.tipo === 'volar') donde = P.vuela ? ` · vas a ${Math.round(Math.max(0, P.y - alturaEn(P.x, P.z)))} m` : '';
+      const txtE = MOVIL ? sig.txt.replace(' (V)', ' (botón VOLAR)') : sig.txt;
+      h += `<div class="q"><b style="color:#7dd3fc">🧭 Encargos de ${esc(MAPAS[zE].nombre)} ${hechos}/${L.length}</b>${esc(txtE)}${pr}<small>${donde}</small></div>`;
     } else h += `<div class="q"><b style="color:#4ade80">🧭 ${esc(MAPAS[zE].nombre)}: encargos completados ✓</b></div>`;
   }
   const tt = htmlTuto3();   // despues de calcular metaMision: el paso 2 la mira (va primera, tambien con invasion)
@@ -3206,7 +3218,7 @@ function pintarMisiones() {
     const zc = ZONAS3D[invasion3.zona], dz = zc ? Math.hypot(zc.x - P.x, zc.z - P.z) : 0;
     h = `<div class="q" style="border-left:3px solid #ff5a1f;padding-left:6px"><b style="color:#ff8a5c">⚔️ ${esc(invasion3.nombre)}</b>${invasion3.fase === 'capitan' ? '¡Derrota al Capitán!' : `Invasores: ${invasion3.hechos}/${invasion3.meta}`} · ${mm}:${String(ss).padStart(2, '0')}<small>${(MAPAS[invasion3.zona] || {}).nombre || ''}${dz > 60 && zc ? ` · ${flechaDir(zc.x, zc.z)} ${Math.round(dz)} m` : ' · ¡aquí!'}</small></div>` + h;
   }
-  if (!COMPACTO) { // Tesoro cercano: el cofre disponible mas proximo (en movil ya sale en el minimapa)
+  if (!COMPACTO || c.classList.contains('abierto')) { // Tesoro cercano: el cofre disponible mas proximo (en movil, con la caja abierta)
     let mc = null, md = 400; const ah = Date.now();
     for (const c of COFRES3) if (c.listoEn <= ah) { const d = Math.hypot(c.x - P.x, c.z - P.z); if (d < md && d > 6) { md = d; mc = c; } }
     if (mc) h += `<div class="q"><b>🧰 ${NOMBRE_COFRE[mc.tipo].replace(/^./, x => x.toUpperCase())}</b><small>${flechaDir(mc.x, mc.z)} ${Math.round(md)} m${mc.tipo === 'legendario' ? ' · en lo alto: ¡vuela!' : ''}</small></div>`;
@@ -3218,7 +3230,9 @@ function pintarMisiones() {
     // Movil con la caja recortada: una sola linea; al tocarla se despliega la lista completa.
     if (COMPACTO && !c.classList.contains('abierto')) h += `<div class="q"><b>🗓 Día ${hd}/${T.dia.l.length} · Semana ${hs}/${T.sem.l.length}</b><small>Toca para ver</small></div>`;
     else h += `<div class="q"><b>🗓 Misiones del día ${hd}/${T.dia.l.length}</b>` + T.dia.l.map((t, i) => t.ok ? `<span class="ok">✓ ${esc(t.txt)}</span>` : `<span class="tarea">• ${esc(t.txt)} ${t.p}/${t.n}${T.dia.cambio ? '' : ` <button class="cambiar" data-cambiar="${i}" title="Cambiar esta misión (1 gratis al día)">🔄</button>`}</span>`).join('') +
-      `<small>Semana ${hs}/${T.sem.l.length}${T.dia.bono ? ' · ✓ bono del día' : ''}</small></div>`;
+      `<small>${T.dia.bono ? '✓ bono del día' : 'Todas: bono del día'} · se renuevan a las 19:00 (Perú)</small></div>` +
+      // Las semanales tambien (antes solo se veia "Semana 0/2").
+      `<div class="q"><b>📅 Misiones de la semana ${hs}/${T.sem.l.length}</b>` + T.sem.l.map(t => t.ok ? `<span class="ok">✓ ${esc(t.txt)}</span>` : `<span class="tarea">• ${esc(t.txt)} ${t.p}/${t.n}</span>`).join('') + '</div>';
   }
   h = tt + h;
   c.classList.toggle('con-tuto', !!tt);
@@ -3243,7 +3257,7 @@ function pintarMisiones() {
   }
 }
 const cristalesHito = [];
-let avisoCampo = '', metaEnc = null, encargos = {}, encZonas = 0;
+let avisoCampo = '', metaEnc = null, encargos = {}, encZonas = 0, encRecibido = false;
 const faroEnc = (() => {
   const m = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.8, 70, 12, 1, true).translate(0, 35, 0), new THREE.MeshBasicMaterial({ color: '#7dd3fc', transparent: true, opacity: 0.18, depthWrite: false, side: THREE.DoubleSide, fog: false }));
   m.visible = false; escena.add(m); return m;

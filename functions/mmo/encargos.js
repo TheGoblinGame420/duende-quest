@@ -19,6 +19,8 @@ export const Encargos = {
     if (!s.m3 || s.i3 || !s.c || enAbismo(s.p.x)) return;
     const zona = tipo === 'jefe' && o && o.x !== undefined ? zonaEn(o.x, o.z) : zonaEn(s.p.x, s.p.z);
     if (!ZONAS3D[zona]) return;
+    // El jefe del encargo es el de la zona (el Capitan de una invasion no cuenta).
+    if (tipo === 'jefe' && MAPAS[zona] && MAPAS[zona].jefe && (!o || o.k !== MAPAS[zona].jefe)) return;
     const c = s.c, enc = c.enc || (c.enc = {});
     for (const e of encargosDe(zona, MAPAS, MONSTRUOS)) {
       if (e.tipo !== tipo || enc[e.id] === true) continue;

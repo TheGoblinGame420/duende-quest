@@ -360,7 +360,8 @@ export const Mundo3D = {
     const cobraron = new Set();
     for (const [sid, d] of o.dano) {
       const s = this.sesiones.get(sid);
-      if (!s || !s.c || !s.m3 || s.muerto) continue;
+      // Quien cae peleando contra un jefe (15 % del daño o mas) tambien cobra: si no, perdia la mision de jefe.
+      if (!s || !s.c || !s.m3 || (s.muerto && !(o.jefe && d / total >= 0.15))) continue;
       const parte = d / total;
       // En grupo, quien pega cobra al menos el 70%: siempre mas que el 60% del
       // compañero que solo mira (antes pegar poco daba menos que no pegar).
@@ -1175,16 +1176,23 @@ export const Mundo3D = {
     for (const o of W.mons.values()) { if (!ok(o) || !mismo(o, s)) continue; const d = dist(o, s.p); if (d < md) { md = d; mejor = o; } }
     return mejor;
   },
+  // Curas, escudos y resurreccion: nunca al rival del duelo ni a la otra faccion en el Abismo.
+  hostil3d(s, a) {
+    const d = this.rivalDuelo && this.rivalDuelo(s);
+    if (d && d.id === a.id) return true;
+    return !!(s.c.faccion && a.c && a.c.faccion && s.c.faccion !== a.c.faccion && enAbismo(s.p.x) && enAbismo(a.p.x));
+  },
   aliado3d(s, tg, rango, muerto) {
     if (typeof tg !== 'number' || tg <= 0 || tg === s.id) {
       if (!muerto) return s;
-      return this.sesiones3d().find(a => a !== s && a.muerto && mismo(a, s) && dist(a.p, s.p) <= rango) || null;
+      return this.sesiones3d().find(a => a !== s && a.muerto && mismo(a, s) && !this.hostil3d(s, a) && dist(a.p, s.p) <= rango) || null;
     }
     const a = this.sesiones.get(tg);
     if (!a || !a.c || !a.m3 || !!a.muerto !== !!muerto) return null;
+    if (this.hostil3d(s, a)) return muerto ? null : s;   // sobre un enemigo, la cura vuelve a uno mismo
     return mismo(a, s) && dist(a.p, s.p) <= rango ? a : null;
   },
-  aliadosCerca3d(s, radio) { return this.sesiones3d().filter(a => !a.muerto && mismo(a, s) && dist(a.p, s.p) <= radio); },
+  aliadosCerca3d(s, radio) { return this.sesiones3d().filter(a => !a.muerto && mismo(a, s) && !this.hostil3d(s, a) && dist(a.p, s.p) <= radio); },
 
   hab3d(s, m) {
     const c = s.c;
@@ -1373,19 +1381,22 @@ export const Mundo3D = {
       }
       case 'dolor': {
         const tick = Math.max(1, Math.round(s.st.atk * h.mult * mh / 5 * multForja((c.forja || {})[c.arma])));
-        this.ponerAuraMon(obj, 'dolor', h.dura, { de: s.id, tick, prox: ahora + 3000 });
+        // Relanzarlo renueva la duracion pero no atrasa el siguiente tick (antes, repetido, nunca hacia daño).
+        const prevD = obj.au && obj.au.dolor && obj.au.dolor.hasta > ahora ? obj.au.dolor.prox : 0;
+        this.ponerAuraMon(obj, 'dolor', h.dura, { de: s.id, tick, prox: prevD || ahora + 3000 });
         obj.amen.set(s.id, (obj.amen.get(s.id) || 0) + tick);
         obj.dano.set(s.id, (obj.dano.get(s.id) || 0) + 1);
         if (!obj.obj) obj.obj = s.id;
         s.combateT = ahora;
         break;
       }
-      case 'renovar': this.ponerAura(obj, 'renovar', h.dura, { de: s.id, cura: Math.round(s.st.atk * h.cura / 4), prox: ahora + 3000 }); break;
+      case 'renovar': { const prevR = obj.au && obj.au.renovar && obj.au.renovar.hasta > ahora ? obj.au.renovar.prox : 0; this.ponerAura(obj, 'renovar', h.dura, { de: s.id, cura: Math.round(s.st.atk * h.cura / 4), prox: prevR || ahora + 3000 }); break; }
       case 'rezo': for (const a of this.aliadosCerca3d(s, radio)) this.curar(s, a, s.st.atk * h.cura); break;
       case 'supresion': this.ponerAura(obj, 'supresion', h.dura); break;
       case 'resurreccion': this.resucitar(obj, s); break;
-      case 'siniestro': if (g(pegar(obj, h.mult, h.amenaza))) this.sumarCombo(s, h.combo); break;
-      case 'eviscerar': { const cp = s.combo || 0; s.combo = 0; g(pegar(obj, h.mult + h.porCombo * cp)); ev.cp = cp; break; }
+      // En 3D el golpe basico vale 3,6 por segundo: el Siniestro (40 de energia) pega mas que el.
+      case 'siniestro': if (g(pegar(obj, h.mult * 1.6, h.amenaza))) this.sumarCombo(s, h.combo); break;
+      case 'eviscerar': { const cp = s.combo || 0; s.combo = 0; g(pegar(obj, h.mult + h.porCombo * cp)); s.combo = 0; ev.cp = cp; break; }   // desde Sigilo no deja combos gratis
       case 'sigilo': this.ponerAura(s, 'sigilo', 0); break;
       case 'patada': case 'zurrar': case 'contrahechizo': case 'silencio':
         g(pegar(obj, h.mult));

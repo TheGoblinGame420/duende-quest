@@ -57,7 +57,7 @@ export const Pase = {
     pa.p = Math.min(tope, pa.p + n);
     const ahora = Math.floor(pa.p / PASE.porNivel);
     s.sucio = true;
-    if (ahora > antes) this.enviar(s, { t: 'toast', ok: true, m: `Pase de temporada: nivel ${ahora}. Cobra el premio en el registro de misiones.` });
+    if (ahora > antes) this.enviar(s, { t: 'toast', ok: true, m: `Pase de temporada: nivel ${ahora}. Cobra el premio en ${s.m3 ? 'el botón 🎟 (en el móvil, dentro de ⋯)' : 'el registro de misiones'}.` });
     this.enviar(s, { t: 'pase', pase: this.infoPase(c) });
   },
   cobrarPase(s, m) {
