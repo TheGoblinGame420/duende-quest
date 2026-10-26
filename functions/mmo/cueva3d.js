@@ -203,6 +203,7 @@ export const Cueva3D = {
       const it = completo && nvOk ? this.darItem(s, this.nuevoItem(c.nivel, 2)) : null;
       this.sumarXp(s, xp);
       if (nvOk) this.progresoTarea && this.progresoTarea(s, 'mazmorra');
+      if (nvOk && this.puntoGesta) this.puntoGesta(s, 'mazmorra');   // la cueva 3D tambien suma a la gesta de la hermandad
       this.enviar(s, { t: 'gana', xp, oro, drops: [], item: it });
       this.enviar(s, { t: 'toast', ok: true, m: `🏆 ¡${CUEVA.nombre} completada! +${xp} XP · +${oro} oro${it ? ' · ' + RAREZAS[it.r].nombre + ': ' + nombreItem(it) : ''}${completo ? '' : ' (cofre pequeño: hoy ya abriste 3 completos)'}` });
       s.sucio = true;

@@ -2310,6 +2310,7 @@ async function pruebasPesca() {
   await aMapa(j, 'pueblo', 1680);
   await j.mandar({ t: 'fabricar', id: 'ceviche' });
   chequear(j.c.mat.pescado === 5 && mundo.elixir(j, 'ceviche'), 'la Artesana cocina el ceviche');
+  if (!j.c.logros.includes('caza1')) j.c.logros.push('caza1');   // el logro de la primera caza da su propio oro
   const oro0 = j.c.oro; mundo.dar(j, 1, 100, null, 1, false);
   chequear(j.c.oro - oro0 === 110, 'el ceviche da +10% de oro de caza');
   chequear(D.TAREAS_DIA.some(t => t.tipo === 'pescar') && D.LOGROS.some(l => l.id === 'pesca50'), 'misión diaria y logros de pesca');

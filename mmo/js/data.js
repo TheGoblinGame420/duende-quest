@@ -498,6 +498,10 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 77, fecha: '26 oct 2026', items: [
+    'Nuevo logro «Duende Valiente» por tu primera caza (+50 oro y título), para que desde el primer minuto se note que avanzas.',
+    'La cueva del Rey Goblin en ORIGINS ya suma puntos a la gesta semanal de tu hermandad.',
+  ] },
   { n: 76, fecha: '26 oct 2026', items: [
     'La cadena del Guardia Tito ahora cuenta una historia: cada una de las 40 misiones explica por qué importa, desde las linternas del pueblo hasta el Dragón Ancestral que guarda el último pedazo del Cántaro.',
   ] },
@@ -1156,6 +1160,8 @@ export const multLogin = nivel => Math.max(1, Math.floor(nivel / 10));
 // ── LOGROS Y TITULOS ──
 // El titulo elegido se ve sobre el nombre del duende.
 export const LOGROS = [
+  // Primer logro en el primer minuto (los foros: el novato tiene que sentir que avanza ya).
+  { id: 'caza1',     titulo: 'Duende Valiente',    desc: 'Caza tu primer monstruo',        oro: 50,    cond: c => c.kills >= 1 },
   { id: 'caza100',   titulo: 'Cazador',            desc: 'Caza 100 monstruos',             oro: 500,   cond: c => c.kills >= 100 },
   { id: 'caza1000',  titulo: 'Exterminador',       desc: 'Caza 1.000 monstruos',           oro: 3000,  cond: c => c.kills >= 1000 },
   { id: 'caza5000',  titulo: 'Leyenda de la Caza', desc: 'Caza 5.000 monstruos',           oro: 12000, cond: c => c.kills >= 5000 },

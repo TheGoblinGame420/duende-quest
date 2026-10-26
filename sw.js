@@ -9,7 +9,7 @@
 // el ?v= de cada version (si se publica a mano, subirlo tambien a mano); las
 // imagenes/sonidos se revalidan solos.
 // ═══════════════════════════════════════════════════════
-const CACHE = 'dq-v308';
+const CACHE = 'dq-v309';
 const OFFLINE = '/offline';   // Cloudflare sirve /offline.html como /offline (sin redirigir)
 const PRECARGA = [OFFLINE, '/assets/ui/icon-192.png', '/assets/ui/icon-512.png'];
 

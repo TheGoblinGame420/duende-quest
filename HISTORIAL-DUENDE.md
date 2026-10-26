@@ -45,6 +45,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v306 | 30 altas por IP, Telegram caducado sin invitado silencioso, enlaces con sesión, Atrás, rescate con copia | **B** |
 | v307 | Avisos legibles, editor de apariencia, controles/sonido al volver, música cueva/Abismo, ref en 3D, pase al cambiar de mes; INFORME-260-AGENTES.md | **B** |
 | v308 | Historia de las 40 misiones del Guardia Tito | **B** |
+| v309 | Logro de la primera caza, cueva suma a la gesta | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

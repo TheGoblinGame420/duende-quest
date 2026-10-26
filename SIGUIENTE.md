@@ -3044,3 +3044,9 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - lore.js: `LORE_MISIONES` (40 frases, mismo orden que `MISIONES`): Larga Noche, Colinas Rojas, Selva, Picos Tormenta, Desierto, Castillo, Cumbres, Cavernas, Abismo marino y Acantilados, enlazadas con las reliquias.
 - mundo.js: al cambiar `yo.mis.i` aviso «🛡 Tito: …» y la frase en la ventana del Guardia.
 - Arnés 843 bien.
+
+### Primer logro y gesta en la cueva (26-oct-2026, `?v=309`)
+
+- data.js: logro `caza1` (1 caza, 50 oro, título «Duende Valiente»).
+- cueva3d.js: `puntoGesta(s, 'mazmorra')` al completar la cueva con nivel válido.
+- Arnés: la prueba del ceviche marca `caza1` antes de medir el oro. 843 bien.
