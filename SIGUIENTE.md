@@ -2944,3 +2944,9 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Chat 3D: formulario con botón ➤ (`enviarInputChat`); social.js: invitado < Nv 5 en general → 'decir'.
 - modelos.js: poncho de la skin común.
 - Arnés 842 bien.
+
+### Lore de zonas, PNJ con voz y aventureros PNJ (26-oct-2026, `?v=297`)
+
+- mundo/js/lore.js (nuevo): `LORE_ZONAS` (intro + pedazo de las 10 zonas), `LORE_NPC`, `LORE_HITOS`, `LORE_NIVEL60`, `AVENTUREROS`, `FRASES_AVENTUREROS` (revisados a mano tras la investigación de foros).
+- mundo.js: `tituloZona` avisa la intro una vez por sesión (sessionStorage `dq3_lz`); `fraseNpc` arriba de la ventana del PNJ (y del ranking del Sabio); `case 'enc'` avisa la frase del hito al completarlo; aviso del nivel 60; leyenda con «Los pedazos del Cántaro».
+- Aventureros: 5 `crearDuende` por día en la plaza (radio 4-16 m, `empujarFuera`), etiqueta «Nombre PNJ» (≤24 m) y bocadillo cada 9-18 s. Solo cliente: no cuentan como conectados.

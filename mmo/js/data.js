@@ -498,6 +498,12 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 65, fecha: '26 oct 2026', items: [
+    'Lore en cada rincón de ORIGINS: cada zona te cuenta su historia al entrar, y la leyenda muestra los 10 pedazos del Cántaro Eterno y dónde cayó cada uno.',
+    'Los PNJ del pueblo hablan: Tito, Grumo, el Sabio y Lila tienen frases propias sobre el Cántaro, la chicha y el Rey Goblin.',
+    'Aventureros del pueblo (PNJ): Quilla, Inti, Killa, Wayra, Sumaq y compañía pasean por la plaza y comentan lo que pasa. Llevan «PNJ» en el nombre: no son jugadores.',
+    'Al encontrar el hito de cada zona se revela un secreto, y al llegar a nivel 60 el Cántaro se llena de nuevo.',
+  ] },
   { n: 64, fecha: '26 oct 2026', items: [
     'Premio real: quien llegue a nivel 60 se lleva 2 litros de chicha morada a su casa. Siempre a la vista en pantalla con tu progreso (Nv X/60) y se reclama con un toque al llegar.',
     'El camino al 60 es más largo: desde el nivel 10 cada nivel pide más experiencia (el 60 cuesta 4 veces lo de antes). Las misiones, mazmorras y encargos dan más en proporción.',

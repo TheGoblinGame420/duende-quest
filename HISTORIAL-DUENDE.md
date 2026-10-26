@@ -32,6 +32,8 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v293 | HUD mínimo en móvil/Telegram y la leyenda del Cántaro (chicha morada, imágenes del dueño) | **B** |
 | v294 | Cielo con degradado y nubes, recarga automática con versión nueva | **B** |
 | v295 | Todas las ventanas adaptadas al móvil, leyenda en cada sesión, mascota $Duende | **B** |
+| v296 | Chicha Nv 60 = 2 litros siempre a la vista (3D y 2D), XP más lenta desde Nv 10, chat móvil con ➤, poncho | **B** |
+| v297 | Lore por zona, PNJ con frases, secretos de hitos, aventureros PNJ en la plaza | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

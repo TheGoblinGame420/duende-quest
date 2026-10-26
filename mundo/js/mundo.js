@@ -14,20 +14,21 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA } from '/mmo/js/data.js?v=296';
-import { iniciarVentanas } from './ventanas.js?v=296';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=296';
-import { crearMusica } from './musica.js?v=296';
-import { construirCueva } from './cueva.js?v=296';
-import { TAPA, transparentar } from './tapa.js?v=296';
-import { construirAbismo } from './abismo.js?v=296';
-import { crearParticulas } from './particulas.js?v=296';
-import { cargarKenney, piezasCasa } from './kenney.js?v=296';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA } from '/mmo/js/data.js?v=297';
+import { iniciarVentanas } from './ventanas.js?v=297';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=297';
+import { crearMusica } from './musica.js?v=297';
+import { construirCueva } from './cueva.js?v=297';
+import { TAPA, transparentar } from './tapa.js?v=297';
+import { construirAbismo } from './abismo.js?v=297';
+import { crearParticulas } from './particulas.js?v=297';
+import { cargarKenney, piezasCasa } from './kenney.js?v=297';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=296';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=296';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=296';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=297';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=297';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=297';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS } from './lore.js?v=297';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1255,6 +1256,7 @@ function recibir(m) {
       break;
     case 'yo': {
       const antes = yo; yo = m.yo;
+      if (antes && antes.nivel < 60 && yo.nivel >= 60) { aviso('🏆 ' + LORE_NIVEL60, 'ok'); setTimeout(() => aviso('🥤 Toca la barra morada de la chicha para reclamar tus 2 litros.', 'ok'), 5000); }
       ALAS_MAX = (ALAS[yo.ala] || ALAS.aprendiz).vuelo; if (!antes) P.alas = ALAS_MAX; alasPropias();
       ALAS_MAX && (P.alas = Math.min(P.alas, ALAS_MAX));
       if (antes && (yo.skin !== antes.skin || yo.clase !== antes.clase || yo.arma !== antes.arma || JSON.stringify(yo.look) !== JSON.stringify(antes.look))) cambiarSkinPropia();
@@ -1274,7 +1276,11 @@ function recibir(m) {
     case 'mundial3': mundial3 = { ...m, recibido: Date.now() }; break;
     case 'mmx3': { const o = mons.get(m.id); if (o) { o.mx = m.mx; o.hp = m.hp; } break; }   // el jefe mundial crece si llegan mas a pelear
     case 'asedio': asedio = m; if (m.activo) asedioHp = asedioHp || { p: 100, g: 100 }; else asedioHp = null; if (abismo) abismo.dueno(m.dueno); break;
-    case 'enc': encargos = m.l || {}; encZonas = m.zonas || 0; $('misiones')._h = ''; break;
+    case 'enc': {
+      const antes = encargos, nuevos = m.l || {};
+      if (antes && Object.keys(antes).length) for (const k in nuevos) if (nuevos[k] === true && antes[k] !== true && k.endsWith(':hito') && LORE_HITOS[k.split(':')[0]]) aviso('✨ ' + LORE_HITOS[k.split(':')[0]], 'ok');
+      encargos = nuevos; encZonas = m.zonas || 0; $('misiones')._h = ''; break;
+    }
     case 'asedioHp': asedioHp = m; if (asedio) asedio.dormido = !!m.d; break;
     case 'asedioTiro': tiroAsedio(m); break;
     case 'zona3': {
@@ -1938,6 +1944,9 @@ function tituloZona(id) {
   $('mini-z').textContent = $('tz-n').textContent;
   const t = $('titulo-zona'); t.style.opacity = 1;
   clearTimeout(t._t); t._t = setTimeout(() => { t.style.opacity = 0; }, 3200);
+  // La historia de la zona, una vez por sesion.
+  const lz = LORE_ZONAS[id];
+  if (lz && yo) { let vistas = ''; try { vistas = sessionStorage.getItem('dq3_lz') || ''; } catch (e) {} if (!vistas.split(',').includes(id)) { try { sessionStorage.setItem('dq3_lz', vistas + ',' + id); } catch (e) {} setTimeout(() => aviso('📜 ' + lz.intro), 1500); } }
 }
 
 // ── VENTANAS ──
@@ -1999,10 +2008,18 @@ function abrirNpc(tipo) {
       }).join('');
     cu.querySelectorAll('[data-r]').forEach(b => b.onclick = () => { mandar({ t: 'fabricar', id: b.dataset.r }); sfx('moneda', 0.3); });
   }
+  cu.insertAdjacentHTML('afterbegin', fraseNpc(n.id));
   abrir('v-npc');
 }
+// Una frase del PNJ (lore) arriba de su ventana; se mantiene al repintar.
+const fraseNpcVista = {};
+function fraseNpc(id) {
+  const L = LORE_NPC[id]; if (!L) return '';
+  if (!fraseNpcVista[id] || !$('v-npc').classList.contains('on')) fraseNpcVista[id] = L[Math.floor(Math.random() * L.length)];
+  return `<p class="npc-dice" style="font-style:italic;color:#e9d5ff;border-left:3px solid #a855f7;padding:2px 0 2px 8px;margin:0 0 10px">«${esc(fraseNpcVista[id])}»</p>`;
+}
 function pintarRanking(r) {
-  $('npc-c').innerHTML = (r || []).slice(0, 15).map((x, i) => `<div class="fila"><span>${i + 1}. ${esc(x.n)}</span><b style="color:${x.yo ? 'var(--ok)' : 'var(--txt)'}">Nv ${x.lv}</b></div>`).join('') || '<p>Aún no hay nadie.</p>';
+  $('npc-c').innerHTML = fraseNpc('sabio') + (r || []).slice(0, 15).map((x, i) => `<div class="fila"><span>${i + 1}. ${esc(x.n)}</span><b style="color:${x.yo ? 'var(--ok)' : 'var(--txt)'}">Nv ${x.lv}</b></div>`).join('') || '<p>Aún no hay nadie.</p>';
 }
 // Inventario, libro de clase, tienda completa y logros (mundo/js/ventanas.js).
 const V = iniciarVentanas({ mandar, yo: () => yo, aviso, sfx, abrir, cerrar, telegram: () => !!TG && !forzarInvitado });
@@ -2201,7 +2218,7 @@ function verLeyenda() {
     <p class="vv-p">El <b>Rey Goblin</b> robó el <b style="color:#ffd84a">Cántaro Eterno</b> y lo rompió en pedazos. Sin chicha, la noche cubrió el bosque, los goblins invadieron las colinas y el Éter del cielo se partió en islas flotantes: el <b>Abismo</b>.</p>
     <p class="vv-p"><img src="/assets/lore/duende-chicha.webp" alt="" style="float:right;height:96px;margin:0 0 4px 6px">Tú eres un duende joven. <b>Recupera las zonas</b> (misiones y encargos 🧭), <b>vence a sus jefes</b>, abre los cofres y junta <b>puntos de chicha</b> cazando. En el Abismo, la Luz y la Sombra luchan por el <b>Núcleo</b>, donde late el último pedazo del Cántaro.</p>
     <p class="vv-p" style="color:#fde68a;font-weight:700">🥤 Y es de verdad: quien llegue a nivel ${CHICHA.nv60} en este mundo se lleva ${CHICHA.litros60} litros de chicha morada a su casa. Además, con ${(10000).toLocaleString('es')} puntos de chicha cazando, otro litro (en $DUENDE CLASSIC → Mochila → Chicha). Se reclama entrando con Telegram.</p>
-`;
+<details style="margin-top:8px"><summary style="cursor:pointer;color:#c084fc;font-weight:700">🏺 Los pedazos del Cántaro (10 zonas)</summary>${Object.entries(LORE_ZONAS).map(([id, z]) => `<p class="vv-p" style="margin:6px 0"><b style="color:#fde68a">${esc((MAPAS[id] || {}).nombre || id)}:</b> ${esc(z.pedazo)}</p>`).join('')}</details>`;
   $('v-diario').querySelector('h2').textContent = 'LA LEYENDA DEL CÁNTARO';
   abrir('v-diario');
 }
@@ -3022,7 +3039,50 @@ function etiquetas(t) {
     const herido = o.hp < o.mx || el;
     ponLbl(o.lbl, o.x, alturaEn(o.x, o.z) + alto + 0.2, o.z, `<span style="color:${o.ra ? o.ti || '#ffd84a' : o.iv ? '#ff5a1f' : o.j ? '#ff6bf0' : colorNivel(o.nv)}">${mis ? '<b style="color:#ffd84a;font-size:15px">❗</b>' : ''}${o.ra ? '★ ' + esc(o.ra) + ' · ' : o.iv ? '⚔ ' : o.j ? '★ ' : ''}${asedio && asedio.dormido && o.id === asedio.guardian ? '💤 ' : ''}${herido || o.j || mis ? esc(def.nombre) + ' ' : ''}${marcaNivel(o.nv)}Nv${o.nv}</span>${herido ? `<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>` : ''}`, el ? 90 : (o.j || mis ? 70 : 38));
   }
+  for (const av of aventureros) ponLbl(av.lbl, av.x, alturaEn(av.x, av.z) + 2.15, av.z, `${av.diceT > t ? `<span style="display:block;background:rgba(255,255,255,.92);color:#222;border-radius:8px;padding:2px 7px;margin:0 auto 2px;font-weight:600;white-space:normal;width:max-content;max-width:170px">${esc(av.dice)}</span>` : ''}<span style="color:#93c5fd">${esc(Math.hypot(av.x - P.x, av.z - P.z) < 10 ? av.n : av.n.split(' ')[0])}</span> <small style="color:#bbb;font-size:9px">PNJ</small>`, 24);
   for (const n of npcs) ponLbl(n.lbl, n.x, n.y + 2.4, n.z, `${n.tipo === 'guia' && misionLista() ? '<b style="color:#ffd84a;font-size:22px;text-shadow:0 0 6px #000">?</b><br>' : ''}<span style="color:#4ade80">${esc(n.nombre)}</span>`, 60);
+}
+// ── AVENTUREROS DEL PUEBLO (PNJ) ──
+// Cinco aventureros PNJ pasean por la plaza y comentan cosas. Llevan «PNJ»
+// en el nombre: no son jugadores ni cuentan como conectados.
+const aventureros = [];
+function crearAventureros() {
+  if (!USAR_MODELOS) return;
+  const dia = Math.floor(Date.now() / 864e5);
+  for (let i = 0; i < 5; i++) {
+    const a = AVENTUREROS[(dia + i * 2) % AVENTUREROS.length];
+    const look = { cara: (i * 2 + dia) % 6, cuerpo: i % 3, altura: 0.95 + (i % 4) * 0.04, pelo: (i * 3 + dia) % 8, colorPelo: (i * 5 + dia) % 8 };
+    const fig = figuraModelo(() => crearDuende({ skin: 'comun', clase: a.cl, arma: 'katana', look }));
+    if (!fig) continue;
+    const ang = i / 5 * Math.PI * 2;
+    const av = { ...a, x: Math.cos(ang) * 9, z: Math.sin(ang) * 9, ry: 0, espera: 800 + i * 900, fig, lbl: etiqueta('pj'), dice: '', diceT: 0 };
+    av.tx = av.x; av.tz = av.z;
+    aventureros.push(av);
+  }
+}
+let charlaT = 0;
+function moverAventureros(t, dt) {
+  if (!aventureros.length) return;
+  if (t > charlaT) {
+    charlaT = t + 9000 + Math.random() * 9000;
+    const av = aventureros[Math.floor(Math.random() * aventureros.length)];
+    if (Math.hypot(av.x - P.x, av.z - P.z) < 35) { av.dice = FRASES_AVENTUREROS[Math.floor(Math.random() * FRASES_AVENTUREROS.length)]; av.diceT = t + 5000; }
+  }
+  for (const av of aventureros) {
+    const dx = av.tx - av.x, dz = av.tz - av.z, d = Math.hypot(dx, dz);
+    let anda = false;
+    if (d < 0.3) {
+      av.espera -= dt * 1000;
+      if (av.espera <= 0) { const r = 4 + Math.random() * 12, a = Math.random() * Math.PI * 2; av.tx = Math.cos(a) * r; av.tz = Math.sin(a) * r; av.espera = 2500 + Math.random() * 5000; }
+    } else {
+      const v = Math.min(d, 2.4 * dt), nx = av.x + dx / d * v, nz = av.z + dz / d * v;
+      const [ex, ez] = empujarFuera(nx, nz);
+      if (Math.hypot(ex - nx, ez - nz) > 0.01) { av.tx = ex; av.tz = ez; }   // choca: se para ahi y elige otro rumbo
+      av.x = ex; av.z = ez; av.ry = lerpAng(av.ry, Math.atan2(dx, dz), 0.15); anda = true;
+    }
+    av.fig.estado(anda ? 'corre' : 'quieto', t);
+    av.fig.poner(av.x, alturaEn(av.x, av.z), av.z, av.ry, t);
+  }
 }
 // ── RASTREADOR DE MISIONES ──
 // La mision de la cadena y la caza del dia, con flecha y distancia al
@@ -3183,6 +3243,7 @@ function bucle(t) {
     n.ry = lerpAng(n.ry || 0, cerca ? Math.atan2(P.x - n.x, P.z - n.z) : 0, 0.08);
     n.fig.poner(n.x, n.y, n.z, n.ry, t);
   } else if (n.fig) { const h = n.fig.hoja; n.fig.cuadro(h.mov[1] + Math.floor(t / 600 + n.x) % 2, h.mov[0], P.x > n.x); n.fig.poner(n.x, n.y, n.z, camYaw); }
+  moverAventureros(t, dt);
   // Proyectiles.
   proyectiles = proyectiles.filter(p => {
     p.t += dt / 0.28;
@@ -3351,6 +3412,7 @@ async function inicio() {
     const fig = figuraModelo(() => crearNpc(n.hoja)) || await figuraHoja(n.hoja, 62);
     npcs.push({ ...n, y: alturaEn(n.x, n.z), fig, lbl: etiqueta('') });
   }
+  try { crearAventureros(); } catch (e) { console.warn(e); }
   P.lbl = etiqueta('yo');
   progreso(1, 'Conectando…');
   requestAnimationFrame(bucle);
