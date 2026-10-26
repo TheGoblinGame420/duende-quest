@@ -649,6 +649,13 @@ async function pruebasAlas3d() {
   a.p = { x: 120, z: 120 }; a.movBud = undefined; a.limpiar();
   for (let i = 0; i < 700; i++) { avanzar(100); a.movBud = undefined; await a.mandar({ t: 'mv3', x: 120 + (i % 2) * 0.2, z: 120, a: 3, h: 10 }); }
   chequear(a.ultimos('alasAgotadas').length >= 1 && a.a !== 3, 'sin energía de alas el servidor te baja (planeando)');
+  // Corriente de viento del Abismo: cruzarla volando recarga las alas (una vez cada 20 s).
+  const AB = await import('../mmo/js/abismo3d.js'), cw = AB.CORRIENTES[0];
+  a.p = { x: cw.x + 3, z: cw.z }; a.movBud = undefined; a.vueloS = 50; a.limpiar();
+  avanzar(100); await a.mandar({ t: 'mv3', x: cw.x + 2, z: cw.z, a: 3, h: 10 });
+  chequear(a.ultimos('corriente').length === 1 && (a.vueloS || 0) < 1, 'la corriente de viento recarga las alas');
+  a.vueloS = 50; avanzar(100); a.movBud = undefined; await a.mandar({ t: 'mv3', x: cw.x + 1, z: cw.z, a: 3, h: 10 });
+  chequear(a.ultimos('corriente').length === 1 && a.vueloS > 40, 'y no otra vez hasta pasados 20 s');
   await dejar(a);
 }
 

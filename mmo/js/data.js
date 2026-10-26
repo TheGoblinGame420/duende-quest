@@ -498,6 +498,11 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 78, fecha: '26 oct 2026', items: [
+    'Corrientes de viento en el Abismo (como en AION): 12 columnas de aire celeste entre las islas. Crúzalas volando o planeando y tus alas se recargan al momento.',
+    'Móvil más limpio al empezar: el botón MONTAR aparece cuando tienes montura y FIJAR desde nivel 3.',
+    'Términos actualizados con el premio de nivel 60 (2 litros de chicha morada por personaje, fuera del límite mensual).',
+  ] },
   { n: 77, fecha: '26 oct 2026', items: [
     'Nuevo logro «Duende Valiente» por tu primera caza (+50 oro y título), para que desde el primer minuto se note que avanzas.',
     'La cueva del Rey Goblin en ORIGINS ya suma puntos a la gesta semanal de tu hermandad.',

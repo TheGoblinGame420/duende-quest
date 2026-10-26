@@ -14,21 +14,22 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS } from '/mmo/js/data.js?v=309';
-import { iniciarVentanas } from './ventanas.js?v=309';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=309';
-import { crearMusica } from './musica.js?v=309';
-import { construirCueva } from './cueva.js?v=309';
-import { TAPA, transparentar } from './tapa.js?v=309';
-import { construirAbismo } from './abismo.js?v=309';
-import { crearParticulas } from './particulas.js?v=309';
-import { cargarKenney, piezasCasa } from './kenney.js?v=309';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS } from '/mmo/js/data.js?v=310';
+import { iniciarVentanas } from './ventanas.js?v=310';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=310';
+import { crearMusica } from './musica.js?v=310';
+import { construirCueva } from './cueva.js?v=310';
+import { TAPA, transparentar } from './tapa.js?v=310';
+import { construirAbismo } from './abismo.js?v=310';
+import { crearParticulas } from './particulas.js?v=310';
+import { cargarKenney, piezasCasa } from './kenney.js?v=310';
+import { CORRIENTES } from '/mmo/js/abismo3d.js?v=310';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=309';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=309';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=309';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=309';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=310';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=310';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=310';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=310';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1329,7 +1330,7 @@ function recibir(m) {
       if (m.t === 'snap3' && Math.hypot(m.x - P.x, m.z - P.z) < 4) { P.corrX = m.x - P.x; P.corrZ = m.z - P.z; P.vx *= 0.5; P.vz *= 0.5; break; }
       P.x = m.x; P.z = m.z; P.y = (m.t === 'snap3' && P.vuela) ? Math.max(P.y, alturaEn(m.x, m.z) + 0.5) : alturaEn(P.x, P.z); P.corrX = P.corrZ = 0; P.vx = P.vz = 0;
       if (m.t === 'tp3' && !m.carga) { if (P.vuela) volar(false); P.vy = 0; P.planea = false; camReal = camDist; caidaEnviada = false; }
-      if (m.t === 'tp3' && m.abismo !== undefined) { zonaActual = ''; objetivo = 0; autoAtk = false; pintarBarra(); if (m.abismo) aviso('🌌 Entre las islas solo se pasa volando (' + K('V', 'VOLAR') + ') o planeando (' + K('mantén Espacio', 'mantén SALTO') + '). ¡No caigas al vacío!', 'ok'); }
+      if (m.t === 'tp3' && m.abismo !== undefined) { zonaActual = ''; objetivo = 0; autoAtk = false; pintarBarra(); if (m.abismo) aviso('🌌 Entre las islas solo se pasa volando (' + K('V', 'VOLAR') + ') o planeando (' + K('mantén Espacio', 'mantén SALTO') + '). Las columnas de viento celestes recargan tus alas. ¡No caigas al vacío!', 'ok'); }
       if (m.t === 'tp3' && m.cueva !== undefined) {
         cuevaInfo = m.cueva;
         if (cueva) { cueva.cofre.visible = !!(m.cueva && m.cueva.hecha); cueva.tapa.rotation.x = 0; }
@@ -1389,6 +1390,7 @@ function recibir(m) {
     case 'contactos': contactos3 = m.l || []; pintarAmigos3(); pintarObjetivoP(); break;
     case 'quien': quien3 = m.r || []; pintarAmigos3(); break;
     // Alas agotadas segun el servidor: a planear (antes caia en picado, mortal sobre el vacio).
+    case 'corriente': P.alas = ALAS_MAX; aviso('🌬 Corriente de viento: ¡alas recargadas!', 'ok'); sfxK('tela', 0.4); vib('light'); break;
     case 'alasAgotadas': if (P.vuela) { volar(false); P.planeoAuto = true; aviso('Tus alas se cansaron: planeas hacia el suelo.'); } P.alas = 0; break;
     case 'pica': pica = performance.now() + m.ms; aviso('🎣 ¡Pica! ' + K('Pulsa E', 'Toca ¡TIRAR!') + ' para tirar', 'ok'); sfx('boton', 0.7); vib('heavy'); break;
     case 'pescado': quitarCorcho(); sfx('moneda', 0.5); break;
@@ -1794,6 +1796,12 @@ function pintarHud() {
   if (cl) $('m-rec').firstElementChild.style.background = RECURSOS[cl.recurso].color;
   $('xp').firstElementChild.style.transform = `scaleX(${clamp(yo.xp / (yo.xpSig || xpParaSubir(yo.nivel)), 0, 1)})`;
   pintarVida(); pintarBarra(); pintarChicha3();
+  // Movil por etapas: MONTAR cuando tienes montura y FIJAR desde nivel 3 (menos botones al empezar).
+  if (MOVIL) {
+    const vMon = yo.montura || (yo.monturas || []).length ? 'visible' : 'hidden', vFij = yo.nivel >= 3 ? 'visible' : 'hidden';
+    if ($('t-montar').style.visibility !== vMon) $('t-montar').style.visibility = vMon;
+    if ($('t-obj').style.visibility !== vFij) { $('t-obj').style.visibility = vFij; if (vFij === 'visible' && yo.nivel === 3) aviso('🎯 Nuevo botón FIJAR: cambia de objetivo entre los monstruos cercanos.', 'ok'); }
+  }
   if (!P.fig || P.skin !== claveYo()) cambiarSkinPropia();
 }
 function pintarVida() {
@@ -2270,6 +2278,11 @@ addEventListener('keydown', e => {
 // ── VERSION NUEVA: Telegram deja la pagina abierta horas; cada 2 min (y al
 // volver a la app) se mira si hay version nueva y se recarga fuera de combate.
 const MI_VER = +(/[?&]v=(\d+)/.exec(import.meta.url) || [0, 0])[1];
+// Los errores de JavaScript de los jugadores llegan al servidor (antes nadie se enteraba de un fallo en un movil).
+let errEnv = 0;
+const avisarError = (msg, f, l) => { if (++errEnv > 5) return; try { mandar({ t: 'errc', m: String(msg || '').slice(0, 200), f: String(f || '').split('/').pop().slice(0, 80), l: l | 0, v: MI_VER, tg: TG ? 1 : 0 }); } catch (e) {} };
+addEventListener('error', e => avisarError(e.message, e.filename, e.lineno));
+addEventListener('unhandledrejection', e => avisarError('promesa: ' + ((e.reason && (e.reason.message || e.reason)) || ''), '', 0));
 let verNueva = 0, verT = 0;
 async function revisarVersion() {
   if (!MI_VER || Date.now() - verT < 110000) return;
@@ -3159,6 +3172,26 @@ function etiquetas(t) {
   for (const av of aventureros) ponLbl(av.lbl, av.x, alturaEn(av.x, av.z) + 2.15, av.z, `${av.diceT > t ? `<span style="display:block;background:rgba(255,255,255,.92);color:#222;border-radius:8px;padding:2px 7px;margin:0 auto 2px;font-weight:600;white-space:normal;width:max-content;max-width:170px">${esc(av.dice)}</span>` : ''}<span style="color:#93c5fd">${esc(Math.hypot(av.x - P.x, av.z - P.z) < 10 ? av.n : av.n.split(' ')[0])}</span> <small style="color:#bbb;font-size:9px">PNJ</small>`, 24);
   for (const n of npcs) ponLbl(n.lbl, n.x, n.y + 2.4, n.z, `${n.tipo === 'guia' && misionLista() ? '<b style="color:#ffd84a;font-size:22px;text-shadow:0 0 6px #000">?</b><br>' : ''}<span style="color:#4ade80">${esc(n.nombre)}</span>`, 60);
 }
+// ── CORRIENTES DE VIENTO DEL ABISMO ──
+// Columnas de aire celeste entre islas (mmo/js/abismo3d.js CORRIENTES): el servidor
+// recarga las alas al cruzarlas volando o planeando y avisa con 'corriente'.
+const corrientes3 = [];
+function crearCorrientes() {
+  const geoC = new THREE.CylinderGeometry(7, 7, 70, 20, 1, true), geoA = new THREE.TorusGeometry(7.5, 0.35, 6, 32);
+  for (const c of CORRIENTES) {
+    const col = new THREE.Mesh(geoC, new THREE.MeshBasicMaterial({ color: 0x7dd3fc, transparent: true, opacity: 0.12, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }));
+    col.position.set(c.x, 30, c.z);
+    const aros = [0, 1, 2].map(i => { const a = new THREE.Mesh(geoA, new THREE.MeshBasicMaterial({ color: 0xbae6fd, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending })); a.rotation.x = Math.PI / 2; a.position.set(c.x, 10 + i * 22, c.z); escena.add(a); return a; });
+    escena.add(col);
+    corrientes3.push({ col, aros });
+  }
+}
+function animarCorrientes(t) {
+  for (const c of corrientes3) {
+    c.col.material.opacity = 0.09 + 0.05 * Math.sin(t / 600 + c.col.position.x);
+    c.aros.forEach((a, i) => { a.position.y = 5 + ((t / 70 + i * 22) % 66); a.rotation.z = t / 900; });   // los aros suben: el viento empuja hacia arriba
+  }
+}
 // ── AVENTUREROS DEL PUEBLO (PNJ) ──
 // Cinco aventureros PNJ pasean por la plaza y comentan cosas. Llevan «PNJ»
 // en el nombre: no son jugadores ni cuentan como conectados.
@@ -3442,7 +3475,7 @@ function bucle(t) {
   sol.position.set(P.x + solDir.x * 0.5, P.y + solDir.y * 0.5, P.z + solDir.z * 0.5);
   moverLluvia(dt, t);
   if (cueva && enCueva(P.x)) cueva.animar(t);
-  if (abismo && enAbismo(P.x)) abismo.animar(t);
+  if (abismo && enAbismo(P.x)) { abismo.animar(t); animarCorrientes(t); }
   if (tirosAsedio.length) moverTirosAsedio(t);
   for (const cr of cristalesHito) { cr.rotation.y = t / 900; cr.position.y += Math.sin(t / 500) * 0.004; }
   if (molinoAspas && Math.hypot(P.x, P.z) < 160) molinoAspas.rotation.x = t / 1400;
@@ -3521,6 +3554,7 @@ async function inicio() {
   crearCofres3();
   for (const c of abismo.solidos || []) ponerSolido(c.x, c.z, c.r);
   abismo.dueno(asedio && asedio.dueno);
+  crearCorrientes();
   progreso(0.7, 'Preparando los gráficos…');
   try { if (render.compileAsync) await Promise.race([render.compileAsync(escena, camara), new Promise(r => setTimeout(r, 4000))]); } catch (e) {}
   progreso(0.75, 'Dibujando el mapa…');

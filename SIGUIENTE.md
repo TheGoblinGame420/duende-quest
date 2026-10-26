@@ -3050,3 +3050,12 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - data.js: logro `caza1` (1 caza, 50 oro, título «Duende Valiente»).
 - cueva3d.js: `puntoGesta(s, 'mazmorra')` al completar la cueva con nivel válido.
 - Arnés: la prueba del ceviche marca `caza1` antes de medir el oro. 843 bien.
+
+### Corrientes de viento, HUD por etapas y telemetría (26-oct-2026, `?v=310`)
+
+- Nota del panel de 5 evaluadores en v309: 6,0 de media (MMO 6,0, F2P 6,3, QA 6,0, casual 6,2, web3 5,6).
+- abismo3d.js: `CORRIENTES` (12, r 8 m), `CORRIENTE_CD` 20 s, `corrienteEn`. mundo3d.js: en mv3 volando/planeando en el Abismo, `vueloS = 0` y mensaje `corriente`. Cliente: columnas y aros que suben, recarga `P.alas`, aviso al entrar en el Abismo. Arnés +2 pruebas.
+- mundo.js: en móvil `t-montar` visible con montura y `t-obj` desde Nv 3 (aviso al desbloquear).
+- Telemetría: `window.onerror`/`unhandledrejection` → `errc` (5 por sesión) → `console.log('[errc]', …)` en el Worker y `erroresCli` (100) en memoria.
+- terminos.html: premio de nivel 60, puntos solo para quien pega o cura, límite mensual solo para los premios por puntos; fecha 26-oct-2026.
+- Arnés 845 bien.

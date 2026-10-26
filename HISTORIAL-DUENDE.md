@@ -46,6 +46,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v307 | Avisos legibles, editor de apariencia, controles/sonido al volver, música cueva/Abismo, ref en 3D, pase al cambiar de mes; INFORME-260-AGENTES.md | **B** |
 | v308 | Historia de las 40 misiones del Guardia Tito | **B** |
 | v309 | Logro de la primera caza, cueva suma a la gesta | **B** |
+| v310 | Corrientes de viento (AION), HUD móvil por etapas, telemetría de errores, términos Nv 60 · panel v309: 6,0 | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

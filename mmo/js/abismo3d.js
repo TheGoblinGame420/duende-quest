@@ -134,3 +134,12 @@ export function maquinasAbismo() {
   }
   return l;
 }
+
+// ── CORRIENTES DE VIENTO (como en AION) ──
+// Columnas de viento en los huecos entre islas: atravesarlas volando o planeando
+// recarga las alas (cada una, como mucho cada 20 s). El servidor solo mira la
+// distancia horizontal (sobre el vacio no conoce la altura absoluta).
+export const CORRIENTES = [[-35, -150], [35, -150], [-35, 150], [35, 150], [-85, -95], [85, -95], [-85, 95], [85, 95], [-150, -35], [150, 35], [-75, 0], [75, 0]]
+  .map(([x, z]) => ({ x: ABISMO_X0 + x, z, r: 8 }));
+export const CORRIENTE_CD = 20000;
+export const corrienteEn = (x, z) => CORRIENTES.findIndex(c => (x - c.x) ** 2 + (z - c.z) ** 2 < c.r * c.r);

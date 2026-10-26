@@ -24,6 +24,7 @@ import {
 } from '../../mmo/js/data.js';
 import { MUNDO, NPCS3D, NPC_DIST, SPAWN3D, ARENA3D, CASAS, campamentos, zonaEn, esNoche, nodos3d, RECOGER_DIST, alturaEn } from '../../mmo/js/mundo3d.js';
 import { CUEVA, CUEVA_X0, caminable, enCueva, vistaCueva, pasoCueva, PORTAL_PUEBLO } from '../../mmo/js/cueva3d.js';
+import { CORRIENTES, CORRIENTE_CD, corrienteEn } from '../../mmo/js/abismo3d.js';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, baseDe, portalBase, VACIO, rangoDe, santuario, ASEDIO, proximoAsedio, CENTRO_NUCLEO, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo } from '../../mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
 const ONDA_CADA = 10000, ONDA_AVISO = 2500, ONDA_R = 8;   // la onda del Guardian
@@ -106,6 +107,15 @@ export const Mundo3D = {
     this.nodos3AlEntrar(s);
     this.aClave(K3, { t: 'pj3', p: this.info3d(s) }, s);
   },
+  // Errores de JavaScript del cliente (window.onerror): 5 por sesion, a los registros
+  // del servidor (Cloudflare) y los 100 ultimos en memoria para /interno.
+  errorCliente(s, m) {
+    if ((s.errc = (s.errc || 0) + 1) > 5) return;
+    const e = { t: Date.now(), u: String(s.c.uid).slice(0, 12), v: m.v | 0, m: String(m.m || '').slice(0, 200), f: String(m.f || '').slice(0, 120), l: m.l | 0, tg: m.tg ? 1 : 0 };
+    (this.erroresCli || (this.erroresCli = [])).push(e);
+    if (this.erroresCli.length > 100) this.erroresCli.shift();
+    console.log('[errc]', JSON.stringify(e));
+  },
   info3d(s) {
     return { ...this.infoApariencia(s), n: s.c.nombre, lv: s.c.nivel, x: r1(s.p.x), z: r1(s.p.z), r: s.ry || 0, hp: Math.ceil(s.hp), muerto: !!s.muerto };
   },
@@ -136,6 +146,7 @@ export const Mundo3D = {
       case 'inspeccionar': return this.inspeccionar(s, m);
       case 'boveda': return this.elegirBoveda(s, m);
       case 'chicha': return this.reclamarChicha(s, m);
+      case 'errc': return this.errorCliente(s, m);
       case 'wallet': return this.ponerWallet(s, m);
       case 'atk3': return this.atacar3d(s, m);
       case 'pw': return this.poder3d(s, m);
@@ -236,6 +247,11 @@ export const Mundo3D = {
     // El margen largo del planeo sobre el vacio solo vale si el planeo empezo en el aire
     // (antes, a=4 desde el suelo daba 45 s para cruzar el vacio sin alas).
     s.planeoAlto = a === 4 && (h > 0.3 || (prevA === 4 && !!s.planeoAlto));
+    // Corriente de viento del Abismo: volando o planeando, recarga las alas.
+    if ((a === 3 || a === 4) && !s.i3 && enAbismo(nx)) {
+      const ci = corrienteEn(nx, nz);
+      if (ci >= 0 && Date.now() - ((s.corrT || (s.corrT = {}))[ci] || 0) > CORRIENTE_CD) { s.corrT[ci] = Date.now(); s.vueloS = 0; s.alasAvisadas = false; if (a === 4) s.h = Math.max(s.h || 0, 12); this.enviar(s, { t: 'corriente', i: ci }); }
+    }
     // Energia de las alas: se cuenta con el modo que se mantuvo hasta este mensaje.
     if (prevA === 3) s.vueloS = (s.vueloS || 0) + dtS;
     else if (prevA !== 4 && h0 <= 1.2 && !(enAbismo(nx) && !s.i3 && !islaEn(nx, nz))) s.vueloS = Math.max(0, (s.vueloS || 0) - dtS * 3);
