@@ -498,6 +498,12 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 73, fecha: '26 oct 2026', items: [
+    'Chicha morada en ORIGINS: toca la barra morada 🥤 para ver tus puntos y reclamar los tres premios (nivel 60 = 2 litros, 10.000 y 50.000 puntos = 1 litro). Al cazar verás el «+N 🥤».',
+    'Las 10 reliquias del Cántaro: al reunirlas todas, la historia te lleva al Núcleo del Abismo y al premio del nivel 60. El jefe cuenta para su zona aunque pelee junto al borde.',
+    'Títulos sobre el nombre en ORIGINS (el tuyo y el de los demás), aviso de talentos y especialización al subir de nivel desde el 10, y el talento Agilidad ya acelera de verdad.',
+    'Juego en grupo en la misma wifi: ya entran 20+ personas desde la misma conexión sin que el servidor eche a nadie. Tras la desconexión por inactividad, tocar la pantalla te devuelve al juego.',
+  ] },
   { n: 72, fecha: '26 oct 2026', items: [
     'Pesca y recolección sin cortes: tocar mientras esperas la picada ya no corta el sedal, la picada vibra en Telegram, y recoger o pescar para el ataque automático para que no se cancele.',
     'Las monturas ganadas (amigos, Torre, Abismo) ya se pueden montar sin ir al Mercader, y dentro de la cueva no se monta.',

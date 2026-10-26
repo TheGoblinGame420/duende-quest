@@ -41,6 +41,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v302 | 2.ª ronda de jugadores: tareas sin CLASSIC, semanales, siguiente misión, premios por ayuda real, sacerdote, pícaro, pase móvil, cueva repetible | **B** |
 | v303 | 3.ª ronda: planeo al agotar alas, nombres con espacios, compras en el pueblo, facción confirmada, sin vacío, Guardián, líder de grupo | **B** |
 | v304 | 4.ª ronda: pesca/recolección, monturas ganadas, botín claro, vender comunes seguro, elixir suma, sin revivir gratis | **B** |
+| v305 | Chicha en ORIGINS (3 premios, +N), final de reliquias, títulos, talentos, Agilidad, 24 por IP / 60 entradas | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

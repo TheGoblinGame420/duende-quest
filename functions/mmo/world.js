@@ -222,7 +222,8 @@ export class MmoWorld {
       if (!x.c) sinId.push(x);
       if (ip && x.ip === ip) { deIp++; if (!x.c) sinIdIp++; }
     }
-    if (ip && (deIp >= 8 || sinIdIp >= 3)) return new Response('Demasiadas conexiones', { status: 429 });
+    // 24 por IP: una casa, un colegio o un grupo de 10 en la misma wifi comparten IP (con 8 el noveno quedaba fuera).
+    if (ip && (deIp >= 24 || sinIdIp >= 6)) return new Response('Demasiadas conexiones', { status: 429 });
     if (sinId.length >= 40) {
       // Se echa al socket mudo mas viejo en vez de rechazar al nuevo: un jugador
       // real manda 'hola' nada mas abrir (antes, 40 sockets mudos dejaban fuera a todos).
@@ -409,14 +410,15 @@ export class MmoWorld {
   async hola(s, m) {
     if (s.c || s.autenticando) return;
     s.autenticando = true;
-    // Como mucho 20 entradas por minuto por IP: cada entrada escribe en el
-    // storage y el cupo diario de escrituras es de todos.
+    // Como mucho 60 entradas por minuto por IP: cada entrada escribe en el
+    // storage y el cupo diario de escrituras es de todos (con 20, una version
+    // nueva recargaba a 10 amigos de la misma wifi y echaba a varios).
     if (s.ip) {
       const ahoraH = Date.now();
       this.holaIp = this.holaIp || new Map();
       let r = this.holaIp.get(s.ip);
       if (!r || ahoraH - r.t > 60000) { r = { t: ahoraH, n: 0 }; this.holaIp.set(s.ip, r); }
-      if (++r.n > 20) { s.autenticando = false; this.expulsar(s, 'Demasiadas reconexiones. Espera un minuto.'); return; }
+      if (++r.n > 60) { s.autenticando = false; this.expulsar(s, 'Demasiadas reconexiones. Espera un minuto.'); return; }
       if (this.holaIp.size > 5000) for (const [k, v] of this.holaIp) if (ahoraH - v.t > 60000) this.holaIp.delete(k);
     }
     const env = getEnv({ env: this.env });

@@ -14,21 +14,21 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem } from '/mmo/js/data.js?v=304';
-import { iniciarVentanas } from './ventanas.js?v=304';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=304';
-import { crearMusica } from './musica.js?v=304';
-import { construirCueva } from './cueva.js?v=304';
-import { TAPA, transparentar } from './tapa.js?v=304';
-import { construirAbismo } from './abismo.js?v=304';
-import { crearParticulas } from './particulas.js?v=304';
-import { cargarKenney, piezasCasa } from './kenney.js?v=304';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS } from '/mmo/js/data.js?v=305';
+import { iniciarVentanas } from './ventanas.js?v=305';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=305';
+import { crearMusica } from './musica.js?v=305';
+import { construirCueva } from './cueva.js?v=305';
+import { TAPA, transparentar } from './tapa.js?v=305';
+import { construirAbismo } from './abismo.js?v=305';
+import { crearParticulas } from './particulas.js?v=305';
+import { cargarKenney, piezasCasa } from './kenney.js?v=305';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=304';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=304';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=304';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS } from './lore.js?v=304';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=305';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=305';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=305';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS } from './lore.js?v=305';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1277,7 +1277,7 @@ function recibir(m) {
     case 's3': foto(m); break;
     case 'pj3': agregarOtro(m.p); break;
     case 'pl': quitarOtro(m.id); break;
-    case 'pa': { const o = otros.get(m.p); if (o) { const cambia = o.sk !== m.sk || o.cl !== (m.cl || '') || o.ar !== (m.ar || 'katana') || JSON.stringify(o.lk) !== JSON.stringify(m.lk || null); Object.assign(o, { sk: m.sk, cl: m.cl || '', ar: m.ar || 'katana', mo: m.mo || '', lk: m.lk || null, al: m.al || '', fc: m.fc || '', ra: m.ra || 0, hn: m.hn || '', hc: m.hc || 0, gm: m.gm || 0 }); if (cambia) rehacerFiguraOtro(o); } break; }
+    case 'pa': { const o = otros.get(m.p); if (o) { const cambia = o.sk !== m.sk || o.cl !== (m.cl || '') || o.ar !== (m.ar || 'katana') || JSON.stringify(o.lk) !== JSON.stringify(m.lk || null); Object.assign(o, { sk: m.sk, cl: m.cl || '', ar: m.ar || 'katana', mo: m.mo || '', lk: m.lk || null, al: m.al || '', fc: m.fc || '', ra: m.ra || 0, hn: m.hn || '', hc: m.hc || 0, gm: m.gm || 0, ti: m.ti || '' }); if (cambia) rehacerFiguraOtro(o); } break; }
     case 'mundial3': mundial3 = { ...m, recibido: Date.now() }; break;
     case 'mmx3': { const o = mons.get(m.id); if (o) { o.mx = m.mx; o.hp = m.hp; } break; }   // el jefe mundial crece si llegan mas a pelear
     case 'asedio': asedio = m; if (m.activo) asedioHp = asedioHp || { p: 100, g: 100 }; else asedioHp = null; if (abismo) abismo.dueno(m.dueno); break;
@@ -1288,7 +1288,12 @@ function recibir(m) {
         const [zk, tipo] = k.split(':');
         if (tipo === 'hito' && LORE_HITOS[zk]) aviso('✨ ' + LORE_HITOS[zk], 'ok');
         // Vencer al jefe de la zona en su encargo devuelve su pedazo del Cantaro.
-        if (tipo === 'jefe' && LORE_ZONAS[zk]) { const n = Object.keys(LORE_ZONAS).filter(z => nuevos[z + ':jefe'] === true).length; setTimeout(() => aviso(`🏺 Pedazo del Cántaro ${n}/10: ${LORE_ZONAS[zk].pedazo}`, 'ok'), 1200); }
+        if (tipo === 'jefe' && LORE_ZONAS[zk]) {
+          const n = Object.keys(LORE_ZONAS).filter(z => nuevos[z + ':jefe'] === true).length;
+          setTimeout(() => aviso(`🏺 Reliquia del Cántaro ${n}/10: ${LORE_ZONAS[zk].pedazo}`, 'ok'), 1200);
+          // Las 10: el final de la historia lleva al Nucleo y al premio de verdad del nivel 60.
+          if (n === 10) setTimeout(() => aviso(`🏺✨ ¡Las 10 reliquias reunidas! El Cántaro Eterno solo espera su último pedazo, que late en el Núcleo del Abismo. Al llegar a nivel ${CHICHA.nv60} se llena de nuevo… y tú te llevas ${CHICHA.litros60} litros de chicha morada de verdad.`, 'ok'), 6000);
+        }
       }
       encargos = nuevos; encRecibido = true; encZonas = m.zonas || 0; $('misiones')._h = ''; break;
     }
@@ -1336,10 +1341,11 @@ function recibir(m) {
     case 'tempFin': mostrarTempFin(m); break;
     case 'inv3': invasion3 = m.on ? { ...m, recibido: Date.now() } : null; pintarMisiones(); break;
     case 'cofre3': if (cueva) { cueva.cofre.visible = true; cueva.tapa.rotation.x = 0; } sfx('moneda', 0.6); break;
-    case 'logro': aviso('🏅 Logro: ' + m.titulo + ' · +' + (m.oro || 0).toLocaleString('es') + ' oro (llévalo como título desde la mochila)', 'ok'); sfx('moneda', 0.4); FX.emitir(P.x, P.y + 1.5, P.z, { n: 30, color: '#ffd84a', vel: 4, vida: 1, grav: -1 }); break;
+    case 'logro': aviso('🏅 Logro: ' + m.titulo + ' · +' + (m.oro || 0).toLocaleString('es') + ' oro (llévalo como título desde ' + (MOVIL ? '⋯ → 🏆' : '🏆 Logros') + ')', 'ok'); sfx('moneda', 0.4); FX.emitir(P.x, P.y + 1.5, P.z, { n: 30, color: '#ffd84a', vel: 4, vida: 1, grav: -1 }); break;
     case 'gana':
       if (m.xp) numero(P.x, P.y + 2.6, P.z, '+' + m.xp + ' XP', '#c084fc');
       if (m.oro) { numero(P.x + 0.6, P.y + 2.2, P.z, '+' + m.oro + ' oro', '#ffd84a'); sfxK('monedas', 0.3); }
+      if (m.chi) numero(P.x - 0.6, P.y + 2.4, P.z, '+' + m.chi + ' 🥤', '#e9b8ff');   // puntos de chicha (en 3D no se veian)
       if (m.item) vib('success');
       // Botin con su nombre y rareza (antes siempre decia "equipo nuevo", tambien si se vendio por bolsa llena).
       if (m.item) aviso('Botín: ' + (m.item.r !== undefined && RAREZAS[m.item.r] ? RAREZAS[m.item.r].nombre + ' · ' : '') + (m.item.nombre || nombreItem(m.item)) + (m.item.vendido ? ' (bolsa llena: vendido)' : ' (' + K('pulsa I', 'toca 🎒') + ' para verlo)'), 'ok');
@@ -1427,7 +1433,11 @@ function recibir(m) {
     case 'ranking': rankDatos = m; if (npcAbierto === 'ranking') pintarRanking(m.r); pintarRankPanel(); break;
     case 'err':
       if (m.auth && m.auth !== 'inv' && !forzarInvitado) { forzarInvitado = true; aviso('No pudimos verificar tu cuenta: entras como invitado.', 'err'); return; }
-      if (m.fatal) { error(m.m || 'Desconectado.'); }
+      if (m.fatal) {
+        error(m.m || 'Desconectado.');
+        // Inactividad: tocar o pulsar una tecla vuelve a entrar (lo promete el aviso; antes no hacia nada).
+        if (m.inactivo) { const volver = () => { removeEventListener('pointerdown', volver, true); removeEventListener('keydown', volver, true); location.reload(); }; setTimeout(() => { addEventListener('pointerdown', volver, true); addEventListener('keydown', volver, true); }, 500); }
+      }
       break;
   }
 }
@@ -1451,7 +1461,7 @@ async function agregarOtro(p) {
   if (!p || p.id === miId || p.p === miId) return;
   const id = p.id || p.p;
   quitarOtro(id);
-  const o = { id, x: p.x, z: p.z, tx: p.x, tz: p.z, ry: p.r || 0, a: 0, hp: p.hp, mx: p.mx, n: p.n, lv: p.lv, cl: p.cl || '', sk: p.sk || 'comun', ar: p.ar || 'katana', mo: p.mo || '', lk: p.lk || null, al: p.al || '', fc: p.fc || '', ra: p.ra || 0, hn: p.hn || '', hc: p.hc || 0, gm: p.gm || 0, muerto: !!p.muerto, fig: null, lbl: etiqueta('pj'), f: 1 };
+  const o = { id, x: p.x, z: p.z, tx: p.x, tz: p.z, ry: p.r || 0, a: 0, hp: p.hp, mx: p.mx, n: p.n, lv: p.lv, cl: p.cl || '', sk: p.sk || 'comun', ar: p.ar || 'katana', mo: p.mo || '', lk: p.lk || null, al: p.al || '', fc: p.fc || '', ra: p.ra || 0, hn: p.hn || '', hc: p.hc || 0, gm: p.gm || 0, ti: p.ti || '', muerto: !!p.muerto, fig: null, lbl: etiqueta('pj'), f: 1 };
   otros.set(id, o);
   rehacerFiguraOtro(o);
 }
@@ -1737,11 +1747,32 @@ function pintarChicha3() {
   if (t === chicha3Txt) return;
   chicha3Txt = t; b.textContent = t; b.classList.toggle('listo', !rec && nv >= CHICHA.nv60);
 }
-$('chicha3').addEventListener('click', () => {
-  if (yo && yo.nivel >= CHICHA.nv60 && !((yo.chicha || {}).rec || []).includes('nv60')) {
-    if (confirm(`¿Reclamar tus ${CHICHA.litros60} litros de chicha morada? El equipo te escribirá por Telegram para pedirte la dirección (nunca pagos ni contraseñas).`)) mandar({ t: 'chicha', meta: 'nv60' });
-  } else verLeyenda();
-});
+// Ventana de la chicha en ORIGINS: puntos, los tres premios y como se reclaman.
+function verChicha() {
+  if (!yo) return;
+  clearTimeout(mostrarDiario.t); mostrarDiario.t = 0;
+  const ch = yo.chicha || { p: 0, hoy: 0, rec: [] }, rec = ch.rec || [], nv = yo.nivel || 1;
+  const fila = (meta, tit, txt, pct, listo) => {
+    const hecho = rec.includes(meta);
+    const acc = hecho ? '<b style="color:#4ade80">✓ Reclamado</b>' : listo ? `<button class="btn" data-chi="${meta}" style="padding:6px 10px">Reclamar</button>` : `<b style="color:#fde68a">${pct}%</b>`;
+    return `<div style="display:flex;gap:8px;align-items:center;margin:8px 0;padding:8px;border-radius:10px;background:rgba(124,58,237,.15);border:1px solid rgba(192,132,252,.35)"><div style="flex:1;min-width:0"><b style="color:#e9d5ff">${tit}</b><br><small>${txt}</small><div style="height:5px;background:rgba(0,0,0,.4);border-radius:3px;margin-top:4px"><i style="display:block;height:100%;width:${pct}%;background:#a855f7;border-radius:3px"></i></div></div>${acc}</div>`;
+  };
+  let h = `<img src="/assets/lore/chicha-duende-playa.jpg" alt="" style="display:block;width:100%;max-height:120px;object-fit:cover;border-radius:10px;margin-bottom:8px">`;
+  if (soyInvitado) h += `<p class="vv-p" style="color:#fca5a5">Juegas como invitado: los premios de chicha se reclaman entrando con Telegram (@duendequest_bot), con tu mismo duende.</p>`;
+  h += `<p class="vv-p" style="text-align:center;font-size:20px;color:#fde68a;margin:4px 0">${(ch.p || 0).toLocaleString('es')} puntos de chicha</p><p class="vv-p" style="text-align:center;font-size:12px">Hoy ${ch.hoy || 0}/${CHICHA.porDia} · desde nivel ${CHICHA.nvPuntos}: 1 punto por monstruo, 3 si es de tu nivel, 25 un jefe.</p>`;
+  h += fila('nv60', `Nivel ${CHICHA.nv60}: ${CHICHA.litros60} litros`, `Llega a nivel ${CHICHA.nv60} y te llevas ${CHICHA.litros60} litros a tu casa (Nv ${nv}/${CHICHA.nv60}).`, Math.min(100, Math.round(nv / CHICHA.nv60 * 100)), nv >= CHICHA.nv60);
+  for (const meta of CHICHA.niveles) h += fila(meta, `${meta.toLocaleString('es')} puntos: 1 litro`, 'Un litro de chicha morada peruana enviado a tu casa.', Math.min(100, Math.round((ch.p || 0) / meta * 100)), (ch.p || 0) >= meta);
+  h += `<p class="vv-p" style="font-size:11px;color:var(--txt2)">Promoción gratuita: no hay que comprar nada. Para reclamar: nivel ${CHICHA.nvReclamo}, personaje de 2 días y Telegram. El equipo te escribe por Telegram para la dirección; nunca te pediremos pagos ni contraseñas.</p><button class="btn sec" id="chi-leyenda" style="width:100%">📜 La leyenda del Cántaro</button>`;
+  $('diario-c').innerHTML = h;
+  $('v-diario').querySelector('h2').textContent = '🥤 CHICHA MORADA REAL';
+  $('diario-c').querySelectorAll('[data-chi]').forEach(b => b.onclick = () => {
+    const meta = b.dataset.chi === 'nv60' ? 'nv60' : +b.dataset.chi;
+    if (confirm(meta === 'nv60' ? `¿Reclamar tus ${CHICHA.litros60} litros de chicha morada? El equipo te escribirá por Telegram (nunca pagos ni contraseñas).` : '¿Reclamar tu litro de chicha morada? El equipo te escribirá por Telegram.')) { mandar({ t: 'chicha', meta }); b.disabled = true; }
+  });
+  $('chi-leyenda').onclick = verLeyenda;
+  abrir('v-diario');
+}
+$('chicha3').addEventListener('click', verChicha);
 function pintarHud() {
   if (!yo) return;
   const cl = CLASES[yo.clase];
@@ -2251,7 +2282,7 @@ function verLeyenda() {
     <p class="vv-p">El <b>Rey Goblin</b> robó el <b style="color:#ffd84a">Cántaro Eterno</b> y lo rompió en pedazos. Sin chicha, la noche cubrió el bosque, los goblins invadieron las colinas y el Éter del cielo se partió en islas flotantes: el <b>Abismo</b>.</p>
     <p class="vv-p"><img src="/assets/lore/duende-chicha.webp" alt="" style="float:right;height:96px;margin:0 0 4px 6px">Tú eres un duende joven. <b>Recupera las zonas</b> (misiones y encargos 🧭), <b>vence a sus jefes</b>, abre los cofres y junta <b>puntos de chicha</b> cazando. En el Abismo, la Luz y la Sombra luchan por el <b>Núcleo</b>, donde late el último pedazo del Cántaro.</p>
     <p class="vv-p" style="color:#fde68a;font-weight:700">🥤 Y es de verdad: quien llegue a nivel ${CHICHA.nv60} en este mundo se lleva ${CHICHA.litros60} litros de chicha morada a su casa. Además, con ${(10000).toLocaleString('es')} puntos de chicha cazando, otro litro (en $DUENDE CLASSIC → Mochila → Chicha). Se reclama entrando con Telegram.</p>
-<details style="margin-top:8px"><summary style="cursor:pointer;color:#c084fc;font-weight:700">🏺 Los pedazos del Cántaro: ${Object.keys(LORE_ZONAS).filter(z => encargos[z + ':jefe'] === true).length}/10 recuperados</summary><p class="vv-p" style="font-size:12px;margin:6px 0">Cada pedazo se recupera venciendo al jefe de su zona en los encargos 🧭.</p>${Object.entries(LORE_ZONAS).map(([id, z]) => { const ok = encargos[id + ':jefe'] === true; return `<p class="vv-p" style="margin:6px 0;${ok ? '' : 'opacity:.6'}"><b style="color:${ok ? '#4ade80' : '#fde68a'}">${ok ? '✓' : '·'} ${esc((MAPAS[id] || {}).nombre || id)}:</b> ${ok ? esc(z.pedazo) : 'pedazo perdido… vence al jefe de la zona.'}</p>`; }).join('')}</details>`;
+<details style="margin-top:8px"><summary style="cursor:pointer;color:#c084fc;font-weight:700">🏺 Las reliquias del Cántaro: ${Object.keys(LORE_ZONAS).filter(z => encargos[z + ':jefe'] === true).length}/10 recuperadas</summary><p class="vv-p" style="font-size:12px;margin:6px 0">Cada reliquia (un pedazo, su semilla, su barro o un secreto) se recupera venciendo al jefe de su zona en los encargos 🧭. Con las 10, el último pedazo espera en el Núcleo del Abismo: el nivel ${CHICHA.nv60}.</p>${Object.entries(LORE_ZONAS).map(([id, z]) => { const ok = encargos[id + ':jefe'] === true; return `<p class="vv-p" style="margin:6px 0;${ok ? '' : 'opacity:.6'}"><b style="color:${ok ? '#4ade80' : '#fde68a'}">${ok ? '✓' : '·'} ${esc((MAPAS[id] || {}).nombre || id)}:</b> ${ok ? esc(z.pedazo) : 'reliquia perdida… vence al jefe de la zona.'}</p>`; }).join('')}</details>`;
   $('v-diario').querySelector('h2').textContent = 'LA LEYENDA DEL CÁNTARO';
   abrir('v-diario');
 }
@@ -2357,6 +2388,10 @@ function subiNivel(lv) {
   FX.emitir(P.x, P.y + 0.2, P.z, { n: 46, color: '#ffe066', vel: 2.4, vida: 1.6, grav: -3.5, radio: 0.7, tam: 1.3 });
   FX.emitir(P.x, P.y + 1, P.z, { n: 30, color: '#ffffff', vel: 6, vida: 0.6, grav: 2 });
   if (lv >= 5 && lv % 5 === 0) ofrecerPresumir(`¡Llegué al nivel ${lv} en Duende Quest 3D!`);
+  // Talentos y especializacion: se dice al desbloquearlos y en cada nivel con puntos (el libro va dentro de ⋯ en movil).
+  const dondeLibro = MOVIL ? '⋯ → 📖' : '📖 (tecla P)';
+  if (lv === 10) setTimeout(() => aviso(`🌟 ¡Nivel 10! Ya puedes elegir tu especialización y repartir puntos de talento en ${dondeLibro}.`, 'ok'), 1500);
+  else if (lv > 10) setTimeout(() => aviso(`🌟 +1 punto de talento: úsalo en ${dondeLibro} → Talentos.`, 'ok'), 1500);
   // A partir del nivel 5, una vez: acceso directo en la pantalla de inicio (Bot API 8.0).
   if (lv >= 5 && TGV('8.0') && TG.addToHomeScreen) {
     let visto = true; try { visto = !!localStorage.getItem('dq_tg_inicio'); } catch (e) {}
@@ -2884,7 +2919,8 @@ function fisica(dt) {
   const quiere = mag > 0.15;
   if (quiere) { mx /= Math.max(1, mag); mz /= Math.max(1, mag); }
   const nadando = !P.vuela && !enAbismo(P.x) && alturaEn(P.x, P.z) < -0.7;
-  const vel = MUNDO.velocidad * (nadando ? 0.55 : 1) * (P.vuela ? alaDe(yo, enAbismo(P.x)).vel : P.planea ? 1.35 : velMontura(yo.montado)) * (yo.dios && yo.diosModo && yo.diosModo.vel ? 3 : 1);
+  // Con el talento Agilidad, como en el servidor (antes el cliente lo ignoraba).
+  const vel = MUNDO.velocidad * (nadando ? 0.55 : 1) * (P.vuela ? alaDe(yo, enAbismo(P.x)).vel : P.planea ? 1.35 : velMontura(yo.montado)) * (1 + talento(yo, 'agilidad')) * (yo.dios && yo.diosModo && yo.diosModo.vel ? 3 : 1);
   // Inercia ligera (rapida en el suelo, mas suelta en el aire y el agua). Al
   // lanzar un hechizo sin tocar las teclas, se frena en seco (no se corta).
   const agarre = P.vuela || P.planea ? 4 : nadando ? 5 : !P.suelo ? 3 : 16;
@@ -3096,10 +3132,10 @@ function etiquetas(t) {
     lbl.style.transform = `translate(${s[0].toFixed(1)}px,${s[1].toFixed(1)}px) translate(-50%,-100%)`;
     if (extra) extra(lbl);
   };
-  if (yo && P.lbl) ponLbl(P.lbl, P.x, P.y + 2.15 + (P.fig && P.fig.montura ? 1.2 : 0), P.z, `<span style="color:${yo.dios ? '#ffd84a' : '#ffe600'}">${yo.dios ? 'GM ' : ''}${esc(yo.nombre)}</span>${hermInfo ? `<small style="display:block;color:${HERM_COLORES[hermInfo.color] || '#4ade80'};font-size:10px">&lt;${esc(hermInfo.nombre)}&gt;</small>` : ''}`, 999);
+  if (yo && P.lbl) ponLbl(P.lbl, P.x, P.y + 2.15 + (P.fig && P.fig.montura ? 1.2 : 0), P.z, `<span style="color:${yo.dios ? '#ffd84a' : '#ffe600'}">${yo.dios ? 'GM ' : ''}${esc(yo.nombre)}</span>${yo.titulo && LOGROS.find(l => l.id === yo.titulo) ? `<small style="display:block;color:#fde68a;font-size:10px">«${esc(LOGROS.find(l => l.id === yo.titulo).titulo)}»</small>` : ''}${hermInfo ? `<small style="display:block;color:${HERM_COLORES[hermInfo.color] || '#4ade80'};font-size:10px">&lt;${esc(hermInfo.nombre)}&gt;</small>` : ''}`, 999);
   for (const o of otros.values()) {
     const cl = CLASES[o.cl];
-    ponLbl(o.lbl, o.x, (o.y || alturaEn(o.x, o.z)) + 2.15 + (o.fig && o.fig.montura ? 1.2 : 0), o.z, `<span style="color:${o.gm ? '#ffd84a' : o.fc && yo && yo.faccion && o.fc !== yo.faccion && enAbismo(o.x) ? '#ff4d4d' : cl ? cl.color : '#fff'}">${o.gm ? 'GM ' : ''}${o.fc && enAbismo(o.x) ? (o.fc === 'luz' ? '☀ ' : '🌑 ') : ''}${esc(o.n)} · Nv${o.lv}</span>${o.hn ? `<small style="display:block;color:${HERM_COLORES[o.hc] || '#4ade80'};font-size:10px">&lt;${esc(o.hn)}&gt;</small>` : ''}${o.ra && enAbismo(o.x) ? `<small style="display:block;color:#c4b5fd;font-size:10px">${RANGOS[o.ra].n}</small>` : ''}<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>`, 70);
+    ponLbl(o.lbl, o.x, (o.y || alturaEn(o.x, o.z)) + 2.15 + (o.fig && o.fig.montura ? 1.2 : 0), o.z, `<span style="color:${o.gm ? '#ffd84a' : o.fc && yo && yo.faccion && o.fc !== yo.faccion && enAbismo(o.x) ? '#ff4d4d' : cl ? cl.color : '#fff'}">${o.gm ? 'GM ' : ''}${o.fc && enAbismo(o.x) ? (o.fc === 'luz' ? '☀ ' : '🌑 ') : ''}${esc(o.n)} · Nv${o.lv}</span>${o.ti ? `<small style="display:block;color:#fde68a;font-size:10px">«${esc(o.ti)}»</small>` : ''}${o.hn ? `<small style="display:block;color:${HERM_COLORES[o.hc] || '#4ade80'};font-size:10px">&lt;${esc(o.hn)}&gt;</small>` : ''}${o.ra && enAbismo(o.x) ? `<small style="display:block;color:#c4b5fd;font-size:10px">${RANGOS[o.ra].n}</small>` : ''}<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>`, 70);
   }
   const kMis = tipoMision();
   for (const o of mons.values()) {

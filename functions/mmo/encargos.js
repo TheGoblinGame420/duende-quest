@@ -17,7 +17,8 @@ export const Encargos = {
   infoEncargos(c) { return { t: 'enc', l: c.enc || {}, zonas: c.encZonas || 0 }; },
   progresoEncargo(s, tipo, o) {
     if (!s.m3 || s.i3 || !s.c || enAbismo(s.p.x)) return;
-    const zona = tipo === 'jefe' && o && o.x !== undefined ? zonaEn(o.x, o.z) : zonaEn(s.p.x, s.p.z);
+    // El jefe cuenta para SU zona aunque pelee junto al borde (antes se perdia la reliquia).
+    const zona = tipo === 'jefe' && o ? (Object.keys(ZONAS3D).find(z => MAPAS[z] && MAPAS[z].jefe === o.k) || (o.x !== undefined ? zonaEn(o.x, o.z) : zonaEn(s.p.x, s.p.z))) : zonaEn(s.p.x, s.p.z);
     if (!ZONAS3D[zona]) return;
     // El jefe del encargo es el de la zona (el Capitan de una invasion no cuenta).
     if (tipo === 'jefe' && MAPAS[zona] && MAPAS[zona].jefe && (!o || o.k !== MAPAS[zona].jefe)) return;

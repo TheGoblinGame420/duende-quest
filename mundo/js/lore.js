@@ -22,7 +22,7 @@ export const LORE_ZONAS = {
 export const LORE_NPC = {
   guia: ['¡Alto ahí, aventurero! Soy Tito, de la Guardia del Pueblo Duende.', 'Desde que se rompió el Cántaro, los goblins bajan cada noche. Necesitamos manos valientes.', 'Ajústate el poncho y no te alejes de las linternas hasta que seas más fuerte.', 'Si encuentras un pedazo del Cántaro, tráelo al Sabio. ¡Cada uno cuenta!'],
   mercader: ['¡Pasa, pasa! Grumo tiene de todo: pociones, ponchos y algún que otro chisme.', 'Ese pedazo de Cántaro no te lo compro, ¡no tengo tanto oro en todo el bosque!', 'Una buena chicha cura el cansancio. Una mala… mejor no preguntes.'],
-  sabio: ['Hace mucho, el Cántaro Eterno guardaba la chicha que encendía el sol de nuestro bosque.', 'El Rey Goblin lo robó y lo rompió. Esa misma noche el cielo se partió en islas y nunca volvió a amanecer.', 'Sus pedazos cayeron por todo el mundo. El último está en el Núcleo, donde Luz y Sombra no dejan de luchar.', 'Quien llegue a nivel 60 llenará el Cántaro de nuevo… y se llevará 2 litros de chicha morada de verdad.'],
+  sabio: ['Hace mucho, el Cántaro Eterno guardaba la chicha que encendía el sol de nuestro bosque.', 'El Rey Goblin lo robó y lo rompió. Esa misma noche el cielo se partió en islas y nunca volvió a amanecer.', 'Sus pedazos cayeron por todo el mundo. El último está en el Núcleo, donde Luz y Sombra no dejan de luchar.', 'Quien reúna las 10 reliquias y llegue a nivel 60 llenará el Cántaro de nuevo… y se llevará 2 litros de chicha morada de verdad.'],
   artesana: ['Soy Lila. Tráeme materiales y te tejo un poncho que hasta los goblins envidiarán.', 'Cada hilo morado está teñido con maíz sagrado. Por eso brillan de noche.', 'Con barro del Cristal Madre podría pegar el Cántaro… si alguien llega tan lejos.'],
 };
 

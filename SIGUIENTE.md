@@ -3014,3 +3014,11 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - world.js: reconexión muerto borra `c.p3`; `darItem` marca `vendido`.
 - profesiones.js: el elixir suma tiempo (tope 3).
 - Arnés 843 bien.
+
+### Quinta ronda de agentes jugando (26-oct-2026, `?v=305`)
+
+- world.js: tope por IP de 8 a 24 sockets (6 sin identificar) y de 20 a 60 entradas/min por IP (10 amigos en la misma wifi + recarga por versión).
+- Cliente: `verChicha()` en `#v-diario` (puntos, nv60/10k/50k con Reclamar, aviso a invitados, botón a la leyenda); `+N 🥤` con `m.chi`; tocar/tecla tras `err.inactivo` recarga; títulos (`o.ti`, `yo.titulo` con `LOGROS`) en las etiquetas; avisos de talento; `talento(yo,'agilidad')` en la velocidad; reliquias 10/10 con final.
+- chicha.js: puntos solo para quien pegó o curó; el aviso de 10.000/50.000 en 3D apunta a la barra 🥤.
+- encargos.js: la zona del jefe sale de `MAPAS[z].jefe`.
+- Arnés 843 bien.

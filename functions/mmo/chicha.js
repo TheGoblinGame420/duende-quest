@@ -28,6 +28,8 @@ export const Chicha = {
   sumarChicha(s, o) {
     const c = s.c;
     if (!o || c.nivel < CHICHA.nvPuntos || !this.elegibilidad(c).cuenta) return 0;
+    // Premio real: solo quien pego o curo en esa pelea (el compañero de grupo que mira no suma).
+    if (o.dano instanceof Map && !o.dano.has(s.id) && !(o.cura instanceof Map && o.cura.has(s.id))) return 0;
     const ch = c.chicha || (c.chicha = { p: 0, d: '', hoy: 0, rec: [] });
     const hoy = hoyUTC();
     if (ch.d !== hoy) { ch.d = hoy; ch.hoy = 0; }
@@ -40,7 +42,7 @@ export const Chicha = {
     // Aviso al cruzar un nivel de premio.
     for (const meta of CHICHA.niveles) {
       if (ch.p >= meta && ch.p - n < meta && !(ch.rec || []).includes(meta)) {
-        this.enviar(s, { t: 'toast', m: `${meta.toLocaleString('es', { useGrouping: 'always' })} puntos de chicha. Reclama tu litro de chicha morada en Inventario → «Chicha».`, ok: true });
+        this.enviar(s, { t: 'toast', m: `${meta.toLocaleString('es', { useGrouping: 'always' })} puntos de chicha. Reclama tu litro de chicha morada en ${s.m3 ? 'la barra morada 🥤 de la pantalla' : 'Inventario → «Chicha»'}.`, ok: true });
       }
     }
     return n;
