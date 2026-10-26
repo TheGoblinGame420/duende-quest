@@ -498,6 +498,12 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 75, fecha: '26 oct 2026', items: [
+    'Los avisos largos (historia de cada zona, reliquias, premios) se quedan en pantalla el tiempo justo para leerlos.',
+    'Al elegir clase se abre el editor de tu duende (cara, pelo, altura) cuando ya viste el premio del día.',
+    'Al volver de Telegram u otra app el joystick y SUBIR ya no se quedan pegados; en iPhone el sonido vuelve tras una llamada; la cueva y el Abismo tienen su propia música.',
+    'Las invitaciones compartidas desde ORIGINS ya cuentan, y al cambiar de mes los premios del pase que alcanzaste se cobran solos sin reconectar.',
+  ] },
   { n: 74, fecha: '26 oct 2026', items: [
     'Para jugar en grupo: hasta 30 personajes nuevos por conexión y hora (antes el 7.º amigo de la misma wifi quedaba fuera).',
     'Telegram: si tu sesión caduca, el juego te pide reabrirlo desde el bot en vez de meterte en un duende nuevo de nivel 1; los botones 2D y ⌂ conservan tu sesión de Telegram, y el botón Atrás ya no deja el juego congelado.',

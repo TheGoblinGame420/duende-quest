@@ -14,21 +14,21 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS } from '/mmo/js/data.js?v=306';
-import { iniciarVentanas } from './ventanas.js?v=306';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=306';
-import { crearMusica } from './musica.js?v=306';
-import { construirCueva } from './cueva.js?v=306';
-import { TAPA, transparentar } from './tapa.js?v=306';
-import { construirAbismo } from './abismo.js?v=306';
-import { crearParticulas } from './particulas.js?v=306';
-import { cargarKenney, piezasCasa } from './kenney.js?v=306';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS } from '/mmo/js/data.js?v=307';
+import { iniciarVentanas } from './ventanas.js?v=307';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=307';
+import { crearMusica } from './musica.js?v=307';
+import { construirCueva } from './cueva.js?v=307';
+import { TAPA, transparentar } from './tapa.js?v=307';
+import { construirAbismo } from './abismo.js?v=307';
+import { crearParticulas } from './particulas.js?v=307';
+import { cargarKenney, piezasCasa } from './kenney.js?v=307';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=306';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=306';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=306';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS } from './lore.js?v=306';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=307';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=307';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=307';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS } from './lore.js?v=307';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -45,8 +45,10 @@ ajustarCompacto(); addEventListener('resize', ajustarCompacto);
 const K = (pc, tactil) => MOVIL ? tactil : pc;
 const TG = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? window.Telegram.WebApp : null;
 // En Telegram los enlaces a CLASSIC llevan la sesion (el #tgWebAppData): sin ella entraba como invitado.
-// El ⌂ (inicio web) va tambien a CLASSIC, que es el menu del juego dentro de Telegram.
-if (TG && location.hash) document.querySelectorAll('a[href="/mmo/"],a[href="/inicio/"]').forEach(a => { a.href = '/mmo/' + location.hash; });
+// Invitacion compartida desde ORIGINS (/mundo/?ref=): se manda en el hola como en CLASSIC (antes no contaba).
+const ref3 = (/[?&]ref=([a-z0-9]{6})/.exec(location.search) || [])[1];
+// El ⌂ (inicio web) va al menu de la Mini App, como en CLASSIC.
+if (TG && location.hash) document.querySelectorAll('a[href="/mmo/"],a[href="/inicio/"]').forEach(a => { a.href = (a.getAttribute('href') === '/inicio/' ? '/telegram/index.html' : '/mmo/') + location.hash; });
 const TGV = v => !!(TG && TG.isVersionAtLeast && TG.isVersionAtLeast(v));
 try { localStorage.setItem('dq_visto3d', '1'); } catch (e) {}
 if (TG) {
@@ -286,7 +288,8 @@ function ambiente(z) {
     lluvia.m.material.opacity = cl === 'nieve' ? 0.9 : 0.5;
     if (NOMBRE_CLIMA[cl]) aviso(NOMBRE_CLIMA[cl] + ' en ' + (MAPAS[z] ? MAPAS[z].nombre : 'la zona'));
   }
-  musica.zona(z); musica.noche(nocheK > 0.5); musica.clima(cl);
+  // La cueva y el Eter con su propia musica (antes sonaba la alegre del pueblo).
+  musica.zona(enCueva(P.x) ? 'cavernas' : enAbismo(P.x) ? 'cumbres' : z); musica.noche(nocheK > 0.5); musica.clima(cl);
   const hh = Math.floor(h), mm = Math.floor((h - hh) * 60);
   const txt = (nocheK > 0.5 ? '🌙 ' : '☀ ') + String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0') + (NOMBRE_CLIMA[cl] ? ' · ' + NOMBRE_CLIMA[cl] : '');
   if ($('mini-r')._h !== txt) { $('mini-r').textContent = txt; $('mini-r')._h = txt; }
@@ -1182,7 +1185,7 @@ async function conectar() {
   try { hola = await autenticacion(); } finally { conectando = false; }
   if (ws && ws.readyState <= 1) return;
   const este = ws = new WebSocket(urlWs());
-  este.onopen = () => { if (ws !== este) return; conectado = true; ultimoMsgT = performance.now(); mandar({ t: 'hola', ...hola, modo: '3d' }); };
+  este.onopen = () => { if (ws !== este) return; conectado = true; ultimoMsgT = performance.now(); mandar({ t: 'hola', ...hola, modo: '3d', ref: ref3 }); };
   este.onmessage = ev => { if (ws !== este) return; ultimoMsgT = performance.now(); let m; try { m = JSON.parse(ev.data); } catch (e) { return; } recibir(m); };
   este.onclose = () => {
     if (ws !== este) return;   // un socket viejo que el vigilante ya cambio por otro: no toca nada
@@ -1268,7 +1271,8 @@ function recibir(m) {
       ALAS_MAX = (ALAS[yo.ala] || ALAS.aprendiz).vuelo; if (!antes) P.alas = ALAS_MAX; alasPropias();
       ALAS_MAX && (P.alas = Math.min(P.alas, ALAS_MAX));
       if (antes && (yo.skin !== antes.skin || yo.clase !== antes.clase || yo.arma !== antes.arma || JSON.stringify(yo.look) !== JSON.stringify(antes.look))) cambiarSkinPropia();
-      if (!antes && !yo.look) { let visto = false; try { visto = localStorage.getItem('dq3_look_visto') === '1'; } catch (e) {} if (!visto) { const intentar = n => { if (!hayVentana()) abrirLook(); else if (n < 20) setTimeout(() => intentar(n + 1), 1500); }; setTimeout(() => intentar(0), 1500); } }
+      // Al elegir clase (antes '!antes' nunca se cumplia: 'bienvenido' ya trae yo).
+      if (antes && !antes.clase && yo.clase && !yo.look) { let visto = false; try { visto = localStorage.getItem('dq3_look_visto') === '1'; } catch (e) {} if (!visto) { const intentar = n => { if (!hayVentana() && !$('v-diario').classList.contains('on')) abrirLook(); else if (n < 20) setTimeout(() => intentar(n + 1), 1500); }; setTimeout(() => intentar(0), 1500); } }
       if (yo.muerto && !(antes && antes.muerto) && !P.muerto) morir();   // tras 'muerte' no borra su texto
       if (!yo.muerto) { cerrar('v-muerte'); P.muerto = false; }
       if (yo.clase) cerrar('v-clase');
@@ -1895,7 +1899,7 @@ function aviso(txt, tipo) {
   const d = document.createElement('div'); d.textContent = txt; if (tipo) d.className = tipo;
   avisos.appendChild(d);
   while (avisos.children.length > 4) avisos.firstChild.remove();
-  setTimeout(() => d.remove(), 4500);
+  setTimeout(() => d.remove(), Math.min(12000, Math.max(4500, String(txt).length * 60)));   // los largos (lore, premios) se leen enteros
 }
 // ── PESCA ──
 let pica = 0, corcho = null;
@@ -2143,7 +2147,7 @@ function pintarSon() { $('b-son').textContent = sonido ? '🔊' : '🔇'; }
 $('b-son').onclick = () => { sonido = !sonido; try { localStorage.setItem('dq_mmo_sonido', sonido ? '1' : '0'); } catch (e) {} musica.activo(sonido); pintarSon(); };
 pintarSon(); if (!sonido) musica.activo(false);
 if (TG && TGV('8.0')) try {
-  TG.onEvent('deactivated', () => { fuera3 = true; musica.activo(false); if (actx) actx.suspend().catch(() => {}); });
+  TG.onEvent('deactivated', () => { fuera3 = true; musica.activo(false); if (actx) actx.suspend().catch(() => {}); tocandoSubir = tocandoBajar = false; joy.id = null; joy.dx = joy.dy = 0; });
   TG.onEvent('activated', () => { fuera3 = false; if (sonido) musica.activo(true); if (actx) actx.resume().catch(() => {}); });
 } catch (e) {}
 $('b-herm').onclick = () => { if ($('v-herm').classList.contains('on')) return cerrar('v-herm'); abrir('v-herm'); mandar({ t: 'herm' }); pintarHerm(); };
@@ -2153,11 +2157,12 @@ $('b-compartir').onclick = () => { presumirTxt = ''; if (!refAmigo) mandar({ t: 
 $('presumir3').onclick = () => { $('presumir3').style.display = 'none'; compartir(); };
 // Sin { once }: si el sistema dejo la musica suspendida al volver (iPhone),
 // cualquier toque la retoma; con el contexto ya creado solo mira su estado.
-for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, () => { if (sonido) musica.arrancar(); });
+for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, () => { if (sonido) { musica.arrancar(); if (actx && actx.state !== 'running') actx.resume().catch(() => {}); } });   // efectos tambien (iPhone)
 // Fuera de la app (otra pestaña, pantalla apagada, Telegram sin 'deactivated')
 // la musica y los golpes seguian sonando de fondo.
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) { musica.activo(false); if (actx) actx.suspend().catch(() => {}); }
+  // Al salir (Telegram, otra app) se sueltan joystick y botones: si no, volvia con SUBIR o el joystick pegados.
+  if (document.hidden) { musica.activo(false); if (actx) actx.suspend().catch(() => {}); tocandoSubir = tocandoBajar = false; joy.id = null; joy.dx = joy.dy = 0; for (const k in teclas) teclas[k] = false; }
   else { fuera3 = false; if (sonido) { musica.activo(true); if (actx) actx.resume().catch(() => {}); } }
 });
 $('b-ayuda').onclick = () => abrir('v-ayuda');

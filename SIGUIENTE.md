@@ -3030,3 +3030,11 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - inicio/index.html: rescate guarda `dq_mmo_tok_previo` y muestra el código anterior; aviso de que con cuenta se usa el duende de la cuenta.
 - Corregido antes de publicar: un comentario en la línea del tope se comía el `if` (el arnés lo detectó).
 - Arnés 843 bien.
+
+### Cierre de la ronda de 263 agentes (26-oct-2026, `?v=307`)
+
+- INFORME-260-AGENTES.md: síntesis de contenido (25 recursos CC0 y 15 conclusiones de foros), seguridad (25 hallazgos) y juego (30 cambios). Casi todo lo de juego y lo no relacionado con pagos ya está aplicado en v298-v307.
+- mundo.js: duración del aviso según el largo (4,5-12 s); editor de apariencia al elegir clase (esperando a `v-diario`); controles sueltos al ocultarse o con 'deactivated'; `ref3` en el hola; ⌂ en Telegram al menú de la Mini App; efectos reanudados si el contexto no está 'running'.
+- musica.js: retoma 'interrupted' (iPhone); cueva = cavernas, Éter = cumbres.
+- retencion.js: al cambiar de día/mes se cobra `pasePend` en la sesión abierta.
+- Arnés 843 bien.

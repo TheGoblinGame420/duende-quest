@@ -196,7 +196,8 @@ export const Retencion = {
         if (ahora - (s.combateT || 0) < 5000) this.enviar(s, { t: 'toast', ok: true, m: `☀️ ¡Nuevo día! Recompensa diaria (día ${lg.racha}): ${lg.oro ? '+' + lg.oro.toLocaleString('es', { useGrouping: 'always' }) + ' oro' : lg.txt}. Misiones diarias renovadas.` });
         else { this.enviar(s, { t: 'login', ...lg }); this.enviar(s, { t: 'toast', ok: true, m: '☀️ ¡Nuevo día! Misiones diarias renovadas.' }); }
         if (this.infoTareas) this.enviar(s, { t: 'tareas', ...this.infoTareas(c) });
-        if (this.infoPase) this.enviar(s, { t: 'pase', pase: this.infoPase(c) });
+        // Cambio de mes con la sesion abierta: lo alcanzado del pase se cobra ya (antes esperaba a reconectar).
+        if (this.infoPase) { const ip = this.infoPase(c); if (this.cobrarPasePendiente && c.pasePend) this.cobrarPasePendiente(s); this.enviar(s, { t: 'pase', pase: c.pasePend ? this.infoPase(c) : ip }); }
         this.actualizarYo(s);
       }
     }

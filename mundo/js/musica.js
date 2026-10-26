@@ -30,7 +30,8 @@ export function crearMusica() {
   let zona = 'pueblo', noche = false, clima = 'despejado', reloj = 0, sigNota = 0, sigAcorde = 0, bordon = null;
 
   function arrancar() {
-    if (ctx || !activo) { if (ctx && ctx.state === 'suspended') ctx.resume(); return; }
+    // iPhone deja el contexto en 'interrupted' tras una llamada o al salir de Telegram: cualquier estado que no sea 'running' se retoma.
+    if (ctx || !activo) { if (ctx && ctx.state !== 'running') { const p = ctx.resume(); if (p && p.catch) p.catch(() => {}); } return; }
     try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
     maestro = ctx.createGain(); maestro.gain.value = 0;
     maestro.connect(ctx.destination);
