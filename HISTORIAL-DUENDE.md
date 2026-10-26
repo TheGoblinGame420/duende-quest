@@ -48,6 +48,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v309 | Logro de la primera caza, cueva suma a la gesta | **B** |
 | v310 | Corrientes de viento (AION), HUD móvil por etapas, telemetría de errores, términos Nv 60 · panel v309: 6,0 | **B** |
 | v311 | Jefes de zona con el Sorbo del Cántaro (hechizo interrumpible) | **B** |
+| v312 | Embudo de nuevos en /mmostats, vibración en móvil web | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 
@@ -70,6 +71,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 |---|---|---|
 | 23-oct (antes de la v272) | **4,8 / 10** | 50 agentes, 10 áreas × 5 perspectivas (`INFORME-50-AGENTES.md`) |
 | 24-oct (v289) | **5,7 / 10** | 5 evaluadores con el mismo baremo: MMO 5,9 · F2P 5,9 · QA 5,8 · casual 5,7 · web3 5,1 |
+| 26-oct (v309) | **6,0 / 10** | 5 evaluadores con el mismo baremo: MMO 6,0 · F2P 6,3 · QA 6,0 · casual 6,2 · web3 5,6. Lo que más resta: pagos sin cerrar (decisión del dueño), poco contenido de grupo en 3D, sin telemetría de embudo, carga pesada en Telegram |
 
 ### Qué falta para un 9 real (según la reevaluación)
 

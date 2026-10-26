@@ -14,22 +14,22 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS } from '/mmo/js/data.js?v=311';
-import { iniciarVentanas } from './ventanas.js?v=311';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=311';
-import { crearMusica } from './musica.js?v=311';
-import { construirCueva } from './cueva.js?v=311';
-import { TAPA, transparentar } from './tapa.js?v=311';
-import { construirAbismo } from './abismo.js?v=311';
-import { crearParticulas } from './particulas.js?v=311';
-import { cargarKenney, piezasCasa } from './kenney.js?v=311';
-import { CORRIENTES } from '/mmo/js/abismo3d.js?v=311';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS } from '/mmo/js/data.js?v=312';
+import { iniciarVentanas } from './ventanas.js?v=312';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=312';
+import { crearMusica } from './musica.js?v=312';
+import { construirCueva } from './cueva.js?v=312';
+import { TAPA, transparentar } from './tapa.js?v=312';
+import { construirAbismo } from './abismo.js?v=312';
+import { crearParticulas } from './particulas.js?v=312';
+import { cargarKenney, piezasCasa } from './kenney.js?v=312';
+import { CORRIENTES } from '/mmo/js/abismo3d.js?v=312';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=311';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=311';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=311';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=311';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=312';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=312';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=312';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=312';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -73,8 +73,9 @@ if (TG) {
 // Vibracion de Telegram: golpes (suaves), criticos, heridas, nivel, muerte.
 let vibT = 0;
 function vib(t) {
-  if (!TG || !TG.HapticFeedback || !TGV('6.1')) return;
   const ahora = performance.now();
+  // Fuera de Telegram (Android en el navegador) con la vibracion del sistema; iPhone no la tiene.
+  if (!TG || !TG.HapticFeedback || !TGV('6.1')) { if (MOVIL && navigator.vibrate && ahora - vibT >= 70) { vibT = ahora; try { navigator.vibrate(t === 'light' ? 8 : t === 'medium' ? 18 : t === 'heavy' ? 30 : t === 'error' ? [20, 40, 20] : 15); } catch (e) {} } return; }
   if (ahora - vibT < 70) return;
   vibT = ahora;
   try { if (t === 'success' || t === 'error' || t === 'warning') TG.HapticFeedback.notificationOccurred(t); else TG.HapticFeedback.impactOccurred(t || 'light'); } catch (e) {}

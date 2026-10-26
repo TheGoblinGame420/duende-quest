@@ -112,6 +112,19 @@ export const Retencion = {
     await this.state.storage.put('ret:dia:' + diaISO(n), r);
   },
 
+  // Embudo de los nuevos (26-oct): de la cohorte de su alta, cuantos llegan a la
+  // primera caza (c1), a entregar la mision 1 (m1), a nivel 5 (n5) y a nivel 10 (n10).
+  // Una vez por personaje y solo en sus primeros 30 dias.
+  hitoEmbudo(c, k) {
+    if (!c || !c.ret || !c.ret.alta || (this.uidsPrueba && this.uidsPrueba.has(c.uid))) return;
+    const e = c.ret.emb || (c.ret.emb = {});
+    if (e[k]) return;
+    e[k] = 1;
+    const desde = diaNum(c.creado || Date.now());
+    if (diaNum() - desde > 30) return;
+    this.retSumar(desde, { [k]: 1 }).catch(() => {});
+  },
+
   // Anota el dia en el personaje. true si es su primera vez de ese dia.
   retMarcarDia(c, hoy) {
     const r = c.ret;
@@ -278,10 +291,13 @@ export const Retencion = {
     }
     let ses = 0, min = 0;
     for (const x of dias.slice(0, 7)) { ses += x.r.ses || 0; min += x.r.min || 0; }
+    // Embudo de las altas de los ultimos 14 dias.
+    const embudo = { n: 0, c1: 0, m1: 0, n5: 0, n10: 0 };
+    for (const x of dias.slice(0, 14)) for (const k in embudo) embudo[k] += x.r[k] || 0;
     const ranking = ((await this.state.storage.get('ranking')) || []).filter(x => !this.uidsPrueba.has(x.uid));
     return {
       ok: true, hoy: diaISO(hoy), activos, tipos30: tipos, niveles30: tramos, altas, cohortes, retencion,
-      sesion: { sesiones7: ses, minutos7: Math.round(min), media: ses ? Math.round(min / ses * 10) / 10 : 0 },
+      sesion: { sesiones7: ses, minutos7: Math.round(min), media: ses ? Math.round(min / ses * 10) / 10 : 0 }, embudo,
       top: ranking.slice(0, 10).map(x => ({ n: x.n, lv: x.lv })),
       online: this.contarOnline(),
     };

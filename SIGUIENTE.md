@@ -3065,3 +3065,12 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - mundo3d.js: `SORBO_MS` 3 s, `SORBO_CURA` 12 %; jefes de zona (`o.jefe && o.campo >= 0`, fuera de la cueva) bajo el 60 % y a <20 m de su objetivo lanzan cada 16-22 s; lo cortan `silencio`, `aturdido` u `oveja`; mensajes `mcast` (inicio, `cortado`, `cura` con `hp`). Ojo: `o.hz` es la casa del monstruo, por eso el estado va en `o.sorbo`.
 - Cliente: `o.cast` con barra naranja `#o-cast` en el marco del objetivo, «🥤 Sorbo del Cántaro…» sobre el jefe y avisos al empezar, al cortarlo y al curarse.
 - Arnés +3 pruebas (aviso, cura, Silencio lo corta). 848 bien.
+
+### Embudo de los nuevos y vibración (26-oct-2026, `?v=312`)
+
+- retencion.js: `hitoEmbudo(c, k)` suma en `ret:dia` de la cohorte del alta (una vez por personaje, primeros 30 días, sin bots de prueba): `c1` primera caza, `m1` misión 1 entregada, `n5`, `n10`. `retStats().embudo` = altas de los últimos 14 días.
+- world.js: ganchos en `dar()` (kills 1), `mision()` (mis.i 1) y `sumarXp()` (5 y 10).
+- telegram-bot.js `/mmostats`: línea «🪜 Embudo de esas altas…» (solo el informe de administración).
+- mundo.js: `vib()` con `navigator.vibrate` fuera de Telegram en móvil.
+- HISTORIAL: nota del panel v309 (6,0).
+- Arnés +1 prueba (embudo). 849 bien.

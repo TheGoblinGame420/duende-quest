@@ -397,6 +397,7 @@ function textoMmoStats(r) {
     `   Niveles: ${tramos}\n` +
     `⏱️ Sesión media (7 días): ${String(r.sesion.media).replace('.', ',')} min · ${r.sesion.sesiones7} sesiones · ${r.sesion.minutos7} min en total\n\n` +
     `🆕 Altas por día (últimos 14):\n${altas}\n\n` +
+    (r.embudo && r.embudo.n ? `🪜 Embudo de esas altas: primera caza ${r.embudo.c1}/${r.embudo.n} · misión 1 ${r.embudo.m1} · nivel 5 ${r.embudo.n5} · nivel 10 ${r.embudo.n10}\n\n` : '') +
     `🔁 Retención (últimas 30 cohortes con el día ya cumplido):\n` +
     `D1: ${ret(r.retencion.d1)}\nD7: ${ret(r.retencion.d7)}\nD30: ${ret(r.retencion.d30)}\n\n` +
     `📅 Cohortes recientes (cuántos volvieron ese día exacto; … = aún no llega):\n${cohortes}\n\n` +

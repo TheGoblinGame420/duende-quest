@@ -498,6 +498,9 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 80, fecha: '26 oct 2026', items: [
+    'En el móvil (también fuera de Telegram) el juego vibra al pegar, al dar un crítico y cuando pica un pez.',
+  ] },
   { n: 79, fecha: '26 oct 2026', items: [
     'Nueva mecánica de jefes en ORIGINS: por debajo del 60 % de vida, los jefes de zona intentan beber el «Sorbo del Cántaro» (3 s, con barra de lanzamiento). Córtalo con Patada, Zurrar, Contrahechizo, Silencio o un aturdimiento; si no, se curan un 12 %.',
   ] },

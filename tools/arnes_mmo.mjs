@@ -1380,6 +1380,10 @@ async function pruebasRetencion() {
   let d0 = await mundo.retDia(D);
   chequear(d0.n === 3 && d0.a === 3 && d0.ses === 3, `altas, activos y sesiones del día sin el bot de prueba (${d0.n}/${d0.a}/${d0.ses})`);
   chequear(h1.c.ret && h1.c.ret.alta === 1 && h1.c.ret.ses === 1 && h1.c.ret.d.length === 1 && h1.c.ret.d[0] === D, 'el personaje guarda su primer día y su sesión');
+  // Embudo: la primera caza cuenta una vez en la cohorte del alta (y el bot de prueba no).
+  h1.c.kills = 0; mundo.dar(h1, 1, 1, null, 1, false); mundo.dar(h1, 1, 1, null, 1, false); bot.c.kills = 0; mundo.dar(bot, 1, 1, null, 1, false);
+  for (let i = 0; i < 5; i++) await espera();
+  chequear((await mundo.retDia(D)).c1 === 1, 'el embudo cuenta la primera caza una vez por personaje');
   avanzar(5 * 60000);
   h1.actT = Date.now();
   for (const x of [h1, h2, h3, bot]) await dejar(x);

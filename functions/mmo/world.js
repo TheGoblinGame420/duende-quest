@@ -1911,6 +1911,7 @@ export class MmoWorld {
       subio = true;
     }
     if (c.nivel >= NIVEL_MAX) c.xp = 0;
+    if (subio && this.hitoEmbudo) { if (nivel0 < 5 && c.nivel >= 5) this.hitoEmbudo(c, 'n5'); if (nivel0 < 10 && c.nivel >= 10) this.hitoEmbudo(c, 'n10'); }
     if (subio) {
       s.st = this.stats(c);
       s.hp = s.st.maxHp;
@@ -1935,6 +1936,7 @@ export class MmoWorld {
     if (this.elixir(s, 'ceviche')) oro = Math.round(oro * 1.1);
     c.oro += oro;
     c.kills++;
+    if (c.kills === 1 && this.hitoEmbudo) this.hitoEmbudo(c, 'c1');
     if (o && o.jefe) c.jefes++;
     // Hora Feliz (cada dia 01-02 UTC): +50% de la XP de caza.
     if (horaFelizActiva()) xp = Math.round(xp * HORA_FELIZ.xp);
@@ -2048,6 +2050,7 @@ export class MmoWorld {
     c.oro += q.oro;
     for (const k in (q.pw || {})) c.pw[k] = Math.min(99, (c.pw[k] || 0) + q.pw[k]);
     c.mis = { i: c.mis.i + 1, p: 0 };
+    if (c.mis.i === 1 && this.hitoEmbudo) this.hitoEmbudo(c, 'm1');
     this.sumarXp(s, q.xp);
     this.revisarLogros(s);
     this.enviar(s, { t: 'toast', m: `✅ Recompensa: +${q.xp} XP · +${q.oro} oro`, ok: true });
