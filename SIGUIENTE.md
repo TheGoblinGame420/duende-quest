@@ -2969,3 +2969,15 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - eventos3d.js: `ev.part` es un Map de ayudas (capitán = 3): cobra quien ayudó en 3 o más; XP con `min(nivel, tope de la zona)`.
 - world.js: cerrojo `pd.entregando` en `entregarPedido` y nueva comprobación del estado tras el await (no toca la verificación de pagos).
 - Arnés 843 bien.
+
+### Ronda de 22 agentes jugando como invitados (26-oct-2026, `?v=300`)
+
+- Leyenda y premio diario (`#v-diario` compartido): `leyendaPrimeraVez` espera a `v-diario` cerrado, `loginPend3` vacío y clase elegida; `mostrarDiario` no pisa una ventana abierta; `verLeyenda`/`avisoInvitado` anulan el cierre de 12 s.
+- Recarga por versión nueva: no con `.modal.on`, chat con foco o texto a medias.
+- `cerrar('v-look')` restaura la cámara (Atrás de Telegram).
+- Tutorial móvil: textos cortos, paso 2 con flecha y metros, paso 4 nombra la habilidad 1 (primer botón), paso 6 entrega desde su fila; el tutorial va primero también con invasión; `#misiones.con-tuto` hasta 76 px.
+- Telegram pantalla completa: sin `margin-top` doble en los paneles que coloca el JS, `#obj`/`#botones` y `#mini`.
+- `#t-atk` PARAR/ATACAR con `.on`, doble toque sin apagar; tocar joystick o botones suelta el foco del chat; FOV base hasta 76 en vertical; cámara que sigue al duende en móvil.
+- `usarHab`: aviso de recurso insuficiente, lanzamiento previsto en local (`lanzando.pre`), Polimorfia apaga el ataque automático.
+- Servidor: Ira +9 (+4 crítico) por golpe en 3D y en duelo; la vara escala con `arma.dano`; Carga en el Abismo cae en la isla.
+- Arnés 843 bien.

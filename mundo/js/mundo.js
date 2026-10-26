@@ -14,21 +14,21 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA } from '/mmo/js/data.js?v=299';
-import { iniciarVentanas } from './ventanas.js?v=299';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=299';
-import { crearMusica } from './musica.js?v=299';
-import { construirCueva } from './cueva.js?v=299';
-import { TAPA, transparentar } from './tapa.js?v=299';
-import { construirAbismo } from './abismo.js?v=299';
-import { crearParticulas } from './particulas.js?v=299';
-import { cargarKenney, piezasCasa } from './kenney.js?v=299';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA } from '/mmo/js/data.js?v=300';
+import { iniciarVentanas } from './ventanas.js?v=300';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=300';
+import { crearMusica } from './musica.js?v=300';
+import { construirCueva } from './cueva.js?v=300';
+import { TAPA, transparentar } from './tapa.js?v=300';
+import { construirAbismo } from './abismo.js?v=300';
+import { crearParticulas } from './particulas.js?v=300';
+import { cargarKenney, piezasCasa } from './kenney.js?v=300';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=299';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=299';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=299';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS } from './lore.js?v=299';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=300';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=300';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=300';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS } from './lore.js?v=300';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -306,11 +306,15 @@ function moverLluvia(dt, t) {
   // Relampagos en la tormenta.
   if (climaAct === 'tormenta' && t > sigRelampago) { relampagoT = t; sigRelampago = t + 7000 + Math.random() * 12000; musica.trueno(); }
 }
+let fovBase = 60;
 function ajustar() {
   const w = innerWidth, h = innerHeight;
   render.setSize(w, h, false);
   if (composer) composer.setSize(w, h);
-  camara.aspect = w / h; camara.updateProjectionMatrix();
+  camara.aspect = w / h;
+  // En vertical (Telegram) 60 grados verticales dejaban unos 30 de ancho: se abre hasta 76.
+  fovBase = camara.aspect < 1 ? Math.min(76, 60 + (1 - camara.aspect) * 30) : 60;
+  camara.fov = fovBase; camara.updateProjectionMatrix();
 }
 addEventListener('resize', ajustar);
 ajustar();
@@ -1338,6 +1342,7 @@ function recibir(m) {
     case 'mton': { if (yo) yo.mton = m.total; const por = { jefe: 'por el jefe', mundial: 'por el jefe mundial', diaria: 'por la caza del día' }[m.motivo]; aviso('💎 +' + m.n + ' mTON (tienes ' + ((m.total || 0) / 1000).toLocaleString('es', { maximumFractionDigits: 3 }) + ' TON)' + (por ? ' — ' + por : ''), 'ok'); numero(P.x, P.y + 3, P.z, '+' + m.n + ' mTON', '#00eeff'); sfx('moneda', 0.5); break; }
     case 'aviso': aviso(m.m); break;
     case 'no':
+      if (lanzando && lanzando.pre) lanzando = null;   // el lanzamiento previsto no empezo
       // "Fuera de alcance" se avisa como mucho una vez cada 3 s (el auto-ataque reintenta solo).
       if (m.m === 'Fuera de alcance.') { if (performance.now() - avisoAlcT < 3000) break; avisoAlcT = performance.now(); }
       aviso(m.m, 'err'); break;
@@ -1638,7 +1643,7 @@ function pintarAuras() {
       e.style.top = y + 'px'; e.style.bottom = 'auto';
       if (id === 'misiones') {   // cerrada se recorta antes del joystick: con grupo y objetivo el pulgar que iba a caminar la abria
         const abierta = e.classList.contains('abierto'), sitio = Math.floor(tope - e.offsetTop - 4);
-        const mh = !abierta && sitio < 50 ? Math.max(28, sitio) + 'px' : '';   // 50: su alto cerrado en movil (index.html)
+        const mh = !abierta && sitio < (e.classList.contains('con-tuto') ? 76 : 50) ? Math.max(28, sitio) + 'px' : '';   // su alto cerrado en movil (index.html)
         if (e.style.maxHeight !== mh) { e.style.maxHeight = mh; h = e.offsetHeight; }
         const pe = !abierta && sitio < 28 ? 'none' : '';   // sin sitio ni para una linea: el toque pasa al joystick
         if (e.style.pointerEvents !== pe) e.style.pointerEvents = pe;
@@ -1785,6 +1790,8 @@ function pintarBarra() {
     });
   }
   $('acc-atk').classList.toggle('on', autoAtk);
+  // En movil la barra no lleva el boton de ataque: ATACAR muestra si el automatico esta puesto.
+  if (MOVIL) { const ta = $('t-atk'); if (ta.classList.contains('on') !== autoAtk) { ta.classList.toggle('on', autoAtk); ta.textContent = autoAtk ? 'PARAR' : 'ATACAR'; } }
   b.querySelectorAll('[data-pw]').forEach(d => { d.querySelector('.n').textContent = (yo.pw && yo.pw[d.dataset.pw]) || 0; });
 }
 function pintarCds() {
@@ -1956,7 +1963,11 @@ function abrir(id) {
   $(id).classList.add('on');
   if (!LATERALES.includes(id)) for (const k in teclas) teclas[k] = false;
 }
-function cerrar(id) { $(id).classList.remove('on'); if (id === 'v-npc') npcAbierto = ''; }
+function cerrar(id) {
+  // El editor de apariencia cerrado por otra via (Atras de Telegram, ✕): la camara vuelve y se descarta la prueba.
+  if (id === 'v-look' && camAntes) { ({ camYaw, camPitch, camDist } = camAntes); camAntes = null; lookEditor = null; cambiarSkinPropia(); }
+  $(id).classList.remove('on'); if (id === 'v-npc') npcAbierto = '';
+}
 document.querySelectorAll('[data-cerrar]').forEach(b => b.onclick = () => cerrar(b.closest('.modal').id));
 function abrirClases() {
   const c = $('clases');
@@ -2208,11 +2219,13 @@ async function revisarVersion() {
 }
 setInterval(() => {
   revisarVersion();
-  if (verNueva && !P.muerto && !autoAtk && !lanzando && !P.vuela && !hayVentana() && performance.now() - (P.heridoT || 0) > 8000) location.reload();
+  // Ni con un panel abierto (tienda, NPC, leyenda…) ni escribiendo en el chat.
+  if (verNueva && !P.muerto && !autoAtk && !lanzando && !P.vuela && !document.querySelector('.modal.on') && !chatAbierto() && !($('chat-in').value || '').trim() && performance.now() - (P.heridoT || 0) > 8000) location.reload();
 }, 5000);
 addEventListener('visibilitychange', () => { if (!document.hidden) { verT = 0; revisarVersion(); } });
 // ── LA LEYENDA DEL CANTARO (lore): una vez al entrar y desde la ayuda ──
 function verLeyenda() {
+  clearTimeout(mostrarDiario.t); mostrarDiario.t = 0;   // el cierre automatico del premio diario no cierra la leyenda
   $('diario-c').innerHTML = `<img src="/assets/lore/chicha-duende-playa.jpg" alt="Chicha morada $DUENDE junto al mar" style="display:block;width:100%;max-height:170px;object-fit:cover;border-radius:10px;margin-bottom:8px">
     <p class="vv-p"><img src="/assets/lore/maiz-morado.png" alt="" style="float:left;width:34px;margin:0 6px 0 0">Hace siglos, los duendes guardaban el <b style="color:#c084fc">Maíz Morado Sagrado</b>. Con él preparaban la <b style="color:#c084fc">chicha morada</b>, la bebida que les daba su fuerza y su magia.</p>
     <p class="vv-p">El <b>Rey Goblin</b> robó el <b style="color:#ffd84a">Cántaro Eterno</b> y lo rompió en pedazos. Sin chicha, la noche cubrió el bosque, los goblins invadieron las colinas y el Éter del cielo se partió en islas flotantes: el <b>Abismo</b>.</p>
@@ -2226,14 +2239,16 @@ $('b-leyenda').onclick = () => { cerrar('v-ayuda'); verLeyenda(); };
 // En cada sesion (no cada reconexion): la historia es lo primero que se ve.
 function leyendaPrimeraVez() {
   try { if (sessionStorage.getItem('dq_leyenda')) return; } catch (e) { return; }
-  if (hayVentana()) { setTimeout(leyendaPrimeraVez, 3000); return; }   // espera a que elija clase, etc.
+  // Espera a que elija clase y a que vea (y cierre) el premio diario: comparten ventana.
+  if (hayVentana() || $('v-diario').classList.contains('on') || loginPend3 || !yo || !yo.clase) { setTimeout(leyendaPrimeraVez, 3000); return; }
   try { sessionStorage.setItem('dq_leyenda', '1'); } catch (e) {}
   verLeyenda();
 }
 let avisoInvT = 0;
 function avisoInvitado() {
   // Desde Nv 3 (no encima del tutorial) y como mucho una vez al dia.
-  if (!soyInvitado || !yo || yo.nivel < 3 || hayVentana()) return;
+  if (!soyInvitado || !yo || yo.nivel < 3 || hayVentana() || $('v-diario').classList.contains('on')) return;
+  clearTimeout(mostrarDiario.t); mostrarDiario.t = 0;
   const hoy = new Date().toISOString().slice(0, 10);
   try { if (localStorage.getItem('dq_aviso_inv') === hoy) return; localStorage.setItem('dq_aviso_inv', hoy); } catch (e) {}
   $('diario-c').innerHTML = `<p class="vv-p">Juegas como <b>invitado</b>: tu duende vive solo en este navegador. Para no perderlo:</p>
@@ -2465,6 +2480,7 @@ function pintarRankPanel() {
 // ── RECOMPENSA DIARIA (racha de 7 dias) ──
 // Panel lateral que se cierra solo: lo de hoy, la racha y lo que espera mañana.
 function mostrarDiario(m) {
+  if ($('v-diario').classList.contains('on') && !mostrarDiario.t) { setTimeout(() => mostrarDiario(m), 2000); return; }   // no pisa la leyenda
   const n = LOGIN_PREMIOS.length, hoy = m.racha;
   let h = m.vuelta ? `<p class="vv-p" style="margin-bottom:8px;padding:8px;border-radius:10px;background:rgba(255,216,74,.12);border:1px solid rgba(255,216,74,.4)">🎉 <b>¡Te echábamos de menos!</b> ${m.vuelta.dias} días fuera. Regalo de bienvenida: <b>+${m.vuelta.oro.toLocaleString('es')} oro</b>, ${m.vuelta.pociones} pociones y <b>${esc(m.vuelta.item)}</b>.</p>` : '';
   h += `<p class="vv-p" style="margin-bottom:8px">¡Día <b style="color:#ffd84a">${hoy}</b> de tu racha! Recibes <b>${esc(m.txt || '')}</b>${m.oro ? ` (+${m.oro.toLocaleString('es')} oro)` : ''}.</p><div class="dias7">`;
@@ -2478,7 +2494,7 @@ function mostrarDiario(m) {
   $('v-diario').querySelector('h2').textContent = m.vuelta ? '¡BIENVENIDO DE VUELTA!' : 'RECOMPENSA DIARIA';
   abrir('v-diario'); vib('success'); sfxK('monedas', 0.4);
   clearTimeout(mostrarDiario.t);
-  mostrarDiario.t = setTimeout(() => cerrar('v-diario'), 12000);
+  mostrarDiario.t = setTimeout(() => { mostrarDiario.t = 0; cerrar('v-diario'); }, 12000);
 }
 // ── PASE DE TEMPORADA (gratis, se reinicia cada mes) ──
 function nivelesPaseListos() {
@@ -2655,11 +2671,17 @@ function usarHab(h) {
   // Aliado: el jugador elegido o uno mismo.
   const contraRival = h.obj === 'enemigo' && !objetivo && rivalP() ? rivalP() : 0;
   if (h.obj === 'enemigo' && !objetivo && !contraRival) cicloObjetivo();
+  // Sin recurso: se explica aqui (antes el tutorial lo daba por hecho y llegaba un "no" del servidor).
+  if (yo.recMax !== undefined && (P.rec || 0) < costoHab(h, yo.recMax || 100, yo.espec)) { const cl = CLASES[yo.clase], rc = cl && RECURSOS[cl.recurso]; return aviso(`${h.nombre} necesita más ${rc ? rc.nombre.toLowerCase() : 'recurso'}${cl && cl.recurso === 'ira' ? ': la Ira sube al pegar y al recibir golpes' : ''}.`, 'err'); }
   mandarPos(true);
   mandar({ t: 'hab3', id: h.id, tg: h.obj === 'enemigo' ? objetivo : 0, tp: contraRival ? contraRival : h.obj === 'aliado' || h.obj === 'muerto' ? objetivoP : 0 });
+  // Con lanzamiento: quieto desde el toque (el acercamiento automatico lo movia antes de
+  // que llegara el 'cast' y el servidor lo cancelaba con "Te moviste").
+  if (h.cast) { lanzando = { id: h.id, ini: ahora, fin: ahora + h.cast, pre: true }; P.vx = 0; P.vz = 0; }
   tuto3.hab = true;
   if (h.gcd !== false) gcdHasta = ahora + GCD_MS;
-  if (h.obj === 'enemigo' && objetivo && !autoAtk && h.id !== 'polimorfia') { autoAtk = true; pintarBarra(); }
+  if (h.id === 'polimorfia') { autoAtk = false; colaHab = null; pintarBarra(); }   // pegarle a la oveja la despierta
+  else if (h.obj === 'enemigo' && objetivo && !autoAtk) { autoAtk = true; pintarBarra(); }
 }
 function montar() { if (!yo || P.muerto) return; if (P.vuela) return aviso('Aterriza antes de montar.', 'err'); mandar({ t: 'montar' }); }
 // ── VUELO (como las alas de AION) ──
@@ -2773,7 +2795,13 @@ if (MOVIL) {
     if (toques.size < 2) pinch = null;
   };
   lienzo.addEventListener('touchend', finToque, { passive: true }); lienzo.addEventListener('touchcancel', finToque, { passive: true });
-  $('t-atk').addEventListener('touchstart', e => { e.preventDefault(); alternarAtaque(); }, { passive: false });
+  // Dos toques seguidos (como en otros juegos de movil) no apagan el ataque que el primero encendio.
+  let atkTapT = 0;
+  $('t-atk').addEventListener('touchstart', e => { e.preventDefault(); const t = performance.now(); if (autoAtk && t - atkTapT < 700) { atkTapT = t; return; } atkTapT = t; alternarAtaque(); }, { passive: false });
+  // Con el teclado cerrado (Atras de Android) el chat seguia con el foco y congelaba el joystick y los botones.
+  const soltarChat = () => { const i = $('chat-in'); if (document.activeElement === i) { i.blur(); if (!i.value.trim()) i.style.display = 'none'; } };
+  $('tactil').addEventListener('touchstart', soltarChat, { capture: true, passive: true });
+  $('joy').addEventListener('touchstart', soltarChat, { capture: true, passive: true });
   // Mantener SALTO: sube volando y planea al caer (como Espacio).
   $('t-salto').addEventListener('touchstart', e => { e.preventDefault(); tocandoSubir = true; if (!P.vuela) saltar(); }, { passive: false });
   $('t-salto').addEventListener('touchend', () => { tocandoSubir = false; });
@@ -2858,6 +2886,12 @@ function fisica(dt) {
     }
     // Gira suave hacia donde va (no de golpe).
     if (quiere) P.ry = lerpAng(P.ry, Math.atan2(mx, mz), 1 - Math.exp(-14 * dt));
+    // Movil: con los dos pulgares ocupados la camara se va poniendo sola detras del duende
+    // (suave, y no si camina hacia la camara: ahi se quiere ver de frente).
+    if (MOVIL && quiere && camTouch.id === null && !lanzando && !camAntes) {
+      const det = P.ry + Math.PI, dif = Math.abs(Math.atan2(Math.sin(det - camYaw), Math.cos(det - camYaw)));
+      if (dif < 2) camYaw = lerpAng(camYaw, det, 1 - Math.exp(-1.1 * dt));
+    }
     if (mx * der.x + mz * der.z > 0.05) P.f = 1; else if (mx * der.x + mz * der.z < -0.05) P.f = -1;
   }
   // Pasos: uno cada ~1,7 m andando por el suelo, con el sonido de la zona.
@@ -3093,12 +3127,13 @@ let metaMision = null;
 // Tutorial de los primeros minutos (como el de CLASSIC): el paso actual va como
 // primera fila del rastreador y se cumple solo al hacerlo. Por personaje y dispositivo.
 const TUTO3 = [
-  { txt: () => MOVIL ? 'Muévete con el joystick y arrastra a la derecha para girar la cámara' : 'Muévete con W A S D y arrastra con el ratón para girar la cámara', hecho: t => { const d = Math.hypot(P.x - t.x0, P.z - t.z0); if (d > 60) { t.x0 = P.x; t.z0 = P.z; } return d > 8 && d <= 60; } },   // un salto grande es un teletransporte: no cuenta
-  { txt: () => 'Sigue la columna de luz amarilla hasta tu presa', hecho: t => (yo.kills || 0) > t.k0 || (metaMision && Math.hypot(metaMision.x - P.x, metaMision.z - P.z) < 30) },
+  { txt: () => MOVIL ? 'Anda con el joystick y desliza el dedo por la pantalla para mirar' : 'Muévete con W A S D y arrastra con el ratón para girar la cámara', hecho: t => { const d = Math.hypot(P.x - t.x0, P.z - t.z0); if (d > 60) { t.x0 = P.x; t.z0 = P.z; } return d > 8 && d <= 60; } },   // un salto grande es un teletransporte: no cuenta
+  { txt: () => 'Ve a la luz amarilla' + (metaMision ? ` ${flechaDir(metaMision.x, metaMision.z)} ${Math.round(Math.hypot(metaMision.x - P.x, metaMision.z - P.z))} m` : ''), hecho: t => (yo.kills || 0) > t.k0 || (metaMision && Math.hypot(metaMision.x - P.x, metaMision.z - P.z) < 30) },
   { txt: () => MOVIL ? 'Toca un monstruo y pulsa ATACAR' : 'Clic en un monstruo (o Tab) y pulsa 1 o Z para atacar', hecho: t => (yo.kills || 0) > t.k0 },
-  { txt: () => 'Usa una habilidad de clase: ' + (MOVIL ? 'segundo botón de la barra' : 'tecla 2'), hecho: t => t.hab },
+  // En movil el boton de ataque no esta en la barra: el primero ya es la habilidad de nivel 1.
+  { txt: () => 'Usa tu habilidad ' + ((habsDe(yo.clase)[0] || {}).nombre || 'de clase') + ': ' + (MOVIL ? 'primer botón de la barra' : 'tecla 2'), hecho: t => t.hab },
   { txt: () => 'Fuera del pueblo, despliega las alas: ' + (MOVIL ? 'botón VOLAR' : 'V o doble salto'), hecho: () => P.vuela },
-  { txt: () => MISIONES[yo.mis.i] && yo.mis.p >= MISIONES[yo.mis.i].n ? '¡Misión lista! Toca su fila 📜 para entregarla' : 'Completa tu misión 📜 y entrégala tocando su fila', hecho: () => yo.mis.i >= 1 },
+  { txt: () => MISIONES[yo.mis.i] && yo.mis.p >= MISIONES[yo.mis.i].n ? '¡Misión lista! Toca AQUÍ para entregarla' : 'Completa tu misión 📜 y luego entrégala aquí', hecho: () => yo.mis.i >= 1 },
 ];
 const tuto3 = { i: -1, x0: 0, z0: 0, k0: 0, hab: false, clave: '' };
 function htmlTuto3() {
@@ -3108,7 +3143,9 @@ function htmlTuto3() {
   // k0 no se reinicia al avanzar: la primera caza cumple a la vez "sigue la luz" y "ataca".
   if (TUTO3[tuto3.i] && TUTO3[tuto3.i].hecho(tuto3)) { tuto3.i++; tuto3.x0 = P.x; tuto3.z0 = P.z; try { localStorage.setItem(clave, String(tuto3.i)); } catch (e) {} sfx('moneda', 0.3); }
   const p = TUTO3[tuto3.i]; if (!p) return '';
-  return `<div class="q" style="border-left:3px solid #4ade80;padding-left:6px"><b style="color:#4ade80">💡 Paso ${tuto3.i + 1}/${TUTO3.length}</b>${esc(p.txt())}</div>`;
+  // Paso 6 con la mision lista: la propia fila del tutorial la entrega (en movil la fila 📜 queda debajo).
+  const lista = tuto3.i === 5 && MISIONES[yo.mis.i] && yo.mis.p >= MISIONES[yo.mis.i].n;
+  return `<div class="q"${lista ? ' data-entregar="1"' : ''} style="border-left:3px solid #4ade80;padding-left:6px${lista ? ';cursor:pointer' : ''}"><b style="color:#4ade80">💡 ${COMPACTO ? '' : 'Paso '}${tuto3.i + 1}/${TUTO3.length}</b>${esc(p.txt())}</div>`;
 }
 const flechaDir = (x, z) => { let a = camYaw - Math.PI - Math.atan2(x - P.x, z - P.z); a = Math.atan2(Math.sin(a), Math.cos(a)); return ['⬆', '↗', '➡', '↘', '⬇', '↙', '⬅', '↖'][(Math.round(a / (Math.PI / 4)) + 8) % 8]; };
 function pintarMisiones() {
@@ -3156,7 +3193,7 @@ function pintarMisiones() {
       h += `<div class="q"><b style="color:#7dd3fc">🧭 Encargos de ${esc(MAPAS[zE].nombre)} ${hechos}/${L.length}</b>${esc(sig.txt)}${pr}<small>${donde}</small></div>`;
     } else h += `<div class="q"><b style="color:#4ade80">🧭 ${esc(MAPAS[zE].nombre)}: encargos completados ✓</b></div>`;
   }
-  h = htmlTuto3() + h;   // despues de calcular metaMision: el paso 2 la mira
+  const tt = htmlTuto3();   // despues de calcular metaMision: el paso 2 la mira (va primera, tambien con invasion)
   if (!d.ok) h += `<div class="q"><b>☀ ${DIARIA.nombre}</b>${(d.p || 0) >= DIARIA.n ? '<span class="ok" data-entregar="diaria" style="cursor:pointer;text-decoration:underline">¡Lista! Toca aquí para cobrarla</span>' : `Monstruos de tu nivel: ${Math.min(d.p || 0, DIARIA.n)}/${DIARIA.n}`}</div>`;
   if (invasion3) {
     const ms = Math.max(0, invasion3.ms - (Date.now() - invasion3.recibido)), mm = Math.floor(ms / 60000), ss = Math.floor(ms % 60000 / 1000);
@@ -3177,6 +3214,8 @@ function pintarMisiones() {
     else h += `<div class="q"><b>🗓 Misiones del día ${hd}/${T.dia.l.length}</b>` + T.dia.l.map((t, i) => t.ok ? `<span class="ok">✓ ${esc(t.txt)}</span>` : `<span class="tarea">• ${esc(t.txt)} ${t.p}/${t.n}${T.dia.cambio ? '' : ` <button class="cambiar" data-cambiar="${i}" title="Cambiar esta misión (1 gratis al día)">🔄</button>`}</span>`).join('') +
       `<small>Semana ${hs}/${T.sem.l.length}${T.dia.bono ? ' · ✓ bono del día' : ''}</small></div>`;
   }
+  h = tt + h;
+  c.classList.toggle('con-tuto', !!tt);
   c.style.display = h ? 'block' : 'none';
   if (c._h !== h) { c.innerHTML = h; c._h = h; }
   // Columna de luz sobre la meta (como las zonas de mision de WoW).
@@ -3273,7 +3312,7 @@ function bucle(t) {
   if (enCv) cy = Math.min(cy, 7.2);   // bajo el techo de la cueva
   camara.position.set(cx, cy, cz); camara.lookAt(tx, ty, tz);
   // Sensacion de velocidad: el campo de vision se abre un poco al galopar o volar rapido.
-  const fovObj = 60 + clamp((Math.hypot(P.vx, P.vz) / MUNDO.velocidad - 1.1) * 8, 0, 10);
+  const fovObj = fovBase + clamp((Math.hypot(P.vx, P.vz) / MUNDO.velocidad - 1.1) * 8, 0, 10);
   if (Math.abs(camara.fov - fovObj) > 0.05) { camara.fov += (fovObj - camara.fov) * Math.min(1, dt * 3); camara.updateProjectionMatrix(); }
   TAPA.uCam.value.set(cx, cy, cz); TAPA.uTgt.value.set(tx, ty, tz);
   // Zona actual: titulo, cielo y niebla de su color.

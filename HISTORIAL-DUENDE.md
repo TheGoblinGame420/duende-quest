@@ -36,6 +36,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v297 | Lore por zona, PNJ con frases, secretos de hitos, aventureros PNJ en la plaza | **B** |
 | v298 | Inicio arreglado (JUGAR), vacío del Abismo, canal de chat, reportes, baneo heredado, título sin spam | **B** |
 | v299 | Planeo sin atajos, invisibles, límites de reportes y vinculación, invasiones justas, cerrojo de entrega | **B** |
+| v300 | Ronda de 22 agentes jugando: tutorial móvil, cámara, FOV, ATACAR, márgenes Telegram, leyenda/diario, Ira, Bola de Fuego, Polimorfia, Carga | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

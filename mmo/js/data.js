@@ -498,6 +498,12 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 68, fecha: '26 oct 2026', items: [
+    'Móvil y Telegram más jugables: vista más amplia en vertical, la cámara se pone sola detrás de tu duende al caminar y el botón ATACAR muestra PARAR cuando el ataque automático está puesto.',
+    'Tutorial arreglado en el móvil: textos cortos, el paso 4 señala tu habilidad de verdad y el último paso entrega la misión con un toque.',
+    'El Guerrero gana Ira al pegar en ORIGINS, la Bola de Fuego ya no se cancela sola, la Polimorfia no se rompe con tu propio ataque y la Carga en el Abismo no te tira al vacío.',
+    'Telegram a pantalla completa: los paneles ya no bajan de más ni chocan con el joystick. La leyenda y el premio diario ya no se pisan, y el juego no se recarga mientras escribes o tienes una ventana abierta.',
+  ] },
   { n: 67, fecha: '26 oct 2026', items: [
     'Invasiones más justas: para cobrar el premio hay que ayudar de verdad (al menos 3 invasores o el capitán), y la experiencia va según tu nivel.',
     'Más protección: el chat y el mensaje de hermandad bloquean los trucos con caracteres invisibles, y el código para vincular cuentas no se puede adivinar a base de intentos.',

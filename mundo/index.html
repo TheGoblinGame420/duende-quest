@@ -13,17 +13,17 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=299" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=300" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=299">
-<link rel="modulepreload" href="/mmo/js/data.js?v=299">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=299">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=299">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=299">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=299">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=299">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=300">
+<link rel="modulepreload" href="/mmo/js/data.js?v=300">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=300">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=300">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=300">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=300">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=300">
 <style>
 :root{--bg:#0a0418;--panel:rgba(14,9,30,.86);--borde:rgba(160,140,255,.22);--txt:#f2efff;--txt2:#b8b0d8;--txt3:#7d7699;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;--oro:#ffd84a;--pri:#2563eb;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -213,6 +213,7 @@ body.movil .acc .t{display:none;}
 #tactil{position:fixed;right:10px;bottom:120px;display:none;grid-template-columns:repeat(3,58px);gap:8px;pointer-events:auto;}
 #tactil button{width:58px;height:58px;border-radius:50%;border:1px solid var(--borde);background:rgba(20,12,44,.75);color:var(--txt);font:700 12px var(--sans);}
 #tactil button.grande{background:rgba(37,99,235,.8);}
+#tactil button.grande.on{background:rgba(220,38,38,.9);box-shadow:0 0 12px #f87171;}
 body.movil #joy,body.movil #tactil{display:grid;}
 body.movil #joy{display:block;}
 body.movil #chat{width:min(260px,60vw);bottom:auto;top:204px;}
@@ -334,6 +335,12 @@ body.movil .ventana img,body.compacto .ventana img{max-width:100%;}
 body.movil .ventana p,body.compacto .ventana p{overflow-wrap:anywhere;}
 /* Sin mensajes ni escribiendo: la caja del chat no se dibuja (era una barra vacia) */
 body.movil #chat:has(#chat-log:empty):not(:has(#chat-in[style*="block"])),body.compacto #chat:has(#chat-log:empty):not(:has(#chat-in[style*="block"])){visibility:hidden;}
+/* Con tutorial la caja de misiones crece un poco para que se lea el paso y la mision (v300) */
+body.movil #misiones.con-tuto:not(.abierto),body.compacto #misiones.con-tuto:not(.abierto){max-height:76px;}
+/* Telegram a pantalla completa: lo que el JS coloca bajo el marco ya hereda su margen
+   y #obj/#botones lo llevan en su top; el minimapa no suma dos veces la zona segura (v300) */
+body.tgfs #grupo3,body.tgfs #alas,body.tgfs.movil #objp,body.tgfs.compacto #objp,body.tgfs.movil #misiones,body.tgfs.compacto #misiones,body.tgfs.movil #chat,body.tgfs.movil #obj,body.tgfs.compacto #obj,body.tgfs.movil #botones,body.tgfs.compacto #botones{margin-top:0;}
+body.tgfs.movil #mini{top:8px;}
 /* Premio de chicha siempre a la vista (v296) */
 #chicha3{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);z-index:3;pointer-events:auto;cursor:pointer;background:rgba(74,20,110,.82);border:1px solid #c084fc;border-radius:999px;color:#fde68a;font:700 11px var(--sans);padding:3px 10px;white-space:nowrap;max-width:calc(100vw - 16px);overflow:hidden;text-overflow:ellipsis;box-shadow:0 2px 8px rgba(0,0,0,.35);}
 #chicha3.listo{background:#7c3aed;color:#fff;animation:chichaPulso 1.6s ease-in-out infinite;}
@@ -523,6 +530,6 @@ body.movil #chicha3,body.compacto #chicha3{bottom:calc(62px + env(safe-area-inse
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script src="/js/config.js"></script>
-<script type="module" src="/mundo/js/mundo.js?v=299"></script>
+<script type="module" src="/mundo/js/mundo.js?v=300"></script>
 </body>
 </html>

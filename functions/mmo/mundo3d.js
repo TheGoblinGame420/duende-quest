@@ -294,9 +294,12 @@ export const Mundo3D = {
     s.atkT = Math.max(ahora, s.atkT || 0) + (vara ? VARA.cdMs * arma.cd : 1000 * arma.cd);
     if (s.montado) this.desmontar(s);
     // pegar3d: critico, forja, fuego, Grito, elixires y el x2 del Sigilo.
-    const r = this.pegar3d(s, o, vara ? VARA.mult : 3.6 * (arma.dano || 1), 1);
+    // La vara tambien escala con el arma (antes las dagas doblaban su DPS y la odachi lo bajaba).
+    const r = this.pegar3d(s, o, (vara ? VARA.mult : 3.6) * (arma.dano || 1), 1);
     if (!r) return;
     const real = r[1], crit = r[2] === 1;
+    // Ira al pegar (en CLASSIC +3 por golpe del combo; aqui un golpe por segundo).
+    if (real > 0 && CLASES[s.c.clase] && CLASES[s.c.clase].recurso === 'ira') s.rec = Math.min(100, (s.rec || 0) + 9 + (crit ? 4 : 0));
     this.aCerca3d(o, { t: 'at3', p: s.id, tg: o.id, d: real, c: crit ? 1 : 0, v: vara ? 1 : 0 });
     const robo = ((SKINS[s.c.skin] || {}).buffs || {}).robo || 0;
     if (robo) s.hp = Math.min(s.st.maxHp, s.hp + real * robo);
@@ -316,7 +319,8 @@ export const Mundo3D = {
     s.atkT = Math.max(ahora, s.atkT || 0) + (vara ? VARA.cdMs * arma.cd : 1000 * arma.cd);
     if (s.montado) this.desmontar(s);
     this.aCerca3d({ x: s.p.x, z: s.p.z, i3: s.i3 }, { t: 'atp3', p: s.id, tg: t.id, v: vara ? 1 : 0 });
-    this.golpeDuelo(s, t, vara ? VARA.mult : 3.6 * (arma.dano || 1), true);
+    this.golpeDuelo(s, t, (vara ? VARA.mult : 3.6) * (arma.dano || 1), true);
+    if (CLASES[s.c.clase] && CLASES[s.c.clase].recurso === 'ira') s.rec = Math.min(100, (s.rec || 0) + 9);
   },
 
   danar3d(o, dmg, s, forzar) {
@@ -1317,6 +1321,12 @@ export const Mundo3D = {
         // Aparece junto al objetivo (embestida).
         const dx = obj.x - s.p.x, dz = obj.z - s.p.z, d = Math.hypot(dx, dz) || 1;
         let cx = obj.x - dx / d * 1.6, cz = obj.z - dz / d * 1.6;
+        // En el Abismo, nunca sobre el vacio: el punto mas cercano al monstruo que este en su isla.
+        if (!s.i3 && enAbismo(cx) && !islaEn(cx, cz)) {
+          let ok = false;
+          for (let k = 1.3; k >= 0.1; k -= 0.3) { const px = obj.x - dx / d * k, pz = obj.z - dz / d * k; if (islaEn(px, pz)) { cx = px; cz = pz; ok = true; break; } }
+          if (!ok) { cx = obj.x; cz = obj.z; }
+        }
         if (s.i3 && !caminable(cx, cz, 0.4)) {
           let ok = false;
           for (let k = 1.6; k <= d; k += 0.5) { const px = obj.x - dx / d * k, pz = obj.z - dz / d * k; if (caminable(px, pz, 0.4)) { cx = px; cz = pz; ok = true; break; } }
