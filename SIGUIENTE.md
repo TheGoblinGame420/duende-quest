@@ -3102,3 +3102,10 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Referencia: Descargas/duende_atleta_voz.mp4 (fotogramas con ffmpeg) y la mascota «Duende verde brindando».
 - modelos.js: `PIEL_DUENDE` #6cc644 → #8fd14f; orejas 0,56 → 0,62 y `orejaRot` 1,38 → 0,98 (hacia arriba); `partesOjosVideo()` (blanco, iris castaño #6b3f1f, pupila, brillo, ceja #3b2414 arqueada) con `ojosVideo: true` solo en el jugador; «Ojos grandes» (cara 5) igual que antes.
 - Arnés 852 bien.
+
+### Entrega manual de los pagos (27-oct-2026, `?v=317`, decisión del dueño)
+
+- world.js: `pedidoFirma` (SOL y $DUENDE confirmados en la cadena) y `pedidoPagadoStars` ya NO llaman a `entregarPedido({por:'auto'})`: el pedido queda `por_verificar` / `pagado` y al dueño le llega el aviso con /entregar y los botones Entregar/Anular. La verificación en la cadena y los pagos raros/tardíos siguen igual.
+- client.js: textos de la tienda («el equipo te entrega la compra»). data.js: comentario de SKINS.
+- Arnés: la prueba de Stars ahora comprueba que no se entrega sola y que /entregar la entrega. 853 bien.
+- Sin tocar: donaciones, staking, wallet.js, la tienda de skins de la web (helius-verify).

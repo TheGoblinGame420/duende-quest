@@ -2640,13 +2640,15 @@ async function pruebasSkinsDinero() {
     mundo.pedidos.push({ codigo: 'SKN002', uid: j.c.uid, jugador: j.c.nombre, paquete: 'skin_king', nombre: pq.nombre, usd: pq.usd, metodo: 'sol', creado: Date.now(), estado: 'pagado' });
     await mundo.entregarPedido({ codigo: 'SKN002' });
     chequear(j.c.oro === oro0 + D.SKINS.king.precio, 'si ya la tenía, recibe su precio en oro');
-    // v292: un pago de Stars correcto (misma cuenta y Stars pedidas) se entrega solo.
+    // Desde el 27-oct: un pago de Stars correcto NO se entrega solo; le llega al dueño para /entregar.
     const uid0 = j.c.uid, avisoAdm = mundo.avisarAdmin, admin = []; mundo.avisarAdmin = async t => { admin.push(t); };
     const skins0 = [...j.c.skins], skin0 = j.c.skin;
     j.c.uid = 'tg:7770001'; mundo.porUid.set(j.c.uid, j); j.c.skins = ['comun'];
     mundo.pedidos.push({ codigo: 'STR001', uid: j.c.uid, jugador: j.c.nombre, paquete: 'skin_necro', nombre: 'Skin Nigromante', usd: D.SKINS.necro.usd, metodo: 'stars', stars: 154, creado: Date.now(), estado: 'esperando_pago' });
     const rs = await mundo.pedidoPagadoStars({ codigo: 'STR001', tgId: '7770001', stars: 154, charge: 'ch1' });
-    chequear(rs.ok && j.c.skins.includes('necro') && mundo.buscarPedido('STR001').estado === 'entregado' && admin.some(t => /Entregado automáticamente/.test(t)), 'un pago de Stars correcto se entrega solo');
+    chequear(rs.ok && !j.c.skins.includes('necro') && mundo.buscarPedido('STR001').estado === 'pagado' && admin.some(t => t.includes('/entregar STR001')), 'un pago de Stars correcto le llega al dueño y no se entrega solo');
+    const entS = await mundo.entregarPedido({ codigo: 'STR001', por: 'bot' });
+    chequear(entS.ok && j.c.skins.includes('necro'), 'y con /entregar llega la skin');
     // De otra cuenta: no se entrega, queda para revisar.
     mundo.pedidos.push({ codigo: 'STR002', uid: j.c.uid, jugador: j.c.nombre, paquete: 'skin_tactico', nombre: 'Skin Táctico', usd: 1, metodo: 'stars', stars: 77, creado: Date.now(), estado: 'esperando_pago' });
     await mundo.pedidoPagadoStars({ codigo: 'STR002', tgId: '999', stars: 77, charge: 'ch2' });

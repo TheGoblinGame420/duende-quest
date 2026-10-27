@@ -17,7 +17,7 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=316';
+} from './data.js?v=317';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -3017,7 +3017,7 @@ let premiumFoco = '';
 function htmlPremium() {
   const cuentaTg = !!TG && !forzarInvitado;
   const cuenta = yo && yo.p2e && yo.p2e.cuenta;
-  let h = '<p style="font-size:13px;line-height:1.45;color:var(--txt2);margin-bottom:10px">Compras opcionales para apoyar el juego. En cuanto se confirma el pago, la compra se entrega sola en tu personaje (vale en CLASSIC y ORIGINS); te avisamos aquí y por Telegram. En la web se paga con SOL o con $DUENDE (10% de descuento). Con dinero <b>no</b> se compran mTON: solo se ganan jugando.</p>';
+  let h = '<p style="font-size:13px;line-height:1.45;color:var(--txt2);margin-bottom:10px">Compras opcionales para apoyar el juego. Cuando se confirma el pago, el equipo te entrega la compra en tu personaje (vale en CLASSIC y ORIGINS); te avisamos aquí y por Telegram. En la web se paga con SOL o con $DUENDE (10% de descuento). Con dinero <b>no</b> se compran mTON: solo se ganan jugando.</p>';
   // La skin elegida desde la pestaña Skins va primero.
   const lista = PAQUETES.slice().sort((a, b) => (b.id === premiumFoco) - (a.id === premiumFoco));
   for (const pq of lista) {
@@ -3092,7 +3092,7 @@ function mostrarPedidoSol(m) {
     `<p style="font-size:12px;margin-top:8px">Y pega aquí la firma (signature) de la transacción:</p>` +
     `<input class="nombre" id="in-firma" placeholder="Firma de la transacción" style="font-size:10px;margin:6px 0">` +
     `<button class="btn sec" id="b-firma" style="width:100%">Enviar comprobante</button>` +
-    `<p style="font-size:12px;color:var(--txt2);margin-top:8px">Tienes 30 minutos. El pago va directo a la wallet de El Duende; en cuanto se confirma en la red, la compra se entrega sola.</p>`;
+    `<p style="font-size:12px;color:var(--txt2);margin-top:8px">Tienes 30 minutos. El pago va directo a la wallet de El Duende; cuando se confirma en la red, el equipo te entrega la compra.</p>`;
   abrir('m-sol');
   const copiar = t => { try { navigator.clipboard.writeText(t); aviso('📋 Copiado', 'ok'); } catch (e) {} };
   $('b-copia-w').onclick = () => copiar(m.wallet);
@@ -4744,7 +4744,7 @@ function pintarTienda() {
       }
       else {
         acc = `<span class="precio">🪙 ${d.precio.toLocaleString('es', { useGrouping: 'always' })}</span><button class="btn" data-comprar="${tabTienda}" data-id="${id}" ${yo.oro < d.precio ? 'disabled' : ''}>Comprar</button>`;
-        // Skins: tambien con dinero; confirmado el pago exacto se entrega sola.
+        // Skins: tambien con dinero; confirmado el pago exacto, la entrega el dueño (manual).
         if (tabTienda === 'skin' && d.usd && yo.p2e && yo.p2e.cuenta) acc += (TG && !forzarInvitado)
           ? `<button class="btn sec" data-premium="skin_${id}" data-metodo="stars">${estrellasDe(d.usd)} Stars</button>`
           : `<button class="btn sec" data-premium="skin_${id}" data-metodo="sol">~$${d.usd} en SOL</button><button class="btn sec" data-premium="skin_${id}" data-metodo="duende">$DUENDE −10%</button>`;

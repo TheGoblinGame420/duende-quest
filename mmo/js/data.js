@@ -498,6 +498,9 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 85, fecha: '27 oct 2026', items: [
+    'Compras con SOL, $DUENDE o Stars: cuando se confirma tu pago, el equipo te entrega la compra en tu personaje y te avisa aquí y por Telegram.',
+  ] },
   { n: 84, fecha: '27 oct 2026', items: [
     'Tu duende 3D se parece más a la mascota de $DUENDE: piel verde lima, orejas largas hacia arriba, ojos grandes y amables con cejas marcadas. Los goblins enemigos siguen con su cara de pícaros.',
   ] },
@@ -1299,7 +1302,7 @@ export const SKINS = {
   comun:      { nombre: 'Duende',      img: 'skin_hero',           precio: 0,      color: '#00eeff', buffs: null, desc: 'El duende de siempre' },
   // usd: tambien se venden con dinero (SOL o $DUENDE en la web, Stars en
   // Telegram); el pago va a la wallet de El Duende y, confirmado el pago
-  // exacto, se entrega solo (entregarPedido por 'auto' en world.js).
+  // exacto, lo entrega el dueño a mano (/entregar o Modo Dios; desde el 27-oct-2026 no hay entrega automática).
   tactico:    { nombre: 'Táctico',     img: 'skin_tactico',        precio: 3000,   usd: 2,  color: '#00ff88', buffs: { oroMult: 1.1, critBonus: .03 }, desc: '+10% oro · +3% crítico' },
   necro:      { nombre: 'Nigromante', img: 'skin_necromancer',    precio: 9000,   usd: 4,  color: '#b44cff', buffs: { oroMult: 1.2, robo: .05, xpMult: 1.05 }, desc: '+20% oro · roba 5% de vida · +5% experiencia' },
   king:       { nombre: 'Rey',        img: 'skin_king',           precio: 20000,  usd: 7,  color: '#ffd84a', buffs: { oroMult: 1.3, bonusHp: 20, defMult: 1.1 }, desc: '+30% oro · +HP extra · +10% defensa' },
