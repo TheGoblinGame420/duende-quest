@@ -19,7 +19,7 @@
 // piezas fijas de cada pivote se funden en una malla (fusionarRig): ~6-14 draw calls.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo } from '/mmo/js/data.js?v=315';
+import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo } from '/mmo/js/data.js?v=316';
 
 const PX_M = 34;                 // pixeles del 2D por metro
 const PI = Math.PI;
@@ -722,7 +722,7 @@ function humano(r, o) {
       ['esfera', hx(osc(piel, 0.9)), [0, 0.15, 0.4], [0.05, 0.045, 0.05]]], null, null, null, H);
   }
   if (o.ojos === 'duende') {
-    MF(cb, o.ojosGrandes ? partesOjos(true) : partesOjos2D(piel), null, null, null, H);
+    MF(cb, o.ojosGrandes ? partesOjos(true) : o.ojosVideo ? partesOjosVideo() : partesOjos2D(piel), null, null, null, H);
   } else if (o.ojos) {
     const ojo = mat(o.ojos, { e: 1 });
     for (const x of [-1, 1]) M(cb, 'esferaB', ojo, [x * 0.1 * H, 0.31 * H, 0.25 * H], [0.06 * H, 0.045 * H, 0.03 * H]);
@@ -741,6 +741,20 @@ function partesOjos2D(piel) {
     P.push(['esferaB', '#f59e0b', [x * 0.1, 0.298, 0.268], [0.036, 0.036, 0.014]]);
     P.push(['esferaB', '#1b1430', [x * 0.1, 0.298, 0.276], [0.014, 0.027, 0.008]]);
     P.push(['caja', ceja, [x * 0.11, 0.352, 0.24], [0.15, 0.05, 0.07], [0, 0, x * 0.42]]);
+  }
+  return P;
+}
+// Ojos del duende de los videos del dueño (Descargas/duende_atleta_voz.mp4 y la
+// mascota): grandes y amables, blanco, iris castaño, pupila con brillo y cejas
+// castaño oscuro algo arqueadas (no fruncidas como los goblins enemigos).
+function partesOjosVideo() {
+  const P = [];
+  for (const x of [-1, 1]) {
+    P.push(['esfera', '#fbfaf5', [x * 0.105, 0.305, 0.238], [0.085, 0.092, 0.05]]);
+    P.push(['esferaB', '#6b3f1f', [x * 0.1, 0.3, 0.282], [0.05, 0.056, 0.02]]);
+    P.push(['esferaB', '#160f0a', [x * 0.1, 0.3, 0.297], [0.026, 0.03, 0.01]]);
+    P.push(['esferaB', '#ffffff', [x * 0.088, 0.318, 0.305], [0.014, 0.014, 0.006]]);
+    P.push(['caja', '#3b2414', [x * 0.112, 0.392, 0.255], [0.13, 0.034, 0.05], [0, 0, -x * 0.12]]);
   }
   return P;
 }
@@ -927,7 +941,8 @@ function auraSuelo(r, c, radio = 0.6) {
 }
 
 // ═══════════ EL DUENDE (jugador) ═══════════
-const PIEL_DUENDE = '#6cc644';
+// Verde lima de los duendes de los videos del dueño (antes '#6cc644', mas oscuro con la luz).
+const PIEL_DUENDE = '#8fd14f';
 // Ropa de cada skin, sacada de su imagen 2D (assets/skins/*.png).
 const ROPA_SKIN = {
   // Duende de siempre (heroe de la hoja animada): cuero marron con hebillas de bronce.
@@ -1103,7 +1118,8 @@ export function crearDuende({ skin = 'comun', clase = null, arma = 'katana', loo
   humano(r, {
     piel: PIEL_DUENDE, ropa, ropaMat: mat(ropa, brilla ? { e: 0.3 } : null),
     pantalon: R0.pantalon, botas: R0.botas, cinto: R0.cinto || '#3a2412',
-    cabeza: 'duende', ojos: 'duende', ojosGrandes: lk.cara === 5, nariz: lk.cara === 5 ? 'bola' : 'gancho', orejas: 0.56, orejaRot: 1.38, manoG: 1.18, cab: 1.18, L: 0.45, T: 0.46, A: 0.38,
+    // Orejas largas hacia arriba y afuera, como en los videos (antes casi horizontales).
+    cabeza: 'duende', ojos: 'duende', ojosGrandes: lk.cara === 5, ojosVideo: true, nariz: lk.cara === 5 ? 'bola' : 'gancho', orejas: 0.62, orejaRot: 0.98, manoG: 1.18, cab: 1.18, L: 0.45, T: 0.46, A: 0.38,
     ancho: cpo.ancho, panza: cpo.panza, grueso: cpo.grueso,
   });
   const cc = cl ? CLASES[cl].color : ropa;

@@ -498,6 +498,9 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 84, fecha: '27 oct 2026', items: [
+    'Tu duende 3D se parece más a la mascota de $DUENDE: piel verde lima, orejas largas hacia arriba, ojos grandes y amables con cejas marcadas. Los goblins enemigos siguen con su cara de pícaros.',
+  ] },
   { n: 83, fecha: '27 oct 2026', items: [
     'Móvil y Telegram: más juego y menos ventanas. Los avisos salen pequeños arriba (como mucho dos) y ya no tapan a tu duende, el premio del día es un aviso corto en vez de una ventana, la leyenda se abre sola solo la primera vez (la barra morada de la chicha sigue siempre a la vista) y el editor de apariencia ya no se abre solo (está en ⋯ → 🪞).',
   ] },

@@ -3096,3 +3096,9 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - mundo.js (COMPACTO): `aviso` como mucho 2; `mostrarDiario` = aviso corto (salvo la vuelta tras días fuera); `leyendaPrimeraVez` una vez por dispositivo (`dq_leyenda_vista`); el editor de apariencia no se abre solo.
 - Comprobación: `node --input-type=module --check` (el `node --check` normal NO analiza estos archivos como módulos y dejó pasar un comentario que se comía código; arreglado antes de publicar).
 - Arnés 852 bien.
+
+### Duende 3D según los videos del dueño (27-oct-2026, `?v=316`)
+
+- Referencia: Descargas/duende_atleta_voz.mp4 (fotogramas con ffmpeg) y la mascota «Duende verde brindando».
+- modelos.js: `PIEL_DUENDE` #6cc644 → #8fd14f; orejas 0,56 → 0,62 y `orejaRot` 1,38 → 0,98 (hacia arriba); `partesOjosVideo()` (blanco, iris castaño #6b3f1f, pupila, brillo, ceja #3b2414 arqueada) con `ojosVideo: true` solo en el jugador; «Ojos grandes» (cara 5) igual que antes.
+- Arnés 852 bien.
