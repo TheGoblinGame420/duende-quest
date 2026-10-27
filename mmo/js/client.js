@@ -17,7 +17,7 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=313';
+} from './data.js?v=314';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -2937,7 +2937,8 @@ function cargarTonConnect() {
   if (window.TON_CONNECT_UI) return Promise.resolve();
   return new Promise((ok, mal) => {
     const sc = document.createElement('script');
-    sc.src = 'https://cdn.jsdelivr.net/npm/@tonconnect/ui@2/dist/tonconnect-ui.min.js';
+    // Version fija con su huella (27-oct): con @2 el CDN servia la ultima 2.x publicada sin comprobarla.
+    sc.src = 'https://cdn.jsdelivr.net/npm/@tonconnect/ui@2.4.4/dist/tonconnect-ui.min.js'; sc.integrity = 'sha384-sSX7t/8RIb6F0lgKBLCCytcRdsJv/+lBzIvFAnTlX7HymE9i9wCFIFOQ4iH7dJWO'; sc.crossOrigin = 'anonymous';
     sc.onload = ok; sc.onerror = () => mal(new Error('No se pudo cargar TON Connect'));
     document.head.appendChild(sc);
   });

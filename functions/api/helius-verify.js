@@ -163,12 +163,25 @@ async function onRequestPost(context) {
       const pago = await buscarPagoPorReferencia(env.HELIUS_API_KEY, reference, orden.expected_lamports);
       if (!pago) return j({ success: false, error: 'payment_not_found', detail: 'No se encontró el pago todavía. Espera unos segundos y reintenta.' }, 402);
 
+      // Una transaccion paga UNA orden: si su firma ya cerro otra (una tx con las
+      // referencias de varias ordenes y un solo pago), no vale para esta.
+      const usada = await supabaseQuery(env, `sol_orders?tx_signature=eq.${enc(pago.tx_signature)}&select=reference&limit=2`);
+      if (Array.isArray(usada) && usada.some(o => o.reference !== reference)) return j({ error: 'tx_already_used', detail: 'Ese pago ya se usó para otra compra.' }, 409);
+
       // tx_signature es UNIQUE en skin_purchases: cierra la carrera si dos
       // peticiones llegan a la vez para la misma orden.
       const marcada = await supabaseQuery(env, `sol_orders?reference=eq.${enc(reference)}&status=eq.pending`, {
         method: 'PATCH', body: { status: 'filled', wallet_address: pago.wallet_address, tx_signature: pago.tx_signature, filled_at: new Date().toISOString() },
       });
+      if (marcada && marcada.code === '23505') return j({ error: 'tx_already_used', detail: 'Ese pago ya se usó para otra compra.' }, 409);   // indice UNIQUE de sql/07
       if (!Array.isArray(marcada) || marcada.length !== 1) return j({ success: true, already_owned: true }); // otra peticion ya la proceso
+      // Carrera entre dos ordenes con la misma tx (sin el indice UNIQUE de sql/07): la
+      // que llego segunda se devuelve a 'pending'.
+      const conEsaTx = await supabaseQuery(env, `sol_orders?tx_signature=eq.${enc(pago.tx_signature)}&select=reference,filled_at&order=filled_at.asc,reference.asc`);
+      if (Array.isArray(conEsaTx) && conEsaTx.length > 1 && conEsaTx[0].reference !== reference) {
+        await supabaseQuery(env, `sol_orders?reference=eq.${enc(reference)}`, { method: 'PATCH', body: { status: 'pending', wallet_address: null, tx_signature: null, filled_at: null } });
+        return j({ error: 'tx_already_used', detail: 'Ese pago ya se usó para otra compra.' }, 409);
+      }
 
       const yaLaTenia = await supabaseQuery(env, `skin_purchases?wallet_address=eq.${enc(pago.wallet_address)}&skin_id=eq.${enc(orden.skin_id)}&select=id`);
       if (Array.isArray(yaLaTenia) && yaLaTenia.length > 0) return j({ success: true, already_owned: true, wallet_address: pago.wallet_address });
@@ -178,7 +191,12 @@ async function onRequestPost(context) {
       // reference es publica en la cadena en cuanto se paga, y antes quien llamaba
       // primero con su telegram_id se quedaba la skin de un pago ajeno.
       purchaseData.telegram_id = orden.telegram_id ? String(orden.telegram_id) : 'wallet_' + pago.wallet_address.slice(0, 8);
-      await supabaseQuery(env, 'skin_purchases', { method: 'POST', body: purchaseData });
+      // Solo se responde «listo» si la compra quedo guardada (antes el INSERT podia fallar en silencio).
+      const guardada = await supabaseQuery(env, 'skin_purchases', { method: 'POST', body: purchaseData });
+      if (!Array.isArray(guardada) || guardada.length !== 1) {
+        const ya = await supabaseQuery(env, `skin_purchases?tx_signature=eq.${enc(pago.tx_signature)}&select=id&limit=1`);
+        if (!(Array.isArray(ya) && ya.length)) { console.error('[skin] INSERT fallido', reference, JSON.stringify(guardada).slice(0, 200)); return j({ error: 'save_failed', detail: 'Tu pago está registrado pero no pudimos guardar la skin: escríbenos con este código.', reference }, 500); }
+      }
       return j({ success: true, sol: pago.sol, wallet_address: pago.wallet_address });
     }
 

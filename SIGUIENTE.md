@@ -3080,3 +3080,12 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - dios.js: `RESERVADO_ESQ` + `esqueleto()` (i/l/1/| → l, 0/ø → o, 3 → e, 4/@ → a, 5/$ → s, 7 → t, ð → d, rn → m) solo para los nombres reservados; la unicidad entre jugadores no cambia (no se tocan las claves `n:` guardadas).
 - world.js: `herir` anota `s.pvpT`; `cerrar()` en el Abismo (fuera de instancia, vivo) sobre el vacío o con `pvpT` < 10 s pone `s.muerto` (guardar lo pasa a `c.muerto`; si estaba en una isla, `muertoPvP` sin perder XP). Import de `enAbismo`/`islaEn`.
 - Arnés: prueba de cerrar sobre el vacío; las pruebas que salen del Abismo vuelven a tierra o limpian `pvpT` (muchas comparten el mismo personaje). 850 bien.
+
+### Pagos del INFORME-260 (27-oct-2026, `?v=314`, con el visto bueno del dueño)
+
+- Regla del dueño: los pagos son manuales (depositan y él entrega con Modo Dios); donaciones y staking NO se tocan. Por eso `wallet.js` (ton_buy/ton_sell) y la factura de Stars quedan igual.
+- helius-verify.js (skins con SOL): una `tx_signature` solo cierra una orden (409 `tx_already_used`, también si dos órdenes se cierran a la vez: la segunda vuelve a 'pending'); el INSERT de la compra se comprueba (500 `save_failed` con la referencia si no quedó guardada). sql/07-pagos-oct.sql: índices UNIQUE de `tx_signature` en sol_orders y skin_purchases (pendiente de ejecutar en Supabase).
+- world.js: los montos de $DUENDE se reservan como los de SOL (30 intentos o «tienda ocupada»); `pagoTarde()` = pago confirmado más de 2 min después de vencer el pedido → estado `por_verificar`, aviso «⏰ FUERA DE PLAZO» al dueño con /entregar o /anular, sin entrega automática.
+- lib.js `getDuendePriceSeguro(modo)`: pump.fun + el par de DexScreener con más liquidez (≥ 5.000 USD); si difieren > 10 %, null; 'compra' el mayor, 'venta' el menor. Solo lo usa `precioDuendeSeguro` del MMO.
+- SRI: @tonconnect/ui@2.4.4 (el mismo archivo que servía @2) en game.html, telegram/index.html y client.js; @solana/web3.js@1.99.0 en index.html. Comprobado que cargan.
+- Arnés +2 pruebas (pago tardío a revisión, montos $DUENDE únicos). 852 bien.

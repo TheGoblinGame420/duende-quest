@@ -2562,15 +2562,24 @@ async function pruebasPagoSol() {
     tx = txDe(pA2.lamports + 5e6);
     await mundo.pedidoFirma(A, { codigo: pA2.codigo, firma: '7'.repeat(88) });
     chequear(mundo.buscarPedido(pA2.codigo).estado === 'esperando_pago', 'un monto distinto al del pedido no se da por pagado');
-    // Pago tardio (a los 31 min): no se pierde.
+    // Pago tardio (a los 33 min, con el precio viejo): no se pierde, pero no se entrega solo.
     C.limpiar(); await mundo.pedido(C, { id: 'skin_king', metodo: 'sol' });
     const pC = C.ultimos('pedidoSol').pop();
-    avanzar(31 * 60000);
+    avanzar(33 * 60000);
     await mundo.guardarPedidos();
     chequear(mundo.buscarPedido(pC.codigo).estado === 'vencido', 'a los 30 min el pedido sin pagar caduca');
     tx = txDe(pC.lamports);
     await mundo.pedidoFirma(C, { codigo: pC.codigo, firma: '6'.repeat(88) });
     chequear(mundo.buscarPedido(pC.codigo).estado === 'por_verificar' && admin.some(t => t.includes(pC.codigo)), 'pagar después de los 30 min igual llega al dueño');
+    chequear(admin.some(t => t.includes(pC.codigo) && /FUERA DE PLAZO/.test(t)) && !C.c.skins.includes('king'), 'pero con el precio viejo no se entrega solo: lo revisa el dueño');
+    // $DUENDE: dos pedidos vivos nunca comparten monto (la cadena no dice para quien era el pago).
+    const montosD = new Set();
+    for (const u of [A, V]) { u.c.uid = u === A ? 'web:tramposo' : 'web:victima'; }
+    mundo.preciosD = [{ t: Date.now(), p: 0.0001 }];
+    for (let i = 0; i < 2; i++) for (const u of [A, V]) { u.limpiar(); await mundo.pedido(u, { id: 'skin_tactico', metodo: 'duende' }); const pd = u.ultimos('pedidoSol').pop(); if (pd) montosD.add(pd.raw); }
+    const vivosD = mundo.pedidos.filter(x => x.metodo === 'duende' && x.estado === 'esperando_pago');
+    chequear(vivosD.length >= 2 && new Set(vivosD.map(x => x.duendeRaw)).size === vivosD.length, 'los pedidos en $DUENDE tienen monto propio, sin repetirse');
+    for (const x of vivosD) await mundo.anularPedido({ codigo: x.codigo, motivo: 'prueba' });
     // /ventas: lo entregado (las skins King de las pruebas anteriores) y lo pendiente.
     const vt = await interno('ventas');
     chequear(vt.ok && vt.d7.n >= 1 && vt.d7.sol >= 1 && vt.d7.top.some(x => /Skin Rey/.test(x.nombre)) && vt.pendientes >= 1, '/ventas resume lo entregado (7 y 30 días, por método y lo más vendido) y lo pendiente');

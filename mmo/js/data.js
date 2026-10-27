@@ -498,6 +498,10 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 82, fecha: '27 oct 2026', items: [
+    'Pagos más seguros: cada pago en la cadena vale para un solo pedido, los pedidos en $DUENDE nunca comparten monto, un pago hecho después del plazo lo revisa el equipo a mano y el precio de $DUENDE se comprueba con dos fuentes.',
+    'Las librerías de las wallets (TON Connect y Solana) se cargan con versión fija y huella verificada.',
+  ] },
   { n: 81, fecha: '26 oct 2026', items: [
     'Nadie puede hacerse pasar por el equipo con letras parecidas (Adm1n, EIDuende, M0derador…): esos nombres quedan reservados.',
     'En el Abismo, cerrar el juego sobre el vacío o justo después de un golpe de la otra facción cuenta como caer (antes era una huida gratis al pueblo).',

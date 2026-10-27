@@ -24,7 +24,7 @@ import {
   CONJUNTOS, CONJUNTO_PROB,
   semanaUTC, horaFelizActiva, HORA_FELIZ, PASE, MAESTRIA_XP, premioMaestria, afijosSemana, DES_SEM_MIN, premioDesSem, BESTIARIO_HITOS, premioBestiario, talento, TALENTOS, TALENTO_MAX, puntosTalento, costoReinicioTalentos, costoReparacion, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX, limpiarLook, ALAS,
 } from '../../mmo/js/data.js';
-import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery, tg, getSolPriceUsd, getDuendePriceUsd, SOL_DEV_WALLET } from '../api/lib.js';
+import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery, tg, getSolPriceUsd, getDuendePriceSeguro, SOL_DEV_WALLET } from '../api/lib.js';
 import { MMO_URL } from '../api/telegram-bot.js';
 import { Cueva3D } from './cueva3d.js';
 import { Encargos } from './encargos.js';
@@ -144,6 +144,10 @@ const botonesPedido = codigo => [[{ text: '✅ Entregar', callback_data: 'mmoent
 
 // Doble salto: 11,5²/1,2 + 10²/1,2 ≈ 194 px; margen por los fotogramas.
 const MAX_SALTO = 215;
+// Pago confirmado mas de 2 min despues de que vencio el pedido (30 min): se pago
+// con el precio de entonces y lo revisa el dueño (no se entrega solo).
+const pagoTarde = (tx, desde) => !!(tx.tiempo && tx.tiempo > desde + PEDIDO_VIGENCIA_MS + 120000);
+
 export class MmoWorld {
   constructor(state, env) {
     this.state = state;
@@ -926,7 +930,13 @@ export class MmoWorld {
       if (!precioD) return no('No se pudo leer el precio de $DUENDE ahora. Intenta en un minuto o paga con SOL.');
       const usd = pq.usd * DUENDE_DESCUENTO;
       // Unidades minimas (6 decimales) con 4 cifras finales propias del pedido.
-      const raw = Math.ceil(usd / precioD * 10 ** DUENDE_DECIMALES / 1e4) * 1e4 + 1 + Math.floor(Math.random() * 9998);
+      // Como en SOL, el monto queda reservado: dos pedidos vivos con el mismo
+      // monto dejaban que otro se quedara con un pago ajeno (la cadena no dice para quien era).
+      const baseD = Math.ceil(usd / precioD * 10 ** DUENDE_DECIMALES / 1e4) * 1e4;
+      const ocupadoD = r => this.pedidos.some(x => x.metodo === 'duende' && x.duendeRaw === r && x.estado !== 'entregado' && x.estado !== 'anulado');
+      let raw = 0;
+      for (let i = 0; i < 30; i++) { const r = baseD + 1 + Math.floor(Math.random() * 9998); if (!ocupadoD(r)) { raw = r; break; } }
+      if (!raw) return no('La tienda está muy ocupada ahora mismo: intenta en unos minutos o paga con SOL.');
       if (!Number.isSafeInteger(raw)) return no('El precio de $DUENDE no permite calcular el monto. Paga con SOL.');
       pd.duendeRaw = raw; pd.precioDuende = precioD;
       this.pedidos.push(pd);
@@ -939,7 +949,9 @@ export class MmoWorld {
     // wallet, El Duende lo reconoce en Solscan solo por el monto.
     const base = Math.ceil(pq.usd / precio * 1e9 / 1e4) * 1e4;
     const ocupado = l => this.pedidos.some(x => x.metodo === 'sol' && x.lamports === l && x.estado !== 'entregado' && x.estado !== 'anulado');
-    for (let i = 0; i < 30; i++) { pd.lamports = base + 1 + Math.floor(Math.random() * 9998); if (!ocupado(pd.lamports)) break; }
+    let libre = false;
+    for (let i = 0; i < 30; i++) { pd.lamports = base + 1 + Math.floor(Math.random() * 9998); if (!ocupado(pd.lamports)) { libre = true; break; } }
+    if (!libre) return no('La tienda está muy ocupada ahora mismo: intenta en unos minutos.');
     pd.ref = claveAzar();   // 'reference' de Solana Pay: identifica el pago en la cadena
     pd.precioSol = precio;
     this.pedidos.push(pd);
@@ -956,7 +968,7 @@ export class MmoWorld {
     const h = (this.preciosD = (this.preciosD || (await this.state.storage.get('preciosD')) || []).filter(x => ahora - x.t < 6 * 3600000));
     const ult = h[h.length - 1];
     if (!ult || ahora - ult.t > 10 * 60000) {
-      const p = await getDuendePriceUsd(true);
+      const p = await getDuendePriceSeguro('venta');   // dos fuentes que coincidan; el menor (pagas mas tokens, nunca menos)
       if (p) { h.push({ t: ahora, p }); await this.state.storage.put('preciosD', h); }
     }
     return h.length ? Math.min(...h.map(x => x.p)) : null;
@@ -1009,6 +1021,15 @@ export class MmoWorld {
     // la cadena, firma no usada antes) ya paso; el dueño solo recibe el aviso.
     const esD = pd.metodo === 'duende';
     const monto = esD ? (pd.duendeRaw / 10 ** DUENDE_DECIMALES).toLocaleString('es', { maximumFractionDigits: 6 }) + ' $DUENDE' : (pd.lamports / 1e9).toFixed(9) + ' SOL';
+    // Pagado despues del plazo (precio viejo): no se entrega solo, lo revisa el dueño.
+    // Asi nadie espera a que baje SOL o $DUENDE para pagar un pedido viejo, y quien pago
+    // tarde de buena fe no pierde su dinero.
+    if (cadena.tarde) {
+      no('📨 Recibimos tu pago, pero llegó después del plazo del pedido (30 min). El equipo lo revisa y te escribe: si el precio cambió mucho te ofrece la entrega o la devolución.');
+      this.actualizarYo(s);
+      this.avisarAdmin(`⏰ *Pedido #${pd.codigo} pagado FUERA DE PLAZO* — ${pd.nombre} ($${pd.usd})\n👤 ${pd.jugador.replace(/[^\p{L}\p{N} ]/gu, '')}\n💰 ${monto} al precio de hace más de 30 min\n🔗 https://solscan.io/tx/${firma}\n\nRevisa el precio actual y decide: /entregar ${pd.codigo}, o devuélvelo y /anular ${pd.codigo}`, botonesPedido(pd.codigo));
+      return;
+    }
     const ent = await this.entregarPedido({ codigo: pd.codigo, por: 'auto' });
     if (ent.ok) no('✅ Pago confirmado en la cadena: tu compra ya está en tu personaje (vale en CLASSIC y ORIGINS).');
     else no('📨 Recibimos tu pago. Lo entregamos en breve (te avisamos aquí y por Telegram).');
@@ -1081,7 +1102,7 @@ export class MmoWorld {
     const t = tx.instr.find(x => x && x.program === 'system' && x.parsed && x.parsed.type === 'transfer' && x.parsed.info && x.parsed.info.destination === SOL_DEV_WALLET && Number(x.parsed.info.lamports) === Number(lamports));
     if (tx.tiempo && tx.tiempo < desde - 30000) return { ok: false, motivo: 'es un pago anterior al pedido', recibido: tx.recibidoSol };
     if (!t) return { ok: false, motivo: tx.recibidoSol > 0 ? `monto distinto: llegaron ${(tx.recibidoSol / 1e9).toFixed(9)} SOL y el pedido es de ${(lamports / 1e9).toFixed(9)}` : 'no hay una transferencia a tu wallet', recibido: tx.recibidoSol };
-    return { ok: true, recibido: lamports, de: t.parsed.info.source };
+    return { ok: true, recibido: lamports, de: t.parsed.info.source, tarde: pagoTarde(tx, desde) };
   }
 
   // Igual para el token $DUENDE: una transferencia SPL del mint correcto a una
@@ -1097,7 +1118,7 @@ export class MmoWorld {
       && Number(x.parsed.info.amount || (x.parsed.info.tokenAmount && x.parsed.info.tokenAmount.amount)) === raw);
     if (tx.tiempo && tx.tiempo < desde - 30000) return { ok: false, motivo: 'es un pago anterior al pedido', recibido: 0 };
     if (!t) return { ok: false, motivo: `no hay una transferencia de exactamente ${(raw / 10 ** DUENDE_DECIMALES).toLocaleString('es', { maximumFractionDigits: 6 })} $DUENDE a la wallet de El Duende`, recibido: 0 };
-    return { ok: true, recibido: raw, de: t.parsed.info.authority || t.parsed.info.source };
+    return { ok: true, recibido: raw, de: t.parsed.info.authority || t.parsed.info.source, tarde: pagoTarde(tx, desde) };
   }
 
   // Lee una transaccion confirmada (jsonParsed) con todas sus instrucciones,

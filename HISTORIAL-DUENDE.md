@@ -50,6 +50,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v311 | Jefes de zona con el Sorbo del Cántaro (hechizo interrumpible) | **B** |
 | v312 | Embudo de nuevos en /mmostats, vibración en móvil web | **B** |
 | v313 | Homoglifos en nombres reservados, cerrar en el Abismo cuenta como caer | **B** |
+| v314 | Pagos: una tx por orden, $DUENDE sin montos repetidos, tardíos a revisión manual, precio con dos fuentes, SRI wallets | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

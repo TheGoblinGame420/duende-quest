@@ -115,6 +115,34 @@ export async function getDuendePriceUsd(estricto = false) {
   return estricto ? null : 0.0000001; // floor fallback
 }
 
+// Precio de $DUENDE para MOVER DINERO (27-oct-2026). El de arriba toma la primera
+// fuente que responde y DexScreener daba pairs[0] (podia ser un par sin liquidez):
+// se podia bajar o subir el precio un momento y comprar o vender con el.
+// Aqui: pump.fun y el par de DexScreener con mas liquidez (minimo 5.000 USD). Si las
+// dos responden y difieren mas de un 10 %, null (no se mueve dinero). Con una sola,
+// vale esa. 'compra' (el jugador recibe tokens) usa el MAYOR de los dos: recibe menos;
+// 'venta' (entrega tokens o se los pagan) el MENOR. Nunca el respaldo fijo.
+export async function getDuendePriceSeguro(modo) {
+  const fuentes = [];
+  try {
+    const r = await fetch(PUMP_API, { signal: AbortSignal.timeout(5000) });
+    const d = await r.json();
+    const p = d && d.usd_market_cap ? parseFloat(d.usd_market_cap) / 1_000_000_000 : 0;
+    if (p > 0 && Number.isFinite(p)) fuentes.push(p);
+  } catch (e) {}
+  try {
+    const r = await fetch(DEXSCREENER_URL, { signal: AbortSignal.timeout(5000) });
+    const d = await r.json();
+    const par = (d?.pairs || []).filter(x => Number(x?.liquidity?.usd || 0) >= 5000).sort((a, b) => Number(b.liquidity.usd) - Number(a.liquidity.usd))[0];
+    const p = par ? parseFloat(par.priceUsd || 0) : 0;
+    if (p > 0 && Number.isFinite(p)) fuentes.push(p);
+  } catch (e) {}
+  if (!fuentes.length) return null;
+  const min = Math.min(...fuentes), max = Math.max(...fuentes);
+  if (max > min * 1.1) { console.warn('[precio $DUENDE] fuentes en desacuerdo', fuentes); return null; }
+  return modo === 'compra' ? max : min;
+}
+
 export async function getTonPriceUsd(estricto = false) {
   try {
     const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=the-open-network&vs_currencies=usd', { signal: AbortSignal.timeout(5000) });
