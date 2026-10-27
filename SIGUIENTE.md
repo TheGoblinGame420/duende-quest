@@ -3118,3 +3118,11 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - modelos.js `crearDuende({ atuendo })`: pirata, militar, vampiro, momia, campesino (sustituyen el tocado de clase); mundo.js los reparte entre los aventureros.
 - mundo.js: línea 📖 de la misión secundaria de la zona en el panel, historia al empezar y al terminar, diario en la leyenda.
 - Arnés +3 pruebas. 856 bien.
+
+### Stars del arcade con acreditación manual (27-oct-2026, `?v=319`, decisión del dueño: todo manual)
+
+- telegram-bot.js `successful_payment`: skin y compra de $DUENDE se registran en stars_purchases con `tokens_credited: 0` (el UNIQUE de tx_id sigue frenando reintentos), al dueño le llega el aviso con el comando exacto y al jugador «Pago recibido». La tienda del MMO (`payload.mmo`) ya era manual.
+- `/starsok CARGO cantidad` acredita $DUENDE (PATCH `tokens_credited=eq.0` como cerrojo y luego `add_duende_by_tgid`) y avisa al jugador; `/starsok CARGO skin:ID` guarda la skin (si la firma no estaba) y avisa.
+- telegram/index.html: los mensajes tras pagar ya no dicen «desbloqueada»/«acreditados».
+- Con esto todos los pagos (MMO, skins web, arcade con Stars) se entregan a mano. Sin tocar: donaciones, staking, wallet.js.
+- Arnés 856 bien.

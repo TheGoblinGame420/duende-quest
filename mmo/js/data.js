@@ -498,6 +498,9 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 87, fecha: '27 oct 2026', items: [
+    'Compras con Stars en el arcade (skins y $DUENDE): el equipo revisa cada pago y te lo acredita en breve; te avisamos por Telegram.',
+  ] },
   { n: 86, fecha: '27 oct 2026', items: [
     '20 misiones secundarias en ORIGINS: dos historias por zona contadas por la gente del bosque (la Abuela Sisa, el Chamán Amaru, la Herrera Coya, la Farera Quilla…). Salen solas en tu panel al llegar a cada zona y avanzan con lo que ya haces: cazar, recoger, pescar, abrir cofres y fabricar.',
     'Nuevas recetas con la Artesana Lila: Chicha Morada del Duende (+10% de oro y +5% de experiencia por caza durante 30 min) y Mazamorra Morada (5 pociones y un escudo).',

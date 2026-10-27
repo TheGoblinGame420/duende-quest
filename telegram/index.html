@@ -1248,13 +1248,10 @@ async function buySkinStars(skinId){
       statusEl.textContent='';
       tg.openInvoice(data.invoice_url,async function(status){
         if(status==='paid'){
-          // El registro de la compra lo hace el webhook del bot server-side (anti-fraude)
-          ownedSkins.push(skinId);
-          equipSkinTG(skinId);
-          statusEl.textContent='✅ ¡Skin desbloqueada!';statusEl.style.color='var(--ok)';
+          // Entrega manual (27-oct-2026): el equipo revisa el pago y activa la skin (/starsok).
+          statusEl.textContent='📨 Pago recibido. El equipo activa tu skin en breve (te avisamos por Telegram).';statusEl.style.color='var(--ok)';
           tgHaptic('heavy');
-          renderSkinShop();
-          setTimeout(()=>{statusEl.style.color='';statusEl.textContent='';},4000);
+          setTimeout(()=>{statusEl.style.color='';statusEl.textContent='';},8000);
         }else{
           statusEl.textContent='❌ Pago cancelado';
           setTimeout(()=>{statusEl.textContent='';},3000);
@@ -1531,7 +1528,7 @@ async function buyWithStars(pkgIndex){
       statusEl.textContent='';
       tg.openInvoice(data.invoice_url,function(status){
         if(status==='paid'){
-          statusEl.textContent='✅ ¡Pago exitoso! Tokens acreditados';
+          statusEl.textContent='📨 Pago recibido. El equipo acredita tus $DUENDE en breve (te avisamos por Telegram).';
           statusEl.style.color='#00ff88';
           tgHaptic('heavy');
           setTimeout(()=>{statusEl.style.color='#ffe600';},3000);

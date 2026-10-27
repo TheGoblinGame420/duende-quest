@@ -312,6 +312,32 @@ async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
   const fondoTxt = f => `Fondo de hoy: ${(f.total / 1000).toFixed(3)} TON (auto ${(f.auto / 1000).toFixed(3)} + tuyo ${(f.extra / 1000).toFixed(3)}) · repartido ${(f.gastado / 1000).toFixed(3)} TON`;
   // /skinweb REFERENCIA: activa a mano una skin de la web ya pagada y verificada en la
   // cadena (desde el 27-oct-2026 la web no la entrega sola: helius-verify avisa al dueño).
+  // /starsok CARGO cantidad | skin:ID — acredita a mano una compra del arcade con Stars.
+  if (cmd === '/starsok') {
+    if (!arg1 || !arg2) return enviar('Uso: /starsok CARGO 12345  (tokens)  o  /starsok CARGO skin:ID');
+    const sb = getEnv(context);
+    // Cerrojo: solo la fila aun sin acreditar (tokens_credited 0) pasa; dos comandos a la vez no pagan dos veces.
+    const filas = await supabaseQuery(sb, `stars_purchases?tx_id=eq.${encodeURIComponent(arg1)}&select=telegram_id,tokens_credited,amount_stars&limit=1`);
+    const f = Array.isArray(filas) ? filas[0] : null;
+    if (!f) return enviar('❌ No hay un pago con ese cargo.');
+    if (Number(f.tokens_credited) !== 0) return enviar('✅ Ese pago ya estaba acreditado.');
+    if (arg2.startsWith('skin:')) {
+      const skin = arg2.slice(5);
+      const ya = await supabaseQuery(sb, `skin_purchases?tx_signature=eq.${encodeURIComponent(arg1)}&select=id&limit=1`);
+      if (Array.isArray(ya) && ya.length) return enviar('✅ Esa skin ya estaba activada.');
+      const r = await supabaseQuery(sb, 'skin_purchases', { method: 'POST', body: { telegram_id: f.telegram_id, skin_id: skin, payment_type: 'stars', amount_paid: f.amount_stars, tx_signature: arg1 } });
+      if (!Array.isArray(r) || r.length !== 1) return enviar('❌ No se pudo guardar: ' + JSON.stringify(r).slice(0, 200));
+      await tg(token, 'sendMessage', { chat_id: f.telegram_id, text: `✅ Tu skin ${skin} ya está activada. ¡A jugar!` }).catch(() => {});
+      return enviar(`✅ Skin ${skin} activada para tg ${f.telegram_id}.`);
+    }
+    const tokens = parseInt(arg2, 10);
+    if (!(tokens > 0)) return enviar('❌ Cantidad no válida.');
+    const marcada = await supabaseQuery(sb, `stars_purchases?tx_id=eq.${encodeURIComponent(arg1)}&tokens_credited=eq.0`, { method: 'PATCH', body: { tokens_credited: tokens } });
+    if (!Array.isArray(marcada) || marcada.length !== 1) return enviar('✅ Ese pago ya estaba acreditado (o cambió mientras tanto).');
+    await supabaseQuery(sb, 'rpc/add_duende_by_tgid', { method: 'POST', body: { p_tg_id: f.telegram_id, p_amount: tokens } });
+    await tg(token, 'sendMessage', { chat_id: f.telegram_id, text: `✅ +${tokens.toLocaleString('es')} $DUENDE añadidos a tu saldo del juego. ¡Gracias por tu compra!` }).catch(() => {});
+    return enviar(`✅ ${tokens.toLocaleString('es')} $DUENDE acreditados a tg ${f.telegram_id}.`);
+  }
   if (cmd === '/skinweb') {
     if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(arg1 || '')) return enviar('Uso: /skinweb REFERENCIA (viene en el aviso de la compra)');
     const sb = getEnv(context);
@@ -648,16 +674,20 @@ async function onRequestPost(context) {
           return new Response('OK');
         }
 
-        // Skin purchase paid with Stars → record server-side (client no longer inserts)
+        // ENTREGA MANUAL (27-oct-2026, decision del dueño): las compras del arcade con
+        // Stars (skin o $DUENDE) se registran con tokens_credited 0 y al dueño le llega el
+        // aviso con el comando exacto; el acredita con /starsok tras revisarlo.
+        const avisarDueno = txt => context.env.ADMIN_TG_ID ? tg(token, 'sendMessage', { chat_id: context.env.ADMIN_TG_ID, text: txt, disable_web_page_preview: true }).catch(() => {}) : null;
+        const quien = (body.message.from.username ? '@' + body.message.from.username : body.message.from.first_name || '') + ' (tg ' + tgId + ')';
         if (payload.skin_id) {
           const reg = await supabaseQuery(env, 'stars_purchases', { method: 'POST', body: { telegram_id: tgId, amount_usd: starsPaid * STAR_USD, amount_stars: starsPaid, tokens_credited: 0, tx_id: chargeId } });
           if (!Array.isArray(reg) || reg.length !== 1) return new Response('OK');   // reintento del webhook
-          await supabaseQuery(env, 'skin_purchases', { method: 'POST', body: { telegram_id: tgId, skin_id: payload.skin_id, payment_type: 'stars', amount_paid: starsPaid, tx_signature: chargeId } });
-          await tg(token, 'sendMessage', { chat_id: chatId, text: `✅ *Skin desbloqueada*\n\nYa puedes equiparla en el juego.\nPagado: ${starsPaid} Stars`, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 Jugar', web_app: { url: WEBAPP_URL } }]] } });
+          await avisarDueno(`⭐ Skin del arcade pagada (por revisar)\nSkin: ${payload.skin_id} · ${starsPaid} Stars\nDe: ${quien}\n\nActívala:\n/starsok ${chargeId} skin:${payload.skin_id}`);
+          await tg(token, 'sendMessage', { chat_id: chatId, text: `✅ *Pago recibido* (${starsPaid} Stars)\n\nEl equipo revisa el pago y activa tu skin en breve. Te avisaremos aquí.`, parse_mode: 'Markdown' });
           return new Response('OK');
         }
 
-        // Token purchase: NEVER trust payload.tokens — recompute from the Stars actually paid
+        // Compra de $DUENDE: NUNCA se confia en payload.tokens — se recalcula con las Stars pagadas.
         const price = await getPrice();
         const priceUsd = price?.priceUsd || 0.0000001;
         const paidUsd = starsPaid * STAR_USD;
@@ -665,15 +695,10 @@ async function onRequestPost(context) {
         const firstBuyMult = (payload.first_buy && await isFirstPurchase(env, tgId)) ? 2 : 1;
         const maxTokens = Math.floor((paidUsd / priceUsd) * 1.05 * firstBuyMult); // 5% price-drift tolerance
         const tokens = Math.max(0, Math.min(parseInt(payload.tokens, 10) || 0, maxTokens)) || maxTokens;
-        if (tokens > 0) {
-          // Registrar ANTES de acreditar: tx_id es UNIQUE, asi que si Telegram
-          // reintenta el webhook o llegan dos a la vez, solo uno inserta y paga.
-          // Antes se acreditaba primero y el INSERT duplicado fallaba en silencio.
-          const reg = await supabaseQuery(env, 'stars_purchases', { method: 'POST', body: { telegram_id: tgId, amount_usd: +paidUsd.toFixed(2), amount_stars: starsPaid, tokens_credited: tokens, tx_id: chargeId } });
-          if (!Array.isArray(reg) || reg.length !== 1) return new Response('OK');
-          await supabaseQuery(env, 'rpc/add_duende_by_tgid', { method: 'POST', body: { p_tg_id: tgId, p_amount: tokens } });
-        }
-        await tg(token, 'sendMessage', { chat_id: chatId, text: `✅ *Pago completado*\n\n+${tokens.toLocaleString()} $DUENDE añadidos a tu saldo del juego.\nPagado: ${starsPaid} Stars`, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 Jugar', web_app: { url: WEBAPP_URL } }],[{ text: '⭐ Comprar más', callback_data: 'buy' }]] } });
+        const reg = await supabaseQuery(env, 'stars_purchases', { method: 'POST', body: { telegram_id: tgId, amount_usd: +paidUsd.toFixed(2), amount_stars: starsPaid, tokens_credited: 0, tx_id: chargeId } });
+        if (!Array.isArray(reg) || reg.length !== 1) return new Response('OK');
+        await avisarDueno(`⭐ Compra de $DUENDE con Stars (por revisar)\n${starsPaid} Stars (~$${paidUsd.toFixed(2)}) · le tocan ${tokens.toLocaleString('es')} $DUENDE${firstBuyMult > 1 ? ' (oferta 2x de 1ª compra)' : ''}\nDe: ${quien}\n\nAcredita:\n/starsok ${chargeId} ${tokens}`);
+        await tg(token, 'sendMessage', { chat_id: chatId, text: `✅ *Pago recibido* (${starsPaid} Stars)\n\nEl equipo revisa el pago y acredita tus $DUENDE en breve. Te avisaremos aquí.`, parse_mode: 'Markdown' });
       } catch(e) {
         await tg(token, 'sendMessage', { chat_id: chatId, text: '⚠️ Recibimos tu pago, pero hubo un error al acreditar los tokens. Escribe a @ElDuendeOficial (creador oficial) con la fecha y la cantidad de Stars para resolverlo.' });
       }
@@ -783,7 +808,7 @@ async function onRequestPost(context) {
         case '/buy': case '/comprar': case '/stars': await handleBuy(token, chatId, user.id); break;
         case '/help': case '/ayuda': await handleHelp(token, chatId); break;
         case '/creador': case '/creator': case '/oficial': await handleCreador(token, chatId); break;
-        case '/retiros': case '/pagado': case '/rechazar': case '/fondo': case '/pedidos': case '/ventas': case '/entregar': case '/anular': case '/mmostats': case '/chicha': case '/chichaok': case '/chichano': case '/skinweb': await handleMmoAdmin(token, context, chatId, user.id, cmd, payload); break;
+        case '/retiros': case '/pagado': case '/rechazar': case '/fondo': case '/pedidos': case '/ventas': case '/entregar': case '/anular': case '/mmostats': case '/chicha': case '/chichaok': case '/chichano': case '/skinweb': case '/starsok': await handleMmoAdmin(token, context, chatId, user.id, cmd, payload); break;
         case '/avisos': await handleAvisos(token, context, chatId, user.id, payload); break;
         case '/admin': await handleAdmin(token, env, context, chatId, user.id); break;
         case '/live': case '/envivo': await handleLive(token, env, context, chatId, user.id, payload); break;
