@@ -178,6 +178,7 @@ export const Profesiones = {
       this.ponerAura(s, r.da.elixir, ms);
     }
     s.sucio = true;
+    if (this.progresoTarea) this.progresoTarea(s, 'fabricar', { k: r.id });   // misiones secundarias de artesania
     this.enviar(s, { t: 'toast', m: `⚗️ Fabricaste: ${r.nombre}`, ok: true });
     this.actualizarYo(s);
     this.guardar(s);

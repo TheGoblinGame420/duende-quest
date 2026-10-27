@@ -28,6 +28,7 @@ import { getEnv, verifyInitData, verifySupabaseUser, supabaseQuery, tg, getSolPr
 import { MMO_URL } from '../api/telegram-bot.js';
 import { Cueva3D } from './cueva3d.js';
 import { Encargos } from './encargos.js';
+import { Secundarias } from './secundarias.js';
 import { Eventos3D } from './eventos3d.js';
 import { Temporada } from './temporada.js';
 import { Copias } from './copias.js';
@@ -1960,6 +1961,7 @@ export class MmoWorld {
     const c = s.c;
     // Ceviche del Duende (pesca + artesania): +10% del oro de caza.
     if (this.elixir(s, 'ceviche')) oro = Math.round(oro * 1.1);
+    if (this.elixir(s, 'chichaE')) oro = Math.round(oro * 1.1);   // Chicha Morada del Duende
     c.oro += oro;
     c.kills++;
     if (c.kills === 1 && this.hitoEmbudo) this.hitoEmbudo(c, 'c1');
@@ -1968,6 +1970,7 @@ export class MmoWorld {
     if (horaFelizActiva()) xp = Math.round(xp * HORA_FELIZ.xp);
     // Elixir de Sabiduria (artesania): +10% de la XP de caza. Skins con xpMult.
     if (this.elixir(s, 'elixirX')) xp = Math.round(xp * 1.1);
+    if (this.elixir(s, 'chichaE')) xp = Math.round(xp * 1.05);
     const xpSkin = ((SKINS[c.skin] || {}).buffs || {}).xpMult;
     if (xpSkin) xp = Math.round(xp * xpSkin);
     // El descanso duplica la experiencia de cada caza hasta gastarse.
@@ -2940,6 +2943,7 @@ Object.assign(MmoWorld.prototype, Viajes);
 Object.assign(MmoWorld.prototype, Mundo3D);
 Object.assign(MmoWorld.prototype, Cueva3D);
 Object.assign(MmoWorld.prototype, Encargos);
+Object.assign(MmoWorld.prototype, Secundarias);
 // Pieza de equipo nueva (para los modulos que no ven generarItem).
 MmoWorld.prototype.nuevoItem = (nv, r) => generarItem(nv, r);
 MmoWorld.prototype.generarItem = generarItem;

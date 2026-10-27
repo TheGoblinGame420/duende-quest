@@ -14,22 +14,23 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS } from '/mmo/js/data.js?v=317';
-import { iniciarVentanas } from './ventanas.js?v=317';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=317';
-import { crearMusica } from './musica.js?v=317';
-import { construirCueva } from './cueva.js?v=317';
-import { TAPA, transparentar } from './tapa.js?v=317';
-import { construirAbismo } from './abismo.js?v=317';
-import { crearParticulas } from './particulas.js?v=317';
-import { cargarKenney, piezasCasa } from './kenney.js?v=317';
-import { CORRIENTES } from '/mmo/js/abismo3d.js?v=317';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS } from '/mmo/js/data.js?v=318';
+import { iniciarVentanas } from './ventanas.js?v=318';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=318';
+import { crearMusica } from './musica.js?v=318';
+import { construirCueva } from './cueva.js?v=318';
+import { TAPA, transparentar } from './tapa.js?v=318';
+import { construirAbismo } from './abismo.js?v=318';
+import { crearParticulas } from './particulas.js?v=318';
+import { cargarKenney, piezasCasa } from './kenney.js?v=318';
+import { CORRIENTES } from '/mmo/js/abismo3d.js?v=318';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=317';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=317';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=317';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=317';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=318';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=318';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=318';
+import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=318';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=318';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1404,6 +1405,9 @@ function recibir(m) {
       }
       break;
     }
+    // Misiones secundarias (mmo/js/secundarias.js): progreso y final con su historia.
+    case 'sec': secundarias = m.l || {}; $('misiones')._h = ''; break;
+    case 'secFin': { const q = SECUNDARIAS.find(x => x.id === m.id); if (q) { aviso(`📖 ${q.quien}: «${q.fin}»`, 'ok'); sfxK('monedas', 0.4); vib('success'); } break; }
     case 'corriente': P.alas = ALAS_MAX; aviso('🌬 Corriente de viento: ¡alas recargadas!', 'ok'); sfxK('tela', 0.4); vib('light'); break;
     case 'alasAgotadas': if (P.vuela) { volar(false); P.planeoAuto = true; aviso('Tus alas se cansaron: planeas hacia el suelo.'); } P.alas = 0; break;
     case 'pica': pica = performance.now() + m.ms; aviso('🎣 ¡Pica! ' + K('Pulsa E', 'Toca ¡TIRAR!') + ' para tirar', 'ok'); sfx('boton', 0.7); vib('heavy'); break;
@@ -2325,7 +2329,8 @@ function verLeyenda() {
     <p class="vv-p">El <b>Rey Goblin</b> robó el <b style="color:#ffd84a">Cántaro Eterno</b> y lo rompió en pedazos. Sin chicha, la noche cubrió el bosque, los goblins invadieron las colinas y el Éter del cielo se partió en islas flotantes: el <b>Abismo</b>.</p>
     <p class="vv-p"><img src="/assets/lore/duende-chicha.webp" alt="" style="float:right;height:96px;margin:0 0 4px 6px">Tú eres un duende joven. <b>Recupera las zonas</b> (misiones y encargos 🧭), <b>vence a sus jefes</b>, abre los cofres y junta <b>puntos de chicha</b> cazando. En el Abismo, la Luz y la Sombra luchan por el <b>Núcleo</b>, donde late el último pedazo del Cántaro.</p>
     <p class="vv-p" style="color:#fde68a;font-weight:700">🥤 Y es de verdad: quien llegue a nivel ${CHICHA.nv60} en este mundo se lleva ${CHICHA.litros60} litros de chicha morada a su casa. Además, con ${(10000).toLocaleString('es')} puntos de chicha cazando, otro litro (en $DUENDE CLASSIC → Mochila → Chicha). Se reclama entrando con Telegram.</p>
-<details style="margin-top:8px"><summary style="cursor:pointer;color:#c084fc;font-weight:700">🏺 Las reliquias del Cántaro: ${Object.keys(LORE_ZONAS).filter(z => encargos[z + ':jefe'] === true).length}/10 recuperadas</summary><p class="vv-p" style="font-size:12px;margin:6px 0">Cada reliquia (un pedazo, su semilla, su barro o un secreto) se recupera venciendo al jefe de su zona en los encargos 🧭. Con las 10, el último pedazo espera en el Núcleo del Abismo: el nivel ${CHICHA.nv60}.</p>${Object.entries(LORE_ZONAS).map(([id, z]) => { const ok = encargos[id + ':jefe'] === true; return `<p class="vv-p" style="margin:6px 0;${ok ? '' : 'opacity:.6'}"><b style="color:${ok ? '#4ade80' : '#fde68a'}">${ok ? '✓' : '·'} ${esc((MAPAS[id] || {}).nombre || id)}:</b> ${ok ? esc(z.pedazo) : 'reliquia perdida… vence al jefe de la zona.'}</p>`; }).join('')}</details>`;
+<details style="margin-top:8px"><summary style="cursor:pointer;color:#c084fc;font-weight:700">🏺 Las reliquias del Cántaro: ${Object.keys(LORE_ZONAS).filter(z => encargos[z + ':jefe'] === true).length}/10 recuperadas</summary><p class="vv-p" style="font-size:12px;margin:6px 0">Cada reliquia (un pedazo, su semilla, su barro o un secreto) se recupera venciendo al jefe de su zona en los encargos 🧭. Con las 10, el último pedazo espera en el Núcleo del Abismo: el nivel ${CHICHA.nv60}.</p>${Object.entries(LORE_ZONAS).map(([id, z]) => { const ok = encargos[id + ':jefe'] === true; return `<p class="vv-p" style="margin:6px 0;${ok ? '' : 'opacity:.6'}"><b style="color:${ok ? '#4ade80' : '#fde68a'}">${ok ? '✓' : '·'} ${esc((MAPAS[id] || {}).nombre || id)}:</b> ${ok ? esc(z.pedazo) : 'reliquia perdida… vence al jefe de la zona.'}</p>`; }).join('')}</details>
+<details style="margin-top:8px"><summary style="cursor:pointer;color:#f0abfc;font-weight:700">📖 Historias de la gente del bosque: ${SECUNDARIAS.filter(q => secundarias[q.id + ':ok']).length}/${SECUNDARIAS.length}</summary><p class="vv-p" style="font-size:12px;margin:6px 0">Misiones secundarias: salen solas en el panel al llegar a cada zona (con su nivel) y avanzan con lo que haces.</p>${SECUNDARIAS.map(q => { const ok = !!secundarias[q.id + ':ok']; return `<p class="vv-p" style="margin:6px 0;${ok ? '' : 'opacity:.6'}"><b style="color:${ok ? '#4ade80' : '#f0abfc'}">${ok ? '✓' : '·'} ${esc(q.nombre)}</b> <small>(${esc((MAPAS[q.zona] || {}).nombre || q.zona)} · Nv ${q.nv})</small><br>${ok ? esc(q.fin) : esc(q.quien) + ' te espera.'}</p>`; }).join('')}</details>`;
   $('v-diario').querySelector('h2').textContent = 'LA LEYENDA DEL CÁNTARO';
   abrir('v-diario');
 }
@@ -3224,7 +3229,9 @@ function crearAventureros() {
   for (let i = 0; i < 5; i++) {
     const a = AVENTUREROS[(dia + i * 2) % AVENTUREROS.length];
     const look = { cara: (i * 2 + dia) % 6, cuerpo: i % 3, altura: 0.95 + (i % 4) * 0.04, pelo: (i * 3 + dia) % 8, colorPelo: (i * 5 + dia) % 8 };
-    const fig = figuraModelo(() => crearDuende({ skin: 'comun', clase: a.cl, arma: 'katana', look }));
+    // Atuendos como los duendes de las imagenes del dueño (pirata, militar, vampiro, momia, campesino).
+    const atuendo = { Tupa: 'pirata', Ccori: 'pirata', Rumi: 'militar', Inti: 'militar', Pacha: 'campesino', Sumaq: 'vampiro', Kusi: 'momia' }[a.n.split(' ')[0]] || '';
+    const fig = figuraModelo(() => crearDuende({ skin: 'comun', clase: a.cl, arma: 'katana', look, atuendo }));
     if (!fig) continue;
     const ang = i / 5 * Math.PI * 2;
     const av = { ...a, x: Math.cos(ang) * 9, z: Math.sin(ang) * 9, ry: 0, espera: 800 + i * 900, fig, lbl: etiqueta('pj'), dice: '', diceT: 0 };
@@ -3333,6 +3340,14 @@ function pintarMisiones() {
       h += `<div class="q"><b style="color:#7dd3fc">🧭 Encargos de ${esc(MAPAS[zE].nombre)} ${hechos}/${L.length}</b>${esc(txtE)}${pr}<small>${donde}</small></div>`;
     } else h += `<div class="q"><b style="color:#4ade80">🧭 ${esc(MAPAS[zE].nombre)}: encargos completados ✓</b></div>`;
   }
+  // Mision secundaria de la zona: la de turno, con quien la pide; al aparecer, su historia.
+  if (ZONAS_ENC.includes(zE)) {
+    const qs = secundariaDe(zE, secundarias, yo.nivel);
+    if (qs) {
+      h += `<div class="q"><b style="color:#f0abfc">📖 ${esc(qs.nombre)}</b>${esc(qs.pide)} ${Math.min(secundarias[qs.id] || 0, qs.n)}/${qs.n}<small> · ${esc(qs.quien)}</small></div>`;
+      if (!secVistas.has(qs.id)) { secVistas.add(qs.id); setTimeout(() => aviso(`📖 ${qs.quien}: «${qs.inicio}»`), 2500); }
+    }
+  }
   const tt = htmlTuto3();   // despues de calcular metaMision: el paso 2 la mira (va primera, tambien con invasion)
   if (!d.ok) h += `<div class="q"><b>☀ ${DIARIA.nombre}</b>${(d.p || 0) >= DIARIA.n ? '<span class="ok" data-entregar="diaria" style="cursor:pointer;text-decoration:underline">¡Lista! Toca aquí para cobrarla</span>' : `Monstruos de tu nivel: ${Math.min(d.p || 0, DIARIA.n)}/${DIARIA.n}`}</div>`;
   if (invasion3) {
@@ -3379,7 +3394,8 @@ function pintarMisiones() {
   }
 }
 const cristalesHito = [];
-let avisoCampo = '', metaEnc = null, encargos = {}, encZonas = 0, encRecibido = false;
+let avisoCampo = '', metaEnc = null, encargos = {}, encZonas = 0, encRecibido = false, secundarias = {};
+const secVistas = new Set();
 const faroEnc = (() => {
   const m = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.8, 70, 12, 1, true).translate(0, 35, 0), new THREE.MeshBasicMaterial({ color: '#7dd3fc', transparent: true, opacity: 0.18, depthWrite: false, side: THREE.DoubleSide, fog: false }));
   m.visible = false; escena.add(m); return m;

@@ -18,7 +18,7 @@
 // CADA compra es impredecible y solo la genera el propio comprador al
 // empezar su compra.
 
-import { verifySupabaseUser, verifyInitData, getSolPriceUsd, SOL_DEV_WALLET, SKIN_PRICES_USD } from './lib.js';
+import { verifySupabaseUser, verifyInitData, getSolPriceUsd, SOL_DEV_WALLET, SKIN_PRICES_USD, tg } from './lib.js';
 
 const DEV_WALLET = SOL_DEV_WALLET;
 // Direccion Solana en base58 (32-44 caracteres, sin 0 O I l).
@@ -29,6 +29,7 @@ function getEnv(context) {
   return {
     HELIUS_API_KEY: context.env.HELIUS_API_KEY,
     TELEGRAM_BOT_TOKEN: context.env.TELEGRAM_BOT_TOKEN,
+    ADMIN_TG_ID: context.env.ADMIN_TG_ID || '',
     SUPABASE_URL: context.env.SUPABASE_URL || 'https://byspuovhhbmndqskvvjo.supabase.co',
     SUPABASE_KEY: context.env.SUPABASE_SERVICE_KEY || context.env.SUPABASE_ANON_KEY || '',
   };
@@ -186,18 +187,22 @@ async function onRequestPost(context) {
       const yaLaTenia = await supabaseQuery(env, `skin_purchases?wallet_address=eq.${enc(pago.wallet_address)}&skin_id=eq.${enc(orden.skin_id)}&select=id`);
       if (Array.isArray(yaLaTenia) && yaLaTenia.length > 0) return j({ success: true, already_owned: true, wallet_address: pago.wallet_address });
 
-      const purchaseData = { skin_id: orden.skin_id, payment_type: 'sol', amount_paid: pago.sol, tx_signature: pago.tx_signature, wallet_address: pago.wallet_address };
-      // El comprador se ata AL CREAR la orden, nunca a quien llama a verify: la
-      // reference es publica en la cadena en cuanto se paga, y antes quien llamaba
-      // primero con su telegram_id se quedaba la skin de un pago ajeno.
-      purchaseData.telegram_id = orden.telegram_id ? String(orden.telegram_id) : 'wallet_' + pago.wallet_address.slice(0, 8);
-      // Solo se responde «listo» si la compra quedo guardada (antes el INSERT podia fallar en silencio).
-      const guardada = await supabaseQuery(env, 'skin_purchases', { method: 'POST', body: purchaseData });
-      if (!Array.isArray(guardada) || guardada.length !== 1) {
-        const ya = await supabaseQuery(env, `skin_purchases?tx_signature=eq.${enc(pago.tx_signature)}&select=id&limit=1`);
-        if (!(Array.isArray(ya) && ya.length)) { console.error('[skin] INSERT fallido', reference, JSON.stringify(guardada).slice(0, 200)); return j({ error: 'save_failed', detail: 'Tu pago está registrado pero no pudimos guardar la skin: escríbenos con este código.', reference }, 500); }
+      // ENTREGA MANUAL (27-oct-2026, decision del dueño): el pago queda verificado en la
+      // cadena y la orden en 'filled', pero la skin NO se guarda aqui: al dueño le llega
+      // por Telegram y la activa con /skinweb REFERENCIA (telegram-bot.js) tras revisarlo.
+      if (env.TELEGRAM_BOT_TOKEN && env.ADMIN_TG_ID) {
+        try {
+          await tg(env.TELEGRAM_BOT_TOKEN, 'sendMessage', { chat_id: env.ADMIN_TG_ID, disable_web_page_preview: true,
+            text: `🛒 Skin web pagada (por revisar)
+Skin: ${orden.skin_id} · ${pago.sol} SOL
+De: ${pago.wallet_address}
+Comprador: ${orden.telegram_id || 'sin Telegram (wallet)'}
+https://solscan.io/tx/${pago.tx_signature}
+
+Si el pago es correcto, actívala: /skinweb ${reference}` });
+        } catch (e) { console.error('[skin web] aviso al dueño', e); }
       }
-      return j({ success: true, sol: pago.sol, wallet_address: pago.wallet_address });
+      return j({ success: true, pending_review: true, sol: pago.sol, wallet_address: pago.wallet_address, reference });
     }
 
     if (action === 'get_owned_skins') {

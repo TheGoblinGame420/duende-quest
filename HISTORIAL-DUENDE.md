@@ -54,6 +54,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v315 | Móvil: avisos arriba y pequeños, premio diario como aviso, leyenda solo la 1.ª vez, sin editor automático | **B** |
 | v316 | Duende 3D con el estilo de los videos del dueño (verde lima, orejas arriba, ojos grandes) | **B** |
 | v317 | Pagos del MMO con entrega manual (/entregar o Modo Dios) | **B** |
+| v318 | 20 misiones secundarias, recetas de chicha/mazamorra, atuendos PNJ, skins web manuales (/skinweb) | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

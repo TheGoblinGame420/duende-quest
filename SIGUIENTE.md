@@ -3109,3 +3109,12 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - client.js: textos de la tienda («el equipo te entrega la compra»). data.js: comentario de SKINS.
 - Arnés: la prueba de Stars ahora comprueba que no se entrega sola y que /entregar la entrega. 853 bien.
 - Sin tocar: donaciones, staking, wallet.js, la tienda de skins de la web (helius-verify).
+
+### Misiones secundarias, recetas andinas, atuendos y skins web manuales (27-oct-2026, `?v=318`)
+
+- Pagos (decisión del dueño, todo manual): helius-verify.js ya no guarda la skin web al verificar: avisa al dueño por Telegram con la referencia y responde `pending_review`; telegram-bot.js `/skinweb REFERENCIA` la activa (comprueba orden 'filled', firma no usada). game.html muestra «Pago recibido… el equipo activa tu skin». Donaciones/staking/wallet.js sin tocar.
+- mmo/js/secundarias.js (nuevo, compartido): `SECUNDARIAS` (20, 2 por zona: caza con k, recoger, pescar, cofre, fabricar) y `secundariaDe(zona, hechas, nivel)`. functions/mmo/secundarias.js (mixin): `progresoSecundaria` desde `progresoTarea` (pescar/fabricar en cualquier zona), `cumplirSecundaria` (XP fracción del nivel, oro, materiales), mensajes `sec`/`secFin`; estado en `c.sec`. mundo3d.js manda `infoSec` al entrar.
+- data.js RECETAS: `chichaE` (hierba 5 + flor 1 → elixir: +10% oro, +5% XP en `dar()`), `mazamorra` (hierba 4, mineral 2, pescado 1 → 5 pociones + 1 escudo). profesiones.js: `progresoTarea(s, 'fabricar', {k})`.
+- modelos.js `crearDuende({ atuendo })`: pirata, militar, vampiro, momia, campesino (sustituyen el tocado de clase); mundo.js los reparte entre los aventureros.
+- mundo.js: línea 📖 de la misión secundaria de la zona en el panel, historia al empezar y al terminar, diario en la leyenda.
+- Arnés +3 pruebas. 856 bien.

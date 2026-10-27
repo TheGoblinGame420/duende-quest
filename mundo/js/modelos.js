@@ -19,7 +19,7 @@
 // piezas fijas de cada pivote se funden en una malla (fusionarRig): ~6-14 draw calls.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo } from '/mmo/js/data.js?v=317';
+import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo } from '/mmo/js/data.js?v=318';
 
 const PX_M = 34;                 // pixeles del 2D por metro
 const PI = Math.PI;
@@ -1103,7 +1103,7 @@ const CUERPOS = [
   { ancho: 1.2, panza: 1.42, grueso: 1.32 },   // Robusto
 ];
 // look = { cara 0-5, cuerpo 0-2, altura 0.9-1.12, pelo 0-7, colorPelo (indice) }
-export function crearDuende({ skin = 'comun', clase = null, arma = 'katana', look = null } = {}) {
+export function crearDuende({ skin = 'comun', clase = null, arma = 'katana', look = null, atuendo = '' } = {}) {
   const sk = SKINS[skin] || SKINS.comun;
   const cl = clase && CLASES[clase] ? clase : null;
   const lk = limpiarLook(look || LOOK_BASE);
@@ -1125,7 +1125,14 @@ export function crearDuende({ skin = 'comun', clase = null, arma = 'katana', loo
   const cc = cl ? CLASES[cl].color : ropa;
   // Sin clase no lleva nada en la cabeza: se ve el peinado entero.
   let tocado = '';
-  if (cl === 'guerrero') { ACC.casco(r, '#9aa3ad', '#efe6cf'); escudo(r.manoI, '#7a4a26', 'redondo', null); tocado = 'casco'; }
+  // Atuendos de los aventureros PNJ, como los duendes de las imagenes del dueño
+  // (Descargas: pirata, militar, vampiro, momia, campesino). Sustituyen al tocado de clase.
+  if (atuendo === 'pirata') { ACC.sombrero(r, '#1c1a26', 0.32); ACC.mascara(r, '#7a1020'); tocado = 'sombrero'; }
+  else if (atuendo === 'militar') { ACC.gorra(r, '#3f5f2a'); tocado = 'gorra'; }
+  else if (atuendo === 'vampiro') { ACC.capucha(r, '#5a0f1e'); tocado = 'capucha'; }
+  else if (atuendo === 'momia') { ACC.capucha(r, '#e8e0c8'); ACC.mascara(r, '#d8cfb4'); tocado = 'capucha'; }
+  else if (atuendo === 'campesino') { ACC.paja(r); tocado = 'paja'; }
+  else if (cl === 'guerrero') { ACC.casco(r, '#9aa3ad', '#efe6cf'); escudo(r.manoI, '#7a4a26', 'redondo', null); tocado = 'casco'; }
   else if (cl === 'mago') { ACC.sombrero(r, osc(cc, 0.75), 0.8); tocado = 'sombrero'; }
   else if (cl === 'sacerdote') { ACC.capucha(r, '#f2efe6'); ACC.halo(r); tocado = 'capucha'; }
   else if (cl === 'picaro') { ACC.capucha(r, '#3d3550'); ACC.mascara(r); tocado = 'capucha'; }

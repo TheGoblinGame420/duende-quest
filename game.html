@@ -1181,7 +1181,12 @@ async function webBuySkinSOL(skinId) {
     });
     const result = await verifyResp.json();
 
-    if (result.success) {
+    if (result.success && result.pending_review) {
+      // Entrega manual: el equipo revisa el pago y activa la skin (no se desbloquea aqui).
+      statusEl.textContent = '📨 Pago recibido y verificado. El equipo activa tu skin en breve.';
+      statusEl.style.color = '#ffd84a';
+      setTimeout(() => { statusEl.style.color = '#c084fc'; statusEl.textContent = ''; }, 9000);
+    } else if (result.success) {
       webOwnedSkins.push(skinId);
       webEquipSkin(skinId);
       statusEl.textContent = '✅ Skin desbloqueada! Verificada on-chain ✓';

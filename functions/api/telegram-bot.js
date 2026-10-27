@@ -310,6 +310,22 @@ async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
   const enviar = text => tg(token, 'sendMessage', { chat_id: chatId, text, disable_web_page_preview: true });
   const [arg1, arg2] = payload.trim().split(/\s+/);
   const fondoTxt = f => `Fondo de hoy: ${(f.total / 1000).toFixed(3)} TON (auto ${(f.auto / 1000).toFixed(3)} + tuyo ${(f.extra / 1000).toFixed(3)}) · repartido ${(f.gastado / 1000).toFixed(3)} TON`;
+  // /skinweb REFERENCIA: activa a mano una skin de la web ya pagada y verificada en la
+  // cadena (desde el 27-oct-2026 la web no la entrega sola: helius-verify avisa al dueño).
+  if (cmd === '/skinweb') {
+    if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(arg1 || '')) return enviar('Uso: /skinweb REFERENCIA (viene en el aviso de la compra)');
+    const sb = getEnv(context);
+    const ords = await supabaseQuery(sb, `sol_orders?reference=eq.${encodeURIComponent(arg1)}&select=*&limit=1`);
+    const o = Array.isArray(ords) ? ords[0] : null;
+    if (!o) return enviar('❌ No existe esa orden.');
+    if (o.status !== 'filled' || !o.tx_signature) return enviar('❌ Esa orden no tiene un pago verificado.');
+    const ya = await supabaseQuery(sb, `skin_purchases?tx_signature=eq.${encodeURIComponent(o.tx_signature)}&select=id&limit=1`);
+    if (Array.isArray(ya) && ya.length) return enviar('✅ Esa skin ya estaba activada.');
+    const fila = { skin_id: o.skin_id, payment_type: 'sol', amount_paid: (o.expected_lamports || 0) / 1e9, tx_signature: o.tx_signature, wallet_address: o.wallet_address,
+      telegram_id: o.telegram_id ? String(o.telegram_id) : 'wallet_' + String(o.wallet_address || '').slice(0, 8) };
+    const r = await supabaseQuery(sb, 'skin_purchases', { method: 'POST', body: fila });
+    return enviar(Array.isArray(r) && r.length === 1 ? `✅ Skin ${o.skin_id} activada para ${fila.telegram_id} (${o.wallet_address}).` : '❌ No se pudo guardar: ' + JSON.stringify(r).slice(0, 200));
+  }
   if (cmd === '/retiros') {
     const r = await mmoInterno(env, 'retiros');
     if (!r.ok) return enviar('❌ ' + (r.error || 'error'));
@@ -767,7 +783,7 @@ async function onRequestPost(context) {
         case '/buy': case '/comprar': case '/stars': await handleBuy(token, chatId, user.id); break;
         case '/help': case '/ayuda': await handleHelp(token, chatId); break;
         case '/creador': case '/creator': case '/oficial': await handleCreador(token, chatId); break;
-        case '/retiros': case '/pagado': case '/rechazar': case '/fondo': case '/pedidos': case '/ventas': case '/entregar': case '/anular': case '/mmostats': case '/chicha': case '/chichaok': case '/chichano': await handleMmoAdmin(token, context, chatId, user.id, cmd, payload); break;
+        case '/retiros': case '/pagado': case '/rechazar': case '/fondo': case '/pedidos': case '/ventas': case '/entregar': case '/anular': case '/mmostats': case '/chicha': case '/chichaok': case '/chichano': case '/skinweb': await handleMmoAdmin(token, context, chatId, user.id, cmd, payload); break;
         case '/avisos': await handleAvisos(token, context, chatId, user.id, payload); break;
         case '/admin': await handleAdmin(token, env, context, chatId, user.id); break;
         case '/live': case '/envivo': await handleLive(token, env, context, chatId, user.id, payload); break;

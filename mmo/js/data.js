@@ -498,6 +498,12 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 86, fecha: '27 oct 2026', items: [
+    '20 misiones secundarias en ORIGINS: dos historias por zona contadas por la gente del bosque (la Abuela Sisa, el Chamán Amaru, la Herrera Coya, la Farera Quilla…). Salen solas en tu panel al llegar a cada zona y avanzan con lo que ya haces: cazar, recoger, pescar, abrir cofres y fabricar.',
+    'Nuevas recetas con la Artesana Lila: Chicha Morada del Duende (+10% de oro y +5% de experiencia por caza durante 30 min) y Mazamorra Morada (5 pociones y un escudo).',
+    'Los aventureros del pueblo llevan atuendos como los duendes de $DUENDE: pirata, militar, vampiro, momia y campesino con sombrero de paja.',
+    'La leyenda lleva el diario de las historias que completaste. Las skins de la web, como las compras del juego, las activa el equipo tras revisar el pago.',
+  ] },
   { n: 85, fecha: '27 oct 2026', items: [
     'Compras con SOL, $DUENDE o Stars: cuando se confirma tu pago, el equipo te entrega la compra en tu personaje y te avisa aquí y por Telegram.',
   ] },
@@ -1494,6 +1500,9 @@ export const RECETAS = [
   // Con lo que se pesca (PESCA).
   { id: 'frito', nombre: 'Pescado frito ×3', icono: 'I_C_Fish', pide: { pescado: 3 }, da: { pw: { pocion: 3 } }, desc: 'Tres pociones de vida (como las de hierba)' },
   { id: 'ceviche', nombre: 'Ceviche del Duende', icono: 'I_C_Fish', pide: { pescado: 5, hierba: 2 }, da: { elixir: 'ceviche' }, desc: '+10% de oro por caza durante 30 min (persiste al morir)' },
+  // Recetas andinas (27-oct-2026): la chicha del lore tambien se prepara.
+  { id: 'chichaE', nombre: 'Chicha Morada del Duende', icono: 'I_Bottle02', pide: { hierba: 5, flor: 1 }, da: { elixir: 'chichaE' }, desc: 'La bebida del Cántaro: +10% de oro y +5% de experiencia por caza durante 30 min (persiste al morir)' },
+  { id: 'mazamorra', nombre: 'Mazamorra Morada', icono: 'I_C_Pie', pide: { hierba: 4, mineral: 2, pescado: 1 }, da: { pw: { pocion: 5, escudo: 1 } }, desc: 'Postre de maíz morado: 5 pociones y un escudo' },
   { id: 'sudado', nombre: 'Sudado Dorado', icono: 'I_C_Pie', pide: { pescado: 3, pez_dorado: 1 }, da: { elixir: 'sudado' }, desc: '+5% de daño y -5% de daño recibido durante 30 min (persiste al morir)' },
 ];
 

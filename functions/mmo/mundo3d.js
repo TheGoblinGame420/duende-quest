@@ -106,6 +106,7 @@ export const Mundo3D = {
     if (c.faccion || c.nivel >= ABISMO.nvMin) this.enviar(s, this.infoTemp(c));
     this.enviar(s, this.estadoAsedio());
     if (this.infoEncargos) this.enviar(s, this.infoEncargos(c));
+    if (this.infoSec) this.enviar(s, this.infoSec(c));
     this.nodos3AlEntrar(s);
     this.aClave(K3, { t: 'pj3', p: this.info3d(s) }, s);
   },

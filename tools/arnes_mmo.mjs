@@ -674,6 +674,13 @@ async function pruebasEncargos3d() {
   a.p = { x: zc.x, z: zc.z }; a.limpiar();
   for (let i = 0; i < 4; i++) mundo.progresoTarea(a, 'recoger');
   chequear(a.c.enc['noche:recoger'] === true && a.ultimos('toast').some(m => /Encargo cumplido/.test(m.m)), 'recoger 4 en la zona cumple su encargo');
+  // Misiones secundarias: las mismas 4 recogidas cumplen «Linternas para el pueblo»; luego toca la de los asesinos.
+  chequear(a.c.sec && a.c.sec['n1:ok'] === 1 && a.ultimos('secFin').some(m => m.id === 'n1'), 'la misión secundaria de la zona avanza con lo que ya haces y se cumple');
+  const oroS = a.c.oro;
+  mundo.progresoTarea(a, 'caza', { k: 'goblin_normal' });
+  chequear(!a.c.sec.n2, 'la siguiente pide un monstruo concreto (otro no cuenta)');
+  for (let i = 0; i < 5; i++) mundo.progresoTarea(a, 'caza', { k: 'goblin_assassin' });
+  chequear(a.c.sec['n2:ok'] === 1 && a.c.oro > oroS, 'y al cazar los pedidos se cumple con su premio');
   // Recoger fuera de la zona (pueblo) no cuenta
   a.p = { x: 0, z: 20 }; const otro = { ...a.c.enc }; mundo.progresoTarea(a, 'recoger');
   chequear(JSON.stringify(otro) === JSON.stringify(a.c.enc), 'fuera de las zonas no cuenta');
