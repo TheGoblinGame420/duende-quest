@@ -498,6 +498,9 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 83, fecha: '27 oct 2026', items: [
+    'Móvil y Telegram: más juego y menos ventanas. Los avisos salen pequeños arriba (como mucho dos) y ya no tapan a tu duende, el premio del día es un aviso corto en vez de una ventana, la leyenda se abre sola solo la primera vez (la barra morada de la chicha sigue siempre a la vista) y el editor de apariencia ya no se abre solo (está en ⋯ → 🪞).',
+  ] },
   { n: 82, fecha: '27 oct 2026', items: [
     'Pagos más seguros: cada pago en la cadena vale para un solo pedido, los pedidos en $DUENDE nunca comparten monto, un pago hecho después del plazo lo revisa el equipo a mano y el precio de $DUENDE se comprueba con dos fuentes.',
     'Las librerías de las wallets (TON Connect y Solana) se cargan con versión fija y huella verificada.',

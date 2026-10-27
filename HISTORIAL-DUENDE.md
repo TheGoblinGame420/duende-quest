@@ -51,6 +51,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v312 | Embudo de nuevos en /mmostats, vibración en móvil web | **B** |
 | v313 | Homoglifos en nombres reservados, cerrar en el Abismo cuenta como caer | **B** |
 | v314 | Pagos: una tx por orden, $DUENDE sin montos repetidos, tardíos a revisión manual, precio con dos fuentes, SRI wallets | **B** |
+| v315 | Móvil: avisos arriba y pequeños, premio diario como aviso, leyenda solo la 1.ª vez, sin editor automático | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

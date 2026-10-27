@@ -13,17 +13,17 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=314" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=315" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=314">
-<link rel="modulepreload" href="/mmo/js/data.js?v=314">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=314">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=314">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=314">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=314">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=314">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=315">
+<link rel="modulepreload" href="/mmo/js/data.js?v=315">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=315">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=315">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=315">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=315">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=315">
 <style>
 :root{--bg:#0a0418;--panel:rgba(14,9,30,.86);--borde:rgba(160,140,255,.22);--txt:#f2efff;--txt2:#b8b0d8;--txt3:#7d7699;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;--oro:#ffd84a;--pri:#2563eb;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -343,6 +343,9 @@ body.movil #misiones.con-tuto:not(.abierto),body.compacto #misiones.con-tuto:not
    y #obj/#botones lo llevan en su top; el minimapa no suma dos veces la zona segura (v300) */
 body.tgfs #grupo3,body.tgfs #alas,body.tgfs.movil #objp,body.tgfs.compacto #objp,body.tgfs.movil #misiones,body.tgfs.compacto #misiones,body.tgfs.movil #chat,body.tgfs.movil #obj,body.tgfs.compacto #obj,body.tgfs.movil #botones,body.tgfs.compacto #botones{margin-top:0;}
 body.tgfs.movil #mini{top:8px;}
+/* Movil vertical: los avisos arriba al centro, pequeños y como mucho 2 (antes tapaban al duende) (v315) */
+body.movil #avisos,body.compacto #avisos{left:50%;right:auto;transform:translateX(-50%);top:calc(188px + env(safe-area-inset-top) + var(--tg-top,0px));bottom:auto;width:min(250px,66vw);max-width:none;align-items:stretch;}
+body.movil #avisos div,body.compacto #avisos div{font-size:10.5px;line-height:1.3;padding:3px 7px;background:rgba(14,9,30,.62);}
 /* Premio de chicha siempre a la vista (v296) */
 #chicha3{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);z-index:3;pointer-events:auto;cursor:pointer;background:rgba(74,20,110,.82);border:1px solid #c084fc;border-radius:999px;color:#fde68a;font:700 11px var(--sans);padding:3px 10px;white-space:nowrap;max-width:calc(100vw - 16px);overflow:hidden;text-overflow:ellipsis;box-shadow:0 2px 8px rgba(0,0,0,.35);}
 #chicha3.listo{background:#7c3aed;color:#fff;animation:chichaPulso 1.6s ease-in-out infinite;}
@@ -533,6 +536,6 @@ body.movil #chicha3,body.compacto #chicha3{bottom:calc(62px + env(safe-area-inse
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script src="/js/config.js"></script>
-<script type="module" src="/mundo/js/mundo.js?v=314"></script>
+<script type="module" src="/mundo/js/mundo.js?v=315"></script>
 </body>
 </html>

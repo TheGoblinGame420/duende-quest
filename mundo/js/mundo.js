@@ -14,22 +14,22 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS } from '/mmo/js/data.js?v=314';
-import { iniciarVentanas } from './ventanas.js?v=314';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=314';
-import { crearMusica } from './musica.js?v=314';
-import { construirCueva } from './cueva.js?v=314';
-import { TAPA, transparentar } from './tapa.js?v=314';
-import { construirAbismo } from './abismo.js?v=314';
-import { crearParticulas } from './particulas.js?v=314';
-import { cargarKenney, piezasCasa } from './kenney.js?v=314';
-import { CORRIENTES } from '/mmo/js/abismo3d.js?v=314';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS } from '/mmo/js/data.js?v=315';
+import { iniciarVentanas } from './ventanas.js?v=315';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=315';
+import { crearMusica } from './musica.js?v=315';
+import { construirCueva } from './cueva.js?v=315';
+import { TAPA, transparentar } from './tapa.js?v=315';
+import { construirAbismo } from './abismo.js?v=315';
+import { crearParticulas } from './particulas.js?v=315';
+import { cargarKenney, piezasCasa } from './kenney.js?v=315';
+import { CORRIENTES } from '/mmo/js/abismo3d.js?v=315';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=314';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=314';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=314';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=314';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=315';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=315';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=315';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=315';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1276,7 +1276,8 @@ function recibir(m) {
       ALAS_MAX && (P.alas = Math.min(P.alas, ALAS_MAX));
       if (antes && (yo.skin !== antes.skin || yo.clase !== antes.clase || yo.arma !== antes.arma || JSON.stringify(yo.look) !== JSON.stringify(antes.look))) cambiarSkinPropia();
       // Al elegir clase (antes '!antes' nunca se cumplia: 'bienvenido' ya trae yo).
-      if (antes && !antes.clase && yo.clase && !yo.look) { let visto = false; try { visto = localStorage.getItem('dq3_look_visto') === '1'; } catch (e) {} if (!visto) { const intentar = n => { if (!hayVentana() && !$('v-diario').classList.contains('on')) abrirLook(); else if (n < 20) setTimeout(() => intentar(n + 1), 1500); }; setTimeout(() => intentar(0), 1500); } }
+      // En movil no se abre solo: esta en ⋯ → 🪞.
+      if (antes && !antes.clase && yo.clase && !yo.look && !COMPACTO) { let visto = false; try { visto = localStorage.getItem('dq3_look_visto') === '1'; } catch (e) {} if (!visto) { const intentar = n => { if (!hayVentana() && !$('v-diario').classList.contains('on')) abrirLook(); else if (n < 20) setTimeout(() => intentar(n + 1), 1500); }; setTimeout(() => intentar(0), 1500); } }
       if (yo.muerto && !(antes && antes.muerto) && !P.muerto) morir();   // tras 'muerte' no borra su texto
       if (!yo.muerto) { cerrar('v-muerte'); P.muerto = false; }
       if (yo.clase) cerrar('v-clase');
@@ -1925,7 +1926,7 @@ const avisos = $('avisos');
 function aviso(txt, tipo) {
   const d = document.createElement('div'); d.textContent = txt; if (tipo) d.className = tipo;
   avisos.appendChild(d);
-  while (avisos.children.length > 4) avisos.firstChild.remove();
+  while (avisos.children.length > (COMPACTO ? 2 : 4)) avisos.firstChild.remove();
   setTimeout(() => d.remove(), Math.min(12000, Math.max(4500, String(txt).length * 60)));   // los largos (lore, premios) se leen enteros
 }
 // ── PESCA ──
@@ -2332,9 +2333,11 @@ $('b-leyenda').onclick = () => { cerrar('v-ayuda'); verLeyenda(); };
 // En cada sesion (no cada reconexion): la historia es lo primero que se ve.
 function leyendaPrimeraVez() {
   try { if (sessionStorage.getItem('dq_leyenda')) return; } catch (e) { return; }
+  // Movil: la ventana de la leyenda sale solo la primera vez (la barra morada de la chicha queda siempre a la vista).
+  try { if (COMPACTO && localStorage.getItem('dq_leyenda_vista')) return; } catch (e) {}
   // Espera a que elija clase y a que vea (y cierre) el premio diario: comparten ventana.
   if (hayVentana() || $('v-diario').classList.contains('on') || loginPend3 || !yo || !yo.clase) { setTimeout(leyendaPrimeraVez, 3000); return; }
-  try { sessionStorage.setItem('dq_leyenda', '1'); } catch (e) {}
+  try { sessionStorage.setItem('dq_leyenda', '1'); localStorage.setItem('dq_leyenda_vista', '1'); } catch (e) {}
   verLeyenda();
 }
 let avisoInvT = 0;
@@ -2577,6 +2580,8 @@ function pintarRankPanel() {
 // ── RECOMPENSA DIARIA (racha de 7 dias) ──
 // Panel lateral que se cierra solo: lo de hoy, la racha y lo que espera mañana.
 function mostrarDiario(m) {
+  // Movil: el premio del dia es un aviso corto, no una ventana que tapa el juego (se ve completo en ⋯ → 🎟).
+  if (COMPACTO && !m.vuelta) { aviso(`☀ Día ${m.racha} de tu racha: ${m.oro ? '+' + m.oro.toLocaleString('es') + ' oro' : m.txt || 'premio'}${m.itemNom ? ' · ' + m.itemNom : ''}`, 'ok'); vib('success'); sfxK('monedas', 0.4); return; }
   if ($('v-diario').classList.contains('on') && !mostrarDiario.t) { setTimeout(() => mostrarDiario(m), 2000); return; }   // no pisa la leyenda
   const n = LOGIN_PREMIOS.length, hoy = m.racha;
   let h = m.vuelta ? `<p class="vv-p" style="margin-bottom:8px;padding:8px;border-radius:10px;background:rgba(255,216,74,.12);border:1px solid rgba(255,216,74,.4)">🎉 <b>¡Te echábamos de menos!</b> ${m.vuelta.dias} días fuera. Regalo de bienvenida: <b>+${m.vuelta.oro.toLocaleString('es')} oro</b>, ${m.vuelta.pociones} pociones y <b>${esc(m.vuelta.item)}</b>.</p>` : '';

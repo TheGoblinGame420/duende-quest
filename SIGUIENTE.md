@@ -3089,3 +3089,10 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - lib.js `getDuendePriceSeguro(modo)`: pump.fun + el par de DexScreener con más liquidez (≥ 5.000 USD); si difieren > 10 %, null; 'compra' el mayor, 'venta' el menor. Solo lo usa `precioDuendeSeguro` del MMO.
 - SRI: @tonconnect/ui@2.4.4 (el mismo archivo que servía @2) en game.html, telegram/index.html y client.js; @solana/web3.js@1.99.0 en index.html. Comprobado que cargan.
 - Arnés +2 pruebas (pago tardío a revisión, montos $DUENDE únicos). 852 bien.
+
+### Móvil: menos ventanas encima del juego (27-oct-2026, `?v=315`)
+
+- index.html: en `body.movil`/`body.compacto` `#avisos` centrado a 188 px del borde (debajo de los paneles de arriba, sobre el cielo), 66vw, 10,5 px.
+- mundo.js (COMPACTO): `aviso` como mucho 2; `mostrarDiario` = aviso corto (salvo la vuelta tras días fuera); `leyendaPrimeraVez` una vez por dispositivo (`dq_leyenda_vista`); el editor de apariencia no se abre solo.
+- Comprobación: `node --input-type=module --check` (el `node --check` normal NO analiza estos archivos como módulos y dejó pasar un comentario que se comía código; arreglado antes de publicar).
+- Arnés 852 bien.
