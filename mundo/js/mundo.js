@@ -14,23 +14,23 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS } from '/mmo/js/data.js?v=319';
-import { iniciarVentanas } from './ventanas.js?v=319';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=319';
-import { crearMusica } from './musica.js?v=319';
-import { construirCueva } from './cueva.js?v=319';
-import { TAPA, transparentar } from './tapa.js?v=319';
-import { construirAbismo } from './abismo.js?v=319';
-import { crearParticulas } from './particulas.js?v=319';
-import { cargarKenney, piezasCasa } from './kenney.js?v=319';
-import { CORRIENTES } from '/mmo/js/abismo3d.js?v=319';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS } from '/mmo/js/data.js?v=320';
+import { iniciarVentanas } from './ventanas.js?v=320';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=320';
+import { crearMusica } from './musica.js?v=320';
+import { construirCueva } from './cueva.js?v=320';
+import { TAPA, transparentar } from './tapa.js?v=320';
+import { construirAbismo } from './abismo.js?v=320';
+import { crearParticulas } from './particulas.js?v=320';
+import { cargarKenney, piezasCasa } from './kenney.js?v=320';
+import { CORRIENTES } from '/mmo/js/abismo3d.js?v=320';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=319';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=319';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=319';
-import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=319';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=319';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=320';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=320';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=320';
+import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=320';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=320';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -293,6 +293,7 @@ function ambiente(z) {
   }
   // La cueva y el Eter con su propia musica (antes sonaba la alegre del pueblo).
   musica.zona(enCueva(P.x) ? 'cavernas' : enAbismo(P.x) ? 'cumbres' : z); musica.noche(nocheK > 0.5); musica.clima(cl);
+  temaPueblo(z);
   const hh = Math.floor(h), mm = Math.floor((h - hh) * 60);
   const txt = (nocheK > 0.5 ? '🌙 ' : '☀ ') + String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0') + (NOMBRE_CLIMA[cl] ? ' · ' + NOMBRE_CLIMA[cl] : '');
   if ($('mini-r')._h !== txt) { $('mini-r').textContent = txt; $('mini-r')._h = txt; }
@@ -1574,9 +1575,14 @@ function fijarDestino(o, x, z) {
 }
 function avanzarHacia(o, t) {
   if (o.t0 === undefined) return;
-  const k = Math.min(1.2, (t - o.t0) / o.dur);
-  o.x = o.px + (o.tx - o.px) * k; o.z = o.pz + (o.tz - o.pz) * k;
-  if (k >= 1.2) { o.vx = o.vz = 0; }
+  const k = Math.min(1.15, (t - o.t0) / o.dur);
+  const ix = o.px + (o.tx - o.px) * k, iz = o.pz + (o.tz - o.pz) * k;
+  // Se sigue al punto interpolado con un filtro suave: con la red irregular del movil
+  // el salto entre un paquete y el siguiente (y el pequeño exceso al extrapolar) se veia a tirones.
+  const dt = Math.min(0.1, (t - (o.tR || t)) / 1000); o.tR = t;
+  if (!dt || Math.hypot(ix - o.x, iz - o.z) > 6) { o.x = ix; o.z = iz; }
+  else { const f = 1 - Math.exp(-dt * 16); o.x += (ix - o.x) * f; o.z += (iz - o.z) * f; }
+  if (k >= 1.15) { o.vx = o.vz = 0; }
 }
 function ataqueVisto(m) {
   const o = mons.get(m.tg);
@@ -2138,6 +2144,7 @@ function pintarLook() {
   $('lk-cara').textContent = APARIENCIA.cara[l.cara];
   $('lk-cuerpo').textContent = APARIENCIA.cuerpo[l.cuerpo];
   $('lk-pelo').textContent = APARIENCIA.pelo[l.pelo];
+  $('lk-disfraz').textContent = APARIENCIA.disfraz[l.disfraz || 0];
   const r = $('lk-altura'); r.min = APARIENCIA.altura.min; r.max = APARIENCIA.altura.max; r.step = APARIENCIA.altura.paso; r.value = l.altura;
   $('lk-color').innerHTML = APARIENCIA.colorPelo.map((c, i) => `<button style="background:${c}" class="${i === l.colorPelo ? 'on' : ''}" data-i="${i}" aria-label="Color ${i + 1}"></button>`).join('');
   $('lk-color').querySelectorAll('button').forEach(b => b.onclick = () => { lookEditor.colorPelo = +b.dataset.i; pintarLook(); cambiarSkinPropia(); });
@@ -2162,7 +2169,7 @@ function cerrarLook(guardar) {
 }
 document.querySelectorAll('#v-look .flecha').forEach(b => b.onclick = () => {
   const k = b.dataset.k, n = APARIENCIA[k].length;
-  lookEditor[k] = (lookEditor[k] + +b.dataset.d + n) % n;
+  lookEditor[k] = ((lookEditor[k] || 0) + +b.dataset.d + n) % n;
   pintarLook(); cambiarSkinPropia(); sfx('boton', 0.2);
 });
 $('lk-altura').oninput = e => { lookEditor.altura = +e.target.value; cambiarSkinPropia(); };
@@ -2176,10 +2183,10 @@ $('v-look').addEventListener('click', e => { if (e.target.id === 'v-look') cerra
 $('b-look').onclick = () => abrirLook();
 $('b-mapa').onclick = () => abrirMapa();
 function pintarSon() { $('b-son').textContent = sonido ? '🔊' : '🔇'; }
-$('b-son').onclick = () => { sonido = !sonido; try { localStorage.setItem('dq_mmo_sonido', sonido ? '1' : '0'); } catch (e) {} musica.activo(sonido); pintarSon(); };
+$('b-son').onclick = () => { sonido = !sonido; try { localStorage.setItem('dq_mmo_sonido', sonido ? '1' : '0'); } catch (e) {} musica.activo(sonido); if (!sonido) { tema.pause(); temaOn = false; } pintarSon(); };
 pintarSon(); if (!sonido) musica.activo(false);
 if (TG && TGV('8.0')) try {
-  TG.onEvent('deactivated', () => { fuera3 = true; musica.activo(false); if (actx) actx.suspend().catch(() => {}); tocandoSubir = tocandoBajar = false; joy.id = null; joy.dx = joy.dy = 0; });
+  TG.onEvent('deactivated', () => { fuera3 = true; musica.activo(false); tema.pause(); temaOn = false; if (actx) actx.suspend().catch(() => {}); tocandoSubir = tocandoBajar = false; joy.id = null; joy.dx = joy.dy = 0; });
   TG.onEvent('activated', () => { fuera3 = false; if (sonido) musica.activo(true); if (actx) actx.resume().catch(() => {}); });
 } catch (e) {}
 $('b-herm').onclick = () => { if ($('v-herm').classList.contains('on')) return cerrar('v-herm'); abrir('v-herm'); mandar({ t: 'herm' }); pintarHerm(); };
@@ -2194,7 +2201,7 @@ for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, () => { if (so
 // la musica y los golpes seguian sonando de fondo.
 document.addEventListener('visibilitychange', () => {
   // Al salir (Telegram, otra app) se sueltan joystick y botones: si no, volvia con SUBIR o el joystick pegados.
-  if (document.hidden) { musica.activo(false); if (actx) actx.suspend().catch(() => {}); tocandoSubir = tocandoBajar = false; joy.id = null; joy.dx = joy.dy = 0; for (const k in teclas) teclas[k] = false; }
+  if (document.hidden) { musica.activo(false); tema.pause(); temaOn = false; if (actx) actx.suspend().catch(() => {}); tocandoSubir = tocandoBajar = false; joy.id = null; joy.dx = joy.dy = 0; for (const k in teclas) teclas[k] = false; }
   else { fuera3 = false; if (sonido) { musica.activo(true); if (actx) actx.resume().catch(() => {}); } }
 });
 $('b-ayuda').onclick = () => abrir('v-ayuda');
@@ -3198,6 +3205,26 @@ function etiquetas(t) {
   }
   for (const av of aventureros) ponLbl(av.lbl, av.x, alturaEn(av.x, av.z) + 2.15, av.z, `${av.diceT > t ? `<span style="display:block;background:rgba(255,255,255,.92);color:#222;border-radius:8px;padding:2px 7px;margin:0 auto 2px;font-weight:600;white-space:normal;width:max-content;max-width:170px">${esc(av.dice)}</span>` : ''}<span style="color:#93c5fd">${esc(Math.hypot(av.x - P.x, av.z - P.z) < 10 ? av.n : av.n.split(' ')[0])}</span> <small style="color:#bbb;font-size:9px">PNJ</small>`, 24);
   for (const n of npcs) ponLbl(n.lbl, n.x, n.y + 2.4, n.z, `${n.tipo === 'guia' && misionLista() ? '<b style="color:#ffd84a;font-size:22px;text-shadow:0 0 6px #000">?</b><br>' : ''}<span style="color:#4ade80">${esc(n.nombre)}</span>`, 60);
+}
+// ── TEMA DEL PUEBLO ──
+// En el Pueblo Duende suena el tema del juego (audio/tema_duende.mp3, la musica
+// del dueño); fuera, la musica generada de cada zona (musica.js). Se pide la
+// primera vez que hace falta (1 MB) y reintenta tras el primer toque si el
+// navegador bloquea el audio.
+const tema = new Audio(); tema.loop = true; tema.volume = 0.3; tema.preload = 'none';
+let temaOn = false;
+function temaPueblo(z) {
+  const quiere = sonido && !document.hidden && !fuera3 && z === 'pueblo' && !enCueva(P.x) && !enAbismo(P.x);
+  if (quiere === temaOn) return;
+  temaOn = quiere;
+  if (quiere) {
+    if (!tema.src) tema.src = '/audio/tema_duende.mp3';
+    const p = tema.play(); if (p && p.catch) p.catch(() => { temaOn = false; });
+    musica.activo(false);
+  } else {
+    tema.pause();
+    if (sonido && !document.hidden && !fuera3) musica.activo(true);
+  }
 }
 // ── CORRIENTES DE VIENTO DEL ABISMO ──
 // Columnas de aire celeste entre islas (mmo/js/abismo3d.js CORRIENTES): el servidor

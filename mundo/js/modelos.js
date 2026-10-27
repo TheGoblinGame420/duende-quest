@@ -19,7 +19,7 @@
 // piezas fijas de cada pivote se funden en una malla (fusionarRig): ~6-14 draw calls.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo } from '/mmo/js/data.js?v=319';
+import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=320';
 
 const PX_M = 34;                 // pixeles del 2D por metro
 const PI = Math.PI;
@@ -713,8 +713,14 @@ function humano(r, o) {
     r.topeCabeza = 0.48 * H;
     return r;
   }
-  M(cb, 'esfera', piel, [0, 0.26 * H, 0], [0.3 * H, 0.28 * H, 0.28 * H]);
-  if (o.orejas) for (const x of [-1, 1]) M(cb, 'cono', piel, [x * 0.24 * H, 0.3 * H, -0.03 * H], [0.075 * H, o.orejas * H, 0.045 * H], [0, -x * 0.25, -x * (o.orejaRot || 1.2)]);
+  // Cabeza de la mascota $DUENDE (imagenes del dueño en Descargas): un cubo, no una bola.
+  if (o.cabezaCubo) M(cb, 'caja', piel, [0, 0.27 * H, 0], [0.54 * H, 0.5 * H, 0.5 * H]);
+  else M(cb, 'esfera', piel, [0, 0.26 * H, 0], [0.3 * H, 0.28 * H, 0.28 * H]);
+  if (o.orejas) for (const x of [-1, 1]) {
+    M(cb, 'cono', piel, [x * 0.24 * H, 0.3 * H, -0.03 * H], [0.075 * H, o.orejas * H, 0.045 * H], [0, -x * 0.25, -x * (o.orejaRot || 1.2)]);
+    // Interior naranja de la oreja (como la mascota).
+    if (o.orejaDentro) M(cb, 'cono', o.orejaDentro, [x * 0.245 * H, 0.3 * H, -0.005 * H], [0.05 * H, o.orejas * 0.82 * H, 0.03 * H], [0, -x * 0.25, -x * (o.orejaRot || 1.2)]);
+  }
   if (o.nariz === 'bola') M(cb, 'esfera', osc(piel, 0.92), [0, 0.21 * H, 0.27 * H], [0.08 * H, 0.07 * H, 0.09 * H]);
   else if (o.nariz === 'pico') M(cb, 'cono', piel, [0, 0.22 * H, 0.23 * H], [0.06 * H, 0.22 * H, 0.06 * H], [PI / 2 + 0.25, 0, 0]);
   else if (o.nariz === 'gancho') {   // la del duende 2D: larga, ancha en la base y caida hacia abajo
@@ -722,7 +728,7 @@ function humano(r, o) {
       ['esfera', hx(osc(piel, 0.9)), [0, 0.15, 0.4], [0.05, 0.045, 0.05]]], null, null, null, H);
   }
   if (o.ojos === 'duende') {
-    MF(cb, o.ojosGrandes ? partesOjos(true) : o.ojosVideo ? partesOjosVideo() : partesOjos2D(piel), null, null, null, H);
+    MF(cb, o.ojosGrandes ? partesOjos(true) : o.mascota ? partesMascota() : o.ojosVideo ? partesOjosVideo() : partesOjos2D(piel), null, null, null, H);
   } else if (o.ojos) {
     const ojo = mat(o.ojos, { e: 1 });
     for (const x of [-1, 1]) M(cb, 'esferaB', ojo, [x * 0.1 * H, 0.31 * H, 0.25 * H], [0.06 * H, 0.045 * H, 0.03 * H]);
@@ -742,6 +748,32 @@ function partesOjos2D(piel) {
     P.push(['esferaB', '#1b1430', [x * 0.1, 0.298, 0.276], [0.014, 0.027, 0.008]]);
     P.push(['caja', ceja, [x * 0.11, 0.352, 0.24], [0.15, 0.05, 0.07], [0, 0, x * 0.42]]);
   }
+  return P;
+}
+// Cara de la mascota $DUENDE sobre la cabeza cubo (cara frontal en z = 0,25):
+// ojos azules grandes, cejas en bloque inclinadas (mirada picara), nariz
+// cuadrada, mejillas redondas, sonrisa ancha con colmillos y lengua.
+function partesMascota() {
+  const P = [], verde = '#7fbf2e', mejilla = '#b5e35c';
+  for (const x of [-1, 1]) {
+    P.push(['esfera', '#fbfbf7', [x * 0.12, 0.31, 0.252], [0.085, 0.095, 0.03]]);
+    P.push(['esferaB', '#2563eb', [x * 0.115, 0.305, 0.272], [0.056, 0.062, 0.012]]);
+    P.push(['esferaB', '#0b0b18', [x * 0.115, 0.305, 0.28], [0.028, 0.032, 0.008]]);
+    P.push(['esferaB', '#ffffff', [x * 0.1, 0.325, 0.286], [0.014, 0.014, 0.005]]);
+    P.push(['caja', verde, [x * 0.12, 0.415, 0.262], [0.17, 0.06, 0.06], [0, 0, -x * 0.28]]);
+    P.push(['esferaB', mejilla, [x * 0.2, 0.17, 0.252], [0.05, 0.05, 0.016]]);
+  }
+  P.push(['caja', verde, [0, 0.215, 0.27], [0.09, 0.075, 0.07]]);              // nariz cuadrada
+  P.push(['caja', '#4a0f1c', [0, 0.1, 0.252], [0.26, 0.08, 0.012]]);           // boca
+  P.push(['caja', '#ffffff', [0, 0.125, 0.258], [0.24, 0.03, 0.01]]);          // dientes
+  for (const x of [-1, 1]) P.push(['cono', '#ffffff', [x * 0.1, 0.112, 0.259], [0.018, 0.045, 0.01], [Math.PI, 0, 0]]);   // colmillos
+  P.push(['esferaB', '#e8607a', [0, 0.078, 0.257], [0.07, 0.025, 0.01]]);      // lengua
+  return P;
+}
+// Las dos espadas de pixeles cruzadas detras de la cabeza (el sello de la mascota).
+function partesEspadasPixel() {
+  const P = [], c1 = '#c4732e', c2 = '#8a4a1c';
+  for (const x of [-1, 1]) for (let i = 0; i < 6; i++) P.push(['caja', i % 2 ? c2 : c1, [x * (0.16 + i * 0.055), 0.42 + i * 0.075, -0.2], [0.07, 0.07, 0.05]]);
   return P;
 }
 // Ojos del duende de los videos del dueño (Descargas/duende_atleta_voz.mp4 y la
@@ -1088,7 +1120,8 @@ function formaDuende(r, R0, lk, colorPelo) {
   for (const [mano, lado] of [[r.manoI, 1], [r.manoD, -1]]) M(mano, 'esferaB', PIEL_DUENDE, [-lado * 0.05, 0.03, 0.04], [0.035, 0.05, 0.035]);
   for (const p of [r.pI, r.pD]) if (p) M(p, 'semi', R0.botas, [0, -0.45 + 0.02, 0.13], [0.09, 0.07, 0.1], [0, 0, 0]);
   const H = r.H, P2 = [];
-  if (lk.cara !== 4) {
+  fuera(MF(r.cabeza, partesEspadasPixel(), null, null, null, H));
+  if (lk.cara === 5) {
     P2.push(['caja', '#3a0f1f', [0, 0.1, 0.25], [0.19, 0.04, 0.02]]);
     for (const x of [-0.06, -0.02, 0.02, 0.06]) P2.push(['caja', '#fbf5e0', [x, 0.108, 0.258], [0.03, 0.022, 0.012]]);
     for (const x of [-1, 1]) P2.push(['caja', '#3a0f1f', [x * 0.115, 0.118, 0.236], [0.06, 0.03, 0.02], [0, 0, x * 0.55]]);
@@ -1119,7 +1152,9 @@ export function crearDuende({ skin = 'comun', clase = null, arma = 'katana', loo
     piel: PIEL_DUENDE, ropa, ropaMat: mat(ropa, brilla ? { e: 0.3 } : null),
     pantalon: R0.pantalon, botas: R0.botas, cinto: R0.cinto || '#3a2412',
     // Orejas largas hacia arriba y afuera, como en los videos (antes casi horizontales).
-    cabeza: 'duende', ojos: 'duende', ojosGrandes: lk.cara === 5, ojosVideo: true, nariz: lk.cara === 5 ? 'bola' : 'gancho', orejas: 0.62, orejaRot: 0.98, manoG: 1.18, cab: 1.18, L: 0.45, T: 0.46, A: 0.38,
+    // Como la mascota $DUENDE (Descargas): cabeza cubo, cara propia, orejas con interior naranja.
+    cabeza: 'duende', ojos: 'duende', ojosGrandes: lk.cara === 5, ojosVideo: true, mascota: lk.cara !== 5, cabezaCubo: lk.cara !== 5, orejaDentro: '#f07a3a',
+    nariz: lk.cara === 5 ? 'bola' : null, orejas: 0.62, orejaRot: 0.98, manoG: 1.18, cab: 1.18, L: 0.45, T: 0.46, A: 0.38,
     ancho: cpo.ancho, panza: cpo.panza, grueso: cpo.grueso,
   });
   const cc = cl ? CLASES[cl].color : ropa;
@@ -1127,7 +1162,9 @@ export function crearDuende({ skin = 'comun', clase = null, arma = 'katana', loo
   let tocado = '';
   // Atuendos de los aventureros PNJ, como los duendes de las imagenes del dueño
   // (Descargas: pirata, militar, vampiro, momia, campesino). Sustituyen al tocado de clase.
-  if (atuendo === 'pirata') { ACC.sombrero(r, '#1c1a26', 0.32); ACC.mascara(r, '#7a1020'); tocado = 'sombrero'; }
+  if (!atuendo && lk.disfraz) atuendo = DISFRAZ_ID[lk.disfraz] || '';
+  if (atuendo === 'bruja') { ACC.sombrero(r, '#3b1f4a', 0.95); tocado = 'sombrero'; }
+  else if (atuendo === 'pirata') { ACC.sombrero(r, '#1c1a26', 0.32); M(fuera(G(r.cabeza)), 'caja', '#15121c', [0.12 * r.H, 0.31 * r.H, 0.27 * r.H], [0.14 * r.H, 0.13 * r.H, 0.03 * r.H]); tocado = 'sombrero'; }   // parche en el ojo
   else if (atuendo === 'militar') { ACC.gorra(r, '#3f5f2a'); tocado = 'gorra'; }
   else if (atuendo === 'vampiro') { ACC.capucha(r, '#5a0f1e'); tocado = 'capucha'; }
   else if (atuendo === 'momia') { ACC.capucha(r, '#e8e0c8'); ACC.mascara(r, '#d8cfb4'); tocado = 'capucha'; }

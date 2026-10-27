@@ -56,6 +56,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v317 | Pagos del MMO con entrega manual (/entregar o Modo Dios) | **B** |
 | v318 | 20 misiones secundarias, recetas de chicha/mazamorra, atuendos PNJ, skins web manuales (/skinweb) | **B** |
 | v319 | Stars del arcade con acreditación manual (/starsok): todos los pagos son manuales | **B** |
+| v320 | Duende = mascota $DUENDE (cabeza cubo, espadas pixel), disfraces, tema oficial en el pueblo, interpolación suave | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

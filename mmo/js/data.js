@@ -481,8 +481,11 @@ export const APARIENCIA = {
   altura: { min: 0.9, max: 1.12, paso: 0.01 },
   pelo: ['Calvo', 'Corto', 'Cresta', 'Coleta', 'Melena', 'Moño', 'Rastas', 'Puntas'],
   colorPelo: ['#2b1d14', '#6b3f1f', '#c98a3c', '#e8d27a', '#d9442b', '#f4f4f4', '#3b82f6', '#a855f7'],
+  // Disfraces como la mascota $DUENDE en las imagenes del dueño (solo estetica; tapan el tocado de clase).
+  disfraz: ['Ninguno', 'Pirata', 'Vampiro', 'Momia', 'Militar', 'Campesino', 'Bruja'],
 };
-export const LOOK_BASE = { cara: 0, cuerpo: 1, altura: 1, pelo: 1, colorPelo: 1 };
+export const DISFRAZ_ID = ['', 'pirata', 'vampiro', 'momia', 'militar', 'campesino', 'bruja'];
+export const LOOK_BASE = { cara: 0, cuerpo: 1, altura: 1, pelo: 1, colorPelo: 1, disfraz: 0 };
 // Deja solo valores validos (lo que llegue del cliente no se cree tal cual).
 export function limpiarLook(l) {
   l = l && typeof l === 'object' ? l : {};
@@ -494,10 +497,17 @@ export function limpiarLook(l) {
     altura: alt,
     pelo: ent(l.pelo, APARIENCIA.pelo.length, LOOK_BASE.pelo),
     colorPelo: ent(l.colorPelo, APARIENCIA.colorPelo.length, LOOK_BASE.colorPelo),
+    disfraz: ent(l.disfraz, APARIENCIA.disfraz.length, 0),
   };
 }
 
 export const NOVEDADES = [
+  { n: 88, fecha: '27 oct 2026', items: [
+    'Tu duende ahora es la mascota $DUENDE: cabeza cuadrada, ojos azules, cejas en bloque, mejillas, sonrisa con colmillos, orejas con interior naranja y las dos espadas de píxeles a la espalda.',
+    'Disfraces en el editor de apariencia (⋯ → 🪞): Pirata con parche, Vampiro, Momia, Militar, Campesino y Bruja, como los duendes de $DUENDE. Los ven todos.',
+    'En el Pueblo Duende suena el tema oficial de Duende Quest; fuera, la música andina de cada zona.',
+    'Movimiento más fluido: los demás jugadores y los monstruos se mueven suaves aunque la red del móvil vaya a saltos.',
+  ] },
   { n: 87, fecha: '27 oct 2026', items: [
     'Compras con Stars en el arcade (skins y $DUENDE): el equipo revisa cada pago y te lo acredita en breve; te avisamos por Telegram.',
   ] },

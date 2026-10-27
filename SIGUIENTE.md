@@ -3126,3 +3126,12 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - telegram/index.html: los mensajes tras pagar ya no dicen «desbloqueada»/«acreditados».
 - Con esto todos los pagos (MMO, skins web, arcade con Stars) se entregan a mano. Sin tocar: donaciones, staking, wallet.js.
 - Arnés 856 bien.
+
+### Duende mascota, disfraces, tema del pueblo y movimiento suave (27-oct-2026, `?v=320`)
+
+- Referencia: las imágenes de la mascota del dueño (Descargas: verde brindando, pirata, vampiro, momia, Frankenstein, lobo, bruja, esqueleto, insignia militar).
+- modelos.js: `cabezaCubo` (caja 0,54×0,5×0,5), `orejaDentro` naranja, `partesMascota()` (ojos azules, cejas en bloque inclinadas, nariz cuadrada, mejillas, boca con dientes, colmillos y lengua), `partesEspadasPixel()` detrás de la cabeza; cara 5 «Ojos grandes» conserva la cabeza redonda. Atuendo `bruja`; pirata con parche.
+- data.js: `APARIENCIA.disfraz`, `DISFRAZ_ID`, `LOOK_BASE.disfraz`, `limpiarLook` lo valida; index.html fila «Disfraz»; `crearDuende` usa `lk.disfraz` si no hay atuendo.
+- audio/tema_duende.mp3 (tema del dueño hecho con IA, 96 kbps, 1 MB): `temaPueblo(z)` lo suena en el pueblo y apaga la música generada; se pausa al silenciar, al salir de la app o fuera del pueblo.
+- `avanzarHacia`: extrapolación hasta 1,15 y filtro exponencial (16/s) hacia el punto interpolado; salto directo si la diferencia pasa de 6 m.
+- Arnés 856 bien.
