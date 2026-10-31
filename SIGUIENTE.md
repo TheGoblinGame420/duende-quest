@@ -3135,3 +3135,14 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - audio/tema_duende.mp3 (tema del dueño hecho con IA, 96 kbps, 1 MB): `temaPueblo(z)` lo suena en el pueblo y apaga la música generada; se pausa al silenciar, al salir de la app o fuera del pueblo.
 - `avanzarHacia`: extrapolación hasta 1,15 y filtro exponencial (16/s) hacia el punto interpolado; salto directo si la diferencia pasa de 6 m.
 - Arnés 856 bien.
+
+### Skins disfraz, interfaz de vidrio, ambiente y física (30-oct-2026, `?v=321`)
+
+- assets/skins/skin_{bruja,momia,frankenstein,vampiro,esqueleto,lobo,pirata}.png (210 px de alto, de las imágenes del dueño).
+- data.js `SKINS`: las 7 con precio en oro (6000–18000) y sin `usd` (no se venden con dinero). client.js las carga en el 2D.
+- modelos.js `ROPA_SKIN`: colores y `atuendo` por skin; `crearDuende` usa `R0.atuendo` antes que `lk.disfraz`. Atuendos nuevos: frankenstein (pelo plano y tornillos), lobo (melena y orejas), esqueleto (cráneo).
+- ventanas.js: la nota de skins dice que El Duende revisa el pago (todo manual) y explica los disfraces.
+- index.html: capa de vidrio (`.caja`/`.ventana` con blur y saturación, `.bt` 34 px con muelle, ⋯ gira y los extra aparecen escalonados, ventanas con `ventanaSube`), respeta `prefers-reduced-motion`. Sin blur en el fondo del modal (el editor de apariencia necesita ver al duende).
+- musica.js: viento (ruido grave con filtro que se mueve), pájaros, grillos, gotas; `tic()` para botones (mundo.js en pointerdown sobre .bt/.vv-tab/.cerrar).
+- mundo.js física: factor de cuesta 0,82–1,12, `P.vy` del vuelo con inercia (7/s), aplastado al aterrizar (`P.aterrizaT/K`, 280 ms) y estirado al subir en `poner`.
+- Arnés 856 bien.

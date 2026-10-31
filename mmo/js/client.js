@@ -17,7 +17,7 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=320';
+} from './data.js?v=321';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -155,7 +155,7 @@ function pintarCarga() {
   $('carga-i').style.width = Math.round(p * 100) + '%';
 }
 Object.keys(HOJAS).forEach(k => cargar('sh_' + k, A + 'enemigos/sheets/' + k + '.png'));
-['skin_hero', 'skin_tactico', 'skin_necromancer', 'skin_king', 'skin_berserker', 'skin_legendariafull'].forEach(k => cargar(k, A + 'skins/' + k + '.png'));
+['skin_hero', 'skin_tactico', 'skin_necromancer', 'skin_king', 'skin_berserker', 'skin_legendariafull', 'skin_bruja', 'skin_momia', 'skin_frankenstein', 'skin_vampiro', 'skin_esqueleto', 'skin_lobo', 'skin_pirata'].forEach(k => cargar(k, A + 'skins/' + k + '.png'));
 cargar('anim', A + 'skins/duende_anim.png');
 [...new Set(Object.values(MAPAS).map(m => m.fondo))].forEach(f => { cargar('lejos_' + f, A + 'fondos/' + f + '_lejos.png'); cargar('cerca_' + f, A + 'fondos/' + f + '_cerca.png'); });
 ['item_potion', 'item_shield', 'item_skill', 'skill_fire'].forEach(k => cargar(k, A + 'items/' + k + '.png'));

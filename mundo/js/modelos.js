@@ -19,7 +19,7 @@
 // piezas fijas de cada pivote se funden en una malla (fusionarRig): ~6-14 draw calls.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=320';
+import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=321';
 
 const PX_M = 34;                 // pixeles del 2D por metro
 const PI = Math.PI;
@@ -989,6 +989,14 @@ const ROPA_SKIN = {
   // Berserker (el juez): toga morada con ribetes dorados, capa y corona.
   berserker:  { ropa: '#6b2a8f', pantalon: '#3d1858', botas: '#2a1040', acento: '#ffd84a', cinto: '#ffd84a', corona: true, capa: '#4d1d6b', tunica: '#5b2380', borde: '#ffd84a', peluca: '#f1f1f1', chorrera: '#ffffff', mazo: '#e8b923', runas: '#b44cff' },
   // Legendaria: armadura negra con circuitos neon cian y magenta.
+  // Disfraces de la mascota (30-oct): ropa + atuendo (sombrero o peinado) de cada imagen.
+  bruja:        { ropa: '#3b1f4a', pantalon: '#4a2a16', botas: '#3a2616', acento: '#f07a1a', poncho: ['#3b1f4a', '#f07a1a', '#2a1430'], atuendo: 'bruja' },
+  momia:        { ropa: '#e8e0c8', pantalon: '#d8cfb4', botas: '#c9bfa2', acento: '#b5a888', poncho: ['#e8e0c8', '#cfc4a6', '#f4efe0'], atuendo: 'momia' },
+  frankenstein: { ropa: '#6b4423', pantalon: '#3b2350', botas: '#3a2616', acento: '#9aa3ad', atuendo: 'frankenstein' },
+  vampiro:      { ropa: '#1a1420', pantalon: '#1a1420', botas: '#120d16', acento: '#c0262d', capa: '#8a1020', atuendo: 'vampiro' },
+  esqueleto:    { ropa: '#2a2030', pantalon: '#2a2030', botas: '#5a3a1e', acento: '#efe6cf', poncho: ['#2a2030', '#efe6cf', '#2a2030'], atuendo: 'esqueleto' },
+  lobo:         { ropa: '#b8322a', pantalon: '#2f3f6b', botas: '#5a3a1e', acento: '#7a4a26', atuendo: 'lobo' },
+  pirata:       { ropa: '#5a3a1e', pantalon: '#3b2616', botas: '#4a2a16', acento: '#c9a227', cinto: '#c0262d', atuendo: 'pirata' },
   legendaria: { ropa: '#1b1f33', pantalon: '#12152a', botas: '#0c0e1c', acento: '#00f0ff', neon: '#ff3cf0', hombreras: true, puas: '#00f0ff', ojosBrillo: '#ff9a1f', orbe: '#00f0ff', hojaNeon: '#7df9ff' },
 };
 // Detalles de la skin: cuello y hebilla, corbata, neon, visor, llamas, corona, capa.
@@ -1162,8 +1170,24 @@ export function crearDuende({ skin = 'comun', clase = null, arma = 'katana', loo
   let tocado = '';
   // Atuendos de los aventureros PNJ, como los duendes de las imagenes del dueño
   // (Descargas: pirata, militar, vampiro, momia, campesino). Sustituyen al tocado de clase.
+  if (!atuendo && R0.atuendo) atuendo = R0.atuendo;   // las skins disfraz traen su sombrero o peinado
   if (!atuendo && lk.disfraz) atuendo = DISFRAZ_ID[lk.disfraz] || '';
-  if (atuendo === 'bruja') { ACC.sombrero(r, '#3b1f4a', 0.95); tocado = 'sombrero'; }
+  if (atuendo === 'frankenstein') {   // pelo negro plano y tornillos en el cuello
+    const H = r.H, g = fuera(G(r.cabeza));
+    M(g, 'caja', '#141218', [0, 0.51 * H, -0.01 * H], [0.56 * H, 0.09 * H, 0.52 * H]);
+    for (const x of [-1, 1]) M(g, 'cil', '#9aa3ad', [x * 0.3 * H, 0.12 * H, 0], [0.035 * H, 0.09 * H, 0.035 * H], [0, 0, PI / 2]);
+    r.tocado = true; tocado = 'gorra';
+  } else if (atuendo === 'lobo') {   // melena marron y orejas de lobo
+    const H = r.H, g = fuera(G(r.cabeza));
+    M(g, 'semi', '#6b3f1f', [0, 0.4 * H, -0.03 * H], [0.32 * H, 0.2 * H, 0.31 * H]);
+    for (const x of [-1, 1]) M(g, 'cono', '#6b3f1f', [x * 0.15 * H, 0.52 * H, -0.02 * H], [0.07 * H, 0.17 * H, 0.05 * H], [0, 0, -x * 0.25]);
+    r.tocado = true; tocado = 'gorra';
+  } else if (atuendo === 'esqueleto') {   // craneo de hueso sobre la cabeza
+    const H = r.H, g = fuera(G(r.cabeza));
+    M(g, 'semi', '#efe6cf', [0, 0.42 * H, 0], [0.31 * H, 0.22 * H, 0.3 * H]);
+    for (const x of [-1, 1]) M(g, 'esferaB', '#1c1620', [x * 0.1 * H, 0.5 * H, 0.22 * H], [0.06 * H, 0.06 * H, 0.03 * H]);
+    r.tocado = true; tocado = 'gorra';
+  } else if (atuendo === 'bruja') { ACC.sombrero(r, '#3b1f4a', 0.95); tocado = 'sombrero'; }
   else if (atuendo === 'pirata') { ACC.sombrero(r, '#1c1a26', 0.32); M(fuera(G(r.cabeza)), 'caja', '#15121c', [0.12 * r.H, 0.31 * r.H, 0.27 * r.H], [0.14 * r.H, 0.13 * r.H, 0.03 * r.H]); tocado = 'sombrero'; }   // parche en el ojo
   else if (atuendo === 'militar') { ACC.gorra(r, '#3f5f2a'); tocado = 'gorra'; }
   else if (atuendo === 'vampiro') { ACC.capucha(r, '#5a0f1e'); tocado = 'capucha'; }

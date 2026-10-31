@@ -8,7 +8,10 @@
 //
 // API: const M = crearMusica();  M.arrancar()  (en un clic/tecla)
 //      M.zona(id)  M.noche(bool)  M.clima('lluvia'|'tormenta'|'nieve'|...)
-//      M.trueno()  M.activo(bool)
+//      M.trueno()  M.activo(bool)  M.tic()  (toque suave de la interfaz)
+//
+// Ambiente (v321): viento que sube y baja en las alturas y el Abismo, pajaros de
+// dia en el pueblo y la selva, grillos de noche y gotas con eco en las cavernas.
 // ═══════════════════════════════════════════════════════
 const ESCALAS = {
   pueblo:      { raiz: 60, esc: [0, 2, 4, 7, 9], pulso: 0.62, onda: 'triangle' },
@@ -28,6 +31,9 @@ const hz = n => 440 * Math.pow(2, (n - 69) / 12);
 export function crearMusica() {
   let ctx = null, maestro = null, eco = null, lluviaG = null, vivo = false, activo = true;
   let zona = 'pueblo', noche = false, clima = 'despejado', reloj = 0, sigNota = 0, sigAcorde = 0, bordon = null;
+  let vientoG = null, vientoF = null, ambG = null, sigAmb = 0;
+  const VIENTO = { cumbres: 0.05, abismo: 0.06, acantilados: 0.045, tormenta: 0.04, desierto: 0.03, castillo: 0.02 };
+  const PAJAROS = { pueblo: 1, amanecer: 1, selva: 1.4, acantilados: 0.6 };
 
   function arrancar() {
     // iPhone deja el contexto en 'interrupted' tras una llamada o al salir de Telegram: cualquier estado que no sea 'running' se retoma.
@@ -49,6 +55,12 @@ export function crearMusica() {
     ruido.connect(bp); bp.connect(lluviaG); lluviaG.connect(ctx.destination);
     ruido.start();
     ctx._ruido = buf;
+    // Viento: el mismo ruido, grave y con un filtro que se mueve despacio.
+    const rv = ctx.createBufferSource(); rv.buffer = buf; rv.loop = true; rv.playbackRate.value = 0.5;
+    vientoF = ctx.createBiquadFilter(); vientoF.type = 'lowpass'; vientoF.frequency.value = 420; vientoF.Q.value = 2.2;
+    vientoG = ctx.createGain(); vientoG.gain.value = 0;
+    rv.connect(vientoF); vientoF.connect(vientoG); vientoG.connect(ctx.destination); rv.start();
+    ambG = ctx.createGain(); ambG.gain.value = 0; ambG.connect(ctx.destination); ambG.connect(eco);
     vivo = true;
     reloj = ctx.currentTime + 0.2; sigNota = reloj; sigAcorde = reloj;
     cambiarBordon();
@@ -63,6 +75,55 @@ export function crearMusica() {
     lluviaG.gain.cancelScheduledValues(t);
     const ll = !activo ? 0 : clima === 'tormenta' ? 0.07 : clima === 'lluvia' ? 0.045 : clima === 'arena' ? 0.03 : 0;
     lluviaG.gain.linearRampToValueAtTime(ll, t + 2);
+    vientoG.gain.cancelScheduledValues(t);
+    vientoG.gain.linearRampToValueAtTime(activo ? (VIENTO[zona] || 0.012) * (clima === 'tormenta' ? 1.8 : 1) : 0, t + 2.5);
+    ambG.gain.cancelScheduledValues(t);
+    ambG.gain.linearRampToValueAtTime(activo ? 0.5 : 0, t + 1.5);
+  }
+  // Sonidos de la naturaleza, cada uno corto y al azar.
+  function pajaro(t) {
+    const o = ctx.createOscillator(), g = ctx.createGain(), f0 = 2200 + Math.random() * 1800, n = 2 + Math.floor(Math.random() * 4);
+    o.type = 'sine';
+    for (let i = 0; i < n; i++) {
+      const a = t + i * 0.11;
+      o.frequency.setValueAtTime(f0, a); o.frequency.exponentialRampToValueAtTime(f0 * (1.25 + Math.random() * 0.4), a + 0.06);
+      g.gain.setValueAtTime(0, a); g.gain.linearRampToValueAtTime(0.035, a + 0.015); g.gain.linearRampToValueAtTime(0, a + 0.08);
+    }
+    o.connect(g); g.connect(ambG); o.start(t); o.stop(t + n * 0.11 + 0.1);
+  }
+  function grillo(t) {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine'; o.frequency.value = 4300 + Math.random() * 500;
+    g.gain.value = 0;
+    for (let i = 0; i < 6; i++) { const a = t + i * 0.045; g.gain.setValueAtTime(0.012, a); g.gain.setValueAtTime(0, a + 0.022); }
+    o.connect(g); g.connect(ambG); o.start(t); o.stop(t + 0.3);
+  }
+  function gota(t) {
+    const o = ctx.createOscillator(), g = ctx.createGain(), f0 = 900 + Math.random() * 900;
+    o.type = 'sine'; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f0 * 0.45, t + 0.12);
+    g.gain.setValueAtTime(0.05, t); g.gain.exponentialRampToValueAtTime(0.0008, t + 0.25);
+    o.connect(g); g.connect(ambG); o.start(t); o.stop(t + 0.3);
+  }
+  function ambiente() {
+    if (!ambG) return;
+    const t = ctx.currentTime;
+    // El viento sopla a rachas.
+    vientoF.frequency.setTargetAtTime(300 + Math.random() * 500, t, 1.2);
+    if (sigAmb > t + 8 || sigAmb < t - 1) sigAmb = t + 0.5;
+    if (sigAmb > t + 0.25) return;
+    const lluvia = clima === 'lluvia' || clima === 'tormenta';
+    if (zona === 'cavernas' || zona === 'abismo') { gota(t + Math.random() * 0.2); sigAmb = t + 0.8 + Math.random() * 2.4; }
+    else if (noche) { if (!lluvia) for (let i = 0; i < 2; i++) grillo(t + i * 0.5 + Math.random() * 0.1); sigAmb = t + 1.4 + Math.random() * 1.8; }
+    else if (PAJAROS[zona] && !lluvia) { pajaro(t + Math.random() * 0.3); sigAmb = t + (2.5 + Math.random() * 5) / PAJAROS[zona]; }
+    else sigAmb = t + 3;
+  }
+  // Toque de la interfaz: un "tic" corto y suave, como el de un telefono.
+  function tic(alto) {
+    if (!ctx || !activo || ctx.state !== 'running') return;
+    const t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(alto ? 1500 : 1100, t); o.frequency.exponentialRampToValueAtTime(alto ? 900 : 650, t + 0.04);
+    g.gain.setValueAtTime(0.06, t); g.gain.exponentialRampToValueAtTime(0.0008, t + 0.06);
+    o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + 0.08);
   }
   function nota(n, cuando, dura, vol, onda, alEco) {
     const o = ctx.createOscillator(), g = ctx.createGain();
@@ -89,6 +150,7 @@ export function crearMusica() {
   }
   function programar() {
     if (!vivo || !activo) return;
+    ambiente();
     const E = ESCALAS[zona] || ESCALAS.pueblo;
     const pulso = E.pulso * (noche ? 1.35 : 1);
     const hasta = ctx.currentTime + 0.6;
@@ -127,7 +189,8 @@ export function crearMusica() {
   }
   return {
     arrancar,
-    zona(id) { if (id === zona) return; zona = id; if (ctx) cambiarBordon(); },
+    zona(id) { if (id === zona) return; zona = id; if (ctx) { cambiarBordon(); volumen(); } },
+    tic,
     noche(v) { if (v === noche) return; noche = v; volumen(); },
     clima(c) { if (c === clima) return; clima = c; volumen(); },
     trueno,

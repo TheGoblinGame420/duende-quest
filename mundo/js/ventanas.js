@@ -19,7 +19,7 @@ import {
   ARMAS, SKINS, PODERES, MONTURAS, TINTES, MASCOTAS, HOJAS, FORJA_MAX, costoForja, multForja,
   BANDA_MONTURA, TORRE, ambulanteActivo, ambulanteOferta,
   PAQUETES, estrellasDe, LOGROS, progresoLogro, statsJugador, ALAS,
-} from '/mmo/js/data.js?v=320';
+} from '/mmo/js/data.js?v=321';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -640,7 +640,7 @@ function htmlArmasSkins(y, tab) {
     h += tarjeta(ico, nom, esc(d.desc) + (tab === 'skin' && puesto !== id ? difSkin(y, id) : ''), acc, d.color ? ` style="--rz:${d.color}"` : '');
   }
   h += '</div>';
-  if (tab === 'skin') h += `<p class="vv-nota" style="color:#fde68a"><b>Una skin, dos juegos:</b> la que consigas la llevas también en $DUENDE CLASSIC (2D), con los mismos poderes. En PvP (duelos y Abismo) sus ventajas de combate no cuentan: ahí todos pelean igual.</p><p class="vv-nota">Cada skin da sus poderes mientras la llevas. Se compran con oro o, con tu cuenta, con dinero: ${esTg() ? 'Telegram Stars' : 'SOL o $DUENDE (10% de descuento) a la wallet de El Duende'}; confirmado el pago, se activa sola en tu personaje. Las cuatro exclusivas (Esmeralda, Sombrío, Solar y Cósmico) solo se consiguen así; ninguna cambia lo que se gana en mTON.</p>`;
+  if (tab === 'skin') h += `<p class="vv-nota" style="color:#fde68a"><b>Una skin, dos juegos:</b> la que consigas la llevas también en $DUENDE CLASSIC (2D), con los mismos poderes. En PvP (duelos y Abismo) sus ventajas de combate no cuentan: ahí todos pelean igual.</p><p class="vv-nota">Cada skin da sus poderes mientras la llevas. Se compran con oro o, con tu cuenta, con dinero: ${esTg() ? 'Telegram Stars' : 'SOL o $DUENDE (10% de descuento) a la wallet de El Duende'}; El Duende revisa el pago y la activa en tu personaje. Los siete disfraces de la mascota (Bruja, Momia, Frankenstein, Vampiro, Esqueleto, Lobo y Pirata) se compran solo con oro y cambian tu duende 3D con su sombrero o peinado. Las cuatro exclusivas (Esmeralda, Sombrío, Solar y Cósmico) solo se consiguen así; ninguna cambia lo que se gana en mTON.</p>`;
   return h;
 }
 function htmlPremium(y) {

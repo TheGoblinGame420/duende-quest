@@ -13,17 +13,17 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=320" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=321" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=320">
-<link rel="modulepreload" href="/mmo/js/data.js?v=320">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=320">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=320">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=320">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=320">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=320">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=321">
+<link rel="modulepreload" href="/mmo/js/data.js?v=321">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=321">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=321">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=321">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=321">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=321">
 <style>
 :root{--bg:#0a0418;--panel:rgba(14,9,30,.86);--borde:rgba(160,140,255,.22);--txt:#f2efff;--txt2:#b8b0d8;--txt3:#7d7699;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;--oro:#ffd84a;--pri:#2563eb;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -351,6 +351,31 @@ body.movil #avisos div,body.compacto #avisos div{font-size:10.5px;line-height:1.
 #chicha3.listo{background:#7c3aed;color:#fff;animation:chichaPulso 1.6s ease-in-out infinite;}
 @keyframes chichaPulso{50%{box-shadow:0 0 14px #c084fc;}}
 body.movil #chicha3,body.compacto #chicha3{bottom:calc(62px + env(safe-area-inset-bottom));font-size:9.5px;padding:2px 8px;}
+/* Interfaz tipo vidrio (v321): paneles translucidos con desenfoque, botones mas pequeños con
+   respuesta de muelle al tocar y ventanas que aparecen con un rebote suave. */
+:root{--muelle:cubic-bezier(.34,1.56,.64,1);--suave:cubic-bezier(.2,.8,.2,1);--vidrio:rgba(22,14,44,.62);}
+.caja{background:var(--vidrio);border-color:rgba(255,255,255,.1);border-radius:14px;-webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);box-shadow:0 8px 24px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.08);}
+#botones{gap:3px;padding:3px;border-radius:16px;}
+.bt{width:34px;height:34px;border-radius:10px;border-color:transparent;background:rgba(255,255,255,.06);font-size:14px;transition:transform .35s var(--muelle),background .2s;-webkit-tap-highlight-color:transparent;}
+.bt:hover{background:rgba(255,255,255,.14);transform:translateY(-1px) scale(1.06);}
+.bt:active{transform:scale(.86);transition-duration:.08s;}
+#b-mas{transition:transform .4s var(--muelle),background .2s;}
+#botones.abierto #b-mas{transform:rotate(90deg);background:rgba(125,211,252,.22);}
+#botones.abierto .extra{animation:btAparece .38s var(--muelle) both;}
+#botones.abierto .extra:nth-child(3n+1){animation-delay:.03s;} #botones.abierto .extra:nth-child(3n+2){animation-delay:.06s;} #botones.abierto .extra:nth-child(3n){animation-delay:.09s;}
+@keyframes btAparece{from{opacity:0;transform:scale(.5) translateY(-6px);}}
+.modal{background:rgba(5,2,14,.35);}
+.modal.on{animation:modalFondo .25s ease both;}
+.modal.on .ventana{animation:ventanaSube .42s var(--muelle) both;}
+@keyframes modalFondo{from{background:rgba(5,2,14,0);}}
+@keyframes ventanaSube{from{opacity:0;transform:translateY(14px) scale(.94);}}
+.ventana{background:rgba(24,15,48,.78);border-color:rgba(255,255,255,.12);border-radius:20px;-webkit-backdrop-filter:blur(24px) saturate(1.7);backdrop-filter:blur(24px) saturate(1.7);box-shadow:0 18px 48px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.1);scrollbar-width:thin;}
+.cerrar{border-radius:50%!important;background:rgba(255,255,255,.1)!important;border:0!important;transition:transform .3s var(--muelle),background .2s;}
+.cerrar:active{transform:scale(.85);}
+.vv-tab{border-radius:999px!important;transition:background .2s,transform .3s var(--muelle);}
+.vv-tab:active{transform:scale(.92);}
+button{-webkit-tap-highlight-color:transparent;}
+@media (prefers-reduced-motion:reduce){.bt,.modal.on,.modal.on .ventana,#botones.abierto .extra{animation:none!important;transition:none!important;}}
 </style>
 </head>
 <body>
@@ -537,6 +562,6 @@ body.movil #chicha3,body.compacto #chicha3{bottom:calc(62px + env(safe-area-inse
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script src="/js/config.js"></script>
-<script type="module" src="/mundo/js/mundo.js?v=320"></script>
+<script type="module" src="/mundo/js/mundo.js?v=321"></script>
 </body>
 </html>

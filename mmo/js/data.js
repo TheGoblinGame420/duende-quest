@@ -502,6 +502,12 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 89, fecha: '30 oct 2026', items: [
+    '7 skins nuevas de la mascota $DUENDE en la tienda, solo con oro: Bruja, Momia, Frankenstein, Vampiro, Esqueleto, Lobo y Pirata. Cada una viste a tu duende 3D con su ropa y su sombrero o peinado, y trae sus poderes.',
+    'Interfaz de vidrio: botones más pequeños que responden al tocar, el menú ⋯ se abre con un rebote suave y las ventanas aparecen con animación.',
+    'Más ambiente: viento en las alturas y el Abismo, pájaros de día, grillos de noche, gotas con eco en las cavernas y un toque suave al pulsar botones.',
+    'Física más viva: el vuelo sube y baja con inercia, las cuestas frenan o aceleran un poco y el duende se aplasta al aterrizar y se estira al saltar.',
+  ] },
   { n: 88, fecha: '27 oct 2026', items: [
     'Tu duende ahora es la mascota $DUENDE: cabeza cuadrada, ojos azules, cejas en bloque, mejillas, sonrisa con colmillos, orejas con interior naranja y las dos espadas de píxeles a la espalda.',
     'Disfraces en el editor de apariencia (⋯ → 🪞): Pirata con parche, Vampiro, Momia, Militar, Campesino y Bruja, como los duendes de $DUENDE. Los ven todos.',
@@ -1327,6 +1333,14 @@ export const SKINS = {
   king:       { nombre: 'Rey',        img: 'skin_king',           precio: 20000,  usd: 7,  color: '#ffd84a', buffs: { oroMult: 1.3, bonusHp: 20, defMult: 1.1 }, desc: '+30% oro · +HP extra · +10% defensa' },
   berserker:  { nombre: 'Berserker',   img: 'skin_berserker',      precio: 45000,  usd: 12, color: '#ff3344', buffs: { oroMult: 1.4, atkMult: 1.3, critBonus: .03 }, desc: '+40% oro · +30% ataque · +3% crítico' },
   legendaria: { nombre: 'Legendaria',  img: 'skin_legendariafull', precio: 100000, usd: 20, color: '#ff3cf0', buffs: { oroMult: 1.5, bonusHp: 50, aura: true, atkMult: 1.1, xpMult: 1.1 }, desc: '+50% oro · +HP · +10% ataque · +10% experiencia · aura que quema' },
+  // Disfraces de la mascota $DUENDE (imagenes y videos del dueño, 30-oct-2026): solo con oro del juego.
+  bruja:        { nombre: 'Duende Bruja',     img: 'skin_bruja',        precio: 6000,  color: '#f07a1a', buffs: { oroMult: 1.12, xpMult: 1.04 }, desc: '+12% oro · +4% experiencia' },
+  momia:        { nombre: 'Duende Momia',     img: 'skin_momia',        precio: 8000,  color: '#e8e0c8', buffs: { oroMult: 1.1, bonusHp: 12, defMult: 1.06 }, desc: '+10% oro · +HP · +6% defensa' },
+  frankenstein: { nombre: 'Duende Frankenstein', img: 'skin_frankenstein', precio: 12000, color: '#9aa3ad', buffs: { oroMult: 1.15, bonusHp: 25, defMult: 1.05 }, desc: '+15% oro · +HP extra · +5% defensa' },
+  vampiro:      { nombre: 'Duende Vampiro',   img: 'skin_vampiro',      precio: 12000, color: '#c0262d', buffs: { oroMult: 1.15, robo: .05 }, desc: '+15% oro · roba 5% de vida' },
+  esqueleto:    { nombre: 'Duende Esqueleto', img: 'skin_esqueleto',    precio: 15000, color: '#efe6cf', buffs: { oroMult: 1.18, critBonus: .04 }, desc: '+18% oro · +4% crítico' },
+  lobo:         { nombre: 'Duende Lobo',      img: 'skin_lobo',         precio: 15000, color: '#7a4a26', buffs: { oroMult: 1.18, atkMult: 1.1 }, desc: '+18% oro · +10% ataque' },
+  pirata:       { nombre: 'Duende Pirata',    img: 'skin_pirata',       precio: 18000, color: '#c9a227', buffs: { oroMult: 1.3, critBonus: .02 }, desc: '+30% oro · +2% crítico' },
   esmeralda:  { nombre: 'Duende Esmeralda', img: 'skin_hero', anim: true, hue: 40,  sat: 1.3, precio: null, premium: true, usd: 5,  color: '#34d399', buffs: { oroMult: 1.15, atkMult: 1.06, robo: .02 }, desc: '+15% oro · +6% ataque · roba 2% de vida' },
   sombra:     { nombre: 'Duende Sombrío',   img: 'skin_hero', anim: true, hue: 200, sat: .55, precio: null, premium: true, usd: 10, color: '#a78bfa', buffs: { oroMult: 1.25, atkMult: 1.1, robo: .03, bonusHp: 10 }, desc: '+25% oro · +10% ataque · roba 3% · +HP' },
   solar:      { nombre: 'Duende Solar',     img: 'skin_hero', anim: true, hue: 22, sat: 1.9, precio: null, premium: true, usd: 25, color: '#fbbf24', buffs: { oroMult: 1.3, atkMult: 1.14, bonusHp: 25, aura: true }, desc: '+30% oro · +14% ataque · +HP · aura que quema' },

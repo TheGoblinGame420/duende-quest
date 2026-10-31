@@ -7,8 +7,8 @@
 // antorchas, estalagmitas, cristales, trono, portal de salida y cofre.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { CUEVA, CUEVA_X0 } from '/mmo/js/cueva3d.js?v=320';
-import { transparentar } from './tapa.js?v=320';
+import { CUEVA, CUEVA_X0 } from '/mmo/js/cueva3d.js?v=321';
+import { transparentar } from './tapa.js?v=321';
 
 const dentro = (x, z) => CUEVA.salas.some(([x0, z0, x1, z1]) => x >= x0 && x < x1 && z >= z0 && z < z1);
 const rnd = (i, k) => { const s = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return s - Math.floor(s); };

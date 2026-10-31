@@ -14,23 +14,23 @@
 import * as THREE from 'three';
 import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS } from '/mmo/js/data.js?v=320';
-import { iniciarVentanas } from './ventanas.js?v=320';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=320';
-import { crearMusica } from './musica.js?v=320';
-import { construirCueva } from './cueva.js?v=320';
-import { TAPA, transparentar } from './tapa.js?v=320';
-import { construirAbismo } from './abismo.js?v=320';
-import { crearParticulas } from './particulas.js?v=320';
-import { cargarKenney, piezasCasa } from './kenney.js?v=320';
-import { CORRIENTES } from '/mmo/js/abismo3d.js?v=320';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS } from '/mmo/js/data.js?v=321';
+import { iniciarVentanas } from './ventanas.js?v=321';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=321';
+import { crearMusica } from './musica.js?v=321';
+import { construirCueva } from './cueva.js?v=321';
+import { TAPA, transparentar } from './tapa.js?v=321';
+import { construirAbismo } from './abismo.js?v=321';
+import { crearParticulas } from './particulas.js?v=321';
+import { cargarKenney, piezasCasa } from './kenney.js?v=321';
+import { CORRIENTES } from '/mmo/js/abismo3d.js?v=321';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=320';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=320';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=320';
-import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=320';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=320';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=321';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=321';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=321';
+import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=321';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=321';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -983,6 +983,12 @@ class Figura3D {
     this.raiz.rotation.set(0, ry, 0);
     const k = escala === undefined ? 1 : escala;
     this.raiz.scale.setScalar(this.escala * k);
+    if (this.aplastaT) {
+      const a = (t - this.aplastaT) / 280;
+      if (a >= 1 || a < 0) this.aplastaT = 0;
+      else { const q = this.aplastaK * Math.sin(a * Math.PI) * (1 - a * 0.5); this.raiz.scale.y *= 1 - q; this.raiz.scale.x *= 1 + q * 0.5; this.raiz.scale.z *= 1 + q * 0.5; }
+    }
+    if (this.estira) { this.raiz.scale.y *= 1 + this.estira; this.raiz.scale.x *= 1 - this.estira * 0.4; this.raiz.scale.z *= 1 - this.estira * 0.4; }
     if (animar) this.modelo.animar(this.est, (t - this.tE) / 1000, ts);
     this.sombra.position.set(x, alturaEn(x, z) + 0.05, z);
   }
@@ -2196,6 +2202,8 @@ $('b-compartir').onclick = () => { presumirTxt = ''; if (!refAmigo) mandar({ t: 
 $('presumir3').onclick = () => { $('presumir3').style.display = 'none'; compartir(); };
 // Sin { once }: si el sistema dejo la musica suspendida al volver (iPhone),
 // cualquier toque la retoma; con el contexto ya creado solo mira su estado.
+// Toque suave al pulsar botones de la interfaz (v321).
+addEventListener('pointerdown', e => { if (sonido && e.target.closest && e.target.closest('.bt,.vv-tab,.cerrar,.vv-btn')) musica.tic(e.target.closest('#b-mas')); });
 for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, () => { if (sonido) { musica.arrancar(); if (actx && actx.state !== 'running') actx.resume().catch(() => {}); } });   // efectos tambien (iPhone)
 // Fuera de la app (otra pestaña, pantalla apagada, Telegram sin 'deactivated')
 // la musica y los golpes seguian sonando de fondo.
@@ -2985,7 +2993,10 @@ function fisica(dt) {
   const agarre = P.vuela || P.planea ? 4 : nadando ? 5 : !P.suelo ? 3 : 16;
   const kv = 1 - Math.exp(-agarre * dt);
   if (lanzando && !quiere) { P.vx = 0; P.vz = 0; }
-  P.vx = lerp(P.vx || 0, quiere ? mx * vel : 0, kv); P.vz = lerp(P.vz || 0, quiere ? mz * vel : 0, kv);
+  // Cuesta arriba se va algo mas lento y cuesta abajo algo mas rapido (v321).
+  let cuesta = 1;
+  if (quiere && P.suelo && !P.vuela && !nadando) cuesta = clamp(1 - (alturaEn(P.x + mx * 0.6, P.z + mz * 0.6) - alturaEn(P.x, P.z)) * 0.45, 0.82, 1.12);
+  P.vx = lerp(P.vx || 0, quiere ? mx * vel * cuesta : 0, kv); P.vz = lerp(P.vz || 0, quiere ? mz * vel * cuesta : 0, kv);
   const rapidez = Math.hypot(P.vx, P.vz);
   P.anda = rapidez > 0.6;
   if (rapidez > 0.05) {
@@ -3034,7 +3045,8 @@ function fisica(dt) {
   if (P.vuela) {
     // Volando: Espacio sube, C (o Mayus) baja; las alas se cansan.
     const abajo = !sinControl && (teclas.KeyC || teclas.ShiftLeft || tocandoBajar);
-    P.vy = espacio ? 6 : abajo ? -7 : Math.sin(ahoraP / 500) * 0.3;
+    // Sube y baja con inercia (antes la velocidad saltaba de golpe).
+    P.vy = lerp(P.vy || 0, espacio ? 6 : abajo ? -7 : Math.sin(ahoraP / 500) * 0.3, 1 - Math.exp(-dt * 7));
     P.y = Math.min(P.y + P.vy * dt, suelo + 45);
     P.alas = Math.max(0, P.alas - dt);
     if (P.alas <= 0) { volar(false); P.planeoAuto = true; aviso('Tus alas se cansaron: planeas hacia el suelo.'); }
@@ -3050,6 +3062,7 @@ function fisica(dt) {
     if (P.y <= suelo || pegar) {
       const aterriza = !P.suelo, vAnt = P.vy;
       if (aterriza && vAnt < -7) FX.emitir(P.x, suelo + 0.1, P.z, { n: 16, color: '#bfae8e', vel: 2.5 - vAnt * 0.15, vida: 0.5, grav: 2, plano: true, radio: 0.4, tam: 1.6 });
+      if (aterriza && vAnt < -3) { P.aterrizaT = ahoraP; P.aterrizaK = clamp(-vAnt * 0.011, 0.05, 0.2); }
       P.y = suelo; P.vy = 0; P.suelo = true; P.planea = false; P.planeoAuto = false; P.coyote = FIS.coyote;
       if (aterriza && P.buffer > 0 && !sinControl) { P.buffer = 0; saltar(); }
     } else { P.suelo = false; P.coyote = Math.max(0, P.coyote - dt); }
@@ -3122,6 +3135,11 @@ function animarJugador(q, esYo, t) {
     if (golpeNuevo) f.atkVisto = q.atkT;
     f.estado(f.montura && e !== 'ataca' && e !== 'lanza' && e !== 'muere' ? 'monta' : e, t, golpeNuevo);
     if ((q.heridoT || 0) !== f.heridoVisto) { f.heridoVisto = q.heridoT || 0; if (t - f.heridoVisto < 300) f.modelo.golpe(); }
+    if (esYo) {
+      // Se aplasta un poco al aterrizar y se estira al saltar (v321).
+      if (P.aterrizaT && P.aterrizaT !== f.aplastaVisto) { f.aplastaVisto = f.aplastaT = P.aterrizaT; f.aplastaK = P.aterrizaK; }
+      f.estira = !P.suelo && !P.vuela && !P.planea ? clamp(P.vy * 0.008, -0.03, 0.07) : 0;
+    }
     f.poner(q.x, y, q.z, esYo ? P.ry : q.ry, t);
     if (!esYo) {
       const vuela = q.a === 3 || q.a === 4;

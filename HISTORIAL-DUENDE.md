@@ -57,6 +57,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v318 | 20 misiones secundarias, recetas de chicha/mazamorra, atuendos PNJ, skins web manuales (/skinweb) | **B** |
 | v319 | Stars del arcade con acreditación manual (/starsok): todos los pagos son manuales | **B** |
 | v320 | Duende = mascota $DUENDE (cabeza cubo, espadas pixel), disfraces, tema oficial en el pueblo, interpolación suave | **B** |
+| v321 | 7 skins disfraz de la mascota (solo oro), interfaz de vidrio, ambiente (viento, pájaros, grillos, gotas), física con inercia y aplastado | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 
