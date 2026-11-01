@@ -26,12 +26,12 @@
 <meta name="theme-color" content="#0a0418">
 <link rel="manifest" href="/mundo/manifest.json">
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
-<script src="/js/pwa.js?v=336" defer></script>
+<script src="/js/pwa.js?v=337" defer></script>
 <link rel="icon" href="/assets/ui/coin.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=336"></script>
+<script src="/js/origen.js?v=337"></script>
 <script>
 // Red de seguridad de la carga (script clasico: corre aunque el modulo 3D o el CDN fallen).
 // - Errores antes de conectar: se guardan en __errQ y mundo.js los manda al entrar.
@@ -110,34 +110,35 @@
   if (!tg) return;
   window.__tgListo = new Promise(function (ok) {
     var s = document.createElement('script'); s.src = 'https://telegram.org/js/telegram-web-app.js';
-    s.onload = s.onerror = function () { ok(); };
+    s.onload = function () { try { var w = window.Telegram && window.Telegram.WebApp; if (w && w.initData) { w.ready(); w.expand(); if (w.isVersionAtLeast && w.isVersionAtLeast('6.1')) { w.setBackgroundColor('#0a0418'); w.setHeaderColor('#0a0418'); } } } catch (e) {} ok(); };
+    s.onerror = function () { ok(); };
     setTimeout(ok, 15000);   // telegram.org caido: el juego no se queda esperando para siempre
     document.head.appendChild(s);
   });
 })();
 </script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=336" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=337" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=336">
-<link rel="modulepreload" href="/mmo/js/data.js?v=336">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=336">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=336">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=336">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=336">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=336">
-<link rel="modulepreload" href="/mmo/js/regalo.js?v=336">
-<link rel="modulepreload" href="/mmo/js/avisotg.js?v=336">
-<link rel="modulepreload" href="/mundo/js/musica.js?v=336">
-<link rel="modulepreload" href="/mundo/js/cueva.js?v=336">
-<link rel="modulepreload" href="/mundo/js/tapa.js?v=336">
-<link rel="modulepreload" href="/mundo/js/abismo.js?v=336">
-<link rel="modulepreload" href="/mundo/js/particulas.js?v=336">
-<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=336">
-<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=336">
-<link rel="modulepreload" href="/mmo/js/secundarias.js?v=336">
-<link rel="modulepreload" href="/mundo/js/lore.js?v=336">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=337">
+<link rel="modulepreload" href="/mmo/js/data.js?v=337">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=337">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=337">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=337">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=337">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=337">
+<link rel="modulepreload" href="/mmo/js/regalo.js?v=337">
+<link rel="modulepreload" href="/mmo/js/avisotg.js?v=337">
+<link rel="modulepreload" href="/mundo/js/musica.js?v=337">
+<link rel="modulepreload" href="/mundo/js/cueva.js?v=337">
+<link rel="modulepreload" href="/mundo/js/tapa.js?v=337">
+<link rel="modulepreload" href="/mundo/js/abismo.js?v=337">
+<link rel="modulepreload" href="/mundo/js/particulas.js?v=337">
+<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=337">
+<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=337">
+<link rel="modulepreload" href="/mmo/js/secundarias.js?v=337">
+<link rel="modulepreload" href="/mundo/js/lore.js?v=337">
 <style>
 :root{--bg:#0a0418;--panel:rgba(14,9,30,.86);--borde:rgba(160,140,255,.22);--txt:#f2efff;--txt2:#b8b0d8;--txt3:#7d7699;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;--oro:#ffd84a;--pri:#2563eb;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -560,6 +561,12 @@ body.movil.mano-der #joy .pista-joy{left:auto;right:28px;flex-direction:row-reve
 #cartel-nv small{display:block;font:700 13px var(--sans);color:#fff;text-shadow:0 1px 3px #000;white-space:normal;max-width:86vw;margin:4px auto 0}
 #cartel-nv.on{animation:cartelNv 2.4s ease-out forwards}
 @keyframes cartelNv{0%{opacity:0;transform:translateX(-50%) scale(1.6)}12%{opacity:1;transform:translateX(-50%) scale(1)}80%{opacity:1;transform:translateX(-50%) scale(1)}100%{opacity:0;transform:translateX(-50%) scale(1)}}
+/* Movil vertical: tienda mas alta y ficha del monstruo entre tu marco y el minimapa */
+@media (orientation:portrait){
+ body.movil #v-tienda.modal,body.compacto #v-tienda.modal{padding-top:calc(8px + env(safe-area-inset-top) + var(--tg-top,0px))!important;}
+ body.movil #v-tienda .ventana,body.compacto #v-tienda .ventana{max-height:calc(100vh - 84px - env(safe-area-inset-top) - env(safe-area-inset-bottom))!important;max-height:calc(100dvh - 84px - env(safe-area-inset-top) - env(safe-area-inset-bottom))!important;}
+ body.movil #obj,body.compacto #obj{left:calc(16px + min(150px,40vw));transform:none;width:calc(100vw - min(150px,40vw) - 120px);max-width:160px;}
+}
 </style>
 </head>
 <body>
@@ -572,6 +579,7 @@ body.movil.mano-der #joy .pista-joy{left:auto;right:28px;flex-direction:row-reve
   <div class="t">DUENDE QUEST<br>ORIGINS</div>
   <div class="barra"><i id="carga-i"></i></div>
   <div class="s" id="carga-s">Preparando el mundo…</div>
+  <button id="b-sin-son" type="button" style="margin-top:10px;background:none;border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:8px;padding:6px 12px;font:inherit;font-size:13px;pointer-events:auto">🔇 Jugar sin sonido</button>
   <p class="consejo-carga" id="carga-c"></p>
 </div>
 <script>
@@ -753,8 +761,8 @@ body.movil.mano-der #joy .pista-joy{left:auto;right:28px;flex-direction:row-reve
 <!-- Telegram: su SDK se carga arriba solo dentro de Telegram (window.__tgListo).
      defer: no frenan el HTML y corren en orden, antes que mundo.js (que usa supabase). -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=336" defer></script>
-<script type="module" src="/mundo/js/mundo.js?v=336"></script>
+<script src="/js/config.js?v=337" defer></script>
+<script type="module" src="/mundo/js/mundo.js?v=337"></script>
 <div id="flash-nv"></div>
 <div id="cartel-nv"></div>
 </body>

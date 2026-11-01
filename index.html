@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=336"></script>
+<script src="/js/origen.js?v=337"></script>
 <!-- Modo anuncio: quien llega de un anuncio (fbclid / utm_*) ve la web sin la parte cripto
      (wallet, precio, token, donaciones). Se recuerda en la pestaña; el resto de visitas no cambia. -->
 <script>(function(){var a=/[?&](fbclid|utm_[a-z]+)=/i.test(location.search);try{if(a)sessionStorage.setItem('dq_anuncio','1');else a=sessionStorage.getItem('dq_anuncio')==='1';}catch(e){}if(a)document.documentElement.classList.add('anuncio');})()</script>
-<style>html.anuncio #wallet-connect-btn,html.anuncio .live-price-pill,html.anuncio .solo-cripto,html.anuncio #btn-buy-main,html.anuncio #trust,html.anuncio #tokenomics,html.anuncio #exchange,html.anuncio #donate{display:none!important;}</style>
+<style>html.anuncio #wallet-connect-btn,html.anuncio .live-price-pill,html.anuncio .solo-cripto,html.anuncio #btn-buy-main,html.anuncio #trust,html.anuncio #tokenomics,html.anuncio #exchange,html.anuncio #donate,html.anuncio #roadmap{display:none!important;}</style>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Duende Quest: MMORPG gratis en 3D y 2D, en el navegador y Telegram</title>
 <meta name="description" content="MMORPG gratis sin descargas: $DUENDE ORIGINS, mundo abierto 3D con alas y PvP de facciones, y $DUENDE CLASSIC, MMO 2D en pixel art. Mismo duende. Hecho en Perú.">
@@ -32,7 +32,7 @@
 <meta name="twitter:image:alt" content="Duende Quest Online, el MMORPG de los duendes">
 <meta name="theme-color" content="#0b0f17">
 <link rel="manifest" href="/inicio/manifest.json">
-<script src="/js/pwa.js?v=336" defer></script>
+<script src="/js/pwa.js?v=337" defer></script>
 <link rel="icon" type="image/png" href="assets/ui/coin.png">
 <script type="application/ld+json">
 {
@@ -782,7 +782,7 @@ section[id]{scroll-margin-top:72px;}
     <li><a href="#community">Comunidad</a></li>
     <li class="solo-cripto"><a href="#tokenomics">Token</a></li>
     <li><a href="#nft-store">Tienda</a></li>
-    <li><a href="#roadmap">Hoja de ruta</a></li>
+    <li class="solo-cripto"><a href="#roadmap">Hoja de ruta</a></li>
     <li><a href="#faq">Preguntas</a></li>
   </ul>
   <div class="nav-right">
@@ -1079,7 +1079,7 @@ section[id]{scroll-margin-top:72px;}
         <h3 class="gf-title">Ranking global</h3>
         <p class="gf-desc">Crea tu cuenta y compite en el ranking global: top 50 actualizado en tiempo real, con filtros por día, semana y de siempre.</p>
       </div>
-      <div class="game-feat">
+      <div class="game-feat solo-cripto">
         <h3 class="gf-title">Recompensas opcionales</h3>
         <p class="gf-desc">Lo que ganas jugando (DQ) se puede canjear por $DUENDE desde tu wallet dentro del juego. Las skins de mayor nivel dan multiplicadores. No hace falta nada de esto para jugar.</p>
       </div>
@@ -1120,7 +1120,7 @@ section[id]{scroll-margin-top:72px;}
       <h3>Skins con Stars o TON</h3>
       <p>Cada skin trae su propia animación y su color de corte. Se compran con Telegram Stars (tarjeta) o con tu wallet TON. Son opcionales.</p>
     </div>
-    <div class="about-card">
+    <div class="about-card solo-cripto">
       <h3>TON ⇄ $DUENDE (opcional)</h3>
       <p>Compra $DUENDE con TON o Stars, y canjea el DQ que ganas jugando de vuelta a $DUENDE en tu wallet.</p>
     </div>
@@ -1885,11 +1885,11 @@ section[id]{scroll-margin-top:72px;}
       <summary>¿Funciona en el celular?</summary>
       <div class="faq-r"><p>Sí, en Android y en iPhone. En el celular aparecen controles táctiles en pantalla para moverte, saltar, atacar y usar habilidades. En el PC se juega con el teclado.</p></div>
     </details>
-    <details>
+    <details class="solo-cripto">
       <summary>¿Qué es $DUENDE y es obligatorio?</summary>
       <div class="faq-r"><p>$DUENDE es un token comunitario de entretenimiento en la blockchain de Solana. <strong>No es obligatorio</strong>: el juego entero es gratis sin él. No es una inversión ni da derechos sobre el proyecto; su precio puede subir o bajar, incluso a cero, y nada de esto es asesoría financiera.</p></div>
     </details>
-    <details>
+    <details class="solo-cripto">
       <summary>¿Cómo compro $DUENDE?</summary>
       <div class="faq-r">
         <p>Hay dos formas:</p>
@@ -1995,7 +1995,7 @@ section[id]{scroll-margin-top:72px;}
     <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">Contacto: @ElDuendeOficial (creador)</a>
   </div>
   <p class="f-note" id="seguridad">🔒 Seguridad: nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado. Los únicos canales oficiales son los de esta página.</p>
-  <p class="f-note">
+  <p class="f-note solo-cripto">
     $DUENDE es un token memecoin creado para entretenimiento y comunidad en Solana.<br>
     No es consejo de inversión financiera. Las criptomonedas son activos de alto riesgo.<br>
     Invierte solo lo que puedes perder. DYOR (investiga por tu cuenta).
@@ -2183,6 +2183,7 @@ document.addEventListener('DOMContentLoaded', loadLiveStats);
 // y metian prisa falsa). Modo anuncio: los botones de jugar llevan a /jugar/ con el utm.
 if (document.documentElement.classList.contains('anuncio')) document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('a[href="/inicio/"],a[href="/jugar/"]').forEach(function (a) { a.href = '/jugar/' + location.search; });
+  try { document.querySelectorAll('.hero-h1-sub,.juego h3').forEach(function(e){e.innerHTML=e.innerHTML.replace(/\$DUENDE /g,'');}); } catch (e) {}
 });
 </script>
 <!-- Solana web3.js -->
@@ -2190,9 +2191,9 @@ if (document.documentElement.classList.contains('anuncio')) document.addEventLis
 <!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <!-- Config (keys + DUENDE_CFG) -->
-<script src="js/config.js?v=336"></script>
+<script src="js/config.js?v=337"></script>
 <!-- Módulos en orden de dependencia -->
-<script src="js/auth-manager.js?v=336"></script>
+<script src="js/auth-manager.js?v=337"></script>
 <script>
 // Ranking real de la landing (antes: 5 nombres inventados con un badge
 // "LIVE" que no estaba conectado a nada). auth-manager.js registra su
@@ -2257,7 +2258,7 @@ window.addEventListener('load', cargarRankingLanding);
   estado(); setInterval(estado, 60000);
 })();
 </script>
-<script src="js/price-feed.js?v=336"></script>
+<script src="js/price-feed.js?v=337"></script>
 <script src="js/wallet-manager.js"></script>
 <script src="js/donation-manager.js"></script>
 <script>

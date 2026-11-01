@@ -21,7 +21,7 @@ import {
   EXPEDICION, premioExpedicion, MATERIALES,
   PAQUETES, estrellasDe, solesDeStars, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA, LOGROS, progresoLogro, statsJugador, ALAS, paqueteParaFaltante, ENTREGA, textoPagoRecibido, PEDIDO_VIGENCIA_MS,
   pagoLocalActivo, textoSoles, YAPE_VIGENCIA_MS, premioDiaria, MISIONES,
-} from '/mmo/js/data.js?v=336';
+} from '/mmo/js/data.js?v=337';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);

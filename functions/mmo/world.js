@@ -709,6 +709,19 @@ export class MmoWorld {
           const h = c.herm && await this.hermandad(c.herm);
           if (h && h.miembros[uidInv]) { h.miembros[uid] = h.miembros[uidInv]; delete h.miembros[uidInv]; await this.guardarHerm(h); }
           if (c.ref && (await this.state.storage.get('ref:' + c.ref)) === uidInv) await this.state.storage.put('ref:' + c.ref, uid);
+          // «Invita a un amigo» sigue valiendo: sus primos apuntan al uid nuevo (si no, el premio de Nv 10
+          // buscaba el 'inv:' borrado) y en «Mis invitados» de quien lo invito tambien (aunque este desconectado).
+          try {
+            for (const a of (c.invitados || []).slice(-30)) {
+              if (!a || !a.u || a.u === uid || a.u === uidInv) continue;
+              const { s: o, c: ci } = await this.pjDe(a.u);
+              if (ci && ci.invitadoPor === uidInv) { ci.invitadoPor = uid; if (o) o.sucio = true; else await this.state.storage.put('c:' + a.u, ci); }
+            }
+            if (c.invitadoPor && c.invitadoPor !== uid && c.invitadoPor !== uidInv) {
+              const { s: o, c: co } = await this.pjDe(c.invitadoPor);
+              if (co && Array.isArray(co.invitados)) { let cambio = false; for (const a of co.invitados) if (a && a.u === uidInv) { a.u = uid; cambio = true; } if (cambio) { if (o) o.sucio = true; else await this.state.storage.put('c:' + c.invitadoPor, co); } }
+            }
+          } catch (e) { console.error('[MMO herencia invitados]', e); }
           await this.migrarUid(uidInv, uid, nombre);   // rankings (vincular.js); la herencia se guarda al momento
         } finally { if (this.entrando.get(uidInv) === s) this.entrando.delete(uidInv); }
       }
@@ -869,8 +882,20 @@ export class MmoWorld {
     this.buzonEnviar(s).catch(e => console.error('[MMO buzon]', e));   // "Mientras no estabas" y compra entregada
     const tp = temporadaDe();
     if (ambulanteActivo() && c.nivel >= 15) this.enviar(s, { t: 'toast', m: 'Mercader ambulante en el pueblo este fin de semana: colores y una mascota exclusivos (pestaña «Ambulante»).', ok: true });
-    if (tp) this.enviar(s, { t: 'toast', m: `${tp.nombre}: hasta el ${tp.hasta} los monstruos sueltan ${tp.cosas}; con 50 ganas 3.000 de oro y un título; con 200, 12.000 de oro y otro título. Llevas ${c[tp.campo] || 0}.`, ok: true });
-    else {
+    // Aviso del evento: una vez por dia de Lima (no en cada reconexion).
+    // El ultimo dia dice «HOY» y, si el siguiente empieza enseguida, lo anuncia.
+    const ahoraT = Date.now();
+    const diaT = new Date(ahoraT - 5 * 3600000).toISOString().slice(0, 10);
+    if (tp && c.tpAvisoD !== diaT) {
+      c.tpAvisoD = diaT; s.sucio = true;
+      const ultimo = tp.fin - ahoraT < 86400000;
+      const hasta = ultimo ? 'HOY a medianoche (¡último día!)' : 'el ' + tp.hasta;
+      const dto = tp.descuento && ultimo ? ` Los disfraces de la mascota cuestan ${Math.round(tp.descuento * 100)}% menos de oro en la tienda solo hasta esta noche.` : '';
+      const sig = TEMPORADAS.filter(x => x.ini >= tp.fin - 60000 && x.ini - tp.fin < 3 * 86400000).sort((a, b) => a.ini - b.ini)[0];
+      const fechaSig = sig ? new Date(sig.ini).toLocaleDateString('es', { day: 'numeric', month: 'long', timeZone: 'America/Lima' }) : '';
+      const tras = sig && tp.fin - ahoraT < 3 * 86400000 ? ` Y desde el ${fechaSig} llega ${sig.emoji} ${sig.nombre}.` : '';
+      this.enviar(s, { t: 'toast', m: `${tp.nombre}: hasta ${hasta} los monstruos sueltan ${tp.cosas}; con 50 ganas 3.000 de oro y un título; con 200, 12.000 de oro y otro título. Llevas ${c[tp.campo] || 0}.${dto}${tras}`, ok: true });
+    } else if (!tp) {
       // Sin evento: si el siguiente empieza en 10 dias o menos, se anuncia
       // (un motivo para volver ese dia).
       const ahora = Date.now();

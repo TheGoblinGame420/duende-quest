@@ -3316,3 +3316,15 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - /jugar/: precarga solo con 4g y sin saveData. Telegram: /miscompras con skins activadas y compras antiguas; motivo claro de fallo de Stars en la Mini App.
 - Carga de ORIGINS en horizontal: consejo con @media (max-height:440px).
 - Arnés 897 bien.
+
+### Ronda 12, última de la noche (1-nov-2026, `?v=337`)
+
+- 20 evaluadores de la primera hora (Instagram/Facebook, iPhone, CLASSIC modesto, 2-nov y 3-nov, comprador de 10 soles, bus sin sonido, tutoriales, Mini App, /jugar/, /start ad_) → 88 problemas → 10 tareas.
+- Telegram: `WebApp.ready()`/`expand()` en el onload del SDK (fondo antes que cabecera, 6.1–6.8 no aceptan hex en la cabecera).
+- Portada en modo anuncio: oculta #roadmap, FAQ de $DUENDE, nota memecoin, TON y el enlace «Hoja de ruta».
+- AUTO de ORIGINS: reintento cada 1,5 s hasta 2 min tras limpiar la zona; poción automática bajo 30 %.
+- Pistas del novato (doble toque, misión, Nv 9/10). Aviso de último día de la Noche de Duendes y del inicio de T'anta Wawa, una vez al día.
+- Invitados → cuenta: los referidos se conservan. Móvil vertical: tienda alta, avisos en cola, ficha del monstruo entre marco y minimapa. «🔇 Jugar sin sonido» en la carga. Rescate a Safari en iPhone desde FB/IG.
+- Arnés 897 bien.
+
+**Resumen de la noche (v325–v337):** evaluación con 221 agentes (1048 propuestas, backlog de 60 ítems, todos atendidos o preparados) y 12 rondas de mejora con unos 640 agentes. Pendiente del dueño: Yape (`PAGO_LOCAL`), píxel (`META_PIXEL_ID`/`META_CAPI_TOKEN`), `DEPLOY_SECRET`, Mini App «jugar» en BotFather, Redirect URLs de Supabase con /mundo/, revisar `ENTREGA` y `CHICHA`, depurador de compartir de Meta, «Confirm email» y `ADMIN_TG_ID`.

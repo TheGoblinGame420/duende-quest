@@ -504,9 +504,17 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 336;
+export const VERSION = 337;
 
 export const NOVEDADES = [
+  { n: 105, fecha: '1 nov 2026', items: [
+    "🎃 Último día de la Noche de Duendes: disfraces de mascota 25% más baratos hasta medianoche. ¡Mañana 3 de noviembre empieza la Semana de la T'anta Wawa!",
+    'En ORIGINS, con el AUTO tu duende espera a que salgan más monstruos y sigue solo, y toma una poción cuando su vida baja del 30 %.',
+    'En la pantalla de carga de ORIGINS puedes tocar «🔇 Jugar sin sonido», ideal en el bus. En Telegram la carga aparece al instante.',
+    'En el celular en vertical, la tienda usa casi toda la pantalla y la ficha del monstruo ya no tapa tu vida.',
+    'Si juegas como invitado y luego creas tu cuenta, no pierdes el premio por tus amigos invitados.',
+    'En iPhone, desde Facebook o Instagram, «Abrir en el navegador» lleva tu duende a Safari sin escribir códigos.',
+  ] },
   { n: 104, fecha: '1 nov 2026', items: [
     'La oferta de bienvenida ya no se abre en medio de una pelea, y los avisos no tapan la ventana para elegir tu clase.',
     'La página /jugar/ ya no baja el juego por adelantado con conexión 3G o más lenta.',
