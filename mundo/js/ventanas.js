@@ -18,8 +18,9 @@ import {
   HABS, habsDe, costoHab, CLASES, RECURSOS, ESPECS, ESPEC_NIVEL, costoCambioClase,
   ARMAS, SKINS, precioOro, PODERES, MONTURAS, TINTES, MASCOTAS, HOJAS, FORJA_MAX, costoForja, multForja,
   BANDA_MONTURA, TORRE, ambulanteActivo, ambulanteOferta,
-  PAQUETES, estrellasDe, LOGROS, progresoLogro, statsJugador, ALAS, paqueteParaFaltante, ENTREGA, textoPagoRecibido, PEDIDO_VIGENCIA_MS,
-} from '/mmo/js/data.js?v=326';
+  EXPEDICION, premioExpedicion, MATERIALES,
+  PAQUETES, estrellasDe, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA, LOGROS, progresoLogro, statsJugador, ALAS, paqueteParaFaltante, ENTREGA, textoPagoRecibido, PEDIDO_VIGENCIA_MS,
+} from '/mmo/js/data.js?v=327';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -43,7 +44,7 @@ const est = {
 let pendiente = null;          // confirmacion de dos toques { k, t }
 let pagoActual = null;         // pedido de SOL/$DUENDE mostrado
 
-const IDS = { inv: 'v-inv', libro: 'v-libro', tienda: 'v-tienda', logros: 'v-logros', pago: 'v-pago' };
+const IDS = { inv: 'v-inv', libro: 'v-libro', tienda: 'v-tienda', logros: 'v-logros', pago: 'v-pago', exped: 'v-exped' };
 
 // ── CSS propio (prefijo vv- para no chocar con el HUD) ──
 const CSS = `
@@ -153,6 +154,8 @@ const CSS = `
 .vv-qr{display:flex;justify-content:center;margin:6px 0;min-height:40px;}
 .vv-qr img{background:#fff;border-radius:8px;}
 .vv-pedidos .fila{font-size:13px;}
+.vv-pedidos .fila>span:last-child{text-align:right;flex-shrink:0;max-width:60%;}
+.vv-pedidos .fila .btn{padding:4px 8px;font-size:12px;margin-top:2px;}
 .vv-plazo{display:block;font-size:11px;color:var(--txt2);margin-top:2px;}
 #vv-franja{position:fixed;left:50%;top:calc(46px + env(safe-area-inset-top,0px) + var(--tg-top,0px));transform:translateX(-50%);z-index:8;display:none;max-width:calc(100vw - 32px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:rgba(14,9,30,.86);border:1px solid #4ade80;border-radius:999px;padding:5px 12px;font:700 12px var(--sans);color:#d1fae5;cursor:pointer;pointer-events:auto;}
 #vv-franja.pend{border-color:#facc15;color:#fef3c7;}
@@ -300,6 +303,14 @@ function pintarTabs(id, tabs, actual, act) {
 // ═══════════════════ INVENTARIO ═══════════════════
 const puntaje = b => ((b && b.atk) || 0) * 3 + ((b && b.def) || 0) * 2 + ((b && b.hp) || 0) * 0.3 + ((b && b.crit) || 0) * 300;
 const puedeUsar = (it, y) => it.nv <= y.nivel || (!!it.des && y.nivel >= NIVEL_MAX);
+// Si una pieza recien ganada mejora la puesta (para la tarjeta «▲ Mejor · Equipar» del botin 3D).
+// No cuenta como mejora si rompe un conjunto de 2 o mas piezas.
+function compararConPuesta(it, y) {
+  if (!it || !y || it.vendido || !it.s || !puedeUsar(it, y)) return false;
+  const eq = y.eq || {}, puesto = eq[it.s];
+  if (puesto && puesto.cj && piezasConjunto(eq)[puesto.cj] >= 2 && it.cj !== puesto.cj) return false;
+  return !puesto || puntaje(it.b) > puntaje(puesto.b);
+}
 // Comunes que se pueden vender sin perder nada: no las que serian una mejora de lo que llevas.
 const comunesVendibles = y => { const eq = y.eq || {}; return (y.bolsa || []).filter(x => x.r === 0 && !(puedeUsar(x, y) && (!eq[x.s] || puntaje(x.b) > puntaje(eq[x.s].b)))); };
 // Diferencia de bonos entre una pieza y la que llevas puesta.
@@ -519,7 +530,7 @@ function htmlClases(y) {
 }
 
 // ═══════════════════ MERCADER ═══════════════════
-const TABS_TIENDA = [['pw', 'PODERES'], ['arma', 'ARMAS'], ['forja', 'FORJA'], ['skin', 'SKINS'], ['montura', 'MONTURAS'], ['alas', 'ALAS'], ['tinte', 'COLORES'], ['mascota', 'MASCOTAS'], ['ambulante', 'AMBULANTE'], ['premium', 'PREMIUM']];
+const TABS_TIENDA = [['pw', 'PODERES'], ['arma', 'ARMAS'], ['forja', 'FORJA'], ['skin', 'SKINS'], ['montura', 'MONTURAS'], ['alas', 'ALAS'], ['tinte', 'COLORES'], ['mascota', 'MASCOTAS'], ['ambulante', 'AMBULANTE'], ['premium', '💎 PAQUETES']];
 const esTg = () => (H && typeof H.telegram === 'function' ? !!H.telegram() : !!TG());
 // Modo anuncio (js/origen.js): quien llega de Meta no ve pagos SOL/$DUENDE ni mTON (solo se ocultan).
 const anuncio = () => { try { return !!(window.dqAnuncio && window.dqAnuncio()); } catch (e) { return false; } };
@@ -618,7 +629,7 @@ function htmlAlas(y) {
   for (const [id, al] of Object.entries(ALAS)) {
     const tiene = (y.alas || ['aprendiz']).includes(id);
     const acc = tiene ? ((y.ala || 'aprendiz') === id ? etq('✓ Puestas', 'vv-ok') : btn('Ponérmelas', 'comprar', { k: 'alas', id }, 'sec'))
-      : al.premium ? btn('Ver en PREMIUM', 'ttab', { id: 'premium' }, 'sec')
+      : al.premium ? btn('Ver en PAQUETES', 'ttab', { id: 'premium' }, 'sec')
       : al.mazmorras ? etq(`🏆 Mazmorras ${y.mazmorras || 0}/${al.mazmorras}`)
       : precioYBoton(y, al.precio, 'alas', id, al.nv);
     const ico = `<span style="display:inline-block;width:34px;height:34px;border-radius:50%;background:radial-gradient(circle,${al.color},transparent 70%);box-shadow:0 0 ${al.brillo ? 12 : 4}px ${al.color}"></span>`;
@@ -631,7 +642,7 @@ function botonesPago(y, pid, usd, principal) {
   if (!(y.p2e && y.p2e.cuenta)) return btn('Iniciar sesión', 'cuenta', {}, 'sec');
   if (esTg()) return btn(`${estrellasDe(usd)} Stars`, 'premium', { id: pid, metodo: 'stars' }, principal ? '' : 'sec');
   if (anuncio()) return principal ? etq('Con Stars en Telegram', 'vv-dim') : '';
-  return btn(principal ? 'Pagar con SOL' : `~$${usd} en SOL`, 'premium', { id: pid, metodo: 'sol' }, principal ? '' : 'sec') + btn('$DUENDE −10%', 'premium', { id: pid, metodo: 'duende' }, 'sec');
+  return btn(principal ? 'Pagar con Solana (cripto)' : `~US$${usd} en Solana`, 'premium', { id: pid, metodo: 'sol' }, principal ? '' : 'sec') + btn('$DUENDE −10%', 'premium', { id: pid, metodo: 'duende' }, 'sec');
 }
 function htmlArmasSkins(y, tab) {
   const tabla = tab === 'arma' ? ARMAS : SKINS;
@@ -659,16 +670,25 @@ function htmlArmasSkins(y, tab) {
 function htmlPremium(y) {
   const cuentaTg = esTg();
   const cuenta = y.p2e && y.p2e.cuenta;
-  let h = `<p class="vv-p" style="margin-bottom:10px">Compras opcionales para apoyar el juego. <b>El Duende</b> revisa cada pago y lo entrega en tu personaje. ${cuentaTg ? 'En Telegram se paga con Stars.' : anuncio() ? 'Con dinero se compra con Stars, jugando desde Telegram.' : 'En la web se paga con SOL o con $DUENDE (10% de descuento).'}${anuncio() ? '' : ' Con dinero <b>no</b> se compran mTON: solo se ganan jugando.'}</p><div class="vv-lista">`;
-  const lista = PAQUETES.slice().sort((a, b) => (b.id === est.foco) - (a.id === est.foco));
+  // Una linea clara y el detalle plegado (en movil no tapa los paquetes).
+  let h = `<p class="vv-p" style="margin-bottom:4px">Compras opcionales: <b>El Duende</b> revisa cada pago y lo entrega en tu personaje.</p><details class="vv-nota" style="margin:0 0 10px"><summary style="cursor:pointer">Cómo funciona</summary>${cuentaTg ? 'En Telegram se paga con Stars.' : anuncio() ? 'Con dinero se compra con Stars, jugando desde Telegram.' : 'En la web se paga con Solana (SOL, una criptomoneda: no son soles) o con $DUENDE (10% de descuento).'}${anuncio() ? '' : ' Con dinero <b>no</b> se compran mTON: solo se ganan jugando.'} Los soles (S/) son solo referencia aproximada.</details>`;
+  // Lo elegido va primero; luego por grupos con subtitulo.
+  // El Pack de bienvenida (SOLO 1 VEZ) sale solo mientras el servidor diga que aun puedes.
+  const lista = ordenTienda(PAQUETES.filter(p => !p.unaVez || y.puedeBienvenida), est.foco);
+  const precio = usd => (cuentaTg ? estrellasDe(usd) + ' ⭐' : 'US$' + usd) + ' · ≈ ' + precioLocal(usd);
+  let grupo = '', abierta = false;
   for (const pq of lista) {
+    const g = pq.id === est.foco ? '' : grupoPaquete(pq);
+    if (g && g !== grupo) { grupo = g; h += `${abierta ? '</div>' : ''}<div class="vv-sec">${esc((GRUPOS_TIENDA.find(x => x[0] === g) || [])[1] || '')}</div><div class="vv-lista">`; abierta = true; }
+    else if (!abierta) { h += '<div class="vv-lista">'; abierta = true; }
     const sk = pq.skin && SKINS[pq.skin];
     let acc;
     if (pq.skin && (y.skins || []).includes(pq.skin)) acc = etq('✓ Ya la tienes', 'vv-ok');
-    else if (!cuenta) acc = etq(cuentaTg ? estrellasDe(pq.usd) + ' Stars' : '$' + pq.usd) + btn('Iniciar sesión', 'cuenta', {}, 'sec');
-    else acc = etq(cuentaTg ? estrellasDe(pq.usd) + ' Stars' : '$' + pq.usd, 'vv-ok') + botonesPago(y, pq.id, pq.usd, true);
+    else if (!cuenta) acc = etq(precio(pq.usd)) + btn('Iniciar sesión', 'cuenta', {}, 'sec');
+    else acc = etq(precio(pq.usd), 'vv-ok') + botonesPago(y, pq.id, pq.usd, true);
     const ico = sk ? icoSkin(pq.skin, sk) : icoEquipo(pq.icono);
-    const nom = sk && sk.premium ? `<span style="color:${sk.color}">${esc(pq.nombre)}</span>` : esc(pq.nombre);
+    const nom = (sk && sk.premium ? `<span style="color:${sk.color}">${esc(pq.nombre)}</span>` : esc(pq.nombre))
+      + (pq.etiqueta ? ` <span style="font-size:10px;padding:1px 5px;border-radius:6px;background:#22c55e;color:#000;white-space:nowrap">${esc(pq.etiqueta)}</span>` : '');
     const nota = sk ? `<br><span class="vv-dim">${sk.premium ? 'Skin exclusiva: solo se consigue aquí.' : 'Skin con poderes: también se consigue con oro.'}</span>` : '';
     h += tarjeta(ico, nom, esc(pq.desc) + nota, acc, sk ? ` style="--rz:${sk.color}"` : ' style="--rz:var(--oro)"', pq.id === est.foco ? 'foco' : '');
   }
@@ -677,8 +697,8 @@ function htmlPremium(y) {
   if (ps.length) {
     const col = { pagado: 'vv-warn', por_verificar: 'vv-warn', entregado: 'vv-ok', anulado: 'vv-err', esperando_pago: 'vv-dim', comprobando: 'vv-dim' };
     const txt = { pagado: 'Por entregar', por_verificar: 'En revisión', entregado: 'Entregado', anulado: 'Anulado', esperando_pago: 'Sin pagar', comprobando: 'Comprobando…' };
-    h += '<div class="vv-sec">Tus compras</div><div class="vv-pedidos">' + ps.slice().reverse().map(x => `<div class="fila"><span>#${esc(x.codigo)} · ${esc(x.nombre)}</span><span class="${col[x.estado] || ''}">${esc(txt[x.estado] || x.estado)}${x.estado === 'esperando_pago' && (x.lamports || x.raw) ? ' ' + btn('Pagar', 'retomar', { id: x.codigo }, 'sec') : ''}${textoPlazo(x)}</span></div>`).join('') + '</div>'
-      + `<p class="vv-nota">Las compras se entregan a mano de ${esc(ENTREGA.horario)}, ${esc(ENTREGA.plazo)}. Te avisamos al entregarlas.</p>`;
+    h += '<div class="vv-sec">Tus compras</div><div class="vv-pedidos">' + ps.slice().reverse().map(x => `<div class="fila"><span>#${esc(x.codigo)} · ${esc(x.nombre)}</span><span class="${col[x.estado] || ''}">${esc(txt[x.estado] || x.estado)}${x.estado === 'esperando_pago' && (x.lamports || x.raw) ? ' ' + btn('Pagar', 'retomar', { id: x.codigo }, 'sec') : ''}${textoPlazo(x)} ${x.reclamado ? '<small class="vv-dim">Avisado</small>' : btn('¿Problema?', 'reclamo', { id: x.codigo }, 'sec')}</span></div>`).join('') + '</div>'
+      + `<p class="vv-nota">Las compras se entregan a mano de ${esc(ENTREGA.horario)}, ${esc(ENTREGA.plazo)}. Te avisamos al entregarlas. ¿Algo salió mal? Pulsa «¿Problema?» y El Duende lo revisa. <a href="/reembolsos.html" target="_blank" rel="noopener" style="color:inherit">Entregas y reembolsos</a></p>`;
   }
   return h;
 }
@@ -747,6 +767,39 @@ function pintarLogros() {
   parte(id, 'cuerpo').innerHTML = h + '</div>';
 }
 
+// ═══════════════════ EXPEDICION (functions/mmo/expediciones.js) ═══════════════════
+// Copia de cajaExpedicion del 2D (client.js): tu mascota (o un duendecillo)
+// sale 1, 4 u 8 h y vuelve con oro, XP y materiales. La primera vez, una de
+// 15 min para que vea el ciclo entero en la misma partida.
+const textoMin = ms => { const tot = Math.max(1, Math.ceil(ms / 60000)), hh = Math.floor(tot / 60), mm = tot % 60; return (hh ? hh + ' h' : '') + (hh && mm ? ' ' : '') + (mm || !hh ? mm + ' min' : ''); };
+function pintarExped() {
+  const y = H.yo(); if (!y) return;
+  const id = IDS.exped, ex = y.exped;
+  const masc = y.mascota && MASCOTAS[y.mascota];
+  const quien = masc ? masc.nombre : 'Un duendecillo explorador';
+  parte(id, 'sub').innerHTML = `<span>Expediciones hechas: <b>${fmt(y.expediciones || 0)}</b></span>`;
+  let h = '';
+  if (y.nivel < EXPEDICION.nv) h = `<p class="vv-vacio">Las expediciones se abren a nivel ${EXPEDICION.nv}. ¡Caza un poco y vuelve!</p>`;
+  else if (!ex) {
+    let dest = 'bosque'; try { dest = localStorage.getItem('dq_exped') || 'bosque'; } catch (e) {}
+    if (!EXPEDICION.destinos[dest]) dest = 'bosque';
+    h += `<p class="vv-p">${esc(quien)} explora mientras no juegas y vuelve con oro, experiencia y el doble de materiales de su destino${masc ? '; con tu mascota, +15% de oro' : '. Con una mascota, +15% de oro'}. Una a la vez.</p>`;
+    h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0">' + Object.entries(EXPEDICION.destinos).map(([k, d]) => btn(`${d.emoji} ${esc(d.nombre)}<br><small>×${d.mat === 'pescado' ? 3 : 2} ${esc(MATERIALES[d.mat].nombre)}</small>`, 'exdest', { id: k }, k === dest ? '' : 'sec')).join('').replace(/<button /g, '<button style="flex:1;min-width:84px;white-space:normal;line-height:1.25;padding:8px 6px" ') + '</div>';
+    // La de 15 min solo si aun no recogio ninguna (el servidor lo vuelve a mirar).
+    const horas = (y.expediciones ? [] : [EXPEDICION.primera]).concat(EXPEDICION.horas);
+    h += '<div style="display:flex;gap:6px;flex-wrap:wrap">' + horas.map(hh => {
+      const pr = premioExpedicion(hh, y.nivel, dest); if (masc) pr.oro = Math.round(pr.oro * 1.15);
+      return btn(`${hh < 1 ? Math.round(hh * 60) + ' min' : hh + ' h'}<br><small>🪙 ${fmt(pr.oro)}</small>`, 'exped', { h: hh, d: dest }, hh < 1 ? '' : 'sec');
+    }).join('').replace(/<button /g, '<button style="flex:1;min-width:70px;padding:8px 6px;line-height:1.25" ') + '</div>';
+    if (!y.expediciones) h += '<p class="vv-p" style="color:#4ade80">✨ Primera vez: prueba la de 15 min y recógela en esta misma partida.</p>';
+  } else {
+    const ms = ex.fin - Date.now(), d = EXPEDICION.destinos[ex.d] || EXPEDICION.destinos.bosque;
+    if (ms <= 0) h += `<p class="vv-p" style="text-align:center;font-size:14px">${d.emoji} ${esc(quien)} ya volvió ${esc(d.a.replace(/^al /, 'del ').replace(/^a la /, 'de la '))}.</p>` + btn('Recoger', 'exrec', {}, 'vv-full');
+    else h += `<p class="vv-p" style="text-align:center">${d.emoji} ${esc(quien)} está ${esc(d.a.replace(/^al /, 'en el ').replace(/^a la /, 'en la '))}: vuelve en <b>${textoMin(ms)}</b>.</p><div class="vv-barra"><i style="width:${Math.round(Math.min(1, 1 - ms / Math.max(1, ex.fin - ex.ini)) * 100)}%"></i></div><p class="vv-p">Puedes cerrar el juego: la expedición sigue sola.</p>`;
+  }
+  parte(id, 'cuerpo').innerHTML = h;
+}
+
 // ═══════════════════ PAGOS (SOL / $DUENDE / Stars) ═══════════════════
 // Telegram abre su propia ventana de pago de Stars.
 function abrirFactura(m) {
@@ -806,7 +859,7 @@ function mostrarPedidoSol(m) {
     else if (p === 'buscar') { H.sfx('boton', 0.3); H.aviso('Buscando tu pago en la red…', 'ok'); H.mandar({ t: 'pedidoBuscar', codigo: m.codigo }); }
     else if (p === 'phantom') pagarConPhantom(m);
     else if (p === 'solflare') {
-      H.aviso('Abriendo el juego dentro de Solflare: entra con tu cuenta y, en la tienda premium → Tus compras, pulsa «Pagar» en el pedido #' + m.codigo + '.', 'ok');
+      H.aviso('Abriendo el juego dentro de Solflare: entra con tu cuenta y, en Tienda → 💎 PAQUETES → Tus compras, pulsa «Pagar» en el pedido #' + m.codigo + '.', 'ok');
       window.location.href = 'https://solflare.com/ul/v1/browse/' + encodeURIComponent(location.origin + location.pathname + location.search) + '?ref=' + encodeURIComponent(location.origin);
     }
   });
@@ -825,7 +878,7 @@ async function pagarConPhantom(m) {
   if (!prov) {
     // En el movil se abre el juego dentro de la app de Phantom (alli si se firma).
     if (TACTIL) {
-      H.aviso('Abriendo el juego dentro de Phantom: entra con tu cuenta y, en la tienda premium → Tus compras, pulsa «Pagar» en el pedido #' + m.codigo + '.', 'ok');
+      H.aviso('Abriendo el juego dentro de Phantom: entra con tu cuenta y, en Tienda → 💎 PAQUETES → Tus compras, pulsa «Pagar» en el pedido #' + m.codigo + '.', 'ok');
       window.location.href = 'https://phantom.app/ul/browse/' + encodeURIComponent(location.origin + location.pathname + location.search) + '?ref=' + encodeURIComponent(location.origin);
       return;
     }
@@ -950,6 +1003,12 @@ const ACC = {
     if (x && x.raw) mostrarPedidoSol({ metodo: 'duende', codigo: x.codigo, raw: x.raw, mint: x.mint, dec: x.dec, wallet: x.wallet, usd: x.usd, nombre: x.nombre });
     else if (x && x.lamports) mostrarPedidoSol({ codigo: x.codigo, lamports: x.lamports, wallet: x.wallet, usd: x.usd, nombre: x.nombre, ref: x.ref });
   },
+  // «¿Problema?» en Tus compras: avisa al dueño de ese pedido (el servidor limita los avisos).
+  reclamo: b => {
+    H.sfx('boton', 0.3); b.disabled = true; b.textContent = 'Avisando…';
+    H.mandar({ t: 'reclamoPedido', codigo: b.dataset.id });
+    setTimeout(() => { if (b.isConnected && b.disabled) { b.disabled = false; b.textContent = '¿Problema?'; } }, 5000);
+  },
   cuenta: () => {
     if (H.iniciarSesion) H.iniciarSesion();
     else { H.aviso('Inicia sesión en Duende Quest Classic y vuelve: entrarás con tu cuenta.', 'ok'); setTimeout(() => { location.href = '/mmo/' + (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? location.hash : ''); }, 900); }
@@ -957,6 +1016,10 @@ const ACC = {
   // Logros
   lgtab: b => { est.logros = b.dataset.id; H.sfx('boton', 0.2); pintarLogros(); },
   titulo: b => { H.sfx('boton', 0.3); H.mandar({ t: 'titulo', id: b.dataset.id }); },
+  // Expedicion
+  exdest: b => { H.sfx('boton', 0.2); try { localStorage.setItem('dq_exped', b.dataset.id); } catch (e) {} pintarExped(); },
+  exped: b => { H.sfx('boton', 0.4); H.mandar({ t: 'exped', h: +b.dataset.h, d: b.dataset.d }); },
+  exrec: b => { H.sfx('moneda', 0.5); H.mandar({ t: 'exped', recoger: 1 }); },
 };
 function delegar(m) {
   m.addEventListener('click', e => {
@@ -982,13 +1045,17 @@ function abrirLibro(tab) {
 function abrirTienda(tab, foco, via) {
   if (!H || !H.yo()) return;
   if (typeof tab === 'string') est.tienda = tab;
-  est.via = via === 'hud' || via === 'oro' || via === 'bot' || via === 'falta' ? via : 'npc';
+  est.via = via === 'hud' || via === 'oro' || via === 'bot' || via === 'falta' || via === 'bienv' ? via : 'npc';
   est.foco = typeof foco === 'string' ? foco : '';
   pintarTienda(); abrirV(IDS.tienda);
 }
 function abrirLogros() {
   if (!H || !H.yo()) return;
   pintarLogros(); abrirV(IDS.logros);
+}
+function abrirExpedicion() {
+  if (!H || !H.yo()) return;
+  pintarExped(); abrirV(IDS.exped);
 }
 // Repinta la ventana abierta (el host la llama con cada 'yo').
 function actualizar() {
@@ -1001,6 +1068,7 @@ function actualizar() {
   if (abierta(IDS.libro)) pintarLibro();
   if (abierta(IDS.tienda)) pintarTienda();
   if (abierta(IDS.logros)) pintarLogros();
+  if (abierta(IDS.exped)) pintarExped();
   pintarFranja();
 }
 
@@ -1024,6 +1092,9 @@ export function iniciarVentanas(opciones) {
     delegar(crearModal(IDS.libro, 'LIBRO DE CLASE'));
     delegar(crearModal(IDS.tienda, 'MERCADER'));
     delegar(crearModal(IDS.logros, 'LOGROS'));
+    delegar(crearModal(IDS.exped, 'EXPEDICIÓN', true));
+    // Cuenta atras de la expedicion en camino (sin repintar mientras elige destino y horas).
+    setInterval(() => { const y = H.yo(); if (abierta(IDS.exped) && y && y.exped) pintarExped(); }, 5000);
     crearModal(IDS.pago, 'PAGAR', true, true);
     // Franja «Pedido #X pendiente» / «N compras en camino».
     const fr = document.createElement('div'); fr.id = 'vv-franja'; fr.setAttribute('role', 'button');
@@ -1031,5 +1102,5 @@ export function iniciarVentanas(opciones) {
     document.body.appendChild(fr);
     setInterval(pintarFranja, 2000);
   }
-  return { abrirInventario, abrirLibro, abrirTienda, abrirLogros, actualizar, alPedido };
+  return { abrirInventario, abrirLibro, abrirTienda, abrirLogros, abrirExpedicion, actualizar, alPedido, compararConPuesta };
 }

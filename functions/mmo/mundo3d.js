@@ -39,6 +39,7 @@ const VISTA_MON = 120;          // m: monstruos que ve cada jugador
 const ACTIVO = 170;             // m: un campamento se puebla si hay alguien a esta distancia
 const RETIRAR = 240;            // m: y se vacia si nadie queda a esta
 const REAPARECE_MS = 20000;
+const REAPARECE_NOVATO_MS = 7000;   // campamentos de Nv 1-2: el primer minuto sin esperar presas
 const REAPARECE_JEFE_MS = 5 * 60 * 1000;
 const CORREA = 50;              // m: un monstruo no se aleja mas de su campamento
 const MELEE3D = 3.2;              // m: alcance del golpe cuerpo a cuerpo (x arma.alcance)
@@ -138,6 +139,7 @@ export const Mundo3D = {
       case 'mv3': return this.mover3d(s, m);
       // Lo social y lo de cuenta funciona igual que en el 2D (mismo personaje).
       case 'pase': return this.cobrarPase(s, m);
+      case 'exped': return this.expedicion(s, m);   // expediciones.js: la mascota sale aunque no juegues
       case 'cambiarTarea': return this.cambiarTarea(s, m);
       case 'amigos': return this.infoAmigos(s);
       case 'herm': return this.verHerm(s);
@@ -206,6 +208,7 @@ export const Mundo3D = {
       case 'pedido': return this.pedido(s, m);
       case 'pedidoFirma': return this.pedidoFirma(s, m);
       case 'pedidoBuscar': return this.pedidoBuscar(s, m);
+      case 'reclamoPedido': return this.reclamoPedido(s, m);   // world.js
       case 'ranking': return this.enviarRanking(s);
       case 'contactos': return this.enviarContactos(s);
       case 'quien': return this.quien(s);
@@ -435,7 +438,7 @@ export const Mundo3D = {
       this.yoLuego(s, subio);
     }
     const campo = W.campos[o.campo];
-    if (campo) { campo.vivos.delete(o.id); campo.prox = Date.now() + (o.jefe ? REAPARECE_JEFE_MS : REAPARECE_MS); }
+    if (campo) { campo.vivos.delete(o.id); campo.prox = Date.now() + (o.jefe ? REAPARECE_JEFE_MS : (o.nv || (MONSTRUOS[o.k] || {}).nivel || 99) <= 2 ? REAPARECE_NOVATO_MS : REAPARECE_MS); }
     this.aClave(K3, { t: 'md3', id: o.id });
     if (o.ex3 && o.ex3.ev) this.muereInvasor3d(o);
     if (o.cueva && o.jefe) this.premiosCueva(o);

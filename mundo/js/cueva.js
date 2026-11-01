@@ -7,11 +7,40 @@
 // antorchas, estalagmitas, cristales, trono, portal de salida y cofre.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { CUEVA, CUEVA_X0 } from '/mmo/js/cueva3d.js?v=326';
-import { transparentar } from './tapa.js?v=326';
+import { CUEVA, CUEVA_X0 } from '/mmo/js/cueva3d.js?v=327';
+import { transparentar } from './tapa.js?v=327';
 
 const dentro = (x, z) => CUEVA.salas.some(([x0, z0, x1, z1]) => x >= x0 && x < x1 && z >= z0 && z < z1);
 const rnd = (i, k) => { const s = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return s - Math.floor(s); };
+// Antorchas (coordenadas del grupo). Antes 7 PointLight vivas: cada material
+// iluminado de TODO el mundo calculaba 7 luces por pixel aunque la cueva no se
+// viera. Ahora su luz va horneada en el color de suelo y rocas, mas un halo.
+const ANT = [[-9, 3], [9, 3], [-19, 45], [19, 45], [-19, 68], [19, 68], [-14, 95], [14, 95], [-14, 114], [14, 114], [36, 88], [76, 88], [36, 124], [76, 124]];
+const ANT_Y = 2.8, ANT_R = 16, NARANJA = new THREE.Color(0xff9a3c);
+// Cuanto ilumina la antorcha un punto (misma caida que la PointLight de antes:
+// intensidad 2.2, distancia 16, decay 1.6), relativo a la luz ambiente de la cueva.
+// suelo=true: normal hacia arriba; si no (rocas), una media de 0.6.
+function luzHorneada(x, y, z, suelo) {
+  let k = 0;
+  ANT.forEach(([ax, az], i) => {
+    const dy = ANT_Y - y, d = Math.hypot(ax - x, dy, az - z);
+    if (d >= ANT_R) return;
+    const ven = Math.pow(Math.max(0, 1 - Math.pow(d / ANT_R, 4)), 2);
+    const nl = suelo ? Math.max(0, dy / Math.max(d, 0.01)) : 0.6;
+    k += (i % 2 === 0 ? 2.2 : 1.1) * ven * nl / Math.pow(Math.max(d, 1), 1.6);
+  });
+  return Math.min(3, k / 0.45);
+}
+const _luz = new THREE.Color();
+function hornear(c, k) { if (k > 0.01) c.multiply(_luz.setRGB(1 + NARANJA.r * k, 1 + NARANJA.g * k, 1 + NARANJA.b * k)); return c; }
+// Degradado radial blanco → transparente (lo tine el color del material).
+function texturaHalo() {
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const x = c.getContext('2d'), gr = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.35, 'rgba(255,255,255,.45)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  x.fillStyle = gr; x.fillRect(0, 0, 64, 64);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
 
 export function construirCueva(escena) {
   const g = new THREE.Group();
@@ -30,7 +59,7 @@ export function construirCueva(escena) {
   suelo.forEach(([x, z], i) => {
     v.set(x + 0.5, -0.1 + rnd(x, z) * 0.06, z + 0.5); s.set(1, 1, 1); q.identity();
     m4.compose(v, q, s); piso.setMatrixAt(i, m4);
-    piso.setColorAt(i, col.setHSL(0.07, 0.12, 0.13 + rnd(z, x) * 0.07));
+    piso.setColorAt(i, hornear(col.setHSL(0.07, 0.12, 0.13 + rnd(z, x) * 0.07), luzHorneada(x + 0.5, 0, z + 0.5, true)));
   });
   g.add(piso);
   // Muros: bloques de roca de altura irregular.
@@ -42,7 +71,7 @@ export function construirCueva(escena) {
       v.set(x + 0.5 + (rnd(x, z + j) - 0.5) * 0.4, j ? h * 0.9 + 1 : h * 0.45, z + 0.5 + (rnd(z, x + j) - 0.5) * 0.4);
       q.setFromEuler(new THREE.Euler(rnd(x, j) * 3, rnd(z, j) * 3, 0)); s.set(1.05, h * 0.55, 1.05);
       m4.compose(v, q, s); roca.setMatrixAt(k, m4);
-      roca.setColorAt(k++, col.setHSL(0.72, 0.08, 0.16 + rnd(x * j, z) * 0.08));
+      roca.setColorAt(k++, hornear(col.setHSL(0.72, 0.08, 0.16 + rnd(x * j, z) * 0.08), luzHorneada(v.x, v.y, v.z, false)));
     }
   }
   g.add(roca);
@@ -65,15 +94,15 @@ export function construirCueva(escena) {
   }
   estal.count = ne; crist.count = nc;
   g.add(estal, crist);
-  // Antorchas: palo + llama; luces solo en unas pocas (son caras).
+  // Antorchas: palo + llama + halo (sprite aditivo; su luz ya va horneada arriba).
   const llamas = [];
   const palo = new THREE.MeshLambertMaterial({ color: 0x3b2a1a }), fuego = new THREE.MeshBasicMaterial({ color: 0xffa53a });
-  const ANT = [[-9, 3], [9, 3], [-19, 45], [19, 45], [-19, 68], [19, 68], [-14, 95], [14, 95], [-14, 114], [14, 114], [36, 88], [76, 88], [36, 124], [76, 124]];
-  ANT.forEach(([x, z], i) => {
+  const haloMat = new THREE.SpriteMaterial({ map: texturaHalo(), color: 0xff9a3c, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false });
+  ANT.forEach(([x, z]) => {
     const p = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 1.4, 5), palo); p.position.set(x, 1.6, z);
     const f = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.5, 6), fuego); f.position.set(x, 2.5, z);
-    g.add(p, f); llamas.push(f);
-    if (i % 2 === 0) { const l = new THREE.PointLight(0xff9a3c, 2.2, 16, 1.6); l.position.set(x, 2.8, z); g.add(l); llamas.push(l); }
+    const h = new THREE.Sprite(haloMat); h.position.set(x, 2.55, z); h.scale.setScalar(2.6); h.userData.halo = true;
+    g.add(p, f, h); llamas.push(f, h);
   });
   // Trono del Rey Goblin.
   const oro = new THREE.MeshLambertMaterial({ color: 0xc9a227, flatShading: true }), rojo = new THREE.MeshLambertMaterial({ color: 0x8b1e2b });
@@ -103,7 +132,7 @@ export function construirCueva(escena) {
     animar(t) {
       for (let i = 0; i < llamas.length; i++) {
         const o = llamas[i];
-        if (o.isLight) o.intensity = 2 + Math.sin(t / 90 + i) * 0.4;
+        if (o.userData.halo) o.scale.setScalar(2.6 + Math.sin(t / 90 + i) * 0.3);
         else o.scale.y = 1 + Math.sin(t / 70 + i * 2) * 0.25;
       }
       velo.material.opacity = 0.45 + Math.sin(t / 300) * 0.15;

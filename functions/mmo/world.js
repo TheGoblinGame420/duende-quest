@@ -259,9 +259,9 @@ export class MmoWorld {
       }
       // lag: ms de retraso del bucle; lleno: no entra gente nueva ahora (tope, lag o modo ahorro).
       const online = this.contarOnline();
-      return new Response(JSON.stringify({ ok: true, online, hoy: this.hoyCache.h, lag: Math.round(this.lagEwma || 0), lleno: online >= MAX_JUGADORES || this.lento() || this.degradado() }), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+      return new Response(JSON.stringify({ ok: true, online, hoy: this.hoyCache.h, lag: Math.round(this.lagEwma || 0), max: MAX_JUGADORES, lleno: online >= MAX_JUGADORES || this.lento() || this.degradado() }), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
     }
-    if (this.contarOnline() >= MAX_JUGADORES) { this.contarRechazo('lleno'); return new Response('Servidor lleno', { status: 503 }); }
+    if (this.contarOnline() >= MAX_JUGADORES) return this.rechazarLleno('lleno', 'lleno');
     // Sockets que aun no se identifican: tope propio y por IP. Antes 300
     // sockets sin 'hola' llenaban el servidor y dejaban fuera a todos.
     const ip = claveIp(request.headers.get('CF-Connecting-IP') || '');
@@ -274,13 +274,13 @@ export class MmoWorld {
       if (k48 && x.ip.startsWith(k48)) de48++;
     }
     // 24 por IP: una casa, un colegio o un grupo de 10 en la misma wifi comparten IP (con 8 el noveno quedaba fuera).
-    if (ip && (deIp >= 24 || sinIdIp >= 6 || de48 >= 60)) { this.contarRechazo('conexionesIp'); return new Response('Demasiadas conexiones', { status: 429 }); }
+    if (ip && (deIp >= 24 || sinIdIp >= 6 || de48 >= 60)) return this.rechazarLleno('ip', 'conexionesIp');
     if (sinId.length >= 40) {
       // Se echa al socket mudo mas viejo en vez de rechazar al nuevo: un jugador
       // real manda 'hola' nada mas abrir (antes, 40 sockets mudos dejaban fuera a todos).
       let viejo = null;
       for (const x of sinId) if (!x.autenticando && !x.cerrado && (!viejo || x.id < viejo.id)) viejo = x;
-      if (!viejo) { this.contarRechazo('sinId'); return new Response('Demasiadas conexiones', { status: 429 }); }
+      if (!viejo) return this.rechazarLleno('ip', 'sinId');
       // Sin fatal: si era un jugador lento (movil en 3G) su cliente vuelve solo.
       this.rechazarSuave(viejo, 'Sin identificación', 1500, 'sinIdViejo');
     }
@@ -292,6 +292,26 @@ export class MmoWorld {
   }
 
   contarOnline() { let n = 0; for (const s of this.sesiones.values()) if (s.c) n++; return n; }
+
+  // Mundo lleno o demasiadas conexiones desde una red. Antes era un 503/429 sin
+  // socket: el navegador solo ve un cierre mudo (1006), el jugador leia «Sin
+  // conexion» y reintentaba a ciegas cada pocos segundos. Ahora se acepta el socket
+  // solo para decir por que y cuando volver, y se cierra sin registrar sesion
+  // (no ocupa plaza ni cuenta como sin identificar). motivo: 'lleno' | 'ip'.
+  rechazarLleno(motivo, k) {
+    this.contarRechazo(k);
+    const on = this.contarOnline();
+    // Con azar: los que esperan no vuelven todos en el mismo segundo.
+    const ms = Math.round((motivo === 'lleno' ? 25000 : 15000) + Math.random() * 10000);
+    const m = motivo === 'lleno' ? 'Servidor lleno (' + on + '/' + MAX_JUGADORES + '). Reintentamos solos en unos segundos.' : 'Muchos jugadores conectados desde tu red. Reintentamos solos en unos segundos.';
+    const [cliente, servidor] = Object.values(new WebSocketPair());
+    servidor.accept();
+    try {
+      servidor.send(JSON.stringify({ t: 'err', m, lleno: motivo, on, max: MAX_JUGADORES, reintentar: ms }));
+      servidor.close(motivo === 'lleno' ? 4002 : 4429, motivo);
+    } catch (e) {}
+    return new Response(null, { status: 101, webSocket: cliente });
+  }
 
   // ── CONEXION ──
   abrir(ws, ip) {
@@ -475,6 +495,7 @@ export class MmoWorld {
       case 'pedido': return this.pedido(s, m);
       case 'pedidoFirma': return this.pedidoFirma(s, m);
       case 'pedidoBuscar': return this.pedidoBuscar(s, m);
+      case 'reclamoPedido': return this.reclamoPedido(s, m);
       case 'ping': return this.enviar(s, { t: 'pong', ts: m.ts });
       case 'visto': return this.buzonVisto(s, m);
       case 'dios': return this.dios(s, m);
@@ -574,7 +595,7 @@ export class MmoWorld {
       // (antes unos pocos /64 con tokens de invitado llenaban el servidor y nadie mas entraba).
       let invs = 0;
       for (const x of this.sesiones.values()) if (x.c && x.c.uid.startsWith('inv:')) invs++;
-      if (invs >= MAX_JUGADORES - 60) { s.autenticando = false; this.expulsar(s, 'El servidor está lleno de invitados. Inicia sesión con Telegram o tu correo para entrar.'); return; }
+      if (invs >= MAX_JUGADORES - 60) { s.autenticando = false; this.expulsar(s, 'El servidor está lleno de invitados. Entra con tu correo o Telegram: las últimas plazas son para cuentas.', { lleno: 'inv', on: this.contarOnline(), max: MAX_JUGADORES }); return; }
     }
     s.extraAuth = extra;
     // Una cuenta solo puede estar ENTRANDO por una sesion a la vez. Antes, dos
@@ -634,7 +655,7 @@ export class MmoWorld {
         this.entrando.set(uidInv, s);
         try {
           const antes = previo.nombre;
-          c = { ...previo, uid, nombre: await this.nombreLibre(nombre, uid, this.calcularDios({ c: { uid } }, s.extraAuth)) };
+          c = { ...previo, uid, nombre: await this.nombreLibre(nombre, uid, this.calcularDios({ c: { uid } }, s.extraAuth) === 'dueno') };
           nombre = c.nombre;
           await this.reservarNombre(c, antes);
           // Sin await entre las dos: el storage del DO las manda en un solo lote
@@ -700,7 +721,7 @@ export class MmoWorld {
     if (!c) {
       // Nombre unico y sin imitar al equipo: un invitado ya no puede entrar
       // con el nombre de otro jugador ni como "Admin" o "El Duende".
-      const libre = await this.nombreLibre(nombre, uid, this.calcularDios({ c: { uid } }, s.extraAuth));
+      const libre = await this.nombreLibre(nombre, uid, this.calcularDios({ c: { uid } }, s.extraAuth) === 'dueno');
       c = personajeNuevo(uid, libre);
       await this.anotarInvitacion(c, refHola(m, s));
       if (c.invitadoPor && this.refContar) { this.refContar('refLlega'); if (!uid.startsWith('inv:')) this.refContar('refCuenta'); }
@@ -1143,6 +1164,12 @@ export class MmoWorld {
     s.pidiendo = true;
     try { await this.pedidoUno(s, m); } finally { s.pidiendo = false; }
   }
+  // Pack de bienvenida (unaVez): solo si la cuenta nunca pagó nada. Cuenta
+  // cualquier pedido pagado, en revisión, comprobándose o ya entregado, y
+  // c.compro (marca en el personaje: los pedidos viejos se podan pasado 300).
+  puedeBienvenida(uid, c) {
+    return !!uid && !uid.startsWith('inv:') && !(c && c.compro) && !this.pedidos.some(x => x.uid === uid && ['pagado', 'por_verificar', 'comprobando', 'entregado'].includes(x.estado));
+  }
   async pedidoUno(s, m) {
     const c = s.c;
     const pq = PAQUETES.find(x => x.id === m.id);
@@ -1156,6 +1183,7 @@ export class MmoWorld {
     if (pq.alas && (c.alas || []).includes(pq.alas)) return no('Ya tienes esas alas.');
     if (pq.skin && this.pedidos.some(x => x.uid === c.uid && x.paquete === pq.id && (x.estado === 'pagado' || x.estado === 'por_verificar' || x.estado === 'comprobando'))) return no('Ya pagaste esa skin: se activa en cuanto se confirme el pago.');
     await this.guardarPedidos();
+    if (pq.unaVez && !this.puedeBienvenida(c.uid, c)) return no('El Pack de bienvenida es solo para tu primera compra, y ya compraste antes. ¡Gracias por apoyar el juego!');
     if (this.pedidos.filter(x => x.uid === c.uid && (x.estado === 'esperando_pago' || x.estado === 'comprobando' || x.estado === 'por_verificar')).length >= 3) return no('Tienes compras sin pagar: termina o espera 30 minutos.');
     if (this.pedidos.filter(x => x.uid === c.uid && Date.now() - x.creado < 3600000).length >= 10) return no('Has creado muchos pedidos seguidos: espera un rato.');
     if (this.pedidos.filter(x => x.estado === 'esperando_pago').length >= 150) return no('La tienda está muy ocupada: intenta en unos minutos.');
@@ -1165,7 +1193,7 @@ export class MmoWorld {
       paquete: pq.id, nombre: pq.nombre, usd: pq.usd, metodo, creado: Date.now(), estado: 'esperando_pago',
     };
     // De donde vino la compra (boton TIENDA del HUD, tienda de oro, NPC o enlace del bot): solo informativo para el dueño.
-    if (['hud', 'oro', 'npc', 'bot', 'falta'].includes(m.via)) pd.via = m.via;
+    if (['hud', 'oro', 'npc', 'bot', 'falta', 'bienv'].includes(m.via)) pd.via = m.via;
     if (metodo === 'stars') {
       pd.stars = estrellasDe(pq.usd);
       let link = null;
@@ -1305,6 +1333,26 @@ export class MmoWorld {
     return true;
   }
 
+  // «¿Problema?» en Tus compras: el jugador avisa de un pedido suyo y al dueño
+  // le llega por Telegram con los datos para revisarlo. No cambia ni entrega
+  // nada; un aviso por pedido cada 6 h y uno por cuenta cada 2 min.
+  async reclamoPedido(s, m) {
+    const c = s.c;
+    const pd = this.buscarPedido(m.codigo);
+    const no = t => this.enviar(s, { t: 'toast', m: t });
+    if (!pd || pd.uid !== c.uid) return no('Ese pedido no es tuyo.');
+    if (pd.reclamadoEn && Date.now() - pd.reclamadoEn < 6 * 3600000) return no(`Ya avisamos a El Duende del pedido #${pd.codigo}: lo está revisando. Si quieres dar más datos, escribe a @ElDuendeOficial.`);
+    if (!this.ritmoSol(c.uid, 'r', 120000)) return no('Espera un par de minutos antes de otro aviso.');
+    pd.reclamadoEn = Date.now();
+    await this.guardarPedidos();
+    const tgId = c.uid.startsWith('tg:') ? c.uid.slice(3) : '';
+    const hace = pd.pagadoEn ? Math.round((Date.now() - pd.pagadoEn) / 60000) + ' min' : 'sin pago registrado';
+    const llego = await this.avisarAdmin(`🆘 Reclamo del pedido #${pd.codigo} — ${pd.nombre} ($${pd.usd})\n👤 ${String(pd.jugador || c.nombre).replace(/[^\p{L}\p{N} ]/gu, '')} · Nv ${c.nivel}${tgId ? ' · tg ' + tgId : ' · cuenta web'}\nEstado: ${pd.estado} · método ${pd.metodo} · pagado hace ${hace}${pd.charge ? '\nCargo: ' + pd.charge : ''}${pd.firma ? '\nTx: https://solscan.io/tx/' + pd.firma : ''}\n\nEl jugador dice que tiene un problema con esta compra. Revísalo: /pedidos · /entregar ${pd.codigo} · /anular ${pd.codigo}`, null, true);
+    if (!llego) { pd.reclamadoEn = 0; return no('No pudimos avisar ahora. Prueba en unos minutos o escribe a @ElDuendeOficial con el número de pedido.'); }
+    this.actualizarYo(s);   // el botón pasa a «Avisado»
+    this.enviar(s, { t: 'toast', ok: 1, m: `Listo: El Duende revisará tu pedido #${pd.codigo} y te avisará${tgId ? ' por Telegram' : ' aquí en el juego'}. Si quieres dar más datos, escribe a @ElDuendeOficial.` });
+  }
+
   // "Ya pague": busca el pago entre las ultimas transacciones de la wallet
   // (el monto exacto, con su marca de 4 cifras, identifica el pedido) y, si
   // lo encuentra, sigue como si se hubiera pegado su firma. Asi se puede
@@ -1436,6 +1484,8 @@ export class MmoWorld {
     try { ({ s, c } = await this.pjDe(pd.uid)); } finally { delete pd.entregando; }
     if (pd.estado !== 'pagado' && pd.estado !== 'por_verificar') return { ok: false, error: 'No hay un pedido pagado con ese código.' };
     if (!c || !pq) return { ok: false, error: 'No encontré al jugador o el paquete.' };
+    // Dos packs de bienvenida pagados a la vez (dos pedidos abiertos): solo se entrega uno; el otro, anúlalo o devuélvelo.
+    if (pq.unaVez && (c.bienvYa || this.pedidos.some(x => x !== pd && x.uid === pd.uid && x.paquete === pq.id && x.estado === 'entregado'))) return { ok: false, error: 'Esa cuenta ya recibió el Pack de bienvenida (es de una sola vez). Anula este pedido o devuelve el pago.' };
     c.oro += pq.oro || 0;
     for (const k in (pq.pw || {})) c.pw[k] = Math.min(99, (c.pw[k] || 0) + pq.pw[k]);
     // Skin: a sus skins y puesta. Si ya la tenia (la compro con oro mientras
@@ -1456,6 +1506,7 @@ export class MmoWorld {
       if (s) { this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) }); this.actualizarYo(s); }
     }
     pd.estado = 'entregado'; pd.entregado = Date.now(); pd.por = b.por || 'bot';
+    c.compro = 1; if (pq.unaVez) c.bienvYa = 1;   // queda en el personaje aunque el pedido se pode
     if (pd.metodo === 'sol' || pd.metodo === 'duende') {
       this.ingresosSol.push({ usd: pd.usd, t: Date.now() });
       this.ingresosSol = this.ingresosSol.filter(x => Date.now() - x.t < 30 * 86400000);
@@ -1614,6 +1665,15 @@ export class MmoWorld {
       return json({ ok: true, existe: true, en: !!s, n: c.nombre, lv: c.nivel, cl: c.clase || '', oro: c.oro || 0, mton: c.mton || 0,
         torre: this.torreSem(c).max, torreMax: c.torreMax || 0, peces: c.peces || 0, especies: Object.keys(c.especies || {}).length,
         logros: (c.logros || []).length, mazmorras: c.mazmorras || 0, elo: c.elo || 0, exped: ex, racha: (c.login || {}).racha || 0 });
+    }
+    // /miscompras del bot: los pedidos de la tienda de esa cuenta de Telegram
+    // (los suyos o los que pagó), sin datos de pago. Solo lectura.
+    if (accion === 'misCompras') {
+      const id = String(b.tgId || '').replace(/\D/g, '');
+      if (!id) return json({ ok: false });
+      const l = this.pedidos.filter(x => x.uid === 'tg:' + id || x.tgPagador === id).slice(-10)
+        .map(x => ({ codigo: x.codigo, nombre: x.nombre, estado: x.estado, metodo: x.metodo, charge: x.charge || '', creado: x.creado || 0, pagadoEn: x.pagadoEn || 0 }));
+      return json({ ok: true, l });
     }
     // /start mmo_/m3d_ del bot: solo nombre y nivel de quien invita (publicos), por su codigo.
     if (accion === 'invitador') {
@@ -1784,10 +1844,11 @@ export class MmoWorld {
       retiros: this.retiros.filter(x => x.uid === c.uid).slice(-5).map(x => ({ id: x.id, ton: x.ton, estado: x.estado, creado: x.creado })),
       // Los de SOL sin pagar (y sin caducar) tambien, para poder retomar el pago.
       pedidos: this.pedidos.filter(x => x.uid === c.uid && x.estado !== 'vencido' && (x.estado !== 'esperando_pago' || ((x.metodo === 'sol' || x.metodo === 'duende') && Date.now() - x.creado < PEDIDO_VIGENCIA_MS))).slice(-5)
-        .map(x => ({ codigo: x.codigo, nombre: x.nombre, metodo: x.metodo, estado: x.estado, creado: x.creado, pagadoEn: x.pagadoEn || undefined, ...(x.estado === 'esperando_pago' ? (x.metodo === 'duende'
+        .map(x => ({ codigo: x.codigo, nombre: x.nombre, metodo: x.metodo, estado: x.estado, creado: x.creado, pagadoEn: x.pagadoEn || undefined, reclamado: x.reclamadoEn && Date.now() - x.reclamadoEn < 6 * 3600000 ? 1 : undefined, ...(x.estado === 'esperando_pago' ? (x.metodo === 'duende'
           ? { raw: x.duendeRaw, mint: DUENDE_MINT, dec: DUENDE_DECIMALES, usd: Math.round(x.usd * DUENDE_DESCUENTO * 100) / 100, wallet: SOL_DEV_WALLET }
           : { lamports: x.lamports, usd: x.usd, wallet: SOL_DEV_WALLET, ref: x.ref || '' }) : {}) })),
       transparencia: this.transparencia(),
+      puedeBienvenida: this.puedeBienvenida(c.uid, c) ? 1 : 0,
       dios: s.dios ? 1 : 0, diosNv: s.dios || undefined, diosModo: s.dios ? s.diosModo || {} : undefined,
     };
   }
@@ -1810,7 +1871,7 @@ export class MmoWorld {
   }
   // Lo que cambia al equiparse o elegir clase (mensaje 'pa').
   infoApariencia(s) {
-    return { p: s.id, id: s.id, sk: s.c.skin, ar: s.c.arma, mx: s.st.maxHp, ti: this.textoTitulo(s.c), cl: s.c.clase || '', rmx: s.st.recMax, hn: this.nombreHermandad(s.c.herm), hc: this.colorHermandad(s.c.herm), mo: s.montado || '', es: s.c.espec || '', lk: s.c.look || undefined, al: s.c.ala && s.c.ala !== 'aprendiz' ? s.c.ala : undefined, fc: s.c.faccion || undefined, ra: s.c.faccion && s.c.pa ? rangoDe(s.c.pa).i || undefined : undefined, tn: s.c.tinte || '', ma: s.c.exped ? '' : s.c.mascota || '', gm: s.dios ? 1 : 0, gi: s.dios && s.diosModo && s.diosModo.inv ? 1 : 0 };
+    return { p: s.id, id: s.id, sk: s.c.skin, ar: s.c.arma, mx: s.st.maxHp, ti: this.textoTitulo(s.c), cl: s.c.clase || '', rmx: s.st.recMax, hn: this.nombreHermandad(s.c.herm), hc: this.colorHermandad(s.c.herm), mo: s.montado || '', es: s.c.espec || '', lk: s.c.look || undefined, al: s.c.ala && s.c.ala !== 'aprendiz' ? s.c.ala : undefined, fc: s.c.faccion || undefined, ra: s.c.faccion && s.c.pa ? rangoDe(s.c.pa).i || undefined : undefined, tn: s.c.tinte || '', ma: s.c.exped ? '' : s.c.mascota || '', gm: s.dios === 'dueno' ? 2 : s.dios ? 1 : 0, gi: s.dios && s.diosModo && s.diosModo.inv ? 1 : 0 };
   }
   // Auras con su tiempo restante, para quien llega al mapa y no vio cuando se pusieron.
   aurasVivas(au) {
@@ -2292,6 +2353,8 @@ export class MmoWorld {
       subio = true;
     }
     if (c.nivel >= NIVEL_MAX) c.xp = 0;
+    // Nv 60: aviso a todo el mundo (un momento para presumir y para que los demas lo vean).
+    if (subio && nivel0 < NIVEL_MAX && c.nivel >= NIVEL_MAX) this.aTodos({ t: 'aviso', m: `🏆 ${c.nombre} llegó al nivel ${NIVEL_MAX}, el máximo. ¡Una leyenda del Éter!` });
     if (subio && this.hitoEmbudo) { if (nivel0 < 5 && c.nivel >= 5) this.hitoEmbudo(c, 'n5'); if (nivel0 < 10 && c.nivel >= 10) this.hitoEmbudo(c, 'n10'); }
     if (subio) {
       s.st = this.stats(c);
@@ -2320,6 +2383,8 @@ export class MmoWorld {
     c.oro += oro;
     c.kills++;
     if (c.kills === 1 && this.hitoEmbudo) this.hitoEmbudo(c, 'c1');
+    // Primera caza del personaje (una sola vez): botin garantizado y nivel 2.
+    const primero = c.kills === 1 && !!o && participo !== false;
     if (o && o.jefe) c.jefes++;
     // Hora Feliz (cada dia 01-02 UTC): +50% de la XP de caza.
     if (horaFelizActiva()) xp = Math.round(xp * HORA_FELIZ.xp);
@@ -2331,6 +2396,7 @@ export class MmoWorld {
     // El descanso duplica la experiencia de cada caza hasta gastarse.
     const extra = Math.min(c.descanso || 0, xp);
     if (extra > 0) { c.descanso -= extra; xp += extra; }
+    if (primero && c.nivel === 1) xp = Math.max(xp, xpParaSubir(1) - c.xp);
     const subio = this.sumarXp(s, xp);
     // Drops: pociones y, en jefes, poderes raros.
     const drops = [];
@@ -2366,6 +2432,17 @@ export class MmoWorld {
       } else if (nvM >= c.nivel - 10 && Math.random() < 0.06 * ((n || 1) > 1 ? 1.2 / n : 1)) {
         item = this.darItem(s, generarItem(nvM, 0));
       }
+      if (primero && !item) {
+        // Se equipa solo si la ranura esta vacia (que se note al instante).
+        const it1 = generarItem(Math.min(nvM, c.nivel), 1);
+        if (!c.eq[it1.s]) {
+          c.eq[it1.s] = it1; item = it1;
+          const pct = s.hp / s.st.maxHp;
+          s.st = this.stats(c);
+          s.hp = Math.max(1, Math.min(s.st.maxHp, Math.round(s.st.maxHp * pct)));
+          this.difundirApariencia(s);   // los demas ven su nueva vida maxima
+        } else item = this.darItem(s, it1);
+      }
     }
     // Diaria: monstruos de su nivel o hasta 5 por debajo.
     const d = this.diariaDe(c);
@@ -2396,12 +2473,13 @@ export class MmoWorld {
       c.mis.p++;
       if (c.mis.p === q.n) {
         // ORIGINS: se entrega sola al cumplirla (alli ya valia desde cualquier sitio).
-        if (s.m3) { this.enviar(s, { t: 'toast', m: `Misión cumplida: «${q.nombre}».`, ok: true }); this.mision(s, null, true); }
+        // La primera mision tambien en CLASSIC: el novato cobra sin volver al pueblo.
+        if (s.m3 || c.mis.i === 0) { this.enviar(s, { t: 'toast', m: `Misión cumplida: «${q.nombre}».`, ok: true }); this.mision(s, null, true); }
         else this.enviar(s, { t: 'toast', m: `Misión cumplida: «${q.nombre}». Entrégala al Guardia Tito.`, ok: true });
       }
     }
     s.sucio = true;
-    this.enviar(s, { t: 'gana', xp, oro, drops, item, cal: cal || undefined, tp: cal ? tp.id : undefined, chi: chi || undefined, x: Math.round(o ? o.x : s.x), y: Math.round(o ? o.y - o.h : s.y - 60) });
+    this.enviar(s, { t: 'gana', xp, oro, drops, item, primero: primero ? (item && c.eq[item.s] === item ? 2 : 1) : undefined, cal: cal || undefined, tp: cal ? tp.id : undefined, chi: chi || undefined, chl: !chi && this.candadoChicha(c) ? 1 : undefined, x: Math.round(o ? o.x : s.x), y: Math.round(o ? o.y - o.h : s.y - 60) });
     this.revisarLogros(s, true);
     this.yoLuego(s, subio || !!item);
   }
@@ -2411,7 +2489,7 @@ export class MmoWorld {
   mision(s, m, desde3d) {
     const c = s.c;
     const npc = MAPAS.pueblo.npcs.find(n => n.tipo === 'guia');
-    if (!(desde3d === true && s.m3) && (s.k !== 'pueblo' || !npc || Math.abs(s.x - npc.x) > 200)) return this.enviar(s, { t: 'toast', m: 'Habla con el Guardia Tito en el pueblo.' });
+    if (!(desde3d === true && (s.m3 || c.mis.i === 0)) && (s.k !== 'pueblo' || !npc || Math.abs(s.x - npc.x) > 200)) return this.enviar(s, { t: 'toast', m: 'Habla con el Guardia Tito en el pueblo.' });
     if (m && m.diaria) {
       const d = this.diariaDe(c);
       if (d.ok) return this.enviar(s, { t: 'toast', m: 'Ya cobraste la caza de hoy.' });
@@ -2982,7 +3060,10 @@ export class MmoWorld {
         this.hfAntes = hf;
         // Una pestaña abierta sin jugar mantiene vivo el objeto (y cobra tiempo
         // de CPU del cupo diario) todo el dia: fuera tras 10 min sin actividad.
+        // Minutos jugados de verdad (con actividad en el último minuto): requisito del premio de Nv 60 (chicha.js).
+        const dtJ = Math.min(30, Math.round((ahora - (this.onJT || ahora)) / 1000)); this.onJT = ahora;
         for (const s of [...this.sesiones.values()]) {
+          if (s.c && dtJ > 0 && ahora - (s.actT || 0) < 60000) this.sumarJugado(s.c, dtJ);
           if (s.c && ahora - (s.actT || 0) > INACTIVO_MS) {
             this.enviar(s, { t: 'err', m: 'Te desconectamos por inactividad. Toca la pantalla o pulsa una tecla para volver.', fatal: true, inactivo: true });
             try { s.ws.close(4001, 'inactivo'); } catch (e) {}

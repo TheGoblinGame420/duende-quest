@@ -101,6 +101,16 @@ export async function supabaseQuery(env, path, options = {}) {
   catch (e) { return { error: 'HTTP ' + r.status + ': respuesta no JSON', status: r.status }; }
 }
 
+// ¿Primera compra con Stars de este usuario? (server-side; la usan la factura y
+// el webhook, que la re-verifica al registrar el pago). Cuenta cualquier compra
+// anterior (acreditada o no, skins y MMO incluidos: la tabla no las distingue);
+// sinCargo excluye la fila del pago que se revisa. Si Supabase falla: no es primera.
+export async function isFirstPurchase(env, tgId, sinCargo) {
+  if (!tgId) return false;
+  const rows = await supabaseQuery(env, `stars_purchases?telegram_id=eq.${encodeURIComponent(tgId)}${sinCargo ? '&tx_id=neq.' + encodeURIComponent(sinCargo) : ''}&select=id&limit=1`);
+  return Array.isArray(rows) && rows.length === 0;
+}
+
 // ── Live prices (server-side only) ──
 // estricto = true devuelve null si fallan las fuentes en vez del precio de
 // respaldo. Para mostrar precios el respaldo vale; para mover dinero no: con

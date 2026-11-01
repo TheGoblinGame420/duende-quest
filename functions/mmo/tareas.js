@@ -13,7 +13,8 @@
 import { TAREAS_DIA, TAREAS_SEMANA, premioTarea, zonaDeNivel, hoyUTC, semanaUTC, MAPAS, MONSTRUOS, NIVEL_MAX , PASE } from '../../mmo/js/data.js';
 
 // Solo existen en CLASSIC (2D): en ORIGINS no se reparten y, si ya tocaron, se cambian.
-const SOLO_2D = new Set(['exped', 'torre']);
+// (Las expediciones ya existen tambien en ORIGINS: ventana 🧭 de ventanas.js.)
+const SOLO_2D = new Set(['torre']);
 // Hash entero pequeño y estable (para elegir las tareas del dia).
 function hash(t) { let h = 2166136261; for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h; }
 function elegir(lista, n, semilla, nivel) {

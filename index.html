@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=326"></script>
+<script src="/js/origen.js?v=327"></script>
 <!-- Modo anuncio: quien llega de un anuncio (fbclid / utm_*) ve la web sin la parte cripto
      (wallet, precio, token, donaciones). Se recuerda en la pestaña; el resto de visitas no cambia. -->
 <script>(function(){var a=/[?&](fbclid|utm_[a-z]+)=/i.test(location.search);try{if(a)sessionStorage.setItem('dq_anuncio','1');else a=sessionStorage.getItem('dq_anuncio')==='1';}catch(e){}if(a)document.documentElement.classList.add('anuncio');})()</script>
@@ -882,7 +882,7 @@ section[id]{scroll-margin-top:72px;}
   </style>
   <h2 class="px-title" id="lo-nuevo-h">Lo nuevo</h2>
   <div class="nuevo-grid">
-    <div class="nuevo-card"><span class="ico" aria-hidden="true">🥤</span><b>Gana chicha morada jugando</b><p>Cada monstruo que cazas en el mundo online suma puntos. Con 10.000 puntos te enviamos un litro de chicha morada a tu casa. No es un sorteo.</p></div>
+    <div class="nuevo-card"><span class="ico" aria-hidden="true">🥤</span><b>Gana chicha morada jugando</b><p>Desde Nv 10, cada monstruo que cazas en el mundo online suma puntos. Con 10.000 puntos te enviamos un litro de chicha morada a tu casa. No es un sorteo. Envío en Perú.</p></div>
     <div class="nuevo-card"><span class="ico" aria-hidden="true">🏰</span><b>5 mazmorras y Desafíos</b><p>Fortaleza Goblin y Nido de la Reina Araña se suman a las mazmorras. A nivel 60, los Desafíos +k suben la dificultad sin límite.</p></div>
     <div class="nuevo-card"><span class="ico" aria-hidden="true">🎃</span><b>Temporadas con premios</b><p>Noche de Duendes (25 oct – 2 nov), Cosecha del Maíz Morado, Navidad y Carnaval: objetos para juntar y títulos únicos.</p></div>
   </div>
@@ -1322,7 +1322,7 @@ section[id]{scroll-margin-top:72px;}
         <li>+10% monedas en el arcade</li>
         <li>Se compra en la tienda del juego (Stars o TON)</li>
       </ul>
-      <div class="tier-price" style="color:var(--green)">US$1</div>
+      <div class="tier-price" style="color:var(--green)">US$1 <small style="font-size:.55em;opacity:.75;white-space:nowrap">≈ S/ 3.75</small></div>
     </div>
     <!-- SPECIAL -->
     <div class="tier-card tier-special">
@@ -1340,7 +1340,7 @@ section[id]{scroll-margin-top:72px;}
         <li>Robo de vida del 5%</li>
         <li>Se compra en la tienda del juego (Stars o TON)</li>
       </ul>
-      <div class="tier-price" style="color:var(--green)">US$2</div>
+      <div class="tier-price" style="color:var(--green)">US$2 <small style="font-size:.55em;opacity:.75;white-space:nowrap">≈ S/ 7.50</small></div>
     </div>
 
     <!-- ELITE -->
@@ -1359,7 +1359,7 @@ section[id]{scroll-margin-top:72px;}
         <li>+20 de vida</li>
         <li>Se compra en la tienda del juego (Stars o TON)</li>
       </ul>
-      <div class="tier-price" style="color:#a78bfa">US$3</div>
+      <div class="tier-price" style="color:#a78bfa">US$3 <small style="font-size:.55em;opacity:.75;white-space:nowrap">≈ S/ 11.25</small></div>
     </div>
 
     <!-- BERSERKER -->
@@ -1378,7 +1378,7 @@ section[id]{scroll-margin-top:72px;}
         <li>+30% de ataque</li>
         <li>Se compra en la tienda del juego (Stars o TON)</li>
       </ul>
-      <div class="tier-price" style="color:#a78bfa">US$7</div>
+      <div class="tier-price" style="color:#a78bfa">US$7 <small style="font-size:.55em;opacity:.75;white-space:nowrap">≈ S/ 26.25</small></div>
     </div>
     <!-- INFINITO -->
     <div class="tier-card tier-infinito">
@@ -1396,7 +1396,7 @@ section[id]{scroll-margin-top:72px;}
         <li>+50 de vida y aura que quema</li>
         <li>Se compra en la tienda del juego (Stars o TON)</li>
       </ul>
-      <div class="tier-price" style="color:var(--yellow)">US$15</div>
+      <div class="tier-price" style="color:var(--yellow)">US$15 <small style="font-size:.55em;opacity:.75;white-space:nowrap">≈ S/ 56.25</small></div>
     </div>
 
   </div>
@@ -2192,7 +2192,7 @@ if (document.documentElement.classList.contains('anuncio')) document.addEventLis
 <!-- Config (keys + DUENDE_CFG) -->
 <script src="js/config.js"></script>
 <!-- Módulos en orden de dependencia -->
-<script src="js/auth-manager.js?v=326"></script>
+<script src="js/auth-manager.js?v=327"></script>
 <script>
 // Ranking real de la landing (antes: 5 nombres inventados con un badge
 // "LIVE" que no estaba conectado a nada). auth-manager.js registra su
@@ -2247,6 +2247,8 @@ window.addEventListener('load', cargarRankingLanding);
     if (document.hidden) return;
     fetch('/mmo/ws', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
       poner('vivo-on', d.online); if ((d.hoy || 0) > (d.online || 0)) poner('vivo-hoy', d.hoy);
+      // Casi lleno (85% del tope o el servidor ya no admite): se avisa antes de entrar.
+      var vo = document.getElementById('vivo-on'); if (vo && vo.lastChild) vo.lastChild.textContent = (d.lleno || (d.max && d.online >= d.max * 0.85)) ? ' jugando · ' + (d.lleno ? 'mundo lleno, quizá esperes un poco' : 'casi lleno') : ' jugando ahora';
     }).catch(function () {});
   }
   // Quien ya jugo como invitado ve su nombre en el boton del movil

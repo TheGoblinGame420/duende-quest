@@ -440,7 +440,7 @@ export const Retencion = {
     let ses = 0, min = 0;
     for (const x of dias.slice(0, 7)) { ses += x.r.ses || 0; min += x.r.min || 0; }
     // Embudo de las altas de los ultimos 14 dias.
-    const embudo = { n: 0, c1: 0, m1: 0, n5: 0, n10: 0, cl: 0 };
+    const embudo = { n: 0, c1: 0, m1: 0, n5: 0, n10: 0, cl: 0, ex1: 0 };   // ex1: primera expedicion recogida
     for (const x of dias.slice(0, 14)) for (const k in embudo) embudo[k] += x.r[k] || 0;
     // Altas del navegador interno de Facebook/Instagram: cuantas en 14 dias y su D1
     // (ultimas 30 cohortes con el dia ya cumplido), para compararlo con el D1 general.
@@ -635,7 +635,7 @@ export const Retencion = {
       lineas.push(`${tp.emoji} ¡${tp.nombre}! Hasta el ${tp.hasta} los monstruos sueltan ${tp.cosas}. Llevas ${fmt(n)}${tit}.`);
     }
     // Expedicion (expediciones.js) que ya volvio y espera a que la recoja.
-    if (c.exped && c.exped.fin <= Date.now()) lineas.push(`🧭 Tu expedición de ${c.exped.h} h ya volvió con oro y materiales: recógela en el registro de misiones.`);
+    if (c.exped && c.exped.fin <= Date.now()) lineas.push(`🧭 Tu expedición de ${c.exped.h < 1 ? Math.round(c.exped.h * 60) + ' min' : c.exped.h + ' h'} ya volvió con oro y materiales: recógela en ${c.en3d ? 'la fila 🧭 de tus misiones' : 'el registro de misiones'}.`);
     if (horaFelizActiva()) lineas.push('⚡ Ahora mismo es la Hora Feliz: +50% de experiencia por caza hasta las 21:00 (hora de Perú).');
     const L = c.login;
     // La racha no tiene tope (semanas de 7 dias): racha%7===0 = semana cumplida,

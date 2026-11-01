@@ -235,7 +235,8 @@ export const Social = {
     if (!txt) return;
     const mudo = this.silenciado ? this.silenciado(s) : 0;
     if (mudo) return this.no(s, `🔇 Estás silenciado por un moderador ${Math.ceil((mudo - ahora) / 60000)} min más.`);
-    if (!s.dios && riesgoEstafa(txt)) return this.no(s, '🛡 Por seguridad no se permiten direcciones de cartera, enlaces ni frases semilla en el chat. Nadie del equipo te pedirá nunca tu frase semilla.');
+    // Solo el dueño se salta el filtro: un moderador no publica carteras ni enlaces (nadie se hace pasar por el equipo).
+    if (!(this.esDueno && this.esDueno(s)) && riesgoEstafa(txt)) return this.no(s, '🛡 Por seguridad no se permiten direcciones de cartera, enlaces ni frases semilla en el chat. Nadie del equipo te pedirá nunca tu frase semilla.');
     s.chatT = ahora;
     let canal = m.canal;
     // Canal desconocido = general (y pasa por las mismas reglas de invitado).
@@ -246,7 +247,7 @@ export const Social = {
     // Invitado de menos de nivel 5: lo del general va al chat de su zona (antes se rechazaba y parecia que el chat no funcionaba).
     if (canal === 'general' && s.c.uid.startsWith('inv:') && s.c.nivel < 5) canal = 'decir';
     if (canal === 'susurro' && s.c.uid.startsWith('inv:') && s.c.nivel < 5) return this.no(s, s.m3 ? '🔒 En ORIGINS los invitados usan el chat público y el susurro desde el nivel 5 (el de grupo /g y hermandad /h ya funcionan). Sube un poco o inicia sesión.' : '🔒 Los invitados usan el canal general y el susurro desde el nivel 5. Mientras tanto escribe /d tu mensaje para hablar con los de tu mapa, o inicia sesión.');
-    const base = { t: 'chat', p: s.id, n: s.c.nombre, m: txt, mapa: s.c.mapa, cl: s.c.clase || '', gm: s.dios ? 1 : undefined };
+    const base = { t: 'chat', p: s.id, n: s.c.nombre, m: txt, mapa: s.c.mapa, cl: s.c.clase || '', gm: s.dios === 'dueno' ? 2 : s.dios ? 1 : undefined };
     if (canal === 'decir') {
       // Solo los que estan en el mismo mapa (o la misma mazmorra), menos quien lo ignora.
       const txtD = JSON.stringify({ ...base, canal: 'decir' });

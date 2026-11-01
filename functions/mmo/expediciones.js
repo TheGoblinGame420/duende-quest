@@ -29,6 +29,7 @@ export const Expediciones = {
       c.mat = c.mat || {};
       for (const k in pr.mat) c.mat[k] = Math.min(999, (c.mat[k] || 0) + pr.mat[k]);
       c.expediciones = (c.expediciones || 0) + 1;
+      if (c.expediciones === 1 && this.hitoEmbudo) this.hitoEmbudo(c, 'ex1');   // embudo: primera expedicion recogida
       if (e.h >= 8) c.exped8 = (c.exped8 || 0) + 1;
       this.progresoTarea && this.progresoTarea(s, 'exped');
       if (this.puntoPase) this.puntoPase(s, PASE.puntos.exped);
@@ -41,8 +42,9 @@ export const Expediciones = {
       this.guardar(s);
       return;
     }
-    const h = EXPEDICION.horas.includes(m.h) ? m.h : 0;
-    if (!h) return;
+    // La de 15 min solo la primera vez (aun sin ninguna recogida): asi ve el ciclo entero en la misma partida.
+    const h = EXPEDICION.horas.includes(m.h) || (m.h === EXPEDICION.primera && !c.expediciones) ? m.h : 0;
+    if (!h) return m.h === EXPEDICION.primera ? this.no(s, 'La expedición corta de 15 min es solo la primera vez.') : undefined;
     if (c.nivel < EXPEDICION.nv) return this.no(s, `Las expediciones se abren a nivel ${EXPEDICION.nv}.`);
     if (c.exped) return this.no(s, c.exped.fin <= ahora ? 'Recoge antes la expedición que ya volvió.' : 'Ya tienes una expedición en camino.');
     const d = typeof m.d === 'string' && Object.hasOwn(EXPEDICION.destinos, m.d) ? m.d : 'bosque';
@@ -50,7 +52,7 @@ export const Expediciones = {
     s.sucio = true;
     const quien = c.mascota && MASCOTAS[c.mascota] ? MASCOTAS[c.mascota].nombre : 'Un duendecillo explorador';
     this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });   // la mascota se va
-    this.enviar(s, { t: 'toast', ok: true, m: `🧭 ${quien} sale de expedición ${EXPEDICION.destinos[d].a}: vuelve en ${h} h. Recógela en el registro de misiones.` });
+    this.enviar(s, { t: 'toast', ok: true, m: `🧭 ${quien} sale de expedición ${EXPEDICION.destinos[d].a}: vuelve en ${h < 1 ? Math.round(h * 60) + ' min' : h + ' h'}. ${c.en3d ? 'Recógela tocando 🧭 en tus misiones.' : 'Recógela en el registro de misiones.'}` });
     this.actualizarYo(s);
     this.guardar(s);
   },

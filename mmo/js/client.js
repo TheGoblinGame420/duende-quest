@@ -9,7 +9,7 @@ import {
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
   RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, costoReforja, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TINTES, MASCOTAS, NOVEDADES, PASE, premioPase, ambulanteActivo, ambulanteOferta, semanaUTC, GESTOS, horaFelizTiempos, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
-  RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe, paqueteParaFaltante, ENTREGA, textoPagoRecibido,
+  RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe, paqueteParaFaltante, ENTREGA, textoPagoRecibido, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe, climaDe, CLIMA, ESPECIES, premioEspecie, TORRE, atajoTorre, MODS_TORRE, HERM_COLORES, premioTorreSem, zonaDeNivel, progresoLogro, proximoMundial, mundialDe, HORA_FELIZ, EXPEDICION, premioExpedicion,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
@@ -17,8 +17,8 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=326';
-import { iniciarRegalo } from './regalo.js?v=326';
+} from './data.js?v=327';
+import { iniciarRegalo } from './regalo.js?v=327';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -538,7 +538,7 @@ function recibir(m) {
       for (const k in cdPoder) delete cdPoder[k];
       clearTimeout(mostrarInvitacion.t); ponCss($('invitacion'), 'display', 'none');
       setTimeout(() => { if (yo) { revisarBoveda(); revisarNovedades(); } }, 1500);
-      miId = m.id; yo = m.yo; online = m.on || 0; reintentos = 0; if (ws) ws._listo = true;
+      miId = m.id; yo = m.yo; online = m.on || 0; reintentos = 0; llenoN = 0; llenoHasta = 0; if (ws) ws._listo = true;
       try { if (canalJuego) canalJuego.postMessage({ t: 'aqui', n: yo.nombre }); } catch (e) {}
       // Aviso de ORIGINS: al jugador nuevo no se le saca hacia el 3D antes de
       // acabar el tutorial (se le ofrece al terminarlo, en pintarTutorial).
@@ -565,9 +565,11 @@ function recibir(m) {
     case 'mapa': entrarMapa(m); break;
     case 'yo': {
       const antes = yo; yo = m.yo; puntoTienda();
+      if (antes && antes.skins && yo.skins && yo.skins.length > antes.skins.length) { const nueva = yo.skins.find(k => !antes.skins.includes(k)); if (nueva && SKINS[nueva]) setTimeout(() => ofrecerPresumir('✨ ¡Estrené la skin ' + SKINS[nueva].nombre + ' en Duende Quest!', 'look'), 1500); }
       if (tiendaAlEntrar && yo.clase) setTimeout(() => { if (tiendaAlEntrar && yo && !document.querySelector('.modal.on')) { tiendaAlEntrar = false; abrirTiendaHud('bot', true); } }, 1200);   // con otra ventana abierta, se reintenta con el siguiente 'yo'
       if (yo.muerto && !(antes && antes.muerto)) morir();
       if (!yo.muerto) { $('m-muerte').classList.remove('on'); P.muerto = false; }
+      ofrecerBienvenida(antes);
       if (!antes || antes.clase !== yo.clase || antes.nivel !== yo.nivel) $('acciones').innerHTML = '';
       if (antes && yo.nivel > antes.nivel) { vibrar(); setTimeout(() => permisosTg(yo.nivel), 2500); }
       // Una vez, a Nv 8: que existen las skins con poderes (informativo).
@@ -616,6 +618,7 @@ function recibir(m) {
       for (let i = 0; i < Math.min(8, 2 + Math.floor(m.oro / 15)); i++) monedas.push({ x: m.x, y: m.y + 20, vx: (Math.random() - .5) * 5, vy: -4 - Math.random() * 3, t: 0 });
       flotante(m.x, m.y, '+' + m.xp + ' XP', '#c084fc', 10);
       if (m.chi) { flotante(m.x - 18, m.y - 44, '+' + m.chi + ' 🥤', '#c084fc', 9); if (yo && yo.chicha) { yo.chicha.p += m.chi; yo.chicha.hoy += m.chi; } }
+      else if (m.chl) flotante(m.x - 18, m.y - 44, '🔒 🥤 desde Nv ' + CHICHA.nvPuntos, '#a8a2b8', 8);   // candado de la chicha (primeras cazas con Nv < 10)
       if (m.cal) { const tp = TEMPORADAS.find(x => x.id === m.tp) || temporadaDe() || TEMPORADAS[0]; flotante(m.x + 18, m.y - 30, '+' + m.cal + ' ' + tp.emoji, tp.color, 10); if (yo) yo[tp.campo] = (yo[tp.campo] || 0) + m.cal; }
       if (m.oro > 0) flotante(m.x, m.y + 14, '+' + m.oro + ' oro', '#ffe600', 10);
       if (m.drops && m.drops.length) m.drops.forEach(d => { const pd = PODERES.find(p => p.id === d); if (pd) aviso('🎁 Encontraste: ' + pd.nombre, 'ok'); });
@@ -624,7 +627,16 @@ function recibir(m) {
         flotante(m.x, m.y - 16, '★ ' + nombreItem(m.item), rz.color, m.item.r >= 2 ? 11 : 9);
         aviso('🎁 ' + rz.nombre + ': ' + nombreItem(m.item) + ' Nv' + m.item.nv + ' (' + textoBonos(m.item.b) + ')', m.item.r >= 2 ? 'jefe' : 'ok');
         if (m.item.r >= 2) { sfx('explosion', .3); for (let i = 0; i < 24; i++) particula(m.x, m.y, rz.color, 4); }
-        if (m.item.r >= 3) ofrecerPresumir('🌟 ¡Me cayó un objeto LEGENDARIO: ' + nombreItem(m.item) + '!');
+        if (m.item.r >= 2) ofrecerPresumir((m.item.r >= 3 ? '🌟 ¡Me cayó un objeto LEGENDARIO: ' : '✨ ¡Me cayó un objeto épico: ') + nombreItem(m.item) + '!', 'botin');
+      }
+      // Primera caza del personaje: botin garantizado (y nivel 2), con fiesta.
+      if (m.primero) {
+        flotante(m.x, m.y - 40, '¡PRIMER BOTÍN!', '#ffe600', 13);
+        aviso('🎉 ¡Primer botín!' + (m.item ? ' ' + nombreItem(m.item) + (m.primero === 2 ? ' ya va equipado.' : m.item.vendido ? ' (bolsa llena: vendido).' : ' está en tu bolsa.') : ''), 'jefe');
+        sfx('explosion', .3); sacudir = Math.max(sacudir, 6);
+        for (let i = 0; i < 40; i++) particula(m.x, m.y, i % 2 ? '#ffe600' : '#c084fc', 5);
+        if (TG && TG.HapticFeedback) try { TG.HapticFeedback.notificationOccurred('success'); } catch (e) {}
+        else if (navigator.vibrate) try { navigator.vibrate([60, 40, 120]); } catch (e) {}
       }
       sfx('moneda', .3);
       break;
@@ -677,7 +689,7 @@ function recibir(m) {
         for (let i = 0; i < 40; i++) particula(quien.x, quien.y - 30, ['#ffe600', '#00ff88', '#ff3cf0'][i % 3], 5);
         flotante(quien.x, quien.y - 95, '¡NIVEL ' + m.lv + '!', '#ffe600', 14);
       }
-      if (m.p === miId) { aviso('Has alcanzado el nivel ' + m.lv + '.', 'ok'); tono('nivel'); }
+      if (m.p === miId) { aviso('Has alcanzado el nivel ' + m.lv + '.', 'ok'); tono('nivel'); if (m.lv >= 60) ofrecerPresumir('🏆 ¡Llegué al nivel 60, el máximo, en Duende Quest!', 'nv60'); else if (m.lv >= 10 && m.lv % 5 === 0) ofrecerPresumir('⭐ ¡Llegué al nivel ' + m.lv + ' en Duende Quest!', 'nivel'); }
       else if (quien) { quien.lv = m.lv; if (m.mx) quien.mx = m.mx; if (m.rmx) quien.rmx = m.rmx; }
       break;
     }
@@ -694,7 +706,7 @@ function recibir(m) {
     // Torre del Duende: el piso en el que vais (y cuanto le queda).
     case 'torre':
       // Marca nueva de la semana cada 5 pisos: ofrecer presumirla (con tu enlace).
-      if (m.mejor >= 5 && m.mejor % 5 === 0 && m.piso === m.mejor && m.mejor > ((torreInfo && torreInfo.mejor) || 0)) ofrecerPresumir(`🗼 ¡Llegué al piso ${m.mejor} de la Torre del Duende! ¿Me superas?`);
+      if (m.mejor >= 5 && m.mejor % 5 === 0 && m.piso === m.mejor && m.mejor > ((torreInfo && torreInfo.mejor) || 0)) ofrecerPresumir(`🗼 ¡Llegué al piso ${m.mejor} de la Torre del Duende! ¿Me superas?`, 'torre');
       torreInfo = { mod: m.en ? (m.mod || '') : (torreInfo ? torreInfo.mod : ''), jefe: m.en ? !!m.jefe : (torreInfo ? torreInfo.jefe : false), piso: m.piso, fin: m.limpio ? 0 : m.en ? performance.now() + m.en : (torreInfo ? torreInfo.fin : 0), mejor: m.mejor !== undefined ? m.mejor : (torreInfo ? torreInfo.mejor : 0) };
       pintarSubMapa();
       break;
@@ -753,7 +765,7 @@ function recibir(m) {
     case 'logro':
       aviso('Logro desbloqueado: ' + m.titulo + (m.oro ? ' · +' + m.oro.toLocaleString('es', { useGrouping: 'always' }) + ' oro' : '') + '. Puedes llevar el título desde el inventario.', 'ok', 6000);
       vibrar();
-      ofrecerPresumir('🏅 ¡Conseguí el logro «' + m.titulo + '»!');
+      ofrecerPresumir('🏅 ¡Conseguí el logro «' + m.titulo + '»!', 'logro');
       sfx('explosion', .35);
       for (let i = 0; i < 30; i++) particula(P.x, P.y - 40, ['#ffe600', '#ff3cf0', '#00ff88'][i % 3], 5);
       break;
@@ -782,7 +794,7 @@ function recibir(m) {
       break;
     case 'vincOk': aviso('🔗 ¡Cuentas vinculadas! Entrando con ' + m.nombre + '…', 'ok', 4000); setTimeout(() => location.reload(), 1500); break;
     case 'diosModo': if (yo) { yo.diosModo = m.modo; pintarDiosModos(); } break;
-    case 'amigos': pintarAmigos(m); if (presumirPend && m.ref) { presumirPend = false; ofrecerPresumir(presumirTxt); aviso('Enlace preparado. Pulsa «Presumir».'); } break;
+    case 'amigos': pintarAmigos(m); if (presumirPend && m.ref) { presumirPend = false; ofrecerPresumir(presumirTxt, undefined, true); aviso('Enlace preparado. Pulsa «Presumir».'); } break;
     case 'muerte': resumenMuerte(m); break;
     case 'nodos': recibirNodos(m.l); break;
     case 'recogido': { const n = nodos.find(x => x.i === m.i); if (n) { n.listo = performance.now() + m.en; for (let k = 0; k < 14; k++) particula(n.x, SUELO - 14, m.tipo === 'hierba' ? '#4ade80' : '#cbd5e1', 3); } sfx('moneda', .3); break; }
@@ -823,6 +835,9 @@ function recibir(m) {
         aviso('No pudimos verificar tu cuenta: entras como invitado (tu personaje de la cuenta no se toca). Cierra y vuelve a abrir el juego para entrar con ella.');
         break;
       }
+      // Mundo lleno o demasiadas conexiones desde tu red: se dice por que, se reintenta
+      // solo (cada vez un poco mas tarde, con azar) y se ofrece el arcade mientras.
+      if (m.lleno) { avisoLleno(m); break; }
       // Rechazo suave (servidor ocupado, la cuenta ya estaba entrando, prueba de
       // trabajo): el servidor cierra y onclose vuelve solo pasado 'reintentar' ms.
       if (m.reintentar && !m.fatal) {
@@ -1460,6 +1475,25 @@ function puntoTienda() {
   try { vista = localStorage.getItem('dq_tienda_vista') === '1'; entVistas = +localStorage.getItem('dq_tienda_ent') || 0; } catch (e) {}
   bt.classList.toggle('aviso', !!yo && ((!ps.length && !vista) || ent > entVistas));
 }
+// Pack de bienvenida (SOLO 1 VEZ): se ofrece una sola vez, entre CLASSIC y
+// ORIGINS (mismas claves), al llegar a Nv 5 o al revivir tras la segunda
+// muerte, cuando no hay otra ventana. Solo si el servidor dice que aun puedes.
+function ofrecerBienvenida(antes) {
+  if (!antes || !yo || !yo.puedeBienvenida) return;
+  let ofrecida = false, muertes = 0;
+  try { ofrecida = localStorage.getItem('dq_bienv_ofrecida') === '1'; muertes = +localStorage.getItem('dq_bienv_muertes') || 0; } catch (e) {}
+  if (ofrecida) return;
+  if (yo.muerto && !antes.muerto) { muertes++; try { localStorage.setItem('dq_bienv_muertes', String(muertes)); } catch (e) {} }
+  if (!((antes.nivel < 5 && yo.nivel >= 5) || (muertes >= 2 && antes.muerto && !yo.muerto))) return;
+  try { localStorage.setItem('dq_bienv_ofrecida', '1'); } catch (e) {}
+  const intentar = n => {
+    if (!yo || !yo.puedeBienvenida || yo.muerto) return;
+    if (document.querySelector('.modal.on')) { if (n < 20) setTimeout(() => intentar(n + 1), 3000); return; }
+    abrirPremium('bienv'); premiumFoco = 'bienvenida'; pintarTienda();
+    aviso('🎁 Pack de bienvenida: solo para tu primera compra. El Duende te lo entrega a mano.', 'ok');
+  };
+  setTimeout(() => intentar(0), 2500);
+}
 function abrirTiendaHud(via, soloPremium) {
   if (!yo) return;
   sfx('boton', .3);
@@ -1673,9 +1707,12 @@ function errorRojo(txt) {
   for (const d of c.children) if (d.textContent === txt && performance.now() - (d._t || 0) < 1500) return;
   const d = document.createElement('div');
   d.textContent = txt; d._t = performance.now();
+  // Los largos duran mas (hasta 6 s) para que se lean enteros; la animacion va al mismo ritmo.
+  const dur = Math.min(6000, Math.max(1600, String(txt).length * 55));
+  d.style.animationDuration = dur + 'ms';
   c.appendChild(d);
   tono('error');
-  setTimeout(() => d.remove(), 1600);
+  setTimeout(() => d.remove(), dur);
   while (c.children.length > 2) c.firstChild.remove();
 }
 
@@ -1718,7 +1755,7 @@ function mensajeChat(m) {
     if (m.de) { quien = m.de + ' te susurra'; ultimoSusurro = m.de; sfx('boton', .4); }
     else quien = 'Susurras a ' + m.a;
   } else if (canal === 'general' && m.mapa && m.mapa !== mapaId && MAPAS[m.mapa]) quien = m.n + ' (' + MAPAS[m.mapa].nombre + ')';
-  lineaChat(ETIQUETA_CANAL[canal] + (m.gm ? '👑 [GM] ' : '') + quien, m.m, canal, m.gm ? '#ffd84a' : CLASES[m.cl] ? CLASES[m.cl].color : null);
+  lineaChat(ETIQUETA_CANAL[canal] + (m.gm === 2 ? '👑 [DUEÑO] ' : m.gm ? '🛡 [MOD] ' : '') + quien, m.m, canal, m.gm ? '#ffd84a' : CLASES[m.cl] ? CLASES[m.cl].color : null);
   if (canal !== 'susurro' && (!m.mapa || m.mapa === mapaId)) burbujas.set(m.p, { txt: m.m, hasta: performance.now() + 5000 });
 }
 
@@ -1848,7 +1885,7 @@ function finDuelo(m) {
   duelo = null;
   aviso(m.m, m.g === miId ? 'ok' : '');
   vibrar(m.g === miId ? 'success' : 'warning');
-  if (m.g === miId) { sfx('moneda', .5); for (let i = 0; i < 24; i++) particula(P.x, P.y - 40, '#ffe600', 4); }
+  if (m.g === miId) { sfx('moneda', .5); for (let i = 0; i < 24; i++) particula(P.x, P.y - 40, '#ffe600', 4); setTimeout(() => ofrecerPresumir('⚔️ ¡Gané un duelo en Duende Quest! ¿Te atreves conmigo?', 'duelo'), 1200); }
 }
 $('o-invitar').onclick = () => { const q = jugObjetivo(); if (q) { mandar({ t: 'invitar', p: q.id }); sfx('boton', .3); } };
 $('o-susurrar').onclick = () => { const q = jugObjetivo(); if (!q) return; abrirChat(); $('chat-in').value = '/s ' + q.n + ' '; };
@@ -1987,9 +2024,14 @@ function abrirWa(txt, url) {
 // Tras un logro, una mazmorra o un objeto legendario sale un boton unos
 // segundos para compartirlo con tu enlace de invitacion (si el amigo llega a
 // Nv 10, premio para los dos). Es la forma de que el mundo tenga mas gente.
-let presumirTxt = '', presumirPend = false;
-function ofrecerPresumir(txt) {
-  presumirTxt = txt;
+let presumirTxt = '', presumirPend = false, presumirTipo = '', presumirUlt = 0;
+// Momento -> imagen de la historia de Telegram (assets/promo/historia_N.jpg): 1 el duende, 2 la fortaleza, 3 el combate.
+const IMG_PRESUMIR = { nivel: 1, look: 1, nv60: 2, mazmorra: 2, torre: 2, botin: 3, logro: 3, duelo: 3 };
+// Tope: una oferta cada 3 min (si no, cansa). forzar: la pidio el jugador.
+function ofrecerPresumir(txt, tipo, forzar) {
+  if (!forzar && Date.now() - presumirUlt < 180000) return;
+  presumirUlt = Date.now();
+  presumirTxt = txt; if (tipo !== undefined) presumirTipo = tipo || '';
   // El enlace se pide ya: al pulsar, compartir debe ser inmediato (el
   // navegador bloquea compartir si espera a una respuesta del servidor).
   if (!(amigosInfo && amigosInfo.ref) && performance.now() - amigosPedidoT > 10000) { amigosPedidoT = performance.now(); mandar({ t: 'amigos' }); }
@@ -2001,6 +2043,15 @@ function ofrecerPresumir(txt) {
 function compartirPresumir(info) {
   const enlTg = 'https://t.me/duendequest_bot?start=mmo_' + info.ref;
   const txt = presumirTxt + ' Juega gratis conmigo a DUENDE QUEST ONLINE. 🧝';
+  // Historia de Telegram (Bot API 7.8) con una imagen segun el momento; si no, el compartir de siempre.
+  try {
+    if (TG && TG.shareToStory && TG.isVersionAtLeast && TG.isVersionAtLeast('7.8')) {
+      const img = location.origin + '/assets/promo/historia_' + (IMG_PRESUMIR[presumirTipo] || 1 + Math.floor(Math.random() * 3)) + '.jpg';
+      const premium = !!(TG.initDataUnsafe && TG.initDataUnsafe.user && TG.initDataUnsafe.user.is_premium);
+      TG.shareToStory(img, premium ? { text: txt.slice(0, 2048), widget_link: { url: enlTg, name: 'Jugar gratis' } } : { text: (txt + ' ' + enlTg).slice(0, 200) });
+      return;
+    }
+  } catch (e) {}
   if (TG && TG.openTelegramLink) return TG.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(enlTg) + '&text=' + encodeURIComponent(txt));
   // Fuera de Telegram, WhatsApp primero, con el premio en el mensaje.
   abrirWa((presumirTxt ? presumirTxt + ' ' : '') + TXT_WA.replace('ganamos oro', 'ganamos +' + oroAmigo() + ' de oro'), enlWa(info.ref));
@@ -2014,7 +2065,7 @@ $('presumir').onclick = () => {
 const regalo2 = iniciarRegalo({
   mandar,
   ocupado: () => !!document.querySelector('.modal.on') || !yo || !yo.clase,
-  presumir: txt => { presumirTxt = txt; if (amigosInfo && amigosInfo.ref) compartirPresumir(amigosInfo); else { presumirPend = true; mandar({ t: 'amigos' }); } },
+  presumir: txt => { presumirTxt = txt; presumirTipo = ''; if (amigosInfo && amigosInfo.ref) compartirPresumir(amigosInfo); else { presumirPend = true; mandar({ t: 'amigos' }); } },
   fanfarria: () => tono('nivel'),
   vibrar,
   filtro: t => modoAnuncio() && SIN_CRIPTO_RE.test(t || ''),
@@ -2346,7 +2397,7 @@ function emote(txt) {
 }
 function completada(m) {
   emote(m.txt);
-  ofrecerPresumir('🏆 ' + (MAZMORRAS[m.id] ? 'Completé ' + MAZMORRAS[m.id].nombre + '.' : 'Completé una mazmorra.'));
+  ofrecerPresumir('🏆 ' + (MAZMORRAS[m.id] ? 'Completé ' + MAZMORRAS[m.id].nombre + '.' : 'Completé una mazmorra.'), 'mazmorra');
   aviso(m.txt, 'ok');
   sfx('explosion', .5);
   for (let i = 0; i < 80; i++) particula(P.x + (Math.random() - .5) * 200, P.y - 40 - Math.random() * 60, ['#ffe600', '#ff3cf0', '#00ff88', '#00eeff'][i % 4], 6);
@@ -2754,7 +2805,7 @@ const TUTORIAL = [
   { id: 'ir', txt: () => 'Sigue la flecha amarilla hasta tu misión', hecho: t => (yo.kills || 0) > t.k0 || (MAPAS[mapaId].zona && !instancia) },
   { id: 'atacar', txt: () => TACTIL ? 'Ataca con el botón rojo (mantenlo pulsado)' : 'Ataca con Z o J. Tab cambia de objetivo', hecho: t => (yo.kills || 0) > t.k0 },
   { id: 'habilidad', txt: () => 'Usa una habilidad: ' + (TACTIL ? 'primer botón de la barra' : 'tecla 1'), hecho: t => t.usoHab },
-  { id: 'mision', txt: () => (yo.mis && MISIONES[yo.mis.i] && yo.mis.p >= MISIONES[yo.mis.i].n ? 'Misión cumplida. Entrégala al Guardia Tito' : 'Completa la misión y vuelve con el Guardia Tito'), hecho: () => (yo.mis && yo.mis.i >= 1) },
+  { id: 'mision', txt: () => (yo.mis && MISIONES[yo.mis.i] && yo.mis.p >= MISIONES[yo.mis.i].n ? 'Misión cumplida. Entrégala al Guardia Tito' : 'Completa la misión: la recompensa llega sola al cumplirla'), hecho: () => (yo.mis && yo.mis.i >= 1) },
 ];
 const tuto = { i: -1, x0: 0, k0: 0, usoHab: false, clave: '' };
 function pintarTutorial() {
@@ -2893,6 +2944,16 @@ function pintarChicha() {
     <p style="font-size:12px;margin-top:6px">Cada monstruo que cazas suelta su chicha: <b style="display:inline">1 punto</b>, <b style="display:inline">3</b> si es de tu nivel o más, <b style="display:inline">25</b> un jefe. Desde nivel ${CHICHA.nvPuntos}, hasta ${CHICHA.porDia} puntos al día.</p>
     <p style="font-size:22px;color:var(--oro);margin:8px 0">${ch.p.toLocaleString('es', { useGrouping: 'always' })} puntos</p>
     <p style="font-size:12px;color:var(--txt2)">Hoy: ${ch.hoy}/${CHICHA.porDia}</p></div>`;
+  // Requisitos a la vista (los mismos que revisa el servidor en chicha.js).
+  {
+    const nv = yo.nivel || 1, dj = ch.dj || 0, hj = Math.floor((ch.mj || 0) / 60), si = b => b ? '✅' : '⬜';
+    h += `<div class="mis-caja" style="font-size:12px;line-height:1.6"><b style="display:block;color:var(--txt);margin-bottom:2px">Requisitos</b>
+      ${si(cuenta)} Cuenta de Telegram (para coordinar el envío)<br>
+      ${si(nv >= CHICHA.nvPuntos)} Puntos desde nivel ${CHICHA.nvPuntos}<br>
+      ${si(nv >= CHICHA.nvReclamo)} Reclamar desde nivel ${CHICHA.nvReclamo} y 2 días de personaje<br>
+      ${si(nv >= CHICHA.nv60 && dj >= CHICHA.dias60 && hj * 60 >= CHICHA.min60)} ${CHICHA.litros60} litros: nivel ${CHICHA.nv60} + ${CHICHA.dias60} días jugados (${Math.min(dj, CHICHA.dias60)}/${CHICHA.dias60}) + ${Math.round(CHICHA.min60 / 60)} h de juego (${Math.min(hj, Math.round(CHICHA.min60 / 60))}/${Math.round(CHICHA.min60 / 60)})<br>
+      📦 Envíos solo en Perú · el equipo revisa y envía a mano</div>`;
+  }
   // El gran premio: 2 litros por llegar a nivel 60 (siempre a la vista).
   {
     const nv = yo.nivel || 1, hecho = (ch.rec || []).includes('nv60'), pct = Math.min(100, Math.round(nv / CHICHA.nv60 * 100));
@@ -3159,7 +3220,7 @@ function pintarWallet() {
   const puede = el.cuenta && el.nivel && lista && mton >= RETIRO_MIN_MTON;
   const aRetirar = Math.min(Math.floor(mton), RETIRO_MAX_MTON);
   h += `<button class="btn" id="b-retirar" style="width:100%;padding:12px" ${puede ? '' : 'disabled'}>Retirar ${tonTxt(aRetirar)} TON</button>`;
-  h += '<button class="btn sec" id="b-premium" style="width:100%;margin-top:8px">Tienda premium (oro y poderes)</button>';
+  h += '<button class="btn sec" id="b-premium" style="width:100%;margin-top:8px">💎 PAQUETES (oro, skins y alas)</button>';
   const tr = yo.transparencia;
   if (tr) h += `<div class="mis-caja" style="margin-top:12px"><b>Transparencia</b><p style="font-size:12px;color:var(--txt2)">${tr.pct ? 'El fondo de cada día es el <b style="display:inline;color:var(--txt)">' + tr.pct + '%</b> de lo que entró al juego la semana anterior, más lo que aporta El Duende.' : 'El fondo de cada día lo aporta El Duende, el creador: no sale de lo que pagan otros jugadores.'} Nunca se reparte más de lo que hay. Pagado a jugadores hasta hoy: <b style="display:inline;color:var(--txt)">${tonTxt(tr.tonPagados * MTON_POR_TON)} TON</b> en ${tr.retirosPagados} ${tr.retirosPagados === 1 ? 'retiro' : 'retiros'}.</p></div>`;
   if (fondoInfo) {
@@ -3215,19 +3276,27 @@ function textoPlazo(x) {
 function htmlPremium() {
   const cuentaTg = !!TG && !forzarInvitado;
   const cuenta = yo && yo.p2e && yo.p2e.cuenta;
-  let h = '<p style="font-size:13px;line-height:1.45;color:var(--txt2);margin-bottom:10px">Compras opcionales para apoyar el juego. Cuando se confirma el pago, El Duende te entrega la compra a mano en tu personaje (vale en CLASSIC y ORIGINS): ' + esc(textoPagoRecibido()) + ' Te avisamos aquí y por Telegram. ' + (modoAnuncio() && !cuentaTg ? 'Con dinero se compra con Stars, jugando desde Telegram.' : 'En la web se paga con SOL o con $DUENDE (10% de descuento). Con dinero <b>no</b> se compran mTON: solo se ganan jugando.') + '</p>';
-  // La skin elegida desde la pestaña Skins va primero.
-  const lista = PAQUETES.slice().sort((a, b) => (b.id === premiumFoco) - (a.id === premiumFoco));
+  // Una linea clara y el detalle legal plegado (en movil no tapa los paquetes).
+  let h = '<p style="font-size:13px;line-height:1.45;color:var(--txt2);margin-bottom:4px">Compras opcionales: El Duende revisa cada pago y te lo entrega a mano (CLASSIC y ORIGINS).</p>'
+    + '<details style="font-size:12px;line-height:1.45;color:var(--txt2);margin-bottom:10px"><summary style="cursor:pointer">Cómo funciona</summary>' + esc(textoPagoRecibido()) + ' Te avisamos aquí y por Telegram. ' + (cuentaTg ? 'En Telegram se paga con Stars. Con dinero <b>no</b> se compran mTON: solo se ganan jugando.' : modoAnuncio() ? 'Con dinero se compra con Stars, jugando desde Telegram.' : 'En la web se paga con Solana (SOL, una criptomoneda: no son soles) o con $DUENDE (10% de descuento). Con dinero <b>no</b> se compran mTON: solo se ganan jugando.') + ' Los soles (S/) son solo referencia aproximada.</details>';
+  // La skin elegida desde la pestaña Skins va primero; luego por grupos.
+  // El Pack de bienvenida (SOLO 1 VEZ) sale solo mientras el servidor diga que aun puedes.
+  const lista = ordenTienda(PAQUETES.filter(p => !p.unaVez || (yo && yo.puedeBienvenida)), premiumFoco);
+  const ref = usd => `<small style="display:block;font-size:11px;color:var(--txt2)">≈ ${precioLocal(usd)}</small>`;
+  let grupo = '';
   for (const pq of lista) {
+    const g = pq.id === premiumFoco ? '' : grupoPaquete(pq);
+    if (g && g !== grupo) { grupo = g; h += `<p style="margin:12px 0 4px;font-size:12px;font-weight:bold;color:var(--oro, #ffd84a)">${esc((GRUPOS_TIENDA.find(x => x[0] === g) || [])[1] || '')}</p>`; }
     const sk = pq.skin && SKINS[pq.skin];
     let acc;
     if (pq.skin && yo && (yo.skins || []).includes(pq.skin)) acc = '<span class="precio" style="color:var(--ok)">✓ Ya la tienes</span>';
-    else if (!cuenta) acc = `<span class="precio">${cuentaTg ? estrellasDe(pq.usd) + ' Stars' : '$' + pq.usd}</span><button class="btn sec" data-cuenta="1">Iniciar sesión</button>`;
-    else if (cuentaTg) acc = `<span class="precio">${estrellasDe(pq.usd)} Stars</span><button class="btn" data-premium="${pq.id}" data-metodo="stars">Pagar con Stars</button>`;
-    else if (modoAnuncio()) acc = `<span class="precio">$${pq.usd}</span><span style="font-size:11px;color:var(--txt2)">Con Stars en Telegram</span>`;
-    else acc = `<span class="precio">$${pq.usd}</span><button class="btn" data-premium="${pq.id}" data-metodo="sol">Pagar con SOL</button><button class="btn sec" data-premium="${pq.id}" data-metodo="duende">$DUENDE −10%</button>`;
+    else if (!cuenta) acc = `<span class="precio">${cuentaTg ? estrellasDe(pq.usd) + ' ⭐' : 'US$' + pq.usd}${ref(pq.usd)}</span><button class="btn sec" data-cuenta="1">Iniciar sesión</button>`;
+    else if (cuentaTg) acc = `<span class="precio">${estrellasDe(pq.usd)} ⭐${ref(pq.usd)}</span><button class="btn" data-premium="${pq.id}" data-metodo="stars">Pagar con Stars</button>`;
+    else if (modoAnuncio()) acc = `<span class="precio">US$${pq.usd}${ref(pq.usd)}</span><span style="font-size:11px;color:var(--txt2)">Con Stars en Telegram</span>`;
+    else acc = `<span class="precio">US$${pq.usd}${ref(pq.usd)}</span><button class="btn" data-premium="${pq.id}" data-metodo="sol">Pagar con Solana (cripto)</button><button class="btn sec" data-premium="${pq.id}" data-metodo="duende">$DUENDE −10%</button>`;
     const ico = sk ? `<img src="${retratoSkin(pq.skin)}" style="${sk.premium ? 'filter:drop-shadow(0 0 5px ' + sk.color + ')' : ''}">` : `<img src="${A}items/equipo/${pq.icono}.png">`;
-    const nom = sk && sk.premium ? `<span style="color:${sk.color}">${esc(pq.nombre)}</span>` : esc(pq.nombre);
+    const nom = (sk && sk.premium ? `<span style="color:${sk.color}">${esc(pq.nombre)}</span>` : esc(pq.nombre))
+      + (pq.etiqueta ? ` <span style="font-size:10px;padding:1px 5px;border-radius:6px;background:var(--ok);color:#000;white-space:nowrap">${esc(pq.etiqueta)}</span>` : '');
     const nota = sk ? '<br><span style="color:var(--txt2)">' + (sk.premium ? 'Skin exclusiva: solo se consigue aquí.' : 'Skin con poderes: también se consigue con oro.') + '</span>' : '';
     h += `<div ${pq.id === premiumFoco ? 'style="outline:2px solid var(--ok);border-radius:10px"' : ''}>` + tarjeta(ico, nom, esc(pq.desc) + nota, acc) + '</div>';
   }
@@ -3235,7 +3304,8 @@ function htmlPremium() {
   if (ps.length) {
     const col = { pagado: 'var(--warn)', por_verificar: 'var(--warn)', entregado: 'var(--ok)', anulado: 'var(--err)', esperando_pago: 'var(--txt2)', comprobando: 'var(--txt2)' };
     const txt = { pagado: 'Por entregar', por_verificar: 'En revisión', entregado: 'Entregado', anulado: 'Anulado', esperando_pago: 'Sin pagar', comprobando: 'Comprobando…' };
-    h += '<p style="margin:12px 0 4px;font-size:12px">Tus compras:</p>' + ps.slice().reverse().map(x => `<div class="fila"><span>#${esc(x.codigo)} · ${esc(x.nombre)}</span><span style="color:${col[x.estado] || 'var(--txt)'}">${txt[x.estado] || esc(x.estado)}${x.estado === 'esperando_pago' && (x.lamports || x.raw) ? ` <button class="btn sec" data-retomar="${esc(x.codigo)}" style="padding:4px 8px">Pagar</button>` : ''}${textoPlazo(x)}</span></div>`).join('');
+    h += '<p style="margin:12px 0 4px;font-size:12px">Tus compras:</p>' + ps.slice().reverse().map(x => `<div class="fila"><span>#${esc(x.codigo)} · ${esc(x.nombre)}</span><span style="color:${col[x.estado] || 'var(--txt)'}">${txt[x.estado] || esc(x.estado)}${x.estado === 'esperando_pago' && (x.lamports || x.raw) ? ` <button class="btn sec" data-retomar="${esc(x.codigo)}" style="padding:4px 8px">Pagar</button>` : ''}${textoPlazo(x)} ${x.reclamado ? '<small style="color:var(--txt2)">Avisado</small>' : `<button class="btn sec" data-reclamo="${esc(x.codigo)}" style="padding:4px 8px">¿Problema?</button>`}</span></div>`).join('')
+      + '<p style="font-size:11px;color:var(--txt2);margin-top:6px">¿Algo salió mal con una compra? Pulsa «¿Problema?» y El Duende lo revisa. <a href="/reembolsos.html" target="_blank" rel="noopener" style="color:var(--txt2)">Entregas y reembolsos</a></p>';
   }
   return h;
 }
@@ -3246,6 +3316,8 @@ function conectarPremium(L) {
     if (x && x.raw) mostrarPedidoSol({ metodo: 'duende', codigo: x.codigo, raw: x.raw, mint: x.mint, dec: x.dec, wallet: x.wallet, usd: x.usd, nombre: x.nombre });
     else if (x && x.lamports) mostrarPedidoSol({ codigo: x.codigo, lamports: x.lamports, wallet: x.wallet, usd: x.usd, nombre: x.nombre, ref: x.ref });
   });
+  // «¿Problema?»: avisa al dueño de ese pedido (el servidor limita los avisos).
+  L.querySelectorAll('[data-reclamo]').forEach(b => b.onclick = () => { sfx('boton', .3); b.disabled = true; b.textContent = 'Avisando…'; mandar({ t: 'reclamoPedido', codigo: b.dataset.reclamo }); setTimeout(() => { if (b.isConnected && b.disabled) { b.disabled = false; b.textContent = '¿Problema?'; } }, 5000); });
   L.querySelectorAll('[data-premium]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'pedido', id: b.dataset.premium, metodo: b.dataset.metodo, via: viaTienda }); });
   L.querySelectorAll('[data-cuenta]').forEach(b => b.onclick = () => abrirCuenta());
 }
@@ -3293,7 +3365,7 @@ function mostrarPedidoSol(m) {
     `<p style="font-size:12px;margin-top:8px">Y pega aquí la firma (signature) de la transacción:</p>` +
     `<input class="nombre" id="in-firma" placeholder="Firma de la transacción" style="font-size:10px;margin:6px 0">` +
     `<button class="btn sec" id="b-firma" style="width:100%">Enviar comprobante</button>` +
-    `<p style="font-size:12px;color:var(--txt2);margin-top:8px">Tienes 30 minutos. El pago va directo a la wallet de El Duende. ${esc(textoPagoRecibido())} Esta ventana solo se cierra con ✕; si la cierras, en Tienda → Premium → Tus compras pulsa «Pagar».</p>`;
+    `<p style="font-size:12px;color:var(--txt2);margin-top:8px">Tienes 30 minutos. El pago va directo a la wallet de El Duende. ${esc(textoPagoRecibido())} Esta ventana solo se cierra con ✕; si la cierras, en Tienda → 💎 PAQUETES → Tus compras pulsa «Pagar».</p>`;
   abrir('m-sol');
   const copiar = t => { try { navigator.clipboard.writeText(t); aviso('📋 Copiado', 'ok'); } catch (e) {} };
   $('b-copia-w').onclick = () => copiar(m.wallet);
@@ -3310,7 +3382,7 @@ function mostrarPedidoSol(m) {
   }).catch(() => { if ($('sol-qr')) $('sol-qr').textContent = ''; });
   const bsf = $('b-solflare');
   if (bsf) bsf.onclick = () => {
-    aviso('Abriendo el juego dentro de Solflare: entra con tu cuenta y, en la tienda premium → Tus compras, pulsa «Pagar» en el pedido #' + m.codigo + '.', 'ok');
+    aviso('Abriendo el juego dentro de Solflare: entra con tu cuenta y, en Tienda → 💎 PAQUETES → Tus compras, pulsa «Pagar» en el pedido #' + m.codigo + '.', 'ok');
     window.location.href = 'https://solflare.com/ul/v1/browse/' + encodeURIComponent(location.origin + location.pathname + location.search) + '?ref=' + encodeURIComponent(location.origin);
   };
 }
@@ -3334,7 +3406,7 @@ async function pagarConPhantom(m) {
     // la app de Phantom (enlace universal), donde si se puede firmar; alli
     // se vuelve a pedir la compra (el pedido sin pagar caduca solo).
     if (TACTIL) {
-      aviso('Abriendo el juego dentro de Phantom: entra con tu cuenta y, en la tienda premium → Tus compras, pulsa «Pagar» en el pedido #' + m.codigo + '.', 'ok');
+      aviso('Abriendo el juego dentro de Phantom: entra con tu cuenta y, en Tienda → 💎 PAQUETES → Tus compras, pulsa «Pagar» en el pedido #' + m.codigo + '.', 'ok');
       window.location.href = 'https://phantom.app/ul/browse/' + encodeURIComponent(location.origin + location.pathname + location.search) + '?ref=' + encodeURIComponent(location.origin);
       return;
     }
@@ -3476,7 +3548,7 @@ function pintarDios(d) {
     h += `<p style="font-size:12px;color:var(--txt2);margin:6px 0">${D.jugadores.length} conectados${dueno && D.fallosSupabase ? ` · ⚠️ ${D.fallosSupabase} fallos de Supabase desde el último reinicio` : ''}</p>`;
     // Un moderador no actua sobre otro admin; el dueño si puede expulsar o banear a un moderador.
     h += D.jugadores.map(j => { const libre = dueno || !j.gm || j.p === miId; return `<div class="mis-caja" style="margin:6px 0;padding:8px">
-      <b>${j.gm ? '👑 ' : ''}${esc(j.n)}</b> <span style="color:var(--txt2);font-size:12px">Nv ${j.lv} · ${esc((MAPAS[j.mapa] || {}).nombre || j.mapa)}${j.inst ? ' (mazmorra)' : ''} · ${j.tipo === 'inv' ? 'invitado' : j.tipo === 'tg' ? 'Telegram' : 'web'} · ${(j.oro || 0).toLocaleString('es')} oro${j.mute ? ' · 🔇' : ''}</span>
+      <b>${j.dn ? '👑 ' : j.gm ? '🛡 ' : ''}${esc(j.n)}</b> <span style="color:var(--txt2);font-size:12px">Nv ${j.lv} · ${esc((MAPAS[j.mapa] || {}).nombre || j.mapa)}${j.inst ? ' (mazmorra)' : ''} · ${j.tipo === 'inv' ? 'invitado' : j.tipo === 'tg' ? 'Telegram' : 'web'} · ${(j.oro || 0).toLocaleString('es')} oro${j.mute ? ' · 🔇' : ''}</span>
       <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">
         <button class="btn sec" data-dj="irA" data-p="${j.p}">Ir</button>${libre ? `<button class="btn sec" data-dj="traer" data-p="${j.p}">Traer</button>` : ''}
         ${dueno ? `<button class="btn sec" data-dj="oro" data-p="${j.p}">Oro</button><button class="btn sec" data-dj="skin" data-p="${j.p}">Skin</button>` : ''}
@@ -4194,8 +4266,8 @@ function dibujarDuende(q, esYo) {
   const tn = TINTES[esYo ? yo.tinte : q.tn];
   const colNom = tn ? colorTinte(tn) : esYo ? '#ffe600' : (CLASES[clase] ? CLASES[clase].color : (SKINS[skin] ? SKINS[skin].color : '#fff'));
   pies = piesOrig;
-  const esGm = esYo ? yo.dios : q.gm;
-  etiqueta(x, pies + 16 + baja, (muerto ? '💀 ' : '') + (esGm ? 'GM ' : '') + nom + ' · NV' + lv, esGm ? '#ffd84a' : colNom, 6);
+  const esGm = esYo ? (yo.dios ? (yo.diosNv === 'dueno' ? 2 : 1) : 0) : q.gm;
+  etiqueta(x, pies + 16 + baja, (muerto ? '💀 ' : '') + (esGm === 2 ? 'DUEÑO ' : esGm ? 'MOD ' : '') + nom + ' · NV' + lv, esGm ? '#ffd84a' : colNom, 6);
   // Hermandad y titulo debajo; si otro duende esta pegado al tuyo, solo su
   // nombre (en el suelo no caben dos pilas de etiquetas).
   const hn = esYo ? (hermandad ? hermandad.nombre : '') : (baja ? '' : q.hn);
@@ -4824,8 +4896,11 @@ function aviso(txt, tipo, ms) {
     capa = $('avisos-modal');
     if (!capa) { capa = document.createElement('div'); capa.id = 'avisos-modal'; capa.setAttribute('role', 'status'); capa.setAttribute('aria-live', 'polite'); document.body.appendChild(capa); }
   }
+  // Duracion segun lo largo del texto (antes la animacion de 3,6 s cortaba los largos).
+  const dur = ms || Math.min(9000, Math.max(3700, String(txt).length * 65));
+  d.style.animationDuration = dur + 'ms';
   capa.appendChild(d);
-  setTimeout(() => d.remove(), ms || 3700);
+  setTimeout(() => d.remove(), dur);
   while (capa.children.length > 4) { const v = [...capa.children].find(x => !x.dataset.imp) || capa.firstChild; v.remove(); }
 }
 
@@ -4843,8 +4918,35 @@ function lineaChat(nombre, txt, canal, colorNombre) {
 }
 
 // ── VENTANAS ──
-function abrir(id) { document.querySelectorAll('.modal.on').forEach(m => { if (m.id !== 'm-muerte') m.classList.remove('on'); }); $(id).classList.add('on'); const vn = $(id).querySelector('.ventana'); if (vn) vn.scrollTop = 0; for (const k in teclas) teclas[k] = false; tIzq = tDer = false; }
-function cerrarModales() { document.querySelectorAll('.modal.on').forEach(m => { if (m.id !== 'm-muerte' && m.id !== 'm-inicio' && m.id !== 'm-error' && !(m.id === 'm-clase' && yo && !yo.clase)) m.classList.remove('on'); }); }
+function abrir(id) { document.querySelectorAll('.modal.on').forEach(m => { if (m.id !== 'm-muerte') m.classList.remove('on'); }); $(id).classList.add('on'); const vn = $(id).querySelector('.ventana'); if (vn) vn.scrollTop = 0; for (const k in teclas) teclas[k] = false; tIzq = tDer = false; pedirSincroAtras(); }
+function cerrarModales() { document.querySelectorAll('.modal.on').forEach(m => { if (m.id !== 'm-muerte' && m.id !== 'm-inicio' && m.id !== 'm-error' && !(m.id === 'm-clase' && yo && !yo.clase)) m.classList.remove('on'); }); pedirSincroAtras(); }
+// Atras del navegador o del movil fuera de Telegram (v327): la ventana abierta deja una entrada en el
+// historial y el Atras la cierra en vez de sacar del juego. En Telegram lo lleva su BackButton (arriba).
+let histV = false, ignorarPop = 0;
+function ventanaAtras() { const m = document.querySelector('.modal.on:not(#m-inicio):not(#m-muerte):not(#m-error)'); return m && !(m.id === 'm-clase' && yo && !yo.clase) ? m : null; }
+function sincroAtras() {
+  if (TG) return;
+  const hay = !!ventanaAtras();
+  if (hay && !histV && !ignorarPop) { try { history.pushState({ dqv: 1 }, ''); histV = true; } catch (e) {} }
+  else if (!hay && histV) {
+    // Cerrada con su ✕: se retira la entrada para que el Atras no "gaste" un toque en vacio.
+    histV = false;
+    if (history.state && history.state.dqv) { ignorarPop++; setTimeout(() => { ignorarPop = 0; }, 800); try { history.back(); } catch (e) { ignorarPop = 0; } }
+  }
+}
+function pedirSincroAtras() { clearTimeout(pedirSincroAtras.t); pedirSincroAtras.t = setTimeout(sincroAtras, 60); }   // con retraso: cerrar una y abrir otra no toca el historial
+if (!TG) {
+  addEventListener('popstate', () => {
+    if (ignorarPop > 0) { ignorarPop--; return; }   // el retroceso lo pidio sincroAtras: no es del jugador
+    if (!histV) return;
+    histV = false;   // antes de cerrar: si no, se pediria otro history.back (doble retroceso)
+    const m = ventanaAtras();
+    if (m && m.id === 'm-sol') aviso('Cierra el pago con ✕ (tus datos no se pierden).');
+    else if (m) cerrarModales();
+    pedirSincroAtras();   // si queda una ventana (la de pago), vuelve a dejar su entrada
+  });
+  setInterval(sincroAtras, 400);   // ventanas que se abren o cierran sin pasar por abrir()
+}
 document.querySelectorAll('[data-cerrar]').forEach(b => b.onclick = cerrarModales);
 document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m && m.id !== 'm-sol') cerrarModales(); }));   // la de pago solo con su ✕
 
@@ -5121,12 +5223,35 @@ function mostrarError(txt, op) {
   b.onclick = op && op.tg ? cerrarJuego : reconectarYa;
   let bc = document.getElementById('b-cerrar-err');
   if (!bc && b.parentNode) { bc = document.createElement('button'); bc.id = 'b-cerrar-err'; bc.className = 'btn'; bc.textContent = 'Cerrar'; bc.style.cssText = 'margin-top:8px;width:100%;min-height:46px;opacity:.85'; bc.onclick = cerrarJuego; b.after(bc); }
-  if (bc) bc.style.display = op && op.dup ? '' : 'none';
+  if (bc) { bc.textContent = op && op.lleno ? 'Jugar el arcade mientras' : 'Cerrar'; bc.onclick = op && op.lleno ? () => { location.href = '/game.html'; } : cerrarJuego; }
+  if (bc) bc.style.display = op && (op.dup || op.lleno) ? '' : 'none';
   $('m-error').classList.add('on');
   $('carga').style.display = 'none';
 }
 function cerrarJuego() { if (TG) { try { TG.close(); } catch (e) {} } else location.href = '/inicio/'; }
-function reconectarYa() { fatal = false; dormido = false; reintentos = 0; $('m-error').classList.remove('on'); conectar(); }
+function reconectarYa() { fatal = false; dormido = false; reintentos = 0; llenoHasta = 0; $('m-error').classList.remove('on'); conectar(); }
+// Servidor lleno (lleno: 'lleno'), muchas conexiones desde la misma red ('ip') o
+// sin plaza para invitados ('inv', fatal): texto claro con cuenta atras y el arcade.
+let llenoN = 0, llenoHasta = 0;
+function avisoLleno(m) {
+  const base = m.lleno === 'inv' ? (m.m || 'El servidor está lleno de invitados. Entra con tu correo o Telegram.')
+    : m.lleno === 'ip' ? 'Muchos jugadores conectados desde tu red (wifi o datos compartidos).'
+    : 'Servidor lleno (' + (m.on || m.max || 300) + '/' + (m.max || 300) + ').';
+  if (m.fatal || m.lleno === 'inv') { fatal = true; llenoHasta = 0; mostrarError(base, { lleno: true }); return; }
+  // Backoff: 1x, 1,5x, 2x... del plazo del servidor (tope 90 s), mas azar propio.
+  llenoN++; reintentos = 0;
+  retrasoRec = Math.min(90000, Math.max(5000, +m.reintentar || 30000) * (1 + 0.5 * Math.min(4, llenoN - 1)));
+  llenoHasta = Date.now() + retrasoRec;
+  const pintar = () => {
+    if (!llenoHasta || !$('m-error').classList.contains('on')) return;
+    const s = Math.max(0, Math.ceil((llenoHasta - Date.now()) / 1000));
+    $('error-txt').textContent = base + (s > 0 ? ' Reintento en ' + s + ' s.' : ' Reintentando…');
+    if (s > 0) setTimeout(pintar, 1000);
+  };
+  mostrarError(base, { lleno: true });
+  $('b-reconectar').textContent = 'Reintentar ahora';
+  pintar();
+}
 $('b-reconectar').onclick = reconectarYa;
 // Una sola pestaña jugando: la que entra avisa a las demas del mismo navegador y estas se pausan
 // (sin esto, dos pestañas se echaban una a otra sin fin al reconectar).

@@ -33,7 +33,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="/js/origen.js?v=326"></script>
+<script src="/js/origen.js?v=327"></script>
 <script>
 // ── ARRANQUE TEMPRANO DE TELEGRAM ──
 // Va aquí, antes de cargar Supabase/TON Connect/el motor, para que Telegram
@@ -465,7 +465,7 @@ html{font-size:24px;}
           <div style="font-size:34px;line-height:1" aria-hidden="true">🥤</div>
           <div style="flex:1;min-width:0">
             <div class="card-t" style="margin-bottom:4px">Gana chicha morada jugando</div>
-            <div class="hub-sub">Desde el nivel 10, cada monstruo que cazas en el mundo online suma puntos. Al llegar a 10.000 y a 50.000 puntos ganas <b>un litro de chicha morada</b> cada vez. Lo reclamas desde el nivel 15, entrando por Telegram. No es un sorteo y no pagas nada.</div>
+            <div class="hub-sub">Desde el nivel 10, cada monstruo que cazas en el mundo online suma puntos. Al llegar a 10.000 y a 50.000 puntos ganas <b>un litro de chicha morada</b> cada vez. Lo reclamas desde el nivel 15, entrando por Telegram. No es un sorteo y no pagas nada. Envío en Perú.</div>
             <button class="ob sec" type="button" onclick="irMMO()" style="width:100%;margin-top:8px">Empezar a juntar puntos</button>
           </div>
         </div>
@@ -1796,8 +1796,12 @@ function _mapaAbierto(){ const m=document.getElementById('ov-niveles'); return !
 function _tabActual(){ const t=document.querySelector('#hub .tab.on'); return t?t.id.replace('tab-',''):'jugar'; }
 function _hubVisible(){ const o=document.getElementById('ov-start'); return !!(o&&o.classList.contains('show')); }
 function _bienvenidaAbierta(){ const b=document.getElementById('bienvenida'); return !!(b&&!b.hidden); }
+// Ranking, Stars, canje, exchange, donar: el Atras vuelve al menu en la pestaña desde la que se abrieron (v327).
+var _ovOrigen='jugar';   // var: showOverlay puede llamarse antes de esta linea
+function _subOverlay(){ const o=document.querySelector('.ov.show'); return o&&!['ov-start','ov-dead','ov-pause'].includes(o.id)?o.id:''; }
 function atrasEnMenu(){
   if(_bienvenidaAbierta()){ cerrarBienvenida(false); return true; }
+  if(_subOverlay()){ const t=_ovOrigen; toMenu(); irTab(t); return true; }
   if(_mapaAbierto()){ toMenu(); return true; }
   if(_hubVisible()&&_tabActual()!=='jugar'){ irTab('jugar'); return true; }
   return false;
@@ -1806,10 +1810,12 @@ function actualizarAtras(){
   if(!tg||!tg.BackButton||!tgVer('6.1'))return;
   if(typeof state!=='undefined'&&state!=='menu')return;   // en partida lo lleva el motor
   try{
-    const hayAtras=_bienvenidaAbierta()||_mapaAbierto()||(_hubVisible()&&_tabActual()!=='jugar');
+    const hayAtras=_bienvenidaAbierta()||_mapaAbierto()||!!_subOverlay()||(_hubVisible()&&_tabActual()!=='jugar');
     if(hayAtras){ registrarAtras(); tg.BackButton.show(); } else tg.BackButton.hide();
   }catch(e){}
 }
+// ORIGINS deja el Atras visible al volver al menu: al cargar se ajusta (si no, quedaba sin accion).
+addEventListener('load',()=>{ try{ actualizarAtras(); }catch(e){} });
 
 // Ir al MMO conservando el hash (lleva tgWebAppData: identidad de Telegram).
 function irMMO(){ location.href='/mmo/'+(location.hash||''); }
@@ -1888,7 +1894,7 @@ async function submitTGScore(d){
   }catch(e){console.warn('[TG Score]',e);}
 }
 
-function showOverlay(id){hideAll();document.getElementById(id).classList.add('show');}
+function showOverlay(id){if(id!=='ov-start'&&_hubVisible())_ovOrigen=_tabActual();hideAll();document.getElementById(id).classList.add('show');try{actualizarAtras();}catch(e){}}
 
 async function loadRanking(){
   const list=document.getElementById('rank-list');
@@ -1968,7 +1974,7 @@ function shareScore(){
 // (la misma tabla STARS_DE_USD que usa /api/telegram-bot-invoice al cobrar), asi
 // la Mini App nunca anuncia un precio distinto del que cobra Telegram.
 // Subir este ?v= junto con el de los otros imports de data.js.
-import { SKINS as CATALOGO, estrellasDe } from '../mmo/js/data.js?v=326';
+import { SKINS as CATALOGO, estrellasDe } from '../mmo/js/data.js?v=327';
 try{
   for(const s of SKINS){
     const c=CATALOGO[s.id];

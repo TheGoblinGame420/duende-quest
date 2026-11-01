@@ -593,6 +593,7 @@ async function pruebas() {
   await pruebasMascotas();
   await pruebasContactos();
   await pruebasSkinsDinero();
+  await pruebasBienvenida();
   await pruebasPagoSol();
   await pruebasHoraFeliz();
   await pruebasElo();
@@ -2175,9 +2176,9 @@ async function pruebasExpedicion() {
   console.log('Expediciones');
   const D = await import('../mmo/js/data.js');
   const j = await entrar('Exploradora', '83');
-  ponerNivel(j, 3, 'mago');
+  ponerNivel(j, 1, 'mago');
   j.limpiar(); await j.mandar({ t: 'exped', h: 4 });
-  chequear(!j.c.exped && j.ultimos('no').some(x => /nivel 5/.test(x.m)), 'a Nv 3 no hay expediciones');
+  chequear(!j.c.exped && j.ultimos('no').some(x => /nivel 2/.test(x.m)), 'a Nv 1 no hay expediciones');
   ponerNivel(j, 20, 'mago');
   await j.mandar({ t: 'exped', h: 3 });
   chequear(!j.c.exped, 'solo 1, 4 u 8 horas');
@@ -3316,11 +3317,24 @@ async function pruebasChicha() {
     await j.mandar({ t: 'chicha', meta: 'nv60' });
     chequear(!j.c.chicha.rec.includes('nv60'), 'antes del nivel 60 no se reclaman los 2 litros');
     j.c.nivel = 60;
+    // Blindado: además del nivel, 14 días jugados y 1800 min de juego activo.
+    j.c.login = { ...(j.c.login || {}), total: 3 }; j.c.tjs = 600 * 60;
+    await j.mandar({ t: 'chicha', meta: 'nv60' });
+    for (let i = 0; i < 10; i++) await espera();
+    chequear(!j.c.chicha.rec.includes('nv60'), 'nivel 60 sin 14 días jugados ni 30 h de juego no reclama');
+    j.c.login.total = D.CHICHA.dias60; j.c.tjs = D.CHICHA.min60 * 60 + 60;
     await j.mandar({ t: 'chicha', meta: 'nv60' });
     for (let i = 0; i < 10; i++) await espera();
     const r60 = mundo.chichas.find(x => x.uid === j.c.uid && x.meta === 'nv60');
     chequear(r60 && r60.litros === 2 && j.c.chicha.rec.includes('nv60') && avisos.some(t => t.includes('2 litros por llegar a nivel 60')), 'en nivel 60 se reclaman 2 litros y el dueño recibe el aviso');
-    await dejar(inv); await dejar(j);
+    chequear(avisos.some(t => t.startsWith('ADMIN') && t.includes('2 litros') && t.includes('h jugadas') && t.includes('⚠️ rápido')), 'el aviso del Nv 60 lleva horas, días y «⚠️ rápido» si subió en pocos días');
+    // Candado visible desde el minuto 1: con Nv < 10 las primeras cazas avisan «🔒 🥤 desde Nv 10».
+    const nuevo = await entrarTg('Novatin', 7102);
+    await aMapa(nuevo, 'noche', 600); limpiarMapa(nuevo);
+    nuevo.ws.rec.length = 0;
+    const o3 = monstruo(nuevo, 'goblin_normal', 30); mundo.danar(o3, o3.hp + 1, nuevo); tick(1);
+    chequear(nuevo.ws.rec.some(x => x.t === 'gana' && x.chl === 1 && !x.chi), 'con Nv < 10 la caza avisa del candado de la chicha');
+    await dejar(inv); await dejar(j); await dejar(nuevo);
   } finally { mundo.tgEnviar = tgReal; mundo.avisarAdmin = adminReal; }
 }
 
@@ -3389,7 +3403,22 @@ async function pruebasDios() {
   await aMapa(dios, 'noche', 200);
   avanzar(16); await dios.mandar({ t: 'mv', x: 2000, y: 400, f: 1, a: 1 });
   chequear(dios.x === 2000, 'el dios con velocidad libre se mueve sin límite');
-  for (const s of [n1b, n2, n3, n4, dios, pobre, rap, leg]) await dejar(s);
+  console.log('Moderadores sin poderes de dueño en el chat');
+  const adminsAntes = mundo.env.MMO_ADMINS;
+  mundo.env.MMO_ADMINS = 'tg:9002';
+  const moder = await entrarTg('ElDuendeMod', 9002);
+  chequear(moder.dios === 'mod', 'MMO_ADMINS con ADMIN_TG_ID da moderador, no dueño');
+  chequear(!/el ?duende/i.test(moder.c.nombre), 'un moderador no puede firmar como «El Duende» (' + moder.c.nombre + ')');
+  moder.ws.rec.length = 0; moder.chatT = 0;
+  await moder.mandar({ t: 'chat', m: 'manden a 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU', canal: 'general' });
+  chequear(!moder.ws.rec.some(x => x.t === 'chat') && moder.ws.rec.some(x => (x.t === 'toast' || x.t === 'no') && /seguridad/i.test(x.m || '')), 'un moderador no publica carteras en el chat');
+  moder.ws.rec.length = 0;
+  await moder.mandar({ t: 'dios', a: 'anuncio', m: 'paguen a 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU' });
+  chequear(!moder.ws.rec.some(x => x.t === 'aviso'), 'un moderador no anuncia carteras');
+  await moder.mandar({ t: 'dios', a: 'anuncio', m: 'evento en 5 min' });
+  chequear(moder.ws.rec.some(x => x.t === 'aviso' && /\[Mod /.test(x.m)), 'el anuncio de un moderador va firmado [Mod Nombre]');
+  mundo.env.MMO_ADMINS = adminsAntes;
+  for (const s of [n1b, n2, n3, n4, dios, pobre, rap, leg, moder]) await dejar(s);
 }
 
 // ── MUNDO ABIERTO SIN CORTES: borde, piedras de viaje y Marcha de invasores ──
@@ -3658,4 +3687,48 @@ async function pruebasHabs3d() {
   p.cdHab = {}; p.gcdHasta = 0; p.rec = p.st.recMax || 100; await p.mandar({ t: 'hab3', id: 'silencio', tg: jf.id }); tick(1);
   chequear(!jf.sorbo && p.ultimos('mcast').some(x => x.id === jf.id && x.cortado), 'Silencio (o Patada, Zurrar, Contrahechizo) interrumpe el Sorbo');
   for (const s of [g, m, p, r]) await dejar(s);
+}
+
+// Pack de bienvenida (SOLO 1 VEZ): el servidor solo deja pedirlo si la cuenta
+// nunca pagó nada; se entrega a mano como el resto y no cambia el precio del oro.
+async function pruebasBienvenida() {
+  console.log('Pack de bienvenida: una sola vez, comprobado por el servidor');
+  const D = await import('../mmo/js/data.js');
+  const pq = D.PAQUETES.find(x => x.id === 'bienvenida');
+  chequear(pq && pq.unaVez && pq.usd === 1.99 && D.estrellasDe(pq.usd) === 150 && !pq.skin, 'el pack existe: US$1,99 o 150 Stars, sin skin');
+  chequear(D.ORO_POR_USD === 7000 && D.paqueteParaFaltante(10000).id !== 'bienvenida', 'no cambia el cambio del oro (precios de skins) ni sale en «Te faltan N de oro»');
+  const j = await entrar('Novato', 'b1');
+  const fetchReal = globalThis.fetch;
+  globalThis.fetch = async () => ({ ok: true, json: async () => ({ solana: { usd: 150 }, price: 150, data: { amount: '150' } }) });
+  try {
+    const uid0 = j.c.uid;
+    j.c.uid = 'web:bienvenida-1'; mundo.porUid.set(j.c.uid, j);   // la entrega busca al jugador por su cuenta
+    chequear(mundo.datosPropios(j).puedeBienvenida === 1, 'una cuenta sin compras puede pedirlo');
+    j.limpiar(); await mundo.pedido(j, { id: 'bienvenida', metodo: 'sol', via: 'bienv' });
+    const p1 = j.ultimos('pedidoSol').pop();
+    chequear(p1 && p1.usd === 1.99, 'el primer pedido del pack se crea');
+    const pd1 = mundo.buscarPedido(p1.codigo); pd1.estado = 'por_verificar';
+    const oro0 = j.c.oro, poc0 = j.c.pw.pocion || 0;
+    const avisoReal = mundo.avisarJugador; mundo.avisarJugador = async () => {};
+    let r;
+    try { r = await mundo.entregarPedido({ codigo: p1.codigo }); } finally { mundo.avisarJugador = avisoReal; }
+    chequear(r.ok && j.c.oro === oro0 + 15000 && j.c.pw.pocion === Math.min(99, poc0 + 10), 'el dueño lo entrega a mano: 15.000 oro y los poderes');
+    chequear(mundo.datosPropios(j).puedeBienvenida === 0, 'tras la primera compra ya no se ofrece');
+    j.limpiar(); await mundo.pedido(j, { id: 'bienvenida', metodo: 'sol' });
+    chequear(!j.ultimos('pedidoSol').length && j.ultimos('toast').some(x => /solo para tu primera compra/.test(x.m)), 'el segundo pedido del pack se rechaza');
+    // Aunque los pedidos viejos se poden (tope de 300), la marca del personaje lo sigue bloqueando.
+    const pedidosAntes = mundo.pedidos; mundo.pedidos = mundo.pedidos.filter(x => x.uid !== 'web:bienvenida-1');
+    chequear(j.c.compro && mundo.datosPropios(j).puedeBienvenida === 0, 'podar los pedidos viejos no vuelve a abrir el pack');
+    mundo.pedidos = pedidosAntes;
+    // Quien ya compró otra cosa (pagada aunque no entregada) tampoco puede.
+    j.c.uid = 'web:bienvenida-2'; delete j.c.compro; delete j.c.bienvYa;
+    mundo.pedidos.push({ codigo: 'BNV002', uid: j.c.uid, jugador: j.c.nombre, paquete: 'oro1', nombre: 'Bolsita de oro', usd: 1, metodo: 'sol', creado: Date.now(), estado: 'pagado' });
+    j.limpiar(); await mundo.pedido(j, { id: 'bienvenida', metodo: 'sol' });
+    chequear(!j.ultimos('pedidoSol').length && j.ultimos('toast').some(x => /solo para tu primera compra/.test(x.m)), 'con otra compra pagada tampoco se puede');
+    mundo.porUid.delete('web:bienvenida-1');
+    j.c.uid = 'inv:bienvenida';
+    chequear(mundo.datosPropios(j).puedeBienvenida === 0, 'a los invitados no se les ofrece (no pueden comprar)');
+    j.c.uid = uid0;
+  } finally { globalThis.fetch = fetchReal; }
+  await dejar(j);
 }

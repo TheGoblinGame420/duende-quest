@@ -502,6 +502,15 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 95, fecha: '1 nov 2026', items: [
+    '🎁 Nuevo Pack de bienvenida a US$1,99 (150 Stars): 15.000 de oro, 10 pociones y 3 escudos, rayos y fuegos, solo para tu primera compra.',
+    '🧭 Las expediciones llegan a ORIGINS desde nivel 2: manda a tu mascota a explorar mientras no juegas. La primera dura solo 15 minutos.',
+    'Tu primera caza siempre da un objeto y te sube a nivel 2, con celebración; la primera misión pide 5 goblins en vez de 8.',
+    'Los objetos épicos y legendarios caen con un haz de luz y un botón para equiparlos, y puedes presumir tus grandes momentos en tu historia de Telegram.',
+    'El botón Atrás del celular cierra la ventana abierta en vez de sacarte del juego.',
+    'La tienda muestra el precio aproximado en soles. Nuevo en el bot: /miscompras y /paysupport, y en «Tus compras» un botón «¿Problema?».',
+    'El mundo 3D va más fluido en celulares y PCs modestas y gasta menos batería en segundo plano.',
+  ] },
   { n: 94, fecha: '1 nov 2026', items: [
     'Tu racha diaria ya no vuelve al día 1 después del día 7: cada semana seguida da más oro (hasta x1,5) y a los 14, 21 y 30 días ganas títulos y un color de nombre exclusivo. En el móvil la ves arriba con lo que te toca mañana.',
     'Al volver al juego verás un buzón con lo que pasó mientras no estabas, y cuando te entregan una compra aparece en grande para ponértela al momento.',
@@ -1450,7 +1459,7 @@ export const PODERES = [
 // Las de caza de Nv 17-28 (11, 15, 17, 18 y 19) suben algo mas (24-oct): con
 // el ×1,8 plano caian a ~30-36% de un nivel justo antes del Angel; ahora ~35-43%.
 export const MISIONES = [
-  { nombre: 'Limpieza nocturna',        tipo: 'goblin_normal',     n: 8,  xp: 60,    oro: 80 },
+  { nombre: 'Limpieza nocturna',        tipo: 'goblin_normal',     n: 5,  xp: 60,    oro: 80 },   // corta: el novato cobra en su primer minuto
   { nombre: 'Huesos inquietos',         tipo: 'esqueleto',         n: 10, xp: 130,   oro: 150 },
   { nombre: 'Cazador de sombras',       tipo: 'goblin_assassin',   n: 8,  xp: 170,   oro: 200, pw: { pocion: 3 } },
   { nombre: 'Aullido infernal',         tipo: 'jefe_sabueso',      n: 1,  xp: 500,   oro: 600, pw: { escudo: 2 } },
@@ -1519,7 +1528,7 @@ export const TAREAS_DIA = [
   { id: 'hab', tipo: 'hab', n: 50, txt: 'Usa 50 habilidades en combate' },
   { id: 'recoger', tipo: 'recoger', n: 6, txt: 'Recoge 6 plantas o vetas de mineral' },
   { id: 'pescar', tipo: 'pescar', n: 5, txt: 'Pesca 5 peces (pesquero 🎣 del pueblo o de una zona)' },
-  { id: 'exped', tipo: 'exped', n: 1, txt: 'Recoge una expedición (registro de misiones)', nv: 5 },
+  { id: 'exped', tipo: 'exped', n: 1, txt: 'Recoge una expedición (🧭 en tus misiones)', nv: 5 },
   { id: 'cofres', tipo: 'cofre', n: 2, txt: 'Abre 2 cofres del tesoro' },
   { id: 'raro', tipo: 'raro', n: 1, txt: 'Derrota a un élite raro (★)', nv: 5 },
   { id: 'invasion', tipo: 'invasion', n: 1, txt: 'Ayuda a rechazar una invasión', nv: 5 },
@@ -1700,7 +1709,9 @@ export const TEMP_PROB = 0.2, TEMP_JEFE = 5;
 // porDia: tope diario de puntos (10.000 = unas semanas de juego, frena bots).
 // mesMax: litros al mes para todo el juego (el dueño lo cambia aqui).
 // nv60: al llegar a nivel 60 (una vez por personaje) se reclaman 2 litros (25-oct-2026, decision del dueño).
-export const CHICHA = { niveles: [10000, 50000], porDia: 600, nvPuntos: 10, nvReclamo: 15, mesMax: 10, nv60: 60, litros60: 2 };
+// mesMax60: premios de Nv 60 al mes (aparte de mesMax); los de más quedan EN COLA para el mes siguiente, no se pierden.
+// dias60 / min60: días jugados (c.login.total) y minutos de juego activo (c.tjs / 60) para reclamar el de Nv 60 (frena granjas).
+export const CHICHA = { niveles: [10000, 50000], porDia: 600, nvPuntos: 10, nvReclamo: 15, mesMax: 10, nv60: 60, litros60: 2, mesMax60: 5, dias60: 14, min60: 1800 };
 
 // ── BESTIARIO ──
 // Cuantos de cada monstruo has cazado. Cada tipo tiene 3 hitos con premio
@@ -2138,15 +2149,19 @@ export const alaDe = (c, abismo) => {
 export const PAQUETES = [
   { id: 'oro1',  nombre: 'Bolsita de oro',     usd: 1,  oro: 5000,   icono: 'I_GoldCoin',  desc: '5.000 oro' },
   { id: 'kit',   nombre: 'Kit del aventurero', usd: 3,  pw: { pocion: 20, escudo: 8, rayo: 8, fuego: 8 }, icono: 'I_Chest01', desc: '20 pociones, 8 escudos, 8 rayos y 8 fuegos' },
-  { id: 'oro5',  nombre: 'Saco de oro',        usd: 5,  oro: 30000,  icono: 'I_GoldBar',  desc: '30.000 oro (+20% de regalo)' },
-  { id: 'oro20', nombre: 'Cofre de oro',       usd: 20, oro: 140000, icono: 'I_Chest02', desc: '140.000 oro (+40% de regalo)' },
+  { id: 'oro5',  nombre: 'Saco de oro',        usd: 5,  oro: 30000,  icono: 'I_GoldBar',  desc: '30.000 oro (+20% de regalo)', etiqueta: 'MÁS POPULAR' },
+  { id: 'oro20', nombre: 'Cofre de oro',       usd: 20, oro: 140000, icono: 'I_Chest02', desc: '140.000 oro (+40% de regalo)', etiqueta: 'MEJOR VALOR' },
+  // Pack de bienvenida: SOLO UNA VEZ por cuenta (el servidor rechaza el pedido
+  // si ya tienes alguna compra pagada o entregada). Se entrega a mano como todo.
+  // Queda fuera de ORO_POR_USD y de «Te faltan N de oro» (unaVez).
+  { id: 'bienvenida', nombre: 'Pack de bienvenida', usd: 1.99, oro: 15000, pw: { pocion: 10, escudo: 3, rayo: 3, fuego: 3 }, unaVez: true, icono: 'I_Chest01', desc: '15.000 oro, 10 pociones, 3 escudos, 3 rayos y 3 fuegos', etiqueta: 'SOLO 1 VEZ' },
 ];
 // UN SOLO CATALOGO (24-oct-2026): este archivo manda en todos los precios
 // (web, arcade, Mini App, Stars, SOL y $DUENDE leen o copian de aqui). Las
 // skins que tambien se compran con oro cuestan en dolares lo mismo que su oro
 // al mejor cambio de los paquetes: comprar oro y luego la skin nunca sale
 // mas barato que comprarla directa.
-export const ORO_POR_USD = Math.max(...PAQUETES.filter(p => p.oro).map(p => p.oro / p.usd));
+export const ORO_POR_USD = Math.max(...PAQUETES.filter(p => p.oro && !p.unaVez).map(p => p.oro / p.usd));
 export const usdDeOro = oro => Math.max(1, Math.ceil(oro / ORO_POR_USD));
 for (const sk of Object.values(SKINS)) if (sk.usd && typeof sk.precio === 'number' && sk.precio > 0) sk.usd = usdDeOro(sk.precio);
 // Precio en dolares de las skins que existen tambien en el arcade y la Mini
@@ -2168,8 +2183,19 @@ export const DUENDE_DECIMALES = 6;
 export const DUENDE_DESCUENTO = 0.9;
 // Stars por precio en dolares: tabla redonda unica (Mini App, factura del bot
 // y tienda del MMO leen esta misma); lo que no esta en la tabla, al cambio.
-export const STARS_DE_USD = { 1: 75, 2: 150, 3: 250, 5: 350, 7: 500, 10: 750, 15: 1000, 20: 1500 };
+export const STARS_DE_USD = { 1: 75, 1.99: 150, 2: 150, 3: 250, 5: 350, 7: 500, 10: 750, 15: 1000, 20: 1500 };
 export const estrellasDe = usd => Object.hasOwn(STARS_DE_USD, usd) ? STARS_DE_USD[usd] : Math.ceil(usd / STAR_USD);
+// Soles de REFERENCIA junto al precio en dolares (solo se muestra, no se cobra
+// en soles). Tipo de cambio fijo y aproximado: revisalo cada semana.
+export const PEN_POR_USD = 3.75;
+export const precioLocal = usd => 'S/ ' + (Math.round(usd * PEN_POR_USD * 100) / 100).toFixed(2);
+// Grupos de la tienda premium (orden y subtitulos en CLASSIC y ORIGINS).
+export const GRUPOS_TIENDA = [['oro', 'Oro y objetos'], ['skin', 'Skins'], ['alas', 'Alas']];
+export const grupoPaquete = pq => pq.skin ? 'skin' : pq.alas ? 'alas' : 'oro';
+export const ordenTienda = (lista, foco) => {
+  const rk = pq => pq.id === foco ? -1 : GRUPOS_TIENDA.findIndex(g => g[0] === grupoPaquete(pq));
+  return lista.slice().sort((a, b) => rk(a) - rk(b) || !!b.unaVez - !!a.unaVez || a.usd - b.usd);   // el pack de una sola vez, primero
+};
 export const PEDIDO_VIGENCIA_MS = 30 * 60 * 1000;   // 30 min para pagar
 // Paquete de oro mas barato que cubre lo que te falta (los botones «Te faltan
 // N de oro» llevan a el). Si ninguno alcanza, el mas grande.
@@ -2300,12 +2326,13 @@ export const premioTorre = (p, nivel) => ({ oro: Math.round(40 * nivel * Math.mi
 // ── EXPEDICIONES ── (functions/mmo/expediciones.js)
 // Tu mascota (o un duendecillo) sale 1, 4 u 8 horas y vuelve con oro, algo
 // de experiencia y materiales. Da menos que jugar esas horas. Nunca mTON.
-export const EXPEDICION = { nv: 5, horas: [1, 4, 8],
+// primera: la de prueba de 15 min (0,25 h), solo si aun no recogio ninguna (c.expediciones).
+export const EXPEDICION = { nv: 2, horas: [1, 4, 8], primera: 0.25,
   // Cada destino trae el doble de su material.
   destinos: { bosque: { nombre: 'Bosque', a: 'al Bosque', emoji: '🌲', mat: 'hierba' }, mina: { nombre: 'Mina', a: 'a la Mina', emoji: '⛏️', mat: 'mineral' }, lago: { nombre: 'Lago', a: 'al Lago', emoji: '🎣', mat: 'pescado' } } };
 export const premioExpedicion = (h, nv, dest) => {
   const k = Math.pow(h, 0.75);
-  const mat = { hierba: Math.ceil(h * 1.5), mineral: Math.ceil(h * 1.5), pescado: h };
+  const mat = { hierba: Math.ceil(h * 1.5), mineral: Math.ceil(h * 1.5), pescado: Math.ceil(h) };   // ceil: la de 15 min
   const d = EXPEDICION.destinos[dest];
   if (d) mat[d.mat] *= d.mat === 'pescado' ? 3 : 2;
   if (h >= 8) mat.cristal = 1;

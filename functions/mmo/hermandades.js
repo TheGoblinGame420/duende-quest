@@ -87,7 +87,7 @@ export const Hermandades = {
     // La frase tambien con las letras que se confunden ('EI Duende', 'El Ðuende').
     const esqHerm = llanoHerm.replace(/[il1|!]/g, 'l').replace(/ð/g, 'd').replace(/[0ø]/g, 'o').replace(/3/g, 'e');
     const RE_FRASE = /(^| )el ?duende( |$)|duende ?quest/;
-    if (!this.esDios(s) && (nombre.split(' ').some(w => this.nombreReservado(w)) || RE_FRASE.test(llanoHerm) || RE_FRASE.test(esqHerm))) return this.no(s, 'Ese nombre está reservado.');
+    if (!this.esDueno(s) && (nombre.split(' ').some(w => this.nombreReservado(w)) || RE_FRASE.test(llanoHerm) || RE_FRASE.test(esqHerm))) return this.no(s, 'Ese nombre está reservado.');
     const clave = 'hn:' + nombre.toLowerCase();
     // Cerrojo: un doble toque (o dos peticiones seguidas) no cobra dos veces
     // ni deja una hermandad huerfana; tampoco dos jugadores el mismo nombre.
@@ -263,7 +263,7 @@ export const Hermandades = {
     if (this.esperaHerm(s)) return;
     const motd = String(m.m || '').replace(/[\u0000-\u001f\u007f­͏ᅟᅠ᠎​-‏‪-‮⁠-⁯ㅤ﻿]/g, '').trim().slice(0, 140);
     // El mensaje del dia sale a toda la hermandad: el mismo filtro que el chat.
-    if (!s.dios && riesgoEstafa(motd)) return this.no(s, '🛡 Por seguridad no se permiten direcciones de cartera, enlaces ni frases semilla.');
+    if (!(this.esDueno && this.esDueno(s)) && riesgoEstafa(motd)) return this.no(s, '🛡 Por seguridad no se permiten direcciones de cartera, enlaces ni frases semilla.');
     h.motd = motd;
     await this.guardarHerm(h);
     this.avisarHerm(h, `📜 Nuevo mensaje del día: ${h.motd || '(vacío)'}`);

@@ -31,6 +31,7 @@
 // ═══════════════════════════════════════════════════════
 import { MAPAS, SKINS, MONSTRUOS, MUNDIALES, limpiarNombre } from '../../mmo/js/data.js';
 import { getEnv } from '../api/lib.js';
+import { riesgoEstafa } from './social.js';
 
 const RESERVADO = /admin|moderador|^mod|mod$|^gm|gm$|staff|soporte|sistema|oficial|elduende|duendequest|dios/;
 // Lo mismo con las letras que se confunden a la vista (Adm1n, EIDuende, Ðios, M0derador…):
@@ -57,7 +58,9 @@ export const Dios = {
   calcularDios(s, extra) {
     const env = getEnv({ env: this.env });
     // Con cuentas vinculadas cuenta tambien la cuenta con la que se entro.
-    const uids = [s.c.uid, s.uidAuth].filter(Boolean);
+    // Y las vinculadas (c.vinc): el dueño que entra por la web a su duende de Telegram ve los PEDIDOS.
+    const v = s.c.vinc && typeof s.c.vinc === 'object' ? s.c.vinc : {};
+    const uids = [s.c.uid, s.uidAuth, v.tg, v.web].filter(u => typeof u === 'string' && u);
     if (uids.every(u => u.startsWith('inv:'))) return false;
     if (env.ADMIN_TG_ID && uids.includes('tg:' + env.ADMIN_TG_ID)) return 'dueno';
     const lista = String(this.env.MMO_ADMINS || '').split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
@@ -196,7 +199,10 @@ export const Dios = {
       case 'anuncio': {
         const txt = String(m.m || '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 200);
         if (!txt) return;
-        this.aTodos({ t: 'aviso', m: '📢 ' + txt });
+        // Un moderador firma con su nombre y pasa el filtro antiestafa: nadie anuncia una cartera «del equipo».
+        if (!dueno && riesgoEstafa(txt)) return this.no(s, '🛡 Los anuncios de moderador no pueden llevar carteras, enlaces ni frases semilla.');
+        this.aTodos({ t: 'aviso', m: dueno ? '📢 ' + txt : '📢 [Mod ' + s.c.nombre + '] ' + txt });
+        this.registrarMod(s, 'anuncio: ' + txt);
         return;
       }
       case 'oro': {
@@ -228,7 +234,7 @@ export const Dios = {
       case 'renombrar': {
         if (!objetivo) return;
         const antes = objetivo.c.nombre;
-        const n = await this.nombreLibre(m.n, objetivo.c.uid, this.esDios(objetivo));
+        const n = await this.nombreLibre(m.n, objetivo.c.uid, this.esDueno(objetivo));
         objetivo.c.nombre = n;
         await this.reservarNombre(objetivo.c, antes);
         this.aClave(objetivo.k, { t: 'pl', id: objetivo.id }, objetivo);
@@ -343,14 +349,21 @@ export const Dios = {
   },
 
   registrarMod(s, txt) {
-    this.modLog = this.modLog || [];
+    if (!this.modLog) {
+      // Primera acción tras un reinicio: junta lo guardado con lo nuevo.
+      this.modLog = [];
+      this.state.storage.get('modLog').then(v => { if (Array.isArray(v)) { this.modLog = v.concat(this.modLog).slice(-50); this.state.storage.put('modLog', this.modLog).catch(() => {}); } }).catch(() => {});
+    }
     this.modLog.push({ t: Date.now(), de: s.c.nombre, txt: String(txt).slice(0, 120) });
     if (this.modLog.length > 50) this.modLog.shift();
+    // Persistente: sobrevive a reinicios del objeto (antes se perdía y no quedaba rastro de lo que hizo un mod).
+    this.state.storage.put('modLog', this.modLog).catch(() => {});
     console.log('[MMO dios]', s.c.nombre, txt);
   },
 
   async enviarPanelDios(s) {
     const mod = await this.cargarMod();
+    if (!this.modLog) { const v = await this.state.storage.get('modLog').catch(() => null); this.modLog = this.modLog || (Array.isArray(v) ? v : []); }
     const ahora = Date.now();
     const jugadores = [...this.sesiones.values()].filter(x => x.c).map(x => ({
       p: x.id, n: x.c.nombre, lv: x.c.nivel, mapa: x.c.mapa, inst: x.k.includes('#') ? 1 : 0,

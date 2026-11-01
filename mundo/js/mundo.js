@@ -14,24 +14,25 @@
 import * as THREE from 'three';
 import { esNocheDuendes, TEMPORADAS, temporadaDe, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo } from '/mmo/js/data.js?v=326';
-import { iniciarVentanas } from './ventanas.js?v=326';
-import { iniciarRegalo } from '/mmo/js/regalo.js?v=326';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=326';
-import { crearMusica } from './musica.js?v=326';
-import { construirCueva } from './cueva.js?v=326';
-import { TAPA, transparentar } from './tapa.js?v=326';
-import { construirAbismo } from './abismo.js?v=326';
-import { crearParticulas } from './particulas.js?v=326';
-import { cargarKenney, piezasCasa } from './kenney.js?v=326';
-import { CORRIENTES, sueloRef } from '/mmo/js/abismo3d.js?v=326';
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo } from '/mmo/js/data.js?v=327';
+import { iniciarVentanas } from './ventanas.js?v=327';
+import { EXPEDICION } from '/mmo/js/data.js?v=327';   // fila 🧭 de las misiones
+import { iniciarRegalo } from '/mmo/js/regalo.js?v=327';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=327';
+import { crearMusica } from './musica.js?v=327';
+import { construirCueva } from './cueva.js?v=327';
+import { TAPA, transparentar } from './tapa.js?v=327';
+import { construirAbismo } from './abismo.js?v=327';
+import { crearParticulas } from './particulas.js?v=327';
+import { cargarKenney, piezasCasa } from './kenney.js?v=327';
+import { CORRIENTES, sueloRef } from '/mmo/js/abismo3d.js?v=327';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=326';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d } from '/mmo/js/mundo3d.js?v=326';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=326';
-import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=326';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=326';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=327';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d } from '/mmo/js/mundo3d.js?v=327';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=327';
+import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=327';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=327';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -153,11 +154,33 @@ const CALIDADES = {
 // El navegador interno de Facebook/Instagram tambien (va justo de memoria).
 const POBRE = esIAB || (/Android/i.test(navigator.userAgent) && ((navigator.deviceMemory || 4) <= 3 || (navigator.hardwareConcurrency || 8) <= 4));
 let CAL = POBRE ? 'baja' : MOVIL ? 'media' : 'alta';
+// La GPU dice mas que la memoria: Mali y Adreno antiguos, PowerVR baratos,
+// Intel HD y los dibujantes por software (SwiftShader, llvmpipe) empiezan en
+// baja; Intel UHD en PC, en media. Solo cambia el punto de partida: la
+// eleccion manual de Ajustes (dq3_calidad) manda siempre.
+function gpuNombre() {
+  try {
+    const c = document.createElement('canvas'), gl = c.getContext('webgl');
+    if (!gl) return '';
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    const n = String(ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER) || '');
+    const p = gl.getExtension('WEBGL_lose_context'); if (p) p.loseContext();
+    return n;
+  } catch (e) { return ''; }
+}
+const GPU = gpuNombre();
+if (/SwiftShader|llvmpipe|softpipe|Microsoft Basic Render|Mali-(4\d\d|T\d+|G(31|51|52|57|71|72))\b|Adreno \(TM\) ([1-5]\d\d|60\d|61[0-3])\b|Adreno ([1-5]\d\d|60\d|61[0-3])\b|PowerVR (Rogue )?(GE8|G6|SGX)|Intel\(R\) HD Graphics|Intel HD Graphics/i.test(GPU)) CAL = 'baja';
+else if (CAL === 'alta' && /Intel\(R\) UHD|Intel UHD/i.test(GPU)) CAL = 'media';
 try { const g = localStorage.getItem('dq3_calidad'); if (CALIDADES[g]) CAL = g; } catch (e) {}
 const Q = CALIDADES[CAL];
+// El vidrio (backdrop-filter) vuelve a difuminar el 3D en cada cuadro: en movil
+// o fuera de alta, paneles opacos (index.html, body.sin-vidrio).
+document.body.classList.toggle('sin-vidrio', MOVIL || CAL !== 'alta');
+// Tope de cuadros: 60 (un monitor de 120/144 Hz no dibuja el doble) y 30 en baja.
+const CUADRO_MS = CAL === 'baja' ? 33 : 16.4;
 // Sin WebGL (o el driver lo niega) el modulo no puede seguir: se ofrece CLASSIC (red de seguridad de index.html).
 let render;
-try { render = new THREE.WebGLRenderer({ canvas: lienzo, antialias: Q.aa, powerPreference: 'high-performance' }); }
+try { render = new THREE.WebGLRenderer({ canvas: lienzo, antialias: Q.aa, powerPreference: MOVIL ? 'low-power' : 'high-performance' }); }
 catch (e) { paso('fallo_webgl'); if (window.__dqFallo) window.__dqFallo('Tu dispositivo no pudo abrir los gráficos 3D (WebGL). Puedes jugar con el mismo duende en CLASSIC (2D).'); throw e; }
 // Contexto grafico perdido (GPU reiniciada, muchas pestañas): three lo recupera solo; si en 8 s no vuelve, se ofrece salir.
 let glPerdidoT = 0;
@@ -211,23 +234,30 @@ function PRUEBA_SIN_POST() { return /[?&]sinPost=1/.test(location.search); }
 let pxAct = Math.min(devicePixelRatio || 1, Q.px), dtProm = 16, resT = 0;
 // Distancia de vision dinamica: con la resolucion ya al minimo y aun lento,
 // se acorta la niebla (cullFlora y las figuras usan fog.far) y se recupera sola.
-let lejosDin = Q.lejos, avisoCal = false;
+let lejosDin = Q.lejos, avisoCal = false, lentas = 0, buenas = 0;
+// Baja por escalones, de lo mas caro a lo mas visible: post-proceso, sombras,
+// resolucion y vista. Los umbrales escalan con el tope (en baja, 30 fps es lo normal).
+// El post y las sombras solo caen tras dos revisiones lentas seguidas (no por
+// el tiron de compilar shaders al entrar) y no vuelven hasta recargar.
 function resolucionDinamica(ms) {
   if (document.hidden || ms > 200) return;
   dtProm += (ms - dtProm) * 0.05; resT += ms;
   if (resT < 2000) return;
   resT = 0;
   const max = Math.min(devicePixelRatio || 1, Q.px), min = max * 0.6;
-  // Ya en el minimo y aun lento: fuera el post-proceso (es lo mas caro).
-  if (composer && dtProm > 28 && pxAct <= min + 0.01) { composer = null; console.info('[3D] post-proceso desactivado por rendimiento'); return; }
+  const lento = 25 * CUADRO_MS / 16.4, muyLento = Math.max(38, lento + 10);
+  lentas = dtProm > lento ? lentas + 1 : 0; buenas = dtProm < CUADRO_MS + 1.2 ? buenas + 1 : 0;
+  if (lentas >= 2 && composer) { try { composer.dispose(); } catch (e) {} composer = null; lentas = 0; console.info('[3D] post-proceso desactivado por rendimiento'); return; }
+  if (lentas >= 2 && sol.castShadow) { sol.castShadow = false; render.shadowMap.enabled = false; lentas = 0; console.info('[3D] sombras desactivadas por rendimiento'); return; }
   // > 38 ms (< 26 fps): un movil topado a 30 Hz (ahorro de bateria) da ~33 ms aunque vaya sobrado; a ese no se le acorta la vista.
-  if (dtProm > 38 && pxAct <= min + 0.01 && lejosDin > 95) {
+  if (dtProm > muyLento && pxAct <= min + 0.01 && lejosDin > 95) {
     lejosDin -= 20;
     if (!avisoCal && CAL !== 'baja') { avisoCal = true; aviso('El juego va justo: acortamos la vista. En ' + K('Ajustes (?)', 'Más (⋯) → ?') + ' puedes poner la calidad Baja.'); }
     return;
   }
-  if (dtProm < 18 && lejosDin < Q.lejos) lejosDin = Math.min(Q.lejos, lejosDin + 10);
-  const n = dtProm > 25 ? Math.max(min, pxAct - 0.1) : dtProm < 15 ? Math.min(max, pxAct + 0.05) : pxAct;
+  if (buenas >= 2 && lejosDin < Q.lejos) lejosDin = Math.min(Q.lejos, lejosDin + 10);
+  // Sube solo tras 3 revisiones (6 s) pegado al tope, para no oscilar.
+  const n = dtProm > lento ? Math.max(min, pxAct - 0.1) : buenas >= 3 ? Math.min(max, pxAct + 0.05) : pxAct;
   if (Math.abs(n - pxAct) < 0.01) return;
   pxAct = n; render.setPixelRatio(n); if (composer) composer.setPixelRatio(n); ajustar();
 }
@@ -324,7 +354,7 @@ function ambiente(z) {
   cieloObj.set(CIELO[z] || CIELO.pueblo).lerp(OCASO, fijo ? 0 : ocaso * 0.35).lerp(NOCHE_CIELO, fijo ? 0 : nocheK * 0.85);
   if (nub < 1) cieloObj.lerp(cl === 'arena' ? ARENA : GRIS, (1 - nub) * 1.2);
   estrellas.material.opacity = z === 'eter' ? 0.7 : z === 'cueva' ? 0 : nocheK * (cl === 'despejado' ? 0.9 : 0.2);
-  if (z === 'cueva') { hemiBase = 0.55; sol.intensity = 0.3; }
+  if (z === 'cueva') { hemiBase = 0.6; sol.intensity = 0.3; }   // 0.6: un pelo mas sin las luces de las antorchas (ahora horneadas)
   hemi.color.copy(cieloObj).lerp(BLANCO_H, 0.55);
   hemi.groundColor.set(SUELO[z] || '#3a3040').multiplyScalar(0.5);
   const lejos = lejosDin;
@@ -1249,7 +1279,7 @@ function huellaDev() {
 // Prueba de trabajo ligera (~4000 hashes, unos 200 ms en un movil) que el servidor
 // pide al crear muchos invitados desde la misma red. Igual que powValida de world.js.
 // rxN: mensajes recibidos (comprobarAlVolver mira si llega alguno tras el ping).
-let powCeros = 0, powNonce = null, retrasoRec = 0, rxN = 0;
+let powCeros = 0, powNonce = null, retrasoRec = 0, rxN = 0, timerRec3 = 0;
 async function resolverPow(tok, ceros) {
   if (!(window.crypto && crypto.subtle)) return null;
   const h = Math.floor(Date.now() / 3600000), enc = new TextEncoder();
@@ -1282,6 +1312,9 @@ async function conectar() {
   // Un solo intento a la vez (volver a la app, 'online' y el temporizador podian
   // coincidir durante el await y abrir dos sockets: el servidor echaba a uno).
   if (conectando || pausaHeredar || (ws && ws.readyState <= 1)) return;
+  // «Reintentar ahora» o volver a la app con un reintento pendiente: se anula el
+  // temporizador viejo (si no, con el mundo lleno cada toque sumaba otra cadena de intentos).
+  clearTimeout(timerRec3);
   conectando = true;
   let hola;
   // Un fallo aqui (supabase, almacenamiento) ya no deja la carga colgada: se reintenta a los 3 s.
@@ -1307,7 +1340,7 @@ async function conectar() {
     // milisegundo. Si el servidor dijo cuando volver (reintentar), se respeta.
     const espera = retrasoRec ? retrasoRec + Math.random() * 1000 : Math.min(8000, 600 * reintentos) * (0.5 + Math.random()) + Math.random() * 2000;
     retrasoRec = 0;
-    setTimeout(conectar, espera);
+    timerRec3 = setTimeout(conectar, espera);
   };
 }
 // Al volver a la app (o recuperar la red), reconectar enseguida.
@@ -1373,8 +1406,36 @@ function error(txt, red, op) {
   b.onclick = op && op.tg ? cerrarJuego : () => location.reload();
   let bc = document.getElementById('b-cerrar-err');
   if (!bc) { bc = document.createElement('button'); bc.id = 'b-cerrar-err'; bc.className = 'btn'; bc.textContent = 'Cerrar'; bc.style.cssText = 'width:100%;margin-top:8px;opacity:.85'; bc.onclick = cerrarJuego; b.after(bc); }
-  bc.style.display = op && op.dup ? '' : 'none';
+  bc.textContent = op && op.lleno ? 'Jugar el arcade mientras' : 'Cerrar';
+  bc.onclick = op && op.lleno ? () => { location.href = '/game.html'; } : cerrarJuego;
+  bc.style.display = op && (op.dup || op.lleno) ? '' : 'none';
   abrir('v-error');
+}
+// Servidor lleno (lleno: 'lleno'), muchas conexiones desde la misma red ('ip') o
+// sin plaza para invitados ('inv', fatal): texto claro con cuenta atras y el arcade.
+// No es fatal: onclose reintenta solo pasado retrasoRec y 'bienvenido' cierra el aviso.
+let llenoN = 0, llenoHasta = 0;
+function avisoLleno(m) {
+  const base = m.lleno === 'inv' ? (m.m || 'El servidor está lleno de invitados. Entra con tu correo o Telegram.')
+    : m.lleno === 'ip' ? 'Muchos jugadores conectados desde tu red (wifi o datos compartidos).'
+    : 'Servidor lleno (' + (m.on || m.max || 300) + '/' + (m.max || 300) + ').';
+  if (m.fatal || m.lleno === 'inv') { llenoHasta = 0; error(base, false, { lleno: true }); return; }
+  // Backoff: 1x, 1,5x, 2x... del plazo del servidor (tope 90 s), mas azar propio.
+  llenoN++; reintentos = 0;
+  retrasoRec = Math.min(90000, Math.max(5000, +m.reintentar || 30000) * (1 + 0.5 * Math.min(4, llenoN - 1)));
+  llenoHasta = Date.now() + retrasoRec;
+  error(base, false, { lleno: true });
+  fatal = false;   // error() lo marca; aqui se sigue reintentando
+  const b = $('b-reconectar');
+  b.textContent = 'Reintentar ahora';
+  b.onclick = () => { llenoHasta = 0; retrasoRec = 0; reintentos = 0; cerrar('v-error'); conectar(); };
+  const pintar = () => {
+    if (!llenoHasta || !$('v-error').classList.contains('on')) return;
+    const s = Math.max(0, Math.ceil((llenoHasta - Date.now()) / 1000));
+    $('error-txt').textContent = base + (s > 0 ? ' Reintento en ' + s + ' s.' : ' Reintentando…');
+    if (s > 0) setTimeout(pintar, 1000);
+  };
+  pintar();
 }
 function cerrarJuego() { if (TG) { try { TG.close(); } catch (e) {} } else location.href = '/inicio/'; }
 // La sesion de Telegram (initData) caduca a las 24 h: a las 23 h se avisa de reabrir desde el bot.
@@ -1405,11 +1466,13 @@ function recibir(m) {
     case 'bienvenido':
       paso('bienvenido');
       miId = m.id; yo = m.yo; reintentos = 0; if (ws) ws._listo = true;
+      if (llenoHasta) { llenoHasta = 0; cerrar('v-error'); }
+      llenoN = 0;
       try { if (canalJuego) canalJuego.postMessage({ t: 'aqui', n: yo.nombre }); } catch (e) {}
       setTimeout(vaciarErrores, 1500);   // errores de la carga (antes de tener socket) llegan ahora al dueño
       if (!refAmigo) setTimeout(() => { if (!refAmigo) mandar({ t: 'amigos' }); }, 3000);   // el enlace de invitar listo antes de tocar 📣
       // Se guarda el nombre final (el elegido o el que puso el servidor): la proxima vez entra directo.
-      setTimeout(leyendaPrimeraVez, 2500);
+      setTimeout(() => despuesMision1(leyendaPrimeraVez), 2500);
       if (soyInvitado) { setTimeout(avisoInvitado, 20000); if (!avisoInvT) avisoInvT = setInterval(avisoInvitado, 60000); try { localStorage.setItem('dq_mmo_nombre', yo.nombre); } catch (e) {} }
       $('carga').style.display = 'none';
       cerrar('v-inicio');
@@ -1445,12 +1508,14 @@ function recibir(m) {
       if (antes && antes.nivel < 60 && yo.nivel >= 60) { aviso('🏆 ' + LORE_NIVEL60, 'ok'); setTimeout(() => aviso('🥤 Toca la barra morada de la chicha para reclamar tus 2 litros.', 'ok'), 5000); }
       ALAS_MAX = (ALAS[yo.ala] || ALAS.aprendiz).vuelo; if (!antes) P.alas = ALAS_MAX; alasPropias();
       ALAS_MAX && (P.alas = Math.min(P.alas, ALAS_MAX));
+      if (antes && antes.skins && yo.skins && yo.skins.length > antes.skins.length) { const nueva = yo.skins.find(k => !antes.skins.includes(k)); const sk = nueva && SKINS[nueva]; if (sk) setTimeout(() => ofrecerPresumir('¡Estrené la skin ' + (sk.nombre || nueva) + ' en Duende Quest 3D!', 'look'), 1500); }
       if (antes && (yo.skin !== antes.skin || yo.clase !== antes.clase || yo.arma !== antes.arma || JSON.stringify(yo.look) !== JSON.stringify(antes.look))) cambiarSkinPropia();
       // Al elegir clase (antes '!antes' nunca se cumplia: 'bienvenido' ya trae yo).
       // En movil no se abre solo: esta en ⋯ → 🪞.
-      if (antes && !antes.clase && yo.clase && !yo.look && !COMPACTO) { let visto = false; try { visto = localStorage.getItem('dq3_look_visto') === '1'; } catch (e) {} if (!visto) { const intentar = n => { if (!hayVentana() && !$('v-diario').classList.contains('on')) abrirLook(); else if (n < 20) setTimeout(() => intentar(n + 1), 1500); }; setTimeout(() => intentar(0), 1500); } }
+      if (antes && !antes.clase && yo.clase && !yo.look && !COMPACTO) { let visto = false; try { visto = localStorage.getItem('dq3_look_visto') === '1'; } catch (e) {} if (!visto) { const intentar = n => { if (!hayVentana() && !$('v-diario').classList.contains('on')) abrirLook(); else if (n < 20) setTimeout(() => intentar(n + 1), 1500); }; setTimeout(() => despuesMision1(() => intentar(0)), 1500); } }
       if (yo.muerto && !(antes && antes.muerto) && !P.muerto) morir();   // tras 'muerte' no borra su texto
       if (!yo.muerto) { if (P.muerto && pocionesTrasRevivir) { pocionesTrasRevivir = false; setTimeout(() => V.abrirTienda('pw'), 400); } cerrar('v-muerte'); P.muerto = false; }
+      ofrecerBienvenida(antes);
       if (yo.clase) cerrar('v-clase');
       if (yo.clase && loginPend3) { const lp = loginPend3; loginPend3 = null; setTimeout(() => mostrarDiario(lp), 900); }
       pintarHud(); marcaPase();
@@ -1518,25 +1583,36 @@ function recibir(m) {
       const c = COFRES3[m.id]; if (c) { c.listoEn = Date.now() + m.ms; FX.emitir(c.x, alturaEn(c.x, c.z) + 0.8, c.z, { n: 40, color: '#ffd84a', vel: 4, vida: 1, grav: 4, sube: 2 }); }
       vib('success'); sfxK('monedas', 0.45);
       aviso(`🧰 ¡${(NOMBRE_COFRE[m.tipo] || 'cofre').replace(/^./, x => x.toUpperCase())} abierto! +${m.oro} oro${m.pociones ? ` · +${m.pociones} pociones` : ''}${m.item ? ' · ' + m.item : ''}`, 'ok');
+      if (m.tipo === 'legendario') { hazBotin('#ffae00'); setTimeout(() => ofrecerPresumir('¡Abrí un cofre legendario en lo alto del cielo en Duende Quest 3D!', 'cofre'), 1200); }
       break;
     }
     case 'temp3': temp3 = m; pintarRankPanel(); break;
     case 'tempFin': mostrarTempFin(m); break;
     case 'inv3': invasion3 = m.on ? { ...m, recibido: Date.now() } : null; pintarMisiones(); break;
     case 'cofre3': if (cueva) { cueva.cofre.visible = true; cueva.tapa.rotation.x = 0; } sfx('moneda', 0.6); break;
-    case 'logro': aviso('🏅 Logro: ' + m.titulo + (m.oro ? ' · +' + m.oro.toLocaleString('es') + ' oro' : '') + ' (llévalo como título desde ' + (MOVIL ? '⋯ → 🏆' : '🏆 Logros') + ')', 'ok'); sfx('moneda', 0.4); FX.emitir(P.x, P.y + 1.5, P.z, { n: 30, color: '#ffd84a', vel: 4, vida: 1, grav: -1 }); break;
+    case 'logro': aviso('🏅 Logro: ' + m.titulo + (m.oro ? ' · +' + m.oro.toLocaleString('es') + ' oro' : '') + ' (llévalo como título desde ' + (MOVIL ? '⋯ → 🏆' : '🏆 Logros') + ')', 'ok'); sfx('moneda', 0.4); setTimeout(() => ofrecerPresumir('¡Conseguí el logro «' + m.titulo + '» en Duende Quest 3D!', 'logro'), 1500); FX.emitir(P.x, P.y + 1.5, P.z, { n: 30, color: '#ffd84a', vel: 4, vida: 1, grav: -1 }); break;
     case 'gana':
       if (m.xp) numero(P.x, P.y + 2.6, P.z, '+' + m.xp + ' XP', '#c084fc');
       if (m.oro) { numero(P.x + 0.6, P.y + 2.2, P.z, '+' + m.oro + ' oro', '#ffd84a'); sfxK('monedas', 0.3); }
       if (m.chi) numero(P.x - 0.6, P.y + 2.4, P.z, '+' + m.chi + ' 🥤', '#e9b8ff');   // puntos de chicha (en 3D no se veian)
+      else if (m.chl) numero(P.x - 0.6, P.y + 2.4, P.z, '🔒 🥤 desde Nv ' + CHICHA.nvPuntos, '#b8b0c8');   // candado: primeras cazas con Nv < 10
       // Objeto del evento de temporada (calabazas, t'anta wawas...): como en CLASSIC (client.js).
       if (m.cal) { const tp = TEMPORADAS.find(x => x.id === m.tp) || temporadaDe(); if (tp) { numero(P.x, P.y + 2, P.z, '+' + m.cal + ' ' + tp.emoji, tp.color); if (yo) yo[tp.campo] = (yo[tp.campo] || 0) + m.cal; pintarTemp3(); } }
       if (m.item) vib('success');
       // Botin con su nombre y rareza (antes siempre decia "equipo nuevo", tambien si se vendio por bolsa llena).
       if (m.item) aviso('Botín: ' + (m.item.r !== undefined && RAREZAS[m.item.r] ? RAREZAS[m.item.r].nombre + ' · ' : '') + (m.item.nombre || nombreItem(m.item)) + (m.item.vendido ? ' (bolsa llena: vendido)' : ' (' + K('pulsa I', 'toca 🎒') + ' para verlo)'), 'ok');
+      if (m.item && !m.item.vendido) botinFuerte(m.item);
+      // Primera caza del personaje: botin garantizado (y nivel 2), con fiesta.
+      if (m.primero) {
+        aviso('🎉 ¡Primer botín!' + (m.item ? ' ' + (m.item.nombre || nombreItem(m.item)) + (m.primero === 2 ? ' ya va equipado.' : m.item.vendido ? ' (bolsa llena: vendido).' : ' está en tu bolsa.') : ''), 'ok');
+        numero(P.x, P.y + 3.4, P.z, '¡PRIMER BOTÍN!', '#ffe600', true);
+        FX.emitir(P.x, P.y + 1.5, P.z, { n: 50, color: '#ffe600', vel: 5, vida: 1.2, grav: -1 });
+        FX.emitir(P.x, P.y + 1.5, P.z, { n: 30, color: '#c084fc', vel: 4, vida: 1, grav: -1 });
+        setTimeout(() => vib('heavy'), 150); sfx('moneda', 0.6);   // tras el vib del botin (vib() descarta los de <70 ms)
+      }
       break;
     case 'lv': if (m.p === miId) { aviso('¡Subiste al nivel ' + m.lv + '!', 'ok'); numero(P.x, P.y + 3, P.z, 'NIVEL ' + m.lv, '#ffe600', true); subiNivel(m.lv); } else { const o = otros.get(m.p); if (o) o.lv = m.lv; } break;
-    case 'toast': if (!(modoAnuncio() && /mTON|\bSOL\b|\$DUENDE|[Ww]allet/.test(m.m || ''))) aviso(m.m, m.ok ? 'ok' : ''); break;   // modo anuncio: sin avisos cripto
+    case 'toast': if (!(modoAnuncio() && /mTON|\bSOL\b|\$DUENDE|[Ww]allet/.test(m.m || ''))) aviso(m.m, m.ok ? 'ok' : '', avisoTapado() ? 1 : 0); if (m.ok && /^⚔️ Invasión rechazada/.test(m.m || '')) setTimeout(() => ofrecerPresumir('¡Defendimos el pueblo de una invasión en Duende Quest 3D!', 'invasion'), 2000); break;   // modo anuncio: sin avisos cripto
     // mTON ganados aqui (jefes, jefe mundial, caza del dia): antes no se avisaba nada en ORIGINS
     case 'mton': { if (yo) yo.mton = m.total; if (modoAnuncio()) break; const por = { jefe: 'por el jefe', mundial: 'por el jefe mundial', diaria: 'por la caza del día' }[m.motivo]; aviso('💎 +' + m.n + ' mTON (tienes ' + ((m.total || 0) / 1000).toLocaleString('es', { maximumFractionDigits: 3 }) + ' TON)' + (por ? ' — ' + por : ''), 'ok'); numero(P.x, P.y + 3, P.z, '+' + m.n + ' mTON', '#00eeff'); sfx('moneda', 0.5); break; }
     case 'aviso': aviso(m.m); break;
@@ -1545,7 +1621,7 @@ function recibir(m) {
       // "Fuera de alcance" se avisa como mucho una vez cada 3 s (el auto-ataque reintenta solo).
       if (m.m === 'Fuera de alcance.') { if (performance.now() - avisoAlcT < 3000) break; avisoAlcT = performance.now(); }
       aviso(m.m, 'err'); break;
-    case 'amigos': if (m.ref) { refAmigo = m.ref; nivelAmigo = m.nivel || nivelAmigo; if (compartirPend) { compartirPend = false; if (TG) compartir(); else { ofrecerPresumir(presumirTxt); aviso('Tu enlace está listo: toca el botón para enviarlo por WhatsApp.', 'ok'); } } } break;   // fuera de Telegram el navegador bloquea abrir WhatsApp sin un toque
+    case 'amigos': if (m.ref) { refAmigo = m.ref; nivelAmigo = m.nivel || nivelAmigo; if (compartirPend) { compartirPend = false; if (TG) compartir(); else { ofrecerPresumir(presumirTxt, undefined, true); aviso('Tu enlace está listo: toca el botón para enviarlo por WhatsApp.', 'ok'); } } } break;   // fuera de Telegram el navegador bloquea abrir WhatsApp sin un toque
     case 'login': if (yo && yo.clase) mostrarDiario(m); else loginPend3 = m; break;
     case 'buzon': regalo3.alBuzon(m); break;
     case 'regalo': regalo3.alRegalo(m); break;
@@ -1597,6 +1673,7 @@ function recibir(m) {
     case 'dueloFin':
       if (m.a === miId || m.b === miId) { dueloCon = 0; autoAtk = false; pintarBarra(); }
       aviso(m.m, m.g === miId ? 'ok' : '');
+      if (m.g === miId && (m.a === miId || m.b === miId)) setTimeout(() => ofrecerPresumir('¡Gané un duelo en Duende Quest 3D! ¿Te atreves conmigo? ⚔️', 'duelo'), 1200);
       break;
     case 'atp3': { const de = m.p === miId ? P : otros.get(m.p), a = m.tg === miId ? P : otros.get(m.tg); if (de && !(de === P && performance.now() - P.atkT < 350)) de.atkT = performance.now(); if (de && a && m.v) proyectil(de, a, '#f0abfc'); break; }
     case 'nodos3': for (const [i, ms] of m.l) { if (!NODOS[i]) continue; nodoListo.set(i, performance.now() + ms); mostrarNodo(NODOS[i], false); } break;
@@ -1640,6 +1717,9 @@ function recibir(m) {
       if (m.auth && m.auth !== 'inv' && TG) { error('Tu sesión de Telegram caducó. Cierra el juego y vuelve a abrirlo desde el bot: entrarás con tu duende.', false, { tg: true }); return; }
       if (m.dup) { error(m.m || 'Tu duende se abrió en otro dispositivo o pestaña.', false, { dup: true }); return; }
       if (m.auth && m.auth !== 'inv' && !forzarInvitado) { forzarInvitado = true; aviso('No pudimos verificar tu cuenta: entras como invitado.', 'err'); return; }
+      // Mundo lleno o demasiadas conexiones desde tu red: se dice por que, se reintenta
+      // solo (cada vez un poco mas tarde, con azar) y se ofrece el arcade mientras.
+      if (m.lleno) { avisoLleno(m); return; }
       // Rechazo suave (servidor ocupado, la cuenta ya estaba entrando, prueba de
       // trabajo): el servidor cierra y onclose vuelve solo pasado 'reintentar' ms.
       if (m.reintentar && !m.fatal) {
@@ -2000,7 +2080,10 @@ function verChicha() {
   h += `<p class="vv-p" style="text-align:center;font-size:20px;color:#fde68a;margin:4px 0">${(ch.p || 0).toLocaleString('es')} puntos de chicha</p><p class="vv-p" style="text-align:center;font-size:12px">Hoy ${ch.hoy || 0}/${CHICHA.porDia} · desde nivel ${CHICHA.nvPuntos}: 1 punto por monstruo, 3 si es de tu nivel, 25 un jefe.</p>`;
   h += fila('nv60', `Nivel ${CHICHA.nv60}: ${CHICHA.litros60} litros`, `Llega a nivel ${CHICHA.nv60} y te llevas ${CHICHA.litros60} litros a tu casa (Nv ${nv}/${CHICHA.nv60}).`, Math.min(100, Math.round(nv / CHICHA.nv60 * 100)), nv >= CHICHA.nv60);
   for (const meta of CHICHA.niveles) h += fila(meta, `${meta.toLocaleString('es')} puntos: 1 litro`, 'Un litro de chicha morada peruana enviado a tu casa.', Math.min(100, Math.round((ch.p || 0) / meta * 100)), (ch.p || 0) >= meta);
-  h += `<p class="vv-p" style="font-size:11px;color:var(--txt2)">Promoción gratuita: no hay que comprar nada. Para reclamar: nivel ${CHICHA.nvReclamo}, personaje de 2 días y Telegram. El equipo te escribe por Telegram para la dirección; nunca te pediremos pagos ni contraseñas.</p><button class="btn sec" id="chi-leyenda" style="width:100%">📜 La leyenda del Cántaro</button>`;
+  // Requisitos a la vista (los mismos que revisa el servidor en chicha.js).
+  const dj = ch.dj || 0, hj = Math.floor((ch.mj || 0) / 60), h60 = Math.round(CHICHA.min60 / 60), si = b => b ? '✅' : '⬜';
+  h += `<p class="vv-p" style="font-size:12px;line-height:1.6;margin:6px 0"><b>Requisitos</b><br>${si(!soyInvitado)} Cuenta de Telegram<br>${si(nv >= CHICHA.nvPuntos)} Puntos desde nivel ${CHICHA.nvPuntos}<br>${si(nv >= CHICHA.nvReclamo)} Reclamar desde nivel ${CHICHA.nvReclamo} y 2 días de personaje<br>${si(nv >= CHICHA.nv60 && dj >= CHICHA.dias60 && hj >= h60)} ${CHICHA.litros60} litros: nivel ${CHICHA.nv60} + ${CHICHA.dias60} días jugados (${Math.min(dj, CHICHA.dias60)}/${CHICHA.dias60}) + ${h60} h de juego (${Math.min(hj, h60)}/${h60})<br>📦 Envíos solo en Perú</p>`;
+  h += `<p class="vv-p" style="font-size:11px;color:var(--txt2)">Promoción gratuita: no hay que comprar nada. El equipo revisa cada reclamo y te escribe por Telegram para la dirección; nunca te pediremos pagos ni contraseñas.</p><button class="btn sec" id="chi-leyenda" style="width:100%">📜 La leyenda del Cántaro</button>`;
   $('diario-c').innerHTML = h;
   $('v-diario').querySelector('h2').textContent = '🥤 CHICHA MORADA REAL';
   $('diario-c').querySelectorAll('[data-chi]').forEach(b => b.onclick = () => {
@@ -2134,11 +2217,56 @@ function avisoPrimeraVez(titulo) {
   aviso(titulo);
 }
 const avisos = $('avisos');
-function aviso(txt, tipo) {
-  const d = document.createElement('div'); d.textContent = txt; if (tipo) d.className = tipo;
+// prio: 1 importante (errores, entregas), 2 normal, 3 promo. Con una ventana abierta
+// solo salen los de prioridad 1; los demas esperan en cola (30 s como mucho).
+// En el movil, durante los 3 primeros pasos del tutorial, solo los de prioridad 1.
+// Un mismo texto no se repite antes de 8 s.
+const colaAvisos = [], avisoVisto = new Map();
+function aviso(txt, tipo, prio) {
+  txt = String(txt); prio = prio || (tipo === 'err' ? 1 : 2);
+  const ahora = Date.now();
+  if (ahora - (avisoVisto.get(txt) || 0) < 8000) return;
+  if (prio > 1) {
+    let tutoTemprano = false; try { tutoTemprano = COMPACTO && yo && yo.clase && tuto3.i >= 0 && tuto3.i < 3 && yo.nivel <= 6; } catch (e) {}
+    if (tutoTemprano && prio > 2) return;
+    if (tutoTemprano || avisoTapado()) {
+      if (!colaAvisos.some(a => a.txt === txt)) colaAvisos.push({ txt, tipo, prio, vence: ahora + 30000 });
+      while (colaAvisos.length > 6) colaAvisos.splice(colaAvisos.reduce((m, a, i, l) => a.prio > l[m].prio ? i : m, 0), 1);
+      return;
+    }
+  }
+  pintarAviso(txt, tipo, prio);
+}
+function avisoTapado() { try { return hayVentana() || $('v-diario').classList.contains('on'); } catch (e) { return false; } }
+function pintarAviso(txt, tipo, prio) {
+  const max = COMPACTO ? 2 : 4;
+  if (avisos.children.length >= max) {
+    // Lleno: sale el de menor prioridad (el mas viejo si empatan); si todos pesan mas, este espera.
+    let v = null; for (const c of avisos.children) if (!v || (c._prio || 2) > (v._prio || 2)) v = c;
+    if (v && (v._prio || 2) >= prio) v.remove();
+    else { colaAvisos.unshift({ txt, tipo, prio, vence: Date.now() + 30000 }); return; }
+  }
+  avisoVisto.set(txt, Date.now());
+  if (avisoVisto.size > 60) avisoVisto.delete(avisoVisto.keys().next().value);
+  const d = document.createElement('div'); d.textContent = txt; if (tipo) d.className = tipo; d._prio = prio;
   avisos.appendChild(d);
-  while (avisos.children.length > (COMPACTO ? 2 : 4)) avisos.firstChild.remove();
-  setTimeout(() => d.remove(), Math.min(12000, Math.max(4500, String(txt).length * 60)));   // los largos (lore, premios) se leen enteros
+  setTimeout(() => d.remove(), Math.min(12000, Math.max(4500, txt.length * 60)));   // los largos (lore, premios) se leen enteros
+}
+setInterval(() => {
+  if (!colaAvisos.length) return;
+  const ahora = Date.now();
+  for (let i = colaAvisos.length - 1; i >= 0; i--) if (colaAvisos[i].vence < ahora) colaAvisos.splice(i, 1);
+  if (!colaAvisos.length || avisoTapado() || avisos.children.length >= (COMPACTO ? 2 : 4)) return;
+  let tutoTemprano = false; try { tutoTemprano = COMPACTO && yo && yo.clase && tuto3.i >= 0 && tuto3.i < 3 && yo.nivel <= 6; } catch (e) {}
+  if (tutoTemprano) return;
+  const a = colaAvisos.shift(); avisoVisto.delete(a.txt); pintarAviso(a.txt, a.tipo, a.prio);
+}, 900);
+// Lo que no debe tapar el tutorial (leyenda, vestuario, promos) espera a la mision 1
+// entregada; si no la entrega, sale igual desde Nv 4 o a los 6 min para no quedarse sin ver.
+function despuesMision1(fn, n) {
+  n = n || 0;
+  if (yo && yo.clase && ((yo.mis && yo.mis.i >= 1) || yo.nivel >= 4 || n >= 120)) fn();
+  else setTimeout(() => despuesMision1(fn, n + 1), 3000);
 }
 // ── PESCA ──
 let pica = 0, corcho = null;
@@ -2239,7 +2367,7 @@ function lineaChat(m) {
   if (m.canal === 'susurro') d.style.color = '#f0abfc';
   if (m.canal === 'hermandad') d.style.color = '#4ade80';
   if (m.sis || !m.n) d.textContent = m.m;
-  else { const b = document.createElement('b'); b.textContent = (m.canal === 'grupo' ? '[Grupo] ' : m.canal === 'susurro' ? '[Susurro] ' : m.canal === 'hermandad' ? '[Hermandad] ' : '') + (m.gm ? '[GM] ' : '') + m.n + ': '; b.style.color = m.gm ? '#ffd84a' : (CLASES[m.cl] ? CLASES[m.cl].color : '#fff'); d.appendChild(b); d.appendChild(document.createTextNode(m.m)); }
+  else { const b = document.createElement('b'); b.textContent = (m.canal === 'grupo' ? '[Grupo] ' : m.canal === 'susurro' ? '[Susurro] ' : m.canal === 'hermandad' ? '[Hermandad] ' : '') + (m.gm === 2 ? '[DUEÑO] ' : m.gm ? '[MOD] ' : '') + m.n + ': '; b.style.color = m.gm ? '#ffd84a' : (CLASES[m.cl] ? CLASES[m.cl].color : '#fff'); d.appendChild(b); d.appendChild(document.createTextNode(m.m)); }
   const log = $('chat-log'); log.appendChild(d);
   while (log.children.length > 8) log.firstChild.remove();
 }
@@ -2261,11 +2389,13 @@ function abrir(id) {
   if (LATERALES.includes(id)) for (const o of LATERALES) if (o !== id && $(o) && $(o).classList.contains('on')) cerrar(o);
   $(id).classList.add('on');
   if (!LATERALES.includes(id)) for (const k in teclas) teclas[k] = false;
+  pedirSincroAtras();
 }
 function cerrar(id) {
   // El editor de apariencia cerrado por otra via (Atras de Telegram, ✕): la camara vuelve y se descarta la prueba.
   if (id === 'v-look' && camAntes) { ({ camYaw, camPitch, camDist } = camAntes); camAntes = null; lookEditor = null; cambiarSkinPropia(); }
   $(id).classList.remove('on'); if (id === 'v-npc') npcAbierto = '';
+  pedirSincroAtras();
 }
 document.querySelectorAll('[data-cerrar]').forEach(b => b.onclick = () => cerrar(b.closest('.modal').id));
 function abrirClases() {
@@ -2332,7 +2462,7 @@ function pintarRanking(r) {
   $('npc-c').innerHTML = fraseNpc('sabio') + (r || []).slice(0, 15).map((x, i) => `<div class="fila"><span>${i + 1}. ${esc(x.n)}</span><b style="color:${x.yo ? 'var(--ok)' : 'var(--txt)'}">Nv ${x.lv}</b></div>`).join('') || '<p>Aún no hay nadie.</p>';
 }
 // Inventario, libro de clase, tienda completa y logros (mundo/js/ventanas.js).
-const V = iniciarVentanas({ mandar, yo: () => yo, aviso, sfx, abrir, cerrar, telegram: () => !!TG && !forzarInvitado });
+const V = iniciarVentanas({ mandar, yo: () => yo, aviso: (t, k) => aviso(t, k, 1), sfx, abrir, cerrar, telegram: () => !!TG && !forzarInvitado });
 $('b-inv').onclick = () => V.abrirInventario();
 $('b-libro').onclick = () => V.abrirLibro();
 $('b-logros').onclick = () => V.abrirLogros();
@@ -2343,6 +2473,25 @@ function puntoTienda() {
   let vista = false, entVistas = 0;
   try { vista = localStorage.getItem('dq_tienda_vista') === '1'; entVistas = +localStorage.getItem('dq_tienda_ent') || 0; } catch (e) {}
   $('b-premium').classList.toggle('aviso', !!yo && ((!ps.length && !vista) || ent > entVistas));
+}
+// Pack de bienvenida (SOLO 1 VEZ): se ofrece una sola vez, entre CLASSIC y
+// ORIGINS (mismas claves), al llegar a Nv 5 o al revivir tras la segunda
+// muerte, cuando no hay otra ventana. Solo si el servidor dice que aun puedes.
+function ofrecerBienvenida(antes) {
+  if (!antes || !yo || !yo.puedeBienvenida) return;
+  let ofrecida = false, muertes = 0;
+  try { ofrecida = localStorage.getItem('dq_bienv_ofrecida') === '1'; muertes = +localStorage.getItem('dq_bienv_muertes') || 0; } catch (e) {}
+  if (ofrecida) return;
+  if (yo.muerto && !antes.muerto) { muertes++; try { localStorage.setItem('dq_bienv_muertes', String(muertes)); } catch (e) {} }
+  if (!((antes.nivel < 5 && yo.nivel >= 5) || (muertes >= 2 && antes.muerto && !yo.muerto))) return;
+  try { localStorage.setItem('dq_bienv_ofrecida', '1'); } catch (e) {}
+  const intentar = n => {
+    if (!yo || !yo.puedeBienvenida || yo.muerto) return;
+    if (hayVentana()) { if (n < 20) setTimeout(() => intentar(n + 1), 3000); return; }
+    V.abrirTienda('premium', 'bienvenida', 'bienv');
+    aviso('🎁 Pack de bienvenida: solo para tu primera compra. El Duende te lo entrega a mano.', 'ok');
+  };
+  setTimeout(() => intentar(0), 2500);
 }
 function abrirTiendaHud(via) {
   if (!yo) return;
@@ -2408,7 +2557,7 @@ if (TG && TGV('8.0')) try {
 $('b-herm').onclick = () => { if ($('v-herm').classList.contains('on')) return cerrar('v-herm'); abrir('v-herm'); mandar({ t: 'herm' }); pintarHerm(); };
 $('b-rank').onclick = () => { if ($('v-rank').classList.contains('on')) return cerrar('v-rank'); abrir('v-rank'); mandar({ t: 'ranking' }); pintarRankPanel(); };
 $('b-pase').onclick = () => { if ($('v-pase').classList.contains('on')) cerrar('v-pase'); else { abrir('v-pase'); pintarPase(); } };
-$('b-compartir').onclick = () => { presumirTxt = ''; compartirYa(); };
+$('b-compartir').onclick = () => { presumirTxt = ''; presumirTipo = ''; compartirYa(); };
 $('presumir3').onclick = () => { $('presumir3').style.display = 'none'; compartirYa(); };
 // Sin { once }: si el sistema dejo la musica suspendida al volver (iPhone),
 // cualquier toque la retoma; con el contexto ya creado solo mira su estado.
@@ -2422,6 +2571,16 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden) { musica.activo(false); tema.pause(); temaOn = false; if (actx) actx.suspend().catch(() => {}); tocandoSubir = tocandoBajar = false; joy.id = null; joy.dx = joy.dy = 0; for (const k in teclas) teclas[k] = false; }
   else { fuera3 = false; if (sonido) { musica.activo(true); if (actx) actx.resume().catch(() => {}); } }
 });
+// «Antes de irte, manda a tu mascota»: una vez por partida, si puede y no tiene expedicion.
+// PC: el raton sale por arriba (va a cerrar la pestaña). Movil: al volver tras salir un rato.
+let avisoExpT = 0, avisoExpVisto = false;
+const sinExped = () => !avisoExpVisto && yo && yo.clase && yo.nivel >= EXPEDICION.nv && !yo.exped;
+const AVISO_EXP = '🧭 Antes de irte, manda a tu mascota de expedición: vuelve con oro y materiales aunque no juegues. Toca 🧭 en tus misiones.';
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { if (sinExped()) avisoExpT = Date.now(); }
+  else if (avisoExpT && Date.now() - avisoExpT > 20000 && sinExped()) { avisoExpVisto = true; avisoExpT = 0; setTimeout(() => aviso(AVISO_EXP, 'ok'), 2500); }
+});
+document.addEventListener('mouseout', e => { if (!e.relatedTarget && e.clientY <= 0 && sinExped() && !hayVentana()) { avisoExpVisto = true; aviso(AVISO_EXP, 'ok'); } });
 $('b-ayuda').onclick = () => abrir('v-ayuda');
 $('sel-calidad').value = CAL;
 $('sel-calidad').onchange = e => { try { localStorage.setItem('dq3_calidad', e.target.value); } catch (er) {} location.reload(); };
@@ -2556,7 +2715,7 @@ function verLeyenda() {
     <p class="vv-p"><img src="/assets/lore/maiz-morado.png" alt="" style="float:left;width:34px;margin:0 6px 0 0">Hace siglos, los duendes guardaban el <b style="color:#c084fc">Maíz Morado Sagrado</b>. Con él preparaban la <b style="color:#c084fc">chicha morada</b>, la bebida que les daba su fuerza y su magia.</p>
     <p class="vv-p">El <b>Rey Goblin</b> robó el <b style="color:#ffd84a">Cántaro Eterno</b> y lo rompió en pedazos. Sin chicha, la noche cubrió el bosque, los goblins invadieron las colinas y el Éter del cielo se partió en islas flotantes: el <b>Abismo</b>.</p>
     <p class="vv-p"><img src="/assets/lore/duende-chicha.webp" alt="" style="float:right;height:96px;margin:0 0 4px 6px">Tú eres un duende joven. <b>Recupera las zonas</b> (misiones y encargos 🧭), <b>vence a sus jefes</b>, abre los cofres y junta <b>puntos de chicha</b> cazando. En el Abismo, la Luz y la Sombra luchan por el <b>Núcleo</b>, donde late el último pedazo del Cántaro.</p>
-    <p class="vv-p" style="color:#fde68a;font-weight:700">🥤 Y es de verdad: quien llegue a nivel ${CHICHA.nv60} en este mundo se lleva ${CHICHA.litros60} litros de chicha morada a su casa. Además, con ${(10000).toLocaleString('es')} puntos de chicha cazando, otro litro (en Duende Quest Classic → Mochila → Chicha). Se reclama entrando con Telegram.</p>
+    <p class="vv-p" style="color:#fde68a;font-weight:700">🥤 Y es de verdad: quien llegue a nivel ${CHICHA.nv60} en este mundo se lleva ${CHICHA.litros60} litros de chicha morada a su casa. Además, con ${(10000).toLocaleString('es')} puntos de chicha cazando (desde nivel ${CHICHA.nvPuntos}), otro litro: toca la barra morada 🥤. Se reclama entrando con Telegram · envíos solo en Perú.</p>
 <details style="margin-top:8px"><summary style="cursor:pointer;color:#c084fc;font-weight:700">🏺 Las reliquias del Cántaro: ${Object.keys(LORE_ZONAS).filter(z => encargos[z + ':jefe'] === true).length}/10 recuperadas</summary><p class="vv-p" style="font-size:12px;margin:6px 0">Cada reliquia (un pedazo, su semilla, su barro o un secreto) se recupera venciendo al jefe de su zona en los encargos 🧭. Con las 10, el último pedazo espera en el Núcleo del Abismo: el nivel ${CHICHA.nv60}.</p>${Object.entries(LORE_ZONAS).map(([id, z]) => { const ok = encargos[id + ':jefe'] === true; return `<p class="vv-p" style="margin:6px 0;${ok ? '' : 'opacity:.6'}"><b style="color:${ok ? '#4ade80' : '#fde68a'}">${ok ? '✓' : '·'} ${esc((MAPAS[id] || {}).nombre || id)}:</b> ${ok ? esc(z.pedazo) : 'reliquia perdida… vence al jefe de la zona.'}</p>`; }).join('')}</details>
 <details style="margin-top:8px"><summary style="cursor:pointer;color:#f0abfc;font-weight:700">📖 Historias de la gente del bosque: ${SECUNDARIAS.filter(q => secundarias[q.id + ':ok']).length}/${SECUNDARIAS.length}</summary><p class="vv-p" style="font-size:12px;margin:6px 0">Misiones secundarias: salen solas en el panel al llegar a cada zona (con su nivel) y avanzan con lo que haces.</p>${SECUNDARIAS.map(q => { const ok = !!secundarias[q.id + ':ok']; return `<p class="vv-p" style="margin:6px 0;${ok ? '' : 'opacity:.6'}"><b style="color:${ok ? '#4ade80' : '#f0abfc'}">${ok ? '✓' : '·'} ${esc(q.nombre)}</b> <small>(${esc((MAPAS[q.zona] || {}).nombre || q.zona)} · Nv ${q.nv})</small><br>${ok ? esc(q.fin) : esc(q.quien) + ' te espera.'}</p>`; }).join('')}</details>`;
   $('v-diario').querySelector('h2').textContent = 'LA LEYENDA DEL CÁNTARO';
@@ -2659,7 +2818,7 @@ function animarCofres(t) {
     c.tapa.rotation.x += ((listo ? 0 : -1.15) - c.tapa.rotation.x) * 0.12;
     c.gema.visible = listo;
     if (listo) { c.gema.position.y = 1.45 + Math.sin(t / 400 + c.i) * 0.12; c.gema.rotation.y = t / 600; }
-    if (listo && cuadro % 45 === c.i % 45) FX.emitir(c.x, alturaEn(c.x, c.z) + 0.9, c.z, { n: c.tipo === 'legendario' ? 8 : 4, color: c.tipo === 'epico' ? '#c084fc' : '#ffd84a', vel: 1, vida: 1.2, grav: -1.5, tam: 0.7 });
+    if (listo && Math.floor(t / 250) % 3 === c.i % 3) FX.emitir(c.x, alturaEn(c.x, c.z) + 0.9, c.z, { n: c.tipo === 'legendario' ? 8 : 4, color: c.tipo === 'epico' ? '#c084fc' : '#ffd84a', vel: 1, vida: 1.2, grav: -1.5, tam: 0.7 });
   }
 }
 // ── TEMPORADA DEL ABISMO Y EQUILIBRIO DE FACCIONES ──
@@ -2692,6 +2851,47 @@ function mostrarTempFin(m) {
   $('v-diario').querySelector('h2').textContent = 'FIN DE TEMPORADA';
   abrir('v-diario'); vib('success'); sfxK('monedas', 0.5);
 }
+// ── BOTIN FUERTE ──
+// Epico o legendario: haz de luz del color de la rareza sobre el jugador, presumir
+// y, si mejora lo que lleva puesto, una tarjeta «▲ Mejor · Equipar» de un toque.
+function hazBotin(color) {
+  const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+  const haz = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.7, 26, 14, 1, true), mat);
+  haz.position.set(P.x, P.y + 13, P.z); escena.add(haz);
+  FX.emitir(P.x, P.y + 1.2, P.z, { n: MOVIL ? 30 : 60, color, vel: 3, vida: 1.4, grav: -2.5, radio: 0.6, tam: 1.1 });
+  const t0 = performance.now();
+  const paso = () => {
+    const k = (performance.now() - t0) / 2600;
+    if (k >= 1) { escena.remove(haz); liberar(haz); return; }
+    haz.position.set(P.x, P.y + 13, P.z); haz.rotation.y += 0.04;
+    mat.opacity = 0.55 * (k < 0.15 ? k / 0.15 : 1 - (k - 0.15) / 0.85);
+    requestAnimationFrame(paso);
+  };
+  requestAnimationFrame(paso);
+}
+function botinFuerte(it) {
+  if (!(it.r >= 2)) return;
+  const rz = RAREZAS[it.r] || {};
+  hazBotin(rz.color || '#c084fc'); sfx('moneda', 0.5);
+  if (it.r >= 3) vib('heavy');
+  setTimeout(() => ofrecerPresumir('¡Me salió un objeto ' + (rz.nombre || '').toLowerCase() + ': ' + (it.nombre || nombreItem(it)) + ' en Duende Quest 3D!', 'botin'), 1500);
+  if (!yo || !it.id || !V.compararConPuesta(it, yo)) return;
+  let t = $('mejor3');
+  if (!t) {
+    t = document.createElement('button'); t.id = 'mejor3';
+    t.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);z-index:6;pointer-events:auto;cursor:pointer;padding:9px 16px;border-radius:10px;background:rgba(14,9,30,.92);color:#fff;font:700 13px var(--sans);box-shadow:0 6px 20px rgba(0,0,0,.45);max-width:88vw;white-space:normal;';
+    t.style.top = COMPACTO ? 'calc(22% + var(--tg-top,0px))' : 'auto'; if (!COMPACTO) t.style.bottom = '250px';
+    document.body.appendChild(t);
+  }
+  t.style.border = '2px solid ' + (rz.color || '#c084fc');
+  t.innerHTML = '';
+  const n = document.createElement('span'); n.style.color = rz.color || '#fff'; n.textContent = (it.nombre || nombreItem(it));
+  const b = document.createElement('b'); b.style.color = '#4ade80'; b.textContent = ' ▲ Mejor · Equipar';
+  t.append(n, b);
+  t.onclick = () => { t.style.display = 'none'; sfx('boton', 0.4); mandar({ t: 'item', a: 'equipar', id: it.id }); aviso('Equipado: ' + (it.nombre || nombreItem(it)), 'ok', 1); };
+  t.style.display = 'block'; clearTimeout(botinFuerte.t);
+  botinFuerte.t = setTimeout(() => { t.style.display = 'none'; }, 10000);
+}
 // ── INVASION DEL 3D ──
 let invasion3 = null;
 // ── SUBIR DE NIVEL, PRESUMIR Y TELEGRAM ──
@@ -2699,7 +2899,8 @@ function subiNivel(lv) {
   vib('success'); fanfarria();
   FX.emitir(P.x, P.y + 0.2, P.z, { n: 46, color: '#ffe066', vel: 2.4, vida: 1.6, grav: -3.5, radio: 0.7, tam: 1.3 });
   FX.emitir(P.x, P.y + 1, P.z, { n: 30, color: '#ffffff', vel: 6, vida: 0.6, grav: 2 });
-  if (lv >= 5 && lv % 5 === 0) ofrecerPresumir(`¡Llegué al nivel ${lv} en Duende Quest 3D!`);
+  if (lv >= 60) ofrecerPresumir('¡Llegué al nivel 60, el máximo, en Duende Quest 3D! 🏆', 'nv60');
+  else if (lv >= 5 && lv % 5 === 0) ofrecerPresumir(`¡Llegué al nivel ${lv} en Duende Quest 3D!`, 'nivel');
   // Talentos y especializacion: se dice al desbloquearlos y en cada nivel con puntos (el libro va dentro de ⋯ en movil).
   const dondeLibro = MOVIL ? '⋯ → 📖' : '📖 (tecla P)';
   if (lv === 10) setTimeout(() => aviso(`🌟 ¡Nivel 10! Ya puedes elegir tu especialización y repartir puntos de talento en ${dondeLibro}.`, 'ok'), 1500);
@@ -2726,7 +2927,7 @@ function compartirYa() {
 const regalo3 = iniciarRegalo({
   mandar,
   ocupado: () => hayVentana() || $('v-diario').classList.contains('on') || !!loginPend3 || !yo || !yo.clase,
-  presumir: txt => { presumirTxt = txt; compartirYa(); },
+  presumir: txt => { presumirTxt = txt; presumirTipo = ''; compartirYa(); },
   fanfarria, vibrar: vib,
   filtro: t => modoAnuncio() && /mTON|\bSOL\b|\$DUENDE|[Ww]allet/.test(t || ''),
 });
@@ -2735,8 +2936,15 @@ const oroAmigo = () => premioAmigo(nivelAmigo).oro.toLocaleString('es', { useGro
 // enviar: solo se abre WhatsApp con el texto listo. El enlace va a /jugar/ (elige 2D o 3D).
 const TXT_WA = 'Oe, juega conmigo Duende Quest, gratis en el celular. Entra con mi link y cuando llegues a nivel 10 los dos ganamos oro 👇';
 const waLink = (txt, url) => 'https://wa.me/?text=' + encodeURIComponent(txt + ' ' + url);
-function ofrecerPresumir(txt) {
-  presumirTxt = txt || '';
+// Momento -> imagen de la historia (assets/promo/historia_N.jpg): 1 el duende, 2 la fortaleza, 3 el combate.
+const IMG_PRESUMIR = { nivel: 1, look: 1, nv60: 2, cofre: 2, invasion: 2, botin: 3, logro: 3, duelo: 3 };
+let presumirTipo = '', presumirUlt = 0;
+// Tope: una oferta cada 3 min (si no, cansa). forzar: la pidio el jugador.
+function ofrecerPresumir(txt, tipo, forzar) {
+  if (!forzar && Date.now() - presumirUlt < 180000) return;
+  if (!forzar && yo && yo.nivel < 4 && !(yo.mis && yo.mis.i >= 1)) return;   // no tapa el tutorial
+  presumirUlt = Date.now();
+  presumirTxt = txt || ''; if (tipo !== undefined) presumirTipo = tipo || '';
   if (!refAmigo) mandar({ t: 'amigos' });
   const b = $('presumir3'); if (!b) return;
   if (!TG) b.textContent = '📲 Presúmelo por WhatsApp · ganan los dos +' + oroAmigo() + ' oro';
@@ -2746,7 +2954,7 @@ function ofrecerPresumir(txt) {
 function compartir() {
   const enl = 'https://t.me/duendequest_bot' + (refAmigo ? '?start=m3d_' + refAmigo : '');
   const txt = (presumirTxt ? presumirTxt + ' ' : '') + '¡Juega gratis conmigo a Duende Quest 3D en Telegram! 🧝';
-  const img = location.origin + '/assets/promo/historia_' + (1 + Math.floor(Math.random() * 3)) + '.jpg';
+  const img = location.origin + '/assets/promo/historia_' + (IMG_PRESUMIR[presumirTipo] || 1 + Math.floor(Math.random() * 3)) + '.jpg';
   try {
     if (TG && TGV('7.8') && TG.shareToStory) {
       const premium = !!(TG.initDataUnsafe && TG.initDataUnsafe.user && TG.initDataUnsafe.user.is_premium);
@@ -2760,17 +2968,53 @@ function compartir() {
   // Si el navegador bloquea la ventana (el enlace llego tarde del servidor), se copia el texto.
   if (!window.open(waLink(txtWa, web), '_blank')) try { navigator.clipboard.writeText(txtWa + ' ' + web).then(() => aviso('Texto y enlace copiados: pégalos en WhatsApp.', 'ok'), () => {}); } catch (e) {}
 }
-// Boton Atras de Telegram: cierra la ventana abierta.
-let tgAtras = false;
+// Boton Atras coherente (v327): cierra la ventana de ARRIBA, no todas, y nunca saca del juego por sorpresa.
+// En la web (Chrome Android, navegador de Facebook...) cada ventana abierta deja una entrada en el historial;
+// en Telegram el Atras se ve siempre y, sin ventanas, vuelve al menu de la Mini App en vez de cerrarla.
+const NO_ATRAS = ['v-muerte', 'v-clase', 'v-error', 'v-inicio'];   // la de error no: dejaba el mundo congelado
+let pilaV = [], histV = false, ignorarPop = 0, tgAtras = false;
+function actualizarPila() {
+  const abiertas = [...document.querySelectorAll('.modal.on')].map(m => m.id).filter(id => id && !NO_ATRAS.includes(id));
+  pilaV = pilaV.filter(id => abiertas.includes(id));
+  for (const id of abiertas) if (!pilaV.includes(id)) pilaV.push(id);   // la ultima abierta queda arriba
+}
+function sincroAtras() {
+  actualizarPila();
+  if (TG) return;
+  if (pilaV.length && !histV && !ignorarPop) { try { history.pushState({ dqv: 1 }, ''); histV = true; } catch (e) {} }
+  else if (!pilaV.length && histV) {
+    // Cerrada con su ✕: se retira la entrada para que el Atras no "gaste" un toque en vacio.
+    histV = false;
+    if (history.state && history.state.dqv) { ignorarPop++; setTimeout(() => { ignorarPop = 0; }, 800); try { history.back(); } catch (e) { ignorarPop = 0; } }
+  }
+}
+function pedirSincroAtras() { clearTimeout(pedirSincroAtras.t); pedirSincroAtras.t = setTimeout(sincroAtras, 60); }   // con retraso: cerrar una y abrir otra no toca el historial
+function atrasVentana() {
+  const id = pilaV[pilaV.length - 1];
+  if (!id || !$(id) || !$(id).classList.contains('on')) return false;
+  if (id === 'v-pago') { aviso('Cierra el pago con su ✕ (así no se pierden tus datos).'); return true; }
+  if (id === 'v-look' && typeof cerrarLook === 'function') cerrarLook(false); else cerrar(id);
+  return true;
+}
+if (!TG) addEventListener('popstate', () => {
+  if (ignorarPop > 0) { ignorarPop--; return; }   // el retroceso lo pidio sincroAtras: no es del jugador
+  if (!histV) return;
+  histV = false;   // antes de cerrar: si no, cerrar() pediria otro history.back (doble retroceso)
+  actualizarPila(); atrasVentana(); pedirSincroAtras();   // si quedan ventanas, vuelve a dejar su entrada
+});
 function revisarAtrasTg() {
-  if (!TG || !TG.BackButton || !TGV('6.1')) return;
-  const abierta = hayVentana() || hayLateral();
-  if (abierta === tgAtras) return;
-  tgAtras = abierta;
-  try { abierta ? TG.BackButton.show() : TG.BackButton.hide(); } catch (e) {}
+  sincroAtras();
+  if (!TG || !TG.BackButton || !TGV('6.1') || tgAtras) return;
+  tgAtras = true;
+  try { TG.BackButton.show(); } catch (e) {}
 }
 if (TG && TG.BackButton) try {
-  TG.BackButton.onClick(() => { document.querySelectorAll('.modal.on').forEach(m => { if (m.id !== 'v-muerte' && m.id !== 'v-clase' && m.id !== 'v-error' && m.id !== 'v-pago') cerrar(m.id); }); revisarAtrasTg(); });   // la de error no: dejaba el mundo congelado
+  TG.BackButton.onClick(() => {
+    actualizarPila();
+    if (atrasVentana()) return revisarAtrasTg();
+    if ([...document.querySelectorAll('.modal.on')].some(m => NO_ATRAS.includes(m.id) && m.id !== 'v-inicio')) return;   // muerte, clase o error: se resuelven en su ventana
+    location.href = '/telegram/index.html' + hashTg;
+  });
 } catch (e) {}
 // ── HERMANDADES (las "guilds") ──
 let hermInfo = null, hermSalirT = 0;
@@ -3533,7 +3777,7 @@ function etiquetas(t) {
   if (yo && P.lbl) ponLbl(P.lbl, P.x, P.y + 2.15 + (P.fig && P.fig.montura ? 1.2 : 0), P.z, `<span style="color:${yo.dios ? '#ffd84a' : '#ffe600'}">${yo.dios ? 'GM ' : ''}${esc(yo.nombre)}</span>${yo.titulo && LOGROS.find(l => l.id === yo.titulo) ? `<small style="display:block;color:#fde68a;font-size:10px">«${esc(LOGROS.find(l => l.id === yo.titulo).titulo)}»</small>` : ''}${hermInfo ? `<small style="display:block;color:${HERM_COLORES[hermInfo.color] || '#4ade80'};font-size:10px">&lt;${esc(hermInfo.nombre)}&gt;</small>` : ''}`, 999);
   for (const o of otros.values()) {
     const cl = CLASES[o.cl];
-    ponLbl(o.lbl, o.x, (o.y || alturaEn(o.x, o.z)) + 2.15 + (o.fig && o.fig.montura ? 1.2 : 0), o.z, `<span style="color:${o.gm ? '#ffd84a' : o.fc && yo && yo.faccion && o.fc !== yo.faccion && enAbismo(o.x) ? '#ff4d4d' : cl ? cl.color : '#fff'}">${o.gm ? 'GM ' : ''}${o.fc && enAbismo(o.x) ? (o.fc === 'luz' ? '☀ ' : '🌑 ') : ''}${esc(o.n)} · Nv${o.lv}</span>${o.ti ? `<small style="display:block;color:#fde68a;font-size:10px">«${esc(o.ti)}»</small>` : ''}${o.hn ? `<small style="display:block;color:${HERM_COLORES[o.hc] || '#4ade80'};font-size:10px">&lt;${esc(o.hn)}&gt;</small>` : ''}${o.ra && enAbismo(o.x) ? `<small style="display:block;color:#c4b5fd;font-size:10px">${RANGOS[o.ra].n}</small>` : ''}<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>`, 70);
+    ponLbl(o.lbl, o.x, (o.y || alturaEn(o.x, o.z)) + 2.15 + (o.fig && o.fig.montura ? 1.2 : 0), o.z, `<span style="color:${o.gm ? '#ffd84a' : o.fc && yo && yo.faccion && o.fc !== yo.faccion && enAbismo(o.x) ? '#ff4d4d' : cl ? cl.color : '#fff'}">${o.gm === 2 ? 'DUEÑO ' : o.gm ? 'MOD ' : ''}${o.fc && enAbismo(o.x) ? (o.fc === 'luz' ? '☀ ' : '🌑 ') : ''}${esc(o.n)} · Nv${o.lv}</span>${o.ti ? `<small style="display:block;color:#fde68a;font-size:10px">«${esc(o.ti)}»</small>` : ''}${o.hn ? `<small style="display:block;color:${HERM_COLORES[o.hc] || '#4ade80'};font-size:10px">&lt;${esc(o.hn)}&gt;</small>` : ''}${o.ra && enAbismo(o.x) ? `<small style="display:block;color:#c4b5fd;font-size:10px">${RANGOS[o.ra].n}</small>` : ''}<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>`, 70);
   }
   const kMis = tipoMision();
   for (const o of mons.values()) {
@@ -3621,7 +3865,7 @@ const noche3 = { calabazas: [], murcis: [], activo: false };
 function crearNocheDuendes() {
   if (!esNocheDuendes()) return;
   noche3.activo = true;
-  setTimeout(() => aviso('🎃 Noche de Duendes: el pueblo se llenó de calabazas y de noche salen los murciélagos. Hasta el 2 de noviembre, los 7 disfraces de la mascota cuestan 25% menos de oro en la tienda.', 'ok'), 9000);
+  setTimeout(() => despuesMision1(() => aviso('🎃 Noche de Duendes: el pueblo se llenó de calabazas y de noche salen los murciélagos. Hasta el 2 de noviembre, los 7 disfraces de la mascota cuestan 25% menos de oro en la tienda.', 'ok', 3)), 9000);
   const geoC = new THREE.SphereGeometry(0.42, 10, 8), geoT = new THREE.CylinderGeometry(0.05, 0.07, 0.22, 5), geoO = new THREE.ConeGeometry(0.09, 0.14, 3), geoB = new THREE.BoxGeometry(0.34, 0.07, 0.02);
   const matC = new THREE.MeshLambertMaterial({ color: 0xf07a1a }), matT = new THREE.MeshLambertMaterial({ color: 0x3f6b1f });
   const matCara = new THREE.MeshBasicMaterial({ color: 0xffd84a });
@@ -3814,6 +4058,14 @@ function pintarMisiones() {
       // Las semanales tambien (antes solo se veia "Semana 0/2").
       `<div class="q"><b>📅 Misiones de la semana ${hs}/${T.sem.l.length}</b>` + T.sem.l.map(t => t.ok ? `<span class="ok">✓ ${esc(t.txt)}</span>` : `<span class="tarea">• ${esc(t.txt)} ${t.p}/${t.n}</span>`).join('') + '</div>';
   }
+  // Fila fija de la expedicion (algo en marcha mientras no juega): toca y abre su ventana (ventanas.js).
+  if (yo.nivel >= EXPEDICION.nv) {
+    const ex = yo.exped, ms = ex ? ex.fin - Date.now() : 0;
+    const tx = !ex ? 'Manda a tu mascota de expedición' : ms <= 0 ? '¡Volvió! Toca para recoger' : `Vuelve en ${ms >= 3600000 ? Math.ceil(ms / 3600000) + ' h' : Math.max(1, Math.ceil(ms / 60000)) + ' min'}`;
+    const fx = `<div class="q" data-expabrir="1" style="cursor:pointer"><b style="color:${ex && ms <= 0 ? '#4ade80' : '#7dd3fc'}">🧭 ${tx}</b></div>`;
+    // Movil con la caja plegada (recorta lo de abajo): si ya volvio, va arriba para que se vea.
+    if (ex && ms <= 0 && COMPACTO && !c.classList.contains('abierto')) h = fx + h; else h += fx;
+  }
   // Fila fija con el premio de mañana de la racha (motivo para volver).
   { const mn = textoManana3(); if (mn) h += `<div class="q"><b style="color:#ffd84a">🎁 ${esc(mn)}</b></div>`; }
   h = tt + h;
@@ -3857,7 +4109,7 @@ const faro = (() => {
 })();
 // Cambiar mision pide dos toques (solo hay 1 cambio gratis al dia; sin confirm(): en Telegram queda feo)
 let cambioPend = null;
-$('misiones').onclick = e => { const en = e.target.closest('[data-entregar]'); if (en) { e.stopPropagation(); mandar(en.dataset.entregar === 'diaria' ? { t: 'mision', diaria: true } : { t: 'mision' }); return; } const b = e.target.closest('[data-cambiar]'); if (b) { e.stopPropagation(); const i = +b.dataset.cambiar; if (cambioPend && cambioPend.i === i && Date.now() - cambioPend.t < 4000) { cambioPend = null; mandar({ t: 'cambiarTarea', i }); } else { cambioPend = { i, t: Date.now() }; b.textContent = '¿Seguro?'; } return; } if (COMPACTO) { $('misiones').classList.toggle('abierto'); pintarMisiones(); return; } abrirMapa(); };
+$('misiones').onclick = e => { if (e.target.closest('[data-expabrir]')) { e.stopPropagation(); V.abrirExpedicion(); return; } const en = e.target.closest('[data-entregar]'); if (en) { e.stopPropagation(); mandar(en.dataset.entregar === 'diaria' ? { t: 'mision', diaria: true } : { t: 'mision' }); return; } const b = e.target.closest('[data-cambiar]'); if (b) { e.stopPropagation(); const i = +b.dataset.cambiar; if (cambioPend && cambioPend.i === i && Date.now() - cambioPend.t < 4000) { cambioPend = null; mandar({ t: 'cambiarTarea', i }); } else { cambioPend = { i, t: Date.now() }; b.textContent = '¿Seguro?'; } return; } if (COMPACTO) { $('misiones').classList.toggle('abierto'); pintarMisiones(); return; } abrirMapa(); };
 function misionLista() { if (!yo) return false; const q = MISIONES[yo.mis.i]; const d = yo.diaria || {}; return (q && yo.mis.p >= q.n) || (!d.ok && (d.p || 0) >= DIARIA.n); }
 function colorNivel(nv) { const d = nv - (yo ? yo.nivel : 1); return d >= 5 ? '#ff3344' : d >= 2 ? '#ff9900' : d <= -8 ? '#9a9a9a' : d <= -3 ? '#4ade80' : '#ffe600'; }
 // Marca de peligro que no depende del color (daltonicos): ASCII porque la fuente pixel no tiene calavera.
@@ -3865,16 +4117,31 @@ function marcaNivel(nv) { const d = nv - (yo ? yo.nivel : 1); return d >= 5 ? '!
 const cieloAct = C(CIELO.pueblo), cieloObj = C(CIELO.pueblo);
 // Un fallo en un cuadro no congela el juego: se avisa (como mucho cada 10 s) y se dibuja igual.
 let bucleErrT = 0;
-function bucle(t) {
+// Ritmo: tope de CUADRO_MS (60 fps; 30 en baja), nada si Telegram esta en
+// segundo plano o la pestaña oculta, y 10 fps con una ventana encima del 3D
+// (mapa, ajustes…; el editor de apariencia no, que muestra al duende).
+let proxCuadro = 0, ventanaAb = false, ventanaAntes = false;
+function bucle(t, forzar) {
   requestAnimationFrame(bucle);
+  if (forzar !== true) {
+    if (fuera3 || document.hidden) return;
+    const paso = ventanaAb ? 100 : CUADRO_MS;
+    if (t < proxCuadro - 1.5) return;
+    proxCuadro = Math.max(proxCuadro + paso, t + paso * 0.5);
+  }
   try { cuadroBucle(t); }
   catch (e) {
     if (t - bucleErrT > 10000) { bucleErrT = t; console.error(e); avisarError('bucle: ' + ((e && e.message) || e), String(e && e.stack || '').split('\n')[1] || '', 0); }
     try { if (composer) composer.render(0.016); else render.render(escena, camara); } catch (e2) {}
   }
 }
+// Cadencias por tiempo (no por cuadros: con el tope o a 10 fps seguirian otro ritmo).
+const cadT = [0, 0, 0, 0, 0];
+function toca(i, ms, t) { if (t - cadT[i] < ms - 4) return false; cadT[i] = t; return true; }
 function cuadroBucle(t) {
-  resolucionDinamica(t - ultimoT);
+  // A 10 fps (o al salir de ahi) el tiempo de cuadro no dice nada del rendimiento.
+  if (!ventanaAb && !ventanaAntes) resolucionDinamica(t - ultimoT);
+  ventanaAntes = ventanaAb;
   const dt = Math.min(0.05, (t - ultimoT) / 1000); ultimoT = t;
   cuadro++;
   fisica(dt);
@@ -3930,7 +4197,8 @@ function cuadroBucle(t) {
   if (Math.abs(camara.fov - fovObj) > 0.05) { camara.fov += (fovObj - camara.fov) * Math.min(1, dt * (fovGolpe ? 14 : 3)); camara.updateProjectionMatrix(); }
   TAPA.uCam.value.set(cx, cy, cz); TAPA.uTgt.value.set(tx, ty, tz);
   // Zona actual: titulo, cielo y niebla de su color.
-  if (cuadro % 15 === 0) {
+  if (toca(0, 250, t)) {
+    ventanaAb = hayVentana() && !$('v-look').classList.contains('on');
     const z = zonaEn(P.x, P.z);
     if (z !== zonaActual) { zonaActual = z; tituloZona(z); }
     ambiente(z);
@@ -3943,7 +4211,7 @@ function cuadroBucle(t) {
       else if (nd) b.textContent = (MOVIL ? '' : 'E · ') + 'Recoger ' + MATERIALES[nd.tipo].nombre;
       else if (!enCueva(P.x) && aguaCerca()) { b.style.display = 'block'; b.textContent = (MOVIL ? '' : 'E · ') + (pica > performance.now() ? '¡TIRAR!' : lanzando && lanzando.id === 'pescar' ? 'Esperando que pique…' : 'Pescar'); }
     }
-    if (cuadro % 60 === 0) revisarNodos();
+    if (toca(1, 1000, t)) revisarNodos();
     animarCofres(t);
     for (const o of mons.values()) if (o.ra && !o.muereT && Math.abs(o.x - P.x) < 60 && Math.abs(o.z - P.z) < 60) FX.emitir(o.x, alturaEn(o.x, o.z) + 0.3, o.z, { n: 5, color: o.ti || '#ffd84a', vel: 1.2, vida: 1, grav: -2.5, radio: 0.8, tam: 0.8 });
     if (MOVIL) { const u = $('t-usar'), b = $('hablar'), ver = b.style.display === 'block' && !P.vuela; u.style.visibility = ver ? 'visible' : 'hidden'; if (ver) u.textContent = /Abrir/.test(b.textContent) ? 'ABRIR' : /Recoger/.test(b.textContent) ? 'RECOGER' : /Pescar|TIRAR|pique/.test(b.textContent) ? (/TIRAR/.test(b.textContent) ? '¡TIRAR!' : 'PESCAR') : /Salir/.test(b.textContent) ? 'SALIR' : /Disparar/.test(b.textContent) ? 'FUEGO' : 'HABLAR'; }
@@ -3968,6 +4236,9 @@ function cuadroBucle(t) {
   sol.target.position.set(P.x, P.y, P.z);
   sol.position.set(P.x + solDir.x * 0.5, P.y + solDir.y * 0.5, P.z + solDir.z * 0.5);
   moverLluvia(dt, t);
+  // Cueva y Abismo solo existen para el render dentro de su zona (estan lejos y no se ven desde fuera).
+  if (cueva) cueva.grupo.visible = enCueva(P.x);
+  if (abismo) abismo.grupo.visible = enAbismo(P.x);
   if (cueva && enCueva(P.x)) cueva.animar(t);
   if (abismo && enAbismo(P.x)) { abismo.animar(t); animarCorrientes(t); }
   animarNocheDuendes(t);
@@ -3978,8 +4249,8 @@ function cuadroBucle(t) {
   if (agua) agua.material.opacity = 0.7 + Math.sin(t / 900) * 0.04;
   if (portal) portal.velo.material.opacity = 0.45 + Math.sin(t / 300) * 0.15;
   pintarObjetivo();
-  if (cuadro % 6 === 0) { pintarMini(); pintarCds(); pintarAuras(); pintarObjetivoP(); }
-  if (cuadro % 20 === 0) { pintarMisiones(); revisarAtrasTg(); }
+  if (toca(2, 100, t)) { pintarMini(); pintarCds(); pintarAuras(); pintarObjetivoP(); }
+  if (toca(3, 333, t)) { pintarMisiones(); revisarAtrasTg(); }
   efectos = efectos.filter(e => {
     e.t += dt / e.dura;
     const r = 0.5 + e.radio * Math.min(1, e.t);
@@ -4001,14 +4272,14 @@ function cuadroBucle(t) {
     n.d.style.opacity = 1 - Math.max(0, n.t - 0.7) / 0.4;
     return true;
   });
-  if (cuadro % 30 === 0) { const z = zonaEn(P.x, P.z); FX.ambiente(z === 'eter' ? 'eter' : z === 'cueva' ? 'polvo' : nocheK > 0.5 && z !== 'pueblo' ? 'luciernagas' : ''); }
+  if (toca(4, 500, t)) { const z = zonaEn(P.x, P.z); FX.ambiente(z === 'eter' ? 'eter' : z === 'cueva' ? 'polvo' : nocheK > 0.5 && z !== 'pueblo' ? 'luciernagas' : ''); }
   vFX.set(P.x, P.y, P.z); FX.actualizar(dt, vFX, lienzo.height);
   if (composer) composer.render(dt); else render.render(escena, camara);
 }
 const vFX = new THREE.Vector3();
 
 // Estado visible en la consola para depurar (solo lectura).
-window.__dq3 = { P, mons, otros, get objetivo() { return objetivo; }, get autoAtk() { return autoAtk; }, get yo() { return yo; }, cuadro: () => bucle(performance.now()), recibir,
+window.__dq3 = { P, mons, otros, get objetivo() { return objetivo; }, get autoAtk() { return autoAtk; }, get yo() { return yo; }, cuadro: () => bucle(performance.now(), true), recibir,
   camara: (yaw, pitch) => { camYaw = yaw; if (pitch !== undefined) camPitch = pitch; } };
 
 // ── INICIO ──

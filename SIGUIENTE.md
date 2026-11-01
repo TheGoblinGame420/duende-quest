@@ -3204,3 +3204,13 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - #39: Open Graph 1200x630 en assets/og/ (tools/og_*.py). Pasar las URL por el depurador de Meta.
 - #36: buzón «Mientras no estabas» y celebración de compra entregada (`mmo/js/regalo.js`).
 - Arnés 865 bien.
+
+### Ronda 3 de la noche del lanzamiento (1-nov-2026, `?v=327`)
+
+- #24: paquete `bienvenida` (US$1,99, 150 Stars, `unaVez`), `puedeBienvenida(uid, c)` con `c.compro`/`c.bienvYa`; entrega manual como siempre; oferta una sola vez a Nv 5 o tras la 2.ª muerte. `pruebasBienvenida` en el arnés.
+- #25: webhook de Stars con `avisoFallo` al dueño (sin entregar nada), `isFirstPurchase` en lib.js, /paysupport, /terms, /miscompras, `setMyCommands`, `reclamoPedido`; página `reembolsos.html`; `tools/arnes_api.mjs`.
+- #30: expediciones en ORIGINS desde Nv 2 y primera de 15 min. #32: Atrás con historial y BackButton de Telegram.
+- #34: soles de referencia (cambio fijo en data.js), tienda ordenada, «💎 PAQUETES». #38: mundo lleno legible con espera y arcade.
+- #42: tope de fps, sin render en segundo plano, calidad según GPU, luz horneada en la cueva. #45: primer minuto con objeto garantizado y Nv 2, misión de 5 goblins, reaparición rápida Nv 1-2.
+- #46/#47: los avisos no tapan el tutorial; haz de luz en épicos/legendarios y «Presumir». #54/#56: [MOD]/[DUEÑO], solo el dueño publica carteras; chicha con requisitos visibles (revisar `CHICHA` en data.js).
+- Arnés 883 bien (actualizadas las pruebas de expediciones Nv 2 y del aviso al moderador).

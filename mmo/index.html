@@ -3,7 +3,7 @@
 <head>
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=326"></script>
+<script src="/js/origen.js?v=327"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <title>$DUENDE CLASSIC · MMORPG 2D gratis en el navegador</title>
@@ -314,7 +314,7 @@ html.anuncio #h-mton-c,html.anuncio #b-wallet,html.anuncio .solo-web,html.anunci
 #hud.estrecho #chat-log:empty{background:none;padding:0;}
 /* Con el chat abierto (💬) se despliega el historial (con fondo para leerlo). */
 #hud.estrecho #chat-log.abierto{max-height:150px;background:rgba(10,14,22,.88);border-radius:8px;padding:4px 6px;}
-#errores div{font:700 13px/1.35 var(--sans);color:#f87171;text-shadow:1px 1px 0 #000,0 0 6px #000;margin:3px 0;animation:av 1.6s forwards;white-space:nowrap;}
+#errores div{font:700 13px/1.35 var(--sans);color:#f87171;text-shadow:1px 1px 0 #000,0 0 6px #000;margin:3px 0;animation:av 1.6s forwards;white-space:normal;max-width:min(92vw,520px);}
 .ranuras{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
 .ranura{border:1px solid var(--borde);border-radius:8px;background:var(--panel2);aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:2px;}
 .ranura img{width:60%;image-rendering:pixelated;}
@@ -658,7 +658,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
       <button class="tab" data-tab="tinte">COLORES</button>
       <button class="tab" data-tab="mascota">MASCOTAS</button>
       <button class="tab" data-tab="ambulante">AMBULANTE</button>
-      <button class="tab" data-tab="premium">PREMIUM</button>
+      <button class="tab" data-tab="premium" style="margin-left:6px;border-color:var(--oro);color:var(--oro)">💎 PAQUETES</button>
     </div>
     <div class="lista" id="tienda-lista"></div>
     <p class="seguridad">🔒 Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado.</p>
@@ -954,7 +954,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=326"></script>
+<script type="module" src="/mmo/js/client.js?v=327"></script>
 <div id="nuevo3d" role="dialog" aria-label="Nuevo mundo 3D">
   <video src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" muted loop playsinline preload="none"></video>
   <div class="t">🌌 NUEVO: Duende Quest Origins, el mundo abierto en 3D</div>

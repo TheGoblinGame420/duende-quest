@@ -23,7 +23,7 @@
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="$DUENDE">
-<script src="/js/origen.js?v=326"></script>
+<script src="/js/origen.js?v=327"></script>
 <script src="/js/pwa.js" defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="image" href="/assets/video/promo3d-poster.jpg" fetchpriority="high">
@@ -192,6 +192,8 @@ footer a{color:var(--cian);text-decoration:none;}
     fetch('/mmo/ws', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
       // Con 1-4 conectados desanima mas que anima: solo se muestra desde 5.
       var el = document.getElementById('on'); if (d.online >= 5) { el.hidden = false; el.querySelector('b').textContent = Number(d.online).toLocaleString('es'); }
+      // Casi lleno (85% del tope o el servidor ya no admite): se avisa antes de entrar.
+      if (d.online >= 5 && el.lastChild) el.lastChild.textContent = (d.lleno || (d.max && d.online >= d.max * 0.85)) ? ' jugando · ' + (d.lleno ? 'mundo lleno, quizá esperes un poco' : 'casi lleno') : ' jugando ahora';
     }).catch(function () {});
   }
   vivos(); setInterval(vivos, 60000);

@@ -2,8 +2,8 @@
 // DUENDE QUEST — Telegram Bot Webhook (Cloudflare Pages Function)
 // ═══════════════════════════════════════════════════════
 
-import { supabaseQuery } from './lib.js';
-import { textoPagoRecibido } from '../../mmo/js/data.js';
+import { supabaseQuery, isFirstPurchase } from './lib.js';
+import { textoPagoRecibido, ENTREGA } from '../../mmo/js/data.js';
 
 const WEBAPP_URL = 'https://duende-quest.alfonso12hc.workers.dev/telegram/index.html';
 const SITE_URL = 'https://duende-quest.alfonso12hc.workers.dev';
@@ -108,14 +108,7 @@ function calcStarsPackages(priceUsd) {
   });
 }
 
-// ¿Primera compra? (server-side; se re-verifica al acreditar el pago)
-async function isFirstPurchase(env, tgId, sinCargo) {
-  if (!tgId) return false;
-  // Cuenta cualquier compra anterior (acreditada o no, skins y MMO incluidos: la
-  // tabla no las distingue); sinCargo excluye la fila del pago que se revisa.
-  const rows = await supabaseQuery(env, `stars_purchases?telegram_id=eq.${encodeURIComponent(tgId)}${sinCargo ? '&tx_id=neq.' + encodeURIComponent(sinCargo) : ''}&select=id&limit=1`);
-  return Array.isArray(rows) && rows.length === 0;
-}
+// ¿Primera compra? isFirstPurchase vive en lib.js (la misma que usa la factura).
 
 async function createStarsInvoice(token, env, pkgIndex, tgId) {
   // Paquete inexistente (buy_99 a mano): ni se consulta el precio.
@@ -430,9 +423,9 @@ async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
   if (cmd === '/chicha') {
     const r = await mmoInterno(env, 'chichas');
     if (!r.ok) return enviar('❌ ' + (r.error || 'error'));
-    const cab = `🥤 Litros de este mes: ${r.mes}/${r.mesMax}\n\n`;
+    const cab = `🥤 Litros de este mes: ${r.mes}/${r.mesMax}${r.mesMax60 ? ` · Nv 60: ${r.mes60 || 0}/${r.mesMax60}` : ''}\n\n`;
     if (!r.pendientes.length) return enviar(cab + '✅ No hay premios de chicha por enviar.');
-    const lineas = r.pendientes.map(x => `#${x.id} · ${x.nombre} Nv${x.nivel} · ${x.meta.toLocaleString('es')} pts\nContacto: tg://user?id=${x.uid.slice(3)} (id ${x.uid.slice(3)})`);
+    const lineas = r.pendientes.map(x => `#${x.id} · ${x.nombre} Nv${x.nivel} · ${x.meta === 'nv60' ? `Nv 60 (${x.litros || 2} L)${x.cola ? ' · EN COLA' : ''}` : x.meta.toLocaleString('es') + ' pts'}\nContacto: tg://user?id=${x.uid.slice(3)} (id ${x.uid.slice(3)})`);
     return enviar(cab + lineas.join('\n\n') + '\n\nEscríbele para pedir la dirección. Enviado: /chichaok CODIGO · No se puede: /chichano CODIGO motivo (añade "trampa" al final para que no pueda volver a reclamarlo).');
   }
   if (cmd === '/chichaok' || cmd === '/chichano') {
@@ -497,7 +490,7 @@ function textoMmoStats(r) {
     `   Niveles: ${tramos}\n` +
     `⏱️ Sesión media (7 días): ${String(r.sesion.media).replace('.', ',')} min · ${r.sesion.sesiones7} sesiones · ${r.sesion.minutos7} min en total\n\n` +
     `🆕 Altas por día (últimos 14):\n${altas}\n\n` +
-    (r.embudo && r.embudo.n ? `🪜 Embudo de esas altas: primera caza ${r.embudo.c1}/${r.embudo.n} · misión 1 ${r.embudo.m1} · nivel 5 ${r.embudo.n5} · nivel 10 ${r.embudo.n10}${r.embudo.iab && r.embudo.iab.n ? ` · desde Facebook/Instagram ${r.embudo.iab.n} (D1 ${r.embudo.iab.d1 && r.embudo.iab.d1.pct != null ? r.embudo.iab.d1.pct + '%' : '—'})` : ''}\n\n` : '') +
+    (r.embudo && r.embudo.n ? `🪜 Embudo de esas altas: primera caza ${r.embudo.c1}/${r.embudo.n} · misión 1 ${r.embudo.m1} · nivel 5 ${r.embudo.n5} · nivel 10 ${r.embudo.n10} · 1ª expedición ${r.embudo.ex1 || 0}${r.embudo.iab && r.embudo.iab.n ? ` · desde Facebook/Instagram ${r.embudo.iab.n} (D1 ${r.embudo.iab.d1 && r.embudo.iab.d1.pct != null ? r.embudo.iab.d1.pct + '%' : '—'})` : ''}\n\n` : '') +
     (r.invitaciones && r.invitaciones.refLlega ? `🤝 Invitados por enlace (14 días): llegan ${r.invitaciones.refLlega} · con cuenta ${r.invitaciones.refCuenta} · premio Nv 10 ${r.invitaciones.refPagado}\n\n` : '') +
     textoOrigenes(r) +
     `🔁 Retención (últimas 30 cohortes con el día ya cumplido):\n` +
@@ -549,8 +542,79 @@ async function handleCreador(token, chatId) {
   await tg(token, 'sendMessage', { chat_id: chatId, text: `🧌 *DUENDE QUEST — ¿Quién está detrás?*\n\nEl juego lo crea y mantiene *El Duende* desde Perú 🇵🇪. Estos son los únicos canales oficiales: desconfía de cualquier otra cuenta que diga ser del juego.\n\n${TEXTO_CREADOR}\n🤖 *Bot oficial:* @duendequest\\_bot\n\n${TEXTO_SEGURIDAD}`, parse_mode: 'Markdown', disable_web_page_preview: true, reply_markup: { inline_keyboard: [...BOTONES_CREADOR, BOTON_SEGURIDAD, [{ text: '⌂ Menú', callback_data: 'menu' }]] } });
 }
 
+// ── Soporte de compras (Telegram lo exige para cobrar con Stars) ──
+// /paysupport y /terms responden texto fijo; /miscompras solo lee. Ninguno
+// entrega ni devuelve nada: eso lo hace el dueño a mano.
+const REEMBOLSOS_URL = SITE_URL + '/reembolsos.html';
+const TERMINOS_URL = SITE_URL + '/terminos.html';
+const BOTONES_SOPORTE = [[{ text: '📄 Entregas y reembolsos', url: REEMBOLSOS_URL }], [{ text: '👤 Escribir a @ElDuendeOficial', url: CREADOR_TG }]];
+const TEXTO_PAYSUPPORT = '🆘 Ayuda con un pago\n\n'
+  + 'Todas las compras se entregan a mano: El Duende revisa cada pago de ' + ENTREGA.horario + ', ' + ENTREGA.plazo + ' (máximo ' + ENTREGA.plazoMaxH + ' h).\n\n'
+  + 'Si pagaste y no recibiste tu compra:\n'
+  + '1. Mira su estado con /miscompras (o en el juego: Tienda → Premium → Tus compras).\n'
+  + '2. En el juego, pulsa «¿Problema?» en ese pedido: a El Duende le llega un aviso con tus datos.\n'
+  + '3. O escribe a @ElDuendeOficial con tu número de pedido, la fecha y cuántas Stars pagaste.\n\n'
+  + 'Si el pedido no se puede entregar, se anula y Telegram te devuelve las Stars.\n\n'
+  + TEXTO_SEGURIDAD;
+const TEXTO_TERMS = '📄 Condiciones de compra\n\n'
+  + '• Las compras (skins, paquetes de la tienda y $DUENDE) son opcionales. Se pagan con Telegram Stars en Telegram, o con SOL o $DUENDE en la web.\n'
+  + '• Antes de pagar ves el precio y lo que recibes. La entrega es manual, de ' + ENTREGA.horario + ', como máximo en ' + ENTREGA.plazoMaxH + ' h.\n'
+  + '• Se devuelven las Stars si pagaste y no se pudo entregar por un error nuestro, si el pedido se anula o si pagaste dos veces lo mismo.\n'
+  + '• No se devuelve una compra ya entregada que funciona como se describía. El precio de $DUENDE puede variar mucho: compra solo lo que estés dispuesto a gastar.\n'
+  + '• Con dinero no se compran mTON: solo se ganan jugando.\n\n'
+  + 'Ayuda con un pago: /paysupport\nTérminos completos: ' + TERMINOS_URL;
+async function handlePaySupport(token, chatId) {
+  await tg(token, 'sendMessage', { chat_id: chatId, text: TEXTO_PAYSUPPORT, disable_web_page_preview: true, reply_markup: { inline_keyboard: BOTONES_SOPORTE } });
+}
+async function handleTerms(token, chatId) {
+  await tg(token, 'sendMessage', { chat_id: chatId, text: TEXTO_TERMS, disable_web_page_preview: true, reply_markup: { inline_keyboard: [[{ text: '📄 Términos completos', url: TERMINOS_URL }], [{ text: '↩️ Entregas y reembolsos', url: REEMBOLSOS_URL }]] } });
+}
+// Tus pagos con Stars: los pedidos de la tienda del MMO (con su estado) y las
+// compras del arcade (Supabase). Solo lectura; si algo no responde, se dice.
+async function handleMisCompras(token, env, context, chatId, userId) {
+  const tgId = String(userId);
+  const ESTADO = { pagado: '⏳ Por entregar', por_verificar: '🔎 En revisión', entregado: '✅ Entregado', anulado: '↩️ Anulado', anulando: '↩️ Anulándose', comprobando: '· Comprobando' };
+  const fecha = t => t ? new Date(t).toLocaleString('es', { timeZone: 'America/Lima', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+  let mmo = null, arcade = null;
+  try { mmo = await mmoInterno(context.env, 'misCompras', { tgId }); } catch (e) {}
+  try { arcade = await supabaseQuery(env, `stars_purchases?telegram_id=eq.${encodeURIComponent(tgId)}&select=tx_id,amount_stars,tokens_credited,created_at&order=created_at.desc&limit=10`); } catch (e) {}
+  const lineas = [];
+  const cargosMmo = [];
+  if (mmo && mmo.ok) for (const x of (mmo.l || []).slice().reverse()) {
+    if (x.estado === 'esperando_pago' || x.estado === 'vencido') continue;
+    if (x.charge) cargosMmo.push(x.charge);
+    lineas.push(`#${x.codigo} · ${String(x.nombre || '').slice(0, 40)}\n   ${ESTADO[x.estado] || x.estado}${x.pagadoEn ? ' · pagado ' + fecha(x.pagadoEn) : ''}`);
+  }
+  if (Array.isArray(arcade)) for (const f of arcade) {
+    if (!f.tx_id || cargosMmo.includes(f.tx_id)) continue;
+    const n = Number(f.tokens_credited);
+    lineas.push(`⭐ ${f.amount_stars} Stars · ${fecha(f.created_at)}\n   ${n > 0 ? '✅ Acreditado' : n < 0 ? '↩️ Devuelto' : '⏳ En revisión'}`);
+  }
+  const fallo = !(mmo && mmo.ok) || !Array.isArray(arcade);
+  let text = lineas.length ? '🧾 Tus compras con Stars\n\n' + lineas.slice(0, 12).join('\n\n') : '🧾 No encontramos compras con Stars de esta cuenta de Telegram.';
+  if (fallo) text += '\n\n⚠️ No pudimos leer todo ahora mismo: prueba otra vez en un rato.';
+  text += '\n\nLa entrega es a mano, como máximo en ' + ENTREGA.plazoMaxH + ' h. ¿Algún problema? /paysupport';
+  await tg(token, 'sendMessage', { chat_id: chatId, text, disable_web_page_preview: true, reply_markup: { inline_keyboard: BOTONES_SOPORTE } });
+}
+// La lista de comandos del menu de Telegram (incluye /paysupport y /terms, que
+// Telegram pide a quien cobra con Stars). Una vez por isolate, en segundo plano.
+let _comandosListos = false;
+const COMANDOS_BOT = [
+  ['start', 'Menú principal'], ['play', 'Abrir el juego'], ['mmo', 'DUENDE QUEST ONLINE'], ['mundo', 'El mundo abierto en 3D'],
+  ['yo', 'Tu personaje'], ['topmmo', 'Ranking de la semana'], ['price', 'Precio de $DUENDE'], ['buy', 'Comprar con Stars'],
+  ['miscompras', 'Tus compras y su estado'], ['paysupport', 'Ayuda con un pago'], ['terms', 'Condiciones de compra'],
+  ['avisos', 'Avisos para volver (on / off)'], ['creador', 'Creador y canales oficiales'], ['help', 'Todos los comandos'],
+];
+function registrarComandos(token, context) {
+  if (_comandosListos || !token) return;
+  _comandosListos = true;
+  const p = tg(token, 'setMyCommands', { commands: COMANDOS_BOT.map(([command, description]) => ({ command, description })) })
+    .then(r => { if (!r || !r.ok) _comandosListos = false; }).catch(() => { _comandosListos = false; });
+  if (context && typeof context.waitUntil === 'function') context.waitUntil(p);
+}
+
 async function handleHelp(token, chatId) {
-  await tg(token, 'sendMessage', { chat_id: chatId, text: `🧌 *DUENDE QUEST — Comandos*\n\n/start — Menú principal\n/play — Abrir el juego\n/mmo — DUENDE QUEST ONLINE (MMORPG)\n/mundo — El mundo abierto en 3D\n/topmmo — Ranking de la semana del MMO\n/yo — Tu personaje del MMO\n/avisos — Avisos para volver al MMO (on / off)\n/ranking — Top 10\n/stats — Tus estadísticas\n/referral — Tu link para invitar amigos\n/price — Precio de $DUENDE\n/buy — Comprar $DUENDE con Stars\n/creador — Creador y canales oficiales\n/help — Esta ayuda\n\n${TEXTO_SEGURIDAD}\nMás información: ${SEGURIDAD_URL}\n\n${TEXTO_CREADOR}`, parse_mode: 'Markdown', disable_web_page_preview: true, reply_markup: { inline_keyboard: [[{ text: '🎮 Jugar', web_app: { url: WEBAPP_URL } }], BOTON_SEGURIDAD] } });
+  await tg(token, 'sendMessage', { chat_id: chatId, text: `🧌 *DUENDE QUEST — Comandos*\n\n/start — Menú principal\n/play — Abrir el juego\n/mmo — DUENDE QUEST ONLINE (MMORPG)\n/mundo — El mundo abierto en 3D\n/topmmo — Ranking de la semana del MMO\n/yo — Tu personaje del MMO\n/avisos — Avisos para volver al MMO (on / off)\n/ranking — Top 10\n/stats — Tus estadísticas\n/referral — Tu link para invitar amigos\n/price — Precio de $DUENDE\n/buy — Comprar $DUENDE con Stars\n/miscompras — Tus compras y su estado\n/paysupport — Ayuda con un pago\n/terms — Condiciones de compra\n/creador — Creador y canales oficiales\n/help — Esta ayuda\n\n${TEXTO_SEGURIDAD}\nMás información: ${SEGURIDAD_URL}\n\n${TEXTO_CREADOR}`, parse_mode: 'Markdown', disable_web_page_preview: true, reply_markup: { inline_keyboard: [[{ text: '🎮 Jugar', web_app: { url: WEBAPP_URL } }], BOTON_SEGURIDAD] } });
 }
 
 // ── /admin: métricas privadas (solo el dueño, via env ADMIN_TG_ID) ──
@@ -726,23 +790,45 @@ async function onRequestPost(context) {
       const payment = body.message.successful_payment;
       const chatId = body.message.chat.id;
       const tgId = String(body.message.from.id);
+      const starsPaid = payment.total_amount || 0;
+      const chargeId = payment.telegram_payment_charge_id || '';
+      const quien = (body.message.from.username ? '@' + body.message.from.username : body.message.from.first_name || '') + ' (tg ' + tgId + ')';
+      let codPedido = '';
+      // A PRUEBA DE FALLOS: las Stars ya se cobraron. Si algo falla al registrar
+      // el pago (MMO caido, Supabase sin responder, error inesperado), al dueño
+      // le llega SIEMPRE este aviso (con "Cargo:" para el boton Devolver) y al
+      // cliente un "pago recibido, lo revisamos". Nada se entrega solo.
+      const avisoFallo = (motivo) => Promise.all([
+        context.env.ADMIN_TG_ID ? tg(token, 'sendMessage', { chat_id: context.env.ADMIN_TG_ID, text: `⚠️ Stars cobradas sin pedido confirmado${codPedido ? ' #' + codPedido : ''}\n${starsPaid} Stars · De: ${quien}\nMotivo: ${motivo}\nCargo: ${chargeId || '(sin cargo)'}\n\nRevísalo a mano: si corresponde, entrégalo (/entregar ${codPedido || 'CODIGO'}) o devuelve las Stars.`, disable_web_page_preview: true, reply_markup: chargeId ? { inline_keyboard: [[{ text: '❌ Devolver', callback_data: 'stno:' + chargeId.slice(-40) }]] } : undefined }).catch(() => {}) : null,
+        tg(token, 'sendMessage', { chat_id: chatId, text: `✅ Pago recibido (${starsPaid} Stars)${codPedido ? ' · pedido #' + codPedido : ''}\n\nLo revisamos a mano y te avisamos aquí. Si tienes dudas: /paysupport` }).catch(() => {}),
+      ]);
+      // Respuesta del Durable Object con plazo: si se cuelga, se avisa igual.
+      const conPlazo = (p, ms) => Promise.race([p, new Promise(res => setTimeout(() => res(null), ms))]);
       try {
         const payload = JSON.parse(payment.invoice_payload);
-        const starsPaid = payment.total_amount || 0;
-        const chargeId = payment.telegram_payment_charge_id || '';
+        codPedido = payload && payload.mmo ? String(payload.mmo).slice(0, 12) : '';
 
         // Anti-replay: never credit the same charge twice
-        if (!chargeId) return new Response('OK');
-        const dup = await supabaseQuery(env, `stars_purchases?tx_id=eq.${encodeURIComponent(chargeId)}&select=id`);
+        if (!chargeId) { await avisoFallo('pago sin identificador de cargo'); return new Response('OK'); }
+        // Supabase con plazo de 5 s: si se cuelga (lanza), se sigue; el insert de abajo lo decide.
+        const dup = await supabaseQuery(env, `stars_purchases?tx_id=eq.${encodeURIComponent(chargeId)}&select=id`).catch(() => null);
         if (Array.isArray(dup) && dup.length > 0) return new Response('OK');
 
         // Tienda del MMO: se registra el pago (cuenta para el fondo de mTON) y
         // el dueño entrega a mano con /entregar.
         if (payload.mmo) {
-          const reg = await supabaseQuery(env, 'stars_purchases', { method: 'POST', body: { telegram_id: tgId, amount_usd: +(starsPaid * STAR_USD).toFixed(2), amount_stars: starsPaid, tokens_credited: 0, tx_id: chargeId } });
-          if (!Array.isArray(reg) || reg.length !== 1) return new Response('OK');
-          const rsp = await mmoInterno(context.env, 'pedidoPagado', { codigo: payload.mmo, stars: starsPaid, charge: chargeId, tgId });
-          await tg(token, 'sendMessage', { chat_id: chatId, text: `✅ *Pago recibido* (${starsPaid} Stars)\n\nCompra: "${(rsp && rsp.nombre) || 'del MMO'}" · pedido #${payload.mmo}\n\n${textoPagoRecibido()} Te avisaremos aquí apenas esté lista. Guarda el número de pedido por si necesitas reclamar.`, parse_mode: 'Markdown' });
+          const reg = await supabaseQuery(env, 'stars_purchases', { method: 'POST', body: { telegram_id: tgId, amount_usd: +(starsPaid * STAR_USD).toFixed(2), amount_stars: starsPaid, tokens_credited: 0, tx_id: chargeId } }).catch(e => ({ error: String((e && e.message) || e) }));   // si Supabase se cuelga, el pedido igual se marca pagado en el MMO
+          const regOk = Array.isArray(reg) && reg.length === 1;
+          // Fila repetida (23505): es un reintento del webhook, ya se atendio.
+          if (!regOk && reg && reg.code === '23505') return new Response('OK');
+          let rsp = null;
+          try { rsp = await conPlazo(mmoInterno(context.env, 'pedidoPagado', { codigo: payload.mmo, stars: starsPaid, charge: chargeId, tgId }), 15000); } catch (e) { rsp = null; }
+          if (!rsp || !rsp.ok) {
+            await avisoFallo((!rsp ? 'el MMO no respondió' : 'el MMO no confirmó el pedido (' + String(rsp.error || '?').slice(0, 80) + ')') + (regOk ? '' : '; tampoco quedó en Supabase'));
+            return new Response('OK');
+          }
+          if (!regOk) await avisoFallo('el pedido quedó pagado en el MMO, pero Supabase no guardó el cobro (no cuenta para el fondo)');
+          else await tg(token, 'sendMessage', { chat_id: chatId, text: `✅ *Pago recibido* (${starsPaid} Stars)\n\nCompra: "${mdSeguro(rsp.nombre) || 'del MMO'}" · pedido #${codPedido}\n\n${textoPagoRecibido()} Te avisaremos aquí apenas esté lista. Guarda el número de pedido por si necesitas reclamar.`, parse_mode: 'Markdown' });
           return new Response('OK');
         }
 
@@ -753,9 +839,11 @@ async function onRequestPost(context) {
         // (callback_data < 64 bytes) y el completo se lee del propio aviso.
         const botonesStars = [[{ text: '✅ Acreditar', callback_data: 'stok:' + chargeId.slice(-40) }, { text: '❌ Devolver', callback_data: 'stno:' + chargeId.slice(-40) }]];
         const avisarDueno = txt => context.env.ADMIN_TG_ID ? tg(token, 'sendMessage', { chat_id: context.env.ADMIN_TG_ID, text: txt, disable_web_page_preview: true, reply_markup: { inline_keyboard: botonesStars } }).catch(() => {}) : null;
-        const quien = (body.message.from.username ? '@' + body.message.from.username : body.message.from.first_name || '') + ' (tg ' + tgId + ')';
+        // Registro del cobro: si falla y no es un reintento (fila repetida 23505), aviso obligatorio.
+        const regFallo = reg => !(Array.isArray(reg) && reg.length === 1) && !(reg && reg.code === '23505');
         if (payload.skin_id) {
           const reg = await supabaseQuery(env, 'stars_purchases', { method: 'POST', body: { telegram_id: tgId, amount_usd: starsPaid * STAR_USD, amount_stars: starsPaid, tokens_credited: 0, tx_id: chargeId } });
+          if (regFallo(reg)) { await avisoFallo('Supabase no guardó el cobro de la skin ' + String(payload.skin_id).slice(0, 30)); return new Response('OK'); }
           if (!Array.isArray(reg) || reg.length !== 1) return new Response('OK');   // reintento del webhook
           await avisarDueno(`⭐ Skin del arcade pagada (por revisar)\nSkin: ${payload.skin_id} · ${starsPaid} Stars\nDe: ${quien}\n\nActívala:\n/starsok ${chargeId} skin:${payload.skin_id}`);
           await tg(token, 'sendMessage', { chat_id: chatId, text: `✅ *Pago recibido* (${starsPaid} Stars)\n\nEl equipo revisa el pago y activa tu skin. ${textoPagoRecibido()} Te avisaremos aquí.`, parse_mode: 'Markdown' });
@@ -771,6 +859,7 @@ async function onRequestPost(context) {
         const maxTokens = Math.floor((paidUsd / priceUsd) * 1.05 * firstBuyMult); // 5% price-drift tolerance
         const tokens = Math.max(0, Math.min(parseInt(payload.tokens, 10) || 0, maxTokens)) || maxTokens;
         const reg = await supabaseQuery(env, 'stars_purchases', { method: 'POST', body: { telegram_id: tgId, amount_usd: +paidUsd.toFixed(2), amount_stars: starsPaid, tokens_credited: 0, tx_id: chargeId } });
+        if (regFallo(reg)) { await avisoFallo(`Supabase no guardó el cobro de $DUENDE (le tocarían ${tokens.toLocaleString('es')})`); return new Response('OK'); }
         if (!Array.isArray(reg) || reg.length !== 1) return new Response('OK');
         // Doble control por si dos pagos llegan a la vez: si aparecen otras compras,
         // se avisa al dueño para que no repita la 2x (la cifra la decide el al revisar).
@@ -782,7 +871,9 @@ async function onRequestPost(context) {
         await avisarDueno(`⭐ Compra de $DUENDE con Stars (por revisar)\n${starsPaid} Stars (~$${paidUsd.toFixed(2)}) · le tocan ${tokens.toLocaleString('es')} $DUENDE${firstBuyMult > 1 ? ' (oferta 2x de 1ª compra)' : ''}${otrasCompras}\nDe: ${quien}\n\nAcredita:\n/starsok ${chargeId} ${tokens}`);
         await tg(token, 'sendMessage', { chat_id: chatId, text: `✅ *Pago recibido* (${starsPaid} Stars)\n\nEl equipo revisa el pago y acredita tus $DUENDE en breve. Te avisaremos aquí.`, parse_mode: 'Markdown' });
       } catch(e) {
-        await tg(token, 'sendMessage', { chat_id: chatId, text: '⚠️ Recibimos tu pago, pero hubo un error al acreditar los tokens. Escribe a @ElDuendeOficial (creador oficial) con la fecha y la cantidad de Stars para resolverlo.' });
+        // Antes solo se le decia al cliente que escribiera: ahora el dueño se entera siempre.
+        console.error('[Bot pago]', e);
+        await avisoFallo('error inesperado: ' + String((e && e.message) || e).slice(0, 120));
       }
       return new Response('OK');
     }
@@ -902,6 +993,7 @@ async function onRequestPost(context) {
 
     // Messages
     if (body.message) {
+      registrarComandos(token, context);
       const msg = body.message;
       const chatId = msg.chat.id;
       const user = msg.from;
@@ -938,6 +1030,9 @@ async function onRequestPost(context) {
         case '/referral': case '/ref': await handleReferralCmd(token, chatId, user.id); break;
         case '/buy': case '/comprar': case '/stars': await handleBuy(token, chatId, user.id); break;
         case '/help': case '/ayuda': await handleHelp(token, chatId); break;
+        case '/paysupport': case '/soporte': await handlePaySupport(token, chatId); break;
+        case '/terms': case '/terminos': await handleTerms(token, chatId); break;
+        case '/miscompras': case '/compras': await handleMisCompras(token, env, context, chatId, user.id); break;
         case '/creador': case '/creator': case '/oficial': await handleCreador(token, chatId); break;
         case '/retiros': case '/pagado': case '/rechazar': case '/fondo': case '/pedidos': case '/ventas': case '/entregar': case '/anular': case '/mmostats': case '/chicha': case '/chichaok': case '/chichano': case '/skinweb': case '/starsok': await handleMmoAdmin(token, context, chatId, user.id, cmd, payload); break;
         case '/avisos': await handleAvisos(token, context, chatId, user.id, payload); break;

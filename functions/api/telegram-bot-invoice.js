@@ -5,7 +5,7 @@
 // ═══════════════════════════════════════════════════════
 
 import {
-  tg, json, corsHeaders, getDuendePriceUsd, getEnv, supabaseQuery, verifyInitData,
+  tg, json, corsHeaders, getDuendePriceUsd, getEnv, verifyInitData, isFirstPurchase,
   STAR_USD, STARS_PACKAGES, SKIN_PRICES_USD,
 } from './lib.js';
 // Stars de las skins: la misma tabla que muestra la Mini App (catalogo unico).
@@ -23,14 +23,9 @@ async function precioCacheado() {
 // Freno por usuario (memoria del isolate): una factura cada 3 s
 const _ultimaFactura = new Map();
 
-// ¿Primera compra de este usuario? (server-side, se re-verifica al acreditar)
-export async function isFirstPurchase(env, tgId, sinCargo) {
-  if (!tgId) return false;
-  // Cuenta cualquier compra anterior (acreditada o no, skins y MMO incluidos: la
-  // tabla no las distingue); sinCargo excluye la fila del pago que se revisa.
-  const rows = await supabaseQuery(env, `stars_purchases?telegram_id=eq.${encodeURIComponent(tgId)}${sinCargo ? '&tx_id=neq.' + encodeURIComponent(sinCargo) : ''}&select=id&limit=1`);
-  return Array.isArray(rows) && rows.length === 0;
-}
+// ¿Primera compra? Vive en lib.js (la comparte con el webhook del bot); se
+// re-exporta por si algo la importaba de aqui.
+export { isFirstPurchase };
 
 async function onRequestPost(context) {
   const { request } = context;
