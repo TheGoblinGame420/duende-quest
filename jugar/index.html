@@ -53,7 +53,7 @@ footer a{color:var(--txt2);}
 @media (min-width:800px){main{grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:40px;padding-top:48px;}.marca{grid-column:1/-1;}h1,.sub{text-align:left;}.lista{justify-content:flex-start;}footer{grid-column:1/-1;}}
 @media (prefers-reduced-motion:reduce){.jugar{animation:none;}}
 </style>
-<script src="/js/origen.js?v=331"></script>
+<script src="/js/origen.js?v=332"></script>
 </head>
 <body>
 <div class="aurora" aria-hidden="true"></div>
@@ -72,12 +72,22 @@ footer a{color:var(--txt2);}
 (function () {
   // Elige el juego segun el equipo: el 3D (/mundo/) pide WebGL, memoria y buena conexion;
   // si falta algo va al 2D (/mmo/), que corre en cualquier celular. ?j=2d|3d lo fuerza.
+  // El 3D necesita WebGL e importmap (iOS 15 a 16.3 no tiene importmap y ORIGINS no arranca).
+  function puede3d() {
+    var gl = false;
+    try { var c = document.createElement('canvas'); gl = !!(window.WebGLRenderingContext && (c.getContext('webgl2') || c.getContext('webgl') || c.getContext('experimental-webgl'))); } catch (e) {}
+    if (!gl) return false;
+    try { if (!(window.HTMLScriptElement && HTMLScriptElement.supports && HTMLScriptElement.supports('importmap'))) return false; } catch (e) { return false; }
+    return true;
+  }
   function destino() {
     var j = (/[?&]j=(2d|3d)\b/i.exec(location.search) || [])[1];
     if (j) return j.toLowerCase() === '2d' ? '/mmo/' : '/mundo/';
-    var gl = false;
-    try { var c = document.createElement('canvas'); gl = !!(window.WebGLRenderingContext && (c.getContext('webgl2') || c.getContext('webgl') || c.getContext('experimental-webgl'))); } catch (e) {}
-    if (!gl) return '/mmo/';
+    // Invitacion (?de=2d|3d): el amigo cae en el mismo juego que quien invita, sin mirar memoria ni red.
+    var de = (/[?&]de=(2d|3d)\b/i.exec(location.search) || [])[1];
+    var ok3d = puede3d();
+    if (de) return de.toLowerCase() === '2d' ? '/mmo/' : (ok3d ? '/mundo/' : '/mmo/');
+    if (!ok3d) return '/mmo/';
     var mem = navigator.deviceMemory;
     if (typeof mem === 'number' && mem <= 3) return '/mmo/';
     var cx = navigator.connection;
@@ -85,7 +95,20 @@ footer a{color:var(--txt2);}
     if (cx && cx.effectiveType && cx.effectiveType !== '4g') return '/mmo/';
     return '/mundo/';
   }
+  // Quien vuelve: retoma el ultimo juego que eligio (salvo que el enlace pida uno con ?j= o ?de=).
+  var ult = null, tiene = false;
+  try { ult = localStorage.getItem('dq_ultimo_juego'); } catch (e) {}
+  try { tiene = /^[a-f0-9]{32}$/.test(localStorage.getItem('dq_mmo_tok') || ''); } catch (e) {}
+  if (ult !== '/mundo/' && ult !== '/mmo/') ult = null;
   var ir = destino(), b = document.getElementById('jugar');
+  if (ult && !/[?&](j|de)=(2d|3d)\b/i.test(location.search)) ir = (ult === '/mundo/' && !puede3d()) ? destino() : ult;
+  if ((ult || tiene) && !/[?&]ref=/i.test(location.search)) {
+    try {
+      b.textContent = 'CONTINUAR CON MI DUENDE';
+      var h1v = document.querySelector('h1');
+      if (h1v) h1v.textContent = 'Tu duende te espera.';
+    } catch (e) {}
+  }
   // Los utm y el fbclid pasan al juego tal cual, para medir el anuncio.
   // CLASSIC elegido aqui lleva j=2d: el nuevo entra solo, sin un segundo «Jugar» (client.js, inicio).
   var qs = location.search;
@@ -108,8 +131,8 @@ footer a{color:var(--txt2);}
   // Navegador interno de Facebook/Instagram (el anuncio abre aqui): se puede jugar igual,
   // pero se sugiere abrirlo en Chrome/Safari (guarda mejor el duende y va mas fluido). No bloquea.
   var ua = navigator.userAgent || '';
-  if (/FBAN|FBAV|FB_IAB|Instagram|Messenger|musical_ly|BytedanceWebview|TikTok|trill/i.test(ua)) {
-    var app = /musical_ly|Bytedance|TikTok|trill/i.test(ua) ? 'TikTok' : 'Facebook/Instagram';
+  if (/FBAN|FBAV|FB_IAB|Instagram|Messenger|musical_ly|BytedanceWebview|TikTok|trill|WhatsApp/i.test(ua)) {
+    var app = /musical_ly|Bytedance|TikTok|trill/i.test(ua) ? 'TikTok' : /WhatsApp/i.test(ua) ? 'WhatsApp' : 'Facebook/Instagram';
     var caja = document.getElementById('iab');
     if (/Android/i.test(ua)) {
       var dest = location.host + ir + qs;

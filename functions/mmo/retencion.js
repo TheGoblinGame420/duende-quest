@@ -263,7 +263,7 @@ export const Retencion = {
       const f = String(b.f || ''), src = String(b.src || ''), camp = campDe(b.camp), usd = Number(b.usd);
       const t = Date.parse(f + 'T12:00:00Z');   // mediodia: cae en ese dia de juego (Lima)
       if (!/^\d{4}-\d{2}-\d{2}$/.test(f) || !Number.isFinite(t) || diaISO(diaNum(t)) !== f) return { ok: false, error: 'Fecha no válida (usa AAAA-MM-DD, hoy o ayer).' };
-      if (diaNum(t) > diaNum() + 1 || diaNum(t) < diaNum() - 120) return { ok: false, error: 'La fecha debe ser de los últimos 120 días.' };
+      if (diaNum(t) > diaNum() || diaNum(t) < diaNum() - 120) return { ok: false, error: 'La fecha debe ser de los últimos 120 días.' };
       if (!ORIGENES.includes(src) || src === 'org') return { ok: false, error: 'Origen no válido: meta, tg, wa o ref.' };
       if (!(usd >= 0 && usd <= 100000)) return { ok: false, error: 'Monto no válido (US$, entre 0 y 100000).' };
       l = l.filter(x => !(x.f === f && x.src === src && x.camp === camp));

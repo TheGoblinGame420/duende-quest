@@ -325,7 +325,7 @@ export class MmoWorld {
     ws.addEventListener('message', ev => {
       this.recibir(s, ev.data).catch(e => { console.error('[MMO]', e); this.enviar(s, { t: 'err', m: 'Error del servidor' }); });
     });
-    const cerrar = () => this.cerrar(s);
+    const cerrar = () => this.cerrar(s).catch(e => console.error('[MMO cerrar]', e));
     ws.addEventListener('close', cerrar);
     ws.addEventListener('error', cerrar);
     // A los 8 s se expulsa a quien no mando hola. A quien se esta verificando
@@ -359,11 +359,14 @@ export class MmoWorld {
     this.sesiones.delete(s.id);
     if (s.c) {
       if (this.porUid.get(s.c.uid) === s) this.porUid.delete(s.c.uid);
-      this.desconectarDeGrupo(s);
-      this.aClave(s.k, { t: 'pl', id: s.id }, s);
-      this.caidaPorDesconexion(s);
-      if (s.m3) this.olvidar3d(s); else this.olvidar(s);
-      this.salirDeMundo(s);
+      // Un fallo al limpiar (grupo, mapa, mundo 3D) no impide guardar al jugador.
+      try {
+        this.desconectarDeGrupo(s);
+        this.aClave(s.k, { t: 'pl', id: s.id }, s);
+        this.caidaPorDesconexion(s);
+        if (s.m3) this.olvidar3d(s); else this.olvidar(s);
+        this.salirDeMundo(s);
+      } catch (e) { console.error('[MMO cerrar]', e); }
       await this.guardar(s);
     }
     if (this.contarOnline() === 0 && this.bucle) { clearInterval(this.bucle); this.bucle = null; this.tickPrevT = 0; this.guardarHermsSucias(Infinity); this.volcarMemoria().catch(e => console.error('[MMO volcar]', e)); }
@@ -1232,8 +1235,9 @@ export class MmoWorld {
       const vivo = this.pedidos.find(x => x.uid === c.uid && x.metodo === 'yape' && x.paquete === pq.id && x.estado === 'esperando_pago' && Date.now() - x.creado < YAPE_VIGENCIA_MS - 600000);
       if (vivo) return this.enviar(s, this.datosYape(vivo));
     }
-    // Las facturas de Stars que el jugador cerro sin pagar no cuentan en el tope.
-    if (this.pedidos.filter(x => x.uid === c.uid && !(x.metodo === 'stars' && x.cancelado && x.estado === 'esperando_pago') && (x.estado === 'esperando_pago' || x.estado === 'comprobando' || x.estado === 'por_verificar')).length >= 3) return no(this.pedidos.some(x => x.uid === c.uid && x.metodo === 'yape' && x.estado === 'esperando_pago') ? 'Tienes compras sin pagar: termina alguna (Tus compras → «Pagar») o espera a que venzan.' : 'Tienes compras sin pagar: termina o espera 30 minutos.');
+    // Las facturas de Stars sin pagar no cuentan en el tope: no salen en 'Tus compras'
+    // (no se pueden terminar) y Telegram no cobra una vencida (pedidoValido la frena).
+    if (this.pedidos.filter(x => x.uid === c.uid && !(x.metodo === 'stars' && x.estado === 'esperando_pago') &&(x.estado === 'esperando_pago' || x.estado === 'comprobando' || x.estado === 'por_verificar')).length >= 3) return no(this.pedidos.some(x => x.uid === c.uid && x.metodo === 'yape' && x.estado === 'esperando_pago') ? 'Tienes compras sin pagar: termina alguna (Tus compras → «Pagar») o espera a que venzan.' : 'Tienes compras sin pagar: termina o espera 30 minutos.');
     if (this.pedidos.filter(x => x.uid === c.uid && Date.now() - x.creado < 3600000).length >= 10) return no('Has creado muchos pedidos seguidos: espera un rato.');
     if (this.pedidos.filter(x => x.estado === 'esperando_pago').length >= 150) return no('La tienda está muy ocupada: intenta en unos minutos.');
     const env = getEnv({ env: this.env });
@@ -1711,20 +1715,33 @@ export class MmoWorld {
     if (!pd || pd.estado === 'entregado' || pd.estado === 'anulado' || pd.estado === 'anulando') return { ok: false, error: 'Ese pedido no se puede anular (no existe, ya se entregó o ya se anuló).' };
     const estadoAntes = pd.estado;
     pd.estado = 'anulando';   // un segundo toque (o /entregar) mientras se devuelven las Stars ya no pasa
-    // La firma vuelve a quedar libre (si era de otro pago, su dueño puede usarla).
-    if (pd.firma && (await this.state.storage.get('firma:' + pd.firma)) === pd.codigo) await this.state.storage.delete('firma:' + pd.firma);
-    if (pd.operacion && (await this.state.storage.get('firma:yape:' + pd.operacion)) === pd.codigo) await this.state.storage.delete('firma:yape:' + pd.operacion);
+    // Primero se devuelven las Stars: si Telegram no acepta, el pedido vuelve a
+    // su estado (sin liberar firmas ni avisar al jugador) para reintentar /anular.
     let reembolso = '';
     if (pd.metodo === 'stars' && pd.charge && pd.tgPagador) {
+      let desc = '';
       try {
         const env = getEnv({ env: this.env });
         const rsp = await tg(env.BOT_TOKEN, 'refundStarPayment', { user_id: Number(pd.tgPagador), telegram_payment_charge_id: pd.charge });
-        reembolso = rsp && rsp.ok ? ' Las Stars se devolvieron solas.' : ' ⚠️ Telegram no aceptó devolver las Stars: ' + ((rsp && rsp.description) || '?');
-      } catch (e) { reembolso = ' ⚠️ No se pudieron devolver las Stars.'; }
+        if (rsp && rsp.ok) reembolso = ' Las Stars se devolvieron solas.';
+        else if (/ALREADY_REFUNDED/i.test((rsp && rsp.description) || '')) reembolso = ' Las Stars ya estaban devueltas.';
+        else desc = (rsp && rsp.description) || 'sin respuesta';
+      } catch (e) { desc = 'no se pudo hablar con Telegram'; }
+      if (desc) {
+        pd.estado = estadoAntes;
+        await this.guardarPedidos();
+        return { ok: false, error: 'Telegram no aceptó devolver las Stars: ' + desc + '. El pedido sigue abierto: reintenta /anular ' + pd.codigo + ' más tarde.' };
+      }
     }
+    // La firma vuelve a quedar libre (si era de otro pago, su dueño puede usarla).
+    if (pd.firma && (await this.state.storage.get('firma:' + pd.firma)) === pd.codigo) await this.state.storage.delete('firma:' + pd.firma);
+    if (pd.operacion && (await this.state.storage.get('firma:yape:' + pd.operacion)) === pd.codigo) await this.state.storage.delete('firma:yape:' + pd.operacion);
     pd.estado = 'anulado'; pd.motivo = String(b.motivo || '').slice(0, 120);
     await this.guardarPedidos();
-    await this.avisarJugador(pd.uid, `❌ Tu compra "${pd.nombre}" (#${pd.codigo}) fue anulada${pd.motivo ? ': ' + pd.motivo : ''}.${pd.metodo === 'stars' && reembolso.includes('devolvieron') ? ' Tus Stars fueron devueltas.' : ''}`);
+    const extraMetodo = pd.metodo === 'stars' && reembolso ? ' Tus Stars fueron devueltas.'
+      : pd.metodo === 'yape' ? ' Si ya yapeaste, El Duende te devuelve el monto a tu Yape/Plin; dudas: @ElDuendeOficial.'
+      : (pd.metodo === 'sol' || pd.metodo === 'duende') ? ' Si llegó tu pago, se devuelve a tu wallet.' : '';
+    await this.avisarJugador(pd.uid, `❌ Tu compra "${pd.nombre}" (#${pd.codigo}) fue anulada${pd.motivo ? ': ' + pd.motivo : ''}.${extraMetodo}`);
     return { ok: true, pedido: pd, reembolso };
   }
 
@@ -2983,7 +3000,7 @@ export class MmoWorld {
       const def = tabla[m.id];
       if (lista.includes(m.id)) return this.enviar(s, { t: 'toast', m: 'Ya lo tienes.' });
       // Las premium no se venden por oro (precio null: c.oro -= null no restaba nada).
-      if (typeof def.precio !== 'number') return this.enviar(s, { t: 'toast', m: 'Esta skin solo se consigue en la tienda premium (SOL o $DUENDE).' });
+      if (typeof def.precio !== 'number') return this.enviar(s, { t: 'toast', m: 'Esta skin solo se consigue en la tienda premium (💎 PAQUETES).' });
       const precio = precioOro(m.k, m.id);
       if (c.oro < precio) return this.enviar(s, { t: 'toast', m: `No te alcanza el oro: te faltan ${(precio - c.oro).toLocaleString('es-PE')}.`, falta: precio - c.oro });
       c.oro -= precio;
@@ -3212,6 +3229,8 @@ export class MmoWorld {
     if (!s.c || s.noGuardar) return;   // noGuardar: se esta restaurando desde una copia
     // Invitado recien creado: no se escribe hasta Nv 2 o 2 min jugados (hola). Sigue
     // 'sucio', asi que el ciclo de guardado lo escribe en cuanto cumple.
+    // Invitado que se va tras jugar de verdad (45 s, gano oro: empieza con 100, o vino de un anuncio): se escribe ya.
+    if (s.diferirT && s.cerrado && (Date.now() - s.diferirT > 45000 || (s.c.oro || 0) > 100 || (s.c.ret && s.c.ret.fbc))) { s.diferirT = 0; if (this.diferidos) this.diferidos.delete(s.c.uid); }
     if (s.diferirT) {
       if ((s.c.nivel || 1) < 2 && Date.now() - s.diferirT < 120000) {
         s.sucio = true;
@@ -3232,7 +3251,7 @@ export class MmoWorld {
     s.c.salida = Date.now();
     s.guardadoT = Date.now();
     s.sucio = false; s.sucioPos = false;
-    this.retAlGuardar(s);
+    try { this.retAlGuardar(s); } catch (e) { console.error('[MMO retAlGuardar]', e); }
     // Si el guardado falla se reintenta en el siguiente ciclo, a los 60 s (guardadoT ya
     // es ahora): sin reintentos seguidos que gasten el cupo. No se pierde el progreso.
     try { await this.state.storage.put('c:' + s.c.uid, s.c); } catch (e) { s.sucio = true; console.error('[MMO guardar]', e); }
@@ -3291,7 +3310,7 @@ export class MmoWorld {
     for (const s of this.sesiones.values()) {
       if (!s.c) continue;
       // Progreso cada 60 s (3 min en modo ahorro); si solo se movio, cada 5 min.
-      if ((s.sucio && ahora - s.guardadoT > cadaGuardar) || (s.sucioPos && ahora - s.guardadoT > GUARDAR_POS_MS)) this.guardar(s);
+      if ((s.sucio && ahora - s.guardadoT > cadaGuardar) || (s.sucioPos && ahora - s.guardadoT > GUARDAR_POS_MS)) this.guardar(s).catch(e => console.error('[MMO guardar]', e));
       if (s.m3) { en3d.push(s); continue; }   // el mundo 3D va aparte
       (porClave[s.k] = porClave[s.k] || []).push(s);
     }

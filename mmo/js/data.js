@@ -504,9 +504,17 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 328;
+export const VERSION = 331;
 
 export const NOVEDADES = [
+  { n: 100, fecha: '1 nov 2026', items: [
+    'El mundo de ORIGINS ya no se congela si falla un monstruo o un jugador, y tu progreso se guarda siempre al cerrar, también como invitado.',
+    'Si el servidor está lleno o hay un error al entrar, ves un aviso claro en vez de una carga congelada. CLASSIC y ORIGINS vuelven a abrir en iPhones con iOS antiguo.',
+    'Con el auto-ataque, tu duende ya no se lanza solo contra jefes ni monstruos mucho más fuertes, y se detiene si te queda poca vida.',
+    'En Telegram, los precios en Stars muestran cuánto pagas de verdad en soles. Si un pago con Stars falla, puedes volver a comprar al toque.',
+    'El bot ya no promete entrega al instante: tu compra se entrega a mano en máximo 24 h.',
+    'Si ya jugaste, la página de entrada te ofrece «Continuar con mi duende». Si invitas desde el 3D tu amigo entra al 3D, y desde el 2D al 2D.',
+  ] },
   { n: 99, fecha: '1 nov 2026', items: [
     'Con el auto-ataque, tu duende sigue solo con el monstruo más cercano al matar uno.',
     'Si el jefe de tu misión es demasiado fuerte, la luz amarilla te lleva a un campamento de tu nivel. El Sabueso Infernal tiene menos vida.',
@@ -1394,7 +1402,7 @@ export const LOGROS = [
   { id: 'dragon',    titulo: 'Matadragones',        desc: 'Vence al Dragón Carmesí de la Ciudadela', oro: 15000, cond: c => !!(c.mzJefes && c.mzJefes.mz_dragon) },
   { id: 'titan',     titulo: 'Azote del Titán',     desc: 'Vence al Titán del Abismo en la banda del Santuario', oro: 25000, cond: c => !!(c.mzJefes && c.mzJefes.mz_titan) },
   { id: 'pionero',   titulo: 'Pionero del Abismo',  desc: 'Forma parte de la primera victoria del servidor contra el Titán del Abismo', oro: 30000, cond: c => !!c.pionero },
-  { id: 'tempOro',   titulo: 'Señor del Éter',      desc: 'Termina una Temporada del Abismo en la liga Oro o mejor', oro: 8000, cond: c => (c.tempMejor ?? -1) >= 2 },
+  { id: 'tempOro',   titulo: 'Señor del Éter',      desc: 'Termina una Temporada del Abismo en la liga Oro o mejor', oro: 8000, cond: c => (c.tempMejor == null ? -1 : c.tempMejor) >= 2 },
   { id: 'tempGana',  titulo: 'Vencedor del Éter',   desc: 'Gana una Temporada del Abismo con tu facción', oro: 5000, cond: c => (c.tempGanadas || 0) >= 1 },
   { id: 'tempTop',   titulo: 'Campeón del Éter',    desc: 'Termina primero en una Temporada del Abismo', oro: 20000, cond: c => (c.tempCampeon || 0) >= 1 },
   { id: 'abismo',    titulo: 'Jinete del Abismo',   desc: 'Gana el Murciélago del Abismo (vence al Titán en 3 semanas distintas)', oro: 20000, cond: c => (c.monturas || []).includes('abismo') },
@@ -2193,7 +2201,7 @@ export const ALAS = {
   fenix:    { nombre: 'Alas de Fénix',        forma: 'pluma',   color: '#fb923c', vuelo: 110, vel: 1.36, nv: 35, precio: 50000, brillo: true, icono: 'S_Fire02' },
   dragon:   { nombre: 'Alas de Dragón',       forma: 'membrana', color: '#7c3aed', vuelo: 130, vel: 1.4,  nv: 45, precio: 120000, icono: 'S_Shadow06' },
   cueva:    { nombre: 'Alas del Rey Goblin',  forma: 'membrana', color: '#ffd84a', vuelo: 100, vel: 1.35, nv: 1,  precio: 0, mazmorras: 5, icono: 'S_Buff14' },
-  duende:   { nombre: 'Alas de $DUENDE',      forma: 'luz',      color: '#22d3ee', vuelo: 120, vel: 1.4,  nv: 1,  usd: 4, brillo: true, premium: true, icono: 'I_Crystal01' },
+  duende:   { nombre: 'Alas del Duende',     forma: 'luz',      color: '#22d3ee', vuelo: 120, vel: 1.4,  nv: 1,  usd: 4, brillo: true, premium: true, icono: 'I_Crystal01' },
   solar:    { nombre: 'Alas Solares',         forma: 'pluma',    color: '#facc15', vuelo: 140, vel: 1.42, nv: 1,  usd: 8, brillo: true, premium: true, icono: 'S_Fire02' },
 };
 // En el Abismo (donde caer es morir) ninguna ala de pago vuela mas ni mas
@@ -2239,12 +2247,17 @@ export const DUENDE_DECIMALES = 6;
 export const DUENDE_DESCUENTO = 0.9;
 // Stars por precio en dolares: tabla redonda unica (Mini App, factura del bot
 // y tienda del MMO leen esta misma); lo que no esta en la tabla, al cambio.
-export const STARS_DE_USD = { 1: 75, 1.99: 150, 2: 150, 3: 250, 5: 350, 7: 500, 10: 750, 15: 1000, 20: 1500 };
-export const estrellasDe = usd => Object.hasOwn(STARS_DE_USD, usd) ? STARS_DE_USD[usd] : Math.ceil(usd / STAR_USD);
+export const STARS_DE_USD = { 1: 75, 1.99: 150, 2: 150, 3: 250, 4: 300, 5: 350, 7: 500, 8: 600, 10: 750, 15: 1000, 20: 1500, 25: 1900, 50: 3750 };
+export const estrellasDe = usd => Object.prototype.hasOwnProperty.call(STARS_DE_USD, usd) ? STARS_DE_USD[usd] : Math.ceil(usd / STAR_USD);
+// Lo que el jugador paga de verdad por las Stars: Telegram se las vende a
+// ~US$0,02 cada una (no a STAR_USD, que es lo que recibe el dueño).
+export const STAR_TIENDA_USD = 0.02;
 // Soles de REFERENCIA junto al precio en dolares (solo se muestra, no se cobra
 // en soles). Tipo de cambio fijo y aproximado: revisalo cada semana.
 export const PEN_POR_USD = 3.75;
 export const precioLocal = usd => 'S/ ' + (Math.round(usd * PEN_POR_USD * 100) / 100).toFixed(2);
+// Soles aproximados de N Stars al precio al que Telegram las vende.
+export const solesDeStars = st => 'S/ ' + (Math.round(st * STAR_TIENDA_USD * PEN_POR_USD * 10) / 10).toFixed(2);
 // ── PAGO LOCAL: Yape / Plin en soles (solo en la web, 100% MANUAL) ──
 // El jugador yapea el monto con céntimos propios del pedido, escribe el código
 // en la nota y pega su número de operación; El Duende lo revisa en su app y
@@ -2257,7 +2270,7 @@ export const YAPE_VIGENCIA_MS = 24 * 3600000;   // 24 h para yapear y mandar la 
 // Precio REDONDO en soles de cada paquete y skin (pq.pen): tabla para los de
 // siempre y, si no esta, el entero de arriba menos 10 céntimos (S/ X.90).
 export const PEN_DE_USD = { 1: 3.9, 1.99: 6.9, 3: 11.9, 5: 18.9, 20: 74.9 };
-export const penDe = usd => Object.hasOwn(PEN_DE_USD, usd) ? PEN_DE_USD[usd] : Math.round((Math.ceil(usd * PEN_POR_USD) - 0.1) * 100) / 100;
+export const penDe = usd => Object.prototype.hasOwnProperty.call(PEN_DE_USD, usd) ? PEN_DE_USD[usd] : Math.round((Math.ceil(usd * PEN_POR_USD) - 0.1) * 100) / 100;
 export const textoSoles = pen => 'S/ ' + Number(pen).toFixed(2);
 for (const pq of PAQUETES) pq.pen = penDe(pq.usd);   // cada paquete, skin y alas
 // Grupos de la tienda premium (orden y subtitulos en CLASSIC y ORIGINS).

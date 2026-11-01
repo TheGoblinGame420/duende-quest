@@ -19,9 +19,9 @@ import {
   ARMAS, SKINS, precioOro, PODERES, MONTURAS, TINTES, MASCOTAS, HOJAS, FORJA_MAX, costoForja, multForja,
   BANDA_MONTURA, TORRE, ambulanteActivo, ambulanteOferta,
   EXPEDICION, premioExpedicion, MATERIALES,
-  PAQUETES, estrellasDe, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA, LOGROS, progresoLogro, statsJugador, ALAS, paqueteParaFaltante, ENTREGA, textoPagoRecibido, PEDIDO_VIGENCIA_MS,
+  PAQUETES, estrellasDe, solesDeStars, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA, LOGROS, progresoLogro, statsJugador, ALAS, paqueteParaFaltante, ENTREGA, textoPagoRecibido, PEDIDO_VIGENCIA_MS,
   pagoLocalActivo, textoSoles, YAPE_VIGENCIA_MS, premioDiaria, MISIONES,
-} from '/mmo/js/data.js?v=331';
+} from '/mmo/js/data.js?v=332';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -688,7 +688,7 @@ function htmlArmasSkins(y, tab) {
     const ico = tab === 'arma' ? icoArma(id, d) : icoSkin(id, d);
     let acc, extra = '';
     if (tiene.includes(id)) acc = puesto === id ? etq('✓ Equipado', 'vv-ok') : btn('Equipar', 'equipar', { k: tab, id }, 'sec');
-    else if (typeof d.precio !== 'number') acc = `<span class="vv-etq" style="color:${d.color}">Exclusiva · $${d.usd}</span>` + botonesPago(y, 'skin_' + id, d.usd, true);
+    else if (typeof d.precio !== 'number') acc = `<span class="vv-etq" style="color:${d.color}">Exclusiva · ${esTg() ? estrellasDe(d.usd) + ' ⭐' : 'US$' + d.usd + ' · ≈ ' + precioLocal(d.usd)}</span>` + botonesPago(y, 'skin_' + id, d.usd, true);
     else {
       const pr = precioOro(tab, id);
       acc = (pr !== d.precio ? `<s style="opacity:.55;font-size:11px">${d.precio.toLocaleString('es')}</s> 🎃 ` : '') + oro(pr) + botonOro(y, pr, 'Comprar', 'comprar', { k: tab, id });
@@ -708,12 +708,13 @@ function htmlPremium(y) {
   const cuentaTg = esTg();
   const cuenta = y.p2e && y.p2e.cuenta;
   // Una linea clara y el detalle plegado (en movil no tapa los paquetes).
-  let h = `<p class="vv-p" style="margin-bottom:4px">Compras opcionales: <b>El Duende</b> revisa cada pago y lo entrega en tu personaje.</p><details class="vv-nota" style="margin:0 0 10px"><summary style="cursor:pointer">Cómo funciona</summary>${cuentaTg ? 'En Telegram se paga con Stars.' : anuncio() ? 'Se paga con Stars de Telegram (se compran con tarjeta dentro de Telegram): el botón abre Telegram, o en PC escaneas un QR con el celular.' : 'En la web se paga con Stars de Telegram (se compran con tarjeta dentro de Telegram), con Solana (SOL, una criptomoneda: no son soles) o con $DUENDE (10% de descuento).'}${anuncio() ? '' : ' Con dinero <b>no</b> se compran mTON: solo se ganan jugando.'}${pagoLocalActivo() && !cuentaTg ? ' Con Yape / Plin pagas en soles el precio que ves; El Duende revisa tu yapeo y te lo entrega.' : ' Los soles (S/) son solo referencia aproximada.'}</details>`;
+  let h = `<p class="vv-p" style="margin-bottom:4px">Compras opcionales: <b>El Duende</b> revisa cada pago y lo entrega en tu personaje.</p><details class="vv-nota" style="margin:0 0 10px"><summary style="cursor:pointer">Cómo funciona</summary>${cuentaTg ? 'En Telegram se paga con Stars. Si no tienes Stars, Telegram te las vende y te muestra el precio final en tu moneda antes de pagar.' : anuncio() ? 'Se paga con Stars de Telegram (se compran con tarjeta dentro de Telegram): el botón abre Telegram, o en PC escaneas un QR con el celular.' : 'En la web se paga con Stars de Telegram (se compran con tarjeta dentro de Telegram), con Solana (SOL, una criptomoneda: no son soles) o con $DUENDE (10% de descuento).'}${anuncio() ? '' : ' Con dinero <b>no</b> se compran mTON: solo se ganan jugando.'}${pagoLocalActivo() && !cuentaTg ? ' Con Yape / Plin pagas en soles el precio que ves; El Duende revisa tu yapeo y te lo entrega.' : ' Los soles (S/) son solo referencia aproximada.'}</details>`;
   // Lo elegido va primero; luego por grupos con subtitulo.
   // El Pack de bienvenida (SOLO 1 VEZ) sale solo mientras el servidor diga que aun puedes.
   const lista = ordenTienda(PAQUETES.filter(p => !p.unaVez || y.puedeBienvenida), est.foco);
   // Con Yape / Plin en la web, el precio en soles es el de verdad (redondo, pq.pen).
-  const precio = (usd, pen) => !cuentaTg && pen && pagoLocalActivo() ? textoSoles(pen) + ' · ≈ US$' + usd : (cuentaTg ? estrellasDe(usd) + ' ⭐' : 'US$' + usd) + ' · ≈ ' + precioLocal(usd);
+  // En Telegram, los soles son los de las Stars (Telegram las vende a ~US$0,02 c/u).
+  const precio = (usd, pen) => !cuentaTg && pen && pagoLocalActivo() ? textoSoles(pen) + ' · ≈ US$' + usd : cuentaTg ? estrellasDe(usd) + ' ⭐ · ≈ ' + solesDeStars(estrellasDe(usd)) : 'US$' + usd + ' · ≈ ' + precioLocal(usd);
   let grupo = '', abierta = false;
   for (const pq of lista) {
     const g = pq.id === est.foco ? '' : grupoPaquete(pq);
@@ -855,7 +856,7 @@ function abrirFactura(m) {
   if (!tg || !tg.openInvoice || !tg.initData) { mostrarFacturaWeb(m); return; }
   tg.openInvoice(m.link, st => {
     if (st === 'paid') H.aviso('Pago recibido. ' + textoPagoRecibido(), 'ok');
-    else if (st === 'failed') H.aviso('El pago no se completó.', 'err');
+    else if (st === 'failed') { H.mandar({ t: 'pedidoCancelar', codigo: m.codigo }); H.aviso('El pago no se completó (no se te cobró). Puedes reintentar desde la tienda.', 'err'); }
     else if (st === 'cancelled') { H.mandar({ t: 'pedidoCancelar', codigo: m.codigo }); reintentarFactura(tg, m); }
   });
 }

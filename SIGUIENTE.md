@@ -3259,3 +3259,16 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Stars desde la web: confirmación en el juego y aviso del bot al pagador al entregarse (entrega manual).
 - Joystick a la derecha (Ajustes → Mando) y doble toque a monstruo.
 - Arnés 897 bien.
+
+### Ronda 8: QA de regresiones y flujos (1-nov-2026, `?v=332`)
+
+- 30 evaluadores (regresiones por archivo, z-index, modo anuncio sin cripto, navegadores viejos, compradores Stars/SOL, panel del dueño, SEO, políticas de Meta, endpoints nuevos) → 140 problemas → 10 tareas.
+- mundo.js: `entradaPedida` (el rescate #r= no compite con la reconexión), `error()` oculta #carga, errores no fatales con aviso; `siguienteBlanco` sin jefes/élites ni con poca vida; nivel correcto en misiones de jefe.
+- Navegadores viejos: polyfill `Object.hasOwn` en origen.js, sin `?.`/`??` en mmo/js, `inset` explícito; web3.js con defer en la portada; sitemap con /mundo/.
+- Modo anuncio sin $DUENDE en carga, leyenda y chicha; «Alas del Duende».
+- Stars: `STARS_DE_USD` ampliado (4/8/25/50), `solesDeStars` al precio real de Telegram; data.js y lib.js coinciden (75/150/250/500/1000).
+- Pedidos de Stars fallidos no bloquean; devolución rechazada no deja el pedido anulado; textos de reembolso por método.
+- Bot: entrega manual en 24 h, /gasto con día de Lima, listas largas troceadas, /yo /topmmo /help a /mundo/.
+- CLASSIC: avisos sobre ventanas y Presumir con enlace. /jugar/: «Continuar con mi duende», WhatsApp IAB, iOS sin importmap.
+- Servidor: try/catch por jugador/monstruo en el tick 3D; cerrar/guardar siempre guardan (invitado nuevo incluido).
+- Arnés 897 bien.

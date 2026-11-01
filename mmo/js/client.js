@@ -9,7 +9,7 @@ import {
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
   RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, costoReforja, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TINTES, MASCOTAS, NOVEDADES, PASE, premioPase, ambulanteActivo, ambulanteOferta, semanaUTC, GESTOS, horaFelizTiempos, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
-  RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe, paqueteParaFaltante, ENTREGA, textoPagoRecibido, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA, PAGO_LOCAL, pagoLocalActivo, textoSoles,
+  RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe, solesDeStars, paqueteParaFaltante, ENTREGA, textoPagoRecibido, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA, PAGO_LOCAL, pagoLocalActivo, textoSoles,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe, climaDe, CLIMA, ESPECIES, premioEspecie, TORRE, atajoTorre, MODS_TORRE, HERM_COLORES, premioTorreSem, zonaDeNivel, progresoLogro, proximoMundial, mundialDe, HORA_FELIZ, EXPEDICION, premioExpedicion,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=331';
-import { iniciarRegalo } from './regalo.js?v=331';
-import { iniciarAvisoTg } from './avisotg.js?v=331';
+} from './data.js?v=332';
+import { iniciarRegalo } from './regalo.js?v=332';
+import { iniciarAvisoTg } from './avisotg.js?v=332';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -53,7 +53,7 @@ const SIN_CRIPTO_RE = /\bSOL\b|\$DUENDE|mTON|\bTON\b|[Ww]allet|[Ss]olana|[Pp]han
 const paso = e => { try { if (window.dqPaso) window.dqPaso(e, 'classic'); } catch (er) {} };
 paso('carga_ini');
 // Navegador interno de Facebook/Instagram/Messenger: se anota en el hola (D1 comparado en /mmostats).
-const esIAB = !TG && /FBAN|FBAV|FB_IAB|Instagram|Messenger|musical_ly|BytedanceWebview|TikTok|trill/i.test(navigator.userAgent);
+const esIAB = !TG && /FBAN|FBAV|FB_IAB|Instagram|Messenger|musical_ly|BytedanceWebview|TikTok|trill|WhatsApp/i.test(navigator.userAgent);
 // #r=<codigo de rescate> (el aviso de ORIGINS para pasar a Chrome; o la salida a CLASSIC si el 3D
 // no carga, que conserva el hash): se borra de la URL al instante y se adopta el duende.
 if (!TG) {
@@ -520,7 +520,7 @@ async function tokenWeb() {
   try {
     if (!sb()) return null;
     const { data } = await _sb.auth.getSession();
-    return data?.session?.access_token || null;
+    return (data && data.session && data.session.access_token) || null;
   } catch (e) { return null; }
 }
 
@@ -858,7 +858,7 @@ function recibir(m) {
     case 'invTraer': try { sessionStorage.setItem('dq_vcod', m.cod); sessionStorage.setItem('dq_auto', '1'); } catch (e) {} aviso('📲 Trayendo a ' + (m.nombre || 'tu duende') + '…', 'ok', 4000); setTimeout(() => location.reload(), 900); break;
     case 'vincOk': aviso('🔗 ¡Cuentas vinculadas! Entrando con ' + m.nombre + '…', 'ok', 4000); setTimeout(() => location.reload(), 1500); break;
     case 'diosModo': if (yo) { yo.diosModo = m.modo; pintarDiosModos(); } break;
-    case 'amigos': pintarAmigos(m); if (presumirPend && m.ref) { presumirPend = false; ofrecerPresumir(presumirTxt, undefined, true); aviso('Enlace preparado. Pulsa «Presumir».'); } break;
+    case 'amigos': pintarAmigos(m); if (presumirPend && m.ref) { presumirPend = false; ofrecerPresumir(presumirTxt, undefined, true); aviso(document.querySelector('.modal.on, #dq-regalo.on, #dq-avtg.on') ? 'Enlace preparado. Al cerrar la ventana sale «Presumir».' : 'Enlace preparado. Pulsa «Presumir».'); } break;
     case 'muerte': resumenMuerte(m); break;
     case 'nodos': recibirNodos(m.l); break;
     case 'recogido': { const n = nodos.find(x => x.i === m.i); if (n) { n.listo = performance.now() + m.en; for (let k = 0; k < 14; k++) particula(n.x, SUELO - 14, m.tipo === 'hierba' ? '#4ade80' : '#cbd5e1', 3); } sfx('moneda', .3); break; }
@@ -1815,6 +1815,15 @@ function habilidadRemota(m) {
 
 // Error corto en rojo arriba al centro (como "No tienes suficiente maná").
 function errorRojo(txt) {
+  // Con una ventana abierta, #errores (dentro de #app) queda debajo: va como aviso rojo en la capa de encima.
+  if (document.querySelector('.modal.on, #dq-regalo.on, #dq-avtg.on')) {
+    // El mismo error repetido (tocar varias veces) no apila avisos.
+    if (errorRojo.u === txt && performance.now() - (errorRojo.ut || 0) < 1500) return;
+    errorRojo.u = txt; errorRojo.ut = performance.now();
+    aviso(txt, 'error', Math.min(6000, Math.max(2500, String(txt).length * 55)));
+    try { tono('error'); } catch (e) {}
+    return;
+  }
   const c = $('errores');
   for (const d of c.children) if (d.textContent === txt && performance.now() - (d._t || 0) < 1500) return;
   const d = document.createElement('div');
@@ -2145,7 +2154,7 @@ function htmlInvitados(m) {
 // solo se abre WhatsApp con el texto listo. El enlace va a /jugar/, que elige 2D o 3D.
 const TXT_WA = 'Oe, juega conmigo Duende Quest, gratis en el celular. Entra con mi link y cuando llegues a nivel 10 los dos ganamos oro 👇';
 const oroAmigo = () => premioAmigo((amigosInfo && amigosInfo.nivel) || 10).oro.toLocaleString('es', { useGrouping: 'always' });
-const enlWa = cod => location.origin + '/jugar/?ref=' + cod + '&utm_source=whatsapp&s=wa';
+const enlWa = cod => location.origin + '/jugar/?ref=' + cod + '&utm_source=whatsapp&s=wa&de=2d';
 const waLink = (txt, url) => 'https://wa.me/?text=' + encodeURIComponent(txt + ' ' + url);
 function abrirWa(txt, url) {
   const u = waLink(txt, url);
@@ -2161,8 +2170,20 @@ let presumirTxt = '', presumirPend = false, presumirTipo = '', presumirUlt = 0;
 // Momento -> imagen de la historia de Telegram (assets/promo/historia_N.jpg): 1 el duende, 2 la fortaleza, 3 el combate.
 const IMG_PRESUMIR = { nivel: 1, look: 1, nv60: 2, mazmorra: 2, torre: 2, botin: 3, logro: 3, duelo: 3 };
 // Tope: una oferta cada 3 min (si no, cansa). forzar: la pidio el jugador.
-function ofrecerPresumir(txt, tipo, forzar) {
+// Con una ventana abierta el boton quedaria tapado: se guarda y se reintenta
+// cada 1,5 s (hasta 60 s); el tope de 3 min solo cuenta cuando se ve.
+let presumirEspera = null;
+function ofrecerPresumir(txt, tipo, forzar, intento) {
   if (!forzar && Date.now() - presumirUlt < 180000) return;
+  if (document.querySelector('.modal.on, #dq-regalo.on, #dq-avtg.on')) {
+    const n = (intento || 0) + 1;
+    clearTimeout(ofrecerPresumir.r);
+    if (n > 40) { presumirEspera = null; return; }
+    presumirEspera = [txt, tipo, forzar];
+    ofrecerPresumir.r = setTimeout(() => { const a = presumirEspera; if (a) ofrecerPresumir(a[0], a[1], a[2], n); }, 1500);
+    return;
+  }
+  presumirEspera = null; clearTimeout(ofrecerPresumir.r);
   presumirUlt = Date.now();
   presumirTxt = txt; if (tipo !== undefined) presumirTipo = tipo || '';
   // El enlace se pide ya: al pulsar, compartir debe ser inmediato (el
@@ -2176,11 +2197,12 @@ function ofrecerPresumir(txt, tipo, forzar) {
 function compartirPresumir(info) {
   const enlTg = 'https://t.me/duendequest_bot?start=mmo_' + info.ref;
   const txt = presumirTxt + ' Juega gratis conmigo a DUENDE QUEST ONLINE. 🧝';
-  // Historia de Telegram (Bot API 7.8) con una imagen segun el momento; si no, el compartir de siempre.
+  // Historia de Telegram (Bot API 7.8) solo en movil y con Premium (el enlace va como widget);
+  // en Desktop/web o sin Premium, el compartir de siempre: el enlace le llega a un amigo.
   try {
-    if (TG && TG.shareToStory && TG.isVersionAtLeast && TG.isVersionAtLeast('7.8')) {
+    const premium = !!(TG && TG.initDataUnsafe && TG.initDataUnsafe.user && TG.initDataUnsafe.user.is_premium);
+    if (TG && TG.shareToStory && TG.isVersionAtLeast && TG.isVersionAtLeast('7.8') && (TG.platform === 'android' || TG.platform === 'ios') && premium) {
       const img = location.origin + '/assets/promo/historia_' + (IMG_PRESUMIR[presumirTipo] || 1 + Math.floor(Math.random() * 3)) + '.jpg';
-      const premium = !!(TG.initDataUnsafe && TG.initDataUnsafe.user && TG.initDataUnsafe.user.is_premium);
       TG.shareToStory(img, premium ? { text: txt.slice(0, 2048), widget_link: { url: enlTg, name: 'Jugar gratis' } } : { text: (txt + ' ' + enlTg).slice(0, 200) });
       return;
     }
@@ -3415,11 +3437,12 @@ function htmlPremium() {
   const cuenta = yo && yo.p2e && yo.p2e.cuenta;
   // Una linea clara y el detalle legal plegado (en movil no tapa los paquetes).
   let h = '<p style="font-size:13px;line-height:1.45;color:var(--txt2);margin-bottom:4px">Compras opcionales: El Duende revisa cada pago y te lo entrega a mano (CLASSIC y ORIGINS).</p>'
-    + '<details style="font-size:12px;line-height:1.45;color:var(--txt2);margin-bottom:10px"><summary style="cursor:pointer">Cómo funciona</summary>' + esc(textoPagoRecibido()) + (cuentaTg ? ' Te avisamos aquí y por Telegram. ' : ' Te avisamos aquí en el juego al entregarlo. ') + (cuentaTg ? 'En Telegram se paga con Stars. Con dinero <b>no</b> se compran mTON: solo se ganan jugando.' : modoAnuncio() ? 'Se paga con Stars de Telegram (se compran con tarjeta dentro de Telegram): el botón abre Telegram, o en PC escaneas un QR con el celular.' : 'En la web se paga con Stars de Telegram (se compran con tarjeta dentro de Telegram), con Solana (SOL, una criptomoneda: no son soles) o con $DUENDE (10% de descuento). Con dinero <b>no</b> se compran mTON: solo se ganan jugando.') + (pagoLocalActivo() && !cuentaTg ? ' Con Yape / Plin pagas en soles el precio que ves; El Duende revisa tu yapeo y te lo entrega.' : ' Los soles (S/) son solo referencia aproximada.') + '</details>';
+    + '<details style="font-size:12px;line-height:1.45;color:var(--txt2);margin-bottom:10px"><summary style="cursor:pointer">Cómo funciona</summary>' + esc(textoPagoRecibido()) + (cuentaTg ? ' Te avisamos aquí y por Telegram. ' : ' Te avisamos aquí en el juego al entregarlo. ') + (cuentaTg ? 'En Telegram se paga con Stars. Si no tienes Stars, Telegram te las vende y te muestra el precio final en tu moneda antes de pagar. Con dinero <b>no</b> se compran mTON: solo se ganan jugando.' : modoAnuncio() ? 'Se paga con Stars de Telegram (se compran con tarjeta dentro de Telegram): el botón abre Telegram, o en PC escaneas un QR con el celular.' : 'En la web se paga con Stars de Telegram (se compran con tarjeta dentro de Telegram), con Solana (SOL, una criptomoneda: no son soles) o con $DUENDE (10% de descuento). Con dinero <b>no</b> se compran mTON: solo se ganan jugando.') + (pagoLocalActivo() && !cuentaTg ? ' Con Yape / Plin pagas en soles el precio que ves; El Duende revisa tu yapeo y te lo entrega.' : ' Los soles (S/) son solo referencia aproximada.') + '</details>';
   // La skin elegida desde la pestaña Skins va primero; luego por grupos.
   // El Pack de bienvenida (SOLO 1 VEZ) sale solo mientras el servidor diga que aun puedes.
   const lista = ordenTienda(PAQUETES.filter(p => !p.unaVez || (yo && yo.puedeBienvenida)), premiumFoco);
-  const ref = usd => `<small style="display:block;font-size:11px;color:var(--txt2)">≈ ${precioLocal(usd)}</small>`;
+  // En Telegram, los soles son los de las Stars (Telegram las vende a ~US$0,02 c/u).
+  const ref = usd => `<small style="display:block;font-size:11px;color:var(--txt2)">≈ ${cuentaTg ? solesDeStars(estrellasDe(usd)) : precioLocal(usd)}</small>`;
   let grupo = '';
   for (const pq of lista) {
     const g = pq.id === premiumFoco ? '' : grupoPaquete(pq);
@@ -3486,7 +3509,7 @@ function abrirFactura(m) {
   if (!TG || !TG.openInvoice) { mostrarFacturaWeb(m); return; }
   TG.openInvoice(m.link, st => {
     if (st === 'paid') aviso('Pago recibido. ' + textoPagoRecibido(), 'ok');
-    else if (st === 'failed') aviso('El pago no se completó.');
+    else if (st === 'failed') { mandar({ t: 'pedidoCancelar', codigo: m.codigo }); aviso('El pago no se completó (no se te cobró). Puedes reintentar desde la tienda.'); }
     else if (st === 'cancelled') { mandar({ t: 'pedidoCancelar', codigo: m.codigo }); reintentarFactura(m); }
   });
 }
@@ -5129,7 +5152,7 @@ function aviso(txt, tipo, ms) {
   d.textContent = sinEmoji(txt);
   // Con una ventana abierta, en una capa propia por encima (si no, la tapaba).
   let capa = $('avisos');
-  if (document.querySelector('.modal.on')) {
+  if (document.querySelector('.modal.on, #dq-regalo.on, #dq-avtg.on, .heredar-fondo')) {
     capa = $('avisos-modal');
     if (!capa) { capa = document.createElement('div'); capa.id = 'avisos-modal'; capa.setAttribute('role', 'status'); capa.setAttribute('aria-live', 'polite'); document.body.appendChild(capa); }
   }

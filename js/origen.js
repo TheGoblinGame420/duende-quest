@@ -17,6 +17,8 @@
 // Todo va en try/catch: un fallo aqui nunca puede romper la pagina.
 (function () {
   'use strict';
+  /* iOS < 15.4 no trae Object.hasOwn: sin esto los modulos de CLASSIC y ORIGINS mueren al cargar */
+  try { if (!Object.hasOwn) Object.hasOwn = function (o, k) { return Object.prototype.hasOwnProperty.call(o, k); }; } catch (e) {}
   var CLAVE = 'dq_origen', DIAS = 30, GRUPOS = { meta: 1, tg: 1, wa: 1, ref: 1, org: 1 };
   var limpio = function (v) { return String(v || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 40); };
   var enTg = false;
@@ -105,7 +107,7 @@
     var okM = window.dqMedirOk();
     if (!enTg && okM !== 0 && (okM === 1 || (origen && (origen.o === 'meta' || origen.fr)))) {
       var sm = document.createElement('script');
-      sm.src = '/js/medir.js?v=331'; sm.async = true;
+      sm.src = '/js/medir.js?v=332'; sm.async = true;
       (document.head || document.documentElement).appendChild(sm);
     }
   } catch (e) {}

@@ -126,7 +126,7 @@ async function createStarsInvoice(token, env, pkgIndex, tgId) {
   const result = await tg(token, 'createInvoiceLink', {
     // Telegram rechaza la factura si el titulo pasa de 32 caracteres.
     title: `${pkg.label}${firstBuy ? ' x2' : ''} · ${tokens.toLocaleString()} $DUENDE`.slice(0, 32),
-    description: `${firstBuy ? 'Primera compra: cantidad doble. ' : ''}${tokens.toLocaleString()} tokens $DUENDE por ${pkg.stars} Stars (~$${pkg.usd} USD). Se acreditan al instante en tu saldo del juego.`,
+    description: `${firstBuy ? 'Primera compra: cantidad doble. ' : ''}${tokens.toLocaleString()} tokens $DUENDE por ${pkg.stars} Stars (~$${pkg.usd} USD). Entrega a mano en máx. ${ENTREGA.plazoMaxH} h.`,
     payload: JSON.stringify({ pkg: pkgIndex, tokens, usd: pkg.usd, first_buy: firstBuy }),
     currency: 'XTR',
     prices: [{ label: `${tokens.toLocaleString()} $DUENDE`, amount: pkg.stars }],
@@ -189,6 +189,7 @@ async function handleStart(token, env, chatId, user, startPayload, desdeMenu) {
 // Ademas Telegram vuelve clicable cualquier @usuario, dominio o t.me/... del
 // texto (un first_name '@SoporteVIP' salia como enlace en el aviso de
 // referido o en el Top 10): solo letras, numeros y espacios, como world.js.
+const mdTexto = t => String(t || '').replace(/[*_\[\]`]/g, '').slice(0, 60);   // nombres de compra: sin recortar a 20 ni quitar '$'
 function mdSeguro(t) { return String(t || '').normalize('NFC').replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 20) || '?'; }
 
 async function handleRanking(token, env, chatId, messageId) {
@@ -219,7 +220,7 @@ async function handleTopMmo(token, env, chatId, messageId) {
     text += `\n\n⚔️ *Duelos (Elo)*\n` + (r.duel.length ? r.duel.map((x, i) => `${med(i)} *${mdSeguro(x.n)}* — ${x.e}`).join('\n') : '_Nadie aún._');
     text += `\n\n👥 Ahora mismo: ${r.online} en línea. Los 3 primeros de la Torre y de Desafíos se llevan oro y título el lunes.`;
   }
-  const opts = { chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🌍 Entrar al mundo', web_app: { url: MMO_URL } }], [{ text: '🔄 Actualizar', callback_data: 'topmmo' }]] } };
+  const opts = { chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🌌 Entrar en 3D', web_app: { url: MUNDO_URL } }], [{ text: '🌍 CLASSIC (2D)', web_app: { url: MMO_URL } }], [{ text: '🔄 Actualizar', callback_data: 'topmmo' }]] } };
   if (messageId) { opts.message_id = messageId; await tg(token, 'editMessageText', opts).catch(() => {}); } else await tg(token, 'sendMessage', opts);
 }
 
@@ -277,7 +278,7 @@ async function handleBuy(token, chatId, userId, messageId) {
   const packages = calcStarsPackages(priceUsd);
   let text = `⭐ *Comprar $DUENDE con Telegram Stars*\n\nPrecio actual: *$${priceUsd.toFixed(8)}*\nPagas con Stars dentro de Telegram (las Stars se compran con tarjeta en Telegram).\n\n`;
   packages.forEach(pkg => { text += `*${pkg.label}:* ${pkg.stars} Stars (~$${pkg.usd}) → ${pkg.tokens.toLocaleString()} $DUENDE\n`; });
-  text += '\nLos tokens se acreditan al instante en tu saldo del juego. La cantidad depende del precio del momento, que puede variar mucho: compra solo lo que estés dispuesto a gastar.';
+  text += '\n' + textoPagoRecibido() + ' La cantidad depende del precio del momento, que puede variar mucho: compra solo lo que estés dispuesto a gastar.';
   const opts = { chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: { inline_keyboard: packages.map((pkg,i) => [{ text: `⭐ ${pkg.label} · ${pkg.stars} Stars`, callback_data: `buy_${i}` }]) } };
   if (messageId) { opts.message_id = messageId; await tg(token, 'editMessageText', opts); } else await tg(token, 'sendMessage', opts);
 }
@@ -349,7 +350,36 @@ async function devolverStarsArcade(context, token, cargo, tgAviso) {
 async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
   if (String(userId) !== String(context.env.ADMIN_TG_ID || '')) return; // silencio para no-admins
   const env = context.env;
-  const enviar = text => tg(token, 'sendMessage', { chat_id: chatId, text, disable_web_page_preview: true });
+  // Listas largas: Telegram corta a 4096; se parte por bloques (\n\n) en trozos de <= 4000 y se manda en orden.
+  const enviar = async text => {
+    text = String(text || '');
+    const trozos = [];
+    if (text.length <= 4000) trozos.push(text);
+    else {
+      let act = '';
+      for (let bloque of text.split('\n\n')) {
+        while (bloque.length > 4000) {
+          if (act) { trozos.push(act); act = ''; }
+          // Corta en un salto de linea (o antes de un emoji partido): medio emoji hace que Telegram rechace el mensaje.
+          let n = bloque.lastIndexOf('\n', 4000);
+          if (n < 1) { n = 4000; if (/[\uD800-\uDBFF]/.test(bloque[n - 1])) n--; }
+          trozos.push(bloque.slice(0, n)); bloque = bloque.slice(n).replace(/^\n/, '');
+        }
+        if (act && act.length + 2 + bloque.length > 4000) { trozos.push(act); act = ''; }
+        act = act ? act + '\n\n' + bloque : bloque;
+      }
+      if (act) trozos.push(act);
+    }
+    let res = null;
+    for (const t of trozos) {
+      res = await tg(token, 'sendMessage', { chat_id: chatId, text: t, disable_web_page_preview: true }).catch(e => ({ ok: false, description: String(e && e.message || e) }));
+      if (res && res.ok === false) {
+        await tg(token, 'sendMessage', { chat_id: chatId, text: '⚠️ No pude mostrar la lista (' + String(res.description || 'error').slice(0, 200) + ')' }).catch(() => {});
+        return res;
+      }
+    }
+    return res;
+  };
   const [arg1, arg2] = payload.trim().split(/\s+/);
   const fondoTxt = f => `Fondo de hoy: ${(f.total / 1000).toFixed(3)} TON (auto ${(f.auto / 1000).toFixed(3)} + tuyo ${(f.extra / 1000).toFixed(3)}) · repartido ${(f.gastado / 1000).toFixed(3)} TON`;
   // /skinweb REFERENCIA: activa a mano una skin de la web ya pagada y verificada en la
@@ -436,7 +466,7 @@ async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
       return enviar('💸 Gasto en anuncios (últimos anotados, US$):\n' + (r.l.length ? r.l.map(x => `${x.f} · ${x.src}${x.camp ? ' · ' + x.camp : ''} · $${x.usd}`).join('\n') : '— (nada anotado)')
         + '\n\nAnotar: /gasto 2026-11-01 meta 42.50 campaña\n(fecha: AAAA-MM-DD, hoy o ayer · origen: meta, tg, wa o ref · campaña opcional = utm_campaign del anuncio · 0 borra esa fila)');
     }
-    const iso = t => new Date(t).toISOString().slice(0, 10);
+    const iso = t => new Date(t - 5 * 3600000).toISOString().slice(0, 10);   // dia de Lima (UTC-5), igual que diaJuego
     const f = p[0] === 'hoy' ? iso(Date.now()) : p[0] === 'ayer' ? iso(Date.now() - 86400000) : p[0];
     const usd = Number(String(p[2] || '').replace(',', '.'));
     if (!p[1] || !p[2] || !Number.isFinite(usd)) return enviar('Uso: /gasto 2026-11-01 meta 42.50 campaña  (monto en US$; fecha también hoy o ayer)');
@@ -476,8 +506,8 @@ async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
   }
   if (cmd === '/mmostats') {
     const r = await mmoInterno(env, 'stats');
-    // Tope de Telegram: 4096 caracteres (con las lineas por origen y de carga podia pasarse y no llegaba nada).
-    return enviar(r && r.ok ? textoMmoStats(r).slice(0, 4000) : '❌ ' + ((r && r.error) || 'error'));
+    // Tope de Telegram: 4096 caracteres; enviar() lo parte en varios mensajes si hace falta.
+    return enviar(r && r.ok ? textoMmoStats(r) :'❌ ' + ((r && r.error) || 'error'));
   }
   if (cmd === '/fondo') {
     if (arg1 !== undefined) {
@@ -595,7 +625,7 @@ async function handleAvisos(token, context, chatId, userId, payload) {
 async function handleYo(token, env, chatId, userId) {
   let r = null;
   try { r = await mmoInterno(env, 'perfil', { tgId: String(userId) }); } catch (e) {}
-  const boton = { inline_keyboard: [[{ text: '🌍 Entrar al mundo', web_app: { url: MMO_URL } }]] };
+  const boton = { inline_keyboard: [[{ text: '🌌 Entrar en 3D', web_app: { url: MUNDO_URL } }], [{ text: '🌍 CLASSIC (2D)', web_app: { url: MMO_URL } }]] };
   if (!r || !r.ok) return tg(token, 'sendMessage', { chat_id: chatId, text: '❌ No se pudo leer tu personaje ahora. Prueba en un momento.' });
   if (!r.existe) return tg(token, 'sendMessage', { chat_id: chatId, text: '🌍 Aún no tienes personaje en DUENDE QUEST ONLINE. ¡Entra y elige tu clase!', reply_markup: boton });
   const clases = { guerrero: '⚔️ Guerrero', mago: '🔥 Mago', sacerdote: '✨ Sacerdote', picaro: '🗡️ Pícaro' };
@@ -686,7 +716,7 @@ function registrarComandos(token, context) {
 }
 
 async function handleHelp(token, chatId) {
-  await tg(token, 'sendMessage', { chat_id: chatId, text: `🧌 *DUENDE QUEST — Comandos*\n\n/start — Menú principal\n/play — Abrir el juego\n/mmo — CLASSIC: el MMORPG en 2D\n/mundo — ORIGINS: el mundo abierto en 3D\n/topmmo — Ranking de la semana del MMO\n/yo — Tu personaje del MMO\n/avisos — Avisos para volver al MMO (on / off)\n/ranking — Top 10\n/stats — Tus estadísticas\n/referral — Tu link para invitar amigos\n/price — Precio de $DUENDE\n/buy — Comprar $DUENDE con Stars\n/miscompras — Tus compras y su estado\n/paysupport — Ayuda con un pago\n/terms — Condiciones de compra\n/creador — Creador y canales oficiales\n/help — Esta ayuda\n\n${TEXTO_SEGURIDAD}\nMás información: ${SEGURIDAD_URL}\n\n${TEXTO_CREADOR}`, parse_mode: 'Markdown', disable_web_page_preview: true, reply_markup: { inline_keyboard: [[{ text: '🎮 Jugar', web_app: { url: WEBAPP_URL } }], BOTON_SEGURIDAD] } });
+  await tg(token, 'sendMessage', { chat_id: chatId, text: `🧌 *DUENDE QUEST — Comandos*\n\n/start — Menú principal\n/play — Abrir el juego\n/mmo — CLASSIC: el MMORPG en 2D\n/mundo — ORIGINS: el mundo abierto en 3D\n/topmmo — Ranking de la semana del MMO\n/yo — Tu personaje del MMO\n/avisos — Avisos para volver al MMO (on / off)\n/ranking — Top 10\n/stats — Tus estadísticas\n/referral — Tu link para invitar amigos\n/price — Precio de $DUENDE\n/buy — Comprar $DUENDE con Stars\n/miscompras — Tus compras y su estado\n/paysupport — Ayuda con un pago\n/terms — Condiciones de compra\n/creador — Creador y canales oficiales\n/help — Esta ayuda\n\n${TEXTO_SEGURIDAD}\nMás información: ${SEGURIDAD_URL}\n\n${TEXTO_CREADOR}`, parse_mode: 'Markdown', disable_web_page_preview: true, reply_markup: { inline_keyboard: [[{ text: '🎮 Jugar', web_app: { url: MUNDO_URL } }], BOTON_SEGURIDAD] } });
 }
 
 // ── /admin: métricas privadas (solo el dueño, via env ADMIN_TG_ID) ──
@@ -900,7 +930,7 @@ async function onRequestPost(context) {
             return new Response('OK');
           }
           if (!regOk) await avisoFallo('el pedido quedó pagado en el MMO, pero Supabase no guardó el cobro (no cuenta para el fondo)');
-          else await tg(token, 'sendMessage', { chat_id: chatId, text: `✅ *Pago recibido* (${starsPaid} Stars)\n\nCompra: "${mdSeguro(rsp.nombre) || 'del MMO'}" · pedido #${codPedido}\n\n${textoPagoRecibido()} Te avisaremos aquí apenas esté lista. Guarda el número de pedido por si necesitas reclamar.`, parse_mode: 'Markdown' });
+          else await tg(token, 'sendMessage', { chat_id: chatId, text: `✅ *Pago recibido* (${starsPaid} Stars)\n\nCompra: "${mdTexto(rsp.nombre) || 'del MMO'}" · pedido #${codPedido}\n\n${textoPagoRecibido()} Te avisaremos aquí apenas esté lista. Guarda el número de pedido por si necesitas reclamar.`, parse_mode: 'Markdown' });
           return new Response('OK');
         }
 

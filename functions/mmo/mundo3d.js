@@ -544,8 +544,16 @@ export const Mundo3D = {
       return;
     }
     const dt = 0.1;
+    // Un jugador o monstruo raro no corta el tick de todos: se registra (como mucho
+    // una vez cada 30 s por tipo, igual que paso() en world.js) y se sigue.
+    const fallo = (n, e) => {
+      if (this.estricto) throw e;
+      const t = Date.now();
+      this.errT = this.errT || {};
+      if (t - (this.errT[n] || 0) > 30000) { this.errT[n] = t; console.error('[MMO tick ' + n + ']', e); }
+    };
     // Vida y recurso (rapida en el pueblo y tras 4 s sin golpes en el campo).
-    for (const s of jugadores) {
+    for (const s of jugadores) try {
       const seguro = zonaEn(s.p.x, s.p.z) === 'pueblo';
       if (s.cast && habPorId(s.cast.h) && ahora >= s.cast.fin) this.finCast3d(s);
       if (s.yoPend) this.vaciarYo(s, ahora);
@@ -561,10 +569,10 @@ export const Mundo3D = {
       if (s.muerto || s.hp >= s.st.maxHp) continue;
       const k = seguro ? 0.12 : (ahora - (s.golpeT || 0) > 4000 ? 0.04 : 0);
       if (k) s.hp = Math.min(s.st.maxHp, s.hp + s.st.maxHp * k * dt);
-    }
+    } catch (e) { fallo('3d-jug', e); }
     const vivos = jugadores.filter(s => !s.muerto);
-    this.tickEventos3d(ahora, jugadores);
-    if (!this.tempT || ahora - this.tempT > 60000) { this.tempT = ahora; this.temporadaA(); }   // cierre del mes
+    this.paso('3d-eventos', () => this.tickEventos3d(ahora, jugadores));
+    if (!this.tempT || ahora - this.tempT > 60000) { this.tempT = ahora; this.paso('3d-temporada', () => this.temporadaA()); }   // cierre del mes
     // Campamentos: se pueblan cerca de alguien.
     for (const c of W.campos) {
       let cerca = Infinity;
@@ -574,9 +582,9 @@ export const Mundo3D = {
         c.prox = ahora + 1500;
       }
     }
-    this.revisarMundial3(ahora, jugadores);
-    this.revisarAsedio(ahora, jugadores);
-    this.tickCuevas(ahora);
+    this.paso('3d-mundial', () => this.revisarMundial3(ahora, jugadores));
+    this.paso('3d-asedio', () => this.revisarAsedio(ahora, jugadores));
+    this.paso('3d-cuevas', () => this.tickCuevas(ahora));
     const porI3 = new Map();
     for (const s of vivos) { const k = s.i3 || 0; if (!porI3.has(k)) porI3.set(k, []); porI3.get(k).push(s); }
     // Monstruos.
@@ -590,10 +598,20 @@ export const Mundo3D = {
         continue;
       }
       if (o.i3 && !porI3.has(o.i3)) continue;   // cueva sin nadie dentro
-      this.ia3d(o, porI3.get(o.i3 || 0) || [], ahora);
+      try { this.ia3d(o, porI3.get(o.i3 || 0) || [], ahora); }
+      catch (e) {
+        fallo('3d-mon', e);
+        // Monstruo roto: fuera, para que no falle en cada tick (su campamento repone otro).
+        // Los jefes (mundial, asedio, cueva) los gobierna su evento: se quedan.
+        // (o.obj es a quien persigue, no marca de evento: no sirve para filtrar.)
+        if (!o.persiste && !o.jefe) {
+          W.mons.delete(o.id);
+          const c = W.campos[o.campo]; if (c) c.vivos.delete(o.id);
+        }
+      }
     }
     // Fotos del mundo (cada 200 ms).
-    if (++W.foto % FOTO_CADA === 0) this.fotos3d(W, jugadores, ahora);
+    if (++W.foto % FOTO_CADA === 0) this.paso('3d-fotos', () => this.fotos3d(W, jugadores, ahora));
   },
 
   crear3d(c) {

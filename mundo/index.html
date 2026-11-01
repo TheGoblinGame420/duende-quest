@@ -26,12 +26,12 @@
 <meta name="theme-color" content="#0a0418">
 <link rel="manifest" href="/mundo/manifest.json">
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
-<script src="/js/pwa.js?v=331" defer></script>
+<script src="/js/pwa.js?v=332" defer></script>
 <link rel="icon" href="/assets/ui/coin.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=331"></script>
+<script src="/js/origen.js?v=332"></script>
 <script>
 // Red de seguridad de la carga (script clasico: corre aunque el modulo 3D o el CDN fallen).
 // - Errores antes de conectar: se guardan en __errQ y mundo.js los manda al entrar.
@@ -47,7 +47,7 @@
   function caja(titulo, txt, botones) {
     var v = document.getElementById('dq-red'); if (v) v.remove();
     v = document.createElement('div'); v.id = 'dq-red';
-    v.style.cssText = 'position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(10,4,24,.82);font:500 15px system-ui,sans-serif;color:#f3eaff';
+    v.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;z-index:90;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(10,4,24,.82);font:500 15px system-ui,sans-serif;color:#f3eaff';
     var c = document.createElement('div');
     c.style.cssText = 'max-width:360px;width:100%;background:#1c1033;border:1px solid #6d3fc0;border-radius:14px;padding:18px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.5)';
     var h = document.createElement('h3'); h.textContent = titulo; h.style.cssText = 'margin:0 0 8px;font-size:17px;color:#ffd84a';
@@ -116,28 +116,28 @@
   });
 })();
 </script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=331" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=332" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=331">
-<link rel="modulepreload" href="/mmo/js/data.js?v=331">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=331">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=331">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=331">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=331">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=331">
-<link rel="modulepreload" href="/mmo/js/regalo.js?v=331">
-<link rel="modulepreload" href="/mmo/js/avisotg.js?v=331">
-<link rel="modulepreload" href="/mundo/js/musica.js?v=331">
-<link rel="modulepreload" href="/mundo/js/cueva.js?v=331">
-<link rel="modulepreload" href="/mundo/js/tapa.js?v=331">
-<link rel="modulepreload" href="/mundo/js/abismo.js?v=331">
-<link rel="modulepreload" href="/mundo/js/particulas.js?v=331">
-<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=331">
-<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=331">
-<link rel="modulepreload" href="/mmo/js/secundarias.js?v=331">
-<link rel="modulepreload" href="/mundo/js/lore.js?v=331">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=332">
+<link rel="modulepreload" href="/mmo/js/data.js?v=332">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=332">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=332">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=332">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=332">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=332">
+<link rel="modulepreload" href="/mmo/js/regalo.js?v=332">
+<link rel="modulepreload" href="/mmo/js/avisotg.js?v=332">
+<link rel="modulepreload" href="/mundo/js/musica.js?v=332">
+<link rel="modulepreload" href="/mundo/js/cueva.js?v=332">
+<link rel="modulepreload" href="/mundo/js/tapa.js?v=332">
+<link rel="modulepreload" href="/mundo/js/abismo.js?v=332">
+<link rel="modulepreload" href="/mundo/js/particulas.js?v=332">
+<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=332">
+<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=332">
+<link rel="modulepreload" href="/mmo/js/secundarias.js?v=332">
+<link rel="modulepreload" href="/mundo/js/lore.js?v=332">
 <style>
 :root{--bg:#0a0418;--panel:rgba(14,9,30,.86);--borde:rgba(160,140,255,.22);--txt:#f2efff;--txt2:#b8b0d8;--txt3:#7d7699;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;--oro:#ffd84a;--pri:#2563eb;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -308,11 +308,12 @@ body.movil .cerrar{right:8px;top:8px;width:38px;height:38px;}
 .btn:disabled{opacity:.45;cursor:default;}
 .fila{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font:500 14px var(--sans);}
 input.nombre{width:100%;padding:12px;border-radius:8px;border:1px solid var(--borde);background:#0a0418;color:var(--txt);font:500 16px var(--sans);text-align:center;margin:10px 0;user-select:text;-webkit-user-select:text;}
-#carga{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:var(--bg);z-index:20;}
+#carga{position:fixed;top:0;right:0;bottom:0;left:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:var(--bg);z-index:20;}
 #carga .t{font:400 18px/1.5 var(--px);text-align:center;color:#fff7d6;}
 #carga .s{font:500 14px var(--sans);color:var(--txt2);}
 #carga .barra{width:220px;height:10px;}
 #carga .barra i{background:linear-gradient(90deg,#a855f7,#ffd84a);transform:scaleX(0);}
+html.anuncio #carga img{content:url(/assets/skins/skin_bruja.png)}
 .clases{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .clases button{padding:12px 8px;border-radius:10px;border:1px solid var(--borde);background:rgba(255,255,255,.05);color:var(--txt);font:700 14px var(--sans);cursor:pointer;}
 .clases button small{display:block;font-weight:500;color:var(--txt2);margin-top:4px;font-size:12px;}
@@ -733,7 +734,7 @@ body.movil.mano-der #joy .pista-joy{left:auto;right:28px;flex-direction:row-reve
 <!-- Telegram: su SDK se carga arriba solo dentro de Telegram (window.__tgListo).
      defer: no frenan el HTML y corren en orden, antes que mundo.js (que usa supabase). -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=331" defer></script>
-<script type="module" src="/mundo/js/mundo.js?v=331"></script>
+<script src="/js/config.js?v=332" defer></script>
+<script type="module" src="/mundo/js/mundo.js?v=332"></script>
 </body>
 </html>
