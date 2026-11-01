@@ -37,3 +37,11 @@ _headers
 
 # Video promocional (salida de tools/promo/): no se publica
 /promo
+
+# Claves y secretos locales (wrangler dev lee .dev.vars): nunca se sirven
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+secrets.js
+service_role_key.txt

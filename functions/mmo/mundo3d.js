@@ -242,7 +242,9 @@ export const Mundo3D = {
     // Altura simulada: subir como mucho 6,5 m/s, planear siempre baja, a pie no se sube.
     const hq = clamp(num(m.h) || 0, 0, 46), h0 = s.h || 0;
     let h;
-    if (a === 3) h = clamp(hq, h0 - 7.5 * dtS - 0.5, h0 + 6.5 * dtS + 0.5);
+    // Solo se sube lo que se volo desde el mensaje anterior (alternar a=4 y a=3
+    // daba ~7 m de subida gratis sin gastar las alas).
+    if (a === 3) h = clamp(hq, h0 - 7.5 * dtS - 0.5, h0 + (prevA === 3 ? 6.5 * dtS : 0) + 0.5);
     else if (a === 4) { h = Math.min(hq, Math.max(0, h0 - 1.0 * dtS)); if (h <= 0.3) { h = 0; if (!(enAbismo(nx) && !islaEn(nx, nz))) a = 0; } }
     // A pie no se flota: se cae. Sobre el vacio del Abismo ni los 2 m de
     // escalon (con a=0/a=4 alternos se caminaba sobre el vacio sin alas).
@@ -250,19 +252,22 @@ export const Mundo3D = {
     // El margen largo del planeo sobre el vacio solo vale si el planeo empezo en el aire
     // (antes, a=4 desde el suelo daba 45 s para cruzar el vacio sin alas).
     s.planeoAlto = a === 4 && (h > 0.3 || (prevA === 4 && !!s.planeoAlto));
+    // El planeo solo acelera si empezo volando o por encima del escalon de 2 m
+    // (alternar a=0 h=2 con a=4 daba 1,4x a pie, tambien en el pueblo).
+    s.planeoVel = a === 4 && (prevA === 4 ? !!s.planeoVel : prevA === 3 || h0 > 2.5);
     // Corriente de viento del Abismo: volando o planeando, recarga las alas.
     if ((a === 3 || a === 4) && !s.i3 && enAbismo(nx)) {
       const ci = corrienteEn(nx, nz);
       if (ci >= 0 && Date.now() - ((s.corrT || (s.corrT = {}))[ci] || 0) > CORRIENTE_CD) { s.corrT[ci] = Date.now(); s.vueloS = 0; s.alasAvisadas = false; if (a === 4) s.h = Math.max(s.h || 0, 12); this.enviar(s, { t: 'corriente', i: ci }); }
     }
     // Energia de las alas: se cuenta con el modo que se mantuvo hasta este mensaje.
-    if (prevA === 3) s.vueloS = (s.vueloS || 0) + dtS;
+    if (prevA === 3 || a === 3) s.vueloS = (s.vueloS || 0) + dtS;
     else if (prevA !== 4 && h0 <= 1.2 && !(enAbismo(nx) && !s.i3 && !islaEn(nx, nz))) s.vueloS = Math.max(0, (s.vueloS || 0) - dtS * 3);
     if ((s.vueloS || 0) > ala.vuelo + 2 && !s.alasAvisadas) { s.alasAvisadas = true; this.enviar(s, { t: 'alasAgotadas' }); }
     if (s.alasAvisadas && (s.vueloS || 0) < ala.vuelo * 0.5) s.alasAvisadas = false;
     const d = Math.hypot(nx - s.p.x, nz - s.p.z);
     if (!(s.dios && s.diosModo && s.diosModo.vel)) {
-      const modo = a === 3 ? ala.vel + 0.05 : a === 4 && h0 > 0.3 ? 1.4 : velMontura(s.montado);   // planear desde el suelo no acelera
+      const modo = a === 3 ? ala.vel + 0.05 : a === 4 && h0 > 0.3 && s.planeoVel ? 1.4 : velMontura(s.montado);   // planear desde el suelo no acelera
       const vel = MUNDO.velocidad * modo * (1 + talento(s.c, 'agilidad'));
       const tope = vel + 3;   // ~1 s de margen por huecos de red
       s.movBud = Math.min(tope, (s.movBud === undefined ? tope : s.movBud) + vel * 1.15 * dt / 1000);
@@ -310,6 +315,8 @@ export const Mundo3D = {
     const rango = vara ? RANGO_VARA : MELEE3D * (arma.alcance || 1) + (o.jefe ? 1.2 : 0.4);
     // Fuera de alcance: el cliente reintenta en 150 ms (no pierde el golpe).
     if (dist(s.p, o) > rango + 0.3) { this.enviar(s, { t: 'atkNo' }); return this.no(s, 'Fuera de alcance.'); }
+    // En la cueva no se pega a traves de la roca (como las habilidades).
+    if (s.i3 && !vistaCueva(s.p.x, s.p.z, o.x, o.z)) { this.enviar(s, { t: 'atkNo' }); return; }
     s.atkT = Math.max(ahora, s.atkT || 0) + (vara ? VARA.cdMs * arma.cd : 1000 * arma.cd);
     if (s.montado) this.desmontar(s);
     // pegar3d: critico, forja, fuego, Grito, elixires y el x2 del Sigilo.
@@ -387,7 +394,8 @@ export const Mundo3D = {
       const gr = this.grupoDe ? this.grupoDe(s) : null;
       // Solo si el grupo hizo la mayor parte del daño (si no, un golpe a la presa de otro daba el 70%).
       const parteG = gr ? this.sesionesGrupo(gr).reduce((a, x) => a + (o.dano.get(x.id) || 0), 0) / total : 0;
-      const k = Math.max(o.jefe ? Math.max(parte, 1 / 3) : parte, parteG >= 0.5 ? 0.7 : 0);
+      // El minimo de 1/3 del jefe solo para quien hizo al menos el 10 % (un golpe suelto cobraba un tercio).
+      const k = Math.max(o.jefe && parte >= 0.1 ? Math.max(parte, 1 / 3) : parte, parteG >= 0.5 ? 0.7 : 0);
       const mult = (((SKINS[s.c.skin] || {}).buffs || {}).oroMult || 1) * (1 + talento(s.c, 'fortuna'));
       // De noche los monstruos dan un 10% mas de experiencia.
       const xp = Math.max(1, Math.round(base.xp * k * (1 + talento(s.c, 'erudicion')) * (esNoche(Date.now()) ? 1.1 : 1)));
@@ -434,7 +442,8 @@ export const Mundo3D = {
 
   // Consumibles: los mismos efectos; el Rayo golpea todo lo que esta cerca.
   poder3d(s, m) {
-    if (s.muerto || this.aura(s, 'aturdido')) return;
+    // En Bloque de Hielo tampoco (como en el 2D).
+    if (s.muerto || this.aura(s, 'aturdido') || this.aura(s, 'bloque')) return;
     if (s.h > 4) return this.no(s, 'Aterriza primero.');
     const def = PODERES[m.i | 0];
     if (!def) return;
@@ -452,6 +461,8 @@ export const Mundo3D = {
     if (def.id === 'rayo') {
       for (const o of this.iniciar3d().mons.values()) {
         if (o.muere || !mismo(o, s) || dist(o, s.p) > 14) continue;
+        // En la cueva el Rayo no atraviesa la roca.
+        if (s.i3 && !vistaCueva(s.p.x, s.p.z, o.x, o.z)) continue;
         const d = this.danar3d(o, Math.round(s.st.atk * (o.jefe ? 2 : 4)), s);
         this.aCerca3d(o, { t: 'at3', p: s.id, tg: o.id, d, c: 0, rayo: 1 });
       }
@@ -1212,6 +1223,8 @@ export const Mundo3D = {
   hostil3d(s, a) {
     const d = this.rivalDuelo && this.rivalDuelo(s);
     if (d && d.id === a.id) return true;
+    // Tampoco a quien esta en duelo con otro: un tercero no ayuda a un duelista.
+    if (a !== s && this.rivalDuelo) { const da = this.rivalDuelo(a); if (da && da.id !== s.id) return true; }
     return !!(s.c.faccion && a.c && a.c.faccion && s.c.faccion !== a.c.faccion && enAbismo(s.p.x) && enAbismo(a.p.x));
   },
   aliado3d(s, tg, rango, muerto) {
@@ -1310,7 +1323,8 @@ export const Mundo3D = {
       obj = o && !o.muere && dist(o, s.p) <= this.metros(h.rango, s) + 3.5 ? o : null;
     } else if (h.obj === 'aliado' || h.obj === 'muerto') {
       const a = ca.tg === s.id ? s : this.sesiones.get(ca.tg);
-      obj = a && a.c && a.m3 && !!a.muerto === (h.obj === 'muerto') && (a === s || dist(a.p, s.p) <= this.metros(h.rango, s) + 3.5) ? a : null;
+      // Se vuelve a mirar si es hostil (pudo empezar un duelo durante el lanzamiento).
+      obj = a && a.c && a.m3 && !!a.muerto === (h.obj === 'muerto') && (a === s || (mismo(a, s) && !this.hostil3d(s, a) && dist(a.p, s.p) <= this.metros(h.rango, s) + 3.5)) ? a : null;
     }
     const necesita = h.obj === 'enemigo' || h.obj === 'aliado' || h.obj === 'muerto';
     if (s.muerto || (necesita && !obj) || s.rec < costoHab(h, s.st.recMax, s.c.espec)) {

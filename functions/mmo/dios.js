@@ -30,7 +30,7 @@ const RESERVADO = /admin|moderador|^mod|mod$|^gm|gm$|staff|soporte|sistema|ofici
 // Lo mismo con las letras que se confunden a la vista (Adm1n, EIDuende, Ðios, M0derador…):
 // i/l/1/| → l, 0/ø → o, 3 → e, 4/@ → a, 5/$ → s, 7 → t, ð → d, rn → m.
 const RESERVADO_ESQ = /admln|moderador|^mod|mod$|^gm|gm$|staff|soporte|slstema|oflclal|elduende|duendequest|dlos/;
-const esqueleto = n => claveNombre(n).replace(/[il1|!]/g, 'l').replace(/[0ø]/g, 'o').replace(/3/g, 'e').replace(/[4@]/g, 'a').replace(/[5$]/g, 's').replace(/7/g, 't').replace(/ð/g, 'd').replace(/rn/g, 'm');
+export const esqueleto = n => claveNombre(n).replace(/[il1|!]/g, 'l').replace(/[0ø]/g, 'o').replace(/3/g, 'e').replace(/[4@]/g, 'a').replace(/[5$]/g, 's').replace(/7/g, 't').replace(/ð/g, 'd').replace(/rn/g, 'm');
 // Clave para comparar nombres: minusculas, sin tildes, sin espacios ni '_'
 // (asi "El_Duende", "el duende" y "ÉlDuende" son el mismo). Las letras no
 // latinas no llegan aqui: limpiarNombre las quita (el cirilico o el griego
@@ -69,18 +69,26 @@ export const Dios = {
     for (let i = 0; i < 12; i++) {
       const n = i === 0 && base !== 'Duende' ? base : (base.slice(0, 11) + Math.floor(1000 + Math.random() * 9000));
       const dueno = await this.state.storage.get('n:' + claveNombre(n));
-      if (!dueno || dueno === uid) return n;
+      // Tampoco uno que se vea igual ('AIonso' con I mayuscula, 'Pedr0'): clave ne: por esqueleto.
+      const duenoEsq = await this.state.storage.get('ne:' + esqueleto(n));
+      if ((!dueno || dueno === uid) && (!duenoEsq || duenoEsq === uid)) return n;
     }
     return 'Duende' + Date.now().toString(36).slice(-6);
   },
+  // n: por claveNombre y ne: por esqueleto. Los nombres viejos ganan su ne: al volver a entrar.
   async reservarNombre(c, antes) {
     if (antes && claveNombre(antes) !== claveNombre(c.nombre)) {
       const k = 'n:' + claveNombre(antes);
       if ((await this.state.storage.get(k)) === c.uid) await this.state.storage.delete(k);
     }
-    const k = 'n:' + claveNombre(c.nombre);
-    const dueno = await this.state.storage.get(k);
-    if (!dueno) await this.state.storage.put(k, c.uid);
+    if (antes && esqueleto(antes) !== esqueleto(c.nombre)) {
+      const k = 'ne:' + esqueleto(antes);
+      if ((await this.state.storage.get(k)) === c.uid) await this.state.storage.delete(k);
+    }
+    for (const k of ['n:' + claveNombre(c.nombre), 'ne:' + esqueleto(c.nombre)]) {
+      const dueno = await this.state.storage.get(k);
+      if (!dueno) await this.state.storage.put(k, c.uid);
+    }
   },
 
   // ── SANCIONES ──
@@ -231,6 +239,14 @@ export const Dios = {
         const horas = Math.max(0, Math.min(24 * 365, Number(m.horas) || 0));
         const mod = await this.cargarMod();
         mod.ban[objetivo.c.uid] = { n: objetivo.c.nombre, hasta: horas ? Date.now() + horas * 3600000 : 0, motivo: String(m.motivo || '').slice(0, 80), t: Date.now() };
+        // A un INVITADO se le banea tambien la IP (o su /64) como mucho 24 h: si no,
+        // borraba su token y volvia al momento. Solo afecta a invitados (world.js, hola).
+        if (objetivo.ip && objetivo.c.uid.startsWith('inv:')) {
+          mod.banIp = mod.banIp || {};
+          for (const k in mod.banIp) if (mod.banIp[k] < Date.now()) delete mod.banIp[k];
+          mod.banIp[objetivo.ip] = Date.now() + Math.min(horas || 24, 24) * 3600000;
+          mod.ban[objetivo.c.uid].ip = objetivo.ip;
+        }
         this.guardarMod();
         this.registrarMod(s, `baneó a ${objetivo.c.nombre} (${horas ? horas + ' h' : 'permanente'})`);
         this.expulsar(objetivo, 'Fuiste baneado' + (horas ? ` por ${horas} h` : '') + (m.motivo ? ': ' + String(m.motivo).slice(0, 80) : '.'));
@@ -241,6 +257,7 @@ export const Dios = {
         const uid = Object.keys(mod.ban).find(u => mod.ban[u].t === Number(m.t));
         if (!uid) return;
         this.registrarMod(s, `desbaneó a ${mod.ban[uid].n}`);
+        if (mod.ban[uid].ip && mod.banIp) delete mod.banIp[mod.ban[uid].ip];
         delete mod.ban[uid];
         this.guardarMod();
         ok('✅ Ban retirado.');

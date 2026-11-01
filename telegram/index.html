@@ -1878,7 +1878,7 @@ async function loadRanking(){
   list.innerHTML='<div style="font-family:var(--sans);font-size:13px;color:var(--txt2);text-align:center;padding:16px">⌛ Cargando...</div>';
   if(_sb){
     try{
-      const{data:raw}=await _sb.from('game_scores').select('username,score,wave,created_at').order('score',{ascending:false}).limit(50);
+      const{data:raw}=await _sb.from('game_scores').select('username,score,wave,created_at').eq('verified',true).order('score',{ascending:false}).limit(50);
       // Una entrada por jugador: su mejor score
       const best=new Map();(raw||[]).forEach(s=>{const k=(s.username||'?').toLowerCase();if(!best.has(k)||s.score>best.get(k).score)best.set(k,s);});
       const data=[...best.values()].sort((a,b)=>b.score-a.score).slice(0,10);

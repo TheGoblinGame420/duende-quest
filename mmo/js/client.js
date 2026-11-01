@@ -17,7 +17,7 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=322';
+} from './data.js?v=323';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -29,7 +29,10 @@ const A = '/assets/';
 // solo escriben cuando hay un cambio real.
 function ponTxt(el, v) { if (el._t !== v) { el._t = v; el.textContent = typeof v === 'string' ? sinEmojiC(v) : v; } }
 function ponCss(el, prop, v) { const k = '_c' + prop; if (el[k] !== v) { el[k] = v; el.style[prop] = v; } }
-const TG = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? window.Telegram.WebApp : null;
+// Solo dentro de Telegram de verdad (app: TelegramWebviewProxy; web y escritorio: iframe).
+// Fuera, el SDK llena initData con un #tgWebAppData ajeno pegado en un enlace.
+const enTg = !!(window.TelegramWebviewProxy || window.parent !== window || (window.external && 'notify' in window.external));
+const TG = enTg && window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? window.Telegram.WebApp : null;
 if (TG) {
   try { TG.ready(); TG.expand(); TG.disableVerticalSwipes && TG.disableVerticalSwipes(); TG.setHeaderColor && TG.setHeaderColor('#0a0418'); } catch (e) {}
   // Dentro de Telegram, "volver" cierra primero la ventana abierta (tienda,
@@ -367,7 +370,7 @@ async function autenticacion() {
     localStorage.setItem('dq_mmo_tok', inv);
   }
   let nombreTg = '';
-  try { const u = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user; if (u) nombreTg = u.username || u.first_name || ''; } catch (e) {}
+  try { const u = TG && TG.initDataUnsafe && TG.initDataUnsafe.user; if (u) nombreTg = u.username || u.first_name || ''; } catch (e) {}
   soyInvitado = true;
   return { auth: { k: 'inv', tok: inv }, nombre: localStorage.getItem('dq_mmo_nombre') || nombreTg };
 }
@@ -3110,7 +3113,7 @@ function mostrarPedidoSol(m) {
   const bsf = $('b-solflare');
   if (bsf) bsf.onclick = () => {
     aviso('Abriendo el juego dentro de Solflare: entra con tu cuenta y, en la tienda premium → Tus compras, pulsa «Pagar» en el pedido #' + m.codigo + '.', 'ok');
-    window.location.href = 'https://solflare.com/ul/v1/browse/' + encodeURIComponent(location.href) + '?ref=' + encodeURIComponent(location.origin);
+    window.location.href = 'https://solflare.com/ul/v1/browse/' + encodeURIComponent(location.origin + location.pathname + location.search) + '?ref=' + encodeURIComponent(location.origin);
   };
 }
 // Enlace Solana Pay del pedido (monto exacto; las wallets lo leen del QR).
@@ -3134,7 +3137,7 @@ async function pagarConPhantom(m) {
     // se vuelve a pedir la compra (el pedido sin pagar caduca solo).
     if (TACTIL) {
       aviso('Abriendo el juego dentro de Phantom: entra con tu cuenta y, en la tienda premium → Tus compras, pulsa «Pagar» en el pedido #' + m.codigo + '.', 'ok');
-      window.location.href = 'https://phantom.app/ul/browse/' + encodeURIComponent(location.href) + '?ref=' + encodeURIComponent(location.origin);
+      window.location.href = 'https://phantom.app/ul/browse/' + encodeURIComponent(location.origin + location.pathname + location.search) + '?ref=' + encodeURIComponent(location.origin);
       return;
     }
     aviso('No encontramos Phantom en este navegador. Instálalo o paga desde otra wallet y pega la firma.'); window.open('https://phantom.app/', '_blank'); return;
@@ -3330,7 +3333,14 @@ function pintarDios(d) {
     const a = b.dataset.dj, p = +b.dataset.p, j = D.jugadores.find(x => x.p === p);
     if (!j) return;
     if (a === 'irA' || a === 'traer') { dios({ a, p }); cerrarModales(); return; }
-    if (a === 'oro') { const n = prompt('Oro para ' + j.n + ' (negativo para quitar):', '10000'); if (n) dios({ a, p, n: +n }); }
+    if (a === 'oro') {
+      const n = prompt('Oro para ' + j.n + ' (negativo para quitar):', '10000');
+      if (!n) return;
+      // '50.000' se leia como 50: se quitan puntos y espacios de miles y solo valen cifras.
+      const v = n.replace(/[.\s]/g, '');
+      if (!/^-?\d+$/.test(v)) { errorRojo('Escribe solo cifras enteras, sin comas.'); return; }
+      if (confirm((+v < 0 ? '¿Quitar ' : '¿Dar ') + Math.abs(+v).toLocaleString('es') + ' oro a ' + j.n + '?')) dios({ a, p, n: +v });
+    }
     else if (a === 'skin') {
       const ids = Object.keys(SKINS).filter(k => k !== 'comun');
       const id = prompt('Skin para ' + j.n + ' (antepón "-" para quitarla):\n' + ids.map(k => k + ' — ' + SKINS[k].nombre + (j.skins.includes(k) ? ' ✓' : '')).join('\n'), ids.find(k => !j.skins.includes(k)) || '');

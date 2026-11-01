@@ -39,7 +39,7 @@ const LFG_CADA_MS = 60000;              // y cada cuanto se puede volver a anunc
 // Fuera tambien los invisibles: ancho cero y marcas bidi (U+202E daba la
 // vuelta al texto para disfrazarlo). El U+200D se deja: lo usan los emojis compuestos.
 // Fuera tambien los invisibles (U+00AD, U+034F, U+3164…) que partian «www» o una frase semilla y saltaban el filtro.
-const limpiar = t => String(t || '').replace(/[\u0000-\u001f\u007f­͏ᅟᅠ᠎​-‏‪-‮⁠-⁯ㅤ﻿]/g, '').trim().slice(0, 120);
+const limpiar = t => String(t || '').replace(/[\u0000-\u001f\u007f­͏ᅟᅠ᠎​-‏‪-‮⁠-⁯ㅤ﻿]/g, '').replace(/[᠋-᠍ﾠ]|[\u{E0000}-\u{E007F}]/gu, '').trim().slice(0, 120);
 
 // Antiestafa (juego con cripto): ni direcciones de cartera, ni enlaces, ni
 // frases semilla en el chat. Nadie del equipo pide nunca la frase semilla.
@@ -51,11 +51,14 @@ const RE_ESTAFA = [
   /\b[a-z0-9-]{2,}\.(?:com|io|xyz|net|org|app|gg|me|link|site|fun|top|online|click|live|shop)\b/i,
   /\b(?:seed|semilla|mnemonic|clave privada|private key|frase de recuperaci[oó]n|12 palabras|24 palabras)\b/i,
 ];
-export const riesgoEstafa = t => RE_ESTAFA.some(r => r.test(t));
+// Se mira tambien una copia en NFKC y sin marcas ni invisibles: un selector de
+// variacion (U+FE0F) o una etiqueta (U+E0020) dentro de «t.me» o «seed» saltaba el filtro.
+const normEstafa = t => String(t || '').normalize('NFKC').replace(/[\p{M}\p{Cf}︀-️᠋-᠍ﾠ⠀ㅤᅟᅠ]|[\u{E0000}-\u{E007F}]/gu, '');
+export const riesgoEstafa = t => { const n = normEstafa(t); return RE_ESTAFA.some(r => r.test(t) || r.test(n)); };
 export const IGNORADOS_MAX = 50;
 const REPORTE_CADA_MS = 60000;
 // No le llega a quien ignora al autor.
-const meIgnora = (x, uid) => !!(x.c && x.c.ignorados && x.c.ignorados.includes(uid));
+export const meIgnora =(x, uid) => !!(x.c && x.c.ignorados && x.c.ignorados.includes(uid));
 
 export const Social = {
   iniciarSocial() {
@@ -75,6 +78,8 @@ export const Social = {
     if (g && g.lider !== s.c.uid) return this.no(s, 'Solo el líder del grupo puede invitar.');
     if (g && g.uids.length >= maxGrupo(g)) return this.no(s, g.banda ? `La banda ya está llena (${BANDA_MAX}).` : `El grupo ya está lleno (${GRUPO_MAX}). El líder puede convertirlo en banda (hasta ${BANDA_MAX}).`);
     if (t.gid) return this.no(s, `${t.c.nombre} ya está en un grupo.`);
+    // Quien te ignora no recibe tus invitaciones (respuesta neutra, sin avisarle).
+    if (meIgnora(t, s.c.uid)) return this.no(s, `${t.c.nombre} no acepta invitaciones tuyas.`);
     if (t.invitacion && t.invitacion.hasta > Date.now() && t.invitacion.de !== s.c.uid) return this.no(s, `${t.c.nombre} ya tiene una invitación pendiente.`);
     // Una invitacion cada 10 s a la misma persona (si no, se le inundaba de ventanas).
     s.invT = s.invT || {};
@@ -252,7 +257,7 @@ export const Social = {
       const g = this.grupoDe(s);
       if (!g) return this.no(s, 'No estás en un grupo.');
       const txtG = JSON.stringify({ ...base, canal: 'grupo' });
-      for (const x of this.sesionesGrupo(g)) this.enviar(x, txtG);
+      for (const x of this.sesionesGrupo(g)) if (!meIgnora(x, s.c.uid)) this.enviar(x, txtG);
       return;
     }
     if (canal === 'hermandad') {
@@ -292,25 +297,32 @@ export const Social = {
   reportar(s, m) {
     const ahora = Date.now();
     // Limite por cuenta (no por conexion: reconectar no lo reinicia).
+    // Un invitado recien creado (gratis) no reporta hasta el nivel 5, como el general.
+    if (s.c.uid.startsWith('inv:') && s.c.nivel < 5) return this.no(s, 'Los invitados pueden reportar desde el nivel 5 (o inicia sesión).');
     this.reporteUid = this.reporteUid || new Map();
-    if (ahora - Math.max(s.reporteT || 0, this.reporteUid.get(s.c.uid) || 0) < REPORTE_CADA_MS) return this.no(s, 'Espera un minuto antes de enviar otro reporte.');
+    // Tambien por conexion: muchas cuentas desde la misma IP no se suman.
+    const kIp = s.ip ? 'i:' + s.ip : '';
+    if (ahora - Math.max(s.reporteT || 0, this.reporteUid.get(s.c.uid) || 0, (kIp && this.reporteUid.get(kIp)) || 0) < REPORTE_CADA_MS) return this.no(s, 'Espera un minuto antes de enviar otro reporte.');
     const n = limpiar(m.n).toLowerCase(), motivo = limpiar(m.motivo).slice(0, 100) || 'sin motivo';
     const t = [...this.sesiones.values()].find(x => x.c && x.c.nombre.toLowerCase() === n);
     if (!t || t === s) return this.no(s, n ? `No hay nadie conectado llamado "${limpiar(m.n)}".` : 'Escribe: /reportar Nombre motivo');
     s.reporteT = ahora; this.reporteUid.set(s.c.uid, ahora);
-    if (this.reporteUid.size > 500) this.reporteUid.clear();
+    if (kIp) this.reporteUid.set(kIp, ahora);
+    // Se podan los vencidos (antes un clear() reiniciaba el limite de todos).
+    if (this.reporteUid.size > 500) for (const [k, t0] of this.reporteUid) if (ahora - t0 >= REPORTE_CADA_MS) this.reporteUid.delete(k);
     const frases = (this.chatHist || []).filter(x => x.u === t.c.uid).slice(-5).map(x => x.m);
     const r = { t: ahora, de: s.c.uid, deN: s.c.nombre, a: t.c.uid, aN: t.c.nombre, motivo, frases };
     this.reportes = (this.reportes || []).concat(r).slice(-200);
     if (this.state && this.state.storage) this.state.storage.put('reportes', this.reportes).catch(() => {});
-    // Al Telegram del dueño sin enlaces, @usuarios ni /comandos clicables.
-    const plano = x => x.replace(/https?:\/\/\S+|www\.\S+|t\.me\S*/gi, '[enlace]').replace(/[*_`\[\]]/g, '').replace(/[\/@]/g, ' ');
+    // Al Telegram del dueño sin enlaces, @usuarios ni /comandos clicables. El punto
+    // pasa a '·': un dominio suelto («pagos.xyz») salia como enlace con vista previa.
+    const plano = x => x.replace(/https?:\/\/\S+|www\.\S+|t\.me\S*/gi, '[enlace]').replace(/[*_`\[\]]/g, '').replace(/[\/@]/g, ' ').replace(/\./g, '·');
     // Al Telegram del dueño como mucho 12 reportes cada 10 min (los demas quedan
     // guardados): asi una oleada de invitados no tapa los avisos de pagos.
     this.reportesAviso = (this.reportesAviso || []).filter(x => ahora - x < 600000);
     const avisar = this.reportesAviso.length < 12;
     if (avisar) this.reportesAviso.push(ahora);
-    if (avisar && this.avisarAdmin) this.avisarAdmin(`⚠️ Reporte de ${s.c.nombre.replace(/[^\p{L}\p{N} ]/gu, '')} contra ${t.c.nombre.replace(/[^\p{L}\p{N} ]/gu, '')}: ${plano(motivo)}${frases.length ? '\nÚltimas frases: ' + frases.map(f => '«' + plano(f) + '»').join(' ') : ''}`).catch(() => {});
+    if (avisar && this.avisarAdmin) this.avisarAdmin(`⚠️ Reporte de ${s.c.nombre.replace(/[^\p{L}\p{N} ]/gu, '')} contra ${t.c.nombre.replace(/[^\p{L}\p{N} ]/gu, '')}: ${plano(motivo)}${frases.length ? '\nÚltimas frases: ' + frases.map(f => '«' + plano(f) + '»').join(' ') : ''}`, null, true).catch(() => {});
     this.enviar(s, { t: 'toast', m: `⚠️ Reporte enviado. Gracias: el equipo lo revisará. Si te molesta, usa /ignorar ${t.c.nombre}.` });
   },
   // Historial corto del general y de cada hermandad, solo en memoria (si el
@@ -330,7 +342,7 @@ export const Social = {
     const h = c.herm && this.herms && this.herms.get(c.herm);
     const deHerm = (h && h.miembros[c.uid] && this.chatHistH && this.chatHistH.get(c.herm)) || [];
     const l = [...(this.chatHist || []), ...deHerm]
-      .filter(x => x.t0 > lim && !mod.ban[x.u] && !((mod.mute[x.u] || 0) > ahora))
+      .filter(x => x.t0 > lim && !mod.ban[x.u] && !((mod.mute[x.u] || 0) > ahora) && !(c.ignorados || []).includes(x.u))
       .sort((a, b) => a.t0 - b.t0).slice(-6);
     if (!l.length) return;
     this.enviar(s, { t: 'chat', canal: 'general', sis: 1, m: '— Mensajes recientes del chat —' });
@@ -365,7 +377,7 @@ export const Social = {
     // No a quien esta en una mazmorra, el Coliseo, un duelo o peleando (el
     // aviso salia en mitad de un jefe): la busqueda queda en la lista igual.
     for (const x of this.sesiones.values()) {
-      if (!x.c || x === s || x.gid || x.c.nivel < mz.nv[0]) continue;
+      if (!x.c || x === s || x.gid || x.c.nivel < mz.nv[0] || meIgnora(x, s.c.uid)) continue;
       if (x.k.includes('#') || x.k === 'coliseo' || x.duelo || ahora - (x.combateT || 0) < 8000) continue;
       this.enviar(x, aviso); n++;
     }
@@ -439,7 +451,8 @@ export const Social = {
     this.enviar(s, { t: 'toast', ok: true, m: `⭐ ${t.c.nombre} está en tu lista de amigos: verás cuándo se conecta.` });
     // Una vez por persona y sesion: añadir y quitar en bucle inundaba de avisos.
     t.avisosAmigo = t.avisosAmigo || new Set();
-    if (!t.avisosAmigo.has(s.c.uid)) { t.avisosAmigo.add(s.c.uid); this.enviar(t, { t: 'toast', m: `⭐ ${s.c.nombre} te añadió a su lista de amigos.` }); }
+    // A quien te ignora no le llega el aviso.
+    if (!t.avisosAmigo.has(s.c.uid) && !meIgnora(t, s.c.uid)) { t.avisosAmigo.add(s.c.uid); this.enviar(t, { t: 'toast', m: `⭐ ${s.c.nombre} te añadió a su lista de amigos.` }); }
     this.enviarContactos(s);
   },
   // Un invitado que pasa a cuenta cambia de uid: en las listas de los

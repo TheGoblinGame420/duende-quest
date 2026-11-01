@@ -3153,3 +3153,12 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - mundo.js: `crearNocheDuendes()` (2 calabazas por puerta de casa y 10 en la plaza, cara con MeshBasic amarilla; 8–14 murciélagos) y `animarNocheDuendes(t)` (solo de noche y cerca del pueblo); aviso a los 9 s.
 - mundo.js: polvo en cada paso al correr (`FX.emitir`, color por zona) y `fovGolpe` (−3,5 en crítico, decae a 9/s).
 - Arnés 855 bien; la prueba del pase «dobles para ponerse al día» falla el día 1 del mes en UTC (depende de la fecha, no de este cambio).
+
+### Auditoría de seguridad con 50 agentes (31-oct-2026, `?v=323`)
+
+- Workflow de 40 revisores (una superficie cada uno, PC y móvil) y 10 verificadores: 85 hallazgos, 81 confirmados (2 altos, 24 medios, 55 bajos). Se arreglaron unos 70 con 5 agentes en archivos separados.
+- Altos: helius-verify con `commitment: 'confirmed'`, reintentos del verify en game.html y referencia en localStorage (`dq_sol_pendiente`); el cliente solo acepta Telegram si `TelegramWebviewProxy`, iframe o `external.notify` (mundo.js, client.js, inicio/index.html).
+- Medios: mundo3d vuelo a=3/a=4 y planeo 1,4x (`planeoVel`); `hostil3d` y `enDueloAjeno` bloquean curar en duelos ajenos; combo 2D en el servidor (`pasoAtk`); premios de invasión 2D/3D y élites raros con umbrales; `difundirApariencia` (1 'pa'/s); tope /48 y 240 invitados; `caidaPorDesconexion` también al entrar en otra pestaña; filtro antiestafa con NFKC y sin selectores invisibles; rankings del bot y de la Mini App solo verificados; enlaces a Phantom/Solflare sin el hash de Telegram; /admin con Markdown seguro.
+- Bajos: nombres y hermandades por esqueleto (`ne:`), ban de invitado por IP 24 h, `sigSesion` al azar, tope de `ret:idx`, límites de vinculación por IP, CORS de helius-verify, `.dev.vars` en .assetsignore, etc.
+- Pendiente (decisión del dueño): oferta 2x de Stars repetida (id 3), ranking web sin verificar (61/81, necesita mandar scores por el Worker), canje DQ→$DUENDE sin jugar (55, migración SQL), heredar invitado con botón explícito (53c), separar dueño de moderadores (38), índice UNIQUE de tickets (60).
+- Arnés 856 bien (actualizadas 4 pruebas que daban por bueno lo vulnerable; la del pase ya no depende del día).

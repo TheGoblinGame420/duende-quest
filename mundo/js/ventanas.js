@@ -19,7 +19,7 @@ import {
   ARMAS, SKINS, precioOro, PODERES, MONTURAS, TINTES, MASCOTAS, HOJAS, FORJA_MAX, costoForja, multForja,
   BANDA_MONTURA, TORRE, ambulanteActivo, ambulanteOferta,
   PAQUETES, estrellasDe, LOGROS, progresoLogro, statsJugador, ALAS,
-} from '/mmo/js/data.js?v=322';
+} from '/mmo/js/data.js?v=323';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -755,7 +755,7 @@ function mostrarPedidoSol(m) {
     else if (p === 'phantom') pagarConPhantom(m);
     else if (p === 'solflare') {
       H.aviso('Abriendo el juego dentro de Solflare: entra con tu cuenta y, en la tienda premium → Tus compras, pulsa «Pagar» en el pedido #' + m.codigo + '.', 'ok');
-      window.location.href = 'https://solflare.com/ul/v1/browse/' + encodeURIComponent(location.href) + '?ref=' + encodeURIComponent(location.origin);
+      window.location.href = 'https://solflare.com/ul/v1/browse/' + encodeURIComponent(location.origin + location.pathname + location.search) + '?ref=' + encodeURIComponent(location.origin);
     }
   });
   // Las otras ventanas del modulo se cierran; esta queda encima.
@@ -774,7 +774,7 @@ async function pagarConPhantom(m) {
     // En el movil se abre el juego dentro de la app de Phantom (alli si se firma).
     if (TACTIL) {
       H.aviso('Abriendo el juego dentro de Phantom: entra con tu cuenta y, en la tienda premium → Tus compras, pulsa «Pagar» en el pedido #' + m.codigo + '.', 'ok');
-      window.location.href = 'https://phantom.app/ul/browse/' + encodeURIComponent(location.href) + '?ref=' + encodeURIComponent(location.origin);
+      window.location.href = 'https://phantom.app/ul/browse/' + encodeURIComponent(location.origin + location.pathname + location.search) + '?ref=' + encodeURIComponent(location.origin);
       return;
     }
     H.aviso('No encontramos Phantom en este navegador. Instálalo o paga desde otra wallet y pega la firma.', 'err');

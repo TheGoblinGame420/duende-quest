@@ -161,7 +161,10 @@ export class MmoWorld {
     this.mundo = {};
     for (const id in MAPAS) if (!MAPAS[id].instancia) this.mundoK(id);
     this.sigBala = 1;
-    this.sigSesion = 1;
+    // Los ids de sesion empiezan en un punto al azar en cada arranque: tras un
+    // despliegue, el panel de dios con la lista vieja no apunta a otra persona.
+    // (Por debajo de 2^31: los mensajes los leen con m.p | 0.)
+    this.sigSesion = 1 + Math.floor(Math.random() * 1e6) * 1000;
     this.sigMon = 1;
     this.bucle = null;
     this.fondo = null;
@@ -222,13 +225,16 @@ export class MmoWorld {
     // Sockets que aun no se identifican: tope propio y por IP. Antes 300
     // sockets sin 'hola' llenaban el servidor y dejaban fuera a todos.
     const ip = claveIp(request.headers.get('CF-Connecting-IP') || '');
-    let deIp = 0, sinIdIp = 0; const sinId = [];
+    // IPv6: ademas un tope por /48 (un solo bloque trae 65 536 /64 y con 13 se llenaba el servidor).
+    const k48 = ip.includes(':') ? ip.split(':').slice(0, 3).join(':') + ':' : '';
+    let deIp = 0, sinIdIp = 0, de48 = 0; const sinId = [];
     for (const x of this.sesiones.values()) {
       if (!x.c) sinId.push(x);
       if (ip && x.ip === ip) { deIp++; if (!x.c) sinIdIp++; }
+      if (k48 && x.ip.startsWith(k48)) de48++;
     }
     // 24 por IP: una casa, un colegio o un grupo de 10 en la misma wifi comparten IP (con 8 el noveno quedaba fuera).
-    if (ip && (deIp >= 24 || sinIdIp >= 6)) return new Response('Demasiadas conexiones', { status: 429 });
+    if (ip && (deIp >= 24 || sinIdIp >= 6 || de48 >= 60)) return new Response('Demasiadas conexiones', { status: 429 });
     if (sinId.length >= 40) {
       // Se echa al socket mudo mas viejo en vez de rechazar al nuevo: un jugador
       // real manda 'hola' nada mas abrir (antes, 40 sockets mudos dejaban fuera a todos).
@@ -276,17 +282,21 @@ export class MmoWorld {
       if (this.porUid.get(s.c.uid) === s) this.porUid.delete(s.c.uid);
       this.desconectarDeGrupo(s);
       this.aClave(s.k, { t: 'pl', id: s.id }, s);
-      // Cerrar en el Abismo sobre el vacio o con un golpe enemigo reciente cuenta como caer
-      // (antes era una huida gratis al pueblo: sin muerte, sin perder nada).
-      if (s.m3 && !s.i3 && !s.muerto && enAbismo(s.p.x) && (!islaEn(s.p.x, s.p.z) || Date.now() - (s.pvpT || 0) < 10000)) {
-        s.muerto = true;   // guardar() lo pasa a c.muerto: al volver revive en el pueblo con su coste
-        if (islaEn(s.p.x, s.p.z)) s.c.muertoPvP = true;   // huida del PvP: como morir ante la otra faccion (sin perder XP)
-      }
+      this.caidaPorDesconexion(s);
       if (s.m3) this.olvidar3d(s); else this.olvidar(s);
       this.salirDeMundo(s);
       await this.guardar(s);
     }
     if (this.contarOnline() === 0 && this.bucle) { clearInterval(this.bucle); this.bucle = null; this.guardarHermsSucias(Infinity); }
+  }
+
+  // Cerrar en el Abismo sobre el vacio o con un golpe enemigo reciente cuenta como caer
+  // (antes era una huida gratis al pueblo: sin muerte, sin perder nada).
+  caidaPorDesconexion(s) {
+    if (s.m3 && !s.i3 && !s.muerto && s.p && enAbismo(s.p.x) && (!islaEn(s.p.x, s.p.z) || Date.now() - (s.pvpT || 0) < 10000)) {
+      s.muerto = true;   // guardar() lo pasa a c.muerto: al volver revive en el pueblo con su coste
+      if (islaEn(s.p.x, s.p.z)) s.c.muertoPvP = true;   // huida del PvP: como morir ante la otra faccion (sin perder XP)
+    }
   }
 
   enviar(s, obj) {
@@ -475,6 +485,16 @@ export class MmoWorld {
     if (prin !== uid) { s.uidAuth = uid; uid = prin; }
     const ban = await this.baneado(uid);
     if (ban) { s.autenticando = false; this.expulsar(s, 'Tu cuenta está baneada' + (ban.hasta ? ' hasta el ' + new Date(ban.hasta).toLocaleString('es', { timeZone: 'America/Lima' }) : '') + (ban.motivo ? ': ' + ban.motivo : '.')); return; }
+    if (uid.startsWith('inv:') && s.ip) {
+      // Un invitado baneado no vuelve con otro token desde la misma conexion (como mucho 24 h, dios.js).
+      const hb = this.mod.banIp && this.mod.banIp[s.ip];
+      if (hb && hb > Date.now()) { s.autenticando = false; this.expulsar(s, 'Tu conexión está baneada por un rato. Inicia sesión con tu cuenta.'); return; }
+      // Cupo de invitados: las ultimas 60 plazas quedan para cuentas de Telegram o correo
+      // (antes unos pocos /64 con tokens de invitado llenaban el servidor y nadie mas entraba).
+      let invs = 0;
+      for (const x of this.sesiones.values()) if (x.c && x.c.uid.startsWith('inv:')) invs++;
+      if (invs >= MAX_JUGADORES - 60) { s.autenticando = false; this.expulsar(s, 'El servidor está lleno de invitados. Inicia sesión con Telegram o tu correo para entrar.'); return; }
+    }
     s.extraAuth = extra;
     // Una cuenta solo puede estar ENTRANDO por una sesion a la vez. Antes, dos
     // pestañas que mandaban el hola juntas pasaban las dos la comprobacion de
@@ -496,7 +516,8 @@ export class MmoWorld {
 
     // Misma cuenta abierta en otra pestaña: la vieja se cierra.
     const vieja = this.porUid.get(uid);
-    if (vieja && vieja !== s) { await this.guardar(vieja); vieja.noGuardar = true; this.expulsar(vieja, 'Tu cuenta se abrió en otro dispositivo'); }
+    // Antes de guardarla se aplica la regla del Abismo: abrir otra pestaña no es una huida gratis.
+    if (vieja && vieja !== s) { this.caidaPorDesconexion(vieja); await this.guardar(vieja); vieja.noGuardar = true; this.expulsar(vieja, 'Tu cuenta se abrió en otro dispositivo'); }
 
     let c = await this.state.storage.get('c:' + uid);
     let heredado = false;
@@ -506,8 +527,8 @@ export class MmoWorld {
     if (!c && !uid.startsWith('inv:') && /^[a-f0-9]{32}$/.test(m.inv || '')) {
       const uidInv = 'inv:' + (await sha256hex('dq-mmo:' + m.inv)).slice(0, 24);
       const previo = uidInv !== uid && await this.state.storage.get('c:' + uidInv);
-      // Un invitado baneado no se lava creando una cuenta.
-      if (previo && !this.porUid.has(uidInv) && !this.entrando.has(uidInv) && !(await this.baneado(uidInv))) {
+      // Un invitado baneado no se lava creando una cuenta. Los bots de prueba no se heredan.
+      if (previo && !UIDS_PRUEBA.has(uidInv) && !this.porUid.has(uidInv) && !this.entrando.has(uidInv) && !(await this.baneado(uidInv))) {
         // Mientras se hereda, el invitado no puede entrar (ni otra cuenta heredar):
         // leeria el personaje que se esta moviendo y al guardarlo quedaria duplicado.
         this.entrando.set(uidInv, s);
@@ -523,6 +544,14 @@ export class MmoWorld {
           await this.state.storage.delete('c:' + uidInv);
           heredado = true;
           this.renombrarContacto(uidInv, uid);
+          // El silencio del invitado sigue en la cuenta nueva (si no, registrarse lo lavaba).
+          const mod = await this.cargarMod();
+          if ((mod.mute[uidInv] || 0) > Date.now()) { mod.mute[uid] = Math.max(mod.mute[uid] || 0, mod.mute[uidInv]); this.guardarMod(); }
+          // Su ficha de hermandad y su codigo de amigo pasan al uid nuevo
+          // (si no, la hermandad quedaba con un miembro o lider fantasma).
+          const h = c.herm && await this.hermandad(c.herm);
+          if (h && h.miembros[uidInv]) { h.miembros[uid] = h.miembros[uidInv]; delete h.miembros[uidInv]; await this.guardarHerm(h); }
+          if (c.ref && (await this.state.storage.get('ref:' + c.ref)) === uidInv) await this.state.storage.put('ref:' + c.ref, uid);
           const r = (await this.state.storage.get('ranking')) || [];
           const fila = r.find(x => x.uid === uidInv);
           if (fila) { fila.uid = uid; fila.n = nombre; await this.state.storage.put('ranking', r); }
@@ -1249,10 +1278,12 @@ export class MmoWorld {
   }
 
   // botones: teclado en linea opcional (p. ej. Entregar / Anular un pedido).
-  async avisarAdmin(texto, botones) {
+  // plano: texto que escribio un jugador (reportes): sin Markdown y sin vista previa de enlaces.
+  async avisarAdmin(texto, botones, plano) {
     try {
       const env = getEnv({ env: this.env });
-      if (env.BOT_TOKEN && env.ADMIN_TG_ID) await tg(env.BOT_TOKEN, 'sendMessage', { chat_id: env.ADMIN_TG_ID, text: texto, parse_mode: 'Markdown', ...(botones ? { reply_markup: { inline_keyboard: botones } } : {}) });
+      const formato = plano ? { link_preview_options: { is_disabled: true } } : { parse_mode: 'Markdown' };
+      if (env.BOT_TOKEN && env.ADMIN_TG_ID) await tg(env.BOT_TOKEN, 'sendMessage', { chat_id: env.ADMIN_TG_ID, text: texto, ...formato, ...(botones ? { reply_markup: { inline_keyboard: botones } } : {}) });
     } catch (e) { console.error('[MMO avisarAdmin]', e); }
   }
   async avisarJugador(uid, texto) {
@@ -1648,9 +1679,23 @@ export class MmoWorld {
     s.st = this.stats(c);
     s.hp = Math.max(1, Math.min(s.st.maxHp, Math.round(s.st.maxHp * pct)));
     s.sucio = true;
-    this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });
+    this.difundirApariencia(s);
     this.revisarLogros(s);
     this.actualizarYo(s);
+  }
+
+  // 'pa' de equipo y cosmeticos: como mucho uno por segundo y sesion (cada 'pa'
+  // va a todo el mundo 3D). Si llega antes, se manda el ultimo al vencer el plazo.
+  difundirApariencia(s) {
+    const espera = 1000 - (Date.now() - (s.paT || 0));
+    if (espera <= 0) { s.paT = Date.now(); this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) }); return; }
+    if (s.paPend) return;
+    s.paPend = setTimeout(() => {
+      s.paPend = null;
+      if (s.cerrado || !s.c) return;
+      s.paT = Date.now();
+      this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });
+    }, espera);
   }
 
   // Reforjar (Nv 60, junto a la Artesana): vuelve a tirar la linea extra de
@@ -2284,7 +2329,7 @@ export class MmoWorld {
       if (typeof m.id !== 'string' || !Object.hasOwn(ALAS, m.id)) return;
       const al = ALAS[m.id];
       c.alas = c.alas || ['aprendiz'];
-      if (c.alas.includes(m.id)) { c.ala = m.id; this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) }); this.actualizarYo(s); return this.enviar(s, { t: 'toast', m: `🪽 Ahora llevas: ${al.nombre}.`, ok: true }); }
+      if (c.alas.includes(m.id)) { if (c.ala === m.id) return; c.ala = m.id; this.difundirApariencia(s); this.actualizarYo(s); return this.enviar(s, { t: 'toast', m: `🪽 Ahora llevas: ${al.nombre}.`, ok: true }); }
       if (al.premium) return this.enviar(s, { t: 'toast', m: 'Esas alas son premium: están en la tienda PREMIUM.' });
       if (al.mazmorras) return this.enviar(s, { t: 'toast', m: `Esas alas no se venden: se ganan completando ${al.mazmorras} mazmorras.` });
       if (c.nivel < al.nv) return this.enviar(s, { t: 'toast', m: `Necesitas nivel ${al.nv} para esas alas.` });
@@ -2307,9 +2352,10 @@ export class MmoWorld {
           c.oro -= tn.precio;
           c.tintes.push(m.id);
         }
+        if (c.tinte === m.id) return;
         c.tinte = m.id;
       }
-      this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });
+      this.difundirApariencia(s);
     } else if (m.k === 'mascota') {
       // Mascota: '' la guarda; si ya la tienes, solo se cambia.
       c.mascotas = c.mascotas || [];
@@ -2326,9 +2372,10 @@ export class MmoWorld {
           c.oro -= ma.precio;
           c.mascotas.push(m.id);
         }
+        if (c.mascota === m.id) return;
         c.mascota = m.id;
       }
-      this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });
+      this.difundirApariencia(s);
     } else if (m.k === 'arma' || m.k === 'skin') {
       const tabla = m.k === 'arma' ? ARMAS : SKINS;
       const lista = m.k === 'arma' ? c.armas : c.skins;
@@ -2354,6 +2401,8 @@ export class MmoWorld {
   equipar(s, m) {
     const c = s.c;
     if (typeof m.id !== 'string') return;
+    // Sin cambio no se difunde nada (antes, repetirlo en bucle inundaba a todo el mundo 3D).
+    if ((m.k === 'arma' && c.arma === m.id) || (m.k === 'skin' && c.skin === m.id)) return;
     if (m.k === 'arma' && c.armas.includes(m.id) && Object.hasOwn(ARMAS, m.id)) c.arma = m.id;
     else if (m.k === 'skin' && c.skins.includes(m.id) && Object.hasOwn(SKINS, m.id)) {
       c.skin = m.id;
@@ -2362,7 +2411,7 @@ export class MmoWorld {
       s.hp = Math.max(1, Math.round(s.st.maxHp * pct));
     } else return;
     s.sucio = true;
-    this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) });
+    this.difundirApariencia(s);
     this.actualizarYo(s);
   }
 

@@ -144,6 +144,8 @@ async function leerRun(secret, tgId, run) {
   if (!ts || !sig || sig !== await firmarRun(secret, tgId, ts)) return null;
   return ts;
 }
+// Tickets ya presentados en este isolate (ver submit_score)
+const _runsUsados = new Set();
 
 async function creditDuende(env, tgId, amount) {
   return supabaseQuery(env, 'rpc/add_duende_by_tgid', { method: 'POST', body: { p_tg_id: tgId, p_amount: amount } });
@@ -423,6 +425,12 @@ async function onRequestPost(context) {
       const seg = (Date.now() - inicio) / 1000;
       if (seg < 15 || seg > 6 * 3600) return json(request, { error: 'implausible' }, 422);
       if (wave > 1 + seg / 20 || score > 25000 * wave + 30000) return json(request, { error: 'implausible' }, 422);
+      // Freno a envios en paralelo con el mismo ticket (memoria del isolate,
+      // mejor esfuerzo: lo atomico de verdad necesita un indice UNIQUE en SQL).
+      const claveRun = tgId + '|' + String(body.run);
+      if (_runsUsados.has(claveRun)) return json(request, { error: 'run_used' }, 409);
+      if (_runsUsados.size > 10000) _runsUsados.clear();
+      _runsUsados.add(claveRun);
       // Un ticket vale para un solo envio: si ya hay un score posterior al
       // inicio de esta partida, el ticket esta gastado.
       const ultimo = await supabaseQuery(env, `game_scores?telegram_id=eq.${tgId}&select=created_at&order=created_at.desc&limit=1`);

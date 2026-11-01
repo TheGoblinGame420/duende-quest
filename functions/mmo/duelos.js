@@ -84,12 +84,14 @@ export const Duelos = {
     const g = ganador && ganador.c ? ganador : null;
     let elo = '';
     if (g) {
-      g.c.duelosG = (g.c.duelosG || 0) + 1;
-      g.sucio = true;
-      this.revisarLogros(g);
       const r = this.puntuarDuelo(g, g === a ? b : a);
-      if (r && !r.sin) elo = ` Elo: ${g.c.nombre} ${r.g} (+${r.d}).`;
-      else if (r && r.nv) elo = ' Sin Elo: demasiada diferencia de nivel.';
+      // La victoria (logro Duelista y ranking) solo cuenta si el duelo puntua.
+      if (r && !r.sin) {
+        g.c.duelosG = (g.c.duelosG || 0) + 1;
+        g.sucio = true;
+        this.revisarLogros(g);
+        elo = ` Elo: ${g.c.nombre} ${r.g} (+${r.d}).`;
+      } else if (r && r.nv) elo = ' Sin Elo: demasiada diferencia de nivel.';
     }
     for (const x of [a, b]) if (x && !x.muerto) x.inv = Date.now() + 1500;
     const txt = g ? `⚔️ ${g.c.nombre} gana el duelo${motivo ? ' (' + motivo + ')' : ''}.${elo}` : `⚔️ El duelo terminó en empate${motivo ? ' (' + motivo + ')' : ''}.`;
@@ -103,12 +105,13 @@ export const Duelos = {
   // sesion, si ya volvio) y pierde como si hubiera perdido el duelo.
   async eloPorAbandono(g, uid) {
     const vuelto = this.porUid.get(uid);
-    if (vuelto && vuelto.c) { this.puntuarDuelo(g, vuelto); return; }
+    if (vuelto && vuelto.c) return this.puntuarDuelo(g, vuelto);
     const { s: ya, c } = this.pjDe ? await this.pjDe(uid) : { s: null, c: await this.state.storage.get('c:' + uid) };
-    if (ya) { this.puntuarDuelo(g, ya); return; }
-    if (!c) return;
+    if (ya) return this.puntuarDuelo(g, ya);
+    if (!c) return null;
     const r = this.puntuarDuelo(g, { c });
     if (r && !r.sin && !this.porUid.get(uid)) await this.state.storage.put('c:' + uid, c);
+    return r;
   },
 
   puntuarDuelo(g, p) {
@@ -116,10 +119,14 @@ export const Duelos = {
     if (g.c.uid.startsWith('inv:') || p.c.uid.startsWith('inv:') || g.c.nivel < 10 || p.c.nivel < 10) return null;
     if (this.esPrueba && (this.esPrueba(g.c) || this.esPrueba(p.c))) return null;
     if (g.c.nivel - p.c.nivel > ELO_NV) return { sin: true, nv: true };
-    const hoy = hoyUTC(), par = [g.c.uid, p.c.uid].sort().join('|');
-    if (!this.dueloPares || this.dueloPares.d !== hoy) this.dueloPares = { d: hoy, l: {} };
-    if ((this.dueloPares.l[par] || 0) >= ELO_PAR_DIA) return { sin: true };
-    this.dueloPares.l[par] = (this.dueloPares.l[par] || 0) + 1;
+    // El tope por pareja y dia se guarda en cada personaje (en memoria se
+    // perdia con cada despliegue).
+    const hoy = hoyUTC();
+    const cuenta = (x, otro) => { if (!x.c.eloPar || x.c.eloPar.d !== hoy) x.c.eloPar = { d: hoy, l: {} }; return x.c.eloPar.l[otro] || 0; };
+    const n = Math.max(cuenta(g, p.c.uid), cuenta(p, g.c.uid));
+    if (n >= ELO_PAR_DIA) return { sin: true };
+    g.c.eloPar.l[p.c.uid] = n + 1;
+    p.c.eloPar.l[g.c.uid] = n + 1;
     const rg = g.c.elo || ELO_BASE, rp = p.c.elo || ELO_BASE;
     const d = Math.max(1, Math.round(ELO_K * (1 - 1 / (1 + Math.pow(10, (rp - rg) / 400)))));
     g.c.elo = rg + d; p.c.elo = Math.max(100, rp - d);
@@ -144,7 +151,13 @@ export const Duelos = {
         // duelo anulado, sin Elo. Huir cuando vas perdiendo sigue restando.
         if (ahora >= d.ini && d.el > d.yo) { this.enviar(s, { t: 'dueloFin', a: s.id, b: 0, g: 0, m: '⚔️ Tu rival perdió la conexión cuando iba ganando: duelo anulado (sin Elo).' }); continue; }
         let txt = '⚔️ Tu rival se fue: ganas el duelo.';
-        if (ahora >= d.ini && d.uid) { s.c.duelosG = (s.c.duelosG || 0) + 1; s.sucio = true; this.revisarLogros(s); this.eloPorAbandono(s, d.uid).catch(e => console.error('[MMO elo abandono]', e)); }
+        // La victoria solo suma si el duelo puntua (no con invitados ni por debajo de Nv 10).
+        if (ahora >= d.ini && d.uid) {
+          this.eloPorAbandono(s, d.uid).then(r => {
+            if (!r || r.sin || !s.c) return;
+            s.c.duelosG = (s.c.duelosG || 0) + 1; s.sucio = true; this.revisarLogros(s);
+          }).catch(e => console.error('[MMO elo abandono]', e));
+        }
         this.enviar(s, { t: 'dueloFin', a: s.id, b: 0, g: s.id, m: txt });
         continue;
       }

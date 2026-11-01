@@ -502,6 +502,13 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 91, fecha: '31 oct 2026', items: [
+    'Seguridad: una auditoría con 50 agentes revisó todo el juego en PC y móvil; se corrigieron más de 60 fallos.',
+    'Tu duende está más protegido: un enlace con datos de Telegram ajenos ya no puede hacerte entrar en otra cuenta ni llevarse tu personaje de invitado.',
+    'Las compras de skins con SOL se vuelven a comprobar solas durante 2 minutos (y al volver a abrir el juego), así El Duende siempre recibe el aviso de tu pago.',
+    'Juego más justo: sin vuelo infinito ni carreras falsas, el combo del 2D lo lleva el servidor, nadie ajeno puede curar en un duelo y los premios de invasiones y élites raros exigen ayudar de verdad.',
+    'El chat bloquea mejor los enlaces de estafa disfrazados y /ignorar ya funciona también en grupo, hermandad e invitaciones.',
+  ] },
   { n: 90, fecha: '31 oct 2026', items: [
     '🎃 Noche de Duendes en ORIGINS: el pueblo se llenó de calabazas con la cara encendida y de noche vuelan murciélagos sobre la plaza (hasta el 2 de noviembre).',
     'Durante la Noche de Duendes, los 7 disfraces de la mascota (Bruja, Momia, Frankenstein, Vampiro, Esqueleto, Lobo y Pirata) cuestan 25% menos de oro, en 3D y en 2D.',

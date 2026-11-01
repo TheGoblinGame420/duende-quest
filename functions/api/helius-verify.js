@@ -18,12 +18,34 @@
 // CADA compra es impredecible y solo la genera el propio comprador al
 // empezar su compra.
 
-import { verifySupabaseUser, verifyInitData, getSolPriceUsd, SOL_DEV_WALLET, SKIN_PRICES_USD, tg } from './lib.js';
+import { verifySupabaseUser, verifyInitData, getSolPriceUsd, SOL_DEV_WALLET, SKIN_PRICES_USD, tg, corsHeaders } from './lib.js';
 
 const DEV_WALLET = SOL_DEV_WALLET;
 // Direccion Solana en base58 (32-44 caracteres, sin 0 O I l).
 const SOL_ADDR = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const ORDEN_VIGENCIA_MS = 30 * 60 * 1000; // 30 minutos para pagar
+
+// Limite por IP en memoria del isolate (mejor esfuerzo, sin tabla): frena a
+// quien llena sol_orders de basura o gasta la cuota de Helius y CoinGecko.
+// verify admite mas porque el cliente reintenta mientras el pago se confirma.
+const LIMITES_IP = { create_sol_order: 6, verify_skin_purchase: 60, get_owned_skins: 60 };
+const VENTANA_IP_MS = 10 * 60 * 1000;
+const usoPorIp = new Map();
+function limiteIpSuperado(ip, action) {
+  const max = LIMITES_IP[action];
+  if (!max || !ip) return false;
+  const ahora = Date.now();
+  const clave = action + '|' + ip;
+  const u = usoPorIp.get(clave);
+  if (!u || ahora - u.desde > VENTANA_IP_MS) {
+    // Limpieza ocasional para que el mapa no crezca sin fin
+    if (usoPorIp.size > 5000) usoPorIp.clear();
+    usoPorIp.set(clave, { desde: ahora, n: 1 });
+    return false;
+  }
+  u.n++;
+  return u.n > max;
+}
 
 function getEnv(context) {
   return {
@@ -83,8 +105,8 @@ function nuevaReferencia() {
 }
 
 // Busca en la cadena, POR REFERENCIA (nunca por lo que diga el cliente), la
-// transaccion que pago una orden. Devuelve {sol, wallet_address, tx_signature}
-// o null. La referencia se mete en la transaccion como cuenta de solo
+// transaccion que pago una orden. Devuelve {sol, wallet_address, tx_signature,
+// block_time_ms} o null. La referencia se mete en la transaccion como cuenta de solo
 // lectura (ver game.html: tx.keys.push({pubkey:reference,...})), asi que
 // aparece en accountKeys de cualquier transaccion que la incluya.
 async function buscarPagoPorReferencia(heliusKey, reference, expectedLamports) {
@@ -96,38 +118,47 @@ async function buscarPagoPorReferencia(heliusKey, reference, expectedLamports) {
       });
       return (await r.json())?.result;
     };
-    const firmas = await rpc('getSignaturesForAddress', [reference, { limit: 5 }]);
+    // commitment 'confirmed': con el valor por defecto ('finalized') el pago
+    // tarda ~13 s mas en verse y la primera verificacion casi siempre fallaba.
+    const firmas = await rpc('getSignaturesForAddress', [reference, { limit: 5, commitment: 'confirmed' }]);
     if (!Array.isArray(firmas) || firmas.length === 0) return null;
     for (const f of firmas) {
       if (f.err) continue;
-      const tx = await rpc('getTransaction', [f.signature, { encoding: 'jsonParsed', maxSupportedTransactionVersion: 0 }]);
+      const tx = await rpc('getTransaction', [f.signature, { encoding: 'jsonParsed', maxSupportedTransactionVersion: 0, commitment: 'confirmed' }]);
       if (!tx || tx.meta?.err) continue;
       const instructions = tx.transaction?.message?.instructions || [];
       const transfer = instructions.find(i => i.parsed?.type === 'transfer' && i.parsed?.info?.destination === DEV_WALLET);
       if (!transfer) continue;
       const lamports = transfer.parsed.info.lamports || 0;
       if (lamports < expectedLamports * 0.97) continue; // 3% de margen por volatilidad del precio
-      return { sol: lamports / 1e9, wallet_address: transfer.parsed.info.source, tx_signature: f.signature };
+      const bt = tx.blockTime || f.blockTime;
+      return { sol: lamports / 1e9, wallet_address: transfer.parsed.info.source, tx_signature: f.signature, block_time_ms: bt ? bt * 1000 : null };
     }
     return null;
   } catch (e) { return null; }
 }
 
-async function getNFTs(heliusKey, walletAddress) {
+// Aviso al dueño por Telegram (la entrega sigue siendo manual con /skinweb).
+async function avisarDueno(env, text) {
+  if (!env.TELEGRAM_BOT_TOKEN || !env.ADMIN_TG_ID) return;
   try {
-    const r = await fetch(`https://api.helius.xyz/v0/addresses/${walletAddress}/nfts?api-key=${heliusKey}`);
-    return await r.json();
-  } catch (e) { return []; }
+    await tg(env.TELEGRAM_BOT_TOKEN, 'sendMessage', { chat_id: env.ADMIN_TG_ID, disable_web_page_preview: true, text });
+  } catch (e) { console.error('[skin web] aviso al dueño', e); }
 }
 
 async function onRequestPost(context) {
-  const headers = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type', 'Content-Type': 'application/json' };
+  // CORS solo para el origen propio (antes '*': cualquier web podia usar la
+  // cuota de Helius y CoinGecko desde el navegador de sus visitantes).
+  const headers = corsHeaders(context.request);
   const env = getEnv(context);
   const j = (body, status = 200) => new Response(JSON.stringify(body), { headers, status });
 
   try {
     const body = await context.request.json();
     const { action } = body;
+    if (limiteIpSuperado(context.request.headers.get('CF-Connecting-IP'), action)) {
+      return j({ error: 'rate_limited', detail: 'Demasiadas peticiones, espera unos minutos.' }, 429);
+    }
 
     // ── PASO 1: crear la orden, ANTES de pagar. Devuelve la referencia que
     // el cliente mete en su transaccion. ──
@@ -139,10 +170,12 @@ async function onRequestPost(context) {
       if (!solUsd) return j({ error: 'price_unavailable', detail: 'Precio de SOL no disponible, reintenta en un minuto' }, 503);
       const expectedLamports = Math.floor((usd / solUsd) * 1e9);
       const reference = nuevaReferencia();
-      await supabaseQuery(env, 'sol_orders', {
+      const creada = await supabaseQuery(env, 'sol_orders', {
         method: 'POST',
         body: { reference, kind: 'skin', skin_id: skinId, expected_lamports: expectedLamports, status: 'pending' },
       });
+      // Sin la fila guardada no se da la referencia: el pago no se podria verificar.
+      if (!Array.isArray(creada) || creada.length !== 1) return j({ error: 'order_unavailable', detail: 'No se pudo crear la orden, reintenta en un minuto' }, 503);
       return j({ success: true, reference, dev_wallet: DEV_WALLET, lamports: expectedLamports, sol: expectedLamports / 1e9 });
     }
 
@@ -157,12 +190,26 @@ async function onRequestPost(context) {
       if (!orden) return j({ error: 'order_not_found' }, 404);
       if (orden.status === 'filled') {
         // Idempotente: si ya se proceso, devolver el resultado guardado en vez de error.
-        return j({ success: true, sol: (orden.expected_lamports || 0) / 1e9, already_owned: true });
+        // pending_review: orden cerrada no es skin entregada (la activa el dueño).
+        return j({ success: true, pending_review: true, sol: (orden.expected_lamports || 0) / 1e9, already_owned: true });
       }
-      if (Date.now() - Date.parse(orden.created_at) > ORDEN_VIGENCIA_MS) return j({ error: 'order_expired', detail: 'La orden expiró, vuelve a intentar la compra' }, 410);
+      const creadaMs = Date.parse(orden.created_at);
 
       const pago = await buscarPagoPorReferencia(env.HELIUS_API_KEY, reference, orden.expected_lamports);
-      if (!pago) return j({ success: false, error: 'payment_not_found', detail: 'No se encontró el pago todavía. Espera unos segundos y reintenta.' }, 402);
+      if (!pago) {
+        if (Date.now() - creadaMs > ORDEN_VIGENCIA_MS) return j({ error: 'order_expired', detail: 'La orden expiró, vuelve a intentar la compra' }, 410);
+        return j({ success: false, error: 'payment_not_found', detail: 'No se encontró el pago todavía. Espera unos segundos y reintenta.' }, 402);
+      }
+      // El plazo se mide con la hora del pago en la cadena, no con la hora de
+      // verificar. Si se pago tarde, el dueño lo revisa a mano igualmente.
+      if (pago.block_time_ms && pago.block_time_ms - creadaMs > ORDEN_VIGENCIA_MS) {
+        await avisarDueno(env, `⚠️ Skin web pagada FUERA DE PLAZO (orden caducada, revisar a mano)
+Skin: ${orden.skin_id} · ${pago.sol} SOL
+De: ${pago.wallet_address}
+https://solscan.io/tx/${pago.tx_signature}
+Referencia: ${reference}`);
+        return j({ error: 'order_expired', detail: 'El pago llegó fuera de plazo; el equipo lo revisará a mano.' }, 410);
+      }
 
       // Una transaccion paga UNA orden: si su firma ya cerro otra (una tx con las
       // referencias de varias ordenes y un solo pago), no vale para esta.
@@ -175,7 +222,8 @@ async function onRequestPost(context) {
         method: 'PATCH', body: { status: 'filled', wallet_address: pago.wallet_address, tx_signature: pago.tx_signature, filled_at: new Date().toISOString() },
       });
       if (marcada && marcada.code === '23505') return j({ error: 'tx_already_used', detail: 'Ese pago ya se usó para otra compra.' }, 409);   // indice UNIQUE de sql/07
-      if (!Array.isArray(marcada) || marcada.length !== 1) return j({ success: true, already_owned: true }); // otra peticion ya la proceso
+      // Otra peticion ya la proceso
+      if (!Array.isArray(marcada) || marcada.length !== 1) return j({ success: true, pending_review: true, already_owned: true });
       // Carrera entre dos ordenes con la misma tx (sin el indice UNIQUE de sql/07): la
       // que llego segunda se devuelve a 'pending'.
       const conEsaTx = await supabaseQuery(env, `sol_orders?tx_signature=eq.${enc(pago.tx_signature)}&select=reference,filled_at&order=filled_at.asc,reference.asc`);
@@ -185,23 +233,26 @@ async function onRequestPost(context) {
       }
 
       const yaLaTenia = await supabaseQuery(env, `skin_purchases?wallet_address=eq.${enc(pago.wallet_address)}&skin_id=eq.${enc(orden.skin_id)}&select=id`);
-      if (Array.isArray(yaLaTenia) && yaLaTenia.length > 0) return j({ success: true, already_owned: true, wallet_address: pago.wallet_address });
+      if (Array.isArray(yaLaTenia) && yaLaTenia.length > 0) {
+        // Pago duplicado: la orden ya quedo cobrada, asi que el dueño debe enterarse.
+        await avisarDueno(env, `⚠️ Skin web pagada DOS VECES (la wallet ya la tenia): revisar devolución
+Skin: ${orden.skin_id} · ${pago.sol} SOL
+De: ${pago.wallet_address}
+https://solscan.io/tx/${pago.tx_signature}
+Referencia: ${reference}`);
+        return j({ success: true, pending_review: true, already_owned: true, wallet_address: pago.wallet_address });
+      }
 
       // ENTREGA MANUAL (27-oct-2026, decision del dueño): el pago queda verificado en la
       // cadena y la orden en 'filled', pero la skin NO se guarda aqui: al dueño le llega
       // por Telegram y la activa con /skinweb REFERENCIA (telegram-bot.js) tras revisarlo.
-      if (env.TELEGRAM_BOT_TOKEN && env.ADMIN_TG_ID) {
-        try {
-          await tg(env.TELEGRAM_BOT_TOKEN, 'sendMessage', { chat_id: env.ADMIN_TG_ID, disable_web_page_preview: true,
-            text: `🛒 Skin web pagada (por revisar)
+      await avisarDueno(env, `🛒 Skin web pagada (por revisar)
 Skin: ${orden.skin_id} · ${pago.sol} SOL
 De: ${pago.wallet_address}
 Comprador: ${orden.telegram_id || 'sin Telegram (wallet)'}
 https://solscan.io/tx/${pago.tx_signature}
 
-Si el pago es correcto, actívala: /skinweb ${reference}` });
-        } catch (e) { console.error('[skin web] aviso al dueño', e); }
-      }
+Si el pago es correcto, actívala: /skinweb ${reference}`);
       return j({ success: true, pending_review: true, sol: pago.sol, wallet_address: pago.wallet_address, reference });
     }
 
@@ -234,13 +285,7 @@ Si el pago es correcto, actívala: /skinweb ${reference}` });
       return j({ skins });
     }
 
-    if (action === 'check_nfts') {
-      // Sin validar, la direccion iba cruda en la ruta de api.helius.xyz junto
-      // a nuestra api-key: servia para llamar a otras rutas con nuestra cuota.
-      if (!SOL_ADDR.test(String(body.wallet_address || ''))) return j({ error: 'Bad wallet' }, 400);
-      const nfts = await getNFTs(env.HELIUS_API_KEY, body.wallet_address);
-      return j({ nfts: nfts.length, items: nfts.slice(0, 20) });
-    }
+    // check_nfts se quito: ningun cliente lo usaba y solo gastaba la cuota de Helius.
 
     return j({ error: 'Unknown action' }, 400);
   } catch (err) {
@@ -248,8 +293,8 @@ Si el pago es correcto, actívala: /skinweb ${reference}` });
   }
 }
 
-async function onRequestOptions() {
-  return new Response('', { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type' } });
+async function onRequestOptions(context) {
+  return new Response('', { headers: corsHeaders(context?.request) });
 }
 
 export default { onRequestPost, onRequestOptions };

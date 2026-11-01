@@ -59,6 +59,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v320 | Duende = mascota $DUENDE (cabeza cubo, espadas pixel), disfraces, tema oficial en el pueblo, interpolación suave | **B** |
 | v321 | 7 skins disfraz de la mascota (solo oro), interfaz de vidrio, ambiente (viento, pájaros, grillos, gotas), física con inercia y aplastado | **B** |
 | v322 | Noche de Duendes (calabazas y murciélagos en el pueblo), disfraces −25% en el evento, polvo al correr, empujón de cámara en crítico | **B** |
+| v323 | Auditoría de seguridad con 50 agentes (PC y móvil): ~70 arreglos — Telegram solo en Telegram, avisos de pagos SOL, vuelo/planeo, duelos, eventos, chat y nombres | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

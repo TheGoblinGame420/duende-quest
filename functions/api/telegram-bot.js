@@ -207,7 +207,7 @@ async function handleStart(token, env, chatId, user, startPayload, desdeMenu) {
 function mdSeguro(t) { return String(t || '').normalize('NFC').replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 20) || '?'; }
 
 async function handleRanking(token, env, chatId, messageId) {
-  const rows = await supabaseQuery(env, 'game_scores?select=username,score,wave&order=score.desc&limit=50');
+  const rows = await supabaseQuery(env, 'game_scores?verified=is.true&select=username,score,wave&order=score.desc&limit=50');
   // Una entrada por jugador: su mejor score
   const best = new Map();
   if (Array.isArray(rows)) for (const s of rows) { const k = (s.username || '?').toLowerCase(); if (!best.has(k) || s.score > best.get(k).score) best.set(k, s); }
@@ -501,14 +501,14 @@ async function handleAdmin(token, env, context, chatId, userId) {
     supabaseQuery(env, `game_scores?created_at=gte.${week}&select=username`),
     supabaseQuery(env, `stars_purchases?created_at=gte.${week}&select=amount_usd,amount_stars`),
     supabaseQuery(env, `withdrawal_requests?status=eq.pending&select=tokens_burned,usd_value`),
-    supabaseQuery(env, `game_scores?created_at=gte.${today.toISOString()}&select=username,score&order=score.desc&limit=1`),
+    supabaseQuery(env, `game_scores?created_at=gte.${today.toISOString()}&verified=is.true&select=username,score&order=score.desc&limit=1`),
     supabaseQuery(env, `redemptions?status=eq.pending&select=id,username,wallet_sol,dq_amount,duende_amount&order=created_at.asc`),
   ]);
   const uniq = a => Array.isArray(a) ? new Set(a.map(s => (s.username || '?').toLowerCase())).size : 0;
   const n = a => Array.isArray(a) ? a.length : 0;
   const usdWeek = (Array.isArray(buysWeek) ? buysWeek : []).reduce((s, b) => s + Number(b.amount_usd || 0), 0);
   const wdUsd = (Array.isArray(pendingWd) ? pendingWd : []).reduce((s, w) => s + Number(w.usd_value || 0), 0);
-  const top = Array.isArray(topToday) && topToday[0] ? `${topToday[0].username} — ${Number(topToday[0].score).toLocaleString()}` : '—';
+  const top = Array.isArray(topToday) && topToday[0] ? `${mdSeguro(topToday[0].username)} — ${Number(topToday[0].score).toLocaleString()}` : '—';
   // Canjes DQ → $DUENDE pendientes (con instrucciones de pago)
   let redLines = '';
   if (Array.isArray(redemptions) && redemptions.length) {
@@ -518,11 +518,18 @@ async function handleAdmin(token, env, context, chatId, userId) {
   } else {
     redLines = '\n\n🎁 Canjes pendientes: *0*';
   }
-  await tg(token, 'sendMessage', {
+  const panel = {
     chat_id: chatId,
     text: `📊 *PANEL ADMIN — DUENDE QUEST*\n\n*Hoy*\n🎮 Partidas: *${n(scoresToday)}* · 👥 Jugadores: *${uniq(scoresToday)}*\n🏆 Top: ${top}\n\n*Últimos 7 días*\n🎮 Partidas: *${n(scoresWeek)}* · 👥 Jugadores: *${uniq(scoresWeek)}*\n⭐ Compras: *${n(buysWeek)}* (~$${usdWeek.toFixed(2)})\n\n*Pendiente*\n💸 Retiros TON: *${n(pendingWd)}* (~$${wdUsd.toFixed(2)})${redLines}`,
     parse_mode: 'Markdown',
-  });
+  };
+  const res = await tg(token, 'sendMessage', panel);
+  // Si el Markdown no se pudo parsear, el panel llega igual en texto plano
+  if (!res || !res.ok) {
+    console.error('[admin] panel rechazado', res && res.description);
+    delete panel.parse_mode;
+    await tg(token, 'sendMessage', panel);
+  }
 }
 
 // ── /pay <id> [txsig]: marca un canje como pagado (solo admin) ──
@@ -697,7 +704,14 @@ async function onRequestPost(context) {
         const tokens = Math.max(0, Math.min(parseInt(payload.tokens, 10) || 0, maxTokens)) || maxTokens;
         const reg = await supabaseQuery(env, 'stars_purchases', { method: 'POST', body: { telegram_id: tgId, amount_usd: +paidUsd.toFixed(2), amount_stars: starsPaid, tokens_credited: 0, tx_id: chargeId } });
         if (!Array.isArray(reg) || reg.length !== 1) return new Response('OK');
-        await avisarDueno(`⭐ Compra de $DUENDE con Stars (por revisar)\n${starsPaid} Stars (~$${paidUsd.toFixed(2)}) · le tocan ${tokens.toLocaleString('es')} $DUENDE${firstBuyMult > 1 ? ' (oferta 2x de 1ª compra)' : ''}\nDe: ${quien}\n\nAcredita:\n/starsok ${chargeId} ${tokens}`);
+        // La 2x mira solo compras ya acreditadas: si hay otras sin acreditar, se avisa
+        // al dueño para que no la repita (la cifra la decide el al revisar).
+        let otrasCompras = '';
+        if (firstBuyMult > 1) {
+          const previas = await supabaseQuery(env, `stars_purchases?telegram_id=eq.${encodeURIComponent(tgId)}&tx_id=neq.${encodeURIComponent(chargeId)}&select=id&limit=20`);
+          if (Array.isArray(previas) && previas.length) otrasCompras = `\n⚠️ OJO: tiene ${previas.length} compra(s) de Stars anteriores (sin acreditar, skins o MMO); la 2x solo vale para la primera.`;
+        }
+        await avisarDueno(`⭐ Compra de $DUENDE con Stars (por revisar)\n${starsPaid} Stars (~$${paidUsd.toFixed(2)}) · le tocan ${tokens.toLocaleString('es')} $DUENDE${firstBuyMult > 1 ? ' (oferta 2x de 1ª compra)' : ''}${otrasCompras}\nDe: ${quien}\n\nAcredita:\n/starsok ${chargeId} ${tokens}`);
         await tg(token, 'sendMessage', { chat_id: chatId, text: `✅ *Pago recibido* (${starsPaid} Stars)\n\nEl equipo revisa el pago y acredita tus $DUENDE en breve. Te avisaremos aquí.`, parse_mode: 'Markdown' });
       } catch(e) {
         await tg(token, 'sendMessage', { chat_id: chatId, text: '⚠️ Recibimos tu pago, pero hubo un error al acreditar los tokens. Escribe a @ElDuendeOficial (creador oficial) con la fecha y la cantidad de Stars para resolverlo.' });

@@ -153,12 +153,15 @@ export async function getTonPriceUsd(estricto = false) {
   return estricto ? null : 3.5;
 }
 
+// Cache de 60 s en memoria del isolate: sin ella cada orden pedia a CoinGecko.
+let _solPrecio = { v: 0, t: 0 };
 export async function getSolPriceUsd() {
+  if (_solPrecio.v && Date.now() - _solPrecio.t < 60000) return _solPrecio.v;
   try {
     const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd', { signal: AbortSignal.timeout(5000) });
     const d = await r.json();
     const p = parseFloat(d?.solana?.usd || 0);
-    if (p > 0) return p;
+    if (p > 0) { _solPrecio = { v: p, t: Date.now() }; return p; }
   } catch (e) {}
   return null; // sin precio real no se cobra de menos por un valor fijo desfasado
 }

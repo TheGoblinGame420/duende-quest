@@ -1652,7 +1652,7 @@ async function pruebasMundoAbierto() {
   chequear(!mundo.evento, 'al caer el Capitán la invasión termina');
   chequear(premio(h1) && h1.c.bolsa.length > bolsa1, 'quien peleó cobra XP, oro y objeto');
   chequear(h1.ultimos('gana').some(x => x.item && x.item.r >= 1), 'el objeto es raro o mejor');
-  chequear(premio(cu) && cu.c.bolsa.length > bolsaCu, 'quien curó en el evento también cobra');
+  chequear(!premio(cu) && cu.c.bolsa.length === bolsaCu, 'quien curó una sola vez no cobra (hay que ayudar contra 3 invasores)');
   chequear(!premio(h2) && h2.c.bolsa.length === bolsa2 && h2.c.oro === oro2, 'quien estaba en la zona sin pelear no cobra');
   chequear(!premio(h3) && h3.c.bolsa.length === bolsa3 && h3.c.oro === oro3, 'quien estaba en otra zona no cobra');
   chequear(h3.ultimos('aviso').some(x => /rechazada/.test(x.m)) && h3.ultimos('ev').some(x => !x.on), 'se avisa a todos que terminó');
@@ -1737,9 +1737,11 @@ async function pruebasMundoAbierto() {
   chequear(mundo.crearRaro('selva') === raro, 'como mucho uno vivo por zona');
   const bolsaR = h3.c.bolsa.length;
   mundo.danar(raro, 1, otro);
+  // Para cobrar el raro hay que estar cerca (900 px), como al pelear de verdad.
+  h3.x = raro.x; h3.y = raro.y;
   matarCon(raro, h3);
   chequear(h3.c.bolsa.length > bolsaR && h3.ultimos('gana').some(x => x.item && x.item.r >= 1), 'suelta un objeto raro o mejor garantizado');
-  chequear(otro.ultimos('gana').some(x => x.item && x.item.r >= 1), 'también a quien ayudó');
+  chequear(!otro.ultimos('gana').some(x => x.item && x.item.r >= 1), 'un golpe de 1 punto no da el premio del raro');
   const w = mundo.mundoK('selva');
   chequear(w.raroProx - Date.now() >= RARO_REAPARECE_MS - 1000, 'reaparición larga (20 min)');
   // Con el azar a favor (Math.random = 0) para ver solo el efecto del tiempo.
@@ -1839,7 +1841,7 @@ async function pruebasDuelos() {
   b.hp = 2; const g0 = a.c.duelosG || 0;
   for (let i = 0; i < 20 && a.duelo; i++) { a.atkT = 0; avanzar(1000); await a.mandar({ t: 'atk', s: 0 }); }
   chequear(!a.duelo && !b.duelo && !b.muerto && b.hp >= 1, 'al quedar a 1 de vida el duelo termina sin muertes');
-  chequear((a.c.duelosG || 0) === g0 + 1, 'se cuenta la victoria');
+  chequear((a.c.duelosG || 0) === g0, 'entre invitados la victoria no suma (no se farmea el logro)');
   chequear(a.ultimos('dueloFin').some(x => x.g === a.id), 'todos saben quién ganó');
   // En combate no se puede retar (si no, el duelo servia para escapar).
   a.limpiar(); avanzar(1000);
@@ -2363,7 +2365,8 @@ async function pruebasPase() {
   chequear(pa.mes === D.paseMes() && pa.p === 0, 'empieza el mes en 0');
   // Quien va por detras del ritmo del mes (50 por dia) gana el doble.
   mundo.puntoPase(j, D.PASE.puntos.semanal); mundo.puntoPase(j, 50);
-  chequear(j.c.pase.p === 160, 'suma puntos, dobles para ponerse al día (160)');
+  const esperado = 60 + (new Date().getUTCDate() >= 2 ? 100 : 50);
+  chequear(j.c.pase.p === esperado, 'suma puntos, dobles para ponerse al día (' + esperado + ')');
   j.c.pase.p = 80;
   j.limpiar(); await j.mandar({ t: 'pase', n: 2 });
   chequear(j.ultimos('no').some(x => /Aún no/.test(x.m)), 'no se cobra un nivel no alcanzado');

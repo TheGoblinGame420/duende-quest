@@ -132,8 +132,10 @@ footer a{color:var(--cian);text-decoration:none;}
 </main>
 <script>
 (function () {
-  // Los enlaces llevan el hash (sesion de Telegram, si la hay).
-  var h = location.hash || '';
+  // Los enlaces llevan el hash (sesion de Telegram) solo dentro de Telegram de verdad:
+  // fuera, un #tgWebAppData ajeno en un enlace metia al jugador en otra cuenta.
+  var enTg = !!(window.TelegramWebviewProxy || window.parent !== window || (window.external && 'notify' in window.external));
+  var h = enTg ? (location.hash || '') : '';
   // El ultimo juego (lo guarda cada juego al entrar) va primero y dice CONTINUAR.
   var ult = null; try { ult = localStorage.getItem('dq_ultimo_juego'); } catch (e) {}
   document.querySelectorAll('[data-ir]').forEach(function (a) {

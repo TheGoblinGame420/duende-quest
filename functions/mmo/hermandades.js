@@ -10,7 +10,8 @@
 // 'miembro'. Crear una cuesta oro (sale del juego, no de dinero real).
 // ═══════════════════════════════════════════════════════
 import { HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, GESTA_ANTIG_MS, premioGesta, semanaUTC } from '../../mmo/js/data.js';
-import { pub, riesgoEstafa } from './social.js';
+import { pub, riesgoEstafa, meIgnora } from './social.js';
+import { esqueleto } from './dios.js';
 
 const INV_MS = 60000;
 // Letras latinas (con tildes y ñ), cifras y espacios; 3-20 caracteres. Como
@@ -83,7 +84,10 @@ export const Hermandades = {
     // 'elduende') y bloqueaba nombres normales. 'El Duende' y 'Duende Quest' se
     // buscan con sus espacios.
     const llanoHerm = nombre.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-    if (!this.esDios(s) && (nombre.split(' ').some(w => this.nombreReservado(w)) || /(^| )el ?duende( |$)|duende ?quest/.test(llanoHerm))) return this.no(s, 'Ese nombre está reservado.');
+    // La frase tambien con las letras que se confunden ('EI Duende', 'El Ðuende').
+    const esqHerm = llanoHerm.replace(/[il1|!]/g, 'l').replace(/ð/g, 'd').replace(/[0ø]/g, 'o').replace(/3/g, 'e');
+    const RE_FRASE = /(^| )el ?duende( |$)|duende ?quest/;
+    if (!this.esDios(s) && (nombre.split(' ').some(w => this.nombreReservado(w)) || RE_FRASE.test(llanoHerm) || RE_FRASE.test(esqHerm))) return this.no(s, 'Ese nombre está reservado.');
     const clave = 'hn:' + nombre.toLowerCase();
     // Cerrojo: un doble toque (o dos peticiones seguidas) no cobra dos veces
     // ni deja una hermandad huerfana; tampoco dos jugadores el mismo nombre.
@@ -93,6 +97,10 @@ export const Hermandades = {
     let h, id;
     try {
       if (await this.state.storage.get(clave)) return this.no(s, 'Ya existe una hermandad con ese nombre.');
+      // Ni una que se vea igual ('Los Iobos', 'Los Lobós' junto a 'Los Lobos'): se compara
+      // el esqueleto con las que ya hay (no hace falta migrar sus claves hn:).
+      const esq = esqueleto(nombre);
+      for (const k of (await this.state.storage.list({ prefix: 'hn:' })).keys()) if (esqueleto(k.slice(3)) === esq) return this.no(s, 'Ya existe una hermandad con un nombre igual o casi igual.');
       // Durante la espera pudo cambiar: se repite antes de cobrar.
       if (c.herm || c.oro < HERM_COSTO || s.cerrado) return;
       id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -121,6 +129,8 @@ export const Hermandades = {
     const t = this.sesiones.get(m.p | 0);
     if (!t || !t.c || t === s) return;
     if (t.c.herm) return this.no(s, `${t.c.nombre} ya está en una hermandad.`);
+    // Quien te ignora no recibe tus invitaciones (respuesta neutra).
+    if (meIgnora(t, s.c.uid)) return this.no(s, `${t.c.nombre} no acepta invitaciones tuyas.`);
     // No se pisa la invitacion pendiente de otra hermandad.
     if (t.invHerm && t.invHerm.hasta > Date.now() && t.invHerm.id !== h.id) return this.no(s, `${t.c.nombre} ya tiene una invitación pendiente.`);
     // Una invitacion cada 10 s a la misma persona (si no, se le inundaba de ventanas).
@@ -269,7 +279,7 @@ export const Hermandades = {
     const h = this.herms && this.herms.get(s.c.herm);
     if (!h) return this.no(s, 'No estás en una hermandad.');
     const txt = JSON.stringify({ ...base, canal: 'hermandad' });
-    for (const x of this.conectadosHerm(h)) this.enviar(x, txt);
+    for (const x of this.conectadosHerm(h)) if (!meIgnora(x, s.c.uid)) this.enviar(x, txt);
     // Para los miembros que entren luego (social.js, enviarHistorialChat).
     this.chatHistH = this.chatHistH || new Map();
     if (!this.chatHistH.has(h.id)) this.chatHistH.set(h.id, []);

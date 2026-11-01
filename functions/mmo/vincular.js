@@ -15,7 +15,7 @@
 // personaje al crear cuenta.
 // c.vinc = { tg: 'tg:<id>', web: 'web:<id>' } (las cuentas secundarias).
 // ═══════════════════════════════════════════════════════
-import { claveNombre } from './dios.js';
+import { claveNombre, esqueleto } from './dios.js';
 
 const VINC_MS = 10 * 60 * 1000;
 const LETRAS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -54,12 +54,20 @@ export const Vincular = {
         if (yoAuth.startsWith('inv:')) return this.no(s, 'Entra primero con tu cuenta de Telegram o de correo para vincularla.');
         if (s.uidAuth && s.uidAuth !== c.uid) return this.no(s, 'Esta cuenta ya está vinculada a un duende.');
         const cod = String(m.cod || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-        // Contra la fuerza bruta: 5 fallos por cuenta y 60 en todo el servidor cada 10 min.
+        // Contra la fuerza bruta: 5 fallos por cuenta y 20 por conexion cada 10 min.
+        // Los 60 de todo el servidor solo frenan codigos que no existen: antes 12
+        // cuentas llenaban ese tope y nadie podia vincular aunque su codigo fuera bueno.
+        // (Cada fallo cuenta igual para su cuenta: el tope global no da intentos gratis.)
         const ahoraV = Date.now();
+        const demasiados = 'Demasiados intentos con códigos que no existen. Espera unos minutos.';
         this.vincFallos = (this.vincFallos || []).filter(x => ahoraV - x.t < VINC_MS);
-        if (this.vincFallos.filter(x => x.u === yoAuth).length >= 5 || this.vincFallos.length >= 60) return this.no(s, 'Demasiados intentos con códigos que no existen. Espera unos minutos.');
+        if (this.vincFallos.filter(x => x.u === yoAuth).length >= 5 || (s.ip && this.vincFallos.filter(x => x.ip === s.ip).length >= 20)) return this.no(s, demasiados);
         const v = this.vincs && this.vincs.get(cod);
-        if (!v || v.exp < ahoraV) { this.vincFallos.push({ u: yoAuth, t: ahoraV }); return this.no(s, 'Ese código no existe o ya caducó (duran 10 minutos).'); }
+        if (!v || v.exp < ahoraV) {
+          const lleno = this.vincFallos.length >= 60;
+          this.vincFallos.push({ u: yoAuth, ip: s.ip || '', t: ahoraV });
+          return this.no(s, lleno ? demasiados : 'Ese código no existe o ya caducó (duran 10 minutos).');
+        }
         if (v.uid === c.uid) return this.no(s, 'Ese código es de esta misma cuenta: escríbelo en tu OTRA cuenta.');
         const tipo = tipoUid(yoAuth);
         if (tipo === tipoUid(v.uid)) return this.no(s, `Las dos cuentas son de ${NOMBRE_TIPO[tipo] || tipo}: solo se vincula una de Telegram con una de correo.`);
@@ -73,8 +81,7 @@ export const Vincular = {
         s.noGuardar = true;
         if (c.nivel > 1 || c.oro > 0) await this.state.storage.put('arch:' + c.uid, { ...c, archivado: Date.now(), por: v.uid });
         await this.state.storage.delete('c:' + c.uid);
-        const kn = 'n:' + claveNombre(c.nombre);
-        if ((await this.state.storage.get(kn)) === c.uid) await this.state.storage.delete(kn);
+        for (const kn of ['n:' + claveNombre(c.nombre), 'ne:' + esqueleto(c.nombre)]) if ((await this.state.storage.get(kn)) === c.uid) await this.state.storage.delete(kn);
         await this.state.storage.put('al:' + c.uid, v.uid);
         destino.vinc = { ...(destino.vinc || {}), [tipo]: c.uid };
         if (otro) { otro.sucio = true; await this.guardar(otro); this.enviar(otro, { t: 'toast', ok: true, m: `🔗 Cuenta de ${NOMBRE_TIPO[tipo]} vinculada: ya puedes entrar con ella a este mismo duende.` }); this.enviar(otro, this.infoVinc(otro)); }

@@ -91,8 +91,20 @@ export const Retencion = {
     }
     return this._retIdx;
   },
+  // Devuelve false si no se pudo guardar. Tope duro de entradas: el indice es una
+  // sola clave (unos 2 MB como mucho) y una oleada de invitados lo llenaba; se
+  // quitan los invitados que llevan mas tiempo sin jugar (a ellos nunca se les avisa).
   async retGuardarIdx() {
-    try { await this.state.storage.put('ret:idx', await this.retIdx()); } catch (e) { console.error('[MMO ret idx]', e); }
+    try {
+      const idx = await this.retIdx();
+      const uids = Object.keys(idx);
+      if (uids.length > 20000) {
+        const invs = uids.filter(u => u.startsWith('inv:')).sort((a, b) => (idx[a].v || 0) - (idx[b].v || 0));
+        for (const u of invs.slice(0, uids.length - 18000)) delete idx[u];
+      }
+      await this.state.storage.put('ret:idx', idx);
+      return true;
+    } catch (e) { console.error('[MMO ret idx]', e); return false; }
   },
   retDia(n) {
     this._retDias = this._retDias || new Map();
@@ -494,7 +506,8 @@ export const Retencion = {
     const e = idx[uid] || (idx[uid] = { v: 0 });
     if (b.on === true) { delete e.off; delete e.bloq; e.a = 0; }
     else if (b.on === false) e.off = 1;
-    await this.retGuardarIdx();
+    // Si no se guardo, se dice: si no, la baja solo vivia en memoria hasta el siguiente reinicio.
+    if (!(await this.retGuardarIdx())) return { ok: false, error: 'No se pudo guardar. Intenta de nuevo en un rato.' };
     return { ok: true, on: !e.off, jugo: e.v > 0 };
   },
 };

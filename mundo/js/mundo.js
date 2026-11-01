@@ -14,23 +14,23 @@
 import * as THREE from 'three';
 import { esNocheDuendes, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS } from '/mmo/js/data.js?v=322';
-import { iniciarVentanas } from './ventanas.js?v=322';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=322';
-import { crearMusica } from './musica.js?v=322';
-import { construirCueva } from './cueva.js?v=322';
-import { TAPA, transparentar } from './tapa.js?v=322';
-import { construirAbismo } from './abismo.js?v=322';
-import { crearParticulas } from './particulas.js?v=322';
-import { cargarKenney, piezasCasa } from './kenney.js?v=322';
-import { CORRIENTES } from '/mmo/js/abismo3d.js?v=322';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS } from '/mmo/js/data.js?v=323';
+import { iniciarVentanas } from './ventanas.js?v=323';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=323';
+import { crearMusica } from './musica.js?v=323';
+import { construirCueva } from './cueva.js?v=323';
+import { TAPA, transparentar } from './tapa.js?v=323';
+import { construirAbismo } from './abismo.js?v=323';
+import { crearParticulas } from './particulas.js?v=323';
+import { cargarKenney, piezasCasa } from './kenney.js?v=323';
+import { CORRIENTES } from '/mmo/js/abismo3d.js?v=323';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=322';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=322';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=322';
-import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=322';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=322';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=323';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=323';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=323';
+import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=323';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=323';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -45,7 +45,10 @@ function ajustarCompacto() { const c = MOVIL || innerWidth < 760; if (c === COMP
 ajustarCompacto(); addEventListener('resize', ajustarCompacto);
 // Texto de ayuda segun el control: tecla en PC, boton tactil en movil.
 const K = (pc, tactil) => MOVIL ? tactil : pc;
-const TG = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? window.Telegram.WebApp : null;
+// Solo dentro de Telegram de verdad (app: TelegramWebviewProxy; web y escritorio: iframe).
+// Fuera, el SDK llena initData con un #tgWebAppData ajeno pegado en un enlace.
+const enTg = !!(window.TelegramWebviewProxy || window.parent !== window || (window.external && 'notify' in window.external));
+const TG = enTg && window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? window.Telegram.WebApp : null;
 // En Telegram los enlaces a CLASSIC llevan la sesion (el #tgWebAppData): sin ella entraba como invitado.
 // Invitacion compartida desde ORIGINS (/mundo/?ref=): se manda en el hola como en CLASSIC (antes no contaba).
 const ref3 = (/[?&]ref=([a-z0-9]{6})/.exec(location.search) || [])[1];

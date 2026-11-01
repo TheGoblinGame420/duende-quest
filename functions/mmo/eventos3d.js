@@ -189,6 +189,8 @@ export const Eventos3D = {
       const s = this.sesiones.get(sid);
       if (!s || !s.c) continue;
       if (o.ex3.cap && !(m === o.dano ? v >= totalD * 0.1 : v >= o.max * 0.03)) continue;
+      // En los normales tambien hace falta ayudar de verdad (Dolor sumaba 1 sin daño real).
+      if (!o.ex3.cap && !(m === o.dano ? v >= Math.min(totalD * 0.1, (o.max || 1) * 0.03) : v >= (o.max || 1) * 0.03)) continue;
       ayudo.add(s.c.uid);
     }
     for (const uid of ayudo) ev.part.set(uid, (ev.part.get(uid) || 0) + (o.ex3.cap ? 3 : 1));
@@ -214,6 +216,8 @@ export const Eventos3D = {
     for (const [uid, n] of ev.part) {
       const s = this.porUid.get(uid);
       if (!s || !s.c || s.cerrado) continue;
+      // Solo cobra quien sigue en ORIGINS y en la zona de la invasion.
+      if (!s.m3 || zonaEn(s.p.x, s.p.z) !== ev.zona) continue;
       if (n < 3) { this.enviar(s, { t: 'toast', m: '⚔️ Invasión rechazada. Para cobrar el premio hay que ayudar contra 3 invasores o contra el Capitán: ¡la próxima!' }); continue; }
       // Con tu nivel (tope el de la zona): uno de nivel 1 no cobra la XP de una zona de nivel 40.
       const c = s.c, nv = Math.min(c.nivel, mp.nv[1]);

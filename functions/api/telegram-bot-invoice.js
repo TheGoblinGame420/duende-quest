@@ -82,7 +82,9 @@ async function onRequestPost(context) {
 
     const result = await tg(token, 'createInvoiceLink', invoice);
     if (result.ok && result.result) return json(request, { invoice_url: result.result });
-    return json(request, { error: result.description || 'Failed' }, 502);
+    // El texto de error de Telegram queda en el log, no se devuelve al cliente
+    console.error('[invoice] createInvoiceLink', result.description);
+    return json(request, { error: 'invoice_failed' }, 502);
   } catch (err) {
     return json(context.request, { error: 'server_error' }, 500);
   }

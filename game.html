@@ -1164,39 +1164,27 @@ async function webBuySkinSOL(skinId) {
     const { blockhash } = await connection.getLatestBlockhash();
     tx.recentBlockhash = blockhash;
 
+    // La referencia se guarda ANTES de firmar: si la pagina se cierra o la
+    // verificacion falla, se puede reintentar mas tarde con ella.
+    _guardarSkinSOLPendiente(orden.reference, skinId);
+
     statusEl.textContent = '⏳ Confirma en Phantom...';
-    const signed = await window.solana.signAndSendTransaction(tx);
-    const txSig = signed.signature;
+    let txSig;
+    try {
+      const signed = await window.solana.signAndSendTransaction(tx);
+      txSig = signed.signature;
+    } catch (e) {
+      // Firma rechazada: no hubo pago, la referencia no sirve
+      _guardarSkinSOLPendiente(null);
+      throw e;
+    }
 
     statusEl.textContent = '⏳ Verificando on-chain con Helius...';
-    await connection.confirmTransaction(txSig, 'confirmed');
+    // Si confirmTransaction caduca, el pago puede haber salido igual: se verifica de todos modos.
+    try { await connection.confirmTransaction(txSig, 'confirmed'); } catch (e) { console.warn('[Buy Skin SOL] confirm', e); }
 
-    // El servidor busca el pago POR LA REFERENCIA, no por lo que diga esta
-    // llamada: aunque alguien mas dispare esta misma peticion, el credito va
-    // siempre a la wallet que de verdad pago (leida de la cadena).
-    const verifyResp = await fetch('/api/helius-verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'verify_skin_purchase', reference: orden.reference }),
-    });
-    const result = await verifyResp.json();
-
-    if (result.success && result.pending_review) {
-      // Entrega manual: el equipo revisa el pago y activa la skin (no se desbloquea aqui).
-      statusEl.textContent = '📨 Pago recibido y verificado. El equipo activa tu skin en breve.';
-      statusEl.style.color = '#ffd84a';
-      setTimeout(() => { statusEl.style.color = '#c084fc'; statusEl.textContent = ''; }, 9000);
-    } else if (result.success) {
-      webOwnedSkins.push(skinId);
-      webEquipSkin(skinId);
-      statusEl.textContent = '✅ Skin desbloqueada! Verificada on-chain ✓';
-      statusEl.style.color = '#00ff88';
-      setTimeout(() => { statusEl.style.color = '#c084fc'; statusEl.textContent = ''; }, 5000);
-    } else {
-      statusEl.textContent = '❌ Error: ' + (result.error || 'Verificación fallida');
-      statusEl.style.color = '#ff3333';
-      setTimeout(() => { statusEl.style.color = '#c084fc'; statusEl.textContent = ''; }, 4000);
-    }
+    const result = await _verificarSkinSOL(orden.reference, statusEl);
+    _mostrarResultadoSkinSOL(result, orden.reference, statusEl);
   } catch (e) {
     console.warn('[Buy Skin SOL]', e);
     statusEl.textContent = '❌ Transacción cancelada';
@@ -1204,6 +1192,72 @@ async function webBuySkinSOL(skinId) {
     setTimeout(() => { statusEl.style.color = '#c084fc'; statusEl.textContent = ''; }, 3000);
   }
 }
+
+function _guardarSkinSOLPendiente(reference, skinId) {
+  try {
+    if (reference) localStorage.setItem('dq_sol_pendiente', JSON.stringify({ reference, skinId, t: Date.now() }));
+    else localStorage.removeItem('dq_sol_pendiente');
+  } catch (e) {}
+}
+
+// El servidor busca el pago POR LA REFERENCIA, no por lo que diga esta
+// llamada: aunque alguien mas dispare esta misma peticion, el credito va
+// siempre a la wallet que de verdad pago (leida de la cadena).
+// Reintenta con espera creciente (~2 min) mientras el pago no aparezca.
+async function _verificarSkinSOL(reference, statusEl) {
+  const esperas = [0, 3000, 5000, 8000, 12000, 15000, 20000, 25000, 30000];
+  let result = { success: false, error: 'payment_not_found' };
+  for (let i = 0; i < esperas.length; i++) {
+    if (esperas[i]) await new Promise(r => setTimeout(r, esperas[i]));
+    if (statusEl && i > 0) statusEl.textContent = '⏳ Buscando tu pago en la cadena... (' + (i + 1) + '/' + esperas.length + ')';
+    try {
+      const verifyResp = await fetch('/api/helius-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'verify_skin_purchase', reference }),
+      });
+      result = await verifyResp.json();
+    } catch (e) { result = { success: false, error: 'network' }; }
+    // Solo se reintenta si el pago aun no aparece o fallo la red
+    if (result.success || (result.error !== 'payment_not_found' && result.error !== 'network' && result.error !== 'Server error')) break;
+  }
+  if (result.success || result.error === 'order_expired' || result.error === 'order_not_found' || result.error === 'bad_reference' || result.error === 'tx_already_used') _guardarSkinSOLPendiente(null);
+  return result;
+}
+
+function _mostrarResultadoSkinSOL(result, reference, statusEl) {
+  if (result.success && result.delivered) {
+    webOwnedSkins.push(result.skin_id);
+    webEquipSkin(result.skin_id);
+    statusEl.textContent = '✅ Skin desbloqueada! Verificada on-chain ✓';
+    statusEl.style.color = '#00ff88';
+    setTimeout(() => { statusEl.style.color = '#c084fc'; statusEl.textContent = ''; }, 5000);
+  } else if (result.success) {
+    // Entrega manual: el equipo revisa el pago y activa la skin (no se desbloquea aqui).
+    statusEl.textContent = '📨 Pago recibido y verificado. El equipo activa tu skin en breve.';
+    statusEl.style.color = '#ffd84a';
+    setTimeout(() => { statusEl.style.color = '#c084fc'; statusEl.textContent = ''; }, 9000);
+  } else if (result.error === 'payment_not_found' || result.error === 'network' || result.error === 'Server error') {
+    // El pago puede tardar: se guarda la referencia y se reintenta al volver a abrir el juego
+    statusEl.textContent = '⏳ Tu pago aún no aparece. Lo reintentaremos solo; guarda esta referencia: ' + reference;
+    statusEl.style.color = '#ffd84a';
+  } else {
+    statusEl.textContent = '❌ Error: ' + (result.detail || result.error || 'Verificación fallida') + ' · Ref: ' + reference;
+    statusEl.style.color = '#ff3333';
+    setTimeout(() => { statusEl.style.color = '#c084fc'; statusEl.textContent = ''; }, 12000);
+  }
+}
+
+// Al abrir el juego, reintenta una compra con SOL que quedo sin verificar (24 h)
+setTimeout(async () => {
+  let p = null;
+  try { p = JSON.parse(localStorage.getItem('dq_sol_pendiente') || 'null'); } catch (e) {}
+  if (!p || !p.reference) return;
+  if (Date.now() - (p.t || 0) > 24 * 3600 * 1000) { _guardarSkinSOLPendiente(null); return; }
+  const statusEl = document.getElementById('web-skin-status');
+  const result = await _verificarSkinSOL(p.reference, null);
+  if (statusEl && (result.success || result.error !== 'payment_not_found')) _mostrarResultadoSkinSOL(result, p.reference, statusEl);
+}, 4000);
 
 // Apply skin buffs at game start
 function _applySkinBuffs() {

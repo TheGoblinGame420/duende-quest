@@ -181,10 +181,25 @@ export const Eventos = {
 
   // Quien peleo contra un invasor (pego o curo a quien lo peleaba) entra en
   // la lista del evento. Se guarda por uid: si se reconecta no lo pierde.
+  // Como en el 3D: solo cuenta ayudar de verdad (Dolor sumaba 1 sin daño) y
+  // hay que ayudar contra 3 invasores (el Capitan vale 3) para cobrar.
   anotarParticipantes(ev, o) {
+    const totalD = o.dano ? [...o.dano.values()].reduce((a, b) => a + b, 0) || 1 : 1, max = o.max || 1;
+    const cap = !!(o.ex && o.ex.cap), ayudo = new Set();
     for (const m of [o.dano, o.cura]) {
       if (!m) continue;
-      for (const sid of m.keys()) { const s = this.sesiones.get(sid); if (s && s.c) ev.part.add(s.c.uid); }
+      for (const [sid, v] of m) {
+        const s = this.sesiones.get(sid);
+        if (!s || !s.c) continue;
+        const minimo = m === o.cura ? max * 0.03 : cap ? totalD * 0.1 : Math.min(totalD * 0.1, max * 0.03);
+        if (v >= minimo) ayudo.add(s.c.uid);
+      }
+    }
+    ev.ayuda = ev.ayuda || new Map();
+    for (const uid of ayudo) {
+      const n = (ev.ayuda.get(uid) || 0) + (cap ? 3 : 1);
+      ev.ayuda.set(uid, n);
+      if (n >= 3) ev.part.add(uid);
     }
   },
 
@@ -311,9 +326,14 @@ export const Eventos = {
     const quienes = new Set();
     for (const m of [o.dano, o.cura]) if (m) for (const sid of m.keys()) quienes.add(sid);
     const nombres = [];
+    // Como en el 3D: solo quien ayudo de verdad (10 % del daño o una cura que
+    // se note) y sigue cerca; un golpe suelto o un Dolor no cobran.
+    const total = [...o.dano.values()].reduce((a, b) => a + b, 0) || 1;
     for (const sid of quienes) {
       const s = this.sesiones.get(sid);
       if (!s || !s.c || s.k !== o.cl) continue;
+      if ((o.dano.get(sid) || 0) < total * 0.1 && !((o.cura && o.cura.get(sid)) >= (o.max || 1) * 0.05)) continue;
+      if (Math.abs(s.x - o.x) > 900) continue;
       const xp = base.xp * 4, oro = base.oro * 5;
       s.c.oro += oro;
       s.c.raros = (s.c.raros || 0) + 1;

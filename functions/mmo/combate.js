@@ -18,6 +18,10 @@ import {
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+// Margen de red para la recarga del ataque basico (igual que en el 3D).
+const JITTER_MS = 150;
+// Golpes seguidos a menos de esto avanzan el combo (el cliente da ~0,67 s).
+const COMBO_VENTANA_MS = 700;
 
 export const Combate = {
   // Aviso a quien ve a s: en el 3D solo a los cercanos (aCerca3d); en el 2D, a su mapa.
@@ -141,13 +145,15 @@ export const Combate = {
   aliadoAlAlcance(s, tg, rango, muerto) {
     if (typeof tg !== 'number' || tg <= 0 || tg === s.id) return muerto ? this.caidoCercano(s, rango) : s;
     const a = this.sesiones.get(tg);
-    if (!a || !a.c || a.k !== s.k || !!a.muerto !== !!muerto) return null;
+    if (!a || !a.c || a.k !== s.k || !!a.muerto !== !!muerto || this.enDueloAjeno(s, a)) return null;
     return this.distJug(s, a) <= rango ? a : null;
   },
+  // Quien esta en un duelo no recibe curas, escudos ni ayudas de terceros.
+  enDueloAjeno(s, a) { return a !== s && !!a.duelo; },
   caidoCercano(s, rango) {
     let mejor = null, md = rango;
     for (const a of this.sesiones.values()) {
-      if (!a.c || a === s || a.k !== s.k || !a.muerto) continue;
+      if (!a.c || a === s || a.k !== s.k || !a.muerto || this.enDueloAjeno(s, a)) continue;
       const d = this.distJug(s, a);
       if (d <= md) { md = d; mejor = a; }
     }
@@ -155,7 +161,7 @@ export const Combate = {
   },
   aliadosCerca(s, radio) {
     const r = [];
-    for (const a of this.sesiones.values()) if (a.c && a.k === s.k && !a.muerto && Math.abs(a.x - s.x) <= radio) r.push(a);
+    for (const a of this.sesiones.values()) if (a.c && a.k === s.k && !a.muerto && !this.enDueloAjeno(s, a) && Math.abs(a.x - s.x) <= radio) r.push(a);
     return r;
   },
 
@@ -215,8 +221,12 @@ export const Combate = {
     const forja = multForja((s.c.forja || {})[s.c.arma]);
     const dmg = Math.max(1, Math.round(s.st.atk * mult * forja * rnd(0.9, 1.1) * (crit ? 1.8 : 1)
       * (ahora < s.fuego ? 1.5 : 1) * (this.aura(s, 'grito') ? 1.1 : 1) * (this.elixir(s, 'elixirF') ? 1.1 : 1) * (this.elixir(s, 'sudado') ? 1.05 : 1) * k));
+    const hpAntes = Math.max(0, o.hp);
     const real = this.danar(o, dmg, s, amen);
-    return [o.id, real || dmg, crit ? 1 : basico ? 0 : 4];
+    const g = [o.id, real || dmg, crit ? 1 : basico ? 0 : 4];
+    // Daño efectivo (sin lo que sobra al matar) para el robo de vida; no viaja al cliente.
+    g.ef = Math.min(real, hpAntes);
+    return g;
   },
 
   curar(s, a, cant) {
@@ -263,9 +273,13 @@ export const Combate = {
     if (cl && cl.basico === 'vara') return this.disparoVara(s, m);
     const ahora = Date.now();
     const arma = ARMAS[s.c.arma] || ARMAS.katana;
-    if (ahora - s.atkT < ATAQUE_CD_MS * arma.cd * 0.8) return;
-    s.atkT = ahora;
-    const paso = clamp(m.s | 0, 0, 2);
+    const cd = ATAQUE_CD_MS * arma.cd;
+    if (s.cast) this.cancelarCast(s);
+    // Recarga y paso del combo los lleva el servidor (no se fia de m.s).
+    if (ahora < (s.atkT || 0) + cd - JITTER_MS) return;
+    s.pasoAtk = ahora - (s.atkT || 0) < COMBO_VENTANA_MS ? ((s.pasoAtk || 0) + 1) % 3 : 0;
+    s.atkT = Math.max(ahora, (s.atkT || 0) + cd);
+    const paso = s.pasoAtk;
     const alcance = ALCANCE_BASE[paso] * arma.alcance;
     const alto = 72 * (s.c.arma === 'odachi' ? 1.4 : 1);
     const x0 = s.f > 0 ? s.x - 8 : s.x - 8 - alcance;
@@ -282,7 +296,7 @@ export const Combate = {
     for (const o of lista) {
       const g = this.pegar(s, o, arma.dano * COMBO_MULT[paso], 1, true);
       if (!g) continue;
-      golpes.push(g); curado += g[1]; if (g[2] === 1) crit = true;
+      golpes.push(g); curado += g.ef; if (g[2] === 1) crit = true;
     }
     // CHISPA: el rayo salta al enemigo mas cercano del primero golpeado.
     if (s.c.arma === 'chispa' && lista.length) {
@@ -327,7 +341,7 @@ export const Combate = {
     s.atkT = ahora;
     s.f = o.x >= s.x ? 1 : -1;
     const g = this.pegar(s, o, VARA.mult * arma.dano, 1, true);
-    if (g) this.robarVida(s, g[1]);
+    if (g) this.robarVida(s, g.ef);
     this.aClave(s.k, { t: 'at', p: s.id, s: 0, f: s.f, h: g ? [g] : [], vara: o.id });
   },
 
@@ -410,6 +424,8 @@ export const Combate = {
       return;
     }
     if (ca.h === 'montar') {
+      // Si entro en combate mientras montaba, no se monta.
+      if (ahora - (s.combateT || 0) < 4000) return this.aDe(s, { t: 'castFin', p: s.id, ok: false });
       this.aDe(s, { t: 'castFin', p: s.id, ok: true });
       if (!s.muerto && s.c.montura && !s.k.includes('#')) {
         s.montado = s.c.montura;
@@ -440,7 +456,7 @@ export const Combate = {
       obj = o && !o.muere && this.distMon(s, o) <= h.rango + 60 ? o : null;
     } else if (h.obj === 'aliado' || h.obj === 'muerto') {
       const a = ca.tg === s.id ? s : this.sesiones.get(ca.tg);
-      obj = a && a.c && a.k === s.k && !!a.muerto === (h.obj === 'muerto') && (a === s || this.distJug(s, a) <= h.rango + 60) ? a : null;
+      obj = a && a.c && a.k === s.k && !!a.muerto === (h.obj === 'muerto') && !this.enDueloAjeno(s, a) && (a === s || this.distJug(s, a) <= h.rango + 60) ? a : null;
     }
     const necesita = h.obj === 'enemigo' || h.obj === 'aliado' || h.obj === 'muerto';
     if (s.muerto || (necesita && !obj) || s.rec < costoHab(h, s.st.recMax, s.c.espec)) {
@@ -541,7 +557,9 @@ export const Combate = {
       }
       case 'dolor': {
         const tick = Math.max(1, Math.round(s.st.atk * h.mult * mh / 5 * multForja((c.forja || {})[c.arma])));
-        this.ponerAuraMon(obj, 'dolor', h.dura, { de: s.id, tick, prox: ahora + 3000 });
+        // Relanzarlo no atrasa el siguiente tick (como en el 3D).
+        const prevD = obj.au.dolor && obj.au.dolor.hasta > ahora ? obj.au.dolor.prox : 0;
+        this.ponerAuraMon(obj, 'dolor', h.dura, { de: s.id, tick, prox: prevD || ahora + 3000 });
         obj.amen.set(s.id, (obj.amen.get(s.id) || 0) + tick);
         obj.dano.set(s.id, (obj.dano.get(s.id) || 0) + 1);
         s.combateT = ahora;
@@ -559,8 +577,9 @@ export const Combate = {
         break;
       case 'eviscerar': {
         const cp = s.combo || 0;
-        s.combo = 0;
         g(pegar(obj, h.mult + h.porCombo * cp));
+        // Despues del golpe: desde sigilo pegar() suma 2 combos que no deben quedar.
+        s.combo = 0;
         ev.cp = cp;
         break;
       }
@@ -581,7 +600,7 @@ export const Combate = {
         this.ponerAura(s, 'sigilo', 0);
         break;
     }
-    this.robarVida(s, golpes.reduce((a, x) => a + x[1], 0));
+    this.robarVida(s, golpes.reduce((a, x) => a + (x.ef || 0), 0));
     if (ahora - (s.combateT || 0) < 5000) this.progresoTarea(s, 'hab');
     s.sucio = true;
     this.aClave(s.k, ev);
