@@ -504,7 +504,7 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 331;
+export const VERSION = 332;
 
 export const NOVEDADES = [
   { n: 100, fecha: '1 nov 2026', items: [
