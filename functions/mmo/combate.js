@@ -37,6 +37,7 @@ export const Combate = {
     const costo = c.clase ? costoCambioClase(c.nivel) : 0;
     if (c.oro < costo) return this.enviar(s, { t: 'toast', m: `Cambiar de clase a tu nivel cuesta ${costo.toLocaleString('es', { useGrouping: 'always' })} oro.` });
     s.claseT = ahoraC;
+    if (!c.clase && this.hitoEmbudo) this.hitoEmbudo(c, 'cl');   // embudo: ya tiene clase (el nuevo entra como Guerrero)
     c.oro -= costo;
     c.clase = m.id;
     c.espec = null;

@@ -19,6 +19,20 @@ console.log((/noindex/.test(jugar.txt) && /id="jugar"/.test(jugar.txt) ? 'OK  ' 
 const portada = await verPagina('/');
 console.log((portada.ok && !/TICKER_EVENTS|initCountdown|Garantiza un objeto legendario|se activa sola/.test(portada.txt) ? 'OK  ' : 'MAL ') + 'portada sin ticker, contador ni cofres falsos');
 console.log((/classList\.add\('anuncio'\)/.test(portada.txt) ? 'OK  ' : 'MAL ') + 'portada con modo anuncio (fbclid/utm)');
+// Vista previa al compartir: se pide como el robot de Facebook/WhatsApp. Cada pagina de
+// entrada lleva og:title/og:description sin "$DUENDE" ni "token" y una og:image absoluta
+// que responde como imagen (si falla, limpiar la cache con el depurador de Meta).
+const UA_FB = { 'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)' };
+const og = (txt, p) => { const m = txt.match(new RegExp('<meta property="og:' + p + '" content="([^"]*)"')); return m ? m[1] : ''; };
+for (const ruta of ['/', '/jugar/', '/inicio/', '/mundo/', '/mmo/']) {
+  let txt = '', ok = false;
+  try { const r = await fetch(web + ruta, { cache: 'no-store', headers: UA_FB }); ok = r.ok; txt = await r.text(); } catch (e) {}
+  const img = og(txt, 'image');
+  let imgOk = false;
+  if (/^https:\/\//.test(img)) { try { const r = await fetch(img, { headers: UA_FB }); imgOk = r.ok && /^image\//.test(r.headers.get('content-type') || ''); } catch (e) {} }
+  const limpio = og(txt, 'title') && !/\$DUENDE|token/i.test(og(txt, 'title') + ' ' + og(txt, 'description'));
+  console.log((ok && limpio && imgOk ? 'OK  ' : 'MAL ') + ruta + ' vista previa (og) para facebookexternalhit');
+}
 const ws = new WebSocket(url);
 const vistos = {};
 let yo = null;

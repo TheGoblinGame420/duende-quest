@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
+<script src="/js/origen.js?v=326"></script>
 <!-- Modo anuncio: quien llega de un anuncio (fbclid / utm_*) ve la web sin la parte cripto
      (wallet, precio, token, donaciones). Se recuerda en la pestaña; el resto de visitas no cambia. -->
 <script>(function(){var a=/[?&](fbclid|utm_[a-z]+)=/i.test(location.search);try{if(a)sessionStorage.setItem('dq_anuncio','1');else a=sessionStorage.getItem('dq_anuncio')==='1';}catch(e){}if(a)document.documentElement.classList.add('anuncio');})()</script>
@@ -2191,7 +2192,7 @@ if (document.documentElement.classList.contains('anuncio')) document.addEventLis
 <!-- Config (keys + DUENDE_CFG) -->
 <script src="js/config.js"></script>
 <!-- Módulos en orden de dependencia -->
-<script src="js/auth-manager.js?v=325"></script>
+<script src="js/auth-manager.js?v=326"></script>
 <script>
 // Ranking real de la landing (antes: 5 nombres inventados con un badge
 // "LIVE" que no estaba conectado a nada). auth-manager.js registra su

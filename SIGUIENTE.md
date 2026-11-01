@@ -3184,3 +3184,23 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - #41/#51: techo de vuelo suave y planeo en el Abismo; reaparición en claro seguro, sin pérdida de XP tras 3 caídas.
 - #16/#18: HUD horizontal y botón TIENDA. #20/#21: WhatsApp y payload m3d_. #10/#55: salida a CLASSIC sin WebGL o carga colgada; sesión caducada en Telegram no crea invitado.
 - Arnés 865 bien.
+
+### Cupo de escrituras y salud del DO (#7 y #13 del backlog, 1-nov-2026)
+
+- #7: guardado del personaje cada 60 s (antes 20 s); la posición 3D sola (`s.sucioPos`) cada 5 min o al cerrar; maestría, logros, cosméticos y subidas por debajo de Nv 10 van por `guardarSuave` (escribe solo si el último guardado tiene más de 60 s). Ranking de niveles en memoria (`rankingLeer`/`volcarRanking`, como mucho cada 60 s; sin escritura si no entras al top 50). `retSumar` suma en memoria y `retVolcarDias` vuelca cada 60 s. Compras, pedidos, retiros y herencia siguen escribiendo al momento. Un reinicio del DO puede perder hasta 60 s de botín, nunca compras.
+- #13: `functions/mmo/salud.js` cuenta put/delete por prefijo, mensajes por tipo y bytes, y el lag del bucle (`lagEwma`). Se guarda cada 10 min en `met:AAAA-MM-DD` y sale en /mmostats (🩺). El GET público del MMO añade `lag` y `lleno`. Aviso al dueño una vez al día al 60% y al 85% del cupo. Desde el 80%: guardado cada 180 s, rankings volcados cada 10 min y sin invitados nuevos. Lag > 80 ms sostenido 30 s (con 10+ conectados): se rechazan entradas nuevas.
+- Cupo por defecto: 100.000 escrituras/día (plan gratis). **Pendiente del dueño:** durante la campaña pasar a Workers Paid (5 USD/mes) y poner la variable `MMO_CUPO_ESCRITURAS` con el cupo nuevo. Calibrar los umbrales 2 días contra el panel de Cloudflare (Durable Objects → rows written) comparando con /mmostats.
+
+### Ronda 2 de la noche del lanzamiento (1-nov-2026, `?v=326`)
+
+- #4/#5: `js/origen.js` (primer toque `dq_origen`, `dqOrigen()`, `dqPaso()` por beacon a `/mmo/ev`); `src` en el hola; `c.ret.src` solo en el alta; contadores n_/c1_/m1_/n5_/r1_/r7_<src> en ret:dia; `evRecibir`/`evVolcar`/`evStats` (topes 40/h por /64 IPv6, 800/h por IPv4 por el CGNAT); /mmostats con orígenes y carga. `/mmo/ev` añadido a run_worker_first.
+- #7/#13: presupuesto de escrituras del DO y `functions/mmo/salud.js` (medidor de cuota, aviso al dueño, modo degradado).
+- #11/#12: reconexión con jitter, 1012, límites por cuenta además de por IP.
+- #14/#15: aviso del navegador interno de FB/IG con paso del duende a Chrome; entrada en un toque como Guerrero con cambio de clase gratis hasta Nv 10.
+- #19/#26: «Te faltan N de oro», franja de pago a prueba de cierres, plazo de entrega (`ENTREGA` en data.js, el dueño la ajusta).
+- #22: invitados web por ?ref= cuentan (14 días en localStorage y user_metadata.ref).
+- #23: modo anuncio dentro de los juegos (oculta mTON/SOL/wallet); textos visibles «Duende Quest Origins/Classic».
+- #29/#31: racha por semanas (x1,25/x1,5), títulos 14/21/30; el día 7 sin seguir vuelve al 1 (evita cobrar el 7 cada 2 días). Tira de racha en móvil y píldora «🎁 Cobrar».
+- #39: Open Graph 1200x630 en assets/og/ (tools/og_*.py). Pasar las URL por el depurador de Meta.
+- #36: buzón «Mientras no estabas» y celebración de compra entregada (`mmo/js/regalo.js`).
+- Arnés 865 bien.

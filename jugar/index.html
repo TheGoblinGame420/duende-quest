@@ -15,9 +15,11 @@
 <meta property="og:title" content="Duende Quest · Juega gratis con amigos">
 <meta property="og:description" content="Crea tu duende y caza monstruos con amigos. Gratis en tu celular, sin descargar.">
 <meta property="og:url" content="https://duende-quest.alfonso12hc.workers.dev/jugar/">
-<meta property="og:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/video/promo3d-poster.jpg">
-<meta property="og:image:width" content="540"><meta property="og:image:height" content="960">
-<meta property="og:image:alt" content="El pueblo de Duende Quest: juego gratis en el navegador">
+<meta property="og:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/og/mundo3d.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Duende Quest 3D: un duende con alas vuela sobre el bosque y pelea contra un jefe">
+<meta name="twitter:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/og/mundo3d.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/assets/ui/coin.png">
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
@@ -44,10 +46,14 @@ h1 b{color:var(--oro);}
 .jugar:active{transform:scale(.98);}
 @keyframes brillo{to{background-position:200% 0;}}
 footer{text-align:center;font-size:13px;color:var(--txt2);}
+.iab{display:none;max-width:420px;margin:0 auto 10px;padding:10px 12px;border-radius:14px;background:rgba(20,12,44,.95);border:1px solid rgba(125,211,252,.5);font:600 13px/1.4 var(--sans);color:var(--txt);text-align:center;}
+.iab.on{display:block;}
+.iab a{display:inline-block;margin-top:6px;padding:7px 12px;border-radius:10px;background:#0ea5e9;color:#fff;text-decoration:none;font-weight:800;}
 footer a{color:var(--txt2);}
 @media (min-width:800px){main{grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:40px;padding-top:48px;}.marca{grid-column:1/-1;}h1,.sub{text-align:left;}.lista{justify-content:flex-start;}footer{grid-column:1/-1;}}
 @media (prefers-reduced-motion:reduce){.jugar{animation:none;}}
 </style>
+<script src="/js/origen.js?v=326"></script>
 </head>
 <body>
 <div class="aurora" aria-hidden="true"></div>
@@ -61,7 +67,7 @@ footer a{color:var(--txt2);}
   </section>
   <footer><a href="/terminos">Términos</a> · <a href="/privacidad">Privacidad</a></footer>
 </main>
-<div class="barra"><a class="jugar" id="jugar" href="/mundo/">JUGAR GRATIS</a></div>
+<div class="barra"><div class="iab" id="iab" role="note"></div><a class="jugar" id="jugar" href="/mundo/">JUGAR GRATIS</a></div>
 <script>
 (function () {
   // Elige el juego segun el equipo: el 3D (/mundo/) pide WebGL, memoria y buena conexion;
@@ -83,6 +89,21 @@ footer a{color:var(--txt2);}
   // Los utm y el fbclid pasan al juego tal cual, para medir el anuncio.
   b.href = ir + location.search;
   b.addEventListener('click', function () { try { localStorage.setItem('dq_ultimo_juego', ir); } catch (e) {} });
+  // Navegador interno de Facebook/Instagram (el anuncio abre aqui): se puede jugar igual,
+  // pero se sugiere abrirlo en Chrome/Safari (guarda mejor el duende y va mas fluido). No bloquea.
+  var ua = navigator.userAgent || '';
+  if (/FBAN|FBAV|FB_IAB|Instagram|Messenger/i.test(ua)) {
+    var caja = document.getElementById('iab');
+    if (/Android/i.test(ua)) {
+      var dest = location.host + ir + location.search;
+      caja.innerHTML = 'Estás dentro de Facebook/Instagram: el juego va mejor en Chrome y tu duende no se borra.<br><a id="iab-ir" href="#">Abrir en Chrome</a>';
+      document.getElementById('iab-ir').href = 'intent://' + dest + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent('https://' + dest) + ';end';
+    } else {
+      caja.textContent = 'Estás dentro de Facebook/Instagram: para que tu duende no se borre, toca ··· (arriba a la derecha) → «Abrir en el navegador». También puedes jugar aquí mismo.';
+    }
+    caja.className = 'iab on';
+    document.querySelector('main').style.paddingBottom = 'calc(' + (caja.offsetHeight + 120) + 'px + env(safe-area-inset-bottom))';   // la barra fija crece: el pie no queda tapado
+  }
 })();
 </script>
 </body>

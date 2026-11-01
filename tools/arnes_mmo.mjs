@@ -1492,7 +1492,7 @@ async function pruebasRetencion() {
   chequear(idx['tg:3003'].bloq === 1, 'marca a quien bloqueó al bot');
   chequear(r.callar.includes('3003') && r.callar.includes('3004') && !r.callar.includes('3001'), 'devuelve a quién no escribirle (para el recordatorio del arcade)');
   const m1 = deQuien('3001');
-  chequear(/Rachero/.test(m1.text) && /Llevas 1 día seguido/.test(m1.text) && /premio del día 2/.test(m1.text), 'el aviso habla de su racha que se pierde hoy');
+  chequear(/Rachero/.test(m1.text) && /Llevas 1 día seguido/.test(m1.text) && /cobras el día 2/.test(m1.text), 'el aviso habla de su racha que se pierde hoy');
   chequear(/Caza del día sin cobrar/.test(m1.text) && /Te faltan .* XP para el nivel 2/.test(m1.text), 'y de la caza del día y lo que falta para subir');
   chequear(/grupo te espera: 1 compañero/.test(deQuien('3007').text), 'a quien tiene el grupo conectado se lo dice');
   const kb = m1.reply_markup.inline_keyboard.flat();

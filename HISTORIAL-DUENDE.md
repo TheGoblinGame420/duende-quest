@@ -62,6 +62,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v323 | Auditoría de seguridad con 50 agentes (PC y móvil): ~70 arreglos — Telegram solo en Telegram, avisos de pagos SOL, vuelo/planeo, duelos, eventos, chat y nombres | **B** |
 | v324 | Los 6 pendientes de seguridad: herencia con botón, niveles dueño/moderador, rankings y canje DQ web por el servidor, tickets únicos, oferta x2 de Stars | **B** |
 | v325 | Noche de lanzamiento, ronda 1: landing /jugar/ sin cripto, estáticos fuera del Worker, T'anta Wawa, TIENDA visible, WhatsApp, revivir cerca, salida a CLASSIC, PNG ligeros | **B** |
+| v326 | Noche de lanzamiento, ronda 2: origen y embudo de carga, racha por semanas, buzón de vuelta, entrada en un toque, te faltan N de oro, plazo de entrega, reconexión, OG | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

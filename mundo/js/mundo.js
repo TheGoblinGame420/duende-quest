@@ -14,23 +14,24 @@
 import * as THREE from 'three';
 import { esNocheDuendes, TEMPORADAS, temporadaDe, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo } from '/mmo/js/data.js?v=325';
-import { iniciarVentanas } from './ventanas.js?v=325';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=325';
-import { crearMusica } from './musica.js?v=325';
-import { construirCueva } from './cueva.js?v=325';
-import { TAPA, transparentar } from './tapa.js?v=325';
-import { construirAbismo } from './abismo.js?v=325';
-import { crearParticulas } from './particulas.js?v=325';
-import { cargarKenney, piezasCasa } from './kenney.js?v=325';
-import { CORRIENTES, sueloRef } from '/mmo/js/abismo3d.js?v=325';
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo } from '/mmo/js/data.js?v=326';
+import { iniciarVentanas } from './ventanas.js?v=326';
+import { iniciarRegalo } from '/mmo/js/regalo.js?v=326';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=326';
+import { crearMusica } from './musica.js?v=326';
+import { construirCueva } from './cueva.js?v=326';
+import { TAPA, transparentar } from './tapa.js?v=326';
+import { construirAbismo } from './abismo.js?v=326';
+import { crearParticulas } from './particulas.js?v=326';
+import { cargarKenney, piezasCasa } from './kenney.js?v=326';
+import { CORRIENTES, sueloRef } from '/mmo/js/abismo3d.js?v=326';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=325';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d } from '/mmo/js/mundo3d.js?v=325';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=325';
-import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=325';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=325';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=326';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d } from '/mmo/js/mundo3d.js?v=326';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=326';
+import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=326';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=326';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -49,9 +50,37 @@ const K = (pc, tactil) => MOVIL ? tactil : pc;
 // Fuera, el SDK llena initData con un #tgWebAppData ajeno pegado en un enlace.
 const enTg = !!(window.TelegramWebviewProxy || window.parent !== window || (window.external && 'notify' in window.external));
 const TG = enTg && window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? window.Telegram.WebApp : null;
+// Modo anuncio (js/origen.js): quien llega de Meta no ve avisos de mTON ni nada cripto (solo se ocultan).
+const modoAnuncio = () => { try { return !!(window.dqAnuncio && window.dqAnuncio()); } catch (e) { return false; } };
+// Embudo de la carga (/js/origen.js → /mmo/ev): un aviso por paso y sesion. Sin origen.js no hace nada.
+const paso = e => { try { if (window.dqPaso) window.dqPaso(e, 'origins'); } catch (er) {} };
+paso('carga_ini');
 // En Telegram los enlaces a CLASSIC llevan la sesion (el #tgWebAppData): sin ella entraba como invitado.
 // Invitacion compartida desde ORIGINS (/mundo/?ref=): se manda en el hola como en CLASSIC (antes no contaba).
-const ref3 = (/[?&]ref=([a-z0-9]{6})/.exec(location.search) || [])[1];
+// Se guarda 14 dias (dq_ref, el mismo que CLASSIC): si entra como invitado y se registra despues, igual cuenta.
+const ref3 = (() => {
+  let r = (/[?&]ref=([a-z0-9]{6})/.exec(location.search) || [])[1];
+  try {
+    if (r) localStorage.setItem('dq_ref', JSON.stringify({ r, t: Date.now() }));
+    else { const x = JSON.parse(localStorage.getItem('dq_ref') || 'null'); if (x && /^[a-z0-9]{6}$/.test(x.r) && Date.now() - x.t < 14 * 86400000) r = x.r; }
+  } catch (e) {}
+  // Si no, la invitacion del primer toque (origen.js, 30 dias).
+  return r || (window.dqOrigen && window.dqOrigen().ref) || undefined;
+})();
+// Navegador interno de Facebook/Instagram/Messenger (los anuncios abren ahi): el
+// duende de invitado vive en su almacenamiento, que se borra a menudo. Se ofrece
+// pasarlo a Chrome/Safari con el codigo de rescate en el hash (#r=), nunca en la query.
+const esIAB = !TG && /FBAN|FBAV|FB_IAB|Instagram|Messenger/i.test(navigator.userAgent);
+// #r=<codigo> (viene de ese aviso): se lee y se borra de la URL al instante, sin registrarlo.
+let rescateHash = null;
+if (!TG) {
+  const mr = /(?:^#|&)r=([A-Za-z0-9-]{32,40})(?:&|$)/.exec(location.hash);
+  if (mr) {
+    const c = mr[1].replace(/[^a-f0-9]/gi, '').toLowerCase();
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+    if (/^[a-f0-9]{32}$/.test(c)) rescateHash = c;
+  }
+}
 // Enlace directo a la tienda: /mundo/#premium o la Mini App con start_param=premium (v325).
 let tiendaAlEntrar = /(^#|&)premium(&|$)/.test(location.hash) || !!(TG && TG.initDataUnsafe && TG.initDataUnsafe.start_param === 'premium');
 // El ⌂ (inicio web) va al menu de la Mini App, como en CLASSIC.
@@ -121,14 +150,15 @@ const CALIDADES = {
 };
 // Android flojo (poca memoria o pocos nucleos): empieza en baja. En iOS
 // hardwareConcurrency no es fiable, asi que solo se mira Android.
-const POBRE = /Android/i.test(navigator.userAgent) && ((navigator.deviceMemory || 4) <= 3 || (navigator.hardwareConcurrency || 8) <= 4);
+// El navegador interno de Facebook/Instagram tambien (va justo de memoria).
+const POBRE = esIAB || (/Android/i.test(navigator.userAgent) && ((navigator.deviceMemory || 4) <= 3 || (navigator.hardwareConcurrency || 8) <= 4));
 let CAL = POBRE ? 'baja' : MOVIL ? 'media' : 'alta';
 try { const g = localStorage.getItem('dq3_calidad'); if (CALIDADES[g]) CAL = g; } catch (e) {}
 const Q = CALIDADES[CAL];
 // Sin WebGL (o el driver lo niega) el modulo no puede seguir: se ofrece CLASSIC (red de seguridad de index.html).
 let render;
 try { render = new THREE.WebGLRenderer({ canvas: lienzo, antialias: Q.aa, powerPreference: 'high-performance' }); }
-catch (e) { if (window.__dqFallo) window.__dqFallo('Tu dispositivo no pudo abrir los gráficos 3D (WebGL). Puedes jugar con el mismo duende en CLASSIC (2D).'); throw e; }
+catch (e) { paso('fallo_webgl'); if (window.__dqFallo) window.__dqFallo('Tu dispositivo no pudo abrir los gráficos 3D (WebGL). Puedes jugar con el mismo duende en CLASSIC (2D).'); throw e; }
 // Contexto grafico perdido (GPU reiniciada, muchas pestañas): three lo recupera solo; si en 8 s no vuelve, se ofrece salir.
 let glPerdidoT = 0;
 lienzo.addEventListener('webglcontextlost', e => { e.preventDefault(); clearTimeout(glPerdidoT); glPerdidoT = setTimeout(() => { if (window.__dqFallo) window.__dqFallo('Se perdieron los gráficos 3D de tu dispositivo. Reintenta o juega con el mismo duende en CLASSIC (2D).'); }, 8000); });
@@ -1199,9 +1229,38 @@ async function autenticacion() {
   if (tok) return { auth: { k: 'web', tok }, inv: inv0, heredar: heredarResp };
   let nombre = ''; try { nombre = localStorage.getItem('dq_mmo_nombre') || ''; } catch (e) {}
   soyInvitado = true;
-  return { auth: { k: 'inv', tok: tokInvitado() }, nombre };
+  const tokI = tokInvitado();
+  // El servidor pidio prueba de trabajo (muchas altas desde la misma red): se resuelve una vez.
+  if (powCeros && powNonce == null) powNonce = await resolverPow(tokI, powCeros);
+  return { auth: { k: 'inv', tok: tokI }, nombre, pow: powNonce == null ? undefined : powNonce };
 }
 let ultimoMsgT = performance.now(), conectando = false;
+// Huella del dispositivo: con ella el servidor banea o silencia a un invitado sin
+// tocar al resto de su IP (en Peru una IP de movil la comparten cientos).
+function huellaDev() {
+  let d = null; try { d = localStorage.getItem('dq_dev'); } catch (e) {}
+  if (!/^[a-f0-9]{32}$/.test(d || '')) {
+    const b = new Uint8Array(16); crypto.getRandomValues(b);
+    d = [...b].map(x => x.toString(16).padStart(2, '0')).join('');
+    try { localStorage.setItem('dq_dev', d); } catch (e) {}
+  }
+  return d;
+}
+// Prueba de trabajo ligera (~4000 hashes, unos 200 ms en un movil) que el servidor
+// pide al crear muchos invitados desde la misma red. Igual que powValida de world.js.
+// rxN: mensajes recibidos (comprobarAlVolver mira si llega alguno tras el ping).
+let powCeros = 0, powNonce = null, retrasoRec = 0, rxN = 0;
+async function resolverPow(tok, ceros) {
+  if (!(window.crypto && crypto.subtle)) return null;
+  const h = Math.floor(Date.now() / 3600000), enc = new TextEncoder();
+  for (let n = 0; n < 500000; n++) {
+    const b = new Uint8Array(await crypto.subtle.digest('SHA-256', enc.encode('dq-pow:' + h + ':' + tok + ':' + n)));
+    let ok = true;
+    for (let i = 0; i < ceros && ok; i++) ok = ((i & 1) ? b[i >> 1] & 15 : b[i >> 1] >> 4) === 0;
+    if (ok) return n;
+  }
+  return null;
+}
 // Pasar el duende de invitado a la cuenta: lo decide el jugador con un boton (nunca en silencio).
 // Mientras el aviso esta abierto no se reconecta.
 let heredarResp, pausaHeredar = false;
@@ -1231,18 +1290,24 @@ async function conectar() {
   finally { conectando = false; }
   if (ws && ws.readyState <= 1) return;
   const este = ws = new WebSocket(urlWs());
-  este.onopen = () => { if (ws !== este) return; conectado = true; ultimoMsgT = performance.now(); mandar({ t: 'hola', ...hola, modo: '3d', ref: ref3 }); };
-  este.onmessage = ev => { if (ws !== este) return; ultimoMsgT = performance.now(); let m; try { m = JSON.parse(ev.data); } catch (e) { return; } recibir(m); };
-  este.onclose = () => {
+  este.onopen = () => { if (ws !== este) return; conectado = true; ultimoMsgT = performance.now(); mandar({ t: 'hola', ...hola, modo: '3d', ref: ref3, iab: esIAB ? 1 : undefined, src: window.dqOrigen ? window.dqOrigen().src : 'org', dev: huellaDev() }); };
+  este.onmessage = ev => { if (ws !== este) return; ultimoMsgT = performance.now(); rxN++; let m; try { m = JSON.parse(ev.data); } catch (e) { return; } recibir(m); };
+  este.onclose = ev => {
     if (ws !== este) return;   // un socket viejo que el vigilante ya cambio por otro: no toca nada
     conectado = false;
     if (fatal || pausaHeredar) return;
+    // 1012: el servidor se esta reiniciando (version nueva): no es un fallo del jugador.
+    if (ev && ev.code === 1012) aviso('Actualizando el mundo…');
     // En segundo plano (Telegram minimizado, pantalla bloqueada) no se cuentan
     // intentos: se reconecta al volver.
     if (document.hidden) return;
     reintentos++;
     if (reintentos > 12) return error('No se pudo conectar con el mundo. Revisa tu conexión.', true);
-    setTimeout(conectar, Math.min(8000, 600 * reintentos));
+    // Con azar (0,5-1,5x mas 0-2 s): tras un despliegue no vuelven todos en el mismo
+    // milisegundo. Si el servidor dijo cuando volver (reintentar), se respeta.
+    const espera = retrasoRec ? retrasoRec + Math.random() * 1000 : Math.min(8000, 600 * reintentos) * (0.5 + Math.random()) + Math.random() * 2000;
+    retrasoRec = 0;
+    setTimeout(conectar, espera);
   };
 }
 // Al volver a la app (o recuperar la red), reconectar enseguida.
@@ -1280,6 +1345,25 @@ setInterval(() => {
 }, 2000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) ultimoMsgT = performance.now(); });
 addEventListener('focus', volverAConectar);
+addEventListener('pageshow', volverAConectar);
+// Vuelta de segundo plano con el socket aun "abierto": un ping y, si en 2,5 s no
+// llega nada, esta medio muerto y se cambia (antes el vigilante tardaba 8 s).
+let timerVuelta = 0;
+function comprobarAlVolver() {
+  if (document.hidden || fatal || pausaHeredar || timerVuelta || !ws || ws.readyState !== 1 || !ws._listo) return;
+  const este = ws, n0 = rxN;
+  mandar({ t: 'ping', ts: Date.now() });
+  timerVuelta = setTimeout(() => {
+    timerVuelta = 0;
+    if (ws !== este || rxN !== n0 || fatal || document.hidden) return;
+    ws = null; conectado = false;
+    try { este.close(); } catch (e) {}
+    reintentos = 0; conectar();
+  }, 2500);
+}
+document.addEventListener('visibilitychange', comprobarAlVolver);
+addEventListener('pageshow', comprobarAlVolver);
+addEventListener('focus', comprobarAlVolver);
 // op.dup: el duende se abrio en otra pestaña/dispositivo (se ofrece 'Jugar aquí' o 'Cerrar', nunca se reconecta solo).
 // op.tg: sesion de Telegram caducada (recargar no sirve: hay que reabrir desde el bot).
 function error(txt, red, op) {
@@ -1319,6 +1403,7 @@ let loginPend3 = null;   // premio diario guardado hasta que el jugador nuevo el
 function recibir(m) {
   switch (m.t) {
     case 'bienvenido':
+      paso('bienvenido');
       miId = m.id; yo = m.yo; reintentos = 0; if (ws) ws._listo = true;
       try { if (canalJuego) canalJuego.postMessage({ t: 'aqui', n: yo.nombre }); } catch (e) {}
       setTimeout(vaciarErrores, 1500);   // errores de la carga (antes de tener socket) llegan ahora al dueño
@@ -1329,7 +1414,11 @@ function recibir(m) {
       $('carga').style.display = 'none';
       cerrar('v-inicio');
       pintarHud(); pintarTemp3();
-      if (!yo.clase) abrirClases();
+      // El nuevo entra ya como Guerrero (la recomendada): un paso menos antes de jugar. El que
+      // vuelve sin clase (personaje antiguo) la elige como siempre.
+      if (!yo.clase) { if (m.nuevo) { mandar({ t: 'clase', id: 'guerrero' }); setTimeout(() => aviso('⚔ Empiezas como Guerrero, la clase recomendada. Puedes cambiarla gratis hasta Nv 10 en 📖 → Especialización.', 'ok'), 6000); } else abrirClases(); }
+      // Si el servidor no la pone (algo raro), a los 4 s se abre la ventana de siempre.
+      if (!yo.clase && m.nuevo) setTimeout(() => { if (yo && !yo.clase && !$('v-clase').classList.contains('on')) abrirClases(); }, 4000);
       // Al nuevo se le da la bienvenida cuando ya eligio clase (antes quedaba detras de esa ventana).
       if (m.nuevo) { const bienv = () => { if (!yo.clase || hayVentana()) return setTimeout(bienv, 1500); aviso('Bienvenido al mundo abierto, ' + yo.nombre + '. Tu primera misión ya está en marcha: sigue la luz amarilla.', 'ok'); }; bienv(); }
       break;
@@ -1348,6 +1437,7 @@ function recibir(m) {
       break;
     case 'yo': {
       const antes = yo; yo = m.yo; pintarTemp3(); puntoTienda();
+      if (esIAB) franjaIAB();   // tras la primera victoria: pasar el duende a Chrome/Safari
       // Enlace con #premium (o start_param=premium de Telegram): la tienda se abre al entrar.
       if (tiendaAlEntrar && yo.clase) setTimeout(() => { if (tiendaAlEntrar && !hayVentana()) { tiendaAlEntrar = false; abrirTiendaHud('bot'); } }, 1200);   // con otra ventana abierta, se reintenta con el siguiente 'yo'
       // Nueva mision de la cadena: el Guardia Tito cuenta por que importa.
@@ -1434,7 +1524,7 @@ function recibir(m) {
     case 'tempFin': mostrarTempFin(m); break;
     case 'inv3': invasion3 = m.on ? { ...m, recibido: Date.now() } : null; pintarMisiones(); break;
     case 'cofre3': if (cueva) { cueva.cofre.visible = true; cueva.tapa.rotation.x = 0; } sfx('moneda', 0.6); break;
-    case 'logro': aviso('🏅 Logro: ' + m.titulo + ' · +' + (m.oro || 0).toLocaleString('es') + ' oro (llévalo como título desde ' + (MOVIL ? '⋯ → 🏆' : '🏆 Logros') + ')', 'ok'); sfx('moneda', 0.4); FX.emitir(P.x, P.y + 1.5, P.z, { n: 30, color: '#ffd84a', vel: 4, vida: 1, grav: -1 }); break;
+    case 'logro': aviso('🏅 Logro: ' + m.titulo + (m.oro ? ' · +' + m.oro.toLocaleString('es') + ' oro' : '') + ' (llévalo como título desde ' + (MOVIL ? '⋯ → 🏆' : '🏆 Logros') + ')', 'ok'); sfx('moneda', 0.4); FX.emitir(P.x, P.y + 1.5, P.z, { n: 30, color: '#ffd84a', vel: 4, vida: 1, grav: -1 }); break;
     case 'gana':
       if (m.xp) numero(P.x, P.y + 2.6, P.z, '+' + m.xp + ' XP', '#c084fc');
       if (m.oro) { numero(P.x + 0.6, P.y + 2.2, P.z, '+' + m.oro + ' oro', '#ffd84a'); sfxK('monedas', 0.3); }
@@ -1446,9 +1536,9 @@ function recibir(m) {
       if (m.item) aviso('Botín: ' + (m.item.r !== undefined && RAREZAS[m.item.r] ? RAREZAS[m.item.r].nombre + ' · ' : '') + (m.item.nombre || nombreItem(m.item)) + (m.item.vendido ? ' (bolsa llena: vendido)' : ' (' + K('pulsa I', 'toca 🎒') + ' para verlo)'), 'ok');
       break;
     case 'lv': if (m.p === miId) { aviso('¡Subiste al nivel ' + m.lv + '!', 'ok'); numero(P.x, P.y + 3, P.z, 'NIVEL ' + m.lv, '#ffe600', true); subiNivel(m.lv); } else { const o = otros.get(m.p); if (o) o.lv = m.lv; } break;
-    case 'toast': aviso(m.m, m.ok ? 'ok' : ''); break;
+    case 'toast': if (!(modoAnuncio() && /mTON|\bSOL\b|\$DUENDE|[Ww]allet/.test(m.m || ''))) aviso(m.m, m.ok ? 'ok' : ''); break;   // modo anuncio: sin avisos cripto
     // mTON ganados aqui (jefes, jefe mundial, caza del dia): antes no se avisaba nada en ORIGINS
-    case 'mton': { if (yo) yo.mton = m.total; const por = { jefe: 'por el jefe', mundial: 'por el jefe mundial', diaria: 'por la caza del día' }[m.motivo]; aviso('💎 +' + m.n + ' mTON (tienes ' + ((m.total || 0) / 1000).toLocaleString('es', { maximumFractionDigits: 3 }) + ' TON)' + (por ? ' — ' + por : ''), 'ok'); numero(P.x, P.y + 3, P.z, '+' + m.n + ' mTON', '#00eeff'); sfx('moneda', 0.5); break; }
+    case 'mton': { if (yo) yo.mton = m.total; if (modoAnuncio()) break; const por = { jefe: 'por el jefe', mundial: 'por el jefe mundial', diaria: 'por la caza del día' }[m.motivo]; aviso('💎 +' + m.n + ' mTON (tienes ' + ((m.total || 0) / 1000).toLocaleString('es', { maximumFractionDigits: 3 }) + ' TON)' + (por ? ' — ' + por : ''), 'ok'); numero(P.x, P.y + 3, P.z, '+' + m.n + ' mTON', '#00eeff'); sfx('moneda', 0.5); break; }
     case 'aviso': aviso(m.m); break;
     case 'no':
       if (lanzando && lanzando.pre) lanzando = null;   // el lanzamiento previsto no empezo
@@ -1457,6 +1547,8 @@ function recibir(m) {
       aviso(m.m, 'err'); break;
     case 'amigos': if (m.ref) { refAmigo = m.ref; nivelAmigo = m.nivel || nivelAmigo; if (compartirPend) { compartirPend = false; if (TG) compartir(); else { ofrecerPresumir(presumirTxt); aviso('Tu enlace está listo: toca el botón para enviarlo por WhatsApp.', 'ok'); } } } break;   // fuera de Telegram el navegador bloquea abrir WhatsApp sin un toque
     case 'login': if (yo && yo.clase) mostrarDiario(m); else loginPend3 = m; break;
+    case 'buzon': regalo3.alBuzon(m); break;
+    case 'regalo': regalo3.alRegalo(m); break;
     case 'tareas': if (yo) { yo.tareas = m; pintarMisiones(); } break;
     case 'mae': if (yo) { yo.mae = m.n; aviso(`⭐ ¡Maestría ${m.n}!`, 'ok'); numero(P.x, P.y + 3, P.z, 'MAESTRÍA ' + m.n, '#ffd84a', true); subiNivel(0); pintarHud(); } break;
     case 'herm': hermInfo = m.h; if (yo) yo.herm = m.h ? m.h.id : null; pintarHerm(); break;
@@ -1548,6 +1640,14 @@ function recibir(m) {
       if (m.auth && m.auth !== 'inv' && TG) { error('Tu sesión de Telegram caducó. Cierra el juego y vuelve a abrirlo desde el bot: entrarás con tu duende.', false, { tg: true }); return; }
       if (m.dup) { error(m.m || 'Tu duende se abrió en otro dispositivo o pestaña.', false, { dup: true }); return; }
       if (m.auth && m.auth !== 'inv' && !forzarInvitado) { forzarInvitado = true; aviso('No pudimos verificar tu cuenta: entras como invitado.', 'err'); return; }
+      // Rechazo suave (servidor ocupado, la cuenta ya estaba entrando, prueba de
+      // trabajo): el servidor cierra y onclose vuelve solo pasado 'reintentar' ms.
+      if (m.reintentar && !m.fatal) {
+        retrasoRec = Math.min(30000, Math.max(300, +m.reintentar || 1500));
+        if (m.pow) { powCeros = Math.max(1, Math.min(5, m.pow | 0)); powNonce = null; }
+        else aviso(m.m, 'err');
+        return;
+      }
       if (m.fatal) {
         error(m.m || 'Desconectado.');
         // Inactividad: tocar o pulsar una tecla vuelve a entrar (lo promete el aviso; antes no hacia nada).
@@ -2456,7 +2556,7 @@ function verLeyenda() {
     <p class="vv-p"><img src="/assets/lore/maiz-morado.png" alt="" style="float:left;width:34px;margin:0 6px 0 0">Hace siglos, los duendes guardaban el <b style="color:#c084fc">Maíz Morado Sagrado</b>. Con él preparaban la <b style="color:#c084fc">chicha morada</b>, la bebida que les daba su fuerza y su magia.</p>
     <p class="vv-p">El <b>Rey Goblin</b> robó el <b style="color:#ffd84a">Cántaro Eterno</b> y lo rompió en pedazos. Sin chicha, la noche cubrió el bosque, los goblins invadieron las colinas y el Éter del cielo se partió en islas flotantes: el <b>Abismo</b>.</p>
     <p class="vv-p"><img src="/assets/lore/duende-chicha.webp" alt="" style="float:right;height:96px;margin:0 0 4px 6px">Tú eres un duende joven. <b>Recupera las zonas</b> (misiones y encargos 🧭), <b>vence a sus jefes</b>, abre los cofres y junta <b>puntos de chicha</b> cazando. En el Abismo, la Luz y la Sombra luchan por el <b>Núcleo</b>, donde late el último pedazo del Cántaro.</p>
-    <p class="vv-p" style="color:#fde68a;font-weight:700">🥤 Y es de verdad: quien llegue a nivel ${CHICHA.nv60} en este mundo se lleva ${CHICHA.litros60} litros de chicha morada a su casa. Además, con ${(10000).toLocaleString('es')} puntos de chicha cazando, otro litro (en $DUENDE CLASSIC → Mochila → Chicha). Se reclama entrando con Telegram.</p>
+    <p class="vv-p" style="color:#fde68a;font-weight:700">🥤 Y es de verdad: quien llegue a nivel ${CHICHA.nv60} en este mundo se lleva ${CHICHA.litros60} litros de chicha morada a su casa. Además, con ${(10000).toLocaleString('es')} puntos de chicha cazando, otro litro (en Duende Quest Classic → Mochila → Chicha). Se reclama entrando con Telegram.</p>
 <details style="margin-top:8px"><summary style="cursor:pointer;color:#c084fc;font-weight:700">🏺 Las reliquias del Cántaro: ${Object.keys(LORE_ZONAS).filter(z => encargos[z + ':jefe'] === true).length}/10 recuperadas</summary><p class="vv-p" style="font-size:12px;margin:6px 0">Cada reliquia (un pedazo, su semilla, su barro o un secreto) se recupera venciendo al jefe de su zona en los encargos 🧭. Con las 10, el último pedazo espera en el Núcleo del Abismo: el nivel ${CHICHA.nv60}.</p>${Object.entries(LORE_ZONAS).map(([id, z]) => { const ok = encargos[id + ':jefe'] === true; return `<p class="vv-p" style="margin:6px 0;${ok ? '' : 'opacity:.6'}"><b style="color:${ok ? '#4ade80' : '#fde68a'}">${ok ? '✓' : '·'} ${esc((MAPAS[id] || {}).nombre || id)}:</b> ${ok ? esc(z.pedazo) : 'reliquia perdida… vence al jefe de la zona.'}</p>`; }).join('')}</details>
 <details style="margin-top:8px"><summary style="cursor:pointer;color:#f0abfc;font-weight:700">📖 Historias de la gente del bosque: ${SECUNDARIAS.filter(q => secundarias[q.id + ':ok']).length}/${SECUNDARIAS.length}</summary><p class="vv-p" style="font-size:12px;margin:6px 0">Misiones secundarias: salen solas en el panel al llegar a cada zona (con su nivel) y avanzan con lo que haces.</p>${SECUNDARIAS.map(q => { const ok = !!secundarias[q.id + ':ok']; return `<p class="vv-p" style="margin:6px 0;${ok ? '' : 'opacity:.6'}"><b style="color:${ok ? '#4ade80' : '#f0abfc'}">${ok ? '✓' : '·'} ${esc(q.nombre)}</b> <small>(${esc((MAPAS[q.zona] || {}).nombre || q.zona)} · Nv ${q.nv})</small><br>${ok ? esc(q.fin) : esc(q.quien) + ' te espera.'}</p>`; }).join('')}</details>`;
   $('v-diario').querySelector('h2').textContent = 'LA LEYENDA DEL CÁNTARO';
@@ -2475,18 +2575,52 @@ function leyendaPrimeraVez() {
 }
 let avisoInvT = 0;
 function avisoInvitado() {
-  // Desde Nv 3 (no encima del tutorial) y como mucho una vez al dia.
-  if (!soyInvitado || !yo || yo.nivel < 3 || hayVentana() || $('v-diario').classList.contains('on')) return;
+  // Tras entregar la mision 1 (o desde Nv 3) y como mucho una vez al dia.
+  if (!soyInvitado || !yo || (yo.nivel < 3 && !(yo.mis && yo.mis.i >= 1)) || hayVentana() || $('v-diario').classList.contains('on')) return;
   clearTimeout(mostrarDiario.t); mostrarDiario.t = 0;
   const hoy = new Date().toISOString().slice(0, 10);
   try { if (localStorage.getItem('dq_aviso_inv') === hoy) return; localStorage.setItem('dq_aviso_inv', hoy); } catch (e) {}
   $('diario-c').innerHTML = `<p class="vv-p">Juegas como <b>invitado</b>: tu duende vive solo en este navegador. Para no perderlo:</p>
-    <p class="vv-p">1) Crea una cuenta gratis en <a href="/mmo/" style="color:#7dd3fc">$DUENDE CLASSIC</a> (botón 👤): tu duende pasa a la nube y sirve en los dos juegos.</p>
-    <p class="vv-p">2) O guarda tu <b>código de rescate</b> y úsalo en otro navegador desde la pantalla de inicio:</p>
+    <p class="vv-p">Guarda tu <b>código de rescate</b>: con él recuperas tu duende en otro navegador o celular (⌂ Inicio → código de rescate).</p>
     <div style="display:flex;gap:6px;align-items:center"><code style="flex:1;min-width:0;overflow-wrap:anywhere;background:rgba(0,0,0,.4);padding:8px;border-radius:8px;font-size:12px;color:#ffd84a">${codigoRescate()}</code><button class="btn" id="copiar-rescate" style="padding:8px 10px;font-size:12px">Copiar</button></div>`;
   $('v-diario').querySelector('h2').textContent = 'GUARDA TU DUENDE';
   abrir('v-diario');
   $('copiar-rescate').onclick = () => { try { navigator.clipboard.writeText(codigoRescate()).then(() => aviso('Código copiado. Guárdalo en un lugar seguro.', 'ok')); } catch (e) {} };
+  // En el navegador de Facebook/Instagram, ademas, el boton para llevarlo a Chrome/Safari.
+  if (esIAB) { const b = document.createElement('button'); b.className = 'btn'; b.style.cssText = 'width:100%;margin-top:10px'; b.textContent = ANDROID_IAB ? 'Abrir en Chrome con mi duende' : 'Pasar a Safari con mi duende'; b.onclick = () => irANavegador(); $('diario-c').appendChild(b); }
+}
+// ── NAVEGADOR INTERNO (Facebook/Instagram) → Chrome/Safari ──
+// Franja que no bloquea, tras la primera victoria (una vez por sesion; si la cierra, no vuelve en 3 dias).
+// Android: intent:// abre Chrome con el codigo en el hash (#r=); /mundo/ lo adopta y lo borra de la URL.
+// iOS no deja abrir Safari desde aqui: se copia el codigo y se explica el menu ··· → Abrir en el navegador.
+const ANDROID_IAB = /Android/i.test(navigator.userAgent);
+function irANavegador() {
+  if (!soyInvitado) return;
+  const cod = tokInvitado();
+  if (ANDROID_IAB) {
+    const fb = encodeURIComponent(location.origin + '/mundo/');
+    location.href = 'intent://' + location.host + '/mundo/#r=' + cod + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + fb + ';end';
+    return;
+  }
+  const txt = codigoRescate();
+  const listo = () => aviso('Código copiado. Toca ··· (arriba a la derecha) → «Abrir en el navegador» y en Safari ve a ⌂ Inicio → código de rescate.', 'ok');
+  try { navigator.clipboard.writeText(txt).then(listo, () => aviso('Tu código de rescate: ' + txt + '. Guárdalo y toca ··· → «Abrir en el navegador».', 'ok')); } catch (e) { aviso('Tu código de rescate: ' + txt + '. Guárdalo y toca ··· → «Abrir en el navegador».', 'ok'); }
+}
+let franjaIABvista = false;
+function franjaIAB() {
+  if (franjaIABvista || !esIAB || !soyInvitado || !yo || !(yo.kills >= 1)) return;
+  franjaIABvista = true;
+  try { if (Date.now() - (+localStorage.getItem('dq_iab_no') || 0) < 3 * 86400000) return; } catch (e) {}
+  const f = document.createElement('div');
+  f.id = 'franja-iab';
+  f.setAttribute('role', 'status');
+  f.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);top:calc(64px + env(safe-area-inset-top));z-index:60;width:min(94vw,440px);display:flex;gap:8px;align-items:center;padding:8px 10px;border-radius:12px;background:rgba(20,12,44,.94);border:1px solid rgba(125,211,252,.5);color:#f2efff;font:600 12px/1.35 system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.45)';
+  f.innerHTML = '<span style="flex:1;min-width:0">¡Primera victoria! Aquí dentro de Facebook/Instagram tu duende se puede borrar. Llévalo a ' + (ANDROID_IAB ? 'Chrome' : 'Safari') + ' y juega más fluido.</span><button type="button" class="btn" style="padding:7px 10px;font-size:12px;white-space:nowrap">' + (ANDROID_IAB ? 'Abrir en Chrome' : 'Cómo pasarlo') + '</button><button type="button" aria-label="Cerrar" style="background:none;border:0;color:#b8b0d8;font-size:18px;padding:0 4px;cursor:pointer">×</button>';
+  const [ir, x] = f.querySelectorAll('button');
+  ir.onclick = () => irANavegador();
+  x.onclick = () => { f.remove(); try { localStorage.setItem('dq_iab_no', String(Date.now())); } catch (e) {} };
+  document.body.appendChild(f);
+  setTimeout(() => f.remove(), 25000);
 }
 // ── COFRES DEL TESORO (3 por zona; el legendario, en lo alto) ──
 const COFRES3 = cofres3d(MAPAS, MONSTRUOS).map(c => ({ ...c, listoEn: 0, g: null, tapa: null, gema: null }));
@@ -2588,6 +2722,14 @@ function compartirYa() {
   if (refAmigo) return compartir();
   compartirPend = true; mandar({ t: 'amigos' }); aviso('Preparando tu enlace de invitación...', 'ok');
 }
+// Buzon "Mientras no estabas" y la compra entregada (/mmo/js/regalo.js), despues del cofre diario.
+const regalo3 = iniciarRegalo({
+  mandar,
+  ocupado: () => hayVentana() || $('v-diario').classList.contains('on') || !!loginPend3 || !yo || !yo.clase,
+  presumir: txt => { presumirTxt = txt; compartirYa(); },
+  fanfarria, vibrar: vib,
+  filtro: t => modoAnuncio() && /mTON|\bSOL\b|\$DUENDE|[Ww]allet/.test(t || ''),
+});
 const oroAmigo = () => premioAmigo(nivelAmigo).oro.toLocaleString('es', { useGrouping: 'always' });
 // WhatsApp primero fuera de Telegram (es lo que mas se usa en Peru). El jugador decide
 // enviar: solo se abre WhatsApp con el texto listo. El enlace va a /jugar/ (elige 2D o 3D).
@@ -2628,7 +2770,7 @@ function revisarAtrasTg() {
   try { abierta ? TG.BackButton.show() : TG.BackButton.hide(); } catch (e) {}
 }
 if (TG && TG.BackButton) try {
-  TG.BackButton.onClick(() => { document.querySelectorAll('.modal.on').forEach(m => { if (m.id !== 'v-muerte' && m.id !== 'v-clase' && m.id !== 'v-error') cerrar(m.id); }); revisarAtrasTg(); });   // la de error no: dejaba el mundo congelado
+  TG.BackButton.onClick(() => { document.querySelectorAll('.modal.on').forEach(m => { if (m.id !== 'v-muerte' && m.id !== 'v-clase' && m.id !== 'v-error' && m.id !== 'v-pago') cerrar(m.id); }); revisarAtrasTg(); });   // la de error no: dejaba el mundo congelado
 } catch (e) {}
 // ── HERMANDADES (las "guilds") ──
 let hermInfo = null, hermSalirT = 0;
@@ -2722,21 +2864,52 @@ function pintarRankPanel() {
   c.innerHTML = s;
   c.querySelectorAll('[data-rt]').forEach(b => b.onclick = () => { rankTab = b.dataset.rt; if (rankTab === 'abismo') mandar({ t: 'temp3' }); pintarRankPanel(); });
 }
-// ── RECOMPENSA DIARIA (racha de 7 dias) ──
+// ── RECOMPENSA DIARIA (racha por semanas de 7 dias, sin tope) ──
+// "Mañana: <premio>" segun lo ultimo cobrado (yo.login), con el oro de la semana.
+function textoManana3() {
+  const L = yo && yo.login;
+  if (!L || !L.racha) return '';
+  const sig = L.racha + 1, pr = premioRacha(sig), d = diaRacha(sig);
+  const oro = pr.oro ? Math.round(pr.oro * multLogin(yo.nivel) * multSemanaRacha(sig)) : 0;
+  const premio = oro ? oro.toLocaleString('es') + ' oro' + (pr.item !== undefined ? ' + objeto ÉPICO' : '') : pr.txt;
+  return d === 7 ? '¡Mañana el cofre ÉPICO! ' + premio : 'Mañana: ' + premio;
+}
+// Movil: en vez de la ventana, una tira arriba (~56 px) con las 7 bolitas de la
+// semana y lo de mañana; dura 5 s (8 s los dias 6 y 7) y al tocarla abre el panel.
+// Espera a que no haya ventanas abiertas (bienvenida, tutorial, clase...).
+function tiraDiario(m, n) {
+  if (hayVentana() && (n || 0) < 12) { setTimeout(() => tiraDiario(m, (n || 0) + 1), 1500); return; }
+  let t = $('tira-diario');
+  if (!t) {
+    t = document.createElement('div'); t.id = 'tira-diario'; t.setAttribute('role', 'button');
+    document.body.appendChild(t);
+    t.onclick = () => { const mm = tiraDiario.m; t.classList.remove('on'); clearTimeout(tiraDiario.t); if (mm) mostrarDiario(mm, true); };
+  }
+  tiraDiario.m = m;
+  const dHoy = diaRacha(m.racha), sem = semanaRacha(m.racha);
+  let b = '';
+  for (let i = 1; i <= 7; i++) b += `<i class="${i < dHoy ? 'ya' : i === dHoy ? 'hoy' : ''}${i === 7 ? ' cofre' : ''}"></i>`;
+  const hoyTxt = m.oro ? '+' + m.oro.toLocaleString('es') + ' oro' : m.txt || 'premio';
+  t.innerHTML = `<div class="dias7 mini">${b}</div><div class="tx"><b>☀ Día ${dHoy}${sem > 1 ? ' · Semana ' + sem : ''}: ${esc(hoyTxt)}${m.itemNom ? ' · ' + esc(m.itemNom) : ''}</b><small>${esc(textoManana3() || '')}${(m.hitos || []).length ? ' · 🏅 ' + esc(m.hitos.join(', ')) : ''}</small></div>`;
+  t.classList.add('on');
+  vib('success'); sfxK('monedas', 0.4);
+  clearTimeout(tiraDiario.t);
+  tiraDiario.t = setTimeout(() => t.classList.remove('on'), dHoy >= 6 ? 8000 : 5000);
+}
 // Panel lateral que se cierra solo: lo de hoy, la racha y lo que espera mañana.
-function mostrarDiario(m) {
-  // Movil: el premio del dia es un aviso corto, no una ventana que tapa el juego (se ve completo en ⋯ → 🎟).
-  if (COMPACTO && !m.vuelta) { aviso(`☀ Día ${m.racha} de tu racha: ${m.oro ? '+' + m.oro.toLocaleString('es') + ' oro' : m.txt || 'premio'}${m.itemNom ? ' · ' + m.itemNom : ''}`, 'ok'); vib('success'); sfxK('monedas', 0.4); return; }
-  if ($('v-diario').classList.contains('on') && !mostrarDiario.t) { setTimeout(() => mostrarDiario(m), 2000); return; }   // no pisa la leyenda
-  const n = LOGIN_PREMIOS.length, hoy = m.racha;
+function mostrarDiario(m, forzar) {
+  if (yo && m.racha) yo.login = { ...(yo.login || {}), racha: m.racha };   // para "Mañana" antes de que llegue el yo nuevo
+  if (COMPACTO && !m.vuelta && !forzar) { tiraDiario(m); return; }
+  if ($('v-diario').classList.contains('on') && !mostrarDiario.t) { setTimeout(() => mostrarDiario(m, forzar), 2000); return; }   // no pisa la leyenda
+  const n = LOGIN_PREMIOS.length, hoy = diaRacha(m.racha), sem = semanaRacha(m.racha);
   let h = m.vuelta ? `<p class="vv-p" style="margin-bottom:8px;padding:8px;border-radius:10px;background:rgba(255,216,74,.12);border:1px solid rgba(255,216,74,.4)">🎉 <b>¡Te echábamos de menos!</b> ${m.vuelta.dias} días fuera. Regalo de bienvenida: <b>+${m.vuelta.oro.toLocaleString('es')} oro</b>, ${m.vuelta.pociones} pociones y <b>${esc(m.vuelta.item)}</b>.</p>` : '';
-  h += `<p class="vv-p" style="margin-bottom:8px">¡Día <b style="color:#ffd84a">${hoy}</b> de tu racha! Recibes <b>${m.oro && /oro/.test(m.txt || '') ? m.oro.toLocaleString('es') + ' oro' : esc(m.txt || '')}</b>${m.oro && !/oro/.test(m.txt || '') ? ` (+${m.oro.toLocaleString('es')} oro)` : ''}${m.itemNom ? `: <b>${esc(m.itemNom)}</b>` : ''}.</p><div class="dias7">`;
+  h += `<p class="vv-p" style="margin-bottom:8px">¡Día <b style="color:#ffd84a">${m.racha}</b> de tu racha${sem > 1 ? ` (semana ${sem}, oro x${String(multSemanaRacha(m.racha)).replace('.', ',')})` : ''}! Recibes <b>${m.oro && /oro/.test(m.txt || '') ? m.oro.toLocaleString('es') + ' oro' : esc(m.txt || '')}</b>${m.oro && !/oro/.test(m.txt || '') ? ` (+${m.oro.toLocaleString('es')} oro)` : ''}${m.itemNom ? `: <b>${esc(m.itemNom)}</b>` : ''}.</p><div class="dias7">`;
   for (let i = 1; i <= n; i++) {
     const pr = LOGIN_PREMIOS[i - 1];
     h += `<div class="d7 ${i < hoy ? 'ya' : i === hoy ? 'hoy' : ''}"><small>Día ${i}</small><span>${i === n ? '🎁' : pr.item !== undefined ? '⚔️' : pr.oro ? '🪙' : '🧪'}</span><em>${esc(pr.txt)}</em></div>`;
   }
-  const sig = LOGIN_PREMIOS[hoy % n];
-  h += `</div><p class="vv-p" style="margin-top:10px;font-size:12px">Mañana: <b style="color:#7dd3fc">${esc(sig.txt)}</b>. Si faltas un día la racha retrocede: ¡no la pierdas!</p>`;
+  h += '</div>' + (m.hitos || []).map(x => `<p class="vv-p" style="margin-top:8px;color:#ffd84a">🏅 <b>¡Hito de racha!</b> Ganaste ${esc(x)}.</p>`).join('');
+  h += `<p class="vv-p" style="margin-top:10px;font-size:12px"><b style="color:#7dd3fc">${esc(textoManana3() || 'Mañana: ' + premioRacha(m.racha + 1).txt)}</b>. Si faltas un día la racha retrocede (desde la semana 2, al inicio de su semana): ¡no la pierdas!</p>`;
   $('diario-c').innerHTML = h;
   $('v-diario').querySelector('h2').textContent = m.vuelta ? '¡BIENVENIDO DE VUELTA!' : 'RECOMPENSA DIARIA';
   abrir('v-diario'); vib('success'); sfxK('monedas', 0.4);
@@ -2785,7 +2958,7 @@ addEventListener('keydown', e => {
   }
   if (hayVentana()) {
     if (e.key === 'Escape' && $('v-look').classList.contains('on')) return cerrarLook(false);
-    if (e.key === 'Escape') document.querySelectorAll('.modal.on').forEach(m => { if (!['v-clase', 'v-muerte', 'v-inicio', 'v-error'].includes(m.id)) cerrar(m.id); });
+    if (e.key === 'Escape') document.querySelectorAll('.modal.on').forEach(m => { if (!['v-clase', 'v-muerte', 'v-inicio', 'v-error', 'v-pago'].includes(m.id)) cerrar(m.id); });   // la de pago solo con su ✕ (no se pierden los datos)
     if (e.code === 'KeyM' && $('v-mapa').classList.contains('on')) cerrar('v-mapa');
     for (const [k, id] of [['KeyI', 'v-inv'], ['KeyP', 'v-libro'], ['KeyL', 'v-logros']]) if (e.code === k && $(id) && $(id).classList.contains('on')) cerrar(id);
     return;
@@ -2991,7 +3164,7 @@ function hablar() {
       + (yo.faccion ? `<p style="font-size:12px">Tu facción: <b style="color:${FACCIONES[yo.faccion].color}">${FACCIONES[yo.faccion].titulo}</b>${temp3 && temp3.debil === yo.faccion ? ' · ✨ Bendición del Éter (PA ×' + String(FACC_BONO).replace('.', ',') + ')' : ''}</p>${temp3 ? `<p style="font-size:11px;color:var(--txt2)">🏆 Temporada: tus PA ${fmtN(temp3.p)} · liga ${TEMP_ABISMO[temp3.tier] ? TEMP_ABISMO[temp3.tier].n : 'sin liga'} (ver en 🏆 Ranking → Abismo)</p>` : ''}<button class="btn" id="p-abismo" style="width:100%;margin:6px 0;background:linear-gradient(90deg,#7c3aed,#2563eb)">Ir al Abismo</button>`
         : yo.nivel >= ABISMO.nvMin ? `<p style="font-size:12px">Elige tu facción (para siempre):</p><div style="display:flex;gap:6px;margin:6px 0"><button class="btn" id="p-luz" style="flex:1;background:#b8860b">☀ Luz${temp3 ? ` (${temp3.n.luz || 0})` : ''}${temp3 && temp3.debil === 'luz' ? ' ★' : ''}</button><button class="btn" id="p-sombra" style="flex:1;background:#6b21a8">🌑 Sombra${temp3 ? ` (${temp3.n.sombra || 0})` : ''}${temp3 && temp3.debil === 'sombra' ? ' ★' : ''}</button></div>${temp3 && temp3.debil ? `<p style="font-size:12px;color:#ffd84a">★ Los ${esc(FACCIONES[temp3.debil].titulo)} son menos: si te unes cobras <b>${fmtN(RECLUTA.oro * Math.max(1, Math.floor(yo.nivel / 10)))} oro, un objeto épico y ${RECLUTA.pa} PA</b>, y ganáis PA ×${String(FACC_BONO).replace('.', ',')} mientras lo seáis.</p>` : ''}`
         : `<p style="font-size:12px;color:var(--txt3)">Se abre a nivel ${ABISMO.nvMin}.</p>`)
-      + '<p style="font-size:12px;color:var(--txt2)">Las demás mazmorras, la Torre y la banda siguen en $DUENDE CLASSIC (2D) con tu mismo personaje.</p><a class="btn sec" href="/mmo/" style="display:block;text-align:center;text-decoration:none">Ir a CLASSIC (2D)</a>';
+      + '<p style="font-size:12px;color:var(--txt2)">Las demás mazmorras, la Torre y la banda siguen en Duende Quest Classic (2D) con tu mismo personaje.</p><a class="btn sec" href="/mmo/" style="display:block;text-align:center;text-decoration:none">Ir a CLASSIC (2D)</a>';
     $('p-cueva').onclick = () => { mandar({ t: 'cueva' }); cerrar('v-npc'); };
     if ($('p-abismo')) $('p-abismo').onclick = () => { mandar({ t: 'abismo' }); cerrar('v-npc'); };
     for (const f of ['luz', 'sombra']) if ($('p-' + f)) $('p-' + f).onclick = () => { if (!confirm(`¿Unirte a los ${FACCIONES[f].titulo}? Es para siempre: no se puede cambiar.`)) return; mandar({ t: 'faccion', f }); cerrar('v-npc'); };
@@ -3230,6 +3403,7 @@ function mandarPos(forzar) {
   if ((forzar || ahora - enviadoT > 100) && clave !== ultimoEnv) {
     mandar({ t: 'mv3', x: +P.x.toFixed(2), z: +P.z.toFixed(2), r: +P.ry.toFixed(2), a: P.vuela ? 3 : P.planea ? 4 : P.anda ? 1 : 0, h: +alt.toFixed(1) });
     enviadoT = ahora; ultimoEnv = clave;
+    if (P.anda && yo) paso('mover');   // primera vez que camina (embudo)
   }
 }
 function rangoAtaque(o) {
@@ -3640,6 +3814,8 @@ function pintarMisiones() {
       // Las semanales tambien (antes solo se veia "Semana 0/2").
       `<div class="q"><b>📅 Misiones de la semana ${hs}/${T.sem.l.length}</b>` + T.sem.l.map(t => t.ok ? `<span class="ok">✓ ${esc(t.txt)}</span>` : `<span class="tarea">• ${esc(t.txt)} ${t.p}/${t.n}</span>`).join('') + '</div>';
   }
+  // Fila fija con el premio de mañana de la racha (motivo para volver).
+  { const mn = textoManana3(); if (mn) h += `<div class="q"><b style="color:#ffd84a">🎁 ${esc(mn)}</b></div>`; }
   h = tt + h;
   c.classList.toggle('con-tuto', !!tt);
   c.style.display = h ? 'block' : 'none';
@@ -3895,23 +4071,54 @@ async function inicio() {
   try { crearNocheDuendes(); } catch (e) { console.warn(e); }
   P.lbl = etiqueta('yo');
   progreso(1, 'Conectando…');
+  paso('arte_ok');
   requestAnimationFrame(bucle);
-  // Quien ya tiene sesion (Telegram, cuenta web o invitado con nombre) entra directo.
+  // Todos entran directo: Telegram, cuenta web, invitado que vuelve y tambien el
+  // invitado nuevo (el servidor le pone 'DuendeNNNN'; el nombre se cambia luego).
+  // Antes el nuevo veia una pantalla de nombre con un texto de CLASSIC: un toque
+  // mas y gente del anuncio que se iba. La pantalla v-inicio de abajo queda solo
+  // como reserva (ENTRADA_DIRECTA = false la recupera).
   const tok = await tokP;
+  // Duende que llega desde el navegador de Facebook/Instagram (#r=, ya borrado de la URL).
+  if (rescateHash && !TG && !tok) await adoptarRescate(rescateHash);
   let nombre = ''; try { nombre = localStorage.getItem('dq_mmo_nombre') || ''; } catch (e) {}
   let inv = null; try { inv = localStorage.getItem('dq_mmo_tok'); } catch (e) {}
   if (TG || tok || (inv && nombre)) { conectar(); return; }
+  // El nuevo que antes veia el formulario: se marcan sus dos pasos (el embudo de /mmostats sigue cuadrando).
+  if (ENTRADA_DIRECTA) { paso('form_visto'); paso('clic_entrar'); conectar(); return; }
   $('carga').style.display = 'none';
   abrir('v-inicio');
+  paso('form_visto');
   const entrar = () => {
     const n = $('in-nombre').value.trim();
     // Vacio vale: el servidor le pone 'DuendeNNNN'. Corto no: se dice por que.
     if (n && n.length < 3) { $('in-nombre').focus(); $('in-nota').style.display = 'block'; return; }
     try { if (n) localStorage.setItem('dq_mmo_nombre', n); } catch (e) {}
+    paso('clic_entrar');
     $('carga').style.display = 'flex'; progreso(1, 'Entrando al mundo…');
     conectar();
   };
   $('b-entrar').onclick = entrar;
   $('in-nombre').addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') entrar(); });
+}
+// Entrada en un toque para el invitado nuevo (sin pantalla de nombre).
+const ENTRADA_DIRECTA = true;
+// Adopta el duende del codigo de rescate. Si en este navegador ya hay otro duende
+// distinto, se pregunta con un boton (el anterior queda en dq_mmo_tok_previo, como en /inicio/).
+function adoptarRescate(c) {
+  let antes = ''; try { antes = localStorage.getItem('dq_mmo_tok') || ''; } catch (e) {}
+  const viajo = () => { const avisar = () => (yo ? aviso('🧳 Tu duende viajó contigo. ¡Sigue la aventura!', 'ok') : setTimeout(avisar, 1000)); setTimeout(avisar, 1500); };
+  const usar = () => { try { if (antes && antes !== c) localStorage.setItem('dq_mmo_tok_previo', antes); localStorage.setItem('dq_mmo_tok', c); localStorage.removeItem('dq_mmo_nombre'); } catch (e) {} viajo(); };
+  if (!/^[a-f0-9]{32}$/.test(antes) || antes === c) { if (antes !== c) usar(); else viajo(); return Promise.resolve(); }
+  return new Promise(listo => {
+    $('carga').style.display = 'none';
+    const fondo = document.createElement('div');
+    fondo.className = 'heredar-fondo';
+    fondo.innerHTML = '<div class="heredar-caja" role="dialog" aria-modal="true"><h3>¿Seguir con el duende que traes?</h3><p class="heredar-txt">En este navegador ya hay otro duende de invitado. Si eliges el que traes, el otro no se pierde: su código queda guardado aquí.</p><button class="heredar-si">Jugar con el duende que traigo</button><button class="heredar-no">Quedarme con el de este navegador</button></div>';
+    const fin = si => { if (si) usar(); fondo.remove(); $('carga').style.display = 'flex'; listo(); };
+    fondo.querySelector('.heredar-si').onclick = () => fin(true);
+    fondo.querySelector('.heredar-no').onclick = () => fin(false);
+    document.body.appendChild(fondo);
+  });
 }
 inicio().catch(e => { console.error(e); avisarError('inicio: ' + ((e && e.message) || e), '', 0); if (window.__dqFallo && $('carga').style.display !== 'none') window.__dqFallo('El mundo 3D no terminó de cargar. Reintenta o juega con el mismo duende en CLASSIC (2D).'); });

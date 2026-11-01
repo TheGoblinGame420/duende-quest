@@ -7,9 +7,9 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, precioOro, ARMAS, PODERES, ATAQUE_CD_MS, ALCANCE_BASE, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
-  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, costoReforja, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TINTES, MASCOTAS, NOVEDADES, PASE, premioPase, ambulanteActivo, ambulanteOferta, semanaUTC, GESTOS, horaFelizTiempos, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
+  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, costoReforja, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TINTES, MASCOTAS, NOVEDADES, PASE, premioPase, ambulanteActivo, ambulanteOferta, semanaUTC, GESTOS, horaFelizTiempos, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
-  RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe,
+  RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe, paqueteParaFaltante, ENTREGA, textoPagoRecibido,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe, climaDe, CLIMA, ESPECIES, premioEspecie, TORRE, atajoTorre, MODS_TORRE, HERM_COLORES, premioTorreSem, zonaDeNivel, progresoLogro, proximoMundial, mundialDe, HORA_FELIZ, EXPEDICION, premioExpedicion,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
@@ -17,7 +17,8 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=325';
+} from './data.js?v=326';
+import { iniciarRegalo } from './regalo.js?v=326';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -40,6 +41,30 @@ function ponCss(el, prop, v) { const k = '_c' + prop; if (el[k] !== v) { el[k] =
 // Fuera, el SDK llena initData con un #tgWebAppData ajeno pegado en un enlace.
 const enTg = !!(window.TelegramWebviewProxy || window.parent !== window || (window.external && 'notify' in window.external));
 const TG = enTg && window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? window.Telegram.WebApp : null;
+// Modo anuncio (js/origen.js pone <html class="anuncio">): quien llega de Meta no ve
+// mTON, wallet ni pagos SOL/$DUENDE. Solo se OCULTAN; nada del token cambia.
+const modoAnuncio = () => { try { return !!(window.dqAnuncio && window.dqAnuncio()); } catch (e) { return false; } };
+// SOL y TON en mayusculas: 'el sol' o la 'Fiesta del Sol' no son cripto.
+const SIN_CRIPTO_RE = /\bSOL\b|\$DUENDE|mTON|\bTON\b|[Ww]allet|[Ss]olana|[Pp]hantom|[Ss]olflare|\b[Rr]etiros?\b/;
+// Embudo de la carga (/js/origen.js → /mmo/ev): un aviso por paso y sesion. Sin origen.js no hace nada.
+const paso = e => { try { if (window.dqPaso) window.dqPaso(e, 'classic'); } catch (er) {} };
+paso('carga_ini');
+// Navegador interno de Facebook/Instagram/Messenger: se anota en el hola (D1 comparado en /mmostats).
+const esIAB = !TG && /FBAN|FBAV|FB_IAB|Instagram|Messenger/i.test(navigator.userAgent);
+// #r=<codigo de rescate> (el aviso de ORIGINS para pasar a Chrome; o la salida a CLASSIC si el 3D
+// no carga, que conserva el hash): se borra de la URL al instante y se adopta el duende.
+if (!TG) {
+  const mr = /(?:^#|&)r=([A-Za-z0-9-]{32,40})(?:&|$)/.exec(location.hash);
+  if (mr) {
+    const c = mr[1].replace(/[^a-f0-9]/gi, '').toLowerCase();
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+    let antes = ''; try { antes = localStorage.getItem('dq_mmo_tok') || ''; } catch (e) {}
+    if (/^[a-f0-9]{32}$/.test(c) && antes !== c && (!/^[a-f0-9]{32}$/.test(antes) || confirm('En este navegador ya hay otro duende de invitado. ¿Jugar con el duende que traes? (el otro no se pierde: su código queda guardado aquí)'))) {
+      try { if (antes) localStorage.setItem('dq_mmo_tok_previo', antes); localStorage.setItem('dq_mmo_tok', c); localStorage.removeItem('dq_mmo_nombre'); } catch (e) {}
+      setTimeout(function avisar() { if (typeof yo !== 'undefined' && yo) aviso('🧳 Tu duende viajó contigo. ¡Sigue la aventura!', 'ok'); else setTimeout(avisar, 1000); }, 1500);
+    }
+  }
+}
 // Enlace directo a la tienda: /mmo/#premium o la Mini App con start_param=premium.
 let tiendaAlEntrar = /(^#|&)premium(&|$)/.test(location.hash) || !!(TG && TG.initDataUnsafe && TG.initDataUnsafe.start_param === 'premium');
 let viaTienda = 'npc';   // de donde se abrio la tienda: va en el pedido (hud, oro, npc o bot), solo informativo para el dueño
@@ -49,6 +74,7 @@ if (TG) {
   // equipo...) y, si no hay ninguna, lleva al hub de la Mini App.
   const volver = () => {
     const abierta = document.querySelector('.modal.on:not(#m-inicio):not(#m-muerte):not(#m-error)');
+    if (abierta && abierta.id === 'm-sol') { aviso('Cierra el pago con ✕ (tus datos no se pierden).'); return; }
     if (abierta && !(abierta.id === 'm-clase' && yo && !yo.clase)) { cerrarModales(); return; }
     location.href = '/telegram/index.html' + (location.hash || '');
   };
@@ -392,7 +418,35 @@ async function autenticacion() {
   let nombreTg = '';
   try { const u = TG && TG.initDataUnsafe && TG.initDataUnsafe.user; if (u) nombreTg = u.username || u.first_name || ''; } catch (e) {}
   soyInvitado = true;
-  return { auth: { k: 'inv', tok: inv }, nombre: LS.getItem('dq_mmo_nombre') || nombreTg };
+  // El servidor pidio prueba de trabajo (muchas altas desde la misma red): se resuelve una vez.
+  if (powCeros && powNonce == null) powNonce = await resolverPow(inv, powCeros);
+  return { auth: { k: 'inv', tok: inv }, nombre: LS.getItem('dq_mmo_nombre') || nombreTg, pow: powNonce == null ? undefined : powNonce };
+}
+// Huella del dispositivo: con ella el servidor banea o silencia a un invitado sin
+// tocar al resto de su IP (en Peru una IP de movil la comparten cientos).
+function huellaDev() {
+  let d = LS.getItem('dq_dev');
+  if (!/^[a-f0-9]{32}$/.test(d || '')) {
+    const b = new Uint8Array(16); crypto.getRandomValues(b);
+    d = [...b].map(x => x.toString(16).padStart(2, '0')).join('');
+    LS.setItem('dq_dev', d);
+  }
+  return d;
+}
+// Prueba de trabajo ligera (~4000 hashes, unos 200 ms en un movil) que el servidor
+// pide al crear muchos invitados desde la misma red. Igual que powValida de world.js.
+// rxN: mensajes recibidos (comprobarAlVolver mira si llega alguno tras el ping).
+let powCeros = 0, powNonce = null, retrasoRec = 0, rxN = 0;
+async function resolverPow(tok, ceros) {
+  if (!(window.crypto && crypto.subtle)) return null;
+  const h = Math.floor(Date.now() / 3600000), enc = new TextEncoder();
+  for (let n = 0; n < 500000; n++) {
+    const b = new Uint8Array(await crypto.subtle.digest('SHA-256', enc.encode('dq-pow:' + h + ':' + tok + ':' + n)));
+    let ok = true;
+    for (let i = 0; i < ceros && ok; i++) ok = ((i & 1) ? b[i >> 1] & 15 : b[i >> 1] >> 4) === 0;
+    if (ok) return n;
+  }
+  return null;
 }
 
 let _sb = null;
@@ -447,26 +501,35 @@ async function conectar() {
   ws = s;
   // reintentos se reinicia al recibir 'bienvenido', no al abrir: si el
   // servidor aceptaba el socket y lo cerraba enseguida, se reintentaba sin fin.
-  const ref = (/[?&]ref=([a-z0-9]{6})/.exec(location.search) || [])[1];
+  // De donde llego (/js/origen.js): src = meta|tg|wa|ref|org; su invitacion guardada, si no hay otra.
+  const og = window.dqOrigen ? window.dqOrigen() : { src: 'org', ref: '' };
+  const ref = refInvitacion() || og.ref || undefined;
   // Cada manejador solo actua si su socket sigue siendo el actual.
-  s.onopen = () => { if (ws !== s) return; conectado = true; ultimoMsgT = performance.now(); mandar({ t: 'hola', ...hola, ref }); };
-  s.onmessage = ev => { if (ws !== s) return; ultimoMsgT = performance.now(); let m; try { m = JSON.parse(ev.data); } catch (e) { return; } recibir(m); };
-  s.onclose = () => {
+  s.onopen = () => { if (ws !== s) return; conectado = true; ultimoMsgT = performance.now(); mandar({ t: 'hola', ...hola, ref, src: og.src, iab: esIAB ? 1 : undefined, dev: huellaDev() }); };
+  s.onmessage = ev => { if (ws !== s) return; ultimoMsgT = performance.now(); rxN++; let m; try { m = JSON.parse(ev.data); } catch (e) { return; } recibir(m); };
+  s.onclose = ev => {
     if (ws !== s) return;
     conectado = false;
     castYo = null; verLanzar(false);   // sin conexion el castFin ya no llega
     if (fatal || pausado || pausaHeredar) return;
     reintentos++;
+    // 1012: el servidor se esta reiniciando (version nueva): no es un fallo del jugador.
+    if (ev && ev.code === 1012) aviso('Actualizando el mundo…');
     if (reintentos === 7) mostrarError('Sin conexión con el servidor. Seguimos intentándolo solos; también puedes pulsar «Reconectar».');
-    // Visible: se sigue intentando cada 8 s (tunel, cambio de red, despliegue).
+    // Con azar (0,5-1,5x mas 0-2 s): tras un despliegue no vuelven todos en el mismo
+    // milisegundo. Si el servidor dijo cuando volver (reintentar), se respeta.
+    const espera = retrasoRec ? retrasoRec + Math.random() * 1000 : Math.min(8000, 600 * reintentos) * (0.5 + Math.random()) + Math.random() * 2000;
+    retrasoRec = 0;
+    // Visible: se sigue intentando cada ~8 s (tunel, cambio de red, despliegue).
     // Oculta: se para a los 6 y se reintenta al volver o al recuperar la red.
-    if (reintentos <= 6 || !document.hidden) timerRec = setTimeout(conectar, Math.min(8000, 600 * reintentos));
+    if (reintentos <= 6 || !document.hidden) timerRec = setTimeout(conectar, espera);
   };
 }
 
 function recibir(m) {
   switch (m.t) {
     case 'bienvenido':
+      paso('bienvenido');
       // Sesion nueva en el servidor: lanzamientos, recargas e invitaciones de la
       // anterior ya no existen (su castFin no llegara nunca y bloquearia todo).
       castYo = null; castPend = 0; gcdHasta = 0;
@@ -490,7 +553,13 @@ function recibir(m) {
       if (m.heredado) { aviso('☁️ Tu progreso de invitado pasó a tu cuenta.', 'ok'); try { localStorage.removeItem('dq_mmo_tok'); } catch (e) {} }
       if (m.regaladas && m.regaladas.length) aviso('🎁 Skins de tu cuenta desbloqueadas: ' + m.regaladas.map(k => SKINS[k].nombre).join(', '), 'ok');
       // Personaje sin clase (nuevo, o de antes de las clases): a elegir.
-      if (!yo.clase) setTimeout(() => abrirClases(true), 300);
+      // El nuevo entra ya como Guerrero (la recomendada): un paso menos antes de jugar.
+      // El que vuelve sin clase (personaje antiguo) la elige como siempre.
+      if (!yo.clase && m.nuevo) {
+        mandar({ t: 'clase', id: 'guerrero' });
+        setTimeout(() => aviso('⚔ Empiezas como Guerrero, la clase recomendada. Puedes cambiarla gratis hasta Nv 10 en el libro de hechizos.', 'ok'), 5000);
+        setTimeout(() => { if (yo && !yo.clase) abrirClases(true); }, 4000);   // si el servidor no la pone, la ventana de siempre
+      } else if (!yo.clase) setTimeout(() => abrirClases(true), 300);
       mandar({ t: 'contactos' });
       break;
     case 'mapa': entrarMapa(m); break;
@@ -668,6 +737,7 @@ function recibir(m) {
     case 'no': errorRojo(m.m); break;
     case 'mton':
       if (yo) yo.mton = m.total;
+      if (modoAnuncio()) { pintarHud(); break; }   // modo anuncio: se guarda, pero sin aviso de mTON
       flotante(P.x, P.y - 110, '+' + m.n + ' mTON', '#00eeff', 12);
       aviso('💎 +' + m.n + ' mTON (tienes ' + tonTxt(m.total) + ' TON) — ' + ({ jefe: 'por el jefe', mundial: 'por el jefe mundial', diaria: 'por la caza del día' }[m.motivo] || ''), 'ok');
       sfx('moneda', .5);
@@ -676,10 +746,12 @@ function recibir(m) {
       break;
     case 'factura': abrirFactura(m); break;
     case 'pedidoSol': mostrarPedidoSol(m); break;
+    case 'buzon': regalo2.alBuzon(m); break;
+    case 'regalo': regalo2.alRegalo(m); break;
     case 'fondo': fondoInfo = m; if ($('m-wallet').classList.contains('on')) pintarWallet(); break;
     case 'login': mostrarLogin(m); if (m.vuelta) aviso(`🎉 ¡Bienvenido de vuelta! ${m.vuelta.dias} días fuera: +${m.vuelta.oro.toLocaleString('es', { useGrouping: 'always' })} oro, ${m.vuelta.pociones} pociones y ${m.vuelta.item}.`, 'ok', 8000); break;
     case 'logro':
-      aviso('Logro desbloqueado: ' + m.titulo + ' · +' + m.oro.toLocaleString('es', { useGrouping: 'always' }) + ' oro. Puedes llevar el título desde el inventario.', 'ok', 6000);
+      aviso('Logro desbloqueado: ' + m.titulo + (m.oro ? ' · +' + m.oro.toLocaleString('es', { useGrouping: 'always' }) + ' oro' : '') + '. Puedes llevar el título desde el inventario.', 'ok', 6000);
       vibrar();
       ofrecerPresumir('🏅 ¡Conseguí el logro «' + m.titulo + '»!');
       sfx('explosion', .35);
@@ -728,7 +800,7 @@ function recibir(m) {
     case 'pase': if (yo) { yo.pase = m.pase; if ($('m-mision').classList.contains('on')) pintarMision(); } break;
     case 'gesto': if (GESTOS[m.id]) { gestos.set(m.p, { id: m.id, t: performance.now() }); if (m.p === miId) sfx('boton', .25); } break;
     case 'on': online = m.n; if (m.h) jugaronHoy = m.h; pintarSubMapa(); break;
-    case 'toast': aviso(m.m, m.ok ? 'ok' : ''); if (m.hab) { $('acciones').innerHTML = ''; pintarHud(); } break;
+    case 'toast': if (!(modoAnuncio() && SIN_CRIPTO_RE.test(m.m || ''))) aviso(m.m, m.ok ? 'ok' : ''); if (m.hab) { $('acciones').innerHTML = ''; pintarHud(); } break;
     case 'aviso': aviso(m.m, 'jefe'); lineaChat(null, sinEmoji(m.m)); sfx('explosion', .3); break;
     case 'snap':
       if (m.carga) {
@@ -749,6 +821,14 @@ function recibir(m) {
         // El servidor cierra el socket; onclose reconecta solo, ya como invitado.
         forzarInvitado = true; reintentos = 0;
         aviso('No pudimos verificar tu cuenta: entras como invitado (tu personaje de la cuenta no se toca). Cierra y vuelve a abrir el juego para entrar con ella.');
+        break;
+      }
+      // Rechazo suave (servidor ocupado, la cuenta ya estaba entrando, prueba de
+      // trabajo): el servidor cierra y onclose vuelve solo pasado 'reintentar' ms.
+      if (m.reintentar && !m.fatal) {
+        retrasoRec = Math.min(30000, Math.max(300, +m.reintentar || 1500));
+        if (m.pow) { powCeros = Math.max(1, Math.min(5, m.pow | 0)); powNonce = null; }
+        else aviso(m.m);
         break;
       }
       if (m.fatal) { fatal = true; dormido = !!m.inactivo; mostrarError(m.m); }
@@ -995,6 +1075,7 @@ function fisica() {
   if (ahora - enviadoT > 80 && clave !== ultimoEnviado) {
     mandar({ t: 'mv', x: Math.round(P.x), y: Math.round(P.y), f: P.f, a: est });
     enviadoT = ahora; ultimoEnviado = clave;
+    if (est === 1 && yo) paso('mover');   // primera vez que camina (embudo)
   }
 }
 
@@ -1244,7 +1325,7 @@ addEventListener('keydown', e => {
     return;
   }
   if (document.querySelector('.modal.on')) {
-    if (e.key === 'Escape' && !($('m-clase').classList.contains('on') && yo && !yo.clase)) cerrarModales();
+    if (e.key === 'Escape' && !($('m-clase').classList.contains('on') && yo && !yo.clase) && !$('m-sol').classList.contains('on')) cerrarModales();
     if (e.code === 'KeyP' && $('m-libro').classList.contains('on')) cerrarModales();
     if (e.code === 'KeyO' && $('m-social').classList.contains('on')) cerrarModales();
     if (e.code === 'KeyM' && $('m-mapa').classList.contains('on')) cerrarModales();
@@ -1929,6 +2010,15 @@ $('presumir').onclick = () => {
   if (amigosInfo && amigosInfo.ref) compartirPresumir(amigosInfo);
   else { presumirPend = true; mandar({ t: 'amigos' }); }
 };
+// Buzon "Mientras no estabas" y la compra entregada (regalo.js), despues del cofre diario.
+const regalo2 = iniciarRegalo({
+  mandar,
+  ocupado: () => !!document.querySelector('.modal.on') || !yo || !yo.clase,
+  presumir: txt => { presumirTxt = txt; if (amigosInfo && amigosInfo.ref) compartirPresumir(amigosInfo); else { presumirPend = true; mandar({ t: 'amigos' }); } },
+  fanfarria: () => tono('nivel'),
+  vibrar,
+  filtro: t => modoAnuncio() && SIN_CRIPTO_RE.test(t || ''),
+});
 
 $('b-social').onclick = () => abrirSocial();
 $('b-mapa').onclick = () => abrirMapaMundo();
@@ -1975,7 +2065,7 @@ pintarHermandad = L => {
       <p class="centro" style="font-size:12px;color:var(--txt2)">Una hermandad es tu clan: chat propio (/h), su nombre bajo el tuyo y compañeros con quienes hacer mazmorras. Pide a un líder u oficial que te invite, o funda la tuya.</p>
       <input class="nombre" id="in-herm" maxlength="20" placeholder="Nombre de tu hermandad" ${puede ? '' : 'disabled'}>
       <button class="btn" id="b-herm-crear" style="width:100%;padding:12px" ${puede && yo.oro >= HERM_COSTO ? '' : 'disabled'}>Fundar (${HERM_COSTO.toLocaleString('es', { useGrouping: 'always' })} oro)</button>
-      ${puede ? '' : `<p class="centro" style="font-size:12px;color:var(--warn);margin-top:6px">Necesitas nivel ${HERM_NIVEL} para fundar una.</p>`}`;
+      ${puede ? (yo.oro < HERM_COSTO ? `<div class="centro" style="margin-top:6px">${botonFalta(HERM_COSTO)}</div>` : '') : `<p class="centro" style="font-size:12px;color:var(--warn);margin-top:6px">Necesitas nivel ${HERM_NIVEL} para fundar una.</p>`}`;
     const i = $('in-herm');
     i.addEventListener('keydown', e => e.stopPropagation());
     $('b-herm-crear').onclick = () => { const n = i.value.trim(); if (n.length < 3) { i.focus(); return; } if (confirm('¿Fundar la hermandad "' + n + '" por ' + HERM_COSTO.toLocaleString('es', { useGrouping: 'always' }) + ' oro?')) mandar({ t: 'hermCrear', nombre: n }); };
@@ -2106,8 +2196,8 @@ function abrirNovedades() {
   let h = htmlCalendario() + '<h3>Notas del parche</h3>';
   for (const nv of NOVEDADES) {
     h += `<p class="parche"><b>Parche 1.${nv.n}</b><span>${esc(nv.fecha)}</span></p><ul>`;
-    // En Telegram, sin lo que habla de SOL o wallets (sus reglas).
-    h += nv.items.filter(x => !TG || !(/\bSOL\b/.test(x) || /wallet|solana|phantom|solflare/i.test(x))).map(x => `<li>${esc(sinEmoji(x))}</li>`).join('') + '</ul>';
+    // En Telegram, sin lo que habla de SOL o wallets (sus reglas); en modo anuncio, sin nada cripto.
+    h += nv.items.filter(x => modoAnuncio() ? !SIN_CRIPTO_RE.test(x) : (!TG || !(/\bSOL\b/.test(x) || /wallet|solana|phantom|solflare/i.test(x)))).map(x => `<li>${esc(sinEmoji(x))}</li>`).join('') + '</ul>';
   }
   $('nov-lista').innerHTML = h;
   $('nov-lista').classList.add('guia');
@@ -2869,7 +2959,7 @@ function pintarLogros() {
   if (yo.titulo) h += `<button class="btn sec" data-titulo="" style="width:100%;margin-bottom:8px">Quitar título</button>`;
   for (const L of LOGROS) {
     const ok = tienen.includes(L.id);
-    const acc = !ok ? `<span class="precio" style="color:var(--txt3)">+${L.oro.toLocaleString('es', { useGrouping: 'always' })} oro</span>`
+    const acc = !ok ? `<span class="precio" style="color:var(--txt3)">${L.oro ? '+' + L.oro.toLocaleString('es', { useGrouping: 'always' }) + ' oro' : 'Título'}</span>`
       : yo.titulo === L.id ? '<span class="precio" style="color:var(--ok)">✓ En uso</span>'
       : `<button class="btn sec" data-titulo="${L.id}">Usar título</button>`;
     // Los que se cuentan: barra de progreso mientras no se tienen.
@@ -2955,18 +3045,22 @@ function pintarEquipo() {
 // la ventana de clase lo tapaba y el novato nunca veia el calendario.
 let loginPend = null;
 function mostrarLogin(m) {
+  if (yo && m.racha) yo.login = { ...(yo.login || {}), racha: m.racha };   // para "Mañana" antes de que llegue el yo nuevo
   if (!yo || !yo.clase) { loginPend = m; return; }
-  let h = '<div class="dias">';
+  // La racha crece sin tope: se pinta la semana en curso (dia 1..7 de esa semana).
+  const dHoy = diaRacha(m.racha), sem = semanaRacha(m.racha);
+  let h = sem > 1 ? `<p class="centro" style="margin-bottom:6px;font-weight:700;color:var(--oro)">🔥 Semana ${sem} de tu racha · ${m.racha} días seguidos${sem >= 2 ? ' · oro x' + String(multSemanaRacha(m.racha)).replace('.', ',') : ''}</p>` : '';
+  h += '<div class="dias">';
   LOGIN_PREMIOS.forEach((pr, i) => {
     const n = i + 1;
-    const cls = n < m.racha ? 'hecho' : n === m.racha ? 'hoy' : '';
+    const cls = n < dHoy ? 'hecho' : n === dHoy ? 'hoy' : '';
     h += `<div class="dia ${cls}"><b>Día ${n}</b><span>${icoPack(n === 7 ? 'I_Chest01' : pr.oro ? 'I_GoldCoin' : pr.pw && pr.pw.fuego ? 'S_Fire03' : pr.pw && pr.pw.rayo ? 'S_Thunder03' : 'P_Red01').replace('width:36px;height:36px', 'width:24px;height:24px')}</span><small>${esc(pr.txt)}</small></div>`;
   });
   h += '</div>';
   let txt = 'Hoy recibes ' + m.txt + '.';
   if (m.oro) txt = 'Hoy recibes ' + m.oro.toLocaleString('es', { useGrouping: 'always' }) + ' oro' + (m.item ? ' y ' + RAREZAS[m.item.r].nombre.toLowerCase() + ': ' + nombreItem(m.item) : '') + '.';
   ponTxt($('login-ok'), m.oro ? 'Recoger ' + m.oro.toLocaleString('es', { useGrouping: 'always' }) + ' oro' : 'Recoger');
-  $('login-cuerpo').innerHTML = h + `<p class="centro" style="margin-top:12px;color:var(--ok);font-weight:600">${esc(txt)}</p><p class="centro" style="font-size:12px;color:var(--txt2)">Vuelve mañana para el día ${m.racha % 7 + 1}. Si faltas un día, retrocede dos; si faltas más, vuelve a empezar. El oro crece con tu nivel.</p>`;
+  $('login-cuerpo').innerHTML = h + `<p class="centro" style="margin-top:12px;color:var(--ok);font-weight:600">${esc(txt)}</p>${(m.hitos || []).map(x => `<p class="centro" style="margin-top:6px;color:var(--oro);font-weight:700">🏅 ¡Hito de racha! Ganaste ${esc(x)}.</p>`).join('')}<p class="centro" style="font-size:12px;color:var(--txt2)">${esc(textoManana())}. Si faltas un día, la racha retrocede un día (desde la semana 2, vuelve al inicio de su semana); si faltas más, vuelve a empezar. El oro crece con tu nivel y con cada semana (hasta x1,5).</p>`;
   abrir('m-login');
   sfx('moneda', .5);
 }
@@ -3097,10 +3191,31 @@ function pintarWallet() {
 // Con dinero se compran cosas del juego, nunca mTON. Cada compra la revisa y
 // entregan solas al confirmarse el pago exacto: aqui solo se pide y se paga.
 let premiumFoco = '';
+// Sin oro: «Te faltan N de oro» lleva a la tienda premium con el paquete de oro
+// justo resaltado (el pago sigue siendo manual: lo revisa y entrega el dueño).
+function botonFalta(precio) {
+  const f = Math.max(1, precio - ((yo && yo.oro) || 0)), pq = paqueteParaFaltante(f);
+  return `<button class="btn sec" data-falta="${pq ? pq.id : ''}">Te faltan ${f.toLocaleString('es', { useGrouping: 'always' })}</button>`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-falta]');
+  if (!b) return;
+  sfx('boton', .3); premiumFoco = b.dataset.falta || ''; abrirPremium('falta');
+});
+// «Pagado hace 14 min · plazo hasta 16:40» (entrega manual, plazo de ENTREGA).
+function textoPlazo(x) {
+  if (!x.pagadoEn || (x.estado !== 'pagado' && x.estado !== 'por_verificar')) return '';
+  const min = Math.max(0, Math.round((Date.now() - x.pagadoEn) / 60000));
+  const hace = min < 60 ? min + ' min' : min < 1440 ? Math.floor(min / 60) + ' h' : Math.floor(min / 1440) + ' d';
+  const fin = new Date(x.pagadoEn + ENTREGA.plazoMaxH * 3600000);
+  let hasta = fin.getHours() + ':' + String(fin.getMinutes()).padStart(2, '0');
+  if (fin.toDateString() !== new Date().toDateString()) hasta = (fin > Date.now() ? 'mañana ' : fin.toLocaleDateString('es') + ' ') + hasta;
+  return `<br><small style="color:var(--txt2)">Pagado hace ${hace} · plazo hasta ${hasta}</small>`;
+}
 function htmlPremium() {
   const cuentaTg = !!TG && !forzarInvitado;
   const cuenta = yo && yo.p2e && yo.p2e.cuenta;
-  let h = '<p style="font-size:13px;line-height:1.45;color:var(--txt2);margin-bottom:10px">Compras opcionales para apoyar el juego. Cuando se confirma el pago, el equipo te entrega la compra en tu personaje (vale en CLASSIC y ORIGINS); te avisamos aquí y por Telegram. En la web se paga con SOL o con $DUENDE (10% de descuento). Con dinero <b>no</b> se compran mTON: solo se ganan jugando.</p>';
+  let h = '<p style="font-size:13px;line-height:1.45;color:var(--txt2);margin-bottom:10px">Compras opcionales para apoyar el juego. Cuando se confirma el pago, El Duende te entrega la compra a mano en tu personaje (vale en CLASSIC y ORIGINS): ' + esc(textoPagoRecibido()) + ' Te avisamos aquí y por Telegram. ' + (modoAnuncio() && !cuentaTg ? 'Con dinero se compra con Stars, jugando desde Telegram.' : 'En la web se paga con SOL o con $DUENDE (10% de descuento). Con dinero <b>no</b> se compran mTON: solo se ganan jugando.') + '</p>';
   // La skin elegida desde la pestaña Skins va primero.
   const lista = PAQUETES.slice().sort((a, b) => (b.id === premiumFoco) - (a.id === premiumFoco));
   for (const pq of lista) {
@@ -3109,6 +3224,7 @@ function htmlPremium() {
     if (pq.skin && yo && (yo.skins || []).includes(pq.skin)) acc = '<span class="precio" style="color:var(--ok)">✓ Ya la tienes</span>';
     else if (!cuenta) acc = `<span class="precio">${cuentaTg ? estrellasDe(pq.usd) + ' Stars' : '$' + pq.usd}</span><button class="btn sec" data-cuenta="1">Iniciar sesión</button>`;
     else if (cuentaTg) acc = `<span class="precio">${estrellasDe(pq.usd)} Stars</span><button class="btn" data-premium="${pq.id}" data-metodo="stars">Pagar con Stars</button>`;
+    else if (modoAnuncio()) acc = `<span class="precio">$${pq.usd}</span><span style="font-size:11px;color:var(--txt2)">Con Stars en Telegram</span>`;
     else acc = `<span class="precio">$${pq.usd}</span><button class="btn" data-premium="${pq.id}" data-metodo="sol">Pagar con SOL</button><button class="btn sec" data-premium="${pq.id}" data-metodo="duende">$DUENDE −10%</button>`;
     const ico = sk ? `<img src="${retratoSkin(pq.skin)}" style="${sk.premium ? 'filter:drop-shadow(0 0 5px ' + sk.color + ')' : ''}">` : `<img src="${A}items/equipo/${pq.icono}.png">`;
     const nom = sk && sk.premium ? `<span style="color:${sk.color}">${esc(pq.nombre)}</span>` : esc(pq.nombre);
@@ -3119,7 +3235,7 @@ function htmlPremium() {
   if (ps.length) {
     const col = { pagado: 'var(--warn)', por_verificar: 'var(--warn)', entregado: 'var(--ok)', anulado: 'var(--err)', esperando_pago: 'var(--txt2)', comprobando: 'var(--txt2)' };
     const txt = { pagado: 'Por entregar', por_verificar: 'En revisión', entregado: 'Entregado', anulado: 'Anulado', esperando_pago: 'Sin pagar', comprobando: 'Comprobando…' };
-    h += '<p style="margin:12px 0 4px;font-size:12px">Tus compras:</p>' + ps.slice().reverse().map(x => `<div class="fila"><span>#${esc(x.codigo)} · ${esc(x.nombre)}</span><span style="color:${col[x.estado] || 'var(--txt)'}">${txt[x.estado] || esc(x.estado)}${x.estado === 'esperando_pago' && (x.lamports || x.raw) ? ` <button class="btn sec" data-retomar="${esc(x.codigo)}" style="padding:4px 8px">Pagar</button>` : ''}</span></div>`).join('');
+    h += '<p style="margin:12px 0 4px;font-size:12px">Tus compras:</p>' + ps.slice().reverse().map(x => `<div class="fila"><span>#${esc(x.codigo)} · ${esc(x.nombre)}</span><span style="color:${col[x.estado] || 'var(--txt)'}">${txt[x.estado] || esc(x.estado)}${x.estado === 'esperando_pago' && (x.lamports || x.raw) ? ` <button class="btn sec" data-retomar="${esc(x.codigo)}" style="padding:4px 8px">Pagar</button>` : ''}${textoPlazo(x)}</span></div>`).join('');
   }
   return h;
 }
@@ -3135,6 +3251,7 @@ function conectarPremium(L) {
 }
 function abrirPremium(via) {
   if (typeof via === 'string') viaTienda = via;
+  if (via !== 'falta') premiumFoco = '';
   tabTienda = 'premium';
   document.querySelectorAll('[data-tab]').forEach(x => x.classList.toggle('on', x.dataset.tab === 'premium'));
   abrir('m-tienda'); pintarTienda();
@@ -3145,7 +3262,7 @@ function abrirPremium(via) {
 function abrirFactura(m) {
   if (!TG || !TG.openInvoice) { window.open(m.link, '_blank'); return; }
   TG.openInvoice(m.link, st => {
-    if (st === 'paid') aviso('Pago recibido. El Duende te entregará tu compra en breve.', 'ok');
+    if (st === 'paid') aviso('Pago recibido. ' + textoPagoRecibido(), 'ok');
     else if (st === 'failed') aviso('El pago no se completó.');
   });
 }
@@ -3176,7 +3293,7 @@ function mostrarPedidoSol(m) {
     `<p style="font-size:12px;margin-top:8px">Y pega aquí la firma (signature) de la transacción:</p>` +
     `<input class="nombre" id="in-firma" placeholder="Firma de la transacción" style="font-size:10px;margin:6px 0">` +
     `<button class="btn sec" id="b-firma" style="width:100%">Enviar comprobante</button>` +
-    `<p style="font-size:12px;color:var(--txt2);margin-top:8px">Tienes 30 minutos. El pago va directo a la wallet de El Duende; cuando se confirma en la red, el equipo te entrega la compra.</p>`;
+    `<p style="font-size:12px;color:var(--txt2);margin-top:8px">Tienes 30 minutos. El pago va directo a la wallet de El Duende. ${esc(textoPagoRecibido())} Esta ventana solo se cierra con ✕; si la cierras, en Tienda → Premium → Tus compras pulsa «Pagar».</p>`;
   abrir('m-sol');
   const copiar = t => { try { navigator.clipboard.writeText(t); aviso('📋 Copiado', 'ok'); } catch (e) {} };
   $('b-copia-w').onclick = () => copiar(m.wallet);
@@ -3477,7 +3594,7 @@ function abrirViajes() {
     const mp = MAPAS[id], costo = costoViaje(mp.nv[0]), aqui = id === mapaId, ya = vis.includes(id);
     const acc = aqui ? '<span class="precio" style="color:var(--ok)">Estás aquí</span>'
       : !ya ? '<span class="precio" style="color:var(--txt3)">Sin descubrir</span>'
-      : `<span class="precio">🪙 ${costo.toLocaleString('es', { useGrouping: 'always' })}</span><button class="btn" data-viaje="${id}" ${yo.oro < costo ? 'disabled' : ''}>Viajar</button>`;
+      : `<span class="precio">🪙 ${costo.toLocaleString('es', { useGrouping: 'always' })}</span>${yo.oro < costo ? botonFalta(costo) : `<button class="btn" data-viaje="${id}">Viajar</button>`}`;
     h += tarjeta(`<div style="width:40px;height:40px;border-radius:8px;background:${mp.paleta.cielo[1]};border:2px solid ${mp.paleta.linea}"></div>`, esc(mp.nombre), 'Nivel ' + mp.nv[0] + '-' + mp.nv[1], acc);
   }
   $('viaje-cuerpo').innerHTML = h;
@@ -4326,6 +4443,8 @@ function pintarHud() {
   if (cl) ponCss($('brec').querySelector('i'), 'background', RECURSOS[cl.recurso].color);
   ponTxt($('h-oro'), yo.oro.toLocaleString('es', { useGrouping: 'always' }));
   ponTxt($('h-mton'), (yo.mton || 0).toLocaleString('es', { useGrouping: 'always' }) + ' mTON');
+  // Bajo el nivel del mTON (y sin mTON guardado) el HUD no lo muestra todavia.
+  document.body.classList.toggle('mton-bajo', (yo.nivel || 1) < MTON_NIVEL_MIN && !(yo.mton > 0));
   const pxp = yo.xpSig ? Math.floor(yo.xp / yo.xpSig * 100) : 100;
   rellenar($('bxp').querySelector('i'), pxp / 100);
   $('bxp').title = 'Experiencia: ' + yo.xp.toLocaleString('es', { useGrouping: 'always' }) + ' / ' + (yo.xpSig || 0).toLocaleString('es', { useGrouping: 'always' }) + ' (' + pxp + '%)';
@@ -4360,15 +4479,38 @@ function pintarHud() {
     const sig = T.dia.l.find(t => !t.ok);
     ponTxt($('h-tareas'), 'Diarias ' + hd + '/' + T.dia.l.length + ' · Semana ' + hs + '/' + T.sem.l.length + (sig ? ' — ' + sig.txt + ' ' + sig.p + '/' + sig.n : '') + (temporadaYa() ? ' · ' + temporadaYa().cosas.charAt(0).toUpperCase() + temporadaYa().cosas.slice(1) + ' ' + (yo[temporadaYa().campo] || 0) : ''));
   }
+  pendientesHud();
   pintarPoderes();
   pintarAcciones();
   pintarDescanso();
+}
+// Premios ya ganados que esperan en el registro de misiones (pase y
+// expedicion): una pildora "🎁 Cobrar (N)" en el seguimiento, que se ve en el movil.
+// "Mañana: <premio>" de la racha (yo.login = lo ultimo cobrado).
+function textoManana() {
+  const L = yo && yo.login;
+  if (!L || !L.racha) return '';
+  const sig = L.racha + 1, pr = premioRacha(sig), d = diaRacha(sig);
+  const oro = pr.oro ? Math.round(pr.oro * multLogin(yo.nivel) * multSemanaRacha(sig)) : 0;
+  const premio = oro ? oro.toLocaleString('es', { useGrouping: 'always' }) + ' oro' + (pr.item !== undefined ? ' + objeto ÉPICO' : '') : pr.txt;
+  return (d === 7 ? '¡Mañana el cofre ÉPICO! ' : 'Mañana: ') + premio + ' (semana ' + semanaRacha(sig) + ', día ' + d + ')';
+}
+function pendientesHud() {
+  const el = $('h-cobrar');
+  if (!el || !yo) return;
+  let n = 0;
+  const pa = yo.pase;
+  if (pa) { const nv = Math.min(PASE.niveles, Math.floor(pa.p / PASE.porNivel)); n += Math.max(0, nv - (pa.cob || []).filter(k => k <= nv).length); }
+  if (yo.exped && Date.now() >= yo.exped.fin) n++;
+  const txt = n ? `🎁 Cobrar (${n})` : '';
+  if (el.textContent !== txt) el.textContent = txt;
+  if (el.classList.contains('on') !== !!n) el.classList.toggle('on', !!n);
 }
 
 // ── MISIONES ──
 function abrirMision() { if (!yo) return; abrir('m-mision'); pintarMision(); }
 // Tocar la mision o las tareas del seguimiento (derecha) abre el registro.
-$('seguimiento').addEventListener('click', e => { if (e.target.closest('#h-mision,#h-tareas')) abrirMision(); });
+$('seguimiento').addEventListener('click', e => { if (e.target.closest('#h-mision,#h-tareas,#h-cobrar')) { if (e.target.closest('#h-cobrar')) sfx('boton', .4); abrirMision(); } });
 function cajaDiaria() {
   const d = yo.diaria || { p: 0, ok: false };
   const pr = premioDiaria(yo.nivel);
@@ -4448,7 +4590,8 @@ function sugerencias() {
 }
 function cajaSugerencias() {
   if (!yo || !yo.clase) return '';
-  return '<div class="mis-caja"><b>Objetivos</b><ul style="padding-left:18px;margin-top:4px;font-size:13px;line-height:1.45">' + sugerencias().map(x => `<li>${sinEmoji(x)}</li>`).join('') + '</ul></div>';
+  const mn = textoManana();
+  return (mn ? `<div class="mis-caja" style="padding:6px 10px"><b>🎁 ${esc(mn)}</b></div>` : '') + '<div class="mis-caja"><b>Objetivos</b><ul style="padding-left:18px;margin-top:4px;font-size:13px;line-height:1.45">' + sugerencias().map(x => `<li>${sinEmoji(x)}</li>`).join('') + '</ul></div>';
 }
 function cajaExpedicion() {
   if (!yo || yo.nivel < EXPEDICION.nv) return '';
@@ -4703,7 +4846,7 @@ function lineaChat(nombre, txt, canal, colorNombre) {
 function abrir(id) { document.querySelectorAll('.modal.on').forEach(m => { if (m.id !== 'm-muerte') m.classList.remove('on'); }); $(id).classList.add('on'); const vn = $(id).querySelector('.ventana'); if (vn) vn.scrollTop = 0; for (const k in teclas) teclas[k] = false; tIzq = tDer = false; }
 function cerrarModales() { document.querySelectorAll('.modal.on').forEach(m => { if (m.id !== 'm-muerte' && m.id !== 'm-inicio' && m.id !== 'm-error' && !(m.id === 'm-clase' && yo && !yo.clase)) m.classList.remove('on'); }); }
 document.querySelectorAll('[data-cerrar]').forEach(b => b.onclick = cerrarModales);
-document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m) cerrarModales(); }));
+document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m && m.id !== 'm-sol') cerrarModales(); }));   // la de pago solo con su ✕
 
 // Estilo de las ventanas: el texto se pinta sin emojis (la moneda pasa a ser
 // el icono de oro del pack). Se respetan los iconos de las tarjetas (.ico),
@@ -4764,19 +4907,19 @@ function pintarTienda() {
       const ico = `<img src="${A}armas/${d.icono}_item.png" style="${id !== 'katana' ? 'filter:drop-shadow(0 0 4px ' + d.color + ')' : ''}">`;
       const desc = 'Daño ×' + multForja(n).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + (n < FORJA_MAX ? ' → ×' + multForja(n + 1).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ' · máximo');
       const acc = n >= FORJA_MAX ? '<span class="precio" style="color:var(--ok)">✓ +' + FORJA_MAX + '</span>'
-        : `<span class="precio">🪙 ${costoForja(n).toLocaleString('es', { useGrouping: 'always' })}</span><button class="btn" data-comprar="forja" data-id="${id}" ${yo.oro < costoForja(n) ? 'disabled' : ''}>Mejorar a +${n + 1}</button>`;
+        : `<span class="precio">🪙 ${costoForja(n).toLocaleString('es', { useGrouping: 'always' })}</span>${yo.oro < costoForja(n) ? botonFalta(costoForja(n)) : `<button class="btn" data-comprar="forja" data-id="${id}">Mejorar a +${n + 1}</button>`}`;
       h += tarjeta(ico, d.nombre + ' +' + n, desc, acc);
     }
     h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Cada mejora sale siempre bien: +7% de daño por nivel, hasta +' + FORJA_MAX + '. Compra más armas en la pestaña «Armas» para forjarlas también.</p>';
   } else if (tabTienda === 'tinte') {
     for (const [id, tn] of Object.entries(TINTES)) {
       const tiene = (yo.tintes || []).includes(id);
-      if (tn.amb && !tiene) continue;   // los del ambulante, en su pestaña
+      if ((tn.amb || tn.racha) && !tiene) continue;   // los del ambulante, en su pestaña; el de racha no se vende
       const muestra = tn.color === 'arcoiris' ? 'background:linear-gradient(90deg,#f43f5e,#facc15,#34d399,#38bdf8,#c084fc)' : 'background:' + tn.color;
       const ico = `<div style="width:40px;height:40px;border-radius:8px;${muestra}"></div>`;
       const acc = tiene ? (yo.tinte === id ? '<span class="precio" style="color:var(--ok)">✓ En uso</span>' : `<button class="btn sec" data-comprar="tinte" data-id="${id}">Usar</button>`)
         : yo.nivel < tn.nv ? `<span class="precio" style="color:var(--warn)">Nv ${tn.nv}</span><span class="precio">🪙 ${tn.precio.toLocaleString('es', { useGrouping: 'always' })}</span>`
-        : `<span class="precio">🪙 ${tn.precio.toLocaleString('es', { useGrouping: 'always' })}</span><button class="btn" data-comprar="tinte" data-id="${id}" ${yo.oro < tn.precio ? 'disabled' : ''}>Comprar</button>`;
+        : `<span class="precio">🪙 ${tn.precio.toLocaleString('es', { useGrouping: 'always' })}</span>${yo.oro < tn.precio ? botonFalta(tn.precio) : `<button class="btn" data-comprar="tinte" data-id="${id}">Comprar</button>`}`;
       h += tarjeta(ico, `<span style="color:${tn.color === 'arcoiris' ? '#facc15' : tn.color}">${esc(tn.nombre)}</span>`, 'Color de tu nombre sobre tu duende: lo ven todos. Solo estética.', acc);
     }
     if (yo.tinte) h += `<button class="btn sec" data-comprar="tinte" data-id="" style="width:100%;margin-top:6px">Volver al color de mi clase</button>`;
@@ -4787,7 +4930,7 @@ function pintarTienda() {
       const ico = `<canvas data-hoja="${ma.hoja}" data-tinte="${ma.tinte || ''}" width="52" height="52"></canvas>`;
       const acc = tiene ? (yo.mascota === id ? '<span class="precio" style="color:var(--ok)">✓ Te acompaña</span>' : `<button class="btn sec" data-comprar="mascota" data-id="${id}">Llevar</button>`)
         : yo.nivel < ma.nv ? `<span class="precio" style="color:var(--warn)">Nv ${ma.nv}</span><span class="precio">🪙 ${ma.precio.toLocaleString('es', { useGrouping: 'always' })}</span>`
-        : `<span class="precio">🪙 ${ma.precio.toLocaleString('es', { useGrouping: 'always' })}</span><button class="btn" data-comprar="mascota" data-id="${id}" ${yo.oro < ma.precio ? 'disabled' : ''}>Comprar</button>`;
+        : `<span class="precio">🪙 ${ma.precio.toLocaleString('es', { useGrouping: 'always' })}</span>${yo.oro < ma.precio ? botonFalta(ma.precio) : `<button class="btn" data-comprar="mascota" data-id="${id}">Comprar</button>`}`;
       h += tarjeta(ico, esc(ma.nombre), 'Te sigue a todas partes y la ven todos. Solo estética: no da nada.', acc);
     }
     if (yo.mascota) h += `<button class="btn sec" data-comprar="mascota" data-id="" style="width:100%;margin-top:6px">Guardar a mi mascota</button>`;
@@ -4799,7 +4942,7 @@ function pintarTienda() {
       const tiene = ((k === 'tinte' ? yo.tintes : yo.mascotas) || []).includes(id);
       const acc = tiene ? '<span class="precio" style="color:var(--ok)">✓ Ya es tuyo</span>'
         : yo.nivel < d.nv ? `<span class="precio" style="color:var(--warn)">Nv ${d.nv}</span><span class="precio">🪙 ${d.precio.toLocaleString('es', { useGrouping: 'always' })}</span>`
-        : `<span class="precio">🪙 ${d.precio.toLocaleString('es', { useGrouping: 'always' })}</span><button class="btn" data-comprar="${k}" data-id="${id}" ${!activo || yo.oro < d.precio ? 'disabled' : ''}>${activo ? 'Comprar' : 'El viernes'}</button>`;
+        : `<span class="precio">🪙 ${d.precio.toLocaleString('es', { useGrouping: 'always' })}</span>${activo && yo.oro < d.precio ? botonFalta(d.precio) : `<button class="btn" data-comprar="${k}" data-id="${id}" ${!activo ? 'disabled' : ''}>${activo ? 'Comprar' : 'El viernes'}</button>`}`;
       h += tarjeta(ico, extra, k === 'tinte' ? 'Color de nombre exclusivo del ambulante.' : 'Mascota exclusiva del ambulante.', acc);
     };
     for (const id of of.tintes) { const tn = TINTES[id]; fila('tinte', id, tn, `<div style="width:40px;height:40px;border-radius:8px;background:${tn.color}"></div>`, `<span style="color:${tn.color}">${esc(tn.nombre)}</span>`); }
@@ -4812,14 +4955,14 @@ function pintarTienda() {
         : mo.banda ? `<span class="precio" style="color:var(--txt2)">⚔️ Banda ${(yo.banda || {}).t || 0}/${BANDA_MONTURA}</span>`
         : mo.torre ? `<span class="precio" style="color:var(--txt2)">🗼 Piso ${yo.torreMax || 0}/${TORRE.montura}</span>`
         : yo.nivel < mo.nv ? `<span class="precio" style="color:var(--warn)">Nv ${mo.nv}</span><span class="precio">🪙 ${mo.precio.toLocaleString('es', { useGrouping: 'always' })}</span>`
-        : `<span class="precio">🪙 ${mo.precio.toLocaleString('es', { useGrouping: 'always' })}</span><button class="btn" data-comprar="montura" data-id="${id}" ${yo.oro < mo.precio ? 'disabled' : ''}>Comprar</button>`;
+        : `<span class="precio">🪙 ${mo.precio.toLocaleString('es', { useGrouping: 'always' })}</span>${yo.oro < mo.precio ? botonFalta(mo.precio) : `<button class="btn" data-comprar="montura" data-id="${id}">Comprar</button>`}`;
       h += tarjeta(ico, esc(mo.nombre), `+${Math.round((mo.vel - 1) * 100)}% de velocidad · ` + (mo.banda ? `no se vende: vence al Titán de la banda en ${BANDA_MONTURA} semanas distintas` : mo.torre ? `no se vende: supera el piso ${TORRE.montura} de la Torre del Duende` : `desde Nv ${mo.nv}`), acc);
     }
     h += '<p style="margin-top:8px;font-size:12px;color:var(--txt2)">Monta con la tecla Y o el botón de montura (1,5 s, fuera de combate). No se puede montar en mazmorras ni en el Coliseo.</p>';
   } else if (tabTienda === 'pw') {
     PODERES.forEach(p => {
       h += tarjeta(`<img src="${A}items/${p.icono}.png">`, p.nombre + ` <span style="color:var(--txt2)">(tienes ${yo.pw[p.id] || 0})</span>`, p.desc,
-        `<span class="precio">🪙 ${p.precio}</span><button class="btn" data-comprar="pw" data-id="${p.id}" data-n="1" ${yo.oro < p.precio ? 'disabled' : ''}>Comprar</button><button class="btn sec" data-comprar="pw" data-id="${p.id}" data-n="5" ${yo.oro < p.precio * 5 ? 'disabled' : ''}>×5</button>`);
+        `<span class="precio">🪙 ${p.precio}</span>${yo.oro < p.precio ? botonFalta(p.precio) : `<button class="btn" data-comprar="pw" data-id="${p.id}" data-n="1">Comprar</button>`}<button class="btn sec" data-comprar="pw" data-id="${p.id}" data-n="5" ${yo.oro < p.precio * 5 ? 'disabled' : ''}>×5</button>`);
     });
   } else {
     const tabla = tabTienda === 'arma' ? ARMAS : SKINS;
@@ -4835,21 +4978,21 @@ function pintarTienda() {
         acc = `<span class="precio" style="color:${d.color}">Exclusiva · $${d.usd}</span>`;
         if (yo.p2e && yo.p2e.cuenta) acc += (TG && !forzarInvitado)
           ? `<button class="btn" data-premium="skin_${id}" data-metodo="stars">${estrellasDe(d.usd)} Stars</button>`
-          : `<button class="btn" data-premium="skin_${id}" data-metodo="sol">SOL</button><button class="btn sec" data-premium="skin_${id}" data-metodo="duende">$DUENDE −10%</button>`;
+          : modoAnuncio() ? '<span style="font-size:11px;color:var(--txt2)">Con Stars en Telegram</span>' : `<button class="btn" data-premium="skin_${id}" data-metodo="sol">SOL</button><button class="btn sec" data-premium="skin_${id}" data-metodo="duende">$DUENDE −10%</button>`;
         else acc += '<button class="btn sec" data-cuenta="1">Iniciar sesión</button>';
       }
       else {
         const pr = precioOro(tabTienda, id);
-        acc = `<span class="precio">🪙 ${pr !== d.precio ? '<s style="opacity:.55">' + d.precio.toLocaleString('es', { useGrouping: 'always' }) + '</s> 🎃 ' : ''}${pr.toLocaleString('es', { useGrouping: 'always' })}</span><button class="btn" data-comprar="${tabTienda}" data-id="${id}" ${yo.oro < pr ? 'disabled' : ''}>Comprar</button>`;
+        acc = `<span class="precio">🪙 ${pr !== d.precio ? '<s style="opacity:.55">' + d.precio.toLocaleString('es', { useGrouping: 'always' }) + '</s> 🎃 ' : ''}${pr.toLocaleString('es', { useGrouping: 'always' })}</span>${yo.oro < pr ? botonFalta(pr) : `<button class="btn" data-comprar="${tabTienda}" data-id="${id}">Comprar</button>`}`;
         // Skins: tambien con dinero; confirmado el pago exacto, la entrega el dueño (manual).
         if (tabTienda === 'skin' && d.usd && yo.p2e && yo.p2e.cuenta) acc += (TG && !forzarInvitado)
           ? `<button class="btn sec" data-premium="skin_${id}" data-metodo="stars">${estrellasDe(d.usd)} Stars</button>`
-          : `<button class="btn sec" data-premium="skin_${id}" data-metodo="sol">~$${d.usd} en SOL</button><button class="btn sec" data-premium="skin_${id}" data-metodo="duende">$DUENDE −10%</button>`;
+          : modoAnuncio() ? '' : `<button class="btn sec" data-premium="skin_${id}" data-metodo="sol">~$${d.usd} en SOL</button><button class="btn sec" data-premium="skin_${id}" data-metodo="duende">$DUENDE −10%</button>`;
       }
       if (tabTienda === 'skin' && !tiene.includes(id)) acc += `<button class="btn sec" data-probar="${id}">Probar</button>`;
       h += tarjeta(ico, d.premium ? `<span style="color:${d.color}">${esc(d.nombre)}</span>` : d.nombre, d.desc + (tabTienda === 'skin' && puesto !== id ? difSkin(id) : ''), acc);
     }
-    if (tabTienda === 'skin') h += '<p style="margin-top:8px;font-size:12px;color:#fde68a"><b>Una skin, dos juegos:</b> la que compres la llevas también en $DUENDE ORIGINS (3D), con los mismos poderes. En PvP (duelos y Abismo) sus ventajas de combate no cuentan: ahí todos pelean igual.</p><p style="margin-top:6px;font-size:12px;color:var(--txt2)">Cada skin da sus poderes mientras la llevas. Se compran con oro o, con tu cuenta, con dinero: ' + ((TG && !forzarInvitado) ? 'Telegram Stars' : 'SOL o $DUENDE (10% de descuento) a la wallet de El Duende') + '; confirmado el pago, se activa sola en tu personaje. Las cuatro exclusivas (Esmeralda, Sombrío, Solar y Cósmico) solo se consiguen así; sus ventajas suben con el precio sin superar a las de oro de final de juego, y ninguna cambia lo que se gana en mTON.</p>';
+    if (tabTienda === 'skin') h += '<p style="margin-top:8px;font-size:12px;color:#fde68a"><b>Una skin, dos juegos:</b> la que compres la llevas también en Duende Quest Origins (3D), con los mismos poderes. En PvP (duelos y Abismo) sus ventajas de combate no cuentan: ahí todos pelean igual.</p><p style="margin-top:6px;font-size:12px;color:var(--txt2)">Cada skin da sus poderes mientras la llevas. Se compran con oro o, con tu cuenta, con dinero: ' + ((TG && !forzarInvitado) || modoAnuncio() ? 'Telegram Stars' : 'SOL o $DUENDE (10% de descuento) a la wallet de El Duende') + '; confirmado el pago, se activa sola en tu personaje. Las cuatro exclusivas (Esmeralda, Sombrío, Solar y Cósmico) solo se consiguen así; sus ventajas suben con el precio sin superar a las de oro de final de juego' + (modoAnuncio() ? '' : ', y ninguna cambia lo que se gana en mTON') + '.</p>';
   }
   L.innerHTML = h;
   // Retratos de las monturas (primer cuadro de su hoja).
@@ -5026,6 +5169,16 @@ const ERR_AUTH = [
 ];
 const errAuth = m => (ERR_AUTH.find(([r]) => r.test(m || '')) || [0, 'No se pudo completar: ' + (m || 'error de red')])[1];
 const URL_VUELTA = () => location.origin + '/mmo/';
+// Codigo de quien te invito (?ref=): se guarda 14 dias en este navegador y va
+// en cada hola (si entras como invitado y te registras despues, igual cuenta).
+function refInvitacion() {
+  let r = (/[?&]ref=([a-z0-9]{6})/.exec(location.search) || [])[1];
+  try {
+    if (r) localStorage.setItem('dq_ref', JSON.stringify({ r, t: Date.now() }));
+    else { const x = JSON.parse(localStorage.getItem('dq_ref') || 'null'); if (x && /^[a-z0-9]{6}$/.test(x.r) && Date.now() - x.t < 14 * 86400000) r = x.r; }
+  } catch (e) {}
+  return r;
+}
 // ── VINCULAR CUENTAS (Telegram + correo = un duende; functions/mmo/vincular.js) ──
 let vincDatos = null, vincCod = null;
 function pintarVinc() {
@@ -5114,7 +5267,7 @@ function pintarCuenta(cont, modo, enJuego) {
       } else if (acc === 'crear') {
         const user = v('cu-user');
         if (!/^[a-zA-Z0-9_]{3,20}$/.test(user)) return msg('Nombre de usuario: 3-20 letras, números o _ (sin espacios).');
-        const { data, error } = await cli.auth.signUp({ email, password: pass, options: { data: { username: user }, emailRedirectTo: URL_VUELTA() } });
+        const { data, error } = await cli.auth.signUp({ email, password: pass, options: { data: refInvitacion() ? { username: user, ref: refInvitacion() } : { username: user }, emailRedirectTo: URL_VUELTA() } });
         if (error) return msg(errAuth(error.message));
         if (data && data.session) { msg('¡Cuenta creada!', true); sesionLista(enJuego); }
         else msg('¡Listo! Te enviamos un correo para confirmar la cuenta. Ábrelo en este navegador y volverás aquí con tu personaje guardado (revisa también spam).', true);
@@ -5147,6 +5300,7 @@ async function inicio() {
   const esperar = () => new Promise(r => { const chk = () => (cargadas >= porCargar ? r() : setTimeout(chk, 100)); chk(); });
   await Promise.race([esperar(), new Promise(r => setTimeout(r, 12000))]);
   precalentarTintes();
+  paso('arte_ok');
   $('carga-s').textContent = 'Conectando…';
   const tokWeb = TG ? null : await tokenWeb();
   $('carga').style.display = 'none';
@@ -5157,7 +5311,13 @@ async function inicio() {
   } else {
     $('in-nombre').value = LS.getItem('dq_mmo_nombre') || '';
   }
+  // Visitante nuevo (sin cuenta, sin duende ni nombre en este navegador): entrada en un
+  // toque, sin pedir nombre (el servidor le pone 'DuendeNNNN'; se cambia luego).
+  // Desde el anuncio con ?j=2d (la landing /jugar/ ya eligio CLASSIC) entra solo.
+  const nuevoVisitante = !TG && !tokWeb && !LS.getItem('dq_mmo_tok') && !LS.getItem('dq_mmo_nombre');
+  if (nuevoVisitante) { $('in-nombre').style.display = 'none'; $('b-jugar').textContent = '▶ JUGAR GRATIS'; }
   $('m-inicio').classList.add('on');
+  paso('form_visto');
   const entrar = () => {
     const n = $('in-nombre').value.trim();
     if (!TG && !tokWeb) {
@@ -5165,6 +5325,7 @@ async function inicio() {
       if (n && n.length < 3) { $('in-nombre').focus(); $('in-nombre').style.borderColor = 'var(--err)'; aviso('El nombre necesita al menos 3 letras, o déjalo vacío.', 'error'); return; }
       try { if (n) localStorage.setItem('dq_mmo_nombre', n); else localStorage.removeItem('dq_mmo_nombre'); } catch (e) {}
     }
+    paso('clic_entrar');
     $('carga').style.display = 'flex'; $('carga-s').textContent = 'Entrando al mundo…';
     if (sonido) sonarMusica();
     conectar();
@@ -5176,7 +5337,7 @@ async function inicio() {
   $('b-cambiar-pass').onclick = e => { e.preventDefault(); $('inicio-auth2').style.display = 'block'; pintarCuenta($('inicio-auth2'), 'cambiar', false); };
   // Vuelve de "olvide mi contraseña" o de entrar desde la partida: directo.
   if (recuperando) mostrarRecuperacion();
-  else { let auto = null; try { auto = sessionStorage.getItem('dq_auto'); if (auto) sessionStorage.removeItem('dq_auto'); } catch (e) {} if (auto) entrar(); }
+  else { let auto = null; try { auto = sessionStorage.getItem('dq_auto'); if (auto) sessionStorage.removeItem('dq_auto'); } catch (e) {} if (auto || (nuevoVisitante && /[?&]j=2d\b/i.test(location.search))) entrar(); }
   $('b-salir-cuenta').onclick = async e => {
     e.preventDefault();
     try { if (_sb) await _sb.auth.signOut(); } catch (er) {}
@@ -5222,6 +5383,29 @@ document.addEventListener('visibilitychange', () => {
     else reintentarYa();
   }
 });
+// Vuelta de segundo plano (otra app, pantalla apagada, bfcache del navegador):
+// un ping y, si en 2,5 s no llega nada, el socket esta medio muerto y se cambia
+// (antes el vigilante tardaba 12 s). Si ya estaba cerrado, se reconecta al momento.
+let timerVuelta = 0;
+function comprobarAlVolver() {
+  // !yo: aun en la pantalla de entrada (se conecta al pulsar «Jugar», no al enfocar).
+  if (document.hidden || fatal || pausado || pausaHeredar || timerVuelta || !yo) return;
+  if (!ws || ws.readyState > 1) { if (!conectando) { reintentos = 0; clearTimeout(timerRec); conectar(); } return; }
+  if (ws.readyState !== 1 || !ws._listo) return;
+  const s = ws, n0 = rxN;
+  mandar({ t: 'ping', ts: Date.now() });
+  timerVuelta = setTimeout(() => {
+    timerVuelta = 0;
+    if (ws !== s || rxN !== n0 || fatal || pausado || document.hidden) return;
+    ws = null; conectado = false;
+    s.onopen = s.onmessage = s.onclose = null;
+    try { s.close(4001, 'mudo'); } catch (e) {}
+    reintentos = 0; aviso('Reconectando…'); conectar();
+  }, 2500);
+}
+document.addEventListener('visibilitychange', comprobarAlVolver);
+addEventListener('pageshow', comprobarAlVolver);
+addEventListener('focus', comprobarAlVolver);
 
 // Paso fijo de 60 Hz: la fisica iba por fotograma, asi que en una pantalla
 // de 120/144 Hz el duende corria y saltaba al doble, y en una pestaña lenta

@@ -31,11 +31,21 @@ const ORDEN_VIGENCIA_MS = 30 * 60 * 1000; // 30 minutos para pagar
 const LIMITES_IP = { create_sol_order: 6, verify_skin_purchase: 60, get_owned_skins: 60 };
 const VENTANA_IP_MS = 10 * 60 * 1000;
 const usoPorIp = new Map();
+// IPv4: x5. En Peru una IPv4 de operadora movil (CGNAT) la comparten cientos de
+// personas; el tope fino va por cuenta (referencia, telegram_id o wallet) abajo.
 function limiteIpSuperado(ip, action) {
   const max = LIMITES_IP[action];
   if (!max || !ip) return false;
+  return usoSuperado(action + '|' + ip, ip.includes(':') ? max : max * 5);
+}
+// El mismo tope de antes, pero por cuenta: lo que pide uno no gasta el cupo de su IP.
+function limiteCuentaSuperado(cuenta, action) {
+  const max = LIMITES_IP[action];
+  if (!max || !cuenta) return false;
+  return usoSuperado(action + '|c:' + String(cuenta).slice(0, 64), max);
+}
+function usoSuperado(clave, max) {
   const ahora = Date.now();
-  const clave = action + '|' + ip;
   const u = usoPorIp.get(clave);
   if (!u || ahora - u.desde > VENTANA_IP_MS) {
     // Limpieza ocasional para que el mapa no crezca sin fin
@@ -156,7 +166,8 @@ async function onRequestPost(context) {
   try {
     const body = await context.request.json();
     const { action } = body;
-    if (limiteIpSuperado(context.request.headers.get('CF-Connecting-IP'), action)) {
+    const cuenta = String(body.reference || body.telegram_id || body.wallet_address || '');
+    if (limiteIpSuperado(context.request.headers.get('CF-Connecting-IP'), action) || limiteCuentaSuperado(cuenta, action)) {
       return j({ error: 'rate_limited', detail: 'Demasiadas peticiones, espera unos minutos.' }, 429);
     }
 

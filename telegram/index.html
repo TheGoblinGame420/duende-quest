@@ -9,6 +9,20 @@
 <!-- Página interna de la Mini App de Telegram: no debe salir en buscadores -->
 <meta name="robots" content="noindex">
 <meta name="description" content="Duende Quest en Telegram: juega gratis el MMO y el arcade, mira tu perfil, skins y ranking.">
+<!-- Vista previa si alguien comparte este enlace (sin "$DUENDE" ni "token") -->
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_PE">
+<meta property="og:site_name" content="Duende Quest">
+<meta property="og:title" content="Duende Quest en Telegram: juega gratis con amigos">
+<meta property="og:description" content="Mundo abierto 3D con alas y MMO 2D en pixel art, gratis y sin descargas, desde tu celular.">
+<meta property="og:url" content="https://duende-quest.alfonso12hc.workers.dev/telegram/">
+<meta property="og:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/og/mundo3d.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Duende Quest 3D: un duende con alas vuela sobre el bosque y pelea contra un jefe">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/og/mundo3d.jpg">
 <meta name="theme-color" content="#0b0f17">
 <meta name="color-scheme" content="dark">
 <!-- La fuente pixel ya no bloquea el primer pintado: se carga aparte
@@ -19,6 +33,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="/js/origen.js?v=326"></script>
 <script>
 // ── ARRANQUE TEMPRANO DE TELEGRAM ──
 // Va aquí, antes de cargar Supabase/TON Connect/el motor, para que Telegram
@@ -1953,7 +1968,7 @@ function shareScore(){
 // (la misma tabla STARS_DE_USD que usa /api/telegram-bot-invoice al cobrar), asi
 // la Mini App nunca anuncia un precio distinto del que cobra Telegram.
 // Subir este ?v= junto con el de los otros imports de data.js.
-import { SKINS as CATALOGO, estrellasDe } from '../mmo/js/data.js?v=325';
+import { SKINS as CATALOGO, estrellasDe } from '../mmo/js/data.js?v=326';
 try{
   for(const s of SKINS){
     const c=CATALOGO[s.id];

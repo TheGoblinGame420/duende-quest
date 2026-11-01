@@ -68,7 +68,8 @@ export const Copias = {
   // entero + su texto + el gzip en memoria a la vez. Mismo formato de siempre.
   async volcarStorage(t, motivo) {
     // Lo que esta en memoria y aun no se guardo, primero al storage.
-    for (const s of this.sesiones.values()) if (s.c && s.sucio && !s.noGuardar) await this.guardar(s);
+    for (const s of this.sesiones.values()) if (s.c && (s.sucio || s.sucioPos) && !s.noGuardar) await this.guardar(s);
+    if (this.volcarMemoria) await this.volcarMemoria();   // ranking y agregados de retencion que viven en memoria
     const cs = new CompressionStream('gzip'), w = cs.writable.getWriter(), enc = new TextEncoder();
     const salida = new Response(cs.readable).arrayBuffer();
     salida.catch(() => {});

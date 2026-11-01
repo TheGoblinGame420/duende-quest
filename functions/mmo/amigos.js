@@ -31,11 +31,13 @@ export const Amigos = {
     return null;
   },
 
-  // Al crear el personaje: quien lo invito (si el codigo es valido).
+  // Al crear el personaje (o al heredar uno de invitado): quien lo invito, si
+  // el codigo es valido. Tambien los invitados de la web: el premio igual
+  // espera a nivel 10 y a una cuenta real (revisarAmigo).
   async anotarInvitacion(c, ref) {
-    if (!CODIGO.test(ref || '') || c.uid.startsWith('inv:')) return;
+    if (!CODIGO.test(ref || '') || c.invitadoPor) return;
     const de = await this.state.storage.get('ref:' + ref);
-    if (!de || de === c.uid) return;
+    if (!de || de === c.uid || (this.uidsPrueba && this.uidsPrueba.has(c.uid))) return;
     c.invitadoPor = de;
   },
 
@@ -48,9 +50,21 @@ export const Amigos = {
     const { s: otro, c: co } = await this.pjDe(de);
     if (!co) return;
     const add = (x, u, n) => { const l = x.contactos || (x.contactos = []); if (!l.some(a => a.u === u) && l.length < CONTACTOS_MAX) l.push({ u, n }); };
-    add(c, de, co.nombre); add(co, c.uid, c.nombre);
+    add(c, de, co.nombre);
     s.sucio = true;
     if (!s.cerrado) this.enviarContactos(s);
+    // Invitado sin cuenta (gratis de crear): solo entra en la lista de quien invito
+    // si este esta conectado y como mucho 5 por hora. Si no, un bucle de invitados
+    // con su ?ref= le llenaba la lista de amigos y gastaba escrituras.
+    if (c.uid.startsWith('inv:')) {
+      if (!otro) return;
+      const h = Math.floor(Date.now() / 3600000);
+      this._refInvH = this._refInvH && this._refInvH.h === h ? this._refInvH : { h, n: new Map() };
+      const n = (this._refInvH.n.get(de) || 0) + 1;
+      this._refInvH.n.set(de, n);
+      if (n > 5) return;
+    }
+    add(co, c.uid, c.nombre);
     if (otro) {
       otro.sucio = true; this.enviarContactos(otro);
       const g = this.grupoDe(otro);
@@ -62,7 +76,8 @@ export const Amigos = {
       }
     } else {
       await this.state.storage.put('c:' + de, co);
-      if (await this.quiereAvisos(de)) { try { await this.tgEnviar('sendMessage', { chat_id: de.slice(3), text: `🤝 ${c.nombre} acaba de crear su duende con tu enlace y ya está en tu lista de amigos. Entra ahora y jueguen juntos en grupo.`, reply_markup: { inline_keyboard: [[{ text: '🌍 Jugar con mi amigo', web_app: { url: MMO_URL } }]] } }); } catch (e) {} }
+      // Un invitado sin cuenta no dispara avisos de Telegram (tokens de invitado sin fin = spam al invitador).
+      if (!c.uid.startsWith('inv:') && await this.quiereAvisos(de)) { try { await this.tgEnviar('sendMessage', { chat_id: de.slice(3), text: `🤝 ${c.nombre} acaba de crear su duende con tu enlace y ya está en tu lista de amigos. Entra ahora y jueguen juntos en grupo.`, reply_markup: { inline_keyboard: [[{ text: '🌍 Jugar con mi amigo', web_app: { url: MMO_URL } }]] } }); } catch (e) {} }
     }
   },
 
@@ -70,7 +85,13 @@ export const Amigos = {
   async revisarAmigo(s) {
     const c = s.c;
     if (!c.invitadoPor || c.refPagado || c.nivel < AMIGO_NIVEL) return;
+    // Solo cuentas reales: Telegram o correo confirmado. El invitado lo cobra
+    // al registrarse (world.js lo vuelve a revisar al entrar).
+    if (c.uid.startsWith('inv:') || !(c.uid.startsWith('tg:') || (s.uidAuth || '').startsWith('tg:') || (s.extraAuth && s.extraAuth.emailOk))) return;
+    // Nadie se cobra a si mismo (cuenta vinculada o heredada con su propio codigo).
+    if (c.invitadoPor === c.uid || c.invitadoPor === s.uidAuth) { delete c.invitadoPor; s.sucio = true; return; }
     c.refPagado = true;
+    if (this.refContar) this.refContar('refPagado');
     s.sucio = true;
     const pr = premioAmigo(c.nivel);
     c.oro += pr.oro;
@@ -90,6 +111,7 @@ export const Amigos = {
     else await this.state.storage.put('c:' + c.invitadoPor, co);
     const txtA = `🤝 ¡Tu amigo ${c.nombre} llegó a nivel ${AMIGO_NIVEL} en DUENDE QUEST ONLINE! Ganaste oro${co.amigos === 5 ? ' y el Conejo Saltarín de montura' : ''}. Amigos invitados: ${co.amigos}.`;
     if (otro) this.enviar(otro, { t: 'toast', m: txtA, ok: true });
+    else if (this.buzonAgregar) await this.buzonAgregar(c.invitadoPor, txtA);   // "Mientras no estabas"
     if (await this.quiereAvisos(c.invitadoPor)) { try { await this.tgEnviar('sendMessage', { chat_id: c.invitadoPor.slice(3), text: txtA }); } catch (e) {} }
   },
 

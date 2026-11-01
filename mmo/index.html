@@ -3,6 +3,7 @@
 <head>
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
+<script src="/js/origen.js?v=326"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <title>$DUENDE CLASSIC · MMORPG 2D gratis en el navegador</title>
@@ -13,7 +14,7 @@
 <meta property="og:type" content="website">
 <meta property="og:locale" content="es_PE">
 <meta property="og:site_name" content="Duende Quest">
-<meta property="og:title" content="$DUENDE CLASSIC · MMORPG 2D gratis en el navegador">
+<meta property="og:title" content="Duende Quest CLASSIC · MMORPG 2D gratis en el navegador">
 <meta property="og:description" content="Elige Guerrero, Mago, Sacerdote o Pícaro, forma grupo y entra a mazmorras con jefes. Gratis, sin descargas, en el navegador o en Telegram.">
 <meta property="og:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/mmo_banner.png">
 <meta property="og:image:width" content="1200">
@@ -21,7 +22,7 @@
 <meta property="og:image:alt" content="Duende Quest Online: duendes en pixel art en un mundo de fantasía">
 <meta property="og:url" content="https://duende-quest.alfonso12hc.workers.dev/mmo/">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="$DUENDE CLASSIC · MMORPG 2D gratis en el navegador">
+<meta name="twitter:title" content="Duende Quest CLASSIC · MMORPG 2D gratis en el navegador">
 <meta name="twitter:description" content="Juego RPG online gratis: clases, grupos, mazmorras y 10 zonas. Sin descargas, en el navegador o en Telegram.">
 <meta name="twitter:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/mmo_banner.png">
 <script type="application/ld+json">
@@ -137,6 +138,9 @@ body:not(.tactil) #hud.estrecho #monedero{bottom:52px;}
    el resto de la caja deja pasar los clics al lienzo. */
 #seguimiento{right:8px;top:106px;max-width:220px;text-align:right;pointer-events:none!important;}
 #seguimiento #h-mision,#seguimiento #h-tareas{pointer-events:auto;cursor:pointer;}
+/* Pildora "🎁 Cobrar (N)": premios ya ganados que esperan (pase, expedicion). */
+#h-cobrar{display:none;margin:4px 0 2px auto;width:max-content;padding:3px 10px;border-radius:999px;font:700 11px/1.4 var(--sans);color:#1a1205;background:linear-gradient(180deg,#ffe27a,#f5b82e);box-shadow:0 0 10px rgba(255,216,74,.55);pointer-events:auto!important;cursor:pointer;animation:parp 1.6s ease-in-out infinite alternate;}
+#h-cobrar.on{display:block;}
 #h-tareas{font:11px/1.4 var(--sans);color:var(--txt2);margin-top:3px;text-shadow:1px 1px 0 #000,0 0 3px #000;}
 #h-mision{font:600 12px/1.35 var(--sans);text-shadow:1px 1px 0 #000,0 0 3px #000;}
 #h-mundial{font-size:8px;line-height:1.6;text-shadow:1px 1px 0 #000,0 0 3px #000;}
@@ -293,6 +297,8 @@ body.tactil .solo-pc,body:not(.tactil) .solo-tactil{display:none;}
 .guia .parche span{color:var(--txt3);font-size:12px;}
 /* Dentro de Telegram no se menciona otra cripto que no sea TON (sus reglas). */
 body.tg .solo-web{display:none;}
+/* Modo anuncio (js/origen.js): quien llega de Meta juega sin la parte cripto. Bajo nivel 15 (sin mTON aun) tampoco se muestra. */
+html.anuncio #h-mton-c,html.anuncio #b-wallet,html.anuncio .solo-web,html.anuncio .solo-cripto,body.mton-bajo #h-mton-c,body.mton-bajo #b-wallet{display:none!important;}
 #hud.tuto #avisos{top:292px;}
 #hud.estrecho #avisos{top:322px;width:90%;}
 #hud.estrecho #consejo{top:248px;font-size:13px;white-space:normal;width:86%;text-align:center;line-height:1.45;}
@@ -518,7 +524,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <body>
 <div id="carga">
   <img class="duende-carga" src="/assets/skins/duende_comun.png" alt="" width="62" height="105">
-  <div class="t">$DUENDE<br>CLASSIC</div>
+  <div class="t">DUENDE QUEST<br>CLASSIC</div>
   <div class="barra"><i id="carga-i" style="width:0%"></i></div>
   <div class="s" id="carga-s">Cargando el mundo…</div>
   <p class="consejo-carga" id="carga-c"></p>
@@ -554,7 +560,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
       <div class="caja" id="grupo"></div>
       <div class="caja" id="invitacion"><span id="inv-txt"></span><button class="btn" id="inv-si">Aceptar</button><button class="btn sec" id="inv-no">Rechazar</button></div>
       <div class="caja" id="minimapa"><canvas id="mini" width="170" height="26"></canvas></div>
-      <div class="caja" id="seguimiento"><div id="h-mision"></div><div id="h-tareas"></div><div id="h-mundial"></div><div id="h-evento"></div><div id="h-chicha" title="Premio real: 2 litros de chicha morada al llegar a nivel 60"></div></div>
+      <div class="caja" id="seguimiento"><div id="h-cobrar" role="button"></div><div id="h-mision"></div><div id="h-tareas"></div><div id="h-mundial"></div><div id="h-evento"></div><div id="h-chicha" title="Premio real: 2 litros de chicha morada al llegar a nivel 60"></div></div>
       <div class="caja" id="mapa-nom"><span id="h-mapa">—</span><small id="h-mapa-sub"></small></div>
       <div class="caja" id="botones" onclick="if(event.target.closest('#b-mas'))this.classList.toggle('abierto');else if(event.target.closest('.extra'))this.classList.remove('abierto')">
         <button class="bt" id="b-libro" title="Hechizos y clase (P)" aria-label="Hechizos"><img class="ico-bt" src="/assets/items/equipo/W_Book01.png" alt=""></button>
@@ -567,7 +573,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
         <button class="bt" id="b-rank" title="Ranking" aria-label="Ranking"><img class="ico-bt" src="/assets/items/equipo/Ac_Medal01.png" alt=""></button>
         <button class="bt extra" id="b-ayuda" title="Guía del juego" aria-label="Guía"><img class="ico-bt" src="/assets/items/equipo/I_Book.png" alt=""></button>
         <button class="bt" id="b-cuenta" title="Mi cuenta: guarda tu progreso" aria-label="Mi cuenta"><svg class="ico-bt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg></button>
-        <a class="bt bt3d" href="/mundo/" title="$DUENDE ORIGINS: el mundo abierto 3D con tu mismo personaje" aria-label="Mundo 3D" style="text-decoration:none;font:800 12px var(--sans)">🌌 3D</a>
+        <a class="bt bt3d" href="/mundo/" title="Duende Quest Origins: el mundo abierto 3D con tu mismo personaje" aria-label="Mundo 3D" style="text-decoration:none;font:800 12px var(--sans)">🌌 3D</a>
         <button class="bt" id="b-dios" title="Modo Dios (F2)" aria-label="Modo Dios" style="display:none"><img class="ico-bt" src="/assets/items/equipo/Ac_Medal04.png" alt=""></button>
         <button class="bt extra" id="b-sonido" title="Sonido">🔊</button>
         <a class="bt extra" href="/inicio/" title="Inicio: elige tu juego" aria-label="Inicio" style="text-decoration:none"><svg class="ico-bt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></a>
@@ -609,7 +615,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- Inicio -->
 <div class="modal" id="m-inicio">
   <div class="ventana centro">
-    <h1>$DUENDE<span>CLASSIC</span></h1>
+    <h1>DUENDE QUEST<span>CLASSIC</span></h1>
     <p class="lema">El juego de rol online de los duendes.</p>
     <p>Cuatro clases, mazmorras y una banda con jefes, la Torre del Duende, hermandades y diez zonas hasta el nivel 60.</p>
     <ul class="ventajas" aria-label="Ventajas">
@@ -619,7 +625,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
       <input class="nombre" id="in-nombre" maxlength="16" placeholder="Nombre de tu duende (opcional)" aria-label="Nombre de tu duende (opcional)">
       <button class="btn btn-grande" id="b-jugar">Entrar como invitado</button>
       <p class="nota">Como invitado tu personaje vive solo en este navegador. Con una cuenta se guarda en la nube y lo recuperas desde cualquier dispositivo.</p>
-      <a class="btn btn-grande bt3d-grande" href="/mundo/" style="display:block;margin-top:8px;text-decoration:none;text-align:center">🌌 NUEVO: $DUENDE ORIGINS (3D)<small style="display:block;font-size:11px;font-weight:600;opacity:.9">Vuela con alas · PvP de facciones · Asedios · tu mismo duende</small></a>
+      <a class="btn btn-grande bt3d-grande" href="/mundo/" style="display:block;margin-top:8px;text-decoration:none;text-align:center">🌌 NUEVO: Duende Quest Origins (3D)<small style="display:block;font-size:11px;font-weight:600;opacity:.9">Vuela con alas · PvP de facciones · Asedios · tu mismo duende</small></a>
       <button class="btn sec btn-grande" id="b-abrir-cuenta" style="margin-top:8px">Entrar con correo o crear cuenta</button>
       <div id="inicio-auth" class="cuenta" style="display:none"></div>
     </div>
@@ -786,9 +792,9 @@ input.nombre:focus{border-color:var(--pri-txt);}
       <h3>Tienda y cuenta</h3>
       <ul>
         <li><b>Mercader.</b> Poderes, armas, monturas, colores, mascotas y skins. Cada skin da bonificaciones mientras la llevas.</li>
-        <li><b>Tienda premium.</b> Oro, poderes y skins con Stars en Telegram<span class="solo-web"> o con SOL en la web (Phantom, Solflare o QR de Solana Pay; «Ya pagué» comprueba el pago)</span>. Cada pedido se revisa y se entrega a mano. Con dinero nunca se compran mTON.</li>
-        <li><b>Oro.</b> Es solo del juego: no se canjea por dinero ni por $DUENDE.</li>
-        <li><b>mTON (opcional).</b> Desde Nv 15 con cuenta: jefes, jefe mundial y caza del día reparten un fondo diario limitado. 1.000 mTON = 1 TON; retiro desde 5 TON, una vez por semana y hasta 10 TON.</li>
+        <li><b>Tienda premium.</b> Oro, poderes y skins con Stars en Telegram<span class="solo-web"> o con SOL en la web (Phantom, Solflare o QR de Solana Pay; «Ya pagué» comprueba el pago)</span>. Cada pedido se revisa y se entrega a mano.<span class="solo-cripto"> Con dinero nunca se compran mTON.</span></li>
+        <li><b>Oro.</b> Es solo del juego: no se canjea por dinero<span class="solo-cripto"> ni por $DUENDE</span>.</li>
+        <li class="solo-cripto"><b>mTON (opcional).</b> Desde Nv 15 con cuenta: jefes, jefe mundial y caza del día reparten un fondo diario limitado. 1.000 mTON = 1 TON; retiro desde 5 TON, una vez por semana y hasta 10 TON.</li>
         <li><b>Seguridad.</b> Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado. El único contacto oficial es @ElDuendeOficial.</li>
       </ul>
       <p class="creditos"><b>Créditos de arte:</b> Luis Zuno (ansimuz) — Magic Cliffs y Warped Caves (CC-BY 3.0), Mountain Dusk, Underwater, GothicVania y Sunny Land (CC0); Moikmellah, Ashuuya, Scratchio y 7Soul1 (CC0). Sonidos: Juhani Junkala (CC0).</p>
@@ -948,10 +954,10 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=325"></script>
+<script type="module" src="/mmo/js/client.js?v=326"></script>
 <div id="nuevo3d" role="dialog" aria-label="Nuevo mundo 3D">
   <video src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" muted loop playsinline preload="none"></video>
-  <div class="t">🌌 NUEVO: $DUENDE ORIGINS, el mundo abierto en 3D</div>
+  <div class="t">🌌 NUEVO: Duende Quest Origins, el mundo abierto en 3D</div>
   <div class="d">Tu mismo duende, con su nivel, oro y skins: vuela con alas, elige Luz o Sombra en el Abismo, asedia la Fortaleza del Núcleo y caza en un mundo enorme.</div>
   <div class="b"><a id="nuevo3d-ir" href="/mundo/">Jugar ORIGINS</a><button id="nuevo3d-no" type="button">Ahora no</button></div>
 </div>

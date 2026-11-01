@@ -13,6 +13,7 @@
 //   ret:dia:<YYYY-MM-DD> → { n: altas, a: activos, ses, min, r1, r7, r30 }
 //     r1/r7/r30 = de los que se dieron de alta ESE dia, cuantos volvieron
 //     exactamente 1, 7 y 30 dias despues (retencion "dia N" clasica).
+//     r8/r14 = igual a los 8 y 14 dias (semanas 2 y 3 de la racha larga).
 //   ret:idx → { uid: { v: ultimo dia jugado, l: nivel, a: avisos sin
 //     respuesta, ad: dia del ultimo aviso, off: 1 si pidio no recibir avisos,
 //     bloq: 1 si bloqueo al bot, hs: hora UTC de su primera entrada de cada
@@ -34,7 +35,7 @@
 // evento avisado); off y bloq se respetan siempre.
 // ═══════════════════════════════════════════════════════
 
-import { xpParaSubir, premioDiaria, premioMazmorraDia, LOGIN_PREMIOS, multLogin, HABS, CLASES, NIVEL_MAX, DIARIA, horaFelizActiva, TORRE, semanaUTC, temporadaDe, TEMPORADAS } from '../../mmo/js/data.js';
+import { xpParaSubir, premioDiaria, premioMazmorraDia, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, HABS, CLASES, NIVEL_MAX, DIARIA, horaFelizActiva, TORRE, semanaUTC, temporadaDe, TEMPORADAS } from '../../mmo/js/data.js';
 import { getEnv, tg } from '../api/lib.js';
 import { MMO_URL } from '../api/telegram-bot.js';
 
@@ -51,6 +52,35 @@ export const diaISO = n => new Date(n * DIA_MS).toISOString().slice(0, 10);
 const fmt = n => Math.round(n).toLocaleString('es', { useGrouping: 'always' });
 const pct = (x, base) => base ? Math.round(x / base * 1000) / 10 : null;
 const vacio = () => ({ n: 0, a: 0, ses: 0, min: 0, r1: 0, r7: 0, r30: 0 });
+
+// Origen del jugador (/js/origen.js lo manda en el 'hola' como src). Lista
+// blanca: nadie puede meter claves nuevas en ret:dia. Se guarda UNA vez, en el
+// alta (c.ret.src), y la herencia de invitado lo conserva (copia c entero).
+// Con el, el alta, el embudo y D1/D7 se suman tambien como <campo>_<src>
+// (n_meta, c1_meta, r1_meta...) en el mismo ret:dia.
+export const ORIGENES = ['meta', 'tg', 'wa', 'ref', 'org'];
+const srcDe = v => ORIGENES.includes(v) ? v : 'org';
+const conSrc = (c, campos) => {
+  const s = c && c.ret && c.ret.src;
+  if (!ORIGENES.includes(s)) return campos;
+  const o = { ...campos };
+  for (const k in campos) o[k + '_' + s] = campos[k];
+  return o;
+};
+
+// Embudo de la carga (antes del alta), por beacon (worker.js → /mmo/ev):
+//   ev:dia:<YYYY-MM-DD> → { '<juego>|<evento>|<origen>|<m|p>': [n, b0..b6] }
+//   n = sesiones que llegaron a ese paso; b = cuantas en cada tramo de ms
+//   (desde que abrio la pagina; 'bienvenido' y 'mover', desde el clic en entrar).
+// Se suma en memoria y se vuelca como mucho una vez por minuto.
+export const EV_PASOS = ['carga_ini', 'arte_ok', 'form_visto', 'clic_entrar', 'bienvenido', 'mover', 'fallo_webgl', 'oculta'];
+const EV_TRAMOS = [2000, 5000, 10000, 20000, 40000, 90000];   // el ultimo tramo es "mas de 90 s"
+const EV_POR_IP_HORA = 40;      // por /64 de IPv6: un jugador manda ~8; recargas y los dos juegos caben de sobra
+const EV_POR_IPV4_HORA = 800;   // IPv4: la comparten cientos de moviles por CGNAT (Claro, Movistar, Entel, Bitel)
+const EV_MAX_DIA = 60000;       // tope diario de avisos aceptados (cuida el cupo)
+const EV_MAX_CLAVES = 400;      // 2 juegos x 8 pasos x 5 origenes x 2 equipos = 160 posibles
+// IPv6: se limita por /64 (un equipo cambia de direccion dentro de su bloque).
+const claveIpEv = ip => ip.includes(':') ? ip.split(':').slice(0, 4).join(':') : ip;
 
 const MAX_ENVIOS = 40;   // avisos por llamada a 'recordatorios' (limite de subpeticiones)
 export const HORA_DEFECTO = 17;   // la del cron: para quien aun no tiene hora habitual
@@ -118,10 +148,33 @@ export const Retencion = {
     }
     return p;
   },
+  // Suma en memoria (el objeto del dia que guarda retDia) y lo vuelca
+  // retVolcarDias como mucho cada 60 s: antes cada alta, activo o hito era una escritura.
   async retSumar(n, campos) {
     const r = await this.retDia(n);
     for (const k in campos) r[k] = Math.round(((r[k] || 0) + campos[k]) * 100) / 100;
-    await this.state.storage.put('ret:dia:' + diaISO(n), r);
+    (this._retSucios = this._retSucios || new Set()).add(n);
+    if (Date.now() - (this._retDiasT || 0) > 60000) await this.retVolcarDias();
+  },
+  async retVolcarDias(forzar) {
+    const sucios = this._retSucios;
+    if (!sucios || !sucios.size) return;
+    if (!forzar && Date.now() - (this._retDiasT || 0) <= 60000) return;
+    this._retDiasT = Date.now();
+    this._retSucios = null;
+    for (const n of sucios) {
+      // Si el cache se vacio (restaurar una copia, pruebas) lo pendiente ya no vale.
+      const p = this._retDias && this._retDias.get(n);
+      if (!p) continue;
+      try { await this.state.storage.put('ret:dia:' + diaISO(n), await p); }
+      catch (e) { (this._retSucios = this._retSucios || new Set()).add(n); console.error('[MMO ret dia]', e); }
+    }
+  },
+
+  // Invitaciones por ?ref= del dia: llegan (personaje nuevo con invitador),
+  // cuentan (ya con cuenta real: nuevo o heredado) y se pagan (premio Nv 10).
+  refContar(k) {
+    this.retSumar(diaNum(), { [k]: 1 }).catch(() => {});
   },
 
   // Embudo de los nuevos (26-oct): de la cohorte de su alta, cuantos llegan a la
@@ -134,7 +187,7 @@ export const Retencion = {
     e[k] = 1;
     const desde = diaNum(c.creado || Date.now());
     if (diaNum() - desde > 30) return;
-    this.retSumar(desde, { [k]: 1 }).catch(() => {});
+    this.retSumar(desde, conSrc(c, { [k]: 1 })).catch(() => {});
   },
 
   // Anota el dia en el personaje. true si es su primera vez de ese dia.
@@ -153,17 +206,23 @@ export const Retencion = {
     if (!c.ret.alta) return;
     const desde = diaNum(c.creado || Date.now());
     const k = hoy - desde;
-    if (k === 1 || k === 7 || k === 30) await this.retSumar(desde, { ['r' + k]: 1 });
+    // D8 (cruzo a la semana 2 de la racha) y D14 (2 semanas): miden la racha larga.
+    if (k === 1 || k === 7 || k === 8 || k === 14 || k === 30) await this.retSumar(desde, conSrc(c, { ['r' + k]: 1 }));
+    if (k === 1 && c.ret.iab) await this.retSumar(desde, { r1iab: 1 });
   },
 
   // ── Ganchos (los llama world.js) ──
   // En hola, con el personaje ya cargado. nuevo = personaje recien creado.
-  async retEntrar(s, nuevo) {
+  async retEntrar(s, nuevo, src) {
     try {
       const c = s.c, ahora = Date.now(), hoy = diaNum(ahora);
       // Solo cuenta como alta un personaje creado ahora: los que ya existian
       // antes de medir no tienen dia de alta fiable y ensuciarian las cohortes.
       if (!c.ret) c.ret = { d: [], dt: 0, ses: 0, min: 0, visto: ahora, u: c.uid, alta: nuevo ? 1 : 0 };
+      // Origen: una sola vez, en el alta (despues nunca se pisa).
+      if (nuevo && !c.ret.src) c.ret.src = srcDe(src);
+      // Alta desde el navegador interno de Facebook/Instagram (hola.iab): su D1 aparte.
+      if (nuevo && s.iab) c.ret.iab = 1;
       const r = c.ret;
       r.ses = (r.ses || 0) + 1;
       r.visto = ahora;
@@ -184,7 +243,7 @@ export const Retencion = {
       // Primera entrada del dia: su hora, para avisarle a esa hora.
       if (nuevoDia) e.hs = [...(e.hs || []), horaUTC(ahora)].slice(-10);
       if (cambia) await this.retGuardarIdx();
-      if (nuevo) await this.retSumar(hoy, { n: 1 });
+      if (nuevo) await this.retSumar(hoy, conSrc(c, c.ret.iab ? { n: 1, niab: 1 } : { n: 1 }));
       // Sesiones: en memoria y al storage como mucho una vez por minuto.
       if (this._retMin && this._retMin.d !== hoy) await this.retVolcar();
       this._retMin = this._retMin || { d: hoy, min: 0, ses: 0 };
@@ -221,6 +280,7 @@ export const Retencion = {
         if (ahora - (s.combateT || 0) < 5000) this.enviar(s, { t: 'toast', ok: true, m: `☀️ ¡Nuevo día! Recompensa diaria (día ${lg.racha}): ${lg.oro ? '+' + lg.oro.toLocaleString('es', { useGrouping: 'always' }) + ' oro' : lg.txt}. Misiones diarias renovadas.` });
         else { this.enviar(s, { t: 'login', ...lg }); this.enviar(s, { t: 'toast', ok: true, m: '☀️ ¡Nuevo día! Misiones diarias renovadas.' }); }
         if (this.infoTareas) this.enviar(s, { t: 'tareas', ...this.infoTareas(c) });
+        if (this.revisarLogros) this.revisarLogros(s, true);   // titulos de racha 7/14/21
         // Cambio de mes con la sesion abierta: lo alcanzado del pase se cobra ya (antes esperaba a reconectar).
         if (this.infoPase) { const ip = this.infoPase(c); if (this.cobrarPasePendiente && c.pasePend) this.cobrarPasePendiente(s); this.enviar(s, { t: 'pase', pase: c.pasePend ? this.infoPase(c) : ip }); }
         this.actualizarYo(s);
@@ -263,11 +323,78 @@ export const Retencion = {
   // Rutas internas de este modulo (las llama interno() de world.js).
   async internoRetencion(accion, b) {
     await this.retVolcar();
+    try { await this.evVolcar(); } catch (e) { console.error('[MMO ev volcar]', e); }
     if (accion === 'stats') return this.retStats();
     if (accion === 'recordatorios') return this.recordatorios(b && Number.isInteger(b.hora) ? b.hora : horaUTC());
     if (accion === 'avisos') return this.ponerAvisos(b || {});
     if (accion === 'avisadosHoy') return this.avisadosHoy(b && Number.isInteger(b.hora) ? b.hora : horaUTC());
     return null;
+  },
+
+  // ── EMBUDO DE CARGA (beacon /mmo/ev) ──
+  // Llega ya validado por worker.js; aqui se vuelve a validar (lista blanca),
+  // se limita por IP y por dia y se suma en memoria. Siempre 204.
+  async evRecibir(request) {
+    const nada = () => new Response(null, { status: 204 });
+    try {
+      const b = await request.json();
+      if (!b || !EV_PASOS.includes(b.e) || (b.j !== 'origins' && b.j !== 'classic')) return nada();
+      const ahora = Date.now(), hoy = diaNum(ahora), h = Math.floor(ahora / 3600000);
+      const ip = claveIpEv(request.headers.get('CF-Connecting-IP') || '');
+      this._evIp = this._evIp && this._evIp.h === h ? this._evIp : { h, n: new Map() };
+      const n = (this._evIp.n.get(ip) || 0) + 1;
+      if (n > (ip.includes(':') ? EV_POR_IP_HORA : EV_POR_IPV4_HORA)) return nada();
+      this._evIp.n.set(ip, n);
+      this._evHoy = this._evHoy && this._evHoy.d === hoy ? this._evHoy : { d: hoy, n: 0 };
+      if (++this._evHoy.n > EV_MAX_DIA) return nada();
+      // Cambio de dia con algo pendiente: lo de ayer se escribe en su dia.
+      if (this._evPend && this._evPend.d !== hoy) await this.evVolcar();
+      const p = this._evPend || (this._evPend = { d: hoy, k: {} });
+      const clave = `${b.j}|${b.e}|${srcDe(b.org)}|${b.movil ? 'm' : 'p'}`;
+      if (!p.k[clave] && Object.keys(p.k).length >= EV_MAX_CLAVES) return nada();
+      const a = p.k[clave] || (p.k[clave] = [0, 0, 0, 0, 0, 0, 0, 0]);
+      a[0]++;
+      const ms = Number(b.ms);
+      if (Number.isFinite(ms) && ms >= 0) { let i = EV_TRAMOS.findIndex(t => ms <= t); if (i < 0) i = EV_TRAMOS.length; a[1 + i]++; }
+      if (ahora - (this._evT || 0) > 60000) await this.evVolcar();
+      else if (!this._evTimer) this._evTimer = setTimeout(() => { this._evTimer = null; this.evVolcar().catch(e => console.error('[MMO ev volcar]', e)); }, Math.max(1000, 60000 - (ahora - (this._evT || 0))));
+    } catch (e) { console.error('[MMO ev]', e); }
+    return nada();
+  },
+  async evVolcar() {
+    const p = this._evPend;
+    if (!p) return;
+    this._evPend = null; this._evT = Date.now();
+    const k = 'ev:dia:' + diaISO(p.d);
+    const g = (await this.state.storage.get(k)) || {};
+    for (const c in p.k) {
+      const a = g[c] || (g[c] = [0, 0, 0, 0, 0, 0, 0, 0]);
+      p.k[c].forEach((v, i) => { a[i] = (a[i] || 0) + v; });
+    }
+    await this.state.storage.put(k, g);
+  },
+  // Resumen de los ultimos 'dias' por origen: sesiones por paso, y del clic al
+  // primer movimiento en el movil cuantas tardaron 20 s o menos y la mediana (por tramo).
+  async evStats(dias = 7) {
+    const hoy = diaNum(), por = {};
+    for (let i = 0; i < dias; i++) {
+      const g = (await this.state.storage.get('ev:dia:' + diaISO(hoy - i))) || {};
+      for (const c in g) {
+        const [, e, org, dev] = c.split('|');
+        const o = por[org] || (por[org] = { pasos: {}, moverMovil: [0, 0, 0, 0, 0, 0, 0] });
+        o.pasos[e] = (o.pasos[e] || 0) + (g[c][0] || 0);
+        if (e === 'mover' && dev === 'm') for (let t = 0; t < 7; t++) o.moverMovil[t] += g[c][1 + t] || 0;
+      }
+    }
+    const nombres = ['≤2 s', '≤5 s', '≤10 s', '≤20 s', '≤40 s', '≤90 s', '>90 s'];
+    for (const org in por) {
+      const b = por[org].moverMovil, tot = b.reduce((x, y) => x + y, 0);
+      let acum = 0, med = null;
+      for (let t = 0; t < 7 && med === null; t++) { acum += b[t]; if (acum * 2 >= tot && tot) med = nombres[t]; }
+      por[org].movil20 = tot ? { pct: pct(b[0] + b[1] + b[2] + b[3], tot), base: tot, mediana: med } : null;
+      delete por[org].moverMovil;
+    }
+    return { dias, por };
   },
 
   // ── ESTADISTICAS (/mmostats) ──
@@ -298,11 +425,11 @@ export const Retencion = {
     // Un dato D-k solo existe cuando ya llego el dia alta+k (si no, null).
     const cohortes = dias.slice(0, 35).filter(x => x.r.n > 0).map(x => {
       const hace = hoy - x.n;
-      return { dia: diaISO(x.n), n: x.r.n, d1: hace >= 1 ? x.r.r1 : null, d7: hace >= 7 ? x.r.r7 : null, d30: hace >= 30 ? x.r.r30 : null };
+      return { dia: diaISO(x.n), n: x.r.n, d1: hace >= 1 ? x.r.r1 : null, d7: hace >= 7 ? x.r.r7 : null, d8: hace >= 8 ? x.r.r8 || 0 : null, d14: hace >= 14 ? x.r.r14 || 0 : null, d30: hace >= 30 ? x.r.r30 : null };
     });
     // Retencion total de las ultimas 30 cohortes cuyo dia alta+k ya termino.
     const retencion = {};
-    for (const k of [1, 7, 30]) {
+    for (const k of [1, 7, 8, 14, 30]) {
       let base = 0, vuelven = 0;
       for (const x of dias) {
         const hace = hoy - x.n;
@@ -313,8 +440,32 @@ export const Retencion = {
     let ses = 0, min = 0;
     for (const x of dias.slice(0, 7)) { ses += x.r.ses || 0; min += x.r.min || 0; }
     // Embudo de las altas de los ultimos 14 dias.
-    const embudo = { n: 0, c1: 0, m1: 0, n5: 0, n10: 0 };
+    const embudo = { n: 0, c1: 0, m1: 0, n5: 0, n10: 0, cl: 0 };
     for (const x of dias.slice(0, 14)) for (const k in embudo) embudo[k] += x.r[k] || 0;
+    // Altas del navegador interno de Facebook/Instagram: cuantas en 14 dias y su D1
+    // (ultimas 30 cohortes con el dia ya cumplido), para compararlo con el D1 general.
+    const iab = { n: 0, d1: null };
+    for (const x of dias.slice(0, 14)) iab.n += x.r.niab || 0;
+    { let base = 0, vuelven = 0; for (const x of dias) { const hace = hoy - x.n; if (hace > 1 && hace <= 31) { base += x.r.niab || 0; vuelven += x.r.r1iab || 0; } } iab.d1 = { pct: pct(vuelven, base), vuelven, base }; }
+    embudo.iab = iab;
+    // Lo mismo por origen (origen.js): altas, embudo de 14 dias y D1/D7 de las
+    // ultimas 30 cohortes con el dia ya cumplido. Solo los origenes con altas.
+    const origenes = {};
+    for (const o of ORIGENES) {
+      const e = { n: 0, c1: 0, m1: 0, n5: 0 };
+      for (const x of dias.slice(0, 14)) for (const k in e) e[k] += x.r[k + '_' + o] || 0;
+      for (const k of [1, 7]) {
+        let base = 0, vuelven = 0;
+        for (const x of dias) { const hace = hoy - x.n; if (hace > k && hace <= k + 30) { base += x.r['n_' + o] || 0; vuelven += x.r['r' + k + '_' + o] || 0; } }
+        e['d' + k] = { pct: pct(vuelven, base), vuelven, base };
+      }
+      if (e.n || e.d1.base) origenes[o] = e;
+    }
+    let carga = null;
+    try { carga = await this.evStats(7); } catch (er) { console.error('[MMO evStats]', er); }
+    // Invitaciones de los ultimos 14 dias (por dia en que pasaron).
+    const invitaciones = { refLlega: 0, refCuenta: 0, refPagado: 0 };
+    for (const x of dias.slice(0, 14)) for (const k in invitaciones) invitaciones[k] += x.r[k] || 0;
     // El evento de temporada en curso (o el ultimo, si acabo hace menos de 60
     // dias): altas de sus dias y su D7, y cuantos llegaron a 50 de su objeto.
     const ahoraE = Date.now();
@@ -330,12 +481,13 @@ export const Retencion = {
       }
       evento = { ...ev, d7pct: pct(ev.d7, ev.d7base) };
     }
-    const ranking = ((await this.state.storage.get('ranking')) || []).filter(x => !this.uidsPrueba.has(x.uid));
+    const ranking = (await (this.rankingLeer ? this.rankingLeer() : this.state.storage.get('ranking').then(r => r || []))).filter(x => !this.uidsPrueba.has(x.uid));
     return {
       ok: true, hoy: diaISO(hoy), activos, tipos30: tipos, niveles30: tramos, altas, cohortes, retencion, evento,
-      sesion: { sesiones7: ses, minutos7: Math.round(min), media: ses ? Math.round(min / ses * 10) / 10 : 0 }, embudo,
+      sesion: { sesiones7: ses, minutos7: Math.round(min), media: ses ? Math.round(min / ses * 10) / 10 : 0 }, embudo, invitaciones, origenes, carga,
       top: ranking.slice(0, 10).map(x => ({ n: x.n, lv: x.lv })),
       online: this.contarOnline(),
+      salud: this.infoSalud ? this.infoSalud() : null,   // cupo de escrituras y lag (salud.js)
     };
   },
 
@@ -446,6 +598,8 @@ export const Retencion = {
         if (r.enviados || r.bloqueados) console.log('[MMO avisos ' + h + 'h]', { enviados: r.enviados, bloqueados: r.bloqueados, fallidos: r.fallidos, quedan: r.quedan });
       }
     } catch (e) { console.error('[MMO alarma]', e); }
+    // Lo pendiente del embudo de carga (por si nadie mas lo volco).
+    try { await this.evVolcar(); } catch (e) { console.error('[MMO ev volcar]', e); }
     // Copia de seguridad diaria (copias.js).
     try { if (this.copiaDiariaSiToca) await this.copiaDiariaSiToca(); } catch (e) { console.error('[MMO copia diaria]', e); }
     // Recordatorios al dueño de pedidos pagados sin entregar (world.js). Esta
@@ -484,13 +638,17 @@ export const Retencion = {
     if (c.exped && c.exped.fin <= Date.now()) lineas.push(`🧭 Tu expedición de ${c.exped.h} h ya volvió con oro y materiales: recógela en el registro de misiones.`);
     if (horaFelizActiva()) lineas.push('⚡ Ahora mismo es la Hora Feliz: +50% de experiencia por caza hasta las 21:00 (hora de Perú).');
     const L = c.login;
-    if (L && L.d === diaISO(hoy - 1) && L.racha >= 1 && L.racha < LOGIN_PREMIOS.length) {
-      const pr = LOGIN_PREMIOS[L.racha];
-      const premio = pr.oro ? `${fmt(pr.oro * multLogin(c.nivel))} oro${pr.item !== undefined ? ' + objeto ÉPICO' : ''}` : pr.txt;
-      lineas.push(`🔥 Llevas ${L.racha} ${L.racha === 1 ? 'día seguido' : 'días seguidos'}: si entras hoy cobras el premio del día ${L.racha + 1} (${premio}). Si no, tu racha retrocede.`);
-    } else if (L && L.d === diaISO(hoy - 2) && L.racha > 2 && L.racha < LOGIN_PREMIOS.length) {
+    // La racha no tiene tope (semanas de 7 dias): racha%7===0 = semana cumplida,
+    // y mañana empieza la siguiente con el oro x1,25/x1,5.
+    if (L && L.d === diaISO(hoy - 1) && L.racha >= 1) {
+      const sig = L.racha + 1, pr = premioRacha(sig);
+      const premio = pr.oro ? `${fmt(Math.round(pr.oro * multLogin(c.nivel) * multSemanaRacha(sig)))} oro${pr.item !== undefined ? ' + objeto ÉPICO' : ''}` : pr.txt;
+      const semTxt = L.racha % 7 === 0 ? `¡cumpliste la semana ${semanaRacha(L.racha)}! Si entras hoy empieza la semana ${semanaRacha(sig)} (${premio}${semanaRacha(sig) <= 3 ? ', con más oro' : ''})` : `si entras hoy cobras el día ${diaRacha(sig)} de la semana ${semanaRacha(sig)} (${premio})`;
+      lineas.push(`🔥 Llevas ${L.racha} ${L.racha === 1 ? 'día seguido' : 'días seguidos'}: ${semTxt}. Si no, tu racha retrocede.`);
+    } else if (L && L.d === diaISO(hoy - 2) && L.racha > 2) {
       // Falto ayer: si entra hoy solo retrocede (o la conserva por el margen de 30 h).
-      lineas.push(`🔥 Ayer no entraste: si entras HOY salvas tu racha de ${L.racha} días (como mucho baja a ${L.racha - 1}). Mañana vuelve al día 1.`);
+      const baja = L.racha >= 8 ? (semanaRacha(L.racha) - 1) * 7 + 1 : L.racha === 7 ? 1 : L.racha - 1;
+      lineas.push(`🔥 Ayer no entraste: si entras HOY salvas tu racha de ${L.racha} días (como mucho baja a ${baja}). Mañana vuelve al día 1.`);
     }
     const g = this.grupos && [...this.grupos.values()].find(x => x.uids.includes(c.uid));
     const enGrupo = g ? g.uids.filter(u => u !== c.uid && this.porUid.has(u)).length : 0;

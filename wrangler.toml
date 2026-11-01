@@ -21,7 +21,7 @@ not_found_handling = "single-page-application"
 # Object). /interno/* NO va: solo existe dentro del Durable Object
 # (stub.fetch) y nunca pasa por este enrutado. Si worker.js gana una ruta
 # nueva, AGREGARLA aqui o la tapara el fallback SPA.
-run_worker_first = ["/api/*", "/mmo/ws", "/mmo/ws/*"]
+run_worker_first = ["/api/*", "/mmo/ws", "/mmo/ws/*", "/mmo/ev"]
 
 # DUENDE QUEST ONLINE (mmo/): el mundo en tiempo real es un Durable Object
 # (functions/mmo/world.js) al que se conecta cada jugador por WebSocket en

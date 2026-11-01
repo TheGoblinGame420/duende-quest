@@ -121,14 +121,24 @@ export const Dios = {
     if (!mod) return 0;
     let h = mod.mute[s.c.uid] || 0;
     if (h && h < Date.now()) { delete mod.mute[s.c.uid]; this.guardarMod(); h = 0; }
-    // El silencio queda tambien en la IP (o su /64): un invitado no se libra
-    // entrando con otro token. Solo para invitados: una IP de movil la
-    // comparten muchas cuentas reales.
-    if (!h && s.ip && mod.muteIp && s.c.uid.startsWith('inv:')) {
-      const hi = mod.muteIp[s.ip] || 0;
-      if (hi && hi < Date.now()) { delete mod.muteIp[s.ip]; this.guardarMod(); } else h = hi;
+    // El silencio queda tambien en el dispositivo (huella 'dev') y, en IPv6, en
+    // su /64: un invitado no se libra entrando con otro token. Solo para
+    // invitados y nunca en una IPv4 (CGNAT: la comparten cientos de moviles).
+    if (!h && mod.muteIp && s.c.uid.startsWith('inv:')) {
+      for (const k of this.clavesBloqueo(s)) {
+        const hi = mod.muteIp[k] || 0;
+        if (hi && hi < Date.now()) { delete mod.muteIp[k]; this.guardarMod(); } else if (hi > h) h = hi;
+      }
     }
     return h;
+  },
+  // Claves con las que se bloquea a un invitado: 'd:' + su huella de dispositivo
+  // y, solo en IPv6, su /64 (claveIp de world.js). La IPv4 nunca.
+  clavesBloqueo(s) {
+    const l = [];
+    if (s.dev) l.push('d:' + s.dev);
+    if (s.ip && s.ip.includes(':')) l.push(s.ip);
+    return l;
   },
 
   // ── PANEL ──
@@ -241,9 +251,10 @@ export const Dios = {
         if (min) mod.mute[objetivo.c.uid] = Date.now() + min * 60000; else delete mod.mute[objetivo.c.uid];
         mod.muteIp = mod.muteIp || {};
         for (const k in mod.muteIp) if (mod.muteIp[k] < Date.now()) delete mod.muteIp[k];
-        // Solo al silenciar a un INVITADO y como mucho 1 h en la IP: una IPv4 de movil
-        // (CGNAT) la comparten muchos invitados legitimos que no hicieron nada.
-        if (objetivo.ip && (!min || objetivo.c.uid.startsWith('inv:'))) { if (min) mod.muteIp[objetivo.ip] = Date.now() + Math.min(min, 60) * 60000; else delete mod.muteIp[objetivo.ip]; }
+        // Solo al silenciar a un INVITADO y como mucho 1 h en su dispositivo (o su /64
+        // en IPv6). Nunca en la IPv4: por CGNAT la comparten muchos invitados que no hicieron nada.
+        if (!min) { for (const k of [objetivo.ip, ...this.clavesBloqueo(objetivo)]) if (k) delete mod.muteIp[k]; }
+        else if (objetivo.c.uid.startsWith('inv:')) for (const k of this.clavesBloqueo(objetivo)) mod.muteIp[k] = Date.now() + Math.min(min, 60) * 60000;
         this.guardarMod();
         this.enviar(objetivo, { t: 'toast', m: min ? `🔇 Un moderador te silenció ${min} min.` : '🔊 Ya puedes volver a escribir en el chat.' });
         this.registrarMod(s, `${min ? 'silenció ' + min + ' min' : 'quitó silencio'} a ${objetivo.c.nombre}`);
@@ -255,13 +266,15 @@ export const Dios = {
         const horas = Math.max(0, Math.min(24 * 365, Number(m.horas) || 0));
         const mod = await this.cargarMod();
         mod.ban[objetivo.c.uid] = { n: objetivo.c.nombre, hasta: horas ? Date.now() + horas * 3600000 : 0, motivo: String(m.motivo || '').slice(0, 80), t: Date.now(), d: dueno ? 1 : 0 };
-        // A un INVITADO se le banea tambien la IP (o su /64) como mucho 24 h: si no,
-        // borraba su token y volvia al momento. Solo afecta a invitados (world.js, hola).
-        if (objetivo.ip && objetivo.c.uid.startsWith('inv:')) {
+        // A un INVITADO se le banea tambien el dispositivo (huella 'dev') y, en IPv6,
+        // su /64, como mucho 24 h: si no, borraba su token y volvia al momento. La
+        // IPv4 no (CGNAT). Solo afecta a invitados (world.js, hola).
+        const ks = this.clavesBloqueo(objetivo);
+        if (ks.length && objetivo.c.uid.startsWith('inv:')) {
           mod.banIp = mod.banIp || {};
           for (const k in mod.banIp) if (mod.banIp[k] < Date.now()) delete mod.banIp[k];
-          mod.banIp[objetivo.ip] = Date.now() + Math.min(horas || 24, 24) * 3600000;
-          mod.ban[objetivo.c.uid].ip = objetivo.ip;
+          for (const k of ks) mod.banIp[k] = Date.now() + Math.min(horas || 24, 24) * 3600000;
+          mod.ban[objetivo.c.uid].ks = ks;
         }
         this.guardarMod();
         this.registrarMod(s, `baneó a ${objetivo.c.nombre} (${horas ? horas + ' h' : 'permanente'})`);
@@ -276,6 +289,7 @@ export const Dios = {
         if (mod.ban[uid].d && !dueno) return this.no(s, 'Ese ban lo puso el dueño: solo él puede quitarlo.');
         this.registrarMod(s, `desbaneó a ${mod.ban[uid].n}`);
         if (mod.ban[uid].ip && mod.banIp) delete mod.banIp[mod.ban[uid].ip];
+        if (Array.isArray(mod.ban[uid].ks) && mod.banIp) for (const k of mod.ban[uid].ks) delete mod.banIp[k];
         delete mod.ban[uid];
         this.guardarMod();
         ok('✅ Ban retirado.');

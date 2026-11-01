@@ -33,6 +33,25 @@ export default {
       if (request.method === 'OPTIONS') return tokenStats.onRequestOptions(context);
       return tokenStats.onRequestGet(context);
     }
+    // Embudo de la carga del juego (beacon de /js/origen.js). Publico: aqui solo
+    // se valida con lista blanca y se pasa limpio al Durable Object, que limita
+    // por IP y suma contadores (functions/mmo/retencion.js, evRecibir). Siempre 204.
+    if (path === '/mmo/ev') {
+      const nada = new Response(null, { status: 204 });
+      if (request.method !== 'POST' || !env.MMO) return nada;
+      try {
+        const txt = await request.text();
+        if (txt.length > 400) return nada;
+        const b = JSON.parse(txt);
+        const EV = ['carga_ini', 'arte_ok', 'form_visto', 'clic_entrar', 'bienvenido', 'mover', 'fallo_webgl', 'oculta'];
+        const ORG = ['meta', 'tg', 'wa', 'ref', 'org'];
+        if (!b || !EV.includes(b.e) || (b.j !== 'origins' && b.j !== 'classic')) return nada;
+        const limpio = { e: b.e, j: b.j, org: ORG.includes(b.org) ? b.org : 'org', ms: Number.isFinite(b.ms) ? Math.round(b.ms) : -1, movil: b.movil ? 1 : 0, tg: b.tg ? 1 : 0 };
+        const ip = request.headers.get('CF-Connecting-IP') || '';
+        ctx.waitUntil(env.MMO.get(env.MMO.idFromName('mundo-1')).fetch('https://mmo/mmo/ev', { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip }, body: JSON.stringify(limpio) }).catch(e => console.error('[MMO ev]', e)));
+      } catch (e) {}
+      return nada;
+    }
     // DUENDE QUEST ONLINE: todo el mundo vive en un solo Durable Object.
     if (path === '/mmo/ws') {
       if (!env.MMO) return new Response('MMO no configurado', { status: 503 });
@@ -45,7 +64,7 @@ export default {
     }
 
     // Respaldo: los estaticos normales ya NO llegan aqui (run_worker_first en
-    // wrangler.toml cubre solo /api/* y /mmo/ws) y toman sus
+    // wrangler.toml cubre solo /api/*, /mmo/ws y /mmo/ev) y toman sus
     // cabeceras de _headers. Aqui solo caen esas rutas sin match y las
     // peticiones no-navegacion a archivos que no existen; se les ponen las
     // mismas cabeceras a mano. Mantener ambas listas iguales.

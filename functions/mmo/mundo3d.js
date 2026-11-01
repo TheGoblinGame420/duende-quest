@@ -210,6 +210,7 @@ export const Mundo3D = {
       case 'contactos': return this.enviarContactos(s);
       case 'quien': return this.quien(s);
       case 'ping': return this.enviar(s, { t: 'pong', ts: m.ts });
+      case 'visto': return this.buzonVisto(s, m);   // buzon "Mientras no estabas" (world.js)
       case 'dios':
         // En el 3D no hay viajes de mapa 2D: el resto del panel funciona igual.
         if (['tp', 'irA', 'traer'].includes(m.a)) return this.no(s, 'En el mundo 3D usa el mapa para moverte.');
@@ -297,7 +298,7 @@ export const Mundo3D = {
     if (this.vacio3d(s, ahora)) return;   // el vacio del Abismo lo valida el servidor
     if (!s.i3 && !enAbismo(nx)) s.c.p3 = { x: Math.round(nx * 10) / 10, z: Math.round(nz * 10) / 10 };
     if (this.revisarExploracion) this.revisarExploracion(s, Date.now());   // encargos: hito y vuelo alto
-    s.sucio = true;
+    s.sucioPos = true;   // solo la posicion: se guarda al cerrar o cada 5 min (world.js tick)
   },
 
   // ── COMBATE ──

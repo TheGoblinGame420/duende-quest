@@ -16,9 +16,9 @@ import {
   MAPAS, MONSTRUOS, statsMonstruo, statsJugador, xpParaSubir, SKINS, precioOro, ARMAS, PODERES, MISIONES, DIARIA, premioDiaria, hoyUTC,
   FORJA_MAX, costoForja, multForja,
   RANURAS, RAREZAS, BOLSA_MAX, baseItem, precioVenta, nombreItem, costoReforja, textoBonos,
-  LOGIN_PREMIOS, multLogin, LOGROS, MUNDIAL_DURA_MS, proximoMundial,
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, RACHA_HITOS, LOGROS, MUNDIAL_DURA_MS, proximoMundial,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, MTON_EDAD_MIN_MS, WALLET_ESPERA_MS, FONDO_REFERENCIA_MTON, tonAmigable,
-  RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, FONDO_PCT_INGRESOS, PAQUETES, estrellasDe, PEDIDO_VIGENCIA_MS, DUENDE_MINT, DUENDE_DECIMALES, DUENDE_DESCUENTO,
+  RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, FONDO_PCT_INGRESOS, PAQUETES, estrellasDe, PEDIDO_VIGENCIA_MS, textoPagoRecibido, DUENDE_MINT, DUENDE_DECIMALES, DUENDE_DESCUENTO,
   temporadaDe, TEMPORADAS, TEMP_PROB, TEMP_JEFE,
   TINTES, MASCOTAS, enOfertaAmbulante, ambulanteActivo, mundialDe,
   CONJUNTOS, CONJUNTO_PROB,
@@ -44,6 +44,7 @@ import { Amigos } from './amigos.js';
 import { Duelos } from './duelos.js';
 import { Chicha } from './chicha.js';
 import { Retencion } from './retencion.js';
+import { Salud } from './salud.js';
 import { Eventos } from './eventos.js';
 import { Pase } from './pase.js';
 import { Torre } from './torre.js';
@@ -54,7 +55,13 @@ import { Mundo3D } from './mundo3d.js';
 import { zonaEn as zonaEn3d } from '../../mmo/js/mundo3d.js';
 
 const MAX_JUGADORES = 300;
-const GUARDAR_CADA_MS = 20000;
+// Presupuesto de escrituras al storage (cupo diario): el progreso cada 60 s,
+// solo la posicion cada 5 min (y siempre al cerrar), y en modo ahorro (salud.js) cada 3 min.
+// Un reinicio del DO puede perder hasta 60 s de botin; compras, pedidos, retiros y herencia guardan al momento.
+const GUARDAR_CADA_MS = 60000;
+const GUARDAR_POS_MS = 5 * 60000;
+const GUARDAR_AHORRO_MS = 180000;
+const RANKING_CADA_MS = 60000;      // el ranking de niveles vive en memoria y se vuelca como mucho cada minuto
 const JEFE_REAPARECE_MS = 5 * 60 * 1000;
 const JEFE_PRIMERO_MS = 60 * 1000;
 const ESCUDO_MS = 5000;
@@ -81,6 +88,18 @@ async function sha256hex(s) {
   const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
   return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
 }
+// Prueba de trabajo de un invitado nuevo: un 'pow' tal que sha256('dq-pow:' + hora
+// + ':' + token + ':' + pow) empiece por POW_CEROS ceros hex (~4000 intentos, unos
+// 200 ms en un movil). Se acepta la hora de antes y la de despues (relojes desfasados).
+const POW_CEROS = 3;
+async function powValida(tok, pow) {
+  if (typeof tok !== 'string' || !/^[a-f0-9]{32}$/.test(tok) || !Number.isSafeInteger(pow) || pow < 0) return false;
+  const h = Math.floor(Date.now() / 3600000), ceros = '0'.repeat(POW_CEROS);
+  for (const d of [0, -1, 1]) if ((await sha256hex('dq-pow:' + (h + d) + ':' + tok + ':' + pow)).startsWith(ceros)) return true;
+  return false;
+}
+// Codigo de invitacion del hola: el ?ref= (o el guardado 14 dias en el navegador) y, si no, el de la cuenta web.
+const refHola = (m, s) => typeof m.ref === 'string' && m.ref ? m.ref : (s.extraAuth && typeof s.extraAuth.ref === 'string' ? s.extraAuth.ref : '');
 const rnd = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const num = v => (typeof v === 'number' && Number.isFinite(v)) ? v : null;
@@ -162,6 +181,7 @@ export class MmoWorld {
   constructor(state, env) {
     this.state = state;
     this.env = env;
+    this.medirStorage();                // cuenta escrituras por prefijo (salud.js)
     this.sesiones = new Map();          // id de sesion -> sesion
     this.porUid = new Map();            // uid -> sesion
     // Cada "clave" es un mundo vivo con sus monstruos: un mapa abierto
@@ -174,18 +194,25 @@ export class MmoWorld {
     // despliegue, el panel de dios con la lista vieja no apunta a otra persona.
     // (Por debajo de 2^31: los mensajes los leen con m.p | 0.)
     this.sigSesion = 1 + Math.floor(Math.random() * 1e6) * 1000;
+    // Hora del arranque: los primeros 90 s (tras un despliegue reconectan todos a la vez) no cuenta el tope de entradas por IP.
+    this.arranqueT = Date.now();
+    // Rechazos por motivo desde el arranque (/interno/stats): para ver a quien dejan fuera los limites.
+    this.rechazos = {};
     this.sigMon = 1;
     this.bucle = null;
     this.fondo = null;
     this.retiros = [];
     this.pedidos = [];
     this.ingresosSol = [];
-    if (state.blockConcurrencyWhile) state.blockConcurrencyWhile(() => this.migrar());
+    if (this.state.blockConcurrencyWhile) this.state.blockConcurrencyWhile(() => this.migrar());
   }
 
   // Migraciones de una sola vez sobre el almacenamiento del mundo.
   async migrar() {
     try {
+      // Lo que vive en memoria se vuelve a leer (restaurar una copia tambien pasa por aqui).
+      this._rankP = null; this.rankSucio = false; this._retDias = null; this._retSucios = null;
+      await this.cargarMet();
       this.fondo = (await this.state.storage.get('fondo')) || null;
       this.retiros = (await this.state.storage.get('retiros')) || [];
       this.chichas = (await this.state.storage.get('chichas')) || [];
@@ -221,6 +248,8 @@ export class MmoWorld {
   async _fetch(request) {
     const url = new URL(request.url);
     if (url.pathname.startsWith('/interno/')) return this.interno(request, url.pathname.slice(9));
+    // Embudo de la carga (beacon ya validado por worker.js): retencion.js
+    if (url.pathname === '/mmo/ev' && request.method === 'POST') return this.evRecibir(request);
     if (request.headers.get('Upgrade') !== 'websocket') {
       // Estado publico para la portada: conectados ahora y jugadores distintos
       // de hoy (este ultimo se recalcula como mucho cada minuto).
@@ -228,9 +257,11 @@ export class MmoWorld {
         let h = 0; try { h = await this.contarHoy(); } catch (e) {}
         this.hoyCache = { t: Date.now(), h };
       }
-      return new Response(JSON.stringify({ ok: true, online: this.contarOnline(), hoy: this.hoyCache.h }), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+      // lag: ms de retraso del bucle; lleno: no entra gente nueva ahora (tope, lag o modo ahorro).
+      const online = this.contarOnline();
+      return new Response(JSON.stringify({ ok: true, online, hoy: this.hoyCache.h, lag: Math.round(this.lagEwma || 0), lleno: online >= MAX_JUGADORES || this.lento() || this.degradado() }), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
     }
-    if (this.contarOnline() >= MAX_JUGADORES) return new Response('Servidor lleno', { status: 503 });
+    if (this.contarOnline() >= MAX_JUGADORES) { this.contarRechazo('lleno'); return new Response('Servidor lleno', { status: 503 }); }
     // Sockets que aun no se identifican: tope propio y por IP. Antes 300
     // sockets sin 'hola' llenaban el servidor y dejaban fuera a todos.
     const ip = claveIp(request.headers.get('CF-Connecting-IP') || '');
@@ -243,14 +274,15 @@ export class MmoWorld {
       if (k48 && x.ip.startsWith(k48)) de48++;
     }
     // 24 por IP: una casa, un colegio o un grupo de 10 en la misma wifi comparten IP (con 8 el noveno quedaba fuera).
-    if (ip && (deIp >= 24 || sinIdIp >= 6 || de48 >= 60)) return new Response('Demasiadas conexiones', { status: 429 });
+    if (ip && (deIp >= 24 || sinIdIp >= 6 || de48 >= 60)) { this.contarRechazo('conexionesIp'); return new Response('Demasiadas conexiones', { status: 429 }); }
     if (sinId.length >= 40) {
       // Se echa al socket mudo mas viejo en vez de rechazar al nuevo: un jugador
       // real manda 'hola' nada mas abrir (antes, 40 sockets mudos dejaban fuera a todos).
       let viejo = null;
       for (const x of sinId) if (!x.autenticando && !x.cerrado && (!viejo || x.id < viejo.id)) viejo = x;
-      if (!viejo) return new Response('Demasiadas conexiones', { status: 429 });
-      this.expulsar(viejo, 'Sin identificación');
+      if (!viejo) { this.contarRechazo('sinId'); return new Response('Demasiadas conexiones', { status: 429 }); }
+      // Sin fatal: si era un jugador lento (movil en 3G) su cliente vuelve solo.
+      this.rechazarSuave(viejo, 'Sin identificación', 1500, 'sinIdViejo');
     }
     const par = new WebSocketPair();
     const [cliente, servidor] = Object.values(par);
@@ -273,7 +305,7 @@ export class MmoWorld {
     ws.addEventListener('error', cerrar);
     // A los 8 s se expulsa a quien no mando hola. A quien se esta verificando
     // (Supabase o Telegram lentos) no se le corta, pero tiene un tope de 30 s.
-    setTimeout(() => { if (!s.c && !s.cerrado && !s.autenticando) this.expulsar(s, 'Sin identificación'); }, 8000);
+    setTimeout(() => { if (!s.c && !s.cerrado && !s.autenticando) this.rechazarSuave(s, 'Sin identificación', 1500, 'sinHola'); }, 8000);
     setTimeout(() => { if (!s.c && !s.cerrado) this.expulsar(s, 'Sin identificación'); }, 30000);
   }
 
@@ -281,6 +313,19 @@ export class MmoWorld {
     this.enviar(s, { t: 'err', m: motivo, fatal: true, ...(extra || {}) });
     try { s.ws.close(4000, 'fin'); } catch (e) {}
     this.cerrar(s);
+  }
+  // Rechazo que no es culpa del jugador (servidor ocupado, otra pestaña entrando,
+  // demasiadas entradas seguidas): sin fatal, el cliente reintenta solo pasado
+  // 'reintentar' ms (con su propio azar) en vez de quedarse en la pantalla de error.
+  rechazarSuave(s, motivo, ms, k, extra) {
+    this.contarRechazo(k || 'suave');
+    this.enviar(s, { t: 'err', m: motivo, reintentar: Math.max(500, Math.round(ms || 1500)), ...(extra || {}) });
+    try { s.ws.close(4002, 'reintentar'); } catch (e) {}
+    this.cerrar(s);
+  }
+  contarRechazo(k) {
+    const r = this.rechazos || (this.rechazos = {});
+    r[k] = (r[k] || 0) + 1;
   }
 
   async cerrar(s) {
@@ -296,7 +341,7 @@ export class MmoWorld {
       this.salirDeMundo(s);
       await this.guardar(s);
     }
-    if (this.contarOnline() === 0 && this.bucle) { clearInterval(this.bucle); this.bucle = null; this.guardarHermsSucias(Infinity); }
+    if (this.contarOnline() === 0 && this.bucle) { clearInterval(this.bucle); this.bucle = null; this.tickPrevT = 0; this.guardarHermsSucias(Infinity); this.volcarMemoria().catch(e => console.error('[MMO volcar]', e)); }
   }
 
   // Cerrar en el Abismo sobre el vacio o con un golpe enemigo reciente cuenta como caer
@@ -353,6 +398,7 @@ export class MmoWorld {
     if (typeof data !== 'string' || (data.length > 4000 && !(s.dios === 'dueno' && data.length < 1300000 && data.startsWith('{"t":"dios","a":"subirCopia"')))) return;
     let m; try { m = JSON.parse(data); } catch (e) { return; }
     if (!m || typeof m.t !== 'string') return;
+    this.contarMsg(m.t, data.length);   // salud.js: mensajes por tipo y bytes
 
     if (m.t === 'hola') return this.hola(s, m);
     if (!s.c) return;
@@ -430,6 +476,7 @@ export class MmoWorld {
       case 'pedidoFirma': return this.pedidoFirma(s, m);
       case 'pedidoBuscar': return this.pedidoBuscar(s, m);
       case 'ping': return this.enviar(s, { t: 'pong', ts: m.ts });
+      case 'visto': return this.buzonVisto(s, m);
       case 'dios': return this.dios(s, m);
       case 'viajar': return this.viajar(s, m);
       case 'irGrupo': return this.irConGrupo(s, m);
@@ -440,17 +487,26 @@ export class MmoWorld {
   async hola(s, m) {
     if (s.c || s.autenticando) return;
     s.autenticando = true;
-    // Como mucho 60 entradas por minuto por IP: cada entrada escribe en el
-    // storage y el cupo diario de escrituras es de todos (con 20, una version
-    // nueva recargaba a 10 amigos de la misma wifi y echaba a varios).
-    if (s.ip) {
-      const ahoraH = Date.now();
+    // Huella del dispositivo (localStorage del cliente): con ella se banea o
+    // silencia a un invitado en IPv4 sin tocar al resto de la IP (CGNAT movil).
+    s.dev = typeof m.dev === 'string' && /^[a-f0-9]{32}$/.test(m.dev) ? m.dev : '';
+    // Tope de entradas por IP: ~200 por minuto (una IP de Claro, Movistar, Entel
+    // o Bitel la comparten cientos de moviles). Solo suman los invitados y las
+    // identidades que fallan (cada uno puede escribir en el storage); las cuentas
+    // verificadas tienen su propio tope por uid mas abajo. Los primeros 90 s tras
+    // el arranque no cuentan: tras un despliegue reconectan todos a la vez.
+    const ahoraH = Date.now();
+    let rIp = null;
+    if (s.ip && ahoraH - (this.arranqueT || 0) > 90000) {
       this.holaIp = this.holaIp || new Map();
-      let r = this.holaIp.get(s.ip);
-      if (!r || ahoraH - r.t > 60000) { r = { t: ahoraH, n: 0 }; this.holaIp.set(s.ip, r); }
-      if (++r.n > 60) { s.autenticando = false; this.expulsar(s, 'Demasiadas reconexiones. Espera un minuto.'); return; }
+      rIp = this.holaIp.get(s.ip);
+      if (!rIp || ahoraH - rIp.t > 60000) { rIp = { t: ahoraH, n: 0 }; this.holaIp.set(s.ip, rIp); }
+      if (rIp.n >= 200) { s.autenticando = false; this.rechazarSuave(s, 'Demasiadas reconexiones desde tu red. Reintentando…', Math.min(20000, Math.max(3000, 60000 - (ahoraH - rIp.t))), 'holaIp'); return; }
       if (this.holaIp.size > 5000) for (const [k, v] of this.holaIp) if (ahoraH - v.t > 60000) this.holaIp.delete(k);
     }
+    // El bucle va con lag alto sostenido (salud.js): no entra nadie mas hasta que se alivie.
+    // Sin fatal: el cliente reintenta solo en 15-30 s (con azar, para que no vuelvan todos a la vez).
+    if (this.lento()) { s.autenticando = false; this.rechazarSuave(s, 'El servidor está muy lleno ahora mismo. Reintentando en unos segundos…', 15000 + Math.random() * 15000, 'lag'); return; }
     const env = getEnv({ env: this.env });
     const a = m.auth || {};
     let uid = null, nombre = null, pagadas = null, extra = null;
@@ -473,6 +529,9 @@ export class MmoWorld {
           nombre = limpiarNombre(u.user_metadata && u.user_metadata.username) || 'Duende' + u.id.slice(0, 4);
           pagadas = { webId: u.id };
           extra = { email: u.email || '', emailOk: !!u.email_confirmed_at };
+          // Codigo de invitacion guardado al registrarse (vale aunque confirme el correo en otro aparato).
+          const refMeta = u.user_metadata && u.user_metadata.ref;
+          if (typeof refMeta === 'string') extra.ref = refMeta;
         }
       } else if (a.k === 'inv' && /^[a-f0-9]{32}$/.test(a.tok || '')) {
         uid = 'inv:' + (await sha256hex('dq-mmo:' + a.tok)).slice(0, 24);
@@ -483,20 +542,33 @@ export class MmoWorld {
       // auth: el cliente reintenta como invitado en vez de quedar bloqueado.
       console.warn('[MMO] identidad no verificada', a.k);
       s.autenticando = false;
+      if (rIp) rIp.n++;
+      this.contarRechazo('auth');
       this.enviar(s, { t: 'err', m: 'No se pudo verificar tu identidad.', fatal: true, auth: String(a.k || '') });
       try { s.ws.close(4000, 'auth'); } catch (e) {}
       this.cerrar(s);
       return;
     }
     if (s.cerrado) return;
+    if (rIp && uid.startsWith('inv:')) rIp.n++;
+    // Tope por cuenta: 10 entradas por minuto (un bucle de recargas no gasta el
+    // cupo de escrituras de todos, y no castiga a la IP compartida).
+    // (Solo conexiones reales con IP: el arnes reconecta la misma cuenta muchas veces.)
+    this.holaUid = this.holaUid || new Map();
+    let rU = this.holaUid.get(uid);
+    if (!rU || ahoraH - rU.t > 60000) { rU = { t: ahoraH, n: 0 }; this.holaUid.set(uid, rU); }
+    if (s.ip && ++rU.n > 10) { s.autenticando = false; this.rechazarSuave(s, 'Demasiadas reconexiones seguidas. Reintentando…', Math.min(20000, Math.max(3000, 60000 - (ahoraH - rU.t))), 'holaUid'); return; }
+    if (this.holaUid.size > 5000) for (const [k, v] of this.holaUid) if (ahoraH - v.t > 60000) this.holaUid.delete(k);
     // Cuentas vinculadas (vincular.js): Telegram y correo entran al mismo duende.
     const prin = await this.uidPrincipal(uid);
     if (prin !== uid) { s.uidAuth = uid; uid = prin; }
     const ban = await this.baneado(uid);
     if (ban) { s.autenticando = false; this.expulsar(s, 'Tu cuenta está baneada' + (ban.hasta ? ' hasta el ' + new Date(ban.hasta).toLocaleString('es', { timeZone: 'America/Lima' }) : '') + (ban.motivo ? ': ' + ban.motivo : '.')); return; }
     if (uid.startsWith('inv:') && s.ip) {
-      // Un invitado baneado no vuelve con otro token desde la misma conexion (como mucho 24 h, dios.js).
-      const hb = this.mod.banIp && this.mod.banIp[s.ip];
+      // Un invitado baneado no vuelve con otro token desde el mismo dispositivo
+      // (huella 'dev') ni, en IPv6, desde el mismo /64 (como mucho 24 h, dios.js).
+      // En IPv4 ya no se mira la IP: la comparten cientos de moviles por CGNAT.
+      const hb = Math.max(0, ...this.clavesBloqueo(s).map(k => (this.mod.banIp && this.mod.banIp[k]) || 0));
       if (hb && hb > Date.now()) { s.autenticando = false; this.expulsar(s, 'Tu conexión está baneada por un rato. Inicia sesión con tu cuenta.'); return; }
       // Cupo de invitados: las ultimas 60 plazas quedan para cuentas de Telegram o correo
       // (antes unos pocos /64 con tokens de invitado llenaban el servidor y nadie mas entraba).
@@ -511,7 +583,8 @@ export class MmoWorld {
     // personaje: la segunda en guardar pisaba a la primera (se podia retirar
     // mTON y recuperarlo, o contar doble la XP semanal).
     this.entrando = this.entrando || new Map();
-    if (this.entrando.has(uid)) { this.expulsar(s, 'Tu cuenta ya está entrando desde otra pestaña. Usa solo una.'); return; }
+    // Sin fatal: casi siempre es la misma pestaña reconectando antes de que el servidor cierre la anterior.
+    if (this.entrando.has(uid)) { s.autenticando = false; this.rechazarSuave(s, 'Tu cuenta ya está entrando. Reintentando…', 1500, 'entrando'); return; }
     this.entrando.set(uid, s);
     // Premios o devoluciones que llegan mientras entra esperan a que termine (pjDe).
     let listo; s.entrandoP = new Promise(r => { listo = r; });
@@ -529,6 +602,14 @@ export class MmoWorld {
     if (vieja && vieja !== s) { this.caidaPorDesconexion(vieja); await this.guardar(vieja); vieja.noGuardar = true; this.expulsar(vieja, 'Tu duende se abrió en otro dispositivo o pestaña.', { dup: 1 }); }
 
     let c = await this.state.storage.get('c:' + uid);
+    // Invitado recien creado que aun no se escribio (guardar, diferirT) y vuelve a
+    // entrar (red movil, volver de otra app): recupera su duende de la memoria en
+    // vez de empezar otro de cero (y sin contar otra alta ni otra invitacion).
+    let diferido = 0;
+    if (!c && this.diferidos && this.diferidos.has(uid)) {
+      const d = this.diferidos.get(uid); this.diferidos.delete(uid);
+      if (Date.now() - d.t < 600000) { c = d.c; diferido = d.t; }
+    }
     let heredado = false;
     // Quien jugo como invitado y luego entra con su cuenta (web o Telegram)
     // no empieza de cero: si la cuenta aun no tiene personaje, hereda el del
@@ -562,6 +643,11 @@ export class MmoWorld {
           this.state.storage.put('c:' + uid, c);
           await this.state.storage.delete('c:' + uidInv);
           heredado = true;
+          // Quien lo invito sigue contando (nadie se invita a si mismo: si el codigo era de esta cuenta, se quita).
+          // Sin invitador y con menos de 7 dias de duende: vale el ?ref= que trae ahora.
+          if (c.invitadoPor === uid) delete c.invitadoPor;
+          if (!c.invitadoPor && Date.now() - (c.creado || 0) < 7 * 86400000) await this.anotarInvitacion(c, refHola(m, s));
+          if (c.invitadoPor && this.refContar) this.refContar('refCuenta');
           this.renombrarContacto(uidInv, uid);
           // El silencio del invitado sigue en la cuenta nueva (si no, registrarse lo lavaba).
           const mod = await this.cargarMod();
@@ -571,13 +657,15 @@ export class MmoWorld {
           const h = c.herm && await this.hermandad(c.herm);
           if (h && h.miembros[uidInv]) { h.miembros[uid] = h.miembros[uidInv]; delete h.miembros[uidInv]; await this.guardarHerm(h); }
           if (c.ref && (await this.state.storage.get('ref:' + c.ref)) === uidInv) await this.state.storage.put('ref:' + c.ref, uid);
-          const r = (await this.state.storage.get('ranking')) || [];
+          const r = await this.rankingLeer();
           const fila = r.find(x => x.uid === uidInv);
-          if (fila) { fila.uid = uid; fila.n = nombre; await this.state.storage.put('ranking', r); }
+          if (fila) { fila.uid = uid; fila.n = nombre; await this.state.storage.put('ranking', r); }   // la herencia se guarda al momento
         } finally { if (this.entrando.get(uidInv) === s) this.entrando.delete(uidInv); }
       }
     }
     const nuevo = !c;
+    // Modo ahorro (cupo de escrituras al 80%, salud.js): sin invitados nuevos hasta mañana.
+    if (!c && uid.startsWith('inv:') && this.degradado()) { this.expulsar(s, 'Hoy el servidor está a tope de invitados nuevos. Inicia sesión con Telegram o tu correo para entrar, o vuelve mañana.'); return; }
     if (!c && uid.startsWith('inv:') && s.ip) {
       // Cada invitado nuevo deja un personaje guardado para siempre: como
       // mucho 30 por IP y hora (antes, un bucle llenaba el cupo de escrituras).
@@ -587,21 +675,35 @@ export class MmoWorld {
       // IPv6: ademas un tope por /48 (un solo bloque trae 65 536 /64).
       const k48 = s.ip.includes(':') ? s.ip.split(':').slice(0, 3).join(':') + '::/48' : '';
       const n48 = k48 ? (this.altasIp.n.get(k48) || 0) + 1 : 0;
-      // 30 por IP y hora: un grupo de amigos en la misma wifi (con 6 el 7.º quedaba fuera).
-      if (n > 30 || n48 > 60) { this.expulsar(s, 'Demasiados personajes nuevos desde tu conexión. Intenta en una hora o inicia sesión.'); return; }
-      // Tope global por hora: pasado 150 solo entra el primer invitado de cada conexion
-      // (un pico real no deja fuera a todos) y con 1000 se corta del todo (cupo de escrituras).
-      if ((n > 1 && this.altasIp.total >= 150) || this.altasIp.total >= 1000) { this.expulsar(s, 'Hay demasiados personajes nuevos ahora mismo. Intenta en un rato o inicia sesión.'); return; }
+      // 300 por IP y hora: una IPv4 de operadora movil (CGNAT) la comparten cientos
+      // de personas que no se conocen (con 30, y con el antiguo "solo el primero de
+      // cada IP pasado 150", el segundo peruano de cada antena quedaba fuera).
+      if (n > 300 || n48 > 600) { this.contarRechazo('altasIp'); this.expulsar(s, 'Demasiados personajes nuevos desde tu conexión. Intenta en una hora o inicia sesión.'); return; }
+      // Pasadas 30 altas por IP (o 150 en total) se pide una prueba de trabajo
+      // ligera (~200 ms una sola vez en el movil): crear invitados en masa cuesta CPU.
+      if ((n > 30 || n48 > 60 || this.altasIp.total >= 150) && !(await powValida(m.auth && m.auth.tok, m.pow))) {
+        if (s.cerrado) return;
+        this.rechazarSuave(s, 'Preparando tu duende…', 300, 'pow', { pow: POW_CEROS });
+        return;
+      }
+      if (s.cerrado) return;
+      // Con 1000 por hora se corta del todo (cupo de escrituras de todos).
+      if (this.altasIp.total >= 1000) { this.contarRechazo('altasTotal'); this.expulsar(s, 'Hay demasiados personajes nuevos ahora mismo. Intenta en un rato o inicia sesión.'); return; }
       if (k48) this.altasIp.n.set(k48, n48);
       this.altasIp.n.set(s.ip, n);
       this.altasIp.total++;
+      // Este invitado no se guarda hasta que llegue a Nv 2 o juegue 2 min (guardar()):
+      // quien entra y se va al momento no gasta escrituras ni deja un personaje para siempre.
+      s.diferirT = Date.now();
     }
+    if (diferido) s.diferirT = diferido;
     if (!c) {
       // Nombre unico y sin imitar al equipo: un invitado ya no puede entrar
       // con el nombre de otro jugador ni como "Admin" o "El Duende".
       const libre = await this.nombreLibre(nombre, uid, this.calcularDios({ c: { uid } }, s.extraAuth));
       c = personajeNuevo(uid, libre);
-      await this.anotarInvitacion(c, typeof m.ref === 'string' ? m.ref : '');
+      await this.anotarInvitacion(c, refHola(m, s));
+      if (c.invitadoPor && this.refContar) { this.refContar('refLlega'); if (!uid.startsWith('inv:')) this.refContar('refCuenta'); }
     }
     await this.reservarNombre(c);
     c.skins = c.skins || ['comun']; c.armas = c.armas || ['katana']; c.pw = c.pw || {};
@@ -641,7 +743,8 @@ export class MmoWorld {
     // (s.c era null): no se le mete en porUid ni en el mapa (quedaria de fantasma).
     // El personaje nuevo o heredado se guarda igual (el del invitado ya se borro).
     if (s.cerrado) {
-      if (nuevo || heredado) { try { await this.state.storage.put('c:' + uid, c); } catch (e) { console.error('[MMO guardar]', e); } }
+      if ((nuevo && !s.diferirT) || heredado) { try { await this.state.storage.put('c:' + uid, c); } catch (e) { console.error('[MMO guardar]', e); } }
+      else if (diferido) this.diferidos.set(uid, { c, t: diferido });
       return;
     }
     s.c = c;
@@ -687,7 +790,8 @@ export class MmoWorld {
     // Estadisticas de retencion y avisos de vuelta: functions/mmo/retencion.js
     // Sin await: lo que toca al personaje es inmediato y los agregados no
     // deben retrasar la entrada al mundo.
-    this.retEntrar(s, nuevo);
+    s.iab = m.iab === 1;   // navegador interno de Facebook/Instagram: su alta y su D1 aparte en /mmostats
+    this.retEntrar(s, nuevo, m.src);   // src: de donde llego (origen.js); solo cuenta en el alta
     if (nuevo || heredado || login) await this.guardar(s);
     if (s.cerrado) return;   // cerrado durante el guardado: cerrar() ya limpio todo
 
@@ -703,7 +807,8 @@ export class MmoWorld {
       this.actualizarYo(s);
       this.refrescarApariencia(s);
     }).catch(e => console.error('[MMO skinsPagadas]', e));
-    if (login) this.enviar(s, { t: 'login', ...login });
+    if (login) { this.enviar(s, { t: 'login', ...login }); this.revisarLogros(s, true); }   // titulos de racha 7/14/21
+    this.buzonEnviar(s).catch(e => console.error('[MMO buzon]', e));   // "Mientras no estabas" y compra entregada
     const tp = temporadaDe();
     if (ambulanteActivo() && c.nivel >= 15) this.enviar(s, { t: 'toast', m: 'Mercader ambulante en el pueblo este fin de semana: colores y una mascota exclusivos (pestaña «Ambulante»).', ok: true });
     if (tp) this.enviar(s, { t: 'toast', m: `${tp.nombre}: hasta el ${tp.hasta} los monstruos sueltan ${tp.cosas}; con 50 y 200 hay títulos. Llevas ${c[tp.campo] || 0}.`, ok: true });
@@ -726,6 +831,8 @@ export class MmoWorld {
     this.reengancharGrupo(s);
     this.avisarContactos(s, salidaAntes);
     if (nuevo && c.invitadoPor) this.alLlegarInvitado(s).catch(e => console.error('[MMO invitado]', e));
+    // Ya era Nv 10 de invitado (o confirmo su correo despues): el premio de amigo se paga al entrar con su cuenta.
+    else if (c.invitadoPor && !c.refPagado) this.revisarAmigo(s).catch(e => console.error('[MMO amigo]', e));
     if (instGuardada && !s.m3) this.volverAInstancia(s, instGuardada.mapa, instGuardada.x);
     this.reponerElixires(s);
     // Lo que se dijo mientras no estaba (social.js), antes del mensaje del dia.
@@ -1058,7 +1165,7 @@ export class MmoWorld {
       paquete: pq.id, nombre: pq.nombre, usd: pq.usd, metodo, creado: Date.now(), estado: 'esperando_pago',
     };
     // De donde vino la compra (boton TIENDA del HUD, tienda de oro, NPC o enlace del bot): solo informativo para el dueño.
-    if (['hud', 'oro', 'npc', 'bot'].includes(m.via)) pd.via = m.via;
+    if (['hud', 'oro', 'npc', 'bot', 'falta'].includes(m.via)) pd.via = m.via;
     if (metodo === 'stars') {
       pd.stars = estrellasDe(pq.usd);
       let link = null;
@@ -1184,7 +1291,7 @@ export class MmoWorld {
     }
     // Entrega MANUAL (27-oct-2026, decision del dueño): el pago verificado le llega por
     // Telegram con los botones Entregar/Anular y el entrega con /entregar o Modo Dios.
-    no('📨 Pago confirmado en la cadena. El equipo te lo entrega en breve (te avisamos aquí y por Telegram).');
+    no('📨 Pago confirmado en la cadena. ' + textoPagoRecibido() + ' Te avisamos aquí y por Telegram.');
     this.actualizarYo(s);
     this.avisarAdmin(`${esD ? '🍄' : '◎'} *Pedido #${pd.codigo}* — ${pd.nombre} ($${pd.usd})\n👤 ${pd.jugador.replace(/[^\p{L}\p{N} ]/gu, '')}\n💰 Pagó ${monto} (monto exacto, confirmado en la cadena)\n🔗 https://solscan.io/tx/${firma}\n\nEntrégalo: /entregar ${pd.codigo}`, botonesPedido(pd.codigo));
   }
@@ -1354,9 +1461,16 @@ export class MmoWorld {
       this.ingresosSol = this.ingresosSol.filter(x => Date.now() - x.t < 30 * 86400000);
       await this.state.storage.put('ingresosSol', this.ingresosSol);
     }
+    // Celebracion en el cliente (ventana con la skin en grande): al momento si
+    // esta conectado; si no, queda en c.regaloPend y sale al entrar.
+    const regalo = { cod: pd.codigo, nombre: pd.nombre, skin: pq.skin && SKINS[pq.skin] ? pq.skin : '', ala: pq.alas && ALAS[pq.alas] ? pq.alas : '', oro: pq.oro || 0, ya: notaSkin.includes('Ya la tenías') ? 1 : 0 };
+    // Dos entregas sin conectarse: la anterior no se pierde, pasa al buzon.
+    if (!s && c.regaloPend && c.regaloPend.cod !== regalo.cod) await this.buzonAgregar(pd.uid, `🎁 Tu compra "${c.regaloPend.nombre}" ya está en tu personaje. Gracias por apoyar DUENDE QUEST.`);
+    if (!s) c.regaloPend = regalo;
     if (s) await this.guardar(s); else await this.state.storage.put('c:' + pd.uid, c);
     await this.guardarPedidos();
-    await this.avisarJugador(pd.uid, `🎁 ¡Tu compra "${pd.nombre}" ya está en tu personaje!${notaSkin} Gracias por apoyar DUENDE QUEST.`);
+    if (s) this.enviar(s, { t: 'regalo', ...regalo, vivo: 1 });
+    await this.avisarJugador(pd.uid, `🎁 ¡Tu compra "${pd.nombre}" ya está en tu personaje!${notaSkin} Gracias por apoyar DUENDE QUEST.`, true);
     return { ok: true, pedido: pd };
   }
 
@@ -1419,12 +1533,41 @@ export class MmoWorld {
     }
     return false;
   }
-  async avisarJugador(uid, texto) {
+  // sinBuzon: la entrega de una compra ya tiene su celebracion (c.regaloPend).
+  async avisarJugador(uid, texto, sinBuzon) {
     const s = this.porUid.get(uid);
     if (s) { this.enviar(s, { t: 'toast', m: texto, ok: true }); this.actualizarYo(s); }
+    else if (!sinBuzon) await this.buzonAgregar(uid, texto);
     if (uid.startsWith('tg:')) {
       try { const env = getEnv({ env: this.env }); await tg(env.BOT_TOKEN, 'sendMessage', { chat_id: uid.slice(3), text: texto }); } catch (e) {}
     }
+  }
+
+  // Buzon "Mientras no estabas": avisos para quien no tenia sesion abierta.
+  // Clave aparte (bz:uid) para no pisar el personaje; como mucho 10 y sin repetidos.
+  async buzonAgregar(uid, texto) {
+    if (!uid || uid.startsWith('inv:')) return;
+    try {
+      const l = (await this.state.storage.get('bz:' + uid)) || [];
+      const m = String(texto).slice(0, 300);
+      if (l.some(x => x.m === m)) return;
+      l.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), m, ts: Date.now() });
+      await this.state.storage.put('bz:' + uid, l.slice(-10));
+    } catch (e) { console.error('[MMO buzon]', e); }
+  }
+  async buzonEnviar(s) {
+    const c = s.c;
+    try {
+      const l = await this.state.storage.get('bz:' + c.uid);
+      if (s.cerrado || s.c !== c) return;
+      if (Array.isArray(l) && l.length) this.enviar(s, { t: 'buzon', l });
+    } catch (e) {}
+    if (c.regaloPend) this.enviar(s, { t: 'regalo', ...c.regaloPend });
+  }
+  // El cliente ya lo mostro: se vacia (q: 'buzon' o 'regalo').
+  async buzonVisto(s, m) {
+    if (m.q === 'regalo') { if (s.c.regaloPend) { delete s.c.regaloPend; s.sucio = true; } return; }
+    try { await this.state.storage.delete('bz:' + s.c.uid); } catch (e) {}
   }
 
   // Ordenes del bot (/retiros, /pagado, /rechazar, /fondo) y del cron.
@@ -1515,6 +1658,8 @@ export class MmoWorld {
     }
     // stats, recordatorios y avisos (functions/mmo/retencion.js)
     const ret = await this.internoRetencion(accion, b);
+    // Rechazos por motivo desde el ultimo arranque (para ajustar los limites anti-abuso).
+    if (ret && accion === 'stats' && typeof ret === 'object') ret.rechazos = { desde: new Date(this.arranqueT || Date.now()).toISOString(), ...(this.rechazos || {}) };
     if (ret) return json(ret);
     return json({ ok: false, error: 'acción desconocida' });
   }
@@ -1533,14 +1678,32 @@ export class MmoWorld {
     // guardado) sigue la racha aunque se salte un dia UTC (en Peru la medianoche
     // UTC cae a las 19:00, en plena hora punta).
     const seguido = L.d === ayer || (L.d === anteayer && c.salida > 0 && Date.now() - c.salida < 30 * 3600000);
-    const racha = seguido ? (L.racha % LOGIN_PREMIOS.length) + 1 : L.d === anteayer && L.racha < LOGIN_PREMIOS.length ? Math.max(1, (L.racha || 1) - 1) : 1;
-    const pr = LOGIN_PREMIOS[racha - 1];
-    const oro = Math.round((pr.oro || 0) * multLogin(c.nivel));
+    // La racha crece sin tope (dia 8 = semana 2, dia 1): una guardada de 7 pasa a 8.
+    // Falta UN dia: hasta el 7 retrocede uno; desde el 8 vuelve al inicio de su
+    // semana (de 10 a 8), sin perder las semanas ya cumplidas.
+    const r0 = L.racha || 0;
+    const racha = seguido ? r0 + 1 : L.d === anteayer && r0 >= 8 ? (semanaRacha(r0) - 1) * 7 + 1 : L.d === anteayer && r0 < 7 ? Math.max(1, r0 - 1) : 1;   // el 7 vuelve al 1 (si no, el premio del 7 se cobraria cada 2 dias)
+    const pr = premioRacha(racha);
+    // Oro de la semana 2 x1,25 y desde la 3 x1,5 (tope).
+    const oro = Math.round((pr.oro || 0) * multLogin(c.nivel) * multSemanaRacha(racha));
     c.oro += oro;
     for (const k in (pr.pw || {})) c.pw[k] = Math.min(99, (c.pw[k] || 0) + pr.pw[k]);
     let item = null;
     if (pr.item !== undefined) item = this.darItem(s, generarItem(c.nivel, pr.item), true);
-    c.login = { d: hoy, racha, total: (L.total || 0) + 1 };
+    const max = Math.max(L.max || 0, r0, racha);
+    c.login = { d: hoy, racha, total: (L.total || 0) + 1, max };
+    // Hitos cosmeticos (una sola vez): los titulos son logros (revisarLogros);
+    // el color de nombre se entrega aqui.
+    const hitos = [];
+    for (const H of RACHA_HITOS) {
+      if (max < H.dias) continue;
+      if (H.tipo === 'tinte') {
+        c.tintes = c.tintes || [];
+        if (c.tintes.includes(H.id)) continue;
+        c.tintes.push(H.id);
+        if (racha === H.dias) hitos.push(H.txt);
+      } else if (racha === H.dias && Math.max(L.max || 0, r0) < H.dias) hitos.push(H.txt);   // titulo nuevo, no repetido
+    }
     // Regalo de bienvenida al volver tras 3+ dias fuera: que regresar compense.
     let vuelta = null;
     const dias = L.d ? Math.round((Date.parse(hoy) - Date.parse(L.d)) / 86400000) : 0;
@@ -1551,7 +1714,7 @@ export class MmoWorld {
       const vIt = this.darItem(s, generarItem(c.nivel, dias >= 7 ? 2 : 1), true);
       vuelta = { dias, oro: vOro, pociones: 5, item: nombreItem(vIt) };
     }
-    return { racha, oro, pw: pr.pw || null, item, itemNom: item ? nombreItem(item) : undefined, txt: pr.txt, vuelta };
+    return { racha, dia: diaRacha(racha), sem: semanaRacha(racha), oro, pw: pr.pw || null, item, itemNom: item ? nombreItem(item) : undefined, txt: pr.txt, vuelta, hitos: hitos.length ? hitos : undefined };
   }
 
   // Mete un objeto en la bolsa (si esta llena se vende solo).
@@ -1621,7 +1784,7 @@ export class MmoWorld {
       retiros: this.retiros.filter(x => x.uid === c.uid).slice(-5).map(x => ({ id: x.id, ton: x.ton, estado: x.estado, creado: x.creado })),
       // Los de SOL sin pagar (y sin caducar) tambien, para poder retomar el pago.
       pedidos: this.pedidos.filter(x => x.uid === c.uid && x.estado !== 'vencido' && (x.estado !== 'esperando_pago' || ((x.metodo === 'sol' || x.metodo === 'duende') && Date.now() - x.creado < PEDIDO_VIGENCIA_MS))).slice(-5)
-        .map(x => ({ codigo: x.codigo, nombre: x.nombre, metodo: x.metodo, estado: x.estado, creado: x.creado, ...(x.estado === 'esperando_pago' ? (x.metodo === 'duende'
+        .map(x => ({ codigo: x.codigo, nombre: x.nombre, metodo: x.metodo, estado: x.estado, creado: x.creado, pagadoEn: x.pagadoEn || undefined, ...(x.estado === 'esperando_pago' ? (x.metodo === 'duende'
           ? { raw: x.duendeRaw, mint: DUENDE_MINT, dec: DUENDE_DECIMALES, usd: Math.round(x.usd * DUENDE_DESCUENTO * 100) / 100, wallet: SOL_DEV_WALLET }
           : { lamports: x.lamports, usd: x.usd, wallet: SOL_DEV_WALLET, ref: x.ref || '' }) : {}) })),
       transparencia: this.transparencia(),
@@ -2101,14 +2264,16 @@ export class MmoWorld {
       this.enviar(s, { t: 'mae', n });
       this.enviar(s, { t: 'toast', ok: true, m: `⭐ Maestría ${n}: +${pr.oro.toLocaleString('es', { useGrouping: 'always' })} oro${subidos.some(k => premioMaestria(k).item) ? ' y un objeto épico' : ''}.` });
       if (n % 10 === 0) this.aTodos({ t: 'aviso', m: `⭐ ${c.nombre} alcanza la Maestría ${n}.` });
-      this.guardar(s);
+      this.guardarSuave(s);
     }
   }
 
   // Guardado no critico (viajes, cosmeticos): como mucho uno cada 3 s por
   // jugador; si no, queda sucio y lo guarda el tick o cerrar().
+  // (Tambien maestria, logros y subidas por debajo de Nv 10: con el guardado
+  // periodico de 60 s solo escribe si el ultimo guardado ya es viejo.)
   guardarSuave(s) {
-    if (Date.now() - (s.guardadoT || 0) > 3000) return this.guardar(s);
+    if (Date.now() - (s.guardadoT || 0) > GUARDAR_CADA_MS) return this.guardar(s);
     s.sucio = true;
   }
 
@@ -2140,7 +2305,8 @@ export class MmoWorld {
       this.revisarAmigo(s).catch(e => console.error('[MMO amigo]', e));
       this.aClave(s.k, { t: 'lv', p: s.id, lv: c.nivel, mx: s.st.maxHp, rmx: s.st.recMax });
       this.actualizarRanking(s);
-      this.guardar(s);
+      // Los primeros niveles suben cada pocos minutos: sin escritura propia.
+      if (c.nivel < 10) this.guardarSuave(s); else this.guardar(s);
     }
     return subio;
   }
@@ -2460,7 +2626,7 @@ export class MmoWorld {
       const n = clamp(m.n | 0, 1, 10);
       if (!def) return;
       const costo = def.precio * n;
-      if (c.oro < costo) return this.enviar(s, { t: 'toast', m: 'No te alcanza el oro.' });
+      if (c.oro < costo) return this.enviar(s, { t: 'toast', m: `No te alcanza el oro: te faltan ${(costo - c.oro).toLocaleString('es-PE')}.`, falta: costo - c.oro });
       if ((c.pw[def.id] || 0) + n > 99) return this.enviar(s, { t: 'toast', m: 'Máximo 99 de cada consumible.' });
       c.oro -= costo; c.pw[def.id] = (c.pw[def.id] || 0) + n;
     } else if (m.k === 'forja') {
@@ -2468,7 +2634,7 @@ export class MmoWorld {
       const nv = c.forja[m.id] || 0;
       if (nv >= FORJA_MAX) return this.enviar(s, { t: 'toast', m: 'Esa arma ya está al máximo (+' + FORJA_MAX + ').' });
       const costo = costoForja(nv);
-      if (c.oro < costo) return this.enviar(s, { t: 'toast', m: 'No te alcanza el oro.' });
+      if (c.oro < costo) return this.enviar(s, { t: 'toast', m: `No te alcanza el oro: te faltan ${(costo - c.oro).toLocaleString('es-PE')}.`, falta: costo - c.oro });
       c.oro -= costo;
       c.forja[m.id] = nv + 1;
     } else if (m.k === 'montura') {
@@ -2479,7 +2645,7 @@ export class MmoWorld {
       if (mo.banda) return this.enviar(s, { t: 'toast', m: 'Esa montura no se vende: se gana en la banda del Santuario del Titán.' });
       if (mo.torre) return this.enviar(s, { t: 'toast', m: 'Esa montura no se vende: se gana en la Torre del Duende.' });
       if (c.nivel < mo.nv) return this.enviar(s, { t: 'toast', m: `Necesitas nivel ${mo.nv} para esa montura.` });
-      if (c.oro < mo.precio) return this.enviar(s, { t: 'toast', m: 'No te alcanza el oro.' });
+      if (c.oro < mo.precio) return this.enviar(s, { t: 'toast', m: `No te alcanza el oro: te faltan ${(mo.precio - c.oro).toLocaleString('es-PE')}.`, falta: mo.precio - c.oro });
       c.oro -= mo.precio;
       c.monturas.push(m.id);
       c.montura = m.id;
@@ -2491,7 +2657,7 @@ export class MmoWorld {
       if (al.premium) return this.enviar(s, { t: 'toast', m: 'Esas alas son premium: están en la tienda PREMIUM.' });
       if (al.mazmorras) return this.enviar(s, { t: 'toast', m: `Esas alas no se venden: se ganan completando ${al.mazmorras} mazmorras.` });
       if (c.nivel < al.nv) return this.enviar(s, { t: 'toast', m: `Necesitas nivel ${al.nv} para esas alas.` });
-      if (c.oro < al.precio) return this.enviar(s, { t: 'toast', m: 'No te alcanza el oro.' });
+      if (c.oro < al.precio) return this.enviar(s, { t: 'toast', m: `No te alcanza el oro: te faltan ${(al.precio - c.oro).toLocaleString('es-PE')}.`, falta: al.precio - c.oro });
       c.oro -= al.precio;
       c.alas.push(m.id);
       c.ala = m.id;
@@ -2504,9 +2670,10 @@ export class MmoWorld {
         if (typeof m.id !== 'string' || !Object.hasOwn(TINTES, m.id)) return;
         const tn = TINTES[m.id];
         if (!c.tintes.includes(m.id)) {
-          if (tn.amb && !enOfertaAmbulante('tinte', m.id)) return this.enviar(s, { t: 'toast', m: 'Ese color solo lo trae el Mercader ambulante algunos fines de semana.' });
+          if (tn.racha) return this.enviar(s, { t: 'toast', m: `Ese color no se vende: se gana entrando ${tn.racha} días seguidos.` });
+          if (tn.amb &&!enOfertaAmbulante('tinte', m.id)) return this.enviar(s, { t: 'toast', m: 'Ese color solo lo trae el Mercader ambulante algunos fines de semana.' });
           if (c.nivel < tn.nv) return this.enviar(s, { t: 'toast', m: `Necesitas nivel ${tn.nv} para ese color.` });
-          if (c.oro < tn.precio) return this.enviar(s, { t: 'toast', m: 'No te alcanza el oro.' });
+          if (c.oro < tn.precio) return this.enviar(s, { t: 'toast', m: `No te alcanza el oro: te faltan ${(tn.precio - c.oro).toLocaleString('es-PE')}.`, falta: tn.precio - c.oro });
           c.oro -= tn.precio;
           c.tintes.push(m.id);
         }
@@ -2526,7 +2693,7 @@ export class MmoWorld {
           if (ma.pesca) return this.enviar(s, { t: 'toast', m: 'Esa mascota solo se consigue pescando.' });
           if (ma.amb && !enOfertaAmbulante('mascota', m.id)) return this.enviar(s, { t: 'toast', m: 'Esa mascota solo la trae el Mercader ambulante algunos fines de semana.' });
           if (c.nivel < ma.nv) return this.enviar(s, { t: 'toast', m: `Necesitas nivel ${ma.nv} para esa mascota.` });
-          if (c.oro < ma.precio) return this.enviar(s, { t: 'toast', m: 'No te alcanza el oro.' });
+          if (c.oro < ma.precio) return this.enviar(s, { t: 'toast', m: `No te alcanza el oro: te faltan ${(ma.precio - c.oro).toLocaleString('es-PE')}.`, falta: ma.precio - c.oro });
           c.oro -= ma.precio;
           c.mascotas.push(m.id);
         }
@@ -2545,7 +2712,7 @@ export class MmoWorld {
       // Las premium no se venden por oro (precio null: c.oro -= null no restaba nada).
       if (typeof def.precio !== 'number') return this.enviar(s, { t: 'toast', m: 'Esta skin solo se consigue en la tienda premium (SOL o $DUENDE).' });
       const precio = precioOro(m.k, m.id);
-      if (c.oro < precio) return this.enviar(s, { t: 'toast', m: 'No te alcanza el oro.' });
+      if (c.oro < precio) return this.enviar(s, { t: 'toast', m: `No te alcanza el oro: te faltan ${(precio - c.oro).toLocaleString('es-PE')}.`, falta: precio - c.oro });
       c.oro -= precio;
       lista.push(m.id);
       this.equipar(s, { k: m.k, id: m.id });
@@ -2576,19 +2743,48 @@ export class MmoWorld {
   // ── RANKING ──
   async actualizarRanking(s) {
     if (UIDS_PRUEBA.has(s.c.uid) || this.diosActivo(s)) return;
-    const r = (await this.state.storage.get('ranking')) || [];
+    const r = await this.rankingLeer();
     const i = r.findIndex(x => x.uid === s.c.uid);
     const fila = { uid: s.c.uid, n: s.c.nombre, lv: s.c.nivel, xp: s.c.xp, k: s.c.kills };
+    // Fuera del top 50 y sin estar en el: no cambia nada (ni se escribe).
+    const ult = r[r.length - 1];
+    if (i < 0 && r.length >= 50 && ult && (fila.lv < ult.lv || (fila.lv === ult.lv && fila.xp <= ult.xp))) return;
     if (i >= 0) r[i] = fila; else r.push(fila);
     r.sort((a, b) => b.lv - a.lv || b.xp - a.xp);
-    await this.state.storage.put('ranking', r.slice(0, 50));
+    if (r.length > 50) r.length = 50;
+    this.rankSucio = true;   // lo vuelca volcarRanking (tick, cerrar o copia)
+  }
+
+  // El ranking de niveles en memoria (una lectura por arranque). Lo cambian
+  // actualizarRanking y la herencia; el storage se pone al dia en volcarRanking.
+  rankingLeer() {
+    if (!this._rankP) {
+      const p = this._rankP = this.state.storage.get('ranking').then(r => Array.isArray(r) ? r : []);
+      p.catch(() => { if (this._rankP === p) this._rankP = null; });
+    }
+    return this._rankP;
+  }
+  async volcarRanking(forzar) {
+    if (!this.rankSucio || !this._rankP) return;
+    const ahora = Date.now();
+    // En modo ahorro (salud.js) los rankings van pausados: cada 10 min.
+    if (!forzar && ahora - (this.rankT || 0) < (this.degradado() ? 600000 : RANKING_CADA_MS)) return;
+    this.rankT = ahora; this.rankSucio = false;
+    try { await this.state.storage.put('ranking', await this._rankP); }
+    catch (e) { this.rankSucio = true; console.error('[MMO ranking]', e); }
+  }
+  // Lo que vive en memoria al storage (al quedar vacio el mundo y antes de una copia).
+  async volcarMemoria() {
+    await this.volcarRanking(true);
+    if (this.retVolcar) await this.retVolcar();
+    if (this.retVolcarDias) await this.retVolcarDias(true);
   }
 
   async enviarRanking(s) {
     // Como mucho cada 3 s por jugador (lee el storage y ordena todo).
     if (Date.now() - (s.rankT || 0) < 3000) return;
     s.rankT = Date.now();
-    const r = ((await this.state.storage.get('ranking')) || []).filter(x => !UIDS_PRUEBA.has(x.uid));
+    const r = (await this.rankingLeer()).filter(x => !UIDS_PRUEBA.has(x.uid));
     const sem = this.topSemana().slice(0, 20).map(([uid, x]) => ({ n: x.n, lv: x.lv, xp: x.xp, yo: uid === s.c.uid }));
     const des = ((await this.state.storage.get('rankDes')) || []).slice(0, 10).map(x => ({ n: x.n, k: x.k, yo: x.uid === s.c.uid }));
     const dsem = this.topDesSem().slice(0, 10).map(([uid, x]) => ({ n: x.n, k: x.k, yo: uid === s.c.uid }));
@@ -2683,7 +2879,7 @@ export class MmoWorld {
       await this.premiarSemana(vieja);
       return;
     }
-    if (this.rsSucio && ahora - (this.rsT || 0) > 60000) {
+    if (this.rsSucio && ahora - (this.rsT || 0) > (this.degradado() ? 600000 : 60000)) {   // modo ahorro (salud.js): cada 10 min
       this.rsT = ahora; this.rsSucio = false;
       const top = Object.fromEntries(this.topSemana().slice(0, 100));
       this.rs.l = top;
@@ -2732,14 +2928,29 @@ export class MmoWorld {
   // ── GUARDADO ──
   async guardar(s) {
     if (!s.c || s.noGuardar) return;   // noGuardar: se esta restaurando desde una copia
+    // Invitado recien creado: no se escribe hasta Nv 2 o 2 min jugados (hola). Sigue
+    // 'sucio', asi que el ciclo de guardado lo escribe en cuanto cumple.
+    if (s.diferirT) {
+      if ((s.c.nivel || 1) < 2 && Date.now() - s.diferirT < 120000) {
+        s.sucio = true;
+        // Se recuerda en memoria (hola lo recupera si reconecta en menos de 10 min).
+        const dm = this.diferidos || (this.diferidos = new Map());
+        dm.set(s.c.uid, { c: s.c, t: s.diferirT });
+        if (dm.size > 3000) for (const [k, v] of dm) if (Date.now() - v.t > 600000) dm.delete(k);
+        return;
+      }
+      s.diferirT = 0;
+      if (this.diferidos) this.diferidos.delete(s.c.uid);
+    }
     s.c.x = Math.round(s.x || s.c.x || 0);
     if (typeof s.hp === 'number') s.c.hp = Math.ceil(s.hp);
     s.c.muerto = !!s.muerto;
     s.c.salida = Date.now();
     s.guardadoT = Date.now();
-    s.sucio = false;
+    s.sucio = false; s.sucioPos = false;
     this.retAlGuardar(s);
-    // Si el guardado falla se reintenta en el siguiente ciclo (no se pierde el progreso).
+    // Si el guardado falla se reintenta en el siguiente ciclo, a los 60 s (guardadoT ya
+    // es ahora): sin reintentos seguidos que gasten el cupo. No se pierde el progreso.
     try { await this.state.storage.put('c:' + s.c.uid, s.c); } catch (e) { s.sucio = true; console.error('[MMO guardar]', e); }
   }
 
@@ -2760,6 +2971,8 @@ export class MmoWorld {
 
   tick() {
     const ahora = Date.now();
+    this.medirLag(ahora);   // salud.js
+    const cadaGuardar = this.degradado() ? GUARDAR_AHORRO_MS : GUARDAR_CADA_MS;
     if (ahora - (this.onT || 0) > 10000) {
       this.onT = ahora;
       this.paso('10s', () => {
@@ -2778,6 +2991,9 @@ export class MmoWorld {
         }
         this.contarHoy().then(h => this.aTodos({ t: 'on', n: this.contarOnline(), h }), () => this.aTodos({ t: 'on', n: this.contarOnline() }));
         this.revisarSemana(ahora).catch(e => console.error('[MMO semana]', e));
+        this.volcarRanking().catch(e => console.error('[MMO ranking]', e));
+        if (this.retVolcarDias) this.retVolcarDias().catch(e => console.error('[MMO ret]', e));
+        this.revisarSalud(ahora);
       });
     }
     this.paso('mundial', () => this.revisarMundial(ahora));
@@ -2787,7 +3003,8 @@ export class MmoWorld {
     const porClave = {}, en3d = [];
     for (const s of this.sesiones.values()) {
       if (!s.c) continue;
-      if (s.sucio && ahora - s.guardadoT > GUARDAR_CADA_MS) this.guardar(s);
+      // Progreso cada 60 s (3 min en modo ahorro); si solo se movio, cada 5 min.
+      if ((s.sucio && ahora - s.guardadoT > cadaGuardar) || (s.sucioPos && ahora - s.guardadoT > GUARDAR_POS_MS)) this.guardar(s);
       if (s.m3) { en3d.push(s); continue; }   // el mundo 3D va aparte
       (porClave[s.k] = porClave[s.k] || []).push(s);
     }
@@ -3134,6 +3351,8 @@ Object.assign(MmoWorld.prototype, Duelos);
 Object.assign(MmoWorld.prototype, Chicha);
 // Estadisticas de retencion y avisos de vuelta por Telegram: functions/mmo/retencion.js
 Object.assign(MmoWorld.prototype, Retencion);
+// Cupo de escrituras, lag y modo ahorro: functions/mmo/salud.js
+Object.assign(MmoWorld.prototype, Salud);
 MmoWorld.prototype.uidsPrueba = UIDS_PRUEBA;
 // Invasiones, elites raros y cofres del mundo abierto: functions/mmo/eventos.js
 Object.assign(MmoWorld.prototype, Eventos);

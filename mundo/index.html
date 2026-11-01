@@ -5,6 +5,24 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>$DUENDE ORIGINS · Mundo abierto 3D</title>
 <meta name="description" content="$DUENDE ORIGINS: el mundo abierto 3D de los duendes. Un mapa continuo con 10 zonas, jefes y otros jugadores en tiempo real, en el navegador y en Telegram.">
+<!-- Vista previa al compartir el enlace (WhatsApp, Facebook, Telegram, X):
+     sin "$DUENDE" ni "token", imagen horizontal 1200x630 (tools/og_mundo.py). -->
+<link rel="canonical" href="https://duende-quest.alfonso12hc.workers.dev/mundo/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_PE">
+<meta property="og:site_name" content="Duende Quest">
+<meta property="og:title" content="Duende Quest 3D: mundo abierto gratis desde tu celular">
+<meta property="og:description" content="Vuela con tus alas, caza jefes y juega con amigos, sin descargar nada. Entra con el enlace de un amigo: al llegar a nivel 10 ganas 3000 de oro y tu amigo también gana oro.">
+<meta property="og:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/og/mundo3d.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Duende Quest 3D: un duende con alas vuela sobre el bosque y pelea contra un jefe">
+<meta property="og:url" content="https://duende-quest.alfonso12hc.workers.dev/mundo/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Duende Quest 3D: mundo abierto gratis desde tu celular">
+<meta name="twitter:description" content="Vuela con tus alas, caza jefes y juega con amigos, sin descargar nada. Gratis en el navegador y en Telegram.">
+<meta name="twitter:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/og/mundo3d.jpg">
 <meta name="theme-color" content="#0a0418">
 <link rel="manifest" href="/mundo/manifest.json">
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
@@ -13,6 +31,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
+<script src="/js/origen.js?v=326"></script>
 <script>
 // Red de seguridad de la carga (script clasico: corre aunque el modulo 3D o el CDN fallen).
 // - Errores antes de conectar: se guardan en __errQ y mundo.js los manda al entrar.
@@ -80,17 +99,17 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', revisarGL); else revisarGL();
 })();
 </script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=325" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=326" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=325">
-<link rel="modulepreload" href="/mmo/js/data.js?v=325">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=325">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=325">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=325">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=325">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=325">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=326">
+<link rel="modulepreload" href="/mmo/js/data.js?v=326">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=326">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=326">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=326">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=326">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=326">
 <style>
 :root{--bg:#0a0418;--panel:rgba(14,9,30,.86);--borde:rgba(160,140,255,.22);--txt:#f2efff;--txt2:#b8b0d8;--txt3:#7d7699;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;--oro:#ffd84a;--pri:#2563eb;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -178,6 +197,17 @@ body.movil #presumir3{bottom:auto;top:calc(36% + var(--tg-top,0px));font-size:13
 #b-pase[data-n]:not([data-n=""])::after{content:attr(data-n);position:absolute;top:-5px;right:-5px;min-width:16px;height:16px;border-radius:8px;background:#ef4444;color:#fff;font:800 10px/16px var(--sans);text-align:center;padding:0 3px;box-shadow:0 0 8px #ef4444;}
 .dias7{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;}
 #v-diario .ventana,#v-pase .ventana{overflow-x:hidden;}
+/* Movil: tira de la racha arriba (7 bolitas + "Mañana"); al tocarla abre el panel diario. */
+#tira-diario{position:fixed;left:50%;top:calc(6px + env(safe-area-inset-top) + var(--tg-top,0px));transform:translate(-50%,-140%);z-index:8;display:flex;align-items:center;gap:10px;min-height:44px;max-width:calc(100vw - 32px);box-sizing:border-box;padding:6px 12px;border-radius:14px;border:1px solid rgba(255,216,74,.55);background:rgba(20,14,34,.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 6px 20px rgba(0,0,0,.45);color:#fff;font:600 12px/1.25 var(--sans);cursor:pointer;pointer-events:none;opacity:0;transition:transform .35s ease,opacity .35s ease;}
+#tira-diario.on{transform:translate(-50%,0);opacity:1;pointer-events:auto;}
+#tira-diario .tx{display:flex;flex-direction:column;min-width:0;}
+#tira-diario .tx b,#tira-diario .tx small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#tira-diario .tx small{color:#7dd3fc;font-size:11px;font-weight:600;}
+.dias7.mini{display:flex;gap:4px;flex:none;}
+.dias7.mini i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);}
+.dias7.mini i.ya{background:#4ade80;border-color:#4ade80;}
+.dias7.mini i.hoy{background:#ffd84a;border-color:#ffd84a;box-shadow:0 0 8px #ffd84a;}
+.dias7.mini i.cofre{border-radius:2px;}
 .d7{min-width:0;background:rgba(255,255,255,.05);border:1px solid var(--borde);border-radius:8px;padding:4px 2px;text-align:center;font:600 9px var(--sans);color:var(--txt2);}
 .d7 span{display:block;font-size:16px;margin:2px 0;}
 .d7 em{display:block;font-style:normal;font-size:8px;line-height:1.15;}
@@ -478,7 +508,7 @@ button{-webkit-tap-highlight-color:transparent;}
 
 <div id="carga">
   <img src="/assets/lore/duende-chicha.webp" alt="" style="height:min(30vh,240px);margin-bottom:10px;filter:drop-shadow(0 6px 18px rgba(168,85,247,.55))">
-  <div class="t">$DUENDE<br>ORIGINS</div>
+  <div class="t">DUENDE QUEST<br>ORIGINS</div>
   <div class="barra"><i id="carga-i"></i></div>
   <div class="s" id="carga-s">Preparando el mundo…</div>
 </div>
@@ -535,7 +565,7 @@ button{-webkit-tap-highlight-color:transparent;}
   <button class="bt" id="b-amigos" title="Amigos y jugadores en línea">👥</button>
   <button class="bt" id="b-chat" title="Chat (Enter)">💬</button>
   <button class="bt extra" id="b-ayuda" title="Ajustes y controles (calidad gráfica)" aria-label="Ajustes y controles">?</button>
-  <a class="bt" href="/mmo/" title="$DUENDE CLASSIC (2D): mazmorras, Torre y banda, con tu mismo personaje">2D</a>
+  <a class="bt" href="/mmo/" title="Duende Quest Classic (2D): mazmorras, Torre y banda, con tu mismo personaje">2D</a>
   <a class="bt" href="/inicio/" title="Inicio: elige tu juego">⌂</a>
   <button class="bt" id="b-mas" title="Más" aria-label="Más">⋯</button>
 </div>
@@ -558,13 +588,12 @@ button{-webkit-tap-highlight-color:transparent;}
 </div>
 
 <div class="modal" id="v-inicio"><div class="ventana" style="text-align:center">
-  <h2>$DUENDE ORIGINS</h2>
-  <p>El mundo abierto de los duendes: un mapa continuo con el pueblo, las 10 zonas, sus jefes y otros jugadores en tiempo real. Es tu mismo personaje de $DUENDE CLASSIC (2D).</p>
+  <h2>Duende Quest Origins</h2>
+  <p>El mundo abierto de los duendes: un mapa continuo con el pueblo, las 10 zonas, sus jefes y otros jugadores en tiempo real. Es tu mismo personaje de Duende Quest Classic (2D).</p>
   <div id="ini-inv">
     <input class="nombre" id="in-nombre" maxlength="16" placeholder="Nombre de tu duende (opcional)" aria-label="Nombre de tu duende (opcional)">
     <p id="in-nota" role="status" style="display:none;margin:4px 0 8px;font-size:12px;color:#ff5a6a">El nombre necesita al menos 3 letras (o déjalo vacío y te ponemos uno).</p>
     <button class="btn" id="b-entrar" style="width:100%">Entrar al mundo</button>
-    <p style="margin-top:10px;font-size:13px">¿Tienes cuenta? <a href="/mmo/" style="color:var(--cian)">Inicia sesión en $DUENDE CLASSIC</a> y vuelve: entrarás con ella.</p>
   </div>
   <div id="ini-cuenta" style="display:none">
     <p id="ini-quien"></p>
@@ -641,7 +670,7 @@ button{-webkit-tap-highlight-color:transparent;}
   <div class="fila"><span>Consumibles</span><b>Q F G T</b></div>
   <div class="fila"><span>Hablar</span><b>E</b></div>
   <div class="fila"><span>Mapa · Chat</span><b>M · Enter</b></div>
-  <p style="margin-top:10px">En el móvil: joystick a la izquierda, arrastra a la derecha para girar la cámara y toca un monstruo para elegirlo. Las mazmorras, la Torre y la banda están por ahora en $DUENDE CLASSIC (botón 2D): es el mismo personaje.</p>
+  <p style="margin-top:10px">En el móvil: joystick a la izquierda, arrastra a la derecha para girar la cámara y toca un monstruo para elegirlo. Las mazmorras, la Torre y la banda están por ahora en Duende Quest Classic (botón 2D): es el mismo personaje.</p>
 
   <p style="margin-top:10px"><button class="btn sec" id="b-leyenda" style="width:100%">📜 La leyenda del Cántaro (la historia del juego)</button></p>
   <p style="margin-top:10px;font-size:11px;color:var(--txt3)">Créditos de arte y sonido (CC0): árboles, casas, castillos y efectos de <a href="https://kenney.nl" target="_blank" rel="noopener" style="color:var(--cian)">Kenney</a> (Nature Kit, Fantasy Town Kit, Castle Kit, RPG Audio, Impact Sounds) y voces de criaturas de «80 CC0 creature SFX» en OpenGameArt. ¡Gracias!</p>
@@ -657,6 +686,6 @@ button{-webkit-tap-highlight-color:transparent;}
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script src="/js/config.js"></script>
-<script type="module" src="/mundo/js/mundo.js?v=325"></script>
+<script type="module" src="/mundo/js/mundo.js?v=326"></script>
 </body>
 </html>

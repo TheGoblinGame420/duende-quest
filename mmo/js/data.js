@@ -502,6 +502,15 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 94, fecha: '1 nov 2026', items: [
+    'Tu racha diaria ya no vuelve al día 1 después del día 7: cada semana seguida da más oro (hasta x1,5) y a los 14, 21 y 30 días ganas títulos y un color de nombre exclusivo. En el móvil la ves arriba con lo que te toca mañana.',
+    'Al volver al juego verás un buzón con lo que pasó mientras no estabas, y cuando te entregan una compra aparece en grande para ponértela al momento.',
+    'Entrar es más rápido: un toque y ya juegas como Guerrero; puedes cambiar de clase gratis hasta el nivel 10.',
+    'Si no te alcanza el oro, el botón dice «Te faltan N» y te lleva al paquete justo. En «Tus compras» ves cuánto hace que pagaste y hasta cuándo llega tu entrega.',
+    'Si tu amigo entra con tu enlace sin crear cuenta, ya cuenta como invitado tuyo.',
+    'La conexión se recupera sola y más rápido, y pueden entrar muchos más jugadores desde la misma red móvil.',
+    'Si abres el juego desde Facebook o Instagram, puedes pasar tu duende a Chrome o Safari con un toque.',
+  ] },
   { n: 93, fecha: '1 nov 2026', items: [
     "🍞 Del 3 al 12 de noviembre llega la Semana de la T'anta Wawa: los monstruos sueltan t'anta wawas y con 50 y 200 ganas los títulos «Panadero Duende» y «Guardián de la T'anta Wawa». En ORIGINS ves tu avance bajo tu marco.",
     'Nuevo botón TIENDA dorado siempre a la vista en 2D y 3D; con el móvil en horizontal el menú ya no tapa VOLAR ni MONTAR.',
@@ -1235,6 +1244,20 @@ export const LOGIN_PREMIOS = [
 ];
 // El oro de la racha crece con el nivel (a Nv 40 vale x4).
 export const multLogin = nivel => Math.max(1, Math.floor(nivel / 10));
+// La racha ya no vuelve al dia 1 el dia 8: crece sin tope y va por semanas.
+// diaRacha = dia 1..7 de la semana; semanaRacha = 1, 2, 3...; el oro de la
+// semana 2 vale x1,25 y desde la 3 x1,5 (tope, para no inflar la economia).
+export const diaRacha = r => ((Math.max(1, r || 1) - 1) % 7) + 1;
+export const semanaRacha = r => Math.floor((Math.max(1, r || 1) - 1) / 7) + 1;
+export const multSemanaRacha = r => 1 + 0.25 * Math.min(2, semanaRacha(r) - 1);
+export const premioRacha = r => LOGIN_PREMIOS[diaRacha(r) - 1];
+// Hitos cosmeticos de la racha (se entregan una sola vez; c.login.max = la mejor).
+// 14 y 21: titulo (son logros, ver LOGROS racha14/racha21); 30: color de nombre.
+export const RACHA_HITOS = [
+  { dias: 14, tipo: 'titulo', id: 'racha14', txt: 'título «Constante»' },
+  { dias: 21, tipo: 'titulo', id: 'racha21', txt: 'título «Llama Eterna»' },
+  { dias: 30, tipo: 'tinte', id: 'brasa', txt: 'color de nombre «Brasa Eterna»' },
+];
 
 // ── LOGROS Y TITULOS ──
 // El titulo elegido se ve sobre el nombre del duende.
@@ -1270,6 +1293,9 @@ export const LOGROS = [
   { id: 'mundial10', titulo: 'Titán',              desc: 'Vence 10 veces al jefe mundial', oro: 15000, cond: c => (c.mundiales || 0) >= 10 },
   { id: 'legend',    titulo: 'Bendecido',          desc: 'Consigue un objeto legendario',  oro: 3000,  cond: c => !!c.tuvoLegendario },
   { id: 'racha7',    titulo: 'Fiel al Duende',     desc: 'Entra 7 días seguidos',          oro: 3000,  cond: c => ((c.login || {}).racha || 0) >= 7 },
+  // Hitos de la racha larga (RACHA_HITOS): solo titulo, sin oro (cosmetico).
+  { id: 'racha14',   titulo: 'Constante',          desc: 'Entra 14 días seguidos',         oro: 0,     cond: c => Math.max((c.login || {}).racha || 0, (c.login || {}).max || 0) >= 14 },
+  { id: 'racha21',   titulo: 'Llama Eterna',       desc: 'Entra 21 días seguidos',         oro: 0,     cond: c => Math.max((c.login || {}).racha || 0, (c.login || {}).max || 0) >= 21 },
   { id: 'equipo5',   titulo: 'Bien Equipado',      desc: 'Lleva puestas las 5 piezas de equipo', oro: 2000, cond: c => Object.keys(RANURAS).every(k => c.eq && c.eq[k]) },
   { id: 'campeon',   titulo: 'Campeón Semanal',     desc: 'Gana el ranking semanal de experiencia', oro: 5000, cond: c => (c.campeon || 0) >= 1 },
   { id: 'bestiario20', titulo: 'Naturalista',     desc: 'Completa el primer hito de 20 monstruos del bestiario', oro: 4000, cond: c => Object.values(c.best || {}).filter(n => n >= 25).length >= 20 },
@@ -2145,6 +2171,16 @@ export const DUENDE_DESCUENTO = 0.9;
 export const STARS_DE_USD = { 1: 75, 2: 150, 3: 250, 5: 350, 7: 500, 10: 750, 15: 1000, 20: 1500 };
 export const estrellasDe = usd => Object.hasOwn(STARS_DE_USD, usd) ? STARS_DE_USD[usd] : Math.ceil(usd / STAR_USD);
 export const PEDIDO_VIGENCIA_MS = 30 * 60 * 1000;   // 30 min para pagar
+// Paquete de oro mas barato que cubre lo que te falta (los botones «Te faltan
+// N de oro» llevan a el). Si ninguno alcanza, el mas grande.
+export const paqueteParaFaltante = falta => {
+  const oros = PAQUETES.filter(p => p.oro && !p.unaVez).sort((a, b) => a.usd - b.usd);
+  return oros.find(p => p.oro >= falta) || oros[oros.length - 1] || null;
+};
+// Plazo de entrega HONESTO de las compras con dinero: el dueño entrega a mano.
+// Ajustalo a su disponibilidad real (plazoMaxH es lo maximo que se promete).
+export const ENTREGA = { horario: '9:00 a 23:00 (hora de Perú)', plazo: 'normalmente en unas horas', plazoMaxH: 24 };
+export const textoPagoRecibido = () => `La entrega es a mano: El Duende la revisa de ${ENTREGA.horario}, ${ENTREGA.plazo} (máximo ${ENTREGA.plazoMaxH} h).`;
 
 // ── GESTOS (/saludar, /bailar...): un emoji grande sobre tu duende que ven
 // los de tu mapa. Solo social.
@@ -2185,6 +2221,8 @@ Object.assign(TINTES, {
   lima:   { nombre: 'Lima Ácida',       color: '#bef264', nv: 25, precio: 50000, amb: true },
   sangre: { nombre: 'Sangre de Dragón', color: '#dc2626', nv: 40, precio: 80000, amb: true },
   aurora: { nombre: 'Aurora',           color: '#5eead4', nv: 40, precio: 80000, amb: true },
+  // No se vende: se gana con 30 dias de racha (RACHA_HITOS).
+  brasa:  { nombre: 'Brasa Eterna',     color: '#ff8a3d', nv: 1, precio: 0, racha: 30 },
 });
 Object.assign(MASCOTAS, {
   hongo_dorado:  { nombre: 'Hongo Dorado',    hoja: 'hongo',    alto: 24, nv: 15, precio: 60000,  tinte: '#facc15', amb: true },

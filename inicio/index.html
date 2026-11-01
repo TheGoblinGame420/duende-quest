@@ -7,21 +7,23 @@
 <meta name="description" content="Elige tu juego: $DUENDE ORIGINS, el mundo abierto 3D, o $DUENDE CLASSIC, el MMO 2D en pixel art. Mismo duende, gratis y sin descargas.">
 <meta name="theme-color" content="#0a0418">
 <meta property="og:title" content="Duende Quest · Elige tu juego">
-<meta property="og:description" content="$DUENDE ORIGINS (3D) y $DUENDE CLASSIC (2D): un mismo duende, gratis y sin descargas.">
-<meta property="og:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/video/promo3d-poster.jpg">
+<meta property="og:description" content="Mundo abierto 3D con alas o MMO 2D en pixel art: un mismo duende, gratis y sin descargas, desde tu celular o PC.">
+<meta property="og:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/og/mundo3d.jpg">
 <link rel="canonical" href="https://duende-quest.alfonso12hc.workers.dev/inicio/">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://duende-quest.alfonso12hc.workers.dev/inicio/">
 <meta property="og:site_name" content="Duende Quest">
 <meta property="og:locale" content="es_PE">
-<meta property="og:image:width" content="540"><meta property="og:image:height" content="960">
-<meta property="og:image:alt" content="$DUENDE ORIGINS: mundo abierto 3D de duendes con alas">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Duende Quest 3D: mundo abierto de duendes con alas">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/assets/ui/coin.png">
 <link rel="manifest" href="/inicio/manifest.json">
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="$DUENDE">
+<script src="/js/origen.js?v=326"></script>
 <script src="/js/pwa.js" defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="image" href="/assets/video/promo3d-poster.jpg" fetchpriority="high">
@@ -104,10 +106,10 @@ footer a{color:var(--cian);text-decoration:none;}
   <section class="cartas">
     <a class="carta origins" data-ir="/mundo/">
       <div class="vista">
-        <video data-src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" muted loop playsinline preload="none" aria-label="Vista de $DUENDE ORIGINS"></video>
+        <video data-src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" muted loop playsinline preload="none" aria-label="Vista de Duende Quest Origins"></video>
         <span class="etq">NUEVO · 3D</span>
       </div>
-      <h2>$DUENDE ORIGINS</h2>
+      <h2>Duende Quest Origins</h2>
       <p>Mundo abierto 3D: vuela con alas, elige Luz o Sombra, PvP de facciones y asedios.</p>
       <div class="jugar">🌌 JUGAR ORIGINS</div>
     </a>
@@ -117,7 +119,7 @@ footer a{color:var(--cian);text-decoration:none;}
         <div class="duende" aria-hidden="true"></div>
         <span class="etq">2D · PIXEL ART</span>
       </div>
-      <h2>$DUENDE CLASSIC</h2>
+      <h2>Duende Quest Classic</h2>
       <p>El MMO de siempre: mazmorras, la Torre, la banda del Titán y 10 zonas hasta el nivel 60.</p>
       <div class="jugar">⚔️ JUGAR CLASSIC</div>
     </a>
@@ -139,7 +141,8 @@ footer a{color:var(--cian);text-decoration:none;}
   // El ultimo juego (lo guarda cada juego al entrar) va primero y dice CONTINUAR.
   var ult = null; try { ult = localStorage.getItem('dq_ultimo_juego'); } catch (e) {}
   document.querySelectorAll('[data-ir]').forEach(function (a) {
-    a.href = a.dataset.ir + h;
+    // ?utm_/fbclid/ref pasan al juego (antes se perdian aqui y el anuncio no se medía).
+    a.href = a.dataset.ir + location.search + h;
     a.addEventListener('click', function () { try { localStorage.setItem('dq_ultimo_juego', a.dataset.ir); } catch (e) {} });
     if (ult === a.dataset.ir) {
       a.classList.add('ultimo');

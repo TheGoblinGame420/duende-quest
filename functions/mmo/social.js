@@ -300,8 +300,9 @@ export const Social = {
     // Un invitado recien creado (gratis) no reporta hasta el nivel 5, como el general.
     if (s.c.uid.startsWith('inv:') && s.c.nivel < 5) return this.no(s, 'Los invitados pueden reportar desde el nivel 5 (o inicia sesión).');
     this.reporteUid = this.reporteUid || new Map();
-    // Tambien por conexion: muchas cuentas desde la misma IP no se suman.
-    const kIp = s.ip ? 'i:' + s.ip : '';
+    // Tambien por conexion, pero solo en IPv6 (su /64): una IPv4 de movil la
+    // comparten cientos de personas por CGNAT y el reporte de uno bloqueaba a todos.
+    const kIp = s.ip && s.ip.includes(':') ? 'i:' + s.ip : '';
     if (ahora - Math.max(s.reporteT || 0, this.reporteUid.get(s.c.uid) || 0, (kIp && this.reporteUid.get(kIp)) || 0) < REPORTE_CADA_MS) return this.no(s, 'Espera un minuto antes de enviar otro reporte.');
     const n = limpiar(m.n).toLowerCase(), motivo = limpiar(m.motivo).slice(0, 100) || 'sin motivo';
     const t = [...this.sesiones.values()].find(x => x.c && x.c.nombre.toLowerCase() === n);

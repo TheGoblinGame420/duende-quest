@@ -3,6 +3,7 @@
 // ═══════════════════════════════════════════════════════
 
 import { supabaseQuery } from './lib.js';
+import { textoPagoRecibido } from '../../mmo/js/data.js';
 
 const WEBAPP_URL = 'https://duende-quest.alfonso12hc.workers.dev/telegram/index.html';
 const SITE_URL = 'https://duende-quest.alfonso12hc.workers.dev';
@@ -443,7 +444,8 @@ async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
   }
   if (cmd === '/mmostats') {
     const r = await mmoInterno(env, 'stats');
-    return enviar(r && r.ok ? textoMmoStats(r) : '❌ ' + ((r && r.error) || 'error'));
+    // Tope de Telegram: 4096 caracteres (con las lineas por origen y de carga podia pasarse y no llegaba nada).
+    return enviar(r && r.ok ? textoMmoStats(r).slice(0, 4000) : '❌ ' + ((r && r.error) || 'error'));
   }
   if (cmd === '/fondo') {
     if (arg1 !== undefined) {
@@ -455,6 +457,27 @@ async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
     const r = await mmoInterno(env, 'fondo', {});
     return enviar(fondoTxt(r) + '\n\nDesde el 22-oct el % automático de ingresos está en 0: el fondo es solo lo que agregas tú (así no sale de lo que pagan otros jugadores). Para sumar TON tuyos cada día: /fondo 0.5');
   }
+}
+
+// /mmostats, por origen (/js/origen.js): altas y embudo de 14 dias con su
+// D1/D7, y el embudo de la carga de 7 dias (beacon /mmo/ev). Vacio si aun no hay datos.
+const NOMBRE_ORIGEN = { meta: 'Meta', tg: 'Telegram', wa: 'WhatsApp', ref: 'Invitación', org: 'Orgánico' };
+function textoOrigenes(r) {
+  const pc = x => !x || x.pct === null ? '—' : String(x.pct).replace('.', ',') + '%';
+  let t = '';
+  const o = r.origenes || {};
+  const filas = Object.keys(NOMBRE_ORIGEN).filter(k => o[k]).map(k => `${NOMBRE_ORIGEN[k]}: altas ${o[k].n} · c1 ${o[k].c1} · m1 ${o[k].m1} · n5 ${o[k].n5} · D1 ${pc(o[k].d1)} · D7 ${pc(o[k].d7)}`);
+  if (filas.length) t += `🎯 Por origen (altas de 14 días):\n${filas.join('\n')}\n\n`;
+  const c = r.carga && r.carga.por ? r.carga.por : {};
+  const PASOS = [['carga_ini', 'abre'], ['arte_ok', 'carga'], ['form_visto', 'formulario'], ['clic_entrar', 'clic'], ['bienvenido', 'dentro'], ['mover', 'se mueve']];
+  const cf = Object.keys(NOMBRE_ORIGEN).filter(k => c[k] && c[k].pasos.carga_ini).map(k => {
+    const p = c[k].pasos, base = p.carga_ini;
+    const pm = base ? Math.round((p.mover || 0) / base * 100) : 0;
+    const m20 = c[k].movil20 ? ` · móvil clic→mover ≤20 s: ${pc(c[k].movil20)} (mediana ${c[k].movil20.mediana})` : '';
+    return `${NOMBRE_ORIGEN[k]}: ${PASOS.map(([e, n]) => `${n} ${p[e] || 0}`).join(' → ')} (${pm}% se mueve) · se van ${p.oculta || 0} · sin 3D ${p.fallo_webgl || 0}${m20}`;
+  });
+  if (cf.length) t += `🚪 Carga del juego (7 días, sesiones):\n${cf.join('\n')}\n\n`;
+  return t;
 }
 
 // /mmostats: la retencion real del MMO (la calcula functions/mmo/retencion.js).
@@ -474,11 +497,18 @@ function textoMmoStats(r) {
     `   Niveles: ${tramos}\n` +
     `⏱️ Sesión media (7 días): ${String(r.sesion.media).replace('.', ',')} min · ${r.sesion.sesiones7} sesiones · ${r.sesion.minutos7} min en total\n\n` +
     `🆕 Altas por día (últimos 14):\n${altas}\n\n` +
-    (r.embudo && r.embudo.n ? `🪜 Embudo de esas altas: primera caza ${r.embudo.c1}/${r.embudo.n} · misión 1 ${r.embudo.m1} · nivel 5 ${r.embudo.n5} · nivel 10 ${r.embudo.n10}\n\n` : '') +
+    (r.embudo && r.embudo.n ? `🪜 Embudo de esas altas: primera caza ${r.embudo.c1}/${r.embudo.n} · misión 1 ${r.embudo.m1} · nivel 5 ${r.embudo.n5} · nivel 10 ${r.embudo.n10}${r.embudo.iab && r.embudo.iab.n ? ` · desde Facebook/Instagram ${r.embudo.iab.n} (D1 ${r.embudo.iab.d1 && r.embudo.iab.d1.pct != null ? r.embudo.iab.d1.pct + '%' : '—'})` : ''}\n\n` : '') +
+    (r.invitaciones && r.invitaciones.refLlega ? `🤝 Invitados por enlace (14 días): llegan ${r.invitaciones.refLlega} · con cuenta ${r.invitaciones.refCuenta} · premio Nv 10 ${r.invitaciones.refPagado}\n\n` : '') +
+    textoOrigenes(r) +
     `🔁 Retención (últimas 30 cohortes con el día ya cumplido):\n` +
     `D1: ${ret(r.retencion.d1)}\nD7: ${ret(r.retencion.d7)}\nD30: ${ret(r.retencion.d30)}\n\n` +
     `📅 Cohortes recientes (cuántos volvieron ese día exacto; … = aún no llega):\n${cohortes}\n\n` +
     `🏆 Top niveles:\n${top}\n\n` +
+    (r.salud ? `🩺 Servidor hoy: ${r.salud.escrituras.toLocaleString('es')} escrituras de ${r.salud.cupo.toLocaleString('es')} (${String(r.salud.pct).replace('.', ',')}%)` +
+      `${r.salud.degradado ? ' · ⚠️ MODO AHORRO' : ''}${r.salud.lento ? ' · ⚠️ LAG ALTO' : ''}\n` +
+      `   Por clave: ${r.salud.porPrefijo.map(x => `${x.k} ${x.n}`).join(' · ') || '—'}\n` +
+      `   Mensajes: ${r.salud.mensajes.toLocaleString('es')} (${r.salud.kb.toLocaleString('es')} KB) · ${r.salud.tipos.map(x => `${x.k} ${x.n}`).join(' · ') || '—'}\n` +
+      `   Lag del bucle: ${r.salud.lag} ms (máx. hoy ${r.salud.lagMax} ms)\n\n` : '') +
     `Se cuenta desde que se activó la medición; no incluye a los bots de prueba.`;
 }
 
@@ -712,7 +742,7 @@ async function onRequestPost(context) {
           const reg = await supabaseQuery(env, 'stars_purchases', { method: 'POST', body: { telegram_id: tgId, amount_usd: +(starsPaid * STAR_USD).toFixed(2), amount_stars: starsPaid, tokens_credited: 0, tx_id: chargeId } });
           if (!Array.isArray(reg) || reg.length !== 1) return new Response('OK');
           const rsp = await mmoInterno(context.env, 'pedidoPagado', { codigo: payload.mmo, stars: starsPaid, charge: chargeId, tgId });
-          await tg(token, 'sendMessage', { chat_id: chatId, text: `✅ *Pago recibido* (${starsPaid} Stars)\n\nCompra: "${(rsp && rsp.nombre) || 'del MMO'}" · pedido #${payload.mmo}\n\nLa entrega es manual: El Duende la revisa y la añade a tu personaje. Te avisaremos aquí apenas esté lista. Guarda el número de pedido por si necesitas reclamar.`, parse_mode: 'Markdown' });
+          await tg(token, 'sendMessage', { chat_id: chatId, text: `✅ *Pago recibido* (${starsPaid} Stars)\n\nCompra: "${(rsp && rsp.nombre) || 'del MMO'}" · pedido #${payload.mmo}\n\n${textoPagoRecibido()} Te avisaremos aquí apenas esté lista. Guarda el número de pedido por si necesitas reclamar.`, parse_mode: 'Markdown' });
           return new Response('OK');
         }
 
@@ -728,7 +758,7 @@ async function onRequestPost(context) {
           const reg = await supabaseQuery(env, 'stars_purchases', { method: 'POST', body: { telegram_id: tgId, amount_usd: starsPaid * STAR_USD, amount_stars: starsPaid, tokens_credited: 0, tx_id: chargeId } });
           if (!Array.isArray(reg) || reg.length !== 1) return new Response('OK');   // reintento del webhook
           await avisarDueno(`⭐ Skin del arcade pagada (por revisar)\nSkin: ${payload.skin_id} · ${starsPaid} Stars\nDe: ${quien}\n\nActívala:\n/starsok ${chargeId} skin:${payload.skin_id}`);
-          await tg(token, 'sendMessage', { chat_id: chatId, text: `✅ *Pago recibido* (${starsPaid} Stars)\n\nEl equipo revisa el pago y activa tu skin en breve. Te avisaremos aquí.`, parse_mode: 'Markdown' });
+          await tg(token, 'sendMessage', { chat_id: chatId, text: `✅ *Pago recibido* (${starsPaid} Stars)\n\nEl equipo revisa el pago y activa tu skin. ${textoPagoRecibido()} Te avisaremos aquí.`, parse_mode: 'Markdown' });
           return new Response('OK');
         }
 
