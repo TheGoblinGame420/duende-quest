@@ -502,6 +502,12 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 90, fecha: '31 oct 2026', items: [
+    '🎃 Noche de Duendes en ORIGINS: el pueblo se llenó de calabazas con la cara encendida y de noche vuelan murciélagos sobre la plaza (hasta el 2 de noviembre).',
+    'Durante la Noche de Duendes, los 7 disfraces de la mascota (Bruja, Momia, Frankenstein, Vampiro, Esqueleto, Lobo y Pirata) cuestan 25% menos de oro, en 3D y en 2D.',
+    'Correr levanta polvo bajo los pies (arena en el desierto, nieve en las cumbres).',
+    'Los golpes críticos se sienten más: la cámara da un pequeño empujón hacia el golpe.',
+  ] },
   { n: 89, fecha: '30 oct 2026', items: [
     '7 skins nuevas de la mascota $DUENDE en la tienda, solo con oro: Bruja, Momia, Frankenstein, Vampiro, Esqueleto, Lobo y Pirata. Cada una viste a tu duende 3D con su ropa y su sombrero o peinado, y trae sus poderes.',
     'Interfaz de vidrio: botones más pequeños que responden al tocar, el menú ⋯ se abre con un rebote suave y las ventanas aparecen con animación.',
@@ -1346,6 +1352,15 @@ export const SKINS = {
   solar:      { nombre: 'Duende Solar',     img: 'skin_hero', anim: true, hue: 22, sat: 1.9, precio: null, premium: true, usd: 25, color: '#fbbf24', buffs: { oroMult: 1.3, atkMult: 1.14, bonusHp: 25, aura: true }, desc: '+30% oro · +14% ataque · +HP · aura que quema' },
   cosmico:    { nombre: 'Duende Cósmico',   img: 'skin_hero', anim: true, hue: 150, sat: 1.5, precio: null, premium: true, usd: 50, color: '#38bdf8', buffs: { oroMult: 1.35, atkMult: 1.18, bonusHp: 35, robo: .04, aura: true }, desc: '+35% oro · +18% ataque · +HP · roba 4% · aura' },
 };
+// Noche de Duendes (Halloween, 24-oct a 2-nov, en UTC): los siete disfraces de la
+// mascota cuestan un 25% menos de oro. Cliente y servidor usan esta misma funcion.
+export const DISFRACES_SKIN = ['bruja', 'momia', 'frankenstein', 'vampiro', 'esqueleto', 'lobo', 'pirata'];
+export function esNocheDuendes(d = new Date()) { const m = d.getUTCMonth(), dd = d.getUTCDate(); return (m === 9 && dd >= 24) || (m === 10 && dd <= 2); }
+export function precioOro(tab, id, d) {
+  const p = tab === 'skin' ? SKINS[id] && SKINS[id].precio : ARMAS[id] && ARMAS[id].precio;
+  if (typeof p !== 'number') return p;
+  return tab === 'skin' && DISFRACES_SKIN.includes(id) && esNocheDuendes(d) ? Math.round(p * 0.75) : p;
+}
 
 // ── ARMAS (las 4 del juego, mismos multiplicadores) ──
 export const ARMAS = {

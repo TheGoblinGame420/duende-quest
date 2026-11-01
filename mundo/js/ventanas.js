@@ -16,10 +16,10 @@ import {
   CONJUNTOS, piezasConjunto, textoConjunto,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos,
   HABS, habsDe, costoHab, CLASES, RECURSOS, ESPECS, ESPEC_NIVEL, costoCambioClase,
-  ARMAS, SKINS, PODERES, MONTURAS, TINTES, MASCOTAS, HOJAS, FORJA_MAX, costoForja, multForja,
+  ARMAS, SKINS, precioOro, PODERES, MONTURAS, TINTES, MASCOTAS, HOJAS, FORJA_MAX, costoForja, multForja,
   BANDA_MONTURA, TORRE, ambulanteActivo, ambulanteOferta,
   PAQUETES, estrellasDe, LOGROS, progresoLogro, statsJugador, ALAS,
-} from '/mmo/js/data.js?v=321';
+} from '/mmo/js/data.js?v=322';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -633,7 +633,8 @@ function htmlArmasSkins(y, tab) {
     if (tiene.includes(id)) acc = puesto === id ? etq('✓ Equipado', 'vv-ok') : btn('Equipar', 'equipar', { k: tab, id }, 'sec');
     else if (typeof d.precio !== 'number') acc = `<span class="vv-etq" style="color:${d.color}">Exclusiva · $${d.usd}</span>` + botonesPago(y, 'skin_' + id, d.usd, true);
     else {
-      acc = oro(d.precio) + btn('Comprar', 'comprar', { k: tab, id }, '', y.oro < d.precio);
+      const pr = precioOro(tab, id);
+      acc = (pr !== d.precio ? `<s style="opacity:.55;font-size:11px">${d.precio.toLocaleString('es')}</s> 🎃 ` : '') + oro(pr) + btn('Comprar', 'comprar', { k: tab, id }, '', y.oro < pr);
       if (tab === 'skin' && d.usd && y.p2e && y.p2e.cuenta) acc += botonesPago(y, 'skin_' + id, d.usd, false);
     }
     const nom = d.premium ? `<span style="color:${d.color}">${esc(d.nombre)}</span>` : esc(d.nombre);

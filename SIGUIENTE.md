@@ -3146,3 +3146,10 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - musica.js: viento (ruido grave con filtro que se mueve), pájaros, grillos, gotas; `tic()` para botones (mundo.js en pointerdown sobre .bt/.vv-tab/.cerrar).
 - mundo.js física: factor de cuesta 0,82–1,12, `P.vy` del vuelo con inercia (7/s), aplastado al aterrizar (`P.aterrizaT/K`, 280 ms) y estirado al subir en `poner`.
 - Arnés 856 bien.
+
+### Noche de Duendes, descuento de disfraces, polvo y golpe crítico (31-oct-2026, `?v=322`)
+
+- data.js: `DISFRACES_SKIN`, `esNocheDuendes(d)` (UTC, 24-oct a 2-nov) y `precioOro(tab, id, d)` (−25% a los disfraces durante el evento). world.js cobra con `precioOro`; ventanas.js y client.js muestran el precio tachado con 🎃.
+- mundo.js: `crearNocheDuendes()` (2 calabazas por puerta de casa y 10 en la plaza, cara con MeshBasic amarilla; 8–14 murciélagos) y `animarNocheDuendes(t)` (solo de noche y cerca del pueblo); aviso a los 9 s.
+- mundo.js: polvo en cada paso al correr (`FX.emitir`, color por zona) y `fovGolpe` (−3,5 en crítico, decae a 9/s).
+- Arnés 855 bien; la prueba del pase «dobles para ponerse al día» falla el día 1 del mes en UTC (depende de la fecha, no de este cambio).

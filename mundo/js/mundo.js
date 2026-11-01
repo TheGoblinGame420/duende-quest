@@ -12,25 +12,25 @@
 // mmo/js/mundo3d.js, igual que en el servidor.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
+import { esNocheDuendes, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS } from '/mmo/js/data.js?v=321';
-import { iniciarVentanas } from './ventanas.js?v=321';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=321';
-import { crearMusica } from './musica.js?v=321';
-import { construirCueva } from './cueva.js?v=321';
-import { TAPA, transparentar } from './tapa.js?v=321';
-import { construirAbismo } from './abismo.js?v=321';
-import { crearParticulas } from './particulas.js?v=321';
-import { cargarKenney, piezasCasa } from './kenney.js?v=321';
-import { CORRIENTES } from '/mmo/js/abismo3d.js?v=321';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS } from '/mmo/js/data.js?v=322';
+import { iniciarVentanas } from './ventanas.js?v=322';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=322';
+import { crearMusica } from './musica.js?v=322';
+import { construirCueva } from './cueva.js?v=322';
+import { TAPA, transparentar } from './tapa.js?v=322';
+import { construirAbismo } from './abismo.js?v=322';
+import { crearParticulas } from './particulas.js?v=322';
+import { cargarKenney, piezasCasa } from './kenney.js?v=322';
+import { CORRIENTES } from '/mmo/js/abismo3d.js?v=322';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=321';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=321';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=321';
-import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=321';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=321';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=322';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=322';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=322';
+import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=322';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=322';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -256,6 +256,7 @@ const lluvia = (() => {
   escena.add(m);
   return { m, n, pos };
 })();
+let fovGolpe = 0;
 let climaAct = 'despejado', nocheK = 0, relampagoT = -1e9, sigRelampago = 0, hemiBase = 1, nieblaObj = [40, Q.lejos];
 const musica = crearMusica();
 const NOMBRE_CLIMA = { despejado: '', lluvia: '🌧 Lluvia', tormenta: '⛈ Tormenta', nieve: '❄ Nieve', niebla: '🌫 Niebla', arena: '🌪 Tormenta de arena' };
@@ -1599,7 +1600,7 @@ function ataqueVisto(m) {
   if (m.d > 0 && Math.hypot(o.x - P.x, o.z - P.z) < 45) FX.emitir(o.x, (o.y || alturaEn(o.x, o.z)) + 1.1, o.z, { n: m.c ? 24 : 10, color: m.c ? '#ffd34d' : m.rayo ? '#7dd3fc' : '#fff1c1', vel: m.c ? 6.5 : 4, vida: 0.45 });
   if (m.p === miId || o.id === objetivo) {
     numero(o.x + (Math.random() - 0.5), alturaEn(o.x, o.z) + 2.2, o.z, (m.c ? '¡' : '') + m.d + (m.c ? '!' : ''), m.c ? '#ffd34d' : m.rayo ? '#7dd3fc' : '#fff', m.c);
-    if (m.p === miId) { vib(m.c ? 'medium' : 'light'); sfx(m.c ? 'corte2' : 'corte', 0.28); sfxK(m.c ? 'g_critico' : 'g_carne', m.c ? 0.4 : 0.3); if (m.c) sacudir = Math.max(sacudir, 0.15); }
+    if (m.p === miId) { vib(m.c ? 'medium' : 'light'); sfx(m.c ? 'corte2' : 'corte', 0.28); sfxK(m.c ? 'g_critico' : 'g_carne', m.c ? 0.4 : 0.3); if (m.c) { sacudir = Math.max(sacudir, 0.15); fovGolpe = -3.5; } }
   }
   // El destello ya salio con la prediccion: no repetirlo.
   if (!(m.p === miId && performance.now() - (o.predT || 0) < 350)) o.golpeT = performance.now();
@@ -3035,6 +3036,8 @@ function fisica(dt) {
     if (P.pasoD > 1.7) {
       P.pasoD = 0;
       const z = zonaEn(P.x, P.z);
+      // Polvo bajo los pies al correr (v322): arena en el desierto, nieve en las cumbres.
+      if (rapidez > MUNDO.velocidad * 0.8 && !enCueva(P.x)) FX.emitir(P.x - P.vx * 0.04, P.y + 0.08, P.z - P.vz * 0.04, { n: MOVIL ? 3 : 5, color: z === 'desierto' ? '#e8c27a' : z === 'cumbres' ? '#f1f5f9' : '#bfae8e', vel: 0.9, vida: 0.45, grav: -0.6, plano: true, radio: 0.25, tam: 1.1 });
       if (voces < 5)   // los pasos nunca quitan voces al combate
         sfxK(z === 'cumbres' || z === 'desierto' ? 'paso_n' : z === 'cueva' || z === 'eter' || z === 'castillo' || z === 'cavernas' ? 'paso_p' : z === 'pueblo' && Math.hypot(P.x, P.z) < 16 ? 'paso_p' : 'paso_h', 0.09);
     }
@@ -3262,6 +3265,54 @@ function animarCorrientes(t) {
   for (const c of corrientes3) {
     c.col.material.opacity = 0.09 + 0.05 * Math.sin(t / 600 + c.col.position.x);
     c.aros.forEach((a, i) => { a.position.y = 5 + ((t / 70 + i * 22) % 66); a.rotation.z = t / 900; });   // los aros suben: el viento empuja hacia arriba
+  }
+}
+// ── NOCHE DE DUENDES (Halloween, 24-oct a 2-nov) ──
+// Calabazas con la cara encendida en las puertas del pueblo y en la plaza, y
+// murcielagos que dan vueltas de noche. Solo decorado: no cambia el juego.
+const noche3 = { calabazas: [], murcis: [], activo: false };
+function crearNocheDuendes() {
+  if (!esNocheDuendes()) return;
+  noche3.activo = true;
+  setTimeout(() => aviso('🎃 Noche de Duendes: el pueblo se llenó de calabazas y de noche salen los murciélagos. Hasta el 2 de noviembre, los 7 disfraces de la mascota cuestan 25% menos de oro en la tienda.', 'ok'), 9000);
+  const geoC = new THREE.SphereGeometry(0.42, 10, 8), geoT = new THREE.CylinderGeometry(0.05, 0.07, 0.22, 5), geoO = new THREE.ConeGeometry(0.09, 0.14, 3), geoB = new THREE.BoxGeometry(0.34, 0.07, 0.02);
+  const matC = new THREE.MeshLambertMaterial({ color: 0xf07a1a }), matT = new THREE.MeshLambertMaterial({ color: 0x3f6b1f });
+  const matCara = new THREE.MeshBasicMaterial({ color: 0xffd84a });
+  const poner = (x, z, ry) => {
+    const g = new THREE.Group();
+    const c = new THREE.Mesh(geoC, matC); c.scale.y = 0.78; c.position.y = 0.32;
+    const t = new THREE.Mesh(geoT, matT); t.position.y = 0.72;
+    const o1 = new THREE.Mesh(geoO, matCara), o2 = o1.clone(), b = new THREE.Mesh(geoB, matCara);
+    o1.position.set(-0.13, 0.42, 0.38); o2.position.set(0.13, 0.42, 0.38); o1.rotation.x = o2.rotation.x = Math.PI / 2; b.position.set(0, 0.24, 0.39);
+    g.add(c, t, o1, o2, b);
+    g.position.set(x, alturaEn(x, z), z); g.rotation.y = ry;
+    escena.add(g); noche3.calabazas.push(g);
+  };
+  // Dos en cada puerta (mirando hacia fuera) y un corro en la plaza.
+  for (const c of CASAS) {
+    const fx = Math.sin(c.r), fz = Math.cos(c.r), lx = Math.cos(c.r), lz = -Math.sin(c.r), dd = c.d / 2 + 1.1;
+    for (const k of [-1.3, 1.3]) poner(c.x + fx * dd + lx * k, c.z + fz * dd + lz * k, c.r);
+  }
+  for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2 + 0.3, r = 7.5; poner(Math.cos(a) * r, Math.sin(a) * r, Math.atan2(-Math.cos(a), -Math.sin(a)) + Math.PI); }
+  const geoA = new THREE.BufferGeometry();
+  geoA.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 0.55, 0.05, -0.15, 0.2, 0, 0.22], 3));
+  const matM = new THREE.MeshBasicMaterial({ color: 0x120a18, side: THREE.DoubleSide });
+  for (let i = 0; i < (MOVIL ? 8 : 14); i++) {
+    const g = new THREE.Group(), cuerpo = new THREE.Mesh(new THREE.SphereGeometry(0.1, 5, 4), matM);
+    const ai = new THREE.Mesh(geoA, matM), ad = new THREE.Mesh(geoA, matM); ad.scale.x = -1;
+    g.add(cuerpo, ai, ad); g.visible = false; escena.add(g);
+    noche3.murcis.push({ g, ai, ad, r: 10 + Math.random() * 22, h: 7 + Math.random() * 9, v: (0.25 + Math.random() * 0.35) * (Math.random() < 0.5 ? -1 : 1), f: Math.random() * 6.3 });
+  }
+}
+function animarNocheDuendes(t) {
+  if (!noche3.activo || Math.hypot(P.x, P.z) > 140) { for (const m of noche3.murcis) m.g.visible = false; return; }
+  const ver = nocheK > 0.3;
+  for (const m of noche3.murcis) {
+    m.g.visible = ver; if (!ver) continue;
+    const a = m.f + t / 1000 * m.v;
+    m.g.position.set(Math.cos(a) * m.r, alturaEn(0, 0) + m.h + Math.sin(t / 400 + m.f) * 0.8, Math.sin(a) * m.r);
+    m.g.rotation.y = -a + (m.v > 0 ? 0 : Math.PI);
+    const bate = Math.sin(t / 55 + m.f) * 0.9; m.ai.rotation.z = bate; m.ad.rotation.z = -bate;
   }
 }
 // ── AVENTUREROS DEL PUEBLO (PNJ) ──
@@ -3515,8 +3566,10 @@ function bucle(t) {
   if (enCv) cy = Math.min(cy, 7.2);   // bajo el techo de la cueva
   camara.position.set(cx, cy, cz); camara.lookAt(tx, ty, tz);
   // Sensacion de velocidad: el campo de vision se abre un poco al galopar o volar rapido.
-  const fovObj = fovBase + clamp((Math.hypot(P.vx, P.vz) / MUNDO.velocidad - 1.1) * 8, 0, 10);
-  if (Math.abs(camara.fov - fovObj) > 0.05) { camara.fov += (fovObj - camara.fov) * Math.min(1, dt * 3); camara.updateProjectionMatrix(); }
+  // Golpe critico: la camara se acerca un instante y vuelve (v322).
+  fovGolpe *= Math.exp(-dt * 9); if (Math.abs(fovGolpe) < 0.05) fovGolpe = 0;
+  const fovObj = fovBase + fovGolpe + clamp((Math.hypot(P.vx, P.vz) / MUNDO.velocidad - 1.1) * 8, 0, 10);
+  if (Math.abs(camara.fov - fovObj) > 0.05) { camara.fov += (fovObj - camara.fov) * Math.min(1, dt * (fovGolpe ? 14 : 3)); camara.updateProjectionMatrix(); }
   TAPA.uCam.value.set(cx, cy, cz); TAPA.uTgt.value.set(tx, ty, tz);
   // Zona actual: titulo, cielo y niebla de su color.
   if (cuadro % 15 === 0) {
@@ -3559,6 +3612,7 @@ function bucle(t) {
   moverLluvia(dt, t);
   if (cueva && enCueva(P.x)) cueva.animar(t);
   if (abismo && enAbismo(P.x)) { abismo.animar(t); animarCorrientes(t); }
+  animarNocheDuendes(t);
   if (tirosAsedio.length) moverTirosAsedio(t);
   for (const cr of cristalesHito) { cr.rotation.y = t / 900; cr.position.y += Math.sin(t / 500) * 0.004; }
   if (molinoAspas && Math.hypot(P.x, P.z) < 160) molinoAspas.rotation.x = t / 1400;
@@ -3656,6 +3710,7 @@ async function inicio() {
     npcs.push({ ...n, y: alturaEn(n.x, n.z), fig, lbl: etiqueta('') });
   }
   try { crearAventureros(); } catch (e) { console.warn(e); }
+  try { crearNocheDuendes(); } catch (e) { console.warn(e); }
   P.lbl = etiqueta('yo');
   progreso(1, 'Conectando…');
   requestAnimationFrame(bucle);

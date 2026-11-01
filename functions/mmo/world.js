@@ -13,7 +13,7 @@
 // ═══════════════════════════════════════════════════════
 
 import {
-  MAPAS, MONSTRUOS, statsMonstruo, statsJugador, xpParaSubir, SKINS, ARMAS, PODERES, MISIONES, DIARIA, premioDiaria, hoyUTC,
+  MAPAS, MONSTRUOS, statsMonstruo, statsJugador, xpParaSubir, SKINS, precioOro, ARMAS, PODERES, MISIONES, DIARIA, premioDiaria, hoyUTC,
   FORJA_MAX, costoForja, multForja,
   RANURAS, RAREZAS, BOLSA_MAX, baseItem, precioVenta, nombreItem, costoReforja, textoBonos,
   LOGIN_PREMIOS, multLogin, LOGROS, MUNDIAL_DURA_MS, proximoMundial,
@@ -2339,8 +2339,9 @@ export class MmoWorld {
       if (lista.includes(m.id)) return this.enviar(s, { t: 'toast', m: 'Ya lo tienes.' });
       // Las premium no se venden por oro (precio null: c.oro -= null no restaba nada).
       if (typeof def.precio !== 'number') return this.enviar(s, { t: 'toast', m: 'Esta skin solo se consigue en la tienda premium (SOL o $DUENDE).' });
-      if (c.oro < def.precio) return this.enviar(s, { t: 'toast', m: 'No te alcanza el oro.' });
-      c.oro -= def.precio;
+      const precio = precioOro(m.k, m.id);
+      if (c.oro < precio) return this.enviar(s, { t: 'toast', m: 'No te alcanza el oro.' });
+      c.oro -= precio;
       lista.push(m.id);
       this.equipar(s, { k: m.k, id: m.id });
     } else return;

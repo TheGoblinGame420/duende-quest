@@ -5,7 +5,7 @@
 // algo (daño, oro, experiencia, compras) lo decide el servidor.
 // ═══════════════════════════════════════════════════════
 import {
-  VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, ARMAS, PODERES, ATAQUE_CD_MS, ALCANCE_BASE, MISIONES, DIARIA,
+  VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, precioOro, ARMAS, PODERES, ATAQUE_CD_MS, ALCANCE_BASE, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
   RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, costoReforja, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TINTES, MASCOTAS, NOVEDADES, PASE, premioPase, ambulanteActivo, ambulanteOferta, semanaUTC, GESTOS, horaFelizTiempos, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
@@ -17,7 +17,7 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=321';
+} from './data.js?v=322';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -4743,7 +4743,8 @@ function pintarTienda() {
         else acc += '<button class="btn sec" data-cuenta="1">Iniciar sesión</button>';
       }
       else {
-        acc = `<span class="precio">🪙 ${d.precio.toLocaleString('es', { useGrouping: 'always' })}</span><button class="btn" data-comprar="${tabTienda}" data-id="${id}" ${yo.oro < d.precio ? 'disabled' : ''}>Comprar</button>`;
+        const pr = precioOro(tabTienda, id);
+        acc = `<span class="precio">🪙 ${pr !== d.precio ? '<s style="opacity:.55">' + d.precio.toLocaleString('es', { useGrouping: 'always' }) + '</s> 🎃 ' : ''}${pr.toLocaleString('es', { useGrouping: 'always' })}</span><button class="btn" data-comprar="${tabTienda}" data-id="${id}" ${yo.oro < pr ? 'disabled' : ''}>Comprar</button>`;
         // Skins: tambien con dinero; confirmado el pago exacto, la entrega el dueño (manual).
         if (tabTienda === 'skin' && d.usd && yo.p2e && yo.p2e.cuenta) acc += (TG && !forzarInvitado)
           ? `<button class="btn sec" data-premium="skin_${id}" data-metodo="stars">${estrellasDe(d.usd)} Stars</button>`
