@@ -74,7 +74,8 @@ async function onRequestPost(context) {
       invoice = {
         // Telegram rechaza la factura si el titulo pasa de 32 caracteres.
         title: `${pkg.label}${firstBuy ? ' x2' : ''} · ${tokens.toLocaleString()} $DUENDE`.slice(0, 32),
-        description: `${firstBuy ? '¡Bienvenida 2x! ' : ''}Compra ${tokens.toLocaleString()} tokens $DUENDE por ${stars} Stars (~$${pkg.usd} USD)`,
+        // Igual que la factura del bot: la entrega es manual (no "al instante").
+        description: `${firstBuy ? '¡Bienvenida 2x! ' : ''}Compra ${tokens.toLocaleString()} tokens $DUENDE por ${stars} Stars (~$${pkg.usd} USD). Entrega a mano en máx. ${ENTREGA.plazoMaxH} h.`.slice(0, 255),
         payload: JSON.stringify({ pkg: pkgIndex, tokens, usd: pkg.usd, tg_id: tgId, first_buy: firstBuy }),
         currency: 'XTR',
         prices: [{ label: `${tokens.toLocaleString()} $DUENDE`, amount: stars }],

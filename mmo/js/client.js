@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=335';
-import { iniciarRegalo } from './regalo.js?v=335';
-import { iniciarAvisoTg } from './avisotg.js?v=335';
+} from './data.js?v=336';
+import { iniciarRegalo } from './regalo.js?v=336';
+import { iniciarAvisoTg } from './avisotg.js?v=336';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1651,7 +1651,7 @@ function ofrecerBienvenida(antes) {
   const intentar = n => {
     if (!yo || !yo.puedeBienvenida || yo.muerto) { if (yo && yo.muerto && n < 20) setTimeout(() => intentar(n + 1), 3000); return; }
     try { if (localStorage.getItem('dq_bienv_ofrecida') === '1') return; } catch (e) {}
-    if (document.querySelector('.modal.on, #dq-avtg.on, #dq-regalo.on')) { if (n < 20) setTimeout(() => intentar(n + 1), 3000); return; }
+    if (document.querySelector('.modal.on, #dq-avtg.on, #dq-regalo.on') || enCombate()) { if (n < 40) setTimeout(() => intentar(n + 1), 3000); return; }
     abrirPremium('bienv'); premiumFoco = 'bienvenida'; pintarTienda();
     try { localStorage.setItem('dq_bienv_ofrecida', '1'); } catch (e) {}
     aviso('🎁 Pack de bienvenida: solo para tu primera compra. El Duende te lo entrega a mano.', 'ok');
@@ -2299,7 +2299,9 @@ const regalo2 = iniciarRegalo({
   filtro: t => modoAnuncio() && SIN_CRIPTO_RE.test(t || ''),
 });
 // «Avísame por Telegram» para jugadores web e invitados (avisotg.js): espera a que no haya otra ventana.
-const avisoTg2 = iniciarAvisoTg({ mandar, ocupado: () => !!document.querySelector('.modal.on, #dq-regalo.on') || !yo || P.muerto || !!(MAPAS[mapaId] && MAPAS[mapaId].zona && [...mons.values()].some(o => o.hp > 0 && Math.abs(o.x - P.x) < 450)), aviso: (t, k) => aviso(t, k, 7000), tg: TG });
+// En combate: zona con monstruos vivos cerca (no se abre ninguna ventana encima de la pelea).
+function enCombate() { return !!(MAPAS[mapaId] && MAPAS[mapaId].zona && [...mons.values()].some(o => o.hp > 0 && !o.muereT && Math.abs(o.x - P.x) < 450)); }
+const avisoTg2 = iniciarAvisoTg({ mandar, ocupado: () => !!document.querySelector('.modal.on, #dq-regalo.on') || !yo || P.muerto || enCombate(), aviso: (t, k) => aviso(t, k, 7000), tg: TG });
 
 $('b-social').onclick = () => abrirSocial();
 $('b-mapa').onclick = () => abrirMapaMundo();

@@ -3307,3 +3307,12 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Mochila móvil con «Equipar lo mejor» arriba y punto rojo; tarjeta de mejora para comunes y raros.
 - Servidor: revivir lejos de zonas altas, gesta por cobrar al momento, factura de skin legible.
 - Arnés 897 bien.
+
+### QA final de la noche (1-nov-2026, `?v=336`)
+
+- 6 QA + 6 revisores sobre v333-335 y toda la noche (mundo.js, ventanas, client, servidor, landing, Telegram).
+- mundo.js: `nvYo` en morir() (sin TypeError con yo=null). `body:has(#v-clase.on) #avisos{display:none}` (el aviso del evento tapaba «Elige tu clase» en móvil, visto en producción).
+- client.js: `enCombate()` retrasa la oferta de bienvenida. world.js: try/catch en `storage.put('rankSem')`.
+- /jugar/: precarga solo con 4g y sin saveData. Telegram: /miscompras con skins activadas y compras antiguas; motivo claro de fallo de Stars en la Mini App.
+- Carga de ORIGINS en horizontal: consejo con @media (max-height:440px).
+- Arnés 897 bien.

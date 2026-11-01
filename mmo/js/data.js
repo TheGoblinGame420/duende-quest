@@ -504,9 +504,15 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 335;
+export const VERSION = 336;
 
 export const NOVEDADES = [
+  { n: 104, fecha: '1 nov 2026', items: [
+    'La oferta de bienvenida ya no se abre en medio de una pelea, y los avisos no tapan la ventana para elegir tu clase.',
+    'La página /jugar/ ya no baja el juego por adelantado con conexión 3G o más lenta.',
+    '/miscompras en el bot muestra bien tus skins activadas y tus compras antiguas, y si una compra con Stars falla la Mini App te explica el motivo.',
+    'Con el celular en horizontal, el consejo de la pantalla de carga ya no tapa la barra.',
+  ] },
   { n: 103, fecha: '1 nov 2026', items: [
     'Al entrar por primera vez a ORIGINS, la cámara ya mira hacia los goblins de tu primera misión y mientras carga ves consejos y una barra que avanza.',
     'La Caza del día se cobra sola al cazar el monstruo 25, y te dice cuándo sale la próxima.',

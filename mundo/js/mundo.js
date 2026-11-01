@@ -14,25 +14,25 @@
 import * as THREE from 'three';
 import { esNocheDuendes, TEMPORADAS, temporadaDe, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo } from '/mmo/js/data.js?v=335';
-import { iniciarVentanas } from './ventanas.js?v=335';
-import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria } from '/mmo/js/data.js?v=335';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
-import { iniciarRegalo } from '/mmo/js/regalo.js?v=335';
-import { iniciarAvisoTg } from '/mmo/js/avisotg.js?v=335';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=335';
-import { crearMusica } from './musica.js?v=335';
-import { construirCueva } from './cueva.js?v=335';
-import { TAPA, transparentar } from './tapa.js?v=335';
-import { construirAbismo } from './abismo.js?v=335';
-import { crearParticulas } from './particulas.js?v=335';
-import { cargarKenney, piezasCasa } from './kenney.js?v=335';
-import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=335';
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo } from '/mmo/js/data.js?v=336';
+import { iniciarVentanas } from './ventanas.js?v=336';
+import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria } from '/mmo/js/data.js?v=336';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
+import { iniciarRegalo } from '/mmo/js/regalo.js?v=336';
+import { iniciarAvisoTg } from '/mmo/js/avisotg.js?v=336';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=336';
+import { crearMusica } from './musica.js?v=336';
+import { construirCueva } from './cueva.js?v=336';
+import { TAPA, transparentar } from './tapa.js?v=336';
+import { construirAbismo } from './abismo.js?v=336';
+import { crearParticulas } from './particulas.js?v=336';
+import { cargarKenney, piezasCasa } from './kenney.js?v=336';
+import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=336';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=335';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d } from '/mmo/js/mundo3d.js?v=335';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=335';
-import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=335';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=335';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=336';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d } from '/mmo/js/mundo3d.js?v=336';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=336';
+import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=336';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=336';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -2158,9 +2158,9 @@ function morir(m) {
   const xp = !m ? '' : m.pvp ? 'Ante la otra facción no pierdes experiencia.' : m.espiral ? '✨ Tres caídas seguidas: esta vez no pierdes XP y revives con la Bendición del Duende (−25% de daño, 3 min).'
     : m.novato ? 'Hasta Nv 10 no pierdes XP.' : m.xp > 0 ? `Revivir cuesta −${fmtN(m.xp)} XP.` : '';
   // Consejo util: enemigo muy alto -> sube antes; con pociones sin usar -> usalas (tecla Q); sin pociones -> Mercader.
-  const nvMax = Math.max(0, ...((m && m.golpes) || []).map(g => g.nv || 0));
-  const zt = m && !m.pvp && nvMax >= (yo.nivel || 1) + 3 ? Object.values(MAPAS).filter(z => z.zona && !z.instancia && !z.coliseo && z.nv && z.nv[0] <= (yo.nivel || 1)).sort((a, b) => b.nv[0] - a.nv[0])[0] : null;
-  const consejo = !m || m.pvp ? '' : nvMax >= (yo.nivel || 1) + 3 ? `Ese enemigo es Nv ${nvMax} y tú Nv ${yo.nivel || 1}: ${zt ? `sube antes en <b>${esc(zt.nombre)}</b> (Nv ${zt.nv[0]}-${zt.nv[1]})` : 'sube antes en una zona de tu nivel'} o ve en grupo.`
+  const nvYo = (yo && yo.nivel) || 1, nvMax = Math.max(0, ...((m && m.golpes) || []).map(g => g.nv || 0));
+  const zt = m && !m.pvp && nvMax >= nvYo + 3 ? Object.values(MAPAS).filter(z => z.zona && !z.instancia && !z.coliseo && z.nv && z.nv[0] <= nvYo).sort((a, b) => b.nv[0] - a.nv[0])[0] : null;
+  const consejo = !m || m.pvp ? '' : nvMax >= nvYo + 3 ? `Ese enemigo es Nv ${nvMax} y tú Nv ${nvYo}: ${zt ? `sube antes en <b>${esc(zt.nombre)}</b> (Nv ${zt.nv[0]}-${zt.nv[1]})` : 'sube antes en una zona de tu nivel'} o ve en grupo.`
     : (m.pw || 0) > 0 ? `Tenías ${m.pw} ${m.pw === 1 ? 'poción' : 'pociones'} sin usar: ${K('pulsa Q', 'toca el botón de la poción en la barra')} cuando tu vida baje de la mitad.` : 'Sin pociones: cómpralas en el Mercader del pueblo.';
   $('muerte-txt').innerHTML = [quien, vida, `<b>${dondeRev}</b>`, xp, m && m.rep > 0 ? 'Reparar tu equipo cuesta ' + m.rep + ' oro.' : '', consejo].filter(Boolean).map(t => `<span style="display:block;margin:3px 0">${t}</span>`).join('');
   $('b-revivir').textContent = ab ? 'Revivir en el bastión' : cerca ? ((yo.nivel || 1) < 10 ? 'Revivir en la entrada' : 'Revivir aquí cerca') : 'Revivir en el pueblo';

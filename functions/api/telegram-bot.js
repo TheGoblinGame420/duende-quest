@@ -681,7 +681,13 @@ async function handleMisCompras(token, env, context, chatId, userId) {
   try { mmo = await mmoInterno(context.env, 'misCompras', { tgId }); } catch (e) {}
   try { arcade = await supabaseQuery(env, `stars_purchases?telegram_id=eq.${encodeURIComponent(tgId)}&select=tx_id,amount_stars,tokens_credited,created_at&order=created_at.desc&limit=10`); } catch (e) {}
   const lineas = [];
-  const cargosMmo = [];
+  const cargosMmo = (mmo && mmo.ok && Array.isArray(mmo.cargos)) ? mmo.cargos.slice() : [];
+  // Skins del arcade ya activadas: su fila sigue con tokens_credited 0 (no salian como «En revisión» para siempre).
+  let skinsOk = [];
+  if (Array.isArray(arcade) && arcade.length) {
+    const lista = arcade.filter(f => f.tx_id).map(f => '"' + String(f.tx_id).replace(/"/g, '') + '"').join(',');
+    try { const sk = lista ? await supabaseQuery(env, `skin_purchases?tx_signature=in.(${encodeURIComponent(lista)})&select=tx_signature,skin_id`) : []; if (Array.isArray(sk)) skinsOk = sk; } catch (e) {}
+  }
   if (mmo && mmo.ok) for (const x of (mmo.l || []).slice().reverse()) {
     if (x.estado === 'esperando_pago' || x.estado === 'vencido') continue;
     if (x.charge) cargosMmo.push(x.charge);
@@ -690,8 +696,9 @@ async function handleMisCompras(token, env, context, chatId, userId) {
   if (Array.isArray(arcade)) for (const f of arcade) {
     if (!f.tx_id || cargosMmo.includes(f.tx_id)) continue;
     const n = Number(f.tokens_credited);
+    const sk = skinsOk.find(x => x.tx_signature === f.tx_id);
     // Sin la lectura del MMO no se sabe si esa compra es un pedido ya entregado.
-    lineas.push(`⭐ ${f.amount_stars} Stars · ${fecha(f.created_at)}\n   ${n > 0 ? '✅ Acreditado' : n < 0 ? '↩️ Devuelto' : (mmo && mmo.ok) ? '⏳ En revisión' : '⏳ Estado no disponible ahora'}`);
+    lineas.push(`⭐ ${f.amount_stars} Stars · ${fecha(f.created_at)}\n   ${sk ? '✅ Skin activada' : n > 0 ? '✅ Acreditado' : n < 0 ? '↩️ Devuelto' : (mmo && mmo.ok) ? '⏳ En revisión' : '⏳ Estado no disponible ahora'}`);
   }
   const fallo = !(mmo && mmo.ok) || !Array.isArray(arcade);
   let text = lineas.length ? '🧾 Tus compras con Stars\n\n' + lineas.slice(0, 12).join('\n\n') : '🧾 No encontramos compras con Stars de esta cuenta de Telegram.';

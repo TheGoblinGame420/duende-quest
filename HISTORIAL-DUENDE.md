@@ -72,6 +72,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v333 | Ronda 9 (juice y viralidad): nivel y jefes que se sienten, presumir con imagen, contador de jugadores, «¿La quieres?», AUTO continuo en CLASSIC, Hora Feliz visible | **B** |
 | v334 | Ronda 10 (QA, abuso y economía): chat sin falsos positivos, un aviso diario, cofres 3D por nivel, camino a crear cuenta, presumir con enlace, Stars web 3 h | **B** |
 | v335 | Ronda 11 (primer minuto y vuelta): cámara hacia la misión, carga con consejos, Caza del día automática, Wake Lock con AUTO, mochila con mejoras, skins con oro en cualquier sitio | **B** |
+| v336 | QA final de la noche: avisos que no tapan la clase, bienvenida fuera de combate, /jugar/ sin precarga en 3G, /miscompras y fallos de Stars claros | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

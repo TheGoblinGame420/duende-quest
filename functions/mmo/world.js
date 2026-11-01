@@ -1870,9 +1870,12 @@ export class MmoWorld {
     if (accion === 'misCompras') {
       const id = String(b.tgId || '').replace(/\D/g, '');
       if (!id) return json({ ok: false });
-      const l = this.pedidos.filter(x => (x.uid === 'tg:' + id || x.tgPagador === id) && x.estado !== 'esperando_pago' && x.estado !== 'vencido').slice(-10)
+      const suyos = this.pedidos.filter(x => (x.uid === 'tg:' + id || x.tgPagador === id) && x.estado !== 'esperando_pago' && x.estado !== 'vencido');
+      const l = suyos.slice(-10)
         .map(x => ({ codigo: x.codigo, nombre: x.nombre, estado: x.estado, metodo: x.metodo, charge: x.charge || '', creado: x.creado || 0, pagadoEn: x.pagadoEn || 0 }));
-      return json({ ok: true, l });
+      // cargos: TODOS sus cobros con Stars del MMO (no solo los 10 ultimos), para que el
+      // bot no muestre un pedido viejo ya entregado como compra del arcade «En revisión».
+      return json({ ok: true, l, cargos: suyos.map(x => x.charge).filter(Boolean) });
     }
     // /start ad_<campaña> del bot: se anota la campaña de ese Telegram (30 dias) para
     // que su alta cuente como 'tg' aunque abra el juego sin utm. Solo la etiqueta.
@@ -3191,7 +3194,8 @@ export class MmoWorld {
       // En memoria se conserva a todos (antes se cortaba al top 100 y el puesto 101
       // perdia su XP de la semana); al storage van como mucho 1000 filas (< 128 KiB).
       const l = Object.fromEntries(this.topSemana().slice(0, 1000));
-      await this.state.storage.put('rankSem', { sem: this.rs.sem, l });
+      // Un fallo del storage no tumba el tick: queda sucio y se reintenta.
+      try { await this.state.storage.put('rankSem', { sem: this.rs.sem, l }); } catch (e) { this.rsSucio = true; console.error('[MMO rankSem]', e); }
     }
   }
   async premiarSemana(rs) {
