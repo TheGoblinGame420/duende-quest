@@ -4,7 +4,7 @@
 // Se mezcla en MmoWorld (Object.assign al final de world.js).
 //
 // Todo el progreso vive en el storage del Durable Object. Una vez al dia (la
-// alarma de cada hora de retencion.js, a partir de las 04:00 UTC) se vuelca
+// alarma de cada hora de retencion.js, a partir de las 09:00 UTC = 4 a. m. en Lima, la hora con menos gente) se vuelca
 // TODO el storage (menos las propias copias) a un JSON comprimido con gzip:
 //  - FUERA de Cloudflare: si existe el binding R2 `COPIAS` se sube ahi
 //    (mmo/AAAA-MM-DD-HH.json.gz); si no, el bot lo manda como archivo al chat
@@ -17,13 +17,15 @@
 // .json.gz que llego por Telegram (se sube desde el panel).
 // ═══════════════════════════════════════════════════════
 import { getEnv } from '../api/lib.js';
+import { VERSION, PAQUETES } from '../../mmo/js/data.js';
 
 export const BK_MAX = 7;
 const TROZO = 512 * 1024;          // bytes por valor del storage
 const SUBIDA_TROZO = 600 * 1024;   // caracteres base64 por mensaje: un mensaje WebSocket de Workers llega hasta 1 MiB
 const SUBIDA_MAX = 8 * 1024 * 1024; // .json.gz entero que se acepta subir (en trozos) desde el panel
-const HORA_COPIA = 4;              // UTC
+const HORA_COPIA = 9;              // UTC (4 a. m. en Lima: antes eran las 4 UTC = 11 p. m., la hora punta)
 const PAGINA = 500;                // claves por lectura del storage
+const MANT_MS = 3 * 60 * 1000;     // tras /interno/mantenimiento no entra nadie (llega la version nueva)
 
 async function porStream(bytes, stream) {
   const r = new Blob([bytes]).stream().pipeThrough(stream);
@@ -90,7 +92,7 @@ export const Copias = {
   },
 
   // Hace una copia: devuelve la entrada del indice.
-  async hacerCopia(motivo = 'auto') {
+  async hacerCopia(motivo = 'auto', fueraLuego = false) {
     if (this.copiando) return null;
     this.copiando = true;
     try {
@@ -106,9 +108,16 @@ export const Copias = {
       for (const v of idx.slice(BK_MAX)) for (let i = 0; i < v.trozos; i++) await st.delete(`bk:${v.id}:${i}`);
       idx = idx.slice(0, BK_MAX);
       await st.put('bk:idx', idx);
-      e.fuera = await this.copiaFuera(id, gz, e);
-      await st.put('bk:idx', idx);
-      console.log('[MMO copia]', { id, pj: nPj, bytes: gz.length, fuera: e.fuera });
+      // fueraLuego (copia por version, dentro de blockConcurrencyWhile): la subida a R2/Telegram
+      // va despues, sin await; esperarla retrasaba la entrada de todos y pasaba de 30 s.
+      const subir = async () => {
+        e.fuera = await this.copiaFuera(id, gz, e);
+        const ix = await this.indiceCopias(), y = ix.find(x => x.id === id);
+        if (y) { y.fuera = e.fuera; await st.put('bk:idx', ix); }
+        console.log('[MMO copia]', { id, pj: nPj, bytes: gz.length, fuera: e.fuera });
+      };
+      if (fueraLuego) subir().catch(err => console.error('[MMO copia fuera]', err));
+      else await subir();
       return e;
     } catch (err) {
       console.error('[MMO copia]', err);
@@ -136,7 +145,7 @@ export const Copias = {
     } catch (err) { console.error('[MMO copia TG]', err); return null; }
   },
 
-  // La alarma de cada hora llama aqui: una copia al dia desde las 04:00 UTC.
+  // La alarma de cada hora llama aqui: una copia al dia desde las 09:00 UTC.
   async copiaDiariaSiToca() {
     const ahora = new Date(Date.now());
     if (ahora.getUTCHours() < HORA_COPIA) return null;
@@ -189,17 +198,83 @@ export const Copias = {
     for (const s of [...this.sesiones.values()]) { s.noGuardar = true; this.expulsar(s, 'El servidor se está restaurando desde una copia. Vuelve a entrar en un minuto.'); }
     // Los retiros NO vuelven atras: uno ya pagado no puede desaparecer ni volver a pendiente.
     const retirosAhora = this.retiros || [];
+    // Las compras tampoco: los pedidos quedan como estan ahora (pagados por entregar incluidos).
+    const pedidosAhora = this.pedidos || [];
     // Solo las claves que sobran (sin valores), recorriendo por paginas.
     const sobran = [];
     for await (const [k] of this.recorrerSinCopias()) if (!k.startsWith('bk:') && !Object.hasOwn(copia.datos, k)) sobran.push(k);
     for (const k of sobran) await st.delete(k);
     for (const [k, v] of Object.entries(copia.datos)) if (!k.startsWith('bk:')) await st.put(k, k.startsWith('c:') ? sinRetirosPosteriores(v, retirosAhora, copia.t) : v);
     await st.put('retiros', retirosAhora);
+    await st.put('pedidos', pedidosAhora);
+    // Lo entregado DESPUES de la copia vuelve a ponerse en el personaje restaurado
+    // (pagaron de verdad), y la firma de cada pago sigue usada (no sirve para otro pedido).
+    const reaplicados = await this.reaplicarEntregas(pedidosAhora, copia.t);
+    // ('comprobando' aun no gasto su firma: world.js la pone al confirmar; ponerla aqui la rechazaria como ya usada.)
+    const firmaViva = pd => !['anulado', 'anulando', 'rechazado', 'comprobando'].includes(pd.estado);
+    for (const pd of pedidosAhora) {
+      if (!firmaViva(pd)) continue;
+      if (pd.firma) await st.put('firma:' + pd.firma, pd.codigo);
+      if (pd.operacion) await st.put('firma:yape:' + pd.operacion, pd.codigo);   // n.º de operacion de Yape: tampoco sirve dos veces
+    }
     // Lo que el mundo tiene en memoria se vuelve a leer del storage.
     this.facc = null; this.rh = null; this.rhP = null; this.rtP = null; this._retIdx = null; this.mod = null;
     if (this.herms) this.herms.clear();
     await this.migrar();
-    return { ok: true, pj: Object.keys(copia.datos).filter(k => k.startsWith('c:')).length, t: copia.t };
+    return { ok: true, pj: Object.keys(copia.datos).filter(k => k.startsWith('c:')).length, t: copia.t, reaplicados };
+  },
+  // Pedidos entregados despues del instante t: su paquete otra vez en el personaje
+  // guardado (aplicarPaquete, world.js, lo mismo que hace /entregar). Sin avisos ni Meta.
+  async reaplicarEntregas(pedidos, t) {
+    let n = 0;
+    for (const pd of pedidos || []) {
+      if (pd.estado !== 'entregado' || !(pd.entregado > t)) continue;
+      const pq = PAQUETES.find(x => x.id === pd.paquete), k = 'c:' + pd.uid;
+      const c = pq && await this.state.storage.get(k);
+      if (!c || (pq.unaVez && c.bienvYa)) continue;
+      this.aplicarPaquete(c, pq, null);
+      c.compro = 1; if (pq.unaVez) c.bienvYa = 1;
+      await this.state.storage.put(k, c);
+      n++;
+    }
+    return n;
+  },
+
+  // Version nueva desplegada (VERSION de data.js distinta de la de la ultima vez):
+  // una copia ANTES de aceptar sesiones, por si la version trae un fallo que estropea
+  // personajes. Solo cuando cambia: en un arranque normal no se bloquea nada. La
+  // marca se pone antes de copiar: si la copia tumba el objeto, no se repite en bucle.
+  async copiaPorVersion() {
+    const st = this.state.storage, ver = String(VERSION);
+    const antes = await st.get('bk:ver');
+    if (antes === ver) return null;
+    await st.put('bk:ver', ver);
+    // Mundo vacio (primer arranque): nada que copiar.
+    if (antes === undefined && !(await st.list({ prefix: 'c:', limit: 1 })).size) return null;
+    return this.hacerCopia('version ' + ver, true);
+  },
+
+  // Antes de publicar (tools/deploy.mjs → /api/mantenimiento → /interno/mantenimiento):
+  // con { solo: 1 } solo dice cuantos hay; si no, guarda a todos, les avisa y cierra
+  // con 1012 (el cliente reconecta solo). Durante MANT_MS no entra nadie (reintentan
+  // solos): asi nadie juega en la version vieja sin guardarse mientras llega la nueva.
+  async mantenimiento(b) {
+    const on = this.contarOnline();
+    const horaLima = (new Date(Date.now()).getUTCHours() + 19) % 24;
+    if (b && b.solo) return { ok: true, on, horaLima };
+    this.mantHasta = Date.now() + MANT_MS;
+    this.aTodos({ t: 'aviso', m: '🔧 Actualizando Duende Quest: tu progreso ya está guardado. Vuelves solo en unos segundos.' });
+    let cerrados = 0;
+    for (const s of [...this.sesiones.values()]) {
+      s.mant = true;   // cerrar por mantenimiento no cuenta como caer en el Abismo
+      this.enviar(s, { t: 'err', m: 'Actualizando el mundo… vuelves solo en unos segundos.', reintentar: 25000 });
+      try { s.ws.close(1012, 'actualizando'); } catch (e) {}
+      await this.cerrar(s);   // guarda el personaje
+      cerrados++;
+    }
+    if (this.guardarHermsSucias) await this.guardarHermsSucias(Infinity);
+    if (this.volcarMemoria) await this.volcarMemoria();
+    return { ok: true, on, cerrados, horaLima, hasta: this.mantHasta };
   },
   // El archivo llega en trozos de base64 ({i, n, b64}): el .json.gz crece con los
   // personajes y un mensaje WebSocket no pasa de 1 MiB. Se juntan en la sesion del

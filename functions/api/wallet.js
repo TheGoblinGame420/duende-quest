@@ -488,7 +488,7 @@ async function onRequestPost(context) {
       // DQ canjeable: única vía de entrada, acotada por partida y por día
       let granted = 0;
       try {
-        const day = new Date().toISOString().slice(0, 10);
+        const day = new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10);   // dia de Lima, como accrue_dq_web
         const res = await supabaseQuery(env, 'rpc/accrue_dq', {
           method: 'POST',
           body: { p_tg_id: tgId, p_amount: plausibleDq(coins, wave), p_day: day, p_daily_cap: DQ_CAP_PER_DAY },
@@ -637,7 +637,7 @@ async function onRequestPost(context) {
       if (await insertarScore(env, fila, 'web:' + uid + ':' + inicio) === 'usado') return json(request, { error: 'run_used' }, 409);
       let granted = 0;
       try {
-        const day = new Date().toISOString().slice(0, 10);
+        const day = new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10);   // dia de Lima (America/Lima, UTC-5 sin horario de verano)
         const res = await supabaseQuery(env, 'rpc/accrue_dq_web', {
           method: 'POST',
           body: { p_user_id: uid, p_amount: plausibleDq(coins, wave), p_day: day, p_daily_cap: DQ_CAP_PER_DAY, p_run_ts: inicio },

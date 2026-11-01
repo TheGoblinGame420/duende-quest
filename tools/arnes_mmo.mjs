@@ -442,7 +442,7 @@ async function pruebas() {
   ponerNivel(q1, 30, 'guerrero'); ponerNivel(q2, 30, 'mago');
   await q1.mandar({ t: 'invitar', p: q2.id }); await q2.mandar({ t: 'grupoResp', si: true });
   await aMapa(q1, 'castillo', 1000); await aMapa(q2, 'castillo', 1200); limpiarMapa(q1);
-  q2.c.diaria = { d: new Date(Date.now()).toISOString().slice(0, 10), p: 0, ok: false };
+  q2.c.diaria = { d: new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10), p: 0, ok: false };   // dia de juego (Lima)
   const v1 = monstruo(q1, 'guardia_real', 30); q1.f = 1;
   for (let i = 0; i < 30 && !v1.muere; i++) { avanzar(400); await q1.mandar({ t: 'atk', s: i % 3 }); }
   chequear(v1.muere && q2.c.diaria.p === 0 && q2.c.xp > 0, 'el compañero quieto cobra XP pero no avanza la caza del día');
@@ -1000,6 +1000,19 @@ async function pruebasCopias() {
   chequear((await mundo.indiceCopias()).some(x => x.motivo === 'antes de restaurar'), 'antes de restaurar se guarda una copia de lo actual');
   chequear(((await mundo.indiceCopias()).find(x => x.id === e.id) || {}).motivo === 'prueba', 'una copia nueva de la misma hora no pisa a la anterior');
   chequear(!(await mundo.restaurarSubida('no-es-una-copia')).ok, 'un archivo que no es copia se rechaza');
+  // Restaurar no borra compras: lo entregado despues de la copia vuelve al personaje y el pedido sigue entregado
+  const cmp = await entrar3d('Compra Copia', 'b4c3'); ponerNivel(cmp, 10, 'guerrero'); cmp.sucio = true;
+  const eC = await mundo.hacerCopia('antes de la compra'), cpC = eC && await mundo.leerCopia(eC.id);
+  reloj += 60000;
+  mundo.pedidos.push({ codigo: 'CPY001', uid: cmp.c.uid, jugador: cmp.c.nombre, paquete: 'oro1', nombre: 'Bolsita de oro', usd: 1, metodo: 'sol', creado: Date.now(), estado: 'pagado' });
+  const avisoRealC = mundo.avisarJugador; mundo.avisarJugador = async () => {};
+  try { await mundo.entregarPedido({ codigo: 'CPY001' }); } finally { mundo.avisarJugador = avisoRealC; }
+  const rC = await mundo.restaurarMundo(cpC), gC = await mundo.state.storage.get('c:' + cmp.c.uid);
+  chequear(rC.ok && rC.reaplicados === 1 && gC.oro === cpC.datos['c:' + cmp.c.uid].oro + 5000 && (mundo.pedidos.find(x => x.codigo === 'CPY001') || {}).estado === 'entregado', 'restaurar el mundo no borra compras: lo entregado después de la copia vuelve al personaje');
+  // Version nueva: una copia al arrancar, y solo una vez por version
+  await mundo.state.storage.put('bk:ver', '0');
+  const eV = await mundo.copiaPorVersion();
+  chequear(eV && /^version /.test(eV.motivo) && (await mundo.copiaPorVersion()) === null, 'con una versión nueva se copia todo antes de aceptar sesiones (una sola vez)');
   // El archivo grande llega en trozos y se junta en la sesion del dueño
   const ses = {}, L = Math.ceil(b64.length / 3);
   const piezas = [0, 1, 2].map(i => mundo.juntarSubida(ses, { i, n: 3, b64: b64.slice(i * L, (i + 1) * L) }));
@@ -1461,7 +1474,7 @@ async function pruebasRetencion() {
   const h1d = await entrarR('Cohorte1', '6a');
   chequear((await mundo.retDia(D)).r7 === 1, 'D7: 1 volvió a los 7 días');
   // Sigue conectado pasada la medianoche: el guardado periodico anota el dia nuevo.
-  irA(D + 8, 0);
+  irA(D + 8, 5);   // 00:07 de Lima: el dia de juego empieza a la medianoche de Lima
   h1d.actT = Date.now();
   await mundo.guardar(h1d);
   for (let i = 0; i < 10; i++) await espera();
@@ -1974,8 +1987,9 @@ async function pruebasNovato() {
   chequear(n4.k === 'pueblo', 'si ya se cerró (5 min vacía), al pueblo');
   Object.assign(n, n4);
   // Racha que perdona
-  const hoy = new Date(Date.now()).toISOString().slice(0, 10);
-  const hace = d => new Date(Date.now() - d * 86400000).toISOString().slice(0, 10);
+  // Dia de juego = medianoche de Lima (UTC-5).
+  const hoy = new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10);
+  const hace = d => new Date(Date.now() - 5 * 3600000 - d * 86400000).toISOString().slice(0, 10);
   n.c.salida = Date.now() - 40 * 3600000;   // fuera del margen de 30 h
   n.c.login = { d: hace(2), racha: 5, total: 5 };
   chequear(mundo.procesarLogin(n).racha === 4, 'faltar un día retrocede dos en la racha');
@@ -1995,6 +2009,24 @@ async function pruebasNovato() {
     n.c.login = { d: hace(8), racha: 4, total: 4 };
     const v = mundo.procesarLogin(n).vuelta;
     chequear(v && v.dias === 8 && n.c.oro > oro0 + v.oro - 1 && (n.c.pw.pocion || 0) >= Math.min(99, po0 + 5) && v.item, 'volver tras 8 días da regalo de bienvenida (oro, pociones y objeto)');
+  }
+  { // Dia de juego en hora de Lima: a las 19:30 (00:30 UTC) no hay segundo premio ni se rompe la racha
+    const D = await import('../mmo/js/data.js');
+    const relojAntes = reloj;
+    const dia = Math.floor(Date.now() / DIA) + 2;
+    reloj = dia * DIA + 15 * 3600000;   // 10:00 de Lima
+    n.c.login = { d: D.diaJuego(reloj - DIA), racha: 3, total: 3 };
+    const l1 = mundo.procesarLogin(n);
+    chequear(l1 && l1.racha === 4 && n.c.login.d === D.diaJuego(), 'por la mañana en Lima se cobra el día y sube la racha');
+    reloj = (dia + 1) * DIA + 30 * 60000;   // 00:30 UTC = 19:30 de Lima, el mismo día de juego
+    chequear(D.hoyUTC() === n.c.login.d && mundo.procesarLogin(n) === null && n.c.login.racha === 4, 'a las 19:30 de Lima no hay segundo premio ni se rompe la racha');
+    n.c.login = { d: D.diaJuego(reloj + DIA), racha: 4, total: 4 };
+    chequear(mundo.procesarLogin(n) === null && n.c.login.racha === 4, 'una fecha guardada mayor que hoy (reloj UTC antiguo) cuenta como ya cobrada');
+    reloj = (dia + 1) * DIA + 5 * 3600000 + 60000;   // 00:01 de Lima del día siguiente
+    n.c.login = { d: D.diaJuego(dia * DIA + 15 * 3600000), racha: 4, total: 4 };
+    const l2 = mundo.procesarLogin(n);
+    chequear(l2 && l2.racha === 5, 'pasada la medianoche de Lima llega el premio del día nuevo y la racha sigue');
+    reloj = Math.max(relojAntes, reloj);
   }
   await dejar(n);
 }
@@ -2410,7 +2442,7 @@ async function pruebasPase() {
   chequear(pa.mes === D.paseMes() && pa.p === 0, 'empieza el mes en 0');
   // Quien va por detras del ritmo del mes (50 por dia) gana el doble.
   mundo.puntoPase(j, D.PASE.puntos.semanal); mundo.puntoPase(j, 50);
-  const esperado = 60 + (new Date().getUTCDate() >= 2 ? 100 : 50);
+  const esperado = 60 + (+D.diaJuego().slice(8, 10) >= 2 ? 100 : 50);
   chequear(j.c.pase.p === esperado, 'suma puntos, dobles para ponerse al día (' + esperado + ')');
   j.c.pase.p = 80;
   j.limpiar(); await j.mandar({ t: 'pase', n: 2 });
@@ -3159,7 +3191,7 @@ async function pruebasBoveda() {
   chequear(await completar(5), 'y un Desafío +5');
   chequear(b.c.boveda.n === 5 && b.c.boveda.k === 5, 'la Bóveda cuenta 5 mazmorras y el mejor +5 (' + b.c.boveda.n + ', +' + b.c.boveda.k + ')');
   chequear(!b.c.bovedaOpc, 'esta semana aún no hay nada que elegir');
-  reloj = Math.max(reloj, Date.parse(sem0 + 'T00:00:00Z') + 7 * DIA + 3600000);
+  reloj = Math.max(reloj, Date.parse(sem0 + 'T00:00:00Z') + 7 * DIA + 6 * 3600000);   // lunes 01:00 de Lima
   b.limpiar();
   mundo.actualizarYo(b);
   const y = b.ultimos('yo').pop().yo;
@@ -3299,7 +3331,7 @@ async function pruebasAfijos() {
   chequear(rk && rk.dsem && rk.dsem.some(x => x.yo && x.k === 5) && rk.af && rk.af.length === 2, 'el ranking manda la tabla semanal y los afijos');
   const oro0 = d.c.oro;
   const fSem = Date.parse(mundo.rds.sem + 'T00:00:00Z') + 7 * DIA;
-  reloj = Math.max(reloj, fSem + 3600000);
+  reloj = Math.max(reloj, fSem + 6 * 3600000);   // lunes 01:00 de Lima
   await mundo.revisarSemana(reloj);
   for (let i = 0; i < 20; i++) await espera();
   const logro = D.LOGROS.find(l => l.id === 'maestrodes').oro;
@@ -3547,9 +3579,10 @@ async function pruebas3d() {
   const dos = await entrar('Plano2D', '3a3');
   chequear(a.m3 && a.k === '~3d' && a.ultimos('m3').length === 1, 'entra al mundo 3D con su personaje');
   chequear(b.ultimos('m3').pop().jugadores.some(x => x.n === 'Viajero3D'), 've a los otros jugadores del mundo 3D');
-  chequear(Math.hypot(a.p.x - W.SPAWN3D.x, a.p.z - W.SPAWN3D.z) < 1, 'aparece en el pueblo');
+  chequear(Math.hypot(a.p.x - W.SPAWN3D.x, a.p.z - W.SPAWN3D.z) < 14, 'aparece en el pueblo (repartidos alrededor de la plaza)');
+  const x0 = a.p.x;
   avanzar(1000); await a.mandar({ t: 'mv3', x: a.p.x + 5, z: a.p.z, r: 1.5, a: 1 });
-  chequear(Math.abs(a.p.x - (W.SPAWN3D.x + 5)) < 0.01 && a.c.p3, 'se mueve y la posición se guarda en el personaje');
+  chequear(Math.abs(a.p.x - (x0 + 5)) < 0.01 && a.c.p3, 'se mueve y la posición se guarda en el personaje');
   a.limpiar(); avanzar(50); await a.mandar({ t: 'mv3', x: a.p.x + 80, z: a.p.z });
   chequear(a.ultimos('snap3').length === 1 && a.p.x < 20, 'un salto imposible se corrige (anti speed-hack)');
   const x2d = dos.c.x;

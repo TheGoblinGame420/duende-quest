@@ -95,7 +95,7 @@ export const Amigos = {
       c.pw = c.pw || {}; c.pw.pocion = Math.min(99, (c.pw.pocion || 0) + 3);
       const otro = this.porUid.get(c.invitadoPor);
       this.enviar(s, { t: 'toast', ok: true, m: `🤝 ¡Nivel ${AMIGO_HITO}! Vas a mitad de camino: +3 pociones. A nivel ${AMIGO_NIVEL} ganan oro los dos${otro && otro.c ? ` (tú y ${otro.c.nombre})` : ''}.` });
-      if (otro && otro.c && !otro.cerrado) this.enviar(otro, { t: 'toast', ok: true, m: `🤝 Tu invitado ${c.nombre} llegó a nivel ${AMIGO_HITO}. A nivel ${AMIGO_NIVEL} ganan los dos: ¡ayúdale en grupo (+25% de XP para él)!` });
+      if (otro && otro.c && !otro.cerrado) this.enviar(otro, { t: 'toast', ok: true, m: `🤝 Tu invitado ${c.nombre} llegó a nivel ${AMIGO_HITO}. A nivel ${AMIGO_NIVEL} ganan los dos: ¡ayúdalo en grupo (+25% de XP para él)!` });
       this.actualizarYo(s);
     }
     if (!c.invitadoPor || c.refPagado || c.nivel < AMIGO_NIVEL) return;

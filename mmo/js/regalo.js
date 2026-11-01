@@ -9,7 +9,7 @@
 //   const R = iniciarRegalo({ mandar, ocupado, presumir, fanfarria, vibrar, filtro });
 //   en 'buzon': R.alBuzon(m)   en 'regalo': R.alRegalo(m)
 // ocupado(): true mientras haya otra ventana (el cofre diario va primero).
-import { SKINS, ALAS } from './data.js?v=328';
+import { SKINS, ALAS } from './data.js?v=329';
 
 const CLAVE = 'dq_buzon_visto';
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
@@ -37,7 +37,7 @@ const CSS = `
 #dq-regalo .rg-fig img{position:relative;max-width:150px;max-height:170px;image-rendering:pixelated;animation:rg-flota 2.4s ease-in-out infinite;}
 #dq-regalo .rg-emo{position:relative;font-size:96px;line-height:1;animation:rg-flota 2.4s ease-in-out infinite;}
 #dq-regalo .rg-chispa{position:absolute;top:50%;left:50%;width:7px;height:7px;border-radius:50%;background:#ffd84a;box-shadow:0 0 8px #ffd84a;opacity:0;animation:rg-chispa 1.6s ease-out infinite;}
-#dq-regalo .rg-bots{display:flex;gap:8px;margin-top:14px;}
+#dq-regalo .rg-bots{display:flex;gap:8px;position:sticky;bottom:-16px;z-index:2;margin:14px -18px -16px;padding:10px 18px 16px;background:linear-gradient(rgba(18,14,31,0),#120e1f 14px);}
 #dq-regalo button{flex:1;min-height:46px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;font:inherit;font-weight:700;font-size:15px;cursor:pointer;touch-action:manipulation;}
 #dq-regalo button.rg-si{background:linear-gradient(180deg,#ffd84a,#e0a810);color:#2a1a00;border-color:#ffd84a;}
 #dq-regalo .rg-lista{text-align:left;margin:10px 0 0;padding:0;list-style:none;}
@@ -48,6 +48,20 @@ const CSS = `
 @keyframes rg-flota{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
 @keyframes rg-chispa{0%{opacity:1;transform:translate(-50%,-50%) translate(0,0) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) translate(var(--dx),var(--dy)) scale(.3)}}
 @media (prefers-reduced-motion:reduce){#dq-regalo *{animation:none!important}}
+/* Movil en horizontal (360 px de alto): figura mas chica para que los botones se vean sin bajar;
+   zona segura del notch en los cuatro lados; los botones quedan pegados abajo si hay que desplazar. */
+#dq-regalo{padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));}
+#dq-regalo .rg-caja{max-height:calc(100dvh - max(16px,env(safe-area-inset-top)) - max(16px,env(safe-area-inset-bottom)));}
+@media (max-height:500px){
+#dq-regalo{padding-top:max(8px,env(safe-area-inset-top));padding-bottom:max(8px,env(safe-area-inset-bottom));}
+#dq-regalo .rg-caja{max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));padding-top:12px;}
+#dq-regalo h2{font-size:17px;margin-bottom:2px;}
+#dq-regalo .rg-fig{width:96px;height:96px;margin:2px auto 0;}
+#dq-regalo .rg-rayos{inset:-14px;}
+#dq-regalo .rg-fig img{max-width:84px;max-height:92px;}
+#dq-regalo .rg-emo{font-size:56px;}
+#dq-regalo .rg-p{margin:3px 0;}
+}
 `;
 
 export function iniciarRegalo(H) {

@@ -9,17 +9,17 @@ import {
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
   RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, costoReforja, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TINTES, MASCOTAS, NOVEDADES, PASE, premioPase, ambulanteActivo, ambulanteOferta, semanaUTC, GESTOS, horaFelizTiempos, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
-  RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe, paqueteParaFaltante, ENTREGA, textoPagoRecibido, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA,
+  RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe, paqueteParaFaltante, ENTREGA, textoPagoRecibido, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA, PAGO_LOCAL, pagoLocalActivo, textoSoles,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe, climaDe, CLIMA, ESPECIES, premioEspecie, TORRE, atajoTorre, MODS_TORRE, HERM_COLORES, premioTorreSem, zonaDeNivel, progresoLogro, proximoMundial, mundialDe, HORA_FELIZ, EXPEDICION, premioExpedicion,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-  PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=328';
-import { iniciarRegalo } from './regalo.js?v=328';
-import { iniciarAvisoTg } from './avisotg.js?v=328';
+  PIEDRA_X, costoViaje, tienePiedra, VERSION,
+} from './data.js?v=329';
+import { iniciarRegalo } from './regalo.js?v=329';
+import { iniciarAvisoTg } from './avisotg.js?v=329';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -178,7 +178,9 @@ function ajustarVista() {
   hud.style.right = 'auto'; hud.style.bottom = 'auto';
   // Pantalla angosta (movil en vertical): el marco del objetivo baja bajo
   // el del jugador y el minimapa se achica.
-  hud.classList.toggle('estrecho', w < 600);
+  // Movil en horizontal: el mundo ocupa toda la pantalla (controles flotando, index.html) y el HUD
+  // usa el diseño compacto del movil (botones en 2 filas, sin pisar el marco del jugador).
+  hud.classList.toggle('estrecho', w < 600 || (TACTIL && matchMedia('(orientation:landscape) and (max-height:500px)').matches));
   hud.classList.toggle('muyestrecho', w < 380);   // movil en horizontal: el HUD mide ~360 px aunque la pantalla sea ancha (v325)
 }
 addEventListener('resize', ajustarVista);
@@ -587,6 +589,7 @@ function recibir(m) {
       clearTimeout(mostrarInvitacion.t); ponCss($('invitacion'), 'display', 'none');
       setTimeout(() => { if (yo) { revisarBoveda(); revisarNovedades(); } }, 1500);
       miId = m.id; yo = m.yo; online = m.on || 0; reintentos = 0; llenoN = 0; llenoHasta = 0; if (ws) ws._listo = true;
+      versionServidor(+m.ver || 0);   // el servidor ya va por una version mayor: recarga segura (versionServidor)
       try { if (canalJuego) canalJuego.postMessage({ t: 'aqui', n: yo.nombre }); } catch (e) {}
       // Aviso de ORIGINS: al jugador nuevo no se le saca hacia el 3D antes de
       // acabar el tutorial (se le ofrece al terminarlo, en pintarTutorial).
@@ -806,6 +809,7 @@ function recibir(m) {
       break;
     case 'factura': abrirFactura(m); if (window.dqMedir) window.dqMedir('InitiateCheckout', {}, m.codigo); break;   // pixel de Meta con permiso (js/medir.js); mismo eventID que el servidor
     case 'pedidoSol': mostrarPedidoSol(m); if (window.dqMedir) window.dqMedir('InitiateCheckout', {}, m.codigo); break;
+    case 'pedidoYape': mostrarPedidoYape(m); if (window.dqMedir) window.dqMedir('InitiateCheckout', {}, m.codigo); break;
     case 'buzon': regalo2.alBuzon(m); break;
     case 'regalo': regalo2.alRegalo(m); break;
     case 'avisoTg': avisoTg2.alOferta(m); break;   // «Avísame por Telegram» (avisotg.js)
@@ -863,7 +867,7 @@ function recibir(m) {
     case 'pase': if (yo) { yo.pase = m.pase; if ($('m-mision').classList.contains('on')) pintarMision(); } break;
     case 'gesto': if (GESTOS[m.id]) { gestos.set(m.p, { id: m.id, t: performance.now() }); if (m.p === miId) sfx('boton', .25); } break;
     case 'on': online = m.n; if (m.h) jugaronHoy = m.h; pintarSubMapa(); break;
-    case 'toast': if (!(modoAnuncio() && SIN_CRIPTO_RE.test(m.m || ''))) aviso(m.m, m.ok ? 'ok' : ''); if (m.hab) { $('acciones').innerHTML = ''; pintarHud(); } break;
+    case 'toast': if (!(modoAnuncio() && SIN_CRIPTO_RE.test(m.m || ''))) aviso(m.m, m.ok ? 'ok' : ''); if (m.yapeOk && $('m-sol')) $('m-sol').classList.remove('on'); if (m.hab) { $('acciones').innerHTML = ''; pintarHud(); } break;
     case 'aviso': aviso(m.m, 'jefe'); lineaChat(null, sinEmoji(m.m)); sfx('explosion', .3); break;
     case 'snap':
       if (m.carga) {
@@ -906,6 +910,26 @@ function recibir(m) {
 // Cliente viejo en cache frente a un servidor nuevo (mapa o monstruo que no
 // conoce): se recarga una sola vez cada 2 min. Si la pagina siguiera vieja
 // (cache del WebView), se pide cerrar y abrir en vez de recargar en bucle.
+// El servidor manda su VERSION (data.js) en 'bienvenido': si es mayor que la de este
+// cliente, se recarga solo en el pueblo (o pasados 15 min fuera de mazmorras), sin
+// pago abierto, sin ventanas abiertas y sin escribir en el chat. Sustituye a mirar
+// la pagina cada pocos minutos: al publicar, el servidor se reinicia y todos reconectan.
+let verServ = 0, verServT = 0;
+function versionServidor(v) {
+  if (!(v > VERSION) || verServ) return;
+  let ya = 0; try { ya = +sessionStorage.getItem('dq_recargaVer') || 0; } catch (e) {}
+  if (Date.now() - ya < 10 * 60000) return;   // la recarga anterior no la trajo (cache): sin bucle
+  verServ = v; verServT = Date.now();
+  aviso('✨ Hay una versión nueva del juego: se actualiza al volver al pueblo.', 'ok');
+}
+setInterval(() => {
+  if (!verServ || !yo || document.hidden || P.muerto || fatal) return;
+  if (mapaId !== 'pueblo' && (Date.now() - verServT < 15 * 60000 || instancia || (MAPAS[mapaId] && MAPAS[mapaId].instancia))) return;
+  if (Date.now() - (window.dqPagoT || 0) < 10 * 60000 || document.querySelector('.modal.on') || chatAbierto() || ($('chat-in').value || '').trim()) return;
+  try { sessionStorage.setItem('dq_recargaVer', String(Date.now())); } catch (e) {}
+  location.reload();
+}, 5000);
+
 function versionNueva() {
   fatal = true;
   try { if (ws) ws.close(); } catch (e) {}
@@ -987,8 +1011,13 @@ function agregarMon(d) {
   if (MONSTRUOS[d.k].jefe) jefeVivo = o;
 }
 
+// Hora de la ultima foto: quien lleva >1,5 s sin llegar en ella (fuera del tope de
+// cercanos) no se dibuja ni sale en el minimapa (si no, quedaria congelado en pantalla).
+let ultFotoT = 0;
+const fueraDeFoto = q => !!q.snapT && ultFotoT - q.snapT > 1500;
 function snapshot(m) {
   const t = performance.now();
+  ultFotoT = t;
   for (const r of m.p) {
     const [id, x, y, f, a, hp, mx, fl, rec, rmx, cp] = r;
     if (id === miId) {
@@ -1001,7 +1030,13 @@ function snapshot(m) {
     }
     const o = otros.get(id);
     if (!o) continue;
-    o.buf.push({ t, x, y }); if (o.buf.length > 4) o.buf.shift();
+    // Los jugadores mandan su posicion cada ~200 ms al correr: la foto repetida
+    // no se guarda (si no, se veria anda-para-anda); quieto, se refresca a los 300 ms.
+    // Con mucha gente el servidor solo manda a los cercanos: quien vuelve tras un rato aparece donde esta, sin deslizarse.
+    if (o.snapT && t - o.snapT > 1000) o.buf.length = 0;
+    o.snapT = t;
+    const ub = o.buf[o.buf.length - 1];
+    if (!ub || ub.x !== x || ub.y !== y || t - ub.t > 300) { o.buf.push({ t, x, y }); if (o.buf.length > 5) o.buf.shift(); }
     o.f = f; o.a = a; o.hp = hp; o.mx = mx; o.fl = fl; o.escudo = !!(fl & FJ.escudo); o.fuego = !!(fl & FJ.fuego); o.muerto = !!(fl & FJ.muerto);
     o.rec = rec || 0; o.rmx = rmx || 0;
   }
@@ -1024,9 +1059,10 @@ function snapshot(m) {
 }
 
 // Posicion interpolada ~110 ms en el pasado: los otros se ven suaves aunque
-// el servidor solo mande 10 fotos por segundo.
-function interpolar(o) {
-  const t = performance.now() - 110;
+// el servidor solo mande 10 fotos por segundo. Los jugadores van a ~230 ms
+// porque su posicion llega cada ~200 ms (ahorro de mensajes).
+function interpolar(o, retraso = 110) {
+  const t = performance.now() - retraso;
   const b = o.buf;
   if (b.length === 1 || t <= b[0].t) { o.x = b[0].x; o.y = b[0].y; return; }
   for (let i = b.length - 1; i > 0; i--) {
@@ -1096,7 +1132,7 @@ function efectoPoder(pid, i) {
 // ── JUGADOR LOCAL ──
 const teclas = {};
 let tIzq = false, tDer = false;
-let enviadoT = 0, ultimoEnviado = '';
+let enviadoT = 0, ultimoEnviado = '', ultimoUrg = '';
 let sacudir = 0;
 
 function congelado() { return !!(P.fl & FJ.bloque); }
@@ -1135,15 +1171,26 @@ function fisica() {
   if (P.comboT > 0) P.comboT--;
   if (P.herido > 0) P.herido--;
 
-  // Enviar posicion (hasta ~12 veces por segundo, solo si cambio).
+  enviarPos(false);
+}
+// Posicion al servidor por cambios: al girar, arrancar, parar o saltar se
+// manda ya (con 50 ms de respiro); si solo avanza, cada 200 ms (100 en el
+// aire, para que el arco del salto se vea); quieto no se manda nada. El golpe
+// no cuenta como cambio: el 'atk' ya lo anuncia.
+// forzar: antes de un 'atk', para que el servidor mida el alcance bien.
+function enviarPos(forzar) {
   const ahora = performance.now();
-  const est = !P.suelo ? 2 : P.atk > 0 ? 3 : Math.abs(P.vx) > .5 ? 1 : 0;
+  const anda = Math.abs(P.vx) > .5 ? 1 : 0;
+  // El golpe ya no va como estado 3: nadie lo leia y cada ataque costaba 2 'mv' (ida y vuelta).
+  const est = !P.suelo ? 2 : anda;
   const clave = Math.round(P.x) + ',' + Math.round(P.y) + ',' + P.f + ',' + est;
-  if (ahora - enviadoT > 80 && clave !== ultimoEnviado) {
-    mandar({ t: 'mv', x: Math.round(P.x), y: Math.round(P.y), f: P.f, a: est });
-    enviadoT = ahora; ultimoEnviado = clave;
-    if (est === 1 && yo) paso('mover');   // primera vez que camina (embudo)
-  }
+  if (clave === ultimoEnviado) return;
+  const urg = P.f + ',' + est;
+  const espera = forzar ? 0 : urg !== ultimoUrg ? 50 : est === 2 ? 100 : 200;
+  if (ahora - enviadoT < espera) return;
+  mandar({ t: 'mv', x: Math.round(P.x), y: Math.round(P.y), f: P.f, a: est });
+  enviadoT = ahora; ultimoEnviado = clave; ultimoUrg = urg;
+  if (est === 1 && yo) paso('mover');   // primera vez que camina (embudo)
 }
 
 // Salto con buen tacto de plataformas:
@@ -1187,6 +1234,7 @@ function atacar() {
     if (!o) { errorRojo('No hay ningún enemigo al alcance de tu vara.'); P.atkCdHasta = ahora + 400; return; }
     P.atkCdHasta = ahora + VARA.cdMs * arma.cd;
     P.atk = 10; P.f = o.x >= P.x ? 1 : -1;
+    enviarPos(true);
     mandar({ t: 'atk', s: 0, tg: o.id, tk: esRival(o) ? 'p' : undefined });
     return;
   }
@@ -1194,6 +1242,7 @@ function atacar() {
   P.comboT = 40;
   P.atk = 14;
   P.atkCdHasta = ahora + ATAQUE_CD_MS * arma.cd;
+  enviarPos(true);   // la posicion va por cambios: que el servidor mida el golpe desde donde estas
   mandar({ t: 'atk', s: P.paso });
   const tipo = ['corte_h', 'corte_arriba', 'corte_giro'][P.paso];
   const esc = (arma.alcance || 1) * (P.paso === 2 ? 1.25 : 1.05);
@@ -1365,11 +1414,11 @@ function interactuar() {
     // Tirar si esta pescando (antes de que pique, el servidor dice que se asusto).
     if (castYo && (castYo.id === 'pica' || castYo.id === 'pescar')) { mandar({ t: 'tirar' }); return; }
     P.f = c.p.x >= P.x ? 1 : -1;
-    mandar({ t: 'pescar' });
+    enviarPos(true); mandar({ t: 'pescar' });
     return;
   }
   if (c.tipo === 'portal' && c.p.buscador) { abrirBuscador(); return; }
-  if (c.tipo === 'portal') { mandar({ t: 'portal', i: c.i }); }
+  if (c.tipo === 'portal') { enviarPos(true); mandar({ t: 'portal', i: c.i }); }
   else if (c.n.tipo === 'tienda') abrirTienda();
   else if (c.n.tipo === 'ranking') abrirRanking();
   else if (c.n.tipo === 'artesania') abrirArtesana();
@@ -1537,11 +1586,13 @@ function ofrecerBienvenida(antes) {
   if (ofrecida) return;
   if (yo.muerto && !antes.muerto) { muertes++; try { localStorage.setItem('dq_bienv_muertes', String(muertes)); } catch (e) {} }
   if (!((antes.nivel < 5 && yo.nivel >= 5) || (muertes >= 2 && antes.muerto && !yo.muerto))) return;
-  try { localStorage.setItem('dq_bienv_ofrecida', '1'); } catch (e) {}
+  // Se marca como ofrecida solo cuando de verdad se abre: si 60 s hubo otra ventana, se ofrece la proxima vez.
   const intentar = n => {
     if (!yo || !yo.puedeBienvenida || yo.muerto) return;
-    if (document.querySelector('.modal.on')) { if (n < 20) setTimeout(() => intentar(n + 1), 3000); return; }
+    try { if (localStorage.getItem('dq_bienv_ofrecida') === '1') return; } catch (e) {}
+    if (document.querySelector('.modal.on, #dq-avtg.on, #dq-regalo.on')) { if (n < 20) setTimeout(() => intentar(n + 1), 3000); return; }
     abrirPremium('bienv'); premiumFoco = 'bienvenida'; pintarTienda();
+    try { localStorage.setItem('dq_bienv_ofrecida', '1'); } catch (e) {}
     aviso('🎁 Pack de bienvenida: solo para tu primera compra. El Duende te lo entrega a mano.', 'ok');
   };
   setTimeout(() => intentar(0), 2500);
@@ -1665,7 +1716,7 @@ function usarHabDef(h, tgForzado) {
   tuto.usoHab = true;
   // La carga mueve al guerrero: el servidor lo pone junto al objetivo.
   if (h.cast) castPend = ahora + 600;
-  mandar({ t: 'hab', id: h.id, tg, tk });
+  enviarPos(true); mandar({ t: 'hab', id: h.id, tg, tk });
 }
 function pintarCooldowns() {
   const ahora = performance.now();
@@ -2133,7 +2184,7 @@ $('presumir').onclick = () => {
 // Buzon "Mientras no estabas" y la compra entregada (regalo.js), despues del cofre diario.
 const regalo2 = iniciarRegalo({
   mandar,
-  ocupado: () => !!document.querySelector('.modal.on') || !yo || !yo.clase,
+  ocupado: () => !!document.querySelector('.modal.on, #dq-avtg.on') || !yo || !yo.clase,
   presumir: txt => { presumirTxt = txt; presumirTipo = ''; if (amigosInfo && amigosInfo.ref) compartirPresumir(amigosInfo); else { presumirPend = true; mandar({ t: 'amigos' }); } },
   fanfarria: () => tono('nivel'),
   vibrar,
@@ -2287,7 +2338,7 @@ function htmlCalendario() {
   for (let i = 0; i < 3; i++, t += 1800000) jefes.push(`${hora(t)} ${esc((MONSTRUOS[mundialDe(t + 1000)] || {}).nombre || '')}`);
   l.push(`👹 <b>Jefes mundiales</b> en el Coliseo: ${jefes.join(' · ')}.`);
   l.push(`🧳 <b>Mercader ambulante</b>: ${ambulanteActivo() ? '<span style="color:var(--ok)">está aquí este fin de semana</span>' : 'de viernes a domingo'}.`);
-  const lunes = Date.parse(semanaUTC() + 'T00:00:00Z') + 7 * 86400000;
+  const lunes = Date.parse(semanaUTC() + 'T00:00:00Z') + 7 * 86400000 + 5 * 3600000;   // lunes 00:00 de Lima
   l.push(`🏆 <b>Cierre de rankings semanales</b>: ${dia(lunes)} a las ${hora(lunes)}.`);
   // Pronostico: donde llueve (Pez Dorado x2) o nieva, ahora o en las proximas horas.
   const pron = Object.keys(CLIMA).map(id => {
@@ -2404,7 +2455,7 @@ function abrirBuscador() {
     const bloq = yo.nivel < mz.nv[0];
     if (mz.banda) { hBanda += htmlBanda(id, mz, bloq); continue; }
     const jefes = mz.jefes.map(j => MONSTRUOS[j.k].nombre).join(' · ');
-    const hecha = yo.mazDia && yo.mazDia.d === new Date().toISOString().slice(0, 10) && (yo.mazDia.hechas || []).includes(id);
+    const hecha = yo.mazDia && yo.mazDia.d === new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10) && (yo.mazDia.hechas || []).includes(id);
     const estado = bloq ? `<span style="color:var(--warn)">🔒 Se abre a Nv ${mz.nv[0]} (te faltan ${mz.nv[0] - yo.nivel})</span>`
       : `<span style="color:${hecha ? 'var(--txt2)' : 'var(--ok)'}">${hecha ? '✓ Premio del día cobrado' : 'Premio del día disponible: XP, oro y un objeto épico'}</span>`;
     const tj = tarjeta(`<img src="${A}items/equipo/${mz.icono}.png" style="${bloq ? 'filter:grayscale(1);opacity:.4' : ''}">`,
@@ -2590,7 +2641,7 @@ function cofreCercano() {
   for (const c of cofres) if (c.hasta <= ahora && Math.abs(P.x - c.x) < 60 && Math.abs(P.y - c.y) < 60) return { tipo: 'cofre', c };
   return null;
 }
-function abrirCofre(c) { mandar({ t: 'cofre', id: c.id }); }
+function abrirCofre(c) { enviarPos(true); mandar({ t: 'cofre', id: c.id }); }
 
 function dibujarCofres() {
   const ahora = performance.now();
@@ -2922,7 +2973,7 @@ function viajePorBorde(izq, der) {
   bordeT = performance.now();
   const dest = MAPAS[mp.portales[i].a];
   if (dest && dest.nv && yo.nivel < dest.nv[0] - 5) { bordeSoltar = true; errorRojo(`${dest.nombre}: zona de nivel ${dest.nv[0]}-${dest.nv[1]}. Para entrar igual, usa su portal (E).`); return; }
-  mandar({ t: 'portal', i, borde: 1 });
+  enviarPos(true); mandar({ t: 'portal', i, borde: 1 });
 }
 
 // Barra de XP: la parte de descanso se ve en azul por delante de la tuya.
@@ -3351,7 +3402,7 @@ function htmlPremium() {
   const cuenta = yo && yo.p2e && yo.p2e.cuenta;
   // Una linea clara y el detalle legal plegado (en movil no tapa los paquetes).
   let h = '<p style="font-size:13px;line-height:1.45;color:var(--txt2);margin-bottom:4px">Compras opcionales: El Duende revisa cada pago y te lo entrega a mano (CLASSIC y ORIGINS).</p>'
-    + '<details style="font-size:12px;line-height:1.45;color:var(--txt2);margin-bottom:10px"><summary style="cursor:pointer">Cómo funciona</summary>' + esc(textoPagoRecibido()) + ' Te avisamos aquí y por Telegram. ' + (cuentaTg ? 'En Telegram se paga con Stars. Con dinero <b>no</b> se compran mTON: solo se ganan jugando.' : modoAnuncio() ? 'Se paga con Stars de Telegram (las compras allí con tarjeta): el botón abre Telegram, o en PC escaneas un QR con el celular.' : 'En la web se paga con Stars de Telegram (allí las compras con tarjeta), con Solana (SOL, una criptomoneda: no son soles) o con $DUENDE (10% de descuento). Con dinero <b>no</b> se compran mTON: solo se ganan jugando.') + ' Los soles (S/) son solo referencia aproximada.</details>';
+    + '<details style="font-size:12px;line-height:1.45;color:var(--txt2);margin-bottom:10px"><summary style="cursor:pointer">Cómo funciona</summary>' + esc(textoPagoRecibido()) + (cuentaTg ? ' Te avisamos aquí y por Telegram. ' : ' Te avisamos aquí en el juego al entregarlo. ') + (cuentaTg ? 'En Telegram se paga con Stars. Con dinero <b>no</b> se compran mTON: solo se ganan jugando.' : modoAnuncio() ? 'Se paga con Stars de Telegram (se compran con tarjeta dentro de Telegram): el botón abre Telegram, o en PC escaneas un QR con el celular.' : 'En la web se paga con Stars de Telegram (se compran con tarjeta dentro de Telegram), con Solana (SOL, una criptomoneda: no son soles) o con $DUENDE (10% de descuento). Con dinero <b>no</b> se compran mTON: solo se ganan jugando.') + (pagoLocalActivo() && !cuentaTg ? ' Con Yape / Plin pagas en soles el precio que ves; El Duende revisa tu yapeo y te lo entrega.' : ' Los soles (S/) son solo referencia aproximada.') + '</details>';
   // La skin elegida desde la pestaña Skins va primero; luego por grupos.
   // El Pack de bienvenida (SOLO 1 VEZ) sale solo mientras el servidor diga que aun puedes.
   const lista = ordenTienda(PAQUETES.filter(p => !p.unaVez || (yo && yo.puedeBienvenida)), premiumFoco);
@@ -3366,6 +3417,9 @@ function htmlPremium() {
     else if (!cuenta) acc = `<span class="precio">${cuentaTg ? estrellasDe(pq.usd) + ' ⭐' : 'US$' + pq.usd}${ref(pq.usd)}</span><button class="btn sec" data-cuenta="1">Iniciar sesión</button>`;
     else if (cuentaTg) acc = `<span class="precio">${estrellasDe(pq.usd)} ⭐${ref(pq.usd)}</span><button class="btn" data-premium="${pq.id}" data-metodo="stars">Pagar con Stars</button>`;
     // En la web tambien con Stars: el servidor crea la factura y se paga en Telegram (movil: abre el enlace; PC: QR).
+    // Yape / Plin (solo con el numero del dueño en PAGO_LOCAL): en soles redondos, y lo demas plegado en «Otros métodos».
+    else if (pagoLocalActivo()) acc = `<span class="precio">${textoSoles(pq.pen)}<small style="display:block;font-size:11px;color:var(--txt2)">≈ US$${pq.usd}</small></span><button class="btn" data-premium="${pq.id}" data-metodo="yape">Yape / Plin ${textoSoles(pq.pen)}</button>`
+      + `<details style="font-size:12px;margin-top:4px"><summary style="cursor:pointer;color:var(--txt2)">Otros métodos</summary><button class="btn sec" data-premium="${pq.id}" data-metodo="stars">⭐ Stars (tarjeta en Telegram)</button>` + (modoAnuncio() ? '' : `<button class="btn sec" data-premium="${pq.id}" data-metodo="sol">Solana (cripto)</button><button class="btn sec" data-premium="${pq.id}" data-metodo="duende">$DUENDE −10%</button>`) + '</details>';
     else if (modoAnuncio()) acc = `<span class="precio">US$${pq.usd}${ref(pq.usd)}</span><button class="btn" data-premium="${pq.id}" data-metodo="stars">⭐ Pagar con Stars (tarjeta en Telegram)</button>`;
     else acc = `<span class="precio">US$${pq.usd}${ref(pq.usd)}</span><button class="btn" data-premium="${pq.id}" data-metodo="sol">Pagar con Solana (cripto)</button><button class="btn sec" data-premium="${pq.id}" data-metodo="stars">⭐ Pagar con Stars (tarjeta en Telegram)</button><button class="btn sec" data-premium="${pq.id}" data-metodo="duende">$DUENDE −10%</button>`;
     const ico = sk ? `<img src="${retratoSkin(pq.skin)}" style="${sk.premium ? 'filter:drop-shadow(0 0 5px ' + sk.color + ')' : ''}">` : `<img src="${A}items/equipo/${pq.icono}.png">`;
@@ -3378,7 +3432,7 @@ function htmlPremium() {
   if (ps.length) {
     const col = { pagado: 'var(--warn)', por_verificar: 'var(--warn)', entregado: 'var(--ok)', anulado: 'var(--err)', esperando_pago: 'var(--txt2)', comprobando: 'var(--txt2)' };
     const txt = { pagado: 'Por entregar', por_verificar: 'En revisión', entregado: 'Entregado', anulado: 'Anulado', esperando_pago: 'Sin pagar', comprobando: 'Comprobando…' };
-    h += '<p style="margin:12px 0 4px;font-size:12px">Tus compras:</p>' + ps.slice().reverse().map(x => `<div class="fila"><span>#${esc(x.codigo)} · ${esc(x.nombre)}</span><span style="color:${col[x.estado] || 'var(--txt)'}">${txt[x.estado] || esc(x.estado)}${x.estado === 'esperando_pago' && (x.lamports || x.raw) ? ` <button class="btn sec" data-retomar="${esc(x.codigo)}" style="padding:4px 8px">Pagar</button>` : ''}${textoPlazo(x)} ${x.reclamado ? '<small style="color:var(--txt2)">Avisado</small>' : `<button class="btn sec" data-reclamo="${esc(x.codigo)}" style="padding:4px 8px">¿Problema?</button>`}</span></div>`).join('')
+    h += '<p style="margin:12px 0 4px;font-size:12px">Tus compras:</p>' + ps.slice().reverse().map(x => `<div class="fila"><span>#${esc(x.codigo)} · ${esc(x.nombre)}</span><span style="color:${col[x.estado] || 'var(--txt)'}">${txt[x.estado] || esc(x.estado)}${x.estado === 'esperando_pago' && (x.lamports || x.raw || x.yape) ? ` <button class="btn sec" data-retomar="${esc(x.codigo)}" style="padding:4px 8px">Pagar</button>` : ''}${textoPlazo(x)} ${x.reclamado ? '<small style="color:var(--txt2)">Avisado</small>' : `<button class="btn sec" data-reclamo="${esc(x.codigo)}" style="padding:4px 8px">¿Problema?</button>`}</span></div>`).join('')
       + '<p style="font-size:11px;color:var(--txt2);margin-top:6px">¿Algo salió mal con una compra? Pulsa «¿Problema?» y El Duende lo revisa. <a href="/reembolsos.html" target="_blank" rel="noopener" style="color:var(--txt2)">Entregas y reembolsos</a></p>';
   }
   return h;
@@ -3387,7 +3441,8 @@ function conectarPremium(L) {
   // Retomar un pago con SOL que quedo a medias (p. ej. tras abrir el juego en Phantom).
   L.querySelectorAll('[data-retomar]').forEach(b => b.onclick = () => {
     const x = ((yo && yo.pedidos) || []).find(p => p.codigo === b.dataset.retomar);
-    if (x && x.raw) mostrarPedidoSol({ metodo: 'duende', codigo: x.codigo, raw: x.raw, mint: x.mint, dec: x.dec, wallet: x.wallet, usd: x.usd, nombre: x.nombre });
+    if (x && x.yape) mostrarPedidoYape(x.yape);
+    else if (x && x.raw) mostrarPedidoSol({ metodo: 'duende', codigo: x.codigo, raw: x.raw, mint: x.mint, dec: x.dec, wallet: x.wallet, usd: x.usd, nombre: x.nombre });
     else if (x && x.lamports) mostrarPedidoSol({ codigo: x.codigo, lamports: x.lamports, wallet: x.wallet, usd: x.usd, nombre: x.nombre, ref: x.ref });
   });
   // «¿Problema?»: avisa al dueño de ese pedido (el servidor limita los avisos).
@@ -3414,6 +3469,7 @@ function abrirPremium(via) {
 // Telegram, sin bloqueo de ventanas emergentes) y un QR en PC para pagar desde el celular.
 function abrirFactura(m) {
   evCompra('fa');
+  window.dqPagoT = Date.now();   // con un pago abierto no se recarga por version nueva (versionServidor)
   if (!TG || !TG.openInvoice) { mostrarFacturaWeb(m); return; }
   TG.openInvoice(m.link, st => {
     if (st === 'paid') aviso('Pago recibido. ' + textoPagoRecibido(), 'ok');
@@ -3455,9 +3511,44 @@ function mostrarFacturaWeb(m) {
     const img = $('stars-qr').querySelector('img'); if (img) { img.style.background = '#fff'; img.style.borderRadius = '8px'; img.alt = 'QR del pago con Stars'; }
   }).catch(() => { if ($('stars-qr')) $('stars-qr').textContent = ''; });
 }
+// Yape / Plin (PAGO_LOCAL): monto exacto en soles, #codigo en la nota y el
+// numero de operacion. El Duende lo revisa en su app y lo entrega a mano.
+function mostrarPedidoYape(m) {
+  window.dqPagoT = Date.now();   // vuelve de su app de pago: sin recarga por version nueva (versionServidor)
+  if (!m || !m.numero) { aviso('El pago con Yape / Plin aún no está disponible.'); return; }
+  const vence = new Date(m.vence || Date.now() + 86400000);
+  const hora = vence.getHours() + ':' + String(vence.getMinutes()).padStart(2, '0') + (vence.toDateString() !== new Date().toDateString() ? ' de mañana' : '');
+  $('sol-titulo').textContent = 'PAGAR CON YAPE / PLIN';
+  $('sol-cuerpo').innerHTML =
+    `<p class="centro" style="margin-bottom:8px">${esc(m.nombre)} · pedido <b>#${esc(m.codigo)}</b></p>` +
+    `<div class="saldo"><b>S/ ${esc(m.monto)}</b><small>Yapea este monto <b style="display:inline">exacto</b> (con sus céntimos): así sabemos que es tu pedido</small></div>` +
+    (/^\/[\w/.-]+$/.test(m.qr || '') ? `<div style="display:flex;justify-content:center;margin:6px 0"><img src="${esc(m.qr)}" alt="QR de Yape de El Duende" style="width:180px;max-width:70%;background:#fff;border-radius:8px;padding:6px"></div>` : '') +
+    `<p style="font-size:13px;margin:6px 0">1. Yapea o plinea al número <b style="font-size:15px;white-space:nowrap">${esc(m.numero)}</b>${m.titular ? ` (${esc(m.titular)})` : ''}.</p>` +
+    `<div style="display:flex;gap:6px;margin:6px 0"><button class="btn sec" id="b-y-num" style="flex:1">Copiar número</button><button class="btn sec" id="b-y-monto" style="flex:1">Copiar monto</button></div>` +
+    `<p style="font-size:13px;margin:6px 0">2. En la nota del yapeo escribe <b>#${esc(m.codigo)}</b>. <button class="btn sec" id="b-y-cod" style="padding:3px 8px">Copiar</button></p>` +
+    `<p style="font-size:13px;margin:6px 0">3. Pega aquí el número de operación del comprobante:</p>` +
+    `<input class="nombre" id="in-yape-op" inputmode="numeric" autocomplete="off" maxlength="16" placeholder="Nº de operación (solo cifras)" style="margin:6px 0">` +
+    `<button class="btn" id="b-yape-ok" style="width:100%;padding:12px">✅ Ya pagué: enviar operación</button>` +
+    `<p style="font-size:12px;color:var(--txt2);margin-top:8px">Tienes hasta las ${esc(hora)}. Cada número de operación vale para un solo pedido. ${esc(textoPagoRecibido())} Si cierras esta ventana, en Tienda → 💎 PAQUETES → Tus compras pulsa «Pagar».</p>`;
+  abrir('m-sol');
+  const copiar = t => { try { navigator.clipboard.writeText(t).then(() => aviso('📋 Copiado', 'ok'), () => aviso('No se pudo copiar: cópialo a mano.')); } catch (e) { aviso('No se pudo copiar: cópialo a mano.'); } };
+  $('b-y-num').onclick = () => copiar(String(m.numero).replace(/\s/g, ''));
+  $('b-y-monto').onclick = () => copiar(m.monto);
+  $('b-y-cod').onclick = () => copiar('#' + m.codigo);
+  const inp = $('in-yape-op');
+  inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') $('b-yape-ok').click(); });
+  $('b-yape-ok').onclick = () => {
+    const op = inp.value.replace(/[\s-]/g, '');
+    if (!/^\d{6,12}$/.test(op)) { aviso('El número de operación son solo cifras (de 6 a 12). Lo ves en el comprobante.'); return; }
+    if (Date.now() - (window.__ultYape || 0) < 4000) return;
+    window.__ultYape = Date.now();
+    sfx('boton', .3); mandar({ t: 'pedidoYapeOk', codigo: m.codigo, operacion: op });
+  };
+}
 // SOL: con Phantom (un toque) o desde cualquier wallet pegando la firma.
 let pedidoSol = null;
 function mostrarPedidoSol(m) {
+  window.dqPagoT = Date.now();   // vuelve de Phantom: sin recarga por version nueva (versionServidor)
   pedidoSol = m;
   const esD = m.metodo === 'duende';
   const unidad = esD ? '$DUENDE' : 'SOL';
@@ -4584,7 +4675,7 @@ function dibujar() {
   if (frame % 6 === 0) escalonarEtiquetas();
   for (const o of mons.values()) dibujarMonstruo(o);
   dibujarMarcasEspeciales();
-  for (const q of otros.values()) { interpolar(q); if (q.atk > 0) q.atk--; if (q.herido > 0) q.herido--; dibujarDuende(q, false); }
+  for (const q of otros.values()) { if (fueraDeFoto(q)) continue; interpolar(q, 230); if (q.atk > 0) q.atk--; if (q.herido > 0) q.herido--; dibujarDuende(q, false); }
   if (yo) dibujarDuende(P, true);
   dibujarProyectiles();
   dibujarEfectos();
@@ -4731,7 +4822,7 @@ function cajaTareas() {
 function cajaSemana() {
   if (!yo || yo.nivel < RUNA_NIVEL) return '';
   const fila = (ok, txt, dcha) => `<div class="fila" style="${ok ? 'color:var(--ok)' : ''}"><span>${ok ? '✓' : '•'} ${txt}</span><span>${dcha}</span></div>`;
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10);   // dia de juego (Lima)
   let h = '<div class="mis-caja"><b>Tu semana</b>';
   const md = yo.mazDia && yo.mazDia.d === hoy ? (yo.mazDia.hechas || []).length : 0;
   h += fila(md > 0, 'Premio del día de mazmorra (uno por mazmorra)', md + ' hoy');
@@ -4770,7 +4861,7 @@ function sugerencias() {
   const t = yo.tareas, pend = t && t.dia ? t.dia.l.filter(x => !x.ok) : [];
   if (pend.length) l.push(`📅 Te ${pend.length > 1 ? 'quedan ' + pend.length + ' diarias' : 'queda 1 diaria'}: ${esc(pend[0].txt)} (${pend[0].p}/${pend[0].n}).`);
   if (yo.nivel >= Math.min(...Object.values(MAZMORRAS).map(m => m.nv[0]))) {
-    const hoy = new Date().toISOString().slice(0, 10), hechas = yo.mazDia && yo.mazDia.d === hoy ? yo.mazDia.hechas || [] : [];
+    const hoy = new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10), hechas = yo.mazDia && yo.mazDia.d === hoy ? yo.mazDia.hechas || [] : [];
     const mz = Object.entries(MAZMORRAS).filter(([id, m]) => !m.banda && yo.nivel >= m.nv[0] && !hechas.includes(id)).sort((a, b) => b[1].nv[0] - a[1].nv[0])[0];
     if (mz) l.push(`🏰 ${esc(mz[1].nombre)}: premio del día sin cobrar (XP, oro y un épico).`);
     if (!yo.torreSem && yo.nivel >= TORRE.nv) l.push('🗼 Sube la Torre del Duende: cada 5 pisos nuevos de la semana, un cofre.');
@@ -4882,7 +4973,8 @@ function dibujarMinimapa() {
   for (const mx of muros) { mg.fillStyle = '#e9d5ff'; mg.fillRect(4 + mx * k - 1, 2, 2, H - 4); }
   for (const n of (mp.npcs || [])) { mg.fillStyle = '#00ff88'; mg.fillRect(4 + n.x * k - 1.5, y - 2, 3, 4); }
   for (const o of mons.values()) if (MONSTRUOS[o.k].jefe && !o.muereT) { mg.fillStyle = '#ff3cf0'; mg.beginPath(); mg.arc(4 + o.x * k, y, 4, 0, 7); mg.fill(); }
-  for (const q of otros.values()) { mg.fillStyle = '#00eeff'; mg.fillRect(4 + q.x * k - 1.5, y - 3, 3, 6); }
+  for (const q of otros.values()) { if (fueraDeFoto(q)) continue;   // lejos: el servidor ya no lo manda
+    mg.fillStyle = '#00eeff'; mg.fillRect(4 + q.x * k - 1.5, y - 3, 3, 6); }
   dibujarMiniMundoAbierto(k, y);
   mg.fillStyle = '#ffe600'; mg.fillRect(4 + P.x * k - 2, y - 4, 4, 8);
 }
@@ -5161,7 +5253,7 @@ function pintarTienda() {
   } else if (tabTienda === 'ambulante') {
     // Mercader ambulante: la oferta de esta semana; se compra de viernes a domingo (UTC).
     const activo = ambulanteActivo(), of = ambulanteOferta();
-    h += `<p style="font-size:13px;color:var(--txt2);margin-bottom:8px">${activo ? '🧳 <b style="color:var(--ok)">El ambulante está aquí este fin de semana.</b>' : '🧳 El ambulante llega el <b>viernes</b> y se va el domingo (UTC).'} Cada semana trae otra cosa (solo estética). Su oferta de esta semana:</p>`;
+    h += `<p style="font-size:13px;color:var(--txt2);margin-bottom:8px">${activo ? '🧳 <b style="color:var(--ok)">El ambulante está aquí este fin de semana.</b>' : '🧳 El ambulante llega el <b>viernes</b> y se va el domingo (hora de Perú).'} Cada semana trae otra cosa (solo estética). Su oferta de esta semana:</p>`;
     const fila = (k, id, d, ico, extra) => {
       const tiene = ((k === 'tinte' ? yo.tintes : yo.mascotas) || []).includes(id);
       const acc = tiene ? '<span class="precio" style="color:var(--ok)">✓ Ya es tuyo</span>'
@@ -5216,7 +5308,7 @@ function pintarTienda() {
       if (tabTienda === 'skin' && !tiene.includes(id)) acc += `<button class="btn sec" data-probar="${id}">Probar</button>`;
       h += tarjeta(ico, d.premium ? `<span style="color:${d.color}">${esc(d.nombre)}</span>` : d.nombre, d.desc + (tabTienda === 'skin' && puesto !== id ? difSkin(id) : ''), acc);
     }
-    if (tabTienda === 'skin') h += '<p style="margin-top:8px;font-size:12px;color:#fde68a"><b>Una skin, dos juegos:</b> la que compres la llevas también en Duende Quest Origins (3D), con los mismos poderes. En PvP (duelos y Abismo) sus ventajas de combate no cuentan: ahí todos pelean igual.</p><p style="margin-top:6px;font-size:12px;color:var(--txt2)">Cada skin da sus poderes mientras la llevas. Se compran con oro o, con tu cuenta, con dinero: ' + ((TG && !forzarInvitado) || modoAnuncio() ? 'Telegram Stars' : 'SOL o $DUENDE (10% de descuento) a la wallet de El Duende') + '; confirmado el pago, se activa sola en tu personaje. Las cuatro exclusivas (Esmeralda, Sombrío, Solar y Cósmico) solo se consiguen así; sus ventajas suben con el precio sin superar a las de oro de final de juego' + (modoAnuncio() ? '' : ', y ninguna cambia lo que se gana en mTON') + '.</p>';
+    if (tabTienda === 'skin') h += '<p style="margin-top:8px;font-size:12px;color:#fde68a"><b>Una skin, dos juegos:</b> la que compres la llevas también en ORIGINS (3D), con los mismos poderes. En PvP (duelos y Abismo) sus ventajas de combate no cuentan: ahí todos pelean igual.</p><p style="margin-top:6px;font-size:12px;color:var(--txt2)">Cada skin da sus poderes mientras la llevas. Se compran con oro o, con tu cuenta, con dinero: ' + ((TG && !forzarInvitado) || modoAnuncio() ? 'Telegram Stars' : 'SOL o $DUENDE (10% de descuento) a la wallet de El Duende') + '; El Duende revisa el pago y la activa en tu personaje. Las cuatro exclusivas (Esmeralda, Sombrío, Solar y Cósmico) solo se consiguen así; sus ventajas suben con el precio sin superar a las de oro de final de juego' + (modoAnuncio() ? '' : ', y ninguna cambia lo que se gana en mTON') + '.</p>';
   }
   L.innerHTML = h;
   // Retratos de las monturas (primer cuadro de su hoja).
@@ -5456,7 +5548,7 @@ function pintarVinc() {
     + fila('tg', 'Telegram') + fila('web', 'Correo');
   if (vincCod && vincCod.hasta > Date.now()) h += `<p style="text-align:center;margin:10px 0 2px;font:700 26px monospace;letter-spacing:4px;color:#ffd84a">${esc(vincCod.cod)}</p><p class="nota" style="margin:0 0 8px;text-align:center">Escríbelo en tu otra cuenta (👤 → «Vincular») antes de 10 minutos.</p>`;
   else h += '<button class="btn" data-v="cod" style="width:100%;margin:8px 0">Generar código para vincular</button>';
-  h += '<div style="display:flex;gap:6px"><input class="nombre" id="vinc-in" maxlength="8" placeholder="¿Tienes un código? (de otra cuenta o de tu duende invitado)" style="margin:0;text-transform:uppercase"><button class="btn" data-v="usar">Vincular</button></div>';
+  h += '<div style="display:flex;gap:6px"><input class="nombre" id="vinc-in" maxlength="8" placeholder="¿Tienes un código?" title="Código de otra cuenta o de tu duende invitado" style="margin:0;text-transform:uppercase"><button class="btn" data-v="usar">Vincular</button></div>';
   C.innerHTML = h;
   const vi = $('vinc-in'); vi.addEventListener('keydown', e => e.stopPropagation());
   C.querySelector('[data-v="usar"]').onclick = () => { const cod = vi.value.trim(); if (cod) mandar({ t: 'vincUsar', cod }); };

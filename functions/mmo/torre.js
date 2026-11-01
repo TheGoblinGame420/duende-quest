@@ -198,14 +198,14 @@ export const Torre = {
       const r = await this.rtP;
       if (!this.rt) this.rt = r || { sem: semanaUTC(), l: {} };
     }
-    if (this.rt.sem !== semanaUTC()) await this.cerrarSemanaTorre();
+    if (this.rt.sem < semanaUTC()) await this.cerrarSemanaTorre();   // una semana futura (lunes UTC antiguo) no se premia otra vez
     return this.rt;
   },
   cerrarSemanaTorre() {
     if (this.cerrandoT) return this.cerrandoT;
     this.cerrandoT = (async () => {
       const vieja = this.rt || (await this.state.storage.get('rankTorre'));
-      if (!vieja || vieja.sem === semanaUTC()) { this.rt = vieja || { sem: semanaUTC(), l: {} }; return; }
+      if (!vieja || vieja.sem >= semanaUTC()) { this.rt = vieja || { sem: semanaUTC(), l: {} }; return; }
       this.rt = { sem: semanaUTC(), l: {} };
       await this.state.storage.put('rankTorre', this.rt);
       await this.premiarTorre(vieja);

@@ -16,12 +16,15 @@
     notify: null,     // function(msg)
 
     check() {
-      const today = new Date().toISOString().slice(0, 10);
+      // Fecha LOCAL del jugador (antes UTC: en Peru el dia cambiaba a las 19:00).
+      const local = t => new Date(t - new Date(t).getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+      const today = local(Date.now());
       let s = null;
       try { s = JSON.parse(localStorage.getItem(this.storageKey) || 'null'); } catch (e) {}
-      if (s && s.last === today) { this.render(s.day); return s.day; } // ya reclamado hoy
+      // Una fecha guardada mayor que hoy (del reloj UTC antiguo) cuenta como ya reclamada.
+      if (s && s.last >= today) { this.render(s.day); return s.day; } // ya reclamado hoy
 
-      const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+      const yesterday = local(Date.now() - 86400000);
       const day = (s && s.last === yesterday) ? (s.day + 1) : 1;
       const bonus = bonusFor(day);
       localStorage.setItem(this.storageKey, JSON.stringify({ last: today, day }));

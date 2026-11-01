@@ -8,7 +8,7 @@
 // bonoTareas), mazmorras.js (al completar) y world.js (jefe mundial).
 // Nada de esto da mTON ni se compra.
 // ═══════════════════════════════════════════════════════
-import { PASE, paseMes, premioPase, MASCOTAS } from '../../mmo/js/data.js';
+import { PASE, paseMes, premioPase, MASCOTAS, diaJuego } from '../../mmo/js/data.js';
 
 export const Pase = {
   paseDe(c) {
@@ -53,7 +53,7 @@ export const Pase = {
     if (pa.p >= tope) return;
     const antes = Math.floor(pa.p / PASE.porNivel);
     // Quien va por detras del ritmo del mes (50 puntos por dia) gana el doble hasta alcanzarlo.
-    if (pa.p < new Date().getUTCDate() * 50) n *= 2;
+    if (pa.p < +diaJuego().slice(8, 10) * 50) n *= 2;   // dia del mes en Lima
     pa.p = Math.min(tope, pa.p + n);
     const ahora = Math.floor(pa.p / PASE.porNivel);
     s.sucio = true;

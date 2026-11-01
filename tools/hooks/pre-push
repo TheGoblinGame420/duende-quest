@@ -1,0 +1,7 @@
+#!/bin/sh
+# Antes de cada git push: tools/verificar.mjs (sintaxis, mismo ?v= en todo,
+# metodos repetidos, mensajes sin case y el arnes). Si falla, no se sube nada.
+# Se activa una vez con:  git config core.hooksPath tools/hooks
+# (tools/deploy.mjs ya verifica antes de empujar y pone DQ_VERIFICADO=1.)
+[ "$DQ_VERIFICADO" = "1" ] && exit 0
+exec node tools/verificar.mjs

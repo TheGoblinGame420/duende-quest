@@ -105,7 +105,7 @@
     var okM = window.dqMedirOk();
     if (!enTg && okM !== 0 && (okM === 1 || (origen && (origen.o === 'meta' || origen.fr)))) {
       var sm = document.createElement('script');
-      sm.src = '/js/medir.js?v=328'; sm.async = true;
+      sm.src = '/js/medir.js?v=329'; sm.async = true;
       (document.head || document.documentElement).appendChild(sm);
     }
   } catch (e) {}
@@ -123,6 +123,11 @@
     // Anuncio que llego por el bot (/start ad_ o startapp=ad_): tambien sin cripto.
     if (!anuncio && origen && origen.s === 'tg_ad') anuncio = true;
     if (anuncio) document.documentElement.classList.add('anuncio');
+    // La pestaña tampoco dice "$DUENDE ORIGINS/CLASSIC" (el <title> puede ir antes o despues de este script).
+    if (anuncio) {
+      var tit = function () { try { if (/\$DUENDE/.test(document.title)) document.title = document.title.replace(/\$DUENDE/g, 'Duende Quest'); } catch (e) {} };
+      tit(); document.addEventListener('DOMContentLoaded', tit);
+    }
   } catch (e) {}
   window.dqAnuncio = function () { return anuncio; };
 

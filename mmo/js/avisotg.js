@@ -33,6 +33,17 @@ const CSS = `
 #dq-avtg .av-chico{font-size:12px;color:#93a7c4;margin-top:8px;}
 @keyframes av-in{from{transform:scale(.8);opacity:0}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){#dq-avtg *{animation:none!important}}
+/* Zona segura del notch y movil en horizontal (360 px de alto): botones en fila para que se vean sin bajar */
+#dq-avtg{padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));}
+#dq-avtg .av-caja{max-height:calc(100dvh - max(16px,env(safe-area-inset-top)) - max(16px,env(safe-area-inset-bottom)));}
+@media (max-height:500px){
+#dq-avtg{padding-top:max(8px,env(safe-area-inset-top));padding-bottom:max(8px,env(safe-area-inset-bottom));}
+#dq-avtg .av-caja{width:min(460px,100%);max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));padding-top:12px;}
+#dq-avtg h2{font-size:17px;margin-bottom:4px;}
+#dq-avtg .av-p{margin:4px 0;font-size:13px;}
+#dq-avtg .av-bots{flex-direction:row;margin-top:10px;}
+#dq-avtg .av-bots>*{flex:1;}
+}
 `;
 
 export function iniciarAvisoTg(H) {

@@ -33,6 +33,18 @@ export default {
       if (request.method === 'OPTIONS') return tokenStats.onRequestOptions(context);
       return tokenStats.onRequestGet(context);
     }
+    // Antes de publicar (tools/deploy.mjs): cuantos hay conectados ({solo:1}) o
+    // guardar a todos y cerrar con 1012 (functions/mmo/copias.js, mantenimiento).
+    // Apagado (404) mientras el dueño no ponga el secreto DEPLOY_SECRET (16+ caracteres).
+    if (path === '/api/mantenimiento') {
+      const sec = String(env.DEPLOY_SECRET || '');
+      if (request.method !== 'POST' || sec.length < 16 || !env.MMO) return new Response('no', { status: 404 });
+      if (request.headers.get('x-deploy') !== sec) return new Response('no', { status: 403 });
+      let b = {};
+      try { b = await request.json(); } catch (e) {}
+      const r = await env.MMO.get(env.MMO.idFromName('mundo-1')).fetch('https://mmo/interno/mantenimiento', { method: 'POST', headers: { 'x-interno': env.TELEGRAM_BOT_TOKEN || '' }, body: JSON.stringify({ solo: b && b.solo ? 1 : 0 }) });
+      return new Response(await r.text(), { status: r.status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+    }
     // Pixel de Meta (/js/medir.js): solo dice el ID publico del pixel, o '' si
     // el dueño no configuro META_PIXEL_ID y META_CAPI_TOKEN (todo apagado).
     if (path === '/api/medir') {

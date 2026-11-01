@@ -26,12 +26,12 @@
 <meta name="theme-color" content="#0a0418">
 <link rel="manifest" href="/mundo/manifest.json">
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
-<script src="/js/pwa.js" defer></script>
+<script src="/js/pwa.js?v=329" defer></script>
 <link rel="icon" href="/assets/ui/coin.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=328"></script>
+<script src="/js/origen.js?v=329"></script>
 <script>
 // Red de seguridad de la carga (script clasico: corre aunque el modulo 3D o el CDN fallen).
 // - Errores antes de conectar: se guardan en __errQ y mundo.js los manda al entrar.
@@ -42,7 +42,8 @@
   window.__errPropio = false;   // mundo.js lo pone en true cuando ya escucha errores
   addEventListener('error', function (e) { if (!window.__errPropio && Q.length < 10) Q.push({ m: String(e.message || 'error'), f: String(e.filename || ''), l: e.lineno | 0 }); });
   addEventListener('unhandledrejection', function (e) { if (!window.__errPropio && Q.length < 10) { var r = e.reason; Q.push({ m: 'promesa: ' + String((r && (r.message || r)) || ''), f: '', l: 0 }); } });
-  var CLASSIC = '/mmo/' + location.search + location.hash;
+  // j=2d: el nuevo entra a CLASSIC sin otro «Jugar» (ya eligio aqui); al que tiene duende no le cambia nada.
+  var CLASSIC = '/mmo/' + (/[?&]j=/i.test(location.search) ? location.search.replace(/([?&]j=)3d\b/i, function (x, a) { return a + '2d'; }) : location.search + (location.search ? '&' : '?') + 'j=2d') + location.hash;
   function caja(titulo, txt, botones) {
     var v = document.getElementById('dq-red'); if (v) v.remove();
     v = document.createElement('div'); v.id = 'dq-red';
@@ -115,28 +116,28 @@
   });
 })();
 </script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=328" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=329" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=328">
-<link rel="modulepreload" href="/mmo/js/data.js?v=328">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=328">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=328">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=328">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=328">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=328">
-<link rel="modulepreload" href="/mmo/js/regalo.js?v=328">
-<link rel="modulepreload" href="/mmo/js/avisotg.js?v=328">
-<link rel="modulepreload" href="/mundo/js/musica.js?v=328">
-<link rel="modulepreload" href="/mundo/js/cueva.js?v=328">
-<link rel="modulepreload" href="/mundo/js/tapa.js?v=328">
-<link rel="modulepreload" href="/mundo/js/abismo.js?v=328">
-<link rel="modulepreload" href="/mundo/js/particulas.js?v=328">
-<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=328">
-<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=328">
-<link rel="modulepreload" href="/mmo/js/secundarias.js?v=328">
-<link rel="modulepreload" href="/mundo/js/lore.js?v=328">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=329">
+<link rel="modulepreload" href="/mmo/js/data.js?v=329">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=329">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=329">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=329">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=329">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=329">
+<link rel="modulepreload" href="/mmo/js/regalo.js?v=329">
+<link rel="modulepreload" href="/mmo/js/avisotg.js?v=329">
+<link rel="modulepreload" href="/mundo/js/musica.js?v=329">
+<link rel="modulepreload" href="/mundo/js/cueva.js?v=329">
+<link rel="modulepreload" href="/mundo/js/tapa.js?v=329">
+<link rel="modulepreload" href="/mundo/js/abismo.js?v=329">
+<link rel="modulepreload" href="/mundo/js/particulas.js?v=329">
+<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=329">
+<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=329">
+<link rel="modulepreload" href="/mmo/js/secundarias.js?v=329">
+<link rel="modulepreload" href="/mundo/js/lore.js?v=329">
 <style>
 :root{--bg:#0a0418;--panel:rgba(14,9,30,.86);--borde:rgba(160,140,255,.22);--txt:#f2efff;--txt2:#b8b0d8;--txt3:#7d7699;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;--oro:#ffd84a;--pri:#2563eb;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -326,6 +327,7 @@ input.nombre{width:100%;padding:12px;border-radius:8px;border:1px solid var(--bo
 /* Pildora del evento de temporada (data TEMPORADAS): objeto, meta y dias que quedan. Tambien en movil. */
 #temp3{display:inline-block;margin-top:4px;padding:1px 7px;border-radius:9px;border:1px solid currentColor;background:rgba(0,0,0,.4);font:700 10px/14px var(--sans);white-space:nowrap;pointer-events:auto;cursor:pointer;}
 #temp3:empty{display:none;}
+#temp3{position:relative;} #temp3::before{content:'';position:absolute;inset:-12px -6px;}   /* zona de toque de 40 px sin agrandar la pildora */
 #auras span{padding:2px 5px;border-radius:5px;background:rgba(124,58,237,.35);border:1px solid rgba(192,132,252,.4);}
 .acc.bloq{opacity:.35;}
 .acc .lv{position:absolute;left:0;right:0;bottom:2px;font:700 9px var(--sans);color:var(--warn);text-align:center;}
@@ -426,8 +428,8 @@ body.movil #misiones.abierto,body.compacto #misiones.abierto{max-height:48vh;}
 body.movil #mini canvas,body.compacto #mini canvas{width:84px;height:84px;}
 body.movil #mini,body.compacto #mini{padding:3px;}
 body.movil #mini .z,body.compacto #mini .z{font-size:9px;margin-top:1px;}
-body.movil #botones,body.compacto #botones{top:calc(126px + env(safe-area-inset-top) + var(--tg-top,0px));grid-template-columns:repeat(4,32px);gap:3px;padding:3px;}
-body.movil #botones .bt,body.compacto #botones .bt{width:32px;height:32px;font-size:13px;}
+body.movil #botones,body.compacto #botones{top:calc(126px + env(safe-area-inset-top) + var(--tg-top,0px));right:calc(8px + env(safe-area-inset-right));grid-template-columns:repeat(4,40px);gap:3px;padding:3px;}
+body.movil #botones .bt,body.compacto #botones .bt{width:40px;height:40px;font-size:15px;}   /* 40 px: se tocan con el dedo sin fallar (antes 32) */
 body.movil #barra,body.compacto #barra{display:flex;gap:3px;justify-content:center;}
 body.movil #barra .acc,body.compacto #barra .acc{flex:1 1 0;min-width:0;max-width:48px;aspect-ratio:1;max-height:44px;}
 body.movil #barra .acc img,body.compacto #barra .acc img{width:20px;height:20px;}
@@ -513,9 +515,9 @@ button{-webkit-tap-highlight-color:transparent;}
 @media (orientation:landscape) and (max-height:500px){
  body.movil #mini{top:calc(6px + env(safe-area-inset-top));right:calc(8px + env(safe-area-inset-right));}
  body.movil #mini canvas{width:72px;height:72px;}
- body.movil #botones{top:calc(6px + env(safe-area-inset-top) + var(--tg-top,0px));right:calc(100px + env(safe-area-inset-right));max-width:none;grid-template-columns:repeat(4,36px);gap:3px;padding:3px;}
- body.movil #botones.abierto{grid-template-columns:repeat(8,36px);}
- body.movil #botones .bt{width:36px;height:36px;font-size:14px;}
+ body.movil #botones{top:calc(6px + env(safe-area-inset-top) + var(--tg-top,0px));right:calc(100px + env(safe-area-inset-right));max-width:none;grid-template-columns:repeat(4,40px);gap:3px;padding:3px;}
+ body.movil #botones.abierto{grid-template-columns:repeat(8,40px);}
+ body.movil #botones .bt{width:40px;height:40px;font-size:15px;}
  body.movil #tactil{bottom:calc(64px + env(safe-area-inset-bottom));right:calc(10px + env(safe-area-inset-right));grid-template-columns:repeat(4,52px);gap:6px;pointer-events:none;}
  body.movil #tactil button{width:52px;height:52px;pointer-events:auto;}
  body.movil #tactil #t-salto{grid-column:3;grid-row:2;}
@@ -597,7 +599,7 @@ button{-webkit-tap-highlight-color:transparent;}
   <button class="bt" id="b-amigos" title="Amigos y jugadores en línea">👥</button>
   <button class="bt" id="b-chat" title="Chat (Enter)">💬</button>
   <button class="bt extra" id="b-ayuda" title="Ajustes y controles (calidad gráfica)" aria-label="Ajustes y controles">?</button>
-  <a class="bt" href="/mmo/" title="Duende Quest Classic (2D): mazmorras, Torre y banda, con tu mismo personaje">2D</a>
+  <a class="bt" href="/mmo/" title="CLASSIC (2D): mazmorras, Torre y banda, con tu mismo personaje">2D</a>
   <a class="bt" href="/inicio/" title="Inicio: elige tu juego">⌂</a>
   <button class="bt" id="b-mas" title="Más" aria-label="Más">⋯</button>
 </div>
@@ -621,7 +623,7 @@ button{-webkit-tap-highlight-color:transparent;}
 
 <div class="modal" id="v-inicio"><div class="ventana" style="text-align:center">
   <h2>Duende Quest Origins</h2>
-  <p>El mundo abierto de los duendes: un mapa continuo con el pueblo, las 10 zonas, sus jefes y otros jugadores en tiempo real. Es tu mismo personaje de Duende Quest Classic (2D).</p>
+  <p>El mundo abierto de los duendes: un mapa continuo con el pueblo, las 10 zonas, sus jefes y otros jugadores en tiempo real. Es tu mismo personaje de CLASSIC (2D).</p>
   <div id="ini-inv">
     <input class="nombre" id="in-nombre" maxlength="16" placeholder="Nombre de tu duende (opcional)" aria-label="Nombre de tu duende (opcional)">
     <p id="in-nota" role="status" style="display:none;margin:4px 0 8px;font-size:12px;color:#ff5a6a">El nombre necesita al menos 3 letras (o déjalo vacío y te ponemos uno).</p>
@@ -702,7 +704,7 @@ button{-webkit-tap-highlight-color:transparent;}
   <div class="fila"><span>Consumibles</span><b>Q F G T</b></div>
   <div class="fila"><span>Hablar</span><b>E</b></div>
   <div class="fila"><span>Mapa · Chat</span><b>M · Enter</b></div>
-  <p style="margin-top:10px">En el móvil: joystick a la izquierda, arrastra a la derecha para girar la cámara y toca un monstruo para elegirlo. Las mazmorras, la Torre y la banda están por ahora en Duende Quest Classic (botón 2D): es el mismo personaje.</p>
+  <p style="margin-top:10px">En el móvil: joystick a la izquierda, arrastra a la derecha para girar la cámara y toca un monstruo para elegirlo. Las mazmorras, la Torre y la banda están por ahora en CLASSIC (botón 2D): es el mismo personaje.</p>
 
   <p style="margin-top:10px"><button class="btn sec" id="b-leyenda" style="width:100%">📜 La leyenda del Cántaro (la historia del juego)</button></p>
   <p style="margin-top:10px;font-size:11px;color:var(--txt3)">Créditos de arte y sonido (CC0): árboles, casas, castillos y efectos de <a href="https://kenney.nl" target="_blank" rel="noopener" style="color:var(--cian)">Kenney</a> (Nature Kit, Fantasy Town Kit, Castle Kit, RPG Audio, Impact Sounds) y voces de criaturas de «80 CC0 creature SFX» en OpenGameArt. ¡Gracias!</p>
@@ -718,7 +720,7 @@ button{-webkit-tap-highlight-color:transparent;}
 <!-- Telegram: su SDK se carga arriba solo dentro de Telegram (window.__tgListo).
      defer: no frenan el HTML y corren en orden, antes que mundo.js (que usa supabase). -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js" defer></script>
-<script type="module" src="/mundo/js/mundo.js?v=328"></script>
+<script src="/js/config.js?v=329" defer></script>
+<script type="module" src="/mundo/js/mundo.js?v=329"></script>
 </body>
 </html>

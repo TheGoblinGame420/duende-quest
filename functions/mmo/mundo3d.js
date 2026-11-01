@@ -51,6 +51,9 @@ const FOTO_CADA = 2;            // ticks entre fotos (200 ms)
 // anterior, asi que no se gana dano).
 const JITTER_MS = 150;
 const VISTA_PJ = 160, SALE_PJ = 190;   // m: a que distancia se ve (y se deja de ver) a otro jugador
+// Con cientos de jugadores juntos: rejilla de vecinos, tope de jugadores por
+// foto (grupo, duelo y PvP reciente siempre entran) y los lejanos, una foto si y otra no.
+const CELDA_PJ = 40, TOPE_PJ = 28, LEJOS_PJ = 60, CRUCE_MS = 15000;
 // Jefe mundial del 3D: a las :15 y :45 (el del Coliseo 2D sale a las :00 y :30).
 const DESFASE_MUNDIAL3 = 15 * 60 * 1000;
 const PISOTON_CADA = 12000, PISOTON_AVISO = 2500, PISOTON_R = 9;
@@ -65,6 +68,8 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const num = v => (typeof v === 'number' && Number.isFinite(v)) ? v : null;
 const dist = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 const r1 = v => Math.round(v * 10) / 10;
+// Spawn del pueblo repartido en un anillo de 4-13 m: 300 recien llegados no aparecen uno encima de otro.
+const spawnPueblo = () => { const a = Math.random() * Math.PI * 2, r = rnd(4, 13); return { x: r1(SPAWN3D.x + Math.cos(a) * r), z: r1(SPAWN3D.z + Math.sin(a) * r) }; };
 
 export const Mundo3D = {
   iniciar3d() {
@@ -95,7 +100,7 @@ export const Mundo3D = {
     const c = s.c;
     s.m3 = true;
     s.k = K3;
-    const p = c.p3 && num(c.p3.x) !== null && num(c.p3.z) !== null && !enCueva(c.p3.x) && !enAbismo(c.p3.x) ? c.p3 : SPAWN3D;
+    const p = c.p3 && num(c.p3.x) !== null && num(c.p3.z) !== null && !enCueva(c.p3.x) && !enAbismo(c.p3.x) ? c.p3 : spawnPueblo();
     s.p = { x: clamp(p.x, -MUNDO.limite, MUNDO.limite), z: clamp(p.z, -MUNDO.limite, MUNDO.limite) };
     s.i3 = 0;
     s.vistosP = new Set();
@@ -210,6 +215,7 @@ export const Mundo3D = {
       case 'pedidoCancelar': return this.pedidoCancelar(s, m);   // world.js
       case 'pedidoFirma': return this.pedidoFirma(s, m);
       case 'pedidoBuscar': return this.pedidoBuscar(s, m);
+      case 'pedidoYapeOk': return this.pedidoYapeOk(s, m);   // world.js (Yape / Plin, revisión manual)
       case 'reclamoPedido': return this.reclamoPedido(s, m);   // world.js
       case 'ev': return this.evCompra(s, m);   // retencion.js
       case 'ranking': return this.enviarRanking(s);
@@ -490,7 +496,7 @@ export const Mundo3D = {
   // 250 m); si no hay ninguno, en el pueblo. Los claros nunca estan junto a un campamento.
   puntoRevivir3d(s) {
     const p = revivirEn3d(s.p.x, s.p.z, s.c.nivel, MAPAS, MONSTRUOS);
-    return p ? { x: p.x, z: p.z } : { x: SPAWN3D.x, z: SPAWN3D.z };
+    return p ? { x: p.x, z: p.z } : spawnPueblo();
   },
   revivir3d(s, m) {
     if (!s.muerto) return;
@@ -512,7 +518,7 @@ export const Mundo3D = {
     this.recursoInicial(s);
     s.inv = Date.now() + 2000;
     const enAb = enAbismo(s.p.x) && c.faccion;
-    s.p = enAb ? baseDe(c.faccion) : estabaCueva || enAbismo(s.p.x) || (m && m.pueblo) ? { x: SPAWN3D.x, z: SPAWN3D.z } : this.puntoRevivir3d(s);   // pueblo: "revivir y comprar pociones"
+    s.p = enAb ? baseDe(c.faccion) : estabaCueva || enAbismo(s.p.x) || (m && m.pueblo) ? spawnPueblo() : this.puntoRevivir3d(s);   // pueblo: "revivir y comprar pociones"
     if (!enAb) c.p3 = { ...s.p };
     s.movBud = undefined;
     this.enviar(s, { t: 'tp3', x: s.p.x, z: s.p.z, ...(estabaCueva ? { cueva: null } : {}) });
@@ -628,9 +634,17 @@ export const Mundo3D = {
   // jugador de la otra faccion (fuera de los bastiones, que son santuario).
   rival3d(s, id) {
     const d = this.rivalDuelo(s);
-    if (d && d.id === id) return d.m3 ? d : null;
+    if (d && d.id === id) { if (d.m3) this.cruceP(s, d); return d.m3 ? d : null; }
     const t = this.sesiones.get(id);
-    return t && t.c && t.m3 && !t.muerto && !s.muerto && !s.i3 && !t.i3 && this.enemigoFaccion(s, t) ? t : null;
+    const r = t && t.c && t.m3 && !t.muerto && !s.muerto && !s.i3 && !t.i3 && this.enemigoFaccion(s, t) ? t : null;
+    if (r) this.cruceP(s, r);
+    return r;
+  },
+  // Quien cruzo golpes con quien hace poco: fotos3d los manda siempre, aunque haya tope de vecinos.
+  cruceP(a, b) {
+    const ahora = Date.now();
+    (a.cruceP || (a.cruceP = new Map())).set(b.id, ahora);
+    (b.cruceP || (b.cruceP = new Map())).set(a.id, ahora);
   },
   enemigoFaccion(s, t) {
     return !!(s.c.faccion && t.c.faccion && s.c.faccion !== t.c.faccion && enAbismo(s.p.x) && enAbismo(t.p.x)
@@ -1492,31 +1506,83 @@ export const Mundo3D = {
   fotos3d(W, jugadores, ahora = Date.now()) {
     // Cada uno ve a los de su misma instancia y a menos de VISTA_PJ (los de su
     // grupo, siempre); al entrar en vista se presentan con pj3.
-    const fila = new Map();
-    for (const s of jugadores) fila.set(s.id, [s.id, r1(s.p.x), r1(s.p.z), Math.round((s.ry || 0) * 100) / 100, s.a | 0, Math.ceil(s.hp), s.st.maxHp, s.muerto ? 1 : 0, s.h ? r1(s.h) : 0]);
+    // Cada fila se serializa una sola vez; los vecinos salen de una rejilla
+    // de CELDA_PJ m (antes, todos contra todos: picos de 200 ms con 300).
+    const fila = new Map(), rejilla = new Map(), porId = new Map();
+    // Clave numerica de celda (instancia, columna, fila): sin crear textos en el bucle.
+    const clave = (i3, cx, cz) => (i3 || 0) * 1e8 + (cx + 5000) * 1e4 + (cz + 5000);
+    const celda = (i3, x, z) => clave(i3, Math.floor(x / CELDA_PJ), Math.floor(z / CELDA_PJ));
     for (const s of jugadores) {
-      const g = this.grupoDe(s), mios = g ? new Set(g.uids) : null;
+      fila.set(s.id, JSON.stringify([s.id, r1(s.p.x), r1(s.p.z), Math.round((s.ry || 0) * 100) / 100, s.a | 0, Math.ceil(s.hp), s.st.maxHp, s.muerto ? 1 : 0, s.h ? r1(s.h) : 0]));
+      porId.set(s.id, s);
+      const k = celda(s.i3, s.p.x, s.p.z), l = rejilla.get(k);
+      if (l) l.push(s); else rejilla.set(k, [s]);
+    }
+    const R = Math.ceil(SALE_PJ / CELDA_PJ), par = Math.floor(W.foto / FOTO_CADA) & 1;
+    // Los monstruos, en la misma rejilla y con su fila serializada una vez.
+    const rejM = new Map(), filaM = new Map(), RM = Math.ceil(VISTA_MON / CELDA_PJ);
+    for (const o of W.mons.values()) {
+      const k = celda(o.i3, o.x, o.z), l = rejM.get(k);
+      if (l) l.push(o); else rejM.set(k, [o]);
+    }
+    for (const s of jugadores) {
       const antes = s.vistosP || new Set(), veoP = new Set(), pj = [];
-      for (const x of jugadores) {
-        if (!mismo(x, s)) continue;
-        const ya = antes.has(x.id);
-        if (x !== s && !(mios && mios.has(x.c.uid)) && dist(x.p, s.p) > (ya ? SALE_PJ : VISTA_PJ)) continue;
-        veoP.add(x.id);
-        if (!ya && x !== s) this.enviar(s, { t: 'pj3', p: this.info3d(x) });
-        pj.push(fila.get(x.id));
+      // Fijos (siempre, a cualquier distancia en su instancia): el grupo, el
+      // rival de duelo y con quien cruzo golpes de PvP en los ultimos 15 s.
+      const fijos = new Set();
+      const g = this.grupoDe(s);
+      if (g) for (const x of this.sesionesGrupo(g)) if (porId.has(x.id) && mismo(x, s)) fijos.add(x.id);
+      const d = this.rivalDuelo && this.rivalDuelo(s);
+      if (d && porId.has(d.id) && mismo(d, s)) fijos.add(d.id);
+      if (s.cruceP) for (const [id, t] of s.cruceP) {
+        if (ahora - t > CRUCE_MS) s.cruceP.delete(id);
+        else if (porId.has(id) && mismo(porId.get(id), s)) fijos.add(id);
       }
+      fijos.delete(s.id);
+      // Vecinos por cercania; los que ya se veian tienen preferencia (sin parpadeo en el tope).
+      const cand = [];
+      const cx = Math.floor(s.p.x / CELDA_PJ), cz = Math.floor(s.p.z / CELDA_PJ);
+      for (let i = -R; i <= R; i++) for (let j = -R; j <= R; j++) {
+        const l = rejilla.get(clave(s.i3, cx + i, cz + j));
+        if (l) for (const x of l) {
+          if (x === s || fijos.has(x.id)) continue;
+          const ya = antes.has(x.id), dx = dist(x.p, s.p);
+          if (dx > (ya ? SALE_PJ : VISTA_PJ)) continue;
+          cand.push([x, dx, ya, ya ? dx - 30 : dx]);
+        }
+      }
+      const cupo = Math.max(0, TOPE_PJ - fijos.size);
+      if (cand.length > cupo) { cand.sort((a, b) => a[3] - b[3]); cand.length = cupo; }
+      const ver = (x, ya, lejos) => {
+        veoP.add(x.id);
+        if (!ya) this.enviar(s, { t: 'pj3', p: this.info3d(x) });
+        // Los lejanos ya presentados llegan una foto si y otra no (repartidos por id).
+        if (!ya || !lejos || ((x.id + par) & 1)) pj.push(fila.get(x.id));
+      };
+      veoP.add(s.id); pj.push(fila.get(s.id));
+      for (const id of fijos) ver(porId.get(id), antes.has(id), false);
+      for (const [x, dx, ya] of cand) ver(x, ya, dx > LEJOS_PJ);
       s.vistosP = veoP;
       const ms = [], n = [], q = [];
       const ve = new Set();
-      for (const o of W.mons.values()) {
-        if (!mismo(o, s) || dist(o, s.p) > VISTA_MON) continue;
-        ve.add(o.id);
-        if (!s.vistos.has(o.id)) n.push({ id: o.id, k: o.k, nv: o.nv, x: r1(o.x), z: r1(o.z), hp: Math.ceil(o.hp), mx: o.max, j: o.jefe ? 1 : 0, mu: o.mundial3 || o.guardian ? 1 : undefined, ra: o.ex3 && o.ex3.nom ? o.ex3.nom : undefined, ti: o.ex3 && o.ex3.ti ? o.ex3.ti : undefined, iv: o.ex3 && o.ex3.ev ? 1 : undefined });
-        else ms.push([o.id, r1(o.x), r1(o.z), Math.round(o.ry * 100) / 100, Math.ceil(o.hp), o.muere ? 3 : o.st]);
+      for (let i = -RM; i <= RM; i++) for (let j = -RM; j <= RM; j++) {
+        const l = rejM.get(clave(s.i3, cx + i, cz + j));
+        if (l) for (const o of l) {
+          if (dist(o, s.p) > VISTA_MON) continue;
+          ve.add(o.id);
+          if (!s.vistos.has(o.id)) n.push({ id: o.id, k: o.k, nv: o.nv, x: r1(o.x), z: r1(o.z), hp: Math.ceil(o.hp), mx: o.max, j: o.jefe ? 1 : 0, mu: o.mundial3 || o.guardian ? 1 : undefined, ra: o.ex3 && o.ex3.nom ? o.ex3.nom : undefined, ti: o.ex3 && o.ex3.ti ? o.ex3.ti : undefined, iv: o.ex3 && o.ex3.ev ? 1 : undefined });
+          else {
+            let fm = filaM.get(o.id);
+            if (!fm) filaM.set(o.id, fm = JSON.stringify([o.id, r1(o.x), r1(o.z), Math.round(o.ry * 100) / 100, Math.ceil(o.hp), o.muere ? 3 : o.st]));
+            ms.push(fm);
+          }
+        }
       }
       for (const id of s.vistos) if (!ve.has(id)) q.push(id);
       s.vistos = ve;
-      this.enviar(s, { t: 's3', ts: ahora, p: pj, m: ms, n: n.length ? n : undefined, q: q.length ? q : undefined, hp: Math.ceil(s.hp), rec: Math.round(s.rec || 0), cb: s.combo || 0 });
+      // Las filas de jugadores van ya serializadas: se pegan sin volver a pasar por JSON.
+      const resto = JSON.stringify({ n: n.length ? n : undefined, q: q.length ? q : undefined, hp: Math.ceil(s.hp), rec: Math.round(s.rec || 0), cb: s.combo || 0 });
+      this.enviar(s, '{"t":"s3","ts":' + ahora + ',"p":[' + pj.join(',') + '],"m":[' + ms.join(',') + '],' + resto.slice(1));
     }
   },
 };

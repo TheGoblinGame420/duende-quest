@@ -151,7 +151,7 @@ export const Temporada = {
   // Lo que ve el jugador: marcador, su liga, la anterior y el podio.
   infoTemp(c) {
     const F = this.temporadaA();
-    const fin = Date.UTC(+F.mes.slice(0, 4), +F.mes.slice(5, 7), 1);   // 1 del mes siguiente
+    const fin = Date.UTC(+F.mes.slice(0, 4), +F.mes.slice(5, 7), 1, 5);   // 1 del mes siguiente, 00:00 de Lima (paseMes)
     const p = c.tempA && c.tempA.mes === F.mes ? c.tempA.p : 0, tier = tierTemp(p);
     const top = Object.entries(F.l).filter(([, x]) => x.p > 0).sort((a, b) => b[1].p - a[1].p).slice(0, 5)
       .map(([uid, x]) => ({ n: x.n, f: x.f, p: x.p, yo: uid === c.uid }));

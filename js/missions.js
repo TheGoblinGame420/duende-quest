@@ -31,10 +31,12 @@
     notify: null,               // function(msg)     — toast/notificación
 
     load() {
-      const today = new Date().toISOString().slice(0, 10);
+      // Fecha LOCAL del jugador (antes UTC: en Peru el dia cambiaba a las 19:00).
+      const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
       let saved = null;
       try { saved = JSON.parse(localStorage.getItem(this.storageKey) || 'null'); } catch (e) {}
-      if (saved && saved.date === today && Array.isArray(saved.list)) {
+      // Una fecha guardada mayor que hoy (del reloj UTC antiguo) sigue valiendo: no se cobran dos veces.
+      if (saved && saved.date >= today && Array.isArray(saved.list)) {
         this.state = saved;
       } else {
         // selección diaria determinista (mismas misiones para todos)

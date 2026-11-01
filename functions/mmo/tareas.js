@@ -33,11 +33,11 @@ export const Tareas = {
   // Las tareas del dia y de la semana (se crean al pedirlas por primera vez).
   tareasDe(c) {
     const hoy = hoyUTC(), sem = semanaUTC();
-    if (!c.tareas || c.tareas.d !== hoy) {
+    if (!c.tareas || !(c.tareas.d >= hoy)) {   // una fecha futura (reloj UTC antiguo) no las renueva otra vez
       const zona = zonaDeNivel(c.nivel);
       c.tareas = { d: hoy, bono: false, cambio: false, l: elegir(this.tareasPosibles().filter(t => !c.en3d || !SOLO_2D.has(t.tipo)), 3, c.uid + hoy, c.nivel).map(t => ({ id: t.id, p: 0, ok: false, zona: t.tipo === 'zona' ? zona : undefined })) };
     }
-    if (!c.semana || c.semana.d !== sem) {
+    if (!c.semana || !(c.semana.d >= sem)) {
       c.semana = { d: sem, bono: false, l: elegir(c.en3d ? TAREAS_SEMANA.filter(t => !SOLO_2D.has(t.tipo)) : TAREAS_SEMANA, 2, c.uid + 'S' + sem, c.nivel).map(t => ({ id: t.id, p: 0, ok: false })) };
     }
     if (c.en3d) this.quitarSolo2d(c);

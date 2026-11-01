@@ -20,7 +20,8 @@ import {
   BANDA_MONTURA, TORRE, ambulanteActivo, ambulanteOferta,
   EXPEDICION, premioExpedicion, MATERIALES,
   PAQUETES, estrellasDe, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA, LOGROS, progresoLogro, statsJugador, ALAS, paqueteParaFaltante, ENTREGA, textoPagoRecibido, PEDIDO_VIGENCIA_MS,
-} from '/mmo/js/data.js?v=328';
+  pagoLocalActivo, textoSoles, YAPE_VIGENCIA_MS,
+} from '/mmo/js/data.js?v=329';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -160,6 +161,16 @@ const CSS = `
 #vv-franja{position:fixed;left:50%;top:calc(46px + env(safe-area-inset-top,0px) + var(--tg-top,0px));transform:translateX(-50%);z-index:8;display:none;max-width:calc(100vw - 32px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:rgba(14,9,30,.86);border:1px solid #4ade80;border-radius:999px;padding:5px 12px;font:700 12px var(--sans);color:#d1fae5;cursor:pointer;pointer-events:auto;}
 #vv-franja.pend{border-color:#facc15;color:#fef3c7;}
 body.movil #vv-franja{font-size:11px;padding:4px 10px;}
+/* Movil/compacto: arriba al centro tapaba la vida y el minimapa (y "en camino" puede durar horas).
+   Va a la derecha bajo el menu, en 2 lineas si hace falta, con 40 px para el dedo; los avisos bajan. */
+body.movil #vv-franja,body.compacto #vv-franja{left:auto;right:calc(8px + env(safe-area-inset-right,0px));transform:none;top:calc(178px + env(safe-area-inset-top,0px) + var(--tg-top,0px));max-width:min(210px,62vw);white-space:normal;text-align:center;line-height:1.25;min-height:40px;padding:5px 12px;border-radius:14px;}
+body.movil #vv-franja[style*="block"],body.compacto #vv-franja[style*="block"]{display:flex!important;align-items:center;justify-content:center;}
+body.movil:has(#vv-franja[style*="block"]) #avisos,body.compacto:has(#vv-franja[style*="block"]) #avisos{top:calc(226px + env(safe-area-inset-top,0px) + var(--tg-top,0px));}
+body.movil:has(#botones.abierto) #vv-franja,body.compacto:has(#botones.abierto) #vv-franja{visibility:hidden;}   /* no tapa el menu ⋯ abierto */
+@media (orientation:landscape) and (max-height:500px){
+ body.movil #vv-franja{top:calc(106px + env(safe-area-inset-top,0px) + var(--tg-top,0px));max-width:min(210px,34vw);}
+ body.movil:has(#vv-franja[style*="block"]) #avisos{top:calc(56px + env(safe-area-inset-top,0px) + var(--tg-top,0px));}
+}
 `;
 
 // ── Utilidades de pintado ──
@@ -601,7 +612,7 @@ function htmlMascotas(y) {
 }
 function htmlAmbulante(y) {
   const activo = ambulanteActivo(), of = ambulanteOferta();
-  let h = `<p class="vv-p" style="margin-bottom:10px">${activo ? '🧳 <b class="vv-ok">El ambulante está aquí este fin de semana.</b>' : '🧳 El ambulante llega el <b>viernes</b> y se va el domingo (UTC).'} Cada semana trae otra cosa (solo estética). Su oferta de esta semana:</p><div class="vv-lista">`;
+  let h = `<p class="vv-p" style="margin-bottom:10px">${activo ? '🧳 <b class="vv-ok">El ambulante está aquí este fin de semana.</b>' : '🧳 El ambulante llega el <b>viernes</b> y se va el domingo (hora de Perú).'} Cada semana trae otra cosa (solo estética). Su oferta de esta semana:</p><div class="vv-lista">`;
   const fila = (k, id, d, ico, nom) => {
     const tiene = ((k === 'tinte' ? y.tintes : y.mascotas) || []).includes(id);
     const acc = tiene ? etq('✓ Ya es tuyo', 'vv-ok')
@@ -643,6 +654,14 @@ function htmlAlas(y) {
 function botonesPago(y, pid, usd, principal) {
   if (!(y.p2e && y.p2e.cuenta)) return btn('Iniciar sesión', 'cuenta', {}, 'sec');
   if (esTg()) return btn(`${estrellasDe(usd)} Stars`, 'premium', { id: pid, metodo: 'stars' }, principal ? '' : 'sec');
+  // Yape / Plin (PAGO_LOCAL con el numero del dueño): principal en soles; lo demas, plegado.
+  const pqL = pagoLocalActivo() && PAQUETES.find(p => p.id === pid);
+  if (pqL && pqL.pen) {
+    const otros = btn(`⭐ ${estrellasDe(usd)} Stars (tarjeta en Telegram)`, 'premium', { id: pid, metodo: 'stars' }, 'sec')
+      + (anuncio() ? '' : btn(`~US$${usd} en Solana`, 'premium', { id: pid, metodo: 'sol' }, 'sec') + btn('$DUENDE −10%', 'premium', { id: pid, metodo: 'duende' }, 'sec'));
+    return btn(`Yape / Plin ${textoSoles(pqL.pen)}`, 'premium', { id: pid, metodo: 'yape' }, principal ? '' : 'sec')
+      + `<details style="font-size:12px;margin-top:4px"><summary style="cursor:pointer;opacity:.75">Otros métodos</summary>${otros}</details>`;
+  }
   const bStars = btn(principal ? '⭐ Pagar con Stars (tarjeta en Telegram)' : `⭐ ${estrellasDe(usd)} Stars`, 'premium', { id: pid, metodo: 'stars' }, principal && anuncio() ? '' : 'sec');
   if (anuncio()) return bStars;
   return btn(principal ? 'Pagar con Solana (cripto)' : `~US$${usd} en Solana`, 'premium', { id: pid, metodo: 'sol' }, principal ? '' : 'sec') + bStars + btn('$DUENDE −10%', 'premium', { id: pid, metodo: 'duende' }, 'sec');
@@ -667,18 +686,19 @@ function htmlArmasSkins(y, tab) {
     h += tarjeta(ico, nom, esc(d.desc) + (tab === 'skin' && puesto !== id ? difSkin(y, id) : ''), acc, d.color ? ` style="--rz:${d.color}"` : '');
   }
   h += '</div>';
-  if (tab === 'skin') h += `<p class="vv-nota" style="color:#fde68a"><b>Una skin, dos juegos:</b> la que consigas la llevas también en Duende Quest Classic (2D), con los mismos poderes. En PvP (duelos y Abismo) sus ventajas de combate no cuentan: ahí todos pelean igual.</p><p class="vv-nota">Cada skin da sus poderes mientras la llevas. Se compran con oro o, con tu cuenta, con dinero: ${esTg() || anuncio() ? 'Telegram Stars' : 'SOL o $DUENDE (10% de descuento) a la wallet de El Duende'}; El Duende revisa el pago y la activa en tu personaje. Los siete disfraces de la mascota (Bruja, Momia, Frankenstein, Vampiro, Esqueleto, Lobo y Pirata) se compran solo con oro y cambian tu duende 3D con su sombrero o peinado. Las cuatro exclusivas (Esmeralda, Sombrío, Solar y Cósmico) solo se consiguen así${anuncio() ? '' : '; ninguna cambia lo que se gana en mTON'}.</p>`;
+  if (tab === 'skin') h += `<p class="vv-nota" style="color:#fde68a"><b>Una skin, dos juegos:</b> la que consigas la llevas también en CLASSIC (2D), con los mismos poderes. En PvP (duelos y Abismo) sus ventajas de combate no cuentan: ahí todos pelean igual.</p><p class="vv-nota">Cada skin da sus poderes mientras la llevas. Se compran con oro o, con tu cuenta, con dinero: ${esTg() || anuncio() ? 'Telegram Stars' : 'SOL o $DUENDE (10% de descuento) a la wallet de El Duende'}; El Duende revisa el pago y la activa en tu personaje. Los siete disfraces de la mascota (Bruja, Momia, Frankenstein, Vampiro, Esqueleto, Lobo y Pirata) se compran solo con oro y cambian tu duende 3D con su sombrero o peinado. Las cuatro exclusivas (Esmeralda, Sombrío, Solar y Cósmico) solo se consiguen así${anuncio() ? '' : '; ninguna cambia lo que se gana en mTON'}.</p>`;
   return h;
 }
 function htmlPremium(y) {
   const cuentaTg = esTg();
   const cuenta = y.p2e && y.p2e.cuenta;
   // Una linea clara y el detalle plegado (en movil no tapa los paquetes).
-  let h = `<p class="vv-p" style="margin-bottom:4px">Compras opcionales: <b>El Duende</b> revisa cada pago y lo entrega en tu personaje.</p><details class="vv-nota" style="margin:0 0 10px"><summary style="cursor:pointer">Cómo funciona</summary>${cuentaTg ? 'En Telegram se paga con Stars.' : anuncio() ? 'Se paga con Stars de Telegram (las compras allí con tarjeta): el botón abre Telegram, o en PC escaneas un QR con el celular.' : 'En la web se paga con Stars de Telegram (allí las compras con tarjeta), con Solana (SOL, una criptomoneda: no son soles) o con $DUENDE (10% de descuento).'}${anuncio() ? '' : ' Con dinero <b>no</b> se compran mTON: solo se ganan jugando.'} Los soles (S/) son solo referencia aproximada.</details>`;
+  let h = `<p class="vv-p" style="margin-bottom:4px">Compras opcionales: <b>El Duende</b> revisa cada pago y lo entrega en tu personaje.</p><details class="vv-nota" style="margin:0 0 10px"><summary style="cursor:pointer">Cómo funciona</summary>${cuentaTg ? 'En Telegram se paga con Stars.' : anuncio() ? 'Se paga con Stars de Telegram (se compran con tarjeta dentro de Telegram): el botón abre Telegram, o en PC escaneas un QR con el celular.' : 'En la web se paga con Stars de Telegram (se compran con tarjeta dentro de Telegram), con Solana (SOL, una criptomoneda: no son soles) o con $DUENDE (10% de descuento).'}${anuncio() ? '' : ' Con dinero <b>no</b> se compran mTON: solo se ganan jugando.'}${pagoLocalActivo() && !cuentaTg ? ' Con Yape / Plin pagas en soles el precio que ves; El Duende revisa tu yapeo y te lo entrega.' : ' Los soles (S/) son solo referencia aproximada.'}</details>`;
   // Lo elegido va primero; luego por grupos con subtitulo.
   // El Pack de bienvenida (SOLO 1 VEZ) sale solo mientras el servidor diga que aun puedes.
   const lista = ordenTienda(PAQUETES.filter(p => !p.unaVez || y.puedeBienvenida), est.foco);
-  const precio = usd => (cuentaTg ? estrellasDe(usd) + ' ⭐' : 'US$' + usd) + ' · ≈ ' + precioLocal(usd);
+  // Con Yape / Plin en la web, el precio en soles es el de verdad (redondo, pq.pen).
+  const precio = (usd, pen) => !cuentaTg && pen && pagoLocalActivo() ? textoSoles(pen) + ' · ≈ US$' + usd : (cuentaTg ? estrellasDe(usd) + ' ⭐' : 'US$' + usd) + ' · ≈ ' + precioLocal(usd);
   let grupo = '', abierta = false;
   for (const pq of lista) {
     const g = pq.id === est.foco ? '' : grupoPaquete(pq);
@@ -687,8 +707,8 @@ function htmlPremium(y) {
     const sk = pq.skin && SKINS[pq.skin];
     let acc;
     if (pq.skin && (y.skins || []).includes(pq.skin)) acc = etq('✓ Ya la tienes', 'vv-ok');
-    else if (!cuenta) acc = etq(precio(pq.usd)) + btn('Iniciar sesión', 'cuenta', {}, 'sec');
-    else acc = etq(precio(pq.usd), 'vv-ok') + botonesPago(y, pq.id, pq.usd, true);
+    else if (!cuenta) acc = etq(precio(pq.usd, pq.pen)) + btn('Iniciar sesión', 'cuenta', {}, 'sec');
+    else acc = etq(precio(pq.usd, pq.pen), 'vv-ok') + botonesPago(y, pq.id, pq.usd, true);
     const ico = sk ? icoSkin(pq.skin, sk) : icoEquipo(pq.icono);
     const nom = (sk && sk.premium ? `<span style="color:${sk.color}">${esc(pq.nombre)}</span>` : esc(pq.nombre))
       + (pq.etiqueta ? ` <span style="font-size:10px;padding:1px 5px;border-radius:6px;background:#22c55e;color:#000;white-space:nowrap">${esc(pq.etiqueta)}</span>` : '');
@@ -700,7 +720,7 @@ function htmlPremium(y) {
   if (ps.length) {
     const col = { pagado: 'vv-warn', por_verificar: 'vv-warn', entregado: 'vv-ok', anulado: 'vv-err', esperando_pago: 'vv-dim', comprobando: 'vv-dim' };
     const txt = { pagado: 'Por entregar', por_verificar: 'En revisión', entregado: 'Entregado', anulado: 'Anulado', esperando_pago: 'Sin pagar', comprobando: 'Comprobando…' };
-    h += '<div class="vv-sec">Tus compras</div><div class="vv-pedidos">' + ps.slice().reverse().map(x => `<div class="fila"><span>#${esc(x.codigo)} · ${esc(x.nombre)}</span><span class="${col[x.estado] || ''}">${esc(txt[x.estado] || x.estado)}${x.estado === 'esperando_pago' && (x.lamports || x.raw) ? ' ' + btn('Pagar', 'retomar', { id: x.codigo }, 'sec') : ''}${textoPlazo(x)} ${x.reclamado ? '<small class="vv-dim">Avisado</small>' : btn('¿Problema?', 'reclamo', { id: x.codigo }, 'sec')}</span></div>`).join('') + '</div>'
+    h += '<div class="vv-sec">Tus compras</div><div class="vv-pedidos">' + ps.slice().reverse().map(x => `<div class="fila"><span>#${esc(x.codigo)} · ${esc(x.nombre)}</span><span class="${col[x.estado] || ''}">${esc(txt[x.estado] || x.estado)}${x.estado === 'esperando_pago' && (x.lamports || x.raw || x.yape) ? ' ' + btn('Pagar', 'retomar', { id: x.codigo }, 'sec') : ''}${textoPlazo(x)} ${x.reclamado ? '<small class="vv-dim">Avisado</small>' : btn('¿Problema?', 'reclamo', { id: x.codigo }, 'sec')}</span></div>`).join('') + '</div>'
       + `<p class="vv-nota">Las compras se entregan a mano de ${esc(ENTREGA.horario)}, ${esc(ENTREGA.plazo)}. Te avisamos al entregarlas. ¿Algo salió mal? Pulsa «¿Problema?» y El Duende lo revisa. <a href="/reembolsos.html" target="_blank" rel="noopener" style="color:inherit">Entregas y reembolsos</a></p>`;
   }
   return h;
@@ -728,7 +748,7 @@ function olvidarPago() { try { sessionStorage.removeItem(CLAVE_PAGO); } catch (e
 function pagoGuardado() {
   let g = null;
   try { g = JSON.parse(sessionStorage.getItem(CLAVE_PAGO) || 'null'); } catch (e) { g = null; }
-  if (!g || !g.m || !g.m.codigo || Date.now() - (g.t || 0) > PEDIDO_VIGENCIA_MS) { if (g) olvidarPago(); return null; }
+  if (!g || !g.m || !g.m.codigo || Date.now() - (g.t || 0) > (g.m.t === 'pedidoYape' ? YAPE_VIGENCIA_MS : PEDIDO_VIGENCIA_MS)) { if (g) olvidarPago(); return null; }
   const y = H && H.yo(), x = y && (y.pedidos || []).find(p => p.codigo === g.m.codigo);
   // Ya pagado, anulado o caducado en el servidor: no se insiste (recien creado puede no estar aun).
   if (y && y.pedidos && (x ? x.estado !== 'esperando_pago' : Date.now() - g.t > 60000)) { olvidarPago(); return null; }
@@ -809,6 +829,7 @@ function pintarExped() {
 // Telegram, sin bloqueo de emergentes) y un QR en PC para pagar desde el celular.
 function abrirFactura(m) {
   evCompra('fa');
+  window.dqPagoT = Date.now();   // con un pago abierto no se recarga por version nueva (mundo.js)
   const tg = TG() || (window.Telegram && window.Telegram.WebApp);
   if (!tg || !tg.openInvoice || !tg.initData) { mostrarFacturaWeb(m); return; }
   tg.openInvoice(m.link, st => {
@@ -974,8 +995,55 @@ async function pagarConPhantom(m) {
 // Respuesta del servidor a { t: 'pedido' }: 'pedidoSol' o 'factura'.
 export function alPedido(m) {
   if (!m || !H) return;
+  window.dqPagoT = Date.now();   // Yape / SOL tambien: quien vuelve de su app de pago no se recarga (mundo.js, version nueva)
   if (m.t === 'factura') abrirFactura(m);
   else if (m.t === 'pedidoSol') mostrarPedidoSol(m);
+  else if (m.t === 'pedidoYape') mostrarPedidoYape(m);
+  // El servidor recibio el numero de operacion: se cierra la ventana y la franja.
+  else if (m.t === 'yapeOk') { if (pagoActual && pagoActual.codigo === m.codigo) { olvidarPago(); cerrarV(IDS.pago); } }
+}
+// Yape / Plin (PAGO_LOCAL): monto exacto en soles, #codigo en la nota y el
+// numero de operacion. NADA se entrega solo: El Duende lo revisa en su app.
+function mostrarPedidoYape(m) {
+  if (!m || !m.numero) { H.aviso('El pago con Yape / Plin aún no está disponible.', 'err'); return; }
+  pagoActual = m; guardarPago(m);
+  const id = IDS.pago;
+  let hora = '';
+  try { hora = new Date(m.vence).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }); } catch (e) { hora = ''; }
+  if (hora && new Date(m.vence).toDateString() !== new Date().toDateString()) hora += ' de mañana';
+  parte(id, 't').textContent = 'PAGAR CON YAPE / PLIN';
+  parte(id, 'sub').innerHTML = `<span>${esc(m.nombre)} · pedido <b>#${esc(m.codigo)}</b></span>`;
+  parte(id, 'cuerpo').innerHTML =
+    `<div class="vv-monto"><b>S/ ${esc(m.monto)}</b><small>Yapea este monto <b>exacto</b> (con sus céntimos): así sabemos que es tu pedido</small></div>` +
+    (/^\/[\w/.-]+$/.test(m.qr || '') ? `<div class="vv-qr"><img src="${esc(m.qr)}" alt="QR de Yape de El Duende" style="width:180px;max-width:70%;background:#fff;border-radius:8px;padding:6px"></div>` : '') +
+    `<p class="vv-p">1. Yapea o plinea al número <b style="font-size:15px;white-space:nowrap">${esc(m.numero)}</b>${m.titular ? ` (${esc(m.titular)})` : ''}.</p>` +
+    `<div class="vv-fila2" style="margin-top:6px"><button class="btn sec" data-p="num">Copiar número</button><button class="btn sec" data-p="monto">Copiar monto</button></div>` +
+    `<p class="vv-p">2. En la nota del yapeo escribe <b>#${esc(m.codigo)}</b>. <button class="btn sec" data-p="cod" style="padding:3px 8px">Copiar</button></p>` +
+    `<p class="vv-p">3. Pega aquí el número de operación del comprobante:</p>` +
+    `<input class="vv-input" data-op inputmode="numeric" maxlength="16" placeholder="Nº de operación (solo cifras)" autocomplete="off" spellcheck="false">` +
+    `<button class="btn" data-p="ok" style="width:100%;padding:12px">✅ Ya pagué: enviar operación</button>` +
+    `<p class="vv-p" style="margin-top:10px">${hora ? 'Tienes hasta las ' + esc(hora) + '. ' : ''}Cada número de operación vale para un solo pedido. ${esc(textoPagoRecibido())} Si cierras esta ventana, la franja de arriba te devuelve a estos datos.</p>`;
+  const c = parte(id, 'cuerpo');
+  const copiar = t => {
+    try { navigator.clipboard.writeText(t).then(() => H.aviso('Copiado', 'ok'), () => H.aviso('No se pudo copiar: cópialo a mano.', 'err')); } catch (e) { H.aviso('No se pudo copiar: cópialo a mano.', 'err'); }
+  };
+  const inp = c.querySelector('[data-op]');
+  const enviar = () => {
+    const op = inp.value.replace(/[\s-]/g, '');
+    if (!/^\d{6,12}$/.test(op)) { H.aviso('El número de operación son solo cifras (de 6 a 12). Lo ves en el comprobante.', 'err'); return; }
+    if (Date.now() - (est.ultYape || 0) < 4000) return;
+    est.ultYape = Date.now();
+    H.sfx('boton', 0.3); H.mandar({ t: 'pedidoYapeOk', codigo: m.codigo, operacion: op });
+  };
+  inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') enviar(); });
+  c.querySelectorAll('[data-p]').forEach(b => b.onclick = () => {
+    const p = b.dataset.p;
+    if (p === 'num') copiar(String(m.numero).replace(/\s/g, ''));
+    else if (p === 'monto') copiar(m.monto);
+    else if (p === 'cod') copiar('#' + m.codigo);
+    else if (p === 'ok') enviar();
+  });
+  abrirV(id);
 }
 
 // ═══════════════════ ACCIONES (delegadas por ventana) ═══════════════════
@@ -1047,7 +1115,8 @@ const ACC = {
   premium: b => { if (Date.now() - (est.ultPedido || 0) < 2500) return; est.ultPedido = Date.now(); H.sfx('boton', 0.3); H.mandar({ t: 'pedido', id: b.dataset.id, metodo: b.dataset.metodo, via: est.via }); H.aviso('Preparando tu pedido…', 'ok'); },
   retomar: b => {
     const y = H.yo(), x = ((y && y.pedidos) || []).find(p => p.codigo === b.dataset.id);
-    if (x && x.raw) mostrarPedidoSol({ metodo: 'duende', codigo: x.codigo, raw: x.raw, mint: x.mint, dec: x.dec, wallet: x.wallet, usd: x.usd, nombre: x.nombre });
+    if (x && x.yape) mostrarPedidoYape(x.yape);
+    else if (x && x.raw) mostrarPedidoSol({ metodo: 'duende', codigo: x.codigo, raw: x.raw, mint: x.mint, dec: x.dec, wallet: x.wallet, usd: x.usd, nombre: x.nombre });
     else if (x && x.lamports) mostrarPedidoSol({ codigo: x.codigo, lamports: x.lamports, wallet: x.wallet, usd: x.usd, nombre: x.nombre, ref: x.ref });
   },
   // «¿Problema?» en Tus compras: avisa al dueño de ese pedido (el servidor limita los avisos).
@@ -1058,7 +1127,7 @@ const ACC = {
   },
   cuenta: () => {
     if (H.iniciarSesion) H.iniciarSesion();
-    else { H.aviso('Inicia sesión en Duende Quest Classic y vuelve: entrarás con tu cuenta.', 'ok'); setTimeout(() => { location.href = '/mmo/' + (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? location.hash : ''); }, 900); }
+    else { H.aviso('Inicia sesión en CLASSIC (2D) y vuelve: entrarás con tu cuenta.', 'ok'); setTimeout(() => { location.href = '/mmo/' + (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? location.hash : ''); }, 900); }
   },
   // Logros
   lgtab: b => { est.logros = b.dataset.id; H.sfx('boton', 0.2); pintarLogros(); },
@@ -1145,7 +1214,7 @@ export function iniciarVentanas(opciones) {
     crearModal(IDS.pago, 'PAGAR', true, true);
     // Franja «Pedido #X pendiente» / «N compras en camino».
     const fr = document.createElement('div'); fr.id = 'vv-franja'; fr.setAttribute('role', 'button');
-    fr.onclick = () => { const p = pagoGuardado(); if (p && fr.classList.contains('pend')) mostrarPedidoSol(p); else abrirTienda('premium'); };
+    fr.onclick = () => { const p = pagoGuardado(); if (p && fr.classList.contains('pend')) (p.t === 'pedidoYape' ? mostrarPedidoYape : mostrarPedidoSol)(p); else abrirTienda('premium'); };
     document.body.appendChild(fr);
     setInterval(pintarFranja, 2000);
   }

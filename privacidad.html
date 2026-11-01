@@ -185,7 +185,7 @@ footer a:hover{color:var(--txt);}
   <script>
   (function () {
     var b = document.getElementById('medir-retirar'), e = document.getElementById('medir-estado');
-    function ver() { var v = null; try { v = localStorage.getItem('dq_medir'); } catch (er) {} e.textContent = v === '1' ? 'Ahora: aceptado.' : v === '0' ? 'Ahora: no aceptado.' : 'Ahora: no has aceptado.'; }
+    function ver() { var v = null; try { v = localStorage.getItem('dq_medir'); } catch (er) {} e.textContent = v === '1' ? 'Ahora: aceptado.' : v === '0' ? 'Ahora: rechazado (no se mide).' : 'Ahora: sin responder (no se mide).'; }
     b.addEventListener('click', function () { try { localStorage.setItem('dq_medir', '0'); sessionStorage.removeItem('dq_medir_p'); } catch (er) {}
       // Borra tambien las cookies de Meta de este sitio (_fbp/_fbc son de nuestro dominio).
       try { ['_fbp', '_fbc'].forEach(function (n) { document.cookie = n + '=;path=/;max-age=0'; document.cookie = n + '=;path=/;max-age=0;domain=.' + location.hostname.replace(/^www\./, ''); }); } catch (er) {}

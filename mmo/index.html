@@ -3,7 +3,7 @@
 <head>
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=328"></script>
+<script src="/js/origen.js?v=329"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <title>$DUENDE CLASSIC · MMORPG 2D gratis en el navegador</title>
@@ -70,9 +70,9 @@
 })();
 </script>
 <!-- defer se ejecuta en orden y todo antes del modulo client.js -->
-<script src="/js/pwa.js" defer></script>
+<script src="/js/pwa.js?v=329" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js" defer></script>
+<script src="/js/config.js?v=329" defer></script>
 <style>
 /* ── Tokens (guia de diseno, oct 2026). Las variables viejas (--verde, --amarillo,
    --rosa, --cian, --rojo) siguen existiendo porque client.js las usa, pero ahora
@@ -91,6 +91,9 @@
 html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--pixel);overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;}
 a{color:var(--cian);}
 #app{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;}
+/* Notch y esquinas redondas (viewport-fit=cover): el HUD no se mete bajo la barra de estado ni el notch lateral.
+   El lienzo se ajusta solo (ResizeObserver de #escena en client.js); abajo ya lo cubre #tactil. */
+#app{padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) 0 env(safe-area-inset-left,0px);}
 #escena{position:relative;width:100%;flex:1 1 auto;display:flex;align-items:center;justify-content:center;min-height:0;}
 #gc{display:block;image-rendering:pixelated;image-rendering:crisp-edges;background:#000;box-shadow:var(--sombra);}
 #hud{position:absolute;inset:0;pointer-events:none;}
@@ -195,6 +198,8 @@ body:not(.tactil) #hud.estrecho #monedero{bottom:52px;}
 #hud.estrecho #botones .bt{width:34px;height:34px;padding:0;font-size:13px;line-height:1;display:inline-flex;align-items:center;justify-content:center;}
 @media (max-width:370px){#hud.estrecho #botones{gap:2px;max-width:180px;}#hud.estrecho #uf-yo,#hud.estrecho #uf-obj{width:160px;}}
 #hud.muyestrecho #botones{gap:2px;max-width:180px;} #hud.muyestrecho #uf-yo,#hud.muyestrecho #uf-obj{width:160px;}
+/* Se ven de 34 px pero se tocan en 40: zona de toque invisible de 4 px alrededor (el hueco entre botones se reparte) */
+#hud.estrecho #botones .bt{position:relative;} #hud.estrecho #botones .bt::before{content:'';position:absolute;inset:-4px;}
 /* Ayuda, sonido e inicio van dentro de "⋯" para no pasar de 2 filas ni tapar el minimapa */
 #hud:not(.estrecho) #b-mas{display:none;}
 /* Tienda siempre a la vista (v325): dorada, con su nombre en PC y punto rojo mientras no se vio la
@@ -534,6 +539,30 @@ input.nombre:focus{border-color:var(--pri-txt);}
 .heredar-caja button{display:block;width:100%;min-height:52px;margin-top:10px;padding:10px 12px;border-radius:12px;font:700 15px var(--sans);cursor:pointer;overflow-wrap:anywhere;}
 .heredar-si{border:0;background:var(--pri);color:#fff;}
 .heredar-no{border:1px solid var(--borde);background:var(--panel2);color:var(--txt);}
+/* Movil en horizontal (360 px de alto): los controles ya no van en una franja debajo (dejaban el
+   mundo en 290x165 px); flotan sobre el mundo en las esquinas y el lienzo ocupa toda la pantalla.
+   Fila de arriba: pociones, HABLAR, chat y auto; abajo: mover a la izquierda, acciones al centro,
+   saltar/atacar a la derecha. Lo que no es boton deja pasar el toque al mundo. */
+@media (orientation:landscape) and (max-height:500px){
+ body.tactil #tactil{position:absolute;left:0;right:0;bottom:0;z-index:5;display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"f1 f1 f1" "izq f0 der";align-items:end;gap:6px 8px;padding:0 calc(10px + env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) calc(10px + env(safe-area-inset-left,0px));background:none;border:0;pointer-events:none;}
+ body.tactil #tactil>.tf:not(#t-fila0):not(#t-fila1){display:contents;}
+ body.tactil #t-fila1{grid-area:f1;justify-content:flex-start;}
+ body.tactil #t-fila1 #consumibles{margin-right:auto;}   /* HABLAR, chat y auto a la derecha: en el centro tapaban al duende */
+ body.tactil #t-auto{min-width:40px;}
+ body.tactil #t-fila0{grid-area:f0;align-self:end;min-width:0;}
+ body.tactil #t-fila0 #acciones{flex-wrap:wrap;justify-content:center;}   /* 8 habilidades (348 px) no caben en ~300 px a 640: 2 filas en vez de cortarlas */
+ body.tactil #t-izq{grid-area:izq;} body.tactil #t-der{grid-area:der;}
+ body.tactil #tactil button,body.tactil #tactil .pw,body.tactil #tactil a{pointer-events:auto;}
+ body.tactil #tactil .tc{width:52px;height:52px;background:rgba(22,30,48,.78);}
+ body.tactil #tactil .tc.grande{width:64px;height:64px;background:rgba(239,68,68,.28);}
+ body.tactil #tactil .tc.chico{width:40px;height:40px;}
+ body.tactil #chat{bottom:144px;width:min(260px,40%);}
+ body.tactil #lanzar{bottom:144px;}
+ body.tactil #hud.estrecho #lanzar{bottom:144px;width:min(300px,46%);}
+ body.tactil #hud.estrecho #consejo{top:10px;width:min(270px,42%);font-size:12px;}
+ body.tactil #hud.estrecho #avisos{top:104px;width:min(300px,46%);}
+ body.tactil #hud.estrecho #monedero{left:8px;right:auto;top:64px;bottom:auto;}
+}
 </style>
 </head>
 <body>
@@ -652,7 +681,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
     </div>
     <button class="btn sec btn-grande" data-instalar hidden style="display:none;margin-top:8px">⬇ Instalar la app</button>
     <div class="confianza">
-      <a href="/terminos.html" target="_blank" rel="noopener">Términos</a> · <a href="/privacidad.html" target="_blank" rel="noopener">Privacidad</a> · <a href="/seguridad.html" target="_blank" rel="noopener">Seguridad</a> · 🔒 Nunca te pediremos contraseñas ni frases semilla.
+      <a href="/terminos.html" target="_blank" rel="noopener">Términos</a> · <a href="/privacidad.html" target="_blank" rel="noopener">Privacidad</a> · <a href="/seguridad.html" target="_blank" rel="noopener">Seguridad</a> · 🔒 Nunca te pediremos contraseñas<span class="solo-cripto"> ni frases semilla</span>.
       <p class="creador">Creado por <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial</a> (cuenta oficial) · <a href="https://t.me/elduende420peru" target="_blank" rel="noopener">Canal</a> · <a href="https://t.me/duendesolana420" target="_blank" rel="noopener">Grupo</a></p>
     </div>
   </div>
@@ -969,7 +998,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=328"></script>
+<script type="module" src="/mmo/js/client.js?v=329"></script>
 <div id="nuevo3d" role="dialog" aria-label="Nuevo mundo 3D">
   <video src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" muted loop playsinline preload="none"></video>
   <div class="t">🌌 NUEVO: Duende Quest Origins, el mundo abierto en 3D</div>

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=328"></script>
+<script src="/js/origen.js?v=329"></script>
 <!-- Modo anuncio: quien llega de un anuncio (fbclid / utm_*) ve la web sin la parte cripto
      (wallet, precio, token, donaciones). Se recuerda en la pestaña; el resto de visitas no cambia. -->
 <script>(function(){var a=/[?&](fbclid|utm_[a-z]+)=/i.test(location.search);try{if(a)sessionStorage.setItem('dq_anuncio','1');else a=sessionStorage.getItem('dq_anuncio')==='1';}catch(e){}if(a)document.documentElement.classList.add('anuncio');})()</script>
@@ -32,7 +32,7 @@
 <meta name="twitter:image:alt" content="Duende Quest Online, el MMORPG de los duendes">
 <meta name="theme-color" content="#0b0f17">
 <link rel="manifest" href="/inicio/manifest.json">
-<script src="/js/pwa.js" defer></script>
+<script src="/js/pwa.js?v=329" defer></script>
 <link rel="icon" type="image/png" href="assets/ui/coin.png">
 <script type="application/ld+json">
 {
@@ -882,7 +882,7 @@ section[id]{scroll-margin-top:72px;}
   </style>
   <h2 class="px-title" id="lo-nuevo-h">Lo nuevo</h2>
   <div class="nuevo-grid">
-    <div class="nuevo-card"><span class="ico" aria-hidden="true">🥤</span><b>Gana chicha morada jugando</b><p>Desde Nv 10, cada monstruo que cazas en el mundo online suma puntos. Con 10.000 puntos te enviamos un litro de chicha morada a tu casa. No es un sorteo. Envío en Perú.</p></div>
+    <div class="nuevo-card"><span class="ico" aria-hidden="true">🥤</span><b>Gana chicha morada jugando</b><p>Desde Nv 10, cada monstruo que cazas en el mundo online suma puntos. Con 10.000 puntos ganas un litro de chicha morada a tu casa (se reclama desde Nv 15, con Telegram; cupos por mes). No es un sorteo. Envío en Perú.</p></div>
     <div class="nuevo-card"><span class="ico" aria-hidden="true">🏰</span><b>5 mazmorras y Desafíos</b><p>Fortaleza Goblin y Nido de la Reina Araña se suman a las mazmorras. A nivel 60, los Desafíos +k suben la dificultad sin límite.</p></div>
     <div class="nuevo-card"><span class="ico" aria-hidden="true">🎃</span><b>Temporadas con premios</b><p>Noche de Duendes (25 oct – 2 nov), Cosecha del Maíz Morado, Navidad y Carnaval: objetos para juntar y títulos únicos.</p></div>
   </div>
@@ -1098,7 +1098,7 @@ section[id]{scroll-margin-top:72px;}
   <!-- SKINS: antes aqui habia precios en SOL (0.5 / 0.3 / 0.2 SOL "para holders
        de NFT") que contradecian la tienda real. Ahora una sola presentacion:
        la coleccion de #nfts, con los precios de game.html / telegram. -->
-  <p class="px-sub" style="margin-top:2.5rem">Skins opcionales desde US$1 (o con el oro que ganas jugando), con Telegram Stars, SOL o $DUENDE. Una compra vale en CLASSIC y ORIGINS; el Duende revisa cada pago a mano y te la entrega. <a href="#nfts" style="color:var(--pri-txt);font-weight:600">Ver la colección de skins</a></p>
+  <p class="px-sub" style="margin-top:2.5rem">Skins opcionales desde US$1 (o con el oro que ganas jugando), con Telegram Stars, SOL o $DUENDE. Una compra vale en CLASSIC y ORIGINS; El Duende revisa cada pago a mano y te la entrega. <a href="#nfts" style="color:var(--pri-txt);font-weight:600">Ver la colección de skins</a></p>
 </section>
 
 <!-- ========== TELEGRAM MINI APP ========== -->
@@ -2190,9 +2190,9 @@ if (document.documentElement.classList.contains('anuncio')) document.addEventLis
 <!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <!-- Config (keys + DUENDE_CFG) -->
-<script src="js/config.js"></script>
+<script src="js/config.js?v=329"></script>
 <!-- Módulos en orden de dependencia -->
-<script src="js/auth-manager.js?v=328"></script>
+<script src="js/auth-manager.js?v=329"></script>
 <script>
 // Ranking real de la landing (antes: 5 nombres inventados con un badge
 // "LIVE" que no estaba conectado a nada). auth-manager.js registra su
@@ -2257,7 +2257,7 @@ window.addEventListener('load', cargarRankingLanding);
   estado(); setInterval(estado, 60000);
 })();
 </script>
-<script src="js/price-feed.js"></script>
+<script src="js/price-feed.js?v=329"></script>
 <script src="js/wallet-manager.js"></script>
 <script src="js/donation-manager.js"></script>
 <script>

@@ -3225,3 +3225,13 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - #57: píxel y Conversions API (`js/medir.js`, `functions/mmo/meta.js`, `/api/medir`) APAGADOS sin META_PIXEL_ID/META_CAPI_TOKEN; consentimiento explícito; privacidad.html actualizada.
 - #58: kit de invitado, +25% XP en grupo con quien te invitó hasta Nv 10, «Mis invitados».
 - Arnés 891 bien.
+
+### Ronda 5 de la noche del lanzamiento (1-nov-2026, `?v=329`)
+
+- #33: Yape/Plin preparado y OCULTO (`PAGO_LOCAL` vacío en data.js; precios `pen` X.90; `pedidoYapeOk` pasa a por_verificar y avisa al dueño; entrega manual).
+- #37: posición por cambios en el cliente (`enviarPos`), protocolo igual.
+- #52/#53: guardado antes de publicar con `/api/mantenimiento` (apagado sin DEPLOY_SECRET), `tools/deploy.mjs`, `tools/version.mjs`, `tools/verificar.mjs`, hook en tools/hooks/ (sin activar); recarga diferida al pueblo.
+- #59: día de juego en hora de Lima (`diaJuego`, `DIA_DESFASE_MS`) para login, diarias, tareas, rankings semanales y pase. Publicar entre 05:00 y 19:00 de Lima para no duplicar el día.
+- #60: fotos3d con tope de vecinos priorizando grupo/rivales y aparición repartida (`spawnPueblo`); `tools/carga_mmo.mjs`.
+- QA de la noche (pagos, entrada, servidor, móvil, textos): pago doble de Stars avisado al dueño, el pack de bienvenida se rechaza en pre_checkout si ya hay otra compra, avisos que no se pisan, volcado de rankSem/ev:dia al vaciarse el mundo, reconexión, botones de 40 px, textos ORIGINS/CLASSIC.
+- Arnés 897 bien (pruebas del spawn 3D actualizadas al reparto).

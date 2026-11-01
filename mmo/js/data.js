@@ -501,10 +501,23 @@ export function limpiarLook(l) {
   };
 }
 
+// Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
+// sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
+// en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
+export const VERSION = 328;
+
 export const NOVEDADES = [
+  { n: 97, fecha: '1 nov 2026', items: [
+    'La recompensa diaria, las misiones del día y la racha ahora se renuevan a la medianoche de Perú, ya no a las 7 de la noche.',
+    'Con mucha gente en el pueblo el juego va más fluido, y los recién llegados ya no aparecen todos amontonados.',
+    'Conexión más ligera: el juego manda menos datos mientras te mueves, así va mejor con datos móviles.',
+    'Al publicar una actualización, el juego guarda tu progreso y te pasa a la versión nueva cuando vuelves al pueblo, nunca en medio de un combate ni de un pago.',
+    'Si pagas dos veces el mismo pedido por error, El Duende recibe el aviso para devolverte el cobro repetido.',
+    'En el celular los botones del menú se tocan más fácil y CLASSIC de lado usa toda la pantalla.',
+  ] },
   { n: 96, fecha: '1 nov 2026', items: [
     'Si entras con el enlace de un amigo recibes un kit de bienvenida (300 de oro, 5 pociones y el título «Compañero») y +25% de experiencia jugando en grupo con él hasta el nivel 10. Nueva lista «Mis invitados» en Amigos.',
-    'Ahora puedes llevar tu duende de invitado a Telegram o a otro celular con un código de 6 letras: ❓ Ayuda → «📲 Llevar mi duende».',
+    'Ahora puedes llevar tu duende de invitado a Telegram o a otro celular con un código de 6 letras y números: ❓ Ayuda → «📲 Llevar mi duende» (en CLASSIC: 👤 → «Pasar mi duende»).',
     'Si juegas desde el navegador, puedes pedir que te avisemos por Telegram cuando tu racha esté por perderse (+300 de oro al activarlo); se apaga con /avisos off.',
     'El aviso diario de Telegram ahora te habla de lo tuyo: tus amigos, tu hermandad, tu racha y tu próxima skin.',
     'También puedes pagar con Stars desde la web, y si cierras el pago sin terminar sale «Reintentar».',
@@ -526,7 +539,7 @@ export const NOVEDADES = [
     'Si no te alcanza el oro, el botón dice «Te faltan N» y te lleva al paquete justo. En «Tus compras» ves cuánto hace que pagaste y hasta cuándo llega tu entrega.',
     'Si tu amigo entra con tu enlace sin crear cuenta, ya cuenta como invitado tuyo.',
     'La conexión se recupera sola y más rápido, y pueden entrar muchos más jugadores desde la misma red móvil.',
-    'Si abres el juego desde Facebook o Instagram, puedes pasar tu duende a Chrome o Safari con un toque.',
+    'Si abres el juego desde Facebook o Instagram, puedes llevar tu duende a Chrome o Safari sin perderlo.',
   ] },
   { n: 93, fecha: '1 nov 2026', items: [
     "🍞 Del 3 al 12 de noviembre llega la Semana de la T'anta Wawa: los monstruos sueltan t'anta wawas y con 50 y 200 ganas los títulos «Panadero Duende» y «Guardián de la T'anta Wawa». En ORIGINS ves tu avance bajo tu marco.",
@@ -1509,15 +1522,22 @@ export const MISIONES = [
   { nombre: 'La orden del paladín',     tipo: 'paladin_goblin',    n: 15, xp: 7500,  oro: 5200, pw: { pocion: 20 } },
   { nombre: 'El Dragón Ancestral',      tipo: 'jefe_dragon',       n: 1,  xp: 50000, oro: 60000, pw: { rayo: 10, escudo: 10, fuego: 10 } },
 ];
-// Mision diaria repetible (se reinicia cada dia UTC). Solo cuentan monstruos
+// Mision diaria repetible (se reinicia cada dia de juego, medianoche de Lima). Solo cuentan monstruos
 // de tu nivel o hasta 5 por debajo, para que no se cumpla farmeando la
 // primera zona con un personaje alto.
 export const DIARIA = { nombre: 'Caza del día', n: 25 };
 export function premioDiaria(nivel) { return { xp: Math.round(xpParaSubir(nivel) * 0.3), oro: 40 * nivel, pocion: 3 }; }
-export const hoyUTC = () => new Date(Date.now()).toISOString().slice(0, 10);
-// Semana (lunes UTC) como "AAAA-MM-DD" de su lunes.
+// Dia de juego: empieza a la medianoche de Lima (UTC-5, Peru no cambia de hora).
+// Antes era UTC y el reinicio caia a las 19:00, en plena hora punta. Los nombres
+// hoyUTC/semanaUTC se quedan para no tocar a quien los importa. Ojo al publicar
+// un cambio de esto: entre las 19:00 y las 24:00 de Lima la fecha UTC ya es la de
+// mañana; publicar entre las 05:00 y las 19:00, cuando ambas coinciden.
+export const DIA_DESFASE_MS = -5 * 3600000;
+export const diaJuego = (t = Date.now()) => new Date(t + DIA_DESFASE_MS).toISOString().slice(0, 10);
+export const hoyUTC = () => diaJuego(Date.now());
+// Semana (lunes de Lima) como "AAAA-MM-DD" de su lunes.
 export function semanaUTC() {
-  const d = new Date(Date.now());
+  const d = new Date(Date.now() + DIA_DESFASE_MS);
   const dia = (d.getUTCDay() + 6) % 7;
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - dia)).toISOString().slice(0, 10);
 }
@@ -2205,6 +2225,21 @@ export const estrellasDe = usd => Object.hasOwn(STARS_DE_USD, usd) ? STARS_DE_US
 // en soles). Tipo de cambio fijo y aproximado: revisalo cada semana.
 export const PEN_POR_USD = 3.75;
 export const precioLocal = usd => 'S/ ' + (Math.round(usd * PEN_POR_USD * 100) / 100).toFixed(2);
+// ── PAGO LOCAL: Yape / Plin en soles (solo en la web, 100% MANUAL) ──
+// El jugador yapea el monto con céntimos propios del pedido, escribe el código
+// en la nota y pega su número de operación; El Duende lo revisa en su app y
+// entrega con /entregar. NADA se entrega solo. Mientras numero este vacio, el
+// metodo no sale en ningun lado (cliente) y el servidor lo rechaza.
+// qr: imagen opcional con el QR de Yape del dueño (p. ej. '/assets/pagos/yape.png').
+export const PAGO_LOCAL = { nombre: 'Yape / Plin', numero: '', titular: '', qr: '' };
+export const pagoLocalActivo = () => !!String(PAGO_LOCAL.numero || '').trim();
+export const YAPE_VIGENCIA_MS = 24 * 3600000;   // 24 h para yapear y mandar la operación
+// Precio REDONDO en soles de cada paquete y skin (pq.pen): tabla para los de
+// siempre y, si no esta, el entero de arriba menos 10 céntimos (S/ X.90).
+export const PEN_DE_USD = { 1: 3.9, 1.99: 6.9, 3: 11.9, 5: 18.9, 20: 74.9 };
+export const penDe = usd => Object.hasOwn(PEN_DE_USD, usd) ? PEN_DE_USD[usd] : Math.round((Math.ceil(usd * PEN_POR_USD) - 0.1) * 100) / 100;
+export const textoSoles = pen => 'S/ ' + Number(pen).toFixed(2);
+for (const pq of PAQUETES) pq.pen = penDe(pq.usd);   // cada paquete, skin y alas
 // Grupos de la tienda premium (orden y subtitulos en CLASSIC y ORIGINS).
 export const GRUPOS_TIENDA = [['oro', 'Oro y objetos'], ['skin', 'Skins'], ['alas', 'Alas']];
 export const grupoPaquete = pq => pq.skin ? 'skin' : pq.alas ? 'alas' : 'oro';
@@ -2274,7 +2309,7 @@ Object.assign(MASCOTAS, {
 });
 export const AMB_TINTES = ['coral', 'hielo', 'sombra', 'lima', 'sangre', 'aurora'];
 export const AMB_MASCOTAS = ['hongo_dorado', 'rana_azul', 'pajaro_fuego', 'fantasma_rosa'];
-export const ambulanteActivo = (t = Date.now()) => [5, 6, 0].includes(new Date(t).getUTCDay());
+export const ambulanteActivo = (t = Date.now()) => [5, 6, 0].includes(new Date(t + DIA_DESFASE_MS).getUTCDay());   // viernes a domingo de Lima
 export function ambulanteOferta(sem = semanaUTC()) {
   const n = Math.round(Date.parse(sem + 'T00:00:00Z') / (7 * 86400000));
   return { tintes: [AMB_TINTES[(2 * n) % 6], AMB_TINTES[(2 * n + 1) % 6]], mascotas: [AMB_MASCOTAS[n % 4]] };
@@ -2292,7 +2327,7 @@ export const mundialDe = t => MUNDIALES[Math.floor(t / 1800000) % MUNDIALES.leng
 // registro de misiones (L). Al nivel 20, una mascota que no se vende. Sin
 // compra y sin mTON.
 export const PASE = { niveles: 20, porNivel: 75, puntos: { diaria: 10, semanal: 30, bono: 15, mazmorra: 6, mundial: 10, torre: 4, exped: 3 } };
-export const paseMes = (t = Date.now()) => new Date(t).toISOString().slice(0, 7);
+export const paseMes = (t = Date.now()) => new Date(t + DIA_DESFASE_MS).toISOString().slice(0, 7);   // mes de Lima
 export function premioPase(n, nivel) {
   const oro = k => Math.round(k * Math.max(1, nivel));
   if (n === PASE.niveles) return { mascota: 'duende_pase', oro: oro(600), txt: 'la mascota Duendecillo Dorado y ' + oro(600).toLocaleString('es', { useGrouping: 'always' }) + ' de oro' };

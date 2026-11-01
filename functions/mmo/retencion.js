@@ -35,7 +35,7 @@
 // evento avisado); off y bloq se respetan siempre.
 // ═══════════════════════════════════════════════════════
 
-import { xpParaSubir, premioDiaria, premioMazmorraDia, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, HABS, CLASES, NIVEL_MAX, DIARIA, horaFelizActiva, TORRE, semanaUTC, temporadaDe, TEMPORADAS, SKINS, precioOro, GESTA_UMBRALES, GESTA_NOMBRES } from '../../mmo/js/data.js';
+import { xpParaSubir, premioDiaria, premioMazmorraDia, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, HABS, CLASES, NIVEL_MAX, DIARIA, horaFelizActiva, TORRE, semanaUTC, temporadaDe, TEMPORADAS, SKINS, precioOro, GESTA_UMBRALES, GESTA_NOMBRES, DIA_DESFASE_MS } from '../../mmo/js/data.js';
 import { getEnv, tg } from '../api/lib.js';
 import { MMO_URL, MUNDO_URL } from '../api/telegram-bot.js';
 import { metaEvento } from './meta.js';
@@ -60,7 +60,8 @@ export const AVISO_TG_MS = 10 * 60 * 1000;
 export const AVISO_TG_ORO = 300;
 const AV_LETRAS = 'abcdefghjkmnpqrstuvwxyz23456789';
 
-export const diaNum = (t = Date.now()) => Math.floor(t / DIA_MS);
+// Dia de juego (medianoche de Lima, como hoyUTC de data.js): diaISO(diaNum(t)) === diaJuego(t).
+export const diaNum = (t = Date.now()) => Math.floor((t + DIA_DESFASE_MS) / DIA_MS);
 export const diaISO = n => new Date(n * DIA_MS).toISOString().slice(0, 10);
 const fmt = n => Math.round(n).toLocaleString('es', { useGrouping: 'always' });
 const pct = (x, base) => base ? Math.round(x / base * 1000) / 10 : null;
@@ -90,7 +91,7 @@ const conSrc = (c, campos) => {
 //   n~<campaña>: altas por campaña (utm_campaign de origen.js, saneada).
 // Gasto en anuncios (/gasto del dueño): ret:gasto → [{ f: 'YYYY-MM-DD', src, camp, usd }].
 // Las compras del arcade con Stars van por otro lado (Supabase): no entran en el ROAS.
-export const COMPRA_PASOS = ['tv', 'fa', 'fc', 'pq_stars', 'pq_sol', 'pq_duende', 'pg', 'en', 'cad'];
+export const COMPRA_PASOS = ['tv', 'fa', 'fc', 'pq_stars', 'pq_sol', 'pq_duende', 'pq_yape', 'pg', 'en', 'cad'];
 export const campDe = v => String(v || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 30);
 const MAX_CAMP_DIA = 30;   // campañas distintas por dia en ret:dia (n~ y u7~)
 const campsDe = r => Object.keys(r).filter(k => k.startsWith('n~')).length;
@@ -114,6 +115,8 @@ const MAX_ENVIOS = 40;   // avisos por llamada a 'recordatorios' (limite de subp
 export const HORA_DEFECTO = 17;   // la del cron: para quien aun no tiene hora habitual
 const DIAS_PARA_HORA = 3;         // dias con hora anotada para buscar la mas repetida
 const horaUTC = (t = Date.now()) => new Date(t).getUTCHours();
+// Hora UTC pasada a Lima: «mas tarde hoy» se ordena dentro del dia de juego (00-23 de Lima).
+const horaLima = h => (h + 19) % 24;
 
 // La hora (UTC) a la que suele volver: la mas repetida de sus primeras
 // entradas del dia; en empate, la mas reciente. Con 1 o 2 dias (el aviso D1
@@ -169,7 +172,7 @@ export const Retencion = {
     let p = this._retDias.get(n);
     if (!p) {
       p = this.state.storage.get('ret:dia:' + diaISO(n)).then(x => x || vacio());
-      p.catch(() => this._retDias.delete(n));
+      p.catch(() => { if (this._retDias && this._retDias.get(n) === p) this._retDias.delete(n); });   // migrar() pudo vaciar el cache
       this._retDias.set(n, p);
       // En memoria solo hacen falta los ultimos ~2 meses (cohortes y /mmostats).
       if (this._retDias.size > 90) for (const k of [...this._retDias.keys()]) if (k < n - 70) this._retDias.delete(k);
@@ -258,7 +261,7 @@ export const Retencion = {
     let l = (await this.state.storage.get('ret:gasto')) || [];
     if (b && b.f !== undefined) {
       const f = String(b.f || ''), src = String(b.src || ''), camp = campDe(b.camp), usd = Number(b.usd);
-      const t = Date.parse(f + 'T00:00:00Z');
+      const t = Date.parse(f + 'T12:00:00Z');   // mediodia: cae en ese dia de juego (Lima)
       if (!/^\d{4}-\d{2}-\d{2}$/.test(f) || !Number.isFinite(t) || diaISO(diaNum(t)) !== f) return { ok: false, error: 'Fecha no válida (usa AAAA-MM-DD, hoy o ayer).' };
       if (diaNum(t) > diaNum() + 1 || diaNum(t) < diaNum() - 120) return { ok: false, error: 'La fecha debe ser de los últimos 120 días.' };
       if (!ORIGENES.includes(src) || src === 'org') return { ok: false, error: 'Origen no válido: meta, tg, wa o ref.' };
@@ -311,7 +314,7 @@ export const Retencion = {
   // Anota el dia en el personaje. true si es su primera vez de ese dia.
   retMarcarDia(c, hoy) {
     const r = c.ret;
-    if (r.d[r.d.length - 1] === hoy) return false;
+    if (r.d.length && r.d[r.d.length - 1] >= hoy) return false;   // uno futuro (dia UTC antiguo) cuenta como hoy
     r.d = r.d.filter(x => x > hoy - DIAS_GUARDADOS && x < hoy);
     r.d.push(hoy);
     r.dt = (r.dt || 0) + 1;
@@ -401,7 +404,7 @@ export const Retencion = {
     c.ret.visto = ahora;
     const hoy = diaNum(ahora);
     const nuevoDia = this.retMarcarDia(c, hoy);
-    // Sigue conectado al cambiar el dia UTC (19:00 en Peru): cobra la diaria y
+    // Sigue conectado al cambiar el dia de juego (medianoche de Lima): cobra la diaria y
     // ve las tareas nuevas sin reconectar. Lo que cambia en c entra en el put
     // de guardar(), que viene justo despues. Al cerrar no: lo cobra al volver.
     if (nuevoDia && !s.cerrado && this.procesarLogin) {
@@ -495,17 +498,32 @@ export const Retencion = {
     } catch (e) { console.error('[MMO ev]', e); }
     return nada();
   },
-  async evVolcar() {
+  // Uno detras de otro: dos volcados a la vez (temporizador, /mmostats, alarma)
+  // leian el mismo ev:dia y el segundo pisaba lo que sumo el primero.
+  evVolcar() {
+    const p = (this._evVolP || Promise.resolve()).catch(() => {}).then(() => this.evVolcarUno());
+    this._evVolP = p;
+    return p;
+  },
+  async evVolcarUno() {
     const p = this._evPend;
     if (!p) return;
     this._evPend = null; this._evT = Date.now();
     const k = 'ev:dia:' + diaISO(p.d);
-    const g = (await this.state.storage.get(k)) || {};
-    for (const c in p.k) {
-      const a = g[c] || (g[c] = [0, 0, 0, 0, 0, 0, 0, 0]);
-      p.k[c].forEach((v, i) => { a[i] = (a[i] || 0) + v; });
+    try {
+      const g = (await this.state.storage.get(k)) || {};
+      for (const c in p.k) {
+        const a = g[c] || (g[c] = [0, 0, 0, 0, 0, 0, 0, 0]);
+        p.k[c].forEach((v, i) => { a[i] = (a[i] || 0) + v; });
+      }
+      await this.state.storage.put(k, g);
+    } catch (e) {
+      // No se pudo escribir: lo contado vuelve a lo pendiente (si es del mismo dia).
+      const q = this._evPend;
+      if (!q) this._evPend = p;
+      else if (q.d === p.d) for (const c in p.k) { const a = q.k[c] || (q.k[c] = [0, 0, 0, 0, 0, 0, 0, 0]); p.k[c].forEach((v, i) => { a[i] = (a[i] || 0) + v; }); }
+      throw e;
     }
-    await this.state.storage.put(k, g);
   },
   // Resumen de los ultimos 'dias' por origen: sesiones por paso, y del clic al
   // primer movimiento en el movil cuantas tardaron 20 s o menos y la mediana (por tramo).
@@ -739,7 +757,7 @@ export const Retencion = {
     await this.retGuardarIdx();
     if (Object.keys(porTipo).length) { try { await this.retSumar(hoy, porTipo); } catch (er) { console.error('[MMO avisos tipo]', er); } }
     res.callar = Object.keys(idx).filter(u => u.startsWith('tg:') && (idx[u].off || idx[u].bloq)).map(u => u.slice(3));
-    res.hoy = Object.keys(idx).filter(u => (u.startsWith('tg:') || idx[u].tc) && (idx[u].ad === hoy || (this.puedeAvisar(u, idx[u], hoy, idx) && horaHabitual(idx[u]) > hora))).map(u => u.startsWith('tg:') ? u.slice(3) : String(idx[u].tc));
+    res.hoy = Object.keys(idx).filter(u => (u.startsWith('tg:') || idx[u].tc) && (idx[u].ad === hoy || (this.puedeAvisar(u, idx[u], hoy, idx) && horaLima(horaHabitual(idx[u])) > horaLima(hora)))).map(u => u.startsWith('tg:') ? u.slice(3) : String(idx[u].tc));
     return res;
   },
 
@@ -753,7 +771,7 @@ export const Retencion = {
     return {
       ok: true,
       callar: tg.filter(u => idx[u].off || idx[u].bloq).map(u => u.slice(3)),
-      hoy: [...tg, ...conTc].filter(u => idx[u].ad === hoy || (this.puedeAvisar(u, idx[u], hoy, idx) && horaHabitual(idx[u]) > hora)).map(u => u.startsWith('tg:') ? u.slice(3) : String(idx[u].tc)),
+      hoy: [...tg, ...conTc].filter(u => idx[u].ad === hoy || (this.puedeAvisar(u, idx[u], hoy, idx) && horaLima(horaHabitual(idx[u])) > horaLima(hora))).map(u => u.startsWith('tg:') ? u.slice(3) : String(idx[u].tc)),
     };
   },
 
@@ -834,7 +852,7 @@ export const Retencion = {
     } else if (L && L.d === diaISO(hoy - 2) && L.racha > 2) {
       // Falto ayer: si entra hoy solo retrocede (o la conserva por el margen de 30 h).
       const baja = L.racha >= 8 ? (semanaRacha(L.racha) - 1) * 7 + 1 : L.racha === 7 ? 1 : L.racha - 1;
-      add('racha', `🔥 Ayer no entraste: si entras HOY salvas tu racha de ${L.racha} días (como mucho baja a ${baja}). Mañana vuelve al día 1.`);
+      add('racha', `🔥 Ayer no entraste: entra HOY y tu racha de ${L.racha} días baja como mucho a ${baja}. Si no, mañana vuelve al día 1.`);
     }
     const g = this.grupos && [...this.grupos.values()].find(x => x.uids.includes(c.uid));
     const enGrupo = g ? g.uids.filter(u => u !== c.uid && this.porUid.has(u)).length : 0;
@@ -862,7 +880,7 @@ export const Retencion = {
       add('mazm', `🏰 El premio diario de mazmorra está disponible: +${fmt(pr.xp)} XP, +${fmt(pr.oro)} oro y un objeto ÉPICO.`);
     }
     // Torre del Duende: si esta semana aun no subio (su cofre cada 5 pisos espera).
-    if (c.nivel >= TORRE.nv && (!c.torre || c.torre.sem !== semanaUTC() || !c.torre.max)) add('torre', '🗼 Esta semana aún no subes la Torre del Duende: cada 5 pisos nuevos, un cofre con oro y equipo.');
+    if (c.nivel >= TORRE.nv && (!c.torre || c.torre.sem !== semanaUTC() || !c.torre.max)) add('torre', '🗼 Esta semana aún no subiste la Torre del Duende: cada 5 pisos nuevos, un cofre con oro y equipo.');
     const pd = premioDiaria(c.nivel);
     add('diaria', `🎯 ${DIARIA.nombre} sin cobrar: +${fmt(pd.xp)} XP, +${fmt(pd.oro)} oro y ${pd.pocion} pociones.`);
     if (c.nivel < NIVEL_MAX) {
