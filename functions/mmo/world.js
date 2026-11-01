@@ -863,7 +863,7 @@ export class MmoWorld {
     this.buzonEnviar(s).catch(e => console.error('[MMO buzon]', e));   // "Mientras no estabas" y compra entregada
     const tp = temporadaDe();
     if (ambulanteActivo() && c.nivel >= 15) this.enviar(s, { t: 'toast', m: 'Mercader ambulante en el pueblo este fin de semana: colores y una mascota exclusivos (pestaña «Ambulante»).', ok: true });
-    if (tp) this.enviar(s, { t: 'toast', m: `${tp.nombre}: hasta el ${tp.hasta} los monstruos sueltan ${tp.cosas}; con 50 y 200 hay títulos. Llevas ${c[tp.campo] || 0}.`, ok: true });
+    if (tp) this.enviar(s, { t: 'toast', m: `${tp.nombre}: hasta el ${tp.hasta} los monstruos sueltan ${tp.cosas}; con 50 ganas 3.000 de oro y un título; con 200, 12.000 de oro y otro título. Llevas ${c[tp.campo] || 0}.`, ok: true });
     else {
       // Sin evento: si el siguiente empieza en 10 dias o menos, se anuncia
       // (un motivo para volver ese dia).
@@ -1756,8 +1756,9 @@ export class MmoWorld {
 
   // Buzon "Mientras no estabas": avisos para quien no tenia sesion abierta.
   // Clave aparte (bz:uid) para no pisar el personaje; como mucho 10 y sin repetidos.
-  async buzonAgregar(uid, texto) {
-    if (!uid || uid.startsWith('inv:')) return;
+  // aunInvitado: tambien a jugadores sin cuenta (avisos de sus propios invitados).
+  async buzonAgregar(uid, texto, aunInvitado) {
+    if (!uid || (uid.startsWith('inv:') && !aunInvitado)) return;
     try {
       const l = (await this.state.storage.get('bz:' + uid)) || [];
       const m = String(texto).slice(0, 300);
@@ -1918,16 +1919,18 @@ export class MmoWorld {
     if (L.d && L.d >= hoy) return null;
     const ayer = new Date(Date.parse(hoy) - 86400000).toISOString().slice(0, 10);
     const anteayer = new Date(Date.parse(hoy) - 2 * 86400000).toISOString().slice(0, 10);
-    // Faltar UN dia no borra la racha: retrocede dos dias (antes volvia al 1).
+    // Faltar UN dia no borra la racha: retrocede (antes volvia al 1).
     // Margen de 30 h: quien estuvo conectado hace menos de 30 h (c.salida = ultimo
     // guardado) sigue la racha aunque se salte un dia (quien juega de noche y
     // vuelve al dia siguiente de noche no la pierde por pocas horas).
     const seguido = L.d === ayer || (L.d === anteayer && c.salida > 0 && Date.now() - c.salida < 30 * 3600000);
     // La racha crece sin tope (dia 8 = semana 2, dia 1): una guardada de 7 pasa a 8.
-    // Falta UN dia: hasta el 7 retrocede uno; desde el 8 vuelve al inicio de su
-    // semana (de 10 a 8), sin perder las semanas ya cumplidas.
+    // Falta UN dia: hasta el 6 retrocede uno; desde el 7 no se pierde la semana
+    // cumplida (el 7 pasa al 8, el 14 al 15; si no, vuelve al inicio de su semana, de 10 a 8).
     const r0 = L.racha || 0;
-    const racha = seguido ? r0 + 1 : L.d === anteayer && r0 >= 8 ? (semanaRacha(r0) - 1) * 7 + 1 : L.d === anteayer && r0 < 7 ? Math.max(1, r0 - 1) : 1;   // el 7 vuelve al 1 (si no, el premio del 7 se cobraria cada 2 dias)
+    // El 7 pasa al 8 (y el 14 al 15...: premio del dia 1 de la semana siguiente): no se
+    // puede explotar, el premio grande del dia 7 no se repite.
+    const racha = seguido ? r0 + 1 : L.d === anteayer && r0 >= 7 && r0 % 7 === 0 ? r0 + 1 : L.d === anteayer && r0 >= 8 ? (semanaRacha(r0) - 1) * 7 + 1 : L.d === anteayer && r0 < 7 ? Math.max(1, r0 - 1) : 1;
     const pr = premioRacha(racha);
     // Oro de la semana 2 x1,25 y desde la 3 x1,5 (tope).
     const oro = Math.round((pr.oro || 0) * multLogin(c.nivel) * multSemanaRacha(racha));
@@ -2033,7 +2036,7 @@ export class MmoWorld {
           ? { raw: x.duendeRaw, mint: DUENDE_MINT, dec: DUENDE_DECIMALES, usd: Math.round(x.usd * DUENDE_DESCUENTO * 100) / 100, wallet: SOL_DEV_WALLET }
           : { lamports: x.lamports, usd: x.usd, wallet: SOL_DEV_WALLET, ref: x.ref || '' }) : {}) })),
       transparencia: this.transparencia(),
-      puedeBienvenida: this.puedeBienvenida(c.uid, c) ? 1 : 0,
+      puedeBienvenida: (c.uid.startsWith('inv:') || this.puedeBienvenida(c.uid, c)) ? 1 : 0,
       dios: s.dios ? 1 : 0, diosNv: s.dios || undefined, diosModo: s.dios ? s.diosModo || {} : undefined,
     };
   }

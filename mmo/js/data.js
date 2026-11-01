@@ -507,6 +507,15 @@ export function limpiarLook(l) {
 export const VERSION = 328;
 
 export const NOVEDADES = [
+  { n: 98, fecha: '1 nov 2026', items: [
+    'Si se va la señal en el mundo 3D, el juego sigue intentando conectar solo y vuelve a la partida sin recargar; hay un botón «Reintentar ahora».',
+    'Al morir en ORIGINS te damos un consejo útil, y con poca vida el botón de la poción late en rojo.',
+    'Invitar a un amigo abre tus chats de Telegram, y en Amigos hay un botón grande para invitar por Telegram o WhatsApp. Si tu amigo entra mientras no juegas, te queda el aviso en el buzón.',
+    'Si llegas al día 7 de tu racha y faltas un día, ya no vuelves al día 1: sigues en la semana 2.',
+    'En ORIGINS, si creas tu cuenta desde la tienda, vuelves al 3D con la tienda abierta.',
+    'Los eventos empiezan y terminan a la medianoche de Perú y te dicen el oro que ganas; la Cueva del 3D suma puntos al Pase.',
+    'Puedes añadir Duende Quest a tu pantalla de inicio para volver en un toque.',
+  ] },
   { n: 97, fecha: '1 nov 2026', items: [
     'La recompensa diaria, las misiones del día y la racha ahora se renuevan a la medianoche de Perú, ya no a las 7 de la noche.',
     'Con mucha gente en el pueblo el juego va más fluido, y los recién llegados ya no aparecen todos amontonados.',
@@ -1729,6 +1738,8 @@ export const TEMPORADAS = [
   { id: 'navidad2027', nombre: 'Navidad Duende', ini: Date.UTC(2027, 11, 18), fin: Date.UTC(2028, 0, 7), hasta: '6 de enero',
     emoji: '🎁', deco: '🎄', cosas: 'regalos', campo: 'regalos', color: '#4ade80', titulos: ['Duende Navideño', 'Santa Duende'] },
 ];
+// Las fechas de arriba son dias de Lima: empiezan y acaban a las 00:00 de Peru (05:00 UTC).
+for (const t of TEMPORADAS) { t.ini -= DIA_DESFASE_MS; t.fin -= DIA_DESFASE_MS; }
 export const temporadaDe = (t = Date.now()) => TEMPORADAS.find(x => t >= x.ini && t < x.fin) || null;
 export const temporadaActiva = (t = Date.now()) => !!temporadaDe(t);
 export const TEMP_PROB = 0.2, TEMP_JEFE = 5;

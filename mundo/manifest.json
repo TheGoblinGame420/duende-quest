@@ -1,7 +1,7 @@
 {
   "id": "/mundo/",
-  "name": "$DUENDE ORIGINS",
-  "short_name": "ORIGINS",
+  "name": "Duende Quest ORIGINS",
+  "short_name": "Duende Quest",
   "description": "El mundo abierto 3D del MMO de los duendes: vuela, caza y pelea por tu facción en el Abismo.",
   "start_url": "/mundo/",
   "scope": "/",

@@ -66,6 +66,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v327 | Noche de lanzamiento, ronda 3: pack de bienvenida, expediciones en ORIGINS, primer minuto con premio, Atrás, soles, soporte de compras, 3D más fluido | **B** |
 | v328 | Noche de lanzamiento, ronda 4: ROAS con /gasto, Stars desde la web, anuncios en el bot, carga rápida, avísame por Telegram, código para llevar el duende, kit del invitado, píxel apagado | **B** |
 | v329 | Noche de lanzamiento, ronda 5: día de juego en hora de Perú, pueblo fluido, menos datos, actualizaciones sin cortar, Yape preparado, QA de la noche | **B** |
+| v330 | Ronda 6 (30 evaluadores): reconexión 3D, consejos al morir, invitar desde Amigos, cuenta desde ORIGINS, racha del 7, instalar app, eventos en hora de Perú | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

@@ -167,13 +167,13 @@ async function handleStart(token, env, chatId, user, startPayload, desdeMenu) {
   }
   await tg(token, 'sendMessage', {
     chat_id: chatId,
-    text: `🧌 *Bienvenido a DUENDE QUEST, ${mdSeguro(user.first_name || 'Duende')}*\n\nJuego de duendes gratis y sin descargas: juega aquí en Telegram o en el navegador.\n\n🎮 *Arcade:* campaña de 15 etapas con jefes y ranking global.\n🌍 *DUENDE QUEST ONLINE:* MMORPG estilo WoW con 4 clases, grupos, mazmorras con jefes, hermandades y 10 zonas hasta el nivel 60.\n🥤 *Premio:* junta 10.000 puntos cazando en el MMO y te enviamos un litro de chicha morada a tu casa. No es un sorteo: lo ganas jugando.\n💎 *Recompensas en TON (opcional):* desde el nivel 15, los jefes del MMO dan mTON del fondo del día, si lo hay (1.000 mTON = 1 TON). Retiro desde 5 TON.\n🪙 *$DUENDE:* token del juego en Solana; también se gana jugando.\n\n${TEXTO_SEGURIDAD}\nMás información: ${SEGURIDAD_URL}\n\n${TEXTO_CREADOR}\n\n*Invita a un amigo* (500 $DUENDE para cada uno):\n\`${referralLink}\``,
+    text: `🧌 *Bienvenido a DUENDE QUEST, ${mdSeguro(user.first_name || 'Duende')}*\n\nJuego de duendes gratis y sin descargas: juega aquí en Telegram o en el navegador.\n\n🌌 *ORIGINS 3D:* mundo abierto con alas, cueva y PvP, gratis en el celular.\n🎮 *Arcade:* campaña de 15 etapas con jefes y ranking global.\n🌍 *DUENDE QUEST ONLINE:* MMORPG estilo WoW con 4 clases, grupos, mazmorras con jefes, hermandades y 10 zonas hasta el nivel 60.\n🥤 *Premio:* junta 10.000 puntos cazando en el MMO y te enviamos un litro de chicha morada a tu casa. No es un sorteo: lo ganas jugando.\n💎 *Recompensas en TON (opcional):* desde el nivel 15, los jefes del MMO dan mTON del fondo del día, si lo hay (1.000 mTON = 1 TON). Retiro desde 5 TON.\n🪙 *$DUENDE:* token del juego en Solana; también se gana jugando.\n\n${TEXTO_SEGURIDAD}\nMás información: ${SEGURIDAD_URL}\n\n${TEXTO_CREADOR}\n\n*Invita a un amigo* (500 $DUENDE para cada uno):\n\`${referralLink}\``,
     parse_mode: 'Markdown',
     disable_web_page_preview: true,
     reply_markup: { inline_keyboard: [
-      [{ text: '🎮 Jugar', web_app: { url: WEBAPP_URL } }],
-      [{ text: '🌍 Jugar el MMO online', web_app: { url: MMO_URL } }],
-      [{ text: '🌌 Mundo abierto 3D', web_app: { url: MUNDO_URL } }],
+      [{ text: '🎮 Jugar gratis (3D)', web_app: { url: MUNDO_URL } }],
+      [{ text: '🌍 CLASSIC (2D)', web_app: { url: MMO_URL } }],
+      [{ text: '🕹 Arcade', web_app: { url: WEBAPP_URL } }],
       [{ text: '🏆 Ranking', callback_data: 'ranking' }, { text: '📊 Mis estadísticas', callback_data: 'stats' }],
       [{ text: '🎁 Invitar amigos', callback_data: 'referral' }, { text: '💹 Precio', callback_data: 'price' }],
       [{ text: '⭐ Comprar con Stars', callback_data: 'buy' }, { text: '🪙 Pump.fun', url: PUMP_FUN_URL }],
@@ -799,7 +799,7 @@ async function handleLive(token, env, context, chatId, userId, payload) {
 }
 
 async function handlePlay(token, chatId) {
-  await tg(token, 'sendMessage', { chat_id: chatId, text: '🎮 *DUENDE QUEST*\n\nToca el botón para abrir el juego.', parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 Abrir el juego', web_app: { url: WEBAPP_URL } }]] } });
+  await tg(token, 'sendMessage', { chat_id: chatId, text: '🎮 *DUENDE QUEST*\n\nToca el botón para abrir el juego.', parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 Abrir el juego', web_app: { url: MUNDO_URL } }]] } });
 }
 
 // ═══════════════════════════════════════════════════════

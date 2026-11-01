@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=329';
-import { iniciarRegalo } from './regalo.js?v=329';
-import { iniciarAvisoTg } from './avisotg.js?v=329';
+} from './data.js?v=330';
+import { iniciarRegalo } from './regalo.js?v=330';
+import { iniciarAvisoTg } from './avisotg.js?v=330';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -70,6 +70,13 @@ if (!TG) {
 }
 // Enlace directo a la tienda: /mmo/#premium o la Mini App con start_param=premium.
 let tiendaAlEntrar = /(^#|&)premium(&|$)/.test(location.hash) || !!(TG && TG.initDataUnsafe && TG.initDataUnsafe.start_param === 'premium');
+// Desde ORIGINS (#cuenta&volver=mundo): al entrar se abre la ventana de cuenta una vez; se limpia el hash y se conserva el de Telegram.
+function cuentaAlEntrar() {
+  if (!/(^#|&)cuenta(&|$)/.test(location.hash)) return;
+  const resto = location.hash.slice(1).split('&').filter(p => p && p !== 'cuenta' && p !== 'volver=mundo').join('&');
+  try { history.replaceState(history.state, '', location.pathname + location.search + (resto ? '#' + resto : '')); } catch (e) {}
+  setTimeout(abrirCuenta, 600);
+}
 let viaTienda = 'npc';   // de donde se abrio la tienda: va en el pedido (hud, oro, npc o bot), solo informativo para el dueño
 if (TG) {
   try { TG.ready(); TG.expand(); TG.disableVerticalSwipes && TG.disableVerticalSwipes(); TG.setHeaderColor && TG.setHeaderColor('#0a0418'); } catch (e) {}
@@ -618,6 +625,7 @@ function recibir(m) {
       const antes = yo; yo = m.yo; puntoTienda();
       if (antes && antes.skins && yo.skins && yo.skins.length > antes.skins.length) { const nueva = yo.skins.find(k => !antes.skins.includes(k)); if (nueva && SKINS[nueva]) setTimeout(() => ofrecerPresumir('✨ ¡Estrené la skin ' + SKINS[nueva].nombre + ' en Duende Quest!', 'look'), 1500); }
       if (tiendaAlEntrar && yo.clase) setTimeout(() => { if (tiendaAlEntrar && yo && !document.querySelector('.modal.on')) { tiendaAlEntrar = false; abrirTiendaHud('bot', true); } }, 1200);   // con otra ventana abierta, se reintenta con el siguiente 'yo'
+      cuentaAlEntrar();
       if (yo.muerto && !(antes && antes.muerto)) morir();
       if (!yo.muerto) { $('m-muerte').classList.remove('on'); P.muerto = false; }
       ofrecerBienvenida(antes);
@@ -3245,7 +3253,7 @@ function mostrarLogin(m) {
   let txt = 'Hoy recibes ' + m.txt + '.';
   if (m.oro) txt = 'Hoy recibes ' + m.oro.toLocaleString('es', { useGrouping: 'always' }) + ' oro' + (m.item ? ' y ' + RAREZAS[m.item.r].nombre.toLowerCase() + ': ' + nombreItem(m.item) : '') + '.';
   ponTxt($('login-ok'), m.oro ? 'Recoger ' + m.oro.toLocaleString('es', { useGrouping: 'always' }) + ' oro' : 'Recoger');
-  $('login-cuerpo').innerHTML = h + `<p class="centro" style="margin-top:12px;color:var(--ok);font-weight:600">${esc(txt)}</p>${(m.hitos || []).map(x => `<p class="centro" style="margin-top:6px;color:var(--oro);font-weight:700">🏅 ¡Hito de racha! Ganaste ${esc(x)}.</p>`).join('')}<p class="centro" style="font-size:12px;color:var(--txt2)">${esc(textoManana())}. Si faltas un día, la racha retrocede un día (desde la semana 2, vuelve al inicio de su semana); si faltas más, vuelve a empezar. El oro crece con tu nivel y con cada semana (hasta x1,5).</p>`;
+  $('login-cuerpo').innerHTML = h + `<p class="centro" style="margin-top:12px;color:var(--ok);font-weight:600">${esc(txt)}</p>${(m.hitos || []).map(x => `<p class="centro" style="margin-top:6px;color:var(--oro);font-weight:700">🏅 ¡Hito de racha! Ganaste ${esc(x)}.</p>`).join('')}<p class="centro" style="font-size:12px;color:var(--txt2)">${esc(textoManana())}. Si faltas un día, la racha retrocede un día (desde la semana 2, vuelve al inicio de su semana; si ya cumpliste la semana, no la pierdes); si faltas más, vuelve a empezar. El oro crece con tu nivel y con cada semana (hasta x1,5).</p>`;
   abrir('m-login');
   sfx('moneda', .5);
 }
@@ -5512,7 +5520,8 @@ const ERR_AUTH = [
   [/reauthenticat/i, 'Por seguridad, para cambiarla usa «¿Olvidaste tu contraseña?»: te llega un enlace al correo.'],
 ];
 const errAuth = m => (ERR_AUTH.find(([r]) => r.test(m || '')) || [0, 'No se pudo completar: ' + (m || 'error de red')])[1];
-const URL_VUELTA = () => location.origin + '/mmo/';
+// Si vino de ORIGINS a crear su cuenta (dq_volver), el enlace del correo lo devuelve al 3D.
+const URL_VUELTA = () => { let v = ''; try { v = sessionStorage.getItem('dq_volver') || localStorage.getItem('dq_volver') || ''; } catch (e) {} return location.origin + (v.startsWith('/mundo/') ? '/mundo/' : '/mmo/'); };
 // Codigo de quien te invito (?ref=): se guarda 14 dias en este navegador y va
 // en cada hola (si entras como invitado y te registras despues, igual cuenta).
 function refInvitacion() {
@@ -5573,6 +5582,9 @@ function mostrarRecuperacion() {
 // Tras iniciar sesion: en la pantalla de entrada se entra al mundo; en
 // partida (invitado) se recarga para reconectar con la cuenta y heredar.
 function sesionLista(enJuego) {
+  // Vino de la tienda de ORIGINS: vuelve al 3D con la tienda abierta (alli hereda al invitado).
+  let v = ''; try { v = sessionStorage.getItem('dq_volver') || localStorage.getItem('dq_volver') || ''; sessionStorage.removeItem('dq_volver'); localStorage.removeItem('dq_volver'); } catch (e) {}
+  if (v.startsWith('/mundo/')) { location.href = TG && location.hash.length > 1 ? '/mundo/' + location.hash + '&premium' : v; return; }   // en Telegram se conserva su hash (initData)
   if (enJuego || conectado) { try { sessionStorage.setItem('dq_auto', '1'); } catch (e) {} location.reload(); return; }
   $('carga').style.display = 'flex'; $('carga-s').textContent = 'Entrando al mundo…';
   if (sonido) sonarMusica();
@@ -5631,7 +5643,7 @@ function pintarCuenta(cont, modo, enJuego) {
         if (data && data.session) { msg('¡Cuenta creada!', true); sesionLista(enJuego); }
         else msg('¡Listo! Te enviamos un correo para confirmar la cuenta. Ábrelo en cualquier navegador: al entrar te ofrecemos pasarle tu duende (revisa también spam).', true);
       } else if (acc === 'olvido') {
-        const { error } = await cli.auth.resetPasswordForEmail(email, { redirectTo: URL_VUELTA() });
+        const { error } = await cli.auth.resetPasswordForEmail(email, { redirectTo: location.origin + '/mmo/' });   // la contraseña nueva se pone en CLASSIC (ORIGINS no tiene esa pantalla)
         if (error) return msg(errAuth(error.message));
         msg('Si ese correo tiene cuenta, te llegó un enlace para cambiar la contraseña (revisa también spam).', true);
       } else if (acc === 'enlace') {
@@ -5698,7 +5710,7 @@ async function inicio() {
   $('b-cambiar-pass').onclick = e => { e.preventDefault(); $('inicio-auth2').style.display = 'block'; pintarCuenta($('inicio-auth2'), 'cambiar', false); };
   // Vuelve de "olvide mi contraseña" o de entrar desde la partida: directo.
   if (recuperando) mostrarRecuperacion();
-  else { let auto = null; try { auto = sessionStorage.getItem('dq_auto'); if (auto) sessionStorage.removeItem('dq_auto'); } catch (e) {} if (auto || (nuevoVisitante && /[?&]j=2d\b/i.test(location.search))) entrar(); }
+  else { let auto = null; try { auto = sessionStorage.getItem('dq_auto'); if (auto) sessionStorage.removeItem('dq_auto'); } catch (e) {} if (auto || /(^#|&)cuenta(&|$)/.test(location.hash) || (nuevoVisitante && /[?&]j=2d\b/i.test(location.search))) entrar(); }   // #cuenta (desde ORIGINS): directo a la partida y alli se abre la cuenta
   $('b-salir-cuenta').onclick = async e => {
     e.preventDefault();
     try { if (_sb) await _sb.auth.signOut(); } catch (er) {}

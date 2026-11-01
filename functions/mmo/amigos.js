@@ -58,12 +58,22 @@ export const Amigos = {
     // si este esta conectado y como mucho 5 por hora. Si no, un bucle de invitados
     // con su ?ref= le llenaba la lista de amigos y gastaba escrituras.
     if (c.uid.startsWith('inv:')) {
-      if (!otro) return;
       const h = Math.floor(Date.now() / 3600000);
       this._refInvH = this._refInvH && this._refInvH.h === h ? this._refInvH : { h, n: new Map() };
       const n = (this._refInvH.n.get(de) || 0) + 1;
       this._refInvH.n.set(de, n);
       if (n > 5) return;
+      // Invitador desconectado: solo entra en «Mis invitados» (no en contactos) y
+      // le queda un aviso en el buzon. Antes no se anotaba y veia «Mis invitados (0)».
+      if (!otro) {
+        const li = co.invitados || (co.invitados = []);
+        if (li.some(a => a.u === c.uid)) return;
+        li.push({ u: c.uid, n: c.nombre, t: Date.now() });
+        if (li.length > INVITADOS_MAX) li.splice(0, li.length - INVITADOS_MAX);
+        await this.state.storage.put('c:' + de, co);
+        if (this.buzonAgregar) await this.buzonAgregar(de, '🤝 ' + c.nombre + ' entró con tu enlace. Jueguen juntos: a nivel ' + AMIGO_NIVEL + ' ganan oro los dos.', true);
+        return;
+      }
     }
     add(co, c.uid, c.nombre);
     // «Mis invitados» (infoAmigos): los ultimos INVITADOS_MAX que llegaron con su enlace.
@@ -101,7 +111,16 @@ export const Amigos = {
     if (!c.invitadoPor || c.refPagado || c.nivel < AMIGO_NIVEL) return;
     // Solo cuentas reales: Telegram o correo confirmado. El invitado lo cobra
     // al registrarse (world.js lo vuelve a revisar al entrar).
-    if (c.uid.startsWith('inv:') || !(c.uid.startsWith('tg:') || (s.uidAuth || '').startsWith('tg:') || (s.extraAuth && s.extraAuth.emailOk))) return;
+    if (c.uid.startsWith('inv:') || !(c.uid.startsWith('tg:') || (s.uidAuth || '').startsWith('tg:') || (s.extraAuth && s.extraAuth.emailOk))) {
+      // Una sola vez: que sepa como cobrar (antes salia en silencio).
+      // 1 = avisado como invitado, 2 = avisado con cuenta (al heredar el duende se copia el 1 y aun falta el de confirmar correo).
+      const inv = c.uid.startsWith('inv:'), tipo = inv ? 1 : 2;
+      if (c.nivel >= AMIGO_NIVEL && !((c.refAvisoCta || 0) >= tipo)) {
+        c.refAvisoCta = tipo; s.sucio = true;
+        this.enviar(s, { t: 'toast', ok: true, m: inv ? '🤝 ¡Nivel ' + AMIGO_NIVEL + '! Tu premio de amigo y el de quien te invitó te esperan: crea tu cuenta gratis con Telegram o con tu correo (confirmado) y se cobran al entrar. Tu duende pasa a tu cuenta.' : '🤝 ¡Nivel ' + AMIGO_NIVEL + '! Confirma tu correo y vuelve a entrar para cobrar tu premio de amigo (y el de quien te invitó).' });
+      }
+      return;
+    }
     // Nadie se cobra a si mismo (cuenta vinculada o heredada con su propio codigo).
     if (c.invitadoPor === c.uid || c.invitadoPor === s.uidAuth) { delete c.invitadoPor; s.sucio = true; return; }
     c.refPagado = true;
@@ -125,7 +144,7 @@ export const Amigos = {
     else await this.state.storage.put('c:' + c.invitadoPor, co);
     const txtA = `🤝 ¡Tu amigo ${c.nombre} llegó a nivel ${AMIGO_NIVEL} en DUENDE QUEST ONLINE! Ganaste oro${co.amigos === 5 ? ' y el Conejo Saltarín de montura' : ''}. Amigos invitados: ${co.amigos}.`;
     if (otro) this.enviar(otro, { t: 'toast', m: txtA, ok: true });
-    else if (this.buzonAgregar) await this.buzonAgregar(c.invitadoPor, txtA);   // "Mientras no estabas"
+    else if (this.buzonAgregar) await this.buzonAgregar(c.invitadoPor, txtA, true);   // "Mientras no estabas"
     if (await this.quiereAvisos(c.invitadoPor)) { try { await this.tgEnviar('sendMessage', { chat_id: c.invitadoPor.slice(3), text: txtA }); } catch (e) {} }
   },
 

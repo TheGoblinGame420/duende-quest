@@ -14,7 +14,7 @@
 // los de dentro (pieza de equipo rara o mejor, XP y oro) y cuenta como
 // mazmorra completada. Una instancia vacia 5 minutos se borra.
 // ═══════════════════════════════════════════════════════
-import { MONSTRUOS, statsMonstruo, xpParaSubir, RAREZAS, nombreItem, ALAS, hoyUTC } from '../../mmo/js/data.js';
+import { MONSTRUOS, statsMonstruo, xpParaSubir, RAREZAS, nombreItem, ALAS, hoyUTC, PASE } from '../../mmo/js/data.js';
 import { CUEVA, CUEVA_X0, PORTAL_PUEBLO, nivelCueva } from '../../mmo/js/cueva3d.js';
 
 const VACIA_MS = 5 * 60 * 1000;
@@ -204,6 +204,7 @@ export const Cueva3D = {
       this.sumarXp(s, xp);
       if (nvOk) this.progresoTarea && this.progresoTarea(s, 'mazmorra');
       if (nvOk && this.puntoGesta) this.puntoGesta(s, 'mazmorra');   // la cueva 3D tambien suma a la gesta de la hermandad
+      if (nvOk && completo && this.puntoPase) this.puntoPase(s, PASE.puntos.mazmorra);
       this.enviar(s, { t: 'gana', xp, oro, drops: [], item: it });
       this.enviar(s, { t: 'toast', ok: true, m: `🏆 ¡${CUEVA.nombre} completada! +${xp} XP · +${oro} oro${it ? ' · ' + RAREZAS[it.r].nombre + ': ' + nombreItem(it) : ''}${completo ? '' : ' (cofre pequeño: hoy ya abriste 3 completos)'}` });
       s.sucio = true;

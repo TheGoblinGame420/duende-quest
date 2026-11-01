@@ -727,7 +727,7 @@ export const Retencion = {
       // Jugador web o invitado: su chat (e.tc) y un enlace normal a su version
       // (web_app lo meteria con su cuenta de Telegram, que es otro personaje).
       const chat = uid.startsWith('tg:') ? uid.slice(3) : String(e.tc);
-      const volver = uid.startsWith('tg:') ? { text: '🌍 Volver al mundo', web_app: { url: MMO_URL } } : { text: '🌍 Volver al mundo', url: c.en3d ? MUNDO_URL : MMO_URL };
+      const volver = uid.startsWith('tg:') ? { text: '🌍 Volver al mundo', web_app: { url: c.en3d ? MUNDO_URL : MMO_URL } } : { text: '🌍 Volver al mundo', url: c.en3d ? MUNDO_URL : MMO_URL };
       try {
         r = await this.tgEnviar('sendMessage', {
           chat_id: chat, text: texto, disable_web_page_preview: true,
@@ -851,8 +851,10 @@ export const Retencion = {
       add('racha', `🔥 Llevas ${L.racha} ${L.racha === 1 ? 'día seguido' : 'días seguidos'}: ${semTxt}. Si no, tu racha retrocede.`);
     } else if (L && L.d === diaISO(hoy - 2) && L.racha > 2) {
       // Falto ayer: si entra hoy solo retrocede (o la conserva por el margen de 30 h).
-      const baja = L.racha >= 8 ? (semanaRacha(L.racha) - 1) * 7 + 1 : L.racha === 7 ? 1 : L.racha - 1;
-      add('racha', `🔥 Ayer no entraste: entra HOY y tu racha de ${L.racha} días baja como mucho a ${baja}. Si no, mañana vuelve al día 1.`);
+      // Igual que procesarLogin (world.js): semana cumplida (7, 14...) pasa a la siguiente.
+      const baja = L.racha >= 7 && L.racha % 7 === 0 ? L.racha + 1 : L.racha >= 8 ? (semanaRacha(L.racha) - 1) * 7 + 1 : L.racha - 1;
+      const queda = baja > L.racha ? `sigue al día ${baja} (no pierdes la semana cumplida)` : `baja como mucho a ${baja}`;
+      add('racha', `🔥 Ayer no entraste: entra HOY y tu racha de ${L.racha} días ${queda}. Si no, mañana vuelve al día 1.`);
     }
     const g = this.grupos && [...this.grupos.values()].find(x => x.uids.includes(c.uid));
     const enGrupo = g ? g.uids.filter(u => u !== c.uid && this.porUid.has(u)).length : 0;

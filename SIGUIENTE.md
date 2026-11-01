@@ -3235,3 +3235,15 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - #60: fotos3d con tope de vecinos priorizando grupo/rivales y aparición repartida (`spawnPueblo`); `tools/carga_mmo.mjs`.
 - QA de la noche (pagos, entrada, servidor, móvil, textos): pago doble de Stars avisado al dueño, el pack de bienvenida se rechaza en pre_checkout si ya hay otra compra, avisos que no se pisan, volcado de rankSem/ev:dia al vaciarse el mundo, reconexión, botones de 40 px, textos ORIGINS/CLASSIC.
 - Arnés 897 bien (pruebas del spawn 3D actualizadas al reparto).
+
+### Ronda 6: ciclo evaluar y mejorar (1-nov-2026, `?v=330`)
+
+- 30 evaluadores con personas peruanas (móvil barato, iPhone, Telegram, día 2/7/30, comprador, ballena, invitador, PvP, Meta, UX, rendimiento, QA) → 134 problemas → 10 tareas, implementadas y revisadas.
+- Cuenta desde ORIGINS vía CLASSIC (`dq_volver`, `#cuenta&volver=mundo`); el restablecimiento de contraseña siempre en /mmo/. Revisar en Supabase que Redirect URLs incluya /mundo/.
+- /jugar/ garantiza el modo anuncio (`ad=1`, `dq_anuncio`) y reconoce `?ref=`; títulos «Duende Quest ORIGINS/CLASSIC» y manifest.
+- Racha: el 7 (y múltiplos de 7) sin seguir pasa al siguiente (no repite el premio del 7). El invitado ve el pack de bienvenida (el servidor sigue exigiendo cuenta para pedirlo).
+- Bot y avisos de vuelta llevan a /mundo/. Invitado registrado con el invitador desconectado (buzón y «Mis invitados»); aviso a Nv 10 de cómo cobrar.
+- ORIGINS: reconexión sin rendirse y «Reintentar ahora»; consejos al morir y poción que late; tutorial que no se reinicia al pasar a Chrome; invitar abre selector de chats.
+- Instalar en pantalla de inicio (franja web y botón en la diaria de CLASSIC).
+- Temporadas en hora de Lima con el oro visible; la Cueva 3D da puntos del pase.
+- Arnés 897 bien (actualizadas 3 pruebas al diseño nuevo).

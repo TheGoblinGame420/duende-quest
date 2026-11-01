@@ -3,10 +3,10 @@
 <head>
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=329"></script>
+<script src="/js/origen.js?v=330"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-<title>$DUENDE CLASSIC · MMORPG 2D gratis en el navegador</title>
+<title>Duende Quest CLASSIC · MMORPG 2D gratis en el navegador</title>
 <meta name="description" content="Juego RPG online gratis en el navegador o en Telegram, sin descargas: 4 clases, grupos, mazmorras con jefes y 10 zonas hasta el nivel 60. Hecho en Perú.">
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://duende-quest.alfonso12hc.workers.dev/mmo/">
@@ -29,7 +29,7 @@
 {
   "@context": "https://schema.org",
   "@type": "VideoGame",
-  "name": "$DUENDE CLASSIC (Duende Quest Online)",
+  "name": "Duende Quest CLASSIC (Duende Quest Online)",
   "url": "https://duende-quest.alfonso12hc.workers.dev/mmo/",
   "image": "https://duende-quest.alfonso12hc.workers.dev/assets/mmo_banner.png",
   "description": "MMORPG gratuito de duendes en pixel art: 4 clases, grupos, mazmorras con jefes, hermandades y 10 zonas hasta el nivel 60. Se juega en el navegador o en Telegram, sin descargas.",
@@ -70,9 +70,9 @@
 })();
 </script>
 <!-- defer se ejecuta en orden y todo antes del modulo client.js -->
-<script src="/js/pwa.js?v=329" defer></script>
+<script src="/js/pwa.js?v=330" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=329" defer></script>
+<script src="/js/config.js?v=330" defer></script>
 <style>
 /* ── Tokens (guia de diseno, oct 2026). Las variables viejas (--verde, --amarillo,
    --rosa, --cian, --rojo) siguen existiendo porque client.js las usa, pero ahora
@@ -903,6 +903,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
     <h2>RECOMPENSA DIARIA</h2>
     <div id="login-cuerpo"></div>
     <button class="btn" data-cerrar id="login-ok" style="width:100%;margin-top:12px">Recoger</button>
+    <button class="btn sec" data-instalar hidden style="display:none;width:100%;margin-top:8px">⬇ Añade el juego a tu pantalla: mañana te esperan más premios</button>
   </div>
 </div>
 
@@ -998,7 +999,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=329"></script>
+<script type="module" src="/mmo/js/client.js?v=330"></script>
 <div id="nuevo3d" role="dialog" aria-label="Nuevo mundo 3D">
   <video src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" muted loop playsinline preload="none"></video>
   <div class="t">🌌 NUEVO: Duende Quest Origins, el mundo abierto en 3D</div>

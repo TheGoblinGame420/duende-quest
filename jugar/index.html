@@ -53,7 +53,7 @@ footer a{color:var(--txt2);}
 @media (min-width:800px){main{grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:40px;padding-top:48px;}.marca{grid-column:1/-1;}h1,.sub{text-align:left;}.lista{justify-content:flex-start;}footer{grid-column:1/-1;}}
 @media (prefers-reduced-motion:reduce){.jugar{animation:none;}}
 </style>
-<script src="/js/origen.js?v=329"></script>
+<script src="/js/origen.js?v=330"></script>
 </head>
 <body>
 <div class="aurora" aria-hidden="true"></div>
@@ -89,6 +89,19 @@ footer a{color:var(--txt2);}
   // Los utm y el fbclid pasan al juego tal cual, para medir el anuncio.
   // CLASSIC elegido aqui lleva j=2d: el nuevo entra solo, sin un segundo «Jugar» (client.js, inicio).
   var qs = location.search;
+  // Quien entra por /jugar/ (anuncio o revisor de Meta con la URL limpia) juega sin la parte cripto:
+  // marca en la pestaña y ad=1 en la URL (el salto a Chrome por intent pierde el sessionStorage).
+  try { sessionStorage.setItem('dq_anuncio', '1'); } catch (e) {}
+  if (!/[?&](fbclid|utm_[a-z]+)=/i.test(qs)) qs += (qs ? '&' : '?') + 'ad=1';
+  // Invitacion de un amigo (?ref=CODIGO): textos fijos, sin meter nada de la URL en la pagina.
+  if (/[?&]ref=[a-z0-9]{6}(&|$)/.test(location.search)) {
+    try {
+      var h1 = document.querySelector('h1'), sub = document.querySelector('.sub');
+      if (h1) h1.innerHTML = 'Tu amigo te invita a Duende Quest. <b>Entra con su enlace y recibe un kit de bienvenida (oro y pociones).</b>';
+      if (sub) sub.textContent = 'Jueguen en grupo y, al llegar a nivel 10, los dos ganan oro.';
+      b.textContent = 'JUGAR CON MI AMIGO';
+    } catch (e) {}
+  }
   if (ir === '/mmo/' && !/[?&]j=/i.test(qs)) qs += (qs ? '&' : '?') + 'j=2d';
   b.href = ir + qs;
   b.addEventListener('click', function () { try { localStorage.setItem('dq_ultimo_juego', ir); } catch (e) {} });

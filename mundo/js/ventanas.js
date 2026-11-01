@@ -21,7 +21,7 @@ import {
   EXPEDICION, premioExpedicion, MATERIALES,
   PAQUETES, estrellasDe, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA, LOGROS, progresoLogro, statsJugador, ALAS, paqueteParaFaltante, ENTREGA, textoPagoRecibido, PEDIDO_VIGENCIA_MS,
   pagoLocalActivo, textoSoles, YAPE_VIGENCIA_MS,
-} from '/mmo/js/data.js?v=329';
+} from '/mmo/js/data.js?v=330';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -1127,7 +1127,13 @@ const ACC = {
   },
   cuenta: () => {
     if (H.iniciarSesion) H.iniciarSesion();
-    else { H.aviso('Inicia sesión en CLASSIC (2D) y vuelve: entrarás con tu cuenta.', 'ok'); setTimeout(() => { location.href = '/mmo/' + (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? location.hash : ''); }, 900); }
+    else {
+      // La cuenta se abre en CLASSIC (#cuenta) y, al entrar, vuelve aquí con la tienda (dq_volver; localStorage por si el correo abre otra pestaña).
+      H.aviso('Entra o crea tu cuenta gratis con tu correo: al terminar vuelves aquí a la tienda.', 'ok');
+      try { sessionStorage.setItem('dq_volver', '/mundo/#premium'); localStorage.setItem('dq_volver', '/mundo/#premium'); } catch (e) {}
+      const hTg = TG() && location.hash && location.hash.length > 1 ? location.hash : '';
+      setTimeout(() => { location.href = '/mmo/' + (hTg ? hTg + '&cuenta&volver=mundo' : '#cuenta&volver=mundo'); }, 900);
+    }
   },
   // Logros
   lgtab: b => { est.logros = b.dataset.id; H.sfx('boton', 0.2); pintarLogros(); },

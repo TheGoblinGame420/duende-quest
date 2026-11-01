@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>$DUENDE ORIGINS · Mundo abierto 3D</title>
-<meta name="description" content="$DUENDE ORIGINS: el mundo abierto 3D de los duendes. Un mapa continuo con 10 zonas, jefes y otros jugadores en tiempo real, en el navegador y en Telegram.">
+<title>Duende Quest ORIGINS · Mundo abierto 3D</title>
+<meta name="description" content="Duende Quest ORIGINS: el mundo abierto 3D de los duendes. Un mapa continuo con 10 zonas, jefes y otros jugadores en tiempo real, en el navegador y en Telegram.">
 <!-- Vista previa al compartir el enlace (WhatsApp, Facebook, Telegram, X):
      sin "$DUENDE" ni "token", imagen horizontal 1200x630 (tools/og_mundo.py). -->
 <link rel="canonical" href="https://duende-quest.alfonso12hc.workers.dev/mundo/">
@@ -26,12 +26,12 @@
 <meta name="theme-color" content="#0a0418">
 <link rel="manifest" href="/mundo/manifest.json">
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
-<script src="/js/pwa.js?v=329" defer></script>
+<script src="/js/pwa.js?v=330" defer></script>
 <link rel="icon" href="/assets/ui/coin.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=329"></script>
+<script src="/js/origen.js?v=330"></script>
 <script>
 // Red de seguridad de la carga (script clasico: corre aunque el modulo 3D o el CDN fallen).
 // - Errores antes de conectar: se guardan en __errQ y mundo.js los manda al entrar.
@@ -116,28 +116,28 @@
   });
 })();
 </script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=329" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=330" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=329">
-<link rel="modulepreload" href="/mmo/js/data.js?v=329">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=329">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=329">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=329">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=329">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=329">
-<link rel="modulepreload" href="/mmo/js/regalo.js?v=329">
-<link rel="modulepreload" href="/mmo/js/avisotg.js?v=329">
-<link rel="modulepreload" href="/mundo/js/musica.js?v=329">
-<link rel="modulepreload" href="/mundo/js/cueva.js?v=329">
-<link rel="modulepreload" href="/mundo/js/tapa.js?v=329">
-<link rel="modulepreload" href="/mundo/js/abismo.js?v=329">
-<link rel="modulepreload" href="/mundo/js/particulas.js?v=329">
-<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=329">
-<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=329">
-<link rel="modulepreload" href="/mmo/js/secundarias.js?v=329">
-<link rel="modulepreload" href="/mundo/js/lore.js?v=329">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=330">
+<link rel="modulepreload" href="/mmo/js/data.js?v=330">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=330">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=330">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=330">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=330">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=330">
+<link rel="modulepreload" href="/mmo/js/regalo.js?v=330">
+<link rel="modulepreload" href="/mmo/js/avisotg.js?v=330">
+<link rel="modulepreload" href="/mundo/js/musica.js?v=330">
+<link rel="modulepreload" href="/mundo/js/cueva.js?v=330">
+<link rel="modulepreload" href="/mundo/js/tapa.js?v=330">
+<link rel="modulepreload" href="/mundo/js/abismo.js?v=330">
+<link rel="modulepreload" href="/mundo/js/particulas.js?v=330">
+<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=330">
+<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=330">
+<link rel="modulepreload" href="/mmo/js/secundarias.js?v=330">
+<link rel="modulepreload" href="/mundo/js/lore.js?v=330">
 <style>
 :root{--bg:#0a0418;--panel:rgba(14,9,30,.86);--borde:rgba(160,140,255,.22);--txt:#f2efff;--txt2:#b8b0d8;--txt3:#7d7699;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;--oro:#ffd84a;--pri:#2563eb;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -190,6 +190,8 @@ body.movil #misiones{top:110px;bottom:auto;left:8px;right:auto;width:165px;font-
 .bt{width:38px;height:38px;border:1px solid var(--borde);border-radius:8px;background:rgba(255,255,255,.04);color:var(--txt);font:600 15px var(--sans);cursor:pointer;display:flex;align-items:center;justify-content:center;text-decoration:none;}
 .bt:hover{background:rgba(255,255,255,.1);}
 #barra{left:50%;bottom:22px;transform:translateX(-50%);padding:6px;display:flex;gap:6px;}
+.acc.urge{border-color:#ff3344!important;box-shadow:0 0 0 3px rgba(255,51,68,.5);animation:latidoBtn 1.1s ease-in-out infinite;}
+@keyframes latidoBtn{0%,100%{box-shadow:0 0 0 2px rgba(255,51,68,.35)}50%{box-shadow:0 0 0 5px rgba(255,51,68,.75)}}
 .acc{position:relative;width:52px;height:52px;border:1px solid var(--borde);border-radius:10px;background:rgba(255,255,255,.05);color:var(--txt);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-direction:column;font:700 11px var(--sans);}
 .acc img{width:30px;height:30px;image-rendering:pixelated;}
 .acc .t{position:absolute;left:4px;top:2px;font:600 9px var(--sans);color:var(--txt2);}
@@ -720,7 +722,7 @@ button{-webkit-tap-highlight-color:transparent;}
 <!-- Telegram: su SDK se carga arriba solo dentro de Telegram (window.__tgListo).
      defer: no frenan el HTML y corren en orden, antes que mundo.js (que usa supabase). -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=329" defer></script>
-<script type="module" src="/mundo/js/mundo.js?v=329"></script>
+<script src="/js/config.js?v=330" defer></script>
+<script type="module" src="/mundo/js/mundo.js?v=330"></script>
 </body>
 </html>

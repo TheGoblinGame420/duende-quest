@@ -105,7 +105,7 @@
     var okM = window.dqMedirOk();
     if (!enTg && okM !== 0 && (okM === 1 || (origen && (origen.o === 'meta' || origen.fr)))) {
       var sm = document.createElement('script');
-      sm.src = '/js/medir.js?v=329'; sm.async = true;
+      sm.src = '/js/medir.js?v=330'; sm.async = true;
       (document.head || document.documentElement).appendChild(sm);
     }
   } catch (e) {}
@@ -117,7 +117,7 @@
   // OCULTA mTON, wallet y pagos SOL/$DUENDE. Solo presentacion: no borra nada.
   var anuncio = false;
   try {
-    anuncio = /[?&](fbclid|utm_[a-z]+)=/i.test(location.search);
+    anuncio = /[?&](fbclid|utm_[a-z]+|ad)=/i.test(location.search) || /^\/jugar(\/|$)/.test(location.pathname);
     try { if (anuncio) sessionStorage.setItem('dq_anuncio', '1'); else anuncio = sessionStorage.getItem('dq_anuncio') === '1'; } catch (e) {}
     if (!anuncio && origen && origen.o === 'meta') anuncio = true;
     // Anuncio que llego por el bot (/start ad_ o startapp=ad_): tambien sin cripto.

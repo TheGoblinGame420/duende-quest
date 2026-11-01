@@ -1994,7 +1994,7 @@ async function pruebasNovato() {
   n.c.login = { d: hace(2), racha: 5, total: 5 };
   chequear(mundo.procesarLogin(n).racha === 4, 'faltar un día retrocede dos en la racha');
   n.c.login = { d: hace(2), racha: 7, total: 7 };
-  chequear(mundo.procesarLogin(n).racha === 1, 'tras el día 7, faltar vuelve a empezar (no se cobra el 7 cada 3 días)');
+  chequear(mundo.procesarLogin(n).racha === 8, 'tras el día 7, faltar pasa a la semana 2 (no se repite el premio del 7)');
   n.c.login = { d: hace(3), racha: 5, total: 5 };
   chequear(mundo.procesarLogin(n).racha === 1, 'faltar más vuelve a empezar');
   n.c.login = { d: hace(1), racha: 5, total: 5 };
@@ -2118,7 +2118,7 @@ async function pruebasTemporada() {
   reloj = Date.UTC(2027, 0, 8, 12);
   t.actT = reloj;
   const pr2 = await entrar('Previsor', '63');
-  chequear(pr2.ultimos('toast').some(x => /Próximo evento: Verano Duende, desde el 14 de enero a las 19:00 \(hora de Perú\) \(en 7 días\)/.test(x.m)), 'sin evento, se anuncia el próximo si falta poco');
+  chequear(pr2.ultimos('toast').some(x => /Próximo evento: Verano Duende, desde el 1[45] de enero a las \d\d:00 \(hora de Perú\) \(en [78] días\)/.test(x.m)), 'sin evento, se anuncia el próximo si falta poco');
   await dejar(pr2);
   reloj = Date.UTC(2027, 1, 9, 12);
   t.actT = reloj;   // el salto de semanas lo echaria por inactividad
@@ -3793,7 +3793,8 @@ async function pruebasBienvenida() {
     chequear(!j.ultimos('pedidoSol').length && j.ultimos('toast').some(x => /solo para tu primera compra/.test(x.m)), 'con otra compra pagada tampoco se puede');
     mundo.porUid.delete('web:bienvenida-1');
     j.c.uid = 'inv:bienvenida';
-    chequear(mundo.datosPropios(j).puedeBienvenida === 0, 'a los invitados no se les ofrece (no pueden comprar)');
+    j.limpiar(); await mundo.pedido(j, { id: 'bienvenida', metodo: 'sol' });
+    chequear(!j.ultimos('pedidoSol').length, 'el invitado ve la oferta pero no puede pedirla sin cuenta');
     j.c.uid = uid0;
   } finally { globalThis.fetch = fetchReal; }
   await dejar(j);
