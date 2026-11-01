@@ -31,7 +31,8 @@
 // ═══════════════════════════════════════════════════════
 import { MAPAS, SKINS, MONSTRUOS, MUNDIALES, limpiarNombre } from '../../mmo/js/data.js';
 import { getEnv } from '../api/lib.js';
-import { riesgoEstafa } from './social.js';
+import { riesgoEstafa, RE_GROSERIA } from './social.js';
+const RE_GROSERIA_1 = new RegExp(RE_GROSERIA.source, 'i');
 
 const RESERVADO = /admin|moderador|^mod|mod$|^gm|gm$|staff|soporte|sistema|oficial|elduende|duendequest|dios/;
 // Lo mismo con las letras que se confunden a la vista (Adm1n, EIDuende, Ðios, M0derador…):
@@ -75,7 +76,7 @@ export const Dios = {
   diosActivo(s) { return !!(s && s.dios && s.diosModo && MODOS.some(k => s.diosModo[k])); },
 
   // ── NOMBRES UNICOS ──
-  nombreReservado(n) { return RESERVADO.test(claveNombre(n)) || RESERVADO_ESQ.test(esqueleto(n)); },
+  nombreReservado(n) { return RESERVADO.test(claveNombre(n)) || RESERVADO_ESQ.test(esqueleto(n)) || RE_GROSERIA_1.test(claveNombre(n)) || RE_GROSERIA_1.test(esqueleto(n)); },
   // Devuelve un nombre libre para uid partiendo de "deseado" (le añade cifras
   // si ya es de otro). No lo reserva: eso lo hace reservarNombre al guardarse.
   async nombreLibre(deseado, uid, dios) {

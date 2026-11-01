@@ -53,7 +53,7 @@ footer a{color:var(--txt2);}
 @media (min-width:800px){main{grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:40px;padding-top:48px;}.marca{grid-column:1/-1;}h1,.sub{text-align:left;}.lista{justify-content:flex-start;}footer{grid-column:1/-1;}}
 @media (prefers-reduced-motion:reduce){.jugar{animation:none;}}
 </style>
-<script src="/js/origen.js?v=330"></script>
+<script src="/js/origen.js?v=331"></script>
 </head>
 <body>
 <div class="aurora" aria-hidden="true"></div>
@@ -108,14 +108,15 @@ footer a{color:var(--txt2);}
   // Navegador interno de Facebook/Instagram (el anuncio abre aqui): se puede jugar igual,
   // pero se sugiere abrirlo en Chrome/Safari (guarda mejor el duende y va mas fluido). No bloquea.
   var ua = navigator.userAgent || '';
-  if (/FBAN|FBAV|FB_IAB|Instagram|Messenger/i.test(ua)) {
+  if (/FBAN|FBAV|FB_IAB|Instagram|Messenger|musical_ly|BytedanceWebview|TikTok|trill/i.test(ua)) {
+    var app = /musical_ly|Bytedance|TikTok|trill/i.test(ua) ? 'TikTok' : 'Facebook/Instagram';
     var caja = document.getElementById('iab');
     if (/Android/i.test(ua)) {
       var dest = location.host + ir + qs;
-      caja.innerHTML = 'Estás dentro de Facebook/Instagram: el juego va mejor en Chrome y tu duende no se borra.<br><a id="iab-ir" href="#">Abrir en Chrome</a>';
+      caja.innerHTML = 'Estás dentro de ' + app + ': el juego va mejor en Chrome y tu duende no se borra.<br><a id="iab-ir" href="#">Abrir en Chrome</a>';
       document.getElementById('iab-ir').href = 'intent://' + dest + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent('https://' + dest) + ';end';
     } else {
-      caja.textContent = 'Estás dentro de Facebook/Instagram: para que tu duende no se borre, toca ··· (arriba a la derecha) → «Abrir en el navegador». También puedes jugar aquí mismo.';
+      caja.textContent = 'Estás dentro de ' + app + ': para que tu duende no se borre, toca ··· (arriba a la derecha) → «Abrir en el navegador». También puedes jugar aquí mismo.';
     }
     caja.className = 'iab on';
     document.querySelector('main').style.paddingBottom = 'calc(' + (caja.offsetHeight + 120) + 'px + env(safe-area-inset-bottom))';   // la barra fija crece: el pie no queda tapado

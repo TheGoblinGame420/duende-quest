@@ -14,25 +14,25 @@
 import * as THREE from 'three';
 import { esNocheDuendes, TEMPORADAS, temporadaDe, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo } from '/mmo/js/data.js?v=330';
-import { iniciarVentanas } from './ventanas.js?v=330';
-import { EXPEDICION, VERSION } from '/mmo/js/data.js?v=330';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
-import { iniciarRegalo } from '/mmo/js/regalo.js?v=330';
-import { iniciarAvisoTg } from '/mmo/js/avisotg.js?v=330';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=330';
-import { crearMusica } from './musica.js?v=330';
-import { construirCueva } from './cueva.js?v=330';
-import { TAPA, transparentar } from './tapa.js?v=330';
-import { construirAbismo } from './abismo.js?v=330';
-import { crearParticulas } from './particulas.js?v=330';
-import { cargarKenney, piezasCasa } from './kenney.js?v=330';
-import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=330';
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo } from '/mmo/js/data.js?v=331';
+import { iniciarVentanas } from './ventanas.js?v=331';
+import { EXPEDICION, VERSION } from '/mmo/js/data.js?v=331';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
+import { iniciarRegalo } from '/mmo/js/regalo.js?v=331';
+import { iniciarAvisoTg } from '/mmo/js/avisotg.js?v=331';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=331';
+import { crearMusica } from './musica.js?v=331';
+import { construirCueva } from './cueva.js?v=331';
+import { TAPA, transparentar } from './tapa.js?v=331';
+import { construirAbismo } from './abismo.js?v=331';
+import { crearParticulas } from './particulas.js?v=331';
+import { cargarKenney, piezasCasa } from './kenney.js?v=331';
+import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=331';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=330';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d } from '/mmo/js/mundo3d.js?v=330';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=330';
-import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=330';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=330';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=331';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d } from '/mmo/js/mundo3d.js?v=331';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=331';
+import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=331';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=331';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -73,7 +73,8 @@ const ref3 = (() => {
 // Navegador interno de Facebook/Instagram/Messenger (los anuncios abren ahi): el
 // duende de invitado vive en su almacenamiento, que se borra a menudo. Se ofrece
 // pasarlo a Chrome/Safari con el codigo de rescate en el hash (#r=), nunca en la query.
-const esIAB = !TG && /FBAN|FBAV|FB_IAB|Instagram|Messenger/i.test(navigator.userAgent);
+const esIAB = !TG && /FBAN|FBAV|FB_IAB|Instagram|Messenger|musical_ly|BytedanceWebview|TikTok|trill/i.test(navigator.userAgent);
+const appIAB = /musical_ly|Bytedance|TikTok|trill/i.test(navigator.userAgent) ? 'TikTok' : 'Facebook';
 // #r=<codigo> (viene de ese aviso): se lee y se borra de la URL al instante, sin registrarlo.
 let rescateHash = null;
 if (!TG) {
@@ -1594,7 +1595,7 @@ function recibir(m) {
       break;
     }
     case 'zona3f': quitarZona3(m.id, true); break;
-    case 'md3': { const o = mons.get(m.id); if (o) { o.muereT = performance.now(); o.st = 3; sfx('muerte', 0.3); if (Math.hypot(o.x - P.x, o.z - P.z) < 30) sfxK(Math.random() < 0.7 ? 'c_hurt' : 'c_grito', 0.28); const y = (o.y || alturaEn(o.x, o.z)) + 1; FX.emitir(o.x, y, o.z, { n: 30, color: '#c084fc', vel: 5, vida: 0.9, grav: 3, sube: 1.5 }); FX.emitir(o.x, y, o.z, { n: 14, color: '#fde68a', vel: 1.6, vida: 1.4, grav: -2, tam: 0.8 }); } if (objetivo === m.id) { objetivo = 0; autoAtk = false; pintarBarra(); } break; }
+    case 'md3': { const o = mons.get(m.id); if (o) { o.muereT = performance.now(); o.st = 3; sfx('muerte', 0.3); if (Math.hypot(o.x - P.x, o.z - P.z) < 30) sfxK(Math.random() < 0.7 ? 'c_hurt' : 'c_grito', 0.28); const y = (o.y || alturaEn(o.x, o.z)) + 1; FX.emitir(o.x, y, o.z, { n: 30, color: '#c084fc', vel: 5, vida: 0.9, grav: 3, sube: 1.5 }); FX.emitir(o.x, y, o.z, { n: 14, color: '#fde68a', vel: 1.6, vida: 1.4, grav: -2, tam: 0.8 }); } if (objetivo === m.id) { if (autoAtk) siguienteBlanco(m.id); else { objetivo = 0; autoAtk = false; pintarBarra(); } } break; }
     case 'at3': ataqueVisto(m); break;
     case 'ph': golpeJugador(m); break;
     case 'b3': { const o = mons.get(m.de), q = m.a === miId ? P : otros.get(m.a); if (o && q) proyectil(o, q, '#c084fc'); break; }
@@ -1664,7 +1665,7 @@ function recibir(m) {
     case 'avisoTgOk': avisoTg3.alOk(m); break;
     case 'tareas': if (yo) { yo.tareas = m; pintarMisiones(); } break;
     case 'mae': if (yo) { yo.mae = m.n; aviso(`⭐ ¡Maestría ${m.n}!`, 'ok'); numero(P.x, P.y + 3, P.z, 'MAESTRÍA ' + m.n, '#ffd84a', true); subiNivel(0); pintarHud(); } break;
-    case 'herm': hermInfo = m.h; if (yo) yo.herm = m.h ? m.h.id : null; pintarHerm(); break;
+    case 'herm': hermInfo = m.h; if (yo) yo.herm = m.h ? m.h.id : null; pintarHerm(); pintarAmigos3(); break;
     case 'hermInv':
       invitTipo = 'herm';
       $('invit3-t').textContent = `🛡️ ${m.de} te invita a la hermandad <${m.nombre}>.`;
@@ -1851,6 +1852,21 @@ function modeloPuerta() {
   return { obj, alto: 6, r: { tAtk: 0.35 }, animar(e, tt) { mesh.position.y = (KIT ? 0 : 3) - (e === 'muere' ? Math.min(7, tt * tt * 6) : 0); }, golpe() { mesh.position.x = x0 + 0.18; setTimeout(() => { mesh.position.x = x0; }, 90); }, dispose() {} };
 }
 function quitarMon(id) { solidosExtra = solidosExtra.filter(x => x.id !== id); const o = mons.get(id); if (!o) return; if (o.fig) o.fig.quitar(); o.lbl.remove(); mons.delete(id); if (objetivo === id) { objetivo = 0; autoAtk = false; pintarBarra(); } }
+// Al matar con auto-ataque, el duende sigue con el monstruo vivo mas cercano (los que ya estan peleando primero).
+// El Guardian dormido no recibe dano: no se elige solo.
+function siguienteBlanco(idMuerto) {
+  let mejor = null, mejorD = 1e9;
+  for (const o of mons.values()) {
+    if (o.id === idMuerto || o.muereT || o.st === 3 || !o.fig || o.hp <= 0) continue;
+    if (asedio && asedio.dormido && o.id === asedio.guardian) continue;
+    const d = Math.hypot(o.x - P.x, o.z - P.z);
+    if (d > 10) continue;
+    const pr = (o.st === 2 ? 0 : 100) + d;
+    if (pr < mejorD) { mejorD = pr; mejor = o; }
+  }
+  if (mejor) { objetivo = mejor.id; autoAtk = true; pintarBarra(); sfx('boton', 0.15); return true; }
+  objetivo = 0; autoAtk = false; pintarBarra(); return false;
+}
 function foto(m) {
   const enFoto = new Set();
   for (const [id, x, z, ry, a, hp, mx, muerto, h] of m.p) {
@@ -1867,7 +1883,7 @@ function foto(m) {
     if (!o) continue;
     fijarDestino(o, x, z); o.ry = ry; o.hp = hp; o.st = st;
     // st 3 = muriendo en el servidor: si el md3 no nos llego (entro en vista ya muerto), se marca aqui
-    if (st === 3 && !o.muereT) { o.muereT = performance.now(); if (objetivo === id) { objetivo = 0; autoAtk = false; pintarBarra(); } }
+    if (st === 3 && !o.muereT) { o.muereT = performance.now(); if (objetivo === id) { if (autoAtk) siguienteBlanco(id); else { objetivo = 0; autoAtk = false; pintarBarra(); } } }
   }
   if (m.q) for (const id of m.q) quitarMon(id);
   if (yo) { yo.hp = m.hp; yo.rec = m.rec; P.rec = m.rec; yo.combo = m.cb || 0; pintarVida(); }
@@ -2353,19 +2369,34 @@ function pintarGrupo() {
   const c = $('grupo3');
   if (!grupo3) { c.style.display = 'none'; c.innerHTML = ''; return; }
   c.style.display = 'block';
-  const lider = grupo3.lider;
-  c.innerHTML = `<div style="font:700 10px var(--sans);color:var(--txt3);margin-bottom:3px">${grupo3.banda ? 'BANDA' : 'GRUPO'}</div>` + grupo3.m.filter(x => x.id !== miId).map(x => {
+  const lider = grupo3.lider, soyLider = !!(yo && lider === yo.pid);
+  // Distancia y flecha al compañero (en pasos de 10 m: el marco no se rehace cada paso).
+  const aDonde = x => {
+    if (!x.on || x.k !== '~3d' || x.muerto) return '';
+    const o = x.id && otros.get(x.id), px = o ? o.x : x.p3 && x.p3[0], pz = o ? o.z : x.p3 && x.p3[1];
+    if (!Number.isFinite(px) || !Number.isFinite(pz)) return '';
+    if (!enCueva(px) !== !enCueva(P.x) || !enAbismo(px) !== !enAbismo(P.x)) return enCueva(px) ? ' · en la cueva' : enAbismo(px) ? ' · en el Abismo' : ' · afuera';
+    const dr = Math.hypot(px - P.x, pz - P.z), d = Math.round(dr / 10) * 10;
+    return dr < 10 ? ' · aquí' : ` · ${d} m ${flechaDir(px, pz)}`;
+  };
+  const html = `<div style="font:700 10px var(--sans);color:var(--txt3);margin-bottom:3px">${grupo3.banda ? 'BANDA' : 'GRUPO'}</div>` + grupo3.m.filter(x => x.id !== miId).map(x => {
     const cl = CLASES[x.cl];
     const fuera = !x.on || x.k !== '~3d';
-    return `<span class="mi${fuera ? ' lejos' : ''}${x.id === objetivoP ? ' sel' : ''}" data-id="${x.id || 0}"><b style="color:${cl ? cl.color : '#fff'}">${x.uid === lider ? '👑 ' : ''}${esc(x.n)}</b> <small>Nv${x.lv || '?'}${!x.on ? ' · desconectado' : x.k !== '~3d' ? ' · en el 2D' : x.muerto ? ' · ☠' : ''}</small>`
+    return `<span class="mi${fuera ? ' lejos' : ''}${x.id === objetivoP ? ' sel' : ''}" data-id="${x.id || 0}"><b style="color:${cl ? cl.color : '#fff'}">${x.uid === lider ? '👑 ' : ''}${esc(x.n)}</b> <small>Nv${x.lv || '?'}${!x.on ? ' · desconectado' : x.k !== '~3d' ? ' · en el 2D' : x.muerto ? ' · ☠' : ''}${aDonde(x)}</small>`
       + (x.on ? `<div class="barra hp"><i style="transform:scaleX(${clamp((x.hp || 0) / (x.mx || 1), 0, 1).toFixed(2)})"></i></div>` : '') + '</span>';
-  }).join('') + '<button class="btn sec salir" id="g-salir">' + (Date.now() - salirPend < 4000 ? '¿Seguro? Toca otra vez' : 'Salir del grupo') + '</button>';
+  }).join('') + (soyLider ? `<button class="btn sec" id="g-banda" style="margin-top:4px;width:100%;padding:4px;font-size:10px">${grupo3.banda ? 'Volver a grupo' : '⚔️ Hacer banda (10)'}</button>` : '')
+    + '<button class="btn sec salir" id="g-salir">' + (Date.now() - salirPend < 4000 ? '¿Seguro? Toca otra vez' : 'Salir del grupo') + '</button>';
+  if (c.innerHTML && html === pintarGrupo.ult) return;   // igual que antes: no rehacer (no se pierde el toque en móvil)
+  pintarGrupo.ult = html;
+  c.innerHTML = html;
+  if ($('g-banda')) $('g-banda').onclick = () => { if (grupo3) mandar({ t: 'banda', si: !grupo3.banda }); };
   c.querySelectorAll('.mi').forEach(e => e.onclick = () => { const id = +e.dataset.id; if (id && otros.has(id)) { objetivoP = id; pintarObjetivoP(); pintarGrupo(); } });
   $('g-salir').onclick = () => {
     if (Date.now() - salirPend < 4000) { salirPend = 0; mandar({ t: 'salirGrupo' }); return; }
     salirPend = Date.now(); pintarGrupo(); setTimeout(() => { if (Date.now() - salirPend >= 4000) pintarGrupo(); }, 4100);
   };
 }
+setInterval(() => { if (grupo3 && !document.hidden) pintarGrupo(); }, 1500);   // distancia al compañero al día (solo rehace si cambió)
 function pintarObjetivoP() {
   const o = otros.get(objetivoP);
   const caja = $('objp');
@@ -2662,6 +2693,13 @@ function pintarMapaBase() {
 }
 function aMapa(wx, wz, N) { return [(wx / LADO + 0.5) * N, (wz / LADO + 0.5) * N]; }
 let ryMini = 0;
+// Si un punto del minimapa queda fuera del cuadro, lo recorta al borde en su
+// misma direccion (asi se ve hacia donde esta la mision o el compañero).
+function alBordeMini(px, pz, S) {
+  if (px >= 6 && pz >= 6 && px <= S - 6 && pz <= S - 6) return [px, pz];
+  const a = Math.atan2(pz - S / 2, px - S / 2);
+  return [S / 2 + Math.cos(a) * (S / 2 - 8), S / 2 + Math.sin(a) * (S / 2 - 8)];
+}
 function pintarMini() {
   if (!mapaBase) return;
   const cv = $('mini-c'), x = cv.getContext('2d'), S = 150, vista = 240;
@@ -2682,14 +2720,19 @@ function pintarMini() {
   if (enAbismo(P.x) && yo && yo.faccion) for (const q of MAQUINAS) if (q.f === yo.faccion) punto(q.x, q.z, '#fbbf24', 2);
   for (const o of mons.values()) if (!o.muereT) punto(o.x, o.z, o.j ? '#ffd84a' : '#ff4455', o.j ? 3.5 : 2);
   for (const o of otros.values()) punto(o.x, o.z, enGrupo(o.id) ? '#7dd3fc' : '#4ade80', enGrupo(o.id) ? 3.5 : 2.5);
+  // Compañeros de grupo fuera de vista: el servidor manda p3 [x, z]; si quedan
+  // lejos se pegan al borde del minimapa para saber hacia donde ir.
+  if (grupo3 && grupo3.m) for (const g of grupo3.m) if (g.on && Array.isArray(g.p3) && g.id !== miId && !otros.has(g.id) && !enCueva(g.p3[0]) === !enCueva(P.x) && !enAbismo(g.p3[0]) === !enAbismo(P.x)) {
+    const [gx, gz] = alBordeMini((g.p3[0] - P.x) * k + S / 2, (g.p3[1] - P.z) * k + S / 2, S);
+    x.fillStyle = '#7dd3fc'; x.strokeStyle = '#fff'; x.lineWidth = 1.5;
+    x.beginPath(); x.arc(gx, gz, 3.5, 0, 7); x.fill(); x.stroke();
+  }
   { const ah = Date.now(); for (const c of COFRES3) if (c.listoEn <= ah && Math.abs(c.x - P.x) < 130 && Math.abs(c.z - P.z) < 130) punto(c.x, c.z, c.tipo === 'legendario' ? '#ffd84a' : c.tipo === 'epico' ? '#c084fc' : '#d6a35c', c.tipo === 'legendario' ? 3.2 : 2.4); }
   if (invasion3 && ZONAS3D[invasion3.zona]) punto(ZONAS3D[invasion3.zona].x, ZONAS3D[invasion3.zona].z, '#ff5a1f', 5);
   for (const o of mons.values()) if (o.ra && !o.muereT) punto(o.x, o.z, o.ti || '#ffd84a', 4);
   { const ah = performance.now(); for (const n of NODOS) if (Math.abs(n.x - P.x) < 130 && Math.abs(n.z - P.z) < 130 && !(nodoListo.get(n.i) > ah)) punto(n.x, n.z, n.tipo === 'hierba' ? '#c084fc' : '#fbbf24', 1.6); }
   if (metaMision) {
-    let px = (metaMision.x - P.x) * k + S / 2, pz = (metaMision.z - P.z) * k + S / 2;
-    const fuera = px < 6 || pz < 6 || px > S - 6 || pz > S - 6;
-    if (fuera) { const a = Math.atan2(pz - S / 2, px - S / 2); px = S / 2 + Math.cos(a) * (S / 2 - 8); pz = S / 2 + Math.sin(a) * (S / 2 - 8); }
+    const [px, pz] = alBordeMini((metaMision.x - P.x) * k + S / 2, (metaMision.z - P.z) * k + S / 2, S);
     x.fillStyle = metaMision.guia ? '#4ade80' : '#ffd84a'; x.strokeStyle = '#000'; x.lineWidth = 2;
     x.font = 'bold 14px system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle';
     x.strokeText(metaMision.guia ? '?' : '!', px, pz); x.fillText(metaMision.guia ? '?' : '!', px, pz);
@@ -2721,6 +2764,19 @@ function abrirMapa() {
   const [ux, uz] = aMapa(0, 0, S); x.fillStyle = '#fff'; x.fillText('Pueblo Duende', ux, uz - 8);
   { const [ax, az] = aMapa(ARENA3D.x, ARENA3D.z, S); x.fillStyle = mundial3 && mundial3.vivo ? '#ff6b3d' : '#c4a484'; x.beginPath(); x.arc(ax, az, 7, 0, 7); x.fill(); x.fillText(ARENA3D.nombre, ax, az - 11); }
   if (metaMision) { const [mx2, mz2] = aMapa(metaMision.x, metaMision.z, S); x.font = 'bold 22px system-ui'; x.fillStyle = metaMision.guia ? '#4ade80' : '#ffd84a'; x.strokeStyle = '#000'; x.lineWidth = 3; x.strokeText(metaMision.guia ? '?' : '!', mx2, mz2 + 7); x.fillText(metaMision.guia ? '?' : '!', mx2, mz2 + 7); x.font = '600 12px system-ui'; }
+  if (grupo3 && grupo3.m) {
+    x.font = '700 12px system-ui'; x.textAlign = 'center'; x.lineJoin = 'round';
+    for (const g of grupo3.m) {
+      if (!g.on || g.id === miId) continue;
+      const o = otros.get(g.id), wx = o ? o.x : Array.isArray(g.p3) ? g.p3[0] : null, wz = o ? o.z : Array.isArray(g.p3) ? g.p3[1] : null;
+      if (wx == null || enAbismo(wx) || enCueva(wx)) continue;
+      const [gx, gz] = aMapa(wx, wz, S);
+      x.fillStyle = '#7dd3fc'; x.strokeStyle = '#fff'; x.lineWidth = 1.5; x.beginPath(); x.arc(gx, gz, 5, 0, 7); x.fill(); x.stroke();
+      const nom = String(g.n || '').slice(0, 16);
+      if (nom) { x.strokeStyle = '#000'; x.lineWidth = 3; x.strokeText(nom, gx, gz - 9); x.fillStyle = '#7dd3fc'; x.fillText(nom, gx, gz - 9); }
+    }
+    x.font = '600 12px system-ui'; x.lineWidth = 1;
+  }
   const [yx, yz] = aMapa(P.x, P.z, S); x.fillStyle = '#4ade80'; x.beginPath(); x.arc(yx, yz, 6, 0, 7); x.fill(); x.strokeStyle = '#000'; x.stroke();
   abrir('v-mapa');
 }
@@ -2891,7 +2947,7 @@ function franjaIAB() {
   f.id = 'franja-iab';
   f.setAttribute('role', 'status');
   f.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);top:calc(64px + env(safe-area-inset-top));z-index:8;width:min(94vw,440px);display:flex;gap:8px;align-items:center;padding:8px 10px;border-radius:12px;background:rgba(20,12,44,.94);border:1px solid rgba(125,211,252,.5);color:#f2efff;font:600 12px/1.35 system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.45)';
-  f.innerHTML = '<span style="flex:1;min-width:0">¡Primera victoria! Aquí dentro de Facebook/Instagram tu duende se puede borrar. Llévalo a ' + (ANDROID_IAB ? 'Chrome' : 'Safari') + ' y juega más fluido.</span><button type="button" class="btn" style="min-height:40px;padding:7px 10px;font-size:12px;white-space:nowrap">' + (ANDROID_IAB ? 'Abrir en Chrome' : 'Cómo pasarlo') + '</button><button type="button" aria-label="Cerrar" style="flex:none;min-width:40px;min-height:40px;margin:-6px -6px -6px 0;background:none;border:0;color:#b8b0d8;font-size:20px;padding:0;cursor:pointer">×</button>';
+  f.innerHTML = '<span style="flex:1;min-width:0">¡Primera victoria! Aquí dentro de ' + (appIAB === 'TikTok' ? 'TikTok' : 'Facebook/Instagram') + ' tu duende se puede borrar. Llévalo a ' + (ANDROID_IAB ? 'Chrome' : 'Safari') + ' y juega más fluido.</span><button type="button" class="btn" style="min-height:40px;padding:7px 10px;font-size:12px;white-space:nowrap">' + (ANDROID_IAB ? 'Abrir en Chrome' : 'Cómo pasarlo') + '</button><button type="button" aria-label="Cerrar" style="flex:none;min-width:40px;min-height:40px;margin:-6px -6px -6px 0;background:none;border:0;color:#b8b0d8;font-size:20px;padding:0;cursor:pointer">×</button>';
   const [ir, x] = f.querySelectorAll('button');
   ir.onclick = () => irANavegador();
   x.onclick = () => { f.remove(); try { localStorage.setItem('dq_iab_no', String(Date.now())); } catch (e) {} };
@@ -3182,10 +3238,14 @@ function pintarHerm() {
 function pintarAmigos3() {
   if (!$('v-amigos').classList.contains('on')) return;
   const c = $('amigos-c'), lider = !grupo3 || !!(yo && grupo3.lider === yo.pid);
+  // Lider u oficial de una hermandad: puede invitar a ella desde aqui (sin tenerlo delante).
+  const miRango = hermInfo && yo && ((hermInfo.m || []).find(z => z.uid === yo.pid) || {}).r;
+  const invHerm = miRango === 'lider' || miRango === 'oficial';
   const fila = (x, amigo) => {
     const cl = CLASES[x.cl];
     let acc = '';
     if (x.on && x.id && !x.g && lider) acc += `<button data-ai="${x.id}">Invitar</button>`;
+    if (x.on && x.id && !x.h && invHerm) acc += `<button data-ah="${x.id}" title="Invitar a tu hermandad">🛡 Hermandad</button>`;
     if (x.on) acc += `<button data-as="${esc(x.n)}">Susurrar</button>`;
     if (amigo) acc += `<button data-aq="${esc(x.uid)}" title="Quitar de amigos">✕</button>`;
     const donde = !x.on ? 'desconectado' : x.m3 ? 'ORIGINS' : 'CLASSIC' + (x.mapa ? ' · ' + x.mapa : '');
@@ -3214,6 +3274,7 @@ function pintarAmigos3() {
   c._h = s;
   c.innerHTML = s;
   c.querySelectorAll('[data-ai]').forEach(b => b.onclick = () => { mandar({ t: 'invitar', p: +b.dataset.ai }); b.disabled = true; });
+  c.querySelectorAll('[data-ah]').forEach(b => b.onclick = () => { mandar({ t: 'hermInvitar', p: +b.dataset.ah }); b.disabled = true; });
   c.querySelectorAll('[data-as]').forEach(b => b.onclick = () => { cerrar('v-amigos'); const i = $('chat-in'); i.style.display = 'block'; i.value = '/s ' + b.dataset.as + ' '; i.focus(); });
   c.querySelectorAll('[data-aq]').forEach(b => b.onclick = () => mandar({ t: 'contactoQuitar', uid: b.dataset.aq }));
   $('am-act').onclick = () => { mandar({ t: 'contactos' }); mandar({ t: 'quien' }); mandar({ t: 'amigos' }); };
@@ -3402,7 +3463,11 @@ function elegirEn(cx, cy, doble) {
   ray.setFromCamera(vec2, camara);
   // Sin los ocultos: el rayo no mira la visibilidad y su cilindro sigue en la escena.
   const lista = [...mons.values()].filter(o => o.fig && !o.muereT && (!o.fig.raiz || o.fig.raiz.visible));
-  const elegirMon = o => { if (objetivo === o.id || doble) { autoAtk = true; } objetivo = o.id; pintarBarra(); sfx('boton', 0.2); };
+  const elegirMon = o => {
+    if (objetivo === o.id || doble) { autoAtk = true; }
+    else if (MOVIL && !autoAtk) { try { if (!localStorage.getItem('dq3_tip2t')) { localStorage.setItem('dq3_tip2t', '1'); aviso('👆 Tócalo otra vez para atacar: tu duende va solo hasta él.', 'ok'); } } catch (e) {} }
+    objetivo = o.id; pintarBarra(); sfx('boton', 0.2);
+  };
   const hits = ray.intersectObjects(lista.map(o => o.fig.m), false);
   if (hits.length) {
     const o = lista.find(x => x.fig.m === hits[0].object);
@@ -3561,6 +3626,7 @@ if (MOVIL) {
   $('joy').addEventListener('touchstart', e => {
     if (pistaJoy) { pistaJoy.remove(); pistaJoy = null; try { localStorage.setItem('dq_joy_ok', '1'); } catch (er) {} }
     const t = e.changedTouches[0]; joy.id = t.identifier; joy.x = t.clientX; joy.y = t.clientY; joy.dx = joy.dy = 0;
+    joy.x0 = t.clientX; joy.y0 = t.clientY; joy.t0 = performance.now(); joy.lejos = 0;   // para distinguir un toque corto (elegir) de mover
     const r = $('joy').getBoundingClientRect();   // la base se dibuja bajo el dedo aunque #joy no empiece en (0,0)
     base.style.display = 'block'; base.style.left = (t.clientX - r.left - 60) + 'px'; base.style.top = (t.clientY - r.top - 60) + 'px';
     e.preventDefault();
@@ -3568,6 +3634,7 @@ if (MOVIL) {
   $('joy').addEventListener('touchmove', e => {
     for (const t of e.changedTouches) if (t.identifier === joy.id) {
       let dx = t.clientX - joy.x, dy = t.clientY - joy.y; const d = Math.hypot(dx, dy);
+      joy.lejos = Math.max(joy.lejos || 0, Math.hypot(t.clientX - joy.x0, t.clientY - joy.y0));
       if (d > 50) {   // joystick flotante: la base sigue al dedo (girar en redondo sin quedarse atascado al borde)
         const k = (d - 50) / d; joy.x += dx * k; joy.y += dy * k; dx -= dx * k; dy -= dy * k;
         const r = $('joy').getBoundingClientRect();
@@ -3578,8 +3645,23 @@ if (MOVIL) {
     }
     e.preventDefault();
   }, { passive: false });
-  const finJoy = e => { for (const t of e.changedTouches) if (t.identifier === joy.id) { joy.id = null; joy.dx = joy.dy = 0; base.style.display = 'none'; pomo.style.left = pomo.style.top = '33px'; } };
+  const finJoy = e => {
+    for (const t of e.changedTouches) if (t.identifier === joy.id) {
+      joy.id = null; joy.dx = joy.dy = 0; base.style.display = 'none'; pomo.style.left = pomo.style.top = '33px';
+      // Toque corto sin arrastrar: elige lo que haya debajo (monstruo, jugador, PNJ) como en el resto de la pantalla.
+      const quieto = Math.max(joy.lejos || 0, Math.hypot(t.clientX - joy.x0, t.clientY - joy.y0)) < 12;
+      if (e.type === 'touchend' && quieto && performance.now() - (joy.t0 || 0) < 300) elegirEn(t.clientX, t.clientY, false);
+    }
+  };
   $('joy').addEventListener('touchend', finJoy); $('joy').addEventListener('touchcancel', finJoy);
+  // Mando para diestros: joystick a la derecha (Ajustes → Mando). Por dispositivo.
+  const ponerMano = v => { document.body.classList.toggle('mano-der', v === 'der'); if ($('sel-mano')) $('sel-mano').value = v === 'der' ? 'der' : 'izq'; };
+  let mano0 = 'izq'; try { mano0 = localStorage.getItem('dq3_mano') || 'izq'; } catch (e) {}
+  ponerMano(mano0);
+  if ($('sel-mano')) {
+    if ($('fila-mano')) $('fila-mano').style.display = '';
+    $('sel-mano').onchange = () => { const v = $('sel-mano').value; try { localStorage.setItem('dq3_mano', v); } catch (e) {} ponerMano(v); };
+  }
   // Dedos sobre el lienzo: con uno se gira la camara, con dos se pellizca para el zoom.
   const toques = new Map(); let pinch = null;
   const sepToques = () => { const [a, b] = [...toques.values()]; return Math.max(20, Math.hypot(a.x - b.x, a.y - b.y)); };
@@ -4101,7 +4183,7 @@ let metaMision = null;
 const TUTO3 = [
   { txt: () => MOVIL ? 'Anda con el joystick y desliza el dedo por la pantalla para mirar' : 'Muévete con W A S D y arrastra con el ratón para girar la cámara', hecho: t => { const d = Math.hypot(P.x - t.x0, P.z - t.z0); if (d > 60) { t.x0 = P.x; t.z0 = P.z; } return d > 8 && d <= 60; } },   // un salto grande es un teletransporte: no cuenta
   { txt: () => 'Ve a la luz amarilla' + (metaMision ? ` ${flechaDir(metaMision.x, metaMision.z)} ${Math.round(Math.hypot(metaMision.x - P.x, metaMision.z - P.z))} m` : ''), hecho: t => (yo.kills || 0) > t.k0 || (metaMision && Math.hypot(metaMision.x - P.x, metaMision.z - P.z) < 30) },
-  { txt: () => MOVIL ? 'Toca un monstruo y pulsa ATACAR' : 'Clic en un monstruo (o Tab) y pulsa 1 o Z para atacar', hecho: t => (yo.kills || 0) > t.k0 },
+  { txt: () => MOVIL ? 'Toca un monstruo 2 veces para atacarlo (o pulsa ATACAR)' : 'Clic en un monstruo (o Tab) y pulsa 1 o Z para atacar', hecho: t => (yo.kills || 0) > t.k0 },
   // En movil el boton de ataque no esta en la barra: el primero ya es la habilidad de nivel 1.
   { txt: () => 'Usa tu habilidad ' + ((habsDe(yo.clase)[0] || {}).nombre || 'de clase') + ': ' + (MOVIL ? 'primer botón de la barra' : 'tecla 2'), hecho: t => t.hab },
   { txt: () => 'Fuera del pueblo, despliega las alas: ' + (MOVIL ? 'botón VOLAR' : 'V o doble salto'), hecho: () => P.vuela },
@@ -4143,7 +4225,21 @@ function pintarMisiones() {
   }
   if (q) {
     const lista = yo.mis.p >= q.n;
+    // Nivel del monstruo pedido y, si es muy fuerte (jefes 3+, el resto 4+),
+    // la luz guia a un campamento entrenable: sin esto el novato se pegaba a un jefe que lo tumbaba.
+    const mq = MONSTRUOS[q.tipo] || {}, alta = !lista && mq.nivel - yo.nivel >= (mq.jefe ? 3 : 4);
+    let campo = null;
+    if (alta) {
+      let cd = Infinity;
+      for (const cp of CAMPOS3D) {
+        const mc = MONSTRUOS[cp.k];
+        if (cp.jefe || !mc || mc.jefe || !(mc.nivel <= yo.nivel + 1)) continue;
+        const dd = Math.hypot(cp.x - P.x, cp.z - P.z);
+        if (!campo || mc.nivel > MONSTRUOS[campo.k].nivel || (mc.nivel === MONSTRUOS[campo.k].nivel && dd < cd)) { campo = cp; cd = dd; }
+      }
+    }
     if (lista) metaMision = null;   // en ORIGINS se entrega desde cualquier sitio
+    else if (campo) metaMision = { x: campo.x, z: campo.z, jefe: false, entreno: true };
     else {
       let mejor = null, md = Infinity;
       for (const cp of CAMPOS3D) if (cp.k === q.tipo) { const dd = Math.hypot(cp.x - P.x, cp.z - P.z); if (dd < md) { md = dd; mejor = cp; } }
@@ -4151,12 +4247,9 @@ function pintarMisiones() {
     }
     const dist = metaMision ? Math.hypot(metaMision.x - P.x, metaMision.z - P.z) : 0;
     const donde = metaMision ? (dist < 25 ? ' · aquí' : ` · ${flechaDir(metaMision.x, metaMision.z)} ${Math.round(dist)} m`) : '';
-    // Nivel del monstruo pedido y, si es muy fuerte (jefes 5+, el resto 4+),
-    // donde subir antes: sin esto el novato se pegaba a un jefe que lo tumbaba.
-    const mq = MONSTRUOS[q.tipo] || {}, alta = !lista && mq.nivel - yo.nivel >= (mq.jefe ? 5 : 4);
-    const zt = alta ? Object.values(MAPAS).filter(m => m.zona && !m.instancia && !m.coliseo && m.nv && m.nv[0] <= yo.nivel).sort((a, b) => b.nv[0] - a.nv[0])[0] : null;
+    const zt = alta && !campo ? Object.values(MAPAS).filter(m => m.zona && !m.instancia && !m.coliseo && m.nv && m.nv[0] <= yo.nivel).sort((a, b) => b.nv[0] - a.nv[0])[0] : null;
     const nvq = mq.nivel ? ` <span style="color:${colorNivel(mq.nivel)}">${marcaNivel(mq.nivel)}Nv ${mq.nivel}</span>` : '';
-    h += `<div class="q"><b>📜 ${esc(q.nombre)}</b>${lista ? `<span class="ok" data-entregar="1" style="cursor:pointer;text-decoration:underline">¡Lista! Toca aquí para entregarla</span>` : `${mq.nombre || q.tipo}${nvq}: ${Math.min(yo.mis.p, q.n)}/${q.n}<small>${donde}</small>${alta ? `<small style="display:block;color:#ff9900">Muy fuerte para ti: sube antes${zt ? ' en ' + esc(zt.nombre) : ''} o ve en grupo</small>` : ''}`}</div>`;
+    h += `<div class="q"><b>📜 ${esc(q.nombre)}</b>${lista ? `<span class="ok" data-entregar="1" style="cursor:pointer;text-decoration:underline">¡Lista! Toca aquí para entregarla</span>` : `${mq.nombre || q.tipo}${nvq}: ${Math.min(yo.mis.p, q.n)}/${q.n}<small>${campo ? '' : donde}</small>${alta ? `<small style="display:block;color:#ff9900">${campo ? `Muy fuerte para ti: sube a Nv ${Math.max(yo.nivel + 1, mq.nivel - (mq.jefe ? 3 : 2))} cazando ${esc(MONSTRUOS[campo.k].nombre || campo.k)} en la luz amarilla${donde || ' →'} o invita a un amigo 🤝` : `Muy fuerte para ti: sube antes${zt ? ' en ' + esc(zt.nombre) : ''} o ve en grupo`}</small>` : ''}`}</div>`;
   }
   // Encargos de la zona (no son "mata N"): el siguiente sin hacer.
   metaEnc = null;
@@ -4228,7 +4321,7 @@ function pintarMisiones() {
   faroEnc.visible = !!metaEnc && Math.hypot(metaEnc.x - P.x, metaEnc.z - P.z) > 12;
   if (metaEnc) faroEnc.position.set(metaEnc.x, alturaEn(metaEnc.x, metaEnc.z), metaEnc.z);
   if (faroAro.visible) faroAro.position.set(metaMision.x, alturaEn(metaMision.x, metaMision.z) + 0.15, metaMision.z);
-  if (q && metaMision && dMeta < 25 && avisoCampo !== yo.mis.i + ':' + q.tipo) {
+  if (q && metaMision && !metaMision.entreno && dMeta < 25 && avisoCampo !== yo.mis.i + ':' + q.tipo) {
     avisoCampo = yo.mis.i + ':' + q.tipo;
     const nom = (MONSTRUOS[q.tipo] || {}).nombre || q.tipo, falta = Math.max(0, q.n - yo.mis.p);
     const hay = [...mons.values()].some(o => o.k === q.tipo && !o.muereT && Math.hypot(o.x - P.x, o.z - P.z) < 40);

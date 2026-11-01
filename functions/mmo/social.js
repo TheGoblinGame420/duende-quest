@@ -55,6 +55,12 @@ const RE_ESTAFA = [
 // variacion (U+FE0F) o una etiqueta (U+E0020) dentro de «t.me» o «seed» saltaba el filtro.
 const normEstafa = t => String(t || '').normalize('NFKC').replace(/[\p{M}\p{Cf}︀-️᠋-᠍ﾠ⠀ㅤᅟᅠ]|[\u{E0000}-\u{E007F}]/gu, '');
 export const riesgoEstafa = t => { const n = normEstafa(t); return RE_ESTAFA.some(r => r.test(t) || r.test(n)); };
+// Chat seguro para menores: groserias se tapan con asteriscos (tambien vetan nombres en dios.js).
+// Sin \w* tras marica/verga: "Maricarmen" y "Vergara" son nombres de verdad.
+export const RE_GROSERIA = /\b(?:put[ao]s?|putamadre|mierd[\wáéíóúñ]*|conchatumadre|ctm|csm|huev[oó]n[\wáéíóúñ]*|cojud[\wáéíóúñ]*|pendej[\wáéíóúñ]*|maric(?:as?|[oó]n[\wáéíóúñ]*)|cabr[oó]n[\wáéíóúñ]*|vergas?|pinga[\wáéíóúñ]*|poronga[\wáéíóúñ]*|cach[ae]r[\wáéíóúñ]*|porno[\wáéíóúñ]*|nudes?|violar[\wáéíóúñ]*)(?![\wáéíóúñ])/gi;
+// Ni telefonos, ni redes, ni preguntas de datos personales (edad, casa, colegio, fotos).
+const RE_CONTACTO = [/(?:(?<!\d)|(?<=(?<!\d)\+?51))9\d{2}[\s.\-]?\d{3}[\s.\-]?\d{3}(?!\d)/, /\b(?:wsp|whats?app|wasap|watsap|wpp|insta|instagram|tiktok|snap(?:chat)?|discord|facebook|n[uú]mero de cel|celular)\b/i, /(?:^|\s)@[a-z0-9_.]{3,}/i, /\b(?:cu[aá]ntos a[nñ]os tienes|d[oó]nde vives|tu direcci[oó]n|tu colegio|manda foto)\b/i];
+export const riesgoContacto = t => { const n = normEstafa(t); return RE_CONTACTO.some(r => r.test(t) || r.test(n)); };
 export const IGNORADOS_MAX = 50;
 const REPORTE_CADA_MS = 60000;
 // No le llega a quien ignora al autor.
@@ -237,6 +243,8 @@ export const Social = {
     if (mudo) return this.no(s, `🔇 Estás silenciado por un moderador ${Math.ceil((mudo - ahora) / 60000)} min más.`);
     // Solo el dueño se salta el filtro: un moderador no publica carteras ni enlaces (nadie se hace pasar por el equipo).
     if (!(this.esDueno && this.esDueno(s)) && riesgoEstafa(txt)) return this.no(s, '🛡 Por seguridad no se permiten direcciones de cartera, enlaces ni frases semilla en el chat. Nadie del equipo te pedirá nunca tu frase semilla.');
+    if (!(this.esDueno && this.esDueno(s)) && riesgoContacto(txt)) return this.no(s, '🛡 Por tu seguridad no se comparten teléfonos, redes ni datos personales en el chat. Si alguien te los pide, usa Reportar.');
+    const txtF = txt.replace(RE_GROSERIA, x => '*'.repeat(x.length));
     s.chatT = ahora;
     let canal = m.canal;
     // Canal desconocido = general (y pasa por las mismas reglas de invitado).
@@ -247,7 +255,7 @@ export const Social = {
     // Invitado de menos de nivel 5: lo del general va al chat de su zona (antes se rechazaba y parecia que el chat no funcionaba).
     if (canal === 'general' && s.c.uid.startsWith('inv:') && s.c.nivel < 5) canal = 'decir';
     if (canal === 'susurro' && s.c.uid.startsWith('inv:') && s.c.nivel < 5) return this.no(s, s.m3 ? '🔒 En ORIGINS los invitados usan el chat público y el susurro desde el nivel 5 (el de grupo /g y hermandad /h ya funcionan). Sube un poco o inicia sesión.' : '🔒 Los invitados usan el canal general y el susurro desde el nivel 5. Mientras tanto escribe /d tu mensaje para hablar con los de tu mapa, o inicia sesión.');
-    const base = { t: 'chat', p: s.id, n: s.c.nombre, m: txt, mapa: s.c.mapa, cl: s.c.clase || '', gm: s.dios === 'dueno' ? 2 : s.dios ? 1 : undefined };
+    const base = { t: 'chat', p: s.id, n: s.c.nombre, m: txtF, mapa: s.c.mapa, cl: s.c.clase || '', gm: s.dios === 'dueno' ? 2 : s.dios ? 1 : undefined };
     if (canal === 'decir') {
       // Solo los que estan en el mismo mapa (o la misma mazmorra), menos quien lo ignora.
       const txtD = JSON.stringify({ ...base, canal: 'decir' });
@@ -479,7 +487,7 @@ export const Social = {
       const x = this.porUid.get(a.u);
       const on = !!(x && x.c && !x.cerrado);
       if (on) a.n = x.c.nombre;
-      return { uid: pub(a.u), n: a.n, on: on ? 1 : 0, id: on ? x.id : 0, lv: on ? x.c.nivel : 0, cl: on ? x.c.clase || '' : '', mapa: on && MAPAS[x.c.mapa] ? MAPAS[x.c.mapa].nombre : '', g: on && x.gid ? 1 : 0, m3: on && x.m3 ? 1 : 0 };
+      return { uid: pub(a.u), n: a.n, on: on ? 1 : 0, id: on ? x.id : 0, lv: on ? x.c.nivel : 0, cl: on ? x.c.clase || '' : '', mapa: on && MAPAS[x.c.mapa] ? MAPAS[x.c.mapa].nombre : '', g: on && x.gid ? 1 : 0, m3: on && x.m3 ? 1 : 0, h: on && x.c.herm ? (this.nombreHermandad ? this.nombreHermandad(x.c.herm) || 1 : 1) : '' };
     }).sort((a, b) => b.on - a.on || a.n.localeCompare(b.n));
     this.enviar(s, { t: 'contactos', l });
   },

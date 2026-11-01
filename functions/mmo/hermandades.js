@@ -114,7 +114,7 @@ export const Hermandades = {
     } finally { s.fundando = false; this.hnFundando.delete(clave); }
     await this.guardar(s);
     this.enviar(s, { t: 'herm', h: this.infoHerm(h) });
-    this.enviar(s, { t: 'toast', m: `Hermandad <${nombre}> fundada. Invita a otros desde su marco o desde la lista de jugadores.`, ok: true });
+    this.enviar(s, { t: 'toast', m: `Hermandad <${nombre}> fundada. Invita a otros desde su marco o con «🛡 Hermandad» en la lista de conectados (Amigos / En línea).`, ok: true });
     this.refrescarApariencia(s);
     this.actualizarYo(s);
     this.revisarLogros(s);

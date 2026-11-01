@@ -1668,6 +1668,10 @@ export class MmoWorld {
     await this.guardarPedidos();
     if (s) this.enviar(s, { t: 'regalo', ...regalo, vivo: 1 });
     await this.avisarJugador(pd.uid, `🎁 ¡Tu compra "${pd.nombre}" ya está en tu personaje!${notaSkin} Gracias por apoyar DUENDE QUEST.`, true);
+    // Pago con Stars desde la web (uid no es tg:): el bot le prometio al pagador «Te avisaremos aquí».
+    if (pd.tgPagador && !String(pd.uid).startsWith('tg:')) {
+      try { const env = getEnv({ env: this.env }); await tg(env.BOT_TOKEN, 'sendMessage', { chat_id: pd.tgPagador, text: '🎁 ¡Tu compra "' + pd.nombre + '" (pedido #' + pd.codigo + ') ya está en tu personaje! Entra al juego para verla.' }); } catch (e) {}
+    }
     return { ok: true, pedido: pd };
   }
 

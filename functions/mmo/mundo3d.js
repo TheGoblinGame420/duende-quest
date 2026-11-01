@@ -211,6 +211,7 @@ export const Mundo3D = {
       case 'salirGrupo': return this.salirGrupo(s);
       case 'expulsarGrupo': return this.expulsarGrupo(s, m);
       case 'liderGrupo': return this.liderGrupo(s, m);
+      case 'banda': return this.bandaGrupo(s, m);
       case 'pedido': return this.pedido(s, m);
       case 'pedidoCancelar': return this.pedidoCancelar(s, m);   // world.js
       case 'pedidoFirma': return this.pedidoFirma(s, m);

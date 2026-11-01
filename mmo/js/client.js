@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=330';
-import { iniciarRegalo } from './regalo.js?v=330';
-import { iniciarAvisoTg } from './avisotg.js?v=330';
+} from './data.js?v=331';
+import { iniciarRegalo } from './regalo.js?v=331';
+import { iniciarAvisoTg } from './avisotg.js?v=331';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -53,7 +53,7 @@ const SIN_CRIPTO_RE = /\bSOL\b|\$DUENDE|mTON|\bTON\b|[Ww]allet|[Ss]olana|[Pp]han
 const paso = e => { try { if (window.dqPaso) window.dqPaso(e, 'classic'); } catch (er) {} };
 paso('carga_ini');
 // Navegador interno de Facebook/Instagram/Messenger: se anota en el hola (D1 comparado en /mmostats).
-const esIAB = !TG && /FBAN|FBAV|FB_IAB|Instagram|Messenger/i.test(navigator.userAgent);
+const esIAB = !TG && /FBAN|FBAV|FB_IAB|Instagram|Messenger|musical_ly|BytedanceWebview|TikTok|trill/i.test(navigator.userAgent);
 // #r=<codigo de rescate> (el aviso de ORIGINS para pasar a Chrome; o la salida a CLASSIC si el 3D
 // no carga, que conserva el hash): se borra de la URL al instante y se adopta el duende.
 if (!TG) {
@@ -629,6 +629,7 @@ function recibir(m) {
       if (yo.muerto && !(antes && antes.muerto)) morir();
       if (!yo.muerto) { $('m-muerte').classList.remove('on'); P.muerto = false; }
       ofrecerBienvenida(antes);
+      confirmarFacturaWeb();
       if (!antes || antes.clase !== yo.clase || antes.nivel !== yo.nivel) $('acciones').innerHTML = '';
       if (antes && yo.nivel > antes.nivel) { vibrar(); setTimeout(() => permisosTg(yo.nivel), 2500); }
       // Una vez, a Nv 8: que existen las skins con poderes (informativo).
@@ -2031,6 +2032,7 @@ const gestos = new Map();   // id de jugador -> { id del gesto, t }
 let contactos = [];   // tu lista de amigos [{ uid, n, on, id, lv, cl, mapa, g }]
 function conectarListaSocial(L) {
   L.querySelectorAll('[data-inv]').forEach(b => b.onclick = () => { mandar({ t: 'invitar', p: +b.dataset.inv }); b.disabled = true; });
+  L.querySelectorAll('[data-hinv]').forEach(b => b.onclick = () => { mandar({ t: 'hermInvitar', p: +b.dataset.hinv }); b.disabled = true; });
   L.querySelectorAll('[data-sus]').forEach(b => b.onclick = () => { cerrarModales(); abrirChat(); $('chat-in').value = '/s ' + b.dataset.sus + ' '; });
   L.querySelectorAll('[data-qamigo]').forEach(b => b.onclick = () => { mandar({ t: 'contactoQuitar', uid: b.dataset.qamigo }); });
 }
@@ -2070,13 +2072,16 @@ function pintarSocial() {
   } else if (tabSocial === 'online') {
     // Arriba, tus amigos (conectados o no); debajo, todos los conectados.
     let h = '<p style="font:600 13px var(--sans);color:var(--txt);margin:2px 0 6px">Amigos</p>';
+    // Lider u oficial: boton para invitar a la hermandad sin tenerlo delante.
+    const rH = miRangoHerm(), invH = rH === 'lider' || rH === 'oficial';
+    const btH = x => invH && x.id && !x.h ? `<button class="btn sec" data-hinv="${x.id}" title="Invitar a tu hermandad">🛡 Hermandad</button>` : '';
     h += contactos.length ? contactos.map(x => {
       const cl = CLASES[x.cl];
       const puede = x.on && !x.g && (!grupo || soyLider());
       return tarjeta(`<img src="${A}items/equipo/${cl ? cl.icono : 'S_Buff06'}.png" style="${x.on ? '' : 'filter:grayscale(1);opacity:.5'}">`,
         `<span style="color:${x.on ? (cl ? cl.color : 'var(--txt)') : 'var(--txt3)'}">${esc(x.n)}</span>${x.on ? ' <span style="color:var(--txt2)">Nv ' + x.lv + '</span>' : ''}`,
         x.on ? esc((cl ? cl.nombre + ' · ' : '') + x.mapa + (x.g ? ' · en grupo' : '')) : 'Desconectado',
-        (puede ? `<button class="btn" data-inv="${x.id}">Invitar</button>` : '') + (x.on ? `<button class="btn sec" data-sus="${esc(x.n)}">Susurrar</button>` : '') + `<button class="btn sec" data-qamigo="${esc(x.uid)}" title="Quitar de amigos">✕</button>`);
+        (puede ? `<button class="btn" data-inv="${x.id}">Invitar</button>` : '') + (x.on ? btH(x) + `<button class="btn sec" data-sus="${esc(x.n)}">Susurrar</button>` : '') + `<button class="btn sec" data-qamigo="${esc(x.uid)}" title="Quitar de amigos">✕</button>`);
     }).join('') : '<p style="font-size:12px;color:var(--txt2);margin-bottom:8px">Elige a otro jugador y pulsa «Amigo» en su marco para ver cuándo se conecta.</p>';
     h += '<p style="font:600 13px var(--sans);color:var(--txt);margin:10px 0 6px">Conectados</p>';
     if (!quienLista.length) { L.innerHTML = h + '<p class="centro">No hay nadie más conectado ahora mismo.</p>'; conectarListaSocial(L); return; }
@@ -2085,7 +2090,7 @@ function pintarSocial() {
       const puede = !x.g && (!grupo || soyLider());
       return tarjeta(`<img src="${A}items/equipo/${cl ? cl.icono : 'S_Buff06'}.png">`, `<span style="color:${cl ? cl.color : 'var(--txt2)'}">${esc(x.n)}</span> <span style="color:var(--txt2)">Nv ${x.lv}</span>`,
         esc((cl ? cl.nombre + ' · ' : '') + x.mapa + (x.h ? ' · <' + x.h + '>' : '') + (x.g ? ' · en grupo' : '')),
-        (puede ? `<button class="btn" data-inv="${x.id}">Invitar</button>` : '') + `<button class="btn sec" data-sus="${esc(x.n)}">Susurrar</button>`);
+        (puede ? `<button class="btn" data-inv="${x.id}">Invitar</button>` : '') + btH(x) + `<button class="btn sec" data-sus="${esc(x.n)}">Susurrar</button>`);
     }).join('');
     conectarListaSocial(L);
   } else if (tabSocial === 'amigos') {
@@ -3503,8 +3508,18 @@ function evCompra(k) {
   if (ya.has(k) || !ws || ws.readyState !== 1) return;
   ya.add(k); mandar({ t: 'ev', k });
 }
+// Pedido de Stars abierto desde la web: al llegar pagado en 'yo' se cierra la ventana (evita pagar doble).
+let facturaWebCod = '';
+function confirmarFacturaWeb() {
+  if (!facturaWebCod || !yo) return;
+  if (!(yo.pedidos || []).some(x => String(x.codigo) === facturaWebCod && (x.estado === 'pagado' || x.estado === 'por_verificar' || x.estado === 'comprobando'))) return;
+  if ($('m-sol').classList.contains('on') && $('sol-titulo').textContent === 'PAGAR CON STARS') $('m-sol').classList.remove('on');
+  aviso('✅ Pago recibido. ' + textoPagoRecibido(), 'ok');
+  facturaWebCod = '';
+}
 function mostrarFacturaWeb(m) {
   if (!/^https:\/\/t\.me\//.test(String(m.link || ''))) { aviso('No se pudo abrir el pago con Stars.'); return; }
+  facturaWebCod = String(m.codigo || '');
   $('sol-titulo').textContent = 'PAGAR CON STARS';
   $('sol-cuerpo').innerHTML =
     `<p class="centro" style="margin-bottom:8px">Pedido <b>#${esc(m.codigo)}</b> · se paga dentro de Telegram con Stars (puedes comprarlas con tarjeta allí mismo).</p>` +
@@ -5213,6 +5228,18 @@ document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { tabTien
 function abrirTienda() { viaTienda = 'npc'; abrir('m-tienda'); pintarTienda(); }
 // Icono del pack para las tarjetas (gris si esta bloqueado).
 const icoPack = (n, gris) => `<img src="${A}items/equipo/${n}.png" alt="" style="width:36px;height:36px;image-rendering:pixelated${gris ? ';filter:grayscale(1);opacity:.45' : ''}">`;
+// Skin de oro que aun no alcanzas: barra de cuanto llevas y de donde sale el oro jugando.
+function barraGanala(pr) {
+  const f = n => (Number(n) || 0).toLocaleString('es', { useGrouping: 'always' });
+  const pc = Math.max(0, Math.min(100, Math.round((yo.oro || 0) / Math.max(1, pr) * 100)));
+  const dia = yo.diaria && yo.diaria.ok ? 0 : ((premioDiaria(yo.nivel || 1) || {}).oro || 0);
+  const mis = (MISIONES[yo.mis && yo.mis.i] || {}).oro || 0;
+  const partes = [];
+  if (dia) partes.push('caza del día +' + f(dia) + ' oro');
+  if (mis) partes.push('misión actual +' + f(mis) + ' oro');
+  partes.push('monstruos');
+  return `<span style="display:block;margin-top:5px"><span style="display:block;background:#333;height:5px;border-radius:3px;overflow:hidden"><span style="display:block;background:#fbbf24;height:100%;width:${pc}%"></span></span><span style="display:block;font-size:11px;opacity:.85;margin-top:3px;line-height:1.3">Llevas ${pc}% · Gánala jugando: ${partes.join(' · ')}</span></span>`;
+}
 function tarjeta(ico, nombre, desc, derecha) {
   return `<div class="item"><div class="ico">${ico}</div><div class="txt"><b>${nombre}</b><small>${desc}</small></div><div class="acc">${derecha}</div></div>`;
 }
@@ -5314,7 +5341,8 @@ function pintarTienda() {
           : modoAnuncio() ? `<button class="btn sec" data-premium="skin_${id}" data-metodo="stars">⭐ ${estrellasDe(d.usd)} Stars</button>` : `<button class="btn sec" data-premium="skin_${id}" data-metodo="sol">~$${d.usd} en SOL</button><button class="btn sec" data-premium="skin_${id}" data-metodo="duende">$DUENDE −10%</button>`;
       }
       if (tabTienda === 'skin' && !tiene.includes(id)) acc += `<button class="btn sec" data-probar="${id}">Probar</button>`;
-      h += tarjeta(ico, d.premium ? `<span style="color:${d.color}">${esc(d.nombre)}</span>` : d.nombre, d.desc + (tabTienda === 'skin' && puesto !== id ? difSkin(id) : ''), acc);
+      const ganala = tabTienda === 'skin' && !tiene.includes(id) && typeof d.precio === 'number' && (yo.oro || 0) < precioOro(tabTienda, id) ? barraGanala(precioOro(tabTienda, id)) : '';
+      h += tarjeta(ico, d.premium ? `<span style="color:${d.color}">${esc(d.nombre)}</span>` : d.nombre, d.desc + (tabTienda === 'skin' && puesto !== id ? difSkin(id) : '') + ganala, acc);
     }
     if (tabTienda === 'skin') h += '<p style="margin-top:8px;font-size:12px;color:#fde68a"><b>Una skin, dos juegos:</b> la que compres la llevas también en ORIGINS (3D), con los mismos poderes. En PvP (duelos y Abismo) sus ventajas de combate no cuentan: ahí todos pelean igual.</p><p style="margin-top:6px;font-size:12px;color:var(--txt2)">Cada skin da sus poderes mientras la llevas. Se compran con oro o, con tu cuenta, con dinero: ' + ((TG && !forzarInvitado) || modoAnuncio() ? 'Telegram Stars' : 'SOL o $DUENDE (10% de descuento) a la wallet de El Duende') + '; El Duende revisa el pago y la activa en tu personaje. Las cuatro exclusivas (Esmeralda, Sombrío, Solar y Cósmico) solo se consiguen así; sus ventajas suben con el precio sin superar a las de oro de final de juego' + (modoAnuncio() ? '' : ', y ninguna cambia lo que se gana en mTON') + '.</p>';
   }

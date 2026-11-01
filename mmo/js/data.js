@@ -118,7 +118,7 @@ export const MONSTRUOS = {
   fantasma_halo:     { nombre: 'Alma Errante',       hoja: 'fantasma_halo',  nivel: 58, vuela: true, dispara: true },
   paladin_goblin:    { nombre: 'Paladín Goblin',     hoja: 'goblin_lord',    nivel: 59, tinte: '#00eeff' },
   // Jefes: uno por zona, reaparecen solos cada cierto tiempo.
-  jefe_sabueso:  { nombre: 'Sabueso Infernal',       hoja: 'hellhound',         nivel: 8,  jefe: true, alto: 110, hpX: 14, atkX: 1.4, w: 150, h: 70 },
+  jefe_sabueso:  { nombre: 'Sabueso Infernal',       hoja: 'hellhound',         nivel: 8,  jefe: true, alto: 110, hpX: 9, atkX: 1.4, w: 150, h: 70 },
   jefe_caballero:{ nombre: 'Rey Goblin Caballero',   hoja: 'goblin_knight',     nivel: 14, jefe: true, alto: 130, hpX: 16, atkX: 1.4, w: 70, h: 120, tinte: '#ff6444' },
   jefe_senor:    { nombre: 'Señor de la Guerra',     hoja: 'goblin_battlelord', nivel: 20, jefe: true, alto: 135, hpX: 18, atkX: 1.5, w: 70, h: 125, tinte: '#00ffcc' },
   jefe_ghoul:    { nombre: 'Ghoul Infernal',         hoja: 'ghoul_ardiente',    nivel: 26, jefe: true, alto: 130, hpX: 20, atkX: 1.5, w: 110, h: 120, tinte: '#ff9900', dispara: true },
@@ -507,6 +507,15 @@ export function limpiarLook(l) {
 export const VERSION = 328;
 
 export const NOVEDADES = [
+  { n: 99, fecha: '1 nov 2026', items: [
+    'Con el auto-ataque, tu duende sigue solo con el monstruo más cercano al matar uno.',
+    'Si el jefe de tu misión es demasiado fuerte, la luz amarilla te lleva a un campamento de tu nivel. El Sabueso Infernal tiene menos vida.',
+    'Juega en grupo más fácil en ORIGINS: ves a tus compañeros en el minimapa y en el mapa, su distancia en el marco del grupo, y el líder puede formar una banda de 10.',
+    'Las skins de oro muestran una barra con cuánto te falta y cómo ganar ese oro jugando.',
+    'Juega con una sola mano: Ajustes → Mando → joystick a la derecha. Toca un monstruo 2 veces para ir a atacarlo.',
+    'Chat más seguro: las groserías se tapan y no se pueden compartir teléfonos ni datos personales. Los líderes invitan a su hermandad desde Amigos / En línea.',
+    'Si abres el juego desde TikTok, te ayudamos a pasar tu duende a Chrome o Safari.',
+  ] },
   { n: 98, fecha: '1 nov 2026', items: [
     'Si se va la señal en el mundo 3D, el juego sigue intentando conectar solo y vuelve a la partida sin recargar; hay un botón «Reintentar ahora».',
     'Al morir en ORIGINS te damos un consejo útil, y con poca vida el botón de la poción late en rojo.',

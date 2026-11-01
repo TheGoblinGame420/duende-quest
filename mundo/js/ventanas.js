@@ -20,8 +20,8 @@ import {
   BANDA_MONTURA, TORRE, ambulanteActivo, ambulanteOferta,
   EXPEDICION, premioExpedicion, MATERIALES,
   PAQUETES, estrellasDe, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA, LOGROS, progresoLogro, statsJugador, ALAS, paqueteParaFaltante, ENTREGA, textoPagoRecibido, PEDIDO_VIGENCIA_MS,
-  pagoLocalActivo, textoSoles, YAPE_VIGENCIA_MS,
-} from '/mmo/js/data.js?v=330';
+  pagoLocalActivo, textoSoles, YAPE_VIGENCIA_MS, premioDiaria, MISIONES,
+} from '/mmo/js/data.js?v=331';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -44,6 +44,7 @@ const est = {
 };
 let pendiente = null;          // confirmacion de dos toques { k, t }
 let pagoActual = null;         // pedido de SOL/$DUENDE mostrado
+let facturaWebCod = '';        // pedido de Stars abierto desde la web (se confirma al llegar pagado)
 
 const IDS = { inv: 'v-inv', libro: 'v-libro', tienda: 'v-tienda', logros: 'v-logros', pago: 'v-pago', exped: 'v-exped' };
 
@@ -666,6 +667,17 @@ function botonesPago(y, pid, usd, principal) {
   if (anuncio()) return bStars;
   return btn(principal ? 'Pagar con Solana (cripto)' : `~US$${usd} en Solana`, 'premium', { id: pid, metodo: 'sol' }, principal ? '' : 'sec') + bStars + btn('$DUENDE −10%', 'premium', { id: pid, metodo: 'duende' }, 'sec');
 }
+// Skin de oro que aun no alcanzas: barra de cuanto llevas y de donde sale el oro jugando.
+function barraGanala(y, pr) {
+  const pc = Math.max(0, Math.min(100, Math.round((y.oro || 0) / Math.max(1, pr) * 100)));
+  const dia = y.diaria && y.diaria.ok ? 0 : ((premioDiaria(y.nivel || 1) || {}).oro || 0);
+  const mis = (MISIONES[y.mis && y.mis.i] || {}).oro || 0;
+  const partes = [];
+  if (dia) partes.push('caza del día +' + fmt(dia) + ' oro');
+  if (mis) partes.push('misión actual +' + fmt(mis) + ' oro');
+  partes.push('monstruos y expediciones');
+  return `<div style="margin:4px 6px 0"><div style="background:#333;height:5px;border-radius:3px;overflow:hidden"><div style="background:#fbbf24;height:100%;width:${pc}%"></div></div><div style="font-size:11px;opacity:.8;margin-top:3px;line-height:1.3">Llevas ${pc}% · Gánala jugando: ${partes.join(' · ')}</div></div>`;
+}
 function htmlArmasSkins(y, tab) {
   const tabla = tab === 'arma' ? ARMAS : SKINS;
   const tiene = (tab === 'arma' ? y.armas : y.skins) || [];
@@ -674,16 +686,19 @@ function htmlArmasSkins(y, tab) {
   for (const id in tabla) {
     const d = tabla[id];
     const ico = tab === 'arma' ? icoArma(id, d) : icoSkin(id, d);
-    let acc;
+    let acc, extra = '';
     if (tiene.includes(id)) acc = puesto === id ? etq('✓ Equipado', 'vv-ok') : btn('Equipar', 'equipar', { k: tab, id }, 'sec');
     else if (typeof d.precio !== 'number') acc = `<span class="vv-etq" style="color:${d.color}">Exclusiva · $${d.usd}</span>` + botonesPago(y, 'skin_' + id, d.usd, true);
     else {
       const pr = precioOro(tab, id);
       acc = (pr !== d.precio ? `<s style="opacity:.55;font-size:11px">${d.precio.toLocaleString('es')}</s> 🎃 ` : '') + oro(pr) + botonOro(y, pr, 'Comprar', 'comprar', { k: tab, id });
       if (tab === 'skin' && d.usd && y.p2e && y.p2e.cuenta) acc += botonesPago(y, 'skin_' + id, d.usd, false);
+      if (tab === 'skin' && (y.oro || 0) < pr) extra = barraGanala(y, pr);
     }
     const nom = d.premium ? `<span style="color:${d.color}">${esc(d.nombre)}</span>` : esc(d.nombre);
+    h += extra ? '<div>' : '';
     h += tarjeta(ico, nom, esc(d.desc) + (tab === 'skin' && puesto !== id ? difSkin(y, id) : ''), acc, d.color ? ` style="--rz:${d.color}"` : '');
+    if (extra) h += extra + '</div>';
   }
   h += '</div>';
   if (tab === 'skin') h += `<p class="vv-nota" style="color:#fde68a"><b>Una skin, dos juegos:</b> la que consigas la llevas también en CLASSIC (2D), con los mismos poderes. En PvP (duelos y Abismo) sus ventajas de combate no cuentan: ahí todos pelean igual.</p><p class="vv-nota">Cada skin da sus poderes mientras la llevas. Se compran con oro o, con tu cuenta, con dinero: ${esTg() || anuncio() ? 'Telegram Stars' : 'SOL o $DUENDE (10% de descuento) a la wallet de El Duende'}; El Duende revisa el pago y la activa en tu personaje. Los siete disfraces de la mascota (Bruja, Momia, Frankenstein, Vampiro, Esqueleto, Lobo y Pirata) se compran solo con oro y cambian tu duende 3D con su sombrero o peinado. Las cuatro exclusivas (Esmeralda, Sombrío, Solar y Cósmico) solo se consiguen así${anuncio() ? '' : '; ninguna cambia lo que se gana en mTON'}.</p>`;
@@ -757,6 +772,12 @@ function pagoGuardado() {
 function pintarFranja() {
   const fr = document.getElementById('vv-franja'); if (!fr || !H) return;
   const y = H.yo();
+  // Pago con Stars desde la web: al llegar pagado se cierra la ventana (evita pagar doble).
+  if (facturaWebCod && y && ((y.pedidos || []).some(x => String(x.codigo) === facturaWebCod && (x.estado === 'pagado' || x.estado === 'por_verificar' || x.estado === 'comprobando')))) {
+    if (abierta(IDS.pago) && !pagoActual) cerrarV(IDS.pago);
+    H.aviso('✅ Pago recibido. ' + textoPagoRecibido(), 'ok');
+    facturaWebCod = '';
+  }
   const p = !abierta(IDS.pago) ? pagoGuardado() : null;
   const enCamino = ((y && y.pedidos) || []).filter(x => x.estado === 'pagado' || x.estado === 'por_verificar' || x.estado === 'comprobando').length;
   const txt = p ? `💳 Pedido #${p.codigo} pendiente: ver datos` : enCamino ? `📦 ${enCamino} compra${enCamino > 1 ? 's' : ''} en camino` : '';
@@ -860,6 +881,7 @@ function mostrarFacturaWeb(m) {
   if (!/^https:\/\/t\.me\//.test(String(m.link || ''))) { H.aviso('No se pudo abrir el pago con Stars.', 'err'); return; }
   const id = IDS.pago;
   pagoActual = null;
+  facturaWebCod = String(m.codigo || '');
   parte(id, 't').textContent = 'PAGAR CON STARS';
   parte(id, 'sub').innerHTML = `<span>Pedido <b>#${esc(m.codigo)}</b></span>`;
   parte(id, 'cuerpo').innerHTML =

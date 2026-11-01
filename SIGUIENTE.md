@@ -3247,3 +3247,15 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Instalar en pantalla de inicio (franja web y botón en la diaria de CLASSIC).
 - Temporadas en hora de Lima con el oro visible; la Cueva 3D da puntos del pase.
 - Arnés 897 bien (actualizadas 3 pruebas al diseño nuevo).
+
+### Ronda 7: ciclo evaluar y mejorar (1-nov-2026, `?v=331`)
+
+- 30 evaluadores (combate, progresión, misiones, jefes, arte, sonido, grupo, economía, accesibilidad, Mini App, arcade, bot, tienda) → 142 problemas → 10 tareas.
+- ORIGINS: `siguienteBlanco` (auto-objetivo, descarta al Guardián dormido); misión de jefe fuerte guía a un campamento entrenable (aviso a 3 niveles); `jefe_sabueso` hpX 14→9.
+- IAB de TikTok en /jugar/, mundo.js y client.js.
+- `RE_GROSERIA` en social.js (chat con asteriscos, nombres vetados en dios.js) y bloqueo de datos de contacto.
+- Banda y distancia/flecha en el marco del grupo; grupo en minimapa y mapa grande; invitar a hermandad desde En línea.
+- Barra de progreso de skins de oro con «gánala jugando».
+- Stars desde la web: confirmación en el juego y aviso del bot al pagador al entregarse (entrega manual).
+- Joystick a la derecha (Ajustes → Mando) y doble toque a monstruo.
+- Arnés 897 bien.
