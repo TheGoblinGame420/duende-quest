@@ -3272,3 +3272,16 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - CLASSIC: avisos sobre ventanas y Presumir con enlace. /jugar/: «Continuar con mi duende», WhatsApp IAB, iOS sin importmap.
 - Servidor: try/catch por jugador/monstruo en el tick 3D; cerrar/guardar siempre guardan (invitado nuevo incluido).
 - Arnés 897 bien.
+
+### Ronda 9: juice, metas y viralidad (1-nov-2026, `?v=333`)
+
+- 30 evaluadores (juice de nivel/cofres/golpes, primer jefe, metas, colección, viralidad, tienda, mundo vivo, NPCs, cámara, vuelo, pase, diarias, T'anta Wawa) → 142 problemas → 10 tareas.
+- Hora Feliz visible en ORIGINS (`horaFelizTiempos` en #mundial, también en móvil con `.hf`); la XP extra ya la aplicaba `dar()` de world.js (el revisor quitó un doble multiplicador).
+- Caza del día y premio de mañana arriba con la caja plegada.
+- Ranking semanal sin poda del top 100; chat general persistido al dormirse el DO.
+- Contador de jugadores (ahora/hoy) junto al minimapa e «Invitar» arriba en 👥.
+- Stars honestas en la web y monto en la ventana de pago. Pack de bienvenida no se «gasta» con invitados.
+- Tocar jugadores en móvil y ficha con skin + «¿La quieres?».
+- Presumir con imagen (Web Share con archivo), historia de Telegram solo Premium, celebración de jefe derrotado.
+- CLASSIC: AUTO al siguiente monstruo y golpe final con hitstop/vibración. ORIGINS: celebración de subida de nivel y aviso del Abismo a Nv 20.
+- Arnés 897 bien.

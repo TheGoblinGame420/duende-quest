@@ -26,12 +26,12 @@
 <meta name="theme-color" content="#0a0418">
 <link rel="manifest" href="/mundo/manifest.json">
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
-<script src="/js/pwa.js?v=332" defer></script>
+<script src="/js/pwa.js?v=333" defer></script>
 <link rel="icon" href="/assets/ui/coin.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=332"></script>
+<script src="/js/origen.js?v=333"></script>
 <script>
 // Red de seguridad de la carga (script clasico: corre aunque el modulo 3D o el CDN fallen).
 // - Errores antes de conectar: se guardan en __errQ y mundo.js los manda al entrar.
@@ -116,28 +116,28 @@
   });
 })();
 </script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=332" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=333" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=332">
-<link rel="modulepreload" href="/mmo/js/data.js?v=332">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=332">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=332">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=332">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=332">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=332">
-<link rel="modulepreload" href="/mmo/js/regalo.js?v=332">
-<link rel="modulepreload" href="/mmo/js/avisotg.js?v=332">
-<link rel="modulepreload" href="/mundo/js/musica.js?v=332">
-<link rel="modulepreload" href="/mundo/js/cueva.js?v=332">
-<link rel="modulepreload" href="/mundo/js/tapa.js?v=332">
-<link rel="modulepreload" href="/mundo/js/abismo.js?v=332">
-<link rel="modulepreload" href="/mundo/js/particulas.js?v=332">
-<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=332">
-<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=332">
-<link rel="modulepreload" href="/mmo/js/secundarias.js?v=332">
-<link rel="modulepreload" href="/mundo/js/lore.js?v=332">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=333">
+<link rel="modulepreload" href="/mmo/js/data.js?v=333">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=333">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=333">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=333">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=333">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=333">
+<link rel="modulepreload" href="/mmo/js/regalo.js?v=333">
+<link rel="modulepreload" href="/mmo/js/avisotg.js?v=333">
+<link rel="modulepreload" href="/mundo/js/musica.js?v=333">
+<link rel="modulepreload" href="/mundo/js/cueva.js?v=333">
+<link rel="modulepreload" href="/mundo/js/tapa.js?v=333">
+<link rel="modulepreload" href="/mundo/js/abismo.js?v=333">
+<link rel="modulepreload" href="/mundo/js/particulas.js?v=333">
+<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=333">
+<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=333">
+<link rel="modulepreload" href="/mmo/js/secundarias.js?v=333">
+<link rel="modulepreload" href="/mundo/js/lore.js?v=333">
 <style>
 :root{--bg:#0a0418;--panel:rgba(14,9,30,.86);--borde:rgba(160,140,255,.22);--txt:#f2efff;--txt2:#b8b0d8;--txt3:#7d7699;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;--oro:#ffd84a;--pri:#2563eb;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -186,6 +186,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 body.movil #misiones{top:110px;bottom:auto;left:8px;right:auto;width:165px;font-size:10px;padding:5px 7px;}
 #mini canvas{display:block;width:150px;height:150px;border-radius:8px;}
 #mini .z{font:600 11px var(--sans);text-align:center;margin-top:4px;color:var(--cian);}
+#mini-r{width:0;min-width:100%;}
 #botones{right:174px;top:12px;padding:4px;display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;max-width:max(230px,calc(100vw - 440px));}
 .bt{width:38px;height:38px;border:1px solid var(--borde);border-radius:8px;background:rgba(255,255,255,.04);color:var(--txt);font:600 15px var(--sans);cursor:pointer;display:flex;align-items:center;justify-content:center;text-decoration:none;}
 .bt:hover{background:rgba(255,255,255,.1);}
@@ -424,6 +425,7 @@ body.movil .barra,body.compacto .barra{height:11px;margin-top:2px;}
 body.movil .barra span,body.compacto .barra span{font-size:8.5px;line-height:11px;}
 body.movil #oro,body.compacto #oro{font-size:10px;margin-top:2px;}
 body.movil #mundial,body.compacto #mundial{display:none;}
+body.movil #mundial.hf,body.compacto #mundial.hf{display:block;font-size:10px;margin-top:2px;}   /* la Hora Feliz si se ve en movil */
 body.movil #obj,body.compacto #obj{left:50%;transform:translateX(-50%);top:calc(6px + env(safe-area-inset-top) + var(--tg-top,0px));min-width:0;width:min(160px,38vw);padding:3px 6px;}
 body.movil #misiones,body.compacto #misiones{width:min(150px,40vw);font-size:9.5px;padding:4px 6px;max-height:50px;}
 body.movil #misiones b,body.compacto #misiones b{font-size:10px;}
@@ -546,6 +548,13 @@ body.movil.mano-der #joy .pista-joy{left:auto;right:28px;flex-direction:row-reve
  body.movil.mano-der #barra{right:auto;left:calc(8px + env(safe-area-inset-left));}
  body.movil.mano-der #chat{left:auto;right:calc(8px + env(safe-area-inset-right));}
 }
+/* Subir de nivel: destello dorado y cartel grande */
+#flash-nv{position:fixed;inset:0;pointer-events:none;z-index:5;background:radial-gradient(circle,rgba(255,230,102,.55),transparent 70%);opacity:0;transition:opacity .6s}
+#flash-nv.on{opacity:1;transition:none}
+#cartel-nv{position:fixed;top:26%;left:50%;transform:translateX(-50%);pointer-events:none;z-index:6;text-align:center;font:900 34px var(--sans);color:#ffe066;text-shadow:0 0 12px #f59e0b,0 2px 0 #7c2d12;opacity:0;white-space:nowrap}
+#cartel-nv small{display:block;font:700 13px var(--sans);color:#fff;text-shadow:0 1px 3px #000;white-space:normal;max-width:86vw;margin:4px auto 0}
+#cartel-nv.on{animation:cartelNv 2.4s ease-out forwards}
+@keyframes cartelNv{0%{opacity:0;transform:translateX(-50%) scale(1.6)}12%{opacity:1;transform:translateX(-50%) scale(1)}80%{opacity:1;transform:translateX(-50%) scale(1)}100%{opacity:0;transform:translateX(-50%) scale(1)}}
 </style>
 </head>
 <body>
@@ -573,6 +582,7 @@ body.movil.mano-der #joy .pista-joy{left:auto;right:28px;flex-direction:row-reve
 <div class="caja" id="grupo3"></div>
 <div class="caja" id="objp">
   <div class="nm"><span id="op-nombre">—</span><small id="op-nivel"></small></div>
+  <button class="btn sec" id="op-skin" style="display:none;width:100%;margin-top:4px;font-size:11px;padding:3px 8px"></button>
   <div class="barra hp" id="op-hp"><i></i><span></span></div>
   <div class="fila-b"><button class="btn" id="op-inv">Invitar al grupo</button><button class="btn sec" id="op-sus">Susurrar</button></div>
   <div class="fila-b"><button class="btn sec" id="op-duelo">⚔️ Retar a duelo</button><button class="btn sec" id="op-amigo">⭐ Amigo</button><button class="btn sec" id="op-herm" style="display:none">🛡 Hermandad</button></div>
@@ -734,7 +744,9 @@ body.movil.mano-der #joy .pista-joy{left:auto;right:28px;flex-direction:row-reve
 <!-- Telegram: su SDK se carga arriba solo dentro de Telegram (window.__tgListo).
      defer: no frenan el HTML y corren en orden, antes que mundo.js (que usa supabase). -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=332" defer></script>
-<script type="module" src="/mundo/js/mundo.js?v=332"></script>
+<script src="/js/config.js?v=333" defer></script>
+<script type="module" src="/mundo/js/mundo.js?v=333"></script>
+<div id="flash-nv"></div>
+<div id="cartel-nv"></div>
 </body>
 </html>

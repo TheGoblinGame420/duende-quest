@@ -69,6 +69,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v330 | Ronda 6 (30 evaluadores): reconexión 3D, consejos al morir, invitar desde Amigos, cuenta desde ORIGINS, racha del 7, instalar app, eventos en hora de Perú | **B** |
 | v331 | Ronda 7 (30 evaluadores): auto-objetivo, misiones de jefe que guían, grupo y banda en ORIGINS, barra de skins, una mano, chat seguro, TikTok | **B** |
 | v332 | Ronda 8 (QA de regresiones): ORIGINS que no se congela, entrada con aviso, iOS antiguo, auto-ataque prudente, Stars honestas, bot sin promesas falsas | **B** |
+| v333 | Ronda 9 (juice y viralidad): nivel y jefes que se sienten, presumir con imagen, contador de jugadores, «¿La quieres?», AUTO continuo en CLASSIC, Hora Feliz visible | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

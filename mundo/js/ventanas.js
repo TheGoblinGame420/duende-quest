@@ -21,7 +21,7 @@ import {
   EXPEDICION, premioExpedicion, MATERIALES,
   PAQUETES, estrellasDe, solesDeStars, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA, LOGROS, progresoLogro, statsJugador, ALAS, paqueteParaFaltante, ENTREGA, textoPagoRecibido, PEDIDO_VIGENCIA_MS,
   pagoLocalActivo, textoSoles, YAPE_VIGENCIA_MS, premioDiaria, MISIONES,
-} from '/mmo/js/data.js?v=332';
+} from '/mmo/js/data.js?v=333';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -663,7 +663,7 @@ function botonesPago(y, pid, usd, principal) {
     return btn(`Yape / Plin ${textoSoles(pqL.pen)}`, 'premium', { id: pid, metodo: 'yape' }, principal ? '' : 'sec')
       + `<details style="font-size:12px;margin-top:4px"><summary style="cursor:pointer;opacity:.75">Otros métodos</summary>${otros}</details>`;
   }
-  const bStars = btn(principal ? '⭐ Pagar con Stars (tarjeta en Telegram)' : `⭐ ${estrellasDe(usd)} Stars`, 'premium', { id: pid, metodo: 'stars' }, principal && anuncio() ? '' : 'sec');
+  const bStars = btn(principal ? (anuncio() ? `⭐ Pagar ${estrellasDe(usd)} Stars (tarjeta en Telegram)` : '⭐ Pagar con Stars (tarjeta en Telegram)') :`⭐ ${estrellasDe(usd)} Stars`, 'premium', { id: pid, metodo: 'stars' }, principal && anuncio() ? '' : 'sec');
   if (anuncio()) return bStars;
   return btn(principal ? 'Pagar con Solana (cripto)' : `~US$${usd} en Solana`, 'premium', { id: pid, metodo: 'sol' }, principal ? '' : 'sec') + bStars + btn('$DUENDE −10%', 'premium', { id: pid, metodo: 'duende' }, 'sec');
 }
@@ -688,7 +688,7 @@ function htmlArmasSkins(y, tab) {
     const ico = tab === 'arma' ? icoArma(id, d) : icoSkin(id, d);
     let acc, extra = '';
     if (tiene.includes(id)) acc = puesto === id ? etq('✓ Equipado', 'vv-ok') : btn('Equipar', 'equipar', { k: tab, id }, 'sec');
-    else if (typeof d.precio !== 'number') acc = `<span class="vv-etq" style="color:${d.color}">Exclusiva · ${esTg() ? estrellasDe(d.usd) + ' ⭐' : 'US$' + d.usd + ' · ≈ ' + precioLocal(d.usd)}</span>` + botonesPago(y, 'skin_' + id, d.usd, true);
+    else if (typeof d.precio !== 'number') acc = `<span class="vv-etq" style="color:${d.color}">Exclusiva · ${esTg() ? estrellasDe(d.usd) + ' ⭐' : anuncio() && !(pagoLocalActivo() && (PAQUETES.find(p => p.id === 'skin_' + id) || {}).pen) ? estrellasDe(d.usd) + ' ⭐ · ≈ ' + solesDeStars(estrellasDe(d.usd)) : 'US$' + d.usd + ' · ≈ ' + precioLocal(d.usd)}</span>` + botonesPago(y, 'skin_' + id, d.usd, true);
     else {
       const pr = precioOro(tab, id);
       acc = (pr !== d.precio ? `<s style="opacity:.55;font-size:11px">${d.precio.toLocaleString('es')}</s> 🎃 ` : '') + oro(pr) + botonOro(y, pr, 'Comprar', 'comprar', { k: tab, id });
@@ -714,7 +714,7 @@ function htmlPremium(y) {
   const lista = ordenTienda(PAQUETES.filter(p => !p.unaVez || y.puedeBienvenida), est.foco);
   // Con Yape / Plin en la web, el precio en soles es el de verdad (redondo, pq.pen).
   // En Telegram, los soles son los de las Stars (Telegram las vende a ~US$0,02 c/u).
-  const precio = (usd, pen) => !cuentaTg && pen && pagoLocalActivo() ? textoSoles(pen) + ' · ≈ US$' + usd : cuentaTg ? estrellasDe(usd) + ' ⭐ · ≈ ' + solesDeStars(estrellasDe(usd)) : 'US$' + usd + ' · ≈ ' + precioLocal(usd);
+  const precio = (usd, pen) => !cuentaTg && pen && pagoLocalActivo() ? textoSoles(pen) + ' · ≈ US$' + usd : cuentaTg || anuncio() ? estrellasDe(usd) + ' ⭐ · ≈ ' + solesDeStars(estrellasDe(usd)) : 'US$' + usd + ' · ≈ ' + precioLocal(usd);
   let grupo = '', abierta = false;
   for (const pq of lista) {
     const g = pq.id === est.foco ? '' : grupoPaquete(pq);
@@ -883,10 +883,16 @@ function mostrarFacturaWeb(m) {
   const id = IDS.pago;
   pagoActual = null;
   facturaWebCod = String(m.codigo || '');
+  // Paquete y monto antes de ir a Telegram (el mensaje 'factura' no trae el paquete:
+  // se toma el ultimo que se pidio, o el pedido con ese codigo si ya figura).
+  const xPd = (((H && H.yo && H.yo()) || {}).pedidos || []).find(p => String(p.codigo) === String(m.codigo));
+  const pqF = PAQUETES.find(p => p.id === (m.id || (xPd && xPd.paquete) || est.ultPedidoId)) || (xPd && xPd.usd ? { nombre: xPd.nombre || '', usd: xPd.usd } : null);
+  const montoF = pqF ? `<p class="vv-p" style="text-align:center;margin-bottom:6px"><b>${esc(pqF.nombre)}</b> · ${estrellasDe(pqF.usd)} ⭐ (≈ ${solesDeStars(estrellasDe(pqF.usd))})</p>` : '';
   parte(id, 't').textContent = 'PAGAR CON STARS';
   parte(id, 'sub').innerHTML = `<span>Pedido <b>#${esc(m.codigo)}</b></span>`;
   parte(id, 'cuerpo').innerHTML =
-    `<p class="vv-p">Se paga dentro de Telegram con Stars (puedes comprarlas con tarjeta allí mismo).</p>` +
+    `<p class="vv-p">Se paga dentro de Telegram con Stars (puedes comprarlas con tarjeta allí mismo).</p>` + montoF +
+    `<p class="vv-nota" style="margin-bottom:8px">Si no tienes Telegram, instálalo gratis: Telegram te vende las Stars con tarjeta y te muestra el total antes de pagar.</p>` +
     `<a class="btn" href="${esc(m.link)}" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;padding:12px;margin-bottom:10px">⭐ Abrir Telegram y pagar</a>` +
     (TACTIL ? '' : `<p class="vv-p">O escanea con la cámara de tu celular:</p><div class="vv-qr" data-qr></div>`) +
     `<p class="vv-p" style="margin-top:10px">El pedido vence a los 30 minutos de hacerlo. ${esc(textoPagoRecibido())} Si cierras esta ventana, vuelve a pulsar el mismo paquete y te sale el mismo pedido.</p>`;
@@ -1135,7 +1141,7 @@ const ACC = {
   ttab: b => { est.tienda = b.dataset.id; est.foco = ''; H.sfx('boton', 0.2); pintarTienda(); parte(IDS.tienda, 'cuerpo').scrollTop = 0; },
   // Candados contra doble toque (en movil un toque doble compraba dos veces o creaba dos pedidos).
   comprar: b => { if (Date.now() - (est.ultCompra || 0) < 600) return; est.ultCompra = Date.now(); H.sfx('boton', 0.3); H.mandar({ t: 'comprar', k: b.dataset.k, id: b.dataset.id, n: +b.dataset.n || 1 }); },
-  premium: b => { if (Date.now() - (est.ultPedido || 0) < 2500) return; est.ultPedido = Date.now(); H.sfx('boton', 0.3); H.mandar({ t: 'pedido', id: b.dataset.id, metodo: b.dataset.metodo, via: est.via }); H.aviso('Preparando tu pedido…', 'ok'); },
+  premium: b => { if (Date.now() - (est.ultPedido || 0) < 2500) return; est.ultPedido = Date.now(); est.ultPedidoId = b.dataset.id; H.sfx('boton', 0.3); H.mandar({ t: 'pedido', id: b.dataset.id, metodo: b.dataset.metodo, via: est.via }); H.aviso('Preparando tu pedido…', 'ok'); },
   retomar: b => {
     const y = H.yo(), x = ((y && y.pedidos) || []).find(p => p.codigo === b.dataset.id);
     if (x && x.yape) mostrarPedidoYape(x.yape);

@@ -893,7 +893,9 @@ export class MmoWorld {
     // Lo que se dijo mientras no estaba (social.js), antes del mensaje del dia.
     if (c.herm) await this.hermandad(c.herm);
     if (s.cerrado) return;
-    this.enviarHistorialChat(s, salidaAntes);
+    // async: la primera vez carga del storage el historial del general (sobrevive al dormirse el servidor).
+    await this.enviarHistorialChat(s, salidaAntes).catch(e => console.error('[MMO chatHist]', e));
+    if (s.cerrado) return;
     await this.cargarHermandadDe(s);
     if (s.cerrado) return;
     if (c.herm) this.refrescarApariencia(s);
@@ -3070,7 +3072,7 @@ export class MmoWorld {
     // al quedar vacio el mundo el DO se puede apagar y se perdia el ultimo minuto.
     if (this.rs && this.rsSucio && this.rs.sem === semanaUTC()) {
       this.rsT = Date.now(); this.rsSucio = false;
-      try { await this.state.storage.put('rankSem', this.rs); } catch (e) { this.rsSucio = true; console.error('[MMO rankSem]', e); }
+      try { await this.state.storage.put('rankSem', { sem: this.rs.sem, l: Object.fromEntries(this.topSemana().slice(0, 1000)) }); } catch (e) { this.rsSucio = true; console.error('[MMO rankSem]', e); }
     }
     if (this.retVolcar) await this.retVolcar();
     if (this.retVolcarDias) await this.retVolcarDias(true);
@@ -3180,9 +3182,10 @@ export class MmoWorld {
     }
     if (this.rsSucio && ahora - (this.rsT || 0) > (this.degradado() ? 600000 : 60000)) {   // modo ahorro (salud.js): cada 10 min
       this.rsT = ahora; this.rsSucio = false;
-      const top = Object.fromEntries(this.topSemana().slice(0, 100));
-      this.rs.l = top;
-      await this.state.storage.put('rankSem', this.rs);
+      // En memoria se conserva a todos (antes se cortaba al top 100 y el puesto 101
+      // perdia su XP de la semana); al storage van como mucho 1000 filas (< 128 KiB).
+      const l = Object.fromEntries(this.topSemana().slice(0, 1000));
+      await this.state.storage.put('rankSem', { sem: this.rs.sem, l });
     }
   }
   async premiarSemana(rs) {

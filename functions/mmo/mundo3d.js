@@ -416,7 +416,7 @@ export const Mundo3D = {
       // El minimo de 1/3 del jefe solo para quien hizo al menos el 10 % (un golpe suelto cobraba un tercio).
       const k = Math.max(o.jefe && parte >= 0.1 ? Math.max(parte, 1 / 3) : parte, parteG >= 0.5 ? 0.7 : 0);
       const mult = (((SKINS[s.c.skin] || {}).buffs || {}).oroMult || 1) * (1 + talento(s.c, 'fortuna'));
-      // De noche los monstruos dan un 10% mas de experiencia.
+      // De noche los monstruos dan un 10% mas de experiencia. La Hora Feliz (+50%) ya la aplica dar() en world.js: no repetirla aqui.
       const xp = Math.max(1, Math.round(base.xp * k * (1 + talento(s.c, 'erudicion')) * (esNoche(Date.now()) ? 1.1 : 1)));
       const oro = Math.max(1, Math.round(base.oro * k * rnd(0.8, 1.2) * mult));
       // dar(): misiones, diarias, bestiario, chicha, pase, botin... lo mismo que el 2D.

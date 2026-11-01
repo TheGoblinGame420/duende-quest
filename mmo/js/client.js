@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=332';
-import { iniciarRegalo } from './regalo.js?v=332';
-import { iniciarAvisoTg } from './avisotg.js?v=332';
+} from './data.js?v=333';
+import { iniciarRegalo } from './regalo.js?v=333';
+import { iniciarAvisoTg } from './avisotg.js?v=333';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -666,10 +666,32 @@ function recibir(m) {
     case 'md': {
       const o = mons.get(m.id);
       if (m.fuera) { mons.delete(m.id); castMon.delete(m.id); aurasM.delete(m.id); if (objetivo && objetivo.k === 'm' && objetivo.id === m.id) objetivo = null; break; }
-      if (o) { o.muereT = performance.now(); o.st = 2; lanzarFX('muerte', o.x, o.y - o.alto * .45, o.alto / 60, false); sfx('muerte', .35); }
-      if (o && MONSTRUOS[o.k].jefe) jefeVivo = null;
+      // Tu golpe final se siente (sonido, pausa, sacudida, vibracion); las
+      // muertes ajenas cercanas suenan bajito y las lejanas no suenan.
+      const mio = (m.pr || []).some(p => p && p[0] === miId);
+      const cerca = o && Math.abs(o.x - P.x) < VW * .75;
+      if (o) {
+        o.muereT = performance.now(); o.st = 2;
+        if (cerca || mio) lanzarFX('muerte', o.x, o.y - o.alto * .45, o.alto / 60, false);
+        if (mio) {
+          sfx('muerte', .45);
+          pausaGolpe = Math.max(pausaGolpe, performance.now() + 50);
+          sacudir = Math.max(sacudir || 0, 3);
+          if (TG && TG.HapticFeedback) vibrar('success'); else try { navigator.vibrate && navigator.vibrate(12); } catch (e) {}
+        } else if (cerca) sfx('muerte', .15);
+      }
+      if (o && MONSTRUOS[o.k] && MONSTRUOS[o.k].jefe) jefeVivo = null;
       castMon.delete(m.id); aurasM.delete(m.id);
-      if (objetivo && objetivo.k === 'm' && objetivo.id === m.id) objetivo = null;
+      if (objetivo && objetivo.k === 'm' && objetivo.id === m.id) {
+        // AUTO: salta al monstruo vivo mas cercano (sin jefes) para seguir farmeando.
+        let sig = null, sd = 260;
+        for (const x of mons.values()) {
+          if (x.id === m.id || x.muereT || (MONSTRUOS[x.k] && MONSTRUOS[x.k].jefe)) continue;
+          const d = distMon(x);
+          if (d < sd) { sd = d; sig = x; }
+        }
+        objetivo = sig ? { k: 'm', id: sig.id } : null;
+      }
       break;
     }
     case 'at': ataqueRemoto(m); break;
@@ -1124,7 +1146,8 @@ function ataqueRemoto(m) {
     if (retraso) setTimeout(pintar, retraso); else pintar();
     if (tipo === 2 && m.s !== -1) lanzarFX('rayo', o.x, o.y - o.alto / 2, .5, false);
     // Sin objetivo elegido, el primero que golpeas pasa a serlo.
-    if (m.p === miId && !objetivo && tipo !== 5) objetivo = { k: 'm', id };
+    // (Nunca un cadaver: el 'md' llega antes que el golpe que mata.)
+    if (m.p === miId && !objetivo && tipo !== 5 && !o.muereT) objetivo = { k: 'm', id };
   }
   if (m.h.length && m.p === miId && !(performance.now() - (P.golpePredicho || 0) < 600)) sfx('golpe', .35);
 }
@@ -1594,10 +1617,24 @@ function ofrecerBienvenida(antes) {
   try { ofrecida = localStorage.getItem('dq_bienv_ofrecida') === '1'; muertes = +localStorage.getItem('dq_bienv_muertes') || 0; } catch (e) {}
   if (ofrecida) return;
   if (yo.muerto && !antes.muerto) { muertes++; try { localStorage.setItem('dq_bienv_muertes', String(muertes)); } catch (e) {} }
-  if (!((antes.nivel < 5 && yo.nivel >= 5) || (muertes >= 2 && antes.muerto && !yo.muerto))) return;
+  const dispara = (antes.nivel < 5 && yo.nivel >= 5) || (muertes >= 2 && antes.muerto && !yo.muerto);
+  // Igual que la tienda (htmlPremium): sin cuenta solo veria «Iniciar sesion». Al invitado no se le
+  // gasta la oferta: se le avisa una vez y se le ofrece cuando ya tenga cuenta.
+  const conCuenta = !!(yo.p2e && yo.p2e.cuenta);
+  if (!conCuenta) {
+    if (!dispara) return;
+    let ya = '';
+    try { ya = localStorage.getItem('dq_bienv_inv') || ''; } catch (e) {}
+    if (!ya) { try { localStorage.setItem('dq_bienv_inv', '1'); } catch (e) {} aviso('🎁 Crea tu cuenta gratis para guardar tu duende. Con cuenta verás el Pack de bienvenida, una oferta de una sola vez.', 'ok'); }
+    return;
+  }
+  let eraInv = false;
+  if (yo.nivel >= 5) { try { eraInv = localStorage.getItem('dq_bienv_inv') === '1'; } catch (e) {} }
+  if (eraInv) { try { localStorage.removeItem('dq_bienv_inv'); } catch (e) {} }
+  else if (!dispara) return;
   // Se marca como ofrecida solo cuando de verdad se abre: si 60 s hubo otra ventana, se ofrece la proxima vez.
   const intentar = n => {
-    if (!yo || !yo.puedeBienvenida || yo.muerto) return;
+    if (!yo || !yo.puedeBienvenida || yo.muerto) { if (yo && yo.muerto && n < 20) setTimeout(() => intentar(n + 1), 3000); return; }
     try { if (localStorage.getItem('dq_bienv_ofrecida') === '1') return; } catch (e) {}
     if (document.querySelector('.modal.on, #dq-avtg.on, #dq-regalo.on')) { if (n < 20) setTimeout(() => intentar(n + 1), 3000); return; }
     abrirPremium('bienv'); premiumFoco = 'bienvenida'; pintarTienda();
@@ -2166,7 +2203,7 @@ function abrirWa(txt, url) {
 // Tras un logro, una mazmorra o un objeto legendario sale un boton unos
 // segundos para compartirlo con tu enlace de invitacion (si el amigo llega a
 // Nv 10, premio para los dos). Es la forma de que el mundo tenga mas gente.
-let presumirTxt = '', presumirPend = false, presumirTipo = '', presumirUlt = 0;
+let presumirTxt = '', presumirPend = false, presumirTipo = '', presumirUlt = 0, presumirFile = null;
 // Momento -> imagen de la historia de Telegram (assets/promo/historia_N.jpg): 1 el duende, 2 la fortaleza, 3 el combate.
 const IMG_PRESUMIR = { nivel: 1, look: 1, nv60: 2, mazmorra: 2, torre: 2, botin: 3, logro: 3, duelo: 3 };
 // Tope: una oferta cada 3 min (si no, cansa). forzar: la pidio el jugador.
@@ -2189,6 +2226,14 @@ function ofrecerPresumir(txt, tipo, forzar, intento) {
   // El enlace se pide ya: al pulsar, compartir debe ser inmediato (el
   // navegador bloquea compartir si espera a una respuesta del servidor).
   if (!(amigosInfo && amigosInfo.ref) && performance.now() - amigosPedidoT > 10000) { amigosPedidoT = performance.now(); mandar({ t: 'amigos' }); }
+  presumirFile = null;
+  if (!TG && navigator.canShare) {
+    fetch('/assets/promo/historia_' + (IMG_PRESUMIR[presumirTipo] || 1) + '.jpg').then(r => r.ok ? r.blob() : null).then(bl => {
+      if (!bl) return;
+      const f = new File([bl], 'duende-quest.jpg', { type: 'image/jpeg' });
+      try { presumirFile = navigator.canShare({ files: [f] }) ? f : null; } catch (e) { presumirFile = null; }
+    }).catch(() => {});
+  }
   ponTxt($('presumir'), 'Presumir · ganan los dos +' + oroAmigo() + ' oro');
   ponCss($('presumir'), 'display', 'block');
   clearTimeout(ofrecerPresumir.t);
@@ -2209,7 +2254,15 @@ function compartirPresumir(info) {
   } catch (e) {}
   if (TG && TG.openTelegramLink) return TG.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(enlTg) + '&text=' + encodeURIComponent(txt));
   // Fuera de Telegram, WhatsApp primero, con el premio en el mensaje.
-  abrirWa((presumirTxt ? presumirTxt + ' ' : '') + TXT_WA.replace('ganamos oro', 'ganamos +' + oroAmigo() + ' de oro'), enlWa(info.ref));
+  const txtWa = (presumirTxt ? presumirTxt + ' ' : '') + TXT_WA.replace('ganamos oro', 'ganamos +' + oroAmigo() + ' de oro'), web = enlWa(info.ref);
+  // Con la imagen precargada, la hoja de compartir del sistema (Estados, historias). Si falla (no si cancela), WhatsApp.
+  try {
+    if (presumirFile && navigator.canShare && navigator.canShare({ files: [presumirFile] })) {
+      navigator.share({ files: [presumirFile], text: txtWa + ' ' + web }).catch(e => { if (e && e.name !== 'AbortError') abrirWa(txtWa, web); });
+      return;
+    }
+  } catch (e) {}
+  abrirWa(txtWa, web);
 }
 $('presumir').onclick = () => {
   ponCss($('presumir'), 'display', 'none');
@@ -3442,7 +3495,9 @@ function htmlPremium() {
   // El Pack de bienvenida (SOLO 1 VEZ) sale solo mientras el servidor diga que aun puedes.
   const lista = ordenTienda(PAQUETES.filter(p => !p.unaVez || (yo && yo.puedeBienvenida)), premiumFoco);
   // En Telegram, los soles son los de las Stars (Telegram las vende a ~US$0,02 c/u).
-  const ref = usd => `<small style="display:block;font-size:11px;color:var(--txt2)">≈ ${cuentaTg ? solesDeStars(estrellasDe(usd)) : precioLocal(usd)}</small>`;
+  // En modo anuncio (web, solo Stars) tambien: Telegram cobra Stars, no dolares.
+  const soloStars = !cuentaTg && modoAnuncio() && !pagoLocalActivo();
+  const ref = usd => `<small style="display:block;font-size:11px;color:var(--txt2)">≈ ${cuentaTg || soloStars ? solesDeStars(estrellasDe(usd)) : precioLocal(usd)}</small>`;
   let grupo = '';
   for (const pq of lista) {
     const g = pq.id === premiumFoco ? '' : grupoPaquete(pq);
@@ -3450,13 +3505,13 @@ function htmlPremium() {
     const sk = pq.skin && SKINS[pq.skin];
     let acc;
     if (pq.skin && yo && (yo.skins || []).includes(pq.skin)) acc = '<span class="precio" style="color:var(--ok)">✓ Ya la tienes</span>';
-    else if (!cuenta) acc = `<span class="precio">${cuentaTg ? estrellasDe(pq.usd) + ' ⭐' : 'US$' + pq.usd}${ref(pq.usd)}</span><button class="btn sec" data-cuenta="1">Iniciar sesión</button>`;
+    else if (!cuenta) acc = `<span class="precio">${cuentaTg || soloStars ? estrellasDe(pq.usd) + ' ⭐' : 'US$' + pq.usd}${ref(pq.usd)}</span><button class="btn sec" data-cuenta="1">Iniciar sesión</button>`;
     else if (cuentaTg) acc = `<span class="precio">${estrellasDe(pq.usd)} ⭐${ref(pq.usd)}</span><button class="btn" data-premium="${pq.id}" data-metodo="stars">Pagar con Stars</button>`;
     // En la web tambien con Stars: el servidor crea la factura y se paga en Telegram (movil: abre el enlace; PC: QR).
     // Yape / Plin (solo con el numero del dueño en PAGO_LOCAL): en soles redondos, y lo demas plegado en «Otros métodos».
     else if (pagoLocalActivo()) acc = `<span class="precio">${textoSoles(pq.pen)}<small style="display:block;font-size:11px;color:var(--txt2)">≈ US$${pq.usd}</small></span><button class="btn" data-premium="${pq.id}" data-metodo="yape">Yape / Plin ${textoSoles(pq.pen)}</button>`
       + `<details style="font-size:12px;margin-top:4px"><summary style="cursor:pointer;color:var(--txt2)">Otros métodos</summary><button class="btn sec" data-premium="${pq.id}" data-metodo="stars">⭐ Stars (tarjeta en Telegram)</button>` + (modoAnuncio() ? '' : `<button class="btn sec" data-premium="${pq.id}" data-metodo="sol">Solana (cripto)</button><button class="btn sec" data-premium="${pq.id}" data-metodo="duende">$DUENDE −10%</button>`) + '</details>';
-    else if (modoAnuncio()) acc = `<span class="precio">US$${pq.usd}${ref(pq.usd)}</span><button class="btn" data-premium="${pq.id}" data-metodo="stars">⭐ Pagar con Stars (tarjeta en Telegram)</button>`;
+    else if (modoAnuncio()) acc = `<span class="precio">${estrellasDe(pq.usd)} ⭐${ref(pq.usd)}</span><button class="btn" data-premium="${pq.id}" data-metodo="stars">⭐ Pagar ${estrellasDe(pq.usd)} Stars (tarjeta en Telegram)</button>`;
     else acc = `<span class="precio">US$${pq.usd}${ref(pq.usd)}</span><button class="btn" data-premium="${pq.id}" data-metodo="sol">Pagar con Solana (cripto)</button><button class="btn sec" data-premium="${pq.id}" data-metodo="stars">⭐ Pagar con Stars (tarjeta en Telegram)</button><button class="btn sec" data-premium="${pq.id}" data-metodo="duende">$DUENDE −10%</button>`;
     const ico = sk ? `<img src="${retratoSkin(pq.skin)}" style="${sk.premium ? 'filter:drop-shadow(0 0 5px ' + sk.color + ')' : ''}">` : `<img src="${A}items/equipo/${pq.icono}.png">`;
     const nom = (sk && sk.premium ? `<span style="color:${sk.color}">${esc(pq.nombre)}</span>` : esc(pq.nombre))
@@ -3486,7 +3541,7 @@ function conectarPremium(L) {
   // Candado contra doble toque: un pedido cada 2,5 s (el servidor ademas reutiliza la factura viva).
   L.querySelectorAll('[data-premium]').forEach(b => b.onclick = () => {
     if (Date.now() - (window.__ultPedido || 0) < 2500) return;
-    window.__ultPedido = Date.now();
+    window.__ultPedido = Date.now(); window.__ultPedidoId = b.dataset.premium;
     sfx('boton', .3); mandar({ t: 'pedido', id: b.dataset.premium, metodo: b.dataset.metodo, via: viaTienda });
   });
   L.querySelectorAll('[data-cuenta]').forEach(b => b.onclick = () => abrirCuenta());
@@ -3543,9 +3598,15 @@ function confirmarFacturaWeb() {
 function mostrarFacturaWeb(m) {
   if (!/^https:\/\/t\.me\//.test(String(m.link || ''))) { aviso('No se pudo abrir el pago con Stars.'); return; }
   facturaWebCod = String(m.codigo || '');
+  // Paquete y monto antes de ir a Telegram (el mensaje 'factura' no trae el paquete:
+  // se toma el ultimo que se pidio, o el pedido con ese codigo si ya figura).
+  const xPd = ((yo && yo.pedidos) || []).find(p => String(p.codigo) === String(m.codigo));
+  const pqF = PAQUETES.find(p => p.id === (m.id || (xPd && xPd.paquete) || window.__ultPedidoId)) || (xPd && xPd.usd ? { nombre: xPd.nombre || '', usd: xPd.usd } : null);
+  const montoF = pqF ? `<p class="centro" style="margin-bottom:6px"><b>${esc(pqF.nombre)}</b> · ${estrellasDe(pqF.usd)} ⭐ (≈ ${solesDeStars(estrellasDe(pqF.usd))})</p>` : '';
   $('sol-titulo').textContent = 'PAGAR CON STARS';
   $('sol-cuerpo').innerHTML =
-    `<p class="centro" style="margin-bottom:8px">Pedido <b>#${esc(m.codigo)}</b> · se paga dentro de Telegram con Stars (puedes comprarlas con tarjeta allí mismo).</p>` +
+    `<p class="centro" style="margin-bottom:8px">Pedido <b>#${esc(m.codigo)}</b> · se paga dentro de Telegram con Stars (puedes comprarlas con tarjeta allí mismo).</p>` + montoF +
+    `<p style="font-size:12px;color:var(--txt2);margin-bottom:8px">Si no tienes Telegram, instálalo gratis: Telegram te vende las Stars con tarjeta y te muestra el total antes de pagar.</p>` +
     `<a class="btn" href="${esc(m.link)}" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;padding:12px;margin-bottom:10px">⭐ Abrir Telegram y pagar</a>` +
     (TACTIL ? '' : `<p style="font-size:12px;margin:6px 0">O escanea con la cámara de tu celular:</p><div id="stars-qr" style="display:flex;justify-content:center;margin:6px 0;min-height:40px"></div>`) +
     `<p style="font-size:12px;color:var(--txt2);margin-top:8px">El pedido vence a los 30 minutos de hacerlo. ${esc(textoPagoRecibido())} Si cierras esta ventana, vuelve a pulsar el mismo paquete y te sale el mismo pedido.</p>`;

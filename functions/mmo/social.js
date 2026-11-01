@@ -335,18 +335,39 @@ export const Social = {
     if (avisar && this.avisarAdmin) this.avisarAdmin(`⚠️ Reporte de ${s.c.nombre.replace(/[^\p{L}\p{N} ]/gu, '')} contra ${t.c.nombre.replace(/[^\p{L}\p{N} ]/gu, '')}: ${plano(motivo)}${frases.length ? '\nÚltimas frases: ' + frases.map(f => '«' + plano(f) + '»').join(' ') : ''}`, null, true).catch(() => {});
     this.enviar(s, { t: 'toast', m: `⚠️ Reporte enviado. Gracias: el equipo lo revisará. Si te molesta, usa /ignorar ${t.c.nombre}.` });
   },
-  // Historial corto del general y de cada hermandad, solo en memoria (si el
-  // servidor se duerme se pierde). u: uid del autor, para no repetir lo de un
-  // silenciado o baneado; no sale al cliente.
+  // Historial corto del general y de cada hermandad. El del general se guarda
+  // en el storage (como mucho cada 15 s, con un guardado final diferido) para
+  // que sobreviva cuando el servidor se duerme. u: uid del autor, para no
+  // repetir lo de un silenciado o baneado; no sale al cliente.
   anotarChat(l, s, base, canal, max) {
     l.push({ ...base, canal, u: s.c.uid, t0: Date.now() });
     if (l.length > max) l.shift();
+    if (l === this.chatHist && this.state && this.state.storage) {
+      // Antes de guardar se carga lo viejo: si no, el put pisaba el historial
+      // guardado y la carga posterior duplicaba los mensajes nuevos.
+      const guardar = () => { this.chatHistGuardT = Date.now(); (this.chatHistCargado ? Promise.resolve() : this.cargarChatHist()).then(() => this.state.storage.put('chatHist', this.chatHist)).catch(() => {}); };
+      if (Date.now() - (this.chatHistGuardT || 0) > 15000) guardar();
+      else if (!this.chatHistPend) this.chatHistPend = setTimeout(() => { this.chatHistPend = null; guardar(); }, 15500 - (Date.now() - (this.chatHistGuardT || 0)));
+    }
+  },
+  // Carga una sola vez el historial del general guardado (una promesa compartida:
+  // dos que entran a la vez no lo duplican). Si alguien ya escribio antes de
+  // terminar la carga, sus mensajes se suman al final.
+  async cargarChatHist() {
+    if (this.chatHistCargado || !this.state || !this.state.storage) return;
+    this.chatHistP = this.chatHistP || this.state.storage.get('chatHist').then(v => {
+      const prev = this.chatHist || [];
+      this.chatHist = [...(Array.isArray(v) ? v : []), ...prev].slice(-20);
+    }, () => { this.chatHist = this.chatHist || []; }).finally(() => { this.chatHistCargado = true; });
+    await this.chatHistP;
   },
   // Al entrar: lo que se dijo mientras no estaba (desde que se guardo al
   // salir, como mucho 24 h): una reconexion no repite lo que ya vio. Los
   // clientes muestran 8 lineas: cabecera, 6 mensajes y el mensaje del dia.
   // Con p: 0 y sin mapa no salen burbujas sobre nadie.
-  enviarHistorialChat(s, desde) {
+  async enviarHistorialChat(s, desde) {
+    if (!this.chatHistCargado) { try { await this.cargarChatHist(); } catch (e) { this.chatHist = this.chatHist || []; } }
+    if (s.cerrado || !s.c) return;
     const c = s.c, ahora = Date.now(), mod = this.mod || { ban: {}, mute: {} };
     const lim = Math.max(desde || 0, ahora - 24 * 3600000);
     const h = c.herm && this.herms && this.herms.get(c.herm);

@@ -504,9 +504,18 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 332;
+export const VERSION = 333;
 
 export const NOVEDADES = [
+  { n: 101, fecha: '1 nov 2026', items: [
+    'Subir de nivel en ORIGINS ahora se siente: cartel grande, destello dorado, chispas y la cámara que se abre. Vencer a un jefe tiene su propia celebración «¡JEFE DERROTADO!».',
+    'Presume tus logros con imagen en tus Estados de WhatsApp o en historias de Instagram y Facebook; cada amigo que entre con tu enlace les da oro a los dos.',
+    'En ORIGINS ves cuántos duendes juegan ahora y cuántos jugaron hoy, y la Hora Feliz (20:00–21:00 de Perú) se ve en pantalla con su cuenta atrás.',
+    'Toca a otro jugador para ver su skin y un botón «¿La quieres?».',
+    'En CLASSIC, el AUTO salta solo al siguiente monstruo y tu golpe final se siente.',
+    'El ranking semanal ya no borra la XP de quien está fuera del top 100, y el chat general guarda sus últimos mensajes.',
+    'En el móvil, la caja de misiones plegada te muestra arriba la Caza del día lista para cobrar.',
+  ] },
   { n: 100, fecha: '1 nov 2026', items: [
     'El mundo de ORIGINS ya no se congela si falla un monstruo o un jugador, y tu progreso se guarda siempre al cerrar, también como invitado.',
     'Si el servidor está lleno o hay un error al entrar, ves un aviso claro en vez de una carga congelada. CLASSIC y ORIGINS vuelven a abrir en iPhones con iOS antiguo.',
