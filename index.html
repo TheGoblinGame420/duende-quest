@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=327"></script>
+<script src="/js/origen.js?v=328"></script>
 <!-- Modo anuncio: quien llega de un anuncio (fbclid / utm_*) ve la web sin la parte cripto
      (wallet, precio, token, donaciones). Se recuerda en la pestaña; el resto de visitas no cambia. -->
 <script>(function(){var a=/[?&](fbclid|utm_[a-z]+)=/i.test(location.search);try{if(a)sessionStorage.setItem('dq_anuncio','1');else a=sessionStorage.getItem('dq_anuncio')==='1';}catch(e){}if(a)document.documentElement.classList.add('anuncio');})()</script>
@@ -832,7 +832,7 @@ section[id]{scroll-margin-top:72px;}
   </div>
   <div class="una-skin"><b>Una skin, dos juegos.</b> Todo lo que ganas o compras (skins, alas, oro, equipo y niveles) vale a la vez en $DUENDE CLASSIC y en $DUENDE ORIGINS: es el mismo personaje.</div>
   <div class="hero-btns">
-    <a href="https://t.me/duendequest_bot" target="_blank" rel="noopener" class="btn-tg">Abrir en Telegram</a>
+    <a href="https://t.me/duendequest_bot?start=ad_web" target="_blank" rel="noopener" class="btn-tg">Abrir en Telegram</a>
   </div>
   <!-- En vivo: conectados y jugadores de hoy los da el servidor del MMO
        (/mmo/ws por GET); el jefe mundial sale cada :00 y :30 UTC. -->
@@ -906,7 +906,7 @@ section[id]{scroll-margin-top:72px;}
     <article class="about-card">
       <h3>Mini App de Telegram</h3>
       <p>Campaña de 15 etapas con un jefe al final de cada mundo y modo sin fin. Se abre dentro de Telegram desde el bot oficial <strong>@duendequest_bot</strong>, sin instalar nada.</p>
-      <a href="https://t.me/duendequest_bot" class="btn-sec" target="_blank" rel="noopener">Abrir en Telegram</a>
+      <a href="https://t.me/duendequest_bot?start=ad_web" class="btn-sec" target="_blank" rel="noopener">Abrir en Telegram</a>
     </article>
     <article class="about-card">
       <h3>Modo arcade en el navegador</h3>
@@ -1013,7 +1013,7 @@ section[id]{scroll-margin-top:72px;}
   </div>
   <div class="pasos-cta">
     <a href="/inicio/" class="btn-main">Jugar gratis ahora</a>
-    <p class="pasos-nota">o <a href="https://t.me/duendequest_bot" target="_blank" rel="noopener">ábrelo en Telegram</a> · Sin descargas</p>
+    <p class="pasos-nota">o <a href="https://t.me/duendequest_bot?start=ad_web" target="_blank" rel="noopener">ábrelo en Telegram</a> · Sin descargas</p>
   </div>
 </section>
 
@@ -1128,7 +1128,7 @@ section[id]{scroll-margin-top:72px;}
 
   <div style="text-align:center;margin-top:2rem">
     <div class="hero-btns" style="margin:0 auto 0;max-width:none">
-      <a href="https://t.me/duendequest_bot" target="_blank" rel="noopener" class="btn-main">Abrir la Mini App</a>
+      <a href="https://t.me/duendequest_bot?start=ad_web" target="_blank" rel="noopener" class="btn-main">Abrir la Mini App</a>
       <a href="https://t.me/duendesolana420" target="_blank" rel="noopener" class="btn-sec">Grupo oficial</a>
     </div>
     <p class="sec-line">🔒 Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado.</p>
@@ -2192,7 +2192,7 @@ if (document.documentElement.classList.contains('anuncio')) document.addEventLis
 <!-- Config (keys + DUENDE_CFG) -->
 <script src="js/config.js"></script>
 <!-- Módulos en orden de dependencia -->
-<script src="js/auth-manager.js?v=327"></script>
+<script src="js/auth-manager.js?v=328"></script>
 <script>
 // Ranking real de la landing (antes: 5 nombres inventados con un badge
 // "LIVE" que no estaba conectado a nada). auth-manager.js registra su

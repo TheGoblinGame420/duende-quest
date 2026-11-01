@@ -20,7 +20,7 @@ import {
   BANDA_MONTURA, TORRE, ambulanteActivo, ambulanteOferta,
   EXPEDICION, premioExpedicion, MATERIALES,
   PAQUETES, estrellasDe, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA, LOGROS, progresoLogro, statsJugador, ALAS, paqueteParaFaltante, ENTREGA, textoPagoRecibido, PEDIDO_VIGENCIA_MS,
-} from '/mmo/js/data.js?v=327';
+} from '/mmo/js/data.js?v=328';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -541,6 +541,7 @@ function pintarTienda() {
   pintarTabs(id, TABS_TIENDA.map(([k, t]) => [k, t, k === 'ambulante' && ambulanteActivo() ? '!' : '']), est.tienda, 'ttab');
   const c = parte(id, 'cuerpo');
   const t = est.tienda;
+  if (t === 'premium') evCompra('tv');
   c.innerHTML = t === 'premium' ? htmlPremium(y) : t === 'forja' ? htmlForja(y) : t === 'tinte' ? htmlTintes(y) : t === 'mascota' ? htmlMascotas(y)
     : t === 'ambulante' ? htmlAmbulante(y) : t === 'montura' ? htmlMonturas(y) : t === 'alas' ? htmlAlas(y) : t === 'pw' ? htmlPoderes(y) : htmlArmasSkins(y, t);
   dibujarHojas(c);
@@ -637,12 +638,14 @@ function htmlAlas(y) {
   }
   return h + '</div><p class="vv-nota">En el mundo 3D: V o doble salto para volar; mantén Espacio al caer para planear gratis.</p>';
 }
-// Botones de pago con dinero (SOL / $DUENDE en la web, Stars en Telegram).
+// Botones de pago con dinero (Stars en Telegram; en la web Stars, SOL o $DUENDE).
+// Stars desde la web: el servidor crea la factura y se paga en Telegram (movil: enlace; PC: QR).
 function botonesPago(y, pid, usd, principal) {
   if (!(y.p2e && y.p2e.cuenta)) return btn('Iniciar sesión', 'cuenta', {}, 'sec');
   if (esTg()) return btn(`${estrellasDe(usd)} Stars`, 'premium', { id: pid, metodo: 'stars' }, principal ? '' : 'sec');
-  if (anuncio()) return principal ? etq('Con Stars en Telegram', 'vv-dim') : '';
-  return btn(principal ? 'Pagar con Solana (cripto)' : `~US$${usd} en Solana`, 'premium', { id: pid, metodo: 'sol' }, principal ? '' : 'sec') + btn('$DUENDE −10%', 'premium', { id: pid, metodo: 'duende' }, 'sec');
+  const bStars = btn(principal ? '⭐ Pagar con Stars (tarjeta en Telegram)' : `⭐ ${estrellasDe(usd)} Stars`, 'premium', { id: pid, metodo: 'stars' }, principal && anuncio() ? '' : 'sec');
+  if (anuncio()) return bStars;
+  return btn(principal ? 'Pagar con Solana (cripto)' : `~US$${usd} en Solana`, 'premium', { id: pid, metodo: 'sol' }, principal ? '' : 'sec') + bStars + btn('$DUENDE −10%', 'premium', { id: pid, metodo: 'duende' }, 'sec');
 }
 function htmlArmasSkins(y, tab) {
   const tabla = tab === 'arma' ? ARMAS : SKINS;
@@ -671,7 +674,7 @@ function htmlPremium(y) {
   const cuentaTg = esTg();
   const cuenta = y.p2e && y.p2e.cuenta;
   // Una linea clara y el detalle plegado (en movil no tapa los paquetes).
-  let h = `<p class="vv-p" style="margin-bottom:4px">Compras opcionales: <b>El Duende</b> revisa cada pago y lo entrega en tu personaje.</p><details class="vv-nota" style="margin:0 0 10px"><summary style="cursor:pointer">Cómo funciona</summary>${cuentaTg ? 'En Telegram se paga con Stars.' : anuncio() ? 'Con dinero se compra con Stars, jugando desde Telegram.' : 'En la web se paga con Solana (SOL, una criptomoneda: no son soles) o con $DUENDE (10% de descuento).'}${anuncio() ? '' : ' Con dinero <b>no</b> se compran mTON: solo se ganan jugando.'} Los soles (S/) son solo referencia aproximada.</details>`;
+  let h = `<p class="vv-p" style="margin-bottom:4px">Compras opcionales: <b>El Duende</b> revisa cada pago y lo entrega en tu personaje.</p><details class="vv-nota" style="margin:0 0 10px"><summary style="cursor:pointer">Cómo funciona</summary>${cuentaTg ? 'En Telegram se paga con Stars.' : anuncio() ? 'Se paga con Stars de Telegram (las compras allí con tarjeta): el botón abre Telegram, o en PC escaneas un QR con el celular.' : 'En la web se paga con Stars de Telegram (allí las compras con tarjeta), con Solana (SOL, una criptomoneda: no son soles) o con $DUENDE (10% de descuento).'}${anuncio() ? '' : ' Con dinero <b>no</b> se compran mTON: solo se ganan jugando.'} Los soles (S/) son solo referencia aproximada.</details>`;
   // Lo elegido va primero; luego por grupos con subtitulo.
   // El Pack de bienvenida (SOLO 1 VEZ) sale solo mientras el servidor diga que aun puedes.
   const lista = ordenTienda(PAQUETES.filter(p => !p.unaVez || y.puedeBienvenida), est.foco);
@@ -802,13 +805,56 @@ function pintarExped() {
 
 // ═══════════════════ PAGOS (SOL / $DUENDE / Stars) ═══════════════════
 // Telegram abre su propia ventana de pago de Stars.
+// Desde la web (sin Mini App): ventana con el enlace (movil: un toque abre
+// Telegram, sin bloqueo de emergentes) y un QR en PC para pagar desde el celular.
 function abrirFactura(m) {
+  evCompra('fa');
   const tg = TG() || (window.Telegram && window.Telegram.WebApp);
-  if (!tg || !tg.openInvoice) { window.open(m.link, '_blank'); return; }
+  if (!tg || !tg.openInvoice || !tg.initData) { mostrarFacturaWeb(m); return; }
   tg.openInvoice(m.link, st => {
     if (st === 'paid') H.aviso('Pago recibido. ' + textoPagoRecibido(), 'ok');
     else if (st === 'failed') H.aviso('El pago no se completó.', 'err');
+    else if (st === 'cancelled') { H.mandar({ t: 'pedidoCancelar', codigo: m.codigo }); reintentarFactura(tg, m); }
   });
+}
+// Cerro la factura sin pagar: un toque para volver a abrirla (el enlace sigue
+// valiendo un rato). Sin ventana emergente de Telegram (versiones viejas), solo el aviso.
+function reintentarFactura(tg, m) {
+  try {
+    if (tg.showPopup && (!tg.isVersionAtLeast || tg.isVersionAtLeast('6.2'))) {
+      tg.showPopup({ title: 'Pago sin terminar', message: 'Cerraste el pago antes de terminar. Tu pedido sigue abierto unos minutos.', buttons: [{ id: 'si', type: 'default', text: 'Reintentar' }, { type: 'cancel' }] }, id => { if (id === 'si') abrirFactura(m); });
+      return;
+    }
+  } catch (e) {}
+  H.aviso('Cerraste el pago sin terminar. Puedes volver a intentarlo desde la tienda.');
+}
+// Embudo de compra (/ventas del dueño): vio la tienda premium (tv) o abrio una
+// factura (fa). Una vez por sesion; el servidor ademas lo cuenta una vez al dia.
+function evCompra(k) {
+  const ya = evCompra.ya || (evCompra.ya = new Set());
+  if (ya.has(k) || !H || !H.mandar) return;
+  ya.add(k); H.mandar({ t: 'ev', k });
+}
+function mostrarFacturaWeb(m) {
+  if (!/^https:\/\/t\.me\//.test(String(m.link || ''))) { H.aviso('No se pudo abrir el pago con Stars.', 'err'); return; }
+  const id = IDS.pago;
+  pagoActual = null;
+  parte(id, 't').textContent = 'PAGAR CON STARS';
+  parte(id, 'sub').innerHTML = `<span>Pedido <b>#${esc(m.codigo)}</b></span>`;
+  parte(id, 'cuerpo').innerHTML =
+    `<p class="vv-p">Se paga dentro de Telegram con Stars (puedes comprarlas con tarjeta allí mismo).</p>` +
+    `<a class="btn" href="${esc(m.link)}" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;padding:12px;margin-bottom:10px">⭐ Abrir Telegram y pagar</a>` +
+    (TACTIL ? '' : `<p class="vv-p">O escanea con la cámara de tu celular:</p><div class="vv-qr" data-qr></div>`) +
+    `<p class="vv-p" style="margin-top:10px">El pedido vence a los 30 minutos de hacerlo. ${esc(textoPagoRecibido())} Si cierras esta ventana, vuelve a pulsar el mismo paquete y te sale el mismo pedido.</p>`;
+  const c = parte(id, 'cuerpo');
+  abrirV(id);
+  if (!TACTIL) cargarScript('https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js', 'sha384-mZT2gIty7ZDdOGkxfP6joZcYdMW1Jvj9dRlfpTmaJAKKXTqzygtB22k7FLe+KZC1').then(() => {
+    const q0 = c.querySelector('[data-qr]');
+    if (!q0 || !window.qrcode) return;
+    const q = window.qrcode(0, 'M'); q.addData(m.link); q.make();
+    q0.innerHTML = q.createImgTag(4, 8);
+    const img = q0.querySelector('img'); if (img) img.alt = 'QR del pago con Stars';
+  }).catch(() => { const q0 = c.querySelector('[data-qr]'); if (q0) q0.textContent = ''; });
 }
 function cargarScript(src, sri) {
   return new Promise((ok, mal) => { const sc = document.createElement('script'); sc.src = src; if (sri) { sc.integrity = sri; sc.crossOrigin = 'anonymous'; } sc.onload = ok; sc.onerror = () => mal(new Error('No se pudo cargar ' + src)); document.head.appendChild(sc); });
@@ -996,8 +1042,9 @@ const ACC = {
   },
   // Mercader
   ttab: b => { est.tienda = b.dataset.id; est.foco = ''; H.sfx('boton', 0.2); pintarTienda(); parte(IDS.tienda, 'cuerpo').scrollTop = 0; },
-  comprar: b => { H.sfx('boton', 0.3); H.mandar({ t: 'comprar', k: b.dataset.k, id: b.dataset.id, n: +b.dataset.n || 1 }); },
-  premium: b => { H.sfx('boton', 0.3); H.mandar({ t: 'pedido', id: b.dataset.id, metodo: b.dataset.metodo, via: est.via }); H.aviso('Preparando tu pedido…', 'ok'); },
+  // Candados contra doble toque (en movil un toque doble compraba dos veces o creaba dos pedidos).
+  comprar: b => { if (Date.now() - (est.ultCompra || 0) < 600) return; est.ultCompra = Date.now(); H.sfx('boton', 0.3); H.mandar({ t: 'comprar', k: b.dataset.k, id: b.dataset.id, n: +b.dataset.n || 1 }); },
+  premium: b => { if (Date.now() - (est.ultPedido || 0) < 2500) return; est.ultPedido = Date.now(); H.sfx('boton', 0.3); H.mandar({ t: 'pedido', id: b.dataset.id, metodo: b.dataset.metodo, via: est.via }); H.aviso('Preparando tu pedido…', 'ok'); },
   retomar: b => {
     const y = H.yo(), x = ((y && y.pedidos) || []).find(p => p.codigo === b.dataset.id);
     if (x && x.raw) mostrarPedidoSol({ metodo: 'duende', codigo: x.codigo, raw: x.raw, mint: x.mint, dec: x.dec, wallet: x.wallet, usd: x.usd, nombre: x.nombre });

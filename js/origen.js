@@ -39,16 +39,33 @@
     var m = /[?&#]tgWebAppStartParam=([^&#]+)/.exec(location.search + location.hash);
     return m ? limpio(decodeURIComponent(m[1])) : '';
   }
+  // start_param / startapp de la Mini App (t.me/duendequest_bot/jugar?startapp=...):
+  //   ad_<campaña> → anuncio que llega por Telegram (s: tg_ad, c: campaña), sin invitacion
+  //   mmo_<cod> / m3d_<cod> → invitacion de un amigo (ref: cod)
+  //   <cod> de 6 → invitacion (enlaces viejos); 'premium' y lo demas no cuentan.
+  function deSp(sp) {
+    if (!sp || sp === 'premium') return null;
+    var m = /^ad_([a-z0-9_]{1,40})$/.exec(sp);
+    if (m) return { s: 'tg_ad', c: m[1], ref: '' };
+    m = /^(?:mmo_|m3d_)?([a-z0-9]{6})$/.exec(sp);
+    return m ? { s: '', c: '', ref: m[1] } : null;
+  }
   // Captura (solo si no hay uno vigente: el primer toque manda).
   function capturar() {
     var o = leer();
-    if (o) return o;
     var q = {};
     try { new URLSearchParams(location.search).forEach(function (v, k) { q[k.toLowerCase()] = v; }); } catch (e) {}
-    var sp = startParam();
-    // start_param 'premium' es un atajo a la tienda, no una invitacion.
-    var ref = limpio((/^[a-z0-9]{6}$/i.exec(q.ref || '') || [])[0] || (sp && sp !== 'premium' ? sp : ''));
-    o = { s: limpio(q.utm_source), c: limpio(q.utm_campaign), a: limpio(q.utm_content || q.utm_ad), fbc: limpio(q.fbclid), ref: ref, t: Date.now(), tg: enTg ? 1 : 0 };
+    // fr/ft: el fbclid TAL CUAL (Meta lo necesita con mayusculas) y cuando llego.
+    // Solo sale del navegador si acepta la medicion (dqOrigen().fbc y /js/medir.js).
+    var fr = String(q.fbclid || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 300);
+    if (o) {
+      if (fr.length >= 8 && !o.fr) { o.fr = fr; o.ft = Date.now(); try { localStorage.setItem(CLAVE, JSON.stringify(o)); } catch (e) {} }
+      return o;
+    }
+    var sp = deSp(startParam()) || { s: '', c: '', ref: '' };
+    var ref = limpio((/^[a-z0-9]{6}$/i.exec(q.ref || '') || [])[0] || sp.ref);
+    o = { s: limpio(q.utm_source) || sp.s, c: limpio(q.utm_campaign) || sp.c, a: limpio(q.utm_content || q.utm_ad), fbc: limpio(q.fbclid), ref: ref, t: Date.now(), tg: enTg ? 1 : 0 };
+    if (fr.length >= 8) { o.fr = fr; o.ft = o.t; }
     o.o = grupo(o);
     try { localStorage.setItem(CLAVE, JSON.stringify(o)); } catch (e) {}
     return o;
@@ -59,10 +76,39 @@
   window.dqOrigen = function () {
     // En Telegram el start_param llega cuando carga su SDK: si aun no habia origen
     // propio (organico o solo "dentro de Telegram"), se completa ahora sin pisar un utm anterior.
-    try { if (origen && !origen.ref && (origen.o === 'org' || origen.o === 'tg')) { var sp = startParam(); if (sp && sp !== 'premium') { origen.ref = sp; origen.o = 'ref'; localStorage.setItem(CLAVE, JSON.stringify(origen)); } } } catch (e) {}
+    try {
+      if (origen && !origen.ref && (origen.o === 'org' || origen.o === 'tg') && !origen.s) {
+        var sp = deSp(startParam());
+        if (sp) {
+          if (sp.ref) { origen.ref = sp.ref; origen.o = 'ref'; }
+          else { origen.s = sp.s; origen.c = sp.c; origen.o = 'tg'; }
+          localStorage.setItem(CLAVE, JSON.stringify(origen));
+        }
+      }
+    } catch (e) {}
     var g = origen && GRUPOS[origen.o] ? origen.o : 'org';
-    return { src: g, ref: (origen && /^[a-z0-9]{6}$/.test(origen.ref || '')) ? origen.ref : '' };
+    // camp: utm_campaign (ya saneada) para el ROAS por campaña de /mmostats; el servidor la vuelve a sanear.
+    // med/fbc: medicion de Meta (/js/medir.js). med 1 = acepto, 0 = la rechazo o retiro
+    // (el servidor borra su fbc); fbc (id del clic del anuncio) SOLO con med 1 y fuera de Telegram.
+    var med = window.dqMedirOk ? window.dqMedirOk() : undefined;
+    var fbc = med === 1 && !enTg && origen && origen.fr ? 'fb.1.' + (origen.ft || origen.t || Date.now()) + '.' + origen.fr : undefined;
+    return { src: g, ref: (origen && /^[a-z0-9]{6}$/.test(origen.ref || '')) ? origen.ref : '', camp: (origen && origen.c) || '', med: med, fbc: fbc };
   };
+  // Consentimiento de la medicion de Meta: 1 acepto, 0 no, undefined aun no decide.
+  window.dqMedirOk = function () {
+    try { var v = localStorage.getItem('dq_medir'); return v === '1' ? 1 : v === '0' ? 0 : undefined; } catch (e) { return undefined; }
+  };
+  // /js/medir.js (aviso de consentimiento y pixel) solo para quien vino de un
+  // anuncio de Meta o ya acepto, nunca dentro de Telegram ni si lo rechazo.
+  // Sin META_PIXEL_ID en el servidor, medir.js no muestra nada ni carga nada de Meta.
+  try {
+    var okM = window.dqMedirOk();
+    if (!enTg && okM !== 0 && (okM === 1 || (origen && (origen.o === 'meta' || origen.fr)))) {
+      var sm = document.createElement('script');
+      sm.src = '/js/medir.js?v=328'; sm.async = true;
+      (document.head || document.documentElement).appendChild(sm);
+    }
+  } catch (e) {}
 
   // ── Modo anuncio ──
   // Quien llega de un anuncio (fbclid / utm_* en esta visita, la marca de la
@@ -74,6 +120,8 @@
     anuncio = /[?&](fbclid|utm_[a-z]+)=/i.test(location.search);
     try { if (anuncio) sessionStorage.setItem('dq_anuncio', '1'); else anuncio = sessionStorage.getItem('dq_anuncio') === '1'; } catch (e) {}
     if (!anuncio && origen && origen.o === 'meta') anuncio = true;
+    // Anuncio que llego por el bot (/start ad_ o startapp=ad_): tambien sin cripto.
+    if (!anuncio && origen && origen.s === 'tg_ad') anuncio = true;
     if (anuncio) document.documentElement.classList.add('anuncio');
   } catch (e) {}
   window.dqAnuncio = function () { return anuncio; };

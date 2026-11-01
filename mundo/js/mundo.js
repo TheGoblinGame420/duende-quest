@@ -14,25 +14,25 @@
 import * as THREE from 'three';
 import { esNocheDuendes, TEMPORADAS, temporadaDe, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo } from '/mmo/js/data.js?v=327';
-import { iniciarVentanas } from './ventanas.js?v=327';
-import { EXPEDICION } from '/mmo/js/data.js?v=327';   // fila 🧭 de las misiones
-import { iniciarRegalo } from '/mmo/js/regalo.js?v=327';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=327';
-import { crearMusica } from './musica.js?v=327';
-import { construirCueva } from './cueva.js?v=327';
-import { TAPA, transparentar } from './tapa.js?v=327';
-import { construirAbismo } from './abismo.js?v=327';
-import { crearParticulas } from './particulas.js?v=327';
-import { cargarKenney, piezasCasa } from './kenney.js?v=327';
-import { CORRIENTES, sueloRef } from '/mmo/js/abismo3d.js?v=327';
-import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo } from '/mmo/js/data.js?v=328';
+import { iniciarVentanas } from './ventanas.js?v=328';
+import { EXPEDICION } from '/mmo/js/data.js?v=328';   // fila 🧭 de las misiones
+import { iniciarRegalo } from '/mmo/js/regalo.js?v=328';
+import { iniciarAvisoTg } from '/mmo/js/avisotg.js?v=328';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=328';
+import { crearMusica } from './musica.js?v=328';
+import { construirCueva } from './cueva.js?v=328';
+import { TAPA, transparentar } from './tapa.js?v=328';
+import { construirAbismo } from './abismo.js?v=328';
+import { crearParticulas } from './particulas.js?v=328';
+import { cargarKenney, piezasCasa } from './kenney.js?v=328';
+import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=328';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=327';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d } from '/mmo/js/mundo3d.js?v=327';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=327';
-import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=327';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=327';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=328';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d } from '/mmo/js/mundo3d.js?v=328';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=328';
+import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=328';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=328';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -49,7 +49,9 @@ ajustarCompacto(); addEventListener('resize', ajustarCompacto);
 const K = (pc, tactil) => MOVIL ? tactil : pc;
 // Solo dentro de Telegram de verdad (app: TelegramWebviewProxy; web y escritorio: iframe).
 // Fuera, el SDK llena initData con un #tgWebAppData ajeno pegado en un enlace.
-const enTg = !!(window.TelegramWebviewProxy || window.parent !== window || (window.external && 'notify' in window.external));
+// El SDK se baja solo dentro de Telegram (index.html, window.__tgListo): se espera aqui, antes de leerlo.
+if (window.__tgListo) await window.__tgListo;
+const enTg =!!(window.TelegramWebviewProxy || window.parent !== window || (window.external && 'notify' in window.external));
 const TG = enTg && window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? window.Telegram.WebApp : null;
 // Modo anuncio (js/origen.js): quien llega de Meta no ve avisos de mTON ni nada cripto (solo se ocultan).
 const modoAnuncio = () => { try { return !!(window.dqAnuncio && window.dqAnuncio()); } catch (e) { return false; } };
@@ -1254,9 +1256,9 @@ async function autenticacion() {
   try { localStorage.setItem('dq_ultimo_juego', '/mundo/'); } catch (e) {}   // /inicio/ lo ofrece como CONTINUAR
   let previo = null; try { previo = localStorage.getItem('dq_mmo_tok'); } catch (e) {}
   const inv0 = /^[a-f0-9]{32}$/.test(previo || '') ? previo : undefined;
-  if (TG && !forzarInvitado) { avisoTgViejo(); return { auth: { k: 'tg', d: TG.initData }, inv: inv0, heredar: heredarResp }; }
+  if (TG && !forzarInvitado) { avisoTgViejo(); return { auth: { k: 'tg', d: TG.initData }, inv: inv0, heredar: heredarResp, vcod: vcodPend() }; }
   const tok = forzarInvitado ? null : await tokenWeb();
-  if (tok) return { auth: { k: 'web', tok }, inv: inv0, heredar: heredarResp };
+  if (tok) return { auth: { k: 'web', tok }, inv: inv0, heredar: heredarResp, vcod: vcodPend() };
   let nombre = ''; try { nombre = localStorage.getItem('dq_mmo_nombre') || ''; } catch (e) {}
   soyInvitado = true;
   const tokI = tokInvitado();
@@ -1265,6 +1267,12 @@ async function autenticacion() {
   return { auth: { k: 'inv', tok: tokI }, nombre, pow: powNonce == null ? undefined : powNonce };
 }
 let ultimoMsgT = performance.now(), conectando = false;
+// Conexion en paralelo con la carga (inicio): lo que manda el servidor antes de que
+// el mundo este dibujado se guarda aqui y se procesa, en orden, al terminar el arte.
+// 'err' y 'heredar' no esperan: fijan retrasoRec/pow/forzarInvitado/pausaHeredar antes
+// del onclose (si no, se reintentaba sin pow ni plazo y se gastaban los 12 intentos).
+let arteListo = false;
+const colaArte = [];
 // Huella del dispositivo: con ella el servidor banea o silencia a un invitado sin
 // tocar al resto de su IP (en Peru una IP de movil la comparten cientos).
 function huellaDev() {
@@ -1323,8 +1331,8 @@ async function conectar() {
   finally { conectando = false; }
   if (ws && ws.readyState <= 1) return;
   const este = ws = new WebSocket(urlWs());
-  este.onopen = () => { if (ws !== este) return; conectado = true; ultimoMsgT = performance.now(); mandar({ t: 'hola', ...hola, modo: '3d', ref: ref3, iab: esIAB ? 1 : undefined, src: window.dqOrigen ? window.dqOrigen().src : 'org', dev: huellaDev() }); };
-  este.onmessage = ev => { if (ws !== este) return; ultimoMsgT = performance.now(); rxN++; let m; try { m = JSON.parse(ev.data); } catch (e) { return; } recibir(m); };
+  este.onopen = () => { if (ws !== este) return; conectado = true; ultimoMsgT = performance.now(); mandar({ t: 'hola', ...hola, modo: '3d', ref: ref3, iab: esIAB ? 1 : undefined, src: window.dqOrigen ? window.dqOrigen().src : 'org', camp: window.dqOrigen ? window.dqOrigen().camp || undefined : undefined, med: window.dqOrigen ? window.dqOrigen().med : undefined, fbc: window.dqOrigen ? window.dqOrigen().fbc : undefined, dev: huellaDev() }); };
+  este.onmessage = ev => { if (ws !== este) return; ultimoMsgT = performance.now(); rxN++; let m; try { m = JSON.parse(ev.data); } catch (e) { return; } if (!arteListo && m.t !== 'err' && m.t !== 'heredar') { colaArte.push(m); return; } recibir(m); };
   este.onclose = ev => {
     if (ws !== este) return;   // un socket viejo que el vigilante ya cambio por otro: no toca nada
     conectado = false;
@@ -1465,6 +1473,7 @@ function recibir(m) {
   switch (m.t) {
     case 'bienvenido':
       paso('bienvenido');
+      try { sessionStorage.removeItem('dq_vcod'); } catch (e) {}   // llevar mi duende: el codigo ya se uso (o no valia)
       miId = m.id; yo = m.yo; reintentos = 0; if (ws) ws._listo = true;
       if (llenoHasta) { llenoHasta = 0; cerrar('v-error'); }
       llenoN = 0;
@@ -1621,10 +1630,12 @@ function recibir(m) {
       // "Fuera de alcance" se avisa como mucho una vez cada 3 s (el auto-ataque reintenta solo).
       if (m.m === 'Fuera de alcance.') { if (performance.now() - avisoAlcT < 3000) break; avisoAlcT = performance.now(); }
       aviso(m.m, 'err'); break;
-    case 'amigos': if (m.ref) { refAmigo = m.ref; nivelAmigo = m.nivel || nivelAmigo; if (compartirPend) { compartirPend = false; if (TG) compartir(); else { ofrecerPresumir(presumirTxt, undefined, true); aviso('Tu enlace está listo: toca el botón para enviarlo por WhatsApp.', 'ok'); } } } break;   // fuera de Telegram el navegador bloquea abrir WhatsApp sin un toque
+    case 'amigos': if (m.invitados) { inv3 = m; pintarAmigos3(); } if (m.ref) { refAmigo = m.ref; nivelAmigo = m.nivel || nivelAmigo; if (compartirPend) { compartirPend = false; if (TG) compartir(); else { ofrecerPresumir(presumirTxt, undefined, true); aviso('Tu enlace está listo: toca el botón para enviarlo por WhatsApp.', 'ok'); } } } break;   // fuera de Telegram el navegador bloquea abrir WhatsApp sin un toque
     case 'login': if (yo && yo.clase) mostrarDiario(m); else loginPend3 = m; break;
     case 'buzon': regalo3.alBuzon(m); break;
     case 'regalo': regalo3.alRegalo(m); break;
+    case 'avisoTg': avisoTg3.alOferta(m); break;   // «Avísame por Telegram» (/mmo/js/avisotg.js)
+    case 'avisoTgOk': avisoTg3.alOk(m); break;
     case 'tareas': if (yo) { yo.tareas = m; pintarMisiones(); } break;
     case 'mae': if (yo) { yo.mae = m.n; aviso(`⭐ ¡Maestría ${m.n}!`, 'ok'); numero(P.x, P.y + 3, P.z, 'MAESTRÍA ' + m.n, '#ffd84a', true); subiNivel(0); pintarHud(); } break;
     case 'herm': hermInfo = m.h; if (yo) yo.herm = m.h ? m.h.id : null; pintarHerm(); break;
@@ -1690,7 +1701,7 @@ function recibir(m) {
       if (String(m.id).startsWith('h_')) cdHab[m.id.slice(2)] = { fin: performance.now() + m.hasta, ms: m.hasta };
       else cdPoder[m.id] = performance.now() + m.hasta;
       break;
-    case 'pedidoSol': case 'factura': V.alPedido(m); break;
+    case 'pedidoSol': case 'factura': V.alPedido(m); if (window.dqMedir) window.dqMedir('InitiateCheckout', {}, m.codigo); break;   // pixel de Meta con permiso (js/medir.js); mismo eventID que el servidor
     case 'pw': if (m.p === miId) sfx(m.i === 2 ? 'explosion' : 'boton', 0.4); break;
     case 'cast':
       if (m.p === miId) { lanzando = { id: m.id, ini: performance.now(), fin: performance.now() + m.ms }; $('lanzar').style.display = 'block'; $('lanzar-t').textContent = m.id === 'montar' ? 'Invocar montura' : m.id === 'recolectar' ? 'Recolectando…' : m.id === 'pescar' ? 'Pescando… (' + K('E', '¡TIRAR!') + ' para tirar cuando pique)' : (habPorId(m.id) || {}).nombre || '';
@@ -1712,6 +1723,10 @@ function recibir(m) {
     case 'res': if (m.p === miId) { aviso((m.de || 'Alguien') + ' te resucitó.', 'ok'); cerrar('v-muerte'); } break;
     case 'ranking': rankDatos = m; if (npcAbierto === 'ranking') pintarRanking(m.r); pintarRankPanel(); break;
     case 'heredar': preguntarHeredar(m); break;
+    case 'vincCod': if (m.inv) pintarLlevar(m); break;
+    case 'invTraer': try { sessionStorage.setItem('dq_vcod', m.cod); } catch (e) {} aviso('📲 Trayendo a ' + (m.nombre || 'tu duende') + '…', 'ok', 1); setTimeout(() => location.reload(), 900); break;
+    case 'vincConfirmar': if (confirm(`Esta cuenta ya tiene a ${m.nombre} (Nv ${m.nivel}). Si sigues, jugarás con ${m.destino} (Nv ${m.nivelDestino}) y ${m.nombre} quedará archivado (el equipo puede recuperarlo). ¿Seguir?`)) mandar({ t: 'vincUsar', cod: m.cod, forzar: true }); break;
+    case 'vincOk': aviso('🔗 ¡Listo! Entrando con ' + m.nombre + '…', 'ok', 1); setTimeout(() => location.reload(), 1500); break;
     case 'err':
       // En Telegram no se cae en silencio a un invitado nuevo de nivel 1 (la sesion de mas de 24 h caduca): se pide reabrir.
       if (m.auth && m.auth !== 'inv' && TG) { error('Tu sesión de Telegram caducó. Cierra el juego y vuelve a abrirlo desde el bot: entrarás con tu duende.', false, { tg: true }); return; }
@@ -2291,7 +2306,7 @@ function quitarCorcho() { if (corcho) { escena.remove(corcho); liberar(corcho); 
 
 // ── GRUPO ──
 let invitT = 0, invitTipo = 'grupo', dueloCon = 0;
-let contactos3 = [], quien3 = null;   // ventana 👥: tus amigos y quien esta en linea (null: aun no llego)
+let contactos3 = [], quien3 = null, inv3 = null;   // inv3: «Mis invitados» (amigos.js infoAmigos). Ventana 👥: tus amigos y quien esta en linea (null: aun no llego)
 const enGrupo = id => !!(grupo3 && grupo3.m.some(x => x.on && x.id === id));
 let salirPend = 0;   // "Salir del grupo" pide dos toques: el pulgar que iba al joystick lo pulsaba sin querer
 function pintarGrupo() {
@@ -2584,7 +2599,7 @@ document.addEventListener('mouseout', e => { if (!e.relatedTarget && e.clientY <
 $('b-ayuda').onclick = () => abrir('v-ayuda');
 $('sel-calidad').value = CAL;
 $('sel-calidad').onchange = e => { try { localStorage.setItem('dq3_calidad', e.target.value); } catch (er) {} location.reload(); };
-$('b-amigos').onclick = () => { if ($('v-amigos').classList.contains('on')) return cerrar('v-amigos'); abrir('v-amigos'); mandar({ t: 'contactos' }); mandar({ t: 'quien' }); $('amigos-c')._h = ''; pintarAmigos3(); };
+$('b-amigos').onclick = () => { if ($('v-amigos').classList.contains('on')) return cerrar('v-amigos'); abrir('v-amigos'); mandar({ t: 'contactos' }); mandar({ t: 'quien' }); mandar({ t: 'amigos' }); $('amigos-c')._h = ''; pintarAmigos3(); };
 $('b-chat').onclick = () => { const i = $('chat-in'); i.style.display = 'block'; i.focus(); };
 $('b-reconectar').onclick = () => location.reload();   // error() lo cambia segun el caso
 
@@ -2722,6 +2737,38 @@ function verLeyenda() {
   abrir('v-diario');
 }
 $('b-leyenda').onclick = () => { cerrar('v-ayuda'); verLeyenda(); };
+// ── LLEVAR MI DUENDE (functions/mmo/vincular.js) ──
+// Invitado: pide un codigo de 6 letras (10 min) y lo escribe en Telegram o en su
+// cuenta de correo (en cualquier navegador). Cuenta: escribe el codigo y vuelve a
+// entrar con hola.vcod; el servidor hereda al invitado (sin tocar el token secreto).
+function vcodPend() { try { const c = sessionStorage.getItem('dq_vcod') || ''; return /^[A-Z0-9]{6}$/.test(c) ? c : undefined; } catch (e) { return undefined; } }
+function abrirLlevar() {
+  cerrar('v-ayuda');
+  if (!yo) return;
+  $('v-diario').querySelector('h2').textContent = 'LLEVAR MI DUENDE';
+  if (soyInvitado) {
+    $('diario-c').innerHTML = '<p class="vv-p">Pide un código y escríbelo en Duende Quest dentro de <b>Telegram</b> o en tu <b>cuenta de correo</b> (en cualquier navegador o celular): ❓ Ayuda → «📲 Llevar mi duende» (en CLASSIC: 👤 → «Vincular»). Tu duende pasa entero a esa cuenta.</p><p class="vv-p" id="llevar-cod" style="text-align:center;font:700 28px monospace;letter-spacing:5px;color:#ffd84a;margin:8px 0">…</p><p class="vv-p" style="font-size:12px;color:var(--txt3)">La cuenta debe ser nueva o casi (hasta Nv 5, sin compras). Usa el código antes de 10 minutos y no se lo pases a nadie.</p>';
+    mandar({ t: 'vincCodigo' });
+  } else {
+    $('diario-c').innerHTML = '<p class="vv-p">¿Jugaste como invitado en otro navegador o celular? Allí toca ❓ Ayuda → «📲 Llevar mi duende» (en CLASSIC: 👤 → «Pasar mi duende») y escribe aquí el código de 6 letras.</p><div style="display:flex;gap:6px"><input id="llevar-in" maxlength="8" autocomplete="off" placeholder="Código" style="flex:1;min-width:0;text-transform:uppercase;font:700 18px monospace;letter-spacing:3px;padding:10px;border-radius:10px;border:1px solid var(--borde);background:rgba(0,0,0,.35);color:var(--txt)"><button class="btn" id="llevar-ok">Traer</button></div><p class="vv-p" style="font-size:12px;color:var(--txt3);margin-top:8px">Solo en una cuenta nueva o casi (hasta Nv 5, sin compras): su duende actual se archiva y juegas con el que traes.</p>';
+    const inp = $('llevar-in');
+    inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') $('llevar-ok').click(); });
+    $('llevar-ok').onclick = () => { const cod = inp.value.trim(); if (cod) mandar({ t: 'vincUsar', cod }); };
+  }
+  abrir('v-diario');
+}
+function pintarLlevar(m) {
+  const p = $('llevar-cod');
+  if (p) p.textContent = m.cod;
+  else aviso('📲 Tu código para llevar tu duende: ' + m.cod + ' (10 min)', 'ok', 1);
+}
+{
+  const b = document.createElement('button');
+  b.className = 'btn sec'; b.style.width = '100%'; b.textContent = '📲 Llevar mi duende (Telegram u otro celular)';
+  b.onclick = abrirLlevar;
+  const pb = document.createElement('p'); pb.style.marginTop = '10px'; pb.appendChild(b);
+  $('b-leyenda').parentNode.after(pb);
+}
 // En cada sesion (no cada reconexion): la historia es lo primero que se ve.
 function leyendaPrimeraVez() {
   try { if (sessionStorage.getItem('dq_leyenda')) return; } catch (e) { return; }
@@ -2745,6 +2792,7 @@ function avisoInvitado() {
   $('v-diario').querySelector('h2').textContent = 'GUARDA TU DUENDE';
   abrir('v-diario');
   $('copiar-rescate').onclick = () => { try { navigator.clipboard.writeText(codigoRescate()).then(() => aviso('Código copiado. Guárdalo en un lugar seguro.', 'ok')); } catch (e) {} };
+  { const b = document.createElement('button'); b.className = 'btn sec'; b.style.cssText = 'width:100%;margin-top:10px'; b.textContent = '📲 Pasar mi duende a Telegram u otro celular'; b.onclick = abrirLlevar; $('diario-c').appendChild(b); }
   // En el navegador de Facebook/Instagram, ademas, el boton para llevarlo a Chrome/Safari.
   if (esIAB) { const b = document.createElement('button'); b.className = 'btn'; b.style.cssText = 'width:100%;margin-top:10px'; b.textContent = ANDROID_IAB ? 'Abrir en Chrome con mi duende' : 'Pasar a Safari con mi duende'; b.onclick = () => irANavegador(); $('diario-c').appendChild(b); }
 }
@@ -2931,7 +2979,9 @@ const regalo3 = iniciarRegalo({
   fanfarria, vibrar: vib,
   filtro: t => modoAnuncio() && /mTON|\bSOL\b|\$DUENDE|[Ww]allet/.test(t || ''),
 });
-const oroAmigo = () => premioAmigo(nivelAmigo).oro.toLocaleString('es', { useGrouping: 'always' });
+// «Avísame por Telegram» para jugadores web e invitados (/mmo/js/avisotg.js): despues del cofre y del buzon.
+const avisoTg3 = iniciarAvisoTg({ mandar, ocupado: () => hayVentana() || $('v-diario').classList.contains('on') || !!loginPend3 || !!document.querySelector('#dq-regalo.on') || !yo, aviso: (t, k) => aviso(t, k, 1), tg: TG });
+const oroAmigo =() => premioAmigo(nivelAmigo).oro.toLocaleString('es', { useGrouping: 'always' });
 // WhatsApp primero fuera de Telegram (es lo que mas se usa en Peru). El jugador decide
 // enviar: solo se abre WhatsApp con el texto listo. El enlace va a /jugar/ (elige 2D o 3D).
 const TXT_WA = 'Oe, juega conmigo Duende Quest, gratis en el celular. Entra con mi link y cuando llegues a nivel 10 los dos ganamos oro 👇';
@@ -3079,6 +3129,15 @@ function pintarAmigos3() {
   s += contactos3.length ? '<div class="herm-lista">' + contactos3.map(x => fila(x, true)).join('') + '</div>' : '<p class="vv-p" style="font-size:12px">Aún no tienes amigos: elige a un jugador y pulsa «⭐ Amigo» en su marco. Verás cuándo se conecta.</p>';
   s += tit(`EN LÍNEA${quien3 ? ` (${resto.length})` : ''}`);
   s += !quien3 ? '<p class="vv-p">Cargando…</p>' : resto.length ? '<div class="herm-lista">' + resto.map(x => fila({ ...x, on: 1 }, false)).join('') + '</div>' : '<p class="vv-p" style="font-size:12px">No hay nadie más conectado ahora mismo.</p>';
+  // «Mis invitados»: quien te invito y los que llegaron con tu enlace, con barra hasta Nv 10.
+  if (inv3) {
+    const meta = inv3.nivel || 10, barra = lv => `<div style="height:4px;background:rgba(255,255,255,.12);border-radius:2px;margin:2px 0 4px;overflow:hidden"><div style="height:100%;width:${Math.min(100, Math.round((lv || 0) / meta * 100))}%;background:#4ade80"></div></div>`;
+    if (inv3.por) s += tit('TE INVITÓ') + `<p class="vv-p" style="font-size:12px">🤝 <b>${esc(inv3.por.n)}</b>: a Nv ${meta} ganan oro los dos. En grupo con tu amigo, +${inv3.bono || 25}% de XP${inv3.por.bono ? ' (activo)' : ''}. Tú: Nv ${inv3.lvYo || 1}/${meta}.</p>` + barra(inv3.lvYo);
+    const L = inv3.invitados || [];
+    s += tit(`MIS INVITADOS (${L.length})`);
+    s += L.length ? '<div class="herm-lista">' + L.map(x => fila({ ...x, lv: x.lv, on: x.on }, false).replace('</small>', `${x.on ? '' : ' · Nv ' + (x.lv || '?')}${x.ok ? ' · ✅ premio' : ''}</small>`) + (x.ok ? '' : barra(x.lv))).join('') + '</div>'
+      : '<p class="vv-p" style="font-size:12px">Aún nadie entró con tu enlace. Invita con 📣: quien llegue recibe un kit de bienvenida y a Nv 10 ganan los dos.</p>';
+  }
   s += '<button class="btn sec" id="am-act" style="width:100%;margin-top:8px">↻ Actualizar</button>';
   if (c._h === s) return;   // 'grupo' llega cada 500 ms: sin cambios no se rehace (se perdian clics)
   c._h = s;
@@ -3086,7 +3145,7 @@ function pintarAmigos3() {
   c.querySelectorAll('[data-ai]').forEach(b => b.onclick = () => { mandar({ t: 'invitar', p: +b.dataset.ai }); b.disabled = true; });
   c.querySelectorAll('[data-as]').forEach(b => b.onclick = () => { cerrar('v-amigos'); const i = $('chat-in'); i.style.display = 'block'; i.value = '/s ' + b.dataset.as + ' '; i.focus(); });
   c.querySelectorAll('[data-aq]').forEach(b => b.onclick = () => mandar({ t: 'contactoQuitar', uid: b.dataset.aq }));
-  $('am-act').onclick = () => { mandar({ t: 'contactos' }); mandar({ t: 'quien' }); };
+  $('am-act').onclick = () => { mandar({ t: 'contactos' }); mandar({ t: 'quien' }); mandar({ t: 'amigos' }); };
 }
 // ── RANKING (general, semana, duelos, hermandades, torre) ──
 let rankDatos = null, rankTab = 'sem';
@@ -3796,8 +3855,11 @@ function etiquetas(t) {
 // navegador bloquea el audio.
 const tema = new Audio(); tema.loop = true; tema.volume = 0.3; tema.preload = 'none';
 let temaOn = false;
+// El MP3 (1 MB) solo con red 4G y sin ahorro de datos; si no, suena la musica generada (gratis).
+// Sin navigator.connection (iPhone, Firefox) se baja como siempre.
+function redTema() { try { const c = navigator.connection; return !c || (!c.saveData && (!c.effectiveType || c.effectiveType === '4g')); } catch (e) { return true; } }
 function temaPueblo(z) {
-  const quiere = sonido && !document.hidden && !fuera3 && z === 'pueblo' && !enCueva(P.x) && !enAbismo(P.x);
+  const quiere = sonido && !document.hidden && !fuera3 && z === 'pueblo' && !enCueva(P.x) && !enAbismo(P.x) && (temaOn || !!tema.src || redTema());
   if (quiere === temaOn) return;
   temaOn = quiere;
   if (quiere) {
@@ -4322,6 +4384,9 @@ async function inicio() {
   abismo.dueno(asedio && asedio.dueno);
   crearCorrientes();
   progreso(0.7, 'Preparando los gráficos…');
+  // El socket y el 'hola' salen ya, en paralelo con shaders, mapa y NPC (antes, al final).
+  // El rescate (#r=) pregunta antes de entrar: ese caso conecta abajo, como siempre.
+  if (ENTRADA_DIRECTA && (TG || !rescateHash)) conectar();
   try { if (render.compileAsync) await Promise.race([render.compileAsync(escena, camara), new Promise(r => setTimeout(r, 4000))]); } catch (e) {}
   progreso(0.75, 'Dibujando el mapa…');
   await new Promise(r => setTimeout(r, 20));
@@ -4334,16 +4399,18 @@ async function inicio() {
     render.compile(escena, camara);
     cal.forEach(m => escena.remove(m));
   } catch (e) { console.warn(e); }
-  for (const n of NPCS3D) {
-    const fig = figuraModelo(() => crearNpc(n.hoja)) || await figuraHoja(n.hoja, 62);
-    npcs.push({ ...n, y: alturaEn(n.x, n.z), fig, lbl: etiqueta('') });
-  }
+  // Los NPC en paralelo (sin modelos 3D, sus hojas se bajaban una tras otra).
+  const figsNpc = await Promise.all(NPCS3D.map(n => figuraModelo(() => crearNpc(n.hoja)) || figuraHoja(n.hoja, 62)));
+  NPCS3D.forEach((n, i) => npcs.push({ ...n, y: alturaEn(n.x, n.z), fig: figsNpc[i], lbl: etiqueta('') }));
   try { crearAventureros(); } catch (e) { console.warn(e); }
   try { crearNocheDuendes(); } catch (e) { console.warn(e); }
   P.lbl = etiqueta('yo');
   progreso(1, 'Conectando…');
   paso('arte_ok');
   requestAnimationFrame(bucle);
+  // Lo que llego del servidor durante la carga, en orden (un mensaje roto no corta los demas).
+  arteListo = true;
+  for (const m of colaArte.splice(0)) { try { recibir(m); } catch (e) { console.error(e); } }
   // Todos entran directo: Telegram, cuenta web, invitado que vuelve y tambien el
   // invitado nuevo (el servidor le pone 'DuendeNNNN'; el nombre se cambia luego).
   // Antes el nuevo veia una pantalla de nombre con un texto de CLASSIC: un toque

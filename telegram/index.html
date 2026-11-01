@@ -33,7 +33,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="/js/origen.js?v=327"></script>
+<script src="/js/origen.js?v=328"></script>
 <script>
 // ── ARRANQUE TEMPRANO DE TELEGRAM ──
 // Va aquí, antes de cargar Supabase/TON Connect/el motor, para que Telegram
@@ -813,7 +813,22 @@ html{font-size:24px;}
 <script src="../js/missions.js"></script>
 <script src="../js/streak.js"></script>
 <script src="../js/achievements.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tonconnect/ui@2.4.4/dist/tonconnect-ui.min.js" integrity="sha384-sSX7t/8RIb6F0lgKBLCCytcRdsJv/+lBzIvFAnTlX7HymE9i9wCFIFOQ4iH7dJWO" crossorigin="anonymous"></script>
+<script>
+// TON Connect (~400 KB) bajo demanda: al abrir la wallet, o al cargar si ya hay una sesion guardada.
+// tonGuardada(): el SDK guarda su sesion en localStorage con claves 'ton-connect...'.
+var _tonP=null;
+function cargarTon(){
+  if(typeof TON_CONNECT_UI!=='undefined') return Promise.resolve();
+  return _tonP||(_tonP=new Promise(function(ok){
+    var s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/@tonconnect/ui@2.4.4/dist/tonconnect-ui.min.js';
+    s.integrity='sha384-sSX7t/8RIb6F0lgKBLCCytcRdsJv/+lBzIvFAnTlX7HymE9i9wCFIFOQ4iH7dJWO'; s.crossOrigin='anonymous';
+    s.onload=function(){ok();}; s.onerror=function(){_tonP=null;ok();};
+    document.head.appendChild(s);
+  }));
+}
+function tonGuardada(){ try{ for(var i=0;i<localStorage.length;i++){ if(/^ton-connect/.test(localStorage.key(i)||'')) return true; } }catch(e){} return false; }
+</script>
 <script src="../js/config.js"></script>
 <script>
 'use strict';
@@ -1013,6 +1028,7 @@ let tonPriceUsd=0;
 
 function initTonConnect(){
   try{
+    if(tonUI||typeof TON_CONNECT_UI==='undefined') return;
     // twaReturnUrl: dentro de Telegram, tras aprobar en la wallet (Tonkeeper,
     // Wallet...) hay que volver a la Mini App. Sin esto el usuario se quedaba
     // en la wallet y la conexion no llegaba nunca al juego.
@@ -1037,7 +1053,8 @@ function initTonConnect(){
     });
   }catch(e){console.warn('[TON Init]',e);}
 }
-initTonConnect();
+// Con una wallet ya conectada se carga al entrar (para mostrarla y pagar); si no, al abrir la wallet.
+if(tonGuardada()) cargarTon().then(initTonConnect);
 
 function onTonConnected(){
   const btn=document.getElementById('ton-btn');
@@ -1066,6 +1083,7 @@ function onTonDisconnected(){
 }
 
 async function connectTonWallet(){
+  if(!tonUI){await cargarTon();initTonConnect();}
   if(!tonUI){showPUNotif('TON Connect no disponible');return;}
   try{await tonUI.openModal();}catch(e){console.warn('[TON Connect]',e);}
 }
@@ -1641,7 +1659,7 @@ function irTab(nombre){
   if(nombre==='perfil') pintarPerfil();
   if(nombre==='skins') renderSkinShop();
   if(nombre==='ranking') pintarRankingHub();
-  if(nombre==='wallet') pintarWallet();
+  if(nombre==='wallet'){ pintarWallet(); cargarTon().then(initTonConnect); }   // TON Connect bajo demanda
 }
 
 // SIN FIN se desbloquea al vencer al jefe 1-3 (como dice el mapa). Antes el
@@ -1974,7 +1992,7 @@ function shareScore(){
 // (la misma tabla STARS_DE_USD que usa /api/telegram-bot-invoice al cobrar), asi
 // la Mini App nunca anuncia un precio distinto del que cobra Telegram.
 // Subir este ?v= junto con el de los otros imports de data.js.
-import { SKINS as CATALOGO, estrellasDe } from '../mmo/js/data.js?v=327';
+import { SKINS as CATALOGO, estrellasDe } from '../mmo/js/data.js?v=328';
 try{
   for(const s of SKINS){
     const c=CATALOGO[s.id];

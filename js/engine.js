@@ -62,10 +62,25 @@ window.addEventListener('DOMContentLoaded', _pintarCarga);
 // El motor elige una al azar cada vez que ENTRA a ese bioma (no cada frame:
 // ver _bgVarBi mas abajo), asi la campaña no se ve identica en cada vuelta.
 const FONDO_VARIANTES = [['noche'], ['amanecer', 'amanecer2'], ['selva', 'selva2'], ['tormenta', 'tormenta2'], ['desierto']];
-const FONDOS = FONDO_VARIANTES.map(nombres => nombres.map(n => {
-  const lejos = new Image(); lejos.src = _AB + 'fondos/' + n + '_lejos.png';
-  const cerca = new Image(); cerca.src = _AB + 'fondos/' + n + '_cerca.png';
-  _vigilar(lejos); _vigilar(cerca);
+// Solo el bioma 0 (y su primera variante) frena el boton JUGAR; el resto se
+// baja en ratos libres (_cargarDiferidas). dibujarCapa ya ignora lo que no esta.
+const _DIFERIDAS = [];
+function _diferir(img, src) { img.dataset.src = src; _DIFERIDAS.push(img); }
+// Baja ya una imagen diferida (p. ej. la skin equipada si aun no esta).
+function _pedirImg(img) { if (img && !img.src && img.dataset.src) img.src = img.dataset.src; }
+function _cargarDiferidas() {
+  const ocio = window.requestIdleCallback ? f => requestIdleCallback(f, { timeout: 1500 }) : f => setTimeout(f, 200);
+  const sig = () => { for (let i = 0; i < 2 && _DIFERIDAS.length; i++) _pedirImg(_DIFERIDAS.shift()); if (_DIFERIDAS.length) ocio(sig); };
+  // Empieza cuando lo critico ya bajo (o a los 4 s como mucho), para no quitarle ancho de banda.
+  const t0 = Date.now();
+  const esperar = () => (cargaCompleta() || Date.now() - t0 > 4000) ? ocio(sig) : setTimeout(esperar, 150);
+  esperar();
+}
+const FONDOS = FONDO_VARIANTES.map((nombres, bi) => nombres.map((n, vi) => {
+  const lejos = new Image(), cerca = new Image();
+  const sl = _AB + 'fondos/' + n + '_lejos.png', sc = _AB + 'fondos/' + n + '_cerca.png';
+  if (bi === 0 && vi === 0) { lejos.src = sl; cerca.src = sc; _vigilar(lejos); _vigilar(cerca); }
+  else { _diferir(lejos, sl); _diferir(cerca, sc); }
   return { lejos, cerca };
 }));
 let scrollLejos = 0, scrollCerca = 0;
@@ -138,7 +153,11 @@ const FX = {
 };
 Object.keys(FX).forEach(k => { IMG['fx_' + k] = _AB + 'fx/' + k + '.png'; });
 const IMG_EL = {};
-Object.entries(IMG).forEach(([k, v]) => { const el = new Image(); el.src = v; _vigilar(el); IMG_EL[k] = el; });
+// Skins de pago, cofres y el jefe no salen en la oleada 1: se bajan despues
+// (la skin equipada cae al duende base mientras tanto, ver _playerKey).
+const _ES_DIFERIDA = k => /^(skin_|cofre_)/.test(k) || k === 'enemy2';
+Object.entries(IMG).forEach(([k, v]) => { const el = new Image(); IMG_EL[k] = el; if (_ES_DIFERIDA(k)) _diferir(el, v); else { el.src = v; _vigilar(el); } });
+_cargarDiferidas();
 
 // ── ANIMACIÓN DEL DUENDE ──
 // En assets/sprite_sheets/ habia una hoja de animacion completa que nadie
@@ -2758,7 +2777,7 @@ function draw() {
   // Capas de parallax: la lejana se mueve a un tercio de la cercana, que a su
   // vez va mas lenta que el suelo. Esa diferencia es toda la profundidad.
   const bi = Math.max(0, BIOMES.indexOf(biome)) % FONDOS.length;
-  if (_bgVarBi !== bi) { _bgVarBi = bi; _bgVarIdx = Math.floor(Math.random() * FONDOS[bi].length); }
+  if (_bgVarBi !== bi) { _bgVarBi = bi; _bgVarIdx = Math.floor(Math.random() * FONDOS[bi].length); _pedirImg(FONDOS[bi][_bgVarIdx].lejos); _pedirImg(FONDOS[bi][_bgVarIdx].cerca); }
   const _fondo = FONDOS[bi][_bgVarIdx];
   dibujarCapa(_fondo.lejos, scrollLejos, 46);
   dibujarCapa(_fondo.cerca, scrollCerca, 16);
@@ -2844,7 +2863,7 @@ function draw() {
     brillo(ch.x + ch.w / 2, ch.y + ch.h / 2, ch.w * (.9 + pulse * .3), brillos[ch.tier], .35 + pulse * .25);
     cx.save(); cx.imageSmoothingEnabled = false;
     cx.globalAlpha = .92 + pulse * .08;
-    drawSpr(IMG_EL['cofre_' + ch.tier], ch);
+    _pedirImg(IMG_EL['cofre_' + ch.tier]); drawSpr(IMG_EL['cofre_' + ch.tier], ch);
     cx.restore();
   });
 
@@ -2894,6 +2913,7 @@ function draw() {
     // "acaba de encajar un golpe". Ahora destella en BLANCO y mantiene su cuerpo.
     const ghostA = e.isGhost ? (e.ghostAlpha || 1) : 1;
     const key = e.isBoss ? 'enemy2' : e.isMagmar ? 'enemy_magmar' : 'enemy';
+    if (e.isBoss) _pedirImg(IMG_EL.enemy2);   // diferida: si el jefe sale antes, se pide ya
     const variant = enemyTint(e);
     // La animacion transforma el sprite alrededor de sus PIES, que es donde
     // pivota cualquier criatura al agacharse, embestir o caer muerta.

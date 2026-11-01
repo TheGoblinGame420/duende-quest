@@ -3,7 +3,7 @@
 <head>
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=327"></script>
+<script src="/js/origen.js?v=328"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <title>$DUENDE CLASSIC · MMORPG 2D gratis en el navegador</title>
@@ -53,8 +53,23 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
-<!-- defer se ejecuta en orden: Telegram ANTES que pwa.js (mira window.Telegram para no mostrar "Instalar" dentro de Telegram) y todo antes del modulo client.js -->
-<script src="https://telegram.org/js/telegram-web-app.js" defer></script>
+<!-- SDK de Telegram solo dentro de Telegram (fuera, una conexion y ~25 KB menos). Mismo criterio
+     que client.js mas el #tgWebAppData y la sesion que guarda el SDK; client.js y pwa.js miran
+     window.__tgListo (client.js lo espera antes de leer Telegram.WebApp). -->
+<script>
+(function () {
+  var tg = true;
+  try { tg = !!(window.TelegramWebviewProxy || window.parent !== window || (window.external && 'notify' in window.external)) || /tgWebApp/.test(location.hash + location.search) || /tgWebAppData/.test(sessionStorage.getItem('__telegram__initParams') || ''); } catch (e) {}
+  if (!tg) return;
+  window.__tgListo = new Promise(function (ok) {
+    var s = document.createElement('script'); s.src = 'https://telegram.org/js/telegram-web-app.js';
+    s.onload = s.onerror = function () { ok(); };
+    setTimeout(ok, 15000);   // telegram.org caido: el juego no se queda esperando para siempre
+    document.head.appendChild(s);
+  });
+})();
+</script>
+<!-- defer se ejecuta en orden y todo antes del modulo client.js -->
 <script src="/js/pwa.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
 <script src="/js/config.js" defer></script>
@@ -954,7 +969,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=327"></script>
+<script type="module" src="/mmo/js/client.js?v=328"></script>
 <div id="nuevo3d" role="dialog" aria-label="Nuevo mundo 3D">
   <video src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" muted loop playsinline preload="none"></video>
   <div class="t">🌌 NUEVO: Duende Quest Origins, el mundo abierto en 3D</div>

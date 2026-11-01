@@ -33,6 +33,12 @@ export default {
       if (request.method === 'OPTIONS') return tokenStats.onRequestOptions(context);
       return tokenStats.onRequestGet(context);
     }
+    // Pixel de Meta (/js/medir.js): solo dice el ID publico del pixel, o '' si
+    // el dueño no configuro META_PIXEL_ID y META_CAPI_TOKEN (todo apagado).
+    if (path === '/api/medir') {
+      const p = env.META_PIXEL_ID && env.META_CAPI_TOKEN && /^\d{5,25}$/.test(String(env.META_PIXEL_ID)) ? String(env.META_PIXEL_ID) : '';
+      return new Response(JSON.stringify({ p }), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=3600' } });
+    }
     // Embudo de la carga del juego (beacon de /js/origen.js). Publico: aqui solo
     // se valida con lista blanca y se pasa limpio al Durable Object, que limita
     // por IP y suma contadores (functions/mmo/retencion.js, evRecibir). Siempre 204.

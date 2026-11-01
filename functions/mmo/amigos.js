@@ -11,8 +11,8 @@
 // el premio llega cuando el amigo llega a nivel 10: asi no sirve crear
 // cuentas vacias. Premios del juego (oro, titulo, montura). Nunca mTON.
 // ═══════════════════════════════════════════════════════
-import { AMIGO_NIVEL, premioAmigo, AMIGOS_MAX } from '../../mmo/js/data.js';
-import { CONTACTOS_MAX, maxGrupo } from './social.js';
+import { AMIGO_NIVEL, premioAmigo, AMIGOS_MAX, KIT_COMP, AMIGO_BONO_XP, AMIGO_HITO, INVITADOS_MAX } from '../../mmo/js/data.js';
+import { CONTACTOS_MAX, maxGrupo, pub } from './social.js';
 import { MMO_URL } from '../api/telegram-bot.js';
 
 const CODIGO = /^[a-z0-9]{6}$/;
@@ -52,6 +52,7 @@ export const Amigos = {
     const add = (x, u, n) => { const l = x.contactos || (x.contactos = []); if (!l.some(a => a.u === u) && l.length < CONTACTOS_MAX) l.push({ u, n }); };
     add(c, de, co.nombre);
     s.sucio = true;
+    this.darKitComp(s, co.nombre);
     if (!s.cerrado) this.enviarContactos(s);
     // Invitado sin cuenta (gratis de crear): solo entra en la lista de quien invito
     // si este esta conectado y como mucho 5 por hora. Si no, un bucle de invitados
@@ -65,6 +66,9 @@ export const Amigos = {
       if (n > 5) return;
     }
     add(co, c.uid, c.nombre);
+    // «Mis invitados» (infoAmigos): los ultimos INVITADOS_MAX que llegaron con su enlace.
+    const li = co.invitados || (co.invitados = []);
+    if (!li.some(a => a.u === c.uid)) { li.push({ u: c.uid, n: c.nombre }); if (li.length > INVITADOS_MAX) li.splice(0, li.length - INVITADOS_MAX); }
     if (otro) {
       otro.sucio = true; this.enviarContactos(otro);
       const g = this.grupoDe(otro);
@@ -84,6 +88,16 @@ export const Amigos = {
   // Al subir de nivel: si llega a AMIGO_NIVEL, premio para los dos.
   async revisarAmigo(s) {
     const c = s.c;
+    // Hito a mitad de camino (Nv 5): 3 pociones al invitado y un aviso a quien
+    // lo invito si esta conectado (sin oro: no se farmea con cuentas vacias).
+    if (c.invitadoPor && !c.refN5 && c.nivel >= AMIGO_HITO && c.nivel < AMIGO_NIVEL) {
+      c.refN5 = 1; s.sucio = true;
+      c.pw = c.pw || {}; c.pw.pocion = Math.min(99, (c.pw.pocion || 0) + 3);
+      const otro = this.porUid.get(c.invitadoPor);
+      this.enviar(s, { t: 'toast', ok: true, m: `🤝 ¡Nivel ${AMIGO_HITO}! Vas a mitad de camino: +3 pociones. A nivel ${AMIGO_NIVEL} ganan oro los dos${otro && otro.c ? ` (tú y ${otro.c.nombre})` : ''}.` });
+      if (otro && otro.c && !otro.cerrado) this.enviar(otro, { t: 'toast', ok: true, m: `🤝 Tu invitado ${c.nombre} llegó a nivel ${AMIGO_HITO}. A nivel ${AMIGO_NIVEL} ganan los dos: ¡ayúdale en grupo (+25% de XP para él)!` });
+      this.actualizarYo(s);
+    }
     if (!c.invitadoPor || c.refPagado || c.nivel < AMIGO_NIVEL) return;
     // Solo cuentas reales: Telegram o correo confirmado. El invitado lo cobra
     // al registrarse (world.js lo vuelve a revisar al entrar).
@@ -115,9 +129,66 @@ export const Amigos = {
     if (await this.quiereAvisos(c.invitadoPor)) { try { await this.tgEnviar('sendMessage', { chat_id: c.invitadoPor.slice(3), text: txtA }); } catch (e) {} }
   },
 
-  async infoAmigos(s) {
-    const cod = await this.codigoRef(s.c);
+  // Kit «Compañero» de una sola vez por personaje, con topes por dia: 10 por
+  // codigo de quien invita y 3 por IP (en memoria; un reinicio los vacia, y el
+  // kit es pequeño: oro y pociones). Ademas, la tarjeta de «a Nv 10 ganan los dos».
+  darKitComp(s, deNombre) {
+    const c = s.c;
+    if (c.kitComp || (this.uidsPrueba && this.uidsPrueba.has(c.uid))) return;
+    const d = Math.floor(Date.now() / 86400000);
+    if (!this._kitComp || this._kitComp.d !== d) this._kitComp = { d, de: new Map(), ip: new Map() };
+    const K = this._kitComp, nDe = (K.de.get(c.invitadoPor) || 0) + 1, nIp = s.ip ? (K.ip.get(s.ip) || 0) + 1 : 0;
+    const txt = `🤝 ${deNombre} te invitó: a nivel ${AMIGO_NIVEL} ganan los dos (${premioAmigo(AMIGO_NIVEL).oro.toLocaleString('es', { useGrouping: 'always' })} de oro para ti). En grupo con tu amigo ganas +${Math.round(AMIGO_BONO_XP * 100)}% de XP hasta nivel ${AMIGO_NIVEL}.`;
+    if (nDe > 10 || nIp > 3) { this.enviar(s, { t: 'toast', ok: true, m: txt }); return; }
+    K.de.set(c.invitadoPor, nDe); if (s.ip) K.ip.set(s.ip, nIp);
+    c.kitComp = 1;
+    c.oro += KIT_COMP.oro;
+    c.pw = c.pw || {}; c.pw.pocion = Math.min(99, (c.pw.pocion || 0) + KIT_COMP.pociones);
     s.sucio = true;
-    this.enviar(s, { t: 'amigos', ref: cod, amigos: s.c.amigos || 0, nivel: AMIGO_NIVEL, max: AMIGOS_MAX });
+    this.enviar(s, { t: 'toast', ok: true, m: `🎁 Kit Compañero: +${KIT_COMP.oro} oro, +${KIT_COMP.pociones} pociones y el título «Compañero». ` + txt });
+    this.revisarLogros(s);
+    this.actualizarYo(s);
+  },
+
+  // +25% de XP de caza para el invitado de nivel < AMIGO_NIVEL si esta en el
+  // mismo grupo que quien lo invito y este esta conectado (dar() en world.js).
+  bonoCompanero(s) {
+    const c = s.c;
+    if (!c || !c.invitadoPor || c.nivel >= AMIGO_NIVEL || !s.gid) return 1;
+    const o = this.porUid.get(c.invitadoPor);
+    return o && o.c && !o.cerrado && o.gid === s.gid ? 1 + AMIGO_BONO_XP : 1;
+  },
+
+  // «Mis invitados»: nivel, si esta conectado y si ya llego a Nv 10. Los
+  // desconectados se leen del storage en un solo get (como mucho 20).
+  async infoAmigos(s) {
+    const c = s.c;
+    // Leer del storage como mucho cada 2 s (cada vez son hasta 20 personajes).
+    const leer = Date.now() - (s.amigosT || 0) >= 2000;
+    if (leer) s.amigosT = Date.now();
+    const cod = await this.codigoRef(c);
+    s.sucio = true;
+    const li = (c.invitados || []).slice(-INVITADOS_MAX);
+    const fuera = li.filter(a => !(this.porUid.get(a.u) || {}).c).map(a => 'c:' + a.u);
+    // Entre lecturas se reusa la ultima (s.amigosG): si no, «Actualizar» seguido
+    // mostraba a los desconectados sin nivel y a los ya borrados.
+    let guard = s.amigosG || new Map();
+    if (fuera.length && leer) try { guard = s.amigosG = await this.state.storage.get(fuera); } catch (e) {}
+    const invitados = [];
+    for (const a of li) {
+      const x = this.porUid.get(a.u), cx = (x && x.c) || guard.get('c:' + a.u);
+      // Invitado que ya no existe (heredado a una cuenta o borrado): se omite.
+      if (!cx) { if (!leer) invitados.push({ n: a.n, lv: 0, on: 0, uid: pub(a.u) }); continue; }
+      const on = !!(x && x.c && !x.cerrado);
+      invitados.push({ n: cx.nombre || a.n, lv: cx.nivel || 1, cl: cx.clase || '', on: on ? 1 : 0, id: on ? x.id : undefined, g: on && x.gid ? 1 : 0, m3: on && x.m3 ? 1 : 0, ok: cx.refPagado ? 1 : 0, uid: pub(a.u) });
+    }
+    // Quien te invito (si sigue en tu lista de amigos): para la tarjeta de arriba.
+    let por = null;
+    if (c.invitadoPor && !c.refPagado) {
+      const x = this.porUid.get(c.invitadoPor), ct = (c.contactos || []).find(a => a.u === c.invitadoPor);
+      if (x && x.c) por = { n: x.c.nombre, on: x.cerrado ? 0 : 1, id: x.cerrado ? undefined : x.id, bono: this.bonoCompanero(s) > 1 ? 1 : 0 };
+      else if (ct) por = { n: ct.n, on: 0 };
+    }
+    this.enviar(s, { t: 'amigos', ref: cod, amigos: c.amigos || 0, nivel: AMIGO_NIVEL, max: AMIGOS_MAX, invitados, por, bono: Math.round(AMIGO_BONO_XP * 100), lvYo: c.nivel });
   },
 };

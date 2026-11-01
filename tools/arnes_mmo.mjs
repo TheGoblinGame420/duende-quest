@@ -625,6 +625,7 @@ async function pruebas() {
   await pruebasTempAbismo();
   await pruebasCopias();
   await pruebasVincular();
+  await pruebasLlevar();
   await pruebasSeguridad();
   await pruebasAsedio3d();
   await pruebasJusticia3d();
@@ -939,6 +940,38 @@ async function pruebasVincular() {
     chequear(w2.ultimos('no').some(m => /ya está vinculada|caducó/.test(m.m)), 'una cuenta ya vinculada no vincula otra vez');
     await dejar(w2);
   } finally { globalThis.fetch = fetchReal; }
+}
+
+// ── LLEVAR MI DUENDE (invitado -> cuenta con un codigo de 6 letras) ──
+async function pruebasLlevar() {
+  console.log('Llevar mi duende');
+  const g = await entrar('Viajero', 'c7d8');
+  ponerNivel(g, 12, 'mago'); g.c.oro = 4242; g.sucio = true;
+  await g.mandar({ t: 'vincCodigo' });
+  const cod = (g.ultimos('vincCod')[0] || {}).cod;
+  chequear(/^[A-Z2-9]{6}$/.test(cod || '') && !!(await mundo.state.storage.get('c:' + g.c.uid)), 'un invitado pide un código y su duende queda guardado');
+  g.limpiar(); await g.mandar({ t: 'vincCodigo' });
+  chequear((g.ultimos('vincCod')[0] || {}).cod === cod, 'pedirlo otra vez repite el mismo código');
+  await g.mandar({ t: 'vincUsar', cod });
+  chequear(g.ultimos('no').some(m => /no aquí/.test(m.m)), 'el invitado no canjea su propio código');
+  const uidInv = g.c.uid;
+  // Cuenta con progreso: no se le pisa su duende.
+  const v = await entrarTg('Veterano', 77051); v.ultimos = x => v.ws.rec.filter(m => m.t === x);
+  ponerNivel(v, 9, 'guerrero');
+  await v.mandar({ t: 'vincUsar', cod });
+  chequear(v.ultimos('no').some(m => /propio duende/.test(m.m)), 'una cuenta con progreso no recibe al invitado');
+  await dejar(v);
+  // Cuenta nueva de Telegram: canjea y vuelve a entrar con vcod (el invitado sigue conectado).
+  const t = await entrarTg('Llegada', 77050); t.ultimos = x => t.ws.rec.filter(m => m.t === x);
+  await t.mandar({ t: 'vincUsar', cod });
+  chequear(t.ultimos('invTraer').length === 1, 'la cuenta nueva acepta el código');
+  const t2 = await entrarTg('Llegada', 77050, { vcod: cod });
+  chequear(t2.c && t2.c.uid === 'tg:77050' && t2.c.nivel === 12 && t2.c.oro >= 4242, 'la cuenta de Telegram entra con el duende del invitado');
+  chequear(g.cerrado && !(await mundo.state.storage.get('c:' + uidInv)), 'el invitado conectado sale y su duende ya no está duplicado');
+  t2.ultimos = x => t2.ws.rec.filter(m => m.t === x);
+  await t2.mandar({ t: 'vincUsar', cod });
+  chequear(t2.ultimos('no').some(m => /caducó|propio duende/.test(m.m)), 'el código no sirve dos veces');
+  await dejar(t2);
 }
 
 // ── COPIAS DE SEGURIDAD ──

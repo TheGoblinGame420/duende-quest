@@ -8,7 +8,8 @@
 // pantalla de inicio". Dentro de Telegram o ya instalada, no se muestra nada.
 // ═══════════════════════════════════════════════════════
 (function () {
-  var enTelegram = !!(window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData);
+  // window.__tgListo: la pagina baja el SDK de Telegram bajo demanda (aun puede no haber llegado).
+  var enTelegram = !!(window.__tgListo || (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData));
   var instalada = matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches || navigator.standalone === true;
   var ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var aviso = null;

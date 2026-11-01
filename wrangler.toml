@@ -22,6 +22,15 @@ not_found_handling = "single-page-application"
 # (stub.fetch) y nunca pasa por este enrutado. Si worker.js gana una ruta
 # nueva, AGREGARLA aqui o la tapara el fallback SPA.
 run_worker_first = ["/api/*", "/mmo/ws", "/mmo/ws/*", "/mmo/ev"]
+# (/api/medir, el ID del pixel de Meta para js/medir.js, ya entra por /api/*.)
+
+# Medicion de anuncios de Meta (pixel + Conversions API): APAGADA mientras no
+# existan META_PIXEL_ID y META_CAPI_TOKEN. Para activarla, el dueño crea el
+# pixel en el Administrador de eventos y luego:
+#   wrangler secret put META_PIXEL_ID
+#   wrangler secret put META_CAPI_TOKEN
+#   (opcional, solo para probar) wrangler secret put META_TEST_CODE
+# Ver functions/mmo/meta.js, js/medir.js y privacidad.html#medicion.
 
 # DUENDE QUEST ONLINE (mmo/): el mundo en tiempo real es un Durable Object
 # (functions/mmo/world.js) al que se conecta cada jugador por WebSocket en

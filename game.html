@@ -49,12 +49,27 @@
 </div>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tonconnect/ui@2.4.4/dist/tonconnect-ui.min.js" integrity="sha384-sSX7t/8RIb6F0lgKBLCCytcRdsJv/+lBzIvFAnTlX7HymE9i9wCFIFOQ4iH7dJWO" crossorigin="anonymous"></script>
+<script>
+// TON Connect (~400 KB) bajo demanda: al abrir la wallet, o al cargar si ya hay una sesion guardada.
+// tonGuardada(): el SDK guarda su sesion en localStorage con claves 'ton-connect...'.
+var _tonP=null;
+function cargarTon(){
+  if(typeof TON_CONNECT_UI!=='undefined') return Promise.resolve();
+  return _tonP||(_tonP=new Promise(function(ok){
+    var s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/@tonconnect/ui@2.4.4/dist/tonconnect-ui.min.js';
+    s.integrity='sha384-sSX7t/8RIb6F0lgKBLCCytcRdsJv/+lBzIvFAnTlX7HymE9i9wCFIFOQ4iH7dJWO'; s.crossOrigin='anonymous';
+    s.onload=function(){ok();}; s.onerror=function(){_tonP=null;ok();};
+    document.head.appendChild(s);
+  }));
+}
+function tonGuardada(){ try{ for(var i=0;i<localStorage.length;i++){ if(/^ton-connect/.test(localStorage.key(i)||'')) return true; } }catch(e){} return false; }
+</script>
 <script src="js/config.js"></script>
 <script src="js/missions.js"></script>
 <script src="js/streak.js"></script>
 <script src="js/achievements.js"></script>
-<script src="js/auth-manager.js?v=327" defer></script>
+<script src="js/auth-manager.js?v=328" defer></script>
 <style>
 /* ── TOKENS (guia de diseño comun, oct 2026) ──
    Las variables viejas se mantienen remapeadas a tonos sobrios. */
@@ -507,7 +522,7 @@ h1.ov-title{font-weight:normal;}
         </div>
       </div>
       <div class="store-item" style="--sc:#f2c14e" onclick="shopBuyItem('chest_key')">
-        <img src="assets/cofres/cofre_epico.png" alt="" style="width:38px;height:38px;image-rendering:pixelated;mix-blend-mode:screen">
+        <img src="assets/cofres/cofre_epico.png" alt="" loading="lazy" decoding="async" style="width:38px;height:38px;image-rendering:pixelated;mix-blend-mode:screen">
         <div class="si-info">
           <div class="si-name">LLAVE ÉPICA</div>
           <div class="si-desc">Abre un cofre épico al inicio</div>
@@ -780,7 +795,7 @@ window.DQE = {
   },
 };
 </script>
-<script src="js/engine.js?v=327"></script>
+<script src="js/engine.js?v=328"></script>
 <script>
 'use strict';
 // ── RANKING ──// ── RANKING ──
@@ -813,7 +828,7 @@ const TON_MANIFEST_WEB='https://duende-quest.alfonso12hc.workers.dev/tonconnect-
 let tonUIWeb=null, tonAddrWeb=null;
 function initTonConnectWeb(){
   try{
-    if(typeof TON_CONNECT_UI==='undefined') return;
+    if(tonUIWeb||typeof TON_CONNECT_UI==='undefined') return;
     tonUIWeb=new TON_CONNECT_UI.TonConnectUI({manifestUrl:TON_MANIFEST_WEB});
     tonUIWeb.onStatusChange(w=>{
       tonAddrWeb = w ? TON_CONNECT_UI.toUserFriendlyAddress(w.account.address) : null;
@@ -822,8 +837,10 @@ function initTonConnectWeb(){
     });
   }catch(e){console.warn('[TON Web]',e);}
 }
-initTonConnectWeb();
-function connectTonWeb(){
+// Con una wallet ya conectada se carga al entrar (para mostrarla); si no, al tocar Conectar.
+if(tonGuardada()) cargarTon().then(initTonConnectWeb);
+async function connectTonWeb(){
+  if(!tonUIWeb){ await cargarTon(); initTonConnectWeb(); }
   if(!tonUIWeb){ if(typeof showPUNotif==='function') showPUNotif('TON Connect no disponible'); return; }
   tonUIWeb.openModal().catch(()=>{});
 }
@@ -1110,7 +1127,7 @@ function renderWebSkinShop() {
     const equipped = equippedSkin === s.id;
     // Solo estilos (paleta sobria y texto legible); la logica es la misma.
     return `<div style="background:#121826;border:1px solid ${equipped ? '#3b82f6' : '#263049'};border-radius:8px;padding:10px;display:flex;gap:10px;align-items:center">
-      <img src="${s.preview}" alt="" style="width:56px;height:56px;image-rendering:pixelated;border-radius:6px;background:#0b0f17;flex-shrink:0" onerror="this.style.display='none'">
+      <img src="${s.preview}" alt="" loading="lazy" decoding="async" style="width:56px;height:56px;image-rendering:pixelated;border-radius:6px;background:#0b0f17;flex-shrink:0" onerror="this.style.display='none'">
       <div style="flex:1;min-width:0;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif">
         <div style="font-size:14px;font-weight:600;color:#e6e9f0;margin-bottom:2px">${s.name} ${equipped ? '✅' : ''}</div>
         <div style="font-size:12.5px;color:#9aa3b5;margin-bottom:4px">${s.desc}</div>
@@ -1278,6 +1295,8 @@ function getPlayerImgKey(){
               king:'skin_king',berserker:'skin_berserker',
               legend:'skin_legendariafull',legendaria:'skin_legendariafull'};
   const k=webOwnedSkins.includes(equippedSkin) ? mapa[equippedSkin] : null;
+  // Skin diferida (engine.js): si aun no se pidio, se pide ya y se adelanta a la cola.
+  if(k && IMG_EL[k] && !IMG_EL[k].src && typeof _pedirImg==='function') _pedirImg(IMG_EL[k]);
   return (k && IMG_EL[k]?.naturalWidth>0) ? k : 'duende_hero';
 }
 

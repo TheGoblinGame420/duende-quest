@@ -35,9 +35,10 @@
 // evento avisado); off y bloq se respetan siempre.
 // ═══════════════════════════════════════════════════════
 
-import { xpParaSubir, premioDiaria, premioMazmorraDia, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, HABS, CLASES, NIVEL_MAX, DIARIA, horaFelizActiva, TORRE, semanaUTC, temporadaDe, TEMPORADAS } from '../../mmo/js/data.js';
+import { xpParaSubir, premioDiaria, premioMazmorraDia, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, HABS, CLASES, NIVEL_MAX, DIARIA, horaFelizActiva, TORRE, semanaUTC, temporadaDe, TEMPORADAS, SKINS, precioOro, GESTA_UMBRALES, GESTA_NOMBRES } from '../../mmo/js/data.js';
 import { getEnv, tg } from '../api/lib.js';
-import { MMO_URL } from '../api/telegram-bot.js';
+import { MMO_URL, MUNDO_URL } from '../api/telegram-bot.js';
+import { metaEvento } from './meta.js';
 
 const DIA_MS = 86400000;
 const DIAS_GUARDADOS = 60;          // dias jugados que se recuerdan por personaje
@@ -46,6 +47,18 @@ const AVISOS_SIN_RESPUESTA = 2;     // despues de esto, pausa hasta que vuelva
 const POR_SEGUNDO = 25;             // Telegram corta a ~30 mensajes/s por bot
 const OLVIDAR_DIAS = 35;            // el indice olvida a quien no juega hace mas
 const NIVEL_MAZMORRA = 6;           // la primera mazmorra (Madriguera Goblin) pide Nv 6
+// Orden de las lineas del aviso diario (las 3 primeras salen). Tambien la lista
+// blanca de tipos que se cuentan en ret:dia (avE_<tipo> enviados, avV_<tipo>
+// los que volvieron en 24 h) y que /mmostats muestra en avisos.
+export const AVISO_ORDEN = ['ev', 'soc', 'racha', 'col', 'exped', 'feliz', 'mazm', 'torre', 'diaria', 'nivel'];
+// «Avísame por Telegram» para jugadores web e invitados: un codigo de un solo
+// uso (10 min, en memoria) atado al personaje; el jugador abre el bot con
+// t.me/duendequest_bot?start=av_<cod> y su chat queda en ret:idx[uid].tc.
+// Solo quien pulso el boton Y abrio el chat con el bot recibe avisos (con los
+// mismos topes que los de Telegram y /avisos off). Premio pequeño, una vez.
+export const AVISO_TG_MS = 10 * 60 * 1000;
+export const AVISO_TG_ORO = 300;
+const AV_LETRAS = 'abcdefghjkmnpqrstuvwxyz23456789';
 
 export const diaNum = (t = Date.now()) => Math.floor(t / DIA_MS);
 export const diaISO = n => new Date(n * DIA_MS).toISOString().slice(0, 10);
@@ -67,6 +80,21 @@ const conSrc = (c, campos) => {
   for (const k in campos) o[k + '_' + s] = campos[k];
   return o;
 };
+
+// Embudo de COMPRA y retorno de los anuncios (en ret:dia, sumado en memoria con retSumar):
+//   tv vio la tienda premium · fa abrio la factura de Stars · fc la cerro sin pagar
+//   pq_<metodo> creo un pedido · pg lo pago (Stars o cadena) · en se le entrego
+//   cad caduco sin pagar. Una vez por personaje, paso y dia UTC, y tambien <paso>_<origen>.
+//   u7 / u7_<origen> / u7~<campaña>: US$ entregados de pedidos hechos en sus 7
+//   primeros dias, sumados al DIA DEL ALTA (ARPU D7 y ROAS D7 de esa cohorte).
+//   n~<campaña>: altas por campaña (utm_campaign de origen.js, saneada).
+// Gasto en anuncios (/gasto del dueño): ret:gasto → [{ f: 'YYYY-MM-DD', src, camp, usd }].
+// Las compras del arcade con Stars van por otro lado (Supabase): no entran en el ROAS.
+export const COMPRA_PASOS = ['tv', 'fa', 'fc', 'pq_stars', 'pq_sol', 'pq_duende', 'pg', 'en', 'cad'];
+export const campDe = v => String(v || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 30);
+const MAX_CAMP_DIA = 30;   // campañas distintas por dia en ret:dia (n~ y u7~)
+const campsDe = r => Object.keys(r).filter(k => k.startsWith('n~')).length;
+const r2 = n => Math.round(n * 100) / 100;
 
 // Embudo de la carga (antes del alta), por beacon (worker.js → /mmo/ev):
 //   ev:dia:<YYYY-MM-DD> → { '<juego>|<evento>|<origen>|<m|p>': [n, b0..b6] }
@@ -187,7 +215,97 @@ export const Retencion = {
     e[k] = 1;
     const desde = diaNum(c.creado || Date.now());
     if (diaNum() - desde > 30) return;
-    this.retSumar(desde, conSrc(c, { [k]: 1 })).catch(() => {});
+    // Referidos (llegaron con ?ref=): n5r / n10r para comparar con el resto (resumen: invitaciones).
+    const campos = conSrc(c, { [k]: 1 });
+    if (c.invitadoPor && (k === 'n5' || k === 'n10')) campos[k + 'r'] = 1;
+    this.retSumar(desde, campos).catch(() => {});
+    if (k === 'm1') metaEvento(this, c, 'CompleteRegistration');   // Conversions API (meta.js): solo con fbc y META_*
+  },
+
+  // Paso del embudo de compra (COMPRA_PASOS) al dia de hoy. c puede faltar
+  // (pago de Stars o entrega con el jugador desconectado): el origen sale de pd.src.
+  hitoCompra(c, k, pd) {
+    if (!COMPRA_PASOS.includes(k)) return;
+    const uid = (c && c.uid) || (pd && pd.uid);
+    if (!uid || (this.uidsPrueba && this.uidsPrueba.has(uid))) return;
+    const hoy = diaNum();
+    if (!this._hitosC || this._hitosC.d !== hoy) this._hitosC = { d: hoy, s: new Set() };
+    const clave = uid + '|' + k;
+    if (this._hitosC.s.has(clave) || this._hitosC.s.size > 50000) return;
+    this._hitosC.s.add(clave);
+    const src = (c && c.ret && c.ret.src) || (pd && pd.src);
+    this.retSumar(hoy, ORIGENES.includes(src) ? { [k]: 1, [k + '_' + src]: 1 } : { [k]: 1 }).catch(() => {});
+  },
+  // Del cliente ({ t: 'ev', k }): solo los pasos que el servidor no ve.
+  evCompra(s, m) {
+    if (s && s.c && m && (m.k === 'tv' || m.k === 'fa')) this.hitoCompra(s.c, m.k);
+  },
+  // Al entregar: lo cobrado de un pedido hecho en sus primeros 7 dias se suma
+  // al dia de su alta (pd.alta, pd.dias, pd.src y pd.camp los pone pedidoUno).
+  ventaCohorte(pd) {
+    if (!pd || !(pd.usd > 0) || !Number.isInteger(pd.alta) || !(pd.dias >= 0 && pd.dias <= 7)) return;
+    if (this.uidsPrueba && this.uidsPrueba.has(pd.uid)) return;
+    const campos = { u7: pd.usd };
+    if (ORIGENES.includes(pd.src)) campos['u7_' + pd.src] = pd.usd;
+    this.retDia(pd.alta).then(r => {
+      if (pd.camp && (r['n~' + pd.camp] || campsDe(r) < MAX_CAMP_DIA)) campos['u7~' + pd.camp] = pd.usd;
+      return this.retSumar(pd.alta, campos);
+    }).catch(() => {});
+  },
+  // /gasto del dueño: anota (o corrige, misma fecha+origen+campaña; 0 lo borra)
+  // lo gastado en anuncios ese dia, en US$. Sin fecha solo lista lo ultimo.
+  async gastoAnuncios(b) {
+    let l = (await this.state.storage.get('ret:gasto')) || [];
+    if (b && b.f !== undefined) {
+      const f = String(b.f || ''), src = String(b.src || ''), camp = campDe(b.camp), usd = Number(b.usd);
+      const t = Date.parse(f + 'T00:00:00Z');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(f) || !Number.isFinite(t) || diaISO(diaNum(t)) !== f) return { ok: false, error: 'Fecha no válida (usa AAAA-MM-DD, hoy o ayer).' };
+      if (diaNum(t) > diaNum() + 1 || diaNum(t) < diaNum() - 120) return { ok: false, error: 'La fecha debe ser de los últimos 120 días.' };
+      if (!ORIGENES.includes(src) || src === 'org') return { ok: false, error: 'Origen no válido: meta, tg, wa o ref.' };
+      if (!(usd >= 0 && usd <= 100000)) return { ok: false, error: 'Monto no válido (US$, entre 0 y 100000).' };
+      l = l.filter(x => !(x.f === f && x.src === src && x.camp === camp));
+      if (usd > 0) l.push({ f, src, camp, usd: r2(usd) });
+      const corte = diaISO(diaNum() - 120);
+      l = l.filter(x => x.f >= corte).sort((a, c) => a.f < c.f ? -1 : a.f > c.f ? 1 : 0).slice(-500);
+      await this.state.storage.put('ret:gasto', l);
+    }
+    return { ok: true, l: l.slice(-15) };
+  },
+  // /mmostats: gasto, altas, CPI, D1, ARPU D7 y ROAS D7 de las altas de los
+  // ultimos 7 dias por origen con gasto (Meta siempre) y por campaña. dias = los de retStats.
+  async retAnuncios(dias, hoy) {
+    const l = (await this.state.storage.get('ret:gasto')) || [];
+    const desde = diaISO(hoy - 6), hasta = diaISO(hoy);
+    const g = l.filter(x => x.f >= desde && x.f <= hasta);
+    const sem = dias.slice(0, 7);
+    const fila = (gasto, nK, r1K, u7K) => {
+      let n = 0, base1 = 0, v1 = 0, u7 = 0;
+      for (const x of sem) {
+        n += x.r[nK] || 0; u7 += x.r[u7K] || 0;
+        if (r1K && hoy - x.n > 1) { base1 += x.r[nK] || 0; v1 += x.r[r1K] || 0; }
+      }
+      return { gasto: r2(gasto), altas: n, cpi: n && gasto ? r2(gasto / n) : null, d1: r1K ? pct(v1, base1) : null, u7: r2(u7), arpu: n ? r2(u7 / n) : null, roas: gasto ? r2(u7 / gasto) : null };
+    };
+    const suma = f => r2(g.filter(f).reduce((a, x) => a + x.usd, 0));
+    const porSrc = {};
+    for (const o of ORIGENES) {
+      if (o === 'org') continue;
+      const gasto = suma(x => x.src === o);
+      const e = fila(gasto, 'n_' + o, 'r1_' + o, 'u7_' + o);
+      if (gasto || (o === 'meta' && e.altas)) porSrc[o] = e;
+    }
+    const camps = [...new Set(g.filter(x => x.camp).map(x => x.camp))].slice(0, 10)
+      .map(k => ({ camp: k, ...fila(suma(x => x.camp === k), 'n~' + k, null, 'u7~' + k) }));
+    return { desde, hasta, porSrc, camps };
+  },
+  // /ventas: el embudo de compra de los ultimos 7 dias (todos y los de Meta).
+  async embudoCompra() {
+    const hoy = diaNum(), tot = {}, meta = {};
+    for (let i = 0; i < 7; i++) {
+      const r = await this.retDia(hoy - i);
+      for (const k of COMPRA_PASOS) { tot[k] = (tot[k] || 0) + (r[k] || 0); meta[k] = (meta[k] || 0) + (r[k + '_meta'] || 0); }
+    }
+    return { tot, meta };
   },
 
   // Anota el dia en el personaje. true si es su primera vez de ese dia.
@@ -209,11 +327,12 @@ export const Retencion = {
     // D8 (cruzo a la semana 2 de la racha) y D14 (2 semanas): miden la racha larga.
     if (k === 1 || k === 7 || k === 8 || k === 14 || k === 30) await this.retSumar(desde, conSrc(c, { ['r' + k]: 1 }));
     if (k === 1 && c.ret.iab) await this.retSumar(desde, { r1iab: 1 });
+    if (k === 1) metaEvento(this, c, 'VolvioD1');   // Conversions API (meta.js): solo con fbc y META_*
   },
 
   // ── Ganchos (los llama world.js) ──
   // En hola, con el personaje ya cargado. nuevo = personaje recien creado.
-  async retEntrar(s, nuevo, src) {
+  async retEntrar(s, nuevo, src, camp) {
     try {
       const c = s.c, ahora = Date.now(), hoy = diaNum(ahora);
       // Solo cuenta como alta un personaje creado ahora: los que ya existian
@@ -221,6 +340,8 @@ export const Retencion = {
       if (!c.ret) c.ret = { d: [], dt: 0, ses: 0, min: 0, visto: ahora, u: c.uid, alta: nuevo ? 1 : 0 };
       // Origen: una sola vez, en el alta (despues nunca se pisa).
       if (nuevo && !c.ret.src) c.ret.src = srcDe(src);
+      // Campaña (utm_campaign): tambien solo en el alta; con ella /mmostats saca el ROAS por campaña.
+      if (nuevo && !c.ret.camp && campDe(camp)) c.ret.camp = campDe(camp);
       // Alta desde el navegador interno de Facebook/Instagram (hola.iab): su D1 aparte.
       if (nuevo && s.iab) c.ret.iab = 1;
       const r = c.ret;
@@ -234,16 +355,24 @@ export const Retencion = {
       const nuevoDia = this.retMarcarDia(c, hoy);
       if (this.uidsPrueba.has(c.uid)) return;
       const idx = await this.retIdx();
+      const tcViejo = uidViejo && idx[uidViejo] ? idx[uidViejo].tc : null;   // su chat de avisos pasa a la cuenta
       if (uidViejo) delete idx[uidViejo];
       const e = idx[c.uid] || (idx[c.uid] = { v: 0 });
+      if (tcViejo && !e.tc && !c.uid.startsWith('tg:')) e.tc = tcViejo;
       // ret:idx solo se escribe si algo cambia (antes, en cada entrada).
       const cambia = !!uidViejo || nuevoDia || e.v !== hoy || e.l !== c.nivel || e.a !== 0;
+      // Volvio dentro de las 24 h del aviso: cuenta para su tipo (una vez por aviso).
+      const avVuelta = e.at && e.tipo && AVISO_ORDEN.includes(e.tipo) && ahora - e.at <= DIA_MS ? 'avV_' + e.tipo : null;
+      const avBorrar = !!e.at;
+      if (avBorrar) { delete e.at; delete e.tipo; }
       e.v = hoy; e.l = c.nivel;
       e.a = 0;   // volvio: se reanudan los avisos
       // Primera entrada del dia: su hora, para avisarle a esa hora.
       if (nuevoDia) e.hs = [...(e.hs || []), horaUTC(ahora)].slice(-10);
-      if (cambia) await this.retGuardarIdx();
+      if (cambia || avBorrar) await this.retGuardarIdx();
+      if (avVuelta) await this.retSumar(hoy, { [avVuelta]: 1 });
       if (nuevo) await this.retSumar(hoy, conSrc(c, c.ret.iab ? { n: 1, niab: 1 } : { n: 1 }));
+      if (nuevo && c.ret.camp) { const rd = await this.retDia(hoy); if (rd['n~' + c.ret.camp] || campsDe(rd) < MAX_CAMP_DIA) await this.retSumar(hoy, { ['n~' + c.ret.camp]: 1 }); }
       // Sesiones: en memoria y al storage como mucho una vez por minuto.
       if (this._retMin && this._retMin.d !== hoy) await this.retVolcar();
       this._retMin = this._retMin || { d: hoy, min: 0, ses: 0 };
@@ -267,6 +396,8 @@ export const Retencion = {
     const min = Math.max(0, hasta - s.retT) / 60000;
     s.retT = ahora;
     c.ret.min = Math.round(((c.ret.min || 0) + min) * 100) / 100;
+    // Conversions API (meta.js): 3 min jugados, una vez, solo altas que vinieron de un anuncio y aceptaron medir.
+    if (c.ret.fbc && c.ret.alta && !c.ret.j3 && c.ret.min >= 3) { c.ret.j3 = 1; metaEvento(this, c, 'Jugo3Min'); }
     c.ret.visto = ahora;
     const hoy = diaNum(ahora);
     const nuevoDia = this.retMarcarDia(c, hoy);
@@ -281,6 +412,7 @@ export const Retencion = {
         else { this.enviar(s, { t: 'login', ...lg }); this.enviar(s, { t: 'toast', ok: true, m: '☀️ ¡Nuevo día! Misiones diarias renovadas.' }); }
         if (this.infoTareas) this.enviar(s, { t: 'tareas', ...this.infoTareas(c) });
         if (this.revisarLogros) this.revisarLogros(s, true);   // titulos de racha 7/14/21
+        if (lg.racha === 2) this.ofrecerAvisoTg(s).catch(() => {});   // «Avísame por Telegram» (web e invitados)
         // Cambio de mes con la sesion abierta: lo alcanzado del pase se cobra ya (antes esperaba a reconectar).
         if (this.infoPase) { const ip = this.infoPase(c); if (this.cobrarPasePendiente && c.pasePend) this.cobrarPasePendiente(s); this.enviar(s, { t: 'pase', pase: c.pasePend ? this.infoPase(c) : ip }); }
         this.actualizarYo(s);
@@ -325,8 +457,10 @@ export const Retencion = {
     await this.retVolcar();
     try { await this.evVolcar(); } catch (e) { console.error('[MMO ev volcar]', e); }
     if (accion === 'stats') return this.retStats();
+    if (accion === 'gasto') return this.gastoAnuncios(b || {});
     if (accion === 'recordatorios') return this.recordatorios(b && Number.isInteger(b.hora) ? b.hora : horaUTC());
     if (accion === 'avisos') return this.ponerAvisos(b || {});
+    if (accion === 'avisoTg') return this.avisoTgUsar(b || {});
     if (accion === 'avisadosHoy') return this.avisadosHoy(b && Number.isInteger(b.hora) ? b.hora : horaUTC());
     return null;
   },
@@ -448,6 +582,17 @@ export const Retencion = {
     for (const x of dias.slice(0, 14)) iab.n += x.r.niab || 0;
     { let base = 0, vuelven = 0; for (const x of dias) { const hace = hoy - x.n; if (hace > 1 && hace <= 31) { base += x.r.niab || 0; vuelven += x.r.r1iab || 0; } } iab.d1 = { pct: pct(vuelven, base), vuelven, base }; }
     embudo.iab = iab;
+    // «Avísame por Telegram» (web e invitados) activados en 14 dias.
+    embudo.avisoTgOk = 0;
+    for (const x of dias.slice(0, 14)) embudo.avisoTgOk += x.r.avisoTgOk || 0;
+    // Avisos diarios de los ultimos 14 dias por el tipo de su primera linea:
+    // enviados y cuantos volvieron en 24 h (la vuelta se anota el dia que vuelve).
+    const avisos = {};
+    for (const t of AVISO_ORDEN) {
+      let env = 0, vuelven = 0;
+      for (const x of dias.slice(0, 14)) { env += x.r['avE_' + t] || 0; vuelven += x.r['avV_' + t] || 0; }
+      if (env || vuelven) avisos[t] = { env, vuelven, pct: pct(vuelven, env) };
+    }
     // Lo mismo por origen (origen.js): altas, embudo de 14 dias y D1/D7 de las
     // ultimas 30 cohortes con el dia ya cumplido. Solo los origenes con altas.
     const origenes = {};
@@ -464,8 +609,11 @@ export const Retencion = {
     let carga = null;
     try { carga = await this.evStats(7); } catch (er) { console.error('[MMO evStats]', er); }
     // Invitaciones de los ultimos 14 dias (por dia en que pasaron).
-    const invitaciones = { refLlega: 0, refCuenta: 0, refPagado: 0 };
+    const invitaciones = { refLlega: 0, refCuenta: 0, refPagado: 0, n5r: 0, n10r: 0 };
     for (const x of dias.slice(0, 14)) for (const k in invitaciones) invitaciones[k] += x.r[k] || 0;
+    // Nv 10 de los referidos frente al resto de altas (mismas cohortes de 14 dias).
+    invitaciones.n10pct = pct(invitaciones.n10r, invitaciones.refLlega);
+    invitaciones.n10restoPct = pct(Math.max(0, embudo.n10 - invitaciones.n10r), Math.max(0, embudo.n - invitaciones.refLlega));
     // El evento de temporada en curso (o el ultimo, si acabo hace menos de 60
     // dias): altas de sus dias y su D7, y cuantos llegaron a 50 de su objeto.
     const ahoraE = Date.now();
@@ -481,10 +629,12 @@ export const Retencion = {
       }
       evento = { ...ev, d7pct: pct(ev.d7, ev.d7base) };
     }
+    let anuncios = null;
+    try { anuncios = await this.retAnuncios(dias, hoy); } catch (er) { console.error('[MMO anuncios]', er); }
     const ranking = (await (this.rankingLeer ? this.rankingLeer() : this.state.storage.get('ranking').then(r => r || []))).filter(x => !this.uidsPrueba.has(x.uid));
     return {
       ok: true, hoy: diaISO(hoy), activos, tipos30: tipos, niveles30: tramos, altas, cohortes, retencion, evento,
-      sesion: { sesiones7: ses, minutos7: Math.round(min), media: ses ? Math.round(min / ses * 10) / 10 : 0 }, embudo, invitaciones, origenes, carga,
+      sesion: { sesiones7: ses, minutos7: Math.round(min), media: ses ? Math.round(min / ses * 10) / 10 : 0 }, embudo, invitaciones, origenes, carga, anuncios, avisos,
       top: ranking.slice(0, 10).map(x => ({ n: x.n, lv: x.lv })),
       online: this.contarOnline(),
       salud: this.infoSalud ? this.infoSalud() : null,   // cupo de escrituras y lag (salud.js)
@@ -503,8 +653,15 @@ export const Retencion = {
   // El evento de temporada activo (aparte para que las pruebas lo fijen).
   temporadaAviso() { return temporadaDe(); },
 
-  puedeAvisar(uid, e, hoy) {
-    if (!/^tg:\d{1,15}$/.test(uid) || !e || e.off || e.bloq) return false;
+  // idx: para respetar el /avisos off (o el bloqueo) del chat de un jugador web
+  // (e.tc) y no mandarle dos avisos el mismo dia si tambien juega por Telegram.
+  puedeAvisar(uid, e, hoy, idx) {
+    if (!e || e.off || e.bloq || e.adw === hoy) return false;   // adw: su chat ya recibio hoy el aviso de su personaje web
+    if (!/^tg:\d{1,15}$/.test(uid)) {
+      if (uid.startsWith('tg:') || !/^\d{1,15}$/.test(String(e.tc || ''))) return false;
+      const t = idx && idx['tg:' + e.tc];
+      if (t && (t.off || t.bloq || t.ad === hoy)) return false;
+    }
     // Evento nuevo para el: un aviso extra aunque este en pausa.
     const tp = this.temporadaAviso(), extra = !!tp && e.ev !== tp.id;
     return e.v > 0 && e.v < hoy && hoy - e.v <= (extra ? OLVIDAR_DIAS : VENTANA_AVISO)
@@ -529,17 +686,19 @@ export const Retencion = {
     // Como mucho MAX_ENVIOS por llamada: cada mensaje a Telegram es una
     // subpeticion y el plan gratis permite ~50 por invocacion. El cron llama
     // varias veces; primero van los que hace mas que no reciben aviso.
-    const lista = Object.keys(idx).filter(u => this.puedeAvisar(u, idx[u], hoy) && horaHabitual(idx[u]) === hora).sort((a, b) => (idx[a].ad || 0) - (idx[b].ad || 0));
+    const lista = Object.keys(idx).filter(u => this.puedeAvisar(u, idx[u], hoy, idx) && horaHabitual(idx[u]) === hora).sort((a, b) => (idx[a].ad || 0) - (idx[b].ad || 0));
     res.quedan = Math.max(0, lista.length - MAX_ENVIOS);
+    const porTipo = {};   // avE_<tipo>: enviados por tipo (una sola suma al final)
     for (const uid of lista.slice(0, MAX_ENVIOS)) {
       const c = await this.state.storage.get('c:' + uid);
       const e = idx[uid];
       // Pudo entrar mientras se leia su personaje.
-      if (!c || !this.puedeAvisar(uid, e, hoy)) continue;
+      if (!c || !this.puedeAvisar(uid, e, hoy, idx)) continue;
       res.candidatos++;
       if (n > 0 && n % POR_SEGUNDO === 0) { await this.retGuardarIdx(); await this.dormir(1100); }
       n++;
-      const texto = await this.mensajeAviso(c, hoy);
+      const info = {};
+      const texto = await this.mensajeAviso(c, hoy, info);
       // Se marca antes de enviar: aunque el envio tarde, nada lo vuelve a
       // elegir hoy. Si falla por algo pasajero se deshace.
       const antes = { ad: e.ad, a: e.a, ev: e.ev };
@@ -547,16 +706,25 @@ export const Retencion = {
       const tpA = this.temporadaAviso();
       if (tpA) e.ev = tpA.id;   // un solo aviso extra por evento
       let r = null;
+      // Jugador web o invitado: su chat (e.tc) y un enlace normal a su version
+      // (web_app lo meteria con su cuenta de Telegram, que es otro personaje).
+      const chat = uid.startsWith('tg:') ? uid.slice(3) : String(e.tc);
+      const volver = uid.startsWith('tg:') ? { text: '🌍 Volver al mundo', web_app: { url: MMO_URL } } : { text: '🌍 Volver al mundo', url: c.en3d ? MUNDO_URL : MMO_URL };
       try {
         r = await this.tgEnviar('sendMessage', {
-          chat_id: uid.slice(3), text: texto, disable_web_page_preview: true,
+          chat_id: chat, text: texto, disable_web_page_preview: true,
           reply_markup: { inline_keyboard: [
-            [{ text: '🌍 Volver al mundo', web_app: { url: MMO_URL } }],
+            [volver],
             [{ text: '🔕 No quiero más avisos', callback_data: 'mmoavisos:off' }],
           ] },
         });
       } catch (err) { r = null; }
-      if (r && r.ok) { res.enviados++; res.ids.push(uid.slice(3)); }
+      if (r && r.ok) {
+        res.enviados++; res.ids.push(chat);
+        if (!uid.startsWith('tg:') && idx['tg:' + chat]) idx['tg:' + chat].adw = hoy;   // su personaje de Telegram no repite hoy
+        // Tipo de su primera linea y hora del envio: al volver en 24 h cuenta avV_<tipo>.
+        if (AVISO_ORDEN.includes(info.tipo)) { e.tipo = info.tipo; e.at = Date.now(); porTipo['avE_' + info.tipo] = (porTipo['avE_' + info.tipo] || 0) + 1; }
+      }
       else if (r && r.error_code === 403) {
         // Bloqueo al bot (o borro su cuenta / nunca abrio el chat): no se le
         // vuelve a escribir hasta que el mismo pida /avisos on.
@@ -569,8 +737,9 @@ export const Retencion = {
       }
     }
     await this.retGuardarIdx();
+    if (Object.keys(porTipo).length) { try { await this.retSumar(hoy, porTipo); } catch (er) { console.error('[MMO avisos tipo]', er); } }
     res.callar = Object.keys(idx).filter(u => u.startsWith('tg:') && (idx[u].off || idx[u].bloq)).map(u => u.slice(3));
-    res.hoy = Object.keys(idx).filter(u => u.startsWith('tg:') && (idx[u].ad === hoy || (this.puedeAvisar(u, idx[u], hoy) && horaHabitual(idx[u]) > hora))).map(u => u.slice(3));
+    res.hoy = Object.keys(idx).filter(u => (u.startsWith('tg:') || idx[u].tc) && (idx[u].ad === hoy || (this.puedeAvisar(u, idx[u], hoy, idx) && horaHabitual(idx[u]) > hora))).map(u => u.startsWith('tg:') ? u.slice(3) : String(idx[u].tc));
     return res;
   },
 
@@ -580,10 +749,11 @@ export const Retencion = {
     const hoy = diaNum();
     const idx = await this.retIdx();
     const tg = Object.keys(idx).filter(u => u.startsWith('tg:'));
+    const conTc = Object.keys(idx).filter(u => !u.startsWith('tg:') && idx[u].tc);
     return {
       ok: true,
       callar: tg.filter(u => idx[u].off || idx[u].bloq).map(u => u.slice(3)),
-      hoy: tg.filter(u => idx[u].ad === hoy || (this.puedeAvisar(u, idx[u], hoy) && horaHabitual(idx[u]) > hora)).map(u => u.slice(3)),
+      hoy: [...tg, ...conTc].filter(u => idx[u].ad === hoy || (this.puedeAvisar(u, idx[u], hoy, idx) && horaHabitual(idx[u]) > hora)).map(u => u.startsWith('tg:') ? u.slice(3) : String(idx[u].tc)),
     };
   },
 
@@ -625,18 +795,34 @@ export const Retencion = {
   // El texto se arma con lo que ese jugador tiene pendiente HOY, de lo mas
   // urgente (perder la racha) a lo mas general (cuanto falta para subir).
   // Texto plano, sin Markdown: el nombre lo eligio el jugador.
-  async mensajeAviso(c, hoy) {
+  // Las lineas se ordenan por lo que mas le importa a cada uno (AVISO_ORDEN):
+  // evento, lo social (sus amigos que ya jugaron hoy, su hermandad), su racha,
+  // lo que le falta para su proxima skin y despues lo demas. Solo datos que ya
+  // estan en memoria (el indice, la hermandad en cache, el propio c). info.tipo
+  // = el tipo de la primera linea (para medir la vuelta en 24 h por tipo).
+  async mensajeAviso(c, hoy, info) {
     const lineas = [];
+    const add = (tipo, t) => lineas.push({ tipo, t });
     // Evento de temporada: primero, para que siempre entre en las 3 lineas.
     const tp = this.temporadaAviso();
     if (tp) {
       const n = c[tp.campo] || 0;
       const tit = n < 50 ? `: con 50 y 200 ganas los títulos «${tp.titulos[0]}» y «${tp.titulos[1]}»` : n < 200 ? `: con 200 ganas el título «${tp.titulos[1]}»` : '';
-      lineas.push(`${tp.emoji} ¡${tp.nombre}! Hasta el ${tp.hasta} los monstruos sueltan ${tp.cosas}. Llevas ${fmt(n)}${tit}.`);
+      add('ev', `${tp.emoji} ¡${tp.nombre}! Hasta el ${tp.hasta} los monstruos sueltan ${tp.cosas}. Llevas ${fmt(n)}${tit}.`);
+    }
+    // Sus amigos (c.contactos) que ya jugaron hoy, cruzando con el indice (en memoria).
+    let idx = null;
+    try { idx = await this.retIdx(); } catch (e) {}
+    if (idx && Array.isArray(c.contactos)) {
+      const nombres = c.contactos.filter(a => a && a.u !== c.uid && a.n && idx[a.u] && idx[a.u].v === hoy).map(a => String(a.n).slice(0, 20));
+      if (nombres.length) {
+        const ver = nombres.slice(0, 2).join(' y ') + (nombres.length > 2 ? ` y ${nombres.length - 2} más` : '');
+        add('soc', `👋 Hoy ya ${nombres.length === 1 ? 'jugó' : 'jugaron'} ${ver}. ¡Entra tú también!`);
+      }
     }
     // Expedicion (expediciones.js) que ya volvio y espera a que la recoja.
-    if (c.exped && c.exped.fin <= Date.now()) lineas.push(`🧭 Tu expedición de ${c.exped.h < 1 ? Math.round(c.exped.h * 60) + ' min' : c.exped.h + ' h'} ya volvió con oro y materiales: recógela en ${c.en3d ? 'la fila 🧭 de tus misiones' : 'el registro de misiones'}.`);
-    if (horaFelizActiva()) lineas.push('⚡ Ahora mismo es la Hora Feliz: +50% de experiencia por caza hasta las 21:00 (hora de Perú).');
+    if (c.exped && c.exped.fin <= Date.now()) add('exped', `🧭 Tu expedición de ${c.exped.h < 1 ? Math.round(c.exped.h * 60) + ' min' : c.exped.h + ' h'} ya volvió con oro y materiales: recógela en ${c.en3d ? 'la fila 🧭 de tus misiones' : 'el registro de misiones'}.`);
+    if (horaFelizActiva()) add('feliz', '⚡ Ahora mismo es la Hora Feliz: +50% de experiencia por caza hasta las 21:00 (hora de Perú).');
     const L = c.login;
     // La racha no tiene tope (semanas de 7 dias): racha%7===0 = semana cumplida,
     // y mañana empieza la siguiente con el oro x1,25/x1,5.
@@ -644,27 +830,41 @@ export const Retencion = {
       const sig = L.racha + 1, pr = premioRacha(sig);
       const premio = pr.oro ? `${fmt(Math.round(pr.oro * multLogin(c.nivel) * multSemanaRacha(sig)))} oro${pr.item !== undefined ? ' + objeto ÉPICO' : ''}` : pr.txt;
       const semTxt = L.racha % 7 === 0 ? `¡cumpliste la semana ${semanaRacha(L.racha)}! Si entras hoy empieza la semana ${semanaRacha(sig)} (${premio}${semanaRacha(sig) <= 3 ? ', con más oro' : ''})` : `si entras hoy cobras el día ${diaRacha(sig)} de la semana ${semanaRacha(sig)} (${premio})`;
-      lineas.push(`🔥 Llevas ${L.racha} ${L.racha === 1 ? 'día seguido' : 'días seguidos'}: ${semTxt}. Si no, tu racha retrocede.`);
+      add('racha', `🔥 Llevas ${L.racha} ${L.racha === 1 ? 'día seguido' : 'días seguidos'}: ${semTxt}. Si no, tu racha retrocede.`);
     } else if (L && L.d === diaISO(hoy - 2) && L.racha > 2) {
       // Falto ayer: si entra hoy solo retrocede (o la conserva por el margen de 30 h).
       const baja = L.racha >= 8 ? (semanaRacha(L.racha) - 1) * 7 + 1 : L.racha === 7 ? 1 : L.racha - 1;
-      lineas.push(`🔥 Ayer no entraste: si entras HOY salvas tu racha de ${L.racha} días (como mucho baja a ${baja}). Mañana vuelve al día 1.`);
+      add('racha', `🔥 Ayer no entraste: si entras HOY salvas tu racha de ${L.racha} días (como mucho baja a ${baja}). Mañana vuelve al día 1.`);
     }
     const g = this.grupos && [...this.grupos.values()].find(x => x.uids.includes(c.uid));
     const enGrupo = g ? g.uids.filter(u => u !== c.uid && this.porUid.has(u)).length : 0;
-    if (enGrupo) lineas.push(`👥 Tu grupo te espera: ${enGrupo} ${enGrupo === 1 ? 'compañero está conectado' : 'compañeros están conectados'} ahora.`);
+    if (enGrupo) add('soc', `👥 Tu grupo te espera: ${enGrupo} ${enGrupo === 1 ? 'compañero está conectado' : 'compañeros están conectados'} ahora.`);
     let h = null;
     try { h = c.herm ? await this.hermandad(c.herm) : null; } catch (e) {}
     const enHerm = h && h.miembros ? Object.keys(h.miembros).filter(u => u !== c.uid && this.porUid.has(u)).length : 0;
-    if (enHerm) lineas.push(`🛡️ ${enHerm} de tu hermandad «${h.nombre}» ${enHerm === 1 ? 'está conectado' : 'están conectados'} ahora.`);
+    if (enHerm) add('soc', `🛡️ ${enHerm} de tu hermandad «${h.nombre}» ${enHerm === 1 ? 'está conectado' : 'están conectados'} ahora.`);
+    // Gesta semanal de su hermandad (hermandades.js): cuanto le falta al siguiente nivel.
+    else if (h && h.gesta && h.gesta.sem === semanaUTC() && h.gesta.p > 0) {
+      const p = h.gesta.p, i = GESTA_UMBRALES.findIndex(u => p < u);
+      if (i >= 0) add('soc', `🛡️ Tu hermandad «${h.nombre}» va ${fmt(p)}/${fmt(GESTA_UMBRALES[i])} en la gesta semanal: tu ayuda la acerca al nivel ${GESTA_NOMBRES[i]}.`);
+    }
+    // Coleccion: la skin de oro mas barata que aun no tiene (con el descuento de evento).
+    const mias = new Set(c.skins || ['comun']);
+    const sk = Object.keys(SKINS).map(id => ({ id, p: precioOro('skin', id) })).filter(x => typeof x.p === 'number' && x.p > 0 && !mias.has(x.id)).sort((a, b) => a.p - b.p)[0];
+    const faltaSk = sk ? sk.p - Math.floor(c.oro || 0) : 0;
+    // Solo si ya junto al menos la cuarta parte (si no, no motiva: va lo demas).
+    if (sk && faltaSk <= sk.p * 0.75) {
+      const falta = faltaSk;
+      add('col', falta > 0 ? `👕 Te faltan ${fmt(falta)} de oro para la skin «${SKINS[sk.id].nombre}».` : `👕 ¡Ya te alcanza el oro para la skin «${SKINS[sk.id].nombre}»! Está en la tienda.`);
+    }
     if (c.nivel >= NIVEL_MAZMORRA) {
       const pr = premioMazmorraDia(c.nivel);
-      lineas.push(`🏰 El premio diario de mazmorra está disponible: +${fmt(pr.xp)} XP, +${fmt(pr.oro)} oro y un objeto ÉPICO.`);
+      add('mazm', `🏰 El premio diario de mazmorra está disponible: +${fmt(pr.xp)} XP, +${fmt(pr.oro)} oro y un objeto ÉPICO.`);
     }
     // Torre del Duende: si esta semana aun no subio (su cofre cada 5 pisos espera).
-    if (c.nivel >= TORRE.nv && (!c.torre || c.torre.sem !== semanaUTC() || !c.torre.max)) lineas.push('🗼 Esta semana aún no subes la Torre del Duende: cada 5 pisos nuevos, un cofre con oro y equipo.');
+    if (c.nivel >= TORRE.nv && (!c.torre || c.torre.sem !== semanaUTC() || !c.torre.max)) add('torre', '🗼 Esta semana aún no subes la Torre del Duende: cada 5 pisos nuevos, un cofre con oro y equipo.');
     const pd = premioDiaria(c.nivel);
-    lineas.push(`🎯 ${DIARIA.nombre} sin cobrar: +${fmt(pd.xp)} XP, +${fmt(pd.oro)} oro y ${pd.pocion} pociones.`);
+    add('diaria', `🎯 ${DIARIA.nombre} sin cobrar: +${fmt(pd.xp)} XP, +${fmt(pd.oro)} oro y ${pd.pocion} pociones.`);
     if (c.nivel < NIVEL_MAX) {
       const falta = Math.max(1, xpParaSubir(c.nivel) - (c.xp || 0));
       const hab = c.clase ? HABS.filter(x => x.clase === c.clase && x.nv > c.nivel).sort((a, b) => a.nv - b.nv)[0] : null;
@@ -672,9 +872,76 @@ export const Retencion = {
       if (hab) t += hab.nv === c.nivel + 1 ? `, donde aprendes ${hab.nombre}.` : ` (en el ${hab.nv} aprendes ${hab.nombre}).`;
       else if (!c.clase) t += `. Aún no eliges clase: ${Object.values(CLASES).map(x => x.nombre).join(', ')}.`;
       else t += '.';
-      lineas.push(t);
+      add('nivel', t);
     }
-    return `🧌 ¡${c.nombre}, el Pueblo Duende te extraña!\n\n${lineas.slice(0, 3).join('\n\n')}`;
+    // Orden estable: dentro de cada tipo se respeta el orden de arriba. Una sola
+    // linea por tipo (dos sociales no dejan fuera la racha).
+    const orden = t => { const i = AVISO_ORDEN.indexOf(t); return i < 0 ? AVISO_ORDEN.length : i; };
+    const vistos = new Set();
+    const top = lineas.map((x, i) => ({ ...x, i })).sort((a, b) => orden(a.tipo) - orden(b.tipo) || a.i - b.i).filter(x => !vistos.has(x.tipo) && vistos.add(x.tipo)).slice(0, 3);
+    if (info && top[0]) info.tipo = top[0].tipo;
+    return `🧌 ¡${c.nombre}, el Pueblo Duende te extraña!\n\n${top.map(x => x.t).join('\n\n')}`;
+  },
+
+  // ── «AVÍSAME POR TELEGRAM» (web e invitados) ──
+  // Se ofrece con el codigo ya hecho (el boton es un enlace normal: el movil no
+  // lo bloquea como ventana emergente) al cobrar el dia 2 de la racha o al
+  // entregar la mision 1; pedido = el jugador pidio otro ({t:'avisoTgCod'}).
+  // Nunca se escribe a nadie desde aqui: el chat se abre solo si el jugador
+  // pulsa el enlace e inicia el bot.
+  async ofrecerAvisoTg(s, pedido) {
+    const c = s && s.c;
+    if (!c || s.cerrado) return;
+    const yoAuth = s.uidAuth || c.uid;
+    if (c.uid.startsWith('tg:') || String(yoAuth).startsWith('tg:') || this.uidsPrueba.has(c.uid)) return;
+    const ahora = Date.now();
+    if (pedido && ahora - (s.avTgT || 0) < 15000) return;   // un codigo cada 15 s por conexion
+    s.avTgT = ahora;
+    let e = null;
+    try { e = (await this.retIdx())[c.uid]; } catch (er) {}
+    if (e && e.tc && !pedido) return;   // ya recibe avisos
+    if (s.cerrado || s.c !== c) return;
+    const m = this.avCods || (this.avCods = new Map());
+    for (const [k, x] of m) if (x.uid === c.uid || x.exp < ahora) m.delete(k);
+    if (m.size > 5000) return;   // tope de memoria (una oleada de invitados)
+    let cod;
+    do {
+      const r = crypto.getRandomValues(new Uint8Array(10));
+      cod = Array.from(r, x => AV_LETRAS[x % AV_LETRAS.length]).join('');
+    } while (m.has(cod));
+    m.set(cod, { uid: c.uid, exp: ahora + AVISO_TG_MS });
+    this.enviar(s, { t: 'avisoTg', cod, url: 'https://t.me/duendequest_bot?start=av_' + cod, oro: c.avTgOro ? 0 : AVISO_TG_ORO, ya: !!(e && e.tc), ms: AVISO_TG_MS, pedido: !!pedido });
+  },
+
+  // El bot recibio /start av_<cod> en un chat privado: ese chat avisa a ese
+  // personaje (uno por chat: el ultimo que lo pidio). Premio una vez por
+  // personaje y por chat. Contador avisoTgOk en el dia.
+  async avisoTgUsar(b) {
+    const cod = String(b.cod || '').toLowerCase(), chat = String(b.chatId || '');
+    if (!/^[a-z0-9]{10}$/.test(cod) || !/^\d{1,15}$/.test(chat)) return { ok: false, error: 'código no válido' };
+    const m = this.avCods, v = m && m.get(cod);
+    if (!v || v.exp < Date.now()) { if (v) m.delete(cod); return { ok: false, caducado: true }; }
+    m.delete(cod);
+    const idx = await this.retIdx();
+    for (const u in idx) if (u !== v.uid && idx[u].tc === chat) delete idx[u].tc;
+    const e = idx[v.uid] || (idx[v.uid] = { v: 0 });
+    const nuevo = e.tc !== chat;
+    e.tc = chat; delete e.bloq; e.a = 0;
+    if (!(await this.retGuardarIdx())) return { ok: false, error: 'No se pudo guardar. Intenta de nuevo en un rato.' };
+    let oro = 0, nombre = '', s = null, c = null;
+    try { ({ s, c } = await this.pjDe(v.uid)); } catch (er) {}
+    if (c) {
+      nombre = c.nombre || '';
+      if (!c.avTgOro && !(await this.state.storage.get('avtg:' + chat))) {
+        c.avTgOro = 1; c.oro = (c.oro || 0) + AVISO_TG_ORO; oro = AVISO_TG_ORO;
+        await this.state.storage.put('avtg:' + chat, v.uid);
+        if (s) { s.sucio = true; await this.guardar(s); } else await this.state.storage.put('c:' + v.uid, c);
+      }
+      if (s && !s.cerrado) { this.enviar(s, { t: 'avisoTgOk', oro }); if (oro) this.actualizarYo(s); }
+    }
+    if (nuevo && !this.uidsPrueba.has(v.uid)) this.retSumar(diaNum(), { avisoTgOk: 1 }).catch(() => {});
+    const t = idx['tg:' + chat];
+    return { ok: true, nombre, oro, off: !!(t && t.off) };
   },
 
   // /avisos on|off (y el boton del aviso). Se guarda en el indice y no en el
@@ -693,7 +960,11 @@ export const Retencion = {
     // Solo consultar (/avisos sin on/off): no se crea ni se escribe nada.
     if (b.on !== true && b.on !== false) { const e0 = idx[uid] || {}; return { ok: true, on: !e0.off, jugo: (e0.v || 0) > 0 }; }
     const e = idx[uid] || (idx[uid] = { v: 0 });
-    if (b.on === true) { delete e.off; delete e.bloq; e.a = 0; }
+    if (b.on === true) {
+      delete e.off; delete e.bloq; e.a = 0;
+      // Sus personajes web o de invitado que avisan a este chat tambien se reanudan.
+      for (const u in idx) if (idx[u].tc === id && idx[u].bloq) { delete idx[u].bloq; idx[u].a = 0; }
+    }
     else if (b.on === false) e.off = 1;
     // Si no se guardo, se dice: si no, la baja solo vivia en memoria hasta el siguiente reinicio.
     if (!(await this.retGuardarIdx())) return { ok: false, error: 'No se pudo guardar. Intenta de nuevo en un rato.' };

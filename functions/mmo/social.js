@@ -463,6 +463,7 @@ export const Social = {
   renombrarContacto(viejo, nuevo) {
     for (const x of this.sesiones.values()) {
       for (const a of (x.c && x.c.contactos) || []) if (a.u === viejo) { a.u = nuevo; x.sucio = true; }
+      for (const a of (x.c && x.c.invitados) || []) if (a.u === viejo) { a.u = nuevo; x.sucio = true; }   // «Mis invitados» (amigos.js)
     }
   },
   quitarContacto(s, m) {

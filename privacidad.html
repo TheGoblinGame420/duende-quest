@@ -83,11 +83,11 @@ footer a:hover{color:var(--txt);}
 
 <main>
   <h1>Política de Privacidad</h1>
-  <p class="updated">Última actualización: 22 de octubre de 2026</p>
+  <p class="updated">Última actualización: 1 de noviembre de 2026</p>
 
   <p>Esta política explica qué datos recopila <strong>DUENDE QUEST</strong> (el "Servicio"), para qué los usamos, con quién los compartimos y qué derechos tienes sobre ellos. Aplica a la versión web (este sitio), a la Mini App de Telegram y a <strong>DUENDE QUEST ONLINE</strong> (<code>/mmo/</code>).</p>
 
-  <div class="nota ok"><p><strong>En resumen:</strong> guardamos lo necesario para que tu progreso no se pierda y para revisar pagos y premios. No vendemos datos, no hay publicidad de terceros y nunca te pedimos tu frase semilla, tus llaves privadas ni tus contraseñas por mensaje.</p></div>
+  <div class="nota ok"><p><strong>En resumen:</strong> guardamos lo necesario para que tu progreso no se pierda y para revisar pagos y premios. No vendemos datos, no mostramos publicidad de terceros y nunca te pedimos tu frase semilla, tus llaves privadas ni tus contraseñas por mensaje. Si llegas desde un anuncio de Facebook o Instagram, <strong>solo si nos das permiso</strong> le contamos a Meta que ese anuncio funcionó (ver <a href="#medicion">Medición de anuncios</a>).</p></div>
 
   <h2 id="responsable"><span class="n">1.</span>Quién trata tus datos</h2>
   <p>DUENDE QUEST es operado por una persona natural desde Perú, su creador, quien actúa como responsable del tratamiento de tus datos personales para efectos de la <strong>Ley N.º 29733, Ley de Protección de Datos Personales</strong> del Perú y su reglamento. Puedes contactarnos para cualquier tema de privacidad en <a href="mailto:sonicoperuoficial@gmail.com">sonicoperuoficial@gmail.com</a>.</p>
@@ -132,10 +132,11 @@ footer a:hover{color:var(--txt);}
     <li>Mostrar el ranking y las estadísticas de tu perfil.</li>
     <li>Enviarte por Telegram avisos del propio juego: el estado de tus pedidos, retiros o premios y, como máximo una vez al día, un recordatorio para volver al MMO. Los recordatorios se desactivan con "No quiero más avisos" o con <code>/avisos off</code> en el bot.</li>
     <li>Medir de forma agregada cuántos jugadores vuelven (por ejemplo, al día siguiente o a la semana) para mejorar el juego.</li>
+    <li>Solo si lo aceptas, medir si nuestros anuncios en Facebook e Instagram traen jugadores (ver <a href="#medicion">Medición de anuncios</a>).</li>
     <li>Dar soporte cuando nos escribes.</li>
     <li>Mantener la seguridad del Servicio (por ejemplo, detectar patrones de tráfico anómalo).</li>
   </ul>
-  <div class="nota ok"><p>No usamos tus datos para publicidad de terceros ni los vendemos. No compartimos tu email ni tu ID de Telegram públicamente: el ranking solo muestra el nombre que tú eliges.</p></div>
+  <div class="nota ok"><p>No vendemos tus datos ni los usamos para mostrarte publicidad de terceros. La única excepción es la medición de nuestros propios anuncios, que es opcional y solo se activa si la aceptas. No compartimos tu email ni tu ID de Telegram públicamente: el ranking solo muestra el nombre que tú eliges.</p></div>
 
   <h2 id="terceros"><span class="n">5.</span>Con quién compartimos datos</h2>
   <p>Usamos los siguientes proveedores para operar el Servicio, quienes procesan datos por nuestra cuenta bajo sus propias políticas de seguridad:</p>
@@ -147,12 +148,13 @@ footer a:hover{color:var(--txt);}
     <tr><td>Telegram</td><td>Autenticación, pagos con Stars dentro de la Mini App y mensajes del bot</td></tr>
     <tr><td>TON Connect</td><td>Conexión con tu wallet TON; solo nos entrega tu dirección pública</td></tr>
     <tr><td>CoinGecko</td><td>Consulta pública de precios de SOL y TON; no recibe datos tuyos</td></tr>
+    <tr><td>Meta Platforms (Facebook / Instagram)</td><td>Solo si aceptas la medición de anuncios: recibe el identificador del clic en el anuncio y un código seudónimo de tu personaje (ver <a href="#medicion">Medición de anuncios</a>)</td></tr>
   </table></div>
   <p>Adicionalmente, cualquier transacción que hagas en Solana o TON (incluidos los pagos de retiros de mTON a tu wallet) queda registrada de forma pública y permanente en esas blockchains por su propia naturaleza; eso no depende de nosotros y no lo podemos borrar.</p>
   <p>Podríamos divulgar datos si la ley nos obliga (por ejemplo, un requerimiento judicial válido) o para proteger nuestros derechos legales.</p>
 
   <h2 id="donde"><span class="n">6.</span>Dónde se procesan tus datos</h2>
-  <p>Nuestros proveedores (Supabase, Cloudflare, Helius, Telegram) operan infraestructura distribuida internacionalmente, por lo que tus datos pueden procesarse fuera de Perú. En esos casos, exigimos que el proveedor mantenga medidas de seguridad razonables equivalentes a las exigidas por la normativa peruana.</p>
+  <p>Nuestros proveedores (Supabase, Cloudflare, Helius, Telegram y, si aceptas la medición de anuncios, Meta) operan infraestructura distribuida internacionalmente, por lo que tus datos pueden procesarse fuera de Perú. En esos casos, exigimos que el proveedor mantenga medidas de seguridad razonables equivalentes a las exigidas por la normativa peruana.</p>
 
   <h2 id="plazo"><span class="n">7.</span>Cuánto tiempo guardamos tus datos</h2>
   <p>Guardamos los datos de tu cuenta y de tu personaje mientras los mantengas activos. Si solicitas la eliminación de tu cuenta, la borraremos en un plazo razonable, salvo la información que debamos conservar por obligación legal o para resolver disputas de pagos, retiros o premios ya realizados. Las estadísticas de días jugados guardan como mucho los últimos 60 días por personaje.</p>
@@ -170,7 +172,27 @@ footer a:hover{color:var(--txt);}
   <p>Consejos para protegerte de suplantaciones: <a href="/seguridad">Seguridad y estafas</a>.</p>
 
   <h2 id="cookies"><span class="n">11.</span>Cookies y almacenamiento local</h2>
-  <p>Usamos <code>localStorage</code> del navegador para guardar tu sesión, un ranking local de respaldo y, en el MMO, tu código de invitado y preferencias como el sonido. No usamos cookies de rastreo publicitario ni de terceros con fines de marketing.</p>
+  <p>Usamos <code>localStorage</code> del navegador para guardar tu sesión, un ranking local de respaldo, de qué enlace llegaste (por ejemplo, la etiqueta de un anuncio o de una invitación) y, en el MMO, tu código de invitado y preferencias como el sonido.</p>
+  <h3 id="medicion">Medición de anuncios (píxel y Conversions API de Meta)</h3>
+  <p>Por defecto <strong>no usamos cookies de rastreo publicitario</strong>. Si llegas desde un anuncio nuestro en Facebook o Instagram, fuera de Telegram, te preguntamos si aceptas que midamos ese anuncio. Solo si pulsas <strong>«Aceptar»</strong>:</p>
+  <ul>
+    <li>se carga el píxel de Meta, que pone sus cookies (<code>_fbp</code> y <code>_fbc</code>) en tu navegador;</li>
+    <li>nuestro servidor le avisa a Meta de unos pocos hitos: que jugaste 3 minutos, que completaste la primera misión, que volviste al día siguiente, que abriste una compra y que tu compra fue entregada (con su monto en dólares);</li>
+    <li>en esos avisos solo va el identificador del clic en el anuncio y un código seudónimo de tu personaje (una huella cifrada en lugar de tu cuenta). <strong>Nunca</strong> enviamos tu nombre, correo, teléfono, dirección IP ni tu ID de Telegram.</li>
+  </ul>
+  <p>Lo usamos solo para saber qué anuncios traen jugadores y dejar de pagar los que no. Si pulsas «No, gracias» no se carga nada de Meta. Dentro de la Mini App de Telegram nunca te lo preguntamos ni se carga el píxel. Puedes retirar tu permiso cuando quieras con este botón, que también borra las cookies de Meta de este sitio; a partir de tu siguiente entrada al juego dejamos de avisar a Meta.</p>
+  <p><button type="button" id="medir-retirar" style="padding:8px 14px;border-radius:8px;cursor:pointer">Retirar mi permiso de medición</button> <span id="medir-estado"></span></p>
+  <script>
+  (function () {
+    var b = document.getElementById('medir-retirar'), e = document.getElementById('medir-estado');
+    function ver() { var v = null; try { v = localStorage.getItem('dq_medir'); } catch (er) {} e.textContent = v === '1' ? 'Ahora: aceptado.' : v === '0' ? 'Ahora: no aceptado.' : 'Ahora: no has aceptado.'; }
+    b.addEventListener('click', function () { try { localStorage.setItem('dq_medir', '0'); sessionStorage.removeItem('dq_medir_p'); } catch (er) {}
+      // Borra tambien las cookies de Meta de este sitio (_fbp/_fbc son de nuestro dominio).
+      try { ['_fbp', '_fbc'].forEach(function (n) { document.cookie = n + '=;path=/;max-age=0'; document.cookie = n + '=;path=/;max-age=0;domain=.' + location.hostname.replace(/^www\./, ''); }); } catch (er) {}
+      ver(); });
+    ver();
+  })();
+  </script>
 
   <h2 id="cambios"><span class="n">12.</span>Cambios a esta política</h2>
   <p>Podemos actualizar esta política cuando cambie el Servicio. Publicaremos la nueva fecha arriba. Te recomendamos revisarla de vez en cuando.</p>

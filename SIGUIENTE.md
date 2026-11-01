@@ -3214,3 +3214,14 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - #42: tope de fps, sin render en segundo plano, calidad según GPU, luz horneada en la cueva. #45: primer minuto con objeto garantizado y Nv 2, misión de 5 goblins, reaparición rápida Nv 1-2.
 - #46/#47: los avisos no tapan el tutorial; haz de luz en épicos/legendarios y «Presumir». #54/#56: [MOD]/[DUEÑO], solo el dueño publica carteras; chicha con requisitos visibles (revisar `CHICHA` en data.js).
 - Arnés 883 bien (actualizadas las pruebas de expediciones Nv 2 y del aviso al moderador).
+
+### Ronda 4 de la noche del lanzamiento (1-nov-2026, `?v=328`)
+
+- #28: embudo de compra (`hitoCompra`, `evCompra`, `ventaCohorte`), `/gasto` (solo ADMIN, US$), ROAS D7 por origen y campaña en /mmostats, /ventas con detalle.
+- #35: Stars desde la web (enlace/QR con createInvoiceLink, `pd.uidPago`), reutiliza la factura viva.
+- #40: `/start ad_<campaña>` con bienvenida sin cripto; el dueño debe registrar la Mini App «jugar» en BotFather.
+- #43/#44: ruta crítica de ORIGINS (conexión en paralelo, música ligera con saveData) y carga mínima de CLASSIC/arcade.
+- #48: «Avísame por Telegram» con opt-in (`mmo/js/avisotg.js`, start=av_). #49: código de 6 letras para llevar el duende. #50: aviso diario personal.
+- #57: píxel y Conversions API (`js/medir.js`, `functions/mmo/meta.js`, `/api/medir`) APAGADOS sin META_PIXEL_ID/META_CAPI_TOKEN; consentimiento explícito; privacidad.html actualizada.
+- #58: kit de invitado, +25% XP en grupo con quien te invitó hasta Nv 10, «Mis invitados».
+- Arnés 891 bien.

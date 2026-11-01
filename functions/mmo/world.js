@@ -43,7 +43,8 @@ import { Profesiones } from './profesiones.js';
 import { Amigos } from './amigos.js';
 import { Duelos } from './duelos.js';
 import { Chicha } from './chicha.js';
-import { Retencion } from './retencion.js';
+import { Retencion, diaNum } from './retencion.js';
+import { metaHola, metaEvento } from './meta.js';
 import { Salud } from './salud.js';
 import { Eventos } from './eventos.js';
 import { Pase } from './pase.js';
@@ -484,6 +485,7 @@ export class MmoWorld {
       case 'revivir': return this.revivir(s);
       case 'mision': return this.mision(s, m);
       case 'vincInfo': case 'vincCodigo': case 'vincUsar': case 'vincQuitar': return this.vincular(s, m);
+      case 'avisoTgCod': return this.ofrecerAvisoTg(s, true);   // «Avísame por Telegram» (retencion.js)
       case 'regreso': return this.regreso(s);
       case 'ranking': return this.enviarRanking(s);
       case 'hab': return this.habilidad(s, m);
@@ -493,9 +495,11 @@ export class MmoWorld {
       case 'retirar': return this.retirar(s);
       case 'fondo': return this.enviar(s, { t: 'fondo', ...this.infoFondo() });
       case 'pedido': return this.pedido(s, m);
+      case 'pedidoCancelar': return this.pedidoCancelar(s, m);
       case 'pedidoFirma': return this.pedidoFirma(s, m);
       case 'pedidoBuscar': return this.pedidoBuscar(s, m);
       case 'reclamoPedido': return this.reclamoPedido(s, m);
+      case 'ev': return this.evCompra(s, m);   // pasos del embudo de compra que solo ve el cliente (retencion.js)
       case 'ping': return this.enviar(s, { t: 'pong', ts: m.ts });
       case 'visto': return this.buzonVisto(s, m);
       case 'dios': return this.dios(s, m);
@@ -553,6 +557,10 @@ export class MmoWorld {
           // Codigo de invitacion guardado al registrarse (vale aunque confirme el correo en otro aparato).
           const refMeta = u.user_metadata && u.user_metadata.ref;
           if (typeof refMeta === 'string') extra.ref = refMeta;
+          // Token del invitado guardado al crear la cuenta (signUp, dq_inv): confirmar el
+          // correo en otro navegador ya no deja atras al duende. Igual se pregunta (heredar).
+          const invMeta = u.user_metadata && u.user_metadata.dq_inv;
+          if (typeof invMeta === 'string' && /^[a-f0-9]{32}$/.test(invMeta)) extra.inv = invMeta;
         }
       } else if (a.k === 'inv' && /^[a-f0-9]{32}$/.test(a.tok || '')) {
         uid = 'inv:' + (await sha256hex('dq-mmo:' + a.tok)).slice(0, 24);
@@ -637,19 +645,27 @@ export class MmoWorld {
     // invitado (el token es secreto: solo lo tiene quien jugo con el).
     // Nunca en silencio: un enlace con la sesion de Telegram de otro se llevaba
     // el duende. Solo con heredar:true (el jugador lo elige con un boton).
-    if (!c && !uid.startsWith('inv:') && /^[a-f0-9]{32}$/.test(m.inv || '')) {
-      const uidInv = 'inv:' + (await sha256hex('dq-mmo:' + m.inv)).slice(0, 24);
+    // Llevar mi duende con codigo (vincular.js): el duende vacio de la cuenta se archiva y hereda sin preguntar otra vez.
+    const porCod = !uid.startsWith('inv:') && typeof m.vcod === 'string' && m.vcod ? await this.tomarCodigoInv(s, uid, c, m.vcod) : '';
+    if (porCod) c = null;
+    if (s.cerrado) return;
+    const tokInv = /^[a-f0-9]{32}$/.test(m.inv || '') ? m.inv : (s.extraAuth && s.extraAuth.inv) || '';
+    if (!c && !uid.startsWith('inv:') && (porCod || tokInv)) {
+      const uidInv = porCod || 'inv:' + (await sha256hex('dq-mmo:' + tokInv)).slice(0, 24);
+      // El invitado abierto en otra pestaña se guarda y se saca (antes la herencia fallaba en silencio).
+      if (!porCod && uidInv !== uid && this.porUid.has(uidInv) && !this.entrando.has(uidInv)) await this.soltarInvitado(uidInv, 'Entraste con tu cuenta en otra pestaña: allí puedes pasarle este duende.');
+      if (s.cerrado) return;
       const previo = uidInv !== uid && await this.state.storage.get('c:' + uidInv);
       // Un invitado baneado no se lava creando una cuenta. Los bots de prueba no se heredan.
       const puede = previo && !UIDS_PRUEBA.has(uidInv) && !this.porUid.has(uidInv) && !this.entrando.has(uidInv) && !(await this.baneado(uidInv));
       // Sin respuesta aun y con progreso: se pregunta y se corta; el cliente vuelve con heredar true o false.
-      if (puede && typeof m.heredar !== 'boolean' && (previo.nivel || 1) > 1) {
+      if (puede && !porCod && typeof m.heredar !== 'boolean' && (previo.nivel || 1) > 1) {
         this.enviar(s, { t: 'heredar', nv: previo.nivel, inv: previo.nombre || '', cuenta: nombre || '', k: uid.split(':')[0] });
         try { s.ws.close(4001, 'heredar'); } catch (e) {}
         this.cerrar(s);
         return;
       }
-      if (puede && m.heredar === true) {
+      if (puede && (porCod || m.heredar === true)) {
         // Mientras se hereda, el invitado no puede entrar (ni otra cuenta heredar):
         // leeria el personaje que se esta moviendo y al guardarlo quedaria duplicado.
         this.entrando.set(uidInv, s);
@@ -678,9 +694,7 @@ export class MmoWorld {
           const h = c.herm && await this.hermandad(c.herm);
           if (h && h.miembros[uidInv]) { h.miembros[uid] = h.miembros[uidInv]; delete h.miembros[uidInv]; await this.guardarHerm(h); }
           if (c.ref && (await this.state.storage.get('ref:' + c.ref)) === uidInv) await this.state.storage.put('ref:' + c.ref, uid);
-          const r = await this.rankingLeer();
-          const fila = r.find(x => x.uid === uidInv);
-          if (fila) { fila.uid = uid; fila.n = nombre; await this.state.storage.put('ranking', r); }   // la herencia se guarda al momento
+          await this.migrarUid(uidInv, uid, nombre);   // rankings (vincular.js); la herencia se guarda al momento
         } finally { if (this.entrando.get(uidInv) === s) this.entrando.delete(uidInv); }
       }
     }
@@ -812,7 +826,14 @@ export class MmoWorld {
     // Sin await: lo que toca al personaje es inmediato y los agregados no
     // deben retrasar la entrada al mundo.
     s.iab = m.iab === 1;   // navegador interno de Facebook/Instagram: su alta y su D1 aparte en /mmostats
-    this.retEntrar(s, nuevo, m.src);   // src: de donde llego (origen.js); solo cuenta en el alta
+    // Alta de Telegram que vino de un /start ad_<campaña>: cuenta como 'tg' (salvo meta/ref, mas concretos).
+    let srcAlta = m.src, campTg = '';
+    if (nuevo && uid && uid.startsWith('tg:') && srcAlta !== 'meta' && srcAlta !== 'ref') {
+      // Se usa una vez y se borra (no se acumulan claves tgorg: en el storage).
+      try { const k = 'tgorg:' + uid.slice(3), o = await this.state.storage.get(k); if (o) { this.state.storage.delete(k); if (Date.now() - (o.t || 0) < 30 * 86400000) { srcAlta = 'tg'; campTg = o.c; } } } catch (e) {}
+    }
+    this.retEntrar(s, nuevo, srcAlta, m.camp || campTg);   // src: de donde llego (origen.js); camp: utm_campaign o /start ad_; solo cuentan en el alta
+    metaHola(this.env, c, m);   // clic del anuncio de Meta (fbc) si acepto la medicion y hay META_*: functions/mmo/meta.js
     if (nuevo || heredado || login) await this.guardar(s);
     if (s.cerrado) return;   // cerrado durante el guardado: cerrar() ya limpio todo
 
@@ -829,6 +850,7 @@ export class MmoWorld {
       this.refrescarApariencia(s);
     }).catch(e => console.error('[MMO skinsPagadas]', e));
     if (login) { this.enviar(s, { t: 'login', ...login }); this.revisarLogros(s, true); }   // titulos de racha 7/14/21
+    if (login && login.racha === 2) this.ofrecerAvisoTg(s).catch(() => {});   // «Avísame por Telegram» (web e invitados)
     this.buzonEnviar(s).catch(e => console.error('[MMO buzon]', e));   // "Mientras no estabas" y compra entregada
     const tp = temporadaDe();
     if (ambulanteActivo() && c.nivel >= 15) this.enviar(s, { t: 'toast', m: 'Mercader ambulante en el pueblo este fin de semana: colores y una mascota exclusivos (pestaña «Ambulante»).', ok: true });
@@ -1071,7 +1093,7 @@ export class MmoWorld {
     // Uno que se quedo 'comprobando' (el servidor se reinicio mientras se
     // miraba la cadena) vuelve a esperar el pago.
     for (const x of this.pedidos) if (x.estado === 'comprobando' && ahora - (x.compT || 0) > 120000) { x.estado = x.antesComp || 'esperando_pago'; x.firma = ''; }
-    for (const x of this.pedidos) if (x.estado === 'esperando_pago' && ahora - x.creado > PEDIDO_VIGENCIA_MS) x.estado = 'vencido';
+    for (const x of this.pedidos) if (x.estado === 'esperando_pago' && ahora - x.creado > PEDIDO_VIGENCIA_MS) { x.estado = 'vencido'; this.hitoCompra(null, 'cad', x); }   // caducado sin pagar: embudo de compra
     this.pedidos = this.pedidos.filter(x => x.estado !== 'vencido' || ahora - x.creado < 86400000);
     let sobran = this.pedidos.length - 300;
     if (sobran > 0) this.pedidos = this.pedidos.filter(x => !(sobran > 0 && (x.estado === 'entregado' || x.estado === 'anulado' || x.estado === 'vencido') && sobran-- > 0));
@@ -1177,23 +1199,44 @@ export class MmoWorld {
     const metodo = m.metodo === 'sol' || m.metodo === 'duende' ? m.metodo : 'stars';
     const no = t => this.enviar(s, { t: 'toast', m: t });
     if (c.uid.startsWith('inv:')) return no('Para comprar entra con tu cuenta de Telegram o inicia sesión en el juego web.');
-    if (metodo === 'stars' && !c.uid.startsWith('tg:')) return no('Las Stars solo se pueden usar dentro de Telegram. En la web se paga con SOL o $DUENDE.');
-    if (metodo !== 'stars' && c.uid.startsWith('tg:')) return no('Dentro de Telegram se paga con Stars.');
+    // El metodo lo decide la cuenta con la que se ENTRO (con cuentas vinculadas,
+    // c.uid es la principal: antes quien entraba por Telegram a un duende de
+    // correo no podia pagar con nada). Stars tambien desde la web: solo se crea
+    // el enlace de factura y el pago sigue el flujo manual de siempre.
+    const auth = s.uidAuth || c.uid;
+    if (metodo !== 'stars' && auth.startsWith('tg:')) return no('Dentro de Telegram se paga con Stars.');
     if (pq.skin && (c.skins || []).includes(pq.skin)) return no('Ya tienes esa skin.');
     if (pq.alas && (c.alas || []).includes(pq.alas)) return no('Ya tienes esas alas.');
     if (pq.skin && this.pedidos.some(x => x.uid === c.uid && x.paquete === pq.id && (x.estado === 'pagado' || x.estado === 'por_verificar' || x.estado === 'comprobando'))) return no('Ya pagaste esa skin: se activa en cuanto se confirme el pago.');
     await this.guardarPedidos();
     if (pq.unaVez && !this.puedeBienvenida(c.uid, c)) return no('El Pack de bienvenida es solo para tu primera compra, y ya compraste antes. ¡Gracias por apoyar el juego!');
-    if (this.pedidos.filter(x => x.uid === c.uid && (x.estado === 'esperando_pago' || x.estado === 'comprobando' || x.estado === 'por_verificar')).length >= 3) return no('Tienes compras sin pagar: termina o espera 30 minutos.');
+    // Stars: si ya hay una factura viva de este paquete (cerrada sin pagar, doble
+    // toque...), se reutiliza su enlace en vez de crear otra.
+    if (metodo === 'stars') {
+      const vivo = this.pedidos.find(x => x.uid === c.uid && x.metodo === 'stars' && x.paquete === pq.id && x.estado === 'esperando_pago' && x.link && Date.now() - x.creado < PEDIDO_VIGENCIA_MS - 300000);
+      if (vivo) { vivo.cancelado = false; return this.enviar(s, { t: 'factura', codigo: vivo.codigo, link: vivo.link, web: !auth.startsWith('tg:') }); }
+    }
+    // Las facturas de Stars que el jugador cerro sin pagar no cuentan en el tope.
+    if (this.pedidos.filter(x => x.uid === c.uid && !(x.metodo === 'stars' && x.cancelado && x.estado === 'esperando_pago') && (x.estado === 'esperando_pago' || x.estado === 'comprobando' || x.estado === 'por_verificar')).length >= 3) return no('Tienes compras sin pagar: termina o espera 30 minutos.');
     if (this.pedidos.filter(x => x.uid === c.uid && Date.now() - x.creado < 3600000).length >= 10) return no('Has creado muchos pedidos seguidos: espera un rato.');
     if (this.pedidos.filter(x => x.estado === 'esperando_pago').length >= 150) return no('La tienda está muy ocupada: intenta en unos minutos.');
     const env = getEnv({ env: this.env });
     const pd = {
       codigo: Math.random().toString(36).slice(2, 8).toUpperCase(), uid: c.uid, jugador: c.nombre,
       paquete: pq.id, nombre: pq.nombre, usd: pq.usd, metodo, creado: Date.now(), estado: 'esperando_pago',
+      uidPago: auth,   // cuenta con la que se entro al pedir (Telegram o correo)
     };
+    if (c.vinc && c.vinc.tg) pd.tgVinc = c.vinc.tg;   // Telegram vinculado al pedir (pagador valido)
     // De donde vino la compra (boton TIENDA del HUD, tienda de oro, NPC o enlace del bot): solo informativo para el dueño.
     if (['hud', 'oro', 'npc', 'bot', 'falta', 'bienv'].includes(m.via)) pd.via = m.via;
+    // Origen, campaña y dias desde el alta: /ventas y el ROAS D7 de /mmostats (retencion.js).
+    if (c.ret) {
+      if (c.ret.src) pd.src = c.ret.src;
+      if (c.ret.camp) pd.camp = c.ret.camp;
+      if (c.ret.alta && c.creado) { pd.alta = diaNum(c.creado); pd.dias = diaNum() - pd.alta; }
+    }
+    this.hitoCompra(c, 'pq_' + metodo, pd);
+    metaEvento(this, c, 'InitiateCheckout', { value: pq.usd, currency: 'USD', content_ids: [pq.id] }, pd.codigo);   // mismo event_id que el pixel (dedup)
     if (metodo === 'stars') {
       pd.stars = estrellasDe(pq.usd);
       let link = null;
@@ -1207,9 +1250,10 @@ export class MmoWorld {
         link = rsp && rsp.result;
       } catch (e) {}
       if (!link) return no('No se pudo crear el pago con Stars. Intenta de nuevo en un rato.');
+      pd.link = link;
       this.pedidos.push(pd);
       await this.guardarPedidos();
-      return this.enviar(s, { t: 'factura', codigo: pd.codigo, link });
+      return this.enviar(s, { t: 'factura', codigo: pd.codigo, link, web: !auth.startsWith('tg:') });
     }
     if (metodo === 'duende') {
       // Precio real del token (pump.fun / DexScreener); sin precio no se cobra.
@@ -1302,6 +1346,7 @@ export class MmoWorld {
       }
       await this.state.storage.put('firma:' + firma, pd.codigo);
       pd.estado = 'por_verificar'; pd.cadena = cadena; pd.pagadoEn = Date.now();
+      this.hitoCompra(c, 'pg', pd);
       await this.guardarPedidos();
     } finally { this.verificando.delete(firma); }
     // Entrega automatica: la verificacion de arriba (monto exacto confirmado en
@@ -1450,11 +1495,33 @@ export class MmoWorld {
     } catch (e) { return null; }
   }
 
+  // El jugador cerro la factura de Stars sin pagar: deja de contar en el tope
+  // de compras sin pagar. Sigue 'esperando_pago' (el enlace vale si lo reabre o
+  // si el pago ya iba en camino); al pedir el mismo paquete se reutiliza.
+  pedidoCancelar(s, m) {
+    const pd = this.buscarPedido(m && m.codigo);
+    if (!pd || !s.c || pd.uid !== s.c.uid || pd.metodo !== 'stars' || pd.estado !== 'esperando_pago' || pd.cancelado) return;
+    pd.cancelado = true;
+    this.hitoCompra(s.c, 'fc', pd);   // cerro la factura sin pagar (embudo de compra)
+  }
+
   async pedidoPagadoStars(b) {
     const pd = this.buscarPedido(b.codigo);
     if (!pd || pd.metodo !== 'stars') return { ok: false, error: 'pedido desconocido' };
     if (pd.estado !== 'esperando_pago' && pd.estado !== 'vencido') return { ok: true, repetido: true, nombre: pd.nombre };
-    if ('tg:' + b.tgId !== pd.uid || (b.stars | 0) < pd.stars) {
+    // Pagador valido: la cuenta del pedido, la de Telegram con la que se entro o
+    // la vinculada al duende. Un pedido hecho desde la web con correo sin Telegram
+    // vinculado lo paga quien abra el enlace (la entrega es manual por codigo).
+    const pagador = 'tg:' + b.tgId;
+    // El vinculo se lee del personaje aunque el jugador no este conectado (si no,
+    // cualquier Telegram contaba como pagador valido de un pedido web).
+    const cp = this.porUid.get(pd.uid);
+    let cv = cp && cp.c;
+    if (!cv) { try { cv = await this.state.storage.get('c:' + pd.uid); } catch (e) {} }
+    const vincTg = (cv && cv.vinc && cv.vinc.tg) || pd.tgVinc || null;
+    const deWeb = !String(pd.uidPago || pd.uid).startsWith('tg:') && !vincTg;
+    const cuentaOk = deWeb || pagador === pd.uid || pagador === pd.uidPago || (!!vincTg && pagador === vincTg);
+    if (!cuentaOk || (b.stars | 0) < pd.stars) {
       // Ya no se marca como pagado: queda por revisar (el dueño decide).
       pd.estado = 'por_verificar'; pd.charge = String(b.charge || ''); pd.tgPagador = String(b.tgId || ''); pd.starsPagadas = b.stars | 0; pd.pagadoEn = Date.now();
       pd.cadena = { ok: false, motivo: `pagó ${b.stars} Stars (se pedían ${pd.stars}) desde otra cuenta o de menos` };
@@ -1463,10 +1530,11 @@ export class MmoWorld {
       return { ok: true, nombre: pd.nombre };
     }
     pd.estado = 'pagado'; pd.charge = String(b.charge || ''); pd.tgPagador = String(b.tgId || ''); pd.starsPagadas = b.stars | 0; pd.pagadoEn = Date.now();
+    this.hitoCompra(null, 'pg', pd);
     await this.guardarPedidos();
     // Entrega MANUAL (27-oct-2026, decision del dueño): le llega por Telegram con los
     // botones Entregar/Anular y el entrega con /entregar o Modo Dios.
-    this.avisarAdmin(`⭐ *Pedido #${pd.codigo}* — ${pd.nombre} (${pd.starsPagadas} Stars, ya están en tu bot)\n👤 ${pd.jugador.replace(/[^\p{L}\p{N} ]/gu, '')}\n\nEntrégalo: /entregar ${pd.codigo}`, botonesPedido(pd.codigo));
+    this.avisarAdmin(`⭐ *Pedido #${pd.codigo}* — ${pd.nombre} (${pd.starsPagadas} Stars, ya están en tu bot)\n👤 ${pd.jugador.replace(/[^\p{L}\p{N} ]/gu, '')}${pagador !== pd.uid ? `\n💳 Pagó desde tg ${b.tgId}${deWeb ? ' (pedido hecho en la web)' : ''}` : ''}\n\nEntrégalo: /entregar ${pd.codigo}`, botonesPedido(pd.codigo));
     const s = this.porUid.get(pd.uid);
     if (s) this.actualizarYo(s);
     return { ok: true, nombre: pd.nombre };
@@ -1506,6 +1574,8 @@ export class MmoWorld {
       if (s) { this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) }); this.actualizarYo(s); }
     }
     pd.estado = 'entregado'; pd.entregado = Date.now(); pd.por = b.por || 'bot';
+    metaEvento(this, c, 'Purchase', { value: pd.usd, currency: 'USD', content_ids: [pd.paquete] }, 'pur_' + pd.codigo);   // sin await: si Meta falla, la entrega sigue
+    this.hitoCompra(c, 'en', pd); this.ventaCohorte(pd);   // embudo de compra y ARPU/ROAS D7 (retencion.js)
     c.compro = 1; if (pq.unaVez) c.bienvYa = 1;   // queda en el personaje aunque el pedido se pode
     if (pd.metodo === 'sol' || pd.metodo === 'duende') {
       this.ingresosSol.push({ usd: pd.usd, t: Date.now() });
@@ -1527,7 +1597,9 @@ export class MmoWorld {
 
   // /ventas (solo el dueño): lo entregado en 7 y 30 dias, por metodo y lo
   // mas vendido, y lo que queda por entregar. Sale de los ultimos 300 pedidos.
-  resumenVentas() {
+  // Tambien por metodo, por donde se abrio la tienda (via), por origen y campaña
+  // del jugador, la mediana de pagado→entregado y el embudo de compra de 7 dias.
+  async resumenVentas() {
     const ahora = Date.now();
     const ent = this.pedidos.filter(x => x.estado === 'entregado');
     const tramo = dias => {
@@ -1538,9 +1610,19 @@ export class MmoWorld {
         n: l.length, usd: Math.round(l.reduce((a, x) => a + x.usd, 0) * 100) / 100,
         sol: l.filter(x => x.metodo === 'sol').length, stars: l.filter(x => x.metodo === 'stars').length,
         top: Object.entries(por).sort((a, b) => b[1].usd - a[1].usd).slice(0, 5).map(([nombre, v]) => ({ nombre, ...v })),
+        grupos: { metodo: agrupar(l, x => x.metodo), via: agrupar(l, x => x.via || 'otro'), origen: agrupar(l, x => x.src || '?'), campana: agrupar(l.filter(x => x.camp), x => x.camp) },
+        // Horas de pagado a entregado (mediana): lo que espera el jugador.
+        espera: (() => { const h = l.filter(x => x.pagadoEn && x.entregado >= x.pagadoEn).map(x => (x.entregado - x.pagadoEn) / 3600000).sort((a, b) => a - b); return h.length ? Math.round(h[h.length >> 1] * 10) / 10 : null; })(),
       };
     };
-    return { ok: true, d7: tramo(7), d30: tramo(30), pendientes: this.pedidos.filter(x => x.estado === 'pagado' || x.estado === 'por_verificar').length, anulados30: this.pedidos.filter(x => x.estado === 'anulado' && ahora - x.creado < 30 * 86400000).length };
+    const agrupar = (l, f) => {
+      const g = {};
+      for (const x of l) { const k = String(f(x)); g[k] = g[k] || { n: 0, usd: 0 }; g[k].n++; g[k].usd = Math.round((g[k].usd + x.usd) * 100) / 100; }
+      return Object.entries(g).sort((a, b) => b[1].usd - a[1].usd).slice(0, 6).map(([k, v]) => ({ k, ...v }));
+    };
+    let embudo = null;
+    try { embudo = await this.embudoCompra(); } catch (e) { console.error('[MMO embudo compra]', e); }
+    return { ok: true, embudo, d7: tramo(7), d30: tramo(30), pendientes: this.pedidos.filter(x => x.estado === 'pagado' || x.estado === 'por_verificar').length, anulados30: this.pedidos.filter(x => x.estado === 'anulado' && ahora - x.creado < 30 * 86400000).length };
   }
 
   async anularPedido(b) {
@@ -1652,7 +1734,7 @@ export class MmoWorld {
     // cargos: los de Stars del MMO, para que /pedidos no los cuente como compras del arcade.
     if (accion === 'pedidos') return json({ ok: true, pedidos: this.pedidos.filter(x => x.estado === 'pagado' || x.estado === 'por_verificar'), cargos: this.pedidos.filter(x => x.charge).map(x => x.charge) });
     if (accion === 'posponer') return json(await this.posponerPedido(b));
-    if (accion === 'ventas') return json(this.resumenVentas());
+    if (accion === 'ventas') return json(await this.resumenVentas());
     // /yo del bot: el personaje de quien escribe (solo el suyo: el bot manda
     // el id de Telegram del remitente).
     if (accion === 'perfil') {
@@ -1674,6 +1756,15 @@ export class MmoWorld {
       const l = this.pedidos.filter(x => x.uid === 'tg:' + id || x.tgPagador === id).slice(-10)
         .map(x => ({ codigo: x.codigo, nombre: x.nombre, estado: x.estado, metodo: x.metodo, charge: x.charge || '', creado: x.creado || 0, pagadoEn: x.pagadoEn || 0 }));
       return json({ ok: true, l });
+    }
+    // /start ad_<campaña> del bot: se anota la campaña de ese Telegram (30 dias) para
+    // que su alta cuente como 'tg' aunque abra el juego sin utm. Solo la etiqueta.
+    if (accion === 'tgOrigen') {
+      const id = String(b.tgId || '').replace(/\D/g, '').slice(0, 20);
+      const cmp = String(b.c || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 40);
+      if (!id || !cmp) return json({ ok: false });
+      if (!(await this.state.storage.get('tgorg:' + id))) await this.state.storage.put('tgorg:' + id, { c: cmp, t: Date.now() });
+      return json({ ok: true });
     }
     // /start mmo_/m3d_ del bot: solo nombre y nivel de quien invita (publicos), por su codigo.
     if (accion === 'invitador') {
@@ -2393,6 +2484,8 @@ export class MmoWorld {
     if (this.elixir(s, 'chichaE')) xp = Math.round(xp * 1.05);
     const xpSkin = ((SKINS[c.skin] || {}).buffs || {}).xpMult;
     if (xpSkin) xp = Math.round(xp * xpSkin);
+    // Invitado de Nv < 10 en grupo con quien lo invito: +25% (amigos.js).
+    if (this.bonoCompanero) xp = Math.round(xp * this.bonoCompanero(s));
     // El descanso duplica la experiencia de cada caza hasta gastarse.
     const extra = Math.min(c.descanso || 0, xp);
     if (extra > 0) { c.descanso -= extra; xp += extra; }
@@ -2513,6 +2606,7 @@ export class MmoWorld {
     for (const k in (q.pw || {})) c.pw[k] = Math.min(99, (c.pw[k] || 0) + q.pw[k]);
     c.mis = { i: c.mis.i + 1, p: 0 };
     if (c.mis.i === 1 && this.hitoEmbudo) this.hitoEmbudo(c, 'm1');
+    if (c.mis.i === 1 && this.ofrecerAvisoTg) this.ofrecerAvisoTg(s).catch(() => {});   // «Avísame por Telegram» (web e invitados)
     this.sumarXp(s, q.xp);
     this.revisarLogros(s);
     this.enviar(s, { t: 'toast', m: `✅ Recompensa: +${q.xp} XP · +${q.oro} oro`, ok: true });

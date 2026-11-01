@@ -169,6 +169,7 @@ export const Mundo3D = {
       case 'cofre3': return this.abrirCofre3d(s, m);
       case 'temp3': return this.enviar(s, this.infoTemp(s.c));
       case 'vincInfo': case 'vincCodigo': case 'vincUsar': case 'vincQuitar': return this.vincular(s, m);
+      case 'avisoTgCod': return this.ofrecerAvisoTg(s, true);   // «Avísame por Telegram» (retencion.js)
       case 'comprar': return this.comprar(s, m);   // cercaDelMercader() sabe del 3D
       case 'ignorar': return this.ignorar(s, m);
       case 'reportar': return this.reportar(s, m);
@@ -206,9 +207,11 @@ export const Mundo3D = {
       case 'expulsarGrupo': return this.expulsarGrupo(s, m);
       case 'liderGrupo': return this.liderGrupo(s, m);
       case 'pedido': return this.pedido(s, m);
+      case 'pedidoCancelar': return this.pedidoCancelar(s, m);   // world.js
       case 'pedidoFirma': return this.pedidoFirma(s, m);
       case 'pedidoBuscar': return this.pedidoBuscar(s, m);
       case 'reclamoPedido': return this.reclamoPedido(s, m);   // world.js
+      case 'ev': return this.evCompra(s, m);   // retencion.js
       case 'ranking': return this.enviarRanking(s);
       case 'contactos': return this.enviarContactos(s);
       case 'quien': return this.quien(s);

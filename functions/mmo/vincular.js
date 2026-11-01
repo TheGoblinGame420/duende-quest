@@ -11,8 +11,11 @@
 // codigo (6 letras, 10 minutos, solo en memoria); en la cuenta B se escribe.
 // Si B ya tenia un personaje con progreso (nivel > 5) hay que confirmarlo: se
 // ARCHIVA en 'arch:<uid>' (no se borra; el dueño puede recuperarlo) y B pasa
-// a jugar con el duende de A. Los invitados no vinculan: ya heredan su
-// personaje al crear cuenta.
+// a jugar con el duende de A.
+// Llevar mi duende: un invitado tambien pide codigo (v.inv). Se escribe en una
+// cuenta de Telegram o correo sin progreso (Nv 5 o menos, sin compras); esa
+// cuenta vuelve a entrar con hola.vcod y hereda al invitado con la misma herencia
+// atomica de world.js (holaCuenta). El token del invitado nunca sale del aparato.
 // c.vinc = { tg: 'tg:<id>', web: 'web:<id>' } (las cuentas secundarias).
 // ═══════════════════════════════════════════════════════
 import { claveNombre, esqueleto } from './dios.js';
@@ -35,6 +38,56 @@ export const Vincular = {
     return { t: 'vincInfo', l, principal: prin, por: tipoUid(s.uidAuth || c.uid) };
   },
 
+  // Llevar mi duende (hola de una cuenta con vcod): devuelve el uid del invitado
+  // a heredar, o '' si el codigo no vale. Archiva el duende vacio de la cuenta y
+  // saca al invitado si esta conectado (guardandolo antes).
+  async tomarCodigoInv(s, uid, c, cod) {
+    cod = String(cod || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const v = this.vincs && this.vincs.get(cod);
+    if (!v || !v.inv || v.para !== uid || v.exp < Date.now() || (this.entrando && this.entrando.has(v.uid))) return '';
+    if (c && ((c.nivel || 1) > 5 || c.compro || Object.keys(c.vinc || {}).length)) return '';
+    // Un invitado baneado no hereda (holaCuenta lo rechazaria): antes de archivar nada de la cuenta.
+    if (await this.baneado(v.uid)) return '';
+    this.vincs.delete(cod);
+    await this.soltarInvitado(v.uid, 'Tu duende pasó a tu cuenta de ' + (NOMBRE_TIPO[tipoUid(uid)] || 'juego') + '. Entra con ella para seguir jugando.');
+    if (!(await this.state.storage.get('c:' + v.uid))) return '';
+    if (c) {
+      if (c.nivel > 1 || c.oro > 0) await this.state.storage.put('arch:' + uid, { ...c, archivado: Date.now(), por: v.uid });
+      await this.state.storage.delete('c:' + uid);
+      for (const kn of ['n:' + claveNombre(c.nombre), 'ne:' + esqueleto(c.nombre)]) if ((await this.state.storage.get(kn)) === uid) await this.state.storage.delete(kn);
+    }
+    console.log('[MMO llevar]', v.uid, '->', uid);
+    return v.uid;
+  },
+  // El invitado esta jugando en otra pestaña o aparato: se guarda y se le saca
+  // (antes la herencia fallaba en silencio y la cuenta empezaba de cero).
+  async soltarInvitado(uidInv, motivo) {
+    const g = this.porUid.get(uidInv);
+    if (!g || !g.c) return;
+    g.diferirT = 0; g.sucio = true;
+    this.caidaPorDesconexion(g);
+    await this.guardar(g);
+    g.noGuardar = true;
+    this.expulsar(g, motivo, { dup: 1 });
+  },
+  // Rankings que apuntan al uid viejo pasan al nuevo (herencia de invitado).
+  async migrarUid(viejo, nuevo, nombre) {
+    const mover = l => {
+      if (!l || !Object.hasOwn(l, viejo)) return false;
+      l[nuevo] = { ...l[viejo], ...('n' in l[viejo] ? { n: nombre } : {}) };
+      delete l[viejo];
+      return true;
+    };
+    try {
+      const r = await this.rankingLeer();
+      const fila = r.find(x => x.uid === viejo);
+      if (fila) { fila.uid = nuevo; fila.n = nombre; await this.state.storage.put('ranking', r); }   // la herencia se guarda al momento
+      if (this.rs && mover(this.rs.l)) this.rsSucio = true;
+      if (this.rds && mover(this.rds.l)) await this.state.storage.put('rankDesSem', this.rds);
+      if (this.cargarRankTorre) { const rt = await this.cargarRankTorre(); if (rt && mover(rt.l)) await this.state.storage.put('rankTorre', rt); }
+    } catch (e) { console.error('[MMO migrarUid]', e); }
+  },
+
   async vincular(s, m) {
     const c = s.c;
     if (!c) return;
@@ -42,8 +95,22 @@ export const Vincular = {
     switch (m.t) {
       case 'vincInfo': return this.enviar(s, this.infoVinc(s));
       case 'vincCodigo': {
-        if (c.uid.startsWith('inv:')) return this.no(s, 'Primero crea tu cuenta (botón 👤): los invitados no pueden vincular.');
         this.vincs = this.vincs || new Map();
+        if (c.uid.startsWith('inv:')) {
+          // Si ya tiene uno vigente se repite (sin otra escritura): pedir codigos no gasta el cupo.
+          for (const [k, x] of this.vincs) if (x.exp < Date.now()) this.vincs.delete(k);
+          let cod = [...this.vincs].find(([, x]) => x.uid === c.uid);
+          if (!cod) {
+            // Se guarda ya (aunque sea Nv 1 recien creado): la otra cuenta lo lee del storage.
+            s.diferirT = 0; s.sucio = true; await this.guardar(s);
+            if (s.cerrado) return;
+            let k;
+            do { k = Array.from({ length: 6 }, () => LETRAS[Math.floor(Math.random() * LETRAS.length)]).join(''); } while (this.vincs.has(k));
+            cod = [k, { uid: c.uid, exp: Date.now() + VINC_MS, nombre: c.nombre, nivel: c.nivel || 1, inv: true }];
+            this.vincs.set(cod[0], cod[1]);
+          }
+          return this.enviar(s, { t: 'vincCod', cod: cod[0], ms: Math.max(0, cod[1].exp - Date.now()), inv: true });
+        }
         for (const [k, x] of this.vincs) if (x.uid === c.uid || x.exp < Date.now()) this.vincs.delete(k);
         let cod;
         do { cod = Array.from({ length: 6 }, () => LETRAS[Math.floor(Math.random() * LETRAS.length)]).join(''); } while (this.vincs.has(cod));
@@ -51,7 +118,7 @@ export const Vincular = {
         return this.enviar(s, { ...this.infoVinc(s), t: 'vincCod', cod, ms: VINC_MS });
       }
       case 'vincUsar': {
-        if (yoAuth.startsWith('inv:')) return this.no(s, 'Entra primero con tu cuenta de Telegram o de correo para vincularla.');
+        if (yoAuth.startsWith('inv:')) return this.no(s, 'Ese código se escribe en tu cuenta de Telegram o de correo, no aquí.');
         if (s.uidAuth && s.uidAuth !== c.uid) return this.no(s, 'Esta cuenta ya está vinculada a un duende.');
         const cod = String(m.cod || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
         // Contra la fuerza bruta: 5 fallos por cuenta y 20 por conexion cada 10 min.
@@ -69,6 +136,15 @@ export const Vincular = {
           return this.no(s, lleno ? demasiados : 'Ese código no existe o ya caducó (duran 10 minutos).');
         }
         if (v.uid === c.uid) return this.no(s, 'Ese código es de esta misma cuenta: escríbelo en tu OTRA cuenta.');
+        if (v.inv) {
+          // Llevar mi duende de invitado a esta cuenta: solo si esta cuenta aun no tiene progreso.
+          if (s.uidAuth && s.uidAuth !== c.uid) return this.no(s, 'Esta cuenta ya está vinculada a un duende.');
+          if ((c.nivel || 1) > 5 || c.compro || Object.keys(c.vinc || {}).length) return this.no(s, `Esta cuenta ya tiene su propio duende (${c.nombre}, Nv ${c.nivel}). Para traer el de invitado usa una cuenta de Telegram o correo que aún no haya jugado.`);
+          if ((c.nivel || 1) > 1 && !m.forzar) return this.enviar(s, { t: 'vincConfirmar', cod, nombre: c.nombre, nivel: c.nivel, destino: v.nombre, nivelDestino: v.nivel || 1 });
+          v.para = c.uid;
+          // La cuenta vuelve a entrar con hola.vcod (holaCuenta -> tomarCodigoInv).
+          return this.enviar(s, { t: 'invTraer', cod, nombre: v.nombre });
+        }
         const tipo = tipoUid(yoAuth);
         if (tipo === tipoUid(v.uid)) return this.no(s, `Las dos cuentas son de ${NOMBRE_TIPO[tipo] || tipo}: solo se vincula una de Telegram con una de correo.`);
         const otro = this.porUid.get(v.uid);

@@ -502,6 +502,14 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 96, fecha: '1 nov 2026', items: [
+    'Si entras con el enlace de un amigo recibes un kit de bienvenida (300 de oro, 5 pociones y el título «Compañero») y +25% de experiencia jugando en grupo con él hasta el nivel 10. Nueva lista «Mis invitados» en Amigos.',
+    'Ahora puedes llevar tu duende de invitado a Telegram o a otro celular con un código de 6 letras: ❓ Ayuda → «📲 Llevar mi duende».',
+    'Si juegas desde el navegador, puedes pedir que te avisemos por Telegram cuando tu racha esté por perderse (+300 de oro al activarlo); se apaga con /avisos off.',
+    'El aviso diario de Telegram ahora te habla de lo tuyo: tus amigos, tu hermandad, tu racha y tu próxima skin.',
+    'También puedes pagar con Stars desde la web, y si cierras el pago sin terminar sale «Reintentar».',
+    'ORIGINS, CLASSIC y el arcade abren más rápido: la carga solo espera lo necesario para empezar.',
+  ] },
   { n: 95, fecha: '1 nov 2026', items: [
     '🎁 Nuevo Pack de bienvenida a US$1,99 (150 Stars): 15.000 de oro, 10 pociones y 3 escudos, rayos y fuegos, solo para tu primera compra.',
     '🧭 Las expediciones llegan a ORIGINS desde nivel 2: manda a tu mascota a explorar mientras no juegas. La primera dura solo 15 minutos.',
@@ -1311,6 +1319,7 @@ export const LOGROS = [
   { id: 'duelista',  titulo: 'Duelista',           desc: 'Gana 10 duelos', oro: 3000, cond: c => (c.duelosG || 0) >= 10 },
   { id: 'amigo1',    titulo: 'Buen Compañero',     desc: 'Un amigo que invitaste llegó a nivel 10', oro: 1000, cond: c => (c.amigos || 0) >= 1 },
   { id: 'amigo5',    titulo: 'Líder de la Manada', desc: '5 amigos invitados llegaron a nivel 10', oro: 8000, cond: c => (c.amigos || 0) >= 5 },
+  { id: 'compa',     titulo: 'Compañero',          desc: 'Llega al juego con el enlace de un amigo', oro: 0, cond: c => !!c.kitComp },
   { id: 'gesta',     titulo: 'Gesta Dorada',        desc: 'Ayuda a tu hermandad a llegar al Oro de la gesta semanal', oro: 8000, cond: c => (c.gestaOro || 0) >= 1 },
   { id: 'herm',      titulo: 'Hermano de Armas',    desc: 'Únete a una hermandad (o funda la tuya)', oro: 1000, cond: c => !!c.herm },
   { id: 'mazmorra1', titulo: 'Explorador de Criptas', desc: 'Completa una mazmorra',             oro: 2000,  cond: c => (c.mazmorras || 0) >= 1 },
@@ -1723,6 +1732,13 @@ export const premioBestiario = (nivelMonstruo, i) => Math.round((60 + nivelMonst
 export const AMIGO_NIVEL = 10;      // el premio llega cuando el amigo llega aqui
 export const AMIGOS_MAX = 20;       // amigos con premio por personaje
 export const premioAmigo = nivel => ({ oro: 1500 + 150 * nivel });
+// Kit «Compañero» (una vez por personaje, al llegar con un enlace): solo oro y
+// pociones, nunca mTON ni $DUENDE. Y +25% de XP de caza en grupo con quien te
+// invito mientras seas de nivel menor que AMIGO_NIVEL; a AMIGO_HITO, un empujon.
+export const KIT_COMP = { oro: 300, pociones: 5 };
+export const AMIGO_BONO_XP = 0.25;
+export const AMIGO_HITO = 5;
+export const INVITADOS_MAX = 20;    // invitados que se ven en «Mis invitados»
 
 // ── HERMANDADES ──
 export const HERM_COSTO = 5000;   // oro para fundar una

@@ -64,6 +64,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v325 | Noche de lanzamiento, ronda 1: landing /jugar/ sin cripto, estáticos fuera del Worker, T'anta Wawa, TIENDA visible, WhatsApp, revivir cerca, salida a CLASSIC, PNG ligeros | **B** |
 | v326 | Noche de lanzamiento, ronda 2: origen y embudo de carga, racha por semanas, buzón de vuelta, entrada en un toque, te faltan N de oro, plazo de entrega, reconexión, OG | **B** |
 | v327 | Noche de lanzamiento, ronda 3: pack de bienvenida, expediciones en ORIGINS, primer minuto con premio, Atrás, soles, soporte de compras, 3D más fluido | **B** |
+| v328 | Noche de lanzamiento, ronda 4: ROAS con /gasto, Stars desde la web, anuncios en el bot, carga rápida, avísame por Telegram, código para llevar el duende, kit del invitado, píxel apagado | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

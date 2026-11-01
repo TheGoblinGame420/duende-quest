@@ -17,8 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=327';
-import { iniciarRegalo } from './regalo.js?v=327';
+} from './data.js?v=328';
+import { iniciarRegalo } from './regalo.js?v=328';
+import { iniciarAvisoTg } from './avisotg.js?v=328';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -39,6 +40,8 @@ function ponTxt(el, v) { if (el._t !== v) { el._t = v; el.textContent = typeof v
 function ponCss(el, prop, v) { const k = '_c' + prop; if (el[k] !== v) { el[k] = v; el.style[prop] = v; } }
 // Solo dentro de Telegram de verdad (app: TelegramWebviewProxy; web y escritorio: iframe).
 // Fuera, el SDK llena initData con un #tgWebAppData ajeno pegado en un enlace.
+// El SDK se baja solo dentro de Telegram (index.html, window.__tgListo): se espera aqui, antes de leerlo.
+if (window.__tgListo) await window.__tgListo;
 const enTg = !!(window.TelegramWebviewProxy || window.parent !== window || (window.external && 'notify' in window.external));
 const TG = enTg && window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? window.Telegram.WebApp : null;
 // Modo anuncio (js/origen.js pone <html class="anuncio">): quien llega de Meta no ve
@@ -186,21 +189,65 @@ if (typeof ResizeObserver === 'function') new ResizeObserver(() => ajustarVista(
 // ── ASSETS ──
 const IMG = {};
 let porCargar = 0, cargadas = 0;
-function cargar(k, src) {
+// La pantalla de carga espera solo lo critico (duende, moneda, golpes, fondo
+// y monstruos del pueblo). Lo demas (skins, otras zonas, cofres) queda anotado
+// en RUTAS y se baja en ratos libres o cuando hace falta (pedir): en 4G lenta
+// el juego abre en segundos en vez de esperar ~5 MB. (v328)
+const RUTAS = {};
+function cargar(k, src, critico) {
+  if (IMG[k]) return;
+  if (critico === false) { RUTAS[k] = src; return; }
   porCargar++;
   const im = new Image();
   im.onload = im.onerror = () => { cargadas++; pintarCarga(); };
   im.src = src;
   IMG[k] = im;
 }
+// Baja ya un asset diferido (sin contar en la barra de carga).
+function pedir(k) {
+  if (IMG[k] || !RUTAS[k]) return;
+  const im = new Image();
+  im.decoding = 'async';
+  im.src = RUTAS[k];
+  IMG[k] = im;
+  delete RUTAS[k];
+}
+// Fondos y hojas de monstruos de una zona: se piden al entrar en ella.
+function pedirZona(id) {
+  const mp = MAPAS[id];
+  if (!mp) return;
+  pedir('lejos_' + mp.fondo); pedir('cerca_' + mp.fondo);
+  if (mp.monstruos) for (const k of mp.monstruos) if (MONSTRUOS[k]) pedir('sh_' + MONSTRUOS[k].hoja);
+}
+// El resto, de a 2 en los ratos libres del navegador; al terminar se
+// preparan sus tintes (antes no se podia: la imagen no estaba).
+function cargarResto() {
+  const ocio = window.requestIdleCallback ? f => requestIdleCallback(f, { timeout: 1500 }) : f => setTimeout(f, 200);
+  let vivas = 0;
+  const sig = () => {
+    const ks = Object.keys(RUTAS);
+    if (!ks.length) { if (!vivas) precalentarTintes(); return; }
+    for (const k of ks.slice(0, 2)) {
+      pedir(k); vivas++;
+      const im = IMG[k];
+      const fin = () => { vivas--; if (!Object.keys(RUTAS).length && !vivas) precalentarTintes(); };
+      if (im.complete) fin(); else { im.addEventListener('load', fin, { once: true }); im.addEventListener('error', fin, { once: true }); }
+    }
+    ocio(sig);
+  };
+  ocio(sig);
+}
 function pintarCarga() {
   const p = porCargar ? cargadas / porCargar : 1;
   $('carga-i').style.width = Math.round(p * 100) + '%';
 }
-Object.keys(HOJAS).forEach(k => cargar('sh_' + k, A + 'enemigos/sheets/' + k + '.png'));
-['skin_hero', 'skin_tactico', 'skin_necromancer', 'skin_king', 'skin_berserker', 'skin_legendariafull', 'skin_bruja', 'skin_momia', 'skin_frankenstein', 'skin_vampiro', 'skin_esqueleto', 'skin_lobo', 'skin_pirata'].forEach(k => cargar(k, A + 'skins/' + k + '.png'));
+// Critico: lo del pueblo (donde se aparece). Lo demas se anota como diferido.
+const HOJAS_PUEBLO = new Set(((MAPAS.pueblo && MAPAS.pueblo.monstruos) || []).filter(k => MONSTRUOS[k]).map(k => MONSTRUOS[k].hoja));
+const FONDO_PUEBLO = MAPAS.pueblo ? MAPAS.pueblo.fondo : null;
+Object.keys(HOJAS).forEach(k => cargar('sh_' + k, A + 'enemigos/sheets/' + k + '.png', HOJAS_PUEBLO.has(k)));
+['skin_hero', 'skin_tactico', 'skin_necromancer', 'skin_king', 'skin_berserker', 'skin_legendariafull', 'skin_bruja', 'skin_momia', 'skin_frankenstein', 'skin_vampiro', 'skin_esqueleto', 'skin_lobo', 'skin_pirata'].forEach(k => cargar(k, A + 'skins/' + k + '.png', false));
 cargar('anim', A + 'skins/duende_anim.png');
-[...new Set(Object.values(MAPAS).map(m => m.fondo))].forEach(f => { cargar('lejos_' + f, A + 'fondos/' + f + '_lejos.png'); cargar('cerca_' + f, A + 'fondos/' + f + '_cerca.png'); });
+[...new Set(Object.values(MAPAS).map(m => m.fondo))].forEach(f => { cargar('lejos_' + f, A + 'fondos/' + f + '_lejos.png', f === FONDO_PUEBLO); cargar('cerca_' + f, A + 'fondos/' + f + '_cerca.png', f === FONDO_PUEBLO); });
 ['item_potion', 'item_shield', 'item_skill', 'skill_fire'].forEach(k => cargar(k, A + 'items/' + k + '.png'));
 cargar('katana_comun', A + 'armas/katana_comun_item.png');
 cargar('katana_spark', A + 'armas/katana_spark_item.png');
@@ -405,10 +452,10 @@ async function autenticacion() {
     // La sesion de Telegram (initData) caduca a las 24 h: a las 23 h se avisa de reabrir desde el bot.
     const ad = +((TG.initDataUnsafe && TG.initDataUnsafe.auth_date) || 0);
     if (ad && Date.now() / 1000 - ad > 23 * 3600 && !autenticacion.avisoTg) { autenticacion.avisoTg = 1; setTimeout(() => aviso('Tu sesión de Telegram caduca pronto. Cierra el juego y vuelve a abrirlo desde el bot para seguir con tu duende.'), 3000); }
-    return { auth: { k: 'tg', d: TG.initData }, inv: inv0, heredar: heredarResp };
+    return { auth: { k: 'tg', d: TG.initData }, inv: inv0, heredar: heredarResp, vcod: vcodPend() };
   }
   const tok = forzarInvitado ? null : await tokenWeb();
-  if (tok) return { auth: { k: 'web', tok }, inv: inv0, heredar: heredarResp };
+  if (tok) return { auth: { k: 'web', tok }, inv: inv0, heredar: heredarResp, vcod: vcodPend() };
   let inv = LS.getItem('dq_mmo_tok');
   if (!/^[a-f0-9]{32}$/.test(inv || '')) {
     const b = new Uint8Array(16); crypto.getRandomValues(b);
@@ -505,7 +552,7 @@ async function conectar() {
   const og = window.dqOrigen ? window.dqOrigen() : { src: 'org', ref: '' };
   const ref = refInvitacion() || og.ref || undefined;
   // Cada manejador solo actua si su socket sigue siendo el actual.
-  s.onopen = () => { if (ws !== s) return; conectado = true; ultimoMsgT = performance.now(); mandar({ t: 'hola', ...hola, ref, src: og.src, iab: esIAB ? 1 : undefined, dev: huellaDev() }); };
+  s.onopen = () => { if (ws !== s) return; conectado = true; ultimoMsgT = performance.now(); mandar({ t: 'hola', ...hola, ref, src: og.src, camp: og.camp || undefined, med: og.med, fbc: og.fbc, iab: esIAB ? 1 : undefined, dev: huellaDev() }); };
   s.onmessage = ev => { if (ws !== s) return; ultimoMsgT = performance.now(); rxN++; let m; try { m = JSON.parse(ev.data); } catch (e) { return; } recibir(m); };
   s.onclose = ev => {
     if (ws !== s) return;
@@ -530,6 +577,7 @@ function recibir(m) {
   switch (m.t) {
     case 'bienvenido':
       paso('bienvenido');
+      try { sessionStorage.removeItem('dq_vcod'); } catch (e) {}   // llevar mi duende: el codigo ya se uso (o no valia)
       // Sesion nueva en el servidor: lanzamientos, recargas e invitaciones de la
       // anterior ya no existen (su castFin no llegara nunca y bloquearia todo).
       castYo = null; castPend = 0; gcdHasta = 0;
@@ -756,10 +804,12 @@ function recibir(m) {
       for (let i = 0; i < 20; i++) particula(P.x, P.y - 40, '#00eeff', 4);
       pintarHud();
       break;
-    case 'factura': abrirFactura(m); break;
-    case 'pedidoSol': mostrarPedidoSol(m); break;
+    case 'factura': abrirFactura(m); if (window.dqMedir) window.dqMedir('InitiateCheckout', {}, m.codigo); break;   // pixel de Meta con permiso (js/medir.js); mismo eventID que el servidor
+    case 'pedidoSol': mostrarPedidoSol(m); if (window.dqMedir) window.dqMedir('InitiateCheckout', {}, m.codigo); break;
     case 'buzon': regalo2.alBuzon(m); break;
     case 'regalo': regalo2.alRegalo(m); break;
+    case 'avisoTg': avisoTg2.alOferta(m); break;   // «Avísame por Telegram» (avisotg.js)
+    case 'avisoTgOk': avisoTg2.alOk(m); break;
     case 'fondo': fondoInfo = m; if ($('m-wallet').classList.contains('on')) pintarWallet(); break;
     case 'login': mostrarLogin(m); if (m.vuelta) aviso(`🎉 ¡Bienvenido de vuelta! ${m.vuelta.dias} días fuera: +${m.vuelta.oro.toLocaleString('es', { useGrouping: 'always' })} oro, ${m.vuelta.pociones} pociones y ${m.vuelta.item}.`, 'ok', 8000); break;
     case 'logro':
@@ -788,10 +838,11 @@ function recibir(m) {
     case 'diosPanel': pintarDios(m); break;
     case 'diosCopias': diosCopias = m; pintarDios(); break;
     case 'vincInfo': vincDatos = m; pintarVinc(); break;
-    case 'vincCod': vincDatos = m; vincCod = { cod: m.cod, hasta: Date.now() + m.ms }; pintarVinc(); break;
+    case 'vincCod': if (!m.inv) vincDatos = m; vincCod = { cod: m.cod, hasta: Date.now() + m.ms, inv: !!m.inv }; pintarVinc(); break;
     case 'vincConfirmar':
       if (confirm(`Esta cuenta ya tiene a ${m.nombre} (Nv ${m.nivel}). Si la vinculas, jugarás con ${m.destino} (Nv ${m.nivelDestino}) y ${m.nombre} quedará archivado (el equipo puede recuperarlo). ¿Seguir?`)) mandar({ t: 'vincUsar', cod: m.cod, forzar: true });
       break;
+    case 'invTraer': try { sessionStorage.setItem('dq_vcod', m.cod); sessionStorage.setItem('dq_auto', '1'); } catch (e) {} aviso('📲 Trayendo a ' + (m.nombre || 'tu duende') + '…', 'ok', 4000); setTimeout(() => location.reload(), 900); break;
     case 'vincOk': aviso('🔗 ¡Cuentas vinculadas! Entrando con ' + m.nombre + '…', 'ok', 4000); setTimeout(() => location.reload(), 1500); break;
     case 'diosModo': if (yo) { yo.diosModo = m.modo; pintarDiosModos(); } break;
     case 'amigos': pintarAmigos(m); if (presumirPend && m.ref) { presumirPend = false; ofrecerPresumir(presumirTxt, undefined, true); aviso('Enlace preparado. Pulsa «Presumir».'); } break;
@@ -891,6 +942,7 @@ function entrarMapa(m) {
   m.jugadores.forEach(agregarOtro);
   m.mons.forEach(agregarMon);
   const mp = MAPAS[mapaId];
+  pedirZona(mapaId);   // fondos y monstruos de esta zona, antes que el resto diferido
   $('h-mapa').textContent = mp.nombre;
   pintarSubMapa();
   if (yo) pintarHud();   // la linea de mision/mazmorra cambia con el mapa
@@ -2000,13 +2052,30 @@ function pintarAmigos(m) {
     <p style="font-size:12px;margin-top:6px">Amigos que ya llegaron: <b style="display:inline;color:var(--ok)">${m.amigos}</b></p></div>
     ${TG ? '' : btWa}<button class="btn${TG ? '' : ' sec'}" id="b-comp-tg" style="width:100%;padding:12px;margin-bottom:8px">Compartir por Telegram</button>${TG ? btWa : ''}
     <button class="btn sec" id="b-comp-copiar" style="width:100%;margin-bottom:6px">Copiar enlace</button>
-    <p style="font-size:11px;word-break:break-all;color:var(--txt2)">${esc(TG ? enlTg : enlWeb)}</p>`;
+    <p style="font-size:11px;word-break:break-all;color:var(--txt2)">${esc(TG ? enlTg : enlWeb)}</p>${htmlInvitados(m)}`;
+  conectarListaSocial(L);
   $('b-comp-tg').onclick = () => {
     const u = 'https://t.me/share/url?url=' + encodeURIComponent(enlTg) + '&text=' + encodeURIComponent(texto);
     if (TG && TG.openTelegramLink) TG.openTelegramLink(u); else window.open(u, '_blank');
   };
   $('b-comp-wa').onclick = () => abrirWa(TXT_WA, enlWa(m.ref));
   $('b-comp-copiar').onclick = () => { try { navigator.clipboard.writeText(TG ? enlTg : enlWeb); aviso('📋 Enlace copiado', 'ok'); } catch (e) {} };
+}
+// «Mis invitados» (amigos.js infoAmigos): quien te invito y los que llegaron con
+// tu enlace, con su barra hasta Nv 10 y los botones de grupo y susurro.
+function htmlInvitados(m) {
+  const meta = m.nivel || 10, barra = lv => `<div style="height:5px;background:rgba(255,255,255,.12);border-radius:3px;margin-top:3px;overflow:hidden"><div style="height:100%;width:${Math.min(100, Math.round((lv || 0) / meta * 100))}%;background:var(--ok)"></div></div>`;
+  let s = '';
+  if (m.por) s += `<div class="mis-caja"><b>🤝 ${esc(m.por.n)} te invitó</b><p style="font-size:12px">A nivel ${meta} ganan oro los dos. En grupo con ${esc(m.por.n)} ganas +${m.bono || 25}% de XP${m.por.bono ? ' <b style="display:inline;color:var(--ok)">(activo ahora)</b>' : ''}.</p>${barra(m.lvYo)}<p style="font-size:11px;color:var(--txt2);margin-top:3px">Tú: Nv ${m.lvYo || 1} de ${meta}</p>
+    ${m.por.on && m.por.id ? `<button class="btn sec" data-sus="${esc(m.por.n)}" style="margin-top:6px">Susurrar</button>` : ''}</div>`;
+  const L = m.invitados || [];
+  s += `<div class="mis-caja"><b>Mis invitados (${L.length})</b>`;
+  s += L.length ? L.map(x => `<div style="margin-top:8px"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span style="flex:1;min-width:110px">${x.on ? '🟢' : '⚪'} <b style="display:inline">${esc(x.n)}</b> <small style="color:var(--txt2)">${x.lv ? 'Nv ' + x.lv : ''}${x.ok ? ' · ✅ premio cobrado' : ''}</small></span>`
+      + (x.on && x.id && !x.g ? `<button class="btn" data-inv="${x.id}">Invitar a grupo</button>` : '')
+      + (x.on ? `<button class="btn sec" data-sus="${esc(x.n)}">Susurrar</button>` : '')
+      + `</div>${x.ok ? '' : barra(x.lv)}</div>`).join('')
+    : '<p style="font-size:12px">Aún nadie entró con tu enlace. Comparte tu enlace: quien llegue recibe un kit de bienvenida (oro y pociones).</p>';
+  return s + '</div>';
 }
 // WhatsApp primero (es lo que mas se usa en Peru). El jugador decide enviar:
 // solo se abre WhatsApp con el texto listo. El enlace va a /jugar/, que elige 2D o 3D.
@@ -2070,6 +2139,8 @@ const regalo2 = iniciarRegalo({
   vibrar,
   filtro: t => modoAnuncio() && SIN_CRIPTO_RE.test(t || ''),
 });
+// «Avísame por Telegram» para jugadores web e invitados (avisotg.js): espera a que no haya otra ventana.
+const avisoTg2 = iniciarAvisoTg({ mandar, ocupado: () => !!document.querySelector('.modal.on, #dq-regalo.on') || !yo, aviso: (t, k) => aviso(t, k, 7000), tg: TG });
 
 $('b-social').onclick = () => abrirSocial();
 $('b-mapa').onclick = () => abrirMapaMundo();
@@ -2467,7 +2538,7 @@ const COFRE = {
   epico:      { img: 'cofre_epico',     nombre: 'Cofre épico',      color: '#c084fc', luz: '192,132,252' },
   legendario: { img: 'cofrelegendario', nombre: 'Cofre legendario', color: '#ffd84a', luz: '255,216,74' },
 };
-for (const k in COFRE) cargar(COFRE[k].img, A + 'cofres/' + COFRE[k].img + '.png');
+for (const k in COFRE) cargar(COFRE[k].img, A + 'cofres/' + COFRE[k].img + '.png', false);
 const COFRE_ALTO = 30;      // alto en pantalla (los dibujos miden 120 px)
 
 function recibirMundoAbierto(m) {
@@ -2527,6 +2598,7 @@ function dibujarCofres() {
     const x = c.x - camX;
     if (x < -60 || x > VW + 60) continue;
     const C = COFRE[c.tipo] || COFRE.comun;
+    if (!IMG[C.img]) pedir(C.img);
     const im = IMG[C.img];
     const abierto = c.hasta > ahora;
     const cerca = Math.abs(P.x - c.x) < 200;
@@ -3002,6 +3074,7 @@ function pintarBestiario() {
   $('inv-lista').innerHTML = h;
   $('inv-lista').querySelectorAll('canvas[data-best]').forEach(c => {
     const m = MONSTRUOS[c.dataset.best], hoja = HOJAS[m.hoja];
+    pedir('sh_' + m.hoja);
     const img = m.tinte ? tenido('sh_' + m.hoja, m.tinte) : IMG['sh_' + m.hoja];
     if (!img || !(img.naturalWidth || img.width)) return;
     const x = c.getContext('2d'); x.imageSmoothingEnabled = false;
@@ -3278,7 +3351,7 @@ function htmlPremium() {
   const cuenta = yo && yo.p2e && yo.p2e.cuenta;
   // Una linea clara y el detalle legal plegado (en movil no tapa los paquetes).
   let h = '<p style="font-size:13px;line-height:1.45;color:var(--txt2);margin-bottom:4px">Compras opcionales: El Duende revisa cada pago y te lo entrega a mano (CLASSIC y ORIGINS).</p>'
-    + '<details style="font-size:12px;line-height:1.45;color:var(--txt2);margin-bottom:10px"><summary style="cursor:pointer">Cómo funciona</summary>' + esc(textoPagoRecibido()) + ' Te avisamos aquí y por Telegram. ' + (cuentaTg ? 'En Telegram se paga con Stars. Con dinero <b>no</b> se compran mTON: solo se ganan jugando.' : modoAnuncio() ? 'Con dinero se compra con Stars, jugando desde Telegram.' : 'En la web se paga con Solana (SOL, una criptomoneda: no son soles) o con $DUENDE (10% de descuento). Con dinero <b>no</b> se compran mTON: solo se ganan jugando.') + ' Los soles (S/) son solo referencia aproximada.</details>';
+    + '<details style="font-size:12px;line-height:1.45;color:var(--txt2);margin-bottom:10px"><summary style="cursor:pointer">Cómo funciona</summary>' + esc(textoPagoRecibido()) + ' Te avisamos aquí y por Telegram. ' + (cuentaTg ? 'En Telegram se paga con Stars. Con dinero <b>no</b> se compran mTON: solo se ganan jugando.' : modoAnuncio() ? 'Se paga con Stars de Telegram (las compras allí con tarjeta): el botón abre Telegram, o en PC escaneas un QR con el celular.' : 'En la web se paga con Stars de Telegram (allí las compras con tarjeta), con Solana (SOL, una criptomoneda: no son soles) o con $DUENDE (10% de descuento). Con dinero <b>no</b> se compran mTON: solo se ganan jugando.') + ' Los soles (S/) son solo referencia aproximada.</details>';
   // La skin elegida desde la pestaña Skins va primero; luego por grupos.
   // El Pack de bienvenida (SOLO 1 VEZ) sale solo mientras el servidor diga que aun puedes.
   const lista = ordenTienda(PAQUETES.filter(p => !p.unaVez || (yo && yo.puedeBienvenida)), premiumFoco);
@@ -3292,8 +3365,9 @@ function htmlPremium() {
     if (pq.skin && yo && (yo.skins || []).includes(pq.skin)) acc = '<span class="precio" style="color:var(--ok)">✓ Ya la tienes</span>';
     else if (!cuenta) acc = `<span class="precio">${cuentaTg ? estrellasDe(pq.usd) + ' ⭐' : 'US$' + pq.usd}${ref(pq.usd)}</span><button class="btn sec" data-cuenta="1">Iniciar sesión</button>`;
     else if (cuentaTg) acc = `<span class="precio">${estrellasDe(pq.usd)} ⭐${ref(pq.usd)}</span><button class="btn" data-premium="${pq.id}" data-metodo="stars">Pagar con Stars</button>`;
-    else if (modoAnuncio()) acc = `<span class="precio">US$${pq.usd}${ref(pq.usd)}</span><span style="font-size:11px;color:var(--txt2)">Con Stars en Telegram</span>`;
-    else acc = `<span class="precio">US$${pq.usd}${ref(pq.usd)}</span><button class="btn" data-premium="${pq.id}" data-metodo="sol">Pagar con Solana (cripto)</button><button class="btn sec" data-premium="${pq.id}" data-metodo="duende">$DUENDE −10%</button>`;
+    // En la web tambien con Stars: el servidor crea la factura y se paga en Telegram (movil: abre el enlace; PC: QR).
+    else if (modoAnuncio()) acc = `<span class="precio">US$${pq.usd}${ref(pq.usd)}</span><button class="btn" data-premium="${pq.id}" data-metodo="stars">⭐ Pagar con Stars (tarjeta en Telegram)</button>`;
+    else acc = `<span class="precio">US$${pq.usd}${ref(pq.usd)}</span><button class="btn" data-premium="${pq.id}" data-metodo="sol">Pagar con Solana (cripto)</button><button class="btn sec" data-premium="${pq.id}" data-metodo="stars">⭐ Pagar con Stars (tarjeta en Telegram)</button><button class="btn sec" data-premium="${pq.id}" data-metodo="duende">$DUENDE −10%</button>`;
     const ico = sk ? `<img src="${retratoSkin(pq.skin)}" style="${sk.premium ? 'filter:drop-shadow(0 0 5px ' + sk.color + ')' : ''}">` : `<img src="${A}items/equipo/${pq.icono}.png">`;
     const nom = (sk && sk.premium ? `<span style="color:${sk.color}">${esc(pq.nombre)}</span>` : esc(pq.nombre))
       + (pq.etiqueta ? ` <span style="font-size:10px;padding:1px 5px;border-radius:6px;background:var(--ok);color:#000;white-space:nowrap">${esc(pq.etiqueta)}</span>` : '');
@@ -3318,7 +3392,12 @@ function conectarPremium(L) {
   });
   // «¿Problema?»: avisa al dueño de ese pedido (el servidor limita los avisos).
   L.querySelectorAll('[data-reclamo]').forEach(b => b.onclick = () => { sfx('boton', .3); b.disabled = true; b.textContent = 'Avisando…'; mandar({ t: 'reclamoPedido', codigo: b.dataset.reclamo }); setTimeout(() => { if (b.isConnected && b.disabled) { b.disabled = false; b.textContent = '¿Problema?'; } }, 5000); });
-  L.querySelectorAll('[data-premium]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'pedido', id: b.dataset.premium, metodo: b.dataset.metodo, via: viaTienda }); });
+  // Candado contra doble toque: un pedido cada 2,5 s (el servidor ademas reutiliza la factura viva).
+  L.querySelectorAll('[data-premium]').forEach(b => b.onclick = () => {
+    if (Date.now() - (window.__ultPedido || 0) < 2500) return;
+    window.__ultPedido = Date.now();
+    sfx('boton', .3); mandar({ t: 'pedido', id: b.dataset.premium, metodo: b.dataset.metodo, via: viaTienda });
+  });
   L.querySelectorAll('[data-cuenta]').forEach(b => b.onclick = () => abrirCuenta());
 }
 function abrirPremium(via) {
@@ -3331,12 +3410,50 @@ function abrirPremium(via) {
   const v = $('tienda-lista').closest('.ventana'); if (v) v.scrollTop = 0;
 }
 // Telegram abre su propia ventana de pago de Stars.
+// Desde la web (sin Mini App): ventana con el enlace (movil: un toque abre
+// Telegram, sin bloqueo de ventanas emergentes) y un QR en PC para pagar desde el celular.
 function abrirFactura(m) {
-  if (!TG || !TG.openInvoice) { window.open(m.link, '_blank'); return; }
+  evCompra('fa');
+  if (!TG || !TG.openInvoice) { mostrarFacturaWeb(m); return; }
   TG.openInvoice(m.link, st => {
     if (st === 'paid') aviso('Pago recibido. ' + textoPagoRecibido(), 'ok');
     else if (st === 'failed') aviso('El pago no se completó.');
+    else if (st === 'cancelled') { mandar({ t: 'pedidoCancelar', codigo: m.codigo }); reintentarFactura(m); }
   });
+}
+// Cerro la factura sin pagar: un toque para volver a abrirla (el enlace sigue
+// valiendo un rato). Sin ventana emergente de Telegram (versiones viejas), solo el aviso.
+function reintentarFactura(m) {
+  try {
+    if (TG.showPopup && (!TG.isVersionAtLeast || TG.isVersionAtLeast('6.2'))) {
+      TG.showPopup({ title: 'Pago sin terminar', message: 'Cerraste el pago antes de terminar. Tu pedido sigue abierto unos minutos.', buttons: [{ id: 'si', type: 'default', text: 'Reintentar' }, { type: 'cancel' }] }, id => { if (id === 'si') abrirFactura(m); });
+      return;
+    }
+  } catch (e) {}
+  aviso('Cerraste el pago sin terminar. Puedes volver a intentarlo desde la tienda.');
+}
+// Embudo de compra (/ventas del dueño): vio la tienda premium (tv) o abrio una
+// factura (fa). Una vez por sesion; el servidor ademas lo cuenta una vez al dia.
+function evCompra(k) {
+  const ya = evCompra.ya || (evCompra.ya = new Set());
+  if (ya.has(k) || !ws || ws.readyState !== 1) return;
+  ya.add(k); mandar({ t: 'ev', k });
+}
+function mostrarFacturaWeb(m) {
+  if (!/^https:\/\/t\.me\//.test(String(m.link || ''))) { aviso('No se pudo abrir el pago con Stars.'); return; }
+  $('sol-titulo').textContent = 'PAGAR CON STARS';
+  $('sol-cuerpo').innerHTML =
+    `<p class="centro" style="margin-bottom:8px">Pedido <b>#${esc(m.codigo)}</b> · se paga dentro de Telegram con Stars (puedes comprarlas con tarjeta allí mismo).</p>` +
+    `<a class="btn" href="${esc(m.link)}" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;padding:12px;margin-bottom:10px">⭐ Abrir Telegram y pagar</a>` +
+    (TACTIL ? '' : `<p style="font-size:12px;margin:6px 0">O escanea con la cámara de tu celular:</p><div id="stars-qr" style="display:flex;justify-content:center;margin:6px 0;min-height:40px"></div>`) +
+    `<p style="font-size:12px;color:var(--txt2);margin-top:8px">El pedido vence a los 30 minutos de hacerlo. ${esc(textoPagoRecibido())} Si cierras esta ventana, vuelve a pulsar el mismo paquete y te sale el mismo pedido.</p>`;
+  abrir('m-sol');
+  if (!TACTIL) cargarScript('https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js', 'sha384-mZT2gIty7ZDdOGkxfP6joZcYdMW1Jvj9dRlfpTmaJAKKXTqzygtB22k7FLe+KZC1').then(() => {
+    if (!$('stars-qr') || !window.qrcode) return;
+    const q = window.qrcode(0, 'M'); q.addData(m.link); q.make();
+    $('stars-qr').innerHTML = q.createImgTag(4, 8);
+    const img = $('stars-qr').querySelector('img'); if (img) { img.style.background = '#fff'; img.style.borderRadius = '8px'; img.alt = 'QR del pago con Stars'; }
+  }).catch(() => { if ($('stars-qr')) $('stars-qr').textContent = ''; });
 }
 // SOL: con Phantom (un toque) o desde cualquier wallet pegando la firma.
 let pedidoSol = null;
@@ -3934,6 +4051,7 @@ function etiqueta(x, y, txt, color, tam) {
 const CONTORNO = '#0b0614';
 function dibujarHoja(k, hoja, fila, col, alto, x, y, f, alpha, tinte, blancoFlash, extra) {
   let img = IMG['sh_' + k];
+  if (!img) pedir('sh_' + k);   // hoja diferida (monstruo de evento o montura ajena): se baja ya
   if (!img || !img.naturalWidth) return;
   if (blancoFlash) img = blanco('sh_' + k); else if (tinte) img = tenido('sh_' + k, tinte);
   const e = alto / hoja.ideal;
@@ -4210,7 +4328,10 @@ function dibujarDuende(q, esYo) {
     g.restore();
     if (skd.premium && frame % (ligero ? 14 : 6) === 0) particula(q.x + (Math.random() - .5) * 34, pies - 10 - Math.random() * 50, skd.color, .8);
   }
-  const hojaSkin = skd && skd.anim ? hojaTenida(skin) : skin === 'comun' ? IMG.anim : null;
+  // Skin de pago aun sin bajar: se pide y mientras tanto se ve el duende base.
+  const kPago = skd && skd.anim || skin === 'comun' ? null : SKINS[skin] ? SKINS[skin].img : 'skin_hero';
+  if (kPago && !IMG[kPago]) pedir(kPago);
+  const hojaSkin = skd && skd.anim ? hojaTenida(skin) : (skin === 'comun' || !(IMG[kPago] && IMG[kPago].naturalWidth)) ? IMG.anim : null;
   if (hojaSkin && ANIM && IMG.anim.naturalWidth) {
     // Duende base: la hoja animada de verdad (reposo / caminar / atacar / herido).
     let lista = ANIM_IDX.reposo, vel = 14;
@@ -4854,6 +4975,7 @@ function dibujarRetrato(o, q) {
   x.imageSmoothingEnabled = false;
   if (o) {
     const def = MONSTRUOS[o.k], hoja = HOJAS[def.hoja];
+    pedir('sh_' + def.hoja);
     const img = def.tinte ? tenido('sh_' + def.hoja, def.tinte) : IMG['sh_' + def.hoja];
     if (!img || !(img.naturalWidth || img.width)) return;
     const e = Math.min(52 / hoja.ideal, 80 / hoja.fw);
@@ -5000,7 +5122,7 @@ function pintarTienda() {
   $('m-tienda').classList.toggle('tab-premium', tabTienda === 'premium');
   $('t-oro').textContent = yo.oro.toLocaleString('es', { useGrouping: 'always' });
   const L = $('tienda-lista');
-  if (tabTienda === 'premium') { L.innerHTML = htmlPremium(); conectarPremium(L); return; }
+  if (tabTienda === 'premium') { evCompra('tv'); L.innerHTML = htmlPremium(); conectarPremium(L); return; }
   let h = '';
   const nvF = id => (yo.forja || {})[id] || 0;
   if (tabTienda === 'forja') {
@@ -5080,7 +5202,7 @@ function pintarTienda() {
         acc = `<span class="precio" style="color:${d.color}">Exclusiva · $${d.usd}</span>`;
         if (yo.p2e && yo.p2e.cuenta) acc += (TG && !forzarInvitado)
           ? `<button class="btn" data-premium="skin_${id}" data-metodo="stars">${estrellasDe(d.usd)} Stars</button>`
-          : modoAnuncio() ? '<span style="font-size:11px;color:var(--txt2)">Con Stars en Telegram</span>' : `<button class="btn" data-premium="skin_${id}" data-metodo="sol">SOL</button><button class="btn sec" data-premium="skin_${id}" data-metodo="duende">$DUENDE −10%</button>`;
+          : modoAnuncio() ? `<button class="btn" data-premium="skin_${id}" data-metodo="stars">⭐ ${estrellasDe(d.usd)} Stars</button>` : `<button class="btn" data-premium="skin_${id}" data-metodo="sol">SOL</button><button class="btn sec" data-premium="skin_${id}" data-metodo="stars">⭐ Stars</button><button class="btn sec" data-premium="skin_${id}" data-metodo="duende">$DUENDE −10%</button>`;
         else acc += '<button class="btn sec" data-cuenta="1">Iniciar sesión</button>';
       }
       else {
@@ -5089,7 +5211,7 @@ function pintarTienda() {
         // Skins: tambien con dinero; confirmado el pago exacto, la entrega el dueño (manual).
         if (tabTienda === 'skin' && d.usd && yo.p2e && yo.p2e.cuenta) acc += (TG && !forzarInvitado)
           ? `<button class="btn sec" data-premium="skin_${id}" data-metodo="stars">${estrellasDe(d.usd)} Stars</button>`
-          : modoAnuncio() ? '' : `<button class="btn sec" data-premium="skin_${id}" data-metodo="sol">~$${d.usd} en SOL</button><button class="btn sec" data-premium="skin_${id}" data-metodo="duende">$DUENDE −10%</button>`;
+          : modoAnuncio() ? `<button class="btn sec" data-premium="skin_${id}" data-metodo="stars">⭐ ${estrellasDe(d.usd)} Stars</button>` : `<button class="btn sec" data-premium="skin_${id}" data-metodo="sol">~$${d.usd} en SOL</button><button class="btn sec" data-premium="skin_${id}" data-metodo="duende">$DUENDE −10%</button>`;
       }
       if (tabTienda === 'skin' && !tiene.includes(id)) acc += `<button class="btn sec" data-probar="${id}">Probar</button>`;
       h += tarjeta(ico, d.premium ? `<span style="color:${d.color}">${esc(d.nombre)}</span>` : d.nombre, d.desc + (tabTienda === 'skin' && puesto !== id ? difSkin(id) : ''), acc);
@@ -5100,6 +5222,7 @@ function pintarTienda() {
   // Retratos de las monturas (primer cuadro de su hoja).
   L.querySelectorAll('canvas[data-montura], canvas[data-hoja]').forEach(c => {
     const hoja = c.dataset.hoja || MONTURAS[c.dataset.montura].hoja;
+    pedir('sh_' + hoja);   // hoja diferida: se pide ya (sale en la proxima vez que se abra)
     const hm = HOJAS[hoja], img = c.dataset.tinte ? tenido('sh_' + hoja, c.dataset.tinte) : IMG['sh_' + hoja];
     if (!img || !(img.naturalWidth || img.width)) return;
     const x = c.getContext('2d'); x.imageSmoothingEnabled = false;
@@ -5108,7 +5231,11 @@ function pintarTienda() {
     x.drawImage(img, hm.mov[1] * hm.fw, hm.mov[0] * hm.fh, hm.fw, hm.fh, -hm.fw * e / 2, -hm.fh * e, hm.fw * e, hm.fh * e);
     x.restore();
   });
-  L.querySelectorAll('[data-comprar]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'comprar', k: b.dataset.comprar, id: b.dataset.id, n: +b.dataset.n || 1 }); });
+  L.querySelectorAll('[data-comprar]').forEach(b => b.onclick = () => {
+    if (Date.now() - (window.__ultCompra || 0) < 600) return;   // doble toque = una compra
+    window.__ultCompra = Date.now();
+    sfx('boton', .3); mandar({ t: 'comprar', k: b.dataset.comprar, id: b.dataset.id, n: +b.dataset.n || 1 });
+  });
   conectarPremium(L);   // skins: el boton de pagar con dinero
   L.querySelectorAll('[data-probar]').forEach(b => b.onclick = () => {
     probando = { skin: b.dataset.probar, hasta: performance.now() + 10000 };
@@ -5306,11 +5433,22 @@ function refInvitacion() {
 }
 // ── VINCULAR CUENTAS (Telegram + correo = un duende; functions/mmo/vincular.js) ──
 let vincDatos = null, vincCod = null;
+// Llevar mi duende: la cuenta vuelve a entrar con este codigo (hola.vcod) y hereda al invitado.
+function vcodPend() { try { const c = sessionStorage.getItem('dq_vcod') || ''; return /^[A-Z0-9]{6}$/.test(c) ? c : undefined; } catch (e) { return undefined; } }
 function pintarVinc() {
   const C = $('vinc-cuerpo');
   if (!C) return;
-  // Solo dentro del mundo y con cuenta (los invitados heredan al crearla).
-  if (soyInvitado || !yo || !conectado) { C.innerHTML = ''; return; }
+  if (!yo || !conectado) { C.innerHTML = ''; return; }
+  if (soyInvitado) {
+    // Invitado: codigo de 6 letras para pasar su duende a Telegram o a una cuenta en otro celular.
+    let h = '<hr style="border-color:var(--borde);margin:14px 0 10px"><p style="font-size:14px;margin:0 0 4px"><b>📲 Pasar mi duende a Telegram u otro celular</b></p>'
+      + '<p class="nota" style="margin:0 0 8px">Pide un código y escríbelo en Duende Quest dentro de Telegram o en tu cuenta de correo, en cualquier navegador (CLASSIC: 👤 → «Vincular»; ORIGINS: ❓ Ayuda → «📲 Llevar mi duende»). La cuenta debe ser nueva o casi (hasta Nv 5, sin compras).</p>';
+    if (vincCod && vincCod.inv && vincCod.hasta > Date.now()) h += `<p style="text-align:center;margin:10px 0 2px;font:700 26px monospace;letter-spacing:4px;color:#ffd84a">${esc(vincCod.cod)}</p><p class="nota" style="margin:0 0 8px;text-align:center">Úsalo antes de 10 minutos y no se lo pases a nadie.</p>`;
+    else h += '<button class="btn" data-v="cod" style="width:100%;margin:8px 0">📲 Pedir mi código</button>';
+    C.innerHTML = h;
+    const bc = C.querySelector('[data-v="cod"]'); if (bc) bc.onclick = () => mandar({ t: 'vincCodigo' });
+    return;
+  }
   const L = (vincDatos && vincDatos.l) || {}, prin = vincDatos && vincDatos.principal;
   const fila = (k, n) => `<div class="fila" style="font-size:13px"><span>${n}: ${L[k] ? '✅ vinculada' : '— sin vincular'}${prin === k ? ' (principal)' : ''}</span>${L[k] && prin !== k && vincDatos.por !== k ? `<a data-vq="${k}" style="font-size:11px;cursor:pointer">Desvincular</a>` : ''}</div>`;
   let h = '<hr style="border-color:var(--borde);margin:14px 0 10px"><p style="font-size:14px;margin:0 0 4px"><b>🔗 Un duende, dos formas de entrar</b></p>'
@@ -5318,7 +5456,7 @@ function pintarVinc() {
     + fila('tg', 'Telegram') + fila('web', 'Correo');
   if (vincCod && vincCod.hasta > Date.now()) h += `<p style="text-align:center;margin:10px 0 2px;font:700 26px monospace;letter-spacing:4px;color:#ffd84a">${esc(vincCod.cod)}</p><p class="nota" style="margin:0 0 8px;text-align:center">Escríbelo en tu otra cuenta (👤 → «Vincular») antes de 10 minutos.</p>`;
   else h += '<button class="btn" data-v="cod" style="width:100%;margin:8px 0">Generar código para vincular</button>';
-  h += '<div style="display:flex;gap:6px"><input class="nombre" id="vinc-in" maxlength="8" placeholder="¿Tienes un código? Escríbelo aquí" style="margin:0;text-transform:uppercase"><button class="btn" data-v="usar">Vincular</button></div>';
+  h += '<div style="display:flex;gap:6px"><input class="nombre" id="vinc-in" maxlength="8" placeholder="¿Tienes un código? (de otra cuenta o de tu duende invitado)" style="margin:0;text-transform:uppercase"><button class="btn" data-v="usar">Vincular</button></div>';
   C.innerHTML = h;
   const vi = $('vinc-in'); vi.addEventListener('keydown', e => e.stopPropagation());
   C.querySelector('[data-v="usar"]').onclick = () => { const cod = vi.value.trim(); if (cod) mandar({ t: 'vincUsar', cod }); };
@@ -5356,7 +5494,7 @@ function pintarCuenta(cont, modo, enJuego) {
   if (modo === 'entrar') h += campo('cu-email', 'email', 'Correo', 'email') + campo('cu-pass', 'password', 'Contraseña', 'current-password')
     + '<button class="btn btn-grande" data-acc="entrar">Entrar</button>'
     + '<p class="ligas"><a data-m="olvido">¿Olvidaste tu contraseña?</a> · <a data-m="enlace">Entrar con un enlace al correo</a></p>';
-  else if (modo === 'crear') h += (soyInvitado && enJuego ? '<p class="nota" style="margin:0 0 8px">Tu personaje de invitado pasa a la cuenta nueva: no pierdes nada.</p>' : '')
+  else if (modo === 'crear') h += (soyInvitado && enJuego ? '<p class="nota" style="margin:0 0 8px">Al entrar con tu cuenta nueva te preguntamos si le pasas este duende de invitado: no pierdes nada.</p>' : '')
     + campo('cu-user', 'text', 'Nombre de usuario (3-20 letras o números)', 'username') + campo('cu-email', 'email', 'Correo', 'email')
     + campo('cu-pass', 'password', 'Contraseña (mínimo 8)', 'new-password') + campo('cu-pass2', 'password', 'Repite la contraseña', 'new-password')
     + '<button class="btn btn-grande" data-acc="crear">Crear cuenta gratis</button>';
@@ -5392,10 +5530,14 @@ function pintarCuenta(cont, modo, enJuego) {
       } else if (acc === 'crear') {
         const user = v('cu-user');
         if (!/^[a-zA-Z0-9_]{3,20}$/.test(user)) return msg('Nombre de usuario: 3-20 letras, números o _ (sin espacios).');
-        const { data, error } = await cli.auth.signUp({ email, password: pass, options: { data: refInvitacion() ? { username: user, ref: refInvitacion() } : { username: user }, emailRedirectTo: URL_VUELTA() } });
+        // dq_inv: el token del invitado va en la cuenta (solo lo ve su dueño): confirmar el correo en otro navegador tambien ofrece heredar.
+        const meta = refInvitacion() ? { username: user, ref: refInvitacion() } : { username: user };
+        const tInv = soyInvitado ? LS.getItem('dq_mmo_tok') : '';
+        if (/^[a-f0-9]{32}$/.test(tInv || '')) meta.dq_inv = tInv;
+        const { data, error } = await cli.auth.signUp({ email, password: pass, options: { data: meta, emailRedirectTo: URL_VUELTA() } });
         if (error) return msg(errAuth(error.message));
         if (data && data.session) { msg('¡Cuenta creada!', true); sesionLista(enJuego); }
-        else msg('¡Listo! Te enviamos un correo para confirmar la cuenta. Ábrelo en este navegador y volverás aquí con tu personaje guardado (revisa también spam).', true);
+        else msg('¡Listo! Te enviamos un correo para confirmar la cuenta. Ábrelo en cualquier navegador: al entrar te ofrecemos pasarle tu duende (revisa también spam).', true);
       } else if (acc === 'olvido') {
         const { error } = await cli.auth.resetPasswordForEmail(email, { redirectTo: URL_VUELTA() });
         if (error) return msg(errAuth(error.message));
@@ -5423,8 +5565,10 @@ async function inicio() {
   ajustarVista();
   pintarPoderes();
   const esperar = () => new Promise(r => { const chk = () => (cargadas >= porCargar ? r() : setTimeout(chk, 100)); chk(); });
-  await Promise.race([esperar(), new Promise(r => setTimeout(r, 12000))]);
+  // Solo lo critico; tope 4 s (antes 12): lo que falte se dibuja al llegar.
+  await Promise.race([esperar(), new Promise(r => setTimeout(r, 4000))]);
   precalentarTintes();
+  cargarResto();
   paso('arte_ok');
   $('carga-s').textContent = 'Conectando…';
   const tokWeb = TG ? null : await tokenWeb();

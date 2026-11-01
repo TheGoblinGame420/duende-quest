@@ -406,7 +406,29 @@ async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
     const r = await mmoInterno(env, 'ventas');
     if (!r.ok) return enviar('❌ ' + (r.error || 'error'));
     const bloque = (t, x) => `${t}: ${x.n} venta${x.n === 1 ? '' : 's'} · $${x.usd} (◎ ${x.sol} con SOL · ⭐ ${x.stars} con Stars)` + (x.top.length ? '\n' + x.top.map(y => `  · ${y.nombre}: ${y.n} ($${Math.round(y.usd * 100) / 100})`).join('\n') : '');
-    return enviar('🛒 Ventas del MMO (entregadas)\n\n' + bloque('Últimos 7 días', r.d7) + '\n\n' + bloque('Últimos 30 días', r.d30) + `\n\n⏳ Por entregar: ${r.pendientes}` + (r.pendientes ? ' (/pedidos)' : '') + ` · ❌ Anuladas (30 d): ${r.anulados30}`);
+    return enviar('🛒 Ventas del MMO (entregadas)\n\n' + bloque('Últimos 7 días', r.d7) + '\n\n' + bloque('Últimos 30 días', r.d30) + `\n\n⏳ Por entregar: ${r.pendientes}` + (r.pendientes ? ' (/pedidos)' : '') + ` · ❌ Anuladas (30 d): ${r.anulados30}` + textoVentasDetalle(r));
+  }
+  // /gasto AAAA-MM-DD|hoy|ayer meta 42.50 [campaña] — lo gastado en anuncios ese
+  // dia (US$). Misma fecha, origen y campaña lo corrige; 0 lo borra. Solo anota:
+  // con esto /mmostats calcula CPI y ROAS D7.
+  if (cmd === '/gasto') {
+    const p = payload.trim().split(/\s+/).filter(Boolean);
+    if (!p.length) {
+      const r = await mmoInterno(env, 'gasto', {});
+      if (!r || !r.ok) return enviar('❌ ' + ((r && r.error) || 'error'));
+      return enviar('💸 Gasto en anuncios (últimos anotados, US$):\n' + (r.l.length ? r.l.map(x => `${x.f} · ${x.src}${x.camp ? ' · ' + x.camp : ''} · $${x.usd}`).join('\n') : '— (nada anotado)')
+        + '\n\nAnotar: /gasto 2026-11-01 meta 42.50 campaña\n(fecha: AAAA-MM-DD, hoy o ayer · origen: meta, tg, wa o ref · campaña opcional = utm_campaign del anuncio · 0 borra esa fila)');
+    }
+    const iso = t => new Date(t).toISOString().slice(0, 10);
+    const f = p[0] === 'hoy' ? iso(Date.now()) : p[0] === 'ayer' ? iso(Date.now() - 86400000) : p[0];
+    const usd = Number(String(p[2] || '').replace(',', '.'));
+    if (!p[1] || !p[2] || !Number.isFinite(usd)) return enviar('Uso: /gasto 2026-11-01 meta 42.50 campaña  (monto en US$; fecha también hoy o ayer)');
+    // La campaña se sanea igual que en el servidor (campDe): asi el aviso muestra la que se guarda.
+    const camp = String(p[3] || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 30);
+    if (p[3] && !camp) return enviar('Campaña no válida: usa letras, números, _ o - (la misma utm_campaign del anuncio).');
+    const r = await mmoInterno(env, 'gasto', { f, src: p[1].toLowerCase(), usd, camp });
+    if (!r || !r.ok) return enviar('❌ ' + ((r && r.error) || 'error'));
+    return enviar(`✅ Anotado: ${f} · ${p[1].toLowerCase()}${camp ? ' · ' + camp : ''} · $${Math.round(usd * 100) / 100}${usd === 0 ? ' (borrado)' : ''}. Míralo en /mmostats.`);
   }
   if (cmd === '/entregar') {
     if (!arg1) return enviar('Uso: /entregar CODIGO');
@@ -452,6 +474,38 @@ async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
   }
 }
 
+// /ventas: por metodo, via, origen y campaña (30 dias), espera pagado→entregado
+// y el embudo de compra de 7 dias (functions/mmo/retencion.js).
+function textoVentasDetalle(r) {
+  const d = r.d30;
+  if (!d) return '';
+  const g = l => (l || []).map(x => `${x.k} ${x.n} ($${x.usd})`).join(' · ') || '—';
+  let t = '';
+  if (d.grupos) t += `\n\n📦 30 días por método: ${g(d.grupos.metodo)}\n🚪 Por dónde abrió la tienda: ${g(d.grupos.via)}\n🎯 Por origen del jugador: ${g(d.grupos.origen)}` + (d.grupos.campana && d.grupos.campana.length ? `\n📣 Por campaña: ${g(d.grupos.campana)}` : '');
+  if (d.espera !== null && d.espera !== undefined) t += `\n⏱️ Pagado → entregado (mediana): ${String(d.espera).replace('.', ',')} h`;
+  const e = r.embudo;
+  if (e && e.tot) {
+    const fila = x => `tienda ${x.tv || 0} → factura ${x.fa || 0} (la cierran sin pagar ${x.fc || 0}) · pedidos ⭐${x.pq_stars || 0} ◎${x.pq_sol || 0} 🍄${x.pq_duende || 0} → pagan ${x.pg || 0} → entregados ${x.en || 0} · caducan ${x.cad || 0}`;
+    t += `\n\n🪜 Embudo de compra (7 días; jugadores distintos por día):\nTodos: ${fila(e.tot)}` + (e.meta && (e.meta.tv || e.meta.pg) ? `\nMeta: ${fila(e.meta)}` : '');
+  }
+  return t;
+}
+
+// /mmostats: anuncios de los ultimos 7 dias (gasto de /gasto, altas por origen
+// y campaña). Las Stars del arcade no cuentan: solo la tienda del MMO.
+function textoAnuncios(r) {
+  const a = r.anuncios;
+  if (!a || (!Object.keys(a.porSrc || {}).length && !(a.camps || []).length)) return '';
+  const nom = { meta: 'Meta', tg: 'Telegram', wa: 'WhatsApp', ref: 'Invitación' };
+  const usd = v => v === null || v === undefined ? '—' : '$' + String(v).replace('.', ',');
+  const x = v => v === null || v === undefined ? '—' : String(v).replace('.', ',') + 'x';
+  const pc = v => v === null || v === undefined ? '—' : String(v).replace('.', ',') + '%';
+  const dm = d => d.slice(8, 10) + '/' + d.slice(5, 7);
+  const filas = Object.entries(a.porSrc || {}).map(([k, e]) => `${nom[k] || k} 7d: gasto ${usd(e.gasto)} · altas ${e.altas} · CPI ${usd(e.cpi)} · D1 ${pc(e.d1)} · ARPU D7 ${usd(e.arpu)} · ROAS D7 ${x(e.roas)}`);
+  const camps = (a.camps || []).map(e => `  · ${e.camp}: gasto ${usd(e.gasto)} · altas ${e.altas} · CPI ${usd(e.cpi)} · ARPU D7 ${usd(e.arpu)} · ROAS D7 ${x(e.roas)}`);
+  return `📣 Anuncios (altas del ${dm(a.desde)} al ${dm(a.hasta)}; gasto anotado con /gasto):\n${filas.join('\n')}${camps.length ? '\nPor campaña:\n' + camps.join('\n') : ''}\n(ARPU y ROAS D7 = compras de la tienda del MMO entregadas, hechas en sus 7 primeros días; aún crecen. Las Stars del arcade no cuentan.)\n\n`;
+}
+
 // /mmostats, por origen (/js/origen.js): altas y embudo de 14 dias con su
 // D1/D7, y el embudo de la carga de 7 dias (beacon /mmo/ev). Vacio si aun no hay datos.
 const NOMBRE_ORIGEN = { meta: 'Meta', tg: 'Telegram', wa: 'WhatsApp', ref: 'Invitación', org: 'Orgánico' };
@@ -490,9 +544,10 @@ function textoMmoStats(r) {
     `   Niveles: ${tramos}\n` +
     `⏱️ Sesión media (7 días): ${String(r.sesion.media).replace('.', ',')} min · ${r.sesion.sesiones7} sesiones · ${r.sesion.minutos7} min en total\n\n` +
     `🆕 Altas por día (últimos 14):\n${altas}\n\n` +
-    (r.embudo && r.embudo.n ? `🪜 Embudo de esas altas: primera caza ${r.embudo.c1}/${r.embudo.n} · misión 1 ${r.embudo.m1} · nivel 5 ${r.embudo.n5} · nivel 10 ${r.embudo.n10} · 1ª expedición ${r.embudo.ex1 || 0}${r.embudo.iab && r.embudo.iab.n ? ` · desde Facebook/Instagram ${r.embudo.iab.n} (D1 ${r.embudo.iab.d1 && r.embudo.iab.d1.pct != null ? r.embudo.iab.d1.pct + '%' : '—'})` : ''}\n\n` : '') +
-    (r.invitaciones && r.invitaciones.refLlega ? `🤝 Invitados por enlace (14 días): llegan ${r.invitaciones.refLlega} · con cuenta ${r.invitaciones.refCuenta} · premio Nv 10 ${r.invitaciones.refPagado}\n\n` : '') +
-    textoOrigenes(r) +
+    (r.embudo && r.embudo.n ? `🪜 Embudo de esas altas: primera caza ${r.embudo.c1}/${r.embudo.n} · misión 1 ${r.embudo.m1} · nivel 5 ${r.embudo.n5} · nivel 10 ${r.embudo.n10} · 1ª expedición ${r.embudo.ex1 || 0} · «Avísame por Telegram» (web) ${r.embudo.avisoTgOk || 0}${r.embudo.iab && r.embudo.iab.n ? ` · desde Facebook/Instagram ${r.embudo.iab.n} (D1 ${r.embudo.iab.d1 && r.embudo.iab.d1.pct != null ? r.embudo.iab.d1.pct + '%' : '—'})` : ''}\n\n` : '') +
+    (r.avisos && Object.keys(r.avisos).length ? `🔔 Avisos diarios (14 días, por su primera línea · volvieron en 24 h): ${Object.entries(r.avisos).map(([k, a]) => `${k} ${a.vuelven}/${a.env}${a.pct != null ? ' (' + String(a.pct).replace('.', ',') + '%)' : ''}`).join(' · ')}\n\n` : '') +
+    (r.invitaciones && r.invitaciones.refLlega ? `🤝 Invitados por enlace (14 días): llegan ${r.invitaciones.refLlega} · con cuenta ${r.invitaciones.refCuenta} · premio Nv 10 ${r.invitaciones.refPagado} · llegan a Nv 10 ${r.invitaciones.n10pct != null ? r.invitaciones.n10pct + '%' : '—'} (resto ${r.invitaciones.n10restoPct != null ? r.invitaciones.n10restoPct + '%' : '—'})\n\n` : '') +
+    textoOrigenes(r) + textoAnuncios(r) +
     `🔁 Retención (últimas 30 cohortes con el día ya cumplido):\n` +
     `D1: ${ret(r.retencion.d1)}\nD7: ${ret(r.retencion.d7)}\nD30: ${ret(r.retencion.d30)}\n\n` +
     `📅 Cohortes recientes (cuántos volvieron ese día exacto; … = aún no llega):\n${cohortes}\n\n` +
@@ -1004,6 +1059,21 @@ async function onRequestPost(context) {
 
       switch (cmd) {
         case '/start':
+          // «Avísame por Telegram» de un jugador web o invitado: t.me/duendequest_bot?start=av_<codigo>.
+          // Lo pidio el en el juego y acaba de abrir el chat: solo se le contesta a el.
+          if (/^av_[a-z0-9]{10}$/.test(payload || '')) {
+            if (msg.chat.type !== 'private') break;
+            let r = null;
+            try { r = await mmoInterno(context.env, 'avisoTg', { cod: payload.slice(3), chatId: String(chatId) }); } catch (e) {}
+            const txt = r && r.ok
+              ? `🔔 ¡Listo${r.nombre ? ', ' + r.nombre : ''}! Te avisaremos aquí (como mucho una vez al día) cuando tengas algo pendiente en DUENDE QUEST: tu racha, la caza del día o un evento.` +
+                (r.oro ? `\n\n🎁 +${r.oro} de oro ya están en tu personaje.` : '') +
+                (r.off ? '\n\n⚠️ Tenías los avisos desactivados en este chat: escribe /avisos on para recibirlos.' : '\n\nPara dejar de recibirlos: /avisos off')
+              : r && r.caducado ? '⌛ Ese enlace ya caducó (dura 10 minutos). Vuelve al juego y toca otra vez «Avísame por Telegram».'
+              : '❌ No se pudo activar ahora. Vuelve al juego y prueba otra vez en un rato.';
+            await tg(token, 'sendMessage', { chat_id: chatId, text: txt, disable_web_page_preview: true });
+            break;
+          }
           // Invitacion: t.me/duendequest_bot?start=mmo_<codigo> (CLASSIC, enlaces viejos)
           // o m3d_<codigo> (ORIGINS 3D). Responde solo a quien escribio /start.
           if (/^(mmo|m3d)_[a-z0-9]{6}$/.test(payload || '')) {
@@ -1012,6 +1082,15 @@ async function onRequestPost(context) {
             try { const r = await mmoInterno(context.env, 'invitador', { ref: cod }); if (r && r.ok && r.n) quien = mdSeguro(r.n) + ' (Nv ' + (Number(r.lv) || 1) + ')'; } catch (e) {}
             const intro = es3d ? 'Mundo abierto en 3D, gratis y sin descargas: vuela con alas, explora con tu amigo y entren juntos a la Cueva de los Goblins.' : 'MMORPG de duendes al estilo WoW, gratis y sin descargas: elige tu clase, haz grupo con tu amigo y entren juntos a las mazmorras.';
             await tg(token, 'sendMessage', { chat_id: chatId, text: '🤝 *' + quien + ' te invita a DUENDE QUEST' + (es3d ? ' 3D' : ' ONLINE') + '*\n\n' + intro + ' Cuando llegues al nivel 10, los dos reciben oro del juego.\n\n' + TEXTO_SEGURIDAD, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: es3d ? '🌌 Entrar al mundo 3D' : '🌍 Entrar al mundo', web_app: { url: (es3d ? MUNDO_URL : MMO_URL) + '?ref=' + cod } }]] } });
+            break;
+          }
+          // Anuncio: t.me/duendequest_bot?start=ad_<campaña> (Meta, la web: ad_web...).
+          // Bienvenida corta SIN cripto (ni TON ni $DUENDE) y el juego con utm_source=tg_ad,
+          // que activa el modo anuncio de origen.js. Solo responde a este /start.
+          if (/^ad_[a-z0-9_]{1,40}$/.test(payload || '')) {
+            const cmp = payload.slice(3);
+            try { await Promise.race([mmoInterno(context.env, 'tgOrigen', { tgId: String(user.id), c: cmp }), new Promise(res => setTimeout(res, 4000))]); } catch (e) {}
+            await tg(token, 'sendMessage', { chat_id: chatId, text: '🧌 *¡Bienvenido a DUENDE QUEST!*\nRPG de duendes gratis y sin descargas: elige tu clase, sube de nivel y explora el mundo con tus amigos.', parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 Jugar gratis', web_app: { url: MUNDO_URL + '?utm_source=tg_ad&utm_campaign=' + cmp } }], [{ text: '🌍 Versión clásica 2D', web_app: { url: MMO_URL + '?utm_source=tg_ad&utm_campaign=' + cmp } }]] } });
             break;
           }
           await handleStart(token, env, chatId, user, payload); break;
@@ -1034,7 +1113,7 @@ async function onRequestPost(context) {
         case '/terms': case '/terminos': await handleTerms(token, chatId); break;
         case '/miscompras': case '/compras': await handleMisCompras(token, env, context, chatId, user.id); break;
         case '/creador': case '/creator': case '/oficial': await handleCreador(token, chatId); break;
-        case '/retiros': case '/pagado': case '/rechazar': case '/fondo': case '/pedidos': case '/ventas': case '/entregar': case '/anular': case '/mmostats': case '/chicha': case '/chichaok': case '/chichano': case '/skinweb': case '/starsok': await handleMmoAdmin(token, context, chatId, user.id, cmd, payload); break;
+        case '/retiros': case '/pagado': case '/rechazar': case '/fondo': case '/pedidos': case '/ventas': case '/entregar': case '/anular': case '/mmostats': case '/gasto': case '/chicha': case '/chichaok': case '/chichano': case '/skinweb': case '/starsok': await handleMmoAdmin(token, context, chatId, user.id, cmd, payload); break;
         case '/avisos': await handleAvisos(token, context, chatId, user.id, payload); break;
         case '/admin': await handleAdmin(token, env, context, chatId, user.id); break;
         case '/live': case '/envivo': await handleLive(token, env, context, chatId, user.id, payload); break;
