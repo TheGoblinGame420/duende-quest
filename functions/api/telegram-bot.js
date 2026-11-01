@@ -119,9 +119,11 @@ function calcStarsPackages(priceUsd) {
 }
 
 // ¿Primera compra? (server-side; se re-verifica al acreditar el pago)
-async function isFirstPurchase(env, tgId) {
+async function isFirstPurchase(env, tgId, sinCargo) {
   if (!tgId) return false;
-  const rows = await supabaseQuery(env, `stars_purchases?telegram_id=eq.${encodeURIComponent(tgId)}&tokens_credited=gt.0&select=id&limit=1`);
+  // Cuenta cualquier compra anterior (acreditada o no, skins y MMO incluidos: la
+  // tabla no las distingue); sinCargo excluye la fila del pago que se revisa.
+  const rows = await supabaseQuery(env, `stars_purchases?telegram_id=eq.${encodeURIComponent(tgId)}${sinCargo ? '&tx_id=neq.' + encodeURIComponent(sinCargo) : ''}&select=id&limit=1`);
   return Array.isArray(rows) && rows.length === 0;
 }
 
@@ -699,13 +701,13 @@ async function onRequestPost(context) {
         const priceUsd = price?.priceUsd || 0.0000001;
         const paidUsd = starsPaid * STAR_USD;
         // Oferta 1ª compra 2x: solo si realmente no tiene compras previas (re-verificado aquí)
-        const firstBuyMult = (payload.first_buy && await isFirstPurchase(env, tgId)) ? 2 : 1;
+        const firstBuyMult = (payload.first_buy && await isFirstPurchase(env, tgId, chargeId)) ? 2 : 1;
         const maxTokens = Math.floor((paidUsd / priceUsd) * 1.05 * firstBuyMult); // 5% price-drift tolerance
         const tokens = Math.max(0, Math.min(parseInt(payload.tokens, 10) || 0, maxTokens)) || maxTokens;
         const reg = await supabaseQuery(env, 'stars_purchases', { method: 'POST', body: { telegram_id: tgId, amount_usd: +paidUsd.toFixed(2), amount_stars: starsPaid, tokens_credited: 0, tx_id: chargeId } });
         if (!Array.isArray(reg) || reg.length !== 1) return new Response('OK');
-        // La 2x mira solo compras ya acreditadas: si hay otras sin acreditar, se avisa
-        // al dueño para que no la repita (la cifra la decide el al revisar).
+        // Doble control por si dos pagos llegan a la vez: si aparecen otras compras,
+        // se avisa al dueño para que no repita la 2x (la cifra la decide el al revisar).
         let otrasCompras = '';
         if (firstBuyMult > 1) {
           const previas = await supabaseQuery(env, `stars_purchases?telegram_id=eq.${encodeURIComponent(tgId)}&tx_id=neq.${encodeURIComponent(chargeId)}&select=id&limit=20`);

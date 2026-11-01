@@ -3162,3 +3162,13 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Bajos: nombres y hermandades por esqueleto (`ne:`), ban de invitado por IP 24 h, `sigSesion` al azar, tope de `ret:idx`, límites de vinculación por IP, CORS de helius-verify, `.dev.vars` en .assetsignore, etc.
 - Pendiente (decisión del dueño): oferta 2x de Stars repetida (id 3), ranking web sin verificar (61/81, necesita mandar scores por el Worker), canje DQ→$DUENDE sin jugar (55, migración SQL), heredar invitado con botón explícito (53c), separar dueño de moderadores (38), índice UNIQUE de tickets (60).
 - Arnés 856 bien (actualizadas 4 pruebas que daban por bueno lo vulnerable; la del pase ya no depende del día).
+
+### Los 6 pendientes de seguridad (31-oct-2026, `?v=324`)
+
+- Stars (id 3): `isFirstPurchase` cuenta cualquier compra anterior en `stars_purchases` (acreditada o no), sin contar el cargo actual.
+- Web (61/81, 55, 60): `web_submit_score` inserta en game_scores con `verified:true` y el username de profiles; el navegador ya no inserta. `dq_last_issued_ts` (solo vale el último ticket), tope 500 pts/s y 2 monedas/s (`WEB_SCORE_POR_SEG`, `WEB_COINS_POR_SEG`), `web_redeem` exige correo confirmado y 3 días. `run_key` UNIQUE: se inserta primero y un duplicado responde `run_used` antes de acreditar. Todo funciona sin el SQL; con `sql/08-seguridad-oct.sql` se cierra del todo.
+- Herencia (53c): el servidor manda `heredar` y el cliente 2D/3D pregunta con dos botones; solo copia con `heredar:true`.
+- Modo Dios (38): niveles `dueno` (ADMIN_TG_ID) y `mod` (MMO_ADMINS); economía, pedidos y copias solo el dueño; un mod no actúa sobre otro admin; `/asedio` solo el dueño. Sin ADMIN_TG_ID todo sigue como antes.
+- game.html e index.html cargan auth-manager.js y engine.js con `?v=324`.
+- Pendiente del dueño: ejecutar sql/08-seguridad-oct.sql y activar «Confirm email» en Supabase Auth.
+- Arnés 856 bien.

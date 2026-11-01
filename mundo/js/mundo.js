@@ -14,23 +14,23 @@
 import * as THREE from 'three';
 import { esNocheDuendes, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS } from '/mmo/js/data.js?v=323';
-import { iniciarVentanas } from './ventanas.js?v=323';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=323';
-import { crearMusica } from './musica.js?v=323';
-import { construirCueva } from './cueva.js?v=323';
-import { TAPA, transparentar } from './tapa.js?v=323';
-import { construirAbismo } from './abismo.js?v=323';
-import { crearParticulas } from './particulas.js?v=323';
-import { cargarKenney, piezasCasa } from './kenney.js?v=323';
-import { CORRIENTES } from '/mmo/js/abismo3d.js?v=323';
+  LOGIN_PREMIOS, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS } from '/mmo/js/data.js?v=324';
+import { iniciarVentanas } from './ventanas.js?v=324';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=324';
+import { crearMusica } from './musica.js?v=324';
+import { construirCueva } from './cueva.js?v=324';
+import { TAPA, transparentar } from './tapa.js?v=324';
+import { construirAbismo } from './abismo.js?v=324';
+import { crearParticulas } from './particulas.js?v=324';
+import { cargarKenney, piezasCasa } from './kenney.js?v=324';
+import { CORRIENTES } from '/mmo/js/abismo3d.js?v=324';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=323';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=323';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=323';
-import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=323';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=323';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=324';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST } from '/mmo/js/mundo3d.js?v=324';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=324';
+import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=324';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=324';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1182,18 +1182,35 @@ async function autenticacion() {
   try { localStorage.setItem('dq_ultimo_juego', '/mundo/'); } catch (e) {}   // /inicio/ lo ofrece como CONTINUAR
   let previo = null; try { previo = localStorage.getItem('dq_mmo_tok'); } catch (e) {}
   const inv0 = /^[a-f0-9]{32}$/.test(previo || '') ? previo : undefined;
-  if (TG && !forzarInvitado) return { auth: { k: 'tg', d: TG.initData }, inv: inv0 };
+  if (TG && !forzarInvitado) return { auth: { k: 'tg', d: TG.initData }, inv: inv0, heredar: heredarResp };
   const tok = forzarInvitado ? null : await tokenWeb();
-  if (tok) return { auth: { k: 'web', tok }, inv: inv0 };
+  if (tok) return { auth: { k: 'web', tok }, inv: inv0, heredar: heredarResp };
   let nombre = ''; try { nombre = localStorage.getItem('dq_mmo_nombre') || ''; } catch (e) {}
   soyInvitado = true;
   return { auth: { k: 'inv', tok: tokInvitado() }, nombre };
 }
 let ultimoMsgT = performance.now(), conectando = false;
+// Pasar el duende de invitado a la cuenta: lo decide el jugador con un boton (nunca en silencio).
+// Mientras el aviso esta abierto no se reconecta.
+let heredarResp, pausaHeredar = false;
+function preguntarHeredar(m) {
+  pausaHeredar = true;
+  $('carga').style.display = 'none';
+  const cuenta = (m.k === 'tg' ? 'de Telegram ' : '') + (m.cuenta || 'nueva');
+  const fondo = document.createElement('div');
+  fondo.className = 'heredar-fondo';
+  fondo.innerHTML = '<div class="heredar-caja" role="dialog" aria-modal="true"><h3>¿Pasar tu duende a esta cuenta?</h3><p class="heredar-txt"></p><button class="heredar-si"></button><button class="heredar-no">Empezar de cero</button></div>';
+  fondo.querySelector('.heredar-txt').textContent = 'En este dispositivo jugaste como invitado con ' + (m.inv || 'un duende') + ' (Nv ' + m.nv + '). Has entrado con la cuenta ' + cuenta + ', que aún no tiene duende. Si esta cuenta no es tuya, elige empezar de cero.';
+  fondo.querySelector('.heredar-si').textContent = 'Pasar mi duende (Nv ' + m.nv + ') a la cuenta ' + cuenta;
+  const elegir = si => { heredarResp = si; pausaHeredar = false; fondo.remove(); $('carga').style.display = 'flex'; reintentos = 0; conectar(); };
+  fondo.querySelector('.heredar-si').onclick = () => elegir(true);
+  fondo.querySelector('.heredar-no').onclick = () => { if (confirm('¿Empezar de cero en la cuenta ' + cuenta + '? Tu duende de invitado se queda en este dispositivo.')) elegir(false); };
+  document.body.appendChild(fondo);
+}
 async function conectar() {
   // Un solo intento a la vez (volver a la app, 'online' y el temporizador podian
   // coincidir durante el await y abrir dos sockets: el servidor echaba a uno).
-  if (conectando || (ws && ws.readyState <= 1)) return;
+  if (conectando || pausaHeredar || (ws && ws.readyState <= 1)) return;
   conectando = true;
   let hola;
   try { hola = await autenticacion(); } finally { conectando = false; }
@@ -1204,7 +1221,7 @@ async function conectar() {
   este.onclose = () => {
     if (ws !== este) return;   // un socket viejo que el vigilante ya cambio por otro: no toca nada
     conectado = false;
-    if (fatal) return;
+    if (fatal || pausaHeredar) return;
     // En segundo plano (Telegram minimizado, pantalla bloqueada) no se cuentan
     // intentos: se reconecta al volver.
     if (document.hidden) return;
@@ -1471,6 +1488,7 @@ function recibir(m) {
     }
     case 'res': if (m.p === miId) { aviso((m.de || 'Alguien') + ' te resucitó.', 'ok'); cerrar('v-muerte'); } break;
     case 'ranking': rankDatos = m; if (npcAbierto === 'ranking') pintarRanking(m.r); pintarRankPanel(); break;
+    case 'heredar': preguntarHeredar(m); break;
     case 'err':
       // En Telegram no se cae en silencio a un invitado nuevo de nivel 1 (la sesion de mas de 24 h caduca): se pide reabrir.
       if (m.auth && m.auth !== 'inv' && TG) { error('Tu sesión de Telegram caducó. Cierra el juego y vuelve a abrirlo desde el bot: entrarás con tu duende.'); return; }

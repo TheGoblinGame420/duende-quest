@@ -502,6 +502,11 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 92, fecha: '31 oct 2026', items: [
+    'Al entrar con tu cuenta (Telegram o correo) por primera vez, si jugabas como invitado ahora te preguntamos: «Pasar mi duende a esta cuenta» o «Empezar de cero». Tu duende nunca cambia de cuenta sin que lo elijas.',
+    'Rankings limpios: solo cuentan las puntuaciones verificadas por el servidor, también las de la web.',
+    'El canje de DQ en la web pide haber jugado de verdad, correo confirmado y una cuenta de al menos 3 días.',
+  ] },
   { n: 91, fecha: '31 oct 2026', items: [
     'Seguridad: una auditoría con 50 agentes revisó todo el juego en PC y móvil; se corrigieron más de 60 fallos.',
     'Tu duende está más protegido: un enlace con datos de Telegram ajenos ya no puede hacerte entrar en otra cuenta ni llevarse tu personaje de invitado.',

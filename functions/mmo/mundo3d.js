@@ -168,7 +168,7 @@ export const Mundo3D = {
       case 'chat':
         // Moderadores: /jefe invoca al jefe mundial del 3D.
         if (String(m.m || '').trim() === '/jefe' && this.esDios(s)) return this.dios(s, { a: 'mundial3' });
-        if (String(m.m || '').trim() === '/asedio' && this.esDios(s)) { this.iniciarAsedio(Date.now()); return; }
+        if (String(m.m || '').trim() === '/asedio' && this.esDueno(s)) { this.iniciarAsedio(Date.now()); return; }
         return this.chat(s, m);
       case 'clase': return this.elegirClase(s, m);
       case 'espec': return this.elegirEspec(s, m);

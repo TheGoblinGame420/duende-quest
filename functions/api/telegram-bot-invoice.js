@@ -22,9 +22,11 @@ async function precioCacheado() {
 const _ultimaFactura = new Map();
 
 // ¿Primera compra de este usuario? (server-side, se re-verifica al acreditar)
-export async function isFirstPurchase(env, tgId) {
+export async function isFirstPurchase(env, tgId, sinCargo) {
   if (!tgId) return false;
-  const rows = await supabaseQuery(env, `stars_purchases?telegram_id=eq.${encodeURIComponent(tgId)}&tokens_credited=gt.0&select=id&limit=1`);
+  // Cuenta cualquier compra anterior (acreditada o no, skins y MMO incluidos: la
+  // tabla no las distingue); sinCargo excluye la fila del pago que se revisa.
+  const rows = await supabaseQuery(env, `stars_purchases?telegram_id=eq.${encodeURIComponent(tgId)}${sinCargo ? '&tx_id=neq.' + encodeURIComponent(sinCargo) : ''}&select=id&limit=1`);
   return Array.isArray(rows) && rows.length === 0;
 }
 

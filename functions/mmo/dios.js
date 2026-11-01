@@ -10,6 +10,12 @@
 //    ajeno se podia registrar sin confirmar y heredar el Modo Dios).
 // Los invitados nunca lo son.
 //
+// Dos niveles: 'dueno' (ADMIN_TG_ID) y 'mod' (MMO_ADMINS). Solo el dueño mueve
+// economia o copias (oro, skins, pedidos, copias, golpe divino, jefe mundial).
+// Un mod no actua sobre otro admin ni sobre el dueño; el dueño si puede
+// expulsar o banear a un mod. Sin ADMIN_TG_ID configurado, MMO_ADMINS es dueño
+// (como antes, para no dejar el juego sin nadie con todos los poderes).
+//
 // Poderes: invencible, matar de un golpe, moverse sin limite de velocidad,
 // viajar a cualquier mapa o junto a un jugador, traerlo, curarse. Moderacion:
 // expulsar, silenciar, banear (por uid, sobrevive a reconexiones),
@@ -38,18 +44,24 @@ export const esqueleto = n => claveNombre(n).replace(/[il1|!]/g, 'l').replace(/[
 export const claveNombre = n => String(n || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[\s_]+/g, '');
 const ORO_MAX_DAR = 10000000;
 const MODOS = ['inv', 'golpe', 'vel'];
+// Lo que solo puede hacer el dueño (mueve economia o copias).
+const SOLO_DUENO = new Set(['oro', 'skin', 'mundial3', 'copias', 'copiaYa', 'restaurarPj', 'restaurarMundo', 'subirCopia', 'entregar', 'anular']);
+// Acciones sobre otro jugador: un mod no las usa contra un admin.
+const SOBRE_OTRO = new Set(['traer', 'oro', 'skin', 'renombrar', 'expulsar', 'silenciar', 'banear']);
 
 export const Dios = {
   // ── QUIEN ES DIOS ──
   esDios(s) { return !!(s && s.c && s.dios); },
+  esDueno(s) { return !!(s && s.c && s.dios === 'dueno'); },
+  // Devuelve 'dueno', 'mod' o false.
   calcularDios(s, extra) {
     const env = getEnv({ env: this.env });
     // Con cuentas vinculadas cuenta tambien la cuenta con la que se entro.
     const uids = [s.c.uid, s.uidAuth].filter(Boolean);
     if (uids.every(u => u.startsWith('inv:'))) return false;
-    if (env.ADMIN_TG_ID && uids.includes('tg:' + env.ADMIN_TG_ID)) return true;
+    if (env.ADMIN_TG_ID && uids.includes('tg:' + env.ADMIN_TG_ID)) return 'dueno';
     const lista = String(this.env.MMO_ADMINS || '').split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
-    if (uids.some(u => lista.includes(u.toLowerCase()))) return true;
+    if (uids.some(u => lista.includes(u.toLowerCase()))) return env.ADMIN_TG_ID ? 'mod' : 'dueno';
     // El correo NO da dios: con 'Confirm email' apagado en Supabase cualquiera puede
     // registrar un correo ajeno ya "confirmado". Solo valen uids (web:<uuid> / tg:<id>);
     // el aviso del log dice que uid añadir a MMO_ADMINS.
@@ -127,6 +139,9 @@ export const Dios = {
     const t = this.sesiones.get(m.p | 0);
     const objetivo = t && t.c ? t : null;
     s.diosModo = s.diosModo || {};
+    const dueno = this.esDueno(s);
+    if (!dueno && (SOLO_DUENO.has(a) || (a === 'modo' && m.k === 'golpe'))) return this.no(s, 'Solo el dueño puede hacer eso.');
+    if (!dueno && SOBRE_OTRO.has(a) && objetivo && objetivo !== s && this.esDios(objetivo)) return this.no(s, 'Un moderador no puede actuar sobre otro admin.');
     switch (a) {
       case 'estado': return this.enviarPanelDios(s);
       case 'modo': {
@@ -235,10 +250,11 @@ export const Dios = {
         return ok(min ? `🔇 ${objetivo.c.nombre} silenciado ${min} min.` : `🔊 ${objetivo.c.nombre} puede volver a hablar.`);
       }
       case 'banear': {
-        if (!objetivo || objetivo === s || this.esDios(objetivo)) return;
+        // El dueño si puede banear a un mod; al dueño no lo banea nadie.
+        if (!objetivo || objetivo === s || this.esDueno(objetivo)) return;
         const horas = Math.max(0, Math.min(24 * 365, Number(m.horas) || 0));
         const mod = await this.cargarMod();
-        mod.ban[objetivo.c.uid] = { n: objetivo.c.nombre, hasta: horas ? Date.now() + horas * 3600000 : 0, motivo: String(m.motivo || '').slice(0, 80), t: Date.now() };
+        mod.ban[objetivo.c.uid] = { n: objetivo.c.nombre, hasta: horas ? Date.now() + horas * 3600000 : 0, motivo: String(m.motivo || '').slice(0, 80), t: Date.now(), d: dueno ? 1 : 0 };
         // A un INVITADO se le banea tambien la IP (o su /64) como mucho 24 h: si no,
         // borraba su token y volvia al momento. Solo afecta a invitados (world.js, hola).
         if (objetivo.ip && objetivo.c.uid.startsWith('inv:')) {
@@ -256,6 +272,8 @@ export const Dios = {
         const mod = await this.cargarMod();
         const uid = Object.keys(mod.ban).find(u => mod.ban[u].t === Number(m.t));
         if (!uid) return;
+        // Un ban puesto por el dueño solo lo quita el dueño.
+        if (mod.ban[uid].d && !dueno) return this.no(s, 'Ese ban lo puso el dueño: solo él puede quitarlo.');
         this.registrarMod(s, `desbaneó a ${mod.ban[uid].n}`);
         if (mod.ban[uid].ip && mod.banIp) delete mod.banIp[mod.ban[uid].ip];
         delete mod.ban[uid];
@@ -322,13 +340,15 @@ export const Dios = {
     const ahora = Date.now();
     const jugadores = [...this.sesiones.values()].filter(x => x.c).map(x => ({
       p: x.id, n: x.c.nombre, lv: x.c.nivel, mapa: x.c.mapa, inst: x.k.includes('#') ? 1 : 0,
-      tipo: x.c.uid.split(':')[0], skins: x.c.skins, oro: x.c.oro, mute: this.silenciado(x) > ahora ? 1 : 0, gm: x.dios ? 1 : 0,
+      tipo: x.c.uid.split(':')[0], skins: x.c.skins, oro: x.c.oro, mute: this.silenciado(x) > ahora ? 1 : 0, gm: x.dios ? 1 : 0, dn: x.dios === 'dueno' ? 1 : 0,
     }));
-    const pedidos = this.pedidos.filter(x => x.estado === 'pagado' || x.estado === 'por_verificar' || x.estado === 'esperando_pago').slice(-40).map(x => ({
+    const dueno = this.esDueno(s);
+    // Los pedidos (pagos) solo los ve el dueño.
+    const pedidos = !dueno ? [] : this.pedidos.filter(x => x.estado === 'pagado' || x.estado === 'por_verificar' || x.estado === 'esperando_pago').slice(-40).map(x => ({
       codigo: x.codigo, jugador: x.jugador, nombre: x.nombre, usd: x.usd, metodo: x.metodo, estado: x.estado, creado: x.creado,
       firma: x.firma || '', cadena: x.cadena || null, monto: x.metodo === 'duende' ? x.duendeRaw / 1e6 + ' $DUENDE' : x.metodo === 'sol' ? (x.lamports / 1e9).toFixed(9) + ' SOL' : (x.starsPagadas || x.stars) + ' Stars',
     }));
-    const bans = Object.values(mod.ban).map(b => ({ n: b.n, hasta: b.hasta, motivo: b.motivo, t: b.t }));
-    this.enviar(s, { t: 'diosPanel', jugadores, pedidos, bans, log: (this.modLog || []).slice(-15), modo: s.diosModo || {} });
+    const bans = Object.values(mod.ban).map(b => ({ n: b.n, hasta: b.hasta, motivo: b.motivo, t: b.t, d: b.d ? 1 : 0 }));
+    this.enviar(s, { t: 'diosPanel', nivel: s.dios, jugadores, pedidos, bans, log: (this.modLog || []).slice(-15), modo: s.diosModo || {} });
   },
 };

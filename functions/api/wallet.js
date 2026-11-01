@@ -147,6 +147,35 @@ async function leerRun(secret, tgId, run) {
 // Tickets ya presentados en este isolate (ver submit_score)
 const _runsUsados = new Set();
 
+// Respuestas de error de PostgREST. Las columnas nuevas (run_key,
+// dq_last_issued_ts) llegan con sql/08-seguridad-oct.sql: mientras no se
+// ejecute, PostgREST responde 42703/PGRST204 y se sigue como antes.
+function faltaColumna(r) {
+  const c = r && !Array.isArray(r) ? String(r.code || '') : '';
+  return c === '42703' || c === 'PGRST204';
+}
+function esDuplicado(r) {
+  return !!r && !Array.isArray(r) && String(r.code || '') === '23505';
+}
+
+// Inserta la fila del ranking gastando el ticket: run_key tiene indice UNIQUE,
+// asi que de N envios en paralelo con el mismo ticket solo uno consigue la
+// fila y el resto recibe 'usado' ANTES de acreditar DQ.
+// Sin la columna (SQL 08 sin ejecutar) inserta como antes.
+async function insertarScore(env, fila, runKey) {
+  let r = await supabaseQuery(env, 'game_scores', { method: 'POST', body: { ...fila, run_key: runKey } });
+  if (esDuplicado(r)) return 'usado';
+  if (faltaColumna(r)) r = await supabaseQuery(env, 'game_scores', { method: 'POST', body: fila });
+  return Array.isArray(r) && r.length ? 'ok' : 'error';
+}
+
+// Topes por tiempo real jugado en la web (segundos entre ticket y envio):
+// el jugador automatico hace ~170 puntos/s y ~1,5 monedas/s.
+const WEB_SCORE_POR_SEG = 500;
+const WEB_COINS_POR_SEG = 2;
+// Canje web: correo confirmado y cuenta con al menos 3 dias
+const WEB_REDEEM_MIN_DIAS = 3;
+
 async function creditDuende(env, tgId, amount) {
   return supabaseQuery(env, 'rpc/add_duende_by_tgid', { method: 'POST', body: { p_tg_id: tgId, p_amount: amount } });
 }
@@ -441,7 +470,8 @@ async function onRequestPost(context) {
       // verified explicito: la columna tiene DEFAULT false y Postgres lo aplica
       // ANTES del trigger, asi que el COALESCE(NEW.verified, true) del trigger
       // nunca daba true y el torneo semanal no encontraba a nadie que premiar.
-      await supabaseQuery(env, 'game_scores', { method: 'POST', body: { username, score, wave, level, telegram_id: tgId, verified: true } });
+      const ins = await insertarScore(env, { username, score, wave, level, telegram_id: tgId, verified: true }, 'tg:' + tgId + ':' + inicio);
+      if (ins === 'usado') return json(request, { error: 'run_used' }, 409);
       // actualizar bests del perfil
       const profiles = await supabaseQuery(env, `profiles?telegram_id=eq.${tgId}&select=best_score,best_wave,games_played,total_coins&limit=1`);
       const p = Array.isArray(profiles) && profiles[0] ? profiles[0] : {};
@@ -556,6 +586,10 @@ async function onRequestPost(context) {
       const user = await verifySupabaseUser(env, body.access_token);
       if (!user?.id) return json(request, { error: 'auth_failed' }, 401);
       const ts = Date.now();
+      // Ultimo ticket emitido: un ticket nuevo invalida los anteriores, asi
+      // que pedir varios a la vez ya no deja cobrar varias partidas.
+      // Si la columna aun no existe (SQL 08 sin ejecutar) se ignora el error.
+      await supabaseQuery(env, `profiles?id=eq.${user.id}`, { method: 'PATCH', body: { dq_last_issued_ts: ts } });
       return json(request, { success: true, run: ts + '.' + await firmarRun(env.BOT_TOKEN, 'web:' + user.id, ts) });
     }
 
@@ -565,12 +599,42 @@ async function onRequestPost(context) {
       const uid = user.id;
       const score = Math.max(0, Math.min(5000000, Math.floor(+body.score || 0)));
       const wave = Math.max(1, Math.min(500, Math.floor(+body.wave || 1)));
-      const coins = Math.max(0, Math.min(100000, Math.floor(+body.coins || 0)));
+      const level = Math.max(1, Math.min(200, Math.floor(+body.level || 1)));
       const inicio = await leerRun(env.BOT_TOKEN, 'web:' + uid, body.run);
       if (!inicio) return json(request, { error: 'bad_run' }, 400);
       const seg = (Date.now() - inicio) / 1000;
       if (seg < 15 || seg > 6 * 3600) return json(request, { error: 'implausible' }, 422);
       if (wave > 1 + seg / 20 || score > 25000 * wave + 30000) return json(request, { error: 'implausible' }, 422);
+      // Tope por tiempo real: los puntos y las monedas no pueden crecer mas
+      // rapido que el tiempo jugado (antes bastaba esperar con el ticket).
+      if (score > WEB_SCORE_POR_SEG * seg + 30000) return json(request, { error: 'implausible' }, 422);
+      const coins = Math.max(0, Math.min(100000, Math.floor(WEB_COINS_POR_SEG * seg), Math.floor(+body.coins || 0)));
+      // Freno en memoria a envios en paralelo (lo atomico es run_key)
+      const claveRun = 'web|' + uid + '|' + String(body.run);
+      if (_runsUsados.has(claveRun)) return json(request, { error: 'run_used' }, 409);
+      if (_runsUsados.size > 10000) _runsUsados.clear();
+      _runsUsados.add(claveRun);
+      // Solo vale el ultimo ticket emitido (0 = aun no se ha guardado ninguno)
+      let perfil = await supabaseQuery(env, `profiles?id=eq.${uid}&select=username,dq_last_issued_ts&limit=1`);
+      if (faltaColumna(perfil)) perfil = await supabaseQuery(env, `profiles?id=eq.${uid}&select=username&limit=1`);
+      const p = Array.isArray(perfil) && perfil[0] ? perfil[0] : {};
+      const emitido = Number(p.dq_last_issued_ts || 0);
+      if (emitido > 0 && emitido !== inicio) return json(request, { error: 'run_used' }, 409);
+      // Un ticket vale para un solo envio: si ya hay un score posterior al
+      // inicio de esta partida, el ticket esta gastado.
+      const ultimo = await supabaseQuery(env, `game_scores?user_id=eq.${uid}&select=created_at&order=created_at.desc&limit=1`);
+      if (Array.isArray(ultimo) && ultimo[0] && Date.parse(ultimo[0].created_at) >= inicio) {
+        return json(request, { error: 'run_used' }, 409);
+      }
+      // La fila del ranking la inserta el servidor (verified y username del
+      // perfil, nunca del cliente). Si el ticket ya se gasto, no se acredita.
+      const fila = {
+        user_id: uid, username: String(p.username || 'duende').slice(0, 20), score, wave, level, coins,
+        bosses_killed: Math.max(0, Math.min(100000, Math.floor(+body.bosses_killed || 0))),
+        combos_max: Math.max(0, Math.min(100000, Math.floor(+body.combos_max || 0))),
+        verified: true,
+      };
+      if (await insertarScore(env, fila, 'web:' + uid + ':' + inicio) === 'usado') return json(request, { error: 'run_used' }, 409);
       let granted = 0;
       try {
         const day = new Date().toISOString().slice(0, 10);
@@ -587,6 +651,12 @@ async function onRequestPost(context) {
       const user = await verifySupabaseUser(env, body.access_token);
       if (!user?.id) return json(request, { error: 'auth_failed' }, 401);
       const uid = user.id;
+      // Cuentas web gratis en serie: solo canjea un correo confirmado y una
+      // cuenta con unos dias de antiguedad (datos de Supabase Auth).
+      if (!user.email_confirmed_at) return json(request, { error: 'email_unconfirmed', detail: 'Confirma tu correo antes de canjear' }, 403);
+      if (!(Date.now() - Date.parse(user.created_at || '') >= WEB_REDEEM_MIN_DIAS * 86400000)) {
+        return json(request, { error: 'account_too_new', detail: `Tu cuenta debe tener al menos ${WEB_REDEEM_MIN_DIAS} días para canjear` }, 403);
+      }
       const wallet = String(body.wallet_sol || '').trim();
       const dq = Math.floor(+body.dq_amount || 0);
 

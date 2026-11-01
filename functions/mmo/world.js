@@ -341,7 +341,7 @@ export class MmoWorld {
     if (ahora - s.ventana > 1000) { s.ventana = ahora; s.cuenta = 0; }
     if (++s.cuenta > 60) { if (s.cuenta > 200) this.expulsar(s, 'Demasiados mensajes'); return; }
     // Solo el dueño puede mandar un mensaje grande: el archivo de una copia de seguridad.
-    if (typeof data !== 'string' || (data.length > 4000 && !(s.dios && data.length < 1300000 && data.startsWith('{"t":"dios","a":"subirCopia"')))) return;
+    if (typeof data !== 'string' || (data.length > 4000 && !(s.dios === 'dueno' && data.length < 1300000 && data.startsWith('{"t":"dios","a":"subirCopia"')))) return;
     let m; try { m = JSON.parse(data); } catch (e) { return; }
     if (!m || typeof m.t !== 'string') return;
 
@@ -524,11 +524,21 @@ export class MmoWorld {
     // Quien jugo como invitado y luego entra con su cuenta (web o Telegram)
     // no empieza de cero: si la cuenta aun no tiene personaje, hereda el del
     // invitado (el token es secreto: solo lo tiene quien jugo con el).
+    // Nunca en silencio: un enlace con la sesion de Telegram de otro se llevaba
+    // el duende. Solo con heredar:true (el jugador lo elige con un boton).
     if (!c && !uid.startsWith('inv:') && /^[a-f0-9]{32}$/.test(m.inv || '')) {
       const uidInv = 'inv:' + (await sha256hex('dq-mmo:' + m.inv)).slice(0, 24);
       const previo = uidInv !== uid && await this.state.storage.get('c:' + uidInv);
       // Un invitado baneado no se lava creando una cuenta. Los bots de prueba no se heredan.
-      if (previo && !UIDS_PRUEBA.has(uidInv) && !this.porUid.has(uidInv) && !this.entrando.has(uidInv) && !(await this.baneado(uidInv))) {
+      const puede = previo && !UIDS_PRUEBA.has(uidInv) && !this.porUid.has(uidInv) && !this.entrando.has(uidInv) && !(await this.baneado(uidInv));
+      // Sin respuesta aun y con progreso: se pregunta y se corta; el cliente vuelve con heredar true o false.
+      if (puede && typeof m.heredar !== 'boolean' && (previo.nivel || 1) > 1) {
+        this.enviar(s, { t: 'heredar', nv: previo.nivel, inv: previo.nombre || '', cuenta: nombre || '', k: uid.split(':')[0] });
+        try { s.ws.close(4001, 'heredar'); } catch (e) {}
+        this.cerrar(s);
+        return;
+      }
+      if (puede && m.heredar === true) {
         // Mientras se hereda, el invitado no puede entrar (ni otra cuenta heredar):
         // leeria el personaje que se esta moviendo y al guardarlo quedaria duplicado.
         this.entrando.set(uidInv, s);
@@ -1481,7 +1491,7 @@ export class MmoWorld {
           ? { raw: x.duendeRaw, mint: DUENDE_MINT, dec: DUENDE_DECIMALES, usd: Math.round(x.usd * DUENDE_DESCUENTO * 100) / 100, wallet: SOL_DEV_WALLET }
           : { lamports: x.lamports, usd: x.usd, wallet: SOL_DEV_WALLET, ref: x.ref || '' }) : {}) })),
       transparencia: this.transparencia(),
-      dios: s.dios ? 1 : 0, diosModo: s.dios ? s.diosModo || {} : undefined,
+      dios: s.dios ? 1 : 0, diosNv: s.dios || undefined, diosModo: s.dios ? s.diosModo || {} : undefined,
     };
   }
   actualizarYo(s) { s.yoPend = null; s.yoT = Date.now(); this.enviar(s, { t: 'yo', yo: this.datosPropios(s) }); }

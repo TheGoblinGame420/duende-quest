@@ -219,19 +219,12 @@ function showProfileModal() {
 // ─────────────────────────────────────────────
 // SCORE SUBMISSION
 // ─────────────────────────────────────────────
-async function submitScore(data) {
+// La fila de game_scores ya no se inserta desde el navegador (cualquiera
+// ponia el nombre y el score que quisiera): la crea el servidor en
+// web_submit_score (game.html). Aqui solo se refresca el perfil despues.
+async function submitScore() {
   if (!_sb || !currentUser || !currentProfile) return;
   try {
-    await _sb.from('game_scores').insert({
-      user_id:       currentUser.id,
-      username:      currentProfile.username,
-      score:         data.score,
-      wave:          data.wave,
-      level:         data.level    || 1,
-      coins:         data.coins    || 0,
-      bosses_killed: data.bosses_killed || 0,
-      combos_max:    data.combos_max    || 0
-    });
     const { data: updated } = await _sb.from('profiles').select('*').eq('id', currentUser.id).single();
     if (updated) { currentProfile = updated; _updateMenuUI(); }
   } catch (e) {
@@ -334,6 +327,8 @@ async function _fetchLeaderboard(filter) {
   let q = _sb
     .from('game_scores')
     .select('username, score, wave, level, created_at')
+    // Solo filas que inserto el servidor (portada, game.html y PC/movil)
+    .eq('verified', true)
     .order('score', { ascending: false })
     .limit(50);
 

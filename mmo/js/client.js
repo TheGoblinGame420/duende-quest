@@ -17,7 +17,7 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=323';
+} from './data.js?v=324';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -357,12 +357,13 @@ async function autenticacion() {
   soyInvitado = false;
   try { localStorage.setItem('dq_ultimo_juego', '/mmo/'); } catch (e) {}   // /inicio/ lo ofrece como CONTINUAR
   // Si hubo partida de invitado en este dispositivo, su token viaja tambien:
-  // la cuenta nueva hereda ese personaje en vez de empezar de cero.
+  // la cuenta nueva puede heredar ese personaje, pero solo si el jugador lo
+  // elige en el aviso (heredarResp); el servidor nunca lo pasa en silencio.
   const previo = localStorage.getItem('dq_mmo_tok');
   const inv0 = /^[a-f0-9]{32}$/.test(previo || '') ? previo : undefined;
-  if (TG && !forzarInvitado) return { auth: { k: 'tg', d: TG.initData }, inv: inv0 };
+  if (TG && !forzarInvitado) return { auth: { k: 'tg', d: TG.initData }, inv: inv0, heredar: heredarResp };
   const tok = forzarInvitado ? null : await tokenWeb();
-  if (tok) return { auth: { k: 'web', tok }, inv: inv0 };
+  if (tok) return { auth: { k: 'web', tok }, inv: inv0, heredar: heredarResp };
   let inv = localStorage.getItem('dq_mmo_tok');
   if (!/^[a-f0-9]{32}$/.test(inv || '')) {
     const b = new Uint8Array(16); crypto.getRandomValues(b);
@@ -394,11 +395,27 @@ async function tokenWeb() {
   } catch (e) { return null; }
 }
 
+// Pasar el duende de invitado a la cuenta: lo decide el jugador con un boton (nunca en silencio).
+// Mientras el aviso esta abierto no se reconecta.
+let heredarResp, pausaHeredar = false;
+function preguntarHeredar(m) {
+  pausaHeredar = true;
+  const cuenta = (m.k === 'tg' ? 'de Telegram ' : '') + (m.cuenta || 'nueva');
+  const fondo = document.createElement('div');
+  fondo.className = 'heredar-fondo';
+  fondo.innerHTML = '<div class="heredar-caja" role="dialog" aria-modal="true"><h3>¿Pasar tu duende a esta cuenta?</h3><p class="heredar-txt"></p><button class="heredar-si"></button><button class="heredar-no">Empezar de cero</button></div>';
+  fondo.querySelector('.heredar-txt').textContent = 'En este dispositivo jugaste como invitado con ' + (m.inv || 'un duende') + ' (Nv ' + m.nv + '). Has entrado con la cuenta ' + cuenta + ', que aún no tiene duende. Si esta cuenta no es tuya, elige empezar de cero.';
+  fondo.querySelector('.heredar-si').textContent = 'Pasar mi duende (Nv ' + m.nv + ') a la cuenta ' + cuenta;
+  const elegir = si => { heredarResp = si; pausaHeredar = false; fondo.remove(); reintentos = 0; conectar(); };
+  fondo.querySelector('.heredar-si').onclick = () => elegir(true);
+  fondo.querySelector('.heredar-no').onclick = () => { if (confirm('¿Empezar de cero en la cuenta ' + cuenta + '? Tu duende de invitado se queda en este dispositivo.')) elegir(false); };
+  document.body.appendChild(fondo);
+}
 async function conectar() {
   // Un solo intento a la vez: en web autenticacion() espera a supabase y, mientras,
   // ws sigue en null. Un doble toque en «Jugar», 'online', volver a la pestaña o
   // el temporizador podian abrir dos sockets y el servidor echaba a uno con error.
-  if (conectando || (ws && ws.readyState <= 1)) return;
+  if (conectando || pausaHeredar || (ws && ws.readyState <= 1)) return;
   clearTimeout(timerRec);
   conectando = true;
   let hola;
@@ -416,7 +433,7 @@ async function conectar() {
     if (ws !== s) return;
     conectado = false;
     castYo = null; verLanzar(false);   // sin conexion el castFin ya no llega
-    if (fatal || pausado) return;
+    if (fatal || pausado || pausaHeredar) return;
     reintentos++;
     if (reintentos === 7) mostrarError('Sin conexión con el servidor. Seguimos intentándolo solos; también puedes pulsar «Reconectar».');
     // Visible: se sigue intentando cada 8 s (tunel, cambio de red, despliegue).
@@ -698,6 +715,7 @@ function recibir(m) {
       P.x = m.x; P.y = m.y; P.vx = 0; P.vy = 0; if (m.f) P.f = m.f;
       break;
     case 'ranking': pintarRanking(m.r, m.sem, m.finSem, m.des, m.dsem, m.af, m.duel, m.elo, m.torre, m.tmax, m.herm); break;
+    case 'heredar': preguntarHeredar(m); break;
     case 'err':
       if (m.auth && m.auth !== 'inv' && !forzarInvitado) {
         // El servidor cierra el socket; onclose reconecta solo, ya como invitado.
@@ -3260,11 +3278,15 @@ function pintarDios(d) {
   if (!$('m-dios').classList.contains('on')) return;
   const D = diosDatos || { jugadores: [], pedidos: [], bans: [], log: [] };
   const C = $('dios-cuerpo');
+  // Nivel que manda el servidor: el moderador no ve lo que mueve economia o copias (el servidor tambien lo rechaza).
+  const dueno = (D.nivel || (yo && yo.diosNv)) !== 'mod';
+  if (!dueno && (diosTab === 'pedidos' || diosTab === 'copias')) diosTab = 'poderes';
   let h = '<div class="tabs">' + [['poderes', '⚡ PODERES'], ['jugadores', '👥 JUGADORES'], ['pedidos', '🛒 PEDIDOS (' + D.pedidos.filter(x => x.estado !== 'esperando_pago').length + ')'], ['mod', '⛔ MODERACIÓN'], ['copias', '💾 COPIAS']]
+    .filter(([k]) => dueno || (k !== 'pedidos' && k !== 'copias'))
     .map(([k, t]) => `<button class="tab ${diosTab === k ? 'on' : ''}" data-dtab="${k}">${t}</button>`).join('') + '</div>';
   if (diosTab === 'poderes') {
     h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0">'
-      + [['inv', '🛡️ Invencible'], ['golpe', '💥 Golpe divino'], ['vel', '⚡ Velocidad libre']].map(([k, t]) => `<button class="btn" data-dmodo="${k}" data-txt="${t}">${t}</button>`).join('')
+      + [['inv', '🛡️ Invencible'], ['golpe', '💥 Golpe divino'], ['vel', '⚡ Velocidad libre']].filter(([k]) => dueno || k !== 'golpe').map(([k, t]) => `<button class="btn" data-dmodo="${k}" data-txt="${t}">${t}</button>`).join('')
       + '<button class="btn sec" id="d-curar">✨ Curarme</button></div>'
       + '<p style="font-size:12px;color:var(--txt2)">Con cualquier poder encendido no ganas mTON ni subes en el ranking.</p>'
       + '<p style="margin:10px 0 4px;font-size:13px">🌀 Viajar a:</p><div style="display:flex;gap:6px;flex-wrap:wrap">'
@@ -3272,14 +3294,15 @@ function pintarDios(d) {
       + '<p style="margin:12px 0 4px;font-size:13px">📢 Anuncio a todo el servidor:</p><div style="display:flex;gap:6px"><input class="nombre" id="d-anuncio" maxlength="200" placeholder="Mensaje" style="margin:0;font-size:12px"><button class="btn" id="d-anunciar">Enviar</button></div>';
   } else if (diosTab === 'jugadores') {
     h += `<p style="font-size:12px;color:var(--txt2);margin:6px 0">${D.jugadores.length} conectados</p>`;
-    h += D.jugadores.map(j => `<div class="mis-caja" style="margin:6px 0;padding:8px">
+    // Un moderador no actua sobre otro admin; el dueño si puede expulsar o banear a un moderador.
+    h += D.jugadores.map(j => { const libre = dueno || !j.gm || j.p === miId; return `<div class="mis-caja" style="margin:6px 0;padding:8px">
       <b>${j.gm ? '👑 ' : ''}${esc(j.n)}</b> <span style="color:var(--txt2);font-size:12px">Nv ${j.lv} · ${esc((MAPAS[j.mapa] || {}).nombre || j.mapa)}${j.inst ? ' (mazmorra)' : ''} · ${j.tipo === 'inv' ? 'invitado' : j.tipo === 'tg' ? 'Telegram' : 'web'} · ${(j.oro || 0).toLocaleString('es')} oro${j.mute ? ' · 🔇' : ''}</span>
       <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">
-        <button class="btn sec" data-dj="irA" data-p="${j.p}">Ir</button><button class="btn sec" data-dj="traer" data-p="${j.p}">Traer</button>
-        <button class="btn sec" data-dj="oro" data-p="${j.p}">Oro</button><button class="btn sec" data-dj="skin" data-p="${j.p}">Skin</button>
-        <button class="btn sec" data-dj="renombrar" data-p="${j.p}">Renombrar</button><button class="btn sec" data-dj="silenciar" data-p="${j.p}">${j.mute ? 'Quitar silencio' : 'Silenciar'}</button>
-        <button class="btn sec" data-dj="expulsar" data-p="${j.p}">Expulsar</button>${j.gm ? '' : `<button class="btn" data-dj="banear" data-p="${j.p}" style="background:var(--err)">Banear</button>`}
-      </div></div>`).join('');
+        <button class="btn sec" data-dj="irA" data-p="${j.p}">Ir</button>${libre ? `<button class="btn sec" data-dj="traer" data-p="${j.p}">Traer</button>` : ''}
+        ${dueno ? `<button class="btn sec" data-dj="oro" data-p="${j.p}">Oro</button><button class="btn sec" data-dj="skin" data-p="${j.p}">Skin</button>` : ''}
+        ${libre ? `<button class="btn sec" data-dj="renombrar" data-p="${j.p}">Renombrar</button><button class="btn sec" data-dj="silenciar" data-p="${j.p}">${j.mute ? 'Quitar silencio' : 'Silenciar'}</button>
+        <button class="btn sec" data-dj="expulsar" data-p="${j.p}">Expulsar</button>` : ''}${(dueno ? j.dn || j.p === miId : j.gm) ? '' : `<button class="btn" data-dj="banear" data-p="${j.p}" style="background:var(--err)">Banear</button>`}
+      </div></div>`; }).join('');
   } else if (diosTab === 'pedidos') {
     const estado = { pagado: '💰 Pagado', por_verificar: '🔎 Por revisar', esperando_pago: '⏳ Esperando pago' };
     if (!D.pedidos.length) h += '<p class="centro" style="margin:16px 0;color:var(--txt2)">No hay compras pendientes.</p>';
@@ -3297,7 +3320,7 @@ function pintarDios(d) {
       <b>${esc(e.id)} UTC</b> <span style="font-size:12px;color:var(--txt2)">· ${e.pj} personajes · ${(e.bytes / 1024).toFixed(0)} KB${e.bytes > 8 * 1024 * 1024 ? ' (⚠️ demasiado grande para subirla desde el panel)' : ''} · ${esc(e.motivo)} · ${e.fuera === 'telegram' ? '✅ en Telegram' : e.fuera === 'r2' ? '✅ en R2' : '⚠️ solo interna'}</span>
       <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px"><button class="btn sec" data-dcp="pj" data-id="${esc(e.id)}">♻️ Restaurar un jugador</button><button class="btn" data-dcp="mundo" data-id="${esc(e.id)}" style="background:var(--err)">Restaurar TODO</button></div></div>`).join('');
   } else {
-    h += '<p style="margin:8px 0 4px;font-size:13px">⛔ Baneados</p>' + (D.bans.length ? D.bans.map(b => `<div class="fila"><span>${esc(b.n)} · ${b.hasta ? 'hasta ' + new Date(b.hasta).toLocaleString('es') : 'permanente'}${b.motivo ? ' · ' + esc(b.motivo) : ''}</span><button class="btn sec" data-dban="${b.t}">Quitar</button></div>`).join('') : '<p style="font-size:12px;color:var(--txt2)">Nadie.</p>');
+    h += '<p style="margin:8px 0 4px;font-size:13px">⛔ Baneados</p>' + (D.bans.length ? D.bans.map(b => `<div class="fila"><span>${esc(b.n)} · ${b.hasta ? 'hasta ' + new Date(b.hasta).toLocaleString('es') : 'permanente'}${b.motivo ? ' · ' + esc(b.motivo) : ''}</span>${b.d && !dueno ? '' : `<button class="btn sec" data-dban="${b.t}">Quitar</button>`}</div>`).join('') : '<p style="font-size:12px;color:var(--txt2)">Nadie.</p>');
     h += '<p style="margin:12px 0 4px;font-size:13px">📜 Últimas acciones</p>' + (D.log.length ? D.log.slice().reverse().map(l => `<div style="font-size:12px;color:var(--txt2)">${new Date(l.t).toLocaleTimeString('es')} · ${esc(l.de)}: ${esc(l.txt)}</div>`).join('') : '<p style="font-size:12px;color:var(--txt2)">Sin acciones todavía.</p>');
   }
   C.innerHTML = h;
