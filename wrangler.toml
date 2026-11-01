@@ -12,12 +12,16 @@ directory = "."
 # fuera un archivo devolvia 500 (error 1101) en vez del fallback SPA.
 binding = "ASSETS"
 not_found_handling = "single-page-application"
-# Sin esto, Cloudflare sirve los archivos estaticos (index.html, engine.js,
-# tonconnect-manifest.json...) DIRECTO desde su cache, sin pasar por
-# worker.js: las cabeceras de seguridad que se añaden ahi solo llegaban a
-# aparecer en rutas que no existen (el unico caso que SI cae al Worker por
-# defecto). Con run_worker_first, toda peticion pasa primero por worker.js.
-run_worker_first = true
+# Solo las rutas dinamicas pasan primero por worker.js; los estaticos
+# (index.html, mundo/js, mmo/js, assets...) se sirven directo, sin gastar una
+# invocacion del Worker por archivo (antes 40-60 por visita, ahora 1-3). Sus
+# cabeceras de seguridad (frame-ancestors de Telegram, HSTS, nosniff...) y de
+# cache salen del archivo _headers. Rutas que maneja worker.js: /api/* (bot,
+# facturas, helius, wallet, token-stats) y /mmo/ws (WebSocket del Durable
+# Object). /interno/* NO va: solo existe dentro del Durable Object
+# (stub.fetch) y nunca pasa por este enrutado. Si worker.js gana una ruta
+# nueva, AGREGARLA aqui o la tapara el fallback SPA.
+run_worker_first = ["/api/*", "/mmo/ws", "/mmo/ws/*"]
 
 # DUENDE QUEST ONLINE (mmo/): el mundo en tiempo real es un Durable Object
 # (functions/mmo/world.js) al que se conecta cada jugador por WebSocket en

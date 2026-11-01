@@ -22,7 +22,7 @@ import {
   MATERIALES, NODO_CADA_MS, RECOLECTAR_MS, RARO_ZONA, raroDe, PESCA, hoyUTC, alaDe,
   habPorId, costoHab, GCD_MS, RECURSOS, MELEE, limpiarLook, MUNDIAL_CADA_MS, MUNDIAL_DURA_MS, proximoMundial, mundialDe,
 } from '../../mmo/js/data.js';
-import { MUNDO, NPCS3D, NPC_DIST, SPAWN3D, ARENA3D, CASAS, campamentos, zonaEn, esNoche, nodos3d, RECOGER_DIST, alturaEn } from '../../mmo/js/mundo3d.js';
+import { MUNDO, NPCS3D, NPC_DIST, SPAWN3D, ARENA3D, CASAS, campamentos, revivirEn3d, zonaEn, esNoche, nodos3d, RECOGER_DIST, alturaEn } from '../../mmo/js/mundo3d.js';
 import { CUEVA, CUEVA_X0, caminable, enCueva, vistaCueva, pasoCueva, PORTAL_PUEBLO } from '../../mmo/js/cueva3d.js';
 import { CORRIENTES, CORRIENTE_CD, corrienteEn } from '../../mmo/js/abismo3d.js';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, baseDe, portalBase, VACIO, rangoDe, santuario, ASEDIO, proximoAsedio, CENTRO_NUCLEO, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo } from '../../mmo/js/abismo3d.js';
@@ -55,6 +55,7 @@ const DESFASE_MUNDIAL3 = 15 * 60 * 1000;
 const PISOTON_CADA = 12000, PISOTON_AVISO = 2500, PISOTON_R = 9;
 // Jefes de zona bajo el 60 %: el «Sorbo del Cantaro» (se cura si nadie lo interrumpe).
 const SORBO_MS = 3000, SORBO_CURA = 0.12;
+const BENDICION_MS = 3 * 60000;   // la Bendicion del Duende tras la espiral de muertes (-25% de daño)
 const PISOTON_JEFE_R = 5.5;     // m: el pisoton de los jefes de zona (mas chico que el del mundial)
 export const proximoMundial3 = ahora => proximoMundial(ahora - DESFASE_MUNDIAL3) + DESFASE_MUNDIAL3;
 
@@ -114,10 +115,14 @@ export const Mundo3D = {
   // del servidor (Cloudflare) y los 100 ultimos en memoria para /interno.
   errorCliente(s, m) {
     if ((s.errc = (s.errc || 0) + 1) > 5) return;
-    const e = { t: Date.now(), u: String(s.c.uid).slice(0, 12), v: m.v | 0, m: String(m.m || '').slice(0, 200), f: String(m.f || '').slice(0, 120), l: m.l | 0, tg: m.tg ? 1 : 0 };
-    (this.erroresCli || (this.erroresCli = [])).push(e);
-    if (this.erroresCli.length > 100) this.erroresCli.shift();
-    console.log('[errc]', JSON.stringify(e));
+    const e = { t: Date.now(), u: String(s.c.uid).slice(0, 12), v: m.v | 0, m: String(m.m || '').slice(0, 200), f: String(m.f || '').slice(0, 120), l: m.l | 0, tg: m.tg ? 1 : 0, n: 1 };
+    const L = this.erroresCli || (this.erroresCli = []);
+    // El mismo fallo (version|archivo|linea) de muchos jugadores se agrupa: n cuenta las veces.
+    const k = e.v + '|' + e.f + '|' + e.l + (e.l ? '' : '|' + e.m.slice(0, 40));
+    const ya = L.find(x => (x.v + '|' + x.f + '|' + x.l + (x.l ? '' : '|' + x.m.slice(0, 40))) === k);
+    if (ya) { ya.n = (ya.n || 1) + 1; ya.t = e.t; ya.u = e.u; if (ya.n % 20 !== 1) return; }
+    else { L.push(e); if (L.length > 100) L.shift(); }
+    console.log('[errc]', JSON.stringify(ya || e));
   },
   info3d(s) {
     return { ...this.infoApariencia(s), n: s.c.nombre, lv: s.c.nivel, x: r1(s.p.x), z: r1(s.p.z), r: s.ry || 0, hp: Math.ceil(s.hp), muerto: !!s.muerto };
@@ -156,7 +161,7 @@ export const Mundo3D = {
       case 'hab3': return this.hab3d(s, m);
       case 'cancelar': return this.cancelarCast(s);
       case 'montar': return this.montar(s);   // mismo lanzamiento de 1,5 s que el 2D
-      case 'revivir': return this.revivir3d(s);
+      case 'revivir': return this.revivir3d(s, m);
       // En ORIGINS las misiones se entregan desde cualquier sitio (el mundo es grande).
       case 'mision': return this.mision(s, m, true);
       case 'cofre3': return this.abrirCofre3d(s, m);
@@ -473,15 +478,24 @@ export const Mundo3D = {
     this.yoLuego(s);
   },
 
-  // Revivir en el cementerio del pueblo (mismo castigo que el 2D).
-  revivir3d(s) {
+  // Revivir cerca (mismo castigo que el 2D): hasta Nv 10 en la entrada de la zona
+  // donde se cayo; desde Nv 10 en el claro de reaparicion mas cercano (a menos de
+  // 250 m); si no hay ninguno, en el pueblo. Los claros nunca estan junto a un campamento.
+  puntoRevivir3d(s) {
+    const p = revivirEn3d(s.p.x, s.p.z, s.c.nivel, MAPAS, MONSTRUOS);
+    return p ? { x: p.x, z: p.z } : { x: SPAWN3D.x, z: SPAWN3D.z };
+  },
+  revivir3d(s, m) {
     if (!s.muerto) return;
     const estabaCueva = !!s.i3;
     if (s.i3) { const inst = this.cuevas3().get(s.i3); if (inst) inst.dentro.delete(s.id); s.i3 = 0; }
     s.a = 0; s.h = 0; s.vueloS = 0; s.alasAvisadas = false; s.cast = null;
     const c = s.c;
     // Caer ante la otra faccion ya cuesta Puntos del Abismo: ahi no se pierde XP.
-    if (c.nivel >= 10 && !s.muertoPvP && !c.muertoPvP) c.xp = Math.max(0, c.xp - Math.round(xpParaSubir(c.nivel) * 0.05));
+    // Tras 3 muertes en 10 min (s.espiral, ver morir) tampoco, y se revive bendecido.
+    const espiral = !!s.espiral; s.espiral = false;
+    if (espiral) { c.bendT = Date.now() + 30 * 60000; s.muertesT = []; }
+    if (c.nivel >= 10 && !s.muertoPvP && !c.muertoPvP && !espiral) c.xp = Math.max(0, c.xp - Math.round(xpParaSubir(c.nivel) * 0.05));
     s.muertoPvP = false; delete c.muertoPvP;
     // En el nivel maximo (sin XP que perder) se paga la reparacion del equipo.
     const rep = Math.min(c.oro, costoReparacion(c.nivel));
@@ -491,12 +505,13 @@ export const Mundo3D = {
     this.recursoInicial(s);
     s.inv = Date.now() + 2000;
     const enAb = enAbismo(s.p.x) && c.faccion;
-    s.p = enAb ? baseDe(c.faccion) : { x: SPAWN3D.x, z: SPAWN3D.z };
+    s.p = enAb ? baseDe(c.faccion) : estabaCueva || enAbismo(s.p.x) || (m && m.pueblo) ? { x: SPAWN3D.x, z: SPAWN3D.z } : this.puntoRevivir3d(s);   // pueblo: "revivir y comprar pociones"
     if (!enAb) c.p3 = { ...s.p };
     s.movBud = undefined;
     this.enviar(s, { t: 'tp3', x: s.p.x, z: s.p.z, ...(estabaCueva ? { cueva: null } : {}) });
     this.aClave(K3, { t: 'pj3', p: this.info3d(s) }, s);
     if (this.reponerElixires) this.reponerElixires(s);
+    if (espiral) { this.ponerAura(s, 'bendicion', BENDICION_MS); this.enviar(s, { t: 'toast', m: '✨ Bendición del Duende: 3 min recibiendo un 25% menos de daño. Esta vez no perdiste XP.' }); }
     this.actualizarYo(s);
     this.guardar(s);
   },
@@ -704,7 +719,8 @@ export const Mundo3D = {
     s.vacioT = 0; this.caidaAbismo(s); return true;
   },
   caidaAbismo(s) {
-    if (s.muerto || !enAbismo(s.p.x) || islaEn(s.p.x, s.p.z) || s.a === 3) return;
+    // Planeando con altura (a=4, h>0,3) tampoco se cae: lo mismo que perdona vacio3d.
+    if (s.muerto || !enAbismo(s.p.x) || islaEn(s.p.x, s.p.z) || s.a === 3 || (s.a === 4 && s.h > 0.3)) return;
     s.hp = 0; this.morir(s); this.actualizarYo(s);   // el vacio no perdona (ni escudos ni hielo)
     this.aTodos({ t: 'aviso', m: `🌌 ${s.c.nombre} cayó al vacío del Abismo.` });
   },

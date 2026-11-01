@@ -19,7 +19,7 @@ import {
   ARMAS, SKINS, precioOro, PODERES, MONTURAS, TINTES, MASCOTAS, HOJAS, FORJA_MAX, costoForja, multForja,
   BANDA_MONTURA, TORRE, ambulanteActivo, ambulanteOferta,
   PAQUETES, estrellasDe, LOGROS, progresoLogro, statsJugador, ALAS,
-} from '/mmo/js/data.js?v=324';
+} from '/mmo/js/data.js?v=325';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -37,7 +37,7 @@ let listo = false;
 const est = {
   inv: 'equipo', ranura: '', filtro: '',
   libro: 'habs', clases: false,
-  tienda: 'pw', foco: '',
+  tienda: 'pw', foco: '', via: 'npc',   // via: de donde se abrio la tienda (va en el pedido, para el dueño)
   logros: 'todos',
 };
 let pendiente = null;          // confirmacion de dos toques { k, t }
@@ -864,7 +864,7 @@ const ACC = {
     if (y) comunesVendibles(y).forEach(x => H.mandar({ t: 'item', a: 'vender', id: x.id }));
   },
   equipar: b => { H.sfx('boton', 0.3); H.mandar({ t: 'equipar', k: b.dataset.k, id: b.dataset.id }); },
-  'ir-tienda': b => { abrirTienda(b.dataset.id); },
+  'ir-tienda': b => { abrirTienda(b.dataset.id, undefined, 'oro'); },
   // Libro
   ltab: b => { est.libro = b.dataset.id; H.sfx('boton', 0.2); pintarLibro(); },
   tal: b => { H.sfx('boton', 0.3); H.mandar({ t: 'talento', id: b.dataset.id }); },
@@ -890,7 +890,7 @@ const ACC = {
   // Mercader
   ttab: b => { est.tienda = b.dataset.id; est.foco = ''; H.sfx('boton', 0.2); pintarTienda(); parte(IDS.tienda, 'cuerpo').scrollTop = 0; },
   comprar: b => { H.sfx('boton', 0.3); H.mandar({ t: 'comprar', k: b.dataset.k, id: b.dataset.id, n: +b.dataset.n || 1 }); },
-  premium: b => { H.sfx('boton', 0.3); H.mandar({ t: 'pedido', id: b.dataset.id, metodo: b.dataset.metodo }); H.aviso('Preparando tu pedido…', 'ok'); },
+  premium: b => { H.sfx('boton', 0.3); H.mandar({ t: 'pedido', id: b.dataset.id, metodo: b.dataset.metodo, via: est.via }); H.aviso('Preparando tu pedido…', 'ok'); },
   retomar: b => {
     const y = H.yo(), x = ((y && y.pedidos) || []).find(p => p.codigo === b.dataset.id);
     if (x && x.raw) mostrarPedidoSol({ metodo: 'duende', codigo: x.codigo, raw: x.raw, mint: x.mint, dec: x.dec, wallet: x.wallet, usd: x.usd, nombre: x.nombre });
@@ -898,7 +898,7 @@ const ACC = {
   },
   cuenta: () => {
     if (H.iniciarSesion) H.iniciarSesion();
-    else { H.aviso('Inicia sesión en $DUENDE CLASSIC y vuelve: entrarás con tu cuenta.', 'ok'); setTimeout(() => { location.href = '/mmo/'; }, 900); }
+    else { H.aviso('Inicia sesión en $DUENDE CLASSIC y vuelve: entrarás con tu cuenta.', 'ok'); setTimeout(() => { location.href = '/mmo/' + (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? location.hash : ''); }, 900); }
   },
   // Logros
   lgtab: b => { est.logros = b.dataset.id; H.sfx('boton', 0.2); pintarLogros(); },
@@ -925,9 +925,10 @@ function abrirLibro(tab) {
   est.clases = false;
   pintarLibro(); abrirV(IDS.libro);
 }
-function abrirTienda(tab, foco) {
+function abrirTienda(tab, foco, via) {
   if (!H || !H.yo()) return;
   if (typeof tab === 'string') est.tienda = tab;
+  est.via = via === 'hud' || via === 'oro' || via === 'bot' ? via : 'npc';
   est.foco = typeof foco === 'string' ? foco : '';
   pintarTienda(); abrirV(IDS.tienda);
 }

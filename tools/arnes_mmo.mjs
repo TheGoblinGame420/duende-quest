@@ -1133,7 +1133,12 @@ async function pruebasAbismo3d() {
   chequear(AB.enAbismo(a.p.x) && a.c.p3.x === p3.x, 'en el Abismo se anda y no se guarda la posición');
   await a.mandar({ t: 'caida' });
   chequear(!a.muerto, 'sobre una isla no se muere por “caída”');
-  a.p = { x: AB.ABISMO_X0 + 60, z: -200 }; a.a = 1;
+  a.p = { x: AB.ABISMO_X0 + 60, z: -200 }; a.a = 4; a.h = 10;
+  await a.mandar({ t: 'caida' });
+  chequear(!a.muerto, 'planear con altura sobre el vacío no recibe “caída”');
+  const ref = AB.sueloRef(a.p.x, a.p.z);
+  chequear(ref >= 30 && ref <= 58, 'sueloRef sobre el hueco está a la altura de las islas (' + ref.toFixed(1) + ')');
+  a.a = 1; a.h = 0;
   await a.mandar({ t: 'caida' });
   chequear(a.muerto, 'caer al vacío mata');
   await a.mandar({ t: 'revivir' }); avanzar(31000); await a.mandar({ t: 'revivir' });
@@ -2030,9 +2035,10 @@ async function pruebasTemporada() {
   const c0 = t.c.calabazas;
   for (let i = 0; i < 30; i++) { const o2 = monstruo(t, 'goblin_normal', 40); mundo.danar(o2, o2.hp + 1, t); tick(1); }
   chequear(t.c.calabazas === c0, 'acabado el evento ya no caen');
+  chequear(t.c.tantas > 0, "del 3 al 12 de noviembre (puente hasta la Cosecha) caen t'anta wawas (" + t.c.tantas + ')');
   reloj = Date.UTC(2026, 10, 8, 12);
   const pr = await entrar('Anticipado', '63');
-  chequear(pr.ultimos('toast').some(x => /Próximo evento: Cosecha del Maíz Morado, desde el 12 de noviembre a las 19:00 \(hora de Perú\) \(en 5 días\)/.test(x.m)), 'sin evento, se anuncia el próximo si falta poco');
+  chequear(pr.ultimos('toast').some(x => /Semana de la T'anta Wawa: hasta el 12 de noviembre/.test(x.m)), 'el puente se anuncia al entrar');
   await dejar(pr);
   reloj = Date.UTC(2026, 10, 20, 12);
   for (let i = 0; i < 40; i++) { const o4 = monstruo(t, 'goblin_normal', 40); mundo.danar(o4, o4.hp + 1, t); tick(1); }
@@ -2043,6 +2049,11 @@ async function pruebasTemporada() {
   t.c.regalos = 0;
   for (let i = 0; i < 40; i++) { const o3 = monstruo(t, 'goblin_normal', 40); mundo.danar(o3, o3.hp + 1, t); tick(1); }
   chequear(t.c.regalos > 0 && t.c.calabazas === c0, 'en Navidad caen regalos (' + t.c.regalos + '), no calabazas');
+  reloj = Date.UTC(2027, 0, 8, 12);
+  t.actT = reloj;
+  const pr2 = await entrar('Previsor', '63');
+  chequear(pr2.ultimos('toast').some(x => /Próximo evento: Verano Duende, desde el 14 de enero a las 19:00 \(hora de Perú\) \(en 7 días\)/.test(x.m)), 'sin evento, se anuncia el próximo si falta poco');
+  await dejar(pr2);
   reloj = Date.UTC(2027, 1, 9, 12);
   t.actT = reloj;   // el salto de semanas lo echaria por inactividad
   for (let i = 0; i < 150 && !t.c.mascaras; i++) { const o5 = monstruo(t, 'goblin_normal', 40); mundo.danar(o5, o5.hp + 1, t); tick(1); }
@@ -3515,8 +3526,26 @@ async function pruebas3d() {
   console.log('Mundo 3D: muerte, pueblo y tienda');
   a.limpiar(); mundo.herir(a, 999999, { jefe: true });
   chequear(a.muerto && a.ultimos('muerte').length, 'puede morir');
+  const mu0 = a.ultimos('muerte').pop();
+  chequear(mu0 && typeof mu0.xp === 'number', 'la pantalla de muerte sabe cuánta XP cuesta revivir');
+  const revs = W.puntosRev3d(D.MAPAS, D.MONSTRUOS), murioEn = { ...a.p };
   await a.mandar({ t: 'revivir' });
-  chequear(!a.muerto && a.ultimos('tp3').length && Math.hypot(a.p.x - W.SPAWN3D.x, a.p.z - W.SPAWN3D.z) < 1, 'revive en el pueblo');
+  const enRev = revs.some(p => Math.hypot(a.p.x - p.x, a.p.z - p.z) < 1), enSpawn = Math.hypot(a.p.x - W.SPAWN3D.x, a.p.z - W.SPAWN3D.z) < 1;
+  chequear(!a.muerto && a.ultimos('tp3').length && (enRev || enSpawn), 'revive en un claro de reaparición o en el pueblo');
+  chequear(enSpawn || Math.hypot(a.p.x - murioEn.x, a.p.z - murioEn.z) < 250 || a.c.nivel < 10, 'desde Nv 10 revive a menos de 250 m');
+  chequear(revs.length >= 10 && revs.every(p => !W.campamentos(D.MAPAS, D.MONSTRUOS).some(c => c.zona !== 'eter' && Math.hypot(c.x - p.x, c.z - p.z) < 35)), 'ningún claro de reaparición cae junto a un campamento');
+  // Espiral de muertes: la tercera en 10 min no cuesta XP y bendice (una vez cada 30 min).
+  const nv0 = a.c.nivel, xp0 = a.c.xp;
+  ponerNivel(a, Math.max(12, a.c.nivel), a.c.clase);
+  a.muertesT = []; a.c.bendT = 0;
+  for (let i = 0; i < 2; i++) { a.inv = a.escudo = 0; mundo.herir(a, 999999, { jefe: true }); await a.mandar({ t: 'revivir' }); }
+  a.limpiar(); a.inv = a.escudo = 0; mundo.herir(a, 999999, { jefe: true });
+  const mu3 = a.ultimos('muerte').pop(), xp3 = a.c.xp;
+  chequear(mu3 && mu3.espiral && mu3.xp === 0, 'la tercera muerte en 10 min avisa que no se pierde XP');
+  await a.mandar({ t: 'revivir' });
+  chequear(a.c.xp === xp3 && a.au && a.au.bendicion && a.c.bendT > Date.now(), 'tras la espiral se revive sin perder XP y con la Bendición');
+  mundo.quitarAura(a, 'bendicion'); ponerNivel(a, nv0); a.c.xp = xp0; a.muertesT = [];
+  a.p = { x: W.SPAWN3D.x, z: W.SPAWN3D.z }; a.c.p3 = { ...a.p };
   const merc = W.NPCS3D.find(n => n.tipo === 'tienda');
   a.c.oro = 1000; const pociones = a.c.pw.pocion;
   const enPueblo = a.p; a.p = { x: W.ZONAS3D.noche.x, z: W.ZONAS3D.noche.z };

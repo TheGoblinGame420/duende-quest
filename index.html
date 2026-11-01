@@ -1,9 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<meta charset="UTF-8">
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<meta charset="UTF-8">
+<!-- Modo anuncio: quien llega de un anuncio (fbclid / utm_*) ve la web sin la parte cripto
+     (wallet, precio, token, donaciones). Se recuerda en la pestaña; el resto de visitas no cambia. -->
+<script>(function(){var a=/[?&](fbclid|utm_[a-z]+)=/i.test(location.search);try{if(a)sessionStorage.setItem('dq_anuncio','1');else a=sessionStorage.getItem('dq_anuncio')==='1';}catch(e){}if(a)document.documentElement.classList.add('anuncio');})()</script>
+<style>html.anuncio #wallet-connect-btn,html.anuncio .live-price-pill,html.anuncio .solo-cripto,html.anuncio #btn-buy-main,html.anuncio #trust,html.anuncio #tokenomics,html.anuncio #exchange,html.anuncio #donate{display:none!important;}</style>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Duende Quest: MMORPG gratis en 3D y 2D, en el navegador y Telegram</title>
 <meta name="description" content="MMORPG gratis sin descargas: $DUENDE ORIGINS, mundo abierto 3D con alas y PvP de facciones, y $DUENDE CLASSIC, MMO 2D en pixel art. Mismo duende. Hecho en Perú.">
@@ -677,8 +681,8 @@ footer{
 h3.creador-t,h3.d-title{font-weight:400;}
 h3.gf-title,h3.b-name,h3.tier-name,h3.nft-name,h3.rm-title{margin-top:0;}
 /* ── CONTADOR "PRECIO ESPECIAL" ──
-   Oculto: se reiniciaba solo cada 48 h (urgencia falsa). Los ids siguen en el
-   DOM porque los usa initCountdown(). */
+   Quitado (se reiniciaba solo cada 48 h: urgencia falsa); la regla queda por si
+   alguna copia vieja en cache trae el markup. */
 .offer-countdown{display:none!important;}
 /* Animaciones viejas que siguen nombradas en estilos en linea: neutralizadas */
 @keyframes blink{0%,100%{opacity:1;}}
@@ -759,11 +763,6 @@ section[id]{scroll-margin-top:72px;}
 </head>
 <body>
 
-<!-- Barra de actividad (la rellena rotateTicker() con mensajes reales) -->
-<div id="live-ticker">
-  <span id="ticker-content">Cargando novedades…</span>
-</div>
-
 <div id="particles" aria-hidden="true"></div>
 
 <div class="ticker">
@@ -780,7 +779,7 @@ section[id]{scroll-margin-top:72px;}
     <li><a href="#telegram">Telegram</a></li>
     <li><a href="#ranking">Ranking</a></li>
     <li><a href="#community">Comunidad</a></li>
-    <li><a href="#tokenomics">Token</a></li>
+    <li class="solo-cripto"><a href="#tokenomics">Token</a></li>
     <li><a href="#nft-store">Tienda</a></li>
     <li><a href="#roadmap">Hoja de ruta</a></li>
     <li><a href="#faq">Preguntas</a></li>
@@ -811,7 +810,7 @@ section[id]{scroll-margin-top:72px;}
     <li>Sin descargas</li>
     <li>Navegador o Telegram</li>
   </ul>
-  <a href="/inicio/" class="btn-main hero-cta-movil" id="hero-cta-movil">▶ Jugar gratis ahora</a>
+  <a href="/jugar/" class="btn-main hero-cta-movil" id="hero-cta-movil">▶ Jugar gratis ahora</a>
   <div class="juegos" aria-label="Elige tu juego">
     <article class="juego origins">
       <div class="juego-media">
@@ -1098,7 +1097,7 @@ section[id]{scroll-margin-top:72px;}
   <!-- SKINS: antes aqui habia precios en SOL (0.5 / 0.3 / 0.2 SOL "para holders
        de NFT") que contradecian la tienda real. Ahora una sola presentacion:
        la coleccion de #nfts, con los precios de game.html / telegram. -->
-  <p class="px-sub" style="margin-top:2.5rem">Skins opcionales desde US$1 (o con el oro que ganas jugando), con Telegram Stars, SOL o $DUENDE. Una compra vale en CLASSIC y ORIGINS y se activa sola al confirmarse el pago. <a href="#nfts" style="color:var(--pri-txt);font-weight:600">Ver la colección de skins</a></p>
+  <p class="px-sub" style="margin-top:2.5rem">Skins opcionales desde US$1 (o con el oro que ganas jugando), con Telegram Stars, SOL o $DUENDE. Una compra vale en CLASSIC y ORIGINS; el Duende revisa cada pago a mano y te la entrega. <a href="#nfts" style="color:var(--pri-txt);font-weight:600">Ver la colección de skins</a></p>
 </section>
 
 <!-- ========== TELEGRAM MINI APP ========== -->
@@ -1400,13 +1399,6 @@ section[id]{scroll-margin-top:72px;}
     </div>
 
   </div>
-  <!-- Contador viejo "precio especial expira en": oculto por CSS (se
-       reiniciaba solo cada 48 h). Los ids los usa initCountdown(). -->
-  <div class="offer-countdown" aria-hidden="true">
-    <span id="cd-hours">--</span>h
-    <span id="cd-mins">--</span>m
-    <span id="cd-secs">--</span>s
-  </div>
 </section>
 
 <!-- ========== BOOSTERS ========== -->
@@ -1471,7 +1463,7 @@ section[id]{scroll-margin-top:72px;}
 <!-- ========== NFT STORE ========== -->
 <section class="section" id="nft-store" aria-labelledby="store-h">
   <h2 class="px-title reveal" id="store-h">Tienda: skins, armas y cofres</h2>
-  <p class="px-sub reveal">Precios en $DUENDE · Compra opcional · El Duende Común es gratis</p>
+  <p class="px-sub reveal">Compra opcional · El Duende Común es gratis · Los cofres solo se ganan jugando</p>
   <div class="una-skin reveal"><b>Una compra, dos juegos:</b> cada skin que consigues se lleva a la vez en $DUENDE CLASSIC (2D) y en $DUENDE ORIGINS (3D), con sus mismos poderes.</div>
 
   <div class="store-tabs reveal">
@@ -1531,7 +1523,7 @@ section[id]{scroll-margin-top:72px;}
       <img class="nft-img" src="assets/cofres/cofre_comun.png" alt="Cofre Común" loading="lazy" width="96" height="96" decoding="async">
       <span class="nft-badge" style="color:var(--txt2);border:1px solid var(--borde)">COMMON</span>
       <h3 class="nft-name">Cofre Común</h3>
-      <div class="nft-desc">Contiene objetos aleatorios comunes. +5 DQ, +100 de puntaje, posibilidad de arma.</div>
+      <div class="nft-desc">Cae de los enemigos en el modo arcade. Al tocarlo ganas +5 monedas, +15 de experiencia y +100 de puntaje. No se vende.</div>
       <button class="nft-buy-btn pump" type="button" onclick="location.href='/inicio/'">Conseguir en el juego</button>
     </div>
 
@@ -1539,7 +1531,7 @@ section[id]{scroll-margin-top:72px;}
       <img class="nft-img" src="assets/cofres/cofre_epico.png" alt="Cofre Épico" loading="lazy" width="96" height="96" decoding="async">
       <span class="nft-badge" style="color:#a78bfa;border:1px solid rgba(167,139,250,.4)">EPIC</span>
       <h3 class="nft-name" style="color:#a78bfa">Cofre Épico</h3>
-      <div class="nft-desc">Objetos épicos garantizados. +10 DQ, +20 HP, +250 de puntaje. Posible arma épica.</div>
+      <div class="nft-desc">Lo sueltan jefes y magmares en el modo arcade. Da +10 monedas, +20 de vida, +30 de experiencia y +250 de puntaje. No se vende.</div>
       <button class="nft-buy-btn pump" type="button" onclick="location.href='/inicio/'">Conseguir en el juego</button>
     </div>
 
@@ -1547,14 +1539,14 @@ section[id]{scroll-margin-top:72px;}
       <img class="nft-img" src="assets/cofres/cofrelegendario.png" alt="Cofre Legendario" loading="lazy" width="96" height="96" decoding="async">
       <span class="nft-badge" style="color:var(--oro);border:1px solid rgba(242,193,78,.5)">LEGENDARY</span>
       <h3 class="nft-name" style="color:var(--yellow)">Cofre Legendario</h3>
-      <div class="nft-desc">El cofre supremo. +20 DQ, +40 HP, +500 de puntaje. Garantiza un objeto legendario.</div>
+      <div class="nft-desc">El más raro: a veces lo sueltan los jefes y magmares del modo arcade. Da +20 monedas, +40 de vida, +60 de experiencia y +500 de puntaje. No se vende.</div>
       <button class="nft-buy-btn pump" type="button" onclick="location.href='/inicio/'">Conseguir en el juego</button>
     </div>
 
   </div>
 
   <div class="reveal" style="text-align:center;margin-top:2rem">
-    <a href="https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump" target="_blank" rel="noopener" class="btn-sec">Ver $DUENDE en pump.fun</a>
+    <a href="https://pump.fun/coin/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump" target="_blank" rel="noopener" class="btn-sec solo-cripto">Ver $DUENDE en pump.fun</a>
     <p style="font-size:13px;color:var(--txt2);margin-top:.8rem;line-height:1.5">Las skins se consiguen dentro del juego (con oro, o pagando con descuento en $DUENDE) · Una compra vale en los dos juegos</p>
     <p class="sec-line">🔒 Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado.</p>
   </div>
@@ -1652,7 +1644,7 @@ section[id]{scroll-margin-top:72px;}
             <li>✅ Skins de pago en el juego (Telegram Stars o TON)</li>
             <li>✅ Temporadas con títulos cosméticos (la primera empieza el 25 de octubre)</li>
             <li>• Skins como NFT coleccionables en Solana</li>
-            <li>• Primer torneo con premios en SOL</li>
+            <li>• Primer torneo con premios dentro del juego</li>
             <li>• Listado en DEX Screener + DexTools</li>
             <li>• Meta: 2.000 holders para desbloquear la Fase 3</li>
           </ul>
@@ -2186,35 +2178,11 @@ async function loadLiveStats() {
 }
 document.addEventListener('DOMContentLoaded', loadLiveStats);
 
-// ── TICKER (mensajes reales/honestos — sin inventar compras ni usuarios) ──
-const TICKER_EVENTS=[
-  ()=>`🎮 Juega DUENDE QUEST GRATIS en Telegram y gana $DUENDE real`,
-  ()=>`🏆 Torneo semanal: el TOP 3 gana 1.000 / 500 / 250 $DUENDE cada lunes`,
-  ()=>`🔥 Misiones diarias + racha: vuelve cada día y gana más DQ`,
-  ()=>`🎁 Invita a un amigo: ambos ganan 500 $DUENDE`,
-  ()=>{const p=(typeof PriceFeed!=='undefined'&&PriceFeed.priceUsd>0)?'$'+PriceFeed.priceUsd.toFixed(8):'en vivo';return `💹 Precio $DUENDE: ${p}`;},
-  ()=>{const h=(typeof PriceFeed!=='undefined'&&PriceFeed.holders)?fmtEs(PriceFeed.holders)+' holders':'comunidad creciendo';return `👥 ${h}`;},
-  ()=>`🔒 0% impuestos · contrato en pump.fun · verificable on-chain`,
-];
-function rotateTicker(){const fn=TICKER_EVENTS[Math.floor(Math.random()*TICKER_EVENTS.length)];const el=document.getElementById('ticker-content');if(el)el.textContent=fn();}
-setInterval(rotateTicker,4000);
-document.addEventListener('DOMContentLoaded',rotateTicker);
-
-// ── COUNTDOWN FOMO (resets every 48h) ──
-function initCountdown(){
-  const stored=localStorage.getItem('dq_cd_end');
-  let end=stored?parseInt(stored):0;
-  if(!end||end<Date.now()){end=Date.now()+48*3600*1000;localStorage.setItem('dq_cd_end',end);}
-  setInterval(()=>{
-    const diff=Math.max(0,end-Date.now());
-    const h=Math.floor(diff/3600000);
-    const m=Math.floor((diff%3600000)/60000);
-    const s=Math.floor((diff%60000)/1000);
-    const eh=document.getElementById('cd-hours'),em=document.getElementById('cd-mins'),es=document.getElementById('cd-secs');
-    if(eh)eh.textContent=h;if(em)em.textContent=String(m).padStart(2,'0');if(es)es.textContent=String(s).padStart(2,'0');
-  },1000);
-}
-document.addEventListener('DOMContentLoaded',initCountdown);
+// Ticker de actividad y contador "oferta expira": quitados (prometian premios en $DUENDE
+// y metian prisa falsa). Modo anuncio: los botones de jugar llevan a /jugar/ con el utm.
+if (document.documentElement.classList.contains('anuncio')) document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('a[href="/inicio/"],a[href="/jugar/"]').forEach(function (a) { a.href = '/jugar/' + location.search; });
+});
 </script>
 <!-- Solana web3.js -->
 <script src="https://unpkg.com/@solana/web3.js@1.99.0/lib/index.iife.min.js" integrity="sha384-DjHoHg45N+L5RZPO5p+uK874TyHExfoonwFDUKKpozAERZGg+SY8y+ntxvWd672b" crossorigin="anonymous"></script>
@@ -2223,7 +2191,7 @@ document.addEventListener('DOMContentLoaded',initCountdown);
 <!-- Config (keys + DUENDE_CFG) -->
 <script src="js/config.js"></script>
 <!-- Módulos en orden de dependencia -->
-<script src="js/auth-manager.js?v=324"></script>
+<script src="js/auth-manager.js?v=325"></script>
 <script>
 // Ranking real de la landing (antes: 5 nombres inventados con un badge
 // "LIVE" que no estaba conectado a nada). auth-manager.js registra su

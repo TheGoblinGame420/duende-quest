@@ -3172,3 +3172,15 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - game.html e index.html cargan auth-manager.js y engine.js con `?v=324`.
 - Pendiente del dueño: ejecutar sql/08-seguridad-oct.sql y activar «Confirm email» en Supabase Auth.
 - Arnés 856 bien.
+
+### Ronda 1 de la noche del lanzamiento (1-nov-2026, `?v=325`)
+
+- Evaluación con 221 agentes (1048 propuestas → backlog de 60 en el scratchpad). Ronda 1: 10 implementadores + 10 revisores.
+- #2/#3: `jugar/index.html` (landing sin cripto, noindex, elige /mundo/ o /mmo/ según el equipo, conserva utm/fbclid); portada con `html.anuncio` (oculta cripto si llega con fbclid/utm), sin ticker ni cuenta atrás FOMO, cofres con el texto real de engine.js. humo_produccion.mjs revisa /jugar/.
+- #6: `run_worker_first = ["/api/*", "/mmo/ws", "/mmo/ws/*"]` y cabeceras en `_headers` (CSP frame-ancestors de Telegram). Ruta nueva en worker.js ⇒ añadirla aquí.
+- #1: temporada T'anta Wawa 3–12 nov (campo propio), píldora de temporada en ORIGINS.
+- #8/#27: skinsPagadas fuera del camino al 'bienvenido', timeout en supabaseQuery, recordatorios al dueño de pedidos pagados sin entregar (solo avisos).
+- #17: PNG recomprimidos (tools/optimizar_png.py). #9: Stars de la Mini App = las del bot.
+- #41/#51: techo de vuelo suave y planeo en el Abismo; reaparición en claro seguro, sin pérdida de XP tras 3 caídas.
+- #16/#18: HUD horizontal y botón TIENDA. #20/#21: WhatsApp y payload m3d_. #10/#55: salida a CLASSIC sin WebGL o carga colgada; sesión caducada en Telegram no crea invitado.
+- Arnés 865 bien.

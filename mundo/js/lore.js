@@ -40,6 +40,15 @@ export const LORE_HITOS = {
   acantilados: 'Desde el Mirador Arcano ves el Núcleo flotando entre la Luz y la Sombra.',
 };
 
+// Lo que cuenta el pueblo de cada evento de temporada (por su `campo` en data
+// TEMPORADAS: los eventos anuales repiten la misma historia). Sale una vez por evento.
+export const LORE_TEMPORADA = {
+  calabazas: 'Cuando cae la noche, los goblins se esconden en calabazas huecas para asustar al pueblo. Rómpelas y quédate con su luz.',
+  tantas: 'Por Todos los Santos, la Abuela Duende hornea t\'anta wawas para recordar a los que ya no están. Los goblins se las robaron todas: recupéralas y el pueblo te lo agradecerá.',
+  mazorcas: 'Llegó la Cosecha del Maíz Morado: sin mazorcas no hay chicha. Los monstruos se las llevan al monte; tráelas de vuelta.',
+  regalos: 'Los goblins asaltaron el taller de regalos del pueblo. Cada monstruo que cae suelta un paquete perdido.',
+};
+
 export const LORE_NIVEL60 = '¡Los pedazos se unen y el Cántaro Eterno vuelve a llenarse de chicha morada! El sol sale sobre el bosque y te has ganado, de verdad, 2 litros de chicha morada.';
 
 // Aventureros del pueblo: PNJ (no son jugadores y no cuentan como conectados).

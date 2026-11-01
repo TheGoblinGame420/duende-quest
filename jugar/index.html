@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- Pagina de aterrizaje de los anuncios (Meta): solo el juego y un unico boton que
+     lleva al juego que mejor corre en este equipo. No se indexa ni sale en el sitemap. -->
+<meta name="robots" content="noindex,follow">
+<title>Duende Quest · Juega gratis</title>
+<meta name="description" content="Crea tu duende y caza monstruos con amigos. Gratis en tu celular, sin descargar.">
+<meta name="theme-color" content="#0a0418">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Duende Quest">
+<meta property="og:locale" content="es_PE">
+<meta property="og:title" content="Duende Quest · Juega gratis con amigos">
+<meta property="og:description" content="Crea tu duende y caza monstruos con amigos. Gratis en tu celular, sin descargar.">
+<meta property="og:url" content="https://duende-quest.alfonso12hc.workers.dev/jugar/">
+<meta property="og:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/video/promo3d-poster.jpg">
+<meta property="og:image:width" content="540"><meta property="og:image:height" content="960">
+<meta property="og:image:alt" content="El pueblo de Duende Quest: juego gratis en el navegador">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/assets/ui/coin.png">
+<link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
+<link rel="preload" as="image" href="/assets/video/promo3d-poster.jpg" fetchpriority="high">
+<style>
+:root{--bg:#0a0418;--txt:#f2efff;--txt2:#b8b0d8;--oro:#ffd84a;--mor:#a78bfa;--ros:#f472b6;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{min-height:100%;background:var(--bg);color:var(--txt);font-family:var(--sans);}
+body{overflow-x:hidden;}
+.aurora{position:fixed;inset:-20%;z-index:0;pointer-events:none;background:radial-gradient(40% 35% at 20% 20%,rgba(124,58,237,.35),transparent 70%),radial-gradient(35% 30% at 85% 30%,rgba(219,39,119,.22),transparent 70%),radial-gradient(45% 40% at 50% 100%,rgba(37,99,235,.25),transparent 70%);}
+main{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:calc(16px + env(safe-area-inset-top)) 16px calc(110px + env(safe-area-inset-bottom));display:grid;grid-template-columns:minmax(0,1fr);gap:20px;align-items:center;}
+.marca{display:flex;align-items:center;gap:10px;font:800 15px var(--sans);letter-spacing:.08em;}
+.marca img{width:34px;height:34px;}
+.poster{position:relative;width:100%;max-width:380px;margin:0 auto;aspect-ratio:9/16;max-height:62vh;border-radius:22px;overflow:hidden;background:#140c2c;border:1px solid rgba(167,139,250,.4);box-shadow:0 20px 60px rgba(0,0,0,.5);}
+.poster img{width:100%;height:100%;object-fit:cover;display:block;}
+.poster span{position:absolute;left:12px;bottom:12px;font:800 12px var(--sans);padding:6px 11px;border-radius:999px;background:linear-gradient(90deg,#7c3aed,#db2777);}
+h1{font:800 clamp(24px,6.4vw,40px)/1.15 var(--sans);text-align:center;}
+h1 b{color:var(--oro);}
+.sub{color:var(--txt2);font-size:16px;line-height:1.5;text-align:center;margin-top:10px;}
+.lista{list-style:none;display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:16px;}
+.lista li{padding:8px 13px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(167,139,250,.3);font:600 14px var(--sans);}
+.barra{position:fixed;left:0;right:0;bottom:0;z-index:5;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(10,4,24,0),rgba(10,4,24,.92) 35%);}
+.jugar{display:flex;align-items:center;justify-content:center;width:100%;max-width:420px;min-height:58px;margin:0 auto;border-radius:16px;font:900 20px var(--sans);letter-spacing:.05em;color:#fff;text-decoration:none;background:linear-gradient(90deg,#7c3aed,#db2777,#2563eb);background-size:200% 100%;animation:brillo 3s linear infinite;box-shadow:0 10px 30px rgba(219,39,119,.45);}
+.jugar:active{transform:scale(.98);}
+@keyframes brillo{to{background-position:200% 0;}}
+footer{text-align:center;font-size:13px;color:var(--txt2);}
+footer a{color:var(--txt2);}
+@media (min-width:800px){main{grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:40px;padding-top:48px;}.marca{grid-column:1/-1;}h1,.sub{text-align:left;}.lista{justify-content:flex-start;}footer{grid-column:1/-1;}}
+@media (prefers-reduced-motion:reduce){.jugar{animation:none;}}
+</style>
+</head>
+<body>
+<div class="aurora" aria-hidden="true"></div>
+<main>
+  <div class="marca"><img src="/assets/ui/coin.png" alt="" width="34" height="34">DUENDE QUEST</div>
+  <div class="poster"><img src="/assets/video/promo3d-poster.jpg" alt="El pueblo de Duende Quest con duendes jugando en 3D" width="540" height="960" fetchpriority="high"><span>JUEGO PERUANO</span></div>
+  <section>
+    <h1>Crea tu duende y caza monstruos con amigos. <b>Gratis en tu celular, sin descargar.</b></h1>
+    <p class="sub">Un mundo con jefes, mazmorras y misiones para jugar en grupo. Se abre en el navegador del celular o de la PC.</p>
+    <ul class="lista"><li>Gratis</li><li>Sin descargas</li><li>Con amigos en tiempo real</li></ul>
+  </section>
+  <footer><a href="/terminos">Términos</a> · <a href="/privacidad">Privacidad</a></footer>
+</main>
+<div class="barra"><a class="jugar" id="jugar" href="/mundo/">JUGAR GRATIS</a></div>
+<script>
+(function () {
+  // Elige el juego segun el equipo: el 3D (/mundo/) pide WebGL, memoria y buena conexion;
+  // si falta algo va al 2D (/mmo/), que corre en cualquier celular. ?j=2d|3d lo fuerza.
+  function destino() {
+    var j = (/[?&]j=(2d|3d)\b/i.exec(location.search) || [])[1];
+    if (j) return j.toLowerCase() === '2d' ? '/mmo/' : '/mundo/';
+    var gl = false;
+    try { var c = document.createElement('canvas'); gl = !!(window.WebGLRenderingContext && (c.getContext('webgl2') || c.getContext('webgl') || c.getContext('experimental-webgl'))); } catch (e) {}
+    if (!gl) return '/mmo/';
+    var mem = navigator.deviceMemory;
+    if (typeof mem === 'number' && mem <= 3) return '/mmo/';
+    var cx = navigator.connection;
+    if (cx && cx.saveData) return '/mmo/';
+    if (cx && cx.effectiveType && cx.effectiveType !== '4g') return '/mmo/';
+    return '/mundo/';
+  }
+  var ir = destino(), b = document.getElementById('jugar');
+  // Los utm y el fbclid pasan al juego tal cual, para medir el anuncio.
+  b.href = ir + location.search;
+  b.addEventListener('click', function () { try { localStorage.setItem('dq_ultimo_juego', ir); } catch (e) {} });
+})();
+</script>
+</body>
+</html>

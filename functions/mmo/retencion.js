@@ -34,7 +34,7 @@
 // evento avisado); off y bloq se respetan siempre.
 // ═══════════════════════════════════════════════════════
 
-import { xpParaSubir, premioDiaria, premioMazmorraDia, LOGIN_PREMIOS, multLogin, HABS, CLASES, NIVEL_MAX, DIARIA, horaFelizActiva, TORRE, semanaUTC, temporadaDe } from '../../mmo/js/data.js';
+import { xpParaSubir, premioDiaria, premioMazmorraDia, LOGIN_PREMIOS, multLogin, HABS, CLASES, NIVEL_MAX, DIARIA, horaFelizActiva, TORRE, semanaUTC, temporadaDe, TEMPORADAS } from '../../mmo/js/data.js';
 import { getEnv, tg } from '../api/lib.js';
 import { MMO_URL } from '../api/telegram-bot.js';
 
@@ -227,6 +227,15 @@ export const Retencion = {
       }
     }
     if (this.uidsPrueba.has(c.uid)) return;
+    // Evento de temporada: quien llega a 50 de su objeto (el primer titulo),
+    // una vez por evento, y aparte si juega en ORIGINS (3D). Para medir si el
+    // evento engancha (/mmostats → evento). En un evento anual que repite
+    // contador cuenta tambien quien ya traia 50 del año anterior.
+    const tpE = this.temporadaAviso();
+    if (tpE && (c[tpE.campo] || 0) >= 50 && c.ret.e50 !== tpE.id) {
+      c.ret.e50 = tpE.id;
+      this.retSumar(hoy, c.en3d ? { e50: 1, e50_3d: 1 } : { e50: 1 }).catch(() => {});
+    }
     // Los minutos del dia se juntan en memoria y se escriben como mucho una
     // vez por minuto: escribir el agregado en CADA guardado doblaba las
     // escrituras al storage (que cuentan en el cupo diario del plan gratis).
@@ -306,9 +315,24 @@ export const Retencion = {
     // Embudo de las altas de los ultimos 14 dias.
     const embudo = { n: 0, c1: 0, m1: 0, n5: 0, n10: 0 };
     for (const x of dias.slice(0, 14)) for (const k in embudo) embudo[k] += x.r[k] || 0;
+    // El evento de temporada en curso (o el ultimo, si acabo hace menos de 60
+    // dias): altas de sus dias y su D7, y cuantos llegaron a 50 de su objeto.
+    const ahoraE = Date.now();
+    const tpS = temporadaDe(ahoraE) || TEMPORADAS.filter(x => x.fin <= ahoraE && x.fin > ahoraE - 60 * DIA_MS).sort((a, b) => b.fin - a.fin)[0];
+    let evento = null;
+    if (tpS) {
+      const ev = { id: tpS.id, nombre: tpS.nombre, altas: 0, d7: 0, d7base: 0, llegan50: 0, llegan50_3d: 0 };
+      for (const x of dias) {
+        if (x.n < diaNum(tpS.ini) || x.n >= diaNum(tpS.fin - 1) + 1) continue;
+        ev.altas += x.r.n || 0;
+        ev.llegan50 += x.r.e50 || 0; ev.llegan50_3d += x.r.e50_3d || 0;
+        if (hoy - x.n >= 7) { ev.d7base += x.r.n || 0; ev.d7 += x.r.r7 || 0; }
+      }
+      evento = { ...ev, d7pct: pct(ev.d7, ev.d7base) };
+    }
     const ranking = ((await this.state.storage.get('ranking')) || []).filter(x => !this.uidsPrueba.has(x.uid));
     return {
-      ok: true, hoy: diaISO(hoy), activos, tipos30: tipos, niveles30: tramos, altas, cohortes, retencion,
+      ok: true, hoy: diaISO(hoy), activos, tipos30: tipos, niveles30: tramos, altas, cohortes, retencion, evento,
       sesion: { sesiones7: ses, minutos7: Math.round(min), media: ses ? Math.round(min / ses * 10) / 10 : 0 }, embudo,
       top: ranking.slice(0, 10).map(x => ({ n: x.n, lv: x.lv })),
       online: this.contarOnline(),
@@ -424,12 +448,19 @@ export const Retencion = {
     } catch (e) { console.error('[MMO alarma]', e); }
     // Copia de seguridad diaria (copias.js).
     try { if (this.copiaDiariaSiToca) await this.copiaDiariaSiToca(); } catch (e) { console.error('[MMO copia diaria]', e); }
+    // Recordatorios al dueño de pedidos pagados sin entregar (world.js). Esta
+    // alarma tambien salta antes de la hora en punto cuando uno toca; lo de
+    // arriba ya no repite nada (avisos y copia van marcados por dia).
+    try { if (this.recordarPedidos) await this.recordarPedidos(); } catch (e) { console.error('[MMO recordar pedidos]', e); }
     await this.programarAlarma();
   },
   async programarAlarma() {
     const st = this.state.storage;
     if (!st.setAlarm) return;
-    try { await st.setAlarm((Math.floor(Date.now() / 3600000) + 1) * 3600000 + 30000); } catch (e) { console.error('[MMO setAlarm]', e); }
+    let t = (Math.floor(Date.now() / 3600000) + 1) * 3600000 + 30000;
+    const p = this.proximoRecordatorioPedido ? this.proximoRecordatorioPedido() : 0;
+    if (p && p < t) t = Math.max(p, Date.now() + 5000);
+    try { await st.setAlarm(t); } catch (e) { console.error('[MMO setAlarm]', e); }
   },
   async asegurarAlarma() {
     const st = this.state.storage;

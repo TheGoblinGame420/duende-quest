@@ -175,8 +175,17 @@ body:not(.tactil) #hud.estrecho #monedero{bottom:52px;}
 #hud.estrecho #botones{max-width:186px;gap:3px;}
 #hud.estrecho #botones .bt{width:34px;height:34px;padding:0;font-size:13px;line-height:1;display:inline-flex;align-items:center;justify-content:center;}
 @media (max-width:370px){#hud.estrecho #botones{gap:2px;max-width:180px;}#hud.estrecho #uf-yo,#hud.estrecho #uf-obj{width:160px;}}
+#hud.muyestrecho #botones{gap:2px;max-width:180px;} #hud.muyestrecho #uf-yo,#hud.muyestrecho #uf-obj{width:160px;}
 /* Ayuda, sonido e inicio van dentro de "⋯" para no pasar de 2 filas ni tapar el minimapa */
 #hud:not(.estrecho) #b-mas{display:none;}
+/* Tienda siempre a la vista (v325): dorada, con su nombre en PC y punto rojo mientras no se vio la
+   oferta de bienvenida o hay una compra entregada sin ver (client.js, puntoTienda) */
+#b-tienda{position:relative;display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,rgba(255,216,74,.35),rgba(234,179,8,.12));border-color:#e8b92f;color:#ffe9a3;font-weight:700;}
+#b-tienda:hover{background:linear-gradient(135deg,rgba(255,216,74,.5),rgba(234,179,8,.22));}
+#b-tienda .bt-txt{font-size:8px;}
+#hud.estrecho #b-tienda .bt-txt{display:none;}
+#b-tienda.aviso::after{content:'';position:absolute;top:2px;right:2px;width:8px;height:8px;border-radius:50%;background:#ff4d6d;box-shadow:0 0 6px #ff4d6d;}
+#monedero{cursor:pointer;pointer-events:auto;}
 #hud.estrecho #botones:not(.abierto) .extra{display:none;}
 /* .bt: botones pequenos del HUD (iconos y etiquetas cortas en pixel) */
 .bt3d{background:linear-gradient(135deg,#7c3aed,#2563eb)!important;border-color:#c4b5fd!important;color:#fff!important;box-shadow:0 0 12px rgba(124,58,237,.8);animation:pulso3d 1.6s ease-in-out infinite;}
@@ -437,6 +446,7 @@ body.tactil #lanzar{bottom:16px;}
 .precio{font-size:9px;color:var(--oro);white-space:nowrap;}
 /* .btn primario (uno por vista), .btn.sec secundario, .btn.peligro para borrar/rechazar */
 .btn{font-family:var(--sans);font-size:14px;font-weight:600;line-height:1.2;letter-spacing:.01em;min-height:40px;padding:9px 14px;border-radius:8px;border:1px solid var(--pri);cursor:pointer;background:var(--pri);color:#fff;white-space:nowrap;transition:background .15s,border-color .15s,transform .1s;}
+.btn small{white-space:normal;}   /* la letra pequeña de un boton salta de linea (antes desbordaba en el movil) */
 .btn:hover{background:var(--pri2);border-color:var(--pri2);}
 .btn:active{transform:scale(.98);}
 .btn:focus-visible,.bt:focus-visible,.tab:focus-visible{outline:2px solid var(--cian);outline-offset:2px;}
@@ -550,8 +560,9 @@ input.nombre:focus{border-color:var(--pri-txt);}
         <button class="bt" id="b-libro" title="Hechizos y clase (P)" aria-label="Hechizos"><img class="ico-bt" src="/assets/items/equipo/W_Book01.png" alt=""></button>
         <button class="bt" id="b-mapa" title="Mapa del mundo (M)" aria-label="Mapa"><img class="ico-bt" src="/assets/items/equipo/I_Map.png" alt=""></button>
         <button class="bt" id="b-social" title="Grupo, jugadores y hermandad (O)" aria-label="Social"><img class="ico-bt" src="/assets/items/equipo/I_Scroll.png" alt=""></button>
-        <button class="bt" id="b-regreso" title="Piedra de Hogar: volver al pueblo (R)" aria-label="Piedra de Hogar"><img class="ico-bt" src="/assets/items/equipo/I_Crystal02.png" alt=""></button>
+        <button class="bt extra" id="b-regreso" title="Piedra de Hogar: volver al pueblo (R)" aria-label="Piedra de Hogar"><img class="ico-bt" src="/assets/items/equipo/I_Crystal02.png" alt=""></button>
         <button class="bt" id="b-inv" title="Inventario (I)" aria-label="Inventario"><img class="ico-bt" src="/assets/items/equipo/I_Chest02.png" alt=""></button>
+        <button class="bt" id="b-tienda" title="Tienda: skins, alas y packs" aria-label="Tienda">💎<span class="bt-txt">TIENDA</span></button>
         <button class="bt" id="b-wallet" title="mTON y retiros" aria-label="mTON"><img class="ico-bt" src="/assets/items/equipo/I_Sapphire.png" alt=""></button>
         <button class="bt" id="b-rank" title="Ranking" aria-label="Ranking"><img class="ico-bt" src="/assets/items/equipo/Ac_Medal01.png" alt=""></button>
         <button class="bt extra" id="b-ayuda" title="Guía del juego" aria-label="Guía"><img class="ico-bt" src="/assets/items/equipo/I_Book.png" alt=""></button>
@@ -937,7 +948,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=324"></script>
+<script type="module" src="/mmo/js/client.js?v=325"></script>
 <div id="nuevo3d" role="dialog" aria-label="Nuevo mundo 3D">
   <video src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" muted loop playsinline preload="none"></video>
   <div class="t">🌌 NUEVO: $DUENDE ORIGINS, el mundo abierto en 3D</div>

@@ -203,6 +203,53 @@ export function campamentos(MAPAS, MONSTRUOS) {
   return (_campos = l);
 }
 
+// ── PUNTOS DE REAPARICION ──
+// Antes se revivia siempre en el pueblo (hasta 600 m de caminata y la espiral
+// de muertes). Por zona, varios claros: se avanza desde el pueblo en abanico
+// hasta el primer sitio libre de cada rayo; la entrada es el mas cercano al
+// pueblo. Nunca a menos de 45 m de un campamento (tampoco del jefe), en tierra
+// firme y poco empinada (en las Cumbres y la costa se afloja si no hay nada).
+// Iguales en servidor y cliente.
+let _rev3 = null;
+export function puntosRev3d(MAPAS, MONSTRUOS) {
+  if (_rev3) return _rev3;
+  const campos = campamentos(MAPAS, MONSTRUOS).filter(c => c.zona !== 'eter');
+  const l = [];
+  for (const id of IDS) {
+    const c = ZONAS3D[id], ang0 = Math.atan2(c.z - MUNDO.pueblo.z, c.x - MUNDO.pueblo.x), dc = Math.hypot(c.x, c.z);
+    let pz = [];
+    for (const [agua, pend, lejos] of [[0.8, 0.45, 45], [0.3, 0.7, 38]]) {
+      const libre = (x, z) => zonaEn(x, z) === id && Math.max(Math.abs(x), Math.abs(z)) < 600
+        && alturaEn(x, z) > MUNDO.agua + agua && pendienteEn(x, z) < pend
+        && !campos.some(k => Math.hypot(k.x - x, k.z - z) < lejos)
+        && Math.hypot(ARENA3D.x - x, ARENA3D.z - z) > ARENA3D.r + 30;   // lejos del pisoton del jefe mundial
+      for (let r = -4; r <= 4; r++) {
+        const ang = ang0 + r * 0.2;
+        for (let d = MUNDO.pueblo.radio + 12; d < dc + 150; d += 4) {
+          const x = Math.round(Math.cos(ang) * d), z = Math.round(Math.sin(ang) * d);
+          if (!libre(x, z)) continue;
+          if (!pz.some(p => Math.hypot(p.x - x, p.z - z) < 50)) pz.push({ zona: id, x, z, dp: d });
+          break;
+        }
+      }
+      if (pz.length) break;
+    }
+    pz.sort((a, b) => a.dp - b.dp);
+    pz.forEach((p, i) => l.push({ zona: id, x: p.x, z: p.z, entrada: i === 0 }));
+  }
+  return (_rev3 = l);
+}
+// Donde se revive tras caer en (x, z): hasta Nv 10 en la entrada de esa zona;
+// desde Nv 10 en el claro mas cercano a menos de 250 m. null = el pueblo.
+export function revivirEn3d(x, z, nivel, MAPAS, MONSTRUOS) {
+  const zona = zonaEn(x, z), l = puntosRev3d(MAPAS, MONSTRUOS);
+  if (zona === 'pueblo' || zona === 'cueva' || zona === 'eter') return null;
+  if (nivel < 10) { const e = l.find(p => p.zona === zona && p.entrada); if (e) return e; }
+  let mejor = null, md = 250;
+  for (const p of l) { const d = Math.hypot(p.x - x, p.z - z); if (d < md) { md = d; mejor = p; } }
+  return mejor;
+}
+
 // ── RECOLECCION ──
 // 24 puntos por zona (hierbas y vetas, alternadas), lejos de los
 // campamentos y en tierra firme. Deterministas: el servidor y el cliente

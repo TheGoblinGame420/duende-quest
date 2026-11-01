@@ -1,0 +1,29 @@
+# Cabeceras de los archivos estaticos (Workers Static Assets las lee de aqui).
+# Los estaticos NO pasan por worker.js (run_worker_first solo
+# cubre /api/* y /mmo/ws en wrangler.toml), asi que estas son las
+# cabeceras que reciben index.html, mundo/, mmo/, assets/... Si se toca algo
+# aqui, revisar tambien worker.js (lo que el Worker sirve a mano).
+# OJO: sin frame-ancestors de Telegram la Mini App no carga en web.telegram.org.
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Content-Security-Policy: frame-ancestors 'self' https://web.telegram.org https://*.telegram.org; object-src 'none'; base-uri 'self'
+
+# TON Connect: las wallets externas leen el manifiesto desde su propio origen.
+/tonconnect-manifest.json
+  Access-Control-Allow-Origin: *
+
+# PWA: el service worker se revisa siempre y controla todo el sitio.
+/sw.js
+  Cache-Control: no-cache
+  Service-Worker-Allowed: /
+
+# Imagenes y audio sin hash en el nombre: 1 dia de cache (ver worker.js).
+/assets/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=3600
+
+/audio/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=3600

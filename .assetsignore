@@ -30,10 +30,8 @@ tools
 # Packs de terceros sin integrar (material de origen, ~21 MB): no se sirven
 recursos
 
-# _headers es una convencion de Cloudflare PAGES; este sitio es un Worker con
-# Static Assets y no la lee (las cabeceras se ponen a mano en worker.js). Si
-# alguna vez vuelve a crearse por costumbre, que al menos no se sirva publico.
-_headers
+# _headers NO va aqui: Workers Static Assets lo lee para poner las cabeceras de
+# seguridad y cache de los estaticos, y wrangler nunca lo publica como archivo.
 
 # Video promocional (salida de tools/promo/): no se publica
 /promo

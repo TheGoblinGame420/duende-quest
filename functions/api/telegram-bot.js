@@ -2,6 +2,8 @@
 // DUENDE QUEST — Telegram Bot Webhook (Cloudflare Pages Function)
 // ═══════════════════════════════════════════════════════
 
+import { supabaseQuery } from './lib.js';
+
 const WEBAPP_URL = 'https://duende-quest.alfonso12hc.workers.dev/telegram/index.html';
 const SITE_URL = 'https://duende-quest.alfonso12hc.workers.dev';
 // Exportada: los avisos de vuelta del MMO (functions/mmo/retencion.js) usan la misma.
@@ -58,20 +60,7 @@ async function tg(token, method, body) {
   return r.json();
 }
 
-async function supabaseQuery(env, path, options = {}) {
-  const url = `${env.SUPABASE_URL}/rest/v1/${path}`;
-  const r = await fetch(url, {
-    method: options.method || 'GET',
-    headers: {
-      'apikey': env.SUPABASE_KEY,
-      'Authorization': `Bearer ${env.SUPABASE_KEY}`,
-      'Content-Type': 'application/json',
-      'Prefer': options.prefer || 'return=representation',
-    },
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
-  return r.json();
-}
+// supabaseQuery: la de lib.js (con tope de 5 s y sin lanzar si no es JSON).
 
 const PUMP_API = 'https://frontend-api-v3.pump.fun/coins/HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump';
 
@@ -306,6 +295,47 @@ async function mmoInterno(env, accion, body) {
   const r = await stub.fetch('https://mmo/interno/' + accion, { method: 'POST', headers: { 'x-interno': env.TELEGRAM_BOT_TOKEN || '' }, body: JSON.stringify(body || {}) });
   return r.json();
 }
+// Compras del arcade con Stars (skin o $DUENDE) de los ultimos 14 dias aun sin
+// acreditar: las del MMO (cargos) y las skins ya activadas no cuentan.
+async function starsSinAcreditar(context, cargosMmo) {
+  const sb = getEnv(context);
+  const desde = new Date(Date.now() - 14 * 86400000).toISOString();
+  const filas = await supabaseQuery(sb, `stars_purchases?tokens_credited=eq.0&amount_stars=gt.0&created_at=gte.${desde}&select=tx_id,telegram_id,amount_stars,created_at&order=created_at.desc&limit=30`);
+  if (!Array.isArray(filas)) return '⚠️ No pude leer las compras del arcade (Supabase).';
+  let l = filas.filter(f => f.tx_id && !cargosMmo.includes(f.tx_id));
+  if (l.length) {
+    const lista = l.map(f => '"' + String(f.tx_id).replace(/"/g, '') + '"').join(',');
+    const sk = await supabaseQuery(sb, `skin_purchases?tx_signature=in.(${encodeURIComponent(lista)})&select=tx_signature`);
+    if (Array.isArray(sk)) l = l.filter(f => !sk.some(x => x.tx_signature === f.tx_id));
+  }
+  if (!l.length) return '';
+  return '⭐ Compras del arcade con Stars sin acreditar (14 días):\n\n' + l.map(f => `${f.amount_stars} Stars · tg ${f.telegram_id} · ${new Date(f.created_at).toLocaleString('es', { timeZone: 'America/Lima', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}\n/starsok ${f.tx_id} …`).join('\n\n')
+    + '\n\nCompleta con la cantidad de $DUENDE o skin:ID (vienen en el aviso de la compra).';
+}
+// "❌ Devolver" de una compra del arcade: solo si aun no se acredito ni se activo la skin.
+async function devolverStarsArcade(context, token, cargo) {
+  const sb = getEnv(context);
+  const filas = await supabaseQuery(sb, `stars_purchases?tx_id=eq.${encodeURIComponent(cargo)}&select=telegram_id,tokens_credited&limit=1`);
+  const f = Array.isArray(filas) ? filas[0] : null;
+  if (!f) return '❌ No hay un pago con ese cargo.';
+  if (Number(f.tokens_credited) < 0) return '↩️ Ese pago ya estaba devuelto.';
+  if (Number(f.tokens_credited) > 0) return '❌ Ese pago ya se acreditó: no se devuelve.';
+  const ya = await supabaseQuery(sb, `skin_purchases?tx_signature=eq.${encodeURIComponent(cargo)}&select=id&limit=1`);
+  if (!Array.isArray(ya)) return '❌ No pude comprobar la skin (Supabase). Inténtalo en un rato.';
+  if (ya.length) return '❌ Esa skin ya se activó: no se devuelve.';
+  // Cerrojo ANTES de devolver: se marca como devuelto (-1) solo si sigue en 0. Asi un
+  // /starsok a la vez (o dos toques) no acredita un pago devuelto ni devuelve dos veces.
+  const marca = await supabaseQuery(sb, `stars_purchases?tx_id=eq.${encodeURIComponent(cargo)}&tokens_credited=eq.0`, { method: 'PATCH', body: { tokens_credited: -1 } }).catch(() => null);
+  if (!Array.isArray(marca) || marca.length !== 1) return '❌ Ese pago cambió mientras tanto (o Supabase no respondió): no se devolvió nada.';
+  const rsp = await tg(token, 'refundStarPayment', { user_id: Number(f.telegram_id), telegram_payment_charge_id: cargo }).catch(() => null);
+  if (!rsp || !rsp.ok) {
+    // No se devolvio: se quita la marca para poder acreditarlo o reintentar.
+    await supabaseQuery(sb, `stars_purchases?tx_id=eq.${encodeURIComponent(cargo)}&tokens_credited=eq.-1`, { method: 'PATCH', body: { tokens_credited: 0 } }).catch(() => {});
+    return '❌ Telegram no aceptó la devolución: ' + ((rsp && rsp.description) || 'sin respuesta');
+  }
+  await tg(token, 'sendMessage', { chat_id: f.telegram_id, text: '↩️ Te devolvimos las Stars de tu compra. Si tienes dudas, escribe a @ElDuendeOficial (creador oficial).' }).catch(() => {});
+  return `↩️ Stars devueltas a tg ${f.telegram_id}.`;
+}
 async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
   if (String(userId) !== String(context.env.ADMIN_TG_ID || '')) return; // silencio para no-admins
   const env = context.env;
@@ -322,6 +352,7 @@ async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
     const filas = await supabaseQuery(sb, `stars_purchases?tx_id=eq.${encodeURIComponent(arg1)}&select=telegram_id,tokens_credited,amount_stars&limit=1`);
     const f = Array.isArray(filas) ? filas[0] : null;
     if (!f) return enviar('❌ No hay un pago con ese cargo.');
+    if (Number(f.tokens_credited) < 0) return enviar('↩️ Ese pago se devolvió: no se acredita.');
     if (Number(f.tokens_credited) !== 0) return enviar('✅ Ese pago ya estaba acreditado.');
     if (arg2.startsWith('skin:')) {
       const skin = arg2.slice(5);
@@ -369,7 +400,9 @@ async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
   if (cmd === '/pedidos') {
     const r = await mmoInterno(env, 'pedidos');
     if (!r.ok) return enviar('❌ ' + (r.error || 'error'));
-    if (!r.pedidos.length) return enviar('✅ No hay compras por entregar.');
+    const arcade = await starsSinAcreditar(context, r.cargos || []).catch(() => '⚠️ No pude leer las compras del arcade (Supabase no respondió).');
+    if (arcade) await enviar(arcade);
+    if (!r.pedidos.length) return enviar('✅ No hay compras del MMO por entregar.');
     const lineas = r.pedidos.map(x => `#${x.codigo} · ${x.nombre} ($${x.usd}) · ${x.jugador}\n` + (x.metodo === 'stars'
       ? `⭐ ${x.starsPagadas} Stars pagadas (verificado por Telegram)`
       : (x.metodo === 'duende' ? `🍄 ${(x.duendeRaw / 1e6).toLocaleString('es')} $DUENDE` : `◎ ${(x.lamports / 1e9).toFixed(9)} SOL`) + ` · ${x.cadena ? (x.cadena.ok ? '✅ visto en la cadena' : '❌ ' + x.cadena.motivo) : '⚠️ sin comprobar'}\nhttps://solscan.io/tx/${x.firma}`));
@@ -686,7 +719,10 @@ async function onRequestPost(context) {
         // ENTREGA MANUAL (27-oct-2026, decision del dueño): las compras del arcade con
         // Stars (skin o $DUENDE) se registran con tokens_credited 0 y al dueño le llega el
         // aviso con el comando exacto; el acredita con /starsok tras revisarlo.
-        const avisarDueno = txt => context.env.ADMIN_TG_ID ? tg(token, 'sendMessage', { chat_id: context.env.ADMIN_TG_ID, text: txt, disable_web_page_preview: true }).catch(() => {}) : null;
+        // Botones de un toque (solo el dueño los puede usar): el cargo va recortado
+        // (callback_data < 64 bytes) y el completo se lee del propio aviso.
+        const botonesStars = [[{ text: '✅ Acreditar', callback_data: 'stok:' + chargeId.slice(-40) }, { text: '❌ Devolver', callback_data: 'stno:' + chargeId.slice(-40) }]];
+        const avisarDueno = txt => context.env.ADMIN_TG_ID ? tg(token, 'sendMessage', { chat_id: context.env.ADMIN_TG_ID, text: txt, disable_web_page_preview: true, reply_markup: { inline_keyboard: botonesStars } }).catch(() => {}) : null;
         const quien = (body.message.from.username ? '@' + body.message.from.username : body.message.from.first_name || '') + ' (tg ' + tgId + ')';
         if (payload.skin_id) {
           const reg = await supabaseQuery(env, 'stars_purchases', { method: 'POST', body: { telegram_id: tgId, amount_usd: starsPaid * STAR_USD, amount_stars: starsPaid, tokens_credited: 0, tx_id: chargeId } });
@@ -740,6 +776,50 @@ async function onRequestPost(context) {
         const invoiceUrl = await createStarsInvoice(token, env, pkgIndex, String(user.id));
         if (invoiceUrl) await tg(token, 'sendMessage', { chat_id: chatId, text: '⭐ Toca el botón para pagar con Stars. El pago se hace dentro de Telegram.', reply_markup: { inline_keyboard: [[{ text: '💳 Pagar con Stars', url: invoiceUrl }]] } });
         else await tg(token, 'sendMessage', { chat_id: chatId, text: '❌ No se pudo crear la factura. Inténtalo de nuevo en un momento.' });
+        return new Response('OK');
+      }
+
+      // Botones de las compras del arcade con Stars (solo el dueño): acreditar con
+      // un toque (lo mismo que /starsok, con la cifra del propio aviso) o devolver
+      // las Stars (pide confirmación: no se deshace).
+      const mSt = /^st(ok|no|no2):([A-Za-z0-9_.-]{6,40})$/.exec(data);
+      if (mSt) {
+        if (String(user.id) !== String(context.env.ADMIN_TG_ID || '')) return new Response('OK');
+        // El cargo completo sale del mensaje del bot ("/starsok CARGO X" o "Cargo: X").
+        const txtMsg = cb.message.text || '';
+        const mCmd = /\/starsok (\S+) (\S+)/.exec(txtMsg);
+        const cargo = mCmd ? mCmd[1] : ((/Cargo: (\S+)/.exec(txtMsg) || [])[1] || '');
+        if (!cargo || !cargo.endsWith(mSt[2])) { await tg(token, 'sendMessage', { chat_id: chatId, text: '❌ No encontré el cargo en el aviso. Usa /starsok a mano.' }); return new Response('OK'); }
+        const sinBotones = () => tg(token, 'editMessageReplyMarkup', { chat_id: chatId, message_id: messageId, reply_markup: { inline_keyboard: [] } }).catch(() => {});
+        if (mSt[1] === 'ok') {
+          if (!mCmd) return new Response('OK');
+          await sinBotones();
+          await handleMmoAdmin(token, context, chatId, user.id, '/starsok', cargo + ' ' + mCmd[2]);
+          return new Response('OK');
+        }
+        if (mSt[1] === 'no') {
+          await tg(token, 'sendMessage', { chat_id: chatId, text: `¿Devolver las Stars de esta compra? No se deshace.\nCargo: ${cargo}`, reply_markup: { inline_keyboard: [[{ text: '↩️ Sí, devolver', callback_data: 'stno2:' + mSt[2] }]] } });
+          return new Response('OK');
+        }
+        await sinBotones();
+        let txt;
+        try { txt = await devolverStarsArcade(context, token, cargo); } catch (e) { txt = '❌ No se pudo devolver ahora. Prueba otra vez en un rato.'; }
+        await tg(token, 'sendMessage', { chat_id: chatId, text: txt });
+        return new Response('OK');
+      }
+
+      // "⏳ En 1 h / Mañana" del aviso de un pedido del MMO: al jugador le llega
+      // una plantilla y al dueño un recordatorio a esa hora. No entrega nada.
+      if (/^mmo(1h|man):[A-Z0-9]{4,10}$/.test(data)) {
+        if (String(user.id) !== String(context.env.ADMIN_TG_ID || '')) return new Response('OK');
+        const [acc, codigo] = data.split(':');
+        let r = null;
+        try { r = await mmoInterno(context.env, 'posponer', { codigo, cuando: acc === 'mmoman' ? 'man' : '1h' }); } catch (e) {}
+        const hora = r && r.cuando ? new Date(r.cuando).toLocaleString('es', { timeZone: 'America/Lima', weekday: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+        const txt = !r ? '❌ No se pudo hablar con el MMO ahora. Prueba otra vez.'
+          : !r.ok ? '❌ ' + r.error
+          : `⏳ Pedido #${r.pedido.codigo}: ${r.avisado ? 'le avisé a ' + r.pedido.jugador + ' que llega ' + (acc === 'mmoman' ? 'mañana' : 'en 1 h') : 'al jugador ya se le avisó hace poco'}. Te lo recuerdo el ${hora} (hora de Perú).`;
+        await tg(token, 'sendMessage', { chat_id: chatId, text: txt });
         return new Response('OK');
       }
 
@@ -802,9 +882,14 @@ async function onRequestPost(context) {
 
       switch (cmd) {
         case '/start':
-          // Invitacion al MMO: t.me/duendequest_bot?start=mmo_<codigo>
-          if (/^mmo_[a-z0-9]{6}$/.test(payload || '')) {
-            await tg(token, 'sendMessage', { chat_id: chatId, text: '🤝 *Un amigo te invita a DUENDE QUEST ONLINE*\n\nMMORPG de duendes al estilo WoW, gratis y sin descargas: elige tu clase, haz grupo con tu amigo y entren juntos a las mazmorras. Cuando llegues al nivel 10, los dos reciben oro del juego.\n\n' + TEXTO_SEGURIDAD, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🌍 Entrar al mundo', web_app: { url: MMO_URL + '?ref=' + payload.slice(4) } }]] } });
+          // Invitacion: t.me/duendequest_bot?start=mmo_<codigo> (CLASSIC, enlaces viejos)
+          // o m3d_<codigo> (ORIGINS 3D). Responde solo a quien escribio /start.
+          if (/^(mmo|m3d)_[a-z0-9]{6}$/.test(payload || '')) {
+            const es3d = payload.startsWith('m3d_'), cod = payload.slice(4);
+            let quien = 'Un amigo';
+            try { const r = await mmoInterno(context.env, 'invitador', { ref: cod }); if (r && r.ok && r.n) quien = mdSeguro(r.n) + ' (Nv ' + (Number(r.lv) || 1) + ')'; } catch (e) {}
+            const intro = es3d ? 'Mundo abierto en 3D, gratis y sin descargas: vuela con alas, explora con tu amigo y entren juntos a la Cueva de los Goblins.' : 'MMORPG de duendes al estilo WoW, gratis y sin descargas: elige tu clase, haz grupo con tu amigo y entren juntos a las mazmorras.';
+            await tg(token, 'sendMessage', { chat_id: chatId, text: '🤝 *' + quien + ' te invita a DUENDE QUEST' + (es3d ? ' 3D' : ' ONLINE') + '*\n\n' + intro + ' Cuando llegues al nivel 10, los dos reciben oro del juego.\n\n' + TEXTO_SEGURIDAD, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: es3d ? '🌌 Entrar al mundo 3D' : '🌍 Entrar al mundo', web_app: { url: (es3d ? MUNDO_URL : MMO_URL) + '?ref=' + cod } }]] } });
             break;
           }
           await handleStart(token, env, chatId, user, payload); break;

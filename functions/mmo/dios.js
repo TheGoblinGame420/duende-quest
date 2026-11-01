@@ -349,6 +349,6 @@ export const Dios = {
       firma: x.firma || '', cadena: x.cadena || null, monto: x.metodo === 'duende' ? x.duendeRaw / 1e6 + ' $DUENDE' : x.metodo === 'sol' ? (x.lamports / 1e9).toFixed(9) + ' SOL' : (x.starsPagadas || x.stars) + ' Stars',
     }));
     const bans = Object.values(mod.ban).map(b => ({ n: b.n, hasta: b.hasta, motivo: b.motivo, t: b.t, d: b.d ? 1 : 0 }));
-    this.enviar(s, { t: 'diosPanel', nivel: s.dios, jugadores, pedidos, bans, log: (this.modLog || []).slice(-15), modo: s.diosModo || {} });
+    this.enviar(s, { t: 'diosPanel', nivel: s.dios, jugadores, pedidos, bans, log: (this.modLog || []).slice(-15), modo: s.diosModo || {}, fallosSupabase: dueno ? this.fallosSupabase || 0 : 0 });
   },
 };

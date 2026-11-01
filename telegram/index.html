@@ -1140,13 +1140,17 @@ async function sendTonPayment(){
 // ═══════════════════════════════════════
 // SKINS SHOP
 // ═══════════════════════════════════════
+// Precios y nombres: los pone el catalogo unico (mmo/js/data.js, script
+// module al final del hub) con la MISMA tabla de Stars que usa la factura del
+// servidor. Lo de aqui es solo el respaldo si ese import fallara en el WebView;
+// los buffs son los del arcade.
 const SKINS=[
-  {id:'comun',name:'Común',img:'../assets/skins/skin_hero.png',preview:'../assets/skins/duende_comun.png',usd:0,stars:0,buffs:null,desc:'Skin base gratis',color:'#888'},
-  {id:'tactico',name:'Táctico',img:'../assets/skins/skin_tactico.png',preview:'../assets/skins/skin_tactico.png',usd:1,stars:77,buffs:{coinMult:1.1,label:'+10% monedas'},desc:'Operador especial',color:'#00ff88'},
-  {id:'necro',name:'Necromancer',img:'../assets/skins/skin_king.png',preview:'../assets/skins/skin_necromancer.png',usd:2,stars:154,buffs:{coinMult:1.2,lifesteal:0.05,label:'+20% monedas · Lifesteal'},desc:'Roba vida al atacar',color:'#9333ea'},
-  {id:'king',name:'King',img:'../assets/skins/skin_king.png',preview:'../assets/skins/skin_king.png',usd:3,stars:231,buffs:{coinMult:1.3,bonusHp:20,label:'+30% monedas · +20 HP'},desc:'Corona de poder',color:'#ffe600'},
-  {id:'berserker',name:'Berserker',img:'../assets/skins/skin_berserker.png',preview:'../assets/skins/skin_berserker.png',usd:7,stars:539,buffs:{coinMult:1.4,atkMult:1.3,label:'+40% monedas · +30% ataque'},desc:'Furia desatada',color:'#ff4400'},
-  {id:'legendaria',name:'Legendaria',img:'../assets/skins/skin_berserker.png',preview:'../assets/skins/skin_legendariafull.png',usd:15,stars:1154,buffs:{coinMult:1.5,bonusHp:50,aura:true,label:'+50% monedas · +50 HP · Aura'},desc:'La skin definitiva',color:'#ff00cc'},
+  {id:'comun',name:'Duende',preview:'../assets/skins/duende_comun.png',usd:0,stars:0,buffs:null,desc:'Skin base gratis',color:'#888'},
+  {id:'tactico',name:'Táctico',preview:'../assets/skins/skin_tactico.png',usd:1,stars:75,buffs:{coinMult:1.1,label:'+10% monedas'},desc:'Operador especial',color:'#00ff88'},
+  {id:'necro',name:'Nigromante',preview:'../assets/skins/skin_necromancer.png',usd:2,stars:150,buffs:{coinMult:1.2,lifesteal:0.05,label:'+20% monedas · Roba vida'},desc:'Roba vida al atacar',color:'#9333ea'},
+  {id:'king',name:'Rey',preview:'../assets/skins/skin_king.png',usd:3,stars:250,buffs:{coinMult:1.3,bonusHp:20,label:'+30% monedas · +20 HP'},desc:'Corona de poder',color:'#ffe600'},
+  {id:'berserker',name:'Berserker',preview:'../assets/skins/skin_berserker.png',usd:7,stars:500,buffs:{coinMult:1.4,atkMult:1.3,label:'+40% monedas · +30% ataque'},desc:'Furia desatada',color:'#ff4400'},
+  {id:'legendaria',name:'Legendaria',preview:'../assets/skins/skin_legendariafull.png',usd:15,stars:1000,buffs:{coinMult:1.5,bonusHp:50,aura:true,label:'+50% monedas · +50 HP · Aura'},desc:'La skin definitiva',color:'#ff00cc'},
 ];
 
 let ownedSkins=['comun'];
@@ -1189,11 +1193,9 @@ function openSkinShop(){
 function renderSkinShop(){
   const grid=document.getElementById('skins-grid');
   if(!grid)return;
-  const tonP=tonPriceUsd||3.5;
   grid.innerHTML=SKINS.map(s=>{
     const owned=ownedSkins.includes(s.id);
     const equipped=equippedSkin===s.id;
-    const tonCost=s.usd>0?(s.usd/tonP).toFixed(2):0;
     const boton=equipped?`<button class="equipada">✅ Equipada</button>`
       :(s.usd===0||owned)?`<button onclick="equipSkinTG('${s.id}')">Equipar</button>`
       :`<button class="compra" onclick="buySkinStars('${s.id}')">⭐ Stars</button>
@@ -1204,7 +1206,7 @@ function renderSkinShop(){
         <div class="n"><span class="rar" style="background:${s.color}"></span>${s.name}${owned&&s.usd>0?'<span class="tuya">Tuya</span>':''}</div>
         <div class="d">${s.desc}</div>
         ${s.buffs?`<div class="b">${s.buffs.label}</div>`:''}
-        ${s.usd>0&&!owned?`<div class="p">⭐ ${Number(s.stars).toLocaleString('es')} Stars<br>💎 ${Number(tonCost).toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2})} TON <span style="color:var(--txt3)">· ≈ ${s.usd} USD</span></div>`:''}
+        ${s.usd>0&&!owned?`<div class="p">${Number(s.stars).toLocaleString('es')} ⭐ <span style="color:var(--txt3)">· Stars de Telegram o TON al cambio del día</span></div>`:''}
         ${s.usd===0?`<div class="p" style="color:var(--txt3)">Gratis</div>`:''}
       </div>
       <div class="acc">${boton}</div>
@@ -1646,7 +1648,7 @@ function pintarBotonesSinFin(){
 
 function invitarAmigos(){
   const link='https://t.me/duendequest_bot?start=ref_'+(TG_USER.id||'');
-  const texto='🧝 Estoy jugando DUENDE QUEST — campaña de 15 etapas con jefes. ¡Únete y ganamos $DUENDE los dos! 👇';
+  const texto='🧝 Estoy jugando DUENDE QUEST — campaña de 15 etapas con jefes. Gratis en el celular: entra con mi link y los dos ganamos premios 👇';
   if(tg&&tg.openTelegramLink){ tg.openTelegramLink('https://t.me/share/url?url='+encodeURIComponent(link)+'&text='+encodeURIComponent(texto)); return; }
   try{ navigator.clipboard.writeText(texto+'\n'+link); showPUNotif('📋 Link copiado'); }catch(e){}
 }
@@ -1945,6 +1947,26 @@ function shareScore(){
 
 
 
+</script>
+<script type="module">
+// Catalogo unico: nombres, dolares y Stars de las skins salen de mmo/js/data.js
+// (la misma tabla STARS_DE_USD que usa /api/telegram-bot-invoice al cobrar), asi
+// la Mini App nunca anuncia un precio distinto del que cobra Telegram.
+// Subir este ?v= junto con el de los otros imports de data.js.
+import { SKINS as CATALOGO, estrellasDe } from '../mmo/js/data.js?v=325';
+try{
+  for(const s of SKINS){
+    const c=CATALOGO[s.id];
+    if(!c)continue;
+    if(s.id==='comun')continue;   // gratis, con su propia imagen
+    if(c.nombre)s.name=c.nombre;
+    if(c.img)s.preview='../assets/skins/'+c.img+'.png';
+    if(c.usd>0){s.usd=c.usd;s.stars=estrellasDe(c.usd);}
+  }
+  window.SKINS_SINCRONIZADAS=true;
+  // Si la tienda ya estaba pintada con el respaldo, se repinta
+  if(document.getElementById('skins-grid')?.children.length)renderSkinShop();
+}catch(e){console.warn('[skins] catalogo',e);}
 </script>
 </body>
 </html>

@@ -44,10 +44,11 @@ export default {
       }
     }
 
-    // Serve static files. El archivo _headers de una sesion anterior NO hace
-    // nada: es una convencion de Cloudflare Pages, y este sitio es un Worker
-    // con Static Assets ([assets] en wrangler.toml), que no lo lee. Las
-    // cabeceras de seguridad se aplican aqui, a mano, sobre la respuesta.
+    // Respaldo: los estaticos normales ya NO llegan aqui (run_worker_first en
+    // wrangler.toml cubre solo /api/* y /mmo/ws) y toman sus
+    // cabeceras de _headers. Aqui solo caen esas rutas sin match y las
+    // peticiones no-navegacion a archivos que no existen; se les ponen las
+    // mismas cabeceras a mano. Mantener ambas listas iguales.
     const res = await env.ASSETS.fetch(request);
     const headers = new Headers(res.headers);
     headers.set('X-Content-Type-Options', 'nosniff');

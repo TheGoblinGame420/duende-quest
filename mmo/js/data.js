@@ -502,6 +502,14 @@ export function limpiarLook(l) {
 }
 
 export const NOVEDADES = [
+  { n: 93, fecha: '1 nov 2026', items: [
+    "🍞 Del 3 al 12 de noviembre llega la Semana de la T'anta Wawa: los monstruos sueltan t'anta wawas y con 50 y 200 ganas los títulos «Panadero Duende» y «Guardián de la T'anta Wawa». En ORIGINS ves tu avance bajo tu marco.",
+    'Nuevo botón TIENDA dorado siempre a la vista en 2D y 3D; con el móvil en horizontal el menú ya no tapa VOLAR ni MONTAR.',
+    'Invita por WhatsApp con un toque: el mensaje trae tu enlace y el premio para los dos. Si invitas desde el 3D, tu amigo entra directo al 3D.',
+    'Al morir en ORIGINS revives cerca, en un claro seguro; tras 3 caídas seguidas no pierdes XP. En el Abismo ya puedes planear entre islas.',
+    'Si tu equipo no puede abrir el 3D, te ofrecemos CLASSIC con el mismo duende. El juego carga más rápido: las imágenes pesan casi un tercio.',
+    'La Mini App de Telegram muestra exactamente las Stars que se cobran.',
+  ] },
   { n: 92, fecha: '31 oct 2026', items: [
     'Al entrar con tu cuenta (Telegram o correo) por primera vez, si jugabas como invitado ahora te preguntamos: «Pasar mi duende a esta cuenta» o «Empezar de cero». Tu duende nunca cambia de cuenta sin que lo elijas.',
     'Rankings limpios: solo cuentan las puntuaciones verificadas por el servidor, también las de la web.',
@@ -1277,6 +1285,8 @@ export const LOGROS = [
   { id: 'maestrodes', titulo: 'Maestro de Desafíos', desc: 'Gana el ranking semanal de Desafíos (desde el +5)', oro: 10000, cond: c => (c.maestroDes || 0) >= 1 },
   { id: 'calabaza50',  titulo: 'Cazacalabazas',      desc: 'Junta 50 calabazas en la Noche de Duendes',  oro: 3000,  cond: c => (c.calabazas || 0) >= 50 },
   { id: 'calabaza200', titulo: 'Rey de las Calabazas', desc: 'Junta 200 calabazas en la Noche de Duendes', oro: 12000, cond: c => (c.calabazas || 0) >= 200 },
+  { id: 'tanta50',     titulo: 'Panadero Duende',    desc: "Junta 50 t'anta wawas en la Semana de la T'anta Wawa",  oro: 3000,  cond: c => (c.tantas || 0) >= 50 },
+  { id: 'tanta200',    titulo: "Guardián de la T'anta Wawa", desc: "Junta 200 t'anta wawas en la Semana de la T'anta Wawa", oro: 12000, cond: c => (c.tantas || 0) >= 200 },
   { id: 'mazorca50',   titulo: 'Cosechador',         desc: 'Junta 50 mazorcas en la Cosecha del Maíz Morado',  oro: 3000,  cond: c => (c.mazorcas || 0) >= 50 },
   { id: 'mazorca200',  titulo: 'Señor del Maíz Morado', desc: 'Junta 200 mazorcas en la Cosecha del Maíz Morado', oro: 12000, cond: c => (c.mazorcas || 0) >= 200 },
   { id: 'regalo50',    titulo: 'Duende Navideño',    desc: 'Junta 50 regalos en la Navidad Duende',      oro: 3000,  cond: c => (c.regalos || 0) >= 50 },
@@ -1364,14 +1374,17 @@ export const SKINS = {
   solar:      { nombre: 'Duende Solar',     img: 'skin_hero', anim: true, hue: 22, sat: 1.9, precio: null, premium: true, usd: 25, color: '#fbbf24', buffs: { oroMult: 1.3, atkMult: 1.14, bonusHp: 25, aura: true }, desc: '+30% oro · +14% ataque · +HP · aura que quema' },
   cosmico:    { nombre: 'Duende Cósmico',   img: 'skin_hero', anim: true, hue: 150, sat: 1.5, precio: null, premium: true, usd: 50, color: '#38bdf8', buffs: { oroMult: 1.35, atkMult: 1.18, bonusHp: 35, robo: .04, aura: true }, desc: '+35% oro · +18% ataque · +HP · roba 4% · aura' },
 };
-// Noche de Duendes (Halloween, 24-oct a 2-nov, en UTC): los siete disfraces de la
-// mascota cuestan un 25% menos de oro. Cliente y servidor usan esta misma funcion.
+// Noche de Duendes (Halloween): los siete disfraces de la mascota cuestan menos
+// oro (el `descuento` de su temporada en TEMPORADAS, 25%). Va por las fechas de
+// TEMPORADAS, no por un dia fijo. Cliente y servidor usan esta misma funcion.
 export const DISFRACES_SKIN = ['bruja', 'momia', 'frankenstein', 'vampiro', 'esqueleto', 'lobo', 'pirata'];
-export function esNocheDuendes(d = new Date()) { const m = d.getUTCMonth(), dd = d.getUTCDate(); return (m === 9 && dd >= 24) || (m === 10 && dd <= 2); }
+const descuentoDisfraz = d => { const tp = temporadaDe(d ? d.getTime() : Date.now()); return (tp && tp.descuento) || 0; };
+export function esNocheDuendes(d) { return descuentoDisfraz(d) > 0; }
 export function precioOro(tab, id, d) {
   const p = tab === 'skin' ? SKINS[id] && SKINS[id].precio : ARMAS[id] && ARMAS[id].precio;
   if (typeof p !== 'number') return p;
-  return tab === 'skin' && DISFRACES_SKIN.includes(id) && esNocheDuendes(d) ? Math.round(p * 0.75) : p;
+  const dto = tab === 'skin' && DISFRACES_SKIN.includes(id) ? descuentoDisfraz(d) : 0;
+  return dto ? Math.round(p * (1 - dto)) : p;
 }
 
 // ── ARMAS (las 4 del juego, mismos multiplicadores) ──
@@ -1604,7 +1617,12 @@ export const bonoRunas = ru => ({ atk: RUNA_PCT * ((ru && ru.fuerza) || 0), def:
 // añadirlo aqui y sus dos logros.
 export const TEMPORADAS = [
   { id: 'noche2026', nombre: 'Noche de Duendes', ini: Date.UTC(2026, 9, 25), fin: Date.UTC(2026, 10, 3), hasta: '2 de noviembre',
-    emoji: '🎃', deco: '🎃', cosas: 'calabazas', campo: 'calabazas', color: '#ff9a3c', titulos: ['Cazacalabazas', 'Rey de las Calabazas'] },
+    emoji: '🎃', deco: '🎃', cosas: 'calabazas', campo: 'calabazas', color: '#ff9a3c', titulos: ['Cazacalabazas', 'Rey de las Calabazas'], descuento: 0.25 },
+  // Puente entre la Noche de Duendes y la Cosecha (semana del lanzamiento): las
+  // t'anta wawas, el pan con forma de bebe que se hornea por Todos los Santos.
+  // Contador propio (`tantas`) para no mezclarse con calabazas ni mazorcas.
+  { id: 'tanta2026', nombre: "Semana de la T'anta Wawa", ini: Date.UTC(2026, 10, 3), fin: Date.UTC(2026, 10, 13), hasta: '12 de noviembre',
+    emoji: '🍞', deco: '🍞', cosas: "t'anta wawas", campo: 'tantas', color: '#e0a96d', titulos: ['Panadero Duende', "Guardián de la T'anta Wawa"] },
   // Cosecha del Maiz Morado: el maiz de la chicha morada (el premio fisico).
   { id: 'cosecha2026', nombre: 'Cosecha del Maíz Morado', ini: Date.UTC(2026, 10, 13), fin: Date.UTC(2026, 11, 1), hasta: '30 de noviembre',
     emoji: '🌽', deco: '🌽', cosas: 'mazorcas', campo: 'mazorcas', color: '#a855f7', titulos: ['Cosechador', 'Señor del Maíz Morado'] },
@@ -1639,7 +1657,9 @@ export const TEMPORADAS = [
   // Las de cada año vuelven con su mismo contador y sus mismos titulos
   // (como los eventos anuales de WoW): quien no los saco, otra oportunidad.
   { id: 'noche2027', nombre: 'Noche de Duendes', ini: Date.UTC(2027, 9, 25), fin: Date.UTC(2027, 10, 3), hasta: '2 de noviembre',
-    emoji: '🎃', deco: '🎃', cosas: 'calabazas', campo: 'calabazas', color: '#ff9a3c', titulos: ['Cazacalabazas', 'Rey de las Calabazas'] },
+    emoji: '🎃', deco: '🎃', cosas: 'calabazas', campo: 'calabazas', color: '#ff9a3c', titulos: ['Cazacalabazas', 'Rey de las Calabazas'], descuento: 0.25 },
+  { id: 'tanta2027', nombre: "Semana de la T'anta Wawa", ini: Date.UTC(2027, 10, 3), fin: Date.UTC(2027, 10, 13), hasta: '12 de noviembre',
+    emoji: '🍞', deco: '🍞', cosas: "t'anta wawas", campo: 'tantas', color: '#e0a96d', titulos: ['Panadero Duende', "Guardián de la T'anta Wawa"] },
   { id: 'cosecha2027', nombre: 'Cosecha del Maíz Morado', ini: Date.UTC(2027, 10, 13), fin: Date.UTC(2027, 11, 1), hasta: '30 de noviembre',
     emoji: '🌽', deco: '🌽', cosas: 'mazorcas', campo: 'mazorcas', color: '#a855f7', titulos: ['Cosechador', 'Señor del Maíz Morado'] },
   { id: 'navidad2027', nombre: 'Navidad Duende', ini: Date.UTC(2027, 11, 18), fin: Date.UTC(2028, 0, 7), hasta: '6 de enero',
@@ -2120,7 +2140,10 @@ for (const [id, al] of Object.entries(ALAS)) {
 export const DUENDE_MINT = 'HtkZy2a4bVKX8v1JNuCB9PHJygbcRjbTpX1FXrFTpump';
 export const DUENDE_DECIMALES = 6;
 export const DUENDE_DESCUENTO = 0.9;
-export const estrellasDe = usd => Math.ceil(usd / STAR_USD);
+// Stars por precio en dolares: tabla redonda unica (Mini App, factura del bot
+// y tienda del MMO leen esta misma); lo que no esta en la tabla, al cambio.
+export const STARS_DE_USD = { 1: 75, 2: 150, 3: 250, 5: 350, 7: 500, 10: 750, 15: 1000, 20: 1500 };
+export const estrellasDe = usd => Object.hasOwn(STARS_DE_USD, usd) ? STARS_DE_USD[usd] : Math.ceil(usd / STAR_USD);
 export const PEDIDO_VIGENCIA_MS = 30 * 60 * 1000;   // 30 min para pagar
 
 // ── GESTOS (/saludar, /bailar...): un emoji grande sobre tu duende que ven

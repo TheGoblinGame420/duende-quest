@@ -8,6 +8,8 @@ import {
   tg, json, corsHeaders, getDuendePriceUsd, getEnv, supabaseQuery, verifyInitData,
   STAR_USD, STARS_PACKAGES, SKIN_PRICES_USD,
 } from './lib.js';
+// Stars de las skins: la misma tabla que muestra la Mini App (catalogo unico).
+import { estrellasDe } from '../../mmo/js/data.js';
 
 // Precio en memoria del isolate 60 s: cada factura ya no pega a pump.fun/DexScreener.
 // Solo se guarda un precio real (estricto); el webhook recalcula al acreditar.
@@ -52,7 +54,7 @@ async function onRequestPost(context) {
       const skinId = String(body.skin_id);
       const usd = Object.hasOwn(SKIN_PRICES_USD, skinId) ? SKIN_PRICES_USD[skinId] : undefined;
       if (!usd) return json(request, { error: 'unknown_skin' }, 400);
-      const stars = Math.ceil(usd / STAR_USD);
+      const stars = estrellasDe(usd);
       invoice = {
         title: `🎨 Skin: ${skinId}`,
         description: `Compra la skin ${skinId} por ${stars} Stars (~$${usd} USD)`,

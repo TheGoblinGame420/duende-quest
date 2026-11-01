@@ -13,17 +13,84 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=324" } }</script>
+<script>
+// Red de seguridad de la carga (script clasico: corre aunque el modulo 3D o el CDN fallen).
+// - Errores antes de conectar: se guardan en __errQ y mundo.js los manda al entrar.
+// - Sin WebGL, render por software (SwiftShader/llvmpipe), carga colgada 25 s o fallo
+//   fatal: se ofrece CLASSIC (2D) conservando ?ref, utm y el hash.
+(function () {
+  var Q = window.__errQ = [];
+  window.__errPropio = false;   // mundo.js lo pone en true cuando ya escucha errores
+  addEventListener('error', function (e) { if (!window.__errPropio && Q.length < 10) Q.push({ m: String(e.message || 'error'), f: String(e.filename || ''), l: e.lineno | 0 }); });
+  addEventListener('unhandledrejection', function (e) { if (!window.__errPropio && Q.length < 10) { var r = e.reason; Q.push({ m: 'promesa: ' + String((r && (r.message || r)) || ''), f: '', l: 0 }); } });
+  var CLASSIC = '/mmo/' + location.search + location.hash;
+  function caja(titulo, txt, botones) {
+    var v = document.getElementById('dq-red'); if (v) v.remove();
+    v = document.createElement('div'); v.id = 'dq-red';
+    v.style.cssText = 'position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(10,4,24,.82);font:500 15px system-ui,sans-serif;color:#f3eaff';
+    var c = document.createElement('div');
+    c.style.cssText = 'max-width:360px;width:100%;background:#1c1033;border:1px solid #6d3fc0;border-radius:14px;padding:18px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.5)';
+    var h = document.createElement('h3'); h.textContent = titulo; h.style.cssText = 'margin:0 0 8px;font-size:17px;color:#ffd84a';
+    var p = document.createElement('p'); p.textContent = txt; p.style.cssText = 'margin:0 0 14px;line-height:1.4;color:#d9cdf0';
+    c.appendChild(h); c.appendChild(p);
+    botones.forEach(function (b, i) {
+      var x = document.createElement('button'); x.type = 'button'; x.textContent = b[0];
+      x.style.cssText = 'display:block;width:100%;min-height:46px;margin-top:8px;border-radius:10px;border:0;font:700 15px system-ui,sans-serif;cursor:pointer;' + (i === 0 ? 'background:linear-gradient(90deg,#a855f7,#ffb020);color:#fff' : 'background:#2d1b4e;color:#e9dcff');
+      x.onclick = function () { b[1](v); };
+      c.appendChild(x);
+    });
+    v.appendChild(c); document.body.appendChild(v);
+  }
+  var aClassic = ['Jugar CLASSIC (2D)', function () { location.href = CLASSIC; }];
+  var recargar = ['Reintentar', function () { location.reload(); }];
+  // mundo.js lo llama si el 3D no puede seguir (sin WebGL, contexto perdido, fallo al iniciar).
+  window.__dqFallo = function (txt) {
+    caja('El mundo 3D no pudo abrirse', txt || 'Tu dispositivo no pudo cargar el mundo 3D. Puedes jugar con el mismo duende en CLASSIC (2D).', [aClassic, recargar]);
+  };
+  function revisarGL() {
+    var gl = null, cv = document.createElement('canvas');
+    try { gl = cv.getContext('webgl2') || cv.getContext('webgl') || cv.getContext('experimental-webgl'); } catch (e) {}
+    if (!gl) { window.__sinWebGL = true; window.__dqFallo('Tu navegador no tiene gráficos 3D (WebGL). Puedes jugar con el mismo duende en CLASSIC (2D).'); return; }
+    // Render por software: el 3D va a 2-5 fps. Se ofrece el 2D, pero se puede seguir (no en pruebas automaticas).
+    var rd = '';
+    try { var ext = gl.getExtension('WEBGL_debug_renderer_info'); if (ext) rd = String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) || ''); } catch (e) {}
+    var ok = false; try { ok = localStorage.getItem('dq3_sw_ok') === '1'; } catch (e) {}
+    if (/swiftshader|llvmpipe|softpipe|software/i.test(rd) && !navigator.webdriver && !ok) {
+      caja('Tu dispositivo va lento en 3D', 'Tu navegador dibuja el 3D sin tarjeta gráfica y se verá muy lento. En CLASSIC (2D) juegas fluido con el mismo duende.', [aClassic, ['Seguir en 3D', function (v) { try { localStorage.setItem('dq3_sw_ok', '1'); } catch (e) {} v.remove(); }]]);
+    }
+    try { var lc = gl.getExtension('WEBGL_lose_context'); if (lc) lc.loseContext(); } catch (e) {}
+  }
+  // Vigilante: si #carga sigue a la vista y la barra (__dqProg) no avanza en 25 s, se ofrece salir.
+  var ultimo, desde = Date.now(), avisado = false;
+  setInterval(function () {
+    var cg = document.getElementById('carga');
+    var rv = document.getElementById('dq-red');
+    // Entro al mundo mientras se mostraba el aviso de espera: se quita solo.
+    if (rv && rv.dataset.espera && cg && cg.style.display === 'none') { rv.remove(); avisado = false; }
+    // Con un error del juego a la vista (sesion duplicada, ban, Telegram caducado) no se tapa con este aviso.
+    var ve0 = document.getElementById('v-error');
+    if (!cg || cg.style.display === 'none' || document.hidden || rv || (ve0 && ve0.classList.contains('on'))) { desde = Date.now(); return; }
+    if (window.__dqProg !== ultimo) { ultimo = window.__dqProg; desde = Date.now(); return; }
+    if (!avisado && Date.now() - desde > 25000) {
+      avisado = true;
+      caja('La carga está tardando', 'El mundo 3D no termina de cargar. Puedes reintentar o jugar con el mismo duende en CLASSIC (2D).', [recargar, aClassic, ['Seguir esperando', function (v) { v.remove(); avisado = false; desde = Date.now(); }]]);
+      var ve = document.getElementById('dq-red'); if (ve) ve.dataset.espera = '1';
+    }
+  }, 2500);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', revisarGL); else revisarGL();
+})();
+</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=325" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=324">
-<link rel="modulepreload" href="/mmo/js/data.js?v=324">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=324">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=324">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=324">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=324">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=324">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=325">
+<link rel="modulepreload" href="/mmo/js/data.js?v=325">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=325">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=325">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=325">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=325">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=325">
 <style>
 :root{--bg:#0a0418;--panel:rgba(14,9,30,.86);--borde:rgba(160,140,255,.22);--txt:#f2efff;--txt2:#b8b0d8;--txt3:#7d7699;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;--oro:#ffd84a;--pri:#2563eb;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -199,6 +266,9 @@ input.nombre{width:100%;padding:12px;border-radius:8px;border:1px solid var(--bo
 #combo i{width:10px;height:10px;border-radius:50%;background:#ffe600;box-shadow:0 0 4px #ffe600;}
 #auras{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;font:600 10px var(--sans);}
 #mundial{margin-top:4px;font:700 11px var(--sans);color:#ffb48a;max-width:220px;}
+/* Pildora del evento de temporada (data TEMPORADAS): objeto, meta y dias que quedan. Tambien en movil. */
+#temp3{display:inline-block;margin-top:4px;padding:1px 7px;border-radius:9px;border:1px solid currentColor;background:rgba(0,0,0,.4);font:700 10px/14px var(--sans);white-space:nowrap;pointer-events:auto;cursor:pointer;}
+#temp3:empty{display:none;}
 #auras span{padding:2px 5px;border-radius:5px;background:rgba(124,58,237,.35);border:1px solid rgba(192,132,252,.4);}
 .acc.bloq{opacity:.35;}
 .acc .lv{position:absolute;left:0;right:0;bottom:2px;font:700 9px var(--sans);color:var(--warn);text-align:center;}
@@ -245,7 +315,7 @@ body.movil #barra .acc img{width:24px;height:24px;}
 body.movil #acc-atk{display:none;}
 body.movil #tactil{bottom:calc(126px + env(safe-area-inset-bottom));grid-template-columns:repeat(3,54px);gap:6px;}
 body.movil #tactil button{width:54px;height:54px;}
-body.movil #joy{bottom:124px;height:calc(55% - 124px);}
+body.movil #joy{bottom:calc(66px + env(safe-area-inset-bottom));height:calc(55% - 66px - env(safe-area-inset-bottom));}   /* justo sobre la barra de acciones: sin franja muerta (v325) */
 /* El joystick por debajo de los paneles (antes se tragaba los toques) */
 body.movil #joy{z-index:1;}
 body.movil .caja,body.movil #tactil{z-index:2;}
@@ -282,25 +352,7 @@ body.movil #botones:not(.abierto) #b-libro,body.movil #botones:not(.abierto) #b-
 body.compacto #botones:not(.abierto) #b-libro,body.compacto #botones:not(.abierto) #b-pase,body.compacto #botones:not(.abierto) #b-amigos{display:none;}
 #b-mas.aviso::after{content:'';position:absolute;top:3px;right:3px;width:8px;height:8px;border-radius:50%;background:#ff4d6d;box-shadow:0 0 6px #ff4d6d;}
 #b-mas{position:relative;}
-/* Movil en horizontal: menu arriba, botones de accion sin taparse, ventanas a toda la altura y respeto del notch lateral */
-@media (orientation:landscape) and (max-height:500px){
- body.movil #mini{right:calc(8px + env(safe-area-inset-right));}
- body.movil #mini canvas{width:84px;height:84px;}
- body.movil #botones{top:calc(6px + env(safe-area-inset-top));right:calc(112px + env(safe-area-inset-right));max-width:none;grid-template-columns:repeat(7,40px);}
- body.movil #botones .bt{width:40px;height:40px;}
- body.movil #tactil{bottom:calc(124px + env(safe-area-inset-bottom));right:calc(10px + env(safe-area-inset-right));grid-template-columns:repeat(4,52px);pointer-events:none;}
- body.movil #tactil button{width:52px;height:52px;pointer-events:auto;}
- body.movil #tactil #t-salto{grid-column:3;grid-row:2;}
- body.movil #tactil #t-atk{grid-column:4;grid-row:2;}
- body.movil #barra{left:auto;right:calc(8px + env(safe-area-inset-right));width:min(320px,42vw);bottom:calc(6px + env(safe-area-inset-bottom));}
- body.movil #joy{left:0;top:calc(200px + env(safe-area-inset-top));bottom:0;height:auto;width:42%;}
- body.movil #marco,body.movil #obj,body.movil #objp,body.movil #grupo3,body.movil #alas,body.movil #misiones{left:calc(8px + env(safe-area-inset-left));}
- body.movil #chat{top:auto;bottom:calc(12px + env(safe-area-inset-bottom));left:calc(8px + env(safe-area-inset-left));width:min(240px,34vw);}
- body.movil #avisos{top:auto;bottom:calc(84px + env(safe-area-inset-bottom));left:calc(8px + env(safe-area-inset-left));max-width:40vw;}
- body.movil #invit3{left:50%;right:auto;width:min(340px,46vw);transform:translateX(-50%);top:calc(104px + env(safe-area-inset-top));}
- body.movil #v-npc.modal,body.movil #v-ayuda.modal,body.movil #v-inv.modal,body.movil #v-libro.modal,body.movil #v-tienda.modal,body.movil #v-logros.modal,body.movil #v-pase.modal,body.movil #v-diario.modal,body.movil #v-herm.modal,body.movil #v-rank.modal,body.movil #v-amigos.modal{padding:calc(8px + env(safe-area-inset-top)) 0 0 calc(6px + env(safe-area-inset-left));}
- body.movil #v-npc .ventana,body.movil #v-ayuda .ventana,body.movil #v-inv .ventana,body.movil #v-libro .ventana,body.movil #v-tienda .ventana,body.movil #v-logros .ventana,body.movil #v-pase .ventana,body.movil #v-diario .ventana,body.movil #v-herm .ventana,body.movil #v-rank .ventana,body.movil #v-amigos .ventana{max-height:calc(100vh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));max-height:calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));width:min(400px,48vw);}
-}
+/* (El bloque del movil en horizontal esta al final del <style>: aqui lo pisaban las reglas de abajo) */
 /* Telegram y movil (25-oct): paneles minimos para que el duende y el mundo se vean.
    Marco estrecho, objetivo arriba al centro, misiones de 2 lineas, minimapa pequeño,
    botones de 32 px y la barra de acciones en una sola fila. */
@@ -384,6 +436,39 @@ button{-webkit-tap-highlight-color:transparent;}
 .heredar-caja button{display:block;width:100%;min-height:52px;margin-top:10px;padding:10px 12px;border-radius:12px;font:700 15px var(--sans);cursor:pointer;overflow-wrap:anywhere;}
 .heredar-si{border:0;background:var(--pri);color:#fff;}
 .heredar-no{border:1px solid var(--borde);background:rgba(255,255,255,.06);color:var(--txt);}
+/* Tienda siempre a la vista (v325): 💎 con acento dorado y punto rojo mientras no hayas visto
+   la oferta de bienvenida o te hayan entregado una compra que aun no viste (mundo.js, puntoTienda) */
+#b-premium{position:relative;background:linear-gradient(135deg,rgba(255,216,74,.38),rgba(234,179,8,.14));box-shadow:inset 0 0 0 1px rgba(255,216,74,.75),0 0 8px rgba(255,216,74,.25);}
+#b-premium:hover{background:linear-gradient(135deg,rgba(255,216,74,.55),rgba(234,179,8,.24));}
+#b-premium.aviso::after{content:'';position:absolute;top:2px;right:2px;width:8px;height:8px;border-radius:50%;background:#ff4d6d;box-shadow:0 0 6px #ff4d6d;}
+/* El nombre de la zona nunca se mete bajo el minimapa ni el menu */
+#titulo-zona{max-width:calc(100vw - 180px);}
+/* Movil en vertical: el nombre de la zona baja bajo el menu y los avisos (a 17% quedaba debajo del menu) */
+@media (orientation:portrait){body.movil #titulo-zona,body.compacto #titulo-zona{top:31%;max-width:calc(100vw - 32px);}}
+/* Movil en horizontal (al final del <style> para ganar a las reglas del movil; antes el menu bajaba
+   a 126 px y tapaba VOLAR/MONTAR): menu arriba a la derecha junto al minimapa, botones de accion
+   sobre la barra, joystick bajo los paneles, avisos arriba al centro y respeto del notch (v325) */
+@media (orientation:landscape) and (max-height:500px){
+ body.movil #mini{top:calc(6px + env(safe-area-inset-top));right:calc(8px + env(safe-area-inset-right));}
+ body.movil #mini canvas{width:72px;height:72px;}
+ body.movil #botones{top:calc(6px + env(safe-area-inset-top) + var(--tg-top,0px));right:calc(100px + env(safe-area-inset-right));max-width:none;grid-template-columns:repeat(4,36px);gap:3px;padding:3px;}
+ body.movil #botones.abierto{grid-template-columns:repeat(8,36px);}
+ body.movil #botones .bt{width:36px;height:36px;font-size:14px;}
+ body.movil #tactil{bottom:calc(64px + env(safe-area-inset-bottom));right:calc(10px + env(safe-area-inset-right));grid-template-columns:repeat(4,52px);gap:6px;pointer-events:none;}
+ body.movil #tactil button{width:52px;height:52px;pointer-events:auto;}
+ body.movil #tactil #t-salto{grid-column:3;grid-row:2;}
+ body.movil #tactil #t-atk{grid-column:4;grid-row:2;}
+ body.movil #barra{left:auto;right:calc(8px + env(safe-area-inset-right));width:min(320px,42vw);bottom:calc(6px + env(safe-area-inset-bottom));}
+ body.movil #joy{left:0;top:calc(90px + env(safe-area-inset-top));bottom:0;height:auto;width:42%;}
+ body.movil #marco,body.movil #objp,body.movil #grupo3,body.movil #alas,body.movil #misiones{left:calc(8px + env(safe-area-inset-left));}
+ body.movil #obj{left:calc(164px + env(safe-area-inset-left));transform:none;width:min(140px,24vw);}
+ body.movil #chat{top:auto;bottom:calc(12px + env(safe-area-inset-bottom));left:calc(8px + env(safe-area-inset-left));width:min(240px,34vw);}
+ body.movil #avisos{left:50%;right:auto;transform:translateX(-50%);top:calc(56px + env(safe-area-inset-top) + var(--tg-top,0px));bottom:auto;width:min(250px,34vw);max-width:none;}
+ body.movil #titulo-zona{top:22%;}
+ body.movil #invit3{left:50%;right:auto;width:min(340px,46vw);transform:translateX(-50%);top:calc(104px + env(safe-area-inset-top));}
+ body.movil #v-npc.modal,body.movil #v-ayuda.modal,body.movil #v-inv.modal,body.movil #v-libro.modal,body.movil #v-tienda.modal,body.movil #v-logros.modal,body.movil #v-pase.modal,body.movil #v-diario.modal,body.movil #v-herm.modal,body.movil #v-rank.modal,body.movil #v-amigos.modal{padding:calc(8px + env(safe-area-inset-top)) 0 0 calc(6px + env(safe-area-inset-left));}
+ body.movil #v-npc .ventana,body.movil #v-ayuda .ventana,body.movil #v-inv .ventana,body.movil #v-libro .ventana,body.movil #v-tienda .ventana,body.movil #v-logros .ventana,body.movil #v-pase .ventana,body.movil #v-diario .ventana,body.movil #v-herm .ventana,body.movil #v-rank .ventana,body.movil #v-amigos .ventana{max-height:calc(100vh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));max-height:calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));}
+}
 </style>
 </head>
 <body>
@@ -406,6 +491,7 @@ button{-webkit-tap-highlight-color:transparent;}
   <div id="combo"></div>
   <div id="auras"></div>
   <div id="mundial"></div>
+  <div id="temp3" role="button" title="Evento de temporada"></div>
 </div>
 <div class="caja" id="grupo3"></div>
 <div class="caja" id="objp">
@@ -436,11 +522,11 @@ button{-webkit-tap-highlight-color:transparent;}
 <!-- Movil: "⋯" despliega los botones .extra y se recogen al elegir uno (en linea: no depende de la cache de mundo.js) -->
 <div class="caja" id="botones" onclick="if(event.target.closest('#b-mas'))this.classList.toggle('abierto');else if(event.target.closest('.bt'))this.classList.remove('abierto')">
   <button class="bt" id="b-inv" title="Inventario (I)">🎒</button>
+  <button class="bt" id="b-premium" title="Tienda: skins, alas y packs" aria-label="Tienda">💎</button>
   <button class="bt" id="b-libro" title="Habilidades y talentos (P)">📖</button>
   <button class="bt extra" id="b-logros" title="Logros (L)">🏆</button>
-  <button class="bt extra" id="b-premium" title="Skins premium">💎</button>
   <button class="bt extra" id="b-look" title="Apariencia (cara, cuerpo, altura y pelo)">🪞</button>
-  <button class="bt" id="b-mapa" title="Mapa del mundo (M)">🗺</button>
+  <button class="bt extra" id="b-mapa" title="Mapa del mundo (M)">🗺</button>
   <button class="bt extra" id="b-herm" title="Hermandad">🛡</button>
   <button class="bt extra" id="b-rank" title="Ranking">🏅</button>
   <button class="bt" id="b-pase" title="Pase de temporada (premios gratis)">🎟</button>
@@ -495,6 +581,7 @@ button{-webkit-tap-highlight-color:transparent;}
   <h2>HAS CAÍDO</h2>
   <p id="muerte-txt">Vuelve al pueblo para seguir.</p>
   <button class="btn" id="b-revivir" style="width:100%">Revivir en el pueblo</button>
+  <button class="btn sec" id="b-revivir-pociones" style="width:100%;margin-top:8px">🧪 Revivir en el pueblo y comprar pociones</button>
 </div></div>
 
 <div class="modal" id="v-npc"><div class="ventana">
@@ -570,6 +657,6 @@ button{-webkit-tap-highlight-color:transparent;}
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script src="/js/config.js"></script>
-<script type="module" src="/mundo/js/mundo.js?v=324"></script>
+<script type="module" src="/mundo/js/mundo.js?v=325"></script>
 </body>
 </html>

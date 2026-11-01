@@ -141,7 +141,16 @@ function claveAzar() {
 }
 
 // Botones del aviso de un pedido pagado al dueño (el bot los atiende).
-const botonesPedido = codigo => [[{ text: '✅ Entregar', callback_data: 'mmoent:' + codigo }, { text: '❌ Anular', callback_data: 'mmoanu:' + codigo }]];
+// Segunda fila: avisar al jugador de cuando llega (plantilla, sin escribir nada).
+const botonesPedido = codigo => [
+  [{ text: '✅ Entregar', callback_data: 'mmoent:' + codigo }, { text: '❌ Anular', callback_data: 'mmoanu:' + codigo }],
+  [{ text: '⏳ En 1 h', callback_data: 'mmo1h:' + codigo }, { text: '⏳ Mañana', callback_data: 'mmoman:' + codigo }],
+];
+// Recordatorios al dueño de un pedido pagado y sin entregar (solo avisos: la
+// entrega sigue siendo manual). A los 30 min, 2 h y 6 h del pago.
+const RECORDAR_PEDIDO_MS = [30 * 60000, 2 * 3600000, 6 * 3600000];
+// Skins pagadas (Supabase) por tgId: se dan al entrar sin esperar a la red.
+const SKINS_CACHE_MS = 10 * 60000;
 
 // Doble salto: 11,5²/1,2 + 10²/1,2 ≈ 194 px; margen por los fotogramas.
 const MAX_SALTO = 215;
@@ -268,8 +277,8 @@ export class MmoWorld {
     setTimeout(() => { if (!s.c && !s.cerrado) this.expulsar(s, 'Sin identificación'); }, 30000);
   }
 
-  expulsar(s, motivo) {
-    this.enviar(s, { t: 'err', m: motivo, fatal: true });
+  expulsar(s, motivo, extra) {
+    this.enviar(s, { t: 'err', m: motivo, fatal: true, ...(extra || {}) });
     try { s.ws.close(4000, 'fin'); } catch (e) {}
     this.cerrar(s);
   }
@@ -517,7 +526,7 @@ export class MmoWorld {
     // Misma cuenta abierta en otra pestaña: la vieja se cierra.
     const vieja = this.porUid.get(uid);
     // Antes de guardarla se aplica la regla del Abismo: abrir otra pestaña no es una huida gratis.
-    if (vieja && vieja !== s) { this.caidaPorDesconexion(vieja); await this.guardar(vieja); vieja.noGuardar = true; this.expulsar(vieja, 'Tu cuenta se abrió en otro dispositivo'); }
+    if (vieja && vieja !== s) { this.caidaPorDesconexion(vieja); await this.guardar(vieja); vieja.noGuardar = true; this.expulsar(vieja, 'Tu duende se abrió en otro dispositivo o pestaña.', { dup: 1 }); }
 
     let c = await this.state.storage.get('c:' + uid);
     let heredado = false;
@@ -616,12 +625,14 @@ export class MmoWorld {
     const tgDe = tgPropio ? c.uid.slice(3) : c.vinc && c.vinc.tg ? c.vinc.tg.slice(3) : null;
     if (tgDe) pagadas = { ...(pagadas || {}), tgId: tgDe };
     // Skins pagadas con dinero real en el juego principal: se regalan aqui.
-    const extra = pagadas ? await this.skinsPagadas(env, pagadas) : [];
-    const regaladas = extra.filter(k => typeof k === 'string' && Object.hasOwn(SKINS, k) && !c.skins.includes(k));
-    c.skins.push(...regaladas);
-    // Las que llegan por una cuenta de Telegram VINCULADA (no propia) se apuntan:
-    // al desvincularla se retiran (si no, vincular/desvincular las copiaba a infinitos duendes).
-    if (!tgPropio && tgDe && regaladas.length) c.skinsTg = [...new Set([...(c.skinsTg || []), ...regaladas])];
+    // Ya no se espera a Supabase para entrar (si se colgaba, el "bienvenido"
+    // tardaba lo que tardara): con la cache de 10 min por tgId se dan al
+    // momento; si no, se piden en segundo plano (tope 2,5 s) y llegan con un aviso.
+    const cacheSk = pagadas && pagadas.tgId && this.cacheSkins ? this.cacheSkins.get(pagadas.tgId) : null;
+    const edadSk = cacheSk ? Date.now() - cacheSk.t : Infinity;
+    const regaladas = edadSk < SKINS_CACHE_MS ? this.darSkinsPagadas(c, cacheSk.l, tgPropio, tgDe) : [];
+    // Pasado 1 min se vuelve a preguntar igual (una skin recien entregada no espera 10 min).
+    const pSkins = pagadas && edadSk > 60000 ? Promise.race([this.skinsPagadas(env, pagadas), new Promise(r => setTimeout(() => r(null), 2500))]) : null;
 
     // Antes de la comprobacion de abajo: desde s.c=c hasta porUid.set no puede haber awaits
     // (si se cerrara ahi, cerrar() no lo quita de porUid y quedaria de fantasma).
@@ -682,6 +693,16 @@ export class MmoWorld {
 
     c.en3d = m.modo === '3d';   // las tareas que solo existen en CLASSIC (expediciones, Torre) no le tocan en ORIGINS
     this.enviar(s, { t: 'bienvenido', id: s.id, yo: this.datosPropios(s), nuevo, heredado, regaladas, on: this.contarOnline() });
+    // Las skins pagadas que llegan despues (Supabase lento o sin cache).
+    if (pSkins) pSkins.then(l => {
+      if (!l || s.cerrado || s.c !== c) return;
+      const nuevas = this.darSkinsPagadas(c, l, tgPropio, tgDe);
+      if (!nuevas.length) return;
+      s.sucio = true;
+      this.enviar(s, { t: 'toast', m: '🎁 Skins de tu cuenta desbloqueadas: ' + nuevas.map(k => SKINS[k].nombre || k).join(', '), ok: true });
+      this.actualizarYo(s);
+      this.refrescarApariencia(s);
+    }).catch(e => console.error('[MMO skinsPagadas]', e));
     if (login) this.enviar(s, { t: 'login', ...login });
     const tp = temporadaDe();
     if (ambulanteActivo() && c.nivel >= 15) this.enviar(s, { t: 'toast', m: 'Mercader ambulante en el pueblo este fin de semana: colores y una mascota exclusivos (pestaña «Ambulante»).', ok: true });
@@ -718,19 +739,34 @@ export class MmoWorld {
     if (!this.bucle) this.bucle = setInterval(() => this.tick(), TICK_MS);
   }
 
+  // Da al personaje las skins de la lista que aun no tiene; devuelve las nuevas.
+  darSkinsPagadas(c, extra, tgPropio, tgDe) {
+    const regaladas = [...new Set(extra)].filter(k => typeof k === 'string' && Object.hasOwn(SKINS, k) && !c.skins.includes(k));
+    c.skins.push(...regaladas);
+    // Las que llegan por una cuenta de Telegram VINCULADA (no propia) se apuntan:
+    // al desvincularla se retiran (si no, vincular/desvincular las copiaba a infinitos duendes).
+    if (!tgPropio && tgDe && regaladas.length) c.skinsTg = [...new Set([...(c.skinsTg || []), ...regaladas])];
+    return regaladas;
+  }
+  // null si Supabase fallo (se cuenta en fallosSupabase, se ve en el Modo Dios).
   async skinsPagadas(env, p) {
     if (!env.HAS_SERVICE_KEY) return [];
     try {
       if (p.tgId) {
         const d = await supabaseQuery(env, `skin_purchases?telegram_id=eq.${encodeURIComponent(p.tgId)}&select=skin_id`);
-        return Array.isArray(d) ? d.map(r => r.skin_id) : [];
+        if (!Array.isArray(d)) { this.fallosSupabase = (this.fallosSupabase || 0) + 1; return null; }
+        const l = d.map(r => r.skin_id);
+        this.cacheSkins = this.cacheSkins || new Map();
+        this.cacheSkins.set(p.tgId, { t: Date.now(), l });
+        if (this.cacheSkins.size > 3000) for (const [k, v] of this.cacheSkins) if (Date.now() - v.t > SKINS_CACHE_MS) this.cacheSkins.delete(k);
+        return l;
       }
       // Cuentas web: ya NO se regalan por profiles.wallet_solana. Ese campo lo
       // escribe el propio usuario sin probar que la wallet es suya, y bastaba
       // con poner la de un comprador (se ve en Solscan) para llevarse sus
       // skins (auditoria del 22-oct). Las ya regaladas siguen en el
       // personaje; las compras web nuevas las entrega el dueño (Modo Dios).
-    } catch (e) {}
+    } catch (e) { this.fallosSupabase = (this.fallosSupabase || 0) + 1; return null; }
     return [];
   }
 
@@ -912,6 +948,80 @@ export class MmoWorld {
     let sobran = this.pedidos.length - 300;
     if (sobran > 0) this.pedidos = this.pedidos.filter(x => !(sobran > 0 && (x.estado === 'entregado' || x.estado === 'anulado' || x.estado === 'vencido') && sobran-- > 0));
     await this.state.storage.put('pedidos', this.pedidos);
+    await this.alarmaPedidos();
+  }
+  // Cuando toca el proximo recordatorio al dueño de un pedido pagado sin
+  // entregar (0 si ninguno). pd.recordado = cuantos de RECORDAR_PEDIDO_MS ya
+  // se enviaron; pd.recordarEn = el que pidio el dueño con "⏳ En 1 h / Mañana".
+  proximoRecordatorioPedido() {
+    let prox = 0;
+    for (const x of this.pedidos) {
+      if ((x.estado !== 'pagado' && x.estado !== 'por_verificar') || !x.pagadoEn) continue;
+      const t = x.recordarEn || ((x.recordado || 0) < RECORDAR_PEDIDO_MS.length ? x.pagadoEn + RECORDAR_PEDIDO_MS[x.recordado || 0] : 0);
+      if (t && (!prox || t < prox)) prox = t;
+    }
+    return prox;
+  }
+  // Adelanta la alarma del objeto (la de cada hora, retencion.js) si un
+  // recordatorio toca antes. alarm() la vuelve a poner con programarAlarma().
+  async alarmaPedidos() {
+    const st = this.state.storage;
+    const prox = this.proximoRecordatorioPedido();
+    if (!prox || !st.setAlarm || !st.getAlarm) return;
+    try {
+      const actual = await st.getAlarm();
+      if (!actual || actual > prox) await st.setAlarm(Math.max(prox, Date.now() + 5000));
+    } catch (e) { console.error('[MMO alarma pedidos]', e); }
+  }
+  // Lo llama alarm(): avisa al dueño (solo a el) de los pedidos que siguen sin
+  // entregar. Nunca entrega nada: los botones son los mismos del primer aviso.
+  async recordarPedidos() {
+    const ahora = Date.now();
+    let n = 0, cambio = false;
+    for (const x of this.pedidos) {
+      if ((x.estado !== 'pagado' && x.estado !== 'por_verificar') || !x.pagadoEn) continue;
+      const r = x.recordado || 0;
+      const pedido = !!x.recordarEn && x.recordarEn <= ahora;
+      const toca = pedido || (!x.recordarEn && r < RECORDAR_PEDIDO_MS.length && ahora >= x.pagadoEn + RECORDAR_PEDIDO_MS[r]);
+      if (!toca) continue;
+      // Pagados hace mas de 24 h sin recordatorio (los de antes de esta version):
+      // se marcan sin mensaje, si no al publicar llegaria una rafaga. Siguen en /pedidos.
+      if (!pedido && ahora - x.pagadoEn > 86400000) { x.recordado = RECORDAR_PEDIDO_MS.length; cambio = true; continue; }
+      if (n >= 5) break;   // tope de mensajes por alarma (subpeticiones: la tanda de avisos ya usa ~40); el resto, en la siguiente
+      n++;
+      // Se marca antes de enviar: aunque falle, no se repite en bucle. Los
+      // tramos que ya pasaron (servidor caido, pedido viejo) no se mandan de golpe.
+      if (pedido) delete x.recordarEn;
+      else { let k = r; while (k < RECORDAR_PEDIDO_MS.length && ahora >= x.pagadoEn + RECORDAR_PEDIDO_MS[k]) k++; x.recordado = k; }
+      cambio = true;
+      const min = Math.round((ahora - x.pagadoEn) / 60000);
+      const hace = min < 90 ? min + ' min' : Math.round(min / 60) + ' h';
+      await this.avisarAdmin(`🔔 *Recordatorio:* el pedido #${x.codigo} sigue sin entregar\n${x.nombre} ($${x.usd}) · pagado hace ${hace}${x.estado === 'por_verificar' ? ' · ⚠️ por verificar' : ''}${pedido ? ' · lo pospusiste' : ''}\n👤 ${String(x.jugador || '').replace(/[^\p{L}\p{N} ]/gu, '')}\n\nEntrégalo: /entregar ${x.codigo} · todos: /pedidos`, botonesPedido(x.codigo));
+    }
+    if (cambio) await this.guardarPedidos();
+  }
+  // "⏳ En 1 h / Mañana" del aviso: al jugador le llega una plantilla y al
+  // dueño se le vuelve a recordar a esa hora. No entrega nada.
+  async posponerPedido(b) {
+    const pd = this.buscarPedido(b.codigo);
+    if (!pd || (pd.estado !== 'pagado' && pd.estado !== 'por_verificar')) return { ok: false, error: 'No hay un pedido pagado con ese código.' };
+    const ahora = Date.now();
+    let cuando;
+    if (b.cuando === 'man') {
+      // Mañana a las 9:00 de Perú (14:00 UTC), al menos 6 h despues.
+      cuando = Math.floor(ahora / 86400000) * 86400000 + 14 * 3600000;
+      while (cuando < ahora + 6 * 3600000) cuando += 86400000;
+    } else cuando = ahora + 3600000;
+    pd.recordarEn = cuando;
+    pd.recordado = RECORDAR_PEDIDO_MS.length;   // ya no los automaticos: solo el que pidio
+    // Al jugador, como mucho un aviso cada 30 min (dos toques no le mandan dos).
+    const avisar = ahora - (pd.esperaAvisoT || 0) > 30 * 60000;
+    if (avisar) pd.esperaAvisoT = ahora;
+    await this.guardarPedidos();
+    if (avisar) await this.avisarJugador(pd.uid, b.cuando === 'man'
+      ? `⏳ Tu compra "${pd.nombre}" (#${pd.codigo}) está confirmada. El Duende te la entrega mañana; te avisamos aquí apenas esté lista. ¡Gracias por tu paciencia!`
+      : `⏳ Tu compra "${pd.nombre}" (#${pd.codigo}) está confirmada. El Duende te la entrega en aproximadamente 1 hora; te avisamos aquí apenas esté lista.`);
+    return { ok: true, pedido: { codigo: pd.codigo, nombre: pd.nombre, jugador: pd.jugador }, cuando, avisado: avisar };
   }
   transparencia() {
     const pagados = this.retiros.filter(x => x.estado === 'pagado');
@@ -947,6 +1057,8 @@ export class MmoWorld {
       codigo: Math.random().toString(36).slice(2, 8).toUpperCase(), uid: c.uid, jugador: c.nombre,
       paquete: pq.id, nombre: pq.nombre, usd: pq.usd, metodo, creado: Date.now(), estado: 'esperando_pago',
     };
+    // De donde vino la compra (boton TIENDA del HUD, tienda de oro, NPC o enlace del bot): solo informativo para el dueño.
+    if (['hud', 'oro', 'npc', 'bot'].includes(m.via)) pd.via = m.via;
     if (metodo === 'stars') {
       pd.stars = estrellasDe(pq.usd);
       let link = null;
@@ -1289,12 +1401,23 @@ export class MmoWorld {
 
   // botones: teclado en linea opcional (p. ej. Entregar / Anular un pedido).
   // plano: texto que escribio un jugador (reportes): sin Markdown y sin vista previa de enlaces.
+  // Comprueba la respuesta de Telegram: reintenta y, si el Markdown no se
+  // pudo leer (un nombre con _ o *), lo manda en texto plano. Devuelve si llego.
   async avisarAdmin(texto, botones, plano) {
-    try {
-      const env = getEnv({ env: this.env });
-      const formato = plano ? { link_preview_options: { is_disabled: true } } : { parse_mode: 'Markdown' };
-      if (env.BOT_TOKEN && env.ADMIN_TG_ID) await tg(env.BOT_TOKEN, 'sendMessage', { chat_id: env.ADMIN_TG_ID, text: texto, ...formato, ...(botones ? { reply_markup: { inline_keyboard: botones } } : {}) });
-    } catch (e) { console.error('[MMO avisarAdmin]', e); }
+    const env = getEnv({ env: this.env });
+    if (!env.BOT_TOKEN || !env.ADMIN_TG_ID) return false;
+    for (let i = 0; i < 3; i++) {
+      try {
+        const formato = plano ? { link_preview_options: { is_disabled: true } } : { parse_mode: 'Markdown' };
+        const r = await tg(env.BOT_TOKEN, 'sendMessage', { chat_id: env.ADMIN_TG_ID, text: texto, ...formato, ...(botones ? { reply_markup: { inline_keyboard: botones } } : {}) });
+        if (r && r.ok) return true;
+        console.error('[MMO avisarAdmin]', r && r.description);
+        if (r && r.error_code === 400 && !plano) { plano = true; texto = texto.replace(/[*`]/g, ''); continue; }
+        if (r && r.error_code === 400) return false;   // reintentar no lo arregla
+      } catch (e) { console.error('[MMO avisarAdmin]', e); }
+      if (i < 2) await new Promise(res => setTimeout(res, 1500));
+    }
+    return false;
   }
   async avisarJugador(uid, texto) {
     const s = this.porUid.get(uid);
@@ -1332,7 +1455,9 @@ export class MmoWorld {
       return json({ ok });
     }
     if (accion === 'pedidoPagado') return json(await this.pedidoPagadoStars(b));
-    if (accion === 'pedidos') return json({ ok: true, pedidos: this.pedidos.filter(x => x.estado === 'pagado' || x.estado === 'por_verificar') });
+    // cargos: los de Stars del MMO, para que /pedidos no los cuente como compras del arcade.
+    if (accion === 'pedidos') return json({ ok: true, pedidos: this.pedidos.filter(x => x.estado === 'pagado' || x.estado === 'por_verificar'), cargos: this.pedidos.filter(x => x.charge).map(x => x.charge) });
+    if (accion === 'posponer') return json(await this.posponerPedido(b));
     if (accion === 'ventas') return json(this.resumenVentas());
     // /yo del bot: el personaje de quien escribe (solo el suyo: el bot manda
     // el id de Telegram del remitente).
@@ -1346,6 +1471,15 @@ export class MmoWorld {
       return json({ ok: true, existe: true, en: !!s, n: c.nombre, lv: c.nivel, cl: c.clase || '', oro: c.oro || 0, mton: c.mton || 0,
         torre: this.torreSem(c).max, torreMax: c.torreMax || 0, peces: c.peces || 0, especies: Object.keys(c.especies || {}).length,
         logros: (c.logros || []).length, mazmorras: c.mazmorras || 0, elo: c.elo || 0, exped: ex, racha: (c.login || {}).racha || 0 });
+    }
+    // /start mmo_/m3d_ del bot: solo nombre y nivel de quien invita (publicos), por su codigo.
+    if (accion === 'invitador') {
+      const cod = String(b.ref || '');
+      if (!/^[a-z0-9]{6}$/.test(cod)) return json({ ok: false });
+      const uid = await this.state.storage.get('ref:' + cod);
+      const s = uid && this.porUid.get(uid);
+      const c = uid ? (s && s.c ? s.c : await this.state.storage.get('c:' + uid)) : null;
+      return json(c ? { ok: true, n: c.nombre || '', lv: c.nivel || 1 } : { ok: false });
     }
     // Rankings publicos de la semana (solo nombres y marcas) para /topmmo del bot.
     if (accion === 'tops') {
@@ -2183,6 +2317,7 @@ export class MmoWorld {
     // jefes quedan fuera (su embestida avisada es el peligro de verdad).
     if (!(fuente && fuente.jefe)) real = Math.min(real, Math.ceil(s.st.maxHp * 0.3));
     if (this.aura(s, 'muro')) real = Math.round(real * (1 - REDUCE_MURO));
+    if (this.aura(s, 'bendicion')) real = Math.round(real * 0.75);   // Bendicion del Duende (ORIGINS, tras 3 muertes seguidas)
     if (this.aura(s, 'supresion')) real = Math.round(real * (1 - REDUCE_SUPRESION));
     if (this.elixir(s, 'elixirP')) real = Math.round(real * 0.9);
     if (this.elixir(s, 'sudado')) real = Math.round(real * 0.95);
@@ -2203,7 +2338,7 @@ export class MmoWorld {
     const mo = fuente && fuente.id ? (s.m3 ? this.iniciar3d().mons.get(fuente.id) : this.mundoDe(s).mons.get(fuente.id)) : null;
     s.golpes = (s.golpes || []).filter(x => ahora - x.t < 12000).slice(-4);
     const atacante = pvp ? this.sesiones.get(pvp) : null;
-    s.golpes.push({ t: ahora, n: mo ? MONSTRUOS[mo.k].nombre : atacante && atacante.c ? atacante.c.nombre : 'Daño', nv: mo ? (mo.nv || MONSTRUOS[mo.k].nivel) : atacante && atacante.c ? atacante.c.nivel : 0, d: real });
+    s.golpes.push({ t: ahora, n: mo ? MONSTRUOS[mo.k].nombre : atacante && atacante.c ? atacante.c.nombre : 'Daño', nv: mo ? (mo.nv || MONSTRUOS[mo.k].nivel) : atacante && atacante.c ? atacante.c.nivel : 0, d: real, vi: mo && mo.max > 0 ? Math.max(1, Math.ceil(mo.hp / mo.max * 100)) : undefined });
     if (!pct && !duelo && !pvp) s.inv = ahora + INVULNERABLE_GOLPE_MS;
     s.golpeT = ahora;
     s.combateT = ahora;
@@ -2230,7 +2365,20 @@ export class MmoWorld {
     this.limpiarAuras(s);
     if (s.m3) this.olvidar3d(s); else this.olvidar(s);
     this.aClave(s.k, { t: 'pm', p: s.id });
-    this.enviar(s, { t: 'muerte', golpes: (s.golpes || []).map(x => ({ n: x.n, nv: x.nv, d: x.d })), pw: s.c.pw.pocion || 0, inst: !!(this.mundo[s.k] && this.mundo[s.k].inst), rep: costoReparacion(s.c.nivel), pvp: pvp ? 1 : undefined });
+    // ORIGINS: 3 muertes en 10 min (sin PvP) cortan la espiral: se revive sin perder XP
+    // y con la Bendicion del Duende (una vez cada 30 min; bendT se guarda en el personaje).
+    const ahora = Date.now(), c = s.c;
+    s.espiral = false;
+    if (s.m3 && !pvp) {
+      s.muertesT = (s.muertesT || []).filter(t => ahora - t < 600000);
+      s.muertesT.push(ahora);
+      s.espiral = s.muertesT.length >= 3 && ahora > (c.bendT || 0);
+    }
+    // Lo que costara revivir (lo mismo que descuentan revivir y revivir3d).
+    const xpPerdida = c.nivel < 10 || (s.m3 && (pvp || s.espiral)) ? 0 : Math.min(c.xp || 0, Math.round(xpParaSubir(c.nivel) * 0.05));
+    const gs = s.golpes || [], ult = gs[gs.length - 1];   // el ultimo golpe: a quien le quedaba vida
+    this.enviar(s, { t: 'muerte', golpes: (s.golpes || []).map(x => ({ n: x.n, nv: x.nv, d: x.d })), pw: c.pw.pocion || 0, inst: !!(this.mundo[s.k] && this.mundo[s.k].inst), rep: costoReparacion(c.nivel), pvp: pvp ? 1 : undefined,
+      xp: xpPerdida, novato: c.nivel < 10 ? 1 : undefined, espiral: s.espiral ? 1 : undefined, vi: ult && ult.vi ? ult.vi : undefined, vn: ult && ult.vi ? ult.n : undefined });
     s.golpes = [];
     this.guardar(s);
   }

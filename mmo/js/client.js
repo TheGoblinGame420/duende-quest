@@ -17,13 +17,20 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra,
-} from './data.js?v=324';
+} from './data.js?v=325';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
 // reventar al cargar y dejar la pantalla de carga colgada.
 const $ = id => document.getElementById(id) || (() => { const e = document.createElement(id === 'mini' ? 'canvas' : 'div'); e.id = id; return e; })();
 const A = '/assets/';
+// localStorage puede no existir o lanzar (Safari privado, WebView con datos bloqueados):
+// sin este envoltorio el modulo moria al cargar y la pantalla de carga quedaba colgada.
+const LS = {
+  getItem(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  setItem(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  removeItem(k) { try { localStorage.removeItem(k); } catch (e) {} },
+};
 // El HUD se repinta cada fotograma: tocar el DOM aunque el valor no cambie
 // obliga al navegador a recalcular estilos 60 veces por segundo. Estas dos
 // solo escriben cuando hay un cambio real.
@@ -33,6 +40,9 @@ function ponCss(el, prop, v) { const k = '_c' + prop; if (el[k] !== v) { el[k] =
 // Fuera, el SDK llena initData con un #tgWebAppData ajeno pegado en un enlace.
 const enTg = !!(window.TelegramWebviewProxy || window.parent !== window || (window.external && 'notify' in window.external));
 const TG = enTg && window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? window.Telegram.WebApp : null;
+// Enlace directo a la tienda: /mmo/#premium o la Mini App con start_param=premium.
+let tiendaAlEntrar = /(^#|&)premium(&|$)/.test(location.hash) || !!(TG && TG.initDataUnsafe && TG.initDataUnsafe.start_param === 'premium');
+let viaTienda = 'npc';   // de donde se abrio la tienda: va en el pedido (hud, oro, npc o bot), solo informativo para el dueño
 if (TG) {
   try { TG.ready(); TG.expand(); TG.disableVerticalSwipes && TG.disableVerticalSwipes(); TG.setHeaderColor && TG.setHeaderColor('#0a0418'); } catch (e) {}
   // Dentro de Telegram, "volver" cierra primero la ventana abierta (tienda,
@@ -47,6 +57,9 @@ if (TG) {
   if (casa) casa.href = '/telegram/index.html' + (location.hash || '');
   // El mundo 3D tambien necesita la sesion de Telegram (va en el hash).
   document.querySelectorAll('a[href="/mundo/"]').forEach(x => { x.href = '/mundo/' + (location.hash || ''); });
+  // Y los enlaces al 3D que se pintan despues: al tocarlos se les pone el hash.
+  const hashTg = location.hash || '';
+  if (hashTg) document.addEventListener('click', ev => { const a = ev.target && ev.target.closest && ev.target.closest('a[href^="/mundo/"]'); if (a && !a.getAttribute('href').includes('#')) a.setAttribute('href', a.getAttribute('href') + hashTg); }, true);
 }
 
 // Aviso del mundo 3D al entrar, hasta que se visite una vez (el 3D guarda
@@ -137,6 +150,7 @@ function ajustarVista() {
   // Pantalla angosta (movil en vertical): el marco del objetivo baja bajo
   // el del jugador y el minimapa se achica.
   hud.classList.toggle('estrecho', w < 600);
+  hud.classList.toggle('muyestrecho', w < 380);   // movil en horizontal: el HUD mide ~360 px aunque la pantalla sea ancha (v325)
 }
 addEventListener('resize', ajustarVista);
 // La barra de abajo (#pie) toma su alto final despues del primer ajuste: si
@@ -217,7 +231,7 @@ function precalentarTintes() {
 }
 
 // ── SONIDO ──
-let sonido = localStorage.getItem('dq_mmo_sonido') !== '0';
+let sonido = LS.getItem('dq_mmo_sonido') !== '0';
 // Efectos con Web Audio: se decodifican una vez y cada golpe es un nodo
 // barato. Con <audio> (currentTime = 0 + play() en cada golpe) el iPhone y
 // varios Android congelaban el hilo principal un instante en cada impacto:
@@ -293,7 +307,7 @@ function pintarSonido() {
   $('b-sonido').setAttribute('aria-label', sonido ? 'Silenciar' : 'Activar sonido');
 }
 $('b-sonido').onclick = () => {
-  sonido = !sonido; localStorage.setItem('dq_mmo_sonido', sonido ? '1' : '0'); pintarSonido();
+  sonido = !sonido; LS.setItem('dq_mmo_sonido', sonido ? '1' : '0'); pintarSonido();
   if (sonido) sonarMusica(); else musica.pause();
 };
 pintarSonido();
@@ -359,21 +373,26 @@ async function autenticacion() {
   // Si hubo partida de invitado en este dispositivo, su token viaja tambien:
   // la cuenta nueva puede heredar ese personaje, pero solo si el jugador lo
   // elige en el aviso (heredarResp); el servidor nunca lo pasa en silencio.
-  const previo = localStorage.getItem('dq_mmo_tok');
+  const previo = LS.getItem('dq_mmo_tok');
   const inv0 = /^[a-f0-9]{32}$/.test(previo || '') ? previo : undefined;
-  if (TG && !forzarInvitado) return { auth: { k: 'tg', d: TG.initData }, inv: inv0, heredar: heredarResp };
+  if (TG && !forzarInvitado) {
+    // La sesion de Telegram (initData) caduca a las 24 h: a las 23 h se avisa de reabrir desde el bot.
+    const ad = +((TG.initDataUnsafe && TG.initDataUnsafe.auth_date) || 0);
+    if (ad && Date.now() / 1000 - ad > 23 * 3600 && !autenticacion.avisoTg) { autenticacion.avisoTg = 1; setTimeout(() => aviso('Tu sesión de Telegram caduca pronto. Cierra el juego y vuelve a abrirlo desde el bot para seguir con tu duende.'), 3000); }
+    return { auth: { k: 'tg', d: TG.initData }, inv: inv0, heredar: heredarResp };
+  }
   const tok = forzarInvitado ? null : await tokenWeb();
   if (tok) return { auth: { k: 'web', tok }, inv: inv0, heredar: heredarResp };
-  let inv = localStorage.getItem('dq_mmo_tok');
+  let inv = LS.getItem('dq_mmo_tok');
   if (!/^[a-f0-9]{32}$/.test(inv || '')) {
     const b = new Uint8Array(16); crypto.getRandomValues(b);
     inv = [...b].map(x => x.toString(16).padStart(2, '0')).join('');
-    localStorage.setItem('dq_mmo_tok', inv);
+    LS.setItem('dq_mmo_tok', inv);
   }
   let nombreTg = '';
   try { const u = TG && TG.initDataUnsafe && TG.initDataUnsafe.user; if (u) nombreTg = u.username || u.first_name || ''; } catch (e) {}
   soyInvitado = true;
-  return { auth: { k: 'inv', tok: inv }, nombre: localStorage.getItem('dq_mmo_nombre') || nombreTg };
+  return { auth: { k: 'inv', tok: inv }, nombre: LS.getItem('dq_mmo_nombre') || nombreTg };
 }
 
 let _sb = null;
@@ -419,7 +438,10 @@ async function conectar() {
   clearTimeout(timerRec);
   conectando = true;
   let hola;
-  try { hola = await autenticacion(); } finally { conectando = false; }
+  // Un fallo aqui (supabase, almacenamiento) ya no deja el juego sin reintentar.
+  try { hola = await autenticacion(); }
+  catch (e) { console.warn('[MMO] autenticacion', e); timerRec = setTimeout(conectar, 3000); return; }
+  finally { conectando = false; }
   if (ws && ws.readyState <= 1) return;
   const s = new WebSocket(urlWs());
   ws = s;
@@ -454,6 +476,7 @@ function recibir(m) {
       clearTimeout(mostrarInvitacion.t); ponCss($('invitacion'), 'display', 'none');
       setTimeout(() => { if (yo) { revisarBoveda(); revisarNovedades(); } }, 1500);
       miId = m.id; yo = m.yo; online = m.on || 0; reintentos = 0; if (ws) ws._listo = true;
+      try { if (canalJuego) canalJuego.postMessage({ t: 'aqui', n: yo.nombre }); } catch (e) {}
       // Aviso de ORIGINS: al jugador nuevo no se le saca hacia el 3D antes de
       // acabar el tutorial (se le ofrece al terminarlo, en pintarTutorial).
       { let tH = false; try { tH = +(localStorage.getItem('dq_tuto_' + (yo.pid || '')) || 0) >= TUTORIAL.length; } catch (e) {}
@@ -472,7 +495,8 @@ function recibir(m) {
       break;
     case 'mapa': entrarMapa(m); break;
     case 'yo': {
-      const antes = yo; yo = m.yo;
+      const antes = yo; yo = m.yo; puntoTienda();
+      if (tiendaAlEntrar && yo.clase) setTimeout(() => { if (tiendaAlEntrar && yo && !document.querySelector('.modal.on')) { tiendaAlEntrar = false; abrirTiendaHud('bot', true); } }, 1200);   // con otra ventana abierta, se reintenta con el siguiente 'yo'
       if (yo.muerto && !(antes && antes.muerto)) morir();
       if (!yo.muerto) { $('m-muerte').classList.remove('on'); P.muerto = false; }
       if (!antes || antes.clase !== yo.clase || antes.nivel !== yo.nivel) $('acciones').innerHTML = '';
@@ -686,7 +710,7 @@ function recibir(m) {
       break;
     case 'vincOk': aviso('🔗 ¡Cuentas vinculadas! Entrando con ' + m.nombre + '…', 'ok', 4000); setTimeout(() => location.reload(), 1500); break;
     case 'diosModo': if (yo) { yo.diosModo = m.modo; pintarDiosModos(); } break;
-    case 'amigos': pintarAmigos(m); if (presumirPend && m.ref) { presumirPend = false; ofrecerPresumir(presumirTxt); aviso('Enlace preparado. Pulsa «Compartir logro».'); } break;
+    case 'amigos': pintarAmigos(m); if (presumirPend && m.ref) { presumirPend = false; ofrecerPresumir(presumirTxt); aviso('Enlace preparado. Pulsa «Presumir».'); } break;
     case 'muerte': resumenMuerte(m); break;
     case 'nodos': recibirNodos(m.l); break;
     case 'recogido': { const n = nodos.find(x => x.i === m.i); if (n) { n.listo = performance.now() + m.en; for (let k = 0; k < 14; k++) particula(n.x, SUELO - 14, m.tipo === 'hierba' ? '#4ade80' : '#cbd5e1', 3); } sfx('moneda', .3); break; }
@@ -717,6 +741,10 @@ function recibir(m) {
     case 'ranking': pintarRanking(m.r, m.sem, m.finSem, m.des, m.dsem, m.af, m.duel, m.elo, m.torre, m.tmax, m.herm); break;
     case 'heredar': preguntarHeredar(m); break;
     case 'err':
+      // En Telegram no se cae en silencio a un invitado nuevo de Nv 1 (la sesion de mas de 24 h caduca): se pide reabrir.
+      if (m.auth && m.auth !== 'inv' && TG) { fatal = true; mostrarError('Tu sesión de Telegram caducó. Cierra el juego y vuelve a abrirlo desde el bot: entrarás con tu duende.', { tg: true }); break; }
+      // Duende abierto en otra pestaña o dispositivo: se ofrece 'Jugar aquí' o 'Cerrar'; nunca se reconecta solo.
+      if (m.dup) { fatal = true; dormido = false; mostrarError(m.m || 'Tu duende se abrió en otro dispositivo o pestaña.', { dup: true }); break; }
       if (m.auth && m.auth !== 'inv' && !forzarInvitado) {
         // El servidor cierra el socket; onclose reconecta solo, ya como invitado.
         forzarInvitado = true; reintentos = 0;
@@ -1341,6 +1369,27 @@ $('b-ayuda').onclick = () => abrir('m-ayuda');
 { const bn = $('b-novedades'); if (bn) bn.onclick = () => abrirNovedades(); }
 $('b-wallet').onclick = abrirWallet;
 $('h-mton-c').onclick = abrirWallet;
+// Tienda siempre a la vista (v325): Nv 3+ abre las skins (oro y premium), antes directo a la oferta.
+// Punto rojo mientras no se vio la oferta de bienvenida (sin compras) o hay una entrega sin ver.
+// Mismas claves que ORIGINS (mundo.js).
+function puntoTienda() {
+  const bt = $('b-tienda'); if (!bt) return;
+  const ps = (yo && yo.pedidos) || [], ent = ps.filter(x => x.estado === 'entregado').length;
+  let vista = false, entVistas = 0;
+  try { vista = localStorage.getItem('dq_tienda_vista') === '1'; entVistas = +localStorage.getItem('dq_tienda_ent') || 0; } catch (e) {}
+  bt.classList.toggle('aviso', !!yo && ((!ps.length && !vista) || ent > entVistas));
+}
+function abrirTiendaHud(via, soloPremium) {
+  if (!yo) return;
+  sfx('boton', .3);
+  const ent = (yo.pedidos || []).filter(x => x.estado === 'entregado').length;
+  try { localStorage.setItem('dq_tienda_vista', '1'); localStorage.setItem('dq_tienda_ent', String(ent)); } catch (e) {}
+  if (!soloPremium && yo.nivel >= 3) { tabTienda = 'skin'; document.querySelectorAll('[data-tab]').forEach(x => x.classList.toggle('on', x.dataset.tab === 'skin')); abrir('m-tienda'); pintarTienda(); viaTienda = via; }
+  else abrirPremium(via);
+  puntoTienda();
+}
+$('b-tienda').onclick = () => abrirTiendaHud('hud');
+$('monedero').addEventListener('click', e => { if (!e.target.closest('#h-mton-c')) abrirTiendaHud('hud', true); });   // el mTON sigue abriendo la wallet
 $('uf-yo').addEventListener('click', () => { objetivo = { k: 'p', id: miId }; });
 
 // ── BARRA DE ACCION ──
@@ -1827,17 +1876,31 @@ function pintarAmigos(m) {
   const enlTg = 'https://t.me/duendequest_bot?start=mmo_' + m.ref;
   const enlWeb = location.origin + '/mmo/?ref=' + m.ref;
   const texto = 'Juguemos juntos a DUENDE QUEST ONLINE, el MMORPG de duendes: gratis, en Telegram o en el navegador. 🧝';
+  const btWa = `<button class="btn${TG ? ' sec' : ''}" id="b-comp-wa" style="width:100%;padding:12px;margin-bottom:8px;${TG ? '' : 'background:#25d366;border-color:#25d366;color:#fff'}">Invitar por WhatsApp</button>`;
   L.innerHTML = `<div class="mis-caja" style="margin-top:0"><b>Invita a tus amigos</b>
     <p style="font-size:12px">Cuando un amigo invitado llegue a nivel ${m.nivel}: él recibe ${premioAmigo(m.nivel).oro.toLocaleString('es', { useGrouping: 'always' })} de oro y tú, ${premioAmigo(yo ? yo.nivel : 1).oro.toLocaleString('es', { useGrouping: 'always' })} (aumenta con tu nivel)${m.max ? '. Hasta ' + m.max + ' amigos' : ''}. Con 5 amigos: montura Conejo Saltarín y un título.</p>
     <p style="font-size:12px;margin-top:6px">Amigos que ya llegaron: <b style="display:inline;color:var(--ok)">${m.amigos}</b></p></div>
-    <button class="btn" id="b-comp-tg" style="width:100%;padding:12px;margin-bottom:8px">Compartir por Telegram</button>
+    ${TG ? '' : btWa}<button class="btn${TG ? '' : ' sec'}" id="b-comp-tg" style="width:100%;padding:12px;margin-bottom:8px">Compartir por Telegram</button>${TG ? btWa : ''}
     <button class="btn sec" id="b-comp-copiar" style="width:100%;margin-bottom:6px">Copiar enlace</button>
     <p style="font-size:11px;word-break:break-all;color:var(--txt2)">${esc(TG ? enlTg : enlWeb)}</p>`;
   $('b-comp-tg').onclick = () => {
     const u = 'https://t.me/share/url?url=' + encodeURIComponent(enlTg) + '&text=' + encodeURIComponent(texto);
     if (TG && TG.openTelegramLink) TG.openTelegramLink(u); else window.open(u, '_blank');
   };
+  $('b-comp-wa').onclick = () => abrirWa(TXT_WA, enlWa(m.ref));
   $('b-comp-copiar').onclick = () => { try { navigator.clipboard.writeText(TG ? enlTg : enlWeb); aviso('📋 Enlace copiado', 'ok'); } catch (e) {} };
+}
+// WhatsApp primero (es lo que mas se usa en Peru). El jugador decide enviar:
+// solo se abre WhatsApp con el texto listo. El enlace va a /jugar/, que elige 2D o 3D.
+const TXT_WA = 'Oe, juega conmigo Duende Quest, gratis en el celular. Entra con mi link y cuando llegues a nivel 10 los dos ganamos oro 👇';
+const oroAmigo = () => premioAmigo((amigosInfo && amigosInfo.nivel) || 10).oro.toLocaleString('es', { useGrouping: 'always' });
+const enlWa = cod => location.origin + '/jugar/?ref=' + cod + '&utm_source=whatsapp&s=wa';
+const waLink = (txt, url) => 'https://wa.me/?text=' + encodeURIComponent(txt + ' ' + url);
+function abrirWa(txt, url) {
+  const u = waLink(txt, url);
+  try { if (TG && TG.openLink) return TG.openLink(u); } catch (e) {}
+  // Si el navegador bloquea la ventana (el enlace llego tarde del servidor), se copia.
+  if (!window.open(u, '_blank')) try { navigator.clipboard.writeText(txt + ' ' + url).then(() => aviso('Texto y enlace copiados: pégalos en WhatsApp.', 'ok'), () => {}); } catch (e) {}
 }
 // ── PRESUMIR ──
 // Tras un logro, una mazmorra o un objeto legendario sale un boton unos
@@ -1849,6 +1912,7 @@ function ofrecerPresumir(txt) {
   // El enlace se pide ya: al pulsar, compartir debe ser inmediato (el
   // navegador bloquea compartir si espera a una respuesta del servidor).
   if (!(amigosInfo && amigosInfo.ref) && performance.now() - amigosPedidoT > 10000) { amigosPedidoT = performance.now(); mandar({ t: 'amigos' }); }
+  ponTxt($('presumir'), 'Presumir · ganan los dos +' + oroAmigo() + ' oro');
   ponCss($('presumir'), 'display', 'block');
   clearTimeout(ofrecerPresumir.t);
   ofrecerPresumir.t = setTimeout(() => ponCss($('presumir'), 'display', 'none'), 12000);
@@ -1857,10 +1921,8 @@ function compartirPresumir(info) {
   const enlTg = 'https://t.me/duendequest_bot?start=mmo_' + info.ref;
   const txt = presumirTxt + ' Juega gratis conmigo a DUENDE QUEST ONLINE. 🧝';
   if (TG && TG.openTelegramLink) return TG.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(enlTg) + '&text=' + encodeURIComponent(txt));
-  const enlWeb = location.origin + '/mmo/?ref=' + info.ref;
-  const copiar = () => { try { navigator.clipboard.writeText(txt + ' ' + enlWeb).then(() => aviso('Texto y enlace copiados.', 'ok'), () => {}); } catch (e) {} };
-  if (navigator.share) navigator.share({ title: 'DUENDE QUEST ONLINE', text: txt, url: enlWeb }).catch(e => { if (!e || e.name !== 'AbortError') copiar(); });
-  else window.open('https://t.me/share/url?url=' + encodeURIComponent(enlWeb) + '&text=' + encodeURIComponent(txt), '_blank');
+  // Fuera de Telegram, WhatsApp primero, con el premio en el mensaje.
+  abrirWa((presumirTxt ? presumirTxt + ' ' : '') + TXT_WA.replace('ganamos oro', 'ganamos +' + oroAmigo() + ' de oro'), enlWa(info.ref));
 }
 $('presumir').onclick = () => {
   ponCss($('presumir'), 'display', 'none');
@@ -3023,7 +3085,7 @@ function pintarWallet() {
     '<li>Los retiros los revisa el equipo y se pagan a tu wallet en 24-48 h. Usar bots o varias cuentas anula el retiro.</li></ul>';
   $('wallet-cuerpo').innerHTML = h;
   const bc = $('b-conectar'); if (bc) bc.onclick = () => { sfx('boton', .3); conectarWallet(); };
-  const bp = $('b-premium'); if (bp) bp.onclick = abrirPremium;
+  const bp = $('b-premium'); if (bp) bp.onclick = () => abrirPremium('oro');
   const br = $('b-retirar');
   if (br) br.onclick = () => {
     if (!confirm('¿Retirar ' + tonTxt(aRetirar) + ' TON a ' + (w ? w.a : '') + '?')) return;
@@ -3068,10 +3130,11 @@ function conectarPremium(L) {
     if (x && x.raw) mostrarPedidoSol({ metodo: 'duende', codigo: x.codigo, raw: x.raw, mint: x.mint, dec: x.dec, wallet: x.wallet, usd: x.usd, nombre: x.nombre });
     else if (x && x.lamports) mostrarPedidoSol({ codigo: x.codigo, lamports: x.lamports, wallet: x.wallet, usd: x.usd, nombre: x.nombre, ref: x.ref });
   });
-  L.querySelectorAll('[data-premium]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'pedido', id: b.dataset.premium, metodo: b.dataset.metodo }); });
+  L.querySelectorAll('[data-premium]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'pedido', id: b.dataset.premium, metodo: b.dataset.metodo, via: viaTienda }); });
   L.querySelectorAll('[data-cuenta]').forEach(b => b.onclick = () => abrirCuenta());
 }
-function abrirPremium() {
+function abrirPremium(via) {
+  if (typeof via === 'string') viaTienda = via;
   tabTienda = 'premium';
   document.querySelectorAll('[data-tab]').forEach(x => x.classList.toggle('on', x.dataset.tab === 'premium'));
   abrir('m-tienda'); pintarTienda();
@@ -3293,7 +3356,7 @@ function pintarDios(d) {
       + Object.entries(MAPAS).filter(([, m]) => !m.instancia).map(([id, m]) => `<button class="btn sec" data-dtp="${id}" style="padding:6px 8px;font-size:11px">${esc(m.nombre)}</button>`).join('') + '</div>'
       + '<p style="margin:12px 0 4px;font-size:13px">📢 Anuncio a todo el servidor:</p><div style="display:flex;gap:6px"><input class="nombre" id="d-anuncio" maxlength="200" placeholder="Mensaje" style="margin:0;font-size:12px"><button class="btn" id="d-anunciar">Enviar</button></div>';
   } else if (diosTab === 'jugadores') {
-    h += `<p style="font-size:12px;color:var(--txt2);margin:6px 0">${D.jugadores.length} conectados</p>`;
+    h += `<p style="font-size:12px;color:var(--txt2);margin:6px 0">${D.jugadores.length} conectados${dueno && D.fallosSupabase ? ` · ⚠️ ${D.fallosSupabase} fallos de Supabase desde el último reinicio` : ''}</p>`;
     // Un moderador no actua sobre otro admin; el dueño si puede expulsar o banear a un moderador.
     h += D.jugadores.map(j => { const libre = dueno || !j.gm || j.p === miId; return `<div class="mis-caja" style="margin:6px 0;padding:8px">
       <b>${j.gm ? '👑 ' : ''}${esc(j.n)}</b> <span style="color:var(--txt2);font-size:12px">Nv ${j.lv} · ${esc((MAPAS[j.mapa] || {}).nombre || j.mapa)}${j.inst ? ' (mazmorra)' : ''} · ${j.tipo === 'inv' ? 'invitado' : j.tipo === 'tg' ? 'Telegram' : 'web'} · ${(j.oro || 0).toLocaleString('es')} oro${j.mute ? ' · 🔇' : ''}</span>
@@ -4680,7 +4743,7 @@ document.querySelectorAll('.modal').forEach(m => { limpiarEmojis(m); obsVentanas
 
 let tabTienda = 'pw';
 document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { tabTienda = b.dataset.tab; document.querySelectorAll('[data-tab]').forEach(x => x.classList.toggle('on', x === b)); pintarTienda(); });
-function abrirTienda() { abrir('m-tienda'); pintarTienda(); }
+function abrirTienda() { viaTienda = 'npc'; abrir('m-tienda'); pintarTienda(); }
 // Icono del pack para las tarjetas (gris si esta bloqueado).
 const icoPack = (n, gris) => `<img src="${A}items/equipo/${n}.png" alt="" style="width:36px;height:36px;image-rendering:pixelated${gris ? ';filter:grayscale(1);opacity:.45' : ''}">`;
 function tarjeta(ico, nombre, desc, derecha) {
@@ -4907,12 +4970,33 @@ function morir() {
 }
 $('b-revivir').onclick = () => { $('m-muerte').classList.remove('on'); mandar({ t: 'revivir' }); };
 
-function mostrarError(txt) {
+// op.dup: 'Jugar aquí' + 'Cerrar'; op.tg: sesion de Telegram caducada (reconectar no sirve, se cierra).
+function mostrarError(txt, op) {
   $('error-txt').textContent = txt;
+  const b = $('b-reconectar');
+  b.textContent = op && op.dup ? 'Jugar aquí' : op && op.tg ? 'Cerrar el juego' : 'Reconectar';
+  b.onclick = op && op.tg ? cerrarJuego : reconectarYa;
+  let bc = document.getElementById('b-cerrar-err');
+  if (!bc && b.parentNode) { bc = document.createElement('button'); bc.id = 'b-cerrar-err'; bc.className = 'btn'; bc.textContent = 'Cerrar'; bc.style.cssText = 'margin-top:8px;width:100%;min-height:46px;opacity:.85'; bc.onclick = cerrarJuego; b.after(bc); }
+  if (bc) bc.style.display = op && op.dup ? '' : 'none';
   $('m-error').classList.add('on');
   $('carga').style.display = 'none';
 }
-$('b-reconectar').onclick = () => { fatal = false; dormido = false; reintentos = 0; $('m-error').classList.remove('on'); conectar(); };
+function cerrarJuego() { if (TG) { try { TG.close(); } catch (e) {} } else location.href = '/inicio/'; }
+function reconectarYa() { fatal = false; dormido = false; reintentos = 0; $('m-error').classList.remove('on'); conectar(); }
+$('b-reconectar').onclick = reconectarYa;
+// Una sola pestaña jugando: la que entra avisa a las demas del mismo navegador y estas se pausan
+// (sin esto, dos pestañas se echaban una a otra sin fin al reconectar).
+let canalJuego = null;
+try { canalJuego = new BroadcastChannel('dq_juego'); } catch (e) {}
+if (canalJuego) canalJuego.onmessage = ev => {
+  const d = ev.data || {};
+  if (d.t !== 'aqui' || !yo || fatal || d.n !== yo.nombre) return;
+  fatal = true; dormido = false;
+  const viejo = ws; ws = null; conectado = false;
+  try { if (viejo) viejo.close(4000, 'otra'); } catch (e) {}
+  mostrarError('Tu duende se abrió en otra pestaña. Juega allí o pulsa «Jugar aquí».', { dup: true });
+};
 // Desconectado por inactividad: cualquier toque o tecla vuelve a conectar
 // (antes habia que encontrar y pulsar RECONECTAR).
 let dormido = false;
@@ -5071,7 +5155,7 @@ async function inicio() {
     $('inicio-cuenta').style.display = 'block';
     $('inicio-quien').textContent = TG ? 'Entrarás con tu cuenta de Telegram.' : 'Entrarás con tu cuenta de DUENDE QUEST.';
   } else {
-    $('in-nombre').value = localStorage.getItem('dq_mmo_nombre') || '';
+    $('in-nombre').value = LS.getItem('dq_mmo_nombre') || '';
   }
   $('m-inicio').classList.add('on');
   const entrar = () => {
@@ -5092,7 +5176,7 @@ async function inicio() {
   $('b-cambiar-pass').onclick = e => { e.preventDefault(); $('inicio-auth2').style.display = 'block'; pintarCuenta($('inicio-auth2'), 'cambiar', false); };
   // Vuelve de "olvide mi contraseña" o de entrar desde la partida: directo.
   if (recuperando) mostrarRecuperacion();
-  else if (sessionStorage.getItem('dq_auto')) { sessionStorage.removeItem('dq_auto'); entrar(); }
+  else { let auto = null; try { auto = sessionStorage.getItem('dq_auto'); if (auto) sessionStorage.removeItem('dq_auto'); } catch (e) {} if (auto) entrar(); }
   $('b-salir-cuenta').onclick = async e => {
     e.preventDefault();
     try { if (_sb) await _sb.auth.signOut(); } catch (er) {}
@@ -5111,7 +5195,8 @@ setInterval(() => {
   vigT = ahora;
   if (!ws || ws.readyState !== 1 || document.hidden) return;
   // Antes de 'bienvenido' el servidor puede tardar hasta 30 s en verificar (no manda 's'): margen mayor.
-  if (conectado && yo && ahora - ultimoMsgT > (ws._listo ? 12000 : 35000)) {
+  // Sin '&& yo': un socket mudo antes de 'bienvenido' tambien se cambia (antes quedaba colgado en la carga).
+  if (conectado && ahora - ultimoMsgT > (ws._listo ? 12000 : 35000)) {
     const s = ws; ws = null; conectado = false;
     s.onopen = s.onmessage = s.onclose = null;
     try { s.close(4001, 'mudo'); } catch (e) {}

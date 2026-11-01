@@ -81,6 +81,9 @@ export async function postDiscord(env, content) {
   } catch (e) { console.error('[Discord]', e); }
 }
 
+// Con tope de 5 s: si Supabase se cuelga, nadie se queda esperando (la
+// entrada al MMO esperaba aqui). Una respuesta que no es JSON (pagina de
+// error, 502 del proxy) devuelve { error } en vez de lanzar.
 export async function supabaseQuery(env, path, options = {}) {
   const r = await fetch(`${env.SUPABASE_URL}/rest/v1/${path}`, {
     method: options.method || 'GET',
@@ -91,8 +94,11 @@ export async function supabaseQuery(env, path, options = {}) {
       'Prefer': options.prefer || 'return=representation',
     },
     body: options.body ? JSON.stringify(options.body) : undefined,
+    signal: AbortSignal.timeout(options.timeout || 5000),
   });
-  return r.json();
+  const txt = await r.text();
+  try { return txt ? JSON.parse(txt) : (r.ok ? [] : { error: 'HTTP ' + r.status }); }
+  catch (e) { return { error: 'HTTP ' + r.status + ': respuesta no JSON', status: r.status }; }
 }
 
 // ── Live prices (server-side only) ──

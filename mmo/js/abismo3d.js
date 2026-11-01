@@ -85,6 +85,19 @@ export function alturaAbismo(x, z) {
   }
   return VACIO;
 }
+// Suelo de referencia sobre el vacio: la altura de las islas cercanas, mezclada
+// por distancia a su borde (sin saltos al cambiar de isla). El techo de vuelo y
+// la altura que se envia al servidor se miden desde aqui y no desde el fondo del
+// vacio (antes, volar sobre el hueco hundia al duende hasta -95 m).
+export function sueloRef(x, z) {
+  const lx = x - ABISMO_X0;
+  let sp = 0, sh = 0;
+  for (const is of ABISMO.islas) {
+    const d = Math.max(0, Math.hypot(lx - is.x, z - is.z) - is.r), p = 1 / ((d + 15) * (d + 15));
+    sp += p; sh += p * is.h;
+  }
+  return sp ? sh / sp : 30;
+}
 // Punto de aparicion de cada faccion (en su bastion) y su portal de vuelta.
 export function baseDe(f) {
   const is = ABISMO.islas.find(i => i.base === f) || ABISMO.islas[0];
