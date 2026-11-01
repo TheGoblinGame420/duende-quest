@@ -44,12 +44,12 @@ const limpiar = t => String(t || '').replace(/[\u0000-\u001f\u007f­͏ᅟᅠ᠎�
 // Antiestafa (juego con cripto): ni direcciones de cartera, ni enlaces, ni
 // frases semilla en el chat. Nadie del equipo pide nunca la frase semilla.
 const RE_ESTAFA = [
-  /\b[1-9A-HJ-NP-Za-km-z]{32,44}\b/,                    // direccion Solana (base58)
+  /\b(?=[A-Za-z0-9]*\d)[1-9A-HJ-NP-Za-km-z]{32,44}\b/,  // direccion Solana (base58, con algun digito: «jajaja…» no cuenta)
   /\b(?:EQ|UQ|kQ|0Q)[A-Za-z0-9_-]{46}\b/,               // direccion TON
   /\b0x[a-fA-F0-9]{40}\b/,                              // direccion EVM
   /(?:https?:\/\/|www\.|t\.me\/|telegram\.me\/|discord\.gg\/)/i,
-  /\b[a-z0-9-]{2,}\.(?:com|io|xyz|net|org|app|gg|me|link|site|fun|top|online|click|live|shop)\b/i,
-  /\b(?:seed|semilla|mnemonic|clave privada|private key|frase de recuperaci[oó]n|12 palabras|24 palabras)\b/i,
+  /\b[a-z0-9-]{2,}\.(?:com|io|xyz|net|org|app|gg|link|site|online|click|shop)\b/i,
+  /\b(?:seed phrase|seed|frase semilla|semilla de (?:tu |la )?(?:wallet|cartera|billetera)|mnemonic|clave privada|private key|frase de recuperaci[oó]n|12 palabras|24 palabras)\b/i,
 ];
 // Se mira tambien una copia en NFKC y sin marcas ni invisibles: un selector de
 // variacion (U+FE0F) o una etiqueta (U+E0020) dentro de «t.me» o «seed» saltaba el filtro.
@@ -59,7 +59,7 @@ export const riesgoEstafa = t => { const n = normEstafa(t); return RE_ESTAFA.som
 // Sin \w* tras marica/verga: "Maricarmen" y "Vergara" son nombres de verdad.
 export const RE_GROSERIA = /\b(?:put[ao]s?|putamadre|mierd[\wáéíóúñ]*|conchatumadre|ctm|csm|huev[oó]n[\wáéíóúñ]*|cojud[\wáéíóúñ]*|pendej[\wáéíóúñ]*|maric(?:as?|[oó]n[\wáéíóúñ]*)|cabr[oó]n[\wáéíóúñ]*|vergas?|pinga[\wáéíóúñ]*|poronga[\wáéíóúñ]*|cach[ae]r[\wáéíóúñ]*|porno[\wáéíóúñ]*|nudes?|violar[\wáéíóúñ]*)(?![\wáéíóúñ])/gi;
 // Ni telefonos, ni redes, ni preguntas de datos personales (edad, casa, colegio, fotos).
-const RE_CONTACTO = [/(?:(?<!\d)|(?<=(?<!\d)\+?51))9\d{2}[\s.\-]?\d{3}[\s.\-]?\d{3}(?!\d)/, /\b(?:wsp|whats?app|wasap|watsap|wpp|insta|instagram|tiktok|snap(?:chat)?|discord|facebook|n[uú]mero de cel|celular)\b/i, /(?:^|\s)@[a-z0-9_.]{3,}/i, /\b(?:cu[aá]ntos a[nñ]os tienes|d[oó]nde vives|tu direcci[oó]n|tu colegio|manda foto)\b/i];
+const RE_CONTACTO = [/(?:(?<!\d)|(?<=(?<!\d)\+?51))9\d{2}[\s.\-]?\d{3}[\s.\-]?\d{3}(?!\d)/, /\b(?:wsp|whats?app|wasap|watsap|wpp|snap(?:chat)?|n[uú]mero de cel)\b/i, /\b(?:mi|tu|su|dame|pasa(?:me)?|p[aá]same|agr[eé]game|escr[ií]beme|h[aá]blame|s[ií]gueme)\s+(?:al\s+|por\s+|en\s+|el\s+|tu\s+|su\s+)?(?:insta(?:gram)?|tiktok|face(?:book)?|discord|n[uú]mero)\b/i, /\b(?:dame|pasa(?:me)?|p[aá]same|agr[eé]game|escr[ií]beme|h[aá]blame)\s+(?:al\s+|por\s+|en\s+|el\s+|tu\s+|su\s+)?cel(?:ular)?\b/i,/(?:^|\s)@[a-z0-9_.]{3,}/i, /\b(?:cu[aá]ntos a[nñ]os tienes|d[oó]nde vives|tu direcci[oó]n|tu colegio|manda foto)\b/i];
 export const riesgoContacto = t => { const n = normEstafa(t); return RE_CONTACTO.some(r => r.test(t) || r.test(n)); };
 export const IGNORADOS_MAX = 50;
 const REPORTE_CADA_MS = 60000;

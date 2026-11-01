@@ -14,25 +14,25 @@
 import * as THREE from 'three';
 import { esNocheDuendes, TEMPORADAS, temporadaDe, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo } from '/mmo/js/data.js?v=333';
-import { iniciarVentanas } from './ventanas.js?v=333';
-import { EXPEDICION, VERSION, horaFelizTiempos } from '/mmo/js/data.js?v=333';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
-import { iniciarRegalo } from '/mmo/js/regalo.js?v=333';
-import { iniciarAvisoTg } from '/mmo/js/avisotg.js?v=333';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=333';
-import { crearMusica } from './musica.js?v=333';
-import { construirCueva } from './cueva.js?v=333';
-import { TAPA, transparentar } from './tapa.js?v=333';
-import { construirAbismo } from './abismo.js?v=333';
-import { crearParticulas } from './particulas.js?v=333';
-import { cargarKenney, piezasCasa } from './kenney.js?v=333';
-import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=333';
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo } from '/mmo/js/data.js?v=334';
+import { iniciarVentanas } from './ventanas.js?v=334';
+import { EXPEDICION, VERSION, horaFelizTiempos } from '/mmo/js/data.js?v=334';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
+import { iniciarRegalo } from '/mmo/js/regalo.js?v=334';
+import { iniciarAvisoTg } from '/mmo/js/avisotg.js?v=334';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=334';
+import { crearMusica } from './musica.js?v=334';
+import { construirCueva } from './cueva.js?v=334';
+import { TAPA, transparentar } from './tapa.js?v=334';
+import { construirAbismo } from './abismo.js?v=334';
+import { crearParticulas } from './particulas.js?v=334';
+import { cargarKenney, piezasCasa } from './kenney.js?v=334';
+import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=334';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=333';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d } from '/mmo/js/mundo3d.js?v=333';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=333';
-import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=333';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=333';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=334';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d } from '/mmo/js/mundo3d.js?v=334';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=334';
+import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=334';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=334';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -88,8 +88,12 @@ if (!TG) {
 }
 // Enlace directo a la tienda: /mundo/#premium o la Mini App con start_param=premium (v325).
 let tiendaAlEntrar = /(^#|&)premium(&|$)/.test(location.hash) || !!(TG && TG.initDataUnsafe && TG.initDataUnsafe.start_param === 'premium');
-// Fue a CLASSIC a crear su cuenta desde la tienda (dq_volver) y vuelve por el enlace del correo: se abre la tienda y se borra la marca.
-try { if (localStorage.getItem('dq_volver') || sessionStorage.getItem('dq_volver')) { localStorage.removeItem('dq_volver'); sessionStorage.removeItem('dq_volver'); tiendaAlEntrar = true; } } catch (e) {}
+// Fue a CLASSIC a crear su cuenta (dq_volver) y vuelve por el enlace del correo: se borra la marca y,
+// solo si venía de la tienda (#premium), se abre en el paquete que quería (&f=). '/mundo/' a secas no abre la tienda.
+let vol = '';
+try { vol = localStorage.getItem('dq_volver') || sessionStorage.getItem('dq_volver') || ''; if (vol) { localStorage.removeItem('dq_volver'); sessionStorage.removeItem('dq_volver'); } } catch (e) {}
+if (/premium/.test(vol)) tiendaAlEntrar = true;
+let focoAlEntrar = ((vol.match(/[#&]f=([\w-]+)/) || location.hash.match(/[#&]f=([\w-]+)/) || [])[1]) || '';
 // El ⌂ (inicio web) va al menu de la Mini App, como en CLASSIC.
 if (TG && location.hash) document.querySelectorAll('a[href="/mmo/"],a[href="/inicio/"]').forEach(a => { a.href = (a.getAttribute('href') === '/inicio/' ? '/telegram/index.html' : '/mmo/') + location.hash; });
 // Y los que se pintan despues (guia de cuenta, ventana de mazmorras...): al tocarlos se les pone el hash.
@@ -1547,7 +1551,7 @@ function recibir(m) {
       const antes = yo; yo = m.yo; pintarTemp3(); puntoTienda();
       if (esIAB) franjaIAB();   // tras la primera victoria: pasar el duende a Chrome/Safari
       // Enlace con #premium (o start_param=premium de Telegram): la tienda se abre al entrar.
-      if (tiendaAlEntrar && yo.clase) setTimeout(() => { if (tiendaAlEntrar && !hayVentana()) { tiendaAlEntrar = false; abrirTiendaHud('bot'); } }, 1200);   // con otra ventana abierta, se reintenta con el siguiente 'yo'
+      if (tiendaAlEntrar && yo.clase) setTimeout(() => { if (tiendaAlEntrar && !hayVentana()) { tiendaAlEntrar = false; abrirTiendaHud('bot', focoAlEntrar); focoAlEntrar = ''; } }, 1200);   // con otra ventana abierta, se reintenta con el siguiente 'yo'
       // Nueva mision de la cadena: el Guardia Tito cuenta por que importa.
       if (antes && antes.mis && yo.mis && yo.mis.i !== antes.mis.i && LORE_MISIONES[yo.mis.i]) setTimeout(() => aviso('🛡 Tito: «' + LORE_MISIONES[yo.mis.i] + '»'), 2500);
       if (antes && antes.nivel < 60 && yo.nivel >= 60) { aviso('🏆 ' + LORE_NIVEL60, 'ok'); setTimeout(() => aviso('🥤 Toca la barra morada de la chicha para reclamar tus 2 litros.', 'ok'), 5000); }
@@ -1606,7 +1610,7 @@ function recibir(m) {
     case 'zona3f': quitarZona3(m.id, true); break;
     case 'md3': { const o = mons.get(m.id); if (o) { o.muereT = performance.now(); o.st = 3; sfx('muerte', 0.3); if (Math.hypot(o.x - P.x, o.z - P.z) < 30) sfxK(Math.random() < 0.7 ? 'c_hurt' : 'c_grito', 0.28); const y = (o.y || alturaEn(o.x, o.z)) + 1; FX.emitir(o.x, y, o.z, { n: 30, color: '#c084fc', vel: 5, vida: 0.9, grav: 3, sube: 1.5 }); FX.emitir(o.x, y, o.z, { n: 14, color: '#fde68a', vel: 1.6, vida: 1.4, grav: -2, tam: 0.8 });
       const dj = MONSTRUOS[o.k];
-      if ((o.j || (dj && dj.jefe)) && (objetivo === m.id || Math.hypot(o.x - P.x, o.z - P.z) < 30)) {
+      if (!m.huye && (o.j || (dj && dj.jefe)) && (objetivo === m.id || Math.hypot(o.x - P.x, o.z - P.z) < 30)) {
         numero(P.x, P.y + 3.4, P.z, '¡JEFE DERROTADO!', '#ffe600', true);
         FX.emitir(o.x, y, o.z, { n: 60, color: '#ffd84a', vel: 4, vida: 1.2, grav: 3, sube: 2 });
         setTimeout(() => vib('heavy'), 150); sfx('moneda', 0.6);
@@ -2453,7 +2457,7 @@ function pintarObjetivoP() {
   const bs = $('op-skin');
   if (!sk) bs.style.display = 'none';
   else {
-    bs.style.display = ''; bs.style.color = sk.color || '';
+    bs.style.display = ''; bs.style.color = '#fff'; bs.style.borderColor = sk.color || '';
     const conOro = typeof sk.precio === 'number', conPaq = !!sk.usd;   // PAQUETES crea 'skin_<id>' para toda skin con usd
     if ((yo && yo.skins || []).includes(o.sk)) { bs.textContent = '✨ ' + sk.nombre + ' · Ya la tienes'; bs.onclick = null; }
     else if (conOro || conPaq) { bs.textContent = '✨ Skin ' + sk.nombre + ' · ¿La quieres?'; const id = o.sk; bs.onclick = () => { sfx('boton', 0.2); if (conOro) V.abrirTienda('skin', id, 'hud'); else V.abrirTienda('premium', 'skin_' + id, 'hud'); }; }
@@ -2626,34 +2630,37 @@ function ofrecerBienvenida(antes) {
   // Igual que la tienda: sin cuenta solo veria «Iniciar sesion». Al invitado no se le gasta
   // la oferta: se le avisa una vez y se le ofrece cuando ya tenga cuenta.
   const conCuenta = !!(yo.p2e && yo.p2e.cuenta);
+  // Se marca solo cuando de verdad se abre: si 60 s hubo otra ventana, se ofrece la proxima vez.
+  // Invitado (inv): la tienda ya le muestra el pack con su precio y el boton de cuenta; se marca
+  // solo dq_bienv_inv (nunca dq_bienv_ofrecida) para volver a ofrecerlo cuando tenga cuenta.
+  const intentar = (n, inv) => {
+    if (!yo || !yo.puedeBienvenida || yo.muerto) { if (yo && yo.muerto && n < 20) setTimeout(() => intentar(n + 1, inv), 3000); return; }
+    try { if (localStorage.getItem(inv ? 'dq_bienv_inv' : 'dq_bienv_ofrecida') === '1') return; } catch (e) {}
+    // Tampoco encima de una ventana lateral (NPC, inventario...), del cofre diario ni del buzon/Telegram.
+    if (hayVentana() || document.querySelector('.modal.on, #dq-avtg.on, #dq-regalo.on')) { if (n < 20) setTimeout(() => intentar(n + 1, inv), 3000); return; }
+    V.abrirTienda('premium', 'bienvenida', 'bienv');
+    try { localStorage.setItem(inv ? 'dq_bienv_inv' : 'dq_bienv_ofrecida', '1'); } catch (e) {}
+    if (inv) aviso('🎁 Pack de bienvenida: crea tu cuenta gratis para pedirlo y guardar tu duende.', 'ok');
+    else aviso('🎁 Pack de bienvenida: solo para tu primera compra. El Duende te lo entrega a mano.', 'ok');
+  };
   if (!conCuenta) {
     if (!dispara) return;
     let ya = '';
     try { ya = localStorage.getItem('dq_bienv_inv') || ''; } catch (e) {}
-    if (!ya) { try { localStorage.setItem('dq_bienv_inv', '1'); } catch (e) {} aviso('🎁 Crea tu cuenta gratis para guardar tu duende. Con cuenta verás el Pack de bienvenida, una oferta de una sola vez.', 'ok'); }
+    if (!ya) setTimeout(() => intentar(0, true), 2500);
     return;
   }
   let eraInv = false;
   if (yo.nivel >= 5) { try { eraInv = localStorage.getItem('dq_bienv_inv') === '1'; } catch (e) {} }
   if (eraInv) { try { localStorage.removeItem('dq_bienv_inv'); } catch (e) {} }
   else if (!dispara) return;
-  // Se marca como ofrecida solo cuando de verdad se abre: si 60 s hubo otra ventana, se ofrece la proxima vez.
-  const intentar = n => {
-    if (!yo || !yo.puedeBienvenida || yo.muerto) { if (yo && yo.muerto && n < 20) setTimeout(() => intentar(n + 1), 3000); return; }
-    try { if (localStorage.getItem('dq_bienv_ofrecida') === '1') return; } catch (e) {}
-    // Tampoco encima de una ventana lateral (NPC, inventario...), del cofre diario ni del buzon/Telegram.
-    if (hayVentana() || document.querySelector('.modal.on, #dq-avtg.on, #dq-regalo.on')) { if (n < 20) setTimeout(() => intentar(n + 1), 3000); return; }
-    V.abrirTienda('premium', 'bienvenida', 'bienv');
-    try { localStorage.setItem('dq_bienv_ofrecida', '1'); } catch (e) {}
-    aviso('🎁 Pack de bienvenida: solo para tu primera compra. El Duende te lo entrega a mano.', 'ok');
-  };
-  setTimeout(() => intentar(0), 2500);
+  setTimeout(() => intentar(0, false), 2500);
 }
-function abrirTiendaHud(via) {
+function abrirTiendaHud(via, foco) {
   if (!yo) return;
   const ent = ((yo.pedidos) || []).filter(x => x.estado === 'entregado').length;
   try { localStorage.setItem('dq_tienda_vista', '1'); localStorage.setItem('dq_tienda_ent', String(ent)); } catch (e) {}
-  V.abrirTienda('premium', undefined, via); puntoTienda();
+  V.abrirTienda('premium', foco || undefined, via); puntoTienda();
 }
 $('b-premium').onclick = () => abrirTiendaHud('hud');
 // ── EDITOR DE APARIENCIA ──
@@ -2939,29 +2946,43 @@ function pintarLlevar(m) {
   const pb = document.createElement('p'); pb.style.marginTop = '10px'; pb.appendChild(b);
   $('b-leyenda').parentNode.after(pb);
 }
+// Cupo global de ventanas que se abren solas (leyenda, aviso de invitado): no se apilan.
+let ventanaAutoT = 0;
 // En cada sesion (no cada reconexion): la historia es lo primero que se ve.
 function leyendaPrimeraVez() {
   try { if (sessionStorage.getItem('dq_leyenda')) return; } catch (e) { return; }
   // Movil: la ventana de la leyenda sale solo la primera vez (la barra morada de la chicha queda siempre a la vista).
   try { if (COMPACTO && localStorage.getItem('dq_leyenda_vista')) return; } catch (e) {}
   // Espera a que elija clase y a que vea (y cierre) el premio diario: comparten ventana.
-  if (hayVentana() || $('v-diario').classList.contains('on') || loginPend3 || !yo || !yo.clase) { setTimeout(leyendaPrimeraVez, 3000); return; }
+  if (hayVentana() || $('v-diario').classList.contains('on') || loginPend3 || !yo || !yo.clase || !!document.querySelector('#dq-avtg.on') || Date.now() - ventanaAutoT < 60000) { setTimeout(leyendaPrimeraVez, 3000); return; }
   try { sessionStorage.setItem('dq_leyenda', '1'); localStorage.setItem('dq_leyenda_vista', '1'); } catch (e) {}
+  ventanaAutoT = Date.now();
   verLeyenda();
 }
 let avisoInvT = 0;
 function avisoInvitado() {
   // Tras entregar la mision 1 (o desde Nv 3) y como mucho una vez al dia.
   if (!soyInvitado || !yo || (yo.nivel < 3 && !(yo.mis && yo.mis.i >= 1)) || hayVentana() || $('v-diario').classList.contains('on')) return;
+  // Nunca en combate ni en mal momento (el setInterval lo vuelve a intentar), ni encima del buzon/Telegram.
+  // (objetivo solo cuenta si pego hace poco: un monstruo marcado y abandonado no lo bloquea para siempre)
+  if (autoAtk || (P && (P.muerto || P.vuela)) || performance.now() - ((P && P.heridoT) || 0) < 8000 || (objetivo && performance.now() - ((P && P.atkT) || 0) < 8000)) return;
+  if (document.querySelector('#dq-avtg.on') || Date.now() - ventanaAutoT < 180000) return;
   clearTimeout(mostrarDiario.t); mostrarDiario.t = 0;
   const hoy = new Date().toISOString().slice(0, 10);
   try { if (localStorage.getItem('dq_aviso_inv') === hoy) return; localStorage.setItem('dq_aviso_inv', hoy); } catch (e) {}
-  $('diario-c').innerHTML = `<p class="vv-p">Juegas como <b>invitado</b>: tu duende vive solo en este navegador. Para no perderlo:</p>
+  ventanaAutoT = Date.now();
+  $('diario-c').innerHTML = `<button class="btn" id="inv-cuenta" style="width:100%;margin:6px 0 10px">📧 Crear cuenta gratis (guarda tu duende)</button>
+    <p class="vv-p">Juegas como <b>invitado</b>: tu duende vive solo en este navegador. Para no perderlo:</p>
     <p class="vv-p">Guarda tu <b>código de rescate</b>: con él recuperas tu duende en otro navegador o celular (⌂ Inicio → código de rescate).</p>
     <div style="display:flex;gap:6px;align-items:center"><code style="flex:1;min-width:0;overflow-wrap:anywhere;background:rgba(0,0,0,.4);padding:8px;border-radius:8px;font-size:12px;color:#ffd84a">${codigoRescate()}</code><button class="btn" id="copiar-rescate" style="padding:8px 10px;font-size:12px">Copiar</button></div>`;
   $('v-diario').querySelector('h2').textContent = 'GUARDA TU DUENDE';
   abrir('v-diario');
   $('copiar-rescate').onclick = () => { try { navigator.clipboard.writeText(codigoRescate()).then(() => aviso('Código copiado. Guárdalo en un lugar seguro.', 'ok')); } catch (e) {} };
+  $('inv-cuenta').onclick = () => {
+    aviso('Crea tu cuenta gratis con tu correo: al terminar vuelves aquí con tu duende.', 'ok');
+    try { sessionStorage.setItem('dq_volver', '/mundo/'); localStorage.setItem('dq_volver', '/mundo/'); } catch (e) {}
+    setTimeout(() => { location.href = '/mmo/' + (hashTg && hashTg.length > 1 ? hashTg + '&cuenta&volver=mundo' : '#cuenta&volver=mundo'); }, 700);
+  };
   { const b = document.createElement('button'); b.className = 'btn sec'; b.style.cssText = 'width:100%;margin-top:10px'; b.textContent = '📲 Pasar mi duende a Telegram u otro celular'; b.onclick = abrirLlevar; $('diario-c').appendChild(b); }
   // En el navegador de Facebook/Instagram, ademas, el boton para llevarlo a Chrome/Safari.
   if (esIAB) { const b = document.createElement('button'); b.className = 'btn'; b.style.cssText = 'width:100%;margin-top:10px'; b.textContent = ANDROID_IAB ? 'Abrir en Chrome con mi duende' : 'Pasar a Safari con mi duende'; b.onclick = () => irANavegador(); $('diario-c').appendChild(b); }
@@ -3196,6 +3217,8 @@ const esPremiumTG = () => !!(TG && TG.initDataUnsafe && TG.initDataUnsafe.user &
 function precargarPresumir() {
   presumirFile = null;
   if (TG || !navigator.canShare) return;
+  // Equipo modesto o navegador de Facebook/Instagram: no se bajan 110-137 KB; va por wa.me con el enlace.
+  if (POBRE || esIAB) return;
   const url = '/assets/promo/historia_' + (IMG_PRESUMIR[presumirTipo] || 1) + '.jpg';
   fetch(url).then(r => r.ok ? r.blob() : null).then(bl => {
     if (!bl) return;
@@ -3236,7 +3259,12 @@ function compartir(historia) {
   // Hoja de compartir del sistema con la imagen (Estados, historias). Si falla (no si cancela), WhatsApp.
   try {
     if (presumirFile && navigator.canShare && navigator.canShare({ files: [presumirFile] })) {
-      navigator.share({ files: [presumirFile], text: txtWa + ' ' + web }).catch(e => { if (e && e.name !== 'AbortError' && !window.open(waLink(txtWa, web), '_blank')) try { navigator.clipboard.writeText(txtWa + ' ' + web).then(() => aviso('Texto y enlace copiados: pégalos en WhatsApp.', 'ok'), () => {}); } catch (e2) {} });
+      // Instagram, Facebook y WhatsApp en iPhone descartan el texto junto a la imagen:
+      // el enlace se copia antes (dentro del gesto) y en iOS se comparte sin archivo.
+      try { if (navigator.clipboard) navigator.clipboard.writeText(txtWa + ' ' + web).then(() => aviso('🔗 Enlace copiado: pégalo en tu historia o mensaje para que tu amigo entre contigo.', 'ok'), () => {}); } catch (e) {}
+      const esIos = /iPhone|iPad|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+      const datos = esIos ? { text: txtWa, url: web } : { files: [presumirFile], text: txtWa + ' ' + web };
+      navigator.share(datos).catch(e => { if (e && e.name !== 'AbortError' && !window.open(waLink(txtWa, web), '_blank')) try { navigator.clipboard.writeText(txtWa + ' ' + web).then(() => aviso('Texto y enlace copiados: pégalos en WhatsApp.', 'ok'), () => {}); } catch (e2) {} });
       return;
     }
   } catch (e) {}

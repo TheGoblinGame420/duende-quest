@@ -21,7 +21,7 @@ import {
   EXPEDICION, premioExpedicion, MATERIALES,
   PAQUETES, estrellasDe, solesDeStars, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA, LOGROS, progresoLogro, statsJugador, ALAS, paqueteParaFaltante, ENTREGA, textoPagoRecibido, PEDIDO_VIGENCIA_MS,
   pagoLocalActivo, textoSoles, YAPE_VIGENCIA_MS, premioDiaria, MISIONES,
-} from '/mmo/js/data.js?v=333';
+} from '/mmo/js/data.js?v=334';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -653,7 +653,7 @@ function htmlAlas(y) {
 // Botones de pago con dinero (Stars en Telegram; en la web Stars, SOL o $DUENDE).
 // Stars desde la web: el servidor crea la factura y se paga en Telegram (movil: enlace; PC: QR).
 function botonesPago(y, pid, usd, principal) {
-  if (!(y.p2e && y.p2e.cuenta)) return btn('Iniciar sesión', 'cuenta', {}, 'sec');
+  if (!(y.p2e && y.p2e.cuenta)) return btn('Crear cuenta / Entrar', 'cuenta', { id: pid }, 'sec');
   if (esTg()) return btn(`${estrellasDe(usd)} Stars`, 'premium', { id: pid, metodo: 'stars' }, principal ? '' : 'sec');
   // Yape / Plin (PAGO_LOCAL con el numero del dueño): principal en soles; lo demas, plegado.
   const pqL = pagoLocalActivo() && PAQUETES.find(p => p.id === pid);
@@ -697,7 +697,7 @@ function htmlArmasSkins(y, tab) {
     }
     const nom = d.premium ? `<span style="color:${d.color}">${esc(d.nombre)}</span>` : esc(d.nombre);
     h += extra ? '<div>' : '';
-    h += tarjeta(ico, nom, esc(d.desc) + (tab === 'skin' && puesto !== id ? difSkin(y, id) : ''), acc, d.color ? ` style="--rz:${d.color}"` : '');
+    h += tarjeta(ico, nom, esc(d.desc) + (tab === 'skin' && puesto !== id ? difSkin(y, id) : ''), acc, d.color ? ` style="--rz:${d.color}"` : '', est.foco === id ? 'foco' : '');
     if (extra) h += extra + '</div>';
   }
   h += '</div>';
@@ -723,7 +723,7 @@ function htmlPremium(y) {
     const sk = pq.skin && SKINS[pq.skin];
     let acc;
     if (pq.skin && (y.skins || []).includes(pq.skin)) acc = etq('✓ Ya la tienes', 'vv-ok');
-    else if (!cuenta) acc = etq(precio(pq.usd, pq.pen)) + btn('Iniciar sesión', 'cuenta', {}, 'sec');
+    else if (!cuenta) acc = etq(precio(pq.usd, pq.pen)) + btn('Crear cuenta / Entrar', 'cuenta', { id: pq.id }, 'sec');
     else acc = etq(precio(pq.usd, pq.pen), 'vv-ok') + botonesPago(y, pq.id, pq.usd, true);
     const ico = sk ? icoSkin(pq.skin, sk) : icoEquipo(pq.icono);
     const nom = (sk && sk.premium ? `<span style="color:${sk.color}">${esc(pq.nombre)}</span>` : esc(pq.nombre))
@@ -895,7 +895,7 @@ function mostrarFacturaWeb(m) {
     `<p class="vv-nota" style="margin-bottom:8px">Si no tienes Telegram, instálalo gratis: Telegram te vende las Stars con tarjeta y te muestra el total antes de pagar.</p>` +
     `<a class="btn" href="${esc(m.link)}" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;padding:12px;margin-bottom:10px">⭐ Abrir Telegram y pagar</a>` +
     (TACTIL ? '' : `<p class="vv-p">O escanea con la cámara de tu celular:</p><div class="vv-qr" data-qr></div>`) +
-    `<p class="vv-p" style="margin-top:10px">El pedido vence a los 30 minutos de hacerlo. ${esc(textoPagoRecibido())} Si cierras esta ventana, vuelve a pulsar el mismo paquete y te sale el mismo pedido.</p>`;
+    `<p class="vv-p" style="margin-top:10px">Tienes 3 horas para pagarlo (si necesitas instalar Telegram o comprar Stars, no hay apuro). ${esc(textoPagoRecibido())} Si cierras esta ventana, vuelve a pulsar el mismo paquete y te sale el mismo pedido.</p>`;
   const c = parte(id, 'cuerpo');
   abrirV(id);
   if (!TACTIL) cargarScript('https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js', 'sha384-mZT2gIty7ZDdOGkxfP6joZcYdMW1Jvj9dRlfpTmaJAKKXTqzygtB22k7FLe+KZC1').then(() => {
@@ -1154,12 +1154,13 @@ const ACC = {
     H.mandar({ t: 'reclamoPedido', codigo: b.dataset.id });
     setTimeout(() => { if (b.isConnected && b.disabled) { b.disabled = false; b.textContent = '¿Problema?'; } }, 5000);
   },
-  cuenta: () => {
+  cuenta: b => {
     if (H.iniciarSesion) H.iniciarSesion();
     else {
-      // La cuenta se abre en CLASSIC (#cuenta) y, al entrar, vuelve aquí con la tienda (dq_volver; localStorage por si el correo abre otra pestaña).
+      // La cuenta se abre en CLASSIC (#cuenta) y, al entrar, vuelve aquí con la tienda en el paquete que quería (&f=; localStorage por si el correo abre otra pestaña).
       H.aviso('Entra o crea tu cuenta gratis con tu correo: al terminar vuelves aquí a la tienda.', 'ok');
-      try { sessionStorage.setItem('dq_volver', '/mundo/#premium'); localStorage.setItem('dq_volver', '/mundo/#premium'); } catch (e) {}
+      const f = b && b.dataset && /^[\w-]+$/.test(b.dataset.id || '') ? '&f=' + b.dataset.id : '';
+      try { sessionStorage.setItem('dq_volver', '/mundo/#premium' + f); localStorage.setItem('dq_volver', '/mundo/#premium' + f); } catch (e) {}
       const hTg = TG() && location.hash && location.hash.length > 1 ? location.hash : '';
       setTimeout(() => { location.href = '/mmo/' + (hTg ? hTg + '&cuenta&volver=mundo' : '#cuenta&volver=mundo'); }, 900);
     }
@@ -1199,6 +1200,7 @@ function abrirTienda(tab, foco, via) {
   est.via = via === 'hud' || via === 'oro' || via === 'bot' || via === 'falta' || via === 'bienv' ? via : 'npc';
   est.foco = typeof foco === 'string' ? foco : '';
   pintarTienda(); abrirV(IDS.tienda);
+  if (est.foco) requestAnimationFrame(() => { try { const c = parte(IDS.tienda, 'cuerpo'), f = c.querySelector('.vv-item.foco'); if (f) c.scrollTop += f.getBoundingClientRect().top - c.getBoundingClientRect().top - (c.clientHeight - f.offsetHeight) / 2; } catch (e) {} });   /* solo el cuerpo: scrollIntoView movía también body/.modal (overflow:hidden) y descuadraba el HUD en móvil */
 }
 function abrirLogros() {
   if (!H || !H.yo()) return;

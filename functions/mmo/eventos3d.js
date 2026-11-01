@@ -71,7 +71,7 @@ export const Eventos3D = {
       if (zonaAbierta(z)) (porZona[z] = porZona[z] || []).push(s);
     }
     // Monstruos especiales que caducan sin pelear (un raro que nadie encontro).
-    for (const o of W.mons.values()) if (o.expira && ahora > o.expira && !o.muere && !o.obj) { W.mons.delete(o.id); this.aClave(K3, { t: 'md3', id: o.id }); if (o.ex3 && o.ex3.raro) (W.raros || (W.raros = {}))[o.mapa] = { id: 0, prox: ahora + RARO3D_REAPARECE_MS }; }
+    for (const o of W.mons.values()) if (o.expira && ahora > o.expira && !o.muere && !o.obj) { W.mons.delete(o.id); this.aClave(K3, { t: 'md3', id: o.id, huye: 1 }); if (o.ex3 && o.ex3.raro) (W.raros || (W.raros = {}))[o.mapa] = { id: 0, prox: ahora + RARO3D_REAPARECE_MS }; }
     // Raros: una tirada por minuto en cada zona con gente.
     W.raros = W.raros || {};
     for (const z in porZona) {
@@ -206,7 +206,7 @@ export const Eventos3D = {
     W.inv3 = null;
     W.inv3prox = Date.now() + rnd(INV3D_CADA_MIN[0], INV3D_CADA_MIN[1]) * 60000;
     const mp = MAPAS[ev.zona];
-    for (const o of [...W.mons.values()]) if (o.ex3 && o.ex3.ev === ev.id) { W.mons.delete(o.id); if (!o.muere) this.aClave(K3, { t: 'md3', id: o.id }); }
+    for (const o of [...W.mons.values()]) if (o.ex3 && o.ex3.ev === ev.id) { W.mons.delete(o.id); if (!o.muere) this.aClave(K3, { t: 'md3', id: o.id, huye: 1 }); }
     if (!ganada) {
       this.aClave(K3, { t: 'aviso', m: `⌛ Los invasores se retiraron de ${mp.nombre}: la invasión terminó sin premio.` });
       this.aClave(K3, { t: 'inv3', on: false, fin: 'perdida' });
@@ -256,15 +256,19 @@ export const Eventos3D = {
     c.cofres3[cf.i] = ahora;
     const T = COFRE_TIPOS[cf.tipo], nvZ = (MAPAS[cf.zona].nv[0] + MAPAS[cf.zona].nv[1]) / 2;
     const X = COFRE3D_X[cf.tipo];
-    const oro = Math.max(1, Math.round(nvZ * T.oro * X.oro * rnd(0.85, 1.15)));
+    // Paga segun TU nivel (tope el de la zona): un Nv 1 con alas no saca el tesoro de una zona Nv 55.
+    const nvJ = c.nivel || 1, nvP = Math.min(nvZ, nvJ + 3), nvMin = MAPAS[cf.zona].nv[0];
+    const bajo = nvJ < nvMin - 5;
+    const oro = Math.max(1, Math.round(nvP * T.oro * X.oro * rnd(0.85, 1.15) * (bajo ? 0.3 : 1)));
     c.oro += oro;
     let pociones = 0;
     if (Math.random() < T.pocion) { pociones = T.pociones; c.pw.pocion = Math.min(99, (c.pw.pocion || 0) + pociones); }
     let item = null;
-    if (Math.random() < X.equipo) { const nv = MAPAS[cf.zona].nv; item = this.darItem(s, this.generarItem(clamp(c.nivel, nv[0], nv[1]), T.r)); }
+    if (Math.random() < X.equipo) { const nv = MAPAS[cf.zona].nv; item = this.darItem(s, this.generarItem(Math.min(nvJ, nv[1]), T.r)); }
     c.cofresAbiertos = (c.cofresAbiertos || 0) + 1;
     this.progresoTarea && this.progresoTarea(s, 'cofre');
     this.enviar(s, { t: 'cofre3A', id: cf.i, ms: COFRE_CADA_MS, oro, pociones, item: item ? nombreItem(item) : null, tipo: cf.tipo });
+    if (bajo) this.enviar(s, { t: 'toast', m: `🧰 Este cofre es de una zona de nivel ${nvMin}: vuelve cuando seas más fuerte para el tesoro completo.` });
     this.revisarLogros(s);
     this.yoLuego(s, true);
     return this.guardar(s);

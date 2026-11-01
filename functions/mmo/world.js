@@ -179,6 +179,9 @@ const MAX_SALTO = 215;
 // Pago confirmado mas de 2 min despues de que vencio el pedido (30 min): se pago
 // con el precio de entonces y lo revisa el dueño (no se entrega solo).
 const pagoTarde = (tx, desde) => !!(tx.tiempo && tx.tiempo > desde + PEDIDO_VIGENCIA_MS + 120000);
+// Vigencia de un pedido. Stars pedido desde la web: 3 h, porque quien llega por un anuncio
+// tiene que instalar Telegram y comprar Stars antes de pagar (el precio en Stars es fijo).
+const vigenciaPd = x => x.metodo === 'yape' ? YAPE_VIGENCIA_MS : (x.metodo === 'stars' && !String(x.uidPago || x.uid || '').startsWith('tg:')) ? 3 * 3600000 : PEDIDO_VIGENCIA_MS;
 
 export class MmoWorld {
   constructor(state, env) {
@@ -1107,7 +1110,7 @@ export class MmoWorld {
     // Uno que se quedo 'comprobando' (el servidor se reinicio mientras se
     // miraba la cadena) vuelve a esperar el pago.
     for (const x of this.pedidos) if (x.estado === 'comprobando' && ahora - (x.compT || 0) > 120000) { x.estado = x.antesComp || 'esperando_pago'; x.firma = ''; }
-    for (const x of this.pedidos) if (x.estado === 'esperando_pago' && ahora - x.creado > (x.metodo === 'yape' ? YAPE_VIGENCIA_MS : PEDIDO_VIGENCIA_MS)) { x.estado = 'vencido'; this.hitoCompra(null, 'cad', x); }   // caducado sin pagar: embudo de compra
+    for (const x of this.pedidos) if (x.estado === 'esperando_pago' && ahora - x.creado > vigenciaPd(x)) { x.estado = 'vencido'; this.hitoCompra(null, 'cad', x); }   // caducado sin pagar: embudo de compra
     // Yape vence a las 24 h de crearse: se guarda 24 h mas para que quien yapeo al final aun pueda mandar su operacion.
     this.pedidos = this.pedidos.filter(x => x.estado !== 'vencido' || ahora - x.creado < (x.metodo === 'yape' ? YAPE_VIGENCIA_MS + 86400000 : 86400000));
     let sobran = this.pedidos.length - 300;
@@ -1229,7 +1232,7 @@ export class MmoWorld {
     // Stars: si ya hay una factura viva de este paquete (cerrada sin pagar, doble
     // toque...), se reutiliza su enlace en vez de crear otra.
     if (metodo === 'stars') {
-      const vivo = this.pedidos.find(x => x.uid === c.uid && x.metodo === 'stars' && x.paquete === pq.id && x.estado === 'esperando_pago' && x.link && Date.now() - x.creado < PEDIDO_VIGENCIA_MS - 300000);
+      const vivo = this.pedidos.find(x => x.uid === c.uid && x.metodo === 'stars' && x.paquete === pq.id && x.estado === 'esperando_pago' && x.link && Date.now() - x.creado < vigenciaPd(x) - 300000);
       if (vivo) { vivo.cancelado = false; return this.enviar(s, { t: 'factura', codigo: vivo.codigo, link: vivo.link, web: !auth.startsWith('tg:') }); }
     }
     // Yape: el pedido vivo del mismo paquete se reutiliza (dura 24 h y cuenta en el tope de 3).
@@ -1237,8 +1240,8 @@ export class MmoWorld {
       const vivo = this.pedidos.find(x => x.uid === c.uid && x.metodo === 'yape' && x.paquete === pq.id && x.estado === 'esperando_pago' && Date.now() - x.creado < YAPE_VIGENCIA_MS - 600000);
       if (vivo) return this.enviar(s, this.datosYape(vivo));
     }
-    // Las facturas de Stars sin pagar no cuentan en el tope: no salen en 'Tus compras'
-    // (no se pueden terminar) y Telegram no cobra una vencida (pedidoValido la frena).
+    // Las facturas de Stars sin pagar no cuentan en el tope: se terminan pulsando el mismo
+    // paquete (reusa la factura viva) y Telegram no cobra una vencida (pedidoValido la frena).
     if (this.pedidos.filter(x => x.uid === c.uid && !(x.metodo === 'stars' && x.estado === 'esperando_pago') &&(x.estado === 'esperando_pago' || x.estado === 'comprobando' || x.estado === 'por_verificar')).length >= 3) return no(this.pedidos.some(x => x.uid === c.uid && x.metodo === 'yape' && x.estado === 'esperando_pago') ? 'Tienes compras sin pagar: termina alguna (Tus compras → «Pagar») o espera a que venzan.' : 'Tienes compras sin pagar: termina o espera 30 minutos.');
     if (this.pedidos.filter(x => x.uid === c.uid && Date.now() - x.creado < 3600000).length >= 10) return no('Has creado muchos pedidos seguidos: espera un rato.');
     if (this.pedidos.filter(x => x.estado === 'esperando_pago').length >= 150) return no('La tienda está muy ocupada: intenta en unos minutos.');
@@ -1599,7 +1602,7 @@ export class MmoWorld {
       pd.estado = 'por_verificar'; pd.charge = String(b.charge || ''); pd.tgPagador = String(b.tgId || ''); pd.starsPagadas = b.stars | 0; pd.pagadoEn = Date.now();
       pd.cadena = { ok: false, motivo: `pagó ${b.stars} Stars (se pedían ${pd.stars}) desde otra cuenta o de menos` };
       await this.guardarPedidos();
-      this.avisarAdmin(`⚠️ Pago de Stars raro en el pedido #${pd.codigo}: pagó ${b.stars} (se pedían ${pd.stars}) desde tg ${b.tgId}. Queda por revisar; para devolverlo: /anular ${pd.codigo}`);
+      this.avisarAdmin(`⚠️ Pago de Stars raro en el pedido #${pd.codigo}: pagó ${b.stars} (se pedían ${pd.stars}) desde tg ${b.tgId}. Queda por revisar; para devolverlo: /anular ${pd.codigo} o /entregar ${pd.codigo} si está bien`, botonesPedido(pd.codigo));
       return { ok: true, nombre: pd.nombre };
     }
     pd.estado = 'pagado'; pd.charge = String(b.charge || ''); pd.tgPagador = String(b.tgId || ''); pd.starsPagadas = b.stars | 0; pd.pagadoEn = Date.now();
@@ -1834,7 +1837,7 @@ export class MmoWorld {
     if (accion === 'retiros') return json({ ok: true, pendientes: this.retiros.filter(x => x.estado === 'pendiente'), fondo: this.infoFondo() });
     if (accion === 'pedidoValido') {
       const pd = this.buscarPedido(b.codigo);
-      const ok = !!pd && pd.metodo === 'stars' && pd.estado === 'esperando_pago' && Date.now() - pd.creado < PEDIDO_VIGENCIA_MS;
+      const ok = !!pd && pd.metodo === 'stars' && pd.estado === 'esperando_pago' && Date.now() - pd.creado < vigenciaPd(pd);
       // Pack de bienvenida: si mientras tanto ya se pagó otra compra (otro pack abierto
       // u otro paquete), Telegram no cobra este (antes se cobraba y habia que devolverlo).
       const pq = pd && PAQUETES.find(x => x.id === pd.paquete);
@@ -1867,7 +1870,7 @@ export class MmoWorld {
     if (accion === 'misCompras') {
       const id = String(b.tgId || '').replace(/\D/g, '');
       if (!id) return json({ ok: false });
-      const l = this.pedidos.filter(x => x.uid === 'tg:' + id || x.tgPagador === id).slice(-10)
+      const l = this.pedidos.filter(x => (x.uid === 'tg:' + id || x.tgPagador === id) && x.estado !== 'esperando_pago' && x.estado !== 'vencido').slice(-10)
         .map(x => ({ codigo: x.codigo, nombre: x.nombre, estado: x.estado, metodo: x.metodo, charge: x.charge || '', creado: x.creado || 0, pagadoEn: x.pagadoEn || 0 }));
       return json({ ok: true, l });
     }

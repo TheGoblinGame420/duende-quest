@@ -3285,3 +3285,14 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Presumir con imagen (Web Share con archivo), historia de Telegram solo Premium, celebración de jefe derrotado.
 - CLASSIC: AUTO al siguiente monstruo y golpe final con hitstop/vibración. ORIGINS: celebración de subida de nivel y aviso del Abismo a Nv 20.
 - Arnés 897 bien.
+
+### Ronda 10: QA de regresiones, abuso y economía (1-nov-2026, `?v=334`)
+
+- 30 evaluadores → 133 problemas → 10 tareas.
+- social.js: `RE_CONTACTO` con intención (dame/pasa/mi/tu/su…), `RE_ESTAFA` sin falsos positivos (semilla sola, base58 con dígito, sin TLD me/top/fun/live).
+- retencion.js: `callar` = todos los jugadores del MMO (el recordatorio del arcade ya no les escribe).
+- Cofres 3D pagan según el nivel del jugador (antes un Nv 1 con alas sacaba ~130.000 oro/h); sin «JEFE DERROTADO» al huir.
+- Invitado: pack de bienvenida a Nv 5 con «Crear cuenta», botón en GUARDA TU DUENDE, ventanas que no se apilan; «Crear cuenta / Entrar» vuelve al paquete (foco).
+- Presumir con imagen copia el enlace; equipos modestos abren WhatsApp directo.
+- /pedidos, botones del bot y /miscompras corregidos. Kit Compañero sin tope por IPv4 (CGNAT). Pedidos de Stars desde la web con 3 h de plazo.
+- Arnés 897 bien (2 pruebas del recordatorio del arcade actualizadas).

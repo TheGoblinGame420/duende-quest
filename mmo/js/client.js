@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=333';
-import { iniciarRegalo } from './regalo.js?v=333';
-import { iniciarAvisoTg } from './avisotg.js?v=333';
+} from './data.js?v=334';
+import { iniciarRegalo } from './regalo.js?v=334';
+import { iniciarAvisoTg } from './avisotg.js?v=334';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -2258,7 +2258,12 @@ function compartirPresumir(info) {
   // Con la imagen precargada, la hoja de compartir del sistema (Estados, historias). Si falla (no si cancela), WhatsApp.
   try {
     if (presumirFile && navigator.canShare && navigator.canShare({ files: [presumirFile] })) {
-      navigator.share({ files: [presumirFile], text: txtWa + ' ' + web }).catch(e => { if (e && e.name !== 'AbortError') abrirWa(txtWa, web); });
+      // Instagram, Facebook y WhatsApp en iPhone descartan el texto junto a la imagen:
+      // el enlace se copia antes (dentro del gesto) y en iOS se comparte sin archivo.
+      try { if (navigator.clipboard) navigator.clipboard.writeText(txtWa + ' ' + web).then(() => aviso('🔗 Enlace copiado: pégalo en tu historia o mensaje para que tu amigo entre contigo.', 'ok'), () => {}); } catch (e) {}
+      const esIos = /iPhone|iPad|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+      const datos = esIos ? { text: txtWa, url: web } : { files: [presumirFile], text: txtWa + ' ' + web };
+      navigator.share(datos).catch(e => { if (e && e.name !== 'AbortError') abrirWa(txtWa, web); });
       return;
     }
   } catch (e) {}
@@ -3609,7 +3614,7 @@ function mostrarFacturaWeb(m) {
     `<p style="font-size:12px;color:var(--txt2);margin-bottom:8px">Si no tienes Telegram, instálalo gratis: Telegram te vende las Stars con tarjeta y te muestra el total antes de pagar.</p>` +
     `<a class="btn" href="${esc(m.link)}" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;padding:12px;margin-bottom:10px">⭐ Abrir Telegram y pagar</a>` +
     (TACTIL ? '' : `<p style="font-size:12px;margin:6px 0">O escanea con la cámara de tu celular:</p><div id="stars-qr" style="display:flex;justify-content:center;margin:6px 0;min-height:40px"></div>`) +
-    `<p style="font-size:12px;color:var(--txt2);margin-top:8px">El pedido vence a los 30 minutos de hacerlo. ${esc(textoPagoRecibido())} Si cierras esta ventana, vuelve a pulsar el mismo paquete y te sale el mismo pedido.</p>`;
+    `<p style="font-size:12px;color:var(--txt2);margin-top:8px">Tienes 3 horas para pagarlo (si necesitas instalar Telegram o comprar Stars, no hay apuro). ${esc(textoPagoRecibido())} Si cierras esta ventana, vuelve a pulsar el mismo paquete y te sale el mismo pedido.</p>`;
   abrir('m-sol');
   if (!TACTIL) cargarScript('https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js', 'sha384-mZT2gIty7ZDdOGkxfP6joZcYdMW1Jvj9dRlfpTmaJAKKXTqzygtB22k7FLe+KZC1').then(() => {
     if (!$('stars-qr') || !window.qrcode) return;
@@ -5696,7 +5701,7 @@ function mostrarRecuperacion() {
 function sesionLista(enJuego) {
   // Vino de la tienda de ORIGINS: vuelve al 3D con la tienda abierta (alli hereda al invitado).
   let v = ''; try { v = sessionStorage.getItem('dq_volver') || localStorage.getItem('dq_volver') || ''; sessionStorage.removeItem('dq_volver'); localStorage.removeItem('dq_volver'); } catch (e) {}
-  if (v.startsWith('/mundo/')) { location.href = TG && location.hash.length > 1 ? '/mundo/' + location.hash + '&premium' : v; return; }   // en Telegram se conserva su hash (initData)
+  if (v.startsWith('/mundo/')) { location.href = TG && location.hash.length > 1 ? '/mundo/' + location.hash + (/premium/.test(v) ? '&premium' + ((v.match(/&f=[\w-]+/) || [''])[0]) : '') : v; return; }   // en Telegram se conserva su hash (initData) y el paquete (&f=)
   if (enJuego || conectado) { try { sessionStorage.setItem('dq_auto', '1'); } catch (e) {} location.reload(); return; }
   $('carga').style.display = 'flex'; $('carga-s').textContent = 'Entrando al mundo…';
   if (sonido) sonarMusica();

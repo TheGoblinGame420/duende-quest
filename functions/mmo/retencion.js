@@ -756,7 +756,9 @@ export const Retencion = {
     }
     await this.retGuardarIdx();
     if (Object.keys(porTipo).length) { try { await this.retSumar(hoy, porTipo); } catch (er) { console.error('[MMO avisos tipo]', er); } }
-    res.callar = Object.keys(idx).filter(u => u.startsWith('tg:') && (idx[u].off || idx[u].bloq)).map(u => u.slice(3));
+    // A todo jugador del MMO/3D solo lo rigen estas reglas (pausa, dia
+    // jugado, 14 dias sin entrar): el cron del arcade no le escribe nunca.
+    res.callar = Object.keys(idx).filter(u => u.startsWith('tg:') || idx[u].tc).map(u => u.startsWith('tg:') ? u.slice(3) : String(idx[u].tc));
     res.hoy = Object.keys(idx).filter(u => (u.startsWith('tg:') || idx[u].tc) && (idx[u].ad === hoy || (this.puedeAvisar(u, idx[u], hoy, idx) && horaLima(horaHabitual(idx[u])) > horaLima(hora)))).map(u => u.startsWith('tg:') ? u.slice(3) : String(idx[u].tc));
     return res;
   },
@@ -770,7 +772,7 @@ export const Retencion = {
     const conTc = Object.keys(idx).filter(u => !u.startsWith('tg:') && idx[u].tc);
     return {
       ok: true,
-      callar: tg.filter(u => idx[u].off || idx[u].bloq).map(u => u.slice(3)),
+      callar: [...tg.map(u => u.slice(3)), ...conTc.map(u => String(idx[u].tc))],
       hoy: [...tg, ...conTc].filter(u => idx[u].ad === hoy || (this.puedeAvisar(u, idx[u], hoy, idx) && horaLima(horaHabitual(idx[u])) > horaLima(hora))).map(u => u.startsWith('tg:') ? u.slice(3) : String(idx[u].tc)),
     };
   },

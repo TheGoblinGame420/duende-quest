@@ -1537,7 +1537,7 @@ async function pruebasRetencion() {
   chequear(r.enviados === 3 && r.bloqueados === 1, `cuenta enviados y bloqueados (${r.enviados}/${r.bloqueados})`);
   const idx = await mundo.retIdx();
   chequear(idx['tg:3003'].bloq === 1, 'marca a quien bloqueó al bot');
-  chequear(r.callar.includes('3003') && r.callar.includes('3004') && !r.callar.includes('3001'), 'devuelve a quién no escribirle (para el recordatorio del arcade)');
+  chequear(r.callar.includes('3003') && r.callar.includes('3004') && r.callar.includes('3001'), 'devuelve a quién no escribirle: todos los del MMO (el arcade no les escribe)');
   const m1 = deQuien('3001');
   chequear(/Rachero/.test(m1.text) && /Llevas 1 día seguido/.test(m1.text) && /cobras el día 2/.test(m1.text), 'el aviso habla de su racha que se pierde hoy');
   chequear(/Caza del día sin cobrar/.test(m1.text) && /Te faltan .* XP para el nivel 2/.test(m1.text), 'y de la caza del día y lo que falta para subir');
@@ -1605,7 +1605,7 @@ async function pruebasRetencion() {
   };
   try { await runCron('0 17 * * *', envCron); } finally { globalThis.fetch = fetchReal; }
   chequear(ids() === '3004', 'el MMO avisa a quien le toca (' + ids() + ')');
-  chequear(arcade.sort().join(',') === '3001,9999', 'el recordatorio del arcade se salta al avisado, al que bloqueó y a quien pidió no recibir avisos (' + arcade + ')');
+  chequear(arcade.sort().join(',') === '9999', 'el recordatorio del arcade solo va a quien no juega el MMO (' + arcade + ')');
   console.log('Avisos a la hora habitual de cada uno');
   const { horaHabitual, HORA_DEFECTO } = await import('../functions/mmo/retencion.js');
   chequear(horaHabitual({ hs: [20, 3] }) === 3 && horaHabitual({ hs: [9] }) === 9 && horaHabitual({}) === HORA_DEFECTO, 'con 1 o 2 días anotados, la hora de su última entrada; sin ninguno, las 17:00');

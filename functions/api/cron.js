@@ -33,8 +33,9 @@ export async function keepAlive(env) {
 
 // ── Recordatorio diario ──
 // saltar = telegram_id que no deben recibirlo: los que ya recibieron hoy el
-// aviso del MMO (un solo mensaje del bot a la misma hora) y los que pidieron
-// no recibir avisos (/avisos off) o bloquearon al bot.
+// aviso del MMO (un solo mensaje del bot a la misma hora) y todo jugador del
+// MMO/3D (a ellos solo los rige retencion.js: pausa, /avisos off, bloqueo).
+// Es un Set en memoria: una lista larga no toca ninguna URL.
 export async function dailyReminder(env, saltar = new Set()) {
   const e = envOf(env);
   const token = env.TELEGRAM_BOT_TOKEN;

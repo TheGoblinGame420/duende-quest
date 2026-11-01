@@ -504,9 +504,18 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 333;
+export const VERSION = 334;
 
 export const NOVEDADES = [
+  { n: 102, fecha: '1 nov 2026', items: [
+    'El chat ya no bloquea frases normales como «juego desde el celular», «lo vi en facebook» o un «jajajaja» largo; sigue bloqueado pasar WhatsApp, redes, números y billeteras.',
+    'Si juegas ORIGINS o CLASSIC, el bot te manda como mucho un aviso al día (se apaga con /avisos off).',
+    'Los cofres de ORIGINS pagan según tu nivel, y ya no sale «¡JEFE DERROTADO!» cuando un jefe se retira.',
+    'Como invitado, a nivel 5 ves el Pack de bienvenida con su botón para crear tu cuenta gratis. En la tienda, «Crear cuenta / Entrar» te devuelve al paquete que querías.',
+    'Al presumir con imagen, el enlace de invitación se copia solo para que lo pegues.',
+    'El Kit Compañero llega a todos tus amigos aunque compartan la red del celular. Si pagas con Stars desde la web tienes 3 horas para completar el pago.',
+    'El botón «¿La quieres?» es más grande y la tienda te lleva directo a esa skin.',
+  ] },
   { n: 101, fecha: '1 nov 2026', items: [
     'Subir de nivel en ORIGINS ahora se siente: cartel grande, destello dorado, chispas y la cámara que se abre. Vencer a un jefe tiene su propia celebración «¡JEFE DERROTADO!».',
     'Presume tus logros con imagen en tus Estados de WhatsApp o en historias de Instagram y Facebook; cada amigo que entre con tu enlace les da oro a los dos.',

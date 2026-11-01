@@ -444,7 +444,7 @@ async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
     if (arcade) await enviar(arcade);
     if (!r.pedidos.length) return enviar('✅ No hay compras del MMO por entregar.');
     const lineas = r.pedidos.map(x => `#${x.codigo} · ${x.nombre} ($${x.usd}) · ${x.jugador}\n` + (x.metodo === 'stars'
-      ? `⭐ ${x.starsPagadas} Stars pagadas (verificado por Telegram)`
+      ? (x.estado === 'por_verificar' ? `⚠️ POR REVISAR: pagó ${x.starsPagadas} de ${x.stars} Stars desde tg ${x.tgPagador || '?'}` : `⭐ ${x.starsPagadas} Stars pagadas (verificado por Telegram)`)
       : x.metodo === 'yape' ? `🟣 S/ ${((x.centimos || 0) / 100).toFixed(2)} por Yape/Plin · operación ${x.operacion || '?'} · ⚠️ revísalo en tu app (monto exacto y nota #${x.codigo})`
       : (x.metodo === 'duende' ? `🍄 ${(x.duendeRaw / 1e6).toLocaleString('es')} $DUENDE` : `◎ ${(x.lamports / 1e9).toFixed(9)} SOL`) + ` · ${x.cadena ? (x.cadena.ok ? '✅ visto en la cadena' : '❌ ' + x.cadena.motivo) : '⚠️ sin comprobar'}\nhttps://solscan.io/tx/${x.firma}`));
     return enviar('🛒 Compras por entregar:\n\n' + lineas.join('\n\n') + '\n\n/entregar CODIGO para darle lo que compró · /anular CODIGO motivo para cancelar (las Stars se devuelven solas; el SOL lo devuelves tú).');
@@ -690,7 +690,8 @@ async function handleMisCompras(token, env, context, chatId, userId) {
   if (Array.isArray(arcade)) for (const f of arcade) {
     if (!f.tx_id || cargosMmo.includes(f.tx_id)) continue;
     const n = Number(f.tokens_credited);
-    lineas.push(`⭐ ${f.amount_stars} Stars · ${fecha(f.created_at)}\n   ${n > 0 ? '✅ Acreditado' : n < 0 ? '↩️ Devuelto' : '⏳ En revisión'}`);
+    // Sin la lectura del MMO no se sabe si esa compra es un pedido ya entregado.
+    lineas.push(`⭐ ${f.amount_stars} Stars · ${fecha(f.created_at)}\n   ${n > 0 ? '✅ Acreditado' : n < 0 ? '↩️ Devuelto' : (mmo && mmo.ok) ? '⏳ En revisión' : '⏳ Estado no disponible ahora'}`);
   }
   const fallo = !(mmo && mmo.ok) || !Array.isArray(arcade);
   let text = lineas.length ? '🧾 Tus compras con Stars\n\n' + lineas.slice(0, 12).join('\n\n') : '🧾 No encontramos compras con Stars de esta cuenta de Telegram.';
@@ -883,7 +884,7 @@ async function onRequestPost(context) {
       } catch (e) {}
       await tg(token, 'answerPreCheckoutQuery', pagoOk
         ? { pre_checkout_query_id: body.pre_checkout_query.id, ok: true }
-        : { pre_checkout_query_id: body.pre_checkout_query.id, ok: false, error_message: motivo === 'bienvenida' ? 'El Pack de bienvenida es solo para tu primera compra y ya tienes una pagada. No se te cobró nada.' : 'Este pedido ya venció o ya se pagó. Vuelve a pedirlo desde el juego.' });
+        : { pre_checkout_query_id: body.pre_checkout_query.id, ok: false, error_message: motivo === 'bienvenida' ? 'El Pack de bienvenida es solo para tu primera compra y ya tienes una pagada. No se te cobró nada.' : 'Este pedido ya venció o ya se pagó. En este intento no se te cobró nada. Si ya lo pagaste, míralo en «Tus compras»; si no, vuelve al juego y pulsa el paquete otra vez.' });
       return new Response('OK');
     }
 
@@ -1060,8 +1061,10 @@ async function onRequestPost(context) {
         }
         let r = null;
         try { r = await mmoInterno(context.env, acc === 'mmoent' ? 'entregar' : 'anular', acc === 'mmoent' ? { codigo } : { codigo, motivo: 'anulado por El Duende' }); } catch (e) {}
-        // Se quitan los botones del aviso para no pulsarlos dos veces.
-        await tg(token, 'editMessageReplyMarkup', { chat_id: chatId, message_id: messageId, reply_markup: { inline_keyboard: [] } }).catch(() => {});
+        // Se quitan los botones del aviso para no pulsarlos dos veces, pero solo si
+        // ya no tiene sentido reintentar (hecho, o el pedido ya no está abierto).
+        // Con fallo de red o «ya se está entregando» se quedan para reintentar.
+        if (r && (r.ok || /No hay un pedido pagado|no se puede anular/i.test(r.error || ''))) await tg(token, 'editMessageReplyMarkup', { chat_id: chatId, message_id: messageId, reply_markup: { inline_keyboard: [] } }).catch(() => {});
         const txt = !r ? '❌ No se pudo hablar con el MMO ahora. Prueba con el comando.'
           : !r.ok ? '❌ ' + r.error
           : acc === 'mmoent' ? `🎁 Pedido #${r.pedido.codigo} entregado a ${r.pedido.jugador}: ${r.pedido.nombre}. Se le avisó.`

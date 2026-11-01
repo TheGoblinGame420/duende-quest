@@ -13,7 +13,7 @@
 // ═══════════════════════════════════════════════════════
 import { AMIGO_NIVEL, premioAmigo, AMIGOS_MAX, KIT_COMP, AMIGO_BONO_XP, AMIGO_HITO, INVITADOS_MAX } from '../../mmo/js/data.js';
 import { CONTACTOS_MAX, maxGrupo, pub } from './social.js';
-import { MMO_URL } from '../api/telegram-bot.js';
+import { MMO_URL, MUNDO_URL } from '../api/telegram-bot.js';
 
 const CODIGO = /^[a-z0-9]{6}$/;
 
@@ -90,8 +90,12 @@ export const Amigos = {
       }
     } else {
       await this.state.storage.put('c:' + de, co);
+      // Aviso en «Mientras no estabas» (el invitado sin cuenta ya tiene el suyo arriba).
+      if (this.buzonAgregar && !c.uid.startsWith('inv:')) await this.buzonAgregar(de, '🤝 ' + c.nombre + ' creó su duende con tu enlace y ya está en tu lista de amigos. Invítalo a tu grupo desde 👥 Amigos: a nivel ' + AMIGO_NIVEL + ' ganan oro los dos.', true);
+      // El boton lleva al juego donde esta el amigo (c.en3d se fija al entrar, world.js) o donde juega quien invito.
+      const urlAmigo = (co && co.en3d) || (c && c.en3d) ? MUNDO_URL : MMO_URL;
       // Un invitado sin cuenta no dispara avisos de Telegram (tokens de invitado sin fin = spam al invitador).
-      if (!c.uid.startsWith('inv:') && await this.quiereAvisos(de)) { try { await this.tgEnviar('sendMessage', { chat_id: de.slice(3), text: `🤝 ${c.nombre} acaba de crear su duende con tu enlace y ya está en tu lista de amigos. Entra ahora y jueguen juntos en grupo.`, reply_markup: { inline_keyboard: [[{ text: '🌍 Jugar con mi amigo', web_app: { url: MMO_URL } }]] } }); } catch (e) {} }
+      if (!c.uid.startsWith('inv:') && await this.quiereAvisos(de)) { try { await this.tgEnviar('sendMessage', { chat_id: de.slice(3), text: `🤝 ${c.nombre} acaba de crear su duende con tu enlace y ya está en tu lista de amigos. Entra ahora y jueguen juntos en grupo.`, reply_markup: { inline_keyboard: [[{ text: '🌍 Jugar con mi amigo', web_app: { url: urlAmigo } }]] } }); } catch (e) {} }
     }
   },
 
@@ -148,18 +152,25 @@ export const Amigos = {
     if (await this.quiereAvisos(c.invitadoPor)) { try { await this.tgEnviar('sendMessage', { chat_id: c.invitadoPor.slice(3), text: txtA }); } catch (e) {} }
   },
 
-  // Kit «Compañero» de una sola vez por personaje, con topes por dia: 10 por
-  // codigo de quien invita y 3 por IP (en memoria; un reinicio los vacia, y el
+  // Kit «Compañero» de una sola vez por personaje, con topes por dia: 30 por
+  // codigo de quien invita, 1 por dispositivo y 3 por IPv6 (en memoria; un reinicio los vacia, y el
   // kit es pequeño: oro y pociones). Ademas, la tarjeta de «a Nv 10 ganan los dos».
   darKitComp(s, deNombre) {
     const c = s.c;
     if (c.kitComp || (this.uidsPrueba && this.uidsPrueba.has(c.uid))) return;
     const d = Math.floor(Date.now() / 86400000);
     if (!this._kitComp || this._kitComp.d !== d) this._kitComp = { d, de: new Map(), ip: new Map() };
-    const K = this._kitComp, nDe = (K.de.get(c.invitadoPor) || 0) + 1, nIp = s.ip ? (K.ip.get(s.ip) || 0) + 1 : 0;
+    // IPv4 en Peru suele ser CGNAT (cientos de moviles con la misma IP): solo cuenta la IPv6.
+    // Tope real: 1 kit por dispositivo (s.dev, huella de 'hola' en world.js).
+    const ipK = s.ip && s.ip.includes(':') ? s.ip : '', devK = s.dev ? 'd:' + s.dev : '';
+    const K = this._kitComp, nDe = (K.de.get(c.invitadoPor) || 0) + 1, nIp = ipK ? (K.ip.get(ipK) || 0) + 1 : 0, nDev = devK ? (K.ip.get(devK) || 0) + 1 : 0;
     const txt = `🤝 ${deNombre} te invitó: a nivel ${AMIGO_NIVEL} ganan los dos (${premioAmigo(AMIGO_NIVEL).oro.toLocaleString('es', { useGrouping: 'always' })} de oro para ti). En grupo con tu amigo ganas +${Math.round(AMIGO_BONO_XP * 100)}% de XP hasta nivel ${AMIGO_NIVEL}.`;
-    if (nDe > 10 || nIp > 3) { this.enviar(s, { t: 'toast', ok: true, m: txt }); return; }
-    K.de.set(c.invitadoPor, nDe); if (s.ip) K.ip.set(s.ip, nIp);
+    if (nDe > 30 || nIp > 3 || nDev > 1) {
+      // Un solo toast (dos seguidos se pisaban en el cliente).
+      this.enviar(s, { t: 'toast', ok: true, m: txt + ` 🎁 El Kit Compañero de hoy ya se repartió (uno por celular y 30 por enlace al día).` });
+      return;
+    }
+    K.de.set(c.invitadoPor, nDe); if (ipK) K.ip.set(ipK, nIp); if (devK) K.ip.set(devK, nDev);
     c.kitComp = 1;
     c.oro += KIT_COMP.oro;
     c.pw = c.pw || {}; c.pw.pocion = Math.min(99, (c.pw.pocion || 0) + KIT_COMP.pociones);
