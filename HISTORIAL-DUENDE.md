@@ -71,6 +71,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v332 | Ronda 8 (QA de regresiones): ORIGINS que no se congela, entrada con aviso, iOS antiguo, auto-ataque prudente, Stars honestas, bot sin promesas falsas | **B** |
 | v333 | Ronda 9 (juice y viralidad): nivel y jefes que se sienten, presumir con imagen, contador de jugadores, «¿La quieres?», AUTO continuo en CLASSIC, Hora Feliz visible | **B** |
 | v334 | Ronda 10 (QA, abuso y economía): chat sin falsos positivos, un aviso diario, cofres 3D por nivel, camino a crear cuenta, presumir con enlace, Stars web 3 h | **B** |
+| v335 | Ronda 11 (primer minuto y vuelta): cámara hacia la misión, carga con consejos, Caza del día automática, Wake Lock con AUTO, mochila con mejoras, skins con oro en cualquier sitio | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

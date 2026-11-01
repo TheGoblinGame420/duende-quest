@@ -3296,3 +3296,14 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Presumir con imagen copia el enlace; equipos modestos abren WhatsApp directo.
 - /pedidos, botones del bot y /miscompras corregidos. Kit Compañero sin tope por IPv4 (CGNAT). Pedidos de Stars desde la web con 3 h de plazo.
 - Arnés 897 bien (2 pruebas del recordatorio del arcade actualizadas).
+
+### Ronda 11: primer minuto, vuelta y compras (1-nov-2026, `?v=335`)
+
+- 30 evaluadores (3 s tras el anuncio, primer minuto en ORIGINS y CLASSIC, D1, D7, invitar, comprar, sin sonido, cada ventana de ORIGINS, bot, modo Dios, copias, Mini App) → 140 problemas → 10 tareas.
+- ORIGINS: cámara hacia el primer campamento, bienvenida y Kit Compañero que esperan a `avisoTapado()`, guía de VOLAR; `irACrearCuenta()` y botón en Ayuda; aviso del invitado con día de Lima; `botinFuerte` del épico de racha; Wake Lock con auto-ataque y AUTO tras reconectar; pantalla de carga con consejos.
+- /jugar/: sin caja de Chrome para nuevos, intent con el duende, precarga del juego.
+- CLASSIC: aviso al portal de zona alta, sin modal de Telegram en combate, móviles débiles sin empujón al 3D.
+- Caza del día que se cobra sola con aviso de nivel mínimo; skins con oro desde cualquier sitio; aviso de entrega manual antes de pagar.
+- Mochila móvil con «Equipar lo mejor» arriba y punto rojo; tarjeta de mejora para comunes y raros.
+- Servidor: revivir lejos de zonas altas, gesta por cobrar al momento, factura de skin legible.
+- Arnés 897 bien.

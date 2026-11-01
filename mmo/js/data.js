@@ -504,9 +504,18 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 334;
+export const VERSION = 335;
 
 export const NOVEDADES = [
+  { n: 103, fecha: '1 nov 2026', items: [
+    'Al entrar por primera vez a ORIGINS, la cámara ya mira hacia los goblins de tu primera misión y mientras carga ves consejos y una barra que avanza.',
+    'La Caza del día se cobra sola al cazar el monstruo 25, y te dice cuándo sale la próxima.',
+    'Con el auto-ataque puesto la pantalla del celular ya no se apaga, y tu duende vuelve a atacar solo tras reconectar.',
+    'En el celular, «Equipar lo mejor» sale arriba de la mochila y la 🎒 te avisa con un punto rojo cuando tienes una pieza mejor.',
+    'Compra skins con oro desde cualquier lugar del mapa. Los paquetes avisan antes de pagar que El Duende los entrega a mano, en 24 h como máximo.',
+    'El cofre épico del día 7 de tu racha se celebra con brillo y sonido. Como invitado, puedes crear tu cuenta desde Ayuda.',
+    'Si caes ante un enemigo muy fuerte, el juego te dice dónde subir antes; en CLASSIC te avisa si entras a una zona muy alta.',
+  ] },
   { n: 102, fecha: '1 nov 2026', items: [
     'El chat ya no bloquea frases normales como «juego desde el celular», «lo vi en facebook» o un «jajajaja» largo; sigue bloqueado pasar WhatsApp, redes, números y billeteras.',
     'Si juegas ORIGINS o CLASSIC, el bot te manda como mucho un aviso al día (se apaga con /avisos off).',

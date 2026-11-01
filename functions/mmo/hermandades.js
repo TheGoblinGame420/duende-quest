@@ -57,7 +57,7 @@ export const Hermandades = {
     const gc = {};
     for (const u in G.c) if (h.miembros[u]) gc[pub(u)] = G.c[u];
     return {
-      id: h.id, nombre: h.nombre, motd: h.motd || '', color: h.color | 0, creada: h.creada, gesta: { p: G.p, c: gc },
+      id: h.id, nombre: h.nombre, motd: h.motd || '', color: h.color | 0, creada: h.creada, gesta: { sem: G.sem, p: G.p, c: gc },
       m: Object.entries(h.miembros).map(([uid, m]) => ({ uid: pub(uid), n: m.n, lv: m.lv, cl: m.cl, r: m.r, on: this.porUid.has(uid) ? 1 : 0 }))
         .sort((a, b) => b.on - a.on || ({ lider: 0, oficial: 1, miembro: 2 }[a.r] - { lider: 0, oficial: 1, miembro: 2 }[b.r]) || b.lv - a.lv),
     };
@@ -310,6 +310,7 @@ export const Hermandades = {
     if (n1 > n0) {
       this.avisarHerm(h, `Gesta semanal: ${GESTA_NOMBRES[n1 - 1]} conseguido. Quien aportó ${GESTA_MIN}+ puntos cobra su oro.`);
       for (const x of this.conectadosHerm(h)) this.cobrarGesta(x, h);
+      this.enviarHerm(h);
       this.guardarHerm(h);
       this.anotarRankHerm([h]);
       this.hermSucias.delete(h);

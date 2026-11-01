@@ -21,7 +21,7 @@ import {
   EXPEDICION, premioExpedicion, MATERIALES,
   PAQUETES, estrellasDe, solesDeStars, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA, LOGROS, progresoLogro, statsJugador, ALAS, paqueteParaFaltante, ENTREGA, textoPagoRecibido, PEDIDO_VIGENCIA_MS,
   pagoLocalActivo, textoSoles, YAPE_VIGENCIA_MS, premioDiaria, MISIONES,
-} from '/mmo/js/data.js?v=334';
+} from '/mmo/js/data.js?v=335';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -97,6 +97,7 @@ const CSS = `
 .vv-stat{background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:6px 4px;text-align:center;}
 .vv-stat small{display:block;font:700 9.5px var(--sans);color:var(--txt3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;}
 .vv-stat b{font:800 15px var(--sans);}
+@media (max-width:520px){.vv-stats{gap:4px;margin-bottom:6px}.vv-stat{padding:3px 2px}.vv-stat small{font-size:8.5px;margin:0}.vv-stat b{font-size:13px}}
 .vv-ranuras{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:8px;}
 .vv-ranura{position:relative;border:1px solid var(--rz,var(--borde));border-radius:10px;background:rgba(255,255,255,.04);aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;padding:4px;color:var(--txt);min-width:0;}
 .vv-ranura img{width:56%;image-rendering:pixelated;}
@@ -352,8 +353,25 @@ function pintarInventario() {
   parte(id, 'sub').innerHTML = `<span><b>${esc(y.nombre)}</b> · Nv ${y.nivel}</span><span>${oro(y.oro)}</span><span>Bolsa <b>${(y.bolsa || []).length}/${BOLSA_MAX}</b></span>`;
   pintarTabs(id, [['equipo', 'EQUIPO'], ['skin', 'SKINS'], ['arma', 'ARMAS']], est.inv, 'itab');
   const c = parte(id, 'cuerpo');
-  c.innerHTML = htmlStats(y) + (est.inv === 'equipo' ? htmlEquipo(y) : htmlColeccion(y, est.inv));
+  c.innerHTML = (est.inv === 'equipo' ? htmlFilaMejor(y) : '') + htmlStats(y) + (est.inv === 'equipo' ? htmlEquipo(y) : htmlColeccion(y, est.inv));
   dibujarHojas(c);
+}
+// Atajos: lo mejor de la bolsa para cada ranura y vender lo comun (arriba del todo, visible en movil).
+function htmlFilaMejor(y) {
+  const eq = y.eq || {}, bolsa = y.bolsa || [];
+  const pz = piezasConjunto(eq);
+  const comunes = comunesVendibles(y);
+  const mejoras = Object.keys(RANURAS).map(k => {
+    const puesto = eq[k];
+    const protege = puesto && puesto.cj && pz[puesto.cj] >= 2;   // no se rompe un conjunto activo
+    const cand = bolsa.filter(x => x.s === k && puedeUsar(x, y) && (!protege || x.cj === puesto.cj)).sort((a, b) => puntaje(b.b) - puntaje(a.b))[0];
+    return cand && (!puesto || puntaje(cand.b) > puntaje(puesto.b)) ? cand : null;
+  }).filter(Boolean);
+  if (!mejoras.length && !comunes.length) return '';
+  let h = '<div class="vv-fila2">';
+  if (mejoras.length) h += btn(`▲ Equipar lo mejor (${mejoras.length})`, 'mejor', {}, '');
+  if (comunes.length) h += btn(pidiendo('comunes') ? '¿Seguro? Toca otra vez' : `Vender ${comunes.length} comunes (+${fmt(comunes.reduce((a, x) => a + precioVenta(x), 0))})`, 'comunes', {}, pidiendo('comunes') ? 'ojo' : 'sec');
+  return h + '</div>';
 }
 function htmlEquipo(y) {
   const eq = y.eq || {}, bolsa = y.bolsa || [];
@@ -371,26 +389,13 @@ function htmlEquipo(y) {
   if (sel) {
     const rz = RAREZAS[sel.r];
     h += `<div class="vv-det" style="--rz:${rz.color}"><div class="vv-ico">${icoItem(sel)}</div><div class="vv-txt"><b style="color:${rz.color}">${esc(nombreItem(sel))} <span class="vv-dim">Nv${sel.nv}</span></b><small>${esc(rz.nombre)} · ${esc(RANURAS[sel.s].nombre)} · ${esc(textoBonos(sel.b || {}))}${sel.cj && CONJUNTOS[sel.cj] ? `<br><span style="color:${CONJUNTOS[sel.cj].color}">Conjunto ${esc(CONJUNTOS[sel.cj].nombre)}</span>` : ''}</small></div><div class="vv-acc">${btn('Quitar', 'quitar', { id: est.ranura }, 'sec', bolsa.length >= BOLSA_MAX)}${sel.r >= 1 && y.nivel >= NIVEL_MAX ? btn(pidiendo('reforjar:' + sel.id) ? '¿Seguro? Toca otra vez' : `Reforjar ${MON}${fmt(costoReforja(sel))}`, 'reforjar', { id: sel.id }, pidiendo('reforjar:' + sel.id) ? 'ojo' : 'sec') : ''}</div></div>`;
-  } else h += '<p class="vv-nota" style="text-align:center;margin:0 0 6px">Toca una pieza puesta para verla o quitarla.</p>';
+  } else if (!bolsa.length) h += '<p class="vv-nota" style="text-align:center;margin:0 0 6px">Toca una pieza puesta para verla o quitarla.</p>';
   // Conjuntos que llevas puestos.
   for (const cid in pz) {
     const cj = CONJUNTOS[cid];
     h += `<p class="vv-cj" style="color:${cj.color}">◆ ${esc(cj.nombre)} ${pz[cid]}/5 — ${pz[cid] >= 4 ? 'bono completo' : pz[cid] >= 2 ? 'bono de 2 activo' : 'sin bono aún'}<br><span>${esc(textoConjunto(cj))}</span></p>`;
   }
-  // Atajos: lo mejor de la bolsa para cada ranura y vender lo comun.
-  const comunes = comunesVendibles(y);
-  const mejoras = Object.keys(RANURAS).map(k => {
-    const puesto = eq[k];
-    const protege = puesto && puesto.cj && pz[puesto.cj] >= 2;   // no se rompe un conjunto activo
-    const cand = bolsa.filter(x => x.s === k && puedeUsar(x, y) && (!protege || x.cj === puesto.cj)).sort((a, b) => puntaje(b.b) - puntaje(a.b))[0];
-    return cand && (!puesto || puntaje(cand.b) > puntaje(puesto.b)) ? cand : null;
-  }).filter(Boolean);
-  if (mejoras.length || comunes.length) {
-    h += '<div class="vv-fila2">';
-    if (mejoras.length) h += btn(`▲ Equipar lo mejor (${mejoras.length})`, 'mejor', {}, '');
-    if (comunes.length) h += btn(pidiendo('comunes') ? '¿Seguro? Toca otra vez' : `Vender ${comunes.length} comunes (+${fmt(comunes.reduce((a, x) => a + precioVenta(x), 0))})`, 'comunes', {}, pidiendo('comunes') ? 'ojo' : 'sec');
-    h += '</div>';
-  }
+  // (Los atajos «Equipar lo mejor» / «Vender comunes» van arriba del todo: ver htmlFilaMejor.)
   // Filtro por ranura.
   h += `<div class="vv-sec">Bolsa <small>${bolsa.length}/${BOLSA_MAX}</small></div>`;
   if (!bolsa.length) return h + '<p class="vv-vacio">La bolsa está vacía. Los monstruos sueltan equipo al morir, y los jefes siempre.</p>';
@@ -549,7 +554,7 @@ const anuncio = () => { try { return !!(window.dqAnuncio && window.dqAnuncio());
 function pintarTienda() {
   const y = H.yo(); if (!y) return;
   const id = IDS.tienda;
-  parte(id, 'sub').innerHTML = `<span>Tu oro: ${oro(y.oro)}</span>` + (est.tienda === 'premium' ? '' : '<span class="vv-dim">Compra junto al Mercader del pueblo</span>');
+  parte(id, 'sub').innerHTML = `<span>Tu oro: ${oro(y.oro)}</span>` + (est.tienda === 'premium' || est.tienda === 'skin' ? '' : '<span class="vv-dim">Compra junto al Mercader del pueblo</span>');
   pintarTabs(id, TABS_TIENDA.map(([k, t]) => [k, t, k === 'ambulante' && ambulanteActivo() ? '!' : '']), est.tienda, 'ttab');
   const c = parte(id, 'cuerpo');
   const t = est.tienda;
@@ -692,7 +697,7 @@ function htmlArmasSkins(y, tab) {
     else {
       const pr = precioOro(tab, id);
       acc = (pr !== d.precio ? `<s style="opacity:.55;font-size:11px">${d.precio.toLocaleString('es')}</s> 🎃 ` : '') + oro(pr) + botonOro(y, pr, 'Comprar', 'comprar', { k: tab, id });
-      if (tab === 'skin' && d.usd && y.p2e && y.p2e.cuenta) acc += botonesPago(y, 'skin_' + id, d.usd, false);
+      if (tab === 'skin' && d.usd) acc +=botonesPago(y, 'skin_' + id, d.usd, false);
       if (tab === 'skin' && (y.oro || 0) < pr) extra = barraGanala(y, pr);
     }
     const nom = d.premium ? `<span style="color:${d.color}">${esc(d.nombre)}</span>` : esc(d.nombre);
@@ -708,7 +713,7 @@ function htmlPremium(y) {
   const cuentaTg = esTg();
   const cuenta = y.p2e && y.p2e.cuenta;
   // Una linea clara y el detalle plegado (en movil no tapa los paquetes).
-  let h = `<p class="vv-p" style="margin-bottom:4px">Compras opcionales: <b>El Duende</b> revisa cada pago y lo entrega en tu personaje.</p><details class="vv-nota" style="margin:0 0 10px"><summary style="cursor:pointer">Cómo funciona</summary>${cuentaTg ? 'En Telegram se paga con Stars. Si no tienes Stars, Telegram te las vende y te muestra el precio final en tu moneda antes de pagar.' : anuncio() ? 'Se paga con Stars de Telegram (se compran con tarjeta dentro de Telegram): el botón abre Telegram, o en PC escaneas un QR con el celular.' : 'En la web se paga con Stars de Telegram (se compran con tarjeta dentro de Telegram), con Solana (SOL, una criptomoneda: no son soles) o con $DUENDE (10% de descuento).'}${anuncio() ? '' : ' Con dinero <b>no</b> se compran mTON: solo se ganan jugando.'}${pagoLocalActivo() && !cuentaTg ? ' Con Yape / Plin pagas en soles el precio que ves; El Duende revisa tu yapeo y te lo entrega.' : ' Los soles (S/) son solo referencia aproximada.'}</details>`;
+  let h = `<p class="vv-p" style="margin-bottom:4px">Compras opcionales: <b>El Duende</b> revisa cada pago y lo entrega en tu personaje <b>a mano, de ${esc(ENTREGA.horario)} (máx. ${ENTREGA.plazoMaxH} h)</b>.</p><details class="vv-nota" style="margin:0 0 10px"><summary style="cursor:pointer">Cómo funciona</summary>${cuentaTg ? 'En Telegram se paga con Stars. Si no tienes Stars, Telegram te las vende y te muestra el precio final en tu moneda antes de pagar.' : anuncio() ? 'Se paga con Stars de Telegram (se compran con tarjeta dentro de Telegram): el botón abre Telegram, o en PC escaneas un QR con el celular.' : 'En la web se paga con Stars de Telegram (se compran con tarjeta dentro de Telegram), con Solana (SOL, una criptomoneda: no son soles) o con $DUENDE (10% de descuento).'}${anuncio() ? '' : ' Con dinero <b>no</b> se compran mTON: solo se ganan jugando.'}${pagoLocalActivo() && !cuentaTg ? ' Con Yape / Plin pagas en soles el precio que ves; El Duende revisa tu yapeo y te lo entrega.' : ' Los soles (S/) son solo referencia aproximada.'}</details>`;
   // Lo elegido va primero; luego por grupos con subtitulo.
   // El Pack de bienvenida (SOLO 1 VEZ) sale solo mientras el servidor diga que aun puedes.
   const lista = ordenTienda(PAQUETES.filter(p => !p.unaVez || y.puedeBienvenida), est.foco);

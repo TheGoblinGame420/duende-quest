@@ -9,7 +9,7 @@ import {
   STAR_USD, STARS_PACKAGES, SKIN_PRICES_USD,
 } from './lib.js';
 // Stars de las skins: la misma tabla que muestra la Mini App (catalogo unico).
-import { estrellasDe } from '../../mmo/js/data.js';
+import { estrellasDe, SKINS, ENTREGA } from '../../mmo/js/data.js';
 
 // Precio en memoria del isolate 60 s: cada factura ya no pega a pump.fun/DexScreener.
 // Solo se guarda un precio real (estricto); el webhook recalcula al acreditar.
@@ -50,12 +50,14 @@ async function onRequestPost(context) {
       const usd = Object.hasOwn(SKIN_PRICES_USD, skinId) ? SKIN_PRICES_USD[skinId] : undefined;
       if (!usd) return json(request, { error: 'unknown_skin' }, 400);
       const stars = estrellasDe(usd);
+      const nombreSk = String((SKINS[skinId] && SKINS[skinId].nombre) || skinId).slice(0, 60);
       invoice = {
-        title: `🎨 Skin: ${skinId}`,
-        description: `Compra la skin ${skinId} por ${stars} Stars (~$${usd} USD)`,
+        // Telegram: titulo hasta 32 caracteres, descripcion hasta 255.
+        title: `🎨 Skin ${nombreSk}`.slice(0, 32),
+        description: `Skin ${nombreSk} para Duende Quest por ${stars} Stars. Se activa a mano en máx. ${ENTREGA.plazoMaxH} h.`.slice(0, 255),
         payload: JSON.stringify({ skin_id: skinId, usd, tg_id: tgId }),
         currency: 'XTR',
-        prices: [{ label: `Skin ${skinId}`, amount: stars }],
+        prices: [{ label: `Skin ${nombreSk}`, amount: stars }],
       };
     } else {
       // ── Token package purchase ──

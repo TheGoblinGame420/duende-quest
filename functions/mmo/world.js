@@ -2664,7 +2664,10 @@ export class MmoWorld {
     const d = this.diariaDe(c);
     if (o && participo !== false && !d.ok && d.p < DIARIA.n && (o.nv || MONSTRUOS[o.k].nivel) >= c.nivel - 5) {
       d.p++;
-      if (d.p === DIARIA.n) this.enviar(s, { t: 'toast', m: `«${DIARIA.nombre}» cumplida. ${s.m3 ? 'Toca su fila ☀ en el panel de misiones para cobrarla.' : 'Cóbrala con el Guardia Tito.'}`, ok: true });
+      if (d.p === DIARIA.n) this.mision(s, { diaria: true }, 'auto');   // se cobra sola al cumplirla
+    } else if (o && participo !== false && !d.ok && d.p < DIARIA.n && !s.avisoDiariaNv) {
+      s.avisoDiariaNv = 1;   // una sola vez por sesion
+      this.enviar(s, { t: 'toast', m: `☀ ${MONSTRUOS[o.k].nombre} es muy débil para la Caza del día: cuentan los de Nv ${c.nivel - 5} o más.` });
     }
     // Bestiario: cada tipo cazado suma; los hitos dan oro.
     if (o && participo !== false && !MONSTRUOS[o.k].mundial) {
@@ -2705,7 +2708,7 @@ export class MmoWorld {
   mision(s, m, desde3d) {
     const c = s.c;
     const npc = MAPAS.pueblo.npcs.find(n => n.tipo === 'guia');
-    if (!(desde3d === true && (s.m3 || c.mis.i === 0)) && (s.k !== 'pueblo' || !npc || Math.abs(s.x - npc.x) > 200)) return this.enviar(s, { t: 'toast', m: 'Habla con el Guardia Tito en el pueblo.' });
+    if (!(desde3d === 'auto' || (desde3d === true && (s.m3 || c.mis.i === 0))) && (s.k !== 'pueblo' || !npc || Math.abs(s.x - npc.x) > 200)) return this.enviar(s, { t: 'toast', m: 'Habla con el Guardia Tito en el pueblo.' });
     if (m && m.diaria) {
       const d = this.diariaDe(c);
       if (d.ok) return this.enviar(s, { t: 'toast', m: 'Ya cobraste la caza de hoy.' });
@@ -2715,7 +2718,7 @@ export class MmoWorld {
       c.oro += pr.oro;
       c.pw.pocion = Math.min(99, (c.pw.pocion || 0) + pr.pocion);
       this.sumarXp(s, pr.xp);
-      this.enviar(s, { t: 'toast', m: `✅ Caza del día: +${pr.xp} XP · +${pr.oro} oro · +${pr.pocion} pociones`, ok: true });
+      this.enviar(s, { t: 'toast', m: `✅ Caza del día: +${pr.xp} XP · +${pr.oro} oro · +${pr.pocion} pociones. Mañana hay otra.`, ok: true });
       this.darMton(s, 25, 'diaria');
       this.enviar(s, { t: 'gana', xp: pr.xp, oro: pr.oro, drops: [], x: Math.round(s.x), y: Math.round(s.y - 80) });
       this.actualizarYo(s);
@@ -2915,7 +2918,7 @@ export class MmoWorld {
     // Ponerse algo que ya es tuyo (montura, alas, color, mascota) vale en cualquier sitio.
     const lista = { montura: c.monturas, alas: c.alas, tinte: c.tintes, mascota: c.mascotas }[m.k];
     const soloPoner = typeof m.id === 'string' && Array.isArray(lista) && lista.includes(m.id);
-    if (!soloPoner && !this.cercaDelMercader(s)) return this.enviar(s, { t: 'toast', m: s.m3 ? 'Para comprar ve al Pueblo Duende (en cualquier punto del pueblo vale).' : 'Tienes que estar junto al Mercader del pueblo.' });
+    if (!soloPoner && !(s.m3 && m.k === 'skin') && !this.cercaDelMercader(s)) return this.enviar(s, { t: 'toast', m: s.m3 ? 'Para comprar ve al Pueblo Duende (en cualquier punto del pueblo vale).' : 'Tienes que estar junto al Mercader del pueblo.' });
     if (m.k === 'pw') {
       const def = PODERES.find(p => p.id === m.id);
       const n = clamp(m.n | 0, 1, 10);

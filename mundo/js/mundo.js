@@ -14,25 +14,25 @@
 import * as THREE from 'three';
 import { esNocheDuendes, TEMPORADAS, temporadaDe, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo } from '/mmo/js/data.js?v=334';
-import { iniciarVentanas } from './ventanas.js?v=334';
-import { EXPEDICION, VERSION, horaFelizTiempos } from '/mmo/js/data.js?v=334';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
-import { iniciarRegalo } from '/mmo/js/regalo.js?v=334';
-import { iniciarAvisoTg } from '/mmo/js/avisotg.js?v=334';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=334';
-import { crearMusica } from './musica.js?v=334';
-import { construirCueva } from './cueva.js?v=334';
-import { TAPA, transparentar } from './tapa.js?v=334';
-import { construirAbismo } from './abismo.js?v=334';
-import { crearParticulas } from './particulas.js?v=334';
-import { cargarKenney, piezasCasa } from './kenney.js?v=334';
-import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=334';
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo } from '/mmo/js/data.js?v=335';
+import { iniciarVentanas } from './ventanas.js?v=335';
+import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria } from '/mmo/js/data.js?v=335';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
+import { iniciarRegalo } from '/mmo/js/regalo.js?v=335';
+import { iniciarAvisoTg } from '/mmo/js/avisotg.js?v=335';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=335';
+import { crearMusica } from './musica.js?v=335';
+import { construirCueva } from './cueva.js?v=335';
+import { TAPA, transparentar } from './tapa.js?v=335';
+import { construirAbismo } from './abismo.js?v=335';
+import { crearParticulas } from './particulas.js?v=335';
+import { cargarKenney, piezasCasa } from './kenney.js?v=335';
+import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=335';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=334';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d } from '/mmo/js/mundo3d.js?v=334';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=334';
-import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=334';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=334';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=335';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d } from '/mmo/js/mundo3d.js?v=335';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=335';
+import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=335';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=335';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -418,7 +418,7 @@ function ajustar() {
 addEventListener('resize', ajustar);
 ajustar();
 
-const progreso = (k, txt) => { window.__dqProg = k + (txt || ''); $('carga-i').style.transform = `scaleX(${k})`; if (txt) $('carga-s').textContent = txt; };
+const progreso = (k, txt) => { window.__dqProg = k + (txt || ''); $('carga-i').style.transition = ''; $('carga-i').style.transform = `scaleX(${k})`; if (txt) $('carga-s').textContent = txt; };
 
 // ── TERRENO ──
 const LADO = MUNDO.lado, SEG = MOVIL ? 180 : 240;
@@ -1532,15 +1532,19 @@ function recibir(m) {
       // Si el servidor no la pone (algo raro), a los 4 s se abre la ventana de siempre.
       if (!yo.clase && m.nuevo) setTimeout(() => { if (yo && !yo.clase && !$('v-clase').classList.contains('on')) abrirClases(); }, 4000);
       // Al nuevo se le da la bienvenida cuando ya eligio clase (antes quedaba detras de esa ventana).
-      if (m.nuevo) { const bienv = () => { if (!yo.clase || hayVentana()) return setTimeout(bienv, 1500); aviso('Bienvenido al mundo abierto, ' + yo.nombre + '. Tu primera misión ya está en marcha: sigue la luz amarilla.', 'ok'); }; bienv(); }
+      if (m.nuevo) { const bienv = () => { if (!yo || !yo.clase || avisoTapado()) return setTimeout(bienv, 1500); aviso('¡Bienvenido, ' + yo.nombre + '! Caza 5 goblins: sigue la luz amarilla ⬆', 'ok', 1); }; bienv(); }
       break;
     case 'm3':
       P.x = m.x; P.z = m.z; P.y = alturaEn(P.x, P.z); P.vx = P.vz = P.vy = 0; P.corrX = P.corrZ = 0;
+      // Novato en su primera mision: la camara queda detras del duende mirando al campamento de goblins.
+      try { if (yo && yo.mis && yo.mis.i === 0 && !(yo.kills > 0) && typeof CAMPOS3D !== 'undefined') { let cb = null, cd = 1e9; for (const c of CAMPOS3D) { if (c.k !== MISIONES[0].tipo) continue; const d = Math.hypot(c.x - P.x, c.z - P.z); if (d < cd) { cd = d; cb = c; } } if (cb) { const a = Math.atan2(cb.x - P.x, cb.z - P.z); camYaw = a + Math.PI; P.ry = a; } } } catch (e) {}
       for (const o of [...otros.keys()]) quitarOtro(o);
       for (const id of [...mons.keys()]) quitarMon(id);
       for (const id of [...zonas3.keys()]) quitarZona3(id);
       for (const p of proyectiles) escena.remove(p.mesh); proyectiles = []; impactos = [];
+      const retomarAuto = autoAtk && !P.muerto;
       objetivo = 0; objetivoP = 0; autoAtk = false; dueloCon = 0; colaHab = null; gcdHasta = 0;
+      if (retomarAuto) setTimeout(() => { try { if (!autoAtk && !objetivo && !P.muerto && yo) siguienteBlanco(0); } catch (e) {} }, 1800);
       lanzando = null; $('lanzar').style.display = 'none'; quitarCorcho();
       if (P.vuela) volar(false); P.planea = false; cuevaInfo = null; zonaActual = '';
       camReal = camDist;
@@ -1548,7 +1552,7 @@ function recibir(m) {
       for (const p of m.jugadores) agregarOtro(p);
       break;
     case 'yo': {
-      const antes = yo; yo = m.yo; pintarTemp3(); puntoTienda();
+      const antes = yo; yo = m.yo; pintarTemp3(); puntoTienda(); puntoMochila();
       if (esIAB) franjaIAB();   // tras la primera victoria: pasar el duende a Chrome/Safari
       // Enlace con #premium (o start_param=premium de Telegram): la tienda se abre al entrar.
       if (tiendaAlEntrar && yo.clase) setTimeout(() => { if (tiendaAlEntrar && !hayVentana()) { tiendaAlEntrar = false; abrirTiendaHud('bot', focoAlEntrar); focoAlEntrar = ''; } }, 1200);   // con otra ventana abierta, se reintenta con el siguiente 'yo'
@@ -1566,7 +1570,7 @@ function recibir(m) {
       if (!yo.muerto) { if (P.muerto && pocionesTrasRevivir) { pocionesTrasRevivir = false; setTimeout(() => V.abrirTienda('pw'), 400); } cerrar('v-muerte'); P.muerto = false; }
       ofrecerBienvenida(antes);
       if (yo.clase) cerrar('v-clase');
-      if (yo.clase && loginPend3) { const lp = loginPend3; loginPend3 = null; setTimeout(() => mostrarDiario(lp), 900); }
+      if (yo.clase && loginPend3) { const lp = loginPend3; loginPend3 = null; setTimeout(() => mostrarDiario(lp), 900); if (lp.item && !lp.item.vendido) setTimeout(() => botinFuerte(lp.item), 3400); }
       pintarHud(); marcaPase();
       refrescarVentanas(true);
       break;
@@ -1660,7 +1664,7 @@ function recibir(m) {
       if (m.item) vib('success');
       // Botin con su nombre y rareza (antes siempre decia "equipo nuevo", tambien si se vendio por bolsa llena).
       if (m.item) aviso('Botín: ' + (m.item.r !== undefined && RAREZAS[m.item.r] ? RAREZAS[m.item.r].nombre + ' · ' : '') + (m.item.nombre || nombreItem(m.item)) + (m.item.vendido ? ' (bolsa llena: vendido)' : ' (' + K('pulsa I', 'toca 🎒') + ' para verlo)'), 'ok');
-      if (m.item && !m.item.vendido) botinFuerte(m.item);
+      if (m.item && !m.item.vendido && m.primero !== 2) botinFuerte(m.item);   // primero===2: ya va equipado (no ofrecer «Equipar»)
       // Primera caza del personaje: botin garantizado (y nivel 2), con fiesta.
       if (m.primero) {
         aviso('🎉 ¡Primer botín!' + (m.item ? ' ' + (m.item.nombre || nombreItem(m.item)) + (m.primero === 2 ? ' ya va equipado.' : m.item.vendido ? ' (bolsa llena: vendido).' : ' está en tu bolsa.') : ''), 'ok');
@@ -1678,7 +1682,7 @@ function recibir(m) {
         cn.classList.remove('on'); void cn.offsetWidth; cn.classList.add('on');
       }
       numero(P.x, P.y + 3, P.z, 'NIVEL ' + m.lv, '#ffe600', true); subiNivel(m.lv); } else { const o = otros.get(m.p); if (o) o.lv = m.lv; } break;
-    case 'toast': if (!(modoAnuncio() && /mTON|\bSOL\b|\$DUENDE|[Ww]allet/.test(m.m || ''))) aviso(m.m, m.ok ? 'ok' : '', avisoTapado() ? 1 : 0); if (m.yapeOk) V.alPedido({ t: 'yapeOk', codigo: m.yapeOk }); if (m.ok && /^⚔️ Invasión rechazada/.test(m.m || '')) setTimeout(() => ofrecerPresumir('¡Defendimos el pueblo de una invasión en Duende Quest 3D!', 'invasion'), 2000); break;   // modo anuncio: sin avisos cripto
+    case 'toast': if (/Kit Compañero|te invitó/.test(m.m || '')) { const tx = m.m; let n = 0; const esperaKit = () => { if (++n <= 40 && (!yo || !yo.clase || avisoTapado())) return setTimeout(esperaKit, 1500); aviso(tx, 'ok', n > 40 ? 2 : 1); try { sfx('moneda', 0.5); } catch (e) {} }; setTimeout(esperaKit, 7000); break; } if (!(modoAnuncio() && /mTON|\bSOL\b|\$DUENDE|[Ww]allet/.test(m.m || ''))) aviso(m.m, m.ok ? 'ok' : '', avisoTapado() ? 1 : 0); if (m.yapeOk) V.alPedido({ t: 'yapeOk', codigo: m.yapeOk }); if (m.ok && /^⚔️ Invasión rechazada/.test(m.m || '')) setTimeout(() => ofrecerPresumir('¡Defendimos el pueblo de una invasión en Duende Quest 3D!', 'invasion'), 2000); break;   // modo anuncio: sin avisos cripto
     // mTON ganados aqui (jefes, jefe mundial, caza del dia): antes no se avisaba nada en ORIGINS
     case 'mton': { if (yo) yo.mton = m.total; if (modoAnuncio()) break; const por = { jefe: 'por el jefe', mundial: 'por el jefe mundial', diaria: 'por la caza del día' }[m.motivo]; aviso('💎 +' + m.n + ' mTON (tienes ' + ((m.total || 0) / 1000).toLocaleString('es', { maximumFractionDigits: 3 }) + ' TON)' + (por ? ' — ' + por : ''), 'ok'); numero(P.x, P.y + 3, P.z, '+' + m.n + ' mTON', '#00eeff'); sfx('moneda', 0.5); break; }
     case 'aviso': aviso(m.m); break;
@@ -1688,7 +1692,7 @@ function recibir(m) {
       if (m.m === 'Fuera de alcance.') { if (performance.now() - avisoAlcT < 3000) break; avisoAlcT = performance.now(); }
       aviso(m.m, 'err'); break;
     case 'amigos': if (m.invitados) { inv3 = m; pintarAmigos3(); } if (m.ref) { refAmigo = m.ref; nivelAmigo = m.nivel || nivelAmigo; if (compartirPend) { const hist = compartirPend === 'h'; compartirPend = false; if (TG) compartir(hist); else { ofrecerPresumir(presumirTxt, undefined, true); aviso('Tu enlace está listo: toca el botón para enviarlo por WhatsApp.', 'ok'); } } } break;   // fuera de Telegram el navegador bloquea abrir WhatsApp sin un toque
-    case 'login': if (yo && yo.clase) mostrarDiario(m); else loginPend3 = m; setTimeout(() => despuesMision1(ofrecerInstalar), 4000); break;
+    case 'login': if (yo && yo.clase) { mostrarDiario(m); if (m.item && !m.item.vendido) setTimeout(() => botinFuerte(m.item), 2500); } else loginPend3 = m; setTimeout(() => despuesMision1(ofrecerInstalar), 4000); break;
     case 'buzon': regalo3.alBuzon(m); break;
     case 'regalo': regalo3.alRegalo(m); break;
     case 'avisoTg': avisoTg3.alOferta(m); break;   // «Avísame por Telegram» (/mmo/js/avisotg.js)
@@ -1703,7 +1707,7 @@ function recibir(m) {
       clearTimeout(invitT); invitT = setTimeout(() => { $('invit3').style.display = 'none'; }, m.ms || 60000);
       break;
     case 'pase': if (yo) { yo.pase = m.pase; pintarPase(); } break;
-    case 'yoC': if (yo) { Object.assign(yo, m.yo); pintarHud(); refrescarVentanas(); } break;
+    case 'yoC': if (yo) { Object.assign(yo, m.yo); pintarHud(); refrescarVentanas(); puntoMochila(); } break;
     case 'atkNo': sigAtk = performance.now() + 150; break;
     case 'habNo': gcdHasta = 0; break;
     case 'chat': lineaChat(m); break;
@@ -1904,6 +1908,7 @@ function siguienteBlanco(idMuerto) {
   }
   if (mejor) { objetivo = mejor.id; autoAtk = true; pintarBarra(); sfx('boton', 0.15); return true; }
   objetivo = 0; autoAtk = false; pintarBarra();
+  if (idMuerto && !vidaBaja && performance.now() - (siguienteBlanco.avT || 0) > 20000) { siguienteBlanco.avT = performance.now(); aviso('✅ No quedan presas de tu nivel cerca: reaparecen en ~20 s, toca ATACAR cuando vuelvan.', 'ok', 1); }
   if (vidaBaja) aviso('❤ Recupera vida antes de seguir (poción o descansa)', 'err', 1);
   return false;
 }
@@ -2154,7 +2159,8 @@ function morir(m) {
     : m.novato ? 'Hasta Nv 10 no pierdes XP.' : m.xp > 0 ? `Revivir cuesta −${fmtN(m.xp)} XP.` : '';
   // Consejo util: enemigo muy alto -> sube antes; con pociones sin usar -> usalas (tecla Q); sin pociones -> Mercader.
   const nvMax = Math.max(0, ...((m && m.golpes) || []).map(g => g.nv || 0));
-  const consejo = !m || m.pvp ? '' : nvMax >= (yo.nivel || 1) + 3 ? `Ese enemigo es Nv ${nvMax} y tú Nv ${yo.nivel || 1}: sube antes en una zona de tu nivel o ve en grupo.`
+  const zt = m && !m.pvp && nvMax >= (yo.nivel || 1) + 3 ? Object.values(MAPAS).filter(z => z.zona && !z.instancia && !z.coliseo && z.nv && z.nv[0] <= (yo.nivel || 1)).sort((a, b) => b.nv[0] - a.nv[0])[0] : null;
+  const consejo = !m || m.pvp ? '' : nvMax >= (yo.nivel || 1) + 3 ? `Ese enemigo es Nv ${nvMax} y tú Nv ${yo.nivel || 1}: ${zt ? `sube antes en <b>${esc(zt.nombre)}</b> (Nv ${zt.nv[0]}-${zt.nv[1]})` : 'sube antes en una zona de tu nivel'} o ve en grupo.`
     : (m.pw || 0) > 0 ? `Tenías ${m.pw} ${m.pw === 1 ? 'poción' : 'pociones'} sin usar: ${K('pulsa Q', 'toca el botón de la poción en la barra')} cuando tu vida baje de la mitad.` : 'Sin pociones: cómpralas en el Mercader del pueblo.';
   $('muerte-txt').innerHTML = [quien, vida, `<b>${dondeRev}</b>`, xp, m && m.rep > 0 ? 'Reparar tu equipo cuesta ' + m.rep + ' oro.' : '', consejo].filter(Boolean).map(t => `<span style="display:block;margin:3px 0">${t}</span>`).join('');
   $('b-revivir').textContent = ab ? 'Revivir en el bastión' : cerca ? ((yo.nivel || 1) < 10 ? 'Revivir en la entrada' : 'Revivir aquí cerca') : 'Revivir en el pueblo';
@@ -2239,6 +2245,9 @@ function pintarVida() {
 }
 const cdPoder = {}, cdHab = {};
 let gcdHasta = 0, misHabs = [];
+let wakeL = null;
+function pedirVela(on) { try { if (on && !wakeL && navigator.wakeLock && !document.hidden && Date.now() > (pedirVela.noAntes || 0)) { wakeL = 'pidiendo'; navigator.wakeLock.request('screen').then(l => { if (!autoAtk) { wakeL = null; l.release().catch(() => {}); return; } wakeL = l; l.addEventListener('release', () => { if (wakeL === l) wakeL = null; }); }).catch(() => { wakeL = null; pedirVela.noAntes = Date.now() + 60000; }); } else if (!on && wakeL && wakeL !== 'pidiendo') { wakeL.release().catch(() => {}); wakeL = null; } } catch (e) {} }
+document.addEventListener('visibilitychange', () => { if (!document.hidden) pedirVela(autoAtk); });
 function pintarBarra() {
   if (!yo) return;
   const b = $('barra');
@@ -2277,6 +2286,7 @@ function pintarBarra() {
   // En movil la barra no lleva el boton de ataque: ATACAR muestra si el automatico esta puesto.
   if (MOVIL) { const ta = $('t-atk'); if (ta.classList.contains('on') !== autoAtk) { ta.classList.toggle('on', autoAtk); ta.textContent = autoAtk ? 'PARAR' : 'ATACAR'; } }
   b.querySelectorAll('[data-pw]').forEach(d => { d.querySelector('.n').textContent = (yo.pw && yo.pw[d.dataset.pw]) || 0; });
+  pedirVela(autoAtk);
 }
 function pintarCds() {
   const ahora = performance.now();
@@ -2524,6 +2534,8 @@ function tituloZona(id) {
   // La historia de la zona, una vez por sesion.
   const lz = LORE_ZONAS[id];
   if (lz && yo) { let vistas = ''; try { vistas = sessionStorage.getItem('dq3_lz') || ''; } catch (e) {} if (!vistas.split(',').includes(id)) { try { sessionStorage.setItem('dq3_lz', vistas + ',' + id); } catch (e) {} setTimeout(() => aviso('📜 ' + lz.intro), 1500); } }
+  // Primera salida del pueblo de un novato: se le enseña a volar (una sola vez).
+  try { if (id && id !== 'pueblo' && yo && (yo.nivel || 1) <= 3 && !P.vuela && !localStorage.getItem('dq3_volar_hint')) { localStorage.setItem('dq3_volar_hint', '1'); setTimeout(() => aviso('🪽 ¡Ya saliste del pueblo! Toca ' + K('V', 'VOLAR') + ' y vuela hacia la luz amarilla.', 'ok', 1), 1800); } } catch (e) {}
 }
 
 // ── VENTANAS ──
@@ -2616,6 +2628,14 @@ function puntoTienda() {
   let vista = false, entVistas = 0;
   try { vista = localStorage.getItem('dq_tienda_vista') === '1'; entVistas = +localStorage.getItem('dq_tienda_ent') || 0; } catch (e) {}
   $('b-premium').classList.toggle('aviso', !!yo && ((!ps.length && !vista) || ent > entVistas));
+}
+// Punto rojo en 🎒: hay en la bolsa una pieza mejor que la puesta, o la bolsa esta casi llena.
+function puntoMochila() {
+  const b = $('b-inv'); if (!b || !yo) return;
+  const bo = yo.bolsa || [];
+  let hay = false;
+  try { hay = bo.some(it => V.compararConPuesta(it, yo)); } catch (e) {}
+  b.classList.toggle('aviso', hay || bo.length >= 36);
 }
 // Pack de bienvenida (SOLO 1 VEZ): se ofrece una sola vez, entre CLASSIC y
 // ORIGINS (mismas claves), al llegar a Nv 5 o al revivir tras la segunda
@@ -2744,7 +2764,7 @@ document.addEventListener('visibilitychange', () => {
   else if (avisoExpT && Date.now() - avisoExpT > 20000 && sinExped()) { avisoExpVisto = true; avisoExpT = 0; setTimeout(() => aviso(AVISO_EXP, 'ok'), 2500); }
 });
 document.addEventListener('mouseout', e => { if (!e.relatedTarget && e.clientY <= 0 && sinExped() && !hayVentana()) { avisoExpVisto = true; aviso(AVISO_EXP, 'ok'); } });
-$('b-ayuda').onclick = () => abrir('v-ayuda');
+$('b-ayuda').onclick = () => { const ac = $('ay-cuenta'); if (ac) ac.style.display = soyInvitado ? '' : 'none'; abrir('v-ayuda'); };
 $('sel-calidad').value = CAL;
 $('sel-calidad').onchange = e => { try { localStorage.setItem('dq3_calidad', e.target.value); } catch (er) {} location.reload(); };
 $('b-amigos').onclick = () => { if ($('v-amigos').classList.contains('on')) return cerrar('v-amigos'); abrir('v-amigos'); mandar({ t: 'contactos' }); mandar({ t: 'quien' }); mandar({ t: 'amigos' }); $('amigos-c')._h = ''; pintarAmigos3(); };
@@ -2945,6 +2965,18 @@ function pintarLlevar(m) {
   b.onclick = abrirLlevar;
   const pb = document.createElement('p'); pb.style.marginTop = '10px'; pb.appendChild(b);
   $('b-leyenda').parentNode.after(pb);
+  // Invitado: crear cuenta gratis desde Ajustes (no solo en el aviso diario).
+  const bc = document.createElement('button');
+  bc.id = 'ay-cuenta'; bc.className = 'btn sec'; bc.style.cssText = 'width:100%;margin-bottom:8px'; bc.textContent = '📧 Crear cuenta gratis (guarda tu duende)';
+  bc.style.display = soyInvitado ? '' : 'none';
+  bc.onclick = () => { cerrar('v-ayuda'); irACrearCuenta(); };
+  pb.insertBefore(bc, b);
+}
+// Invitado → /mmo/ a crear cuenta con correo; al terminar vuelve a /mundo/ con su duende.
+function irACrearCuenta() {
+  aviso('Crea tu cuenta gratis con tu correo: al terminar vuelves aquí con tu duende.', 'ok');
+  try { sessionStorage.setItem('dq_volver', '/mundo/'); localStorage.setItem('dq_volver', '/mundo/'); } catch (e) {}
+  setTimeout(() => { location.href = '/mmo/' + (hashTg && hashTg.length > 1 ? hashTg + '&cuenta&volver=mundo' : '#cuenta&volver=mundo'); }, 700);
 }
 // Cupo global de ventanas que se abren solas (leyenda, aviso de invitado): no se apilan.
 let ventanaAutoT = 0;
@@ -2968,21 +3000,17 @@ function avisoInvitado() {
   if (autoAtk || (P && (P.muerto || P.vuela)) || performance.now() - ((P && P.heridoT) || 0) < 8000 || (objetivo && performance.now() - ((P && P.atkT) || 0) < 8000)) return;
   if (document.querySelector('#dq-avtg.on') || Date.now() - ventanaAutoT < 180000) return;
   clearTimeout(mostrarDiario.t); mostrarDiario.t = 0;
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10);   // dia de Lima (UTC-5)
   try { if (localStorage.getItem('dq_aviso_inv') === hoy) return; localStorage.setItem('dq_aviso_inv', hoy); } catch (e) {}
   ventanaAutoT = Date.now();
   $('diario-c').innerHTML = `<button class="btn" id="inv-cuenta" style="width:100%;margin:6px 0 10px">📧 Crear cuenta gratis (guarda tu duende)</button>
     <p class="vv-p">Juegas como <b>invitado</b>: tu duende vive solo en este navegador. Para no perderlo:</p>
-    <p class="vv-p">Guarda tu <b>código de rescate</b>: con él recuperas tu duende en otro navegador o celular (⌂ Inicio → código de rescate).</p>
+    <p class="vv-p">Guarda tu <b>código de rescate</b>: con él recuperas tu duende en otro navegador o celular (${K('⌂ Inicio', '⋯ → ? → Inicio')} → código de rescate).</p>
     <div style="display:flex;gap:6px;align-items:center"><code style="flex:1;min-width:0;overflow-wrap:anywhere;background:rgba(0,0,0,.4);padding:8px;border-radius:8px;font-size:12px;color:#ffd84a">${codigoRescate()}</code><button class="btn" id="copiar-rescate" style="padding:8px 10px;font-size:12px">Copiar</button></div>`;
   $('v-diario').querySelector('h2').textContent = 'GUARDA TU DUENDE';
   abrir('v-diario');
   $('copiar-rescate').onclick = () => { try { navigator.clipboard.writeText(codigoRescate()).then(() => aviso('Código copiado. Guárdalo en un lugar seguro.', 'ok')); } catch (e) {} };
-  $('inv-cuenta').onclick = () => {
-    aviso('Crea tu cuenta gratis con tu correo: al terminar vuelves aquí con tu duende.', 'ok');
-    try { sessionStorage.setItem('dq_volver', '/mundo/'); localStorage.setItem('dq_volver', '/mundo/'); } catch (e) {}
-    setTimeout(() => { location.href = '/mmo/' + (hashTg && hashTg.length > 1 ? hashTg + '&cuenta&volver=mundo' : '#cuenta&volver=mundo'); }, 700);
-  };
+  $('inv-cuenta').onclick = irACrearCuenta;
   { const b = document.createElement('button'); b.className = 'btn sec'; b.style.cssText = 'width:100%;margin-top:10px'; b.textContent = '📲 Pasar mi duende a Telegram u otro celular'; b.onclick = abrirLlevar; $('diario-c').appendChild(b); }
   // En el navegador de Facebook/Instagram, ademas, el boton para llevarlo a Chrome/Safari.
   if (esIAB) { const b = document.createElement('button'); b.className = 'btn'; b.style.cssText = 'width:100%;margin-top:10px'; b.textContent = ANDROID_IAB ? 'Abrir en Chrome con mi duende' : 'Pasar a Safari con mi duende'; b.onclick = () => irANavegador(); $('diario-c').appendChild(b); }
@@ -3023,7 +3051,7 @@ function irANavegador() {
     return;
   }
   const txt = codigoRescate();
-  const listo = () => aviso('Código copiado. Toca ··· (arriba a la derecha) → «Abrir en el navegador» y en Safari ve a ⌂ Inicio → código de rescate.', 'ok');
+  const listo = () => aviso('Código copiado. Toca ··· (arriba a la derecha) → «Abrir en el navegador» y en Safari ve a ' + K('⌂ Inicio', '⋯ → ? → Inicio') + ' → código de rescate.', 'ok');
   try { navigator.clipboard.writeText(txt).then(listo, () => aviso('Tu código de rescate: ' + txt + '. Guárdalo y toca ··· → «Abrir en el navegador».', 'ok')); } catch (e) { aviso('Tu código de rescate: ' + txt + '. Guárdalo y toca ··· → «Abrir en el navegador».', 'ok'); }
 }
 let franjaIABvista = false;
@@ -3131,11 +3159,14 @@ function hazBotin(color) {
   requestAnimationFrame(paso);
 }
 function botinFuerte(it) {
-  if (!(it.r >= 2)) return;
+  if (!it) return;
+  const fuerte = it.r >= 2;   // haz, vibracion y presumir solo epico o mas; la tarjeta de mejora para todos
   const rz = RAREZAS[it.r] || {};
-  hazBotin(rz.color || '#c084fc'); sfx('moneda', 0.5);
-  if (it.r >= 3) vib('heavy');
-  setTimeout(() => ofrecerPresumir('¡Me salió un objeto ' + (rz.nombre || '').toLowerCase() + ': ' + (it.nombre || nombreItem(it)) + ' en Duende Quest 3D!', 'botin'), 1500);
+  if (fuerte) {
+    hazBotin(rz.color || '#c084fc'); sfx('moneda', 0.5);
+    if (it.r >= 3) vib('heavy');
+    setTimeout(() => ofrecerPresumir('¡Me salió un objeto ' + (rz.nombre || '').toLowerCase() + ': ' + (it.nombre || nombreItem(it)) + ' en Duende Quest 3D!', 'botin'), 1500);
+  }
   if (!yo || !it.id || !V.compararConPuesta(it, yo)) return;
   let t = $('mejor3');
   if (!t) {
@@ -3151,7 +3182,7 @@ function botinFuerte(it) {
   t.append(n, b);
   t.onclick = () => { t.style.display = 'none'; sfx('boton', 0.4); mandar({ t: 'item', a: 'equipar', id: it.id }); aviso('Equipado: ' + (it.nombre || nombreItem(it)), 'ok', 1); };
   t.style.display = 'block'; clearTimeout(botinFuerte.t);
-  botinFuerte.t = setTimeout(() => { t.style.display = 'none'; }, 10000);
+  botinFuerte.t = setTimeout(() => { t.style.display = 'none'; }, fuerte ? 10000 : 6000);
 }
 // ── INVASION DEL 3D ──
 let invasion3 = null;
@@ -3196,13 +3227,13 @@ function compartirYa(historia) {
 // Buzon "Mientras no estabas" y la compra entregada (/mmo/js/regalo.js), despues del cofre diario.
 const regalo3 = iniciarRegalo({
   mandar,
-  ocupado: () => hayVentana() || $('v-diario').classList.contains('on') || !!loginPend3 || !!document.querySelector('#dq-avtg.on') || !yo || !yo.clase,
+  ocupado: () => hayVentana() || $('v-diario').classList.contains('on') || !!loginPend3 || !!document.querySelector('#dq-avtg.on') || !!document.querySelector('#tira-diario.on') || !yo || !yo.clase,
   presumir: txt => { presumirTxt = txt; presumirTipo = ''; compartirYa(); },
   fanfarria, vibrar: vib,
   filtro: t => modoAnuncio() && /mTON|\bSOL\b|\$DUENDE|[Ww]allet/.test(t || ''),
 });
 // «Avísame por Telegram» para jugadores web e invitados (/mmo/js/avisotg.js): despues del cofre y del buzon.
-const avisoTg3 = iniciarAvisoTg({ mandar, ocupado: () => hayVentana() || $('v-diario').classList.contains('on') || !!loginPend3 || !!document.querySelector('#dq-regalo.on') || !yo, aviso: (t, k) => aviso(t, k, 1), tg: TG });
+const avisoTg3 = iniciarAvisoTg({ mandar, ocupado: () => hayVentana() || $('v-diario').classList.contains('on') || !!loginPend3 || !!document.querySelector('#dq-regalo.on') || !!document.querySelector('#tira-diario.on') || !yo, aviso: (t, k) => aviso(t, k, 1), tg: TG });
 const oroAmigo =() => premioAmigo(nivelAmigo).oro.toLocaleString('es', { useGrouping: 'always' });
 // WhatsApp primero fuera de Telegram (es lo que mas se usa en Peru). El jugador decide
 // enviar: solo se abre WhatsApp con el texto listo. El enlace va a /jugar/ (elige 2D o 3D).
@@ -3696,7 +3727,7 @@ function volar(on) {
   if (on) {
     if (P.muerto || !yo) return;
     if (yo.montado) return aviso('Bájate de la montura para volar.', 'err');
-    if (zonaEn(P.x, P.z) === 'pueblo') return aviso('En el pueblo no se puede volar.', 'err');
+    if (zonaEn(P.x, P.z) === 'pueblo') return aviso('🪽 En el pueblo no se vuela: sal por el camino hacia la luz amarilla y toca ' + K('V', 'VOLAR') + '.', 'ok', 1);
     if (enCueva(P.x)) return aviso('En la cueva no hay sitio para volar.', 'err');
     if (P.alas < 3) return aviso('Tus alas necesitan descansar.', 'err');
     P.vuela = true; P.vy = 0; if (P.suelo) P.y += 1.5; P.suelo = false;
@@ -4414,11 +4445,14 @@ function pintarMisiones() {
   }
   const tt = htmlTuto3();   // despues de calcular metaMision: el paso 2 la mira (va primera, tambien con invasion)
   // Movil con la caja plegada (solo se ve la primera fila): la Caza del dia lista para cobrar va arriba,
-  // porque en ORIGINS no se cobra sola y el aviso del servidor pide tocar su fila.
+  // (el servidor ya la cobra sola al cumplirla; la fila queda por si un cliente viejo no la cobro).
   const plegada = COMPACTO && !c.classList.contains('abierto'), diariaLista = !d.ok && (d.p || 0) >= DIARIA.n;
   if (!d.ok) {
-    const filaDiaria = `<div class="q"><b>☀ ${DIARIA.nombre}</b>${(d.p || 0) >= DIARIA.n ? '<span class="ok" data-entregar="diaria" style="cursor:pointer;text-decoration:underline">¡Lista! Toca aquí para cobrarla</span>' : `Monstruos de tu nivel: ${Math.min(d.p || 0, DIARIA.n)}/${DIARIA.n}`}</div>`;
+    const filaDiaria = `<div class="q"><b>☀ ${DIARIA.nombre}</b>${(d.p || 0) >= DIARIA.n ? '<span class="ok" data-entregar="diaria" style="cursor:pointer;text-decoration:underline">¡Lista! Toca aquí para cobrarla</span>' : `Monstruos de tu nivel: ${Math.min(d.p || 0, DIARIA.n)}/${DIARIA.n}<small style="display:block">Premio: +${premioDiaria(yo.nivel).oro} oro · ${premioDiaria(yo.nivel).pocion} pociones</small>`}</div>`;
     if (plegada && diariaLista) h = filaDiaria + h; else h += filaDiaria;
+  } else if (!plegada) {   // ya cobrada: cuando vuelve (medianoche de Peru)
+    const msD = 86400000 - ((Date.now() - 5 * 3600000) % 86400000);
+    h += '<div class="q"><b>☀ ' + DIARIA.nombre + ' ✓</b><small>Nueva en ' + Math.ceil(msD / 3600000) + ' h (00:00 hora de Perú)</small></div>';
   }
   if (invasion3) {
     const ms = Math.max(0, invasion3.ms - (Date.now() - invasion3.recibido)), mm = Math.floor(ms / 60000), ss = Math.floor(ms % 60000 / 1000);
@@ -4733,7 +4767,7 @@ async function inicio() {
   try { crearAventureros(); } catch (e) { console.warn(e); }
   try { crearNocheDuendes(); } catch (e) { console.warn(e); }
   P.lbl = etiqueta('yo');
-  progreso(1, 'Conectando…');
+  progreso(0.9, 'Conectando con el mundo…');
   paso('arte_ok');
   requestAnimationFrame(bucle);
   // Lo que llego del servidor durante la carga, en orden (un mensaje roto no corta los demas).

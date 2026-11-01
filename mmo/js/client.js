@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=334';
-import { iniciarRegalo } from './regalo.js?v=334';
-import { iniciarAvisoTg } from './avisotg.js?v=334';
+} from './data.js?v=335';
+import { iniciarRegalo } from './regalo.js?v=335';
+import { iniciarAvisoTg } from './avisotg.js?v=335';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -102,6 +102,10 @@ if (TG) {
 // dq_visto3d) o se cierre en esta sesion.
 function mostrarNuevo3d() {
   const c = $('nuevo3d'); if (!c) return;
+  // Quien eligio 2D o tiene un movil debil / red lenta no recibe el empujon al 3D.
+  if (/[?&]j=2d\b/i.test(location.search)) return;
+  const cxr = navigator.connection;
+  if ((typeof navigator.deviceMemory === 'number' && navigator.deviceMemory <= 3) || (cxr && (cxr.saveData || (cxr.effectiveType && cxr.effectiveType !== '4g')))) return;
   let visto = false, cerrado = false;
   try { visto = !!localStorage.getItem('dq_visto3d'); cerrado = !!sessionStorage.getItem('dq_cerro3d'); } catch (e) {}
   if (visto || cerrado) return;
@@ -850,7 +854,7 @@ function recibir(m) {
     case 'logro':
       aviso('Logro desbloqueado: ' + m.titulo + (m.oro ? ' · +' + m.oro.toLocaleString('es', { useGrouping: 'always' }) + ' oro' : '') + '. Puedes llevar el título desde el inventario.', 'ok', 6000);
       vibrar();
-      ofrecerPresumir('🏅 ¡Conseguí el logro «' + m.titulo + '»!', 'logro');
+      if (yo && (yo.nivel >= 5 || (yo.kills || 0) >= 30)) ofrecerPresumir('🏅 ¡Conseguí el logro «' + m.titulo + '»!', 'logro');
       sfx('explosion', .35);
       for (let i = 0; i < 30; i++) particula(P.x, P.y - 40, ['#ffe600', '#ff3cf0', '#00ff88'][i % 3], 5);
       break;
@@ -1450,7 +1454,18 @@ function interactuar() {
     return;
   }
   if (c.tipo === 'portal' && c.p.buscador) { abrirBuscador(); return; }
-  if (c.tipo === 'portal') { enviarPos(true); mandar({ t: 'portal', i: c.i }); }
+  if (c.tipo === 'portal') {
+    // Zona muy por encima de tu nivel: primer toque avisa, el segundo (en 4 s) entra igual.
+    const dz = MAPAS[c.p && c.p.a];
+    const qm0 = yo && yo.mis && MISIONES[yo.mis.i];
+    if (dz && dz.nv && yo && yo.nivel < dz.nv[0] - 5 && !(qm0 && zonaDe(qm0.tipo) === c.p.a) && !(interactuar.ok === c.i && performance.now() - (interactuar.okT || 0) < 4000)) {
+      interactuar.ok = c.i; interactuar.okT = performance.now();
+      const qm = yo.mis && MISIONES[yo.mis.i], qz = qm && zonaDe(qm.tipo);
+      errorRojo(dz.nombre + ': zona de nivel ' + dz.nv[0] + '-' + dz.nv[1] + '. Tu misión está en ' + (qz && MAPAS[qz] ? MAPAS[qz].nombre : 'el Bosque Nocturno') + '. Toca otra vez para entrar igual.');
+      return;
+    }
+    enviarPos(true); mandar({ t: 'portal', i: c.i });
+  }
   else if (c.n.tipo === 'tienda') abrirTienda();
   else if (c.n.tipo === 'ranking') abrirRanking();
   else if (c.n.tipo === 'artesania') abrirArtesana();
@@ -2284,7 +2299,7 @@ const regalo2 = iniciarRegalo({
   filtro: t => modoAnuncio() && SIN_CRIPTO_RE.test(t || ''),
 });
 // «Avísame por Telegram» para jugadores web e invitados (avisotg.js): espera a que no haya otra ventana.
-const avisoTg2 = iniciarAvisoTg({ mandar, ocupado: () => !!document.querySelector('.modal.on, #dq-regalo.on') || !yo, aviso: (t, k) => aviso(t, k, 7000), tg: TG });
+const avisoTg2 = iniciarAvisoTg({ mandar, ocupado: () => !!document.querySelector('.modal.on, #dq-regalo.on') || !yo || P.muerto || !!(MAPAS[mapaId] && MAPAS[mapaId].zona && [...mons.values()].some(o => o.hp > 0 && Math.abs(o.x - P.x) < 450)), aviso: (t, k) => aviso(t, k, 7000), tg: TG });
 
 $('b-social').onclick = () => abrirSocial();
 $('b-mapa').onclick = () => abrirMapaMundo();
@@ -3494,7 +3509,7 @@ function htmlPremium() {
   const cuentaTg = !!TG && !forzarInvitado;
   const cuenta = yo && yo.p2e && yo.p2e.cuenta;
   // Una linea clara y el detalle legal plegado (en movil no tapa los paquetes).
-  let h = '<p style="font-size:13px;line-height:1.45;color:var(--txt2);margin-bottom:4px">Compras opcionales: El Duende revisa cada pago y te lo entrega a mano (CLASSIC y ORIGINS).</p>'
+  let h = '<p style="font-size:13px;line-height:1.45;color:var(--txt2);margin-bottom:4px">Compras opcionales: <b>El Duende</b> revisa cada pago y lo entrega en tu personaje <b>a mano, de ' + ENTREGA.horario + ' (máx. ' + ENTREGA.plazoMaxH + ' h)</b> (CLASSIC y ORIGINS).</p>'
     + '<details style="font-size:12px;line-height:1.45;color:var(--txt2);margin-bottom:10px"><summary style="cursor:pointer">Cómo funciona</summary>' + esc(textoPagoRecibido()) + (cuentaTg ? ' Te avisamos aquí y por Telegram. ' : ' Te avisamos aquí en el juego al entregarlo. ') + (cuentaTg ? 'En Telegram se paga con Stars. Si no tienes Stars, Telegram te las vende y te muestra el precio final en tu moneda antes de pagar. Con dinero <b>no</b> se compran mTON: solo se ganan jugando.' : modoAnuncio() ? 'Se paga con Stars de Telegram (se compran con tarjeta dentro de Telegram): el botón abre Telegram, o en PC escaneas un QR con el celular.' : 'En la web se paga con Stars de Telegram (se compran con tarjeta dentro de Telegram), con Solana (SOL, una criptomoneda: no son soles) o con $DUENDE (10% de descuento). Con dinero <b>no</b> se compran mTON: solo se ganan jugando.') + (pagoLocalActivo() && !cuentaTg ? ' Con Yape / Plin pagas en soles el precio que ves; El Duende revisa tu yapeo y te lo entrega.' : ' Los soles (S/) son solo referencia aproximada.') + '</details>';
   // La skin elegida desde la pestaña Skins va primero; luego por grupos.
   // El Pack de bienvenida (SOLO 1 VEZ) sale solo mientras el servidor diga que aun puedes.
@@ -4816,7 +4831,7 @@ function dibujar() {
   ponCss(bi, 'display', 'block');
   if (c && yo && !P.muerto) {
     ponCss(bi, 'visibility', 'visible');
-    ponTxt(bi, c.tipo === 'res' ? 'RESUCITAR' : c.tipo === 'portal' ? (c.p.etiqueta === 'Salida' ? (TACTIL ? 'SALIR' : 'E · SALIR') : (TACTIL ? 'ENTRAR' : 'E · ENTRAR')) : c.tipo === 'cofre' ? (TACTIL ? 'ABRIR' : 'E · ABRIR') : c.tipo === 'vitrina' ? (TACTIL ? 'VER SKINS' : 'E · VER SKINS') : c.tipo === 'piedra' ? (TACTIL ? 'VIAJAR' : 'E · VIAJAR') : c.tipo === 'nodo' ? (TACTIL ? 'RECOGER' : 'E · RECOGER') : c.tipo === 'pesca' ? (castYo && castYo.id === 'pica' ? (TACTIL ? 'TIRAR' : 'E · TIRAR') : castYo && castYo.id === 'pescar' ? 'Espera…' : (TACTIL ? 'PESCAR' : 'E · PESCAR')) : (c.n.tipo === 'guia' && misionLista() ? (TACTIL ? 'ENTREGAR' : 'E · ENTREGAR') : (TACTIL ? 'HABLAR' : 'E · HABLAR')));
+    ponTxt(bi, c.tipo === 'res' ? 'RESUCITAR' : c.tipo === 'portal' ? (c.p.etiqueta === 'Salida' ? (TACTIL ? 'SALIR' : 'E · SALIR') : (TACTIL ? (c.p.a && MAPAS[c.p.a] && MAPAS[c.p.a].zona ? 'ENTRAR · ' + MAPAS[c.p.a].nombre.split(' ')[0] : 'ENTRAR') : 'E · ENTRAR')) : c.tipo === 'cofre' ? (TACTIL ? 'ABRIR' : 'E · ABRIR') : c.tipo === 'vitrina' ? (TACTIL ? 'VER SKINS' : 'E · VER SKINS') : c.tipo === 'piedra' ? (TACTIL ? 'VIAJAR' : 'E · VIAJAR') : c.tipo === 'nodo' ? (TACTIL ? 'RECOGER' : 'E · RECOGER') : c.tipo === 'pesca' ? (castYo && castYo.id === 'pica' ? (TACTIL ? 'TIRAR' : 'E · TIRAR') : castYo && castYo.id === 'pescar' ? 'Espera…' : (TACTIL ? 'PESCAR' : 'E · PESCAR')) : (c.n.tipo === 'guia' && misionLista() ? (TACTIL ? 'ENTREGAR' : 'E · ENTREGAR') : (TACTIL ? 'HABLAR' : 'E · HABLAR')));
   } else ponCss(bi, 'visibility', 'hidden');
 }
 

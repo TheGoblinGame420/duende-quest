@@ -244,6 +244,7 @@ export function puntosRev3d(MAPAS, MONSTRUOS) {
 export function revivirEn3d(x, z, nivel, MAPAS, MONSTRUOS) {
   const zona = zonaEn(x, z), l = puntosRev3d(MAPAS, MONSTRUOS);
   if (zona === 'pueblo' || zona === 'cueva' || zona === 'eter') return null;
+  const mz = MAPAS && MAPAS[zona]; if (mz && mz.nv && mz.nv[0] > nivel + 2) return null;
   if (nivel < 10) { const e = l.find(p => p.zona === zona && p.entrada); if (e) return e; }
   let mejor = null, md = 250;
   for (const p of l) { const d = Math.hypot(p.x - x, p.z - z); if (d < md) { md = d; mejor = p; } }
