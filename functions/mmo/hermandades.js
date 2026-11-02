@@ -57,7 +57,7 @@ export const Hermandades = {
     const gc = {};
     for (const u in G.c) if (h.miembros[u]) gc[pub(u)] = G.c[u];
     return {
-      id: h.id, nombre: h.nombre, motd: h.motd || '', color: h.color | 0, creada: h.creada, gesta: { sem: G.sem, p: G.p, c: gc },
+      id: h.id, nombre: h.nombre, motd: h.motd || '', color: h.color | 0, creada: h.creada, abierta: h.abierta ? 1 : 0, gesta: { sem: G.sem, p: G.p, c: gc },
       m: Object.entries(h.miembros).map(([uid, m]) => ({ uid: pub(uid), n: m.n, lv: m.lv, cl: m.cl, r: m.r, on: this.porUid.has(uid) ? 1 : 0 }))
         .sort((a, b) => b.on - a.on || ({ lider: 0, oficial: 1, miembro: 2 }[a.r] - { lider: 0, oficial: 1, miembro: 2 }[b.r]) || b.lv - a.lv),
     };
@@ -149,8 +149,14 @@ export const Hermandades = {
     if (s.c.herm) return this.no(s, 'Ya estás en una hermandad.');
     const h = await this.hermandad(inv.id);
     if (!h) return this.no(s, 'Esa hermandad ya no existe.');
+    await this.altaHerm(s, h);
+  },
+  // Alta comun (invitacion aceptada o hermandad abierta). 'desde' es ahora:
+  // GESTA_ANTIG_MS sigue impidiendo cobrar la gesta recien entrado.
+  async altaHerm(s, h) {
     if (Object.keys(h.miembros).length >= HERM_MAX) return this.no(s, 'La hermandad está llena.');
     const c = s.c;
+    if (c.herm) return this.no(s, 'Ya estás en una hermandad.');
     h.miembros[c.uid] = { n: c.nombre, lv: c.nivel, cl: c.clase || '', r: 'miembro', desde: Date.now() };
     c.herm = h.id;
     await this.guardarHerm(h);
@@ -160,6 +166,60 @@ export const Hermandades = {
     this.refrescarApariencia(s);
     this.actualizarYo(s);
     this.revisarLogros(s);
+  },
+
+  // ── HERMANDADES ABIERTAS ──
+  // Los novatos no conocen a nadie: una hermandad abierta acepta a cualquiera
+  // con un toque. Indice 'hAb' = { id: 1 } para listarlas sin leer todas.
+  async cargarHAb() {
+    if (!this.hAb) this.hAb = (await this.state.storage.get('hAb')) || {};
+    return this.hAb;
+  },
+  async hermAbierta(s, m) {
+    const h = await this.hermandad(s.c.herm);
+    const r = this.rangoEn(h, s.c.uid);
+    if (!h || !r) return this.no(s, 'No estás en una hermandad.');
+    if (r === 'miembro') return this.no(s, 'Solo el líder y los oficiales pueden abrir la hermandad.');
+    const v = !!m.v;
+    if (v === !!h.abierta || this.esperaHerm(s)) return;
+    h.abierta = v;
+    const ab = await this.cargarHAb();
+    if (v) ab[h.id] = 1; else delete ab[h.id];
+    await this.state.storage.put('hAb', ab);
+    await this.guardarHerm(h);
+    this.avisarHerm(h, v ? `🔓 ${s.c.nombre} abrió la hermandad: cualquiera puede unirse.` : `🔒 ${s.c.nombre} cerró la hermandad: solo se entra por invitación.`);
+    this.enviarHerm(h);
+  },
+  async hermUnirse(s, m) {
+    const ahora = Date.now();
+    if (ahora - (s.hermUnT || 0) < 3000) return this.no(s, 'Espera un momento.');
+    s.hermUnT = ahora;
+    if (s.c.herm) return this.no(s, 'Ya estás en una hermandad.');
+    const id = String(m.id || '').slice(0, 20);
+    const ab = await this.cargarHAb();
+    const h = ab[id] && await this.hermandad(id);
+    if (!h || !h.abierta) return this.no(s, 'Esa hermandad ya no acepta gente sin invitación.');
+    if (s.cerrado || s.c.herm) return;
+    await this.altaHerm(s, h);
+    if (s.c.herm === h.id) this.enviar(s, { t: 'toast', ok: true, m: `🛡️ Te uniste a <${h.nombre}>. Escribe /h mensaje para saludar.` });
+  },
+  async hermAbiertas(s) {
+    const ahora = Date.now();
+    if (ahora - (s.hermAbT || 0) < 1000) return;
+    s.hermAbT = ahora;
+    const ab = await this.cargarHAb();
+    const rh = await this.cargarRankHerm();
+    const ids = Object.keys(ab).sort((a, b) => ((rh.l[b] || {}).p || 0) - ((rh.l[a] || {}).p || 0)).slice(0, 40);
+    const l = [];
+    for (const id of ids) {
+      const h = await this.hermandad(id);
+      if (!h) { delete ab[id]; continue; }
+      const n = Object.keys(h.miembros).length;
+      if (!h.abierta || n >= HERM_MAX) continue;
+      l.push({ id, n: h.nombre, c: h.color | 0, m: n, p: this.gestaDe(h).p, on: this.conectadosHerm(h).length ? 1 : 0 });
+    }
+    l.sort((a, b) => b.p - a.p || b.on - a.on || b.m - a.m);
+    this.enviar(s, { t: 'hermAbiertas', l: l.slice(0, 5) });
   },
 
   // Quitar a un miembro (por irse o por expulsion). Si se va el lider, el
@@ -182,6 +242,7 @@ export const Hermandades = {
       await this.state.storage.delete('h:' + h.id);
       await this.state.storage.delete('hn:' + h.nombre.toLowerCase());
       this.herms.delete(h.id);
+      if (h.abierta) this.cargarHAb().then(ab => { delete ab[h.id]; return this.state.storage.put('hAb', ab); }).catch(e => console.error('[MMO hAb]', e));
       if (this.chatHistH) this.chatHistH.delete(h.id);
       this.cargarRankHerm().then(rh => { if (!rh.l[h.id]) return; delete rh.l[h.id]; return this.state.storage.put('rankHerm', rh); }).catch(e => console.error('[MMO rankHerm]', e));
       return;

@@ -26,12 +26,12 @@
 <meta name="theme-color" content="#0a0418">
 <link rel="manifest" href="/mundo/manifest.json">
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
-<script src="/js/pwa.js?v=347" defer></script>
+<script src="/js/pwa.js?v=348" defer></script>
 <link rel="icon" href="/assets/ui/coin.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=347"></script>
+<script src="/js/origen.js?v=348"></script>
 <script>
 // Red de seguridad de la carga (script clasico: corre aunque el modulo 3D o el CDN fallen).
 // - Errores antes de conectar: se guardan en __errQ y mundo.js los manda al entrar.
@@ -117,29 +117,29 @@
   });
 })();
 </script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=347" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=348" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=347">
-<link rel="modulepreload" href="/mmo/js/data.js?v=347">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=347">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=347">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=347">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=347">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=347">
-<link rel="modulepreload" href="/mmo/js/regalo.js?v=347">
-<link rel="modulepreload" href="/mmo/js/avisotg.js?v=347">
-<link rel="modulepreload" href="/mundo/js/musica.js?v=347">
-<link rel="modulepreload" href="/mundo/js/sonidos.js?v=347">
-<link rel="modulepreload" href="/mundo/js/cueva.js?v=347">
-<link rel="modulepreload" href="/mundo/js/tapa.js?v=347">
-<link rel="modulepreload" href="/mundo/js/abismo.js?v=347">
-<link rel="modulepreload" href="/mundo/js/particulas.js?v=347">
-<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=347">
-<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=347">
-<link rel="modulepreload" href="/mmo/js/secundarias.js?v=347">
-<link rel="modulepreload" href="/mundo/js/lore.js?v=347">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=348">
+<link rel="modulepreload" href="/mmo/js/data.js?v=348">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=348">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=348">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=348">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=348">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=348">
+<link rel="modulepreload" href="/mmo/js/regalo.js?v=348">
+<link rel="modulepreload" href="/mmo/js/avisotg.js?v=348">
+<link rel="modulepreload" href="/mundo/js/musica.js?v=348">
+<link rel="modulepreload" href="/mundo/js/sonidos.js?v=348">
+<link rel="modulepreload" href="/mundo/js/cueva.js?v=348">
+<link rel="modulepreload" href="/mundo/js/tapa.js?v=348">
+<link rel="modulepreload" href="/mundo/js/abismo.js?v=348">
+<link rel="modulepreload" href="/mundo/js/particulas.js?v=348">
+<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=348">
+<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=348">
+<link rel="modulepreload" href="/mmo/js/secundarias.js?v=348">
+<link rel="modulepreload" href="/mundo/js/lore.js?v=348">
 <style>
 :root{--bg:#0a0418;--panel:rgba(14,9,30,.86);--borde:rgba(160,140,255,.22);--txt:#f2efff;--txt2:#b8b0d8;--txt3:#7d7699;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;--oro:#ffd84a;--pri:#2563eb;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -207,11 +207,23 @@ body.movil #misiones{top:110px;bottom:auto;left:8px;right:auto;width:165px;font-
 .acc img{width:30px;height:30px;image-rendering:pixelated;}
 .acc .t{position:absolute;left:4px;top:2px;font:600 9px var(--sans);color:var(--txt2);}
 .acc .n{position:absolute;right:4px;bottom:2px;font:700 10px var(--sans);}
-.acc .cd{position:absolute;inset:0;border-radius:10px;background:rgba(0,0,0,.6);transform-origin:bottom;transform:scaleY(0);}
+.acc .cd{position:absolute;inset:0;border-radius:10px;pointer-events:none;transform:none!important;background:conic-gradient(rgba(0,0,0,.62) calc(var(--k,0)*360deg),transparent 0);}   /* recarga radial: mundo.js pintarCds pone --k (1 = recien usada) */
 .acc .cs{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:800 15px var(--sans);color:#fff;text-shadow:0 1px 3px #000;pointer-events:none;}
 .acc.on{border-color:var(--ok);box-shadow:0 0 0 2px rgba(74,222,128,.35) inset;}
 #xp{position:fixed;left:0;right:0;bottom:0;height:8px;background:rgba(0,0,0,.6);pointer-events:none;}
 #xp i{position:absolute;inset:0;background:linear-gradient(90deg,#a855f7,#c084fc);transform-origin:left;}
+/* XP de descanso: tramo azul detras de la barra (mundo.js pintarXpProx) y chip con el proximo desbloqueo */
+#xp i:not(.xd){z-index:1;}
+#xp i.xd{z-index:0;background:#60a5fa;opacity:.55;transform:scaleX(0);}
+#xp-prox{position:fixed;left:50%;bottom:8px;transform:translateX(-50%);max-width:min(460px,calc(100vw - 32px));display:none;pointer-events:none;z-index:2;font:600 11px/13px var(--sans);color:#fde68a;background:rgba(10,4,24,.72);padding:0 8px;border-radius:999px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#xp-prox b{color:#93c5fd;font-weight:700;}
+#xp-prox span:not([style*="none"])+b::before{content:' · ';color:#fde68a;}
+body.movil #xp-prox,body.compacto #xp-prox{left:50%;right:auto;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));max-width:54vw;}   /* encima de la pildora de la chicha (no la tapa) */
+body.movil.mano-der #xp-prox{right:auto;left:50%;}
+body.tgfs #xp-prox{margin-bottom:var(--tg-bot,0px);}
+@media (orientation:landscape) and (max-height:500px){
+ body.movil #xp-prox,body.movil.mano-der #xp-prox{left:50%;right:auto;transform:translateX(-50%);bottom:calc(8px + env(safe-area-inset-bottom));max-width:22vw;}
+}
 #chat{left:12px;bottom:22px;width:min(380px,42vw);padding:6px 8px;}
 #chat-log{max-height:150px;overflow:hidden;font:500 12px/1.45 var(--sans);display:flex;flex-direction:column;justify-content:flex-end;}
 #chat-log div b{font-weight:700;}
@@ -389,7 +401,12 @@ body.movil #tactil #t-atk{width:68px;height:68px;}
 #tactil button.grande.on{background:rgba(220,38,38,.9);box-shadow:0 0 12px #f87171;}
 /* Anillo de recarga de ATACAR (v344): se llena al ritmo del arma; lleno y tenue = listo para el siguiente golpe */
 #tactil #t-atk{position:relative;}
+#t-atk.combo3{box-shadow:0 0 0 3px #fbbf24,0 0 14px #fbbf24;transition:box-shadow .12s;}
+@media (prefers-reduced-motion:reduce){#t-atk.combo3{transition:none;}}
 #tactil #t-atk::after{content:'';position:absolute;inset:-5px;border-radius:50%;pointer-events:none;background:conic-gradient(#ffd84a calc(var(--rc,1)*360deg),rgba(255,255,255,.12) 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 3px));mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 3px));opacity:var(--rco,0);transition:opacity .15s;}
+/* ESQUIVAR: encima de ATACAR (fuera de la rejilla), con el mismo anillo de recarga */
+#tactil #t-esq{position:absolute;right:8px;top:-60px;width:52px;height:52px;font-size:22px;padding:0;line-height:1;background:rgba(14,116,144,.8);}
+#tactil #t-esq::after{content:'';position:absolute;inset:-5px;border-radius:50%;pointer-events:none;background:conic-gradient(#ffd84a calc(var(--rc,1)*360deg),rgba(255,255,255,.12) 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 3px));mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 3px));opacity:var(--rco,0);transition:opacity .15s;}
 body.movil #joy,body.movil #tactil{display:grid;}
 body.movil #joy{display:block;}
 body.movil #chat{width:min(260px,60vw);bottom:auto;top:204px;}
@@ -574,11 +591,23 @@ button{-webkit-tap-highlight-color:transparent;}
  body.movil #botones{top:calc(6px + env(safe-area-inset-top) + var(--tg-top,0px));right:calc(100px + env(safe-area-inset-right));max-width:none;grid-template-columns:repeat(4,40px);gap:3px;padding:3px;}
  body.movil #botones.abierto{grid-template-columns:repeat(8,40px);}
  body.movil #botones .bt{width:40px;height:40px;font-size:15px;}
- body.movil #tactil{bottom:calc(64px + env(safe-area-inset-bottom));right:calc(10px + env(safe-area-inset-right));grid-template-columns:repeat(3,52px) 68px;gap:6px;pointer-events:none;}
+ body.movil #tactil{bottom:calc(64px + env(safe-area-inset-bottom));right:calc(10px + env(safe-area-inset-right));grid-template-columns:repeat(3,52px) 90px 68px;gap:6px;pointer-events:none;}
  body.movil #tactil button{width:52px;height:52px;pointer-events:auto;}
+ /* La columna 4 queda libre: ahi va el arco de 3 habilidades alrededor de ATACAR (.acc.arco, abajo) */
+ body.movil #tactil #t-volar{grid-column:1;grid-row:1;}
+ body.movil #tactil #t-montar{grid-column:3;grid-row:1;}
+ body.movil #tactil #t-obj{grid-column:2;grid-row:2;}
  body.movil #tactil #t-salto{grid-column:3;grid-row:2;}
- body.movil #tactil #t-atk{grid-column:4;grid-row:2;}
- body.movil #barra{left:auto;right:calc(8px + env(safe-area-inset-right));width:min(320px,42vw);bottom:calc(6px + env(safe-area-inset-bottom));}
+ body.movil #tactil #t-atk{grid-column:5;grid-row:2;}
+ body.movil #tactil #t-esq{width:48px;height:48px;right:-4px;top:-68px;}   /* un poco mas arriba y al borde: no pisa el arco */
+ body.movil #barra{left:auto;right:calc(8px + env(safe-area-inset-right));width:min(320px,42vw);bottom:calc(6px + env(safe-area-inset-bottom));-webkit-backdrop-filter:none;backdrop-filter:none;}   /* sin desenfoque: si no, el arco (position:fixed) quedaria atado a la barra */
+ /* Arco: centro de ATACAR = borde de #tactil (10 px dcha, 64 px abajo) + media columna/fila de 68 px = 44 px y 98 px.
+    mundo.js (pintarBarra) pone --ang y --dx/--dy = 95 px en esa direccion; sin transform para que tiemble y destelle igual */
+ body.movil #barra .acc.arco{position:fixed;width:50px;height:50px;max-width:none;max-height:none;min-width:0;aspect-ratio:auto;flex:none;border-radius:50%;left:auto;right:calc(44px + env(safe-area-inset-right) - 25px - var(--dx,0px));bottom:calc(98px + env(safe-area-inset-bottom) - 25px - var(--dy,0px));background:rgba(20,12,44,.8);z-index:2;touch-action:manipulation;}
+ body.movil #barra .acc.arco img{width:26px;height:26px;}
+ body.movil #barra .acc.arco .cd{border-radius:50%;}
+ body.movil #barra .acc.arco .cs{font-size:13px;}
+ body.tgfs.movil #barra .acc.arco{margin-bottom:var(--tg-bot,0px);}
  body.movil #joy{left:0;top:calc(90px + env(safe-area-inset-top));bottom:0;height:auto;width:42%;}
  body.movil #marco,body.movil #objp,body.movil #grupo3,body.movil #alas,body.movil #misiones{left:calc(8px + env(safe-area-inset-left));}
  body.movil #obj{left:calc(164px + env(safe-area-inset-left));transform:none;width:min(140px,24vw);}
@@ -598,6 +627,10 @@ body.movil.mano-der #joy .pista-joy{left:auto;right:28px;flex-direction:row-reve
  body.movil.mano-der #tactil{right:auto;left:calc(10px + env(safe-area-inset-left));}
  body.movil.mano-der #barra{right:auto;left:calc(8px + env(safe-area-inset-left));}
  body.movil.mano-der #chat{left:auto;right:calc(8px + env(safe-area-inset-right));}
+ /* Espejo: ATACAR en la esquina izquierda (columnas de derecha a izquierda) y el arco abierto hacia la derecha */
+ body.movil.mano-der #tactil{direction:rtl;}
+ body.movil.mano-der #tactil #t-esq{right:auto;left:-4px;}
+ body.movil.mano-der #barra .acc.arco{right:auto;left:calc(44px + env(safe-area-inset-left) - 25px - var(--dx,0px));}
 }
 /* Subir de nivel: destello dorado y cartel grande */
 #flash-nv{position:fixed;inset:0;pointer-events:none;z-index:5;background:radial-gradient(circle,rgba(255,230,102,.55),transparent 70%);opacity:0;transition:opacity .6s}
@@ -659,7 +692,7 @@ body.movil #npc-dice,body.compacto #npc-dice{bottom:auto;top:calc(200px + env(sa
   <p class="consejo-carga" id="carga-c"></p>
 </div>
 <script>
-(function(){var L=['Acércate a un enemigo y toca ATACAR: mantén pulsado para seguir pegando','Toca VOLAR fuera del pueblo: las columnas de viento celestes recargan tus alas','Sigue la luz amarilla: ahí está tu misión','Invita a un amigo: cuando llegue a Nv 10, los dos ganan oro','En la Hora Feliz ganas +50% de experiencia','Gratis y sin instalar nada: se juega desde el navegador','Crea tu cuenta gratis para no perder a tu duende','Los jefes sueltan equipo raro o mejor: ve con amigos'];var i=Math.floor(Math.random()*L.length),c=document.getElementById('carga-c'),g=document.getElementById('carga');function p(){if(c)c.textContent='💡 '+L[i++%L.length];}p();var t=setInterval(function(){if(!g||g.style.display==='none')return;p();},5000);setTimeout(function(){var b=document.getElementById('carga-i');if(b&&!window.__dqProg){b.style.transition='transform 8s ease-out';b.style.transform='scaleX(.08)';var w=setInterval(function(){if(window.__dqProg){b.style.transition='';clearInterval(w);}},200);}},50);setTimeout(function(){var s=document.getElementById('carga-s');if(s&&!window.__dqProg)s.textContent='Descargando el mundo 3D (solo la primera vez)…';},6000);})();
+(function(){var L=['Acércate a un enemigo y toca ATACAR: mantén pulsado para seguir pegando','Toca VOLAR fuera del pueblo: las columnas de viento celestes recargan tus alas','Sigue la luz amarilla: ahí está tu misión','Invita a un amigo: cuando llegue a Nv 10, los dos ganan oro','En la Hora Feliz ganas +50% de experiencia','Gratis y sin instalar nada: se juega desde el navegador','Crea tu cuenta gratis para no perder a tu duende','Los jefes sueltan equipo raro o mejor: ve con amigos'];var i=Math.floor(Math.random()*L.length),c=document.getElementById('carga-c'),g=document.getElementById('carga');function p(){if(c)c.textContent='💡 '+L[i++%L.length];}var G={jefe:'Sigue la luz amarilla: tras tres misiones cortas, el jefe Sabueso te espera',vuelo:'Al salir del pueblo podrás VOLAR: toca VOLAR y busca las columnas de viento',amigos:'Invita a tu pata y cacen juntos: a Nv 10 los dos ganan oro',botin:'Cada monstruo puede soltar botín: los jefes, equipo raro o mejor'},gk='';try{gk=(/[?&]g=(jefe|vuelo|amigos|botin)(&|$)/.exec(location.search)||[])[1]||'';}catch(e){}if(gk&&c)c.textContent='💡 '+G[gk];else p();var t=setInterval(function(){if(!g||g.style.display==='none')return;p();},5000);setTimeout(function(){var b=document.getElementById('carga-i');if(b&&!window.__dqProg){b.style.transition='transform 8s ease-out';b.style.transform='scaleX(.08)';var w=setInterval(function(){if(window.__dqProg){b.style.transition='';clearInterval(w);}},200);}},50);setTimeout(function(){var s=document.getElementById('carga-s');if(s&&!window.__dqProg)s.textContent='Descargando el mundo 3D (solo la primera vez)…';},6000);})();
 </script>
 
 <div class="caja" id="marco">
@@ -731,12 +764,13 @@ body.movil #npc-dice,body.compacto #npc-dice{bottom:auto;top:calc(200px + env(sa
 <div id="gestos3" role="menu" aria-label="Gestos y frases rápidas"></div>
 <div id="titulo-zona"><b id="tz-n"></b><small id="tz-s"></small></div>
 <button class="caja" id="hablar">E · Hablar</button>
-<div id="xp"><i></i></div>
+<div id="xp"><i></i><i class="xd" id="xp-desc"></i></div>
+<div id="xp-prox"><span id="xp-pt"></span><b id="xp-pd" style="display:none">💤 x2 descanso</b></div>
 
 <div id="joy"><div class="base"><div class="pomo"></div></div></div>
 <div id="tactil">
   <button id="t-volar">VOLAR</button><button id="t-bajar" style="visibility:hidden">BAJAR</button><button id="t-usar" style="visibility:hidden">HABLAR</button><button id="t-montar">MONTAR</button>
-  <button id="t-obj" aria-label="Cambiar de objetivo">FIJAR</button><button id="t-salto">SALTO</button><button class="grande" id="t-atk">ATACAR</button>
+  <button id="t-obj" aria-label="Cambiar de objetivo">FIJAR</button><button id="t-salto">SALTO</button><button class="grande" id="t-atk">ATACAR</button><button id="t-esq" aria-label="Esquivar">💨</button>
 </div>
 
 <div class="modal" id="v-inicio"><div class="ventana" style="text-align:center">
@@ -848,8 +882,8 @@ body.movil #npc-dice,body.compacto #npc-dice{bottom:auto;top:calc(200px + env(sa
 <!-- Telegram: su SDK se carga arriba solo dentro de Telegram (window.__tgListo).
      defer: no frenan el HTML y corren en orden, antes que mundo.js (que usa supabase). -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=347" defer></script>
-<script type="module" src="/mundo/js/mundo.js?v=347"></script>
+<script src="/js/config.js?v=348" defer></script>
+<script type="module" src="/mundo/js/mundo.js?v=348"></script>
 <div id="flash-nv"></div>
 <div id="cartel-nv"></div>
 </body>

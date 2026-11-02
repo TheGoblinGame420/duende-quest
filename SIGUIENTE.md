@@ -3453,3 +3453,16 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - CLASSIC: giro hacia el monstruo al golpear, vara al más cercano.
 - Abismo: islas con monstruos Nv 20-30; Rey Goblin vencible en solitario y más duro en grupo.
 - Arnés 905 bien.
+
+### Estudio 4 (2-nov-2026, `?v=348`)
+
+- 10 estudios web (combate táctil, mazmorras cortas, jefes de mundo, estética andina, ritmo de 7 días, UI de habilidades, emotes, anuncios en video, logros, hermandades) → 56 hallazgos → 12 tareas.
+- Búfer del ataque (220 ms, solo toques reales) y combo del cliente igual al del servidor; brillo dorado `combo3`.
+- ESQUIVAR (`esquivar`/`pasoEsquiva`, 3 m en 180 ms, recarga 1,2 s); servidor: +3 m de margen a pie una vez cada 1,18 s (`s.esqT`). Prueba anti-velocidad ajustada (+3 m de una sola esquiva).
+- Gran Invasión diaria a las 21:00 de Lima con cuenta atrás; invasión con umbral escalado, medallas y top 3.
+- Cueva: cronómetro, récord, cofres de hoy; buscar grupo (`buscarGrupo`/`lfg` en 3D) y entrada conjunta.
+- Pueblo andino (tejas, ichu, aguayo, campanario, portal inca). Gestos con animación, fiesta en grupo y foto bailando.
+- Barra de XP con próximo desbloqueo (`#xp-prox`, ahora encima de la píldora de la chicha) y descanso visible.
+- Habilidades en arco junto a ATACAR, recarga radial y búfer de habilidad. Hermandades abiertas y aporte por miembro.
+- Landing según `utm_content` y medición del primer golpe/caza.
+- Arnés 905 bien.

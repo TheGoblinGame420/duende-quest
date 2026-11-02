@@ -11,8 +11,8 @@
 //    (src): el servidor lo vuelve a validar con la misma lista blanca.
 // 2) EMBUDO: window.dqPaso(e, j) manda un beacon a /mmo/ev UNA vez por sesion
 //    (sessionStorage) con { e, j, ms, org, movil, tg }. ms es el tiempo desde
-//    que abrio la pagina, salvo 'bienvenido' y 'mover': desde el clic en
-//    entrar (-1 si entro directo, sin formulario). Si la pestaña se oculta
+//    que abrio la pagina, salvo 'bienvenido', 'mover', 'golpe1' (primer
+//    ataque) y 'caza1' (primera caza): desde el clic en entrar (-1 si entro directo, sin formulario). Si la pestaña se oculta
 //    antes de 'mover', manda 'oculta' (abandono durante la carga).
 // Todo va en try/catch: un fallo aqui nunca puede romper la pagina.
 (function () {
@@ -108,7 +108,7 @@
     var okM = window.dqMedirOk();
     if (!enTg && okM !== 0 && (okM === 1 || (origen && (origen.o === 'meta' || origen.fr)))) {
       var sm = document.createElement('script');
-      sm.src = '/js/medir.js?v=347'; sm.async = true;
+      sm.src = '/js/medir.js?v=348'; sm.async = true;
       (document.head || document.documentElement).appendChild(sm);
     }
   } catch (e) {}
@@ -138,7 +138,8 @@
   var EVENTOS = { carga_ini: 1, arte_ok: 1, form_visto: 1, clic_entrar: 1, bienvenido: 1, mover: 1, fallo_webgl: 1, oculta: 1, t_hab: 1, t_volar: 1, t_fin: 1,
     mis_0: 1, mis_1: 1, mis_2: 1, mis_3: 1, mis_4: 1, mis_5: 1, jefe1_ver: 1, jefe1_muere: 1, jefe1_ok: 1,
     fps_baja_ok: 1, fps_baja_justo: 1, fps_baja_lento: 1, fps_media_ok: 1, fps_media_justo: 1, fps_media_lento: 1, fps_alta_ok: 1, fps_alta_justo: 1, fps_alta_lento: 1,
-    gpu_mali: 1, gpu_adreno: 1, gpu_powervr: 1, gpu_apple: 1, gpu_intel: 1, gpu_swiftshader: 1, gpu_otra: 1, fuga_gpu: 1, nan_pos: 1 };
+    gpu_mali: 1, gpu_adreno: 1, gpu_powervr: 1, gpu_apple: 1, gpu_intel: 1, gpu_swiftshader: 1, gpu_otra: 1, fuga_gpu: 1, nan_pos: 1,
+    golpe1: 1, caza1: 1 };
   var hechos = {}, clicT = -1, juego = '';
   var movil = false;
   try { movil = (window.matchMedia && matchMedia('(pointer:coarse)').matches) || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent); } catch (e) {}
@@ -153,7 +154,7 @@
       if (e === 'clic_entrar') clicT = ahora;
       var ss = 'dq_ev_' + k;
       try { if (sessionStorage.getItem(ss)) return; sessionStorage.setItem(ss, '1'); } catch (er) {}
-      var ms = (e === 'bienvenido' || e === 'mover') ? (clicT >= 0 ? ahora - clicT : -1) : ahora;
+      var ms = (e === 'bienvenido' || e === 'mover' || e === 'golpe1' || e === 'caza1') ? (clicT >= 0 ? ahora - clicT : -1) : ahora;
       var cuerpo = JSON.stringify({ e: e, j: j, ms: ms, org: window.dqOrigen().src, movil: movil ? 1 : 0, tg: enTg ? 1 : 0 });
       if (navigator.sendBeacon) navigator.sendBeacon('/mmo/ev', cuerpo);
       else fetch('/mmo/ev', { method: 'POST', body: cuerpo, keepalive: true }).catch(function () {});

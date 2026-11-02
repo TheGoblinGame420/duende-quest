@@ -52,10 +52,11 @@ footer{text-align:center;font-size:13px;color:var(--txt2);}
 .iab.on{display:block;}
 .iab a{display:inline-block;margin-top:6px;padding:7px 12px;border-radius:10px;background:#0ea5e9;color:#fff;text-decoration:none;font-weight:800;}
 footer a{color:var(--txt2);}
-@media (min-width:800px){main{grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:40px;padding-top:48px;}.marca{grid-column:1/-1;}h1,.sub{text-align:left;}.lista{justify-content:flex-start;}footer{grid-column:1/-1;}}
+.consejo{margin-top:14px;padding:10px 14px;border-radius:14px;background:rgba(255,216,74,.08);border:1px solid rgba(255,216,74,.35);color:var(--oro);font:600 14px/1.45 var(--sans);text-align:center;}
+@media (min-width:800px){main{grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:40px;padding-top:48px;}.marca{grid-column:1/-1;}h1,.sub,.consejo{text-align:left;}.lista{justify-content:flex-start;}footer{grid-column:1/-1;}}
 @media (prefers-reduced-motion:reduce){.jugar{animation:none;}}
 </style>
-<script src="/js/origen.js?v=347"></script>
+<script src="/js/origen.js?v=348"></script>
 </head>
 <body>
 <div class="aurora" aria-hidden="true"></div>
@@ -66,6 +67,7 @@ footer a{color:var(--txt2);}
     <h1>Crea tu duende y caza monstruos con amigos. <b>Gratis en tu celular, sin descargar.</b></h1>
     <p class="sub">Un mundo con jefes, mazmorras y misiones para jugar en grupo. Se abre en el navegador del celular o de la PC.</p>
     <ul class="lista"><li>Gratis</li><li>Sin descargas</li><li>Con amigos en tiempo real</li></ul>
+    <p class="consejo" id="consejo" hidden></p>
   </section>
   <footer><a href="/terminos">Términos</a> · <a href="/privacidad">Privacidad</a></footer>
 </main>
@@ -104,6 +106,32 @@ footer a{color:var(--txt2);}
   if (ult !== '/mundo/' && ult !== '/mmo/') ult = null;
   var ir = destino(), b = document.getElementById('jugar');
   if (ult && !/[?&](j|de)=(2d|3d)\b/i.test(location.search)) ir = (ult === '/mundo/' && !puede3d()) ? destino() : ult;
+  // Gancho del anuncio: si utm_content (o el guardado por /js/origen.js, campo 'a') trae
+  // jefe|vuelo|amigos|botin, la portada habla de ese video y el juego recibe ?g=<gancho>
+  // (consejo de la pantalla de carga). De la URL solo se mira la palabra: los textos son fijos.
+  var GANCHOS = {
+    jefe: { h1: 'Caza goblins y derrota al <b>jefe Sabueso</b> con tus patas.', poster: '/assets/promo/historia_3.jpg', alt: 'Un duende pelea contra goblins en el bosque de Duende Quest', consejo: '💡 Haz las misiones del Guardia Tito: tras tres cortas, el jefe Sabueso te espera.' },
+    vuelo: { h1: 'Tu duende tiene alas: <b>sal del pueblo y vuela.</b>', poster: '/assets/promo/historia_2.jpg', alt: 'Una isla flotante con un castillo en el cielo de Duende Quest', consejo: '💡 Fuera del pueblo toca VOLAR: las columnas de viento celestes recargan tus alas.' },
+    amigos: { h1: 'Arma tu grupo y <b>cacen juntos con tus patas.</b>', poster: '/assets/video/promo3d-poster.jpg', alt: 'El pueblo de Duende Quest con duendes jugando en 3D', consejo: '💡 Invita a tu pata con tu enlace: cuando llegue a Nv 10, los dos ganan oro.' },
+    botin: { h1: 'Caza monstruos y <b>llévate su botín.</b>', poster: '/assets/promo/historia_1.jpg', alt: 'Un duende con su espada en Duende Quest', consejo: '💡 Tu primera caza trae botín seguro, y los jefes sueltan equipo raro o mejor.' }
+  };
+  var gancho = '';
+  try {
+    var uq = {};
+    try { new URLSearchParams(location.search).forEach(function (v, k) { uq[k.toLowerCase()] = v; }); } catch (e) {}
+    var uc = String(uq.utm_content || uq.utm_ad || '');
+    if (!uc && window.dqOrigen) uc = window.dqOrigen().ad || '';
+    try { uc = uc.normalize('NFD').replace(/[^\x00-\x7f]/g, ''); } catch (e) {}
+    uc = uc.toLowerCase();
+    for (var gk in GANCHOS) if (uc.indexOf(gk) >= 0) { gancho = gk; break; }
+    if (gancho === 'vuelo' && ir !== '/mundo/') gancho = '';   // CLASSIC (2D) no tiene alas: no prometerlas
+    if (gancho) {
+      var G = GANCHOS[gancho], h1g = document.querySelector('h1'), pg = document.querySelector('.poster img'), cg = document.getElementById('consejo');
+      if (h1g) h1g.innerHTML = G.h1;
+      if (pg) { pg.src = G.poster; pg.alt = G.alt; }
+      if (cg) { cg.textContent = G.consejo; cg.hidden = false; }
+    }
+  } catch (e) { gancho = ''; }
   if ((ult || tiene) && !/[?&]ref=/i.test(location.search)) {
     try {
       b.textContent = 'CONTINUAR CON MI DUENDE';
@@ -137,6 +165,7 @@ footer a{color:var(--txt2);}
       b.textContent = 'ACEPTO EL RETO';
     } catch (e) {}
   }
+  if (gancho && !/[?&]g=/i.test(qs)) qs += (qs ? '&' : '?') + 'g=' + gancho;
   if (ir === '/mmo/' && !/[?&]j=/i.test(qs)) qs += (qs ? '&' : '?') + 'j=2d';
   b.href = ir + qs;
   b.addEventListener('click', function () { try { localStorage.setItem('dq_ultimo_juego', ir); } catch (e) {} });
@@ -169,8 +198,8 @@ footer a{color:var(--txt2);}
       pc.rel = 'preconnect'; pc.href = 'https://cdn.jsdelivr.net'; pc.crossOrigin = 'anonymous';
       if (ir === '/mundo/') document.head.appendChild(pc);
       var lista = ir === '/mundo/'
-        ? ['https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js', '/mundo/js/mundo.js?v=347', '/mundo/js/modelos.js?v=347', '/mundo/js/ventanas.js?v=347', '/mmo/js/data.js?v=347', '/assets/3d/kenney.json', '/assets/3d/kenney.bin.gz']
-        : ['/mmo/js/client.js?v=347', '/mmo/js/data.js?v=347'];
+        ? ['https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js', '/mundo/js/mundo.js?v=348', '/mundo/js/modelos.js?v=348', '/mundo/js/ventanas.js?v=348', '/mmo/js/data.js?v=348', '/assets/3d/kenney.json', '/assets/3d/kenney.bin.gz']
+        : ['/mmo/js/client.js?v=348', '/mmo/js/data.js?v=348'];
       window.addEventListener('load', function () {
         setTimeout(function () {
           try {

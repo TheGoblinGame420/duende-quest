@@ -85,6 +85,18 @@ export const Eventos3D = {
     // Invasiones.
     if (!W.inv3prox) W.inv3prox = ahora + rnd(INV3D_CADA_MIN[0], INV3D_CADA_MIN[1]) * 60000;
     const ev = W.inv3;
+    // Gran Invasion diaria a las 21:00 de Lima (UTC-5): cita fija de la comunidad, meta x1,5.
+    const lima = new Date(ahora - 5 * 3600e3), lh = lima.getUTCHours(), lm = lima.getUTCMinutes(), hoyL = lima.toISOString().slice(0, 10);
+    const m21 = Date.UTC(lima.getUTCFullYear(), lima.getUTCMonth(), lima.getUTCDate(), 21) + 5 * 3600e3;   // 21:00 Lima en ms reales
+    if (!ev && (lh === 20 && lm >= 57 || lh === 21 && lm < 30) && W.granHoy !== hoyL) {   // hasta 21:29 por si otra invasion seguia en pie a las 20:57
+      W.granHoy = hoyL; W.granProx = 1; W.inv3prox = Math.max(m21, ahora + 60000);
+      if (W.inv3pre) { W.inv3pre = null; this.aClave(K3, { t: 'inv3', on: false, pre: 0 }); }   // unos tambores sueltos ceden su sitio a la Gran Invasion
+    } else if (W.granProx && !ev && !W.inv3pre) {
+      if (lh === 21 || (lh === 20 && lm >= 57)) W.inv3prox = Math.min(W.inv3prox, Math.max(m21, ahora + 60000));   // si la reiniciaron, vuelve a su hora
+      else W.granProx = 0;   // paso la hora sin nadie: mañana sera
+    } else if (!ev && !W.inv3pre && !W.granProx && W.inv3prox > m21 - 15 * 60000 && W.inv3prox < m21 + 15 * 60000) {
+      W.inv3prox = m21 + 15 * 60000 + rnd(0, 3) * 60000;   // las aleatorias no caen entre 20:45 y 21:15
+    }
     if (ev) this.tickInvasion3d(ev, ahora, porZona[ev.zona] || []);
     else if (!W.inv3pre && W.inv3prox - ahora <= INV3D_AVISO_MS) {
       // Aviso previo: 1:30 antes ya se sabe donde sera (tambores), para que la gente llegue.
@@ -114,8 +126,8 @@ export const Eventos3D = {
   avisarInvasion3d(zona, ahora) {
     const W = this.iniciar3d(), mp = MAPAS[zona];
     W.inv3prox = Math.max(W.inv3prox, ahora + INV3D_AVISO_MS);   // siempre 1:30 de aviso real
-    W.inv3pre = { zona, en: W.inv3prox };
-    this.aClave(K3, { t: 'aviso', m: `🥁 Se oyen tambores en ${mp.nombre}: invasión en 1:30` });
+    W.inv3pre = { zona, en: W.inv3prox, gran: W.granProx ? 1 : 0 };
+    this.aClave(K3, { t: 'aviso', m: W.granProx ? '🥁 ¡GRAN INVASIÓN de las 21:00! Todos a defender ' + mp.nombre : `🥁 Se oyen tambores en ${mp.nombre}: invasión en 1:30` });
     this.aClave(K3, this.estadoInvasion3d());
   },
   // Zona Bendecida tras ganar una invasion: +10 % de XP de caza un rato.
@@ -175,15 +187,17 @@ export const Eventos3D = {
   empezarInvasion3d(zona, porZona, ahora) {
     const W = this.iniciar3d(), mp = MAPAS[zona], n = Math.max(1, (porZona[zona] || []).length);
     W.inv3pre = null;
-    W.inv3 = { id: (W.inv3n = (W.inv3n || 0) + 1), zona, nombre: INVASION[zona] || 'Invasión', inicio: ahora, fin: ahora + INV3D_DURA_MS,
-      meta: clamp(10 + 6 * n, 12, 40), hechos: 0, fase: 'oleadas', oleadaEn: ahora, capitan: 0, part: new Map() };
+    const gran = W.granProx ? 1 : 0;   // Gran Invasion de las 21:00: mas invasores (x1,5) y el Capitan al final, mismos premios base
+    W.granProx = 0;
+    W.inv3 = { id: (W.inv3n = (W.inv3n || 0) + 1), zona, nombre: (gran ? 'GRAN ' : '') + (INVASION[zona] || 'Invasión'), inicio: ahora, fin: ahora + INV3D_DURA_MS,
+      meta: Math.round(clamp(10 + 6 * n, 12, 40) * (gran ? 1.5 : 1)), hechos: 0, fase: 'oleadas', oleadaEn: ahora, capitan: 0, part: new Map(), gran };
     this.aClave(K3, { t: 'aviso', m: `⚔️ ${W.inv3.nombre} en ${mp.nombre}: derroten a ${W.inv3.meta} invasores en 5 minutos.` });
     this.aClave(K3, this.estadoInvasion3d());
     return W.inv3;
   },
   estadoInvasion3d() {
     const W = this.iniciar3d(), ev = W.inv3;
-    if (!ev && W.inv3pre) return { t: 'inv3', on: false, pre: 1, zona: W.inv3pre.zona, ms: Math.max(0, W.inv3pre.en - Date.now()), bend: this.benditas3d() };
+    if (!ev && W.inv3pre) return { t: 'inv3', on: false, pre: 1, zona: W.inv3pre.zona, gran: W.inv3pre.gran || 0, ms: Math.max(0, W.inv3pre.en - Date.now()), bend: this.benditas3d() };
     if (!ev) return { t: 'inv3', on: false, bend: this.benditas3d() };
     return { t: 'inv3', on: true, nombre: ev.nombre, zona: ev.zona, hechos: ev.hechos, meta: ev.meta, fase: ev.fase, ms: Math.max(0, ev.fin - Date.now()) };
   },
@@ -222,11 +236,13 @@ export const Eventos3D = {
     // Pegar o curar a quien pelea cuenta (como en el 2D): el sanador del grupo tambien cobra.
     // Se cuenta en cuantos invasores ayudo cada uno (el capitan vale 3): un golpe suelto no cobra.
     // Con el Capitan solo cuenta quien le hizo el 10 % del daño o curo de verdad (un golpe suelto no).
+    // Umbral escalado: con muchos pegando al Capitan el 10 % es imposible; baja a 50 % / pegadores (tope 10 %).
     const ayudo = new Set(), totalD = [...o.dano.values()].reduce((a, b) => a + b, 0) || 1;
+    const nPel = [...o.dano.values()].filter(v => v > 0).length, umbCap = totalD * Math.min(0.1, 0.5 / Math.max(1, nPel));
     for (const m of [o.dano, o.cura]) if (m) for (const [sid, v] of m) {
       const s = this.sesiones.get(sid);
       if (!s || !s.c) continue;
-      if (o.ex3.cap && !(m === o.dano ? v >= totalD * 0.1 : v >= o.max * 0.03)) continue;
+      if (o.ex3.cap && !(m === o.dano ? v >= umbCap : v >= o.max * 0.03)) continue;
       // En los normales tambien hace falta ayudar de verdad (Dolor sumaba 1 sin daño real).
       if (!o.ex3.cap && !(m === o.dano ? v >= Math.min(totalD * 0.1, (o.max || 1) * 0.03) : v >= (o.max || 1) * 0.03)) continue;
       ayudo.add(s.c.uid);
@@ -250,31 +266,43 @@ export const Eventos3D = {
       this.aClave(K3, { t: 'inv3', on: false, fin: 'perdida' });
       return;
     }
-    const nombres = [];
-    for (const [uid, n] of ev.part) {
+    // Medallas por aporte (ya no es todo o nada): bronce 1-2 = mitad de XP y oro sin objeto; plata 3-5 = premio
+    // de siempre; oro 6+ (o top 3 con al menos plata) = premio + 25 % de oro. 0 aportes: sin premio.
+    const orden = [...ev.part].filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
+    const top3 = new Set(orden.slice(0, 3).map(([uid]) => uid)), nDef = orden.length;
+    // Si antes toca la Gran Invasion de las 21:00 (Lima), esa es la proxima de verdad (las aleatorias no caen entre 20:45 y 21:15).
+    const lim = new Date(Date.now() - 5 * 3600e3), m21f = Date.UTC(lim.getUTCFullYear(), lim.getUTCMonth(), lim.getUTCDate(), 21) + 5 * 3600e3;
+    const proxT = W.granHoy !== lim.toISOString().slice(0, 10) && Date.now() < m21f && W.inv3prox > m21f - 15 * 60000 ? m21f : W.inv3prox;
+    const prox = proxT ? Math.max(1, Math.ceil((proxT - Date.now()) / 60000)) : 0;
+    for (const [uid, n] of orden) {
       const s = this.porUid.get(uid);
       if (!s || !s.c || s.cerrado) continue;
       // Solo cobra quien sigue en ORIGINS y en la zona de la invasion.
       if (!s.m3 || zonaEn(s.p.x, s.p.z) !== ev.zona) continue;
-      if (n < 3) { this.enviar(s, { t: 'toast', m: '⚔️ Invasión rechazada. Para cobrar el premio hay que ayudar contra 3 invasores o contra el Capitán: ¡la próxima!' }); continue; }
+      const med = n >= 6 || (n >= 3 && top3.has(uid)) ? 'o' : n >= 3 ? 'p' : 'b';
       // Con tu nivel (tope el de la zona): uno de nivel 1 no cobra la XP de una zona de nivel 40.
       const c = s.c, nv = Math.min(c.nivel, mp.nv[1]);
-      const xp = Math.round(xpParaSubir(nv) * 0.35), oro = Math.round(40 * nv * rnd(0.9, 1.1));
+      const xp0 = Math.round(xpParaSubir(nv) * 0.35), oro0 = Math.round(40 * nv * rnd(0.9, 1.1));
+      const xp = med === 'b' ? Math.round(xp0 * 0.5) : xp0, oro = med === 'b' ? Math.round(oro0 * 0.5) : med === 'o' ? Math.round(oro0 * 1.25) : oro0;
       c.oro += oro;
-      c.invasiones = (c.invasiones || 0) + 1;
-      const it = this.darItem(s, this.generarItem(nv, 1));
+      let it = null;
+      if (med !== 'b') {
+        c.invasiones = (c.invasiones || 0) + 1;
+        it = this.darItem(s, this.generarItem(nv, 1));
+        this.progresoTarea && this.progresoTarea(s, 'invasion');
+      }
       this.sumarXp(s, xp);
-      this.progresoTarea && this.progresoTarea(s, 'invasion');
       s.sucio = true;
-      this.enviar(s, { t: 'gana', xp, oro, drops: [], item: it });
-      this.enviar(s, { t: 'toast', ok: true, m: `⚔️ Invasión rechazada: +${xp} XP · +${oro} oro · ${RAREZAS[it.r].nombre}: ${nombreItem(it)}` });
+      const ico = { b: '🥉', p: '🥈', o: '🥇' }[med], nomM = { b: 'bronce', p: 'plata', o: 'oro' }[med];
+      this.enviar(s, { t: 'gana', xp, oro, drops: [], item: it, med });
+      this.enviar(s, { t: 'toast', ok: true, med, inv: { n: nDef, med, prox }, m: `${ico} Aporte ${nomM}: +${xp} XP +${oro} oro${it ? ` · ${RAREZAS[it.r].nombre}: ${nombreItem(it)}` : ' · Ayuda contra 3 invasores para la plata'}` });
       this.revisarLogros(s);
       this.yoLuego(s, true);
-      nombres.push(c.nombre);
     }
+    const topTxt = orden.slice(0, 3).map(([uid, n]) => { const s = this.porUid.get(uid); return s && s.c ? `${s.c.nombre} (${n})` : null; }).filter(Boolean).join(' · ');
     (W.zonaEstado || (W.zonaEstado = {}))[ev.zona] = { tipo: 'bendita', hasta: Date.now() + BENDITA_MS };
-    this.aClave(K3, { t: 'aviso', m: `${ev.nombre} rechazada en ${mp.nombre}. Héroes: ${nombres.slice(0, 6).join(', ') || '—'}. La zona queda Bendecida 15 min: +10% XP al cazar` });
-    this.aClave(K3, { t: 'inv3', on: false, fin: 'ganada', zona: ev.zona, bend: this.benditas3d() });
+    this.aClave(K3, { t: 'aviso', prox, m: `${ev.nombre} rechazada. 🏆 Top: ${topTxt || '—'} · ${nDef} duende${nDef === 1 ? '' : 's'} defendieron ${mp.nombre}. La zona queda Bendecida 15 min: +10% XP al cazar${prox ? ` · Próxima invasión en ~${prox} min` : ''}` });
+    this.aClave(K3, { t: 'inv3', on: false, fin: 'ganada', zona: ev.zona, bend: this.benditas3d(), n: nDef, prox });
   },
 
   // ── COFRES ──

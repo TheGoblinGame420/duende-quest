@@ -15,6 +15,7 @@
 // se une con un toque, sin esperar a que aceptes (el lider puede expulsar).
 // ═══════════════════════════════════════════════════════
 import { MAPAS, MAZMORRAS, BANDA_MAX, GESTOS } from '../../mmo/js/data.js';
+import { CUEVA } from '../../mmo/js/cueva3d.js';
 
 export const GRUPO_MAX = 5;
 // Un grupo convertido en banda (boton del lider o al buscar gente para la
@@ -36,6 +37,10 @@ const INVITACION_MS = 60000;
 export const CONTACTOS_MAX = 50;      // amigos en la lista de cada personaje
 export const LFG_MS = 10 * 60000;       // cuanto dura un anuncio de "busco grupo"
 const LFG_CADA_MS = 60000;              // y cada cuanto se puede volver a anunciar
+// ORIGINS: buscar grupo para la Cueva de los Goblins (Nv 5+, hasta CUEVA.max).
+// Solo se anuncia y se ve entre jugadores del mundo 3D (s.m3).
+const LFG_CUEVA = { nombre: CUEVA.nombre, nv: [5], max: CUEVA.max };
+const lfgDef = id => (id === 'cueva' ? LFG_CUEVA : MAZMORRAS[id]);
 // Fuera tambien los invisibles: ancho cero y marcas bidi (U+202E daba la
 // vuelta al texto para disfrazarlo). El U+200D se deja: lo usan los emojis compuestos.
 // Fuera tambien los invisibles (U+00AD, U+034F, U+3164…) que partian «www» o una frase semilla y saltaban el filtro.
@@ -444,12 +449,15 @@ export const Social = {
   buscarGrupo(s, m) {
     this.iniciarSocial();
     this.lfg = this.lfg || new Map();   // uid -> { id de mazmorra, t, hasta }
-    const mz = typeof m.id === 'string' && Object.hasOwn(MAZMORRAS, m.id) ? MAZMORRAS[m.id] : null;
+    const cueva = m.id === 'cueva';
+    // La cueva solo existe en ORIGINS y las mazmorras solo en CLASSIC.
+    const mz = cueva ? (s.m3 ? LFG_CUEVA : null) : !s.m3 && typeof m.id === 'string' && Object.hasOwn(MAZMORRAS, m.id) ? MAZMORRAS[m.id] : null;
     if (!mz) return;
     if (s.c.nivel < mz.nv[0]) return this.no(s, `Necesitas nivel ${mz.nv[0]} para ${mz.nombre}.`);
     const g = this.grupoDe(s);
     if (g && g.lider !== s.c.uid) return this.no(s, 'Solo el líder del grupo puede buscar más gente.');
-    if (g && !mz.banda && g.uids.length > GRUPO_MAX) return this.no(s, `Las mazmorras son para ${GRUPO_MAX}: tu banda solo puede buscar gente para la banda.`);
+    if (g && cueva && g.uids.length >= CUEVA.max) return this.no(s, `Tu grupo ya está completo para la cueva (${CUEVA.max}): ¡entren juntos!`);
+    if (g && !cueva && !mz.banda && g.uids.length > GRUPO_MAX) return this.no(s, `Las mazmorras son para ${GRUPO_MAX}: tu banda solo puede buscar gente para la banda.`);
     const wi = g && g.inst && this.mundo[g.inst];
     if (g && mz.banda && !g.banda && wi && wi.inst && !wi.inst.completada) return this.no(s, 'Tu grupo está en una mazmorra: termínenla antes de buscar gente para la banda.');
     if (g && g.uids.length >= (mz.banda ? BANDA_MAX : maxGrupo(g))) return this.no(s, 'Tu grupo ya está lleno.');
@@ -469,16 +477,19 @@ export const Social = {
     // aviso salia en mitad de un jefe): la busqueda queda en la lista igual.
     for (const x of this.sesiones.values()) {
       if (!x.c || x === s || x.gid || x.c.nivel < mz.nv[0] || meIgnora(x, s.c.uid)) continue;
+      // Cueva: solo a los de ORIGINS que no estan ya dentro de una cueva; mazmorras: solo a CLASSIC.
+      if (cueva ? (!x.m3 || x.i3 || x.muerto) : x.m3) continue;
       if (x.k.includes('#') || x.k === 'coliseo' || x.duelo || ahora - (x.combateT || 0) < 8000) continue;
       this.enviar(x, aviso); n++;
     }
-    this.enviar(s, { t: 'toast', ok: true, m: `📢 Buscas grupo para ${mz.nombre} (10 min). ` + (n ? `Se avisó a ${n} jugador${n > 1 ? 'es' : ''} con nivel.` : 'Ahora no hay nadie libre con nivel: queda en la lista del portal de mazmorras.') });
+    this.enviar(s, { t: 'toast', ok: true, m: `📢 Buscas grupo para ${mz.nombre} (10 min). ` + (n ? `Se avisó a ${n} jugador${n > 1 ? 'es' : ''} con nivel.` : cueva ? 'Ahora no hay nadie libre con Nv 5+ en ORIGINS: prueba otra vez en un minuto o entra solo.' : 'Ahora no hay nadie libre con nivel: queda en la lista del portal de mazmorras.') });
     this.lfgLista(s);
   },
   infoLfg(uid, e) {
     const x = this.porUid.get(uid);
     const g = x && this.grupoDe(x);
-    return { pid: pub(uid), n: x.c.nombre, nv: x.c.nivel, cl: x.c.clase || '', id: e.id, m: g ? g.uids.length : 1, mx: MAZMORRAS[e.id] && MAZMORRAS[e.id].banda ? BANDA_MAX : GRUPO_MAX };
+    const d = lfgDef(e.id) || {};
+    return { pid: pub(uid), n: x.c.nombre, nv: x.c.nivel, cl: x.c.clase || '', id: e.id, nombre: d.nombre || '', m: g ? g.uids.length : 1, mx: e.id === 'cueva' ? CUEVA.max : d.banda ? BANDA_MAX : GRUPO_MAX };
   },
   // Las busquedas que siguen en pie (se borran las caducadas, las de quien
   // se fue y las de grupos llenos o que ya no lleva esa persona).
@@ -487,12 +498,13 @@ export const Social = {
     for (const [uid, e] of this.lfg || []) {
       const x = this.porUid.get(uid);
       const g = x && this.grupoDe(x);
-      if (!x || !x.c || e.hasta < ahora || (g && (g.lider !== uid || g.uids.length >= maxGrupo(g)))) { this.lfg.delete(uid); continue; }
+      if (!x || !x.c || e.hasta < ahora || (g && (g.lider !== uid || g.uids.length >= (e.id === 'cueva' ? Math.min(CUEVA.max, maxGrupo(g)) : maxGrupo(g))))) { this.lfg.delete(uid); continue; }
       r.push([uid, e]);
     }
     return r;
   },
-  lfgLista(s) { this.enviar(s, { t: 'lfg', l: this.lfgVigentes().map(([u, e]) => ({ ...this.infoLfg(u, e), yo: u === s.c.uid ? 1 : 0 })) }); },
+  // Cada modo ve solo lo suyo (el 2D pinta MAZMORRAS[id].nombre y la cueva no esta ahi).
+  lfgLista(s) { this.enviar(s, { t: 'lfg', l: this.lfgVigentes().filter(([, e]) => (e.id === 'cueva') === !!s.m3).map(([u, e]) => ({ ...this.infoLfg(u, e), yo: u === s.c.uid ? 1 : 0 })) }); },
   quitarLfg(s) {
     if (this.lfg && this.lfg.delete(s.c.uid)) this.enviar(s, { t: 'toast', m: 'Dejaste de buscar grupo.' });
     this.lfgLista(s);
@@ -504,7 +516,9 @@ export const Social = {
     const [uid, e] = par;
     const lider = this.porUid.get(uid);
     if (lider === s) return;
-    const mz = MAZMORRAS[e.id];
+    const cueva = e.id === 'cueva';
+    const mz = lfgDef(e.id);
+    if (!mz || cueva !== !!s.m3) return this.no(s, cueva ? 'Esa búsqueda es para ORIGINS (mundo 3D).' : 'Esa búsqueda es para CLASSIC.');
     if (s.gid) return this.no(s, 'Ya estás en un grupo: sal de él para unirte a otro.');
     if (s.c.nivel < mz.nv[0]) return this.no(s, `Necesitas nivel ${mz.nv[0]} para ${mz.nombre}.`);
     let g = this.grupoDe(lider);
@@ -517,15 +531,15 @@ export const Social = {
       this.grupos.set(g.id, g);
       lider.gid = g.id;
     }
-    if (g.uids.length >= Math.min(maxGrupo(g), mz.banda ? BANDA_MAX : GRUPO_MAX)) return this.no(s, 'Ese grupo ya está lleno.');
+    if (g.uids.length >= Math.min(maxGrupo(g), cueva ? CUEVA.max : mz.banda ? BANDA_MAX : GRUPO_MAX)) return this.no(s, 'Ese grupo ya está lleno.');
     g.uids.push(s.c.uid);
     s.gid = g.id;
     s.invitacion = null;
     this.avisarGrupo(g, `👥 ${s.c.nombre} se unió al grupo desde el buscador (${mz.nombre}).`);
     this.enviarGrupo(g);
     this.enviar(lider, { t: 'toast', ok: true, m: `📢 ${s.c.nombre} (Nv ${s.c.nivel}) se unió a tu grupo para ${mz.nombre}.` });
-    this.enviar(s, { t: 'toast', ok: true, m: `👥 Te uniste al grupo de ${lider.c.nombre} para ${mz.nombre}. Vayan juntos al portal de mazmorras del pueblo.` });
-    if (g.uids.length >= maxGrupo(g)) this.lfg.delete(uid);
+    this.enviar(s, { t: 'toast', ok: true, m: `👥 Te uniste al grupo de ${lider.c.nombre} para ${mz.nombre}. ` + (cueva ? 'Vayan al portal de la cueva en el pueblo: al entrar, el grupo cae en la misma cueva.' : 'Vayan juntos al portal de mazmorras del pueblo.') });
+    if (g.uids.length >= (cueva ? Math.min(CUEVA.max, maxGrupo(g)) : maxGrupo(g))) this.lfg.delete(uid);
   },
 
   // ── AMIGOS (lista de contactos, como en WoW) ──

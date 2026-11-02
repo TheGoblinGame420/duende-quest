@@ -117,7 +117,9 @@ export const EV_PASOS = ['carga_ini', 'arte_ok', 'form_visto', 'clic_entrar', 'b
   'fps_baja_ok', 'fps_baja_justo', 'fps_baja_lento', 'fps_media_ok', 'fps_media_justo', 'fps_media_lento', 'fps_alta_ok', 'fps_alta_justo', 'fps_alta_lento',
   'gpu_mali', 'gpu_adreno', 'gpu_powervr', 'gpu_apple', 'gpu_intel', 'gpu_swiftshader', 'gpu_otra',
   // Vigias de ORIGINS (mundo.js): fuga de geometrias/texturas en la GPU y posicion rota (NaN).
-  'fuga_gpu', 'nan_pos'];
+  'fuga_gpu', 'nan_pos',
+  // Primer ataque mandado y primera caza (ms desde el clic en entrar): los dos juegos.
+  'golpe1', 'caza1'];
 const EV_TRAMOS = [2000, 5000, 10000, 20000, 40000, 90000];   // el ultimo tramo es "mas de 90 s"
 const EV_POR_IP_HORA = 40;      // por /64 de IPv6: un jugador manda ~11 (8 de carga + 3 del tutorial); recargas y los dos juegos caben de sobra
 const EV_POR_IPV4_HORA = 800;   // IPv4: la comparten cientos de moviles por CGNAT (Claro, Movistar, Entel, Bitel)
@@ -577,6 +579,8 @@ export const Retencion = {
         const o = por[org] || (por[org] = { pasos: {}, moverMovil: [0, 0, 0, 0, 0, 0, 0] });
         o.pasos[e] = (o.pasos[e] || 0) + (g[c][0] || 0);
         if (e === 'mover' && dev === 'm') for (let t = 0; t < 7; t++) o.moverMovil[t] += g[c][1 + t] || 0;
+        // 1er golpe y 1ra caza: tramos de todos los equipos (movil y PC) para su mediana.
+        if (e === 'golpe1' || e === 'caza1') { const tt = o[e + 'T'] || (o[e + 'T'] = [0, 0, 0, 0, 0, 0, 0]); for (let t = 0; t < 7; t++) tt[t] += g[c][1 + t] || 0; }
       }
     }
     const nombres = ['≤2 s', '≤5 s', '≤10 s', '≤20 s', '≤40 s', '≤90 s', '>90 s'];
@@ -586,6 +590,14 @@ export const Retencion = {
       for (let t = 0; t < 7 && med === null; t++) { acum += b[t]; if (acum * 2 >= tot && tot) med = nombres[t]; }
       por[org].movil20 = tot ? { pct: pct(b[0] + b[1] + b[2] + b[3], tot), base: tot, mediana: med } : null;
       delete por[org].moverMovil;
+      // golpe1Med / caza1Med: mediana (tramo en segundos) desde el clic en entrar; null sin datos.
+      for (const e of ['golpe1', 'caza1']) {
+        const tb = por[org][e + 'T'] || [], tt = tb.reduce((x, y) => x + y, 0);
+        let ac = 0, md = null;
+        for (let t = 0; t < 7 && md === null; t++) { ac += tb[t] || 0; if (ac * 2 >= tt && tt) md = nombres[t]; }
+        por[org][e + 'Med'] = md;
+        delete por[org][e + 'T'];
+      }
     }
     return { dias, por };
   },

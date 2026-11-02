@@ -582,12 +582,14 @@ function textoOrigenes(r) {
   const filas = Object.keys(NOMBRE_ORIGEN).filter(k => o[k]).map(k => `${NOMBRE_ORIGEN[k]}: altas ${o[k].n} · c1 ${o[k].c1} · m1 ${o[k].m1} · n5 ${o[k].n5} · D1 ${pc(o[k].d1)} · D2 ${pc(o[k].d2)} · D3 ${pc(o[k].d3)} · D7 ${pc(o[k].d7)}`);
   if (filas.length) t += `🎯 Por origen (altas de 14 días):\n${filas.join('\n')}\n\n`;
   const c = r.carga && r.carga.por ? r.carga.por : {};
-  const PASOS = [['carga_ini', 'abre'], ['arte_ok', 'carga'], ['form_visto', 'formulario'], ['clic_entrar', 'clic'], ['bienvenido', 'dentro'], ['mover', 'se mueve']];
+  const PASOS = [['carga_ini', 'abre'], ['arte_ok', 'carga'], ['form_visto', 'formulario'], ['clic_entrar', 'clic'], ['bienvenido', 'dentro'], ['mover', 'se mueve'], ['golpe1', '1er golpe'], ['caza1', '1ra caza']];
   const cf = Object.keys(NOMBRE_ORIGEN).filter(k => c[k] && c[k].pasos.carga_ini).map(k => {
     const p = c[k].pasos, base = p.carga_ini;
     const pm = base ? Math.round((p.mover || 0) / base * 100) : 0;
     const m20 = c[k].movil20 ? ` · móvil clic→mover ≤20 s: ${pc(c[k].movil20)} (mediana ${c[k].movil20.mediana})` : '';
-    return `${NOMBRE_ORIGEN[k]}: ${PASOS.map(([e, n]) => `${n} ${p[e] || 0}`).join(' → ')} (${pm}% se mueve) · se van ${p.oculta || 0} · sin 3D ${p.fallo_webgl || 0}${p.t_hab || p.t_volar || p.t_fin ? ` · tutorial: habilidad ${p.t_hab || 0} → alas (solo 3D) ${p.t_volar || 0} → fin ${p.t_fin || 0}` : ''}${p.mis_0 || p.jefe1_ver ? ` · misiones (3D) ${['mis_0', 'mis_1', 'mis_2', 'mis_3', 'mis_4', 'mis_5'].map(e => p[e] || 0).join('→')} · 1er jefe: lo ve ${p.jefe1_ver || 0}, muere ${p.jefe1_muere || 0}, lo vence ${p.jefe1_ok || 0}` : ''}${m20}`;
+    // Mediana (por tramo, en segundos) del clic en entrar al 1er golpe y a la 1ra caza, movil y PC juntos.
+    const mgc = c[k].golpe1Med || c[k].caza1Med ? ` · mediana clic→1er golpe ${c[k].golpe1Med || '—'} · clic→1ra caza ${c[k].caza1Med || '—'}` : '';
+    return `${NOMBRE_ORIGEN[k]}: ${PASOS.map(([e, n]) => `${n} ${p[e] || 0}`).join(' → ')} (${pm}% se mueve) · se van ${p.oculta || 0} · sin 3D ${p.fallo_webgl || 0}${p.t_hab || p.t_volar || p.t_fin ? ` · tutorial: habilidad ${p.t_hab || 0} → alas (solo 3D) ${p.t_volar || 0} → fin ${p.t_fin || 0}` : ''}${p.mis_0 || p.jefe1_ver ? ` · misiones (3D) ${['mis_0', 'mis_1', 'mis_2', 'mis_3', 'mis_4', 'mis_5'].map(e => p[e] || 0).join('→')} · 1er jefe: lo ve ${p.jefe1_ver || 0}, muere ${p.jefe1_muere || 0}, lo vence ${p.jefe1_ok || 0}` : ''}${m20}${mgc}`;
   });
   if (cf.length) t += `🚪 Carga del juego (7 días, sesiones):\n${cf.join('\n')}\n\n`;
   return t;

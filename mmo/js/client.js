@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=347';
-import { iniciarRegalo } from './regalo.js?v=347';
-import { iniciarAvisoTg } from './avisotg.js?v=347';
+} from './data.js?v=348';
+import { iniciarRegalo } from './regalo.js?v=348';
+import { iniciarAvisoTg } from './avisotg.js?v=348';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -51,6 +51,7 @@ const modoAnuncio = () => { try { return !!(window.dqAnuncio && window.dqAnuncio
 const SIN_CRIPTO_RE = /\bSOL\b|\$DUENDE|mTON|\bTON\b|[Ww]allet|[Ss]olana|[Pp]hantom|[Ss]olflare|\b[Rr]etiros?\b/;
 // Embudo de la carga (/js/origen.js → /mmo/ev): un aviso por paso y sesion. Sin origen.js no hace nada.
 const paso = e => { try { if (window.dqPaso) window.dqPaso(e, 'classic'); } catch (er) {} };
+let golpe1Ok = false;   // embudo: el primer 'atk' mandado (paso 'golpe1') va una sola vez
 paso('carga_ini');
 // Navegador interno de Facebook/Instagram/Messenger: se anota en el hola (D1 comparado en /mmostats).
 const esIAB = !TG && /FBAN|FBAV|FB_IAB|Instagram|Messenger|musical_ly|BytedanceWebview|TikTok|trill|WhatsApp/i.test(navigator.userAgent);
@@ -733,6 +734,7 @@ function recibir(m) {
       }
       // Primera caza del personaje: botin garantizado (y nivel 2), con fiesta.
       if (m.primero) {
+        paso('caza1');   // embudo: primera caza (ms desde el clic en entrar)
         flotante(m.x, m.y - 40, '¡PRIMER BOTÍN!', '#ffe600', 13);
         aviso('🎉 ¡Primer botín!' + (m.item ? ' ' + nombreItem(m.item) + (m.primero === 2 ? ' ya va equipado.' : m.item.vendido ? ' (bolsa llena: vendido).' : ' está en tu bolsa.') : ''), 'jefe');
         sfx('explosion', .3); sacudir = Math.max(sacudir, 6);
@@ -1299,6 +1301,7 @@ function atacar() {
     P.atk = 10; P.f = o.x >= P.x ? 1 : -1;
     enviarPos(true);
     mandar({ t: 'atk', s: 0, tg: o.id, tk: esRival(o) ? 'p' : undefined });
+    if (!golpe1Ok) { golpe1Ok = true; paso('golpe1'); }
     return;
   }
   P.paso = P.comboT > 0 ? (P.paso + 1) % 3 : 0;
@@ -1319,6 +1322,7 @@ function atacar() {
   if (!hayEnCaja(P.f) && (hayEnCaja(-P.f) || (mo && !mo.muereT && (mo.x - P.x) * P.f < 0 && distMon(mo) < alcance + 16))) P.f = -P.f;
   enviarPos(true);   // la posicion va por cambios: que el servidor mida el golpe desde donde estas
   mandar({ t: 'atk', s: P.paso });
+  if (!golpe1Ok) { golpe1Ok = true; paso('golpe1'); }
   const tipo = ['corte_h', 'corte_arriba', 'corte_giro'][P.paso];
   const esc = (arma.alcance || 1) * (P.paso === 2 ? 1.25 : 1.05);
   lanzarFX(tipo, P.x + P.f * 40 * arma.alcance, P.y - 32, esc, P.f < 0, true, colorCorte(yo.skin));
@@ -1868,7 +1872,8 @@ function pintarCooldowns() {
       const enCd = fin > ahora;
       const gcd = h.gcd !== false && gcdHasta > ahora && !enCd;
       const k = enCd ? (fin - ahora) / h.cd : gcd ? (gcdHasta - ahora) / GCD_MS : 0;
-      ponCss(d._cd || (d._cd = d.querySelector('.cd')), 'transform', 'scaleY(' + Math.round(k * 100) / 100 + ')');
+      d._cd = d._cd || d.querySelector('.cd'); ponCss(d._cd, 'transform', 'none');   // recarga radial (como en ORIGINS)
+      ponCss(d._cd, 'background', 'conic-gradient(rgba(0,0,0,.65) ' + Math.round(k * 360) + 'deg,transparent 0)');
       ponTxt(d._cdt || (d._cdt = d.querySelector('.cdt')), enCd && fin - ahora > 1500 ? String(Math.ceil((fin - ahora) / 1000)) : '');
       const bloq = yo.nivel < h.nv;
       d.classList.toggle('sinrec', !bloq && P.rec < costoHab(h, P.recMax || 0, yo.espec));
@@ -1884,7 +1889,8 @@ function pintarCooldowns() {
     const fin = cdPoder[p.id] || 0;
     const k = fin > ahora ? (fin - ahora) / p.cd : 0;
     const e = pc.children[i];
-    ponCss(e._cd || (e._cd = e.querySelector('.cd')), 'transform', 'scaleY(' + Math.round(k * 100) / 100 + ')');
+    e._cd = e._cd || e.querySelector('.cd'); ponCss(e._cd, 'transform', 'none');
+    ponCss(e._cd, 'background', 'conic-gradient(rgba(0,0,0,.65) ' + Math.round(k * 360) + 'deg,transparent 0)');
   });
 }
 

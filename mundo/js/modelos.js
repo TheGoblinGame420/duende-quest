@@ -19,7 +19,7 @@
 // piezas fijas de cada pivote se funden en una malla (fusionarRig): ~6-14 draw calls.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=347';
+import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=348';
 
 const PX_M = 34;                 // pixeles del 2D por metro
 const PI = Math.PI;
@@ -445,6 +445,7 @@ class Modelo {
 
 // ── ANIMACION PROCEDURAL ──
 // Cada frame: los pivotes vuelven a su reposo y se les suma la pose del estado.
+const MENOS_MOV_R = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } })();
 function animarRig(m, est, te, t) {
   const r = m.r;
   if (!r) return;
@@ -527,6 +528,39 @@ function animarRig(m, est, te, t) {
             const g = arco(kg), sacude = Math.sin(kg * PI * 6) * 0.35 * g;
             bI.rotation.z += 2.3 * g + sacude; bI.rotation.x -= 0.25 * g;
             if (cb) cb.rotation.z -= 0.12 * g;
+          }
+        }
+      }
+      // Gesto del jugador (v347): 2,5 s de pose sobre la quietud; si camina o pelea, se corta.
+      // Lo marca mostrarGesto en el cliente (m.gesto / m.gestoT): sin coste de red.
+      if (m.gesto) {
+        const kg = (performance.now() - (m.gestoT || 0)) / 1000;
+        if (est !== 'quieto' || kg > 2.5 || kg < 0) m.gesto = null;
+        else {
+          const g = m.gesto, am = Math.max(0, Math.min(1, kg / 0.2, (2.5 - kg) / 0.3)) * (MENOS_MOV_R ? 0.4 : 1);
+          if (g === 'bailar') {
+            const ph = kg * 8, sn = Math.sin(ph);
+            b.position.y += Math.abs(sn) * 0.06 * A * am;
+            b.rotation.y += Math.sin(ph * 0.5) * 0.35 * am;
+            if (cu) cu.rotation.z += Math.sin(ph * 0.5) * 0.12 * am;
+            if (bI) { bI.rotation.z += (1.2 + sn * 0.9) * am; bD.rotation.z -= (1.2 - sn * 0.9) * am; }
+            if (pI) { pI.rotation.x -= Math.max(0, sn) * 0.35 * am; pD.rotation.x -= Math.max(0, -sn) * 0.35 * am; }
+            if (cb) cb.rotation.z += sn * 0.12 * am;
+          } else if (g === 'aplaudir') {
+            const ab = 0.55 * (0.5 + 0.5 * Math.sin(kg * 18)) - 0.15;
+            if (bI) { bI.rotation.x -= 1.25 * am; bD.rotation.x -= 1.25 * am; bI.rotation.z += ab * am; bD.rotation.z -= ab * am; }
+            if (cb) cb.rotation.x += 0.06 * am;
+          } else if (g === 'reir') {
+            const sc = Math.sin(kg * 30);
+            if (cu) { cu.rotation.x -= 0.15 * am; cu.rotation.z += sc * 0.06 * am; cu.scale.y *= 1 + sc * 0.03 * am; }
+            if (cb) cb.rotation.x -= 0.25 * am;
+            if (bI) { bI.rotation.x -= 0.5 * am; bD.rotation.x -= 0.5 * am; bI.rotation.z -= 0.2 * am; bD.rotation.z += 0.2 * am; }
+            b.position.y += Math.abs(Math.sin(kg * 15)) * 0.015 * A * am;
+          } else {
+            // 'saludar' (y, mas suave, el resto): brazo derecho arriba que se sacude.
+            const k2 = g === 'saludar' ? am : am * 0.6;
+            if (bD) { bD.rotation.z -= 2.3 * k2 + Math.sin(kg * 14) * 0.35 * k2; bD.rotation.x -= 0.25 * k2; }
+            if (cb) cb.rotation.z += 0.12 * k2;
           }
         }
       }

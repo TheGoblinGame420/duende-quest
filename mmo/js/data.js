@@ -504,9 +504,18 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 347;
+export const VERSION = 348;
 
 export const NOVEDADES = [
+  { n: 116, fecha: '2 nov 2026', items: [
+    '💨 Nuevo botón ESQUIVAR en ORIGINS (en PC, X o Mayús): un impulso rápido para salir del golpe rojo, con 1,2 s de recarga.',
+    'Si tocas ATACAR un pelín antes de que termine la recarga, el golpe ya no se pierde; el botón brilla en dorado antes del golpe fuerte del combo.',
+    '🥁 Gran Invasión todos los días a las 21:00 (hora de Perú), con cuenta atrás desde las 19:00; todos cobran según su medalla y sale el top 3.',
+    'Cueva de los Goblins: busca grupo desde el portal, cronómetro por salas y récord personal.',
+    'El pueblo es andino: techos de teja y de ichu, banderines de aguayo, campanario y portal inca.',
+    'Los gestos mueven a tu duende: si varios bailan juntos se arma el huayno grupal, y con 📸 sale una foto bailando.',
+    'Hermandades abiertas para unirse con un toque, barra de XP con el próximo desbloqueo y habilidades en arco junto a ATACAR en el celular.',
+  ] },
   { n: 115, fecha: '2 nov 2026', items: [
     'El aviso para activar las notificaciones de Telegram ya no te interrumpe al entrar ni en plena pelea.',
     'Los NPC del pueblo muestran qué hacen sobre su cabeza, y el Mercader explica cada poder y si te alcanza el oro.',

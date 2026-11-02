@@ -69,7 +69,7 @@ export const Cueva3D = {
     }
     s.p = { x: CUEVA_X0 + CUEVA.entrada.x + rnd(-2, 2), z: CUEVA.entrada.z + rnd(-1, 1) };
     s.h = 0; s.movBud = undefined; s.cast = null;
-    this.enviar(s, { t: 'tp3', x: r1(s.p.x), z: r1(s.p.z), cueva: { id: inst.id, nv: inst.nv, hecha: inst.hecha ? 1 : 0 } });
+    this.enviar(s, { t: 'tp3', x: r1(s.p.x), z: r1(s.p.z), cueva: { id: inst.id, nv: inst.nv, hecha: inst.hecha ? 1 : 0, ms: Date.now() - inst.creada } });
     this.enviar(s, { t: 'toast', m: `⛏ ${CUEVA.nombre} (Nv ${inst.nv}). El Rey Goblin espera en su trono.` });
     if (g) this.avisarGrupo(g, `⛏ ${s.c.nombre} entró a la ${CUEVA.nombre}.`, s);
     this.aDe(s, { t: 'pj3', p: this.info3d(s) });   // a los cercanos; al resto se lo presenta fotos3d
@@ -189,6 +189,9 @@ export const Cueva3D = {
     if (!inst || inst.hecha) return;
     inst.hecha = true;
     const nombres = [];
+    // Cronometro: segundos desde que se abrio la instancia (el record solo cuenta si la cueva da premio completo de nivel).
+    const seg = Math.max(1, Math.round((Date.now() - inst.creada) / 1000));
+    const mmss = v => Math.floor(v / 60) + ':' + String(v % 60).padStart(2, '0');
     for (const s of this.dentroCueva(inst)) {
       const c = s.c;
       const peleo = o.dano.has(s.id) || o.amen.has(s.id);
@@ -210,8 +213,12 @@ export const Cueva3D = {
       if (nvOk) this.progresoTarea && this.progresoTarea(s, 'mazmorra');
       if (nvOk && this.puntoGesta) this.puntoGesta(s, 'mazmorra');   // la cueva 3D tambien suma a la gesta de la hermandad
       if (nvOk && completo && this.puntoPase) this.puntoPase(s, PASE.puntos.mazmorra);
+      const previo = c.cuevaRecord || 0, nuevo = nvOk && (!previo || seg < previo);
+      if (nuevo) c.cuevaRecord = seg;
+      const reloj = nuevo ? `⏱ ${mmss(seg)} · ¡nuevo récord!` : `⏱ ${mmss(seg)}${previo ? ` (récord ${mmss(previo)})` : ''}`;
       this.enviar(s, { t: 'gana', xp, oro, drops: [], item: it });
-      this.enviar(s, { t: 'toast', ok: true, m: `🏆 ¡${CUEVA.nombre} completada! +${xp} XP · +${oro} oro${it ? ' · ' + RAREZAS[it.r].nombre + ': ' + nombreItem(it) : ''}${completo ? '' : ' (cofre pequeño: hoy ya abriste 3 completos)'}` });
+      this.enviar(s, { t: 'cuevaFin', seg, rec: c.cuevaRecord || 0, nuevo: nuevo ? 1 : 0, hoy: Math.min(3, c.cuevaDia.n) });
+      this.enviar(s, { t: 'toast', ok: true, m: `🏆 ¡${CUEVA.nombre} completada! +${xp} XP · +${oro} oro${it ? ' · ' + RAREZAS[it.r].nombre + ': ' + nombreItem(it) : ''}${completo ? '' : ' (cofre pequeño: hoy ya abriste 3 completos)'} · ${reloj}` });
       s.sucio = true;
       this.revisarLogros(s);
       this.actualizarYo(s);

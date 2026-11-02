@@ -162,6 +162,9 @@ export const Mundo3D = {
       case 'hermRango': return this.rangoHerm(s, m);
       case 'hermMotd': return this.motdHerm(s, m);
       case 'hermColor': return this.colorHerm(s, m);
+      case 'hermAbierta': return this.hermAbierta(s, m);
+      case 'hermUnirse': return this.hermUnirse(s, m);
+      case 'hermAbiertas': return this.hermAbiertas(s);
       case 'contactoAdd': return this.agregarContacto(s, m);
       case 'contactoQuitar': return this.quitarContacto(s, m);
       case 'inspeccionar': return this.inspeccionar(s, m);
@@ -222,6 +225,10 @@ export const Mundo3D = {
       case 'expulsarGrupo': return this.expulsarGrupo(s, m);
       case 'liderGrupo': return this.liderGrupo(s, m);
       case 'banda': return this.bandaGrupo(s, m);
+      // Buscar grupo para la Cueva de los Goblins (social.js: en 3D solo acepta id 'cueva').
+      case 'buscarGrupo': case 'lfg': return this.buscarGrupo(s, m);
+      case 'lfgUnir': return this.unirseLfg(s, m);
+      case 'lfgQuitar': return this.quitarLfg(s);
       case 'pedido': return this.pedido(s, m);
       case 'pedidoCancelar': return this.pedidoCancelar(s, m);   // world.js
       case 'pedidoFirma': return this.pedidoFirma(s, m);
@@ -301,6 +308,8 @@ export const Mundo3D = {
       const vel = MUNDO.velocidad * modo * (1 + talento(s.c, 'agilidad'));
       const tope = vel + 3;   // ~1 s de margen por huecos de red
       s.movBud = Math.min(tope, (s.movBud === undefined ? tope : s.movBud) + vel * 1.15 * dt / 1000);
+      // ESQUIVAR (boton del cliente, 3 m en 180 ms): +3 m de margen a pie una vez cada 1,1 s por sesion. Solo mueve.
+      if (d > s.movBud + 1 && d <= s.movBud + 4 && a <= 1 && ahora - (s.esqT || 0) > 1180) { s.esqT = ahora; s.movBud += 3; }
       if (d > s.movBud + 1) { this.enviar(s, { t: 'snap3', x: r1(s.p.x), z: r1(s.p.z) }); return; }
       s.movBud -= d;   // el margen de +1 m es un prestamo unico: puede quedar en -1 y la recarga lo repone
       // Las casas tampoco se atraviesan en el servidor (salvo volando por encima).

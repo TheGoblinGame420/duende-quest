@@ -862,7 +862,7 @@ async function pruebasSeguridad() {
   // Speed hack: el metro de margen ya no se regala en cada mensaje
   a.p = { x: 100, z: 100 }; a.movBud = 0; a.movT = Date.now(); a.h = 0; a.a = 0;
   for (let i = 1; i <= 20; i++) await a.mandar({ t: 'mv3', x: 100 + i, z: 100, a: 0, h: 0 });
-  chequear(a.p.x - 100 <= 1.5, 'sin tiempo no se avanza más de 1 m aunque se manden 20 mensajes (avanzó ' + (a.p.x - 100) + ' m)');
+  chequear(a.p.x - 100 <= 4.5, 'sin tiempo no se avanza más de 1 m (+3 de una sola esquiva) aunque se manden 20 mensajes (avanzó ' + (a.p.x - 100) + ' m)');
   // Flotar con a=0: a pie se cae
   avanzar(1000); a.movBud = undefined; a.h = 30; a.a = 0;
   await a.mandar({ t: 'mv3', x: a.p.x, z: a.p.z, a: 0, h: 30 });
