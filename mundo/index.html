@@ -26,12 +26,12 @@
 <meta name="theme-color" content="#0a0418">
 <link rel="manifest" href="/mundo/manifest.json">
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
-<script src="/js/pwa.js?v=344" defer></script>
+<script src="/js/pwa.js?v=345" defer></script>
 <link rel="icon" href="/assets/ui/coin.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=344"></script>
+<script src="/js/origen.js?v=345"></script>
 <script>
 // Red de seguridad de la carga (script clasico: corre aunque el modulo 3D o el CDN fallen).
 // - Errores antes de conectar: se guardan en __errQ y mundo.js los manda al entrar.
@@ -117,29 +117,29 @@
   });
 })();
 </script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=344" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=345" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=344">
-<link rel="modulepreload" href="/mmo/js/data.js?v=344">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=344">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=344">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=344">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=344">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=344">
-<link rel="modulepreload" href="/mmo/js/regalo.js?v=344">
-<link rel="modulepreload" href="/mmo/js/avisotg.js?v=344">
-<link rel="modulepreload" href="/mundo/js/musica.js?v=344">
-<link rel="modulepreload" href="/mundo/js/sonidos.js?v=344">
-<link rel="modulepreload" href="/mundo/js/cueva.js?v=344">
-<link rel="modulepreload" href="/mundo/js/tapa.js?v=344">
-<link rel="modulepreload" href="/mundo/js/abismo.js?v=344">
-<link rel="modulepreload" href="/mundo/js/particulas.js?v=344">
-<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=344">
-<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=344">
-<link rel="modulepreload" href="/mmo/js/secundarias.js?v=344">
-<link rel="modulepreload" href="/mundo/js/lore.js?v=344">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=345">
+<link rel="modulepreload" href="/mmo/js/data.js?v=345">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=345">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=345">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=345">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=345">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=345">
+<link rel="modulepreload" href="/mmo/js/regalo.js?v=345">
+<link rel="modulepreload" href="/mmo/js/avisotg.js?v=345">
+<link rel="modulepreload" href="/mundo/js/musica.js?v=345">
+<link rel="modulepreload" href="/mundo/js/sonidos.js?v=345">
+<link rel="modulepreload" href="/mundo/js/cueva.js?v=345">
+<link rel="modulepreload" href="/mundo/js/tapa.js?v=345">
+<link rel="modulepreload" href="/mundo/js/abismo.js?v=345">
+<link rel="modulepreload" href="/mundo/js/particulas.js?v=345">
+<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=345">
+<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=345">
+<link rel="modulepreload" href="/mmo/js/secundarias.js?v=345">
+<link rel="modulepreload" href="/mundo/js/lore.js?v=345">
 <style>
 :root{--bg:#0a0418;--panel:rgba(14,9,30,.86);--borde:rgba(160,140,255,.22);--txt:#f2efff;--txt2:#b8b0d8;--txt3:#7d7699;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;--oro:#ffd84a;--pri:#2563eb;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -387,6 +387,9 @@ body.movil #tactil #t-atk{width:68px;height:68px;}
 @media (prefers-reduced-motion:reduce){.acc.listo,.acc.no{animation:none;}#tactil button:active,.acc:active{transform:none;}}
 #tactil button.grande{background:rgba(37,99,235,.8);}
 #tactil button.grande.on{background:rgba(220,38,38,.9);box-shadow:0 0 12px #f87171;}
+/* Anillo de recarga de ATACAR (v344): se llena al ritmo del arma; lleno y tenue = listo para el siguiente golpe */
+#tactil #t-atk{position:relative;}
+#tactil #t-atk::after{content:'';position:absolute;inset:-5px;border-radius:50%;pointer-events:none;background:conic-gradient(#ffd84a calc(var(--rc,1)*360deg),rgba(255,255,255,.12) 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 3px));mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 3px));opacity:var(--rco,0);transition:opacity .15s;}
 body.movil #joy,body.movil #tactil{display:grid;}
 body.movil #joy{display:block;}
 body.movil #chat{width:min(260px,60vw);bottom:auto;top:204px;}
@@ -819,7 +822,7 @@ body.movil #npc-dice,body.compacto #npc-dice{bottom:auto;top:calc(200px + env(sa
   <div class="fila"><span>Zoom</span><b>Rueda</b></div>
   <div class="fila"><span>Saltar</span><b>Espacio</b></div>
   <div class="fila"><span>Elegir objetivo</span><b>Clic o Tab · !! = mucho más fuerte que tú</b></div>
-  <div class="fila"><span>Ataque automático</span><b>1 o Z</b></div>
+  <div class="fila"><span>Atacar (mantén pulsado para seguir)</span><b>1 o Z</b></div>
   <div class="fila"><span>Habilidades de clase</span><b>2 a 9</b></div>
   <div class="fila"><span>Volar (alas)</span><b>V o doble salto · Espacio sube · C baja</b></div>
   <div class="fila"><span>Planear (gratis)</span><b>Mantén Espacio al caer</b></div>
@@ -829,7 +832,7 @@ body.movil #npc-dice,body.compacto #npc-dice{bottom:auto;top:calc(200px + env(sa
   <div class="fila"><span>Consumibles</span><b>Q F G T</b></div>
   <div class="fila"><span>Hablar</span><b>E</b></div>
   <div class="fila"><span>Mapa · Chat</span><b>M · Enter</b></div>
-  <p style="margin-top:10px">En el móvil: joystick a un lado (cámbialo en «Mando»), arrastra en el resto de la pantalla para girar la cámara y toca un monstruo 2 veces para atacarlo. Las mazmorras, la Torre y la banda están por ahora en CLASSIC (botón 2D): es el mismo personaje.</p>
+  <p style="margin-top:10px">En el móvil: joystick a un lado (cámbialo en «Mando»), arrastra en el resto de la pantalla para girar la cámara, acércate a un monstruo y toca ATACAR en cada golpe (mantenlo pulsado para seguir pegando). Las mazmorras, la Torre y la banda están por ahora en CLASSIC (botón 2D): es el mismo personaje.</p>
 
   <p style="margin-top:10px"><button class="btn sec" id="b-leyenda" style="width:100%">📜 La leyenda del Cántaro (la historia del juego)</button></p>
   <p style="margin-top:10px;font-size:11px;color:var(--txt3)">Créditos de arte y sonido (CC0): árboles, casas, castillos y efectos de <a href="https://kenney.nl" target="_blank" rel="noopener" style="color:var(--cian)">Kenney</a> (Nature Kit, Fantasy Town Kit, Castle Kit, RPG Audio, Impact Sounds) y voces de criaturas de «80 CC0 creature SFX» en OpenGameArt. ¡Gracias!</p>
@@ -845,8 +848,8 @@ body.movil #npc-dice,body.compacto #npc-dice{bottom:auto;top:calc(200px + env(sa
 <!-- Telegram: su SDK se carga arriba solo dentro de Telegram (window.__tgListo).
      defer: no frenan el HTML y corren en orden, antes que mundo.js (que usa supabase). -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=344" defer></script>
-<script type="module" src="/mundo/js/mundo.js?v=344"></script>
+<script src="/js/config.js?v=345" defer></script>
+<script type="module" src="/mundo/js/mundo.js?v=345"></script>
 <div id="flash-nv"></div>
 <div id="cartel-nv"></div>
 </body>

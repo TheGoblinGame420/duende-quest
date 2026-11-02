@@ -3,7 +3,7 @@
 <head>
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=344"></script>
+<script src="/js/origen.js?v=345"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Duende Quest CLASSIC · MMORPG 2D gratis en el navegador</title>
@@ -71,9 +71,9 @@
 })();
 </script>
 <!-- defer se ejecuta en orden y todo antes del modulo client.js -->
-<script src="/js/pwa.js?v=344" defer></script>
+<script src="/js/pwa.js?v=345" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=344" defer></script>
+<script src="/js/config.js?v=345" defer></script>
 <style>
 /* ── Tokens (guia de diseno, oct 2026). Las variables viejas (--verde, --amarillo,
    --rosa, --cian, --rojo) siguen existiendo porque client.js las usa, pero ahora
@@ -532,6 +532,10 @@ input.nombre:focus{border-color:var(--pri-txt);}
 .cuenta .ligas a{color:var(--cian);cursor:pointer;}
 #b-cuenta.invitado{animation:latido 1.6s ease-in-out infinite;}
 @keyframes latido{0%,100%{box-shadow:0 0 0 0 rgba(74,222,128,.0)}50%{box-shadow:0 0 0 4px rgba(74,222,128,.55)}}
+/* Tutorial (client.js pintarTutorial): el boton de atacar late en el paso de atacar */
+#t-atk.tuto-pulso{border-color:#4ade80!important;animation:latidoTuto 1.1s ease-in-out infinite;}
+@keyframes latidoTuto{0%,100%{box-shadow:0 0 0 2px rgba(74,222,128,.5);transform:scale(1)}50%{box-shadow:0 0 0 8px rgba(74,222,128,.25);transform:scale(1.08)}}
+@media (prefers-reduced-motion:reduce){#t-atk.tuto-pulso{animation:none;box-shadow:0 0 0 4px rgba(74,222,128,.7);}}
 /* Aviso para pasar el duende de invitado a la cuenta (client.js, preguntarHeredar) */
 .heredar-fondo{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(5,8,14,.85);touch-action:auto;}
 .heredar-caja{width:100%;max-width:400px;max-height:100%;overflow:auto;padding:18px 16px;border:1px solid var(--borde);border-radius:14px;background:var(--panel);color:var(--txt);font:500 14px/1.45 var(--sans);text-align:center;}
@@ -646,7 +650,7 @@ body.texto-grande .uf .nm small,body.texto-grande #hud.estrecho .uf .nm small{fo
     <div class="tf" id="t-fila0"></div>
     <div class="tf" id="t-fila1">
       <button class="tc chico" id="t-chat" aria-label="Chat"><svg class="ico-tc" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg></button>
-      <button class="tc chico" id="t-auto" title="Ataque automático (H)" style="width:auto;padding:0 8px;border-radius:20px;font-size:11px" aria-label="Ataque automático"><svg class="ico-tc" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 013-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 01-3 3H3"/></svg></button>
+      <button class="tc chico" id="t-auto" title="Atacar a mano" style="display:none;width:auto;padding:0 8px;border-radius:20px;font-size:11px" aria-label="Atacar a mano"><svg class="ico-tc" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 013-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 01-3 3H3"/></svg></button>
     </div>
     <div class="tf">
       <div id="t-izq">
@@ -778,15 +782,15 @@ body.texto-grande .uf .nm small,body.texto-grande #hud.estrecho .uf .nm small{fo
       <h3>Controles</h3>
       <dl class="solo-pc">
         <dt>Mover / saltar</dt><dd>← → o A D · ↑, W o Espacio (doble salto)</dd>
-        <dt>Atacar / esquivar</dt><dd>Z o J · X o K</dd>
-        <dt>Habilidades</dt><dd>1-8 · Tab: siguiente objetivo · Esc: quitar objetivo · H: ataque automático</dd>
+        <dt>Atacar / esquivar</dt><dd>Z o J (mantén pulsado para seguir pegando) · X o K</dd>
+        <dt>Habilidades</dt><dd>1-8 · Tab: siguiente objetivo · Esc: quitar objetivo</dd>
         <dt>Consumibles</dt><dd>Q poción · F escudo · G rayo · T fuego</dd>
         <dt>Interactuar</dt><dd>E (portales, NPC, pesca, recolección)</dd>
         <dt>Ventanas</dt><dd>L misiones · I inventario · P hechizos · O social · M mapa · Y montura · R piedra de hogar · Enter chat</dd>
       </dl>
       <dl class="solo-tactil">
         <dt>Mover / saltar</dt><dd>Flechas y botón de salto (doble salto)</dd>
-        <dt>Combate</dt><dd>Botón de ataque, habilidades en la barra y consumibles a la izquierda</dd>
+        <dt>Combate</dt><dd>Toca el botón de ataque en cada golpe (mantenlo pulsado para seguir), habilidades en la barra y consumibles a la izquierda</dd>
         <dt>Objetivo</dt><dd>Toca un monstruo, o un aliado para curarlo</dd>
         <dt>Interactuar</dt><dd>El botón azul cambia según lo que tengas cerca: entrar, hablar, pescar, recoger</dd>
       </dl>
@@ -1005,7 +1009,7 @@ body.texto-grande .uf .nm small,body.texto-grande #hud.estrecho .uf .nm small{fo
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=344"></script>
+<script type="module" src="/mmo/js/client.js?v=345"></script>
 <div id="nuevo3d" role="dialog" aria-label="Nuevo mundo 3D">
   <video src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" muted loop playsinline preload="none"></video>
   <div class="t">🌌 NUEVO: Duende Quest Origins, el mundo abierto en 3D</div>

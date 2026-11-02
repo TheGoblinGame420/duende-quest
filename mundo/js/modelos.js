@@ -19,7 +19,7 @@
 // piezas fijas de cada pivote se funden en una malla (fusionarRig): ~6-14 draw calls.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=344';
+import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=345';
 
 const PX_M = 34;                 // pixeles del 2D por metro
 const PI = Math.PI;
@@ -103,6 +103,7 @@ function mat(color, o) {
   return m;
 }
 const BLANCO = new THREE.MeshBasicMaterial({ color: 0xffffff });   // destello de golpe
+const ROJO_AVISO = new THREE.MeshBasicMaterial({ color: 0xff3b2f });   // monstruo a punto de pegar
 
 // ── PIEZAS ──
 // M(padre, geometria, color|material, pos, escala, rot, opciones de material)
@@ -408,6 +409,16 @@ class Modelo {
     clearTimeout(this._tf);
     this._tf = setTimeout(() => this._restaurar(), 120);
   }
+  // Brillo rojo de aviso (va a pegar): mismo cambio de material que el destello, ms milisegundos.
+  avisoRojo(ms) {
+    for (const me of this.mallas) {
+      if (me.userData.sinFlash) continue;
+      if (!me.userData.m0) me.userData.m0 = me.material;
+      me.material = ROJO_AVISO;
+    }
+    clearTimeout(this._tf);
+    this._tf = setTimeout(() => this._restaurar(), ms || 300);
+  }
   _restaurar() {
     for (const me of this.mallas) if (me.userData.m0) { me.material = me.userData.m0; me.userData.m0 = null; }
   }
@@ -544,8 +555,21 @@ function animarRig(m, est, te, t) {
       if (ataca) {
         // Brazo derecho: arriba y atras, luego tajo hacia delante (~0.35 s).
         const k = Math.min(kA, 1), vuelta = kA < 1 ? 1 : Math.max(0, 1 - (kA - 1) * 4);
+        const cmb = m.combo | 0;   // combo visual (v344): 0 tajo de arriba, 1 tajo de vuelta (barrido), 2 estocada fuerte
         const ang = k < 0.4 ? lerp(0, -3.3, suave(k / 0.4)) : lerp(-3.3, -0.5, suave((k - 0.4) / 0.6));
-        if (bD) bD.rotation.x += ang * vuelta;
+        if (bD && cmb === 1) {
+          // Tajo de vuelta: brazo a la altura del hombro que barre de un lado al otro.
+          const kb = suave(clamp((k - 0.15) / 0.6, 0, 1));
+          bD.rotation.x += -1.45 * Math.min(1, k / 0.15 + 0.3) * vuelta;
+          bD.rotation.z += lerp(1.0, -1.15, kb) * vuelta;
+          if (cu) cu.rotation.y += lerp(0.45, -0.55, kb) * vuelta - (k < 0.4 ? 0.35 * suave(k / 0.4) : 0.35 - 0.75 * suave((k - 0.4) / 0.6)) * vuelta;
+        } else if (bD && cmb === 2) {
+          // Estocada: el brazo se recoge atras y sale recto adelante con todo el cuerpo.
+          const ke = k < 0.35 ? lerp(0, 0.8, suave(k / 0.35)) : lerp(0.8, -1.55, suave(clamp((k - 0.35) / 0.25, 0, 1)));
+          bD.rotation.x += ke * vuelta;
+          b.position.z += aA * 0.14 * A; b.position.y -= aA * 0.03 * A; b.rotation.x += aA * 0.1;
+          if (pI) { pI.rotation.x -= 0.3 * aA; pD.rotation.x += 0.3 * aA; }
+        } else if (bD) bD.rotation.x += ang * vuelta;
         if (r.dosArmas && bI) {
           const k2 = clamp((kA - 0.3) / 0.9, 0, 1);
           if (k2 > 0 && k2 < 1) bI.rotation.x += k2 < 0.4 ? lerp(0, -2.6, k2 / 0.4) : lerp(-2.6, -0.4, (k2 - 0.4) / 0.6);

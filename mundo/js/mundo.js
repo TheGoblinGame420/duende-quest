@@ -14,26 +14,26 @@
 import * as THREE from 'three';
 import { esNocheDuendes, TEMPORADAS, temporadaDe, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=344';
-import { iniciarVentanas } from './ventanas.js?v=344';
-import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase } from '/mmo/js/data.js?v=344';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
-import { iniciarRegalo } from '/mmo/js/regalo.js?v=344';
-import { iniciarAvisoTg } from '/mmo/js/avisotg.js?v=344';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=344';
-import { crearMusica } from './musica.js?v=344';
-import { crearSonidos } from './sonidos.js?v=344';
-import { construirCueva } from './cueva.js?v=344';
-import { TAPA, transparentar } from './tapa.js?v=344';
-import { construirAbismo } from './abismo.js?v=344';
-import { crearParticulas } from './particulas.js?v=344';
-import { cargarKenney, piezasCasa } from './kenney.js?v=344';
-import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=344';
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=345';
+import { iniciarVentanas } from './ventanas.js?v=345';
+import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase } from '/mmo/js/data.js?v=345';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
+import { iniciarRegalo } from '/mmo/js/regalo.js?v=345';
+import { iniciarAvisoTg } from '/mmo/js/avisotg.js?v=345';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=345';
+import { crearMusica } from './musica.js?v=345';
+import { crearSonidos } from './sonidos.js?v=345';
+import { construirCueva } from './cueva.js?v=345';
+import { TAPA, transparentar } from './tapa.js?v=345';
+import { construirAbismo } from './abismo.js?v=345';
+import { crearParticulas } from './particulas.js?v=345';
+import { cargarKenney, piezasCasa } from './kenney.js?v=345';
+import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=345';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=344';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d } from '/mmo/js/mundo3d.js?v=344';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=344';
-import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=344';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA } from './lore.js?v=344';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=345';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d } from '/mmo/js/mundo3d.js?v=345';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=345';
+import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=345';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA } from './lore.js?v=345';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1104,6 +1104,12 @@ const anilloMat = new THREE.MeshBasicMaterial({ color: 0xff3344, transparent: tr
 const anillo = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.15, 32).rotateX(-Math.PI / 2), anilloMat);
 anillo.visible = false;
 escena.add(anillo);
+// Anillo pequeño "a tiro" (v344): bajo el monstruo mas cercano a menos de alcance+2 m.
+// Amarillo = casi; verde (y late) = el golpe ya le llega.
+const anilloTiroMat = new THREE.MeshBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide });
+const anilloTiro = new THREE.Mesh(new THREE.RingGeometry(0.48, 0.66, 28).rotateX(-Math.PI / 2), anilloTiroMat);
+anilloTiro.visible = false;
+escena.add(anilloTiro);
 
 // ── ALAS (vuelo estilo AION) ──
 // Cada tipo de ALAS (data.js) tiene su forma: luz, plumas, mariposa o
@@ -1755,9 +1761,7 @@ function recibir(m) {
       for (const id of [...mons.keys()]) quitarMon(id);
       for (const id of [...zonas3.keys()]) quitarZona3(id);
       for (const p of proyectiles) escena.remove(p.mesh); proyectiles = []; impactos = [];
-      const retomarAuto = autoAtk && !P.muerto;
       objetivo = 0; objetivoP = 0; autoAtk = false; dueloCon = 0; colaHab = null; gcdHasta = 0;
-      if (retomarAuto) setTimeout(() => { try { if (!autoAtk && !objetivo && !P.muerto && yo) siguienteBlanco(0); } catch (e) {} }, 1800);
       lanzando = null; $('lanzar').style.display = 'none'; quitarCorcho();
       if (P.vuela) volar(false); P.planea = false; cuevaInfo = null; zonaActual = '';
       camReal = camDist;
@@ -1863,7 +1867,7 @@ function recibir(m) {
         const nomJ = dj && dj.nombre ? 'al jefe ' + dj.nombre : 'a un jefe';
         setTimeout(() => ofrecerPresumir('¡Vencí ' + nomJ + ' en Duende Quest 3D! ¿Te atreves?', 'jefe'), 1800);
       }
-    } if (objetivo === m.id) { if (autoAtk) siguienteBlanco(m.id); else { objetivo = 0; autoAtk = false; pintarBarra(); } } break; }
+    } if (objetivo === m.id) { objetivo = 0; autoAtk = false; pintarBarra(); } break; }
     case 'at3': ataqueVisto(m); break;
     case 'ph': golpeJugador(m); break;
     case 'b3': { const o = mons.get(m.de), q = m.a === miId ? P : otros.get(m.a); if (o && q) proyectil(o, q, '#c084fc'); break; }
@@ -1937,7 +1941,7 @@ function recibir(m) {
     case 'aviso': aviso(m.m); break;
     case 'no':
       if (lanzando && lanzando.pre) lanzando = null;   // el lanzamiento previsto no empezo
-      // "Fuera de alcance" se avisa como mucho una vez cada 3 s (el auto-ataque reintenta solo).
+      // "Fuera de alcance" se avisa como mucho una vez cada 3 s (mantener pulsado ATACAR reintenta cada golpe).
       if (m.m === 'Fuera de alcance.') { if (performance.now() - avisoAlcT < 3000) break; avisoAlcT = performance.now(); }
       aviso(m.m, 'err'); break;
     case 'amigos': if (m.invitados) { inv3 = m; pintarAmigos3(); } if (m.ref) { refAmigo = m.ref; nivelAmigo = m.nivel || nivelAmigo; if (compartirPend) { const hist = compartirPend === 'h'; compartirPend = false; if (TG) compartir(hist); else { ofrecerPresumir(presumirTxt, undefined, true); aviso('Tu enlace está listo: toca el botón para enviarlo por WhatsApp.', 'ok'); } } } break;   // fuera de Telegram el navegador bloquea abrir WhatsApp sin un toque
@@ -1960,6 +1964,8 @@ function recibir(m) {
     case 'pase': if (yo) { yo.pase = m.pase; pintarPase(); } break;
     case 'yoC': if (yo) { Object.assign(yo, m.yo); pintarHud(); refrescarVentanas(); puntoMochila(); } break;
     case 'atkNo': sigAtk = performance.now() + 150; break;
+    // Un monstruo va a pegarte en ~300-400 ms: se agacha y brilla en rojo (retrocede para esquivarlo).
+    case 'mpre': { const o = mons.get(m.id); if (!o || o.muereT || !o.fig) break; o.preT = performance.now(); if (o.fig.modelo && o.fig.modelo.avisoRojo) o.fig.modelo.avisoRojo(PRE_MON_MS); break; }
     case 'habNo': gcdHasta = 0; break;
     case 'chat': lineaChat(m); break;
     case 'gesto': if (GESTOS[m.id]) mostrarGesto(m.p, m.id); break;
@@ -2147,45 +2153,6 @@ function modeloPuerta() {
   return { obj, alto: 6, r: { tAtk: 0.35 }, animar(e, tt) { mesh.position.y = (KIT ? 0 : 3) - (e === 'muere' ? Math.min(7, tt * tt * 6) : 0); }, golpe() { mesh.position.x = x0 + 0.18; setTimeout(() => { mesh.position.x = x0; }, 90); }, dispose() {} };
 }
 function quitarMon(id) { solidosExtra = solidosExtra.filter(x => x.id !== id); const o = mons.get(id); if (!o) return; if (o.fig) o.fig.quitar(); o.lbl.remove(); mons.delete(id); if (objetivo === id) { objetivo = 0; autoAtk = false; pintarBarra(); } }
-// Al matar con auto-ataque, el duende sigue con el monstruo normal vivo mas cercano de su nivel.
-// El Guardian dormido no recibe dano: no se elige solo.
-function siguienteBlanco(idMuerto) {
-  // Con poca vida no se lanza solo al siguiente: primero curarse.
-  // Solo sigue contra uno que ya te esta pegando (para no quedarte quieto recibiendo golpes).
-  const vidaBaja = !!(yo && yo.maxHp && yo.hp < yo.maxHp * 0.35);
-  let mejor = null, mejorD = 1e9;
-  for (const o of mons.values()) {
-    if (o.id === idMuerto || o.muereT || o.st === 3 || !o.fig || o.hp <= 0) continue;
-    if (asedio && asedio.dormido && o.id === asedio.guardian) continue;
-    // Nunca salta solo a jefes, mutados, raros o invocados, ni a monstruos muy por encima del nivel.
-    if (o.j || o.mu || o.ra || o.iv) continue;
-    if (yo && (o.nv || 0) > (yo.nivel || 1) + 2) continue;
-    const d = Math.hypot(o.x - P.x, o.z - P.z);
-    if (d > 10) continue;
-    if (vidaBaja && o.st !== 2) continue;
-    const pr = (o.st === 2 ? 0 : 100) + d;   // primero el que te ataca
-    if (pr < mejorD) { mejorD = pr; mejor = o; }
-  }
-  if (mejor) { objetivo = mejor.id; autoAtk = true; pintarBarra(); sfx('boton', 0.15); vibSel(); return true; }
-  objetivo = 0; autoAtk = false; pintarBarra();
-  // Reintento: cuando reaparecen, el duende sigue solo (si no te moviste ni tocaste nada).
-  if ((idMuerto || vidaBaja) && !siguienteBlanco.esperaT) {
-    const t0 = performance.now(), jx = P.x, jz = P.z;
-    const paso = () => {
-      siguienteBlanco.esperaT = -1;   // en curso: evita cadenas dobles y mantiene la pantalla encendida
-      const fin = () => { siguienteBlanco.esperaT = 0; pedirVela(autoAtk); };
-      if (!yo || P.muerto || autoAtk || objetivo || performance.now() - t0 > 120000) return fin();
-      if (Math.hypot(P.x - jx, P.z - jz) > 6) return fin();   // se movio: manda el jugador
-      if (yo.maxHp && yo.hp < yo.maxHp * 0.6) { siguienteBlanco.esperaT = setTimeout(paso, 1500); return; }
-      if (siguienteBlanco(0)) siguienteBlanco.esperaT = 0; else siguienteBlanco.esperaT = setTimeout(paso, 1500);
-    };
-    siguienteBlanco.esperaT = setTimeout(paso, 1500);
-    pedirVela(true);
-  }
-  if (idMuerto && !vidaBaja && performance.now() - (siguienteBlanco.avT || 0) > 20000) { siguienteBlanco.avT = performance.now(); aviso('✅ No quedan presas de tu nivel cerca: salen más en unos segundos y, si te quedas aquí, tu duende sigue solo.', 'ok', 1); }
-  if (vidaBaja && idMuerto !== 0) aviso('❤ Recupera vida antes de seguir (poción o descansa)', 'err', 1);
-  return false;
-}
 function foto(m) {
   const enFoto = new Set();
   for (const [id, x, z, ry, a, hp, mx, muerto, h] of m.p) {
@@ -2202,7 +2169,7 @@ function foto(m) {
     if (!o) continue;
     fijarDestino(o, x, z); o.ry = ry; o.hp = hp; o.st = st;
     // st 3 = muriendo en el servidor: si el md3 no nos llego (entro en vista ya muerto), se marca aqui
-    if (st === 3 && !o.muereT) { o.muereT = performance.now(); bestDeMuerte(id); if (objetivo === id) { if (autoAtk) siguienteBlanco(id); else { objetivo = 0; autoAtk = false; pintarBarra(); } } }
+    if (st === 3 && !o.muereT) { o.muereT = performance.now(); bestDeMuerte(id); if (objetivo === id) { objetivo = 0; autoAtk = false; pintarBarra(); } }
   }
   if (m.q) for (const id of m.q) quitarMon(id);
   if (yo) { yo.hp = m.hp; yo.rec = m.rec; P.rec = m.rec; yo.combo = m.cb || 0; pintarVida(); }
@@ -2601,39 +2568,17 @@ function pintarVida() {
 const cdPoder = {}, cdHab = {};
 let gcdHasta = 0, misHabs = [];
 let wakeL = null;
-function pedirVela(on) { try { if (on && !wakeL && navigator.wakeLock && !document.hidden && Date.now() > (pedirVela.noAntes || 0)) { wakeL = 'pidiendo'; navigator.wakeLock.request('screen').then(l => { if (!autoAtk && !siguienteBlanco.esperaT) { wakeL = null; l.release().catch(() => {}); return; } wakeL = l; l.addEventListener('release', () => { if (wakeL === l) wakeL = null; }); }).catch(() => { wakeL = null; pedirVela.noAntes = Date.now() + 60000; }); } else if (!on && wakeL && wakeL !== 'pidiendo') { wakeL.release().catch(() => {}); wakeL = null; } } catch (e) {} }
+function pedirVela(on) { try { if (on && !wakeL && navigator.wakeLock && !document.hidden && Date.now() > (pedirVela.noAntes || 0)) { wakeL = 'pidiendo'; navigator.wakeLock.request('screen').then(l => { if (!autoAtk) { wakeL = null; l.release().catch(() => {}); return; } wakeL = l; l.addEventListener('release', () => { if (wakeL === l) wakeL = null; }); }).catch(() => { wakeL = null; pedirVela.noAntes = Date.now() + 60000; }); } else if (!on && wakeL && wakeL !== 'pidiendo') { wakeL.release().catch(() => {}); wakeL = null; } } catch (e) {} }
 document.addEventListener('visibilitychange', () => { if (!document.hidden) pedirVela(autoAtk); });
-// AUTO en pausa si nadie toca en 15 min: no gasta bateria ni pociones toda la noche.
+// Ultimo toque o tecla del jugador (sin AUTO desde v344 ya no hay pausa de 15 min que avisar).
 let ultimoToqueT = performance.now();
-let pausaAutoT = 0;
-addEventListener('pointerdown', () => {
-  ultimoToqueT = performance.now();
-  if (pausaAutoT) {
-    pausaAutoT = 0;
-    setTimeout(() => {
-      if (!autoAtk) aviso('💤 Pausamos AUTO mientras no estabas: ' + K('pulsa 1', 'toca ATACAR') + ' para seguir.', 'ok');
-    }, 300);
-  }
-}, true);
-addEventListener('keydown', () => { ultimoToqueT = performance.now(); pausaAutoT = 0; }, true);
+addEventListener('pointerdown', () => { ultimoToqueT = performance.now(); }, true);
+addEventListener('keydown', () => { ultimoToqueT = performance.now(); }, true);
 // Modo reposo (bucle): arrastrar la camara o la rueda tambien es "estar jugando".
 let movInputT = 0;
 for (const ev of ['pointermove', 'wheel', 'touchmove']) addEventListener(ev, () => { movInputT = performance.now(); }, { capture: true, passive: true });
 // Al volver de otra app (WhatsApp) cuenta como toque: no pausar a los pocos segundos.
 document.addEventListener('visibilitychange', () => { if (!document.hidden) ultimoToqueT = performance.now(); });
-setInterval(() => {
-  try {
-    if (!(autoAtk || (siguienteBlanco && siguienteBlanco.esperaT)) || performance.now() - ultimoToqueT <= 15 * 60000) return;
-    // Nunca soltar al duende en plena pelea ni con poca vida: se reintenta en 30 s.
-    const ob = objetivo && mons.get(objetivo);
-    const peleando = (ob && !ob.muereT && ob.hp > 0 && ob.st === 2) || [...mons.values()].some(o => o.st === 2 && !o.muereT && o.hp > 0 && Math.hypot(o.x - P.x, o.z - P.z) < 14);
-    if (peleando || (yo && yo.maxHp && yo.hp < yo.maxHp * 0.5)) return;
-    autoAtk = false; objetivo = 0; pausaAutoT = Date.now();
-    if (siguienteBlanco.esperaT) { if (siguienteBlanco.esperaT > 0) clearTimeout(siguienteBlanco.esperaT); siguienteBlanco.esperaT = 0; }
-    pedirVela(false); pintarBarra();
-    aviso('💤 AUTO en pausa: llevas 15 min sin tocar. ' + K('Pulsa 1', 'Toca ATACAR') + ' para seguir.' + (typeof sinExped === 'function' && sinExped() ? ' Antes de dormir, manda tu mascota de expedición 🧭' : ''), 'ok');
-  } catch (e) {}
-}, 30000);
 function pintarBarra() {
   try { marcaJefeIni(); } catch (e) {}   // jefeIni se declara mas abajo: antes de eso no hay jefes que medir
   if (!yo) return;
@@ -2673,7 +2618,7 @@ function pintarBarra() {
   // En movil la barra no lleva el boton de ataque: ATACAR muestra si el automatico esta puesto.
   if (MOVIL) { const ta = $('t-atk'); if (ta.classList.contains('on') !== autoAtk) { ta.classList.toggle('on', autoAtk); ta.textContent = autoAtk ? 'PARAR' : 'ATACAR'; } }
   b.querySelectorAll('[data-pw]').forEach(d => { d.querySelector('.n').textContent = (yo.pw && yo.pw[d.dataset.pw]) || 0; });
-  pedirVela(autoAtk || !!siguienteBlanco.esperaT);
+  pedirVela(autoAtk);
 }
 // Toque que no sirve (en recarga, sin recurso o bloqueada): el boton tiembla en rojo y vibra.
 function rechazo(d) {
@@ -4635,7 +4580,11 @@ lienzo.addEventListener('pointermove', e => {
 });
 lienzo.addEventListener('pointerup', e => {
   if (e.pointerType === 'touch') return;
-  if (arrastre && arrastre.mov < 6) elegirEn(e.clientX, e.clientY, e.detail >= 2);
+  if (arrastre && arrastre.mov < 6) {
+    const om = elegirEn(e.clientX, e.clientY, e.detail >= 2);
+    // Clic izquierdo sobre un monstruo al alcance: lo marca y le pega ya (golpeManual respeta la cadencia).
+    if (om && e.button === 0 && !om.muereT && Math.hypot(om.x - P.x, om.z - P.z) <= rangoAtaque(om)) golpeManual();
+  }
   arrastre = null;
 });
 lienzo.addEventListener('contextmenu', e => e.preventDefault());
@@ -4654,7 +4603,7 @@ function elegirEn(cx, cy, doble) {
   const hits = ray.intersectObjects(lista.map(o => o.fig.m), false);
   if (hits.length) {
     const o = lista.find(x => x.fig.m === hits[0].object);
-    if (o) { elegirMon(o); return; }
+    if (o) { elegirMon(o); return o; }
   }
   // Clic en otro jugador: queda elegido (curas, invitar al grupo).
   const ls = [...otros.values()].filter(o => o.fig);
@@ -4669,7 +4618,7 @@ function elegirEn(cx, cy, doble) {
     const d = Math.hypot(s[0] - cx, s[1] - cy);
     if (d < mejor) { mejor = d; cerca = m; }
   }
-  if (cerca) { elegirMon(cerca); return; }
+  if (cerca) { elegirMon(cerca); return cerca; }
   // Lo mismo con otros jugadores: con el dedo no hace falta darle justo en la malla.
   let mejorP = MOVIL ? 44 : 22, cercaP = null;
   for (const o of ls) {
@@ -4713,13 +4662,66 @@ function blancoAtk() {
 // Ataque MANUAL (v344): cada toque de ATACAR (o 1/Z, o mantenerlo pulsado) es un golpe que se ve.
 // Sin AUTO: el duende no persigue, no cambia solo de blanco ni toma pociones por su cuenta.
 function alternarAtaque() { golpeManual(); }
-let atkMantener = false;
+let atkMantener = false, atkCdIni = 0, atkCdFin = 0, avisoTiroT = 0, avisoTiroN = 0, tiroO = null, btnAtkEl = null, recargaQ = -1;
+// Direccion (x, z) del mundo hacia donde se empuja el joystick, o null si no se esta moviendo.
+function dirJoy() {
+  if (joy.id === null || Math.hypot(joy.dx, joy.dy) < 0.25) return null;
+  const f = -joy.dy, s = joy.dx;
+  const x = fwd.x * f + der.x * s, z = fwd.z * f + der.z * s, m = Math.hypot(x, z);
+  return m > 0.01 ? [x / m, z / m] : null;
+}
+// Monstruo vivo mas cercano a menos de 'lim' metros (el elegido manda si esta dentro).
+function monCerca(lim) {
+  const ob = objetivo && mons.get(objetivo);
+  if (ob && !ob.muereT && ob.fig && Math.hypot(ob.x - P.x, ob.z - P.z) <= lim) return ob;
+  let mejor = null, md = lim;
+  for (const o of mons.values()) {
+    if (o.muereT || !o.fig || (o.fig.raiz && !o.fig.raiz.visible)) continue;
+    const d = Math.hypot(o.x - P.x, o.z - P.z);
+    if (d <= md) { md = d; mejor = o; }
+  }
+  return mejor;
+}
+// Monstruo "a tiro": el mas cercano a menos de su alcance + 2 m (el elegido manda si esta dentro).
+function monATiro() {
+  const ob = objetivo && mons.get(objetivo);
+  if (ob && !ob.muereT && ob.fig && Math.hypot(ob.x - P.x, ob.z - P.z) <= rangoAtaque(ob) + 2) return ob;
+  let mejor = null, md = Infinity;
+  for (const o of mons.values()) {
+    if (o.muereT || !o.fig || (o.fig.raiz && !o.fig.raiz.visible)) continue;
+    const d = Math.hypot(o.x - P.x, o.z - P.z);
+    if (d <= rangoAtaque(o) + 2 && d < md) { md = d; mejor = o; }
+  }
+  return mejor;
+}
+// Cada cuadro: anillo "a tiro" en el suelo y anillo de recarga del boton ATACAR (cadencia del arma).
+function pintarAyudaAtk(t) {
+  if (cuadro % 4 === 0) tiroO = yo && !P.muerto ? monATiro() : null;
+  const o = tiroO;
+  if (!o || o.muereT || mons.get(o.id) !== o || P.muerto) { if (anilloTiro.visible) anilloTiro.visible = false; }
+  else {
+    const llega = Math.hypot(o.x - P.x, o.z - P.z) <= rangoAtaque(o);
+    anilloTiroMat.color.setHex(llega ? 0x4ade80 : 0xfacc15);
+    anilloTiro.visible = true;
+    anilloTiro.position.set(o.x, alturaEn(o.x, o.z) + 0.1, o.z);
+    const s = (o.j ? 1.8 : 1) * (llega ? 1 + 0.1 * Math.sin(t / 110) : 1); anilloTiro.scale.set(s, 1, s);
+  }
+  if (!MOVIL) return;
+  if (!btnAtkEl) btnAtkEl = $('t-atk');
+  if (!btnAtkEl) return;
+  const k = atkCdFin > t ? clamp((t - atkCdIni) / Math.max(1, atkCdFin - atkCdIni), 0, 1) : 1;
+  const q = Math.round(k * 40) / 40;
+  if (q === recargaQ) return;
+  recargaQ = q;
+  btnAtkEl.style.setProperty('--rc', q); btnAtkEl.style.setProperty('--rco', q < 1 ? '1' : '0.3');
+}
 // Monstruo al alcance para el golpe: el elegido si llega; si no, el mas cercano al alcance (mejor si esta delante).
 function blancoCercano() {
   const ob = objetivo && mons.get(objetivo);
   if (ob && !ob.muereT && Math.hypot(ob.x - P.x, ob.z - P.z) <= rangoAtaque(ob)) return ob;
   let mejor = null, mp = Infinity;
-  const fx = Math.sin(P.ry), fz = Math.cos(P.ry);
+  const jd = dirJoy();   // con el joystick empujado, "delante" es hacia donde lo empuja
+  const fx = jd ? jd[0] : Math.sin(P.ry), fz = jd ? jd[1] : Math.cos(P.ry);
   for (const o of mons.values()) {
     if (o.muereT || !o.fig) continue;
     const dx = o.x - P.x, dz = o.z - P.z, d = Math.hypot(dx, dz);
@@ -4739,10 +4741,24 @@ function golpeManual() {
   // Jugador rival (duelo o Abismo de la otra faccion): solo ahi se pega a jugadores; el servidor lo vuelve a comprobar.
   const rv = !objetivo && rivalP() ? otros.get(rivalP()) : null;
   const o = rv && Math.hypot(rv.x - P.x, rv.z - P.z) <= rangoAtaque(rv) ? rv : blancoCercano();
-  sigAtk = ahora + (vara ? VARA.cdMs * arma.cd : 1000 * arma.cd);
+  const cdMs = vara ? VARA.cdMs * arma.cd : 1000 * arma.cd;
+  sigAtk = ahora + cdMs;
+  atkCdIni = ahora; atkCdFin = sigAtk;   // anillo de recarga del boton ATACAR (movil)
+  // Combo visual de 3 golpes si se encadenan rapido (solo se ve; el daño lo decide el servidor).
+  P.combo = ahora - (P.atkT || 0) < Math.max(1200, cdMs + 350) ? ((P.combo || 0) + 1) % 3 : 0;
   P.atkT = ahora;   // el golpe se ve siempre, aunque sea al aire
   ultimoToqueT = ahora;
-  if (!o) { sfxK('desenv', 0.22); return; }
+  if (!o) {
+    // Ayuda de apuntado: sin blanco al alcance, el golpe sale hacia el joystick (movil)
+    // o el duende gira hacia el monstruo cercano (< 7 m) y el anillo del suelo dice cuando llega.
+    const jd = dirJoy(), c = jd ? null : monCerca(7);
+    if (jd) P.ry = Math.atan2(jd[0], jd[1]);
+    else if (c) {
+      P.ry = Math.atan2(c.x - P.x, c.z - P.z); P.f = (c.x - P.x) * der.x + (c.z - P.z) * der.z >= 0 ? 1 : -1;
+      if (avisoTiroN < 3 && ahora - avisoTiroT > 6000) { avisoTiroN++; avisoTiroT = ahora; aviso('🎯 Acércate un poco más: cuando el anillo bajo el monstruo se pone verde, tu golpe le llega.', 'ok'); }
+    }
+    sfxK('desenv', 0.22); efectoGolpe(vara, true); return;
+  }
   if (o !== rv && objetivo !== o.id) { objetivo = o.id; pintarBarra(); }
   mandarPos(true);
   mandar(o === rv ? { t: 'atk3', tp: o.id } : { t: 'atk3', tg: o.id });
@@ -4751,6 +4767,51 @@ function golpeManual() {
   P.f = dx * der.x + dz * der.z >= 0 ? 1 : -1;
   sfx(vara ? 'boton' : 'corte', 0.3);
   tuto3.atk = true;
+  efectoGolpe(vara, false);
+}
+// Arco del tajo (v344, solo visual): media luna translucida delante del duende con el color de la clase,
+// que barre y se desvanece en ~200 ms. Las varas al aire sueltan ademas un destello que vuela adelante.
+const GEO_TAJO = new THREE.RingGeometry(0.7, 1.2, CAL === 'baja' ? 10 : 22, 1, -Math.PI / 2 - 1.2, 2.4);
+const tajos = [];
+function efectoGolpe(vara, alAire) {
+  if (!P || !yo) return;
+  const cl = CLASES[yo.clase], color = (cl && cl.color) || '#fff1c1', baja = POBRE || CAL === 'baja';
+  const cmb = P.combo || 0, fuerte = cmb === 2, alto = P.fig && P.fig.alto ? P.fig.alto : 1.6;
+  while (tajos.length >= (baja ? 2 : 5)) { const v = tajos.shift(); escena.remove(v.g); if (v.mat) v.mat.dispose(); }
+  const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.8, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending });
+  const g = new THREE.Group(), inc = new THREE.Group(), me = new THREE.Mesh(GEO_TAJO, mat);
+  me.rotation.x = -Math.PI / 2; inc.add(me); g.add(inc);
+  // 0: tajo en diagonal, 1: tajo de vuelta casi plano (barre al reves), 2: golpe fuerte vertical y mas grande.
+  inc.rotation.z = cmb === 0 ? 0.55 : cmb === 1 ? -0.15 : Math.PI / 2;
+  const esc = (fuerte ? 1.3 : 1) * (vara ? 0.85 : 1) * clamp(alto / 1.6, 0.8, 1.5);
+  g.position.set(P.x, P.y + alto * (fuerte ? 0.6 : 0.5), P.z); g.scale.setScalar(esc);
+  escena.add(g);
+  tajos.push({ g, mat, t0: performance.now(), dur: fuerte ? 260 : 200, ry: P.ry, giro: cmb === 1 ? -1 : 1, fuerte });
+  const fx = Math.sin(P.ry), fz = Math.cos(P.ry);
+  if (fuerte && !baja) FX.emitir(P.x + fx * 1.1, P.y + alto * 0.55, P.z + fz * 1.1, { n: MOVIL ? 6 : 10, color, vel: 3, vida: 0.3 });
+  // Vara al aire: una bolita de luz que sale hacia delante y se deshace en chispas.
+  if (vara && alAire) {
+    const b = new THREE.Mesh(GEO_BALA, matBala(color));
+    b.scale.setScalar(fuerte ? 0.9 : 0.6);
+    escena.add(b);
+    tajos.push({ g: b, mat: null, t0: performance.now(), dur: 340, bola: true, x: P.x + fx * 0.6, y: P.y + alto * 0.6, z: P.z + fz * 0.6, fx, fz, color, baja });
+  }
+}
+function moverTajos(t) {
+  for (let i = tajos.length - 1; i >= 0; i--) {
+    const v = tajos[i], k = Math.max(0, (t - v.t0) / v.dur);   // el reloj del cuadro puede ir unos ms detras de performance.now()
+    if (k >= 1) {
+      escena.remove(v.g); if (v.mat) v.mat.dispose();
+      if (v.bola && !v.baja && k >= 1) FX.emitir(v.x + v.fx * 5, v.y, v.z + v.fz * 5, { n: MOVIL ? 6 : 10, color: v.color, vel: 2.5, vida: 0.35 });
+      tajos.splice(i, 1); continue;
+    }
+    if (v.bola) { const d = 0.6 + 4.4 * k; v.g.position.set(v.x + v.fx * d, v.y + Math.sin(k * Math.PI) * 0.15, v.z + v.fz * d); continue; }
+    // Sigue al duende, barre unos grados y se agranda mientras se apaga.
+    v.g.position.x = P.x; v.g.position.z = P.z;
+    v.g.rotation.y = v.ry + v.giro * (k - 0.5) * (v.fuerte ? 0.3 : 0.9);
+    v.g.children[0].scale.setScalar(0.85 + 0.35 * k);
+    v.mat.opacity = 0.8 * (1 - k) * (1 - k * 0.3);
+  }
 }
 function usarPoder(i) { if (!yo || P.muerto) return; mandar({ t: 'pw', i }); }
 function usarHab(h) {
@@ -4964,17 +5025,7 @@ function fisica(dt) {
   }
   fwd.set(-Math.sin(camYaw), 0, -Math.cos(camYaw)); der.set(Math.cos(camYaw), 0, -Math.sin(camYaw));
   let mx = fwd.x * f + der.x * s, mz = fwd.z * f + der.z * s;
-  // Con el ataque automatico puesto y sin mover el duende, va solo hasta su
-  // objetivo (como hacer clic para atacar en WoW). No mientras lanzas un hechizo.
-  if (!sinControl && !f && !s && autoAtk && !lanzando) {
-    const o = blancoAtk();
-    if (o && !o.muereT) {
-      const ox = o.tx ?? o.x, oz = o.tz ?? o.z;
-      const dx = ox - P.x, dz = oz - P.z, d = Math.hypot(dx, dz);
-      // En el Abismo no persigue al objetivo fuera de la isla (antes te tiraba al vacio).
-      if (d > rangoAtaque(o) * 0.75 && d < 45 && !(enAbismo(P.x) && !P.vuela && !islaEn(P.x + dx / d * 1.5, P.z + dz / d * 1.5))) { mx = dx / d; mz = dz / d; }
-    }
-  }
+  // Sin AUTO (v344): el duende solo se mueve con el joystick o el teclado, nunca persigue solo.
   const mag = Math.hypot(mx, mz);
   const quiere = mag > 0.15;
   if (quiere) { mx /= Math.max(1, mag); mz /= Math.max(1, mag); }
@@ -5114,40 +5165,6 @@ function rangoAtaque(o) {
   const vara = CLASES[yo.clase] && CLASES[yo.clase].basico === 'vara';
   return vara ? 23 : 3.0 * (arma.alcance || 1) + (o.j ? 1.2 : 0.3);
 }
-function ataqueAuto() {
-  if (!autoAtk || !yo || P.muerto) return;
-  if (yo.maxHp && yo.hp < yo.maxHp * 0.3 && ((yo.pw && yo.pw.pocion) || 0) > 0 && !P.vuela && !dueloCon && performance.now() > Math.max(ataqueAuto.pocT || 0, cdPoder.pocion || 0)) {
-    ataqueAuto.pocT = performance.now() + 3500;
-    const ip = PODERES.findIndex(p => p.id === 'pocion');
-    if (ip >= 0) usarPoder(ip);
-    if (!ataqueAuto.avisoPoc) { ataqueAuto.avisoPoc = 1; aviso('🧪 Con AUTO tu duende toma poción solo cuando baja del 30 % de vida.', 'ok'); }
-  }
-  const o = blancoAtk();
-  if (!o || o.muereT) { autoAtk = false; pintarBarra(); return; }
-  const arma = ARMAS[yo.arma] || ARMAS.katana;
-  const vara = CLASES[yo.clase] && CLASES[yo.clase].basico === 'vara';
-  const rango = rangoAtaque(o);
-  const d = Math.hypot(o.x - P.x, o.z - P.z);
-  const ahora = performance.now();
-  if (d > rango) { if (d > 45 && ahora - avisoLejosT > 2500) { avisoLejosT = ahora; aviso('Tu objetivo está demasiado lejos.'); } return; }
-  if (ahora < sigAtk) return;
-  // En Sigilo el primer golpe vale x2 y da combos: se espera 2,5 s a que lo abra una habilidad
-  // (antes el ataque automatico lo gastaba en un golpe basico).
-  if (P.au && P.au.sigilo) {
-    if (!P.sigiloT) { P.sigiloT = ahora; aviso('🗡 En Sigilo: abre con Puñalada Rápida para pegar el doble.', 'ok'); }
-    if (ahora - P.sigiloT < 2500) return;
-  } else P.sigiloT = 0;
-  sigAtk = ahora + (vara ? VARA.cdMs * arma.cd : 1000 * arma.cd);
-  mandarPos(true);
-  mandar(objetivo ? { t: 'atk3', tg: o.id } : { t: 'atk3', tp: o.id });
-  P.atkT = ahora;
-  // Respuesta inmediata: destello y golpe en el momento del tajo (o al llegar la bola).
-  if (objetivo) impactos.push({ o, t: ahora + (vara ? 280 : 150) });
-  // Mirar al objetivo.
-  const dx = o.x - P.x, dz = o.z - P.z; P.ry = Math.atan2(dx, dz);
-  P.f = dx * der.x + dz * der.z >= 0 ? 1 : -1;
-  sfx(vara ? 'boton' : 'corte', 0.3);
-}
 // ── MASCOTA 3D: la de la tienda te sigue (sprite de su hoja 2D, con su tinte) y la ven los demas ──
 // Va en la escena (no como hija de la figura) y se guarda en el jugador (q.masc) para que sobreviva a rehacer la figura.
 const MAX_MASC_AJENAS = CAL === 'baja' ? 0 : MOVIL && CAL === 'media' ? 3 : 6;
@@ -5257,6 +5274,7 @@ function animarJugador(q, esYo, t) {
       f.estira = !P.suelo && !P.vuela && !P.planea ? clamp(P.vy * 0.008, -0.03, 0.07) : 0;
     }
     f.pausa = esYo && t < pausaAnim;
+    if (f.modelo) f.modelo.combo = esYo ? P.combo || 0 : 0;   // pose del combo (solo el propio duende; los demas, el tajo de siempre)
     f.poner(q.x, y, q.z, esYo ? P.ry : q.ry, t);
     if (!esYo) {
       const vuela = q.a === 3 || q.a === 4;
@@ -5295,7 +5313,7 @@ function animarMon(o, t) {
     o.ryV = lerpAng(o.ryV === undefined ? o.ry : o.ryV, o.ry, 0.2);
     f.pausa = pausaMon === o.id && t < pausaAnim;
     f.poner(o.x, y, o.z, o.ryV, t, Math.min(1, (t - o.nace) / 400));
-    retroceso(o, t, f.raiz);
+    retroceso(o, t, f.raiz); preparaGolpe(o, t, f.raiz);
     return;
   }
   const h = f.hoja;
@@ -5317,7 +5335,17 @@ function animarMon(o, t) {
   const y = Math.max(alturaEn(o.x, o.z), def.vuela ? alturaEn(o.x, o.z) + 1.2 + Math.sin(t / 300 + o.id) * 0.3 : aguaEn(o.x) - 0.9);
   const nace = Math.min(1, (t - o.nace) / 400);
   f.poner(o.x, y, o.z, camYaw, [nace, nace]);
-  retroceso(o, t, f.m);
+  retroceso(o, t, f.m); preparaGolpe(o, t, f.m);
+}
+// Preparacion del golpe ('mpre'): se agacha y se echa atras (solo la figura) hasta que pega.
+const PRE_MON_MS = 360;
+function preparaGolpe(o, t, obj) {
+  const dp = t - (o.preT || 0);
+  if (!obj || dp < 0 || dp >= PRE_MON_MS || o.muereT) return;
+  const k = Math.sin(Math.min(1, dp / (PRE_MON_MS * 0.6)) * Math.PI / 2);   // baja rapido y aguanta
+  const dx = o.x - P.x, dz = o.z - P.z, l = Math.hypot(dx, dz) || 1;
+  obj.position.x += dx / l * 0.18 * k; obj.position.z += dz / l * 0.18 * k;
+  obj.scale.x *= 1 + 0.1 * k; obj.scale.y *= 1 - 0.16 * k; obj.scale.z *= 1 + 0.1 * k;
 }
 // Retroceso cosmetico del monstruo golpeado: se empuja lejos de ti y se aplasta 150 ms (solo la figura; o.x/o.z no cambian).
 function retroceso(o, t, obj) {
@@ -5640,8 +5668,8 @@ let metaMision = null;
 // primera fila del rastreador y se cumple solo al hacerlo. Por personaje y dispositivo.
 const TUTO3 = [
   { txt: () => MOVIL ? 'Anda con el joystick y desliza el dedo por la pantalla para mirar' : 'Muévete con W A S D y arrastra con el ratón para girar la cámara', hecho: t => { const d = Math.hypot(P.x - t.x0, P.z - t.z0); if (d > 60) { t.x0 = P.x; t.z0 = P.z; } return d > 8 && d <= 60; } },   // un salto grande es un teletransporte: no cuenta
-  { txt: () => 'Ve a la luz amarilla' + (metaMision ? ` ${flechaDir(metaMision.x, metaMision.z)} ${Math.round(Math.hypot(metaMision.x - P.x, metaMision.z - P.z))} m` : ''), hecho: t => (yo.kills || 0) > t.k0 || (metaMision && Math.hypot(metaMision.x - P.x, metaMision.z - P.z) < 30) },
-  { txt: () => MOVIL ? 'Acércate a un monstruo y toca ATACAR (mantén pulsado para seguir pegando)' : 'Acércate a un monstruo y pulsa 1 o Z para golpear (mantén para seguir)', hecho: t => (yo.kills || 0) > t.k0 },
+  { txt: () => (metaMision && metaMision.mon ? 'Sigue la luz amarilla: ahí te espera un goblin' : 'Ve a la luz amarilla') + (metaMision ? ` ${flechaDir(metaMision.x, metaMision.z)} ${Math.round(Math.hypot(metaMision.x - P.x, metaMision.z - P.z))} m` : ''), hecho: t => (yo.kills || 0) > t.k0 || (metaMision && Math.hypot(metaMision.x - P.x, metaMision.z - P.z) < 30) },
+  { txt: () => MOVIL ? 'Acércate y toca ATACAR: cada toque es un golpe. Mantén pulsado para seguir pegando' : 'Acércate y pulsa 1 o Z: cada pulsación es un golpe. Mantén para seguir pegando', hecho: t => (yo.kills || 0) > t.k0 },
   // En movil el boton de ataque no esta en la barra: el primero ya es la habilidad de nivel 1.
   { txt: () => 'Usa tu habilidad ' + ((habsDe(yo.clase)[0] || {}).nombre || 'de clase') + ': ' + (MOVIL ? 'primer botón de la barra' : 'tecla 2'), hecho: t => t.hab },
   { txt: () => 'Fuera del pueblo, despliega las alas: ' + (MOVIL ? 'botón VOLAR' : 'V o doble salto'), hecho: () => P.vuela },
@@ -5673,7 +5701,9 @@ function htmlTuto3() {
   // k0 no se reinicia al avanzar: la primera caza cumple a la vez "sigue la luz" y "ataca".
   if (TUTO3[tuto3.i] && TUTO3[tuto3.i].hecho(tuto3)) { tuto3.i++; tuto3.x0 = P.x; tuto3.z0 = P.z; try { localStorage.setItem(clave, String(tuto3.i)); } catch (e) {} sfx('moneda', 0.3);
     // Embudo (una vez por sesion, beacon /mmo/ev): cumplio la habilidad, las alas o todo el tutorial.
-    const pe = tuto3.i === 4 ? 't_hab' : tuto3.i === 5 ? 't_volar' : tuto3.i === TUTO3.length ? 't_fin' : ''; if (pe) paso(pe); }
+    const pe = tuto3.i === 4 ? 't_hab' : tuto3.i === 5 ? 't_volar' : tuto3.i === TUTO3.length ? 't_fin' : ''; if (pe) paso(pe);
+    // Primera caza: se felicita y se enseña lo que falta del combate (habilidad y alejarse del rojo).
+    if (tuto3.i === 3) aviso('¡Bien hecho! Ahora usa tu habilidad. Si un monstruo se agacha y brilla en rojo, aléjate: va a pegarte.', 'ok', 1); }
   pulsoTuto3(tuto3.i);
   const p = TUTO3[tuto3.i]; if (!p) return '';
   // Paso 6 con la mision lista: la propia fila del tutorial la entrega (en movil la fila 📜 queda debajo).
@@ -5718,6 +5748,13 @@ function pintarMisiones() {
       let mejor = null, md = Infinity;
       for (const cp of CAMPOS3D) if (cp.k === q.tipo) { const dd = Math.hypot(cp.x - P.x, cp.z - P.z); if (dd < md) { md = dd; mejor = cp; } }
       if (mejor) metaMision = { x: mejor.x, z: mejor.z, jefe: mejor.jefe };
+    }
+    // Primer combate guiado: en los pasos "luz" y "ataca" la luz señala al monstruo vivo mas cercano
+    // de la mision (el servidor le pone uno al novato junto al pueblo), no al centro del campamento.
+    if (!lista && !campo && tuto3.i >= 1 && tuto3.i <= 2 && !mq.jefe) {
+      let mm = null, mdd = 90;
+      for (const o of mons.values()) if (o.k === q.tipo && o.hp > 0 && !o.muereT) { const dd = Math.hypot(o.x - P.x, o.z - P.z); if (dd < mdd) { mdd = dd; mm = o; } }
+      if (mm) metaMision = { x: mm.x, z: mm.z, jefe: false, mon: true };
     }
     const dist = metaMision ? Math.hypot(metaMision.x - P.x, metaMision.z - P.z) : 0;
     const donde = metaMision ? (dist < 25 ? ' · aquí' : ` · ${flechaDir(metaMision.x, metaMision.z)} ${Math.round(dist)} m`) : '';
@@ -5825,7 +5862,7 @@ function pintarMisiones() {
     avisoCampo = yo.mis.i + ':' + q.tipo;
     const nom = (MONSTRUOS[q.tipo] || {}).nombre || q.tipo, falta = Math.max(0, q.n - yo.mis.p);
     const hay = [...mons.values()].some(o => o.k === q.tipo && !o.muereT && Math.hypot(o.x - P.x, o.z - P.z) < 40);
-    aviso(hay ? `📜 Aquí está tu misión: derrota ${falta} ${nom} (los marcados con ❗). ${MOVIL ? 'Tócalos' : 'Haz clic en ellos'} y ataca.` : `📜 Zona de ${nom}: aparecen en unos segundos aquí mismo. Te faltan ${falta}.`, 'ok', 1);
+    aviso(hay ? `📜 Aquí está tu misión: derrota ${falta} ${nom} (los marcados con ❗). Acércate y ${MOVIL ? 'toca ATACAR' : 'pulsa 1 o Z'} por cada golpe.` : `📜 Zona de ${nom}: aparecen en unos segundos aquí mismo. Te faltan ${falta}.`, 'ok', 1);
   }
 }
 const cristalesHito = [];
@@ -5923,6 +5960,7 @@ function cuadroBucle(t) {
   fisica(dt);
   if (prueba) girarPrueba();
   if (atkMantener) golpeManual();   // mantener ATACAR (o 1/Z) sigue pegando al ritmo del arma
+  pintarAyudaAtk(t);   // anillo "a tiro" bajo el monstruo y recarga del boton ATACAR
   if (colaHab && t >= gcdHasta) { const h = colaHab; colaHab = null; if (t < colaHasta) usarHab(h); }
   if (impactos.length) impactos = impactos.filter(i => { if (t < i.t) return true; if (!i.o.muereT) { i.o.golpeT = t; i.o.predT = t; i.o.golpeC = false; i.o.golpeDe = P; pausaGolpe(i.o, 40); } return false; });
   // Interpolacion de los demas.
@@ -5948,6 +5986,7 @@ function cuadroBucle(t) {
     if (p.t >= 1) { escena.remove(p.mesh); return false; }
     return true;
   });
+  if (tajos.length) moverTajos(t);
   // Camara: detras del duende, sin meterse en el suelo.
   const tx = P.x, ty = P.y + 1.4, tz = P.z;
   // Solo el terreno (colinas entre el duende y la camara) y las paredes de la

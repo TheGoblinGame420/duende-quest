@@ -177,8 +177,21 @@ export const Duelos = {
     }
   },
 
+  // ¿Puede s dañar a t? Duelo ya empezado entre los dos (mismo mapa) o PvP de
+  // facciones del Abismo 3D (enemigoFaccion: ambos en el Abismo y fuera de santuario).
+  puedeHerirJugador(s, t) {
+    if (!s || !t || s === t || !s.c || !t.c || t.muerto) return false;
+    const d = this.rivalDuelo(s);
+    if (d && d.id === t.id) return true;
+    return !!(s.m3 && t.m3 && !s.i3 && !t.i3 && this.enemigoFaccion && this.enemigoFaccion(s, t));
+  },
+
   // Golpe de s a su rival de duelo. mult como en pegar().
   golpeDuelo(s, t, mult, basico) {
+    // Ultima barrera: solo el rival de un duelo aceptado o, en el 3D, la otra
+    // faccion en el Abismo (fuera de los bastiones). En el pueblo y en las zonas
+    // normales nadie hiere a otro jugador, venga el golpe de donde venga.
+    if (!this.puedeHerirJugador(s, t)) return;
     const ahora = Date.now();
     // Sin las ventajas de combate de la skin (en PvP todos iguales).
     const sb = this.statsSinSkin ? this.statsSinSkin(s) : s.st;
@@ -209,6 +222,7 @@ export const Duelos = {
   // Habilidad usada contra el rival (version simple: daño directo y sus
   // efectos sobre jugadores; las de area y las de monstruos no aplican).
   habDuelo(s, h, t) {
+    if (!this.puedeHerirJugador(s, t)) return;   // ni aturdir ni interrumpir a quien no es rival
     const ahora = Date.now();
     const cl = CLASES[s.c.clase];
     s.rec = Math.max(0, s.rec - costoHab(h, s.st.recMax, s.c.espec));

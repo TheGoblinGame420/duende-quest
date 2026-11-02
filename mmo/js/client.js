@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=344';
-import { iniciarRegalo } from './regalo.js?v=344';
-import { iniciarAvisoTg } from './avisotg.js?v=344';
+} from './data.js?v=345';
+import { iniciarRegalo } from './regalo.js?v=345';
+import { iniciarAvisoTg } from './avisotg.js?v=345';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -703,7 +703,7 @@ function recibir(m) {
       if (o && MONSTRUOS[o.k] && MONSTRUOS[o.k].jefe) jefeVivo = null;
       castMon.delete(m.id); aurasM.delete(m.id);
       if (objetivo && objetivo.k === 'm' && objetivo.id === m.id) {
-        // AUTO: salta al monstruo vivo mas cercano (sin jefes) para seguir farmeando.
+        // El objetivo pasa al monstruo vivo mas cercano (sin jefes): solo lo marca, no ataca solo.
         let sig = null, sd = 260;
         for (const x of mons.values()) {
           if (x.id === m.id || x.muereT || (MONSTRUOS[x.k] && MONSTRUOS[x.k].jefe)) continue;
@@ -3091,13 +3091,14 @@ function dibujarGuia() {
 const TUTORIAL = [
   { id: 'mover', txt: () => TACTIL ? 'Muévete con los botones de dirección' : 'Muévete con las flechas o A / D', hecho: t => Math.abs(P.x - t.x0) > 120 },
   { id: 'ir', txt: () => 'Sigue la flecha amarilla hasta tu misión', hecho: t => (yo.kills || 0) > t.k0 || (MAPAS[mapaId].zona && !instancia) },
-  { id: 'atacar', txt: () => TACTIL ? 'Ataca con el botón rojo (mantenlo pulsado)' : 'Ataca con Z o J. Tab cambia de objetivo', hecho: t => (yo.kills || 0) > t.k0 },
+  { id: 'atacar', txt: () => TACTIL ? 'Acércate y toca el botón rojo: cada toque es un golpe. Mantenlo pulsado para seguir' : 'Acércate y pulsa Z o J: cada pulsación es un golpe. Mantén para seguir', hecho: t => (yo.kills || 0) > t.k0 },
   { id: 'habilidad', txt: () => 'Usa una habilidad: ' + (TACTIL ? 'primer botón de la barra' : 'tecla 1'), hecho: t => t.usoHab },
   { id: 'mision', txt: () => (yo.mis && MISIONES[yo.mis.i] && yo.mis.p >= MISIONES[yo.mis.i].n ? 'Misión cumplida. Entrégala al Guardia Tito' : 'Completa la misión: la recompensa llega sola al cumplirla'), hecho: () => (yo.mis && yo.mis.i >= 1) },
 ];
 const tuto = { i: -1, x0: 0, k0: 0, usoHab: false, clave: '' };
 function pintarTutorial() {
   const el = $('consejo');
+  if (TACTIL && tuto.i >= 0) { const pa = TUTORIAL[tuto.i]; if (!pa || pa.id !== 'atacar') ponClase($('t-atk'), 'tuto-pulso', false); }   // fuera del paso de atacar, sin latido
   if (!yo || !yo.clase || yo.nivel > 6 || $('m-clase').classList.contains('on')) { ponCss(el, 'display', 'none'); ponClase($('hud'), 'tuto', false); return; }
   const clave = 'dq_tuto_' + (yo.pid || '');
   if (tuto.clave !== clave) {
@@ -3115,10 +3116,15 @@ function pintarTutorial() {
     if (pe) { try { if (window.dqPaso) window.dqPaso(pe, 'classic'); } catch (er) {} }
     // Recien entregada la primera mision: ahora si se ofrece ORIGINS (una vez).
     if (tuto.i === TUTORIAL.length) setTimeout(mostrarNuevo3d, 5000);
+    // Primera caza: se felicita y se enseña lo que falta del combate (habilidad y alejarse del rojo).
+    // Tercer argumento = duracion en ms (no prioridad, como en ORIGINS): con 1 desaparecia al instante.
+    if (paso.id === 'atacar') aviso('¡Bien hecho! Ahora usa tu habilidad. Si ves una zona roja que parpadea en el suelo, sal de ahí: viene un golpe fuerte.', 'ok', 7000);
     sfx('moneda', .3);
     return;
   }
   ponCss(el, 'display', 'block'); ponClase($('hud'), 'tuto', true);
+  // Movil: el boton de ataque late mientras toca aprender a atacar.
+  if (TACTIL) ponClase($('t-atk'), 'tuto-pulso', paso.id === 'atacar');
   ponTxt(el, sinEmoji(paso.txt()) + '  (' + (tuto.i + 1) + '/' + TUTORIAL.length + ')');
 }
 
@@ -6077,33 +6083,14 @@ function bucle(t) {
   if (frame % 3 === 0) dibujarMinimapa();
   pintarVida();
   pintarCooldowns();
-  if (autoAtk && frame % 4 === 0) ataqueAuto();
 }
-// Ataque automatico (como el auto-ataque de WoW): mientras tengas un
-// enemigo elegido al alcance, el duende le pega solo. En el movil,
-// mantener pulsado el boton de ataque minutos seguidos cansa la mano.
-let autoAtk = false;
-// Sin AUTO desde v344: se ataca a mano (cada golpe se ve) en PC y movil. El boton queda oculto.
+// Sin AUTO desde v344: se ataca a mano (cada golpe se ve) en PC y movil; mantener
+// pulsado ATACAR (o Z/J) sigue pegando. El boton viejo queda oculto y H solo lo explica.
 try { localStorage.removeItem('dq_auto'); } catch (e) {}
-function ataqueAuto() {
-  if (!yo || P.muerto || castYo || chatAbierto() || document.querySelector('.modal.on')) return;
-  const o = monObjetivo();
-  if (!o || o.muereT) return;
-  const cl = CLASES[yo.clase];
-  const rango = cl && cl.basico === 'vara' ? VARA.rango : 70;
-  if (distMon(o) > rango) return;
-  if (!(cl && cl.basico === 'vara')) P.f = o.x >= P.x ? 1 : -1;
-  atacar();
-}
-function pintarAuto() { const b = $('t-auto'); b.classList.toggle('on', autoAtk); b.innerHTML = '<svg class="ico-tc" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 013-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 01-3 3H3"/></svg>' + (autoAtk ? ' AUTO' : ''); }
 $('t-auto').style.display = 'none';
 $('t-auto').onclick = () => {
-  autoAtk = false;
-  try { localStorage.setItem('dq_auto', autoAtk ? '1' : '0'); } catch (e) {}
-  pintarAuto();
-  aviso('⚔ Ataca tú mismo: ' + (TACTIL ? 'toca ATACAR' : 'pulsa Z o J') + ' para cada golpe.');
+  aviso('⚔ Ataca tú mismo: ' + (TACTIL ? 'toca ATACAR' : 'pulsa Z o J') + ' en cada golpe y mantenlo pulsado para seguir.');
 };
-pintarAuto();
 inicio();
 requestAnimationFrame(bucle);
 // Solo en el servidor local de pruebas (tools/mmo_local.mjs): acceso al

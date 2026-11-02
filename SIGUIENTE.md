@@ -3415,3 +3415,13 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - PvP: el servidor ya solo deja dañar a jugadores en duelo aceptado o en el Abismo contra la otra facción fuera de los santuarios (`rival3d`/`enemigoFaccion`); el golpe manual solo apunta a un jugador si es `rivalP()`.
 - CLASSIC (client.js): AUTO desactivado y botón oculto; ATACAR ya repetía al mantener.
 - Arnés 897 bien; probado en local: golpe al aire anima y un monstruo al alcance recibe `atk3`.
+
+### Combate a mano que se siente (2-nov-2026, `?v=345`)
+
+- Combo visual de 3 golpes (`P.combo`, poses en `animarRig`) y arco de tajo (`efectoGolpe`, `moverTajos`, tope 2 en calidad baja); bolita de luz al aire para clases de vara.
+- Apuntado: `anilloTiro` (amarillo/verde), golpe hacia el joystick, giro al monstruo a <7 m, anillo de recarga en #t-atk (`--rc`), clic izquierdo pega en PC.
+- Telegrafía: `{t:'mpre'}` 400 ms antes del golpe del monstruo (`AVISO_MON_MS`), solo al jugador objetivo; aviso rojo en el modelo.
+- Textos del AUTO retirados en ayudas, guía, bot y avisos; código muerto del AUTO quitado.
+- Tutorial del ataque manual en ORIGINS y CLASSIC; primer goblin cerca y luz amarilla hacia él; ATACAR late hasta el primer golpe.
+- PvP seguro: auditoría del servidor (todo daño a jugadores pasa por `rival3d`/`rivalDuelo`) y pruebas nuevas en el arnés.
+- Arnés 905 bien (la de «ningún tipo acapara la zona» es la aleatoria de siempre).

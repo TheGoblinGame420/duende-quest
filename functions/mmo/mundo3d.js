@@ -45,6 +45,10 @@ const CORREA = 50;              // m: un monstruo no se aleja mas de su campamen
 const MELEE3D = 3.2;              // m: alcance del golpe cuerpo a cuerpo (x arma.alcance)
 const RANGO_VARA = 24;          // m: disparo de vara de magos y sacerdotes
 const MON_MELEE = 2.4, MON_DISPARO = 15;
+// Aviso del golpe de un monstruo normal: 300-400 ms antes (segun el tick) se le
+// manda 'mpre' solo a su presa; el cliente lo muestra agachado y en rojo para que
+// pueda retroceder. No cambia el ritmo ni el daño.
+const AVISO_MON_MS = 400;
 const FOTO_CADA = 2;            // ticks entre fotos (200 ms)
 // Margen para el jitter de la red: un golpe o una habilidad que llega hasta
 // 150 ms antes de su recarga cuenta (la cadencia se mide desde el golpe
@@ -599,7 +603,9 @@ export const Mundo3D = {
         c.prox = ahora + 1500;
       }
     }
-    this.paso('3d-mundial', () => this.revisarMundial3(ahora, jugadores));
+    // Primer combate guiado: al novato (mision 1, sin cazas) le sale un goblin cerca (uno por sesion).
+    for (const s of vivos) if (!s.gobGuia && !s.i3 && s.c && s.c.mis && s.c.mis.i === 0 && !(s.c.kills > 0) && (s.c.nivel || 1) <= 2) this.paso('3d-guia', () => this.gobGuia3d(W, s));
+    this.paso('3d-mundial',() => this.revisarMundial3(ahora, jugadores));
     this.paso('3d-asedio', () => this.revisarAsedio(ahora, jugadores));
     this.paso('3d-cuevas', () => this.tickCuevas(ahora));
     const porI3 = new Map();
@@ -646,6 +652,27 @@ export const Mundo3D = {
     c.vivos.add(o.id);
     if (o.jefe) this.aTodos({ t: 'aviso', m: `${def.nombre} ha aparecido en ORIGINS (${MAPAS[c.zona].nombre}).` });
     return o;
+  },
+
+  // Goblin guia del novato: justo fuera del pueblo, camino a su campamento (a ~107 m del spawn),
+  // o 12 m delante si ya salio. Sin campamento (campo -1): se retira solo si nadie queda cerca.
+  // El cliente (pintarMisiones) apunta la luz amarilla al goblin vivo mas cercano durante el tutorial.
+  gobGuia3d(W, s) {
+    s.gobGuia = true;
+    if (!s.p || enCueva(s.p.x) || enAbismo(s.p.x)) return;
+    let cp = null, cd = Infinity;
+    for (const c of W.campos) if (c.k === 'goblin_normal') { const d = dist(s.p, c); if (d < cd) { cd = d; cp = c; } }
+    if (!cp || cd < 30) return;   // ya esta junto a su campamento: no hace falta
+    const P0 = MUNDO.pueblo, dentro = Math.hypot(s.p.x - P0.x, s.p.z - P0.z) < P0.radio;
+    const ox = dentro ? P0.x : s.p.x, oz = dentro ? P0.z : s.p.z, L = Math.hypot(cp.x - ox, cp.z - oz) || 1;
+    const r = dentro ? P0.radio + 9 : Math.min(12, L - 5);   // +9: al pasear (±7) no entra al pueblo
+    const x = r1(ox + (cp.x - ox) / L * r), z = r1(oz + (cp.z - oz) / L * r);
+    if (zonaEn(x, z) === 'pueblo') return;
+    const def = MONSTRUOS.goblin_normal, st = statsMonstruo('goblin_normal', def.nivel);
+    const o = { id: W.sig++, k: 'goblin_normal', nv: def.nivel, campo: -1, mapa: cp.zona, jefe: false, dispara: !!def.dispara, x, z, hx: x, hz: z, ry: 0,
+      hp: st.hp, max: st.hp, atk: st.atk, vel: st.vel, y: 0, h: 0,
+      dano: new Map(), amen: new Map(), au: {}, cl: K3, obj: 0, atkEn: 0, golpeT: 0, st: 0, paseo: 0, destino: null };
+    W.mons.set(o.id, o);
   },
 
   // Inteligencia: pasea por su campamento; si le pegan (o es un jefe y te
@@ -1245,6 +1272,8 @@ export const Mundo3D = {
         if (o.st !== 2) o.atkEn = Math.max(o.atkEn, ahora + 400);
         o.st = 2;
         o.ry = Math.atan2(s.p.x - o.x, s.p.z - o.z);
+        // Telegrafia el golpe (una vez por golpe; si sales y vuelves, atkEn cambia y avisa de nuevo).
+        if (!o.jefe && o.avisoAtk !== o.atkEn && ahora < o.atkEn && ahora >= o.atkEn - AVISO_MON_MS) { o.avisoAtk = o.atkEn; this.enviar(s, { t: 'mpre', id: o.id }); }
         if (ahora >= o.atkEn) {
           o.atkEn = ahora + (o.jefe ? 1250 : 1600);
           const golpe = o.atk * (o.jefe ? 0.7 : 1) * (o.dispara ? 0.9 : 1);

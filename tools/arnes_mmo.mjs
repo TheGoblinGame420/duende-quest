@@ -620,6 +620,7 @@ async function pruebas() {
   await pruebasAlas3d();
   await pruebasAbismo3d();
   await pruebasPvP3d();
+  await pruebasSinPvP();
   await pruebasSocial3d();
   await pruebasEventos3d();
   await pruebasTempAbismo();
@@ -3799,4 +3800,61 @@ async function pruebasBienvenida() {
     j.c.uid = uid0;
   } finally { globalThis.fetch = fetchReal; }
   await dejar(j);
+}
+
+// Sin PvP fuera de duelos y del Abismo (?v=344): pegar o lanzar un area al
+// lado de otro jugador en el pueblo o en una zona normal no le quita vida
+// (ni en ORIGINS ni en CLASSIC); en el Abismo, a la otra faccion si.
+async function pruebasSinPvP() {
+  console.log('Sin PvP: nadie hiere a otro jugador fuera de duelos y del Abismo');
+  const W = await import('../mmo/js/mundo3d.js');
+  const AB = await import('../mmo/js/abismo3d.js');
+  const a = await entrar3d('Pegon3D', '5a1'); ponerNivel(a, 25, 'guerrero');
+  const b = await entrar3d('Vecino3D', '5a2'); ponerNivel(b, 25, 'picaro');
+  a.c.faccion = 'luz'; b.c.faccion = 'sombra';   // facciones enemigas: aun asi, fuera del Abismo nada
+  mundo.m3.mons.clear(); for (const k of mundo.m3.campos) { k.vivos.clear(); k.prox = Date.now() + 1e9; }
+  const pv = W.MUNDO.pueblo;
+  const sitios = [['el pueblo', { x: pv.x + 2, z: pv.z + 2 }], ['una zona normal', { x: pv.x + pv.radio + 60, z: pv.z }]];
+  for (const [nom, p] of sitios) {
+    a.p = { ...p }; b.p = { x: p.x + 0.8, z: p.z }; a.movBud = b.movBud = undefined; a.h = b.h = 0; a.a = b.a = 0;
+    a.muerto = b.muerto = false; b.hp = b.st.maxHp; b.inv = 0; b.escudo = 0; avanzar(6000);
+    const o = mundo.crear3d({ id: -1, x: p.x - 1, z: p.z, k: 'goblin_normal', n: 1, jefe: false, vivos: new Set(), zona: 'amanecer' });
+    o.x = p.x - 1; o.z = p.z; o.hx = o.x; o.hz = o.z; o.hp = o.max = 1e6; o.paseo = Date.now() + 1e9; o.destino = null;
+    const hpB = b.hp;
+    a.atkT = 0; await a.mandar({ t: 'atk3', tp: b.id });
+    a.atkT = 0; await a.mandar({ t: 'atk3', tg: o.id });
+    a.rec = 100; a.cdHab = {}; a.gcdHasta = 0; a.cast = null;
+    await a.mandar({ t: 'hab3', id: 'torbellino' });
+    a.rec = 100; a.cdHab = {}; a.gcdHasta = 0;
+    await a.mandar({ t: 'hab3', id: 'golpe_heroico', tp: b.id });
+    mundo.golpeDuelo(a, b, 5, true);   // ultima barrera: ni llamandolo a mano
+    chequear(o.hp < o.max, 'en ' + nom + ' el golpe y el Torbellino sí dañan al monstruo');
+    chequear(b.hp === hpB && !b.muerto, 'en ' + nom + ' el jugador de al lado no pierde vida (atk3, Torbellino, habilidad, golpe directo)');
+    mundo.m3.mons.delete(o.id);
+  }
+  // En el Abismo (isla neutral), contra la otra faccion, si.
+  const is = AB.ABISMO.islas[3], x0 = AB.ABISMO_X0 + is.x;
+  a.p = { x: x0, z: is.z }; b.p = { x: x0 + 0.8, z: is.z }; a.movBud = b.movBud = undefined;
+  b.hp = b.st.maxHp; b.inv = 0; a.atkT = 0; avanzar(3000);
+  await a.mandar({ t: 'atk3', tp: b.id });
+  chequear(b.hp < b.st.maxHp, 'en el Abismo la otra facción sí recibe el golpe');
+  // Misma faccion en el Abismo: tampoco.
+  b.c.faccion = 'luz'; b.hp = b.st.maxHp; b.inv = 0; a.atkT = 0; avanzar(1500);
+  await a.mandar({ t: 'atk3', tp: b.id }); mundo.golpeDuelo(a, b, 5, true);
+  chequear(b.hp === b.st.maxHp, 'en el Abismo no se hiere a los de tu facción');
+  for (const x of [a, b]) x.pvpT = 0;
+  await dejar(a); await dejar(b);
+  // CLASSIC (2D): espadazo y habilidad junto a otro jugador sin duelo.
+  const c = await entrar('Pegon2D', '5a3'); ponerNivel(c, 25, 'guerrero');
+  const d = await entrar('Vecino2D', '5a4'); ponerNivel(d, 25, 'mago');
+  for (const mapa of ['pueblo', 'noche']) {
+    await aMapa(c, mapa, 600); await aMapa(d, mapa, 610); limpiarMapa(c);
+    c.y = d.y; c.f = 1; d.hp = d.st.maxHp; d.inv = 0; d.escudo = 0; avanzar(6000);
+    for (let i = 0; i < 3; i++) { avanzar(400); c.atkT = 0; await c.mandar({ t: 'atk', s: i }); }
+    c.rec = 100; c.cdHab = {}; c.gcdHasta = 0;
+    await c.mandar({ t: 'hab', id: 'golpe_heroico', tg: d.id, tk: 'p' });
+    mundo.golpeDuelo(c, d, 5, true);
+    chequear(d.hp === d.st.maxHp, 'CLASSIC (' + mapa + '): sin duelo el de al lado no pierde vida');
+  }
+  await dejar(c); await dejar(d);
 }

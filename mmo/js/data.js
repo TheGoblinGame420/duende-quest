@@ -504,9 +504,16 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 344;
+export const VERSION = 345;
 
 export const NOVEDADES = [
+  { n: 113, fecha: '2 nov 2026', items: [
+    '⚔ Cada golpe se ve: si pegas seguido encadenas un combo de tres (tajo, tajo de vuelta y estocada fuerte) con un arco de luz del color de tu clase. Magos y sacerdotes lanzan un destello al atacar al aire.',
+    'Un anillo en el suelo te avisa cuándo le llega tu golpe al monstruo: amarillo si estás cerca, verde cuando ya le pegas. En el celular, ATACAR muestra el ritmo de tu arma y el golpe sale hacia donde mueves el joystick.',
+    'Los monstruos avisan antes de pegarte: se agachan y brillan en rojo un instante; si retrocedes a tiempo, esquivas.',
+    'Primer combate guiado: al salir del pueblo te espera un goblin y la luz amarilla te lleva a él.',
+    'En el pueblo y en las zonas normales nadie puede herirte, aunque ataque o use poderes de área a tu lado.',
+  ] },
   { n: 112, fecha: '1 nov 2026', items: [
     '⚔ Ahora atacas tú: en ORIGINS cada toque de ATACAR (o la tecla 1/Z) es un golpe que ves en tu duende, aunque sea al aire. Si hay un monstruo a tu alcance, le pega; mantén pulsado para seguir pegando al ritmo de tu arma.',
     'Se quitó el ataque automático en ORIGINS y CLASSIC: tu duende ya no persigue ni cambia de blanco solo.',
