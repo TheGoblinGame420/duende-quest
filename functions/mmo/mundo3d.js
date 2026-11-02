@@ -224,6 +224,15 @@ export const Mundo3D = {
       case 'fabricar': return this.fabricar(s, m);   // cercaDeArtesana() sabe del 3D
       case 'invitar': return this.invitar(s, m);
       case 'unirmeRef': return this.unirmeRef(s, m);   // social.js: enlace «Invitar a mi grupo» (#g= / startapp=g_)
+      case 'grupoLink': {
+        // El dueño armo el enlace: vale 2 h y 6 usos. Por cuenta (no por sesion): en el movil, al irse a
+        // WhatsApp a compartir, el socket se corta y vuelve con otra sesion; el enlace debe seguir valiendo.
+        if (!this._grupoLinkU) this._grupoLinkU = new Map();
+        const ahoraGL = Date.now();
+        this._grupoLinkU.set(s.c.uid, { hasta: ahoraGL + 2 * 3600000, n: 0 });
+        if (this._grupoLinkU.size > 5000) { for (const [k, v] of this._grupoLinkU) if (!(v.hasta > ahoraGL)) this._grupoLinkU.delete(k); }
+        return;
+      }
       case 'grupoResp': return this.respuestaGrupo(s, m);
       case 'salirGrupo': return this.salirGrupo(s);
       case 'expulsarGrupo': return this.expulsarGrupo(s, m);

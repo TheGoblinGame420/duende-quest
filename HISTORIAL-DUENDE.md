@@ -95,6 +95,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v356 | Estudio 8: debilidades, medalla en vivo, primera caída protegida, modo cine, recetas ocultas, capítulos, Adviento y Año Nuevo | **B** |
 | v357 | Ronda 26: debilidades para todas las clases, modo cine con enlace, cueva en solitario, revancha justa, avisos con permiso | **B** |
 | v358 | Estudio 9: bautizo, poder visible, presentación de zonas, monstruos con personalidad, invitar a mi grupo, fin de día, libro de reclamaciones | **B** |
+| v359 | Ronda 28: enlace de grupo seguro, bautizo que no estorba, avisos de uno en uno, constancia de Yape, términos de entrega manual | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

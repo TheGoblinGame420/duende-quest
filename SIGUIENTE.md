@@ -2796,6 +2796,7 @@ PENDIENTE DEL DUEÑO (no se puede hacer desde el codigo):
   "!/audio/*"]` (wrangler >= 4.20) y una regla WAF de rate limiting con dominio
   propio. No se aplico a ciegas para no romper el despliegue.
 - Quedan 40 hallazgos medios/bajos sin verificar (lista en el informe).
+- Rellenar en reembolsos.html (Libro de Reclamaciones) razón social, RUC/DNI y dirección (hoy dice que se envían por correo).
 
 ### Ronda 2: 32 agentes con parches exactos (24-oct-2026, `?v=283`)
 
@@ -3590,4 +3591,15 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - reembolsos.html: devolución con Yape/Plin y Libro de Reclamaciones (correo oficial ya usado en las páginas legales).
 - Pagos: «atiende ahora», «Fuera de plazo» con reclamo prioritario, constancia del Yape.
 - Enlace «Invitar a mi grupo». Tarjeta «Listo por hoy». Moral de manada (huida 💦, ¡Remate!). Monstruos que gritan y cojean. Brillo del equipo por rareza y forja.
+- Arnés 907 bien.
+
+### Ronda 28 (2-nov-2026, `?v=359`)
+
+- 10 evaluadores → 47 problemas → 10 tareas.
+- Bautizo: arriba (no tapa ATACAR), espera su turno (`ventanaAutoT`, #npc-dice), «Luego» pospone 20 h, se oculta en combate, caduca a 45 s con reintento.
+- «Invitar a mi grupo»: `grupoLink` por cuenta (`_grupoLinkU`, 2 h, 6 usos), freno por cuenta, Desafío bloquea, toast a la víctima 1/min; enlaces #g=/g_ cuentan como referido y `dq_grefq` caduca.
+- «Listo por hoy»: también a principiantes (misión 3), guardar duende del invitado, oferta de Telegram honesta.
+- Yape: constancia fija con pedido/monto/últimos 4/hora; «Pedido en revisión».
+- Legales: sin «[completar]», Términos alineados con la entrega manual y Yape, devolución si no se entrega en 24 h (el dueño debe revisarlo).
+- CLASSIC: novedades sin ORIGINS, ATQ/DEF al subir, pack tras la 3.ª muerte. Sonido de oro sin cansar y 'amenaza' siempre audible. Equipo forjado visible en calidad baja. Una tarjeta cada vez tras la misión 1.
 - Arnés 907 bien.

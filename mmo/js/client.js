@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=358';
-import { iniciarRegalo } from './regalo.js?v=358';
-import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=358';
+} from './data.js?v=359';
+import { iniciarRegalo } from './regalo.js?v=359';
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=359';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -813,7 +813,19 @@ function recibir(m) {
         for (let i = 0; i < 40; i++) particula(quien.x, quien.y - 30, ['#ffe600', '#00ff88', '#ff3cf0'][i % 3], 5);
         flotante(quien.x, quien.y - 95, '¡NIVEL ' + m.lv + '!', '#ffe600', 14);
       }
-      if (m.p === miId) { aviso('Has alcanzado el nivel ' + m.lv + '.', 'ok'); tono('nivel'); if (m.lv >= 60) ofrecerPresumir('🏆 ¡Llegué al nivel 60, el máximo, en Duende Quest!', 'nv60'); else if (m.lv >= 10 && m.lv % 5 === 0) ofrecerPresumir('⭐ ¡Llegué al nivel ' + m.lv + ' en Duende Quest!', 'nivel'); }
+      if (m.p === miId) {
+        // Lo que gano al subir: deltas de ATQ, DEF y vida (si algo falla, el aviso sale sin ellos).
+        let extra = '';
+        try {
+          if (yo && m.lv > 1) {
+            const a = statsJugador(m.lv - 1, yo.skin, yo.eq, yo.clase, yo.espec, yo.tal, yo.runas), b = statsJugador(m.lv, yo.skin, yo.eq, yo.clase, yo.espec, yo.tal, yo.runas);
+            const da = (b.atk | 0) - (a.atk | 0), dd = (b.def | 0) - (a.def | 0), dv = (b.maxHp | 0) - (a.maxHp | 0);
+            if (da > 0) extra += ' · ⚔ ATQ +' + da;
+            if (dd > 0) extra += ' · 🛡 DEF +' + dd;
+            if (dv > 0) extra += ' · ❤ Vida +' + dv;
+          }
+        } catch (e) { extra = ''; }
+        aviso('Has alcanzado el nivel ' + m.lv + '.' + extra, 'ok'); tono('nivel'); if (m.lv >= 60) ofrecerPresumir('🏆 ¡Llegué al nivel 60, el máximo, en Duende Quest!', 'nv60'); else if (m.lv >= 10 && m.lv % 5 === 0) ofrecerPresumir('⭐ ¡Llegué al nivel ' + m.lv + ' en Duende Quest!', 'nivel'); }
       else if (quien) { quien.lv = m.lv; if (m.mx) quien.mx = m.mx; if (m.rmx) quien.rmx = m.rmx; }
       break;
     }
@@ -1745,7 +1757,7 @@ function ofrecerBienvenida(antes) {
   try { ofrecida = localStorage.getItem('dq_bienv_ofrecida') === '1'; muertes = +localStorage.getItem('dq_bienv_muertes') || 0; pend = localStorage.getItem('dq_bienv_pend') || ''; } catch (e) {}
   if (ofrecida) return;
   if (yo.muerto && !antes.muerto) { muertes++; try { localStorage.setItem('dq_bienv_muertes', String(muertes)); } catch (e) {} }
-  const cruce = (antes.nivel < 5 && yo.nivel >= 5) || (muertes >= 2 && antes.muerto && !yo.muerto);
+  const cruce = (antes.nivel < 5 && yo.nivel >= 5) || (muertes >= 3 && antes.muerto && !yo.muerto);
   // Si en el cruce siempre hubo pelea o ventana, la oferta queda pendiente y se reintenta luego.
   if (cruce && pend !== '1') { pend = '1'; try { localStorage.setItem('dq_bienv_pend', '1'); } catch (e) {} }
   if (bienvEnCurso) return;
@@ -2601,7 +2613,7 @@ function limpiarRestos(t) { return t.replace(/\s*\(\s*\)/g, '').replace(/\(\s+/g
 // Notas que CLASSIC muestra: sin lo que es solo de ORIGINS (3D), salvo que nombre a CLASSIC.
 // En Telegram, sin lo que habla de SOL o wallets (sus reglas); en modo anuncio, sin nada cripto.
 function itemsNovClassic(nv) {
-  const solo3d = /ORIGINS|\b3D\b|Gran Invasión|Cueva de los Goblins|ESQUIVAR|pueblo es andino|gestos|golpe fuerte del combo|Hermandades abiertas|FASE 2|Furia|Corrientes de viento|corriente|tarjeta de botín|Libreta de pesca|Tirón perfecto|marca el camino|élite|Duende Ladr|📍|Pedir ayuda|cámara|faroles|Brillo de noche|respingo|retrato|Probar su|caja de misiones|TIRAR|ventanas automáticas|tiradores|Álbum|lbum de monstruos|Ayni|píldora|probar Mago|brillan en dorado|empieza con niebla|Prueba cualquier montura|💨|Debilidad|DÉBIL|medalla|revancha|capítulos|recetario|recetas ocultas|dedo fantasma|pasa algo con el Capitán|ranking semanal de la Cueva/i;
+  const solo3d = /ORIGINS|\b3D\b|Gran Invasión|Cueva de los Goblins|ESQUIVAR|pueblo es andino|gestos|golpe fuerte del combo|Hermandades abiertas|FASE 2|Furia|Corrientes de viento|corriente|tarjeta de botín|Libreta de pesca|Tirón perfecto|marca el camino|élite|Duende Ladr|📍|Pedir ayuda|cámara|faroles|Brillo de noche|respingo|retrato|Probar su|caja de misiones|TIRAR|ventanas automáticas|tiradores|Álbum|lbum de monstruos|Ayni|píldora|probar Mago|brillan en dorado|empieza con niebla|Prueba cualquier montura|💨|Debilidad|DÉBIL|medalla|revancha|capítulos|recetario|recetas ocultas|dedo fantasma|pasa algo con el Capitán|ranking semanal de la Cueva|bautiz|ATQ y DEF|destello|gritan|Remate|Invitar a mi grupo|Buen trabajo hoy|Listo por hoy|modo cine/i;
   return (nv.items || []).filter(x => !(solo3d.test(x) && !/CLASSIC/.test(x)))
     .filter(x => modoAnuncio() ? !SIN_CRIPTO_RE.test(x) : (!TG || !(/\bSOL\b/.test(x) || /wallet|solana|phantom|solflare/i.test(x))));
 }

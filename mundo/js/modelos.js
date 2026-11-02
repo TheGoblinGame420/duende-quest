@@ -19,7 +19,7 @@
 // piezas fijas de cada pivote se funden en una malla (fusionarRig): ~6-14 draw calls.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=358';
+import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=359';
 
 const PX_M = 34;                 // pixeles del 2D por metro
 const PI = Math.PI;
@@ -1317,7 +1317,7 @@ const CUERPOS = [
 ];
 // look = { cara 0-5, cuerpo 0-2, altura 0.9-1.12, pelo 0-7, colorPelo (indice) }
 // grado 0-3: equipo y forja que se ven (filo que brilla; en 3, aura en el suelo). colorGrado: color
-// de la rareza (grado 2-3). ligero: calidad baja, solo el filo, sin aura.
+// de la rareza (grado 2-3). ligero: calidad baja, aura del suelo mas chica.
 export function crearDuende({ skin = 'comun', clase = null, arma = 'katana', look = null, atuendo = '', grado = 0, colorGrado = null, ligero = false } = {}) {
   const sk = SKINS[skin] || SKINS.comun;
   const cl = clase && CLASES[clase] ? clase : null;
@@ -1385,7 +1385,7 @@ export function crearDuende({ skin = 'comun', clase = null, arma = 'katana', loo
   const G2 = gr ? { gr, cg } : {};
   if (cl && CLASES[cl].basico === 'vara') {
     const gb = baston(r, r.manoD, cl === 'sacerdote' ? '#fff3b0' : cc);
-    if (gr) M(gb, 'cil', mat(cg, { e: gr >= 3 ? 0.9 : gr >= 2 ? 0.7 : 0.4 }), [0, 0.92, 0], [0.05, 0.1, 0.05]).userData.sinFlash = true;   // anillo de grado bajo la punta
+    if (gr) M(gb, 'cil', mat(cg, { e: gr >= 3 ? 0.9 : gr >= 2 ? 0.7 : 0.4 }), [0, 0.92, 0], gr >= 3 ? [0.14, 0.09, 0.14] : [0.09, 0.09, 0.09]).userData.sinFlash = true;   // anillo de grado bajo la punta
   } else if (arma === 'dagas') {
     // Brillo segun la rareza del arma: dagas violeta, odachi blanco frio, chispa celeste.
     espada(r.manoD, { largo: 0.32, daga: true, guarda: ARMAS.dagas.color, filo: ARMAS.dagas.color, r, ...G2 });
@@ -1394,9 +1394,9 @@ export function crearDuende({ skin = 'comun', clase = null, arma = 'katana', loo
   } else if (arma === 'odachi') espada(r.manoD, { largo: 1.25, hoja: '#ffffff', guarda: '#2b2b2b', filo: '#cfe8ff', r, ...G2 });
   else if (arma === 'chispa') espada(r.manoD, { largo: 0.8, hoja: ARMAS.chispa.color, e: 0.9, guarda: '#1e3a5f', filo: ARMAS.chispa.color, r, ...G2 });
   else if (R0.hojaNeon) espada(r.manoD, { largo: 0.95, hoja: R0.hojaNeon, e: 0.9, guarda: '#ff3cf0', filo: R0.hojaNeon, r, ...G2 });
-  else espada(r.manoD, { largo: 0.75, guarda: ARMAS.katana.color, ...G2 });
+  else espada(r.manoD, Object.assign({ largo: 0.75, guarda: ARMAS.katana.color, ...G2 }, gr >= 2 ? { filo: cg, r } : {}));   // forja 2-3: funda que late (se ve en el celular)
   if (brilla) auraSuelo(r, sk.color, 0.55);
-  else if (gr >= 3 && !ligero) auraSuelo(r, cg, 0.45);   // equipo legendario o forja alta: aura en el suelo
+  else if (gr >= 3) auraSuelo(r, cg, ligero ? 0.4 : 0.45);   // equipo legendario o forja alta: aura en el suelo (tambien en calidad baja, mas chica)
   const m = new Modelo(r, 1.75 * lk.altura, 'd:' + JSON.stringify([skin, cl, arma, Object.assign({}, lk, { altura: 0 })]) + (gr ? '#g' + gr + cg + (ligero ? 'l' : '') : ''));
   m.tipo = 'duende';
   m.look = lk;

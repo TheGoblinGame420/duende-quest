@@ -14,6 +14,7 @@ export function crearSonidos({ ctx, puede, oyente }) {
   let bus = null, busCtx = null, ruidoBuf = null, voces = 0, ultR = 1;
   const ultimo = {};
   const MAX_VOCES = 6;
+  const PRIORIDAD = { amenaza: 1, no: 1, nivel: 1 };   // avisos que siempre se oyen aunque haya muchas voces
 
   function salida() {
     const c = ctx();
@@ -213,8 +214,9 @@ export function crearSonidos({ ctx, puede, oyente }) {
     if (!c || !rec || c.state === 'closed') return;
     if (c.state === 'suspended') c.resume().catch(() => {});
     const ahora = performance.now();
-    if (ahora - (ultimo[nombre] || 0) < (SEPARA[nombre] || 50)) return;
-    if (voces >= MAX_VOCES) return;
+    if (ahora - (ultimo[nombre] || 0) < (SEPARA[nombre] || 50) && !(nombre === 'tic_oro' && o.fin)) return;   // el tic final del oro no se pierde
+    if (nombre === 'tic_oro' && voces >= 4) return;   // los tics del oro dejan sitio a los avisos
+    if (voces >= MAX_VOCES && !PRIORIDAD[nombre]) return;
     let vol = o.vol == null ? 1 : o.vol, pan = 0;
     if (o.x != null) { const p = pos(o.x, o.z); if (!p) return; vol *= p.vol; pan = p.pan; }
     if (vol < 0.02) return;

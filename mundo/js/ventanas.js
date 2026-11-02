@@ -24,8 +24,8 @@ import {
   ORO_POR_USD, STAR_TIENDA_USD, PEN_POR_USD,
   temporadaDe, TEMPORADAS, TEMP_DIAS, premioDiaFiesta, esNochebuena, diaFiesta, diasFiesta,
   ESPECIES, MAPAS, MONSTRUOS, BESTIARIO_HITOS, premioBestiario, DEBIL_EMO,
-} from '/mmo/js/data.js?v=358';
-import { LORE_MONSTRUOS } from './lore.js?v=358';
+} from '/mmo/js/data.js?v=359';
+import { LORE_MONSTRUOS } from './lore.js?v=359';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -785,6 +785,8 @@ function htmlPremium(y) {
   // «desde ≈ S/ X»: el paquete visible más barato, en los mismos soles que muestra su tarjeta.
   const barato = lista.filter(p => p.usd > 0 && !(p.skin && (y.skins || []).includes(p.skin))).sort((a, b) => a.usd - b.usd)[0];
   if (barato) h = h.replace('<p class="vv-p" style="margin-bottom:4px">', `<p class="vv-p" style="margin:0 0 2px;font-size:13px;color:#fde68a">💎 Paquetes desde <b>${!cuentaTg && barato.pen && pagoLocalActivo() ? textoSoles(barato.pen) : cuentaTg || anuncio() ? '≈ ' + solesDeStars(estrellasDe(barato.usd)) : '≈ ' + precioLocal(barato.usd)}</b></p>$&`);
+  const rev = pedidoEnRevision(y);
+  if (rev) h = `<p class="vv-p" style="margin:0 0 8px;padding:8px 10px;border-radius:10px;border:1px solid #3ddc84;font-size:13px">📦 Pedido #${esc(rev.codigo)} en revisión (entrega manual)${rev.op4 ? ` · Op. ****${esc(rev.op4)}` : ''}</p>` + h;
   let grupo = '', abierta = false;
   for (const pq of lista) {
     const g = pq.id === est.foco ? '' : grupoPaquete(pq);
@@ -1200,7 +1202,37 @@ function constanciaYape(p) {
     let hh = '';
     try { hh = new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }); } catch (e) { hh = ''; }
     H.aviso('Recibido ✓ Pedido #' + p.codigo + ' · S/ ' + p.monto + (op ? ' · Yape op. ****' + op.slice(-4) : '') + (hh ? ' · ' + hh : '') + '. Haz captura: es tu constancia.', 'ok');
+    // Tarjeta fija (no se borra sola ni la tapa otro aviso): es la prueba de quien yapeo dinero real.
+    const vieja = document.getElementById('dq-constancia'); if (vieja) vieja.remove();
+    let fecha = '';
+    try { fecha = new Date().toLocaleString('es-PE', { timeZone: 'America/Lima', dateStyle: 'short', timeStyle: 'short' }); } catch (e) { fecha = hh; }
+    const op4 = op ? op.slice(-4) : '';
+    const c = document.createElement('div');
+    c.id = 'dq-constancia'; c.setAttribute('role', 'dialog'); c.setAttribute('aria-label', 'Constancia de pago');
+    c.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);top:calc(64px + env(safe-area-inset-top,0px) + var(--tg-top,0px));z-index:11;width:min(340px,calc(100vw - 32px));box-sizing:border-box;padding:12px 14px;border-radius:14px;background:rgba(14,9,30,.96);border:1px solid #3ddc84;color:#fff;font:600 14px/1.4 system-ui,sans-serif;text-align:left';
+    c.innerHTML = `<div style="font-size:15px;color:#3ddc84;margin-bottom:4px">✅ Recibimos tu Nº de operación · Pedido #${esc(p.codigo)}</div>`
+      + (p.nombre ? `<div>${esc(p.nombre)}</div>` : '')
+      + (p.monto != null && p.monto !== '' ? `<div>S/ ${esc(p.monto)}</div>` : '')
+      + (op4 ? `<div>Op. ****${esc(op4)}</div>` : '')
+      + (fecha ? `<div>${esc(fecha)}</div>` : '')
+      + '<div style="margin-top:6px;font-weight:500;font-size:13px">Estado: en revisión · El Duende lo entrega a mano (máx. 24 h, de 9:00 a 23:00 hora de Perú)</div>'
+      + '<button type="button" class="btn" style="margin-top:10px;width:100%;min-height:40px">Listo, ya hice captura</button>';
+    c.querySelector('button').addEventListener('click', () => c.remove());
+    document.body.appendChild(c);
+    try { localStorage.setItem('dq_pedido_rev', JSON.stringify({ codigo: p.codigo, nombre: p.nombre || '', monto: p.monto, op4, t: Date.now() })); } catch (e) {}
   } catch (e) {}
+}
+// «Pedido #X en revision» guardado al yapear: dura 72 h o hasta que el servidor lo marque entregado.
+function pedidoEnRevision(y) {
+  let g = null;
+  try { g = JSON.parse(localStorage.getItem('dq_pedido_rev') || 'null'); } catch (e) { g = null; }
+  if (!g || !g.codigo) return null;
+  const x = ((y && y.pedidos) || []).find(p => String(p.codigo) === String(g.codigo));
+  if (Date.now() - (g.t || 0) > 72 * 3600000 || (x && (x.estado === 'entregado' || x.estado === 'anulado'))) {
+    try { localStorage.removeItem('dq_pedido_rev'); } catch (e) {}
+    return null;
+  }
+  return g;
 }
 // Yape / Plin (PAGO_LOCAL): monto exacto en soles, #codigo en la nota y el
 // numero de operacion. NADA se entrega solo: El Duende lo revisa en su app.
@@ -1259,7 +1291,7 @@ const ACC = {
   // Reforjar (junto a la Artesana) pide un segundo toque: la linea nueva puede salir peor.
   reforjar: b => {
     if (!confirmar('reforjar:' + b.dataset.id)) { marcarSeguro(b); return; }
-    H.sfx('moneda', 0.3); H.mandar({ t: 'item', a: 'reforjar', id: b.dataset.id });
+    H.sfx('boton', 0.3); H.mandar({ t: 'item', a: 'reforjar', id: b.dataset.id });
   },
   vender: b => {
     const y = H.yo(), it = ((y && y.bolsa) || []).find(x => x.id === b.dataset.id);
@@ -1362,12 +1394,12 @@ const ACC = {
   // Expedicion
   exdest: b => { H.sfx('boton', 0.2); try { localStorage.setItem('dq_exped', b.dataset.id); } catch (e) {} pintarExped(); },
   exped: b => { H.sfx('boton', 0.4); H.mandar({ t: 'exped', h: +b.dataset.h, d: b.dataset.d }); },
-  exrec: b => { H.sfx('moneda', 0.5); H.mandar({ t: 'exped', recoger: 1 }); },
-  exrep: b => { H.sfx('moneda', 0.5); H.mandar({ t: 'exped', recoger: 1, repetir: 1 }); },   // el servidor la relanza con las mismas horas y destino
+  exrec: b => { H.sfx('boton', 0.3); H.mandar({ t: 'exped', recoger: 1 }); },
+  exrep: b => { H.sfx('boton', 0.3); H.mandar({ t: 'exped', recoger: 1, repetir: 1 }); },   // el servidor la relanza con las mismas horas y destino
   // Tienda de la fiesta: los de una vez piden doble toque (no se devuelven).
   ttemp: b => {
     if (b.dataset.una === '1' && !confirmar('tt' + b.dataset.id)) { marcarSeguro(b); return; }
-    H.sfx('moneda', 0.4); H.mandar({ t: 'tiendaTemp', id: b.dataset.id });
+    H.sfx('boton', 0.3); H.mandar({ t: 'tiendaTemp', id: b.dataset.id });
   },
 };
 function delegar(m) {

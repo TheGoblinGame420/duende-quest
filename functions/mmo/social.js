@@ -124,12 +124,23 @@ export const Social = {
     const no = t => (q ? undefined : this.no(s, t));
     if (!/^[a-z0-9]{6}$/.test(ref)) return;
     if (Date.now() - (s.unirRefT || 0) < 10000) return no('Espera unos segundos antes de volver a usar el enlace.');
+    // Freno por cuenta (no por sesion: recargar no lo salta).
+    if (!this._unirRefU) this._unirRefU = new Map();
+    if (Date.now() - (this._unirRefU.get(s.c.uid) || 0) < 10000) return no('Espera unos segundos antes de volver a usar el enlace.');
+    this._unirRefU.set(s.c.uid, Date.now());
+    if (this._unirRefU.size > 5000) { const lim = Date.now() - 60000; for (const [k, t] of this._unirRefU) if (t < lim) this._unirRefU.delete(k); }
     s.unirRefT = Date.now();
     const uid = await this.state.storage.get('ref:' + ref);
     if (!uid || s.cerrado) return;
     if (uid === s.c.uid) return no('Ese es tu propio enlace: compártelo con tus amigos.');
     const d = this.porUid.get(uid);
     if (!d || !d.c || d.cerrado) return no('Tu amigo no está conectado ahora. Pídele que entre y vuelve a tocar el enlace.');
+    // Solo vale si el dueño armo el enlace hace poco («📲 Invitar a mi grupo», 2 h y 6 usos);
+    // el codigo c.ref es publico (marcas de agua): sin esto cualquiera se metia a su grupo.
+    // Su propio invitado (llego por su ?ref=) siempre puede.
+    const esSuInvitado = s.c.invitadoPor === uid;
+    const gl = this._grupoLinkU && this._grupoLinkU.get(uid);   // mundo3d.js 'grupoLink' (por cuenta: sobrevive a reconexiones)
+    if (!esSuInvitado && !(gl && gl.hasta > Date.now() && gl.n < 6)) return no(`El enlace de grupo de ${d.c.nombre} ya no sirve: pídele uno nuevo desde «📲 Invitar a mi grupo».`);
     // Quien te ignora no te mete en su grupo (respuesta neutra); si tu lo ignoras, nada.
     if (meIgnora(s, uid)) return;
     if (meIgnora(d, s.c.uid)) return no(`${d.c.nombre} no acepta invitaciones tuyas.`);
@@ -141,11 +152,17 @@ export const Social = {
     const g = this.grupoDe(d);
     if (g && g.lider !== uid) return no(`${d.c.nombre} está en un grupo y no es el líder: pídele al líder que te invite.`);
     if (g && g.uids.length >= maxGrupo(g)) return no(`El grupo de ${d.c.nombre} ya está lleno.`);
+    const wi = g && g.inst && this.mundo[g.inst];
+    if (wi && wi.inst && wi.inst.k && !wi.inst.completada) return no('Ese grupo ya está dentro de un Desafío: pide al líder que te invite.');
     // Ya tiene esa misma invitacion (al llegar como invitado nuevo, amigos.js): no se repite la ventana.
     if (s.invitacion && s.invitacion.hasta > Date.now() && s.invitacion.de === uid) return;
+    if (!esSuInvitado && gl) gl.n++;
     s.invitacion = { de: uid, hasta: Date.now() + INVITACION_MS };
     this.enviar(s, { t: 'invitacion', de: d.c.nombre, nv: d.c.nivel, cl: d.c.clase || '', ms: INVITACION_MS });
-    this.enviar(d, { t: 'toast', m: `📲 ${s.c.nombre} entró con tu enlace: le llegó tu invitación de grupo.` });
+    if (Date.now() - (d.refToastT || 0) > 60000) {
+      d.refToastT = Date.now();
+      this.enviar(d, { t: 'toast', m: `📲 ${s.c.nombre} entró con tu enlace: le llegó tu invitación de grupo.` });
+    }
   },
 
   respuestaGrupo(s, m) {

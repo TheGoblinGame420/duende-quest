@@ -26,12 +26,12 @@
 <meta name="theme-color" content="#0a0418">
 <link rel="manifest" href="/mundo/manifest.json">
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
-<script src="/js/pwa.js?v=358" defer></script>
+<script src="/js/pwa.js?v=359" defer></script>
 <link rel="icon" href="/assets/ui/coin.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=358"></script>
+<script src="/js/origen.js?v=359"></script>
 <script>
 // Red de seguridad de la carga (script clasico: corre aunque el modulo 3D o el CDN fallen).
 // - Errores antes de conectar: se guardan en __errQ y mundo.js los manda al entrar.
@@ -117,29 +117,29 @@
   });
 })();
 </script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=358" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=359" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=358">
-<link rel="modulepreload" href="/mmo/js/data.js?v=358">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=358">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=358">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=358">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=358">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=358">
-<link rel="modulepreload" href="/mmo/js/regalo.js?v=358">
-<link rel="modulepreload" href="/mmo/js/avisotg.js?v=358">
-<link rel="modulepreload" href="/mundo/js/musica.js?v=358">
-<link rel="modulepreload" href="/mundo/js/sonidos.js?v=358">
-<link rel="modulepreload" href="/mundo/js/cueva.js?v=358">
-<link rel="modulepreload" href="/mundo/js/tapa.js?v=358">
-<link rel="modulepreload" href="/mundo/js/abismo.js?v=358">
-<link rel="modulepreload" href="/mundo/js/particulas.js?v=358">
-<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=358">
-<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=358">
-<link rel="modulepreload" href="/mmo/js/secundarias.js?v=358">
-<link rel="modulepreload" href="/mundo/js/lore.js?v=358">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=359">
+<link rel="modulepreload" href="/mmo/js/data.js?v=359">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=359">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=359">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=359">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=359">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=359">
+<link rel="modulepreload" href="/mmo/js/regalo.js?v=359">
+<link rel="modulepreload" href="/mmo/js/avisotg.js?v=359">
+<link rel="modulepreload" href="/mundo/js/musica.js?v=359">
+<link rel="modulepreload" href="/mundo/js/sonidos.js?v=359">
+<link rel="modulepreload" href="/mundo/js/cueva.js?v=359">
+<link rel="modulepreload" href="/mundo/js/tapa.js?v=359">
+<link rel="modulepreload" href="/mundo/js/abismo.js?v=359">
+<link rel="modulepreload" href="/mundo/js/particulas.js?v=359">
+<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=359">
+<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=359">
+<link rel="modulepreload" href="/mmo/js/secundarias.js?v=359">
+<link rel="modulepreload" href="/mundo/js/lore.js?v=359">
 <!-- Kit 3D de Kenney (mundo/js/kenney.js lo pide con fetch() sin opciones: mismo origen, cors, URL sin ?v=): se baja ya, junto a los modulos.
      El binario: .gz si hay DecompressionStream (como hace kenney.js), si no el normal; asi no se baja dos veces. -->
 <link rel="preload" href="/assets/3d/kenney.json" as="fetch" crossorigin>
@@ -186,7 +186,7 @@ body.movil .lbl .b{height:6px;border-radius:3px;}
 .hp i{background:linear-gradient(#4ade80,#16a34a);}
 .rc i{background:linear-gradient(#60a5fa,#2563eb);}
 .hpo i{background:linear-gradient(#ff5a6a,#b91c1c);}
-#oro{margin-top:6px;font:600 12px var(--sans);color:var(--oro);}
+#oro{margin-top:6px;font:600 12px var(--sans);color:var(--oro);transform-origin:left center;}
 #mini{right:12px;top:12px;padding:6px;}
 #misiones{right:12px;top:212px;padding:7px 9px;width:174px;font:600 11px var(--sans);pointer-events:auto;cursor:pointer;display:none;}
 #misiones b{display:block;color:#ffd84a;font-size:11px;margin-bottom:1px;}
@@ -925,8 +925,8 @@ body.cine #hud,body.cine .g3-e,body.cine #joy,body.cine #tactil,body.cine #marco
 <!-- Telegram: su SDK se carga arriba solo dentro de Telegram (window.__tgListo).
      defer: no frenan el HTML y corren en orden, antes que mundo.js (que usa supabase). -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=358" defer></script>
-<script type="module" src="/mundo/js/mundo.js?v=358"></script>
+<script src="/js/config.js?v=359" defer></script>
+<script type="module" src="/mundo/js/mundo.js?v=359"></script>
 <div id="flash-nv"></div>
 <div id="cartel-nv"></div>
 </body>

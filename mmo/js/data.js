@@ -516,9 +516,18 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 358;
+export const VERSION = 359;
 
 export const NOVEDADES = [
+  { n: 127, fecha: '2 nov 2026', items: [
+    'Tu enlace de «📲 Invitar a mi grupo» es solo tuyo: dura 2 horas, sirve para 6 amigos y cuenta a tu amigo como invitado.',
+    'La tarjeta para ponerle nombre a tu duende sale arriba, no tapa ATACAR y se esconde mientras peleas.',
+    'Tras la primera misión los avisos salen de uno en uno.',
+    'Al pagar con Yape o Plin sale una constancia fija para hacerle captura, y la tienda muestra «📦 Pedido en revisión» hasta la entrega.',
+    'Los Términos explican la entrega a mano; si no recibes tu compra en 24 horas puedes pedir la devolución.',
+    'Tu arma forjada o legendaria brilla también en el celular. CLASSIC muestra ATQ, DEF y vida ganados al subir de nivel.',
+    'El oro de la caza ya no se llena de tics, y los avisos de peligro siempre se escuchan.',
+  ] },
   { n: 126, fecha: '2 nov 2026', items: [
     'Tras tu primera misión puedes bautizar a tu duende con un toque: elige un nombre sugerido o escribe el tuyo.',
     'Al subir de nivel ves cuánto ATQ y DEF ganaste, y equipar una pieza mejor da un destello del color de su rareza. Tu equipo brilla en tu duende según su rareza y forja.',

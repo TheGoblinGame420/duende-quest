@@ -43,13 +43,13 @@
   }
   // start_param / startapp de la Mini App (t.me/duendequest_bot/jugar?startapp=...):
   //   ad_<campaña> → anuncio que llega por Telegram (s: tg_ad, c: campaña), sin invitacion
-  //   mmo_<cod> / m3d_<cod> → invitacion de un amigo (ref: cod)
+  //   mmo_<cod> / m3d_<cod> / g_<cod> (Invitar a mi grupo) → invitacion de un amigo (ref: cod)
   //   <cod> de 6 → invitacion (enlaces viejos); 'premium' y lo demas no cuentan.
   function deSp(sp) {
     if (!sp || sp === 'premium') return null;
     var m = /^ad_([a-z0-9_]{1,40})$/.exec(sp);
     if (m) return { s: 'tg_ad', c: m[1], ref: '' };
-    m = /^(?:mmo_|m3d_)?([a-z0-9]{6})$/.exec(sp);
+    m = /^(?:mmo_|m3d_|g_)?([a-z0-9]{6})$/.exec(sp);
     return m ? { s: '', c: '', ref: m[1] } : null;
   }
   // Captura (solo si no hay uno vigente: el primer toque manda).
@@ -108,7 +108,7 @@
     var okM = window.dqMedirOk();
     if (!enTg && okM !== 0 && (okM === 1 || (origen && (origen.o === 'meta' || origen.fr)))) {
       var sm = document.createElement('script');
-      sm.src = '/js/medir.js?v=358'; sm.async = true;
+      sm.src = '/js/medir.js?v=359'; sm.async = true;
       (document.head || document.documentElement).appendChild(sm);
     }
   } catch (e) {}
