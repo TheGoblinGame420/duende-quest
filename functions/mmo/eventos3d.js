@@ -15,7 +15,7 @@
 // Lo decide el servidor; nada de esto da mTON.
 // ═══════════════════════════════════════════════════════
 import { MAPAS, MONSTRUOS, RAREZAS, statsMonstruo, xpParaSubir, nombreItem, MISIONES, AFIJOS } from '../../mmo/js/data.js';
-import { zonaEn, cofres3d, COFRE3D_DIST, alturaEn, MUNDO } from '../../mmo/js/mundo3d.js';
+import { zonaEn, cofres3d, COFRE3D_DIST, alturaEn, MUNDO, ARENA3D } from '../../mmo/js/mundo3d.js';
 import { COFRE_TIPOS, COFRE_CADA_MS, cuentaCofreDia, AVISO_COFRES_DIA } from './eventos.js';
 // Los cofres del 3D estan escondidos (hay que explorar y, el legendario, volar
 // hasta lo alto): pagan mas que los del 2D y el legendario siempre trae equipo.
@@ -59,9 +59,12 @@ export const Eventos3D = {
   puntoCerca3d(s, zona) {
     for (let i = 0; i < 20; i++) {
       const a = Math.random() * Math.PI * 2, d = rnd(18, 30), x = s.p.x + Math.cos(a) * d, z = s.p.z + Math.sin(a) * d;
+      if (Math.hypot(x - ARENA3D.x, z - ARENA3D.z) < ARENA3D.r + 15) continue;   // nunca junto a la arena del jefe mundial (novatos)
       if (zonaEn(x, z) === zona && alturaEn(x, z) > MUNDO.agua + 0.5) return { x, z };
     }
-    return { x: s.p.x + 10, z: s.p.z };
+    const x = s.p.x + 10, z = s.p.z;
+    if (Math.hypot(x - ARENA3D.x, z - ARENA3D.z) < ARENA3D.r + 15) return null;   // quien llama decide (el raro no sale)
+    return { x, z };
   },
 
   tickEventos3d(ahora, jugadores) {
@@ -153,6 +156,7 @@ export const Eventos3D = {
     const W = this.iniciar3d(), mp = MAPAS[zona];
     const k = azar(mp.monstruos), nom = azar(NOMBRES), ti = azar(TINTES);
     const p = cerca ? this.puntoCerca3d(cerca, zona) : { x: 0, z: 0 };
+    if (!p) return null;   // junto al Claro del Titán: este minuto no hay raro
     // Nivel a la medida de quien lo encuentra (su nivel +2, dentro del rango de la zona): el novato no muere por el "raro seguro".
     const nvR = Math.max(mp.nv[0], Math.min(mp.nv[1], ((cerca && cerca.c && cerca.c.nivel) || mp.nv[0]) + 2));
     // Afijo visible: furioso (pega +50 % bajo el 30 % de vida) o sanguinario (se cura al caer sus esbirros).
@@ -242,6 +246,7 @@ export const Eventos3D = {
   },
   crearLadron3d(zona, cerca, ahora) {
     const mp = MAPAS[zona], k = azar(mp.monstruos), p = this.puntoCerca3d(cerca, zona);
+    if (!p) return null;
     const nv = clamp((cerca.c && cerca.c.nivel) || mp.nv[0], mp.nv[0], mp.nv[1]);
     const o = this.crearEspecial3d(k, p.x, p.z, { zona, nv, hpX: 2, atkX: 0, ex: { ladron: 1, nom: 'Duende Ladrón', ti: LADRON_TINTE, pagos: {} }, expira: ahora + LADRON_VIDA_MS });
     o.dormido = true; o.dispara = false; o.atk = 0;   // ia3d no lo mueve ni pega: solo huye (huirLadron3d)
@@ -331,6 +336,7 @@ export const Eventos3D = {
     const nv = clamp(Math.round(jug.reduce((a, s) => a + s.c.nivel, 0) / jug.length), mp.nv[0], mp.nv[1]);
     for (let i = Math.min(tope - vivos, 2 + Math.floor(Math.random() * 2)); i > 0; i--) {
       const p = this.puntoCerca3d(azar(jug), ev.zona);
+      if (!p) continue;
       this.crearEspecial3d(azar(mp.monstruos), p.x, p.z, { zona: ev.zona, nv, hpX: 1.4, agresivo: true, ex: { ev: ev.id } });
     }
   },
@@ -341,7 +347,7 @@ export const Eventos3D = {
     // o por un Dolor tras morir): en el campamento de la zona mas cercano al
     // pueblo (no en el del jefe). Antes salia en (0, 0), en medio del pueblo.
     const cp = jug.length ? null : this.iniciar3d().campos.find(c => c.zona === ev.zona && !c.jefe);
-    const p = jug.length ? this.puntoCerca3d(azar(jug), ev.zona) : cp ? { x: cp.x, z: cp.z } : { x: 0, z: 0 };
+    const p = (jug.length && this.puntoCerca3d(azar(jug), ev.zona)) || (cp ? { x: cp.x, z: cp.z } : { x: 0, z: 0 });
     // Defensa HEROICA (oculta): meta cumplida con mas de 2:30 restantes en una invasion normal.
     // El Capitan llega furioso (+30 % de vida) y la plata/oro sube un grado de rareza.
     const heroica = !ev.gran && ev.fin - Date.now() > 150000;

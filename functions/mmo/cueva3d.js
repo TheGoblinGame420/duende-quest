@@ -33,6 +33,7 @@ export const Cueva3D = {
 
   entrarCueva(s) {
     if (s.i3 || s.muerto) return;
+    if ((s.c.nivel || 1) < 5) return this.no(s, 'La Cueva de los Goblins se abre a Nv 5.');
     if (Date.now() - (s.cuevaT || 0) < 3000) return this.no(s, 'Espera un momento.');   // entrar/salir en bucle avisaba a todo el 3D
     if (Math.hypot(s.p.x - PORTAL_PUEBLO.x, s.p.z - PORTAL_PUEBLO.z) > 9) return this.no(s, 'Ve al portal del pueblo.');
     if (Date.now() - (s.combateT || 0) < 5000) return this.no(s, 'No puedes entrar en pleno combate.');
@@ -53,7 +54,8 @@ export const Cueva3D = {
       if (cuevas.size >= 40) return this.no(s, 'Las cuevas están llenas: prueba en un momento.');
       s.c.cuevaCreadaT = ahora;
       const del = g ? this.sesionesGrupo(g) : [s];
-      inst = this.crearCueva(clave, nivelCueva(Math.max(...del.map(x => x.c.nivel))), del.length);
+      const nvs = del.filter(x => x === s || (x.m3 && (x.c.nivel || 1) >= 5)).map(x => x.c.nivel || 1);   // solo cuentan los que pueden entrar (3D y Nv 5+); nivel del mas alto, pero sin pasar de 10 sobre el mas bajo (el novato invitado puede pelear)
+      inst = this.crearCueva(clave, nivelCueva(Math.min(Math.max(...nvs), Math.min(...nvs) + 10)), del.length);
     }
     if (this.dentroCueva(inst).length >= CUEVA.max) return this.no(s, 'La cueva de tu grupo ya está llena.');
     this.desmontar(s);
@@ -192,15 +194,21 @@ export const Cueva3D = {
     // Cronometro: segundos desde que se abrio la instancia (el record solo cuenta si la cueva da premio completo de nivel).
     const seg = Math.max(1, Math.round((Date.now() - inst.creada) / 1000));
     const mmss = v => Math.floor(v / 60) + ':' + String(v % 60).padStart(2, '0');
-    for (const s of this.dentroCueva(inst)) {
+    // Cobran los de dentro y tambien quien peleo y cayo (revivio en el pueblo): el novato invitado no se queda sin nada.
+    const ids = new Set([...this.dentroCueva(inst).map(x => x.id), ...o.dano.keys(), ...o.amen.keys()]);
+    const lista = [];
+    for (const id of ids) { const x = this.sesiones.get(id); if (x && x.c && !x.cerrado && x.m3 && !lista.includes(x)) lista.push(x); }
+    for (const s of lista) {
       const c = s.c;
-      const peleo = o.dano.has(s.id) || o.amen.has(s.id);
-      if (!peleo || s.muerto) { this.enviar(s, { t: 'toast', m: 'Para el cofre hay que pelear contra el Rey (y seguir vivo).' }); continue; }
+      const dano = o.dano.get(s.id) || 0;
+      const peleo = dano >= o.max * 0.03 || o.amen.has(s.id);
+      if (!peleo || (s.muerto && !(dano > 0))) { this.enviar(s, { t: 'toast', m: 'Para el cofre hay que pelear contra el Rey.' }); continue; }
       const hoy = hoyUTC();
       if (!c.cuevaDia || c.cuevaDia.d !== hoy) c.cuevaDia = { d: hoy, n: 0 };
       const completo = c.cuevaDia.n++ < 3, nvOk = inst.nv >= c.nivel - 10;
       const xp = Math.round(xpParaSubir(c.nivel) * (completo && nvOk ? 0.3 : 0.05));
-      const oro = (completo ? 50 : 10) * inst.nv;
+      const nvPago = Math.min(inst.nv, (c.nivel || 1) + 10);   // el oro va segun su nivel: un Nv 5 en la cueva de un Nv 30 no cobra como Nv 30
+      const oro = (completo ? 50 : 10) * nvPago;
       c.oro += oro;
       if (nvOk) c.mazmorras = (c.mazmorras || 0) + 1;
       c.alas = c.alas || ['aprendiz'];
@@ -211,7 +219,7 @@ export const Cueva3D = {
       const it = completo && nvOk ? this.darItem(s, this.nuevoItem(c.nivel, 2)) : null;
       // Primera conquista (hito de Nv 5): una pieza epica extra a su nivel; no gasta ninguno de los 3 cofres del dia.
       let itP = null;
-      if (!c.cuevaHecha) { c.cuevaHecha = 1; if (!c.cuevaRecord) itP = this.darItem(s, this.nuevoItem(c.nivel, 2)); }   // quien ya tenia record la conquisto antes: solo se marca
+      if (!c.cuevaHecha && (c.nivel || 1) >= 5 && nvOk) { c.cuevaHecha = 1; if (!c.cuevaRecord) itP = this.darItem(s, this.nuevoItem(c.nivel, 2)); }   // quien ya tenia record la conquisto antes: solo se marca
       this.sumarXp(s, xp);
       if (nvOk) this.progresoTarea && this.progresoTarea(s, 'mazmorra');
       if (nvOk && this.puntoGesta) this.puntoGesta(s, 'mazmorra');   // la cueva 3D tambien suma a la gesta de la hermandad

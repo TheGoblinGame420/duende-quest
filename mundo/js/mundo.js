@@ -14,28 +14,28 @@
 import * as THREE from 'three';
 import { esNocheDuendes, TEMPORADAS, temporadaDe, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=360';
-import { iniciarVentanas, talentoPreElegido, TAL_PRE_NIVEL } from './ventanas.js?v=360';
-import { TALENTOS, TALENTO_NIVEL } from '/mmo/js/data.js?v=360';   // meta del talento elegido a Nv 7 en la barra de XP
-import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel, DEBIL_EMO, statsJugador } from '/mmo/js/data.js?v=360';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
-import { diaFiesta, diasFiesta, TEMP_DIAS, premioDiaFiesta, esNochebuena } from '/mmo/js/data.js?v=360';   // tarea del dia de la fiesta en la caja de misiones
-import { iniciarRegalo } from '/mmo/js/regalo.js?v=360';
-import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=360';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=360';
-import { crearMusica } from './musica.js?v=360';
-import { crearSonidos } from './sonidos.js?v=360';
-import { construirCueva } from './cueva.js?v=360';
-import { TAPA, transparentar } from './tapa.js?v=360';
-import { construirAbismo } from './abismo.js?v=360';
-import { crearParticulas } from './particulas.js?v=360';
-import { cargarKenney, piezasCasa } from './kenney.js?v=360';
-import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=360';
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=361';
+import { iniciarVentanas, talentoPreElegido, TAL_PRE_NIVEL } from './ventanas.js?v=361';
+import { TALENTOS, TALENTO_NIVEL } from '/mmo/js/data.js?v=361';   // meta del talento elegido a Nv 7 en la barra de XP
+import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel, DEBIL_EMO, statsJugador } from '/mmo/js/data.js?v=361';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
+import { diaFiesta, diasFiesta, TEMP_DIAS, premioDiaFiesta, esNochebuena } from '/mmo/js/data.js?v=361';   // tarea del dia de la fiesta en la caja de misiones
+import { iniciarRegalo } from '/mmo/js/regalo.js?v=361';
+import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=361';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=361';
+import { crearMusica } from './musica.js?v=361';
+import { crearSonidos } from './sonidos.js?v=361';
+import { construirCueva } from './cueva.js?v=361';
+import { TAPA, transparentar } from './tapa.js?v=361';
+import { construirAbismo } from './abismo.js?v=361';
+import { crearParticulas } from './particulas.js?v=361';
+import { cargarKenney, piezasCasa } from './kenney.js?v=361';
+import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=361';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=360';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, esNoche, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=360';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=360';
-import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=360';
-import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe } from './lore.js?v=360';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=361';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, esNoche, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=361';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=361';
+import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=361';
+import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe } from './lore.js?v=361';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1821,11 +1821,12 @@ async function conectar() {
   finally { conectando = false; }
   if (ws && ws.readyState <= 1) return;
   const este = ws = new WebSocket(urlWs());
-  este.onopen = () => { if (ws !== este) return; conectado = true; ultimoMsgT = performance.now(); mandar({ t: 'hola', ...hola, modo: '3d', ref: ref3, iab: esIAB ? 1 : undefined, src: window.dqOrigen ? window.dqOrigen().src : 'org', camp: window.dqOrigen ? window.dqOrigen().camp || undefined : undefined, ad: window.dqOrigen ? window.dqOrigen().ad || undefined : undefined, med: window.dqOrigen ? window.dqOrigen().med : undefined, fbc: window.dqOrigen ? window.dqOrigen().fbc : undefined, dev: huellaDev() }); };
-  este.onmessage = ev => { if (ws !== este) return; ultimoMsgT = performance.now(); rxN++; let m; try { m = JSON.parse(ev.data); } catch (e) { return; } if (!arteListo && m.t !== 'err' && m.t !== 'heredar') { colaArte.push(m); return; } recibir(m); };
+  este.onopen = () => { if (ws !== este) return; conectado = true; ultimoMsgT = performance.now(); if (puntoSenal) puntoSenal.title = 'Midiendo tu señal…';mandar({ t: 'hola', ...hola, modo: '3d', ref: ref3, iab: esIAB ? 1 : undefined, src: window.dqOrigen ? window.dqOrigen().src : 'org', camp: window.dqOrigen ? window.dqOrigen().camp || undefined : undefined, ad: window.dqOrigen ? window.dqOrigen().ad || undefined : undefined, med: window.dqOrigen ? window.dqOrigen().med : undefined, fbc: window.dqOrigen ? window.dqOrigen().fbc : undefined, dev: huellaDev() }); };
+  este.onmessage = ev => { if (ws !== este) return; ultimoMsgT = performance.now(); rxN++; let m; try { m = JSON.parse(ev.data); } catch (e) { return; } if (m.t === 'pong') { recibir(m); return; } if (!arteListo && m.t !== 'err' && m.t !== 'heredar') { colaArte.push(m); return; } recibir(m); };
   este.onclose = ev => {
     if (ws !== este) return;   // un socket viejo que el vigilante ya cambio por otro: no toca nada
     conectado = false;
+    rttMs = null; if (puntoSenal) { puntoSenal.style.backgroundColor = '#888'; puntoSenal.title = 'Sin conexión'; }
     if (fatal || pausaHeredar) return;
     // 1012: el servidor se esta reiniciando (version nueva): no es un fallo del jugador.
     if (ev && ev.code === 1012) aviso('Actualizando el mundo…');
@@ -1975,7 +1976,7 @@ if (canalJuego) canalJuego.onmessage = ev => {
   error('Tu duende se abrió en otra pestaña. Juega allí o pulsa «Jugar aquí».', false, { dup: true });
 };
 // Señal (ping): cada 5 s solo con la pestaña a la vista; el rtt suavizado va en el
-// propio ping y pinta un punto junto a la vida (verde <150, amarillo <=350, rojo).
+// propio ping y pinta un punto junto a la vida (verde <250, amarillo <=600, rojo).
 let rttMs = null, puntoSenal = null;
 function mandarPing() { mandar({ t: 'ping', ts: Date.now(), rtt: Math.round(rttMs || 0) }); }
 function pintarSenal() {
@@ -1987,12 +1988,12 @@ function pintarSenal() {
       puntoSenal.id = 'senal3';
       puntoSenal.setAttribute('role', 'button');
       puntoSenal.style.cssText = 'position:absolute;top:-7px;right:-7px;width:9px;height:9px;padding:6px;box-sizing:content-box;background-clip:content-box;border-radius:50%;box-shadow:inset 0 0 0 6px transparent;background-color:#888;cursor:pointer;z-index:2;';
-      puntoSenal.onclick = ev => { ev.stopPropagation(); aviso(rttMs == null ? 'Midiendo tu señal…' : 'Tu señal: ' + Math.round(rttMs) + ' ms. Con mejor señal tus golpes llegan antes.'); };
+      puntoSenal.onclick = ev => { ev.stopPropagation(); aviso(!conectado ? 'Sin conexión: reconectando…' : rttMs == null ? 'Midiendo tu señal…' : 'Tu señal: ' + Math.round(rttMs) + ' ms. Con mejor señal tus golpes llegan antes.'); };
       if (getComputedStyle(marco).position === 'static') marco.style.position = 'relative';
       marco.appendChild(puntoSenal);
     }
     if (rttMs == null) return;
-    puntoSenal.style.backgroundColor = rttMs < 150 ? '#3ddc5a' : rttMs <= 350 ? '#f2c230' : '#ff4a4a';
+    puntoSenal.style.backgroundColor = rttMs < 250 ? '#3ddc5a' : rttMs <= 600 ? '#f2c230' : '#ff4a4a';
     puntoSenal.title = 'Señal: ' + Math.round(rttMs) + ' ms';
   } catch (e) {}
 }
@@ -2004,7 +2005,7 @@ function recibir(m) {
   switch (m.t) {
     case 'pong': {
       const d = Date.now() - (+m.ts || 0);
-      if (m.ts && d >= 0 && d < 30000) { rttMs = rttMs == null ? d : 0.7 * rttMs + 0.3 * d; pintarSenal(); }
+      if (m.ts && d >= 0 && d <= 3000) { rttMs = rttMs == null ? d : 0.7 * rttMs + 0.3 * d; pintarSenal(); }
       return;
     }
     case 'bienvenido':
@@ -2054,7 +2055,7 @@ function recibir(m) {
       break;
     case 'yo': {
       const antes = yo; yo = m.yo; pintarTemp3(); puntoTienda(); puntoMochila();
-      if (esIAB) franjaIAB();   // tras la primera victoria: pasar el duende a Chrome/Safari
+      if (esIAB) franjaIAB();   // tras la primera mision: pasar el duende a Chrome/Safari
       // Enlace de grupo (refGrupo3): una sola vez, ya con clase; se limpia el #g= de la barra.
       if (refGrupo3 && yo.clase) {
         const rg = refGrupo3; refGrupo3 = '';
@@ -2070,7 +2071,7 @@ function recibir(m) {
       // Termino la mision 1: ofrecer probar otra clase (sale sola si ya la vio o esta en pantalla).
       if (antes && antes.mis && antes.mis.i === 0 && yo.mis && yo.mis.i >= 1) setTimeout(ofrecerClases, 4000);
       // principiante: al completar la 3.a mision tambien sale «Listo por hoy» (una vez al dia de Lima)
-      if (antes && antes.mis && yo.mis && antes.mis.i < 3 && yo.mis.i >= 3) { clearTimeout(tarjetaNoche3.t); tarjetaNoche3.t = setTimeout(tarjetaNoche3, 4000); }
+      if (antes && antes.mis && yo.mis && antes.mis.i < 4 && yo.mis.i >= 4) { clearTimeout(tarjetaNoche3.t); tarjetaNoche3.t = setTimeout(tarjetaNoche3, 4000); }
       // Embudo de las primeras misiones (una vez por sesion): mis_0 al entrar de novato, el resto al llegar a cada una.
       if (yo.mis && yo.mis.i <= 5 && (antes ? antes.mis && yo.mis.i !== antes.mis.i : yo.mis.i === 0)) paso('mis_' + yo.mis.i);
       if (antes && antes.nivel < 60 && yo.nivel >= 60) { aviso('🏆 ' + LORE_NIVEL60, 'ok'); setTimeout(() => aviso('🥤 Toca la barra morada de la chicha para reclamar tus 2 litros.', 'ok'), 5000); }
@@ -2290,6 +2291,8 @@ function recibir(m) {
       }
     } break;
     case 'toast': if (m.ofreceGrupo) { ofertaGrupo(m); break; }
+      // Bono del día/semana y cofre semanal: el texto se guarda y se muestra al abrir el cofre (no estropea la sorpresa).
+      if (/^(Semana|Día) completo\. Bono:|^📦 Cofre semanal \d\/3 abierto/.test(m.m || '')) { cofreSemTxt = (m.m || '').replace(/^📦 /, ''); clearTimeout(cofreSemTxtT); cofreSemTxtT =setTimeout(() => { if (cofreSemTxt) { aviso(cofreSemTxt, 'ok'); cofreSemTxt = ''; } }, 3000); break; }
       // Nombre aceptado (Ajustes o bautizo): la tarjeta de bautizo se cierra al momento, aunque la red tarde.
       if (m.miNombre) { paso('nombre_puesto'); try { localStorage.setItem('dq_bautizo_visto', '1'); } catch (e) {} const tb = $('tarjeta-bautizo'); if (tb) tb.remove(); }
       // Cuenta regresiva de Año Nuevo: cada numero reemplaza al anterior y nunca se encola (saldria tarde).
@@ -4776,7 +4779,7 @@ function tarjetaBautizo(n) {
   // «Luego» la aplaza hasta otro dia (20 h); la segunda vez si queda descartada.
   let L = {}; try { L = JSON.parse(localStorage.getItem('dq_bautizo_luego') || '{}') || {}; } catch (e) {}
   if (L.t && Date.now() - L.t < 20 * 3600000) return;
-  const ocupado = hayVentana() || enCombate3() || yo.muerto || $('probar-clase') || $('v-diario').classList.contains('on') || !!document.querySelector('#tira-diario.on') || ($('npc-dice') && $('npc-dice').classList.contains('on')) || (Date.now() - ventanaAutoT < 45000);
+  const ocupado = hayVentana() || enCombate3() || yo.muerto || $('probar-clase') || $('v-diario').classList.contains('on') || !!document.querySelector('#tira-diario.on') || ($('npc-dice') && $('npc-dice').classList.contains('on')) || (Date.now() - ventanaAutoT < 45000) || !!$('dq-noche');
   if (ocupado) { if (n < 40) setTimeout(() => tarjetaBautizo(n + 1), 5000); return; }
   const marcar = () => { try { localStorage.setItem('dq_bautizo_visto', '1'); } catch (e) {} };
   const PRE = ['Pacha', 'Inti', 'Wayra', 'Kusi', 'Killa', 'Sumaq', 'Tika', 'Yaku', 'Rumi', 'Illa'];
@@ -4840,7 +4843,7 @@ function tarjetaBautizo(n) {
   inN.addEventListener('keyup', e => e.stopPropagation());
   pintar();
   document.body.appendChild(d);
-  ventanaAutoT = Date.now();   // las demas ventanas automaticas esperan su turno
+  ventanaAutoT = Date.now(); autoN++;   // las demas ventanas automaticas esperan su turno
   // En pelea (o recien golpeado) se esconde para no estorbar; vuelve sola al calmarse.
   vig = setInterval(() => {
     if (!d.isConnected) return clearInterval(vig);
@@ -4861,16 +4864,24 @@ function irACrearCuenta() {
 }
 // Cupo global de ventanas que se abren solas (leyenda, aviso de invitado): no se apilan.
 let ventanaAutoT = 0;
+// Tope de tarjetas automaticas: tras 3, las de menos prioridad esperan a Nv 6 y a 15 min de juego (quedan para otra sesion).
+let autoN = 0; const t0Auto = Date.now(); function cupoAuto() { return !(autoN >= 3 && ((yo && (yo.nivel || 1) < 6) || Date.now() - t0Auto < 15 * 60000)); }
+// Cargas del juego en este equipo (la primera sesion no ofrece instalar).
+let sesionesDQ = 0;
+try { sesionesDQ = (+localStorage.getItem('dq_sesiones') || 0) + 1; localStorage.setItem('dq_sesiones', String(sesionesDQ)); } catch (e) {}
 // En cada sesion (no cada reconexion): la historia es lo primero que se ve.
 function leyendaPrimeraVez() {
+  if (!cupoAuto()) return;
   try { if (sessionStorage.getItem('dq_leyenda')) return; } catch (e) { return; }
   // Movil: la ventana de la leyenda sale solo la primera vez (la barra morada de la chicha queda siempre a la vista).
   try { if (COMPACTO && localStorage.getItem('dq_leyenda_vista')) return; } catch (e) {}
   // Espera a que elija clase y a que vea (y cierre) el premio diario: comparten ventana.
   if (hayVentana() || hayLateral() || $('v-diario').classList.contains('on') || loginPend3 || !yo || !yo.clase || !!document.querySelector('#dq-avtg.on') || !!document.querySelector('#tira-diario.on') || !!$('probar-clase') || Date.now() - ventanaAutoT < 60000) { setTimeout(leyendaPrimeraVez, 3000); return; }
   try { sessionStorage.setItem('dq_leyenda', '1'); localStorage.setItem('dq_leyenda_vista', '1'); } catch (e) {}
-  ventanaAutoT = Date.now();
-  verLeyenda();
+  ventanaAutoT = Date.now(); autoN++;
+  // Celular: la historia en una burbuja de Tito (sin ventana que tape la pantalla).
+  if (COMPACTO) npcDice('Guardia Tito', ['El Rey Goblin rompió el Cántaro Eterno de la chicha. Recupera sus pedazos… y a Nv ' + CHICHA.nv60 + ' te llevas ' + CHICHA.litros60 + ' L de chicha morada de verdad (envíos solo en Perú).'], '🛡');
+  else verLeyenda();
 }
 let avisoInvT = 0;
 function avisoInvitado() {
@@ -4883,7 +4894,7 @@ function avisoInvitado() {
   clearTimeout(mostrarDiario.t); mostrarDiario.t = 0;
   const hoy = new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10);   // dia de Lima (UTC-5)
   try { if (localStorage.getItem('dq_aviso_inv') === hoy) return; localStorage.setItem('dq_aviso_inv', hoy); } catch (e) {}
-  ventanaAutoT = Date.now();
+  ventanaAutoT = Date.now(); autoN++;
   $('diario-c').innerHTML = `<button class="btn" id="inv-cuenta" style="width:100%;margin:6px 0 10px">📧 Crear cuenta gratis (guarda tu duende)</button>
     <p class="vv-p">Juegas como <b>invitado</b>: tu duende vive solo en este navegador. Para no perderlo:</p>
     <p class="vv-p">Guarda tu <b>código de rescate</b>: con él recuperas tu duende en otro navegador o celular (${K('⌂ Inicio', '⋯ → ? → Inicio')} → código de rescate).</p>
@@ -4901,6 +4912,7 @@ function avisoInvitado() {
 // Espera (hasta ~3 min) a que no haya ventana abierta; js/pwa.js decide si se puede instalar.
 function ofrecerInstalar(n) {
   n = n || 0;
+  if (!cupoAuto() || sesionesDQ < 2) return;   // ni con el cupo lleno ni en la primera sesion
   if (soyInvitado && /iphone|ipad|ipod/i.test(navigator.userAgent)) return;   // iOS: el icono guarda aparte y el invitado perderia su duende
   if (TG || !window.dqPuedeInstalar || !window.dqPuedeInstalar() || ofrecerInstalar.ya || $('franja-inst')) return;
   const hoy = new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10);   // dia de Lima (UTC-5)
@@ -4908,7 +4920,7 @@ function ofrecerInstalar(n) {
   // Una tarjeta automatica cada vez: espera a "probar clase", al bautizo y a que pasen ~45 s de la anterior (hasta ~3 min).
   if (hayVentana() || $('v-diario').classList.contains('on') || $('franja-iab') || !!$('probar-clase') || !!$('tarjeta-bautizo') || (Date.now() - ventanaAutoT < 45000)) { if (n < 40) setTimeout(() => ofrecerInstalar(n + 1), 5000); return; }
   ofrecerInstalar.ya = true;
-  ventanaAutoT = Date.now();
+  ventanaAutoT = Date.now(); autoN++;
   try { localStorage.setItem('dq_inst_ofrecido', hoy); } catch (e) {}
   const f = document.createElement('div');
   f.id = 'franja-inst';
@@ -4942,18 +4954,22 @@ function irANavegador() {
 }
 let franjaIABvista = false;
 function franjaIAB() {
-  if (franjaIABvista || !esIAB || !soyInvitado || !yo || !(yo.kills >= 1)) return;
+  if (franjaIABvista || !esIAB || !soyInvitado || !yo || !(yo.mis && yo.mis.i >= 1)) return;
+  if (!cupoAuto()) return;
+  // Una tarjeta automatica cada vez: se reintenta en el siguiente 'yo'.
+  if (Date.now() - ventanaAutoT < 45000 || $('probar-clase') || $('tarjeta-bautizo')) return;
   franjaIABvista = true;
   try { if (Date.now() - (+localStorage.getItem('dq_iab_no') || 0) < 3 * 86400000) return; } catch (e) {}
   const f = document.createElement('div');
   f.id = 'franja-iab';
   f.setAttribute('role', 'status');
   f.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);top:calc(64px + env(safe-area-inset-top));z-index:8;width:min(94vw,440px);display:flex;gap:8px;align-items:center;padding:8px 10px;border-radius:12px;background:rgba(20,12,44,.94);border:1px solid rgba(125,211,252,.5);color:#f2efff;font:600 12px/1.35 system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.45)';
-  f.innerHTML = '<span style="flex:1;min-width:0">¡Primera victoria! Aquí dentro de ' + (appIAB === 'Facebook' ? 'Facebook/Instagram' : appIAB) + ' tu duende se puede borrar. Llévalo a ' + (ANDROID_IAB ? 'Chrome' : 'Safari') + ' y juega más fluido.</span><button type="button" class="btn" style="min-height:40px;padding:7px 10px;font-size:12px;white-space:nowrap">' + (ANDROID_IAB ? 'Abrir en Chrome' : 'Cómo pasarlo') + '</button><button type="button" aria-label="Cerrar" style="flex:none;min-width:40px;min-height:40px;margin:-6px -6px -6px 0;background:none;border:0;color:#b8b0d8;font-size:20px;padding:0;cursor:pointer">×</button>';
+  f.innerHTML = '<span style="flex:1;min-width:0">¡Primera misión! Para no perder tu duende, juega en ' + (ANDROID_IAB ? 'Chrome' : 'Safari') + ': es más fluido.</span><button type="button" class="btn" style="min-height:40px;padding:7px 10px;font-size:12px;white-space:nowrap">' + (ANDROID_IAB ? 'Abrir en Chrome' : 'Cómo pasarlo') + '</button><button type="button" aria-label="Cerrar" style="flex:none;min-width:40px;min-height:40px;margin:-6px -6px -6px 0;background:none;border:0;color:#b8b0d8;font-size:20px;padding:0;cursor:pointer">×</button>';
   const [ir, x] = f.querySelectorAll('button');
   ir.onclick = () => irANavegador();
   x.onclick = () => { f.remove(); try { localStorage.setItem('dq_iab_no', String(Date.now())); } catch (e) {} };
   document.body.appendChild(f);
+  ventanaAutoT = Date.now(); autoN++;
   setTimeout(() => f.remove(), 25000);
 }
 // ── COFRES DEL TESORO (3 por zona; el legendario, en lo alto) ──
@@ -5059,9 +5075,11 @@ function hazBotin(color) {
 // 📦 Cofre del dia / semanal (bonoTareas y puntoSemana del servidor): tarjeta que se abre con un toque o sola a los 4 s.
 const SEMANA_COFRES3 = [4, 8, 12];   // mismos umbrales que functions/mmo/tareas.js
 const colaCofreSem = [];
+let cofreSemTxt = '', cofreSemTxtT = 0;   // texto del bono (toast del servidor) que se revela al abrir el cofre
 function cofreSem(m) {
   if (!m) return;
-  if (avisoTapado() || $('cofre-sem')) { if ($('cofre-sem')) colaCofreSem.push(m); else if (m.item && !m.item.vendido) botinFuerte(m.item); return; }
+  if (cofreSemTxt && m.txt === undefined) { m.txt = cofreSemTxt; cofreSemTxt = ''; clearTimeout(cofreSemTxtT); }   // el texto viaja con su cofre (aunque haga cola)
+  if (avisoTapado() || $('cofre-sem') || !m.item) { if ($('cofre-sem') && m.item) colaCofreSem.push(m); else { if (m.item && !m.item.vendido) botinFuerte(m.item); if (m.txt) aviso(m.txt, 'ok'); } return; }
   const t = document.createElement('button'); t.id = 'cofre-sem'; t.type = 'button';
   const ico = document.createElement('span'); ico.className = 'cs-ico'; ico.textContent = '📦';
   const tit = document.createElement('span'); tit.textContent = m.tipo === 'dia' ? 'Cofre del día' : (m.n ? 'Cofre semanal ' + m.n + '/3' : 'Cofre de la semana');
@@ -5075,9 +5093,20 @@ function cofreSem(m) {
     sub.textContent = '¡Abriendo!';
     if (!MENOS_MOV) t.classList.add('tiembla');
     setTimeout(() => {
-      t.remove();
-      if (m.item && !m.item.vendido) botinFuerte(m.item);   // vendido: bolsa llena, el toast ya lo dijo
-      const sig = colaCofreSem.shift(); if (sig) setTimeout(() => cofreSem(sig), 600);
+      // Revela qué salió (~1,2 s) antes de cerrar la tarjeta.
+      const it = m.item, rz = RAREZAS[it.r] || {};
+      const ex = /(\d+) escudos? y (\d+) pociones?/.exec(m.txt || '');
+      const esc2 = ex ? +ex[1] : (m.tipo === 'semana' && !m.n ? 5 : 2), poc = ex ? +ex[2] : (m.tipo === 'semana' && !m.n ? 10 : 5);
+      t.classList.remove('tiembla');
+      ico.textContent = '🎁';
+      tit.innerHTML = '<b style="color:' + esc(rz.color || '#ffd84a') + '">' + esc((rz.nombre ? rz.nombre + ': ' : '') + (it.nombre || nombreItem(it))) + '</b>';
+      sub.textContent = it.vendido ? '(bolsa llena: vendido) · +' + esc2 + ' 🛡️ · +' + poc + ' 🧪' : '+' + esc2 + ' escudos · +' + poc + ' pociones';
+      setTimeout(() => {
+        t.remove();
+        if (!it.vendido) botinFuerte(it);   // vendido: bolsa llena, la tarjeta ya lo dijo
+        if (m.txt) { aviso(m.txt, 'ok'); m.txt = ''; }
+        const sig = colaCofreSem.shift(); if (sig) setTimeout(() => cofreSem(sig), 600);
+      }, MENOS_MOV ? 600 : 1200);
     }, MENOS_MOV ? 120 : 400);
   };
   t.addEventListener('pointerdown', abrir);
@@ -5085,12 +5114,12 @@ function cofreSem(m) {
   tm = setTimeout(abrir, 4000);
 }
 function metaCofreSem(pts, cof) {
-  if (cof >= 3 || avisoTapado()) return;
+  if (cof >= 3 || avisoTapado() || $('dq-noche')) return;
   const meta = SEMANA_COFRES3[cof], base = cof ? SEMANA_COFRES3[cof - 1] : 0, falta = meta - pts;
   if (falta <= 0) return;
   let b = $('cofre-meta');
   if (!b) { b = document.createElement('div'); b.id = 'cofre-meta'; document.body.appendChild(b); }
-  b.textContent = '📦 ' + pts + '/' + meta + ' · ' + (falta === 1 ? '¡1 más y se abre!' : '¡' + falta + ' más y se abre!');
+  b.textContent = '📦 ' + pts + '/' + meta + ' · ' + (falta === 1 ? '¡1 misión diaria más y se abre!' : '¡' + falta + ' puntos más y se abre!');   // puntos, no misiones: el bono del dia suma +1 extra (tareas.js puntoSemana)
   const barra = document.createElement('span'); barra.className = 'cm-b';
   const relleno = document.createElement('i'); relleno.style.width = Math.max(0, Math.min(100, (pts - base) / (meta - base) * 100)) + '%';
   barra.appendChild(relleno); b.appendChild(barra);
@@ -5921,12 +5950,12 @@ function tarjetaNoche3(intento) {
   intento = intento || 0;
   let hoy = ''; try { hoy = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Lima' }).format(new Date()); } catch (e) { hoy = new Date(Date.now() - 5 * 3600e3).toISOString().slice(0, 10); }
   let ya = ''; try { ya = localStorage.getItem('dq3_noche') || ''; } catch (e) {}
-  if (ya === hoy || !yo || !yo.clase || modoAnuncio() || $('dq-noche')) return;
+  if (ya === hoy || !yo || !yo.clase || modoAnuncio() || $('dq-noche') || (yo.mis && (yo.mis.i || 0) < 4)) return;   // nunca antes de vencer al primer jefe (MISIONES[3]), venga de la caza del dia o de la cueva
   const ahora = performance.now();
   let ocupado = true;
   try {
     ocupado = jefeCerca() || camCombate || autoAtk || !!cineEst || !!loginPend3 || hayVentana() || hayLateral() || $('v-diario').classList.contains('on') || !!$('probar-clase')
-      || !!document.querySelector('#tira-diario.on,#dq-regalo.on,#dq-avtg.on') || (P && (P.muerto || ahora - (P.heridoT || 0) < 5000 || (objetivo && ahora - (P.atkT || 0) < 5000)));
+      || !!document.querySelector('#tira-diario.on,#dq-regalo.on,#dq-avtg.on') || !!document.querySelector('#tarjeta-bautizo,#franja-inst,#franja-iab,#tira-comunidad,#cofre-sem,#cofre-meta.on,#probar-clase') || (Date.now() - ventanaAutoT < 45000) || (P && (P.muerto || ahora - (P.heridoT || 0) < 5000 || (objetivo && ahora - (P.atkT || 0) < 5000)));
   } catch (e) { ocupado = true; }
   if (ocupado) { if (intento < 36) { clearTimeout(tarjetaNoche3.t); tarjetaNoche3.t = setTimeout(() => tarjetaNoche3(intento + 1), 5000); } return; }
   try { localStorage.setItem('dq3_noche', hoy); } catch (e) {}
@@ -5957,7 +5986,7 @@ function tarjetaNoche3(intento) {
   const f4 = soyInvitado ? fila('💾', 'Tu duende vive solo en este navegador.<br><button type="button" class="btn sec" data-noche="cuenta" style="margin-top:4px;padding:5px 10px;font-size:12px">Guardarlo gratis</button>'
     + (esIAB ? ' <button type="button" class="btn sec" data-noche="nav" style="margin-top:4px;padding:5px 10px;font-size:12px">' + (ANDROID_IAB ? 'Abrir en Chrome con mi duende' : 'Pasar a Safari con mi duende') + '</button>' : '')) : '';
   const t = document.createElement('div');
-  t.id = 'dq-noche'; t.setAttribute('role', 'dialog'); t.setAttribute('aria-label', 'Listo por hoy');
+  t.id = 'dq-noche'; ventanaAutoT = Date.now(); t.setAttribute('role', 'dialog'); t.setAttribute('aria-label', 'Listo por hoy');
   t.style.cssText = 'position:fixed;left:50%;top:calc(64px + env(safe-area-inset-top) + var(--tg-top,0px));transform:translateX(-50%);z-index:8;width:min(340px,calc(100vw - 32px));box-sizing:border-box;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,216,74,.55);background:rgba(20,14,34,.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 6px 20px rgba(0,0,0,.45);color:#fff;text-align:center;font-family:var(--sans);transition:opacity .3s ease;opacity:0';
   t.innerHTML = `<b style="display:block;font-size:15px;color:#ffd84a;margin-bottom:2px">🌙 ¡Buen trabajo hoy!</b>${f1}${f2}${f3}${f4}<button type="button" class="btn" data-noche="ok" style="width:100%;margin-top:6px">Seguir jugando</button>`;
   const cerrarN = () => { clearTimeout(t._t); clearInterval(t._i); t.style.opacity = 0; setTimeout(() => t.remove(), 320); };
@@ -7067,6 +7096,8 @@ function animarMon(o, t) {
     const y = Math.max(alturaEn(o.x, o.z), def.vuela ? alturaEn(o.x, o.z) + 1.2 : aguaEn(o.x) - 0.9);
     const dtR = Math.min(0.1, Math.max(0, (t - (o._tRy || t)) / 1000)); o._tRy = t;   // giro igual a 30 o 60 fps
     o.ryV = lerpAng(o.ryV === undefined ? o.ry : o.ryV, o.ry, 1 - Math.exp(-12 * dtR));
+    // Fuera del tope de figuras (topeMons): poner() deja solo la sombra-disco; sin mirada, cojera ni retroceso.
+    if (f._cerca === false) { f.poner(o.x, y, o.z, o.ryV, t, 1); return; }
     // Mira al jugador mientras te persigue (o en el respingo de alerta), solo de cerca.
     const kAl = o.alertaT ? (t - o.alertaT) / 180 : 1;
     mirarSuave(f, o, t, o.ryV, !o.muereT && !P.muerto && dP < 20 && (haciaMi || (o.st === 2 && dP < 5) || kAl < 1) ? P : null);
@@ -7835,6 +7866,7 @@ let proxCuadro = 0, ventanaAb = false, ventanaAntes = false;
 // Modo reposo: quieto, sin pelea ni habilidad y sin tocar nada en 4 s, se dibuja a 30 fps (20 en baja): menos bateria y calor.
 let reposo = false, reposoAntes = false, reposoT = 0, topeFigT = 0;
 const MAX_FIG = { baja: 8, media: 16, alta: 30 }[CAL] || 16;
+const MAX_MON = { baja: 10, media: 18, alta: 40 }[CAL] || 18;
 function calcReposo(t) {
   if (!yo || P.anda || autoAtk || lanzando || colaHab || t < gcdHasta || !P.suelo || P.vuela || P.planea) return false;
   if (t - Math.max(ultimoToqueT, movInputT) < 4000 || t - (P.heridoT || 0) < 5000 || t - (P.atkT || 0) < 4000) return false;
@@ -7851,6 +7883,23 @@ function topeFiguras() {
   for (const o of ls) o._d2 = (o.x - P.x) * (o.x - P.x) + (o.z - P.z) * (o.z - P.z);
   ls.sort((a, b) => a._d2 - b._d2);
   for (let i = 0; i < ls.length; i++) ls[i].fig._cerca = i < MAX_FIG;
+}
+// Igual con los monstruos: solo se dibujan y animan los MAX_MON mas cercanos (objetivo, mision, jefes y elites siempre).
+function topeMons() {
+  // Monstruo de mision: solo el vivo mas cercano (el del '❗'); los demas del mismo tipo entran por distancia.
+  let kMis = null; try { kMis = tipoMision(); } catch (e) {}
+  let misId = null, misD = 1e18;
+  if (kMis) for (const o of mons.values()) if (o.k === kMis && !o.muereT) { const d = (o.x - P.x) * (o.x - P.x) + (o.z - P.z) * (o.z - P.z); if (d < misD) { misD = d; misId = o.id; } }
+  const ls = [];
+  for (const o of mons.values()) if (o.fig && o.fig.tipo === 'modelo') {   // los sprites 2D no usan _cerca: no gastan cupo
+    const dj = MONSTRUOS[o.k];
+    if (o.id === objetivo || o.id === misId || o.j || o.mu || o.ra || (dj && (dj.jefe || dj.mundial || (dj.dispara && o.st === 2)))) o.fig._cerca = true;
+    else ls.push(o);
+  }
+  if (ls.length <= MAX_MON) { for (const o of ls) o.fig._cerca = true; return; }
+  for (const o of ls) o._d2 = (o.x - P.x) * (o.x - P.x) + (o.z - P.z) * (o.z - P.z);
+  ls.sort((a, b) => a._d2 - b._d2);
+  for (let i = 0; i < ls.length; i++) ls[i].fig._cerca = i < MAX_MON;
 }
 // Guarda de NaN: si la posicion o la camara se rompen, vuelven a la ultima buena (un aviso por sesion).
 const posOk = { x: 0, y: 0, z: 0, ok: false, cx: 0, cy: 0, cz: 0, cok: false, aviso: false };
@@ -7890,7 +7939,7 @@ function cuadroBucle(t) {
   if (!ventanaAb && !ventanaAntes && !reposo && !reposoAntes) resolucionDinamica(t - ultimoT);
   ventanaAntes = ventanaAb; reposoAntes = reposo;
   if (t - reposoT > 250) { reposoT = t; reposo = calcReposo(t); }
-  if (t - topeFigT > 500) { topeFigT = t; topeFiguras(); }
+  if (t - topeFigT > 500) { topeFigT = t; topeFiguras(); topeMons(); }
   const dt = Math.min(0.05, (t - ultimoT) / 1000); ultimoT = t;
   cuadro++;
   fisica(dt);

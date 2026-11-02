@@ -1365,9 +1365,14 @@ async function pruebasMundial3d() {
   chequear(pr % 1800000 === 900000, 'el jefe del 3D sale a las :15 y :45');
   const a = await entrar3d('Heroe3D', '4c1'); ponerNivel(a, 20, 'guerrero');
   const b = await entrar3d('Novato3D', '4c2'); ponerNivel(b, 3, 'mago');
+  // Sin raros, invasiones ni ladrones durante la prueba: un élite con esbirros agresivos
+  // junto a la arena podía herir a b y hacer fallar el pisotón al azar.
+  const te = mundo.tickEventos3d; mundo.tickEventos3d = () => {};
+  try {
   avanzar(pr - Date.now()); tick(1);
   const M = mundo.m3.mundial, o = M && M.o;
   chequear(o && o.mundial3, 'aparece a su hora');
+  for (const [id, x] of mundo.m3.mons) if (x.ex3 || x.agresivo) mundo.m3.mons.delete(id);
   chequear(a.ultimos('mundial3').some(x => x.vivo), 'avisa a los del 3D');
   for (const s of [a, b]) { s.p = { x: o.x + 2, z: o.z }; s.movBud = undefined; s.inv = 0; s.hp = s.st.maxHp; }
   a.atkT = 0; await a.mandar({ t: 'atk3', tg: o.id });
@@ -1379,16 +1384,22 @@ async function pruebasMundial3d() {
   for (let i = 0; i < 120 && !o.pisa; i++) tick(1);
   chequear(!!o.pisa && a.ultimos('zona3').length === 1, 'el pisotón se avisa en el suelo');
   chequear(o.nEsc === 2 && o.max === mundo.vidaMundial(2) && a.ultimos('mmx3').some(x => x.id === o.id && x.mx === o.max), 'si llega otro a pelear, su vida crece (' + o.max + ')');
-  a.hp = a.st.maxHp; const hpB = b.hp;
-  tick(26);
+  a.hp = a.st.maxHp;
+  // b herido y con golpe reciente: no regenera en los 2,6 s (corta a los 4 s), así cualquier daño se nota.
+  b.hp = b.st.maxHp - 10; b.golpeT = Date.now(); const hpB = b.hp;
+  chequear(Math.hypot(b.p.x - o.pisa.x, b.p.z - o.pisa.z) > 9 && Math.hypot(a.p.x - o.pisa.x, a.p.z - o.pisa.z) <= 9, 'el pisotón cae donde está su objetivo y b quedó fuera');
+  const herir0 = mundo.herir; let pisoB = false;
+  mundo.herir = function (s, ...r) { if (s === b && r[1] && r[1].zona) pisoB = true; return herir0.call(this, s, ...r); };
+  try { tick(26); } finally { mundo.herir = herir0; }
   chequear(a.hp <= a.st.maxHp * 0.75 && !a.muerto, 'quien se queda dentro del pisotón pierde ~30% (sin morir de golpe)');
-  chequear(b.hp === hpB, 'quien sale del círculo no recibe el pisotón');
+  chequear(!pisoB && b.hp === hpB, 'quien sale del círculo no recibe el pisotón');
   o.hp = 1; a.atkT = 0; a.hp = a.st.maxHp; a.p = { x: o.x + 2, z: o.z };
   await a.mandar({ t: 'atk3', tg: o.id });
   chequear(o.muere && !M.o, 'el jefe mundial cae');
   chequear(a.c.mundiales === 1 && b.c.mundiales === 1, 'premio de jefe mundial para todos los que pelearon');
   chequear(a.ultimos('mundial3').some(x => !x.vivo), 'avisa que ya no está');
   for (const s of [a, b]) await dejar(s);
+  } finally { mundo.tickEventos3d = te; }
 }
 
 // ── RETENCION Y AVISOS (functions/mmo/retencion.js) ──

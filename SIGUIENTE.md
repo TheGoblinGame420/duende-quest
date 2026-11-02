@@ -3615,3 +3615,17 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Cueva: épica de regalo en la primera conquista, avisos de fases, embudo medido.
 - Indicador de ping y envío de posición que no se atasca. Primer talento a Nv 7.
 - Arnés 907 bien (la prueba del pisotón sigue siendo aleatoria: falló 1 de 3 ejecuciones).
+
+### Ronda 30 (2-nov-2026, `?v=361`)
+
+- 10 evaluadores → 45 problemas → 10 tareas.
+- `tarjetaNoche3` solo tras el primer jefe (misión 4) y respetando otras tarjetas y `ventanaAutoT`.
+- Punto de señal: pong fuera de `colaArte`, muestras >3 s ignoradas, gris al cerrar, umbrales 250/600 ms, posición en móvil.
+- Tope de tarjetas automáticas (`cupoAuto`, `autoN`), franja IAB tras la misión 1, leyenda contada por Tito sin modal en móvil.
+- Cueva: cobra quien pegó aunque cayera, oro según nivel, apertura a Nv 5, nivel ≤ +10 del más bajo.
+- `grupoLink` persistido en storage (sobrevive a despliegues).
+- Anti-farmeo: Ayni por novatos distintos, gracias desde Nv 5 a quien ayudó, nocturnos solo de noche y no muy por debajo.
+- CLASSIC sin promesas de v360; fiesta día 2 alcanzable.
+- Tope de figuras de monstruos en gama baja. Cofre que revela el objeto con su rareza.
+- Prueba del jefe mundial estable y élites raros fuera del Claro del Titán.
+- Arnés 908 bien (2 de 3 ejecuciones limpias; la aleatoria «ningún tipo acapara la zona» de siempre).

@@ -139,7 +139,24 @@ export const Social = {
     // el codigo c.ref es publico (marcas de agua): sin esto cualquiera se metia a su grupo.
     // Su propio invitado (llego por su ?ref=) siempre puede.
     const esSuInvitado = s.c.invitadoPor === uid;
-    const gl = this._grupoLinkU && this._grupoLinkU.get(uid);   // mundo3d.js 'grupoLink' (por cuenta: sobrevive a reconexiones)
+    let gl = this._grupoLinkU && this._grupoLinkU.get(uid);   // mundo3d.js 'grupoLink' (por cuenta: sobrevive a reconexiones)
+    // Tras un despliegue el Map viene vacio: se recupera de storage (glink:uid).
+    if (!gl && !esSuInvitado) {
+      let g2 = null;
+      try { g2 = await this.state.storage.get('glink:' + uid); } catch (e) {}
+      if (s.cerrado || d.cerrado) return;
+      if (this._grupoLinkU && this._grupoLinkU.get(uid)) gl = this._grupoLinkU.get(uid);   // el dueño lo armo (o otro mensaje lo cargo) durante la espera
+      else if (g2 && typeof g2 === 'object') {
+        if (!this._grupoLinkU) this._grupoLinkU = new Map();
+        gl = this._grupoLinkU.get(uid) || g2;   // otro mensaje pudo cargarlo mientras se esperaba
+        this._grupoLinkU.set(uid, gl);
+      }
+    }
+    if (gl && !(gl.hasta > Date.now())) {   // caducado: fuera de memoria y de storage
+      if (this._grupoLinkU && this._grupoLinkU.get(uid) === gl) this._grupoLinkU.delete(uid);
+      try { this.state.storage.delete('glink:' + uid); } catch (e) {}
+      gl = null;
+    }
     if (!esSuInvitado && !(gl && gl.hasta > Date.now() && gl.n < 6)) return no(`El enlace de grupo de ${d.c.nombre} ya no sirve: pídele uno nuevo desde «📲 Invitar a mi grupo».`);
     // Quien te ignora no te mete en su grupo (respuesta neutra); si tu lo ignoras, nada.
     if (meIgnora(s, uid)) return;
@@ -156,7 +173,10 @@ export const Social = {
     if (wi && wi.inst && wi.inst.k && !wi.inst.completada) return no('Ese grupo ya está dentro de un Desafío: pide al líder que te invite.');
     // Ya tiene esa misma invitacion (al llegar como invitado nuevo, amigos.js): no se repite la ventana.
     if (s.invitacion && s.invitacion.hasta > Date.now() && s.invitacion.de === uid) return;
-    if (!esSuInvitado && gl) gl.n++;
+    if (!esSuInvitado && gl) {
+      gl.n++;   // como mucho 6 escrituras por enlace
+      try { this.state.storage.put('glink:' + uid, { hasta: gl.hasta, n: gl.n }); } catch (e) {}
+    }
     s.invitacion = { de: uid, hasta: Date.now() + INVITACION_MS };
     this.enviar(s, { t: 'invitacion', de: d.c.nombre, nv: d.c.nivel, cl: d.c.clase || '', ms: INVITACION_MS });
     if (Date.now() - (d.refToastT || 0) > 60000) {
@@ -245,24 +265,34 @@ export const Social = {
     // Mismo telefono o misma IPv6: es la misma persona con dos cuentas, no hay ayni.
     const mismoDisp = (a.dev && a.dev === b.dev) || (a.ip && a.ip.includes(':') && a.ip === b.ip);
     if (mismoDisp) return;
+    // Un invitado Nv 1 recien creado no es un novato de verdad (anti-farmeo con cuentas de usar y tirar).
+    if (b.c.uid.startsWith('inv:') && (b.c.nivel || 1) < 2) return;
     const par = this.ayniPar || (this.ayniPar = new Map());
     const clave = a.c.uid + '|' + b.c.uid;
     if (ahora - (par.get(clave) || 0) < 10 * 60000) return;
     par.set(clave, ahora);
     if (par.size > 2000) for (const [k, t] of par) if (ahora - t >= 10 * 60000) par.delete(k);
     const c = a.c, hoy = hoyUTC();
-    if (!c.ayniDia || c.ayniDia.d !== hoy) c.ayniDia = { d: hoy, n: 0 };
+    if (!c.ayniDia || c.ayniDia.d !== hoy) c.ayniDia = { d: hoy, n: 0, u: [] };
+    if (!Array.isArray(c.ayniDia.u)) c.ayniDia.u = [];
+    // Ayuda reciente entre los dos: habilita el «gracias» de grupo (gratitud) sin haber resucitado.
+    a.ultAyuda = { uid: b.c.uid, t: ahora };
+    b.ultAyuda = { uid: a.c.uid, t: ahora };
     if (c.ayniDia.n < 10) {
       c.ayniDia.n++;
-      c.ayni = (c.ayni || 0) + 1;
+      // El logro (c.ayni) solo sube con novatos distintos: 1 por novato y dia, como resucitar (combate.js).
+      const cuenta = !c.ayniDia.u.includes(b.c.uid) && c.ayniDia.u.length < 10;
+      if (cuenta) { c.ayniDia.u.push(b.c.uid); c.ayni = (c.ayni || 0) + 1; }
       // Oro a la medida del veterano (como dos presas comunes suyas: 2 x (2+2L)), no del novato.
       // Sin el x25 de jefe de statsMonstruo: cazar un jefe con un novato no paga miles de oro.
       const oro = 4 + 4 * (c.nivel || 1);
       c.oro = (c.oro || 0) + oro;
       a.sucio = true;
       if (this.yoLuego) this.yoLuego(a, false);
-      this.enviar(a, { t: 'toast', ok: true, ayni: c.ayni, m: `🤝 Ayni +1: ayudaste a ${b.c.nombre} (+${oro} oro)` });
-      if (this.revisarLogros) this.revisarLogros(a, true);   // Mano Amiga / Corazon / Taita del Ayni
+      this.enviar(a, cuenta
+        ? { t: 'toast', ok: true, ayni: c.ayni, m: `🤝 Ayni +1: ayudaste a ${b.c.nombre} (+${oro} oro)` }
+        : { t: 'toast', ok: true, m: `🤝 Ayudaste a ${b.c.nombre} (+${oro} oro)` });
+      if (cuenta && this.revisarLogros) this.revisarLogros(a, true);   // Mano Amiga / Corazon / Taita del Ayni
     }
     // Al novato: +10 % de la XP de esa presa (minimo 1).
     let xp = 1;
@@ -700,21 +730,33 @@ export const Social = {
     if (m.id === 'gracias') this.gratitud(s, ahora);
   },
   // 🙏 «gracias» que cuenta: al que te levanto hace poco (s.ultRes, combate.js) o, si no, al
-  // de tu grupo mas cercano a menos de 15 m. Sin oro: solo c.gratitud y sus logros.
+  // de tu grupo mas cercano (15 m / 150 px) con ayuda mutua reciente (ultAyuda). Desde Nv 5. Sin oro: solo c.gratitud y sus logros.
   // 1 por par y dia de Lima (marcas en el emisor: c.gracDia) y 10 al dia por receptor.
   gratitud(s, ahora) {
     const c = s.c;
     if (!c || !c.uid) return;
+    // Anti-farmeo: los invitados y los Nv 1-4 no reparten gracias que cuenten (aviso una vez por sesion).
+    if (c.uid.startsWith('inv:') || (c.nivel || 1) < 5) {
+      if (!s.gracAviso) { s.gracAviso = 1; this.enviar(s, { t: 'toast', m: '🙏 Tus gracias cuentan desde Nv 5' }); }
+      return;
+    }
     const valido = x => x && x !== s && x.c && x.c.uid && x.c.uid !== c.uid && x.k === s.k && !x.cerrado
       && !(s.dev && s.dev === x.dev) && !(s.ip && s.ip.includes(':') && s.ip === x.ip) && !meIgnora(x, c.uid);
     let otro = null;
     const ur = s.ultRes;
     if (ur && ahora - ur.t < 10 * 60000) { const x = this.sesiones.get(ur.id); if (valido(x) && x.c.uid === ur.uid) otro = x; }
-    if (!otro && s.gid && s.p) {
-      let mejor = 225;
+    if (!otro && s.gid) {
+      // Solo al compañero que te ayudó (o al que ayudaste) en los ultimos 10 min (ultAyuda, ayniCaza).
+      const ayudo = (x, y) => x.ultAyuda && x.ultAyuda.uid === y.c.uid && ahora - x.ultAyuda.t < 600000;
+      // ORIGINS: s.p (x, z) a menos de 15 m; CLASSIC: s.x / s.y en pixeles, a menos de 150 px.
+      const sx = s.p ? s.p.x : s.x, sz = s.p ? (s.p.z || 0) : s.y;
+      let mejor = s.p ? 225 : 22500;
       for (const x of this.sesiones.values()) {
-        if (x.gid !== s.gid || !valido(x) || !x.p || (x.i3 || 0) !== (s.i3 || 0)) continue;
-        const d2 = (x.p.x - s.p.x) ** 2 + ((x.p.z || 0) - (s.p.z || 0)) ** 2;
+        if (x.gid !== s.gid || !valido(x) || !!x.p !== !!s.p || (x.i3 || 0) !== (s.i3 || 0)) continue;
+        if (!ayudo(x, s) && !ayudo(s, x)) continue;
+        const xx = x.p ? x.p.x : x.x, xz = x.p ? (x.p.z || 0) : x.y;
+        if (typeof sx !== 'number' || typeof xx !== 'number') continue;
+        const d2 = (xx - sx) ** 2 + ((xz || 0) - (sz || 0)) ** 2;
         if (d2 < mejor) { mejor = d2; otro = x; }
       }
     }
@@ -730,6 +772,7 @@ export const Social = {
     oc.gratitud = (oc.gratitud || 0) + 1;
     s.sucio = true; otro.sucio = true;
     this.enviar(otro, { t: 'toast', ok: true, m: '🙏 ' + c.nombre + ' te agradeció' });
+    this.enviar(s, { t: 'toast', ok: true, m: '🙏 Le diste las gracias a ' + oc.nombre });
     if (this.revisarLogros) this.revisarLogros(otro, true);
   },
 

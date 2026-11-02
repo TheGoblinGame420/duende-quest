@@ -516,9 +516,18 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 360;
+export const VERSION = 361;
 
 export const NOVEDADES = [
+  { n: 129, fecha: '2 nov 2026', items: [
+    'Los nuevos jugadores ven menos ventanas al empezar; en el celular la historia te la cuenta el Guardia Tito sin taparte la pantalla.',
+    '«¡Buen trabajo hoy!» sale después de vencer al Sabueso, no antes.',
+    'El punto de señal muestra tu conexión real y se pone gris si la pierdes.',
+    'Si caes peleando contra el Rey Goblin igual te llevas tu cofre; la Cueva se abre a Nv 5.',
+    'Al abrir el cofre del día o de la semana ves qué te salió, con el color de su rareza.',
+    'Los logros de Ayni se ganan ayudando a novatos distintos, y tus «gracias» cuentan desde Nv 5.',
+    'En celulares sencillos el juego va más fluido al farmear de noche. El enlace «Invitar a mi grupo» sigue valiendo aunque actualicemos el juego.',
+  ] },
   { n: 128, fecha: '2 nov 2026', items: [
     'Cada arma se siente distinta: las Dagas cortan rápido, la Odachi pega pesado con temblor y choque de metal, y cada una deja su propio tajo. El Mago y el Sacerdote ven volar su bola al instante.',
     '🌙 De noche ganas +10% de experiencia y aparecen monstruos nocturnos morados que dan +25% de oro.',
@@ -2059,12 +2068,12 @@ export const TEMP_META = [3000, 12000, 30000];
 // tipo = el de progresoTarea; 'obj' = objeto de la fiesta conseguido de monstruos.
 export const TEMP_DIAS = [
   { tipo: 'caza', n: 15, txt: 'Caza 15 monstruos de tu nivel' },
-  { tipo: 'invasion', n: 1, txt: 'Defiende una invasión' },
-  { tipo: 'mazmorra', n: 1, txt: 'Completa una mazmorra o la cueva' },
   { tipo: 'obj', n: 10, txt: 'Consigue 10 objetos de la fiesta' },
   { tipo: 'gesto', n: 2, txt: 'Haz 2 gestos (saluda o baila)' },
-  { tipo: 'pescar', n: 3, txt: 'Pesca 3 veces' },
   { tipo: 'recoger', n: 6, txt: 'Recoge 6 materiales' },
+  { tipo: 'pescar', n: 3, txt: 'Pesca 3 veces' },
+  { tipo: 'mazmorra', n: 1, txt: 'Completa una mazmorra o la cueva' },
+  { tipo: 'invasion', n: 1, txt: 'Defiende una invasión' },
 ];
 export const TEMP_DIA_PREMIO = 10;
 // Premio del dia d (0 = primer dia): +2 por cada semana de fiesta; en Navidad la

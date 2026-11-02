@@ -230,6 +230,8 @@ export const Mundo3D = {
         if (!this._grupoLinkU) this._grupoLinkU = new Map();
         const ahoraGL = Date.now();
         this._grupoLinkU.set(s.c.uid, { hasta: ahoraGL + 2 * 3600000, n: 0 });
+        // Tambien en storage: un despliegue vacia el Map y rompia los enlaces ya pegados en WhatsApp.
+        try { this.state.storage.put('glink:' + s.c.uid, { hasta: ahoraGL + 2 * 3600000, n: 0 }); } catch (e) {}
         if (this._grupoLinkU.size > 5000) { for (const [k, v] of this._grupoLinkU) if (!(v.hasta > ahoraGL)) this._grupoLinkU.delete(k); }
         return;
       }
@@ -481,8 +483,11 @@ export const Mundo3D = {
       const mult = (((SKINS[s.c.skin] || {}).buffs || {}).oroMult || 1) * (1 + talento(s.c, 'fortuna'));
       // De noche los monstruos dan un 10% mas de experiencia. La Hora Feliz (+50%) ya la aplica dar() en world.js: no repetirla aqui.
       const xp = Math.max(1, Math.round(base.xp * k * (1 + talento(s.c, 'erudicion')) * (esNoche(Date.now()) ? 1.1 : 1) * (this.zonaBendita3d && this.zonaBendita3d(zonaEn(s.p.x, s.p.z)) ? 1.1 : 1)));
-      const oro = Math.max(1, Math.round(base.oro * k * rnd(0.8, 1.2) * mult * (o.noct ? 1.25 : 1)));
-      if (o.noct) s.c.noctN = (s.c.noctN || 0) + 1;   // logros noct10 / noct50
+      // Nocturno valido: sigue siendo de noche (al amanecer pierde el premio) y no es una presa
+      // mas de 10 niveles por debajo (el logro noct10 / noct50 no se farmea en la zona inicial).
+      const noctV = o.noct && esNoche(Date.now()) && (o.nv || 1) >= (s.c.nivel || 1) - 10;
+      const oro = Math.max(1, Math.round(base.oro * k * rnd(0.8, 1.2) * mult * (noctV ? 1.25 : 1)));
+      if (noctV) s.c.noctN = (s.c.noctN || 0) + 1;   // logros noct10 / noct50
       // dar(): misiones, diarias, bestiario, chicha, pase, botin... lo mismo que el 2D.
       const nG = gr ? Math.max(1, this.sesionesGrupo(gr).filter(x => x.m3 && !x.muerto && o.dano.has(x.id)).length) : 1;
       this.dar(s, xp, oro, o, nG, true);
@@ -1821,7 +1826,7 @@ export const Mundo3D = {
           const dm = dist(o, s.p);
           if (dm > VISTA_MON) continue;
           ve.add(o.id);
-          if (!s.vistos.has(o.id)) n.push({ id: o.id, k: o.k, nv: o.nv, x: r1(o.x), z: r1(o.z), hp: Math.ceil(o.hp), mx: o.max, j: o.jefe ? 1 : 0, mu: o.mundial3 || o.guardian ? 1 : undefined, ra: o.ex3 && o.ex3.nom ? o.ex3.nom : undefined, ti: o.ex3 && o.ex3.ti ? o.ex3.ti : undefined, af: o.ex3 && o.ex3.af ? o.ex3.af : undefined, iv: o.ex3 && o.ex3.ev ? 1 : undefined, la: o.ex3 && o.ex3.ladron ? 1 : undefined, noct: o.noct ? 1 : undefined });
+          if (!s.vistos.has(o.id)) n.push({ id: o.id, k: o.k, nv: o.nv, x: r1(o.x), z: r1(o.z), hp: Math.ceil(o.hp), mx: o.max, j: o.jefe ? 1 : 0, mu: o.mundial3 || o.guardian ? 1 : undefined, ra: o.ex3 && o.ex3.nom ? o.ex3.nom : undefined, ti: o.ex3 && o.ex3.ti ? o.ex3.ti : undefined, af: o.ex3 && o.ex3.af ? o.ex3.af : undefined, iv: o.ex3 && o.ex3.ev ? 1 : undefined, la: o.ex3 && o.ex3.ladron ? 1 : undefined, noct: o.noct && esNoche(ahora) ? 1 : undefined });
           else {
             // Lejanos tranquilos ya presentados: una foto si y otra no (repartidos por id).
             if (dm > 50 && o.obj !== s.id && !o.jefe && !o.muere && o.st !== 3 && ((o.id + par) & 1)) continue;
