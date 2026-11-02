@@ -504,9 +504,18 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 349;
+export const VERSION = 350;
 
 export const NOVEDADES = [
+  { n: 118, fecha: '2 nov 2026', items: [
+    '🍀 Suerte del duende: si pasas muchas cazas sin equipo es cada vez más fácil que salga uno, y tras 25 piezas sin Épico la siguiente es Épica o mejor.',
+    '📦 Medidor semanal: cada misión diaria suma 1 punto y a los 4, 8 y 12 se abre un cofre.',
+    '📅 La fiesta trae una tarea por día (+10 del objeto de la fiesta) y te puedes poner al día. Si llegaste tarde, tus primeras 80 cuentan doble.',
+    'Jefes de zona con ¡FASE 2! y Furia si te comes sus pisotones; élites raros con aura, esbirros y afijo visible; campamentos con tiradores 🏹.',
+    'Corrientes de viento en cada zona junto a su cofre legendario: crúzalas volando para recargar las alas.',
+    'La tarjeta de botín te dice cuánto ganas o pierdes (+12 ATQ, -3 DEF). Libreta de pesca y ¡Tirón perfecto!',
+    'Toca una misión del día y te marca el camino con flecha y metros.',
+  ] },
   { n: 117, fecha: '2 nov 2026', items: [
     '🎃 Último día de Halloween: el juego y la tienda de la Abuela te avisan cuántas calabazas te quedan; a medianoche dejan de valer.',
     'Los nombres de los monstruos ya no se enciman, y el ❗ marca solo al de tu misión más cercano.',
@@ -1938,6 +1947,22 @@ export const TEMP_PROB = 0.2, TEMP_JEFE = 5;
 // Meta comunitaria «Entre todos»: objetos de la temporada sumados por todo el
 // servidor. Al cruzar cada umbral, una Hora Feliz extra de 1 h para todos.
 export const TEMP_META = [3000, 12000, 30000];
+// Calendario de la fiesta: una tarea por dia (ciclo de 7, dia d usa TEMP_DIAS[d % 7]).
+// Los dias pasados siguen abiertos (puesta al dia); los futuros no se adelantan.
+// Cada dia cumplido paga TEMP_DIA_PREMIO del objeto de la fiesta (tareas.js progresoFiesta).
+// tipo = el de progresoTarea; 'obj' = objeto de la fiesta conseguido de monstruos.
+export const TEMP_DIAS = [
+  { tipo: 'caza', n: 15, txt: 'Caza 15 monstruos de tu nivel' },
+  { tipo: 'invasion', n: 1, txt: 'Defiende una invasión' },
+  { tipo: 'mazmorra', n: 1, txt: 'Completa una mazmorra o la cueva' },
+  { tipo: 'obj', n: 30, txt: 'Consigue 30 objetos de la fiesta' },
+  { tipo: 'gesto', n: 2, txt: 'Haz 2 gestos (saluda o baila)' },
+  { tipo: 'pescar', n: 3, txt: 'Pesca 3 veces' },
+  { tipo: 'recoger', n: 6, txt: 'Recoge 6 materiales' },
+];
+export const TEMP_DIA_PREMIO = 10;
+export const diaFiesta = (tp, t = Date.now()) => Math.floor((t - tp.ini) / 86400000);
+export const diasFiesta = tp => Math.ceil((tp.fin - tp.ini) / 86400000);
 
 // ── PREMIO FISICO: CHICHA MORADA (functions/mmo/chicha.js) ──
 // niveles: puntos para cada litro (dos premios por jugador como mucho).

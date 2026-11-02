@@ -19,7 +19,7 @@
 // piezas fijas de cada pivote se funden en una malla (fusionarRig): ~6-14 draw calls.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=349';
+import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=350';
 
 const PX_M = 34;                 // pixeles del 2D por metro
 const PI = Math.PI;
@@ -81,6 +81,15 @@ function geo(k) {
 // ── MATERIALES COMPARTIDOS (por color y opciones) ──
 // o: { e: brillo emisivo 0..1, op: opacidad, ds: dos caras, aura: aditivo sin luz }
 const MATS = new Map();
+// Luz de borde calida (fresnel barato) para que las siluetas se lean en pantallas
+// chicas. Usa la normal 'normal' que Lambert ya calcula (con flatShading sale de
+// dFdx/dFdy de vViewPosition), asi que no hace falta vNormal. Sin mallas nuevas.
+const RIM_K = (() => { try { return (matchMedia('(pointer: coarse)').matches ? 0.24 : 0.32).toFixed(2); } catch (e) { return '0.28'; } })();
+function conBorde(fs, extra) {
+  return fs.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>' + extra +
+    '\n\tfloat rimF = pow(1.0 - max(dot(normal, normalize(vViewPosition)), 0.0), 3.0);' +
+    '\n\ttotalEmissiveRadiance += vec3(1.0, 0.95, 0.87) * rimF * ' + RIM_K + ';');
+}
 function mat(color, o) {
   o = o || {};
   const c = col(color);
@@ -97,6 +106,7 @@ function mat(color, o) {
       emissive: o.e ? c : new THREE.Color(0), emissiveIntensity: o.e || 0,
       vertexColors: !!o.vc,
     });
+    if (op >= 1) { m.onBeforeCompile = s => { s.fragmentShader = conBorde(s.fragmentShader, ''); }; m.customProgramCacheKey = () => 'borde'; }
   }
   m.userData.compartido = true;
   MATS.set(k, m);
@@ -189,9 +199,9 @@ function matVC(brillo) {
     s.vertexShader = 'attribute float brillo;\nvarying float vBrillo;\n' +
       s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n\tvBrillo = brillo;');
     s.fragmentShader = 'varying float vBrillo;\n' +
-      s.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n\ttotalEmissiveRadiance *= vColor.rgb * vBrillo;');
+      conBorde(s.fragmentShader, '\n\ttotalEmissiveRadiance *= vColor.rgb * vBrillo;');
   };
-  m.customProgramCacheKey = () => 'vcb';
+  m.customProgramCacheKey = () => 'vcb-borde';
   m.userData.compartido = true;
   MATS.set('vcb', m);
   return m;
@@ -766,6 +776,9 @@ function animarRig(m, est, te, t) {
     const e = Math.max(0, 1 - te / 0.35);
     b.rotation.x -= 0.32 * e;
     b.position.z -= 0.06 * A * e;
+    // Aplastado al recibir: el cuerpo se achata y ensancha (b.scale se reinicia cada frame).
+    const q = 0.14 * e * e * (MENOS_MOV_R ? 0.4 : 1) * (m.golpeFuerte ? 1.6 : 1);
+    b.scale.y *= 1 - q; b.scale.x *= 1 + q * 0.5; b.scale.z *= 1 + q * 0.5;
   }
   if (muerto) {
     const k = Math.min(1, te / 1.4), caida = suave(Math.min(1, k / 0.5)), hunde = Math.max(0, (k - 0.55) / 0.45);

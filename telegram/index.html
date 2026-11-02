@@ -33,7 +33,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="/js/origen.js?v=349"></script>
+<script src="/js/origen.js?v=350"></script>
 <script>
 // ── ARRANQUE TEMPRANO DE TELEGRAM ──
 // Va aquí, antes de cargar Supabase/TON Connect/el motor, para que Telegram
@@ -809,10 +809,10 @@ html{font-size:24px;}
      pesan cientos de KB). Aquí se ejecutan en el MISMO orden y antes que el
      código de la página, así que nada de lo que los usa cambia. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
-<script src="../js/dom-utils.js?v=349"></script>
-<script src="../js/missions.js?v=349"></script>
-<script src="../js/streak.js?v=349"></script>
-<script src="../js/achievements.js?v=349"></script>
+<script src="../js/dom-utils.js?v=350"></script>
+<script src="../js/missions.js?v=350"></script>
+<script src="../js/streak.js?v=350"></script>
+<script src="../js/achievements.js?v=350"></script>
 <script>
 // TON Connect (~400 KB) bajo demanda: al abrir la wallet, o al cargar si ya hay una sesion guardada.
 // tonGuardada(): el SDK guarda su sesion en localStorage con claves 'ton-connect...'.
@@ -829,7 +829,7 @@ function cargarTon(){
 }
 function tonGuardada(){ try{ for(var i=0;i<localStorage.length;i++){ if(/^ton-connect/.test(localStorage.key(i)||'')) return true; } }catch(e){} return false; }
 </script>
-<script src="../js/config.js?v=349"></script>
+<script src="../js/config.js?v=350"></script>
 <script>
 'use strict';
 
@@ -1644,7 +1644,7 @@ window.DQE={
   },
 };
 </script>
-<script src="../js/engine.js?v=349"></script>
+<script src="../js/engine.js?v=350"></script>
 <script>
 
 // ══ MENU EN PESTAÑAS ══
@@ -1993,7 +1993,7 @@ function shareScore(){
 // (la misma tabla STARS_DE_USD que usa /api/telegram-bot-invoice al cobrar), asi
 // la Mini App nunca anuncia un precio distinto del que cobra Telegram.
 // Subir este ?v= junto con el de los otros imports de data.js.
-import { SKINS as CATALOGO, estrellasDe } from '../mmo/js/data.js?v=349';
+import { SKINS as CATALOGO, estrellasDe } from '../mmo/js/data.js?v=350';
 try{
   for(const s of SKINS){
     const c=CATALOGO[s.id];

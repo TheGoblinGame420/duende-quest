@@ -603,6 +603,7 @@ export const Social = {
     if (typeof m.id !== 'string' || !Object.hasOwn(GESTOS, m.id) || ahora - (s.gestoT || 0) < 1500) return;
     if (this.silenciado && this.silenciado(s)) return;   // silenciado por un moderador: tampoco gestos
     s.gestoT = ahora;
+    if (this.progresoFiesta) this.progresoFiesta(s, 'gesto', 1);   // calendario de la fiesta (tareas.js)
     // Como el chat: no le llega a quien ignora al autor.
     const txt = JSON.stringify({ t: 'gesto', p: s.id, id: m.id });
     for (const x of this.sesiones.values()) if (x.c && x.k === s.k && !meIgnora(x, s.c.uid)) this.enviar(x, txt);

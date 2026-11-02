@@ -14,7 +14,7 @@
 //     cada uno una vez cada 30 min.
 // Lo decide el servidor; nada de esto da mTON.
 // ═══════════════════════════════════════════════════════
-import { MAPAS, MONSTRUOS, RAREZAS, statsMonstruo, xpParaSubir, nombreItem, MISIONES } from '../../mmo/js/data.js';
+import { MAPAS, MONSTRUOS, RAREZAS, statsMonstruo, xpParaSubir, nombreItem, MISIONES, AFIJOS } from '../../mmo/js/data.js';
 import { zonaEn, cofres3d, COFRE3D_DIST, alturaEn, MUNDO } from '../../mmo/js/mundo3d.js';
 import { COFRE_TIPOS, COFRE_CADA_MS, cuentaCofreDia, AVISO_COFRES_DIA } from './eventos.js';
 // Los cofres del 3D estan escondidos (hay que explorar y, el legendario, volar
@@ -148,9 +148,13 @@ export const Eventos3D = {
     const W = this.iniciar3d(), mp = MAPAS[zona];
     const k = azar(mp.monstruos), nom = azar(NOMBRES), ti = azar(TINTES);
     const p = cerca ? this.puntoCerca3d(cerca, zona) : { x: 0, z: 0 };
-    const o = this.crearEspecial3d(k, p.x, p.z, { zona, nv: mp.nv[1], hpX: 6, atkX: 1.3, ex: { raro: 1, nom, ti }, expira: Date.now() + RARO3D_VIDA_MS });
+    // Afijo visible: furioso (pega +50 % bajo el 30 % de vida) o sanguinario (se cura al caer sus esbirros).
+    const af = azar(['furioso', 'sanguinario']), expira = Date.now() + RARO3D_VIDA_MS;
+    const o = this.crearEspecial3d(k, p.x, p.z, { zona, nv: mp.nv[1], hpX: 6, atkX: 1.3, ex: { raro: 1, nom, ti, af }, expira });
+    // Dos esbirros normales de su misma especie a su lado (caducan con el).
+    for (const lado of [-1, 1]) this.crearEspecial3d(k, p.x + lado * 3, p.z + lado * 1.5, { zona, nv: mp.nv[1], ex: { esb: o.id }, expira });
     (W.raros || (W.raros = {}))[zona] = { id: o.id, prox: Date.now() + RARO3D_TIRADA_MS };
-    for (const s of this.sesiones3d()) if (zonaEn(s.p.x, s.p.z) === zona) this.enviar(s, { t: 'aviso', m: `★ ¡${nom} (${MONSTRUOS[k].nombre} raro) ronda ${mp.nombre}! Objeto raro seguro para quien lo derrote.` });
+    for (const s of this.sesiones3d()) if (zonaEn(s.p.x, s.p.z) === zona) this.enviar(s, { t: 'aviso', m: `★ ¡${nom} (${MONSTRUOS[k].nombre} raro) ronda ${mp.nombre} con dos esbirros · ${AFIJOS[af].emoji} ${AFIJOS[af].nombre}! Objeto raro seguro para quien lo derrote.` });
     return o;
   },
   premioRaro3d(o) {

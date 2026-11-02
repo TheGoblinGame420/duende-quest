@@ -7,7 +7,7 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, precioOro, ARMAS, PODERES, ATAQUE_CD_MS, ALCANCE_BASE, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
-  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, costoReforja, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TINTES, MASCOTAS, NOVEDADES, PASE, premioPase, ambulanteActivo, ambulanteOferta, semanaUTC, GESTOS, horaFelizTiempos, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
+  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, costoReforja, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TEMP_DIAS, TEMP_DIA_PREMIO, diaFiesta, diasFiesta, TINTES, MASCOTAS, NOVEDADES, PASE, premioPase, ambulanteActivo, ambulanteOferta, semanaUTC, GESTOS, horaFelizTiempos, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe, solesDeStars, paqueteParaFaltante, ENTREGA, textoPagoRecibido, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA, PAGO_LOCAL, pagoLocalActivo, textoSoles,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=349';
-import { iniciarRegalo } from './regalo.js?v=349';
-import { iniciarAvisoTg } from './avisotg.js?v=349';
+} from './data.js?v=350';
+import { iniciarRegalo } from './regalo.js?v=350';
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=350';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -122,12 +122,27 @@ function mostrarNuevo3d() {
 // (sin el, quien abrio el juego por un enlace nunca recibe los avisos de
 // vuelta) y a Nv 5 se ofrece ponerlo en la pantalla de inicio. Una vez por
 // dispositivo y solo si la version de Telegram lo admite.
+let escribirTgT = 0;
 function permisosTg(nv) {
   if (!TG || !TG.isVersionAtLeast) return;
   const visto = k => { try { return !!localStorage.getItem(k); } catch (e) { return true; } };
   const marcar = k => { try { localStorage.setItem(k, '1'); } catch (e) {} };
   try {
-    if (nv >= 3 && !visto('dq_tg_escribir') && TG.isVersionAtLeast('6.9') && TG.requestWriteAccess) { marcar('dq_tg_escribir'); TG.requestWriteAccess(); return; }
+    // Antes de la ventana de Telegram, una tarjeta propia (avisotg.js): solo «Sí, avísame» la abre
+    // y solo si acepta se marca. «Ahora no» = otra vez en 7 dias. Nunca en pelea ni con otra ventana.
+    if (nv >= 3 && escribirTgPendiente() && TG.isVersionAtLeast('6.9') && TG.requestWriteAccess) {
+      if (!escribirTgT) {
+        let intentos = 0;
+        const intentar = () => {
+          escribirTgT = 0;
+          if (!escribirTgPendiente()) return;
+          let ocu = true; try { ocu = !yo || P.muerto || enCombate() || document.hidden || !!document.querySelector('.modal.on, #dq-regalo.on'); } catch (e) {}
+          if ((ocu || !avisoTg2.pedirPermiso()) && ++intentos < 8) escribirTgT = setTimeout(intentar, 15000);
+        };
+        escribirTgT = setTimeout(intentar, 15000);
+      }
+      return;
+    }
     if (nv >= 5 && !visto('dq_tg_inicio') && TG.isVersionAtLeast('8.0') && TG.addToHomeScreen) {
       if (TG.checkHomeScreenStatus) TG.checkHomeScreenStatus(st => { if (st === 'unknown') return; marcar('dq_tg_inicio'); if (st === 'missed') TG.addToHomeScreen(); });
       else { marcar('dq_tg_inicio'); TG.addToHomeScreen(); }
@@ -5028,12 +5043,28 @@ $('seguimiento').addEventListener('click', e => { if (e.target.closest('#h-misio
 // Tienda de la fiesta (data TEMPORADAS[].tienda): se paga SOLO con el objeto
 // del evento; el servidor valida (world.js tiendaTemp). Plegada tras su boton.
 let ttemp = null, ttAbierta = false, ttPend = null;
+// Calendario de la fiesta (data TEMP_DIAS; servidor: tareas.js progresoFiesta): lista simple
+// por dia: ✓ hecho, • abierto (hoy o pasado: puesta al dia), 🔒 futuro.
+function calendarioFiesta(tp, est) {
+  const av = f => f && f.id === tp.id ? (f.ok || []).length * 1e4 + Object.values(f.p || {}).reduce((a, b) => a + b, 0) : -1;
+  const fA = est && est.fiestaDias, fB = yo && yo.fiestaDias, fd = (av(fA) >= av(fB) ? fA : fB) || {};
+  const total = diasFiesta(tp), hoy = Math.max(0, Math.min(diaFiesta(tp), total - 1)), ok = fd.ok || [], p = fd.p || {};
+  let h = '<p style="margin-top:6px"><b style="display:inline">📅 Una tarea por día</b> (+' + TEMP_DIA_PREMIO + ' ' + esc(tp.cosas) + ' cada una; los días pasados siguen abiertos):</p><div style="font-size:12px;line-height:1.5">';
+  for (let d = 0; d < total; d++) {
+    const def = TEMP_DIAS[d % TEMP_DIAS.length], hecho = ok.includes(d), fut = d > hoy;
+    h += '<div style="' + (d === hoy ? 'color:#ffd24a;font-weight:700' : fut ? 'opacity:.55' : '') + '">' + (hecho ? '✓' : fut ? '🔒' : '•') + ' Día ' + (d + 1) + (d === hoy ? ' (hoy)' : '') + ': ' +
+      (fut ? '…' : esc(def.txt) + (hecho ? '' : ' · ' + (p[d] || 0) + '/' + def.n)) + '</div>';
+  }
+  const ms = Math.max(0, tp.ini + (hoy + 1) * 86400000 - Date.now()), hm = Math.floor(ms / 3600000) + ' h ' + Math.floor(ms % 3600000 / 60000) + ' min';
+  return h + '<div style="margin-top:3px">' + (hoy + 1 < total ? 'Mañana: ' + esc(TEMP_DIAS[(hoy + 1) % TEMP_DIAS.length].txt) + ' · abre en ' + hm + ' (a las 7 p. m. de Perú)' : 'Último día: la fiesta termina en ' + hm) + '</div></div>';
+}
 function cajaTiendaTemp() {
   const tp = temporadaYa();
   if (!tp || !tp.tienda) return '';
   const est = ttemp && ttemp.tp === tp.id ? ttemp : null, saldo = est ? est.saldo : null, comprado = est ? est.comprado || [] : [];
   let h = '<div class="mis-caja" style="border-color:' + tp.color + '"><b>' + tp.emoji + ' Tienda de la fiesta</b>' +
     '<p>Canjea tus ' + esc(tp.cosas) + ' (tienes <b style="display:inline;color:' + tp.color + '">' + (saldo === null ? '…' : saldo) + '</b>). Solo hasta el ' + esc(tp.hasta) + (tp.fin - Date.now() < 86400000 && saldo > 0 ? ' · <b style="display:inline;color:#ff5a5a">⏰ lo que no canjees se pierde</b>' : '') + '.</p>' +
+    calendarioFiesta(tp, est) +
     '<button class="btn sec" data-ttabrir="1" style="width:100%;padding:9px;margin-top:4px">' + (ttAbierta ? 'Ocultar la tienda' : '🛒 Ver la tienda de la fiesta') + '</button>';
   if (ttAbierta) for (const a of tp.tienda) {
     const ya = a.una && comprado.includes(a.id), seguro = ttPend && ttPend.id === a.id && Date.now() - ttPend.t < 4000;
@@ -5073,7 +5104,8 @@ function cajaTareas() {
   return '<div class="mis-caja"><b>Misiones del día</b>' + T.dia.l.map((t, i) => fila(t, i, true)).join('') +
     `<p style="font-size:12px;margin-top:6px">Cada una: +${T.premio.xp.toLocaleString('es', { useGrouping: 'always' })} XP y +${T.premio.oro.toLocaleString('es', { useGrouping: 'always' })} oro. Bono al completar 2 de 3: ${T.dia.bono ? '✓ bono cobrado' : 'objeto raro + pociones y escudos'}. Se renuevan cada día.</p></div>` +
     '<div class="mis-caja"><b>Misiones de la semana</b>' + T.sem.l.map(t => fila(t)).join('') +
-    `<p style="font-size:12px;margin-top:6px">Cada una: +${T.premioSem.xp.toLocaleString('es', { useGrouping: 'always' })} XP y +${T.premioSem.oro.toLocaleString('es', { useGrouping: 'always' })} oro. Las 2: ${T.sem.bono ? '✓ bono cobrado' : 'objeto épico + 🧿 protector de racha'}. Se renuevan los lunes.</p></div>`;
+    `<p style="font-size:12px;margin-top:6px">Cada una: +${T.premioSem.xp.toLocaleString('es', { useGrouping: 'always' })} XP y +${T.premioSem.oro.toLocaleString('es', { useGrouping: 'always' })} oro. Las 2: ${T.sem.bono ? '✓ bono cobrado' : 'objeto épico + 🧿 protector de racha'}. Se renuevan los lunes.</p>` +
+    `<p style="font-size:12px;margin-top:6px"><b>📦 Semana: ${Math.min(T.sem.pts || 0, 12)}/12</b> · ${[4, 8, 12].map((u, i) => ((T.sem.cof || 0) > i ? '✅' : (T.sem.pts || 0) >= u ? '🎁' : '🔒') + ' ' + u).join(' · ')}<br>+1 punto por diaria y +1 por bono del día: cofre con objeto, pociones y escudos.</p></div>`;
 }
 // Final de juego: lo que queda por hacer esta semana (y hoy), de un vistazo.
 function cajaSemana() {

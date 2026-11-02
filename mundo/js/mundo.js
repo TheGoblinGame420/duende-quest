@@ -14,26 +14,26 @@
 import * as THREE from 'three';
 import { esNocheDuendes, TEMPORADAS, temporadaDe, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=349';
-import { iniciarVentanas } from './ventanas.js?v=349';
-import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase } from '/mmo/js/data.js?v=349';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
-import { iniciarRegalo } from '/mmo/js/regalo.js?v=349';
-import { iniciarAvisoTg } from '/mmo/js/avisotg.js?v=349';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=349';
-import { crearMusica } from './musica.js?v=349';
-import { crearSonidos } from './sonidos.js?v=349';
-import { construirCueva } from './cueva.js?v=349';
-import { TAPA, transparentar } from './tapa.js?v=349';
-import { construirAbismo } from './abismo.js?v=349';
-import { crearParticulas } from './particulas.js?v=349';
-import { cargarKenney, piezasCasa } from './kenney.js?v=349';
-import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=349';
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=350';
+import { iniciarVentanas } from './ventanas.js?v=350';
+import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel } from '/mmo/js/data.js?v=350';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
+import { iniciarRegalo } from '/mmo/js/regalo.js?v=350';
+import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=350';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=350';
+import { crearMusica } from './musica.js?v=350';
+import { crearSonidos } from './sonidos.js?v=350';
+import { construirCueva } from './cueva.js?v=350';
+import { TAPA, transparentar } from './tapa.js?v=350';
+import { construirAbismo } from './abismo.js?v=350';
+import { crearParticulas } from './particulas.js?v=350';
+import { cargarKenney, piezasCasa } from './kenney.js?v=350';
+import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=350';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=349';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d } from '/mmo/js/mundo3d.js?v=349';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=349';
-import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=349';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA } from './lore.js?v=349';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=350';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=350';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=350';
+import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=350';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA } from './lore.js?v=350';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1930,7 +1930,7 @@ function recibir(m) {
       if (dz < m.r + 3) { aviso('¡Pisotón! Sal del círculo rojo.', 'err'); vib(dz <= m.r ? 'heavy' : 'medium'); }
       break;
     }
-    case 'zona3f': quitarZona3(m.id, true); break;
+    case 'zona3f': quitarZona3(m.id, !m.no); break;   // no:1 = pisoton cancelado (Fase 2), sin explosion
     // Tras el pisoton el jefe queda expuesto (+25 % de daño): etiqueta sobre él para contraatacar.
     case 'expuesto': {
       const o = mons.get(m.id); if (!o || o.muereT) break;
@@ -2086,7 +2086,8 @@ function recibir(m) {
       else {
         o.cast = null;
         if (m.cortado && Math.hypot(o.x - P.x, o.z - P.z) < 30) aviso(`✋ ¡${nom} no pudo beber: lanzamiento interrumpido!`, 'ok');
-        if (m.cura) { if (m.hp) o.hp = m.hp; if (Math.hypot(o.x - P.x, o.z - P.z) < 30) aviso(`🥤 ${nom} bebió chicha robada y se curó. La próxima vez: ${corte()}`, 'err'); }
+        if (m.cura && m.sg) { if (m.hp) o.hp = m.hp; FX.emitir(o.x, alturaEn(o.x, o.z) + 1, o.z, { n: 14, color: '#4ade80', vel: 2, vida: 0.8, grav: -3, radio: 1, tam: 1 }); if (Math.hypot(o.x - P.x, o.z - P.z) < 30) aviso(`🩸 ${o.ra || nom} se curó al caer su esbirro: ¡mátalos a la vez o ve primero por el élite!`, 'err'); }
+        else if (m.cura) { if (m.hp) o.hp = m.hp; if (Math.hypot(o.x - P.x, o.z - P.z) < 30) aviso(`🥤 ${nom} bebió chicha robada y se curó. La próxima vez: ${corte()}`, 'err'); }
       }
       break;
     }
@@ -2096,7 +2097,9 @@ function recibir(m) {
     case 'corriente': P.alas = ALAS_MAX; aviso('🌬 Corriente de viento: ¡alas recargadas!', 'ok'); sfxK('tela', 0.4); vib('light'); break;
     case 'alasAgotadas': if (P.vuela) { volar(false); P.planeoAuto = true; aviso('Tus alas se cansaron: planeas hacia el suelo.'); } P.alas = 0; break;
     case 'pica': pica = performance.now() + m.ms; aviso('🎣 ¡Pica! ' + K('Pulsa E', 'Toca ¡TIRAR!') + ' para tirar', 'ok'); sfx('boton', 0.7); vib('heavy'); break;
-    case 'pescado': quitarCorcho(); sfx('moneda', 0.5); break;
+    case 'pescado': quitarCorcho();
+      if (m.perfecto) { sfxK('monedas', 0.5); vib('heavy'); numero(P.x, P.y + 3, P.z, '¡Perfecto!', '#7dd3fc', true); } else sfx('moneda', 0.5);
+      break;
     case 'duelo':
       if (m.a === miId || m.b === miId) {
         dueloCon = m.a === miId ? m.b : m.a;
@@ -2248,14 +2251,15 @@ async function agregarMon(d) {
   mons.set(d.id, o);
   if (d.hp <= 0) o.muereT = performance.now() - 800;   // llega ya muriendo: solo el final de la animacion
   fijarDestino(o, d.x, d.z);
-  o.mu = !!d.mu; o.ra = d.ra || ''; o.ti = d.ti || ''; o.iv = !!d.iv;
+  o.mu = !!d.mu; o.ra = d.ra || ''; o.ti = d.ti || ''; o.iv = !!d.iv; o.af = d.af || '';
   if (d.k === 'puerta_nucleo') {
     o.fig = new Figura3D(modeloPuerta(), 1);
     solidosExtra = solidosExtra.filter(x => x.id !== d.id).concat([-2.2, 0, 2.2].map(dz => ({ x: d.x, z: d.z + dz, r: 1.5, id: d.id })));
     return;
   }
   const esc3 = d.mu ? 2.4 : d.ra ? 1.35 : d.j ? 1.15 : 1;
-  o.fig = figuraModelo(() => crearMonstruo(d.k), esc3) || await figuraHoja(def.hoja, st.alto * esc3);
+  // Élite raro: el mismo aura de suelo que los jefes, en su color (algo mas ancha).
+  o.fig = figuraModelo(() => { const m = crearMonstruo(d.k); if (d.ra && !m.jefe && m._aura) { m._aura(d.ti || '#ffd84a'); const me = m.mallas[m.mallas.length - 1]; if (me) { me.scale.multiplyScalar(1.15); me.userData.reposo[2] = me.scale.clone(); } } return m; }, esc3) || await figuraHoja(def.hoja, st.alto * esc3);
   if (!mons.has(d.id) && o.fig) { o.fig.quitar(); o.fig = null; }
 }
 // La Puerta del Nucleo: reja de hierro entre dos torres del kit de castillo
@@ -3108,6 +3112,9 @@ function ponerCorcho() {
   const a = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), new THREE.MeshLambertMaterial({ color: 0xffffff }));
   const b = new THREE.Mesh(new THREE.SphereGeometry(0.17, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshLambertMaterial({ color: 0xe11d48 }));
   corcho.add(a, b); corcho.position.set(w.x, MUNDO.agua + 0.05, w.z); corcho.userData.y0 = MUNDO.agua + 0.05;
+  // Amagos: 1-2 temblores cortos (solo visual). Tocar en uno no tira: hablar() solo avisa hasta la pica real.
+  const ahA = performance.now(); corcho.userData.am = [ahA + 1200 + Math.random() * 3000];
+  if (Math.random() < 0.6) corcho.userData.am.push(ahA + 4500 + Math.random() * 3500);
   escena.add(corcho);
 }
 function quitarCorcho() { if (corcho) { escena.remove(corcho); liberar(corcho); corcho = null; } pica = 0; }
@@ -4047,8 +4054,17 @@ function botinFuerte(it) {
   if (!it) return;
   const fuerte = it.r >= 2;   // haz, vibracion y presumir solo epico o mas; la tarjeta de mejora para todos
   const rz = RAREZAS[it.r] || {};
+  const pobreB = MOVIL || CAL === 'baja';
+  if (it.r === 1) {   // Raro (~1 de cada 4 drops): latido azul corto y campanita suave, sin haz ni presumir
+    FX.brillo(P.x, P.y + 1.1, P.z, '#33aaff', false);
+    if (!pobreB) setTimeout(() => FX.brillo(P.x, P.y + 1.1, P.z, '#33aaff', false), 380);
+    SON.tocar('botin', { r: 1, vol: 0.5 });
+  }
   if (fuerte) {
-    hazBotin(rz.color || '#c084fc'); SON.tocar('botin', { r: it.r, vol: it.r >= 3 ? 1 : 0.85 });   // mas brillante cuanto mas raro
+    // Anticipacion: destello blanco neutro y, medio segundo despues, el haz del color de la rareza.
+    FX.brillo(P.x, P.y + 1.1, P.z, '#ffffff', !pobreB);
+    const colB = rz.color || '#c084fc'; setTimeout(() => hazBotin(colB), 500);
+    SON.tocar('botin', { r: it.r, vol: it.r >= 3 ? 1 : 0.85 });   // mas brillante cuanto mas raro
     if (musica.agachar) musica.agachar(1.5);
     if (it.r >= 3) vib('heavy');
     setTimeout(() => ofrecerPresumir('¡Me salió un objeto ' + (rz.nombre || '').toLowerCase() + ': ' + (it.nombre || nombreItem(it)) + ' en Duende Quest 3D!', 'botin'), 1500);
@@ -4066,6 +4082,13 @@ function botinFuerte(it) {
   const n = document.createElement('span'); n.style.color = rz.color || '#fff'; n.textContent = (it.nombre || nombreItem(it));
   const b = document.createElement('b'); b.style.color = '#4ade80'; b.textContent = ' ▲ Mejor · Equipar';
   t.append(n, b);
+  // Diferencias contra la pieza puesta en esa ranura (+12 ATQ en verde, -3 DEF en rojo; maximo 3).
+  const dl = V.deltasBonos ? V.deltasBonos(it.b, ((yo.eq || {})[it.s] || {}).b).slice(0, 3) : [];
+  if (dl.length) {
+    const sm = document.createElement('small'); sm.style.cssText = 'display:block;margin-top:3px;font:700 12px var(--sans);';
+    dl.forEach((x, i) => { const s = document.createElement('span'); s.style.color = x.d > 0 ? '#6f6' : '#f66'; s.textContent = (i ? ' · ' : '') + x.v + ' ' + x.k; sm.appendChild(s); });
+    t.appendChild(sm);
+  }
   t.onclick = () => { t.style.display = 'none'; sfx('boton', 0.4); mandar({ t: 'item', a: 'equipar', id: it.id }); aviso('Equipado: ' + (it.nombre || nombreItem(it)), 'ok', 1); };
   t.style.display = 'block'; clearTimeout(botinFuerte.t);
   botinFuerte.t = setTimeout(() => { t.style.display = 'none'; }, fuerte ? 10000 : 6000);
@@ -4127,22 +4150,18 @@ function subiNivel(lv) {
 let escribirTgT = 0;
 function pedirEscribirTg(lv) {
   if (lv < 3 || !TGV('6.9') || !TG.requestWriteAccess) return false;
-  let visto = true; try { visto = !!localStorage.getItem('dq_tg_escribir'); } catch (e) {}
-  if (visto) return false;
+  // Ya acepto, o dijo «Ahora no» hace menos de 7 dias (avisotg.js).
+  if (!escribirTgPendiente()) return false;
   if (escribirTgT) return true;
   let intentos = 0;
   const intentar = () => {
     escribirTgT = 0;
-    let ya = true; try { ya = !!localStorage.getItem('dq_tg_escribir'); } catch (e) {}
-    if (ya) return;
-    if (enCombate3() || (yo && yo.muerto) || document.hidden) {
+    if (!escribirTgPendiente()) return;
+    // Nunca en pelea ni con otra ventana abierta: se espera.
+    let ocu = true; try { ocu = enCombate3() || !!(yo && yo.muerto) || document.hidden || hayVentana(); } catch (e) {}
+    if (ocu || !avisoTg3.pedirPermiso()) {
       if (++intentos < 8) escribirTgT = setTimeout(intentar, 15000);
-      return;
     }
-    try {
-      localStorage.setItem('dq_tg_escribir', '1');
-      TG.requestWriteAccess(ok => { if (ok) mandar({ t: 'tgEscribir' }); });
-    } catch (e) {}
   };
   escribirTgT = setTimeout(intentar, 20000);
   return true;
@@ -5741,7 +5760,7 @@ function etiquetas(t) {
     const def = MONSTRUOS[o.k], el = o.id === objetivo, mis = o.id === misId;
     const alto = o.fig ? altoFig(o.fig) : 2;
     const herido = o.hp < o.mx || el;
-    ponLbl(o.lbl, o.x, alturaEn(o.x, o.z) + alto + 0.2, o.z, `${o.cast && o.cast.fin > t ? `<b style="display:block;color:#fb923c;font-size:12px">🥤 ${esc(o.cast.n)}…</b>` : ''}<span style="color:${o.ra ? o.ti || '#ffd84a' : o.iv ? '#ff5a1f' : o.j ? '#ff6bf0' : colorNivel(o.nv)}">${mis ? '<b style="color:#ffd84a;font-size:15px">❗</b>' : ''}${o.ra ? '★ ' + esc(o.ra) + ' · ' : o.iv ? '⚔ ' : o.j ? '★ ' : ''}${asedio && asedio.dormido && o.id === asedio.guardian ? '💤 ' : ''}${herido || o.j || mis ? esc(def.nombre) + ' ' : ''}${marcaNivel(o.nv)}Nv${o.nv}</span>${herido ? `<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>` : ''}`, el ? 90 : (o.j || mis ? 70 : 38));
+    ponLbl(o.lbl, o.x, alturaEn(o.x, o.z) + alto + 0.2, o.z, `${o.cast && o.cast.fin > t ? `<b style="display:block;color:#fb923c;font-size:12px">🥤 ${esc(o.cast.n)}…</b>` : ''}<span style="color:${o.ra ? o.ti || '#ffd84a' : o.iv ? '#ff5a1f' : o.j ? '#ff6bf0' : colorNivel(o.nv)}">${mis ? '<b style="color:#ffd84a;font-size:15px">❗</b>' : ''}${o.ra ? '★ ' + esc(o.ra) + (o.af ? ' · ' + ({ furioso: '😡', sanguinario: '🩸' }[o.af] || '') : '') + ' · ' :o.iv ? '⚔ ' : o.j ? '★ ' : ''}${asedio && asedio.dormido && o.id === asedio.guardian ? '💤 ' : ''}${def && def.dispara ? '🏹 ' : ''}${def && def.vel >= 1.25 ? '⚡ ' : ''}${herido || o.j || mis ? esc(def.nombre) + ' ' : ''}${marcaNivel(o.nv)}Nv${o.nv}</span>${herido ? `<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>` : ''}`, el ? 90 : (o.j || mis ? 70 : 38));
     if (o.lbl.style.display !== 'none') {
       const s = aPantalla(o.x, alturaEn(o.x, o.z) + alto + 0.2, o.z);
       if (s) {
@@ -5797,6 +5816,33 @@ function animarCorrientes(t) {
   for (const c of corrientes3) {
     c.col.material.opacity = 0.09 + 0.05 * Math.sin(t / 600 + c.col.position.x);
     c.aros.forEach((a, i) => { a.position.y = 5 + ((t / 70 + i * 22) % 66); a.rotation.z = t / 900; });   // los aros suben: el viento empuja hacia arriba
+  }
+}
+// ── CORRIENTES DE VIENTO DEL MUNDO ABIERTO ──
+// Una por zona junto al cofre legendario (mmo/js/mundo3d.js corrientesMundo):
+// misma recarga de alas y mismo aviso 'corriente' del servidor. Geometria y
+// materiales compartidos por todas; en movil o calidad baja, un solo aro.
+const corrM3 = [];
+let matCorrM = null;
+function crearCorrientesMundo() {
+  const geoC = new THREE.CylinderGeometry(7, 7, 60, MOVIL || CAL === 'baja' ? 12 : 20, 1, true), geoA = new THREE.TorusGeometry(7.5, 0.35, 6, MOVIL || CAL === 'baja' ? 16 : 32);
+  matCorrM = { col: new THREE.MeshBasicMaterial({ color: 0x7dd3fc, transparent: true, opacity: 0.12, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }), aro: new THREE.MeshBasicMaterial({ color: 0xbae6fd, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending }) };
+  const nAros = MOVIL || CAL === 'baja' ? 1 : 3;
+  for (const c of corrientesMundo(MAPAS, MONSTRUOS)) {
+    const col = new THREE.Mesh(geoC, matCorrM.col);
+    col.position.set(c.x, c.y + 28, c.z);
+    const aros = [];
+    for (let i = 0; i < nAros; i++) { const a = new THREE.Mesh(geoA, matCorrM.aro); a.rotation.x = Math.PI / 2; a.position.set(c.x, c.y + 2 + i * 20, c.z); escena.add(a); aros.push(a); }
+    escena.add(col);
+    corrM3.push({ col, aros, y: c.y });
+  }
+}
+function animarCorrientesMundo(t) {
+  if (!matCorrM) return;
+  matCorrM.col.opacity = 0.09 + 0.05 * Math.sin(t / 600);
+  for (const c of corrM3) {
+    if (Math.abs(c.col.position.x - P.x) > 220 || Math.abs(c.col.position.z - P.z) > 220) continue;   // lejos no se anima (ni se ve con la niebla)
+    c.aros.forEach((a, i) => { a.position.y = c.y + 1 + ((t / 70 + i * 20) % 56); a.rotation.z = t / 900; });
   }
 }
 // ── EVENTO DE TEMPORADA (data TEMPORADAS) ──
@@ -6228,16 +6274,20 @@ function pintarMisiones() {
     for (const c of COFRES3) if (c.listoEn <= ah) { const d = Math.hypot(c.x - P.x, c.z - P.z); if (d < md && d > 6) { md = d; mc = c; } }
     if (mc) h += `<div class="q"><b>🧰 ${NOMBRE_COFRE[mc.tipo].replace(/^./, x => x.toUpperCase())}</b><small>${flechaDir(mc.x, mc.z)} ${Math.round(md)} m${mc.tipo === 'legendario' ? ' · en lo alto: ¡vuela!' : ''}</small></div>`;
   }
+  // Suerte del duende: cuanto falta para el Epico asegurado (servidor: c.secaEp).
+  if (yo && (yo.secaEp || 0) > 10) { const sl = Math.min(5, Math.ceil(yo.secaEp / 5)), fz = Math.max(1, 26 - yo.secaEp); h += `<div class="q"><small>🍀 Suerte del duende: ${'▮'.repeat(sl)}${'▯'.repeat(5 - sl)} · ${fz === 1 ? 'tu próxima pieza será Épica o mejor' : `Épico asegurado en ${fz} piezas`}</small></div>`; }
   // Misiones del dia y de la semana (se cobran solas); 🔄 cambia una gratis al dia.
   const T = yo.tareas;
   if (T && T.dia) {
     const hd = T.dia.l.filter(t => t.ok).length, hs = T.sem.l.filter(t => t.ok).length;
     // Movil con la caja recortada: una sola linea; al tocarla se despliega la lista completa.
     if (COMPACTO && !c.classList.contains('abierto')) h += `<div class="q"><b>🗓 Día ${hd}/${T.dia.l.length} · Semana ${hs}/${T.sem.l.length}</b><small>Toca para ver</small></div>`;
-    else h += `<div class="q"><b>🗓 Misiones del día ${hd}/${T.dia.l.length}</b>` + T.dia.l.map((t, i) => t.ok ? `<span class="ok">✓ ${esc(t.txt)}</span>` : `<span class="tarea">• ${esc(t.txt)} ${t.p}/${t.n}${T.dia.cambio ? '' : ` <button class="cambiar" data-cambiar="${i}" title="Cambiar esta misión (1 gratis al día)">🔄</button>`}</span>`).join('') +
+    else h += `<div class="q"><b>🗓 Misiones del día ${hd}/${T.dia.l.length}</b>` + T.dia.l.map((t, i) => t.ok ? `<span class="ok">✓ ${esc(t.txt)}</span>` : `<span class="tarea" data-ir="${i}" style="cursor:pointer">• ${esc(t.txt)} ${t.p}/${t.n}${caminoTarea(t)}${T.dia.cambio ? '' : ` <button class="cambiar" data-cambiar="${i}" title="Cambiar esta misión (1 gratis al día)">🔄</button>`}</span>`).join('') +
       `<small>${T.dia.bono ? '✓ bono del día' : 'Bono al completar 2 de 3'} · se renuevan a la medianoche (hora de Perú)</small></div>` +
       // Las semanales tambien (antes solo se veia "Semana 0/2").
       `<div class="q"><b>📅 Misiones de la semana ${hs}/${T.sem.l.length}</b>` + T.sem.l.map(t => t.ok ? `<span class="ok">✓ ${esc(t.txt)}</span>` : `<span class="tarea">• ${esc(t.txt)} ${t.p}/${t.n}</span>`).join('') + '</div>';
+    // Medidor semanal: +1 por diaria y +1 por bono del día; cofres a 4, 8 y 12 (tareas.js puntoSemana).
+    if (!(COMPACTO && !c.classList.contains('abierto'))) { const pts = T.sem.pts || 0, cof = T.sem.cof || 0; h += `<div class="q"><b>📦 Semana: ${Math.min(pts, 12)}/12</b><small>${[4, 8, 12].map((u, i) => (cof > i ? '✅' : pts >= u ? '🎁' : '🔒') + ' ' + u).join(' · ')} · cofres con diarias y bonos del día</small></div>`; }
   }
   // Fila fija de la expedicion (algo en marcha mientras no juega): toca y abre su ventana (ventanas.js).
   if (yo.nivel >= EXPEDICION.nv) {
@@ -6295,9 +6345,47 @@ const faro = (() => {
   const m = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 2.4, 90, 12, 1, true).translate(0, 45, 0), new THREE.MeshBasicMaterial({ color: '#ffd84a', transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide, fog: false }));
   m.visible = false; escena.add(m); return m;
 })();
+// Tocar una mision del dia marca su camino (flecha y metros en la fila); se camina a mano, no hay piloto automatico.
+let metaTarea = null;
+function puntoTarea(t) {
+  if (enCueva(P.x) || enAbismo(P.x)) return null;   // otras coordenadas: primero sal
+  const def = TAREAS_DIA.find(x => x.id === t.id) || {}, tipo = def.tipo, cerca = (l, ok) => { let m = null, md = Infinity; for (const o of l) { if (ok && !ok(o)) continue; const d = Math.hypot(o.x - P.x, o.z - P.z); if (d < md) { md = d; m = o; } } return m; };
+  const zonaNv = () => { const z = zonaDeNivel(yo.nivel || 1); return ZONAS3D[z] || ZONAS3D[zonaEn(P.x, P.z)] || null; };
+  if (tipo === 'pescar') {   // el agua mas cercana (aguaCerca pesca a 6 m de la orilla)
+    for (let r = 8; r <= 420; r += 8) { let m = null; for (let k = 0; k < 40; k++) { const a = k / 40 * Math.PI * 2, x = P.x + Math.cos(a) * r, z = P.z + Math.sin(a) * r; if (!enCueva(x) && !enAbismo(x) && alturaEn(x, z) < MUNDO.agua - 0.6) { m = { x, z }; break; } } if (m) return m; }
+    return null;
+  }
+  if (tipo === 'mazmorra') return portal ? { x: portal.x, z: portal.z } : null;
+  if (tipo === 'mundial') return { x: ARENA3D.x, z: ARENA3D.z };
+  if (tipo === 'jefe') { const j = cerca(CAMPOS3D, cp => cp.jefe && (MONSTRUOS[cp.k] || {}).nivel <= (yo.nivel || 1) + 2) || cerca(CAMPOS3D, cp => cp.jefe); return j && { x: j.x, z: j.z }; }
+  if (tipo === 'recoger') { const ah = performance.now(), n = cerca(NODOS, o => !(nodoListo.get(o.i) > ah) && Math.hypot(o.x - P.x, o.z - P.z) > 3); if (n) return { x: n.x, z: n.z }; const hz = hitoDe(zonaEn(P.x, P.z), ZONAS3D, alturaEn); return hz && { x: hz.x, z: hz.z }; }
+  if (tipo === 'cofre') { const ah = Date.now(), cf = cerca(COFRES3, o => o.listoEn <= ah && Math.hypot(o.x - P.x, o.z - P.z) > 6); return cf && { x: cf.x, z: cf.z }; }
+  if (tipo === 'invasion') { const iz = (invasion3 && invasion3.zona) || (invPre3 && invPre3.zona); return iz && ZONAS3D[iz] ? { x: ZONAS3D[iz].x, z: ZONAS3D[iz].z } : null; }
+  if (tipo === 'zona') { const id = Object.keys(ZONAS3D).find(z => MAPAS[z] && MAPAS[z].nombre && t.txt === (def.txt || '') + MAPAS[z].nombre); if (id) return { x: ZONAS3D[id].x, z: ZONAS3D[id].z }; }
+  if (tipo === 'zona' || tipo === 'caza' || tipo === 'raro' || tipo === 'grupo' || tipo === 'hab') { const zc = zonaNv(); return zc && { x: zc.x, z: zc.z }; }
+  return null;
+}
+function caminoTarea(t) {
+  if (!metaTarea || metaTarea.id !== t.id) return '';
+  if (Date.now() - metaTarea.t > 30 * 60000) { metaTarea = null; return ''; }
+  const d = Math.hypot(metaTarea.x - P.x, metaTarea.z - P.z);
+  if (d < 15) { metaTarea.llego = metaTarea.llego || Date.now(); if (Date.now() - metaTarea.llego > 5000) metaTarea = null; return ' · ¡aquí!'; }   // se ve 5 s (el panel se repinta cada 333 ms)
+  metaTarea.llego = 0;
+  return ` · ${flechaDir(metaTarea.x, metaTarea.z)} ${Math.round(d)} m`;
+}
+function irTarea(i) {
+  const t = yo && yo.tareas && yo.tareas.dia && yo.tareas.dia.l[i];
+  if (!t || t.ok) return;
+  if (t.id === 'exped') { V.abrirExpedicion(); return; }
+  const p = puntoTarea(t);
+  if (!p) { aviso(enCueva(P.x) || enAbismo(P.x) ? 'Sal al mundo para ver el camino de esta misión' : '➜ ' + t.txt); return; }
+  metaTarea = { id: t.id, x: p.x, z: p.z, txt: t.txt, t: Date.now() };
+  aviso('➜ ' + t.txt + ' · sigue la flecha', 'ok');
+  pintarMisiones();
+}
 // Cambiar mision pide dos toques (solo hay 1 cambio gratis al dia; sin confirm(): en Telegram queda feo)
 let cambioPend = null;
-$('misiones').onclick = e => { if (e.target.closest('[data-expabrir]')) { e.stopPropagation(); V.abrirExpedicion(); return; } const en = e.target.closest('[data-entregar]'); if (en) { e.stopPropagation(); mandar(en.dataset.entregar === 'diaria' ? { t: 'mision', diaria: true } : { t: 'mision' }); return; } const b = e.target.closest('[data-cambiar]'); if (b) { e.stopPropagation(); const i = +b.dataset.cambiar; if (cambioPend && cambioPend.i === i && Date.now() - cambioPend.t < 4000) { cambioPend = null; mandar({ t: 'cambiarTarea', i }); } else { cambioPend = { i, t: Date.now() }; b.textContent = '¿Seguro?'; } return; } if (COMPACTO) { $('misiones').classList.toggle('abierto'); pintarMisiones(); return; } abrirMapa(); };
+$('misiones').onclick = e => { if (e.target.closest('[data-expabrir]')) { e.stopPropagation(); V.abrirExpedicion(); return; } const en = e.target.closest('[data-entregar]'); if (en) { e.stopPropagation(); mandar(en.dataset.entregar === 'diaria' ? { t: 'mision', diaria: true } : { t: 'mision' }); return; } const b = e.target.closest('[data-cambiar]'); if (b) { e.stopPropagation(); const i = +b.dataset.cambiar; if (cambioPend && cambioPend.i === i && Date.now() - cambioPend.t < 4000) { cambioPend = null; mandar({ t: 'cambiarTarea', i }); } else { cambioPend = { i, t: Date.now() }; b.textContent = '¿Seguro?'; } return; } const ir = e.target.closest('[data-ir]'); if (ir) { e.stopPropagation(); irTarea(+ir.dataset.ir); return; } if (COMPACTO) { $('misiones').classList.toggle('abierto'); pintarMisiones(); return; } abrirMapa(); };
 function misionLista() { if (!yo) return false; const q = MISIONES[yo.mis.i]; const d = yo.diaria || {}; return (q && yo.mis.p >= q.n) || (!d.ok && (d.p || 0) >= DIARIA.n); }
 function colorNivel(nv) { const d = nv - (yo ? yo.nivel : 1); return d >= 5 ? '#ff3344' : d >= 2 ? '#ff9900' : d <= -8 ? '#9a9a9a' : d <= -3 ? '#4ade80' : '#ffe600'; }
 // Marca de peligro que no depende del color (daltonicos): ASCII porque la fuente pixel no tiene calavera.
@@ -6477,11 +6565,13 @@ function cuadroBucle(t) {
   if (abismo) abismo.grupo.visible = enAbismo(P.x);
   if (cueva && enCueva(P.x)) cueva.animar(t);
   if (abismo && enAbismo(P.x)) { abismo.animar(t); animarCorrientes(t); }
+  else if (!enCueva(P.x)) animarCorrientesMundo(t);
   animarNocheDuendes(t);
   if (tirosAsedio.length) moverTirosAsedio(t);
   for (const cr of cristalesHito) { cr.rotation.y = t / 900; cr.position.y += Math.sin(t / 500) * 0.004; }
   if (molinoAspas && Math.hypot(P.x, P.z) < 160) molinoAspas.rotation.x = t / 1400;
-  if (corcho) corcho.position.y = corcho.userData.y0 + (pica > performance.now() ? -0.18 + Math.sin(t / 60) * 0.08 : Math.sin(t / 500) * 0.04);
+  if (corcho) { const ahC = performance.now(), amC = (corcho.userData.am || []).some(a => ahC >= a && ahC < a + 120);
+    corcho.position.y = corcho.userData.y0 + (pica > ahC ? -0.18 + Math.sin(t / 60) * 0.08 : amC ? -0.07 + Math.sin(ahC / 25) * 0.03 : Math.sin(t / 500) * 0.04); }
   if (agua && agua.material.uniforms) {
     // Agua viva: refleja el horizonte, brilla con el sol (o la luna) y se oscurece de noche.
     AGUA_U.uT.value = t / 1000; AGUA_U.uCielo.value.copy(nieblaAct); AGUA_U.uSol.value.copy(solDir);
@@ -6579,6 +6669,7 @@ async function inicio() {
   for (const c of abismo.solidos || []) ponerSolido(c.x, c.z, c.r);
   abismo.dueno(asedio && asedio.dueno);
   crearCorrientes();
+  crearCorrientesMundo();
   progreso(0.7, 'Preparando los gráficos…');
   // El socket y el 'hola' salen ya, en paralelo con shaders, mapa y NPC (antes, al final).
   // El rescate (#r=) pregunta antes de entrar: ese caso conecta abajo, como siempre.

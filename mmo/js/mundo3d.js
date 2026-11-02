@@ -194,7 +194,17 @@ export function campamentos(MAPAS, MONSTRUOS) {
     const jefe = mp.jefe && puntos.length ? puntos.pop() : null;
     puntos.forEach((p, i) => {
       const k = tipos[Math.min(tipos.length - 1, Math.floor(i / puntos.length * tipos.length))];
-      l.push({ id: l.length, zona: id, x: p.x, z: p.z, k, n: 2 + (i % 2), jefe: false });
+      const cp = { id: l.length, zona: id, x: p.x, z: p.z, k, n: 2 + (i % 2), jefe: false };
+      // Campamento mixto: uno de cada tres suma un tirador de la zona (el de
+      // nivel mas parecido) que dispara desde atras mientras los otros cargan.
+      const mb = MONSTRUOS[k] || {};
+      // (Nunca en los de Nv 1-2: ahi aprenden a pelear los recien llegados.)
+      if (i % 3 === 2 && !mb.dispara && !mb.jefe && mb.nivel > 2) {
+        const tir = tipos.filter(t => MONSTRUOS[t] && MONSTRUOS[t].dispara && !MONSTRUOS[t].jefe)
+          .sort((a, b) => Math.abs(MONSTRUOS[a].nivel - mb.nivel) - Math.abs(MONSTRUOS[b].nivel - mb.nivel))[0];
+        if (tir) { cp.k2 = tir; cp.n2 = 1; }
+      }
+      l.push(cp);
     });
     if (jefe) l.push({ id: l.length, zona: id, x: jefe.x, z: jefe.z, k: mp.jefe, n: 1, jefe: true });
     n++;
@@ -311,5 +321,37 @@ export function nodos3d(MAPAS, MONSTRUOS) {
     n++;
   }
   return (_nodos = l);
+}
+
+// ── CORRIENTES DE VIENTO DEL MUNDO ABIERTO ──
+// Una por zona, a ~25 m del cofre legendario (el punto mas alto) y en la
+// parte mas baja de ese anillo: el novato sin alas entra volando o planeando,
+// el servidor le recarga las alas y sube hasta el cofre. Mismo formato que
+// CORRIENTES del Abismo ({ x, z, r }) mas la zona y la altura del suelo (y).
+// Indices desplazados (+100) para no chocar con los del Abismo en s.corrT.
+export const CORRIENTE_MUNDO_BASE = 100;
+let _corrM = null;
+export function corrientesMundo(MAPAS, MONSTRUOS) {
+  if (_corrM) return _corrM;
+  const l = [];
+  for (const c of cofres3d(MAPAS, MONSTRUOS)) {
+    if (c.tipo !== 'legendario' || c.zona === 'pueblo') continue;
+    let mejor = null;
+    for (let k = 0; k < 12; k++) {
+      const ang = k * Math.PI / 6;
+      const x = Math.round(c.x + Math.cos(ang) * 25), z = Math.round(c.z + Math.sin(ang) * 25);
+      if (zonaEn(x, z) !== c.zona || Math.max(Math.abs(x), Math.abs(z)) > 570) continue;
+      const y = alturaEn(x, z);
+      if (y < MUNDO.agua + 0.5) continue;
+      if (!mejor || y < mejor.y) mejor = { x, z, y };
+    }
+    if (mejor) l.push({ x: mejor.x, z: mejor.z, r: 8, y: Math.round(mejor.y * 10) / 10, zona: c.zona });
+  }
+  return (_corrM = l);
+}
+// Indice (+100) de la corriente en (x, z), o -1. Mismo criterio que corrienteEn.
+export function corrienteEnMundo(x, z, MAPAS, MONSTRUOS) {
+  const i = corrientesMundo(MAPAS, MONSTRUOS).findIndex(c => (x - c.x) ** 2 + (z - c.z) ** 2 < c.r * c.r);
+  return i < 0 ? -1 : CORRIENTE_MUNDO_BASE + i;
 }
 

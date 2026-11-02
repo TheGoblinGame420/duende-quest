@@ -86,6 +86,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v347 | Ronda 16: aviso de Telegram que no interrumpe, NPC rotulados, cueva a Nv 5, tienda clara, chat para menores, menos datos | **B** |
 | v348 | Estudio 4: esquivar, búfer de ataque, Gran Invasión 21:00, grupo para la cueva, pueblo andino, gestos que bailan, hermandades abiertas | **B** |
 | v349 | Ronda 18: etiquetas limpias, esquiva justa con sonido, pueblo seguro, Gran Invasión siempre, skins exclusivas en 3D, calabazas del último día | **B** |
+| v350 | Estudio 5: suerte del duende, cofres semanales, calendario de la fiesta, jefes con fase 2, élites con afijo, corrientes, libreta de pesca | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

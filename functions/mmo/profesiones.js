@@ -106,6 +106,9 @@ export const Profesiones = {
     if (!ca) return;
     if (ca.h === 'pescar') return this.cancelarCast(s, 'Tiraste antes de que picara: el pez se asustó.');
     if (ca.h !== 'pica' || s.muerto) return;
+    // Tiron perfecto: tirar en los primeros 800 ms de la pica medidos en el servidor
+    // (incluye ida y vuelta de la red movil; la ventana de 2 s no cambia).
+    const perfecto = Date.now() - (ca.fin - PESCA.ventana) < 800;
     s.cast = null;
     this.aClave(s.k, { t: 'castFin', p: s.id, ok: true });
     const c = s.c;
@@ -121,9 +124,9 @@ export const Profesiones = {
     c.mat = c.mat || {};
     const cant = 1 + (p.nv >= 30 ? 1 : 0);
     c.mat.pescado = Math.min(999, (c.mat.pescado || 0) + cant);
-    let txt = `🎣 +${cant} ${MATERIALES.pescado.nombre}`, dorado = false, oro = 0;
+    let txt = `${perfecto ? '¡Tirón perfecto! ' : ''}🎣 +${cant} ${MATERIALES.pescado.nombre}`, dorado = false, oro = 0;
     // Con lluvia (CLIMA) los dorados pican el doble.
-    if (Math.random() < (PESCA.dorado + p.nv / 1500) * ((s.m3 ? ['lluvia', 'tormenta'].includes(climaEn(lugar, Date.now())) : climaDe(c.mapa) === 'lluvia') ? 2 : 1)) { c.mat.pez_dorado = Math.min(999, (c.mat.pez_dorado || 0) + 1); c.dorados = (c.dorados || 0) + 1; dorado = true; txt += ' y 1 Pez Dorado'; }
+    if (Math.random() < (PESCA.dorado + p.nv / 1500) * ((s.m3 ? ['lluvia', 'tormenta'].includes(climaEn(lugar, Date.now())) : climaDe(c.mapa) === 'lluvia') ? 2 : 1) * (perfecto ? 1.5 : 1)) { c.mat.pez_dorado = Math.min(999, (c.mat.pez_dorado || 0) + 1); c.dorados = (c.dorados || 0) + 1; dorado = true; txt += ' y 1 Pez Dorado'; }
     if (Math.random() < PESCA.cofre) { oro = 30 * Math.max(5, p.nv); c.oro += oro; txt += ` y un cofre hundido (+${oro} oro)`; }
     // La especie de este pesquero: la primera vez, oro.
     c.especies = c.especies || {};
@@ -145,7 +148,7 @@ export const Profesiones = {
       this.aTodos({ t: 'aviso', m: `${c.nombre} ha pescado el Pececito Dorado.` });
     }
     s.sucio = true;
-    this.enviar(s, { t: 'pescado', cant, dorado, oro, hoy: c.pescaHoy.n });
+    this.enviar(s, { t: 'pescado', cant, dorado, oro, hoy: c.pescaHoy.n, ...(perfecto ? { perfecto: 1 } : {}) });
     this.enviar(s, { t: 'toast', m: txt, ok: true });
     this.progresoTarea && this.progresoTarea(s, 'pescar');
     this.puntoGesta && this.puntoGesta(s, 'pesca');

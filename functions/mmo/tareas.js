@@ -10,11 +10,13 @@
 // cadena de misiones (que se acaba) y el jefe mundial.
 // Premios: XP, oro, poderes y equipo. NUNCA mTON.
 // ═══════════════════════════════════════════════════════
-import { TAREAS_DIA, TAREAS_SEMANA, premioTarea, zonaDeNivel, hoyUTC, semanaUTC, MAPAS, MONSTRUOS, NIVEL_MAX , PASE } from '../../mmo/js/data.js';
+import { TAREAS_DIA, TAREAS_SEMANA, premioTarea, zonaDeNivel, hoyUTC, semanaUTC, MAPAS, MONSTRUOS, NIVEL_MAX , PASE, temporadaDe, TEMP_DIAS, TEMP_DIA_PREMIO, diaFiesta, diasFiesta } from '../../mmo/js/data.js';
 
 // Solo existen en CLASSIC (2D): en ORIGINS no se reparten y, si ya tocaron, se cambian.
 // (Las expediciones ya existen tambien en ORIGINS: ventana 🧭 de ventanas.js.)
 const SOLO_2D = new Set(['torre']);
+// Medidor semanal: puntos para abrir cada uno de los 3 cofres de la semana.
+const SEMANA_COFRES = [4, 8, 12];
 // Hash entero pequeño y estable (para elegir las tareas del dia).
 function hash(t) { let h = 2166136261; for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h; }
 function elegir(lista, n, semilla, nivel) {
@@ -38,7 +40,7 @@ export const Tareas = {
       c.tareas = { d: hoy, bono: false, cambio: false, l: elegir(this.tareasPosibles().filter(t => !c.en3d || !SOLO_2D.has(t.tipo)), 3, c.uid + hoy, c.nivel).map(t => ({ id: t.id, p: 0, ok: false, zona: t.tipo === 'zona' ? zona : undefined })) };
     }
     if (!c.semana || !(c.semana.d >= sem)) {
-      c.semana = { d: sem, bono: false, l: elegir(c.en3d ? TAREAS_SEMANA.filter(t => !SOLO_2D.has(t.tipo)) : TAREAS_SEMANA, 2, c.uid + 'S' + sem, c.nivel).map(t => ({ id: t.id, p: 0, ok: false })) };
+      c.semana = { d: sem, bono: false, pts: 0, cof: 0, l: elegir(c.en3d ? TAREAS_SEMANA.filter(t => !SOLO_2D.has(t.tipo)) : TAREAS_SEMANA, 2, c.uid + 'S' + sem, c.nivel).map(t => ({ id: t.id, p: 0, ok: false })) };
     }
     if (c.en3d) this.quitarSolo2d(c);
     return { dia: c.tareas, sem: c.semana };
@@ -107,7 +109,7 @@ export const Tareas = {
         if (!vale) continue;
         t.p++;
         cambio = true;
-        if (t.p >= def.n) { t.ok = true; acabada = true; this.cobrarTarea(s, def, semanal); }
+        if (t.p >= def.n) { t.ok = true; acabada = true; this.cobrarTarea(s, def, semanal); if (!semanal) this.puntoSemana(s, 1); }
       }
       // Diarias con margen: el bono del día sale al cumplir 2 de 3 (la
       // tercera sigue pagando su premio propio). La semanal pide todas.
@@ -115,6 +117,7 @@ export const Tareas = {
       if (!bloque.bono && bloque.l.length && listas) {
         bloque.bono = true;
         this.bonoTareas(s, semanal);
+        if (!semanal) this.puntoSemana(s, 1);
       }
     };
     revisar(dia, TAREAS_DIA, false);
@@ -126,6 +129,37 @@ export const Tareas = {
       const ahora = Date.now();
       if (acabada || ahora - (s.tareasT || 0) >= 3000) { s.tareasT = ahora; this.enviar(s, { t: 'tareas', ...this.infoTareas(c) }); }
     }
+    if (tipo === 'caza' && o && (o.nv || (MONSTRUOS[o.k] || {}).nivel || 0) < c.nivel - 5) return;   // fiesta: caza de tu nivel
+    this.progresoFiesta(s, tipo, 1);
+  },
+
+  // Calendario de la fiesta (data TEMP_DIAS): una tarea por dia. Suma a todos
+  // los dias ya abiertos (hoy y los pasados sin cumplir: puesta al dia); nunca
+  // a dias futuros. Cada dia cumplido paga TEMP_DIA_PREMIO del objeto de la fiesta.
+  progresoFiesta(s, tipo, cant) {
+    const c = s && s.c, tp = c && temporadaDe();
+    if (!tp || !(cant > 0)) return;
+    if (!c.fiestaDias || c.fiestaDias.id !== tp.id) c.fiestaDias = { id: tp.id, p: {}, ok: [] };
+    const fd = c.fiestaDias, hoy = Math.min(diaFiesta(tp), diasFiesta(tp) - 1);
+    let cambio = false;
+    // Lo hecho se reparte del dia mas antiguo al mas nuevo (una accion no cumple dos dias a la vez).
+    for (let d = 0, resto = cant; d <= hoy && resto > 0; d++) {
+      const def = TEMP_DIAS[d % TEMP_DIAS.length];
+      if (def.tipo !== tipo || fd.ok.includes(d)) continue;
+      const usa = Math.max(0, Math.min(resto, def.n - (fd.p[d] || 0)));
+      resto -= usa;
+      fd.p[d] = (fd.p[d] || 0) + usa;
+      cambio = true;
+      if (fd.p[d] < def.n) continue;
+      fd.ok.push(d);
+      if (this.edicionTemp) this.edicionTemp(c, tp);
+      c[tp.campo] = (c[tp.campo] || 0) + TEMP_DIA_PREMIO;
+      if (this.sumarTempGlobal) this.sumarTempGlobal(tp, TEMP_DIA_PREMIO);
+      this.enviar(s, { t: 'toast', ok: true, m: `${tp.emoji} Día ${d + 1} de ${tp.nombre} cumplido: "${def.txt}" · +${TEMP_DIA_PREMIO} ${tp.cosas}` });
+      if (this.yoLuego) this.yoLuego(s, true);   // el 'yo' lleva fiestaDias (world.js datosPropios)
+      if (this.tiendaTemp) this.tiendaTemp(s, {});   // saldo nuevo para la tienda de la fiesta
+    }
+    if (cambio) s.sucio = true;
   },
 
   cobrarTarea(s, def, semanal) {
@@ -159,6 +193,26 @@ export const Tareas = {
     this.guardar(s);
   },
 
+  // Medidor semanal: +1 por diaria cumplida y +1 por bono del día. Con 4/8/12
+  // puntos se abre un cofre con el mismo premio que el bono diario (objeto,
+  // escudos y pociones). Así quien entra 4 de 7 días también se lleva algo.
+  puntoSemana(s, n) {
+    const c = s.c, sem = c && c.semana;
+    if (!sem) return;
+    sem.pts = (sem.pts || 0) + n;
+    sem.cof = sem.cof || 0;
+    while (sem.cof < 3 && sem.pts >= SEMANA_COFRES[sem.cof]) {
+      sem.cof++;
+      const it = this.darItem(s, this.generarItem(c.nivel, 1));
+      c.pw.escudo = Math.min(99, (c.pw.escudo || 0) + 2);
+      c.pw.pocion = Math.min(99, (c.pw.pocion || 0) + 5);
+      this.enviar(s, { t: 'toast', ok: true, m: `📦 Cofre semanal ${sem.cof}/3 abierto: ${it && it.r >= 2 ? 'objeto ÉPICO' : 'objeto raro'}, 2 escudos y 5 pociones.` });
+      this.actualizarYo(s);
+      this.guardar(s);
+    }
+    s.sucio = true;
+  },
+
   textoTarea(def, c, t) {
     if (def.tipo === 'zona') return def.txt + ((MAPAS[(t && t.zona) || zonaDeNivel(c.nivel)] || {}).nombre || '');
     if (def.tipo === 'mazmorra' && c && c.en3d) return def.txt + ' (la Cueva del pueblo cuenta)';   // ORIGINS: la cueva 3D suma a esta tarea (cueva3d.js progresoTarea)
@@ -167,6 +221,6 @@ export const Tareas = {
   infoTareas(c) {
     const { dia, sem } = this.tareasDe(c);
     const fila = (t, defs) => { const d = defs.find(x => x.id === t.id); return { id: t.id, txt: this.textoTarea(d, c, t), p: Math.min(t.p, d.n), n: d.n, ok: t.ok }; };
-    return { dia: { l: dia.l.map(t => fila(t, TAREAS_DIA)), bono: dia.bono, cambio: !!dia.cambio }, sem: { l: sem.l.map(t => fila(t, TAREAS_SEMANA)), bono: sem.bono }, premio: premioTarea(c.nivel, false), premioSem: premioTarea(c.nivel, true) };
+    return { dia: { l: dia.l.map(t => fila(t, TAREAS_DIA)), bono: dia.bono, cambio: !!dia.cambio }, sem: { l: sem.l.map(t => fila(t, TAREAS_SEMANA)), bono: sem.bono, pts: sem.pts || 0, cof: sem.cof || 0 }, premio: premioTarea(c.nivel, false), premioSem: premioTarea(c.nivel, true) };
   },
 };

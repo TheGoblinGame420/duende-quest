@@ -20,6 +20,18 @@ function leerNo() { try { return Number(localStorage.getItem(CLAVE_NO)) || 0; } 
 function ponerNo() { try { localStorage.setItem(CLAVE_NO, String(Date.now())); } catch (e) {} }
 const fmt = n => Math.round(n).toLocaleString('es', { useGrouping: 'always' });
 
+// Jugadores de Telegram: permiso para que el bot les escriba (requestWriteAccess).
+// Antes se pide con una tarjeta propia; 'dq_tg_escribir' = ya acepto,
+// 'dq_tg_escribir_no' = fecha del «Ahora no» (se vuelve a preguntar a los 7 dias).
+const CLAVE_ESC = 'dq_tg_escribir', CLAVE_ESC_NO = 'dq_tg_escribir_no';
+export function escribirTgPendiente() {
+  try {
+    if (localStorage.getItem(CLAVE_ESC)) return false;
+    return Date.now() - (Number(localStorage.getItem(CLAVE_ESC_NO)) || 0) >= PAUSA_NO;
+  } catch (e) { return false; }
+}
+function ponerEscNo() { try { localStorage.setItem(CLAVE_ESC_NO, String(Date.now())); } catch (e) {} }
+
 const CSS = `
 #dq-avtg{position:fixed;inset:0;z-index:10040;display:none;align-items:center;justify-content:center;background:rgba(5,4,12,.66);padding:16px;box-sizing:border-box;font-family:inherit;}
 #dq-avtg.on{display:flex;}
@@ -29,7 +41,7 @@ const CSS = `
 #dq-avtg .av-oro{display:inline-block;margin:6px 0 2px;padding:4px 10px;border-radius:999px;background:rgba(255,216,74,.14);color:#ffd84a;font-weight:700;font-size:14px;}
 #dq-avtg .av-bots{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
 #dq-avtg a,#dq-avtg button{display:flex;align-items:center;justify-content:center;min-height:48px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;font:inherit;font-weight:700;font-size:15px;cursor:pointer;text-decoration:none;touch-action:manipulation;box-sizing:border-box;padding:0 12px;}
-#dq-avtg a.av-si{background:linear-gradient(180deg,#3aa7ea,#1f7fc0);border-color:#54a9eb;}
+#dq-avtg a.av-si,#dq-avtg button.av-si{background:linear-gradient(180deg,#3aa7ea,#1f7fc0);border-color:#54a9eb;}
 #dq-avtg .av-chico{font-size:12px;color:#93a7c4;margin-top:8px;}
 @keyframes av-in{from{transform:scale(.8);opacity:0}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){#dq-avtg *{animation:none!important}}
@@ -47,22 +59,23 @@ const CSS = `
 `;
 
 export function iniciarAvisoTg(H) {
-  let raiz = null, oferta = null, espera = 0, esperaHasta = 0, abierto = false;
+  let raiz = null, oferta = null, espera = 0, esperaHasta = 0, abierto = false, permiso = false;
 
   function montar() {
     if (raiz) return raiz;
     const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
     raiz = document.createElement('div'); raiz.id = 'dq-avtg';
     raiz.setAttribute('role', 'dialog'); raiz.setAttribute('aria-modal', 'true'); raiz.setAttribute('aria-labelledby', 'dq-avtg-t');
-    raiz.addEventListener('click', e => { if (e.target === raiz) cerrar(); });
+    raiz.addEventListener('click', e => { if (e.target === raiz) { if (permiso) ponerEscNo(); cerrar(); } });
     document.body.appendChild(raiz);
     return raiz;
   }
-  function cerrar() { abierto = false; if (raiz) raiz.classList.remove('on'); }
+  function cerrar() { abierto = false; permiso = false; if (raiz) raiz.classList.remove('on'); }
   function caducado() { return !oferta || Date.now() > oferta.hasta - 15000; }
 
   function pintar(fase) {
     const r = montar(), o = oferta;
+    permiso = false;
     const premio = o.oro ? `<div class="av-oro">🎁 +${fmt(o.oro)} oro al activarlo</div>` : '';
     if (fase === 'abierto') {
       r.innerHTML = `<div class="av-caja"><h2 id="dq-avtg-t">📲 Ya casi</h2>
@@ -91,7 +104,7 @@ export function iniciarAvisoTg(H) {
     espera = 0;
     if (!oferta) return;
     let ocu = false; try { ocu = !!(H.ocupado && H.ocupado()); } catch (e) {}
-    if (ocu && !abierto) {
+    if ((ocu && !abierto) || permiso) {   // la tarjeta del permiso de Telegram no se pisa
       if (Date.now() < esperaHasta) espera = setTimeout(intentar, 1500);
       return;
     }
@@ -99,6 +112,30 @@ export function iniciarAvisoTg(H) {
   }
 
   return {
+    // Jugador dentro de Telegram: tarjeta previa. Solo «Sí, avísame» abre la ventana
+    // de permiso de Telegram; si acepta, se avisa al servidor ({t:'tgEscribir'}).
+    // No se envia ningun mensaje en ese momento. «Ahora no» (o tocar fuera) = 7 dias.
+    // Devuelve true si la tarjeta se mostro.
+    pedirPermiso() {
+      const tg = H.tg;
+      if (abierto || !tg || !tg.requestWriteAccess || !escribirTgPendiente()) return false;
+      const r = montar();
+      r.innerHTML = `<div class="av-caja"><h2 id="dq-avtg-t">🔔 ¿Te avisamos por Telegram?</h2>
+        <p class="av-p">Te escribimos <b>como mucho 1 vez al día</b> si tu racha está por perderse o tienes premios sin cobrar.</p>        <div class="av-bots"><button type="button" class="av-si" data-a="si">Sí, avísame</button><button type="button" data-a="no">Ahora no</button></div>
+        <div class="av-chico">Lo apagas cuando quieras con /avisos off en el bot.</div></div>`;
+      r.querySelector('[data-a="si"]').addEventListener('click', () => {
+        cerrar();
+        try {
+          tg.requestWriteAccess(ok => {
+            if (ok) { try { localStorage.setItem(CLAVE_ESC, '1'); } catch (e) {} H.mandar({ t: 'tgEscribir' }); }
+            else ponerEscNo();
+          });
+        } catch (e) {}
+      });
+      r.querySelector('[data-a="no"]').addEventListener('click', () => { ponerEscNo(); cerrar(); });
+      r.classList.add('on'); abierto = true; permiso = true;
+      return true;
+    },
     alOferta(m) {
       if (!m || !/^https:\/\/t\.me\/duendequest_bot\?start=av_[a-z0-9]{10}$/.test(m.url || '')) return;
       // Navegador de Facebook/Instagram/TikTok (llegan por anuncios): no sacarlo hacia t.me si no lo pidio.
@@ -107,7 +144,7 @@ export function iniciarAvisoTg(H) {
       if (!m.pedido && Date.now() - leerNo() < PAUSA_NO) return;
       if (!m.pedido && m.ya) return;
       oferta = { url: m.url, oro: Number(m.oro) || 0, hasta: Date.now() + (Number(m.ms) || 600000) };
-      if (abierto) { pintar('oferta'); return; }
+      if (abierto && !permiso) { pintar('oferta'); return; }
       esperaHasta = Date.now() + 600000;   // espera a que termine la pelea; si el codigo caduca, el boton pide otro (avisoTgCod)
       if (espera) clearTimeout(espera);
       // Un respiro: llega junto al cofre diario o al premio de la mision.

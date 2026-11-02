@@ -522,6 +522,8 @@ export class MmoWorld {
       case 'mision': return this.mision(s, m);
       case 'vincInfo': case 'vincCodigo': case 'vincUsar': case 'vincQuitar': return this.vincular(s, m);
       case 'avisoTgCod': return this.ofrecerAvisoTg(s, true);   // «Avísame por Telegram» (retencion.js)
+      // Telegram: acepto que el bot le escriba (requestWriteAccess); quita un bloqueo viejo por 403. Sin mensaje.
+      case 'tgEscribir': if (s.c && String(s.c.uid || '').startsWith('tg:')) this.permisoEscribirTg(s.c.uid, s).catch(() => {}); return;
       case 'regreso': return this.regreso(s);
       case 'ranking': return this.enviarRanking(s);
       case 'tiendaTemp': return this.tiendaTemp(s, m);   // tienda de la fiesta: solo con el objeto del evento
@@ -2124,13 +2126,13 @@ export class MmoWorld {
     this.diariaDe(c);
     if (this.rotarBoveda(c)) s.sucio = true;
     return {
-      diaria: c.diaria,
+      diaria: c.diaria, fiestaDias: c.fiestaDias || null,
       nombre: c.nombre, nivel: c.nivel, xp: c.nivel >= NIVEL_MAX ? (c.mae || {}).p || 0 : c.xp, xpSig: c.nivel >= NIVEL_MAX ? MAESTRIA_XP : xpParaSubir(c.nivel), mae: (c.mae || {}).n || 0, oro: c.oro,
       hp: Math.ceil(s.hp), maxHp: s.st.maxHp, atk: s.st.atk, def: s.st.def,
       arma: c.arma, armas: c.armas, skin: c.skin, skins: c.skins, pw: c.pw,
       kills: c.kills, jefes: c.jefes, muerto: s.muerto, mis: c.mis, forja: c.forja,
       eq: c.eq, bolsa: c.bolsa, logros: c.logros, titulo: c.titulo, mundiales: c.mundiales, login: c.login, crit: s.st.crit,
-      clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, torreSem: this.torreSem(c).max, torreMax: c.torreMax || 0, exped: c.exped || null, nVisitadas: c.nVisitadas || 0, visitadas: c.visitadas || [], especies: c.especies || {}, nEspecies: c.nEspecies || 0, dorados: c.dorados || 0, exped8: c.exped8 || 0, peces: c.peces || 0, expediciones: c.expediciones || 0, duelosG: c.duelosG || 0, desafioMax: c.desafioMax || 0, amigosN: c.amigos || 0, desafio: c.desafio || {}, ...Object.fromEntries(TEMPORADAS.map(t => [t.campo, c[t.campo] || 0])), chicha: this.infoChicha(c), temp: (temporadaDe() || {}).id || '', herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, best: c.best || {},
+      clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, torreSem: this.torreSem(c).max, torreMax: c.torreMax || 0, exped: c.exped || null, nVisitadas: c.nVisitadas || 0, visitadas: c.visitadas || [], especies: c.especies || {}, nEspecies: c.nEspecies || 0, dorados: c.dorados || 0, seca: c.seca || 0, secaEp: c.secaEp || 0, exped8: c.exped8 || 0, peces: c.peces || 0, expediciones: c.expediciones || 0, duelosG: c.duelosG || 0, desafioMax: c.desafioMax || 0, amigosN: c.amigos || 0, desafio: c.desafio || {}, ...Object.fromEntries(TEMPORADAS.map(t => [t.campo, c[t.campo] || 0])), chicha: this.infoChicha(c), temp: (temporadaDe() || {}).id || '', herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, best: c.best || {},
       boveda: c.boveda, bovedaOpc: c.bovedaOpc || null, pase: this.infoPase(c), banda: this.infoBanda(c), runas: c.runas || {}, gestaCob: c.gestaCob || null, cuevaHoy: c.cuevaDia && c.cuevaDia.d === hoyUTC() ? Math.min(3, c.cuevaDia.n) : 0, cuevaRec: c.cuevaRecord || 0,
       faccion: c.faccion || null, pa: c.pa || 0, bajasPvP: c.bajasPvP || 0, look: c.look || null, alas: c.alas || ['aprendiz'], ala: c.ala || 'aprendiz', espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, tintes: c.tintes || [], tinte: c.tinte || '', mascotas: c.mascotas || [], mascota: c.mascota || '', montado: s.montado || null,
       mton: c.mton, wallet: c.wallet ? { a: tonAmigable(c.wallet.a), desde: c.wallet.desde } : null,
@@ -2402,7 +2404,7 @@ export class MmoWorld {
     const estado = () => {
       if (!tp) return this.enviar(s, { t: 'tiendaTemp', tp: '' });
       const saldo = Math.max(0, (c[tp.campo] || 0) - (c[tp.campo + 'G'] || 0));
-      this.enviar(s, { t: 'tiendaTemp', tp: tp.id, saldo, sacoHoy: Math.max(0, 5 - c.sacoDia.n), comprado: (c.tempComprado || []).filter(id => tp.tienda.some(a => a.id === id)) });
+      this.enviar(s, { t: 'tiendaTemp', tp: tp.id, saldo, sacoHoy: Math.max(0, 5 - c.sacoDia.n), fiestaDias: c.fiestaDias && c.fiestaDias.id === tp.id ? c.fiestaDias : null, comprado: (c.tempComprado || []).filter(id => tp.tienda.some(a => a.id === id)) });
     };
     if (!tp || m.id === undefined) return estado();
     if (Date.now() - (s.tiendaTempT || 0) < 300) return;   // doble toque
@@ -2767,7 +2769,17 @@ export class MmoWorld {
       const curo = o.jefe && o.cura && o.dano ? (o.cura.get(s.id) || 0) >= 0.05 * [...o.dano.values()].reduce((a, b) => a + b, 0) && o.cura.has(s.id) : false;
       if (o.jefe) cal = ((o.dano && this.parteJusta(o, s) >= 0.05) || curo) ? TEMP_JEFE : (Math.random() < TEMP_PROB ? 1 : 0);
       else cal = (o.nv || MONSTRUOS[o.k].nivel) >= c.nivel - 10 && Math.random() < TEMP_PROB ? 1 : 0;
-      if (cal) { this.edicionTemp(c, tp); c[tp.campo] = (c[tp.campo] || 0) + cal; this.sumarTempGlobal(tp, cal); }
+      if (cal) {
+        this.edicionTemp(c, tp);
+        const cal0 = cal;   // la meta global cuenta lo real, sin el doble
+        // Llegaste a tiempo: quien se unio con la fiesta ya empezada cobra doble sus primeras 80.
+        if ((c.creado || 0) >= tp.ini && (c[tp.campo] || 0) < 80) {
+          cal += Math.min(cal, 80 - (c[tp.campo] || 0));   // el doble solo hasta llegar a 80
+          if (c.tardeAv !== tp.id) { c.tardeAv = tp.id; this.enviar(s, { t: 'toast', ok: true, m: `🎉 Llegaste a tiempo: tus primeras ${tp.emoji} ${tp.cosas} cuentan doble` }); }
+        }
+        c[tp.campo] = (c[tp.campo] || 0) + cal; this.sumarTempGlobal(tp, cal0);
+        if (this.progresoFiesta) this.progresoFiesta(s, 'obj', cal0);   // calendario de la fiesta (tareas.js)
+      }
     }
     if (Math.random() < 0.05) { c.pw.pocion = Math.min(99, c.pw.pocion + 1); drops.push('pocion'); }
     if (o && o.jefe) {
@@ -2783,14 +2795,20 @@ export class MmoWorld {
         // Banda: botin propio, una vez por semana y jefe (mazmorras.js).
         item = this.botinBanda(s, o, participo !== false);
       } else if (o.jefe && !o.cueva) {
-        const it0 = generarItem(nvM, o.final ? 2 : 1);
+        const it0 = generarItem(nvM, o.final || (c.secaEp || 0) >= 25 ? 2 : 1);   // la Suerte del duende tambien vale con jefes
         // Jefe de mazmorra: a veces la pieza es de su conjunto.
         const idMaz = o.mazmorra && this.mundo[o.cl] && this.mundo[o.cl].inst && this.mundo[o.cl].inst.id;
         if (idMaz && CONJUNTOS[idMaz] && Math.random() < CONJUNTO_PROB) it0.cj = idMaz;
         item = this.darItem(s, it0);
         if ((n || 1) === 1 && Math.random() < 0.3) this.darItem(s, generarItem(nvM, 0));
-      } else if (nvM >= c.nivel - 10 && Math.random() < 0.06 * ((n || 1) > 1 ? 1.2 / n : 1)) {
-        item = this.darItem(s, generarItem(nvM, 0));
+      } else if (nvM >= c.nivel - 10) {
+        // Suerte del duende: tras 15 cazas sin equipo, +1 % por caza; a las 35, seguro.
+        // Y tras 25 piezas sin Epico, la siguiente es Epica o mejor.
+        c.seca = (c.seca || 0) + 1;
+        const pSeca = Math.max(0, c.seca - 15) * 0.01;
+        if (c.seca >= 35 || Math.random() < 0.06 * ((n || 1) > 1 ? 1.2 / n : 1) + pSeca) {
+          item = this.darItem(s, generarItem(nvM, (c.secaEp || 0) >= 25 ? 2 : 0));
+        }
       }
       if (primero && !item) {
         // Se equipa solo si la ranura esta vacia (que se note al instante).
@@ -2803,6 +2821,7 @@ export class MmoWorld {
           this.difundirApariencia(s);   // los demas ven su nueva vida maxima
         } else item = this.darItem(s, it1);
       }
+      if (item) { c.seca = 0; c.secaEp = (item.r || 0) >= 2 ? 0 : (c.secaEp || 0) + 1; }
     }
     // Diaria: monstruos de su nivel o hasta 5 por debajo.
     const d = this.diariaDe(c);

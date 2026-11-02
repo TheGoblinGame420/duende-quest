@@ -22,8 +22,9 @@ import {
   PAQUETES, estrellasDe, solesDeStars, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA, LOGROS, progresoLogro, statsJugador, ALAS, paqueteParaFaltante, ENTREGA, textoPagoRecibido, PEDIDO_VIGENCIA_MS,
   pagoLocalActivo, textoSoles, YAPE_VIGENCIA_MS, premioDiaria, MISIONES,
   ORO_POR_USD, STAR_TIENDA_USD, PEN_POR_USD,
-  temporadaDe, TEMPORADAS,
-} from '/mmo/js/data.js?v=349';
+  temporadaDe, TEMPORADAS, TEMP_DIAS, TEMP_DIA_PREMIO, diaFiesta, diasFiesta,
+  ESPECIES, MAPAS,
+} from '/mmo/js/data.js?v=350';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -341,6 +342,18 @@ function difBonos(a, b) {
     l.push(`<span class="vv-dif ${d > 0 ? 'vv-ok' : 'vv-err'}">${d > 0 ? '+' : ''}${v} ${n}</span>`);
   }
   return l.join('');
+}
+// Igual que difBonos pero en datos (para la tarjeta del botin 3D): [{ k: 'ATQ', v: '+12' | '-5%', d }].
+function deltasBonos(a, b) {
+  const l = [];
+  for (const [k, n] of [['atk', 'ATQ'], ['def', 'DEF'], ['hp', 'VIDA'], ['crit', 'CRÍT']]) {
+    const d = ((a && a[k]) || 0) - ((b && b[k]) || 0);
+    if (Math.abs(d) < 1e-9) continue;
+    const v = k === 'crit' ? Math.round(d * 100) + '%' : Math.round(d);
+    if (v === 0 || v === '0%') continue;
+    l.push({ k: n, v: (d > 0 ? '+' : '') + v, d });
+  }
+  return l;
 }
 function htmlStats(y) {
   const ar = ARMAS[y.arma];
@@ -831,6 +844,23 @@ function pintarFranja() {
 }
 
 // ═══════════════════ LOGROS ═══════════════════
+// Libreta de pesca: una especie por pesquero (servidor: profesiones.js tirar).
+// Las que faltan salen como ??? con la pista de la zona donde se pescan.
+function libretaPesca(y) {
+  const lugares = Object.keys(ESPECIES || {}), tiene = y.especies || {};
+  const n = lugares.filter(l => (tiene[l] || 0) > 0).length;
+  let h = `<div class="vv-p" style="margin:0 0 10px;padding:8px;border-radius:8px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.35)">`
+    + `<div style="text-align:center;margin-bottom:6px">🎣 <b>Libreta de pesca</b> · Especies <b style="color:var(--oro)">${n}/${lugares.length}</b> · Ictiólogo</div>`
+    + '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center">';
+  for (const l of lugares) {
+    const c = tiene[l] || 0;
+    const zona = l === 'pueblo' ? 'el pueblo' : ((MAPAS[l] && MAPAS[l].nombre) || l);
+    h += c > 0
+      ? `<div style="min-width:44px;min-height:44px;flex:1 1 130px;max-width:200px;padding:6px;border-radius:8px;background:rgba(255,216,74,.10);border:1px solid rgba(255,216,74,.4);font-size:12px">🐟 <b>${esc(ESPECIES[l])}</b> <span class="vv-ok">x${fmt(c)}</span></div>`
+      : `<div style="min-width:44px;min-height:44px;flex:1 1 130px;max-width:200px;padding:6px;border-radius:8px;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.2);font-size:12px" class="vv-dim">🐟 ???<br><span style="font-size:11px">en ${esc(zona)}</span></div>`;
+  }
+  return h + '</div><div class="vv-dim" style="text-align:center;font-size:11px;margin-top:6px">Tira justo cuando el corcho se hunde: un tirón perfecto atrae más peces dorados.</div></div>';
+}
 function pintarLogros() {
   const y = H.yo(); if (!y) return;
   const id = IDS.logros;
@@ -856,6 +886,7 @@ function pintarLogros() {
   }
   if (sig) h += `<div class="vv-p" style="text-align:center;margin:-4px 0 10px;padding:6px 8px;border-radius:8px;background:rgba(255,216,74,.10);border:1px solid rgba(255,216,74,.35)">🎯 Siguiente: <b style="color:var(--oro)">${esc(sig.L.titulo)}</b> ${fmt(sig.p[0])}/${fmt(sig.p[1])}${sig.L.oro ? ' · +' + fmt(sig.L.oro) + ' oro' : ''}</div>`;
   if (y.titulo) h += btn('Quitar título', 'titulo', { id: '' }, 'sec vv-full') + '<div style="height:8px"></div>';
+  h += libretaPesca(y);
   const lista = LOGROS.filter(L => est.logros === 'todos' || (est.logros === 'hechos') === tienen.includes(L.id));
   if (!lista.length) h += `<p class="vv-vacio">${est.logros === 'hechos' ? 'Aún no tienes logros: caza, vence jefes y explora para conseguirlos.' : '¡Los tienes todos!'}</p>`;
   h += '<div class="vv-lista">';
@@ -1282,6 +1313,28 @@ function abrirExpedicion() {
 // La fiesta segun el reloj del servidor ('yo'.temp): con el reloj del movil
 // adelantado o atrasado, el saldo no llegaba nunca y los botones quedaban grises.
 function tempDelServidor(y) { return y && typeof y.temp === 'string' ? TEMPORADAS.find(x => x.id === y.temp) || null : temporadaDe(); }
+// Calendario de la fiesta (data TEMP_DIAS; el servidor cuenta en tareas.js progresoFiesta):
+// una casilla por dia: ✓ hecho, • abierto (hoy o pasado: puesta al dia), 🔒 futuro.
+function calendarioFiesta(tp, fd) {
+  const total = diasFiesta(tp), hoy = Math.max(0, Math.min(diaFiesta(tp), total - 1));
+  fd = fd && fd.id === tp.id ? fd : { p: {}, ok: [] };
+  const ok = fd.ok || [], p = fd.p || {};
+  let cas = '', pend = '';
+  for (let d = 0; d < total; d++) {
+    const def = TEMP_DIAS[d % TEMP_DIAS.length], hecho = ok.includes(d), fut = d > hoy;
+    const ico = hecho ? '✓' : fut ? '🔒' : '•';
+    const tit = `Día ${d + 1}: ${def.txt}` + (hecho ? ' (hecho)' : fut ? ' (aún no)' : ` (${p[d] || 0}/${def.n})`);
+    cas += `<div title="${esc(tit)}" style="min-width:44px;min-height:44px;flex:0 0 44px;box-sizing:border-box;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;line-height:1.15;`
+      + `border:2px solid ${d === hoy ? '#ffd24a' : 'rgba(255,255,255,.15)'};background:${hecho ? 'rgba(74,222,128,.18)' : fut ? 'rgba(0,0,0,.25)' : 'rgba(255,255,255,.06)'};opacity:${fut ? 0.6 : 1}">`
+      + `<b style="font-size:${hecho ? 17 : 15}px;color:${hecho ? '#4ade80' : fut ? 'inherit' : tp.color}">${ico}</b><span>D${d + 1}</span></div>`;
+    if (!hecho && !fut) pend += `<div style="margin:3px 0">${d === hoy ? '<b>Hoy</b>' : `Día ${d + 1}`}: ${esc(def.txt)} · <b>${p[d] || 0}/${def.n}</b></div>`;
+  }
+  const ms = Math.max(0, tp.ini + (hoy + 1) * 86400000 - Date.now()), hh = Math.floor(ms / 3600000), mm = Math.floor(ms % 3600000 / 60000);
+  const man = hoy + 1 < total ? `Mañana: ${esc(TEMP_DIAS[(hoy + 1) % TEMP_DIAS.length].txt)} · abre en ${hh} h ${mm} min (a las 7 p. m. de Perú)` : `Último día de la fiesta: termina en ${hh} h ${mm} min`;
+  return `<div style="margin:0 0 10px"><div style="font-weight:700;margin:0 0 6px">📅 Una tarea por día · +${TEMP_DIA_PREMIO} ${esc(tp.cosas)} ${tp.emoji} cada una</div>`
+    + `<div style="display:flex;flex-wrap:wrap;gap:6px">${cas}</div>`
+    + `<div class="vv-nota" style="margin:8px 0 0">${pend || '¡Al día! Todas las tareas abiertas están hechas.'}${pend ? '<div style="opacity:.8">Los días pasados siguen abiertos: ponte al día cuando quieras.</div>' : ''}<div style="margin-top:4px">${man}</div></div></div>`;
+}
 function pintarTiendaTemp() {
   const y = H.yo(); if (!y) return;
   const tp = tempDelServidor(y), sub = parte(IDS.ttemp, 'sub'), cu = parte(IDS.ttemp, 'cuerpo');
@@ -1296,7 +1349,10 @@ function pintarTiendaTemp() {
   const saldo = est0 ? est0.saldo : null, comprado = est0 ? est0.comprado || [] : [];
   const sacoHoy = est0 && typeof est0.sacoHoy === 'number' ? est0.sacoHoy : null;   // sacos de oro que quedan hoy (tope 5)
   sub.innerHTML = `<span>Tienes <b style="color:${tp.color}">${saldo === null ? '…' : fmt(saldo)} ${esc(tp.cosas)} ${tp.emoji}</b></span><span>hasta el ${esc(tp.hasta)}</span>`;
-  let h = '<div class="vv-lista">';
+  // El mas avanzado de los dos (la tienda lo trae al abrir; el 'yo', al cumplir un dia).
+  const avance = f => f && f.id === tp.id ? (f.ok || []).length * 1e4 + Object.values(f.p || {}).reduce((a, b) => a + b, 0) : -1;
+  const fdA = est0 && est0.fiestaDias, fdB = y.fiestaDias;
+  let h = calendarioFiesta(tp, avance(fdA) >= avance(fdB) ? fdA : fdB) + '<div class="vv-lista">';
   for (const a of tp.tienda) {
     const ya = a.una && comprado.includes(a.id);
     const desc = a.premio.titulo ? 'Exclusivo de esta fiesta: sale bajo tu nombre. Es tuyo para siempre.'
@@ -1368,7 +1424,7 @@ export function iniciarVentanas(opciones) {
     document.body.appendChild(fr);
     setInterval(pintarFranja, 2000);
   }
-  return { abrirInventario, abrirLibro, abrirTienda, abrirLogros, abrirExpedicion, abrirTiendaTemp, alTiendaTemp, actualizar, alPedido, compararConPuesta,
+  return { abrirInventario, abrirLibro, abrirTienda, abrirLogros, abrirExpedicion, abrirTiendaTemp, alTiendaTemp, actualizar, alPedido, compararConPuesta, deltasBonos,
     // Probador 3D: el mismo precio y botones de compra que la tarjeta de la tienda, y sus clics.
     compraSkin: id => { const y = H.yo(), d = SKINS[id]; return y && d ? ((y.skins || []).includes(id) ? (y.skin === id ? etq('✓ Equipado', 'vv-ok') : btn('Equipar', 'equipar', { k: 'skin', id }, '')) : accPrecio(y, 'skin', id, d)) : ''; },
     delegarCompra: el => delegar(el) };

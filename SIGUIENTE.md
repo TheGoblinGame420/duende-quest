@@ -3480,3 +3480,14 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - /jugar/ avisa que abrirá CLASSIC en celulares débiles; CLASSIC filtra notas solo-3D.
 - Tutorial móvil legible; decoración de la T'anta Wawa con InstancedMesh.
 - Arnés 905 bien.
+
+### Estudio 5 (2-nov-2026, `?v=350`)
+
+- 10 estudios web (arquetipos de enemigos, jefes, botín, misiones, eventos de varios días, vuelo, pesca, música festiva, semana en Telegram, low-poly expresivo) → 54 hallazgos → 12 tareas.
+- world.js: `c.seca` (equipo seguro a las 35 cazas) y `c.secaEp` (épico tras 25); «Llegaste a tiempo» (doble hasta 80, meta global con lo real).
+- tareas.js: `puntoSemana` y cofres 4/8/12. Calendario de la fiesta con tarea diaria y puesta al día.
+- Corrientes de viento en el mundo abierto. Campamentos mixtos con tirador y ayuda de la manada; ⚡ en rápidos.
+- Jefes con fase 2 y Furia; élites raros con afijo (Furioso/Sanguinario), dos esbirros y aura.
+- Tarjeta de botín con diferencias de stats; efecto del Raro. Libreta de pesca, tirón perfecto y amagos.
+- Pregunta previa al permiso de Telegram (tg). Luz de borde y aplastado al recibir golpe. Ruta de la misión diaria.
+- Arnés 905 bien.

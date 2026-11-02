@@ -1053,8 +1053,23 @@ export const Retencion = {
   // escriba (requestWriteAccess). Un 403 anterior (bloq) ya no aplica: se borra y
   // se reinicia la cuenta de avisos, como /avisos on, pero NO se toca un /avisos off
   // (eso lo decide el jugador en el bot). No se envia ningun mensaje aqui.
-  async permisoEscribirTg(uid) {
+  // s: la sesion del jugador. La primera vez por personaje recibe el mismo premio que
+  // el «Avísame por Telegram» de la web (AVISO_TG_ORO, marca c.avTgOro) y suma avisoTgOk.
+  async permisoEscribirTg(uid, s) {
     if (typeof uid !== 'string' || !/^tg:\d{1,15}$/.test(uid)) return false;
+    const c = s && s.c;
+    // Una vez por chat de Telegram, como la web ('avtg:'+chat): un personaje web ya premiado
+    // por este mismo chat no cobra otra vez. avTgOro se marca antes del await (doble envio).
+    if (c && c.uid === uid && !s.cerrado && !c.avTgOro && !(this.uidsPrueba && this.uidsPrueba.has(uid))) {
+      c.avTgOro = 1; s.sucio = true;
+      let yaChat = true; try { yaChat = !!(await this.state.storage.get('avtg:' + uid.slice(3))); } catch (er) {}
+      if (yaChat) return this.permisoEscribirTg(uid, null);
+      c.oro = (c.oro || 0) + AVISO_TG_ORO;
+      try { await this.state.storage.put('avtg:' + uid.slice(3), uid); } catch (er) {}
+      try { await this.guardar(s); } catch (er) {}
+      if (!s.cerrado) { this.enviar(s, { t: 'avisoTgOk', oro: AVISO_TG_ORO }); this.actualizarYo(s); }
+      this.retSumar(diaNum(), { avisoTgOk: 1 }).catch(() => {});
+    }
     const idx = await this.retIdx(), id = uid.slice(3);
     let cambio = false;
     const e = idx[uid];
