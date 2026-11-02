@@ -123,6 +123,9 @@ export default {
       // la URL cambia en cada version, asi que puede cachearse 7 dias sin
       // revalidar. REGLA: cualquier cambio en esos archivos DEBE subir el ?v=
       // (en el HTML y en el import), o el jugador seguira con el JS viejo.
+      // OJO: esta rama solo corre si el Worker sirve la peticion (run_worker_first
+      // en wrangler.toml no incluye /mundo/js/* ni /mmo/js/*). Los JS estaticos
+      // reciben su Cache-Control de _headers (bloques /mundo/js/* y /mmo/js/*).
       headers.set('Cache-Control', 'public, max-age=604800');
     }
     return new Response(res.body, { status: res.status, statusText: res.statusText, headers });

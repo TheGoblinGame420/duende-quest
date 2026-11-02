@@ -516,9 +516,18 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 357;
+export const VERSION = 358;
 
 export const NOVEDADES = [
+  { n: 126, fecha: '2 nov 2026', items: [
+    'Tras tu primera misión puedes bautizar a tu duende con un toque: elige un nombre sugerido o escribe el tuyo.',
+    'Al subir de nivel ves cuánto ATQ y DEF ganaste, y equipar una pieza mejor da un destello del color de su rareza. Tu equipo brilla en tu duende según su rareza y forja.',
+    'Al descubrir una zona suena una frase de quena y la cámara hace una panorámica hacia su lugar emblemático.',
+    'Los monstruos gritan antes de atacarte, cojean con poca vida y a veces huyen asustados cuando cae un compañero (¡Remate!).',
+    '📲 «Invitar a mi grupo»: tu amigo toca tu enlace y le llega tu invitación de grupo al instante.',
+    'Al terminar la caza del día aparece «🌙 ¡Buen trabajo hoy!» con tus motivos para volver mañana.',
+    'La tienda dice si El Duende está atendiendo ahora, y hay Libro de Reclamaciones en la página de reembolsos.',
+  ] },
   { n: 125, fecha: '2 nov 2026', items: [
     'Guerreros y Pícaros también ven ¡DÉBIL!: Golpe del Puma es de luz, Torbellino de fuego, Tajo del Otorongo de sombra y Lluvia de Cuchillas de hielo. Caza 25 de un monstruo y aprendes su debilidad.',
     '🎬 El modo cine deja a tu duende bailando todo el rato y pone tu enlace abajo, listo para subir el video.',
@@ -2577,6 +2586,18 @@ export const paqueteParaFaltante = falta => {
 // Ajustalo a su disponibilidad real (plazoMaxH es lo maximo que se promete).
 export const ENTREGA = { horario: '9:00 a 23:00 (hora de Perú)', plazo: 'normalmente en unas horas', plazoMaxH: 24 };
 export const textoPagoRecibido = () => `La entrega es a mano: El Duende la revisa de ${ENTREGA.horario}, ${ENTREGA.plazo} (máximo ${ENTREGA.plazoMaxH} h).`;
+// ¿El Duende atiende ahora? Lee la hora de Lima y usa el horario de ENTREGA
+// (horas sacadas del texto 'H:MM a H:MM'; si no hay, 9 y 23). Solo informa:
+// la entrega sigue siendo a mano.
+export function atencionAhora() {
+  try {
+    const m = String(ENTREGA.horario || '').match(/(\d{1,2}):\d{2}\D+(\d{1,2}):\d{2}/);
+    const ini = m ? Number(m[1]) : 9, fin = m ? Number(m[2]) : 23;
+    const h = Number(new Intl.DateTimeFormat('es-PE', { timeZone: 'America/Lima', hour: 'numeric', hourCycle: 'h23' }).format(new Date()).replace(/\D/g, ''));
+    if (h >= ini && h < fin) return `🟢 El Duende atiende ahora (hasta las ${fin}:00, hora de Perú)`;
+    return `🌙 Fuera de horario: El Duende revisa tu compra desde las ${ini}:00 (hora de Perú)`;
+  } catch (e) { return ''; }
+}
 
 // ── GESTOS (/saludar, /bailar...): un emoji grande sobre tu duende que ven
 // los de tu mapa. Solo social.

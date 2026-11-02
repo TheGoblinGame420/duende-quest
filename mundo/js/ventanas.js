@@ -19,13 +19,13 @@ import {
   ARMAS, SKINS, precioOro, PODERES, MONTURAS, TINTES, MASCOTAS, HOJAS, FORJA_MAX, costoForja, multForja,
   BANDA_MONTURA, TORRE, ambulanteActivo, ambulanteOferta,
   EXPEDICION, premioExpedicion, MATERIALES,
-  PAQUETES, estrellasDe, solesDeStars, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA, LOGROS, progresoLogro, statsJugador, ALAS, paqueteParaFaltante, ENTREGA, textoPagoRecibido, PEDIDO_VIGENCIA_MS,
+  PAQUETES, estrellasDe, solesDeStars, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA, LOGROS, progresoLogro, statsJugador, ALAS, paqueteParaFaltante, ENTREGA, textoPagoRecibido, atencionAhora, PEDIDO_VIGENCIA_MS,
   pagoLocalActivo, textoSoles, YAPE_VIGENCIA_MS, premioDiaria, MISIONES,
   ORO_POR_USD, STAR_TIENDA_USD, PEN_POR_USD,
   temporadaDe, TEMPORADAS, TEMP_DIAS, premioDiaFiesta, esNochebuena, diaFiesta, diasFiesta,
   ESPECIES, MAPAS, MONSTRUOS, BESTIARIO_HITOS, premioBestiario, DEBIL_EMO,
-} from '/mmo/js/data.js?v=357';
-import { LORE_MONSTRUOS } from './lore.js?v=357';
+} from '/mmo/js/data.js?v=358';
+import { LORE_MONSTRUOS } from './lore.js?v=358';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -773,7 +773,8 @@ function htmlPremium(y) {
   const cuentaTg = esTg();
   const cuenta = y.p2e && y.p2e.cuenta;
   // Una linea clara y el detalle plegado (en movil no tapa los paquetes).
-  let h = `<p class="vv-p" style="margin-bottom:4px">Compras opcionales: <b>El Duende</b> revisa cada pago y lo entrega en tu personaje <b>a mano, de ${esc(ENTREGA.horario)} (máx. ${ENTREGA.plazoMaxH} h)</b>.</p><details class="vv-nota" style="margin:0 0 10px"><summary style="cursor:pointer">Cómo funciona</summary>${cuentaTg ? 'En Telegram se paga con Stars. Si no tienes Stars, Telegram te las vende y te muestra el precio final en tu moneda antes de pagar.' : anuncio() ? 'Se paga con Stars de Telegram (se compran con tarjeta dentro de Telegram): el botón abre Telegram, o en PC escaneas un QR con el celular.' : 'En la web se paga con Stars de Telegram (se compran con tarjeta dentro de Telegram), con Solana (SOL, una criptomoneda: no son soles) o con $DUENDE (10% de descuento).'}${anuncio() ? '' : ' Con dinero <b>no</b> se compran mTON: solo se ganan jugando.'}${pagoLocalActivo() && !cuentaTg ? ' Con Yape / Plin pagas en soles el precio que ves; El Duende revisa tu yapeo y te lo entrega.' : ' Los soles (S/) son solo referencia aproximada.'}</details>`;
+  const atiende = atencionAhora();
+  let h = (atiende ? `<p class="vv-dim" style="margin:0 0 4px;font-size:12px">${esc(atiende)}</p>` : '') + `<p class="vv-p" style="margin-bottom:4px">Compras opcionales: <b>El Duende</b> revisa cada pago y lo entrega en tu personaje <b>a mano, de ${esc(ENTREGA.horario)} (máx. ${ENTREGA.plazoMaxH} h)</b>.</p><details class="vv-nota" style="margin:0 0 10px"><summary style="cursor:pointer">Cómo funciona</summary>${cuentaTg ? 'En Telegram se paga con Stars. Si no tienes Stars, Telegram te las vende y te muestra el precio final en tu moneda antes de pagar.' : anuncio() ? 'Se paga con Stars de Telegram (se compran con tarjeta dentro de Telegram): el botón abre Telegram, o en PC escaneas un QR con el celular.' : 'En la web se paga con Stars de Telegram (se compran con tarjeta dentro de Telegram), con Solana (SOL, una criptomoneda: no son soles) o con $DUENDE (10% de descuento).'}${anuncio() ? '' : ' Con dinero <b>no</b> se compran mTON: solo se ganan jugando.'}${pagoLocalActivo() && !cuentaTg ? ' Con Yape / Plin pagas en soles el precio que ves; El Duende revisa tu yapeo y te lo entrega.' : ' Los soles (S/) son solo referencia aproximada.'}</details>`;
   // Lo elegido va primero; luego por grupos con subtitulo.
   // El Pack de bienvenida (SOLO 1 VEZ) sale solo mientras el servidor diga que aun puedes.
   const lista = ordenTienda(PAQUETES.filter(p => !p.unaVez || y.puedeBienvenida), est.foco);
@@ -819,7 +820,7 @@ function htmlPremium(y) {
     const col = { pagado: 'vv-warn', por_verificar: 'vv-warn', entregado: 'vv-ok', anulado: 'vv-err', esperando_pago: 'vv-dim', comprobando: 'vv-dim' };
     const txt = { pagado: 'Por entregar', por_verificar: 'En revisión', entregado: 'Entregado', anulado: 'Anulado', esperando_pago: 'Sin pagar', comprobando: 'Comprobando…' };
     h += '<div class="vv-sec">Tus compras</div><div class="vv-pedidos">' + ps.slice().reverse().map(x => `<div class="fila"><span>#${esc(x.codigo)} · ${esc(x.nombre)}</span><span class="${col[x.estado] || ''}">${esc(txt[x.estado] || x.estado)}${x.estado === 'esperando_pago' && (x.lamports || x.raw || x.yape) ? ' ' + btn('Pagar', 'retomar', { id: x.codigo }, 'sec') : ''}${textoPlazo(x)} ${x.reclamado ? '<small class="vv-dim">Avisado</small>' : btn('¿Problema?', 'reclamo', { id: x.codigo }, 'sec')}</span></div>`).join('') + '</div>'
-      + `<p class="vv-nota">Las compras se entregan a mano de ${esc(ENTREGA.horario)}, ${esc(ENTREGA.plazo)}. Te avisamos al entregarlas. ¿Algo salió mal? Pulsa «¿Problema?» y El Duende lo revisa. <a href="/reembolsos.html" target="_blank" rel="noopener" style="color:inherit">Entregas y reembolsos</a></p>`;
+      + `<p class="vv-nota">Las compras se entregan a mano de ${esc(ENTREGA.horario)}, ${esc(ENTREGA.plazo)}. Te avisamos al entregarlas. ¿Algo salió mal? Pulsa «¿Problema?» y El Duende lo revisa. <a href="/reembolsos.html" target="_blank" rel="noopener" style="color:inherit">Entregas y reembolsos</a> · <a href="/reembolsos.html#libro" target="_blank" rel="noopener" style="color:inherit">Libro de Reclamaciones</a></p>`;
   }
   return h;
 }
@@ -830,6 +831,7 @@ function textoPlazo(x) {
   const min = Math.max(0, Math.round((Date.now() - x.pagadoEn) / 60000));
   const hace = min < 60 ? min + ' min' : min < 1440 ? Math.floor(min / 60) + ' h' : Math.floor(min / 1440) + ' d';
   const fin = new Date(x.pagadoEn + ENTREGA.plazoMaxH * 3600000);
+  if (Date.now() > fin.getTime()) return ' <small class="vv-err">Fuera de plazo: pulsa «¿Problema?» y se marca urgente</small>';
   let hasta = '';
   try { hasta = fin.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }); } catch (e) { hasta = fin.getHours() + ':' + String(fin.getMinutes()).padStart(2, '0'); }
   if (fin.toDateString() !== new Date().toDateString()) hasta = (fin - Date.now() < 86400000 * 2 && fin > Date.now() ? 'mañana ' : fin.toLocaleDateString('es-PE') + ' ') + hasta;
@@ -1188,7 +1190,17 @@ export function alPedido(m) {
   else if (m.t === 'pedidoSol') mostrarPedidoSol(m);
   else if (m.t === 'pedidoYape') mostrarPedidoYape(m);
   // El servidor recibio el numero de operacion: se cierra la ventana y la franja.
-  else if (m.t === 'yapeOk') { if (pagoActual && pagoActual.codigo === m.codigo) { olvidarPago(); cerrarV(IDS.pago); } }
+  else if (m.t === 'yapeOk') { if (pagoActual && pagoActual.codigo === m.codigo) { constanciaYape(pagoActual); olvidarPago(); cerrarV(IDS.pago); } }
+}
+// Constancia al recibir el Nº de operacion: pedido, monto, operacion enmascarada y hora.
+// Solo informa (la entrega sigue siendo a mano).
+function constanciaYape(p) {
+  try {
+    const op = String(p.opEnviada || '');
+    let hh = '';
+    try { hh = new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }); } catch (e) { hh = ''; }
+    H.aviso('Recibido ✓ Pedido #' + p.codigo + ' · S/ ' + p.monto + (op ? ' · Yape op. ****' + op.slice(-4) : '') + (hh ? ' · ' + hh : '') + '. Haz captura: es tu constancia.', 'ok');
+  } catch (e) {}
 }
 // Yape / Plin (PAGO_LOCAL): monto exacto en soles, #codigo en la nota y el
 // numero de operacion. NADA se entrega solo: El Duende lo revisa en su app.
@@ -1209,6 +1221,7 @@ function mostrarPedidoYape(m) {
     `<p class="vv-p">2. En la nota del yapeo escribe <b>#${esc(m.codigo)}</b>. <button class="btn sec" data-p="cod" style="padding:3px 8px">Copiar</button></p>` +
     `<p class="vv-p">3. Pega aquí el número de operación del comprobante:</p>` +
     `<input class="vv-input" data-op inputmode="numeric" maxlength="16" placeholder="Nº de operación (solo cifras)" autocomplete="off" spellcheck="false">` +
+    (atencionAhora() ? `<p class="vv-dim" style="margin:6px 0;font-size:12px">${esc(atencionAhora())}</p>` : '') +
     `<button class="btn" data-p="ok" style="width:100%;padding:12px">✅ Ya pagué: enviar operación</button>` +
     `<p class="vv-p" style="margin-top:10px">${hora ? 'Tienes hasta las ' + esc(hora) + '. ' : ''}Cada número de operación vale para un solo pedido. ${esc(textoPagoRecibido())} Si cierras esta ventana, la franja de arriba te devuelve a estos datos.</p>`;
   const c = parte(id, 'cuerpo');
@@ -1221,6 +1234,7 @@ function mostrarPedidoYape(m) {
     if (!/^\d{6,12}$/.test(op)) { H.aviso('El número de operación son solo cifras (de 6 a 12). Lo ves en el comprobante.', 'err'); return; }
     if (Date.now() - (est.ultYape || 0) < 4000) return;
     est.ultYape = Date.now();
+    m.opEnviada = op;
     H.sfx('boton', 0.3); H.mandar({ t: 'pedidoYapeOk', codigo: m.codigo, operacion: op });
   };
   inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') enviar(); });

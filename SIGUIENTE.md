@@ -3578,3 +3578,16 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Ranking de la Cueva solo en solitario y puesto al terminar. Primera caída protegida aunque se cierre muerto. Revancha justa (sin Cueva, una vez por monstruo, parte del daño, marca sin alarma).
 - Tira de clases que no falla en silencio tras pelear; avisos por encima de la tira y del diálogo.
 - Arnés 907 bien (la del pisotón es aleatoria: pasó en las dos repeticiones).
+
+### Estudio 9 (2-nov-2026, `?v=358`)
+
+- 10 estudios web (creación de personaje, poder visible, presentación de zonas, ganchos al cerrar, sonido de UI, carga three.js, grupos pequeños, confianza en pagos, monstruos con personalidad, eventos cada hora) → 54 hallazgos → 12 tareas.
+- `tarjetaBautizo` tras la misión 1 (se cierra con el toast `miNombre` del servidor; paso `nombre_puesto` solo al aceptarse); 🎲 de apariencia respeta disfraces.
+- Cartel de nivel con ATQ/DEF ganados (`statsJugador`), celebración visible para cercanos, destello y deltas al equipar.
+- Presentación de zona: panorámica, stinger de quena, lore en calma.
+- Sonido que dice la verdad (moneda solo al confirmarse) y contador de oro con tics.
+- `_headers`: JS versionado con max-age 1 h + stale-while-revalidate 1 día (no immutable: hay imports sin ?v=); precarga del kit 3D.
+- reembolsos.html: devolución con Yape/Plin y Libro de Reclamaciones (correo oficial ya usado en las páginas legales).
+- Pagos: «atiende ahora», «Fuera de plazo» con reclamo prioritario, constancia del Yape.
+- Enlace «Invitar a mi grupo». Tarjeta «Listo por hoy». Moral de manada (huida 💦, ¡Remate!). Monstruos que gritan y cojean. Brillo del equipo por rareza y forja.
+- Arnés 907 bien.

@@ -27,3 +27,21 @@
 
 /audio/*
   Cache-Control: public, max-age=86400, stale-while-revalidate=3600
+
+# JS de ORIGINS (mundo/js) y CLASSIC (mmo/js): los HTML los piden con ?v=N y
+# el flujo de publicacion sube ese ?v= en cada version, asi que una URL nueva
+# salta la cache. Antes iban con max-age=0 y el movil revalidaba ~20 modulos
+# uno a uno antes de jugar (lento con datos moviles desde Meta Ads).
+# NO es "immutable" a proposito: hay imports internos sin ?v= en el codigo
+# (mundo/js/abismo.js -> '/mmo/js/abismo3d.js' y mmo/js/mundo3d.js ->
+# './abismo3d.js'; los corrige el importmap de mundo/index.html, pero si un
+# dia falta, el jugador quedaria con un JS viejo una semana). Por eso 1 hora
+# fresca + 1 dia sirviendo la copia mientras se revalida en segundo plano.
+# Si todos los imports llevan ?v=, se puede subir a
+# "public, max-age=604800, immutable". Ninguna otra regla de este archivo pone
+# Cache-Control en estas rutas (no se duplica la cabecera).
+/mundo/js/*
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+
+/mmo/js/*
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400

@@ -19,7 +19,7 @@
 // piezas fijas de cada pivote se funden en una malla (fusionarRig): ~6-14 draw calls.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=357';
+import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=358';
 
 const PX_M = 34;                 // pixeles del 2D por metro
 const PI = Math.PI;
@@ -1065,6 +1065,8 @@ function espada(mano, o = {}) {
   if (o.e) M(g, 'caja', mat(o.hoja, { e: o.e }), hoja[2], hoja[3]).userData.sinFlash = true;
   else P.push(hoja);
   MF(g, P);
+  // Grado del equipo (o.gr 1-3, o.cg color): filo emisivo a lo largo de la hoja.
+  if (o.gr) M(g, 'caja', mat(o.cg || '#ffe6b8', { e: o.gr >= 3 ? 0.9 : o.gr >= 2 ? 0.7 : 0.4 }), [0, -(o.ancho ?? 0.07) / 2, 0.09 + L / 2], [0.03, 0.022, L * 0.96]).userData.sinFlash = true;
   // Brillo de rareza: funda aditiva un poco mas grande que la hoja que late (o.r = rig).
   if (o.filo && o.r) {
     const fp = piv(o.r, G(g, hoja[2]));
@@ -1314,7 +1316,9 @@ const CUERPOS = [
   { ancho: 1.2, panza: 1.42, grueso: 1.32 },   // Robusto
 ];
 // look = { cara 0-5, cuerpo 0-2, altura 0.9-1.12, pelo 0-7, colorPelo (indice) }
-export function crearDuende({ skin = 'comun', clase = null, arma = 'katana', look = null, atuendo = '' } = {}) {
+// grado 0-3: equipo y forja que se ven (filo que brilla; en 3, aura en el suelo). colorGrado: color
+// de la rareza (grado 2-3). ligero: calidad baja, solo el filo, sin aura.
+export function crearDuende({ skin = 'comun', clase = null, arma = 'katana', look = null, atuendo = '', grado = 0, colorGrado = null, ligero = false } = {}) {
   const sk = SKINS[skin] || SKINS.comun;
   const cl = clase && CLASES[clase] ? clase : null;
   const lk = limpiarLook(look || LOOK_BASE);
@@ -1377,18 +1381,23 @@ export function crearDuende({ skin = 'comun', clase = null, arma = 'katana', loo
   if (cara.length) fuera(MF(r.cabeza, cara, null, null, null, r.H));
   formaDuende(r, R0, lk, colorPelo);
   // Arma: los de vara (mago, sacerdote) llevan baston.
-  if (cl && CLASES[cl].basico === 'vara') baston(r, r.manoD, cl === 'sacerdote' ? '#fff3b0' : cc);
-  else if (arma === 'dagas') {
+  const gr = Math.max(0, Math.min(3, grado | 0)), cg = gr >= 2 && colorGrado ? colorGrado : '#ffe6b8';
+  const G2 = gr ? { gr, cg } : {};
+  if (cl && CLASES[cl].basico === 'vara') {
+    const gb = baston(r, r.manoD, cl === 'sacerdote' ? '#fff3b0' : cc);
+    if (gr) M(gb, 'cil', mat(cg, { e: gr >= 3 ? 0.9 : gr >= 2 ? 0.7 : 0.4 }), [0, 0.92, 0], [0.05, 0.1, 0.05]).userData.sinFlash = true;   // anillo de grado bajo la punta
+  } else if (arma === 'dagas') {
     // Brillo segun la rareza del arma: dagas violeta, odachi blanco frio, chispa celeste.
-    espada(r.manoD, { largo: 0.32, daga: true, guarda: ARMAS.dagas.color, filo: ARMAS.dagas.color, r });
-    espada(r.manoI, { largo: 0.32, daga: true, guarda: ARMAS.dagas.color, filo: ARMAS.dagas.color, r });
+    espada(r.manoD, { largo: 0.32, daga: true, guarda: ARMAS.dagas.color, filo: ARMAS.dagas.color, r, ...G2 });
+    espada(r.manoI, { largo: 0.32, daga: true, guarda: ARMAS.dagas.color, filo: ARMAS.dagas.color, r, ...G2 });
     r.dosArmas = true;
-  } else if (arma === 'odachi') espada(r.manoD, { largo: 1.25, hoja: '#ffffff', guarda: '#2b2b2b', filo: '#cfe8ff', r });
-  else if (arma === 'chispa') espada(r.manoD, { largo: 0.8, hoja: ARMAS.chispa.color, e: 0.9, guarda: '#1e3a5f', filo: ARMAS.chispa.color, r });
-  else if (R0.hojaNeon) espada(r.manoD, { largo: 0.95, hoja: R0.hojaNeon, e: 0.9, guarda: '#ff3cf0', filo: R0.hojaNeon, r });
-  else espada(r.manoD, { largo: 0.75, guarda: ARMAS.katana.color });
+  } else if (arma === 'odachi') espada(r.manoD, { largo: 1.25, hoja: '#ffffff', guarda: '#2b2b2b', filo: '#cfe8ff', r, ...G2 });
+  else if (arma === 'chispa') espada(r.manoD, { largo: 0.8, hoja: ARMAS.chispa.color, e: 0.9, guarda: '#1e3a5f', filo: ARMAS.chispa.color, r, ...G2 });
+  else if (R0.hojaNeon) espada(r.manoD, { largo: 0.95, hoja: R0.hojaNeon, e: 0.9, guarda: '#ff3cf0', filo: R0.hojaNeon, r, ...G2 });
+  else espada(r.manoD, { largo: 0.75, guarda: ARMAS.katana.color, ...G2 });
   if (brilla) auraSuelo(r, sk.color, 0.55);
-  const m = new Modelo(r, 1.75 * lk.altura, 'd:' + JSON.stringify([skin, cl, arma, Object.assign({}, lk, { altura: 0 })]));
+  else if (gr >= 3 && !ligero) auraSuelo(r, cg, 0.45);   // equipo legendario o forja alta: aura en el suelo
+  const m = new Modelo(r, 1.75 * lk.altura, 'd:' + JSON.stringify([skin, cl, arma, Object.assign({}, lk, { altura: 0 })]) + (gr ? '#g' + gr + cg + (ligero ? 'l' : '') : ''));
   m.tipo = 'duende';
   m.look = lk;
   return m;

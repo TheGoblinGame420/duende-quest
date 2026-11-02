@@ -120,7 +120,9 @@ export const EV_PASOS = ['carga_ini', 'arte_ok', 'form_visto', 'clic_entrar', 'b
   // Vigias de ORIGINS (mundo.js): fuga de geometrias/texturas en la GPU y posicion rota (NaN).
   'fuga_gpu', 'nan_pos',
   // Primer ataque mandado y primera caza (ms desde el clic en entrar): los dos juegos.
-  'golpe1', 'caza1'];
+  'golpe1', 'caza1',
+  // Bautizo del duende (invitado se pone nombre) y apariencia guardada: ORIGINS.
+  'nombre_puesto', 'look_guardado'];
 const EV_TRAMOS = [2000, 5000, 10000, 20000, 40000, 90000];   // el ultimo tramo es "mas de 90 s"
 const EV_POR_IP_HORA = 40;      // por /64 de IPv6: un jugador manda ~11 (8 de carga + 3 del tutorial); recargas y los dos juegos caben de sobra
 const EV_POR_IPV4_HORA = 800;   // IPv4: la comparten cientos de moviles por CGNAT (Claro, Movistar, Entel, Bitel)

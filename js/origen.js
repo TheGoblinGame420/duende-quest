@@ -108,7 +108,7 @@
     var okM = window.dqMedirOk();
     if (!enTg && okM !== 0 && (okM === 1 || (origen && (origen.o === 'meta' || origen.fr)))) {
       var sm = document.createElement('script');
-      sm.src = '/js/medir.js?v=357'; sm.async = true;
+      sm.src = '/js/medir.js?v=358'; sm.async = true;
       (document.head || document.documentElement).appendChild(sm);
     }
   } catch (e) {}
@@ -139,7 +139,7 @@
     mis_0: 1, mis_1: 1, mis_2: 1, mis_3: 1, mis_4: 1, mis_5: 1, jefe1_ver: 1, jefe1_muere: 1, jefe1_ok: 1,
     fps_baja_ok: 1, fps_baja_justo: 1, fps_baja_lento: 1, fps_media_ok: 1, fps_media_justo: 1, fps_media_lento: 1, fps_alta_ok: 1, fps_alta_justo: 1, fps_alta_lento: 1,
     gpu_mali: 1, gpu_adreno: 1, gpu_powervr: 1, gpu_apple: 1, gpu_intel: 1, gpu_swiftshader: 1, gpu_otra: 1, fuga_gpu: 1, nan_pos: 1,
-    golpe1: 1, caza1: 1 };
+    golpe1: 1, caza1: 1, nombre_puesto: 1, look_guardado: 1 };
   var hechos = {}, clicT = -1, juego = '';
   var movil = false;
   try { movil = (window.matchMedia && matchMedia('(pointer:coarse)').matches) || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent); } catch (e) {}

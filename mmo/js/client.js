@@ -9,7 +9,7 @@ import {
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
   RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, costoReforja, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TEMP_DIAS, premioDiaFiesta, esNochebuena, diaFiesta, diasFiesta, TINTES, MASCOTAS, NOVEDADES, PASE, premioPase, ambulanteActivo, ambulanteOferta, semanaUTC, GESTOS, horaFelizTiempos, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
-  RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe, solesDeStars, paqueteParaFaltante, ENTREGA, textoPagoRecibido, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA, PAGO_LOCAL, pagoLocalActivo, textoSoles,
+  RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe, solesDeStars, paqueteParaFaltante, ENTREGA, textoPagoRecibido, atencionAhora, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA, PAGO_LOCAL, pagoLocalActivo, textoSoles,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe, climaDe, CLIMA, ESPECIES, premioEspecie, TORRE, atajoTorre, MODS_TORRE, HERM_COLORES, premioTorreSem, zonaDeNivel, progresoLogro, proximoMundial, mundialDe, HORA_FELIZ, EXPEDICION, premioExpedicion,
   TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, talentosSugeridos, BESTIARIO_HITOS, premioBestiario,
@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=357';
-import { iniciarRegalo } from './regalo.js?v=357';
-import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=357';
+} from './data.js?v=358';
+import { iniciarRegalo } from './regalo.js?v=358';
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=358';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -3647,6 +3647,7 @@ function textoPlazo(x) {
   const min = Math.max(0, Math.round((Date.now() - x.pagadoEn) / 60000));
   const hace = min < 60 ? min + ' min' : min < 1440 ? Math.floor(min / 60) + ' h' : Math.floor(min / 1440) + ' d';
   const fin = new Date(x.pagadoEn + ENTREGA.plazoMaxH * 3600000);
+  if (Date.now() > fin.getTime()) return '<br><small style="color:#f87171">Fuera de plazo: pulsa «¿Problema?» y se marca urgente</small>';
   let hasta = fin.getHours() + ':' + String(fin.getMinutes()).padStart(2, '0');
   if (fin.toDateString() !== new Date().toDateString()) hasta = (fin > Date.now() ? 'mañana ' : fin.toLocaleDateString('es') + ' ') + hasta;
   return `<br><small style="color:var(--txt2)">Pagado hace ${hace} · plazo hasta ${hasta}</small>`;
@@ -3655,7 +3656,8 @@ function htmlPremium() {
   const cuentaTg = !!TG && !forzarInvitado;
   const cuenta = yo && yo.p2e && yo.p2e.cuenta;
   // Una linea clara y el detalle legal plegado (en movil no tapa los paquetes).
-  let h = '<p style="font-size:13px;line-height:1.45;color:var(--txt2);margin-bottom:4px">Compras opcionales: <b>El Duende</b> revisa cada pago y lo entrega en tu personaje <b>a mano, de ' + ENTREGA.horario + ' (máx. ' + ENTREGA.plazoMaxH + ' h)</b> (CLASSIC y ORIGINS).</p>'
+  const atiende = atencionAhora();
+  let h = (atiende ? '<p style="font-size:12px;color:var(--txt2);margin:0 0 4px">' + esc(atiende) + '</p>' : '') + '<p style="font-size:13px;line-height:1.45;color:var(--txt2);margin-bottom:4px">Compras opcionales: <b>El Duende</b> revisa cada pago y lo entrega en tu personaje <b>a mano, de ' + ENTREGA.horario + ' (máx. ' + ENTREGA.plazoMaxH + ' h)</b> (CLASSIC y ORIGINS).</p>'
     + '<details style="font-size:12px;line-height:1.45;color:var(--txt2);margin-bottom:10px"><summary style="cursor:pointer">Cómo funciona</summary>' + esc(textoPagoRecibido()) + (cuentaTg ? ' Te avisamos aquí y por Telegram. ' : ' Te avisamos aquí en el juego al entregarlo. ') + (cuentaTg ? 'En Telegram se paga con Stars. Si no tienes Stars, Telegram te las vende y te muestra el precio final en tu moneda antes de pagar. Con dinero <b>no</b> se compran mTON: solo se ganan jugando.' : modoAnuncio() ? 'Se paga con Stars de Telegram (se compran con tarjeta dentro de Telegram): el botón abre Telegram, o en PC escaneas un QR con el celular.' : 'En la web se paga con Stars de Telegram (se compran con tarjeta dentro de Telegram), con Solana (SOL, una criptomoneda: no son soles) o con $DUENDE (10% de descuento). Con dinero <b>no</b> se compran mTON: solo se ganan jugando.') + (pagoLocalActivo() && !cuentaTg ? ' Con Yape / Plin pagas en soles el precio que ves; El Duende revisa tu yapeo y te lo entrega.' : ' Los soles (S/) son solo referencia aproximada.') + '</details>';
   // La skin elegida desde la pestaña Skins va primero; luego por grupos.
   // El Pack de bienvenida (SOLO 1 VEZ) sale solo mientras el servidor diga que aun puedes.
@@ -3690,7 +3692,7 @@ function htmlPremium() {
     const col = { pagado: 'var(--warn)', por_verificar: 'var(--warn)', entregado: 'var(--ok)', anulado: 'var(--err)', esperando_pago: 'var(--txt2)', comprobando: 'var(--txt2)' };
     const txt = { pagado: 'Por entregar', por_verificar: 'En revisión', entregado: 'Entregado', anulado: 'Anulado', esperando_pago: 'Sin pagar', comprobando: 'Comprobando…' };
     h += '<p style="margin:12px 0 4px;font-size:12px">Tus compras:</p>' + ps.slice().reverse().map(x => `<div class="fila"><span>#${esc(x.codigo)} · ${esc(x.nombre)}</span><span style="color:${col[x.estado] || 'var(--txt)'}">${txt[x.estado] || esc(x.estado)}${x.estado === 'esperando_pago' && (x.lamports || x.raw || x.yape) ? ` <button class="btn sec" data-retomar="${esc(x.codigo)}" style="padding:4px 8px">Pagar</button>` : ''}${textoPlazo(x)} ${x.reclamado ? '<small style="color:var(--txt2)">Avisado</small>' : `<button class="btn sec" data-reclamo="${esc(x.codigo)}" style="padding:4px 8px">¿Problema?</button>`}</span></div>`).join('')
-      + '<p style="font-size:11px;color:var(--txt2);margin-top:6px">¿Algo salió mal con una compra? Pulsa «¿Problema?» y El Duende lo revisa. <a href="/reembolsos.html" target="_blank" rel="noopener" style="color:var(--txt2)">Entregas y reembolsos</a></p>';
+      + '<p style="font-size:11px;color:var(--txt2);margin-top:6px">¿Algo salió mal con una compra? Pulsa «¿Problema?» y El Duende lo revisa. <a href="/reembolsos.html" target="_blank" rel="noopener" style="color:var(--txt2)">Entregas y reembolsos</a> · <a href="/reembolsos.html#libro" target="_blank" rel="noopener" style="color:var(--txt2)">Libro de Reclamaciones</a></p>';
   }
   return h;
 }
@@ -3801,6 +3803,7 @@ function mostrarPedidoYape(m) {
     `<p style="font-size:13px;margin:6px 0">2. En la nota del yapeo escribe <b>#${esc(m.codigo)}</b>. <button class="btn sec" id="b-y-cod" style="padding:3px 8px">Copiar</button></p>` +
     `<p style="font-size:13px;margin:6px 0">3. Pega aquí el número de operación del comprobante:</p>` +
     `<input class="nombre" id="in-yape-op" inputmode="numeric" autocomplete="off" maxlength="16" placeholder="Nº de operación (solo cifras)" style="margin:6px 0">` +
+    (atencionAhora() ? `<p style="font-size:12px;color:var(--txt2);margin:6px 0">${esc(atencionAhora())}</p>` : '') +
     `<button class="btn" id="b-yape-ok" style="width:100%;padding:12px">✅ Ya pagué: enviar operación</button>` +
     `<p style="font-size:12px;color:var(--txt2);margin-top:8px">Tienes hasta las ${esc(hora)}. Cada número de operación vale para un solo pedido. ${esc(textoPagoRecibido())} Si cierras esta ventana, en Tienda → 💎 PAQUETES → Tus compras pulsa «Pagar».</p>`;
   abrir('m-sol');

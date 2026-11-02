@@ -32,7 +32,7 @@ import { Secundarias } from './secundarias.js';
 import { Eventos3D } from './eventos3d.js';
 import { Temporada } from './temporada.js';
 import { Copias } from './copias.js';
-import { VERSION as VERSION_JUEGO } from '../../mmo/js/data.js';   // va en 'bienvenido': el cliente viejo se recarga solo
+import { VERSION as VERSION_JUEGO, ENTREGA } from '../../mmo/js/data.js';   // va en 'bienvenido': el cliente viejo se recarga solo
 import { Vincular } from './vincular.js';
 import { rangoDe, enAbismo, islaEn } from '../../mmo/js/abismo3d.js';
 import { Combate } from './combate.js';
@@ -1562,7 +1562,8 @@ export class MmoWorld {
     await this.guardarPedidos();
     const tgId = c.uid.startsWith('tg:') ? c.uid.slice(3) : '';
     const hace = pd.pagadoEn ? Math.round((Date.now() - pd.pagadoEn) / 60000) + ' min' : 'sin pago registrado';
-    const llego = await this.avisarAdmin(`🆘 Reclamo del pedido #${pd.codigo} — ${pd.nombre} ($${pd.usd})\n👤 ${String(pd.jugador || c.nombre).replace(/[^\p{L}\p{N} ]/gu, '')} · Nv ${c.nivel}${tgId ? ' · tg ' + tgId : ' · cuenta web'}\nEstado: ${pd.estado} · método ${pd.metodo} · pagado hace ${hace}${pd.charge ? '\nCargo: ' + pd.charge : ''}${pd.firma ? '\nTx: https://solscan.io/tx/' + pd.firma : ''}\n\nEl jugador dice que tiene un problema con esta compra. Revísalo: /pedidos · /entregar ${pd.codigo} · /anular ${pd.codigo}`, null, true);
+    const vencido = pd.pagadoEn && (pd.estado === 'pagado' || pd.estado === 'por_verificar') && Date.now() - pd.pagadoEn > ENTREGA.plazoMaxH * 3600000;
+    const llego = await this.avisarAdmin(`${vencido ? '🔴 FUERA DE PLAZO · ' : ''}🆘 Reclamo del pedido #${pd.codigo} — ${pd.nombre} ($${pd.usd})\n👤 ${String(pd.jugador || c.nombre).replace(/[^\p{L}\p{N} ]/gu, '')} · Nv ${c.nivel}${tgId ? ' · tg ' + tgId : ' · cuenta web'}\nEstado: ${pd.estado} · método ${pd.metodo} · pagado hace ${hace}${pd.charge ? '\nCargo: ' + pd.charge : ''}${pd.firma ? '\nTx: https://solscan.io/tx/' + pd.firma : ''}\n\nEl jugador dice que tiene un problema con esta compra. Revísalo: /pedidos · /entregar ${pd.codigo} · /anular ${pd.codigo}`, null, true);
     if (!llego) { pd.reclamadoEn = 0; return no('No pudimos avisar ahora. Prueba en unos minutos o escribe a @ElDuendeOficial con el número de pedido.'); }
     this.actualizarYo(s);   // el botón pasa a «Avisado»
     this.enviar(s, { t: 'toast', ok: 1, m: `Listo: El Duende revisará tu pedido #${pd.codigo} y te avisará${tgId ? ' por Telegram' : ' aquí en el juego'}. Si quieres dar más datos, escribe a @ElDuendeOficial.` });

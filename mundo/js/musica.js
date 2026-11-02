@@ -413,6 +413,7 @@ export function crearMusica(opc = {}) {
   // Remate: al caer un jefe, frase de quena en la escala y el acorde que suenan, triple bombo y rasgueo.
   function remate(tipo) {
     if (!ctx || !activo || !maestro || ctx.state !== 'running') return false;
+    if (tipo === 'zona') return descubrir();
     const E = bus ? bus.E : ESCALAS.pueblo, t = ctx.currentTime + 0.08, d = tipo === 'jefe' ? 0.1 : 0.085;
     const r = E.prog[acorde % E.prog.length][0] % 12, gi = E.esc.indexOf(r), g0 = gi >= 0 ? gi : 0;   // arranca en la raiz del acorde que suena
     [[g0, 1], [g0 + 1, 1], [g0 + 2, 1], [g0 + 3, 1], [g0 + 4, 2], [g0 + 5, 6]].reduce((a, [g, l]) => { soplo(nGrado(E, g), t + a * d, l * d, 0.11, maestro, 0.4); return a + l; }, 0);
@@ -422,6 +423,17 @@ export function crearMusica(opc = {}) {
     for (let i = 0; i < 8; i++) chajchas(t + i * d, 0.03, maestro);
     remateHasta = t + 13 * d;   // agachar no lo tapa (el botin del jefe llega a la vez)
     furiaHasta = 0;   // la pelea termino: la percusion de combate se apaga sola
+    return true;
+  }
+  // Descubrir una zona nueva: 6 notas de quena (y zampoña al final) en la escala de la zona
+  // a la que se llega, dos golpes suaves de bombo. Sin percusion de combate, volumen moderado.
+  function descubrir() {
+    if (!ctx || !activo || !maestro || ctx.state !== 'running') return false;
+    const E = confDe(idConf()) || (bus ? bus.E : ESCALAS.pueblo), t = ctx.currentTime + 0.1, d = 0.13;
+    [[0, 1], [2, 1], [4, 2], [3, 1], [4, 1], [7, 5]].reduce((a, [g, l], i) => { soplo(nGrado(E, g), t + a * d, l * d * (i === 5 ? 1.4 : 1), 0.075, maestro, i === 5 ? 0.75 : 0.4); return a + l; }, 0);
+    soplo(nGrado(E, 9), t + 6 * d, 5 * d * 1.4, 0.035, maestro, 0.6);   // zampoña en tercera sobre la nota larga
+    bombo(t, 0.16, maestro); bombo(t + 6 * d, 0.2, maestro);
+    remateHasta = t + 12 * d;
     return true;
   }
   // Baja la musica unos segundos para que se oiga la recompensa, y vuelve despacio.
@@ -489,7 +501,7 @@ export function crearMusica(opc = {}) {
     // Temporada activa ('tanta2026', 'cosecha2026'...): fiesta en el pueblo + toque al empezar.
     evento(id) { id = id || ''; if (id === evento) return; evento = id; if (FIESTAS[id]) toquePend = id; },
     tic,
-    remate, agachar, peligro,
+    remate, descubrir, agachar, peligro,
     // Modo ligero (moviles flojos / resolucion dinamica): menos nodos de audio por segundo.
     ligera(v) { ligera = !!v; },
     noche(v) { if (v === noche) return; noche = v; volumen(); },

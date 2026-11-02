@@ -223,6 +223,7 @@ export const Mundo3D = {
       case 'tirar': return this.tirar(s, m);
       case 'fabricar': return this.fabricar(s, m);   // cercaDeArtesana() sabe del 3D
       case 'invitar': return this.invitar(s, m);
+      case 'unirmeRef': return this.unirmeRef(s, m);   // social.js: enlace «Invitar a mi grupo» (#g= / startapp=g_)
       case 'grupoResp': return this.respuestaGrupo(s, m);
       case 'salirGrupo': return this.salirGrupo(s);
       case 'expulsarGrupo': return this.expulsarGrupo(s, m);
@@ -507,6 +508,17 @@ export const Mundo3D = {
     if (this.cazaJuntos) this.cazaJuntos([...cobraron].map(id => this.sesiones.get(id)).concat(juntos), o);
     const campo = W.campos[o.campo];
     if (campo) { campo.vivos.delete(o.id); campo.prox = Date.now() + (o.k === 'jefe_sabueso' ? 60000 + Math.random() * 30000 : o.jefe ? REAPARECE_JEFE_MS : (o.nv || (MONSTRUOS[o.k] || {}).nivel || 99) <= 2 ? REAPARECE_NOVATO_MS : REAPARECE_MS); }
+    // Moral de manada: si cae un compañero comun, los cobardes de su campamento
+    // (a menos de 8 m) pueden huir 1,8 s. Nunca jefes, cueva, eventos, élites ni en el pueblo.
+    if (campo && !o.jefe && !o.cueva && !o.i3 && !o.ex3 && !o.persiste && !o.asedio && zonaEn(o.x, o.z) !== 'pueblo') {
+      const ahoraP = Date.now();
+      for (const x of W.mons.values()) {
+        if (x === o || x.muere || x.hp <= 0 || x.campo !== o.campo || x.jefe || x.cueva || x.i3 || x.ex3 || x.persiste || x.asedio) continue;
+        if (!/^(goblin_peasant|goblin_normal|conejo|zarig|rata|murci)/.test(x.k || '') || dist(x, o) >= 8 || (x.panico || 0) > ahoraP || Math.random() >= 0.5) continue;
+        x.panico = ahoraP + 1800;
+        this.aCerca3d(x, { t: 'mpan', id: x.id });
+      }
+    }
     // Jefes e invasores los anuncia todo el 3D; el resto solo a quien esta cerca.
     if (o.jefe || (o.ex3 && o.ex3.ev)) this.aClave(K3, { t: 'md3', id: o.id }); else this.aCerca3d(o, { t: 'md3', id: o.id });
     if (o.ex3 && o.ex3.ev) this.muereInvasor3d(o);
@@ -1319,6 +1331,22 @@ export const Mundo3D = {
       o.ry = Math.atan2(nx - o.x, nz - o.z); o.x = nx; o.z = nz;
       return d - paso;
     };
+    // Panico (murio un compañero cerca): 1,8 s sin pegar, sin avisar golpe ni curarse;
+    // se aleja de su objetivo mas lento que el jugador y sin romper la correa ni pisar el pueblo.
+    if (o.panico) {
+      if (o.panico > ahora && !enC && !o.jefe) {
+        o.st = 1;
+        if (s && !this.auraMon(o, 'raiz')) {
+          const dx = o.x - s.p.x, dz = o.z - s.p.z, dd = Math.hypot(dx, dz) || 1;
+          let tx = o.x + dx / dd * 3, tz = o.z + dz / dd * 3;
+          const dc = Math.hypot(tx - casa.x, tz - casa.z), lim = CORREA - 2;
+          if (dc > lim) { tx = casa.x + (tx - casa.x) / dc * lim; tz = casa.z + (tz - casa.z) / dc * lim; }
+          if (enA || zonaEn(tx, tz) !== 'pueblo') mover(tx, tz, velC * 0.8);
+        }
+        return;
+      }
+      o.panico = 0;
+    }
     if (s) {
       o.vuelve = false;
       const silencio = this.auraMon(o, 'silencio');

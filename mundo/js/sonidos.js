@@ -186,9 +186,25 @@ export function crearSonidos({ ctx, puede, oyente }) {
       soplo(c, d, t, 0.03, { filtro: 'highpass', f: 3000, vol: 0.04, ataque: 0.002 });
       return 0.1;
     },
+    // No se pudo (aviso rojo): dos tonos suaves que bajan, sin asustar.
+    no(c, d, t, r, o) {
+      tono(c, d, t, 330 * r, 0.09, { tipo: 'triangle', vol: 0.06, ataque: 0.005 });
+      tono(c, d, t + 0.1, 220 * r, 0.09, { tipo: 'triangle', vol: 0.06, ataque: 0.005 });
+      return 0.25;
+    },
+    // Contador de oro: cada tic un grado mas alto de la pentatonica (o.i); o.fin cierra con campana y quinta.
+    // Como racha, no usa r: la escalera sube afinada.
+    tic_oro(c, d, t, r, o) {
+      const i = Math.max(0, Math.min(9, o.i | 0)), P = [0, 2, 4, 7, 9], m = 81 + P[i % 5] + 12 * Math.floor(i / 5);
+      const f = 440 * Math.pow(2, (m - 69) / 12);
+      if (!o.fin) { campana(c, d, t, f, 0.05, 0.045); return 0.08; }
+      campana(c, d, t, f, 0.35, 0.06);
+      campana(c, d, t + 0.04, f * 1.5, 0.3, 0.035);   // quinta encima: el oro llego
+      return 0.45;
+    },
   };
   // Separacion minima entre dos iguales (ms): evita que se amontonen.
-  const SEPARA = { clic: 60, alas: 220, hab: 90, splash: 250, aterriza: 200, cofre: 300, botin: 250, nivel: 400, logro: 400, cura: 200, racha: 80, esquiva: 300, esquivado: 400, amenaza: 250 };
+  const SEPARA = { clic: 60, alas: 220, hab: 90, splash: 250, aterriza: 200, cofre: 300, botin: 250, nivel: 400, logro: 400, cura: 200, racha: 80, esquiva: 300, esquivado: 400, amenaza: 250, no: 400, tic_oro: 40 };
 
   // tocar('cofre', { vol, x, z, r }) — con x, z suena donde pasa.
   function tocar(nombre, o = {}) {

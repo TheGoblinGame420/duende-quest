@@ -113,6 +113,40 @@ export const Social = {
     this.enviar(t, { t: 'invitacion', de: s.c.nombre, nv: s.c.nivel, cl: s.c.clase || '', ms: INVITACION_MS });
     this.enviar(s, { t: 'toast', m: `📨 Invitaste a ${t.c.nombre} a tu grupo.` });
   },
+  // 📲 Enlace «Invitar a mi grupo» (#g=codigo o startapp=g_codigo; codigo = c.ref, amigos.js):
+  // quien lo toca recibe la invitacion de grupo del dueño del codigo, con su ventana de
+  // Aceptar (nadie entra a un grupo sin querer). Ningun mensaje de Telegram.
+  // q: llego por el ?ref= de siempre (enlace del bot): si no se puede, sin avisos.
+  async unirmeRef(s, m) {
+    this.iniciarSocial();
+    if (!s || !s.c || !m) return;
+    const ref = String(m.ref || ''), q = !!m.q;
+    const no = t => (q ? undefined : this.no(s, t));
+    if (!/^[a-z0-9]{6}$/.test(ref)) return;
+    if (Date.now() - (s.unirRefT || 0) < 10000) return no('Espera unos segundos antes de volver a usar el enlace.');
+    s.unirRefT = Date.now();
+    const uid = await this.state.storage.get('ref:' + ref);
+    if (!uid || s.cerrado) return;
+    if (uid === s.c.uid) return no('Ese es tu propio enlace: compártelo con tus amigos.');
+    const d = this.porUid.get(uid);
+    if (!d || !d.c || d.cerrado) return no('Tu amigo no está conectado ahora. Pídele que entre y vuelve a tocar el enlace.');
+    // Quien te ignora no te mete en su grupo (respuesta neutra); si tu lo ignoras, nada.
+    if (meIgnora(s, uid)) return;
+    if (meIgnora(d, s.c.uid)) return no(`${d.c.nombre} no acepta invitaciones tuyas.`);
+    if (s.gid) {
+      const gs = this.grupoDe(s);
+      if (gs && gs.uids.includes(uid)) return no(`Ya estás en el grupo de ${d.c.nombre}.`);
+      return no('Ya estás en un grupo: sal de él para unirte al de tu amigo.');
+    }
+    const g = this.grupoDe(d);
+    if (g && g.lider !== uid) return no(`${d.c.nombre} está en un grupo y no es el líder: pídele al líder que te invite.`);
+    if (g && g.uids.length >= maxGrupo(g)) return no(`El grupo de ${d.c.nombre} ya está lleno.`);
+    // Ya tiene esa misma invitacion (al llegar como invitado nuevo, amigos.js): no se repite la ventana.
+    if (s.invitacion && s.invitacion.hasta > Date.now() && s.invitacion.de === uid) return;
+    s.invitacion = { de: uid, hasta: Date.now() + INVITACION_MS };
+    this.enviar(s, { t: 'invitacion', de: d.c.nombre, nv: d.c.nivel, cl: d.c.clase || '', ms: INVITACION_MS });
+    this.enviar(d, { t: 'toast', m: `📲 ${s.c.nombre} entró con tu enlace: le llegó tu invitación de grupo.` });
+  },
 
   respuestaGrupo(s, m) {
     this.iniciarSocial();
