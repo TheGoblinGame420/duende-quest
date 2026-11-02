@@ -904,6 +904,8 @@ export class MmoWorld {
 
     c.en3d = m.modo === '3d';   // las tareas que solo existen en CLASSIC (expediciones, Torre) no le tocan en ORIGINS
     this.enviar(s, { t: 'bienvenido', id: s.id, yo: this.datosPropios(s), nuevo, heredado, regaladas, on: this.contarOnline(), ver: VERSION_JUEGO });
+    // Veteranos con talentos al tope viejo (5): avisa del reinicio gratis (una vez por sesion).
+    if (!c.talR8 && c.nivel >= 10 && Object.values(c.tal || {}).some(v => v >= 5)) setTimeout(() => { if (!s.cerrado && s.c === c && !c.talR8) this.enviar(s, { t: 'toast', m: '🌟 Los talentos ahora llegan a 8 rangos. Tu primer reinicio es GRATIS: Libro → Talentos.', ok: true }); }, 9000);
     // Las skins pagadas que llegan despues (Supabase lento o sin cache).
     if (pSkins) pSkins.then(l => {
       if (!l || s.cerrado || s.c !== c) return;
@@ -1024,12 +1026,16 @@ export class MmoWorld {
   reiniciarTalentos(s) {
     const c = s.c;
     if (!c.tal || !Object.keys(c.tal).length) return;
-    const costo = costoReinicioTalentos(c.nivel);
+    // Un reinicio gratis por personaje por el cambio del tope de 5 a 8 rangos (talR8).
+    const gratis = !c.talR8;
+    const costo = gratis ? 0 : costoReinicioTalentos(c.nivel);
     if (c.oro < costo) return this.no(s, `Reiniciar los talentos cuesta ${costo.toLocaleString('es', { useGrouping: 'always' })} oro.`);
     c.oro -= costo;
     c.tal = {};
-    this.recalcular(s);
-    this.enviar(s, { t: 'toast', m: '🌀 Talentos reiniciados: vuelve a repartir tus puntos.', ok: true });
+    c.talR8 = 1;
+    s.sucio = true;
+    this.recalcular(s);   // recalcular() ya reenvia el yo (actualizarYo)
+    this.enviar(s, { t: 'toast', m: gratis ? '🌀 Reinicio gratis por el cambio a 8 rangos: reparte tus puntos de nuevo.' : '🌀 Talentos reiniciados: vuelve a repartir tus puntos.', ok: true });
   }
   recalcular(s) {
     const pct = s.hp / s.st.maxHp;
@@ -2039,12 +2045,13 @@ export class MmoWorld {
     const r0 = L.racha || 0;
     // El 7 pasa al 8 (y el 14 al 15...: premio del dia 1 de la semana siguiente): no se
     // puede explotar, el premio grande del dia 7 no se repite.
-    const racha = seguido ? r0 + 1 : L.d === anteayer && r0 >= 7 && r0 % 7 === 0 ? r0 + 1 : L.d === anteayer && r0 >= 8 ? (semanaRacha(r0) - 1) * 7 + 1 : L.d === anteayer && r0 < 7 ? Math.max(1, r0 - 1) : r0 >= 2 ? (semanaRacha(r0) - 1) * 7 + 1 : 1;
-    // Faltar 2+ dias ya no borra las semanas cumplidas: vuelve al inicio de su semana.
+    const racha = seguido ? r0 + 1 : L.d === anteayer && r0 >= 7 && r0 % 7 === 0 ? r0 + 1 : L.d === anteayer && r0 >= 8 ? (semanaRacha(r0) - 1) * 7 + 1 : L.d === anteayer && r0 < 7 ? Math.max(1, r0 - 1) : r0 >= 7 ? Math.floor(r0 / 7) * 7 + 1 : 1;
+    // Faltar 2+ dias nunca quita las semanas cumplidas: se sigue en el dia 1 de la
+    // semana siguiente a la ultima completa (7 a 8, 10 a 8, 14 a 15). Sin semana completa vuelve al 1.
     // Protector 🧿 de regalo: uno en el primer ingreso y otro al empezar cada semana
-    // nueva de racha (dia 8, 15...) avanzando, no al caer ahi por faltar, si no le queda ninguno.
+    // nueva de racha (dia 8, 15...) entrando seguido, no al caer ahi por faltar, si no le queda ninguno.
     let amuRegalo = 0;
-    if (amu === 0 && ((L.total || 0) === 0 || (racha === r0 + 1 && racha > 1 && racha % 7 === 1))) { amu = 1; amuRegalo = 1; }
+    if (amu === 0 && ((L.total || 0) === 0 || (seguido && racha === r0 + 1 && racha > 1 && racha % 7 === 1))) { amu = 1; amuRegalo = 1; }
     const pr = premioRacha(racha);
     // Oro de la semana 2 x1,25 y desde la 3 x1,5 (tope).
     const oro = Math.round((pr.oro || 0) * multLogin(c.nivel) * multSemanaRacha(racha));
@@ -2138,7 +2145,7 @@ export class MmoWorld {
       arma: c.arma, armas: c.armas, skin: c.skin, skins: c.skins, pw: c.pw,
       kills: c.kills, jefes: c.jefes, muerto: s.muerto, mis: c.mis, forja: c.forja,
       eq: c.eq, bolsa: c.bolsa, logros: c.logros, titulo: c.titulo, mundiales: c.mundiales, login: c.login, crit: s.st.crit,
-      clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, torreSem: this.torreSem(c).max, torreMax: c.torreMax || 0, exped: c.exped || null, nVisitadas: c.nVisitadas || 0, visitadas: c.visitadas || [], especies: c.especies || {}, nEspecies: c.nEspecies || 0, dorados: c.dorados || 0, seca: c.seca || 0, secaEp: c.secaEp || 0, exped8: c.exped8 || 0, peces: c.peces || 0, expediciones: c.expediciones || 0, duelosG: c.duelosG || 0, desafioMax: c.desafioMax || 0, amigosN: c.amigos || 0, desafio: c.desafio || {}, ...Object.fromEntries(TEMPORADAS.map(t => [t.campo, c[t.campo] || 0])), chicha: this.infoChicha(c), temp: (temporadaDe() || {}).id || '', herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, best: c.best || {}, bestR: c.bestR || {}, sellos: c.sellos || {},
+      clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, torreSem: this.torreSem(c).max, torreMax: c.torreMax || 0, exped: c.exped || null, nVisitadas: c.nVisitadas || 0, visitadas: c.visitadas || [], especies: c.especies || {}, nEspecies: c.nEspecies || 0, dorados: c.dorados || 0, seca: c.seca || 0, secaEp: c.secaEp || 0, exped8: c.exped8 || 0, peces: c.peces || 0, expediciones: c.expediciones || 0, duelosG: c.duelosG || 0, desafioMax: c.desafioMax || 0, amigosN: c.amigos || 0, desafio: c.desafio || {}, ...Object.fromEntries(TEMPORADAS.map(t => [t.campo, c[t.campo] || 0])), chicha: this.infoChicha(c), temp: (temporadaDe() || {}).id || '', herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, talGratis8: !c.talR8 ? 1 : 0, best: c.best || {}, bestR: c.bestR || {}, sellos: c.sellos || {},
       boveda: c.boveda, bovedaOpc: c.bovedaOpc || null, pase: this.infoPase(c), banda: this.infoBanda(c), runas: c.runas || {}, gestaCob: c.gestaCob || null, cuevaHoy: c.cuevaDia && c.cuevaDia.d === hoyUTC() ? Math.min(3, c.cuevaDia.n) : 0, cuevaRec: c.cuevaRecord || 0,
       faccion: c.faccion || null, pa: c.pa || 0, bajasPvP: c.bajasPvP || 0, look: c.look || null, alas: c.alas || ['aprendiz'], ala: c.ala || 'aprendiz', espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, tintes: c.tintes || [], tinte: c.tinte || '', mascotas: c.mascotas || [], mascota: c.mascota || '', montado: s.montado || null,
       mton: c.mton, wallet: c.wallet ? { a: tonAmigable(c.wallet.a), desde: c.wallet.desde } : null,

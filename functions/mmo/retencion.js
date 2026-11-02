@@ -727,6 +727,7 @@ export const Retencion = {
   // (e.tc) y no mandarle dos avisos el mismo dia si tambien juega por Telegram.
   puedeAvisar(uid, e, hoy, idx) {
     if (!e || e.off || e.bloq || e.adw === hoy) return false;   // adw: su chat ya recibio hoy el aviso de su personaje web
+    if (/^tg:/.test(uid) && !e.si) return false;   // solo con consentimiento explicito (tarjeta, /avisos on, Avisame por Telegram)
     if (!/^tg:\d{1,15}$/.test(uid)) {
       if (uid.startsWith('tg:') || !/^\d{1,15}$/.test(String(e.tc || ''))) return false;
       const t = idx && idx['tg:' + e.tc];
@@ -1010,6 +1011,10 @@ export const Retencion = {
     const e = idx[v.uid] || (idx[v.uid] = { v: 0 });
     const nuevo = e.tc !== chat;
     e.tc = chat; delete e.bloq; e.a = 0;
+    // Pidio «Avísame por Telegram» desde este chat: es consentimiento tambien para su
+    // personaje de Telegram (si existe y no puso /avisos off).
+    const tChat = idx['tg:' + chat];
+    if (tChat && !tChat.off) tChat.si = 1;
     if (!(await this.retGuardarIdx())) return { ok: false, error: 'No se pudo guardar. Intenta de nuevo en un rato.' };
     let oro = 0, nombre = '', s = null, c = null;
     try { ({ s, c } = await this.pjDe(v.uid)); } catch (er) {}
@@ -1032,7 +1037,8 @@ export const Retencion = {
   async quiereAvisos(uid) {
     if (!uid.startsWith('tg:')) return false;
     const e = (await this.retIdx())[uid];
-    return !(e && (e.off || e.bloq));
+    // Solo con consentimiento explicito (e.si: tarjeta, /avisos on, Avisame por Telegram).
+    return !!(e && e.si && !e.off && !e.bloq);
   },
 
   // Telegram (ORIGINS): «Ahora no» en la tarjeta del permiso (o lo rechazo en la ventana
@@ -1056,7 +1062,7 @@ export const Retencion = {
     if (b.on !== true && b.on !== false) { const e0 = idx[uid] || {}; return { ok: true, on: !e0.off, jugo: (e0.v || 0) > 0 }; }
     const e = idx[uid] || (idx[uid] = { v: 0 });
     if (b.on === true) {
-      delete e.off; delete e.bloq; e.a = 0;
+      delete e.off; delete e.bloq; e.a = 0; e.si = 1;
       // Sus personajes web o de invitado que avisan a este chat tambien se reanudan.
       for (const u in idx) if (idx[u].tc === id && idx[u].bloq) { delete idx[u].bloq; idx[u].a = 0; }
     }
@@ -1090,9 +1096,10 @@ export const Retencion = {
     }
     const idx = await this.retIdx(), id = uid.slice(3);
     let cambio = false;
-    const e = idx[uid];
-    if (e && e.offTarjeta) { delete e.off; delete e.offTarjeta; e.a = 0; cambio = true; }   // habia dicho «Ahora no» en la tarjeta
-    if (e && e.bloq) { delete e.bloq; e.a = 0; cambio = true; }
+    const e = idx[uid] || (idx[uid] = { v: 0 });
+    if (!e.si) { e.si = 1; cambio = true; }   // consentimiento explicito: acepto en la ventana de Telegram
+    if (e.offTarjeta) { delete e.off; delete e.offTarjeta; e.a = 0; cambio = true; }   // habia dicho «Ahora no» en la tarjeta
+    if (e.bloq) { delete e.bloq; e.a = 0; cambio = true; }
     for (const u in idx) if (idx[u].tc === id && idx[u].bloq) { delete idx[u].bloq; idx[u].a = 0; cambio = true; }
     return cambio ? this.retGuardarIdx() : true;
   },

@@ -66,7 +66,7 @@ export function iniciarAvisoTg(H) {
     const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
     raiz = document.createElement('div'); raiz.id = 'dq-avtg';
     raiz.setAttribute('role', 'dialog'); raiz.setAttribute('aria-modal', 'true'); raiz.setAttribute('aria-labelledby', 'dq-avtg-t');
-    raiz.addEventListener('click', e => { if (e.target === raiz) { if (permiso) ponerEscNo(); cerrar(); } });
+    raiz.addEventListener('click', e => { if (e.target === raiz) { if (permiso) { ponerEscNo(); try { H.mandar({ t: 'tgEscribirNo' }); } catch (er) {} } cerrar(); } });
     document.body.appendChild(raiz);
     return raiz;
   }

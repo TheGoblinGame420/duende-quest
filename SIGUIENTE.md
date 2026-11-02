@@ -3540,3 +3540,16 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Racha: protector de regalo, semanas cumplidas que no se pierden, expedición de noche 12 h.
 - Comunidad oficial en Ajustes (enlaces ya usados por el bot) e invitación única a Nv 5.
 - Arnés 905 bien (prueba del aviso de racha ajustada al texto nuevo).
+
+### Ronda 24 (2-nov-2026, `?v=355`)
+
+- 12 evaluadores → 56 problemas → 10 tareas.
+- Modo anuncio: sin Comunidad/canales/TON en ORIGINS, CLASSIC y Mini App (`.solo-cripto`, `html.anuncio`).
+- Consentimiento de Telegram: `puedeAvisar` y `quiereAvisos` exigen `e.si` (marcado por /avisos on, la tarjeta o «Avísame»); tocar fuera = `tgEscribirNo`.
+- Racha: faltar 2+ días tras cumplir la semana no la borra; protector de regalo solo con racha seguida.
+- Reinicio de talentos gratis una vez por el cambio a 8 rangos.
+- Tira de clases: espera a la historia, sobrevive a ventanas y pide doble toque.
+- Monstruo que huye: humo, sin explosión ni bestiario. Tira diaria y leyenda se esperan en móvil.
+- T'anta Wawa en la caja plegada; día 4 a 10 objetos. CLASSIC: racha explicada, expedición de 15 min y de noche.
+- Minimapa legible en móvil.
+- Arnés 907 bien (pruebas ajustadas: primer reinicio gratis, consentimiento del aviso al invitador, calabazas dobles para quien llegó tarde).

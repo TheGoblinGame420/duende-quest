@@ -512,9 +512,18 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 354;
+export const VERSION = 355;
 
 export const NOVEDADES = [
+  { n: 123, fecha: '2 nov 2026', items: [
+    'Los talentos llegan a 8 rangos y tu primer reinicio de talentos es GRATIS: Libro → Talentos.',
+    'El duende solo te escribe por Telegram si tú lo pediste; cerrar el aviso tocando fuera cuenta como «Ahora no».',
+    'Si faltas varios días ya no pierdes las semanas de racha que completaste.',
+    'Quien entra desde un anuncio ve un juego más limpio, sin canales externos ni pagos con TON.',
+    '«¿Probar otra clase?» espera a que termines de leer y pide dos toques para no cambiar por accidente.',
+    'Cuando un monstruo se escapa, desaparece en una nubecita de humo y no cuenta como derrotado.',
+    "En el móvil la caja plegada muestra tu día de la T'anta Wawa; el día 4 pide 10 objetos en vez de 30. En CLASSIC llegan la expedición de 15 min y la de noche.",
+  ] },
   { n: 122, fecha: '2 nov 2026', items: [
     'Al terminar tu primera misión puedes probar Mago, Sacerdote o Pícaro con un toque, gratis hasta el Nv 9.',
     'Tus habilidades de área brillan en dorado y blanco: el círculo rojo siempre es peligro. Los hechizos dejan estela y estallan por elemento.',
@@ -1999,7 +2008,7 @@ export const TEMP_DIAS = [
   { tipo: 'caza', n: 15, txt: 'Caza 15 monstruos de tu nivel' },
   { tipo: 'invasion', n: 1, txt: 'Defiende una invasión' },
   { tipo: 'mazmorra', n: 1, txt: 'Completa una mazmorra o la cueva' },
-  { tipo: 'obj', n: 30, txt: 'Consigue 30 objetos de la fiesta' },
+  { tipo: 'obj', n: 10, txt: 'Consigue 10 objetos de la fiesta' },
   { tipo: 'gesto', n: 2, txt: 'Haz 2 gestos (saluda o baila)' },
   { tipo: 'pescar', n: 3, txt: 'Pesca 3 veces' },
   { tipo: 'recoger', n: 6, txt: 'Recoge 6 materiales' },

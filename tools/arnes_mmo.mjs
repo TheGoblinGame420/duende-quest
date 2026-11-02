@@ -550,7 +550,9 @@ async function pruebas() {
   await tl.mandar({ t: 'talento', id: '__proto__' });
   tl.c.oro = 5000;
   await tl.mandar({ t: 'talentoReset' });
-  chequear(!Object.keys(tl.c.tal).length && tl.c.oro === 5000 - 1100, 'reiniciar cuesta 100 × nivel y devuelve los puntos');
+  chequear(!Object.keys(tl.c.tal).length && tl.c.oro === 5000, 'el primer reinicio (cambio a 8 rangos) es gratis y devuelve los puntos');
+  await tl.mandar({ t: 'talento', id: 'fuerza' }); await tl.mandar({ t: 'talentoReset' });
+  chequear(!Object.keys(tl.c.tal).length && tl.c.oro === 5000 - 1100, 'después, reiniciar cuesta 100 × nivel y devuelve los puntos');
 
   console.log('Doble entrada simultánea de una cuenta');
   {
@@ -1523,6 +1525,8 @@ async function pruebasRetencion() {
   await gB.mandar({ t: 'grupoResp', si: true });
   chequear(gA.gid && gA.gid === gB.gid, 'Líder y Amigo en grupo');
   for (const x of [t1, t2, t3, t4, t5, gB, i1]) await dejar(x);   // el Líder sigue conectado
+  // Solo se avisa con consentimiento explicito (tarjeta del permiso, /avisos on): se lo dan todos.
+  { const ix0 = await mundo.retIdx(); for (const id of ['3001', '3002', '3003', '3004', '3005', '3006', '3007']) if (ix0['tg:' + id]) ix0['tg:' + id].si = 1; }
   const off = await interno('avisos', { tgId: '3004', on: false });
   chequear(off.ok && off.on === false, '/avisos off se guarda');
 
@@ -1578,12 +1582,13 @@ async function pruebasRetencion() {
   chequear(idx['tg:3004'].a === 1 && idx['tg:3004'].ad === A + 4, 'un fallo pasajero de Telegram no cuenta como aviso');
   fallaUna = null;
   const hoy = Math.floor(Date.now() / DIA);
-  chequear(mundo.puedeAvisar('tg:1', { v: hoy - 14 }, hoy) && !mundo.puedeAvisar('tg:1', { v: hoy - 15 }, hoy), 'solo a quien jugó en los últimos 14 días');
+  chequear(mundo.puedeAvisar('tg:1', { v: hoy - 14, si: 1 }, hoy) && !mundo.puedeAvisar('tg:1', { v: hoy - 15, si: 1 }, hoy), 'solo a quien jugó en los últimos 14 días');
+  chequear(!mundo.puedeAvisar('tg:1', { v: hoy - 3 }, hoy), 'sin consentimiento explícito (si) no se le escribe');
   chequear(!mundo.puedeAvisar('inv:abc', { v: hoy - 1 }, hoy) && !mundo.puedeAvisar('web:abc', { v: hoy - 1 }, hoy), 'nunca a invitados ni cuentas web');
   // Evento de temporada: ya NO salta la pausa ni amplia la ventana (no se escribe a quien no lo pidio).
   mundo.temporadaAviso = () => ({ id: 'evPrueba', nombre: 'Evento de Prueba', emoji: '🎃', hasta: '2 de noviembre', cosas: 'calabazas', campo: 'calabazas', titulos: ['Cazacalabazas', 'Rey de las Calabazas'] });
-  chequear(!mundo.puedeAvisar('tg:1', { v: hoy - 3, a: 2 }, hoy) && !mundo.puedeAvisar('tg:1', { v: hoy - 30 }, hoy) && mundo.puedeAvisar('tg:1', { v: hoy - 3 }, hoy), 'evento nuevo: no avisa a quien está en pausa ni a quien lleva 30 días sin jugar');
-  chequear(!mundo.puedeAvisar('tg:1', { v: hoy - 3, off: 1 }, hoy) && !mundo.puedeAvisar('tg:1', { v: hoy - 36 }, hoy), 'respeta /avisos off y la ventana de 14 días');
+  chequear(!mundo.puedeAvisar('tg:1', { v: hoy - 3, a: 2, si: 1 }, hoy) && !mundo.puedeAvisar('tg:1', { v: hoy - 30, si: 1 }, hoy) && mundo.puedeAvisar('tg:1', { v: hoy - 3, si: 1 }, hoy), 'evento nuevo: no avisa a quien está en pausa ni a quien lleva 30 días sin jugar');
+  chequear(!mundo.puedeAvisar('tg:1', { v: hoy - 3, off: 1, si: 1 }, hoy) && !mundo.puedeAvisar('tg:1', { v: hoy - 36, si: 1 }, hoy), 'respeta /avisos off y la ventana de 14 días');
   const tEv = await mundo.mensajeAviso({ nombre: 'Rachero', nivel: 1, xp: 0, calabazas: 7 }, hoy);
   chequear(tEv.split('\n\n')[1].startsWith('🎃 ¡Evento de Prueba!') && /Llevas 7: con 50 y 200/.test(tEv), 'el aviso empieza por el evento y cuánto lleva');
   mundo.temporadaAviso = () => null;
@@ -1613,6 +1618,7 @@ async function pruebasRetencion() {
   chequear(horaHabitual({ hs: [20, 3, 20, 3, 1] }) === 3 && horaHabitual({ hs: [1, 2, 2, 1, 22, 22, 5] }) === 22 && horaHabitual({ hs: [20, 20, 9] }) === 20, 'la hora más repetida (en empate, la más reciente)');
   for (let k = 7; k <= 9; k++) { irA(A + k, 20); const n = await entrarTg('Nocturno', 3010); await dejar(n); }
   chequear(horaHabitual((await mundo.retIdx())['tg:3010']) === 20, 'se anota la hora de su primera entrada de cada día');
+  (await mundo.retIdx())['tg:3010'].si = 1;   // acepto los avisos (consentimiento explicito)
   irA(A + 10, 17);
   salidos.length = 0;
   r = await interno('recordatorios');
@@ -1840,6 +1846,7 @@ async function pruebasAmigos() {
     chequear(!viejo.c.invitadoPor, 'uno no se invita a sí mismo');
     const oro0 = viejo.c.oro, oroN = nuevo.c.oro;
     nuevo.c.nivel = 9; nuevo.c.xp = 0;
+    await interno('avisos', { tgId: '7001', on: true });   // solo se escribe a quien lo pidio
     mundo.sumarXp(nuevo, 100000);
     for (let i = 0; i < 50; i++) await espera();
     chequear(nuevo.c.refPagado && nuevo.c.oro > oroN, 'al llegar a nivel 10 el invitado cobra');
@@ -2094,7 +2101,7 @@ async function pruebasTemporada() {
   const relojAntes = reloj;
   reloj = Date.UTC(2026, 9, 28, 12);
   for (let i = 0; i < 60; i++) { const o = monstruo(t, 'goblin_normal', 40); mundo.danar(o, o.hp + 1, t); tick(1); }
-  chequear((t.c.calabazas || 0) > 2 && t.c.calabazas < 30, 'durante el evento caen calabazas (' + t.c.calabazas + ' de 60)');
+  chequear((t.c.calabazas || 0) > 2 && t.c.calabazas < 60, 'durante el evento caen calabazas, dobles para quien llegó tarde (' + t.c.calabazas + ' de 60)');
   t.c.calabazas = 49;
   const o = monstruo(t, 'jefe_sabueso', 40); mundo.danar(o, o.hp + 1, t); tick(1);
   chequear(t.c.calabazas >= 54 && t.c.logros.includes('calabaza50'), 'los jefes dan varias y a 50 llega el título');

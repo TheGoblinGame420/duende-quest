@@ -91,6 +91,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v352 | Estudio 6: cámara de combate, faroles de noche, álbum y sellos, Duende Ladrón, Ayni, marca 📍, animación viva, diálogos con retrato | **B** |
 | v353 | Ronda 22: cámara móvil sin vueltas, primer minuto sin ruido, Ayni y Ladrón justos, CLASSIC sin avisos de ORIGINS, diálogos con teclado | **B** |
 | v354 | Estudio 7: probar clase, colores de habilidades, mapa con niebla, probar monturas, talentos, racha amable, expedición de noche | **B** |
+| v355 | Ronda 24: reinicio de talentos gratis, Telegram con consentimiento, racha que conserva semanas, anuncio sin TON, huidas en humo | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

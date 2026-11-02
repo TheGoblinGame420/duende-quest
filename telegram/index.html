@@ -33,7 +33,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="/js/origen.js?v=354"></script>
+<script src="/js/origen.js?v=355"></script>
 <script>
 // ── ARRANQUE TEMPRANO DE TELEGRAM ──
 // Va aquí, antes de cargar Supabase/TON Connect/el motor, para que Telegram
@@ -344,6 +344,7 @@ html{font-size:24px;}
 /* En pantallas anchas la barra ocupaba 1920px; se alinea con el menú (480px) */
 /* Quien llega por anuncio (origen.js pone html.anuncio) no ve nada cripto */
 html.anuncio #tg-price-display,html.anuncio #ton-btn,html.anuncio #tabbar [data-tab="wallet"],html.anuncio #tab-wallet,html.anuncio #perfil-wallet{display:none!important}
+html.anuncio .solo-cripto{display:none!important}
 html.anuncio #tabbar{grid-template-columns:repeat(4,1fr);}
 @media (min-width:481px){#tabbar{max-width:480px;left:50%;right:auto;width:100%;transform:translateX(-50%);border-left:1px solid var(--borde);border-right:1px solid var(--borde);}}
 
@@ -491,10 +492,10 @@ html.anuncio #tabbar{grid-template-columns:repeat(4,1fr);}
         <!-- 4) Comunidad -->
         <h2 class="seccion-t">Comunidad</h2>
         <div class="card" style="text-align:center">
-          <div class="card-t">Canales oficiales</div>
+          <div class="card-t">Cuenta<span class="solo-cripto"> y canales</span> oficiales</div>
           <div class="hub-sub" style="margin-bottom:10px">Creador del juego: @ElDuendeOficial. Desconfía de cualquier otra cuenta que diga ser nosotros.</div>
           <button class="ob sec" onclick="abrirTg('ElDuendeOficial')" style="width:100%">@ElDuendeOficial</button>
-          <div class="fila2" style="margin-top:10px">
+          <div class="fila2 solo-cripto" style="margin-top:10px">
             <button class="ob sec" onclick="abrirTg('elduende420peru')">📢 Canal</button>
             <button class="ob sec" onclick="abrirTg('duendesolana420')">💬 Grupo</button>
           </div>
@@ -535,14 +536,14 @@ html.anuncio #tabbar{grid-template-columns:repeat(4,1fr);}
       <section class="tab" id="tab-skins">
         <div class="tab-cab">
           <div class="tab-titulo">SKINS</div>
-          <div class="hub-sub">Opcionales. Cada skin tiene su sprite y su color de corte propio. Se pagan con Telegram Stars o con TON.</div>
+          <div class="hub-sub">Opcionales. Cada skin tiene su sprite y su color de corte propio. Se pagan con Telegram Stars<span class="solo-cripto"> o con TON</span>.</div>
         </div>
         <p id="skin-status" class="estado" role="status" aria-live="polite"></p>
         <div id="skins-grid">
           <div class="skin"><span class="skel" style="width:72px;height:72px;flex-shrink:0"></span><div style="flex:1"><span class="skel" style="height:14px;width:55%;margin-bottom:8px"></span><span class="skel" style="height:10px;width:80%"></span></div></div>
           <div class="skin"><span class="skel" style="width:72px;height:72px;flex-shrink:0"></span><div style="flex:1"><span class="skel" style="height:14px;width:55%;margin-bottom:8px"></span><span class="skel" style="height:10px;width:80%"></span></div></div>
         </div>
-        <p class="seguro">🔒 El pago se confirma dentro de Telegram (Stars) o en tu wallet (TON). Nunca te pediremos pagos por mensaje privado.</p>
+        <p class="seguro">🔒 El pago se confirma dentro de Telegram (Stars)<span class="solo-cripto"> o en tu wallet (TON)</span>. Nunca te pediremos pagos por mensaje privado.</p>
       </section>
 
       <!-- RANKING -->
@@ -812,10 +813,10 @@ html.anuncio #tabbar{grid-template-columns:repeat(4,1fr);}
      pesan cientos de KB). Aquí se ejecutan en el MISMO orden y antes que el
      código de la página, así que nada de lo que los usa cambia. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
-<script src="../js/dom-utils.js?v=354"></script>
-<script src="../js/missions.js?v=354"></script>
-<script src="../js/streak.js?v=354"></script>
-<script src="../js/achievements.js?v=354"></script>
+<script src="../js/dom-utils.js?v=355"></script>
+<script src="../js/missions.js?v=355"></script>
+<script src="../js/streak.js?v=355"></script>
+<script src="../js/achievements.js?v=355"></script>
 <script>
 // TON Connect (~400 KB) bajo demanda: al abrir la wallet, o al cargar si ya hay una sesion guardada.
 // tonGuardada(): el SDK guarda su sesion en localStorage con claves 'ton-connect...'.
@@ -832,7 +833,7 @@ function cargarTon(){
 }
 function tonGuardada(){ try{ for(var i=0;i<localStorage.length;i++){ if(/^ton-connect/.test(localStorage.key(i)||'')) return true; } }catch(e){} return false; }
 </script>
-<script src="../js/config.js?v=354"></script>
+<script src="../js/config.js?v=355"></script>
 <script>
 'use strict';
 
@@ -899,7 +900,7 @@ function showProfile(){
   const msg='👤 '+(TG_USER.first_name||TG_USER.username||'Duende')+'\n'+
     '🪙 '+Number(totalCoins||0).toLocaleString()+' DQ\n'+
     '🏆 Mejor score: '+Number(best).toLocaleString()+'\n'+
-    (wallet?('💎 TON: '+wallet.slice(0,6)+'...'+wallet.slice(-4)):'💎 Wallet TON: no conectada')+'\n'+
+    (document.documentElement.classList.contains('anuncio')?'':(wallet?('💎 TON: '+wallet.slice(0,6)+'...'+wallet.slice(-4)):'💎 Wallet TON: no conectada')+'\n')+
     (tgProfile&&tgProfile.id?'✅ Sesión sincronizada':'⏳ Sincronizando…');
   if(tg&&tg.showPopup){ try{ tg.showPopup({title:'Tu perfil',message:msg,buttons:[{type:'close'}]}); return; }catch(e){} }
   alert(msg);
@@ -1231,20 +1232,22 @@ function openSkinShop(){
 function renderSkinShop(){
   const grid=document.getElementById('skins-grid');
   if(!grid)return;
+  // Modo anuncio (html.anuncio): solo Stars, sin botón ni mención de TON.
+  const ad=document.documentElement.classList.contains('anuncio');
   grid.innerHTML=SKINS.map(s=>{
     const owned=ownedSkins.includes(s.id);
     const equipped=equippedSkin===s.id;
     const boton=equipped?`<button class="equipada">✅ Equipada</button>`
       :(s.usd===0||owned)?`<button onclick="equipSkinTG('${s.id}')">Equipar</button>`
-      :`<button class="compra" onclick="buySkinStars('${s.id}')">⭐ Stars</button>
-        <button onclick="buySkinTon('${s.id}')">💎 TON</button>`;
+      :`<button class="compra" onclick="buySkinStars('${s.id}')">⭐ Stars</button>`+(ad?'':`
+        <button onclick="buySkinTon('${s.id}')">💎 TON</button>`);
     return `<div class="skin${equipped?' on':''}">
       <img src="${s.preview}" alt="Skin ${s.name}" width="72" height="72" loading="lazy" decoding="async" onerror="this.style.visibility='hidden'">
       <div style="flex:1;min-width:0">
         <div class="n"><span class="rar" style="background:${s.color}"></span>${s.name}${owned&&s.usd>0?'<span class="tuya">Tuya</span>':''}</div>
         <div class="d">${s.desc}</div>
         ${s.buffs?`<div class="b">${s.buffs.label}</div>`:''}
-        ${s.usd>0&&!owned?`<div class="p">${Number(s.stars).toLocaleString('es')} ⭐ <span style="color:var(--txt3)">· Stars de Telegram o TON al cambio del día</span></div>`:''}
+        ${s.usd>0&&!owned?`<div class="p">${Number(s.stars).toLocaleString('es')} ⭐ <span style="color:var(--txt3)">· ${ad?'Stars de Telegram':'Stars de Telegram o TON al cambio del día'}</span></div>`:''}
         ${s.usd===0?`<div class="p" style="color:var(--txt3)">Gratis</div>`:''}
       </div>
       <div class="acc">${boton}</div>
@@ -1649,7 +1652,7 @@ window.DQE={
   },
 };
 </script>
-<script src="../js/engine.js?v=354"></script>
+<script src="../js/engine.js?v=355"></script>
 <script>
 
 // ══ MENU EN PESTAÑAS ══
@@ -1999,7 +2002,7 @@ function shareScore(){
 // (la misma tabla STARS_DE_USD que usa /api/telegram-bot-invoice al cobrar), asi
 // la Mini App nunca anuncia un precio distinto del que cobra Telegram.
 // Subir este ?v= junto con el de los otros imports de data.js.
-import { SKINS as CATALOGO, estrellasDe } from '../mmo/js/data.js?v=354';
+import { SKINS as CATALOGO, estrellasDe } from '../mmo/js/data.js?v=355';
 try{
   for(const s of SKINS){
     const c=CATALOGO[s.id];

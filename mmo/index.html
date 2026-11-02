@@ -3,7 +3,7 @@
 <head>
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=354"></script>
+<script src="/js/origen.js?v=355"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Duende Quest CLASSIC · MMORPG 2D gratis en el navegador</title>
@@ -71,9 +71,9 @@
 })();
 </script>
 <!-- defer se ejecuta en orden y todo antes del modulo client.js -->
-<script src="/js/pwa.js?v=354" defer></script>
+<script src="/js/pwa.js?v=355" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=354" defer></script>
+<script src="/js/config.js?v=355" defer></script>
 <style>
 /* ── Tokens (guia de diseno, oct 2026). Las variables viejas (--verde, --amarillo,
    --rosa, --cian, --rojo) siguen existiendo porque client.js las usa, pero ahora
@@ -692,7 +692,7 @@ body.texto-grande .uf .nm small,body.texto-grande #hud.estrecho .uf .nm small{fo
     <button class="btn sec btn-grande" data-instalar hidden style="display:none;margin-top:8px">⬇ Instalar la app</button>
     <div class="confianza">
       <a href="/terminos.html" target="_blank" rel="noopener">Términos</a> · <a href="/privacidad.html" target="_blank" rel="noopener">Privacidad</a> · <a href="/seguridad.html" target="_blank" rel="noopener">Seguridad</a> · 🔒 Nunca te pediremos contraseñas<span class="solo-cripto"> ni frases semilla</span>.
-      <p class="creador">Creado por <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial</a> (cuenta oficial) · <a href="https://t.me/elduende420peru" target="_blank" rel="noopener">Canal</a> · <a href="https://t.me/duendesolana420" target="_blank" rel="noopener">Grupo</a></p>
+      <p class="creador">Creado por <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial</a> (cuenta oficial)<span class="solo-cripto"> · <a href="https://t.me/elduende420peru" target="_blank" rel="noopener">Canal</a> · <a href="https://t.me/duendesolana420" target="_blank" rel="noopener">Grupo</a></span></p>
     </div>
   </div>
 </div>
@@ -833,7 +833,7 @@ body.texto-grande .uf .nm small,body.texto-grande #hud.estrecho .uf .nm small{fo
         <li><b>Recolección.</b> Plantas y vetas en cada zona; vuelven a estar disponibles a los 5 minutos.</li>
         <li><b>Pesca.</b> Un pesquero en el pueblo y en cada zona. Lanza y tira cuando pique; tirar antes o moverte lo espanta. Cada pesquero tiene su especie y, con lluvia, el Pez Dorado es el doble de frecuente. Hasta 80 capturas al día.</li>
         <li><b>Artesanía.</b> La Artesana Lila convierte materiales y pescado en pociones, elixires, comida y runas.</li>
-        <li><b>Expediciones.</b> Desde Nv 5 (L). Envía a tu mascota 1, 4 u 8 horas al Bosque, la Mina o el Lago y recoge el botín al volver.</li>
+        <li><b>Expediciones.</b> Desde Nv 2 (L). Envía a tu mascota 1, 4, 8 o 12 horas (🌙 de noche; la primera vez, una de 15 min) al Bosque, la Mina o el Lago y recoge el botín al volver.</li>
       </ul>
 
       <h3>Social</h3>
@@ -854,7 +854,7 @@ body.texto-grande .uf .nm small,body.texto-grande #hud.estrecho .uf .nm small{fo
       </ul>
       <p class="creditos"><b>Créditos de arte:</b> Luis Zuno (ansimuz) — Magic Cliffs y Warped Caves (CC-BY 3.0), Mountain Dusk, Underwater, GothicVania y Sunny Land (CC0); Moikmellah, Ashuuya, Scratchio y 7Soul1 (CC0). Sonidos: Juhani Junkala (CC0).</p>
     </div>
-    <p class="creador">👤 Creado por <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial</a> · <a href="https://t.me/elduende420peru" target="_blank" rel="noopener">📢 Canal</a> · <a href="https://t.me/duendesolana420" target="_blank" rel="noopener">💬 Grupo</a></p>
+    <p class="creador">👤 Creado por <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial</a><span class="solo-cripto"> · <a href="https://t.me/elduende420peru" target="_blank" rel="noopener">📢 Canal</a> · <a href="https://t.me/duendesolana420" target="_blank" rel="noopener">💬 Grupo</a></span></p>
   </div>
 </div>
 
@@ -1010,7 +1010,7 @@ body.texto-grande .uf .nm small,body.texto-grande #hud.estrecho .uf .nm small{fo
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=354"></script>
+<script type="module" src="/mmo/js/client.js?v=355"></script>
 <div id="nuevo3d" role="dialog" aria-label="Nuevo mundo 3D">
   <video src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" muted loop playsinline preload="none"></video>
   <div class="t">🌌 NUEVO: Duende Quest Origins, el mundo abierto en 3D</div>

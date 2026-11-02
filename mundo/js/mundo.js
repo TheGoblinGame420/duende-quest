@@ -14,27 +14,27 @@
 import * as THREE from 'three';
 import { esNocheDuendes, TEMPORADAS, temporadaDe, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=354';
-import { iniciarVentanas } from './ventanas.js?v=354';
-import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel } from '/mmo/js/data.js?v=354';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
-import { diaFiesta, diasFiesta, TEMP_DIAS, TEMP_DIA_PREMIO } from '/mmo/js/data.js?v=354';   // tarea del dia de la fiesta en la caja de misiones
-import { iniciarRegalo } from '/mmo/js/regalo.js?v=354';
-import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=354';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=354';
-import { crearMusica } from './musica.js?v=354';
-import { crearSonidos } from './sonidos.js?v=354';
-import { construirCueva } from './cueva.js?v=354';
-import { TAPA, transparentar } from './tapa.js?v=354';
-import { construirAbismo } from './abismo.js?v=354';
-import { crearParticulas } from './particulas.js?v=354';
-import { cargarKenney, piezasCasa } from './kenney.js?v=354';
-import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=354';
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=355';
+import { iniciarVentanas } from './ventanas.js?v=355';
+import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel } from '/mmo/js/data.js?v=355';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
+import { diaFiesta, diasFiesta, TEMP_DIAS, TEMP_DIA_PREMIO } from '/mmo/js/data.js?v=355';   // tarea del dia de la fiesta en la caja de misiones
+import { iniciarRegalo } from '/mmo/js/regalo.js?v=355';
+import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=355';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=355';
+import { crearMusica } from './musica.js?v=355';
+import { crearSonidos } from './sonidos.js?v=355';
+import { construirCueva } from './cueva.js?v=355';
+import { TAPA, transparentar } from './tapa.js?v=355';
+import { construirAbismo } from './abismo.js?v=355';
+import { crearParticulas } from './particulas.js?v=355';
+import { cargarKenney, piezasCasa } from './kenney.js?v=355';
+import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=355';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=354';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=354';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=354';
-import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=354';
-import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA } from './lore.js?v=354';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=355';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=355';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=355';
+import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=355';
+import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA } from './lore.js?v=355';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1945,6 +1945,8 @@ function recibir(m) {
       // El nuevo entra ya como Guerrero (la recomendada): un paso menos antes de jugar. El que
       // vuelve sin clase (personaje antiguo) la elige como siempre.
       if (!yo.clase) { if (m.nuevo) { mandar({ t: 'clase', id: 'guerrero' }); setTimeout(() => despuesMision1(() => { aviso('⚔ Empiezas como Guerrero. Puedes cambiar de clase gratis hasta Nv 9 en ' + K('📖 (tecla P)', '⋯ → 📖') + ' → Clase.', 'ok', 1); setTimeout(ofrecerClases, 4000); }), 6000); } else abrirClases(); }
+      // Quien cerro el juego antes de verla (ya paso la mision 1 y aun es Nv < 9): se le ofrece al volver.
+      if (yo && yo.mis && yo.mis.i >= 1 && yo.nivel < 9) setTimeout(ofrecerClases, 20000);
       // Si el servidor no la pone (algo raro), a los 4 s se abre la ventana de siempre.
       if (!yo.clase && m.nuevo) setTimeout(() => { if (yo && !yo.clase && !$('v-clase').classList.contains('on')) abrirClases(); }, 4000);
       // Al nuevo se le da la bienvenida cuando ya eligio clase (antes quedaba detras de esa ventana).
@@ -1972,6 +1974,8 @@ function recibir(m) {
       if (tiendaAlEntrar && yo.clase) setTimeout(() => { if (tiendaAlEntrar && !hayVentana()) { tiendaAlEntrar = false; abrirTiendaHud('bot', focoAlEntrar); focoAlEntrar = ''; } }, 1200);   // con otra ventana abierta, se reintenta con el siguiente 'yo'
       // Nueva mision de la cadena: el Guardia Tito cuenta por que importa.
       if (antes && antes.mis && yo.mis && yo.mis.i !== antes.mis.i && LORE_MISIONES[yo.mis.i]) setTimeout(() => aviso('🛡 Tito: «' + LORE_MISIONES[yo.mis.i] + '»'), 2500);
+      // Termino la mision 1: ofrecer probar otra clase (sale sola si ya la vio o esta en pantalla).
+      if (antes && antes.mis && antes.mis.i === 0 && yo.mis && yo.mis.i >= 1) setTimeout(ofrecerClases, 4000);
       // Embudo de las primeras misiones (una vez por sesion): mis_0 al entrar de novato, el resto al llegar a cada una.
       if (yo.mis && yo.mis.i <= 5 && (antes ? antes.mis && yo.mis.i !== antes.mis.i : yo.mis.i === 0)) paso('mis_' + yo.mis.i);
       if (antes && antes.nivel < 60 && yo.nivel >= 60) { aviso('🏆 ' + LORE_NIVEL60, 'ok'); setTimeout(() => aviso('🥤 Toca la barra morada de la chicha para reclamar tus 2 litros.', 'ok'), 5000); }
@@ -2055,7 +2059,13 @@ function recibir(m) {
       if (objetivo === m.id || Math.hypot(o.x - P.x, o.z - P.z) < 25) vib('light');
       break;
     }
-    case 'md3': { bestDeMuerte(m.id); const o = mons.get(m.id); if (o) { if (m.id === objetivo || performance.now() - (o.predT || 0) < 600) { vib('heavy'); sacudir = Math.max(sacudir, 0.12); pausaGolpe(o, 90); } o.muereT = performance.now(); o.st = 3; sfx('muerte', 0.36, o.x, o.z); if (Math.hypot(o.x - P.x, o.z - P.z) < 30) sfxK(Math.random() < 0.7 ? 'c_hurt' : 'c_grito', 0.32, o.x, o.z); const y = (o.y || alturaEn(o.x, o.z)) + 1; FX.emitir(o.x, y, o.z, { n: 30, color: '#c084fc', vel: 5, vida: 0.9, grav: 3, sube: 1.5 }); FX.emitir(o.x, y, o.z, { n: 14, color: '#fde68a', vel: 1.6, vida: 1.4, grav: -2, tam: 1.6, forma: 'estrella' }); FX.emitir(o.x, y - 0.5, o.z, { n: 7, color: '#5b5266', vel: 1.1, vida: 1.1, grav: -1, tam: 3, radio: 0.4, forma: 'humo' });
+    case 'md3': {
+      // Un monstruo que huye (Duende Ladron, raro, jefe que se va) no cuenta
+      // para el album ni explota como una muerte: solo una nubecita y un paso.
+      if (m.huye) bestRec.delete(m.id); else bestDeMuerte(m.id);
+      const o = mons.get(m.id); if (o) { o.muereT = performance.now(); o.st = 3; const y = (o.y || alturaEn(o.x, o.z)) + 1;
+      if (m.huye) { FX.emitir(o.x, y, o.z, { n: 6, color: '#cbd5e1', vel: 1.2, vida: 0.6, grav: -1.5, tam: 1.6, forma: 'humo' }); try { sfxK('paso_h', 0.25, o.x, o.z); } catch (e) {} }
+      else { if (m.id === objetivo || performance.now() - (o.predT || 0) < 600) { vib('heavy'); sacudir = Math.max(sacudir, 0.12); pausaGolpe(o, 90); } sfx('muerte', 0.36, o.x, o.z); if (Math.hypot(o.x - P.x, o.z - P.z) < 30) sfxK(Math.random() < 0.7 ? 'c_hurt' : 'c_grito', 0.32, o.x, o.z); FX.emitir(o.x, y, o.z, { n: 30, color: '#c084fc', vel: 5, vida: 0.9, grav: 3, sube: 1.5 }); FX.emitir(o.x, y, o.z, { n: 14, color: '#fde68a', vel: 1.6, vida: 1.4, grav: -2, tam: 1.6, forma: 'estrella' }); FX.emitir(o.x, y - 0.5, o.z, { n: 7, color: '#5b5266', vel: 1.1, vida: 1.1, grav: -1, tam: 3, radio: 0.4, forma: 'humo' }); }
       const dj = MONSTRUOS[o.k];
       if (!m.huye && (o.j || (dj && dj.jefe)) && (objetivo === m.id || Math.hypot(o.x - P.x, o.z - P.z) < 30)) {
         numero(P.x, P.y + 3.4, P.z, '¡JEFE DERROTADO!', '#ffe600', true);
@@ -3265,7 +3275,7 @@ function npcOcupado() {
   try {
     if (avisoTapado() || autoAtk || jefeCerca()) return true;
     const t = performance.now();
-    return !!(P && (P.muerto || t - (P.heridoT || 0) < 6000 || (objetivo && t - (P.atkT || 0) < 6000)));
+    return !!(P && (P.muerto || t - (P.heridoT || 0) < 6000 || (objetivo && t - (P.atkT || 0) < 6000))) || !!$('probar-clase');
   } catch (e) { return false; }
 }
 // texto: un texto o una lista (la ultima con sigue: 'frase de suspense' sale en dorado).
@@ -3550,8 +3560,10 @@ function ofrecerClases(n) {
   n = n || 0;
   let vista = false; try { vista = !!localStorage.getItem('dq3_clase_probada'); } catch (e) {}
   if (vista || !yo || !yo.clase || yo.nivel >= 9 || $('probar-clase')) return;
-  if (avisoTapado() || enCombate3()) { if (n < 8) setTimeout(() => ofrecerClases(n + 1), 3000); return; }   // en combate el servidor rechaza el cambio: espera
-  try { localStorage.setItem('dq3_clase_probada', '1'); } catch (e) {}
+  // Espera a que no haya ventana, lateral, NPC hablando, cola de NPC ni tira del premio diario (hasta ~3 min).
+  const ocupado = avisoTapado() || enCombate3() || hayVentana() || hayLateral() || ($('npc-dice') && $('npc-dice').classList.contains('on')) || colaNpc.length || !!document.querySelector('#tira-diario.on');
+  if (ocupado) { if (n < 60) setTimeout(() => ofrecerClases(n + 1), 3000); return; }
+  const marcar = () => { try { localStorage.setItem('dq3_clase_probada', '1'); } catch (e) {} };   // solo cuando de verdad la vio o eligio
   const d = document.createElement('div'); d.id = 'probar-clase';
   d.innerHTML = '<p class="pc-t">¿Probar otra clase? Es gratis hasta Nv 9</p><div class="pc-g"></div><button class="pc-no" type="button">✕ Así estoy bien</button>';
   let vigila = 0;
@@ -3561,13 +3573,34 @@ function ofrecerClases(n) {
     const b = document.createElement('button'); b.type = 'button';
     const act = yo.clase === id; if (act) b.className = 'act';
     b.innerHTML = `<span>${EMOJI_CLASE[id] || ''} ${esc(cl.nombre)}${act ? ' ✓' : ''}</span><small>${esc(cl.rol)}</small>`;
-    b.onclick = () => { try { SON.tocar('clic', { vol: 0.7 }); } catch (e) {} if (!act) mandar({ t: 'clase', id }); fin(); };
+    b.onclick = () => {
+      try { SON.tocar('clic', { vol: 0.7 }); b.blur(); } catch (e) {}   // sin foco: Espacio/Enter al jugar no cuentan como segundo toque
+      if (act) { marcar(); fin(); return; }
+      // Doble toque: el primero solo marca (un roce sin querer no cambia la clase).
+      if (!b.classList.contains('conf')) {
+        g.querySelectorAll('button.conf').forEach(o => { o.classList.remove('conf'); const s = o.querySelector('span'); if (s && o.dataset.txt) s.textContent = o.dataset.txt; });
+        const s = b.querySelector('span'); b.dataset.txt = s.textContent;
+        b.classList.add('conf'); s.textContent = 'Toca otra vez: ' + cl.nombre;
+        return;
+      }
+      // En combate o caido el servidor rechaza el cambio: la tira sigue y no se marca como vista.
+      if (enCombate3() || (P && P.muerto)) { aviso('Termina el combate y vuelve a tocar ' + cl.nombre + '.', 'err'); return; }
+      mandar({ t: 'clase', id }); marcar(); fin();
+      setTimeout(() => { if (yo && yo.clase === id) aviso(`Pruebas ${cl.nombre}. Si no te gusta, vuelve en ${K('📖 (tecla P)', '⋯ → 📖')} → Clase (gratis hasta Nv 9).`, 'ok', 1); }, 1500);
+    };
     g.appendChild(b);
   }
-  d.querySelector('.pc-no').onclick = () => { try { SON.tocar('clic', { vol: 0.7, cerrar: true }); } catch (e) {} fin(); };
+  d.querySelector('.pc-no').onclick = () => { try { SON.tocar('clic', { vol: 0.7, cerrar: true }); } catch (e) {} marcar(); fin(); };
   document.body.appendChild(d);
-  const hasta = Date.now() + 20000;
-  vigila = setInterval(() => { if (Date.now() > hasta || hayVentana() || !d.isConnected) fin(); }, 500);   // sola a los 20 s; si se abre una ventana, no la tapa
+  const desde = Date.now(), hasta = desde + 20000;
+  // Sola a los 20 s (cuenta como vista). Si se abre una ventana, lateral o habla un NPC, no la tapa:
+  // con 5 s o mas a la vista cuenta como vista; si no, vuelve a ofrecerse luego.
+  vigila = setInterval(() => {
+    if (!d.isConnected) { clearInterval(vigila); return; }
+    const tapa = hayVentana() || hayLateral() || ($('npc-dice') && $('npc-dice').classList.contains('on'));
+    if (Date.now() > hasta) { marcar(); fin(); return; }
+    if (tapa) { if (Date.now() - desde >= 5000) { marcar(); fin(); } else { fin(); setTimeout(() => ofrecerClases(n + 1), 3000); } }
+  }, 500);
 }
 function abrirClases() {
   const c = $('clases');
@@ -4035,10 +4068,10 @@ function aMapa(wx, wz, N) { return [(wx / LADO + 0.5) * N, (wz / LADO + 0.5) * N
 let ryMini = 0;
 // Si un punto del minimapa queda fuera del cuadro, lo recorta al borde en su
 // misma direccion (asi se ve hacia donde esta la mision o el compañero).
-function alBordeMini(px, pz, S) {
-  if (px >= 6 && pz >= 6 && px <= S - 6 && pz <= S - 6) return [px, pz];
+function alBordeMini(px, pz, S, m = 8) {
+  if (px >= m - 2 && pz >= m - 2 && px <= S - m + 2 && pz <= S - m + 2) return [px, pz];
   const a = Math.atan2(pz - S / 2, px - S / 2);
-  return [S / 2 + Math.cos(a) * (S / 2 - 8), S / 2 + Math.sin(a) * (S / 2 - 8)];
+  return [S / 2 + Math.cos(a) * (S / 2 - m), S / 2 + Math.sin(a) * (S / 2 - m)];
 }
 function pintarMini() {
   actualizarMarcas3();
@@ -4059,14 +4092,15 @@ function pintarMini() {
   const punto = (wx, wz, color, r) => { const px = (wx - P.x) * k + S / 2, pz = (wz - P.z) * k + S / 2; if (px < 0 || pz < 0 || px > S || pz > S) return; if (esMovil && r < 3) r *= 1.6; x.fillStyle = color; x.beginPath(); x.arc(px, pz, r, 0, 7); x.fill(); };
   // Eventos grandes: nunca desaparecen; si estan lejos se pegan al borde, laten y muestran la distancia.
   const borde = (wx, wz, color, r) => {
-    const px0 = (wx - P.x) * k + S / 2, pz0 = (wz - P.z) * k + S / 2, [bx, bz] = alBordeMini(px0, pz0, S), alBorde = bx !== px0 || bz !== pz0;
-    x.fillStyle = color; x.strokeStyle = '#fff'; x.lineWidth = 1.5;
+    if (esMovil) r *= 1.7;   // en movil el canvas se ve a ~0,56x: punto y texto mas grandes
+    const px0 = (wx - P.x) * k + S / 2, pz0 = (wz - P.z) * k + S / 2, [bx, bz] = alBordeMini(px0, pz0, S, esMovil ? 13 : 8), alBorde = bx !== px0 || bz !== pz0;
+    x.fillStyle = color; x.strokeStyle = '#fff'; x.lineWidth = esMovil ? 2.5 : 1.5;
     x.beginPath(); x.arc(bx, bz, r * (1 + 0.25 * Math.sin(Date.now() / 200)), 0, 7); x.fill(); x.stroke();
     if (alBorde) {
-      const t = Math.round(Math.hypot(wx - P.x, wz - P.z)) + 'm', ty = bz < 16 ? bz + r + 9 : bz - r - 7;
-      x.font = 'bold 9px system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle';
-      const tx = Math.max(16, Math.min(S - 16, bx));
-      x.strokeStyle = '#000'; x.lineWidth = 2.5; x.strokeText(t, tx, ty); x.fillStyle = '#fff'; x.fillText(t, tx, ty);
+      const t = Math.round(Math.hypot(wx - P.x, wz - P.z)) + 'm', ty = bz < (esMovil ? 24 : 16) ? bz + r + (esMovil ? 12 : 9) : bz - r - (esMovil ? 10 : 7);
+      x.font = esMovil ? 'bold 16px system-ui' : 'bold 9px system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      const mt = esMovil ? 25 : 16, tx = Math.max(mt, Math.min(S - mt, bx));
+      x.strokeStyle = '#000'; x.lineWidth = esMovil ? 3.5 : 2.5; x.strokeText(t, tx, ty); x.fillStyle = '#fff'; x.fillText(t, tx, ty);
     }
   };
   const mundoPrincipal = !enCueva(P.x) && !enAbismo(P.x);
@@ -4091,9 +4125,9 @@ function pintarMini() {
   else if (mundoPrincipal && invPre3 && ZONAS3D[invPre3.zona]) borde(ZONAS3D[invPre3.zona].x, ZONAS3D[invPre3.zona].z, '#ff9a3c', 4);
   if (mundoPrincipal && mundial3 && mundial3.vivo) borde(ARENA3D.x, ARENA3D.z, '#ff6b3d', 5);
   if (metaMision) {
-    const [px, pz] = alBordeMini((metaMision.x - P.x) * k + S / 2, (metaMision.z - P.z) * k + S / 2, S);
-    x.fillStyle = metaMision.guia ? '#4ade80' : '#ffd84a'; x.strokeStyle = '#000'; x.lineWidth = 2;
-    x.font = 'bold 14px system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle';
+    const [px, pz] = alBordeMini((metaMision.x - P.x) * k + S / 2, (metaMision.z - P.z) * k + S / 2, S, esMovil ? 13 : 8);
+    x.fillStyle = metaMision.guia ? '#4ade80' : '#ffd84a'; x.strokeStyle = '#000'; x.lineWidth = esMovil ? 3.2 : 2;
+    x.font = esMovil ? 'bold 22px system-ui' : 'bold 14px system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle';
     x.strokeText(metaMision.guia ? '?' : '!', px, pz); x.fillText(metaMision.guia ? '?' : '!', px, pz);
   }
   // Marcas 📍 vivas: punto que parpadea (encendido/apagado cada 250 ms).
@@ -4279,9 +4313,13 @@ function abrirComunidad(k) {
   try { const tw = window.Telegram && window.Telegram.WebApp; if (tw && tw.initData && typeof tw.openTelegramLink === 'function') { tw.openTelegramLink(url); return; } } catch (e) {}
   try { window.open(url, '_blank', 'noopener'); } catch (e) {}
 }
-{ const bc = $('com-canal'), bg = $('com-grupo'); if (bc) bc.onclick = () => abrirComunidad('canal'); if (bg) bg.onclick = () => abrirComunidad('grupo'); }
+{ const bc = $('com-canal'), bg = $('com-grupo'); if (bc) bc.onclick = () => abrirComunidad('canal'); if (bg) bg.onclick = () => abrirComunidad('grupo'); if (modoAnuncio()) { const f = bc && (bc.closest('.fila') || bc.parentElement); if (f) f.style.display = 'none'; } }
 // Aviso único (Nv 5): tira pequeña arriba con «Unirme» / «Ahora no». Si hay una ventana abierta, espera un poco.
+// Modo anuncio: nunca. Navegador de Facebook/Instagram/TikTok: tampoco (sin marcarlo visto, por si luego entra por Telegram).
 function avisoComunidad(n) {
+  if (modoAnuncio()) return;
+  const enTg = !!(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData);
+  if (!enTg && /FBAN|FBAV|FB_IAB|Instagram|Messenger|TikTok|BytedanceWebview/i.test(navigator.userAgent || '')) return;
   let ya = false; try { ya = !!localStorage.getItem('dq3_comunidad'); } catch (e) { ya = true; }
   if (ya || $('tira-comunidad')) return;
   let tapado = false; try { tapado = hayVentana() || avisoTapado(); } catch (e) {}
@@ -4375,7 +4413,7 @@ function leyendaPrimeraVez() {
   // Movil: la ventana de la leyenda sale solo la primera vez (la barra morada de la chicha queda siempre a la vista).
   try { if (COMPACTO && localStorage.getItem('dq_leyenda_vista')) return; } catch (e) {}
   // Espera a que elija clase y a que vea (y cierre) el premio diario: comparten ventana.
-  if (hayVentana() || hayLateral() || $('v-diario').classList.contains('on') || loginPend3 || !yo || !yo.clase || !!document.querySelector('#dq-avtg.on') || Date.now() - ventanaAutoT < 60000) { setTimeout(leyendaPrimeraVez, 3000); return; }
+  if (hayVentana() || hayLateral() || $('v-diario').classList.contains('on') || loginPend3 || !yo || !yo.clase || !!document.querySelector('#dq-avtg.on') || !!document.querySelector('#tira-diario.on') || !!$('probar-clase') || Date.now() - ventanaAutoT < 60000) { setTimeout(leyendaPrimeraVez, 3000); return; }
   try { sessionStorage.setItem('dq_leyenda', '1'); localStorage.setItem('dq_leyenda_vista', '1'); } catch (e) {}
   ventanaAutoT = Date.now();
   verLeyenda();
@@ -5218,7 +5256,7 @@ function textoManana3() {
 // semana y lo de mañana; dura 5 s (8 s los dias 6 y 7) y al tocarla abre el panel.
 // Espera a que no haya ventanas abiertas (bienvenida, tutorial, clase...).
 function tiraDiario(m, n) {
-  if (hayVentana() && (n || 0) < 12) { setTimeout(() => tiraDiario(m, (n || 0) + 1), 1500); return; }
+  if ((hayVentana() || hayLateral() || !!$('probar-clase')) && (n || 0) < 40) { setTimeout(() => tiraDiario(m, (n || 0) + 1), 1500); return; }
   let t = $('tira-diario');
   if (!t) {
     t = document.createElement('div'); t.id = 'tira-diario'; t.setAttribute('role', 'button');
@@ -5275,7 +5313,7 @@ function mostrarDiario(m, forzar) {
     h += `<div class="d7 ${i < hoy ? 'ya' : i === hoy ? 'hoy' : ''}"><small>Día ${i}</small><span>${i === n ? '🎁' : pr.item !== undefined ? '⚔️' : pr.oro ? '🪙' : '🧪'}</span><em>${esc(pr.txt)}</em></div>`;
   }
   h += '</div>' + (m.hitos || []).map(x => `<p class="vv-p" style="margin-top:8px;color:#ffd84a">🏅 <b>¡Hito de racha!</b> Ganaste ${esc(x)}.</p>`).join('');
-  h += `<p class="vv-p" style="margin-top:10px;font-size:12px"><b style="color:#7dd3fc">${esc(textoManana3() || 'Mañana: ' + premioRacha(m.racha + 1).txt)}</b>. Si faltas un día, un protector 🧿 la salva; sin protector retrocede (desde el día 7 no pierdes las semanas cumplidas).${m.pase ? ` Entrar sumó <b>+${m.pase}</b> al pase del mes.` : ''}</p><p class="vv-p" style="margin-top:6px;font-size:12px">🧿 Protectores: <b>${m.amu || 0}</b> (se ganan con el bono semanal, máximo 2)</p>`;
+  h += `<p class="vv-p" style="margin-top:10px;font-size:12px"><b style="color:#7dd3fc">${esc(textoManana3() || 'Mañana: ' + premioRacha(m.racha + 1).txt)}</b>. Si faltas un día, un protector 🧿 la salva; sin protector, o si faltas más, retrocedes (como mucho al inicio de tu semana): las semanas cumplidas no se pierden.${m.pase ? ` Entrar sumó <b>+${m.pase}</b> al pase del mes.` : ''}</p><p class="vv-p" style="margin-top:6px;font-size:12px">🧿 Protectores: <b>${m.amu || 0}</b> (te regalamos uno al empezar cada semana de racha, entrando seguido, si no te queda ninguno, y otro con el bono semanal; máximo 2)</p>`;
   $('diario-c').innerHTML = h;
   $('diario-c').onclick = clicExpedDiario;
   const vt = $('vv-temp');
@@ -6750,11 +6788,17 @@ const flechaDir = (x, z) => { let a = camYaw - Math.PI - Math.atan2(x - P.x, z -
 // Fiesta que vale para el servidor (yo.temp) o, si no lo dice, la del reloj.
 function fiestaYo() { return yo && typeof yo.temp === 'string' ? TEMPORADAS.find(x => x.id === yo.temp) || null : temporadaDe(); }
 // Fila de la tarea del dia de la fiesta (data TEMP_DIAS; progreso en yo.fiestaDias, p = {dia: n}).
-function filaFiestaDia() {
-  const tp = yo ? fiestaYo() : null; if (!tp) return '';
+// Estado del dia de la fiesta: { tp, d, def, p (hecho hoy), n, ok (hoy cumplido), okL, pL } o null.
+function estadoFiestaDia() {
+  const tp = yo ? fiestaYo() : null; if (!tp) return null;
   const d = Math.max(0, Math.min(diaFiesta(tp), diasFiesta(tp) - 1)), def = TEMP_DIAS[d % TEMP_DIAS.length];
   const fd = yo.fiestaDias && yo.fiestaDias.id === tp.id ? yo.fiestaDias : { p: {}, ok: [] };
-  const ok = fd.ok || [], p = fd.p || {};
+  const okL = fd.ok || [], pL = fd.p || {};
+  return { tp, d, def, p: Math.min(pL[d] || 0, def.n), n: def.n, ok: okL.includes(d), okL, pL };
+}
+function filaFiestaDia() {
+  const ef = estadoFiestaDia(); if (!ef) return '';
+  const { tp, d, def } = ef, ok = ef.okL, p = ef.pL;
   const atras = ok.length < d + 1 ? Array.from({ length: d }, (_, i) => i).filter(i => !ok.includes(i)).length : 0;
   const extra = atras ? ` · ${atras} día${atras > 1 ? 's' : ''} atrasado${atras > 1 ? 's' : ''}` : '';
   if (ok.includes(d)) return `<div class="q" data-ttemp="1" style="cursor:pointer"><span class="ok">✓ Día ${d + 1} de la fiesta hecho${d + 1 < diasFiesta(tp) ? ' · vuelve mañana' : ' · era el último día'}</span><small>${tp.emoji} toca para ver el calendario${extra}</small></div>`;
@@ -6892,7 +6936,7 @@ function pintarMisiones() {
     const hd = T.dia.l.filter(t => t.ok).length, hs = T.sem.l.filter(t => t.ok).length;
     const ptsS = T.sem.pts || 0, cofS = T.sem.cof || 0, sigS = [4, 8, 12][cofS] || 12;   // cofres semanales (se abren solos al llegar al umbral)
     // Movil con la caja recortada: una fila pegada abajo (siempre visible) con dia, cofres y la ruta de la mision tocada. (Con tutorial no se pega: taparia el paso.)
-    if (COMPACTO && !c.classList.contains('abierto')) { const rt = metaTarea ? caminoTarea(metaTarea) : ''; h += `<div class="q"${tt ? '' : ' style="position:sticky;bottom:0;background:rgba(22,14,44,.95)"'}><b>▾ Día ${hd}/${T.dia.l.length} · 📦 ${cofS >= 3 ? '✓' : `${ptsS}/${sigS}`}${rt ? ` · ➜${rt.replace(/^ · /, ' ')}` : ''}</b></div>`; }
+    if (COMPACTO && !c.classList.contains('abierto')) { const rt = metaTarea ? caminoTarea(metaTarea) : ''; h += `<div class="q"${tt ? '' : ' style="position:sticky;bottom:0;background:rgba(22,14,44,.95)"'}><b>▾ Día ${hd}/${T.dia.l.length} · 📦 ${cofS >= 3 ? '✓' : `${ptsS}/${sigS}`}${rt ? ` · ➜${rt.replace(/^ · /, ' ')}` : ''}${(() => { try { const ef = estadoFiestaDia(); return ef ? `<span data-ttemp="1" style="cursor:pointer;color:${ef.tp.color}"> · ${ef.tp.emoji} ${ef.ok ? '✓' : `D${ef.d + 1} ${ef.p}/${ef.n}`}</span>` : ''; } catch (e) { return ''; } })()}</b></div>`; }
     else h += `<div class="q"><b>🗓 Misiones del día ${hd}/${T.dia.l.length}</b>` + T.dia.l.map((t, i) => t.ok ? `<span class="ok">✓ ${esc(t.txt)}</span>` : `<span class="tarea" data-ir="${i}" style="cursor:pointer">• ${esc(t.txt)} ${t.p}/${t.n}${caminoTarea(t)}${T.dia.cambio ? '' : ` <button class="cambiar" data-cambiar="${i}" title="Cambiar esta misión (1 gratis al día)">🔄</button>`}</span>`).join('') +
       `<small>${T.dia.bono ? '✓ bono del día' : 'Bono al completar 2 de 3'} · se renuevan a la medianoche (hora de Perú)</small></div>` +
       // Las semanales tambien (antes solo se veia "Semana 0/2").

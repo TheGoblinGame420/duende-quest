@@ -24,8 +24,8 @@ import {
   ORO_POR_USD, STAR_TIENDA_USD, PEN_POR_USD,
   temporadaDe, TEMPORADAS, TEMP_DIAS, TEMP_DIA_PREMIO, diaFiesta, diasFiesta,
   ESPECIES, MAPAS, MONSTRUOS, BESTIARIO_HITOS, premioBestiario,
-} from '/mmo/js/data.js?v=354';
-import { LORE_MONSTRUOS } from './lore.js?v=354';
+} from '/mmo/js/data.js?v=355';
+import { LORE_MONSTRUOS } from './lore.js?v=355';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -520,7 +520,9 @@ function htmlTalentos(y) {
   h += htmlListaTal(tal, libres, false, y);
   if (Object.values(tal).some(Boolean)) {
     const k = 'talReset';
-    h += btn(pidiendo(k) ? '¿Seguro? Toca otra vez' : `Reiniciar talentos (${MON}${fmt(costoReinicioTalentos(y.nivel))})`, 'tal-reset', {}, 'vv-full ' + (pidiendo(k) ? 'ojo' : 'sec'), y.oro < costoReinicioTalentos(y.nivel));
+    // Reinicio gratis (una vez) por el cambio del tope de 5 a 8 rangos: sin costo ni confirmacion.
+    if (y.talGratis8) h += btn('🌟 Reiniciar talentos GRATIS (cambio a 8 rangos)', 'tal-reset', { g: 1 }, 'vv-full oro');
+    else h += btn(pidiendo(k) ? '¿Seguro? Toca otra vez' : `Reiniciar talentos (${MON}${fmt(costoReinicioTalentos(y.nivel))})`, 'tal-reset', {}, 'vv-full ' + (pidiendo(k) ? 'ojo' : 'sec'), y.oro < costoReinicioTalentos(y.nivel));
   }
   return h;
 }
@@ -1291,7 +1293,7 @@ const ACC = {
   // Libro
   ltab: b => { est.libro = b.dataset.id; H.sfx('boton', 0.2); pintarLibro(); },
   tal: b => { H.sfx('boton', 0.3); H.mandar({ t: 'talento', id: b.dataset.id }); },
-  'tal-reset': b => { if (!confirmar('talReset')) { marcarSeguro(b); return; } H.sfx('explosion', 0.3); H.mandar({ t: 'talentoReset' }); },
+  'tal-reset': b => { if (!b.dataset.g && !confirmar('talReset')) { marcarSeguro(b); return; } H.sfx('explosion', 0.3); H.mandar({ t: 'talentoReset' }); },
   espec: b => {
     const y = H.yo(); if (!y) return;
     if (y.nivel < ESPEC_NIVEL) { H.aviso('Las especializaciones se eligen desde el nivel ' + ESPEC_NIVEL + '.', 'err'); return; }

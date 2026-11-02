@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=354';
-import { iniciarRegalo } from './regalo.js?v=354';
-import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=354';
+} from './data.js?v=355';
+import { iniciarRegalo } from './regalo.js?v=355';
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=355';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -2596,7 +2596,7 @@ function limpiarRestos(t) { return t.replace(/\s*\(\s*\)/g, '').replace(/\(\s+/g
 // Notas que CLASSIC muestra: sin lo que es solo de ORIGINS (3D), salvo que nombre a CLASSIC.
 // En Telegram, sin lo que habla de SOL o wallets (sus reglas); en modo anuncio, sin nada cripto.
 function itemsNovClassic(nv) {
-  const solo3d = /ORIGINS|\b3D\b|Gran Invasión|Cueva de los Goblins|ESQUIVAR|pueblo es andino|gestos|golpe fuerte del combo|Hermandades abiertas|FASE 2|Furia|Corrientes de viento|corriente|tarjeta de botín|Libreta de pesca|Tirón perfecto|marca el camino|élite|Duende Ladr|📍|Pedir ayuda|cámara|faroles|Brillo de noche|respingo|retrato|Probar su|caja de misiones|TIRAR|ventanas automáticas|tiradores|Álbum|lbum de monstruos|Ayni|píldora/i;
+  const solo3d = /ORIGINS|\b3D\b|Gran Invasión|Cueva de los Goblins|ESQUIVAR|pueblo es andino|gestos|golpe fuerte del combo|Hermandades abiertas|FASE 2|Furia|Corrientes de viento|corriente|tarjeta de botín|Libreta de pesca|Tirón perfecto|marca el camino|élite|Duende Ladr|📍|Pedir ayuda|cámara|faroles|Brillo de noche|respingo|retrato|Probar su|caja de misiones|TIRAR|ventanas automáticas|tiradores|Álbum|lbum de monstruos|Ayni|píldora|probar Mago|brillan en dorado|empieza con niebla|Prueba cualquier montura|💨/i;
   return (nv.items || []).filter(x => !(solo3d.test(x) && !/CLASSIC/.test(x)))
     .filter(x => modoAnuncio() ? !SIN_CRIPTO_RE.test(x) : (!TG || !(/\bSOL\b/.test(x) || /wallet|solana|phantom|solflare/i.test(x))));
 }
@@ -3052,13 +3052,15 @@ function pintarLibro() {
     h += `<div class="tal ${r ? 'on' : ''}"><img src="${A}items/equipo/${t.icono}.png" alt=""><div><b>${esc(t.nombre)} ${r}/${TALENTO_MAX}</b>${sugTal.includes(t.id) ? '<small style="color:var(--oro,#ffd84a);font-weight:700">⭐ Para tu rol</small>' : ''}<small>${esc(t.txt)} por rango</small></div><button class="btn sec" data-tal="${t.id}" ${libres > 0 && r < TALENTO_MAX ? '' : 'disabled'}>+</button></div>`;
   }
   h += '</div>';
-  if (Object.keys(tal).length) h += `<button class="btn sec" id="b-tal-reset" style="width:100%;margin-top:6px">Reiniciar talentos (${costoReinicioTalentos(yo.nivel).toLocaleString('es', { useGrouping: 'always' })} oro)</button>`;
+  // Reinicio gratis (una vez) por el cambio del tope de 5 a 8 rangos (yo.talGratis8).
+  if (Object.keys(tal).length) h += yo.talGratis8 ? '<button class="btn" id="b-tal-reset" style="width:100%;margin-top:6px">🌟 Reiniciar talentos GRATIS (cambio a 8 rangos)</button>'
+    : `<button class="btn sec" id="b-tal-reset" style="width:100%;margin-top:6px" ${yo.oro < costoReinicioTalentos(yo.nivel) ? 'disabled' : ''}>Reiniciar talentos (${costoReinicioTalentos(yo.nivel).toLocaleString('es', { useGrouping: 'always' })} oro)</button>`;
   const costoC = costoCambioClase(yo.nivel);
   h += `<button class="btn sec" id="b-cambiar-clase" style="width:100%;margin-top:8px">Cambiar de clase${costoC ? ' (' + costoC.toLocaleString('es', { useGrouping: 'always' }) + ' oro)' : ' (gratis hasta Nv 10)'}</button>`;
   $('libro-lista').innerHTML = h;
   $('b-cambiar-clase').onclick = () => abrirClases(false);
   $('libro-lista').querySelectorAll('[data-tal]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'talento', id: b.dataset.tal }); });
-  const br = $('b-tal-reset'); if (br) br.onclick = () => { if (confirm('¿Reiniciar todos tus talentos por ' + costoReinicioTalentos(yo.nivel).toLocaleString('es', { useGrouping: 'always' }) + ' oro?')) mandar({ t: 'talentoReset' }); };
+  const br = $('b-tal-reset'); if (br) br.onclick = () => { if (yo.talGratis8 || confirm('¿Reiniciar todos tus talentos por ' + costoReinicioTalentos(yo.nivel).toLocaleString('es', { useGrouping: 'always' }) + ' oro?')) mandar({ t: 'talentoReset' }); };
   $('libro-lista').querySelectorAll('[data-espec]').forEach(b => b.onclick = () => { if (yo.nivel >= ESPEC_NIVEL && yo.espec !== b.dataset.espec) { sfx('explosion', .3); mandar({ t: 'espec', id: b.dataset.espec }); } });
 }
 
@@ -3477,7 +3479,7 @@ function pintarEquipo() {
 // la ventana de clase lo tapaba y el novato nunca veia el calendario.
 let loginPend = null;
 function mostrarLogin(m) {
-  if (yo && m.racha) yo.login = { ...(yo.login || {}), racha: m.racha };   // para "Mañana" antes de que llegue el yo nuevo
+  if (yo && m.racha) yo.login = { ...(yo.login || {}), racha: m.racha, amu: m.amu || 0 };   // para "Mañana" antes de que llegue el yo nuevo
   if (!yo || !yo.clase) { loginPend = m; return; }
   // La racha crece sin tope: se pinta la semana en curso (dia 1..7 de esa semana).
   const dHoy = diaRacha(m.racha), sem = semanaRacha(m.racha);
@@ -3492,7 +3494,7 @@ function mostrarLogin(m) {
   let txt = 'Hoy recibes ' + m.txt + '.';
   if (m.oro) txt = 'Hoy recibes ' + m.oro.toLocaleString('es', { useGrouping: 'always' }) + ' oro' + (m.item ? ' y ' + RAREZAS[m.item.r].nombre.toLowerCase() + ': ' + nombreItem(m.item) : '') + '.';
   ponTxt($('login-ok'), m.oro ? 'Recoger ' + m.oro.toLocaleString('es', { useGrouping: 'always' }) + ' oro' : 'Recoger');
-  $('login-cuerpo').innerHTML = h + `<p class="centro" style="margin-top:12px;color:var(--ok);font-weight:600">${esc(txt)}</p>${(m.hitos || []).map(x => `<p class="centro" style="margin-top:6px;color:var(--oro);font-weight:700">🏅 ¡Hito de racha! Ganaste ${esc(x)}.</p>`).join('')}<p class="centro" style="font-size:12px;color:var(--txt2)">${esc(textoManana())}.${m.pase ? ` Entrar sumó +${m.pase} al pase del mes.` : ''}</p>${m.amuUsado ? '<p class="centro" style="margin-top:6px;color:#7dd3fc;font-weight:700">🧿 Tu protector salvó tu racha</p>' : ''}<p class="centro" style="font-size:12px;color:var(--txt2)">🧿 Protectores: ${m.amu || 0} (se ganan con el bono semanal, máximo 2). Si faltas un día, un protector salva tu racha; sin protector retrocede un día (desde la semana 2, vuelve al inicio de su semana; si ya cumpliste la semana, no la pierdes); si faltas más, vuelve a empezar. El oro crece con tu nivel y con cada semana (hasta x1,5).</p>`;
+  $('login-cuerpo').innerHTML = h + `<p class="centro" style="margin-top:12px;color:var(--ok);font-weight:600">${esc(txt)}</p>${(m.hitos || []).map(x => `<p class="centro" style="margin-top:6px;color:var(--oro);font-weight:700">🏅 ¡Hito de racha! Ganaste ${esc(x)}.</p>`).join('')}<p class="centro" style="font-size:12px;color:var(--txt2)">${esc(textoManana())}.${m.pase ? ` Entrar sumó +${m.pase} al pase del mes.` : ''}</p>${m.amuUsado ? '<p class="centro" style="margin-top:6px;color:#7dd3fc;font-weight:700">🧿 Tu protector salvó tu racha</p>' : ''}${m.amuRegalo ? '<p class="centro" style="margin-top:6px;color:#7dd3fc;font-weight:700">🧿 Protector de regalo: si un día no puedes entrar, salva tu racha.</p>' : ''}<p class="centro" style="font-size:12px;color:var(--txt2)">🧿 Protectores: ${m.amu || 0} (te regalamos uno al empezar cada semana si no te queda ninguno, y otro con el bono semanal; máximo 2). Si faltas un día, un protector salva tu racha; sin protector retrocede un día (desde la semana 2, vuelve al inicio de su semana; si ya cumpliste la semana, no la pierdes); si faltas más, vuelves al inicio de tu semana: las semanas cumplidas no se pierden. El oro crece con tu nivel y con cada semana (hasta x1,5).</p>`;
   abrir('m-login');
   sfx('moneda', .5);
 }
@@ -5199,8 +5201,16 @@ function cajaExpedicion() {
     h += `<p style="font-size:12px;color:var(--txt2)">${esc(quien)} explora mientras no juegas y vuelve con oro, experiencia y el doble de materiales de su destino${yo.mascota && MASCOTAS[yo.mascota] ? '; con tu mascota, +15% de oro' : '. Con una mascota (Mercader), +15% de oro'}.</p>`;
     h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">' + Object.entries(EXPEDICION.destinos).map(([id, d]) => `<button class="btn ${id === dest ? '' : 'sec'}" data-exdest="${id}" style="flex:1;min-width:80px;padding:6px;white-space:normal;line-height:1.25"><img src="${A}items/equipo/${MATERIALES[d.mat].icono}.png" alt="" style="width:16px;height:16px;image-rendering:pixelated;vertical-align:-3px;margin-right:4px">${esc(d.nombre)}<br><small>×${d.mat === 'pescado' ? 3 : 2} ${esc(MATERIALES[d.mat].nombre)}</small></button>`).join('') + '</div>';
     h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">';
-    for (const hh of EXPEDICION.horas) { const pr = premioExpedicion(hh, yo.nivel, dest); if (yo.mascota && MASCOTAS[yo.mascota]) pr.oro = Math.round(pr.oro * 1.15); h += `<button class="btn sec" data-exped="${hh}" data-d="${dest}" style="flex:1;min-width:90px">${hh} h<br><small>🪙 ${pr.oro.toLocaleString('es', { useGrouping: 'always' })}</small></button>`; }
+    // La de 15 min (EXPEDICION.primera) solo hasta recoger la primera; la de 12 h es la de noche.
+    const horasEx = (yo.expediciones ? [] : [EXPEDICION.primera]).concat(EXPEDICION.horas);
+    for (const hh of horasEx) {
+      const pr = premioExpedicion(hh, yo.nivel, dest); if (yo.mascota && MASCOTAS[yo.mascota]) pr.oro = Math.round(pr.oro * 1.15);
+      const etiqueta = hh < 1 ? Math.round(hh * 60) + ' min' : hh >= 12 ? '🌙 Noche · ' + hh + ' h' : hh + ' h';
+      let vuelta = ''; try { vuelta = new Date(Date.now() + hh * 3600000).toLocaleTimeString('es-PE', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Lima' }); } catch (e) {}
+      h += `<button class="btn sec" data-exped="${hh}" data-d="${dest}" style="flex:1;min-width:90px;white-space:normal;line-height:1.25">${etiqueta}<br><small>🪙 ${pr.oro.toLocaleString('es', { useGrouping: 'always' })}${hh >= 8 ? ' · 💎1' : ''}${vuelta ? '<br>vuelve ' + esc(vuelta) : ''}</small></button>`;
+    }
     h += '</div>';
+    if (!yo.expediciones) h += '<p style="font-size:12px;color:var(--ok)">✨ Primera vez: prueba la de 15 min y recógela en esta misma partida.</p>';
   } else {
     const ms = ex.fin - Date.now();
     if (ms <= 0) h += `<p>${esc(quien)} ya volvió.</p><button class="btn" id="b-exped" style="width:100%;margin-top:6px">Recoger</button>`;
