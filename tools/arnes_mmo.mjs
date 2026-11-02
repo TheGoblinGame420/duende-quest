@@ -1806,12 +1806,15 @@ async function pruebasMundoAbierto() {
   chequear(h3.ultimos('ms').some(x => x.m.id === raro.id && x.m.ex && x.m.ex.raro), 'el cliente recibe la marca de raro');
   chequear(mundo.crearRaro('selva') === raro, 'como mucho uno vivo por zona');
   const bolsaR = h3.c.bolsa.length;
+  // sin primera caza garantizada ni Suerte del duende: solo cuenta el premio del raro
+  otro.c.kills = Math.max(1, otro.c.kills || 0); otro.c.seca = 0; const rarosO = otro.c.raros || 0;
   mundo.danar(raro, 1, otro);
   // Para cobrar el raro hay que estar cerca (900 px), como al pelear de verdad.
   h3.x = raro.x; h3.y = raro.y;
-  matarCon(raro, h3);
+  const azarR = Math.random; Math.random = () => 0.99;
+  try { matarCon(raro, h3); } finally { Math.random = azarR; }
   chequear(h3.c.bolsa.length > bolsaR && h3.ultimos('gana').some(x => x.item && x.item.r >= 1), 'suelta un objeto raro o mejor garantizado');
-  chequear(!otro.ultimos('gana').some(x => x.item && x.item.r >= 1), 'un golpe de 1 punto no da el premio del raro');
+  chequear(!otro.ultimos('gana').some(x => x.item && x.item.r >= 1) && (otro.c.raros || 0) === rarosO, 'un golpe de 1 punto no da el premio del raro');
   const w = mundo.mundoK('selva');
   chequear(w.raroProx - Date.now() >= RARO_REAPARECE_MS - 1000, 'reaparición larga (20 min)');
   // Con el azar a favor (Math.random = 0) para ver solo el efecto del tiempo.

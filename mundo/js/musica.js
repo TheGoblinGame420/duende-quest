@@ -501,7 +501,17 @@ export function crearMusica(opc = {}) {
     // Pelea: on = sube el pulso y entra la percusion; sin golpes, a la calma sola.
     combate(on) { if (!ctx) return; furiaHasta = on ? ctx.currentTime + 3 : 0; },
     // Vuelo (0..1): el viento sopla mas fuerte en el aire.
-    vuelo(k) { k = Math.max(0, Math.min(1, k || 0)); if (k === vueloK) return; vueloK = k; if (ctx) volumen(); },
+    vuelo(k) { k = Math.max(0, Math.min(1, k || 0)); if (k === vueloK) return; vueloK = k;
+      // Solo el viento: no se cortan las rampas de maestro, lluvia ni ambiente.
+      if (ctx && vientoG) {
+        const t = ctx.currentTime, g = vientoG.gain;
+        const vv = activo ? Math.max((VIENTO[zona] || 0.012) * (clima === 'tormenta' ? 1.8 : 1), 0.06 * vueloK) : 0;
+        if (g.cancelAndHoldAtTime) g.cancelAndHoldAtTime(t);
+        else { g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); }
+        g.setTargetAtTime(vv, t, 0.6);
+        bucle('viento', vv > 0);
+      }
+    },
     // Temporada activa ('tanta2026', 'cosecha2026'...): fiesta en el pueblo + toque al empezar.
     evento(id) { id = id || ''; if (id === evento) return; evento = id; if (FIESTAS[id]) toquePend = id; },
     tic,

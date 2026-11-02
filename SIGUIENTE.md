@@ -3662,3 +3662,13 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - T'anta Wawa: velas en la plaza y en la mesa de la Abuela; la Abuela habla; meta «Entre todos» en el puesto.
 - Atrás del navegador cierra tarjetas; texto de pociones táctil. HUD móvil prolijo.
 - Arnés 908 bien (4 de 5 limpias; aleatorias: «un golpe de 1 punto no da el premio del raro» y «ningún tipo acapara la zona»).
+
+### Última ronda de la noche (2-nov-2026, `?v=365`)
+
+- 5 revisores → 17 problemas → 10 arreglos pequeños de v364.
+- Jefe: fase conservada al volver herido por revancha; pisotón/Fase 2 no anulan una mordida avisada; sin revancha ni Furia por jugadores ya muertos.
+- Píldora #chicha3 legible (texto corto en vertical, oculta tras títulos en horizontal, sin depender de :has).
+- #temp3 no tapa la tienda de la fiesta; Atrás de Android cierra tarjetas; música generada si el navegador bloquea el MP3 del pueblo.
+- `volar` reinicia `P.planea`; `musica.vuelo()` solo ajusta el viento; sin doble corte con mala señal.
+- Prueba «un golpe de 1 punto no da el premio del raro» hecha determinista.
+- Arnés 908 bien (3 de 3).

@@ -1279,12 +1279,12 @@ export const Mundo3D = {
       // Furia: cada jugador que se come el pisoton la sube (+6 % de golpe por punto, max 5).
       const furia0 = o.furia || 0;
       for (const x of vivos) if (!(x.h > 4) && Math.hypot(x.p.x - o.pzj.x, x.p.z - o.pzj.z) <= PISOTON_JEFE_R && (enAbismo(o.x) || zonaEn(x.p.x, x.p.z) !== 'pueblo')) {
-        this.herir(x, 1, { zona: true, jefe: true, pct: 0.2, id: o.id });
-        if (x.muerto && !x.muertoPvP && puedeRevancha(o, x)) {
+        const vivoAntes = !x.muerto; this.herir(x, 1, { zona: true, jefe: true, pct: 0.2, id: o.id });
+        if (vivoAntes && x.muerto && !x.muertoPvP && puedeRevancha(o, x)) {
           o.revancha = { pid: x.id, hasta: ahora + 90000 }; o.revanchaUsada = true;
           this.enviar(x, { t: 'revancha3', id: o.id, x: Math.round(casa.x * 10) / 10, z: Math.round(casa.z * 10) / 10 });
         }
-        if (o.campo >= 0) o.furia = Math.min(5, (o.furia || 0) + 1);
+        if (vivoAntes && o.campo >= 0) o.furia = Math.min(5, (o.furia || 0) + 1);
       }
       if ((o.furia || 0) > furia0) this.aCerca3d(o, { t: 'aviso', m: `😡 ${MONSTRUOS[o.k].nombre} se enfurece (Furia x${o.furia}: pega +${6 * o.furia}%). Sal del círculo rojo y pégale cuando diga ¡AHORA! para calmarlo.` });
       this.aCerca3d(o, { t: 'zona3f', id: o.id });
@@ -1292,7 +1292,7 @@ export const Mundo3D = {
       // ¡AHORA! es una apertura real: no muerde mientras esta expuesto (novatos 2,5 s).
       const msExp = ((MONSTRUOS[o.k] || {}).nivel || 99) <= 10 ? 2500 : 2000;
       o.expuesto = ahora + msExp;
-      if (o.campo >= 0 && !o.cueva) o.atkEn = Math.max(o.atkEn || 0, o.expuesto + 300);
+      if (o.campo >= 0 && !o.cueva && !(o.avisoAtk === o.atkEn && ahora < o.atkEn)) o.atkEn = Math.max(o.atkEn || 0, o.expuesto + 300);
       this.aCerca3d(o, { t: 'expuesto', id: o.id, ms: msExp });
     }
     // Fase 2 de los jefes de zona: bajo el 50 % se le cae el pisoton pendiente,
@@ -1302,7 +1302,7 @@ export const Mundo3D = {
       if (o.pzj) { o.pzj = null; this.aCerca3d(o, { t: 'zona3f', id: o.id, no: 1 }); }
       const msExp2 = ((MONSTRUOS[o.k] || {}).nivel || 99) <= 10 ? 2500 : 2000;
       o.expuesto = ahora + msExp2;
-      o.atkEn = Math.max(o.atkEn || 0, o.expuesto + 300);   // ya filtrado: campo >= 0 y sin cueva
+      if (!(o.avisoAtk === o.atkEn && ahora < o.atkEn)) o.atkEn = Math.max(o.atkEn || 0, o.expuesto + 300);   // ya filtrado: campo >= 0 y sin cueva
       o.pzjProx = Math.max(o.pzjProx || 0, o.expuesto + 1500);   // sin circulo rojo nuevo encima del ¡AHORA!
       this.aCerca3d(o, { t: 'expuesto', id: o.id, ms: msExp2 });
       this.aCerca3d(o, { t: 'aviso', m: `¡FASE 2! ${MONSTRUOS[o.k].nombre} pisotea más seguido: ¡sal del rojo y pégale cuando esté expuesto!` });
@@ -1447,6 +1447,7 @@ export const Mundo3D = {
         }
         if (ahora >= o.atkEn) {
           o.atkEn = ahora + (o.jefe ? 1250 : 1600);
+          if (o.jefe && o.campo >= 0 && !o.cueva && o.expuesto > ahora) o.atkEn = Math.max(o.atkEn, o.expuesto + 300);   // la apertura ¡AHORA! empieza tras la mordida avisada
           const golpe = o.atk * (o.jefe ? 0.7 : 1) * (o.dispara ? 0.9 : 1) * (1 + 0.06 * (o.furia || 0)) * (o.ex3 && o.ex3.af === 'furioso' && o.hp < o.max * 0.3 ? 1.5 : 1);   // élite Furioso: +50 % bajo el 30 % de vida
           if (o.dispara) this.aCerca3d(o, { t: 'b3', de: o.id, a: s.id });
           this.herir(s, golpe, { jefe: o.jefe, bala: o.dispara, mundial: o.mundial3 || o.guardian, id: o.id });
@@ -1471,8 +1472,8 @@ export const Mundo3D = {
     if (o.vuelve) {
       o.st = 1;
       o.pzjProx = 0;   // la proxima pelea empieza otra vez sin pisoton inmediato
-      o.fase = 0; o.furia = 0;   // y sin Fase 2 ni Furia acumulada
       const herido = o.revancha && ahora < o.revancha.hasta;   // revancha: sigue herido 90 s
+      if (!herido) o.fase = 0; o.furia = 0;   // con revancha conserva la Fase 2: no la reanuncia en casa
       if (!o.persiste && !herido) o.hp = Math.min(o.max, o.hp + o.max * 0.15 * dt);   // se cura visiblemente al irse
       if (mover(casa.x, casa.z, velC * 1.3) < 0.5) {
         o.vuelve = false; o.st = 0;

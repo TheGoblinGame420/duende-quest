@@ -516,12 +516,20 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 364;
+export const VERSION = 365;
 
 // gancho (opcional): la frase que ve en ORIGINS quien vuelve (tira diaria y aviso tras actualizar);
 // sin gancho se usa el primer item. Siempre lo que GANA un jugador que vuelve, nunca un arreglo para novatos ni algo tecnico.
 // solo3d: true en los parches que solo cambian ORIGINS (CLASSIC no abre la ventana y el aviso de Telegram solo va a quien juega en 3D).
 export const NOVEDADES = [
+  { n: 133, fecha: '2 nov 2026', items: [
+    'El Pueblo Duende siempre tiene música, también en iPhone y en Telegram.',
+    'Si el jefe ya te avisó su mordida, primero muerde y después llega el ¡AHORA!; en tu revancha contra el Sabueso ya no sale un «¡FASE 2!» falso.',
+    'La píldora del premio de chicha se lee completa en el celular y ya no tapa el nombre de la zona.',
+    'En el celular, Atrás cierra la tarjeta de oferta o el aviso de Telegram sin sacarte del juego.',
+    'Al pasar de planear a volar las alas vuelven a aletear, y despegar ya no da saltos de volumen.',
+    'Con mala señal, el sonido de tu tajo ya no se repite.',
+  ] },
   { n: 132, fecha: '2 nov 2026', items: [
     'Tras el pisotón del jefe, el ¡AHORA! es una apertura de verdad: deja de morder unos segundos y tus golpes salen como ¡CONTRA! con más daño.',
     'Si el Sabueso te derriba cuando ya está a media vida, se queda herido 90 s: vuelve y termínalo.',
