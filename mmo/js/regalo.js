@@ -9,7 +9,7 @@
 //   const R = iniciarRegalo({ mandar, ocupado, presumir, fanfarria, vibrar, filtro });
 //   en 'buzon': R.alBuzon(m)   en 'regalo': R.alRegalo(m)
 // ocupado(): true mientras haya otra ventana (el cofre diario va primero).
-import { SKINS, ALAS } from './data.js?v=363';
+import { SKINS, ALAS } from './data.js?v=364';
 
 const CLAVE = 'dq_buzon_visto';
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
@@ -122,7 +122,9 @@ export function iniciarRegalo(H) {
       // Poderes del paquete (Pack de bienvenida): que vea que las pociones llegaron y como usarlas.
       const pw = m.pw && typeof m.pw === 'object' ? m.pw : {}, npw = k => Math.max(0, Math.floor(Number(pw[k]) || 0));
       const lpw = [['pocion', '🧪', 'pociones'], ['escudo', '🛡', 'escudos'], ['rayo', '⚡', 'rayos'], ['fuego', '🔥', 'fuegos']].filter(x => npw(x[0]) > 0).map(x => `${x[1]} ${npw(x[0])} ${x[2]}`).join(' · ');
-      const pwHtml = lpw ? `<p class="rg-p" style="font-size:15px;color:#fff"><b>${esc(lpw)}</b></p>${npw('pocion') > 0 ? `<p class="rg-p" style="font-size:12px;color:#c4bce0">${esc('Ya no se toman solas: toca 🧪 en tu barra (tecla Q) cuando tu vida baje de la mitad. Cura el 50 %.')}</p>` : ''}` : '';
+      let tactil = false; try { tactil = matchMedia('(pointer: coarse)').matches; } catch (e) {}   // en el celular no hay tecla Q
+      const txtPocion = tactil ? 'Ya no se toman solas: toca 🧪 en tu barra cuando tu vida baje de la mitad. Cura el 50 %.' : 'Ya no se toman solas: toca 🧪 en tu barra (tecla Q) cuando tu vida baje de la mitad. Cura el 50 %.';
+      const pwHtml = lpw ? `<p class="rg-p" style="font-size:15px;color:#fff"><b>${esc(lpw)}</b></p>${npw('pocion') > 0 ? `<p class="rg-p" style="font-size:12px;color:#c4bce0">${esc(txtPocion)}</p>` : ''}` : '';
       caja.innerHTML = `<h2>🎉 ¡TU COMPRA LLEGÓ!</h2><div class="rg-fig"><div class="rg-rayos"></div>${chispas}${fig}</div>
         <p class="rg-p" style="font-size:17px;color:#fff"><b style="color:${esc(color)}">${esc(que)}</b></p>
         <p class="rg-p">${esc(m.nombre)} ya es tuyo. ${esc(extra)}${esc(oro)}</p>${pwHtml}<p class="rg-p" style="font-size:12px;color:#a5a0c0">Gracias por apoyar DUENDE QUEST 💛</p>

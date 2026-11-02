@@ -24,8 +24,8 @@ import {
   ORO_POR_USD, STAR_TIENDA_USD, PEN_POR_USD,
   temporadaDe, TEMPORADAS, TEMP_DIAS, premioDiaFiesta, esNochebuena, diaFiesta, diasFiesta,
   ESPECIES, MAPAS, MONSTRUOS, BESTIARIO_HITOS, premioBestiario, DEBIL_EMO,
-} from '/mmo/js/data.js?v=363';
-import { LORE_MONSTRUOS } from './lore.js?v=363';
+} from '/mmo/js/data.js?v=364';
+import { LORE_MONSTRUOS } from './lore.js?v=364';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -613,8 +613,8 @@ function htmlEspec(y) {
 function htmlClases(y) {
   const costo = y.clase ? costoCambioClase(y.nivel) : 0;
   let h = `<p class="vv-p" style="text-align:center;margin-bottom:10px">${y.clase
-    ? (costo ? `Cambiar de clase a tu nivel cuesta ${MON}<b>${fmt(costo)}</b> oro. Tus talentos y tu equipo se quedan; la especialización se elige de nuevo.` : 'Hasta nivel 10 cambiar de clase es gratis.')
-    : 'Cada clase juega distinto y cumple un papel en el grupo: el tanque aguanta, el sanador cura y los demás hacen daño. Hasta nivel 10 puedes cambiarla gratis.'}</p><div class="vv-cajas">`;
+    ? (costo ? `Cambiar de clase a tu nivel cuesta ${MON}<b>${fmt(costo)}</b> oro. Tus talentos y tu equipo se quedan; la especialización se elige de nuevo.` : 'Hasta Nv 9 cambiar de clase es gratis.')
+    : 'Cada clase juega distinto y cumple un papel en el grupo: el tanque aguanta, el sanador cura y los demás hacen daño. Hasta Nv 9 puedes cambiarla gratis.'}</p><div class="vv-cajas">`;
   for (const [id, cl] of Object.entries(CLASES)) {
     const habs = habsDe(id).map(hb => `<img src="${A}items/equipo/${hb.icono}.png" title="${esc(hb.nombre)} (Nv ${hb.nv})" alt="">`).join('');
     const k = 'clase:' + id;
@@ -1532,6 +1532,9 @@ function pintarTiendaTemp() {
   // Puente: en los ultimos 3 dias, la fiesta que viene despues (para no irse sin plan).
   const luego = tp.fin - Date.now() < 3 * 86400000 ? TEMPORADAS.filter(x => x.ini >= tp.fin - 3600000 && x.id !== tp.id).sort((a, b) => a.ini - b.ini)[0] : null;
   if (luego) sub.innerHTML += `<span style="flex-basis:100%;color:${luego.color}">Luego: ${luego.emoji} ${esc(luego.nombre)} desde el ${esc(fechaLuego(luego.ini))}</span>`;
+  // Meta comunitaria «Entre todos» (mismo window.dqTempG que pintarLogros).
+  const tgG = window.dqTempG;
+  if (tgG && tgG.fin > Date.now() && tgG.meta > 0) sub.innerHTML += `<span style="flex-basis:100%">🤝 Entre todos: ${fmt(tgG.n)} / ${fmt(tgG.meta)} ${esc(tgG.cosas || tp.cosas || '')} ${tgG.feliz > Date.now() ? '· 🎉 ¡Hora Feliz de todos activa!' : tgG.n >= tgG.meta ? '· ¡metas cumplidas!' : '→ 1 h de Hora Feliz para todos'}</span>`;
   // El mas avanzado de los dos (la tienda lo trae al abrir; el 'yo', al cumplir un dia).
   const avance = f => f && f.id === tp.id ? (f.ok || []).length * 1e4 + Object.values(f.p || {}).reduce((a, b) => a + b, 0) : -1;
   const fdA = est0 && est0.fiestaDias, fdB = y.fiestaDias;

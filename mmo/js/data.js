@@ -516,12 +516,20 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 363;
+export const VERSION = 364;
 
 // gancho (opcional): la frase que ve en ORIGINS quien vuelve (tira diaria y aviso tras actualizar);
 // sin gancho se usa el primer item. Siempre lo que GANA un jugador que vuelve, nunca un arreglo para novatos ni algo tecnico.
 // solo3d: true en los parches que solo cambian ORIGINS (CLASSIC no abre la ventana y el aviso de Telegram solo va a quien juega en 3D).
 export const NOVEDADES = [
+  { n: 132, fecha: '2 nov 2026', items: [
+    'Tras el pisotón del jefe, el ¡AHORA! es una apertura de verdad: deja de morder unos segundos y tus golpes salen como ¡CONTRA! con más daño.',
+    'Si el Sabueso te derriba cuando ya está a media vida, se queda herido 90 s: vuelve y termínalo.',
+    'Volar se ve y se siente mágico: destello al despegar, estela del color de tus alas, cámara más abierta y polvo al aterrizar.',
+    "🕯️ En la T'anta Wawa hay velas encendidas entre los panes de la plaza; la Abuela te habla y te cuenta su leyenda.",
+    'El combate suena más limpio: sin cortes dobles, con voces de monstruo dosificadas y golpes recibidos más graves.',
+    'En el celular, los avisos ya no se mezclan con el chat y la chicha no queda encima del joystick.',
+  ] },
   { n: 131, fecha: '2 nov 2026', items: [
     'En Telegram, el botón Atrás pide dos toques para salir al menú y también cierra las tarjetas de compra y de avisos.',
     'Si ya activaste los avisos de Telegram, tocar «Ahora no» ya no los apaga (para eso está /avisos off).',

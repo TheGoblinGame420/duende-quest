@@ -80,6 +80,8 @@ export function crearMusica(opc = {}) {
   let ctx = null, maestro = null, salida = null, eco = null, lluviaG = null, vivo = false, activo = true;
   let zona = 'pueblo', noche = false, clima = 'despejado', reloj = 0;
   let vientoG = null, vientoF = null, ambG = null, sigAmb = 0;
+  // Vuelo: 0 en tierra, 0.6 planeando, 1 volando; sube el viento aunque la zona sea tranquila.
+  let vueloK = 0;
   // Secuenciador: semicorcheas (n16), frase en curso, capas y combate.
   let bus = null, sigPaso = 0, n16 = 0, frase = [], resto = 0, vari = 0, acorde = 0;
   let evento = '', toquePend = '', combG = null, furia = 0, furiaHasta = 0;
@@ -135,7 +137,7 @@ export function crearMusica(opc = {}) {
     lluviaG.gain.linearRampToValueAtTime(ll, t + 2);
     bucle('lluvia', ll > 0);
     vientoG.gain.cancelScheduledValues(t);
-    const vv = activo ? (VIENTO[zona] || 0.012) * (clima === 'tormenta' ? 1.8 : 1) : 0;
+    const vv = activo ? Math.max((VIENTO[zona] || 0.012) * (clima === 'tormenta' ? 1.8 : 1), 0.06 * vueloK) : 0;
     vientoG.gain.linearRampToValueAtTime(vv, t + 2.5);
     bucle('viento', vv > 0);
     ambG.gain.cancelScheduledValues(t);
@@ -498,6 +500,8 @@ export function crearMusica(opc = {}) {
     zona(id) { if (id === zona) return; zona = id; if (ctx) volumen(); },
     // Pelea: on = sube el pulso y entra la percusion; sin golpes, a la calma sola.
     combate(on) { if (!ctx) return; furiaHasta = on ? ctx.currentTime + 3 : 0; },
+    // Vuelo (0..1): el viento sopla mas fuerte en el aire.
+    vuelo(k) { k = Math.max(0, Math.min(1, k || 0)); if (k === vueloK) return; vueloK = k; if (ctx) volumen(); },
     // Temporada activa ('tanta2026', 'cosecha2026'...): fiesta en el pueblo + toque al empezar.
     evento(id) { id = id || ''; if (id === evento) return; evento = id; if (FIESTAS[id]) toquePend = id; },
     tic,

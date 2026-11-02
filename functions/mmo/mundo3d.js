@@ -74,6 +74,18 @@ const dist = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 const r1 = v => Math.round(v * 10) / 10;
 // Spawn del pueblo repartido en un anillo de 4-13 m: 300 recien llegados no aparecen uno encima de otro.
 const spawnPueblo = () => { const a = Math.random() * Math.PI * 2, r = rnd(4, 13); return { x: r1(SPAWN3D.x + Math.cos(a) * r), z: r1(SPAWN3D.z + Math.sin(a) * r) }; };
+// Revancha (Nv < 10): el monstruo que te derriba casi muerto queda herido 90 s.
+// Tambien los jefes de novato (Nv <= 10, como el Sabueso Nv 8) bajo el 50 %, con margen de nivel extra.
+function puedeRevancha(o, s) {
+  if (!o || !s || !s.c || o.cueva || o.persiste || o.revanchaUsada || !(o.max > 0) || !(o.hp > 0)) return false;
+  if ((s.c.nivel || 1) >= 10) return false;
+  const nvJ = (MONSTRUOS[o.k] || {}).nivel || 99;
+  if (o.jefe && nvJ > 10) return false;
+  const tope = o.jefe ? 0.5 : 0.4;
+  return o.hp / o.max <= tope && (o.nv || nvJ || 1) <= (s.c.nivel || 1) + 4 + (o.jefe ? 4 : 0);
+}
+// Jefes de novato: sus anuncios solo para quien esta cerca (no llenan el chat de todo ORIGINS).
+const jefeNovato = o => o.k === 'jefe_sabueso' || ((MONSTRUOS[o.k] || {}).nivel || 99) <= 10;
 
 export const Mundo3D = {
   iniciar3d() {
@@ -386,6 +398,7 @@ export const Mundo3D = {
     s.paso3 = (ahora - (s.atkPrev3 || 0) < cdMs + 450 && s.pasoTg3 === o.id) ? ((s.paso3 || 0) + 1) % 3 : 0;
     s.atkPrev3 = ahora; s.pasoTg3 = o.id;
     const multPaso = [0.92, 1, 1.3][s.paso3];
+    const exp = !!(o.jefe && o.expuesto > Date.now());   // ¡CONTRA!: el cliente lo muestra (danar3d ya suma el +25 %)
     // pegar3d: critico, forja, fuego, Grito, elixires y el x2 del Sigilo.
     // La vara tambien escala con el arma (antes las dagas doblaban su DPS y la odachi lo bajaba).
     const r = this.pegar3d(s, o, (vara ? VARA.mult : 3.6) * (arma.dano || 1) * multPaso, 1, vara ? null : TIPO_HAB[s.c.arma]);
@@ -394,7 +407,7 @@ export const Mundo3D = {
     const real = r[1], crit = r[2] === 1;
     // Ira al pegar (en CLASSIC +3 por golpe del combo; aqui un golpe por segundo).
     if (real > 0 && CLASES[s.c.clase] && CLASES[s.c.clase].recurso === 'ira') s.rec = Math.min(100, (s.rec || 0) + 9 + (crit ? 4 : 0));
-    this.aCerca3d(o, { t: 'at3', p: s.id, tg: o.id, d: real, c: crit ? 1 : 0, v: vara ? 1 : 0, f: s.paso3 === 2 ? 1 : 0, ...(r[3] ? { w: 1 } : {}) });
+    this.aCerca3d(o, { t: 'at3', p: s.id, tg: o.id, d: real, c: crit ? 1 : 0, v: vara ? 1 : 0, f: s.paso3 === 2 ? 1 : 0, ...(r[3] ? { w: 1 } : {}), ...(exp ? { x: 1 } : {}) });
     const robo = ((SKINS[s.c.skin] || {}).buffs || {}).robo || 0;
     if (robo) s.hp = Math.min(s.st.maxHp, s.hp + real * robo);
   },
@@ -548,7 +561,8 @@ export const Mundo3D = {
     else if (o.ex3 && o.ex3.cap) { /* el aviso lo da la invasion */ }
     else if (o.jefe) {
       const quien = [...cobraron].map(id => this.sesiones.get(id)?.c?.nombre).filter(Boolean).slice(0, 4).join(', ');
-      this.a3d({ t: 'aviso', m: `${MONSTRUOS[o.k].nombre} fue derrotado en ORIGINS${quien ? ' por ' + quien : ''}.` });
+      const avD = { t: 'aviso', m: `${MONSTRUOS[o.k].nombre} fue derrotado en ORIGINS${quien ? ' por ' + quien : ''}.` };
+      if (jefeNovato(o)) this.aCerca3d(o, avD, 120); else this.a3d(avD);
     }
   },
 
@@ -739,7 +753,7 @@ export const Mundo3D = {
     o.noct = !o.jefe && !o.i3 && !o.ex3 && !enCueva(o.x) && !enAbismo(o.x) && esNoche(Date.now()) && Math.random() < 0.1 ? 1 : 0;
     W.mons.set(o.id, o);
     c.vivos.add(o.id);
-    if (o.jefe) this.a3d({ t: 'aviso', m: `${def.nombre} ha aparecido en ORIGINS (${MAPAS[c.zona].nombre}).` });
+    if (o.jefe) { const avA = { t: 'aviso', m: `${def.nombre} ha aparecido en ORIGINS (${MAPAS[c.zona].nombre}).` }; if (jefeNovato(o)) this.aCerca3d(o, avA, 120); else this.a3d(avA); }
     return o;
   },
 
@@ -1266,21 +1280,31 @@ export const Mundo3D = {
       const furia0 = o.furia || 0;
       for (const x of vivos) if (!(x.h > 4) && Math.hypot(x.p.x - o.pzj.x, x.p.z - o.pzj.z) <= PISOTON_JEFE_R && (enAbismo(o.x) || zonaEn(x.p.x, x.p.z) !== 'pueblo')) {
         this.herir(x, 1, { zona: true, jefe: true, pct: 0.2, id: o.id });
+        if (x.muerto && !x.muertoPvP && puedeRevancha(o, x)) {
+          o.revancha = { pid: x.id, hasta: ahora + 90000 }; o.revanchaUsada = true;
+          this.enviar(x, { t: 'revancha3', id: o.id, x: Math.round(casa.x * 10) / 10, z: Math.round(casa.z * 10) / 10 });
+        }
         if (o.campo >= 0) o.furia = Math.min(5, (o.furia || 0) + 1);
       }
       if ((o.furia || 0) > furia0) this.aCerca3d(o, { t: 'aviso', m: `😡 ${MONSTRUOS[o.k].nombre} se enfurece (Furia x${o.furia}: pega +${6 * o.furia}%). Sal del círculo rojo y pégale cuando diga ¡AHORA! para calmarlo.` });
       this.aCerca3d(o, { t: 'zona3f', id: o.id });
       o.pzj = null;
-      o.expuesto = ahora + 2000;
-      this.aCerca3d(o, { t: 'expuesto', id: o.id, ms: 2000 });
+      // ¡AHORA! es una apertura real: no muerde mientras esta expuesto (novatos 2,5 s).
+      const msExp = ((MONSTRUOS[o.k] || {}).nivel || 99) <= 10 ? 2500 : 2000;
+      o.expuesto = ahora + msExp;
+      if (o.campo >= 0 && !o.cueva) o.atkEn = Math.max(o.atkEn || 0, o.expuesto + 300);
+      this.aCerca3d(o, { t: 'expuesto', id: o.id, ms: msExp });
     }
     // Fase 2 de los jefes de zona: bajo el 50 % se le cae el pisoton pendiente,
     // queda expuesto 2 s (se anuncia) y desde ahi pisotea un 30 % mas seguido.
     if (o.jefe && o.campo >= 0 && !o.cueva && !o.fase && !o.vuelve && o.hp < o.max * 0.5) {
       o.fase = 2;
       if (o.pzj) { o.pzj = null; this.aCerca3d(o, { t: 'zona3f', id: o.id, no: 1 }); }
-      o.expuesto = ahora + 2000;
-      this.aCerca3d(o, { t: 'expuesto', id: o.id, ms: 2000 });
+      const msExp2 = ((MONSTRUOS[o.k] || {}).nivel || 99) <= 10 ? 2500 : 2000;
+      o.expuesto = ahora + msExp2;
+      o.atkEn = Math.max(o.atkEn || 0, o.expuesto + 300);   // ya filtrado: campo >= 0 y sin cueva
+      o.pzjProx = Math.max(o.pzjProx || 0, o.expuesto + 1500);   // sin circulo rojo nuevo encima del ¡AHORA!
+      this.aCerca3d(o, { t: 'expuesto', id: o.id, ms: msExp2 });
       this.aCerca3d(o, { t: 'aviso', m: `¡FASE 2! ${MONSTRUOS[o.k].nombre} pisotea más seguido: ¡sal del rojo y pégale cuando esté expuesto!` });
     }
     if (o.dormido) { if (!(o.ex3 && o.ex3.ladron)) o.st = 0; return; }   // el Guardian espera a que caiga la puerta (el Ladron se mueve en huirLadron3d)
@@ -1427,7 +1451,7 @@ export const Mundo3D = {
           if (o.dispara) this.aCerca3d(o, { t: 'b3', de: o.id, a: s.id });
           this.herir(s, golpe, { jefe: o.jefe, bala: o.dispara, mundial: o.mundial3 || o.guardian, id: o.id });
           // Revancha (Nv < 10): si te derriba casi muerto, queda herido 90 s y no se cura al volver.
-          if (s.muerto && !s.muertoPvP && !o.jefe && !o.persiste && s.c && (s.c.nivel || 1) < 10 && o.max > 0 && o.hp > 0 && o.hp / o.max <= 0.4 && !o.cueva && !o.revanchaUsada && (o.nv || 1) <= (s.c.nivel || 1) + 4) {
+          if (s.muerto && !s.muertoPvP && puedeRevancha(o, s)) {
             // Una sola revancha por monstruo (no se renueva con cada muerte), nunca en la Cueva ni contra uno muy superior.
             o.revancha = { pid: s.id, hasta: ahora + 90000 }; o.revanchaUsada = true;
             this.enviar(s, { t: 'revancha3', id: o.id, x: Math.round(casa.x * 10) / 10, z: Math.round(casa.z * 10) / 10 });   // vuelve a su casa a esperar herido: ahi va la marca

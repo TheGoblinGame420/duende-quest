@@ -3651,3 +3651,14 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Combate 3D: daño visible en duelos/PvP marcado, sin monstruos fantasma ni etiquetas de ocultos.
 - Señal roja con 3G mala; avisos sin ráfagas.
 - Arnés 908 bien (2 de 2).
+
+### Ronda 33 (2-nov-2026, `?v=364`)
+
+- 8 evaluadores → 36 problemas → 10 tareas.
+- `puedeRevancha`/`jefeNovato`: revancha contra jefes de Nv ≤10 al 50 %, también por pisotón; anuncios del Sabueso solo a cercanos (`aCerca3d`). Consejo de muerte por jefe de zona.
+- Apertura real tras pisotón/Fase 2 (2,5 s Sabueso, 2 s resto; `atkEn` retrasado), flag `x` en 'at3' y número ¡CONTRA!; sin doble 'corte'.
+- Sonido de combate dosificado; golpe recibido distinto. Presumir del jefe legible en móvil.
+- Vuelo: estallido al despegar, estela del color de las alas, polvo al aterrizar, viento por altura, FOV y cámara.
+- T'anta Wawa: velas en la plaza y en la mesa de la Abuela; la Abuela habla; meta «Entre todos» en el puesto.
+- Atrás del navegador cierra tarjetas; texto de pociones táctil. HUD móvil prolijo.
+- Arnés 908 bien (4 de 5 limpias; aleatorias: «un golpe de 1 punto no da el premio del raro» y «ningún tipo acapara la zona»).

@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=363';
-import { iniciarRegalo } from './regalo.js?v=363';
-import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=363';
+} from './data.js?v=364';
+import { iniciarRegalo } from './regalo.js?v=364';
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=364';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -90,7 +90,7 @@ if (TG) {
     const abierta = document.querySelector('.modal.on:not(#m-inicio):not(#m-muerte):not(#m-error)');
     if (abierta && abierta.id === 'm-sol') { aviso('Cierra el pago con ✕ (tus datos no se pierden).'); return; }
     if (abierta && !(abierta.id === 'm-clase' && yo && !yo.clase)) { cerrarModales(); return; }
-    const ah = Date.now(); if (ah - atrasT > 2500) { atrasT = ah; aviso('Toca Atrás otra vez para salir al menú'); try { TG.HapticFeedback.impactOccurred('light'); } catch (e) {} return; }
+    const ah = Date.now(); if (ah - atrasT > 2500) { atrasT = ah; aviso('Toca Atrás otra vez para salir al menú'); if (!vibOff()) try { TG.HapticFeedback.impactOccurred('light'); } catch (e) {} return; }
     location.href = '/telegram/index.html' + (location.hash || '');
   };
   try { TG.BackButton.show(); TG.BackButton.onClick(volver); } catch (e) {}
@@ -3068,8 +3068,8 @@ function abrirClases(obligatorio) {
   const costo = yo.clase ? costoCambioClase(yo.nivel) : 0;
   $('clase-cerrar').style.display = obligatorio ? 'none' : '';
   $('clase-txt').textContent = yo.clase
-    ? (costo ? 'Cambiar de clase a tu nivel cuesta ' + costo.toLocaleString('es', { useGrouping: 'always' }) + ' oro.' : 'Hasta nivel 10 cambiar de clase es gratis.')
-    : 'Cada clase juega distinto y cumple un papel en el grupo: el tanque aguanta, el sanador cura y los demás hacen daño. Hasta nivel 10 puedes cambiarla gratis.';
+    ? (costo ? 'Cambiar de clase a tu nivel cuesta ' + costo.toLocaleString('es', { useGrouping: 'always' }) + ' oro.' : 'Hasta Nv 9 cambiar de clase es gratis.')
+    : 'Cada clase juega distinto y cumple un papel en el grupo: el tanque aguanta, el sanador cura y los demás hacen daño. Hasta Nv 9 puedes cambiarla gratis.';
   cont.innerHTML = Object.entries(CLASES).map(([id, cl]) => {
     const habs = habsDe(id).map(h => `<img src="${A}items/equipo/${h.icono}.png" title="${esc(h.nombre)} (Nv ${h.nv})">`).join('');
     return `<div class="clase ${yo.clase === id ? 'sel' : ''}" data-clase="${id}" style="--c:${cl.color}">
@@ -5541,7 +5541,7 @@ function cerrarModales() { document.querySelectorAll('.modal.on').forEach(m => {
 // Atras del navegador o del movil fuera de Telegram (v327): la ventana abierta deja una entrada en el
 // historial y el Atras la cierra en vez de sacar del juego. En Telegram lo lleva su BackButton (arriba).
 let histV = false, ignorarPop = 0;
-function ventanaAtras() { const m = document.querySelector('.modal.on:not(#m-inicio):not(#m-muerte):not(#m-error)'); return m && !(m.id === 'm-clase' && yo && !yo.clase) ? m : null; }
+function ventanaAtras() { const m = document.querySelector('.modal.on:not(#m-inicio):not(#m-muerte):not(#m-error)'); return (m && !(m.id === 'm-clase' && yo && !yo.clase) ? m : null) || document.querySelector('#dq-regalo.on, #dq-avtg.on'); }   // la tarjeta de compra/avisos tambien deja entrada: el Atras la cierra
 function sincroAtras() {
   if (TG) return;
   const hay = !!ventanaAtras();
@@ -5558,6 +5558,8 @@ if (!TG) {
     if (ignorarPop > 0) { ignorarPop--; return; }   // el retroceso lo pidio sincroAtras: no es del jugador
     if (!histV) return;
     histV = false;   // antes de cerrar: si no, se pediria otro history.back (doble retroceso)
+    if (document.querySelector('#dq-regalo.on')) { try { regalo2.cerrar(); } catch (e) {} pedirSincroAtras(); return; }
+    if (document.querySelector('#dq-avtg.on')) { try { avisoTg2.cerrarAtras(); } catch (e) {} pedirSincroAtras(); return; }
     const m = ventanaAtras();
     if (m && m.id === 'm-sol') aviso('Cierra el pago con ✕ (tus datos no se pierden).');
     else if (m) cerrarModales();

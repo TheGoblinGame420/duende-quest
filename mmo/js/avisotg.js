@@ -67,6 +67,7 @@ export function iniciarAvisoTg(H) {
     raiz = document.createElement('div'); raiz.id = 'dq-avtg';
     raiz.setAttribute('role', 'dialog'); raiz.setAttribute('aria-modal', 'true'); raiz.setAttribute('aria-labelledby', 'dq-avtg-t');
     raiz.addEventListener('click', e => { if (e.target === raiz) { if (permiso) ponerEscNo(); cerrar(); } });
+    addEventListener('keydown', e => { if (abierto && e.key === 'Escape') { e.stopPropagation(); if (permiso) ponerEscNo(); cerrar(); } }, true);   // Esc cierra como el Atrás
     document.body.appendChild(raiz);
     return raiz;
   }
