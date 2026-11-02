@@ -3407,3 +3407,11 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Retención por `utm_content` y D2/D3 en /mmostats.
 - Sabueso como primer jefe: presentación, respawn ≤90 s, pista tras morir. Historias en tarjetas con Releer. Reto de jefe compartible. Pueblo lleno sin tirones (histéresis de mascotas, deco liberada, vigía de NaN).
 - Arnés 897 bien.
+
+### Ataque manual (1-nov-2026, `?v=344`)
+
+- Pedido del dueño: sin ataque automático, para que se vean las mecánicas y la animación del ataque en PC y móvil.
+- ORIGINS (mundo.js): `alternarAtaque()` → `golpeManual()`: cada golpe pone `P.atkT` (animación siempre, aunque sea al aire, con sonido de desenvainar), respeta la cadencia del arma (`sigAtk`) y, si hay un monstruo al alcance (`blancoCercano`: el elegido o el más cercano, mejor si está delante), manda `atk3` con impacto predicho. `atkMantener`: mantener ATACAR (touchstart/touchend), 1 o Z (keydown/keyup) o perder el foco. Tocar un monstruo solo lo marca. Las habilidades ya no encienden el AUTO; `ataqueAuto()` ya no se llama; `enCombate3` usa el último golpe. Textos del tutorial y la carga actualizados.
+- PvP: el servidor ya solo deja dañar a jugadores en duelo aceptado o en el Abismo contra la otra facción fuera de los santuarios (`rival3d`/`enemigoFaccion`); el golpe manual solo apunta a un jugador si es `rivalP()`.
+- CLASSIC (client.js): AUTO desactivado y botón oculto; ATACAR ya repetía al mantener.
+- Arnés 897 bien; probado en local: golpe al aire anima y un monstruo al alcance recibe `atk3`.

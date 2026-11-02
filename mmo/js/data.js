@@ -504,9 +504,14 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 343;
+export const VERSION = 344;
 
 export const NOVEDADES = [
+  { n: 112, fecha: '1 nov 2026', items: [
+    '⚔ Ahora atacas tú: en ORIGINS cada toque de ATACAR (o la tecla 1/Z) es un golpe que ves en tu duende, aunque sea al aire. Si hay un monstruo a tu alcance, le pega; mantén pulsado para seguir pegando al ritmo de tu arma.',
+    'Se quitó el ataque automático en ORIGINS y CLASSIC: tu duende ya no persigue ni cambia de blanco solo.',
+    'En las zonas sin PvP nunca le haces daño a otro jugador, aunque ataques a su lado: solo se pelea entre jugadores en un duelo aceptado o en el Abismo contra la otra facción.',
+  ] },
   { n: 111, fecha: '1 nov 2026', items: [
     'El primer jefe, el Sabueso Infernal, llega con su cartel y su leyenda, avisa el pisotón con más tiempo y vuelve en 1,5 min como máximo. Si te tumba, te decimos cómo ganarle.',
     'Nueva opción «Texto grande» en Ajustes; tu vida y la de tus aliados se ven en celeste y la del enemigo en rojo.',

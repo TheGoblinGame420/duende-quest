@@ -14,26 +14,26 @@
 import * as THREE from 'three';
 import { esNocheDuendes, TEMPORADAS, temporadaDe, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=343';
-import { iniciarVentanas } from './ventanas.js?v=343';
-import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase } from '/mmo/js/data.js?v=343';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
-import { iniciarRegalo } from '/mmo/js/regalo.js?v=343';
-import { iniciarAvisoTg } from '/mmo/js/avisotg.js?v=343';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=343';
-import { crearMusica } from './musica.js?v=343';
-import { crearSonidos } from './sonidos.js?v=343';
-import { construirCueva } from './cueva.js?v=343';
-import { TAPA, transparentar } from './tapa.js?v=343';
-import { construirAbismo } from './abismo.js?v=343';
-import { crearParticulas } from './particulas.js?v=343';
-import { cargarKenney, piezasCasa } from './kenney.js?v=343';
-import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=343';
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=344';
+import { iniciarVentanas } from './ventanas.js?v=344';
+import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase } from '/mmo/js/data.js?v=344';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
+import { iniciarRegalo } from '/mmo/js/regalo.js?v=344';
+import { iniciarAvisoTg } from '/mmo/js/avisotg.js?v=344';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=344';
+import { crearMusica } from './musica.js?v=344';
+import { crearSonidos } from './sonidos.js?v=344';
+import { construirCueva } from './cueva.js?v=344';
+import { TAPA, transparentar } from './tapa.js?v=344';
+import { construirAbismo } from './abismo.js?v=344';
+import { crearParticulas } from './particulas.js?v=344';
+import { cargarKenney, piezasCasa } from './kenney.js?v=344';
+import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=344';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=343';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d } from '/mmo/js/mundo3d.js?v=343';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=343';
-import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=343';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA } from './lore.js?v=343';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=344';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d } from '/mmo/js/mundo3d.js?v=344';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=344';
+import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=344';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA } from './lore.js?v=344';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -2645,7 +2645,7 @@ function pintarBarra() {
     misHabs = yo.clase ? habsDe(yo.clase).slice(0, 8) : [];
     const atk = document.createElement('button'); atk.className = 'acc'; atk.id = 'acc-atk';
     atk.innerHTML = '<span class="t">1</span><img src="' + A + 'armas/katana_comun_item.png" alt=""><span class="cd"></span>';
-    atk.title = 'Ataque automático (1 o Z)';
+    atk.title = 'Atacar (1 o Z; mantén para seguir pegando)';
     atk.setAttribute('aria-label', atk.title);
     atk.onclick = () => { if (MOVIL) avisoPrimeraVez(atk.title); alternarAtaque(); };
     b.appendChild(atk);
@@ -3198,7 +3198,7 @@ function puntoMochila() {
 // muerte, cuando no hay otra ventana. Solo si el servidor dice que aun puedes.
 // En pelea (AUTO, objetivo vivo o un monstruo cerca atacandote) no se abre nada encima.
 function enCombate3() {
-  if (autoAtk && objetivo) return true;
+  if (objetivo && performance.now() - (P.atkT || 0) < 4000) return true;
   if (objetivo && mons.has(objetivo)) { const o = mons.get(objetivo); if (o && o.hp > 0 && !o.muereT) return true; }
   for (const o of mons.values()) if (o.hp > 0 && !o.muereT && o.st === 2 && Math.hypot(o.x - P.x, o.z - P.z) < 12) return true;
   return false;
@@ -4591,7 +4591,7 @@ addEventListener('keydown', e => {
   teclas[e.code] = true;
   if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) saltar(); }
   if (e.code === 'Tab') { e.preventDefault(); if (!e.repeat) cicloObjetivo(); }
-  if ((e.code === 'Digit1' || e.code === 'KeyZ') && !e.repeat) alternarAtaque();
+  if ((e.code === 'Digit1' || e.code === 'KeyZ') && !e.repeat) { atkMantener = true; golpeManual(); }
   const nh = /^Digit([2-9])$/.exec(e.code);
   if (nh && !e.repeat) usarHab(misHabs[+nh[1] - 2]);
   if (e.code === 'KeyY' && !e.repeat) montar();
@@ -4606,7 +4606,8 @@ addEventListener('keydown', e => {
   if (e.code === 'Enter') { e.preventDefault(); $('chat-in').style.display = 'block'; $('chat-in').focus(); }
   if (e.code === 'Escape') { objetivo = 0; objetivoP = 0; autoAtk = false; pintarBarra(); pintarGrupo(); }
 });
-addEventListener('keyup', e => { teclas[e.code] = false; if (e.code === 'Space' && !P.vuela && P.vy > 0) P.vy *= 0.55; });   // salto corto si sueltas pronto
+addEventListener('blur', () => { atkMantener = false; });
+addEventListener('keyup', e => { teclas[e.code] = false; if (e.code === 'Digit1' || e.code === 'KeyZ') atkMantener = false; if (e.code === 'Space' && !P.vuela && P.vy > 0) P.vy *= 0.55; });   // salto corto si sueltas pronto
 addEventListener('blur', () => { for (const k in teclas) teclas[k] = false; arrastre = null; tocandoSubir = tocandoBajar = false; joy.id = null; joy.dx = joy.dy = 0; });
 $('chat-in').addEventListener('keydown', e => e.stopPropagation(), true);
 // Enviar: Enter, el boton ➤ o el "Enviar" del teclado del movil (en Android
@@ -4646,8 +4647,7 @@ function elegirEn(cx, cy, doble) {
   // Sin los ocultos: el rayo no mira la visibilidad y su cilindro sigue en la escena.
   const lista = [...mons.values()].filter(o => o.fig && !o.muereT && (!o.fig.raiz || o.fig.raiz.visible));
   const elegirMon = o => {
-    if (objetivo === o.id || doble) { autoAtk = true; }
-    else if (MOVIL && !autoAtk) { try { if (!localStorage.getItem('dq3_tip2t')) { localStorage.setItem('dq3_tip2t', '1'); aviso('👆 Tócalo otra vez para atacar: tu duende va solo hasta él.', 'ok', 1); } } catch (e) {} }
+    if (MOVIL) { try { if (!localStorage.getItem('dq3_tip2m')) { localStorage.setItem('dq3_tip2m', '1'); aviso('👆 Monstruo marcado: acércate y toca ' + K('1', 'ATACAR') + ' para golpearlo (mantén pulsado para seguir pegando).', 'ok', 1); } } catch (e) {} }
     if (objetivo !== o.id) vibSel();
     objetivo = o.id; pintarBarra(); sfx('boton', 0.2);
   };
@@ -4710,12 +4710,47 @@ function blancoAtk() {
   const r = rivalP();
   return r ? otros.get(r) || null : null;
 }
-function alternarAtaque() {
-  if (rivalP() && !objetivo) { autoAtk = !autoAtk; pintarBarra(); return; }
-  if (!objetivo) cicloObjetivo();
-  autoAtk = !!objetivo && !autoAtk;
-  if (autoAtk) sfxK('desenv', 0.25);
-  pintarBarra();
+// Ataque MANUAL (v344): cada toque de ATACAR (o 1/Z, o mantenerlo pulsado) es un golpe que se ve.
+// Sin AUTO: el duende no persigue, no cambia solo de blanco ni toma pociones por su cuenta.
+function alternarAtaque() { golpeManual(); }
+let atkMantener = false;
+// Monstruo al alcance para el golpe: el elegido si llega; si no, el mas cercano al alcance (mejor si esta delante).
+function blancoCercano() {
+  const ob = objetivo && mons.get(objetivo);
+  if (ob && !ob.muereT && Math.hypot(ob.x - P.x, ob.z - P.z) <= rangoAtaque(ob)) return ob;
+  let mejor = null, mp = Infinity;
+  const fx = Math.sin(P.ry), fz = Math.cos(P.ry);
+  for (const o of mons.values()) {
+    if (o.muereT || !o.fig) continue;
+    const dx = o.x - P.x, dz = o.z - P.z, d = Math.hypot(dx, dz);
+    if (d > rangoAtaque(o)) continue;
+    const delante = d > 0.01 ? (dx * fx + dz * fz) / d : 1;
+    const pts = d - delante * 1.5;
+    if (pts < mp) { mp = pts; mejor = o; }
+  }
+  return mejor;
+}
+function golpeManual() {
+  if (!yo || P.muerto || lanzando) return;
+  const ahora = performance.now();
+  if (ahora < sigAtk) return;
+  const arma = ARMAS[yo.arma] || ARMAS.katana;
+  const vara = CLASES[yo.clase] && CLASES[yo.clase].basico === 'vara';
+  // Jugador rival (duelo o Abismo de la otra faccion): solo ahi se pega a jugadores; el servidor lo vuelve a comprobar.
+  const rv = !objetivo && rivalP() ? otros.get(rivalP()) : null;
+  const o = rv && Math.hypot(rv.x - P.x, rv.z - P.z) <= rangoAtaque(rv) ? rv : blancoCercano();
+  sigAtk = ahora + (vara ? VARA.cdMs * arma.cd : 1000 * arma.cd);
+  P.atkT = ahora;   // el golpe se ve siempre, aunque sea al aire
+  ultimoToqueT = ahora;
+  if (!o) { sfxK('desenv', 0.22); return; }
+  if (o !== rv && objetivo !== o.id) { objetivo = o.id; pintarBarra(); }
+  mandarPos(true);
+  mandar(o === rv ? { t: 'atk3', tp: o.id } : { t: 'atk3', tg: o.id });
+  if (o !== rv) impactos.push({ o, t: ahora + (vara ? 280 : 150) });
+  const dx = o.x - P.x, dz = o.z - P.z; P.ry = Math.atan2(dx, dz);
+  P.f = dx * der.x + dz * der.z >= 0 ? 1 : -1;
+  sfx(vara ? 'boton' : 'corte', 0.3);
+  tuto3.atk = true;
 }
 function usarPoder(i) { if (!yo || P.muerto) return; mandar({ t: 'pw', i }); }
 function usarHab(h) {
@@ -4740,7 +4775,7 @@ function usarHab(h) {
   tuto3.hab = true;
   if (h.gcd !== false) gcdHasta = ahora + GCD_MS;
   if (h.id === 'polimorfia') { autoAtk = false; colaHab = null; pintarBarra(); }   // pegarle a la oveja la despierta
-  else if (h.obj === 'enemigo' && objetivo && !autoAtk) { autoAtk = true; pintarBarra(); }
+  // (sin AUTO desde v344: la habilidad no enciende el ataque automatico)
 }
 function montar() { if (!yo || P.muerto) return; if (P.vuela) return aviso('Aterriza antes de montar.', 'err'); mandar({ t: 'montar' }); }
 // ── VUELO (como las alas de AION) ──
@@ -4883,7 +4918,8 @@ if (MOVIL) {
   lienzo.addEventListener('touchend', finToque, { passive: true }); lienzo.addEventListener('touchcancel', finToque, { passive: true });
   // Dos toques seguidos (como en otros juegos de movil) no apagan el ataque que el primero encendio.
   let atkTapT = 0;
-  $('t-atk').addEventListener('touchstart', e => { e.preventDefault(); vib('light'); const t = performance.now(); if (autoAtk && t - atkTapT < 700) { atkTapT = t; return; } atkTapT = t; alternarAtaque(); }, { passive: false });
+  $('t-atk').addEventListener('touchstart', e => { e.preventDefault(); vib('light'); atkTapT = performance.now(); atkMantener = true; golpeManual(); }, { passive: false });
+  for (const ev of ['touchend', 'touchcancel']) $('t-atk').addEventListener(ev, () => { atkMantener = false; }, { passive: true });
   // Con el teclado cerrado (Atras de Android) el chat seguia con el foco y congelaba el joystick y los botones.
   const soltarChat = () => { const i = $('chat-in'); if (document.activeElement === i) { i.blur(); if (!i.value.trim()) i.style.display = 'none'; } };
   $('tactil').addEventListener('touchstart', soltarChat, { capture: true, passive: true });
@@ -5605,7 +5641,7 @@ let metaMision = null;
 const TUTO3 = [
   { txt: () => MOVIL ? 'Anda con el joystick y desliza el dedo por la pantalla para mirar' : 'Muévete con W A S D y arrastra con el ratón para girar la cámara', hecho: t => { const d = Math.hypot(P.x - t.x0, P.z - t.z0); if (d > 60) { t.x0 = P.x; t.z0 = P.z; } return d > 8 && d <= 60; } },   // un salto grande es un teletransporte: no cuenta
   { txt: () => 'Ve a la luz amarilla' + (metaMision ? ` ${flechaDir(metaMision.x, metaMision.z)} ${Math.round(Math.hypot(metaMision.x - P.x, metaMision.z - P.z))} m` : ''), hecho: t => (yo.kills || 0) > t.k0 || (metaMision && Math.hypot(metaMision.x - P.x, metaMision.z - P.z) < 30) },
-  { txt: () => MOVIL ? 'Toca un monstruo 2 veces para atacarlo (o pulsa ATACAR)' : 'Clic en un monstruo (o Tab) y pulsa 1 o Z para atacar', hecho: t => (yo.kills || 0) > t.k0 },
+  { txt: () => MOVIL ? 'Acércate a un monstruo y toca ATACAR (mantén pulsado para seguir pegando)' : 'Acércate a un monstruo y pulsa 1 o Z para golpear (mantén para seguir)', hecho: t => (yo.kills || 0) > t.k0 },
   // En movil el boton de ataque no esta en la barra: el primero ya es la habilidad de nivel 1.
   { txt: () => 'Usa tu habilidad ' + ((habsDe(yo.clase)[0] || {}).nombre || 'de clase') + ': ' + (MOVIL ? 'primer botón de la barra' : 'tecla 2'), hecho: t => t.hab },
   { txt: () => 'Fuera del pueblo, despliega las alas: ' + (MOVIL ? 'botón VOLAR' : 'V o doble salto'), hecho: () => P.vuela },
@@ -5886,7 +5922,7 @@ function cuadroBucle(t) {
   cuadro++;
   fisica(dt);
   if (prueba) girarPrueba();
-  ataqueAuto();
+  if (atkMantener) golpeManual();   // mantener ATACAR (o 1/Z) sigue pegando al ritmo del arma
   if (colaHab && t >= gcdHasta) { const h = colaHab; colaHab = null; if (t < colaHasta) usarHab(h); }
   if (impactos.length) impactos = impactos.filter(i => { if (t < i.t) return true; if (!i.o.muereT) { i.o.golpeT = t; i.o.predT = t; i.o.golpeC = false; i.o.golpeDe = P; pausaGolpe(i.o, 40); } return false; });
   // Interpolacion de los demas.

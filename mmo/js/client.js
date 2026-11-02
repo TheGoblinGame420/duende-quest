@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=343';
-import { iniciarRegalo } from './regalo.js?v=343';
-import { iniciarAvisoTg } from './avisotg.js?v=343';
+} from './data.js?v=344';
+import { iniciarRegalo } from './regalo.js?v=344';
+import { iniciarAvisoTg } from './avisotg.js?v=344';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -6083,7 +6083,8 @@ function bucle(t) {
 // enemigo elegido al alcance, el duende le pega solo. En el movil,
 // mantener pulsado el boton de ataque minutos seguidos cansa la mano.
 let autoAtk = false;
-try { autoAtk = localStorage.getItem('dq_auto') === '1'; } catch (e) {}
+// Sin AUTO desde v344: se ataca a mano (cada golpe se ve) en PC y movil. El boton queda oculto.
+try { localStorage.removeItem('dq_auto'); } catch (e) {}
 function ataqueAuto() {
   if (!yo || P.muerto || castYo || chatAbierto() || document.querySelector('.modal.on')) return;
   const o = monObjetivo();
@@ -6095,11 +6096,12 @@ function ataqueAuto() {
   atacar();
 }
 function pintarAuto() { const b = $('t-auto'); b.classList.toggle('on', autoAtk); b.innerHTML = '<svg class="ico-tc" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 013-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 01-3 3H3"/></svg>' + (autoAtk ? ' AUTO' : ''); }
+$('t-auto').style.display = 'none';
 $('t-auto').onclick = () => {
-  autoAtk = !autoAtk;
+  autoAtk = false;
   try { localStorage.setItem('dq_auto', autoAtk ? '1' : '0'); } catch (e) {}
   pintarAuto();
-  aviso(autoAtk ? '🔁 Ataque automático: elige un enemigo y tu duende le pegará solo.' : 'Ataque automático apagado.');
+  aviso('⚔ Ataca tú mismo: ' + (TACTIL ? 'toca ATACAR' : 'pulsa Z o J') + ' para cada golpe.');
 };
 pintarAuto();
 inicio();
