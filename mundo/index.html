@@ -26,12 +26,12 @@
 <meta name="theme-color" content="#0a0418">
 <link rel="manifest" href="/mundo/manifest.json">
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
-<script src="/js/pwa.js?v=361" defer></script>
+<script src="/js/pwa.js?v=362" defer></script>
 <link rel="icon" href="/assets/ui/coin.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=fallback" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=fallback" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=361"></script>
+<script src="/js/origen.js?v=362"></script>
 <script>
 // Red de seguridad de la carga (script clasico: corre aunque el modulo 3D o el CDN fallen).
 // - Errores antes de conectar: se guardan en __errQ y mundo.js los manda al entrar.
@@ -117,29 +117,29 @@
   });
 })();
 </script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=361" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=362" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=361">
-<link rel="modulepreload" href="/mmo/js/data.js?v=361">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=361">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=361">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=361">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=361">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=361">
-<link rel="modulepreload" href="/mmo/js/regalo.js?v=361">
-<link rel="modulepreload" href="/mmo/js/avisotg.js?v=361">
-<link rel="modulepreload" href="/mundo/js/musica.js?v=361">
-<link rel="modulepreload" href="/mundo/js/sonidos.js?v=361">
-<link rel="modulepreload" href="/mundo/js/cueva.js?v=361">
-<link rel="modulepreload" href="/mundo/js/tapa.js?v=361">
-<link rel="modulepreload" href="/mundo/js/abismo.js?v=361">
-<link rel="modulepreload" href="/mundo/js/particulas.js?v=361">
-<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=361">
-<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=361">
-<link rel="modulepreload" href="/mmo/js/secundarias.js?v=361">
-<link rel="modulepreload" href="/mundo/js/lore.js?v=361">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=362">
+<link rel="modulepreload" href="/mmo/js/data.js?v=362">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=362">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=362">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=362">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=362">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=362">
+<link rel="modulepreload" href="/mmo/js/regalo.js?v=362">
+<link rel="modulepreload" href="/mmo/js/avisotg.js?v=362">
+<link rel="modulepreload" href="/mundo/js/musica.js?v=362">
+<link rel="modulepreload" href="/mundo/js/sonidos.js?v=362">
+<link rel="modulepreload" href="/mundo/js/cueva.js?v=362">
+<link rel="modulepreload" href="/mundo/js/tapa.js?v=362">
+<link rel="modulepreload" href="/mundo/js/abismo.js?v=362">
+<link rel="modulepreload" href="/mundo/js/particulas.js?v=362">
+<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=362">
+<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=362">
+<link rel="modulepreload" href="/mmo/js/secundarias.js?v=362">
+<link rel="modulepreload" href="/mundo/js/lore.js?v=362">
 <!-- Kit 3D de Kenney (mundo/js/kenney.js lo pide con fetch() sin opciones: mismo origen, cors, URL sin ?v=): se baja ya, junto a los modulos.
      El binario: .gz si hay DecompressionStream (como hace kenney.js), si no el normal; asi no se baja dos veces. -->
 <link rel="preload" href="/assets/3d/kenney.json" as="fetch" crossorigin>
@@ -157,6 +157,7 @@ body.sin-post #vineta{display:block;}
 #herida.bajo{animation:latido 1.1s ease-in-out infinite;}
 .flecha-amz{position:fixed;left:0;top:0;width:34px;height:34px;pointer-events:none;z-index:4;will-change:transform;}
 .flecha-amz::before{content:"";position:absolute;left:8px;top:5px;border-style:solid;border-width:12px 0 12px 20px;border-color:transparent transparent transparent rgba(255,255,255,.88);filter:drop-shadow(0 0 3px rgba(0,0,0,.8));}
+#aviso-dir{position:fixed;inset:0;pointer-events:none;z-index:5;opacity:0;transition:opacity .12s}#aviso-dir.on{opacity:1}#aviso-dir i{position:absolute;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:radial-gradient(circle,rgba(255,176,32,.9) 0,rgba(255,176,32,.35) 55%,transparent 70%);color:#1a0f00;font:900 26px/46px system-ui,sans-serif;font-style:normal;text-align:center;text-shadow:0 0 4px rgba(255,220,140,.9)}
 .flecha-amz.roja::before{border-left-color:#ff3b4e;filter:drop-shadow(0 0 6px rgba(255,40,60,.9));}
 @keyframes latido{0%,100%{opacity:.1}50%{opacity:.38}}
 .lbl{position:absolute;left:0;top:0;transform:translate(-50%,-100%);white-space:nowrap;font:600 11px var(--sans);text-shadow:0 1px 2px #000,0 0 3px #000;text-align:center;will-change:transform;}
@@ -202,14 +203,14 @@ body.movil #misiones{top:110px;bottom:auto;left:8px;right:auto;width:165px;font-
 #mini-r{width:0;min-width:100%;}
 #botones{right:174px;top:12px;padding:4px;display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;max-width:max(230px,calc(100vw - 440px));}
 .bt{width:38px;height:38px;border:1px solid var(--borde);border-radius:8px;background:rgba(255,255,255,.04);color:var(--txt);font:600 15px var(--sans);cursor:pointer;display:flex;align-items:center;justify-content:center;text-decoration:none;}
-.bt:hover{background:rgba(255,255,255,.1);}
+@media (hover:hover){.bt:hover{background:rgba(255,255,255,.1);}}
 #barra{left:50%;bottom:22px;transform:translateX(-50%);padding:6px;display:flex;gap:6px;}
 .acc.urge{border-color:#ff3344!important;box-shadow:0 0 0 3px rgba(255,51,68,.5);animation:latidoBtn 1.1s ease-in-out infinite;}
 @keyframes latidoBtn{0%,100%{box-shadow:0 0 0 2px rgba(255,51,68,.35)}50%{box-shadow:0 0 0 5px rgba(255,51,68,.75)}}
 /* Tutorial: el boton que toca pulsar late en verde (mostrar, no contar) */
 .tuto-pulso{border-color:#4ade80!important;box-shadow:0 0 0 3px rgba(74,222,128,.5);animation:latidoTuto 1.1s ease-in-out infinite;}
 @keyframes latidoTuto{0%,100%{box-shadow:0 0 0 2px rgba(74,222,128,.35)}50%{box-shadow:0 0 0 6px rgba(74,222,128,.8)}}
-@media (prefers-reduced-motion:reduce){.tuto-pulso{animation:none;box-shadow:0 0 0 4px rgba(74,222,128,.7);}}
+@media (prefers-reduced-motion:reduce){.tuto-pulso{animation:none;box-shadow:0 0 0 4px rgba(74,222,128,.7);}html #avisos div.fuera{animation:none;opacity:0;}}
 .acc{position:relative;width:52px;height:52px;border:1px solid var(--borde);border-radius:10px;background:rgba(255,255,255,.05);color:var(--txt);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-direction:column;font:700 11px var(--sans);}
 .acc img{width:30px;height:30px;image-rendering:pixelated;}
 .acc .t{position:absolute;left:4px;top:2px;font:600 9px var(--sans);color:var(--txt2);}
@@ -260,6 +261,8 @@ body:has(#v-clase.on) #avisos{display:none;}
 /* El error no solo por el color de la barra (daltonicos) */
 #avisos div.err::before{content:'✕ ';color:#ff5a6a;font-weight:800;}
 @keyframes entra{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@keyframes sale{to{opacity:0;transform:translateX(-8px)}}
+#avisos div.fuera{animation:sale .18s ease-in forwards;}
 /* Pantalla completa de Telegram: el HUD se aparta de sus botones */
 body.tgfs #marco,body.tgfs #obj,body.tgfs #objp,body.tgfs #grupo3,body.tgfs #mini,body.tgfs #misiones,body.tgfs #botones,body.tgfs #alas,body.tgfs #titulo-zona,body.tgfs.movil #chat{margin-top:var(--tg-top,0px);}
 body.tgfs #barra,body.tgfs #tactil,body.tgfs #hablar,body.tgfs #lanzar,body.tgfs #invit3,body.tgfs #joy{margin-bottom:var(--tg-bot,0px);}
@@ -285,7 +288,7 @@ body.movil #presumir3{bottom:auto;top:calc(36% + var(--tg-top,0px));font-size:13
 .dias7.mini i.cofre{border-radius:2px;}
 .d7{min-width:0;background:rgba(255,255,255,.05);border:1px solid var(--borde);border-radius:8px;padding:4px 2px;text-align:center;font:600 9px var(--sans);color:var(--txt2);}
 .d7 span{display:block;font-size:16px;margin:2px 0;}
-.d7 em{display:block;font-style:normal;font-size:8px;line-height:1.15;}
+.d7 em{display:block;font-style:normal;font-size:10px;line-height:1.15;letter-spacing:-.2px;overflow-wrap:anywhere;}
 .d7.ya{opacity:.45;}
 .d7.hoy{border-color:#ffd84a;background:rgba(255,216,74,.15);color:#fff;box-shadow:0 0 10px rgba(255,216,74,.4);}
 #herm-c .barra i,#pase-c .barra i{position:absolute;inset:0;display:block;background:linear-gradient(90deg,#a78bfa,#ffd84a);transform-origin:left center;}
@@ -354,10 +357,14 @@ body.movil .cerrar{right:8px;top:8px;width:38px;height:38px;}
 .fila{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font:500 14px var(--sans);}
 input.nombre{width:100%;padding:12px;border-radius:8px;border:1px solid var(--borde);background:#0a0418;color:var(--txt);font:500 16px var(--sans);text-align:center;margin:10px 0;user-select:text;-webkit-user-select:text;}
 #carga{position:fixed;top:0;right:0;bottom:0;left:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:var(--bg);z-index:20;}
+#carga{transition:opacity .35s ease-out}#carga.sale{opacity:0;pointer-events:none}
 #carga .t{font:400 18px/1.5 var(--px);text-align:center;color:#fff7d6;}
 #carga .s{font:500 14px var(--sans);color:var(--txt2);}
 #carga .barra{width:220px;height:10px;}
 #carga .barra i{background:linear-gradient(90deg,#a855f7,#ffd84a);transform:scaleX(0);transition:transform .5s ease-out;}
+#carga-i.latido{overflow:hidden;}#carga-i.latido::after{content:'';position:absolute;top:0;bottom:0;left:0;width:40%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);animation:brilloCarga 1.1s linear infinite;}
+@keyframes brilloCarga{from{transform:translateX(-100%)}to{transform:translateX(250%)}}
+@media (prefers-reduced-motion:reduce){#carga-i.latido::after{animation:none;opacity:0;}}
 #carga .consejo-carga{position:absolute;bottom:max(32px,env(safe-area-inset-bottom));left:24px;right:24px;margin:0;text-align:center;font-family:var(--sans);font-size:12px;line-height:1.5;color:var(--txt2);}
 @media (max-height:440px){#carga .consejo-carga{bottom:6px;font-size:11px;line-height:1.3;}}   /* movil apaisado: el consejo no pisa la barra */
 html.anuncio #carga img{content:url(/assets/skins/skin_bruja.png)}
@@ -367,9 +374,9 @@ html.anuncio #carga img{content:url(/assets/skins/skin_bruja.png)}
 #mapa-grande canvas{width:100%;border-radius:10px;display:block;}
 #lanzar{left:50%;bottom:100px;transform:translateX(-50%);width:280px;padding:6px 8px;display:none;}
 #lanzar .barra i{background:linear-gradient(90deg,#f59e0b,#ffe600);transform:scaleX(0);}
-#alas{position:fixed;left:12px;top:120px;width:120px;height:10px;background:rgba(0,0,0,.6);border-radius:5px;overflow:hidden;display:none;pointer-events:none;}
+#alas{position:fixed;left:12px;top:120px;width:120px;height:12px;background:rgba(0,0,0,.6);border-radius:6px;overflow:hidden;display:none;pointer-events:none;}
 #alas i{position:absolute;inset:0;background:linear-gradient(90deg,#c084fc,#7dd3fc);transform-origin:left;}
-#alas span{position:relative;display:block;font:700 8px/10px var(--sans);text-align:center;letter-spacing:1px;}
+#alas span{position:relative;display:block;font:700 10px/12px var(--sans);text-align:center;letter-spacing:.5px;}
 #combo{display:flex;gap:4px;margin-top:5px;}
 #combo i{width:10px;height:10px;border-radius:50%;background:#ffe600;box-shadow:0 0 4px #ffe600;}
 #auras{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;font:600 10px var(--sans);}
@@ -489,9 +496,9 @@ body.compacto #botones:not(.abierto) #b-libro,body.compacto #botones:not(.abiert
 /* Invitar siempre a la vista (verde, junto a ⋯): cerrado son 5 botones (mochila, tienda, chat, invitar y ⋯) */
 body.movil #botones:not(.abierto),body.compacto #botones:not(.abierto){grid-template-columns:repeat(5,40px);}
 #b-compartir{flex-direction:column;line-height:1;background:#25d366;color:#fff;}
-#b-compartir small{font-size:8px;font-weight:800;}
+#b-compartir small{font-size:10px;font-weight:800;}
 body.movil #b-compartir,body.compacto #b-compartir{background:#25d366;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;}
-body.movil #b-compartir small,body.compacto #b-compartir small{font-size:8px;}
+body.movil #b-compartir small,body.compacto #b-compartir small{font-size:10px;}
 @media (max-width:389px){body.movil #botones:not(.abierto),body.compacto #botones:not(.abierto){grid-template-columns:repeat(5,36px);}
  body.movil #botones:not(.abierto) .bt,body.compacto #botones:not(.abierto) .bt{width:36px;height:36px;}}   /* 5 x 40 px pisaba las misiones en pantallas de 360 px */
 #b-mas.aviso::after{content:'';position:absolute;top:3px;right:3px;width:8px;height:8px;border-radius:50%;background:#ff4d6d;box-shadow:0 0 6px #ff4d6d;}
@@ -515,7 +522,7 @@ body.movil #misiones small,body.compacto #misiones small{font-size:9.5px;color:#
 body.movil #misiones.abierto,body.compacto #misiones.abierto{max-height:48vh;}
 body.movil #mini canvas,body.compacto #mini canvas{width:84px;height:84px;}
 body.movil #mini,body.compacto #mini{padding:3px;}
-body.movil #mini .z,body.compacto #mini .z{font-size:9px;margin-top:1px;}
+body.movil #mini .z,body.compacto #mini .z{font-size:10px;margin-top:1px;}
 body.movil #botones,body.compacto #botones{top:calc(126px + env(safe-area-inset-top) + var(--tg-top,0px));right:calc(8px + env(safe-area-inset-right));grid-template-columns:repeat(4,40px);gap:3px;padding:3px;}
 body.movil #botones .bt,body.compacto #botones .bt{width:40px;height:40px;font-size:15px;}   /* 40 px: se tocan con el dedo sin fallar (antes 32) */
 body.movil #barra,body.compacto #barra{display:flex;gap:3px;justify-content:center;}
@@ -556,11 +563,12 @@ body.movil #chicha3,body.compacto #chicha3{bottom:calc(62px + env(safe-area-inse
 .caja{background:var(--vidrio);border-color:rgba(255,255,255,.1);border-radius:14px;-webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);box-shadow:0 8px 24px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.08);}
 #botones{gap:3px;padding:3px;border-radius:16px;}
 .bt{width:34px;height:34px;border-radius:10px;border-color:transparent;background:rgba(255,255,255,.06);font-size:14px;transition:transform .35s var(--muelle),background .2s;-webkit-tap-highlight-color:transparent;}
-.bt:hover{background:rgba(255,255,255,.14);transform:translateY(-1px) scale(1.06);}
+@media (hover:hover){.bt:hover{background:rgba(255,255,255,.14);transform:translateY(-1px) scale(1.06);}}
 .bt:active{transform:scale(.86);transition-duration:.08s;}
 #b-mas{transition:transform .4s var(--muelle),background .2s;}
 #botones.abierto #b-mas{transform:rotate(90deg);background:rgba(125,211,252,.22);}
 #botones.abierto .extra{animation:btAparece .38s var(--muelle) both;}
+body.movil #botones.abierto .bt[data-l],body.compacto #botones.abierto .bt[data-l]{height:46px;flex-direction:column;justify-content:center;line-height:1}body.movil #botones.abierto .bt[data-l]::after,body.compacto #botones.abierto .bt[data-l]::after{content:attr(data-l);font:600 8px var(--sans);color:var(--txt2,#cbd5e1);margin-top:2px}   /* etiquetas al abrir ⋯ en tactil (v361) */
 #botones.abierto .extra:nth-child(3n+1){animation-delay:.03s;} #botones.abierto .extra:nth-child(3n+2){animation-delay:.06s;} #botones.abierto .extra:nth-child(3n){animation-delay:.09s;}
 @keyframes btAparece{from{opacity:0;transform:scale(.5) translateY(-6px);}}
 .modal{background:rgba(5,2,14,.35);}
@@ -579,7 +587,7 @@ body.sin-vidrio .ventana{background:rgba(24,15,48,.95);}
 .vv-tab{border-radius:999px!important;transition:background .2s,transform .3s var(--muelle);}
 .vv-tab:active{transform:scale(.92);}
 button{-webkit-tap-highlight-color:transparent;}
-@media (prefers-reduced-motion:reduce){.bt,.modal.on,.modal.on .ventana,#botones.abierto .extra{animation:none!important;transition:none!important;}}
+@media (prefers-reduced-motion:reduce){.bt,.modal.on,.modal.on .ventana,#botones.abierto .extra{animation:none!important;transition:none!important;}#carga{transition:none;}}
 /* Aviso para pasar el duende de invitado a la cuenta (mundo.js, preguntarHeredar) */
 .heredar-fondo{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(5,2,14,.82);}
 .heredar-caja{width:100%;max-width:400px;max-height:100%;overflow:auto;box-sizing:border-box;padding:18px 16px;border:1px solid var(--borde);border-radius:18px;background:rgba(24,15,48,.96);color:var(--txt);font:500 14px/1.45 var(--sans);text-align:center;}
@@ -591,7 +599,8 @@ button{-webkit-tap-highlight-color:transparent;}
 /* Tienda siempre a la vista (v325): 💎 con acento dorado y punto rojo mientras no hayas visto
    la oferta de bienvenida o te hayan entregado una compra que aun no viste (mundo.js, puntoTienda) */
 #b-premium{position:relative;background:linear-gradient(135deg,rgba(255,216,74,.38),rgba(234,179,8,.14));box-shadow:inset 0 0 0 1px rgba(255,216,74,.75),0 0 8px rgba(255,216,74,.25);}
-#b-premium:hover{background:linear-gradient(135deg,rgba(255,216,74,.55),rgba(234,179,8,.24));}
+@media (hover:hover){#b-premium:hover{background:linear-gradient(135deg,rgba(255,216,74,.55),rgba(234,179,8,.24));}}
+#oro,#mini .z,.barra span,#xp-pt,.num,.vv-cuerpo b{font-variant-numeric:tabular-nums;}
 #b-inv{position:relative;}
 #b-premium.aviso::after,#b-inv.aviso::after{content:'';position:absolute;top:2px;right:2px;width:8px;height:8px;border-radius:50%;background:#ff4d6d;box-shadow:0 0 6px #ff4d6d;}
 /* El nombre de la zona nunca se mete bajo el minimapa ni el menu */
@@ -790,17 +799,17 @@ body.cine #cofre-sem,body.cine #cofre-meta{visibility:hidden !important;}
   <button class="bt" id="b-inv" title="Inventario (I)">🎒</button>
   <button class="bt" id="b-premium" title="Tienda: skins, alas y packs" aria-label="Tienda">💎</button>
   <button class="bt" id="b-libro" title="Habilidades y talentos (P)">📖</button>
-  <button class="bt extra" id="b-logros" title="Logros (L)">🏆</button>
-  <button class="bt extra" id="b-look" title="Apariencia (cara, cuerpo, altura y pelo)">🪞</button>
-  <button class="bt extra" id="b-mapa" title="Mapa del mundo (M)">🗺</button>
-  <button class="bt extra" id="b-herm" title="Hermandad">🛡</button>
-  <button class="bt extra" id="b-rank" title="Ranking">🏅</button>
-  <button class="bt" id="b-pase" title="Pase de temporada (premios gratis)">🎟</button>
-  <button class="bt extra" id="b-son" title="Música y sonido">🔊</button>
+  <button class="bt extra" id="b-logros" title="Logros (L)" data-l="Logros">🏆</button>
+  <button class="bt extra" id="b-look" title="Apariencia (cara, cuerpo, altura y pelo)" data-l="Look">👤</button>
+  <button class="bt extra" id="b-mapa" title="Mapa del mundo (M)" data-l="Mapa">🗺️</button>
+  <button class="bt extra" id="b-herm" title="Hermandad" data-l="Gremio">🛡️</button>
+  <button class="bt extra" id="b-rank" title="Ranking" data-l="Ranking">🏅</button>
+  <button class="bt" id="b-pase" title="Pase de temporada (premios gratis)">🎟️</button>
+  <button class="bt extra" id="b-son" title="Música y sonido" data-l="Sonido">🔊</button>
   <button class="bt" id="b-amigos" title="Amigos y jugadores en línea">👥</button>
   <button class="bt" id="b-chat" title="Chat (Enter)">💬</button>
   <button class="bt" id="b-gestos" title="Gestos y frases rápidas" aria-label="Gestos y frases rápidas">😀</button>
-  <button class="bt extra" id="b-ayuda" title="Ajustes y controles (calidad gráfica)" aria-label="Ajustes y controles">?</button>
+  <button class="bt extra" id="b-ayuda" title="Ajustes y controles (calidad gráfica)" aria-label="Ajustes y controles" data-l="Ajustes">?</button>
   <a class="bt" href="/mmo/" title="CLASSIC (2D): mazmorras, Torre y banda, con tu mismo personaje">2D</a>
   <a class="bt" href="/inicio/" title="Inicio: elige tu juego">⌂</a>
   <button class="bt" id="b-compartir" title="Invitar a un amigo: cuando llegue a Nv 10, los dos ganan oro" aria-label="Invitar a un amigo">📣<small>+oro</small></button>
@@ -899,9 +908,9 @@ body.cine #cofre-sem,body.cine #cofre-meta{visibility:hidden !important;}
   <div class="fila" id="fila-vib"><span>Vibración</span><b><select id="sel-vib" style="background:#22164a;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="normal">Normal</option><option value="suave">Suave</option><option value="off">Apagada</option></select></b></div>
   <div class="fila"><span>Texto</span><b><select id="sel-texto" style="background:#22164a;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="n">Normal</option><option value="g">Grande</option></select></b></div>
   <script>
-  /* Texto grande: 'dq3_texto' (n|g). Sin valor guardado, grande en pantallas de 5" (lado corto <= 400 px). */
+  /* Texto grande: 'dq3_texto' (n|g). Sin valor guardado, grande en pantallas de 5" (lado corto <= 430 px: Android de gama media de 393-412 px). */
   (function(){var v=null;try{v=localStorage.getItem('dq3_texto');}catch(e){}
-  if(v!=='n'&&v!=='g'){try{v=Math.min(screen.width,screen.height)<=400?'g':'n';}catch(e){v='n';}}
+  if(v!=='n'&&v!=='g'){try{v=Math.min(screen.width,screen.height)<=430?'g':'n';}catch(e){v='n';}}
   function poner(x){document.body.classList.toggle('texto-grande',x==='g');}
   poner(v);var s=document.getElementById('sel-texto');
   if(s){s.value=v;s.onchange=function(){var x=s.value==='g'?'g':'n';try{localStorage.setItem('dq3_texto',x);}catch(e){}poner(x);};}})();
@@ -940,9 +949,10 @@ body.cine #cofre-sem,body.cine #cofre-meta{visibility:hidden !important;}
 <!-- Telegram: su SDK se carga arriba solo dentro de Telegram (window.__tgListo).
      defer: no frenan el HTML y corren en orden, antes que mundo.js (que usa supabase). -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=361" defer></script>
-<script type="module" src="/mundo/js/mundo.js?v=361"></script>
+<script src="/js/config.js?v=362" defer></script>
+<script type="module" src="/mundo/js/mundo.js?v=362"></script>
 <div id="flash-nv"></div>
 <div id="cartel-nv"></div>
+<div id="aviso-dir" aria-hidden="true"></div>
 </body>
 </html>

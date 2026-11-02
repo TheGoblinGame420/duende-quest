@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=361';
-import { iniciarRegalo } from './regalo.js?v=361';
-import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=361';
+} from './data.js?v=362';
+import { iniciarRegalo } from './regalo.js?v=362';
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=362';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -156,7 +156,22 @@ function permisosTg(nv) {
 // 'suave' quita los golpes repetidos (remate de cada caza) y deja los momentos buenos.
 function vibModo() { try { return localStorage.getItem('dq3_vib') || 'normal'; } catch (e) { return 'normal'; } }
 function vibOff() { return vibModo() === 'off'; }
-function vibrar(tipo) { if (vibOff()) return; if (tipo === 'golpe') { if (vibModo() === 'suave') return; tipo = 'success'; } if (TG && TG.HapticFeedback) try { TG.HapticFeedback.notificationOccurred(tipo || 'success'); } catch (e) {} }
+// El golpe es un toque ligero (impacto), no un "logro": fuera de Telegram,
+// un pulso corto en celulares, como mucho uno cada 70 ms.
+let vibGolpeT = 0;
+function vibrar(tipo) {
+  if (vibOff()) return;
+  if (tipo === 'golpe') {
+    if (vibModo() === 'suave') return;
+    if (TG && TG.HapticFeedback) { try { TG.HapticFeedback.impactOccurred('light'); } catch (e) {} return; }
+    try {
+      const ahora = performance.now();
+      if (navigator.vibrate && ahora - vibGolpeT >= 70 && matchMedia('(pointer: coarse)').matches) { vibGolpeT = ahora; navigator.vibrate(8); }
+    } catch (e) {}
+    return;
+  }
+  if (TG && TG.HapticFeedback) try { TG.HapticFeedback.notificationOccurred(tipo || 'success'); } catch (e) {}
+}
 
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
 if (TACTIL) document.body.classList.add('tactil');
@@ -1250,6 +1265,7 @@ const teclas = {};
 let tIzq = false, tDer = false;
 let enviadoT = 0, ultimoEnviado = '', ultimoUrg = '';
 let sacudir = 0;
+const MENOS_MOV_C = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } })();
 
 function congelado() { return !!(P.fl & FJ.bloque); }
 function fisica() {
@@ -2644,17 +2660,28 @@ function itemsNovClassic(nv) {
     .filter(x => modoAnuncio() ? !SIN_CRIPTO_RE.test(x) : (!TG || !(/\bSOL\b/.test(x) || /wallet|solana|phantom|solflare/i.test(x))));
 }
 function abrirNovedades() {
+  // Lo que no viste va primero y marcado NUEVO; lo anterior, plegado.
+  let visto = 0;
+  try { visto = +localStorage.getItem('dq_mmo_nov') || 0; } catch (e) {}
   let h = htmlCalendario() + '<h3>Notas del parche</h3>';
-  for (const nv of NOVEDADES) {
+  let nuevos = '', viejos = '', primero = true;
+  for (const nv of NOVEDADES.slice(0, 10)) {
     const its = itemsNovClassic(nv);
     if (!its.length) continue;
-    h += `<p class="parche"><b>Parche 1.${nv.n}</b><span>${esc(nv.fecha)}</span></p><ul>`;
-    h += its.map(x => `<li>${esc(sinEmoji(x))}</li>`).join('') + '</ul>';
+    const esNuevo = visto ? nv.n > visto : primero;
+    primero = false;
+    const bloque = `<p class="parche"><b>Parche 1.${nv.n}${esNuevo ? '<em style="color:var(--ok);font-style:normal;font-weight:700;margin-left:6px">NUEVO</em>' : ''}</b><span>${esc(nv.fecha)}</span></p><ul>`
+      + its.map(x => `<li>${esc(sinEmoji(x))}</li>`).join('') + '</ul>';
+    if (esNuevo) nuevos += bloque; else viejos += bloque;
   }
+  h += nuevos;
+  if (viejos) h += (nuevos ? '<details><summary>Parches anteriores</summary>' : '<details open><summary>Parches anteriores</summary>') + viejos + '</details>';
   h += '<p class="creditos" style="margin-top:4px">Más novedades en ORIGINS (3D)</p>';
   $('nov-lista').innerHTML = h;
   $('nov-lista').classList.add('guia');
   abrir('m-novedades');
+  // Abrirla a mano tambien cuenta como vista: si no, NUEVO no se iria nunca.
+  if (NOVEDADES.length) try { localStorage.setItem('dq_mmo_nov', String(NOVEDADES[0].n)); } catch (e) {}
 }
 // Boveda semanal: elegir UNO de los objetos que abrieron tus mazmorras de
 // la semana pasada. Se ofrece sola una vez por sesion al entrar.
@@ -4972,7 +4999,7 @@ function dibujar() {
   if (mp.ancho <= VW) camX = (mp.ancho - VW) / 2;
   g.save();
   g.translate(0, OY);
-  if (sacudir > 0) { g.translate((Math.random() - .5) * sacudir, (Math.random() - .5) * sacudir); sacudir *= .85; if (sacudir < .5) sacudir = 0; }
+  if (sacudir > 0) { g.translate((Math.random() - .5) * sacudir * (MENOS_MOV_C ? 0.15 : 1), (Math.random() - .5) * sacudir * (MENOS_MOV_C ? 0.15 : 1)); sacudir *= .85; if (sacudir < .5) sacudir = 0; }
   dibujarFondo(mp);
   dibujarSuelo(mp);
   dibujarAmbiente(mp);

@@ -3629,3 +3629,12 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Tope de figuras de monstruos en gama baja. Cofre que revela el objeto con su rareza.
 - Prueba del jefe mundial estable y élites raros fuera del Claro del Titán.
 - Arnés 908 bien (2 de 3 ejecuciones limpias; la aleatoria «ningún tipo acapara la zona» de siempre).
+
+### Estudio 11: pulido final (2-nov-2026, `?v=362`)
+
+- 8 estudios web (primera impresión, microinteracciones, números de combate, iconografía, abandono en el primer minuto, Telegram Mini App, comunicar novedades, accesibilidad) → 44 hallazgos → 12 tareas.
+- `numero(..., clave)` suma golpes, `cifraCorta`, prioridad de grandes solo sobre números de daño; botín de baja en una línea; daño a jugadores solo propio y de grupo.
+- Novedades en ORIGINS (`novPendiente`, línea «Nuevo» en la tira diaria, aviso tras actualizar; campo `gancho` en NOVEDADES) y en el recordatorio de Telegram consentido (una vez por novedad). CLASSIC marca NUEVO.
+- Fundido de entrada, título sin salto de fuente, pulido CSS móvil (hover, cifras fijas, letra mínima, texto grande por defecto en Android comunes).
+- Pestañas que recuerdan scroll, vibran y muestran que hay más. «!» ámbar de amenaza en el borde. Iconos del HUD compatibles y etiquetas al abrir ⋯. Avisos con salida animada; 🔮 para hechizos enemigos. Carga con porcentaje y etapas medidas; reacomodo al girar.
+- Arnés 908 bien.

@@ -24,8 +24,8 @@ import {
   ORO_POR_USD, STAR_TIENDA_USD, PEN_POR_USD,
   temporadaDe, TEMPORADAS, TEMP_DIAS, premioDiaFiesta, esNochebuena, diaFiesta, diasFiesta,
   ESPECIES, MAPAS, MONSTRUOS, BESTIARIO_HITOS, premioBestiario, DEBIL_EMO,
-} from '/mmo/js/data.js?v=361';
-import { LORE_MONSTRUOS } from './lore.js?v=361';
+} from '/mmo/js/data.js?v=362';
+import { LORE_MONSTRUOS } from './lore.js?v=362';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -67,9 +67,13 @@ const CSS = `
 .vv-tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;touch-action:pan-x;padding:1px;}
 .vv-tabs::-webkit-scrollbar{display:none;}
 .vv-tabs:empty{display:none;}
+.vv-tabs.mas{-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent);}
+@keyframes vvIn{from{opacity:0;transform:translateY(4px)}}
+.vv-cuerpo.cambia{animation:vvIn .14s ease-out;}
+@media (prefers-reduced-motion:reduce){.vv-cuerpo.cambia{animation:none;}}
 @media (min-width:720px){.vv-tabs{flex-wrap:wrap;justify-content:center;overflow:visible;}}
 .vv-tab{flex:0 0 auto;position:relative;font:700 12px var(--sans);letter-spacing:.03em;min-height:34px;padding:7px 12px;border-radius:8px;border:1px solid var(--borde);background:rgba(255,255,255,.03);color:var(--txt2);cursor:pointer;}
-.vv-tab:hover{color:var(--txt);background:rgba(255,255,255,.08);}
+@media (hover:hover){.vv-tab:hover{color:var(--txt);background:rgba(255,255,255,.08);}}
 .vv-tab.on{background:var(--pri);border-color:#60a5fa;color:#fff;}
 .vv-tab .pt{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--oro);color:#1a1200;font:800 10px/18px var(--sans);}
 .vv-cuerpo{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;padding:12px 16px 18px;touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}
@@ -322,6 +326,24 @@ function pintarTabs(id, tabs, actual, act) {
   // En el movil las pestañas se desplazan: la elegida queda a la vista.
   const on = el.querySelector('.on');
   if (on && el.scrollWidth > el.clientWidth) el.scrollLeft = Math.max(0, on.offsetLeft - (el.clientWidth - on.offsetWidth) / 2);
+  // Si quedan pestañas fuera de la vista, el borde derecho se desvanece.
+  const upd = () => el.classList.toggle('mas', el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  upd(); requestAnimationFrame(upd);
+  if (!el._masL) { el._masL = 1; el.addEventListener('scroll', upd, { passive: true }); }
+}
+// Cada pestaña recuerda dónde se quedó el scroll; el cambio entra suave y vibra un toque.
+const scrollV = {};
+function guardaScroll(id, pest) { try { const c = parte(id, 'cuerpo'); if (c) scrollV[id + ':' + pest] = c.scrollTop; } catch (e) {} }
+function ponScroll(id, pest) { requestAnimationFrame(() => { try { const c = parte(id, 'cuerpo'); if (c) c.scrollTop = scrollV[id + ':' + pest] || 0; } catch (e) {} }); }
+function cambiaTab(id, k, ant) {
+  if (k === ant) return false;
+  guardaScroll(id, ant);
+  return true;
+}
+function trasTab(id, k) {
+  try { if (H.vibSel) H.vibSel(); } catch (e) {}
+  ponScroll(id, k);
+  try { const c = parte(id, 'cuerpo'); if (c) { c.classList.remove('cambia'); void c.offsetWidth; c.classList.add('cambia'); } } catch (e) {}
 }
 
 // ═══════════════════ INVENTARIO ═══════════════════
@@ -1305,7 +1327,7 @@ function mostrarPedidoYape(m) {
 // ═══════════════════ ACCIONES (delegadas por ventana) ═══════════════════
 const ACC = {
   // Inventario
-  itab: b => { est.inv = b.dataset.id; H.sfx('boton', 0.2); pintarInventario(); },
+  itab: b => { const k = b.dataset.id, nuevo = cambiaTab(IDS.inv, k, est.inv); est.inv = k; H.sfx('boton', 0.2); pintarInventario(); if (nuevo) trasTab(IDS.inv, k); },
   ranura: b => { est.ranura = est.ranura === b.dataset.id ? '' : b.dataset.id; H.sfx('boton', 0.2); pintarInventario(); },
   quitar: b => { H.sfx('boton', 0.3); H.mandar({ t: 'item', a: 'quitar', ranura: b.dataset.id }); est.ranura = ''; },
   filtro: b => { est.filtro = b.dataset.id; pintarInventario(); },
@@ -1361,7 +1383,7 @@ const ACC = {
   // «Te faltan N de oro»: a la tienda premium con el paquete justo resaltado.
   'ir-tienda-foco': b => { H.sfx('boton', 0.2); abrirTienda('premium', b.dataset.id || '', 'falta'); },
   // Libro
-  ltab: b => { est.libro = b.dataset.id; H.sfx('boton', 0.2); pintarLibro(); },
+  ltab: b => { const k = b.dataset.id, nuevo = cambiaTab(IDS.libro, k, est.libro); est.libro = k; H.sfx('boton', 0.2); pintarLibro(); if (nuevo) trasTab(IDS.libro, k); },
   tal: b => { H.sfx('boton', 0.3); H.mandar({ t: 'talento', id: b.dataset.id }); },
   // Pre-elección Nv 7-9: solo se guarda en este equipo; no se manda ni se gasta nada.
   'tal-pre': b => { const y = H.yo(); if (!y) return; try { localStorage.setItem(talPreClave(y), b.dataset.id); } catch (e) {} H.sfx('boton', 0.2); pintarLibro(); },
@@ -1385,7 +1407,7 @@ const ACC = {
     est.clases = false;
   },
   // Mercader
-  ttab: b => { est.tienda = b.dataset.id; est.foco = ''; H.sfx('boton', 0.2); pintarTienda(); parte(IDS.tienda, 'cuerpo').scrollTop = 0; },
+  ttab: b => { const k = b.dataset.id, nuevo = cambiaTab(IDS.tienda, k, est.tienda), habiaFoco = !!est.foco; est.tienda = k; est.foco = ''; H.sfx('boton', 0.2); pintarTienda(); if (nuevo) trasTab(IDS.tienda, k); else if (habiaFoco) { const c = parte(IDS.tienda, 'cuerpo'); if (c) c.scrollTop = 0; } },
   // Candados contra doble toque (en movil un toque doble compraba dos veces o creaba dos pedidos).
   comprar: b => { if (Date.now() - (est.ultCompra || 0) < 600) return; est.ultCompra = Date.now(); H.sfx('boton', 0.3); H.mandar({ t: 'comprar', k: b.dataset.k, id: b.dataset.id, n: +b.dataset.n || 1 }); },
   premium: b => { if (Date.now() - (est.ultPedido || 0) < 2500) return; est.ultPedido = Date.now(); est.ultPedidoId = b.dataset.id; H.sfx('boton', 0.3); H.mandar({ t: 'pedido', id: b.dataset.id, metodo: b.dataset.metodo, via: est.via }); H.aviso('Preparando tu pedido…', 'ok'); },
@@ -1413,7 +1435,7 @@ const ACC = {
     }
   },
   // Logros
-  lgtab: b => { est.logros = b.dataset.id; H.sfx('boton', 0.2); pintarLogros(); },
+  lgtab: b => { const k = b.dataset.id, nuevo = cambiaTab(IDS.logros, k, est.logros); est.logros = k; H.sfx('boton', 0.2); pintarLogros(); if (nuevo) trasTab(IDS.logros, k); },
   titulo: b => { H.sfx('boton', 0.3); H.mandar({ t: 'titulo', id: b.dataset.id }); },
   // Expedicion
   exdest: b => { H.sfx('boton', 0.2); try { localStorage.setItem('dq_exped', b.dataset.id); } catch (e) {} pintarExped(); },
@@ -1566,6 +1588,7 @@ export function iniciarVentanas(opciones) {
     iniciarSesion: o.iniciarSesion,   // opcional: boton «Iniciar sesión»
     probarSkin: o.probarSkin,         // opcional: probador 3D de skins (ORIGINS)
     probarMontura: o.probarMontura,   // opcional: probador 3D de monturas (ORIGINS)
+    vibSel: o.vibSel,                 // opcional: vibración suave al cambiar de pestaña
   };
   if (!listo) {
     listo = true;

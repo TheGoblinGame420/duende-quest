@@ -516,10 +516,21 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 361;
+export const VERSION = 362;
 
+// gancho (opcional): la frase que ve en ORIGINS quien vuelve (tira diaria y aviso tras actualizar);
+// sin gancho se usa el primer item. Siempre lo que GANA un jugador que vuelve, nunca un arreglo para novatos ni algo tecnico.
 export const NOVEDADES = [
-  { n: 129, fecha: '2 nov 2026', items: [
+  { n: 130, fecha: '2 nov 2026', items: [
+    'Los golpes seguidos a un monstruo se suman en un solo número que salta, las cifras grandes salen cortas (1,2k) y los críticos tienen prioridad.',
+    'Al vencer a un monstruo, XP, oro, chicha y objeto de temporada salen juntos en una línea; ya no ves los números de daño de desconocidos.',
+    'Al entrar cada día verás lo nuevo del juego en la tira de tu racha.',
+    'Si juegas sin volumen o un monstruo te ataca desde fuera de pantalla, un «!» ámbar en el borde te marca de dónde viene.',
+    'La pantalla de carga muestra el porcentaje y se desvanece suave al entrar; al girar el celular el juego se reacomoda.',
+    'Los botones del menú ⋯ se ven en todos los celulares y muestran su nombre; las pestañas recuerdan hasta dónde bajaste.',
+    'Los hechizos enemigos tienen su icono 🔮 y los avisos se despiden con un desvanecido.',
+  ] },
+  { n: 129, fecha: '2 nov 2026', gancho: 'Si caes peleando contra el Rey Goblin igual te llevas tu cofre.', items: [
     'Los nuevos jugadores ven menos ventanas al empezar; en el celular la historia te la cuenta el Guardia Tito sin taparte la pantalla.',
     '«¡Buen trabajo hoy!» sale después de vencer al Sabueso, no antes.',
     'El punto de señal muestra tu conexión real y se pone gris si la pierdes.',
@@ -863,7 +874,7 @@ export const NOVEDADES = [
   ] },
   { n: 88, fecha: '27 oct 2026', items: [
     'Tu duende ahora es la mascota $DUENDE: cabeza cuadrada, ojos azules, cejas en bloque, mejillas, sonrisa con colmillos, orejas con interior naranja y las dos espadas de píxeles a la espalda.',
-    'Disfraces en el editor de apariencia (⋯ → 🪞): Pirata con parche, Vampiro, Momia, Militar, Campesino y Bruja, como los duendes de $DUENDE. Los ven todos.',
+    'Disfraces en el editor de apariencia (⋯ → 👤): Pirata con parche, Vampiro, Momia, Militar, Campesino y Bruja, como los duendes de $DUENDE. Los ven todos.',
     'En el Pueblo Duende suena el tema oficial de Duende Quest; fuera, la música andina de cada zona.',
     'Movimiento más fluido: los demás jugadores y los monstruos se mueven suaves aunque la red del móvil vaya a saltos.',
   ] },
@@ -883,7 +894,7 @@ export const NOVEDADES = [
     'Tu duende 3D se parece más a la mascota de $DUENDE: piel verde lima, orejas largas hacia arriba, ojos grandes y amables con cejas marcadas. Los goblins enemigos siguen con su cara de pícaros.',
   ] },
   { n: 83, fecha: '27 oct 2026', items: [
-    'Móvil y Telegram: más juego y menos ventanas. Los avisos salen pequeños arriba (como mucho dos) y ya no tapan a tu duende, el premio del día es un aviso corto en vez de una ventana, la leyenda se abre sola solo la primera vez (la barra morada de la chicha sigue siempre a la vista) y el editor de apariencia ya no se abre solo (está en ⋯ → 🪞).',
+    'Móvil y Telegram: más juego y menos ventanas. Los avisos salen pequeños arriba (como mucho dos) y ya no tapan a tu duende, el premio del día es un aviso corto en vez de una ventana, la leyenda se abre sola solo la primera vez (la barra morada de la chicha sigue siempre a la vista) y el editor de apariencia ya no se abre solo (está en ⋯ → 👤).',
   ] },
   { n: 82, fecha: '27 oct 2026', items: [
     'Pagos más seguros: cada pago en la cadena vale para un solo pedido, los pedidos en $DUENDE nunca comparten monto, un pago hecho después del plazo lo revisa el equipo a mano y el precio de $DUENDE se comprueba con dos fuentes.',
@@ -1193,7 +1204,7 @@ export const NOVEDADES = [
     'La cueva se adapta al nivel del más alto del grupo y cuenta como mazmorra completada.',
   ] },
   { n: 19, fecha: '23 oct 2026', items: [
-    'Editor de personaje en el mundo 3D (botón 🪞): elige cara, forma del cuerpo, altura, peinado y color de pelo. Todos lo ven.',
+    'Editor de personaje en el mundo 3D (botón 👤): elige cara, forma del cuerpo, altura, peinado y color de pelo. Todos lo ven.',
     'Seis caras (pecosa, cicatriz, bigotes, barba…), tres cuerpos y ocho peinados que asoman bajo el casco o la capucha de tu clase.',
   ] },
   { n: 18, fecha: '23 oct 2026', items: [

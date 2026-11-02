@@ -108,7 +108,7 @@
     var okM = window.dqMedirOk();
     if (!enTg && okM !== 0 && (okM === 1 || (origen && (origen.o === 'meta' || origen.fr)))) {
       var sm = document.createElement('script');
-      sm.src = '/js/medir.js?v=361'; sm.async = true;
+      sm.src = '/js/medir.js?v=362'; sm.async = true;
       (document.head || document.documentElement).appendChild(sm);
     }
   } catch (e) {}
@@ -135,7 +135,7 @@
   window.dqAnuncio = function () { return anuncio; };
 
   // ── Embudo ──
-  var EVENTOS = { carga_ini: 1, arte_ok: 1, form_visto: 1, clic_entrar: 1, bienvenido: 1, mover: 1, fallo_webgl: 1, oculta: 1, joy_toque: 1, t_atk: 1, t_hab: 1, t_volar: 1, t_fin: 1,
+  var EVENTOS = { carga_ini: 1, arte_ok: 1, form_visto: 1, clic_entrar: 1, bienvenido: 1, mover: 1, fallo_webgl: 1, oculta: 1, oculta_dl: 1, oculta_arte: 1, oculta_gl: 1, oculta_red: 1, joy_toque: 1, t_atk: 1, t_hab: 1, t_volar: 1, t_fin: 1,
     mis_0: 1, mis_1: 1, mis_2: 1, mis_3: 1, mis_4: 1, mis_5: 1, jefe1_ver: 1, jefe1_muere: 1, jefe1_ok: 1,
     fps_baja_ok: 1, fps_baja_justo: 1, fps_baja_lento: 1, fps_media_ok: 1, fps_media_justo: 1, fps_media_lento: 1, fps_alta_ok: 1, fps_alta_justo: 1, fps_alta_lento: 1,
     gpu_mali: 1, gpu_adreno: 1, gpu_powervr: 1, gpu_apple: 1, gpu_intel: 1, gpu_swiftshader: 1, gpu_otra: 1, fuga_gpu: 1, nan_pos: 1,
@@ -163,7 +163,14 @@
   // Se va (o minimiza) antes de moverse por primera vez: abandono en la carga.
   try {
     document.addEventListener('visibilitychange', function () {
-      if (document.visibilityState === 'hidden' && juego && !hechos[juego + ':mover']) window.dqPaso('oculta', juego);
+      if (document.visibilityState === 'hidden' && juego && !hechos[juego + ':mover']) {
+        var primera = !hechos[juego + ':oculta'];
+        window.dqPaso('oculta', juego);
+        // Etapa en la que se fue (solo ORIGINS, que es quien pone __dqProg, y solo la primera vez):
+        // descarga (sin progreso), arte (<70%), 3D (<90%) o red/entrada.
+        var pr = parseFloat(window.__dqProg);
+        if (primera && juego === 'origins') window.dqPaso(!window.__dqProg || isNaN(pr) ? 'oculta_dl' : pr < 0.7 ? 'oculta_arte' : pr < 0.9 ? 'oculta_gl' : 'oculta_red', juego);
+      }
     });
   } catch (e) {}
 })();

@@ -34,7 +34,7 @@
 // avisado); off y bloq se respetan siempre.
 // ═══════════════════════════════════════════════════════
 
-import { xpParaSubir, premioDiaria, premioMazmorraDia, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, HABS, CLASES, NIVEL_MAX, DIARIA, horaFelizActiva, TORRE, semanaUTC, temporadaDe, TEMPORADAS, SKINS, precioOro, GESTA_UMBRALES, GESTA_NOMBRES, DIA_DESFASE_MS, hoyUTC, VERSION } from '../../mmo/js/data.js';
+import { xpParaSubir, premioDiaria, premioMazmorraDia, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, HABS, CLASES, NIVEL_MAX, DIARIA, horaFelizActiva, TORRE, semanaUTC, temporadaDe, TEMPORADAS, SKINS, precioOro, GESTA_UMBRALES, GESTA_NOMBRES, DIA_DESFASE_MS, hoyUTC, VERSION, NOVEDADES } from '../../mmo/js/data.js';
 import { getEnv, tg } from '../api/lib.js';
 import { MMO_URL, MUNDO_URL } from '../api/telegram-bot.js';
 import { metaEvento } from './meta.js';
@@ -49,7 +49,7 @@ const NIVEL_MAZMORRA = 6;           // la primera mazmorra (Madriguera Goblin) p
 // Orden de las lineas del aviso diario (las 3 primeras salen). Tambien la lista
 // blanca de tipos que se cuentan en ret:dia (avE_<tipo> enviados, avV_<tipo>
 // los que volvieron en 24 h) y que /mmostats muestra en avisos.
-export const AVISO_ORDEN = ['ev', 'soc', 'racha', 'col', 'exped', 'feliz', 'mazm', 'torre', 'diaria', 'nivel'];
+export const AVISO_ORDEN = ['ev', 'soc', 'racha', 'col', 'exped', 'feliz', 'mazm', 'torre', 'diaria', 'nivel', 'nov'];
 // «Avísame por Telegram» para jugadores web e invitados: un codigo de un solo
 // uso (10 min, en memoria) atado al personaje; el jugador abre el bot con
 // t.me/duendequest_bot?start=av_<cod> y su chat queda en ret:idx[uid].tc.
@@ -123,7 +123,7 @@ const r2 = n => Math.round(n * 100) / 100;
 //   n = sesiones que llegaron a ese paso; b = cuantas en cada tramo de ms
 //   (desde que abrio la pagina; 'bienvenido' y 'mover', desde el clic en entrar).
 // Se suma en memoria y se vuelca como mucho una vez por minuto.
-export const EV_PASOS = ['carga_ini', 'arte_ok', 'form_visto', 'clic_entrar', 'bienvenido', 'mover', 'fallo_webgl', 'oculta', 'joy_toque', 't_atk', 't_hab', 't_volar', 't_fin',
+export const EV_PASOS = ['carga_ini', 'arte_ok', 'form_visto', 'clic_entrar', 'bienvenido', 'mover', 'fallo_webgl', 'oculta', 'oculta_dl', 'oculta_arte', 'oculta_gl', 'oculta_red', 'joy_toque', 't_atk', 't_hab', 't_volar', 't_fin',
   // Primeras misiones y primer jefe (Sabueso, mision 4) de ORIGINS: donde se pierde el novato.
   'mis_0', 'mis_1', 'mis_2', 'mis_3', 'mis_4', 'mis_5', 'jefe1_ver', 'jefe1_muere', 'jefe1_ok',
   // Cueva de los Goblins (hito de Nv 5): entra, ve al Rey, cae dentro y la completa.
@@ -827,6 +827,7 @@ export const Retencion = {
       if (n > 0 && n % POR_SEGUNDO === 0) { await this.retGuardarIdx(); await this.dormir(1100); }
       n++;
       const info = {};
+      info.novVisto = e.nov || 0;
       const texto = await this.mensajeAviso(c, hoy, info);
       // Se marca antes de enviar: aunque el envio tarde, nada lo vuelve a
       // elegir hoy. Si falla por algo pasajero se deshace.
@@ -850,6 +851,7 @@ export const Retencion = {
       } catch (err) { r = null; }
       if (r && r.ok) {
         res.enviados++; res.ids.push(chat);
+        if (info.nov) e.nov = info.nov;   // esa novedad ya no se repite
         if (!uid.startsWith('tg:') && idx['tg:' + chat]) idx['tg:' + chat].adw = hoy;   // su personaje de Telegram no repite hoy
         // Tipo de su primera linea y hora del envio: al volver en 24 h cuenta avV_<tipo>.
         if (AVISO_ORDEN.includes(info.tipo)) { e.tipo = info.tipo; e.at = Date.now(); porTipo['avE_' + info.tipo] = (porTipo['avE_' + info.tipo] || 0) + 1; }
@@ -1023,9 +1025,18 @@ export const Retencion = {
     // Orden estable: dentro de cada tipo se respeta el orden de arriba. Una sola
     // linea por tipo (dos sociales no dejan fuera la racha).
     const orden = t => { const i = AVISO_ORDEN.indexOf(t); return i < 0 ? AVISO_ORDEN.length : i; };
+    // Novedad del juego (NOVEDADES[0] de data.js): la de menor prioridad, solo
+    // si queda sitio (menos de 3 tipos) y nunca sola; una vez por novedad.
+    const nv = NOVEDADES && NOVEDADES[0];
+    if (nv && lineas.length && new Set(lineas.map(x => x.tipo)).size < 3 && nv.n > ((info && info.novVisto) || 0)) {
+      const tn = String(nv.gancho || (nv.items && nv.items[0]) || '').replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '').replace(/\s+/g, ' ').trim();
+      const tn90 = tn.length > 90 ? tn.slice(0, 89).replace(/\s+\S*$/, '') + '…' : tn;
+      if (tn90) add('nov', '✨ Novedad: ' + tn90);
+    }
     const vistos = new Set();
     const top = lineas.map((x, i) => ({ ...x, i })).sort((a, b) => orden(a.tipo) - orden(b.tipo) || a.i - b.i).filter(x => !vistos.has(x.tipo) && vistos.add(x.tipo)).slice(0, 3);
     if (info && top[0]) info.tipo = top[0].tipo;
+    if (info && top.some(x => x.tipo === 'nov')) info.nov = nv.n;
     return `🧌 ¡${c.nombre}, el Pueblo Duende te extraña!\n\n${top.map(x => x.t).join('\n\n')}`;
   },
 
