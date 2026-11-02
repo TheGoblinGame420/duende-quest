@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=362';
-import { iniciarRegalo } from './regalo.js?v=362';
-import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=362';
+} from './data.js?v=363';
+import { iniciarRegalo } from './regalo.js?v=363';
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=363';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -83,10 +83,14 @@ if (TG) {
   try { TG.ready(); TG.expand(); TG.disableVerticalSwipes && TG.disableVerticalSwipes(); TG.setHeaderColor && TG.setHeaderColor('#0a0418'); } catch (e) {}
   // Dentro de Telegram, "volver" cierra primero la ventana abierta (tienda,
   // equipo...) y, si no hay ninguna, lleva al hub de la Mini App.
+  let atrasT = 0;   // sin ventanas: el primer toque de Atrás solo avisa, el segundo sale al menú
   const volver = () => {
+    if (document.querySelector('#dq-regalo.on')) { try { regalo2.cerrar(); } catch (e) {} return; }
+    if (document.querySelector('#dq-avtg.on')) { try { avisoTg2.cerrarAtras(); } catch (e) {} return; }
     const abierta = document.querySelector('.modal.on:not(#m-inicio):not(#m-muerte):not(#m-error)');
     if (abierta && abierta.id === 'm-sol') { aviso('Cierra el pago con ✕ (tus datos no se pierden).'); return; }
     if (abierta && !(abierta.id === 'm-clase' && yo && !yo.clase)) { cerrarModales(); return; }
+    const ah = Date.now(); if (ah - atrasT > 2500) { atrasT = ah; aviso('Toca Atrás otra vez para salir al menú'); try { TG.HapticFeedback.impactOccurred('light'); } catch (e) {} return; }
     location.href = '/telegram/index.html' + (location.hash || '');
   };
   try { TG.BackButton.show(); TG.BackButton.onClick(volver); } catch (e) {}
@@ -681,7 +685,7 @@ function recibir(m) {
       // El que vuelve sin clase (personaje antiguo) la elige como siempre.
       if (!yo.clase && m.nuevo) {
         mandar({ t: 'clase', id: 'guerrero' });
-        setTimeout(() => aviso('⚔ Empiezas como Guerrero, la clase recomendada. Puedes cambiarla gratis hasta Nv 10 en el libro de hechizos.', 'ok'), 5000);
+        setTimeout(() => aviso('⚔ Empiezas como Guerrero, la clase recomendada. Puedes cambiarla gratis hasta Nv 9 en el libro de hechizos.', 'ok'), 5000);
         setTimeout(() => { if (yo && !yo.clase) abrirClases(true); }, 4000);   // si el servidor no la pone, la ventana de siempre
       } else if (!yo.clase) setTimeout(() => abrirClases(true), 300);
       mandar({ t: 'contactos' });
@@ -2655,6 +2659,7 @@ function limpiarRestos(t) { return t.replace(/\s*\(\s*\)/g, '').replace(/\(\s+/g
 // Notas que CLASSIC muestra: sin lo que es solo de ORIGINS (3D), salvo que nombre a CLASSIC.
 // En Telegram, sin lo que habla de SOL o wallets (sus reglas); en modo anuncio, sin nada cripto.
 function itemsNovClassic(nv) {
+  if (nv && nv.solo3d) return [];
   const solo3d = /ORIGINS|\b3D\b|Gran Invasión|Cueva de los Goblins|ESQUIVAR|pueblo es andino|gestos|golpe fuerte del combo|Hermandades abiertas|FASE 2|Furia|Corrientes de viento|corriente|tarjeta de botín|Libreta de pesca|Tirón perfecto|marca el camino|élite|Duende Ladr|📍|Pedir ayuda|cámara|faroles|Brillo de noche|respingo|retrato|Probar su|caja de misiones|TIRAR|ventanas automáticas|tiradores|Álbum|lbum de monstruos|Ayni|píldora|probar Mago|brillan en dorado|empieza con niebla|Prueba cualquier montura|💨|Debilidad|DÉBIL|medalla|revancha|capítulos|recetario|recetas ocultas|dedo fantasma|pasa algo con el Capitán|ranking semanal de la Cueva|bautiz|ATQ y DEF|destello|gritan|Remate|Invitar a mi grupo|Buen trabajo hoy|Listo por hoy|modo cine|Cada arma se siente|De noche ganas|nocturno|se abren con un toque|Desde Nv 7/i;
   return (nv.items || []).filter(x => !(solo3d.test(x) && !/CLASSIC/.test(x)))
     .filter(x => modoAnuncio() ? !SIN_CRIPTO_RE.test(x) : (!TG || !(/\bSOL\b/.test(x) || /wallet|solana|phantom|solflare/i.test(x))));
@@ -3126,7 +3131,7 @@ function pintarLibro() {
   if (Object.keys(tal).length) h += yo.talGratis8 ? '<button class="btn" id="b-tal-reset" style="width:100%;margin-top:6px">🌟 Reiniciar talentos GRATIS (cambio a 8 rangos)</button>'
     : `<button class="btn sec" id="b-tal-reset" style="width:100%;margin-top:6px" ${yo.oro < costoReinicioTalentos(yo.nivel) ? 'disabled' : ''}>Reiniciar talentos (${costoReinicioTalentos(yo.nivel).toLocaleString('es', { useGrouping: 'always' })} oro)</button>`;
   const costoC = costoCambioClase(yo.nivel);
-  h += `<button class="btn sec" id="b-cambiar-clase" style="width:100%;margin-top:8px">Cambiar de clase${costoC ? ' (' + costoC.toLocaleString('es', { useGrouping: 'always' }) + ' oro)' : ' (gratis hasta Nv 10)'}</button>`;
+  h += `<button class="btn sec" id="b-cambiar-clase" style="width:100%;margin-top:8px">Cambiar de clase${costoC ? ' (' + costoC.toLocaleString('es', { useGrouping: 'always' }) + ' oro)' : ' (gratis hasta Nv 9)'}</button>`;
   $('libro-lista').innerHTML = h;
   $('b-cambiar-clase').onclick = () => abrirClases(false);
   $('libro-lista').querySelectorAll('[data-tal]').forEach(b => b.onclick = () => { sfx('boton', .3); mandar({ t: 'talento', id: b.dataset.tal }); });

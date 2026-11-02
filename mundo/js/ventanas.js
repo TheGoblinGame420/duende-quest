@@ -24,8 +24,8 @@ import {
   ORO_POR_USD, STAR_TIENDA_USD, PEN_POR_USD,
   temporadaDe, TEMPORADAS, TEMP_DIAS, premioDiaFiesta, esNochebuena, diaFiesta, diasFiesta,
   ESPECIES, MAPAS, MONSTRUOS, BESTIARIO_HITOS, premioBestiario, DEBIL_EMO,
-} from '/mmo/js/data.js?v=362';
-import { LORE_MONSTRUOS } from './lore.js?v=362';
+} from '/mmo/js/data.js?v=363';
+import { LORE_MONSTRUOS } from './lore.js?v=363';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -607,7 +607,7 @@ function htmlEspec(y) {
   h += '</div>';
   const costoC = costoCambioClase(y.nivel);
   h += `<div class="vv-sec">Clase</div>`;
-  h += btn(`Cambiar de clase${costoC ? ` (${MON}${fmt(costoC)})` : ' (gratis hasta Nv 10)'}`, 'ver-clases', {}, 'sec vv-full');
+  h += btn(`Cambiar de clase${costoC ? ` (${MON}${fmt(costoC)})` : ' (gratis hasta Nv 9)'}`, 'ver-clases', {}, 'sec vv-full');
   return h;
 }
 function htmlClases(y) {

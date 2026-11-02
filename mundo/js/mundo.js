@@ -14,29 +14,29 @@
 import * as THREE from 'three';
 import { esNocheDuendes, TEMPORADAS, temporadaDe, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=362';
-import { iniciarVentanas, talentoPreElegido, TAL_PRE_NIVEL } from './ventanas.js?v=362';
-import { TALENTOS, TALENTO_NIVEL } from '/mmo/js/data.js?v=362';   // meta del talento elegido a Nv 7 en la barra de XP
-import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel, DEBIL_EMO, statsJugador } from '/mmo/js/data.js?v=362';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
-import { diaFiesta, diasFiesta, TEMP_DIAS, premioDiaFiesta, esNochebuena } from '/mmo/js/data.js?v=362';   // tarea del dia de la fiesta en la caja de misiones
-import { NOVEDADES } from '/mmo/js/data.js?v=362';   // linea «Nuevo» de la tira diaria y aviso tras actualizar
-import { iniciarRegalo } from '/mmo/js/regalo.js?v=362';
-import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=362';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=362';
-import { crearMusica } from './musica.js?v=362';
-import { crearSonidos } from './sonidos.js?v=362';
-import { construirCueva } from './cueva.js?v=362';
-import { TAPA, transparentar } from './tapa.js?v=362';
-import { construirAbismo } from './abismo.js?v=362';
-import { crearParticulas } from './particulas.js?v=362';
-import { cargarKenney, piezasCasa } from './kenney.js?v=362';
-import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=362';
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=363';
+import { iniciarVentanas, talentoPreElegido, TAL_PRE_NIVEL } from './ventanas.js?v=363';
+import { TALENTOS, TALENTO_NIVEL } from '/mmo/js/data.js?v=363';   // meta del talento elegido a Nv 7 en la barra de XP
+import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel, DEBIL_EMO, statsJugador } from '/mmo/js/data.js?v=363';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
+import { diaFiesta, diasFiesta, TEMP_DIAS, premioDiaFiesta, esNochebuena } from '/mmo/js/data.js?v=363';   // tarea del dia de la fiesta en la caja de misiones
+import { NOVEDADES } from '/mmo/js/data.js?v=363';   // linea «Nuevo» de la tira diaria y aviso tras actualizar
+import { iniciarRegalo } from '/mmo/js/regalo.js?v=363';
+import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=363';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=363';
+import { crearMusica } from './musica.js?v=363';
+import { crearSonidos } from './sonidos.js?v=363';
+import { construirCueva } from './cueva.js?v=363';
+import { TAPA, transparentar } from './tapa.js?v=363';
+import { construirAbismo } from './abismo.js?v=363';
+import { crearParticulas } from './particulas.js?v=363';
+import { cargarKenney, piezasCasa } from './kenney.js?v=363';
+import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=363';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=362';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, esNoche, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=362';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=362';
-import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=362';
-import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe } from './lore.js?v=362';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=363';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, esNoche, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=363';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=363';
+import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=363';
+import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe } from './lore.js?v=363';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -548,10 +548,12 @@ function ambiente(z) {
   if (nocheBonoAnt !== null && bonoNoche !== nocheBonoAnt && !fijo && !avisoTapado()) aviso(bonoNoche ? '🌙 Cae la noche: +10% de experiencia hasta el amanecer' : '☀ Amanece: termina el +10% de experiencia nocturna', 'ok');
   nocheBonoAnt = bonoNoche;
   const hh = Math.floor(h), mm = Math.floor((h - hh) * 60);
-  const txt = (bonoNoche ? (chico ? '🌙+10% ' : '🌙 ') : nocheK > 0.5 ? '🌙 ' : '☀ ') + String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0') + (bonoNoche && !chico ? ' +10% XP' : '') + (NOMBRE_CLIMA[cl] ? ' · ' + NOMBRE_CLIMA[cl] : '')
-    + (chico   // minimapa de 72-110 px: solo la cifra
-      ? (enLinea3 > 1 ? ' · 👥 ' + enLinea3 : '')
-      : (enLinea3 > 1 ? ' · 👥 ' + enLinea3 + ' en línea' : '') + (hoy3 > enLinea3 ? ' · ' + hoy3 + ' hoy' : ''));
+  const hora3 = String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0'), clima3 = NOMBRE_CLIMA[cl] ? ' · ' + NOMBRE_CLIMA[cl] : '';
+  // Minimapa de 72-110 px en una sola linea con "…": primero la hora y los jugadores; el icono y el clima al final (los corta el "…")
+  const txt = chico
+    ? hora3 + (enLinea3 > 1 ? ' · 👥 ' + enLinea3 : '') + ' · ' + (bonoNoche ? '🌙+10%' : nocheK > 0.5 ? '🌙' : '☀') + clima3
+    : (bonoNoche ? '🌙 ' : nocheK > 0.5 ? '🌙 ' : '☀ ') + hora3 + (bonoNoche ? ' +10% XP' : '') + clima3
+      + (enLinea3 > 1 ? ' · 👥 ' + enLinea3 + ' en línea' : '') + (hoy3 > enLinea3 ? ' · ' + hoy3 + ' hoy' : '');
   if ($('mini-r')._h !== txt) { $('mini-r').textContent = txt; $('mini-r')._h = txt; }
 }
 // Cae la lluvia (o la nieve): cada segmento baja y vuelve arriba al salir.
@@ -2026,7 +2028,7 @@ function recibir(m) {
   switch (m.t) {
     case 'pong': {
       const d = Date.now() - (+m.ts || 0);
-      if (m.ts && d >= 0 && d <= 3000) { rttMs = rttMs == null ? d : 0.7 * rttMs + 0.3 * d; pintarSenal(); }
+      if (m.ts && d >= 0 && d < 30000) { if (d > 3000) rttMs = Math.max(rttMs || 0, d); else rttMs = rttMs == null || rttMs > 3000 ? d : 0.7 * rttMs + 0.3 * d; pintarSenal(); }   // 3G muy mala: punto rojo, no «Midiendo…» eterno
       return;
     }
     case 'bienvenido':
@@ -2059,7 +2061,7 @@ function recibir(m) {
       // Al nuevo se le da la bienvenida cuando ya eligio clase (antes quedaba detras de esa ventana).
       if (m.nuevo) { const bienv = () => { if (!yo || !yo.clase || avisoTapado()) return setTimeout(bienv, 1500); aviso('¡Bienvenido, ' + yo.nombre + '! Caza 5 goblins: sigue la luz amarilla ⬆', 'ok', 1); }; bienv(); }
       // Se recargo solo por una version nueva (revisarVersion): una vez, lo que gana quien vuelve.
-      setTimeout(() => { try { if (sessionStorage.getItem('dq_recargaNov') !== '1') return; sessionStorage.removeItem('dq_recargaNov'); if (!yo || (yo.nivel || 1) < 3 || Date.now() - (+sessionStorage.getItem('dq_recargaVer') || 0) >= 120000) return; const nv = NOVEDADES[0]; if (nv) aviso('✨ ¡Juego actualizado! ' + String(nv.gancho || nv.items[0]).slice(0, 90), 'ok'); } catch (e) {} }, 4000);
+      setTimeout(() => { try { if (sessionStorage.getItem('dq_recargaNov') !== '1') return; sessionStorage.removeItem('dq_recargaNov'); if (!yo || (yo.nivel || 1) < 3 || Date.now() - (+sessionStorage.getItem('dq_recargaVer') || 0) >= 120000) return; const nv = NOVEDADES[0]; if (nv) { aviso('✨ ¡Juego actualizado! ' + textoNov(nv, 90), 'ok'); try { localStorage.setItem('dq_3d_nov', String(nv.n)); } catch (e) {} } } catch (e) {} }, 4000);
       break;
     case 'm3':
       P.x = m.x; P.z = m.z; P.y = alturaEn(P.x, P.z); P.vx = P.vz = P.vy = 0; P.corrX = P.corrZ = 0;
@@ -2608,7 +2610,7 @@ async function agregarMon(d) {
   const esc3 = d.mu ? 2.4 : d.ra ? 1.35 : d.j ? 1.15 : 1;
   // Élite raro: el mismo aura de suelo que los jefes, en su color (algo mas ancha).
   o.fig = figuraModelo(() => { const m = crearMonstruo(d.k); if (d.ra && !m.jefe && m._aura) { m._aura(d.ti || '#ffd84a'); const me = m.mallas[m.mallas.length - 1]; if (me) { me.scale.multiplyScalar(1.15); me.userData.reposo[2] = me.scale.clone(); } } return m; }, esc3) || await figuraHoja(def.hoja, st.alto * esc3);
-  if (!mons.has(d.id) && o.fig) { o.fig.quitar(); o.fig = null; }
+  if (mons.get(d.id) !== o) { if (o.fig) { o.fig.quitar(); o.fig = null; } return; }   // llegó otro con el mismo id mientras cargaba: este se descarta sin dejar fantasma
   if (d.noct && mons.get(d.id) === o) { tenirNocturno(o); avisoNocturno(); }
 }
 // Monstruo nocturno (servidor: 1 de cada 10 comunes de noche, +25 % de oro): mismo modelo
@@ -2714,7 +2716,7 @@ function ataqueVisto(m) {
   if (m.d > 0 && Math.hypot(o.x - P.x, o.z - P.z) < 45) FX.golpe(o.x, (o.y || alturaEn(o.x, o.z)) + 1.1, o.z, { critico: m.c, color: m.c ? '#ffd34d' : m.rayo ? '#7dd3fc' : '#fff1c1' });
   // 3.er golpe del combo (el servidor lo marca con f): numero grande naranja con '!'.
   const fuerte = !!(m.f && m.p === miId && m.d > 0 && !m.c);
-  if (m.p === miId || o.id === objetivo) {
+  if (m.p === miId || (o.id === objetivo && !(o.fig && o.fig._cerca === false))) {   // un monstruo oculto por el tope no suelta números ajenos
     // Golpe a su debilidad (servidor w): ¡DÉBIL! verde-amarillo, 30 % más grande y un clic agudo.
     if (m.w && m.d > 0) { numero(o.x + (Math.random() - 0.5), alturaEn(o.x, o.z) + 2.2, o.z, '¡DÉBIL! ' + m.d, '#c8ff3a', m.c || fuerte ? 29 : 21); if (m.p === miId) SON.tocar('clic', { vol: 0.9 }); }
     else if (fuerte) numero(o.x + (Math.random() - 0.5), alturaEn(o.x, o.z) + 2.2, o.z, m.d + '!', '#ffb347', true);
@@ -2806,7 +2808,7 @@ function golpeJugador(m) {
   const q = m.p === miId ? P : otros.get(m.p);
   if (!q) return;
   if (m.d > 0 && q === P) musica.combate(true);   // musica de pelea mientras te pegan
-  if (m.d > 0) { let verNum = q === P; if (!verNum) { try { verNum = enGrupo(m.p); } catch (e) {} } if (verNum) numero(q.x, (q.y || alturaEn(q.x, q.z)) + 2.3, q.z, '-' + m.d, '#ff5a6a'); FX.emitir(q.x, (q.y || alturaEn(q.x, q.z)) + 1.1, q.z, { n: 8, color: '#ff4d5e', vel: 3.5, vida: 0.4 }); }
+  if (m.d > 0) { let verNum = q === P; if (!verNum) { try { verNum = m.p === dueloCon || m.p === objetivoP || enGrupo(m.p); } catch (e) {} } if (verNum) numero(q.x, (q.y || alturaEn(q.x, q.z)) + 2.3, q.z, '-' + m.d, '#ff5a6a'); FX.emitir(q.x, (q.y || alturaEn(q.x, q.z)) + 1.1, q.z, { n: 8, color: '#ff4d5e', vel: 3.5, vida: 0.4 }); }
   if (m.esq && m.p === miId) numero(P.x, P.y + 2.3, P.z, 'Esquiva', '#7dd3fc');
   // Sin objetivo, quien te pega pasa a serlo: su marco dice quien es y el
   // ataque (1 o Z) y las habilidades van contra el.
@@ -3656,7 +3658,7 @@ function pintarAviso(txt, tipo, prio) {
     // Lleno: sale el de menor prioridad (el mas viejo si empatan); si todos pesan mas, este espera.
     let v = null; for (const c of avisos.children) if (!v || (c._prio || 2) > (v._prio || 2)) v = c;
     if (v && (v._prio || 2) >= prio) v.remove();
-    else { colaAvisos.unshift({ txt, tipo, prio, vence: Date.now() + 30000 }); return; }
+    else { if (!colaAvisos.some(a => a.txt === txt)) colaAvisos.unshift({ txt, tipo, prio, vence: Date.now() + 30000 }); while (colaAvisos.length > 6) colaAvisos.pop(); return; }
   }
   avisoVisto.set(txt, Date.now());
   if (avisoVisto.size > 60) avisoVisto.delete(avisoVisto.keys().next().value);
@@ -3672,7 +3674,7 @@ setInterval(() => {
   if (!colaAvisos.length || avisoTapado() || avisos.children.length >= (COMPACTO ? 2 : 4)) return;
   let tutoTemprano = false; try { tutoTemprano = COMPACTO && yo && yo.clase && tuto3.i >= 0 && tuto3.i < TUTO3.length && yo.nivel <= 6; } catch (e) {}
   if (tutoTemprano) return;
-  const a = colaAvisos.shift(); avisoVisto.delete(a.txt); pintarAviso(a.txt, a.tipo, a.prio);
+  const a = colaAvisos.shift(); if (ahora - (avisoVisto.get(a.txt) || 0) < 8000) return; avisoVisto.delete(a.txt); pintarAviso(a.txt, a.tipo, a.prio);
 }, 900);
 // Lo que no debe tapar el tutorial (leyenda, vestuario, promos) espera a la mision 1
 // entregada; si no la entrega, sale igual desde Nv 4 o a los 6 min para no quedarse sin ver.
@@ -4988,8 +4990,11 @@ function irANavegador() {
   if (!soyInvitado) return;
   const cod = tokInvitado();
   if (ANDROID_IAB) {
-    const fb = encodeURIComponent(location.origin + '/mundo/');
-    location.href = 'intent://' + location.host + '/mundo/#r=' + cod + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + fb + ';end';
+    // Conserva ?fbclid/utm_* (medicion de Meta) y el modo anuncio (ad=1, lo lee js/origen.js) al pasar a Chrome.
+    let q = location.search || '';
+    try { if (!q && modoAnuncio()) q = '?ad=1'; else if (q && modoAnuncio() && !/[?&]ad=/.test(q)) q += '&ad=1'; } catch (e) {}
+    const fb = encodeURIComponent(location.origin + '/mundo/' + q);
+    location.href = 'intent://' + location.host + '/mundo/' + q + '#r=' + cod + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + fb + ';end';
     return;
   }
   // iOS: el codigo va en el hash; «Abrir en el navegador» de Facebook abre Safari con #r= y /mundo/ lo adopta.
@@ -5791,6 +5796,8 @@ if (TG && TG.BackButton) try {
   /* Sin alerta de cierre: el progreso va al servidor y el doble toque de Atrás ya evita salidas por error */
   try { if (TGV('6.2') && TG.disableClosingConfirmation) TG.disableClosingConfirmation(); } catch (e) {}
   TG.BackButton.onClick(() => {
+    if (document.querySelector('#dq-regalo.on')) { try { regalo3.cerrar(); } catch (e) {} return; }
+    if (document.querySelector('#dq-avtg.on')) { try { avisoTg3.cerrarAtras(); } catch (e) {} return; }
     if (cineEst) { salirCine(); return; }
     actualizarPila();
     if (atrasVentana()) return revisarAtrasTg();
@@ -7246,6 +7253,7 @@ function etiquetas(t) {
   const usados = [];
   for (const o of lista) {
     if (o.muereT) { if (o.lbl && o.lbl.style.display !== 'none') o.lbl.style.display = 'none'; continue; }
+    if (o.fig && o.fig._cerca === false && o.id !== objetivo) { if (o.lbl && o.lbl.style.display !== 'none') o.lbl.style.display = 'none'; continue; }
     const def = MONSTRUOS[o.k], el = o.id === objetivo, mis = o.id === misId;
     const alto = o.fig ? altoFig(o.fig) : 2;
     const herido = o.hp < o.mx || el;
@@ -7952,7 +7960,7 @@ function topeMons() {
   const ls = [];
   for (const o of mons.values()) if (o.fig && o.fig.tipo === 'modelo') {   // los sprites 2D no usan _cerca: no gastan cupo
     const dj = MONSTRUOS[o.k];
-    if (o.id === objetivo || o.id === misId || o.j || o.mu || o.ra || (dj && (dj.jefe || dj.mundial || (dj.dispara && o.st === 2)))) o.fig._cerca = true;
+    if (o.id === objetivo || o.id === misId || o.j || o.mu || o.ra || o.iv || (dj && (dj.jefe || dj.mundial || (dj.dispara && o.st === 2)))) o.fig._cerca = true;
     else ls.push(o);
   }
   if (ls.length <= MAX_MON) { for (const o of ls) o.fig._cerca = true; return; }

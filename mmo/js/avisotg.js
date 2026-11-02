@@ -66,7 +66,7 @@ export function iniciarAvisoTg(H) {
     const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
     raiz = document.createElement('div'); raiz.id = 'dq-avtg';
     raiz.setAttribute('role', 'dialog'); raiz.setAttribute('aria-modal', 'true'); raiz.setAttribute('aria-labelledby', 'dq-avtg-t');
-    raiz.addEventListener('click', e => { if (e.target === raiz) { if (permiso) { ponerEscNo(); try { H.mandar({ t: 'tgEscribirNo' }); } catch (er) {} } cerrar(); } });
+    raiz.addEventListener('click', e => { if (e.target === raiz) { if (permiso) ponerEscNo(); cerrar(); } });
     document.body.appendChild(raiz);
     return raiz;
   }
@@ -112,6 +112,8 @@ export function iniciarAvisoTg(H) {
   }
 
   return {
+    // Atrás de Telegram: cierra la tarjeta. Si era la del permiso cuenta como «Ahora no» local (7 dias), sin avisar al servidor.
+    cerrarAtras() { if (permiso) ponerEscNo(); cerrar(); },
     // Jugador dentro de Telegram: tarjeta previa. Solo «Sí, avísame» abre la ventana
     // de permiso de Telegram; si acepta, se avisa al servidor ({t:'tgEscribir'}).
     // No se envia ningun mensaje en ese momento. «Ahora no» (o tocar fuera) = 7 dias.
@@ -122,7 +124,7 @@ export function iniciarAvisoTg(H) {
       const r = montar();
       r.innerHTML = `<div class="av-caja"><h2 id="dq-avtg-t">🔔 ¿Te avisamos por Telegram?</h2>
         <p class="av-p">Te escribimos <b>como mucho 1 vez al día</b> si tu racha está por perderse o tienes premios sin cobrar.</p>
-        <div class="av-oro">🎁 +300 oro la primera vez que lo activas</div>
+        <div class="av-oro">🎁 +300 oro si es tu primera vez</div>
         <div class="av-bots"><button type="button" class="av-si" data-a="si">Sí, avísame</button><button type="button" data-a="no">Ahora no</button></div>
         <div class="av-chico">Lo apagas cuando quieras con /avisos off en el bot.</div></div>`;
       r.querySelector('[data-a="si"]').addEventListener('click', () => {

@@ -99,6 +99,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v360 | Estudio 10: peso por arma, noche con XP y nocturnos, cofres con un toque, épica en la primera cueva, talento a Nv 7, señal | **B** |
 | v361 | Ronda 30: menos ventanas al empezar, fin de día tras el jefe, señal honesta, cueva justa, cofres que revelan, anti-farmeo | **B** |
 | v362 | Estudio 11 (pulido): números agrupados, botín en una línea, novedades al entrar, amenaza sin sonido, carga con %, menú con etiquetas | **B** |
+| v363 | QA final de la noche: Atrás de Telegram, consentimiento estable, minimapa y menú legibles, anuncio sin cripto, paso a Chrome con medición | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

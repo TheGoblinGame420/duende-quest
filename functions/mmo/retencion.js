@@ -1028,10 +1028,10 @@ export const Retencion = {
     // Novedad del juego (NOVEDADES[0] de data.js): la de menor prioridad, solo
     // si queda sitio (menos de 3 tipos) y nunca sola; una vez por novedad.
     const nv = NOVEDADES && NOVEDADES[0];
-    if (nv && lineas.length && new Set(lineas.map(x => x.tipo)).size < 3 && nv.n > ((info && info.novVisto) || 0)) {
+    if (nv && lineas.length && new Set(lineas.map(x => x.tipo)).size < 3 && nv.n > ((info && info.novVisto) || 0) && (c.en3d || !nv.solo3d)) {
       const tn = String(nv.gancho || (nv.items && nv.items[0]) || '').replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '').replace(/\s+/g, ' ').trim();
       const tn90 = tn.length > 90 ? tn.slice(0, 89).replace(/\s+\S*$/, '') + '…' : tn;
-      if (tn90) add('nov', '✨ Novedad: ' + tn90);
+      if (tn90 && !/\bSOL\b|\$DUENDE|\bTON\b|mTON|wallet|solana|phantom|solflare|pago|precio|yape/i.test(tn)) add('nov', '✨ Novedad: ' + tn90);
     }
     const vistos = new Set();
     const top = lineas.map((x, i) => ({ ...x, i })).sort((a, b) => orden(a.tipo) - orden(b.tipo) || a.i - b.i).filter(x => !vistos.has(x.tipo) && vistos.add(x.tipo)).slice(0, 3);
@@ -1121,7 +1121,7 @@ export const Retencion = {
     if (typeof uid !== 'string' || !/^tg:\d{1,15}$/.test(uid)) return;
     const idx = await this.retIdx();
     const e = idx[uid] || (idx[uid] = { v: 0 });
-    if (e.off) return;
+    if (e.off || e.si) return;   // ya acepto: el «Ahora no» de la tarjeta no lo silencia (para eso esta /avisos off)
     e.off = 1; e.offTarjeta = 1;
     await this.retGuardarIdx();
   },
@@ -1160,7 +1160,13 @@ export const Retencion = {
     if (c && c.uid === uid && !s.cerrado && !c.avTgOro && !(this.uidsPrueba && this.uidsPrueba.has(uid))) {
       c.avTgOro = 1; s.sucio = true;
       let yaChat = true; try { yaChat = !!(await this.state.storage.get('avtg:' + uid.slice(3))); } catch (er) {}
-      if (yaChat) return this.permisoEscribirTg(uid, null);
+      if (yaChat) {
+        // Este chat ya cobro el premio: se confirma sin oro (la tarjeta no queda sin respuesta).
+        const r = await this.permisoEscribirTg(uid, null);
+        // Solo si de verdad quedan activos (un /avisos off del bot sigue mandando).
+        try { const e2 = (await this.retIdx())[uid] || {}; if (!e2.off && !s.cerrado) this.enviar(s, { t: 'avisoTgOk', oro: 0 }); } catch (er) {}
+        return r;
+      }
       c.oro = (c.oro || 0) + AVISO_TG_ORO;
       try { await this.state.storage.put('avtg:' + uid.slice(3), uid); } catch (er) {}
       try { await this.guardar(s); } catch (er) {}

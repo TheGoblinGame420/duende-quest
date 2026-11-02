@@ -516,12 +516,21 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 362;
+export const VERSION = 363;
 
 // gancho (opcional): la frase que ve en ORIGINS quien vuelve (tira diaria y aviso tras actualizar);
 // sin gancho se usa el primer item. Siempre lo que GANA un jugador que vuelve, nunca un arreglo para novatos ni algo tecnico.
+// solo3d: true en los parches que solo cambian ORIGINS (CLASSIC no abre la ventana y el aviso de Telegram solo va a quien juega en 3D).
 export const NOVEDADES = [
-  { n: 130, fecha: '2 nov 2026', items: [
+  { n: 131, fecha: '2 nov 2026', items: [
+    'En Telegram, el botón Atrás pide dos toques para salir al menú y también cierra las tarjetas de compra y de avisos.',
+    'Si ya activaste los avisos de Telegram, tocar «Ahora no» ya no los apaga (para eso está /avisos off).',
+    'En el celular el minimapa ya no queda tapado y el menú ⋯ muestra el nombre de cada botón.',
+    'En duelos y contra el jugador que marcaste ves el daño que le haces; se acabaron los monstruos fantasma.',
+    'Si pasas de Facebook o Instagram a Chrome, tu partida sigue igual. Con señal muy débil el punto se pone rojo.',
+    'La portada desde un anuncio solo habla del juego; el aviso de medición ya no tapa JUGAR GRATIS.',
+  ] },
+  { n: 130, fecha: '2 nov 2026', solo3d: true, gancho: 'Tus golpes seguidos ahora suman un solo número grande que salta al pegar.', items: [
     'Los golpes seguidos a un monstruo se suman en un solo número que salta, las cifras grandes salen cortas (1,2k) y los críticos tienen prioridad.',
     'Al vencer a un monstruo, XP, oro, chicha y objeto de temporada salen juntos en una línea; ya no ves los números de daño de desconocidos.',
     'Al entrar cada día verás lo nuevo del juego en la tira de tu racha.',
@@ -1333,7 +1342,7 @@ export const MASCOTAS = {
 };
 export const velMontura = id => (MONTURAS[id] ? MONTURAS[id].vel : 1);
 
-// Cambiar de clase: gratis hasta Nv 10, luego cuesta oro (asi se puede
+// Cambiar de clase: gratis hasta Nv 9, luego cuesta oro (asi se puede
 // probar sin miedo, pero no se cambia por capricho a nivel alto).
 export const costoCambioClase = nivel => (nivel < 10 ? 0 : 200 * nivel);
 // Reparar el equipo al revivir en el nivel maximo: alli ya no hay XP que

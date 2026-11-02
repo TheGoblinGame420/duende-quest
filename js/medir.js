@@ -62,7 +62,7 @@
     d.id = 'dq-medir';
     d.setAttribute('role', 'dialog');
     d.setAttribute('aria-label', 'Permiso de medición');
-    d.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:2147483000;width:calc(100% - 24px);max-width:460px;box-sizing:border-box;background:#1b1530;color:#f2ecff;border:1px solid #6d5bb8;border-radius:12px;padding:12px 14px;font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.45)';
+    d.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);' + (/^\/jugar(\/|$)/.test(location.pathname) ? 'top:calc(12px + env(safe-area-inset-top,0px))' : 'bottom:calc(12px + env(safe-area-inset-bottom,0px))') + ';z-index:2147483000;width:calc(100% - 24px);max-width:460px;box-sizing:border-box;background:#1b1530;color:#f2ecff;border:1px solid #6d5bb8;border-radius:12px;padding:12px 14px;font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.45)';
     d.innerHTML = '<div style="margin-bottom:10px">¿Nos ayudas a saber si nuestros anuncios funcionan? Con tu permiso usamos el píxel de Meta (Facebook/Instagram) y avisamos a Meta cuando juegas o compras desde un anuncio. Nunca enviamos tu nombre, correo ni teléfono. <a href="/privacidad.html#medicion" target="_blank" rel="noopener" style="color:#c9b8ff">Más info</a></div>'
       + '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">'
       + '<button type="button" data-v="0" style="min-height:40px;padding:8px 14px;border-radius:8px;border:1px solid #6d5bb8;background:transparent;color:#f2ecff;font:inherit;cursor:pointer">No, gracias</button>'

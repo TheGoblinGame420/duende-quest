@@ -3638,3 +3638,16 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Fundido de entrada, título sin salto de fuente, pulido CSS móvil (hover, cifras fijas, letra mínima, texto grande por defecto en Android comunes).
 - Pestañas que recuerdan scroll, vibran y muestran que hay más. «!» ámbar de amenaza en el borde. Iconos del HUD compatibles y etiquetas al abrir ⋯. Avisos con salida animada; 🔮 para hechizos enemigos. Carga con porcentaje y etapas medidas; reacomodo al girar.
 - Arnés 908 bien.
+
+### QA final de la noche (2-nov-2026, `?v=363`)
+
+- 8 evaluadores → 35 problemas → 10 arreglos pequeños.
+- `irANavegador` conserva la query (fbclid/utm) y añade `ad=1` en modo anuncio al pasar a Chrome.
+- Atrás de Telegram: doble toque en CLASSIC, cierre de #dq-regalo/#dq-avtg en ORIGINS y CLASSIC (`regalo.cerrar`, `avisoTg.cerrarAtras`).
+- Consentimiento: `tarjetaTgNo` no revoca `e.si`; tocar fuera no manda tgEscribirNo; `avisoTgOk` con oro 0 si ya cobró; texto «si es tu primera vez».
+- NOVEDADES 1.130 con gancho, solo ORIGINS; clase gratis hasta Nv 9.
+- Móvil: minimapa sin taparse, etiquetas legibles en ⋯, huecos que dejan pasar toques, esquivar en ayuda de PC.
+- Portada en modo anuncio sin restos cripto; /jugar/ con consentimiento arriba, sin «Tu duende te espera» falso, invitado débil a CLASSIC.
+- Combate 3D: daño visible en duelos/PvP marcado, sin monstruos fantasma ni etiquetas de ocultos.
+- Señal roja con 3G mala; avisos sin ráfagas.
+- Arnés 908 bien (2 de 2).

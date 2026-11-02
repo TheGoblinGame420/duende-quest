@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=362"></script>
+<script src="/js/origen.js?v=363"></script>
 <!-- Modo anuncio: quien llega de un anuncio (fbclid / utm_*) ve la web sin la parte cripto
      (wallet, precio, token, donaciones). Se recuerda en la pestaña; el resto de visitas no cambia. -->
 <script>(function(){var a=/[?&](fbclid|utm_[a-z]+)=/i.test(location.search);try{if(a)sessionStorage.setItem('dq_anuncio','1');else a=sessionStorage.getItem('dq_anuncio')==='1';}catch(e){}if(a)document.documentElement.classList.add('anuncio');})()</script>
-<style>html.anuncio #wallet-connect-btn,html.anuncio .live-price-pill,html.anuncio .solo-cripto,html.anuncio #btn-buy-main,html.anuncio #trust,html.anuncio #tokenomics,html.anuncio #exchange,html.anuncio #donate,html.anuncio #roadmap{display:none!important;}</style>
+<style>html.anuncio #wallet-connect-btn,html.anuncio .live-price-pill,html.anuncio .solo-cripto,html.anuncio #btn-buy-main,html.anuncio #trust,html.anuncio #tokenomics,html.anuncio #exchange,html.anuncio #donate,html.anuncio #roadmap,html.anuncio .soc.pump{display:none!important;}</style>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Duende Quest: MMORPG gratis en 3D y 2D, en el navegador y Telegram</title>
 <meta name="description" content="MMORPG gratis sin descargas: $DUENDE ORIGINS, mundo abierto 3D con alas y PvP de facciones, y $DUENDE CLASSIC, MMO 2D en pixel art. Mismo duende. Hecho en Perú.">
@@ -32,7 +32,7 @@
 <meta name="twitter:image:alt" content="Duende Quest Online, el MMORPG de los duendes">
 <meta name="theme-color" content="#0b0f17">
 <link rel="manifest" href="/inicio/manifest.json">
-<script src="/js/pwa.js?v=362" defer></script>
+<script src="/js/pwa.js?v=363" defer></script>
 <link rel="icon" type="image/png" href="assets/ui/coin.png">
 <script type="application/ld+json">
 {
@@ -2184,7 +2184,14 @@ document.addEventListener('DOMContentLoaded', loadLiveStats);
 // y metian prisa falsa). Modo anuncio: los botones de jugar llevan a /jugar/ con el utm.
 if (document.documentElement.classList.contains('anuncio')) document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('a[href="/inicio/"],a[href="/jugar/"]').forEach(function (a) { a.href = '/jugar/' + location.search; });
-  try { document.querySelectorAll('.hero-h1-sub,.juego h3').forEach(function(e){e.innerHTML=e.innerHTML.replace(/\$DUENDE /g,'');}); } catch (e) {}
+  // Sin restos cripto en lo visible: se recorren solo los nodos de texto (no innerHTML) para no romper enlaces ni listeners.
+  try { document.querySelectorAll('.hero-h1-sub,.juego h3,.una-skin,.vivo-skins,#que-es .btn-sec,.px-sub,#telegram .about-card,#nfts li,#nfts p,#nft-store p,.faq-r').forEach(function (e) {
+    var w = document.createTreeWalker(e, NodeFilter.SHOW_TEXT, null), n;
+    while ((n = w.nextNode())) {
+      var t = n.nodeValue.replace(/ y el token \$DUENDE/g, '').replace(/, o pagando con descuento en \$DUENDE/g, '').replace(/, SOL o \$DUENDE/g, '').replace(/ · Wallet TON/g, '').replace(/ o (con tu wallet )?TON/g, '').replace(/\$DUENDE /g, '');
+      if (t !== n.nodeValue) n.nodeValue = t;
+    }
+  }); } catch (e) {}
 });
 </script>
 <!-- Solana web3.js -->
@@ -2192,9 +2199,9 @@ if (document.documentElement.classList.contains('anuncio')) document.addEventLis
 <!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <!-- Config (keys + DUENDE_CFG) -->
-<script src="js/config.js?v=362"></script>
+<script src="js/config.js?v=363"></script>
 <!-- Módulos en orden de dependencia -->
-<script src="js/auth-manager.js?v=362"></script>
+<script src="js/auth-manager.js?v=363"></script>
 <script>
 // Ranking real de la landing (antes: 5 nombres inventados con un badge
 // "LIVE" que no estaba conectado a nada). auth-manager.js registra su
@@ -2259,7 +2266,7 @@ window.addEventListener('load', cargarRankingLanding);
   estado(); setInterval(estado, 60000);
 })();
 </script>
-<script src="js/price-feed.js?v=362"></script>
+<script src="js/price-feed.js?v=363"></script>
 <script src="js/wallet-manager.js"></script>
 <script src="js/donation-manager.js"></script>
 <script>
