@@ -869,11 +869,15 @@ export class MmoWorld {
     s.st = this.stats(c);
     // Se guarda la vida y si estaba muerto: si no, cerrar la pestaña justo
     // antes de morir te devolvia con la vida llena en el mismo sitio.
+    let darBend = false;   // cerro en la pantalla de muerte con la Bendicion prometida
     if (c.muerto) {
       // Igual que revivir(): hasta Nv 10 sin perder XP y en la entrada de la zona.
       const novato = c.nivel < 10 && MAPAS[c.mapa] && MAPAS[c.mapa].zona && c.mapa !== 'coliseo';
-      if (c.nivel >= 10 && !c.muertoPvP) c.xp = Math.max(0, c.xp - Math.round(xpParaSubir(c.nivel) * 0.05));
+      // Primera caida o espiral prometida en la pantalla de muerte (c.espiralP, ver morir): se respeta al volver.
+      if (c.nivel >= 10 && !c.muertoPvP && !c.espiralP) c.xp = Math.max(0, c.xp - Math.round(xpParaSubir(c.nivel) * 0.05));
       delete c.muertoPvP;
+      darBend = !!c.espiralP; delete c.espiralP;
+      if (darBend) c.bendT = Date.now() + 30 * 60000;
       c.oro -= Math.min(c.oro, costoReparacion(c.nivel));   // cerrar estando muerto no se salta la reparacion
       c.muerto = false;
       if (novato) c.x = 150; else { c.mapa = 'pueblo'; c.x = MAPAS.pueblo.spawn; }
@@ -921,6 +925,7 @@ export class MmoWorld {
 
     c.en3d = m.modo === '3d';   // las tareas que solo existen en CLASSIC (expediciones, Torre) no le tocan en ORIGINS
     this.enviar(s, { t: 'bienvenido', id: s.id, yo: this.datosPropios(s), nuevo, heredado, regaladas, on: this.contarOnline(), ver: VERSION_JUEGO });
+    if (darBend) { try { this.ponerAura(s, 'bendicion', 3 * 60000); this.enviar(s, { t: 'toast', m: '✨ Bendición del Duende: 3 min recibiendo un 25% menos de daño.' + ((c.nivel || 1) >= 10 ? ' Esta vez no perdiste XP.' : '') }); } catch (e) {} }
     // Veteranos con talentos al tope viejo (5): avisa del reinicio gratis (una vez por sesion).
     if (!c.talR8 && c.nivel >= 10 && Object.values(c.tal || {}).some(v => v >= 5)) setTimeout(() => { if (!s.cerrado && s.c === c && !c.talR8) this.enviar(s, { t: 'toast', m: '🌟 Los talentos ahora llegan a 8 rangos. Tu primer reinicio es GRATIS: Libro → Talentos.', ok: true }); }, 9000);
     // Las skins pagadas que llegan despues (Supabase lento o sin cache).
@@ -2872,6 +2877,15 @@ export class MmoWorld {
         c.oro += pr;
         this.enviar(s, { t: 'toast', m: `📖 Bestiario: ${n} × ${MONSTRUOS[o.k].nombre} · +${pr.toLocaleString('es', { useGrouping: 'always' })} oro`, ok: true });
       }
+      // Debilidad sin elemento: a las 25 cazas se aprende igual (mismo oro que debil3d).
+      if (s.m3 && n >= BESTIARIO_HITOS[0] && MONSTRUOS[o.k].debil && !(c.bestD && c.bestD[o.k])) {   // >= para veteranos que ya pasaron 25; solo ORIGINS (CLASSIC no usa debilidades)
+        c.bestD = c.bestD || {}; c.bestD[o.k] = 1;
+        const prD = Math.max(10, Math.round(premioBestiario(MONSTRUOS[o.k].nivel || 1, 0) * 0.5));
+        c.oro += prD;
+        s.sucio = true;
+        this.enviar(s, { t: 'toast', m: `🔎 Tras ${n} cazas aprendiste: ${MONSTRUOS[o.k].nombre} es débil a ${MONSTRUOS[o.k].debil} · +${prD.toLocaleString('es', { useGrouping: 'always' })} oro`, ok: true });
+        this.yoLuego(s, true);
+      }
       // Primera caza de un tipo: se celebra con un poco de oro.
       if (n === 1) {
         const todosB = new Set(Object.values(MAPAS).flatMap(m => m.monstruos || []));
@@ -3052,6 +3066,7 @@ export class MmoWorld {
       s.espiral = s.muertesT.length >= 3 && ahora > (c.bendT || 0);
       // Primera caida (ORIGINS y CLASSIC, antes de Nv 10): siempre revive bendecido.
       if (!c.caida1 && c.nivel < 10) { s.espiral = true; c.caida1 = 1; s.sucio = true; primera = true; }
+      if (s.espiral) c.espiralP = 1;   // se guarda: si cierra muerto, al volver igual revive sin perder XP y bendecido
     }
     // Lo que costara revivir (lo mismo que descuentan revivir y revivir3d).
     const xpPerdida = c.nivel < 10 || s.espiral || (s.m3 && pvp) ? 0 : Math.min(c.xp || 0, Math.round(xpParaSubir(c.nivel) * 0.05));
@@ -3070,7 +3085,7 @@ export class MmoWorld {
     // (antes: al pueblo, a 80-100 m, y la espiral de muertes echaba al novato).
     const novato = c.nivel < 10;
     // Espiral de muertes o primera caida (ver morir): no se pierde XP y se revive bendecido.
-    const espiral = !!s.espiral; s.espiral = false;
+    const espiral = !!s.espiral; s.espiral = false; delete c.espiralP;
     if (espiral) { c.bendT = Date.now() + 30 * 60000; s.muertesT = []; }
     if (!novato && !espiral) c.xp = Math.max(0, c.xp - Math.round(xpParaSubir(c.nivel) * 0.05));
     // En el nivel maximo (sin XP que perder) se paga la reparacion del equipo.
@@ -3086,7 +3101,7 @@ export class MmoWorld {
       else this.entrarMapa(s, 'pueblo', MAPAS.pueblo.spawn);
     }
     this.reponerElixires(s);
-    if (espiral) { this.ponerAura(s, 'bendicion', 3 * 60000); this.enviar(s, { t: 'toast', m: '✨ Bendición del Duende: 3 min recibiendo un 25% menos de daño. Esta vez no perdiste XP.' }); }
+    if (espiral) { this.ponerAura(s, 'bendicion', 3 * 60000); this.enviar(s, { t: 'toast', m: '✨ Bendición del Duende: 3 min recibiendo un 25% menos de daño.' + ((c.nivel || 1) >= 10 ? ' Esta vez no perdiste XP.' : '') }); }
     this.actualizarYo(s);
     this.guardar(s);
   }
@@ -3424,7 +3439,8 @@ export class MmoWorld {
     if (!this.rcs || this.rcs.sem !== sem) this.rcs = { sem, l: {} };
     return this.rcs;
   }
-  anotarCuevaSem(s, seg, nvCueva) {
+  anotarCuevaSem(s, seg, nvCueva, gente) {
+    if ((gente | 0) > 1) return;   // el ranking es solo en solitario: un grupo no ocupa el #1 de cada clase
     if (!this.rcs || UIDS_PRUEBA.has(s.c.uid) || !(seg > 0) || s.c.nivel < 30) return;
     // Solo cuenta una Cueva de tu tramo: un Nv 60 que "carga" a un Nv 35 no le regala el primer puesto.
     if (!(nvCueva >= 30) || tramoCueva(nvCueva) !== tramoCueva(s.c.nivel)) return;

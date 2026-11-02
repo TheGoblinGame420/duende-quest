@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=356';
-import { iniciarRegalo } from './regalo.js?v=356';
-import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=356';
+} from './data.js?v=357';
+import { iniciarRegalo } from './regalo.js?v=357';
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=357';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -2601,7 +2601,7 @@ function limpiarRestos(t) { return t.replace(/\s*\(\s*\)/g, '').replace(/\(\s+/g
 // Notas que CLASSIC muestra: sin lo que es solo de ORIGINS (3D), salvo que nombre a CLASSIC.
 // En Telegram, sin lo que habla de SOL o wallets (sus reglas); en modo anuncio, sin nada cripto.
 function itemsNovClassic(nv) {
-  const solo3d = /ORIGINS|\b3D\b|Gran Invasión|Cueva de los Goblins|ESQUIVAR|pueblo es andino|gestos|golpe fuerte del combo|Hermandades abiertas|FASE 2|Furia|Corrientes de viento|corriente|tarjeta de botín|Libreta de pesca|Tirón perfecto|marca el camino|élite|Duende Ladr|📍|Pedir ayuda|cámara|faroles|Brillo de noche|respingo|retrato|Probar su|caja de misiones|TIRAR|ventanas automáticas|tiradores|Álbum|lbum de monstruos|Ayni|píldora|probar Mago|brillan en dorado|empieza con niebla|Prueba cualquier montura|💨/i;
+  const solo3d = /ORIGINS|\b3D\b|Gran Invasión|Cueva de los Goblins|ESQUIVAR|pueblo es andino|gestos|golpe fuerte del combo|Hermandades abiertas|FASE 2|Furia|Corrientes de viento|corriente|tarjeta de botín|Libreta de pesca|Tirón perfecto|marca el camino|élite|Duende Ladr|📍|Pedir ayuda|cámara|faroles|Brillo de noche|respingo|retrato|Probar su|caja de misiones|TIRAR|ventanas automáticas|tiradores|Álbum|lbum de monstruos|Ayni|píldora|probar Mago|brillan en dorado|empieza con niebla|Prueba cualquier montura|💨|Debilidad|DÉBIL|medalla|revancha|capítulos|recetario|recetas ocultas|dedo fantasma|pasa algo con el Capitán|ranking semanal de la Cueva/i;
   return (nv.items || []).filter(x => !(solo3d.test(x) && !/CLASSIC/.test(x)))
     .filter(x => modoAnuncio() ? !SIN_CRIPTO_RE.test(x) : (!TG || !(/\bSOL\b/.test(x) || /wallet|solana|phantom|solflare/i.test(x))));
 }

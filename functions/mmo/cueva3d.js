@@ -215,10 +215,12 @@ export const Cueva3D = {
       if (nvOk && completo && this.puntoPase) this.puntoPase(s, PASE.puntos.mazmorra);
       const previo = c.cuevaRecord || 0, nuevo = nvOk && (!previo || seg < previo);
       if (nuevo) c.cuevaRecord = seg;
-      if (nvOk && c.nivel >= 30 && this.anotarCuevaSem) this.anotarCuevaSem(s, seg, inst.nv);   // ranking semanal por clase y tramo
+      if (nvOk && c.nivel >= 30 && this.anotarCuevaSem) this.anotarCuevaSem(s, seg, inst.nv, inst.gente || 1);   // ranking semanal por clase y tramo (solo en solitario)
+      let rk = null;
+      if (c.nivel >= 30 && this.infoCuevaSem) { try { const ic = this.infoCuevaSem(c); if (ic && ic.pos > 0) rk = { pos: ic.pos, tot: ic.tot }; } catch (e) { rk = null; } }
       const reloj = nuevo ? `⏱ ${mmss(seg)} · ¡nuevo récord!` : `⏱ ${mmss(seg)}${previo ? ` (récord ${mmss(previo)})` : ''}`;
       this.enviar(s, { t: 'gana', xp, oro, drops: [], item: it });
-      this.enviar(s, { t: 'cuevaFin', seg, rec: c.cuevaRecord || 0, nuevo: nuevo ? 1 : 0, hoy: Math.min(3, c.cuevaDia.n) });
+      this.enviar(s, { t: 'cuevaFin', seg, rec: c.cuevaRecord || 0, nuevo: nuevo ? 1 : 0, hoy: Math.min(3, c.cuevaDia.n), grp: nvOk && c.nivel >= 30 && (inst.gente || 1) > 1 ? 1 : 0, ...(rk || {}) });
       this.enviar(s, { t: 'toast', ok: true, m: `🏆 ¡${CUEVA.nombre} completada! +${xp} XP · +${oro} oro${it ? ' · ' + RAREZAS[it.r].nombre + ': ' + nombreItem(it) : ''}${completo ? '' : ' (cofre pequeño: hoy ya abriste 3 completos)'} · ${reloj}` });
       s.sucio = true;
       this.revisarLogros(s);

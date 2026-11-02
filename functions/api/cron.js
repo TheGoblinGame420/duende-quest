@@ -36,7 +36,11 @@ export async function keepAlive(env) {
 // aviso del MMO (un solo mensaje del bot a la misma hora) y todo jugador del
 // MMO/3D (a ellos solo los rige retencion.js: pausa, /avisos off, bloqueo).
 // Es un Set en memoria: una lista larga no toca ninguna URL.
-export async function dailyReminder(env, saltar = new Set()) {
+// permitidos = telegram_id con consentimiento explicito (e.si en ret:idx del
+// MMO): a nadie fuera de esa lista se le escribe. Ojo: todo chat tg: de
+// ret:idx ya va en saltar (callar), asi que hoy este aviso no le llega a
+// nadie hasta que el arcade tenga su propio consentimiento (a proposito).
+export async function dailyReminder(env, saltar = new Set(), permitidos = new Set()) {
   const e = envOf(env);
   const token = env.TELEGRAM_BOT_TOKEN;
   if (!token) return;
@@ -51,6 +55,7 @@ export async function dailyReminder(env, saltar = new Set()) {
   for (const p of profiles) {
     if (!p.telegram_id || !/^\d+$/.test(p.telegram_id)) continue;
     if (saltar.has(String(p.telegram_id))) continue;
+    if (!permitidos.has(String(p.telegram_id))) continue;
     try {
       await tg(token, 'sendMessage', {
         chat_id: p.telegram_id,
@@ -88,7 +93,7 @@ export async function mmoRecordatorios(env) {
       throw e;
     }
     if (!d) d = x;
-    else { for (const k of ['candidatos', 'enviados', 'bloqueados', 'fallidos']) d[k] = (d[k] || 0) + (x[k] || 0); d.ids = [...(d.ids || []), ...(x.ids || [])]; d.callar = x.callar || d.callar; d.hoy = x.hoy || d.hoy; }
+    else { for (const k of ['candidatos', 'enviados', 'bloqueados', 'fallidos']) d[k] = (d[k] || 0) + (x[k] || 0); d.ids = [...(d.ids || []), ...(x.ids || [])]; d.callar = x.callar || d.callar; d.hoy = x.hoy || d.hoy; d.permitidos = x.permitidos || d.permitidos; }
     if (!x.ok || !x.quedan || !x.enviados) break;
   }
   console.log('[MMO avisos]', { candidatos: d.candidatos, enviados: d.enviados, bloqueados: d.bloqueados, fallidos: d.fallidos });
@@ -192,23 +197,31 @@ export async function runCron(cronExpr, env) {
     // Ni a los avisados hoy por el MMO (a su hora o ahora) ni a los que se
     // avisaran mas tarde a su hora habitual: un solo mensaje por persona.
     let saltar = null;
+    let permitidos = null;   // solo con consentimiento (e.si); sin lista no se envia nada
     try {
       const d = await mmoRecordatorios(env);
-      if (!env.MMO) saltar = new Set();
-      else if (d && d.ok) saltar = new Set([...(d.ids || []), ...(d.callar || []), ...(d.hoy || [])].map(String));
+      if (!env.MMO) { saltar = new Set(); permitidos = new Set(); }
+      else if (d && d.ok) {
+        saltar = new Set([...(d.ids || []), ...(d.callar || []), ...(d.hoy || [])].map(String));
+        if (Array.isArray(d.permitidos)) permitidos = new Set(d.permitidos.map(String));
+      }
     } catch (e) { console.error('[Cron avisos MMO]', e); }
     // Si fallo, se pide solo la lista; si tampoco llega, hoy no sale el
     // recordatorio del arcade (mejor ninguno que dos al mismo jugador).
-    if (!saltar) {
+    if (!saltar || !permitidos) {
       try {
         const stub = env.MMO.get(env.MMO.idFromName('mundo-1'));
         const r = await stub.fetch('https://mmo/interno/avisadosHoy', { method: 'POST', headers: { 'x-interno': env.TELEGRAM_BOT_TOKEN || '' }, body: '{}' });
         const x = await r.json();
-        if (x && x.ok) saltar = new Set([...(x.callar || []), ...(x.hoy || [])].map(String));
+        if (x && x.ok) {
+          if (!saltar) saltar = new Set([...(x.callar || []), ...(x.hoy || [])].map(String));
+          if (Array.isArray(x.permitidos)) permitidos = new Set(x.permitidos.map(String));
+        }
       } catch (e) { console.error('[Cron avisados MMO]', e); }
     }
     if (!saltar) { console.error('[Cron] sin la lista del MMO: hoy no sale el recordatorio del arcade'); return; }
-    return dailyReminder(env, saltar);
+    if (!permitidos) { console.error('[Cron] sin la lista de permitidos (consentimiento): hoy no sale el recordatorio del arcade'); return; }
+    return dailyReminder(env, saltar, permitidos);
   }
   if (cronExpr === '0 12 * * 1') return weeklyTournament(env);
   if (cronExpr === '0 0 * * *') {

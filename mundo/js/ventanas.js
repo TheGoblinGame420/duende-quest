@@ -24,8 +24,8 @@ import {
   ORO_POR_USD, STAR_TIENDA_USD, PEN_POR_USD,
   temporadaDe, TEMPORADAS, TEMP_DIAS, premioDiaFiesta, esNochebuena, diaFiesta, diasFiesta,
   ESPECIES, MAPAS, MONSTRUOS, BESTIARIO_HITOS, premioBestiario, DEBIL_EMO,
-} from '/mmo/js/data.js?v=356';
-import { LORE_MONSTRUOS } from './lore.js?v=356';
+} from '/mmo/js/data.js?v=357';
+import { LORE_MONSTRUOS } from './lore.js?v=357';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -915,7 +915,7 @@ function libretaBestiario(y) {
     if (c > 0) {
       const lore = c >= 25 && LORE_MONSTRUOS && LORE_MONSTRUOS[k] ? `<div class="vv-dim" style="font-size:10px;font-style:italic;margin-top:3px;line-height:1.25">${esc(LORE_MONSTRUOS[k])}</div>` : '';
       // Debilidad: su emoji si ya la descubriste (golpe ¡DÉBIL!), si no un «?» con pista.
-      const deb = m.debil ? ((y.bestD || {})[k] ? ` <span title="Débil a ${esc(m.debil)}">${DEBIL_EMO[m.debil] || ''}</span>` : ' <span class="vv-dim" title="Tiene una debilidad por descubrir">❔</span>') : '';
+      const deb = m.debil ? ((y.bestD || {})[k] ? ` <span title="Débil a ${esc(m.debil)}">${DEBIL_EMO[m.debil] || ''}</span>` : ' <span class="vv-dim" title="Tiene una debilidad: pruébale una habilidad del elemento justo, la Chispa ⚡, o caza 25 y lo aprenderás">❔</span>') : '';
       h += `<div style="min-height:44px;padding:6px;border-radius:8px;background:rgba(255,216,74,.08);${borde};font-size:12px"><b>${esc(m.nombre)}</b>${deb}<br>`
         + `<span class="vv-dim">${sig ? fmt(c) + ' / ' + fmt(sig) : fmt(c) + ' · ✓'}</span> ${estr}`
         + (sig ? `<div class="vv-dim" style="font-size:10px">Premio: ${fmt(premioBestiario(m.nivel, i))} oro</div>` : '')
@@ -926,7 +926,7 @@ function libretaBestiario(y) {
       h += `<div class="vv-dim" style="min-height:44px;padding:6px;border-radius:8px;background:rgba(255,255,255,.04);${borde};font-size:12px">??? ${estr}<br><span style="font-size:11px">vive en ${esc(zona)} · Nv ${m.nivel}</span>${el ? '<div style="font-size:11px;color:var(--oro)">★ élite vencido</div>' : ''}</div>`;
     }
   }
-  return h + '</div><div class="vv-dim" style="text-align:center;font-size:11px;margin:6px 0">Hitos de ' + BESTIARIO_HITOS.join(', ') + ' cazas con premio de oro. A las 25 conoces su historia. ❔ = tiene una debilidad (🔥❄️✨🌑⚡): pruébale habilidades o la Chispa hasta ver ¡DÉBIL!</div>'
+  return h + '</div><div class="vv-dim" style="text-align:center;font-size:11px;margin:6px 0">Hitos de ' + BESTIARIO_HITOS.join(', ') + ' cazas con premio de oro. A las 25 conoces su historia. ❔ = tiene una debilidad (🔥❄️✨🌑⚡): pruébale una habilidad del elemento justo, la Chispa ⚡, o caza 25 y lo aprenderás</div>'
     + btn('📤 Compartir mi bestiario', 'compartirBestiario', {}, 'sec vv-full') + '</div>';
 }
 function pintarLogros() {

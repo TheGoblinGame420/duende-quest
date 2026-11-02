@@ -70,7 +70,8 @@ export const HOJAS = {
 // Las estadisticas salen de stats(nivel) salvo que se indiquen; alto = altura
 // en pantalla del dibujo (no de la caja de choque).
 // Debilidades por tipo de daño: el golpe del tipo justo hace ×1,3 (solo a monstruos).
-export const TIPO_HAB = { bola_fuego: 'fuego', meteoros: 'fuego', nova: 'hielo', castigo: 'luz', dolor: 'sombra', chispa: 'rayo' };
+export const TIPO_HAB = { bola_fuego: 'fuego', meteoros: 'fuego', nova: 'hielo', castigo: 'luz', dolor: 'sombra', chispa: 'rayo',
+  golpe_heroico: 'luz', torbellino: 'fuego', eviscerar: 'sombra', abanico: 'hielo' };   // Guerrero y Pícaro también ven ¡DÉBIL! (solo ORIGINS: CLASSIC no lee TIPO_HAB)
 export const DEBIL_EMO = { fuego: '🔥', hielo: '❄️', luz: '✨', sombra: '🌑', rayo: '⚡' };
 export const MONSTRUOS = {
   goblin_normal:     { nombre: 'Goblin',            hoja: 'goblin_normal',     nivel: 1 },
@@ -515,9 +516,18 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 356;
+export const VERSION = 357;
 
 export const NOVEDADES = [
+  { n: 125, fecha: '2 nov 2026', items: [
+    'Guerreros y Pícaros también ven ¡DÉBIL!: Golpe del Puma es de luz, Torbellino de fuego, Tajo del Otorongo de sombra y Lluvia de Cuchillas de hielo. Caza 25 de un monstruo y aprendes su debilidad.',
+    '🎬 El modo cine deja a tu duende bailando todo el rato y pone tu enlace abajo, listo para subir el video.',
+    'El ranking semanal de la Cueva es solo para quien entra solo, y al vencer al Rey Goblin ves tu puesto al toque.',
+    'La revancha es justa: no sale en la Cueva ni contra monstruos muy superiores, y cobras tu parte aunque otro lo remate.',
+    'La tira diaria te avisa qué hay esta noche: Hora Feliz a las 20:00 y Gran Invasión a las 21:00.',
+    'Nuevo botón «🔔 Avisos por Telegram» en Ajustes de ORIGINS, para pedir avisos cuando tú quieras.',
+    'En el tutorial del celular los consejos de atacar y caminar se ven al momento, y la primera caída ya no te manda a la tienda.',
+  ] },
   { n: 124, fecha: '2 nov 2026', items: [
     '🔥 Debilidades: algunos monstruos son débiles al fuego, hielo, luz, sombra o rayo; golpéalos con la habilidad justa y verás ¡DÉBIL! (+30%). Descubrirlas da oro y las anota en tu Bestiario.',
     'Durante una invasión ves en vivo tu medalla y cuánto te falta; y si cumplen la meta con tiempo de sobra… pasa algo con el Capitán.',
@@ -525,7 +535,8 @@ export const NOVEDADES = [
     '🎬 Modo cine en Gestos: sin HUD, tu duende baila y la cámara gira para que grabes y compartas.',
     'La Artesana tiene recetario con recetas ocultas que se descubren juntando ingredientes.',
     'La historia va por capítulos con su tarjeta de título; nuevo ranking semanal de la Cueva por clase desde Nv 30.',
-    'En el celular, el joystick te enseña con un dedo fantasma. En diciembre llega la Navidad como calendario de Adviento y el Año Nuevo con cuenta regresiva y fuegos.',
+    'En el celular, el joystick te enseña con un dedo fantasma.',
+    'En diciembre llega la Navidad como calendario de Adviento (desde el 1 de diciembre) y el Año Nuevo con cuenta regresiva y fuegos.',
   ] },
   { n: 123, fecha: '2 nov 2026', items: [
     'Los talentos llegan a 8 rangos y tu primer reinicio de talentos es GRATIS: Libro → Talentos.',
@@ -1403,6 +1414,7 @@ export const AURAS = {
   elixirX:     { nombre: 'Elixir de Sabiduría (+10% experiencia de caza)', icono: 'I_Book' },
   ceviche:     { nombre: 'Ceviche del Duende (+10% oro de caza)', icono: 'I_C_Fish' },
   sudado:      { nombre: 'Sudado Dorado (+5% daño, -5% daño recibido)', icono: 'I_C_Pie' },
+  bendicion:   { nombre: 'Bendición del Duende (−25% de daño recibido)', icono: 'S_Holy09' },
 };
 
 // ── EQUIPO ──

@@ -3565,3 +3565,16 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Presumir con foto en cofre/botín/Nv 60 con código de amigo; fallo gracioso del Ladrón. Modo cine 🎬.
 - Artesana con recetas ocultas y recetario n/14. Historia en capítulos con tarjeta de título y releer zonas.
 - Arnés 907 bien (prueba del próximo evento movida al hueco Verano→Carnaval).
+
+### Ronda 26 (2-nov-2026, `?v=357`)
+
+- 11 evaluadores → 49 problemas → 10 tareas.
+- Tutorial móvil: avisos de ATACAR/caminar con prio 1; oferta de bienvenida tras la 3.ª muerte; `estaNoche3` (06:00–18:59 Lima).
+- Botón «Avísame» por Telegram en Ajustes (web/IAB), con aviso si no se pudo preparar el enlace.
+- Recordatorio del arcade solo a `permitidos` (e.si); sin lista no se envía (hoy no le llega a nadie: a propósito). Pruebas del cron ajustadas.
+- Debilidades para Guerrero/Pícaro (`TIPO_HAB`), aprender la debilidad tras 25 cazas, pista según la clase.
+- CLASSIC: sin novedades exclusivas de ORIGINS; aura de Bendición visible.
+- Modo cine: baile continuo, marca con enlace, salida limpia y BackButton.
+- Ranking de la Cueva solo en solitario y puesto al terminar. Primera caída protegida aunque se cierre muerto. Revancha justa (sin Cueva, una vez por monstruo, parte del daño, marca sin alarma).
+- Tira de clases que no falla en silencio tras pelear; avisos por encima de la tira y del diálogo.
+- Arnés 907 bien (la del pisotón es aleatoria: pasó en las dos repeticiones).

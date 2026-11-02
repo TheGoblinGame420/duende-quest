@@ -573,7 +573,7 @@ export const Mundo3D = {
     const c = s.c;
     // Caer ante la otra faccion ya cuesta Puntos del Abismo: ahi no se pierde XP.
     // Tras 3 muertes en 10 min (s.espiral, ver morir) tampoco, y se revive bendecido.
-    const espiral = !!s.espiral; s.espiral = false;
+    const espiral = !!s.espiral; s.espiral = false; delete c.espiralP;
     if (espiral) { c.bendT = Date.now() + 30 * 60000; s.muertesT = []; }
     if (c.nivel >= 10 && !s.muertoPvP && !c.muertoPvP && !espiral) c.xp = Math.max(0, c.xp - Math.round(xpParaSubir(c.nivel) * 0.05));
     s.muertoPvP = false; delete c.muertoPvP;
@@ -591,7 +591,7 @@ export const Mundo3D = {
     this.enviar(s, { t: 'tp3', x: s.p.x, z: s.p.z, ...(estabaCueva ? { cueva: null } : {}) });
     this.aClave(K3, { t: 'pj3', p: this.info3d(s) }, s);
     if (this.reponerElixires) this.reponerElixires(s);
-    if (espiral) { this.ponerAura(s, 'bendicion', BENDICION_MS); this.enviar(s, { t: 'toast', m: '✨ Bendición del Duende: 3 min recibiendo un 25% menos de daño. Esta vez no perdiste XP.' }); }
+    if (espiral) { this.ponerAura(s, 'bendicion', BENDICION_MS); this.enviar(s, { t: 'toast', m: '✨ Bendición del Duende: 3 min recibiendo un 25% menos de daño.' + ((c.nivel || 1) >= 10 ? ' Esta vez no perdiste XP.' : '') }); }
     this.actualizarYo(s);
     this.guardar(s);
   },
@@ -1378,8 +1378,9 @@ export const Mundo3D = {
           if (o.dispara) this.aCerca3d(o, { t: 'b3', de: o.id, a: s.id });
           this.herir(s, golpe, { jefe: o.jefe, bala: o.dispara, mundial: o.mundial3 || o.guardian, id: o.id });
           // Revancha (Nv < 10): si te derriba casi muerto, queda herido 90 s y no se cura al volver.
-          if (s.muerto && !s.muertoPvP && !o.jefe && !o.persiste && s.c && (s.c.nivel || 1) < 10 && o.max > 0 && o.hp > 0 && o.hp / o.max <= 0.4) {
-            o.revancha = { pid: s.id, hasta: ahora + 90000 };
+          if (s.muerto && !s.muertoPvP && !o.jefe && !o.persiste && s.c && (s.c.nivel || 1) < 10 && o.max > 0 && o.hp > 0 && o.hp / o.max <= 0.4 && !o.cueva && !o.revanchaUsada && (o.nv || 1) <= (s.c.nivel || 1) + 4) {
+            // Una sola revancha por monstruo (no se renueva con cada muerte), nunca en la Cueva ni contra uno muy superior.
+            o.revancha = { pid: s.id, hasta: ahora + 90000 }; o.revanchaUsada = true;
             this.enviar(s, { t: 'revancha3', id: o.id, x: Math.round(casa.x * 10) / 10, z: Math.round(casa.z * 10) / 10 });   // vuelve a su casa a esperar herido: ahi va la marca
           }
         }
@@ -1387,7 +1388,7 @@ export const Mundo3D = {
       if (dist(o, casa) > CORREA) {
         // Se rompe la correa: vuelve a casa y olvida el combate.
         o.obj = 0; o.vuelve = true; o.amen.clear();
-        if (!o.persiste) { o.dano.clear(); o.iniCombate = 0; }
+        if (!o.persiste) { const mioR = o.revancha ? o.dano.get(o.revancha.pid) : 0; o.dano.clear(); if (mioR) o.dano.set(o.revancha.pid, mioR); o.iniCombate = 0; }
         delete o.au.dolor; delete o.au.provoca;
       }
       return;
@@ -1403,7 +1404,8 @@ export const Mundo3D = {
       if (mover(casa.x, casa.z, velC * 1.3) < 0.5) {
         o.vuelve = false; o.st = 0;
         // El jefe mundial conserva el daño (y su credito para el premio).
-        if (!o.persiste) { if (!herido) o.hp = o.max; o.dano.clear(); o.amen.clear(); o.iniCombate = 0; }
+        // Revancha: se guarda el daño del novato; si otro lo remata, igual cobra su parte.
+        if (!o.persiste) { if (!herido) o.hp = o.max; const mioR = o.revancha ? o.dano.get(o.revancha.pid) : 0; o.dano.clear(); if (mioR) o.dano.set(o.revancha.pid, mioR); o.amen.clear(); o.iniCombate = 0; }
         if (o.cueva && o.jefe) this.reiniciarJefeCueva(o);
       }
       return;

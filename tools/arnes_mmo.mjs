@@ -1611,7 +1611,7 @@ async function pruebasRetencion() {
   };
   try { await runCron('0 17 * * *', envCron); } finally { globalThis.fetch = fetchReal; }
   chequear(ids() === '3004', 'el MMO avisa a quien le toca (' + ids() + ')');
-  chequear(arcade.sort().join(',') === '9999', 'el recordatorio del arcade solo va a quien no juega el MMO (' + arcade + ')');
+  chequear(arcade.sort().join(',') === '', 'el recordatorio del arcade solo va a quien dio su permiso (nadie aquí: ' + arcade + ')');
   console.log('Avisos a la hora habitual de cada uno');
   const { horaHabitual, HORA_DEFECTO } = await import('../functions/mmo/retencion.js');
   chequear(horaHabitual({ hs: [20, 3] }) === 3 && horaHabitual({ hs: [9] }) === 9 && horaHabitual({}) === HORA_DEFECTO, 'con 1 o 2 días anotados, la hora de su última entrada; sin ninguno, las 17:00');
@@ -1636,7 +1636,7 @@ async function pruebasRetencion() {
     chequear(salidos.length === 0, 'una sola vez al día');
   } finally { delete state.storage.setAlarm; }
   // Si falla la llamada de avisos, se pide solo la lista; sin lista, no sale el del arcade.
-  for (const [modo, esperado] of [['lista', '9999'], ['nada', '']]) {
+  for (const [modo, esperado] of [['lista', ''], ['nada', '']]) {
     irA(A + (modo === 'lista' ? 11 : 12), 17);
     arcade.length = 0;
     globalThis.fetch = async (url, init) => {

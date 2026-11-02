@@ -815,6 +815,9 @@ export const Retencion = {
     // jugado, 14 dias sin entrar): el cron del arcade no le escribe nunca.
     res.callar = Object.keys(idx).filter(u => u.startsWith('tg:') || idx[u].tc).map(u => u.startsWith('tg:') ? u.slice(3) : String(idx[u].tc));
     res.hoy = Object.keys(idx).filter(u => (u.startsWith('tg:') || idx[u].tc) && (idx[u].ad === hoy || (this.puedeAvisar(u, idx[u], hoy, idx) && horaLima(horaHabitual(idx[u])) > horaLima(hora)))).map(u => u.startsWith('tg:') ? u.slice(3) : String(idx[u].tc));
+    // Lista de permitidos del recordatorio del arcade: solo quien dio su
+    // consentimiento explicito (e.si) y no lo retiro ni bloqueo al bot.
+    res.permitidos = Object.keys(idx).filter(u => u.startsWith('tg:') && idx[u].si && !idx[u].off && !idx[u].bloq).map(u => u.slice(3));
     return res;
   },
 
@@ -829,6 +832,7 @@ export const Retencion = {
       ok: true,
       callar: [...tg.map(u => u.slice(3)), ...conTc.map(u => String(idx[u].tc))],
       hoy: [...tg, ...conTc].filter(u => idx[u].ad === hoy || (this.puedeAvisar(u, idx[u], hoy, idx) && horaLima(horaHabitual(idx[u])) > horaLima(hora))).map(u => u.startsWith('tg:') ? u.slice(3) : String(idx[u].tc)),
+      permitidos: Object.keys(idx).filter(u => u.startsWith('tg:') && idx[u].si && !idx[u].off && !idx[u].bloq).map(u => u.slice(3)),
     };
   },
 
