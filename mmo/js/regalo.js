@@ -1,7 +1,7 @@
 // ── BUZÓN "MIENTRAS NO ESTABAS" Y CELEBRACIÓN DE LA COMPRA ENTREGADA ──
 // Lo usan los dos clientes (mmo/js/client.js y mundo/js/mundo.js). Crea su
 // propio DOM y su CSS. El servidor (world.js: buzonAgregar / buzonEnviar)
-// manda {t:'buzon', l:[{id,m,ts}]} y {t:'regalo', cod, nombre, skin, ala, oro, ya}
+// manda {t:'buzon', l:[{id,m,ts}]} y {t:'regalo', cod, nombre, skin, ala, oro, pw, ya}
 // al entrar; al cerrar la ventana se contesta {t:'visto', q} y el servidor lo vacia.
 // Con dos pestañas no sale dos veces: lo ya visto se recuerda en este navegador.
 //
@@ -9,7 +9,7 @@
 //   const R = iniciarRegalo({ mandar, ocupado, presumir, fanfarria, vibrar, filtro });
 //   en 'buzon': R.alBuzon(m)   en 'regalo': R.alRegalo(m)
 // ocupado(): true mientras haya otra ventana (el cofre diario va primero).
-import { SKINS, ALAS } from './data.js?v=345';
+import { SKINS, ALAS } from './data.js?v=346';
 
 const CLAVE = 'dq_buzon_visto';
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
@@ -119,9 +119,13 @@ export function iniciarRegalo(H) {
       const que = sk ? sk.nombre : al ? al.nombre : m.nombre;
       const extra = m.ya ? 'Ya la tenías: te devolvimos su precio en oro.' : sk ? 'Ya está en tus skins.' : al ? 'Ya las llevas puestas.' : '';
       const oro = m.oro ? ` +${Number(m.oro).toLocaleString('es', { useGrouping: 'always' })} oro.` : '';
+      // Poderes del paquete (Pack de bienvenida): que vea que las pociones llegaron y como usarlas.
+      const pw = m.pw && typeof m.pw === 'object' ? m.pw : {}, npw = k => Math.max(0, Math.floor(Number(pw[k]) || 0));
+      const lpw = [['pocion', '🧪', 'pociones'], ['escudo', '🛡', 'escudos'], ['rayo', '⚡', 'rayos'], ['fuego', '🔥', 'fuegos']].filter(x => npw(x[0]) > 0).map(x => `${x[1]} ${npw(x[0])} ${x[2]}`).join(' · ');
+      const pwHtml = lpw ? `<p class="rg-p" style="font-size:15px;color:#fff"><b>${esc(lpw)}</b></p>${npw('pocion') > 0 ? `<p class="rg-p" style="font-size:12px;color:#c4bce0">${esc('Ya no se toman solas: toca 🧪 en tu barra (tecla Q) cuando tu vida baje de la mitad. Cura el 50 %.')}</p>` : ''}` : '';
       caja.innerHTML = `<h2>🎉 ¡TU COMPRA LLEGÓ!</h2><div class="rg-fig"><div class="rg-rayos"></div>${chispas}${fig}</div>
         <p class="rg-p" style="font-size:17px;color:#fff"><b style="color:${esc(color)}">${esc(que)}</b></p>
-        <p class="rg-p">${esc(m.nombre)} ya es tuyo. ${esc(extra)}${esc(oro)}</p><p class="rg-p" style="font-size:12px;color:#a5a0c0">Gracias por apoyar DUENDE QUEST 💛</p>
+        <p class="rg-p">${esc(m.nombre)} ya es tuyo. ${esc(extra)}${esc(oro)}</p>${pwHtml}<p class="rg-p" style="font-size:12px;color:#a5a0c0">Gracias por apoyar DUENDE QUEST 💛</p>
         <div class="rg-bots">${sk ? '<button class="rg-si" data-rg="poner">¡Ponérmela!</button>' : '<button class="rg-si" data-rg="ok">¡Genial!</button>'}<button data-rg="presumir">Presumir</button></div>`;
       try { H.fanfarria && H.fanfarria(); } catch (e) {}
       try { H.vibrar && H.vibrar('success'); } catch (e) {}

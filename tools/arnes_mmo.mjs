@@ -3581,7 +3581,7 @@ async function pruebas3d() {
   const dos = await entrar('Plano2D', '3a3');
   chequear(a.m3 && a.k === '~3d' && a.ultimos('m3').length === 1, 'entra al mundo 3D con su personaje');
   chequear(b.ultimos('m3').pop().jugadores.some(x => x.n === 'Viajero3D'), 've a los otros jugadores del mundo 3D');
-  chequear(Math.hypot(a.p.x - W.SPAWN3D.x, a.p.z - W.SPAWN3D.z) < 14, 'aparece en el pueblo (repartidos alrededor de la plaza)');
+  chequear(Math.hypot(a.p.x - W.SPAWN3D.x, a.p.z - W.SPAWN3D.z) < 80, 'aparece en el pueblo (el novato, en la salida hacia su primer goblin)');
   const x0 = a.p.x;
   avanzar(1000); await a.mandar({ t: 'mv3', x: a.p.x + 5, z: a.p.z, r: 1.5, a: 1 });
   chequear(Math.abs(a.p.x - (x0 + 5)) < 0.01 && a.c.p3, 'se mueve y la posición se guarda en el personaje');

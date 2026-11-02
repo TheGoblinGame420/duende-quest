@@ -19,7 +19,7 @@
 // piezas fijas de cada pivote se funden en una malla (fusionarRig): ~6-14 draw calls.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=345';
+import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=346';
 
 const PX_M = 34;                 // pixeles del 2D por metro
 const PI = Math.PI;
@@ -401,6 +401,7 @@ class Modelo {
   animar(estado, tEstado, t) { animarRig(this, estado || 'quieto', tEstado || 0, t || 0); }
   // Destello blanco ~120 ms.
   golpe() {
+    if (performance.now() < (this._rojoHasta || 0)) return; // el aviso rojo manda: tu golpe no lo borra
     for (const me of this.mallas) {
       if (me.userData.sinFlash) continue;
       if (!me.userData.m0) me.userData.m0 = me.material;
@@ -416,10 +417,12 @@ class Modelo {
       if (!me.userData.m0) me.userData.m0 = me.material;
       me.material = ROJO_AVISO;
     }
+    this._rojoHasta = performance.now() + (ms || 300);
     clearTimeout(this._tf);
     this._tf = setTimeout(() => this._restaurar(), ms || 300);
   }
   _restaurar() {
+    this._rojoHasta = 0;
     for (const me of this.mallas) if (me.userData.m0) { me.material = me.userData.m0; me.userData.m0 = null; }
   }
   // Aura de jefe (se pone despues de medir: su radio sigue el ancho).

@@ -45,10 +45,10 @@ const CORREA = 50;              // m: un monstruo no se aleja mas de su campamen
 const MELEE3D = 3.2;              // m: alcance del golpe cuerpo a cuerpo (x arma.alcance)
 const RANGO_VARA = 24;          // m: disparo de vara de magos y sacerdotes
 const MON_MELEE = 2.4, MON_DISPARO = 15;
-// Aviso del golpe de un monstruo normal: 300-400 ms antes (segun el tick) se le
-// manda 'mpre' solo a su presa; el cliente lo muestra agachado y en rojo para que
+// Aviso del golpe cuerpo a cuerpo: 550-650 ms antes (segun el tick) se manda 'mpre'
+// a su presa (los jefes, a todos los de cerca; los tiradores no avisan); el cliente lo muestra agachado y en rojo para que
 // pueda retroceder. No cambia el ritmo ni el daño.
-const AVISO_MON_MS = 400;
+const AVISO_MON_MS = 650;       // 650: con 400 llegaba tarde en 4G
 const FOTO_CADA = 2;            // ticks entre fotos (200 ms)
 // Margen para el jitter de la red: un golpe o una habilidad que llega hasta
 // 150 ms antes de su recarga cuenta (la cadencia se mide desde el golpe
@@ -100,11 +100,13 @@ export const Mundo3D = {
 
   // ── ENTRAR ──
   entrar3d(s) {
-    this.iniciar3d();
+    const W0 = this.iniciar3d();
     const c = s.c;
     s.m3 = true;
     s.k = K3;
-    const p = c.p3 && num(c.p3.x) !== null && num(c.p3.z) !== null && !enCueva(c.p3.x) && !enAbismo(c.p3.x) ? c.p3 : spawnPueblo();
+    // Novato recien llegado: aparece en el borde del pueblo que mira a su campamento goblin (el goblin guia queda a ~20 m)
+    const novato = !c.p3 && c.mis && c.mis.i === 0 && !(c.kills > 0) && (c.nivel || 1) <= 1;
+    const p = c.p3 && num(c.p3.x) !== null && num(c.p3.z) !== null && !enCueva(c.p3.x) && !enAbismo(c.p3.x) ? c.p3 : novato ? this.spawnNovato3d(W0) : spawnPueblo();
     s.p = { x: clamp(p.x, -MUNDO.limite, MUNDO.limite), z: clamp(p.z, -MUNDO.limite, MUNDO.limite) };
     s.i3 = 0;
     s.vistosP = new Set();
@@ -337,7 +339,7 @@ export const Mundo3D = {
     const o = W.mons.get(m.tg | 0);
     if (!o || o.muere || !mismo(o, s)) return;
     const ahora = Date.now();
-    if (ahora < (s.atkT || 0) - JITTER_MS) return;
+    if (ahora < (s.atkT || 0) - JITTER_MS) { this.enviar(s, { t: 'atkNo', ms: Math.min(600, Math.round(s.atkT - ahora)) }); return; }
     const arma = ARMAS[s.c.arma] || ARMAS.katana;
     const vara = !!(CLASES[s.c.clase] && CLASES[s.c.clase].basico === 'vara');
     const rango = vara ? RANGO_VARA : MELEE3D * (arma.alcance || 1) + (o.jefe ? 1.2 : 0.4);
@@ -345,16 +347,23 @@ export const Mundo3D = {
     if (dist(s.p, o) > rango + 0.3) { this.enviar(s, { t: 'atkNo' }); return this.no(s, 'Fuera de alcance.'); }
     // En la cueva no se pega a traves de la roca (como las habilidades).
     if (s.i3 && !vistaCueva(s.p.x, s.p.z, o.x, o.z)) { this.enviar(s, { t: 'atkNo' }); return; }
-    s.atkT = Math.max(ahora, s.atkT || 0) + (vara ? VARA.cdMs * arma.cd : 1000 * arma.cd);
+    const cdMs = vara ? VARA.cdMs * arma.cd : 1000 * arma.cd;
+    s.atkT = Math.max(ahora, s.atkT || 0) + cdMs;
     if (s.montado) this.desmontar(s);
+    // Combo de 3 golpes (como el cliente): seguidos y al mismo blanco avanza
+    // 0-1-2; el 3.º pega fuerte. Media de [0.92, 1, 1.3] ≈ 1.07 (DPS casi igual).
+    s.paso3 = (ahora - (s.atkPrev3 || 0) < cdMs + 450 && s.pasoTg3 === o.id) ? ((s.paso3 || 0) + 1) % 3 : 0;
+    s.atkPrev3 = ahora; s.pasoTg3 = o.id;
+    const multPaso = [0.92, 1, 1.3][s.paso3];
     // pegar3d: critico, forja, fuego, Grito, elixires y el x2 del Sigilo.
     // La vara tambien escala con el arma (antes las dagas doblaban su DPS y la odachi lo bajaba).
-    const r = this.pegar3d(s, o, (vara ? VARA.mult : 3.6) * (arma.dano || 1), 1);
+    const r = this.pegar3d(s, o, (vara ? VARA.mult : 3.6) * (arma.dano || 1) * multPaso, 1);
     if (!r) return;
+    if (s.paso3 === 2 && s.c.clase === 'picaro' && this.sumarCombo) this.sumarCombo(s, 1);
     const real = r[1], crit = r[2] === 1;
     // Ira al pegar (en CLASSIC +3 por golpe del combo; aqui un golpe por segundo).
     if (real > 0 && CLASES[s.c.clase] && CLASES[s.c.clase].recurso === 'ira') s.rec = Math.min(100, (s.rec || 0) + 9 + (crit ? 4 : 0));
-    this.aCerca3d(o, { t: 'at3', p: s.id, tg: o.id, d: real, c: crit ? 1 : 0, v: vara ? 1 : 0 });
+    this.aCerca3d(o, { t: 'at3', p: s.id, tg: o.id, d: real, c: crit ? 1 : 0, v: vara ? 1 : 0, f: s.paso3 === 2 ? 1 : 0 });
     const robo = ((SKINS[s.c.skin] || {}).buffs || {}).robo || 0;
     if (robo) s.hp = Math.min(s.st.maxHp, s.hp + real * robo);
   },
@@ -366,7 +375,7 @@ export const Mundo3D = {
     const t = this.rival3d(s, m.tp | 0);
     if (!t) return;
     const ahora = Date.now();
-    if (ahora < (s.atkT || 0) - JITTER_MS) return;
+    if (ahora < (s.atkT || 0) - JITTER_MS) { this.enviar(s, { t: 'atkNo', ms: Math.min(600, Math.round(s.atkT - ahora)) }); return; }
     const arma = ARMAS[s.c.arma] || ARMAS.katana;
     const vara = !!(CLASES[s.c.clase] && CLASES[s.c.clase].basico === 'vara');
     if (dist(s.p, t.p) > (vara ? RANGO_VARA : MELEE3D * (arma.alcance || 1) + 0.6) + 0.3) { this.enviar(s, { t: 'atkNo' }); return this.no(s, 'Fuera de alcance.'); }
@@ -654,8 +663,20 @@ export const Mundo3D = {
     return o;
   },
 
-  // Goblin guia del novato: justo fuera del pueblo, camino a su campamento (a ~107 m del spawn),
-  // o 12 m delante si ya salio. Sin campamento (campo -1): se retira solo si nadie queda cerca.
+  // Punto de aparicion del novato: dentro del pueblo (radio - 10) en direccion al campamento goblin mas cercano al centro
+  spawnNovato3d(W) {
+    try {
+      const P0 = MUNDO.pueblo;
+      let cp = null, cd = Infinity;
+      for (const c of (W && W.campos) || []) if (c.k === 'goblin_normal') { const d = Math.hypot(c.x - P0.x, c.z - P0.z); if (d < cd) { cd = d; cp = c; } }
+      if (!cp || !(cd > 0)) return spawnPueblo();
+      const r = Math.max(4, P0.radio - 10), x = r1(P0.x + (cp.x - P0.x) / cd * r), z = r1(P0.z + (cp.z - P0.z) / cd * r);
+      return zonaEn(x, z) === 'pueblo' ? { x, z } : spawnPueblo();
+    } catch { return spawnPueblo(); }
+  },
+
+  // Goblin guia del novato: justo fuera del pueblo, camino a su campamento (a ~19 m si aparecio
+  // con spawnNovato3d), o 12 m delante si ya salio. Sin campamento (campo -1): se retira solo si nadie queda cerca.
   // El cliente (pintarMisiones) apunta la luz amarilla al goblin vivo mas cercano durante el tutorial.
   gobGuia3d(W, s) {
     s.gobGuia = true;
@@ -1251,6 +1272,8 @@ export const Mundo3D = {
         this.aCerca3d(o, { t: 'mcast', id: o.id, ms: SORBO_MS, n: 'Sorbo del Cántaro' });
       }
       if (d > alcance || !veo) {
+        // Te avisó en rojo y saliste de su alcance a tiempo: "¡Esquivado!" (solo a la presa).
+        if (o.avisoAtk === o.atkEn && o.avisoA === s.id && ahora < o.atkEn + 200 && !o.jefe && !o.dispara) { o.avisoAtk = -1; this.enviar(s, { t: 'mesq', id: o.id }); }
         // Se acerca por su lado (rodean al jugador en vez de apilarse).
         if (!this.auraMon(o, 'raiz')) {
           const k = d > 0.01 && veo ? (alcance * 0.8) / d : 0;
@@ -1269,11 +1292,16 @@ export const Mundo3D = {
         o.st = 1;
       } else {
         // Al entrar en combate se prepara un instante (se ve el brazo arriba).
-        if (o.st !== 2) o.atkEn = Math.max(o.atkEn, ahora + 400);
+        if (o.st !== 2) o.atkEn = Math.max(o.atkEn, ahora + AVISO_MON_MS);
         o.st = 2;
         o.ry = Math.atan2(s.p.x - o.x, s.p.z - o.z);
         // Telegrafia el golpe (una vez por golpe; si sales y vuelves, atkEn cambia y avisa de nuevo).
-        if (!o.jefe && o.avisoAtk !== o.atkEn && ahora < o.atkEn && ahora >= o.atkEn - AVISO_MON_MS) { o.avisoAtk = o.atkEn; this.enviar(s, { t: 'mpre', id: o.id }); }
+        // Los tiradores no avisan (15 m: alejarse no sirve); los jefes avisan a todos los de cerca.
+        if (!o.dispara && o.avisoAtk !== o.atkEn && ahora < o.atkEn && ahora >= o.atkEn - AVISO_MON_MS) {
+          o.avisoAtk = o.atkEn; o.avisoA = s.id;   // el "¡Esquivado!" solo va a quien vio el aviso
+          const pre = { t: 'mpre', id: o.id, ms: Math.round(o.atkEn - ahora) };
+          if (o.jefe) this.aCerca3d(o, pre, 40); else this.enviar(s, pre);
+        }
         if (ahora >= o.atkEn) {
           o.atkEn = ahora + (o.jefe ? 1250 : 1600);
           const golpe = o.atk * (o.jefe ? 0.7 : 1) * (o.dispara ? 0.9 : 1);
@@ -1480,7 +1508,9 @@ export const Mundo3D = {
     const pegar = (o, mult, amen) => this.pegar3d(s, o, mult * mh, amen);
     const radio = h.radio ? h.radio / 17 : 0;
     switch (h.id) {
-      case 'golpe_heroico': case 'ejecutar': case 'castigo': case 'bola_fuego':
+      // Golpe del Puma: cuesta Ira, asi que pega mas que el basico (3.6 x arma): 3 x 1.6 x arma.
+      case 'golpe_heroico': g(pegar(obj, h.mult * 1.6 * ((ARMAS[c.arma] || ARMAS.katana).dano || 1), h.amenaza)); break;
+      case 'ejecutar': case 'castigo': case 'bola_fuego':
         g(pegar(obj, h.mult, h.amenaza)); break;
       case 'carga': {
         // Aparece junto al objetivo (embestida).

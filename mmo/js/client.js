@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=345';
-import { iniciarRegalo } from './regalo.js?v=345';
-import { iniciarAvisoTg } from './avisotg.js?v=345';
+} from './data.js?v=346';
+import { iniciarRegalo } from './regalo.js?v=346';
+import { iniciarAvisoTg } from './avisotg.js?v=346';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de

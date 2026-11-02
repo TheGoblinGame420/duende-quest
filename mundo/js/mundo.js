@@ -14,26 +14,26 @@
 import * as THREE from 'three';
 import { esNocheDuendes, TEMPORADAS, temporadaDe, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=345';
-import { iniciarVentanas } from './ventanas.js?v=345';
-import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase } from '/mmo/js/data.js?v=345';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
-import { iniciarRegalo } from '/mmo/js/regalo.js?v=345';
-import { iniciarAvisoTg } from '/mmo/js/avisotg.js?v=345';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=345';
-import { crearMusica } from './musica.js?v=345';
-import { crearSonidos } from './sonidos.js?v=345';
-import { construirCueva } from './cueva.js?v=345';
-import { TAPA, transparentar } from './tapa.js?v=345';
-import { construirAbismo } from './abismo.js?v=345';
-import { crearParticulas } from './particulas.js?v=345';
-import { cargarKenney, piezasCasa } from './kenney.js?v=345';
-import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=345';
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=346';
+import { iniciarVentanas } from './ventanas.js?v=346';
+import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase } from '/mmo/js/data.js?v=346';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
+import { iniciarRegalo } from '/mmo/js/regalo.js?v=346';
+import { iniciarAvisoTg } from '/mmo/js/avisotg.js?v=346';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=346';
+import { crearMusica } from './musica.js?v=346';
+import { crearSonidos } from './sonidos.js?v=346';
+import { construirCueva } from './cueva.js?v=346';
+import { TAPA, transparentar } from './tapa.js?v=346';
+import { construirAbismo } from './abismo.js?v=346';
+import { crearParticulas } from './particulas.js?v=346';
+import { cargarKenney, piezasCasa } from './kenney.js?v=346';
+import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=346';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=345';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d } from '/mmo/js/mundo3d.js?v=345';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=345';
-import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=345';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA } from './lore.js?v=345';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=346';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d } from '/mmo/js/mundo3d.js?v=346';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=346';
+import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=346';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA } from './lore.js?v=346';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1863,6 +1863,7 @@ function recibir(m) {
         numero(P.x, P.y + 3.4, P.z, '¡JEFE DERROTADO!', '#ffe600', true);
         try { finJefe(m.id); } catch (e) {}
         FX.emitir(o.x, y, o.z, { n: 60, color: '#ffd84a', vel: 4, vida: 1.2, grav: 3, sube: 2 });
+        presumirTipo = 'jefe'; requestAnimationFrame(() => { try { if (presumirTipo === 'jefe') precargarPresumir(); } catch (e) {} });   // foto con la explosion
         setTimeout(() => vib('heavy'), 150); if (!(musica.remate && musica.remate('jefe'))) sfx('moneda', 0.6);   // remate musical en la escala de la zona
         const nomJ = dj && dj.nombre ? 'al jefe ' + dj.nombre : 'a un jefe';
         setTimeout(() => ofrecerPresumir('¡Vencí ' + nomJ + ' en Duende Quest 3D! ¿Te atreves?', 'jefe'), 1800);
@@ -1963,9 +1964,11 @@ function recibir(m) {
       break;
     case 'pase': if (yo) { yo.pase = m.pase; pintarPase(); } break;
     case 'yoC': if (yo) { Object.assign(yo, m.yo); pintarHud(); refrescarVentanas(); puntoMochila(); } break;
-    case 'atkNo': sigAtk = performance.now() + 150; break;
-    // Un monstruo va a pegarte en ~300-400 ms: se agacha y brilla en rojo (retrocede para esquivarlo).
-    case 'mpre': { const o = mons.get(m.id); if (!o || o.muereT || !o.fig) break; o.preT = performance.now(); if (o.fig.modelo && o.fig.modelo.avisoRojo) o.fig.modelo.avisoRojo(PRE_MON_MS); break; }
+    case 'atkNo': sigAtk = performance.now() + (m.ms || 150); if (m.ms && atkRepN < 2) { atkRepN++; atkRepite = true; atkReintento = performance.now() + 700; } impactos = impactos.filter(i => i.t < performance.now() - 1); break;   // golpe descartado (lag o fuera de alcance): se reenvia sin repetir el tajo
+    // Un monstruo va a pegarte en ~550-650 ms (m.ms): se agacha y brilla en rojo (retrocede para esquivarlo).
+    case 'mpre': { const o = mons.get(m.id); if (!o || o.muereT || !o.fig) break; const ms = Math.min(800, m.ms || PRE_MON_MS); o.preT = performance.now(); o.preMs = ms; if (o.fig.modelo && o.fig.modelo.avisoRojo) o.fig.modelo.avisoRojo(ms); break; }
+    // Saliste de su alcance tras el aviso rojo (tope: 1 cada 1,5 s).
+    case 'mesq': { const ah = performance.now(); if (P.muerto || ah - mesqT < 1500) break; mesqT = ah; numero(P.x, P.y + 2, P.z, '¡Esquivado!', '#4ade80', true); vib('light'); break; }
     case 'habNo': gcdHasta = 0; break;
     case 'chat': lineaChat(m); break;
     case 'gesto': if (GESTOS[m.id]) mostrarGesto(m.p, m.id); break;
@@ -2205,8 +2208,12 @@ function ataqueVisto(m) {
   if (de) { if (!(de === P && performance.now() - P.atkT < 350)) de.atkT = performance.now(); if (m.v) proyectil(de, o, CLASES[(m.p === miId ? yo.clase : de.cl)] ? CLASES[(m.p === miId ? yo.clase : de.cl)].color : '#fff'); }
   if (m.d > 0) o.hp = Math.max(0, o.hp - m.d);
   if (m.d > 0 && Math.hypot(o.x - P.x, o.z - P.z) < 45) FX.golpe(o.x, (o.y || alturaEn(o.x, o.z)) + 1.1, o.z, { critico: m.c, color: m.c ? '#ffd34d' : m.rayo ? '#7dd3fc' : '#fff1c1' });
+  // 3.er golpe del combo (el servidor lo marca con f): numero grande naranja con '!'.
+  const fuerte = !!(m.f && m.p === miId && m.d > 0 && !m.c);
   if (m.p === miId || o.id === objetivo) {
-    numero(o.x + (Math.random() - 0.5), alturaEn(o.x, o.z) + 2.2, o.z, (m.c ? '¡' : '') + m.d + (m.c ? '!' : ''), m.c ? '#ffd34d' : m.rayo ? '#7dd3fc' : '#fff', m.c);
+    if (fuerte) numero(o.x + (Math.random() - 0.5), alturaEn(o.x, o.z) + 2.2, o.z, m.d + '!', '#ffb347', true);
+    else numero(o.x + (Math.random() - 0.5), alturaEn(o.x, o.z) + 2.2, o.z, (m.c ? '¡' : '') + m.d + (m.c ? '!' : ''), m.c ? '#ffd34d' : m.rayo ? '#7dd3fc' : '#fff', m.c);
+    if (fuerte) { sfxK('g_critico', 0.3); pausaGolpe(o, 60); }
     if (m.p === miId) { musica.combate(true); if (m.c) vib(TG && TG.HapticFeedback ? 'rigid' : 'medium'); else if (!autoAtk) vib('light'); sfx(m.c ? 'corte2' : 'corte', 0.28); sfxK(m.c ? 'g_critico' : 'g_carne', m.c ? 0.4 : 0.3); if (m.c) { sacudir = Math.max(sacudir, 0.15); fovGolpe = -3.5; } }
   }
   // Golpes de otros jugadores: suenan donde pasan (mas bajo y por su lado), como mucho ~8 por segundo.
@@ -2423,6 +2430,7 @@ function proyectil(de, a, color) {
   proyectiles.push({ mesh, de: { x: de.x, z: de.z, y: (de.y || alturaEn(de.x, de.z)) + 1.2 }, a, t: 0 });
 }
 function morir(m) {
+  atkMantener = false;   // al revivir no sigue pegando solo (ATACAR o el clic quedaron "pulsados")
   // Golpe sordo al caer (una sola vez aunque lleguen 'muerte' y 'yo' seguidos).
   if (!P.muerto) sfx('caida', 0.55);
   vib('error');
@@ -2563,7 +2571,7 @@ function pintarVida() {
   if (bpo) bpo.classList.toggle('urge', yo.hp > 0 && yo.hp / yo.maxHp < 0.35 && ((yo.pw && yo.pw.pocion) || 0) > 0);
   // Peligro: con menos del 35 % de vida la musica se apaga (filtro) y late; solo se avisa si cambia (pasos de 0,1).
   { const vb = yo.maxHp && yo.hp > 0 && yo.hp < yo.maxHp * 0.35, kP = vb ? Math.round(clamp(1 - yo.hp / (0.35 * yo.maxHp), 0, 1) * 10) / 10 : 0; if (kP !== pintarVida.kP) { pintarVida.kP = kP; if (musica.peligro) musica.peligro(kP); } }
-  if (yo.recMax) { rc.firstElementChild.style.transform = `scaleX(${clamp((yo.rec || 0) / yo.recMax, 0, 1)})`; rc.lastElementChild.textContent = Math.round(yo.rec || 0) + ' / ' + yo.recMax; }
+  if (yo.recMax) { rc.firstElementChild.style.transform = `scaleX(${clamp((yo.rec || 0) / yo.recMax, 0, 1)})`; const rn = RECURSOS[(CLASES[yo.clase] || {}).recurso]; rc.lastElementChild.textContent = (rn ? rn.nombre + ' ' : '') + Math.round(yo.rec || 0) + ' / ' + yo.recMax; }
 }
 const cdPoder = {}, cdHab = {};
 let gcdHasta = 0, misHabs = [];
@@ -2592,7 +2600,10 @@ function pintarBarra() {
     atk.innerHTML = '<span class="t">1</span><img src="' + A + 'armas/katana_comun_item.png" alt=""><span class="cd"></span>';
     atk.title = 'Atacar (1 o Z; mantén para seguir pegando)';
     atk.setAttribute('aria-label', atk.title);
-    atk.onclick = () => { if (MOVIL) avisoPrimeraVez(atk.title); alternarAtaque(); };
+    // Pulsar pega al instante; mantener sigue pegando (bucle con atkMantener); soltar/salir/cancelar lo corta.
+    atk.onpointerdown = e => { if (e.button !== 0) return; e.preventDefault(); if (MOVIL) avisoPrimeraVez(atk.title); atkMantener = true; alternarAtaque(); };
+    atk.onpointerup = atk.onpointerleave = atk.onpointercancel = () => { atkMantener = false; };
+    atk.onclick = e => { if (e.detail === 0) alternarAtaque(); };   // solo teclado (Enter/Espacio sobre el boton)
     b.appendChild(atk);
     let bloqueadas = 0;
     misHabs.forEach((h, i) => {
@@ -2603,6 +2614,8 @@ function pintarBarra() {
       d.setAttribute('aria-label', d.title);
       // Bloqueada no: usarHab ya avisa del nivel y de lo que hace
       d.onclick = () => { if (MOVIL && yo && yo.nivel >= h.nv) avisoPrimeraVez(d.title); if (habNoLista(h)) rechazo(d); usarHab(h); };
+      // Movil: con otro dedo en el joystick o en ATACAR el navegador no genera click; el toque si llega.
+      if (MOVIL) d.addEventListener('touchstart', e => { e.preventDefault(); d.onclick(); }, { passive: false });
       b.appendChild(d);
     });
     PODERES.forEach((p, i) => {
@@ -2611,6 +2624,7 @@ function pintarBarra() {
       d.title = p.nombre + ' (' + p.tecla + ') — ' + p.desc;
       d.setAttribute('aria-label', d.title);
       d.onclick = () => { if (MOVIL) avisoPrimeraVez(d.title); if ((cdPoder[p.id] || 0) > performance.now() || !(yo && yo.pw && yo.pw[p.id] > 0)) rechazo(d); usarPoder(i); };
+      if (MOVIL) d.addEventListener('touchstart', e => { e.preventDefault(); d.onclick(); }, { passive: false });
       b.appendChild(d);
     });
   }
@@ -3035,7 +3049,7 @@ function tituloZona(id) {
   const lz = LORE_ZONAS[id];
   if (lz && yo) { let vistas = ''; try { vistas = sessionStorage.getItem('dq3_lz') || ''; } catch (e) {} if (!vistas.split(',').includes(id)) { try { sessionStorage.setItem('dq3_lz', vistas + ',' + id); } catch (e) {} setTimeout(() => aviso('📜 ' + lz.intro), 1500); } }
   // Primera salida del pueblo de un novato: se le enseña a volar (una sola vez).
-  try { if (id && id !== 'pueblo' && yo && (yo.nivel || 1) <= 3 && !P.vuela && !localStorage.getItem('dq3_volar_hint')) { localStorage.setItem('dq3_volar_hint', '1'); setTimeout(() => aviso('🪽 ¡Ya saliste del pueblo! Toca ' + K('V', 'VOLAR') + ' y vuela hacia la luz amarilla.', 'ok', 1), 1800); } } catch (e) {}
+  try { if (id && id !== 'pueblo' && yo && (yo.nivel || 1) <= 3 && (yo.kills || 0) > 0 && !P.vuela && !localStorage.getItem('dq3_volar_hint')) { localStorage.setItem('dq3_volar_hint', '1'); setTimeout(() => aviso('🪽 ¡Ya saliste del pueblo! Toca ' + K('V', 'VOLAR') + ' y vuela hacia la luz amarilla.', 'ok', 1), 1800); } } catch (e) {}
 }
 
 // ── VENTANAS ──
@@ -3320,7 +3334,7 @@ try {
   }
 } catch (e) {}
 if (TG && TGV('8.0')) try {
-  TG.onEvent('deactivated', () => { fuera3 = true; musica.activo(false); tema.pause(); temaOn = false; if (actx) actx.suspend().catch(() => {}); tocandoSubir = tocandoBajar = false; joy.id = null; joy.dx = joy.dy = 0; });
+  TG.onEvent('deactivated', () => { fuera3 = true; musica.activo(false); tema.pause(); temaOn = false; if (actx) actx.suspend().catch(() => {}); tocandoSubir = tocandoBajar = false; joy.id = null; joy.dx = joy.dy = 0; atkMantener = false; });
   TG.onEvent('activated', () => { fuera3 = false; if (sonido) musica.activo(true); if (actx) actx.resume().catch(() => {}); });
 } catch (e) {}
 $('b-herm').onclick = () => { if ($('v-herm').classList.contains('on')) return cerrar('v-herm'); abrir('v-herm'); mandar({ t: 'herm' }); pintarHerm(); };
@@ -3337,7 +3351,7 @@ for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, e => { if (e &
 // la musica y los golpes seguian sonando de fondo.
 document.addEventListener('visibilitychange', () => {
   // Al salir (Telegram, otra app) se sueltan joystick y botones: si no, volvia con SUBIR o el joystick pegados.
-  if (document.hidden) { musica.activo(false); tema.pause(); temaOn = false; if (actx) actx.suspend().catch(() => {}); tocandoSubir = tocandoBajar = false; joy.id = null; joy.dx = joy.dy = 0; for (const k in teclas) teclas[k] = false; }
+  if (document.hidden) { musica.activo(false); tema.pause(); temaOn = false; if (actx) actx.suspend().catch(() => {}); tocandoSubir = tocandoBajar = false; joy.id = null; joy.dx = joy.dy = 0; for (const k in teclas) teclas[k] = false; atkMantener = false; }
   else { fuera3 = false; if (sonido) { musica.activo(true); if (actx) actx.resume().catch(() => {}); } }
 });
 // «Antes de irte, manda a tu mascota»: una vez por partida, si puede y no tiene expedicion.
@@ -3989,12 +4003,16 @@ function precargarPresumir() {
     const url = '/assets/promo/historia_' + (IMG_PRESUMIR[presumirTipo] || 1) + '.jpg';
     fetch(url).then(r => r.ok ? r.blob() : null).then(ponerFile).catch(() => {});
   };
-  if (presumirTipo === 'look' || presumirTipo === 'logro' || presumirTipo === 'nivel') {
+  precargarPresumir.tipo = presumirTipo; precargarPresumir.ts = Date.now();
+  if (['look', 'logro', 'nivel', 'jefe', 'duelo'].includes(presumirTipo)) {
     try { if (fotoPresumir(bl => { if (!ponerFile(bl) && turno === precargarPresumir.n) jpgFijo(); })) return; } catch (e) {}
   }
   jpgFijo();
 }
 precargarPresumir.n = 0;
+// La foto de ese momento ya esta (o se esta armando hace < 4 s): no se pisa con un cuadro posterior.
+// Lista solo 90 s: otro jefe o nivel minutos despues lleva foto nueva, no la vieja.
+const presumirListo = tipo => !!tipo && tipo === precargarPresumir.tipo && tipo === presumirTipo && Date.now() - (precargarPresumir.ts || 0) < (presumirFile ? 90000 : 4000);
 // Foto de TU duende: se dibuja el cuadro y se copia en el MISMO tick (sin preserveDrawingBuffer, que cuesta
 // rendimiento), recortada a 9:16 centrada en el duende, con franja y texto abajo. Solo se arma: compartir
 // sigue siendo cuando el jugador toca el boton. Devuelve false si no se pudo (va el JPEG de siempre).
@@ -4039,13 +4057,15 @@ function fotoPresumir(cb) {
 }
 // Tope: una oferta cada 3 min (si no, cansa). forzar: la pidio el jugador.
 function ofrecerPresumir(txt, tipo, forzar) {
-  if (!forzar && Date.now() - presumirUlt < 180000) return;
+  // El jefe pesa mas que nivel/logro: si esa oferta fue hace < 5 s (subiste al matarlo), el jefe la reemplaza.
+  const jefeGana = tipo === 'jefe' && Date.now() - presumirUlt < 5000 && /^(nivel|logro)$/.test(ofrecerPresumir.tipo || '');
+  if (!forzar && !jefeGana && Date.now() - presumirUlt < 180000) return;
   if (!forzar && yo && yo.nivel < 4 && !(yo.mis && yo.mis.i >= 1)) return;   // no tapa el tutorial
-  presumirUlt = Date.now();
+  presumirUlt = Date.now(); ofrecerPresumir.tipo = tipo || '';
   presumirTxt = txt || ''; if (tipo !== undefined) presumirTipo = tipo || '';
   if (!refAmigo) mandar({ t: 'amigos' });
   const b = $('presumir3'); if (!b) return;
-  precargarPresumir();
+  if (!presumirListo(presumirTipo)) precargarPresumir();
   if (!TG) b.textContent = (navigator.canShare ? '📲 Presúmelo (WhatsApp, Instagram…)' : '📲 Presúmelo por WhatsApp') + ' · ganan los dos +' + oroAmigo() + ' oro';
   else b.textContent = esPremiumTG() && (TG.platform === 'android' || TG.platform === 'ios') ? '📸 Presúmelo en tu historia · +' + oroAmigo() + ' oro' : '📨 Presúmelo a un amigo · ganan los dos +' + oroAmigo() + ' oro';
   b.style.display = 'block'; clearTimeout(ofrecerPresumir.t);
@@ -4117,11 +4137,13 @@ function resumenJefe(m) {
   bt.onclick = ev => {
     ev.stopPropagation();
     d.style.display = 'none'; const p3 = $('presumir3'); if (p3) p3.style.display = 'none';
-    presumirTxt = bt.dataset.txt || '¡Vencí a ' + nom + ' en Duende Quest' + (puesto ? ': puesto ' + puesto + ' de ' + de : '') + '!'; presumirTipo = 'jefe';
-    try { precargarPresumir(); } catch (e) {}
+    presumirTxt = bt.dataset.txt || '¡Vencí a ' + nom + ' en Duende Quest' + (puesto ? ': puesto ' + puesto + ' de ' + de : '') + '!';
+    // La foto del jefe ya se armo al caer (md3) o al salir la tarjeta: no se borra justo antes de compartir.
+    if (!presumirListo('jefe')) { presumirTipo = 'jefe'; try { precargarPresumir(); } catch (e) {} }
     compartirYa(true);
   };
   d.append(bt);
+  if (!presumirListo('jefe')) { presumirTipo = 'jefe'; try { precargarPresumir(); } catch (e) {} }
   d.onclick = () => { d.style.display = 'none'; };
   d.style.opacity = '1'; d.style.display = 'block';
   clearTimeout(resumenJefe.t); clearTimeout(resumenJefe.t2);
@@ -4463,6 +4485,7 @@ function mostrarDiario(m, forzar) {
   if ($('v-diario').classList.contains('on') && !mostrarDiario.t) { setTimeout(() => mostrarDiario(m, forzar), 2000); return; }   // no pisa la leyenda
   const n = LOGIN_PREMIOS.length, hoy = diaRacha(m.racha), sem = semanaRacha(m.racha);
   let h = bloqueExpedDiario();
+  try { const tp = yo ? temporadaDe() : null; if (tp) h += `<p class="vv-p" id="vv-temp" style="margin-bottom:8px;padding:8px;border-radius:10px;cursor:pointer;color:${tp.color};background:rgba(255,255,255,.06);border:1px solid ${tp.color}">${tp.emoji} <b>${esc(tp.nombre)}</b> hasta el ${esc(tp.hasta)} · ${esc(textoTemp3(tp).txt)}<br><small style="color:#e8e8f0">Toca aquí para ver el puesto de la Abuela ›</small></p>`; } catch (e) {}
   h += m.amuUsado ? `<p class="vv-p" style="margin-bottom:8px;padding:8px;border-radius:10px;background:rgba(125,211,252,.12);border:1px solid rgba(125,211,252,.45)">🧿 <b>Tu protector salvó tu racha</b>: faltaste un día y no la perdiste.</p>` : '';
   h += m.vuelta ? `<p class="vv-p" style="margin-bottom:8px;padding:8px;border-radius:10px;background:rgba(255,216,74,.12);border:1px solid rgba(255,216,74,.4)">🎉 <b>¡Te echábamos de menos!</b> ${m.vuelta.dias} días fuera. Regalo de bienvenida: <b>+${m.vuelta.oro.toLocaleString('es')} oro</b>, ${m.vuelta.pociones} pociones y <b>${esc(m.vuelta.item)}</b>.</p>` : '';
   h += `<p class="vv-p" style="margin-bottom:8px">¡Día <b style="color:#ffd84a">${m.racha}</b> de tu racha${sem > 1 ? ` (semana ${sem}, oro x${String(multSemanaRacha(m.racha)).replace('.', ',')})` : ''}! Recibes <b>${m.oro && /oro/.test(m.txt || '') ? m.oro.toLocaleString('es') + ' oro' : esc(m.txt || '')}</b>${m.oro && !/oro/.test(m.txt || '') ? ` (+${m.oro.toLocaleString('es')} oro)` : ''}${m.itemNom ? `: <b>${esc(m.itemNom)}</b>` : ''}.</p><div class="dias7">`;
@@ -4474,6 +4497,8 @@ function mostrarDiario(m, forzar) {
   h += `<p class="vv-p" style="margin-top:10px;font-size:12px"><b style="color:#7dd3fc">${esc(textoManana3() || 'Mañana: ' + premioRacha(m.racha + 1).txt)}</b>. Si faltas un día, un protector 🧿 la salva; sin protector retrocede (desde el día 7 no pierdes las semanas cumplidas).${m.pase ? ` Entrar sumó <b>+${m.pase}</b> al pase del mes.` : ''}</p><p class="vv-p" style="margin-top:6px;font-size:12px">🧿 Protectores: <b>${m.amu || 0}</b> (se ganan con el bono semanal, máximo 2)</p>`;
   $('diario-c').innerHTML = h;
   $('diario-c').onclick = clicExpedDiario;
+  const vt = $('vv-temp');
+  if (vt) vt.onclick = e => { e.stopPropagation(); clearTimeout(mostrarDiario.t); mostrarDiario.t = 0; cerrar('v-diario'); try { V.abrirTiendaTemp(); } catch (er) {} };
   $('v-diario').querySelector('h2').textContent = m.vuelta ? '¡BIENVENIDO DE VUELTA!' : 'RECOMPENSA DIARIA';
   abrir('v-diario'); vib('success'); sfxK('monedas', 0.4);
   clearTimeout(mostrarDiario.t);
@@ -4568,25 +4593,38 @@ $('chat-in').addEventListener('keydown', e => {
 let arrastre = null;
 lienzo.addEventListener('pointerdown', e => {
   if (e.pointerType === 'touch') return;
+  soltarAtkRaton();   // un arrastre anterior sin pointerup no deja atkMantener pegado
   arrastre = { x: e.clientX, y: e.clientY, mov: 0 };
   lienzo.setPointerCapture(e.pointerId);
+  // Mantener el clic izquierdo quieto con un monstruo (o rival de duelo/Abismo) al alcance sigue pegando, como mantener 1/Z.
+  if (e.button === 0) { const a = arrastre; a.tAtk = setTimeout(() => { if (arrastre === a && a.mov < 6 && (blancoCercano() || rivalP())) { a.atk = true; atkMantener = true; golpeManual(); } }, 220); }
 });
 lienzo.addEventListener('pointermove', e => {
   if (!arrastre || e.pointerType === 'touch') return;
-  if (!(e.buttons & 3)) { arrastre = null; return; }   // el boton ya se solto (alt-tab, dialogo...)
+  if (!(e.buttons & 3)) { soltarAtkRaton(); arrastre = null; return; }   // el boton ya se solto (alt-tab, dialogo...)
   const dx = e.clientX - arrastre.x, dy = e.clientY - arrastre.y;
   arrastre.x = e.clientX; arrastre.y = e.clientY; arrastre.mov += Math.abs(dx) + Math.abs(dy);
+  if (arrastre.mov >= 6) soltarAtkRaton();   // ya es arrastre de camara: deja de pegar
   camYaw -= dx * 0.006; camPitch = clamp(camPitch + dy * 0.004, 0.08, 1.25);
 });
 lienzo.addEventListener('pointerup', e => {
   if (e.pointerType === 'touch') return;
+  const mantuvo = !!(arrastre && arrastre.atk);
+  soltarAtkRaton();
   if (arrastre && arrastre.mov < 6) {
     const om = elegirEn(e.clientX, e.clientY, e.detail >= 2);
     // Clic izquierdo sobre un monstruo al alcance: lo marca y le pega ya (golpeManual respeta la cadencia).
-    if (om && e.button === 0 && !om.muereT && Math.hypot(om.x - P.x, om.z - P.z) <= rangoAtaque(om)) golpeManual();
+    if (!mantuvo && om && e.button === 0 && !om.muereT && Math.hypot(om.x - P.x, om.z - P.z) <= rangoAtaque(om)) golpeManual();
   }
   arrastre = null;
 });
+lienzo.addEventListener('pointercancel', e => { if (e.pointerType === 'touch') return; soltarAtkRaton(); arrastre = null; });
+// Corta el "mantener clic para pegar" del raton (y su temporizador) sin tocar el de ATACAR/1/Z.
+function soltarAtkRaton() {
+  if (!arrastre) return;
+  clearTimeout(arrastre.tAtk);
+  if (arrastre.atk) { arrastre.atk = false; atkMantener = false; }
+}
 lienzo.addEventListener('contextmenu', e => e.preventDefault());
 lienzo.addEventListener('wheel', e => { camDist = clamp(camDist + Math.sign(e.deltaY) * 1.2, 4, 26); e.preventDefault(); }, { passive: false });
 const ray = new THREE.Raycaster(), vec2 = new THREE.Vector2();
@@ -4596,7 +4634,7 @@ function elegirEn(cx, cy, doble) {
   // Sin los ocultos: el rayo no mira la visibilidad y su cilindro sigue en la escena.
   const lista = [...mons.values()].filter(o => o.fig && !o.muereT && (!o.fig.raiz || o.fig.raiz.visible));
   const elegirMon = o => {
-    if (MOVIL) { try { if (!localStorage.getItem('dq3_tip2m')) { localStorage.setItem('dq3_tip2m', '1'); aviso('👆 Monstruo marcado: acércate y toca ' + K('1', 'ATACAR') + ' para golpearlo (mantén pulsado para seguir pegando).', 'ok', 1); } } catch (e) {} }
+    if (MOVIL) { try { if (!localStorage.getItem('dq3_tip2m')) { localStorage.setItem('dq3_tip2m', '1'); aviso('👆 Monstruo marcado: acércate y tócalo o toca ' + K('1', 'ATACAR') + ' para golpearlo (mantén ATACAR para seguir pegando).', 'ok', 1); } } catch (e) {} }
     if (objetivo !== o.id) vibSel();
     objetivo = o.id; pintarBarra(); sfx('boton', 0.2);
   };
@@ -4662,6 +4700,7 @@ function blancoAtk() {
 // Ataque MANUAL (v344): cada toque de ATACAR (o 1/Z, o mantenerlo pulsado) es un golpe que se ve.
 // Sin AUTO: el duende no persigue, no cambia solo de blanco ni toma pociones por su cuenta.
 function alternarAtaque() { golpeManual(); }
+let atkReintento = 0, atkRepite = false, atkRepN = 0;   // reenvio silencioso (maximo 2 seguidos) de un golpe que el servidor descarto por recarga (atkNo con ms)
 let atkMantener = false, atkCdIni = 0, atkCdFin = 0, avisoTiroT = 0, avisoTiroN = 0, tiroO = null, btnAtkEl = null, recargaQ = -1;
 // Direccion (x, z) del mundo hacia donde se empuja el joystick, o null si no se esta moviendo.
 function dirJoy() {
@@ -4742,6 +4781,12 @@ function golpeManual() {
   const rv = !objetivo && rivalP() ? otros.get(rivalP()) : null;
   const o = rv && Math.hypot(rv.x - P.x, rv.z - P.z) <= rangoAtaque(rv) ? rv : blancoCercano();
   const cdMs = vara ? VARA.cdMs * arma.cd : 1000 * arma.cd;
+  if (atkRepite) {
+    // Reintento tras atkNo: el tajo ya se vio; solo se reenvia el golpe (sin combo, sonido ni impacto nuevo).
+    atkRepite = false; atkReintento = 0;
+    if (o) { mandarPos(true); mandar(o === rv ? { t: 'atk3', tp: o.id } : { t: 'atk3', tg: o.id }); sigAtk = ahora + cdMs; return; }
+    if (!atkMantener) return;
+  }
   sigAtk = ahora + cdMs;
   atkCdIni = ahora; atkCdFin = sigAtk;   // anillo de recarga del boton ATACAR (movil)
   // Combo visual de 3 golpes si se encadenan rapido (solo se ve; el daño lo decide el servidor).
@@ -4757,11 +4802,17 @@ function golpeManual() {
       P.ry = Math.atan2(c.x - P.x, c.z - P.z); P.f = (c.x - P.x) * der.x + (c.z - P.z) * der.z >= 0 ? 1 : -1;
       if (avisoTiroN < 3 && ahora - avisoTiroT > 6000) { avisoTiroN++; avisoTiroT = ahora; aviso('🎯 Acércate un poco más: cuando el anillo bajo el monstruo se pone verde, tu golpe le llega.', 'ok'); }
     }
+    // Sin monstruos a la vista (tambien con joystick): decirle adonde ir, como mucho cada 8 s
+    if (!c && !enCueva(P.x) && !enAbismo(P.x) && !monCerca(25) && ahora - (golpeManual.avL || 0) > 8000) {
+      golpeManual.avL = ahora;
+      aviso(zonaEn(P.x, P.z) === 'pueblo' ? '🏘 En el pueblo no hay monstruos: sal y sigue la luz amarilla.' : 'No hay monstruos cerca: sigue la luz amarilla o mira el mapa ' + K('🗺 (M)', '⋯ → 🗺') + '.', 'ok');
+    }
     sfxK('desenv', 0.22); efectoGolpe(vara, true); return;
   }
   if (o !== rv && objetivo !== o.id) { objetivo = o.id; pintarBarra(); }
   mandarPos(true);
   mandar(o === rv ? { t: 'atk3', tp: o.id } : { t: 'atk3', tg: o.id });
+  atkReintento = 0; atkRepN = 0;
   if (o !== rv) impactos.push({ o, t: ahora + (vara ? 280 : 150) });
   const dx = o.x - P.x, dz = o.z - P.z; P.ry = Math.atan2(dx, dz);
   P.f = dx * der.x + dz * der.z >= 0 ? 1 : -1;
@@ -4828,7 +4879,12 @@ function usarHab(h) {
   if (yo.recMax !== undefined && (P.rec || 0) < costoHab(h, yo.recMax || 100, yo.espec)) { const cl = CLASES[yo.clase], rc = cl && RECURSOS[cl.recurso]; return aviso(`${h.nombre} necesita más ${rc ? rc.nombre.toLowerCase() : 'recurso'}${cl && cl.recurso === 'ira' ? ': la Ira sube al pegar y al recibir golpes' : ''}.`, 'err'); }
   mandarPos(true);
   // Aliado elegido solo si sigue cerca (en movil no habia forma de soltarlo y la cura iba a un "fantasma").
-  const qa = objetivoP && otros.get(objetivoP), aliadoOk = qa && Math.hypot(qa.x - P.x, qa.z - P.z) <= (h.rango || 400) / 17 + 2;
+  const qa = objetivoP && otros.get(objetivoP), dqa = qa ? Math.hypot(qa.x - P.x, qa.z - P.z) : 0, aliadoOk = qa && dqa <= (h.rango || 400) / 17 + 2;
+  // Aliado elegido pero lejos: avisa en vez de gastar la cura en uno mismo. Repetir en 4 s suelta al aliado y te cura a ti (en movil no hay otra forma de soltarlo).
+  if ((h.obj === 'aliado' || h.obj === 'muerto') && qa && !aliadoOk && !enemigoP(qa.id) && !!qa.muerto === (h.obj === 'muerto')) {
+    if (h.obj === 'aliado' && usarHab.lejos === qa.id && ahora - usarHab.lejosT < 4000) { usarHab.lejos = 0; objetivoP = 0; pintarObjetivoP(); pintarGrupo(); }
+    else { usarHab.lejos = qa.id; usarHab.lejosT = ahora; return aviso((qa.n || 'Tu aliado') + ' está lejos (' + Math.round(dqa) + ' m): acércate' + (h.obj === 'muerto' ? ' para resucitarle.' : ' para curarle, o vuelve a tocar para curarte tú.'), 'err'); }
+  }
   mandar({ t: 'hab3', id: h.id, tg: h.obj === 'enemigo' ? objetivo : 0, tp: contraRival ? contraRival : (h.obj === 'aliado' || h.obj === 'muerto') && aliadoOk ? objetivoP : 0 });
   // Con lanzamiento: quieto desde el toque (el acercamiento automatico lo movia antes de
   // que llegara el 'cast' y el servidor lo cancelaba con "Te moviste").
@@ -4849,7 +4905,7 @@ function volar(on) {
   if (on) {
     if (P.muerto || !yo) return;
     if (yo.montado) return aviso('Bájate de la montura para volar.', 'err');
-    if (zonaEn(P.x, P.z) === 'pueblo') return aviso('🪽 En el pueblo no se vuela: sal por el camino hacia la luz amarilla y toca ' + K('V', 'VOLAR') + '.', 'ok', 1);
+    if (zonaEn(P.x, P.z) === 'pueblo') return aviso(!(yo && yo.kills > 0) ? '⚔️ Primero caza: sal por el camino hacia la luz amarilla y pega con ' + K('1', 'ATACAR') + '.' : '🪽 En el pueblo no se vuela: sal por el camino hacia la luz amarilla y toca ' + K('V', 'VOLAR') + '.', 'ok', 1);
     if (enCueva(P.x)) return aviso('En la cueva no hay sitio para volar.', 'err');
     if (P.alas < 3) return aviso('Tus alas necesitan descansar.', 'err');
     P.vuela = true; P.vy = 0; if (P.suelo) P.y += 1.5; P.suelo = false;
@@ -4873,6 +4929,9 @@ function npcCercano() {
     return q ? { tipo: 'maquina', nombre: MAQUINA[q.k].nombre, i: q.i } : null;
   }
   if (enCueva(P.x)) return Math.hypot(P.x - CUEVA_X0 - CUEVA.salida.x, P.z - CUEVA.salida.z) < 4 ? { tipo: 'salida', nombre: 'Salir de la cueva' } : null;
+  // Sacerdote junto a un aliado caido: el boton ofrece Resucitarle (la habilidad no va en la barra).
+  const hRes = yo && yo.clase === 'sacerdote' && !P.muerto ? habPorId('resurreccion') : null;
+  if (hRes && (yo.nivel || 1) >= hRes.nv) for (const q of otros.values()) if (q.muerto && Math.hypot(q.x - P.x, q.z - P.z) <= (hRes.rango / 17 || 6) && !enemigoP(q.id) && q.id !== dueloCon) return { tipo: 'res', nombre: 'Resucitar a ' + (q.n || 'tu aliado'), q, h: hRes };
   return npcs.find(n => Math.hypot(P.x - n.x, P.z - n.z) < NPC_DIST) || (portal && Math.hypot(P.x - portal.x, P.z - portal.z) < 5 ? { tipo: 'portal', nombre: 'Mazmorras' } : null)
     || (decoTp.puesto && Math.hypot(P.x - decoTp.puesto.x, P.z - decoTp.puesto.z) < 3.5 ? { tipo: 'tiendaTemp', nombre: 'la Abuela' } : null);
 }
@@ -4889,6 +4948,7 @@ function hablar() {
   if (n.tipo === 'salidaAbismo') { mandar({ t: 'salirAbismo' }); return; }
   if (n.tipo === 'maquina') { mandar({ t: 'maquina', i: n.i }); return; }
   if (n.tipo === 'tiendaTemp') { V.abrirTiendaTemp(); return; }
+  if (n.tipo === 'res') { if (lanzando && lanzando.id === 'resurreccion') return; objetivoP = n.q.id; pintarObjetivoP(); usarHab(n.h); return; }
   if (n.tipo === 'portal') {
     npcAbierto = '';
     $('npc-t').textContent = 'PORTAL DE LAS MAZMORRAS';
@@ -4944,7 +5004,7 @@ if (MOVIL) {
       joy.id = null; joy.dx = joy.dy = 0; base.style.display = 'none'; pomo.style.left = pomo.style.top = '33px';
       // Toque corto sin arrastrar: elige lo que haya debajo (monstruo, jugador, PNJ) como en el resto de la pantalla.
       const quieto = Math.max(joy.lejos || 0, Math.hypot(t.clientX - joy.x0, t.clientY - joy.y0)) < 12;
-      if (e.type === 'touchend' && quieto && performance.now() - (joy.t0 || 0) < 300) elegirEn(t.clientX, t.clientY, false);
+      if (e.type === 'touchend' && quieto && performance.now() - (joy.t0 || 0) < 300) { const om = elegirEn(t.clientX, t.clientY, false); if (om && !om.muereT && mons.has(om.id) && Math.hypot(om.x - P.x, om.z - P.z) <= rangoAtaque(om)) { vib('light'); golpeManual(); } }
     }
   };
   $('joy').addEventListener('touchend', finJoy); $('joy').addEventListener('touchcancel', finJoy);
@@ -4973,7 +5033,7 @@ if (MOVIL) {
     }
   }, { passive: true });
   const finToque = e => {
-    for (const t of e.changedTouches) { toques.delete(t.identifier); if (t.identifier === camTouch.id) { if (camTouch.mov < 10 && e.type === 'touchend') elegirEn(t.clientX, t.clientY, false); camTouch.id = null; } }
+    for (const t of e.changedTouches) { toques.delete(t.identifier); if (t.identifier === camTouch.id) { if (camTouch.mov < 10 && e.type === 'touchend') { const om = elegirEn(t.clientX, t.clientY, false); if (om && !om.muereT && mons.has(om.id) && Math.hypot(om.x - P.x, om.z - P.z) <= rangoAtaque(om)) { vib('light'); golpeManual(); } } camTouch.id = null; } }
     if (toques.size < 2) pinch = null;
   };
   lienzo.addEventListener('touchend', finToque, { passive: true }); lienzo.addEventListener('touchcancel', finToque, { passive: true });
@@ -5339,10 +5399,11 @@ function animarMon(o, t) {
 }
 // Preparacion del golpe ('mpre'): se agacha y se echa atras (solo la figura) hasta que pega.
 const PRE_MON_MS = 360;
+let mesqT = 0;   // ultimo '¡Esquivado!' por aviso rojo
 function preparaGolpe(o, t, obj) {
-  const dp = t - (o.preT || 0);
-  if (!obj || dp < 0 || dp >= PRE_MON_MS || o.muereT) return;
-  const k = Math.sin(Math.min(1, dp / (PRE_MON_MS * 0.6)) * Math.PI / 2);   // baja rapido y aguanta
+  const dp = t - (o.preT || 0), pm = o.preMs || PRE_MON_MS;
+  if (!obj || dp < 0 || dp >= pm || o.muereT) return;
+  const k = Math.sin(Math.min(1, dp / (pm * 0.6)) * Math.PI / 2);   // baja rapido y aguanta
   const dx = o.x - P.x, dz = o.z - P.z, l = Math.hypot(dx, dz) || 1;
   obj.position.x += dx / l * 0.18 * k; obj.position.z += dz / l * 0.18 * k;
   obj.scale.x *= 1 + 0.1 * k; obj.scale.y *= 1 - 0.16 * k; obj.scale.z *= 1 + 0.1 * k;
@@ -5671,7 +5732,8 @@ const TUTO3 = [
   { txt: () => (metaMision && metaMision.mon ? 'Sigue la luz amarilla: ahí te espera un goblin' : 'Ve a la luz amarilla') + (metaMision ? ` ${flechaDir(metaMision.x, metaMision.z)} ${Math.round(Math.hypot(metaMision.x - P.x, metaMision.z - P.z))} m` : ''), hecho: t => (yo.kills || 0) > t.k0 || (metaMision && Math.hypot(metaMision.x - P.x, metaMision.z - P.z) < 30) },
   { txt: () => MOVIL ? 'Acércate y toca ATACAR: cada toque es un golpe. Mantén pulsado para seguir pegando' : 'Acércate y pulsa 1 o Z: cada pulsación es un golpe. Mantén para seguir pegando', hecho: t => (yo.kills || 0) > t.k0 },
   // En movil el boton de ataque no esta en la barra: el primero ya es la habilidad de nivel 1.
-  { txt: () => 'Usa tu habilidad ' + ((habsDe(yo.clase)[0] || {}).nombre || 'de clase') + ': ' + (MOVIL ? 'primer botón de la barra' : 'tecla 2'), hecho: t => t.hab },
+  // Guerrero: la Ira empieza en 0; se explica como llenarla (antes el paso se trababa sin Ira).
+  { txt: () => (CLASES[yo.clase] || {}).recurso === 'ira' ? 'Pega 2 golpes con ' + K('1', 'ATACAR') + ' para llenar tu Ira (barra roja) y luego usa ' + ((habsDe(yo.clase)[0] || {}).nombre || 'Golpe del Puma') + ' ' + K('(tecla 2)', '(el botón de la barra que late en verde)') + '.' : 'Usa tu habilidad ' + ((habsDe(yo.clase)[0] || {}).nombre || 'de clase') + ': ' + (MOVIL ? 'primer botón de la barra' : 'tecla 2'), hecho: t => t.hab },
   { txt: () => 'Fuera del pueblo, despliega las alas: ' + (MOVIL ? 'botón VOLAR' : 'V o doble salto'), hecho: () => P.vuela },
   { txt: () => MISIONES[yo.mis.i] && yo.mis.p >= MISIONES[yo.mis.i].n ? '¡Misión lista! Toca AQUÍ para entregarla' : 'Completa tu misión 📜: el premio se cobra solo al terminarla', hecho: () => yo.mis.i >= 1 },
 ];
@@ -5703,7 +5765,7 @@ function htmlTuto3() {
     // Embudo (una vez por sesion, beacon /mmo/ev): cumplio la habilidad, las alas o todo el tutorial.
     const pe = tuto3.i === 4 ? 't_hab' : tuto3.i === 5 ? 't_volar' : tuto3.i === TUTO3.length ? 't_fin' : ''; if (pe) paso(pe);
     // Primera caza: se felicita y se enseña lo que falta del combate (habilidad y alejarse del rojo).
-    if (tuto3.i === 3) aviso('¡Bien hecho! Ahora usa tu habilidad. Si un monstruo se agacha y brilla en rojo, aléjate: va a pegarte.', 'ok', 1); }
+    if (tuto3.i === 3) aviso('¡Bien hecho! Ahora usa tu habilidad. Si un monstruo se agacha y brilla en rojo, aléjate un paso: va a darte un golpe cuerpo a cuerpo.', 'ok', 1); }
   pulsoTuto3(tuto3.i);
   const p = TUTO3[tuto3.i]; if (!p) return '';
   // Paso 6 con la mision lista: la propia fila del tutorial la entrega (en movil la fila 📜 queda debajo).
@@ -5959,7 +6021,7 @@ function cuadroBucle(t) {
   cuadro++;
   fisica(dt);
   if (prueba) girarPrueba();
-  if (atkMantener) golpeManual();   // mantener ATACAR (o 1/Z) sigue pegando al ritmo del arma
+  if (atkMantener || (atkReintento && atkReintento > t)) golpeManual();   // mantener ATACAR (o 1/Z) sigue pegando al ritmo del arma
   pintarAyudaAtk(t);   // anillo "a tiro" bajo el monstruo y recarga del boton ATACAR
   if (colaHab && t >= gcdHasta) { const h = colaHab; colaHab = null; if (t < colaHasta) usarHab(h); }
   if (impactos.length) impactos = impactos.filter(i => { if (t < i.t) return true; if (!i.o.muereT) { i.o.golpeT = t; i.o.predT = t; i.o.golpeC = false; i.o.golpeDe = P; pausaGolpe(i.o, 40); } return false; });
@@ -6023,7 +6085,7 @@ function cuadroBucle(t) {
     if (yo) {
       const n = npcCercano(), cf = n ? null : cofreCercano(), nd = n || cf ? null : nodoCercano(); const b = $('hablar');
       b.style.display = n || cf || nd ? 'block' : 'none';
-      if (n) b.textContent = (MOVIL ? '' : 'E · ') + (n.tipo === 'portal' ? 'Mazmorras' : n.tipo === 'salida' ? 'Salir de la cueva' : n.tipo === 'salidaAbismo' ? 'Volver al pueblo' : n.tipo === 'maquina' ? 'Disparar ' + n.nombre.toLowerCase() : n.tipo === 'tiendaTemp' ? 'Tienda de la fiesta' : 'Hablar con ' + n.nombre);
+      if (n) b.textContent = (MOVIL ? '' : 'E · ') + (n.tipo === 'portal' ? 'Mazmorras' : n.tipo === 'salida' ? 'Salir de la cueva' : n.tipo === 'salidaAbismo' ? 'Volver al pueblo' : n.tipo === 'maquina' ? 'Disparar ' + n.nombre.toLowerCase() : n.tipo === 'tiendaTemp' ? 'Tienda de la fiesta' : n.tipo === 'res' ? '✨ ' + n.nombre : 'Hablar con ' + n.nombre);
       else if (cf) b.textContent = (MOVIL ? '' : 'E · ') + 'Abrir ' + NOMBRE_COFRE[cf.tipo];
       else if (nd) b.textContent = (MOVIL ? '' : 'E · ') + 'Recoger ' + MATERIALES[nd.tipo].nombre;
       else if (!enCueva(P.x) && aguaCerca()) { b.style.display = 'block'; b.textContent = (MOVIL ? '' : 'E · ') + (pica > performance.now() ? '¡TIRAR!' : lanzando && lanzando.id === 'pescar' ? 'Esperando que pique…' : 'Pescar'); }
@@ -6031,7 +6093,7 @@ function cuadroBucle(t) {
     if (toca(1, 1000, t)) revisarNodos();
     animarCofres(t);
     for (const o of mons.values()) if (o.ra && !o.muereT && Math.abs(o.x - P.x) < 60 && Math.abs(o.z - P.z) < 60) FX.emitir(o.x, alturaEn(o.x, o.z) + 0.3, o.z, { n: 5, color: o.ti || '#ffd84a', vel: 1.2, vida: 1, grav: -2.5, radio: 0.8, tam: 0.8 });
-    if (MOVIL) { const u = $('t-usar'), b = $('hablar'), ver = b.style.display === 'block' && !P.vuela; u.style.visibility = ver ? 'visible' : 'hidden'; if (ver) u.textContent = /Abrir/.test(b.textContent) ? 'ABRIR' : /Recoger/.test(b.textContent) ? 'RECOGER' : /Pescar|TIRAR|pique/.test(b.textContent) ? (/TIRAR/.test(b.textContent) ? '¡TIRAR!' : 'PESCAR') : /Salir/.test(b.textContent) ? 'SALIR' : /Disparar/.test(b.textContent) ? 'FUEGO' : 'HABLAR'; }
+    if (MOVIL) { const u = $('t-usar'), b = $('hablar'), ver = b.style.display === 'block' && !P.vuela; u.style.visibility = ver ? 'visible' : 'hidden'; if (ver) u.textContent = /Abrir/.test(b.textContent) ? 'ABRIR' : /Recoger/.test(b.textContent) ? 'RECOGER' : /Pescar|TIRAR|pique/.test(b.textContent) ? (/TIRAR/.test(b.textContent) ? '¡TIRAR!' : 'PESCAR') : /Salir/.test(b.textContent) ? 'SALIR' : /Disparar/.test(b.textContent) ? 'FUEGO' : /Resucitar/.test(b.textContent) ? 'REVIVIR' : 'HABLAR'; }
     if (npcAbierto && $('v-npc').classList.contains('on')) { const n = NPCS3D.find(x => x.tipo === npcAbierto); if (n && Math.hypot(P.x - n.x, P.z - n.z) > NPC_DIST + 6) cerrar('v-npc'); }
   }
   cieloAct.lerp(cieloObj, Math.min(1, dt * 1.5));

@@ -3425,3 +3425,16 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Tutorial del ataque manual en ORIGINS y CLASSIC; primer goblin cerca y luz amarilla hacia él; ATACAR late hasta el primer golpe.
 - PvP seguro: auditoría del servidor (todo daño a jugadores pasa por `rival3d`/`rivalDuelo`) y pruebas nuevas en el arnés.
 - Arnés 905 bien (la de «ningún tipo acapara la zona» es la aleatoria de siempre).
+
+### Ronda 15 tras el ataque manual (2-nov-2026, `?v=346`)
+
+- 30 evaluadores (cada clase a mano, móvil/PC, jefes, CLASSIC sin AUTO, accesibilidad, anti-trampas, lag, T'anta Wawa) → 139 problemas → 10 tareas.
+- `atkNo` con `ms` en atacar3d/atacarDuelo3d y reintento silencioso (máx. 2) solo para descartes por recarga.
+- Paso de combo en el servidor (`paso3`, ×[0.92,1,1.3]) y `f` en 'at3' para el número naranja.
+- 'mpre' justo: no lo borra tu golpe, no lo mandan los tiradores, jefes avisan a todos, «¡Esquivado!».
+- Sacerdote: botón Resucitar y Sanar con aviso de distancia. Pack de bienvenida refresca al jugador al entregarse.
+- Guerrero novato: tutorial de la Ira y Golpe del Puma más fuerte; nombre del recurso en la barra.
+- `spawnNovato3d`: el nuevo aparece en la salida del pueblo, cerca del goblin guía. ATACAR sin monstruos indica adónde ir.
+- Controles: tocar al monstruo pega, clic mantenido en PC, habilidades con touchstart, `atkMantener` que no se queda pegado.
+- T'anta Wawa en la recompensa diaria y en la portada. Presumir del jefe con foto real.
+- Arnés 905 bien (prueba del spawn ajustada al novato).

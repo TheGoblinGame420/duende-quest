@@ -504,9 +504,17 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 345;
+export const VERSION = 346;
 
 export const NOVEDADES = [
+  { n: 114, fecha: '2 nov 2026', items: [
+    'El tercer golpe seguido del combo pega más fuerte de verdad: su número sale grande y naranja con «!».',
+    'Toca al monstruo que tienes al lado para pegarle; en PC mantén el clic sobre él. Los botones de habilidad responden al instante aunque te muevas.',
+    'Los monstruos brillan en rojo un poco antes de pegarte: aléjate un paso y verás «¡Esquivado!». Los jefes avisan a todo el grupo.',
+    'Con 4G inestable tus golpes ya no se pierden en silencio. Sacerdotes: botón ✨ Resucitar cerca de un aliado caído.',
+    'Los nuevos aparecen a pocos pasos de su primer goblin; los guerreros novatos saben que primero hay que llenar la Ira.',
+    "Desde mañana la recompensa diaria muestra tus T'anta Wawas. Al vencer a un jefe, «Presumir 📣» comparte una foto real del momento.",
+  ] },
   { n: 113, fecha: '2 nov 2026', items: [
     '⚔ Cada golpe se ve: si pegas seguido encadenas un combo de tres (tajo, tajo de vuelta y estocada fuerte) con un arco de luz del color de tu clase. Magos y sacerdotes lanzan un destello al atacar al aire.',
     'Un anillo en el suelo te avisa cuándo le llega tu golpe al monstruo: amarillo si estás cerca, verde cuando ya le pegas. En el celular, ATACAR muestra el ritmo de tu arma y el golpe sale hacia donde mueves el joystick.',

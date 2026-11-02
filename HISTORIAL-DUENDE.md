@@ -82,6 +82,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v343 | Estudio 3 + QA: primer jefe como acontecimiento, texto grande, ligas por nivel, historias en tarjetas, reto de jefe, tienda de fiesta sin abusos, modo ligero | **B** |
 | v344 | Ataque manual en ORIGINS y CLASSIC: cada golpe se ve, mantener sigue pegando, sin AUTO; sin daño a jugadores fuera de duelos y Abismo | **B** |
 | v345 | Combate a mano: combo de 3 golpes con arco, anillo de alcance, monstruos que avisan, tutorial del ataque manual, pruebas de PvP seguro | **B** |
+| v346 | Ronda 15: combo con daño real, tocar para pegar, esquiva, golpes con lag, resucitar, spawn del novato, T'anta Wawa en la diaria | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

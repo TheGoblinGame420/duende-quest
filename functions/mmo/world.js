@@ -1728,12 +1728,14 @@ export class MmoWorld {
     }
     // Celebracion en el cliente (ventana con la skin en grande): al momento si
     // esta conectado; si no, queda en c.regaloPend y sale al entrar.
-    const regalo = { cod: pd.codigo, nombre: pd.nombre, skin: pq.skin && SKINS[pq.skin] ? pq.skin : '', ala: pq.alas && ALAS[pq.alas] ? pq.alas : '', oro: pq.oro || 0, ya: notaSkin.includes('Ya la tenías') ? 1 : 0 };
+    const regalo = { cod: pd.codigo, nombre: pd.nombre, skin: pq.skin && SKINS[pq.skin] ? pq.skin : '', ala: pq.alas && ALAS[pq.alas] ? pq.alas : '', oro: pq.oro || 0, pw: pq.pw || null, ya: notaSkin.includes('Ya la tenías') ? 1 : 0 };
     // Dos entregas sin conectarse: la anterior no se pierde, pasa al buzon.
     if (!s && c.regaloPend && c.regaloPend.cod !== regalo.cod) await this.buzonAgregar(pd.uid, `🎁 Tu compra "${c.regaloPend.nombre}" ya está en tu personaje. Gracias por apoyar DUENDE QUEST.`);
     if (!s) c.regaloPend = regalo;
     if (s) await this.guardar(s); else await this.state.storage.put('c:' + pd.uid, c);
     await this.guardarPedidos();
+    // Pack sin skin (oro + pociones): aplicarPaquete no manda 'yo'; sin esto el cliente seguia con las pociones viejas y la tienda ofreciendo el pack.
+    if (s) this.actualizarYo(s);
     if (s) this.enviar(s, { t: 'regalo', ...regalo, vivo: 1 });
     await this.avisarJugador(pd.uid, `🎁 ¡Tu compra "${pd.nombre}" ya está en tu personaje!${notaSkin} Gracias por apoyar DUENDE QUEST.`, true);
     // Pago con Stars desde la web (uid no es tg:): el bot le prometio al pagador «Te avisaremos aquí».
