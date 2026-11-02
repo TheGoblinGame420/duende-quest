@@ -504,9 +504,18 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 348;
+export const VERSION = 349;
 
 export const NOVEDADES = [
+  { n: 117, fecha: '2 nov 2026', items: [
+    '🎃 Último día de Halloween: el juego y la tienda de la Abuela te avisan cuántas calabazas te quedan; a medianoche dejan de valer.',
+    'Los nombres de los monstruos ya no se enciman, y el ❗ marca solo al de tu misión más cercano.',
+    'Esquivar es más justo con datos móviles y tiene sonido propio; el aviso rojo de un monstruo cercano también suena.',
+    'En el pueblo estás a salvo de verdad: los monstruos que te persiguen se rinden en el cartel de Zona segura.',
+    'La Gran Invasión de las 21:00 llega siempre, y si se pierde quien ayudó se lleva un premio consuelo.',
+    'Las skins exclusivas Esmeralda, Sombrío, Solar y Cósmico tienen aspecto propio en 3D.',
+    'En Telegram, Atrás pide un segundo toque antes de salir del mundo 3D.',
+  ] },
   { n: 116, fecha: '2 nov 2026', items: [
     '💨 Nuevo botón ESQUIVAR en ORIGINS (en PC, X o Mayús): un impulso rápido para salir del golpe rojo, con 1,2 s de recarga.',
     'Si tocas ATACAR un pelín antes de que termine la recarga, el golpe ya no se pierde; el botón brilla en dorado antes del golpe fuerte del combo.',

@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=348';
-import { iniciarRegalo } from './regalo.js?v=348';
-import { iniciarAvisoTg } from './avisotg.js?v=348';
+} from './data.js?v=349';
+import { iniciarRegalo } from './regalo.js?v=349';
+import { iniciarAvisoTg } from './avisotg.js?v=349';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -2508,6 +2508,7 @@ function revisarNovedades() {
   const guardar = () => { try { localStorage.setItem('dq_mmo_nov', String(ult)); } catch (e) {} };
   if (visto >= ult) return;
   if (yo.nivel < 3 && (yo.kills || 0) < 20) { guardar(); return; }
+  if (!itemsNovClassic(NOVEDADES[0]).length) { guardar(); return; }   // parche solo de ORIGINS (3D): no abrir sola
   let n = 0;
   const t = setInterval(() => {
     if (castYo) ultCastT = performance.now();
@@ -2557,13 +2558,22 @@ function sinEmojiC(t) {
 function sinEmoji(t) { return limpiarRestos(String(t).replace(/(\p{Extended_Pictographic}|\uFE0F|\u200D)+/gu, '')).replace(/^[\s·:\-—]+/, '').trim(); }
 // Lo que queda al quitar un emoji: "( tecla M)", "()", dobles espacios.
 function limpiarRestos(t) { return t.replace(/\s*\(\s*\)/g, '').replace(/\(\s+/g, '(').replace(/\s+\)/g, ')').replace(/ {2,}/g, ' '); }
+// Notas que CLASSIC muestra: sin lo que es solo de ORIGINS (3D), salvo que nombre a CLASSIC.
+// En Telegram, sin lo que habla de SOL o wallets (sus reglas); en modo anuncio, sin nada cripto.
+function itemsNovClassic(nv) {
+  const solo3d = /ORIGINS|\b3D\b|Gran Invasión|Cueva de los Goblins|ESQUIVAR|pueblo es andino|gestos|golpe fuerte del combo|Hermandades abiertas/i;
+  return (nv.items || []).filter(x => !(solo3d.test(x) && !/CLASSIC/.test(x)))
+    .filter(x => modoAnuncio() ? !SIN_CRIPTO_RE.test(x) : (!TG || !(/\bSOL\b/.test(x) || /wallet|solana|phantom|solflare/i.test(x))));
+}
 function abrirNovedades() {
   let h = htmlCalendario() + '<h3>Notas del parche</h3>';
   for (const nv of NOVEDADES) {
+    const its = itemsNovClassic(nv);
+    if (!its.length) continue;
     h += `<p class="parche"><b>Parche 1.${nv.n}</b><span>${esc(nv.fecha)}</span></p><ul>`;
-    // En Telegram, sin lo que habla de SOL o wallets (sus reglas); en modo anuncio, sin nada cripto.
-    h += nv.items.filter(x => modoAnuncio() ? !SIN_CRIPTO_RE.test(x) : (!TG || !(/\bSOL\b/.test(x) || /wallet|solana|phantom|solflare/i.test(x)))).map(x => `<li>${esc(sinEmoji(x))}</li>`).join('') + '</ul>';
+    h += its.map(x => `<li>${esc(sinEmoji(x))}</li>`).join('') + '</ul>';
   }
+  h += '<p class="creditos" style="margin-top:4px">Más novedades en ORIGINS (3D)</p>';
   $('nov-lista').innerHTML = h;
   $('nov-lista').classList.add('guia');
   abrir('m-novedades');
@@ -5023,7 +5033,7 @@ function cajaTiendaTemp() {
   if (!tp || !tp.tienda) return '';
   const est = ttemp && ttemp.tp === tp.id ? ttemp : null, saldo = est ? est.saldo : null, comprado = est ? est.comprado || [] : [];
   let h = '<div class="mis-caja" style="border-color:' + tp.color + '"><b>' + tp.emoji + ' Tienda de la fiesta</b>' +
-    '<p>Canjea tus ' + esc(tp.cosas) + ' (tienes <b style="display:inline;color:' + tp.color + '">' + (saldo === null ? '…' : saldo) + '</b>). Solo hasta el ' + esc(tp.hasta) + '.</p>' +
+    '<p>Canjea tus ' + esc(tp.cosas) + ' (tienes <b style="display:inline;color:' + tp.color + '">' + (saldo === null ? '…' : saldo) + '</b>). Solo hasta el ' + esc(tp.hasta) + (tp.fin - Date.now() < 86400000 && saldo > 0 ? ' · <b style="display:inline;color:#ff5a5a">⏰ lo que no canjees se pierde</b>' : '') + '.</p>' +
     '<button class="btn sec" data-ttabrir="1" style="width:100%;padding:9px;margin-top:4px">' + (ttAbierta ? 'Ocultar la tienda' : '🛒 Ver la tienda de la fiesta') + '</button>';
   if (ttAbierta) for (const a of tp.tienda) {
     const ya = a.una && comprado.includes(a.id), seguro = ttPend && ttPend.id === a.id && Date.now() - ttPend.t < 4000;

@@ -19,7 +19,7 @@
 // piezas fijas de cada pivote se funden en una malla (fusionarRig): ~6-14 draw calls.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=348';
+import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=349';
 
 const PX_M = 34;                 // pixeles del 2D por metro
 const PI = Math.PI;
@@ -1141,6 +1141,11 @@ const ROPA_SKIN = {
   lobo:         { ropa: '#b8322a', pantalon: '#2f3f6b', botas: '#5a3a1e', acento: '#7a4a26', atuendo: 'lobo' },
   pirata:       { ropa: '#5a3a1e', pantalon: '#3b2616', botas: '#4a2a16', acento: '#c9a227', cinto: '#c0262d', atuendo: 'pirata' },
   legendaria: { ropa: '#1b1f33', pantalon: '#12152a', botas: '#0c0e1c', acento: '#00f0ff', neon: '#ff3cf0', hombreras: true, puas: '#00f0ff', ojosBrillo: '#ff9a1f', orbe: '#00f0ff', hojaNeon: '#7df9ff' },
+  // Exclusivas de pago (US$5-50): cada una con su propio aspecto, de menos a mas piezas.
+  esmeralda:  { ropa: '#0f5e43', pantalon: '#0b3d2c', botas: '#082a1f', acento: '#34d399', neon: '#34d399', capucha: '#0b4a34', hombreras: true },
+  sombra:     { ropa: '#1e1636', pantalon: '#140f26', botas: '#0d0a18', acento: '#a78bfa', capa: '#2a1d4f', ojosBrillo: '#c4b5fd', humo: '#7c3aed', hombreras: true },
+  solar:      { ropa: '#7a4a06', pantalon: '#4a2c04', botas: '#2e1b02', acento: '#fbbf24', corona: true, capa: '#b45309', orbe: '#facc15', hojaNeon: '#fde68a', hombreras: true },
+  cosmico:    { ropa: '#0b1d3a', pantalon: '#081428', botas: '#050d1c', acento: '#38bdf8', neon: '#a78bfa', puas: '#38bdf8', orbe: '#38bdf8', ojosBrillo: '#e0f2fe', hojaNeon: '#7dd3fc', capa: '#1e3a8a', hombreras: true },
 };
 // Detalles de la skin: cuello y hebilla, corbata, neon, visor, llamas, corona, capa.
 function vestirSkin(r, R0, cpo, tocado) {

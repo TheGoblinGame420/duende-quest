@@ -928,10 +928,17 @@ export class MmoWorld {
       const ultimo = tp.fin - ahoraT < 86400000;
       const hasta = ultimo ? 'HOY a medianoche (¡último día!)' : 'el ' + tp.hasta;
       const dto = tp.descuento && ultimo ? ` Los disfraces de la mascota cuestan ${Math.round(tp.descuento * 100)}% menos de oro en la tienda solo hasta esta noche.` : '';
+      // Ultimo dia: avisa del saldo sin canjear (a medianoche deja de valer).
+      let pierde = '';
+      if (ultimo) {
+        this.edicionTemp(c, tp);
+        const saldoT = Math.max(0, (c[tp.campo] || 0) - (c[tp.campo + 'G'] || 0));
+        if (saldoT > 0) pierde = ` Te quedan ${saldoT} ${tp.cosas} sin canjear: cámbialas HOY ${s.m3 ? 'en el puesto de la Abuela (plaza del pueblo)' : 'en la tienda de la fiesta (toca tu misión o habla con el Guardia Tito)'}; a medianoche (hora de Perú) dejan de valer.`;
+      }
       const sig = TEMPORADAS.filter(x => x.ini >= tp.fin - 60000 && x.ini - tp.fin < 3 * 86400000).sort((a, b) => a.ini - b.ini)[0];
       const fechaSig = sig ? new Date(sig.ini).toLocaleDateString('es', { day: 'numeric', month: 'long', timeZone: 'America/Lima' }) : '';
       const tras = sig && tp.fin - ahoraT < 3 * 86400000 ? ` Y desde el ${fechaSig} llega ${sig.emoji} ${sig.nombre}.` : '';
-      this.enviar(s, { t: 'toast', m: `${tp.nombre}: hasta ${hasta} los monstruos sueltan ${tp.cosas}; con 50 ganas 3.000 de oro y un título; con 200, 12.000 de oro y otro título. Llevas ${c[tp.campo] || 0}. Entre todos: ${tgI.n.toLocaleString('es-PE')} / ${tgI.meta.toLocaleString('es-PE')} (${tgI.n >= tgI.meta ? '¡todas las metas cumplidas!' : 'cada meta da 1 h de Hora Feliz para todos'}).${dto}${tras}`, ok: true, tg: tgI });
+      this.enviar(s, { t: 'toast', m: `${tp.nombre}: hasta ${hasta} los monstruos sueltan ${tp.cosas}; con 50 ganas 3.000 de oro y un título; con 200, 12.000 de oro y otro título. Llevas ${c[tp.campo] || 0}. Entre todos: ${tgI.n.toLocaleString('es-PE')} / ${tgI.meta.toLocaleString('es-PE')} (${tgI.n >= tgI.meta ? '¡todas las metas cumplidas!' : 'cada meta da 1 h de Hora Feliz para todos'}).${pierde}${dto}${tras}`, ok: true, tg: tgI });
     } else if (!tp) {
       // Sin evento: si el siguiente empieza en 10 dias o menos, se anuncia
       // (un motivo para volver ese dia).

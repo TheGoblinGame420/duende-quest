@@ -161,6 +161,25 @@ export function crearSonidos({ ctx, puede, oyente }) {
       if (n >= 4) campana(c, d, t + 0.06, f * 1.5, 0.35, v * 0.5);   // quinta encima: la racha ya brilla
       return 0.6;
     },
+    // Esquivar (boton 💨): rafaga de aire que pasa rapido.
+    esquiva(c, d, t, r, o) {
+      soplo(c, d, t, 0.18, { filtro: 'lowpass', f: 1800 * r, f2: 300, vol: 0.28, ataque: 0.01 });
+      soplo(c, d, t + 0.15, 0.06, { filtro: 'highpass', f: 2500, vol: 0.06 });
+      return 0.25;
+    },
+    // ¡Esquivado!: dos campanitas que suben y un brillo.
+    esquivado(c, d, t, r, o) {
+      campana(c, d, t, 1319 * r, 0.25, 0.07);
+      campana(c, d, t + 0.07, 1976 * r, 0.35, 0.06);
+      soplo(c, d, t, 0.2, { filtro: 'highpass', f: 6000, vol: 0.03 });
+      return 0.45;
+    },
+    // Aviso rojo de un monstruo cercano: zumbido que sube (va a pegar).
+    amenaza(c, d, t, r, o) {
+      tono(c, d, t, 180 * r, 0.25, { tipo: 'sawtooth', vol: 0.06, f2: 360 * r, ataque: 0.02 });
+      soplo(c, d, t, 0.25, { filtro: 'bandpass', f: 600, f2: 1400, vol: 0.08 });
+      return 0.3;
+    },
     // Ventana: clic suave (sube al abrir, baja al cerrar).
     clic(c, d, t, r, o) {
       tono(c, d, t, (o.cerrar ? 900 : 1300) * r, 0.05, { vol: 0.08, f2: (o.cerrar ? 600 : 1700) * r, ataque: 0.002 });
@@ -169,7 +188,7 @@ export function crearSonidos({ ctx, puede, oyente }) {
     },
   };
   // Separacion minima entre dos iguales (ms): evita que se amontonen.
-  const SEPARA = { clic: 60, alas: 220, hab: 90, splash: 250, aterriza: 200, cofre: 300, botin: 250, nivel: 400, logro: 400, cura: 200, racha: 80 };
+  const SEPARA = { clic: 60, alas: 220, hab: 90, splash: 250, aterriza: 200, cofre: 300, botin: 250, nivel: 400, logro: 400, cura: 200, racha: 80, esquiva: 300, esquivado: 400, amenaza: 250 };
 
   // tocar('cofre', { vol, x, z, r }) — con x, z suena donde pasa.
   function tocar(nombre, o = {}) {

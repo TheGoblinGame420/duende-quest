@@ -29,10 +29,9 @@
 // Object (alarm(), cada hora en punto), sin gastar otro disparador de cron.
 // Reglas para no hacer spam: solo cuentas de Telegram que jugaron en los
 // ultimos 14 dias y no entraron hoy, 1 aviso al dia como mucho, y tras 2
-// avisos sin volver se pausa hasta que vuelva. Excepcion: al empezar un evento
-// de temporada (data TEMPORADAS) se manda UN aviso extra por evento aunque
-// este en pausa o lleve hasta OLVIDAR_DIAS sin jugar (e.ev = id del ultimo
-// evento avisado); off y bloq se respetan siempre.
+// avisos sin volver se pausa hasta que vuelva. Un evento de temporada ya no
+// salta la pausa ni amplia la ventana (e.ev solo guarda el ultimo evento
+// avisado); off y bloq se respetan siempre.
 // ═══════════════════════════════════════════════════════
 
 import { xpParaSubir, premioDiaria, premioMazmorraDia, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, HABS, CLASES, NIVEL_MAX, DIARIA, horaFelizActiva, TORRE, semanaUTC, temporadaDe, TEMPORADAS, SKINS, precioOro, GESTA_UMBRALES, GESTA_NOMBRES, DIA_DESFASE_MS, hoyUTC } from '../../mmo/js/data.js';
@@ -733,10 +732,10 @@ export const Retencion = {
       const t = idx && idx['tg:' + e.tc];
       if (t && (t.off || t.bloq || t.ad === hoy)) return false;
     }
-    // Evento nuevo para el: un aviso extra aunque este en pausa.
-    const tp = this.temporadaAviso(), extra = !!tp && e.ev !== tp.id;
-    return e.v > 0 && e.v < hoy && hoy - e.v <= (extra ? OLVIDAR_DIAS : VENTANA_AVISO)
-      && e.ad !== hoy && ((e.a || 0) < AVISOS_SIN_RESPUESTA || extra)
+    // Un evento nuevo ya NO salta la pausa ni amplia la ventana: quien ignoro
+    // los avisos o se fue hace mucho no recibe mensajes que no pidio.
+    return e.v > 0 && e.v < hoy && hoy - e.v <= VENTANA_AVISO
+      && e.ad !== hoy && (e.a || 0) < AVISOS_SIN_RESPUESTA
       && !this.porUid.has(uid) && !this.uidsPrueba.has(uid);
   },
 

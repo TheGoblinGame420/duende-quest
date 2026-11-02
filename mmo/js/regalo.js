@@ -9,7 +9,7 @@
 //   const R = iniciarRegalo({ mandar, ocupado, presumir, fanfarria, vibrar, filtro });
 //   en 'buzon': R.alBuzon(m)   en 'regalo': R.alRegalo(m)
 // ocupado(): true mientras haya otra ventana (el cofre diario va primero).
-import { SKINS, ALAS } from './data.js?v=348';
+import { SKINS, ALAS } from './data.js?v=349';
 
 const CLAVE = 'dq_buzon_visto';
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
@@ -110,14 +110,14 @@ export function iniciarRegalo(H) {
     } else {
       const m = a.m, sk = m.skin && SKINS[m.skin], al = m.ala && ALAS[m.ala];
       const color = (sk && sk.color) || (al && al.color) || '#ffd84a';
-      const fig = sk ? `<img src="/assets/skins/${esc(sk.img || 'skin_hero')}.png" alt="" onerror="this.replaceWith('🎁')" style="filter:drop-shadow(0 0 14px ${esc(color)})">` : `<span class="rg-emo">${al ? '🪽' : m.oro ? '🪙' : '🎁'}</span>`;
+      const fig = sk ? `<img src="/assets/skins/${esc(sk.img || 'skin_hero')}.png" alt="" onerror="this.replaceWith('🎁')" style="filter:${sk.anim ? `hue-rotate(${Number(sk.hue) || 0}deg) saturate(${Number(sk.sat) || 1}) ` : ''}drop-shadow(0 0 14px ${esc(color)})">` : `<span class="rg-emo">${al ? '🪽' : m.oro ? '🪙' : '🎁'}</span>`;
       let chispas = '';
       for (let i = 0; i < 14; i++) {
         const ang = i / 14 * Math.PI * 2, r = 80 + (i % 3) * 18;
         chispas += `<i class="rg-chispa" style="--dx:${Math.round(Math.cos(ang) * r)}px;--dy:${Math.round(Math.sin(ang) * r)}px;animation-delay:${(i % 5) * 0.28}s"></i>`;
       }
       const que = sk ? sk.nombre : al ? al.nombre : m.nombre;
-      const extra = m.ya ? 'Ya la tenías: te devolvimos su precio en oro.' : sk ? 'Ya está en tus skins.' : al ? 'Ya las llevas puestas.' : '';
+      const extra = m.ya ? 'Ya la tenías: te devolvimos su precio en oro.' : sk ? 'Ya la llevas puesta.' : al ? 'Ya las llevas puestas.' : '';
       const oro = m.oro ? ` +${Number(m.oro).toLocaleString('es', { useGrouping: 'always' })} oro.` : '';
       // Poderes del paquete (Pack de bienvenida): que vea que las pociones llegaron y como usarlas.
       const pw = m.pw && typeof m.pw === 'object' ? m.pw : {}, npw = k => Math.max(0, Math.floor(Number(pw[k]) || 0));
@@ -126,7 +126,7 @@ export function iniciarRegalo(H) {
       caja.innerHTML = `<h2>🎉 ¡TU COMPRA LLEGÓ!</h2><div class="rg-fig"><div class="rg-rayos"></div>${chispas}${fig}</div>
         <p class="rg-p" style="font-size:17px;color:#fff"><b style="color:${esc(color)}">${esc(que)}</b></p>
         <p class="rg-p">${esc(m.nombre)} ya es tuyo. ${esc(extra)}${esc(oro)}</p>${pwHtml}<p class="rg-p" style="font-size:12px;color:#a5a0c0">Gracias por apoyar DUENDE QUEST 💛</p>
-        <div class="rg-bots">${sk ? '<button class="rg-si" data-rg="poner">¡Ponérmela!</button>' : '<button class="rg-si" data-rg="ok">¡Genial!</button>'}<button data-rg="presumir">Presumir</button></div>`;
+        <div class="rg-bots">${sk && m.ya ? '<button class="rg-si" data-rg="poner">¡Ponérmela!</button>' : '<button class="rg-si" data-rg="ok">¡Genial!</button>'}<button data-rg="presumir">Presumir</button></div>`;
       try { H.fanfarria && H.fanfarria(); } catch (e) {}
       try { H.vibrar && H.vibrar('success'); } catch (e) {}
     }

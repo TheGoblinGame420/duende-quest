@@ -56,7 +56,7 @@ footer a{color:var(--txt2);}
 @media (min-width:800px){main{grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:40px;padding-top:48px;}.marca{grid-column:1/-1;}h1,.sub,.consejo{text-align:left;}.lista{justify-content:flex-start;}footer{grid-column:1/-1;}}
 @media (prefers-reduced-motion:reduce){.jugar{animation:none;}}
 </style>
-<script src="/js/origen.js?v=348"></script>
+<script src="/js/origen.js?v=349"></script>
 </head>
 <body>
 <div class="aurora" aria-hidden="true"></div>
@@ -132,6 +132,14 @@ footer a{color:var(--txt2);}
       if (cg) { cg.textContent = G.consejo; cg.hidden = false; }
     }
   } catch (e) { gancho = ''; }
+  // Celular que abrira CLASSIC (2D): se avisa antes, para que no se sienta engañado por el poster del 3D.
+  if (ir === '/mmo/') {
+    try {
+      var pm = document.querySelector('.poster img'), cm = document.getElementById('consejo');
+      if (pm) pm.alt = 'Duende Quest';
+      if (cm) { cm.textContent = '📱 Se abrirá la versión ligera CLASSIC (2D): va fluida en cualquier celular y gasta pocos datos. Es tu mismo duende.'; cm.hidden = false; }
+    } catch (e) {}
+  }
   if ((ult || tiene) && !/[?&]ref=/i.test(location.search)) {
     try {
       b.textContent = 'CONTINUAR CON MI DUENDE';
@@ -198,8 +206,8 @@ footer a{color:var(--txt2);}
       pc.rel = 'preconnect'; pc.href = 'https://cdn.jsdelivr.net'; pc.crossOrigin = 'anonymous';
       if (ir === '/mundo/') document.head.appendChild(pc);
       var lista = ir === '/mundo/'
-        ? ['https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js', '/mundo/js/mundo.js?v=348', '/mundo/js/modelos.js?v=348', '/mundo/js/ventanas.js?v=348', '/mmo/js/data.js?v=348', '/assets/3d/kenney.json', '/assets/3d/kenney.bin.gz']
-        : ['/mmo/js/client.js?v=348', '/mmo/js/data.js?v=348'];
+        ? ['https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js', '/mundo/js/mundo.js?v=349', '/mundo/js/modelos.js?v=349', '/mundo/js/ventanas.js?v=349', '/mmo/js/data.js?v=349', '/assets/3d/kenney.json', '/assets/3d/kenney.bin.gz']
+        : ['/mmo/js/client.js?v=349', '/mmo/js/data.js?v=349'];
       window.addEventListener('load', function () {
         setTimeout(function () {
           try {

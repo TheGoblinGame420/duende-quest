@@ -100,7 +100,9 @@ export const Eventos3D = {
     if (ev) this.tickInvasion3d(ev, ahora, porZona[ev.zona] || []);
     else if (!W.inv3pre && W.inv3prox - ahora <= INV3D_AVISO_MS) {
       // Aviso previo: 1:30 antes ya se sabe donde sera (tambores), para que la gente llegue.
-      const zona = this.zonaInvasion3d(porZona);
+      let zona = this.zonaInvasion3d(porZona);
+      // La Gran de las 21:00 no se pierde si todos esperan en el pueblo: va al Bosque Nocturno (Nv 1-6).
+      if (!zona && W.granProx && jugadores.some(s => !s.i3 && !s.muerto)) zona = 'noche';
       if (zona) this.avisarInvasion3d(zona, ahora);
       else W.inv3prox = Math.max(W.inv3prox, ahora + 60000);
     } else if (W.inv3pre && ahora >= W.inv3prox) {
@@ -109,7 +111,7 @@ export const Eventos3D = {
         // Nadie fue a la zona anunciada: los tambores se mueven a donde hay gente (o se aplaza).
         const otra = this.zonaInvasion3d(porZona);
         if (otra && otra !== zona) { zona = otra; this.aClave(K3, { t: 'aviso', m: `🥁 Los tambores se movieron a ${(MAPAS[zona] || {}).nombre || zona}` }); }
-        else zona = null;
+        else if (!W.inv3pre.gran) zona = null;   // la Gran empieza igual en la zona anunciada: la gente llega en camino
       }
       if (zona) this.empezarInvasion3d(zona, porZona, ahora);
       else if ((W.inv3pre.apl = (W.inv3pre.apl || 0) + 1) <= 4) {
@@ -254,6 +256,11 @@ export const Eventos3D = {
     if (ev.hechos >= ev.meta) this.llegaCapitan3d(ev);
     else this.aClave(K3, this.estadoInvasion3d());
   },
+  // Premio base de una invasion con tu nivel (tope el de la zona).
+  premioBaseInv3d(c, mp) {
+    const nv = Math.min(c.nivel, mp.nv[1]);
+    return { xp0: Math.round(xpParaSubir(nv) * 0.35), oro0: Math.round(40 * nv * rnd(0.9, 1.1)) };
+  },
   terminarInvasion3d(ganada) {
     const W = this.iniciar3d(), ev = W.inv3;
     if (!ev) return;
@@ -262,7 +269,21 @@ export const Eventos3D = {
     const mp = MAPAS[ev.zona];
     for (const o of [...W.mons.values()]) if (o.ex3 && o.ex3.ev === ev.id) { W.mons.delete(o.id); if (!o.muere) this.aClave(K3, { t: 'md3', id: o.id, huye: 1 }); }
     if (!ganada) {
-      this.aClave(K3, { t: 'aviso', m: `⌛ Los invasores se retiraron de ${mp.nombre}: la invasión terminó sin premio.` });
+      // Gran Invasion perdida: premio consuelo (25 % de XP y oro, sin objeto) a quien ayudo y sigue en ORIGINS en la zona.
+      if (ev.gran) for (const [uid, n] of ev.part) {
+        if (!(n >= 1)) continue;
+        const s = this.porUid.get(uid);
+        if (!s || !s.c || s.cerrado || !s.m3 || zonaEn(s.p.x, s.p.z) !== ev.zona) continue;
+        const b = this.premioBaseInv3d(s.c, mp), xp = Math.round(b.xp0 * 0.25), oro = Math.round(b.oro0 * 0.25);
+        s.c.oro += oro;
+        this.sumarXp(s, xp);
+        s.sucio = true;
+        this.enviar(s, { t: 'gana', xp, oro, drops: [], item: null, med: 'b' });
+        this.enviar(s, { t: 'toast', ok: true, m: `🥉 Resististe la Gran Invasión: +${xp} XP +${oro} oro · mañana a las 21:00 otra vez` });
+        this.revisarLogros(s);
+        this.yoLuego(s, true);
+      }
+      this.aClave(K3, { t: 'aviso', m: ev.gran ? `⌛ La Gran Invasión se retiró de ${mp.nombre} sin caer su Capitán: quien ayudó se lleva un premio consuelo · mañana a las 21:00 otra vez.` : `⌛ Los invasores se retiraron de ${mp.nombre}: la invasión terminó sin premio.` });
       this.aClave(K3, { t: 'inv3', on: false, fin: 'perdida' });
       return;
     }
@@ -282,7 +303,7 @@ export const Eventos3D = {
       const med = n >= 6 || (n >= 3 && top3.has(uid)) ? 'o' : n >= 3 ? 'p' : 'b';
       // Con tu nivel (tope el de la zona): uno de nivel 1 no cobra la XP de una zona de nivel 40.
       const c = s.c, nv = Math.min(c.nivel, mp.nv[1]);
-      const xp0 = Math.round(xpParaSubir(nv) * 0.35), oro0 = Math.round(40 * nv * rnd(0.9, 1.1));
+      const { xp0, oro0 } = this.premioBaseInv3d(c, mp);
       const xp = med === 'b' ? Math.round(xp0 * 0.5) : xp0, oro = med === 'b' ? Math.round(oro0 * 0.5) : med === 'o' ? Math.round(oro0 * 1.25) : oro0;
       c.oro += oro;
       let it = null;

@@ -23,7 +23,7 @@ import {
   pagoLocalActivo, textoSoles, YAPE_VIGENCIA_MS, premioDiaria, MISIONES,
   ORO_POR_USD, STAR_TIENDA_USD, PEN_POR_USD,
   temporadaDe, TEMPORADAS,
-} from '/mmo/js/data.js?v=348';
+} from '/mmo/js/data.js?v=349';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -1307,7 +1307,8 @@ function pintarTiendaTemp() {
     const acc = ya ? etq('✓ Ya es tuyo', 'vv-ok') : `<span class="vv-precio" style="color:${tp.color}">${tp.emoji} ${a.costo}</span>` + btn('Canjear', 'ttemp', { id: a.id, una: a.una ? '1' : '0' }, '', saldo === null || saldo < a.costo || (a.premio.oroNivel && sacoHoy === 0));
     h += tarjeta(ico, esc(a.nombre), desc, acc, ` style="--rz:${tp.color}"`);
   }
-  cu.innerHTML = h + `</div><p class="vv-nota">Los monstruos sueltan ${esc(tp.cosas)} durante la fiesta (los jefes, varias). Canjear no te quita los logros: cuentan todo lo que juntaste.</p>`;
+  const pierdeHoy = tp.fin - Date.now() < 86400000 && saldo > 0 ? '<b style="color:#ff5a5a">⏰ Último día: lo que no canjees hoy se pierde a medianoche</b><br>' : '';
+  cu.innerHTML = h + `</div><p class="vv-nota">${pierdeHoy}Los monstruos sueltan ${esc(tp.cosas)} durante la fiesta (los jefes, varias). Canjear no te quita los logros: cuentan todo lo que juntaste.</p>`;
 }
 function abrirTiendaTemp() {
   if (!H || !H.yo()) return;

@@ -3466,3 +3466,17 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Habilidades en arco junto a ATACAR, recarga radial y búfer de habilidad. Hermandades abiertas y aporte por miembro.
 - Landing según `utm_content` y medición del primer golpe/caza.
 - Arnés 905 bien.
+
+### Ronda 18: QA de lo de hoy (2-nov-2026, `?v=349`)
+
+- 20 evaluadores → 95 problemas → 10 tareas.
+- `etiquetas(t)`: orden por distancia (objetivo y misión primero), sin cadáveres, anti-solape 70×18 px, ❗ solo en el monstruo de misión más cercano.
+- Esquiva: envío temprano de posición a los 45 ms, sonidos esquiva/esquivado/amenaza en sonidos.js; servidor que tolera el lag sin speed hack.
+- Pueblo como zona segura real (los monstruos se rinden en el cartel).
+- Gran Invasión: cae en el Bosque Nocturno si todos están en el pueblo; premio consuelo (`premioBaseInv3d`).
+- Telegram: Atrás con doble toque y confirmación de cierre; la oferta de Telegram ya no retrasa «Guarda tu duende».
+- Fin de Halloween: aviso de calabazas sin canjear; avisos de Telegram no escriben a pausados.
+- Skins exclusivas con aspecto propio en 3D y celebración teñida.
+- /jugar/ avisa que abrirá CLASSIC en celulares débiles; CLASSIC filtra notas solo-3D.
+- Tutorial móvil legible; decoración de la T'anta Wawa con InstancedMesh.
+- Arnés 905 bien.

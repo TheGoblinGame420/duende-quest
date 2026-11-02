@@ -307,9 +307,12 @@ export const Mundo3D = {
       const modo = a === 3 ? ala.vel + 0.05 : a === 4 && h0 > 0.3 && s.planeoVel ? 1.4 : velMontura(s.montado);   // planear desde el suelo no acelera
       const vel = MUNDO.velocidad * modo * (1 + talento(s.c, 'agilidad'));
       const tope = vel + 3;   // ~1 s de margen por huecos de red
-      s.movBud = Math.min(tope, (s.movBud === undefined ? tope : s.movBud) + vel * 1.15 * dt / 1000);
-      // ESQUIVAR (boton del cliente, 3 m en 180 ms): +3 m de margen a pie una vez cada 1,1 s por sesion. Solo mueve.
-      if (d > s.movBud + 1 && d <= s.movBud + 4 && a <= 1 && ahora - (s.esqT || 0) > 1180) { s.esqT = ahora; s.movBud += 3; }
+      // La esquiva es un PRESTAMO: los +3 m se devuelven de la recarga siguiente (no sirve de speed hack).
+      const rec = vel * 1.15 * dt / 1000, pago = Math.min(s.esqDeuda || 0, rec);
+      s.esqDeuda = (s.esqDeuda || 0) - pago;
+      s.movBud = Math.min(tope, (s.movBud === undefined ? tope : s.movBud) + rec - pago);
+      // ESQUIVAR (boton del cliente, 3 m en 180 ms): +3 m de margen a pie, 0,9 s entre esquivas (aguanta dos paquetes juntos por 4G). Solo mueve.
+      if (d > s.movBud + 1 && d <= s.movBud + 4 && a <= 1 && ahora - (s.esqT || 0) > 900) { s.esqT = ahora; s.movBud += 3; s.esqDeuda = (s.esqDeuda || 0) + 3; }
       if (d > s.movBud + 1) { this.enviar(s, { t: 'snap3', x: r1(s.p.x), z: r1(s.p.z) }); return; }
       s.movBud -= d;   // el margen de +1 m es un prestamo unico: puede quedar en -1 y la recarga lo repone
       // Las casas tampoco se atraviesan en el servidor (salvo volando por encima).
@@ -1192,7 +1195,7 @@ export const Mundo3D = {
     // Pisoton de jefe de zona: cae al llenarse el circulo aunque lo aturdan (el
     // aviso ya se vio); a quien siga dentro y en el suelo, un 20 % de su vida.
     if (o.pzj && ahora >= o.pzj.en) {
-      for (const x of vivos) if (!(x.h > 4) && Math.hypot(x.p.x - o.pzj.x, x.p.z - o.pzj.z) <= PISOTON_JEFE_R) this.herir(x, 1, { zona: true, jefe: true, pct: 0.2, id: o.id });
+      for (const x of vivos) if (!(x.h > 4) && Math.hypot(x.p.x - o.pzj.x, x.p.z - o.pzj.z) <= PISOTON_JEFE_R && (enAbismo(o.x) || zonaEn(x.p.x, x.p.z) !== 'pueblo')) this.herir(x, 1, { zona: true, jefe: true, pct: 0.2, id: o.id });
       this.aCerca3d(o, { t: 'zona3f', id: o.id });
       o.pzj = null;
       o.expuesto = ahora + 2000;
@@ -1216,7 +1219,7 @@ export const Mundo3D = {
     const enSuIsla = x => !isla || islaEn(x.p.x, x.p.z) === isla;
     // Los del asedio (puerta, Guardian, guardia) no van contra la faccion duena: ella no les puede pegar.
     const duenaN = o.asedio ? this.duenoNucleo() : null;
-    const valido = x => x && x.m3 && !x.muerto && !x.cerrado && mismo(x, o) && !(x.h > 8) && dist(x.p, casa) < CORREA + 20 && enSuIsla(x) && !(duenaN && x.c && x.c.faccion === duenaN);
+    const valido = x => x && x.m3 && !x.muerto && !x.cerrado && mismo(x, o) && !(x.h > 8) && dist(x.p, casa) < CORREA + 20 && (o.cueva || enAbismo(o.x) || zonaEn(x.p.x, x.p.z) !== 'pueblo') && enSuIsla(x) && !(duenaN && x.c && x.c.faccion === duenaN);
     // Objetivo: Provocar manda; si no, la tabla de amenaza (para quitarle el
     // foco hay que superar el 110 % cuerpo a cuerpo o el 130 % a distancia).
     const teniaObj = !!o.obj || o.amen.size > 0;
@@ -1239,7 +1242,7 @@ export const Mundo3D = {
     // Solo se reinicia cuando ya no queda nadie en su lista.
     if (!s && teniaObj && !o.amen.size && !o.vuelve) o.vuelve = true;
     if (!s && (o.jefe || o.cueva || o.agresivo) && !o.vuelve) {
-      const cerca = vivos.find(x => dist(x.p, o) < (o.agresivo ? 20 : o.jefe ? 16 : 11) && !this.aura(x, 'sigilo') && !(x.h > 8) && ve(x.p.x, x.p.z) && enSuIsla(x));
+      const cerca = vivos.find(x => dist(x.p, o) < (o.agresivo ? 20 : o.jefe ? 16 : 11) && !this.aura(x, 'sigilo') && !(x.h > 8) && ve(x.p.x, x.p.z) && enSuIsla(x) && (o.cueva || enAbismo(o.x) || zonaEn(x.p.x, x.p.z) !== 'pueblo'));
       if (cerca) {
         o.obj = cerca.id; s = cerca;
         // En la cueva acude el grupo entero de esa sala.

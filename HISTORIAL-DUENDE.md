@@ -85,6 +85,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v346 | Ronda 15: combo con daño real, tocar para pegar, esquiva, golpes con lag, resucitar, spawn del novato, T'anta Wawa en la diaria | **B** |
 | v347 | Ronda 16: aviso de Telegram que no interrumpe, NPC rotulados, cueva a Nv 5, tienda clara, chat para menores, menos datos | **B** |
 | v348 | Estudio 4: esquivar, búfer de ataque, Gran Invasión 21:00, grupo para la cueva, pueblo andino, gestos que bailan, hermandades abiertas | **B** |
+| v349 | Ronda 18: etiquetas limpias, esquiva justa con sonido, pueblo seguro, Gran Invasión siempre, skins exclusivas en 3D, calabazas del último día | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

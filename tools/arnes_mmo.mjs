@@ -1580,10 +1580,10 @@ async function pruebasRetencion() {
   const hoy = Math.floor(Date.now() / DIA);
   chequear(mundo.puedeAvisar('tg:1', { v: hoy - 14 }, hoy) && !mundo.puedeAvisar('tg:1', { v: hoy - 15 }, hoy), 'solo a quien jugó en los últimos 14 días');
   chequear(!mundo.puedeAvisar('inv:abc', { v: hoy - 1 }, hoy) && !mundo.puedeAvisar('web:abc', { v: hoy - 1 }, hoy), 'nunca a invitados ni cuentas web');
-  // Evento de temporada: un aviso extra por evento aunque este en pausa.
+  // Evento de temporada: ya NO salta la pausa ni amplia la ventana (no se escribe a quien no lo pidio).
   mundo.temporadaAviso = () => ({ id: 'evPrueba', nombre: 'Evento de Prueba', emoji: '🎃', hasta: '2 de noviembre', cosas: 'calabazas', campo: 'calabazas', titulos: ['Cazacalabazas', 'Rey de las Calabazas'] });
-  chequear(mundo.puedeAvisar('tg:1', { v: hoy - 3, a: 2 }, hoy) && mundo.puedeAvisar('tg:1', { v: hoy - 30 }, hoy), 'evento nuevo: avisa aunque esté en pausa o lleve 30 días sin jugar');
-  chequear(!mundo.puedeAvisar('tg:1', { v: hoy - 3, a: 2, ev: 'evPrueba' }, hoy) && !mundo.puedeAvisar('tg:1', { v: hoy - 3, off: 1 }, hoy) && !mundo.puedeAvisar('tg:1', { v: hoy - 36 }, hoy), 'un solo aviso extra por evento, respeta /avisos off y no pasa de 35 días');
+  chequear(!mundo.puedeAvisar('tg:1', { v: hoy - 3, a: 2 }, hoy) && !mundo.puedeAvisar('tg:1', { v: hoy - 30 }, hoy) && mundo.puedeAvisar('tg:1', { v: hoy - 3 }, hoy), 'evento nuevo: no avisa a quien está en pausa ni a quien lleva 30 días sin jugar');
+  chequear(!mundo.puedeAvisar('tg:1', { v: hoy - 3, off: 1 }, hoy) && !mundo.puedeAvisar('tg:1', { v: hoy - 36 }, hoy), 'respeta /avisos off y la ventana de 14 días');
   const tEv = await mundo.mensajeAviso({ nombre: 'Rachero', nivel: 1, xp: 0, calabazas: 7 }, hoy);
   chequear(tEv.split('\n\n')[1].startsWith('🎃 ¡Evento de Prueba!') && /Llevas 7: con 50 y 200/.test(tEv), 'el aviso empieza por el evento y cuánto lleva');
   mundo.temporadaAviso = () => null;
