@@ -140,6 +140,8 @@ export const Cueva3D = {
         }
         this.aCueva(inst, { t: 'zona3f', id: o.id });
         o.pisa = null;
+        o.expuesto = ahora + 2000;
+        this.aCueva(inst, { t: 'expuesto', id: o.id, ms: 2000 });
       }
       if (!o.pisa && o.obj && ahora >= o.pisaProx) {
         const t = this.sesiones.get(o.obj);

@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=341';
-import { iniciarRegalo } from './regalo.js?v=341';
-import { iniciarAvisoTg } from './avisotg.js?v=341';
+} from './data.js?v=342';
+import { iniciarRegalo } from './regalo.js?v=342';
+import { iniciarAvisoTg } from './avisotg.js?v=342';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -915,6 +915,7 @@ function recibir(m) {
     case 'quien': quienLista = m.r || []; pintarSocial(); break;
     case 'contactos': contactos = m.l || []; pintarSocial(); break;
     case 'inspeccion': pintarInspeccion(m); break;
+    case 'tiendaTemp': ttemp = m.tp ? m : null; if ($('m-mision').classList.contains('on')) pintarMision(); break;   // tienda de la fiesta
     case 'pase': if (yo) { yo.pase = m.pase; if ($('m-mision').classList.contains('on')) pintarMision(); } break;
     case 'gesto': if (GESTOS[m.id]) { gestos.set(m.p, { id: m.id, t: performance.now() }); if (m.p === miId) sfx('boton', .25); } break;
     case 'on': online = m.n; if (m.h) jugaronHoy = m.h; pintarSubMapa(); break;
@@ -928,7 +929,7 @@ function recibir(m) {
       }
       P.x = m.x; P.y = m.y; P.vx = 0; P.vy = 0; if (m.f) P.f = m.f;
       break;
-    case 'ranking': pintarRanking(m.r, m.sem, m.finSem, m.des, m.dsem, m.af, m.duel, m.elo, m.torre, m.tmax, m.herm); break;
+    case 'ranking': pintarRanking(m.r, m.sem, m.finSem, m.des, m.dsem, m.af, m.duel, m.elo, m.torre, m.tmax, m.herm, m); break;
     case 'heredar': preguntarHeredar(m); break;
     case 'err':
       // En Telegram no se cae en silencio a un invitado nuevo de Nv 1 (la sesion de mas de 24 h caduca): se pide reabrir.
@@ -1807,7 +1808,7 @@ function usarHabDef(h, tgForzado) {
   if (!yo || P.muerto || chatAbierto() || !h) return;
   const ahora = performance.now();
   if (yo.nivel < h.nv) { errorRojo('Aprendes ' + h.nombre + ' a nivel ' + h.nv + '.'); return; }
-  if (congelado()) { errorRojo('Estás dentro del Bloque de Hielo: espera a que se rompa.'); return; }
+  if (congelado()) { errorRojo('Estás dentro del Ataúd de Escarcha: espera a que se rompa.'); return; }
   if (castYo) { errorRojo('Ya estás lanzando otro hechizo.'); return; }
   if (ahora < (cdPoder['h_' + h.id] || 0)) { errorRojo(h.nombre + ' todavía no está lista.'); return; }
   if (h.gcd !== false && ahora < gcdHasta) return;
@@ -1826,7 +1827,7 @@ function usarHabDef(h, tgForzado) {
     const q = tg && tg !== miId ? otros.get(tg) : null;
     if (q && distJug(q) > h.rango + 20) { errorRojo('Tu aliado está demasiado lejos.'); return; }
   }
-  if (h.id === 'eviscerar' && !(P.combo > 0)) { errorRojo('Necesitas puntos de combo (usa Golpe Siniestro).'); return; }
+  if (h.id === 'eviscerar' && !(P.combo > 0)) { errorRojo('Necesitas puntos de combo (usa Puñalada Rápida).'); return; }
   if (h.gcd !== false) gcdHasta = ahora + GCD_MS;
   tuto.usoHab = true;
   // La carga mueve al guerrero: el servidor lo pone junto al objetivo.
@@ -2642,7 +2643,7 @@ function abrirBuscador() {
   // A Nv 60 la banda va arriba (abajo quedaba tras 5 mazmorras y los afijos).
   h += hTorreBloq;
   if (yo.nivel >= NIVEL_MAX) h = h.slice(0, posBanda) + hBanda + h.slice(posBanda); else h += hBanda;
-  h += '<ul style="padding-left:18px;margin-top:10px;font-size:12px"><li>Aquí los monstruos atacan solos y en packs: tira de uno y vendrá todo su grupo.</li><li>Cada jefe guarda una barrera. Lee sus avisos: <b style="color:var(--warn)">sal de las zonas marcadas</b> en el suelo e <b>interrumpe</b> (Patada, Zurrar, Contrahechizo o Silencio) los hechizos con barra naranja.</li><li>Si todo el grupo cae, reaparece junto a la última barrera abierta y el jefe se recupera.</li><li>Cada jefe da equipo a cada uno; el último, épico.</li><li>En la banda, las <b style="color:#facc15">zonas doradas</b> se aguantan <b>juntos</b>: el golpe se reparte entre los que estén dentro.</li></ul>';
+  h += '<ul style="padding-left:18px;margin-top:10px;font-size:12px"><li>Aquí los monstruos atacan solos y en packs: tira de uno y vendrá todo su grupo.</li><li>Cada jefe guarda una barrera. Lee sus avisos: <b style="color:var(--warn)">sal de las zonas marcadas</b> en el suelo e <b>interrumpe</b> (Patada, Zurrar, Corta Conjuro o Silencio) los hechizos con barra naranja.</li><li>Si todo el grupo cae, reaparece junto a la última barrera abierta y el jefe se recupera.</li><li>Cada jefe da equipo a cada uno; el último, épico.</li><li>En la banda, las <b style="color:#facc15">zonas doradas</b> se aguantan <b>juntos</b>: el golpe se reparte entre los que estén dentro.</li></ul>';
   L.innerHTML = h;
   L.querySelectorAll('[data-maz]').forEach(b => b.onclick = () => { sfx('explosion', .3); mandar({ t: 'mazmorra', id: b.dataset.maz }); cerrarModales(); });
   L.querySelectorAll('[data-torre]').forEach(b => b.onclick = () => { sfx('explosion', .3); mandar({ t: 'torre', desde: +b.dataset.torre }); cerrarModales(); });
@@ -4448,10 +4449,10 @@ function dibujarMonstruo(o) {
     g.fillStyle = rg; g.fillRect(x - o.alto, o.y - o.alto * 1.4, o.alto * 2, o.alto * 1.6); g.restore();
   }
   if (oveja && !o.muereT) {
-    // Polimorfia: una oveja que pasea (se rompe al pegarle).
+    // Hechizo de Llamita: una llamita que pasea (se rompe al pegarle).
     g.save();
     g.translate(x, o.y - 4 + Math.abs(Math.sin(frame * .2)) * -3); if (o.f < 0) g.scale(-1, 1);
-    emoji('🐑', 30, 0, 0); g.restore();
+    emoji('🦙', 30, 0, 0); g.restore();
   } else {
     // Vida propia: respiran en reposo, se aplastan al recibir un golpe y los
     // voladores aletean arriba y abajo. Contorno oscuro (dorado en elites,
@@ -4978,9 +4979,36 @@ function pendientesHud() {
 }
 
 // ── MISIONES ──
-function abrirMision() { if (!yo) return; abrir('m-mision'); pintarMision(); }
+function abrirMision() { if (!yo) return; abrir('m-mision'); if (temporadaYa()) mandar({ t: 'tiendaTemp' }); pintarMision(); }   // saldo de la tienda de la fiesta
 // Tocar la mision o las tareas del seguimiento (derecha) abre el registro.
 $('seguimiento').addEventListener('click', e => { if (e.target.closest('#h-mision,#h-tareas,#h-cobrar')) { if (e.target.closest('#h-cobrar')) sfx('boton', .4); abrirMision(); } });
+// Tienda de la fiesta (data TEMPORADAS[].tienda): se paga SOLO con el objeto
+// del evento; el servidor valida (world.js tiendaTemp). Plegada tras su boton.
+let ttemp = null, ttAbierta = false, ttPend = null;
+function cajaTiendaTemp() {
+  const tp = temporadaYa();
+  if (!tp || !tp.tienda) return '';
+  const est = ttemp && ttemp.tp === tp.id ? ttemp : null, saldo = est ? est.saldo : null, comprado = est ? est.comprado || [] : [];
+  let h = '<div class="mis-caja" style="border-color:' + tp.color + '"><b>' + tp.emoji + ' Tienda de la fiesta</b>' +
+    '<p>Canjea tus ' + esc(tp.cosas) + ' (tienes <b style="display:inline;color:' + tp.color + '">' + (saldo === null ? '…' : saldo) + '</b>). Solo hasta el ' + esc(tp.hasta) + '.</p>' +
+    '<button class="btn sec" data-ttabrir="1" style="width:100%;padding:9px;margin-top:4px">' + (ttAbierta ? 'Ocultar la tienda' : '🛒 Ver la tienda de la fiesta') + '</button>';
+  if (ttAbierta) for (const a of tp.tienda) {
+    const ya = a.una && comprado.includes(a.id), seguro = ttPend && ttPend.id === a.id && Date.now() - ttPend.t < 4000;
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-top:8px"><span style="flex:1;font-size:13px">' + a.emoji + ' ' + esc(a.nombre) + (a.premio.oroNivel ? ' <small style="color:var(--oro)">(' + (a.premio.oroNivel * yo.nivel).toLocaleString('es', { useGrouping: 'always' }) + ')</small>' : '') + '</span>' +
+      (ya ? '<span style="color:var(--ok);font-size:12px">✓ Ya es tuyo</span>' : '<b style="color:' + tp.color + '">' + tp.emoji + ' ' + a.costo + '</b><button class="btn" data-ttemp="' + esc(a.id) + '"' + (saldo === null || saldo < a.costo ? ' disabled' : '') + '>' + (seguro ? '¿Seguro?' : 'Canjear') + '</button>') + '</div>';
+  }
+  return h + '</div>';
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-ttabrir],[data-ttemp]');
+  if (!b || !$('m-mision') || !$('m-mision').contains(b) || b.disabled) return;
+  if (b.dataset.ttabrir) { ttAbierta = !ttAbierta; sfx('boton', .3); if (ttAbierta) mandar({ t: 'tiendaTemp' }); pintarMision(); return; }
+  const tp = temporadaYa(), a = tp && (tp.tienda || []).find(x => x.id === b.dataset.ttemp);
+  if (!a) return;
+  // Titulo y color: doble toque (no se devuelven).
+  if (a.una && !(ttPend && ttPend.id === a.id && Date.now() - ttPend.t < 4000)) { ttPend = { id: a.id, t: Date.now() }; pintarMision(); return; }
+  ttPend = null; sfx('moneda', .4); mandar({ t: 'tiendaTemp', id: a.id });
+});
 function cajaDiaria() {
   const d = yo.diaria || { p: 0, ok: false };
   const pr = premioDiaria(yo.nivel);
@@ -5124,7 +5152,7 @@ function pintarMision() {
     cuerpo.querySelectorAll('[data-exdest]').forEach(b => b.onclick = () => { sfx('boton', .3); try { localStorage.setItem('dq_exped', b.dataset.exdest); } catch (e) {} pintarMision(); });
     const be = $('b-exped'); if (be) be.onclick = () => { sfx('moneda', .5); mandar({ t: 'exped', recoger: 1 }); };
   };
-  if (!q) { cuerpo.innerHTML = '<p class="centro">Completaste las ' + MISIONES.length + ' misiones. Eres una leyenda del Pueblo Duende. 👑</p>' + cajaSugerencias() + cajaExpedicion() + cajaPase() + cajaSemana() + cajaDiaria() + cajaTareas(); conectarDiaria(); conectarPase(); return; }
+  if (!q) { cuerpo.innerHTML = '<p class="centro">Completaste las ' + MISIONES.length + ' misiones. Eres una leyenda del Pueblo Duende. 👑</p>' + cajaSugerencias() + cajaExpedicion() + cajaPase() + cajaTiendaTemp() + cajaSemana() + cajaDiaria() + cajaTareas(); conectarDiaria(); conectarPase(); return; }
   const def = MONSTRUOS[q.tipo];
   const zona = MAPAS[zonaDe(q.tipo)];
   const lista = yo.mis.p >= q.n;
@@ -5140,7 +5168,7 @@ function pintarMision() {
     (lista && cercaDeTito() ? '<button class="btn" id="b-entregar" style="width:100%;padding:12px">Entregar misión</button>'
       : lista ? '<p class="centro" style="color:var(--ok)">Cumplida. Entrégasela al Guardia Tito en el pueblo (sigue la flecha amarilla o usa la Piedra de Hogar).</p>'
       : '<p class="centro">Vuelve cuando la termines.</p>') +
-    cajaSugerencias() + cajaExpedicion() + cajaPase() + cajaSemana() + cajaDiaria() + cajaTareas();
+    cajaSugerencias() + cajaExpedicion() + cajaPase() + cajaTiendaTemp() + cajaSemana() + cajaDiaria() + cajaTareas();
   conectarPase();
   const b = $('b-entregar');
   if (b) b.onclick = () => { sfx('boton', .3); mandar({ t: 'mision' }); };
@@ -5428,7 +5456,7 @@ function pintarTienda() {
   } else if (tabTienda === 'tinte') {
     for (const [id, tn] of Object.entries(TINTES)) {
       const tiene = (yo.tintes || []).includes(id);
-      if ((tn.amb || tn.racha) && !tiene) continue;   // los del ambulante, en su pestaña; el de racha no se vende
+      if ((tn.amb || tn.racha || tn.temp) && !tiene) continue;   // los del ambulante, en su pestaña; el de racha no se vende; los de fiesta, en su tienda
       const muestra = tn.color === 'arcoiris' ? 'background:linear-gradient(90deg,#f43f5e,#facc15,#34d399,#38bdf8,#c084fc)' : 'background:' + tn.color;
       const ico = `<div style="width:40px;height:40px;border-radius:8px;${muestra}"></div>`;
       const acc = tiene ? (yo.tinte === id ? '<span class="precio" style="color:var(--ok)">✓ En uso</span>' : `<button class="btn sec" data-comprar="tinte" data-id="${id}">Usar</button>`)
@@ -5576,11 +5604,22 @@ function pintarInventario() {
 function abrirRanking() { abrir('m-rank'); $('rank-lista').innerHTML = '<p class="centro">Cargando…</p>'; mandar({ t: 'ranking' }); }
 // Dos rankings: el de la semana (experiencia ganada; premia al top 3 cada
 // lunes, asi un jugador nuevo tambien puede ganar) y el de siempre (nivel).
-function pintarRanking(r, sem, finSem, des, dsem, af, duel, elo, torre, tmax, herm) {
+// Tu fila del ranking semanal: puesto, a quien pasas y tu liga (premio por tramos).
+function textoMioSem(m) {
+  const f = n => (n || 0).toLocaleString('es', { useGrouping: 'always' });
+  if (!m.pos) return `Tú: aún sin XP esta semana · caza y entra al ranking (con ${f(m.min)} XP ya tienes premio de liga)`;
+  let t = `Tú: #${f(m.pos)} de ${f(m.total)}` + (m.arriba ? ` · te faltan ${f(m.arriba.xp - m.xp + 1)} XP para pasar a ${m.arriba.n}` : ' · ¡Vas primero!');
+  if (m.liga >= 0) t += ` · Liga ${['Oro', 'Plata', 'Bronce'][m.liga]} 🏅`;
+  else if (m.pos > 3 && m.xp < m.min) t += ` · ${f(m.min - m.xp)} XP más para entrar a una liga con premio`;
+  return t;
+}
+function pintarRanking(r, sem, finSem, des, dsem, af, duel, elo, torre, tmax, herm, m) {
+  m = m || {};
   const med = ['#1', '#2', '#3'];
   let h = '<p style="font-size:12px;color:var(--txt);font-weight:600;margin-bottom:4px">Esta semana (experiencia ganada)</p>';
   if (finSem) { const ms = finSem - Date.now(); const d = Math.floor(ms / 86400000), hh = Math.floor(ms / 3600000) % 24; h += `<p style="font-size:12px;color:var(--txt2);margin-bottom:6px">Termina en ${d} d ${hh} h. Premios: 1.º, 400 × tu nivel en oro, objeto épico y título · 2.º, ×200 · 3.º, ×100.</p>`; }
   h += (sem && sem.length) ? sem.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>${x.xp.toLocaleString('es', { useGrouping: 'always' })} XP · Nv ${x.lv}</span></div>`).join('') : '<p class="centro">Nadie ha cazado aún esta semana.</p>';
+  if (m.mio) h += `<div class="fila yo" style="display:block;margin-top:4px;line-height:1.35;border:1px solid rgba(250,204,21,.55);border-radius:6px;padding:6px 8px">${esc(textoMioSem(m.mio))}</div><p style="font-size:11px;color:var(--txt2);margin-top:3px">Desde ${(m.mio.min || 2000).toLocaleString('es', { useGrouping: 'always' })} XP todos cobran su liga al entrar el lunes: Oro (top 10 %), Plata (30 %) o Bronce.</p>`;
   h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">Los más fuertes (nivel)</p>';
   h += r.length ? r.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>Nv ${x.lv} · ${x.k} caz.</span></div>`).join('') : '<p class="centro">Todavía nadie sube de nivel.</p>';
   // Desafios de la semana (con sus afijos) y de siempre: el mejor +k de cada uno.
@@ -5590,7 +5629,7 @@ function pintarRanking(r, sem, finSem, des, dsem, af, duel, elo, torre, tmax, he
   h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">⚡ Desafíos de mazmorra (mejor +k de siempre)</p>';
   h += (des && des.length) ? des.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>⚡ +${x.k}</span></div>`).join('') : '<p class="centro" style="font-size:12px">Nadie ha vencido aún un Desafío. Se abren a nivel 60 en el portal de mazmorras.</p>';
   // Torre del Duende: mejor piso de la semana.
-  h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">Torre del Duende (esta semana)' + (tmax ? ' · tu marca: piso ' + tmax : '') + '</p>';
+  h += '<p style="font-size:12px;color:var(--txt);font-weight:600;margin:12px 0 4px">Torre del Duende (esta semana)' + (tmax ? ' · tu marca: piso ' + tmax : '') + (m.tpos ? ' · tú: #' + m.tpos + ' de ' + m.ttot : '') + '</p>';
   h += `<p style="font-size:12px;color:var(--txt2);margin-bottom:4px">Premios el lunes (desde el piso ${TORRE.semMin}): 1.º ${premioTorreSem(0).toLocaleString('es', { useGrouping: 'always' })} oro y título Rey de la Torre · 2.º ${premioTorreSem(1).toLocaleString('es', { useGrouping: 'always' })} · 3.º ${premioTorreSem(2).toLocaleString('es', { useGrouping: 'always' })}.</p>`;
   h += (torre && torre.length) ? torre.map((x, i) => `<div class="fila ${x.yo ? 'yo' : ''}"><span>${med[i] || '#' + (i + 1)} ${esc(x.n)}</span><span>piso ${x.p}</span></div>`).join('') : '<p class="centro" style="font-size:12px">Nadie ha subido aún esta semana. Entra por el portal de mazmorras del pueblo (Nv 10+).</p>';
   // Hermandades: puntos de la gesta de esta semana.

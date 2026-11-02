@@ -349,7 +349,7 @@ export function statsJugador(nivel, skin, eq, clase, espec, tal, runas) {
   };
 }
 
-// ── CLASES (al estilo World of Warcraft) ──
+// ── CLASES ──
 // Cada clase tiene su recurso, su papel en el grupo y 7-8 habilidades que se
 // aprenden al subir de nivel. El ataque basico (Z) sigue siendo el combo de
 // siempre para los de cuerpo a cuerpo; los magos y sacerdotes disparan con
@@ -387,7 +387,7 @@ export const CLASES = {
   picaro: {
     nombre: 'Pícaro', rol: 'Daño cuerpo a cuerpo', color: '#fff569', recurso: 'energia', icono: 'S_Dagger02', basico: 'melee',
     mod: { hp: 1, def: 1, atk: 1.08, crit: 0.05 }, amenaza: 1,
-    desc: 'Sigilo, venenos y puntos de combo. Acumula combos con golpes rápidos y remata con Eviscerar.',
+    desc: 'Sigilo, venenos y puntos de combo. Acumula combos con golpes rápidos y remata con Tajo del Otorongo.',
   },
 };
 // ── ESPECIALIZACIONES ──
@@ -398,20 +398,20 @@ export const CLASES = {
 export const ESPEC_NIVEL = 10;
 export const ESPECS = {
   guerrero: {
-    armas:      { nombre: 'Armas',      icono: 'S_Sword17', rol: 'Daño',    desc: '+15% de daño y el Golpe Heroico cuesta 10 de Ira.', mod: { atk: 1.15 }, costo: { golpe_heroico: 10 } },
-    proteccion: { nombre: 'Protección', icono: 'E_Metal08', rol: 'Tanque',  desc: '+15% de vida, +20% de defensa y +50% de amenaza: el tanque del grupo.', mod: { hp: 1.15, def: 1.2 }, amenaza: 1.5 },
+    armas:      { nombre: 'Puño de Piedra', icono: 'S_Sword17', rol: 'Daño',    desc: '+15% de daño y el Golpe del Puma cuesta 10 de Ira.', mod: { atk: 1.15 }, costo: { golpe_heroico: 10 } },
+    proteccion: { nombre: 'Muralla',    icono: 'E_Metal08', rol: 'Tanque',  desc: '+15% de vida, +20% de defensa y +50% de amenaza: el tanque del grupo.', mod: { hp: 1.15, def: 1.2 }, amenaza: 1.5 },
   },
   mago: {
     fuego:    { nombre: 'Fuego',    icono: 'S_Fire02', rol: 'Daño',    desc: '+8% de crítico; Bola de Fuego y Lluvia de Meteoros hacen +20%.', mod: { crit: 0.08 }, hab: { bola_fuego: 1.2, meteoros: 1.2 } },
-    escarcha: { nombre: 'Escarcha', icono: 'S_Ice05',  rol: 'Control', desc: 'La Nova congela el doble y hace +50%; +10% de vida y +15% de defensa.', mod: { hp: 1.1, def: 1.15 }, hab: { nova: 1.5 }, raiz: 2 },
+    escarcha: { nombre: 'Escarcha', icono: 'S_Ice05',  rol: 'Control', desc: 'La Helada de la Puna congela el doble y hace +50%; +10% de vida y +15% de defensa.', mod: { hp: 1.1, def: 1.15 }, hab: { nova: 1.5 }, raiz: 2 },
   },
   sacerdote: {
-    sagrado: { nombre: 'Sagrado', icono: 'S_Holy04',   rol: 'Sanador', desc: 'Tus curas y escudos son un 25% más fuertes.', cura: 1.25 },
-    sombras: { nombre: 'Sombras', icono: 'S_Shadow03', rol: 'Daño',    desc: '+20% de daño y Dolor hace +50%, pero curas un 20% menos.', mod: { atk: 1.2 }, hab: { dolor: 1.5 }, cura: 0.8 },
+    sagrado: { nombre: 'Luz del Inti', icono: 'S_Holy04',   rol: 'Sanador', desc: 'Tus curas y escudos son un 25% más fuertes.', cura: 1.25 },
+    sombras: { nombre: 'Sombra de la Luna', icono: 'S_Shadow03', rol: 'Daño',    desc: '+20% de daño y la Maldición del Supay hace +50%, pero curas un 20% menos.', mod: { atk: 1.2 }, hab: { dolor: 1.5 }, cura: 0.8 },
   },
   picaro: {
-    asesinato: { nombre: 'Asesinato', icono: 'S_Poison03', rol: 'Daño', desc: '+5% de crítico y Eviscerar hace +25%.', mod: { crit: 0.05 }, hab: { eviscerar: 1.25 } },
-    combate:   { nombre: 'Combate',   icono: 'S_Sword18',  rol: 'Daño', desc: '+10% de daño y la energía vuelve un 25% más rápido.', mod: { atk: 1.1 }, energia: 1.25 },
+    asesinato: { nombre: 'Veneno de Víbora', icono: 'S_Poison03', rol: 'Daño', desc: '+5% de crítico y el Tajo del Otorongo hace +25%.', mod: { crit: 0.05 }, hab: { eviscerar: 1.25 } },
+    combate:   { nombre: 'Navaja',    icono: 'S_Sword18',  rol: 'Daño', desc: '+10% de daño y la energía vuelve un 25% más rápido.', mod: { atk: 1.1 }, energia: 1.25 },
   },
 };
 export const especDe = (clase, espec) => (ESPECS[clase] && ESPECS[clase][espec]) || null;
@@ -504,9 +504,18 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 341;
+export const VERSION = 342;
 
 export const NOVEDADES = [
+  { n: 110, fecha: '1 nov 2026', items: [
+    '🐾 Tu mascota ahora te sigue también en ORIGINS 3D y los demás la ven. Al entrar recoges su expedición desde la bienvenida y con «Recoger y repetir» la mandas otra vez.',
+    '👀 Probador de skins: en la tienda de ORIGINS toca «Probar» y tu duende se pone la skin mientras la cámara le da la vuelta.',
+    "🛒 Tienda de la fiesta en el puesto de la Abuela: canjea t'anta wawas o mazorcas por un título exclusivo, color de nombre, pociones u oro.",
+    'Los jefes marcan el pisotón con un anillo: esquívalo y pégale en el «¡AHORA!» para hacer 25% más de daño. Al vencerlo ves tu aporte, tu puesto y tu medalla.',
+    '🏆 Ves tu puesto en el ranking semanal y ligas Oro, Plata y Bronce con premio el lunes.',
+    '🗺 Sube al mirador de cada zona para revelar sus cofres en el mapa; los cofres legendarios lanzan un haz de luz visible desde lejos.',
+    'Habilidades con nombres andinos (Escudo del Apu, Muralla Inca, Luz del Inti…), botones que se hunden y destellan al estar listos, y presumir con una foto real de tu duende.',
+  ] },
   { n: 109, fecha: '1 nov 2026', items: [
     'Cada golpe en ORIGINS tiene peso: pausa corta al impactar, el monstruo retrocede y al rematarlo sientes que cae. En AUTO solo vibran los críticos.',
     '😀 Nuevo botón de gestos: saluda, baila o aplaude sobre tu duende y manda frases rápidas como «¡Ayuda aquí!» o «Gracias, causa».',
@@ -1151,7 +1160,7 @@ export const costoReparacion = nivel => (nivel >= NIVEL_MAX ? 5 * nivel : 0);
 export const MELEE = 105;
 export const HABS = [
   // ── GUERRERO ──
-  { id: 'golpe_heroico', clase: 'guerrero', nombre: 'Golpe Heroico', nv: 1, icono: 'S_Sword15', costo: 15, cd: 0, rango: MELEE, obj: 'enemigo', mult: 3, amenaza: 2.5,
+  { id: 'golpe_heroico', clase: 'guerrero', nombre: 'Golpe del Puma', nv: 1, icono: 'S_Sword15', costo: 15, cd: 0, rango: MELEE, obj: 'enemigo', mult: 3, amenaza: 2.5,
     desc: 'Un golpe brutal (×3) que genera muchísima amenaza.' },
   { id: 'carga', clase: 'guerrero', nombre: 'Carga', nv: 4, icono: 'S_Dagger03', costo: 0, genera: 20, cd: 12000, rango: 380, min: 60, obj: 'enemigo', aturde: 1500, gcd: false,
     desc: 'Cargas contra el enemigo, lo aturdes 1,5 s y ganas 20 de Ira.' },
@@ -1163,24 +1172,24 @@ export const HABS = [
     desc: 'Giras con el arma y golpeas a todo lo que te rodea (×2,2).' },
   { id: 'grito', clase: 'guerrero', nombre: 'Grito de Batalla', nv: 20, icono: 'S_Buff08', costo: 10, cd: 30000, radio: 500, obj: 'yo', dura: 120000,
     desc: '+10% de ataque para ti y los aliados cercanos durante 2 minutos.' },
-  { id: 'muro', clase: 'guerrero', nombre: 'Muro de Escudo', nv: 28, icono: 'E_Metal06', costo: 0, cd: 45000, obj: 'yo', dura: 8000, reduce: 0.6, gcd: false,
+  { id: 'muro', clase: 'guerrero', nombre: 'Muralla Inca', nv: 28, icono: 'E_Metal06', costo: 0, cd: 45000, obj: 'yo', dura: 8000, reduce: 0.6, gcd: false,
     desc: 'Recibes un 60% menos de daño durante 8 s.' },
   { id: 'ejecutar', clase: 'guerrero', nombre: 'Ejecutar', nv: 36, icono: 'S_Sword10', costo: 30, cd: 0, rango: MELEE, obj: 'enemigo', mult: 9, bajo: 0.25,
     desc: 'Remata a un enemigo con menos del 25% de vida (×9).' },
   // ── MAGO ──
   { id: 'bola_fuego', clase: 'mago', nombre: 'Bola de Fuego', nv: 1, icono: 'S_Fire03', costo: 7, cd: 0, cast: 1500, rango: 430, obj: 'enemigo', mult: 5.5,
     desc: 'Lanzas una bola de fuego (×5,5). 1,5 s de lanzamiento.' },
-  { id: 'nova', clase: 'mago', nombre: 'Nova de Escarcha', nv: 4, icono: 'S_Ice02', costo: 9, cd: 14000, radio: 160, obj: 'area', mult: 1.5, raiz: 5000,
+  { id: 'nova', clase: 'mago', nombre: 'Helada de la Puna', nv: 4, icono: 'S_Ice02', costo: 9, cd: 14000, radio: 160, obj: 'area', mult: 1.5, raiz: 5000,
     desc: 'Congelas en el sitio a todo lo cercano 5 s (×1,5). ' },
   { id: 'misiles', clase: 'mago', nombre: 'Misiles Arcanos', nv: 8, icono: 'S_Magic02', costo: 10, cd: 6000, rango: 430, obj: 'enemigo', mult: 6, golpes: 3,
     desc: 'Tres misiles al instante (×2 cada uno).' },
-  { id: 'polimorfia', clase: 'mago', nombre: 'Polimorfia', nv: 14, icono: 'S_Magic01', costo: 6, cd: 0, cast: 1500, rango: 380, obj: 'enemigo', dura: 15000,
-    desc: 'Conviertes al enemigo en oveja 15 s (se rompe si recibe daño). No afecta a jefes.' },
-  { id: 'contrahechizo', clase: 'mago', nombre: 'Contrahechizo', nv: 16, icono: 'S_Magic11', costo: 8, cd: 20000, rango: 410, obj: 'enemigo', mult: 0.3, interrumpe: 5000, gcd: false,
+  { id: 'polimorfia', clase: 'mago', nombre: 'Hechizo de Llamita', nv: 14, icono: 'S_Magic01', costo: 6, cd: 0, cast: 1500, rango: 380, obj: 'enemigo', dura: 15000,
+    desc: 'Conviertes al enemigo en llamita 15 s (se rompe si recibe daño). No afecta a jefes.' },
+  { id: 'contrahechizo', clase: 'mago', nombre: 'Corta Conjuro', nv: 16, icono: 'S_Magic11', costo: 8, cd: 20000, rango: 410, obj: 'enemigo', mult: 0.3, interrumpe: 5000, gcd: false,
     desc: 'Cortas el hechizo que el enemigo esté lanzando, desde lejos (y no puede lanzar otro en 5 s).' },
-  { id: 'evocacion', clase: 'mago', nombre: 'Evocación', nv: 20, icono: 'S_Magic04', costo: 0, cd: 60000, cast: 4000, obj: 'yo', gcd: true,
+  { id: 'evocacion', clase: 'mago', nombre: 'Respiro del Nevado', nv: 20, icono: 'S_Magic04', costo: 0, cd: 60000, cast: 4000, obj: 'yo', gcd: true,
     desc: 'Te concentras 4 s y recuperas el 60% del maná.' },
-  { id: 'bloque', clase: 'mago', nombre: 'Bloque de Hielo', nv: 28, icono: 'S_Ice07', costo: 0, cd: 60000, obj: 'yo', dura: 6000, gcd: false,
+  { id: 'bloque', clase: 'mago', nombre: 'Ataúd de Escarcha', nv: 28, icono: 'S_Ice07', costo: 0, cd: 60000, obj: 'yo', dura: 6000, gcd: false,
     desc: 'Te encierras en hielo: inmune a todo 6 s, pero no puedes actuar.' },
   { id: 'meteoros', clase: 'mago', nombre: 'Lluvia de Meteoros', nv: 36, icono: 'S_Fire05', costo: 20, cd: 18000, cast: 2000, radio: 430, obj: 'area', mult: 7, multJefe: 4,
     desc: 'Llueven meteoros sobre todo lo que ves (×7; ×4 a jefes).' },
@@ -1189,36 +1198,36 @@ export const HABS = [
     desc: 'Luz sagrada contra el enemigo (×5,5). 1,5 s de lanzamiento.' },
   { id: 'sanar', clase: 'sacerdote', nombre: 'Sanar', nv: 1, icono: 'S_Holy03', costo: 10, cd: 0, cast: 1800, rango: 420, obj: 'aliado', cura: 3.2,
     desc: 'Curas a un aliado (o a ti) ataque ×3,2. 1,8 s de lanzamiento.' },
-  { id: 'escudo_poder', clase: 'sacerdote', nombre: 'Palabra de Poder: Escudo', nv: 4, icono: 'S_Holy09', costo: 12, cd: 4000, rango: 420, obj: 'aliado', absorbe: 4, dura: 15000,
+  { id: 'escudo_poder', clase: 'sacerdote', nombre: 'Escudo del Apu', nv: 4, icono: 'S_Holy09', costo: 12, cd: 4000, rango: 420, obj: 'aliado', absorbe: 4, dura: 15000,
     desc: 'Un escudo que absorbe daño (ataque ×4) durante 15 s. El mismo aliado no puede recibir otro en 12 s.' },
-  { id: 'dolor', clase: 'sacerdote', nombre: 'Palabra de las Sombras: Dolor', nv: 8, icono: 'S_Shadow06', costo: 5, cd: 0, rango: 410, obj: 'enemigo', mult: 9, dura: 15000,
-    desc: 'Dolor oscuro que hace ataque ×9 en 15 s.' },
+  { id: 'dolor', clase: 'sacerdote', nombre: 'Maldición del Supay', nv: 8, icono: 'S_Shadow06', costo: 5, cd: 0, rango: 410, obj: 'enemigo', mult: 9, dura: 15000,
+    desc: 'Una maldición oscura que hace ataque ×9 en 15 s.' },
   { id: 'renovar', clase: 'sacerdote', nombre: 'Renovar', nv: 14, icono: 'S_Holy01', costo: 9, cd: 0, rango: 420, obj: 'aliado', cura: 4, dura: 12000,
     desc: 'Curación continua: ataque ×4 repartido en 12 s.' },
   { id: 'silencio', clase: 'sacerdote', nombre: 'Silencio', nv: 18, icono: 'S_Shadow07', costo: 6, cd: 30000, rango: 400, obj: 'enemigo', mult: 0.3, interrumpe: 5000, gcd: false,
     desc: 'Silencias al enemigo: interrumpe su hechizo y no puede lanzar ni disparar en 5 s.' },
-  { id: 'rezo', clase: 'sacerdote', nombre: 'Rezo de Sanación', nv: 22, icono: 'S_Holy06', costo: 22, cd: 0, cast: 2500, radio: 480, obj: 'yo', cura: 2.6,
+  { id: 'rezo', clase: 'sacerdote', nombre: 'Rezo de la Pachamama', nv: 22, icono: 'S_Holy06', costo: 22, cd: 0, cast: 2500, radio: 480, obj: 'yo', cura: 2.6,
     desc: 'Curas a todos los aliados cercanos ataque ×2,6. 2,5 s de lanzamiento.' },
-  { id: 'supresion', clase: 'sacerdote', nombre: 'Supresión de Dolor', nv: 32, icono: 'S_Holy08', costo: 8, cd: 60000, rango: 420, obj: 'aliado', dura: 8000, reduce: 0.4, gcd: false,
+  { id: 'supresion', clase: 'sacerdote', nombre: 'Calma del Apu', nv: 32, icono: 'S_Holy08', costo: 8, cd: 60000, rango: 420, obj: 'aliado', dura: 8000, reduce: 0.4, gcd: false,
     desc: 'El aliado recibe un 40% menos de daño durante 8 s.' },
   // Resurreccion: no va en la barra, sale en el boton de accion junto a un
   // aliado caido (como "hablar" o "entrar").
   { id: 'resurreccion', clase: 'sacerdote', nombre: 'Resurrección', nv: 10, icono: 'S_Holy05', costo: 30, cd: 0, cast: 4000, rango: 160, obj: 'muerto', barra: false,
     desc: 'Devuelves la vida a un aliado caído (con la mitad de su vida). Ponte junto a él y pulsa el botón de acción.' },
   // ── PICARO ──
-  { id: 'siniestro', clase: 'picaro', nombre: 'Golpe Siniestro', nv: 1, icono: 'S_Dagger02', costo: 40, cd: 0, rango: MELEE, obj: 'enemigo', mult: 2.6, combo: 1,
+  { id: 'siniestro', clase: 'picaro', nombre: 'Puñalada Rápida', nv: 1, icono: 'S_Dagger02', costo: 40, cd: 0, rango: MELEE, obj: 'enemigo', mult: 2.6, combo: 1,
     desc: 'Una puñalada rápida (×2,6) que suma 1 punto de combo.' },
-  { id: 'eviscerar', clase: 'picaro', nombre: 'Eviscerar', nv: 3, icono: 'S_Dagger05', costo: 35, cd: 0, rango: MELEE, obj: 'enemigo', mult: 1.2, porCombo: 1.6, remate: true,
+  { id: 'eviscerar', clase: 'picaro', nombre: 'Tajo del Otorongo', nv: 3, icono: 'S_Dagger05', costo: 35, cd: 0, rango: MELEE, obj: 'enemigo', mult: 1.2, porCombo: 1.6, remate: true,
     desc: 'Remate: gasta los puntos de combo (×1,2 + ×1,6 por punto). Con 5 puntos, ×9,2.' },
   { id: 'sigilo', clase: 'picaro', nombre: 'Sigilo', nv: 6, icono: 'S_Buff06', costo: 0, cd: 4000, obj: 'yo', gcd: false,
     desc: 'Te vuelves casi invisible: los monstruos no te ven. Tu primer golpe desde el sigilo hace ×2 y da 2 puntos de combo. Solo fuera de combate.' },
   { id: 'patada', clase: 'picaro', nombre: 'Patada', nv: 10, icono: 'S_Dagger06', costo: 25, cd: 10000, rango: MELEE, obj: 'enemigo', mult: 0.8, interrumpe: 4000, gcd: false,
     desc: 'Interrumpe el hechizo que el enemigo esté lanzando (y no puede volver a lanzarlo en 4 s).' },
-  { id: 'abanico', clase: 'picaro', nombre: 'Abanico de Cuchillas', nv: 16, icono: 'S_Dagger04', costo: 50, cd: 0, radio: 150, obj: 'area', mult: 2, combo: 1,
+  { id: 'abanico', clase: 'picaro', nombre: 'Lluvia de Cuchillas', nv: 16, icono: 'S_Dagger04', costo: 50, cd: 0, radio: 150, obj: 'area', mult: 2, combo: 1,
     desc: 'Lanzas cuchillas a todos los enemigos cercanos (×2) y sumas 1 punto de combo.' },
   { id: 'evasion', clase: 'picaro', nombre: 'Evasión', nv: 24, icono: 'S_Wind05', costo: 0, cd: 40000, obj: 'yo', dura: 10000, esquiva: 0.6, gcd: false,
     desc: 'Esquivas el 60% de los golpes durante 10 s.' },
-  { id: 'desvanecer', clase: 'picaro', nombre: 'Desvanecerse', nv: 34, icono: 'S_Shadow16', costo: 0, cd: 90000, obj: 'yo', gcd: false,
+  { id: 'desvanecer', clase: 'picaro', nombre: 'Paso de Neblina', nv: 34, icono: 'S_Shadow16', costo: 0, cd: 90000, obj: 'yo', gcd: false,
     desc: 'Desapareces: los monstruos se olvidan de ti y entras en Sigilo aunque estés en combate.' },
 ];
 export const habsDe = clase => HABS.filter(h => h.clase === clase && h.barra !== false);
@@ -1243,19 +1252,19 @@ export const FM = { raiz: 1, aturdido: 2, oveja: 4, dolor: 8, lanza: 16 };
 export const AURAS = {
   escudo:      { nombre: 'Escudo (invulnerable)', icono: 'item_shield', dir: 'items/' },
   fuego:       { nombre: 'Golpes de fuego', icono: 'skill_fire', dir: 'items/' },
-  escudoPoder: { nombre: 'Palabra de Poder: Escudo', icono: 'S_Holy09' },
+  escudoPoder: { nombre: 'Escudo del Apu', icono: 'S_Holy09' },
   almaDebil:   { nombre: 'Alma Debilitada', icono: 'S_Shadow11', mala: true },
   renovar:     { nombre: 'Renovar', icono: 'S_Holy01' },
-  muro:        { nombre: 'Muro de Escudo', icono: 'E_Metal06' },
-  supresion:   { nombre: 'Supresión de Dolor', icono: 'S_Holy08' },
+  muro:        { nombre: 'Muralla Inca', icono: 'E_Metal06' },
+  supresion:   { nombre: 'Calma del Apu', icono: 'S_Holy08' },
   evasion:     { nombre: 'Evasión', icono: 'S_Wind05' },
-  bloque:      { nombre: 'Bloque de Hielo', icono: 'S_Ice07' },
+  bloque:      { nombre: 'Ataúd de Escarcha', icono: 'S_Ice07' },
   sigilo:      { nombre: 'Sigilo', icono: 'S_Buff06' },
   grito:       { nombre: 'Grito de Batalla', icono: 'S_Buff08' },
   raiz:        { nombre: 'Congelado', icono: 'S_Ice02', mala: true },
   aturdido:    { nombre: 'Aturdido', icono: 'S_Dagger03', mala: true },
-  oveja:       { nombre: 'Polimorfia', icono: 'S_Magic01', mala: true },
-  dolor:       { nombre: 'Dolor', icono: 'S_Shadow06', mala: true },
+  oveja:       { nombre: 'Hechizo de Llamita', icono: 'S_Magic01', mala: true },
+  dolor:       { nombre: 'Maldición del Supay', icono: 'S_Shadow06', mala: true },
   silencio:    { nombre: 'Interrumpido', icono: 'S_Dagger06', mala: true },
   provoca:     { nombre: 'Provocado', icono: 'S_Buff14', mala: true },
   caparazon:   { nombre: 'Caparazón (casi inmune)', icono: 'E_Metal05' },
@@ -1842,6 +1851,31 @@ export const TEMPORADAS = [
 ];
 // Las fechas de arriba son dias de Lima: empiezan y acaban a las 00:00 de Peru (05:00 UTC).
 for (const t of TEMPORADAS) { t.ini -= DIA_DESFASE_MS; t.fin -= DIA_DESFASE_MS; }
+// ── TIENDA DE LA FIESTA ── (world.js tiendaTemp; puesto de la Abuela en ORIGINS)
+// El objeto del evento es su UNICA moneda (nunca oro, Stars ni $DUENDE).
+// Gastado = c[campo + 'G']; los logros siguen contando el total c[campo].
+// Titulo y color de nombre: una vez (c.tempComprado) y valen para siempre;
+// el mismo evento de otro año comparte los suyos. Pociones y saco: sin fin.
+const TIENDA_TEMP_NOM = {   // campo: [titulo exclusivo, color de nombre]
+  calabazas: ['Señor de la Noche Duende', 'Naranja Calabaza'], tantas: ['Hornero de Todos los Santos', 'Dorado de Horno'],
+  mazorcas: ['Guardián de la Chicha', 'Morado Maíz'], regalos: ['Duende de la Chocolatada', 'Verde Navidad'],
+  conchas: ['Tablista Duende', 'Azul Mar'], mascaras: ['Alma del Carnaval', 'Rosa Carnaval'], uvas: ['Catador de Ica', 'Vino de Ica'],
+  estrellas: ['Viajero de las Estrellas', 'Polvo de Estrella'], cometas: ['Dueño del Viento', 'Celeste Viento'],
+  soles: ['Guardián del Inti Raymi', 'Oro del Inti'], fuegos: ['Corazón Rojo y Blanco', 'Rojo Patrio'],
+  semillas: ['Hijo de la Pachamama', 'Verde Chacra'], flores: ['Flor de Amancae', 'Rosa Primavera'],
+};
+for (const t of TEMPORADAS) {
+  const [tit, col] = TIENDA_TEMP_NOM[t.campo] || ['Héroe de ' + t.nombre, 'Color de ' + t.nombre];
+  const tid = 'tt_' + t.campo, cid = 'tp_' + t.campo;
+  if (!LOGROS.some(L => L.id === tid)) LOGROS.push({ id: tid, titulo: tit, desc: `Canjéalo en la tienda de ${t.nombre} (120 ${t.cosas})`, oro: 0, tienda: true, cond: c => (c.tempComprado || []).includes(tid) });
+  if (!TINTES[cid]) TINTES[cid] = { nombre: col, color: t.color, nv: 1, precio: 0, temp: true };
+  t.tienda = [
+    { id: tid, nombre: `Título «${tit}»`, emoji: '🏷️', costo: 120, una: true, premio: { titulo: tid } },
+    { id: cid, nombre: `Color de nombre «${col}»`, emoji: '🎨', costo: 80, una: true, premio: { tinte: cid } },
+    { id: 'pociones', nombre: '5 pociones y 2 escudos', emoji: '🧪', costo: 15, premio: { pw: { pocion: 5, escudo: 2 } } },
+    { id: 'saco', nombre: 'Saco de oro (50 × tu nivel)', emoji: '💰', costo: 10, premio: { oroNivel: 50 } },
+  ];
+}
 export const temporadaDe = (t = Date.now()) => TEMPORADAS.find(x => t >= x.ini && t < x.fin) || null;
 export const temporadaActiva = (t = Date.now()) => !!temporadaDe(t);
 export const TEMP_PROB = 0.2, TEMP_JEFE = 5;

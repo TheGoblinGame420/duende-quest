@@ -40,6 +40,8 @@ export const Expediciones = {
       this.revisarLogros(s);
       this.actualizarYo(s);
       this.guardar(s);
+      // «Recoger y repetir»: vuelve a salir con las mismas horas y destino, pasando por las mismas comprobaciones del envio normal (la de 15 min no se repite).
+      if (m.repetir && EXPEDICION.horas.includes(e.h)) this.expedicion(s, { h: e.h, d: e.d });
       return;
     }
     // La de 15 min solo la primera vez (aun sin ninguna recogida): asi ve el ciclo entero en la misma partida.

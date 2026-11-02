@@ -107,7 +107,7 @@
     var okM = window.dqMedirOk();
     if (!enTg && okM !== 0 && (okM === 1 || (origen && (origen.o === 'meta' || origen.fr)))) {
       var sm = document.createElement('script');
-      sm.src = '/js/medir.js?v=341'; sm.async = true;
+      sm.src = '/js/medir.js?v=342'; sm.async = true;
       (document.head || document.documentElement).appendChild(sm);
     }
   } catch (e) {}

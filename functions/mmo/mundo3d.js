@@ -175,6 +175,8 @@ export const Mundo3D = {
       case 'temp3': return this.enviar(s, this.infoTemp(s.c));
       case 'vincInfo': case 'vincCodigo': case 'vincUsar': case 'vincQuitar': return this.vincular(s, m);
       case 'avisoTgCod': return this.ofrecerAvisoTg(s, true);   // «Avísame por Telegram» (retencion.js)
+      // Telegram: acepto que el bot le escriba (requestWriteAccess); quita un bloqueo viejo por 403. Sin mensaje.
+      case 'tgEscribir': if (s.c && String(s.c.uid || '').startsWith('tg:')) this.permisoEscribirTg(s.c.uid).catch(() => {}); return;
       case 'comprar': return this.comprar(s, m);   // cercaDelMercader() sabe del 3D
       case 'ignorar': return this.ignorar(s, m);
       case 'reportar': return this.reportar(s, m);
@@ -222,6 +224,7 @@ export const Mundo3D = {
       case 'reclamoPedido': return this.reclamoPedido(s, m);   // world.js
       case 'ev': return this.evCompra(s, m);   // retencion.js
       case 'ranking': return this.enviarRanking(s);
+      case 'tiendaTemp': return this.tiendaTemp(s, m);   // world.js: tienda de la fiesta (puesto de la Abuela)
       case 'contactos': return this.enviarContactos(s);
       case 'quien': return this.quien(s);
       case 'ping': return this.enviar(s, { t: 'pong', ts: m.ts });
@@ -374,10 +377,12 @@ export const Mundo3D = {
     if (o.muere) return 0;
     if (o.vuelve && !o.persiste) return 0;
     if (o.asedio && !forzar && (o.dormido || !s || !this.puedeAsediar(s))) return 0;
+    if (o.expuesto && Date.now() < o.expuesto) dmg = Math.round(dmg * 1.25);
     if (s && s.dios && s.diosModo && s.diosModo.golpe) dmg = Math.ceil(o.hp);
     dmg = Math.min(dmg, Math.ceil(o.hp));
     o.hp -= dmg;
     o.golpeT = Date.now();
+    if (s && !o.iniCombate) o.iniCombate = o.golpeT;   // inicio de la pelea (resumen del jefe)
     if (o.au.oveja) this.quitarAuraMon(o, 'oveja');
     if (s) {
       o.dano.set(s.id, (o.dano.get(s.id) || 0) + dmg);
@@ -405,6 +410,9 @@ export const Mundo3D = {
     const base = statsMonstruo(o.k, o.nv);
     const total = [...o.dano.values()].reduce((a, b) => a + b, 0) || 1;
     const cobraron = new Set();
+    // Resumen personal del jefe: puesto por daño (se ordena una sola vez).
+    const puestos = o.jefe ? new Map([...o.dano].sort((a, b) => b[1] - a[1]).map(([id], i) => [id, i + 1])) : null;
+    const msJefe = o.jefe ? Date.now() - (o.iniCombate || Date.now()) : 0;
     for (const [sid, d] of o.dano) {
       const s = this.sesiones.get(sid);
       // Quien cae peleando contra un jefe (15 % del daño o mas) tambien cobra: si no, perdia la mision de jefe.
@@ -425,6 +433,7 @@ export const Mundo3D = {
       const nG = gr ? Math.max(1, this.sesionesGrupo(gr).filter(x => x.m3 && !x.muerto && o.dano.has(x.id)).length) : 1;
       this.dar(s, xp, oro, o, nG, true);
       cobraron.add(sid);
+      if (puestos) this.enviar(s, { t: 'resJefe', k: o.k, n: (MONSTRUOS[o.k] || {}).nombre || '', parte: Math.round(parte * 100), puesto: puestos.get(sid) || 0, de: o.dano.size, ms: msJefe });
       if (enAbismo(o.x) && parte >= 0.1) this.sumarPA(s, (o.jefe ? 10 : 3) + (s.c.faccion && s.c.faccion === this.duenoNucleo() ? (o.jefe ? 2 : 1) : 0), 'élite');
       if (o.jefe && !o.cueva && this.parteJusta(o, s) >= 0.1) this.darMton(s, 20 * Math.max(0.3, MONSTRUOS[o.k].nivel / 30), 'jefe');
     }
@@ -1054,6 +1063,9 @@ export const Mundo3D = {
         }
         this.aClave(K3, { t: 'zona3f', id: o.id });
         o.pisa = null;
+        // Tras el pisoton queda expuesto 2 s: +25 % de daño recibido (premio por esquivar y contraatacar).
+        o.expuesto = ahora + 2000;
+        this.aCerca3d(o, { t: 'expuesto', id: o.id, ms: 2000 });
       }
       if (!o.pisa && ahora >= o.pisaProx && o.obj) {
         const s = this.sesiones.get(o.obj);
@@ -1123,6 +1135,8 @@ export const Mundo3D = {
       for (const x of vivos) if (!(x.h > 4) && Math.hypot(x.p.x - o.pzj.x, x.p.z - o.pzj.z) <= PISOTON_JEFE_R) this.herir(x, 1, { zona: true, jefe: true, pct: 0.2, id: o.id });
       this.aCerca3d(o, { t: 'zona3f', id: o.id });
       o.pzj = null;
+      o.expuesto = ahora + 2000;
+      this.aCerca3d(o, { t: 'expuesto', id: o.id, ms: 2000 });
     }
     if (o.dormido) { o.st = 0; return; }   // el Guardian espera a que caiga la puerta
     // Sorbo del Cantaro: lo cortan Patada, Zurrar, Contrahechizo, Silencio o un aturdimiento.
@@ -1239,7 +1253,7 @@ export const Mundo3D = {
       if (dist(o, casa) > CORREA) {
         // Se rompe la correa: vuelve a casa y olvida el combate.
         o.obj = 0; o.vuelve = true; o.amen.clear();
-        if (!o.persiste) o.dano.clear();
+        if (!o.persiste) { o.dano.clear(); o.iniCombate = 0; }
         delete o.au.dolor; delete o.au.provoca;
       }
       return;
@@ -1251,7 +1265,7 @@ export const Mundo3D = {
       if (mover(casa.x, casa.z, velC * 1.3) < 0.5) {
         o.vuelve = false; o.st = 0;
         // El jefe mundial conserva el daño (y su credito para el premio).
-        if (!o.persiste) { o.hp = o.max; o.dano.clear(); o.amen.clear(); }
+        if (!o.persiste) { o.hp = o.max; o.dano.clear(); o.amen.clear(); o.iniCombate = 0; }
         if (o.cueva && o.jefe) this.reiniciarJefeCueva(o);
       }
       return;
@@ -1328,7 +1342,7 @@ export const Mundo3D = {
       if (h.radio || h.area) return this.no(s, 'Contra jugadores solo valen las habilidades de un objetivo.');
       if (dist(s.p, t.p) > this.metros(h.rango, s) + 0.5) return this.no(s, 'Tu rival está fuera de alcance.');
       if (h.min && dist(s.p, t.p) < h.min / 17) return this.no(s, 'Estás demasiado cerca.');
-      if (h.id === 'eviscerar' && !(s.combo > 0)) return this.no(s, 'Necesitas puntos de combo (usa Golpe Siniestro).');
+      if (h.id === 'eviscerar' && !(s.combo > 0)) return this.no(s, 'Necesitas puntos de combo (usa Puñalada Rápida).');
       if (h.bajo && t.hp / t.st.maxHp > h.bajo) return this.no(s, 'Solo funciona con enemigos casi muertos.');
       this.desmontar(s);
       if (h.gcd !== false) s.gcdHasta = Math.max(ahora, s.gcdHasta || 0) + GCD_MS;
@@ -1346,7 +1360,7 @@ export const Mundo3D = {
         return this.no(s, cerca ? 'Estás demasiado cerca.' : 'No hay ningún enemigo al alcance.');
       }
       if (h.bajo && obj.hp / obj.max > h.bajo) return this.no(s, 'Solo funciona con enemigos casi muertos.');
-      if (h.id === 'polimorfia' && obj.jefe) return this.no(s, 'Los jefes no se pueden convertir en oveja.');
+      if (h.id === 'polimorfia' && obj.jefe) return this.no(s, 'Los jefes no se pueden convertir en llamita.');
     } else if (h.obj === 'aliado') {
       obj = this.aliado3d(s, m.tp | 0, this.metros(h.rango, s), false);
       if (!obj) return this.no(s, 'Tu aliado está demasiado lejos.');
@@ -1355,7 +1369,7 @@ export const Mundo3D = {
       obj = this.aliado3d(s, m.tp | 0, this.metros(h.rango, s) + 2, true);
       if (!obj) return this.no(s, 'Acércate a un aliado caído para resucitarlo.');
     }
-    if (h.id === 'eviscerar' && !(s.combo > 0)) return this.no(s, 'Necesitas puntos de combo (usa Golpe Siniestro).');
+    if (h.id === 'eviscerar' && !(s.combo > 0)) return this.no(s, 'Necesitas puntos de combo (usa Puñalada Rápida).');
     if (h.id === 'sigilo') {
       if (this.aura(s, 'sigilo')) { this.quitarAura(s, 'sigilo'); return; }
       if (ahora - (s.combateT || 0) < 5000) return this.no(s, 'No puedes entrar en sigilo en pleno combate.');

@@ -3380,3 +3380,18 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Rendimiento gama baja: tope de figuras, modo reposo, viñeta CSS, telemetría de FPS.
 - Diarias 2 de 3, +8 al pase por entrar, protector 🧿 de racha.
 - Arnés 897 bien (pruebas del pase ajustadas a los puntos por entrar).
+
+### Segundo estudio de juegos de referencia (1-nov-2026, `?v=342`)
+
+- 12 investigadores (jefes, exploración, personalización, mascotas, LiveOps, clases, retención D7-D30, sesiones cortas en Telegram, HUD, cámara táctil, artesanía, anti-frustración) → 65 hallazgos → 12 tareas.
+- Mascota en 3D (`ponMascota`/`moverMascotas`, tope 6 ajenas, solo la propia en calidad baja).
+- `fotoPresumir`: captura 9:16 del lienzo centrada en el duende, con franja de texto (look/logro/nivel).
+- Nombres originales de habilidades y especializaciones.
+- Tienda de temporada (canje del objeto del evento sin perder logros).
+- Ranking semanal con puesto propio y ligas Oro/Plata/Bronce con premio el lunes.
+- Permiso de avisos de Telegram en ORIGINS desde Nv 3 (una vez, fuera de combate, opt-in del jugador).
+- Botones táctiles con presión, listo y rechazo; ATACAR más grande.
+- Jefe expuesto tras el pisotón (+25% de daño) y anillo telegrafiado; resumen personal al vencer con medalla y Presumir.
+- Haz del cofre legendario y mirador que revela el mapa con % explorado.
+- Expedición en la bienvenida y «Recoger y repetir». Probador de skins con vuelta de cámara.
+- Arnés 897 bien.

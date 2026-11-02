@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════
-// DUENDE QUEST ONLINE — combate al estilo World of Warcraft
+// DUENDE QUEST ONLINE — combate en tiempo real
 //
 // Se mezcla en MmoWorld (Object.assign sobre su prototipo): todo usa `this`
 // como si estuviera escrito dentro de world.js. Aqui viven las clases, el
@@ -367,7 +367,7 @@ export const Combate = {
       const riv = this.rivalDuelo(s);
       if (!riv || riv.id !== m.tg) return this.no(s, 'Ese jugador no es tu rival de duelo.');
       if (this.distJug(s, riv) > h.rango + 20) return this.no(s, 'Fuera de alcance.');
-      if (h.id === 'eviscerar' && !(s.combo > 0)) return this.no(s, 'Necesitas puntos de combo (usa Golpe Siniestro).');
+      if (h.id === 'eviscerar' && !(s.combo > 0)) return this.no(s, 'Necesitas puntos de combo (usa Puñalada Rápida).');
       if (h.bajo && riv.hp / riv.st.maxHp > h.bajo) return this.no(s, 'Solo funciona con enemigos casi muertos.');
       this.desmontar(s);
       if (h.gcd !== false) s.gcdHasta = ahora + GCD_MS;
@@ -387,7 +387,7 @@ export const Combate = {
         return this.no(s, cerca ? 'Estás demasiado cerca.' : 'No hay ningún enemigo al alcance.');
       }
       if (h.bajo && obj.hp / obj.max > h.bajo) return this.no(s, 'Solo funciona con enemigos casi muertos.');
-      if (h.id === 'polimorfia' && obj.jefe) return this.no(s, 'Los jefes no se pueden convertir en oveja.');
+      if (h.id === 'polimorfia' && obj.jefe) return this.no(s, 'Los jefes no se pueden convertir en llamita.');
     } else if (h.obj === 'aliado') {
       obj = this.aliadoAlAlcance(s, m.tg, h.rango, false);
       if (!obj) return this.no(s, 'Tu aliado está demasiado lejos.');
@@ -396,7 +396,7 @@ export const Combate = {
       obj = this.aliadoAlAlcance(s, m.tg, h.rango, true);
       if (!obj) return this.no(s, 'Acércate a un aliado caído para resucitarlo.');
     }
-    if (h.id === 'eviscerar' && !(s.combo > 0)) return this.no(s, 'Necesitas puntos de combo (usa Golpe Siniestro).');
+    if (h.id === 'eviscerar' && !(s.combo > 0)) return this.no(s, 'Necesitas puntos de combo (usa Puñalada Rápida).');
     if (h.id === 'sigilo') {
       if (this.aura(s, 'sigilo')) { this.quitarAura(s, 'sigilo'); return; }
       if (ahora - (s.combateT || 0) < 5000) return this.no(s, 'No puedes entrar en sigilo en pleno combate.');

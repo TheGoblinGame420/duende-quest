@@ -996,4 +996,18 @@ export const Retencion = {
     if (!(await this.retGuardarIdx())) return { ok: false, error: 'No se pudo guardar. Intenta de nuevo en un rato.' };
     return { ok: true, on: !e.off, jugo: e.v > 0 };
   },
+
+  // Telegram (ORIGINS): el jugador acepto en la ventana de Telegram que el bot le
+  // escriba (requestWriteAccess). Un 403 anterior (bloq) ya no aplica: se borra y
+  // se reinicia la cuenta de avisos, como /avisos on, pero NO se toca un /avisos off
+  // (eso lo decide el jugador en el bot). No se envia ningun mensaje aqui.
+  async permisoEscribirTg(uid) {
+    if (typeof uid !== 'string' || !/^tg:\d{1,15}$/.test(uid)) return false;
+    const idx = await this.retIdx(), id = uid.slice(3);
+    let cambio = false;
+    const e = idx[uid];
+    if (e && e.bloq) { delete e.bloq; e.a = 0; cambio = true; }
+    for (const u in idx) if (idx[u].tc === id && idx[u].bloq) { delete idx[u].bloq; idx[u].a = 0; cambio = true; }
+    return cambio ? this.retGuardarIdx() : true;
+  },
 };

@@ -22,7 +22,8 @@ import {
   PAQUETES, estrellasDe, solesDeStars, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA, LOGROS, progresoLogro, statsJugador, ALAS, paqueteParaFaltante, ENTREGA, textoPagoRecibido, PEDIDO_VIGENCIA_MS,
   pagoLocalActivo, textoSoles, YAPE_VIGENCIA_MS, premioDiaria, MISIONES,
   ORO_POR_USD, STAR_TIENDA_USD, PEN_POR_USD,
-} from '/mmo/js/data.js?v=341';
+  temporadaDe, TEMPORADAS,
+} from '/mmo/js/data.js?v=342';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -47,7 +48,8 @@ let pendiente = null;          // confirmacion de dos toques { k, t }
 let pagoActual = null;         // pedido de SOL/$DUENDE mostrado
 let facturaWebCod = '';        // pedido de Stars abierto desde la web (se confirma al llegar pagado)
 
-const IDS = { inv: 'v-inv', libro: 'v-libro', tienda: 'v-tienda', logros: 'v-logros', pago: 'v-pago', exped: 'v-exped' };
+const IDS = { inv: 'v-inv', libro: 'v-libro', tienda: 'v-tienda', logros: 'v-logros', pago: 'v-pago', exped: 'v-exped', ttemp: 'v-ttemp' };
+let ttemp = null;              // estado de la tienda de la fiesta que manda el servidor { tp, saldo, comprado }
 
 // ── CSS propio (prefijo vv- para no chocar con el HUD) ──
 const CSS = `
@@ -80,7 +82,8 @@ const CSS = `
 .vv-txt>b{display:block;font:700 14px/1.3 var(--sans);margin-bottom:3px;}
 .vv-txt small{display:block;font:500 12.5px/1.45 var(--sans);color:var(--txt2);}
 .vv-acc{display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex:0 0 auto;}
-.vv .btn{padding:7px 12px;font-size:13px;min-height:34px;white-space:nowrap;}
+.vv .btn,#probador3 .btn{padding:7px 12px;font-size:13px;min-height:34px;white-space:nowrap;}
+#probador3 .btn.sec{color:var(--txt);}
 .vv .btn.sec{color:var(--txt);}
 .vv .btn.oro{background:linear-gradient(#f59e0b,#d97706);color:#1a1200;}
 .vv .btn.ojo{background:#b45309;border:1px solid #f59e0b;color:#fff;}
@@ -597,7 +600,7 @@ function htmlTintes(y) {
   let h = '<div class="vv-lista">';
   for (const [id, tn] of Object.entries(TINTES)) {
     const tiene = (y.tintes || []).includes(id);
-    if ((tn.amb || tn.racha) && !tiene) continue;   // los del ambulante, en su pestaña; el de racha no se vende
+    if ((tn.amb || tn.racha || tn.temp) && !tiene) continue;   // los del ambulante, en su pestaña; el de racha no se vende; los de fiesta, en su tienda
     const acc = tiene ? (y.tinte === id ? etq('✓ En uso', 'vv-ok') : btn('Usar', 'comprar', { k: 'tinte', id }, 'sec')) : precioYBoton(y, tn.precio, 'tinte', id, tn.nv);
     h += tarjeta(muestraTinte(tn), `<span style="color:${tn.color === 'arcoiris' ? '#facc15' : tn.color}">${esc(tn.nombre)}</span>`, 'Color de tu nombre sobre tu duende en ORIGINS y CLASSIC: lo ven todos. Solo estética.', acc);
   }
@@ -611,7 +614,7 @@ function htmlMascotas(y) {
     const tiene = (y.mascotas || []).includes(id);
     if ((ma.amb || ma.pase || ma.pesca) && !tiene) continue;   // ambulante, pase y pesca no se venden aqui
     const acc = tiene ? (y.mascota === id ? etq('✓ Te acompaña', 'vv-ok') : btn('Llevar', 'comprar', { k: 'mascota', id }, 'sec')) : precioYBoton(y, ma.precio, 'mascota', id, ma.nv);
-    h += tarjeta(icoHoja(ma.hoja, ma.tinte), esc(ma.nombre), 'Te sigue en CLASSIC (2D) y la ven todos; en ORIGINS todavía no se ve. En expediciones da +15% de oro.' + (!tiene ? ` <span class="vv-dim">Desde Nv ${ma.nv}.</span>` : ''), acc);
+    h += tarjeta(icoHoja(ma.hoja, ma.tinte), esc(ma.nombre), 'Te sigue en ORIGINS y CLASSIC, y la ven todos. En expediciones da +15% de oro.' + (!tiene ? ` <span class="vv-dim">Desde Nv ${ma.nv}.</span>` : ''), acc);
   }
   h += '</div>';
   if (y.mascota) h += btn('Guardar a mi mascota', 'comprar', { k: 'mascota', id: '' }, 'sec vv-full');
@@ -684,6 +687,14 @@ function barraGanala(y, pr) {
   partes.push('monstruos y expediciones');
   return `<div style="margin:4px 6px 0"><div style="background:#333;height:5px;border-radius:3px;overflow:hidden"><div style="background:#fbbf24;height:100%;width:${pc}%"></div></div><div style="font-size:11px;opacity:.8;margin-top:3px;line-height:1.3">Llevas ${pc}% · Gánala jugando: ${partes.join(' · ')}</div></div>`;
 }
+// Precio y botones de compra de un arma o skin que aún no tienes (la tarjeta y el probador 3D usan lo mismo).
+function accPrecio(y, tab, id, d) {
+  if (typeof d.precio !== 'number') return `<span class="vv-etq" style="color:${d.color}">Exclusiva · ${esTg() ? estrellasDe(d.usd) + ' ⭐' : anuncio() && !(pagoLocalActivo() && (PAQUETES.find(p => p.id === 'skin_' + id) || {}).pen) ? estrellasDe(d.usd) + ' ⭐ · ≈ ' + solesDeStars(estrellasDe(d.usd)) : 'US$' + d.usd + ' · ≈ ' + precioLocal(d.usd)}</span>` + botonesPago(y, 'skin_' + id, d.usd, true);
+  const pr = precioOro(tab, id);
+  let acc = (pr !== d.precio ? `<s style="opacity:.55;font-size:11px">${d.precio.toLocaleString('es')}</s> 🎃 ` : '') + oro(pr) + botonOro(y, pr, 'Comprar', 'comprar', { k: tab, id });
+  if (tab === 'skin' && d.usd) acc += botonesPago(y, 'skin_' + id, d.usd, false);
+  return acc;
+}
 function htmlArmasSkins(y, tab) {
   const tabla = tab === 'arma' ? ARMAS : SKINS;
   const tiene = (tab === 'arma' ? y.armas : y.skins) || [];
@@ -694,12 +705,11 @@ function htmlArmasSkins(y, tab) {
     const ico = tab === 'arma' ? icoArma(id, d) : icoSkin(id, d);
     let acc, extra = '';
     if (tiene.includes(id)) acc = puesto === id ? etq('✓ Equipado', 'vv-ok') : btn('Equipar', 'equipar', { k: tab, id }, 'sec');
-    else if (typeof d.precio !== 'number') acc = `<span class="vv-etq" style="color:${d.color}">Exclusiva · ${esTg() ? estrellasDe(d.usd) + ' ⭐' : anuncio() && !(pagoLocalActivo() && (PAQUETES.find(p => p.id === 'skin_' + id) || {}).pen) ? estrellasDe(d.usd) + ' ⭐ · ≈ ' + solesDeStars(estrellasDe(d.usd)) : 'US$' + d.usd + ' · ≈ ' + precioLocal(d.usd)}</span>` + botonesPago(y, 'skin_' + id, d.usd, true);
     else {
-      const pr = precioOro(tab, id);
-      acc = (pr !== d.precio ? `<s style="opacity:.55;font-size:11px">${d.precio.toLocaleString('es')}</s> 🎃 ` : '') + oro(pr) + botonOro(y, pr, 'Comprar', 'comprar', { k: tab, id });
-      if (tab === 'skin' && d.usd) acc +=botonesPago(y, 'skin_' + id, d.usd, false);
-      if (tab === 'skin' && (y.oro || 0) < pr) extra = barraGanala(y, pr);
+      acc = accPrecio(y, tab, id, d);
+      // Probador 3D (ORIGINS): te la pones unos segundos, solo tú la ves y no se manda nada.
+      if (tab === 'skin' && H && H.probarSkin) acc += btn('👀 Probar', 'probarSkin', { id }, 'sec');
+      if (tab === 'skin' && typeof d.precio === 'number' && (y.oro || 0) < precioOro(tab, id)) extra = barraGanala(y, precioOro(tab, id));
     }
     const nom = d.premium ? `<span style="color:${d.color}">${esc(d.nombre)}</span>` : esc(d.nombre);
     h += extra ? '<div>' : '';
@@ -882,7 +892,7 @@ function pintarExped() {
     if (!y.expediciones) h += '<p class="vv-p" style="color:#4ade80">✨ Primera vez: prueba la de 15 min y recógela en esta misma partida.</p>';
   } else {
     const ms = ex.fin - Date.now(), d = EXPEDICION.destinos[ex.d] || EXPEDICION.destinos.bosque;
-    if (ms <= 0) h += `<p class="vv-p" style="text-align:center;font-size:14px">${d.emoji} ${esc(quien)} ya volvió ${esc(d.a.replace(/^al /, 'del ').replace(/^a la /, 'de la '))}.</p>` + btn('Recoger', 'exrec', {}, 'vv-full');
+    if (ms <= 0) h += `<p class="vv-p" style="text-align:center;font-size:14px">${d.emoji} ${esc(quien)} ya volvió ${esc(d.a.replace(/^al /, 'del ').replace(/^a la /, 'de la '))}.</p>` + btn('Recoger', 'exrec', {}, 'vv-full') + (EXPEDICION.horas.includes(ex.h) && y.nivel >= EXPEDICION.nv ? btn(`🔁 Recoger y repetir (${ex.h} h)`, 'exrep', { h: ex.h, d: ex.d || 'bosque' }, 'sec vv-full').replace('<button ', '<button style="margin-top:6px" ') : '');
     else h += `<p class="vv-p" style="text-align:center">${d.emoji} ${esc(quien)} está ${esc(d.a.replace(/^al /, 'en el ').replace(/^a la /, 'en la '))}: vuelve en <b>${textoMin(ms)}</b>.</p><div class="vv-barra"><i style="width:${Math.round(Math.min(1, 1 - ms / Math.max(1, ex.fin - ex.ini)) * 100)}%"></i></div><p class="vv-p">Puedes cerrar el juego: la expedición sigue sola.</p>`;
   }
   parte(id, 'cuerpo').innerHTML = h;
@@ -1155,6 +1165,7 @@ const ACC = {
     if (y) comunesVendibles(y).forEach(x => H.mandar({ t: 'item', a: 'vender', id: x.id }));
   },
   equipar: b => { H.sfx('boton', 0.3); H.mandar({ t: 'equipar', k: b.dataset.k, id: b.dataset.id }); },
+  probarSkin: b => { if (!H.probarSkin || !SKINS[b.dataset.id]) return; H.sfx('boton', 0.2); H.probarSkin(b.dataset.id); },
   'ir-tienda': b => { abrirTienda(b.dataset.id, undefined, 'oro'); },
   // «Te faltan N de oro»: a la tienda premium con el paquete justo resaltado.
   'ir-tienda-foco': b => { H.sfx('boton', 0.2); abrirTienda('premium', b.dataset.id || '', 'falta'); },
@@ -1215,6 +1226,12 @@ const ACC = {
   exdest: b => { H.sfx('boton', 0.2); try { localStorage.setItem('dq_exped', b.dataset.id); } catch (e) {} pintarExped(); },
   exped: b => { H.sfx('boton', 0.4); H.mandar({ t: 'exped', h: +b.dataset.h, d: b.dataset.d }); },
   exrec: b => { H.sfx('moneda', 0.5); H.mandar({ t: 'exped', recoger: 1 }); },
+  exrep: b => { H.sfx('moneda', 0.5); H.mandar({ t: 'exped', recoger: 1, repetir: 1 }); },   // el servidor la relanza con las mismas horas y destino
+  // Tienda de la fiesta: los de una vez piden doble toque (no se devuelven).
+  ttemp: b => {
+    if (b.dataset.una === '1' && !confirmar('tt' + b.dataset.id)) { marcarSeguro(b); return; }
+    H.sfx('moneda', 0.4); H.mandar({ t: 'tiendaTemp', id: b.dataset.id });
+  },
 };
 function delegar(m) {
   m.addEventListener('click', e => {
@@ -1253,6 +1270,48 @@ function abrirExpedicion() {
   if (!H || !H.yo()) return;
   pintarExped(); abrirV(IDS.exped);
 }
+// ═══════════════════ TIENDA DE LA FIESTA ═══════════════════
+// Puesto de la Abuela en la plaza: se paga SOLO con el objeto del evento
+// (data TEMPORADAS[].tienda; el servidor valida y descuenta en tiendaTemp).
+// La fiesta segun el reloj del servidor ('yo'.temp): con el reloj del movil
+// adelantado o atrasado, el saldo no llegaba nunca y los botones quedaban grises.
+function tempDelServidor(y) { return y && typeof y.temp === 'string' ? TEMPORADAS.find(x => x.id === y.temp) || null : temporadaDe(); }
+function pintarTiendaTemp() {
+  const y = H.yo(); if (!y) return;
+  const tp = tempDelServidor(y), sub = parte(IDS.ttemp, 'sub'), cu = parte(IDS.ttemp, 'cuerpo');
+  parte(IDS.ttemp, 't').textContent = tp ? 'TIENDA DE LA FIESTA ' + tp.emoji : 'TIENDA DE LA FIESTA';
+  if (!tp || !tp.tienda) {
+    const prox = TEMPORADAS.filter(x => x.ini > Date.now()).sort((a, b) => a.ini - b.ini)[0];
+    sub.innerHTML = '';
+    cu.innerHTML = `<p class="vv-nota" style="font-size:14px;text-align:center;margin:18px 0">La Abuela guardó su puesto. Vuelve en la próxima fiesta${prox ? `: ${prox.emoji} <b>${esc(prox.nombre)}</b>` : ''}.</p>`;
+    return;
+  }
+  const est0 = ttemp && ttemp.tp === tp.id ? ttemp : null;
+  const saldo = est0 ? est0.saldo : null, comprado = est0 ? est0.comprado || [] : [];
+  sub.innerHTML = `<span>Tienes <b style="color:${tp.color}">${saldo === null ? '…' : fmt(saldo)} ${esc(tp.cosas)} ${tp.emoji}</b></span><span>hasta el ${esc(tp.hasta)}</span>`;
+  let h = '<div class="vv-lista">';
+  for (const a of tp.tienda) {
+    const ya = a.una && comprado.includes(a.id);
+    const desc = a.premio.titulo ? 'Exclusivo de esta fiesta: sale bajo tu nombre. Es tuyo para siempre.'
+      : a.premio.tinte ? 'Tu nombre de este color en ORIGINS y CLASSIC. Es tuyo para siempre (cámbialo en la tienda).'
+      : a.premio.oroNivel ? `Ahora: ${fmt(a.premio.oroNivel * (y.nivel || 1))} de oro. Cómpralo las veces que quieras.`
+      : 'Para el camino. Cómpralo las veces que quieras.';
+    const ico = a.premio.tinte && TINTES[a.premio.tinte] ? muestraTinte(TINTES[a.premio.tinte]) : `<span style="font-size:28px">${a.emoji}</span>`;
+    const acc = ya ? etq('✓ Ya es tuyo', 'vv-ok') : `<span class="vv-precio" style="color:${tp.color}">${tp.emoji} ${a.costo}</span>` + btn('Canjear', 'ttemp', { id: a.id, una: a.una ? '1' : '0' }, '', saldo === null || saldo < a.costo);
+    h += tarjeta(ico, esc(a.nombre), desc, acc, ` style="--rz:${tp.color}"`);
+  }
+  cu.innerHTML = h + `</div><p class="vv-nota">Los monstruos sueltan ${esc(tp.cosas)} durante la fiesta (los jefes, varias). Canjear no te quita los logros: cuentan todo lo que juntaste.</p>`;
+}
+function abrirTiendaTemp() {
+  if (!H || !H.yo()) return;
+  if (tempDelServidor(H.yo())) H.mandar({ t: 'tiendaTemp' });   // pide saldo y lo ya comprado
+  pintarTiendaTemp(); abrirV(IDS.ttemp);
+}
+// Respuesta del servidor ('tiendaTemp'): guarda el estado y repinta si esta abierta.
+function alTiendaTemp(m) {
+  ttemp = m && m.tp ? m : null;
+  if (H && abierta(IDS.ttemp)) pintarTiendaTemp();
+}
 // Repinta la ventana abierta (el host la llama con cada 'yo').
 function actualizar() {
   if (!H || !H.yo()) return;
@@ -1265,6 +1324,7 @@ function actualizar() {
   if (abierta(IDS.tienda)) pintarTienda();
   if (abierta(IDS.logros)) pintarLogros();
   if (abierta(IDS.exped)) pintarExped();
+  if (abierta(IDS.ttemp)) pintarTiendaTemp();
   pintarFranja();
 }
 
@@ -1279,6 +1339,7 @@ export function iniciarVentanas(opciones) {
     cerrar: o.cerrar || (id => document.getElementById(id).classList.remove('on')),
     telegram: o.telegram,             // opcional: () => true si se paga con Stars
     iniciarSesion: o.iniciarSesion,   // opcional: boton «Iniciar sesión»
+    probarSkin: o.probarSkin,         // opcional: probador 3D de skins (ORIGINS)
   };
   if (!listo) {
     listo = true;
@@ -1289,6 +1350,7 @@ export function iniciarVentanas(opciones) {
     delegar(crearModal(IDS.tienda, 'MERCADER'));
     delegar(crearModal(IDS.logros, 'LOGROS'));
     delegar(crearModal(IDS.exped, 'EXPEDICIÓN', true));
+    delegar(crearModal(IDS.ttemp, 'TIENDA DE LA FIESTA', true));
     // Cuenta atras de la expedicion en camino (sin repintar mientras elige destino y horas).
     setInterval(() => { const y = H.yo(); if (abierta(IDS.exped) && y && y.exped) pintarExped(); }, 5000);
     crearModal(IDS.pago, 'PAGAR', true, true);
@@ -1298,5 +1360,8 @@ export function iniciarVentanas(opciones) {
     document.body.appendChild(fr);
     setInterval(pintarFranja, 2000);
   }
-  return { abrirInventario, abrirLibro, abrirTienda, abrirLogros, abrirExpedicion, actualizar, alPedido, compararConPuesta };
+  return { abrirInventario, abrirLibro, abrirTienda, abrirLogros, abrirExpedicion, abrirTiendaTemp, alTiendaTemp, actualizar, alPedido, compararConPuesta,
+    // Probador 3D: el mismo precio y botones de compra que la tarjeta de la tienda, y sus clics.
+    compraSkin: id => { const y = H.yo(), d = SKINS[id]; return y && d ? ((y.skins || []).includes(id) ? (y.skin === id ? etq('✓ Equipado', 'vv-ok') : btn('Equipar', 'equipar', { k: 'skin', id }, '')) : accPrecio(y, 'skin', id, d)) : ''; },
+    delegarCompra: el => delegar(el) };
 }

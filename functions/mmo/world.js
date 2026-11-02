@@ -65,6 +65,11 @@ const GUARDAR_CADA_MS = 60000;
 const GUARDAR_POS_MS = 5 * 60000;
 const GUARDAR_AHORRO_MS = 180000;
 const RANKING_CADA_MS = 60000;      // el ranking de niveles vive en memoria y se vuelca como mucho cada minuto
+// Ligas del ranking semanal para todos (no solo el top 3): con ~1 h de juego en la semana
+// (2000 XP; un novato de Nv 1 llega a Nv 7 con eso) entras; top 10 % Oro, hasta 30 % Plata, resto Bronce.
+const SEM_LIGA_MIN = 2000;
+const LIGAS_SEM = ['Oro', 'Plata', 'Bronce'];
+const ligaSem = (i, n) => { const f = (i + 1) / Math.max(1, n); return f <= 0.1 ? 0 : f <= 0.3 ? 1 : 2; };
 const JEFE_REAPARECE_MS = 5 * 60 * 1000;
 const JEFE_PRIMERO_MS = 60 * 1000;
 const ESCUDO_MS = 5000;
@@ -226,6 +231,8 @@ export class MmoWorld {
       for (const x of this.pedidos) if (x.estado === 'comprobando') { x.estado = x.antesComp || 'esperando_pago'; x.firma = ''; }
       this.ingresosSol = (await this.state.storage.get('ingresosSol')) || [];
       this.rs = (await this.state.storage.get('rankSem')) || { sem: semanaUTC(), l: {} };
+      // Ligas de la semana pasada (oro/plata/bronce por tramos): se cobran al entrar (cobrarLigaSem).
+      this.rsp = (await this.state.storage.get('rankSemPrem')) || null;
       this.rds = (await this.state.storage.get('rankDesSem')) || { sem: semanaUTC(), l: {} };
       // Primeras victorias del servidor (jefe final de la banda): { idJefe: { t, n } }.
       this.primeros = (await this.state.storage.get('primeros')) || {};
@@ -503,6 +510,7 @@ export class MmoWorld {
       case 'avisoTgCod': return this.ofrecerAvisoTg(s, true);   // «Avísame por Telegram» (retencion.js)
       case 'regreso': return this.regreso(s);
       case 'ranking': return this.enviarRanking(s);
+      case 'tiendaTemp': return this.tiendaTemp(s, m);   // tienda de la fiesta: solo con el objeto del evento
       case 'hab': return this.habilidad(s, m);
       case 'item': return this.item(s, m);
       case 'titulo': return this.ponerTitulo(s, m);
@@ -852,6 +860,7 @@ export class MmoWorld {
     this.porUid.set(uid, s);
     const login = this.procesarLogin(s);
     if (this.cobrarPasePendiente) this.cobrarPasePendiente(s);
+    this.cobrarLigaSem(s);   // liga semanal (oro/plata/bronce) de la semana que cerro
     this.temporadaA(); this.cobrarTemporada(s);   // premios de la temporada del Abismo que cerro
     // XP de descanso por el tiempo fuera (c.salida se pone al guardar).
     const salidaAntes = c.salida || 0;
@@ -2350,6 +2359,41 @@ export class MmoWorld {
     this.guardar(s);
   }
 
+  // Tienda de la fiesta (data TEMPORADAS[].tienda). Sin id: solo el estado.
+  // La moneda es el objeto del evento: saldo = juntado - gastado (c[campo+'G']).
+  tiendaTemp(s, m) {
+    const c = s.c, tp = temporadaDe();
+    const estado = () => {
+      if (!tp) return this.enviar(s, { t: 'tiendaTemp', tp: '' });
+      const saldo = Math.max(0, (c[tp.campo] || 0) - (c[tp.campo + 'G'] || 0));
+      this.enviar(s, { t: 'tiendaTemp', tp: tp.id, saldo, comprado: (c.tempComprado || []).filter(id => tp.tienda.some(a => a.id === id)) });
+    };
+    if (!tp || m.id === undefined) return estado();
+    if (Date.now() - (s.tiendaTempT || 0) < 300) return;   // doble toque
+    s.tiendaTempT = Date.now();
+    const a = typeof m.id === 'string' && (tp.tienda || []).find(x => x.id === m.id);
+    if (!a) return estado();
+    c.tempComprado = Array.isArray(c.tempComprado) ? c.tempComprado : [];
+    if (a.una && c.tempComprado.includes(a.id)) { this.no(s, 'Ya lo tienes.'); return estado(); }
+    const saldo = (c[tp.campo] || 0) - (c[tp.campo + 'G'] || 0);
+    if (saldo < a.costo) { this.enviar(s, { t: 'toast', m: `Te faltan ${a.costo - Math.max(0, saldo)} ${tp.cosas} ${tp.emoji}: los monstruos las sueltan durante la fiesta.` }); return estado(); }
+    const p = a.premio || {};
+    if (p.pw && Object.entries(p.pw).some(([k, n]) => (c.pw[k] || 0) + n > 99)) { this.no(s, 'Máximo 99 de cada consumible: usa algunas antes.'); return estado(); }
+    c[tp.campo + 'G'] = (c[tp.campo + 'G'] || 0) + a.costo;
+    let txt = a.nombre;
+    if (p.titulo) c.tempComprado.push(a.id);
+    if (p.tinte) { c.tempComprado.push(a.id); c.tintes = c.tintes || []; if (!c.tintes.includes(p.tinte)) c.tintes.push(p.tinte); c.tinte = p.tinte; this.difundirApariencia(s); }
+    if (p.pw) for (const [k, n] of Object.entries(p.pw)) c.pw[k] = Math.min(99, (c.pw[k] || 0) + n);
+    if (p.oroNivel) { const oro = p.oroNivel * (c.nivel || 1); c.oro += oro; txt = `+${oro.toLocaleString('es', { useGrouping: 'always' })} de oro`; }
+    this.revisarLogros(s);   // el titulo comprado se desbloquea como logro (oro 0)
+    if (p.titulo && c.logros.includes(p.titulo)) { c.titulo = p.titulo; s.tituloT = Date.now(); this.aClave(s.k, { t: 'pa', ...this.infoApariencia(s) }); }
+    this.enviar(s, { t: 'toast', ok: true, m: `${a.emoji} ${txt}${p.titulo ? ' (ya lo llevas puesto)' : p.tinte ? ' (ya lo llevas puesto; cámbialo en la tienda)' : ''}. Te quedan ${saldo - a.costo} ${tp.cosas}.` });
+    s.sucio = true;
+    this.actualizarYo(s);
+    this.guardarSuave(s);
+    estado();
+  }
+
   ponerTitulo(s, m) {
     const c = s.c;
     if (m.id !== '' && !(typeof m.id === 'string' && c.logros.includes(m.id))) return;
@@ -3021,6 +3065,7 @@ export class MmoWorld {
         const tn = TINTES[m.id];
         if (!c.tintes.includes(m.id)) {
           if (tn.racha) return this.enviar(s, { t: 'toast', m: `Ese color no se vende: se gana entrando ${tn.racha} días seguidos.` });
+          if (tn.temp) return this.enviar(s, { t: 'toast', m: 'Ese color se canjea en la tienda de la fiesta, con el objeto del evento.' });
           if (tn.amb &&!enOfertaAmbulante('tinte', m.id)) return this.enviar(s, { t: 'toast', m: 'Ese color solo lo trae el Mercader ambulante algunos fines de semana.' });
           if (c.nivel < tn.nv) return this.enviar(s, { t: 'toast', m: `Necesitas nivel ${tn.nv} para ese color.` });
           if (c.oro < tn.precio) return this.enviar(s, { t: 'toast', m: `No te alcanza el oro: te faltan ${(tn.precio - c.oro).toLocaleString('es-PE')}.`, falta: tn.precio - c.oro });
@@ -3178,13 +3223,20 @@ export class MmoWorld {
     if (Date.now() - (s.rankT || 0) < 3000) return;
     s.rankT = Date.now();
     const r = (await this.rankingLeer()).filter(x => !UIDS_PRUEBA.has(x.uid));
-    const sem = this.topSemana().slice(0, 20).map(([uid, x]) => ({ n: x.n, lv: x.lv, xp: x.xp, yo: uid === s.c.uid }));
+    const todo = this.topSemana(), iy = todo.findIndex(([uid]) => uid === s.c.uid);
+    const sem = todo.slice(0, 20).map(([uid, x]) => ({ n: x.n, lv: x.lv, xp: x.xp, yo: uid === s.c.uid }));
+    // Tu puesto aunque no salgas en el top 20 (quien llega de un anuncio nunca se veia) y la liga que llevas.
+    const nCal = todo.filter(([, x]) => x.xp >= SEM_LIGA_MIN).length;
+    const mio = { pos: iy + 1, xp: iy >= 0 ? todo[iy][1].xp : 0, total: todo.length, min: SEM_LIGA_MIN,
+      arriba: iy > 0 ? { n: todo[iy - 1][1].n, xp: todo[iy - 1][1].xp } : null,
+      liga: iy >= 3 && todo[iy][1].xp >= SEM_LIGA_MIN ? ligaSem(iy, nCal) : -1 };
     const des = ((await this.state.storage.get('rankDes')) || []).slice(0, 10).map(x => ({ n: x.n, k: x.k, yo: x.uid === s.c.uid }));
     const dsem = this.topDesSem().slice(0, 10).map(([uid, x]) => ({ n: x.n, k: x.k, yo: uid === s.c.uid }));
     const duel = ((await this.state.storage.get('rankDuelo')) || []).slice(0, 10).map(x => ({ n: x.n, e: x.e, g: x.g, yo: x.uid === s.c.uid }));
-    const torre = (await this.topTorre()).slice(0, 10).map(([uid, x]) => ({ n: x.n, p: x.p, yo: uid === s.c.uid }));
+    const todoT = await this.topTorre(), tpos = todoT.findIndex(([uid]) => uid === s.c.uid) + 1;
+    const torre = todoT.slice(0, 10).map(([uid, x]) => ({ n: x.n, p: x.p, yo: uid === s.c.uid }));
     const herm = (await this.topHerm()).slice(0, 5).map(([id, x]) => ({ n: x.n, p: x.p, m: x.m, yo: id === s.c.herm }));
-    this.enviar(s, { t: 'ranking', r: r.slice(0, 20).map(x => ({ n: x.n, lv: x.lv, k: x.k, yo: x.uid === s.c.uid })), sem, des, dsem, duel, elo: s.c.elo || 0, torre, tmax: this.torreSem(s.c).max, herm, temp: s.c.faccion || s.c.nivel >= 20 ? this.infoTemp(s.c) : null, af: afijosSemana(), finSem: Date.parse(this.rs.sem + 'T00:00:00Z') + 7 * 86400000 + 5 * 3600000 });   // lunes 00:00 de Lima
+    this.enviar(s, { t: 'ranking', r: r.slice(0, 20).map(x => ({ n: x.n, lv: x.lv, k: x.k, yo: x.uid === s.c.uid })), sem, mio, des, dsem, duel, elo: s.c.elo || 0, torre, tmax: this.torreSem(s.c).max, tpos, ttot: todoT.length, herm, temp: s.c.faccion || s.c.nivel >= 20 ? this.infoTemp(s.c) : null, af: afijosSemana(), finSem: Date.parse(this.rs.sem + 'T00:00:00Z') + 7 * 86400000 + 5 * 3600000 });   // lunes 00:00 de Lima
   }
 
   // Ranking semanal de Desafios: el mejor +k vencido esta semana (con los
@@ -3302,6 +3354,33 @@ export class MmoWorld {
       if (await this.quiereAvisos(uid)) { try { const env = getEnv({ env: this.env }); await tg(env.BOT_TOKEN, 'sendMessage', { chat_id: uid.slice(3), text: txt }); } catch (e) {} }
     }
     if (nombres.length) this.aTodos({ t: 'aviso', m: `🏆 Ranking semanal: ${nombres.join(' · ')}. Empieza una semana nueva.` });
+    // Ligas por tramos para el resto (desde SEM_LIGA_MIN XP). No se escribe sobre cada personaje
+    // desconectado (hasta 1000 escrituras): se guarda el mapa {uid: [liga, puesto]} y cada uno lo
+    // cobra al entrar (cobrarLigaSem). Solo aviso dentro del juego, nada por Telegram.
+    try {
+      const todo = Object.entries(rs.l).sort((a, b) => b[1].xp - a[1].xp);
+      const nCal = todo.filter(([, f]) => f.xp >= SEM_LIGA_MIN).length, l = {};
+      for (let i = 3; i < nCal; i++) l[todo[i][0]] = [ligaSem(i, nCal), i + 1];
+      this.rsp = { sem: rs.sem, l };
+      await this.state.storage.put('rankSemPrem', this.rsp);
+      for (const uid in l) { const s = this.porUid.get(uid); if (s && s.c) this.cobrarLigaSem(s); }
+    } catch (e) { console.error('[MMO ligaSem]', e); }
+  }
+  // Premio pequeño de la liga semanal (oro/plata/bronce) de la semana que cerro, una sola vez.
+  cobrarLigaSem(s) {
+    const c = s.c, P = this.rsp, e = P && P.l && c && P.l[c.uid];
+    if (!e || c.ligaSemCob === P.sem) return;
+    c.ligaSemCob = P.sem;
+    const [t, pos] = e, partes = [];
+    c.pw = c.pw || {};
+    if (t === 0) { const oro = 50 * (c.nivel || 1); c.oro += oro; partes.push('+' + oro.toLocaleString('es', { useGrouping: 'always' }) + ' oro'); }
+    if (t <= 1) { const it = this.darItem(s, generarItem(c.nivel, t === 0 ? 2 : 1), true); if (it) partes.push(nombreItem(it)); }
+    const poc = [5, 3, 2][t] || 2;
+    c.pw.pocion = Math.min(99, (c.pw.pocion || 0) + poc);
+    partes.push(poc + ' pociones');
+    s.sucio = true;
+    this.enviar(s, { t: 'toast', ok: true, m: `🏅 Liga ${LIGAS_SEM[t]} la semana pasada (#${pos.toLocaleString('es', { useGrouping: 'always' })}): premio recibido — ${partes.join(', ')}.` });
+    this.actualizarYo(s);
   }
 
   // El personaje de uid para cambiarlo desde fuera de su sesion (premios,

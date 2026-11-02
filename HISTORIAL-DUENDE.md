@@ -78,6 +78,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v339 | Ronda 14: pueblo de T'anta Wawa y Cosecha, botón 📣 +oro, ventanas móviles completas, AUTO que no suelta en pelea, nombres seguros, tope diario de cofres | **B** |
 | v340 | ORIGINS: música andina por zona con combate y fiestas, sonidos posicionales, cielo y agua vivos, efectos por zona, personajes que respiran, lore de mitos peruanos | **B** |
 | v341 | Estudio de juegos de referencia: golpes con peso, gestos, invasiones con aviso, meta comunitaria, protector de racha, grupo tras cazar juntos, fiesta en el pueblo | **B** |
+| v342 | Segundo estudio: mascota en 3D, probador de skins, tienda de la fiesta, jefes con pisotón esquivable, ligas semanales, miradores, foto para presumir | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

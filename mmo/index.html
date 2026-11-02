@@ -3,7 +3,7 @@
 <head>
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=341"></script>
+<script src="/js/origen.js?v=342"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Duende Quest CLASSIC · MMORPG 2D gratis en el navegador</title>
@@ -71,9 +71,9 @@
 })();
 </script>
 <!-- defer se ejecuta en orden y todo antes del modulo client.js -->
-<script src="/js/pwa.js?v=341" defer></script>
+<script src="/js/pwa.js?v=342" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=341" defer></script>
+<script src="/js/config.js?v=342" defer></script>
 <style>
 /* ── Tokens (guia de diseno, oct 2026). Las variables viejas (--verde, --amarillo,
    --rosa, --cian, --rojo) siguen existiendo porque client.js las usa, pero ahora
@@ -1000,7 +1000,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=341"></script>
+<script type="module" src="/mmo/js/client.js?v=342"></script>
 <div id="nuevo3d" role="dialog" aria-label="Nuevo mundo 3D">
   <video src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" muted loop playsinline preload="none"></video>
   <div class="t">🌌 NUEVO: Duende Quest Origins, el mundo abierto en 3D</div>

@@ -26,12 +26,12 @@
 <meta name="theme-color" content="#0a0418">
 <link rel="manifest" href="/mundo/manifest.json">
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
-<script src="/js/pwa.js?v=341" defer></script>
+<script src="/js/pwa.js?v=342" defer></script>
 <link rel="icon" href="/assets/ui/coin.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=341"></script>
+<script src="/js/origen.js?v=342"></script>
 <script>
 // Red de seguridad de la carga (script clasico: corre aunque el modulo 3D o el CDN fallen).
 // - Errores antes de conectar: se guardan en __errQ y mundo.js los manda al entrar.
@@ -117,29 +117,29 @@
   });
 })();
 </script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=341" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=342" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=341">
-<link rel="modulepreload" href="/mmo/js/data.js?v=341">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=341">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=341">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=341">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=341">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=341">
-<link rel="modulepreload" href="/mmo/js/regalo.js?v=341">
-<link rel="modulepreload" href="/mmo/js/avisotg.js?v=341">
-<link rel="modulepreload" href="/mundo/js/musica.js?v=341">
-<link rel="modulepreload" href="/mundo/js/sonidos.js?v=341">
-<link rel="modulepreload" href="/mundo/js/cueva.js?v=341">
-<link rel="modulepreload" href="/mundo/js/tapa.js?v=341">
-<link rel="modulepreload" href="/mundo/js/abismo.js?v=341">
-<link rel="modulepreload" href="/mundo/js/particulas.js?v=341">
-<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=341">
-<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=341">
-<link rel="modulepreload" href="/mmo/js/secundarias.js?v=341">
-<link rel="modulepreload" href="/mundo/js/lore.js?v=341">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=342">
+<link rel="modulepreload" href="/mmo/js/data.js?v=342">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=342">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=342">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=342">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=342">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=342">
+<link rel="modulepreload" href="/mmo/js/regalo.js?v=342">
+<link rel="modulepreload" href="/mmo/js/avisotg.js?v=342">
+<link rel="modulepreload" href="/mundo/js/musica.js?v=342">
+<link rel="modulepreload" href="/mundo/js/sonidos.js?v=342">
+<link rel="modulepreload" href="/mundo/js/cueva.js?v=342">
+<link rel="modulepreload" href="/mundo/js/tapa.js?v=342">
+<link rel="modulepreload" href="/mundo/js/abismo.js?v=342">
+<link rel="modulepreload" href="/mundo/js/particulas.js?v=342">
+<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=342">
+<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=342">
+<link rel="modulepreload" href="/mmo/js/secundarias.js?v=342">
+<link rel="modulepreload" href="/mundo/js/lore.js?v=342">
 <style>
 :root{--bg:#0a0418;--panel:rgba(14,9,30,.86);--borde:rgba(160,140,255,.22);--txt:#f2efff;--txt2:#b8b0d8;--txt3:#7d7699;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;--oro:#ffd84a;--pri:#2563eb;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -371,8 +371,19 @@ html.anuncio #carga img{content:url(/assets/skins/skin_bruja.png)}
 @keyframes pistaJ{50%{opacity:.45}}
 body.movil .acc .t{display:none;}
 #joy .pomo{position:absolute;width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,.35);left:33px;top:33px;}
-#tactil{position:fixed;right:10px;bottom:120px;display:none;grid-template-columns:repeat(3,58px);gap:8px;pointer-events:auto;}
-#tactil button{width:58px;height:58px;border-radius:50%;border:1px solid var(--borde);background:rgba(20,12,44,.75);color:var(--txt);font:700 12px var(--sans);}
+#tactil{position:fixed;right:10px;bottom:120px;display:none;grid-template-columns:repeat(2,58px) 74px;gap:8px;pointer-events:auto;align-items:center;justify-items:center;}
+#tactil button{width:58px;height:58px;border-radius:50%;border:1px solid var(--borde);background:rgba(20,12,44,.75);color:var(--txt);font:700 12px var(--sans);-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;-webkit-user-select:none;transition:transform .12s,filter .12s;}
+#tactil button:active{transform:scale(.9);filter:brightness(1.35);transition:transform .06s;}
+/* ATACAR mas grande y en la esquina inferior derecha: el pulgar lo encuentra sin mirar */
+#tactil #t-atk{width:74px;height:74px;font-size:13px;grid-column:3;grid-row:2;}
+body.movil #tactil #t-atk{width:68px;height:68px;}
+.acc{-webkit-tap-highlight-color:transparent;}
+.acc:active{transform:scale(.92);filter:brightness(1.25);}
+.acc.listo{animation:accListo .45s ease-out;}
+@keyframes accListo{0%{box-shadow:0 0 0 0 #ffd84a;transform:scale(1.08)}100%{box-shadow:0 0 0 10px transparent;transform:scale(1)}}
+.acc.no{animation:accNo .28s;border-color:#ef4444;}
+@keyframes accNo{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+@media (prefers-reduced-motion:reduce){.acc.listo,.acc.no{animation:none;}#tactil button:active,.acc:active{transform:none;}}
 #tactil button.grande{background:rgba(37,99,235,.8);}
 #tactil button.grande.on{background:rgba(220,38,38,.9);box-shadow:0 0 12px #f87171;}
 body.movil #joy,body.movil #tactil{display:grid;}
@@ -402,7 +413,7 @@ body.movil #barra{left:8px;right:8px;bottom:calc(10px + env(safe-area-inset-bott
 body.movil #barra .acc{width:auto;height:auto;aspect-ratio:1;max-height:48px;border-radius:8px;}
 body.movil #barra .acc img{width:24px;height:24px;}
 body.movil #acc-atk{display:none;}
-body.movil #tactil{bottom:calc(126px + env(safe-area-inset-bottom));grid-template-columns:repeat(3,54px);gap:6px;}
+body.movil #tactil{bottom:calc(126px + env(safe-area-inset-bottom));grid-template-columns:repeat(2,54px) 68px;gap:6px;}
 body.movil #tactil button{width:54px;height:54px;}
 body.movil #joy{bottom:calc(66px + env(safe-area-inset-bottom));height:calc(55% - 66px - env(safe-area-inset-bottom));}   /* justo sobre la barra de acciones: sin franja muerta (v325) */
 /* El joystick por debajo de los paneles (antes se tragaba los toques) */
@@ -559,7 +570,7 @@ button{-webkit-tap-highlight-color:transparent;}
  body.movil #botones{top:calc(6px + env(safe-area-inset-top) + var(--tg-top,0px));right:calc(100px + env(safe-area-inset-right));max-width:none;grid-template-columns:repeat(4,40px);gap:3px;padding:3px;}
  body.movil #botones.abierto{grid-template-columns:repeat(8,40px);}
  body.movil #botones .bt{width:40px;height:40px;font-size:15px;}
- body.movil #tactil{bottom:calc(64px + env(safe-area-inset-bottom));right:calc(10px + env(safe-area-inset-right));grid-template-columns:repeat(4,52px);gap:6px;pointer-events:none;}
+ body.movil #tactil{bottom:calc(64px + env(safe-area-inset-bottom));right:calc(10px + env(safe-area-inset-right));grid-template-columns:repeat(3,52px) 68px;gap:6px;pointer-events:none;}
  body.movil #tactil button{width:52px;height:52px;pointer-events:auto;}
  body.movil #tactil #t-salto{grid-column:3;grid-row:2;}
  body.movil #tactil #t-atk{grid-column:4;grid-row:2;}
@@ -799,8 +810,8 @@ body.movil.mano-der #joy .pista-joy{left:auto;right:28px;flex-direction:row-reve
 <!-- Telegram: su SDK se carga arriba solo dentro de Telegram (window.__tgListo).
      defer: no frenan el HTML y corren en orden, antes que mundo.js (que usa supabase). -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=341" defer></script>
-<script type="module" src="/mundo/js/mundo.js?v=341"></script>
+<script src="/js/config.js?v=342" defer></script>
+<script type="module" src="/mundo/js/mundo.js?v=342"></script>
 <div id="flash-nv"></div>
 <div id="cartel-nv"></div>
 </body>
