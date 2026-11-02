@@ -205,9 +205,12 @@ export const Duelos = {
     // de vida que entre iguales (siguen contando equipo, clase y habilidad).
     // Con la vida sin skin (herir ya quita la vida extra de la skin del que recibe).
     // Factor por vida base del nivel (sin equipo): el equipo sigue contando.
+    const hpNv = n => 100 + 30 * ((n || 1) - 1);
     if (s.duelo && s.duelo.con === t.id && t.c && (s.c.nivel || 1) !== (t.c.nivel || 1)) {
-      const hpNv = n => 100 + 30 * ((n || 1) - 1);
       dmg *= hpNv(t.c.nivel) / hpNv(s.c.nivel);
+    } else if (t.c && (s.c.nivel || 1) > (t.c.nivel || 1) + 10) {
+      // Abismo: el veterano pega como si fuera solo 10 niveles mayor (el menor no se potencia).
+      dmg *= hpNv((t.c.nivel || 1) + 10) / hpNv(s.c.nivel);
     }
     const vara = basico && CLASES[s.c.clase] && CLASES[s.c.clase].basico === 'vara';
     dmg = Math.max(1, Math.round(dmg * (vara ? ESCALA_VARA : ESCALA)));

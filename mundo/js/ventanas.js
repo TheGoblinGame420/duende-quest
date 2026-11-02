@@ -24,8 +24,8 @@ import {
   ORO_POR_USD, STAR_TIENDA_USD, PEN_POR_USD,
   temporadaDe, TEMPORADAS, TEMP_DIAS, premioDiaFiesta, esNochebuena, diaFiesta, diasFiesta,
   ESPECIES, MAPAS, MONSTRUOS, BESTIARIO_HITOS, premioBestiario, DEBIL_EMO,
-} from '/mmo/js/data.js?v=359';
-import { LORE_MONSTRUOS } from './lore.js?v=359';
+} from '/mmo/js/data.js?v=360';
+import { LORE_MONSTRUOS } from './lore.js?v=360';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -154,6 +154,9 @@ const CSS = `
 .vv-pips i{width:14px;flex-shrink:1;min-width:6px;height:5px;border-radius:2px;background:rgba(255,255,255,.12);}
 .vv-tal.sug{box-shadow:inset 3px 0 0 var(--oro);}
 .vv-tal .sug{display:inline-block;font:700 11px/1.3 var(--sans);color:var(--oro);white-space:nowrap;}
+.vv-tal.pre{border-color:var(--oro);background:rgba(255,216,74,.10);box-shadow:inset 3px 0 0 var(--oro);}
+.vv-tal .prex{display:block;font:700 12px/1.3 var(--sans);color:var(--oro);}
+.vv-tal .btn.eleg{font-size:13px;padding:7px 10px;white-space:nowrap;}
 .vv-pips i.on{background:var(--oro);}
 .vv-det{display:flex;gap:10px;align-items:center;border:1px solid var(--rz);border-radius:10px;padding:9px 10px;background:rgba(0,0,0,.25);margin-bottom:8px;}
 .vv-monto{text-align:center;margin:6px 0 12px;}
@@ -514,6 +517,8 @@ function htmlHabs(y) {
 }
 function htmlTalentos(y) {
   const tal = y.tal || {};
+  // Nv 7-9: se puede dejar elegido el primer talento (solo en este equipo, no gasta nada ni va al servidor).
+  if (y.nivel < TALENTO_NIVEL && y.nivel >= TAL_PRE_NIVEL) return `<div class="vv-sec">Elige ya tu primer talento <small>lo activas a Nv ${TALENTO_NIVEL}</small></div><p class="vv-dim" style="margin:0 0 8px">Marca el que quieres y a Nv ${TALENTO_NIVEL} te lo dejamos primero para activarlo con un toque. Puedes cambiarlo cuando quieras.</p>` + htmlListaTal(tal, 0, true, y, 'pre');
   if (y.nivel < TALENTO_NIVEL) return `<p class="vv-vacio">Los talentos se desbloquean a nivel ${TALENTO_NIVEL}: desde ahí ganas 1 punto por nivel para repartir.</p>` + htmlListaTal(tal, 0, true, y);
   const libres = talentosLibres(y);
   let h = `<div class="vv-sec">Talentos <small>Puntos libres: <b class="${libres ? 'vv-ok' : ''}">${libres}</b> · un punto por nivel desde el ${TALENTO_NIVEL}</small></div>`;
@@ -537,17 +542,34 @@ function siguienteTal(y, id) {
   const b = statsJugador(y.nivel, y.skin, y.eq, y.clase, y.espec, { ...tal, [id]: (tal[id] || 0) + 1 }, y.runas);
   return b[st[0]] - a[st[0]];
 }
-function htmlListaTal(tal, libres, bloq, y) {
+// Talento pre-elegido entre Nv 7 y 9 (solo localStorage de este equipo).
+export const TAL_PRE_NIVEL = 7;
+const talPreClave = y => 'dq3_talPre_' + ((y && y.pid) || '');
+export function talentoPreElegido(y) {
+  let v = null; try { v = localStorage.getItem(talPreClave(y)); } catch (e) { v = null; }
+  return v && TALENTOS.some(t => t.id === v) ? v : null;
+}
+function htmlListaTal(tal, libres, bloq, y, modo) {
   const sug = y ? talentosSugeridos(y.clase, y.nivel >= ESPEC_NIVEL ? y.espec : null) : [];
+  const pre = y ? talentoPreElegido(y) : null;
+  // Con puntos libres a Nv 10+, la elección de Nv 7 va primero (sin gastar nada: hace falta el toque).
+  const destacar = !bloq && pre && libres > 0 && !(tal[pre] || 0) ? pre : null;
+  const orden = destacar ? [TALENTOS.find(t => t.id === destacar), ...TALENTOS.filter(t => t.id !== destacar)] : TALENTOS;
   let h = '<div class="vv-tals">';
-  for (const t of TALENTOS) {
+  for (const t of orden) {
+    if (modo === 'pre') {
+      const el = pre === t.id;
+      h += `<div class="vv-tal${el ? ' pre' : ''}${sug.includes(t.id) ? ' sug' : ''}"><img src="${A}items/equipo/${t.icono}.png" alt=""><div><b>${el ? '⭐ ' : ''}${esc(t.nombre)}</b>${sug.includes(t.id) ? '<span class="sug">⭐ Para tu rol</span>' : ''}${el ? `<span class="prex">Tu elección: lo activas a Nv ${TALENTO_NIVEL}</span>` : ''}<small>${esc(t.txt)} por rango</small></div>${btn(el ? '⭐ Elegido' : 'Elegir', 'tal-pre', { id: t.id }, 'eleg ' + (el ? 'oro' : 'sec'))}</div>`;
+      continue;
+    }
     const r = tal[t.id] || 0;
     const pips = Array.from({ length: TALENTO_MAX }, (_, i) => `<i class="${i < r ? 'on' : ''}"></i>`).join('');
     const total = r ? ` · ahora +${Math.round(r * t.por * 100)}%` : '';
     const esSug = sug.includes(t.id);
     const sig = !bloq && r < TALENTO_MAX ? siguienteTal(y, t.id) : 0;
     const sigTxt = sig > 0 ? `<small class="vv-ok">Siguiente: +${sig} ${TAL_STAT[t.id][1]}</small>` : '';
-    h += `<div class="vv-tal${r ? ' on' : ''}${esSug ? ' sug' : ''}"${bloq ? ' style="opacity:.55"' : ''}><img src="${A}items/equipo/${t.icono}.png" alt=""><div><b>${esc(t.nombre)} <span class="vv-dim">${r}/${TALENTO_MAX}</span></b>${esSug ? '<span class="sug">⭐ Para tu rol</span>' : ''}<div class="vv-pips">${pips}</div><small>${esc(t.txt)} por rango${total}</small>${sigTxt}</div>${bloq ? '' : btn('+', 'tal', { id: t.id }, 'sec', !(libres > 0 && r < TALENTO_MAX))}</div>`;
+    const esPre = destacar === t.id;
+    h += `<div class="vv-tal${r ? ' on' : ''}${esSug ? ' sug' : ''}${esPre ? ' pre' : ''}"${bloq ? ' style="opacity:.55"' : ''}><img src="${A}items/equipo/${t.icono}.png" alt=""><div><b>${esPre ? '⭐ ' : ''}${esc(t.nombre)} <span class="vv-dim">${r}/${TALENTO_MAX}</span></b>${esPre ? '<span class="prex">Tu elección de Nv 7: tócalo para activarlo</span>' : ''}${esSug ? '<span class="sug">⭐ Para tu rol</span>' : ''}<div class="vv-pips">${pips}</div><small>${esc(t.txt)} por rango${total}</small>${sigTxt}</div>${bloq ? '' : btn('+', 'tal', { id: t.id }, esPre ? 'oro' : 'sec', !(libres > 0 && r < TALENTO_MAX))}</div>`;
   }
   return h + '</div>';
 }
@@ -1341,6 +1363,8 @@ const ACC = {
   // Libro
   ltab: b => { est.libro = b.dataset.id; H.sfx('boton', 0.2); pintarLibro(); },
   tal: b => { H.sfx('boton', 0.3); H.mandar({ t: 'talento', id: b.dataset.id }); },
+  // Pre-elección Nv 7-9: solo se guarda en este equipo; no se manda ni se gasta nada.
+  'tal-pre': b => { const y = H.yo(); if (!y) return; try { localStorage.setItem(talPreClave(y), b.dataset.id); } catch (e) {} H.sfx('boton', 0.2); pintarLibro(); },
   'tal-reset': b => { if (!b.dataset.g && !confirmar('talReset')) { marcarSeguro(b); return; } H.sfx('explosion', 0.3); H.mandar({ t: 'talentoReset' }); },
   espec: b => {
     const y = H.yo(); if (!y) return;

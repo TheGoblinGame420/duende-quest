@@ -26,12 +26,12 @@
 <meta name="theme-color" content="#0a0418">
 <link rel="manifest" href="/mundo/manifest.json">
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
-<script src="/js/pwa.js?v=359" defer></script>
+<script src="/js/pwa.js?v=360" defer></script>
 <link rel="icon" href="/assets/ui/coin.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=359"></script>
+<script src="/js/origen.js?v=360"></script>
 <script>
 // Red de seguridad de la carga (script clasico: corre aunque el modulo 3D o el CDN fallen).
 // - Errores antes de conectar: se guardan en __errQ y mundo.js los manda al entrar.
@@ -117,29 +117,29 @@
   });
 })();
 </script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=359" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=360" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=359">
-<link rel="modulepreload" href="/mmo/js/data.js?v=359">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=359">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=359">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=359">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=359">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=359">
-<link rel="modulepreload" href="/mmo/js/regalo.js?v=359">
-<link rel="modulepreload" href="/mmo/js/avisotg.js?v=359">
-<link rel="modulepreload" href="/mundo/js/musica.js?v=359">
-<link rel="modulepreload" href="/mundo/js/sonidos.js?v=359">
-<link rel="modulepreload" href="/mundo/js/cueva.js?v=359">
-<link rel="modulepreload" href="/mundo/js/tapa.js?v=359">
-<link rel="modulepreload" href="/mundo/js/abismo.js?v=359">
-<link rel="modulepreload" href="/mundo/js/particulas.js?v=359">
-<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=359">
-<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=359">
-<link rel="modulepreload" href="/mmo/js/secundarias.js?v=359">
-<link rel="modulepreload" href="/mundo/js/lore.js?v=359">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=360">
+<link rel="modulepreload" href="/mmo/js/data.js?v=360">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=360">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=360">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=360">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=360">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=360">
+<link rel="modulepreload" href="/mmo/js/regalo.js?v=360">
+<link rel="modulepreload" href="/mmo/js/avisotg.js?v=360">
+<link rel="modulepreload" href="/mundo/js/musica.js?v=360">
+<link rel="modulepreload" href="/mundo/js/sonidos.js?v=360">
+<link rel="modulepreload" href="/mundo/js/cueva.js?v=360">
+<link rel="modulepreload" href="/mundo/js/tapa.js?v=360">
+<link rel="modulepreload" href="/mundo/js/abismo.js?v=360">
+<link rel="modulepreload" href="/mundo/js/particulas.js?v=360">
+<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=360">
+<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=360">
+<link rel="modulepreload" href="/mmo/js/secundarias.js?v=360">
+<link rel="modulepreload" href="/mundo/js/lore.js?v=360">
 <!-- Kit 3D de Kenney (mundo/js/kenney.js lo pide con fetch() sin opciones: mismo origen, cors, URL sin ?v=): se baja ya, junto a los modulos.
      El binario: .gz si hay DecompressionStream (como hace kenney.js), si no el normal; asi no se baja dos veces. -->
 <link rel="preload" href="/assets/3d/kenney.json" as="fetch" crossorigin>
@@ -712,7 +712,21 @@ body.movil #probar-clase .pc-no{position:absolute;top:4px;right:6px;width:auto;m
 body.movil:has(#probar-clase) #avisos,body.movil:has(#npc-dice.on) #avisos,body.compacto:has(#probar-clase) #avisos,body.compacto:has(#npc-dice.on) #avisos{top:calc(340px + env(safe-area-inset-top) + var(--tg-top,0px));}
 @media (max-height:500px){body.movil:has(#probar-clase) #avisos,body.movil:has(#npc-dice.on) #avisos,body.compacto:has(#probar-clase) #avisos,body.compacto:has(#npc-dice.on) #avisos{top:calc(200px + env(safe-area-inset-top) + var(--tg-top,0px));}}
 /* 🎬 Modo cine: sin HUD para grabar (el lienzo 3D sigue visible) */
-body.cine #hud,body.cine .g3-e,body.cine #joy,body.cine #tactil,body.cine #marco,body.cine #grupo3,body.cine #objp,body.cine #invit3,body.cine #obj,body.cine #presumir3,body.cine #botones,body.cine #misiones,body.cine #mini,body.cine #barra,body.cine #chicha3,body.cine #lanzar,body.cine #alas,body.cine #chat,body.cine #avisos,body.cine #gestos3,body.cine #titulo-zona,body.cine #hablar,body.cine #xp,body.cine #xp-prox,body.cine #chip-bienv,body.cine #npc-dice,body.cine #probar-clase,body.cine #tira-comunidad,body.cine #franja-inst,body.cine #franja-iab,body.cine #mejor3,body.cine #res-jefe,body.cine #tira-diario,body.cine #vv-franja,body.cine #b-ayuda-caido,body.cine #acc-atk{visibility:hidden !important;}
+body.cine #hud,body.cine .g3-e,body.cine #joy,body.cine #tactil,body.cine #marco,body.cine #grupo3,body.cine #objp,body.cine #invit3,body.cine #obj,body.cine #presumir3,body.cine #botones,body.cine #misiones,body.cine #mini,body.cine #barra,body.cine #chicha3,body.cine #lanzar,body.cine #alas,body.cine #chat,body.cine #avisos,body.cine #gestos3,body.cine #titulo-zona,body.cine #hablar,body.cine #xp,body.cine #xp-prox,body.cine #chip-bienv,body.cine #npc-dice,body.cine #probar-clase,body.cine #tira-comunidad,body.cine #franja-inst,body.cine #franja-iab,body.cine #mejor3,body.cine #res-jefe,body.cine #tira-diario,body.cine #vv-franja,body.cine #b-ayuda-caido,body.cine #acc-atk{visibility:hidden !important;} body.cine #capa{visibility:hidden !important;}
+</style>
+<style>
+/* 📦 Cofre del dia / semanal: tarjeta que se abre con un toque y mini barra del medidor semanal */
+#cofre-sem{position:fixed;left:50%;top:calc(30% + var(--tg-top,0px));transform:translateX(-50%);z-index:7;pointer-events:auto;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 22px 12px;min-width:180px;max-width:86vw;border-radius:14px;background:rgba(14,9,30,.94);border:2px solid var(--oro);color:var(--txt);font:700 14px var(--sans);text-align:center;box-shadow:0 8px 28px rgba(0,0,0,.5),0 0 18px rgba(255,216,74,.25);-webkit-tap-highlight-color:transparent;}
+#cofre-sem .cs-ico{font-size:56px;line-height:1;}
+#cofre-sem .cs-sub{font:600 12px var(--sans);color:var(--txt2);}
+#cofre-sem.tiembla .cs-ico{animation:cofreTiembla .4s linear;}
+@keyframes cofreTiembla{0%,100%{transform:rotate(0)}20%{transform:rotate(-12deg) scale(1.08)}40%{transform:rotate(10deg) scale(1.12)}60%{transform:rotate(-8deg) scale(1.15)}80%{transform:rotate(6deg) scale(1.2)}}
+#cofre-meta{position:fixed;left:50%;top:calc(64px + var(--tg-top,0px));transform:translateX(-50%) translateY(-6px);z-index:6;pointer-events:none;padding:5px 12px;border-radius:10px;background:rgba(14,9,30,.9);border:1px solid var(--borde);color:var(--oro);font:700 12px var(--sans);white-space:nowrap;opacity:0;transition:opacity .4s,transform .4s;}
+#cofre-meta.on{opacity:1;transform:translateX(-50%) translateY(0);}
+#cofre-meta .cm-b{display:block;height:4px;margin-top:4px;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden;}
+#cofre-meta .cm-b i{display:block;height:100%;background:var(--oro);transition:width .4s;}
+@media (prefers-reduced-motion:reduce){#cofre-sem.tiembla .cs-ico{animation:none;}#cofre-meta,#cofre-meta .cm-b i{transition:none;}}
+body.cine #cofre-sem,body.cine #cofre-meta{visibility:hidden !important;}
 </style>
 </head>
 <body>
@@ -925,8 +939,8 @@ body.cine #hud,body.cine .g3-e,body.cine #joy,body.cine #tactil,body.cine #marco
 <!-- Telegram: su SDK se carga arriba solo dentro de Telegram (window.__tgListo).
      defer: no frenan el HTML y corren en orden, antes que mundo.js (que usa supabase). -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=359" defer></script>
-<script type="module" src="/mundo/js/mundo.js?v=359"></script>
+<script src="/js/config.js?v=360" defer></script>
+<script type="module" src="/mundo/js/mundo.js?v=360"></script>
 <div id="flash-nv"></div>
 <div id="cartel-nv"></div>
 </body>

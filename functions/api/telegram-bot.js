@@ -555,6 +555,23 @@ function textoVentasDetalle(r) {
   return t;
 }
 
+// /mmostats: un % con su intervalo de Wilson al 95% (lo calcula retencion.js):
+// '32% (17–51)', y '⚠️ poca muestra' si la base es menor de 30.
+function pcIntervalo(v, i, base) {
+  if (v === null || v === undefined || !base) return '—';
+  const t = String(Math.round(v)) + '%' + (Array.isArray(i) ? ` (${i[0]}–${i[1]})` : '');
+  return base < 30 ? t + ' ⚠️ poca muestra' : t;
+}
+
+// /mmostats: por version publicada (?v=): altas de 14 dias, cuantas volvieron a
+// entrar el mismo dia y su D1/D3 con intervalo. Dice si una version subio o bajo el D1.
+function textoVersiones(r) {
+  const l = r.versiones || [];
+  if (!l.length) return '';
+  const filas = l.map(e => `v${e.v}: altas ${e.n} · volvió hoy ${e.s2}${e.s2pct != null ? ' (' + String(e.s2pct).replace('.', ',') + '%)' : ''} · D1 ${pcIntervalo(e.d1, e.d1i, e.d1base)} · D3 ${pcIntervalo(e.d3, e.d3i, e.d3base)}`);
+  return `🧪 Por versión (altas de 14 días; volvió hoy = 2.ª sesión el mismo día del alta; su % sin las altas de hoy):\n${filas.join('\n')}\n(D1/D3 solo de cohortes con el día ya cumplido; entre paréntesis, el rango probable al 95%.)\n\n`;
+}
+
 // /mmostats: anuncios de los ultimos 7 dias (gasto de /gasto, altas por origen
 // y campaña). Las Stars del arcade no cuentan: solo la tienda del MMO.
 function textoAnuncios(r) {
@@ -566,9 +583,9 @@ function textoAnuncios(r) {
   const pc = v => v === null || v === undefined ? '—' : String(v).replace('.', ',') + '%';
   const dm = d => d.slice(8, 10) + '/' + d.slice(5, 7);
   const filas = Object.entries(a.porSrc || {}).map(([k, e]) => `${nom[k] || k} 7d: gasto ${usd(e.gasto)} · altas ${e.altas} · CPI ${usd(e.cpi)} · D1 ${pc(e.d1)} · D3 ${pc(e.d3)} · ARPU D7 ${usd(e.arpu)} · ROAS D7 ${x(e.roas)}`);
-  const camps = (a.camps || []).map(e => `  · ${e.camp}: gasto ${usd(e.gasto)} · altas ${e.altas} · CPI ${usd(e.cpi)} · D1 ${pc(e.d1)} · D3 ${pc(e.d3)} · ARPU D7 ${usd(e.arpu)} · ROAS D7 ${x(e.roas)}`);
+  const camps = (a.camps || []).map(e => `  · ${e.camp}: gasto ${usd(e.gasto)} · altas ${e.altas} · CPI ${usd(e.cpi)} · D1 ${e.d1i ? pcIntervalo(e.d1, e.d1i, e.d1base) : pc(e.d1)} · D3 ${e.d3i ? pcIntervalo(e.d3, e.d3i, e.d3base) : pc(e.d3)} · ARPU D7 ${usd(e.arpu)} · ROAS D7 ${x(e.roas)}`);
   // Por anuncio (utm_content): que video trae gente que VUELVE, no solo clics.
-  const ads = (a.ads || []).map(e => `  · ${e.ad}: altas ${e.altas} · D1 ${pc(e.d1)}${e.d1base ? ` (${e.d1n}/${e.d1base})` : ''} · D3 ${pc(e.d3)}${e.d3base ? ` (${e.d3n}/${e.d3base})` : ''}`);
+  const ads = (a.ads || []).map(e => `  · ${e.ad}: altas ${e.altas} · D1 ${e.d1i ? pcIntervalo(e.d1, e.d1i, e.d1base) : pc(e.d1)}${e.d1base ? ` [${e.d1n}/${e.d1base}]` : ''} · D3 ${e.d3i ? pcIntervalo(e.d3, e.d3i, e.d3base) : pc(e.d3)}${e.d3base ? ` [${e.d3n}/${e.d3base}]` : ''}`);
   return `📣 Anuncios (altas del ${dm(a.desde)} al ${dm(a.hasta)}; gasto anotado con /gasto):\n${filas.join('\n')}${camps.length ? '\nPor campaña:\n' + camps.join('\n') : ''}${ads.length ? '\nPor anuncio (utm_content, altas de 14 días): altas · D1 · D3\n' + ads.join('\n') : ''}\n(D3 = volvieron al 3er día: con 20+ altas por anuncio sirve para pausar o escalar. ARPU y ROAS D7 = compras de la tienda del MMO entregadas, hechas en sus 7 primeros días; aún crecen. Las Stars del arcade no cuentan.)\n\n`;
 }
 
@@ -589,7 +606,7 @@ function textoOrigenes(r) {
     const m20 = c[k].movil20 ? ` · móvil clic→mover ≤20 s: ${pc(c[k].movil20)} (mediana ${c[k].movil20.mediana})` : '';
     // Mediana (por tramo, en segundos) del clic en entrar al 1er golpe y a la 1ra caza, movil y PC juntos.
     const mgc = c[k].golpe1Med || c[k].caza1Med ? ` · mediana clic→1er golpe ${c[k].golpe1Med || '—'} · clic→1ra caza ${c[k].caza1Med || '—'}` : '';
-    return `${NOMBRE_ORIGEN[k]}: ${PASOS.map(([e, n]) => `${n} ${p[e] || 0}`).join(' → ')} (${pm}% se mueve) · se van ${p.oculta || 0} · sin 3D ${p.fallo_webgl || 0}${p.t_hab || p.t_volar || p.t_fin ? ` · tutorial: habilidad ${p.t_hab || 0} → alas (solo 3D) ${p.t_volar || 0} → fin ${p.t_fin || 0}` : ''}${p.mis_0 || p.jefe1_ver ? ` · misiones (3D) ${['mis_0', 'mis_1', 'mis_2', 'mis_3', 'mis_4', 'mis_5'].map(e => p[e] || 0).join('→')} · 1er jefe: lo ve ${p.jefe1_ver || 0}, muere ${p.jefe1_muere || 0}, lo vence ${p.jefe1_ok || 0}` : ''}${m20}${mgc}`;
+    return `${NOMBRE_ORIGEN[k]}: ${PASOS.map(([e, n]) => `${n} ${p[e] || 0}`).join(' → ')} (${pm}% se mueve) · se van ${p.oculta || 0} · sin 3D ${p.fallo_webgl || 0}${p.t_hab || p.t_volar || p.t_fin ? ` · tutorial: habilidad ${p.t_hab || 0} → alas (solo 3D) ${p.t_volar || 0} → fin ${p.t_fin || 0}` : ''}${p.mis_0 || p.jefe1_ver ? ` · misiones (3D) ${['mis_0', 'mis_1', 'mis_2', 'mis_3', 'mis_4', 'mis_5'].map(e => p[e] || 0).join('→')} · 1er jefe: lo ve ${p.jefe1_ver || 0}, muere ${p.jefe1_muere || 0}, lo vence ${p.jefe1_ok || 0}` : ''}${p.cueva_entra ? ` · cueva: entra ${p.cueva_entra || 0}, ve al Rey ${p.cueva_rey_ve || 0}, cae ${p.cueva_muere || 0}, completa ${p.cueva_ok || 0}` : ''}${m20}${mgc}`;
   });
   if (cf.length) t += `🚪 Carga del juego (7 días, sesiones):\n${cf.join('\n')}\n\n`;
   return t;
@@ -623,7 +640,7 @@ function textoMmoStats(r) {
     (r.embudo && r.embudo.n ? `🪜 Embudo de esas altas: primera caza ${r.embudo.c1}/${r.embudo.n} · misión 1 ${r.embudo.m1}${tutoTotal(r)} · nivel 5 ${r.embudo.n5} · nivel 10 ${r.embudo.n10} · 1ª expedición ${r.embudo.ex1 || 0} · «Avísame por Telegram» (web) ${r.embudo.avisoTgOk || 0}${r.embudo.iab && r.embudo.iab.n ? ` · desde Facebook/Instagram ${r.embudo.iab.n} (D1 ${r.embudo.iab.d1 && r.embudo.iab.d1.pct != null ? r.embudo.iab.d1.pct + '%' : '—'})` : ''}\n\n` : '') +
     (r.avisos && Object.keys(r.avisos).length ? `🔔 Avisos diarios (14 días, por su primera línea · volvieron en 24 h): ${Object.entries(r.avisos).map(([k, a]) => `${k} ${a.vuelven}/${a.env}${a.pct != null ? ' (' + String(a.pct).replace('.', ',') + '%)' : ''}`).join(' · ')}\n\n` : '') +
     (r.invitaciones && r.invitaciones.refLlega ? `🤝 Invitados por enlace (14 días): llegan ${r.invitaciones.refLlega} · con cuenta ${r.invitaciones.refCuenta} · premio Nv 10 ${r.invitaciones.refPagado} · llegan a Nv 10 ${r.invitaciones.n10pct != null ? r.invitaciones.n10pct + '%' : '—'} (resto ${r.invitaciones.n10restoPct != null ? r.invitaciones.n10restoPct + '%' : '—'})\n\n` : '') +
-    textoOrigenes(r) + textoAnuncios(r) +
+    textoOrigenes(r) + textoAnuncios(r) + textoVersiones(r) +
     `🔁 Retención (últimas 30 cohortes con el día ya cumplido):\n` +
     `D1: ${ret(r.retencion.d1)}\n${r.retencion.d3 && r.retencion.d3.base ? `D2: ${ret(r.retencion.d2)}\nD3: ${ret(r.retencion.d3)}\n` : ''}D7: ${ret(r.retencion.d7)}\nD30: ${ret(r.retencion.d30)}\n\n` +
     `📅 Cohortes recientes (cuántos volvieron ese día exacto; … = aún no llega):\n${cohortes}\n\n` +

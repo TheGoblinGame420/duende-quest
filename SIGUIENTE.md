@@ -3603,3 +3603,15 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Legales: sin «[completar]», Términos alineados con la entrega manual y Yape, devolución si no se entrega en 24 h (el dueño debe revisarlo).
 - CLASSIC: novedades sin ORIGINS, ATQ/DEF al subir, pack tras la 3.ª muerte. Sonido de oro sin cansar y 'amenaza' siempre audible. Equipo forjado visible en calidad baja. Una tarjeta cada vez tras la misión 1.
 - Arnés 907 bien.
+
+### Estudio 10 (2-nov-2026, `?v=360`)
+
+- 10 estudios web (peso por arma, segunda hora, recompensas, clima/noche, red móvil LatAm, facciones, NPC recurrentes, logros sociales, capturas, métricas) → 56 hallazgos → 12 tareas.
+- `PESO_ARMA`/`pesoArma()` (pausa, vibración, tono, sacudida de Odachi), `sfx(..., tono)`; tajo por alcance y color del arma; bola local de vara con supresión del eco del servidor (700 ms).
+- Cofre del día y de la semana con un toque (`cofreSem`). Noche con +10% XP anunciada; monstruos nocturnos (+25% oro) y logros.
+- Logros de Ayni y gracias que cuentan. Abismo justo: diferencia de nivel acotada a 10 y novatos sin perder puntos.
+- /mmostats con retención por versión, señal del mismo día e intervalos.
+- Fotos de frente con zonas seguras para Reels/Estados; modo cine sin etiquetas.
+- Cueva: épica de regalo en la primera conquista, avisos de fases, embudo medido.
+- Indicador de ping y envío de posición que no se atasca. Primer talento a Nv 7.
+- Arnés 907 bien (la prueba del pisotón sigue siendo aleatoria: falló 1 de 3 ejecuciones).

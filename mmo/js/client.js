@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=359';
-import { iniciarRegalo } from './regalo.js?v=359';
-import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=359';
+} from './data.js?v=360';
+import { iniciarRegalo } from './regalo.js?v=360';
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=360';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -606,8 +606,32 @@ async function conectar() {
   };
 }
 
+// Señal (ping/pong): rtt suavizado y un punto junto a la vida (verde/amarillo/rojo).
+let rttMs = null, puntoSenal = null;
+function pintarSenal() {
+  try {
+    if (!puntoSenal) {
+      const uf = document.getElementById('uf-yo');
+      if (!uf) return;
+      puntoSenal = document.createElement('span');
+      puntoSenal.setAttribute('role', 'button');
+      puntoSenal.style.cssText = 'position:absolute;top:-7px;right:-7px;width:9px;height:9px;padding:6px;box-sizing:content-box;background-clip:content-box;border-radius:50%;box-shadow:inset 0 0 0 6px transparent;background-color:#888;cursor:pointer;z-index:2;pointer-events:auto;';
+      puntoSenal.onclick = ev => { ev.stopPropagation(); aviso(rttMs == null ? 'Midiendo tu señal…' : 'Tu señal: ' + Math.round(rttMs) + ' ms. Con mejor señal tus golpes llegan antes.'); };
+      if (getComputedStyle(uf).position === 'static') uf.style.position = 'relative';
+      uf.appendChild(puntoSenal);
+    }
+    if (rttMs == null) return;
+    puntoSenal.style.backgroundColor = rttMs < 150 ? '#3ddc5a' : rttMs <= 350 ? '#f2c230' : '#ff4a4a';
+    puntoSenal.title = 'Señal: ' + Math.round(rttMs) + ' ms';
+  } catch (e) {}
+}
 function recibir(m) {
   switch (m.t) {
+    case 'pong': {
+      const d = Date.now() - (+m.ts || 0);
+      if (m.ts && d >= 0 && d < 30000) { rttMs = rttMs == null ? d : 0.7 * rttMs + 0.3 * d; pintarSenal(); }
+      return;
+    }
     case 'bienvenido':
       paso('bienvenido');
       try { sessionStorage.removeItem('dq_vcod'); } catch (e) {}   // llevar mi duende: el codigo ya se uso (o no valia)
@@ -1271,6 +1295,8 @@ function fisica() {
 // no cuenta como cambio: el 'atk' ya lo anuncia.
 // forzar: antes de un 'atk', para que el servidor mida el alcance bien.
 function enviarPos(forzar) {
+  // Contrapresion: socket atascado, no se apilan 'mv' viejos (ultimoEnviado no cambia).
+  if (ws && ws.bufferedAmount > 2048 && !forzar) return;
   const ahora = performance.now();
   const anda = Math.abs(P.vx) > .5 ? 1 : 0;
   // El golpe ya no va como estado 3: nadie lo leia y cada ataque costaba 2 'mv' (ida y vuelta).

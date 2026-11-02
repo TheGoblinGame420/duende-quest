@@ -253,7 +253,9 @@ export const Mundo3D = {
       case 'tiendaTemp': return this.tiendaTemp(s, m);   // world.js: tienda de la fiesta (puesto de la Abuela)
       case 'contactos': return this.enviarContactos(s);
       case 'quien': return this.quien(s);
-      case 'ping': return this.enviar(s, { t: 'pong', ts: m.ts });
+      case 'ping':
+        if (typeof m.rtt === 'number' && isFinite(m.rtt)) s.rtt = Math.min(2000, Math.max(0, m.rtt | 0));   // señal del cliente (solo se guarda)
+        return this.enviar(s, { t: 'pong', ts: m.ts });
       case 'visto': return this.buzonVisto(s, m);   // buzon "Mientras no estabas" (world.js)
       case 'dios':
         // En el 3D no hay viajes de mapa 2D: el resto del panel funciona igual.
@@ -479,7 +481,8 @@ export const Mundo3D = {
       const mult = (((SKINS[s.c.skin] || {}).buffs || {}).oroMult || 1) * (1 + talento(s.c, 'fortuna'));
       // De noche los monstruos dan un 10% mas de experiencia. La Hora Feliz (+50%) ya la aplica dar() en world.js: no repetirla aqui.
       const xp = Math.max(1, Math.round(base.xp * k * (1 + talento(s.c, 'erudicion')) * (esNoche(Date.now()) ? 1.1 : 1) * (this.zonaBendita3d && this.zonaBendita3d(zonaEn(s.p.x, s.p.z)) ? 1.1 : 1)));
-      const oro = Math.max(1, Math.round(base.oro * k * rnd(0.8, 1.2) * mult));
+      const oro = Math.max(1, Math.round(base.oro * k * rnd(0.8, 1.2) * mult * (o.noct ? 1.25 : 1)));
+      if (o.noct) s.c.noctN = (s.c.noctN || 0) + 1;   // logros noct10 / noct50
       // dar(): misiones, diarias, bestiario, chicha, pase, botin... lo mismo que el 2D.
       const nG = gr ? Math.max(1, this.sesionesGrupo(gr).filter(x => x.m3 && !x.muerto && o.dano.has(x.id)).length) : 1;
       this.dar(s, xp, oro, o, nG, true);
@@ -727,6 +730,8 @@ export const Mundo3D = {
       hp: st.hp, max: st.hp, atk: st.atk, vel: st.vel, y: 0, h: 0,
       dano: new Map(), amen: new Map(), au: {}, cl: K3, obj: 0, atkEn: 0, golpeT: 0, st: 0, paseo: 0, destino: null,
     };
+    // Monstruo nocturno: de noche, 1 de cada 10 comunes del mundo abierto sale morado (+25 % de oro).
+    o.noct = !o.jefe && !o.i3 && !o.ex3 && !enCueva(o.x) && !enAbismo(o.x) && esNoche(Date.now()) && Math.random() < 0.1 ? 1 : 0;
     W.mons.set(o.id, o);
     c.vivos.add(o.id);
     if (o.jefe) this.a3d({ t: 'aviso', m: `${def.nombre} ha aparecido en ORIGINS (${MAPAS[c.zona].nombre}).` });
@@ -843,6 +848,8 @@ export const Mundo3D = {
     if (!quien.includes(k)) quien.push(k);
     const parte = Math.max(2, Math.ceil(pts * (quien.length > 1 ? 1.2 : 1) / quien.length));
     for (const x of quien) { x.c.bajasPvP = (x.c.bajasPvP || 0) + (x === k ? 1 : 0); this.sumarPA(x, parte, x === k ? 'baja' : 'asistencia'); }
+    // Novato del Abismo (rango bajo o menos de 10 bajas): no pierde Puntos; el veterano sí arriesga.
+    if (rv <= 1 || (v.c.bajasPvP || 0) < 10) return this.enviar(v, { t: 'toast', m: '🛡 Novato del Abismo: no pierdes Puntos' });
     const pierde = Math.min(v.c.pa || 0, Math.ceil(pts / 2));
     if (pierde) { this.sumarPA(v, -pierde); this.enviar(v, { t: 'toast', m: `🌌 −${pierde} Puntos del Abismo` }); }
   },
@@ -1814,7 +1821,7 @@ export const Mundo3D = {
           const dm = dist(o, s.p);
           if (dm > VISTA_MON) continue;
           ve.add(o.id);
-          if (!s.vistos.has(o.id)) n.push({ id: o.id, k: o.k, nv: o.nv, x: r1(o.x), z: r1(o.z), hp: Math.ceil(o.hp), mx: o.max, j: o.jefe ? 1 : 0, mu: o.mundial3 || o.guardian ? 1 : undefined, ra: o.ex3 && o.ex3.nom ? o.ex3.nom : undefined, ti: o.ex3 && o.ex3.ti ? o.ex3.ti : undefined, af: o.ex3 && o.ex3.af ? o.ex3.af : undefined, iv: o.ex3 && o.ex3.ev ? 1 : undefined, la: o.ex3 && o.ex3.ladron ? 1 : undefined });
+          if (!s.vistos.has(o.id)) n.push({ id: o.id, k: o.k, nv: o.nv, x: r1(o.x), z: r1(o.z), hp: Math.ceil(o.hp), mx: o.max, j: o.jefe ? 1 : 0, mu: o.mundial3 || o.guardian ? 1 : undefined, ra: o.ex3 && o.ex3.nom ? o.ex3.nom : undefined, ti: o.ex3 && o.ex3.ti ? o.ex3.ti : undefined, af: o.ex3 && o.ex3.af ? o.ex3.af : undefined, iv: o.ex3 && o.ex3.ev ? 1 : undefined, la: o.ex3 && o.ex3.ladron ? 1 : undefined, noct: o.noct ? 1 : undefined });
           else {
             // Lejanos tranquilos ya presentados: una foto si y otra no (repartidos por id).
             if (dm > 50 && o.obj !== s.id && !o.jefe && !o.muere && o.st !== 3 && ((o.id + par) & 1)) continue;

@@ -209,6 +209,9 @@ export const Cueva3D = {
         this.enviar(s, { t: 'toast', ok: true, m: `🪽 ¡Ganaste las ${ALAS.cueva.nombre}! Póntelas en el Mercader → ALAS.` });
       }
       const it = completo && nvOk ? this.darItem(s, this.nuevoItem(c.nivel, 2)) : null;
+      // Primera conquista (hito de Nv 5): una pieza epica extra a su nivel; no gasta ninguno de los 3 cofres del dia.
+      let itP = null;
+      if (!c.cuevaHecha) { c.cuevaHecha = 1; if (!c.cuevaRecord) itP = this.darItem(s, this.nuevoItem(c.nivel, 2)); }   // quien ya tenia record la conquisto antes: solo se marca
       this.sumarXp(s, xp);
       if (nvOk) this.progresoTarea && this.progresoTarea(s, 'mazmorra');
       if (nvOk && this.puntoGesta) this.puntoGesta(s, 'mazmorra');   // la cueva 3D tambien suma a la gesta de la hermandad
@@ -220,7 +223,7 @@ export const Cueva3D = {
       if (c.nivel >= 30 && this.infoCuevaSem) { try { const ic = this.infoCuevaSem(c); if (ic && ic.pos > 0) rk = { pos: ic.pos, tot: ic.tot }; } catch (e) { rk = null; } }
       const reloj = nuevo ? `⏱ ${mmss(seg)} · ¡nuevo récord!` : `⏱ ${mmss(seg)}${previo ? ` (récord ${mmss(previo)})` : ''}`;
       this.enviar(s, { t: 'gana', xp, oro, drops: [], item: it });
-      this.enviar(s, { t: 'cuevaFin', seg, rec: c.cuevaRecord || 0, nuevo: nuevo ? 1 : 0, hoy: Math.min(3, c.cuevaDia.n), grp: nvOk && c.nivel >= 30 && (inst.gente || 1) > 1 ? 1 : 0, ...(rk || {}) });
+      this.enviar(s, { t: 'cuevaFin', seg, rec: c.cuevaRecord || 0, nuevo: nuevo ? 1 : 0, hoy: Math.min(3, c.cuevaDia.n), grp: nvOk && c.nivel >= 30 && (inst.gente || 1) > 1 ? 1 : 0, ...(rk || {}), ...(itP ? { primera: 1, item: itP } : {}) });
       this.enviar(s, { t: 'toast', ok: true, m: `🏆 ¡${CUEVA.nombre} completada! +${xp} XP · +${oro} oro${it ? ' · ' + RAREZAS[it.r].nombre + ': ' + nombreItem(it) : ''}${completo ? '' : ' (cofre pequeño: hoy ya abriste 3 completos)'} · ${reloj}` });
       s.sucio = true;
       this.revisarLogros(s);

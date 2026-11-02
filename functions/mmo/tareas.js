@@ -181,6 +181,7 @@ export const Tareas = {
     c.pw.escudo = Math.min(99, (c.pw.escudo || 0) + (semanal ? 5 : 2));
     c.pw.pocion = Math.min(99, (c.pw.pocion || 0) + (semanal ? 10 : 5));
     this.enviar(s, { t: 'toast', m: `${semanal ? 'Semana' : 'Día'} completo. Bono: ${it.r >= 2 ? 'objeto ÉPICO' : 'objeto raro'}, ${semanal ? 5 : 2} escudos y ${semanal ? 10 : 5} pociones.`, ok: true });
+    this.enviar(s, { t: 'cofreSem', tipo: semanal ? 'semana' : 'dia', item: it });   // ORIGINS: cofre que se abre con un toque
     c.diasCompletos = (c.diasCompletos || 0) + (semanal ? 0 : 1);
     // Bono semanal: un protector de racha 🧿 (maximo 2) que salva un dia faltado.
     if (semanal) {
@@ -208,6 +209,7 @@ export const Tareas = {
       c.pw.escudo = Math.min(99, (c.pw.escudo || 0) + 2);
       c.pw.pocion = Math.min(99, (c.pw.pocion || 0) + 5);
       this.enviar(s, { t: 'toast', ok: true, m: `📦 Cofre semanal ${sem.cof}/3 abierto: ${it && it.r >= 2 ? 'objeto ÉPICO' : 'objeto raro'}, 2 escudos y 5 pociones.` });
+      this.enviar(s, { t: 'cofreSem', tipo: 'semana', n: sem.cof, item: it });
       this.actualizarYo(s);
       this.guardar(s);
     }

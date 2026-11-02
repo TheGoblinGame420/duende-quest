@@ -516,9 +516,18 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 359;
+export const VERSION = 360;
 
 export const NOVEDADES = [
+  { n: 128, fecha: '2 nov 2026', items: [
+    'Cada arma se siente distinta: las Dagas cortan rápido, la Odachi pega pesado con temblor y choque de metal, y cada una deja su propio tajo. El Mago y el Sacerdote ven volar su bola al instante.',
+    '🌙 De noche ganas +10% de experiencia y aparecen monstruos nocturnos morados que dan +25% de oro.',
+    'Los cofres del día y de la semana se abren con un toque, con temblor y sonido.',
+    'La primera vez que conquistas la Cueva de los Goblins te llevas una pieza Épica de regalo.',
+    'Desde Nv 7 eliges tu primer talento. En el Abismo, un veterano te pega como si fuera solo 10 niveles mayor.',
+    'Ayudar a otros (Ayni) y dar 🙏 gracias ya dan logros y títulos.',
+    'Nuevo punto de señal junto a tu vida (verde, amarillo o rojo), y con señal lenta tu duende ya no se atasca.',
+  ] },
   { n: 127, fecha: '2 nov 2026', items: [
     'Tu enlace de «📲 Invitar a mi grupo» es solo tuyo: dura 2 horas, sirve para 6 amigos y cuenta a tu amigo como invitado.',
     'La tarjeta para ponerle nombre a tu duende sale arriba, no tapa ATACAR y se esconde mientras peleas.',
@@ -2693,6 +2702,15 @@ LOGROS.push(
   { id: 'pase10', titulo: 'Aventurero del Pase', desc: 'Llega al nivel 10 del pase de temporada', oro: 2000, cond: c => (c.paseMax || 0) >= 10 },
   { id: 'pase20', titulo: 'Leyenda del Pase',    desc: 'Completa los 20 niveles del pase de temporada', oro: 5000, cond: c => (c.paseMax || 0) >= 20 },
 );
+// Ayni (ayuda mutua): c.ayni lo suman social.js ayniCaza y combate.js al levantar a otro;
+// c.gratitud, los 🙏 «gracias» recibidos (social.js gesto: 1 por par y dia, 10 al dia).
+LOGROS.push(
+  { id: 'ayni10',      titulo: 'Mano Amiga',         desc: 'Ayuda 10 veces a otros duendes (Ayni)',oro: 1500, cond: c => (c.ayni || 0) >= 10 },
+  { id: 'ayni50',      titulo: 'Corazón de Ayni',    desc: 'Ayuda 50 veces a otros duendes',oro: 6000, cond: c => (c.ayni || 0) >= 50 },
+  { id: 'ayni200',     titulo: 'Taita del Ayni',     desc: 'Ayuda 200 veces a otros duendes',oro: 0,    cond: c => (c.ayni || 0) >= 200 },
+  { id: 'gratitud25',  titulo: 'Querido del Pueblo', desc: 'Recibe 25 «gracias» de otros duendes',  oro: 2000, cond: c => (c.gratitud || 0) >= 25 },
+  { id: 'gratitud100', titulo: 'Alma del Pueblo',    desc: 'Recibe 100 «gracias» de otros duendes', oro: 0,    cond: c => (c.gratitud || 0) >= 100 },
+);
 // Constancia mas alla de la racha de 7: dias distintos jugados (c.login.total,
 // procesarLogin) y dias con las 3 diarias hechas (c.diasCompletos, bonoTareas).
 LOGROS.push(
@@ -2701,6 +2719,11 @@ LOGROS.push(
   { id: 'dias60',      titulo: 'Duende Eterno',          desc: 'Entra 60 días distintos',        oro: 25000, cond: c => ((c.login || {}).total || 0) >= 60 },
   { id: 'completos10', titulo: 'Cumplidor',              desc: 'Cobra el bono diario 10 días', oro: 3000,  cond: c => (c.diasCompletos || 0) >= 10 },
   { id: 'completos30', titulo: 'Incansable',             desc: 'Cobra el bono diario 30 días', oro: 9000,  cond: c => (c.diasCompletos || 0) >= 30 },
+);
+// Monstruos nocturnos de ORIGINS (c.noctN, functions/mmo/mundo3d.js morir3d).
+LOGROS.push(
+  { id: 'noct10', titulo: 'Cazador Nocturno',  desc: 'Derrota 10 monstruos nocturnos en ORIGINS', oro: 2000, cond: c => (c.noctN || 0) >= 10 },
+  { id: 'noct50', titulo: 'Señor de la Noche', desc: 'Derrota 50 monstruos nocturnos en ORIGINS', oro: 6000, cond: c => (c.noctN || 0) >= 50 },
 );
 
 // ── TORRE DEL DUENDE ── (functions/mmo/torre.js)

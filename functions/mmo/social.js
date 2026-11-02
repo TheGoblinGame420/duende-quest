@@ -261,7 +261,8 @@ export const Social = {
       c.oro = (c.oro || 0) + oro;
       a.sucio = true;
       if (this.yoLuego) this.yoLuego(a, false);
-      this.enviar(a, { t: 'toast', ok: true, m: `🤝 Ayni +1: ayudaste a ${b.c.nombre} (+${oro} oro)` });
+      this.enviar(a, { t: 'toast', ok: true, ayni: c.ayni, m: `🤝 Ayni +1: ayudaste a ${b.c.nombre} (+${oro} oro)` });
+      if (this.revisarLogros) this.revisarLogros(a, true);   // Mano Amiga / Corazon / Taita del Ayni
     }
     // Al novato: +10 % de la XP de esa presa (minimo 1).
     let xp = 1;
@@ -696,6 +697,40 @@ export const Social = {
     // En ORIGINS solo lo ven tu grupo y los que están a menos de 60 m (en el 2D, todo el mapa).
     const txt = JSON.stringify({ t: 'gesto', p: s.id, id: m.id });
     for (const x of this.sesiones.values()) if (x.c && x.k === s.k && !meIgnora(x, s.c.uid) && ((s.gid && x.gid === s.gid) || cercaSoc(x, s, 3600))) this.enviar(x, txt);
+    if (m.id === 'gracias') this.gratitud(s, ahora);
+  },
+  // 🙏 «gracias» que cuenta: al que te levanto hace poco (s.ultRes, combate.js) o, si no, al
+  // de tu grupo mas cercano a menos de 15 m. Sin oro: solo c.gratitud y sus logros.
+  // 1 por par y dia de Lima (marcas en el emisor: c.gracDia) y 10 al dia por receptor.
+  gratitud(s, ahora) {
+    const c = s.c;
+    if (!c || !c.uid) return;
+    const valido = x => x && x !== s && x.c && x.c.uid && x.c.uid !== c.uid && x.k === s.k && !x.cerrado
+      && !(s.dev && s.dev === x.dev) && !(s.ip && s.ip.includes(':') && s.ip === x.ip) && !meIgnora(x, c.uid);
+    let otro = null;
+    const ur = s.ultRes;
+    if (ur && ahora - ur.t < 10 * 60000) { const x = this.sesiones.get(ur.id); if (valido(x) && x.c.uid === ur.uid) otro = x; }
+    if (!otro && s.gid && s.p) {
+      let mejor = 225;
+      for (const x of this.sesiones.values()) {
+        if (x.gid !== s.gid || !valido(x) || !x.p || (x.i3 || 0) !== (s.i3 || 0)) continue;
+        const d2 = (x.p.x - s.p.x) ** 2 + ((x.p.z || 0) - (s.p.z || 0)) ** 2;
+        if (d2 < mejor) { mejor = d2; otro = x; }
+      }
+    }
+    if (!otro) return;
+    const hoy = hoyUTC();
+    if (!c.gracDia || c.gracDia.d !== hoy || !Array.isArray(c.gracDia.ids)) c.gracDia = { d: hoy, ids: [] };
+    if (c.gracDia.ids.includes(otro.c.uid) || c.gracDia.ids.length >= 30) return;
+    const oc = otro.c;
+    if (!oc.gracRec || oc.gracRec.d !== hoy) oc.gracRec = { d: hoy, n: 0 };
+    if (oc.gracRec.n >= 10) return;
+    c.gracDia.ids.push(oc.uid);
+    oc.gracRec.n++;
+    oc.gratitud = (oc.gratitud || 0) + 1;
+    s.sucio = true; otro.sucio = true;
+    this.enviar(otro, { t: 'toast', ok: true, m: '🙏 ' + c.nombre + ' te agradeció' });
+    if (this.revisarLogros) this.revisarLogros(otro, true);
   },
 
   // ── MARCAS (📍 sin texto) ──

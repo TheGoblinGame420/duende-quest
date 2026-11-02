@@ -34,7 +34,7 @@
 // avisado); off y bloq se respetan siempre.
 // ═══════════════════════════════════════════════════════
 
-import { xpParaSubir, premioDiaria, premioMazmorraDia, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, HABS, CLASES, NIVEL_MAX, DIARIA, horaFelizActiva, TORRE, semanaUTC, temporadaDe, TEMPORADAS, SKINS, precioOro, GESTA_UMBRALES, GESTA_NOMBRES, DIA_DESFASE_MS, hoyUTC } from '../../mmo/js/data.js';
+import { xpParaSubir, premioDiaria, premioMazmorraDia, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, HABS, CLASES, NIVEL_MAX, DIARIA, horaFelizActiva, TORRE, semanaUTC, temporadaDe, TEMPORADAS, SKINS, precioOro, GESTA_UMBRALES, GESTA_NOMBRES, DIA_DESFASE_MS, hoyUTC, VERSION } from '../../mmo/js/data.js';
 import { getEnv, tg } from '../api/lib.js';
 import { MMO_URL, MUNDO_URL } from '../api/telegram-bot.js';
 import { metaEvento } from './meta.js';
@@ -99,6 +99,20 @@ const campsDe = r => Object.keys(r).filter(k => k.startsWith('n~')).length;
 // Las campañas tambien llevan r1~/r3~. Asi /mmostats ve que video trae gente que vuelve.
 export const adDe = v => String(v || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 40);
 const adsDe = r => Object.keys(r).filter(k => k.startsWith('n^')).length;
+// Version publicada (?v= de data.js) con la que se dio de alta: n@<v> altas, r1@/r3@
+// volvieron al D1/D3 y s2@ volvio a entrar el mismo dia. Asi /mmostats ve si una
+// version subio o bajo el D1. Como mucho 6 versiones por dia (un dia con varias subidas).
+const MAX_VERS_DIA = 6;
+const versDe = r => Object.keys(r).filter(k => k.startsWith('n@')).length;
+// Intervalo de Wilson al 95% de x de n, en puntos enteros: [bajo, alto]. Con poca
+// muestra el intervalo es ancho y avisa de que el % aun no dice nada.
+export function wilson(x, n) {
+  if (!(n > 0)) return [0, 0];
+  const z = 1.96, p = Math.min(1, Math.max(0, x / n)), z2 = z * z;
+  const centro = (p + z2 / (2 * n)) / (1 + z2 / n);
+  const margen = z * Math.sqrt(p * (1 - p) / n + z2 / (4 * n * n)) / (1 + z2 / n);
+  return [Math.max(0, Math.round((centro - margen) * 100)), Math.min(100, Math.round((centro + margen) * 100))];
+}
 // r2/r3 y r1~/r3~ se miden desde este dia de alta: las cohortes anteriores no los
 // tienen y bajarian el % (en /mmostats salen sin dato, no como 0).
 const INI_D23 = diaNum(Date.parse('2026-11-02T12:00:00Z'));
@@ -112,6 +126,8 @@ const r2 = n => Math.round(n * 100) / 100;
 export const EV_PASOS = ['carga_ini', 'arte_ok', 'form_visto', 'clic_entrar', 'bienvenido', 'mover', 'fallo_webgl', 'oculta', 'joy_toque', 't_atk', 't_hab', 't_volar', 't_fin',
   // Primeras misiones y primer jefe (Sabueso, mision 4) de ORIGINS: donde se pierde el novato.
   'mis_0', 'mis_1', 'mis_2', 'mis_3', 'mis_4', 'mis_5', 'jefe1_ver', 'jefe1_muere', 'jefe1_ok',
+  // Cueva de los Goblins (hito de Nv 5): entra, ve al Rey, cae dentro y la completa.
+  'cueva_entra', 'cueva_rey_ve', 'cueva_muere', 'cueva_ok',
   // Primera caida protegida: cuantos mueren por primera vez y cuantos revivan.
   'muerte1', 'revivir1',
   // Rendimiento de ORIGINS (90 s tras arte_ok): calidad x fluidez y familia de GPU.
@@ -308,7 +324,7 @@ export const Retencion = {
         if (r1K && hoy - x.n > 1 && (x.n >= INI_D23 || !r1K.includes('~'))) { base1 += x.r[nK] || 0; v1 += x.r[r1K] || 0; }
         if (r3K && hoy - x.n > 3 && x.n >= INI_D23) { base3 += x.r[nK] || 0; v3 += x.r[r3K] || 0; }
       }
-      return { gasto: r2(gasto), altas: n, cpi: n && gasto ? r2(gasto / n) : null, d1: r1K ? pct(v1, base1) : null, d3: r3K ? pct(v3, base3) : null, u7: r2(u7), arpu: n ? r2(u7 / n) : null, roas: gasto ? r2(u7 / gasto) : null };
+      return { gasto: r2(gasto), altas: n, cpi: n && gasto ? r2(gasto / n) : null, d1: r1K ? pct(v1, base1) : null, d1n: v1, d1base: base1, d1i: wilson(v1, base1), d3: r3K ? pct(v3, base3) : null, d3n: v3, d3base: base3, d3i: wilson(v3, base3), u7: r2(u7), arpu: n ? r2(u7 / n) : null, roas: gasto ? r2(u7 / gasto) : null };
     };
     const suma = f => r2(g.filter(f).reduce((a, x) => a + x.usd, 0));
     const porSrc = {};
@@ -332,8 +348,27 @@ export const Retencion = {
       if (hace > 3) { e.b3 += n; e.v3 += x.r['r3^' + id] || 0; }
     }
     const anuncios = Object.values(ads).sort((a, b) => b.altas - a.altas).slice(0, 10)
-      .map(e => ({ ad: e.ad, altas: e.altas, d1: pct(e.v1, e.b1), d1n: e.v1, d1base: e.b1, d3: pct(e.v3, e.b3), d3n: e.v3, d3base: e.b3 }));
+      .map(e => ({ ad: e.ad, altas: e.altas, d1: pct(e.v1, e.b1), d1n: e.v1, d1base: e.b1, d1i: wilson(e.v1, e.b1), d3: pct(e.v3, e.b3), d3n: e.v3, d3base: e.b3, d3i: wilson(e.v3, e.b3) }));
     return { desde, hasta, porSrc, camps, ads: anuncios };
+  },
+  // /mmostats: por version publicada (n@), altas de 14 dias, cuantas volvieron a
+  // entrar el mismo dia (s2@) y su D1/D3 (solo cohortes con el dia ya cumplido).
+  // Las 8 versiones mas nuevas, de la mas nueva a la mas vieja.
+  retVersiones(dias, hoy) {
+    const vs = {};
+    for (const x of dias.slice(0, 14)) for (const k in x.r) {
+      if (!k.startsWith('n@')) continue;
+      const v = k.slice(2), e = vs[v] || (vs[v] = { v, n: 0, d1n: 0, d1base: 0, d3n: 0, d3base: 0, s2: 0 });
+      const n = x.r[k] || 0, hace = hoy - x.n;
+      e.n += n;
+      e.s2 += x.r['s2@' + v] || 0;
+      // El % de «volvió hoy» solo con dias ya cerrados: las altas de hoy aun pueden volver.
+      if (hace >= 1) { e.s2base = (e.s2base || 0) + n; e.s2c = (e.s2c || 0) + (x.r['s2@' + v] || 0); }
+      if (hace > 1) { e.d1base += n; e.d1n += x.r['r1@' + v] || 0; }
+      if (hace > 3) { e.d3base += n; e.d3n += x.r['r3@' + v] || 0; }
+    }
+    return Object.values(vs).sort((a, b) => (Number(b.v) || 0) - (Number(a.v) || 0)).slice(0, 8)
+      .map(e => ({ ...e, d1: pct(e.d1n, e.d1base), d1i: wilson(e.d1n, e.d1base), d3: pct(e.d3n, e.d3base), d3i: wilson(e.d3n, e.d3base), s2pct: pct(e.s2c || 0, e.s2base || 0) }));
   },
   // /ventas: el embudo de compra de los ultimos 7 dias (todos y los de Meta).
   async embudoCompra() {
@@ -365,10 +400,11 @@ export const Retencion = {
     // D2/D3: señal temprana para pausar o escalar un anuncio (r2_meta, r3_meta...).
     if (k === 1 || k === 2 || k === 3 || k === 7 || k === 8 || k === 14 || k === 30) await this.retSumar(desde, conSrc(c, { ['r' + k]: 1 }));
     // D1/D3 por campaña (r1~/r3~) y por anuncio (r1^/r3^): solo si su alta se conto ese dia (tope de claves).
-    if ((k === 1 || k === 3) && (c.ret.camp || c.ret.ad)) {
+    if ((k === 1 || k === 3) && (c.ret.camp || c.ret.ad || c.ret.v)) {
       const rd = await this.retDia(desde), extra = {};
       if (c.ret.camp && rd['n~' + c.ret.camp]) extra['r' + k + '~' + c.ret.camp] = 1;
       if (c.ret.ad && rd['n^' + c.ret.ad]) extra['r' + k + '^' + c.ret.ad] = 1;
+      if (c.ret.v && rd['n@' + c.ret.v]) extra['r' + k + '@' + c.ret.v] = 1;
       if (Object.keys(extra).length) await this.retSumar(desde, extra);
     }
     if (k === 1 && c.ret.iab) await this.retSumar(desde, { r1iab: 1 });
@@ -391,7 +427,13 @@ export const Retencion = {
       if (nuevo && !c.ret.ad && adDe(ad)) c.ret.ad = adDe(ad);
       // Alta desde el navegador interno de Facebook/Instagram (hola.iab): su D1 aparte.
       if (nuevo && s.iab) c.ret.iab = 1;
+      // Version publicada del alta: altas, D1/D3 y «volvió hoy» por version en /mmostats.
+      if (nuevo && !c.ret.v) c.ret.v = VERSION;
       const r = c.ret;
+      // «Volvió hoy» (s2): su 2a sesion cae el mismo dia de Lima del alta. Una vez por
+      // cuenta; una reconexion de menos de 5 min (cambio de app en el celular) no cuenta.
+      const s2 = !nuevo && r.alta && !r.s2 && (r.ses || 0) + 1 >= 2 && hoy === diaNum(c.creado || 0) && ahora - (r.visto || 0) >= 5 * 60000;
+      if (s2) r.s2 = 1;
       r.ses = (r.ses || 0) + 1;
       r.visto = ahora;
       s.retT = ahora;
@@ -421,6 +463,13 @@ export const Retencion = {
       if (nuevo) await this.retSumar(hoy, conSrc(c, c.ret.iab ? { n: 1, niab: 1 } : { n: 1 }));
       if (nuevo && c.ret.camp) { const rd = await this.retDia(hoy); if (rd['n~' + c.ret.camp] || campsDe(rd) < MAX_CAMP_DIA) await this.retSumar(hoy, { ['n~' + c.ret.camp]: 1 }); }
       if (nuevo && c.ret.ad) { const rd = await this.retDia(hoy); if (rd['n^' + c.ret.ad] || adsDe(rd) < MAX_CAMP_DIA) await this.retSumar(hoy, { ['n^' + c.ret.ad]: 1 }); }
+      if (nuevo && c.ret.v) { const rd = await this.retDia(hoy); if (rd['n@' + c.ret.v] || versDe(rd) < MAX_VERS_DIA) await this.retSumar(hoy, { ['n@' + c.ret.v]: 1 }); }
+      if (s2) {
+        const rd = await this.retDia(hoy), campos = conSrc(c, { s2: 1 });
+        if (c.ret.ad && rd['n^' + c.ret.ad]) campos['s2^' + c.ret.ad] = 1;
+        if (c.ret.v && rd['n@' + c.ret.v]) campos['s2@' + c.ret.v] = 1;
+        await this.retSumar(hoy, campos);
+      }
       // Sesiones: en memoria y al storage como mucho una vez por minuto.
       if (this._retMin && this._retMin.d !== hoy) await this.retVolcar();
       this._retMin = this._retMin || { d: hoy, min: 0, ses: 0 };
@@ -705,10 +754,15 @@ export const Retencion = {
     }
     let anuncios = null;
     try { anuncios = await this.retAnuncios(dias, hoy); } catch (er) { console.error('[MMO anuncios]', er); }
+    let versiones = [];
+    try { versiones = this.retVersiones(dias, hoy); } catch (er) { console.error('[MMO versiones]', er); }
+    // «Volvió hoy» de las altas de 14 dias (s2 se suma el mismo dia del alta).
+    embudo.s2 = 0;
+    for (const x of dias.slice(0, 14)) embudo.s2 += x.r.s2 || 0;
     const ranking = (await (this.rankingLeer ? this.rankingLeer() : this.state.storage.get('ranking').then(r => r || []))).filter(x => !this.uidsPrueba.has(x.uid));
     return {
       ok: true, hoy: diaISO(hoy), activos, tipos30: tipos, niveles30: tramos, altas, cohortes, retencion, evento,
-      sesion: { sesiones7: ses, minutos7: Math.round(min), media: ses ? Math.round(min / ses * 10) / 10 : 0 }, embudo, invitaciones, origenes, carga, anuncios, avisos,
+      sesion: { sesiones7: ses, minutos7: Math.round(min), media: ses ? Math.round(min / ses * 10) / 10 : 0 }, embudo, invitaciones, origenes, carga, anuncios, versiones, avisos,
       top: ranking.slice(0, 10).map(x => ({ n: x.n, lv: x.lv })),
       online: this.contarOnline(),
       salud: this.infoSalud ? this.infoSalud() : null,   // cupo de escrituras y lag (salud.js)

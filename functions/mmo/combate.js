@@ -638,8 +638,10 @@ export const Combate = {
         u.push(a.c.uid);
         de.c.ayni = (de.c.ayni || 0) + 1;
         de.sucio = true;
-        this.enviar(de, { t: 'toast', ok: true, m: `🤝 Ayni +1: levantaste a ${a.c.nombre}` });
+        this.enviar(de, { t: 'toast', ok: true, ayni: de.c.ayni, m: `🤝 Ayni +1: levantaste a ${a.c.nombre}` });
+        if (this.revisarLogros) this.revisarLogros(de, true);   // logros de Ayni (data.js)
       }
+      a.ultRes = { id: de.id, uid: de.c.uid, t: Date.now() };   // a quien va el 🙏 «gracias» (social.js gratitud)
     }
     this.reponerElixires(a);
     this.actualizarYo(a);
