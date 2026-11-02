@@ -445,7 +445,7 @@ export const Mundo3D = {
       if (!g) continue;
       for (const x of this.sesionesGrupo(g)) {
         if (cobraron.has(x.id) || !x.m3 || x.muerto || !mismo(x, o) || dist(x.p, o) > 60) continue;
-        this.dar(x, Math.max(1, Math.round(base.xp * 0.6 * (1 + talento(x.c, 'erudicion')))), Math.max(1, Math.round(base.oro * 0.5)), o, 2, true);
+        this.dar(x, Math.max(1, Math.round(base.xp * 0.6 * (1 + talento(x.c, 'erudicion')))), Math.max(1, Math.round(base.oro * 0.5)), o, 2, 'grupo');   // 'grupo': sin chicha ni objeto de evento (no pego)
         cobraron.add(x.id);
       }
     }
@@ -463,7 +463,7 @@ export const Mundo3D = {
     // «Jugaste con» y oferta de grupo a quien caza junto (social.js cazaJuntos).
     if (this.cazaJuntos) this.cazaJuntos([...cobraron].map(id => this.sesiones.get(id)).concat(juntos), o);
     const campo = W.campos[o.campo];
-    if (campo) { campo.vivos.delete(o.id); campo.prox = Date.now() + (o.jefe ? REAPARECE_JEFE_MS : (o.nv || (MONSTRUOS[o.k] || {}).nivel || 99) <= 2 ? REAPARECE_NOVATO_MS : REAPARECE_MS); }
+    if (campo) { campo.vivos.delete(o.id); campo.prox = Date.now() + (o.k === 'jefe_sabueso' ? 60000 + Math.random() * 30000 : o.jefe ? REAPARECE_JEFE_MS : (o.nv || (MONSTRUOS[o.k] || {}).nivel || 99) <= 2 ? REAPARECE_NOVATO_MS : REAPARECE_MS); }
     this.aClave(K3, { t: 'md3', id: o.id });
     if (o.ex3 && o.ex3.ev) this.muereInvasor3d(o);
     if (o.cueva && o.jefe) this.premiosCueva(o);
@@ -1212,9 +1212,11 @@ export const Mundo3D = {
       if (o.jefe && o.campo >= 0 && !enC && !o.pzj && d < 12 && ahora >= (o.pzjProx || 0)) {
         if (!o.pzjProx) o.pzjProx = ahora + rnd(4000, 7000);   // el primero, unos segundos despues del tiron
         else {
-          o.pzj = { x: s.p.x, z: s.p.z, en: ahora + PISOTON_AVISO };
+          // Jefes de novato (Nv <= 10, p. ej. el Sabueso): aviso 40% mas largo para aprender a esquivar.
+          const avisoPz = ((MONSTRUOS[o.k] || {}).nivel || 99) <= 10 ? Math.round(PISOTON_AVISO * 1.4) : PISOTON_AVISO;
+          o.pzj = { x: s.p.x, z: s.p.z, en: ahora + avisoPz };
           o.pzjProx = ahora + rnd(10000, 14000);
-          this.aCerca3d(o, { t: 'zona3', id: o.id, x: r1(s.p.x), z: r1(s.p.z), r: PISOTON_JEFE_R, ms: PISOTON_AVISO });
+          this.aCerca3d(o, { t: 'zona3', id: o.id, x: r1(s.p.x), z: r1(s.p.z), r: PISOTON_JEFE_R, ms: avisoPz });
         }
       }
       if (o.jefe && o.campo >= 0 && !enC && !o.sorbo && o.hp < o.max * 0.6 && d < 20 && ahora >= (o.sorboProx || 0)) {

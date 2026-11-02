@@ -19,7 +19,7 @@ import * as THREE from 'three';
 const FORMAS = { punto: 0, chispa: 1, estrella: 2, humo: 3, anillo: 4, destello: 5 };
 const VERT = `
 attribute vec3 vel; attribute vec4 dat; attribute vec3 col; attribute float frm;
-uniform float uT; uniform float uEsc;
+uniform float uT; uniform float uEsc; uniform float uMaxPx;
 varying vec3 vCol; varying float vA; varying float vF; varying vec2 vDir; varying float vW;
 void main() {
   float edad = uT - dat.x;            // dat: nacimiento, vida, tamaño, gravedad
@@ -34,7 +34,7 @@ void main() {
   if (frm > 2.5 && frm < 3.5) esc = 0.6 + 1.6 * k;        // humo: se hincha
   else if (frm > 3.5 && frm < 4.5) esc = 0.15 + 1.85 * sqrt(k);   // anillo: onda que se abre
   else if (frm > 4.5) esc = 0.7 + 0.6 * k;               // destello
-  gl_PointSize = min(vivo * dat.z * uEsc * esc / max(0.5, -mv.z), 480.0);
+  gl_PointSize = min(vivo * dat.z * uEsc * esc / max(0.5, -mv.z), uMaxPx);   // tope por calidad: menos overdraw con un critico pegado a la camara
   // Chispa: direccion de vuelo en pantalla (en espacio de vista basta) y lo fina que va segun la rapidez.
   vec2 vv = (modelViewMatrix * vec4(v, 0.0)).xy;
   float lv = length(vv);
@@ -71,16 +71,21 @@ const AMB = {
   arena:       { m: 6, c: '#d6b47a', c2: '#ecd3a0', corte: 0.4,  tam: 0.22, frac: 1,    add: false, a: 0.5 },
 };
 
-export function crearParticulas(escena, max, movil, pobre) {
+// cal (opcional): 'alta' | 'media' | 'baja' — fija el tamaño maximo en pantalla de cada particula.
+export function crearParticulas(escena, max, movil, pobre, cal) {
   const N = max || 1500;
   const MULT = pobre ? 0.4 : movil ? 0.6 : 1;   // menos particulas en moviles modestos
   const cuenta = n => Math.max(1, Math.round(n * MULT));
+  // Tope de px por particula: en baja un pisoton o un critico cerca de la camara no llena la pantalla de quads aditivos.
+  const MAXPX = pobre || cal === 'baja' ? 110 : cal === 'media' || (!cal && movil) ? 200 : 480;
+  // En baja, humo y anillos (los quads mas grandes) salen a la mitad.
+  const mitad = (f, n) => (pobre && (f === 3 || f === 4)) ? Math.ceil(n / 2) : n;
   const g = new THREE.BufferGeometry();
   const pos = new Float32Array(N * 3), vel = new Float32Array(N * 3), dat = new Float32Array(N * 4), col = new Float32Array(N * 3), frm = new Float32Array(N);
   for (let i = 0; i < N; i++) dat[i * 4] = -1e6;   // todas muertas
   const at = (n, a, k) => { const b = new THREE.BufferAttribute(a, k); b.setUsage(THREE.DynamicDrawUsage); g.setAttribute(n, b); return b; };
   const aP = at('position', pos, 3), aV = at('vel', vel, 3), aD = at('dat', dat, 4), aC = at('col', col, 3), aF = at('frm', frm, 1);
-  const u = { uT: { value: 0 }, uEsc: { value: 320 } };
+  const u = { uT: { value: 0 }, uEsc: { value: 320 }, uMaxPx: { value: MAXPX } };
   const m = new THREE.ShaderMaterial({ uniforms: u, vertexShader: VERT, fragmentShader: FRAG, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
   const pts = new THREE.Points(g, m);
   pts.frustumCulled = false; pts.renderOrder = 5;
@@ -102,10 +107,10 @@ export function crearParticulas(escena, max, movil, pobre) {
   // o.retraso (opcional): segundos en que se reparten los nacimientos.
   function emitir(x, y, z, o) {
     o = o || {};
-    const n = cuenta(o.n || 12);
+    const f = FORMAS[o.forma] || 0, ret = o.retraso || 0.04;
+    const n = mitad(f, cuenta(o.n || 12));
     c.set(o.color || '#ffd34d');
     const v = o.vel || 4, vida = o.vida || 0.6, tam = o.tam || 1, gr = o.grav === undefined ? 9 : o.grav, sube = o.sube || 0, r = o.radio || 0.15;
-    const f = FORMAS[o.forma] || 0, ret = o.retraso || 0.04;
     const tb = f === 1 ? 0.45 : f === 3 ? 0.5 : 0.16;   // la chispa y el humo se ven mas grandes que un punto
     const t0 = reloj();
     for (let k = 0; k < n; k++) {
@@ -130,7 +135,7 @@ export function crearParticulas(escena, max, movil, pobre) {
     una(x, y, z, 0, 0, 0, t0, crit ? 0.2 : 0.13, crit ? 2.4 : 1.3, 0, (c.r + 1) / 2, (c.g + 1) / 2, (c.b + 1) / 2, 5);
     if (crit) {
       una(x, y, z, 0, 0, 0, t0, 0.36, 2.0, 0, 1, 0.85, 0.35, 4);
-      una(x, y, z, 0, 0, 0, t0 + 0.07, 0.42, 2.9, 0, 1, 0.62, 0.2, 4);
+      if (mitad(4, 2) > 1) una(x, y, z, 0, 0, 0, t0 + 0.07, 0.42, 2.9, 0, 1, 0.62, 0.2, 4);   // en baja, un solo anillo
       emitir(x, y, z, { n: 6, color: '#fff3b0', vel: 2.5, vida: 0.6, grav: -1, tam: 1.8, forma: 'estrella' });
     }
   }

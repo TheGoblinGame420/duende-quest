@@ -504,9 +504,18 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 342;
+export const VERSION = 343;
 
 export const NOVEDADES = [
+  { n: 111, fecha: '1 nov 2026', items: [
+    'El primer jefe, el Sabueso Infernal, llega con su cartel y su leyenda, avisa el pisotón con más tiempo y vuelve en 1,5 min como máximo. Si te tumba, te decimos cómo ganarle.',
+    'Nueva opción «Texto grande» en Ajustes; tu vida y la de tus aliados se ven en celeste y la del enemigo en rojo.',
+    'Ligas semanales por tramo de nivel (1-19, 20-39, 40-60): desde Nv 1 ya puedes ganar Liga Oro.',
+    'Las historias de la gente del bosque se cuentan en tarjetas que pasas con un toque, y puedes releerlas en el diario.',
+    'Reto de jefe: tu enlace para presumir lleva tu tiempo y tu pana ve «¿Lo haces más rápido?».',
+    'Tienda de la fiesta con saldo por edición y Saco de oro con tope de 5 por día. Los premios de la fiesta y la chicha son para quien pelea de verdad.',
+    'En celulares sencillos la música, las partículas y el cielo son más ligeros, y el pueblo en fiesta va más fluido.',
+  ] },
   { n: 110, fecha: '1 nov 2026', items: [
     '🐾 Tu mascota ahora te sigue también en ORIGINS 3D y los demás la ven. Al entrar recoges su expedición desde la bienvenida y con «Recoger y repetir» la mandas otra vez.',
     '👀 Probador de skins: en la tienda de ORIGINS toca «Probar» y tu duende se pone la skin mientras la cámara le da la vuelta.',
@@ -1855,7 +1864,7 @@ for (const t of TEMPORADAS) { t.ini -= DIA_DESFASE_MS; t.fin -= DIA_DESFASE_MS; 
 // El objeto del evento es su UNICA moneda (nunca oro, Stars ni $DUENDE).
 // Gastado = c[campo + 'G']; los logros siguen contando el total c[campo].
 // Titulo y color de nombre: una vez (c.tempComprado) y valen para siempre;
-// el mismo evento de otro año comparte los suyos. Pociones y saco: sin fin.
+// el mismo evento de otro año comparte los suyos. Pociones: sin fin; saco: 5 por día.
 const TIENDA_TEMP_NOM = {   // campo: [titulo exclusivo, color de nombre]
   calabazas: ['Señor de la Noche Duende', 'Naranja Calabaza'], tantas: ['Hornero de Todos los Santos', 'Dorado de Horno'],
   mazorcas: ['Guardián de la Chicha', 'Morado Maíz'], regalos: ['Duende de la Chocolatada', 'Verde Navidad'],

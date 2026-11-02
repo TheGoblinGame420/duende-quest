@@ -95,6 +95,14 @@ export const COMPRA_PASOS = ['tv', 'fa', 'fc', 'pq_stars', 'pq_sol', 'pq_duende'
 export const campDe = v => String(v || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 30);
 const MAX_CAMP_DIA = 30;   // campañas distintas por dia en ret:dia (n~ y u7~)
 const campsDe = r => Object.keys(r).filter(k => k.startsWith('n~')).length;
+// Anuncio (utm_content de origen.js): n^<anuncio> altas, r1^/r3^ volvieron al D1/D3
+// (sumados al dia del alta, solo si ese dia conto su n^). Mismo tope que las campañas.
+// Las campañas tambien llevan r1~/r3~. Asi /mmostats ve que video trae gente que vuelve.
+export const adDe = v => String(v || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 40);
+const adsDe = r => Object.keys(r).filter(k => k.startsWith('n^')).length;
+// r2/r3 y r1~/r3~ se miden desde este dia de alta: las cohortes anteriores no los
+// tienen y bajarian el % (en /mmostats salen sin dato, no como 0).
+const INI_D23 = diaNum(Date.parse('2026-11-02T12:00:00Z'));
 const r2 = n => Math.round(n * 100) / 100;
 
 // Embudo de la carga (antes del alta), por beacon (worker.js → /mmo/ev):
@@ -103,14 +111,18 @@ const r2 = n => Math.round(n * 100) / 100;
 //   (desde que abrio la pagina; 'bienvenido' y 'mover', desde el clic en entrar).
 // Se suma en memoria y se vuelca como mucho una vez por minuto.
 export const EV_PASOS = ['carga_ini', 'arte_ok', 'form_visto', 'clic_entrar', 'bienvenido', 'mover', 'fallo_webgl', 'oculta', 't_hab', 't_volar', 't_fin',
+  // Primeras misiones y primer jefe (Sabueso, mision 4) de ORIGINS: donde se pierde el novato.
+  'mis_0', 'mis_1', 'mis_2', 'mis_3', 'mis_4', 'mis_5', 'jefe1_ver', 'jefe1_muere', 'jefe1_ok',
   // Rendimiento de ORIGINS (90 s tras arte_ok): calidad x fluidez y familia de GPU.
   'fps_baja_ok', 'fps_baja_justo', 'fps_baja_lento', 'fps_media_ok', 'fps_media_justo', 'fps_media_lento', 'fps_alta_ok', 'fps_alta_justo', 'fps_alta_lento',
-  'gpu_mali', 'gpu_adreno', 'gpu_powervr', 'gpu_apple', 'gpu_intel', 'gpu_swiftshader', 'gpu_otra'];
+  'gpu_mali', 'gpu_adreno', 'gpu_powervr', 'gpu_apple', 'gpu_intel', 'gpu_swiftshader', 'gpu_otra',
+  // Vigias de ORIGINS (mundo.js): fuga de geometrias/texturas en la GPU y posicion rota (NaN).
+  'fuga_gpu', 'nan_pos'];
 const EV_TRAMOS = [2000, 5000, 10000, 20000, 40000, 90000];   // el ultimo tramo es "mas de 90 s"
 const EV_POR_IP_HORA = 40;      // por /64 de IPv6: un jugador manda ~11 (8 de carga + 3 del tutorial); recargas y los dos juegos caben de sobra
 const EV_POR_IPV4_HORA = 800;   // IPv4: la comparten cientos de moviles por CGNAT (Claro, Movistar, Entel, Bitel)
 const EV_MAX_DIA = 60000;       // tope diario de avisos aceptados (cuida el cupo)
-const EV_MAX_CLAVES = 500;      // 2 juegos x 11 pasos x 5 origenes x 2 equipos = 220, mas 16 de rendimiento (solo origins) x 10 = 380 posibles
+const EV_MAX_CLAVES = 600;      // 2 juegos x 11 pasos x 5 origenes x 2 equipos = 220, mas 16 de rendimiento y 9 de misiones/1er jefe (solo origins) x 10 = 470 posibles
 // IPv6: se limita por /64 (un equipo cambia de direccion dentro de su bloque).
 const claveIpEv = ip => ip.includes(':') ? ip.split(':').slice(0, 4).join(':') : ip;
 
@@ -284,25 +296,39 @@ export const Retencion = {
     const desde = diaISO(hoy - 6), hasta = diaISO(hoy);
     const g = l.filter(x => x.f >= desde && x.f <= hasta);
     const sem = dias.slice(0, 7);
-    const fila = (gasto, nK, r1K, u7K) => {
-      let n = 0, base1 = 0, v1 = 0, u7 = 0;
+    const fila = (gasto, nK, r1K, u7K, r3K) => {
+      let n = 0, base1 = 0, v1 = 0, base3 = 0, v3 = 0, u7 = 0;
       for (const x of sem) {
         n += x.r[nK] || 0; u7 += x.r[u7K] || 0;
-        if (r1K && hoy - x.n > 1) { base1 += x.r[nK] || 0; v1 += x.r[r1K] || 0; }
+        if (r1K && hoy - x.n > 1 && (x.n >= INI_D23 || !r1K.includes('~'))) { base1 += x.r[nK] || 0; v1 += x.r[r1K] || 0; }
+        if (r3K && hoy - x.n > 3 && x.n >= INI_D23) { base3 += x.r[nK] || 0; v3 += x.r[r3K] || 0; }
       }
-      return { gasto: r2(gasto), altas: n, cpi: n && gasto ? r2(gasto / n) : null, d1: r1K ? pct(v1, base1) : null, u7: r2(u7), arpu: n ? r2(u7 / n) : null, roas: gasto ? r2(u7 / gasto) : null };
+      return { gasto: r2(gasto), altas: n, cpi: n && gasto ? r2(gasto / n) : null, d1: r1K ? pct(v1, base1) : null, d3: r3K ? pct(v3, base3) : null, u7: r2(u7), arpu: n ? r2(u7 / n) : null, roas: gasto ? r2(u7 / gasto) : null };
     };
     const suma = f => r2(g.filter(f).reduce((a, x) => a + x.usd, 0));
     const porSrc = {};
     for (const o of ORIGENES) {
       if (o === 'org') continue;
       const gasto = suma(x => x.src === o);
-      const e = fila(gasto, 'n_' + o, 'r1_' + o, 'u7_' + o);
+      const e = fila(gasto, 'n_' + o, 'r1_' + o, 'u7_' + o, 'r3_' + o);
       if (gasto || (o === 'meta' && e.altas)) porSrc[o] = e;
     }
     const camps = [...new Set(g.filter(x => x.camp).map(x => x.camp))].slice(0, 10)
-      .map(k => ({ camp: k, ...fila(suma(x => x.camp === k), 'n~' + k, null, 'u7~' + k) }));
-    return { desde, hasta, porSrc, camps };
+      .map(k => ({ camp: k, ...fila(suma(x => x.camp === k), 'n~' + k, 'r1~' + k, 'u7~' + k, 'r3~' + k) }));
+    // Por anuncio (utm_content, sin gasto: Meta lo da por campaña): altas de 14 dias y su
+    // D1/D3 (solo cohortes con el dia ya cumplido). Los 10 con mas altas.
+    const ads = {};
+    for (const x of dias.slice(0, 14)) for (const k in x.r) {
+      if (!k.startsWith('n^')) continue;
+      const id = k.slice(2), e = ads[id] || (ads[id] = { ad: id, altas: 0, b1: 0, v1: 0, b3: 0, v3: 0 });
+      const n = x.r[k] || 0, hace = hoy - x.n;
+      e.altas += n;
+      if (hace > 1) { e.b1 += n; e.v1 += x.r['r1^' + id] || 0; }
+      if (hace > 3) { e.b3 += n; e.v3 += x.r['r3^' + id] || 0; }
+    }
+    const anuncios = Object.values(ads).sort((a, b) => b.altas - a.altas).slice(0, 10)
+      .map(e => ({ ad: e.ad, altas: e.altas, d1: pct(e.v1, e.b1), d1n: e.v1, d1base: e.b1, d3: pct(e.v3, e.b3), d3n: e.v3, d3base: e.b3 }));
+    return { desde, hasta, porSrc, camps, ads: anuncios };
   },
   // /ventas: el embudo de compra de los ultimos 7 dias (todos y los de Meta).
   async embudoCompra() {
@@ -331,14 +357,22 @@ export const Retencion = {
     const desde = diaNum(c.creado || Date.now());
     const k = hoy - desde;
     // D8 (cruzo a la semana 2 de la racha) y D14 (2 semanas): miden la racha larga.
-    if (k === 1 || k === 7 || k === 8 || k === 14 || k === 30) await this.retSumar(desde, conSrc(c, { ['r' + k]: 1 }));
+    // D2/D3: señal temprana para pausar o escalar un anuncio (r2_meta, r3_meta...).
+    if (k === 1 || k === 2 || k === 3 || k === 7 || k === 8 || k === 14 || k === 30) await this.retSumar(desde, conSrc(c, { ['r' + k]: 1 }));
+    // D1/D3 por campaña (r1~/r3~) y por anuncio (r1^/r3^): solo si su alta se conto ese dia (tope de claves).
+    if ((k === 1 || k === 3) && (c.ret.camp || c.ret.ad)) {
+      const rd = await this.retDia(desde), extra = {};
+      if (c.ret.camp && rd['n~' + c.ret.camp]) extra['r' + k + '~' + c.ret.camp] = 1;
+      if (c.ret.ad && rd['n^' + c.ret.ad]) extra['r' + k + '^' + c.ret.ad] = 1;
+      if (Object.keys(extra).length) await this.retSumar(desde, extra);
+    }
     if (k === 1 && c.ret.iab) await this.retSumar(desde, { r1iab: 1 });
     if (k === 1) metaEvento(this, c, 'VolvioD1');   // Conversions API (meta.js): solo con fbc y META_*
   },
 
   // ── Ganchos (los llama world.js) ──
   // En hola, con el personaje ya cargado. nuevo = personaje recien creado.
-  async retEntrar(s, nuevo, src, camp) {
+  async retEntrar(s, nuevo, src, camp, ad) {
     try {
       const c = s.c, ahora = Date.now(), hoy = diaNum(ahora);
       // Solo cuenta como alta un personaje creado ahora: los que ya existian
@@ -348,6 +382,8 @@ export const Retencion = {
       if (nuevo && !c.ret.src) c.ret.src = srcDe(src);
       // Campaña (utm_campaign): tambien solo en el alta; con ella /mmostats saca el ROAS por campaña.
       if (nuevo && !c.ret.camp && campDe(camp)) c.ret.camp = campDe(camp);
+      // Anuncio (utm_content): igual, solo en el alta; altas y D1/D3 por anuncio en /mmostats.
+      if (nuevo && !c.ret.ad && adDe(ad)) c.ret.ad = adDe(ad);
       // Alta desde el navegador interno de Facebook/Instagram (hola.iab): su D1 aparte.
       if (nuevo && s.iab) c.ret.iab = 1;
       const r = c.ret;
@@ -379,6 +415,7 @@ export const Retencion = {
       if (avVuelta) await this.retSumar(hoy, { [avVuelta]: 1 });
       if (nuevo) await this.retSumar(hoy, conSrc(c, c.ret.iab ? { n: 1, niab: 1 } : { n: 1 }));
       if (nuevo && c.ret.camp) { const rd = await this.retDia(hoy); if (rd['n~' + c.ret.camp] || campsDe(rd) < MAX_CAMP_DIA) await this.retSumar(hoy, { ['n~' + c.ret.camp]: 1 }); }
+      if (nuevo && c.ret.ad) { const rd = await this.retDia(hoy); if (rd['n^' + c.ret.ad] || adsDe(rd) < MAX_CAMP_DIA) await this.retSumar(hoy, { ['n^' + c.ret.ad]: 1 }); }
       // Sesiones: en memoria y al storage como mucho una vez por minuto.
       if (this._retMin && this._retMin.d !== hoy) await this.retVolcar();
       this._retMin = this._retMin || { d: hoy, min: 0, ses: 0 };
@@ -581,15 +618,15 @@ export const Retencion = {
     // Un dato D-k solo existe cuando ya llego el dia alta+k (si no, null).
     const cohortes = dias.slice(0, 35).filter(x => x.r.n > 0).map(x => {
       const hace = hoy - x.n;
-      return { dia: diaISO(x.n), n: x.r.n, d1: hace >= 1 ? x.r.r1 : null, d7: hace >= 7 ? x.r.r7 : null, d8: hace >= 8 ? x.r.r8 || 0 : null, d14: hace >= 14 ? x.r.r14 || 0 : null, d30: hace >= 30 ? x.r.r30 : null };
+      return { dia: diaISO(x.n), n: x.r.n, d1: hace >= 1 ? x.r.r1 : null, d2: hace >= 2 && x.n >= INI_D23 ? x.r.r2 || 0 : null, d3: hace >= 3 && x.n >= INI_D23 ? x.r.r3 || 0 : null, d7: hace >= 7 ? x.r.r7 : null, d8: hace >= 8 ? x.r.r8 || 0 : null, d14: hace >= 14 ? x.r.r14 || 0 : null, d30: hace >= 30 ? x.r.r30 : null };
     });
     // Retencion total de las ultimas 30 cohortes cuyo dia alta+k ya termino.
     const retencion = {};
-    for (const k of [1, 7, 8, 14, 30]) {
+    for (const k of [1, 2, 3, 7, 8, 14, 30]) {
       let base = 0, vuelven = 0;
       for (const x of dias) {
         const hace = hoy - x.n;
-        if (hace > k && hace <= k + 30) { base += x.r.n; vuelven += x.r['r' + k] || 0; }
+        if (hace > k && hace <= k + 30 && (k > 3 || k < 2 || x.n >= INI_D23)) { base += x.r.n; vuelven += x.r['r' + k] || 0; }
       }
       retencion['d' + k] = { pct: pct(vuelven, base), vuelven, base };
     }
@@ -621,9 +658,9 @@ export const Retencion = {
     for (const o of ORIGENES) {
       const e = { n: 0, c1: 0, m1: 0, n5: 0 };
       for (const x of dias.slice(0, 14)) for (const k in e) e[k] += x.r[k + '_' + o] || 0;
-      for (const k of [1, 7]) {
+      for (const k of [1, 2, 3, 7]) {
         let base = 0, vuelven = 0;
-        for (const x of dias) { const hace = hoy - x.n; if (hace > k && hace <= k + 30) { base += x.r['n_' + o] || 0; vuelven += x.r['r' + k + '_' + o] || 0; } }
+        for (const x of dias) { const hace = hoy - x.n; if (hace > k && hace <= k + 30 && (k > 3 || k < 2 || x.n >= INI_D23)) { base += x.r['n_' + o] || 0; vuelven += x.r['r' + k + '_' + o] || 0; } }
         e['d' + k] = { pct: pct(vuelven, base), vuelven, base };
       }
       if (e.n || e.d1.base) origenes[o] = e;

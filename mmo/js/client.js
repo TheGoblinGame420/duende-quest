@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=342';
-import { iniciarRegalo } from './regalo.js?v=342';
-import { iniciarAvisoTg } from './avisotg.js?v=342';
+} from './data.js?v=343';
+import { iniciarRegalo } from './regalo.js?v=343';
+import { iniciarAvisoTg } from './avisotg.js?v=343';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -565,7 +565,7 @@ async function conectar() {
   const og = window.dqOrigen ? window.dqOrigen() : { src: 'org', ref: '' };
   const ref = refInvitacion() || og.ref || undefined;
   // Cada manejador solo actua si su socket sigue siendo el actual.
-  s.onopen = () => { if (ws !== s) return; conectado = true; ultimoMsgT = performance.now(); mandar({ t: 'hola', ...hola, ref, src: og.src, camp: og.camp || undefined, med: og.med, fbc: og.fbc, iab: esIAB ? 1 : undefined, dev: huellaDev() }); };
+  s.onopen = () => { if (ws !== s) return; conectado = true; ultimoMsgT = performance.now(); mandar({ t: 'hola', ...hola, ref, src: og.src, camp: og.camp || undefined, ad: og.ad || undefined, med: og.med, fbc: og.fbc, iab: esIAB ? 1 : undefined, dev: huellaDev() }); };
   s.onmessage = ev => { if (ws !== s) return; ultimoMsgT = performance.now(); rxN++; let m; try { m = JSON.parse(ev.data); } catch (e) { return; } recibir(m); };
   s.onclose = ev => {
     if (ws !== s) return;
@@ -4995,7 +4995,7 @@ function cajaTiendaTemp() {
   if (ttAbierta) for (const a of tp.tienda) {
     const ya = a.una && comprado.includes(a.id), seguro = ttPend && ttPend.id === a.id && Date.now() - ttPend.t < 4000;
     h += '<div style="display:flex;align-items:center;gap:8px;margin-top:8px"><span style="flex:1;font-size:13px">' + a.emoji + ' ' + esc(a.nombre) + (a.premio.oroNivel ? ' <small style="color:var(--oro)">(' + (a.premio.oroNivel * yo.nivel).toLocaleString('es', { useGrouping: 'always' }) + ')</small>' : '') + '</span>' +
-      (ya ? '<span style="color:var(--ok);font-size:12px">✓ Ya es tuyo</span>' : '<b style="color:' + tp.color + '">' + tp.emoji + ' ' + a.costo + '</b><button class="btn" data-ttemp="' + esc(a.id) + '"' + (saldo === null || saldo < a.costo ? ' disabled' : '') + '>' + (seguro ? '¿Seguro?' : 'Canjear') + '</button>') + '</div>';
+      (ya ? '<span style="color:var(--ok);font-size:12px">✓ Ya es tuyo</span>' : '<b style="color:' + tp.color + '">' + tp.emoji + ' ' + a.costo + '</b><button class="btn" data-ttemp="' + esc(a.id) + '"' + (saldo === null || saldo < a.costo || (a.premio.oroNivel && est.sacoHoy === 0) ? ' disabled' : '') + '>' + (seguro ? '¿Seguro?' : 'Canjear') + '</button>') + '</div>';
   }
   return h + '</div>';
 }

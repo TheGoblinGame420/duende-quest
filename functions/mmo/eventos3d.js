@@ -92,9 +92,18 @@ export const Eventos3D = {
       if (zona) this.avisarInvasion3d(zona, ahora);
       else W.inv3prox = Math.max(W.inv3prox, ahora + 60000);
     } else if (W.inv3pre && ahora >= W.inv3prox) {
-      const zona = W.inv3pre.zona;
-      if (Object.keys(porZona).length) this.empezarInvasion3d(zona, porZona, ahora);
-      else { W.inv3pre = null; W.inv3prox = ahora + 60000; this.aClave(K3, { t: 'inv3', on: false, pre: 0 }); }
+      let zona = W.inv3pre.zona;
+      if (!(porZona[zona] || []).length) {
+        // Nadie fue a la zona anunciada: los tambores se mueven a donde hay gente (o se aplaza).
+        const otra = this.zonaInvasion3d(porZona);
+        if (otra && otra !== zona) { zona = otra; this.aClave(K3, { t: 'aviso', m: `🥁 Los tambores se movieron a ${(MAPAS[zona] || {}).nombre || zona}` }); }
+        else zona = null;
+      }
+      if (zona) this.empezarInvasion3d(zona, porZona, ahora);
+      else if ((W.inv3pre.apl = (W.inv3pre.apl || 0) + 1) <= 4) {
+        // Sin nadie en ningun lado: se aplaza 30 s (hasta 4 veces) y el contador del cliente se actualiza.
+        W.inv3prox = ahora + 30000; W.inv3pre.en = W.inv3prox; this.aClave(K3, this.estadoInvasion3d());
+      } else { W.inv3pre = null; W.inv3prox = ahora + 60000; this.aClave(K3, { t: 'inv3', on: false, pre: 0 }); }
     }
   },
   // La zona con mas gente (abierta y con monstruos).

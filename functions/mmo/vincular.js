@@ -74,7 +74,8 @@ export const Vincular = {
   async migrarUid(viejo, nuevo, nombre) {
     const mover = l => {
       if (!l || !Object.hasOwn(l, viejo)) return false;
-      l[nuevo] = { ...l[viejo], ...('n' in l[viejo] ? { n: nombre } : {}) };
+      // Las ligas (rankSemPrem) guardan [liga, puesto, tramo]: un array se mueve tal cual (spread lo volvia objeto).
+      l[nuevo] = Array.isArray(l[viejo]) ? l[viejo] : { ...l[viejo], ...('n' in l[viejo] ? { n: nombre } : {}) };
       delete l[viejo];
       return true;
     };
@@ -84,6 +85,8 @@ export const Vincular = {
       if (fila) { fila.uid = nuevo; fila.n = nombre; await this.state.storage.put('ranking', r); }   // la herencia se guarda al momento
       if (this.rs && mover(this.rs.l)) this.rsSucio = true;
       if (this.rds && mover(this.rds.l)) await this.state.storage.put('rankDesSem', this.rds);
+      // Premio de liga de la semana pasada aun sin cobrar: si no, se perdia al vincular la cuenta.
+      if (this.rsp && mover(this.rsp.l)) await this.state.storage.put('rankSemPrem', this.rsp);
       if (this.cargarRankTorre) { const rt = await this.cargarRankTorre(); if (rt && mover(rt.l)) await this.state.storage.put('rankTorre', rt); }
     } catch (e) { console.error('[MMO migrarUid]', e); }
   },

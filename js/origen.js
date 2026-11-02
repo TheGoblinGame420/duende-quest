@@ -94,7 +94,8 @@
     // (el servidor borra su fbc); fbc (id del clic del anuncio) SOLO con med 1 y fuera de Telegram.
     var med = window.dqMedirOk ? window.dqMedirOk() : undefined;
     var fbc = med === 1 && !enTg && origen && origen.fr ? 'fb.1.' + (origen.ft || origen.t || Date.now()) + '.' + origen.fr : undefined;
-    return { src: g, ref: (origen && /^[a-z0-9]{6}$/.test(origen.ref || '')) ? origen.ref : '', camp: (origen && origen.c) || '', med: med, fbc: fbc };
+    // ad: utm_content (el video/anuncio de Meta), saneado igual: altas y D1 por anuncio en /mmostats.
+    return { src: g, ref: (origen && /^[a-z0-9]{6}$/.test(origen.ref || '')) ? origen.ref : '', camp: (origen && origen.c) || '', ad: limpio(origen && origen.a), med: med, fbc: fbc };
   };
   // Consentimiento de la medicion de Meta: 1 acepto, 0 no, undefined aun no decide.
   window.dqMedirOk = function () {
@@ -107,7 +108,7 @@
     var okM = window.dqMedirOk();
     if (!enTg && okM !== 0 && (okM === 1 || (origen && (origen.o === 'meta' || origen.fr)))) {
       var sm = document.createElement('script');
-      sm.src = '/js/medir.js?v=342'; sm.async = true;
+      sm.src = '/js/medir.js?v=343'; sm.async = true;
       (document.head || document.documentElement).appendChild(sm);
     }
   } catch (e) {}
@@ -135,8 +136,9 @@
 
   // ── Embudo ──
   var EVENTOS = { carga_ini: 1, arte_ok: 1, form_visto: 1, clic_entrar: 1, bienvenido: 1, mover: 1, fallo_webgl: 1, oculta: 1, t_hab: 1, t_volar: 1, t_fin: 1,
+    mis_0: 1, mis_1: 1, mis_2: 1, mis_3: 1, mis_4: 1, mis_5: 1, jefe1_ver: 1, jefe1_muere: 1, jefe1_ok: 1,
     fps_baja_ok: 1, fps_baja_justo: 1, fps_baja_lento: 1, fps_media_ok: 1, fps_media_justo: 1, fps_media_lento: 1, fps_alta_ok: 1, fps_alta_justo: 1, fps_alta_lento: 1,
-    gpu_mali: 1, gpu_adreno: 1, gpu_powervr: 1, gpu_apple: 1, gpu_intel: 1, gpu_swiftshader: 1, gpu_otra: 1 };
+    gpu_mali: 1, gpu_adreno: 1, gpu_powervr: 1, gpu_apple: 1, gpu_intel: 1, gpu_swiftshader: 1, gpu_otra: 1, fuga_gpu: 1, nan_pos: 1 };
   var hechos = {}, clicT = -1, juego = '';
   var movil = false;
   try { movil = (window.matchMedia && matchMedia('(pointer:coarse)').matches) || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent); } catch (e) {}

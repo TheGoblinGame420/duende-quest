@@ -26,12 +26,12 @@
 <meta name="theme-color" content="#0a0418">
 <link rel="manifest" href="/mundo/manifest.json">
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
-<script src="/js/pwa.js?v=342" defer></script>
+<script src="/js/pwa.js?v=343" defer></script>
 <link rel="icon" href="/assets/ui/coin.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=342"></script>
+<script src="/js/origen.js?v=343"></script>
 <script>
 // Red de seguridad de la carga (script clasico: corre aunque el modulo 3D o el CDN fallen).
 // - Errores antes de conectar: se guardan en __errQ y mundo.js los manda al entrar.
@@ -117,29 +117,29 @@
   });
 })();
 </script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=342" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=343" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=342">
-<link rel="modulepreload" href="/mmo/js/data.js?v=342">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=342">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=342">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=342">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=342">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=342">
-<link rel="modulepreload" href="/mmo/js/regalo.js?v=342">
-<link rel="modulepreload" href="/mmo/js/avisotg.js?v=342">
-<link rel="modulepreload" href="/mundo/js/musica.js?v=342">
-<link rel="modulepreload" href="/mundo/js/sonidos.js?v=342">
-<link rel="modulepreload" href="/mundo/js/cueva.js?v=342">
-<link rel="modulepreload" href="/mundo/js/tapa.js?v=342">
-<link rel="modulepreload" href="/mundo/js/abismo.js?v=342">
-<link rel="modulepreload" href="/mundo/js/particulas.js?v=342">
-<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=342">
-<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=342">
-<link rel="modulepreload" href="/mmo/js/secundarias.js?v=342">
-<link rel="modulepreload" href="/mundo/js/lore.js?v=342">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=343">
+<link rel="modulepreload" href="/mmo/js/data.js?v=343">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=343">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=343">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=343">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=343">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=343">
+<link rel="modulepreload" href="/mmo/js/regalo.js?v=343">
+<link rel="modulepreload" href="/mmo/js/avisotg.js?v=343">
+<link rel="modulepreload" href="/mundo/js/musica.js?v=343">
+<link rel="modulepreload" href="/mundo/js/sonidos.js?v=343">
+<link rel="modulepreload" href="/mundo/js/cueva.js?v=343">
+<link rel="modulepreload" href="/mundo/js/tapa.js?v=343">
+<link rel="modulepreload" href="/mundo/js/abismo.js?v=343">
+<link rel="modulepreload" href="/mundo/js/particulas.js?v=343">
+<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=343">
+<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=343">
+<link rel="modulepreload" href="/mmo/js/secundarias.js?v=343">
+<link rel="modulepreload" href="/mundo/js/lore.js?v=343">
 <style>
 :root{--bg:#0a0418;--panel:rgba(14,9,30,.86);--borde:rgba(160,140,255,.22);--txt:#f2efff;--txt2:#b8b0d8;--txt3:#7d7699;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;--oro:#ffd84a;--pri:#2563eb;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -155,7 +155,8 @@ body.sin-post #vineta{display:block;}
 .lbl{position:absolute;left:0;top:0;transform:translate(-50%,-100%);white-space:nowrap;font:600 11px var(--sans);text-shadow:0 1px 2px #000,0 0 3px #000;text-align:center;will-change:transform;}
 .lbl .b{display:block;width:44px;height:4px;margin:2px auto 0;background:rgba(0,0,0,.7);border-radius:2px;overflow:hidden;}
 .lbl .b i{display:block;height:100%;background:#ff3344;transform-origin:left;}
-.lbl.yo .b i,.lbl.pj .b i{background:#4ade80;}
+.lbl.yo .b i,.lbl.pj .b i{background:#38bdf8;}   /* cian (no verde): aliado y enemigo se distinguen sin depender del rojo/verde */
+body.movil .lbl .b{height:6px;border-radius:3px;}
 .num{position:absolute;left:0;top:0;font:700 16px var(--sans);text-shadow:0 2px 3px #000;transform:translate(-50%,-50%);will-change:transform,opacity;}
 .caja{position:fixed;background:var(--panel);border:1px solid var(--borde);border-radius:10px;backdrop-filter:blur(4px);pointer-events:auto;}
 #marco{left:12px;top:12px;padding:8px 10px;min-width:210px;}
@@ -613,6 +614,31 @@ body.movil.mano-der #joy .pista-joy{left:auto;right:28px;flex-direction:row-reve
  body.compacto #v-npc .ventana,body.compacto #v-inv .ventana,body.compacto #v-diario .ventana,body.compacto #v-pase .ventana,body.compacto #v-libro .ventana,body.compacto #v-logros .ventana,body.compacto #v-herm .ventana,body.compacto #v-rank .ventana,body.compacto #v-amigos .ventana,body.compacto #v-ayuda .ventana{max-height:calc(100vh - 84px - env(safe-area-inset-top) - env(safe-area-inset-bottom))!important;max-height:calc(100dvh - 84px - env(safe-area-inset-top) - env(safe-area-inset-bottom))!important;}
  body.movil #obj,body.compacto #obj{left:calc(16px + min(150px,40vw));transform:none;width:calc(100vw - min(150px,40vw) - 120px);max-width:160px;}
 }
+/* Texto grande (Ajustes > Texto, localStorage 'dq3_texto'; por defecto en pantallas de 5"): va al final para ganarle a body.movil/compacto */
+body.texto-grande #m-hp,body.texto-grande #m-rec,body.texto-grande #op-hp,body.texto-grande #o-hp,body.texto-grande #o-cast,body.texto-grande #lanzar .barra{height:15px!important;}   /* solo las barras con texto: las de grupo/carga/pase conservan su alto */
+body.texto-grande .barra span{font-size:12px!important;line-height:15px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+body.texto-grande #misiones,body.texto-grande #misiones b,body.texto-grande #misiones .tarea,body.texto-grande #misiones .q .ok{font-size:12px!important;}
+body.movil.texto-grande #misiones:not(.abierto),body.compacto.texto-grande #misiones:not(.abierto){max-height:62px;}
+body.texto-grande #mini .z{font-size:12px!important;line-height:1.15;width:0;min-width:100%;overflow-wrap:anywhere;}   /* width:0 + min-width:100%: no ensancha el minimapa, parte el nombre en 2 lineas */
+body.texto-grande #chicha3{font-size:12px!important;}
+body.texto-grande .vv-stat small{font-size:11px!important;overflow-wrap:anywhere;}
+body.texto-grande .d7 em{font-size:10.5px;overflow-wrap:anywhere;}
+body.texto-grande .lbl{font-size:13px;}
+body.texto-grande .num{font-size:19px;}
+/* La gente del bosque te cuenta (mundo.js npcDice): tarjeta tocable con la historia en burbujas */
+#npc-dice{position:fixed;left:50%;bottom:calc(var(--tg-bottom,0px) + 150px);transform:translateX(-50%);width:min(440px,calc(100vw - 32px));box-sizing:border-box;z-index:6;display:none;pointer-events:auto;cursor:pointer;background:rgba(20,10,40,.94);border:1px solid #f0abfc;border-radius:14px;padding:10px 12px;box-shadow:0 6px 24px rgba(0,0,0,.55);color:#fff;font:600 14px var(--sans);-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;}
+#npc-dice.on{display:block;animation:ndEntra .25s ease-out;}
+@keyframes ndEntra{from{opacity:0}to{opacity:1}}
+#npc-dice .nd-cab{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+#npc-dice .nd-cara{font-size:26px;line-height:1;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(240,171,252,.18);flex:none;}
+#npc-dice .nd-quien{color:#f0abfc;font-size:15px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#npc-dice .nd-pag{color:#c4b5fd;font-size:11px;flex:none;}
+#npc-dice .nd-txt{margin:0 0 8px;line-height:1.4;min-height:2.8em;}
+#npc-dice .nd-txt.sigue{color:#fde68a;font-style:italic;}
+#npc-dice .nd-bot{display:flex;gap:8px;justify-content:flex-end;}
+#npc-dice .nd-bot button{min-height:36px;padding:6px 14px;font-size:13px;margin:0;}
+body.movil #npc-dice,body.compacto #npc-dice{bottom:auto;top:calc(200px + env(safe-area-inset-top) + var(--tg-top,0px));font-size:13px;}
+@media (orientation:landscape) and (max-height:500px){body.movil #npc-dice,body.compacto #npc-dice{top:calc(56px + env(safe-area-inset-top) + var(--tg-top,0px));width:min(400px,46vw);}}
 </style>
 </head>
 <body>
@@ -779,6 +805,15 @@ body.movil.mano-der #joy .pista-joy{left:auto;right:28px;flex-direction:row-reve
   <h2>AJUSTES Y CONTROLES</h2>
   <div class="fila"><span>Calidad gráfica</span><b><select id="sel-calidad" style="background:#22164a;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="baja">Baja (móviles lentos)</option><option value="media">Media</option><option value="alta">Alta (sombras)</option></select></b></div>
   <div class="fila" id="fila-mano" style="display:none"><span>Mando</span><b><select id="sel-mano" style="background:#22164a;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="izq">Joystick a la izquierda</option><option value="der">Joystick a la derecha</option></select></b></div>
+  <div class="fila"><span>Texto</span><b><select id="sel-texto" style="background:#22164a;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="n">Normal</option><option value="g">Grande</option></select></b></div>
+  <script>
+  /* Texto grande: 'dq3_texto' (n|g). Sin valor guardado, grande en pantallas de 5" (lado corto <= 400 px). */
+  (function(){var v=null;try{v=localStorage.getItem('dq3_texto');}catch(e){}
+  if(v!=='n'&&v!=='g'){try{v=Math.min(screen.width,screen.height)<=400?'g':'n';}catch(e){v='n';}}
+  function poner(x){document.body.classList.toggle('texto-grande',x==='g');}
+  poner(v);var s=document.getElementById('sel-texto');
+  if(s){s.value=v;s.onchange=function(){var x=s.value==='g'?'g':'n';try{localStorage.setItem('dq3_texto',x);}catch(e){}poner(x);};}})();
+  </script>
   <div class="fila"><span>Moverse</span><b>W A S D</b></div>
   <div class="fila"><span>Girar la cámara</span><b>Arrastrar con el ratón</b></div>
   <div class="fila"><span>Zoom</span><b>Rueda</b></div>
@@ -810,8 +845,8 @@ body.movil.mano-der #joy .pista-joy{left:auto;right:28px;flex-direction:row-reve
 <!-- Telegram: su SDK se carga arriba solo dentro de Telegram (window.__tgListo).
      defer: no frenan el HTML y corren en orden, antes que mundo.js (que usa supabase). -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=342" defer></script>
-<script type="module" src="/mundo/js/mundo.js?v=342"></script>
+<script src="/js/config.js?v=343" defer></script>
+<script type="module" src="/mundo/js/mundo.js?v=343"></script>
 <div id="flash-nv"></div>
 <div id="cartel-nv"></div>
 </body>

@@ -3,7 +3,7 @@
 <head>
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=342"></script>
+<script src="/js/origen.js?v=343"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Duende Quest CLASSIC · MMORPG 2D gratis en el navegador</title>
@@ -71,9 +71,9 @@
 })();
 </script>
 <!-- defer se ejecuta en orden y todo antes del modulo client.js -->
-<script src="/js/pwa.js?v=342" defer></script>
+<script src="/js/pwa.js?v=343" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=342" defer></script>
+<script src="/js/config.js?v=343" defer></script>
 <style>
 /* ── Tokens (guia de diseno, oct 2026). Las variables viejas (--verde, --amarillo,
    --rosa, --cian, --rojo) siguen existiendo porque client.js las usa, pero ahora
@@ -564,9 +564,14 @@ input.nombre:focus{border-color:var(--pri-txt);}
  body.tactil #hud.estrecho #avisos{top:104px;width:min(300px,46%);}
  body.tactil #hud.estrecho #monedero{left:8px;right:auto;top:64px;bottom:auto;}
 }
+/* Texto grande (mismo ajuste que ORIGINS: localStorage 'dq3_texto'; por defecto en pantallas de 5") */
+body.texto-grande #monedero,body.texto-grande #hud.estrecho #monedero{font-size:10px;}
+body.texto-grande .uf .nm,body.texto-grande #hud.estrecho .uf .nm{font-size:10px;}
+body.texto-grande .uf .nm small,body.texto-grande #hud.estrecho .uf .nm small{font-size:9px;}
 </style>
 </head>
 <body>
+<script>(function(){var v=null;try{v=localStorage.getItem('dq3_texto');}catch(e){}if(v!=='n'&&v!=='g'){try{v=Math.min(screen.width,screen.height)<=400?'g':'n';}catch(e){v='n';}}document.body.classList.toggle('texto-grande',v==='g');})();</script>
 <div id="carga">
   <img class="duende-carga" src="/assets/skins/duende_comun.png" alt="" width="62" height="105">
   <div class="t">DUENDE QUEST<br>CLASSIC</div>
@@ -1000,7 +1005,7 @@ input.nombre:focus{border-color:var(--pri-txt);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=342"></script>
+<script type="module" src="/mmo/js/client.js?v=343"></script>
 <div id="nuevo3d" role="dialog" aria-label="Nuevo mundo 3D">
   <video src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" muted loop playsinline preload="none"></video>
   <div class="t">🌌 NUEVO: Duende Quest Origins, el mundo abierto en 3D</div>

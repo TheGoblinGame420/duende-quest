@@ -55,7 +55,7 @@ footer a{color:var(--txt2);}
 @media (min-width:800px){main{grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:40px;padding-top:48px;}.marca{grid-column:1/-1;}h1,.sub{text-align:left;}.lista{justify-content:flex-start;}footer{grid-column:1/-1;}}
 @media (prefers-reduced-motion:reduce){.jugar{animation:none;}}
 </style>
-<script src="/js/origen.js?v=342"></script>
+<script src="/js/origen.js?v=343"></script>
 </head>
 <body>
 <div class="aurora" aria-hidden="true"></div>
@@ -127,6 +127,16 @@ footer a{color:var(--txt2);}
       b.textContent = 'JUGAR CON MI AMIGO';
     } catch (e) {}
   }
+  // Reto de jefe (?rj=SEGUNDOS): solo un numero formateado en una plantilla fija; rj sigue en qs hacia el juego.
+  var rjm = location.search.match(/[?&]rj=(\d{1,4})(&|$)/), rjs = rjm ? parseInt(rjm[1], 10) : 0;
+  if (rjs >= 1 && rjs <= 3599) {
+    try {
+      var h1r = document.querySelector('h1'), subr = document.querySelector('.sub');
+      if (h1r) h1r.textContent = 'Tu pana venció a un jefe en ' + Math.floor(rjs / 60) + ':' + ('0' + (rjs % 60)).slice(-2) + '. ¿Lo haces más rápido?';
+      if (subr && /[?&]ref=[a-z0-9]{6}(&|$)/.test(location.search)) subr.textContent = 'Entra con su enlace: recibes oro y pociones de bienvenida, y a nivel 10 los dos ganan oro.';
+      b.textContent = 'ACEPTO EL RETO';
+    } catch (e) {}
+  }
   if (ir === '/mmo/' && !/[?&]j=/i.test(qs)) qs += (qs ? '&' : '?') + 'j=2d';
   b.href = ir + qs;
   b.addEventListener('click', function () { try { localStorage.setItem('dq_ultimo_juego', ir); } catch (e) {} });
@@ -159,8 +169,8 @@ footer a{color:var(--txt2);}
       pc.rel = 'preconnect'; pc.href = 'https://cdn.jsdelivr.net'; pc.crossOrigin = 'anonymous';
       if (ir === '/mundo/') document.head.appendChild(pc);
       var lista = ir === '/mundo/'
-        ? ['https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js', '/mundo/js/mundo.js?v=342', '/mundo/js/modelos.js?v=342', '/mundo/js/ventanas.js?v=342', '/mmo/js/data.js?v=342', '/assets/3d/kenney.json', '/assets/3d/kenney.bin.gz']
-        : ['/mmo/js/client.js?v=342', '/mmo/js/data.js?v=342'];
+        ? ['https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js', '/mundo/js/mundo.js?v=343', '/mundo/js/modelos.js?v=343', '/mundo/js/ventanas.js?v=343', '/mmo/js/data.js?v=343', '/assets/3d/kenney.json', '/assets/3d/kenney.bin.gz']
+        : ['/mmo/js/client.js?v=343', '/mmo/js/data.js?v=343'];
       window.addEventListener('load', function () {
         setTimeout(function () {
           try {

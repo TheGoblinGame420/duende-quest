@@ -71,7 +71,12 @@ const RASG_FIESTA = [1, 0, 2, 1, 0, 2, 1, 2, 1, 0, 2, 1, 0, 2, 1, 2];
 const SECCIONES = [[1, 1, 0, 0], [1, 1, 1, 0.6], [0.8, 1, 1, 1], [1, 0.55, 0.35, 0]];
 const hz = n => 440 * Math.pow(2, (n - 69) / 12);
 
-export function crearMusica() {
+// opc.ligera (moviles flojos): charango de una cuerda con filtro compartido, menos
+// rasgueos, quena sin capa de ruido y menos chajchas en combate. M.ligera(v) lo cambia.
+export function crearMusica(opc = {}) {
+  let ligera = !!opc.ligera;
+  const curvas = new Map();   // vibrato por duracion (decimas de s): no se crea un Float32Array por nota
+  const bucles = {};          // ruidos en bucle (lluvia, viento): se paran si llevan rato en silencio
   let ctx = null, maestro = null, salida = null, eco = null, lluviaG = null, vivo = false, activo = true;
   let zona = 'pueblo', noche = false, clima = 'despejado', reloj = 0;
   let vientoG = null, vientoF = null, ambG = null, sigAmb = 0;
@@ -104,17 +109,16 @@ export function crearMusica() {
     // Lluvia: ruido blanco en bucle, filtrado.
     const n = ctx.sampleRate * 2, buf = ctx.createBuffer(1, n, ctx.sampleRate), d = buf.getChannelData(0);
     for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
-    const ruido = ctx.createBufferSource(); ruido.buffer = buf; ruido.loop = true;
     const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1400; bp.Q.value = 0.6;
     lluviaG = ctx.createGain(); lluviaG.gain.value = 0;
-    ruido.connect(bp); bp.connect(lluviaG); lluviaG.connect(salida);
-    ruido.start();
+    bp.connect(lluviaG); lluviaG.connect(salida);
     ctx._ruido = buf;
+    bucles.lluvia = { s: null, entrada: bp, rate: 1, cero: 0 };
     // Viento: el mismo ruido, grave y con un filtro que se mueve despacio.
-    const rv = ctx.createBufferSource(); rv.buffer = buf; rv.loop = true; rv.playbackRate.value = 0.5;
     vientoF = ctx.createBiquadFilter(); vientoF.type = 'lowpass'; vientoF.frequency.value = 420; vientoF.Q.value = 2.2;
     vientoG = ctx.createGain(); vientoG.gain.value = 0;
-    rv.connect(vientoF); vientoF.connect(vientoG); vientoG.connect(salida); rv.start();
+    vientoF.connect(vientoG); vientoG.connect(salida);
+    bucles.viento = { s: null, entrada: vientoF, rate: 0.5, cero: 0 };
     ambG = ctx.createGain(); ambG.gain.value = 0; ambG.connect(salida); ambG.connect(eco);
     vivo = true;
     reloj = ctx.currentTime + 0.2; sigPaso = reloj;
@@ -129,10 +133,31 @@ export function crearMusica() {
     lluviaG.gain.cancelScheduledValues(t);
     const ll = !activo ? 0 : clima === 'tormenta' ? 0.07 : clima === 'lluvia' ? 0.045 : clima === 'arena' ? 0.03 : 0;
     lluviaG.gain.linearRampToValueAtTime(ll, t + 2);
+    bucle('lluvia', ll > 0);
     vientoG.gain.cancelScheduledValues(t);
-    vientoG.gain.linearRampToValueAtTime(activo ? (VIENTO[zona] || 0.012) * (clima === 'tormenta' ? 1.8 : 1) : 0, t + 2.5);
+    const vv = activo ? (VIENTO[zona] || 0.012) * (clima === 'tormenta' ? 1.8 : 1) : 0;
+    vientoG.gain.linearRampToValueAtTime(vv, t + 2.5);
+    bucle('viento', vv > 0);
     ambG.gain.cancelScheduledValues(t);
     ambG.gain.linearRampToValueAtTime(activo ? 0.5 : 0, t + 1.5);
+  }
+  // Ruido en bucle: suena mientras su volumen sea > 0; si queda en 0 (rampa de ~2 s + 5 s
+  // de silencio), podarBucles lo para y se vuelve a crear al subir. Asi la lluvia no gasta CPU con cielo despejado.
+  function bucle(nom, on) {
+    const b = bucles[nom];
+    if (!b || !ctx) return;
+    if (!on) { if (!b.cero) b.cero = ctx.currentTime; return; }
+    b.cero = 0;
+    if (b.s) return;
+    const s = ctx.createBufferSource(); s.buffer = ctx._ruido; s.loop = true; s.playbackRate.value = b.rate;
+    s.connect(b.entrada); s.start(ctx.currentTime, Math.random() * 1.5); b.s = s;
+  }
+  function podarBucles() {
+    const t = ctx.currentTime;
+    for (const k in bucles) {
+      const b = bucles[k];
+      if (b.s && b.cero && t - b.cero > 7.5) { try { b.s.stop(); b.s.disconnect(); } catch (e) {} b.s = null; }
+    }
   }
   // Sonidos de la naturaleza, cada uno corto y al azar.
   function pajaro(t) {
@@ -195,13 +220,20 @@ export function crearMusica() {
     g.gain.linearRampToValueAtTime(0, fin + 0.12);
     if (dur > 0.35) {
       // Vibrato en cents (curva: sin osciladores extra que dejar vivos).
-      const largo = dur - 0.15, N = Math.max(8, Math.ceil(largo * 60)), c = new Float32Array(N);
-      for (let i = 0; i < N; i++) { const tt = i / (N - 1) * largo; c[i] = 9 * Math.min(1, tt / 0.3) * Math.sin(6.283 * 5.3 * tt); }
+      // Guardada por duracion en decimas de segundo (como mucho ~30 curvas en toda la partida).
+      const k = Math.round(dur * 10), largo = k / 10 - 0.15;
+      let c = curvas.get(k);
+      if (!c) {
+        const N = Math.max(8, Math.ceil(largo * 60)); c = new Float32Array(N);
+        for (let i = 0; i < N; i++) { const tt = i / (N - 1) * largo; c[i] = 9 * Math.min(1, tt / 0.3) * Math.sin(6.283 * 5.3 * tt); }
+        curvas.set(k, c);
+      }
       try { o.detune.setValueCurveAtTime(c, t + 0.15, largo); o2.detune.setValueCurveAtTime(c, t + 0.15, largo); } catch (e) {}
     }
     o.connect(g); o2.connect(g2); g2.connect(g); g.connect(dest);
     o.start(t); o2.start(t); o.stop(fin + 0.15); o2.stop(fin + 0.15);
-    if (aire > 0.05) {
+    // Ligera: sin capa de ruido en la melodia de fondo (el remate y el toque de fiesta, que salen por maestro, si la llevan).
+    if (aire > 0.05 && !(ligera && dest !== maestro)) {
       // Soplo: ruido en banda cerca de la nota, fuerte al atacar y luego un hilo.
       const s = ctx.createBufferSource(), bp = ctx.createBiquadFilter(), ng = ctx.createGain(), va = vol * aire;
       s.buffer = ctx._ruido; bp.type = 'bandpass'; bp.frequency.value = Math.min(9000, f * (aire > 0.5 ? 1.2 : 1.6)); bp.Q.value = aire > 0.5 ? 0.9 : 1.6;
@@ -212,6 +244,16 @@ export function crearMusica() {
   }
   // Charango: cuerdas dobles (una algo desafinada), brillo que se apaga rapido.
   function cuerda(n, t, vol, dest) {
+    if (ligera) {
+      // Una sola cuerda triangular y un filtro compartido por bus (se crea una vez): 2 nodos por nota en vez de 5.
+      let lp = dest._lpLig;
+      if (!lp) { lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 1.2; lp.frequency.value = 2600; lp.connect(dest); dest._lpLig = lp; }
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'triangle'; o.frequency.value = hz(n);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol * 1.15, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0008, t + 0.38);
+      o.connect(g); g.connect(lp); o.start(t); o.stop(t + 0.4);
+      return;
+    }
     const f = hz(n), o = ctx.createOscillator(), o2 = ctx.createOscillator(), g2 = ctx.createGain(), lp = ctx.createBiquadFilter(), g = ctx.createGain();
     o.type = 'triangle'; o.frequency.value = f; o2.type = 'sawtooth'; o2.frequency.value = f * 1.004; g2.gain.value = 0.35;
     lp.type = 'lowpass'; lp.Q.value = 1.5; lp.frequency.setValueAtTime(5200, t); lp.frequency.exponentialRampToValueAtTime(1300, t + 0.14);
@@ -220,7 +262,8 @@ export function crearMusica() {
     o.start(t); o2.start(t); o.stop(t + 0.45); o2.stop(t + 0.45);
   }
   function rasgueo(notas, t, vol, dest, abajo) {
-    const ns = abajo ? notas : notas.slice(1).reverse();   // hacia arriba solo rozan las agudas (y menos nodos en movil)
+    // Hacia arriba solo rozan las agudas (y menos nodos en movil); en ligera, solo la grave.
+    const ns = abajo ? notas : ligera ? notas.slice(0, 1) : notas.slice(1).reverse();
     ns.forEach((n, i) => cuerda(n, t + i * 0.013, vol * (1 - i * 0.12), dest));
   }
   // Golpe de ruido filtrado (parche, aro, chajchas, caja).
@@ -343,7 +386,7 @@ export function crearMusica() {
       resto = l - 1;
     }
     // Charango: rasgueo de huayno sobre el acorde.
-    if (viva('cha')) { const r = (E.fiesta ? RASG_FIESTA : RASGUEO)[p]; if (r) rasgueo(notasAcorde(E, acorde, E.raiz), t, r === 1 ? 0.05 : 0.032, bus.cha, r === 1); }
+    if (viva('cha')) { const r = (E.fiesta ? RASG_FIESTA : RASGUEO)[p]; if (r && !(ligera && E.fiesta && r !== 1)) rasgueo(notasAcorde(E, acorde, E.raiz), t, r === 1 ? 0.05 : 0.032, bus.cha, r === 1); }
     // Bombo legüero: "tum ... tum-tum" con el aro de madera en los contratiempos.
     if (viva('bom')) {
       if (p === 0) bombo(t, 0.34, bus.bom); else if (p === 8) bombo(t, 0.26, bus.bom); else if (p === 10) bombo(t, 0.16, bus.bom);
@@ -355,7 +398,7 @@ export function crearMusica() {
       const v = Math.min(1, furia), rb = notasAcorde(E, acorde, E.raiz - 24)[0];
       if (p % 4 === 0) bombo(t, 0.32 * v, combG);
       if (p === 4 || p === 12) caja(t, 0.1 * v, combG);
-      if (p % 2 === 1) chajchas(t, (p % 4 === 3 ? 0.045 : 0.025) * v, combG);
+      if (p % 2 === 1 && (!ligera || p % 4 === 3)) chajchas(t, (p % 4 === 3 ? 0.045 : 0.025) * v, combG);
       if (p % 2 === 0) bajo(rb + (p % 4 === 2 ? 12 : 0), t, d * 1.6, 0.09 * v, combG);
     }
   }
@@ -405,7 +448,7 @@ export function crearMusica() {
   }
   function programar() {
     if (!vivo || !activo) return;
-    ambiente();
+    ambiente(); podarBucles();
     const ahora = ctx.currentTime, hasta = ahora + 0.7;
     const id = idConf();
     if (!bus || bus.id !== id) cambiarBus(id);
@@ -447,6 +490,8 @@ export function crearMusica() {
     evento(id) { id = id || ''; if (id === evento) return; evento = id; if (FIESTAS[id]) toquePend = id; },
     tic,
     remate, agachar, peligro,
+    // Modo ligero (moviles flojos / resolucion dinamica): menos nodos de audio por segundo.
+    ligera(v) { ligera = !!v; },
     noche(v) { if (v === noche) return; noche = v; volumen(); },
     clima(c) { if (c === clima) return; clima = c; volumen(); },
     trueno,

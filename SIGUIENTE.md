@@ -3395,3 +3395,15 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Haz del cofre legendario y mirador que revela el mapa con % explorado.
 - Expedición en la bienvenida y «Recoger y repetir». Probador de skins con vuelta de cámara.
 - Arnés 897 bien.
+
+### Estudio 3 + QA de v340-v342 (1-nov-2026, `?v=343`)
+
+- 3 auditorías de código (regresiones mundo.js, rendimiento gama baja, servidor) + 7 estudios web → 52 hallazgos → 12 tareas.
+- musica.js modo ligero (`crearMusica({ligera})`, `musica.ligera()` desde resolucionDinamica), vibrato en caché, lluvia/viento que se paran en silencio.
+- particulas.js `uMaxPx` y `mitad()` en baja; cielo con `#define BAJA`; respaldos de shader que liberan materiales.
+- 'zona3' sin fugas, borde blanco y vibración. «Texto grande», barras aliado/enemigo, ⚔ en rivales, menos sacudida.
+- dar(): botín de evento y chicha con umbral de daño (5% en jefes) y sin bichos grises; invasión que se muda a donde hay gente.
+- Tienda de fiesta con saldo por edición y tope diario del saco; ligas por tramo de nivel; premio de liga que sobrevive a la herencia.
+- Retención por `utm_content` y D2/D3 en /mmostats.
+- Sabueso como primer jefe: presentación, respawn ≤90 s, pista tras morir. Historias en tarjetas con Releer. Reto de jefe compartible. Pueblo lleno sin tirones (histéresis de mascotas, deco liberada, vigía de NaN).
+- Arnés 897 bien.

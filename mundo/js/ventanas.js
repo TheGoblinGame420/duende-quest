@@ -23,7 +23,7 @@ import {
   pagoLocalActivo, textoSoles, YAPE_VIGENCIA_MS, premioDiaria, MISIONES,
   ORO_POR_USD, STAR_TIENDA_USD, PEN_POR_USD,
   temporadaDe, TEMPORADAS,
-} from '/mmo/js/data.js?v=342';
+} from '/mmo/js/data.js?v=343';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -1288,16 +1288,17 @@ function pintarTiendaTemp() {
   }
   const est0 = ttemp && ttemp.tp === tp.id ? ttemp : null;
   const saldo = est0 ? est0.saldo : null, comprado = est0 ? est0.comprado || [] : [];
+  const sacoHoy = est0 && typeof est0.sacoHoy === 'number' ? est0.sacoHoy : null;   // sacos de oro que quedan hoy (tope 5)
   sub.innerHTML = `<span>Tienes <b style="color:${tp.color}">${saldo === null ? '…' : fmt(saldo)} ${esc(tp.cosas)} ${tp.emoji}</b></span><span>hasta el ${esc(tp.hasta)}</span>`;
   let h = '<div class="vv-lista">';
   for (const a of tp.tienda) {
     const ya = a.una && comprado.includes(a.id);
     const desc = a.premio.titulo ? 'Exclusivo de esta fiesta: sale bajo tu nombre. Es tuyo para siempre.'
       : a.premio.tinte ? 'Tu nombre de este color en ORIGINS y CLASSIC. Es tuyo para siempre (cámbialo en la tienda).'
-      : a.premio.oroNivel ? `Ahora: ${fmt(a.premio.oroNivel * (y.nivel || 1))} de oro. Cómpralo las veces que quieras.`
+      : a.premio.oroNivel ? `Ahora: ${fmt(a.premio.oroNivel * (y.nivel || 1))} de oro. Hasta 5 por día${sacoHoy === null ? '' : `: <b>${sacoHoy ? `quedan ${sacoHoy} hoy` : 'vuelve mañana'}</b>`}.`
       : 'Para el camino. Cómpralo las veces que quieras.';
     const ico = a.premio.tinte && TINTES[a.premio.tinte] ? muestraTinte(TINTES[a.premio.tinte]) : `<span style="font-size:28px">${a.emoji}</span>`;
-    const acc = ya ? etq('✓ Ya es tuyo', 'vv-ok') : `<span class="vv-precio" style="color:${tp.color}">${tp.emoji} ${a.costo}</span>` + btn('Canjear', 'ttemp', { id: a.id, una: a.una ? '1' : '0' }, '', saldo === null || saldo < a.costo);
+    const acc = ya ? etq('✓ Ya es tuyo', 'vv-ok') : `<span class="vv-precio" style="color:${tp.color}">${tp.emoji} ${a.costo}</span>` + btn('Canjear', 'ttemp', { id: a.id, una: a.una ? '1' : '0' }, '', saldo === null || saldo < a.costo || (a.premio.oroNivel && sacoHoy === 0));
     h += tarjeta(ico, esc(a.nombre), desc, acc, ` style="--rz:${tp.color}"`);
   }
   cu.innerHTML = h + `</div><p class="vv-nota">Los monstruos sueltan ${esc(tp.cosas)} durante la fiesta (los jefes, varias). Canjear no te quita los logros: cuentan todo lo que juntaste.</p>`;

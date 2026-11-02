@@ -14,22 +14,22 @@
 export const SECUNDARIAS = [
   // ── Bosque de la Larga Noche ──
   { id: 'n1', zona: 'noche', nv: 2, quien: 'Abuela Sisa', nombre: 'Linternas para el pueblo', tipo: 'recoger', n: 4,
-    pide: 'Recoge 4 plantas o vetas del bosque', inicio: 'Las linternas del pueblo se apagan una a una. Tráeme lo que encuentres entre los árboles y haré aceite de hierba duende.', fin: 'Las linternas vuelven a brillar. Mientras quede una encendida, los goblins no entran al pueblo.', premio: { xp: 0.4, oro: 40, mat: { hierba: 2 } } },
+    pide: 'Recoge 4 plantas o vetas del bosque', inicio: 'Las linternas del pueblo se apagan una a una. Tráeme lo que encuentres entre los árboles y haré aceite de hierba duende.', fin: 'Las linternas vuelven a brillar. Mientras quede una encendida, los goblins no entran al pueblo.', sigue: 'Aunque anoche, junto a las ollas de chicha, oí pasos chiquitos… y un cuchillo que brillaba.', premio: { xp: 0.4, oro: 40, mat: { hierba: 2 } } },
   { id: 'n2', zona: 'noche', nv: 4, quien: 'Abuela Sisa', nombre: 'El que roba las ollas', tipo: 'caza', k: 'goblin_assassin', n: 5,
     pide: 'Derrota a 5 Goblins Asesinos', inicio: 'Alguien se lleva las ollas de chicha que dejamos al fresco. Huellas pequeñas, cuchillos grandes: asesinos goblin.', fin: 'Encontraste las ollas… vacías, pero enteras. Ya podremos llenarlas otra vez.', premio: { xp: 0.5, oro: 60 } },
   // ── Colinas Rojas del Amanecer ──
   { id: 'a1', zona: 'amanecer', nv: 7, quien: 'Tayta Mallku', nombre: 'Maizales en llamas', tipo: 'caza', k: 'goblin_peasant', n: 6,
-    pide: 'Derrota a 6 Goblins Campesinos', inicio: 'Los campesinos goblin queman los últimos maizales. Sin maíz no hay chicha, y sin chicha no hay mañana.', fin: 'El humo se va. Entre la ceniza quedaron mazorcas moradas sanas: guárdalas, valen oro.', premio: { xp: 0.4, oro: 70, mat: { hierba: 3 } } },
+    pide: 'Derrota a 6 Goblins Campesinos', inicio: 'Los campesinos goblin queman los últimos maizales. Sin maíz no hay chicha, y sin chicha no hay mañana.', fin: 'El humo se va. Entre la ceniza quedaron mazorcas moradas sanas: guárdalas, valen oro.', sigue: 'Pero el maíz quemado ya no se siembra. Pronto necesitaré semillas nuevas para volver a sembrar.', premio: { xp: 0.4, oro: 70, mat: { hierba: 3 } } },
   { id: 'a2', zona: 'amanecer', nv: 9, quien: 'Tayta Mallku', nombre: 'Semillas para sembrar', tipo: 'recoger', n: 5,
     pide: 'Recoge 5 plantas o vetas de las colinas', inicio: 'Si volvemos a sembrar, el amanecer volverá. Busca entre las rocas rojas todo lo que crezca.', fin: 'Sembramos al pie de la Roca del Alba. Dicen que esta mañana el sol tardó un poco menos.', premio: { xp: 0.5, oro: 80, mat: { mineral: 3 } } },
   // ── Selva Esmeralda ──
   { id: 's1', zona: 'selva', nv: 13, quien: 'Chamán Amaru', nombre: 'Esporas en la chicha', tipo: 'caza', k: 'hongo', n: 6,
-    pide: 'Derrota a 6 Hongos Gigantes', inicio: 'Los hongos beben la chicha derramada y crecen como torres. Sus esporas enferman a los viajeros.', fin: 'El aire se limpia. Con sus sombreros secos preparo un remedio para tus heridas.', premio: { xp: 0.4, oro: 90, mat: { hierba: 4 } } },
+    pide: 'Derrota a 6 Hongos Gigantes', inicio: 'Los hongos beben la chicha derramada y crecen como torres. Sus esporas enferman a los viajeros.', fin: 'El aire se limpia. Con sus sombreros secos preparo un remedio para tus heridas.', sigue: 'Mientras limpiabas, la Semilla Madre brilló un instante. Creo que quiere decirnos algo.', premio: { xp: 0.4, oro: 90, mat: { hierba: 4 } } },
   { id: 's2', zona: 'selva', nv: 15, quien: 'Chamán Amaru', nombre: 'La receta perdida', tipo: 'fabricar', n: 1, k: 'chichaE',
     pide: 'Prepara una Chicha Morada del Duende con la Artesana Lila', inicio: 'La Semilla Madre guarda la receta original: maíz morado, hierbas y una flor que brilla de noche. Llévasela a Lila.', fin: 'Es la primera chicha de verdad desde que se rompió el Cántaro. Bébela: hoy cazas con más fuerza.', premio: { xp: 0.6, oro: 120, mat: { flor: 1 } } },
   // ── Picos Tormenta ──
   { id: 't1', zona: 'tormenta', nv: 19, quien: 'Herrera Coya', nombre: 'Rayos robados', tipo: 'caza', k: 'goblin_mage', n: 6,
-    pide: 'Derrota a 6 Goblins Magos', inicio: 'Los magos goblin roban rayos del cielo partido para sus bastones. Mi fragua necesita esa chispa.', fin: 'Sin sus bastones, la tormenta amaina un poco. Toma este mineral cargado: forja algo digno.', premio: { xp: 0.4, oro: 140, mat: { mineral: 5 } } },
+    pide: 'Derrota a 6 Goblins Magos', inicio: 'Los magos goblin roban rayos del cielo partido para sus bastones. Mi fragua necesita esa chispa.', fin: 'Sin sus bastones, la tormenta amaina un poco. Toma este mineral cargado: forja algo digno.', sigue: 'Esa chispa no basta para algo que dure. Me falta un metal que solo nace donde cae el rayo.', premio: { xp: 0.4, oro: 140, mat: { mineral: 5 } } },
   { id: 't2', zona: 'tormenta', nv: 21, quien: 'Herrera Coya', nombre: 'Metal del cielo', tipo: 'recoger', n: 6,
     pide: 'Recoge 6 plantas o vetas de los picos', inicio: 'Donde cae el rayo, el hierro se vuelve más duro. Busca vetas entre las rocas quemadas.', fin: 'Este metal canta cuando lo golpeas. Con él se forjan armas que no se rompen.', premio: { xp: 0.5, oro: 160, mat: { cristal: 1 } } },
   // ── Desierto Dorado ──

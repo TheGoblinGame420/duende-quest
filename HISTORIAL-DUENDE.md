@@ -79,6 +79,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v340 | ORIGINS: música andina por zona con combate y fiestas, sonidos posicionales, cielo y agua vivos, efectos por zona, personajes que respiran, lore de mitos peruanos | **B** |
 | v341 | Estudio de juegos de referencia: golpes con peso, gestos, invasiones con aviso, meta comunitaria, protector de racha, grupo tras cazar juntos, fiesta en el pueblo | **B** |
 | v342 | Segundo estudio: mascota en 3D, probador de skins, tienda de la fiesta, jefes con pisotón esquivable, ligas semanales, miradores, foto para presumir | **B** |
+| v343 | Estudio 3 + QA: primer jefe como acontecimiento, texto grande, ligas por nivel, historias en tarjetas, reto de jefe, tienda de fiesta sin abusos, modo ligero | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

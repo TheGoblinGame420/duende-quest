@@ -559,15 +559,17 @@ function textoVentasDetalle(r) {
 // y campaña). Las Stars del arcade no cuentan: solo la tienda del MMO.
 function textoAnuncios(r) {
   const a = r.anuncios;
-  if (!a || (!Object.keys(a.porSrc || {}).length && !(a.camps || []).length)) return '';
+  if (!a || (!Object.keys(a.porSrc || {}).length && !(a.camps || []).length && !(a.ads || []).length)) return '';
   const nom = { meta: 'Meta', tg: 'Telegram', wa: 'WhatsApp', ref: 'Invitación' };
   const usd = v => v === null || v === undefined ? '—' : '$' + String(v).replace('.', ',');
   const x = v => v === null || v === undefined ? '—' : String(v).replace('.', ',') + 'x';
   const pc = v => v === null || v === undefined ? '—' : String(v).replace('.', ',') + '%';
   const dm = d => d.slice(8, 10) + '/' + d.slice(5, 7);
-  const filas = Object.entries(a.porSrc || {}).map(([k, e]) => `${nom[k] || k} 7d: gasto ${usd(e.gasto)} · altas ${e.altas} · CPI ${usd(e.cpi)} · D1 ${pc(e.d1)} · ARPU D7 ${usd(e.arpu)} · ROAS D7 ${x(e.roas)}`);
-  const camps = (a.camps || []).map(e => `  · ${e.camp}: gasto ${usd(e.gasto)} · altas ${e.altas} · CPI ${usd(e.cpi)} · ARPU D7 ${usd(e.arpu)} · ROAS D7 ${x(e.roas)}`);
-  return `📣 Anuncios (altas del ${dm(a.desde)} al ${dm(a.hasta)}; gasto anotado con /gasto):\n${filas.join('\n')}${camps.length ? '\nPor campaña:\n' + camps.join('\n') : ''}\n(ARPU y ROAS D7 = compras de la tienda del MMO entregadas, hechas en sus 7 primeros días; aún crecen. Las Stars del arcade no cuentan.)\n\n`;
+  const filas = Object.entries(a.porSrc || {}).map(([k, e]) => `${nom[k] || k} 7d: gasto ${usd(e.gasto)} · altas ${e.altas} · CPI ${usd(e.cpi)} · D1 ${pc(e.d1)} · D3 ${pc(e.d3)} · ARPU D7 ${usd(e.arpu)} · ROAS D7 ${x(e.roas)}`);
+  const camps = (a.camps || []).map(e => `  · ${e.camp}: gasto ${usd(e.gasto)} · altas ${e.altas} · CPI ${usd(e.cpi)} · D1 ${pc(e.d1)} · D3 ${pc(e.d3)} · ARPU D7 ${usd(e.arpu)} · ROAS D7 ${x(e.roas)}`);
+  // Por anuncio (utm_content): que video trae gente que VUELVE, no solo clics.
+  const ads = (a.ads || []).map(e => `  · ${e.ad}: altas ${e.altas} · D1 ${pc(e.d1)}${e.d1base ? ` (${e.d1n}/${e.d1base})` : ''} · D3 ${pc(e.d3)}${e.d3base ? ` (${e.d3n}/${e.d3base})` : ''}`);
+  return `📣 Anuncios (altas del ${dm(a.desde)} al ${dm(a.hasta)}; gasto anotado con /gasto):\n${filas.join('\n')}${camps.length ? '\nPor campaña:\n' + camps.join('\n') : ''}${ads.length ? '\nPor anuncio (utm_content, altas de 14 días): altas · D1 · D3\n' + ads.join('\n') : ''}\n(D3 = volvieron al 3er día: con 20+ altas por anuncio sirve para pausar o escalar. ARPU y ROAS D7 = compras de la tienda del MMO entregadas, hechas en sus 7 primeros días; aún crecen. Las Stars del arcade no cuentan.)\n\n`;
 }
 
 // /mmostats, por origen (/js/origen.js): altas y embudo de 14 dias con su
@@ -577,7 +579,7 @@ function textoOrigenes(r) {
   const pc = x => !x || x.pct === null ? '—' : String(x.pct).replace('.', ',') + '%';
   let t = '';
   const o = r.origenes || {};
-  const filas = Object.keys(NOMBRE_ORIGEN).filter(k => o[k]).map(k => `${NOMBRE_ORIGEN[k]}: altas ${o[k].n} · c1 ${o[k].c1} · m1 ${o[k].m1} · n5 ${o[k].n5} · D1 ${pc(o[k].d1)} · D7 ${pc(o[k].d7)}`);
+  const filas = Object.keys(NOMBRE_ORIGEN).filter(k => o[k]).map(k => `${NOMBRE_ORIGEN[k]}: altas ${o[k].n} · c1 ${o[k].c1} · m1 ${o[k].m1} · n5 ${o[k].n5} · D1 ${pc(o[k].d1)} · D2 ${pc(o[k].d2)} · D3 ${pc(o[k].d3)} · D7 ${pc(o[k].d7)}`);
   if (filas.length) t += `🎯 Por origen (altas de 14 días):\n${filas.join('\n')}\n\n`;
   const c = r.carga && r.carga.por ? r.carga.por : {};
   const PASOS = [['carga_ini', 'abre'], ['arte_ok', 'carga'], ['form_visto', 'formulario'], ['clic_entrar', 'clic'], ['bienvenido', 'dentro'], ['mover', 'se mueve']];
@@ -585,7 +587,7 @@ function textoOrigenes(r) {
     const p = c[k].pasos, base = p.carga_ini;
     const pm = base ? Math.round((p.mover || 0) / base * 100) : 0;
     const m20 = c[k].movil20 ? ` · móvil clic→mover ≤20 s: ${pc(c[k].movil20)} (mediana ${c[k].movil20.mediana})` : '';
-    return `${NOMBRE_ORIGEN[k]}: ${PASOS.map(([e, n]) => `${n} ${p[e] || 0}`).join(' → ')} (${pm}% se mueve) · se van ${p.oculta || 0} · sin 3D ${p.fallo_webgl || 0}${p.t_hab || p.t_volar || p.t_fin ? ` · tutorial: habilidad ${p.t_hab || 0} → alas (solo 3D) ${p.t_volar || 0} → fin ${p.t_fin || 0}` : ''}${m20}`;
+    return `${NOMBRE_ORIGEN[k]}: ${PASOS.map(([e, n]) => `${n} ${p[e] || 0}`).join(' → ')} (${pm}% se mueve) · se van ${p.oculta || 0} · sin 3D ${p.fallo_webgl || 0}${p.t_hab || p.t_volar || p.t_fin ? ` · tutorial: habilidad ${p.t_hab || 0} → alas (solo 3D) ${p.t_volar || 0} → fin ${p.t_fin || 0}` : ''}${p.mis_0 || p.jefe1_ver ? ` · misiones (3D) ${['mis_0', 'mis_1', 'mis_2', 'mis_3', 'mis_4', 'mis_5'].map(e => p[e] || 0).join('→')} · 1er jefe: lo ve ${p.jefe1_ver || 0}, muere ${p.jefe1_muere || 0}, lo vence ${p.jefe1_ok || 0}` : ''}${m20}`;
   });
   if (cf.length) t += `🚪 Carga del juego (7 días, sesiones):\n${cf.join('\n')}\n\n`;
   return t;
@@ -608,7 +610,7 @@ function textoMmoStats(r) {
   const a = r.activos, t = r.tipos30;
   const tramos = Object.entries(r.niveles30).sort((x, y) => parseInt(x[0]) - parseInt(y[0])).map(([k, v]) => `Nv ${k}: ${v}`).join(' · ') || '—';
   const altas = r.altas.map(x => `${dm(x.dia)} ${x.n}`).join(' · ');
-  const cohortes = r.cohortes.slice(0, 10).map(x => `${dm(x.dia)}: ${x.n} alta${x.n === 1 ? '' : 's'} → D1 ${dato(x.d1)} · D7 ${dato(x.d7)} · D30 ${dato(x.d30)}`).join('\n') || 'Aún no hay altas registradas.';
+  const cohortes = r.cohortes.slice(0, 10).map(x => `${dm(x.dia)}: ${x.n} alta${x.n === 1 ? '' : 's'} → D1 ${dato(x.d1)}${x.d2 !== undefined && x.d2 !== null ? ` · D2 ${x.d2}` : ''}${x.d3 !== undefined && x.d3 !== null ? ` · D3 ${x.d3}` : ''} · D7 ${dato(x.d7)} · D30 ${dato(x.d30)}`).join('\n') || 'Aún no hay altas registradas.';
   const top = r.top.map((x, i) => `${i + 1}. ${String(x.n || '?').slice(0, 20)} — Nv ${x.lv}`).join('\n') || '—';
   return `📊 DUENDE QUEST ONLINE — retención (${r.hoy}, días de Lima)\n\n` +
     `👥 Activos: hoy ${a.hoy} · 7 días ${a.d7} · 30 días ${a.d30} (en línea ahora: ${r.online})\n` +
@@ -621,7 +623,7 @@ function textoMmoStats(r) {
     (r.invitaciones && r.invitaciones.refLlega ? `🤝 Invitados por enlace (14 días): llegan ${r.invitaciones.refLlega} · con cuenta ${r.invitaciones.refCuenta} · premio Nv 10 ${r.invitaciones.refPagado} · llegan a Nv 10 ${r.invitaciones.n10pct != null ? r.invitaciones.n10pct + '%' : '—'} (resto ${r.invitaciones.n10restoPct != null ? r.invitaciones.n10restoPct + '%' : '—'})\n\n` : '') +
     textoOrigenes(r) + textoAnuncios(r) +
     `🔁 Retención (últimas 30 cohortes con el día ya cumplido):\n` +
-    `D1: ${ret(r.retencion.d1)}\nD7: ${ret(r.retencion.d7)}\nD30: ${ret(r.retencion.d30)}\n\n` +
+    `D1: ${ret(r.retencion.d1)}\n${r.retencion.d3 && r.retencion.d3.base ? `D2: ${ret(r.retencion.d2)}\nD3: ${ret(r.retencion.d3)}\n` : ''}D7: ${ret(r.retencion.d7)}\nD30: ${ret(r.retencion.d30)}\n\n` +
     `📅 Cohortes recientes (cuántos volvieron ese día exacto; … = aún no llega):\n${cohortes}\n\n` +
     `🏆 Top niveles:\n${top}\n\n` +
     (r.salud ? `🩺 Servidor hoy: ${r.salud.escrituras.toLocaleString('es')} escrituras de ${r.salud.cupo.toLocaleString('es')} (${String(r.salud.pct).replace('.', ',')}%)` +
