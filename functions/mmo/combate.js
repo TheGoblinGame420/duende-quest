@@ -628,9 +628,14 @@ export const Combate = {
     // Ayni: quien levanta a otro jugador (sesion real, no la Torre ni uno mismo) suma +1, como mucho 5 al dia (Lima).
     if (de && de.c && de.c.uid && a.c.uid && de.c.uid !== a.c.uid && this.sesiones.get(de.id) === de) {
       const hoy = hoyUTC();
-      if (!de.c.resDia || de.c.resDia.d !== hoy) de.c.resDia = { d: hoy, n: 0 };
-      if (de.c.resDia.n < 5) {
+      if (!de.c.resDia || de.c.resDia.d !== hoy || !Array.isArray(de.c.resDia.u)) de.c.resDia = { d: hoy, n: (de.c.resDia && de.c.resDia.d === hoy ? de.c.resDia.n : 0) || 0, u: [] };
+      // Cada jugador levantado cuenta una vez al dia; no vale tu otra cuenta (mismo telefono/IPv6) ni un invitado Nv 1.
+      const u = de.c.resDia.u;
+      const mismoDisp = (de.dev && de.dev === a.dev) || (de.ip && de.ip.includes(':') && de.ip === a.ip);
+      const invNv1 = a.c.uid.startsWith('inv:') && (a.c.nivel || 1) < 2;
+      if (de.c.resDia.n < 5 && !u.includes(a.c.uid) && !mismoDisp && !invNv1) {
         de.c.resDia.n++;
+        u.push(a.c.uid);
         de.c.ayni = (de.c.ayni || 0) + 1;
         de.sucio = true;
         this.enviar(de, { t: 'toast', ok: true, m: `🤝 Ayni +1: levantaste a ${a.c.nombre}` });

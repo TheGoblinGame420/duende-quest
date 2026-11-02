@@ -171,7 +171,7 @@ export const Social = {
       r.unshift({ pub: pb, nombre: b.c.nombre, t: ahora });
       if (r.length > 10) r.length = 10;
       // Ayni: el veterano (a) que caza junto a un novato (b, Nv 12 o menos, 5+ niveles menos) y ambos pegaron.
-      if (pego(a) && pego(b) && (a.c.nivel || 1) >= (b.c.nivel || 1) + 5 && (b.c.nivel || 1) <= 12) this.ayniCaza(a, b, o, ahora);
+      if (pego(a) && pego(b) && this.mismoGrupo(a, b) && (a.c.nivel || 1) >= (b.c.nivel || 1) + 5 && (b.c.nivel || 1) <= 12) this.ayniCaza(a, b, o, ahora);
       if (a.gid || b.gid || novato(a) || novato(b) || !pego(a) || !pego(b)) continue;
       const co = a.coop || (a.coop = new Map());
       let e = co.get(b.c.uid);
@@ -191,6 +191,9 @@ export const Social = {
   // Ayni (ayuda mutua andina): premio al veterano que ayuda a un novato y un empujon de XP al novato.
   // Una vez por pareja cada 10 min; el veterano cobra como mucho 10 al dia (dia de Lima). Solo oro del juego.
   ayniCaza(a, b, o, ahora) {
+    // Mismo telefono o misma IPv6: es la misma persona con dos cuentas, no hay ayni.
+    const mismoDisp = (a.dev && a.dev === b.dev) || (a.ip && a.ip.includes(':') && a.ip === b.ip);
+    if (mismoDisp) return;
     const par = this.ayniPar || (this.ayniPar = new Map());
     const clave = a.c.uid + '|' + b.c.uid;
     if (ahora - (par.get(clave) || 0) < 10 * 60000) return;
@@ -201,7 +204,9 @@ export const Social = {
     if (c.ayniDia.n < 10) {
       c.ayniDia.n++;
       c.ayni = (c.ayni || 0) + 1;
-      const oro = Math.max(1, (b.c.nivel || 1) * 2);
+      // Oro a la medida del veterano (como dos presas comunes suyas: 2 x (2+2L)), no del novato.
+      // Sin el x25 de jefe de statsMonstruo: cazar un jefe con un novato no paga miles de oro.
+      const oro = 4 + 4 * (c.nivel || 1);
       c.oro = (c.oro || 0) + oro;
       a.sucio = true;
       if (this.yoLuego) this.yoLuego(a, false);
@@ -213,7 +218,7 @@ export const Social = {
     const subio = this.sumarXp(b, xp);
     b.sucio = true;
     if (this.yoLuego) this.yoLuego(b, subio);
-    this.enviar(b, { t: 'toast', ok: true, m: `🤝 ${a.c.nombre} te echó una mano (+${xp} exp)` });
+    this.enviar(b, { t: 'toast', ok: true, m: `🤝 ${a.c.nombre} te echó una mano (+${xp} XP)` });
   },
 
   salirGrupo(s, motivo) {

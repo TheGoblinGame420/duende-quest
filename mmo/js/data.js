@@ -504,15 +504,24 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 352;
+export const VERSION = 353;
 
 export const NOVEDADES = [
+  { n: 121, fecha: '2 nov 2026', items: [
+    'En el celular la cámara ya no da vueltas al mover el joystick de lado, y la de combate gira suave hacia tu enemigo.',
+    'El primer minuto es más tranquilo: los avisos esperan a que termines el tutorial.',
+    'Al compartir tu bestiario, el link lleva tu código de amigo.',
+    'CLASSIC ya no recibe avisos de ORIGINS y tiene su propio ajuste de vibración.',
+    'El Ayni y el Duende Ladrón son más justos: el oro va a quien ayuda de verdad y el Ladrón aguanta para que todos alcancen a sacarle monedas.',
+    'Los diálogos muestran el retrato, Saltar cierra al primer toque y en PC se manejan con Espacio, Enter, E o Escape.',
+    'Sonido de fiesta para el Sello de zona, resucitar, el Duende Ladrón y el Ayni.',
+  ] },
   { n: 120, fecha: '2 nov 2026', items: [
     '🎥 En combate, la cámara deja al enemigo a la vista cuando estás quieto, y con jefes o peleas grandes se aleja para que veas todo.',
     '🏮 De noche, los faroles del pueblo echan luz cálida en el suelo y tu duende lleva su farolito; nuevo ajuste «Brillo de noche».',
     '📖 Álbum de monstruos en Logros con estrellas, historias y pistas; la primera caza de cada monstruo se celebra y cada zona tiene su Sello de Cazador.',
     '💰 ¡Ojo con el Duende Ladrón! Cada golpe suelta monedas y si lo atrapas en 60 s ganas premio.',
-    '🤝 Ayni: ayudar a novatos o levantar a otro jugador da puntos y oro. Nuevo 📍 para marcar adónde ir y «🆘 Pedir ayuda» si caes.',
+    '🤝 Ayni: ayudar a novatos de tu grupo da puntos y oro, y levantar a otro jugador suma puntos. Nuevo 📍 para marcar adónde ir y «🆘 Pedir ayuda» si caes.',
     'Los monstruos dan un respingo al descubrirte, los personajes se inclinan al correr y giran la cabeza; flechas en el borde avisan de quién te persigue.',
     'Los NPC hablan con su retrato y te dicen «¿Qué hago ahora?»; toca a otro jugador y «👀 Probar su look».',
   ] },
@@ -635,7 +644,7 @@ export const NOVEDADES = [
     'Si te quedas dormido con el AUTO prendido, se pausa solo a los 15 minutos. Desde el arcade puedes saltar al juego online con «🌍 JUGAR ONLINE».',
   ] },
   { n: 105, fecha: '1 nov 2026', items: [
-    "🎃 Último día de la Noche de Duendes: disfraces de mascota 25% más baratos hasta medianoche. ¡Mañana 3 de noviembre empieza la Semana de la T'anta Wawa!",
+    "🎃 Último día de la Noche de Duendes: disfraces de mascota 25% más baratos hasta la medianoche de Perú. ¡Mañana 3 de noviembre empieza la Semana de la T'anta Wawa!",
     'En ORIGINS, con el AUTO tu duende espera a que salgan más monstruos y sigue solo, y toma una poción cuando su vida baja del 30 %.',
     'En la pantalla de carga de ORIGINS puedes tocar «🔇 Jugar sin sonido», ideal en el bus. En Telegram la carga aparece al instante.',
     'En el celular en vertical, la tienda usa casi toda la pantalla y la ficha del monstruo ya no tapa tu vida.',

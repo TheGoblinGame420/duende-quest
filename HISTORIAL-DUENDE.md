@@ -89,6 +89,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v350 | Estudio 5: suerte del duende, cofres semanales, calendario de la fiesta, jefes con fase 2, élites con afijo, corrientes, libreta de pesca | **B** |
 | v351 | Ronda 20: inicio justo hasta Nv 8, élites a medida, aviso de jefe para la presa, tarea de la fiesta visible, ventanas que esperan, pesca con sonido | **B** |
 | v352 | Estudio 6: cámara de combate, faroles de noche, álbum y sellos, Duende Ladrón, Ayni, marca 📍, animación viva, diálogos con retrato | **B** |
+| v353 | Ronda 22: cámara móvil sin vueltas, primer minuto sin ruido, Ayni y Ladrón justos, CLASSIC sin avisos de ORIGINS, diálogos con teclado | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

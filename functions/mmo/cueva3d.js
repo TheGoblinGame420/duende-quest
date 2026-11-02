@@ -225,6 +225,6 @@ export const Cueva3D = {
       nombres.push(c.nombre);
     }
     this.aCueva(inst, { t: 'cofre3' });
-    if (nombres.length) this.aTodos({ t: 'aviso', m: `👑 El Rey Goblin cayó en la ${CUEVA.nombre}: ${nombres.join(', ')}.` });
+    if (nombres.length) { const av = { t: 'aviso', m: `👑 El Rey Goblin cayó en la ${CUEVA.nombre}: ${nombres.join(', ')}.` }; this.a3d ? this.a3d(av) : this.aTodos(av); }
   },
 };

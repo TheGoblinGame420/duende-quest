@@ -81,7 +81,7 @@ export const Temporada = {
         const ganador = sc.luz > sc.sombra ? 'luz' : sc.sombra > sc.luz ? 'sombra' : null;
         const top = Object.entries(F.l).filter(([, x]) => x.p > 0).sort((a, b) => b[1].p - a[1].p).slice(0, 3);
         F.hist = [{ mes: viejo, ganador, sc, top: top.map(([uid]) => uid), tops: top.map(([, x]) => ({ n: x.n, f: x.f, p: x.p })) }, ...(F.hist || [])].slice(0, 4);
-        if (this.aTodos) this.aTodos({ t: 'aviso', m: ganador ? `🏆 Termina la Temporada del Abismo ${viejo}: ¡ganan los ${FACCIONES[ganador].titulo}! Entra para cobrar tus premios.` : `🏆 Termina la Temporada del Abismo ${viejo} en empate. Entra para cobrar tus premios.` });
+        if (this.a3d || this.aTodos) this[this.a3d ? 'a3d' : 'aTodos']({ t: 'aviso', m: ganador ? `🏆 Termina la Temporada del Abismo ${viejo}: ¡ganan los ${FACCIONES[ganador].titulo}! Entra para cobrar tus premios.` : `🏆 Termina la Temporada del Abismo ${viejo} en empate. Entra para cobrar tus premios.` });
       }
       F.mes = mes; F.pts = vacioF(); F.as = vacioF(); F.l = {};
       this.guardarFacc();

@@ -3517,3 +3517,15 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - «Probar su look» y soles primero en la tienda web. Diálogos con retrato, máquina de escribir y respuestas rápidas.
 - Flechas de amenaza fuera de cámara y ajuste de vibración (Normal/Suave/Apagada, también en CLASSIC).
 - Arnés 905 bien.
+
+### Ronda 22 (2-nov-2026, `?v=353`)
+
+- 14 evaluadores → 65 problemas → 10 tareas.
+- Muerte: chip del Pack de bienvenida de vuelta y «🆘 Pedir ayuda» solo con grupo o jugadores cerca.
+- Fiesta: el revisor corrigió una premisa falsa (los eventos terminan a medianoche de Lima: `tp.fin` desplazado con `DIA_DESFASE_MS`); quedan «medianoche (hora de Perú)» en world.js, ventanas.js, client.js y NOVEDADES; clave del aviso `tpAvisoD = día + id`.
+- Cámara móvil: solo sigue con empuje hacia adelante; cámara de combate con histéresis y espera (1,5 s móvil / 4 s PC) y sin ventanas abiertas.
+- Primer minuto sin ruido; diario y encargos tras la misión 1.
+- Bestiario compartible con código de amigo. CLASSIC sin banners de ORIGINS; HUD claro; vibración Normal/Suave/Apagada en CLASSIC.
+- Ayni: solo a novatos de tu grupo, oro según nivel, resucitar 1 vez por persona al día. Duende Ladrón con tropiezo y aguante; sin oro para quien supera mucho la zona.
+- Diálogos: retrato, Saltar al primer toque, teclado. Sonidos de celebración.
+- Arnés 905 bien.

@@ -251,10 +251,11 @@ export const Eventos3D = {
   // Se aleja del jugador mas cercano (a menos de 25 m) a 1,2 x su paso normal, sin salir de su zona ni meterse al agua.
   huirLadron3d(o, jug) {
     if (this.auraMon(o, 'aturdido') || this.auraMon(o, 'oveja') || this.auraMon(o, 'raiz')) { o.st = 0; return; }
+    if (Date.now() < (o.tropiezo || 0)) { o.st = 0; return; }   // tropieza 0,4 s tras cada golpe
     let cerca = null, dm = 25;
     for (const s of jug) { const d = dist(s.p, o); if (d < dm) { dm = d; cerca = s; } }
     if (!cerca) { o.st = 0; return; }
-    const paso = 4.2 * (o.vel || 1) * 1.2 * 0.1;   // mismo paso que ia3d (4,2 x vel por s, tick de 100 ms) x 1,2
+    const paso = Math.min(4.2 * (o.vel || 1) * 1.2, 5.6) * 0.1;   // paso de ia3d (4,2 x vel por s, tick de 100 ms) x 1,2, tope 5,6 m/s
     const base = Math.atan2(o.z - cerca.p.z, o.x - cerca.p.x);
     for (const giro of [0, 0.6, -0.6, 1.2, -1.2, 1.8, -1.8]) {
       const a = base + giro, nx = clamp(o.x + Math.cos(a) * paso, -MUNDO.limite, MUNDO.limite), nz = clamp(o.z + Math.sin(a) * paso, -MUNDO.limite, MUNDO.limite);
@@ -267,9 +268,14 @@ export const Eventos3D = {
   // Cada golpe suelta oro (2 x su nivel), hasta 15 golpes pagados por jugador.
   golpeLadron3d(o, s) {
     if (!s || !s.c || !o.ex3 || !o.ex3.ladron) return;
-    const p = o.ex3.pagos || (o.ex3.pagos = {}), n = p[s.id] || 0;
+    o.tropiezo = Date.now() + 400;
+    // Muy por encima de la zona (mas de 8 niveles sobre su tope): el golpe frena al ladron pero no suelta oro.
+    const mp = MAPAS[o.mapa];
+    if (mp && mp.nv && (s.c.nivel || 1) > mp.nv[1] + 8) return;
+    // Tope por cuenta (uid), no por conexion: recargar la pagina no reinicia los 15 golpes.
+    const p = o.ex3.pagos || (o.ex3.pagos = {}), n = p[s.c.uid] || 0;
     if (n >= LADRON_GOLPES) return;
-    p[s.id] = n + 1;
+    p[s.c.uid] = n + 1;
     const oro = 2 * o.nv;
     s.c.oro += oro; s.sucio = true;
     this.enviar(s, { t: 'gana', xp: 0, oro, drops: [], lad: 1 });   // lad: solo monedas (el cliente no lo cuenta como una baja)
@@ -281,13 +287,14 @@ export const Eventos3D = {
     for (const [sid, v] of o.dano) {
       const s = this.sesiones.get(sid);
       if (!s || !s.c || !s.m3 || v < total * 0.1 || dist(s.p, o) > 80) continue;
-      const oro = o.nv * 20;
+      const mp = MAPAS[o.mapa], alto = !!(mp && mp.nv && (s.c.nivel || 1) > mp.nv[1] + 8);
+      const oro = alto ? 0 : o.nv * 20;   // un veterano muy por encima de la zona no se lleva el oro del ladron
       s.c.oro += oro;
       s.c.pw = s.c.pw || {}; s.c.pw.pocion = Math.min(99, (s.c.pw.pocion || 0) + 2);
       const it = Math.random() < 0.35 ? this.darItem(s, this.generarItem(Math.min(o.nv, s.c.nivel), 1)) : null;
       s.sucio = true;
       this.enviar(s, { t: 'gana', xp: 0, oro, drops: [], item: it || undefined });
-      this.enviar(s, { t: 'toast', ok: true, m: `💰 ¡Atrapaste al Duende Ladrón! +${oro} oro · +2 pociones${it ? ' · ' + RAREZAS[it.r].nombre + ': ' + nombreItem(it) : ''}` });
+      this.enviar(s, { t: 'toast', ok: true, m: `💰 ¡Atrapaste al Duende Ladrón! ${oro ? '+' + oro + ' oro' : 'Sin oro (zona muy baja para tu nivel)'} · +2 pociones${it ? ' · ' + RAREZAS[it.r].nombre + ': ' + nombreItem(it) : ''}` });
       this.yoLuego(s, true);
       nombres.push(s.c.nombre);
     }

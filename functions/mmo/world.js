@@ -926,12 +926,12 @@ export class MmoWorld {
     // Meta «Entre todos» (barra de la ventana del evento): en cada hola.
     const tgI = tp ? this.tgInfo() : null;
     if (tgI) this.enviar(s, { t: 'tempG', tg: tgI });
-    if (tp && c.tpAvisoD !== diaT) {
-      c.tpAvisoD = diaT; s.sucio = true;
+    if (tp && c.tpAvisoD !== diaT + tp.id) {
+      c.tpAvisoD = diaT + tp.id; s.sucio = true;
       const ultimo = tp.fin - ahoraT < 86400000;
-      const hasta = ultimo ? 'HOY a medianoche (¡último día!)' : 'el ' + tp.hasta;
+      const hasta = ultimo ? 'HOY a medianoche (hora de Perú, ¡último día!)' : 'el ' + tp.hasta;
       const dto = tp.descuento && ultimo ? ` Los disfraces de la mascota cuestan ${Math.round(tp.descuento * 100)}% menos de oro en la tienda solo hasta esta noche.` : '';
-      // Ultimo dia: avisa del saldo sin canjear (a medianoche deja de valer).
+      // Ultimo dia: avisa del saldo sin canjear (tp.fin es las 00:00 de Lima: a medianoche deja de valer).
       let pierde = '';
       if (ultimo) {
         this.edicionTemp(c, tp);

@@ -97,6 +97,7 @@ export const Mundo3D = {
     if (s.i3 && W.cuevas) { const inst = W.cuevas.get(s.i3); if (inst) inst.dentro.delete(s.id); }
   },
   sesiones3d() { const l = []; for (const s of this.sesiones.values()) if (s.c && s.m3 && !s.cerrado) l.push(s); return l; },
+  a3d(obj) { const t = JSON.stringify(obj); for (const s of this.sesiones3d()) this.enviar(s, t); },
 
   // ── ENTRAR ──
   entrar3d(s) {
@@ -411,6 +412,7 @@ export const Mundo3D = {
       // Castigarlo mientras esta expuesto le baja la Furia (jefes de zona).
       if (o.furia > 0) o.furia--;
     }
+    if (o.ex3 && o.ex3.ladron) dmg = Math.min(dmg, Math.ceil(o.max / 12));   // el Duende Ladron aguanta 12+ golpes: un veterano no lo borra de uno
     if (s && s.dios && s.diosModo && s.diosModo.golpe) dmg = Math.ceil(o.hp);
     dmg = Math.min(dmg, Math.ceil(o.hp));
     o.hp -= dmg;
@@ -517,7 +519,7 @@ export const Mundo3D = {
     else if (o.ex3 && o.ex3.cap) { /* el aviso lo da la invasion */ }
     else if (o.jefe) {
       const quien = [...cobraron].map(id => this.sesiones.get(id)?.c?.nombre).filter(Boolean).slice(0, 4).join(', ');
-      this.aTodos({ t: 'aviso', m: `${MONSTRUOS[o.k].nombre} fue derrotado en ORIGINS${quien ? ' por ' + quien : ''}.` });
+      this.a3d({ t: 'aviso', m: `${MONSTRUOS[o.k].nombre} fue derrotado en ORIGINS${quien ? ' por ' + quien : ''}.` });
     }
   },
 
@@ -706,7 +708,7 @@ export const Mundo3D = {
     };
     W.mons.set(o.id, o);
     c.vivos.add(o.id);
-    if (o.jefe) this.aTodos({ t: 'aviso', m: `${def.nombre} ha aparecido en ORIGINS (${MAPAS[c.zona].nombre}).` });
+    if (o.jefe) this.a3d({ t: 'aviso', m: `${def.nombre} ha aparecido en ORIGINS (${MAPAS[c.zona].nombre}).` });
     return o;
   },
 
@@ -794,7 +796,7 @@ export const Mundo3D = {
     if (n > 0) { this.anotarTemp(s, n); this.enviar(s, { t: 'toast', m: `🌌 +${n} Puntos del Abismo${por ? ' (' + por + ')' : ''}${mx.por ? ` · ×${String(mx.x).replace('.', ',')} ${mx.por}` : ''}` }); }
     const r1 = rangoDe(s.c.pa);
     if (r1.i !== r0.i) {
-      if (r1.i > r0.i) this.aTodos({ t: 'aviso', m: `🎖 ${s.c.nombre} asciende a ${r1.n} del Abismo.` });
+      if (r1.i > r0.i) this.a3d({ t: 'aviso', m: `🎖 ${s.c.nombre} asciende a ${r1.n} del Abismo.` });
       this.aClave(K3, { t: 'pa', ...this.infoApariencia(s) });
     }
     this.yoLuego(s);
@@ -833,7 +835,7 @@ export const Mundo3D = {
     s.sucio = true;
     this.unirseFaccion(s, m.f);
     this.aClave(K3, { t: 'pa', ...this.infoApariencia(s) });
-    this.aTodos({ t: 'aviso', m: `⚔️ ${c.nombre} se une a los ${FACCIONES[m.f].titulo}.` });
+    this.a3d({ t: 'aviso', m: `⚔️ ${c.nombre} se une a los ${FACCIONES[m.f].titulo}.` });
     this.enviar(s, this.infoTemp(c));
     this.actualizarYo(s);
     this.guardar(s);
@@ -874,7 +876,7 @@ export const Mundo3D = {
     // Planeando con altura (a=4, h>0,3) tampoco se cae: lo mismo que perdona vacio3d.
     if (s.muerto || !enAbismo(s.p.x) || islaEn(s.p.x, s.p.z) || s.a === 3 || (s.a === 4 && s.h > 0.3)) return;
     s.hp = 0; this.morir(s); this.actualizarYo(s);   // el vacio no perdona (ni escudos ni hielo)
-    this.aTodos({ t: 'aviso', m: `🌌 ${s.c.nombre} cayó al vacío del Abismo.` });
+    this.a3d({ t: 'aviso', m: `🌌 ${s.c.nombre} cayó al vacío del Abismo.` });
   },
 
   // ── ASEDIO DE LA FORTALEZA DEL NUCLEO ──
@@ -895,7 +897,7 @@ export const Mundo3D = {
     if (!A.activo) {
       if (!dentro && ini - ahora <= ASEDIO.aviso && ini - ahora > 5000 && A.avisado !== ini) {
         A.avisado = ini;
-        this.aTodos({ t: 'aviso', m: `⚔️ El asedio de la Fortaleza del Núcleo (Abismo de Éter) empieza en 2 minutos.` });
+        this.a3d({ t: 'aviso', m: `⚔️ El asedio de la Fortaleza del Núcleo (Abismo de Éter) empieza en 2 minutos.` });
       }
       // (asedioAuto = false: el arnes de pruebas lo lanza a mano)
       if (dentro && A.ini !== ini && jugadores.length && this.asedioAuto !== false) this.iniciarAsedio(ini);
@@ -974,7 +976,7 @@ export const Mundo3D = {
     A.puerta = nuevo('puerta_nucleo', PUERTA_NUCLEO.x, PUERTA_NUCLEO.z, 40000 + 8000 * n, { puerta: true });
     A.guardian = nuevo('guardian_nucleo', CENTRO_NUCLEO.x - 8, CENTRO_NUCLEO.z, 30000 + 10000 * n, { guardian: true, dormido: true, onda: null, ondaProx: 0, enfurecido: false, llamo: false });
     const d = this.duenoNucleo();
-    this.aTodos({ t: 'aviso', m: `⚔️ ¡Empieza el asedio de la Fortaleza del Núcleo! ${d ? 'Los ' + FACCIONES[d].titulo + ' la defienden' : 'Nadie la tiene todavía'}: rompe la puerta y vence al Guardián (20 minutos).` });
+    this.a3d({ t: 'aviso', m: `⚔️ ¡Empieza el asedio de la Fortaleza del Núcleo! ${d ? 'Los ' + FACCIONES[d].titulo + ' la defienden' : 'Nadie la tiene todavía'}: rompe la puerta y vence al Guardián (20 minutos).` });
     this.aClave(K3, this.estadoAsedio());
   },
   // La puerta o el guardian han caido.
@@ -985,7 +987,7 @@ export const Mundo3D = {
     if (o.puerta) {
       const g = A.guardian;
       if (g && !g.muere) { g.dormido = false; g.ondaProx = Date.now() + 6000; }
-      this.aTodos({ t: 'aviso', m: '🏰 ¡La Puerta del Núcleo ha caído! El Guardián del Núcleo despierta.' });
+      this.a3d({ t: 'aviso', m: '🏰 ¡La Puerta del Núcleo ha caído! El Guardián del Núcleo despierta.' });
       this.aClave(K3, this.estadoAsedio());
       return;
     }
@@ -1011,8 +1013,8 @@ export const Mundo3D = {
         this.nucleo = { dueno: ganador, desde: Date.now() };
         this.anotarAsedioTemp(ganador);
         if (this.state && this.state.storage) this.state.storage.put('nucleo', this.nucleo).catch(() => {});
-        this.aTodos({ t: 'aviso', m: `🏰 Los ${FACCIONES[ganador].titulo} ${antes === ganador ? 'defienden' : 'conquistan'} la Fortaleza del Núcleo.` });
-      } else this.aTodos({ t: 'aviso', m: antes ? `🏰 La Fortaleza del Núcleo resiste: sigue en manos de los ${FACCIONES[antes].titulo}.` : '🏰 Se acabó el tiempo: la Fortaleza del Núcleo sigue sin dueño.' });
+        this.a3d({ t: 'aviso', m: `🏰 Los ${FACCIONES[ganador].titulo} ${antes === ganador ? 'defienden' : 'conquistan'} la Fortaleza del Núcleo.` });
+      } else this.a3d({ t: 'aviso', m: antes ? `🏰 La Fortaleza del Núcleo resiste: sigue en manos de los ${FACCIONES[antes].titulo}.` : '🏰 Se acabó el tiempo: la Fortaleza del Núcleo sigue sin dueño.' });
       // Premios: quien aporto al menos un 0,3 % (puerta + guardian; los tiros de
       // maquina, desde el santuario del bastion, solo al 25 %); si resistio,
       // los defensores que estaban en la isla del Nucleo.

@@ -24,8 +24,8 @@ import {
   ORO_POR_USD, STAR_TIENDA_USD, PEN_POR_USD,
   temporadaDe, TEMPORADAS, TEMP_DIAS, TEMP_DIA_PREMIO, diaFiesta, diasFiesta,
   ESPECIES, MAPAS, MONSTRUOS, BESTIARIO_HITOS, premioBestiario,
-} from '/mmo/js/data.js?v=352';
-import { LORE_MONSTRUOS } from './lore.js?v=352';
+} from '/mmo/js/data.js?v=353';
+import { LORE_MONSTRUOS } from './lore.js?v=353';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -1255,8 +1255,12 @@ const ACC = {
     const c = cuentaBestiario(H.yo()); H.sfx('boton', 0.3);
     const tg = window.Telegram && window.Telegram.WebApp;
     const enTG = !!(tg && tg.initData && tg.openTelegramLink);
-    const url = enTG ? 'https://t.me/duendequest_bot' : location.origin + '/jugar/?utm_source=share&s=bestiario&de=3d';
-    const txt = `Llevo ${c.n}/${c.t} monstruos y ${c.p}/${c.q} peces en Duende Quest 🧌 ¡Únete!`;
+    // Con el codigo de amigo el que entra cuenta como invitado; si aun no llego, se pide y se comparte igual.
+    const r = String(window.dqRef || '');
+    if (!r) { try { H.mandar({ t: 'amigos' }); } catch (e) {} }
+    const url = enTG ? 'https://t.me/duendequest_bot' + (r ? (window.TG_STARTAPP_OK ? '?startapp=r_' : '?start=m3d_') + r : '')
+      : location.origin + '/jugar/?' + (r ? 'ref=' + encodeURIComponent(r) + '&' : '') + 'utm_source=share&s=bestiario&de=3d';
+    const txt = `Llevo ${c.n}/${c.t} monstruos` + (c.p ? ` y ${c.p}/${c.q} peces` : '') + ' en Duende Quest 🧌 ' + (r ? 'Entra gratis con mi link y te llevas oro y pociones de bienvenida 👇' : '¡Juega gratis conmigo! 👇');
     try { if (enTG) { tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(txt)); return; } } catch (e) {}
     const copiar = () => { try { navigator.clipboard.writeText(txt + ' ' + url).then(() => H.aviso('Copiado', 'ok'), () => H.aviso('No se pudo copiar: cópialo a mano.', 'err')); } catch (e) { H.aviso('No se pudo copiar: cópialo a mano.', 'err'); } };
     if (navigator.share) navigator.share({ text: txt, url }).catch(e => { if (!e || e.name !== 'AbortError') copiar(); });
@@ -1389,7 +1393,7 @@ function calendarioFiesta(tp, fd) {
     if (!hecho && !fut) pend += `<div style="margin:3px 0">${d === hoy ? '<b>Hoy</b>' : `Día ${d + 1}`}: ${esc(def.txt)} · <b>${p[d] || 0}/${def.n}</b></div>`;
   }
   const ms = Math.max(0, tp.ini + (hoy + 1) * 86400000 - Date.now()), hh = Math.floor(ms / 3600000), mm = Math.floor(ms % 3600000 / 60000);
-  const man = hoy + 1 < total ? `Mañana: ${esc(TEMP_DIAS[(hoy + 1) % TEMP_DIAS.length].txt)} · abre en ${hh} h ${mm} min (a las 7 p. m. de Perú)` : `Último día de la fiesta: termina en ${hh} h ${mm} min`;
+  const man = hoy + 1 < total ? `Mañana: ${esc(TEMP_DIAS[(hoy + 1) % TEMP_DIAS.length].txt)} · abre en ${hh} h ${mm} min (a medianoche, hora de Perú)` : `Último día de la fiesta: termina en ${hh} h ${mm} min`;
   return `<div style="margin:0 0 10px"><div style="font-weight:700;margin:0 0 6px">📅 Una tarea por día · +${TEMP_DIA_PREMIO} ${esc(tp.cosas)} ${tp.emoji} cada una</div>`
     + `<div style="display:flex;flex-wrap:wrap;gap:6px">${cas}</div>`
     + `<div class="vv-nota" style="margin:8px 0 0">${pend || '¡Al día! Todas las tareas abiertas están hechas.'}${pend ? '<div style="opacity:.8">Los días pasados siguen abiertos: ponte al día cuando quieras.</div>' : ''}<div style="margin-top:4px">${man}</div></div></div>`;
@@ -1422,7 +1426,7 @@ function pintarTiendaTemp() {
     const acc = ya ? etq('✓ Ya es tuyo', 'vv-ok') : `<span class="vv-precio" style="color:${tp.color}">${tp.emoji} ${a.costo}</span>` + btn('Canjear', 'ttemp', { id: a.id, una: a.una ? '1' : '0' }, '', saldo === null || saldo < a.costo || (a.premio.oroNivel && sacoHoy === 0));
     h += tarjeta(ico, esc(a.nombre), desc, acc, ` style="--rz:${tp.color}"`);
   }
-  const pierdeHoy = tp.fin - Date.now() < 86400000 && saldo > 0 ? '<b style="color:#ff5a5a">⏰ Último día: lo que no canjees hoy se pierde a medianoche</b><br>' : '';
+  const pierdeHoy = tp.fin - Date.now() < 86400000 && saldo > 0 ? '<b style="color:#ff5a5a">⏰ Último día: lo que no canjees hoy se pierde a medianoche (hora de Perú)</b><br>' : '';
   cu.innerHTML = h + `</div><p class="vv-nota">${pierdeHoy}Los monstruos sueltan ${esc(tp.cosas)} durante la fiesta (los jefes, varias). Canjear no te quita los logros: cuentan todo lo que juntaste.</p>`;
 }
 function abrirTiendaTemp() {

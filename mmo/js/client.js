@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=352';
-import { iniciarRegalo } from './regalo.js?v=352';
-import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=352';
+} from './data.js?v=353';
+import { iniciarRegalo } from './regalo.js?v=353';
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=353';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -153,8 +153,10 @@ function permisosTg(nv) {
 // Vibracion de Telegram en los momentos buenos (subir de nivel, logro,
 // ganar un duelo): en la mini app se nota en la mano, como un juego nativo.
 // Ajustes de ORIGINS -> Vibracion: 'off' la apaga tambien aqui.
-function vibOff() { try { return localStorage.getItem('dq3_vib') === 'off'; } catch (e) { return false; } }
-function vibrar(tipo) { if (vibOff()) return; if (TG && TG.HapticFeedback) try { TG.HapticFeedback.notificationOccurred(tipo || 'success'); } catch (e) {} }
+// 'suave' quita los golpes repetidos (remate de cada caza) y deja los momentos buenos.
+function vibModo() { try { return localStorage.getItem('dq3_vib') || 'normal'; } catch (e) { return 'normal'; } }
+function vibOff() { return vibModo() === 'off'; }
+function vibrar(tipo) { if (vibOff()) return; if (tipo === 'golpe') { if (vibModo() === 'suave') return; tipo = 'success'; } if (TG && TG.HapticFeedback) try { TG.HapticFeedback.notificationOccurred(tipo || 'success'); } catch (e) {} }
 
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
 if (TACTIL) document.body.classList.add('tactil');
@@ -715,7 +717,7 @@ function recibir(m) {
           sfx('muerte', .45);
           pausaGolpe = Math.max(pausaGolpe, performance.now() + 50);
           sacudir = Math.max(sacudir || 0, 3);
-          if (TG && TG.HapticFeedback) vibrar('success'); else if (!vibOff()) try { navigator.vibrate && navigator.vibrate(12); } catch (e) {}
+          if (TG && TG.HapticFeedback) vibrar('golpe'); else if (vibModo() === 'normal') try { navigator.vibrate && navigator.vibrate(12); } catch (e) {}
         } else if (cerca) sfx('muerte', .15);
       }
       if (o && MONSTRUOS[o.k] && MONSTRUOS[o.k].jefe) jefeVivo = null;
@@ -779,7 +781,7 @@ function recibir(m) {
         // retroceso movia al jugador y el servidor cancelaba el hechizo.
         if (o && !castYo && performance.now() > castPend) { P.vx = (P.x < o.x ? -1 : 1) * 7; if (P.suelo) { P.vy = -4; P.suelo = false; } }
         sacudir = Math.max(sacudir, 4);
-        if (TG && TG.HapticFeedback) try { TG.HapticFeedback.impactOccurred('medium'); } catch (e) {}
+        if (vibModo() === 'normal' && TG && TG.HapticFeedback) try { TG.HapticFeedback.impactOccurred('medium'); } catch (e) {}
       } else { q.herido = 18; flotante(q.x, q.y - 70, '-' + m.d, '#ff7777', 9); }
       break;
     }
@@ -1671,6 +1673,21 @@ $('b-rank').onclick = abrirRanking;
 $('b-dios').onclick = abrirDios;
 $('b-ayuda').onclick = () => abrir('m-ayuda');
 { const bn = $('b-novedades'); if (bn) bn.onclick = () => abrirNovedades(); }
+// Vibracion (Normal / Suave / Apagada): la misma clave 'dq3_vib' que usa ORIGINS.
+{
+  const sv = $('sel-vib2');
+  if (sv) {
+    const leer = () => { const v0 = vibModo(); sv.value = ['normal', 'suave', 'off'].includes(v0) ? v0 : 'normal'; };
+    leer();
+    // Al abrir la Ayuda se relee: pudo cambiarse en ORIGINS (otra pestaña) mientras tanto.
+    { const ba = $('b-ayuda'); if (ba) ba.addEventListener('click', leer); }
+    sv.onchange = () => {
+      const v = sv.value;
+      try { localStorage.setItem('dq3_vib', v); } catch (e) {}
+      if (v !== 'off') { if (TG && TG.HapticFeedback) vibrar('success'); else try { navigator.vibrate && navigator.vibrate(20); } catch (e) {} }
+    };
+  }
+}
 // Invitado 'DuendeNNNN': ponerle nombre a su duende (gratis, una vez; dios.js miNombre). Campo propio: prompt() falla en algunos WebView.
 {
   const bnov = $('b-novedades');
@@ -2579,7 +2596,7 @@ function limpiarRestos(t) { return t.replace(/\s*\(\s*\)/g, '').replace(/\(\s+/g
 // Notas que CLASSIC muestra: sin lo que es solo de ORIGINS (3D), salvo que nombre a CLASSIC.
 // En Telegram, sin lo que habla de SOL o wallets (sus reglas); en modo anuncio, sin nada cripto.
 function itemsNovClassic(nv) {
-  const solo3d = /ORIGINS|\b3D\b|Gran Invasión|Cueva de los Goblins|ESQUIVAR|pueblo es andino|gestos|golpe fuerte del combo|Hermandades abiertas|FASE 2|Furia|Corrientes de viento|corriente|tarjeta de botín|Libreta de pesca|Tirón perfecto|marca el camino|élite/i;
+  const solo3d = /ORIGINS|\b3D\b|Gran Invasión|Cueva de los Goblins|ESQUIVAR|pueblo es andino|gestos|golpe fuerte del combo|Hermandades abiertas|FASE 2|Furia|Corrientes de viento|corriente|tarjeta de botín|Libreta de pesca|Tirón perfecto|marca el camino|élite|Duende Ladr|📍|Pedir ayuda|cámara|faroles|Brillo de noche|respingo|retrato|Probar su|caja de misiones|TIRAR|ventanas automáticas|tiradores|Álbum|lbum de monstruos|Ayni|píldora/i;
   return (nv.items || []).filter(x => !(solo3d.test(x) && !/CLASSIC/.test(x)))
     .filter(x => modoAnuncio() ? !SIN_CRIPTO_RE.test(x) : (!TG || !(/\bSOL\b/.test(x) || /wallet|solana|phantom|solflare/i.test(x))));
 }
@@ -5009,7 +5026,7 @@ function pintarHud() {
   if (T) {
     const hd = T.dia.l.filter(t => t.ok).length, hs = T.sem.l.filter(t => t.ok).length;
     const sig = T.dia.l.find(t => !t.ok);
-    ponTxt($('h-tareas'), 'Diarias ' + hd + '/' + T.dia.l.length + ' · Semana ' + hs + '/' + T.sem.l.length + ' · 📦 ' + Math.min((T.sem && T.sem.pts) || 0, 12) + '/12' + ((yo.secaEp || 0) > 10 ? ' · 🍀 Épico en ' + Math.max(1, 26 - yo.secaEp) : '') + (sig ? ' — ' + sig.txt + ' ' + sig.p + '/' + sig.n : '') + (temporadaYa() ? ' · ' + temporadaYa().cosas.charAt(0).toUpperCase() + temporadaYa().cosas.slice(1) + ' ' + (yo[temporadaYa().campo] || 0) : ''));
+    ponTxt($('h-tareas'), 'Diarias ' + hd + '/' + T.dia.l.length + ' · Semana ' + hs + '/' + T.sem.l.length + ' · Cofre semanal ' + Math.min((T.sem && T.sem.pts) || 0, 12) + '/12' + ((yo.secaEp || 0) > 10 ? ' · Épico asegurado en ' + Math.max(1, 26 - yo.secaEp) + ' objetos' : '') + (sig ? ' — ' + sig.txt + ' ' + sig.p + '/' + sig.n : '') + (temporadaYa() ? ' · ' + temporadaYa().cosas.charAt(0).toUpperCase() + temporadaYa().cosas.slice(1) + ' ' + (yo[temporadaYa().campo] || 0) : ''));
   }
   pendientesHud();
   pintarPoderes();
@@ -5059,7 +5076,7 @@ function calendarioFiesta(tp, est) {
       (fut ? '…' : esc(def.txt) + (hecho ? '' : ' · ' + (p[d] || 0) + '/' + def.n)) + '</div>';
   }
   const ms = Math.max(0, tp.ini + (hoy + 1) * 86400000 - Date.now()), hm = Math.floor(ms / 3600000) + ' h ' + Math.floor(ms % 3600000 / 60000) + ' min';
-  return h + '<div style="margin-top:3px">' + (hoy + 1 < total ? 'Mañana: ' + esc(TEMP_DIAS[(hoy + 1) % TEMP_DIAS.length].txt) + ' · abre en ' + hm + ' (a las 7 p. m. de Perú)' : 'Último día: la fiesta termina en ' + hm) + '</div></div>';
+  return h + '<div style="margin-top:3px">' + (hoy + 1 < total ? 'Mañana: ' + esc(TEMP_DIAS[(hoy + 1) % TEMP_DIAS.length].txt) + ' · abre en ' + hm + ' (a medianoche, hora de Perú)' : 'Último día: la fiesta termina en ' + hm) + '</div></div>';
 }
 function cajaTiendaTemp() {
   const tp = temporadaYa();
