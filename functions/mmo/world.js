@@ -524,6 +524,7 @@ export class MmoWorld {
       case 'avisoTgCod': return this.ofrecerAvisoTg(s, true);   // «Avísame por Telegram» (retencion.js)
       // Telegram: acepto que el bot le escriba (requestWriteAccess); quita un bloqueo viejo por 403. Sin mensaje.
       case 'tgEscribir': if (s.c && String(s.c.uid || '').startsWith('tg:')) this.permisoEscribirTg(s.c.uid, s).catch(() => {}); return;
+      case 'tgEscribirNo': if (s.c && String(s.c.uid || '').startsWith('tg:')) this.tarjetaTgNo(s.c.uid).catch(() => {}); return;   // «Ahora no» en la tarjeta de Telegram (retencion.js)
       case 'regreso': return this.regreso(s);
       case 'ranking': return this.enviarRanking(s);
       case 'tiendaTemp': return this.tiendaTemp(s, m);   // tienda de la fiesta: solo con el objeto del evento

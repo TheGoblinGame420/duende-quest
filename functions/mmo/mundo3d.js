@@ -186,6 +186,7 @@ export const Mundo3D = {
       case 'avisoTgCod': return this.ofrecerAvisoTg(s, true);   // «Avísame por Telegram» (retencion.js)
       // Telegram: acepto que el bot le escriba (requestWriteAccess); quita un bloqueo viejo por 403. Sin mensaje.
       case 'tgEscribir': if (s.c && String(s.c.uid || '').startsWith('tg:')) this.permisoEscribirTg(s.c.uid, s).catch(() => {}); return;
+      case 'tgEscribirNo': if (s.c && String(s.c.uid || '').startsWith('tg:')) this.tarjetaTgNo(s.c.uid).catch(() => {}); return;   // «Ahora no» en la tarjeta de Telegram (retencion.js)
       case 'comprar': return this.comprar(s, m);   // cercaDelMercader() sabe del 3D
       case 'ignorar': return this.ignorar(s, m);
       case 'reportar': return this.reportar(s, m);
@@ -217,7 +218,7 @@ export const Mundo3D = {
       case 'look': return this.cambiarLook(s, m);
       case 'recolectar': return this.recolectar3d(s, m);
       case 'pescar': return this.pescar3d(s);
-      case 'tirar': return this.tirar(s);
+      case 'tirar': return this.tirar(s, m);
       case 'fabricar': return this.fabricar(s, m);   // cercaDeArtesana() sabe del 3D
       case 'invitar': return this.invitar(s, m);
       case 'grupoResp': return this.respuestaGrupo(s, m);
@@ -292,12 +293,6 @@ export const Mundo3D = {
     // El planeo solo acelera si empezo volando o por encima del escalon de 2 m
     // (alternar a=0 h=2 con a=4 daba 1,4x a pie, tambien en el pueblo).
     s.planeoVel = a === 4 && (prevA === 4 ? !!s.planeoVel : prevA === 3 || h0 > 2.5);
-    // Corriente de viento (Abismo o mundo abierto, nunca en el pueblo): volando o
-    // planeando, recarga las alas. Cada corriente, como mucho cada 20 s.
-    if ((a === 3 || a === 4) && !s.i3 && (enAbismo(nx) || aire)) {
-      const ci = enAbismo(nx) ? corrienteEn(nx, nz) : corrienteEnMundo(nx, nz, MAPAS, MONSTRUOS);
-      if (ci >= 0 && Date.now() - ((s.corrT || (s.corrT = {}))[ci] || 0) > CORRIENTE_CD) { s.corrT[ci] = Date.now(); s.vueloS = 0; s.alasAvisadas = false; if (a === 4) s.h = Math.max(s.h || 0, 12); this.enviar(s, { t: 'corriente', i: ci }); }
-    }
     // Energia de las alas: se cuenta con el modo que se mantuvo hasta este mensaje.
     if (prevA === 3 || a === 3) s.vueloS = (s.vueloS || 0) + dtS;
     else if (prevA !== 4 && h0 <= 1.2 && !(enAbismo(nx) && !s.i3 && !islaEn(nx, nz))) s.vueloS = Math.max(0, (s.vueloS || 0) - dtS * 3);
@@ -330,6 +325,13 @@ export const Mundo3D = {
       if (Math.hypot(nx - c0.x, nz - c0.z) > 0.8) this.cancelarCast(s, s.cast.h === 'montar' ? '' : 'Te moviste: el lanzamiento se canceló.');
     }
     s.p.x = nx; s.p.z = nz;
+    // Corriente de viento (Abismo o mundo abierto, nunca en el pueblo): volando o
+    // planeando, recarga las alas. Cada corriente, como mucho cada 20 s. Va DESPUES
+    // de validar el paso (presupuesto, casas, snap): solo cuenta donde de verdad estas.
+    if ((a === 3 || a === 4) && !s.i3 && (enAbismo(s.p.x) || aire)) {
+      const ci = enAbismo(s.p.x) ? corrienteEn(s.p.x, s.p.z) : corrienteEnMundo(s.p.x, s.p.z, MAPAS, MONSTRUOS);
+      if (ci >= 0 && Date.now() - ((s.corrT || (s.corrT = {}))[ci] || 0) > CORRIENTE_CD) { s.corrT[ci] = Date.now(); s.vueloS = 0; s.alasAvisadas = false; this.enviar(s, { t: 'corriente', i: ci }); }
+    }
     s.ry = num(m.r) || 0;
     s.a = a; s.h = Math.max(0, h);
     if (this.vacio3d(s, ahora)) return;   // el vacio del Abismo lo valida el servidor
@@ -1229,7 +1231,7 @@ export const Mundo3D = {
         this.herir(x, 1, { zona: true, jefe: true, pct: 0.2, id: o.id });
         if (o.campo >= 0) o.furia = Math.min(5, (o.furia || 0) + 1);
       }
-      if ((o.furia || 0) > furia0) this.aCerca3d(o, { t: 'aviso', m: `${MONSTRUOS[o.k].nombre}: Furia x${o.furia}` });
+      if ((o.furia || 0) > furia0) this.aCerca3d(o, { t: 'aviso', m: `😡 ${MONSTRUOS[o.k].nombre} se enfurece (Furia x${o.furia}: pega +${6 * o.furia}%). Sal del círculo rojo y pégale cuando diga ¡AHORA! para calmarlo.` });
       this.aCerca3d(o, { t: 'zona3f', id: o.id });
       o.pzj = null;
       o.expuesto = ahora + 2000;
@@ -1242,7 +1244,7 @@ export const Mundo3D = {
       if (o.pzj) { o.pzj = null; this.aCerca3d(o, { t: 'zona3f', id: o.id, no: 1 }); }
       o.expuesto = ahora + 2000;
       this.aCerca3d(o, { t: 'expuesto', id: o.id, ms: 2000 });
-      this.aCerca3d(o, { t: 'aviso', m: `¡FASE 2! ${MONSTRUOS[o.k].nombre}` });
+      this.aCerca3d(o, { t: 'aviso', m: `¡FASE 2! ${MONSTRUOS[o.k].nombre} pisotea más seguido: ¡sal del rojo y pégale cuando esté expuesto!` });
     }
     if (o.dormido) { o.st = 0; return; }   // el Guardian espera a que caiga la puerta
     // Sorbo del Cantaro: lo cortan Patada, Zurrar, Contrahechizo, Silencio o un aturdimiento.
@@ -1269,7 +1271,7 @@ export const Mundo3D = {
     const obj0 = o.obj;
     // Ayuda de la manada: si a uno de un campamento le pegan, acuden los de su
     // mismo claro (a menos de 10 m). Nunca en el pueblo ni contra nadie alli.
-    const manada = sid => { if (o.campo >= 0 && !o.jefe && !o.i3 && zonaEn(o.x, o.z) !== 'pueblo') for (const x of this.iniciar3d().mons.values()) if (x !== o && x.campo === o.campo && !x.i3 && !x.obj && !x.muere && !x.jefe && dist(x, o) < 10) x.obj = sid; };
+    const manada = sid => { if (o.campo >= 0 && !o.jefe && !o.i3 && zonaEn(o.x, o.z) !== 'pueblo' && ((MONSTRUOS[o.k] || {}).nivel || 0) >= 8) for (const x of this.iniciar3d().mons.values()) if (x !== o && x.campo === o.campo && !x.i3 && !x.obj && !x.muere && !x.jefe && dist(x, o) < 10) x.obj = sid; };
     const prov = this.auraMon(o, 'provoca');
     if (prov) o.obj = prov.sid;
     else if (o.amen.size) {
@@ -1337,7 +1339,7 @@ export const Mundo3D = {
       }
       if (d > alcance || !veo) {
         // Te avisó en rojo y saliste de su alcance a tiempo: "¡Esquivado!" (solo a la presa).
-        if (o.avisoAtk === o.atkEn && o.avisoA === s.id && ahora < o.atkEn + 200 && !o.jefe && !o.dispara) { o.avisoAtk = -1; this.enviar(s, { t: 'mesq', id: o.id }); }
+        if (o.avisoAtk === o.atkEn && o.avisoA === s.id && ahora < o.atkEn + 200 && !o.dispara) { o.avisoAtk = -1; this.enviar(s, { t: 'mesq', id: o.id }); }
         // Se acerca por su lado (rodean al jugador en vez de apilarse).
         if (!this.auraMon(o, 'raiz')) {
           const k = d > 0.01 && veo ? (alcance * 0.8) / d : 0;
@@ -1363,7 +1365,7 @@ export const Mundo3D = {
         // Los tiradores no avisan (15 m: alejarse no sirve); los jefes avisan a todos los de cerca.
         if (!o.dispara && o.avisoAtk !== o.atkEn && ahora < o.atkEn && ahora >= o.atkEn - AVISO_MON_MS) {
           o.avisoAtk = o.atkEn; o.avisoA = s.id;   // el "¡Esquivado!" solo va a quien vio el aviso
-          const pre = { t: 'mpre', id: o.id, ms: Math.round(o.atkEn - ahora) };
+          const pre = { t: 'mpre', id: o.id, ms: Math.round(o.atkEn - ahora), a: s.id };
           if (o.jefe) this.aCerca3d(o, pre, 40); else this.enviar(s, pre);
         }
         if (ahora >= o.atkEn) {

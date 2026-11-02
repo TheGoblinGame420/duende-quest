@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=350';
-import { iniciarRegalo } from './regalo.js?v=350';
-import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=350';
+} from './data.js?v=351';
+import { iniciarRegalo } from './regalo.js?v=351';
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=351';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -2576,7 +2576,7 @@ function limpiarRestos(t) { return t.replace(/\s*\(\s*\)/g, '').replace(/\(\s+/g
 // Notas que CLASSIC muestra: sin lo que es solo de ORIGINS (3D), salvo que nombre a CLASSIC.
 // En Telegram, sin lo que habla de SOL o wallets (sus reglas); en modo anuncio, sin nada cripto.
 function itemsNovClassic(nv) {
-  const solo3d = /ORIGINS|\b3D\b|Gran Invasión|Cueva de los Goblins|ESQUIVAR|pueblo es andino|gestos|golpe fuerte del combo|Hermandades abiertas/i;
+  const solo3d = /ORIGINS|\b3D\b|Gran Invasión|Cueva de los Goblins|ESQUIVAR|pueblo es andino|gestos|golpe fuerte del combo|Hermandades abiertas|FASE 2|Furia|Corrientes de viento|corriente|tarjeta de botín|Libreta de pesca|Tirón perfecto|marca el camino|élite/i;
   return (nv.items || []).filter(x => !(solo3d.test(x) && !/CLASSIC/.test(x)))
     .filter(x => modoAnuncio() ? !SIN_CRIPTO_RE.test(x) : (!TG || !(/\bSOL\b/.test(x) || /wallet|solana|phantom|solflare/i.test(x))));
 }
@@ -5006,7 +5006,7 @@ function pintarHud() {
   if (T) {
     const hd = T.dia.l.filter(t => t.ok).length, hs = T.sem.l.filter(t => t.ok).length;
     const sig = T.dia.l.find(t => !t.ok);
-    ponTxt($('h-tareas'), 'Diarias ' + hd + '/' + T.dia.l.length + ' · Semana ' + hs + '/' + T.sem.l.length + (sig ? ' — ' + sig.txt + ' ' + sig.p + '/' + sig.n : '') + (temporadaYa() ? ' · ' + temporadaYa().cosas.charAt(0).toUpperCase() + temporadaYa().cosas.slice(1) + ' ' + (yo[temporadaYa().campo] || 0) : ''));
+    ponTxt($('h-tareas'), 'Diarias ' + hd + '/' + T.dia.l.length + ' · Semana ' + hs + '/' + T.sem.l.length + ' · 📦 ' + Math.min((T.sem && T.sem.pts) || 0, 12) + '/12' + ((yo.secaEp || 0) > 10 ? ' · 🍀 Épico en ' + Math.max(1, 26 - yo.secaEp) : '') + (sig ? ' — ' + sig.txt + ' ' + sig.p + '/' + sig.n : '') + (temporadaYa() ? ' · ' + temporadaYa().cosas.charAt(0).toUpperCase() + temporadaYa().cosas.slice(1) + ' ' + (yo[temporadaYa().campo] || 0) : ''));
   }
   pendientesHud();
   pintarPoderes();
@@ -5105,7 +5105,8 @@ function cajaTareas() {
     `<p style="font-size:12px;margin-top:6px">Cada una: +${T.premio.xp.toLocaleString('es', { useGrouping: 'always' })} XP y +${T.premio.oro.toLocaleString('es', { useGrouping: 'always' })} oro. Bono al completar 2 de 3: ${T.dia.bono ? '✓ bono cobrado' : 'objeto raro + pociones y escudos'}. Se renuevan cada día.</p></div>` +
     '<div class="mis-caja"><b>Misiones de la semana</b>' + T.sem.l.map(t => fila(t)).join('') +
     `<p style="font-size:12px;margin-top:6px">Cada una: +${T.premioSem.xp.toLocaleString('es', { useGrouping: 'always' })} XP y +${T.premioSem.oro.toLocaleString('es', { useGrouping: 'always' })} oro. Las 2: ${T.sem.bono ? '✓ bono cobrado' : 'objeto épico + 🧿 protector de racha'}. Se renuevan los lunes.</p>` +
-    `<p style="font-size:12px;margin-top:6px"><b>📦 Semana: ${Math.min(T.sem.pts || 0, 12)}/12</b> · ${[4, 8, 12].map((u, i) => ((T.sem.cof || 0) > i ? '✅' : (T.sem.pts || 0) >= u ? '🎁' : '🔒') + ' ' + u).join(' · ')}<br>+1 punto por diaria y +1 por bono del día: cofre con objeto, pociones y escudos.</p></div>`;
+    `<p style="font-size:12px;margin-top:6px"><b>📦 Semana: ${Math.min(T.sem.pts || 0, 12)}/12</b> · ${[4, 8, 12].map((u, i) => ((T.sem.cof || 0) > i ? '✅' : (T.sem.pts || 0) >= u ? '🎁' : '🔒') + ' ' + u).join(' · ')}<br>+1 por cada misión del día y +1 por su bono (hasta 4 al día): cofre con objeto, pociones y escudos.</p>` +
+    ((yo.secaEp || 0) > 10 ? `<p style="font-size:12px;margin-top:6px;color:var(--ok)">🍀 Suerte del duende: Épico asegurado en ${Math.max(1, 26 - yo.secaEp)} objetos de monstruos</p>` : '') + '</div>';
 }
 // Final de juego: lo que queda por hacer esta semana (y hoy), de un vistazo.
 function cajaSemana() {

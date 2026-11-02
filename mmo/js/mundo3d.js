@@ -198,8 +198,8 @@ export function campamentos(MAPAS, MONSTRUOS) {
       // Campamento mixto: uno de cada tres suma un tirador de la zona (el de
       // nivel mas parecido) que dispara desde atras mientras los otros cargan.
       const mb = MONSTRUOS[k] || {};
-      // (Nunca en los de Nv 1-2: ahi aprenden a pelear los recien llegados.)
-      if (i % 3 === 2 && !mb.dispara && !mb.jefe && mb.nivel > 2) {
+      // (Nunca por debajo de Nv 8: ahí aprenden a pelear los recién llegados.)
+      if (i % 3 === 2 && !mb.dispara && !mb.jefe && mb.nivel >= 8) {
         const tir = tipos.filter(t => MONSTRUOS[t] && MONSTRUOS[t].dispara && !MONSTRUOS[t].jefe)
           .sort((a, b) => Math.abs(MONSTRUOS[a].nivel - mb.nivel) - Math.abs(MONSTRUOS[b].nivel - mb.nivel))[0];
         if (tir) { cp.k2 = tir; cp.n2 = 1; }

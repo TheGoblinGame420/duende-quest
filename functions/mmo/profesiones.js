@@ -101,14 +101,20 @@ export const Profesiones = {
     this.enviar(s, { t: 'toast', m: '🐟 Se escapó… tira en cuanto pique.' });
   },
 
-  tirar(s) {
+  tirar(s, m) {
     const ca = s.cast;
     if (!ca) return;
     if (ca.h === 'pescar') return this.cancelarCast(s, 'Tiraste antes de que picara: el pez se asustó.');
     if (ca.h !== 'pica' || s.muerto) return;
-    // Tiron perfecto: tirar en los primeros 800 ms de la pica medidos en el servidor
-    // (incluye ida y vuelta de la red movil; la ventana de 2 s no cambia).
-    const perfecto = Date.now() - (ca.fin - PESCA.ventana) < 800;
+    // Tiron perfecto: el cliente manda r = ms entre recibir la pica y tirar (reaccion humana,
+    // sin la red). Si r es humano (120-700 ms) basta con tirar dentro de la ventana del servidor;
+    // si no viene o es de bot (<120 ms) se mide en el servidor entre 200 y 1100 ms (4G de ida y vuelta).
+    const dtS = Date.now() - (ca.fin - PESCA.ventana);
+    const r = Number(m && m.r);
+    // r tiene que cuadrar con lo que mide el servidor (dtS = red ida + r + red vuelta): un r inventado
+    // mayor que dtS, o con mas de 1,5 s de "red", no cuenta y se usa la medida del servidor.
+    const rOk = r >= 120 && r <= 700 && r <= dtS + 50 && dtS - r <= 1500;
+    const perfecto = rOk ? dtS < PESCA.ventana : (dtS >= 200 && dtS < 1100);
     s.cast = null;
     this.aClave(s.k, { t: 'castFin', p: s.id, ok: true });
     const c = s.c;

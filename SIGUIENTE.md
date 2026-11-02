@@ -3491,3 +3491,16 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Tarjeta de botín con diferencias de stats; efecto del Raro. Libreta de pesca, tirón perfecto y amagos.
 - Pregunta previa al permiso de Telegram (tg). Luz de borde y aplastado al recibir golpe. Ruta de la misión diaria.
 - Arnés 905 bien.
+
+### Ronda 20 (2-nov-2026, `?v=351`)
+
+- 16 evaluadores → 72 problemas → 10 tareas.
+- Campamentos mixtos y manada solo desde Nv 8 (mmo/js/mundo3d.js y servidor).
+- Élite raro a nivel del jugador +2 (acotado a la zona), esbirros agresivos, aviso con pista del afijo y Nv coloreado; textos sin género.
+- 'mpre' con `a` (solo la presa), 'mesq' también contra jefes, textos de Furia y Fase 2; corrientes de viento validadas tras el control de movimiento.
+- Ventanas automáticas que esperan a que cierres tienda/mochila; Nv 5 menos saturado.
+- Tarea diaria de la fiesta en la caja de misiones, píldora 🍞 y tira diaria que abren el calendario; caja plegada útil en móvil; luz amarilla a la misión diaria.
+- Telegram: sin cripto en modo anuncio, sin alerta falsa al cerrar; «Ahora no» respetado en el servidor; +300 oro visible.
+- CLASSIC muestra Suerte del duende y cofre semanal; calendario dice medianoche de Perú.
+- Pesca y jefes con sonido y feedback; tirón perfecto mide el reflejo sin el lag.
+- Arnés 905 bien.

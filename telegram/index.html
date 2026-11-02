@@ -33,7 +33,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="/js/origen.js?v=350"></script>
+<script src="/js/origen.js?v=351"></script>
 <script>
 // ── ARRANQUE TEMPRANO DE TELEGRAM ──
 // Va aquí, antes de cargar Supabase/TON Connect/el motor, para que Telegram
@@ -342,6 +342,9 @@ html{font-size:24px;}
 #tabbar button.on{color:var(--cian);}
 #tabbar button.on span{filter:none;opacity:1;}
 /* En pantallas anchas la barra ocupaba 1920px; se alinea con el menú (480px) */
+/* Quien llega por anuncio (origen.js pone html.anuncio) no ve nada cripto */
+html.anuncio #tg-price-display,html.anuncio #ton-btn,html.anuncio #tabbar [data-tab="wallet"],html.anuncio #tab-wallet,html.anuncio #perfil-wallet{display:none!important}
+html.anuncio #tabbar{grid-template-columns:repeat(4,1fr);}
 @media (min-width:481px){#tabbar{max-width:480px;left:50%;right:auto;width:100%;transform:translateX(-50%);border-left:1px solid var(--borde);border-right:1px solid var(--borde);}}
 
 /* Foco visible para teclado (y sin anillo al tocar con el dedo) */
@@ -809,10 +812,10 @@ html{font-size:24px;}
      pesan cientos de KB). Aquí se ejecutan en el MISMO orden y antes que el
      código de la página, así que nada de lo que los usa cambia. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
-<script src="../js/dom-utils.js?v=350"></script>
-<script src="../js/missions.js?v=350"></script>
-<script src="../js/streak.js?v=350"></script>
-<script src="../js/achievements.js?v=350"></script>
+<script src="../js/dom-utils.js?v=351"></script>
+<script src="../js/missions.js?v=351"></script>
+<script src="../js/streak.js?v=351"></script>
+<script src="../js/achievements.js?v=351"></script>
 <script>
 // TON Connect (~400 KB) bajo demanda: al abrir la wallet, o al cargar si ya hay una sesion guardada.
 // tonGuardada(): el SDK guarda su sesion en localStorage con claves 'ton-connect...'.
@@ -829,7 +832,7 @@ function cargarTon(){
 }
 function tonGuardada(){ try{ for(var i=0;i<localStorage.length;i++){ if(/^ton-connect/.test(localStorage.key(i)||'')) return true; } }catch(e){} return false; }
 </script>
-<script src="../js/config.js?v=350"></script>
+<script src="../js/config.js?v=351"></script>
 <script>
 'use strict';
 
@@ -847,6 +850,8 @@ function tgVer(v){try{return !!(tg&&tg.isVersionAtLeast&&tg.isVersionAtLeast(v))
 // "¿Seguro que quieres cerrar?" solo DURANTE la partida: en el menú molestaba
 // cada vez que el jugador quería salir (ver onStartGame / onToMenu).
 function tgConfirmarCierre(si){ if(!tgVer('6.2'))return; try{ si?tg.enableClosingConfirmation():tg.disableClosingConfirmation(); }catch(e){} }
+// Al cargar, sin alerta de cierre: el progreso se guarda en el servidor.
+try{ tgConfirmarCierre(false); }catch(e){}
 const TG_USER = tg?.initDataUnsafe?.user || {};
 // La foto de Telegram llega SIN firma (initDataUnsafe, que el SDK lee del hash de
 // la URL): solo se acepta una URL https de Telegram y se pinta con el DOM, nunca
@@ -992,7 +997,7 @@ async function fetchPrice(){
   try{
     const r=await fetch(window.DUENDE_CFG?.DEXSCREENER_URL||'',{signal:AbortSignal.timeout(4000)});
     const d=await r.json();const p=parseFloat(d?.pairs?.[0]?.priceUsd||0);
-    if(p>0){tgPriceUsd=p;document.getElementById('tg-price-display').textContent='$DUENDE: $'+p.toFixed(8);}
+    if(p>0){tgPriceUsd=p;if(!document.documentElement.classList.contains('anuncio'))document.getElementById('tg-price-display').textContent='$DUENDE: $'+p.toFixed(8);}
   }catch(e){}
 }
 fetchPrice();setInterval(fetchPrice,30000);
@@ -1644,7 +1649,7 @@ window.DQE={
   },
 };
 </script>
-<script src="../js/engine.js?v=350"></script>
+<script src="../js/engine.js?v=351"></script>
 <script>
 
 // ══ MENU EN PESTAÑAS ══
@@ -1653,6 +1658,7 @@ window.DQE={
 // fijas, texto en px, y todo lo que faltaba (perfil, ranking, comprar,
 // conectar wallet) vive en una de ellas.
 function irTab(nombre){
+  if (nombre === 'wallet' && document.documentElement.classList.contains('anuncio')) nombre = 'jugar';
   document.querySelectorAll('#hub .tab').forEach(t=>t.classList.toggle('on', t.id==='tab-'+nombre));
   document.querySelectorAll('#tabbar button').forEach(b=>{ const on=b.dataset.tab===nombre; b.classList.toggle('on',on); if(on)b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
   document.getElementById('hub').scrollTop=0;
@@ -1993,7 +1999,7 @@ function shareScore(){
 // (la misma tabla STARS_DE_USD que usa /api/telegram-bot-invoice al cobrar), asi
 // la Mini App nunca anuncia un precio distinto del que cobra Telegram.
 // Subir este ?v= junto con el de los otros imports de data.js.
-import { SKINS as CATALOGO, estrellasDe } from '../mmo/js/data.js?v=350';
+import { SKINS as CATALOGO, estrellasDe } from '../mmo/js/data.js?v=351';
 try{
   for(const s of SKINS){
     const c=CATALOGO[s.id];

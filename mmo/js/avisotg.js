@@ -121,18 +121,20 @@ export function iniciarAvisoTg(H) {
       if (abierto || !tg || !tg.requestWriteAccess || !escribirTgPendiente()) return false;
       const r = montar();
       r.innerHTML = `<div class="av-caja"><h2 id="dq-avtg-t">🔔 ¿Te avisamos por Telegram?</h2>
-        <p class="av-p">Te escribimos <b>como mucho 1 vez al día</b> si tu racha está por perderse o tienes premios sin cobrar.</p>        <div class="av-bots"><button type="button" class="av-si" data-a="si">Sí, avísame</button><button type="button" data-a="no">Ahora no</button></div>
+        <p class="av-p">Te escribimos <b>como mucho 1 vez al día</b> si tu racha está por perderse o tienes premios sin cobrar.</p>
+        <div class="av-oro">🎁 +300 oro la primera vez que lo activas</div>
+        <div class="av-bots"><button type="button" class="av-si" data-a="si">Sí, avísame</button><button type="button" data-a="no">Ahora no</button></div>
         <div class="av-chico">Lo apagas cuando quieras con /avisos off en el bot.</div></div>`;
       r.querySelector('[data-a="si"]').addEventListener('click', () => {
         cerrar();
         try {
           tg.requestWriteAccess(ok => {
             if (ok) { try { localStorage.setItem(CLAVE_ESC, '1'); } catch (e) {} H.mandar({ t: 'tgEscribir' }); }
-            else ponerEscNo();
+            else { ponerEscNo(); try { H.mandar({ t: 'tgEscribirNo' }); } catch (e) {} }
           });
         } catch (e) {}
       });
-      r.querySelector('[data-a="no"]').addEventListener('click', () => { ponerEscNo(); cerrar(); });
+      r.querySelector('[data-a="no"]').addEventListener('click', () => { ponerEscNo(); try { H.mandar({ t: 'tgEscribirNo' }); } catch (e) {} cerrar(); });
       r.classList.add('on'); abierto = true; permiso = true;
       return true;
     },

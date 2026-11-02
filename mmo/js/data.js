@@ -504,9 +504,18 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 350;
+export const VERSION = 351;
 
 export const NOVEDADES = [
+  { n: 119, fecha: '2 nov 2026', items: [
+    'El Bosque Nocturno es más justo para los que empiezan: hasta Nv 8 no hay tiradores y los compañeros del monstruo no te caen todos encima.',
+    'Los élites ★ salen a tu medida y su aviso explica su afijo; contra los jefes, el aviso rojo llega solo a quien va a recibir el golpe.',
+    "La tarea del día de la T'anta Wawa sale en tu caja de misiones y la píldora 🍞 abre el calendario.",
+    'En el celular, la caja de misiones plegada muestra tus misiones del día, el cofre semanal y la flecha a la misión que tocaste.',
+    'Las ventanas automáticas ya no cierran la tienda ni la mochila mientras compras.',
+    'Pescar se siente: chapoteo, salpicón y botón ¡TIRAR! rojo; los jefes rugen al entrar en FASE 2.',
+    'En Telegram, quien llega por anuncio no ve precios cripto, y si dices «Ahora no» a los avisos no te escribimos.',
+  ] },
   { n: 118, fecha: '2 nov 2026', items: [
     '🍀 Suerte del duende: si pasas muchas cazas sin equipo es cada vez más fácil que salga uno, y tras 25 piezas sin Épico la siguiente es Épica o mejor.',
     '📦 Medidor semanal: cada misión diaria suma 1 punto y a los 4, 8 y 12 se abre un cofre.',

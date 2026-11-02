@@ -313,7 +313,7 @@ export const Eventos = {
     });
     w.raroId = o.id;
     // Solo a la zona: es un premio para quien explora, no un aviso del servidor.
-    this.aClave(clave, { t: 'emote', m: `★ ¡${nom} (${MONSTRUOS[k].nombre} raro) ronda ${mp.nombre}!` });
+    this.aClave(clave, { t: 'emote', m: `★ ¡${nom}, élite de ${MONSTRUOS[k].nombre}, ronda ${mp.nombre}!` });
     return o;
   },
 

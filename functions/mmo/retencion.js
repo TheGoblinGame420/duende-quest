@@ -1030,6 +1030,18 @@ export const Retencion = {
     return !(e && (e.off || e.bloq));
   },
 
+  // Telegram (ORIGINS): «Ahora no» en la tarjeta del permiso (o lo rechazo en la ventana
+  // de Telegram). No se le escribe hasta que acepte: off marcado por la tarjeta (offTarjeta),
+  // que «Sí, avísame» puede quitar; un /avisos off puesto en el bot no lo quita nada del juego.
+  async tarjetaTgNo(uid) {
+    if (typeof uid !== 'string' || !/^tg:\d{1,15}$/.test(uid)) return;
+    const idx = await this.retIdx();
+    const e = idx[uid] || (idx[uid] = { v: 0 });
+    if (e.off) return;
+    e.off = 1; e.offTarjeta = 1;
+    await this.retGuardarIdx();
+  },
+
   async ponerAvisos(b) {
     const id = String(b.tgId || '');
     if (!/^\d{1,15}$/.test(id)) return { ok: false, error: 'id de Telegram no válido' };
@@ -1044,6 +1056,7 @@ export const Retencion = {
       for (const u in idx) if (idx[u].tc === id && idx[u].bloq) { delete idx[u].bloq; idx[u].a = 0; }
     }
     else if (b.on === false) e.off = 1;
+    delete e.offTarjeta;   // lo decidio en el bot: la tarjeta del juego ya no lo cambia
     // Si no se guardo, se dice: si no, la baja solo vivia en memoria hasta el siguiente reinicio.
     if (!(await this.retGuardarIdx())) return { ok: false, error: 'No se pudo guardar. Intenta de nuevo en un rato.' };
     return { ok: true, on: !e.off, jugo: e.v > 0 };
@@ -1073,6 +1086,7 @@ export const Retencion = {
     const idx = await this.retIdx(), id = uid.slice(3);
     let cambio = false;
     const e = idx[uid];
+    if (e && e.offTarjeta) { delete e.off; delete e.offTarjeta; e.a = 0; cambio = true; }   // habia dicho «Ahora no» en la tarjeta
     if (e && e.bloq) { delete e.bloq; e.a = 0; cambio = true; }
     for (const u in idx) if (idx[u].tc === id && idx[u].bloq) { delete idx[u].bloq; idx[u].a = 0; cambio = true; }
     return cambio ? this.retGuardarIdx() : true;

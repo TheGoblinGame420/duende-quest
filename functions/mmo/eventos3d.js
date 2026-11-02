@@ -148,13 +148,16 @@ export const Eventos3D = {
     const W = this.iniciar3d(), mp = MAPAS[zona];
     const k = azar(mp.monstruos), nom = azar(NOMBRES), ti = azar(TINTES);
     const p = cerca ? this.puntoCerca3d(cerca, zona) : { x: 0, z: 0 };
+    // Nivel a la medida de quien lo encuentra (su nivel +2, dentro del rango de la zona): el novato no muere por el "raro seguro".
+    const nvR = Math.max(mp.nv[0], Math.min(mp.nv[1], ((cerca && cerca.c && cerca.c.nivel) || mp.nv[0]) + 2));
     // Afijo visible: furioso (pega +50 % bajo el 30 % de vida) o sanguinario (se cura al caer sus esbirros).
     const af = azar(['furioso', 'sanguinario']), expira = Date.now() + RARO3D_VIDA_MS;
-    const o = this.crearEspecial3d(k, p.x, p.z, { zona, nv: mp.nv[1], hpX: 6, atkX: 1.3, ex: { raro: 1, nom, ti, af }, expira });
-    // Dos esbirros normales de su misma especie a su lado (caducan con el).
-    for (const lado of [-1, 1]) this.crearEspecial3d(k, p.x + lado * 3, p.z + lado * 1.5, { zona, nv: mp.nv[1], ex: { esb: o.id }, expira });
+    const o = this.crearEspecial3d(k, p.x, p.z, { zona, nv: nvR, hpX: 6, atkX: 1.3, ex: { raro: 1, nom, ti, af }, expira });
+    // Dos esbirros normales de su misma especie a su lado (caducan con el); pelean de verdad.
+    for (const lado of [-1, 1]) this.crearEspecial3d(k, p.x + lado * 3, p.z + lado * 1.5, { zona, nv: nvR, agresivo: true, ex: { esb: o.id }, expira });
     (W.raros || (W.raros = {}))[zona] = { id: o.id, prox: Date.now() + RARO3D_TIRADA_MS };
-    for (const s of this.sesiones3d()) if (zonaEn(s.p.x, s.p.z) === zona) this.enviar(s, { t: 'aviso', m: `★ ¡${nom} (${MONSTRUOS[k].nombre} raro) ronda ${mp.nombre} con dos esbirros · ${AFIJOS[af].emoji} ${AFIJOS[af].nombre}! Objeto raro seguro para quien lo derrote.` });
+    const PISTA_AF = { furioso: 'pega +50% cuando le queda poca vida: guarda tu esquiva', sanguinario: 'se cura si caen sus esbirros: ve primero por él' };
+    for (const s of this.sesiones3d()) if (zonaEn(s.p.x, s.p.z) === zona) this.enviar(s, { t: 'aviso', m: `★ ¡${nom}, élite de ${MONSTRUOS[k].nombre}, ronda ${mp.nombre} con dos esbirros! ${AFIJOS[af].emoji} ${AFIJOS[af].nombre}: ${PISTA_AF[af]}. Objeto raro seguro para quien lo venza.` });
     return o;
   },
   premioRaro3d(o) {
@@ -181,7 +184,7 @@ export const Eventos3D = {
       this.progresoTarea && this.progresoTarea(s, 'raro');
       s.sucio = true;
       this.enviar(s, { t: 'gana', xp, oro, drops: [], item: it });
-      this.enviar(s, { t: 'toast', ok: true, m: `★ ${o.ex3.nom} derrotado: +${xp} XP · +${oro} oro · ${RAREZAS[it.r].nombre}: ${nombreItem(it)}` });
+      this.enviar(s, { t: 'toast', ok: true, m: `★ ¡Venciste a ${o.ex3.nom}! +${xp} XP · +${oro} oro · ${RAREZAS[it.r].nombre}: ${nombreItem(it)}` });
       this.revisarLogros(s);
       this.yoLuego(s, true);
       nombres.push(s.c.nombre);
