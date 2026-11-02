@@ -65,11 +65,11 @@ function cargarTon(){
 }
 function tonGuardada(){ try{ for(var i=0;i<localStorage.length;i++){ if(/^ton-connect/.test(localStorage.key(i)||'')) return true; } }catch(e){} return false; }
 </script>
-<script src="js/config.js?v=337"></script>
-<script src="js/missions.js?v=337"></script>
-<script src="js/streak.js?v=337"></script>
-<script src="js/achievements.js?v=337"></script>
-<script src="js/auth-manager.js?v=337" defer></script>
+<script src="js/config.js?v=338"></script>
+<script src="js/missions.js?v=338"></script>
+<script src="js/streak.js?v=338"></script>
+<script src="js/achievements.js?v=338"></script>
+<script src="js/auth-manager.js?v=338" defer></script>
 <style>
 /* ── TOKENS (guia de diseño comun, oct 2026) ──
    Las variables viejas se mantienen remapeadas a tonos sobrios. */
@@ -377,7 +377,7 @@ h1.ov-title{font-weight:normal;}
     <button class="ob sec" id="menu-auth-btn" onclick="handleAuthBtnClick()">🔑 CUENTA</button>
     <!-- Sonido si/no: lo pinta y lo recuerda js/engine.js (alternarSonido, tecla M) -->
     <button class="ob sec btn-sonido" type="button" onclick="alternarSonido()" data-on="🔊 SONIDO: SI" data-off="🔇 SONIDO: NO">🔊 SONIDO: SI</button>
-    <a href="/mmo/" class="ob sec mmo-link"><span class="badge-nuevo">Nuevo</span> Juega online con otros →</a>
+    <a href="/jugar/?utm_source=arcade&amp;utm_medium=menu" class="ob sec mmo-link"><span class="badge-nuevo">Nuevo</span> Juega online con otros →</a>
     <div id="streak-banner" class="panel-menu"></div>
     <div id="daily-missions" class="panel-menu"></div>
     <div id="achievements-panel" class="panel-menu" style="margin-bottom:.6rem"></div>
@@ -437,6 +437,7 @@ h1.ov-title{font-weight:normal;}
       <button class="ob purple" onclick="showRanking()">🏆 RANKING</button>
       <button class="ob sec" onclick="toMenu()">⌂ MENU</button>
       <a href="index.html" class="ob sec">🌐 SITIO WEB</a>
+      <a href="/jugar/?utm_source=arcade&amp;utm_medium=gameover" class="ob purple">🌍 JUGAR ONLINE</a>
     </div>
   </div>
 
@@ -795,7 +796,7 @@ window.DQE = {
   },
 };
 </script>
-<script src="js/engine.js?v=337"></script>
+<script src="js/engine.js?v=338"></script>
 <script>
 'use strict';
 // ── RANKING ──// ── RANKING ──

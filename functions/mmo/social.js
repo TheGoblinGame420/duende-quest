@@ -78,7 +78,11 @@ export const Social = {
   // ── INVITAR ──
   invitar(s, m) {
     this.iniciarSocial();
-    const t = this.sesiones.get(m.p | 0);
+    // Por nombre (amigos que llegan por el mismo anuncio, sin enlace) o por id de sesion.
+    const nom = typeof m.n === 'string' ? limpiar(m.n).slice(0, 24) : '';
+    const t = nom ? [...this.sesiones.values()].find(x => x.c && !x.cerrado && String(x.c.nombre || '').toLowerCase() === nom.toLowerCase()) : this.sesiones.get(m.p | 0);
+    if (nom && !t) return this.no(s, `No encontré a «${nom}» conectado. Revisa cómo se escribe su nombre.`);
+    if (nom && t === s) return this.no(s, 'Ese es tu nombre: escribe el de tu amigo.');
     if (!t || !t.c || t === s) return;
     const g = this.grupoDe(s);
     if (g && g.lider !== s.c.uid) return this.no(s, 'Solo el líder del grupo puede invitar.');
@@ -119,6 +123,22 @@ export const Social = {
     s.gid = g.id;
     this.avisarGrupo(g, `👥 ${s.c.nombre} se unió al grupo.`);
     this.enviarGrupo(g);
+    this.amigosPorGrupo(s, lider);
+  },
+  // Quien acepta una invitacion y quien invito quedan como amigos mutuos (asi
+  // al dia siguiente se ven conectados). No con invitados de nivel < 2 ni si uno ignora al otro.
+  amigosPorGrupo(a, b) {
+    if (!a || !b || !a.c || !b.c || a === b) return;
+    const novato = x => x.c.uid.startsWith('inv:') && (x.c.nivel || 1) < 2;
+    if (novato(a) || novato(b) || meIgnora(a, b.c.uid) || meIgnora(b, a.c.uid)) return;
+    for (const [x, y] of [[a, b], [b, a]]) {
+      const l = x.c.contactos || (x.c.contactos = []);
+      if (l.some(c => c.u === y.c.uid) || l.length >= CONTACTOS_MAX) continue;
+      l.push({ u: y.c.uid, n: y.c.nombre });
+      x.sucio = true;
+      this.enviar(x, { t: 'toast', ok: true, m: `⭐ ${y.c.nombre} ya está en tus amigos: verás cuándo se conecta.` });
+      if (this.enviarContactos) this.enviarContactos(x);
+    }
   },
 
   salirGrupo(s, motivo) {
@@ -548,13 +568,11 @@ export const Social = {
   quien(s) {
     if (Date.now() - (s.quienT || 0) < 2000) return;   // recorre a todos: con limite
     s.quienT = Date.now();
-    const r = [];
-    for (const x of this.sesiones.values()) {
-      if (!x.c || x === s) continue;
-      r.push({ id: x.id, n: x.c.nombre, lv: x.c.nivel, cl: x.c.clase || '', mapa: MAPAS[x.c.mapa] ? MAPAS[x.c.mapa].nombre : '', g: x.gid ? 1 : 0, m3: x.m3 ? 1 : 0, h: x.c.herm ? (this.nombreHermandad ? this.nombreHermandad(x.c.herm) : '') : '' });
-      if (r.length >= 100) break;
-    }
-    r.sort((a, b) => b.lv - a.lv);
+    // Primero quien no tiene grupo y, entre ellos, los de nivel bajo (los recien
+    // llegados por el mismo anuncio se encuentran); luego el corte a 100.
+    const cand = [...this.sesiones.values()].filter(x => x.c && x !== s)
+      .sort((a, b) => (a.gid ? 1 : 0) - (b.gid ? 1 : 0) || (a.gid ? (b.c.nivel | 0) - (a.c.nivel | 0) : (a.c.nivel | 0) - (b.c.nivel | 0))).slice(0, 100);
+    const r = cand.map(x => ({ id: x.id, n: x.c.nombre, lv: x.c.nivel, cl: x.c.clase || '', mapa: MAPAS[x.c.mapa] ? MAPAS[x.c.mapa].nombre : '', g: x.gid ? 1 : 0, m3: x.m3 ? 1 : 0, h: x.c.herm ? (this.nombreHermandad ? this.nombreHermandad(x.c.herm) : '') : '' }));
     this.enviar(s, { t: 'quien', r });
   },
 };

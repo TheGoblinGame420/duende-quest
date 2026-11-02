@@ -190,6 +190,7 @@ export const Mundo3D = {
       case 'equipar': return this.equipar(s, m);
       case 'item': return this.item(s, m);
       case 'titulo': return this.ponerTitulo(s, m);
+      case 'miNombre': return this.miNombre(s, m);   // dios.js: el invitado elige su nombre (1 vez)
       case 'faccion': return this.elegirFaccion(s, m);
       case 'maquina': return this.dispararMaquina(s, m);
       case 'abismo': return this.entrarAbismo(s);
@@ -469,6 +470,8 @@ export const Mundo3D = {
     const ahora = Date.now();
     if ((s.c.pw[def.id] || 0) <= 0) return this.enviar(s, { t: 'toast', m: `No te quedan ${def.nombre}s. Cómpralos al Mercader del pueblo.` });
     if (ahora < (s.cdPw[def.id] || 0)) return;
+    // En duelo (ya empezado) no hay pociones: las pociones se compran y el duelo no.
+    if (def.id === 'pocion' && s.duelo && ahora >= (s.duelo.ini || 0)) return this.no(s, 'En un duelo no se usan pociones: gana el más hábil.');
     s.c.pw[def.id]--;
     s.cdPw[def.id] = ahora + def.cd;
     if (def.id === 'pocion') {
@@ -1119,7 +1122,9 @@ export const Mundo3D = {
     if (o.dormido) { o.st = 0; return; }   // el Guardian espera a que caiga la puerta
     // Sorbo del Cantaro: lo cortan Patada, Zurrar, Contrahechizo, Silencio o un aturdimiento.
     if (o.sorbo) {
-      if (this.auraMon(o, 'silencio') || this.auraMon(o, 'aturdido') || this.auraMon(o, 'oveja')) { o.sorbo = null; this.aCerca3d(o, { t: 'mcast', id: o.id, ms: 0, cortado: 1 }); }
+      // Pegarle fuerte (6 % de su vida mientras bebe) tambien le tira el cantaro: asi se corta a Nv 6-9.
+      const golpeFuerte = o.sorbo.hp0 != null && o.sorbo.hp0 - o.hp >= o.max * 0.06;
+      if (golpeFuerte || this.auraMon(o, 'silencio') || this.auraMon(o, 'aturdido') || this.auraMon(o, 'oveja')) { o.sorbo = null; this.aCerca3d(o, { t: 'mcast', id: o.id, ms: 0, cortado: 1 }); }
       else if (ahora >= o.sorbo.fin) { o.sorbo = null; o.hp = Math.min(o.max, o.hp + Math.round(o.max * SORBO_CURA)); this.aCerca3d(o, { t: 'mcast', id: o.id, ms: 0, cura: 1, hp: Math.ceil(o.hp) }); }
     }
     if (this.auraMon(o, 'aturdido') || this.auraMon(o, 'oveja')) { o.st = 0; return; }
@@ -1194,7 +1199,7 @@ export const Mundo3D = {
         }
       }
       if (o.jefe && o.campo >= 0 && !enC && !o.sorbo && o.hp < o.max * 0.6 && d < 20 && ahora >= (o.sorboProx || 0)) {
-        o.sorbo = { fin: ahora + SORBO_MS }; o.sorboProx = ahora + rnd(16000, 22000);
+        o.sorbo = { fin: ahora + SORBO_MS, hp0: o.hp }; o.sorboProx = ahora + rnd(16000, 22000);
         this.aCerca3d(o, { t: 'mcast', id: o.id, ms: SORBO_MS, n: 'Sorbo del Cántaro' });
       }
       if (d > alcance || !veo) {

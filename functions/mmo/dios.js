@@ -106,6 +106,30 @@ export const Dios = {
       if (!dueno) await this.state.storage.put(k, c.uid);
     }
   },
+  // El invitado ('DuendeNNNN') elige su nombre una sola vez y gratis (Ajustes en ORIGINS y CLASSIC).
+  async miNombre(s, m) {
+    const c = s && s.c;
+    if (!c) return;
+    const ahora = Date.now();
+    if (ahora - (s.miNombreT || 0) < 5000) return this.enviar(s, { t: 'toast', m: 'Espera unos segundos e inténtalo otra vez.' });
+    s.miNombreT = ahora;
+    if (c.nombreLibreUsado || !/^Duende[0-9a-z]{3,6}$/i.test(c.nombre || '')) return this.enviar(s, { t: 'toast', m: 'Ya elegiste tu nombre.' });
+    if (typeof m.n !== 'string' || m.n.trim().length < 3 || m.n.trim().length > 16) return this.enviar(s, { t: 'toast', m: 'El nombre debe tener de 3 a 16 letras.' });
+    const pedido = String(m.n).slice(0, 16);
+    const limpio = limpiarNombre(pedido);
+    const antes = c.nombre;
+    const n = await this.nombreLibre(pedido, c.uid, false);
+    if (s.cerrado || s.c !== c) return;
+    if (!limpio || limpio.length < 3 || /^duende/i.test(n) || n !== limpio) return this.enviar(s, { t: 'toast', m: 'Ese nombre no está disponible, prueba otro.' });
+    c.nombre = n;
+    c.nombreLibreUsado = 1;
+    await this.reservarNombre(c, antes);
+    // ORIGINS (s.k '~3d') solo entiende 'pj3' (con 'pl'+'pj' el duende desaparecia para los demas).
+    if (s.k === '~3d' && this.info3d) this.aClave(s.k, { t: 'pj3', p: this.info3d(s) }, s);
+    else { this.aClave(s.k, { t: 'pl', id: s.id }, s); this.aClave(s.k, { t: 'pj', p: this.infoJugador(s) }, s); }
+    this.actualizarYo(s); s.sucio = true; await this.guardar(s);
+    this.enviar(s, { t: 'toast', m: `✏️ ¡Listo! Ahora te llamas «${n}».`, ok: true, miNombre: n });
+  },
 
   // ── SANCIONES ──
   async cargarMod() {

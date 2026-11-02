@@ -504,9 +504,18 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 337;
+export const VERSION = 338;
 
 export const NOVEDADES = [
+  { n: 106, fecha: '1 nov 2026', items: [
+    '¡Ponle nombre a tu duende! Si todavía te llamas «DuendeNNNN», entra en ? → Ajustes y elige tu nombre gratis (una vez).',
+    'Los objetos épicos y legendarios tienen nombre propio, como «Sandalias del Inti», y el cofre legendario del cielo 3D siempre da un legendario.',
+    'Duelos justos: sin pociones y con el nivel igualado; al recibir un reto ves las reglas.',
+    'Puedes cortar el «Sorbo del Cántaro» de los jefes pegándoles fuerte mientras beben.',
+    'Invita a un amigo al grupo escribiendo su nombre en Amigos; si juegan juntos, quedan como amigos.',
+    'El color de nombre que compraste ya se ve en ORIGINS 3D. CLASSIC gasta mucho menos de tu plan de datos al cazar.',
+    'Si te quedas dormido con el AUTO prendido, se pausa solo a los 15 minutos. Desde el arcade puedes saltar al juego online con «🌍 JUGAR ONLINE».',
+  ] },
   { n: 105, fecha: '1 nov 2026', items: [
     "🎃 Último día de la Noche de Duendes: disfraces de mascota 25% más baratos hasta medianoche. ¡Mañana 3 de noviembre empieza la Semana de la T'anta Wawa!",
     'En ORIGINS, con el AUTO tu duende espera a que salgan más monstruos y sigue solo, y toma una poción cuando su vida baja del 30 %.',
@@ -1270,7 +1279,16 @@ export function baseItem(ranura, nv) {
   }
   return {};
 }
-export function nombreItem(it) { const r = RANURAS[it.s]; return r ? r.nombres[tierItem(it.nv)] + (it.cj && CONJUNTOS[it.cj] ? ' «' + CONJUNTOS[it.cj].nombre + '»' : '') : '?'; }
+// Epítetos por rareza: un legendario no se anuncia como unas «Sandalias» cualquiera.
+export const EPITETOS = [[], ['del Colca','de Ayacucho','de Andahuaylas','del Cóndor'], ['del Inti','de la Pachamama','del Amaru','de Chavín'], ['del Apu Dorado','de Wiracocha','del Último Inca','de la Luna de Paititi']];
+function epitetoItem(it) {
+  const r = it.r | 0; if (r < 1) return '';
+  const lista = EPITETOS[Math.min(r, 3)]; if (!lista || !lista.length) return '';
+  const id = String(it.id || ''); let h = 0;
+  for (let i = 0; i < id.length; i++) h += id.charCodeAt(i);
+  return ' ' + lista[h % lista.length];
+}
+export function nombreItem(it) { const r = RANURAS[it.s]; return r ? r.nombres[tierItem(it.nv)] + epitetoItem(it) + (it.cj && CONJUNTOS[it.cj] ? ' «' + CONJUNTOS[it.cj].nombre + '»' : '') : '?'; }
 // ── CONJUNTOS ──
 // Cada mazmorra tiene su conjunto: sus jefes (y sus Desafios) a veces sueltan
 // piezas marcadas (it.cj = id de la mazmorra). Con 2 piezas del mismo

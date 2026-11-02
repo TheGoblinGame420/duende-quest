@@ -21,7 +21,7 @@ import {
   EXPEDICION, premioExpedicion, MATERIALES,
   PAQUETES, estrellasDe, solesDeStars, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA, LOGROS, progresoLogro, statsJugador, ALAS, paqueteParaFaltante, ENTREGA, textoPagoRecibido, PEDIDO_VIGENCIA_MS,
   pagoLocalActivo, textoSoles, YAPE_VIGENCIA_MS, premioDiaria, MISIONES,
-} from '/mmo/js/data.js?v=337';
+} from '/mmo/js/data.js?v=338';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -598,7 +598,7 @@ function htmlTintes(y) {
     const tiene = (y.tintes || []).includes(id);
     if ((tn.amb || tn.racha) && !tiene) continue;   // los del ambulante, en su pestaña; el de racha no se vende
     const acc = tiene ? (y.tinte === id ? etq('✓ En uso', 'vv-ok') : btn('Usar', 'comprar', { k: 'tinte', id }, 'sec')) : precioYBoton(y, tn.precio, 'tinte', id, tn.nv);
-    h += tarjeta(muestraTinte(tn), `<span style="color:${tn.color === 'arcoiris' ? '#facc15' : tn.color}">${esc(tn.nombre)}</span>`, 'Color de tu nombre sobre tu duende: lo ven todos. Solo estética.', acc);
+    h += tarjeta(muestraTinte(tn), `<span style="color:${tn.color === 'arcoiris' ? '#facc15' : tn.color}">${esc(tn.nombre)}</span>`, 'Color de tu nombre sobre tu duende en ORIGINS y CLASSIC: lo ven todos. Solo estética.', acc);
   }
   h += '</div>';
   if (y.tinte) h += btn('Volver al color de mi clase', 'comprar', { k: 'tinte', id: '' }, 'sec vv-full');
@@ -610,7 +610,7 @@ function htmlMascotas(y) {
     const tiene = (y.mascotas || []).includes(id);
     if ((ma.amb || ma.pase || ma.pesca) && !tiene) continue;   // ambulante, pase y pesca no se venden aqui
     const acc = tiene ? (y.mascota === id ? etq('✓ Te acompaña', 'vv-ok') : btn('Llevar', 'comprar', { k: 'mascota', id }, 'sec')) : precioYBoton(y, ma.precio, 'mascota', id, ma.nv);
-    h += tarjeta(icoHoja(ma.hoja, ma.tinte), esc(ma.nombre), 'Te sigue a todas partes y la ven todos. Solo estética: no da nada.' + (!tiene ? ` <span class="vv-dim">Desde Nv ${ma.nv}.</span>` : ''), acc);
+    h += tarjeta(icoHoja(ma.hoja, ma.tinte), esc(ma.nombre), 'Te sigue en CLASSIC (2D) y la ven todos; en ORIGINS todavía no se ve. En expediciones da +15% de oro.' + (!tiene ? ` <span class="vv-dim">Desde Nv ${ma.nv}.</span>` : ''), acc);
   }
   h += '</div>';
   if (y.mascota) h += btn('Guardar a mi mascota', 'comprar', { k: 'mascota', id: '' }, 'sec vv-full');

@@ -105,6 +105,9 @@ export function zonaSiguiente(id) {
 }
 
 export const Eventos = {
+  // Avisos globales solo para CLASSIC 2D: ORIGINS 3D (s.m3) no tiene estas invasiones.
+  a2d(obj) { const t = JSON.stringify(obj); for (const s of this.sesiones.values()) if (s.c && !s.m3) this.enviar(s, t); },
+
   // ── CADA TICK ──
   // porClave: jugadores por mundo vivo (lo arma tick()).
   tickEventos(ahora, porClave) {
@@ -139,8 +142,8 @@ export const Eventos = {
       meta: clamp(12 + 8 * n, 20, 60), hechos: 0, fase: 'oleadas', oleadaEn: ahora,
       capitan: 0, part: new Set(),
     };
-    this.aTodos({ t: 'aviso', m: `${ev.nombre} en ${mp.nombre}. Derroten a ${ev.meta} invasores en 5 minutos.` });
-    this.aTodos(this.estadoEvento());
+    this.a2d({ t: 'aviso', m: `${ev.nombre} en ${mp.nombre}. Derroten a ${ev.meta} invasores en 5 minutos.` });
+    this.a2d(this.estadoEvento());
     return ev;
   },
 
@@ -218,7 +221,7 @@ export const Eventos = {
     ev.fase = 'capitan';
     ev.capitan = o.id;
     this.aClave(ev.mapa, { t: 'emote', m: `⚔️ ¡${nom} llega para vengar a los suyos! Derrótalo para ganar la invasión.` });
-    this.aTodos(this.estadoEvento());
+    this.a2d(this.estadoEvento());
   },
 
   terminarEvento(ganado) {
@@ -236,8 +239,8 @@ export const Eventos = {
       if (!o.muere) this.aClave(ev.mapa, { t: 'md', id: o.id, pr: [] });
     }
     if (!ganado) {
-      this.aTodos({ t: 'aviso', m: `⌛ Los invasores se retiraron de ${mp.nombre}: la invasión terminó sin premio.` });
-      this.aTodos({ t: 'ev', on: false, fin: 'perdida', mapa: ev.mapa });
+      this.a2d({ t: 'aviso', m: `⌛ Los invasores se retiraron de ${mp.nombre}: la invasión terminó sin premio.` });
+      this.a2d({ t: 'ev', on: false, fin: 'perdida', mapa: ev.mapa });
       return;
     }
     const nombres = [];
@@ -264,16 +267,16 @@ export const Eventos = {
       this.actualizarYo(s);
       nombres.push(c.nombre);
     }
-    this.aTodos({ t: 'aviso', m: `${ev.nombre} rechazada en ${mp.nombre}. Héroes: ${nombres.slice(0, 6).join(', ') || '—'}${nombres.length > 6 ? ' y ' + (nombres.length - 6) + ' más' : ''}` });
-    this.aTodos({ t: 'ev', on: false, fin: 'ganada', mapa: ev.mapa });
+    this.a2d({ t: 'aviso', m: `${ev.nombre} rechazada en ${mp.nombre}. Héroes: ${nombres.slice(0, 6).join(', ') || '—'}${nombres.length > 6 ? ' y ' + (nombres.length - 6) + ' más' : ''}` });
+    this.a2d({ t: 'ev', on: false, fin: 'ganada', mapa: ev.mapa });
     // La marcha sigue en la zona vecina (se les persigue caminando).
     const sig = (ev.etapa || 1) < MARCHA_ETAPAS ? zonaSiguiente(ev.mapa) : null;
     if (sig) {
       const etapa = (ev.etapa || 1) + 1;
       this.marcha = { mapa: sig, etapa, en: Date.now() + MARCHA_ESPERA_MS };
-      this.aTodos({ t: 'aviso', m: `Los supervivientes huyen hacia ${MAPAS[sig].nombre}. La marcha sigue allí en ${MARCHA_ESPERA_MS / 1000} s (etapa ${etapa}/${MARCHA_ETAPAS}, premio +${Math.round((MARCHA_MULT[etapa - 1] - 1) * 100)}%). Cruza el borde de la zona para perseguirlos.` });
+      this.a2d({ t: 'aviso', m: `Los supervivientes huyen hacia ${MAPAS[sig].nombre}. La marcha sigue allí en ${MARCHA_ESPERA_MS / 1000} s (etapa ${etapa}/${MARCHA_ETAPAS}, premio +${Math.round((MARCHA_MULT[etapa - 1] - 1) * 100)}%). Cruza el borde de la zona para perseguirlos.` });
     } else if ((ev.etapa || 1) >= MARCHA_ETAPAS) {
-      this.aTodos({ t: 'aviso', m: `¡Marcha de invasores derrotada en ${mp.nombre}! Las tres zonas quedaron a salvo.` });
+      this.a2d({ t: 'aviso', m: `¡Marcha de invasores derrotada en ${mp.nombre}! Las tres zonas quedaron a salvo.` });
     }
   },
 

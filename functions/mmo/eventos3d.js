@@ -264,10 +264,12 @@ export const Eventos3D = {
     let pociones = 0;
     if (Math.random() < T.pocion) { pociones = T.pociones; c.pw.pocion = Math.min(99, (c.pw.pocion || 0) + pociones); }
     let item = null;
-    if (Math.random() < X.equipo) { const nv = MAPAS[cf.zona].nv; item = this.darItem(s, this.generarItem(Math.min(nvJ, nv[1]), T.r)); }
+    // Rareza minima segun el cofre 3D: el epico suelta Raro o mas y el legendario Epico o mas (muy bajo para la zona: la de siempre).
+    const rMin3 = bajo ? T.r : ({ comun: 0, epico: 1, legendario: 2 }[cf.tipo] ?? T.r);
+    if (Math.random() < X.equipo) { const nv = MAPAS[cf.zona].nv; item = this.darItem(s, this.generarItem(Math.min(nvJ, nv[1]), rMin3)); }
     c.cofresAbiertos = (c.cofresAbiertos || 0) + 1;
     this.progresoTarea && this.progresoTarea(s, 'cofre');
-    this.enviar(s, { t: 'cofre3A', id: cf.i, ms: COFRE_CADA_MS, oro, pociones, item: item ? nombreItem(item) : null, tipo: cf.tipo });
+    this.enviar(s, { t: 'cofre3A', id: cf.i, ms: COFRE_CADA_MS, oro, pociones, item: item ? { r: item.r, nombre: nombreItem(item), id: item.id, s: item.s, nv: item.nv, b: item.b, cj: item.cj, vendido: item.vendido } : null, tipo: cf.tipo });
     if (bajo) this.enviar(s, { t: 'toast', m: `🧰 Este cofre es de una zona de nivel ${nvMin}: vuelve cuando seas más fuerte para el tesoro completo.` });
     this.revisarLogros(s);
     this.yoLuego(s, true);

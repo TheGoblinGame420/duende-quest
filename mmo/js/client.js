@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=337';
-import { iniciarRegalo } from './regalo.js?v=337';
-import { iniciarAvisoTg } from './avisotg.js?v=337';
+} from './data.js?v=338';
+import { iniciarRegalo } from './regalo.js?v=338';
+import { iniciarAvisoTg } from './avisotg.js?v=338';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -625,6 +625,19 @@ function recibir(m) {
       mandar({ t: 'contactos' });
       break;
     case 'mapa': entrarMapa(m); break;
+    // Tras cada caza el servidor manda solo lo que cambia (oro, XP, nivel,
+    // pociones, mision, diaria): se repinta solo lo barato.
+    case 'yoC':
+      if (yo && m.yo) {
+        Object.assign(yo, m.yo);
+        pintarHud();
+        if ($('m-mision').classList.contains('on')) pintarMision();
+        if ($('m-tienda').classList.contains('on')) pintarTienda();
+        if ($('m-inv').classList.contains('on')) pintarInventario();
+        // #premium con otra ventana abierta al entrar: se reintenta tras la caza (antes lo hacia el 'yo')
+        if (tiendaAlEntrar && yo.clase) setTimeout(() => { if (tiendaAlEntrar && yo && !document.querySelector('.modal.on')) { tiendaAlEntrar = false; abrirTiendaHud('bot', true); } }, 1200);
+      }
+      break;
     case 'yo': {
       const antes = yo; yo = m.yo; puntoTienda();
       if (antes && antes.skins && yo.skins && yo.skins.length > antes.skins.length) { const nueva = yo.skins.find(k => !antes.skins.includes(k)); if (nueva && SKINS[nueva]) setTimeout(() => ofrecerPresumir('✨ ¡Estrené la skin ' + SKINS[nueva].nombre + ' en Duende Quest!', 'look'), 1500); }
@@ -1611,6 +1624,35 @@ $('b-rank').onclick = abrirRanking;
 $('b-dios').onclick = abrirDios;
 $('b-ayuda').onclick = () => abrir('m-ayuda');
 { const bn = $('b-novedades'); if (bn) bn.onclick = () => abrirNovedades(); }
+// Invitado 'DuendeNNNN': ponerle nombre a su duende (gratis, una vez; dios.js miNombre). Campo propio: prompt() falla en algunos WebView.
+{
+  const bnov = $('b-novedades');
+  if (bnov) {
+    const caja = document.createElement('div'); caja.style.cssText = 'display:none;margin-bottom:10px';
+    const bn = document.createElement('button'); bn.className = 'btn sec'; bn.style.width = '100%'; bn.textContent = '✏️ Ponle nombre a tu duende (gratis, 1 vez)';
+    const fila = document.createElement('div'); fila.style.cssText = 'display:none;gap:6px;margin-top:6px';
+    const inN = document.createElement('input');
+    inN.type = 'text'; inN.maxLength = 16; inN.placeholder = 'Nombre de tu duende (3-16 letras)'; inN.autocomplete = 'off';
+    inN.style.cssText = 'flex:1;min-width:0;padding:10px;border-radius:8px;border:1px solid #556;background:#111;color:#fff;font-size:16px';
+    const bok = document.createElement('button'); bok.className = 'btn'; bok.textContent = 'Listo';
+    fila.append(inN, bok); caja.append(bn, fila);
+    bnov.after(caja);
+    bn.onclick = () => { fila.style.display = 'flex'; setTimeout(() => { try { inN.focus(); } catch (e) {} }, 50); };
+    const enviarNombre = () => {
+      const n = inN.value.replace(/\s+/g, ' ').trim().slice(0, 16);
+      if (n.length < 3 || !/^[A-Za-z0-9À-ÖØ-öø-ÿ _]+$/.test(n)) { aviso('Usa de 3 a 16 letras o números (sin símbolos).'); return; }
+      if (/^duende/i.test(n)) { aviso('Elige un nombre que no empiece por «Duende».'); return; }
+      mandar({ t: 'miNombre', n });
+      try { localStorage.setItem('dq_mmo_nombre', n); } catch (e) {}
+      fila.style.display = 'none'; inN.value = '';
+      cerrarModales();
+    };
+    bok.onclick = enviarNombre;
+    inN.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') enviarNombre(); });
+    inN.addEventListener('keyup', e => e.stopPropagation());
+    $('b-ayuda').addEventListener('click', () => { caja.style.display = yo && /^Duende[0-9a-z]{3,6}$/i.test(yo.nombre || '') ? '' : 'none'; fila.style.display = 'none'; });
+  }
+}
 $('b-wallet').onclick = abrirWallet;
 $('h-mton-c').onclick = abrirWallet;
 // Tienda siempre a la vista (v325): Nv 3+ abre las skins (oro y premium), antes directo a la oferta.

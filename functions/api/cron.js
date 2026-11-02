@@ -40,8 +40,13 @@ export async function dailyReminder(env, saltar = new Set()) {
   const e = envOf(env);
   const token = env.TELEGRAM_BOT_TOKEN;
   if (!token) return;
-  const profiles = await supabaseQuery(e, 'profiles?select=telegram_id&telegram_id=not.is.null&limit=500');
-  if (!Array.isArray(profiles)) return;
+  // Solo a quien jugo el arcade en los ultimos 7 dias (sus partidas en
+  // game_scores): a los que se fueron no se les insiste cada dia. Ojo:
+  // profiles.updated_at no sirve, jugar no lo cambia (solo $DUENDE).
+  const desde = encodeURIComponent(new Date(Date.now() - 7 * 86400000).toISOString());
+  const filas = await supabaseQuery(e, `game_scores?select=telegram_id&telegram_id=not.is.null&created_at=gte.${desde}&order=created_at.desc&limit=3000`);
+  if (!Array.isArray(filas)) return;
+  const profiles = [...new Set(filas.map(f => String(f.telegram_id || '')))].slice(0, 500).map(t => ({ telegram_id: t }));
   let sent = 0;
   for (const p of profiles) {
     if (!p.telegram_id || !/^\d+$/.test(p.telegram_id)) continue;
@@ -49,7 +54,7 @@ export async function dailyReminder(env, saltar = new Set()) {
     try {
       await tg(token, 'sendMessage', {
         chat_id: p.telegram_id,
-        text: '🎯 *Tus misiones diarias te esperan*\n\n🔥 No pierdas tu racha — el bonus de hoy puede ser de hasta *100 DQ*\n🏆 El torneo semanal está en juego',
+        text: '🎯 *Tus misiones diarias te esperan*\n\n🔥 No pierdas tu racha — el bonus de hoy puede ser de hasta *100 DQ*\n🏆 El torneo semanal está en juego\n\nPara no recibir más avisos: /avisos off',
         parse_mode: 'Markdown',
         reply_markup: { inline_keyboard: [[{ text: '🎮 JUGAR AHORA', web_app: { url: WEBAPP_URL } }]] },
       });

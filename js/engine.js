@@ -2643,6 +2643,8 @@ function ganarNivel() {
       (typeof window.shareScore === 'function' ? '<button class="ob sec" id="vic-share">📣 COMPARTIR</button>' : '') +
       '<button class="ob sec" id="vic-rep">↻ REPETIR</button>' +
       '<button class="ob sec" id="vic-mapa">🗺 MAPA</button>' +
+      // Salida al juego online (solo en la web: dentro de Telegram ya esta el bot)
+      (!(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) ? '<a href="/jugar/?utm_source=arcade&amp;utm_medium=victoria" class="ob purple" style="text-align:center;text-decoration:none">🌍 JUGAR ONLINE</a>' : '') +
     '</div>';
   ov.querySelector('#vic-sig').onclick = () => siguiente ? startGame({ nivel: idx + 1 }) : startGame();
   ov.querySelector('#vic-rep').onclick = () => startGame({ nivel: idx });

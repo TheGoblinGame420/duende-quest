@@ -1594,7 +1594,7 @@ async function pruebasRetencion() {
   const arcade = [];
   globalThis.fetch = async (url, init) => {
     const u = String(url);
-    if (u.includes('/rest/v1/profiles')) return new Response(JSON.stringify([{ telegram_id: '3001' }, { telegram_id: '3003' }, { telegram_id: '3004' }, { telegram_id: '9999' }]));
+    if (u.includes('/rest/v1/profiles') || u.includes('/rest/v1/game_scores')) return new Response(JSON.stringify([{ telegram_id: '3001' }, { telegram_id: '3003' }, { telegram_id: '3004' }, { telegram_id: '9999' }]));
     if (u.includes('api.telegram.org')) { arcade.push(String(JSON.parse(init.body).chat_id)); return new Response('{"ok":true}'); }
     return new Response('{}');
   };
@@ -1634,7 +1634,7 @@ async function pruebasRetencion() {
     arcade.length = 0;
     globalThis.fetch = async (url, init) => {
       const u = String(url);
-      if (u.includes('/rest/v1/profiles')) return new Response(JSON.stringify([{ telegram_id: '3003' }, { telegram_id: '3010' }, { telegram_id: '9999' }]));
+      if (u.includes('/rest/v1/profiles') || u.includes('/rest/v1/game_scores')) return new Response(JSON.stringify([{ telegram_id: '3003' }, { telegram_id: '3010' }, { telegram_id: '9999' }]));
       if (u.includes('api.telegram.org')) { arcade.push(String(JSON.parse(init.body).chat_id)); return new Response('{"ok":true}'); }
       return new Response('{}');
     };

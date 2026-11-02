@@ -188,6 +188,13 @@ export const Duelos = {
     const forja = multForja(Math.min(5, (s.c.forja || {})[s.c.arma] || 0));
     let dmg = sb.atk * mult * forja * rnd(0.9, 1.1) * (crit ? 1.8 : 1) * (this.aura(s, 'grito') ? 1.1 : 1) * (this.elixir(s, 'elixirF') ? 1.1 : 1) * (this.elixir(s, 'sudado') ? 1.05 : 1);
     if (this.aura(s, 'sigilo')) { dmg *= 2; this.quitarAura(s, 'sigilo'); }
+    // Duelo amistoso con mucha diferencia de nivel: cada golpe quita el mismo %
+    // de vida que entre iguales (siguen contando equipo, clase y habilidad).
+    // Con la vida sin skin (herir ya quita la vida extra de la skin del que recibe).
+    if (s.duelo && s.duelo.con === t.id && t.c && t.st && Math.abs((s.c.nivel || 1) - (t.c.nivel || 1)) > 5) {
+      const tb = this.statsSinSkin ? this.statsSinSkin(t) : t.st;
+      if (sb.maxHp > 0 && tb && tb.maxHp > 0) dmg *= tb.maxHp / sb.maxHp;
+    }
     const vara = basico && CLASES[s.c.clase] && CLASES[s.c.clase].basico === 'vara';
     dmg = Math.max(1, Math.round(dmg * (vara ? ESCALA_VARA : ESCALA)));
     s.combateT = ahora;

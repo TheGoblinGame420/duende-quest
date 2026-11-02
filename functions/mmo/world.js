@@ -501,6 +501,7 @@ export class MmoWorld {
       case 'hab': return this.habilidad(s, m);
       case 'item': return this.item(s, m);
       case 'titulo': return this.ponerTitulo(s, m);
+      case 'miNombre': return this.miNombre(s, m);   // dios.js: el invitado elige su nombre (1 vez)
       case 'wallet': return this.ponerWallet(s, m);
       case 'retirar': return this.retirar(s);
       case 'fondo': return this.enviar(s, { t: 'fondo', ...this.infoFondo() });
@@ -2099,7 +2100,9 @@ export class MmoWorld {
   // repintado en el cliente): se marca y tick3d manda como mucho 1 vez/s lo
   // que cambia al cazar ('yoC', ~250 B). full = hace falta el 'yo' entero
   // (botin, subida de nivel, logro).
-  yoLuego(s, full) { if (!s.m3) return this.actualizarYo(s); s.yoPend = full || s.yoPend === 'full' ? 'full' : 'caza'; }
+  // CLASSIC 2D: lo mismo pero al momento (sin tick3d): 'yoC' de ~250 B por
+  // caza en vez del 'yo' entero; con AUTO continuo ahorra datos moviles.
+  yoLuego(s, full) { if (!s.m3) { if (full) return this.actualizarYo(s); return this.enviar(s, { t: 'yoC', yo: { ...this.datosCaza(s), best: s.c.best || {} } }); } s.yoPend = full || s.yoPend === 'full' ? 'full' : 'caza'; }
   datosCaza(s) { const c = s.c, max = c.nivel >= NIVEL_MAX; return { nivel: c.nivel, xp: max ? (c.mae || {}).p || 0 : c.xp, xpSig: max ? MAESTRIA_XP : xpParaSubir(c.nivel), mae: (c.mae || {}).n || 0, oro: c.oro, kills: c.kills, jefes: c.jefes, mis: c.mis, diaria: c.diaria, pw: c.pw, descanso: c.descanso || 0, mat: c.mat || {} }; }
   vaciarYo(s, ahora) {
     if (!s.yoPend || ahora - (s.yoT || 0) < 1000) return;
@@ -2908,6 +2911,8 @@ export class MmoWorld {
     const ahora = Date.now();
     if ((s.c.pw[def.id] || 0) <= 0) return this.enviar(s, { t: 'toast', m: `No te quedan ${(def.plural || def.nombre).toLowerCase()}. El Mercader del pueblo las vende.` });
     if (ahora < (s.cdPw[def.id] || 0)) return;
+    // En duelo (ya empezado) no hay pociones: las pociones se compran y el duelo no.
+    if (def.id === 'pocion' && s.duelo && ahora >= (s.duelo.ini || 0)) return this.no(s, 'En un duelo no se usan pociones: gana el más hábil.');
     s.c.pw[def.id]--;
     s.cdPw[def.id] = ahora + def.cd;
     if (def.id === 'rayo' || def.id === 'fuego') this.desmontar(s);

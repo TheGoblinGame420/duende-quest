@@ -3328,3 +3328,17 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Arnés 897 bien.
 
 **Resumen de la noche (v325–v337):** evaluación con 221 agentes (1048 propuestas, backlog de 60 ítems, todos atendidos o preparados) y 12 rondas de mejora con unos 640 agentes. Pendiente del dueño: Yape (`PAGO_LOCAL`), píxel (`META_PIXEL_ID`/`META_CAPI_TOKEN`), `DEPLOY_SECRET`, Mini App «jugar» en BotFather, Redirect URLs de Supabase con /mundo/, revisar `ENTREGA` y `CHICHA`, depurador de compartir de Meta, «Confirm email» y `ADMIN_TG_ID`.
+
+### Ronda 13 (1-nov-2026 noche, `?v=338`)
+
+- 30 evaluadores (contenido, jefes, botín, secundarias, eventos, PvP, hermandades, economía media, colección, red, rendimiento, arcade, portada, QA de cueva/abismo/torre/chat/modo Dios) → 139 problemas → 10 tareas.
+- ORIGINS: flora sin kit Kenney no rompe la carga, precarga del shader de skins con brillo, pausa del AUTO a los 15 min sin tocar.
+- `a2d()` en eventos.js: invasiones 2D solo a sesiones 2D.
+- CLASSIC: `yoC` con `datosCaza` en vez del `yo` entero por kill (de 2–8 KB a ~250 B).
+- Colores de nombre en 3D; texto real de mascota (+15% oro en expediciones).
+- Duelos sin pociones y con nivel igualado (duelos.js); «Sorbo del Cántaro» interrumpible con golpe fuerte.
+- Renombrar gratis una vez a quien sigue como DuendeNNNN (dios.js/social.js).
+- Nombres propios de épicos/legendarios; cofre legendario del cielo con legendario garantizado.
+- Bot: /start corto para nuevos con botón al 3D; arcade con «🌍 JUGAR ONLINE»; recordatorio del arcade solo a quien jugó el arcade en 7 días y con «/avisos off».
+- Grupo por nombre en Amigos y amistad automática al jugar en grupo.
+- Arnés 897 bien (mock de game_scores en la prueba del cron).

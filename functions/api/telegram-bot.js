@@ -165,6 +165,23 @@ async function handleStart(token, env, chatId, user, startPayload, desdeMenu) {
     trailerEnviado.add(tgId);
     try { await tg(token, 'sendVideo', { chat_id: chatId, video: TRAILER_URL, caption: '🎬 Así se juega DUENDE QUEST (30 s de juego real)', supports_streaming: true }); } catch (e) {}
   }
+  // Al que llega nuevo (de un anuncio o invitado con ref_), un mensaje corto y
+  // tres botones: el muro de texto con cripto y 13 botones lo espantaba. El
+  // menu completo sigue en «⌂ Más opciones» (callback 'menu' -> desdeMenu).
+  if (esNuevo && !desdeMenu) {
+    await tg(token, 'sendMessage', {
+      chat_id: chatId,
+      text: `🧌 *¡Bienvenido a DUENDE QUEST, ${mdSeguro(user.first_name || 'Duende')}!*\n\nRPG de duendes gratis y sin descargas: elige tu clase, sube de nivel y explora con tus amigos.\n\n${TEXTO_SEGURIDAD}`,
+      parse_mode: 'Markdown',
+      disable_web_page_preview: true,
+      reply_markup: { inline_keyboard: [
+        [{ text: '🎮 Jugar gratis (3D)', web_app: { url: MUNDO_URL } }],
+        [{ text: '🌍 CLASSIC (2D)', web_app: { url: MMO_URL } }],
+        [{ text: '⌂ Más opciones', callback_data: 'menu' }],
+      ]},
+    });
+    return;
+  }
   await tg(token, 'sendMessage', {
     chat_id: chatId,
     text: `🧌 *Bienvenido a DUENDE QUEST, ${mdSeguro(user.first_name || 'Duende')}*\n\nJuego de duendes gratis y sin descargas: juega aquí en Telegram o en el navegador.\n\n🌌 *ORIGINS 3D:* mundo abierto con alas, cueva y PvP, gratis en el celular.\n🎮 *Arcade:* campaña de 15 etapas con jefes y ranking global.\n🌍 *DUENDE QUEST ONLINE:* MMORPG estilo WoW con 4 clases, grupos, mazmorras con jefes, hermandades y 10 zonas hasta el nivel 60.\n🥤 *Premio:* junta 10.000 puntos cazando en el MMO y te enviamos un litro de chicha morada a tu casa. No es un sorteo: lo ganas jugando.\n💎 *Recompensas en TON (opcional):* desde el nivel 15, los jefes del MMO dan mTON del fondo del día, si lo hay (1.000 mTON = 1 TON). Retiro desde 5 TON.\n🪙 *$DUENDE:* token del juego en Solana; también se gana jugando.\n\n${TEXTO_SEGURIDAD}\nMás información: ${SEGURIDAD_URL}\n\n${TEXTO_CREADOR}\n\n*Invita a un amigo* (500 $DUENDE para cada uno):\n\`${referralLink}\``,
@@ -201,7 +218,7 @@ async function handleRanking(token, env, chatId, messageId) {
   let text = '🏆 *Top 10 — DUENDE QUEST*\n\n';
   if (scores.length === 0) text += '_Aún no hay puntuaciones._';
   else { const medals = ['🥇','🥈','🥉']; scores.forEach((s,i) => { text += `${medals[i]||`${i+1}.`} *${mdSeguro(s.username)}* — ${s.score.toLocaleString()} pts (oleada ${s.wave})\n`; }); }
-  const opts = { chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 Jugar', web_app: { url: WEBAPP_URL } }],[{ text: '🔄 Actualizar', callback_data: 'ranking' }, { text: '⌂ Menú', callback_data: 'menu' }]] } };
+  const opts = { chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 Jugar (3D)', web_app: { url: MUNDO_URL } }, { text: '🕹 Arcade', web_app: { url: WEBAPP_URL } }],[{ text: '🔄 Actualizar', callback_data: 'ranking' }, { text: '⌂ Menú', callback_data: 'menu' }]] } };
   if (messageId) { opts.message_id = messageId; await tg(token, 'editMessageText', opts); } else await tg(token, 'sendMessage', opts);
 }
 
@@ -239,7 +256,7 @@ async function handleStats(token, env, chatId, userId, messageId) {
   let text;
   if (!Array.isArray(profiles) || profiles.length === 0) text = '📊 *Tus estadísticas*\n\n_Aún no tienes perfil. Juega una partida para crearlo._';
   else { const p = profiles[0]; text = `📊 *Estadísticas de ${mdSeguro(p.username||'Duende')}*\n\n🏆 Mejor puntuación: *${Number(p.best_score||0).toLocaleString()}*\n🌊 Mejor oleada: *${p.best_wave||0}*\n🪙 Monedas: *${Number(p.total_coins||0).toLocaleString()}*\n🎮 Partidas: *${p.games_played||0}*\n💎 $DUENDE: *${Number(p.duende_balance||0).toLocaleString()}*`; }
-  const opts = { chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 Jugar', web_app: { url: WEBAPP_URL } }],[{ text: '🔄 Actualizar', callback_data: 'stats' }, { text: '⌂ Menú', callback_data: 'menu' }]] } };
+  const opts = { chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🎮 Jugar (3D)', web_app: { url: MUNDO_URL } }],[{ text: '🔄 Actualizar', callback_data: 'stats' }, { text: '⌂ Menú', callback_data: 'menu' }]] } };
   if (messageId) { opts.message_id = messageId; await tg(token, 'editMessageText', opts); } else await tg(token, 'sendMessage', opts);
 }
 
