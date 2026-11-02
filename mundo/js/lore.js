@@ -203,3 +203,24 @@ export const LORE_MISIONES = [
   'La orden del paladín goblin protege el camino al Núcleo. Es la última muralla.',
   'El Dragón Ancestral guarda el último pedazo del Cántaro. Vence y la chicha volverá a correr.',
 ];
+
+// La cadena de Tito en capitulos (40 misiones, un capitulo cada 4: uno por zona, mismo orden).
+// `desde` = indice de LORE_MISIONES donde empieza; `z` = su zona de LORE_ZONAS.
+export const CAPITULOS = [
+  { n: 1, titulo: 'La Larga Noche', desde: 0, z: 'noche' },
+  { n: 2, titulo: 'El Rayo Perdido del Alba', desde: 4, z: 'amanecer' },
+  { n: 3, titulo: 'La Selva que Respira', desde: 8, z: 'selva' },
+  { n: 4, titulo: 'El Cielo Partido', desde: 12, z: 'tormenta' },
+  { n: 5, titulo: 'La Última Gota del Oasis', desde: 16, z: 'desierto' },
+  { n: 6, titulo: 'El Trono de la Chicha Robada', desde: 20, z: 'castillo' },
+  { n: 7, titulo: 'Donde Duerme el Sol', desde: 24, z: 'cumbres' },
+  { n: 8, titulo: 'El Barro de la Pachamama', desde: 28, z: 'cavernas' },
+  { n: 9, titulo: 'El Mar que se Tragó el Cielo', desde: 32, z: 'abismo' },
+  { n: 10, titulo: 'Entre la Luz y la Sombra', desde: 36, z: 'acantilados' },
+];
+// El capitulo de la mision i (el ultimo con desde <= i).
+export function capituloDe(i) {
+  let c = CAPITULOS[0];
+  for (const x of CAPITULOS) if (x.desde <= (+i || 0)) c = x;
+  return c;
+}

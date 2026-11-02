@@ -92,6 +92,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v353 | Ronda 22: cámara móvil sin vueltas, primer minuto sin ruido, Ayni y Ladrón justos, CLASSIC sin avisos de ORIGINS, diálogos con teclado | **B** |
 | v354 | Estudio 7: probar clase, colores de habilidades, mapa con niebla, probar monturas, talentos, racha amable, expedición de noche | **B** |
 | v355 | Ronda 24: reinicio de talentos gratis, Telegram con consentimiento, racha que conserva semanas, anuncio sin TON, huidas en humo | **B** |
+| v356 | Estudio 8: debilidades, medalla en vivo, primera caída protegida, modo cine, recetas ocultas, capítulos, Adviento y Año Nuevo | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

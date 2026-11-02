@@ -20,7 +20,7 @@
 import {
   MAPAS, MONSTRUOS, SKINS, ARMAS, CLASES, PODERES, VARA, statsMonstruo, multForja, talento, velMontura, xpParaSubir, costoReparacion,
   MATERIALES, NODO_CADA_MS, RECOLECTAR_MS, RARO_ZONA, raroDe, PESCA, hoyUTC, alaDe,
-  habPorId, costoHab, GCD_MS, RECURSOS, MELEE, limpiarLook, MUNDIAL_CADA_MS, MUNDIAL_DURA_MS, proximoMundial, mundialDe,
+  habPorId, costoHab, GCD_MS, RECURSOS, MELEE, limpiarLook, MUNDIAL_CADA_MS, MUNDIAL_DURA_MS, proximoMundial, mundialDe, TIPO_HAB, DEBIL_EMO, premioBestiario,
 } from '../../mmo/js/data.js';
 import { MUNDO, NPCS3D, NPC_DIST, SPAWN3D, ARENA3D, CASAS, campamentos, revivirEn3d, zonaEn, esNoche, nodos3d, RECOGER_DIST, alturaEn, corrienteEnMundo } from '../../mmo/js/mundo3d.js';
 import { CUEVA, CUEVA_X0, caminable, enCueva, vistaCueva, pasoCueva, PORTAL_PUEBLO } from '../../mmo/js/cueva3d.js';
@@ -374,13 +374,13 @@ export const Mundo3D = {
     const multPaso = [0.92, 1, 1.3][s.paso3];
     // pegar3d: critico, forja, fuego, Grito, elixires y el x2 del Sigilo.
     // La vara tambien escala con el arma (antes las dagas doblaban su DPS y la odachi lo bajaba).
-    const r = this.pegar3d(s, o, (vara ? VARA.mult : 3.6) * (arma.dano || 1) * multPaso, 1);
+    const r = this.pegar3d(s, o, (vara ? VARA.mult : 3.6) * (arma.dano || 1) * multPaso, 1, vara ? null : TIPO_HAB[s.c.arma]);
     if (!r) return;
     if (s.paso3 === 2 && s.c.clase === 'picaro' && this.sumarCombo) this.sumarCombo(s, 1);
     const real = r[1], crit = r[2] === 1;
     // Ira al pegar (en CLASSIC +3 por golpe del combo; aqui un golpe por segundo).
     if (real > 0 && CLASES[s.c.clase] && CLASES[s.c.clase].recurso === 'ira') s.rec = Math.min(100, (s.rec || 0) + 9 + (crit ? 4 : 0));
-    this.aCerca3d(o, { t: 'at3', p: s.id, tg: o.id, d: real, c: crit ? 1 : 0, v: vara ? 1 : 0, f: s.paso3 === 2 ? 1 : 0 });
+    this.aCerca3d(o, { t: 'at3', p: s.id, tg: o.id, d: real, c: crit ? 1 : 0, v: vara ? 1 : 0, f: s.paso3 === 2 ? 1 : 0, ...(r[3] ? { w: 1 } : {}) });
     const robo = ((SKINS[s.c.skin] || {}).buffs || {}).robo || 0;
     if (robo) s.hp = Math.min(s.st.maxHp, s.hp + real * robo);
   },
@@ -1222,7 +1222,7 @@ export const Mundo3D = {
       dol.prox += 3000;
       const de = this.sesiones.get(dol.de);
       const d = this.danar3d(o, dol.tick, de && de.m3 ? de : null);
-      this.aCerca3d(o, { t: 'at3', p: dol.de, tg: o.id, d, c: 0, dot: 1 });
+      this.aCerca3d(o, { t: 'at3', p: dol.de, tg: o.id, d, c: 0, dot: 1, ...(dol.w ? { w: 1 } : {}) });
       if (o.muere) return;
     }
     for (const a in o.au) if (o.au[a].hasta < ahora) delete o.au[a];
@@ -1377,6 +1377,11 @@ export const Mundo3D = {
           const golpe = o.atk * (o.jefe ? 0.7 : 1) * (o.dispara ? 0.9 : 1) * (1 + 0.06 * (o.furia || 0)) * (o.ex3 && o.ex3.af === 'furioso' && o.hp < o.max * 0.3 ? 1.5 : 1);   // élite Furioso: +50 % bajo el 30 % de vida
           if (o.dispara) this.aCerca3d(o, { t: 'b3', de: o.id, a: s.id });
           this.herir(s, golpe, { jefe: o.jefe, bala: o.dispara, mundial: o.mundial3 || o.guardian, id: o.id });
+          // Revancha (Nv < 10): si te derriba casi muerto, queda herido 90 s y no se cura al volver.
+          if (s.muerto && !s.muertoPvP && !o.jefe && !o.persiste && s.c && (s.c.nivel || 1) < 10 && o.max > 0 && o.hp > 0 && o.hp / o.max <= 0.4) {
+            o.revancha = { pid: s.id, hasta: ahora + 90000 };
+            this.enviar(s, { t: 'revancha3', id: o.id, x: Math.round(casa.x * 10) / 10, z: Math.round(casa.z * 10) / 10 });   // vuelve a su casa a esperar herido: ahi va la marca
+          }
         }
       }
       if (dist(o, casa) > CORREA) {
@@ -1387,15 +1392,18 @@ export const Mundo3D = {
       }
       return;
     }
+    // Acabo la revancha sin que nadie lo rematara: vuelve a casa y se cura como siempre.
+    if (o.revancha && ahora >= o.revancha.hasta) { o.revancha = null; if (!o.vuelve && !o.persiste && o.hp > 0 && o.hp < o.max) o.vuelve = true; }
     if (o.vuelve) {
       o.st = 1;
       o.pzjProx = 0;   // la proxima pelea empieza otra vez sin pisoton inmediato
       o.fase = 0; o.furia = 0;   // y sin Fase 2 ni Furia acumulada
-      if (!o.persiste) o.hp = Math.min(o.max, o.hp + o.max * 0.15 * dt);   // se cura visiblemente al irse
+      const herido = o.revancha && ahora < o.revancha.hasta;   // revancha: sigue herido 90 s
+      if (!o.persiste && !herido) o.hp = Math.min(o.max, o.hp + o.max * 0.15 * dt);   // se cura visiblemente al irse
       if (mover(casa.x, casa.z, velC * 1.3) < 0.5) {
         o.vuelve = false; o.st = 0;
         // El jefe mundial conserva el daño (y su credito para el premio).
-        if (!o.persiste) { o.hp = o.max; o.dano.clear(); o.amen.clear(); o.iniCombate = 0; }
+        if (!o.persiste) { if (!herido) o.hp = o.max; o.dano.clear(); o.amen.clear(); o.iniCombate = 0; }
         if (o.cueva && o.jefe) this.reiniciarJefeCueva(o);
       }
       return;
@@ -1547,18 +1555,38 @@ export const Mundo3D = {
   },
 
   // Daño de jugador a monstruo con todos los modificadores del 2D.
-  pegar3d(s, o, mult, amen) {
+  // Debilidad por tipo de daño (solo monstruos): ×1,3 y, la primera vez por
+  // especie, se descubre en el bestiario con un poco de oro.
+  debil3d(s, o, tipo) {
+    const M = o && MONSTRUOS[o.k];
+    if (!tipo || !M || !M.debil || M.debil !== tipo || !s || !s.c) return false;
+    const c = s.c;
+    c.bestD = c.bestD || {};
+    if (!c.bestD[o.k]) {
+      c.bestD[o.k] = 1;
+      const oro = Math.max(10, Math.round(premioBestiario(M.nivel || 1, 0) * 0.5));
+      c.oro += oro;
+      s.sucio = true;
+      this.enviar(s, { t: 'toast', m: `🔎 Descubriste: ${M.nombre} es débil a ${tipo} ${DEBIL_EMO[tipo] || ''} (+${oro.toLocaleString('es', { useGrouping: 'always' })} oro)`, ok: true });
+      this.yoLuego(s, true);
+    }
+    return true;
+  },
+
+  pegar3d(s, o, mult, amen, tipo) {
     if (!o || o.muere) return null;
     const ahora = Date.now();
     let k = 1;
+    const w = this.debil3d(s, o, tipo);
     if (this.aura(s, 'sigilo')) { k = 2; this.quitarAura(s, 'sigilo'); if (s.c.clase === 'picaro') this.sumarCombo(s, 2); }
+    if (w) k *= 1.3;
     const crit = Math.random() < s.st.crit;
     const forja = multForja((s.c.forja || {})[s.c.arma]);
     const dmg = Math.max(1, Math.round(s.st.atk * mult * forja * rnd(0.9, 1.1) * (crit ? 1.8 : 1)
       * (ahora < s.fuego ? 1.5 : 1) * (this.aura(s, 'grito') ? 1.1 : 1) * (this.elixir(s, 'elixirF') ? 1.1 : 1) * (this.elixir(s, 'sudado') ? 1.05 : 1) * k));
     const real = this.danar3d(o, dmg, s);
     if (amen && amen !== 1) o.amen.set(s.id, (o.amen.get(s.id) || 0) + real * (amen - 1));
-    return [o.id, real, crit ? 1 : 4];
+    return w ? [o.id, real, crit ? 1 : 4, 1] : [o.id, real, crit ? 1 : 4];
   },
 
   aplicar3d(s, h, obj) {
@@ -1576,7 +1604,7 @@ export const Mundo3D = {
     const g = x => { if (x) golpes.push(x); return x; };
     const sp = this.especDe(s);
     const mh = (sp && sp.hab && sp.hab[h.id]) || 1;
-    const pegar = (o, mult, amen) => this.pegar3d(s, o, mult * mh, amen);
+    const pegar = (o, mult, amen) => this.pegar3d(s, o, mult * mh, amen, TIPO_HAB[h.id]);
     const radio = h.radio ? h.radio / 17 : 0;
     switch (h.id) {
       // Golpe del Puma: cuesta Ira, asi que pega mas que el basico (3.6 x arma): 3 x 1.6 x arma.
@@ -1638,10 +1666,11 @@ export const Mundo3D = {
         break;
       }
       case 'dolor': {
-        const tick = Math.max(1, Math.round(s.st.atk * h.mult * mh / 5 * multForja((c.forja || {})[c.arma])));
+        const wD = this.debil3d(s, obj, TIPO_HAB.dolor);   // sombra: ×1,3 a quien le teme
+        const tick = Math.max(1, Math.round(s.st.atk * h.mult * mh / 5 * multForja((c.forja || {})[c.arma]) * (wD ? 1.3 : 1)));
         // Relanzarlo renueva la duracion pero no atrasa el siguiente tick (antes, repetido, nunca hacia daño).
         const prevD = obj.au && obj.au.dolor && obj.au.dolor.hasta > ahora ? obj.au.dolor.prox : 0;
-        this.ponerAuraMon(obj, 'dolor', h.dura, { de: s.id, tick, prox: prevD || ahora + 3000 });
+        this.ponerAuraMon(obj, 'dolor', h.dura, { de: s.id, tick, prox: prevD || ahora + 3000, w: wD ? 1 : 0 });
         obj.amen.set(s.id, (obj.amen.get(s.id) || 0) + tick);
         obj.dano.set(s.id, (obj.dano.get(s.id) || 0) + 1);
         if (!obj.obj) obj.obj = s.id;

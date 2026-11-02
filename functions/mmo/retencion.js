@@ -109,9 +109,11 @@ const r2 = n => Math.round(n * 100) / 100;
 //   n = sesiones que llegaron a ese paso; b = cuantas en cada tramo de ms
 //   (desde que abrio la pagina; 'bienvenido' y 'mover', desde el clic en entrar).
 // Se suma en memoria y se vuelca como mucho una vez por minuto.
-export const EV_PASOS = ['carga_ini', 'arte_ok', 'form_visto', 'clic_entrar', 'bienvenido', 'mover', 'fallo_webgl', 'oculta', 't_hab', 't_volar', 't_fin',
+export const EV_PASOS = ['carga_ini', 'arte_ok', 'form_visto', 'clic_entrar', 'bienvenido', 'mover', 'fallo_webgl', 'oculta', 'joy_toque', 't_atk', 't_hab', 't_volar', 't_fin',
   // Primeras misiones y primer jefe (Sabueso, mision 4) de ORIGINS: donde se pierde el novato.
   'mis_0', 'mis_1', 'mis_2', 'mis_3', 'mis_4', 'mis_5', 'jefe1_ver', 'jefe1_muere', 'jefe1_ok',
+  // Primera caida protegida: cuantos mueren por primera vez y cuantos revivan.
+  'muerte1', 'revivir1',
   // Rendimiento de ORIGINS (90 s tras arte_ok): calidad x fluidez y familia de GPU.
   'fps_baja_ok', 'fps_baja_justo', 'fps_baja_lento', 'fps_media_ok', 'fps_media_justo', 'fps_media_lento', 'fps_alta_ok', 'fps_alta_justo', 'fps_alta_lento',
   'gpu_mali', 'gpu_adreno', 'gpu_powervr', 'gpu_apple', 'gpu_intel', 'gpu_swiftshader', 'gpu_otra',

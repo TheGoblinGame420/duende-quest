@@ -7,7 +7,7 @@
 import {
   VH, SUELO, FIS, HOJAS, MONSTRUOS, MAPAS, SKINS, precioOro, ARMAS, PODERES, ATAQUE_CD_MS, ALCANCE_BASE, MISIONES, DIARIA,
   statsMonstruo, sueloEn, zonaDe, premioDiaria, FORJA_MAX, costoForja, multForja,
-  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, costoReforja, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TEMP_DIAS, TEMP_DIA_PREMIO, diaFiesta, diasFiesta, TINTES, MASCOTAS, NOVEDADES, PASE, premioPase, ambulanteActivo, ambulanteOferta, semanaUTC, GESTOS, horaFelizTiempos, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
+  RANURAS, RAREZAS, BOLSA_MAX, nombreItem, iconoItem, precioVenta, costoReforja, textoBonos, LOGROS, temporadaDe, TEMPORADAS, TEMP_DIAS, premioDiaFiesta, esNochebuena, diaFiesta, diasFiesta, TINTES, MASCOTAS, NOVEDADES, PASE, premioPase, ambulanteActivo, ambulanteOferta, semanaUTC, GESTOS, horaFelizTiempos, CHICHA, CONJUNTOS, piezasConjunto, textoConjunto, LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, NIVEL_MAX, DESAFIO_MAX, multDesafio, AFIJOS, afijosSemana, DES_SEM_MIN, premioDesSem, BOVEDA_UMBRALES, opcionesBoveda,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, WALLET_ESPERA_MS,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe, solesDeStars, paqueteParaFaltante, ENTREGA, textoPagoRecibido, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA, PAGO_LOCAL, pagoLocalActivo, textoSoles,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=355';
-import { iniciarRegalo } from './regalo.js?v=355';
-import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=355';
+} from './data.js?v=356';
+import { iniciarRegalo } from './regalo.js?v=356';
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=356';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -941,7 +941,12 @@ function recibir(m) {
     case 'pase': if (yo) { yo.pase = m.pase; if ($('m-mision').classList.contains('on')) pintarMision(); } break;
     case 'gesto': if (GESTOS[m.id]) { gestos.set(m.p, { id: m.id, t: performance.now() }); if (m.p === miId) sfx('boton', .25); } break;
     case 'on': online = m.n; if (m.h) jugaronHoy = m.h; pintarSubMapa(); break;
-    case 'toast': if (!(modoAnuncio() && SIN_CRIPTO_RE.test(m.m || ''))) aviso(m.m, m.ok ? 'ok' : ''); if (m.yapeOk && $('m-sol')) $('m-sol').classList.remove('on'); if (m.hab) { $('acciones').innerHTML = ''; pintarHud(); } break;
+    // Año Nuevo en vivo (hora de Lima): el saludo llega como 'toast'; aqui solo la vibracion de fiesta.
+    case 'anoNuevo': vibrar('success'); break;
+    case 'fuegos': break;
+    // Cuenta regresiva de Año Nuevo («🎆 n…»): cada numero reemplaza al anterior (sin apilar 10 avisos).
+    case 'toast': if (/^🎆 \d+…$/.test(m.m || '')) { document.querySelectorAll('.aviso').forEach(a => { if (/^\d+…$/.test(a.textContent)) a.remove(); }); aviso(m.m, 'ok', 1500); break; }
+      if (!(modoAnuncio() && SIN_CRIPTO_RE.test(m.m || ''))) aviso(m.m, m.ok ? 'ok' : ''); if (m.yapeOk && $('m-sol')) $('m-sol').classList.remove('on'); if (m.hab) { $('acciones').innerHTML = ''; pintarHud(); } break;
     case 'aviso': aviso(m.m, 'jefe'); lineaChat(null, sinEmoji(m.m)); sfx('explosion', .3); break;
     case 'snap':
       if (m.carga) {
@@ -5072,10 +5077,10 @@ function calendarioFiesta(tp, est) {
   const av = f => f && f.id === tp.id ? (f.ok || []).length * 1e4 + Object.values(f.p || {}).reduce((a, b) => a + b, 0) : -1;
   const fA = est && est.fiestaDias, fB = yo && yo.fiestaDias, fd = (av(fA) >= av(fB) ? fA : fB) || {};
   const total = diasFiesta(tp), hoy = Math.max(0, Math.min(diaFiesta(tp), total - 1)), ok = fd.ok || [], p = fd.p || {};
-  let h = '<p style="margin-top:6px"><b style="display:inline">📅 Una tarea por día</b> (+' + TEMP_DIA_PREMIO + ' ' + esc(tp.cosas) + ' cada una; los días pasados siguen abiertos):</p><div style="font-size:12px;line-height:1.5">';
+  let h = '<p style="margin-top:6px"><b style="display:inline">📅 Una tarea por día</b> (hoy +' + premioDiaFiesta(tp, hoy) + ' ' + esc(tp.cosas) + ', sube cada semana' + (/^navidad/.test(tp.id) ? '; ⭐ Nochebuena, doble' : '') + '; los días pasados siguen abiertos):</p><div style="font-size:12px;line-height:1.5">';
   for (let d = 0; d < total; d++) {
-    const def = TEMP_DIAS[d % TEMP_DIAS.length], hecho = ok.includes(d), fut = d > hoy;
-    h += '<div style="' + (d === hoy ? 'color:#ffd24a;font-weight:700' : fut ? 'opacity:.55' : '') + '">' + (hecho ? '✓' : fut ? '🔒' : '•') + ' Día ' + (d + 1) + (d === hoy ? ' (hoy)' : '') + ': ' +
+    const def = TEMP_DIAS[d % TEMP_DIAS.length], hecho = ok.includes(d), fut = d > hoy, nb = esNochebuena(tp, d);
+    h += '<div style="' + (d === hoy ? 'color:#ffd24a;font-weight:700' : fut && !nb ? 'opacity:.55' : '') + '">' + (hecho ? '✓' : nb ? '⭐' : fut ? '🔒' : '•') + ' Día ' + (d + 1) + (nb ? ' · Nochebuena (+' + premioDiaFiesta(tp, d) + ')' : '') + (d === hoy ? ' (hoy)' : '') + ': ' +
       (fut ? '…' : esc(def.txt) + (hecho ? '' : ' · ' + (p[d] || 0) + '/' + def.n)) + '</div>';
   }
   const ms = Math.max(0, tp.ini + (hoy + 1) * 86400000 - Date.now()), hm = Math.floor(ms / 3600000) + ' h ' + Math.floor(ms % 3600000 / 60000) + ' min';
@@ -5086,7 +5091,12 @@ function cajaTiendaTemp() {
   if (!tp || !tp.tienda) return '';
   const est = ttemp && ttemp.tp === tp.id ? ttemp : null, saldo = est ? est.saldo : null, comprado = est ? est.comprado || [] : [];
   let h = '<div class="mis-caja" style="border-color:' + tp.color + '"><b>' + tp.emoji + ' Tienda de la fiesta</b>' +
-    '<p>Canjea tus ' + esc(tp.cosas) + ' (tienes <b style="display:inline;color:' + tp.color + '">' + (saldo === null ? '…' : saldo) + '</b>). Solo hasta el ' + esc(tp.hasta) + (tp.fin - Date.now() < 86400000 && saldo > 0 ? ' · <b style="display:inline;color:#ff5a5a">⏰ lo que no canjees se pierde</b>' : '') + '.</p>' +
+    '<p>Canjea tus ' + esc(tp.cosas) + ' (tienes <b style="display:inline;color:' + tp.color + '">' + (saldo === null ? '…' : saldo) + '</b>). Solo hasta el ' + esc(tp.hasta) + (tp.fin - Date.now() < 86400000 && saldo > 0 ? ' · <b style="display:inline;color:#ff5a5a">⏰ lo que no canjees se pierde</b>' : '') + '.' + (() => {
+      // Puente: en los ultimos 3 dias, la fiesta que viene despues.
+      const lu = tp.fin - Date.now() < 3 * 86400000 ? TEMPORADAS.filter(x => x.ini >= tp.fin - 3600000 && x.id !== tp.id).sort((a, b) => a.ini - b.ini)[0] : null;
+      let f = ''; if (lu) try { f = new Date(lu.ini).toLocaleDateString('es-PE', { day: 'numeric', month: 'long', timeZone: 'UTC' }); } catch (e) { f = new Date(lu.ini).toLocaleDateString(); }
+      return lu ? ' <span style="color:' + lu.color + '">Luego: ' + lu.emoji + ' ' + esc(lu.nombre) + ' desde el ' + esc(f) + '</span>' : '';
+    })() + '</p>' +
     calendarioFiesta(tp, est) +
     '<button class="btn sec" data-ttabrir="1" style="width:100%;padding:9px;margin-top:4px">' + (ttAbierta ? 'Ocultar la tienda' : '🛒 Ver la tienda de la fiesta') + '</button>';
   if (ttAbierta) for (const a of tp.tienda) {
@@ -5756,6 +5766,10 @@ function resumenMuerte(m) {
   let h = '';
   if (ult) h += `<p>Te venció: <b style="color:var(--err)">${esc(ult.n)}${ult.nv ? ' (Nv ' + ult.nv + ')' : ''}</b></p>`;
   if (g.length) h += '<p style="font-size:12px;color:var(--txt2)">Últimos golpes: ' + g.map(x => esc(x.n) + ' −' + x.d).join(' · ') + '</p>';
+  if (m.vi && m.vn) h += `<p style="font-size:12px;color:var(--txt2)">El ${esc(m.vn)} aún tenía un ${m.vi | 0} % de vida.</p>`;
+  // Primera caida o tres seguidas: el servidor revive sin perder XP y con la Bendicion del Duende.
+  if (m.primera) h += '<p style="margin-top:6px;color:var(--ok)">✨ Todos caen la primera vez: revives con la Bendición del Duende (−25 % de daño, 3 min).</p>';
+  else if (m.espiral) h += '<p style="margin-top:6px;color:var(--ok)">✨ Tres caídas seguidas: esta vez no pierdes XP y revives con la Bendición del Duende (−25 % de daño, 3 min).</p>';
   let consejo = '';
   if (ult && ult.nv && yo && ult.nv >= yo.nivel + 3) consejo = 'Ese enemigo te supera en nivel: sube un par de niveles en una zona de tu nivel' + (TACTIL ? ' (botón Mapa).' : ' (mapa: tecla M).');
   else if (m.pw > 0) consejo = 'Tenías ' + m.pw + ' pociones: úsalas (' + (TACTIL ? 'el primer consumible de la barra' : 'tecla Q') + ') cuando tu vida baje de la mitad.';
@@ -5767,7 +5781,7 @@ function resumenMuerte(m) {
   const novato = yo && yo.nivel < 10 && MAPAS[mapaId] && MAPAS[mapaId].zona && mapaId !== 'coliseo';
   $('b-revivir').textContent = m.inst ? '↺ Revivir junto a la última barrera' : novato ? '↺ Revivir aquí (entrada de la zona)' : '↺ Revivir en el pueblo';
   if (novato && !m.inst) h += '<p style="margin-top:6px;font-size:12px;color:var(--ok)">Hasta nivel 10 morir no te quita experiencia.</p>';
-  ponCss($('muerte-xp'), 'display', novato && !m.inst ? 'none' : 'block');
+  ponCss($('muerte-xp'), 'display', (novato && !m.inst) || (m.espiral && !(m.rep > 0)) ? 'none' : 'block');
   // En el nivel maximo no se pierde XP: se paga la reparacion (m.rep, del servidor).
   $('muerte-xp').textContent = m.rep > 0 ? `En el nivel máximo no pierdes experiencia: reparar tu equipo cuesta ${m.rep} oro.` : 'Pierdes un 5% de la experiencia de tu nivel.';
   $('muerte-info').innerHTML = h;

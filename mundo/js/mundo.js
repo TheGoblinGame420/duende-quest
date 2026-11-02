@@ -14,27 +14,27 @@
 import * as THREE from 'three';
 import { esNocheDuendes, TEMPORADAS, temporadaDe, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=355';
-import { iniciarVentanas } from './ventanas.js?v=355';
-import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel } from '/mmo/js/data.js?v=355';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
-import { diaFiesta, diasFiesta, TEMP_DIAS, TEMP_DIA_PREMIO } from '/mmo/js/data.js?v=355';   // tarea del dia de la fiesta en la caja de misiones
-import { iniciarRegalo } from '/mmo/js/regalo.js?v=355';
-import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=355';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=355';
-import { crearMusica } from './musica.js?v=355';
-import { crearSonidos } from './sonidos.js?v=355';
-import { construirCueva } from './cueva.js?v=355';
-import { TAPA, transparentar } from './tapa.js?v=355';
-import { construirAbismo } from './abismo.js?v=355';
-import { crearParticulas } from './particulas.js?v=355';
-import { cargarKenney, piezasCasa } from './kenney.js?v=355';
-import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=355';
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=356';
+import { iniciarVentanas } from './ventanas.js?v=356';
+import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel, DEBIL_EMO } from '/mmo/js/data.js?v=356';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
+import { diaFiesta, diasFiesta, TEMP_DIAS, premioDiaFiesta, esNochebuena } from '/mmo/js/data.js?v=356';   // tarea del dia de la fiesta en la caja de misiones
+import { iniciarRegalo } from '/mmo/js/regalo.js?v=356';
+import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=356';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=356';
+import { crearMusica } from './musica.js?v=356';
+import { crearSonidos } from './sonidos.js?v=356';
+import { construirCueva } from './cueva.js?v=356';
+import { TAPA, transparentar } from './tapa.js?v=356';
+import { construirAbismo } from './abismo.js?v=356';
+import { crearParticulas } from './particulas.js?v=356';
+import { cargarKenney, piezasCasa } from './kenney.js?v=356';
+import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=356';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=355';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=355';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=355';
-import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=355';
-import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA } from './lore.js?v=355';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=356';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=356';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=356';
+import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=356';
+import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe } from './lore.js?v=356';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1454,7 +1454,7 @@ function numero(x, y, z, txt, color, grande) {
   if (numeros.length >= 24) { const v = numeros.shift(); v.d.style.display = 'none'; poolNum.push(v.d); }
   let d = poolNum.pop();
   if (!d) { d = document.createElement('div'); d.className = 'num'; capa.appendChild(d); }
-  d.textContent = txt; d.style.color = color || '#fff'; d.style.fontSize = grande ? '22px' : ''; d.style.display = ''; d.style.opacity = 1;
+  d.textContent = txt; d.style.color = color || '#fff'; d.style.fontSize = grande ? (typeof grande === 'number' ? grande + 'px' : '22px') : ''; d.style.display = ''; d.style.opacity = 1;
   numeros.push({ d, x, y, z, t: 0, dx: (Math.random() - 0.5) * 0.8, g: !!grande });
 }
 let numeros = [];
@@ -1478,6 +1478,16 @@ const MARCA_COL = { ataque: 0xff3b3b, recurso: 0x4ade80, ir: 0x60a5fa, caido: 0x
 const MARCA_CSS = { ataque: '#ff3b3b', recurso: '#4ade80', ir: '#60a5fa', caido: '#ffffff' };
 const MARCA_TXT = { ataque: '¡ataquen aquí!', recurso: 'recurso aquí', ir: 'vamos aquí', caido: '¡caí, ayúdenme!' };
 let marcas3 = [], marcaGeo = null, marcaT = 0, ayudaT = 0;
+// Revancha (servidor 'revancha3'): el monstruo que te derribó casi muerto queda herido 90 s; al revivir se marca 📍.
+let revancha3 = null;
+const TXT_REVANCHA = ': está herido 90 s, ve por la revancha 📍';
+function marcarRevancha3() {
+  const r = revancha3;
+  if (!r || Date.now() >= r.hasta || !Number.isFinite(r.x) || !Number.isFinite(r.z)) return;
+  mostrarMarca({ p: miId, k: 'ataque', x: r.x, z: r.z });
+  const mk = marcas3[marcas3.length - 1]; if (mk && mk.p === miId) mk.vence = Math.min(r.hasta, Date.now() + 20000);
+  setTimeout(() => aviso(`📍 Revancha: ${Math.round(Math.hypot(r.x - P.x, r.z - P.z))} m, aún está herido (${Math.max(1, Math.ceil((r.hasta - Date.now()) / 1000))} s)`, 'ok', 2), 2200);
+}
 function recursoCerca3() {
   const ahora = performance.now(), ah = Date.now();
   let mejor = null, md = 15;
@@ -1974,6 +1984,8 @@ function recibir(m) {
       if (tiendaAlEntrar && yo.clase) setTimeout(() => { if (tiendaAlEntrar && !hayVentana()) { tiendaAlEntrar = false; abrirTiendaHud('bot', focoAlEntrar); focoAlEntrar = ''; } }, 1200);   // con otra ventana abierta, se reintenta con el siguiente 'yo'
       // Nueva mision de la cadena: el Guardia Tito cuenta por que importa.
       if (antes && antes.mis && yo.mis && yo.mis.i !== antes.mis.i && LORE_MISIONES[yo.mis.i]) setTimeout(() => aviso('🛡 Tito: «' + LORE_MISIONES[yo.mis.i] + '»'), 2500);
+      // Empieza un capitulo nuevo de la historia: su tarjeta de titulo (como al entrar a una zona).
+      if (antes && antes.mis && yo.mis && yo.mis.i > antes.mis.i && capituloDe(yo.mis.i).n !== capituloDe(antes.mis.i).n) tarjetaCapitulo(capituloDe(yo.mis.i), 0);
       // Termino la mision 1: ofrecer probar otra clase (sale sola si ya la vio o esta en pantalla).
       if (antes && antes.mis && antes.mis.i === 0 && yo.mis && yo.mis.i >= 1) setTimeout(ofrecerClases, 4000);
       // Embudo de las primeras misiones (una vez por sesion): mis_0 al entrar de novato, el resto al llegar a cada una.
@@ -1987,7 +1999,7 @@ function recibir(m) {
       // En movil no se abre solo: esta en ⋯ → 🪞.
       if (antes && !antes.clase && yo.clase && !yo.look && !COMPACTO) { let visto = false; try { visto = localStorage.getItem('dq3_look_visto') === '1'; } catch (e) {} if (!visto) { const intentar = n => { if (!hayVentana() && !$('v-diario').classList.contains('on')) abrirLook(); else if (n < 20) setTimeout(() => intentar(n + 1), 1500); }; setTimeout(() => despuesMision1(() => intentar(0)), 1500); } }
       if (yo.muerto && !(antes && antes.muerto) && !P.muerto) morir();   // tras 'muerte' no borra su texto
-      if (!yo.muerto) { if (P.muerto && pocionesTrasRevivir) { pocionesTrasRevivir = false; setTimeout(() => V.abrirTienda('pw'), 400); } if (P.muerto && bienvTrasRevivir) { bienvTrasRevivir = false; setTimeout(() => { if (yo && yo.puedeBienvenida && !yo.muerto && !enCombate3()) V.abrirTienda('premium', 'bienvenida', 'revivir'); }, 400); } chipBienvVisto = false; cerrar('v-muerte'); P.muerto = false; }
+      if (!yo.muerto) { if (P.muerto && pocionesTrasRevivir) { pocionesTrasRevivir = false; setTimeout(() => V.abrirTienda('pw'), 400); } if (P.muerto && bienvTrasRevivir) { bienvTrasRevivir = false; setTimeout(() => { if (yo && yo.puedeBienvenida && !yo.muerto && !enCombate3()) V.abrirTienda('premium', 'bienvenida', 'revivir'); }, 400); } chipBienvVisto = false; cerrar('v-muerte'); if (P.muerto && revancha3) { marcarRevancha3(); revancha3 = null; } P.muerto = false; }
       ofrecerBienvenida(antes);
       if (yo.clase) cerrar('v-clase');
       if (yo.clase && loginPend3) { const lp = loginPend3; loginPend3 = null; if (yo.mis && yo.mis.i === 0 && (lp.racha || 1) <= 1) despuesMision1(() => mostrarDiario(lp)); else setTimeout(() => mostrarDiario(lp), 900); if (lp.item && !lp.item.vendido) setTimeout(() => botinFuerte(lp.item), 3400); }
@@ -2081,6 +2093,13 @@ function recibir(m) {
     case 'ph': golpeJugador(m); break;
     case 'b3': { const o = mons.get(m.de), q = m.a === miId ? P : otros.get(m.a); if (o && q) proyectil(o, q, '#c084fc'); break; }
     case 'muerte': morir(m); break;
+    case 'revancha3': {
+      // Llega justo tras 'muerte': completa la línea "aún tenía X %" que ya se pintó.
+      revancha3 = { id: m.id, x: +m.x, z: +m.z, hasta: Date.now() + 90000 };
+      const mt = $('muerte-txt'), sp = mt && P.muerto ? [...mt.children].find(e => e.textContent.includes('aún tenía') && !e.textContent.includes('revancha')) : null;
+      if (sp) sp.innerHTML = sp.innerHTML.replace(/ de vida\.$/, ' de vida' + TXT_REVANCHA);
+      break;
+    }
     case 'tp3': case 'snap3':
       if (m.t === 'snap3' && Math.hypot(m.x - P.x, m.z - P.z) < 4) { P.corrX = m.x - P.x; P.corrZ = m.z - P.z; P.vx *= 0.5; P.vz *= 0.5; break; }
       P.x = m.x; P.z = m.z; P.y = (m.t === 'snap3' && P.vuela) ? Math.max(P.y, alturaEn(m.x, m.z) + 0.5) : alturaEn(P.x, P.z); P.corrX = P.corrZ = 0; P.vx = P.vz = 0;
@@ -2111,14 +2130,26 @@ function recibir(m) {
     case 'temp3': temp3 = m; pintarRankPanel(); break;
     case 'on': enLinea3 = +m.n || 0; if (m.h) hoy3 = +m.h || 0; break;   // cuanta gente juega (reloj de arriba y ventana 👥)
     case 'tempFin': mostrarTempFin(m); break;
-    case 'inv3': invasion3 = m.on ? { ...m, recibido: Date.now() } : null; invPre3 = !m.on && m.pre && m.zona ? { zona: m.zona, hasta: Date.now() + (m.ms || 0), gran: m.gran } : null; if (m.bend) { benditas3 = {}; for (const z in m.bend) benditas3[z] = Date.now() + m.bend[z]; } pintarMisiones(); break;
+    case 'inv3yo': {
+      // Medalla en vivo: bronce 1-2, plata 3-5, oro 6+ (el top 3 con plata pasa a oro al final, no se muestra).
+      if (m.id && m.id !== invYo3Id) { invYo3Id = m.id; invYo3 = 0; }
+      const antes = invYo3, n = m.n | 0;
+      invYo3 = n;
+      // Tras recargar la pagina no sabemos lo previo (antes 0 y n > 1): solo se pinta el HUD, sin aviso de subida falso.
+      if (antes === 0 && n > 1) {}
+      else if (antes < 6 && n >= 6) { aviso('🥇 ¡Subiste a ORO!', 'ok'); SON.tocar('logro'); }
+      else if (antes < 3 && n >= 3) { aviso('🥈 ¡Subiste a PLATA en la invasión!', 'ok'); SON.tocar('logro'); }
+      pintarMisiones();
+      break;
+    }
+    case 'inv3': if (!m.on || !invasion3) invYo3 = 0; invasion3 = m.on ? { ...m, recibido: Date.now() } : null;invPre3 = !m.on && m.pre && m.zona ? { zona: m.zona, hasta: Date.now() + (m.ms || 0), gran: m.gran } : null; if (m.bend) { benditas3 = {}; for (const z in m.bend) benditas3[z] = Date.now() + m.bend[z]; } pintarMisiones(); break;
     case 'cofre3': if (cueva) { cueva.cofre.visible = true; cueva.tapa.rotation.x = 0; } if (cuevaInfo) cuevaInfo.hecha = 1; SON.tocar('cofre', { vol: 0.9 }); pintarMisiones(); break;
     case 'cuevaFin': cuevaFinM = m; if (cuevaInfo) cuevaInfo.hecha = 1; if (yo) { yo.cuevaRec = m.rec || yo.cuevaRec || 0; yo.cuevaHoy = m.hoy; } pintarMisiones(); break;
     case 'logro': aviso('🏅 Logro: ' + m.titulo + (m.oro ? ' · +' + m.oro.toLocaleString('es') + ' oro' : '') + ' (llévalo como título desde ' + (MOVIL ? '⋯ → 🏆' : '🏆 Logros') + ')', 'ok'); SON.tocar('logro'); setTimeout(() => ofrecerPresumir('¡Conseguí el logro «' + m.titulo + '» en Duende Quest 3D!', 'logro'), 1500); FX.emitir(P.x, P.y + 1.5, P.z, { n: 30, color: '#ffd84a', vel: 4, vida: 1, grav: -1 }); break;
     case 'resJefe': try { resumenJefe(m); } catch (e) {} break;
     case 'gana':
       // Golpe al Duende Ladron: solo las monedas (no es una baja: sin racha ni bestiario).
-      if (m.lad) { if (m.oro) { numero(P.x + 0.6, P.y + 2.2, P.z, '+' + m.oro + ' oro', '#ffd84a'); sfxK('monedas', 0.3); } break; }
+      if (m.lad) { ofrecerPresumir.lad = Date.now(); if (m.oro) { numero(P.x + 0.6, P.y + 2.2, P.z, '+' + m.oro + ' oro', '#ffd84a'); sfxK('monedas', 0.3); } break; }
       ganaSes++; bestDeGana(m); clearTimeout(revisarCasi.t); revisarCasi.t = setTimeout(revisarCasi, 1600);   // tras el 'yoC' con las cazas al dia
       { const ahR = performance.now(); rachaBajas.n = ahR - rachaBajas.t < 2500 ? Math.min(8, rachaBajas.n + 1) : 0; rachaBajas.t = ahR; SON.tocar('racha', { n: rachaBajas.n, vol: 0.8 }); }   // bajas seguidas: cada una un tono mas alto
       if (m.xp) numero(P.x, P.y + 2.6, P.z, '+' + m.xp + ' XP', '#c084fc');
@@ -2151,6 +2182,8 @@ function recibir(m) {
       }
       numero(P.x, P.y + 3, P.z, 'NIVEL ' + m.lv, '#ffe600', true); subiNivel(m.lv); } else { const o = otros.get(m.p); if (o) o.lv = m.lv; } break;
     case 'toast': if (m.ofreceGrupo) { ofertaGrupo(m); break; }
+      // Cuenta regresiva de Año Nuevo: cada numero reemplaza al anterior y nunca se encola (saldria tarde).
+      if (/^🎆 \d+…$/.test(m.m || '')) { for (const c of [...avisos.children]) if (/^🎆 \d+…$/.test(c.textContent)) c.remove(); if (!avisoTapado() && avisos.children.length < (COMPACTO ? 2 : 4)) pintarAviso(m.m, 'ok', 2); break; }
       // Sello de zona, bestiario y Ayni: cada uno con su sonido de celebracion.
       if (/^🏅 ¡Sello de/.test(m.m || '')) { const tx = m.m; try { SON.tocar('logro'); FX.emitir(P.x, P.y + 1, P.z, { n: MOVIL ? 25 : 40, color: '#ffd84a', vel: 4, vida: 1.2, grav: -1 }); } catch (e) {} vib('success'); aviso(tx, 'ok', 1); setTimeout(() => ofrecerPresumir('¡Gané el ' + tx.replace(/^🏅 ¡/, '').replace(/[!(].*$/, '').trim() + ' en Duende Quest 3D!', 'logro'), 1500); break; }
       if (/^📖 ¡Nuevo en el bestiario/.test(m.m || '')) SON.tocar('botin', { r: 1, vol: 0.5 });
@@ -2163,7 +2196,7 @@ function recibir(m) {
       if (/^¡FASE 2!/.test(m.m)) { sfxK('c_roar', 0.6); vib('heavy'); sacudir = Math.max(sacudir || 0, 0.35); aviso(m.m, 'err', 1); break; }
       if (/Furia x\d/.test(m.m)) { SON.tocar('amenaza', { vol: 0.8 }); aviso(m.m, 'err'); break; }
       if (/^💰 ¡Un Duende Ladrón huye/.test(m.m)) { sfxK('monedas', 0.7); SON.tocar('racha', { n: 6, vol: 0.9 }); vib('medium'); aviso(m.m, 'ok', 1); break; }
-      if (/Ladrón/.test(m.m) && /escapó/.test(m.m)) SON.tocar('alas', { vol: 0.6 });
+      if (/Ladrón/.test(m.m) && /escapó/.test(m.m)) { SON.tocar('alas', { vol: 0.6 }); if (Date.now() - (ofrecerPresumir.lad || 0) < 75000) setTimeout(() => ofrecerPresumir('😭 ¡Se me escapó un Duende Ladrón con todo su oro en Duende Quest 3D! ¿A ti también?', 'fail'), 1200); }   // fallo gracioso: solo a quien lo golpeo (el aviso va a toda la zona); compartir sigue siendo con un toque
       aviso(m.m); break;
     case 'no':
       if (lanzando && lanzando.pre) lanzando = null;   // el lanzamiento previsto no empezo
@@ -2173,6 +2206,9 @@ function recibir(m) {
     case 'amigos': if (m.invitados) { inv3 = m; pintarAmigos3(); } if (m.ref) { refAmigo = m.ref; window.dqRef = refAmigo; nivelAmigo = m.nivel || nivelAmigo; if (compartirPend) { const hist = compartirPend === 'h'; compartirPend = false; if (TG) compartir(hist); else { ofrecerPresumir(presumirTxt, undefined, true); aviso('Tu enlace está listo: toca el botón para enviarlo por WhatsApp.', 'ok'); } } } break;   // fuera de Telegram el navegador bloquea abrir WhatsApp sin un toque
     // Meta comunitaria «Entre todos» de la temporada (world.js tgInfo): la barra va en Logros.
     case 'tempG': if (m.tg && typeof m.tg.n === 'number') window.dqTempG = m.tg; break;
+    // Año Nuevo en vivo (hora de Lima): fuegos a cada hora del 31 dic y gran final a las 00:00.
+    case 'fuegos': fuegosArtificiales(false); break;
+    case 'anoNuevo': fuegosArtificiales(true); vib('success'); setTimeout(() => fuegosArtificiales(false), 6500); break;
     case 'login': if (yo && yo.clase) { mostrarDiario(m); if (m.item && !m.item.vendido) setTimeout(() => botinFuerte(m.item), 2500); } else loginPend3 = m; setTimeout(() => despuesMision1(ofrecerInstalar), 4000); break;
     case 'buzon': regalo3.alBuzon(m); break;
     case 'regalo': regalo3.alRegalo(m); break;
@@ -2475,7 +2511,9 @@ function ataqueVisto(m) {
   // 3.er golpe del combo (el servidor lo marca con f): numero grande naranja con '!'.
   const fuerte = !!(m.f && m.p === miId && m.d > 0 && !m.c);
   if (m.p === miId || o.id === objetivo) {
-    if (fuerte) numero(o.x + (Math.random() - 0.5), alturaEn(o.x, o.z) + 2.2, o.z, m.d + '!', '#ffb347', true);
+    // Golpe a su debilidad (servidor w): ¡DÉBIL! verde-amarillo, 30 % más grande y un clic agudo.
+    if (m.w && m.d > 0) { numero(o.x + (Math.random() - 0.5), alturaEn(o.x, o.z) + 2.2, o.z, '¡DÉBIL! ' + m.d, '#c8ff3a', m.c || fuerte ? 29 : 21); if (m.p === miId) SON.tocar('clic', { vol: 0.9 }); }
+    else if (fuerte) numero(o.x + (Math.random() - 0.5), alturaEn(o.x, o.z) + 2.2, o.z, m.d + '!', '#ffb347', true);
     else numero(o.x + (Math.random() - 0.5), alturaEn(o.x, o.z) + 2.2, o.z, (m.c ? '¡' : '') + m.d + (m.c ? '!' : ''), m.c ? '#ffd34d' : m.rayo ? '#7dd3fc' : '#fff', m.c);
     if (fuerte) { sfxK('g_critico', 0.3); pausaGolpe(o, 60); }
     if (m.p === miId) { musica.combate(true); if (m.c) vib(TG && TG.HapticFeedback ? 'rigid' : 'medium'); else if (!autoAtk) vib('light'); sfx(m.c ? 'corte2' : 'corte', 0.28); sfxK(m.c ? 'g_critico' : 'g_carne', m.c ? 0.4 : 0.3); if (m.c) { sacudir = Math.max(sacudir, 0.15); fovGolpe = -3.5; } }
@@ -2647,12 +2685,13 @@ function efectoHab(m) {
     if (!(ajena && (POBRE || CAL === 'baja'))) onda(de.x, de.z, (h && h.radio ? h.radio / 17 : 6), AREA[m.id], true, ajena ? 0.3 : 0.8);
   }
   if (FIRMA[m.id]) { try { efectoFirma(m, de); } catch (e) {} }
-  for (const [id, d, tipo] of m.h || []) {
+  for (const [id, d, tipo, w] of m.h || []) {
     const o = mons.get(id);
     if (!o) continue;
     if (d > 0) o.hp = Math.max(0, o.hp - d);
     if (de && A_DISTANCIA[m.id]) proyectil(de, o, A_DISTANCIA[m.id]);
-    if (m.p === miId || id === objetivo) numero(o.x + (Math.random() - 0.5), alturaEn(o.x, o.z) + 2.3, o.z, (tipo === 1 ? '¡' : '') + d + (tipo === 1 ? '!' : ''), tipo === 1 ? '#ffd34d' : '#ffe600', tipo === 1);
+    if ((m.p === miId || id === objetivo) && w && d > 0) { numero(o.x + (Math.random() - 0.5), alturaEn(o.x, o.z) + 2.3, o.z, '¡DÉBIL! ' + d, '#c8ff3a', tipo === 1 ? 29 : 21); if (m.p === miId) SON.tocar('clic', { vol: 0.9 }); }
+    else if (m.p === miId || id === objetivo) numero(o.x + (Math.random() - 0.5), alturaEn(o.x, o.z) + 2.3, o.z, (tipo === 1 ? '¡' : '') + d + (tipo === 1 ? '!' : ''), tipo === 1 ? '#ffd34d' : '#ffe600', tipo === 1);
     o.golpeT = performance.now();
   }
   // Lanzar: whoosh (o campanitas si cura); las de otros suenan desde ellos y mas bajo.
@@ -2757,6 +2796,7 @@ function proyectil(de, a, color, forma) {
   proyectiles.push({ mesh, de: { x: de.x, z: de.z, y: (de.y || alturaEn(de.x, de.z)) + 1.2 }, a, t: 0, color: col, forma: fo, n: 0 });
 }
 let avisoXP_t = 0;   // cuando se dio el aviso de XP al morir (la pantalla puede repintarse en la misma caida)
+let muerte1Rev = false;   // embudo: fue su primera caida y aun no pulso revivir
 function morir(m) {
   atkMantener = false;   // al revivir no sigue pegando solo (ATACAR o el clic quedaron "pulsados")
   // Golpe sordo al caer (una sola vez aunque lleguen 'muerte' y 'yo' seguidos).
@@ -2785,8 +2825,10 @@ function morir(m) {
   const dondeRev = ab ? 'Revives en tu bastión.' : cerca ? `Revives ${(yo.nivel || 1) < 10 ? 'en la entrada' : 'cerca, en un claro seguro'} de ${MAPAS[cerca.zona] ? MAPAS[cerca.zona].nombre : 'la zona'} (a ${Math.round(Math.hypot(cerca.x - P.x, cerca.z - P.z))} m).` : 'Revives en el pueblo.';
   const quien = m && m.golpes && m.golpes.length ? 'Te derribó: ' + m.golpes.map(g => esc(g.n)).filter((v, i, l) => l.indexOf(v) === i).slice(0, 2).join(', ') + '.' : '';   // innerHTML: los nombres de jugadores van escapados
   // Diagnostico: cuanto le faltaba al monstruo y cuanto cuesta caer.
-  const vida = m && m.vi && m.vn ? `${esc(m.vn)} aún tenía un ${m.vi}% de vida.` : '';
-  const xp = !m ? '' : m.pvp ? 'Ante la otra facción no pierdes experiencia.' : m.espiral ? '✨ Tres caídas seguidas: esta vez no pierdes XP y revives con la Bendición del Duende (−25% de daño, 3 min).'
+  const vida = m && m.vi && m.vn ? `${esc(m.vn)} aún tenía un ${m.vi}% de vida${revancha3 && Date.now() < revancha3.hasta ? TXT_REVANCHA : '.'}` : '';
+  // Embudo: primera caida de este personaje en este aparato (y si luego revive).
+  if (m) { let m1 = false; try { const k1 = 'dq3_m1_' + ((yo && yo.pid) || ''); if (!localStorage.getItem(k1)) { localStorage.setItem(k1, '1'); m1 = true; } } catch (e) {} if (m1) { paso('muerte1'); muerte1Rev = true; } }
+  const xp = !m ? '' : m.pvp ? 'Ante la otra facción no pierdes experiencia.' : m.primera ? '✨ Todos caen la primera vez: revives con la Bendición del Duende (−25 % de daño, 3 min).' : m.espiral ? '✨ Tres caídas seguidas: esta vez no pierdes XP y revives con la Bendición del Duende (−25% de daño, 3 min).'
     : m.novato ? 'Hasta Nv 10 no pierdes XP.' : m.xp > 0 ? `Revivir cuesta −${fmtN(m.xp)} XP.` : '';
   // Consejo util: enemigo muy alto -> sube antes; con pociones sin usar -> usalas (tecla Q); sin pociones -> Mercader.
   const nvYo = (yo && yo.nivel) || 1, nvMax = Math.max(0, ...((m && m.golpes) || []).map(g => g.nv || 0));
@@ -2845,15 +2887,16 @@ function chipBienvMuerte(m) {
     ch.style.cssText = 'display:block;margin:10px auto 0;max-width:100%;padding:5px 12px;border-radius:999px;border:1px solid rgba(255,216,74,.55);background:rgba(255,216,74,.12);color:#fde68a;font:600 12px var(--sans,system-ui);cursor:pointer;white-space:normal;line-height:1.3';
     ch.textContent = '🎁 Tu Pack de bienvenida (10 pociones) sigue disponible';
     // La tienda va debajo de esta pantalla: se revive como con el boton principal y se abre al volver.
-    ch.onclick = () => { if (!ws || ws.readyState !== 1) return aviso('Sin conexión: reconectando… vuelve a intentarlo en un momento.', 'err'); ch.style.display = 'none'; pocionesTrasRevivir = false; bienvTrasRevivir = true; mandar({ t: 'revivir' }); };
+    ch.onclick = () => { if (!ws || ws.readyState !== 1) return aviso('Sin conexión: reconectando… vuelve a intentarlo en un momento.', 'err'); ch.style.display = 'none'; pocionesTrasRevivir = false; bienvTrasRevivir = true; pasoRevivir1(); mandar({ t: 'revivir' }); };
     ref.insertAdjacentElement('afterend', ch);
   }
   ch.style.display = 'block'; chipBienvVisto = true;
 }
 // La ventana se cierra cuando el servidor confirma (llega 'yo' vivo): sin conexion no te quedas muerto y sin boton.
 let pocionesTrasRevivir = false;
-$('b-revivir').onclick = () => { if (!ws || ws.readyState !== 1) return aviso('Sin conexión: reconectando… vuelve a intentarlo en un momento.', 'err'); pocionesTrasRevivir = false; mandar({ t: 'revivir' }); };
-if ($('b-revivir-pociones')) $('b-revivir-pociones').onclick = () => { if (!ws || ws.readyState !== 1) return aviso('Sin conexión: reconectando… vuelve a intentarlo en un momento.', 'err'); pocionesTrasRevivir = true; mandar({ t: 'revivir', pueblo: 1 }); };
+function pasoRevivir1() { if (muerte1Rev) { muerte1Rev = false; paso('revivir1'); } }
+$('b-revivir').onclick = () => { if (!ws || ws.readyState !== 1) return aviso('Sin conexión: reconectando… vuelve a intentarlo en un momento.', 'err'); pocionesTrasRevivir = false; pasoRevivir1(); mandar({ t: 'revivir' }); };
+if ($('b-revivir-pociones')) $('b-revivir-pociones').onclick = () => { if (!ws || ws.readyState !== 1) return aviso('Sin conexión: reconectando… vuelve a intentarlo en un momento.', 'err'); pocionesTrasRevivir = true; pasoRevivir1(); mandar({ t: 'revivir', pueblo: 1 }); };
 
 // ── HUD ──
 // Premio real siempre a la vista: al llegar a nivel 60, 2 litros de chicha
@@ -3185,14 +3228,15 @@ function pintarObjetivo() {
   const o = mons.get(objetivo);
   const caja = $('obj');
   if (!o) { if (objPintado !== '-') { caja.style.display = 'none'; anillo.visible = false; objPintado = '-'; } return; }
-  const clave = o.id + '|' + Math.ceil(o.hp) + '|' + o.mx + '|' + (yo ? yo.nivel : 0) + '|' + (yo && yo.best ? yo.best[o.k] || 0 : -1);
+  const clave = o.id + '|' + Math.ceil(o.hp) + '|' + o.mx + '|' + (yo ? yo.nivel : 0) + '|' + (yo && yo.best ? yo.best[o.k] || 0 : -1) + '|' + (yo && yo.bestD && yo.bestD[o.k] ? 1 : 0);
   if (clave !== objPintado) {
     objPintado = clave;
     const def = MONSTRUOS[o.k];
     bestRec.delete(o.id); bestRec.set(o.id, o.k); if (bestRec.size > 4) bestRec.delete(bestRec.keys().next().value);
     pintarChipBest(o.k, def);
     caja.style.display = 'block';
-    $('o-nombre').textContent = (o.j ? '★ ' : '') + def.nombre;
+    // Debilidad ya descubierta (bestD): su emoji junto al nombre.
+    $('o-nombre').textContent = (o.j ? '★ ' : '') + def.nombre + (def.debil && yo && yo.bestD && yo.bestD[o.k] ? ' ' + (DEBIL_EMO[def.debil] || '') : '');
     $('o-nivel').textContent = marcaNivel(o.nv) + 'Nv ' + o.nv;
     bestiario3(o.k, def.nombre);
     const hp = $('o-hp');
@@ -3523,6 +3567,23 @@ function lineaChat(m) {
   const log = $('chat-log'); log.appendChild(d);
   while (log.children.length > 8) log.firstChild.remove();
 }
+// Tarjeta «CAPÍTULO N» al empezar un capitulo de la cadena de Tito (la misma de tituloZona).
+// Con un jefe cerca o en pleno combate se pospone 5 s (hasta ~2 min; luego se omite).
+function tarjetaCapitulo(c, intento) {
+  clearTimeout(tarjetaCapitulo.t);
+  tarjetaCapitulo.t = setTimeout(() => {
+    if (!c || !yo) return;
+    const t = $('titulo-zona'), n = $('tz-n'), s = $('tz-s'); if (!t || !n || !s) return;
+    const ahora = performance.now();
+    const ocupado = jefeCerca() || camCombate || autoAtk || (P && (P.muerto || ahora - (P.heridoT || 0) < 5000 || (objetivo && ahora - (P.atkT || 0) < 5000)));
+    if (ocupado) { if ((intento || 0) < 24) tarjetaCapitulo(c, (intento || 0) + 1); return; }
+    const n0 = n.textContent, s0 = s.textContent;
+    n.textContent = 'CAPÍTULO ' + c.n; s.textContent = c.titulo;
+    t.style.opacity = 1;
+    try { if (SFX_K.libro) sfxK('libro', 0.3); else SON.tocar('logro', { vol: 0.6 }); } catch (e) {}
+    clearTimeout(t._t); t._t = setTimeout(() => { t.style.opacity = 0; setTimeout(() => { if (n.textContent === 'CAPÍTULO ' + c.n) { n.textContent = n0; s.textContent = s0; } }, 900); }, 3200);
+  }, intento ? 5000 : 1200);
+}
 function tituloZona(id) {
   const mp = id === 'eter' ? { nombre: ABISMO.nombre + ' · zona PvP', nv: [ABISMO.nvMin, 60] } : id === 'cueva' ? { nombre: CUEVA.nombre, nv: [cuevaInfo ? cuevaInfo.nv : 5, cuevaInfo ? cuevaInfo.nv : 60] } : MAPAS[id];
   $('tz-n').textContent = mp ? mp.nombre : 'Pueblo Duende';
@@ -3616,7 +3677,7 @@ function abrirClases() {
 let npcAbierto = '', firmaNpcAnt = '';
 // Que hace cada NPC del pueblo (etiqueta sobre su cabeza y boton de hablar).
 const ROL_NPC = { guia: '📜 Misiones', tienda: '🛒 Tienda', ranking: '🏆 Ranking', artesania: '⚒️ Fabricar' };
-const firmaNpc = t => JSON.stringify(t === 'guia' ? [yo.mis, yo.diaria] : t === 'tienda' ? [yo.pw, yo.oro] : [yo.mat, yo.pw]);
+const firmaNpc = t => JSON.stringify(t === 'guia' ? [yo.mis, yo.diaria] : t === 'tienda' ? [yo.pw, yo.oro] : [yo.mat, yo.pw, yo.recetas]);
 // Ventanas abiertas al dia (solo se repintan si cambia lo que muestran).
 function refrescarVentanas(lleno) {
   if (lleno) V.actualizar();
@@ -3647,10 +3708,17 @@ function abrirNpc(tipo) {
     const mat = yo.mat || {};
     const tengo = Object.entries(MATERIALES).filter(([k]) => mat[k]).map(([k, d]) => `<span style="white-space:nowrap"><img src="${A}items/equipo/${d.icono}.png" style="width:18px;vertical-align:middle;image-rendering:pixelated"> ${mat[k]}</span>`).join(' · ');
     cu.innerHTML = `<p>Recoge hierbas 🌿 y minerales ⛏ por el mundo (${K('tecla E', 'botón RECOGER')} junto a ellos) y yo te los convierto.</p><p style="margin:6px 0"><b>Tus materiales:</b> ${tengo || 'ninguno todavía'}</p>`
+      + `<p style="margin:6px 0"><b>📖 Recetario: ${RECETAS.filter(r => (yo.recetas || {})[r.id]).length}/${RECETAS.length}</b></p>`
       + RECETAS.map(r => {
         const ok = Object.entries(r.pide).every(([k, n]) => (mat[k] || 0) >= n);
-        const pide = Object.entries(r.pide).map(([k, n]) => `${n} ${MATERIALES[k].nombre}`).join(', ');
-        return `<div class="fila"><span><b>${esc(r.nombre)}</b><br><small style="color:var(--txt3)">${esc(r.desc)} · ${pide}</small></span><button class="btn${ok ? '' : ' sec'}" data-r="${r.id}" ${ok ? '' : 'disabled'}>Fabricar</button></div>`;
+        // Cada ingrediente como tengo/pide con su icono: verde si alcanza, gris si no.
+        const pide = Object.entries(r.pide).map(([k, n]) => { const d = MATERIALES[k] || { nombre: k }, t = mat[k] || 0; return `<span style="white-space:nowrap;color:${t >= n ? '#4ade80' : 'var(--txt3)'}">${Math.min(t, 999)}/${n} ${d.icono ? `<img src="${A}items/equipo/${d.icono}.png" alt="" style="width:16px;vertical-align:middle;image-rendering:pixelated">` : ''} ${esc(d.nombre)}</span>`; }).join(' · ');
+        const falta = Object.entries(r.pide).filter(([k, n]) => (mat[k] || 0) < n).map(([k, n]) => `${n - (mat[k] || 0)} ${esc((MATERIALES[k] || { nombre: k }).nombre)}`).join(', ');
+        const nueva = r.oculta && !(yo.recetas || {})[r.id];
+        // Si una mision secundaria a tu nivel pide esta receta, se ve entera (si no, no sabrias que juntar).
+        const pedida = SECUNDARIAS.some(q => q.tipo === 'fabricar' && q.k === r.id && (yo.nivel || 1) >= q.nv && !(secundarias || {})[q.id + ':ok']);
+        if (nueva && !ok && !pedida) return `<div class="fila" style="opacity:.75"><span><b>???</b> <small style="color:var(--txt3)">· ${esc(r.pista || 'Receta por descubrir')}</small></span><button class="btn sec" disabled>???</button></div>`;
+        return `<div class="fila"${nueva ? ' style="box-shadow:0 0 10px rgba(250,204,21,.55);border-radius:8px;background:rgba(250,204,21,.08)"' : ''}><span><b>${esc(r.nombre)}</b>${nueva ? ' <small style="background:#facc15;color:#1a1a1a;border-radius:6px;padding:0 5px;font-weight:700">¡Nueva!</small>' : ''}<br><small style="color:var(--txt3)">${esc(r.desc)}</small><br><small>${pide}</small>${falta ? `<br><small style="color:var(--txt3);font-size:11px">Falta: ${falta}</small>` : ''}</span><button class="btn${ok ? '' : ' sec'}" data-r="${r.id}" ${ok ? '' : 'disabled'}>Fabricar</button></div>`;
       }).join('');
     cu.querySelectorAll('[data-r]').forEach(b => b.onclick = () => { mandar({ t: 'fabricar', id: b.dataset.r }); sfx('moneda', 0.3); });
   }
@@ -4021,7 +4089,7 @@ const FRASES3 = ['¡Ayuda aquí!', 'Vamos al jefe', 'Gracias, causa', 'Espérame
 (() => {
   const fila = $('gestos3'), bt = $('b-gestos');
   if (!fila || !bt) return;
-  fila.innerHTML = '<div class="g3-e">' + Object.entries(GESTOS).map(([id, g]) => `<button type="button" data-g="${id}" title="${g.txt}" aria-label="${g.txt}">${g.e}</button>`).join('') + '<button type="button" data-m="1" title="Marcar: tu objetivo, un recurso cercano o adelante" aria-label="Marcar lugar para tu grupo y los cercanos">📍</button><button type="button" data-foto="1" title="Foto bailando para compartir" aria-label="Foto de tu duende bailando para compartir">📸</button></div>'
+  fila.innerHTML = '<div class="g3-e">' + Object.entries(GESTOS).map(([id, g]) => `<button type="button" data-g="${id}" title="${g.txt}" aria-label="${g.txt}">${g.e}</button>`).join('') + '<button type="button" data-m="1" title="Marcar: tu objetivo, un recurso cercano o adelante" aria-label="Marcar lugar para tu grupo y los cercanos">📍</button><button type="button" data-foto="1" title="Foto bailando para compartir" aria-label="Foto de tu duende bailando para compartir">📸</button><button type="button" data-cine="1" title="Modo cine: sin botones, para grabar tu pantalla" aria-label="Modo cine para grabar">🎬</button></div>'
     + '<div class="g3-f">' + FRASES3.map((f, i) => `<button type="button" data-f="${i}">${f}</button>`).join('') + '</div>';
   const cerrarG = () => { fila.classList.remove('on'); };
   // Debajo del boton y nunca hasta la barra de habilidades/joystick (si no cabe, desliza).
@@ -4042,6 +4110,7 @@ const FRASES3 = ['¡Ayuda aquí!', 'Vamos al jefe', 'Gracias, causa', 'Espérame
     if (b.dataset.g) mandar({ t: 'gesto', id: b.dataset.g });
     else if (b.dataset.m) marcar3();
     else if (b.dataset.foto) fotoBaile();
+    else if (b.dataset.cine) modoCine();
     else if (b.dataset.f) { const f = FRASES3[b.dataset.f | 0]; if (f) enviarChat((grupo3 && grupo3.m && grupo3.m.length > 1 ? '/g ' : '') + f); }
     cerrarG();
   };
@@ -4298,9 +4367,11 @@ function verLeyenda() {
     <p class="vv-p">El <b>Rey Goblin</b> robó el <b style="color:#ffd84a">Cántaro Eterno</b> y lo rompió en pedazos. Sin chicha, la noche cubrió el bosque, los goblins invadieron las colinas y el Éter del cielo se partió en islas flotantes: el <b>Abismo</b>.</p>
     <p class="vv-p"><img src="${modoAnuncio() ? '/assets/skins/skin_bruja.png' : '/assets/lore/duende-chicha.webp'}" alt="" style="float:right;height:96px;margin:0 0 4px 6px">Tú eres un duende joven. <b>Recupera las zonas</b> (misiones y encargos 🧭), <b>vence a sus jefes</b>, abre los cofres y junta <b>puntos de chicha</b> cazando. En el Abismo, la Luz y la Sombra luchan por el <b>Núcleo</b>, donde late el último pedazo del Cántaro.</p>
     <p class="vv-p" style="color:#fde68a;font-weight:700">🥤 Y es de verdad: quien llegue a nivel ${CHICHA.nv60} en este mundo se lleva ${CHICHA.litros60} litros de chicha morada a su casa. Además, con ${(10000).toLocaleString('es')} puntos de chicha cazando (desde nivel ${CHICHA.nvPuntos}), otro litro: toca la barra morada 🥤. Se reclama entrando con Telegram · envíos solo en Perú.</p>
-<details style="margin-top:8px"><summary style="cursor:pointer;color:#c084fc;font-weight:700">🏺 Las reliquias del Cántaro: ${Object.keys(LORE_ZONAS).filter(z => encargos[z + ':jefe'] === true).length}/10 recuperadas</summary><p class="vv-p" style="font-size:12px;margin:6px 0">Cada reliquia (un pedazo, su semilla, su barro o un secreto) se recupera venciendo al jefe de su zona en los encargos 🧭. Con las 10, el último pedazo espera en el Núcleo del Abismo: el nivel ${CHICHA.nv60}.</p>${Object.entries(LORE_ZONAS).map(([id, z]) => { const ok = encargos[id + ':jefe'] === true; return `<p class="vv-p" style="margin:6px 0;${ok ? '' : 'opacity:.6'}"><b style="color:${ok ? '#4ade80' : '#fde68a'}">${ok ? '✓' : '·'} ${esc((MAPAS[id] || {}).nombre || id)}:</b> ${ok ? esc(z.pedazo) : 'reliquia perdida… vence al jefe de la zona.'}</p>`; }).join('')}</details>
+<details style="margin-top:8px"><summary style="cursor:pointer;color:#fde68a;font-weight:700">📜 Los capítulos de la historia: ${yo && yo.mis ? Math.min(capituloDe(yo.mis.i).n, CAPITULOS.length) : 1}/${CAPITULOS.length}</summary><p class="vv-p" style="font-size:12px;margin:6px 0">La cadena de misiones del Guardia Tito, contada por capítulos.</p>${CAPITULOS.map(c => { const mi = yo && yo.mis ? yo.mis.i : 0, cur = capituloDe(mi).n, sig = CAPITULOS.find(x => x.n === c.n + 1), fin = mi >= LORE_MISIONES.length; const est = fin || c.n < cur ? 'ok' : c.n === cur ? 'ya' : 'no'; return `<p class="vv-p" style="margin:4px 0;${est === 'no' ? 'opacity:.55' : ''}"><b style="color:${est === 'ok' ? '#4ade80' : est === 'ya' ? '#fde68a' : '#cbd5e1'}">${est === 'ok' ? '✓' : est === 'ya' ? '▶' : '·'} Capítulo ${c.n}:</b> ${esc(c.titulo)} <small>(misiones ${c.desde + 1}-${sig ? sig.desde : LORE_MISIONES.length})</small></p>`; }).join('')}</details>
+<details style="margin-top:8px"><summary style="cursor:pointer;color:#c084fc;font-weight:700">🏺 Las reliquias del Cántaro: ${Object.keys(LORE_ZONAS).filter(z => encargos[z + ':jefe'] === true).length}/10 recuperadas</summary><p class="vv-p" style="font-size:12px;margin:6px 0">Cada reliquia (un pedazo, su semilla, su barro o un secreto) se recupera venciendo al jefe de su zona en los encargos 🧭. Con las 10, el último pedazo espera en el Núcleo del Abismo: el nivel ${CHICHA.nv60}.</p>${Object.entries(LORE_ZONAS).map(([id, z]) => { const ok = encargos[id + ':jefe'] === true; return `<p class="vv-p" style="margin:6px 0;${ok ? '' : 'opacity:.6'}"><b style="color:${ok ? '#4ade80' : '#fde68a'}">${ok ? '✓' : '·'} ${esc((MAPAS[id] || {}).nombre || id)}:</b> ${ok ? esc(z.pedazo) + ` <button type="button" class="btn sec" data-releer-z="${esc(id)}" style="padding:4px 10px;font-size:12px;margin-top:4px">▶ Releer</button>` : 'reliquia perdida… vence al jefe de la zona.'}</p>`; }).join('')}</details>
 <details style="margin-top:8px"><summary style="cursor:pointer;color:#f0abfc;font-weight:700">📖 Historias de la gente del bosque: ${SECUNDARIAS.filter(q => secundarias[q.id + ':ok']).length}/${SECUNDARIAS.length}</summary><p class="vv-p" style="font-size:12px;margin:6px 0">Misiones secundarias: salen solas en el panel al llegar a cada zona (con su nivel) y avanzan con lo que haces.</p>${SECUNDARIAS.map(q => { const ok = !!secundarias[q.id + ':ok']; return `<p class="vv-p" style="margin:6px 0;${ok ? '' : 'opacity:.6'}"><b style="color:${ok ? '#4ade80' : '#f0abfc'}">${ok ? '✓' : '·'} ${esc(q.nombre)}</b> <small>(${esc((MAPAS[q.zona] || {}).nombre || q.zona)} · Nv ${q.nv})</small><br>${ok ? esc(q.fin) + ` <button type="button" class="btn sec" data-releer="${esc(q.id)}" style="padding:4px 10px;font-size:12px;margin-top:4px">▶ Releer</button>` : esc(q.quien) + ' te espera.'}</p>`; }).join('')}</details>`;
   $('v-diario').querySelector('h2').textContent = 'LA LEYENDA DEL CÁNTARO';
+  $('diario-c').querySelectorAll('[data-releer-z]').forEach(b => { b.onclick = e => { e.preventDefault(); const id = b.dataset.releerZ, z = LORE_ZONAS[id]; if (!z) return; cerrar('v-diario'); npcDice('Guardia Tito', [z.intro, LORE_HITOS[id], z.pedazo].filter(Boolean), '🛡', true); }; });
   $('diario-c').querySelectorAll('[data-releer]').forEach(b => { b.onclick = e => { e.preventDefault(); const q = SECUNDARIAS.find(x => x.id === b.dataset.releer); if (!q) return; cerrar('v-diario'); npcDice(q.quien, [q.inicio, q.fin], q.emoji, true, q.sigue); }; });
   abrir('v-diario');
 }
@@ -4645,6 +4716,7 @@ function botinFuerte(it) {
 }
 // ── INVASION DEL 3D ──
 let invasion3 = null;
+let invYo3 = 0, invYo3Id = 0;   // tus aportes en la invasion actual (inv3yo de eventos3d.js): medalla en vivo en el HUD
 let invPre3 = null, benditas3 = {};   // invPre3: tambores (invasion en 1:30, eventos3d.js avisarInvasion3d). benditas3: zona -> hasta (+10 % XP tras ganar una invasion)
 // ── SUBIR DE NIVEL, PRESUMIR Y TELEGRAM ──
 // Lo proximo que se abre (todo con las constantes del juego, sin niveles inventados).
@@ -4653,6 +4725,29 @@ const NV_CLASE_GRATIS = (() => { let n = 1; while (n < 60 && costoCambioClase(n 
 const PROXIMOS = Object.values([[EXPEDICION.nv, '🧭 expediciones de tu mascota'], [NV_CLASE_GRATIS, '⚔ último nivel para cambiar de clase gratis'], [ESPEC_NIVEL, '🌟 especialización y talentos'], [ABISMO.nvMin, '🌌 el Abismo de Éter'], [5, '⛏ la Cueva de los Goblins (portal del pueblo): épico + XP, 3 al día'],
   ...Object.values(MAPAS).filter(m => m && m.zona && !m.instancia && !m.coliseo && !m.torre && Array.isArray(m.nv) && m.nv[0] > 1).map(m => [m.nv[0], '🗺 nueva zona: ' + m.nombre])]
   .reduce((acc, p) => { if (acc[p[0]]) acc[p[0]][1] += ' · ' + p[1]; else acc[p[0]] = [p[0], p[1]]; return acc; }, {})).sort((a, b) => a[0] - b[0]);
+// Fuegos artificiales de Año Nuevo (world.js revisarAnoNuevo): 5-8 rafagas de colores en el cielo
+// sobre el jugador durante ~6 s; en calidad baja o equipo pobre, menos rafagas y menos chispas.
+const COL_FUEGOS = ['#ff4d6d', '#ffd84a', '#4ade80', '#60a5fa', '#c084fc', '#f472b6', '#fb923c', '#e0f2fe'];
+function fuegosArtificiales(grande) {
+  const baja = POBRE || CAL === 'baja';
+  const nR = baja ? (grande ? 4 : 3) : (grande ? 8 : 5) + (MOVIL ? -1 : 0);
+  const nC = baja ? 18 : MOVIL ? 30 : 48;
+  for (let i = 0; i < nR; i++) {
+    setTimeout(() => {
+      try {
+        if (!P) return;
+        const ang = Math.random() * Math.PI * 2, r = 6 + Math.random() * 12;
+        const x = P.x + Math.cos(ang) * r, z = P.z + Math.sin(ang) * r, y = (P.y || 0) + 16 + Math.random() * 8;
+        const c1 = COL_FUEGOS[(Math.random() * COL_FUEGOS.length) | 0], c2 = COL_FUEGOS[(Math.random() * COL_FUEGOS.length) | 0];
+        FX.emitir(x, y, z, { n: nC, color: c1, vel: 7, vida: 1.4, grav: 2.5, forma: 'chispa' });
+        if (!baja) FX.emitir(x, y, z, { n: (nC / 2) | 0, color: c2, vel: 4, vida: 1.1, grav: 1.5, tam: 1.3, forma: 'estrella' });
+        FX.emitir(x, y, z, { n: 2, color: '#ffffff', vel: 0.5, vida: 0.3, tam: 2.2, forma: 'destello' });
+        if (i % 2 === 0) sfx('explosion', 0.12);
+      } catch (e) {}
+    }, i * (5600 / nR) + Math.random() * 300);
+  }
+  try { SON.tocar('logro', { vol: 0.7 }); } catch (e) {}
+}
 function subiNivel(lv) {
   // Habilidad recien aprendida: se presenta y su boton late hasta que la uses (la marca sobrevive a recargar).
   const hn = lv > 0 && yo && yo.clase ? habsDe(yo.clase).find(x => x.nv === lv) : null;
@@ -4775,7 +4870,7 @@ function precargarPresumir() {
     fetch(url).then(r => r.ok ? r.blob() : null).then(ponerFile).catch(() => {});
   };
   precargarPresumir.tipo = presumirTipo; precargarPresumir.ts = Date.now();
-  if (['look', 'logro', 'nivel', 'jefe', 'duelo'].includes(presumirTipo)) {
+  if (['look', 'logro', 'nivel', 'jefe', 'duelo', 'cofre', 'botin', 'nv60', 'fail'].includes(presumirTipo)) {
     try { if (fotoPresumir(bl => { if (!ponerFile(bl) && turno === precargarPresumir.n) jpgFijo(); })) return; } catch (e) {}
   }
   jpgFijo();
@@ -4821,7 +4916,7 @@ function fotoPresumir(cb, lineaFija) {
   lineas.forEach((l, i) => x.fillText(l, 270, 960 - alto + 50 + i * 40, 510));
   x.font = '22px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
   x.fillStyle = 'rgba(255,255,255,0.85)';
-  x.fillText('duendequest · gratis en el celular', 270, 960 - 22, 510);
+  x.fillText(/^[a-z0-9]{6}$/.test(refAmigo || '') ? location.host + '/jugar/?ref=' + refAmigo : 'duendequest · gratis en el celular', 270, 960 - 22, 510);   // enlace que se puede escribir (no hay casilla de codigo de amigo; la de 6 letras es Llevar mi duende)
   if (!c.toBlob) return false;
   c.toBlob(bl => { try { cb(bl); } catch (e) {} }, 'image/jpeg', 0.82);
   return true;
@@ -4852,10 +4947,46 @@ function fotoBaile() {
     if (!ok) fin(null);
   }, 600);
 }
+// 🎬 Modo cine: oculta el HUD 15 s, el duende baila y la camara orbita lento para grabar
+// con la grabacion de pantalla del celular. Sale con cualquier toque/tecla. Solo cliente.
+let cineEst = null;
+function salirCine() {
+  if (!cineEst) return;
+  const c = cineEst; cineEst = null; salirCine.t = Date.now();
+  clearTimeout(c.tOcultar); clearTimeout(c.tFin); clearTimeout(c.tEsc);
+  document.removeEventListener('pointerdown', c.fuera, true); document.removeEventListener('keydown', c.fuera, true);
+  document.body.classList.remove('cine');
+  camYaw = c.yaw; camDist = c.dist;
+}
+function modoCine() {
+  if (cineEst) return salirCine();
+  if (Date.now() - (salirCine.t || 0) < 600) return;   // el toque en 🎬 ya cerro el modo por la escucha de captura: no reabrir
+  if (!yo || P.muerto) return;
+  let peligro = camCombate;
+  try { for (const o of mons.values()) if (!o.muereT && o.hp > 0 && (o.st === 1 || o.st === 2) && Math.hypot(o.x - P.x, o.z - P.z) < 14) { peligro = true; break; } } catch (e) {}
+  if (peligro) return aviso('Aléjate de los monstruos para grabar', 'err', 1);
+  const c = cineEst = { on: false, yaw: camYaw, dist: camDist, t0: performance.now() };
+  aviso(MOVIL ? 'Activa la grabación de pantalla de tu celular 🎥' : 'Activa la grabación de pantalla 🎥', 'ok', 1);
+  c.fuera = () => salirCine();
+  c.tOcultar = setTimeout(() => {
+    if (cineEst !== c) return;
+    c.on = true;
+    document.body.classList.add('cine');
+    mandar({ t: 'gesto', id: 'bailar' });
+    try { mostrarGesto(miId, 'bailar'); } catch (e) {}
+    c.tFin = setTimeout(salirCine, 15000);
+  }, 2000);
+  // Escucha la salida un poco despues, para no salir con el mismo toque del boton.
+  c.tEsc = setTimeout(() => {
+    if (cineEst !== c) return;
+    document.addEventListener('pointerdown', c.fuera, { capture: true, once: true });
+    document.addEventListener('keydown', c.fuera, { capture: true, once: true });
+  }, 300);
+}
 // Tope: una oferta cada 3 min (si no, cansa). forzar: la pidio el jugador.
 function ofrecerPresumir(txt, tipo, forzar) {
   // El jefe pesa mas que nivel/logro: si esa oferta fue hace < 5 s (subiste al matarlo), el jefe la reemplaza.
-  const jefeGana = tipo === 'jefe' && Date.now() - presumirUlt < 5000 && /^(nivel|logro)$/.test(ofrecerPresumir.tipo || '');
+  const jefeGana = (tipo === 'jefe' && Date.now() - presumirUlt < 5000 && /^(nivel|logro)$/.test(ofrecerPresumir.tipo || '')) || (!!tipo && tipo !== 'fail' && ofrecerPresumir.tipo === 'fail');   // un fallo no tapa un logro de verdad
   if (!forzar && !jefeGana && Date.now() - presumirUlt < 180000) return;
   if (!forzar && yo && yo.nivel < 4 && !(yo.mis && yo.mis.i >= 1)) return;   // no tapa el tutorial
   presumirUlt = Date.now(); ofrecerPresumir.tipo = tipo || '';
@@ -5222,21 +5353,36 @@ function textoMioSem(m) {
   else if (m.pos > 3 && m.xp < m.min) t += ` · ${f(m.min - m.xp)} XP más para entrar a una liga con premio`;
   return t;
 }
+// Ranking semanal de la Cueva (por clase y tramo de nivel, desde Nv 30).
+const mmss = v => Math.floor((v || 0) / 60) + ':' + String((v || 0) % 60).padStart(2, '0');
+const pluralClase = k => { const n = (CLASES[k] && CLASES[k].nombre) || 'jugadores'; return /[aeiouáéíóú]$/i.test(n) ? n + 's' : n + 'es'; };
+function textoMioCueva(cv) {
+  if (!cv) return 'Cargando el ranking de la Cueva…';
+  if (cv.bloq) return 'Desde Nv 30 entras al ranking semanal de la Cueva.';
+  const grupo = `${pluralClase(cv.k)} ${cv.tramo || ''}`.trim();
+  if (!cv.pos) return `Aún sin tiempo esta semana: vence al Rey Goblin en una Cueva de tu tramo y ${cv.tot ? `entra a competir con ${cv.tot} ${grupo}` : `sé el primero entre los ${grupo}`}.`;
+  let t = `Eres #${cv.pos} de ${cv.tot} ${grupo} · ${mmss(cv.seg)}`;
+  t += cv.arriba ? ` · Te faltan ${mmss(cv.seg - cv.arriba.seg + 1)} para pasar a ${cv.arriba.n}` : ' · ¡Vas primero!';
+  return t;
+}
 function pintarRankPanel() {
   if (!$('v-rank').classList.contains('on')) return;
   const d = rankDatos, c = $('rank-c');
-  const tabs = [['sem', 'Semana'], ['abismo', 'Abismo'], ['r', 'Nivel'], ['duel', 'Duelos'], ['herm', 'Hermandades'], ['torre', 'Torre']];
+  const tabs = [['sem', 'Semana'], ['abismo', 'Abismo'], ['r', 'Nivel'], ['duel', 'Duelos'], ['herm', 'Hermandades'], ['cueva', 'Cueva']];   // la Torre es de CLASSIC (2D): aqui no se puede subir
+  if (rankTab === 'torre') rankTab = 'cueva';
   let s = '<div class="rank-tabs">' + tabs.map(([k, n]) => `<button data-rt="${k}" class="${k === rankTab ? 'on' : ''}">${n}</button>`).join('') + '</div>';
   if (rankTab === 'abismo') s += htmlTemp(temp3 || (d && d.temp));
   else if (!d) { c.innerHTML = s + '<p class="vv-p">Cargando…</p>'; }
   else {
     const fin = d.finSem ? Math.max(0, d.finSem - Date.now()) : 0, dd = Math.floor(fin / 86400000), hh = Math.floor(fin % 86400000 / 3600000);
     if (rankTab === 'sem' && fin) s += `<p class="vv-p">⏳ La semana cierra en <b style="color:#f87171">${dd} d ${hh} h</b>: el top 3 se lleva el gran premio y, desde ${((d.mio && d.mio.min) || 2000).toLocaleString('es', { useGrouping: 'always' })} XP, todos cobran su liga contra los de su nivel${d.mio && d.mio.tramoTxt ? ` (tú: ${d.mio.tramoTxt})` : ''} (Oro top 10 %, Plata 30 %, Bronce el resto).</p>`;
-    const L = d[rankTab] || [];
-    const val = x => rankTab === 'sem' ? `${(x.xp || 0).toLocaleString('es')} XP` : rankTab === 'r' ? `Nv ${x.lv}` : rankTab === 'duel' ? `Elo ${x.e}` : rankTab === 'herm' ? `${(x.p || 0).toLocaleString('es')} pts · ${x.m} miembros` : `piso ${x.p}`;
-    s += '<div class="rank-lista">' + (L.length ? L.map((x, i) => `<div class="rk ${x.yo ? 'yo' : ''}"><span class="pos">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><b>${esc(x.n)}</b><span>${val(x)}</span></div>`).join('') : '<p class="vv-p">Aún no hay nadie: ¡sé el primero!</p>') + '</div>';
+    const cv = rankTab === 'cueva' ? d.cueva : null;
+    if (cv && !cv.bloq) s += `<p class="vv-p" style="font-size:12px">⏱ Mejor tiempo de la semana contra el Rey Goblin, solo entre ${esc(pluralClase(cv.k))} ${esc(cv.tramo || '')}. Cuenta si la Cueva es de tu tramo (si te carga alguien de más nivel, no entra); se reinicia el lunes a medianoche (hora de Lima).</p>`;
+    const L = rankTab === 'cueva' ? (cv && cv.top) || [] : d[rankTab] || [];
+    const val = x => rankTab === 'cueva' ? `${mmss(x.seg)} · Nv ${x.lv}` : rankTab === 'sem' ? `${(x.xp || 0).toLocaleString('es')} XP` : rankTab === 'r' ? `Nv ${x.lv}` : rankTab === 'duel' ? `Elo ${x.e}` : rankTab === 'herm' ? `${(x.p || 0).toLocaleString('es')} pts · ${x.m} miembros` : `piso ${x.p}`;
+    if (!(cv && cv.bloq)) s += '<div class="rank-lista">' + (L.length ? L.map((x, i) => `<div class="rk ${x.yo ? 'yo' : ''}"><span class="pos">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><b>${esc(x.n)}</b><span>${val(x)}</span></div>`).join('') : '<p class="vv-p">Aún no hay nadie: ¡sé el primero!</p>') + '</div>';
     if (rankTab === 'sem' && d.mio) s += `<div class="rk yo" style="position:sticky;bottom:0;margin-top:6px;display:block;line-height:1.35;background:rgba(30,24,8,.95);border:1px solid rgba(250,204,21,.55);border-radius:8px;padding:8px 10px">${esc(textoMioSem(d.mio))}</div>`;
-    if (rankTab === 'torre' && d.tpos) s += `<p class="vv-p" style="font-size:12px">Tú: <b>#${d.tpos}</b> de ${d.ttot} · piso ${d.tmax || 0}</p>`;
+    if (rankTab === 'cueva') s += `<div class="rk yo" style="position:sticky;bottom:0;margin-top:6px;display:block;line-height:1.35;background:rgba(30,24,8,.95);border:1px solid rgba(250,204,21,.55);border-radius:8px;padding:8px 10px">${esc(textoMioCueva(cv))}</div>`;
     if (rankTab === 'duel') s += `<p class="vv-p" style="font-size:11px">Tu Elo: <b>${d.elo || 1000}</b>. Reta a alguien desde su marco.</p>`;
   }
   c.innerHTML = s;
@@ -5303,7 +5449,7 @@ function mostrarDiario(m, forzar) {
   if ($('v-diario').classList.contains('on') && !mostrarDiario.t) { setTimeout(() => mostrarDiario(m, forzar), 2000); return; }   // no pisa la leyenda
   const n = LOGIN_PREMIOS.length, hoy = diaRacha(m.racha), sem = semanaRacha(m.racha);
   let h = bloqueExpedDiario();
-  try { const tp = yo ? temporadaDe() : null; if (tp) h += `<p class="vv-p" id="vv-temp" style="margin-bottom:8px;padding:8px;border-radius:10px;cursor:pointer;color:${tp.color};background:rgba(255,255,255,.06);border:1px solid ${tp.color}">${tp.emoji} <b>${esc(tp.nombre)}</b> hasta el ${esc(tp.hasta)} · ${esc(textoTemp3(tp).txt)}<br><small style="color:#e8e8f0">Toca aquí para ver el puesto de la Abuela ›</small></p>`; } catch (e) {}
+  try { const tp = yo ? temporadaDe() : null; if (tp) h += `<p class="vv-p" id="vv-temp" style="margin-bottom:8px;padding:8px;border-radius:10px;cursor:pointer;color:${tp.color};background:rgba(255,255,255,.06);border:1px solid ${tp.color}">${tp.emoji} <b>${esc(tp.nombre)}</b> hasta el ${esc(tp.hasta)} · ${esc(textoTemp3(tp).txt)}${(() => { const px = proxTemp3(); return px && tp.fin - Date.now() < 3 * 86400000 ? `<br><small style="color:${px.color}">Luego: ${px.emoji} ${esc(px.nombre)} desde el ${esc(fechaTemp3(px.ini))}</small>` : ''; })()}<br><small style="color:#e8e8f0">Toca aquí para ver el puesto de la Abuela ›</small></p>`; } catch (e) {}
   h += m.amuUsado ? `<p class="vv-p" style="margin-bottom:8px;padding:8px;border-radius:10px;background:rgba(125,211,252,.12);border:1px solid rgba(125,211,252,.45)">🧿 <b>Tu protector salvó tu racha</b>: faltaste un día y no la perdiste.</p>` : '';
   h += m.amuRegalo ? `<p class="vv-p" style="margin-bottom:8px;padding:8px;border-radius:10px;background:rgba(125,211,252,.12);border:1px solid rgba(125,211,252,.45)">🧿 <b>Protector de regalo</b>: si un día no puedes entrar, salva tu racha.</p>` : '';
   h += m.vuelta ? `<p class="vv-p" style="margin-bottom:8px;padding:8px;border-radius:10px;background:rgba(255,216,74,.12);border:1px solid rgba(255,216,74,.4)">🎉 <b>¡Te echábamos de menos!</b> ${m.vuelta.dias} días fuera. Regalo de bienvenida: <b>+${m.vuelta.oro.toLocaleString('es')} oro</b>, ${m.vuelta.pociones} pociones y <b>${esc(m.vuelta.item)}</b>.</p>` : '';
@@ -5705,7 +5851,7 @@ function golpeManual(bucle) {   // bucle: llamada del bucle (mantener o reintent
   if (o !== rv && objetivo !== o.id) { objetivo = o.id; pintarBarra(); }
   mandarPos(true);
   mandar(o === rv ? { t: 'atk3', tp: o.id } : { t: 'atk3', tg: o.id });
-  if (!golpe1Ok) { golpe1Ok = true; paso('golpe1'); }
+  if (!golpe1Ok) { golpe1Ok = true; paso('golpe1'); paso('t_atk'); }
   atkReintento = 0; atkRepN = 0;
   if (o !== rv) impactos.push({ o, t: ahora + (vara ? 280 : 150) });
   const dx = o.x - P.x, dz = o.z - P.z; P.ry = Math.atan2(dx, dz);
@@ -5885,8 +6031,13 @@ if (MOVIL) {
   // Pista hasta el primer uso: la base del joystick no se ve hasta tocar.
   let pistaJoy = null;
   try { if (!localStorage.getItem('dq_joy_ok')) { pistaJoy = document.createElement('div'); pistaJoy.className = 'pista-joy'; pistaJoy.innerHTML = '<i></i><span>Desliza aquí<br>para moverte</span>'; $('joy').appendChild(pistaJoy); } } catch (e) {}
+  // La pista solo se va de verdad tras arrastrar > 30 px durante 400 ms (un toque suelto no basta).
+  let joyTocado = false;
+  const joyPistaOk = () => { if (pistaJoy && joy.lejos > 30 && joy.t30 && performance.now() - joy.t30 >= 400) { pistaJoy.remove(); pistaJoy = null; try { localStorage.setItem('dq_joy_ok', '1'); } catch (er) {} } };
   $('joy').addEventListener('touchstart', e => {
-    if (pistaJoy) { pistaJoy.remove(); pistaJoy = null; try { localStorage.setItem('dq_joy_ok', '1'); } catch (er) {} }
+    if (!joyTocado) { joyTocado = true; paso('joy_toque'); }
+    if (pistaJoy) { pistaJoy.style.display = 'none'; vib('light'); }
+    joy.t30 = 0;
     const t = e.changedTouches[0]; joy.id = t.identifier; joy.x = t.clientX; joy.y = t.clientY; joy.dx = joy.dy = 0;
     joy.x0 = t.clientX; joy.y0 = t.clientY; joy.t0 = performance.now(); joy.lejos = 0;   // para distinguir un toque corto (elegir) de mover
     const r = $('joy').getBoundingClientRect();   // la base se dibuja bajo el dedo aunque #joy no empiece en (0,0)
@@ -5897,6 +6048,8 @@ if (MOVIL) {
     for (const t of e.changedTouches) if (t.identifier === joy.id) {
       let dx = t.clientX - joy.x, dy = t.clientY - joy.y; const d = Math.hypot(dx, dy);
       joy.lejos = Math.max(joy.lejos || 0, Math.hypot(t.clientX - joy.x0, t.clientY - joy.y0));
+      if (joy.lejos > 30 && !joy.t30) joy.t30 = performance.now();
+      joyPistaOk();
       if (d > 50) {   // joystick flotante: la base sigue al dedo (girar en redondo sin quedarse atascado al borde)
         const k = (d - 50) / d; joy.x += dx * k; joy.y += dy * k; dx -= dx * k; dy -= dy * k;
         const r = $('joy').getBoundingClientRect();
@@ -5909,6 +6062,7 @@ if (MOVIL) {
   }, { passive: false });
   const finJoy = e => {
     for (const t of e.changedTouches) if (t.identifier === joy.id) {
+      joyPistaOk(); if (pistaJoy) pistaJoy.style.display = '';   // no llego a arrastrar: la pista vuelve
       joy.id = null; joy.dx = joy.dy = 0; base.style.display = 'none'; pomo.style.left = pomo.style.top = '33px';
       // Toque corto sin arrastrar: elige lo que haya debajo (monstruo, jugador, PNJ) como en el resto de la pantalla.
       const quieto = Math.max(joy.lejos || 0, Math.hypot(t.clientX - joy.x0, t.clientY - joy.y0)) < 12;
@@ -5982,7 +6136,7 @@ function fisica(dt) {
   if (!yo) { P.anda = false; return; }
   const ahoraP = performance.now();
   const aturdido = (P.au && ((P.au.aturdido || 0) > ahoraP || (P.au.bloque || 0) > ahoraP));
-  const sinControl = P.muerto || hayVentana() || chatAbierto() || aturdido;
+  const sinControl = P.muerto || hayVentana() || chatAbierto() || aturdido || !!cineEst;
   if (P.muerto && P.vuela) volar(false);
   let f = 0, s = 0;
   if (!sinControl) {
@@ -6514,7 +6668,7 @@ $('temp3') && $('temp3').addEventListener('click', ev => {
   }
   const { n, meta } = textoTemp3(tp);
   // Con la tienda abierta (calendario y saldo) ya no se encadenan la leyenda ni «Entre todos».
-  const despues =prox && tp.fin - Date.now() < 2 * 86400000 ? ' Después: ' + prox.emoji + ' ' + prox.nombre + ' desde el ' + fechaTemp3(prox.ini) + '.' : '';
+  const despues = prox && tp.fin - Date.now() < 3 * 86400000 ? ' Luego: ' + prox.emoji + ' ' + prox.nombre + ' desde el ' + fechaTemp3(prox.ini) + '.' : '';
   aviso(tp.emoji + ' ' + tp.nombre + ' (hasta el ' + tp.hasta + '): los monstruos sueltan ' + tp.cosas + ' y los jefes, varias. Llevas ' + n.toLocaleString('es') + (meta ? '; con ' + meta + ' ganas ' + (meta === 50 ? '3.000' : '12.000') + ' de oro y el título «' + tp.titulos[meta === 50 ? 0 : 1] + '».' : ': ya tienes los dos títulos.') + despues, 'ok');
   try { V.abrirTiendaTemp(); } catch (e) {}   // calendario de la fiesta y saldo, a un toque
 });
@@ -6771,13 +6925,22 @@ function htmlTuto3() {
     // Otro navegador (p. ej. de Telegram a Chrome) no tiene el paso guardado: se deduce del progreso real.
     if (yo.mis && yo.mis.i >= 1) i = TUTO3.length; else if ((yo.kills || 0) > 0) i = Math.max(i, 3);
     try { localStorage.setItem(clave, String(i)); } catch (e) {}
-    Object.assign(tuto3, { clave, i, x0: P.x, z0: P.z, k0: yo.kills || 0, hab: false }); }
+    Object.assign(tuto3, { clave, i, x0: P.x, z0: P.z, k0: yo.kills || 0, hab: false, t0: 0, ay6: false, ay15: false }); }
   // k0 no se reinicia al avanzar: la primera caza cumple a la vez "sigue la luz" y "ataca".
   if (TUTO3[tuto3.i] && TUTO3[tuto3.i].hecho(tuto3)) { tuto3.i++; tuto3.x0 = P.x; tuto3.z0 = P.z; try { localStorage.setItem(clave, String(tuto3.i)); } catch (e) {} sfx('moneda', 0.3);
     // Embudo (una vez por sesion, beacon /mmo/ev): cumplio la habilidad, las alas o todo el tutorial.
     const pe = tuto3.i === 4 ? 't_hab' : tuto3.i === 5 ? 't_volar' : tuto3.i === TUTO3.length ? 't_fin' : ''; if (pe) paso(pe);
     // Primera caza: se felicita y se enseña lo que falta del combate (habilidad y alejarse del rojo).
-    if (tuto3.i === 3) aviso('¡Bien hecho! Ahora usa tu habilidad. Si un monstruo se agacha y brilla en rojo, aléjate un paso: va a darte un golpe cuerpo a cuerpo.', 'ok', 1); }
+    if (tuto3.i === 3) aviso('¡Bien hecho! Ahora usa tu habilidad. Si un monstruo se agacha y brilla en rojo, aléjate un paso: va a darte un golpe cuerpo a cuerpo.', 'ok', 1);
+    if (tuto3.i === 1) { vib('success'); aviso('¡Así se camina! Ahora sigue la luz amarilla', 'ok'); } }
+  // Paso 1 en movil sin moverse (cada ~333 ms con pintarMisiones): a los 6 s la pista crece; a los 15 s, aviso. Con una ventana abierta no cuenta.
+  if (tuto3.i === 0 && MOVIL) {
+    const ahoraT = Date.now();
+    if (!tuto3.t0 || hayVentana()) tuto3.t0 = ahoraT;
+    const quietoT = ahoraT - tuto3.t0, pj = document.querySelector('#joy .pista-joy');
+    if (quietoT > 6000 && !tuto3.ay6) { tuto3.ay6 = true; if (pj) { pj.classList.add('grande'); const sp = pj.querySelector('span'); if (sp) sp.textContent = 'Pon tu dedo aquí y arrastra'; vib('medium'); } }
+    if (quietoT > 15000 && !tuto3.ay15) { tuto3.ay15 = true; aviso('👇 Pon tu dedo abajo a la ' + (document.body.classList.contains('mano-der') ? 'derecha' : 'izquierda') + ' y arrástralo para caminar', 'ok', 1); }
+  }
   pulsoTuto3(tuto3.i);
   const p = TUTO3[tuto3.i]; if (!p) return '';
   // Paso 6 con la mision lista: la propia fila del tutorial la entrega (en movil la fila 📜 queda debajo).
@@ -6802,7 +6965,7 @@ function filaFiestaDia() {
   const atras = ok.length < d + 1 ? Array.from({ length: d }, (_, i) => i).filter(i => !ok.includes(i)).length : 0;
   const extra = atras ? ` · ${atras} día${atras > 1 ? 's' : ''} atrasado${atras > 1 ? 's' : ''}` : '';
   if (ok.includes(d)) return `<div class="q" data-ttemp="1" style="cursor:pointer"><span class="ok">✓ Día ${d + 1} de la fiesta hecho${d + 1 < diasFiesta(tp) ? ' · vuelve mañana' : ' · era el último día'}</span><small>${tp.emoji} toca para ver el calendario${extra}</small></div>`;
-  return `<div class="q" data-ttemp="1" style="cursor:pointer"><b style="color:${tp.color}">${tp.emoji} Fiesta · Día ${d + 1}: ${esc(def.txt)}${p[d] ? ' (vas ' + Math.min(p[d], def.n) + '/' + def.n + ')' : ''}</b><small>+${TEMP_DIA_PREMIO} ${esc(tp.cosas)} · toca para ver el calendario${extra}</small></div>`;
+  return `<div class="q" data-ttemp="1" style="cursor:pointer"><b style="color:${tp.color}">${tp.emoji} Fiesta · Día ${d + 1}: ${esc(def.txt)}${p[d] ? ' (vas ' + Math.min(p[d], def.n) + '/' + def.n + ')' : ''}</b><small>${esNochebuena(tp, d) ? '⭐ Nochebuena · ' : ''}+${premioDiaFiesta(tp, d)} ${esc(tp.cosas)} · toca para ver el calendario${extra}</small></div>`;
 }
 function pintarMisiones() {
   const c = $('misiones');
@@ -6907,7 +7070,7 @@ function pintarMisiones() {
   if (invasion3) {
     const ms = Math.max(0, invasion3.ms - (Date.now() - invasion3.recibido)), mm = Math.floor(ms / 60000), ss = Math.floor(ms % 60000 / 1000);
     const zc = ZONAS3D[invasion3.zona], dz = zc ? Math.hypot(zc.x - P.x, zc.z - P.z) : 0;
-    h = `<div class="q" style="border-left:3px solid #ff5a1f;padding-left:6px"><b style="color:#ff8a5c">⚔️ ${esc(invasion3.nombre)}</b>${invasion3.fase === 'capitan' ? '¡Derrota al Capitán!' : `Invasores: ${invasion3.hechos}/${invasion3.meta}`} · ${mm}:${String(ss).padStart(2, '0')}<small>${(MAPAS[invasion3.zona] || {}).nombre || ''}${dz > 60 && zc ? ` · ${flechaDir(zc.x, zc.z)} ${Math.round(dz)} m` : ' · ¡aquí!'}</small></div>` + h;
+    h = `<div class="q" style="border-left:3px solid #ff5a1f;padding-left:6px"><b style="color:#ff8a5c">⚔️ ${esc(invasion3.nombre)}</b>${invasion3.fase === 'capitan' ? '¡Derrota al Capitán!' : `Invasores: ${invasion3.hechos}/${invasion3.meta}`}${invYo3 > 0 ? (invYo3 >= 6 ? ` · Tú: 🥇 ${invYo3}` : invYo3 >= 3 ? ` · Tú: 🥈 ${invYo3} · oro a 6` : ` · Tú: 🥉 ${invYo3} · plata a 3`) : ''} · ${mm}:${String(ss).padStart(2, '0')}<small>${(MAPAS[invasion3.zona] || {}).nombre || ''}${dz > 60 && zc ? ` · ${flechaDir(zc.x, zc.z)} ${Math.round(dz)} m` : ' · ¡aquí!'}</small></div>` + h;
   } else if (invPre3) {   // tambores: la invasion llega en 1:30 a esa zona
     const ms = Math.max(0, invPre3.hasta - Date.now()), mm = Math.floor(ms / 60000), ss = Math.floor(ms % 60000 / 1000);
     const zc = ZONAS3D[invPre3.zona], dz = zc ? Math.hypot(zc.x - P.x, zc.z - P.z) : 0;
@@ -7184,6 +7347,9 @@ function cuadroBucle(t) {
       if (camCombGira) camYaw = lerpAng(camYaw, ideal, 1 - Math.exp(-(MENOS_MOV ? 1.1 : 2.2) * dt));
     } else camCombGira = false;
   } else camCombGira = false;
+  // 🎬 Modo cine: orbita lenta alrededor del duende (sin orbita si el jugador pidio menos movimiento).
+  if (cineEst && (P.muerto || camCombate || (P.heridoT || 0) > cineEst.t0)) salirCine();   // si te atacan o mueres, vuelve el HUD
+  if (cineEst && cineEst.on && !MENOS_MOV) camYaw += 0.15 * dt;
   // Zoom de contexto: se abre con jefes o peleas de 3+, se acerca un poco en el pueblo.
   if (ahoraCam - camExtraT > 250) {
     camExtraT = ahoraCam; camExtraMeta = 0;

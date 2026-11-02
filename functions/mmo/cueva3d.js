@@ -215,6 +215,7 @@ export const Cueva3D = {
       if (nvOk && completo && this.puntoPase) this.puntoPase(s, PASE.puntos.mazmorra);
       const previo = c.cuevaRecord || 0, nuevo = nvOk && (!previo || seg < previo);
       if (nuevo) c.cuevaRecord = seg;
+      if (nvOk && c.nivel >= 30 && this.anotarCuevaSem) this.anotarCuevaSem(s, seg, inst.nv);   // ranking semanal por clase y tramo
       const reloj = nuevo ? `⏱ ${mmss(seg)} · ¡nuevo récord!` : `⏱ ${mmss(seg)}${previo ? ` (récord ${mmss(previo)})` : ''}`;
       this.enviar(s, { t: 'gana', xp, oro, drops: [], item: it });
       this.enviar(s, { t: 'cuevaFin', seg, rec: c.cuevaRecord || 0, nuevo: nuevo ? 1 : 0, hoy: Math.min(3, c.cuevaDia.n) });

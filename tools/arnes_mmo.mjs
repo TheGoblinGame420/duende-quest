@@ -2123,10 +2123,10 @@ async function pruebasTemporada() {
   t.c.regalos = 0;
   for (let i = 0; i < 40; i++) { const o3 = monstruo(t, 'goblin_normal', 40); mundo.danar(o3, o3.hp + 1, t); tick(1); }
   chequear(t.c.regalos > 0 && t.c.calabazas === c0, 'en Navidad caen regalos (' + t.c.regalos + '), no calabazas');
-  reloj = Date.UTC(2027, 0, 8, 12);
+  reloj = Date.UTC(2027, 0, 31, 12);   // hueco entre el Verano (hasta el 29) y el Carnaval (4 feb)
   t.actT = reloj;
   const pr2 = await entrar('Previsor', '63');
-  chequear(pr2.ultimos('toast').some(x => /Próximo evento: Verano Duende, desde el 1[45] de enero a las \d\d:00 \(hora de Perú\) \(en [78] días\)/.test(x.m)), 'sin evento, se anuncia el próximo si falta poco');
+  chequear(pr2.ultimos('toast').some(x => /Próximo evento: Carnaval Duende, desde el [34] de febrero a las \d\d:00 \(hora de Perú\) \(en [34] días\)/.test(x.m)), 'sin evento, se anuncia el próximo si falta poco');
   await dejar(pr2);
   reloj = Date.UTC(2027, 1, 9, 12);
   t.actT = reloj;   // el salto de semanas lo echaria por inactividad

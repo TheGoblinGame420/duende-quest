@@ -85,6 +85,7 @@ export const Vincular = {
       if (fila) { fila.uid = nuevo; fila.n = nombre; await this.state.storage.put('ranking', r); }   // la herencia se guarda al momento
       if (this.rs && mover(this.rs.l)) this.rsSucio = true;
       if (this.rds && mover(this.rds.l)) await this.state.storage.put('rankDesSem', this.rds);
+      if (this.rcs && mover(this.rcs.l)) { this.rcs.l[nuevo].uid = nuevo; await this.state.storage.put('rankCuevaSem', this.rcs); }
       // Premio de liga de la semana pasada aun sin cobrar: si no, se perdia al vincular la cuenta.
       if (this.rsp && mover(this.rsp.l)) await this.state.storage.put('rankSemPrem', this.rsp);
       if (this.cargarRankTorre) { const rt = await this.cargarRankTorre(); if (rt && mover(rt.l)) await this.state.storage.put('rankTorre', rt); }

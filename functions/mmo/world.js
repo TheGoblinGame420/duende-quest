@@ -73,6 +73,9 @@ const ligaSem = (i, n) => { const f = (i + 1) / Math.max(1, n); return f <= 0.1 
 // Las ligas se reparten por tramo de nivel: quien llega de un anuncio (Nv 1-19) compite con sus pares, no con los de Nv 60.
 const tramoLv = lv => (lv || 1) >= 40 ? 2 : (lv || 1) >= 20 ? 1 : 0;
 const TRAMO_TXT = ['Nv 1-19', 'Nv 20-39', 'Nv 40-60'];
+// Tramos del ranking semanal de la Cueva 3D (solo Nv 30+).
+const tramoCueva = lv => (lv || 1) >= 50 ? 2 : (lv || 1) >= 40 ? 1 : 0;
+const TRAMO_CUEVA_TXT = ['Nv 30-39', 'Nv 40-49', 'Nv 50-60'];
 // Puesto y liga dentro del tramo de cada uno: todo ordenado por XP; se salta el top 3 global (ya tiene su premio).
 const ligasTramo = todo => {
   const grupos = [[], [], []];
@@ -178,6 +181,18 @@ function claveAzar() {
   return t;
 }
 
+// Año Nuevo en hora de Lima (UTC-5, sin horario de verano). Funcion pura:
+// { cuenta: 10..1, y } en los ultimos 10 s del 31 dic; { ano: y } del 1 ene 00:00 a 00:05;
+// { hora: 0..23, min, y } el resto del 31 dic (fuegos a cada hora en punto); si no, null.
+function anoNuevoLima(ahora) {
+  const d = new Date(ahora - 5 * 3600e3);
+  const mes = d.getUTCMonth(), dia = d.getUTCDate(), h = d.getUTCHours(), mi = d.getUTCMinutes(), s = d.getUTCSeconds(), y = d.getUTCFullYear();
+  if (mes === 0 && dia === 1 && h === 0 && mi < 5) return { ano: y };
+  if (mes !== 11 || dia !== 31) return null;
+  if (h === 23 && mi === 59 && s >= 50) return { cuenta: 60 - s, y: y + 1 };
+  return { hora: h, min: mi, y: y + 1 };
+}
+
 // Botones del aviso de un pedido pagado al dueño (el bot los atiende).
 // Segunda fila: avisar al jugador de cuando llega (plantilla, sin escribir nada).
 const botonesPedido = codigo => [
@@ -245,6 +260,8 @@ export class MmoWorld {
       // Ligas de la semana pasada (oro/plata/bronce por tramos): se cobran al entrar (cobrarLigaSem).
       this.rsp = (await this.state.storage.get('rankSemPrem')) || null;
       this.rds = (await this.state.storage.get('rankDesSem')) || { sem: semanaUTC(), l: {} };
+      // Ranking semanal de la Cueva 3D (mejor tiempo por clase y tramo, Nv 30+). Sin premio: solo honor.
+      this.rcs = (await this.state.storage.get('rankCuevaSem')) || { sem: semanaUTC(), l: {} };
       // Primeras victorias del servidor (jefe final de la banda): { idJefe: { t, n } }.
       this.primeros = (await this.state.storage.get('primeros')) || {};
       // Dueño de la Fortaleza del Nucleo (asedio del Abismo, mundo3d.js).
@@ -2146,7 +2163,7 @@ export class MmoWorld {
       kills: c.kills, jefes: c.jefes, muerto: s.muerto, mis: c.mis, forja: c.forja,
       eq: c.eq, bolsa: c.bolsa, logros: c.logros, titulo: c.titulo, mundiales: c.mundiales, login: c.login, crit: s.st.crit,
       clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, torreSem: this.torreSem(c).max, torreMax: c.torreMax || 0, exped: c.exped || null, nVisitadas: c.nVisitadas || 0, visitadas: c.visitadas || [], especies: c.especies || {}, nEspecies: c.nEspecies || 0, dorados: c.dorados || 0, seca: c.seca || 0, secaEp: c.secaEp || 0, exped8: c.exped8 || 0, peces: c.peces || 0, expediciones: c.expediciones || 0, duelosG: c.duelosG || 0, desafioMax: c.desafioMax || 0, amigosN: c.amigos || 0, desafio: c.desafio || {}, ...Object.fromEntries(TEMPORADAS.map(t => [t.campo, c[t.campo] || 0])), chicha: this.infoChicha(c), temp: (temporadaDe() || {}).id || '', herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, talGratis8: !c.talR8 ? 1 : 0, best: c.best || {}, bestR: c.bestR || {}, sellos: c.sellos || {},
-      boveda: c.boveda, bovedaOpc: c.bovedaOpc || null, pase: this.infoPase(c), banda: this.infoBanda(c), runas: c.runas || {}, gestaCob: c.gestaCob || null, cuevaHoy: c.cuevaDia && c.cuevaDia.d === hoyUTC() ? Math.min(3, c.cuevaDia.n) : 0, cuevaRec: c.cuevaRecord || 0,
+      boveda: c.boveda, bovedaOpc: c.bovedaOpc || null, pase: this.infoPase(c), banda: this.infoBanda(c), runas: c.runas || {}, gestaCob: c.gestaCob || null, cuevaHoy: c.cuevaDia && c.cuevaDia.d === hoyUTC() ? Math.min(3, c.cuevaDia.n) : 0, cuevaRec: c.cuevaRecord || 0, recetas: c.recetas || {}, bestD: c.bestD || {},
       faccion: c.faccion || null, pa: c.pa || 0, bajasPvP: c.bajasPvP || 0, look: c.look || null, alas: c.alas || ['aprendiz'], ala: c.ala || 'aprendiz', espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, tintes: c.tintes || [], tinte: c.tinte || '', mascotas: c.mascotas || [], mascota: c.mascota || '', montado: s.montado || null,
       mton: c.mton, wallet: c.wallet ? { a: tonAmigable(c.wallet.a), desde: c.wallet.desde } : null,
       p2e: this.elegibilidad(c), creado: c.creado,
@@ -3028,16 +3045,19 @@ export class MmoWorld {
     // y con la Bendicion del Duende (una vez cada 30 min; bendT se guarda en el personaje).
     const ahora = Date.now(), c = s.c;
     s.espiral = false;
-    if (s.m3 && !pvp) {
+    let primera = false;
+    if (!pvp) {
       s.muertesT = (s.muertesT || []).filter(t => ahora - t < 600000);
       s.muertesT.push(ahora);
       s.espiral = s.muertesT.length >= 3 && ahora > (c.bendT || 0);
+      // Primera caida (ORIGINS y CLASSIC, antes de Nv 10): siempre revive bendecido.
+      if (!c.caida1 && c.nivel < 10) { s.espiral = true; c.caida1 = 1; s.sucio = true; primera = true; }
     }
     // Lo que costara revivir (lo mismo que descuentan revivir y revivir3d).
-    const xpPerdida = c.nivel < 10 || (s.m3 && (pvp || s.espiral)) ? 0 : Math.min(c.xp || 0, Math.round(xpParaSubir(c.nivel) * 0.05));
+    const xpPerdida = c.nivel < 10 || s.espiral || (s.m3 && pvp) ? 0 : Math.min(c.xp || 0, Math.round(xpParaSubir(c.nivel) * 0.05));
     const gs = s.golpes || [], ult = gs[gs.length - 1];   // el ultimo golpe: a quien le quedaba vida
     this.enviar(s, { t: 'muerte', golpes: (s.golpes || []).map(x => ({ n: x.n, nv: x.nv, d: x.d })), pw: c.pw.pocion || 0, inst: !!(this.mundo[s.k] && this.mundo[s.k].inst), rep: costoReparacion(c.nivel), pvp: pvp ? 1 : undefined,
-      xp: xpPerdida, novato: c.nivel < 10 ? 1 : undefined, espiral: s.espiral ? 1 : undefined, vi: ult && ult.vi ? ult.vi : undefined, vn: ult && ult.vi ? ult.n : undefined });
+      xp: xpPerdida, novato: c.nivel < 10 ? 1 : undefined, espiral: s.espiral ? 1 : undefined, primera: primera ? 1 : undefined, vi: ult && ult.vi ? ult.vi : undefined, vn: ult && ult.vi ? ult.n : undefined });
     s.golpes = [];
     this.guardar(s);
   }
@@ -3049,7 +3069,10 @@ export class MmoWorld {
     // nivel 10 no se pierde nada y se revive a la entrada de la misma zona
     // (antes: al pueblo, a 80-100 m, y la espiral de muertes echaba al novato).
     const novato = c.nivel < 10;
-    if (!novato) c.xp = Math.max(0, c.xp - Math.round(xpParaSubir(c.nivel) * 0.05));
+    // Espiral de muertes o primera caida (ver morir): no se pierde XP y se revive bendecido.
+    const espiral = !!s.espiral; s.espiral = false;
+    if (espiral) { c.bendT = Date.now() + 30 * 60000; s.muertesT = []; }
+    if (!novato && !espiral) c.xp = Math.max(0, c.xp - Math.round(xpParaSubir(c.nivel) * 0.05));
     // En el nivel maximo (sin XP que perder) se paga la reparacion del equipo.
     const rep = Math.min(c.oro, costoReparacion(c.nivel));
     if (rep > 0) { c.oro -= rep; this.enviar(s, { t: 'toast', m: `🔧 Reparaste tu equipo: -${rep.toLocaleString('es', { useGrouping: 'always' })} oro.` }); }
@@ -3063,6 +3086,7 @@ export class MmoWorld {
       else this.entrarMapa(s, 'pueblo', MAPAS.pueblo.spawn);
     }
     this.reponerElixires(s);
+    if (espiral) { this.ponerAura(s, 'bendicion', 3 * 60000); this.enviar(s, { t: 'toast', m: '✨ Bendición del Duende: 3 min recibiendo un 25% menos de daño. Esta vez no perdiste XP.' }); }
     this.actualizarYo(s);
     this.guardar(s);
   }
@@ -3287,12 +3311,46 @@ export class MmoWorld {
     if (!cruzado) return;
     // Hora Feliz extra de 1 h (si ya habia una, se alarga).
     const ahora = Date.now();
-    this.felizExtraHasta = Math.max(ahora, this.felizExtraHasta || 0) + 3600000;
+    this.felizExtraHasta = Math.max(ahora, this.felizExtraHasta || 0) + 3600000; this.felizAno = false;
     this.volcarTempGlobal(true).catch(e => console.error('[MMO tempGlobal]', e));
     // Solo a los conectados (nunca por Telegram).
     const tg = this.tgInfo();
     this.aTodos({ t: 'toast', m: `🎉 ¡Entre todos llegamos a ${cruzado.toLocaleString('es-PE')} ${tp.cosas}! Hora Feliz para todos 1 h (+50% de experiencia por caza).`, ok: true, tg });
     this.aTodos({ t: 'tempG', tg });
+  }
+  // Año Nuevo en vivo (hora de Lima), solo a los conectados y nunca por Telegram:
+  // cuenta regresiva 10..1, fuegos a cada hora en punto del 31 dic y 1 h de Hora Feliz a las 00:00.
+  revisarAnoNuevo(ahora) {
+    const an = anoNuevoLima(ahora);
+    if (!an) return;
+    if (an.cuenta) {
+      const k = an.y * 100 + an.cuenta;
+      if (this.anCuenta !== k) { this.anCuenta = k; this.aTodos({ t: 'toast', m: '🎆 ' + an.cuenta + '…' }); }
+      return;
+    }
+    if (an.hora !== undefined) {
+      const k = an.y * 100 + an.hora;
+      if (an.min < 5 && this.anFuegos !== k) { this.anFuegos = k; this.aTodos({ t: 'fuegos' }); }
+      return;
+    }
+    if (this.anoHecho === an.ano) return;
+    if (this.anoHecho === undefined) {
+      // Tras reiniciarse el objeto en esos 5 minutos no se repite: se lee la marca guardada.
+      this.anoHecho = null;
+      this.state.storage.get('anoHecho').then(v => { if (this.anoHecho === null) this.anoHecho = v || 0; }, () => { if (this.anoHecho === null) this.anoHecho = 0; });
+      return;
+    }
+    if (this.anoHecho === null) return;
+    this.anoHecho = an.ano;
+    this.state.storage.put('anoHecho', an.ano).catch(e => console.error('[MMO anoNuevo]', e));
+    if (!(this.felizExtraHasta > ahora)) this.felizAno = true;   // el aviso de fin dira de que fiesta era
+    this.felizExtraHasta = Math.max(this.felizExtraHasta || 0, ahora + 3600e3);
+    this.tgSucio = true;
+    if (this.tempGlobal) this.volcarTempGlobal(true).catch(e => console.error('[MMO tempGlobal]', e));
+    this.aTodos({ t: 'anoNuevo', y: an.ano });
+    this.aTodos({ t: 'toast', m: `🎉 ¡Feliz Año Nuevo ${an.ano}! Hora Feliz para todos durante 1 hora (+50% de experiencia por caza).`, ok: true });
+    const tg = this.tgInfo();
+    if (tg) this.aTodos({ t: 'tempG', tg });
   }
   async volcarTempGlobal(forzar) {
     if (!this.tgSucio || !this.tempGlobal) return;
@@ -3345,7 +3403,7 @@ export class MmoWorld {
     const todoT = await this.topTorre(), tpos = todoT.findIndex(([uid]) => uid === s.c.uid) + 1;
     const torre = todoT.slice(0, 10).map(([uid, x]) => ({ n: x.n, p: x.p, yo: uid === s.c.uid }));
     const herm = (await this.topHerm()).slice(0, 5).map(([id, x]) => ({ n: x.n, p: x.p, m: x.m, yo: id === s.c.herm }));
-    this.enviar(s, { t: 'ranking', r: r.slice(0, 20).map(x => ({ n: x.n, lv: x.lv, k: x.k, yo: x.uid === s.c.uid })), sem, mio, des, dsem, duel, elo: s.c.elo || 0, torre, tmax: this.torreSem(s.c).max, tpos, ttot: todoT.length, herm, temp: s.c.faccion || s.c.nivel >= 20 ? this.infoTemp(s.c) : null, af: afijosSemana(), finSem: Date.parse(this.rs.sem + 'T00:00:00Z') + 7 * 86400000 + 5 * 3600000 });   // lunes 00:00 de Lima
+    this.enviar(s, { t: 'ranking', r: r.slice(0, 20).map(x => ({ n: x.n, lv: x.lv, k: x.k, yo: x.uid === s.c.uid })), sem, mio, des, dsem, duel, elo: s.c.elo || 0, torre, tmax: this.torreSem(s.c).max, tpos, ttot: todoT.length, herm, cueva: this.infoCuevaSem(s.c), temp: s.c.faccion || s.c.nivel >= 20 ? this.infoTemp(s.c) : null, af: afijosSemana(), finSem: Date.parse(this.rs.sem + 'T00:00:00Z') + 7 * 86400000 + 5 * 3600000 });   // lunes 00:00 de Lima
   }
 
   // Ranking semanal de Desafios: el mejor +k vencido esta semana (con los
@@ -3359,6 +3417,31 @@ export class MmoWorld {
     this.state.storage.put('rankDesSem', this.rds).catch(e => console.error('[MMO rankDesSem]', e));
   }
   topDesSem(rds = this.rds) { return Object.entries((rds && rds.l) || {}).sort((a, b) => b[1].k - a[1].k || a[1].t - b[1].t); }
+  // Ranking semanal de la Cueva 3D: el mejor tiempo de cada uno (Nv 30+), por clase
+  // y tramo (30-39, 40-49, 50-60). Al cambiar la semana empieza de cero (sin premio).
+  rankCueva() {
+    const sem = semanaUTC();
+    if (!this.rcs || this.rcs.sem !== sem) this.rcs = { sem, l: {} };
+    return this.rcs;
+  }
+  anotarCuevaSem(s, seg, nvCueva) {
+    if (!this.rcs || UIDS_PRUEBA.has(s.c.uid) || !(seg > 0) || s.c.nivel < 30) return;
+    // Solo cuenta una Cueva de tu tramo: un Nv 60 que "carga" a un Nv 35 no le regala el primer puesto.
+    if (!(nvCueva >= 30) || tramoCueva(nvCueva) !== tramoCueva(s.c.nivel)) return;
+    const r = this.rankCueva(), f = r.l[s.c.uid];
+    if (f && f.seg <= seg && f.k === s.c.clase && tramoCueva(f.lv) === tramoCueva(s.c.nivel)) return;
+    r.l[s.c.uid] = { n: s.c.nombre, seg, k: s.c.clase, lv: s.c.nivel, t: Date.now(), uid: s.c.uid };
+    this.state.storage.put('rankCuevaSem', r).catch(e => console.error('[MMO rankCuevaSem]', e));
+  }
+  infoCuevaSem(c) {
+    if (!c || c.nivel < 30) return { bloq: 1 };
+    const tr = tramoCueva(c.nivel);
+    const todo = Object.values(this.rankCueva().l).filter(x => x.k === c.clase && tramoCueva(x.lv) === tr).sort((a, b) => a.seg - b.seg || a.t - b.t);
+    const i = todo.findIndex(x => x.uid === c.uid);
+    return { k: c.clase, tramo: TRAMO_CUEVA_TXT[tr], tot: todo.length, pos: i + 1, seg: i >= 0 ? todo[i].seg : 0,
+      top: todo.slice(0, 5).map(x => ({ n: x.n, seg: x.seg, lv: x.lv, yo: x.uid === c.uid })),
+      arriba: i > 0 ? { n: todo[i - 1].n, seg: todo[i - 1].seg } : null };
+  }
   async premiarDesSem(rds) {
     const top = this.topDesSem(rds).filter(([, f]) => f.k >= DES_SEM_MIN).slice(0, 3);
     const nombres = [];
@@ -3585,12 +3668,13 @@ export class MmoWorld {
         this.volcarRanking().catch(e => console.error('[MMO ranking]', e));
         this.volcarTempGlobal().catch(e => console.error('[MMO tempGlobal]', e));
         // Fin de la Hora Feliz extra de la meta comunitaria (solo a los conectados).
-        if (this.felizExtraHasta && this.felizExtraHasta <= ahora) { this.felizExtraHasta = 0; this.tgSucio = true; if (!hf) this.aTodos({ t: 'aviso', m: '⚡ Terminó la Hora Feliz de «Entre todos».' }); }
+        if (this.felizExtraHasta && this.felizExtraHasta <= ahora) { this.felizExtraHasta = 0; this.tgSucio = true; if (!hf) this.aTodos({ t: 'aviso', m: this.felizAno ? '⚡ Terminó la Hora Feliz de Año Nuevo.' : '⚡ Terminó la Hora Feliz de «Entre todos».' }); this.felizAno = false; }
         if (this.retVolcarDias) this.retVolcarDias().catch(e => console.error('[MMO ret]', e));
         this.revisarSalud(ahora);
       });
     }
     this.paso('mundial', () => this.revisarMundial(ahora));
+    if (ahora - (this.anT || 0) >= 250) { this.anT = ahora; this.paso('anoNuevo', () => this.revisarAnoNuevo(ahora)); }
     this.paso('grupos', () => this.tickGrupos(ahora));
     this.paso('herms', () => this.guardarHermsSucias(ahora));
     this.paso('duelos', () => this.tickDuelos(ahora));

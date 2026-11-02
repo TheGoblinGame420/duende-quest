@@ -10,7 +10,7 @@
 // cadena de misiones (que se acaba) y el jefe mundial.
 // Premios: XP, oro, poderes y equipo. NUNCA mTON.
 // ═══════════════════════════════════════════════════════
-import { TAREAS_DIA, TAREAS_SEMANA, premioTarea, zonaDeNivel, hoyUTC, semanaUTC, MAPAS, MONSTRUOS, NIVEL_MAX , PASE, temporadaDe, TEMP_DIAS, TEMP_DIA_PREMIO, diaFiesta, diasFiesta } from '../../mmo/js/data.js';
+import { TAREAS_DIA, TAREAS_SEMANA, premioTarea, zonaDeNivel, hoyUTC, semanaUTC, MAPAS, MONSTRUOS, NIVEL_MAX , PASE, temporadaDe, TEMP_DIAS, TEMP_DIA_PREMIO, premioDiaFiesta, esNochebuena, diaFiesta, diasFiesta } from '../../mmo/js/data.js';
 
 // Solo existen en CLASSIC (2D): en ORIGINS no se reparten y, si ya tocaron, se cambian.
 // (Las expediciones ya existen tambien en ORIGINS: ventana 🧭 de ventanas.js.)
@@ -135,7 +135,7 @@ export const Tareas = {
 
   // Calendario de la fiesta (data TEMP_DIAS): una tarea por dia. Suma a todos
   // los dias ya abiertos (hoy y los pasados sin cumplir: puesta al dia); nunca
-  // a dias futuros. Cada dia cumplido paga TEMP_DIA_PREMIO del objeto de la fiesta.
+  // a dias futuros. Cada dia cumplido paga premioDiaFiesta (data.js) del objeto de la fiesta.
   progresoFiesta(s, tipo, cant) {
     const c = s && s.c, tp = c && temporadaDe();
     if (!tp || !(cant > 0)) return;
@@ -153,9 +153,10 @@ export const Tareas = {
       if (fd.p[d] < def.n) continue;
       fd.ok.push(d);
       if (this.edicionTemp) this.edicionTemp(c, tp);
-      c[tp.campo] = (c[tp.campo] || 0) + TEMP_DIA_PREMIO;
-      if (this.sumarTempGlobal) this.sumarTempGlobal(tp, TEMP_DIA_PREMIO);
-      this.enviar(s, { t: 'toast', ok: true, m: `${tp.emoji} Día ${d + 1} de ${tp.nombre} cumplido: "${def.txt}" · +${TEMP_DIA_PREMIO} ${tp.cosas}` });
+      const premio = premioDiaFiesta(tp, d);
+      c[tp.campo] = (c[tp.campo] || 0) + premio;
+      if (this.sumarTempGlobal) this.sumarTempGlobal(tp, premio);
+      this.enviar(s, { t: 'toast', ok: true, m: `${tp.emoji} Día ${d + 1} de ${tp.nombre}${esNochebuena(tp, d) ? ' (⭐ Nochebuena, premio doble)' : ''} cumplido: "${def.txt}" · +${premio} ${tp.cosas}` });
       if (this.yoLuego) this.yoLuego(s, true);   // el 'yo' lleva fiestaDias (world.js datosPropios)
       if (this.tiendaTemp) this.tiendaTemp(s, {});   // saldo nuevo para la tienda de la fiesta
     }

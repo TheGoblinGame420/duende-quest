@@ -69,23 +69,26 @@ export const HOJAS = {
 // ── MONSTRUOS ──
 // Las estadisticas salen de stats(nivel) salvo que se indiquen; alto = altura
 // en pantalla del dibujo (no de la caja de choque).
+// Debilidades por tipo de daño: el golpe del tipo justo hace ×1,3 (solo a monstruos).
+export const TIPO_HAB = { bola_fuego: 'fuego', meteoros: 'fuego', nova: 'hielo', castigo: 'luz', dolor: 'sombra', chispa: 'rayo' };
+export const DEBIL_EMO = { fuego: '🔥', hielo: '❄️', luz: '✨', sombra: '🌑', rayo: '⚡' };
 export const MONSTRUOS = {
   goblin_normal:     { nombre: 'Goblin',            hoja: 'goblin_normal',     nivel: 1 },
-  esqueleto:         { nombre: 'Esqueleto',         hoja: 'esqueleto',         nivel: 2 },
+  esqueleto:         { nombre: 'Esqueleto',         hoja: 'esqueleto',         nivel: 2, debil: 'luz' },
   goblin_assassin:   { nombre: 'Goblin Asesino',    hoja: 'goblin_assassin',   nivel: 3, vel: 1.3 },
-  fantasma:          { nombre: 'Fantasma',          hoja: 'fantasma',          nivel: 4, vuela: true },
+  fantasma:          { nombre: 'Fantasma',          hoja: 'fantasma',          nivel: 4, vuela: true, debil: 'luz' },
   hechicero:         { nombre: 'Hechicero',         hoja: 'hechicero',         nivel: 5, dispara: true },
   goblin_peasant:    { nombre: 'Goblin Campesino',  hoja: 'goblin_peasant',    nivel: 7 },
   goblin_guard:      { nombre: 'Goblin Guardia',    hoja: 'goblin_guard',      nivel: 8 },
   pajaro:            { nombre: 'Pájaro Hueso',      hoja: 'pajaro',            nivel: 9, vuela: true },
   goblin_knight:     { nombre: 'Goblin Caballero',  hoja: 'goblin_knight',     nivel: 11 },
-  hongo:             { nombre: 'Hongo Gigante',     hoja: 'hongo',             nivel: 13, vel: .7 },
-  rana:              { nombre: 'Rana de Charca',    hoja: 'rana',              nivel: 14 },
+  hongo:             { nombre: 'Hongo Gigante',     hoja: 'hongo',             nivel: 13, vel: .7, debil: 'fuego' },
+  rana:              { nombre: 'Rana de Charca',    hoja: 'rana',              nivel: 14, debil: 'rayo' },
   goblin_centurion:  { nombre: 'Goblin Centurión',  hoja: 'goblin_centurion',  nivel: 15 },
   goblin_battlelord: { nombre: 'Goblin Señor',      hoja: 'goblin_battlelord', nivel: 17 },
   goblin_mage:       { nombre: 'Goblin Mago',       hoja: 'goblin_mage',       nivel: 19, dispara: true },
-  esqueleto_arcano:  { nombre: 'Esqueleto Arcano',  hoja: 'esqueleto',         nivel: 20, tinte: '#c084fc' },
-  ghoul_ardiente:    { nombre: 'Ghoul Ardiente',    hoja: 'ghoul_ardiente',    nivel: 22, vel: 1.2 },
+  esqueleto_arcano:  { nombre: 'Esqueleto Arcano',  hoja: 'esqueleto',         nivel: 20, tinte: '#c084fc', debil: 'luz' },
+  ghoul_ardiente:    { nombre: 'Ghoul Ardiente',    hoja: 'ghoul_ardiente',    nivel: 22, vel: 1.2, debil: 'hielo' },
   goblin_samurai:    { nombre: 'Goblin Samurái',    hoja: 'goblin_samurai',    nivel: 25 },
   lagarto:           { nombre: 'Lagarto',           hoja: 'lagarto',           nivel: 26, vel: 1.2 },
   serpiente:         { nombre: 'Serpiente',         hoja: 'serpiente',         nivel: 27 },
@@ -97,26 +100,26 @@ export const MONSTRUOS = {
   esqueleto_real:    { nombre: 'Esqueleto Real',    hoja: 'esqueleto',         nivel: 36, tinte: '#ffd84a' },
   hechicero_corte:   { nombre: 'Hechicero de la Corte', hoja: 'hechicero',     nivel: 38, tinte: '#00eeff', dispara: true },
   // Cumbres del Ocaso (Nv 40-45)
-  murcielago:        { nombre: 'Murciélago Vampiro', hoja: 'murcielago',     nivel: 41, vuela: true, alto: 58 },
-  arana:             { nombre: 'Araña de Ceniza',    hoja: 'arana',          nivel: 42, vel: 1.25, alto: 40 },
+  murcielago:        { nombre: 'Murciélago Vampiro', hoja: 'murcielago',     nivel: 41, vuela: true, alto: 58, debil: 'luz' },
+  arana:             { nombre: 'Araña de Ceniza',    hoja: 'arana',          nivel: 42, vel: 1.25, alto: 40, debil: 'hielo' },
   esqueleto_capa:    { nombre: 'Esqueleto Errante',  hoja: 'esqueleto_capa', nivel: 43 },
-  hellgato:          { nombre: 'Gato Infernal',      hoja: 'hellgato',       nivel: 44, vel: 1.45, alto: 50 },
+  hellgato:          { nombre: 'Gato Infernal',      hoja: 'hellgato',       nivel: 44, vel: 1.45, alto: 50, debil: 'hielo' },
   // Cavernas Abisales (Nv 45-50)
   cangrejo:          { nombre: 'Cangrejo de Cristal', hoja: 'cangrejo',      nivel: 46, alto: 54 },
   saltador:          { nombre: 'Saltarín Abisal',    hoja: 'saltador',       nivel: 47, vel: 1.3, alto: 50 },
   pulpo:             { nombre: 'Pulpo Brujo',        hoja: 'pulpo',          nivel: 48, vuela: true, dispara: true, alto: 56 },
-  cosa:              { nombre: 'Cosa del Pantano',   hoja: 'cosa',           nivel: 49 },
+  cosa:              { nombre: 'Cosa del Pantano',   hoja: 'cosa',           nivel: 49, debil: 'fuego' },
   // Abismo Marino (Nv 50-55)
-  pez:               { nombre: 'Piraña Abisal',      hoja: 'pez',            nivel: 51, vuela: true, alto: 40 },
+  pez:               { nombre: 'Piraña Abisal',      hoja: 'pez',            nivel: 51, vuela: true, alto: 40, debil: 'rayo' },
   pez_dardo:         { nombre: 'Pez Dardo',          hoja: 'pez_dardo',      nivel: 52, vuela: true, vel: 1.5, alto: 28 },
   baba:              { nombre: 'Babosa Abisal',      hoja: 'baba',           nivel: 53, vel: .8, alto: 58 },
-  espectro:          { nombre: 'Espectro Marino',    hoja: 'espectro',       nivel: 54, vuela: true, dispara: true },
+  espectro:          { nombre: 'Espectro Marino',    hoja: 'espectro',       nivel: 54, vuela: true, dispara: true, debil: 'luz' },
   pez_grande:        { nombre: 'Pez Ogro',           hoja: 'pez_grande',     nivel: 55, vuela: true, alto: 60 },
   // Acantilados Magicos (Nv 55-60)
   zarigueya:         { nombre: 'Zarigüeya Salvaje',  hoja: 'zarigueya',      nivel: 56, vel: 1.35, alto: 46 },
   aguila:            { nombre: 'Águila de Tormenta', hoja: 'aguila',         nivel: 57, vuela: true, alto: 56 },
   fantasma_halo:     { nombre: 'Alma Errante',       hoja: 'fantasma_halo',  nivel: 58, vuela: true, dispara: true },
-  paladin_goblin:    { nombre: 'Paladín Goblin',     hoja: 'goblin_lord',    nivel: 59, tinte: '#00eeff' },
+  paladin_goblin:    { nombre: 'Paladín Goblin',     hoja: 'goblin_lord',    nivel: 59, tinte: '#00eeff', debil: 'sombra' },
   // Jefes: uno por zona, reaparecen solos cada cierto tiempo.
   jefe_sabueso:  { nombre: 'Sabueso Infernal',       hoja: 'hellhound',         nivel: 8,  jefe: true, alto: 110, hpX: 9, atkX: 1.4, w: 150, h: 70 },
   jefe_caballero:{ nombre: 'Rey Goblin Caballero',   hoja: 'goblin_knight',     nivel: 14, jefe: true, alto: 130, hpX: 16, atkX: 1.4, w: 70, h: 120, tinte: '#ff6444' },
@@ -512,9 +515,18 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 355;
+export const VERSION = 356;
 
 export const NOVEDADES = [
+  { n: 124, fecha: '2 nov 2026', items: [
+    '🔥 Debilidades: algunos monstruos son débiles al fuego, hielo, luz, sombra o rayo; golpéalos con la habilidad justa y verás ¡DÉBIL! (+30%). Descubrirlas da oro y las anota en tu Bestiario.',
+    'Durante una invasión ves en vivo tu medalla y cuánto te falta; y si cumplen la meta con tiempo de sobra… pasa algo con el Capitán.',
+    'Tu primera caída antes del Nv 10 te revive con la Bendición del Duende, y si un monstruo te derriba casi muerto queda herido 90 s para tu revancha.',
+    '🎬 Modo cine en Gestos: sin HUD, tu duende baila y la cámara gira para que grabes y compartas.',
+    'La Artesana tiene recetario con recetas ocultas que se descubren juntando ingredientes.',
+    'La historia va por capítulos con su tarjeta de título; nuevo ranking semanal de la Cueva por clase desde Nv 30.',
+    'En el celular, el joystick te enseña con un dedo fantasma. En diciembre llega la Navidad como calendario de Adviento y el Año Nuevo con cuenta regresiva y fuegos.',
+  ] },
   { n: 123, fecha: '2 nov 2026', items: [
     'Los talentos llegan a 8 rangos y tu primer reinicio de talentos es GRATIS: Libro → Talentos.',
     'El duende solo te escribe por Telegram si tú lo pediste; cerrar el aviso tocando fuera cuenta como «Ahora no».',
@@ -1864,15 +1876,15 @@ export const RECETAS = [
   { id: 'refinar', nombre: 'Refinar cristal', icono: 'I_Crystal01', pide: { mineral: 8 }, da: { mat: { cristal: 1 } }, desc: '8 minerales se funden en 1 Cristal Arcano' },
   { id: 'elixirF', nombre: 'Elixir de Fuerza', icono: 'P_Red03', pide: { hierba: 6, cristal: 1 }, da: { elixir: 'elixirF' }, desc: '+10% de daño durante 30 min (persiste al morir)' },
   { id: 'elixirP', nombre: 'Elixir de Piel de Piedra', icono: 'P_Blue05', pide: { mineral: 6, cristal: 1 }, da: { elixir: 'elixirP' }, desc: 'Recibes un 10% menos de daño durante 30 min' },
-  { id: 'destilar', nombre: 'Destilar Flor de Luna', icono: 'S_Magic02', pide: { hierba: 10, cristal: 1 }, da: { mat: { flor: 1 } }, desc: '10 hierbas y un cristal se destilan en 1 Flor de Luna' },
+  { id: 'destilar', nombre: 'Destilar Flor de Luna', icono: 'S_Magic02', pide: { hierba: 10, cristal: 1 }, da: { mat: { flor: 1 } }, desc: '10 hierbas y un cristal se destilan en 1 Flor de Luna', oculta: 1, pista: 'Muchas hierbas y un cristal, a la luz de la luna…' },
   { id: 'elixirX', nombre: 'Elixir de Sabiduría', icono: 'I_Book', pide: { hierba: 4, mineral: 2, cristal: 1 }, da: { elixir: 'elixirX' }, desc: '+10% de experiencia por caza durante 30 min (persiste al morir)' },
   // Con lo que se pesca (PESCA).
   { id: 'frito', nombre: 'Pescado frito ×3', icono: 'I_C_Fish', pide: { pescado: 3 }, da: { pw: { pocion: 3 } }, desc: 'Tres pociones de vida (como las de hierba)' },
   { id: 'ceviche', nombre: 'Ceviche del Duende', icono: 'I_C_Fish', pide: { pescado: 5, hierba: 2 }, da: { elixir: 'ceviche' }, desc: '+10% de oro por caza durante 30 min (persiste al morir)' },
   // Recetas andinas (27-oct-2026): la chicha del lore tambien se prepara.
-  { id: 'chichaE', nombre: 'Chicha Morada del Duende', icono: 'I_Bottle02', pide: { hierba: 5, flor: 1 }, da: { elixir: 'chichaE' }, desc: 'La bebida del Cántaro: +10% de oro y +5% de experiencia por caza durante 30 min (persiste al morir)' },
-  { id: 'mazamorra', nombre: 'Mazamorra Morada', icono: 'I_C_Pie', pide: { hierba: 4, mineral: 2, pescado: 1 }, da: { pw: { pocion: 5, escudo: 1 } }, desc: 'Postre de maíz morado: 5 pociones y un escudo' },
-  { id: 'sudado', nombre: 'Sudado Dorado', icono: 'I_C_Pie', pide: { pescado: 3, pez_dorado: 1 }, da: { elixir: 'sudado' }, desc: '+5% de daño y -5% de daño recibido durante 30 min (persiste al morir)' },
+  { id: 'chichaE', nombre: 'Chicha Morada del Duende', icono: 'I_Bottle02', pide: { hierba: 5, flor: 1 }, da: { elixir: 'chichaE' }, desc: 'La bebida del Cántaro: +10% de oro y +5% de experiencia por caza durante 30 min (persiste al morir)', oculta: 1, pista: 'Hierbas con una flor que solo sale de noche…' },
+  { id: 'mazamorra', nombre: 'Mazamorra Morada', icono: 'I_C_Pie', pide: { hierba: 4, mineral: 2, pescado: 1 }, da: { pw: { pocion: 5, escudo: 1 } }, desc: 'Postre de maíz morado: 5 pociones y un escudo', oculta: 1, pista: 'Hierbas, piedra y un pescadito para el postre…' },
+  { id: 'sudado', nombre: 'Sudado Dorado', icono: 'I_C_Pie', pide: { pescado: 3, pez_dorado: 1 }, da: { elixir: 'sudado' }, desc: '+5% de daño y -5% de daño recibido durante 30 min (persiste al morir)', oculta: 1, pista: 'Algo con pescado y un pez que brilla…' },
 ];
 
 // ── PESCA ──
@@ -1928,10 +1940,12 @@ export const TEMPORADAS = [
   // Cosecha del Maiz Morado: el maiz de la chicha morada (el premio fisico).
   { id: 'cosecha2026', nombre: 'Cosecha del Maíz Morado', ini: Date.UTC(2026, 10, 13), fin: Date.UTC(2026, 11, 1), hasta: '30 de noviembre',
     emoji: '🌽', deco: '🌽', cosas: 'mazorcas', campo: 'mazorcas', color: '#a855f7', titulos: ['Cosechador', 'Señor del Maíz Morado'] },
-  { id: 'navidad2026', nombre: 'Navidad Duende', ini: Date.UTC(2026, 11, 18), fin: Date.UTC(2027, 0, 7), hasta: '6 de enero',
+  // Navidad como Adviento: empieza el 1 de diciembre (justo al acabar la Cosecha),
+  // con la Nochebuena (dia 24, indice 23) como casilla estrella que paga doble.
+  { id: 'navidad2026', nombre: 'Navidad Duende', ini: Date.UTC(2026, 11, 1), fin: Date.UTC(2027, 0, 7), hasta: '6 de enero',
     emoji: '🎁', deco: '🎄', cosas: 'regalos', campo: 'regalos', color: '#4ade80', titulos: ['Duende Navideño', 'Santa Duende'] },
-  // Verano en Peru (enero): entre la Navidad y el Carnaval.
-  { id: 'verano2027', nombre: 'Verano Duende', ini: Date.UTC(2027, 0, 15), fin: Date.UTC(2027, 0, 30), hasta: '29 de enero',
+  // Verano en Peru (enero): entre la Navidad y el Carnaval, pegado a la Navidad (sin dias vacios).
+  { id: 'verano2027', nombre: 'Verano Duende', ini: Date.UTC(2027, 0, 7), fin: Date.UTC(2027, 0, 30), hasta: '29 de enero',
     emoji: '🐚', deco: '🏖️', cosas: 'conchas', campo: 'conchas', color: '#38bdf8', titulos: ['Bañista Duende', 'Rey de la Playa'] },
   { id: 'carnaval2027', nombre: 'Carnaval Duende', ini: Date.UTC(2027, 1, 4), fin: Date.UTC(2027, 1, 15), hasta: '14 de febrero',
     emoji: '🎭', deco: '🎭', cosas: 'máscaras', campo: 'mascaras', color: '#f472b6', titulos: ['Carnavalero', 'Rey Momo'] },
@@ -1964,7 +1978,7 @@ export const TEMPORADAS = [
     emoji: '🍞', deco: '🍞', cosas: "t'anta wawas", campo: 'tantas', color: '#e0a96d', titulos: ['Panadero Duende', "Guardián de la T'anta Wawa"] },
   { id: 'cosecha2027', nombre: 'Cosecha del Maíz Morado', ini: Date.UTC(2027, 10, 13), fin: Date.UTC(2027, 11, 1), hasta: '30 de noviembre',
     emoji: '🌽', deco: '🌽', cosas: 'mazorcas', campo: 'mazorcas', color: '#a855f7', titulos: ['Cosechador', 'Señor del Maíz Morado'] },
-  { id: 'navidad2027', nombre: 'Navidad Duende', ini: Date.UTC(2027, 11, 18), fin: Date.UTC(2028, 0, 7), hasta: '6 de enero',
+  { id: 'navidad2027', nombre: 'Navidad Duende', ini: Date.UTC(2027, 11, 1), fin: Date.UTC(2028, 0, 7), hasta: '6 de enero',
     emoji: '🎁', deco: '🎄', cosas: 'regalos', campo: 'regalos', color: '#4ade80', titulos: ['Duende Navideño', 'Santa Duende'] },
 ];
 // Las fechas de arriba son dias de Lima: empiezan y acaban a las 00:00 de Peru (05:00 UTC).
@@ -2002,7 +2016,7 @@ export const TEMP_PROB = 0.2, TEMP_JEFE = 5;
 export const TEMP_META = [3000, 12000, 30000];
 // Calendario de la fiesta: una tarea por dia (ciclo de 7, dia d usa TEMP_DIAS[d % 7]).
 // Los dias pasados siguen abiertos (puesta al dia); los futuros no se adelantan.
-// Cada dia cumplido paga TEMP_DIA_PREMIO del objeto de la fiesta (tareas.js progresoFiesta).
+// Cada dia cumplido paga premioDiaFiesta (base TEMP_DIA_PREMIO) del objeto de la fiesta (tareas.js progresoFiesta).
 // tipo = el de progresoTarea; 'obj' = objeto de la fiesta conseguido de monstruos.
 export const TEMP_DIAS = [
   { tipo: 'caza', n: 15, txt: 'Caza 15 monstruos de tu nivel' },
@@ -2014,6 +2028,10 @@ export const TEMP_DIAS = [
   { tipo: 'recoger', n: 6, txt: 'Recoge 6 materiales' },
 ];
 export const TEMP_DIA_PREMIO = 10;
+// Premio del dia d (0 = primer dia): +2 por cada semana de fiesta; en Navidad la
+// Nochebuena (d 23 con ini 1 dic) paga doble. Solo la moneda del evento.
+export function premioDiaFiesta(tp, d) { let p = TEMP_DIA_PREMIO + 2 * Math.floor(d / 7); if (tp && /^navidad/.test(tp.id) && d === 23) p *= 2; return p; }
+export const esNochebuena = (tp, d) => !!(tp && /^navidad/.test(tp.id) && d === 23);
 export const diaFiesta = (tp, t = Date.now()) => Math.floor((t - tp.ini) / 86400000);
 export const diasFiesta = tp => Math.ceil((tp.fin - tp.ini) / 86400000);
 

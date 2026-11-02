@@ -22,10 +22,10 @@ import {
   PAQUETES, estrellasDe, solesDeStars, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA, LOGROS, progresoLogro, statsJugador, ALAS, paqueteParaFaltante, ENTREGA, textoPagoRecibido, PEDIDO_VIGENCIA_MS,
   pagoLocalActivo, textoSoles, YAPE_VIGENCIA_MS, premioDiaria, MISIONES,
   ORO_POR_USD, STAR_TIENDA_USD, PEN_POR_USD,
-  temporadaDe, TEMPORADAS, TEMP_DIAS, TEMP_DIA_PREMIO, diaFiesta, diasFiesta,
-  ESPECIES, MAPAS, MONSTRUOS, BESTIARIO_HITOS, premioBestiario,
-} from '/mmo/js/data.js?v=355';
-import { LORE_MONSTRUOS } from './lore.js?v=355';
+  temporadaDe, TEMPORADAS, TEMP_DIAS, premioDiaFiesta, esNochebuena, diaFiesta, diasFiesta,
+  ESPECIES, MAPAS, MONSTRUOS, BESTIARIO_HITOS, premioBestiario, DEBIL_EMO,
+} from '/mmo/js/data.js?v=356';
+import { LORE_MONSTRUOS } from './lore.js?v=356';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -914,7 +914,9 @@ function libretaBestiario(y) {
     const borde = el ? 'border:2px solid var(--oro)' : c > 0 ? 'border:1px solid rgba(255,216,74,.4)' : 'border:1px dashed rgba(255,255,255,.2)';
     if (c > 0) {
       const lore = c >= 25 && LORE_MONSTRUOS && LORE_MONSTRUOS[k] ? `<div class="vv-dim" style="font-size:10px;font-style:italic;margin-top:3px;line-height:1.25">${esc(LORE_MONSTRUOS[k])}</div>` : '';
-      h += `<div style="min-height:44px;padding:6px;border-radius:8px;background:rgba(255,216,74,.08);${borde};font-size:12px"><b>${esc(m.nombre)}</b><br>`
+      // Debilidad: su emoji si ya la descubriste (golpe ¡DÉBIL!), si no un «?» con pista.
+      const deb = m.debil ? ((y.bestD || {})[k] ? ` <span title="Débil a ${esc(m.debil)}">${DEBIL_EMO[m.debil] || ''}</span>` : ' <span class="vv-dim" title="Tiene una debilidad por descubrir">❔</span>') : '';
+      h += `<div style="min-height:44px;padding:6px;border-radius:8px;background:rgba(255,216,74,.08);${borde};font-size:12px"><b>${esc(m.nombre)}</b>${deb}<br>`
         + `<span class="vv-dim">${sig ? fmt(c) + ' / ' + fmt(sig) : fmt(c) + ' · ✓'}</span> ${estr}`
         + (sig ? `<div class="vv-dim" style="font-size:10px">Premio: ${fmt(premioBestiario(m.nivel, i))} oro</div>` : '')
         + (el ? '<div style="font-size:11px;color:var(--oro)">★ élite vencido</div>' : '') + lore + '</div>';
@@ -924,7 +926,7 @@ function libretaBestiario(y) {
       h += `<div class="vv-dim" style="min-height:44px;padding:6px;border-radius:8px;background:rgba(255,255,255,.04);${borde};font-size:12px">??? ${estr}<br><span style="font-size:11px">vive en ${esc(zona)} · Nv ${m.nivel}</span>${el ? '<div style="font-size:11px;color:var(--oro)">★ élite vencido</div>' : ''}</div>`;
     }
   }
-  return h + '</div><div class="vv-dim" style="text-align:center;font-size:11px;margin:6px 0">Hitos de ' + BESTIARIO_HITOS.join(', ') + ' cazas con premio de oro. A las 25 conoces su historia.</div>'
+  return h + '</div><div class="vv-dim" style="text-align:center;font-size:11px;margin:6px 0">Hitos de ' + BESTIARIO_HITOS.join(', ') + ' cazas con premio de oro. A las 25 conoces su historia. ❔ = tiene una debilidad (🔥❄️✨🌑⚡): pruébale habilidades o la Chispa hasta ver ¡DÉBIL!</div>'
     + btn('📤 Compartir mi bestiario', 'compartirBestiario', {}, 'sec vv-full') + '</div>';
 }
 function pintarLogros() {
@@ -1396,6 +1398,8 @@ function abrirExpedicion() {
 // (data TEMPORADAS[].tienda; el servidor valida y descuenta en tiendaTemp).
 // La fiesta segun el reloj del servidor ('yo'.temp): con el reloj del movil
 // adelantado o atrasado, el saldo no llegaba nunca y los botones quedaban grises.
+// Fecha del dia de inicio (en UTC, como los «hasta» de TEMPORADAS): «7 de enero».
+function fechaLuego(t) { try { return new Date(t).toLocaleDateString('es-PE', { day: 'numeric', month: 'long', timeZone: 'UTC' }); } catch (e) { return new Date(t).toLocaleDateString(); } }
 function tempDelServidor(y) { return y && typeof y.temp === 'string' ? TEMPORADAS.find(x => x.id === y.temp) || null : temporadaDe(); }
 // Calendario de la fiesta (data TEMP_DIAS; el servidor cuenta en tareas.js progresoFiesta):
 // una casilla por dia: ✓ hecho, • abierto (hoy o pasado: puesta al dia), 🔒 futuro.
@@ -1405,17 +1409,17 @@ function calendarioFiesta(tp, fd) {
   const ok = fd.ok || [], p = fd.p || {};
   let cas = '', pend = '';
   for (let d = 0; d < total; d++) {
-    const def = TEMP_DIAS[d % TEMP_DIAS.length], hecho = ok.includes(d), fut = d > hoy;
-    const ico = hecho ? '✓' : fut ? '🔒' : '•';
-    const tit = `Día ${d + 1}: ${def.txt}` + (hecho ? ' (hecho)' : fut ? ' (aún no)' : ` (${p[d] || 0}/${def.n})`);
-    cas += `<div title="${esc(tit)}" style="min-width:44px;min-height:44px;flex:0 0 44px;box-sizing:border-box;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;line-height:1.15;`
-      + `border:2px solid ${d === hoy ? '#ffd24a' : 'rgba(255,255,255,.15)'};background:${hecho ? 'rgba(74,222,128,.18)' : fut ? 'rgba(0,0,0,.25)' : 'rgba(255,255,255,.06)'};opacity:${fut ? 0.6 : 1}">`
-      + `<b style="font-size:${hecho ? 17 : 15}px;color:${hecho ? '#4ade80' : fut ? 'inherit' : tp.color}">${ico}</b><span>D${d + 1}</span></div>`;
+    const def = TEMP_DIAS[d % TEMP_DIAS.length], hecho = ok.includes(d), fut = d > hoy, nb = esNochebuena(tp, d);
+    const ico = hecho ? '✓' : nb ? '⭐' : fut ? '🔒' : '•';
+    const tit = `Día ${d + 1}${nb ? ' (Nochebuena, premio doble)' : ''}: ${def.txt} · +${premioDiaFiesta(tp, d)} ${tp.cosas}` + (hecho ? ' (hecho)' : fut ? ' (aún no)' : ` (${p[d] || 0}/${def.n})`);
+    cas += `<div title="${esc(tit)}" style="min-width:44px;min-height:44px;flex:0 0 ${nb ? 'auto;padding:0 4px' : '44px'};box-sizing:border-box;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;line-height:1.15;`
+      + `border:2px solid ${d === hoy ? '#ffd24a' : nb ? tp.color : 'rgba(255,255,255,.15)'};background:${hecho ? 'rgba(74,222,128,.18)' : fut ? 'rgba(0,0,0,.25)' : 'rgba(255,255,255,.06)'};opacity:${fut && !nb ? 0.6 : 1}">`
+      + `<b style="font-size:${hecho ? 17 : 15}px;color:${hecho ? '#4ade80' : fut ? 'inherit' : tp.color}">${ico}</b><span>${nb ? 'Nochebuena' : 'D' + (d + 1)}</span></div>`;
     if (!hecho && !fut) pend += `<div style="margin:3px 0">${d === hoy ? '<b>Hoy</b>' : `Día ${d + 1}`}: ${esc(def.txt)} · <b>${p[d] || 0}/${def.n}</b></div>`;
   }
   const ms = Math.max(0, tp.ini + (hoy + 1) * 86400000 - Date.now()), hh = Math.floor(ms / 3600000), mm = Math.floor(ms % 3600000 / 60000);
   const man = hoy + 1 < total ? `Mañana: ${esc(TEMP_DIAS[(hoy + 1) % TEMP_DIAS.length].txt)} · abre en ${hh} h ${mm} min (a medianoche, hora de Perú)` : `Último día de la fiesta: termina en ${hh} h ${mm} min`;
-  return `<div style="margin:0 0 10px"><div style="font-weight:700;margin:0 0 6px">📅 Una tarea por día · +${TEMP_DIA_PREMIO} ${esc(tp.cosas)} ${tp.emoji} cada una</div>`
+  return `<div style="margin:0 0 10px"><div style="font-weight:700;margin:0 0 6px">📅 Una tarea por día · hoy +${premioDiaFiesta(tp, hoy)} ${esc(tp.cosas)} ${tp.emoji} (sube cada semana${/^navidad/.test(tp.id) ? '; ⭐ Nochebuena, doble' : ''})</div>`
     + `<div style="display:flex;flex-wrap:wrap;gap:6px">${cas}</div>`
     + `<div class="vv-nota" style="margin:8px 0 0">${pend || '¡Al día! Todas las tareas abiertas están hechas.'}${pend ? '<div style="opacity:.8">Los días pasados siguen abiertos: ponte al día cuando quieras.</div>' : ''}<div style="margin-top:4px">${man}</div></div></div>`;
 }
@@ -1433,6 +1437,9 @@ function pintarTiendaTemp() {
   const saldo = est0 ? est0.saldo : null, comprado = est0 ? est0.comprado || [] : [];
   const sacoHoy = est0 && typeof est0.sacoHoy === 'number' ? est0.sacoHoy : null;   // sacos de oro que quedan hoy (tope 5)
   sub.innerHTML = `<span>Tienes <b style="color:${tp.color}">${saldo === null ? '…' : fmt(saldo)} ${esc(tp.cosas)} ${tp.emoji}</b></span><span>hasta el ${esc(tp.hasta)}</span>`;
+  // Puente: en los ultimos 3 dias, la fiesta que viene despues (para no irse sin plan).
+  const luego = tp.fin - Date.now() < 3 * 86400000 ? TEMPORADAS.filter(x => x.ini >= tp.fin - 3600000 && x.id !== tp.id).sort((a, b) => a.ini - b.ini)[0] : null;
+  if (luego) sub.innerHTML += `<span style="flex-basis:100%;color:${luego.color}">Luego: ${luego.emoji} ${esc(luego.nombre)} desde el ${esc(fechaLuego(luego.ini))}</span>`;
   // El mas avanzado de los dos (la tienda lo trae al abrir; el 'yo', al cumplir un dia).
   const avance = f => f && f.id === tp.id ? (f.ok || []).length * 1e4 + Object.values(f.p || {}).reduce((a, b) => a + b, 0) : -1;
   const fdA = est0 && est0.fiestaDias, fdB = y.fiestaDias;

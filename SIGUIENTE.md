@@ -3553,3 +3553,15 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - T'anta Wawa en la caja plegada; día 4 a 10 objetos. CLASSIC: racha explicada, expedición de 15 min y de noche.
 - Minimapa legible en móvil.
 - Arnés 907 bien (pruebas ajustadas: primer reinicio gratis, consentimiento del aviso al invitador, calabazas dobles para quien llegó tarde).
+
+### Estudio 8 (2-nov-2026, `?v=356`)
+
+- 10 estudios web (eventos públicos, historia por capítulos, debilidades, fabricación, endgame, diciembre en Perú, clips de TikTok, joystick novato, señales premium, primera muerte) → 55 hallazgos → 12 tareas.
+- Invasión 3D: `inv3yo` con medalla en vivo; Defensa HEROICA oculta (Capitán Furioso, rareza mínima 2).
+- Debilidades: `TIPO_HAB`/`DEBIL_EMO` en data.js, `debil3d` (×1,3, solo monstruos), `c.bestD`, número ¡DÉBIL!, emoji en objetivo y bestiario.
+- Ranking semanal de la Cueva por clase y tramo (Nv 30+). Primera caída protegida (ORIGINS y CLASSIC); en CLASSIC, 3 caídas en 10 min sin XP perdida. Revancha 90 s hasta Nv 10.
+- Joystick con dedo fantasma y pista que exige arrastre.
+- Navidad desde el 1-dic como Adviento (Nochebuena doble), Verano desde el 7-ene; Año Nuevo con cuenta regresiva de Lima, fuegos y Hora Feliz.
+- Presumir con foto en cofre/botín/Nv 60 con código de amigo; fallo gracioso del Ladrón. Modo cine 🎬.
+- Artesana con recetas ocultas y recetario n/14. Historia en capítulos con tarjeta de título y releer zonas.
+- Arnés 907 bien (prueba del próximo evento movida al hueco Verano→Carnaval).

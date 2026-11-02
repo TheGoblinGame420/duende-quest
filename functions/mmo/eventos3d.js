@@ -342,10 +342,15 @@ export const Eventos3D = {
     // pueblo (no en el del jefe). Antes salia en (0, 0), en medio del pueblo.
     const cp = jug.length ? null : this.iniciar3d().campos.find(c => c.zona === ev.zona && !c.jefe);
     const p = jug.length ? this.puntoCerca3d(azar(jug), ev.zona) : cp ? { x: cp.x, z: cp.z } : { x: 0, z: 0 };
-    const o = this.crearEspecial3d(k, p.x, p.z, { zona: ev.zona, nv: mp.nv[1], hpX: 9 * (1 + 0.5 * (n - 1)), atkX: 1.25, agresivo: true, jefe: true, ex: { ev: ev.id, cap: 1, nom: 'Capitán ' + MONSTRUOS[k].nombre, ti: '#ff5a1f' } });
+    // Defensa HEROICA (oculta): meta cumplida con mas de 2:30 restantes en una invasion normal.
+    // El Capitan llega furioso (+30 % de vida) y la plata/oro sube un grado de rareza.
+    const heroica = !ev.gran && ev.fin - Date.now() > 150000;
+    if (heroica) ev.heroica = 1;
+    const hpCap = 9 * (1 + 0.5 * (n - 1)) * (heroica ? 1.3 : 1);
+    const o = this.crearEspecial3d(k, p.x, p.z, { zona: ev.zona, nv: mp.nv[1], hpX: hpCap, atkX: 1.25, agresivo: true, jefe: true, ex: { ev: ev.id, cap: 1, nom: (heroica ? 'Capitán Furioso ' : 'Capitán ') + MONSTRUOS[k].nombre, ti: heroica ? '#ff3b2f' : '#ff5a1f' } });
     ev.fase = 'capitan'; ev.capitan = o.id;
     ev.fin = Math.max(ev.fin, Date.now() + 3 * 60000);   // al menos 3 minutos para el Capitan
-    this.aClave(K3, { t: 'aviso', m: `⚔️ ¡${o.ex3.nom} llega a ${mp.nombre}! Derrótalo para ganar la invasión.` });
+    this.aClave(K3, { t: 'aviso', m: heroica ? `🔥 ¡Defensa HEROICA! El Capitán llega furioso a ${mp.nombre}` : `⚔️ ¡${o.ex3.nom} llega a ${mp.nombre}! Derrótalo para ganar la invasión.` });
     this.aClave(K3, this.estadoInvasion3d());
   },
   muereInvasor3d(o) {
@@ -366,6 +371,12 @@ export const Eventos3D = {
       ayudo.add(s.c.uid);
     }
     for (const uid of ayudo) ev.part.set(uid, (ev.part.get(uid) || 0) + (o.ex3.cap ? 3 : 1));
+    // Medalla en vivo: cada uno ve cuantos aportes lleva (el HUD dice cuanto falta para plata/oro).
+    // (el Capitan cierra la invasion: su toast final ya trae la medalla, no hace falta un aviso doble)
+    if (!o.ex3.cap) for (const uid of ayudo) {
+      const s = this.porUid.get(uid);
+      if (s && s.m3 && !s.cerrado) this.enviar(s, { t: 'inv3yo', id: ev.id, n: ev.part.get(uid) });
+    }
     if (o.ex3.cap) return this.terminarInvasion3d(true);
     if (ev.fase !== 'oleadas') return;
     ev.hechos++;
@@ -425,20 +436,20 @@ export const Eventos3D = {
       let it = null;
       if (med !== 'b') {
         c.invasiones = (c.invasiones || 0) + 1;
-        it = this.darItem(s, this.generarItem(nv, 1));
+        it = this.darItem(s, this.generarItem(nv, ev.heroica ? Math.min(2, RAREZAS.length - 1) : 1));
         this.progresoTarea && this.progresoTarea(s, 'invasion');
       }
       this.sumarXp(s, xp);
       s.sucio = true;
       const ico = { b: '🥉', p: '🥈', o: '🥇' }[med], nomM = { b: 'bronce', p: 'plata', o: 'oro' }[med];
       this.enviar(s, { t: 'gana', xp, oro, drops: [], item: it, med });
-      this.enviar(s, { t: 'toast', ok: true, med, inv: { n: nDef, med, prox }, m: `${ico} Aporte ${nomM}: +${xp} XP +${oro} oro${it ? ` · ${RAREZAS[it.r].nombre}: ${nombreItem(it)}` : ' · Ayuda contra 3 invasores para la plata'}` });
+      this.enviar(s, { t: 'toast', ok: true, med, inv: { n: nDef, med, prox }, m: `${ev.heroica ? 'HEROICA · ' : ''}${ico} Aporte ${nomM}: +${xp} XP +${oro} oro${it ? ` · ${RAREZAS[it.r].nombre}: ${nombreItem(it)}` : ' · Ayuda contra 3 invasores para la plata'}` });
       this.revisarLogros(s);
       this.yoLuego(s, true);
     }
     const topTxt = orden.slice(0, 3).map(([uid, n]) => { const s = this.porUid.get(uid); return s && s.c ? `${s.c.nombre} (${n})` : null; }).filter(Boolean).join(' · ');
     (W.zonaEstado || (W.zonaEstado = {}))[ev.zona] = { tipo: 'bendita', hasta: Date.now() + BENDITA_MS };
-    this.aClave(K3, { t: 'aviso', prox, m: `${ev.nombre} rechazada. 🏆 Top: ${topTxt || '—'} · ${nDef} duende${nDef === 1 ? '' : 's'} defendieron ${mp.nombre}. La zona queda Bendecida 15 min: +10% XP al cazar${prox ? ` · Próxima invasión en ~${prox} min` : ''}` });
+    this.aClave(K3, { t: 'aviso', prox, m: `${ev.heroica ? 'HEROICA · ' : ''}${ev.nombre} rechazada. 🏆 Top: ${topTxt || '—'} · ${nDef} duende${nDef === 1 ? '' : 's'} defendieron ${mp.nombre}. La zona queda Bendecida 15 min: +10% XP al cazar${prox ? ` · Próxima invasión en ~${prox} min` : ''}` });
     this.aClave(K3, { t: 'inv3', on: false, fin: 'ganada', zona: ev.zona, bend: this.benditas3d(), n: nDef, prox });
   },
 

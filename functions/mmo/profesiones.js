@@ -15,7 +15,7 @@
 // RUNAS permanentes desde Nv 40 (+2% por rango, 5 rangos).
 // ═══════════════════════════════════════════════════════
 import { climaEn } from '../../mmo/js/mundo3d.js';
-import { MAPAS, MATERIALES, NODO_CADA_MS, RECOLECTAR_MS, ELIXIR_MS, RECETAS, nodosDe, RARO_ZONA, raroDe, RUNAS, RUNA_NIVEL, RUNA_MAX, costoRuna, PESCA, pesqueroDe, hoyUTC, climaDe, ESPECIES, premioEspecie } from '../../mmo/js/data.js';
+import { MAPAS, MATERIALES, NODO_CADA_MS, RECOLECTAR_MS, ELIXIR_MS, RECETAS, nodosDe, RARO_ZONA, raroDe, RUNAS, RUNA_NIVEL, RUNA_MAX, costoRuna, PESCA, pesqueroDe, hoyUTC, climaDe, ESPECIES, premioEspecie, xpParaSubir } from '../../mmo/js/data.js';
 
 export const Profesiones = {
   // Al entrar a un mapa: sus nodos y cuando vuelve a estar listo cada uno.
@@ -189,6 +189,17 @@ export const Profesiones = {
     s.sucio = true;
     if (this.progresoTarea) this.progresoTarea(s, 'fabricar', { k: r.id });   // misiones secundarias de artesania
     this.enviar(s, { t: 'toast', m: `⚗️ Fabricaste: ${r.nombre}`, ok: true });
+    // Recetario: la primera vez que fabricas una receta queda anotada y da un premio unico moderado.
+    c.recetas = c.recetas || {};
+    if (!c.recetas[r.id]) {
+      c.recetas[r.id] = 1;
+      const oro = 15 * Math.max(1, Math.min(40, c.nivel || 1));
+      const xp = Math.round(xpParaSubir(c.nivel) * 0.03);
+      c.oro += oro;
+      if (xp > 0 && this.sumarXp) this.sumarXp(s, xp);
+      const n = RECETAS.filter(x => c.recetas[x.id]).length;
+      this.enviar(s, { t: 'toast', m: `📖 Receta nueva en tu recetario (${n}/${RECETAS.length}) · +${oro} oro${xp > 0 ? ` · +${xp} XP` : ''}`, ok: true });
+    }
     this.actualizarYo(s);
     this.guardar(s);
   },
