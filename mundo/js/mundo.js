@@ -14,27 +14,27 @@
 import * as THREE from 'three';
 import { esNocheDuendes, TEMPORADAS, temporadaDe, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=353';
-import { iniciarVentanas } from './ventanas.js?v=353';
-import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel } from '/mmo/js/data.js?v=353';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
-import { diaFiesta, diasFiesta, TEMP_DIAS, TEMP_DIA_PREMIO } from '/mmo/js/data.js?v=353';   // tarea del dia de la fiesta en la caja de misiones
-import { iniciarRegalo } from '/mmo/js/regalo.js?v=353';
-import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=353';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=353';
-import { crearMusica } from './musica.js?v=353';
-import { crearSonidos } from './sonidos.js?v=353';
-import { construirCueva } from './cueva.js?v=353';
-import { TAPA, transparentar } from './tapa.js?v=353';
-import { construirAbismo } from './abismo.js?v=353';
-import { crearParticulas } from './particulas.js?v=353';
-import { cargarKenney, piezasCasa } from './kenney.js?v=353';
-import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=353';
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=354';
+import { iniciarVentanas } from './ventanas.js?v=354';
+import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel } from '/mmo/js/data.js?v=354';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
+import { diaFiesta, diasFiesta, TEMP_DIAS, TEMP_DIA_PREMIO } from '/mmo/js/data.js?v=354';   // tarea del dia de la fiesta en la caja de misiones
+import { iniciarRegalo } from '/mmo/js/regalo.js?v=354';
+import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=354';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=354';
+import { crearMusica } from './musica.js?v=354';
+import { crearSonidos } from './sonidos.js?v=354';
+import { construirCueva } from './cueva.js?v=354';
+import { TAPA, transparentar } from './tapa.js?v=354';
+import { construirAbismo } from './abismo.js?v=354';
+import { crearParticulas } from './particulas.js?v=354';
+import { cargarKenney, piezasCasa } from './kenney.js?v=354';
+import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=354';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=353';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=353';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=353';
-import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=353';
-import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA } from './lore.js?v=353';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=354';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=354';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=354';
+import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=354';
+import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA } from './lore.js?v=354';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1317,7 +1317,17 @@ class Figura3D {
     if (id === this.mId) return;
     if (this.montura) { escena.remove(this.montura.obj); this.montura.dispose(); this.montura = null; }
     this.mId = id || '';
-    if (id) { try { this.montura = crearMontura(id); if (Q.sombras) this.montura.obj.traverse(o => { if (o.isMesh) o.castShadow = true; }); escena.add(this.montura.obj); } catch (e) { console.warn(e); this.mId = ''; } }
+    if (id) { try { this.montura = crearMontura(id); this.montura.ritmo = velMontura(id) / 1.5; if (Q.sombras) this.montura.obj.traverse(o => { if (o.isMesh) o.castShadow = true; }); escena.add(this.montura.obj); } catch (e) { console.warn(e); this.mId = ''; } }
+    // Invocacion (solo si la figura ya estaba en escena y cerca): anillo del color de la montura, tono y rebote.
+    if (this.montura && this._t !== undefined) {
+      const x = this._x, z = this._z, y = this._y;
+      if (Math.hypot(x - P.x, z - P.z) < 30) {
+        const d = MONTURAS[id], col = !d || d.banda || d.torre ? '#ffd84a' : d.tinte || '#fff3b0';
+        FX.emitir(x, y + 0.2, z, { n: MOVIL ? 6 : 10, color: col, vel: 3, vida: 0.7, grav: -1, plano: true, radio: 0.9, tam: 1.4, forma: 'estrella' });
+        SON.tocar('botin', { vol: 0.5, x, z, r: 1 });   /* campanita corta: 'nivel' sonaba a subir de nivel y su pausa de 400 ms podia tapar tu subida real */
+        this.aplastaT = this._t; this.aplastaK = 0.14;
+      }
+    }
   }
   poner(x, y, z, ry, t, escala) {
     // Pausa de golpe (hitstop): mientras this.pausa, el reloj de la animacion no avanza.
@@ -1369,6 +1379,7 @@ class Figura3D {
       else { const q = this.aplastaK * Math.sin(a * Math.PI) * (1 - a * 0.5); this.raiz.scale.y *= 1 - q; this.raiz.scale.x *= 1 + q * 0.5; this.raiz.scale.z *= 1 + q * 0.5; }
     }
     if (this.estira) { this.raiz.scale.y *= 1 + this.estira; this.raiz.scale.x *= 1 - this.estira * 0.4; this.raiz.scale.z *= 1 - this.estira * 0.4; }
+    this.modelo.montaAnda = !!(this.montura && this.andaMontura);
     if (animar) this.modelo.animar(this.est, (t - this.tE) / 1000, ts);
     ponerSombra(this.sombra, this.sombraBase, x, y, z);
   }
@@ -1933,7 +1944,7 @@ function recibir(m) {
       pintarHud(); pintarTemp3();
       // El nuevo entra ya como Guerrero (la recomendada): un paso menos antes de jugar. El que
       // vuelve sin clase (personaje antiguo) la elige como siempre.
-      if (!yo.clase) { if (m.nuevo) { mandar({ t: 'clase', id: 'guerrero' }); setTimeout(() => despuesMision1(() => aviso('⚔ Empiezas como Guerrero, la clase recomendada. Puedes cambiarla gratis hasta Nv 10 en ' + K('📖 (tecla P)', '⋯ → 📖') + ' → Especialización.', 'ok', 1)), 6000); } else abrirClases(); }
+      if (!yo.clase) { if (m.nuevo) { mandar({ t: 'clase', id: 'guerrero' }); setTimeout(() => despuesMision1(() => { aviso('⚔ Empiezas como Guerrero. Puedes cambiar de clase gratis hasta Nv 9 en ' + K('📖 (tecla P)', '⋯ → 📖') + ' → Clase.', 'ok', 1); setTimeout(ofrecerClases, 4000); }), 6000); } else abrirClases(); }
       // Si el servidor no la pone (algo raro), a los 4 s se abre la ventana de siempre.
       if (!yo.clase && m.nuevo) setTimeout(() => { if (yo && !yo.clase && !$('v-clase').classList.contains('on')) abrirClases(); }, 4000);
       // Al nuevo se le da la bienvenida cuando ya eligio clase (antes quedaba detras de esa ventana).
@@ -1994,6 +2005,7 @@ function recibir(m) {
         const [zk, tipo] = k.split(':');
         if (tipo === 'hito') {
           try { localStorage.setItem('dq_mirador_' + zk, '1'); } catch (e) {}
+          revelarNieblaZona(zk);
           aviso('✨ ' + (LORE_HITOS[zk] ? LORE_HITOS[zk] + ' ' : '') + 'El mapa de la zona se reveló: abre 🗺', 'ok');
         }
         // Vencer al jefe de la zona en su encargo devuelve su pedazo del Cantaro.
@@ -2182,10 +2194,11 @@ function recibir(m) {
       if (m.a && m.a !== miId) break;   // el golpe va a otro jugador (jefes): solo se ve el aviso rojo
       { const dMp = Math.hypot(o.x - P.x, o.z - P.z), ahMp = performance.now();
         if (dMp < 12 && !P.muerto && ahMp - mpreSonT >= 500) { mpreSonT = ahMp; SON.tocar('amenaza', { x: o.x, z: o.z }); vib('light'); }
-        if (!esqTuto && dMp < 9) { esqTuto = true; try { localStorage.setItem('dq3_esqTuto', '1'); } catch (e) {} aviso(K('💨 ¡Pulsa X o Mayús para ESQUIVAR el golpe rojo!', '💨 ¡Toca el botón 💨 para ESQUIVAR el golpe rojo!'), 'ok', 1); } }
+        if (!esqTuto && dMp < 9 && !P.muerto) esqPista(ms); }
       break; }
     // Saliste de su alcance tras el aviso rojo (tope: 1 cada 1,5 s).
-    case 'mesq': { const ah = performance.now(); if (P.muerto || ah - mesqT < 1500) break; mesqT = ah; numero(P.x, P.y + 2, P.z, '¡Esquivado!', '#4ade80', true); SON.tocar('esquivado'); vib('light'); break; }
+    case 'mesq': { const ah = performance.now(); if (!esqTuto && !P.muerto && esqHasta > ah) esqAprendida(true);   // salio del golpe rojo con 💨 reciente: esquiva aprendida
+      if (P.muerto || ah - mesqT < 1500) break; mesqT = ah; numero(P.x, P.y + 2, P.z, '¡Esquivado!', '#4ade80', true); SON.tocar('esquivado'); vib('light'); break; }
     case 'habNo': gcdHasta = 0; break;
     case 'chat': lineaChat(m); break;
     case 'gesto': if (GESTOS[m.id]) mostrarGesto(m.p, m.id); break;
@@ -2323,6 +2336,7 @@ let lookEditor = null;
 const lookYo = () => lookEditor || (yo && yo.look) || LOOK_BASE;
 // Probador de la tienda: skin puesta solo en tu pantalla (nunca se manda al servidor).
 let skinPrueba = null;
+let monturaPrueba = null;   // probador de monturas: id que ves bajo tu duende (solo en tu pantalla)
 const skinYo = () => (skinPrueba && SKINS[skinPrueba] ? skinPrueba : yo.skin);
 const claveYo = () => skinYo() + '|' + (yo.clase || '') + '|' + (yo.arma || '') + '|' + JSON.stringify(lookYo());
 async function cambiarSkinPropia() {
@@ -2574,19 +2588,55 @@ function quitarZona3(id, explota) {
 let tocandoSubir = false, tocandoBajar = false;
 // Anillo que se expande (habilidades de area, curas en grupo...).
 const GEO_ONDA = new THREE.RingGeometry(0.85, 1, 40).rotateX(-Math.PI / 2);
-function onda(x, z, radio, color) {
-  const m = new THREE.Mesh(GEO_ONDA, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.8, depthWrite: false, side: THREE.DoubleSide }));
+// Anillo fino para las habilidades de jugadores: el grueso rojo queda para pisotones de jefes.
+const GEO_ONDA_FINA = new THREE.RingGeometry(0.93, 1, 48).rotateX(-Math.PI / 2);
+function onda(x, z, radio, color, propio, op) {
+  const o = op ?? 0.8;
+  const m = new THREE.Mesh(propio ? GEO_ONDA_FINA : GEO_ONDA, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: o, depthWrite: false, side: THREE.DoubleSide }));
   m.position.set(x, alturaEn(x, z) + 0.15, z);
   escena.add(m);
-  efectos.push({ m, t: 0, dura: 0.5, radio });
+  efectos.push({ m, t: 0, dura: 0.5, radio, op: o });
 }
-const AREA = { torbellino: '#ff6633', abanico: '#cbd5e1', nova: '#9be7ff', meteoros: '#ff7a1a', rezo: '#4ade80', grito: '#ff3344' };
+// Colores calidos/claros (sin rojo): el rojo-naranja avisa de peligro de monstruos y jefes.
+const AREA = { torbellino: '#e2e8f0', abanico: '#cbd5e1', nova: '#9be7ff', meteoros: '#f59e0b', rezo: '#4ade80', grito: '#fbbf24' };
+// Golpes firma con efecto propio (ver efectoFirma).
+const FIRMA = { golpe_heroico: 1, siniestro: 1, sanar: 1, escudo_poder: 1, renovar: 1 };
+function efectoFirma(m, de) {
+  const baja = POBRE || CAL === 'baja', n = k => baja ? Math.max(1, Math.round(k / 2)) : k;
+  // En gama baja, los golpes firma de otros que no te tocan ni a ti ni a tu objetivo no se dibujan.
+  if (baja && m.p !== miId && m.tg !== miId && !(m.h || []).some(g => g[0] === objetivo)) return;
+  if (m.id === 'golpe_heroico' || m.id === 'siniestro') {
+    const g = (m.h || [])[0], o = g && mons.get(g[0]);
+    if (!o) return;
+    const y = alturaEn(o.x, o.z);
+    if (m.id === 'golpe_heroico') {
+      onda(o.x, o.z, 1.6, '#fcd34d', true);
+      FX.emitir(o.x, y + 1.2, o.z, { n: n(8), color: '#fcd34d', vel: 4, vida: 0.4, grav: 4, forma: 'chispa' });
+      if (m.p === miId) vib('light');
+    } else {
+      FX.emitir(o.x, y + 1.3, o.z, { n: n(4), color: '#fde047', vel: 1.5, vida: 0.25, tam: 1.6, forma: 'destello' });
+      FX.emitir(o.x, y + 1.1, o.z, { n: n(6), color: '#facc15', vel: 3.5, vida: 0.3, grav: 3, forma: 'chispa' });
+    }
+    return;
+  }
+  // Curas y escudos: proyectil verde (o blanco del escudo) hacia el aliado; si es a si mismo, brillo que sube.
+  if (!de) return;
+  const col = m.id === 'escudo_poder' ? '#f8fafc' : '#4ade80';
+  const al = m.tg === miId ? P : m.tg != null ? otros.get(m.tg) : null;
+  if (al && al !== de) proyectil(de, al, col);
+  else FX.emitir(de.x, (de.y || alturaEn(de.x, de.z)) + 0.6, de.z, { n: n(12), color: col, vel: 1.6, vida: 0.9, grav: -3, radio: 0.6, tam: 1.1 });
+}
 const A_DISTANCIA = { bola_fuego: '#ff7a1a', castigo: '#ffe9a8', misiles: '#c084fc', dolor: '#7c3aed', contrahechizo: '#7dd3fc', silencio: '#a78bfa', polimorfia: '#f9a8d4' };
 function efectoHab(m) {
   const de = m.p === miId ? P : otros.get(m.p);
   const h = habPorId(m.id);
   if (de && !(de === P && performance.now() - P.atkT < 350)) de.atkT = performance.now();
-  if (de && AREA[m.id]) onda(de.x, de.z, (h && h.radio ? h.radio / 17 : 6), AREA[m.id]);
+  if (de && AREA[m.id]) {
+    // Las de otros (que no pegan a tu objetivo) van tenues, y en gama baja ni se dibujan.
+    const ajena = m.p !== miId && !(m.h || []).some(g => g[0] === objetivo);
+    if (!(ajena && (POBRE || CAL === 'baja'))) onda(de.x, de.z, (h && h.radio ? h.radio / 17 : 6), AREA[m.id], true, ajena ? 0.3 : 0.8);
+  }
+  if (FIRMA[m.id]) { try { efectoFirma(m, de); } catch (e) {} }
   for (const [id, d, tipo] of m.h || []) {
     const o = mons.get(id);
     if (!o) continue;
@@ -2688,11 +2738,15 @@ function asedioHtml() {
     + `<br>🚪 Puerta ${asedio.puerta ? (hp.p ?? 100) + '%' : '<b style="color:#4ade80">rota</b>'} · 🛡 Guardián ${asedio.guardian ? (asedio.dormido ? '💤 dormido' : (hp.g ?? 100) + '%') : '—'}`
     + `<br><span style="font-size:11px">${defiendo ? 'Tu facción defiende: protege la puerta (al oeste del Núcleo).' : 'Rompe la puerta (al oeste del Núcleo) y vence al Guardián. Usa las máquinas de tu bastión (' + K('E', 'botón FUEGO') + ').'}</span>`;
 }
-function proyectil(de, a, color) {
+// Forma de la estela y del estallido segun el color del proyectil (fuego y sombra humean, magia brilla).
+const FORMA_COLOR = { '#ff7a1a': 'humo', '#c084fc': 'estrella', '#ffe9a8': 'estrella', '#7c3aed': 'humo' };
+function proyectil(de, a, color, forma) {
   const mesh = new THREE.Mesh(GEO_BALA, matBala(color));
   escena.add(mesh);
-  proyectiles.push({ mesh, de: { x: de.x, z: de.z, y: (de.y || alturaEn(de.x, de.z)) + 1.2 }, a, t: 0 });
+  const col = color || '#ffd34d', fo = forma || FORMA_COLOR[String(col).toLowerCase()] || 'chispa';
+  proyectiles.push({ mesh, de: { x: de.x, z: de.z, y: (de.y || alturaEn(de.x, de.z)) + 1.2 }, a, t: 0, color: col, forma: fo, n: 0 });
 }
+let avisoXP_t = 0;   // cuando se dio el aviso de XP al morir (la pantalla puede repintarse en la misma caida)
 function morir(m) {
   atkMantener = false;   // al revivir no sigue pegando solo (ATACAR o el clic quedaron "pulsados")
   // Golpe sordo al caer (una sola vez aunque lleguen 'muerte' y 'yo' seguidos).
@@ -2727,9 +2781,16 @@ function morir(m) {
   // Consejo util: enemigo muy alto -> sube antes; con pociones sin usar -> usalas (tecla Q); sin pociones -> Mercader.
   const nvYo = (yo && yo.nivel) || 1, nvMax = Math.max(0, ...((m && m.golpes) || []).map(g => g.nv || 0));
   const zt = m && !m.pvp && nvMax >= nvYo + 3 ? Object.values(MAPAS).filter(z => z.zona && !z.instancia && !z.coliseo && z.nv && z.nv[0] <= nvYo).sort((a, b) => b.nv[0] - a.nv[0])[0] : null;
-  const consejo = !m || m.pvp ? '' : nvMax >= nvYo + 3 ? `Ese enemigo es Nv ${nvMax} y tú Nv ${nvYo}: ${zt ? `sube antes en <b>${esc(zt.nombre)}</b> (Nv ${zt.nv[0]}-${zt.nv[1]})` : 'sube antes en una zona de tu nivel'} o ve en grupo.`
+  // Primera caida desde Nv 10 (no PvP): aqui se explica la perdida de XP, justo cuando importa (antes era un aviso mas al subir a Nv 10).
+  let avisoXP = '';
+  if (m && !m.pvp && nvYo >= 10) {
+    let visto = true; try { visto = !!localStorage.getItem('dq3_muerteXP_' + ((yo && yo.pid) || '')); if (!visto) localStorage.setItem('dq3_muerteXP_' + ((yo && yo.pid) || ''), '1'); } catch (e) {}
+    if (!visto) avisoXP_t = Date.now();
+    if (Date.now() - avisoXP_t < 60000) avisoXP = '⚠ Desde nivel 10, morir te quita un poco de XP (5 % del nivel). Toma pociones bajo la mitad de vida y no pelees con enemigos 3+ niveles más altos.';
+  }
+  const consejo = !m ? '' : m.pvp ? '⚔ Te venció alguien de la otra facción. Ve con tu grupo o vuelve al portal para estar a salvo.' : nvMax >= nvYo + 3 ? `Ese enemigo es Nv ${nvMax} y tú Nv ${nvYo}: ${zt ? `sube antes en <b>${esc(zt.nombre)}</b> (Nv ${zt.nv[0]}-${zt.nv[1]})` : 'sube antes en una zona de tu nivel'} o ve en grupo.`
     : (m.pw || 0) > 0 ? `Tenías ${m.pw} ${m.pw === 1 ? 'poción' : 'pociones'} sin usar: ${K('pulsa Q', 'toca el botón de la poción en la barra')} cuando tu vida baje de la mitad.` : 'Sin pociones: cómpralas en el Mercader del pueblo.';
-  $('muerte-txt').innerHTML = [quien, vida, `<b>${dondeRev}</b>`, xp, m && m.rep > 0 ? 'Reparar tu equipo cuesta ' + m.rep + ' oro.' : '', consejo].filter(Boolean).map(t => `<span style="display:block;margin:3px 0">${t}</span>`).join('');
+  $('muerte-txt').innerHTML = [quien, vida, `<b>${dondeRev}</b>`, xp, m && m.rep > 0 ? 'Reparar tu equipo cuesta ' + m.rep + ' oro.' : '', avisoXP, consejo].filter(Boolean).map(t => `<span style="display:block;margin:3px 0">${t}</span>`).join('');
   $('b-revivir').textContent = ab ? 'Revivir en el bastión' : cerca ? ((yo.nivel || 1) < 10 ? 'Revivir en la entrada' : 'Revivir aquí cerca') : 'Revivir en el pueblo';
   // Comprar pociones: revive en el pueblo (solo alli se compra) y abre la tienda de consumibles.
   const bp = $('b-revivir-pociones');
@@ -2974,12 +3035,29 @@ function pintarBarra() {
       if (MOVIL) d.addEventListener('touchstart', e => { e.preventDefault(); d.onclick(); }, { passive: false });
       b.appendChild(d);
     });
+    pulsoHabNueva();
   }
   $('acc-atk').classList.toggle('on', autoAtk);
   // En movil la barra no lleva el boton de ataque: ATACAR muestra si el automatico esta puesto.
   if (MOVIL) { const ta = $('t-atk'); if (ta.classList.contains('on') !== autoAtk) { ta.classList.toggle('on', autoAtk); ta.textContent = autoAtk ? 'PARAR' : 'ATACAR'; } }
   b.querySelectorAll('[data-pw]').forEach(d => { d.querySelector('.n').textContent = (yo.pw && yo.pw[d.dataset.pw]) || 0; });
   pedirVela(autoAtk);
+}
+// Habilidad nueva sin estrenar (marca dq3_habNueva_<id>): su boton late en verde hasta usarla una vez.
+function pulsoHabNueva() {
+  let id = null; try { id = yo && yo.pid ? localStorage.getItem('dq3_habNueva_' + ((yo && yo.pid) || '')) : null; } catch (e) {}
+  if (!id || !yo) return;
+  const h = habPorId(id);
+  if (!h || yo.nivel < h.nv) return;
+  const d = document.querySelector('#barra [data-hab="' + id + '"]');
+  if (d) d.classList.add('tuto-pulso');
+}
+function estrenarHab(h) {
+  let id = null; try { id = localStorage.getItem('dq3_habNueva_' + ((yo && yo.pid) || '')); } catch (e) {}
+  if (!h || id !== h.id) return;
+  try { localStorage.removeItem('dq3_habNueva_' + ((yo && yo.pid) || '')); } catch (e) {}
+  const d = document.querySelector('#barra [data-hab="' + h.id + '"]');
+  if (d) d.classList.remove('tuto-pulso');
 }
 // Toque que no sirve (en recarga, sin recurso o bloqueada): el boton tiembla en rojo y vibra.
 function rechazo(d) {
@@ -3443,6 +3521,8 @@ function tituloZona(id) {
   const t = $('titulo-zona'); t.style.opacity = 1;
   clearTimeout(t._t); t._t = setTimeout(() => { t.style.opacity = 0; }, 3200);
   // La historia de la zona, una vez por sesion.
+  // Primera vez en el Abismo (por cuenta): que quede claro que aqui, y solo aqui, la otra faccion puede atacarte.
+  if (id === 'eter' && yo && yo.pid) { let visto = true; try { visto = !!localStorage.getItem('dq3_abismo_' + ((yo && yo.pid) || '')); if (!visto) localStorage.setItem('dq3_abismo_' + ((yo && yo.pid) || ''), '1'); } catch (e) {} if (!visto) setTimeout(() => aviso('⚔ Abismo de Éter: aquí los de la otra facción pueden atacarte. En el pueblo y en el resto del mundo nadie puede dañarte (salvo en un duelo que tú aceptes).', 'err', 1), 1500); }
   const lz = LORE_ZONAS[id];
   if (lz && yo) { let vistas = ''; try { vistas = sessionStorage.getItem('dq3_lz') || ''; } catch (e) {} if (!vistas.split(',').includes(id)) { try { sessionStorage.setItem('dq3_lz', vistas + ',' + id); } catch (e) {} setTimeout(() => aviso('📜 ' + lz.intro), 1500); } }
   // Primera salida del pueblo de un novato: se le enseña a volar (una sola vez).
@@ -3465,9 +3545,33 @@ function cerrar(id) {
   pedirSincroAtras();
 }
 document.querySelectorAll('[data-cerrar]').forEach(b => b.onclick = () => cerrar(b.closest('.modal').id));
+// Tira "¿Probar otra clase?" tras la mision 1: el novato descubre Mago, Sacerdote y Picaro (una sola vez).
+function ofrecerClases(n) {
+  n = n || 0;
+  let vista = false; try { vista = !!localStorage.getItem('dq3_clase_probada'); } catch (e) {}
+  if (vista || !yo || !yo.clase || yo.nivel >= 9 || $('probar-clase')) return;
+  if (avisoTapado() || enCombate3()) { if (n < 8) setTimeout(() => ofrecerClases(n + 1), 3000); return; }   // en combate el servidor rechaza el cambio: espera
+  try { localStorage.setItem('dq3_clase_probada', '1'); } catch (e) {}
+  const d = document.createElement('div'); d.id = 'probar-clase';
+  d.innerHTML = '<p class="pc-t">¿Probar otra clase? Es gratis hasta Nv 9</p><div class="pc-g"></div><button class="pc-no" type="button">✕ Así estoy bien</button>';
+  let vigila = 0;
+  const fin = () => { clearInterval(vigila); d.remove(); };
+  const g = d.querySelector('.pc-g');
+  for (const [id, cl] of Object.entries(CLASES)) {
+    const b = document.createElement('button'); b.type = 'button';
+    const act = yo.clase === id; if (act) b.className = 'act';
+    b.innerHTML = `<span>${EMOJI_CLASE[id] || ''} ${esc(cl.nombre)}${act ? ' ✓' : ''}</span><small>${esc(cl.rol)}</small>`;
+    b.onclick = () => { try { SON.tocar('clic', { vol: 0.7 }); } catch (e) {} if (!act) mandar({ t: 'clase', id }); fin(); };
+    g.appendChild(b);
+  }
+  d.querySelector('.pc-no').onclick = () => { try { SON.tocar('clic', { vol: 0.7, cerrar: true }); } catch (e) {} fin(); };
+  document.body.appendChild(d);
+  const hasta = Date.now() + 20000;
+  vigila = setInterval(() => { if (Date.now() > hasta || hayVentana() || !d.isConnected) fin(); }, 500);   // sola a los 20 s; si se abre una ventana, no la tapa
+}
 function abrirClases() {
   const c = $('clases');
-  c.innerHTML = '<p style="grid-column:1/-1;font-size:12px;margin:0;color:var(--txt2)">Toca una clase para elegirla. Hasta nivel 10 puedes cambiarla gratis.</p>';
+  c.innerHTML = '<p style="grid-column:1/-1;font-size:12px;margin:0;color:var(--txt2)">Toca una clase para elegirla. Hasta Nv 9 puedes cambiarla gratis.</p>';
   for (const [id, cl] of Object.entries(CLASES)) {
     const b = document.createElement('button');
     b.innerHTML = `<span style="color:${cl.color}">${esc(cl.nombre)}</span><small>${esc(cl.rol)}</small>${id === 'guerrero' ? '<small style="color:#4ade80">★ Recomendada para empezar</small>' : ''}<small style="font-weight:400;line-height:1.35">${esc(cl.desc)}</small>`;
@@ -3599,7 +3703,7 @@ function pintarRanking(r) {
   chipsNpc($('npc-c'), 'sabio');
 }
 // Inventario, libro de clase, tienda completa y logros (mundo/js/ventanas.js).
-const V = iniciarVentanas({ mandar, yo: () => yo, aviso: (t, k) => aviso(t, k, 1), sfx, abrir, cerrar, telegram: () => !!TG && !forzarInvitado, probarSkin });
+const V = iniciarVentanas({ mandar, yo: () => yo, aviso: (t, k) => aviso(t, k, 1), sfx, abrir, cerrar, telegram: () => !!TG && !forzarInvitado, probarSkin, probarMontura });
 $('b-inv').onclick = () => V.abrirInventario();
 $('b-libro').onclick = () => V.abrirLibro();
 $('b-logros').onclick = () => V.abrirLogros();
@@ -3746,6 +3850,17 @@ function probarSkin(id, deOtro) {   // deOtro: desde el marco de otro jugador (C
   prueba = { id, otro: !!deOtro, cam: { camYaw, camPitch, camDist }, yaw0: P.ry, t0: performance.now(), html: '', pintT: 0 };
   camYaw = P.ry; camPitch = 0.14; camDist = 4.8;
   cambiarSkinPropia();
+  const el = probadorEl();
+  const verTienda = deOtro && !(yo.skins || []).includes(id) && ((typeof sk.precio === 'number' && sk.precio > 0) || sk.usd)
+    ? `<button class="btn sec" data-pr-tienda data-id="${esc(id)}">🛒 Ver en tienda</button>` : '';
+  el.innerHTML = `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b style="color:${sk.color || '#fff'};flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">👀 ${esc(sk.nombre)}</b><span id="probador3-t" style="font-size:12px;opacity:.7"></span>${verTienda}<button class="btn sec" data-pr-cerrar>Cerrar</button></div>`
+    + `<div id="probador3-c" class="vv-acc" style="flex-direction:row;flex-wrap:wrap;justify-content:flex-end;align-items:center;width:100%;margin-top:8px"></div>`
+    + '<div style="font-size:11px;opacity:.65;margin-top:6px">Solo tú la ves mientras la pruebas.</div>';
+  el.style.display = 'block';
+  pintarPrueba();
+}
+// Franja inferior del probador (la comparten skins y monturas; se crea una sola vez).
+function probadorEl() {
   let el = $('probador3');
   if (!el) {
     el = document.createElement('div'); el.id = 'probador3';
@@ -3758,10 +3873,30 @@ function probarSkin(id, deOtro) {   // deOtro: desde el marco de otro jugador (C
       if (vt) { const s = vt.dataset.id, k = SKINS[s]; sfx('boton', 0.2); terminarPrueba(false); if (!k) return; if (typeof k.precio === 'number' && k.precio > 0) V.abrirTienda('skin', s, 'hud'); else V.abrirTienda('premium', 'skin_' + s, 'hud'); }
     });
   }
-  const verTienda = deOtro && !(yo.skins || []).includes(id) && ((typeof sk.precio === 'number' && sk.precio > 0) || sk.usd)
-    ? `<button class="btn sec" data-pr-tienda data-id="${esc(id)}">🛒 Ver en tienda</button>` : '';
-  el.innerHTML = `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b style="color:${sk.color || '#fff'};flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">👀 ${esc(sk.nombre)}</b><span id="probador3-t" style="font-size:12px;opacity:.7"></span>${verTienda}<button class="btn sec" data-pr-cerrar>Cerrar</button></div>`
-    + `<div id="probador3-c" class="vv-acc" style="flex-direction:row;flex-wrap:wrap;justify-content:flex-end;align-items:center;width:100%;margin-top:8px"></div>`
+  return el;
+}
+// ── PROBADOR DE MONTURAS (pestaña MONTURAS de la tienda) ──
+// Tu duende sale montado y galopando en el sitio solo en tu pantalla, con la misma vuelta de
+// cámara que las skins. No se manda nada al servidor ni cambia tu montura real.
+/* Pelea de verdad: golpeaste hace < 4 s o un monstruo te persigue a < 12 m (un objetivo marcado lejos no cuenta). */
+function peleaMontura() {
+  if (objetivo && performance.now() - (P.atkT || 0) < 4000) return true;
+  for (const o of mons.values()) if (o.hp > 0 && !o.muereT && o.st === 2 && Math.hypot(o.x - P.x, o.z - P.z) < 12) return true;
+  return false;
+}
+function probarMontura(id) {
+  const mo = MONTURAS[id];
+  if (!yo || !mo || yo.muerto || camAntes) return;
+  if (P.vuela || P.planea) return aviso('Aterriza para probar la montura.', 'err');
+  if (peleaMontura()) return aviso('Sal del combate para probar la montura.', 'err');
+  if (prueba) terminarPrueba(false);
+  cerrar('v-tienda');
+  monturaPrueba = id;
+  prueba = { id, montura: true, otro: false, cam: { camYaw, camPitch, camDist }, yaw0: P.ry, t0: performance.now(), html: '', pintT: 0 };
+  camYaw = P.ry; camPitch = 0.14; camDist = 5.6;
+  if (P.fig && P.fig.tipo === 'modelo') P.fig.montar(id);
+  const el = probadorEl();
+  el.innerHTML = `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b style="flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">👀 ${esc(mo.nombre)}</b><span style="font-size:12px;color:#86efac">+${Math.round((mo.vel - 1) * 100)}% vel.</span><span id="probador3-t" style="font-size:12px;opacity:.7"></span><button class="btn sec" data-pr-cerrar>Cerrar</button></div>`
     + '<div style="font-size:11px;opacity:.65;margin-top:6px">Solo tú la ves mientras la pruebas.</div>';
   el.style.display = 'block';
   pintarPrueba();
@@ -3769,7 +3904,7 @@ function probarSkin(id, deOtro) {   // deOtro: desde el marco de otro jugador (C
 // Cuenta atrás y precio/botones (se repintan solo si cambian: al comprarla sale «Equipar»).
 function pintarPrueba() {
   if (!prueba) return;
-  const c = $('probador3-c'), tt = $('probador3-t'), h = V.compraSkin(prueba.id);
+  const c = $('probador3-c'), tt = $('probador3-t'), h = prueba.montura ? prueba.html : V.compraSkin(prueba.id);
   if (c && h !== prueba.html) { prueba.html = h; c.innerHTML = h; }
   if (tt) tt.textContent = Math.max(0, Math.ceil((PRUEBA_DURA - (performance.now() - prueba.t0)) / 1000)) + ' s';
 }
@@ -3778,18 +3913,20 @@ function girarPrueba() {
   if (!prueba) return;
   const e = performance.now() - prueba.t0;
   if (e >= PRUEBA_DURA || !yo || yo.muerto) { terminarPrueba(!prueba.otro); return; }
+  if (prueba.montura && (P.vuela || P.planea || peleaMontura())) { terminarPrueba(false); return; }   /* despegar o entrar en combate corta la prueba de montura */
   const k = Math.min(1, e / PRUEBA_GIRO);
-  camYaw = prueba.yaw0 + Math.PI * (1 - Math.cos(Math.PI * k)); camPitch = 0.14; camDist = 4.8;
+  camYaw = prueba.yaw0 + Math.PI * (1 - Math.cos(Math.PI * k)); camPitch = 0.14; camDist = prueba.montura ? 5.6 : 4.8;
   if (e - prueba.pintT > 250) { prueba.pintT = e; pintarPrueba(); }
 }
 function terminarPrueba(reabrir) {
   if (!prueba) return;
-  const p = prueba; prueba = null; skinPrueba = null;
+  const p = prueba; prueba = null; skinPrueba = null; monturaPrueba = null;
   ({ camYaw, camPitch, camDist } = p.cam);
   const el = $('probador3'); if (el) { el.style.display = 'none'; el.innerHTML = ''; }
-  cambiarSkinPropia();
-  // De vuelta a la tienda en la misma skin (no encima de un pago u otra ventana que se abrió).
-  if (reabrir && yo && !hayVentana() && !$('v-tienda').classList.contains('on')) V.abrirTienda('skin', p.id);
+  if (p.montura) { if (P.fig && P.fig.tipo === 'modelo') P.fig.montar(P.vuela ? '' : (yo && yo.montado) || ''); }
+  else cambiarSkinPropia();
+  // De vuelta a la tienda en la misma skin o montura (no encima de un pago u otra ventana que se abrió).
+  if (reabrir && yo && !hayVentana() && !$('v-tienda').classList.contains('on')) V.abrirTienda(p.montura ? 'montura' : 'skin', p.id);
 }
 /* Esc cierra la prueba y vuelve a la tienda; se corta aquí para que el Esc general no cierre la tienda recién reabierta */
 addEventListener('keydown', e => { if (prueba && e.key === 'Escape' && !chatAbierto()) { e.stopImmediatePropagation(); terminarPrueba(!prueba.otro); } });
@@ -3918,7 +4055,21 @@ function pintarMini() {
     x.fillStyle = '#4a3f5c';
     for (const [a, b, c, d] of CUEVA.salas) x.fillRect((CUEVA_X0 + a - P.x) * k * 2.2 + S / 2, (b - P.z) * k * 2.2 + S / 2, (c - a) * k * 2.2, (d - b) * k * 2.2);
   } else x.drawImage(mapaBase, mx - lado / 2, mz - lado / 2, lado, lado, 0, 0, S, S);
-  const punto = (wx, wz, color, r) => { const px = (wx - P.x) * k + S / 2, pz = (wz - P.z) * k + S / 2; if (px < 0 || pz < 0 || px > S || pz > S) return; x.fillStyle = color; x.beginPath(); x.arc(px, pz, r, 0, 7); x.fill(); };
+  const esMovil = document.body.classList.contains('movil');
+  const punto = (wx, wz, color, r) => { const px = (wx - P.x) * k + S / 2, pz = (wz - P.z) * k + S / 2; if (px < 0 || pz < 0 || px > S || pz > S) return; if (esMovil && r < 3) r *= 1.6; x.fillStyle = color; x.beginPath(); x.arc(px, pz, r, 0, 7); x.fill(); };
+  // Eventos grandes: nunca desaparecen; si estan lejos se pegan al borde, laten y muestran la distancia.
+  const borde = (wx, wz, color, r) => {
+    const px0 = (wx - P.x) * k + S / 2, pz0 = (wz - P.z) * k + S / 2, [bx, bz] = alBordeMini(px0, pz0, S), alBorde = bx !== px0 || bz !== pz0;
+    x.fillStyle = color; x.strokeStyle = '#fff'; x.lineWidth = 1.5;
+    x.beginPath(); x.arc(bx, bz, r * (1 + 0.25 * Math.sin(Date.now() / 200)), 0, 7); x.fill(); x.stroke();
+    if (alBorde) {
+      const t = Math.round(Math.hypot(wx - P.x, wz - P.z)) + 'm', ty = bz < 16 ? bz + r + 9 : bz - r - 7;
+      x.font = 'bold 9px system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      const tx = Math.max(16, Math.min(S - 16, bx));
+      x.strokeStyle = '#000'; x.lineWidth = 2.5; x.strokeText(t, tx, ty); x.fillStyle = '#fff'; x.fillText(t, tx, ty);
+    }
+  };
+  const mundoPrincipal = !enCueva(P.x) && !enAbismo(P.x);
   if (asedio && asedio.activo && asedio.puerta && enAbismo(P.x)) punto(PUERTA_NUCLEO.x, PUERTA_NUCLEO.z, '#ff3b3b', 4.5);
   if (metaEnc) punto(metaEnc.x, metaEnc.z, '#7dd3fc', 3.5);
   if (enAbismo(P.x) && yo && yo.faccion) for (const q of MAQUINAS) if (q.f === yo.faccion) punto(q.x, q.z, '#fbbf24', 2);
@@ -3932,20 +4083,21 @@ function pintarMini() {
     x.beginPath(); x.arc(gx, gz, 3.5, 0, 7); x.fill(); x.stroke();
   }
   { const ah = Date.now(); for (const c of COFRES3) if (c.listoEn <= ah && Math.abs(c.x - P.x) < 130 && Math.abs(c.z - P.z) < 130) punto(c.x, c.z, c.tipo === 'legendario' ? '#ffd84a' : c.tipo === 'epico' ? '#c084fc' : '#d6a35c', c.tipo === 'legendario' ? 3.2 : 2.4); }
-  if (invasion3 && ZONAS3D[invasion3.zona]) punto(ZONAS3D[invasion3.zona].x, ZONAS3D[invasion3.zona].z, '#ff5a1f', 5);
-  else if (invPre3 && ZONAS3D[invPre3.zona]) punto(ZONAS3D[invPre3.zona].x, ZONAS3D[invPre3.zona].z, '#ff9a3c', 4);
   for (const o of mons.values()) if (o.ra && !o.muereT) punto(o.x, o.z, o.ti || '#ffd84a', 4);
   { const ah = performance.now(); for (const n of NODOS) if (Math.abs(n.x - P.x) < 130 && Math.abs(n.z - P.z) < 130 && !(nodoListo.get(n.i) > ah)) punto(n.x, n.z, n.tipo === 'hierba' ? '#c084fc' : '#fbbf24', 1.6); }
+  // NPC: cuadrado gris claro (no se confunde con el grupo) y debajo del '!' de mision.
+  { x.fillStyle = '#e5e7eb'; const rn = esMovil ? 3.2 : 2; for (const n of NPCS3D) { const px = (n.x - P.x) * k + S / 2, pz = (n.z - P.z) * k + S / 2; if (px >= 0 && pz >= 0 && px <= S && pz <= S) x.fillRect(px - rn, pz - rn, rn * 2, rn * 2); } }
+  if (mundoPrincipal && invasion3 && ZONAS3D[invasion3.zona]) borde(ZONAS3D[invasion3.zona].x, ZONAS3D[invasion3.zona].z, '#ff5a1f', 5);
+  else if (mundoPrincipal && invPre3 && ZONAS3D[invPre3.zona]) borde(ZONAS3D[invPre3.zona].x, ZONAS3D[invPre3.zona].z, '#ff9a3c', 4);
+  if (mundoPrincipal && mundial3 && mundial3.vivo) borde(ARENA3D.x, ARENA3D.z, '#ff6b3d', 5);
   if (metaMision) {
     const [px, pz] = alBordeMini((metaMision.x - P.x) * k + S / 2, (metaMision.z - P.z) * k + S / 2, S);
     x.fillStyle = metaMision.guia ? '#4ade80' : '#ffd84a'; x.strokeStyle = '#000'; x.lineWidth = 2;
     x.font = 'bold 14px system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle';
     x.strokeText(metaMision.guia ? '?' : '!', px, pz); x.fillText(metaMision.guia ? '?' : '!', px, pz);
   }
-  for (const n of NPCS3D) punto(n.x, n.z, '#7dd3fc', 2);
   // Marcas 📍 vivas: punto que parpadea (encendido/apagado cada 250 ms).
   if (marcas3.length && ((Date.now() / 250) | 0) % 2 === 0) for (const a of marcas3) { const [mx2, mz2] = alBordeMini((a.x - P.x) * k + S / 2, (a.z - P.z) * k + S / 2, S); x.fillStyle = MARCA_CSS[a.k]; x.strokeStyle = '#000'; x.lineWidth = 1.5; x.beginPath(); x.arc(mx2, mz2, 4.5, 0, 7); x.fill(); x.stroke(); }
-  if (mundial3 && mundial3.vivo) punto(ARENA3D.x, ARENA3D.z, '#ff6b3d', 5);
   // Cono de vision de la camara (mira hacia -sin/-cos de camYaw).
   x.save(); x.translate(S / 2, S / 2); x.rotate(-camYaw);
   x.fillStyle = 'rgba(255,255,255,.13)'; x.beginPath(); x.moveTo(0, 0); x.arc(0, 0, 46, -Math.PI / 2 - 0.55, -Math.PI / 2 + 0.55); x.closePath(); x.fill(); x.restore();
@@ -3956,10 +4108,55 @@ function pintarMini() {
   x.fillStyle = '#fff'; x.strokeStyle = '#000'; x.lineWidth = 1.5;
   x.beginPath(); x.moveTo(0, -8); x.lineTo(5.5, 6); x.lineTo(0, 3); x.lineTo(-5.5, 6); x.closePath(); x.fill(); x.stroke(); x.restore();
 }
+// ── NIEBLA DEL MAPA: celdas de 22x22 que se descubren al caminar (solo cliente, en localStorage) ──
+const NIEBLA_N = 22, niebla = new Uint8Array(NIEBLA_N * NIEBLA_N);
+let nieblaCambio = false, nieblaGuardadaT = 0;
+try { const s = localStorage.getItem('dq_niebla') || ''; if (s.length === niebla.length && /^[01]+$/.test(s)) for (let i = 0; i < s.length; i++) niebla[i] = s.charCodeAt(i) === 49 ? 1 : 0; } catch (e) {}
+function celdaNiebla(wx, wz) {
+  const [cx, cz] = aMapa(wx, wz, NIEBLA_N);
+  return [Math.max(0, Math.min(NIEBLA_N - 1, Math.floor(cx))), Math.max(0, Math.min(NIEBLA_N - 1, Math.floor(cz)))];
+}
+function marcarCeldasNiebla(cx, cz, r) {
+  for (let j = cz - r; j <= cz + r; j++) for (let i = cx - r; i <= cx + r; i++) {
+    if (i < 0 || j < 0 || i >= NIEBLA_N || j >= NIEBLA_N) continue;
+    const k = j * NIEBLA_N + i; if (!niebla[k]) { niebla[k] = 1; nieblaCambio = true; }
+  }
+}
+function guardarNiebla(forzar) {
+  if (!nieblaCambio || (!forzar && Date.now() - nieblaGuardadaT < 10000)) return;
+  nieblaGuardadaT = Date.now(); nieblaCambio = false;
+  try { localStorage.setItem('dq_niebla', Array.from(niebla).join('')); } catch (e) {}
+}
+function marcarNiebla(wx, wz) { const [cx, cz] = celdaNiebla(wx, wz); marcarCeldasNiebla(cx, cz, 1); guardarNiebla(false); }
+// Mirador revelado: su hito y 3 celdas a la redonda quedan vistos.
+function revelarNieblaZona(zk) {
+  try { const hi = hitoDe(zk, ZONAS3D, alturaEn) || ZONAS3D[zk]; if (!hi) return; const [cx, cz] = celdaNiebla(hi.x, hi.z); marcarCeldasNiebla(cx, cz, 3); guardarNiebla(true); } catch (e) {}
+}
+// El pueblo inicial cuenta siempre como visto (no asusta al novato).
+{ const [cx, cz] = celdaNiebla(0, 0); marcarCeldasNiebla(cx, cz, 2); }
+setInterval(() => { try { if (yo && !enCueva(P.x) && !enAbismo(P.x)) marcarNiebla(P.x, P.z); } catch (e) {} }, 1000);
+addEventListener('pagehide', () => guardarNiebla(true));
+function pintarNiebla(x, S) {
+  // Lienzo de (N+2)x(N+2): el marco repite la celda de la orilla para que el desenfoque no aclare los bordes.
+  const T = NIEBLA_N + 2, c = document.createElement('canvas'); c.width = c.height = T;
+  const g = c.getContext('2d'); g.fillStyle = 'rgba(20,16,40,.82)';
+  for (let j = 0; j < T; j++) for (let i = 0; i < T; i++) {
+    const ci = Math.max(0, Math.min(NIEBLA_N - 1, i - 1)), cj = Math.max(0, Math.min(NIEBLA_N - 1, j - 1));
+    if (!niebla[cj * NIEBLA_N + ci]) g.fillRect(i, j, 1, 1);
+  }
+  x.save(); x.imageSmoothingEnabled = true;
+  if ('filter' in x) x.filter = 'blur(6px)';
+  const m = S / NIEBLA_N; x.drawImage(c, 0, 0, T, T, -m, -m, S + 2 * m, S + 2 * m);
+  x.restore();
+}
 function abrirMapa() {
   const cv = $('mapa-c'), x = cv.getContext('2d'), S = cv.width;
   x.imageSmoothingEnabled = true;
   x.drawImage(mapaBase, 0, 0, S, S);
+  // Antes de la niebla: miradores ya revelados y donde estas parado cuentan como vistos.
+  for (const zid of ZONAS_ENC) { let vm = false; try { vm = localStorage.getItem('dq_mirador_' + zid) === '1'; } catch (e) {} if (vm || (encargos || {})[zid + ':hito'] === true) revelarNieblaZona(zid); }
+  try { if (!enCueva(P.x) && !enAbismo(P.x)) marcarNiebla(P.x, P.z); } catch (e) {}
+  pintarNiebla(x, S);
   x.font = '600 12px system-ui'; x.textAlign = 'center';
   // Exploracion: encargos hechos por zona y, con el mirador (hito) descubierto, sus cofres y su hito.
   const encH = encargos || {}, miradores = [];
@@ -3989,7 +4186,7 @@ function abrirMapa() {
     for (const id of miradores) { const hi = hitoDe(id, ZONAS3D, alturaEn); if (!hi) continue; const [hx, hz] = aMapa(hi.x, hi.z, S); x.strokeText('★', hx, hz + 6); x.fillText('★', hx, hz + 6); }
     x.font = '600 12px system-ui'; x.lineWidth = 1;
   }
-  { const tot = ZONAS_ENC.length * 5, pc = Math.round(expHechos / tot * 100), txt = `Mundo explorado: ${pc} %`;
+  { const tot = ZONAS_ENC.length * 5, vistas = niebla.reduce((a, b) => a + b, 0), pc = Math.round((expHechos / tot * 100 + vistas / niebla.length * 100) / 2), txt = `Mundo explorado: ${pc} %`;
     x.font = 'bold 15px system-ui'; x.fillStyle = 'rgba(0,0,0,.6)'; x.fillRect(S / 2 - 95, 6, 190, 24);
     x.fillStyle = pc >= 100 ? '#4ade80' : '#ffd84a'; x.fillText(txt, S / 2, 24); x.font = '600 12px system-ui'; }
   for (const cp of campamentos(MAPAS, MONSTRUOS)) if (cp.jefe) { const [px, pz] = aMapa(cp.x, cp.z, S); x.fillStyle = '#ffd84a'; x.beginPath(); x.arc(px, pz, 5, 0, 7); x.fill(); }
@@ -4010,6 +4207,7 @@ function abrirMapa() {
     x.font = '600 12px system-ui'; x.lineWidth = 1;
   }
   const [yx, yz] = aMapa(P.x, P.z, S); x.fillStyle = '#4ade80'; x.beginPath(); x.arc(yx, yz, 6, 0, 7); x.fill(); x.strokeStyle = '#000'; x.stroke();
+  if (!$('mapa-leyenda')) { const ly = document.createElement('p'); ly.id = 'mapa-leyenda'; ly.style.cssText = 'margin:6px 0 0;font-size:12px;opacity:.9;text-align:center;white-space:nowrap;overflow-x:auto'; ly.innerHTML = '<b style="color:#ffd84a">!</b> misión · <b style="color:#4ade80">?</b> guía · <b style="color:#fde047">★</b> hito · <b style="color:#d6a35c">●</b> cofre · <b style="color:#ffd84a">●</b> jefe · <b style="color:#4ade80">●</b> tú · <b style="color:#8b7fc7">▒</b> por descubrir'; cv.insertAdjacentElement('afterend', ly); }
   abrir('v-mapa');
 }
 
@@ -4073,6 +4271,32 @@ function verLeyenda() {
   abrir('v-diario');
 }
 $('b-leyenda').onclick = () => { cerrar('v-ayuda'); verLeyenda(); };
+// ── COMUNIDAD OFICIAL (mismas URLs que functions/api/telegram-bot.js) ──
+// Lista blanca fija. Solo se abre el enlace si el jugador toca: el juego no envía nada por Telegram.
+const COMUNIDAD = { canal: 'https://t.me/elduende420peru', grupo: 'https://t.me/duendesolana420' };
+function abrirComunidad(k) {
+  const url = COMUNIDAD[k === 'grupo' ? 'grupo' : 'canal'];
+  try { const tw = window.Telegram && window.Telegram.WebApp; if (tw && tw.initData && typeof tw.openTelegramLink === 'function') { tw.openTelegramLink(url); return; } } catch (e) {}
+  try { window.open(url, '_blank', 'noopener'); } catch (e) {}
+}
+{ const bc = $('com-canal'), bg = $('com-grupo'); if (bc) bc.onclick = () => abrirComunidad('canal'); if (bg) bg.onclick = () => abrirComunidad('grupo'); }
+// Aviso único (Nv 5): tira pequeña arriba con «Unirme» / «Ahora no». Si hay una ventana abierta, espera un poco.
+function avisoComunidad(n) {
+  let ya = false; try { ya = !!localStorage.getItem('dq3_comunidad'); } catch (e) { ya = true; }
+  if (ya || $('tira-comunidad')) return;
+  let tapado = false; try { tapado = hayVentana() || avisoTapado(); } catch (e) {}
+  if (tapado) { if ((n || 0) < 20) setTimeout(() => avisoComunidad((n || 0) + 1), 6000); return; }
+  try { localStorage.setItem('dq3_comunidad', '1'); } catch (e) {}
+  const t = document.createElement('div'); t.id = 'tira-comunidad'; t.setAttribute('role', 'dialog');
+  t.style.cssText = 'position:fixed;left:50%;top:calc(58px + env(safe-area-inset-top) + var(--tg-top,0px));transform:translateX(-50%);z-index:8;display:flex;align-items:center;flex-wrap:wrap;justify-content:center;gap:8px;max-width:calc(100vw - 32px);box-sizing:border-box;padding:8px 12px;border-radius:14px;border:1px solid rgba(34,211,238,.55);background:rgba(20,14,34,.92);box-shadow:0 6px 20px rgba(0,0,0,.45);color:#fff;font:600 12px/1.3 var(--sans);pointer-events:auto;';
+  t.innerHTML = '<span>📢 Únete al canal oficial para enterarte de eventos</span><button type="button" class="btn" data-com="si" style="padding:6px 12px;font-size:12px;min-height:34px">Unirme</button><button type="button" class="btn sec" data-com="no" style="padding:6px 12px;font-size:12px;min-height:34px">Ahora no</button>';
+  const quitar = () => { clearTimeout(t._t); t.remove(); };
+  t.onclick = ev => { ev.stopPropagation(); const b = ev.target && ev.target.closest && ev.target.closest('[data-com]'); if (!b) return; if (b.dataset.com === 'si') abrirComunidad('canal'); quitar(); };
+  t.addEventListener('pointerdown', ev => ev.stopPropagation());
+  t.addEventListener('touchstart', ev => ev.stopPropagation(), { passive: true });
+  document.body.appendChild(t);
+  t._t = setTimeout(quitar, 25000);
+}
 // ── LLEVAR MI DUENDE (functions/mmo/vincular.js) ──
 // Invitado: pide un codigo de 6 letras (10 min) y lo escribe en Telegram o en su
 // cuenta de correo (en cualquier navegador). Cuenta: escribe el codigo y vuelve a
@@ -4392,6 +4616,13 @@ const PROXIMOS = Object.values([[EXPEDICION.nv, '🧭 expediciones de tu mascota
   ...Object.values(MAPAS).filter(m => m && m.zona && !m.instancia && !m.coliseo && !m.torre && Array.isArray(m.nv) && m.nv[0] > 1).map(m => [m.nv[0], '🗺 nueva zona: ' + m.nombre])]
   .reduce((acc, p) => { if (acc[p[0]]) acc[p[0]][1] += ' · ' + p[1]; else acc[p[0]] = [p[0], p[1]]; return acc; }, {})).sort((a, b) => a[0] - b[0]);
 function subiNivel(lv) {
+  // Habilidad recien aprendida: se presenta y su boton late hasta que la uses (la marca sobrevive a recargar).
+  const hn = lv > 0 && yo && yo.clase ? habsDe(yo.clase).find(x => x.nv === lv) : null;
+  if (hn) {
+    setTimeout(() => aviso('✨ Nueva habilidad: ' + hn.nombre + ' — ' + hn.desc, 'ok', 1), 3000);
+    try { localStorage.setItem('dq3_habNueva_' + ((yo && yo.pid) || ''), hn.id); } catch (e) {}
+    setTimeout(pulsoHabNueva, 50);   // la barra se rehace al cambiar de nivel: se marca despues
+  }
   // «Próximo: Nv N → ...» (no en los niveles que ya traen su propio aviso a esa hora).
   const prox = lv < 20 && PROXIMOS.find(p => p[0] > lv);
   if (prox && ![3, 5, NV_CLASE_GRATIS, ESPEC_NIVEL, ABISMO.nvMin].includes(lv)) setTimeout(() => aviso('Próximo: Nv ' + prox[0] + ' → ' + prox[1], undefined, 3), 2500);
@@ -4406,6 +4637,7 @@ function subiNivel(lv) {
   if (lv >= ABISMO.nvMin && !temp3) mandar({ t: 'temp3' });
   // Nv 5: se abre la Cueva de los Goblins (cofre epico + 30 % de XP, 3 al dia).
   if (lv === 5) setTimeout(() => { if (!enCueva(P.x) && !enAbismo(P.x)) aviso('⛏ ¡Nivel 5! Entra a la Cueva de los Goblins por el portal del pueblo: solo o en grupo, el Rey Goblin suelta un objeto ÉPICO (3 al día).', 'ok'); }, 6000);
+  if (lv === 5) setTimeout(avisoComunidad, 15000);
   if (lv === ABISMO.nvMin && !(yo && yo.faccion)) setTimeout(() => aviso('🌌 ¡Nivel ' + lv + '! Se abrió el Abismo de Éter: ve al portal del pueblo y elige Luz o Sombra. Si una facción tiene menos gente, unirte a ella da premio.', 'ok'), 4000);
   if (lv >= 60) ofrecerPresumir('¡Llegué al nivel 60, el máximo, en Duende Quest 3D! 🏆', 'nv60');
   else if (lv >= 5 && lv % 5 === 0) ofrecerPresumir(`¡Llegué al nivel ${lv} en Duende Quest 3D!`, 'nivel');
@@ -4414,8 +4646,8 @@ function subiNivel(lv) {
   // Nv 3 con 'DuendeNNNN': una vez, se le dice que puede ponerle su nombre (gratis) para que sus amigos lo reconozcan.
   if (lv === 3 && yo && /^Duende[0-9a-z]{3,6}$/i.test(yo.nombre || '')) setTimeout(() => { let visto = false; try { visto = !!localStorage.getItem('dq_aviso_nombre'); localStorage.setItem('dq_aviso_nombre', '1'); } catch (e) {} if (!visto && yo && /^Duende[0-9a-z]{3,6}$/i.test(yo.nombre || '')) aviso(`✏️ Tus amigos te ven como ${yo.nombre}: ponle tu nombre en ${K('? → Ajustes', 'Más (⋯) → ?')}.`, 'ok'); }, 6000);
   if (lv === 9) setTimeout(() => aviso('⚔ Último nivel para cambiar de clase gratis: desde Nv 10 cuesta oro. Pruébalas en ' + dondeLibro + '.', 'ok'), 2500);
-  if (lv === 10) setTimeout(() => aviso('⚠ Desde nivel 10, morir te quita un poco de XP (5 % del nivel). Toma pociones bajo la mitad de vida y no pelees con enemigos 3+ niveles más altos.', 'ok'), 7000);
-  if (lv === 10 && soyInvitado) setTimeout(() => aviso('🥤 Desde nivel 10 cada caza suma puntos de chicha morada de verdad, pero solo con cuenta. Crea tu cuenta gratis (tu duende pasa contigo) en ' + K('Ajustes (?)', 'Más (⋯) → ?') + '.', 'ok'), 12000);
+  // El aviso de la XP al morir desde Nv 10 se da en la pantalla de muerte (la primera vez), no aqui entre otros 3.
+  if (lv === 10 && soyInvitado) setTimeout(() => aviso('🥤 Desde nivel 10 cada caza suma puntos de chicha morada de verdad, pero solo con cuenta. Crea tu cuenta gratis (tu duende pasa contigo) en ' + K('Ajustes (?)', 'Más (⋯) → ?') + '.', 'ok'), 20000);
   if (lv === 10) setTimeout(() => aviso(`🌟 ¡Nivel 10! Ya puedes elegir tu especialización y repartir puntos de talento en ${dondeLibro}.`, 'ok'), 1500);
   else if (lv > 10) setTimeout(() => aviso(`🌟 +1 punto de talento: úsalo en ${dondeLibro} → Talentos.`, 'ok'), 1500);
   // Nv 3+, una vez por dispositivo: permiso para que el bot te escriba (Bot API 6.9).
@@ -4999,7 +5231,7 @@ function tiraDiario(m, n) {
   for (let i = 1; i <= 7; i++) b += `<i class="${i < dHoy ? 'ya' : i === dHoy ? 'hoy' : ''}${i === 7 ? ' cofre' : ''}"></i>`;
   const hoyTxt = m.oro ? '+' + m.oro.toLocaleString('es') + ' oro' : m.txt || 'premio';
   let tpTxt = ''; try { const tp = yo ? fiestaYo() : null; if (tp) tpTxt = `<small data-ttemp="1" style="color:${tp.color};font-weight:700;padding:4px 0">${tp.emoji} ${esc(tp.nombre)} · toca aquí para ver el calendario</small>`; } catch (e) {}
-  t.innerHTML =`<div class="dias7 mini">${b}</div><div class="tx"><b>☀ Día ${dHoy}${sem > 1 ? ' · Semana ' + sem : ''}: ${esc(hoyTxt)}${m.itemNom ? ' · ' + esc(m.itemNom) : ''}</b><small>${m.amuUsado ? '🧿 Tu protector salvó tu racha · ' : ''}${m.pase ? '+' + m.pase + ' al pase del mes · ' : ''}🧿 Protectores: ${m.amu || 0} · ${esc(textoManana3() || '')}${(m.hitos || []).length ? ' · 🏅 ' + esc(m.hitos.join(', ')) : ''}</small>${expVolvio() ? '<small style="color:#4ade80;font-weight:700">🧭 ' + (yo.exped.m ? 'Tu mascota' : 'Tu explorador') + ' volvió de la expedición · toca para recoger</small>' : ''}${tpTxt}</div>`;
+  t.innerHTML =`<div class="dias7 mini">${b}</div><div class="tx"><b>☀ Día ${dHoy}${sem > 1 ? ' · Semana ' + sem : ''}: ${esc(hoyTxt)}${m.itemNom ? ' · ' + esc(m.itemNom) : ''}</b><small>${m.amuUsado ? '🧿 Tu protector salvó tu racha · ' : ''}${m.amuRegalo ? '🧿 Protector de regalo · ' : ''}${m.pase ? '+' + m.pase + ' al pase del mes · ' : ''}🧿 Protectores: ${m.amu || 0} · ${esc(textoManana3() || '')}${(m.hitos || []).length ? ' · 🏅 ' + esc(m.hitos.join(', ')) : ''}</small>${expVolvio() ? '<small style="color:#4ade80;font-weight:700">🧭 ' + (yo.exped.m ? 'Tu mascota' : 'Tu explorador') + ' volvió de la expedición · toca para recoger</small>' : ''}${tpTxt}</div>`;
   t.classList.add('on');
   vib('success'); sfxK('monedas', 0.4);
   clearTimeout(tiraDiario.t);
@@ -5035,6 +5267,7 @@ function mostrarDiario(m, forzar) {
   let h = bloqueExpedDiario();
   try { const tp = yo ? temporadaDe() : null; if (tp) h += `<p class="vv-p" id="vv-temp" style="margin-bottom:8px;padding:8px;border-radius:10px;cursor:pointer;color:${tp.color};background:rgba(255,255,255,.06);border:1px solid ${tp.color}">${tp.emoji} <b>${esc(tp.nombre)}</b> hasta el ${esc(tp.hasta)} · ${esc(textoTemp3(tp).txt)}<br><small style="color:#e8e8f0">Toca aquí para ver el puesto de la Abuela ›</small></p>`; } catch (e) {}
   h += m.amuUsado ? `<p class="vv-p" style="margin-bottom:8px;padding:8px;border-radius:10px;background:rgba(125,211,252,.12);border:1px solid rgba(125,211,252,.45)">🧿 <b>Tu protector salvó tu racha</b>: faltaste un día y no la perdiste.</p>` : '';
+  h += m.amuRegalo ? `<p class="vv-p" style="margin-bottom:8px;padding:8px;border-radius:10px;background:rgba(125,211,252,.12);border:1px solid rgba(125,211,252,.45)">🧿 <b>Protector de regalo</b>: si un día no puedes entrar, salva tu racha.</p>` : '';
   h += m.vuelta ? `<p class="vv-p" style="margin-bottom:8px;padding:8px;border-radius:10px;background:rgba(255,216,74,.12);border:1px solid rgba(255,216,74,.4)">🎉 <b>¡Te echábamos de menos!</b> ${m.vuelta.dias} días fuera. Regalo de bienvenida: <b>+${m.vuelta.oro.toLocaleString('es')} oro</b>, ${m.vuelta.pociones} pociones y <b>${esc(m.vuelta.item)}</b>.</p>` : '';
   h += `<p class="vv-p" style="margin-bottom:8px">¡Día <b style="color:#ffd84a">${m.racha}</b> de tu racha${sem > 1 ? ` (semana ${sem}, oro x${String(multSemanaRacha(m.racha)).replace('.', ',')})` : ''}! Recibes <b>${m.oro && /oro/.test(m.txt || '') ? m.oro.toLocaleString('es') + ' oro' : esc(m.txt || '')}</b>${m.oro && !/oro/.test(m.txt || '') ? ` (+${m.oro.toLocaleString('es')} oro)` : ''}${m.itemNom ? `: <b>${esc(m.itemNom)}</b>` : ''}.</p><div class="dias7">`;
   for (let i = 1; i <= n; i++) {
@@ -5341,6 +5574,20 @@ const ESQ_MS = 180, ESQ_M = 3, ESQ_CD = 1200;
 let esqT0 = 0, esqDx = 0, esqDz = 0, esqHasta = 0, esqBtn = null, esqQ = -1, esqTuto = false;
 let esqEnv = false;   // ya se mando la posicion temprana de esta esquiva (a los 45 ms)
 try { esqTuto = localStorage.getItem('dq3_esqTuto') === '1'; } catch (e) {}
+// Pista de esquiva: ver el texto no es aprenderlo. Se marca aprendida al esquivar de verdad un golpe rojo
+// ('mesq' con la esquiva reciente) o tras usar 💨 3 veces; hasta entonces el boton late en cada aviso rojo cercano.
+let esqUsos = 0, esqTxtN = 0, esqTxtT = -1e9;
+function esqAprendida(logro) {
+  if (esqTuto) return;
+  esqTuto = true; try { localStorage.setItem('dq3_esqTuto', '1'); } catch (e) {}
+  if (logro) { aviso('💨 ¡Bien esquivado!', 'ok', 1); paso('esq1'); }
+}
+function esqPista(ms) {
+  const ah = performance.now();
+  if (MOVIL) { if (!esqBtn) esqBtn = $('t-esq');
+    if (esqBtn) { const b = esqBtn; b.classList.add('tuto-pulso'); clearTimeout(esqPista.t); esqPista.t = setTimeout(() => { b.classList.remove('tuto-pulso'); }, ms + 400); } }
+  if (esqTxtN < 3 && ah - esqTxtT >= 60000) { esqTxtN++; esqTxtT = ah; aviso(K('💨 ¡Pulsa X o Mayús para ESQUIVAR el golpe rojo!', '💨 ¡Toca el botón 💨 para ESQUIVAR el golpe rojo!'), 'ok', 1); }
+}
 function esquivar() {
   const ahora = performance.now();
   if (!yo || P.muerto || lanzando || P.vuela || P.planea || ahora < esqHasta || hayVentana() || chatAbierto()) return;
@@ -5355,6 +5602,7 @@ function esquivar() {
   let m = Math.hypot(dx, dz);
   if (m < 0.01) { dx = -Math.sin(P.ry); dz = -Math.cos(P.ry); m = 1; }
   esqDx = dx / m; esqDz = dz / m; esqT0 = ahora; esqEnv = false; esqHasta = ahora + ESQ_CD;
+  if (!esqTuto && ++esqUsos >= 3) esqAprendida(false);
   SON.tocar('esquiva'); vib('light');
   if (!POBRE && CAL !== 'baja' && !enCueva(P.x)) FX.emitir(P.x, P.y + 0.1, P.z, { n: MOVIL ? 4 : 7, color: '#bfae8e', vel: 1.4, vida: 0.4, grav: -0.6, plano: true, radio: 0.35, tam: 1.2 });
 }
@@ -5502,6 +5750,7 @@ function usarHab(h) {
   // que llegara el 'cast' y el servidor lo cancelaba con "Te moviste").
   if (h.cast) { lanzando = { id: h.id, ini: ahora, fin: ahora + h.cast, pre: true }; P.vx = 0; P.vz = 0; }
   tuto3.hab = true;
+  estrenarHab(h);
   if (h.gcd !== false) gcdHasta = ahora + GCD_MS;
   if (h.id === 'polimorfia') { autoAtk = false; colaHab = null; pintarBarra(); }   // pegarle a la oveja la despierta
   // (sin AUTO desde v344: la habilidad no enciende el ataque automatico)
@@ -5769,6 +6018,16 @@ function fisica(dt) {
       if (voces < 5)   // los pasos nunca quitan voces al combate
         sfxK(z === 'cumbres' || z === 'desierto' ? 'paso_n' : z === 'cueva' || z === 'eter' || z === 'castillo' || z === 'cavernas' ? 'paso_p' : z === 'pueblo' && Math.hypot(P.x, P.z) < 16 ? 'paso_p' : 'paso_h', 0.09);
     }
+  } else if (P.suelo && !P.vuela && !nadando && !P.muerto && yo && yo.montado) {
+    // Montado: cascos dobles cada ~2,4 m y una nube de polvo mas grande.
+    P.pasoD = (P.pasoD || 0) + Math.hypot(P.vx, P.vz) * dt;
+    if (P.pasoD > 2.4) {
+      P.pasoD = 0;
+      const z = zonaEn(P.x, P.z);
+      const pz = z === 'cumbres' || z === 'desierto' ? 'paso_n' : z === 'cueva' || z === 'eter' || z === 'castillo' || z === 'cavernas' ? 'paso_p' : z === 'pueblo' && Math.hypot(P.x, P.z) < 16 ? 'paso_p' : 'paso_h';
+      if (!enCueva(P.x)) FX.emitir(P.x - P.vx * 0.06, P.y + 0.1, P.z - P.vz * 0.06, { n: MOVIL ? 4 : 7, color: z === 'desierto' ? '#e8c27a' : z === 'cumbres' ? '#f1f5f9' : '#bfae8e', vel: 1.1, vida: 0.6, grav: -0.6, plano: true, radio: 0.5, tam: 1.3 });
+      if (voces < 5) { sfxK(pz, 0.12); setTimeout(() => { if (voces < 5) sfxK(pz, 0.08); }, 70); }
+    }
   }
   // Gravedad y suelo (en el agua se nada en la superficie).
   const suelo = Math.max(alturaEn(P.x, P.z), aguaEn(P.x) - 0.9);
@@ -5945,9 +6204,9 @@ function animarJugador(q, esYo, t) {
   if (!esYo) { const dx = q.tx - q.x, dz = q.tz - q.z; if (Math.abs(dx * der.x + dz * der.z) > 0.02) q.f = (dx * der.x + dz * der.z) > 0 ? 1 : -1; }
   const mira = (esYo ? P.f : q.f) !== -1;
   if (f.tipo === 'modelo') {
-    const mo = esYo ? (yo && yo.montado) || '' : q.mo || '';
+    const mo = esYo ? monturaPrueba || (yo && yo.montado) || '' : q.mo || '';
     f.montar(P.vuela && esYo ? '' : mo);
-    f.andaMontura = anda;
+    f.andaMontura = anda || (esYo && !!monturaPrueba);   /* en el probador galopa en el sitio */
     const e = estadoJugador(q, esYo, t, anda);
     const golpeNuevo = e === 'ataca' && (q.atkT || 0) !== f.atkVisto;
     if (golpeNuevo) f.atkVisto = q.atkT;
@@ -6461,7 +6720,7 @@ function pulsoTuto3(i) {
   if (i === -1 && tuto3.pul === -1) return;
   try {
     const obj = i === 2 ? $(MOVIL ? 't-atk' : 'acc-atk') : i === 3 ? document.querySelector('#barra [data-hab]:not(.bloq)') : i === 4 ? $('t-volar') : null;
-    if (tuto3.pul !== i) document.querySelectorAll('.tuto-pulso').forEach(b => { if (b !== obj) b.classList.remove('tuto-pulso'); });
+    if (tuto3.pul !== i) { document.querySelectorAll('.tuto-pulso').forEach(b => { if (b !== obj) b.classList.remove('tuto-pulso'); }); pulsoHabNueva(); }   // la habilidad nueva sin estrenar sigue latiendo
     if (obj && !obj.classList.contains('tuto-pulso')) obj.classList.add('tuto-pulso');
   } catch (e) {}
   tuto3.pul = i;
@@ -6843,7 +7102,15 @@ function cuadroBucle(t) {
     p.t += dt / 0.28;
     const a = p.a, ay = (a.y || alturaEn(a.x, a.z)) + 1.2;
     p.mesh.position.set(lerp(p.de.x, a.x, p.t), lerp(p.de.y, ay, p.t) + Math.sin(p.t * Math.PI) * 0.8, lerp(p.de.z, a.z, p.t));
-    if (p.t >= 1) { escena.remove(p.mesh); return false; }
+    const bajaP = POBRE || CAL === 'baja', cercaP = Math.hypot(a.x - P.x, a.z - P.z) < 45;
+    // Estela: una particula cada 2 cuadros (en calidad baja no hay estela; lejos del duende tampoco).
+    if (p.t < 1 && !bajaP && cercaP && (p.n++ % 2) === 0) { const q = p.mesh.position; FX.emitir(q.x, q.y, q.z, { n: 1, color: p.color, forma: p.forma, vida: 0.25, vel: 0.3, grav: 0, radio: 0.05 }); }
+    if (p.t >= 1) {
+      // Impacto con la forma del elemento (tambien en calidad baja, con menos particulas). Sin FX.golpe: el dano ya lo pinta
+      // al llegar el aviso del servidor y las curas no deben parecer un golpe.
+      if (cercaP) FX.emitir(a.x, ay, a.z, { n: bajaP ? 3 : MOVIL ? 4 : 7, color: p.color, forma: p.forma, vel: 2.2, vida: 0.4, grav: p.forma === 'humo' ? -1 : 3 });
+      escena.remove(p.mesh); return false;
+    }
     return true;
   });
   if (tajos.length) moverTajos(t);
@@ -6993,7 +7260,7 @@ function cuadroBucle(t) {
   efectos = efectos.filter(e => {
     e.t += dt / e.dura;
     const r = 0.5 + e.radio * Math.min(1, e.t);
-    e.m.scale.set(r, r, r); e.m.material.opacity = 0.8 * (1 - e.t);
+    e.m.scale.set(r, r, r); e.m.material.opacity = (e.op ?? 0.8) * (1 - e.t);
     if (e.t >= 1) { escena.remove(e.m); e.m.material.dispose(); return false; }
     return true;
   });

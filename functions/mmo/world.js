@@ -2039,7 +2039,12 @@ export class MmoWorld {
     const r0 = L.racha || 0;
     // El 7 pasa al 8 (y el 14 al 15...: premio del dia 1 de la semana siguiente): no se
     // puede explotar, el premio grande del dia 7 no se repite.
-    const racha = seguido ? r0 + 1 : L.d === anteayer && r0 >= 7 && r0 % 7 === 0 ? r0 + 1 : L.d === anteayer && r0 >= 8 ? (semanaRacha(r0) - 1) * 7 + 1 : L.d === anteayer && r0 < 7 ? Math.max(1, r0 - 1) : 1;
+    const racha = seguido ? r0 + 1 : L.d === anteayer && r0 >= 7 && r0 % 7 === 0 ? r0 + 1 : L.d === anteayer && r0 >= 8 ? (semanaRacha(r0) - 1) * 7 + 1 : L.d === anteayer && r0 < 7 ? Math.max(1, r0 - 1) : r0 >= 2 ? (semanaRacha(r0) - 1) * 7 + 1 : 1;
+    // Faltar 2+ dias ya no borra las semanas cumplidas: vuelve al inicio de su semana.
+    // Protector 🧿 de regalo: uno en el primer ingreso y otro al empezar cada semana
+    // nueva de racha (dia 8, 15...) avanzando, no al caer ahi por faltar, si no le queda ninguno.
+    let amuRegalo = 0;
+    if (amu === 0 && ((L.total || 0) === 0 || (racha === r0 + 1 && racha > 1 && racha % 7 === 1))) { amu = 1; amuRegalo = 1; }
     const pr = premioRacha(racha);
     // Oro de la semana 2 x1,25 y desde la 3 x1,5 (tope).
     const oro = Math.round((pr.oro || 0) * multLogin(c.nivel) * multSemanaRacha(racha));
@@ -2071,7 +2076,7 @@ export class MmoWorld {
       const vIt = this.darItem(s, generarItem(c.nivel, dias >= 7 ? 2 : 1), true);
       vuelta = { dias, oro: vOro, pociones: 5, item: nombreItem(vIt) };
     }
-    return { racha, dia: diaRacha(racha), sem: semanaRacha(racha), oro, pw: pr.pw || null, item, itemNom: item ? nombreItem(item) : undefined, txt: pr.txt, vuelta, hitos: hitos.length ? hitos : undefined, amu, amuUsado: amuUsado || undefined, pase: PASE.puntos.login };
+    return { racha, dia: diaRacha(racha), sem: semanaRacha(racha), oro, pw: pr.pw || null, item, itemNom: item ? nombreItem(item) : undefined, txt: pr.txt, vuelta, hitos: hitos.length ? hitos : undefined, amu, amuUsado: amuUsado || undefined, amuRegalo: amuRegalo || undefined, pase: PASE.puntos.login };
   }
 
   // Mete un objeto en la bolsa (si esta llena se vende solo).

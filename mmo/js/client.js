@@ -12,14 +12,14 @@ import {
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, PAQUETES, estrellasDe, solesDeStars, paqueteParaFaltante, ENTREGA, textoPagoRecibido, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA, PAGO_LOCAL, pagoLocalActivo, textoSoles,
   CLASES, RECURSOS, HABS, habsDe, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, FJ, FM, AURAS, MAZMORRAS, HERM_COSTO, HERM_NIVEL,
   ESPECS, ESPEC_NIVEL, especDe, MONTURAS, velMontura, MATERIALES, RECETAS, PESCA, pesqueroDe, climaDe, CLIMA, ESPECIES, premioEspecie, TORRE, atajoTorre, MODS_TORRE, HERM_COLORES, premioTorreSem, zonaDeNivel, progresoLogro, proximoMundial, mundialDe, HORA_FELIZ, EXPEDICION, premioExpedicion,
-  TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, BESTIARIO_HITOS, premioBestiario,
+  TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talento, talentosSugeridos, BESTIARIO_HITOS, premioBestiario,
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=353';
-import { iniciarRegalo } from './regalo.js?v=353';
-import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=353';
+} from './data.js?v=354';
+import { iniciarRegalo } from './regalo.js?v=354';
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=354';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -3046,9 +3046,10 @@ function pintarLibro() {
   const tal = yo.tal || {};
   const libres = puntosTalento(yo.nivel) - Object.values(tal).reduce((a, b) => a + b, 0);
   h += `<p style="font-size:12px;margin:12px 0 4px;color:var(--txt);font-weight:600">Talentos ${yo.nivel < TALENTO_NIVEL ? '(desde nivel ' + TALENTO_NIVEL + ')' : '· puntos libres: <b>' + libres + '</b>'}</p><div class="talentos">`;
+  const sugTal = talentosSugeridos(yo.clase, yo.nivel >= ESPEC_NIVEL ? yo.espec : null);
   for (const t of TALENTOS) {
     const r = tal[t.id] || 0;
-    h += `<div class="tal ${r ? 'on' : ''}"><img src="${A}items/equipo/${t.icono}.png" alt=""><div><b>${esc(t.nombre)} ${r}/${TALENTO_MAX}</b><small>${esc(t.txt)} por rango</small></div><button class="btn sec" data-tal="${t.id}" ${libres > 0 && r < TALENTO_MAX ? '' : 'disabled'}>+</button></div>`;
+    h += `<div class="tal ${r ? 'on' : ''}"><img src="${A}items/equipo/${t.icono}.png" alt=""><div><b>${esc(t.nombre)} ${r}/${TALENTO_MAX}</b>${sugTal.includes(t.id) ? '<small style="color:var(--oro,#ffd84a);font-weight:700">⭐ Para tu rol</small>' : ''}<small>${esc(t.txt)} por rango</small></div><button class="btn sec" data-tal="${t.id}" ${libres > 0 && r < TALENTO_MAX ? '' : 'disabled'}>+</button></div>`;
   }
   h += '</div>';
   if (Object.keys(tal).length) h += `<button class="btn sec" id="b-tal-reset" style="width:100%;margin-top:6px">Reiniciar talentos (${costoReinicioTalentos(yo.nivel).toLocaleString('es', { useGrouping: 'always' })} oro)</button>`;

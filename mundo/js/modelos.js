@@ -19,7 +19,7 @@
 // piezas fijas de cada pivote se funden en una malla (fusionarRig): ~6-14 draw calls.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=353';
+import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=354';
 
 const PX_M = 34;                 // pixeles del 2D por metro
 const PI = Math.PI;
@@ -466,7 +466,7 @@ function animarRig(m, est, te, t) {
 
   const corre = est === 'corre';
   const mueve = est === 'anda' || corre || est === 'nada' || est === 'vuela';
-  const f = t * r.paso * (corre ? 1.5 : 1);           // fase del paso
+  const f = t * r.paso * (corre ? 1.5 : 1) * (m.tipo === 'montura' ? m.ritmo || 1 : 1);   // fase del paso (las monturas rapidas galopan mas rapido)
   const s = Math.sin(f), c = Math.cos(f);
   const amp = est === 'anda' ? 0.55 : corre ? 0.85 : est === 'nada' ? 0.5 : 0;
   const kA = te / r.tAtk;                              // progreso del ataque
@@ -655,6 +655,7 @@ function animarRig(m, est, te, t) {
         if (pI) { pI.rotation.x -= 1.35; pD.rotation.x -= 1.35; pI.rotation.z += 0.45; pD.rotation.z -= 0.45; }
         if (bI) { bI.rotation.x -= 0.6; bD.rotation.x -= 0.6; }
         if (cu) cu.scale.y *= 1 + 0.015 * Math.sin(t * 2.4);
+        if (m.montaAnda) b.rotation.x += 0.12;   // con la montura andando, el jinete se inclina hacia delante
       }
       // Mirar al objetivo (v351): m.mirar = giro relativo (rad), m.mirarK = peso 0..1 ya suavizado.
       if (m.mirarK && !muerto) {

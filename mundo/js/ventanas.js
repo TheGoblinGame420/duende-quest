@@ -14,7 +14,7 @@
 import {
   RANURAS, RAREZAS, BOLSA_MAX, NIVEL_MAX, nombreItem, iconoItem, precioVenta, costoReforja, textoBonos,
   CONJUNTOS, piezasConjunto, textoConjunto,
-  TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos,
+  TALENTOS, TALENTO_MAX, TALENTO_NIVEL, puntosTalento, costoReinicioTalentos, talentosSugeridos,
   HABS, habsDe, costoHab, CLASES, RECURSOS, ESPECS, ESPEC_NIVEL, costoCambioClase,
   ARMAS, SKINS, precioOro, PODERES, MONTURAS, TINTES, MASCOTAS, HOJAS, FORJA_MAX, costoForja, multForja,
   BANDA_MONTURA, TORRE, ambulanteActivo, ambulanteOferta,
@@ -24,8 +24,8 @@ import {
   ORO_POR_USD, STAR_TIENDA_USD, PEN_POR_USD,
   temporadaDe, TEMPORADAS, TEMP_DIAS, TEMP_DIA_PREMIO, diaFiesta, diasFiesta,
   ESPECIES, MAPAS, MONSTRUOS, BESTIARIO_HITOS, premioBestiario,
-} from '/mmo/js/data.js?v=353';
-import { LORE_MONSTRUOS } from './lore.js?v=353';
+} from '/mmo/js/data.js?v=354';
+import { LORE_MONSTRUOS } from './lore.js?v=354';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -151,7 +151,9 @@ const CSS = `
 .vv-tal small{display:block;font:500 12px/1.35 var(--sans);color:var(--txt2);}
 .vv-tal .btn{padding:6px 12px;min-width:40px;font-size:16px;}
 .vv-pips{display:flex;gap:3px;margin:4px 0 2px;}
-.vv-pips i{width:14px;height:5px;border-radius:2px;background:rgba(255,255,255,.12);}
+.vv-pips i{width:14px;flex-shrink:1;min-width:6px;height:5px;border-radius:2px;background:rgba(255,255,255,.12);}
+.vv-tal.sug{box-shadow:inset 3px 0 0 var(--oro);}
+.vv-tal .sug{display:inline-block;font:700 11px/1.3 var(--sans);color:var(--oro);white-space:nowrap;}
 .vv-pips i.on{background:var(--oro);}
 .vv-det{display:flex;gap:10px;align-items:center;border:1px solid var(--rz);border-radius:10px;padding:9px 10px;background:rgba(0,0,0,.25);margin-bottom:8px;}
 .vv-monto{text-align:center;margin:6px 0 12px;}
@@ -512,23 +514,38 @@ function htmlHabs(y) {
 }
 function htmlTalentos(y) {
   const tal = y.tal || {};
-  if (y.nivel < TALENTO_NIVEL) return `<p class="vv-vacio">Los talentos se desbloquean a nivel ${TALENTO_NIVEL}: desde ahí ganas 1 punto por nivel para repartir.</p>` + htmlListaTal(tal, 0, true);
+  if (y.nivel < TALENTO_NIVEL) return `<p class="vv-vacio">Los talentos se desbloquean a nivel ${TALENTO_NIVEL}: desde ahí ganas 1 punto por nivel para repartir.</p>` + htmlListaTal(tal, 0, true, y);
   const libres = talentosLibres(y);
   let h = `<div class="vv-sec">Talentos <small>Puntos libres: <b class="${libres ? 'vv-ok' : ''}">${libres}</b> · un punto por nivel desde el ${TALENTO_NIVEL}</small></div>`;
-  h += htmlListaTal(tal, libres, false);
+  h += htmlListaTal(tal, libres, false, y);
   if (Object.values(tal).some(Boolean)) {
     const k = 'talReset';
     h += btn(pidiendo(k) ? '¿Seguro? Toca otra vez' : `Reiniciar talentos (${MON}${fmt(costoReinicioTalentos(y.nivel))})`, 'tal-reset', {}, 'vv-full ' + (pidiendo(k) ? 'ojo' : 'sec'), y.oro < costoReinicioTalentos(y.nivel));
   }
   return h;
 }
-function htmlListaTal(tal, libres, bloq) {
+// Cuánto sube la vida, el ataque o la defensa con el próximo rango (números
+// reales con statsJugador, igual que el servidor).
+const TAL_STAT = { vida: ['maxHp', '❤'], fuerza: ['atk', '⚔'], defensa: ['def', '🛡'] };
+function siguienteTal(y, id) {
+  const st = TAL_STAT[id];
+  if (!y || !st) return 0;
+  const tal = y.tal || {};
+  const a = statsJugador(y.nivel, y.skin, y.eq, y.clase, y.espec, tal, y.runas);
+  const b = statsJugador(y.nivel, y.skin, y.eq, y.clase, y.espec, { ...tal, [id]: (tal[id] || 0) + 1 }, y.runas);
+  return b[st[0]] - a[st[0]];
+}
+function htmlListaTal(tal, libres, bloq, y) {
+  const sug = y ? talentosSugeridos(y.clase, y.nivel >= ESPEC_NIVEL ? y.espec : null) : [];
   let h = '<div class="vv-tals">';
   for (const t of TALENTOS) {
     const r = tal[t.id] || 0;
     const pips = Array.from({ length: TALENTO_MAX }, (_, i) => `<i class="${i < r ? 'on' : ''}"></i>`).join('');
     const total = r ? ` · ahora +${Math.round(r * t.por * 100)}%` : '';
-    h += `<div class="vv-tal${r ? ' on' : ''}"${bloq ? ' style="opacity:.55"' : ''}><img src="${A}items/equipo/${t.icono}.png" alt=""><div><b>${esc(t.nombre)} <span class="vv-dim">${r}/${TALENTO_MAX}</span></b><div class="vv-pips">${pips}</div><small>${esc(t.txt)} por rango${total}</small></div>${bloq ? '' : btn('+', 'tal', { id: t.id }, 'sec', !(libres > 0 && r < TALENTO_MAX))}</div>`;
+    const esSug = sug.includes(t.id);
+    const sig = !bloq && r < TALENTO_MAX ? siguienteTal(y, t.id) : 0;
+    const sigTxt = sig > 0 ? `<small class="vv-ok">Siguiente: +${sig} ${TAL_STAT[t.id][1]}</small>` : '';
+    h += `<div class="vv-tal${r ? ' on' : ''}${esSug ? ' sug' : ''}"${bloq ? ' style="opacity:.55"' : ''}><img src="${A}items/equipo/${t.icono}.png" alt=""><div><b>${esc(t.nombre)} <span class="vv-dim">${r}/${TALENTO_MAX}</span></b>${esSug ? '<span class="sug">⭐ Para tu rol</span>' : ''}<div class="vv-pips">${pips}</div><small>${esc(t.txt)} por rango${total}</small>${sigTxt}</div>${bloq ? '' : btn('+', 'tal', { id: t.id }, 'sec', !(libres > 0 && r < TALENTO_MAX))}</div>`;
   }
   return h + '</div>';
 }
@@ -656,7 +673,8 @@ function htmlMonturas(y) {
       : mo.banda ? etq(`⚔️ Banda ${(y.banda || {}).t || 0}/${BANDA_MONTURA}`)
       : mo.torre ? etq(`🗼 Piso ${y.torreMax || 0}/${TORRE.montura}`)
       : precioYBoton(y, mo.precio, 'montura', id, mo.nv);
-    h += tarjeta(icoHoja(mo.hoja, mo.tinte), esc(mo.nombre), `+${Math.round((mo.vel - 1) * 100)}% de velocidad · ` + (mo.banda ? `no se vende: vence al Titán de la banda en ${BANDA_MONTURA} semanas distintas` : mo.torre ? `no se vende: supera el piso ${TORRE.montura} de la Torre del Duende` : `desde Nv ${mo.nv}`), acc);
+    const acc2 = !tiene && H && H.probarMontura ? acc + btn('👀 Probar', 'probarMontura', { id }, 'sec') : acc;
+    h += tarjeta(icoHoja(mo.hoja, mo.tinte), esc(mo.nombre), `+${Math.round((mo.vel - 1) * 100)}% de velocidad · ` + (mo.banda ? `no se vende: vence al Titán de la banda en ${BANDA_MONTURA} semanas distintas` : mo.torre ? `no se vende: supera el piso ${TORRE.montura} de la Torre del Duende` : `desde Nv ${mo.nv}`), acc2, '', est.foco === id ? 'foco' : '');
   }
   return h + '</div><p class="vv-nota">Se monta en 1,5 s fuera de combate. No se puede montar en mazmorras ni en el Coliseo.</p>';
 }
@@ -971,7 +989,7 @@ function pintarExped() {
     const horas = (y.expediciones ? [] : [EXPEDICION.primera]).concat(EXPEDICION.horas);
     h += '<div style="display:flex;gap:6px;flex-wrap:wrap">' + horas.map(hh => {
       const pr = premioExpedicion(hh, y.nivel, dest); if (masc) pr.oro = Math.round(pr.oro * 1.15);
-      return btn(`${hh < 1 ? Math.round(hh * 60) + ' min' : hh + ' h'}<br><small>🪙 ${fmt(pr.oro)}</small>`, 'exped', { h: hh, d: dest }, hh < 1 ? '' : 'sec');
+      return btn(`${hh < 1 ? Math.round(hh * 60) + ' min' : hh >= 12 ? '🌙 Noche · ' + hh + ' h' : hh + ' h'}<br><small>🪙 ${fmt(pr.oro)}</small>`, 'exped', { h: hh, d: dest }, hh < 1 ? '' : 'sec');
     }).join('').replace(/<button /g, '<button style="flex:1;min-width:70px;padding:8px 6px;line-height:1.25" ') + '</div>';
     if (!y.expediciones) h += '<p class="vv-p" style="color:#4ade80">✨ Primera vez: prueba la de 15 min y recógela en esta misma partida.</p>';
   } else {
@@ -1250,6 +1268,7 @@ const ACC = {
   },
   equipar: b => { H.sfx('boton', 0.3); H.mandar({ t: 'equipar', k: b.dataset.k, id: b.dataset.id }); },
   probarSkin: b => { if (!H.probarSkin || !SKINS[b.dataset.id]) return; H.sfx('boton', 0.2); H.probarSkin(b.dataset.id); },
+  probarMontura: b => { if (!H.probarMontura || !MONTURAS[b.dataset.id]) return; H.sfx('boton', 0.2); H.probarMontura(b.dataset.id); },
   // Solo al tocar el boton: abre el selector de chats (Telegram) o la hoja de compartir; nunca envia nada solo.
   compartirBestiario: () => {
     const c = cuentaBestiario(H.yo()); H.sfx('boton', 0.3);
@@ -1467,6 +1486,7 @@ export function iniciarVentanas(opciones) {
     telegram: o.telegram,             // opcional: () => true si se paga con Stars
     iniciarSesion: o.iniciarSesion,   // opcional: boton «Iniciar sesión»
     probarSkin: o.probarSkin,         // opcional: probador 3D de skins (ORIGINS)
+    probarMontura: o.probarMontura,   // opcional: probador 3D de monturas (ORIGINS)
   };
   if (!listo) {
     listo = true;

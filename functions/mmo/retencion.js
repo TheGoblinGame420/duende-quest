@@ -901,14 +901,19 @@ export const Retencion = {
     if (L && L.d === diaISO(hoy - 1) && L.racha >= 1) {
       const sig = L.racha + 1, pr = premioRacha(sig);
       const premio = pr.oro ? `${fmt(Math.round(pr.oro * multLogin(c.nivel) * multSemanaRacha(sig)))} oro${pr.item !== undefined ? ' + objeto ÉPICO' : ''}` : pr.txt;
-      const semTxt = L.racha % 7 === 0 ? `¡cumpliste la semana ${semanaRacha(L.racha)}! Si entras hoy empieza la semana ${semanaRacha(sig)} (${premio}${semanaRacha(sig) <= 3 ? ', con más oro' : ''})` : `si entras hoy cobras el día ${diaRacha(sig)} de la semana ${semanaRacha(sig)} (${premio})`;
-      add('racha', `🔥 Llevas ${L.racha} ${L.racha === 1 ? 'día seguido' : 'días seguidos'}: ${semTxt}. Si no, tu racha retrocede.`);
+      // Aviso en positivo (lo que gana hoy), sin amenazas.
+      const semTxt = L.racha % 7 === 0 ? `¡cumpliste la semana ${semanaRacha(L.racha)}! Empiezas la semana ${semanaRacha(sig)}${semanaRacha(sig) <= 3 ? ', con más oro' : ''}` : `día ${diaRacha(sig)} de la semana ${semanaRacha(sig)}`;
+      add('racha', `🔥 Llevas ${L.racha} ${L.racha === 1 ? 'día seguido' : 'días seguidos'}: hoy te espera ${premio} (${semTxt}).`);
     } else if (L && L.d === diaISO(hoy - 2) && L.racha > 2) {
       // Falto ayer: si entra hoy solo retrocede (o la conserva por el margen de 30 h).
       // Igual que procesarLogin (world.js): semana cumplida (7, 14...) pasa a la siguiente.
       const baja = L.racha >= 7 && L.racha % 7 === 0 ? L.racha + 1 : L.racha >= 8 ? (semanaRacha(L.racha) - 1) * 7 + 1 : L.racha - 1;
-      const queda = baja > L.racha ? `sigue al día ${baja} (no pierdes la semana cumplida)` : (L.amu || 0) > 0 ? `sigue intacta: tu protector 🧿 la salva` : baja > L.racha ? `sigue al día ${baja} (no pierdes la semana cumplida)` : `baja como mucho a ${baja}`;
-      add('racha', `🔥 Ayer no entraste: entra HOY y tu racha de ${L.racha} días ${queda}. Si no, mañana vuelve al día 1.`);
+      // En positivo: el dia en que sigue si entra hoy (con 🧿 sigue como si no hubiera faltado).
+      // Si falta 2+ dias vuelve al inicio de su semana (world.js), no al dia 1 desde la semana 2.
+      const conAmu = baja <= L.racha && (L.amu || 0) > 0;
+      const diaSig = baja > L.racha ? baja : conAmu ? L.racha + 1 : baja;
+      const nota = baja > L.racha ? ' (no pierdes la semana cumplida)' : conAmu ? ' (tu protector 🧿 la cuida)' : L.racha >= 8 ? ' (tus semanas cumplidas están a salvo)' : '';
+      add('racha', `🧿 Tu racha te espera: entra hoy y sigue en el día ${diaRacha(diaSig)} de la semana ${semanaRacha(diaSig)}${nota}.`);
     }
     const g = this.grupos && [...this.grupos.values()].find(x => x.uids.includes(c.uid));
     const enGrupo = g ? g.uids.filter(u => u !== c.uid && this.porUid.has(u)).length : 0;

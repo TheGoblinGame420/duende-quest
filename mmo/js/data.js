@@ -418,10 +418,10 @@ export const especDe = (clase, espec) => (ESPECS[clase] && ESPECS[clase][espec])
 
 // ── TALENTOS ──
 // Desde Nv 10, cada nivel da 1 punto para repartir (51 a Nv 60). Cada
-// talento tiene 5 rangos. Reiniciarlos cuesta oro. Pequeños pero suman:
-// cada nivel trae una decision propia ademas de la experiencia.
+// talento tiene 8 rangos (80 en total): al tope no alcanza para todo, asi
+// que hay que elegir. Reiniciarlos cuesta oro.
 export const TALENTO_NIVEL = 10;
-export const TALENTO_MAX = 5;
+export const TALENTO_MAX = 8;
 export const TALENTOS = [
   { id: 'fuerza',    nombre: 'Fuerza',       icono: 'S_Sword19', por: 0.02, txt: '+2% de ataque' },
   { id: 'vida',      nombre: 'Vitalidad',    icono: 'S_Holy10',  por: 0.03, txt: '+3% de vida' },
@@ -434,6 +434,14 @@ export const TALENTOS = [
   { id: 'erudicion', nombre: 'Erudición',    icono: 'I_Book',    por: 0.02, txt: '+2% de experiencia' },
   { id: 'agilidad',  nombre: 'Agilidad',     icono: 'S_Wind03',  por: 0.02, txt: '+2% de velocidad al caminar' },
 ];
+// Tres talentos que encajan con cada rol ('_' = aun sin especializacion).
+export const TALENTOS_SUGERIDOS = {
+  guerrero:  { _: ['fuerza', 'vida', 'critico'], armas: ['fuerza', 'critico', 'celeridad'], proteccion: ['vida', 'defensa', 'fuerza'] },
+  mago:      { _: ['fuerza', 'critico', 'sabiduria'], fuego: ['fuerza', 'critico', 'celeridad'], escarcha: ['vida', 'defensa', 'celeridad'] },
+  sacerdote: { _: ['sanacion', 'sabiduria', 'vida'], sagrado: ['sanacion', 'sabiduria', 'celeridad'], sombras: ['fuerza', 'critico', 'celeridad'] },
+  picaro:    { _: ['fuerza', 'critico', 'agilidad'], asesinato: ['critico', 'fuerza', 'celeridad'], combate: ['fuerza', 'celeridad', 'critico'] },
+};
+export const talentosSugeridos = (clase, espec) => { const c = TALENTOS_SUGERIDOS[clase] || {}; return c[espec] || c._ || []; };
 export const puntosTalento = nivel => Math.max(0, nivel - TALENTO_NIVEL + 1);
 export const costoReinicioTalentos = nivel => 100 * nivel;
 // Bonus de un talento (0 si no tiene rangos).
@@ -504,9 +512,18 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 353;
+export const VERSION = 354;
 
 export const NOVEDADES = [
+  { n: 122, fecha: '2 nov 2026', items: [
+    'Al terminar tu primera misión puedes probar Mago, Sacerdote o Pícaro con un toque, gratis hasta el Nv 9.',
+    'Tus habilidades de área brillan en dorado y blanco: el círculo rojo siempre es peligro. Los hechizos dejan estela y estallan por elemento.',
+    'El mapa del mundo empieza con niebla y se descubre al caminar; el minimapa muestra la invasión y el jefe mundial en el borde.',
+    '👀 Prueba cualquier montura antes de comprarla; al cabalgar suenan los cascos y se levanta polvo.',
+    'Los talentos llegan a 8 rangos y te marcan con ⭐ los que van con tu rol.',
+    'Racha más amable: protector 🧿 de regalo cada semana y nueva expedición de noche de 12 h.',
+    'Al subir de nivel te presentamos tu habilidad nueva; el botón 💨 late hasta tu primera esquiva. Nuevo acceso al canal oficial en Ajustes.',
+  ] },
   { n: 121, fecha: '2 nov 2026', items: [
     'En el celular la cámara ya no da vueltas al mover el joystick de lado, y la de combate gira suave hacia tu enemigo.',
     'El primer minuto es más tranquilo: los avisos esperan a que termines el tutorial.',
@@ -2641,7 +2658,8 @@ export const premioTorre = (p, nivel) => ({ oro: Math.round(40 * nivel * Math.mi
 // Tu mascota (o un duendecillo) sale 1, 4 u 8 horas y vuelve con oro, algo
 // de experiencia y materiales. Da menos que jugar esas horas. Nunca mTON.
 // primera: la de prueba de 15 min (0,25 h), solo si aun no recogio ninguna (c.expediciones).
-export const EXPEDICION = { nv: 2, horas: [1, 4, 8], primera: 0.25,
+// 12 h = expedicion de noche (se manda antes de dormir).
+export const EXPEDICION = { nv: 2, horas: [1, 4, 8, 12], primera: 0.25,
   // Cada destino trae el doble de su material.
   destinos: { bosque: { nombre: 'Bosque', a: 'al Bosque', emoji: '🌲', mat: 'hierba' }, mina: { nombre: 'Mina', a: 'a la Mina', emoji: '⛏️', mat: 'mineral' }, lago: { nombre: 'Lago', a: 'al Lago', emoji: '🎣', mat: 'pescado' } } };
 export const premioExpedicion = (h, nv, dest) => {

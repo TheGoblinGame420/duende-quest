@@ -3529,3 +3529,14 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Ayni: solo a novatos de tu grupo, oro según nivel, resucitar 1 vez por persona al día. Duende Ladrón con tropiezo y aguante; sin oro para quien supera mucho la zona.
 - Diálogos: retrato, Saltar al primer toque, teclado. Sonidos de celebración.
 - Arnés 905 bien.
+
+### Estudio 7 (2-nov-2026, `?v=354`)
+
+- 10 estudios web (identidad de clase, talentos, monturas, tutoriales a tiempo, recompensas de login, mapas, música de combate, VFX por elemento, comunidad en Telegram, casuales) → 53 hallazgos → 12 tareas.
+- `ofrecerClases` tras la misión 1 (fuera de combate). Colores de habilidades propias distintos del rojo de peligro, `GEO_ONDA_FINA`, golpes firma por clase. Proyectiles con estela e impacto por elemento.
+- Minimapa con eventos en el borde; mapa con niebla descubrible y leyenda.
+- Avisos a tiempo: habilidad nueva, primer Abismo, XP perdida al morir. Pista de esquiva hasta la primera esquiva real.
+- Probar montura y sonido/polvo/invocación de monturas. Talentos hasta 8 rangos con ⭐ sugeridos y números reales.
+- Racha: protector de regalo, semanas cumplidas que no se pierden, expedición de noche 12 h.
+- Comunidad oficial en Ajustes (enlaces ya usados por el bot) e invitación única a Nv 5.
+- Arnés 905 bien (prueba del aviso de racha ajustada al texto nuevo).

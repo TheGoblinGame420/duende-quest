@@ -2,7 +2,7 @@
 // DUENDE QUEST ONLINE — expediciones
 //
 // Se mezcla en MmoWorld (Object.assign al final de world.js).
-// Mandas a tu mascota (o a un duendecillo explorador) 1, 4 u 8 horas y al
+// Mandas a tu mascota (o a un duendecillo explorador) 1, 4, 8 o 12 horas y al
 // volver trae oro, un poco de experiencia y materiales (ver EXPEDICION en
 // data.js). Una a la vez. Es el "vuelve luego" de la Mini App; da menos
 // que jugar esas horas. Nunca mTON.
