@@ -28,6 +28,8 @@ const azar = l => l[Math.floor(Math.random() * l.length)];
 const dist = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 
 export const RARO3D_TIRADA_MS = 60 * 1000, RARO3D_PROB = 0.15, RARO3D_REAPARECE_MS = 15 * 60 * 1000, RARO3D_VIDA_MS = 15 * 60 * 1000;
+// Duende Ladron: tirada propia por minuto y zona, 20 min de enfriamiento por zona, vive 60 s huyendo.
+export const LADRON_PROB = 0.06, LADRON_ENFRIA_MS = 20 * 60 * 1000, LADRON_VIDA_MS = 60 * 1000, LADRON_GOLPES = 15, LADRON_TINTE = '#b5d334';
 export const INV3D_CADA_MIN = [14, 18], INV3D_DURA_MS = 5 * 60 * 1000, INV3D_AVISO_MS = 90 * 1000, BENDITA_MS = 15 * 60 * 1000;
 const NOMBRES = ['Ojoplata', 'Zarpadorada', 'Grishnak el Viejo', 'Morgra', 'Colmillo de Oro', 'Vorgath', 'Lunargenta',
   'Skarn el Errante', 'Brasaviva', 'Ulmo Sombrío', 'Kragga', 'Nébula', 'Torvo Dientefrío', 'Rengo el Codicioso'];
@@ -70,8 +72,11 @@ export const Eventos3D = {
       const z = zonaEn(s.p.x, s.p.z);
       if (zonaAbierta(z)) (porZona[z] = porZona[z] || []).push(s);
     }
+    // Duende Ladron (antes de las caducidades: el suyo vence aunque le esten pegando).
+    this.tickLadron3d(W, ahora, porZona);
     // Monstruos especiales que caducan sin pelear (un raro que nadie encontro).
-    for (const o of W.mons.values()) if (o.expira && ahora > o.expira && !o.muere && !o.obj) { W.mons.delete(o.id); this.aClave(K3, { t: 'md3', id: o.id, huye: 1 }); if (o.ex3 && o.ex3.raro) (W.raros || (W.raros = {}))[o.mapa] = { id: 0, prox: ahora + RARO3D_REAPARECE_MS }; }
+    // Si el raro huye con daño encima: consuelo de bronce a quien hizo al menos el 5 %.
+    for (const o of W.mons.values()) if (o.expira && ahora > o.expira && !o.muere && !o.obj) { W.mons.delete(o.id); this.aClave(K3, { t: 'md3', id: o.id, huye: 1 }); if (o.ex3 && o.ex3.raro) { (W.raros || (W.raros = {}))[o.mapa] = { id: 0, prox: ahora + RARO3D_REAPARECE_MS }; if (o.dano && o.dano.size) this.bronceRaro3d(o); } }
     // Raros: una tirada por minuto en cada zona con gente.
     W.raros = W.raros || {};
     for (const z in porZona) {
@@ -165,13 +170,14 @@ export const Eventos3D = {
     (W.raros || (W.raros = {}))[o.mapa] = { id: 0, prox: Date.now() + RARO3D_REAPARECE_MS };
     const base = statsMonstruo(o.k, o.nv), nombres = [];
     // Quien pego o curo a quien lo peleaba (como en el 2D): el sanador del grupo tambien cobra.
-    // Solo quien ayudo de verdad (10 % del daño o una cura que se note) y sigue cerca: un golpe suelto no cobra.
+    // Solo quien ayudo de verdad (10 % del daño, menos si eran muchos: 0,5 / pegadores, o una cura que se note) y sigue cerca: un golpe suelto no cobra.
     const total = [...o.dano.values()].reduce((a, b) => a + b, 0) || 1;
+    const pegadores = Math.max(1, [...o.dano.values()].filter(v => v > 0).length), umbral = total * Math.min(0.1, 0.5 / pegadores);
     const quienes = new Set([...o.dano.keys(), ...(o.cura ? o.cura.keys() : [])]);
     for (const sid of quienes) {
       const s = this.sesiones.get(sid);
       if (!s || !s.c || !s.m3) continue;
-      if ((o.dano.get(sid) || 0) < total * 0.1 && !((o.cura && o.cura.get(sid)) >= (o.max || 1) * 0.05)) continue;
+      if ((o.dano.get(sid) || 0) < umbral && !((o.cura && o.cura.get(sid)) >= (o.max || 1) * 0.05)) continue;
       if (dist(s.p, o) > 80) continue;
       // Tambien cuenta para la mision de la cadena si es el monstruo que pide.
       const q = MISIONES[s.c.mis.i];
@@ -190,6 +196,102 @@ export const Eventos3D = {
       nombres.push(s.c.nombre);
     }
     this.aClave(K3, { t: 'aviso', m: `★ ${o.ex3.nom} cayó${nombres.length ? ' ante ' + nombres.slice(0, 4).join(', ') : ''}.` });
+  },
+  // Raro que se va (caduca o huye) con daño encima: quien hizo al menos el 5 % se lleva el 25 % de XP y oro, sin objeto.
+  bronceRaro3d(o) {
+    const base = statsMonstruo(o.k, o.nv), total = [...o.dano.values()].reduce((a, b) => a + b, 0) || 1;
+    for (const [sid, v] of o.dano) {
+      const s = this.sesiones.get(sid);
+      if (!s || !s.c || !s.m3 || v < total * 0.05 || dist(s.p, o) > 120) continue;
+      const xp = Math.max(1, Math.round(base.xp * 4 * 0.25)), oro = Math.max(1, Math.round(base.oro * 5 * 0.25));
+      s.c.oro += oro; this.sumarXp(s, xp); s.sucio = true;
+      this.enviar(s, { t: 'gana', xp, oro, drops: [] });
+      this.enviar(s, { t: 'toast', ok: true, m: `🥉 Huyó, pero te llevas algo: +${xp} XP · +${oro} oro` });
+      this.yoLuego(s, true);
+    }
+  },
+
+  // ── DUENDE LADRÓN ── Huye del jugador más cercano soltando oro con cada golpe; vence a los 60 s.
+  tickLadron3d(W, ahora, porZona) {
+    this.ladronT = this.ladronT || {}; this.ladronTir = this.ladronTir || {};
+    for (const o of [...W.mons.values()]) {
+      if (!o.ex3 || !o.ex3.ladron) continue;
+      if (o.muere) { if (!o.ex3.pagado) { o.ex3.pagado = 1; this.premioLadron3d(o); } continue; }
+      if (ahora > o.expira) {
+        W.mons.delete(o.id); this.aClave(K3, { t: 'md3', id: o.id, huye: 1 });
+        this.avisoZona3d(o.mapa, { t: 'aviso', m: `💨 El Duende Ladrón escapó… se fue con su oro de ${(MAPAS[o.mapa] || {}).nombre || o.mapa}.` });
+        continue;
+      }
+      this.huirLadron3d(o, porZona[o.mapa] || []);
+    }
+    // Nunca entre 20:45 y 21:15 de Lima (la Gran Invasion de las 21:00 es la cita de todos).
+    const lima = new Date(ahora - 5 * 3600e3), lh = lima.getUTCHours(), lm = lima.getUTCMinutes();
+    if ((lh === 20 && lm >= 45) || (lh === 21 && lm < 15)) return;
+    for (const z in porZona) {
+      if (z === 'pueblo' || (MAPAS[z] && MAPAS[z].pueblo)) continue;
+      if (!this.ladronTir[z]) { this.ladronTir[z] = ahora + rnd(1, 3) * 60000; continue; }
+      if (ahora < this.ladronTir[z] || ahora < (this.ladronT[z] || 0)) continue;
+      this.ladronTir[z] = ahora + 60000;
+      if (Math.random() >= LADRON_PROB) continue;
+      this.ladronT[z] = ahora + LADRON_ENFRIA_MS;
+      this.crearLadron3d(z, azar(porZona[z]), ahora);
+    }
+  },
+  avisoZona3d(zona, msg) {
+    for (const s of this.sesiones3d()) if (!s.i3 && zonaEn(s.p.x, s.p.z) === zona) this.enviar(s, msg);
+  },
+  crearLadron3d(zona, cerca, ahora) {
+    const mp = MAPAS[zona], k = azar(mp.monstruos), p = this.puntoCerca3d(cerca, zona);
+    const nv = clamp((cerca.c && cerca.c.nivel) || mp.nv[0], mp.nv[0], mp.nv[1]);
+    const o = this.crearEspecial3d(k, p.x, p.z, { zona, nv, hpX: 2, atkX: 0, ex: { ladron: 1, nom: 'Duende Ladrón', ti: LADRON_TINTE, pagos: {} }, expira: ahora + LADRON_VIDA_MS });
+    o.dormido = true; o.dispara = false; o.atk = 0;   // ia3d no lo mueve ni pega: solo huye (huirLadron3d)
+    this.avisoZona3d(zona, { t: 'aviso', m: `💰 ¡Un Duende Ladrón huye con oro en ${mp.nombre}! Cada golpe suelta monedas: atrápalo en 60 s.`, x: Math.round(p.x), z: Math.round(p.z) });
+    return o;
+  },
+  // Se aleja del jugador mas cercano (a menos de 25 m) a 1,2 x su paso normal, sin salir de su zona ni meterse al agua.
+  huirLadron3d(o, jug) {
+    if (this.auraMon(o, 'aturdido') || this.auraMon(o, 'oveja') || this.auraMon(o, 'raiz')) { o.st = 0; return; }
+    let cerca = null, dm = 25;
+    for (const s of jug) { const d = dist(s.p, o); if (d < dm) { dm = d; cerca = s; } }
+    if (!cerca) { o.st = 0; return; }
+    const paso = 4.2 * (o.vel || 1) * 1.2 * 0.1;   // mismo paso que ia3d (4,2 x vel por s, tick de 100 ms) x 1,2
+    const base = Math.atan2(o.z - cerca.p.z, o.x - cerca.p.x);
+    for (const giro of [0, 0.6, -0.6, 1.2, -1.2, 1.8, -1.8]) {
+      const a = base + giro, nx = clamp(o.x + Math.cos(a) * paso, -MUNDO.limite, MUNDO.limite), nz = clamp(o.z + Math.sin(a) * paso, -MUNDO.limite, MUNDO.limite);
+      if (zonaEn(nx, nz) !== o.mapa || alturaEn(nx, nz) <= MUNDO.agua + 0.5) continue;
+      o.ry = Math.atan2(nx - o.x, nz - o.z); o.x = nx; o.z = nz; o.st = 1;
+      return;
+    }
+    o.st = 0;   // acorralado contra el borde: ¡a por el!
+  },
+  // Cada golpe suelta oro (2 x su nivel), hasta 15 golpes pagados por jugador.
+  golpeLadron3d(o, s) {
+    if (!s || !s.c || !o.ex3 || !o.ex3.ladron) return;
+    const p = o.ex3.pagos || (o.ex3.pagos = {}), n = p[s.id] || 0;
+    if (n >= LADRON_GOLPES) return;
+    p[s.id] = n + 1;
+    const oro = 2 * o.nv;
+    s.c.oro += oro; s.sucio = true;
+    this.enviar(s, { t: 'gana', xp: 0, oro, drops: [], lad: 1 });   // lad: solo monedas (el cliente no lo cuenta como una baja)
+    this.yoLuego(s);
+  },
+  // Al caer: a quien hizo al menos el 10 % del daño, oro (nivel x 20), 2 pociones y una tirada de objeto raro.
+  premioLadron3d(o) {
+    const total = [...o.dano.values()].reduce((a, b) => a + b, 0) || 1, nombres = [];
+    for (const [sid, v] of o.dano) {
+      const s = this.sesiones.get(sid);
+      if (!s || !s.c || !s.m3 || v < total * 0.1 || dist(s.p, o) > 80) continue;
+      const oro = o.nv * 20;
+      s.c.oro += oro;
+      s.c.pw = s.c.pw || {}; s.c.pw.pocion = Math.min(99, (s.c.pw.pocion || 0) + 2);
+      const it = Math.random() < 0.35 ? this.darItem(s, this.generarItem(Math.min(o.nv, s.c.nivel), 1)) : null;
+      s.sucio = true;
+      this.enviar(s, { t: 'gana', xp: 0, oro, drops: [], item: it || undefined });
+      this.enviar(s, { t: 'toast', ok: true, m: `💰 ¡Atrapaste al Duende Ladrón! +${oro} oro · +2 pociones${it ? ' · ' + RAREZAS[it.r].nombre + ': ' + nombreItem(it) : ''}` });
+      this.yoLuego(s, true);
+      nombres.push(s.c.nombre);
+    }
+    this.avisoZona3d(o.mapa, { t: 'aviso', m: `💰 El Duende Ladrón cayó${nombres.length ? ' ante ' + nombres.slice(0, 4).join(', ') : ''}.` });
   },
 
   // ── INVASIONES ──

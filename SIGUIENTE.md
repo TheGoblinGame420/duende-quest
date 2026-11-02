@@ -3504,3 +3504,16 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - CLASSIC muestra Suerte del duende y cofre semanal; calendario dice medianoche de Perú.
 - Pesca y jefes con sonido y feedback; tirón perfecto mide el reflejo sin el lag.
 - Arnés 905 bien.
+
+### Estudio 6 (2-nov-2026, `?v=352`)
+
+- 10 estudios web (cámara, animación procedural, iluminación barata, diálogos, colección, eventos sorpresa, grupo sin chat, microcompras LatAm, PC en ratos cortos, accesibilidad táctil) → 56 hallazgos → 12 tareas.
+- Cámara de combate (encuadre solo quieto, zoom por contexto suavizado `camExtra`, `camSube`); `choqueCamara` sin uso quitado.
+- Luces falsas de faroles y del duende (`luzSueloMat`/`luzHaloMat`) y ajuste «Brillo de noche» (`dq3_brillo`, claro por defecto en navegadores internos).
+- Álbum de monstruos (estrellas, lore desde 25 cazas, pistas, compartir); servidor: primera caza, Sello de Cazador por zona, élites registrados.
+- 📍 marca contextual y «🆘 Pedir ayuda»; gestos solo a grupo y cercanos.
+- Ayni (ayudar a novatos y resucitar) visible en la ficha. Duende Ladrón y consuelo de bronce en élites.
+- Inclinación al girar/arrancar, sombra según altura, cabeza que mira, respingo de detección con «!».
+- «Probar su look» y soles primero en la tienda web. Diálogos con retrato, máquina de escribir y respuestas rápidas.
+- Flechas de amenaza fuera de cámara y ajuste de vibración (Normal/Suave/Apagada, también en CLASSIC).
+- Arnés 905 bien.

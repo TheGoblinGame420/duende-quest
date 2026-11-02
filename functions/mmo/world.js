@@ -2133,7 +2133,7 @@ export class MmoWorld {
       arma: c.arma, armas: c.armas, skin: c.skin, skins: c.skins, pw: c.pw,
       kills: c.kills, jefes: c.jefes, muerto: s.muerto, mis: c.mis, forja: c.forja,
       eq: c.eq, bolsa: c.bolsa, logros: c.logros, titulo: c.titulo, mundiales: c.mundiales, login: c.login, crit: s.st.crit,
-      clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, torreSem: this.torreSem(c).max, torreMax: c.torreMax || 0, exped: c.exped || null, nVisitadas: c.nVisitadas || 0, visitadas: c.visitadas || [], especies: c.especies || {}, nEspecies: c.nEspecies || 0, dorados: c.dorados || 0, seca: c.seca || 0, secaEp: c.secaEp || 0, exped8: c.exped8 || 0, peces: c.peces || 0, expediciones: c.expediciones || 0, duelosG: c.duelosG || 0, desafioMax: c.desafioMax || 0, amigosN: c.amigos || 0, desafio: c.desafio || {}, ...Object.fromEntries(TEMPORADAS.map(t => [t.campo, c[t.campo] || 0])), chicha: this.infoChicha(c), temp: (temporadaDe() || {}).id || '', herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, best: c.best || {},
+      clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, torreSem: this.torreSem(c).max, torreMax: c.torreMax || 0, exped: c.exped || null, nVisitadas: c.nVisitadas || 0, visitadas: c.visitadas || [], especies: c.especies || {}, nEspecies: c.nEspecies || 0, dorados: c.dorados || 0, seca: c.seca || 0, secaEp: c.secaEp || 0, exped8: c.exped8 || 0, peces: c.peces || 0, expediciones: c.expediciones || 0, duelosG: c.duelosG || 0, desafioMax: c.desafioMax || 0, amigosN: c.amigos || 0, desafio: c.desafio || {}, ...Object.fromEntries(TEMPORADAS.map(t => [t.campo, c[t.campo] || 0])), chicha: this.infoChicha(c), temp: (temporadaDe() || {}).id || '', herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, best: c.best || {}, bestR: c.bestR || {}, sellos: c.sellos || {},
       boveda: c.boveda, bovedaOpc: c.bovedaOpc || null, pase: this.infoPase(c), banda: this.infoBanda(c), runas: c.runas || {}, gestaCob: c.gestaCob || null, cuevaHoy: c.cuevaDia && c.cuevaDia.d === hoyUTC() ? Math.min(3, c.cuevaDia.n) : 0, cuevaRec: c.cuevaRecord || 0,
       faccion: c.faccion || null, pa: c.pa || 0, bajasPvP: c.bajasPvP || 0, look: c.look || null, alas: c.alas || ['aprendiz'], ala: c.ala || 'aprendiz', espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, tintes: c.tintes || [], tinte: c.tinte || '', mascotas: c.mascotas || [], mascota: c.mascota || '', montado: s.montado || null,
       mton: c.mton, wallet: c.wallet ? { a: tonAmigable(c.wallet.a), desde: c.wallet.desde } : null,
@@ -2156,7 +2156,7 @@ export class MmoWorld {
   // (botin, subida de nivel, logro).
   // CLASSIC 2D: lo mismo pero al momento (sin tick3d): 'yoC' de ~250 B por
   // caza en vez del 'yo' entero; con AUTO continuo ahorra datos moviles.
-  yoLuego(s, full) { if (!s.m3) { if (full) return this.actualizarYo(s); return this.enviar(s, { t: 'yoC', yo: { ...this.datosCaza(s), best: s.c.best || {} } }); } s.yoPend = full || s.yoPend === 'full' ? 'full' : 'caza'; }
+  yoLuego(s, full) { if (!s.m3) { if (full) return this.actualizarYo(s); return this.enviar(s, { t: 'yoC', yo: { ...this.datosCaza(s), best: s.c.best || {}, bestR: s.c.bestR || {}, sellos: s.c.sellos || {} } }); } s.yoPend = full || s.yoPend === 'full' ? 'full' : 'caza'; }
   datosCaza(s) { const c = s.c, max = c.nivel >= NIVEL_MAX; return { nivel: c.nivel, xp: max ? (c.mae || {}).p || 0 : c.xp, xpSig: max ? MAESTRIA_XP : xpParaSubir(c.nivel), mae: (c.mae || {}).n || 0, oro: c.oro, kills: c.kills, jefes: c.jefes, mis: c.mis, diaria: c.diaria, pw: c.pw, descanso: c.descanso || 0, mat: c.mat || {} }; }
   vaciarYo(s, ahora) {
     if (!s.yoPend || ahora - (s.yoT || 0) < 1000) return;
@@ -2843,6 +2843,25 @@ export class MmoWorld {
         c.oro += pr;
         this.enviar(s, { t: 'toast', m: `📖 Bestiario: ${n} × ${MONSTRUOS[o.k].nombre} · +${pr.toLocaleString('es', { useGrouping: 'always' })} oro`, ok: true });
       }
+      // Primera caza de un tipo: se celebra con un poco de oro.
+      if (n === 1) {
+        const todosB = new Set(Object.values(MAPAS).flatMap(m => m.monstruos || []));
+        const pr1 = Math.max(1, Math.round(premioBestiario(MONSTRUOS[o.k].nivel, 0) / 5));
+        c.oro += pr1;
+        this.enviar(s, { t: 'toast', m: `📖 ¡Nuevo en el bestiario! ${MONSTRUOS[o.k].nombre}${todosB.has(o.k) ? ` (${Object.keys(c.best).filter(k => todosB.has(k)).length}/${todosB.size})` : ''} · +${pr1.toLocaleString('es', { useGrouping: 'always' })} oro`, ok: true });
+      }
+      // Sello de zona: todos sus monstruos cazados 25 veces (se cobra una sola vez).
+      const zb = Object.entries(MAPAS).find(([, m]) => m.monstruos?.includes(o.k));
+      if (zb && !c.sellos?.[zb[0]] && zb[1].monstruos.every(k => (c.best[k] || 0) >= BESTIARIO_HITOS[0])) {
+        c.sellos = c.sellos || {}; c.sellos[zb[0]] = 1;
+        const nvTop = Math.max(...zb[1].monstruos.map(k => MONSTRUOS[k]?.nivel || 1));
+        const prS = premioBestiario(nvTop, 0);
+        c.oro += prS;
+        this.enviar(s, { t: 'toast', m: `🏅 ¡Sello de ${zb[1].nombre}! Eres Cazador de ${zb[1].nombre} · +${prS.toLocaleString('es', { useGrouping: 'always' })} oro`, ok: true });
+        this.yoLuego(s, true);
+      }
+      // Elite raro vencido: queda registrado en el bestiario.
+      if ((o.ex3?.raro || o.raro) && !c.bestR?.[o.k]) { c.bestR = c.bestR || {}; c.bestR[o.k] = 1; this.yoLuego(s, true); }
     }
     // Misiones diarias y semanales (solo quien peleo de verdad).
     if (o && participo !== false) {

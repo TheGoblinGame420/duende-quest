@@ -23,8 +23,9 @@ import {
   pagoLocalActivo, textoSoles, YAPE_VIGENCIA_MS, premioDiaria, MISIONES,
   ORO_POR_USD, STAR_TIENDA_USD, PEN_POR_USD,
   temporadaDe, TEMPORADAS, TEMP_DIAS, TEMP_DIA_PREMIO, diaFiesta, diasFiesta,
-  ESPECIES, MAPAS,
-} from '/mmo/js/data.js?v=351';
+  ESPECIES, MAPAS, MONSTRUOS, BESTIARIO_HITOS, premioBestiario,
+} from '/mmo/js/data.js?v=352';
+import { LORE_MONSTRUOS } from './lore.js?v=352';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -700,9 +701,11 @@ function barraGanala(y, pr) {
   partes.push('monstruos y expediciones');
   return `<div style="margin:4px 6px 0"><div style="background:#333;height:5px;border-radius:3px;overflow:hidden"><div style="background:#fbbf24;height:100%;width:${pc}%"></div></div><div style="font-size:11px;opacity:.8;margin-top:3px;line-height:1.3">Llevas ${pc}% · Gánala jugando: ${partes.join(' · ')}</div></div>`;
 }
+// Precio en la web sin Yape: el sol primero (el público paga en soles) y el dólar chico y tenue. Mismo cálculo de siempre.
+const solesYDolar = usd => '≈ ' + precioLocal(usd) + ` <small style="opacity:.6;font-weight:400">· US$${usd}</small>`;
 // Precio y botones de compra de un arma o skin que aún no tienes (la tarjeta y el probador 3D usan lo mismo).
 function accPrecio(y, tab, id, d) {
-  if (typeof d.precio !== 'number') return `<span class="vv-etq" style="color:${d.color}">Exclusiva · ${esTg() ? estrellasDe(d.usd) + ' ⭐' : anuncio() && !(pagoLocalActivo() && (PAQUETES.find(p => p.id === 'skin_' + id) || {}).pen) ? estrellasDe(d.usd) + ' ⭐ · ≈ ' + solesDeStars(estrellasDe(d.usd)) : 'US$' + d.usd + ' · ≈ ' + precioLocal(d.usd)}</span>` + botonesPago(y, 'skin_' + id, d.usd, true);
+  if (typeof d.precio !== 'number') return `<span class="vv-etq" style="color:${d.color}">Exclusiva · ${esTg() ? estrellasDe(d.usd) + ' ⭐' : anuncio() && !(pagoLocalActivo() && (PAQUETES.find(p => p.id === 'skin_' + id) || {}).pen) ? estrellasDe(d.usd) + ' ⭐ · ≈ ' + solesDeStars(estrellasDe(d.usd)) : solesYDolar(d.usd)}</span>` + botonesPago(y, 'skin_' + id, d.usd, true);
   const pr = precioOro(tab, id);
   let acc = (pr !== d.precio ? `<s style="opacity:.55;font-size:11px">${d.precio.toLocaleString('es')}</s> 🎃 ` : '') + oro(pr) + botonOro(y, pr, 'Comprar', 'comprar', { k: tab, id });
   if (tab === 'skin' && d.usd) acc += botonesPago(y, 'skin_' + id, d.usd, false);
@@ -757,7 +760,10 @@ function htmlPremium(y) {
   if (!cuenta) h += '<p class="vv-dim" style="margin:0 0 8px;font-size:12px">Para comprar con dinero crea tu cuenta gratis con tu correo (1 min). Tu duende se queda contigo.</p>';
   // Con Yape / Plin en la web, el precio en soles es el de verdad (redondo, pq.pen).
   // En Telegram, los soles son los de las Stars (Telegram las vende a ~US$0,02 c/u).
-  const precio = (usd, pen) => !cuentaTg && pen && pagoLocalActivo() ? textoSoles(pen) + ' · ≈ US$' + usd : cuentaTg || anuncio() ? estrellasDe(usd) + ' ⭐ · ≈ ' + solesDeStars(estrellasDe(usd)) : 'US$' + usd + ' · ≈ ' + precioLocal(usd);
+  const precio = (usd, pen) => !cuentaTg && pen && pagoLocalActivo() ? textoSoles(pen) + ' · ≈ US$' + usd : cuentaTg || anuncio() ? estrellasDe(usd) + ' ⭐ · ≈ ' + solesDeStars(estrellasDe(usd)) : solesYDolar(usd);
+  // «desde ≈ S/ X»: el paquete visible más barato, en los mismos soles que muestra su tarjeta.
+  const barato = lista.filter(p => p.usd > 0 && !(p.skin && (y.skins || []).includes(p.skin))).sort((a, b) => a.usd - b.usd)[0];
+  if (barato) h = h.replace('<p class="vv-p" style="margin-bottom:4px">', `<p class="vv-p" style="margin:0 0 2px;font-size:13px;color:#fde68a">💎 Paquetes desde <b>${!cuentaTg && barato.pen && pagoLocalActivo() ? textoSoles(barato.pen) : cuentaTg || anuncio() ? '≈ ' + solesDeStars(estrellasDe(barato.usd)) : '≈ ' + precioLocal(barato.usd)}</b></p>$&`);
   let grupo = '', abierta = false;
   for (const pq of lista) {
     const g = pq.id === est.foco ? '' : grupoPaquete(pq);
@@ -861,6 +867,46 @@ function libretaPesca(y) {
   }
   return h + '</div><div class="vv-dim" style="text-align:center;font-size:11px;margin-top:6px">Tira justo cuando el corcho se hunde: un tirón perfecto atrae más peces dorados.</div></div>';
 }
+// Album de monstruos (y.best: cazas por tipo; y.bestR: elite vencido, si el servidor lo manda).
+// Solo cuenta los que viven en alguna zona (sin jefes de evento). Los que faltan dan la pista de la zona.
+function listaBestiario() {
+  const vistos = new Set();
+  for (const m of Object.values(MAPAS)) for (const k of (m.monstruos || [])) if (MONSTRUOS[k] && !MONSTRUOS[k].mundial && !MONSTRUOS[k].asedio) vistos.add(k);
+  return [...vistos].sort((a, b) => MONSTRUOS[a].nivel - MONSTRUOS[b].nivel);
+}
+function cuentaBestiario(y) {
+  const lista = listaBestiario(), best = (y && y.best) || {};
+  const esp = (y && y.especies) || {};
+  return { n: lista.filter(k => (best[k] || 0) > 0).length, t: lista.length,
+    p: Object.keys(ESPECIES || {}).filter(l => (esp[l] || 0) > 0).length, q: Object.keys(ESPECIES || {}).length };
+}
+function libretaBestiario(y) {
+  const lista = listaBestiario(), best = y.best || {}, elite = y.bestR || {};
+  const { n } = cuentaBestiario(y);
+  let h = `<div class="vv-p" style="margin:0 0 10px;padding:8px;border-radius:8px;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.35)">`
+    + `<div style="text-align:center;margin-bottom:6px">📖 <b>Bestiario</b> · <b style="color:var(--oro)">${n} de ${lista.length}</b> cazados</div>`
+    + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px">';
+  for (const k of lista) {
+    const m = MONSTRUOS[k], c = best[k] || 0, el = !!elite[k];
+    const sig = BESTIARIO_HITOS.find(x => x > c), i = BESTIARIO_HITOS.indexOf(sig);
+    const hechos = BESTIARIO_HITOS.filter(x => x <= c).length;
+    const estr = `<span style="color:var(--oro);letter-spacing:1px">${'★'.repeat(hechos)}${'☆'.repeat(BESTIARIO_HITOS.length - hechos)}</span>`;
+    const borde = el ? 'border:2px solid var(--oro)' : c > 0 ? 'border:1px solid rgba(255,216,74,.4)' : 'border:1px dashed rgba(255,255,255,.2)';
+    if (c > 0) {
+      const lore = c >= 25 && LORE_MONSTRUOS && LORE_MONSTRUOS[k] ? `<div class="vv-dim" style="font-size:10px;font-style:italic;margin-top:3px;line-height:1.25">${esc(LORE_MONSTRUOS[k])}</div>` : '';
+      h += `<div style="min-height:44px;padding:6px;border-radius:8px;background:rgba(255,216,74,.08);${borde};font-size:12px"><b>${esc(m.nombre)}</b><br>`
+        + `<span class="vv-dim">${sig ? fmt(c) + ' / ' + fmt(sig) : fmt(c) + ' · ✓'}</span> ${estr}`
+        + (sig ? `<div class="vv-dim" style="font-size:10px">Premio: ${fmt(premioBestiario(m.nivel, i))} oro</div>` : '')
+        + (el ? '<div style="font-size:11px;color:var(--oro)">★ élite vencido</div>' : '') + lore + '</div>';
+    } else {
+      const z = Object.entries(MAPAS).find(([, mp]) => mp.monstruos && mp.monstruos.includes(k));
+      const zona = z ? (z[1].nombre || z[0]) : '???';
+      h += `<div class="vv-dim" style="min-height:44px;padding:6px;border-radius:8px;background:rgba(255,255,255,.04);${borde};font-size:12px">??? ${estr}<br><span style="font-size:11px">vive en ${esc(zona)} · Nv ${m.nivel}</span>${el ? '<div style="font-size:11px;color:var(--oro)">★ élite vencido</div>' : ''}</div>`;
+    }
+  }
+  return h + '</div><div class="vv-dim" style="text-align:center;font-size:11px;margin:6px 0">Hitos de ' + BESTIARIO_HITOS.join(', ') + ' cazas con premio de oro. A las 25 conoces su historia.</div>'
+    + btn('📤 Compartir mi bestiario', 'compartirBestiario', {}, 'sec vv-full') + '</div>';
+}
 function pintarLogros() {
   const y = H.yo(); if (!y) return;
   const id = IDS.logros;
@@ -887,6 +933,7 @@ function pintarLogros() {
   if (sig) h += `<div class="vv-p" style="text-align:center;margin:-4px 0 10px;padding:6px 8px;border-radius:8px;background:rgba(255,216,74,.10);border:1px solid rgba(255,216,74,.35)">🎯 Siguiente: <b style="color:var(--oro)">${esc(sig.L.titulo)}</b> ${fmt(sig.p[0])}/${fmt(sig.p[1])}${sig.L.oro ? ' · +' + fmt(sig.L.oro) + ' oro' : ''}</div>`;
   if (y.titulo) h += btn('Quitar título', 'titulo', { id: '' }, 'sec vv-full') + '<div style="height:8px"></div>';
   h += libretaPesca(y);
+  h += libretaBestiario(y);
   const lista = LOGROS.filter(L => est.logros === 'todos' || (est.logros === 'hechos') === tienen.includes(L.id));
   if (!lista.length) h += `<p class="vv-vacio">${est.logros === 'hechos' ? 'Aún no tienes logros: caza, vence jefes y explora para conseguirlos.' : '¡Los tienes todos!'}</p>`;
   h += '<div class="vv-lista">';
@@ -1203,6 +1250,18 @@ const ACC = {
   },
   equipar: b => { H.sfx('boton', 0.3); H.mandar({ t: 'equipar', k: b.dataset.k, id: b.dataset.id }); },
   probarSkin: b => { if (!H.probarSkin || !SKINS[b.dataset.id]) return; H.sfx('boton', 0.2); H.probarSkin(b.dataset.id); },
+  // Solo al tocar el boton: abre el selector de chats (Telegram) o la hoja de compartir; nunca envia nada solo.
+  compartirBestiario: () => {
+    const c = cuentaBestiario(H.yo()); H.sfx('boton', 0.3);
+    const tg = window.Telegram && window.Telegram.WebApp;
+    const enTG = !!(tg && tg.initData && tg.openTelegramLink);
+    const url = enTG ? 'https://t.me/duendequest_bot' : location.origin + '/jugar/?utm_source=share&s=bestiario&de=3d';
+    const txt = `Llevo ${c.n}/${c.t} monstruos y ${c.p}/${c.q} peces en Duende Quest 🧌 ¡Únete!`;
+    try { if (enTG) { tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(txt)); return; } } catch (e) {}
+    const copiar = () => { try { navigator.clipboard.writeText(txt + ' ' + url).then(() => H.aviso('Copiado', 'ok'), () => H.aviso('No se pudo copiar: cópialo a mano.', 'err')); } catch (e) { H.aviso('No se pudo copiar: cópialo a mano.', 'err'); } };
+    if (navigator.share) navigator.share({ text: txt, url }).catch(e => { if (!e || e.name !== 'AbortError') copiar(); });
+    else copiar();
+  },
   'ir-tienda': b => { abrirTienda(b.dataset.id, undefined, 'oro'); },
   // «Te faltan N de oro»: a la tienda premium con el paquete justo resaltado.
   'ir-tienda-foco': b => { H.sfx('boton', 0.2); abrirTienda('premium', b.dataset.id || '', 'falta'); },

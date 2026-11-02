@@ -190,7 +190,8 @@ export const Mundo3D = {
       case 'comprar': return this.comprar(s, m);   // cercaDelMercader() sabe del 3D
       case 'ignorar': return this.ignorar(s, m);
       case 'reportar': return this.reportar(s, m);
-      case 'gesto': return this.gesto(s, m);   // social.js: s.k es la clave 3D, llega a todos los de ORIGINS (espera 1,5 s)
+      case 'gesto': return this.gesto(s, m);   // social.js: tu grupo y los que están a menos de 60 m (espera 1,5 s)
+      case 'marca': return this.marca(s, m);   // social.js: 📍 pilar de luz para tu grupo y los cercanos (espera 3 s)
       case 'chat':
         // Moderadores: /jefe invoca al jefe mundial del 3D.
         if (String(m.m || '').trim() === '/jefe' && this.esDios(s)) return this.dios(s, { a: 'mundial3' });
@@ -418,6 +419,7 @@ export const Mundo3D = {
     if (o.au.oveja) this.quitarAuraMon(o, 'oveja');
     if (s) {
       o.dano.set(s.id, (o.dano.get(s.id) || 0) + dmg);
+      if (o.ex3 && o.ex3.ladron && dmg > 0 && this.golpeLadron3d) this.golpeLadron3d(o, s);   // Duende Ladron: cada golpe suelta oro (eventos3d.js)
       const cl = CLASES[s.c.clase];
       o.amen.set(s.id, (o.amen.get(s.id) || 0) + dmg * (cl ? cl.amenaza : 1));
       s.combateT = Date.now();
@@ -1246,7 +1248,7 @@ export const Mundo3D = {
       this.aCerca3d(o, { t: 'expuesto', id: o.id, ms: 2000 });
       this.aCerca3d(o, { t: 'aviso', m: `¡FASE 2! ${MONSTRUOS[o.k].nombre} pisotea más seguido: ¡sal del rojo y pégale cuando esté expuesto!` });
     }
-    if (o.dormido) { o.st = 0; return; }   // el Guardian espera a que caiga la puerta
+    if (o.dormido) { if (!(o.ex3 && o.ex3.ladron)) o.st = 0; return; }   // el Guardian espera a que caiga la puerta (el Ladron se mueve en huirLadron3d)
     // Sorbo del Cantaro: lo cortan Patada, Zurrar, Contrahechizo, Silencio o un aturdimiento.
     if (o.sorbo) {
       // Pegarle fuerte (6 % de su vida mientras bebe) tambien le tira el cantaro: asi se corta a Nv 6-9.
@@ -1742,7 +1744,7 @@ export const Mundo3D = {
           const dm = dist(o, s.p);
           if (dm > VISTA_MON) continue;
           ve.add(o.id);
-          if (!s.vistos.has(o.id)) n.push({ id: o.id, k: o.k, nv: o.nv, x: r1(o.x), z: r1(o.z), hp: Math.ceil(o.hp), mx: o.max, j: o.jefe ? 1 : 0, mu: o.mundial3 || o.guardian ? 1 : undefined, ra: o.ex3 && o.ex3.nom ? o.ex3.nom : undefined, ti: o.ex3 && o.ex3.ti ? o.ex3.ti : undefined, af: o.ex3 && o.ex3.af ? o.ex3.af : undefined, iv: o.ex3 && o.ex3.ev ? 1 : undefined });
+          if (!s.vistos.has(o.id)) n.push({ id: o.id, k: o.k, nv: o.nv, x: r1(o.x), z: r1(o.z), hp: Math.ceil(o.hp), mx: o.max, j: o.jefe ? 1 : 0, mu: o.mundial3 || o.guardian ? 1 : undefined, ra: o.ex3 && o.ex3.nom ? o.ex3.nom : undefined, ti: o.ex3 && o.ex3.ti ? o.ex3.ti : undefined, af: o.ex3 && o.ex3.af ? o.ex3.af : undefined, iv: o.ex3 && o.ex3.ev ? 1 : undefined, la: o.ex3 && o.ex3.ladron ? 1 : undefined });
           else {
             // Lejanos tranquilos ya presentados: una foto si y otra no (repartidos por id).
             if (dm > 50 && o.obj !== s.id && !o.jefe && !o.muere && o.st !== 3 && ((o.id + par) & 1)) continue;

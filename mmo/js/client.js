@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=351';
-import { iniciarRegalo } from './regalo.js?v=351';
-import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=351';
+} from './data.js?v=352';
+import { iniciarRegalo } from './regalo.js?v=352';
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=352';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -152,7 +152,9 @@ function permisosTg(nv) {
 
 // Vibracion de Telegram en los momentos buenos (subir de nivel, logro,
 // ganar un duelo): en la mini app se nota en la mano, como un juego nativo.
-function vibrar(tipo) { if (TG && TG.HapticFeedback) try { TG.HapticFeedback.notificationOccurred(tipo || 'success'); } catch (e) {} }
+// Ajustes de ORIGINS -> Vibracion: 'off' la apaga tambien aqui.
+function vibOff() { try { return localStorage.getItem('dq3_vib') === 'off'; } catch (e) { return false; } }
+function vibrar(tipo) { if (vibOff()) return; if (TG && TG.HapticFeedback) try { TG.HapticFeedback.notificationOccurred(tipo || 'success'); } catch (e) {} }
 
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
 if (TACTIL) document.body.classList.add('tactil');
@@ -713,7 +715,7 @@ function recibir(m) {
           sfx('muerte', .45);
           pausaGolpe = Math.max(pausaGolpe, performance.now() + 50);
           sacudir = Math.max(sacudir || 0, 3);
-          if (TG && TG.HapticFeedback) vibrar('success'); else try { navigator.vibrate && navigator.vibrate(12); } catch (e) {}
+          if (TG && TG.HapticFeedback) vibrar('success'); else if (!vibOff()) try { navigator.vibrate && navigator.vibrate(12); } catch (e) {}
         } else if (cerca) sfx('muerte', .15);
       }
       if (o && MONSTRUOS[o.k] && MONSTRUOS[o.k].jefe) jefeVivo = null;
@@ -754,7 +756,8 @@ function recibir(m) {
         aviso('🎉 ¡Primer botín!' + (m.item ? ' ' + nombreItem(m.item) + (m.primero === 2 ? ' ya va equipado.' : m.item.vendido ? ' (bolsa llena: vendido).' : ' está en tu bolsa.') : ''), 'jefe');
         sfx('explosion', .3); sacudir = Math.max(sacudir, 6);
         for (let i = 0; i < 40; i++) particula(m.x, m.y, i % 2 ? '#ffe600' : '#c084fc', 5);
-        if (TG && TG.HapticFeedback) try { TG.HapticFeedback.notificationOccurred('success'); } catch (e) {}
+        if (vibOff()) {}
+        else if (TG && TG.HapticFeedback) try { TG.HapticFeedback.notificationOccurred('success'); } catch (e) {}
         else if (navigator.vibrate) try { navigator.vibrate([60, 40, 120]); } catch (e) {}
       }
       sfx('moneda', .3);
@@ -2501,7 +2504,7 @@ function pintarInspeccion(m) {
   }
   const pz = piezasConjunto(m.eq || {});
   for (const id in pz) if (pz[id] >= 2 && CONJUNTOS[id]) h += `<p style="font-size:12px;color:${CONJUNTOS[id].color};margin-top:4px">${esc(CONJUNTOS[id].nombre)}: ${pz[id]} piezas</p>`;
-  h += `<p style="font-size:12px;color:var(--txt2);margin-top:8px">🏆 ${m.logros} logros · 🏰 ${m.mazmorras} mazmorras${m.desafioMax ? ' · ⚡ Desafío +' + m.desafioMax : ''}${m.duelos ? ' · ⚔️ ' + m.duelos + ' duelos ganados' : ''}${m.torreMax ? ' · 🗼 piso ' + m.torreMax + ' de la Torre' : ''}${m.peces ? ' · 🎣 ' + m.peces + ' peces' : ''}</p>`;
+  h += `<p style="font-size:12px;color:var(--txt2);margin-top:8px">🏆 ${m.logros} logros · 🏰 ${m.mazmorras} mazmorras${m.desafioMax ? ' · ⚡ Desafío +' + m.desafioMax : ''}${m.duelos ? ' · ⚔️ ' + m.duelos + ' duelos ganados' : ''}${m.torreMax ? ' · 🗼 piso ' + m.torreMax + ' de la Torre' : ''}${m.peces ? ' · 🎣 ' + m.peces + ' peces' : ''}${(m.ayni | 0) > 0 ? ' · 🤝 Ayni ' + (m.ayni | 0) : ''}</p>`;
   const ru = m.runas || {};
   const txtRunas = Object.entries(RUNAS).filter(([k]) => ru[k]).map(([k, r]) => `${esc(r.nombre)} ${ru[k]}/${RUNA_MAX}`).join(' · ');
   if (txtRunas || m.titanes || m.pionero) h += `<p style="font-size:12px;color:var(--txt2);margin-top:4px">${txtRunas ? '✨ ' + txtRunas : ''}${m.titanes ? (txtRunas ? ' · ' : '') + '⚔️ Titán vencido ' + m.titanes + ' ' + (m.titanes === 1 ? 'vez' : 'veces') : ''}${m.pionero ? ' · 🌟 Pionero del Abismo' : ''}</p>`;
@@ -3335,7 +3338,7 @@ function pintarBestiario() {
     const n = best[k] || 0;
     const sig = BESTIARIO_HITOS.find(x => x > n);
     const i = BESTIARIO_HITOS.indexOf(sig);
-    const desc = n ? (sig ? `${n} / ${sig} · próximo premio: ${premioBestiario(m.nivel, i).toLocaleString('es', { useGrouping: 'always' })} oro` : `${n} · ✓ completo`) : `Sin cazar · Nv ${m.nivel}${m.jefe ? ' · jefe' : ''}`;
+    const desc = n ? (sig ? `${n} / ${sig} · próximo premio: ${premioBestiario(m.nivel, i).toLocaleString('es', { useGrouping: 'always' })} oro` : `${n} · ✓ completo`) : (z => `??? · ${z ? 'vive en ' + esc(z[1].nombre || z[0]) : 'sin cazar'} · Nv ${m.nivel}${m.jefe ? ' · jefe' : ''}`)(Object.entries(MAPAS).find(([, mp]) => mp.monstruos && mp.monstruos.includes(k)));
     h += tarjeta(n ? `<canvas data-best="${k}" width="52" height="52"></canvas>` : '<span style="font:700 22px var(--sans);color:var(--txt3)">?</span>', n ? esc(m.nombre) + ` <span style="color:var(--txt2)">Nv ${m.nivel}</span>` : '<span style="color:var(--txt3)">???</span>', desc,
       `<span class="precio" style="font-size:15px;letter-spacing:1px;color:${!sig && n ? 'var(--ok)' : 'var(--oro)'}">${'★'.repeat(BESTIARIO_HITOS.filter(x => x <= n).length)}${'☆'.repeat(BESTIARIO_HITOS.filter(x => x > n).length)}</span>`);
   }

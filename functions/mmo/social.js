@@ -14,7 +14,7 @@
 // Buscar grupo: te anuncias para una mazmorra (10 min) y quien tenga nivel
 // se une con un toque, sin esperar a que aceptes (el lider puede expulsar).
 // ═══════════════════════════════════════════════════════
-import { MAPAS, MAZMORRAS, BANDA_MAX, GESTOS } from '../../mmo/js/data.js';
+import { MAPAS, MAZMORRAS, BANDA_MAX, GESTOS, hoyUTC, statsMonstruo } from '../../mmo/js/data.js';
 import { CUEVA } from '../../mmo/js/cueva3d.js';
 
 export const GRUPO_MAX = 5;
@@ -76,6 +76,9 @@ export const IGNORADOS_MAX = 50;
 const REPORTE_CADA_MS = 60000;
 // No le llega a quien ignora al autor.
 export const meIgnora =(x, uid) => !!(x.c && x.c.ignorados && x.c.ignorados.includes(uid));
+// Cercanía para gestos y marcas: en el 3D (s.p) misma instancia y distancia al
+// cuadrado menor que d2; en el 2D (sin s.p) cuenta como cerca todo el mapa.
+const cercaSoc = (a, b, d2) => !(a.p && b.p) || ((a.i3 || 0) === (b.i3 || 0) && (a.p.x - b.p.x) ** 2 + (a.p.z - b.p.z) ** 2 < d2);
 
 export const Social = {
   iniciarSocial() {
@@ -167,6 +170,8 @@ export const Social = {
       if (i >= 0) r.splice(i, 1);
       r.unshift({ pub: pb, nombre: b.c.nombre, t: ahora });
       if (r.length > 10) r.length = 10;
+      // Ayni: el veterano (a) que caza junto a un novato (b, Nv 12 o menos, 5+ niveles menos) y ambos pegaron.
+      if (pego(a) && pego(b) && (a.c.nivel || 1) >= (b.c.nivel || 1) + 5 && (b.c.nivel || 1) <= 12) this.ayniCaza(a, b, o, ahora);
       if (a.gid || b.gid || novato(a) || novato(b) || !pego(a) || !pego(b)) continue;
       const co = a.coop || (a.coop = new Map());
       let e = co.get(b.c.uid);
@@ -182,6 +187,33 @@ export const Social = {
       // ofreceGrupo: el id de sesion (lo que pide invitar), como en las listas de amigos.
       this.enviar(a, { t: 'toast', ofreceGrupo: b.id, n: b.c.nombre, m: `🤝 Cazaste junto a ${b.c.nombre}. ¿Hacen grupo? (+exp compartida)` });
     }
+  },
+  // Ayni (ayuda mutua andina): premio al veterano que ayuda a un novato y un empujon de XP al novato.
+  // Una vez por pareja cada 10 min; el veterano cobra como mucho 10 al dia (dia de Lima). Solo oro del juego.
+  ayniCaza(a, b, o, ahora) {
+    const par = this.ayniPar || (this.ayniPar = new Map());
+    const clave = a.c.uid + '|' + b.c.uid;
+    if (ahora - (par.get(clave) || 0) < 10 * 60000) return;
+    par.set(clave, ahora);
+    if (par.size > 2000) for (const [k, t] of par) if (ahora - t >= 10 * 60000) par.delete(k);
+    const c = a.c, hoy = hoyUTC();
+    if (!c.ayniDia || c.ayniDia.d !== hoy) c.ayniDia = { d: hoy, n: 0 };
+    if (c.ayniDia.n < 10) {
+      c.ayniDia.n++;
+      c.ayni = (c.ayni || 0) + 1;
+      const oro = Math.max(1, (b.c.nivel || 1) * 2);
+      c.oro = (c.oro || 0) + oro;
+      a.sucio = true;
+      if (this.yoLuego) this.yoLuego(a, false);
+      this.enviar(a, { t: 'toast', ok: true, m: `🤝 Ayni +1: ayudaste a ${b.c.nombre} (+${oro} oro)` });
+    }
+    // Al novato: +10 % de la XP de esa presa (minimo 1).
+    let xp = 1;
+    try { xp = Math.max(1, Math.round(((o && o.k ? statsMonstruo(o.k, o.nv).xp : 0) || 0) * 0.1)); } catch (e) { xp = 1; }
+    const subio = this.sumarXp(b, xp);
+    b.sucio = true;
+    if (this.yoLuego) this.yoLuego(b, subio);
+    this.enviar(b, { t: 'toast', ok: true, m: `🤝 ${a.c.nombre} te echó una mano (+${xp} exp)` });
   },
 
   salirGrupo(s, motivo) {
@@ -605,8 +637,30 @@ export const Social = {
     s.gestoT = ahora;
     if (this.progresoFiesta) this.progresoFiesta(s, 'gesto', 1);   // calendario de la fiesta (tareas.js)
     // Como el chat: no le llega a quien ignora al autor.
+    // En ORIGINS solo lo ven tu grupo y los que están a menos de 60 m (en el 2D, todo el mapa).
     const txt = JSON.stringify({ t: 'gesto', p: s.id, id: m.id });
-    for (const x of this.sesiones.values()) if (x.c && x.k === s.k && !meIgnora(x, s.c.uid)) this.enviar(x, txt);
+    for (const x of this.sesiones.values()) if (x.c && x.k === s.k && !meIgnora(x, s.c.uid) && ((s.gid && x.gid === s.gid) || cercaSoc(x, s, 3600))) this.enviar(x, txt);
+  },
+
+  // ── MARCAS (📍 sin texto) ──
+  // Un pilar de luz en el suelo: «ataquen aquí», «recurso aquí», «vamos aquí» o
+  // «caí, ayuda». Solo tipos fijos y posiciones cerca del autor: nada de texto libre.
+  marca(s, m) {
+    const ahora = Date.now();
+    if (!s.c || !s.p || (ahora - (s.marcaT || 0) < 3000 && m && m.k !== 'caido')) return;
+    if (this.silenciado && this.silenciado(s)) return;
+    const k = m && typeof m.k === 'string' ? m.k : '';
+    if (!['ataque', 'recurso', 'ir', 'caido'].includes(k)) return;
+    // «Caí, ayuda» solo estando caído y como mucho 1 vez cada 15 s.
+    if (k === 'caido' && (!s.muerto || ahora - (s.ayudaT || 0) < 15000)) return;
+    const x = Number(m.x), z = Number(m.z);
+    if (!Number.isFinite(x) || !Number.isFinite(z) || (x - s.p.x) ** 2 + (z - s.p.z) ** 2 > 1600) return;
+    s.marcaT = ahora;
+    if (k === 'caido') s.ayudaT = ahora;
+    const r2 = k === 'caido' ? 3600 : 1600;
+    const txt = JSON.stringify({ t: 'marca', p: s.id, k, x: Math.round(x * 10) / 10, z: Math.round(z * 10) / 10 });
+    // Como el gesto: no le llega a quien ignora al autor.
+    for (const o of this.sesiones.values()) if (o.c && o.k === s.k && !meIgnora(o, s.c.uid) && ((s.gid && o.gid === s.gid) || cercaSoc(o, s, r2))) this.enviar(o, txt);
   },
 
   // ── INSPECCIONAR (como en WoW) ──
@@ -618,7 +672,7 @@ export const Social = {
     const c = t.c;
     this.enviar(s, { t: 'inspeccion', p: t.id, n: c.nombre, lv: c.nivel, cl: c.clase || '', es: c.espec || '', ti: this.textoTitulo ? this.textoTitulo(c) : '',
       eq: c.eq || {}, logros: (c.logros || []).length, mazmorras: c.mazmorras || 0, desafioMax: c.desafioMax || 0, duelos: c.duelosG || 0,
-      runas: c.runas || {}, titanes: c.titanes || 0, pionero: c.pionero ? 1 : 0, torreMax: c.torreMax || 0, peces: c.peces || 0,
+      runas: c.runas || {}, titanes: c.titanes || 0, pionero: c.pionero ? 1 : 0, torreMax: c.torreMax || 0, peces: c.peces || 0, ayni: c.ayni || 0,
       herm: this.nombreHermandad ? this.nombreHermandad(c.herm) : '' });
   },
 

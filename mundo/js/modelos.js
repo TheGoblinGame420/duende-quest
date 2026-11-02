@@ -19,7 +19,7 @@
 // piezas fijas de cada pivote se funden en una malla (fusionarRig): ~6-14 draw calls.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=351';
+import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=352';
 
 const PX_M = 34;                 // pixeles del 2D por metro
 const PI = Math.PI;
@@ -530,7 +530,8 @@ function animarRig(m, est, te, t) {
         if (pI) { pI.rotation.z += 0.02 * Math.sin(t * 0.9); pD.rotation.z += 0.02 * Math.sin(t * 0.9); }   // cambia el peso de pie
         if (m.tipo === 'npc') {
           // NPC del pueblo: mira a un lado y al otro (con pausas) y cada ~11 s saluda.
-          const mira = Math.sin(t * 0.33), pausa = Math.sign(mira) * Math.min(1, Math.abs(mira) * 2.2);
+          // Si ya mira a alguien (m.mirarK), deja el vaiven de lado para no pelear con el giro.
+          const mira = Math.sin(t * 0.33), pausa = (m.mirarK || 0) < 0.1 ? Math.sign(mira) * Math.min(1, Math.abs(mira) * 2.2) : 0;
           if (cb) { cb.rotation.y += pausa * 0.38; cb.rotation.x += Math.max(0, Math.sin(t * 0.21)) * 0.12; }
           if (cu) cu.rotation.y += pausa * 0.1;
           const kg = (t % 11) / 1.6;
@@ -655,6 +656,12 @@ function animarRig(m, est, te, t) {
         if (bI) { bI.rotation.x -= 0.6; bD.rotation.x -= 0.6; }
         if (cu) cu.scale.y *= 1 + 0.015 * Math.sin(t * 2.4);
       }
+      // Mirar al objetivo (v351): m.mirar = giro relativo (rad), m.mirarK = peso 0..1 ya suavizado.
+      if (m.mirarK && !muerto) {
+        const a = Math.max(-1, Math.min(1, m.mirar || 0)) * m.mirarK;
+        if (cb) cb.rotation.y += a * 0.7;
+        if (cu) cu.rotation.y += a * 0.3;
+      }
       break;
     }
     case 'cuadrupedo': {
@@ -674,7 +681,8 @@ function animarRig(m, est, te, t) {
       if (est === 'quieto' && cu) cu.scale.y *= 1 + 0.02 * Math.sin(t * 2.2);
       if (cb) cb.rotation.x += Math.sin(t * 1.3) * 0.05;
       // Quieto, olfatea y mira a los lados (con pausas, como un animal alerta).
-      if (est === 'quieto' && cb) { const mi = Math.sin(t * 0.45); cb.rotation.y += Math.sign(mi) * Math.min(1, Math.abs(mi) * 2) * 0.25; cb.rotation.x += Math.max(0, Math.sin(t * 7)) * 0.03 * (Math.sin(t * 0.6) > 0.6 ? 1 : 0); }
+      if (m.mirarK && cb && !muerto) cb.rotation.y += Math.max(-1, Math.min(1, m.mirar || 0)) * m.mirarK * 0.6;   // mira al objetivo
+      if (est === 'quieto' && cb && (m.mirarK || 0) < 0.1) { const mi = Math.sin(t * 0.45); cb.rotation.y += Math.sign(mi) * Math.min(1, Math.abs(mi) * 2) * 0.25; cb.rotation.x += Math.max(0, Math.sin(t * 7)) * 0.03 * (Math.sin(t * 0.6) > 0.6 ? 1 : 0); }
       if (ataca) {
         b.position.z += aA * 0.15 * A;
         if (cb) cb.rotation.x += aA * 0.35;

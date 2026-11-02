@@ -13,7 +13,7 @@
 import {
   MAPAS, CLASES, RECURSOS, habPorId, costoHab, costoCambioClase, GCD_MS, VARA, HOGAR_MS, HOGAR_CD_MS,
   ARMAS, SKINS, ATAQUE_CD_MS, ALCANCE_BASE, COMBO_MULT, multForja, FIS, FJ, FM,
-  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, MONTAR_MS, talento,
+  ESPECS, ESPEC_NIVEL, especDe, MONTURAS, MONTAR_MS, talento, hoyUTC,
 } from '../../mmo/js/data.js';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -625,6 +625,17 @@ export const Combate = {
     a.inv = Date.now() + 2000;
     a.golpeT = Date.now();
     this.aClave(a.k, { t: 'res', p: a.id, de: de ? de.c.nombre : '' });
+    // Ayni: quien levanta a otro jugador (sesion real, no la Torre ni uno mismo) suma +1, como mucho 5 al dia (Lima).
+    if (de && de.c && de.c.uid && a.c.uid && de.c.uid !== a.c.uid && this.sesiones.get(de.id) === de) {
+      const hoy = hoyUTC();
+      if (!de.c.resDia || de.c.resDia.d !== hoy) de.c.resDia = { d: hoy, n: 0 };
+      if (de.c.resDia.n < 5) {
+        de.c.resDia.n++;
+        de.c.ayni = (de.c.ayni || 0) + 1;
+        de.sucio = true;
+        this.enviar(de, { t: 'toast', ok: true, m: `🤝 Ayni +1: levantaste a ${a.c.nombre}` });
+      }
+    }
     this.reponerElixires(a);
     this.actualizarYo(a);
     this.guardar(a);

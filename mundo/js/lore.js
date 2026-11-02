@@ -30,6 +30,20 @@ export const LORE_NPC = {
   abuela: ['Pasa, hijito, pasa. Hay t\'anta wawa calientita para los que tienen hambre y para los que extrañan.', 'Cada pan lleva su carita. Así recordamos a los que ya no están con nosotros.', 'El 2 de noviembre ponemos la mesa con lo que les gustaba. Ellos vienen a visitar, ya verás.', '¡Esos goblins sinvergüenzas me robaron la hornada entera! Tráemelas, que se enfrían.', 'Mi t\'anta wawa sabe a anís y a canela. La receta me la dio mi mamá, y a ella la suya.', 'Con un pan de estos en la mochila, el camino se hace más corto. Eso dicen.', 'Después viene la Cosecha del Maíz Morado. Sin mazorcas no hay chicha, ni mazamorra, ni nada.'],
 };
 
+// Frases del PNJ segun lo que te pasa (fraseNpc en mundo.js las prefiere al azar normal).
+export const LORE_NPC_CTX = {
+  guia: {
+    lista: ['¡Ya está, causa! Entrégamela y cobra.', 'Esa misión ya la tienes lista. Dale a «Entregar» y llévate tu premio.', '¡Bien hecho! El pueblo te debe una. Cobra tranquilo.'],
+    noche: ['De noche los goblins salen más bravos. Ten tus pociones a la mano.', 'Ya oscureció, oe. Camina cerca de las linternas si vas solo.'],
+  },
+  mercader: {
+    sinPociones: ['¿Sin pociones? ¡Así no sales de aquí! Llévate unas cuantas.', 'Oye, tu bolsa está sin una sola poción. Grumo te arregla eso al toque.'],
+  },
+  artesana: {
+    conMateriales: ['¡Uy, qué buenos materiales traes! Déjame ver qué te fabrico.', 'Con eso que cargas ya podemos hacer algo bonito. Elige abajo.'],
+  },
+};
+
 // Al completar el encargo de explorar el hito de cada zona.
 export const LORE_HITOS = {
   noche: 'El Árbol de los Susurros te reconoce y murmura tu nombre.',

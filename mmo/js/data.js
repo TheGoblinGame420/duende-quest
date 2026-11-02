@@ -504,9 +504,18 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 351;
+export const VERSION = 352;
 
 export const NOVEDADES = [
+  { n: 120, fecha: '2 nov 2026', items: [
+    '🎥 En combate, la cámara deja al enemigo a la vista cuando estás quieto, y con jefes o peleas grandes se aleja para que veas todo.',
+    '🏮 De noche, los faroles del pueblo echan luz cálida en el suelo y tu duende lleva su farolito; nuevo ajuste «Brillo de noche».',
+    '📖 Álbum de monstruos en Logros con estrellas, historias y pistas; la primera caza de cada monstruo se celebra y cada zona tiene su Sello de Cazador.',
+    '💰 ¡Ojo con el Duende Ladrón! Cada golpe suelta monedas y si lo atrapas en 60 s ganas premio.',
+    '🤝 Ayni: ayudar a novatos o levantar a otro jugador da puntos y oro. Nuevo 📍 para marcar adónde ir y «🆘 Pedir ayuda» si caes.',
+    'Los monstruos dan un respingo al descubrirte, los personajes se inclinan al correr y giran la cabeza; flechas en el borde avisan de quién te persigue.',
+    'Los NPC hablan con su retrato y te dicen «¿Qué hago ahora?»; toca a otro jugador y «👀 Probar su look».',
+  ] },
   { n: 119, fecha: '2 nov 2026', items: [
     'El Bosque Nocturno es más justo para los que empiezan: hasta Nv 8 no hay tiradores y los compañeros del monstruo no te caen todos encima.',
     'Los élites ★ salen a tu medida y su aviso explica su afijo; contra los jefes, el aviso rojo llega solo a quien va a recibir el golpe.',
