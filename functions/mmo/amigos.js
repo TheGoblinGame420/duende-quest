@@ -108,7 +108,7 @@ export const Amigos = {
       c.refN5 = 1; s.sucio = true;
       c.pw = c.pw || {}; c.pw.pocion = Math.min(99, (c.pw.pocion || 0) + 3);
       const otro = this.porUid.get(c.invitadoPor);
-      this.enviar(s, { t: 'toast', ok: true, m: `🤝 ¡Nivel ${AMIGO_HITO}! Vas a mitad de camino: +3 pociones. A nivel ${AMIGO_NIVEL} ganan oro los dos${otro && otro.c ? ` (tú y ${otro.c.nombre})` : ''}.` });
+      this.enviar(s, { t: 'toast', ok: true, m: `🤝 ¡Nivel ${AMIGO_HITO}! Vas a mitad de camino: +3 pociones. A nivel ${AMIGO_NIVEL} ganan oro los dos${otro && otro.c ? ` (tú y ${otro.c.nombre})` : ''}.${String(c.uid || '').startsWith('inv:') ? ' Para que cobren los dos, guarda tu duende con Telegram o tu correo (gratis).' : ''}` });
       if (otro && otro.c && !otro.cerrado) this.enviar(otro, { t: 'toast', ok: true, m: `🤝 Tu invitado ${c.nombre} llegó a nivel ${AMIGO_HITO}. A nivel ${AMIGO_NIVEL} ganan los dos: ¡ayúdalo en grupo (+25% de XP para él)!` });
       this.actualizarYo(s);
     }
@@ -137,8 +137,9 @@ export const Amigos = {
     const { s: otro, c: co } = await this.pjDe(c.invitadoPor);
     if (!co) return;
     co.amigos = (co.amigos || 0) + 1;
+    let prO = null;
     if (co.amigos <= AMIGOS_MAX) {
-      const prO = premioAmigo(co.nivel);
+      prO = premioAmigo(Math.max(co.nivel, AMIGO_NIVEL));
       co.oro += prO.oro;
       // Al quinto amigo, una montura de regalo (si no la tenia ya).
       co.monturas = co.monturas || [];
@@ -146,7 +147,7 @@ export const Amigos = {
     }
     if (otro) { this.revisarLogros(otro); this.actualizarYo(otro); await this.guardar(otro); }
     else await this.state.storage.put('c:' + c.invitadoPor, co);
-    const txtA = `🤝 ¡Tu amigo ${c.nombre} llegó a nivel ${AMIGO_NIVEL} en DUENDE QUEST ONLINE! Ganaste oro${co.amigos === 5 ? ' y el Conejo Saltarín de montura' : ''}. Amigos invitados: ${co.amigos}.`;
+    const txtA = `🤝 ¡Tu amigo ${c.nombre} llegó a nivel ${AMIGO_NIVEL} en DUENDE QUEST ONLINE! ${prO ? 'Ganaste +' + prO.oro.toLocaleString('es', { useGrouping: 'always' }) + ' de oro' : 'Ya alcanzaste el tope de premios por invitar'}${co.amigos === 5 ? ' y el Conejo Saltarín de montura' : ''}. Amigos invitados: ${co.amigos}.`;
     if (otro) this.enviar(otro, { t: 'toast', m: txtA, ok: true });
     else if (this.buzonAgregar) await this.buzonAgregar(c.invitadoPor, txtA, true);   // "Mientras no estabas"
     if (await this.quiereAvisos(c.invitadoPor)) { try { await this.tgEnviar('sendMessage', { chat_id: c.invitadoPor.slice(3), text: txtA }); } catch (e) {} }

@@ -31,7 +31,9 @@ export const ABISMO = {
   ],
   // Campamentos de elite: [isla, monstruo, cantidad]
   campos: [[3, 'caballero_negro', 2], [4, 'hechicero_corte', 2], [5, 'esqueleto_capa', 2], [6, 'guardia_real', 3],
-    [11, 'murcielago', 2], [12, 'hellgato', 2], [7, 'esqueleto_real', 2], [10, 'esqueleto_real', 2]],
+    [11, 'murcielago', 2], [12, 'hellgato', 2],
+    // Islas pequeñas junto a cada bastión: para Nv 20-30 (Ghoul Nv 22, Samurái Nv 25).
+    [7, 'ghoul_ardiente', 2], [8, 'goblin_samurai', 2], [9, 'goblin_samurai', 2], [10, 'ghoul_ardiente', 2]],
 };
 // Rangos por Puntos del Abismo (PA): se ganan abatiendo a la otra faccion y a
 // los elites de las islas; morir a manos del enemigo cuesta algunos.

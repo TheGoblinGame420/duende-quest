@@ -23,7 +23,7 @@ import {
   pagoLocalActivo, textoSoles, YAPE_VIGENCIA_MS, premioDiaria, MISIONES,
   ORO_POR_USD, STAR_TIENDA_USD, PEN_POR_USD,
   temporadaDe, TEMPORADAS,
-} from '/mmo/js/data.js?v=346';
+} from '/mmo/js/data.js?v=347';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -551,7 +551,7 @@ function htmlClases(y) {
 }
 
 // ═══════════════════ MERCADER ═══════════════════
-const TABS_TIENDA = [['pw', 'PODERES'], ['arma', 'ARMAS'], ['forja', 'FORJA'], ['skin', 'SKINS'], ['montura', 'MONTURAS'], ['alas', 'ALAS'], ['tinte', 'COLORES'], ['mascota', 'MASCOTAS'], ['ambulante', 'AMBULANTE'], ['premium', '💎 PAQUETES']];
+const TABS_TIENDA = [['pw', 'PODERES'], ['premium', '💎 PAQUETES'], ['arma', 'ARMAS'], ['forja', 'FORJA'], ['skin', 'SKINS'], ['montura', 'MONTURAS'], ['alas', 'ALAS'], ['tinte', 'COLORES'], ['mascota', 'MASCOTAS'], ['ambulante', 'AMBULANTE']];
 const esTg = () => (H && typeof H.telegram === 'function' ? !!H.telegram() : !!TG());
 // Modo anuncio (js/origen.js): quien llega de Meta no ve pagos SOL/$DUENDE ni mTON (solo se ocultan).
 const anuncio = () => { try { return !!(window.dqAnuncio && window.dqAnuncio()); } catch (e) { return false; } };
@@ -662,7 +662,7 @@ function htmlAlas(y) {
 // Botones de pago con dinero (Stars en Telegram; en la web Stars, SOL o $DUENDE).
 // Stars desde la web: el servidor crea la factura y se paga en Telegram (movil: enlace; PC: QR).
 function botonesPago(y, pid, usd, principal) {
-  if (!(y.p2e && y.p2e.cuenta)) return btn('Crear cuenta / Entrar', 'cuenta', { id: pid }, 'sec');
+  if (!(y.p2e && y.p2e.cuenta)) return btn(principal ? '🛒 Comprar (cuenta gratis)' : '💳 Con dinero · cuenta gratis', 'cuenta', { id: pid }, 'sec');
   if (esTg()) return btn(`${estrellasDe(usd)} Stars`, 'premium', { id: pid, metodo: 'stars' }, principal ? '' : 'sec');
   // Yape / Plin (PAGO_LOCAL con el numero del dueño): principal en soles; lo demas, plegado.
   const pqL = pagoLocalActivo() && PAQUETES.find(p => p.id === pid);
@@ -672,7 +672,7 @@ function botonesPago(y, pid, usd, principal) {
     return btn(`Yape / Plin ${textoSoles(pqL.pen)}`, 'premium', { id: pid, metodo: 'yape' }, principal ? '' : 'sec')
       + `<details style="font-size:12px;margin-top:4px"><summary style="cursor:pointer;opacity:.75">Otros métodos</summary>${otros}</details>`;
   }
-  const bStars = btn(principal ? (anuncio() ? `⭐ Pagar ${estrellasDe(usd)} Stars (tarjeta en Telegram)` : '⭐ Pagar con Stars (tarjeta en Telegram)') :`⭐ ${estrellasDe(usd)} Stars`, 'premium', { id: pid, metodo: 'stars' }, principal && anuncio() ? '' : 'sec');
+  const bStars = btn(principal ? (anuncio() ? `⭐ Pagar ${estrellasDe(usd)} Stars (tarjeta en Telegram)` : `⭐ ${estrellasDe(usd)} Stars ≈ ${solesDeStars(estrellasDe(usd))}`) :`⭐ ${estrellasDe(usd)} Stars`, 'premium', { id: pid, metodo: 'stars' }, principal && anuncio() ? '' : 'sec');
   if (anuncio()) return bStars;
   return btn(principal ? 'Pagar con Solana (cripto)' : `~US$${usd} en Solana`, 'premium', { id: pid, metodo: 'sol' }, principal ? '' : 'sec') + bStars + btn('$DUENDE −10%', 'premium', { id: pid, metodo: 'duende' }, 'sec');
 }
@@ -741,6 +741,7 @@ function htmlPremium(y) {
   // Lo elegido va primero; luego por grupos con subtitulo.
   // El Pack de bienvenida (SOLO 1 VEZ) sale solo mientras el servidor diga que aun puedes.
   const lista = ordenTienda(PAQUETES.filter(p => !p.unaVez || y.puedeBienvenida), est.foco);
+  if (!cuenta) h += '<p class="vv-dim" style="margin:0 0 8px;font-size:12px">Para comprar con dinero crea tu cuenta gratis con tu correo (1 min). Tu duende se queda contigo.</p>';
   // Con Yape / Plin en la web, el precio en soles es el de verdad (redondo, pq.pen).
   // En Telegram, los soles son los de las Stars (Telegram las vende a ~US$0,02 c/u).
   const precio = (usd, pen) => !cuentaTg && pen && pagoLocalActivo() ? textoSoles(pen) + ' · ≈ US$' + usd : cuentaTg || anuncio() ? estrellasDe(usd) + ' ⭐ · ≈ ' + solesDeStars(estrellasDe(usd)) : 'US$' + usd + ' · ≈ ' + precioLocal(usd);
@@ -752,8 +753,13 @@ function htmlPremium(y) {
     const sk = pq.skin && SKINS[pq.skin];
     let acc;
     if (pq.skin && (y.skins || []).includes(pq.skin)) acc = etq('✓ Ya la tienes', 'vv-ok');
-    else if (!cuenta) acc = etq(precio(pq.usd, pq.pen)) + btn('Crear cuenta / Entrar', 'cuenta', { id: pq.id }, 'sec');
-    else acc = etq(precio(pq.usd, pq.pen), 'vv-ok') + botonesPago(y, pq.id, pq.usd, true);
+    else if (!cuenta) acc = etq(precio(pq.usd, pq.pen)) + btn('🛒 Comprar (cuenta gratis)', 'cuenta', { id: pq.id }, 'sec');
+    else acc = etq(precio(pq.usd, pq.pen), 'vv-ok')
+      // Precio en dolares en la web: que vea tambien cuanto sale con Stars antes de pagar.
+      + (!cuentaTg && !anuncio() && !(pq.pen && pagoLocalActivo()) ? `<div class="vv-dim" style="font-size:11px">Con Stars: ${estrellasDe(pq.usd)} ⭐ ≈ ${solesDeStars(estrellasDe(pq.usd))}</div>` : '')
+      + botonesPago(y, pq.id, pq.usd, true);
+    // Probador 3D (ORIGINS): la skin del paquete se prueba igual que en SKINS.
+    if (sk && !(y.skins || []).includes(pq.skin) && H && H.probarSkin) acc += btn('👀 Probar', 'probarSkin', { id: pq.skin }, 'sec');
     const ico = sk ? icoSkin(pq.skin, sk) : icoEquipo(pq.icono);
     const nom = (sk && sk.premium ? `<span style="color:${sk.color}">${esc(pq.nombre)}</span>` : esc(pq.nombre))
       + (pq.etiqueta ? ` <span style="font-size:10px;padding:1px 5px;border-radius:6px;background:#22c55e;color:#000;white-space:nowrap">${esc(pq.etiqueta)}</span>` : '');

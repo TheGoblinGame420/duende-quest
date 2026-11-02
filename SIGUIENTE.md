@@ -3438,3 +3438,18 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Controles: tocar al monstruo pega, clic mantenido en PC, habilidades con touchstart, `atkMantener` que no se queda pegado.
 - T'anta Wawa en la recompensa diaria y en la portada. Presumir del jefe con foto real.
 - Arnés 905 bien (prueba del spawn ajustada al novato).
+
+### Ronda 16 (2-nov-2026, `?v=347`)
+
+- 30 evaluadores → 136 problemas → 10 tareas.
+- Oferta «Avísame por Telegram»: fuera de combate, tras 3 cazas y el primer minuto, 30 s después de otra ventana automática, no en navegadores internos; espera hasta 10 min. HUD con la zona segura de Telegram (`zonas()` al arrancar y `fullscreenFailed`).
+- social.js: groserías peruanas, `groseriaDisfrazada` (leet y letras sueltas), `RE_CONTACTO2` (edad, fotos, redes, colegio, distrito, celular).
+- Referidos: el que invita cobra al menos el premio completo; aviso a Nv 5 para guardar el duende.
+- Bot: respuesta con botón Jugar a texto libre o comandos desconocidos.
+- Tienda: Stars y soles antes de pagar, PAQUETES 2.ª pestaña, probar skins premium, explicación de la cuenta.
+- NPC con rótulo de función; Mercader con oro, explicación de poderes y botones apagados sin oro.
+- Cueva de los Goblins anunciada a Nv 5; «qué se abre después»; la cueva cuenta para la tarea de mazmorra.
+- Servidor 3D: monstruos lejanos a media frecuencia y muertes solo a cercanos (menos datos).
+- CLASSIC: giro hacia el monstruo al golpear, vara al más cercano.
+- Abismo: islas con monstruos Nv 20-30; Rey Goblin vencible en solitario y más duro en grupo.
+- Arnés 905 bien.

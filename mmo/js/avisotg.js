@@ -10,7 +10,7 @@
 // Uso:
 //   const A = iniciarAvisoTg({ mandar, ocupado, aviso, tg });
 //   en 'avisoTg': A.alOferta(m)   en 'avisoTgOk': A.alOk(m)
-// ocupado(): true mientras haya otra ventana (la oferta espera, 90 s como mucho).
+// ocupado(): true mientras haya otra ventana (la oferta espera, 10 min como mucho).
 // tg: el Telegram.WebApp si se juega dentro de Telegram (abre el enlace con el).
 
 const CLAVE_NO = 'dq_avtg_no';            // "Ahora no": no se vuelve a ofrecer en 7 dias
@@ -101,12 +101,14 @@ export function iniciarAvisoTg(H) {
   return {
     alOferta(m) {
       if (!m || !/^https:\/\/t\.me\/duendequest_bot\?start=av_[a-z0-9]{10}$/.test(m.url || '')) return;
+      // Navegador de Facebook/Instagram/TikTok (llegan por anuncios): no sacarlo hacia t.me si no lo pidio.
+      if (!m.pedido && !(H && H.tg) && /FBAN|FBAV|FB_IAB|Instagram|Messenger|TikTok|BytedanceWebview/i.test(navigator.userAgent || '')) return;
       // Ofrecida sola (no pedida): respeta el "Ahora no" de esta semana.
       if (!m.pedido && Date.now() - leerNo() < PAUSA_NO) return;
       if (!m.pedido && m.ya) return;
       oferta = { url: m.url, oro: Number(m.oro) || 0, hasta: Date.now() + (Number(m.ms) || 600000) };
       if (abierto) { pintar('oferta'); return; }
-      esperaHasta = Date.now() + 90000;
+      esperaHasta = Date.now() + 600000;   // espera a que termine la pelea; si el codigo caduca, el boton pide otro (avisoTgCod)
       if (espera) clearTimeout(espera);
       // Un respiro: llega junto al cofre diario o al premio de la mision.
       espera = setTimeout(intentar, 2500);

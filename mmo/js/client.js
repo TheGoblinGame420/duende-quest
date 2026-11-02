@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=346';
-import { iniciarRegalo } from './regalo.js?v=346';
-import { iniciarAvisoTg } from './avisotg.js?v=346';
+} from './data.js?v=347';
+import { iniciarRegalo } from './regalo.js?v=347';
+import { iniciarAvisoTg } from './avisotg.js?v=347';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -1283,8 +1283,18 @@ function atacar() {
   if (cl && cl.basico === 'vara') {
     // Magos y sacerdotes: disparo de vara al objetivo (o al mas cercano).
     if (castYo) return;
-    const o = enemigoParaUsar(VARA.rango);
-    if (!o) { errorRojo('No hay ningún enemigo al alcance de tu vara.'); P.atkCdHasta = ahora + 400; return; }
+    // Si el objetivo marcado quedo lejos, se suelta y se busca el mas cercano:
+    // antes la vara "fallaba" con un goblin pegado por apuntar al de lejos.
+    let o = enemigoParaUsar(VARA.rango);
+    if (o && !esRival(o) && distMon(o) > VARA.rango) {
+      const marcado = objetivo; objetivo = null; o = enemigoParaUsar(VARA.rango);
+      if (!o) objetivo = marcado;   // sin nadie cerca, no se pierde el objetivo elegido
+    }
+    if (!o) {
+      // Un solo aviso por pulsacion: mantener ATACAR no pita sin parar.
+      if (!errVaraMostrado) { errVaraMostrado = true; errorRojo('No hay ningún enemigo al alcance de tu vara.'); }
+      P.atkCdHasta = ahora + 400; return;
+    }
     P.atkCdHasta = ahora + VARA.cdMs * arma.cd;
     P.atk = 10; P.f = o.x >= P.x ? 1 : -1;
     enviarPos(true);
@@ -1295,6 +1305,18 @@ function atacar() {
   P.comboT = 40;
   P.atk = 14;
   P.atkCdHasta = ahora + ATAQUE_CD_MS * arma.cd;
+  const alcance = ALCANCE_BASE[P.paso] * arma.alcance;
+  const alto = 72 * (yo.arma === 'odachi' ? 1.4 : 1);
+  // Girar hacia el monstruo: si delante no hay nada pero detras si (o el
+  // objetivo marcado esta pegado a tu espalda), el golpe sale hacia atras.
+  const hayEnCaja = f => {
+    const a = f > 0 ? P.x - 8 : P.x - 8 - alcance, b = f > 0 ? P.x + 8 + alcance : P.x + 8;
+    for (const m of mons.values()) if (!m.muereT && m.x + m.w / 2 >= a && m.x - m.w / 2 <= b && m.y >= P.y - alto && m.y - m.h <= P.y + 8) return true;
+    const riv = rivalDuelo();
+    return !!riv && riv.x >= a - 10 && riv.x <= b + 10 && Math.abs(riv.y - P.y) < alto;
+  };
+  const mo = monObjetivo();
+  if (!hayEnCaja(P.f) && (hayEnCaja(-P.f) || (mo && !mo.muereT && (mo.x - P.x) * P.f < 0 && distMon(mo) < alcance + 16))) P.f = -P.f;
   enviarPos(true);   // la posicion va por cambios: que el servidor mida el golpe desde donde estas
   mandar({ t: 'atk', s: P.paso });
   const tipo = ['corte_h', 'corte_arriba', 'corte_giro'][P.paso];
@@ -1305,8 +1327,6 @@ function atacar() {
   // misma caja de golpe que usa el servidor; los numeros de daño llegan con
   // su respuesta. Antes todo esperaba el viaje de ida y vuelta (100-300 ms
   // en movil) y cada golpe se sentia con retraso.
-  const alcance = ALCANCE_BASE[P.paso] * arma.alcance;
-  const alto = 72 * (yo.arma === 'odachi' ? 1.4 : 1);
   const x0 = P.f > 0 ? P.x - 8 : P.x - 8 - alcance, x1 = P.f > 0 ? P.x + 8 + alcance : P.x + 8;
   let acierta = false;
   for (const o of mons.values()) {
@@ -1520,7 +1540,7 @@ addEventListener('keydown', e => {
   // saltaba o avanzaba por el pueblo acababa metido en una mazmorra sin
   // querer. Para entrar se usa E (o el boton de interactuar).
   if (['Space', 'ArrowUp', 'KeyW'].includes(e.code)) { e.preventDefault(); saltar(); }
-  if (e.code === 'KeyZ' || e.code === 'KeyJ') atacar();
+  if (e.code === 'KeyZ' || e.code === 'KeyJ') { if (!e.repeat) errVaraMostrado = false; atacar(); }
   if (e.code === 'KeyX' || e.code === 'KeyK' || e.code === 'ShiftLeft') dash();
   if (e.code === 'KeyE') interactuar();
   if (e.code === 'KeyI') abrirInventario();
@@ -1606,7 +1626,8 @@ let atkRepetir = null;
 // Con dos dedos sobre ATACAR llegaban dos touchstart: el primer intervalo quedaba
 // huerfano (solo se borraba el ultimo) y el duende atacaba solo hasta recargar.
 // Antes de crear uno se quita el anterior; al perder el foco o minimizar (Telegram) tambien se para.
-const pararAtkRepetir = () => { clearInterval(atkRepetir); atkRepetir = null; };
+let errVaraMostrado = false;   // aviso de vara sin blanco: uno por pulsacion
+const pararAtkRepetir = () => { clearInterval(atkRepetir); atkRepetir = null; errVaraMostrado = false; };
 botonTactil('t-atk', () => { pararAtkRepetir(); atacar(); atkRepetir = setInterval(atacar, 120); }, pararAtkRepetir);
 const soltarAtk = () => { if (atkRepetir) { pararAtkRepetir(); $('t-atk').classList.remove('on'); } };
 addEventListener('blur', soltarAtk);

@@ -1113,7 +1113,9 @@ async function onRequestPost(context) {
         try { r = await mmoInterno(context.env, 'avisos', { tgId: String(user.id), on: false }); } catch (e) {}
         if (r && r.ok) {
           // Se quita el boton del aviso para que no quede algo que ya no hace nada.
-          await tg(token, 'editMessageReplyMarkup', { chat_id: chatId, message_id: messageId, reply_markup: { inline_keyboard: [[{ text: '🌍 Volver al mundo', web_app: { url: MMO_URL } }]] } }).catch(() => {});
+          // Se conserva la primera fila del aviso original (puede apuntar a ORIGINS o a CLASSIC).
+          const fila = ((body.callback_query.message || {}).reply_markup || {}).inline_keyboard?.[0];
+          await tg(token, 'editMessageReplyMarkup', { chat_id: chatId, message_id: messageId, reply_markup: { inline_keyboard: fila && !fila.some(b => b && b.callback_data === 'mmoavisos:off') ? [fila] : [] } }).catch(() => {});
         }
         await tg(token, 'sendMessage', { chat_id: chatId, text: r && r.ok ? '🔕 Listo: no te mandaremos más avisos para volver al juego.\n\nSi cambias de idea: /avisos on' : '❌ No se pudo guardar ahora. Prueba otra vez o escribe /avisos off' });
         return new Response('OK');
@@ -1212,6 +1214,14 @@ async function onRequestPost(context) {
           await tg(token, 'sendMessage', { chat_id: chatId, text: ok ? '✅ Publicado en Discord' : '❌ No se pudo publicar (¿webhook configurado?)' });
           break;
         }
+        default:
+          // Texto libre ('hola', 'no carga') o comando desconocido: solo en chat privado
+          // y solo a quien acaba de escribir, para que el bot no parezca muerto.
+          // En grupos calla. Sin precios ni cripto (eso solo con /price y /buy).
+          if (msg.chat && msg.chat.type === 'private' && text && !(user && user.is_bot)) {
+            await tg(token, 'sendMessage', { chat_id: chatId, text: '🧌 Soy el bot de DUENDE QUEST. Toca «Jugar gratis» para entrar (sin descargas). Todos los comandos: /help', reply_markup: { inline_keyboard: [[{ text: '🎮 Jugar gratis (3D)', web_app: { url: MUNDO_URL } }], [{ text: '🌍 CLASSIC (2D)', web_app: { url: MMO_URL } }], BOTON_SEGURIDAD] } });
+          }
+          break;
       }
     }
 

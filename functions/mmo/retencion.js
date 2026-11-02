@@ -35,7 +35,7 @@
 // evento avisado); off y bloq se respetan siempre.
 // ═══════════════════════════════════════════════════════
 
-import { xpParaSubir, premioDiaria, premioMazmorraDia, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, HABS, CLASES, NIVEL_MAX, DIARIA, horaFelizActiva, TORRE, semanaUTC, temporadaDe, TEMPORADAS, SKINS, precioOro, GESTA_UMBRALES, GESTA_NOMBRES, DIA_DESFASE_MS } from '../../mmo/js/data.js';
+import { xpParaSubir, premioDiaria, premioMazmorraDia, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, HABS, CLASES, NIVEL_MAX, DIARIA, horaFelizActiva, TORRE, semanaUTC, temporadaDe, TEMPORADAS, SKINS, precioOro, GESTA_UMBRALES, GESTA_NOMBRES, DIA_DESFASE_MS, hoyUTC } from '../../mmo/js/data.js';
 import { getEnv, tg } from '../api/lib.js';
 import { MMO_URL, MUNDO_URL } from '../api/telegram-bot.js';
 import { metaEvento } from './meta.js';
@@ -920,7 +920,11 @@ export const Retencion = {
       const falta = faltaSk;
       add('col', falta > 0 ? `👕 Te faltan ${fmt(falta)} de oro para la skin «${SKINS[sk.id].nombre}».` : `👕 ¡Ya te alcanza el oro para la skin «${SKINS[sk.id].nombre}»! Está en la tienda.`);
     }
-    if (c.nivel >= NIVEL_MAZMORRA) {
+    if (c.en3d) {
+      // ORIGINS no tiene la mazmorra 2D: se le recuerda la Cueva de los Goblins (Nv 5+, 3 cofres epicos al dia; cueva3d.js c.cuevaDia).
+      const hechas = c.cuevaDia && c.cuevaDia.d === hoyUTC() ? c.cuevaDia.n : 0;
+      if (c.nivel >= 5 && hechas < 3) add('mazm', '⛏ Te quedan ' + (3 - hechas) + ' cofres épicos hoy en la Cueva de los Goblins (portal del pueblo).');
+    } else if (c.nivel >= NIVEL_MAZMORRA) {
       const pr = premioMazmorraDia(c.nivel);
       add('mazm', `🏰 El premio diario de mazmorra está disponible: +${fmt(pr.xp)} XP, +${fmt(pr.oro)} oro y un objeto ÉPICO.`);
     }

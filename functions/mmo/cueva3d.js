@@ -21,6 +21,9 @@ const VACIA_MS = 5 * 60 * 1000;
 const PISOTON = { cada: 11000, aviso: 2200, r: 7 };
 const rnd = (a, b) => a + Math.random() * (b - a);
 const r1 = v => Math.round(v * 10) / 10;
+// Vida del Rey Goblin (veces la de un monstruo de su nivel) segun cuanta gente hay:
+// solo, 1.3 (vencible sin grupo); en grupo, 2.2 y +70 % por cada uno mas.
+const multJefe = g => (g > 1 ? 2.2 : 1.3) * (1 + 0.7 * (g - 1));
 
 export const Cueva3D = {
   cuevas3() { const W = this.iniciar3d(); return W.cuevas || (W.cuevas = new Map()); },
@@ -61,7 +64,7 @@ export const Cueva3D = {
     // Si entra mas gente de la que habia al crearla, el Rey sube su vida en proporcion.
     const jf = this.iniciar3d().mons.get(inst.jefe), nDentro = this.dentroCueva(inst).length;
     if (jf && !jf.muere && nDentro > inst.gente) {
-      const k = (1 + 0.7 * (nDentro - 1)) / (1 + 0.7 * (inst.gente - 1));
+      const k = multJefe(nDentro) / multJefe(inst.gente);   // de 1 a 2+ pasa de base 1.3 a 2.2
       jf.max = Math.round(jf.max * k); jf.hp = Math.round(jf.hp * k); inst.gente = nDentro;
     }
     s.p = { x: CUEVA_X0 + CUEVA.entrada.x + rnd(-2, 2), z: CUEVA.entrada.z + rnd(-1, 1) };
@@ -85,7 +88,7 @@ export const Cueva3D = {
     const def = MONSTRUOS[k];
     const st = statsMonstruo(k, inst.nv);
     // Los de la cueva aguantan un poco mas (es una mazmorra) y el jefe escala con el grupo.
-    const hp = Math.round(st.hp * (jefe ? 2.2 * (1 + 0.7 * (inst.gente - 1)) : 1.3));
+    const hp = Math.round(st.hp * (jefe ? multJefe(inst.gente) : 1.3));
     const x = CUEVA_X0 + lx, z = lz;
     const o = {
       id: W.sig++, k, nv: inst.nv, campo: -1, i3: inst.id, cueva: true, jefe: !!jefe, dispara: !!def.dispara,

@@ -504,9 +504,18 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 346;
+export const VERSION = 347;
 
 export const NOVEDADES = [
+  { n: 115, fecha: '2 nov 2026', items: [
+    'El aviso para activar las notificaciones de Telegram ya no te interrumpe al entrar ni en plena pelea.',
+    'Los NPC del pueblo muestran qué hacen sobre su cabeza, y el Mercader explica cada poder y si te alcanza el oro.',
+    'A nivel 5 te avisamos de la Cueva de los Goblins; el Rey Goblin ya se puede vencer solo.',
+    'La tienda muestra cuántas Stars y soles cuesta cada paquete antes de pagar, y puedes probar en 3D las skins de los paquetes.',
+    'Invitar amigos paga siempre lo prometido y el aviso dice cuánto oro ganaste.',
+    'Chat más seguro para los más chicos: frena groserías disfrazadas y preguntas de edad, colegio, fotos o celular.',
+    'El mundo 3D gasta menos datos móviles, y en CLASSIC tu duende se gira solo hacia el monstruo al golpear.',
+  ] },
   { n: 114, fecha: '2 nov 2026', items: [
     'El tercer golpe seguido del combo pega más fuerte de verdad: su número sale grande y naranja con «!».',
     'Toca al monstruo que tienes al lado para pegarle; en PC mantén el clic sobre él. Los botones de habilidad responden al instante aunque te muevas.',

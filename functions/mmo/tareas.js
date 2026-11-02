@@ -161,6 +161,7 @@ export const Tareas = {
 
   textoTarea(def, c, t) {
     if (def.tipo === 'zona') return def.txt + ((MAPAS[(t && t.zona) || zonaDeNivel(c.nivel)] || {}).nombre || '');
+    if (def.tipo === 'mazmorra' && c && c.en3d) return def.txt + ' (la Cueva del pueblo cuenta)';   // ORIGINS: la cueva 3D suma a esta tarea (cueva3d.js progresoTarea)
     return def.txt;
   },
   infoTareas(c) {

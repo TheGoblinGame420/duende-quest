@@ -57,10 +57,16 @@ const normEstafa = t => String(t || '').normalize('NFKC').replace(/[\p{M}\p{Cf}�
 export const riesgoEstafa = t => { const n = normEstafa(t); return RE_ESTAFA.some(r => r.test(t) || r.test(n)); };
 // Chat seguro para menores: groserias se tapan con asteriscos (tambien vetan nombres en dios.js).
 // Sin \w* tras marica/verga: "Maricarmen" y "Vergara" son nombres de verdad.
-export const RE_GROSERIA = /\b(?:put[ao]s?|putamadre|mierd[\wáéíóúñ]*|conchatumadre|ctm|csm|huev[oó]n[\wáéíóúñ]*|cojud[\wáéíóúñ]*|pendej[\wáéíóúñ]*|maric(?:as?|[oó]n[\wáéíóúñ]*)|cabr[oó]n[\wáéíóúñ]*|vergas?|pinga[\wáéíóúñ]*|poronga[\wáéíóúñ]*|cach[ae]r[\wáéíóúñ]*|porno[\wáéíóúñ]*|nudes?|violar[\wáéíóúñ]*)(?![\wáéíóúñ])/gi;
+export const RE_GROSERIA = /\b(?:put[ao]s?|putamadre|mierd[\wáéíóúñ]*|conchatumadre|ctm|csm|huev[oó]n[\wáéíóúñ]*|cojud[\wáéíóúñ]*|pendej[\wáéíóúñ]*|maric(?:as?|[oó]n[\wáéíóúñ]*)|cabr[oó]n[\wáéíóúñ]*|vergas?|pinga[\wáéíóúñ]*|poronga[\wáéíóúñ]*|cach[ae]r[\wáéíóúñ]*|porno[\wáéíóúñ]*|nudes?|violar[\wáéíóúñ]*|ptm[r]?|conchatumare|conchasumadre|conchasumare|concha\s*tu\s*madre|csmr|ctmr|chucha|w[e]b[oó]n|we[oó]n|hdp|mrd|zorra|pajer[oa]s?|marac[oa]s?)(?![\wáéíóúñ])/gi;
 // Ni telefonos, ni redes, ni preguntas de datos personales (edad, casa, colegio, fotos).
 const RE_CONTACTO = [/(?:(?<!\d)|(?<=(?<!\d)\+?51))9\d{2}[\s.\-]?\d{3}[\s.\-]?\d{3}(?!\d)/, /\b(?:wsp|whats?app|wasap|watsap|wpp|snap(?:chat)?|n[uú]mero de cel)\b/i, /\b(?:mi|tu|su|dame|pasa(?:me)?|p[aá]same|agr[eé]game|escr[ií]beme|h[aá]blame|s[ií]gueme)\s+(?:al\s+|por\s+|en\s+|el\s+|tu\s+|su\s+)?(?:insta(?:gram)?|tiktok|face(?:book)?|discord|n[uú]mero)\b/i, /\b(?:dame|pasa(?:me)?|p[aá]same|agr[eé]game|escr[ií]beme|h[aá]blame)\s+(?:al\s+|por\s+|en\s+|el\s+|tu\s+|su\s+)?cel(?:ular)?\b/i,/(?:^|\s)@[a-z0-9_.]{3,}/i, /\b(?:cu[aá]ntos a[nñ]os tienes|d[oó]nde vives|tu direcci[oó]n|tu colegio|manda foto)\b/i];
-export const riesgoContacto = t => { const n = normEstafa(t); return RE_CONTACTO.some(r => r.test(t) || r.test(n)); };
+// Preguntas tipicas de grooming y numeros sueltos: se prueban en minusculas y sin tildes.
+const RE_CONTACTO2 = [/\b(?:que edad|edad tienes|cual es tu edad)\b/, /\b(?:manda|mandame|pasa|pasame)\s+(?:una\s+|tu\s+|tus\s+)?fotos?\b/, /\b(?:mi|tu|su|al)\s+(?:ig|tg|insta|instagram|telegram|face|facebook|tiktok)\b/, /\b(?:que|cual)\s+colegio\b|\bcolegio\s+estudias\b/, /\b(?:en que distrito|vives en|tienes novi[oa]|eres (?:chica|chico|mujer|hombre))\b/, /\btu\s+cel(?:ular)?\b/, /(?<!\d)9(?:\d{8}|(?:[\s.-]\d){8})(?!\d)/];
+export const riesgoContacto = t => { const n = normEstafa(t); if (RE_CONTACTO.some(r => r.test(t) || r.test(n))) return true; const b = n.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); return RE_CONTACTO2.some(r => r.test(b)); };
+// Copia normalizada para pillar letras disfrazadas (put@, p u t a, m1erda).
+const normGroseria = t => normEstafa(t).normalize('NFKC').toLowerCase().replace(/[@4]/g, 'a').replace(/[1!|]/g, 'i').replace(/0/g, 'o').replace(/3/g, 'e').replace(/\$/g, 's').replace(/\b(\w)[\s._*-]+(?=\w\b)/g, '$1');
+// Se quitan antes las groserias normales (esas van con asteriscos) para que "puta m1erda" no deje pasar la disfrazada.
+export const groseriaDisfrazada = t => { const re = new RegExp(RE_GROSERIA.source, 'i'); return re.test(normGroseria(String(t || '').replace(RE_GROSERIA, ' '))); };
 export const IGNORADOS_MAX = 50;
 const REPORTE_CADA_MS = 60000;
 // No le llega a quien ignora al autor.
@@ -296,6 +302,7 @@ export const Social = {
     // Solo el dueño se salta el filtro: un moderador no publica carteras ni enlaces (nadie se hace pasar por el equipo).
     if (!(this.esDueno && this.esDueno(s)) && riesgoEstafa(txt)) return this.no(s, '🛡 Por seguridad no se permiten direcciones de cartera, enlaces ni frases semilla en el chat. Nadie del equipo te pedirá nunca tu frase semilla.');
     if (!(this.esDueno && this.esDueno(s)) && riesgoContacto(txt)) return this.no(s, '🛡 Por tu seguridad no se comparten teléfonos, redes ni datos personales en el chat. Si alguien te los pide, usa Reportar.');
+    if (groseriaDisfrazada(txt)) return this.no(s, 'Ese mensaje tiene palabras no permitidas.');
     const txtF = txt.replace(RE_GROSERIA, x => '*'.repeat(x.length));
     s.chatT = ahora;
     let canal = m.canal;

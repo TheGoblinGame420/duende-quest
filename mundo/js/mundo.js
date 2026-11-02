@@ -14,26 +14,26 @@
 import * as THREE from 'three';
 import { esNocheDuendes, TEMPORADAS, temporadaDe, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=346';
-import { iniciarVentanas } from './ventanas.js?v=346';
-import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase } from '/mmo/js/data.js?v=346';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
-import { iniciarRegalo } from '/mmo/js/regalo.js?v=346';
-import { iniciarAvisoTg } from '/mmo/js/avisotg.js?v=346';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=346';
-import { crearMusica } from './musica.js?v=346';
-import { crearSonidos } from './sonidos.js?v=346';
-import { construirCueva } from './cueva.js?v=346';
-import { TAPA, transparentar } from './tapa.js?v=346';
-import { construirAbismo } from './abismo.js?v=346';
-import { crearParticulas } from './particulas.js?v=346';
-import { cargarKenney, piezasCasa } from './kenney.js?v=346';
-import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=346';
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=347';
+import { iniciarVentanas } from './ventanas.js?v=347';
+import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase } from '/mmo/js/data.js?v=347';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
+import { iniciarRegalo } from '/mmo/js/regalo.js?v=347';
+import { iniciarAvisoTg } from '/mmo/js/avisotg.js?v=347';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=347';
+import { crearMusica } from './musica.js?v=347';
+import { crearSonidos } from './sonidos.js?v=347';
+import { construirCueva } from './cueva.js?v=347';
+import { TAPA, transparentar } from './tapa.js?v=347';
+import { construirAbismo } from './abismo.js?v=347';
+import { crearParticulas } from './particulas.js?v=347';
+import { cargarKenney, piezasCasa } from './kenney.js?v=347';
+import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=347';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=346';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d } from '/mmo/js/mundo3d.js?v=346';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=346';
-import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=346';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA } from './lore.js?v=346';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=347';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d } from '/mmo/js/mundo3d.js?v=347';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=347';
+import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=347';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA } from './lore.js?v=347';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -117,7 +117,8 @@ if (TG) {
   };
   try {
     if (TGV('8.0') && /android|ios/.test(TG.platform || '') && TG.requestFullscreen) {
-      for (const ev of ['safeAreaChanged', 'contentSafeAreaChanged', 'fullscreenChanged']) TG.onEvent(ev, zonas);
+      for (const ev of ['safeAreaChanged', 'contentSafeAreaChanged', 'fullscreenChanged', 'fullscreenFailed']) TG.onEvent(ev, zonas);
+      zonas(); setTimeout(zonas, 300);
       TG.requestFullscreen();
     }
   } catch (e) {}
@@ -1907,7 +1908,7 @@ function recibir(m) {
     case 'logro': aviso('🏅 Logro: ' + m.titulo + (m.oro ? ' · +' + m.oro.toLocaleString('es') + ' oro' : '') + ' (llévalo como título desde ' + (MOVIL ? '⋯ → 🏆' : '🏆 Logros') + ')', 'ok'); SON.tocar('logro'); setTimeout(() => ofrecerPresumir('¡Conseguí el logro «' + m.titulo + '» en Duende Quest 3D!', 'logro'), 1500); FX.emitir(P.x, P.y + 1.5, P.z, { n: 30, color: '#ffd84a', vel: 4, vida: 1, grav: -1 }); break;
     case 'resJefe': try { resumenJefe(m); } catch (e) {} break;
     case 'gana':
-      bestDeGana(m); clearTimeout(revisarCasi.t); revisarCasi.t = setTimeout(revisarCasi, 1600);   // tras el 'yoC' con las cazas al dia
+      ganaSes++; bestDeGana(m); clearTimeout(revisarCasi.t); revisarCasi.t = setTimeout(revisarCasi, 1600);   // tras el 'yoC' con las cazas al dia
       { const ahR = performance.now(); rachaBajas.n = ahR - rachaBajas.t < 2500 ? Math.min(8, rachaBajas.n + 1) : 0; rachaBajas.t = ahR; SON.tocar('racha', { n: rachaBajas.n, vol: 0.8 }); }   // bajas seguidas: cada una un tono mas alto
       if (m.xp) numero(P.x, P.y + 2.6, P.z, '+' + m.xp + ' XP', '#c084fc');
       if (m.oro) { numero(P.x + 0.6, P.y + 2.2, P.z, '+' + m.oro + ' oro', '#ffd84a'); sfxK('monedas', 0.3); }
@@ -1951,7 +1952,7 @@ function recibir(m) {
     case 'login': if (yo && yo.clase) { mostrarDiario(m); if (m.item && !m.item.vendido) setTimeout(() => botinFuerte(m.item), 2500); } else loginPend3 = m; setTimeout(() => despuesMision1(ofrecerInstalar), 4000); break;
     case 'buzon': regalo3.alBuzon(m); break;
     case 'regalo': regalo3.alRegalo(m); break;
-    case 'avisoTg': avisoTg3.alOferta(m); break;   // «Avísame por Telegram» (/mmo/js/avisotg.js)
+    case 'avisoTg': avisoTgT3 = Date.now(); if (avisoTgT3 - ventanaAutoT >= 30000) ventanaAutoT = avisoTgT3; avisoTgPed3 = !!(m && m.pedido); avisoTg3.alOferta(m); break;   // «Avísame por Telegram» (/mmo/js/avisotg.js)
     case 'avisoTgOk': avisoTg3.alOk(m); break;
     case 'tareas': if (yo) { yo.tareas = m; pintarMisiones(); } break;
     case 'mae': if (yo) { yo.mae = m.n; aviso(`⭐ ¡Maestría ${m.n}!`, 'ok'); numero(P.x, P.y + 3, P.z, 'MAESTRÍA ' + m.n, '#ffd84a', true); subiNivel(0); pintarHud(); } break;
@@ -3080,6 +3081,8 @@ function abrirClases() {
   abrir('v-clase');
 }
 let npcAbierto = '', firmaNpcAnt = '';
+// Que hace cada NPC del pueblo (etiqueta sobre su cabeza y boton de hablar).
+const ROL_NPC = { guia: '📜 Misiones', tienda: '🛒 Tienda', ranking: '🏆 Ranking', artesania: '⚒️ Fabricar' };
 const firmaNpc = t => JSON.stringify(t === 'guia' ? [yo.mis, yo.diaria] : t === 'tienda' ? [yo.pw, yo.oro] : [yo.mat, yo.pw]);
 // Ventanas abiertas al dia (solo se repintan si cambia lo que muestran).
 function refrescarVentanas(lleno) {
@@ -3101,7 +3104,7 @@ function abrirNpc(tipo) {
     const b = $('n-mision'); if (b) b.onclick = () => { mandar({ t: 'mision' }); sfx('moneda', 0.4); };
     $('n-diaria').onclick = () => mandar({ t: 'mision', diaria: true });
   } else if (tipo === 'tienda') {
-    cu.innerHTML = '<button class="btn" id="n-tienda" style="width:100%;margin-bottom:8px">Ver toda la tienda: armas, forja, skins, monturas…</button><p>Consumibles para el camino:</p>' + PODERES.map(p => `<div class="fila"><span><img src="${A}items/${p.icono}.png" style="width:22px;vertical-align:middle;image-rendering:pixelated"> ${esc(p.nombre)} <small style="color:var(--txt3)">(${(yo.pw && yo.pw[p.id]) || 0})</small></span><span><b style="color:var(--oro)">${p.precio}</b> <button class="btn" data-c="${p.id}" data-n="1">×1</button> <button class="btn sec" data-c="${p.id}" data-n="5">×5</button></span></div>`).join('');
+    cu.innerHTML = '<button class="btn" id="n-tienda" style="width:100%;margin-bottom:8px">Ver toda la tienda: armas, forja, skins, monturas…</button><p style="margin:0 0 6px">Tu oro: <b style="color:var(--oro)">' + (yo.oro || 0).toLocaleString('es', { useGrouping: 'always' }) + '</b></p><p>Consumibles para el camino:</p>' + PODERES.map(p => `<div class="fila"><span><img src="${A}items/${p.icono}.png" style="width:22px;vertical-align:middle;image-rendering:pixelated"> ${esc(p.nombre)} <small style="color:var(--txt3)">(${(yo.pw && yo.pw[p.id]) || 0})</small><br><small style="color:var(--txt3)">${esc(p.desc || '')}</small></span><span style="white-space:nowrap"><b style="color:var(--oro)">${p.precio}</b> <button class="btn" data-c="${p.id}" data-n="1" ${(yo.oro || 0) < p.precio ? 'disabled' : ''}>×1</button> <button class="btn sec" data-c="${p.id}" data-n="5" ${(yo.oro || 0) < p.precio * 5 ? 'disabled' : ''}>×5</button></span></div>`).join('');
     cu.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { mandar({ t: 'comprar', k: 'pw', id: b.dataset.c, n: +b.dataset.n }); sfx('moneda', 0.3); });
     $('n-tienda').onclick = () => { cerrar('v-npc'); V.abrirTienda('arma'); };
   } else if (tipo === 'ranking') {
@@ -3890,7 +3893,10 @@ let invPre3 = null, benditas3 = {};   // invPre3: tambores (invasion en 1:30, ev
 // ── SUBIR DE NIVEL, PRESUMIR Y TELEGRAM ──
 // Lo proximo que se abre (todo con las constantes del juego, sin niveles inventados).
 const NV_CLASE_GRATIS = (() => { let n = 1; while (n < 60 && costoCambioClase(n + 1) === 0) n++; return n; })();   // 9: ultimo nivel con cambio de clase gratis
-const PROXIMOS = [[EXPEDICION.nv, '🧭 expediciones de tu mascota'], [NV_CLASE_GRATIS, '⚔ último nivel para cambiar de clase gratis'], [ESPEC_NIVEL, '🌟 especialización y talentos'], [ABISMO.nvMin, '🌌 el Abismo de Éter']].sort((a, b) => a[0] - b[0]);
+// Tambien la Cueva de los Goblins (Nv 5) y cada zona nueva (desde MAPAS); si dos caen en el mismo nivel, se unen con « · ».
+const PROXIMOS = Object.values([[EXPEDICION.nv, '🧭 expediciones de tu mascota'], [NV_CLASE_GRATIS, '⚔ último nivel para cambiar de clase gratis'], [ESPEC_NIVEL, '🌟 especialización y talentos'], [ABISMO.nvMin, '🌌 el Abismo de Éter'], [5, '⛏ la Cueva de los Goblins (portal del pueblo): épico + XP, 3 al día'],
+  ...Object.values(MAPAS).filter(m => m && m.zona && !m.instancia && !m.coliseo && !m.torre && Array.isArray(m.nv) && m.nv[0] > 1).map(m => [m.nv[0], '🗺 nueva zona: ' + m.nombre])]
+  .reduce((acc, p) => { if (acc[p[0]]) acc[p[0]][1] += ' · ' + p[1]; else acc[p[0]] = [p[0], p[1]]; return acc; }, {})).sort((a, b) => a[0] - b[0]);
 function subiNivel(lv) {
   // «Próximo: Nv N → ...» (no en los niveles que ya traen su propio aviso a esa hora).
   const prox = lv < 20 && PROXIMOS.find(p => p[0] > lv);
@@ -3904,6 +3910,8 @@ function subiNivel(lv) {
   FX.emitir(P.x, P.y + 0.2, P.z, { n: 30, color: '#ffe066', vel: 2.4, vida: 1.6, grav: -3.5, radio: 0.7, tam: 1.3 });
   // Nv 20: se abre el Abismo de Eter; se pide la temporada (gente por faccion y premio al reclutar).
   if (lv >= ABISMO.nvMin && !temp3) mandar({ t: 'temp3' });
+  // Nv 5: se abre la Cueva de los Goblins (cofre epico + 30 % de XP, 3 al dia).
+  if (lv === 5) setTimeout(() => { if (!enCueva(P.x) && !enAbismo(P.x)) aviso('⛏ ¡Nivel 5! Entra a la Cueva de los Goblins por el portal del pueblo: solo o en grupo, el Rey Goblin suelta un objeto ÉPICO (3 al día).', 'ok'); }, 6000);
   if (lv === ABISMO.nvMin && !(yo && yo.faccion)) setTimeout(() => aviso('🌌 ¡Nivel ' + lv + '! Se abrió el Abismo de Éter: ve al portal del pueblo y elige Luz o Sombra. Si una facción tiene menos gente, unirte a ella da premio.', 'ok'), 4000);
   if (lv >= 60) ofrecerPresumir('¡Llegué al nivel 60, el máximo, en Duende Quest 3D! 🏆', 'nv60');
   else if (lv >= 5 && lv % 5 === 0) ofrecerPresumir(`¡Llegué al nivel ${lv} en Duende Quest 3D!`, 'nivel');
@@ -3974,7 +3982,9 @@ const regalo3 = iniciarRegalo({
   filtro: t => modoAnuncio() && /mTON|\bSOL\b|\$DUENDE|[Ww]allet/.test(t || ''),
 });
 // «Avísame por Telegram» para jugadores web e invitados (/mmo/js/avisotg.js): despues del cofre y del buzon.
-const avisoTg3 = iniciarAvisoTg({ mandar, ocupado: () => hayVentana() || $('v-diario').classList.contains('on') || !!loginPend3 || !!document.querySelector('#dq-regalo.on') || !!document.querySelector('#tira-diario.on') || !yo, aviso: (t, k) => aviso(t, k, 1), tg: TG });
+// Nunca en plena pelea, muerto, sin clase, en el primer minuto ni antes de 3 cazas (salvo si el jugador la pidio).
+let t0Ses = performance.now(), ganaSes = 0, avisoTgPed3 = false, avisoTgT3 = 0;
+const avisoTg3 = iniciarAvisoTg({ mandar, ocupado: () => hayVentana() || $('v-diario').classList.contains('on') || !!loginPend3 || !!document.querySelector('#dq-regalo.on') || !!document.querySelector('#tira-diario.on') || !yo || enCombate3() || !!(yo && yo.muerto) || !yo.clase || (P && (P.muerto || performance.now() - (P.heridoT || 0) < 6000)) || (!avisoTgPed3 && (performance.now() - t0Ses < 60000 || ganaSes < 3)) || (ventanaAutoT !== avisoTgT3 && Date.now() - ventanaAutoT < 30000), aviso: (t, k) => aviso(t, k, 1), tg: TG });
 const oroAmigo =() => premioAmigo(nivelAmigo).oro.toLocaleString('es', { useGrouping: 'always' });
 // WhatsApp primero fuera de Telegram (es lo que mas se usa en Peru). El jugador decide
 // enviar: solo se abre WhatsApp con el texto listo. El enlace va a /jugar/ (elige 2D o 3D).
@@ -5444,7 +5454,7 @@ function etiquetas(t) {
   }
   for (const av of aventureros) ponLbl(av.lbl, av.x, alturaEn(av.x, av.z) + 2.15, av.z, `${av.diceT > t ? `<span style="display:block;background:rgba(255,255,255,.92);color:#222;border-radius:8px;padding:2px 7px;margin:0 auto 2px;font-weight:600;white-space:normal;width:max-content;max-width:170px">${esc(av.dice)}</span>` : ''}<span style="color:#93c5fd">${esc(Math.hypot(av.x - P.x, av.z - P.z) < 10 ? av.n : av.n.split(' ')[0])}</span> <small style="color:#bbb;font-size:9px">PNJ</small>`, 24);
   if (decoTp.lbl) { if (decoTp.puesto) ponLbl(decoTp.lbl, decoTp.puesto.x, decoTp.puesto.y + 1.6, decoTp.puesto.z, '<span style="color:#4ade80">Abuela · Tienda de la fiesta</span>', 40); else decoTp.lbl.style.display = 'none'; }
-  for (const n of npcs) ponLbl(n.lbl, n.x, n.y + 2.4, n.z, `${n.tipo === 'guia' && misionLista() ? '<b style="color:#ffd84a;font-size:22px;text-shadow:0 0 6px #000">?</b><br>' : ''}<span style="color:#4ade80">${esc(n.nombre)}</span>`, 60);
+  for (const n of npcs) ponLbl(n.lbl, n.x, n.y + 2.4, n.z, `${n.tipo === 'guia' && misionLista() ? '<b style="color:#ffd84a;font-size:22px;text-shadow:0 0 6px #000">?</b><br>' : ''}<span style="color:#4ade80">${esc(n.nombre)}</span>${ROL_NPC[n.tipo] ? `<br><small style="color:#fde68a;font-size:11px">${ROL_NPC[n.tipo]}</small>` : ''}`, 60);
 }
 // ── TEMA DEL PUEBLO ──
 // En el Pueblo Duende suena el tema del juego (audio/tema_duende.mp3, la musica
@@ -6085,7 +6095,7 @@ function cuadroBucle(t) {
     if (yo) {
       const n = npcCercano(), cf = n ? null : cofreCercano(), nd = n || cf ? null : nodoCercano(); const b = $('hablar');
       b.style.display = n || cf || nd ? 'block' : 'none';
-      if (n) b.textContent = (MOVIL ? '' : 'E · ') + (n.tipo === 'portal' ? 'Mazmorras' : n.tipo === 'salida' ? 'Salir de la cueva' : n.tipo === 'salidaAbismo' ? 'Volver al pueblo' : n.tipo === 'maquina' ? 'Disparar ' + n.nombre.toLowerCase() : n.tipo === 'tiendaTemp' ? 'Tienda de la fiesta' : n.tipo === 'res' ? '✨ ' + n.nombre : 'Hablar con ' + n.nombre);
+      if (n) b.textContent = (MOVIL ? '' : 'E · ') + (n.tipo === 'portal' ? 'Mazmorras' : n.tipo === 'salida' ? 'Salir de la cueva' : n.tipo === 'salidaAbismo' ? 'Volver al pueblo' : n.tipo === 'maquina' ? 'Disparar ' + n.nombre.toLowerCase() : n.tipo === 'tiendaTemp' ? 'Tienda de la fiesta' : n.tipo === 'res' ? '✨ ' + n.nombre : (ROL_NPC[n.tipo] ? ROL_NPC[n.tipo] + ' · ' : 'Hablar con ') + n.nombre);
       else if (cf) b.textContent = (MOVIL ? '' : 'E · ') + 'Abrir ' + NOMBRE_COFRE[cf.tipo];
       else if (nd) b.textContent = (MOVIL ? '' : 'E · ') + 'Recoger ' + MATERIALES[nd.tipo].nombre;
       else if (!enCueva(P.x) && aguaCerca()) { b.style.display = 'block'; b.textContent = (MOVIL ? '' : 'E · ') + (pica > performance.now() ? '¡TIRAR!' : lanzando && lanzando.id === 'pescar' ? 'Esperando que pique…' : 'Pescar'); }
@@ -6093,7 +6103,7 @@ function cuadroBucle(t) {
     if (toca(1, 1000, t)) revisarNodos();
     animarCofres(t);
     for (const o of mons.values()) if (o.ra && !o.muereT && Math.abs(o.x - P.x) < 60 && Math.abs(o.z - P.z) < 60) FX.emitir(o.x, alturaEn(o.x, o.z) + 0.3, o.z, { n: 5, color: o.ti || '#ffd84a', vel: 1.2, vida: 1, grav: -2.5, radio: 0.8, tam: 0.8 });
-    if (MOVIL) { const u = $('t-usar'), b = $('hablar'), ver = b.style.display === 'block' && !P.vuela; u.style.visibility = ver ? 'visible' : 'hidden'; if (ver) u.textContent = /Abrir/.test(b.textContent) ? 'ABRIR' : /Recoger/.test(b.textContent) ? 'RECOGER' : /Pescar|TIRAR|pique/.test(b.textContent) ? (/TIRAR/.test(b.textContent) ? '¡TIRAR!' : 'PESCAR') : /Salir/.test(b.textContent) ? 'SALIR' : /Disparar/.test(b.textContent) ? 'FUEGO' : /Resucitar/.test(b.textContent) ? 'REVIVIR' : 'HABLAR'; }
+    if (MOVIL) { const u = $('t-usar'), b = $('hablar'), ver = b.style.display === 'block' && !P.vuela; u.style.visibility = ver ? 'visible' : 'hidden'; if (ver) u.textContent = /Abrir/.test(b.textContent) ? 'ABRIR' : /Recoger/.test(b.textContent) ? 'RECOGER' : /Pescar|TIRAR|pique/.test(b.textContent) ? (/TIRAR/.test(b.textContent) ? '¡TIRAR!' : 'PESCAR') : /Salir/.test(b.textContent) ? 'SALIR' : /Disparar/.test(b.textContent) ? 'FUEGO' : /Resucitar/.test(b.textContent) ? 'REVIVIR' : /🛒 Tienda/.test(b.textContent) ? 'TIENDA' : /📜 Misiones/.test(b.textContent) ? 'MISIONES' : /⚒️ Fabricar/.test(b.textContent) ? 'FABRICAR' : /🏆 Ranking/.test(b.textContent) ? 'RANKING' : 'HABLAR'; if (ver) u.style.fontSize = u.textContent.length > 7 ? '10px' : ''; }
     if (npcAbierto && $('v-npc').classList.contains('on')) { const n = NPCS3D.find(x => x.tipo === npcAbierto); if (n && Math.hypot(P.x - n.x, P.z - n.z) > NPC_DIST + 6) cerrar('v-npc'); }
   }
   cieloAct.lerp(cieloObj, Math.min(1, dt * 1.5));

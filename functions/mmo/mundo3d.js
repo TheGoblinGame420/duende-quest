@@ -447,7 +447,9 @@ export const Mundo3D = {
       this.dar(s, xp, oro, o, nG, true);
       cobraron.add(sid);
       if (puestos) this.enviar(s, { t: 'resJefe', k: o.k, n: (MONSTRUOS[o.k] || {}).nombre || '', parte: Math.round(parte * 100), puesto: puestos.get(sid) || 0, de: o.dano.size, ms: msJefe });
-      if (enAbismo(o.x) && parte >= 0.1) this.sumarPA(s, (o.jefe ? 10 : 3) + (s.c.faccion && s.c.faccion === this.duenoNucleo() ? (o.jefe ? 2 : 1) : 0), 'élite');
+      // Las islas Nv 20-30 (Ghoul, Samurai) no dan PA a quien les saca mas de 10 niveles: no son granja de PA para los altos.
+      const nvE = (MONSTRUOS[o.k] || {}).nivel || 0;
+      if (enAbismo(o.x) && parte >= 0.1 && (nvE >= 30 || (s.c.nivel || 1) <= nvE + 10)) this.sumarPA(s, (o.jefe ? 10 : 3) + (s.c.faccion && s.c.faccion === this.duenoNucleo() ? (o.jefe ? 2 : 1) : 0), 'élite');
       if (o.jefe && !o.cueva && this.parteJusta(o, s) >= 0.1) this.darMton(s, 20 * Math.max(0.3, MONSTRUOS[o.k].nivel / 30), 'jefe');
     }
     // Grupo: los compañeros cerca (60 m) cuentan la caza como suya (misiones,
@@ -477,7 +479,8 @@ export const Mundo3D = {
     if (this.cazaJuntos) this.cazaJuntos([...cobraron].map(id => this.sesiones.get(id)).concat(juntos), o);
     const campo = W.campos[o.campo];
     if (campo) { campo.vivos.delete(o.id); campo.prox = Date.now() + (o.k === 'jefe_sabueso' ? 60000 + Math.random() * 30000 : o.jefe ? REAPARECE_JEFE_MS : (o.nv || (MONSTRUOS[o.k] || {}).nivel || 99) <= 2 ? REAPARECE_NOVATO_MS : REAPARECE_MS); }
-    this.aClave(K3, { t: 'md3', id: o.id });
+    // Jefes e invasores los anuncia todo el 3D; el resto solo a quien esta cerca.
+    if (o.jefe || (o.ex3 && o.ex3.ev)) this.aClave(K3, { t: 'md3', id: o.id }); else this.aCerca3d(o, { t: 'md3', id: o.id });
     if (o.ex3 && o.ex3.ev) this.muereInvasor3d(o);
     if (o.cueva && o.jefe) this.premiosCueva(o);
     else if (o.ex3 && o.ex3.cap) { /* el aviso lo da la invasion */ }
@@ -801,7 +804,7 @@ export const Mundo3D = {
     this.desmontar(s);
     s.p = baseDe(c.faccion); s.h = 0; s.a = 0; s.movBud = undefined; s.cast = null;
     this.enviar(s, { t: 'tp3', x: r1(s.p.x), z: r1(s.p.z), abismo: 1 });
-    this.enviar(s, { t: 'toast', m: `🌌 ${ABISMO.nombre}: entre las islas solo se pasa volando. ¡Cuidado con el vacío!` });
+    this.enviar(s, { t: 'toast', m: `🌌 ${ABISMO.nombre}: entre las islas solo se pasa volando. ¡Cuidado con el vacío! Las islas pequeñas junto a tu bastión son para Nv 20-30.` });
     this.aClave(K3, { t: 'pj3', p: this.info3d(s) }, s);
   },
   salirAbismo(s) {
@@ -1672,10 +1675,13 @@ export const Mundo3D = {
       for (let i = -RM; i <= RM; i++) for (let j = -RM; j <= RM; j++) {
         const l = rejM.get(clave(s.i3, cx + i, cz + j));
         if (l) for (const o of l) {
-          if (dist(o, s.p) > VISTA_MON) continue;
+          const dm = dist(o, s.p);
+          if (dm > VISTA_MON) continue;
           ve.add(o.id);
           if (!s.vistos.has(o.id)) n.push({ id: o.id, k: o.k, nv: o.nv, x: r1(o.x), z: r1(o.z), hp: Math.ceil(o.hp), mx: o.max, j: o.jefe ? 1 : 0, mu: o.mundial3 || o.guardian ? 1 : undefined, ra: o.ex3 && o.ex3.nom ? o.ex3.nom : undefined, ti: o.ex3 && o.ex3.ti ? o.ex3.ti : undefined, iv: o.ex3 && o.ex3.ev ? 1 : undefined });
           else {
+            // Lejanos tranquilos ya presentados: una foto si y otra no (repartidos por id).
+            if (dm > 50 && o.obj !== s.id && !o.jefe && !o.muere && o.st !== 3 && ((o.id + par) & 1)) continue;
             let fm = filaM.get(o.id);
             if (!fm) filaM.set(o.id, fm = JSON.stringify([o.id, r1(o.x), r1(o.z), Math.round(o.ry * 100) / 100, Math.ceil(o.hp), o.muere ? 3 : o.st]));
             ms.push(fm);
