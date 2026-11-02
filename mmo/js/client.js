@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=338';
-import { iniciarRegalo } from './regalo.js?v=338';
-import { iniciarAvisoTg } from './avisotg.js?v=338';
+} from './data.js?v=339';
+import { iniciarRegalo } from './regalo.js?v=339';
+import { iniciarAvisoTg } from './avisotg.js?v=339';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -609,6 +609,9 @@ function recibir(m) {
       $('m-error').classList.remove('on');
       $('m-inicio').classList.remove('on');
       pintarHud();
+      // Desde v338 tras 'bienvenido' no llega 'yo': la cuenta (#cuenta) y la tienda (#premium) se abren desde aqui.
+      if (yo && (yo.clase || !m.nuevo)) cuentaAlEntrar();
+      if (tiendaAlEntrar && yo && yo.clase) setTimeout(() => { if (tiendaAlEntrar && yo && !document.querySelector('.modal.on')) { tiendaAlEntrar = false; abrirTiendaHud('bot', true); } }, 1500);
       if (m.nuevo) aviso('Bienvenido al Pueblo Duende, ' + yo.nombre + '. El Guardia Tito tiene tu primera misión.');
       // El servidor puede cambiar el nombre pedido (ya era de otro o imita al equipo).
       if (soyInvitado) { try { if (localStorage.getItem('dq_mmo_nombre') !== yo.nombre) { if (m.nuevo && localStorage.getItem('dq_mmo_nombre')) aviso('Ese nombre ya estaba en uso o está reservado: te llamas ' + yo.nombre + '.'); localStorage.setItem('dq_mmo_nombre', yo.nombre); } } catch (e) {} }
@@ -1668,13 +1671,19 @@ function puntoTienda() {
 // Pack de bienvenida (SOLO 1 VEZ): se ofrece una sola vez, entre CLASSIC y
 // ORIGINS (mismas claves), al llegar a Nv 5 o al revivir tras la segunda
 // muerte, cuando no hay otra ventana. Solo si el servidor dice que aun puedes.
+// Una sola cadena de reintentos a la vez (llegan muchos 'yo' por segundo).
+let bienvEnCurso = false;
 function ofrecerBienvenida(antes) {
   if (!antes || !yo || !yo.puedeBienvenida) return;
-  let ofrecida = false, muertes = 0;
-  try { ofrecida = localStorage.getItem('dq_bienv_ofrecida') === '1'; muertes = +localStorage.getItem('dq_bienv_muertes') || 0; } catch (e) {}
+  let ofrecida = false, muertes = 0, pend = '';
+  try { ofrecida = localStorage.getItem('dq_bienv_ofrecida') === '1'; muertes = +localStorage.getItem('dq_bienv_muertes') || 0; pend = localStorage.getItem('dq_bienv_pend') || ''; } catch (e) {}
   if (ofrecida) return;
   if (yo.muerto && !antes.muerto) { muertes++; try { localStorage.setItem('dq_bienv_muertes', String(muertes)); } catch (e) {} }
-  const dispara = (antes.nivel < 5 && yo.nivel >= 5) || (muertes >= 2 && antes.muerto && !yo.muerto);
+  const cruce = (antes.nivel < 5 && yo.nivel >= 5) || (muertes >= 2 && antes.muerto && !yo.muerto);
+  // Si en el cruce siempre hubo pelea o ventana, la oferta queda pendiente y se reintenta luego.
+  if (cruce && pend !== '1') { pend = '1'; try { localStorage.setItem('dq_bienv_pend', '1'); } catch (e) {} }
+  if (bienvEnCurso) return;
+  const dispara = cruce || (pend === '1' && yo.nivel >= 5 && !yo.muerto && !ofrecida);
   // Igual que la tienda (htmlPremium): sin cuenta solo veria «Iniciar sesion». Al invitado no se le
   // gasta la oferta: se le avisa una vez y se le ofrece cuando ya tenga cuenta.
   const conCuenta = !!(yo.p2e && yo.p2e.cuenta);
@@ -1687,17 +1696,20 @@ function ofrecerBienvenida(antes) {
   }
   let eraInv = false;
   if (yo.nivel >= 5) { try { eraInv = localStorage.getItem('dq_bienv_inv') === '1'; } catch (e) {} }
-  if (eraInv) { try { localStorage.removeItem('dq_bienv_inv'); } catch (e) {} }
+  if (eraInv) { try { localStorage.removeItem('dq_bienv_inv'); localStorage.setItem('dq_bienv_pend', '1'); } catch (e) {} }
   else if (!dispara) return;
-  // Se marca como ofrecida solo cuando de verdad se abre: si 60 s hubo otra ventana, se ofrece la proxima vez.
+  // Se marca como ofrecida solo cuando de verdad se abre: si 2 min hubo otra ventana o pelea,
+  // queda pendiente (dq_bienv_pend) y se vuelve a intentar con el siguiente 'yo'.
   const intentar = n => {
-    if (!yo || !yo.puedeBienvenida || yo.muerto) { if (yo && yo.muerto && n < 20) setTimeout(() => intentar(n + 1), 3000); return; }
-    try { if (localStorage.getItem('dq_bienv_ofrecida') === '1') return; } catch (e) {}
-    if (document.querySelector('.modal.on, #dq-avtg.on, #dq-regalo.on') || enCombate()) { if (n < 40) setTimeout(() => intentar(n + 1), 3000); return; }
+    if (!yo || !yo.puedeBienvenida || yo.muerto) { if (yo && yo.muerto && n < 40) setTimeout(() => intentar(n + 1), 3000); else bienvEnCurso = false; return; }
+    try { if (localStorage.getItem('dq_bienv_ofrecida') === '1') { localStorage.removeItem('dq_bienv_pend'); bienvEnCurso = false; return; } } catch (e) {}
+    if (document.querySelector('.modal.on, #dq-avtg.on, #dq-regalo.on') || enCombate()) { if (n < 40) setTimeout(() => intentar(n + 1), 3000); else bienvEnCurso = false; return; }
+    bienvEnCurso = false;
     abrirPremium('bienv'); premiumFoco = 'bienvenida'; pintarTienda();
-    try { localStorage.setItem('dq_bienv_ofrecida', '1'); } catch (e) {}
+    try { localStorage.setItem('dq_bienv_ofrecida', '1'); localStorage.removeItem('dq_bienv_pend'); } catch (e) {}
     aviso('🎁 Pack de bienvenida: solo para tu primera compra. El Duende te lo entrega a mano.', 'ok');
   };
+  bienvEnCurso = true;
   setTimeout(() => intentar(0), 2500);
 }
 function abrirTiendaHud(via, soloPremium) {
@@ -1985,7 +1997,7 @@ function mostrarInvitacion(m) {
   $('inv-txt').innerHTML = m.lfg
     ? `📢 <b style="color:${cl ? cl.color : 'var(--txt)'}">${esc(m.n)}</b> (Nv ${m.nv}${cl ? ' ' + esc(cl.nombre) : ''}) busca grupo para <b style="color:var(--ok)">${esc((MAZMORRAS[m.id] || {}).nombre || 'una mazmorra')}</b> (${m.m}/${m.mx || 5})`
     : m.duelo
-    ? `⚔️ <b style="color:${cl ? cl.color : 'var(--txt)'}">${esc(m.de)}</b> (Nv ${m.nv}${cl ? ' ' + esc(cl.nombre) : ''}) te reta a un <b style="color:var(--err)">duelo</b>`
+    ? `⚔️ <b style="color:${cl ? cl.color : 'var(--txt)'}">${esc(m.de)}</b> (Nv ${m.nv}${cl ? ' ' + esc(cl.nombre) : ''}) te reta a un <b style="color:var(--err)">duelo</b><br><small>Amistoso: nadie muere ni pierde objetos ni oro · sin pociones · nivel igualado</small>`
     : m.herm
     ? `<b>${esc(m.de)}</b> te invita a la hermandad <b style="color:var(--ok)">&lt;${esc(m.nombre)}&gt;</b>`
     : `<b style="color:${cl ? cl.color : 'var(--txt)'}">${esc(m.de)}</b> (Nv ${m.nv}${cl ? ' ' + esc(cl.nombre) : ''}) te invita a su grupo`;
@@ -2212,13 +2224,13 @@ function pintarAmigos(m) {
   if (!m.ref) { L.innerHTML = '<p class="centro">No se pudo crear tu enlace ahora. Prueba en un momento.</p>'; return; }
   const enlTg = 'https://t.me/duendequest_bot?start=mmo_' + m.ref;
   const enlWeb = location.origin + '/mmo/?ref=' + m.ref;
-  const texto = 'Juguemos juntos a DUENDE QUEST ONLINE, el MMORPG de duendes: gratis, en Telegram o en el navegador. 🧝';
+  const texto = 'Oe, entra con mi link a Duende Quest (gratis en Telegram): recibes oro y pociones de bienvenida, y a nivel 10 ganamos +' + oroAmigo() + ' de oro los dos 👇';
   const btWa = `<button class="btn${TG ? ' sec' : ''}" id="b-comp-wa" style="width:100%;padding:12px;margin-bottom:8px;${TG ? '' : 'background:#25d366;border-color:#25d366;color:#fff'}">Invitar por WhatsApp</button>`;
   L.innerHTML = `<div class="mis-caja" style="margin-top:0"><b>Invita a tus amigos</b>
     <p style="font-size:12px">Cuando un amigo invitado llegue a nivel ${m.nivel}: él recibe ${premioAmigo(m.nivel).oro.toLocaleString('es', { useGrouping: 'always' })} de oro y tú, ${premioAmigo(yo ? yo.nivel : 1).oro.toLocaleString('es', { useGrouping: 'always' })} (aumenta con tu nivel)${m.max ? '. Hasta ' + m.max + ' amigos' : ''}. Con 5 amigos: montura Conejo Saltarín y un título.</p>
     <p style="font-size:12px;margin-top:6px">Amigos que ya llegaron: <b style="display:inline;color:var(--ok)">${m.amigos}</b></p></div>
     ${TG ? '' : btWa}<button class="btn${TG ? '' : ' sec'}" id="b-comp-tg" style="width:100%;padding:12px;margin-bottom:8px">Compartir por Telegram</button>${TG ? btWa : ''}
-    <button class="btn sec" id="b-comp-copiar" style="width:100%;margin-bottom:6px">Copiar enlace</button>
+    <button class="btn sec" id="b-comp-copiar" style="width:100%;margin-bottom:6px">${TG ? 'Copiar enlace' : 'Copiar mensaje y enlace'}</button>
     <p style="font-size:11px;word-break:break-all;color:var(--txt2)">${esc(TG ? enlTg : enlWeb)}</p>${htmlInvitados(m)}`;
   conectarListaSocial(L);
   $('b-comp-tg').onclick = () => {
@@ -2226,7 +2238,7 @@ function pintarAmigos(m) {
     if (TG && TG.openTelegramLink) TG.openTelegramLink(u); else window.open(u, '_blank');
   };
   $('b-comp-wa').onclick = () => abrirWa(TXT_WA, enlWa(m.ref));
-  $('b-comp-copiar').onclick = () => { try { navigator.clipboard.writeText(TG ? enlTg : enlWeb); aviso('📋 Enlace copiado', 'ok'); } catch (e) {} };
+  $('b-comp-copiar').onclick = () => { try { navigator.clipboard.writeText(TG ? enlTg : TXT_WA.replace('ganamos oro', 'ganamos +' + oroAmigo() + ' de oro') + ' ' + enlWa(m.ref)).then(() => aviso(TG ? '📋 Enlace copiado' : '📋 Mensaje y enlace copiados: pégalos en WhatsApp', 'ok'), () => aviso('No se pudo copiar: usa el botón de WhatsApp o Telegram.')); } catch (e) {} };
 }
 // «Mis invitados» (amigos.js infoAmigos): quien te invito y los que llegaron con
 // tu enlace, con su barra hasta Nv 10 y los botones de grupo y susurro.
@@ -2298,7 +2310,7 @@ function ofrecerPresumir(txt, tipo, forzar, intento) {
 }
 function compartirPresumir(info) {
   const enlTg = 'https://t.me/duendequest_bot?start=mmo_' + info.ref;
-  const txt = presumirTxt + ' Juega gratis conmigo a DUENDE QUEST ONLINE. 🧝';
+  const txt = (presumirTxt ? presumirTxt + ' ' : '') + 'Oe, entra con mi link a Duende Quest (gratis en Telegram): recibes oro y pociones de bienvenida, y a nivel 10 ganamos +' + oroAmigo() + ' de oro los dos 👇';
   // Historia de Telegram (Bot API 7.8) solo en movil y con Premium (el enlace va como widget);
   // en Desktop/web o sin Premium, el compartir de siempre: el enlace le llega a un amigo.
   try {
@@ -5616,7 +5628,7 @@ function morir() {
   sfx('explosion', .4);
   setTimeout(() => $('m-muerte').classList.add('on'), 900);
 }
-$('b-revivir').onclick = () => { $('m-muerte').classList.remove('on'); mandar({ t: 'revivir' }); };
+$('b-revivir').onclick = () => { if (!ws || ws.readyState !== 1) return aviso('Sin conexión: reconectando… vuelve a intentarlo en un momento.'); $('m-muerte').classList.remove('on'); mandar({ t: 'revivir' }); };
 
 // op.dup: 'Jugar aquí' + 'Cerrar'; op.tg: sesion de Telegram caducada (reconectar no sirve, se cierra).
 function mostrarError(txt, op) {
@@ -5915,6 +5927,28 @@ setInterval(() => {
   }
   if (++pingN % 4 === 0) mandar({ t: 'ping', ts: Date.now() });
 }, 5000);
+// Banda de reconexion (como en ORIGINS): sin ella el juego parecia congelado
+// 15-25 s sin aviso. Sin internet se dice claro; al volver, un aviso una vez.
+const bandaRed = document.createElement('div');
+bandaRed.setAttribute('role', 'status');
+bandaRed.style.cssText = 'position:fixed;top:calc(4px + env(safe-area-inset-top, 0px));left:50%;transform:translateX(-50%);z-index:50;pointer-events:none;background:#b91c1c;color:#fff;font:12px sans-serif;padding:4px 10px;border-radius:8px;display:none;max-width:calc(100vw - 32px);text-align:center';
+document.body.appendChild(bandaRed);
+let bandaRedVista = false, bandaRedT = performance.now();
+setInterval(() => {
+  // Si este reloj estuvo parado (app en segundo plano, iOS suspendida), se da margen: sin falso «Reconectando» ni «recuperada».
+  const ahoraB = performance.now();
+  if (ahoraB - bandaRedT > 4000) ultimoMsgT = Math.max(ultimoMsgT, ahoraB);
+  bandaRedT = ahoraB;
+  const caida = !!yo && !pausado && !pausaHeredar && !fatal && !document.hidden && !$('m-error').classList.contains('on') && (!ws || ws.readyState !== 1 || performance.now() - ultimoMsgT > 4000);
+  if (caida) {
+    const txt = navigator.onLine === false ? '📶 Sin internet: tu duende te espera, volvemos solos al recuperar la señal' : 'Reconectando…';
+    if (bandaRed.textContent !== txt) bandaRed.textContent = txt;
+    if (!bandaRedVista) { bandaRed.style.display = 'block'; bandaRedVista = true; }
+  } else if (bandaRedVista) {
+    bandaRed.style.display = 'none'; bandaRedVista = false;
+    if (ws && ws.readyState === 1 && !document.hidden) aviso('✅ Conexión recuperada', 'ok');
+  }
+}, 1500);
 
 // Pestaña oculta mas de 3 minutos (otra app, pantalla apagada): se suelta la
 // conexion para no tener el servidor encendido por nadie, y al volver se

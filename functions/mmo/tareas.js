@@ -145,6 +145,7 @@ export const Tareas = {
     this.enviar(s, { t: 'toast', m: `${semanal ? 'Semana' : 'Día'} completo. Bono: ${it.r >= 2 ? 'objeto ÉPICO' : 'objeto raro'}, ${semanal ? 5 : 2} escudos y ${semanal ? 10 : 5} pociones.`, ok: true });
     c.diasCompletos = (c.diasCompletos || 0) + (semanal ? 0 : 1);
     this.revisarLogros(s);
+    this.actualizarYo(s);
     this.guardar(s);
   },
 

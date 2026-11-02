@@ -44,7 +44,7 @@ export async function dailyReminder(env, saltar = new Set()) {
   // game_scores): a los que se fueron no se les insiste cada dia. Ojo:
   // profiles.updated_at no sirve, jugar no lo cambia (solo $DUENDE).
   const desde = encodeURIComponent(new Date(Date.now() - 7 * 86400000).toISOString());
-  const filas = await supabaseQuery(e, `game_scores?select=telegram_id&telegram_id=not.is.null&created_at=gte.${desde}&order=created_at.desc&limit=3000`);
+  const filas = await supabaseQuery(e, `game_scores?select=telegram_id&telegram_id=not.is.null&created_at=gte.${desde}&verified=is.true&order=created_at.desc&limit=3000`);
   if (!Array.isArray(filas)) return;
   const profiles = [...new Set(filas.map(f => String(f.telegram_id || '')))].slice(0, 500).map(t => ({ telegram_id: t }));
   let sent = 0;

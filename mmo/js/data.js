@@ -504,12 +504,21 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 338;
+export const VERSION = 339;
 
 export const NOVEDADES = [
+  { n: 107, fecha: '1 nov 2026', items: [
+    "🍞 Desde el 3 de noviembre, en ORIGINS el pueblo se llena de t'anta wawas con carita y la Abuela pone su puesto de panes en la plaza; en la Cosecha llegan las mazorcas de maíz morado. La píldora del evento cuenta los días para el próximo.",
+    'Nuevo botón verde 📣 +oro siempre a la vista para invitar a tus amigos, y las invitaciones por WhatsApp y Telegram dicen el premio para los dos.',
+    'En el celular las ventanas se ven casi a pantalla completa y el chat ya no tapa la mochila.',
+    'El AUTO ya no deja a tu duende solo en plena pelea y no se pausa al volver de WhatsApp. El Pack de bienvenida espera a que termines de luchar.',
+    'Los duelos amistosos igualan el nivel siempre. En CLASSIC, si se cae tu internet ves un aviso arriba y el juego se reconecta solo.',
+    'Nombres más seguros: sin groserías ni imitaciones del equipo, y si eliges nombre como invitado lo conservas al crear tu cuenta.',
+    'Los cofres pagan su tesoro completo en los 12 primeros de cada día, y en CLASSIC pagan según tu nivel.',
+  ] },
   { n: 106, fecha: '1 nov 2026', items: [
     '¡Ponle nombre a tu duende! Si todavía te llamas «DuendeNNNN», entra en ? → Ajustes y elige tu nombre gratis (una vez).',
-    'Los objetos épicos y legendarios tienen nombre propio, como «Sandalias del Inti», y el cofre legendario del cielo 3D siempre da un legendario.',
+    'Los objetos épicos y legendarios tienen nombre propio, como «Sandalias del Inti», y el cofre legendario del cielo 3D da equipo épico o mejor (los 12 primeros cofres del día pagan completo).',
     'Duelos justos: sin pociones y con el nivel igualado; al recibir un reto ves las reglas.',
     'Puedes cortar el «Sorbo del Cántaro» de los jefes pegándoles fuerte mientras beben.',
     'Invita a un amigo al grupo escribiendo su nombre en Amigos; si juegan juntos, quedan como amigos.',

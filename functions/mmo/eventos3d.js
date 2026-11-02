@@ -16,7 +16,7 @@
 // ═══════════════════════════════════════════════════════
 import { MAPAS, MONSTRUOS, RAREZAS, statsMonstruo, xpParaSubir, nombreItem, MISIONES } from '../../mmo/js/data.js';
 import { zonaEn, cofres3d, COFRE3D_DIST, alturaEn, MUNDO } from '../../mmo/js/mundo3d.js';
-import { COFRE_TIPOS, COFRE_CADA_MS } from './eventos.js';
+import { COFRE_TIPOS, COFRE_CADA_MS, cuentaCofreDia, AVISO_COFRES_DIA } from './eventos.js';
 // Los cofres del 3D estan escondidos (hay que explorar y, el legendario, volar
 // hasta lo alto): pagan mas que los del 2D y el legendario siempre trae equipo.
 const COFRE3D_X = { comun: { oro: 3, equipo: 0.15 }, epico: { oro: 4, equipo: 0.4 }, legendario: { oro: 5, equipo: 1 } };
@@ -259,18 +259,20 @@ export const Eventos3D = {
     // Paga segun TU nivel (tope el de la zona): un Nv 1 con alas no saca el tesoro de una zona Nv 55.
     const nvJ = c.nivel || 1, nvP = Math.min(nvZ, nvJ + 3), nvMin = MAPAS[cf.zona].nv[0];
     const bajo = nvJ < nvMin - 5;
-    const oro = Math.max(1, Math.round(nvP * T.oro * X.oro * rnd(0.85, 1.15) * (bajo ? 0.3 : 1)));
+    const lleno = cuentaCofreDia(c);
+    const oro = Math.max(1, Math.round(nvP * T.oro * X.oro * rnd(0.85, 1.15) * (bajo ? 0.3 : 1) * (lleno ? 1 : 0.2)));
     c.oro += oro;
     let pociones = 0;
-    if (Math.random() < T.pocion) { pociones = T.pociones; c.pw.pocion = Math.min(99, (c.pw.pocion || 0) + pociones); }
+    if (lleno && Math.random() < T.pocion) { pociones = T.pociones; c.pw.pocion = Math.min(99, (c.pw.pocion || 0) + pociones); }
     let item = null;
     // Rareza minima segun el cofre 3D: el epico suelta Raro o mas y el legendario Epico o mas (muy bajo para la zona: la de siempre).
     const rMin3 = bajo ? T.r : ({ comun: 0, epico: 1, legendario: 2 }[cf.tipo] ?? T.r);
-    if (Math.random() < X.equipo) { const nv = MAPAS[cf.zona].nv; item = this.darItem(s, this.generarItem(Math.min(nvJ, nv[1]), rMin3)); }
+    if (lleno && Math.random() < X.equipo) { const nv = MAPAS[cf.zona].nv; item = this.darItem(s, this.generarItem(Math.min(nvJ, nv[1]), rMin3)); }
     c.cofresAbiertos = (c.cofresAbiertos || 0) + 1;
     this.progresoTarea && this.progresoTarea(s, 'cofre');
     this.enviar(s, { t: 'cofre3A', id: cf.i, ms: COFRE_CADA_MS, oro, pociones, item: item ? { r: item.r, nombre: nombreItem(item), id: item.id, s: item.s, nv: item.nv, b: item.b, cj: item.cj, vendido: item.vendido } : null, tipo: cf.tipo });
     if (bajo) this.enviar(s, { t: 'toast', m: `🧰 Este cofre es de una zona de nivel ${nvMin}: vuelve cuando seas más fuerte para el tesoro completo.` });
+    if (!lleno && !c.cofresDia.avisado) { c.cofresDia.avisado = 1; this.enviar(s, { t: 'toast', m: AVISO_COFRES_DIA }); }
     this.revisarLogros(s);
     this.yoLuego(s, true);
     return this.guardar(s);

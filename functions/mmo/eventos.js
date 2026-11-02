@@ -40,6 +40,16 @@ export const RARO_PROB = 0.12;                    // ...con esta probabilidad
 export const RARO_REAPARECE_MS = 20 * 60 * 1000;  // tras morir, nada en 20 min
 export const COFRE_CADA_MS = 30 * 60 * 1000;
 export const COFRE_DIST = 70;
+// Tope diario de cofres con premio completo (2D y 3D comparten contador; dia de Lima).
+// Despues pagan el 20% del oro y sin objeto ni pociones: la ruta de cofres no supera a cazar.
+export const COFRES_DIA_FULL = 12;
+export function cuentaCofreDia(c) {
+  const d = new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10);
+  if (!c.cofresDia || c.cofresDia.d !== d) c.cofresDia = { d, n: 0 };
+  c.cofresDia.n++;
+  return c.cofresDia.n <= COFRES_DIA_FULL;
+}
+export const AVISO_COFRES_DIA = '🧰 Ya sacaste el tesoro grande de hoy: los cofres vuelven a pagar completo mañana (00:00 Perú).';
 
 // Nombre de la invasion segun el bestiario de cada zona.
 const INVASION = {
@@ -375,20 +385,25 @@ export const Eventos = {
     for (const k in c.cofres) if (ahora - c.cofres[k] >= COFRE_CADA_MS) delete c.cofres[k];
     c.cofres[clave] = ahora;
     const T = COFRE_TIPOS[cf.tipo];
-    const nvZ = nivelZona(mapaId);
+    const nvZ = nivelZona(mapaId), nv = MAPAS[mapaId].nv;
+    // Paga segun TU nivel (tope el de la zona), igual que el 3D: un Nv 1 no cobra el legendario de una zona Nv 55.
+    const nvJ = c.nivel || 1, nvP = Math.min(nvZ, nvJ + 3), nvMin = nv[0];
+    const bajo = nvJ < nvMin - 5;
+    const lleno = cuentaCofreDia(c);
     // x2 en el 2D (el 3D paga mas aun: sus cofres estan escondidos).
-    const oro = Math.max(1, Math.round(nvZ * T.oro * 2 * rnd(0.85, 1.15)));
+    const oro = Math.max(1, Math.round(nvP * T.oro * 2 * rnd(0.85, 1.15) * (bajo ? 0.3 : 1) * (lleno ? 1 : 0.2)));
     c.oro += oro;
     let pociones = 0;
-    if (Math.random() < T.pocion) { pociones = T.pociones; c.pw.pocion = Math.min(99, (c.pw.pocion || 0) + pociones); }
+    if (lleno && Math.random() < T.pocion) { pociones = T.pociones; c.pw.pocion = Math.min(99, (c.pw.pocion || 0) + pociones); }
     let item = null;
-    if (Math.random() < T.equipo) {
-      const nv = MAPAS[mapaId].nv;
-      item = this.darItem(s, this.generarItem(clamp(c.nivel, nv[0], nv[1]), T.r));
+    if (lleno && Math.random() < T.equipo) {
+      item = this.darItem(s, this.generarItem(Math.min(nvJ, nv[1]), T.r));
     }
     c.cofresAbiertos = (c.cofresAbiertos || 0) + 1;
     this.progresoTarea && this.progresoTarea(s, 'cofre');
     this.enviar(s, { t: 'cofreA', id: cf.i, ms: COFRE_CADA_MS, oro, pociones, item, tipo: cf.tipo });
+    if (bajo) this.enviar(s, { t: 'toast', m: `🧰 Este cofre es de una zona de nivel ${nvMin}: vuelve cuando seas más fuerte para el tesoro completo.` });
+    if (!lleno && !c.cofresDia.avisado) { c.cofresDia.avisado = 1; this.enviar(s, { t: 'toast', m: AVISO_COFRES_DIA }); }
     this.revisarLogros(s);
     this.actualizarYo(s);
     // Se guarda ya (como una compra): asi un cierre del servidor no deja

@@ -687,7 +687,12 @@ export class MmoWorld {
         this.entrando.set(uidInv, s);
         try {
           const antes = previo.nombre;
-          c = { ...previo, uid, nombre: await this.nombreLibre(nombre, uid, this.calcularDios({ c: { uid } }, s.extraAuth) === 'dueno') };
+          // El nombre que el invitado eligio (gratis, una vez) se conserva: su reserva pasa a la cuenta.
+          const eligio = previo.nombre && (previo.nombreLibreUsado || !/^Duende[0-9a-z]{3,6}$/i.test(previo.nombre));
+          if (eligio) await this.pasarNombre(uidInv, uid, previo.nombre);
+          c = { ...previo, uid, nombre: await this.nombreLibre(eligio ? previo.nombre : nombre, uid, this.calcularDios({ c: { uid } }, s.extraAuth) === 'dueno') };
+          // Si hubo choque (raro: reserva vieja de otro) le toca el nombre con cifras; no se marca como elegido.
+          if (c.nombre !== previo.nombre) delete c.nombreLibreUsado;
           nombre = c.nombre;
           await this.reservarNombre(c, antes);
           // Sin await entre las dos: el storage del DO las manda en un solo lote

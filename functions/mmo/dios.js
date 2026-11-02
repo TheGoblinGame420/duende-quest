@@ -34,10 +34,15 @@ import { getEnv } from '../api/lib.js';
 import { riesgoEstafa, RE_GROSERIA } from './social.js';
 const RE_GROSERIA_1 = new RegExp(RE_GROSERIA.source, 'i');
 
-const RESERVADO = /admin|moderador|^mod|mod$|^gm|gm$|staff|soporte|sistema|oficial|elduende|duendequest|dios/;
-// Lo mismo con las letras que se confunden a la vista (Adm1n, EIDuende, Ðios, M0derador…):
+// Por subcadena (sin espacios): imita al equipo o a quien cobra ("Tienda Duende", "Yape Pagos").
+// 'mod', 'gm', 'dios' van como palabra suelta en nombreReservado (si no, caen 'Modesto', 'Claudio Soto').
+const RESERVADO = /admin|moderador|staff|soporte|sistema|oficial|elduende|duendequest|dueno|owner|creador|developer|tienda|pagos|yape|plin(?!io)|cajer|cobrador|vendedor|ventas|vendooro|telegram|equipoduende|duendeteam|teamduende|duendeoficial/;
+// Lo mismo con las letras que se confunden a la vista (Adm1n, EIDuende, T1enda, M0derador…):
 // i/l/1/| → l, 0/ø → o, 3 → e, 4/@ → a, 5/$ → s, 7 → t, ð → d, rn → m.
-const RESERVADO_ESQ = /admln|moderador|^mod|mod$|^gm|gm$|staff|soporte|slstema|oflclal|elduende|duendequest|dlos/;
+const RESERVADO_ESQ = /admln|moderador|staff|soporte|slstema|oflclal|elduende|duendequest|dueno|owner|creador|developer|tlenda|pagos|yape|plln(?!lo)|cajer|cobrador|vendedor|ventas|vendooro|telegram|equlpoduende|duendeteam|teamduende|duendeoflclal/;
+// Groserias por subcadena sobre el nombre sin espacios ('Soy Puta', 'XPendejo'). 'verga' sin 'Vergara' (apellido); 'puta' sin Diputado/Computadora/Disputa.
+const RE_GROSERIA_NOMBRE = /putamadre|conchatumadre|conchatumare|conchasumare|ctmr|csmr|chucha|mierd|pendej|cojud|huev[oó]n|huevon|webon|maric[oó]n|maricon|cabr[oó]n|cabron|poronga|pinga|cacher|porno|violar|nazi|hitler|(?<!d[il]|com|re|[il]m|am|d[il]s)put[ao]|verga(?!ra)/;
+const PAL_RESERVADA = new Set(['mod', 'mods', 'gm', 'dios', 'dlos', 'admin', 'admln', 'staff']);
 export const esqueleto = n => claveNombre(n).replace(/[il1|!]/g, 'l').replace(/[0ø]/g, 'o').replace(/3/g, 'e').replace(/[4@]/g, 'a').replace(/[5$]/g, 's').replace(/7/g, 't').replace(/ð/g, 'd').replace(/rn/g, 'm');
 // Clave para comparar nombres: minusculas, sin tildes, sin espacios ni '_'
 // (asi "El_Duende", "el duende" y "ÉlDuende" son el mismo). Las letras no
@@ -76,7 +81,12 @@ export const Dios = {
   diosActivo(s) { return !!(s && s.dios && s.diosModo && MODOS.some(k => s.diosModo[k])); },
 
   // ── NOMBRES UNICOS ──
-  nombreReservado(n) { return RESERVADO.test(claveNombre(n)) || RESERVADO_ESQ.test(esqueleto(n)) || RE_GROSERIA_1.test(claveNombre(n)) || RE_GROSERIA_1.test(esqueleto(n)); },
+  nombreReservado(n) {
+    const pal = String(n || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().split(/[\s_]+/);
+    const k = claveNombre(n), e = esqueleto(n);
+    return pal.some(p => PAL_RESERVADA.has(p) || PAL_RESERVADA.has(esqueleto(p))) || RESERVADO.test(k) || RESERVADO_ESQ.test(e) ||
+      RE_GROSERIA_1.test(String(n || '')) || RE_GROSERIA_1.test(k) || RE_GROSERIA_NOMBRE.test(k) || RE_GROSERIA_NOMBRE.test(e);
+  },
   // Devuelve un nombre libre para uid partiendo de "deseado" (le añade cifras
   // si ya es de otro). No lo reserva: eso lo hace reservarNombre al guardarse.
   async nombreLibre(deseado, uid, dios) {
@@ -106,21 +116,32 @@ export const Dios = {
       if (!dueno) await this.state.storage.put(k, c.uid);
     }
   },
+  // Herencia invitado→cuenta: la reserva del nombre pasa del uid del invitado a la cuenta.
+  async pasarNombre(uidInv, uid, nombre) {
+    if (!uidInv || !uid || !nombre) return;
+    for (const k of ['n:' + claveNombre(nombre), 'ne:' + esqueleto(nombre)]) {
+      if ((await this.state.storage.get(k)) === uidInv) await this.state.storage.put(k, uid);
+    }
+  },
   // El invitado ('DuendeNNNN') elige su nombre una sola vez y gratis (Ajustes en ORIGINS y CLASSIC).
   async miNombre(s, m) {
     const c = s && s.c;
     if (!c) return;
     const ahora = Date.now();
-    if (ahora - (s.miNombreT || 0) < 5000) return this.enviar(s, { t: 'toast', m: 'Espera unos segundos e inténtalo otra vez.' });
-    s.miNombreT = ahora;
+    if (ahora - (s.miNombreT || 0) < 2000) return this.enviar(s, { t: 'toast', m: 'Espera unos segundos e inténtalo otra vez.' });
     if (c.nombreLibreUsado || !/^Duende[0-9a-z]{3,6}$/i.test(c.nombre || '')) return this.enviar(s, { t: 'toast', m: 'Ya elegiste tu nombre.' });
     if (typeof m.n !== 'string' || m.n.trim().length < 3 || m.n.trim().length > 16) return this.enviar(s, { t: 'toast', m: 'El nombre debe tener de 3 a 16 letras.' });
     const pedido = String(m.n).slice(0, 16);
     const limpio = limpiarNombre(pedido);
     const antes = c.nombre;
+    s.miNombreT = ahora;
     const n = await this.nombreLibre(pedido, c.uid, false);
     if (s.cerrado || s.c !== c) return;
-    if (!limpio || limpio.length < 3 || /^duende/i.test(n) || n !== limpio) return this.enviar(s, { t: 'toast', m: 'Ese nombre no está disponible, prueba otro.' });
+    if (!limpio || limpio.length < 3 || /^duende/i.test(n) || n !== limpio) {
+      if (!limpio || limpio.length < 3) return this.enviar(s, { t: 'toast', m: 'El nombre debe tener de 3 a 16 letras.' });
+      if (this.nombreReservado(limpio)) return this.enviar(s, { t: 'toast', m: 'Ese nombre no está permitido (parece del equipo o es una grosería). Prueba otro.' });
+      return this.enviar(s, { t: 'toast', m: 'Otro jugador ya se llama así: prueba agregando algo, como «' + limpio.slice(0, 11) + ' Inca»' });
+    }
     c.nombre = n;
     c.nombreLibreUsado = 1;
     await this.reservarNombre(c, antes);

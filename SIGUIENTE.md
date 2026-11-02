@@ -3342,3 +3342,15 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Bot: /start corto para nuevos con botón al 3D; arcade con «🌍 JUGAR ONLINE»; recordatorio del arcade solo a quien jugó el arcade en 7 días y con «/avisos off».
 - Grupo por nombre en Amigos y amistad automática al jugar en grupo.
 - Arnés 897 bien (mock de game_scores en la prueba del cron).
+
+### Ronda 14 (1-nov-2026 noche, `?v=339`)
+
+- 30 evaluadores (regresiones de v338, renombrado, duelos, T'anta Wawa y Cosecha, calendario, desbloqueos por nivel, compras, ballenas, compartir en Telegram/WhatsApp, HUD pequeño, reconexión, anti-trampas, economía, memoria del DO, sonido, clips para Meta) → 140 problemas → 10 tareas.
+- CLASSIC: `cuentaAlEntrar`/tienda al recibir 'bienvenido', banda de reconexión (`bandaRedT`, sin falsos positivos al volver de segundo plano ni con `pausaHeredar`), Revivir sin red no cierra la ventana.
+- dios.js: `RE_GROSERIA_NOMBRE` sin falsos positivos (Diputado, Vergara…), `PAL_RESERVADA`, impostores de cobro; mensajes de error claros y sugerencia «X Inca».
+- Nombre elegido como invitado se conserva al crear cuenta. AUTO que no se pausa en pelea ni al volver de otra app.
+- ORIGINS: decorado de T'anta Wawa (panes con carita, puesto de la Abuela) y Cosecha; cuenta atrás del próximo evento en la píldora.
+- Pack de bienvenida diferido fuera de combate y sin perderse. Tope diario de 12 cofres con premio completo (2D+3D, día de Lima); cofres 2D por nivel.
+- Móvil: ventanas casi a pantalla completa, botones sobre el chat, botón 📣 +oro. OG de /jugar/ e invitaciones de Telegram con el premio.
+- Aviso de Telegram solo a verificados; bono de tareas visible al momento; duelos con daño proporcional a la vida.
+- Arnés 897 bien.

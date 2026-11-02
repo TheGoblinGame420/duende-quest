@@ -26,12 +26,12 @@
 <meta name="theme-color" content="#0a0418">
 <link rel="manifest" href="/mundo/manifest.json">
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
-<script src="/js/pwa.js?v=338" defer></script>
+<script src="/js/pwa.js?v=339" defer></script>
 <link rel="icon" href="/assets/ui/coin.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=338"></script>
+<script src="/js/origen.js?v=339"></script>
 <script>
 // Red de seguridad de la carga (script clasico: corre aunque el modulo 3D o el CDN fallen).
 // - Errores antes de conectar: se guardan en __errQ y mundo.js los manda al entrar.
@@ -117,28 +117,28 @@
   });
 })();
 </script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=338" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=339" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=338">
-<link rel="modulepreload" href="/mmo/js/data.js?v=338">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=338">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=338">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=338">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=338">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=338">
-<link rel="modulepreload" href="/mmo/js/regalo.js?v=338">
-<link rel="modulepreload" href="/mmo/js/avisotg.js?v=338">
-<link rel="modulepreload" href="/mundo/js/musica.js?v=338">
-<link rel="modulepreload" href="/mundo/js/cueva.js?v=338">
-<link rel="modulepreload" href="/mundo/js/tapa.js?v=338">
-<link rel="modulepreload" href="/mundo/js/abismo.js?v=338">
-<link rel="modulepreload" href="/mundo/js/particulas.js?v=338">
-<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=338">
-<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=338">
-<link rel="modulepreload" href="/mmo/js/secundarias.js?v=338">
-<link rel="modulepreload" href="/mundo/js/lore.js?v=338">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=339">
+<link rel="modulepreload" href="/mmo/js/data.js?v=339">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=339">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=339">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=339">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=339">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=339">
+<link rel="modulepreload" href="/mmo/js/regalo.js?v=339">
+<link rel="modulepreload" href="/mmo/js/avisotg.js?v=339">
+<link rel="modulepreload" href="/mundo/js/musica.js?v=339">
+<link rel="modulepreload" href="/mundo/js/cueva.js?v=339">
+<link rel="modulepreload" href="/mundo/js/tapa.js?v=339">
+<link rel="modulepreload" href="/mundo/js/abismo.js?v=339">
+<link rel="modulepreload" href="/mundo/js/particulas.js?v=339">
+<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=339">
+<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=339">
+<link rel="modulepreload" href="/mmo/js/secundarias.js?v=339">
+<link rel="modulepreload" href="/mundo/js/lore.js?v=339">
 <style>
 :root{--bg:#0a0418;--panel:rgba(14,9,30,.86);--borde:rgba(160,140,255,.22);--txt:#f2efff;--txt2:#b8b0d8;--txt3:#7d7699;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;--oro:#ffd84a;--pri:#2563eb;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -387,6 +387,7 @@ body.movil #joy{bottom:calc(66px + env(safe-area-inset-bottom));height:calc(55% 
 /* El joystick por debajo de los paneles (antes se tragaba los toques) */
 body.movil #joy{z-index:1;}
 body.movil .caja,body.movil #tactil{z-index:2;}
+body.movil #botones,body.compacto #botones{z-index:3;}   /* el menu por encima de la caja del chat (tapaba la mochila) */
 #tactil #t-bajar,#tactil #t-usar{grid-column:2;grid-row:1;}
 body.movil #hablar{display:none!important;}
 body.movil #lanzar{bottom:auto;top:50%;width:min(220px,58vw);pointer-events:none;}
@@ -418,6 +419,14 @@ body.compacto #barra .acc img{width:24px;height:24px;}
 body.movil #botones,body.compacto #botones{grid-template-columns:repeat(4,38px);}
 body.movil #botones:not(.abierto) #b-libro,body.movil #botones:not(.abierto) #b-pase,body.movil #botones:not(.abierto) #b-amigos,
 body.compacto #botones:not(.abierto) #b-libro,body.compacto #botones:not(.abierto) #b-pase,body.compacto #botones:not(.abierto) #b-amigos{display:none;}
+/* Invitar siempre a la vista (verde, junto a ⋯): cerrado son 5 botones (mochila, tienda, chat, invitar y ⋯) */
+body.movil #botones:not(.abierto),body.compacto #botones:not(.abierto){grid-template-columns:repeat(5,40px);}
+#b-compartir{flex-direction:column;line-height:1;background:#25d366;color:#fff;}
+#b-compartir small{font-size:8px;font-weight:800;}
+body.movil #b-compartir,body.compacto #b-compartir{background:#25d366;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;}
+body.movil #b-compartir small,body.compacto #b-compartir small{font-size:8px;}
+@media (max-width:389px){body.movil #botones:not(.abierto),body.compacto #botones:not(.abierto){grid-template-columns:repeat(5,36px);}
+ body.movil #botones:not(.abierto) .bt,body.compacto #botones:not(.abierto) .bt{width:36px;height:36px;}}   /* 5 x 40 px pisaba las misiones en pantallas de 360 px */
 #b-mas.aviso::after{content:'';position:absolute;top:3px;right:3px;width:8px;height:8px;border-radius:50%;background:#ff4d6d;box-shadow:0 0 6px #ff4d6d;}
 #b-mas{position:relative;}
 /* (El bloque del movil en horizontal esta al final del <style>: aqui lo pisaban las reglas de abajo) */
@@ -565,6 +574,11 @@ body.movil.mano-der #joy .pista-joy{left:auto;right:28px;flex-direction:row-reve
 @media (orientation:portrait){
  body.movil #v-tienda.modal,body.compacto #v-tienda.modal{padding-top:calc(8px + env(safe-area-inset-top) + var(--tg-top,0px))!important;}
  body.movil #v-tienda .ventana,body.compacto #v-tienda .ventana{max-height:calc(100vh - 84px - env(safe-area-inset-top) - env(safe-area-inset-bottom))!important;max-height:calc(100dvh - 84px - env(safe-area-inset-top) - env(safe-area-inset-bottom))!important;}
+ /* El resto de paneles igual de altos: con padding de 96 px y 100dvh - 330 px, en el navegador de Facebook/Instagram eran una rendija de ~200 px */
+ body.movil #v-npc.modal,body.movil #v-inv.modal,body.movil #v-diario.modal,body.movil #v-pase.modal,body.movil #v-libro.modal,body.movil #v-logros.modal,body.movil #v-herm.modal,body.movil #v-rank.modal,body.movil #v-amigos.modal,body.movil #v-ayuda.modal,
+ body.compacto #v-npc.modal,body.compacto #v-inv.modal,body.compacto #v-diario.modal,body.compacto #v-pase.modal,body.compacto #v-libro.modal,body.compacto #v-logros.modal,body.compacto #v-herm.modal,body.compacto #v-rank.modal,body.compacto #v-amigos.modal,body.compacto #v-ayuda.modal{padding-top:calc(8px + env(safe-area-inset-top) + var(--tg-top,0px))!important;}
+ body.movil #v-npc .ventana,body.movil #v-inv .ventana,body.movil #v-diario .ventana,body.movil #v-pase .ventana,body.movil #v-libro .ventana,body.movil #v-logros .ventana,body.movil #v-herm .ventana,body.movil #v-rank .ventana,body.movil #v-amigos .ventana,body.movil #v-ayuda .ventana,
+ body.compacto #v-npc .ventana,body.compacto #v-inv .ventana,body.compacto #v-diario .ventana,body.compacto #v-pase .ventana,body.compacto #v-libro .ventana,body.compacto #v-logros .ventana,body.compacto #v-herm .ventana,body.compacto #v-rank .ventana,body.compacto #v-amigos .ventana,body.compacto #v-ayuda .ventana{max-height:calc(100vh - 84px - env(safe-area-inset-top) - env(safe-area-inset-bottom))!important;max-height:calc(100dvh - 84px - env(safe-area-inset-top) - env(safe-area-inset-bottom))!important;}
  body.movil #obj,body.compacto #obj{left:calc(16px + min(150px,40vw));transform:none;width:calc(100vw - min(150px,40vw) - 120px);max-width:160px;}
 }
 </style>
@@ -635,12 +649,12 @@ body.movil.mano-der #joy .pista-joy{left:auto;right:28px;flex-direction:row-reve
   <button class="bt extra" id="b-rank" title="Ranking">🏅</button>
   <button class="bt" id="b-pase" title="Pase de temporada (premios gratis)">🎟</button>
   <button class="bt extra" id="b-son" title="Música y sonido">🔊</button>
-  <button class="bt extra" id="b-compartir" title="Invitar a un amigo / compartir">📣</button>
   <button class="bt" id="b-amigos" title="Amigos y jugadores en línea">👥</button>
   <button class="bt" id="b-chat" title="Chat (Enter)">💬</button>
   <button class="bt extra" id="b-ayuda" title="Ajustes y controles (calidad gráfica)" aria-label="Ajustes y controles">?</button>
   <a class="bt" href="/mmo/" title="CLASSIC (2D): mazmorras, Torre y banda, con tu mismo personaje">2D</a>
   <a class="bt" href="/inicio/" title="Inicio: elige tu juego">⌂</a>
+  <button class="bt" id="b-compartir" title="Invitar a un amigo: cuando llegue a Nv 10, los dos ganan oro" aria-label="Invitar a un amigo">📣<small>+oro</small></button>
   <button class="bt" id="b-mas" title="Más" aria-label="Más">⋯</button>
 </div>
 <div class="caja" id="misiones"></div>
@@ -761,8 +775,8 @@ body.movil.mano-der #joy .pista-joy{left:auto;right:28px;flex-direction:row-reve
 <!-- Telegram: su SDK se carga arriba solo dentro de Telegram (window.__tgListo).
      defer: no frenan el HTML y corren en orden, antes que mundo.js (que usa supabase). -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=338" defer></script>
-<script type="module" src="/mundo/js/mundo.js?v=338"></script>
+<script src="/js/config.js?v=339" defer></script>
+<script type="module" src="/mundo/js/mundo.js?v=339"></script>
 <div id="flash-nv"></div>
 <div id="cartel-nv"></div>
 </body>

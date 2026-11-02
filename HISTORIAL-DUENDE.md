@@ -75,6 +75,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v336 | QA final de la noche: avisos que no tapan la clase, bienvenida fuera de combate, /jugar/ sin precarga en 3G, /miscompras y fallos de Stars claros | **B** |
 | v337 | Ronda 12, última de la noche: AUTO que sigue y toma pociones, Jugar sin sonido, Telegram al instante, portada de anuncio sin cripto, último día de Halloween, rescate a Safari | **B** |
 | v338 | Ronda 13: nombre propio, legendarios con nombre, duelos justos, jefes interrumpibles, grupo por nombre, colores en 3D, CLASSIC con menos datos | **B** |
+| v339 | Ronda 14: pueblo de T'anta Wawa y Cosecha, botón 📣 +oro, ventanas móviles completas, AUTO que no suelta en pelea, nombres seguros, tope diario de cofres | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 
