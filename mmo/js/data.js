@@ -516,12 +516,19 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 365;
+export const VERSION = 366;
 
 // gancho (opcional): la frase que ve en ORIGINS quien vuelve (tira diaria y aviso tras actualizar);
 // sin gancho se usa el primer item. Siempre lo que GANA un jugador que vuelve, nunca un arreglo para novatos ni algo tecnico.
 // solo3d: true en los parches que solo cambian ORIGINS (CLASSIC no abre la ventana y el aviso de Telegram solo va a quien juega en 3D).
 export const NOVEDADES = [
+  { n: 134, fecha: '2 nov 2026', items: [
+    'La música del pueblo arranca bien al tocar la pantalla en el celular y ya no se encima con otra música.',
+    'Si tu celular es antiguo para el 3D (iPhone con iOS 15 a 16.3), te avisamos al instante y entras directo a CLASSIC con el mismo duende.',
+    'En CLASSIC, la tienda abre en PODERES si juegas sin cuenta, y en el celular los botones de pago no tapan los paquetes.',
+    'El tutorial de CLASSIC explica que el Guerrero debe llenar su Ira antes del Golpe del Puma.',
+    'En el bot, /yo y /miscompras encuentran tu duende aunque lo hayas vinculado con correo, y /avisos dice la verdad sobre si están activados.',
+  ] },
   { n: 133, fecha: '2 nov 2026', items: [
     'El Pueblo Duende siempre tiene música, también en iPhone y en Telegram.',
     'Si el jefe ya te avisó su mordida, primero muerde y después llega el ¡AHORA!; en tu revancha contra el Sabueso ya no sale un «¡FASE 2!» falso.',

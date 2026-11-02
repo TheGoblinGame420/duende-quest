@@ -14,29 +14,29 @@
 import * as THREE from 'three';
 import { esNocheDuendes, TEMPORADAS, temporadaDe, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=365';
-import { iniciarVentanas, talentoPreElegido, TAL_PRE_NIVEL } from './ventanas.js?v=365';
-import { TALENTOS, TALENTO_NIVEL } from '/mmo/js/data.js?v=365';   // meta del talento elegido a Nv 7 en la barra de XP
-import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel, DEBIL_EMO, statsJugador } from '/mmo/js/data.js?v=365';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
-import { diaFiesta, diasFiesta, TEMP_DIAS, premioDiaFiesta, esNochebuena } from '/mmo/js/data.js?v=365';   // tarea del dia de la fiesta en la caja de misiones
-import { NOVEDADES } from '/mmo/js/data.js?v=365';   // linea «Nuevo» de la tira diaria y aviso tras actualizar
-import { iniciarRegalo } from '/mmo/js/regalo.js?v=365';
-import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=365';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=365';
-import { crearMusica } from './musica.js?v=365';
-import { crearSonidos } from './sonidos.js?v=365';
-import { construirCueva } from './cueva.js?v=365';
-import { TAPA, transparentar } from './tapa.js?v=365';
-import { construirAbismo } from './abismo.js?v=365';
-import { crearParticulas } from './particulas.js?v=365';
-import { cargarKenney, piezasCasa } from './kenney.js?v=365';
-import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=365';
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=366';
+import { iniciarVentanas, talentoPreElegido, TAL_PRE_NIVEL } from './ventanas.js?v=366';
+import { TALENTOS, TALENTO_NIVEL } from '/mmo/js/data.js?v=366';   // meta del talento elegido a Nv 7 en la barra de XP
+import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel, DEBIL_EMO, statsJugador } from '/mmo/js/data.js?v=366';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
+import { diaFiesta, diasFiesta, TEMP_DIAS, premioDiaFiesta, esNochebuena } from '/mmo/js/data.js?v=366';   // tarea del dia de la fiesta en la caja de misiones
+import { NOVEDADES } from '/mmo/js/data.js?v=366';   // linea «Nuevo» de la tira diaria y aviso tras actualizar
+import { iniciarRegalo } from '/mmo/js/regalo.js?v=366';
+import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=366';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=366';
+import { crearMusica } from './musica.js?v=366';
+import { crearSonidos } from './sonidos.js?v=366';
+import { construirCueva } from './cueva.js?v=366';
+import { TAPA, transparentar } from './tapa.js?v=366';
+import { construirAbismo } from './abismo.js?v=366';
+import { crearParticulas } from './particulas.js?v=366';
+import { cargarKenney, piezasCasa } from './kenney.js?v=366';
+import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=366';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=365';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, esNoche, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=365';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=365';
-import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=365';
-import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe } from './lore.js?v=365';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=366';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, esNoche, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=366';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=366';
+import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=366';
+import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe } from './lore.js?v=366';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -1948,8 +1948,9 @@ function error(txt, red, op) {
   }
   let bc = document.getElementById('b-cerrar-err');
   if (!bc) { bc = document.createElement('button'); bc.id = 'b-cerrar-err'; bc.className = 'btn'; bc.textContent = 'Cerrar'; bc.style.cssText = 'width:100%;margin-top:8px;opacity:.85'; bc.onclick = cerrarJuego; b.after(bc); }
-  bc.textContent = op && op.lleno ? 'Jugar el arcade mientras' : 'Cerrar';
-  bc.onclick = op && op.lleno ? () => { location.href = '/game.html'; } : cerrarJuego;
+  const arc = !!(op && op.lleno && !modoAnuncio());
+  bc.textContent = arc ? 'Jugar el arcade mientras' : 'Cerrar';
+  bc.onclick = arc ? () => { location.href = '/game.html'; } : cerrarJuego;
   bc.style.display = op && (op.dup || op.lleno) ? '' : 'none';
   abrir('v-error');
 }
@@ -4399,7 +4400,7 @@ try {
 } catch (e) {}
 if (TG && TGV('8.0')) try {
   TG.onEvent('deactivated', () => { fuera3 = true; musica.activo(false); tema.pause(); temaOn = false; if (actx) actx.suspend().catch(() => {}); tocandoSubir = tocandoBajar = false; joy.id = null; joy.dx = joy.dy = 0; atkMantener = false; });
-  TG.onEvent('activated', () => { fuera3 = false; if (sonido) musica.activo(true); if (actx) actx.resume().catch(() => {}); });
+  TG.onEvent('activated', () => { fuera3 = false; if (sonido && !temaOn) musica.activo(true); if (actx) actx.resume().catch(() => {}); });
 } catch (e) {}
 $('b-herm').onclick = () => { if ($('v-herm').classList.contains('on')) return cerrar('v-herm'); abrir('v-herm'); mandar({ t: 'herm' }); pintarHerm(); };
 $('b-rank').onclick = () => { if ($('v-rank').classList.contains('on')) return cerrar('v-rank'); abrir('v-rank'); mandar({ t: 'ranking' }); pintarRankPanel(); };
@@ -4410,13 +4411,13 @@ $('presumir3').onclick = () => { $('presumir3').style.display = 'none'; comparti
 // cualquier toque la retoma; con el contexto ya creado solo mira su estado.
 // Toque suave al pulsar botones de la interfaz (v321).
 addEventListener('pointerdown', e => { if (sonido && e.target.closest && e.target.closest('.bt,.vv-tab,.cerrar,.vv-btn')) musica.tic(e.target.closest('#b-mas')); });
-for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, e => { if (e && e.target && e.target.closest && e.target.closest('#b-sin-son')) return; if (sonido) { musica.arrancar(); if (actx && actx.state !== 'running') actx.resume().catch(() => {}); } });   // efectos tambien (iPhone)
+for (const ev of ['pointerdown', 'touchend', 'keydown']) addEventListener(ev, e => { if (e && e.target && e.target.closest && e.target.closest('#b-sin-son')) return; if (sonido) { musica.arrancar(); if (actx && actx.state !== 'running') actx.resume().catch(() => {}); } });   // efectos tambien (iPhone)
 // Fuera de la app (otra pestaña, pantalla apagada, Telegram sin 'deactivated')
 // la musica y los golpes seguian sonando de fondo.
 document.addEventListener('visibilitychange', () => {
   // Al salir (Telegram, otra app) se sueltan joystick y botones: si no, volvia con SUBIR o el joystick pegados.
   if (document.hidden) { musica.activo(false); tema.pause(); temaOn = false; if (actx) actx.suspend().catch(() => {}); tocandoSubir = tocandoBajar = false; joy.id = null; joy.dx = joy.dy = 0; for (const k in teclas) teclas[k] = false; atkMantener = false; }
-  else { fuera3 = false; if (sonido) { musica.activo(true); if (actx) actx.resume().catch(() => {}); } }
+  else { fuera3 = false; if (sonido) { if (!temaOn) musica.activo(true); if (actx) actx.resume().catch(() => {}); } }
 });
 // «Antes de irte, manda a tu mascota»: una vez por partida, si puede y no tiene expedicion.
 // PC: el raton sale por arriba (va a cerrar la pestaña). Movil: al volver tras salir un rato.
@@ -7307,6 +7308,7 @@ function etiquetas(t) {
 // navegador bloquea el audio.
 const tema = new Audio(); tema.loop = true; tema.volume = 0.3; tema.preload = 'none';
 let temaOn = false;
+let temaMal = false;   // el MP3 fallo (red, formato): no se reintenta, suena la generada
 let temaBloq = false;   // el navegador rechazo play() (autoplay): suena la generada hasta el siguiente toque
 // El MP3 (1 MB) solo con red 4G y sin ahorro de datos; si no, suena la musica generada (gratis).
 // Sin navigator.connection (iPhone, Firefox) se baja como siempre.
@@ -7314,19 +7316,19 @@ function redTema() { try { const c = navigator.connection; return !c || (!c.save
 function temaPueblo(z) {
   // En las fiestas (T'anta Wawa, Cosecha) el pueblo suena con la fiesta andina generada (musica.evento), no con el MP3.
   let fiesta = false; try { fiesta = /^(tanta|cosecha)/.test((temporadaDe() || {}).id || ''); } catch (e) {}
-  const quiere = sonido && !fiesta && !document.hidden && !fuera3 && z === 'pueblo' && !enCueva(P.x) && !enAbismo(P.x) && (temaOn || !!tema.src || redTema()) && !temaBloq;
+  const quiere = sonido && !fiesta && !document.hidden && !fuera3 && z === 'pueblo' && !enCueva(P.x) && !enAbismo(P.x) && (temaOn || !!tema.src || redTema()) && !temaBloq && !temaMal;
   if (quiere === temaOn) return;
   temaOn = quiere;
   if (quiere) {
     if (!tema.src) tema.src = '/audio/tema_duende.mp3';
-    const p = tema.play(); if (p && p.then) p.then(() => { if (temaOn) musica.activo(false); }, er => { if (er && er.name === 'AbortError') return; temaOn = false; temaBloq = true; if (sonido && !document.hidden && !fuera3) musica.activo(true); }); else musica.activo(false);
+    const p = tema.play(); if (p && p.then) p.then(() => { if (temaOn) musica.activo(false); }, er => { if (er && er.name === 'AbortError') return; temaOn = false; if (er && er.name === 'NotAllowedError') temaBloq = true; else { temaMal = true; try { tema.removeAttribute('src'); } catch (e2) {} } if (sonido && !document.hidden && !fuera3) musica.activo(true); }); else musica.activo(false);
   } else {
     tema.pause();
     if (sonido && !document.hidden && !fuera3) musica.activo(true);
   }
 }
 // Reintento dentro de un gesto del jugador (iPhone / WebView de Telegram solo dejan sonar ahi).
-for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, () => { if (!temaBloq) return; temaBloq = false; try { temaPueblo(zonaActual || zonaEn(P.x, P.z)); } catch (e) {} }, true);
+for (const ev of ['pointerup', 'touchend', 'click', 'keydown']) addEventListener(ev, () => { if (!temaBloq) return; temaBloq = false; try { temaPueblo(zonaActual || zonaEn(P.x, P.z)); } catch (e) {} }, true);
 // ── CORRIENTES DE VIENTO DEL ABISMO ──
 // Columnas de aire celeste entre islas (mmo/js/abismo3d.js CORRIENTES): el servidor
 // recarga las alas al cruzarlas volando o planeando y avisa con 'corriente'.

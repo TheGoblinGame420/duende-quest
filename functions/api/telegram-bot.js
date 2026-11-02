@@ -37,6 +37,9 @@ function getEnv(context) {
     SUPABASE_URL: context.env.SUPABASE_URL || 'https://byspuovhhbmndqskvvjo.supabase.co',
     SUPABASE_KEY: context.env.SUPABASE_SERVICE_KEY || context.env.SUPABASE_ANON_KEY || '',
     DISCORD_WEBHOOK_URL: context.env.DISCORD_WEBHOOK_URL || '',
+    // mmoInterno(env) los necesita: sin ellos /yo, /topmmo y /stats sin perfil daban siempre error.
+    MMO: context.env.MMO,
+    TELEGRAM_BOT_TOKEN: context.env.TELEGRAM_BOT_TOKEN,
   };
 }
 
@@ -253,6 +256,8 @@ async function handlePrice(token, chatId, messageId) {
 async function handleStats(token, env, chatId, userId, messageId) {
   const tgId = String(userId);
   let profiles; try { profiles = await supabaseQuery(env, `profiles?telegram_id=eq.${tgId}&select=username,best_score,best_wave,total_coins,games_played,duende_balance`); } catch(e) { profiles = []; }
+  // Sin perfil del arcade: es jugador de ORIGINS/CLASSIC, se le muestra su duende del MMO.
+  if (!Array.isArray(profiles) || profiles.length === 0) return handleYo(token, env, chatId, userId);
   let text;
   if (!Array.isArray(profiles) || profiles.length === 0) text = '📊 *Tus estadísticas*\n\n_Aún no tienes perfil. Juega una partida para crearlo._';
   else { const p = profiles[0]; text = `📊 *Estadísticas de ${mdSeguro(p.username||'Duende')}*\n\n🏆 Mejor puntuación: *${Number(p.best_score||0).toLocaleString()}*\n🌊 Mejor oleada: *${p.best_wave||0}*\n🪙 Monedas: *${Number(p.total_coins||0).toLocaleString()}*\n🎮 Partidas: *${p.games_played||0}*\n💎 $DUENDE: *${Number(p.duende_balance||0).toLocaleString()}*`; }
@@ -397,7 +402,7 @@ async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
     }
     return res;
   };
-  const [arg1, arg2] = payload.trim().split(/\s+/);
+  const [arg1, arg2] = payload.trim().replace(/^#/, '').split(/\s+/);
   const fondoTxt = f => `Fondo de hoy: ${(f.total / 1000).toFixed(3)} TON (auto ${(f.auto / 1000).toFixed(3)} + tuyo ${(f.extra / 1000).toFixed(3)}) · repartido ${(f.gastado / 1000).toFixed(3)} TON`;
   // /skinweb REFERENCIA: activa a mano una skin de la web ya pagada y verificada en la
   // cadena (desde el 27-oct-2026 la web no la entrega sola: helius-verify avisa al dueño).
@@ -747,7 +752,7 @@ async function handleMisCompras(token, env, context, chatId, userId) {
     lineas.push(`⭐ ${f.amount_stars} Stars · ${fecha(f.created_at)}\n   ${sk ? '✅ Skin activada' : n > 0 ? '✅ Acreditado' : n < 0 ? '↩️ Devuelto' : (mmo && mmo.ok) ? '⏳ En revisión' : '⏳ Estado no disponible ahora'}`);
   }
   const fallo = !(mmo && mmo.ok) || !Array.isArray(arcade);
-  let text = lineas.length ? '🧾 Tus compras con Stars\n\n' + lineas.slice(0, 12).join('\n\n') : '🧾 No encontramos compras con Stars de esta cuenta de Telegram.';
+  let text = lineas.length ? '🧾 Tus compras\n\n' + lineas.slice(0, 12).join('\n\n') : '🧾 No encontramos compras de esta cuenta de Telegram.';
   if (fallo) text += '\n\n⚠️ No pudimos leer todo ahora mismo: prueba otra vez en un rato.';
   text += '\n\nLa entrega es a mano, como máximo en ' + ENTREGA.plazoMaxH + ' h. ¿Algún problema? /paysupport';
   await tg(token, 'sendMessage', { chat_id: chatId, text, disable_web_page_preview: true, reply_markup: { inline_keyboard: BOTONES_SOPORTE } });

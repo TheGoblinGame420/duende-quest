@@ -130,17 +130,17 @@ export function crearMusica(opc = {}) {
   function volumen() {
     if (!ctx) return;
     const t = ctx.currentTime;
-    maestro.gain.cancelScheduledValues(t);
+    maestro.gain.cancelScheduledValues(t); maestro.gain.setValueAtTime(maestro.gain.value, t);
     maestro.gain.linearRampToValueAtTime(activo ? (noche ? 0.08 : 0.11) : 0, t + 1.5);
-    lluviaG.gain.cancelScheduledValues(t);
+    lluviaG.gain.cancelScheduledValues(t); lluviaG.gain.setValueAtTime(lluviaG.gain.value, t);
     const ll = !activo ? 0 : clima === 'tormenta' ? 0.07 : clima === 'lluvia' ? 0.045 : clima === 'arena' ? 0.03 : 0;
     lluviaG.gain.linearRampToValueAtTime(ll, t + 2);
     bucle('lluvia', ll > 0);
-    vientoG.gain.cancelScheduledValues(t);
+    vientoG.gain.cancelScheduledValues(t); vientoG.gain.setValueAtTime(vientoG.gain.value, t);
     const vv = activo ? Math.max((VIENTO[zona] || 0.012) * (clima === 'tormenta' ? 1.8 : 1), 0.06 * vueloK) : 0;
     vientoG.gain.linearRampToValueAtTime(vv, t + 2.5);
     bucle('viento', vv > 0);
-    ambG.gain.cancelScheduledValues(t);
+    ambG.gain.cancelScheduledValues(t); ambG.gain.setValueAtTime(ambG.gain.value, t);
     ambG.gain.linearRampToValueAtTime(activo ? 0.5 : 0, t + 1.5);
   }
   // Ruido en bucle: suena mientras su volumen sea > 0; si queda en 0 (rampa de ~2 s + 5 s

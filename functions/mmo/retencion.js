@@ -1132,7 +1132,7 @@ export const Retencion = {
     const idx = await this.retIdx();
     const uid = 'tg:' + id;
     // Solo consultar (/avisos sin on/off): no se crea ni se escribe nada.
-    if (b.on !== true && b.on !== false) { const e0 = idx[uid] || {}; return { ok: true, on: !e0.off, jugo: (e0.v || 0) > 0 }; }
+    if (b.on !== true && b.on !== false) { const e0 = idx[uid] || {}; return { ok: true, on: !!e0.si && !e0.off && !e0.bloq, jugo: (e0.v || 0) > 0 }; }
     const e = idx[uid] || (idx[uid] = { v: 0 });
     if (b.on === true) {
       delete e.off; delete e.bloq; e.a = 0; e.si = 1;

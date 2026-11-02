@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=365';
-import { iniciarRegalo } from './regalo.js?v=365';
-import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=365';
+} from './data.js?v=366';
+import { iniciarRegalo } from './regalo.js?v=366';
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=366';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -109,6 +109,7 @@ function mostrarNuevo3d() {
   const c = $('nuevo3d'); if (!c) return;
   // Quien eligio 2D o tiene un movil debil / red lenta no recibe el empujon al 3D.
   if (/[?&]j=2d\b/i.test(location.search)) return;
+  try { if (!(HTMLScriptElement.supports && HTMLScriptElement.supports('importmap'))) return; } catch (e) { return; }
   const cxr = navigator.connection;
   if ((typeof navigator.deviceMemory === 'number' && navigator.deviceMemory <= 3) || (cxr && (cxr.saveData || (cxr.effectiveType && cxr.effectiveType !== '4g')))) return;
   let visto = false, cerrado = false;
@@ -1842,6 +1843,7 @@ function abrirTiendaHud(via, soloPremium) {
   const ent = (yo.pedidos || []).filter(x => x.estado === 'entregado').length;
   try { localStorage.setItem('dq_tienda_vista', '1'); localStorage.setItem('dq_tienda_ent', String(ent)); } catch (e) {}
   if (!soloPremium && yo.nivel >= 3) { tabTienda = 'skin'; document.querySelectorAll('[data-tab]').forEach(x => x.classList.toggle('on', x.dataset.tab === 'skin')); abrir('m-tienda'); pintarTienda(); viaTienda = via; }
+  else if (!soloPremium && !(yo.p2e && yo.p2e.cuenta)) { tabTienda = 'pw'; document.querySelectorAll('[data-tab]').forEach(x => x.classList.toggle('on', x.dataset.tab === 'pw')); abrir('m-tienda'); pintarTienda(); viaTienda = via; }
   else abrirPremium(via);
   puntoTienda();
 }
@@ -3241,14 +3243,15 @@ function dibujarGuia() {
 const TUTORIAL = [
   { id: 'mover', txt: () => TACTIL ? 'Muévete con los botones de dirección' : 'Muévete con las flechas o A / D', hecho: t => Math.abs(P.x - t.x0) > 120 },
   { id: 'ir', txt: () => 'Sigue la flecha amarilla hasta tu misión', hecho: t => (yo.kills || 0) > t.k0 || (MAPAS[mapaId].zona && !instancia) },
-  { id: 'atacar', txt: () => TACTIL ? 'Acércate y toca el botón rojo: cada toque es un golpe. Mantenlo pulsado para seguir' : 'Acércate y pulsa Z o J: cada pulsación es un golpe. Mantén para seguir', hecho: t => (yo.kills || 0) > t.k0 },
-  { id: 'habilidad', txt: () => 'Usa una habilidad: ' + (TACTIL ? 'primer botón de la barra' : 'tecla 1'), hecho: t => t.usoHab },
+  { id: 'atacar', txt: () => TACTIL ? 'Acércate y toca el botón de la espada (el que late): cada toque es un golpe. Mantenlo pulsado para seguir' : 'Acércate y pulsa Z o J: cada pulsación es un golpe. Mantén para seguir', hecho: t => (yo.kills || 0) > t.k0 },
+  { id: 'habilidad', txt: () => (CLASES[yo.clase] && CLASES[yo.clase].recurso === 'ira') ? 'Pega unas veces a un enemigo para juntar Ira (barra roja) y ' + (TACTIL ? 'toca el botón que late: ' : 'pulsa la tecla 1: ') + ((habsDe(yo.clase)[0] || {}).nombre || 'Golpe del Puma') : ('Usa una habilidad: ' + (TACTIL ? 'el botón que late' : 'tecla 1')), hecho: t => t.usoHab },
   { id: 'mision', txt: () => (yo.mis && MISIONES[yo.mis.i] && yo.mis.p >= MISIONES[yo.mis.i].n ? 'Misión cumplida. Entrégala al Guardia Tito' : 'Completa la misión: la recompensa llega sola al cumplirla'), hecho: () => (yo.mis && yo.mis.i >= 1) },
 ];
 const tuto = { i: -1, x0: 0, k0: 0, usoHab: false, clave: '' };
 function pintarTutorial() {
   const el = $('consejo');
   if (TACTIL && tuto.i >= 0) { const pa = TUTORIAL[tuto.i]; if (!pa || pa.id !== 'atacar') ponClase($('t-atk'), 'tuto-pulso', false); }   // fuera del paso de atacar, sin latido
+  { const pa = TUTORIAL[tuto.i], a0 = $('acciones') && $('acciones').firstElementChild; if (a0 && (!pa || pa.id !== 'habilidad')) ponClase(a0, 'tuto-pulso', false); }   // fuera del paso de habilidad, sin latido
   if (!yo || !yo.clase || yo.nivel > 6 || $('m-clase').classList.contains('on')) { ponCss(el, 'display', 'none'); ponClase($('hud'), 'tuto', false); return; }
   const clave = 'dq_tuto_' + (yo.pid || '');
   if (tuto.clave !== clave) {
@@ -3270,11 +3273,13 @@ function pintarTutorial() {
     // Tercer argumento = duracion en ms (no prioridad, como en ORIGINS): con 1 desaparecia al instante.
     if (paso.id === 'atacar') aviso('¡Bien hecho! Ahora usa tu habilidad. Si ves una zona roja que parpadea en el suelo, sal de ahí: viene un golpe fuerte.', 'ok', 7000);
     sfx('moneda', .3);
+    { const a0 = $('acciones') && $('acciones').firstElementChild; if (a0) ponClase(a0, 'tuto-pulso', false); }
     return;
   }
   ponCss(el, 'display', 'block'); ponClase($('hud'), 'tuto', true);
   // Movil: el boton de ataque late mientras toca aprender a atacar.
   if (TACTIL) ponClase($('t-atk'), 'tuto-pulso', paso.id === 'atacar');
+  { const a0 = $('acciones') && $('acciones').firstElementChild; if (a0) ponClase(a0, 'tuto-pulso', paso.id === 'habilidad'); }
   ponTxt(el, sinEmoji(paso.txt()) + '  (' + (tuto.i + 1) + '/' + TUTORIAL.length + ')');
 }
 
@@ -5876,7 +5881,7 @@ function mostrarError(txt, op) {
   b.onclick = op && op.tg ? cerrarJuego : reconectarYa;
   let bc = document.getElementById('b-cerrar-err');
   if (!bc && b.parentNode) { bc = document.createElement('button'); bc.id = 'b-cerrar-err'; bc.className = 'btn'; bc.textContent = 'Cerrar'; bc.style.cssText = 'margin-top:8px;width:100%;min-height:46px;opacity:.85'; bc.onclick = cerrarJuego; b.after(bc); }
-  if (bc) { bc.textContent = op && op.lleno ? 'Jugar el arcade mientras' : 'Cerrar'; bc.onclick = op && op.lleno ? () => { location.href = '/game.html'; } : cerrarJuego; }
+  if (bc) { const arc = !!(op && op.lleno && !modoAnuncio()); bc.textContent = arc ? 'Jugar el arcade mientras' : 'Cerrar'; bc.onclick = arc ? () => { location.href = '/game.html'; } : cerrarJuego; }
   if (bc) bc.style.display = op && (op.dup || op.lleno) ? '' : 'none';
   $('m-error').classList.add('on');
   $('carga').style.display = 'none';

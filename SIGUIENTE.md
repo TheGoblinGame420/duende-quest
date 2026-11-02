@@ -3672,3 +3672,12 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - `volar` reinicia `P.planea`; `musica.vuelo()` solo ajusta el viento; sin doble corte con mala señal.
 - Prueba «un golpe de 1 punto no da el premio del raro» hecha determinista.
 - Arnés 908 bien (3 de 3).
+
+### Ronda final antes de las 07:00 (2-nov-2026, `?v=366`)
+
+- 4 revisores → 18 problemas → 10 arreglos pequeños.
+- ORIGINS: aviso inmediato y salida a CLASSIC sin importmap (iOS 15–16.3); CLASSIC no empuja esos móviles al 3D. Música del pueblo desbloqueada por el toque, sin dos músicas a la vez, fundidos reales.
+- Bot: /avisos refleja `e.si`; /stats muestra el duende del MMO; /yo y /miscompras con cuenta vinculada; códigos con o sin '#'.
+- Modo anuncio: mundo lleno sin enlace a game.html; portada sin enlaces al arcade ni grupo cripto.
+- CLASSIC: tutorial de la Ira, tienda en móvil con botones de pago en su fila, pestañas deslizables en horizontal, invitados abren PODERES.
+- Arnés 908 bien (2 de 2).

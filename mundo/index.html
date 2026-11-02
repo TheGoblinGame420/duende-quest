@@ -26,12 +26,12 @@
 <meta name="theme-color" content="#0a0418">
 <link rel="manifest" href="/mundo/manifest.json">
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
-<script src="/js/pwa.js?v=365" defer></script>
+<script src="/js/pwa.js?v=366" defer></script>
 <link rel="icon" href="/assets/ui/coin.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=fallback" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=fallback" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=365"></script>
+<script src="/js/origen.js?v=366"></script>
 <script>
 // Red de seguridad de la carga (script clasico: corre aunque el modulo 3D o el CDN fallen).
 // - Errores antes de conectar: se guardan en __errQ y mundo.js los manda al entrar.
@@ -71,6 +71,7 @@
     var gl = null, cv = document.createElement('canvas');
     try { gl = cv.getContext('webgl2') || cv.getContext('webgl') || cv.getContext('experimental-webgl'); } catch (e) {}
     if (!gl) { window.__sinWebGL = true; window.__dqFallo('Tu navegador no tiene gráficos 3D (WebGL). Puedes jugar con el mismo duende en CLASSIC (2D).'); return; }
+    try { if (!(window.HTMLScriptElement && HTMLScriptElement.supports && HTMLScriptElement.supports('importmap'))) { window.__dqFallo('Tu navegador es antiguo para el mundo 3D. Puedes jugar ya con el mismo duende en CLASSIC (2D), o actualizar tu iPhone o Chrome.'); return; } } catch (e) {}
     // Render por software: el 3D va a 2-5 fps. Se ofrece el 2D, pero se puede seguir (no en pruebas automaticas).
     var rd = '';
     try { var ext = gl.getExtension('WEBGL_debug_renderer_info'); if (ext) rd = String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) || ''); } catch (e) {}
@@ -117,29 +118,29 @@
   });
 })();
 </script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=365" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=366" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=365">
-<link rel="modulepreload" href="/mmo/js/data.js?v=365">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=365">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=365">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=365">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=365">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=365">
-<link rel="modulepreload" href="/mmo/js/regalo.js?v=365">
-<link rel="modulepreload" href="/mmo/js/avisotg.js?v=365">
-<link rel="modulepreload" href="/mundo/js/musica.js?v=365">
-<link rel="modulepreload" href="/mundo/js/sonidos.js?v=365">
-<link rel="modulepreload" href="/mundo/js/cueva.js?v=365">
-<link rel="modulepreload" href="/mundo/js/tapa.js?v=365">
-<link rel="modulepreload" href="/mundo/js/abismo.js?v=365">
-<link rel="modulepreload" href="/mundo/js/particulas.js?v=365">
-<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=365">
-<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=365">
-<link rel="modulepreload" href="/mmo/js/secundarias.js?v=365">
-<link rel="modulepreload" href="/mundo/js/lore.js?v=365">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=366">
+<link rel="modulepreload" href="/mmo/js/data.js?v=366">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=366">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=366">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=366">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=366">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=366">
+<link rel="modulepreload" href="/mmo/js/regalo.js?v=366">
+<link rel="modulepreload" href="/mmo/js/avisotg.js?v=366">
+<link rel="modulepreload" href="/mundo/js/musica.js?v=366">
+<link rel="modulepreload" href="/mundo/js/sonidos.js?v=366">
+<link rel="modulepreload" href="/mundo/js/cueva.js?v=366">
+<link rel="modulepreload" href="/mundo/js/tapa.js?v=366">
+<link rel="modulepreload" href="/mundo/js/abismo.js?v=366">
+<link rel="modulepreload" href="/mundo/js/particulas.js?v=366">
+<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=366">
+<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=366">
+<link rel="modulepreload" href="/mmo/js/secundarias.js?v=366">
+<link rel="modulepreload" href="/mundo/js/lore.js?v=366">
 <!-- Kit 3D de Kenney (mundo/js/kenney.js lo pide con fetch() sin opciones: mismo origen, cors, URL sin ?v=): se baja ya, junto a los modulos.
      El binario: .gz si hay DecompressionStream (como hace kenney.js), si no el normal; asi no se baja dos veces. -->
 <link rel="preload" href="/assets/3d/kenney.json" as="fetch" crossorigin>
@@ -973,8 +974,8 @@ body.cine #cofre-sem,body.cine #cofre-meta{visibility:hidden !important;}
 <!-- Telegram: su SDK se carga arriba solo dentro de Telegram (window.__tgListo).
      defer: no frenan el HTML y corren en orden, antes que mundo.js (que usa supabase). -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=365" defer></script>
-<script type="module" src="/mundo/js/mundo.js?v=365"></script>
+<script src="/js/config.js?v=366" defer></script>
+<script type="module" src="/mundo/js/mundo.js?v=366"></script>
 <div id="flash-nv"></div>
 <div id="cartel-nv"></div>
 <div id="aviso-dir" aria-hidden="true"></div>

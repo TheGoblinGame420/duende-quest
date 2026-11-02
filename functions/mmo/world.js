@@ -1201,7 +1201,7 @@ export class MmoWorld {
   }
 
   // ── TIENDA PREMIUM (Stars / SOL, entrega manual) ──
-  buscarPedido(codigo) { return this.pedidos.find(x => x.codigo === String(codigo || '').toUpperCase()); }
+  buscarPedido(codigo) { return this.pedidos.find(x => x.codigo === String(codigo || '').trim().replace(/^#/, '').toUpperCase()); }
   async guardarPedidos() {
     // Los que nunca se pagaron caducan. Los pagados o por revisar NUNCA se
     // podan: antes un slice(-300) sobre todos dejaba borrar la compra pagada
@@ -1960,8 +1960,9 @@ export class MmoWorld {
     if (accion === 'perfil') {
       const uid = 'tg:' + String(b.tgId || '').replace(/\D/g, '');
       if (uid === 'tg:') return json({ ok: false });
-      const s = this.porUid.get(uid);
-      const c = s && s.c ? s.c : await this.state.storage.get('c:' + uid);
+      const prin = await this.uidPrincipal(uid);
+      const s = this.porUid.get(prin);
+      const c = s && s.c ? s.c : await this.state.storage.get('c:' + prin);
       if (!c) return json({ ok: true, existe: false });
       const ex = c.exped ? { h: c.exped.h, d: c.exped.d || 'bosque', listo: c.exped.fin <= Date.now(), min: Math.max(0, Math.ceil((c.exped.fin - Date.now()) / 60000)) } : null;
       return json({ ok: true, existe: true, en: !!s, n: c.nombre, lv: c.nivel, cl: c.clase || '', oro: c.oro || 0, mton: c.mton || 0,
@@ -1973,7 +1974,7 @@ export class MmoWorld {
     if (accion === 'misCompras') {
       const id = String(b.tgId || '').replace(/\D/g, '');
       if (!id) return json({ ok: false });
-      const suyos = this.pedidos.filter(x => (x.uid === 'tg:' + id || x.tgPagador === id) && x.estado !== 'esperando_pago' && x.estado !== 'vencido');
+      const suyos = this.pedidos.filter(x => (x.uid === 'tg:' + id || x.tgPagador === id || x.uidPago === 'tg:' + id) && x.estado !== 'esperando_pago' && x.estado !== 'vencido');
       const l = suyos.slice(-10)
         .map(x => ({ codigo: x.codigo, nombre: x.nombre, estado: x.estado, metodo: x.metodo, charge: x.charge || '', creado: x.creado || 0, pagadoEn: x.pagadoEn || 0 }));
       // cargos: TODOS sus cobros con Stars del MMO (no solo los 10 ultimos), para que el
