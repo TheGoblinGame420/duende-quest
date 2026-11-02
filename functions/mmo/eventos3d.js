@@ -28,7 +28,7 @@ const azar = l => l[Math.floor(Math.random() * l.length)];
 const dist = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 
 export const RARO3D_TIRADA_MS = 60 * 1000, RARO3D_PROB = 0.15, RARO3D_REAPARECE_MS = 15 * 60 * 1000, RARO3D_VIDA_MS = 15 * 60 * 1000;
-export const INV3D_CADA_MIN = [14, 18], INV3D_DURA_MS = 5 * 60 * 1000;
+export const INV3D_CADA_MIN = [14, 18], INV3D_DURA_MS = 5 * 60 * 1000, INV3D_AVISO_MS = 90 * 1000, BENDITA_MS = 15 * 60 * 1000;
 const NOMBRES = ['Ojoplata', 'Zarpadorada', 'Grishnak el Viejo', 'Morgra', 'Colmillo de Oro', 'Vorgath', 'Lunargenta',
   'Skarn el Errante', 'Brasaviva', 'Ulmo Sombrío', 'Kragga', 'Nébula', 'Torvo Dientefrío', 'Rengo el Codicioso'];
 const TINTES = ['#ffd84a', '#e5e7eb'];
@@ -86,11 +86,38 @@ export const Eventos3D = {
     if (!W.inv3prox) W.inv3prox = ahora + rnd(INV3D_CADA_MIN[0], INV3D_CADA_MIN[1]) * 60000;
     const ev = W.inv3;
     if (ev) this.tickInvasion3d(ev, ahora, porZona[ev.zona] || []);
-    else if (ahora >= W.inv3prox) {
-      const zonas = Object.keys(porZona);
-      if (zonas.length) this.empezarInvasion3d(zonas.sort((a, b) => porZona[b].length - porZona[a].length)[0], porZona, ahora);
-      else W.inv3prox = ahora + 60000;
+    else if (!W.inv3pre && W.inv3prox - ahora <= INV3D_AVISO_MS) {
+      // Aviso previo: 1:30 antes ya se sabe donde sera (tambores), para que la gente llegue.
+      const zona = this.zonaInvasion3d(porZona);
+      if (zona) this.avisarInvasion3d(zona, ahora);
+      else W.inv3prox = Math.max(W.inv3prox, ahora + 60000);
+    } else if (W.inv3pre && ahora >= W.inv3prox) {
+      const zona = W.inv3pre.zona;
+      if (Object.keys(porZona).length) this.empezarInvasion3d(zona, porZona, ahora);
+      else { W.inv3pre = null; W.inv3prox = ahora + 60000; this.aClave(K3, { t: 'inv3', on: false, pre: 0 }); }
     }
+  },
+  // La zona con mas gente (abierta y con monstruos).
+  zonaInvasion3d(porZona) {
+    const zonas = Object.keys(porZona);
+    return zonas.length ? zonas.sort((a, b) => porZona[b].length - porZona[a].length)[0] : null;
+  },
+  avisarInvasion3d(zona, ahora) {
+    const W = this.iniciar3d(), mp = MAPAS[zona];
+    W.inv3prox = Math.max(W.inv3prox, ahora + INV3D_AVISO_MS);   // siempre 1:30 de aviso real
+    W.inv3pre = { zona, en: W.inv3prox };
+    this.aClave(K3, { t: 'aviso', m: `🥁 Se oyen tambores en ${mp.nombre}: invasión en 1:30` });
+    this.aClave(K3, this.estadoInvasion3d());
+  },
+  // Zona Bendecida tras ganar una invasion: +10 % de XP de caza un rato.
+  zonaBendita3d(zona) {
+    const e = (this.iniciar3d().zonaEstado || {})[zona];
+    return !!(e && e.tipo === 'bendita' && Date.now() < e.hasta);
+  },
+  benditas3d() {
+    const r = {}, ze = this.iniciar3d().zonaEstado || {}, ahora = Date.now();
+    for (const z in ze) if (ze[z].tipo === 'bendita' && ze[z].hasta > ahora) r[z] = ze[z].hasta - ahora;
+    return r;
   },
 
   // ── ELITES RAROS ──
@@ -138,6 +165,7 @@ export const Eventos3D = {
   // ── INVASIONES ──
   empezarInvasion3d(zona, porZona, ahora) {
     const W = this.iniciar3d(), mp = MAPAS[zona], n = Math.max(1, (porZona[zona] || []).length);
+    W.inv3pre = null;
     W.inv3 = { id: (W.inv3n = (W.inv3n || 0) + 1), zona, nombre: INVASION[zona] || 'Invasión', inicio: ahora, fin: ahora + INV3D_DURA_MS,
       meta: clamp(10 + 6 * n, 12, 40), hechos: 0, fase: 'oleadas', oleadaEn: ahora, capitan: 0, part: new Map() };
     this.aClave(K3, { t: 'aviso', m: `⚔️ ${W.inv3.nombre} en ${mp.nombre}: derroten a ${W.inv3.meta} invasores en 5 minutos.` });
@@ -145,8 +173,9 @@ export const Eventos3D = {
     return W.inv3;
   },
   estadoInvasion3d() {
-    const ev = this.iniciar3d().inv3;
-    if (!ev) return { t: 'inv3', on: false };
+    const W = this.iniciar3d(), ev = W.inv3;
+    if (!ev && W.inv3pre) return { t: 'inv3', on: false, pre: 1, zona: W.inv3pre.zona, ms: Math.max(0, W.inv3pre.en - Date.now()), bend: this.benditas3d() };
+    if (!ev) return { t: 'inv3', on: false, bend: this.benditas3d() };
     return { t: 'inv3', on: true, nombre: ev.nombre, zona: ev.zona, hechos: ev.hechos, meta: ev.meta, fase: ev.fase, ms: Math.max(0, ev.fin - Date.now()) };
   },
   tickInvasion3d(ev, ahora, jug) {
@@ -234,8 +263,9 @@ export const Eventos3D = {
       this.yoLuego(s, true);
       nombres.push(c.nombre);
     }
-    this.aClave(K3, { t: 'aviso', m: `${ev.nombre} rechazada en ${mp.nombre}. Héroes: ${nombres.slice(0, 6).join(', ') || '—'}.` });
-    this.aClave(K3, { t: 'inv3', on: false, fin: 'ganada' });
+    (W.zonaEstado || (W.zonaEstado = {}))[ev.zona] = { tipo: 'bendita', hasta: Date.now() + BENDITA_MS };
+    this.aClave(K3, { t: 'aviso', m: `${ev.nombre} rechazada en ${mp.nombre}. Héroes: ${nombres.slice(0, 6).join(', ') || '—'}. La zona queda Bendecida 15 min: +10% XP al cazar` });
+    this.aClave(K3, { t: 'inv3', on: false, fin: 'ganada', zona: ev.zona, bend: this.benditas3d() });
   },
 
   // ── COFRES ──

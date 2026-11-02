@@ -26,12 +26,12 @@
 <meta name="theme-color" content="#0a0418">
 <link rel="manifest" href="/mundo/manifest.json">
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
-<script src="/js/pwa.js?v=340" defer></script>
+<script src="/js/pwa.js?v=341" defer></script>
 <link rel="icon" href="/assets/ui/coin.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=340"></script>
+<script src="/js/origen.js?v=341"></script>
 <script>
 // Red de seguridad de la carga (script clasico: corre aunque el modulo 3D o el CDN fallen).
 // - Errores antes de conectar: se guardan en __errQ y mundo.js los manda al entrar.
@@ -117,35 +117,38 @@
   });
 })();
 </script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=340" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=341" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=340">
-<link rel="modulepreload" href="/mmo/js/data.js?v=340">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=340">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=340">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=340">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=340">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=340">
-<link rel="modulepreload" href="/mmo/js/regalo.js?v=340">
-<link rel="modulepreload" href="/mmo/js/avisotg.js?v=340">
-<link rel="modulepreload" href="/mundo/js/musica.js?v=340">
-<link rel="modulepreload" href="/mundo/js/sonidos.js?v=340">
-<link rel="modulepreload" href="/mundo/js/cueva.js?v=340">
-<link rel="modulepreload" href="/mundo/js/tapa.js?v=340">
-<link rel="modulepreload" href="/mundo/js/abismo.js?v=340">
-<link rel="modulepreload" href="/mundo/js/particulas.js?v=340">
-<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=340">
-<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=340">
-<link rel="modulepreload" href="/mmo/js/secundarias.js?v=340">
-<link rel="modulepreload" href="/mundo/js/lore.js?v=340">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=341">
+<link rel="modulepreload" href="/mmo/js/data.js?v=341">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=341">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=341">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=341">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=341">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=341">
+<link rel="modulepreload" href="/mmo/js/regalo.js?v=341">
+<link rel="modulepreload" href="/mmo/js/avisotg.js?v=341">
+<link rel="modulepreload" href="/mundo/js/musica.js?v=341">
+<link rel="modulepreload" href="/mundo/js/sonidos.js?v=341">
+<link rel="modulepreload" href="/mundo/js/cueva.js?v=341">
+<link rel="modulepreload" href="/mundo/js/tapa.js?v=341">
+<link rel="modulepreload" href="/mundo/js/abismo.js?v=341">
+<link rel="modulepreload" href="/mundo/js/particulas.js?v=341">
+<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=341">
+<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=341">
+<link rel="modulepreload" href="/mmo/js/secundarias.js?v=341">
+<link rel="modulepreload" href="/mundo/js/lore.js?v=341">
 <style>
 :root{--bg:#0a0418;--panel:rgba(14,9,30,.86);--borde:rgba(160,140,255,.22);--txt:#f2efff;--txt2:#b8b0d8;--txt3:#7d7699;--ok:#4ade80;--err:#ff5a6a;--warn:#ffb020;--oro:#ffd84a;--pri:#2563eb;--cian:#7dd3fc;--px:"Press Start 2P",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:var(--sans);touch-action:none;user-select:none;-webkit-user-select:none;}
 #lienzo{position:fixed;inset:0;display:block;width:100%;height:100%;}
 #capa{position:fixed;inset:0;pointer-events:none;overflow:hidden;}
+/* Viñeta barata cuando no hay post-proceso (baja, media o caida por rendimiento): la pone/quita mundo.js */
+#vineta{position:fixed;inset:0;pointer-events:none;display:none;background:radial-gradient(ellipse at center,transparent 55%,rgba(10,6,20,.38) 100%);}
+body.sin-post #vineta{display:block;}
 #herida{position:fixed;inset:0;pointer-events:none;opacity:0;box-shadow:inset 0 0 90px 22px rgba(255,30,50,.75);}
 #herida.bajo{animation:latido 1.1s ease-in-out infinite;}
 @keyframes latido{0%,100%{opacity:.1}50%{opacity:.38}}
@@ -195,6 +198,10 @@ body.movil #misiones{top:110px;bottom:auto;left:8px;right:auto;width:165px;font-
 #barra{left:50%;bottom:22px;transform:translateX(-50%);padding:6px;display:flex;gap:6px;}
 .acc.urge{border-color:#ff3344!important;box-shadow:0 0 0 3px rgba(255,51,68,.5);animation:latidoBtn 1.1s ease-in-out infinite;}
 @keyframes latidoBtn{0%,100%{box-shadow:0 0 0 2px rgba(255,51,68,.35)}50%{box-shadow:0 0 0 5px rgba(255,51,68,.75)}}
+/* Tutorial: el boton que toca pulsar late en verde (mostrar, no contar) */
+.tuto-pulso{border-color:#4ade80!important;box-shadow:0 0 0 3px rgba(74,222,128,.5);animation:latidoTuto 1.1s ease-in-out infinite;}
+@keyframes latidoTuto{0%,100%{box-shadow:0 0 0 2px rgba(74,222,128,.35)}50%{box-shadow:0 0 0 6px rgba(74,222,128,.8)}}
+@media (prefers-reduced-motion:reduce){.tuto-pulso{animation:none;box-shadow:0 0 0 4px rgba(74,222,128,.7);}}
 .acc{position:relative;width:52px;height:52px;border:1px solid var(--borde);border-radius:10px;background:rgba(255,255,255,.05);color:var(--txt);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-direction:column;font:700 11px var(--sans);}
 .acc img{width:30px;height:30px;image-rendering:pixelated;}
 .acc .t{position:absolute;left:4px;top:2px;font:600 9px var(--sans);color:var(--txt2);}
@@ -211,6 +218,19 @@ body.movil #misiones{top:110px;bottom:auto;left:8px;right:auto;width:165px;font-
 #chat-in[style*="block"]+#chat-env{display:block;}
 #chat-in{display:none;width:100%;margin-top:4px;padding:6px 8px;border-radius:6px;border:1px solid var(--borde);background:rgba(0,0,0,.5);color:var(--txt);font:500 13px var(--sans);user-select:text;-webkit-user-select:text;}
 /* Avisos a la izquierda, encima del chat (no en medio de la pantalla) */
+/* 😀 Gestos y frases rapidas (mundo.js coloca la fila bajo el boton) */
+.gesto3{font-size:34px;line-height:1;text-shadow:0 2px 6px rgba(0,0,0,.6);}
+#gestos3{position:fixed;display:none;z-index:12;box-sizing:border-box;padding:8px;border-radius:14px;border:1px solid var(--borde);background:rgba(16,10,30,.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 8px 24px rgba(0,0,0,.5);overflow-y:auto;pointer-events:auto;}
+#gestos3.on{display:block;}
+#gestos3 .g3-e{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px;}
+#gestos3 .g3-f{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+#gestos3 button{min-height:44px;border:1px solid var(--borde);border-radius:10px;background:rgba(255,255,255,.06);color:var(--txt);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+#gestos3 .g3-e button{font-size:24px;}
+#gestos3 .g3-f button{font:600 13px var(--sans);padding:4px 6px;}
+#gestos3 button:active{transform:scale(.94);background:rgba(125,211,252,.22);}
+@media (hover:hover){#gestos3 button:hover{background:rgba(125,211,252,.16);}}
+body.movil #botones #b-gestos,body.compacto #botones #b-gestos{min-height:44px;}
+body.movil #botones:not(.abierto) #b-gestos,body.compacto #botones:not(.abierto) #b-gestos{grid-row:2;grid-column:3;}
 #avisos{position:fixed;left:12px;bottom:200px;display:flex;flex-direction:column;gap:4px;align-items:flex-start;pointer-events:none;z-index:5;max-width:min(380px,42vw);}
 body:has(.modal.on) #avisos{z-index:11;}
 body:has(#v-clase.on) #avisos{display:none;}
@@ -586,6 +606,7 @@ body.movil.mano-der #joy .pista-joy{left:auto;right:28px;flex-direction:row-reve
 </head>
 <body>
 <canvas id="lienzo"></canvas>
+<div id="vineta"></div>
 <div id="herida"></div>
 <div id="capa"></div>
 
@@ -652,6 +673,7 @@ body.movil.mano-der #joy .pista-joy{left:auto;right:28px;flex-direction:row-reve
   <button class="bt extra" id="b-son" title="Música y sonido">🔊</button>
   <button class="bt" id="b-amigos" title="Amigos y jugadores en línea">👥</button>
   <button class="bt" id="b-chat" title="Chat (Enter)">💬</button>
+  <button class="bt" id="b-gestos" title="Gestos y frases rápidas" aria-label="Gestos y frases rápidas">😀</button>
   <button class="bt extra" id="b-ayuda" title="Ajustes y controles (calidad gráfica)" aria-label="Ajustes y controles">?</button>
   <a class="bt" href="/mmo/" title="CLASSIC (2D): mazmorras, Torre y banda, con tu mismo personaje">2D</a>
   <a class="bt" href="/inicio/" title="Inicio: elige tu juego">⌂</a>
@@ -666,6 +688,7 @@ body.movil.mano-der #joy .pista-joy{left:auto;right:28px;flex-direction:row-reve
 <div id="alas"><i></i><span>ALAS</span></div>
 <div class="caja" id="chat"><div id="chat-log"></div><form id="chat-f" style="display:flex;gap:4px;margin:0" onsubmit="return false"><input id="chat-in" maxlength="120" placeholder="Escribe tu mensaje…" autocomplete="off" enterkeyhint="send"><button type="submit" id="chat-env" aria-label="Enviar">➤</button></form></div>
 <div id="avisos" role="status" aria-live="polite"></div>
+<div id="gestos3" role="menu" aria-label="Gestos y frases rápidas"></div>
 <div id="titulo-zona"><b id="tz-n"></b><small id="tz-s"></small></div>
 <button class="caja" id="hablar">E · Hablar</button>
 <div id="xp"><i></i></div>
@@ -776,8 +799,8 @@ body.movil.mano-der #joy .pista-joy{left:auto;right:28px;flex-direction:row-reve
 <!-- Telegram: su SDK se carga arriba solo dentro de Telegram (window.__tgListo).
      defer: no frenan el HTML y corren en orden, antes que mundo.js (que usa supabase). -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=340" defer></script>
-<script type="module" src="/mundo/js/mundo.js?v=340"></script>
+<script src="/js/config.js?v=341" defer></script>
+<script type="module" src="/mundo/js/mundo.js?v=341"></script>
 <div id="flash-nv"></div>
 <div id="cartel-nv"></div>
 </body>

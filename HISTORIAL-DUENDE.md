@@ -77,6 +77,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v338 | Ronda 13: nombre propio, legendarios con nombre, duelos justos, jefes interrumpibles, grupo por nombre, colores en 3D, CLASSIC con menos datos | **B** |
 | v339 | Ronda 14: pueblo de T'anta Wawa y Cosecha, botón 📣 +oro, ventanas móviles completas, AUTO que no suelta en pelea, nombres seguros, tope diario de cofres | **B** |
 | v340 | ORIGINS: música andina por zona con combate y fiestas, sonidos posicionales, cielo y agua vivos, efectos por zona, personajes que respiran, lore de mitos peruanos | **B** |
+| v341 | Estudio de juegos de referencia: golpes con peso, gestos, invasiones con aviso, meta comunitaria, protector de racha, grupo tras cazar juntos, fiesta en el pueblo | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

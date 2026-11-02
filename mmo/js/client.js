@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=340';
-import { iniciarRegalo } from './regalo.js?v=340';
-import { iniciarAvisoTg } from './avisotg.js?v=340';
+} from './data.js?v=341';
+import { iniciarRegalo } from './regalo.js?v=341';
+import { iniciarAvisoTg } from './avisotg.js?v=341';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -3109,6 +3109,9 @@ function pintarTutorial() {
   if (paso.hecho(tuto)) {
     tuto.i++; tuto.x0 = P.x; tuto.k0 = yo.kills || 0;
     try { localStorage.setItem(clave, String(tuto.i)); } catch (e) {}
+    // Embudo (una vez por sesion): aqui 'paso' es el consejo, asi que va directo a window.dqPaso.
+    const pe = paso.id === 'habilidad' ? 't_hab' : tuto.i === TUTORIAL.length ? 't_fin' : '';
+    if (pe) { try { if (window.dqPaso) window.dqPaso(pe, 'classic'); } catch (er) {} }
     // Recien entregada la primera mision: ahora si se ofrece ORIGINS (una vez).
     if (tuto.i === TUTORIAL.length) setTimeout(mostrarNuevo3d, 5000);
     sfx('moneda', .3);
@@ -3409,7 +3412,7 @@ function mostrarLogin(m) {
   let txt = 'Hoy recibes ' + m.txt + '.';
   if (m.oro) txt = 'Hoy recibes ' + m.oro.toLocaleString('es', { useGrouping: 'always' }) + ' oro' + (m.item ? ' y ' + RAREZAS[m.item.r].nombre.toLowerCase() + ': ' + nombreItem(m.item) : '') + '.';
   ponTxt($('login-ok'), m.oro ? 'Recoger ' + m.oro.toLocaleString('es', { useGrouping: 'always' }) + ' oro' : 'Recoger');
-  $('login-cuerpo').innerHTML = h + `<p class="centro" style="margin-top:12px;color:var(--ok);font-weight:600">${esc(txt)}</p>${(m.hitos || []).map(x => `<p class="centro" style="margin-top:6px;color:var(--oro);font-weight:700">🏅 ¡Hito de racha! Ganaste ${esc(x)}.</p>`).join('')}<p class="centro" style="font-size:12px;color:var(--txt2)">${esc(textoManana())}. Si faltas un día, la racha retrocede un día (desde la semana 2, vuelve al inicio de su semana; si ya cumpliste la semana, no la pierdes); si faltas más, vuelve a empezar. El oro crece con tu nivel y con cada semana (hasta x1,5).</p>`;
+  $('login-cuerpo').innerHTML = h + `<p class="centro" style="margin-top:12px;color:var(--ok);font-weight:600">${esc(txt)}</p>${(m.hitos || []).map(x => `<p class="centro" style="margin-top:6px;color:var(--oro);font-weight:700">🏅 ¡Hito de racha! Ganaste ${esc(x)}.</p>`).join('')}<p class="centro" style="font-size:12px;color:var(--txt2)">${esc(textoManana())}.${m.pase ? ` Entrar sumó +${m.pase} al pase del mes.` : ''}</p>${m.amuUsado ? '<p class="centro" style="margin-top:6px;color:#7dd3fc;font-weight:700">🧿 Tu protector salvó tu racha</p>' : ''}<p class="centro" style="font-size:12px;color:var(--txt2)">🧿 Protectores: ${m.amu || 0} (se ganan con el bono semanal, máximo 2). Si faltas un día, un protector salva tu racha; sin protector retrocede un día (desde la semana 2, vuelve al inicio de su semana; si ya cumpliste la semana, no la pierdes); si faltas más, vuelve a empezar. El oro crece con tu nivel y con cada semana (hasta x1,5).</p>`;
   abrir('m-login');
   sfx('moneda', .5);
 }
@@ -4997,9 +5000,9 @@ function cajaTareas() {
   if (!T) return '';
   const fila = (t, i, dia) => `<div class="fila" style="${t.ok ? 'color:var(--ok)' : ''}"><span>${t.ok ? '✓' : '•'} ${esc(t.txt)}</span><span>${t.p}/${t.n}${dia && !t.ok && !T.dia.cambio ? ` <button class="bt" data-cambiar="${i}" title="Cambiar esta misión (1 gratis al día)" style="padding:1px 5px">🔄</button>` : ''}</span></div>`;
   return '<div class="mis-caja"><b>Misiones del día</b>' + T.dia.l.map((t, i) => fila(t, i, true)).join('') +
-    `<p style="font-size:12px;margin-top:6px">Cada una: +${T.premio.xp.toLocaleString('es', { useGrouping: 'always' })} XP y +${T.premio.oro.toLocaleString('es', { useGrouping: 'always' })} oro. Las 3: ${T.dia.bono ? '✓ bono cobrado' : 'objeto raro + pociones y escudos'}. Se renuevan cada día.</p></div>` +
+    `<p style="font-size:12px;margin-top:6px">Cada una: +${T.premio.xp.toLocaleString('es', { useGrouping: 'always' })} XP y +${T.premio.oro.toLocaleString('es', { useGrouping: 'always' })} oro. Bono al completar 2 de 3: ${T.dia.bono ? '✓ bono cobrado' : 'objeto raro + pociones y escudos'}. Se renuevan cada día.</p></div>` +
     '<div class="mis-caja"><b>Misiones de la semana</b>' + T.sem.l.map(t => fila(t)).join('') +
-    `<p style="font-size:12px;margin-top:6px">Cada una: +${T.premioSem.xp.toLocaleString('es', { useGrouping: 'always' })} XP y +${T.premioSem.oro.toLocaleString('es', { useGrouping: 'always' })} oro. Las 2: ${T.sem.bono ? '✓ bono cobrado' : 'objeto épico'}. Se renuevan los lunes.</p></div>`;
+    `<p style="font-size:12px;margin-top:6px">Cada una: +${T.premioSem.xp.toLocaleString('es', { useGrouping: 'always' })} XP y +${T.premioSem.oro.toLocaleString('es', { useGrouping: 'always' })} oro. Las 2: ${T.sem.bono ? '✓ bono cobrado' : 'objeto épico + 🧿 protector de racha'}. Se renuevan los lunes.</p></div>`;
 }
 // Final de juego: lo que queda por hacer esta semana (y hoy), de un vistazo.
 function cajaSemana() {
@@ -5714,6 +5717,8 @@ const URL_VUELTA = () => { let v = ''; try { v = sessionStorage.getItem('dq_volv
 // en cada hola (si entras como invitado y te registras despues, igual cuenta).
 function refInvitacion() {
   let r = (/[?&]ref=([a-z0-9]{6})/.exec(location.search) || [])[1];
+  // Mini App abierta con t.me/duendequest_bot?startapp=r_xxxxxx: el mismo codigo de amigo ('premium' sigue aparte).
+  if (!r) r = (/^r_([a-z0-9]{6})$/.exec((TG && TG.initDataUnsafe && TG.initDataUnsafe.start_param) || '') || [])[1];
   try {
     if (r) localStorage.setItem('dq_ref', JSON.stringify({ r, t: Date.now() }));
     else { const x = JSON.parse(localStorage.getItem('dq_ref') || 'null'); if (x && /^[a-z0-9]{6}$/.test(x.r) && Date.now() - x.t < 14 * 86400000) r = x.r; }

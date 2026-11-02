@@ -21,7 +21,8 @@ import {
   EXPEDICION, premioExpedicion, MATERIALES,
   PAQUETES, estrellasDe, solesDeStars, precioLocal, ordenTienda, grupoPaquete, GRUPOS_TIENDA, LOGROS, progresoLogro, statsJugador, ALAS, paqueteParaFaltante, ENTREGA, textoPagoRecibido, PEDIDO_VIGENCIA_MS,
   pagoLocalActivo, textoSoles, YAPE_VIGENCIA_MS, premioDiaria, MISIONES,
-} from '/mmo/js/data.js?v=340';
+  ORO_POR_USD, STAR_TIENDA_USD, PEN_POR_USD,
+} from '/mmo/js/data.js?v=341';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -709,6 +710,19 @@ function htmlArmasSkins(y, tab) {
   if (tab === 'skin') h += `<p class="vv-nota" style="color:#fde68a"><b>Una skin, dos juegos:</b> la que consigas la llevas también en CLASSIC (2D), con los mismos poderes. En PvP (duelos y Abismo) sus ventajas de combate no cuentan: ahí todos pelean igual.</p><p class="vv-nota">Cada skin da sus poderes mientras la llevas. Se compran con oro o, con tu cuenta, con dinero: ${esTg() || anuncio() ? 'Telegram Stars' : 'SOL o $DUENDE (10% de descuento) a la wallet de El Duende'}; El Duende revisa el pago y la activa en tu personaje. Los siete disfraces de la mascota (Bruja, Momia, Frankenstein, Vampiro, Esqueleto, Lobo y Pirata) se compran solo con oro y cambian tu duende 3D con su sombrero o peinado. Las cuatro exclusivas (Esmeralda, Sombrío, Solar y Cósmico) solo se consiguen así${anuncio() ? '' : '; ninguna cambia lo que se gana en mTON'}.</p>`;
   return h;
 }
+// Valor en dolares de un paquete si lo compraras suelto: oro al mejor cambio de los
+// paquetes de oro y cada poder/pocion al precio por unidad del paquete suelto que lo
+// vende (sin equivalente, esa parte no cuenta). Solo se muestra: no cambia ningun precio.
+function valorPorSeparado(pq) {
+  let v = pq.oro && ORO_POR_USD > 0 ? pq.oro / ORO_POR_USD : 0;
+  for (const [k, n] of Object.entries(pq.pw || {})) {
+    const suelto = PAQUETES.find(p => !p.unaVez && p.pw && p.pw[k] > 0);
+    if (!suelto || !(n > 0)) continue;
+    const uds = Object.values(suelto.pw).reduce((a, b) => a + (b || 0), 0);
+    if (uds > 0) v += n * suelto.usd / uds;
+  }
+  return v;
+}
 function htmlPremium(y) {
   const cuentaTg = esTg();
   const cuenta = y.p2e && y.p2e.cuenta;
@@ -733,7 +747,15 @@ function htmlPremium(y) {
     const ico = sk ? icoSkin(pq.skin, sk) : icoEquipo(pq.icono);
     const nom = (sk && sk.premium ? `<span style="color:${sk.color}">${esc(pq.nombre)}</span>` : esc(pq.nombre))
       + (pq.etiqueta ? ` <span style="font-size:10px;padding:1px 5px;border-radius:6px;background:#22c55e;color:#000;white-space:nowrap">${esc(pq.etiqueta)}</span>` : '');
-    const nota = sk ? `<br><span class="vv-dim">${sk.premium ? 'Skin exclusiva: solo se consigue aquí.' : 'Skin con poderes: también se consigue con oro.'}</span>` : '';
+    let nota = sk ? `<br><span class="vv-dim">${sk.premium ? 'Skin exclusiva: solo se consigue aquí.' : 'Skin con poderes: también se consigue con oro.'}</span>` : '';
+    if (pq.unaVez) {
+      // Valor honesto por separado: lo que costaria lo mismo en los paquetes sueltos, comparado
+      // con lo que de verdad pagas por el metodo que ves (soles de Yape, Stars o dolares).
+      const vs = valorPorSeparado(pq);
+      const yape = !cuentaTg && pq.pen && pagoLocalActivo(), stars = !yape && (cuentaTg || anuncio());
+      const pagas = yape ? pq.pen / PEN_POR_USD : stars ? estrellasDe(pq.usd) * STAR_TIENDA_USD : pq.usd;
+      if (vs > pagas + 0.05) nota += `<br><span class="vv-ok" style="font-size:12px">Por separado ≈ US$${vs.toFixed(2)} (≈ ${precioLocal(vs)}) · tú pagas ${yape ? textoSoles(pq.pen) : stars ? estrellasDe(pq.usd) + ' ⭐' : 'US$' + pq.usd}</span>`;
+    }
     h += tarjeta(ico, nom, esc(pq.desc) + nota, acc, sk ? ` style="--rz:${sk.color}"` : ' style="--rz:var(--oro)"', pq.id === est.foco ? 'foco' : '');
   }
   h += '</div>';
@@ -801,6 +823,22 @@ function pintarLogros() {
   parte(id, 'sub').innerHTML = `<span><b>${tienen.length}</b> de ${LOGROS.length} logros</span><span>Título: <b class="${tit ? 'vv-ok' : 'vv-dim'}">${tit ? esc(tit.titulo) : 'ninguno'}</b></span>`;
   pintarTabs(id, [['todos', 'TODOS'], ['hechos', 'CONSEGUIDOS'], ['faltan', 'PENDIENTES']], est.logros, 'lgtab');
   let h = '<p class="vv-p" style="text-align:center;margin-bottom:10px">Cada logro da oro y un título para lucir sobre tu nombre.</p>';
+  // Meta comunitaria de la temporada «Entre todos» (mundo.js guarda el ultimo tg del servidor).
+  const tgG = window.dqTempG;
+  if (tgG && tgG.fin > Date.now() && tgG.meta > 0) {
+    const pc = Math.round(Math.min(1, tgG.n / tgG.meta) * 100), fel = tgG.feliz > Date.now();
+    h += `<div class="vv-p" style="margin:-4px 0 10px;padding:6px 8px;border-radius:8px;background:rgba(74,222,128,.10);border:1px solid rgba(74,222,128,.35)">🤝 <b>Entre todos:</b> ${fmt(tgG.n)} / ${fmt(tgG.meta)} ${esc(tgG.cosas || '')} ${esc(tgG.emoji || '')}<div class="vv-barra"><i style="width:${pc}%"></i></div><span class="vv-dim">${fel ? '🎉 ¡Hora Feliz de todos activa! +50% de experiencia por caza.' : (tgG.n >= tgG.meta ? '¡Cumplimos todas las metas de esta temporada!' : 'Cada meta cumplida da 1 h de Hora Feliz para todos.')}</span></div>`;
+  }
+  // Meta a la vista: el logro pendiente mas avanzado (desde la mitad) arriba de todo.
+  let sig = null, sigR = 0.5;
+  for (const L of LOGROS) {
+    if (tienen.includes(L.id)) continue;
+    let p = null; try { p = progresoLogro(L.id, { ...y, amigos: y.amigosN || 0 }); } catch (e) { p = null; }
+    if (!p || !(p[1] > 0)) continue;
+    const r = p[0] / p[1];
+    if (r >= sigR && r < 1) { sig = { L, p }; sigR = r; }
+  }
+  if (sig) h += `<div class="vv-p" style="text-align:center;margin:-4px 0 10px;padding:6px 8px;border-radius:8px;background:rgba(255,216,74,.10);border:1px solid rgba(255,216,74,.35)">🎯 Siguiente: <b style="color:var(--oro)">${esc(sig.L.titulo)}</b> ${fmt(sig.p[0])}/${fmt(sig.p[1])}${sig.L.oro ? ' · +' + fmt(sig.L.oro) + ' oro' : ''}</div>`;
   if (y.titulo) h += btn('Quitar título', 'titulo', { id: '' }, 'sec vv-full') + '<div style="height:8px"></div>';
   const lista = LOGROS.filter(L => est.logros === 'todos' || (est.logros === 'hechos') === tienen.includes(L.id));
   if (!lista.length) h += `<p class="vv-vacio">${est.logros === 'hechos' ? 'Aún no tienes logros: caza, vence jefes y explora para conseguirlos.' : '¡Los tienes todos!'}</p>`;
@@ -1202,7 +1240,7 @@ function abrirLibro(tab) {
 function abrirTienda(tab, foco, via) {
   if (!H || !H.yo()) return;
   if (typeof tab === 'string') est.tienda = tab;
-  est.via = via === 'hud' || via === 'oro' || via === 'bot' || via === 'falta' || via === 'bienv' ? via : 'npc';
+  est.via = via === 'hud' || via === 'oro' || via === 'bot' || via === 'falta' || via === 'bienv' || via === 'revivir' ? via : 'npc';
   est.foco = typeof foco === 'string' ? foco : '';
   pintarTienda(); abrirV(IDS.tienda);
   if (est.foco) requestAnimationFrame(() => { try { const c = parte(IDS.tienda, 'cuerpo'), f = c.querySelector('.vv-item.foco'); if (f) c.scrollTop += f.getBoundingClientRect().top - c.getBoundingClientRect().top - (c.clientHeight - f.offsetHeight) / 2; } catch (e) {} });   /* solo el cuerpo: scrollIntoView movía también body/.modal (overflow:hidden) y descuadraba el HUD en móvil */

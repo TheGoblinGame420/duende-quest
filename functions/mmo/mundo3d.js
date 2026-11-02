@@ -178,6 +178,7 @@ export const Mundo3D = {
       case 'comprar': return this.comprar(s, m);   // cercaDelMercader() sabe del 3D
       case 'ignorar': return this.ignorar(s, m);
       case 'reportar': return this.reportar(s, m);
+      case 'gesto': return this.gesto(s, m);   // social.js: s.k es la clave 3D, llega a todos los de ORIGINS (espera 1,5 s)
       case 'chat':
         // Moderadores: /jefe invoca al jefe mundial del 3D.
         if (String(m.m || '').trim() === '/jefe' && this.esDios(s)) return this.dios(s, { a: 'mundial3' });
@@ -418,7 +419,7 @@ export const Mundo3D = {
       const k = Math.max(o.jefe && parte >= 0.1 ? Math.max(parte, 1 / 3) : parte, parteG >= 0.5 ? 0.7 : 0);
       const mult = (((SKINS[s.c.skin] || {}).buffs || {}).oroMult || 1) * (1 + talento(s.c, 'fortuna'));
       // De noche los monstruos dan un 10% mas de experiencia. La Hora Feliz (+50%) ya la aplica dar() en world.js: no repetirla aqui.
-      const xp = Math.max(1, Math.round(base.xp * k * (1 + talento(s.c, 'erudicion')) * (esNoche(Date.now()) ? 1.1 : 1)));
+      const xp = Math.max(1, Math.round(base.xp * k * (1 + talento(s.c, 'erudicion')) * (esNoche(Date.now()) ? 1.1 : 1) * (this.zonaBendita3d && this.zonaBendita3d(zonaEn(s.p.x, s.p.z)) ? 1.1 : 1)));
       const oro = Math.max(1, Math.round(base.oro * k * rnd(0.8, 1.2) * mult));
       // dar(): misiones, diarias, bestiario, chicha, pase, botin... lo mismo que el 2D.
       const nG = gr ? Math.max(1, this.sesionesGrupo(gr).filter(x => x.m3 && !x.muerto && o.dano.has(x.id)).length) : 1;
@@ -440,6 +441,7 @@ export const Mundo3D = {
       }
     }
     // Caza cooperativa: quien este cerca se lleva el 25% de la experiencia.
+    const juntos = [];
     for (const s of this.sesiones3d()) {
       if (cobraron.has(s.id) || s.muerto || !mismo(s, o) || dist(s.p, o) > 40) continue;
       const xp = Math.max(1, Math.round(base.xp * 0.25));
@@ -447,7 +449,10 @@ export const Mundo3D = {
       s.sucio = true;
       this.enviar(s, { t: 'gana', xp, oro: 0, drops: [], coop: true });
       this.yoLuego(s, subio);
+      juntos.push(s);
     }
+    // «Jugaste con» y oferta de grupo a quien caza junto (social.js cazaJuntos).
+    if (this.cazaJuntos) this.cazaJuntos([...cobraron].map(id => this.sesiones.get(id)).concat(juntos), o);
     const campo = W.campos[o.campo];
     if (campo) { campo.vivos.delete(o.id); campo.prox = Date.now() + (o.jefe ? REAPARECE_JEFE_MS : (o.nv || (MONSTRUOS[o.k] || {}).nivel || 99) <= 2 ? REAPARECE_NOVATO_MS : REAPARECE_MS); }
     this.aClave(K3, { t: 'md3', id: o.id });
@@ -542,7 +547,7 @@ export const Mundo3D = {
       if (W.mundial) W.mundial.o = null;            // el jefe mundial ya no existe
       if (W.asedio && W.asedio.activo) this.terminarAsedio(null, true);
       if (W.cuevas) W.cuevas.clear();   // sus monstruos ya no existen
-      if (W.inv3) { W.inv3 = null; W.inv3prox = 0; }   // sin nadie, la invasion se va
+      if (W.inv3 || W.inv3pre) { W.inv3 = null; W.inv3pre = null; W.inv3prox = 0; }   // sin nadie, la invasion (o su aviso) se va
       W.raros = {};
       return;
     }

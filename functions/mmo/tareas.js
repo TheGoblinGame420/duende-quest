@@ -109,7 +109,10 @@ export const Tareas = {
         cambio = true;
         if (t.p >= def.n) { t.ok = true; acabada = true; this.cobrarTarea(s, def, semanal); }
       }
-      if (!bloque.bono && bloque.l.length && bloque.l.every(t => t.ok)) {
+      // Diarias con margen: el bono del día sale al cumplir 2 de 3 (la
+      // tercera sigue pagando su premio propio). La semanal pide todas.
+      const listas = semanal ? bloque.l.every(t => t.ok) : bloque.l.filter(t => t.ok).length >= Math.min(2, bloque.l.length);
+      if (!bloque.bono && bloque.l.length && listas) {
         bloque.bono = true;
         this.bonoTareas(s, semanal);
       }
@@ -144,6 +147,13 @@ export const Tareas = {
     c.pw.pocion = Math.min(99, (c.pw.pocion || 0) + (semanal ? 10 : 5));
     this.enviar(s, { t: 'toast', m: `${semanal ? 'Semana' : 'Día'} completo. Bono: ${it.r >= 2 ? 'objeto ÉPICO' : 'objeto raro'}, ${semanal ? 5 : 2} escudos y ${semanal ? 10 : 5} pociones.`, ok: true });
     c.diasCompletos = (c.diasCompletos || 0) + (semanal ? 0 : 1);
+    // Bono semanal: un protector de racha 🧿 (maximo 2) que salva un dia faltado.
+    if (semanal) {
+      c.login = c.login || { d: null, racha: 0, total: 0 };
+      const antes = c.login.amu || 0;
+      c.login.amu = Math.min(2, antes + 1);
+      if (c.login.amu > antes) this.enviar(s, { t: 'toast', ok: true, m: `🧿 Ganaste un protector de racha (tienes ${c.login.amu}). Si faltas un día, salva tu racha.` });
+    }
     this.revisarLogros(s);
     this.actualizarYo(s);
     this.guardar(s);

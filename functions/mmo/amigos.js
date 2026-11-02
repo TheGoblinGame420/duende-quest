@@ -12,7 +12,7 @@
 // cuentas vacias. Premios del juego (oro, titulo, montura). Nunca mTON.
 // ═══════════════════════════════════════════════════════
 import { AMIGO_NIVEL, premioAmigo, AMIGOS_MAX, KIT_COMP, AMIGO_BONO_XP, AMIGO_HITO, INVITADOS_MAX } from '../../mmo/js/data.js';
-import { CONTACTOS_MAX, maxGrupo, pub } from './social.js';
+import { CONTACTOS_MAX, maxGrupo, pub, meIgnora } from './social.js';
 import { MMO_URL, MUNDO_URL } from '../api/telegram-bot.js';
 
 const CODIGO = /^[a-z0-9]{6}$/;
@@ -219,6 +219,17 @@ export const Amigos = {
       if (x && x.c) por = { n: x.c.nombre, on: x.cerrado ? 0 : 1, id: x.cerrado ? undefined : x.id, bono: this.bonoCompanero(s) > 1 ? 1 : 0 };
       else if (ct) por = { n: ct.n, on: 0 };
     }
-    this.enviar(s, { t: 'amigos', ref: cod, amigos: c.amigos || 0, nivel: AMIGO_NIVEL, max: AMIGOS_MAX, invitados, por, bono: Math.round(AMIGO_BONO_XP * 100), lvYo: c.nivel });
+    // «Jugaste con» (social.js cazaJuntos): solo en memoria; conectado o no, sin uid. Fuera quien se ignora.
+    const recientes = [];
+    if (s.recientes && s.recientes.length) {
+      const porPub = new Map();
+      for (const x of this.sesiones.values()) if (x.c && !x.cerrado && x !== s) porPub.set(pub(x.c.uid), x);
+      for (const z of s.recientes) {
+        const x = porPub.get(z.pub);
+        if (x && (meIgnora(s, x.c.uid) || meIgnora(x, c.uid))) continue;
+        recientes.push(x ? { uid: z.pub, n: x.c.nombre, on: 1, id: x.id, lv: x.c.nivel, cl: x.c.clase || '', g: x.gid ? 1 : 0, m3: x.m3 ? 1 : 0, t: z.t } : { uid: z.pub, n: z.nombre, on: 0, t: z.t });
+      }
+    }
+    this.enviar(s, { t: 'amigos', ref: cod, amigos: c.amigos || 0, nivel: AMIGO_NIVEL, max: AMIGOS_MAX, invitados, por, bono: Math.round(AMIGO_BONO_XP * 100), lvYo: c.nivel, recientes });
   },
 };

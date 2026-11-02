@@ -2439,10 +2439,11 @@ async function pruebasPase() {
   ponerNivel(j, 30, 'guerrero');
   await aMapa(j, 'pueblo', 900);
   const pa = mundo.paseDe(j.c);
-  chequear(pa.mes === D.paseMes() && pa.p === 0, 'empieza el mes en 0');
+  const p0 = pa.p;
+  chequear(pa.mes === D.paseMes() && p0 <= 16, 'empieza el mes solo con los puntos de entrar hoy (' + p0 + ')');
   // Quien va por detras del ritmo del mes (50 por dia) gana el doble.
   mundo.puntoPase(j, D.PASE.puntos.semanal); mundo.puntoPase(j, 50);
-  const esperado = 60 + (+D.diaJuego().slice(8, 10) >= 2 ? 100 : 50);
+  const esperado = p0 + 60 + (+D.diaJuego().slice(8, 10) >= 2 ? 100 : 50);
   chequear(j.c.pase.p === esperado, 'suma puntos, dobles para ponerse al día (' + esperado + ')');
   j.c.pase.p = 80;
   j.limpiar(); await j.mandar({ t: 'pase', n: 2 });

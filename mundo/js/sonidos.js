@@ -152,6 +152,15 @@ export function crearSonidos({ ctx, puede, oyente }) {
       soplo(c, d, t, 0.18, { filtro: 'lowpass', f: 500 * r, f2: 120, vol: 0.25 * k + 0.05, ataque: 0.003 });
       return 0.3;
     },
+    // Racha: cada baja seguida suena un grado mas alto de la pentatonica (tope 8).
+    // No usa r: la escalera debe subir afinada, sin variacion al azar.
+    racha(c, d, t, r, o) {
+      const n = Math.max(0, Math.min(8, o.n | 0)), P = [0, 2, 4, 7, 9], m = 76 + P[n % 5] + 12 * Math.floor(n / 5);
+      const f = 440 * Math.pow(2, (m - 69) / 12), v = 0.07 + n * 0.006;
+      campana(c, d, t, f, 0.4 + n * 0.03, v);
+      if (n >= 4) campana(c, d, t + 0.06, f * 1.5, 0.35, v * 0.5);   // quinta encima: la racha ya brilla
+      return 0.6;
+    },
     // Ventana: clic suave (sube al abrir, baja al cerrar).
     clic(c, d, t, r, o) {
       tono(c, d, t, (o.cerrar ? 900 : 1300) * r, 0.05, { vol: 0.08, f2: (o.cerrar ? 600 : 1700) * r, ataque: 0.002 });
@@ -160,7 +169,7 @@ export function crearSonidos({ ctx, puede, oyente }) {
     },
   };
   // Separacion minima entre dos iguales (ms): evita que se amontonen.
-  const SEPARA = { clic: 60, alas: 220, hab: 90, splash: 250, aterriza: 200, cofre: 300, botin: 250, nivel: 400, logro: 400, cura: 200 };
+  const SEPARA = { clic: 60, alas: 220, hab: 90, splash: 250, aterriza: 200, cofre: 300, botin: 250, nivel: 400, logro: 400, cura: 200, racha: 80 };
 
   // tocar('cofre', { vol, x, z, r }) — con x, z suena donde pasa.
   function tocar(nombre, o = {}) {

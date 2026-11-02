@@ -102,12 +102,15 @@ const r2 = n => Math.round(n * 100) / 100;
 //   n = sesiones que llegaron a ese paso; b = cuantas en cada tramo de ms
 //   (desde que abrio la pagina; 'bienvenido' y 'mover', desde el clic en entrar).
 // Se suma en memoria y se vuelca como mucho una vez por minuto.
-export const EV_PASOS = ['carga_ini', 'arte_ok', 'form_visto', 'clic_entrar', 'bienvenido', 'mover', 'fallo_webgl', 'oculta'];
+export const EV_PASOS = ['carga_ini', 'arte_ok', 'form_visto', 'clic_entrar', 'bienvenido', 'mover', 'fallo_webgl', 'oculta', 't_hab', 't_volar', 't_fin',
+  // Rendimiento de ORIGINS (90 s tras arte_ok): calidad x fluidez y familia de GPU.
+  'fps_baja_ok', 'fps_baja_justo', 'fps_baja_lento', 'fps_media_ok', 'fps_media_justo', 'fps_media_lento', 'fps_alta_ok', 'fps_alta_justo', 'fps_alta_lento',
+  'gpu_mali', 'gpu_adreno', 'gpu_powervr', 'gpu_apple', 'gpu_intel', 'gpu_swiftshader', 'gpu_otra'];
 const EV_TRAMOS = [2000, 5000, 10000, 20000, 40000, 90000];   // el ultimo tramo es "mas de 90 s"
-const EV_POR_IP_HORA = 40;      // por /64 de IPv6: un jugador manda ~8; recargas y los dos juegos caben de sobra
+const EV_POR_IP_HORA = 40;      // por /64 de IPv6: un jugador manda ~11 (8 de carga + 3 del tutorial); recargas y los dos juegos caben de sobra
 const EV_POR_IPV4_HORA = 800;   // IPv4: la comparten cientos de moviles por CGNAT (Claro, Movistar, Entel, Bitel)
 const EV_MAX_DIA = 60000;       // tope diario de avisos aceptados (cuida el cupo)
-const EV_MAX_CLAVES = 400;      // 2 juegos x 8 pasos x 5 origenes x 2 equipos = 160 posibles
+const EV_MAX_CLAVES = 500;      // 2 juegos x 11 pasos x 5 origenes x 2 equipos = 220, mas 16 de rendimiento (solo origins) x 10 = 380 posibles
 // IPv6: se limita por /64 (un equipo cambia de direccion dentro de su bloque).
 const claveIpEv = ip => ip.includes(':') ? ip.split(':').slice(0, 4).join(':') : ip;
 
@@ -418,6 +421,7 @@ export const Retencion = {
         if (lg.racha === 2) this.ofrecerAvisoTg(s).catch(() => {});   // «Avísame por Telegram» (web e invitados)
         // Cambio de mes con la sesion abierta: lo alcanzado del pase se cobra ya (antes esperaba a reconectar).
         if (this.infoPase) { const ip = this.infoPase(c); if (this.cobrarPasePendiente && c.pasePend) this.cobrarPasePendiente(s); this.enviar(s, { t: 'pase', pase: c.pasePend ? this.infoPase(c) : ip }); }
+        if (this.puntoPase && lg.pase) this.puntoPase(s, lg.pase);   // entrar suma al pase (1 vez al dia)
         this.actualizarYo(s);
       }
     }
@@ -855,7 +859,7 @@ export const Retencion = {
       // Falto ayer: si entra hoy solo retrocede (o la conserva por el margen de 30 h).
       // Igual que procesarLogin (world.js): semana cumplida (7, 14...) pasa a la siguiente.
       const baja = L.racha >= 7 && L.racha % 7 === 0 ? L.racha + 1 : L.racha >= 8 ? (semanaRacha(L.racha) - 1) * 7 + 1 : L.racha - 1;
-      const queda = baja > L.racha ? `sigue al día ${baja} (no pierdes la semana cumplida)` : `baja como mucho a ${baja}`;
+      const queda = baja > L.racha ? `sigue al día ${baja} (no pierdes la semana cumplida)` : (L.amu || 0) > 0 ? `sigue intacta: tu protector 🧿 la salva` : baja > L.racha ? `sigue al día ${baja} (no pierdes la semana cumplida)` : `baja como mucho a ${baja}`;
       add('racha', `🔥 Ayer no entraste: entra HOY y tu racha de ${L.racha} días ${queda}. Si no, mañana vuelve al día 1.`);
     }
     const g = this.grupos && [...this.grupos.values()].find(x => x.uids.includes(c.uid));

@@ -585,10 +585,18 @@ function textoOrigenes(r) {
     const p = c[k].pasos, base = p.carga_ini;
     const pm = base ? Math.round((p.mover || 0) / base * 100) : 0;
     const m20 = c[k].movil20 ? ` · móvil clic→mover ≤20 s: ${pc(c[k].movil20)} (mediana ${c[k].movil20.mediana})` : '';
-    return `${NOMBRE_ORIGEN[k]}: ${PASOS.map(([e, n]) => `${n} ${p[e] || 0}`).join(' → ')} (${pm}% se mueve) · se van ${p.oculta || 0} · sin 3D ${p.fallo_webgl || 0}${m20}`;
+    return `${NOMBRE_ORIGEN[k]}: ${PASOS.map(([e, n]) => `${n} ${p[e] || 0}`).join(' → ')} (${pm}% se mueve) · se van ${p.oculta || 0} · sin 3D ${p.fallo_webgl || 0}${p.t_hab || p.t_volar || p.t_fin ? ` · tutorial: habilidad ${p.t_hab || 0} → alas (solo 3D) ${p.t_volar || 0} → fin ${p.t_fin || 0}` : ''}${m20}`;
   });
   if (cf.length) t += `🚪 Carga del juego (7 días, sesiones):\n${cf.join('\n')}\n\n`;
   return t;
+}
+
+// Pasos del tutorial (sesiones de 7 dias, sumando todos los origenes): solo lectura.
+function tutoTotal(r) {
+  const c = r.carga && r.carga.por ? r.carga.por : {};
+  const s = { t_hab: 0, t_volar: 0, t_fin: 0 };
+  for (const k in c) for (const e in s) s[e] += (c[k] && c[k].pasos && c[k].pasos[e]) || 0;
+  return s.t_hab || s.t_volar || s.t_fin ? ` · tutorial (sesiones 7 d): habilidad ${s.t_hab} → alas (solo 3D) ${s.t_volar} → fin ${s.t_fin}` : '';
 }
 
 // /mmostats: la retencion real del MMO (la calcula functions/mmo/retencion.js).
@@ -608,7 +616,7 @@ function textoMmoStats(r) {
     `   Niveles: ${tramos}\n` +
     `⏱️ Sesión media (7 días): ${String(r.sesion.media).replace('.', ',')} min · ${r.sesion.sesiones7} sesiones · ${r.sesion.minutos7} min en total\n\n` +
     `🆕 Altas por día (últimos 14):\n${altas}\n\n` +
-    (r.embudo && r.embudo.n ? `🪜 Embudo de esas altas: primera caza ${r.embudo.c1}/${r.embudo.n} · misión 1 ${r.embudo.m1} · nivel 5 ${r.embudo.n5} · nivel 10 ${r.embudo.n10} · 1ª expedición ${r.embudo.ex1 || 0} · «Avísame por Telegram» (web) ${r.embudo.avisoTgOk || 0}${r.embudo.iab && r.embudo.iab.n ? ` · desde Facebook/Instagram ${r.embudo.iab.n} (D1 ${r.embudo.iab.d1 && r.embudo.iab.d1.pct != null ? r.embudo.iab.d1.pct + '%' : '—'})` : ''}\n\n` : '') +
+    (r.embudo && r.embudo.n ? `🪜 Embudo de esas altas: primera caza ${r.embudo.c1}/${r.embudo.n} · misión 1 ${r.embudo.m1}${tutoTotal(r)} · nivel 5 ${r.embudo.n5} · nivel 10 ${r.embudo.n10} · 1ª expedición ${r.embudo.ex1 || 0} · «Avísame por Telegram» (web) ${r.embudo.avisoTgOk || 0}${r.embudo.iab && r.embudo.iab.n ? ` · desde Facebook/Instagram ${r.embudo.iab.n} (D1 ${r.embudo.iab.d1 && r.embudo.iab.d1.pct != null ? r.embudo.iab.d1.pct + '%' : '—'})` : ''}\n\n` : '') +
     (r.avisos && Object.keys(r.avisos).length ? `🔔 Avisos diarios (14 días, por su primera línea · volvieron en 24 h): ${Object.entries(r.avisos).map(([k, a]) => `${k} ${a.vuelven}/${a.env}${a.pct != null ? ' (' + String(a.pct).replace('.', ',') + '%)' : ''}`).join(' · ')}\n\n` : '') +
     (r.invitaciones && r.invitaciones.refLlega ? `🤝 Invitados por enlace (14 días): llegan ${r.invitaciones.refLlega} · con cuenta ${r.invitaciones.refCuenta} · premio Nv 10 ${r.invitaciones.refPagado} · llegan a Nv 10 ${r.invitaciones.n10pct != null ? r.invitaciones.n10pct + '%' : '—'} (resto ${r.invitaciones.n10restoPct != null ? r.invitaciones.n10restoPct + '%' : '—'})\n\n` : '') +
     textoOrigenes(r) + textoAnuncios(r) +

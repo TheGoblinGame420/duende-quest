@@ -19,7 +19,7 @@ import {
   LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, RACHA_HITOS, LOGROS, MUNDIAL_DURA_MS, proximoMundial,
   MTON_POR_TON, RETIRO_MIN_MTON, MTON_NIVEL_MIN, MTON_EDAD_MIN_MS, WALLET_ESPERA_MS, FONDO_REFERENCIA_MTON, tonAmigable,
   RETIRO_MAX_MTON, RETIRO_CADA_MS, TOPE_DIARIO_PCT, FONDO_PCT_INGRESOS, PAQUETES, estrellasDe, PEDIDO_VIGENCIA_MS, PAGO_LOCAL, pagoLocalActivo, YAPE_VIGENCIA_MS, textoPagoRecibido, DUENDE_MINT, DUENDE_DECIMALES, DUENDE_DESCUENTO,
-  temporadaDe, TEMPORADAS, TEMP_PROB, TEMP_JEFE,
+  temporadaDe, TEMPORADAS, TEMP_PROB, TEMP_JEFE, TEMP_META,
   TINTES, MASCOTAS, enOfertaAmbulante, ambulanteActivo, mundialDe,
   CONJUNTOS, CONJUNTO_PROB,
   semanaUTC, horaFelizActiva, HORA_FELIZ, PASE, MAESTRIA_XP, premioMaestria, afijosSemana, DES_SEM_MIN, premioDesSem, BESTIARIO_HITOS, premioBestiario, talento, TALENTOS, TALENTO_MAX, puntosTalento, costoReinicioTalentos, costoReparacion, SUELO, TICK_MS, NIVEL_MAX, FIS, limpiarNombre, CLASES, HABS, MONTURAS, velMontura, descansoGanado, DESCANSO_MAX, limpiarLook, ALAS,
@@ -231,6 +231,11 @@ export class MmoWorld {
       this.primeros = (await this.state.storage.get('primeros')) || {};
       // Dueño de la Fortaleza del Nucleo (asedio del Abismo, mundo3d.js).
       this.nucleo = (await this.state.storage.get('nucleo')) || { dueno: null, desde: 0 };
+      // Meta comunitaria «Entre todos» de la temporada (+ su Hora Feliz extra).
+      const tgG = (await this.state.storage.get('tempGlobal')) || null;
+      this.tempGlobal = tgG && tgG.id ? { id: tgG.id, n: tgG.n | 0 } : null;
+      this.felizExtraHasta = tgG && tgG.feliz > Date.now() ? tgG.feliz : 0;
+      this.tgSucio = false;
       // Miembros de cada faccion y Temporada del Abismo (temporada.js).
       await this.cargarFacc();
       // Avisos de vuelta a la hora habitual de cada uno (retencion.js).
@@ -883,7 +888,7 @@ export class MmoWorld {
       this.actualizarYo(s);
       this.refrescarApariencia(s);
     }).catch(e => console.error('[MMO skinsPagadas]', e));
-    if (login) { this.enviar(s, { t: 'login', ...login }); this.revisarLogros(s, true); }   // titulos de racha 7/14/21
+    if (login) { this.enviar(s, { t: 'login', ...login }); this.revisarLogros(s, true); if (this.puntoPase) this.puntoPase(s, PASE.puntos.login); }   // titulos de racha 7/14/21; entrar suma al pase (1 vez al dia)
     if (login && login.racha === 2) this.ofrecerAvisoTg(s).catch(() => {});   // «Avísame por Telegram» (web e invitados)
     this.buzonEnviar(s).catch(e => console.error('[MMO buzon]', e));   // "Mientras no estabas" y compra entregada
     const tp = temporadaDe();
@@ -892,6 +897,9 @@ export class MmoWorld {
     // El ultimo dia dice «HOY» y, si el siguiente empieza enseguida, lo anuncia.
     const ahoraT = Date.now();
     const diaT = new Date(ahoraT - 5 * 3600000).toISOString().slice(0, 10);
+    // Meta «Entre todos» (barra de la ventana del evento): en cada hola.
+    const tgI = tp ? this.tgInfo() : null;
+    if (tgI) this.enviar(s, { t: 'tempG', tg: tgI });
     if (tp && c.tpAvisoD !== diaT) {
       c.tpAvisoD = diaT; s.sucio = true;
       const ultimo = tp.fin - ahoraT < 86400000;
@@ -900,7 +908,7 @@ export class MmoWorld {
       const sig = TEMPORADAS.filter(x => x.ini >= tp.fin - 60000 && x.ini - tp.fin < 3 * 86400000).sort((a, b) => a.ini - b.ini)[0];
       const fechaSig = sig ? new Date(sig.ini).toLocaleDateString('es', { day: 'numeric', month: 'long', timeZone: 'America/Lima' }) : '';
       const tras = sig && tp.fin - ahoraT < 3 * 86400000 ? ` Y desde el ${fechaSig} llega ${sig.emoji} ${sig.nombre}.` : '';
-      this.enviar(s, { t: 'toast', m: `${tp.nombre}: hasta ${hasta} los monstruos sueltan ${tp.cosas}; con 50 ganas 3.000 de oro y un título; con 200, 12.000 de oro y otro título. Llevas ${c[tp.campo] || 0}.${dto}${tras}`, ok: true });
+      this.enviar(s, { t: 'toast', m: `${tp.nombre}: hasta ${hasta} los monstruos sueltan ${tp.cosas}; con 50 ganas 3.000 de oro y un título; con 200, 12.000 de oro y otro título. Llevas ${c[tp.campo] || 0}. Entre todos: ${tgI.n.toLocaleString('es-PE')} / ${tgI.meta.toLocaleString('es-PE')} (${tgI.n >= tgI.meta ? '¡todas las metas cumplidas!' : 'cada meta da 1 h de Hora Feliz para todos'}).${dto}${tras}`, ok: true, tg: tgI });
     } else if (!tp) {
       // Sin evento: si el siguiente empieza en 10 dias o menos, se anuncia
       // (un motivo para volver ese dia).
@@ -1284,7 +1292,7 @@ export class MmoWorld {
     };
     if (c.vinc && c.vinc.tg) pd.tgVinc = c.vinc.tg;   // Telegram vinculado al pedir (pagador valido)
     // De donde vino la compra (boton TIENDA del HUD, tienda de oro, NPC o enlace del bot): solo informativo para el dueño.
-    if (['hud', 'oro', 'npc', 'bot', 'falta', 'bienv'].includes(m.via)) pd.via = m.via;
+    if (['hud', 'oro', 'npc', 'bot', 'falta', 'bienv', 'revivir'].includes(m.via)) pd.via = m.via;
     // Origen, campaña y dias desde el alta: /ventas y el ROAS D7 de /mmostats (retencion.js).
     if (c.ret) {
       if (c.ret.src) pd.src = c.ret.src;
@@ -1983,7 +1991,13 @@ export class MmoWorld {
     // Margen de 30 h: quien estuvo conectado hace menos de 30 h (c.salida = ultimo
     // guardado) sigue la racha aunque se salte un dia (quien juega de noche y
     // vuelve al dia siguiente de noche no la pierde por pocas horas).
-    const seguido = L.d === ayer || (L.d === anteayer && c.salida > 0 && Date.now() - c.salida < 30 * 3600000);
+    let seguido = L.d === ayer || (L.d === anteayer && c.salida > 0 && Date.now() - c.salida < 30 * 3600000);
+    // Protector de racha 🧿 (se gana con el bono semanal, maximo 2): si falto
+    // exactamente un dia, la racha sigue como si hubiera entrado.
+    let amu = Math.max(0, Math.min(2, L.amu || 0)), amuUsado = 0;
+    // Con la semana recien cumplida (7, 14...) faltar un dia ya pasa a la siguiente: no se gasta.
+    const semanaCumplida = (L.racha || 0) >= 7 && (L.racha || 0) % 7 === 0;
+    if (!seguido && L.d === anteayer && amu > 0 && !semanaCumplida) { seguido = true; amu--; amuUsado = 1; }
     // La racha crece sin tope (dia 8 = semana 2, dia 1): una guardada de 7 pasa a 8.
     // Falta UN dia: hasta el 6 retrocede uno; desde el 7 no se pierde la semana
     // cumplida (el 7 pasa al 8, el 14 al 15; si no, vuelve al inicio de su semana, de 10 a 8).
@@ -1999,7 +2013,7 @@ export class MmoWorld {
     let item = null;
     if (pr.item !== undefined) item = this.darItem(s, generarItem(c.nivel, pr.item), true);
     const max = Math.max(L.max || 0, r0, racha);
-    c.login = { d: hoy, racha, total: (L.total || 0) + 1, max };
+    c.login = { d: hoy, racha, total: (L.total || 0) + 1, max, amu };
     // Hitos cosmeticos (una sola vez): los titulos son logros (revisarLogros);
     // el color de nombre se entrega aqui.
     const hitos = [];
@@ -2022,7 +2036,7 @@ export class MmoWorld {
       const vIt = this.darItem(s, generarItem(c.nivel, dias >= 7 ? 2 : 1), true);
       vuelta = { dias, oro: vOro, pociones: 5, item: nombreItem(vIt) };
     }
-    return { racha, dia: diaRacha(racha), sem: semanaRacha(racha), oro, pw: pr.pw || null, item, itemNom: item ? nombreItem(item) : undefined, txt: pr.txt, vuelta, hitos: hitos.length ? hitos : undefined };
+    return { racha, dia: diaRacha(racha), sem: semanaRacha(racha), oro, pw: pr.pw || null, item, itemNom: item ? nombreItem(item) : undefined, txt: pr.txt, vuelta, hitos: hitos.length ? hitos : undefined, amu, amuUsado: amuUsado || undefined, pase: PASE.puntos.login };
   }
 
   // Mete un objeto en la bolsa (si esta llena se vende solo).
@@ -2637,7 +2651,7 @@ export class MmoWorld {
     const primero = c.kills === 1 && !!o && participo !== false;
     if (o && o.jefe) c.jefes++;
     // Hora Feliz (cada dia 01-02 UTC): +50% de la XP de caza.
-    if (horaFelizActiva()) xp = Math.round(xp * HORA_FELIZ.xp);
+    if (horaFelizActiva() || (this.felizExtraHasta > Date.now())) xp = Math.round(xp * HORA_FELIZ.xp);
     // Elixir de Sabiduria (artesania): +10% de la XP de caza. Skins con xpMult.
     if (this.elixir(s, 'elixirX')) xp = Math.round(xp * 1.1);
     if (this.elixir(s, 'chichaE')) xp = Math.round(xp * 1.05);
@@ -2659,7 +2673,7 @@ export class MmoWorld {
     const tp = o && participo !== false ? temporadaDe() : null;
     if (tp) {
       cal = o.jefe ? TEMP_JEFE : (Math.random() < TEMP_PROB ? 1 : 0);
-      if (cal) c[tp.campo] = (c[tp.campo] || 0) + cal;
+      if (cal) { c[tp.campo] = (c[tp.campo] || 0) + cal; this.sumarTempGlobal(tp, cal); }
     }
     if (Math.random() < 0.05) { c.pw.pocion = Math.min(99, c.pw.pocion + 1); drops.push('pocion'); }
     if (o && o.jefe) {
@@ -3109,9 +3123,43 @@ export class MmoWorld {
     try { await this.state.storage.put('ranking', await this._rankP); }
     catch (e) { this.rankSucio = true; console.error('[MMO ranking]', e); }
   }
+  // Meta comunitaria «Entre todos»: suma de la temporada de todo el servidor.
+  // Vive en memoria y se guarda como mucho cada minuto (volcarTempGlobal).
+  tgInfo() {
+    const tp = temporadaDe();
+    if (!tp) return null;
+    const n = this.tempGlobal && this.tempGlobal.id === tp.id ? this.tempGlobal.n : 0;
+    const meta = TEMP_META.find(x => x > n) || TEMP_META[TEMP_META.length - 1];
+    return { n, meta, cosas: tp.cosas, emoji: tp.emoji, fin: tp.fin, feliz: this.felizExtraHasta > Date.now() ? this.felizExtraHasta : 0 };
+  }
+  sumarTempGlobal(tp, cal) {
+    if (!this.tempGlobal || this.tempGlobal.id !== tp.id) this.tempGlobal = { id: tp.id, n: 0 };
+    const antes = this.tempGlobal.n;
+    const n = this.tempGlobal.n = antes + cal;
+    this.tgSucio = true;
+    const cruzado = TEMP_META.filter(x => antes < x && n >= x).pop();
+    if (!cruzado) return;
+    // Hora Feliz extra de 1 h (si ya habia una, se alarga).
+    const ahora = Date.now();
+    this.felizExtraHasta = Math.max(ahora, this.felizExtraHasta || 0) + 3600000;
+    this.volcarTempGlobal(true).catch(e => console.error('[MMO tempGlobal]', e));
+    // Solo a los conectados (nunca por Telegram).
+    const tg = this.tgInfo();
+    this.aTodos({ t: 'toast', m: `🎉 ¡Entre todos llegamos a ${cruzado.toLocaleString('es-PE')} ${tp.cosas}! Hora Feliz para todos 1 h (+50% de experiencia por caza).`, ok: true, tg });
+    this.aTodos({ t: 'tempG', tg });
+  }
+  async volcarTempGlobal(forzar) {
+    if (!this.tgSucio || !this.tempGlobal) return;
+    const ahora = Date.now();
+    if (!forzar && ahora - (this.tgT || 0) < (this.degradado() ? 600000 : RANKING_CADA_MS)) return;
+    this.tgT = ahora; this.tgSucio = false;
+    try { await this.state.storage.put('tempGlobal', { id: this.tempGlobal.id, n: this.tempGlobal.n, feliz: this.felizExtraHasta || 0 }); }
+    catch (e) { this.tgSucio = true; console.error('[MMO tempGlobal]', e); }
+  }
   // Lo que vive en memoria al storage (al quedar vacio el mundo y antes de una copia).
   async volcarMemoria() {
     await this.volcarRanking(true);
+    await this.volcarTempGlobal(true);
     // XP de la semana pendiente (revisarSemana la vuelca cada minuto solo con gente conectada):
     // al quedar vacio el mundo el DO se puede apagar y se perdia el ultimo minuto.
     if (this.rs && this.rsSucio && this.rs.sem === semanaUTC()) {
@@ -3346,6 +3394,9 @@ export class MmoWorld {
         this.contarHoy().then(h => this.aTodos({ t: 'on', n: this.contarOnline(), h }), () => this.aTodos({ t: 'on', n: this.contarOnline() }));
         this.revisarSemana(ahora).catch(e => console.error('[MMO semana]', e));
         this.volcarRanking().catch(e => console.error('[MMO ranking]', e));
+        this.volcarTempGlobal().catch(e => console.error('[MMO tempGlobal]', e));
+        // Fin de la Hora Feliz extra de la meta comunitaria (solo a los conectados).
+        if (this.felizExtraHasta && this.felizExtraHasta <= ahora) { this.felizExtraHasta = 0; this.tgSucio = true; if (!hf) this.aTodos({ t: 'aviso', m: '⚡ Terminó la Hora Feliz de «Entre todos».' }); }
         if (this.retVolcarDias) this.retVolcarDias().catch(e => console.error('[MMO ret]', e));
         this.revisarSalud(ahora);
       });

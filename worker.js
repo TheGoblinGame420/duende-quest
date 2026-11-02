@@ -61,9 +61,11 @@ export default {
         const txt = await request.text();
         if (txt.length > 400) return nada;
         const b = JSON.parse(txt);
-        const EV = ['carga_ini', 'arte_ok', 'form_visto', 'clic_entrar', 'bienvenido', 'mover', 'fallo_webgl', 'oculta'];
+        const EV = ['carga_ini', 'arte_ok', 'form_visto', 'clic_entrar', 'bienvenido', 'mover', 'fallo_webgl', 'oculta', 't_hab', 't_volar', 't_fin'];
         const ORG = ['meta', 'tg', 'wa', 'ref', 'org'];
-        if (!b || !EV.includes(b.e) || (b.j !== 'origins' && b.j !== 'classic')) return nada;
+        // Rendimiento de ORIGINS (mundo.js, 90 s tras arte_ok): la lista exacta esta en EV_PASOS (retencion.js).
+        const EV_REND = /^(fps_(baja|media|alta)_(ok|justo|lento)|gpu_(mali|adreno|powervr|apple|intel|swiftshader|otra))$/;
+        if (!b || !(EV.includes(b.e) || EV_REND.test(String(b.e))) || (b.j !== 'origins' && b.j !== 'classic')) return nada;
         const limpio = { e: b.e, j: b.j, org: ORG.includes(b.org) ? b.org : 'org', ms: Number.isFinite(b.ms) ? Math.round(b.ms) : -1, movil: b.movil ? 1 : 0, tg: b.tg ? 1 : 0 };
         const ip = request.headers.get('CF-Connecting-IP') || '';
         ctx.waitUntil(env.MMO.get(env.MMO.idFromName('mundo-1')).fetch('https://mmo/mmo/ev', { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip }, body: JSON.stringify(limpio) }).catch(e => console.error('[MMO ev]', e)));

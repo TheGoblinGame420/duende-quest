@@ -78,6 +78,8 @@ export function crearMusica() {
   // Secuenciador: semicorcheas (n16), frase en curso, capas y combate.
   let bus = null, sigPaso = 0, n16 = 0, frase = [], resto = 0, vari = 0, acorde = 0;
   let evento = '', toquePend = '', combG = null, furia = 0, furiaHasta = 0;
+  // Peligro (vida baja): filtro que apaga los agudos y latido grave; agachar = baja ante premios.
+  let peligroF = null, peligroK = 0, sigLatido = 0, remateHasta = 0;
   const capa = { acor: 1, mel: 1, cha: 0, bom: 0 }, capaAnt = { acor: 1, mel: 1, cha: 0, bom: 0 };
   const VIENTO = { cumbres: 0.05, abismo: 0.06, acantilados: 0.045, tormenta: 0.04, desierto: 0.03, castillo: 0.02 };
   const PAJAROS = { pueblo: 1, amanecer: 1, selva: 1.4, acantilados: 0.6 };
@@ -91,7 +93,8 @@ export function crearMusica() {
     salida.threshold.value = -16; salida.knee.value = 10; salida.ratio.value = 4; salida.attack.value = 0.004; salida.release.value = 0.3;
     salida.connect(ctx.destination);
     maestro = ctx.createGain(); maestro.gain.value = 0;
-    maestro.connect(salida);
+    peligroF = ctx.createBiquadFilter(); peligroF.type = 'lowpass'; peligroF.frequency.value = 20000 - peligroK * 19000; peligroF.Q.value = 0.7;
+    maestro.connect(peligroF); peligroF.connect(salida);
     combG = ctx.createGain(); combG.gain.value = 0; combG.connect(maestro);
     // Eco suave (da "espacio" sin una reverb cara).
     eco = ctx.createDelay(1.5); eco.delayTime.value = 0.42;
@@ -364,6 +367,42 @@ export function crearMusica() {
     rasgueo(notasAcorde(F, 0, F.raiz), t + 8 * d, 0.06, maestro, true);
     for (let i = 0; i < 12; i++) chajchas(t + i * d, 0.03, maestro);
   }
+  // Remate: al caer un jefe, frase de quena en la escala y el acorde que suenan, triple bombo y rasgueo.
+  function remate(tipo) {
+    if (!ctx || !activo || !maestro || ctx.state !== 'running') return false;
+    const E = bus ? bus.E : ESCALAS.pueblo, t = ctx.currentTime + 0.08, d = tipo === 'jefe' ? 0.1 : 0.085;
+    const r = E.prog[acorde % E.prog.length][0] % 12, gi = E.esc.indexOf(r), g0 = gi >= 0 ? gi : 0;   // arranca en la raiz del acorde que suena
+    [[g0, 1], [g0 + 1, 1], [g0 + 2, 1], [g0 + 3, 1], [g0 + 4, 2], [g0 + 5, 6]].reduce((a, [g, l]) => { soplo(nGrado(E, g), t + a * d, l * d, 0.11, maestro, 0.4); return a + l; }, 0);
+    soplo(nGrado(E, g0 + 3), t + 6 * d, 6 * d, 0.05, maestro, 0.6);   // segunda voz: la zampona en tercera
+    bombo(t + 4 * d, 0.3, maestro); bombo(t + 5 * d, 0.3, maestro); bombo(t + 6 * d, 0.4, maestro);
+    rasgueo(notasAcorde(E, acorde, E.raiz), t + 6 * d, 0.065, maestro, true);
+    for (let i = 0; i < 8; i++) chajchas(t + i * d, 0.03, maestro);
+    remateHasta = t + 13 * d;   // agachar no lo tapa (el botin del jefe llega a la vez)
+    furiaHasta = 0;   // la pelea termino: la percusion de combate se apaga sola
+    return true;
+  }
+  // Baja la musica unos segundos para que se oiga la recompensa, y vuelve despacio.
+  function agachar(seg) {
+    if (!ctx || !maestro || !activo || ctx.currentTime < remateHasta) return;
+    const t = ctx.currentTime, base = activo ? (noche ? 0.08 : 0.11) : 0;
+    seg = Math.max(0.3, Math.min(5, +seg || 1.5));
+    maestro.gain.cancelScheduledValues(t); maestro.gain.setValueAtTime(maestro.gain.value, t);
+    maestro.gain.setTargetAtTime(base * 0.35, t, 0.03);
+    maestro.gain.setTargetAtTime(base, t + seg, 0.4);
+  }
+  // k 0..1: cuanto peligro (vida baja). 0 = musica limpia; 1 = apagada y con latido.
+  function peligro(k) {
+    k = Math.max(0, Math.min(1, +k || 0));
+    peligroK = k;
+    if (!ctx || !peligroF) return;
+    peligroF.frequency.setTargetAtTime(20000 - k * 19000, ctx.currentTime, k > 0 ? 0.25 : 0.6);
+  }
+  function latido(t, vol) {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(70, t); o.frequency.exponentialRampToValueAtTime(38, t + 0.2);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0008, t + 0.35);
+    o.connect(g); g.connect(maestro); o.start(t); o.stop(t + 0.4);
+  }
   function programar() {
     if (!vivo || !activo) return;
     ambiente();
@@ -377,6 +416,11 @@ export function crearMusica() {
     furia += (meta - furia) * (meta > furia ? 0.4 : 0.2);   // ~3 s de bajada tras los 3 s de espera: calma a los ~6 s
     if (furia < 0.01) furia = 0;
     combG.gain.setTargetAtTime(furia, ahora, 0.25);
+    // Vida baja: latido grave y suave cada ~0,8 s (como un corazon que se acelera).
+    if (peligroK > 0.5 && ctx.state === 'running') {
+      if (sigLatido < ahora || sigLatido > ahora + 2) sigLatido = ahora + 0.05;
+      while (sigLatido < hasta) { latido(sigLatido, 0.22 + 0.16 * (peligroK - 0.5)); sigLatido += 0.8; }
+    }
     // Tras una pausa (Telegram minimizado, sonido apagado, segundo plano) no se recupera
     // lo perdido: el bucle creaba cientos de osciladores de golpe al volver (tiron).
     if (sigPaso < ahora) sigPaso = ahora + 0.05;
@@ -402,6 +446,7 @@ export function crearMusica() {
     // Temporada activa ('tanta2026', 'cosecha2026'...): fiesta en el pueblo + toque al empezar.
     evento(id) { id = id || ''; if (id === evento) return; evento = id; if (FIESTAS[id]) toquePend = id; },
     tic,
+    remate, agachar, peligro,
     noche(v) { if (v === noche) return; noche = v; volumen(); },
     clima(c) { if (c === clima) return; clima = c; volumen(); },
     trueno,

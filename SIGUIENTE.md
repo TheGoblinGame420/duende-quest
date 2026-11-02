@@ -3365,3 +3365,18 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - modelos.js: respiración, parpadeo, orejas, caminar y ataque más vivos, NPC que miran y saludan, brillo de armas raras.
 - lore.js: más frases por PNJ, mitos andinos y amazónicos, `LORE_MONSTRUOS` mostrado al marcar un monstruo por primera vez, leyendas de T'anta Wawa y Cosecha.
 - Arnés 897 bien; probado en local de tarde y de noche, con sonido activado, sin errores en consola.
+
+### Estudio de juegos de referencia (1-nov-2026, `?v=341`)
+
+- 12 investigadores con búsqueda web (onboarding, game feel, retención, progresión, social, viralidad en Telegram, monetización ética, gustos de Perú/LatAm, mundo vivo, arte low-poly, audio adaptativo, rendimiento WebGL) → 64 hallazgos → 12 tareas implementadas y revisadas. Solo mecánicas del género, sin copiar contenido.
+- temaPueblo: en fiestas (tanta/cosecha) no suena el MP3, suena la fiesta generada.
+- Game feel: `pausaGolpe` (hitstop 40/70 ms), `retroceso` cosmético, confirmación de muerte, vib por capas y `vibSel`, sacudida suave sin ruido.
+- Gestos y frases rápidas en 3D (`case 'gesto'` en mundo3d.js, panel #gestos3).
+- Tutorial que resalta ATACAR, la habilidad y VOLAR (embudo t_hab/t_volar). Chip de bestiario, siguiente logro y «Próximo en Nv N».
+- Social: propuesta de grupo tras cazar juntos, «Jugaste con», escalera de referidos. Compartir con línea de logro y referido por start_param.
+- Tienda: valor del pack de bienvenida y recordatorio al morir sin pociones (1/día).
+- Invasiones con aviso de 90 s y zona Bendecida (+10% XP 15 min). Meta comunitaria «Entre todos» con Hora Feliz por umbral.
+- Música: fanfarria de jefe, ducking ante recompensas, latido con poca vida, racha que sube de tono.
+- Rendimiento gama baja: tope de figuras, modo reposo, viñeta CSS, telemetría de FPS.
+- Diarias 2 de 3, +8 al pase por entrar, protector 🧿 de racha.
+- Arnés 897 bien (pruebas del pase ajustadas a los puntos por entrar).

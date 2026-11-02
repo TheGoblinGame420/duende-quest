@@ -504,9 +504,18 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 340;
+export const VERSION = 341;
 
 export const NOVEDADES = [
+  { n: 109, fecha: '1 nov 2026', items: [
+    'Cada golpe en ORIGINS tiene peso: pausa corta al impactar, el monstruo retrocede y al rematarlo sientes que cae. En AUTO solo vibran los críticos.',
+    '😀 Nuevo botón de gestos: saluda, baila o aplaude sobre tu duende y manda frases rápidas como «¡Ayuda aquí!» o «Gracias, causa».',
+    '🥁 Las invasiones avisan 1:30 antes con tambores y una flecha; si las ganan, la zona queda Bendecida 15 minutos con +10% de XP.',
+    "🤝 «Entre todos»: cada t'anta wawa cuenta para una meta del servidor; al llegar a 3.000, 12.000 y 30.000 todos tienen 1 hora de Hora Feliz.",
+    'El bono diario sale con 2 de las 3 misiones, entrar cada día suma +8 al pase y el nuevo protector 🧿 salva tu racha si faltas un día.',
+    'Si cazas junto a otro duende, el juego te propone hacer grupo; en Amigos ves con quién jugaste y cuánto te falta para la montura por invitar.',
+    "En la T'anta Wawa y la Cosecha el pueblo suena a fiesta andina; al vencer a un jefe suena su fanfarria y con poca vida se oye un latido.",
+  ] },
   { n: 108, fecha: '1 nov 2026', items: [
     "🎶 La música de ORIGINS ahora es andina: quena, zampoña, charango y bombo, con una melodía propia en cada zona y un paso suave al cambiar de zona. En las peleas se acelera y entra la percusión, y en la T'anta Wawa y la Cosecha suena fiesta.",
     '🔊 Sonidos nuevos: cofres que crujen, botín que brilla según su rareza, fanfarria al subir de nivel, curación, alas y chapuzones. Los golpes y monstruos suenan desde donde están.',
@@ -1836,6 +1845,9 @@ for (const t of TEMPORADAS) { t.ini -= DIA_DESFASE_MS; t.fin -= DIA_DESFASE_MS; 
 export const temporadaDe = (t = Date.now()) => TEMPORADAS.find(x => t >= x.ini && t < x.fin) || null;
 export const temporadaActiva = (t = Date.now()) => !!temporadaDe(t);
 export const TEMP_PROB = 0.2, TEMP_JEFE = 5;
+// Meta comunitaria «Entre todos»: objetos de la temporada sumados por todo el
+// servidor. Al cruzar cada umbral, una Hora Feliz extra de 1 h para todos.
+export const TEMP_META = [3000, 12000, 30000];
 
 // ── PREMIO FISICO: CHICHA MORADA (functions/mmo/chicha.js) ──
 // niveles: puntos para cada litro (dos premios por jugador como mucho).
@@ -2435,7 +2447,7 @@ export const mundialDe = t => MUNDIALES[Math.floor(t / 1800000) % MUNDIALES.leng
 // mundial); cada 75 puntos, un nivel con premio que se cobra a mano en el
 // registro de misiones (L). Al nivel 20, una mascota que no se vende. Sin
 // compra y sin mTON.
-export const PASE = { niveles: 20, porNivel: 75, puntos: { diaria: 10, semanal: 30, bono: 15, mazmorra: 6, mundial: 10, torre: 4, exped: 3 } };
+export const PASE = { niveles: 20, porNivel: 75, puntos: { diaria: 10, semanal: 30, bono: 15, mazmorra: 6, mundial: 10, torre: 4, exped: 3, login: 8 } };
 export const paseMes = (t = Date.now()) => new Date(t + DIA_DESFASE_MS).toISOString().slice(0, 7);   // mes de Lima
 export function premioPase(n, nivel) {
   const oro = k => Math.round(k * Math.max(1, nivel));
@@ -2459,8 +2471,8 @@ LOGROS.push(
   { id: 'dias14',      titulo: 'Vecino del Pueblo',      desc: 'Entra 14 días distintos',        oro: 4000,  cond: c => ((c.login || {}).total || 0) >= 14 },
   { id: 'dias30',      titulo: 'Duende de Toda la Vida', desc: 'Entra 30 días distintos',        oro: 10000, cond: c => ((c.login || {}).total || 0) >= 30 },
   { id: 'dias60',      titulo: 'Duende Eterno',          desc: 'Entra 60 días distintos',        oro: 25000, cond: c => ((c.login || {}).total || 0) >= 60 },
-  { id: 'completos10', titulo: 'Cumplidor',              desc: 'Completa las 3 diarias 10 días', oro: 3000,  cond: c => (c.diasCompletos || 0) >= 10 },
-  { id: 'completos30', titulo: 'Incansable',             desc: 'Completa las 3 diarias 30 días', oro: 9000,  cond: c => (c.diasCompletos || 0) >= 30 },
+  { id: 'completos10', titulo: 'Cumplidor',              desc: 'Cobra el bono diario 10 días', oro: 3000,  cond: c => (c.diasCompletos || 0) >= 10 },
+  { id: 'completos30', titulo: 'Incansable',             desc: 'Cobra el bono diario 30 días', oro: 9000,  cond: c => (c.diasCompletos || 0) >= 30 },
 );
 
 // ── TORRE DEL DUENDE ── (functions/mmo/torre.js)

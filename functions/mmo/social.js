@@ -140,6 +140,38 @@ export const Social = {
       if (this.enviarContactos) this.enviarContactos(x);
     }
   },
+  // Caza juntos (ORIGINS, matar3d): quien comparte una presa queda en «Jugaste
+  // con» del otro (s.recientes: solo en memoria, 10 como mucho, sin uid). Si dos
+  // sin grupo que pegaron suman 2 bajas juntos en menos de 3 min, se les ofrece
+  // hacer grupo: una vez por pareja cada 30 min, solo dentro del juego.
+  cazaJuntos(ses, o) {
+    const l = ses.filter(x => x && x.c && !x.cerrado).slice(0, 8);
+    if (l.length < 2) return;
+    const ahora = Date.now();
+    const novato = x => x.c.uid.startsWith('inv:') && (x.c.nivel || 1) < 2;
+    const pego = x => !!(o && o.dano && o.dano.has(x.id));
+    for (const a of l) for (const b of l) {
+      if (a === b || a.c.uid === b.c.uid || meIgnora(a, b.c.uid) || meIgnora(b, a.c.uid)) continue;
+      const r = a.recientes || (a.recientes = []), pb = pub(b.c.uid), i = r.findIndex(z => z.pub === pb);
+      if (i >= 0) r.splice(i, 1);
+      r.unshift({ pub: pb, nombre: b.c.nombre, t: ahora });
+      if (r.length > 10) r.length = 10;
+      if (a.gid || b.gid || novato(a) || novato(b) || !pego(a) || !pego(b)) continue;
+      const co = a.coop || (a.coop = new Map());
+      let e = co.get(b.c.uid);
+      if (!e || ahora - e.t > 180000) e = { n: 0, t: ahora };
+      e.n++;
+      co.delete(b.c.uid); co.set(b.c.uid, e);
+      if (co.size > 20) co.delete(co.keys().next().value);
+      const of = a.coopOf || (a.coopOf = new Map());
+      if (e.n < 2 || ahora - (of.get(b.c.uid) || 0) < 30 * 60000) continue;
+      of.set(b.c.uid, ahora);
+      if (of.size > 20) of.delete(of.keys().next().value);
+      co.delete(b.c.uid);
+      // ofreceGrupo: el id de sesion (lo que pide invitar), como en las listas de amigos.
+      this.enviar(a, { t: 'toast', ofreceGrupo: b.id, n: b.c.nombre, m: `🤝 Cazaste junto a ${b.c.nombre}. ¿Hacen grupo? (+exp compartida)` });
+    }
+  },
 
   salirGrupo(s, motivo) {
     const g = this.grupoDe(s);
@@ -319,6 +351,7 @@ export const Social = {
     if (i >= 0) { l.splice(i, 1); s.sucio = true; return this.enviar(s, { t: 'toast', m: `🔈 Vuelves a ver los mensajes de ${t.c.nombre}.` }); }
     if (l.length >= IGNORADOS_MAX) l.shift();
     l.push(t.c.uid); s.sucio = true;
+    if (s.recientes) s.recientes = s.recientes.filter(z => z.pub !== pub(t.c.uid));   // fuera de «Jugaste con»
     this.enviar(s, { t: 'toast', m: `🔇 Ya no ves los mensajes de ${t.c.nombre} (escribe /ignorar ${t.c.nombre} otra vez para deshacerlo).` });
   },
   // /reportar Nombre motivo: queda guardado (con sus ultimas frases del chat)
@@ -547,8 +580,11 @@ export const Social = {
   gesto(s, m) {
     const ahora = Date.now();
     if (typeof m.id !== 'string' || !Object.hasOwn(GESTOS, m.id) || ahora - (s.gestoT || 0) < 1500) return;
+    if (this.silenciado && this.silenciado(s)) return;   // silenciado por un moderador: tampoco gestos
     s.gestoT = ahora;
-    this.aClave(s.k, { t: 'gesto', p: s.id, id: m.id });
+    // Como el chat: no le llega a quien ignora al autor.
+    const txt = JSON.stringify({ t: 'gesto', p: s.id, id: m.id });
+    for (const x of this.sesiones.values()) if (x.c && x.k === s.k && !meIgnora(x, s.c.uid)) this.enviar(x, txt);
   },
 
   // ── INSPECCIONAR (como en WoW) ──
