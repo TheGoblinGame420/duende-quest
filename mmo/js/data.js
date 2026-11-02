@@ -504,9 +504,17 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 339;
+export const VERSION = 340;
 
 export const NOVEDADES = [
+  { n: 108, fecha: '1 nov 2026', items: [
+    "🎶 La música de ORIGINS ahora es andina: quena, zampoña, charango y bombo, con una melodía propia en cada zona y un paso suave al cambiar de zona. En las peleas se acelera y entra la percusión, y en la T'anta Wawa y la Cosecha suena fiesta.",
+    '🔊 Sonidos nuevos: cofres que crujen, botín que brilla según su rareza, fanfarria al subir de nivel, curación, alas y chapuzones. Los golpes y monstruos suenan desde donde están.',
+    '🌅 Atardeceres cálidos, luna con halo, estrellas que titilan y agua turquesa con brillos y espuma; en las Cumbres la bruma cubre los valles.',
+    '✨ Chispas y destellos al golpear, ondas en los críticos y una columna de luz al subir de nivel. Cada zona tiene su ambiente: luciérnagas, hojas, nieve, ceniza, arena o éter.',
+    'Los duendes y la gente del pueblo parpadean, respiran y te saludan, y las armas raras brillan en cada golpe.',
+    "📖 Cada monstruo tiene su historia (el Tunche, el Muki, el Amaru…), y Tito, Grumo, el Sabio y Lila hablan con más gracia. Toca el contador del evento para leer la leyenda de la T'anta Wawa.",
+  ] },
   { n: 107, fecha: '1 nov 2026', items: [
     "🍞 Desde el 3 de noviembre, en ORIGINS el pueblo se llena de t'anta wawas con carita y la Abuela pone su puesto de panes en la plaza; en la Cosecha llegan las mazorcas de maíz morado. La píldora del evento cuenta los días para el próximo.",
     'Nuevo botón verde 📣 +oro siempre a la vista para invitar a tus amigos, y las invitaciones por WhatsApp y Telegram dicen el premio para los dos.',

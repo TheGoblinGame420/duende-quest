@@ -76,6 +76,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v337 | Ronda 12, última de la noche: AUTO que sigue y toma pociones, Jugar sin sonido, Telegram al instante, portada de anuncio sin cripto, último día de Halloween, rescate a Safari | **B** |
 | v338 | Ronda 13: nombre propio, legendarios con nombre, duelos justos, jefes interrumpibles, grupo por nombre, colores en 3D, CLASSIC con menos datos | **B** |
 | v339 | Ronda 14: pueblo de T'anta Wawa y Cosecha, botón 📣 +oro, ventanas móviles completas, AUTO que no suelta en pelea, nombres seguros, tope diario de cofres | **B** |
+| v340 | ORIGINS: música andina por zona con combate y fiestas, sonidos posicionales, cielo y agua vivos, efectos por zona, personajes que respiran, lore de mitos peruanos | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

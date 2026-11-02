@@ -14,25 +14,26 @@
 import * as THREE from 'three';
 import { esNocheDuendes, TEMPORADAS, temporadaDe, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES } from '/mmo/js/data.js?v=339';
-import { iniciarVentanas } from './ventanas.js?v=339';
-import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria } from '/mmo/js/data.js?v=339';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
-import { iniciarRegalo } from '/mmo/js/regalo.js?v=339';
-import { iniciarAvisoTg } from '/mmo/js/avisotg.js?v=339';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=339';
-import { crearMusica } from './musica.js?v=339';
-import { construirCueva } from './cueva.js?v=339';
-import { TAPA, transparentar } from './tapa.js?v=339';
-import { construirAbismo } from './abismo.js?v=339';
-import { crearParticulas } from './particulas.js?v=339';
-import { cargarKenney, piezasCasa } from './kenney.js?v=339';
-import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=339';
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES } from '/mmo/js/data.js?v=340';
+import { iniciarVentanas } from './ventanas.js?v=340';
+import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria } from '/mmo/js/data.js?v=340';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
+import { iniciarRegalo } from '/mmo/js/regalo.js?v=340';
+import { iniciarAvisoTg } from '/mmo/js/avisotg.js?v=340';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=340';
+import { crearMusica } from './musica.js?v=340';
+import { crearSonidos } from './sonidos.js?v=340';
+import { construirCueva } from './cueva.js?v=340';
+import { TAPA, transparentar } from './tapa.js?v=340';
+import { construirAbismo } from './abismo.js?v=340';
+import { crearParticulas } from './particulas.js?v=340';
+import { cargarKenney, piezasCasa } from './kenney.js?v=340';
+import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=340';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=339';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d } from '/mmo/js/mundo3d.js?v=339';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=339';
-import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=339';
-import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES } from './lore.js?v=339';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=340';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d } from '/mmo/js/mundo3d.js?v=340';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=340';
+import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=340';
+import { LORE_ZONAS, LORE_NPC, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA } from './lore.js?v=340';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -199,6 +200,20 @@ lienzo.addEventListener('webglcontextrestored', () => { clearTimeout(glPerdidoT)
 render.setPixelRatio(Math.min(devicePixelRatio || 1, Q.px));
 if (Q.sombras) { render.shadowMap.enabled = true; render.shadowMap.type = THREE.PCFSoftShadowMap; }
 render.outputColorSpace = THREE.SRGBColorSpace;
+// Si un shader propio (agua, estrellas, bruma) no compila en algun movil raro,
+// se vuelve al material de siempre en vez de dejar un hueco en la escena.
+// Cada shader lleva una marca (comentario GLSL «dq:nombre») y solo cae el que fallo.
+const respaldosShader = [];
+try {
+  if (render.debug) render.debug.onShaderError = (gl, prog, vs, fs) => {
+    let src = '';
+    try { console.error('[3D] shader no compilo', gl.getProgramInfoLog(prog) || '', gl.getShaderInfoLog(vs) || '', gl.getShaderInfoLog(fs) || ''); src = (gl.getShaderSource(vs) || '') + (gl.getShaderSource(fs) || ''); } catch (e) {}
+    for (let i = respaldosShader.length - 1; i >= 0; i--) {
+      const [marca, f] = respaldosShader[i];
+      if (src.includes('dq:' + marca)) { respaldosShader.splice(i, 1); try { f(); } catch (e) {} }
+    }
+  };
+} catch (e) {}
 const escena = new THREE.Scene();
 escena.background = C(CIELO.pueblo);
 escena.fog = new THREE.Fog(CIELO.pueblo, 40, Q.lejos);
@@ -273,37 +288,74 @@ function resolucionDinamica(ms) {
 }
 // ── DIA, NOCHE Y CLIMA ──
 const BLANCO_H = C('#ffffff'), NOCHE_CIELO = C('#0b1030'), OCASO = C('#ff8a5c'), GRIS = C('#6c7380'), ARENA = C('#c9a46a');
+// Estrellas que titilan: cada una con su fase y un tinte (blancas, azuladas,
+// alguna dorada). El parpadeo se inyecta en el shader de PointsMaterial; si
+// el codigo de three no trae lo esperado, quedan fijas como antes.
+const estrellasT = { value: 0 };
 const estrellas = (() => {
-  const n = 700, pos = new Float32Array(n * 3);
+  const n = 700, pos = new Float32Array(n * 3), fase = new Float32Array(n), col = new Float32Array(n * 3);
   for (let i = 0; i < n; i++) {
     const a = Math.random() * Math.PI * 2, e = Math.asin(Math.random() * 0.95 + 0.05);
     pos[i * 3] = Math.cos(a) * Math.cos(e) * 420; pos[i * 3 + 1] = Math.sin(e) * 420; pos[i * 3 + 2] = Math.sin(a) * Math.cos(e) * 420;
+    fase[i] = Math.random();
+    const r = Math.random(), tn = r < 0.12 ? [1, 0.86, 0.62] : r < 0.4 ? [0.78, 0.86, 1] : [1, 1, 1];
+    col.set(tn, i * 3);
   }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  const p = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xffffff, size: 1.7, sizeAttenuation: false, transparent: true, opacity: 0, fog: false, depthWrite: false }));
+  g.setAttribute('fase', new THREE.BufferAttribute(fase, 1)); g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  const mat = new THREE.PointsMaterial({ color: 0xffffff, vertexColors: true, size: 1.8, sizeAttenuation: false, transparent: true, opacity: 0, fog: false, depthWrite: false });
+  mat.onBeforeCompile = sh => {
+    try {
+      const v = sh.vertexShader, f = sh.fragmentShader;
+      if (!v.includes('gl_PointSize = size;') || !v.includes('#include <common>') || !f.includes('#include <color_fragment>') || !f.includes('#include <common>')) return;
+      sh.uniforms.uT = estrellasT;
+      sh.vertexShader = v.replace('#include <common>', '#include <common>\n// dq:estrellas\nattribute float fase; uniform float uT; varying float vTw;')
+        .replace('gl_PointSize = size;', 'vTw = 0.6 + 0.4 * sin(uT * (1.2 + fase * 2.4) + fase * 40.0); gl_PointSize = size * (0.8 + 0.45 * vTw);');
+      sh.fragmentShader = f.replace('#include <common>', '#include <common>\nvarying float vTw;')
+        .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.a *= vTw;');
+    } catch (e) {}
+  };
+  const p = new THREE.Points(g, mat);
   escena.add(p);
+  respaldosShader.push(['estrellas', () => { const m2 = new THREE.PointsMaterial({ color: 0xffffff, size: 1.7, sizeAttenuation: false, transparent: true, opacity: p.material.opacity, fog: false, depthWrite: false }); p.material = m2; }]);
   return p;
 })();
 // ── CIELO: cupula con degradado (horizonte → cenit), halo y disco del sol, y
 // nubes low-poly que derivan alto. La niebla usa el color del horizonte, asi
 // el mundo se funde con el cielo.
 const cielo = (() => {
-  const u = { uHor: { value: new THREE.Color() }, uTop: { value: new THREE.Color() }, uSol: { value: new THREE.Vector3(0, 1, 0) }, uSolC: { value: new THREE.Color('#fff1c9') }, uNoche: { value: 0 } };
+  // uOca/uOcaK: banda calida del amanecer y el ocaso (mas fuerte del lado del
+  // sol); uBruma: horizonte lechoso (Cumbres, niebla); la luna sale enfrente
+  // del sol con su halo frio. Un pelo de ruido evita las franjas del degradado.
+  const u = { uHor: { value: new THREE.Color() }, uTop: { value: new THREE.Color() }, uSol: { value: new THREE.Vector3(0, 1, 0) }, uSolC: { value: new THREE.Color('#fff1c9') }, uNoche: { value: 0 },
+    uOca: { value: new THREE.Color('#ff9a5a') }, uOcaK: { value: 0 }, uBruma: { value: 0.12 }, uLunaC: { value: new THREE.Color('#dfe8ff') } };
   const m = new THREE.Mesh(new THREE.SphereGeometry(440, 32, 16), new THREE.ShaderMaterial({
     uniforms: u, side: THREE.BackSide, depthWrite: false, depthTest: false, fog: false,
     vertexShader: 'varying vec3 vD; void main() { vD = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-    fragmentShader: `uniform vec3 uHor; uniform vec3 uTop; uniform vec3 uSol; uniform vec3 uSolC; uniform float uNoche; varying vec3 vD;
+    fragmentShader: `uniform vec3 uHor; uniform vec3 uTop; uniform vec3 uSol; uniform vec3 uSolC; uniform float uNoche;
+      uniform vec3 uOca; uniform float uOcaK; uniform float uBruma; uniform vec3 uLunaC; varying vec3 vD;
+      // dq:cielo
       void main() {
-        float h = vD.y;
-        vec3 c = mix(uHor, uTop, smoothstep(0.0, 0.6, h));
+        vec3 d = normalize(vD); float h = d.y;
+        vec3 sd = normalize(uSol);
+        vec3 c = mix(uHor, uTop, pow(smoothstep(-0.02, 0.7, h), 0.75));
+        float lado = 0.5 + 0.5 * dot(normalize(d.xz + vec2(0.0001)), normalize(sd.xz + vec2(0.0001)));
+        float banda = exp(-max(h, 0.0) * 5.0) * (0.3 + 0.7 * lado * lado);
+        c = mix(c, uOca, clamp(banda * uOcaK, 0.0, 0.85));
+        c = mix(c, uHor * 1.06, clamp(uBruma * exp(-abs(h) * 8.0), 0.0, 0.9));
         c = mix(c, uHor * 0.8, smoothstep(0.0, -0.25, h));
-        float s = max(dot(normalize(vD), normalize(uSol)), 0.0);
-        c += uSolC * (pow(s, 10.0) * 0.28 + pow(s, 900.0) * 1.6) * (1.0 - uNoche);
-        gl_FragColor = vec4(c, 1.0);
+        float s = max(dot(d, sd), 0.0);
+        c += uSolC * (pow(s, 8.0) * 0.2 + pow(s, 60.0) * 0.3 + pow(s, 900.0) * 1.6) * (1.0 - uNoche);
+        float l = max(dot(d, normalize(vec3(-sd.x, sd.y, -sd.z))), 0.0);
+        c += uLunaC * (pow(l, 14.0) * 0.1 + pow(l, 120.0) * 0.18 + smoothstep(0.9991, 0.9995, l) * 0.85) * uNoche;
+        c += (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) / 255.0;
+        gl_FragColor = vec4(max(c, vec3(0.0)), 1.0);
         #include <colorspace_fragment>
       }`,
   }));
   m.renderOrder = -10; m.frustumCulled = false; escena.add(m);
+  // Si la cupula no compila queda el color de fondo de la escena (como antes de tener cupula).
+  respaldosShader.push(['cielo', () => { m.visible = false; }]);
   return { m, u };
 })();
 const nubes3 = (() => {
@@ -330,7 +382,33 @@ const nubes3 = (() => {
     },
   };
 })();
-const FX = crearParticulas(escena, MOVIL ? 900 : 1800, MOVIL);
+// ── BRUMA DE ALTURA (Cumbres): un manto de niebla en los valles que se ve
+// desde arriba, con las cimas asomando. Un disco con textura que deriva y se
+// desvanece hacia el borde (alfa por vertice); en calidad baja no se crea.
+const BRUMA_Y = 9;
+const bruma = (() => {
+  if (CAL === 'baja') return null;
+  try {
+    const cv = document.createElement('canvas'); cv.width = cv.height = 128;
+    const g = cv.getContext('2d');
+    for (let i = 0; i < 40; i++) {
+      const x = Math.random() * 128, y = Math.random() * 128, r = 14 + Math.random() * 24;
+      for (let ox = -128; ox <= 128; ox += 128) for (let oy = -128; oy <= 128; oy += 128) {   // repetible sin costuras
+        const gr = g.createRadialGradient(x + ox, y + oy, 0, x + ox, y + oy, r);
+        gr.addColorStop(0, 'rgba(255,255,255,0.32)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+        g.fillStyle = gr; g.fillRect(x + ox - r, y + oy - r, r * 2, r * 2);
+      }
+    }
+    const tex = new THREE.CanvasTexture(cv); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(6, 6); tex.colorSpace = THREE.SRGBColorSpace;
+    const geo = new THREE.CircleGeometry(240, 28).rotateX(-Math.PI / 2), np = geo.attributes.position.count, ca = new Float32Array(np * 4);
+    for (let i = 0; i < np; i++) { ca.set([1, 1, 1, i === 0 ? 1 : 0], i * 4); }   // centro opaco, borde transparente
+    geo.setAttribute('color', new THREE.BufferAttribute(ca, 4));
+    const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: tex, vertexColors: true, color: 0xeef2fa, transparent: true, opacity: 0, depthWrite: false }));
+    m.visible = false; m.renderOrder = 2; m.frustumCulled = false; escena.add(m);
+    return { m, tex, k: 0 };
+  } catch (e) { return null; }
+})();
+const FX = crearParticulas(escena, MOVIL ? 900 : 1800, MOVIL, POBRE || CAL === 'baja');
 // Gotas (o copos): segmentos en una caja que sigue a la camara.
 const lluvia = (() => {
   const n = MOVIL ? 700 : 1600, pos = new Float32Array(n * 6);
@@ -343,13 +421,24 @@ const lluvia = (() => {
 })();
 let fovGolpe = 0;
 let climaAct = 'despejado', nocheK = 0, relampagoT = -1e9, sigRelampago = 0, hemiBase = 1, nieblaObj = [40, Q.lejos];
+// Tinte de la niebla por zona (el horizonte de la cupula usa el mismo color),
+// fuerza de la banda del ocaso y bruma del horizonte; ambiente() fija el objetivo
+// y el bucle lo alcanza poco a poco.
+const NIEBLA_TINTE = Object.fromEntries(Object.entries({
+  pueblo: '#cfe6ff', noche: '#3b4f86', amanecer: '#ffc9a6', selva: '#b8e8c4', tormenta: '#8a8fb4', desierto: '#f4d9a6',
+  castillo: '#9d93ad', cumbres: '#eef1fa', cavernas: '#4f8592', abismo: '#9fd0ee', acantilados: '#e6c8ff',
+}).map(([k, v]) => [k, C(v)]));
+const SOL_DIA = C('#fff2dd'), SOL_NOCHE = C('#9fb4ff'), SOL_PUEBLO = C('#ffcf8f'), CENIT_DIA = C('#2a4fb8'), CENIT_NOCHE = C('#02040e');
+const nieblaTinteObj = C(CIELO.pueblo), nieblaAct = C(CIELO.pueblo);
+let ocasoK = 0, ocasoAct = 0, brumaObj = 0.12;
 const musica = crearMusica();
 const NOMBRE_CLIMA = { despejado: '', lluvia: '🌧 Lluvia', tormenta: '⛈ Tormenta', nieve: '❄ Nieve', niebla: '🌫 Niebla', arena: '🌪 Tormenta de arena' };
 // Para probar: ?clima=lluvia|tormenta|nieve|niebla|arena y ?hora=0..24
 const PRUEBA = new URLSearchParams(location.search);
 function ambiente(z) {
   const ahora = Date.now(), h = PRUEBA.has('hora') ? +PRUEBA.get('hora') : horaMundo(ahora);
-  const dia = clamp(Math.sin((h - 5) / 14.5 * Math.PI) * 1.5, 0, 1);   // amanece a las 5, anochece a las 19:30
+  // Amanece a las 5, anochece a las 19:30; la curva en S suaviza la entrada y salida del dia.
+  const sdia = clamp(Math.sin((h - 5) / 14.5 * Math.PI) * 1.3 + 0.06, 0, 1), dia = sdia * sdia * (3 - 2 * sdia);
   nocheK = 1 - dia;
   const ocaso = Math.min(1, Math.max(0, 1 - Math.abs(h - 18.8) / 1.3) + Math.max(0, 1 - Math.abs(h - 5.8) / 1.1));
   const luz = LUZ[z] || 1;
@@ -357,12 +446,18 @@ function ambiente(z) {
   const nub = cl === 'tormenta' ? 0.55 : cl === 'lluvia' || cl === 'nieve' ? 0.75 : cl === 'niebla' || cl === 'arena' ? 0.85 : 1;
   hemiBase = 0.9 * luz * (0.32 + 0.68 * dia) * (0.6 + 0.4 * nub);
   sol.intensity = 2.0 * luz * (0.12 + 0.88 * dia) * nub;
-  sol.color.set(dia < 0.25 ? 0x9fb4ff : 0xfff2dd).lerp(OCASO, ocaso * 0.6);
+  // Del sol blanco-dorado a la luz azul de luna sin salto; en el pueblo, una tarde mas calida.
+  sol.color.copy(SOL_DIA).lerp(SOL_NOCHE, clamp((0.45 - dia) / 0.35, 0, 1)).lerp(OCASO, ocaso * 0.6);
+  if (z === 'pueblo') sol.color.lerp(SOL_PUEBLO, 0.32 * dia * (1 - ocaso));
   const a = (h - 6) / 24 * Math.PI * 2;
   solDir.set(Math.cos(a) * 200, Math.max(60, Math.abs(Math.sin(a)) * 220), 80);
   const fijo = z === 'cueva' || z === 'eter';   // ni dia ni noche: siempre su cielo
   cieloObj.set(CIELO[z] || CIELO.pueblo).lerp(OCASO, fijo ? 0 : ocaso * 0.35).lerp(NOCHE_CIELO, fijo ? 0 : nocheK * 0.85);
   if (nub < 1) cieloObj.lerp(cl === 'arena' ? ARENA : GRIS, (1 - nub) * 1.2);
+  nieblaTinteObj.copy(cieloObj);
+  if (!fijo && NIEBLA_TINTE[z]) nieblaTinteObj.lerp(NIEBLA_TINTE[z], (z === 'cumbres' ? 0.4 : 0.22) * (1 - nocheK * 0.6));
+  ocasoK = fijo ? 0 : ocaso * (0.35 + 0.65 * nub) * (1 - nocheK * 0.5);
+  brumaObj = z === 'cueva' ? 0 : z === 'cumbres' ? 0.55 : cl === 'niebla' || cl === 'arena' ? 0.45 : cl === 'nieve' ? 0.3 : 0.12;
   estrellas.material.opacity = z === 'eter' ? 0.7 : z === 'cueva' ? 0 : nocheK * (cl === 'despejado' ? 0.9 : 0.2);
   if (z === 'cueva') { hemiBase = 0.6; sol.intensity = 0.3; }   // 0.6: un pelo mas sin las luces de las antorchas (ahora horneadas)
   hemi.color.copy(cieloObj).lerp(BLANCO_H, 0.55);
@@ -379,6 +474,7 @@ function ambiente(z) {
   }
   // La cueva y el Eter con su propia musica (antes sonaba la alegre del pueblo).
   musica.zona(enCueva(P.x) ? 'cavernas' : enAbismo(P.x) ? 'cumbres' : z); musica.noche(nocheK > 0.5); musica.clima(cl);
+  musica.evento((temporadaDe() || {}).id || '');   // T'anta Wawa / Cosecha: fiesta andina en el pueblo
   temaPueblo(z);
   const hh = Math.floor(h), mm = Math.floor((h - hh) * 60);
   const txt = (nocheK > 0.5 ? '🌙 ' : '☀ ') + String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0') + (NOMBRE_CLIMA[cl] ? ' · ' + NOMBRE_CLIMA[cl] : '')
@@ -461,11 +557,78 @@ function crearTerreno() {
   const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true }));
   m.receiveShadow = Q.sombras;
   escena.add(m);
-  const agua = new THREE.Mesh(new THREE.PlaneGeometry(LADO * 1.4, LADO * 1.4).rotateX(-Math.PI / 2),
-    new THREE.MeshLambertMaterial({ color: 0x3a8fd0, transparent: true, opacity: 0.72 }));
+  const base = new THREE.MeshLambertMaterial({ color: 0x3a8fd0, transparent: true, opacity: 0.72 });
+  let matAgua = base;
+  try { matAgua = materialAgua(pos); } catch (e) { console.warn('[3D] agua simple', e); matAgua = base; }
+  const agua = new THREE.Mesh(new THREE.PlaneGeometry(LADO * 1.4, LADO * 1.4).rotateX(-Math.PI / 2), matAgua);
   agua.position.y = MUNDO.agua;
   escena.add(agua);
+  if (matAgua !== base) respaldosShader.push(['agua', () => { agua.material = base; }]);
   return agua;
+}
+// ── AGUA VIVA: color con profundidad (turquesa en la orilla, azul hondo mar
+// adentro), cielo reflejado al mirar rasante, destellos del sol que se mueven
+// con olas pequeñas y espuma suave en la orilla. La profundidad sale de las
+// alturas del terreno ya calculadas (una textura, sin calculos extra). Sin
+// luces de three: el brillo lo da uLuz (dia/noche/relampago) desde el bucle.
+const AGUA_U = { uT: { value: 0 }, uCielo: { value: C(CIELO.pueblo) }, uSol: { value: new THREE.Vector3(0.5, 0.8, 0.3) }, uSolC: { value: C('#fff2dd') },
+  uLuz: { value: 1 }, uProf: { value: null }, uEsc: { value: new THREE.Vector2(1, 0) } };
+function materialAgua(pos) {
+  const N = SEG + 1, datos = new Uint8Array(N * N * 4);
+  for (let i = 0; i < pos.count; i++) {
+    datos[i * 4] = Math.round(clamp((MUNDO.agua - pos.getY(i) + 2) / 12, 0, 1) * 255);   // 0 = 2 m sobre el agua · 1 = 10 m de hondo
+    datos[i * 4 + 3] = 255;
+  }
+  const tex = new THREE.DataTexture(datos, N, N);
+  tex.magFilter = THREE.LinearFilter; tex.minFilter = THREE.LinearFilter; tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping; tex.needsUpdate = true;
+  AGUA_U.uProf.value = tex;
+  AGUA_U.uEsc.value.set(SEG / (LADO * N), (0.5 * SEG + 0.5) / N);
+  const baja = CAL === 'baja';
+  return new THREE.ShaderMaterial({
+    uniforms: Object.assign(THREE.UniformsUtils.clone(THREE.UniformsLib.fog), AGUA_U),
+    transparent: true, fog: true,
+    vertexShader: `// dq:agua
+      varying vec3 vW;
+      #include <common>
+      #include <fog_pars_vertex>
+      void main() {
+        vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz;
+        vec4 mvPosition = viewMatrix * w;
+        gl_Position = projectionMatrix * mvPosition;
+        #include <fog_vertex>
+      }`,
+    fragmentShader: `// dq:agua
+      uniform float uT; uniform vec3 uCielo; uniform vec3 uSol; uniform vec3 uSolC; uniform float uLuz; uniform sampler2D uProf; uniform vec2 uEsc;
+      varying vec3 vW;
+      #include <common>
+      #include <fog_pars_fragment>
+      void main() {
+        vec2 q = vW.xz; float t = uT;
+        vec2 uvP = q * uEsc.x + uEsc.y;
+        float p = texture2D(uProf, uvP).r * 12.0 - 2.0;
+        // Fuera del terreno (tras las montanas del borde) es mar abierto, no orilla con espuma.
+        float fuera = max(max(-uvP.x, uvP.x - 1.0), max(-uvP.y, uvP.y - 1.0));
+        p = mix(p, 10.0, smoothstep(0.0, 0.01, fuera));
+        float hondo = clamp(p / 7.0, 0.0, 1.0);
+        vec3 n = normalize(vec3(
+          sin(q.x * 0.35 + t * 1.1) * 0.05 + sin(q.x * 0.9 + q.y * 0.6 + t * 1.7) * 0.035${baja ? '' : ' + sin((q.x - q.y) * 2.1 + t * 2.6) * 0.02'},
+          1.0,
+          cos(q.y * 0.4 + t * 0.9) * 0.05 + cos(q.y * 1.1 - q.x * 0.5 + t * 1.5) * 0.035${baja ? '' : ' + cos((q.x + q.y) * 2.3 - t * 2.2) * 0.02'}));
+        vec3 v = normalize(cameraPosition - vW);
+        float fres = pow(1.0 - max(dot(n, v), 0.0), 3.0);
+        vec3 col = mix(vec3(0.07, 0.42, 0.44), vec3(0.012, 0.09, 0.24), hondo);
+        col = mix(col, uCielo, 0.18 + 0.5 * fres) * uLuz;
+        float spec = pow(max(dot(n, normalize(normalize(uSol) + v)), 0.0), 160.0);
+        col += uSolC * spec * 1.3;
+        float orilla = 1.0 - smoothstep(0.0, 1.1, p);
+        float ola = 0.5 + 0.5 * sin(p * 9.0 - t * 1.8 + sin(q.x * 0.25 + q.y * 0.2) * 2.0);
+        float espuma = orilla * (0.35 + 0.65 * ola);
+        col = mix(col, vec3(0.85, 0.92, 0.95) * uLuz, espuma * 0.65);
+        gl_FragColor = vec4(col, clamp(mix(0.5, 0.86, hondo) + fres * 0.1 + espuma * 0.35, 0.0, 0.95));
+        #include <colorspace_fragment>
+        #include <fog_fragment>
+      }`,
+  });
 }
 
 // ── VEGETACION Y DECORADO (instanciado: miles de arboles en pocas llamadas) ──
@@ -1172,7 +1335,15 @@ function cargarSfx(n) {
   if (!c || cargandoSfx[n]) return;
   cargandoSfx[n] = fetch(A.replace('assets/', '') + 'audio/sfx/' + n + '.mp3').then(r => r.arrayBuffer()).then(b => c.decodeAudioData(b)).then(buf => { SFX[n] = buf; }).catch(() => {});
 }
-function sfx(n, vol) {
+// Sintetizados (cofre, botin, nivel, alas, agua...) y bus comun con compresor:
+// todo sale por SON.salida(). El oyente es el jugador; el «derecha» sale de la camara.
+const SON = crearSonidos({
+  ctx: ctxAudio,
+  puede: () => sonido && !fuera3 && !document.hidden,
+  oyente: () => { const e = camara.matrixWorld.elements, l = Math.hypot(e[0], e[2]) || 1; return { x: P.x, z: P.z, rx: e[0] / l, rz: e[2] / l }; },
+});
+// x, z (opcional): suena desde ahi, con volumen por distancia y paneo estereo (lo de otros).
+function sfx(n, vol, x, z) {
   if (!sonido) return;
   const c = ctxAudio();
   if (!c || fuera3 || document.hidden) return;
@@ -1180,11 +1351,15 @@ function sfx(n, vol) {
   const buf = SFX[n];
   if (!buf) { cargarSfx(n); return; }
   if (voces >= 8) return;
+  let v = vol || 0.4, pan = 0;
+  if (x != null) { const p = SON.pos(x, z); if (!p) return; v *= p.vol; pan = p.pan; if (v < 0.015) return; }
   try {
     const src = c.createBufferSource(), g = c.createGain();
-    src.buffer = buf; src.playbackRate.value = 0.94 + Math.random() * 0.12;
-    g.gain.value = vol || 0.4;
-    src.connect(g); g.connect(c.destination);
+    src.buffer = buf; src.playbackRate.value = SON.variar(0.06);
+    g.gain.value = v;
+    src.connect(g);
+    if (pan && c.createStereoPanner) { const pn = c.createStereoPanner(); pn.pan.value = pan; g.connect(pn); pn.connect(SON.salida()); }
+    else g.connect(SON.salida());
     voces++; src.onended = () => { voces--; };
     src.start();
   } catch (e) {}
@@ -1192,7 +1367,9 @@ function sfx(n, vol) {
 // Variantes de los paquetes CC0 (Kenney y OpenGameArt): una al azar.
 const SFX_K = { paso_h: 5, paso_p: 5, paso_m: 5, paso_n: 5, g_carne: 5, g_metal: 5, g_critico: 3, desenv: 3, monedas: 2, libro: 3, tela: 4, puerta: 1,
   c_grunt: 5, c_hurt: 5, c_fant: 5, c_troll: 3, c_roar: 3, c_bug: 4, c_monster: 4, c_baba: 3, c_aullido: 2, c_grito: 2 };
-function sfxK(base, vol) { const n = SFX_K[base]; if (n) sfx('k/' + base + Math.floor(Math.random() * n), vol); }
+// Variante al azar pero nunca la misma dos veces seguidas.
+const ultK = {};
+function sfxK(base, vol, x, z) { const n = SFX_K[base]; if (!n) return; let i = Math.floor(Math.random() * n); if (n > 1 && i === ultK[base]) i = (i + 1) % n; ultK[base] = i; sfx('k/' + base + i, vol, x, z); }
 // Fanfarria de subir de nivel o de maestria (las cuatro notas del tono
 // 'nivel' de CLASSIC): antes sonaba igual que recoger oro.
 let fanfarriaT = 0;
@@ -1204,15 +1381,7 @@ function fanfarria() {
   const ahora = performance.now();
   if (ahora - fanfarriaT < 400) return;
   fanfarriaT = ahora;
-  try {
-    const t0 = c.currentTime;
-    [523, 659, 784, 1047].forEach((f, i) => {
-      const o = c.createOscillator(), g = c.createGain(), t = t0 + i * 0.11, d = i === 3 ? 0.3 : 0.12;
-      o.type = 'triangle'; o.frequency.value = f;
-      g.gain.setValueAtTime(0.12, t); g.gain.exponentialRampToValueAtTime(0.001, t + d);
-      o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + d + 0.02);
-    });
-  } catch (e) {}
+  SON.tocar('nivel');   // arpegio + acorde mantenido + brillo (sonidos.js)
 }
 // Voz de cada monstruo segun lo que es.
 function vozDe(k) {
@@ -1613,7 +1782,7 @@ function recibir(m) {
       break;
     }
     case 'zona3f': quitarZona3(m.id, true); break;
-    case 'md3': { const o = mons.get(m.id); if (o) { o.muereT = performance.now(); o.st = 3; sfx('muerte', 0.3); if (Math.hypot(o.x - P.x, o.z - P.z) < 30) sfxK(Math.random() < 0.7 ? 'c_hurt' : 'c_grito', 0.28); const y = (o.y || alturaEn(o.x, o.z)) + 1; FX.emitir(o.x, y, o.z, { n: 30, color: '#c084fc', vel: 5, vida: 0.9, grav: 3, sube: 1.5 }); FX.emitir(o.x, y, o.z, { n: 14, color: '#fde68a', vel: 1.6, vida: 1.4, grav: -2, tam: 0.8 });
+    case 'md3': { const o = mons.get(m.id); if (o) { o.muereT = performance.now(); o.st = 3; sfx('muerte', 0.36, o.x, o.z); if (Math.hypot(o.x - P.x, o.z - P.z) < 30) sfxK(Math.random() < 0.7 ? 'c_hurt' : 'c_grito', 0.32, o.x, o.z); const y = (o.y || alturaEn(o.x, o.z)) + 1; FX.emitir(o.x, y, o.z, { n: 30, color: '#c084fc', vel: 5, vida: 0.9, grav: 3, sube: 1.5 }); FX.emitir(o.x, y, o.z, { n: 14, color: '#fde68a', vel: 1.6, vida: 1.4, grav: -2, tam: 1.6, forma: 'estrella' }); FX.emitir(o.x, y - 0.5, o.z, { n: 7, color: '#5b5266', vel: 1.1, vida: 1.1, grav: -1, tam: 3, radio: 0.4, forma: 'humo' });
       const dj = MONSTRUOS[o.k];
       if (!m.huye && (o.j || (dj && dj.jefe)) && (objetivo === m.id || Math.hypot(o.x - P.x, o.z - P.z) < 30)) {
         numero(P.x, P.y + 3.4, P.z, '¡JEFE DERROTADO!', '#ffe600', true);
@@ -1644,7 +1813,7 @@ function recibir(m) {
     case 'cofres3': (m.l || []).forEach((ms, i) => { if (COFRES3[i]) COFRES3[i].listoEn = Date.now() + ms; }); break;
     case 'cofre3A': {
       const c = COFRES3[m.id]; if (c) { c.listoEn = Date.now() + m.ms; FX.emitir(c.x, alturaEn(c.x, c.z) + 0.8, c.z, { n: 40, color: '#ffd84a', vel: 4, vida: 1, grav: 4, sube: 2 }); }
-      vib('success'); sfxK('monedas', 0.45);
+      vib('success'); SON.tocar('cofre', { vol: 0.9 }); setTimeout(() => sfxK('monedas', 0.35), 280);
       aviso(`🧰 ¡${(NOMBRE_COFRE[m.tipo] || 'cofre').replace(/^./, x => x.toUpperCase())} abierto! +${m.oro} oro${m.pociones ? ` · +${m.pociones} pociones` : ''}${!m.item ? '' : typeof m.item === 'string' ? ' · ' + m.item : ' · ' + (RAREZAS[m.item.r] ? RAREZAS[m.item.r].nombre + ': ' : '') + (m.item.nombre || '') + (m.item.vendido ? ' (bolsa llena: vendido)' : '')}`, 'ok');
       // Objeto con rareza: el haz, la tarjeta de mejora y el presumir los pone botinFuerte (sin duplicar).
       const itC = m.item && typeof m.item === 'object' ? m.item : null;
@@ -1657,8 +1826,8 @@ function recibir(m) {
     case 'on': enLinea3 = +m.n || 0; if (m.h) hoy3 = +m.h || 0; break;   // cuanta gente juega (reloj de arriba y ventana 👥)
     case 'tempFin': mostrarTempFin(m); break;
     case 'inv3': invasion3 = m.on ? { ...m, recibido: Date.now() } : null; pintarMisiones(); break;
-    case 'cofre3': if (cueva) { cueva.cofre.visible = true; cueva.tapa.rotation.x = 0; } sfx('moneda', 0.6); break;
-    case 'logro': aviso('🏅 Logro: ' + m.titulo + (m.oro ? ' · +' + m.oro.toLocaleString('es') + ' oro' : '') + ' (llévalo como título desde ' + (MOVIL ? '⋯ → 🏆' : '🏆 Logros') + ')', 'ok'); sfx('moneda', 0.4); setTimeout(() => ofrecerPresumir('¡Conseguí el logro «' + m.titulo + '» en Duende Quest 3D!', 'logro'), 1500); FX.emitir(P.x, P.y + 1.5, P.z, { n: 30, color: '#ffd84a', vel: 4, vida: 1, grav: -1 }); break;
+    case 'cofre3': if (cueva) { cueva.cofre.visible = true; cueva.tapa.rotation.x = 0; } SON.tocar('cofre', { vol: 0.9 }); break;
+    case 'logro': aviso('🏅 Logro: ' + m.titulo + (m.oro ? ' · +' + m.oro.toLocaleString('es') + ' oro' : '') + ' (llévalo como título desde ' + (MOVIL ? '⋯ → 🏆' : '🏆 Logros') + ')', 'ok'); SON.tocar('logro'); setTimeout(() => ofrecerPresumir('¡Conseguí el logro «' + m.titulo + '» en Duende Quest 3D!', 'logro'), 1500); FX.emitir(P.x, P.y + 1.5, P.z, { n: 30, color: '#ffd84a', vel: 4, vida: 1, grav: -1 }); break;
     case 'gana':
       if (m.xp) numero(P.x, P.y + 2.6, P.z, '+' + m.xp + ' XP', '#c084fc');
       if (m.oro) { numero(P.x + 0.6, P.y + 2.2, P.z, '+' + m.oro + ' oro', '#ffd84a'); sfxK('monedas', 0.3); }
@@ -1770,7 +1939,7 @@ function recibir(m) {
       else cdPoder[m.id] = performance.now() + m.hasta;
       break;
     case 'pedidoSol': case 'factura': case 'pedidoYape': V.alPedido(m); if (window.dqMedir) window.dqMedir('InitiateCheckout', {}, m.codigo); break;   // pixel de Meta con permiso (js/medir.js); mismo eventID que el servidor
-    case 'pw': if (m.p === miId) sfx(m.i === 2 ? 'explosion' : 'boton', 0.4); break;
+    case 'pw': if (m.p === miId) { if (m.i === 0) SON.tocar('cura', { vol: 0.8 }); else sfx(m.i === 2 ? 'explosion' : 'boton', 0.4); } break;   // la pocion: campanitas de curacion
     case 'cast':
       if (m.p === miId) { lanzando = { id: m.id, ini: performance.now(), fin: performance.now() + m.ms }; $('lanzar').style.display = 'block'; $('lanzar-t').textContent = m.id === 'montar' ? 'Invocar montura' : m.id === 'recolectar' ? 'Recolectando…' : m.id === 'pescar' ? 'Pescando… (' + K('E', '¡TIRAR!') + ' para tirar cuando pique)' : (habPorId(m.id) || {}).nombre || '';
         if (m.id === 'pescar') ponerCorcho(); }
@@ -1984,11 +2153,13 @@ function ataqueVisto(m) {
   const de = m.p === miId ? P : otros.get(m.p);
   if (de) { if (!(de === P && performance.now() - P.atkT < 350)) de.atkT = performance.now(); if (m.v) proyectil(de, o, CLASES[(m.p === miId ? yo.clase : de.cl)] ? CLASES[(m.p === miId ? yo.clase : de.cl)].color : '#fff'); }
   if (m.d > 0) o.hp = Math.max(0, o.hp - m.d);
-  if (m.d > 0 && Math.hypot(o.x - P.x, o.z - P.z) < 45) FX.emitir(o.x, (o.y || alturaEn(o.x, o.z)) + 1.1, o.z, { n: m.c ? 24 : 10, color: m.c ? '#ffd34d' : m.rayo ? '#7dd3fc' : '#fff1c1', vel: m.c ? 6.5 : 4, vida: 0.45 });
+  if (m.d > 0 && Math.hypot(o.x - P.x, o.z - P.z) < 45) FX.golpe(o.x, (o.y || alturaEn(o.x, o.z)) + 1.1, o.z, { critico: m.c, color: m.c ? '#ffd34d' : m.rayo ? '#7dd3fc' : '#fff1c1' });
   if (m.p === miId || o.id === objetivo) {
     numero(o.x + (Math.random() - 0.5), alturaEn(o.x, o.z) + 2.2, o.z, (m.c ? '¡' : '') + m.d + (m.c ? '!' : ''), m.c ? '#ffd34d' : m.rayo ? '#7dd3fc' : '#fff', m.c);
-    if (m.p === miId) { vib(m.c ? 'medium' : 'light'); sfx(m.c ? 'corte2' : 'corte', 0.28); sfxK(m.c ? 'g_critico' : 'g_carne', m.c ? 0.4 : 0.3); if (m.c) { sacudir = Math.max(sacudir, 0.15); fovGolpe = -3.5; } }
+    if (m.p === miId) { musica.combate(true); vib(m.c ? 'medium' : 'light'); sfx(m.c ? 'corte2' : 'corte', 0.28); sfxK(m.c ? 'g_critico' : 'g_carne', m.c ? 0.4 : 0.3); if (m.c) { sacudir = Math.max(sacudir, 0.15); fovGolpe = -3.5; } }
   }
+  // Golpes de otros jugadores: suenan donde pasan (mas bajo y por su lado), como mucho ~8 por segundo.
+  if (m.p !== miId && m.d > 0 && performance.now() - (ataqueVisto.sT || 0) > 120) { ataqueVisto.sT = performance.now(); sfxK(m.c ? 'g_critico' : 'g_carne', m.c ? 0.3 : 0.22, o.x, o.z); }
   // El destello ya salio con la prediccion: no repetirlo.
   if (!(m.p === miId && performance.now() - (o.predT || 0) < 350)) o.golpeT = performance.now();
 }
@@ -2021,12 +2192,15 @@ function golpeJugador(m) {
   }
   const q = m.p === miId ? P : otros.get(m.p);
   if (!q) return;
+  if (m.d > 0 && q === P) musica.combate(true);   // musica de pelea mientras te pegan
   if (m.d > 0) { numero(q.x, (q.y || alturaEn(q.x, q.z)) + 2.3, q.z, '-' + m.d, '#ff5a6a'); FX.emitir(q.x, (q.y || alturaEn(q.x, q.z)) + 1.1, q.z, { n: 8, color: '#ff4d5e', vel: 3.5, vida: 0.4 }); }
   if (m.esq && m.p === miId) numero(P.x, P.y + 2.3, P.z, 'Esquiva', '#7dd3fc');
   // Sin objetivo, quien te pega pasa a serlo: su marco dice quien es y el
   // ataque (1 o Z) y las habilidades van contra el.
   if (mo && m.p === miId && !mo.muereT && !objetivo && !objetivoP && !P.muerto) { objetivo = mo.id; pintarBarra(); }
   if (mo && m.p === miId && performance.now() - (mo.vozT || 0) > 5000 && Math.random() < 0.6) { mo.vozT = performance.now(); sfxK(vozDe(mo.k), 0.3); }
+  // El que pelea con otro tambien grita de vez en cuando, desde donde esta.
+  else if (mo && m.p !== miId && performance.now() - (mo.vozT || 0) > 8000 && Math.random() < 0.35) { mo.vozT = performance.now(); sfxK(vozDe(mo.k), 0.3, mo.x, mo.z); }
   if (m.p === miId) { P.heridoT = performance.now(); if (m.d > 0) vib('rigid'); sfxK('g_carne', 0.22); if (yo && m.d > 0) { herida(m.d, mo); yo.hp = Math.max(0, yo.hp - m.d); pintarVida(); } }
 }
 let impactos = [];
@@ -2064,6 +2238,9 @@ function efectoHab(m) {
     if (m.p === miId || id === objetivo) numero(o.x + (Math.random() - 0.5), alturaEn(o.x, o.z) + 2.3, o.z, (tipo === 1 ? '¡' : '') + d + (tipo === 1 ? '!' : ''), tipo === 1 ? '#ffd34d' : '#ffe600', tipo === 1);
     o.golpeT = performance.now();
   }
+  // Lanzar: whoosh (o campanitas si cura); las de otros suenan desde ellos y mas bajo.
+  if (h && h.cura) SON.tocar('cura', m.p === miId || !de ? { vol: 0.9 } : { vol: 0.5, x: de.x, z: de.z });
+  else SON.tocar('hab', m.p === miId || !de ? { vol: 0.7 } : { vol: 0.4, x: de.x, z: de.z });
   if (m.p === miId) { sfx(AREA[m.id] ? 'explosion' : 'corte2', 0.35); if (m.cp) aviso('Eviscerar con ' + m.cp + ' puntos de combo', 'ok'); }
 }
 const NOMBRE_AURA = { grito: 'Grito', muro: 'Muro', bloque: 'Hielo', escudoPoder: 'Escudo', renovar: 'Renovar', supresion: 'Supresión', evasion: 'Evasión', sigilo: 'Sigilo', aturdido: 'Aturdido', almaDebil: 'Alma débil', bendicion: 'Bendición' };
@@ -2133,7 +2310,7 @@ function moverTirosAsedio(t) {
     if (k >= 1) {
       escena.remove(s.mesh);
       FX.emitir(s.b.x, s.b.y, s.b.z, { n: 40, color: '#ff9a3c', vel: 8, vida: 0.8, grav: 6, sube: 2 });
-      FX.emitir(s.b.x, s.b.y, s.b.z, { n: 20, color: '#8a8094', vel: 4, vida: 1.2, grav: 3, tam: 2 });
+      FX.emitir(s.b.x, s.b.y, s.b.z, { n: 20, color: '#8a8094', vel: 4, vida: 1.2, grav: 3, tam: 2, forma: 'humo' });
       const d = Math.hypot(s.b.x - P.x, s.b.z - P.z);
       if (d < 70) { sfx('explosion', 0.5 * (1 - d / 70)); if (d < 25) sacudir = Math.max(sacudir, 0.3); }
       return false;
@@ -2358,6 +2535,19 @@ function pintarCds() {
   });
 }
 let objPintado = '';
+// Bestiario: la primera vez que marcas cada monstruo, su linea de lore (una vez por
+// navegador; en el tutorial temprano del movil espera a otra ocasion).
+let bestiaVista = null;
+function bestiario3(k, nombre) {
+  if (!LORE_MONSTRUOS[k]) return;
+  if (!bestiaVista) { bestiaVista = new Set(); try { for (const x of (localStorage.getItem('dq3_bestia') || '').split(',')) if (x) bestiaVista.add(x); } catch (e) {} }
+  if (bestiaVista.has(k)) return;
+  try { if (COMPACTO && tuto3.i >= 0 && tuto3.i < 3 && yo && yo.nivel <= 6) return; } catch (e) {}
+  if (avisoTapado()) return;   // con una ventana abierta iria a la cola y podria vencer: se marca cuando de verdad se ve
+  bestiaVista.add(k);
+  try { localStorage.setItem('dq3_bestia', [...bestiaVista].join(',')); } catch (e) {}
+  aviso('📖 ' + nombre + ': ' + LORE_MONSTRUOS[k], undefined, 3);
+}
 function pintarObjetivo() {
   const o = mons.get(objetivo);
   const caja = $('obj');
@@ -2369,6 +2559,7 @@ function pintarObjetivo() {
     caja.style.display = 'block';
     $('o-nombre').textContent = (o.j ? '★ ' : '') + def.nombre;
     $('o-nivel').textContent = marcaNivel(o.nv) + 'Nv ' + o.nv;
+    bestiario3(o.k, def.nombre);
     const hp = $('o-hp');
     hp.firstElementChild.style.transform = `scaleX(${clamp(o.hp / o.mx, 0, 1)})`;
     hp.lastElementChild.textContent = Math.ceil(o.hp) + ' / ' + o.mx;
@@ -2589,7 +2780,7 @@ function tituloZona(id) {
 
 // ── VENTANAS ──
 function abrir(id) {
-  if (!$(id).classList.contains('on')) sfxK('libro', 0.14);
+  if (!$(id).classList.contains('on')) { sfxK('libro', 0.12); SON.tocar('clic', { vol: 0.8 }); }
   if (LATERALES.includes(id)) for (const o of LATERALES) if (o !== id && $(o) && $(o).classList.contains('on')) cerrar(o);
   $(id).classList.add('on');
   if (!LATERALES.includes(id)) for (const k in teclas) teclas[k] = false;
@@ -2598,6 +2789,7 @@ function abrir(id) {
 function cerrar(id) {
   // El editor de apariencia cerrado por otra via (Atras de Telegram, ✕): la camara vuelve y se descarta la prueba.
   if (id === 'v-look' && camAntes) { ({ camYaw, camPitch, camDist } = camAntes); camAntes = null; lookEditor = null; cambiarSkinPropia(); }
+  if ($(id).classList.contains('on')) SON.tocar('clic', { vol: 0.7, cerrar: true });
   $(id).classList.remove('on'); if (id === 'v-npc') npcAbierto = '';
   pedirSincroAtras();
 }
@@ -3212,7 +3404,10 @@ function animarCofres(t) {
     c.tapa.rotation.x += ((listo ? 0 : -1.15) - c.tapa.rotation.x) * 0.12;
     c.gema.visible = listo;
     if (listo) { c.gema.position.y = 1.45 + Math.sin(t / 400 + c.i) * 0.12; c.gema.rotation.y = t / 600; }
-    if (listo && Math.floor(t / 250) % 3 === c.i % 3) FX.emitir(c.x, alturaEn(c.x, c.z) + 0.9, c.z, { n: c.tipo === 'legendario' ? 8 : 4, color: c.tipo === 'epico' ? '#c084fc' : '#ffd84a', vel: 1, vida: 1.2, grav: -1.5, tam: 0.7 });
+    if (listo && Math.floor(t / 250) % 3 === c.i % 3) {
+      FX.emitir(c.x, alturaEn(c.x, c.z) + 0.9, c.z, { n: c.tipo === 'legendario' ? 8 : 4, color: c.tipo === 'epico' ? '#c084fc' : '#ffd84a', vel: 1, vida: 1.2, grav: -1.5, tam: 1.4, forma: 'estrella' });
+      if (c.tipo === 'epico' || c.tipo === 'legendario') FX.brillo(c.x, alturaEn(c.x, c.z) + 1.5, c.z, c.tipo === 'epico' ? '#c084fc' : '#ffd84a', c.tipo === 'legendario');   // latido de luz del cofre fuerte
+    }
   }
 }
 // ── TEMPORADA DEL ABISMO Y EQUILIBRIO DE FACCIONES ──
@@ -3254,11 +3449,13 @@ function hazBotin(color) {
   haz.position.set(P.x, P.y + 13, P.z); escena.add(haz);
   FX.emitir(P.x, P.y + 1.2, P.z, { n: MOVIL ? 30 : 60, color, vel: 3, vida: 1.4, grav: -2.5, radio: 0.6, tam: 1.1 });
   const t0 = performance.now();
+  let pulso = 0;
   const paso = () => {
-    const k = (performance.now() - t0) / 2600;
+    const ahora = performance.now(), k = (ahora - t0) / 2600;
     if (k >= 1) { escena.remove(haz); liberar(haz); return; }
     haz.position.set(P.x, P.y + 13, P.z); haz.rotation.y += 0.04;
-    mat.opacity = 0.55 * (k < 0.15 ? k / 0.15 : 1 - (k - 0.15) / 0.85);
+    mat.opacity = 0.55 * (k < 0.15 ? k / 0.15 : 1 - (k - 0.15) / 0.85) * (0.8 + 0.2 * Math.sin(ahora / 90));   // late
+    if (ahora - pulso > 420 && k < 0.85) { pulso = ahora; FX.brillo(P.x, P.y + 1.1, P.z, color, true); }
     requestAnimationFrame(paso);
   };
   requestAnimationFrame(paso);
@@ -3268,7 +3465,7 @@ function botinFuerte(it) {
   const fuerte = it.r >= 2;   // haz, vibracion y presumir solo epico o mas; la tarjeta de mejora para todos
   const rz = RAREZAS[it.r] || {};
   if (fuerte) {
-    hazBotin(rz.color || '#c084fc'); sfx('moneda', 0.5);
+    hazBotin(rz.color || '#c084fc'); SON.tocar('botin', { r: it.r, vol: it.r >= 3 ? 1 : 0.85 });   // mas brillante cuanto mas raro
     if (it.r >= 3) vib('heavy');
     setTimeout(() => ofrecerPresumir('¡Me salió un objeto ' + (rz.nombre || '').toLowerCase() + ': ' + (it.nombre || nombreItem(it)) + ' en Duende Quest 3D!', 'botin'), 1500);
   }
@@ -3298,9 +3495,8 @@ function subiNivel(lv) {
   fovGolpe = 7; sacudir = Math.max(sacudir, 0.12);
   const fl = $('flash-nv');
   if (fl) { fl.classList.add('on'); requestAnimationFrame(() => requestAnimationFrame(() => fl.classList.remove('on'))); }
-  FX.emitir(P.x, P.y + 0.2, P.z, { n: 46, color: '#ffe066', vel: 2.4, vida: 1.6, grav: -3.5, radio: 0.7, tam: 1.3 });
-  FX.emitir(P.x, P.y + 1, P.z, { n: 30, color: '#ffffff', vel: 6, vida: 0.6, grav: 2 });
-  FX.emitir(P.x, P.y, P.z, { n: 60, color: '#ffd84a', vel: 1.2, vida: 1.4, grav: -9, radio: 0.35, tam: 1.6 });
+  FX.subirNivel(P.x, P.y, P.z); hazBotin('#ffe066');   // espiral dorada, anillo y columna de luz
+  FX.emitir(P.x, P.y + 0.2, P.z, { n: 30, color: '#ffe066', vel: 2.4, vida: 1.6, grav: -3.5, radio: 0.7, tam: 1.3 });
   // Nv 20: se abre el Abismo de Eter; se pide la temporada (gente por faccion y premio al reclutar).
   if (lv >= ABISMO.nvMin && !temp3) mandar({ t: 'temp3' });
   if (lv === ABISMO.nvMin && !(yo && yo.faccion)) setTimeout(() => aviso('🌌 ¡Nivel ' + lv + '! Se abrió el Abismo de Éter: ve al portal del pueblo y elige Luz o Sombra. Si una facción tiene menos gente, unirte a ella da premio.', 'ok'), 4000);
@@ -3852,7 +4048,7 @@ function volar(on) {
     if (enCueva(P.x)) return aviso('En la cueva no hay sitio para volar.', 'err');
     if (P.alas < 3) return aviso('Tus alas necesitan descansar.', 'err');
     P.vuela = true; P.vy = 0; if (P.suelo) P.y += 1.5; P.suelo = false;
-    sfx('salto', 0.2); sfxK('tela', 0.35);
+    sfx('salto', 0.2); sfxK('tela', 0.3); SON.tocar('alas', { vol: 0.8 });
   } else P.vuela = false;
   if (MOVIL) { $('t-bajar').style.visibility = P.vuela ? 'visible' : 'hidden'; $('t-volar').textContent = P.vuela ? 'PLANEAR' : 'VOLAR'; }
 }
@@ -4115,7 +4311,7 @@ function fisica(dt) {
     const planeaba = P.planea;
     P.planea = !P.suelo && P.vy < 0 && (espacio || P.planeoAuto) && !P.muerto && !enCueva(P.x) && P.y - suelo > 1.2;
     // Como el servidor: el planeo solo acelera si empieza al dejar de volar (si no, snap3).
-    if (P.planea && !planeaba) P.planeoRapido = ahoraP - (P.volabaT || 0) < 1500;
+    if (P.planea && !planeaba) { P.planeoRapido = ahoraP - (P.volabaT || 0) < 1500; SON.tocar('alas', { vol: 0.5 }); }
     if (P.planea) P.vy += ((abajo ? -6 : -2.2) - P.vy) * Math.min(1, dt * 5);   // abre las alas sin tiron; C/bajar desciende mas rapido
     else { const g = P.vy > 0 ? FIS.gSube : (P.alas > 0 && P.vy < -6 ? 6 : FIS.gCae); P.vy = Math.max(P.vy - g * dt, -FIS.vMaxCaida); }
     P.y += P.vy * dt;
@@ -4125,6 +4321,8 @@ function fisica(dt) {
       const aterriza = !P.suelo, vAnt = P.vy;
       if (aterriza && vAnt < -7) FX.emitir(P.x, suelo + 0.1, P.z, { n: 16, color: '#bfae8e', vel: 2.5 - vAnt * 0.15, vida: 0.5, grav: 2, plano: true, radio: 0.4, tam: 1.6 });
       if (aterriza && vAnt < -3) { P.aterrizaT = ahoraP; P.aterrizaK = clamp(-vAnt * 0.011, 0.05, 0.2); }
+      // Caida fuerte en tierra: golpe sordo (en el agua suena el chapuzon, abajo).
+      if (aterriza) { P.caidaT = ahoraP; P.caidaV = vAnt; if (vAnt < -12 && !(aguaEn(P.x) - 0.9 > alturaEn(P.x, P.z))) SON.tocar('aterriza', { fuerza: clamp((-vAnt - 10) / 18, 0.3, 1) }); }
       P.y = suelo; P.vy = 0; P.suelo = true; P.planea = false; P.planeoAuto = false; P.coyote = FIS.coyote;
       if (aterriza && P.buffer > 0 && !sinControl) { P.buffer = 0; saltar(); }
     } else { P.suelo = false; P.coyote = Math.max(0, P.coyote - dt); }
@@ -4132,6 +4330,10 @@ function fisica(dt) {
     if (P.suelo) P.alas = Math.min(ALAS_MAX, P.alas + dt * 3);
     if (yo) { const am = alaDe(yo, enAbismo(P.x)).vuelo; if (am !== ALAS_MAX) { ALAS_MAX = am; P.alas = Math.min(P.alas, am); } }
   }
+  // Entrar al agua (caer, bajar volando o meterse andando): chapuzon segun la velocidad de caida.
+  const mojado = P.suelo && !P.muerto && aguaEn(P.x) - 0.9 > alturaEn(P.x, P.z);
+  if (mojado && !P.mojado) SON.tocar('splash', { vol: 0.9, fuerza: ahoraP - (P.caidaT || 0) < 100 ? clamp(-(P.caidaV || 0) / 20, 0.3, 1) : 0.3 });
+  P.mojado = mojado;
   if (P.vuela && zonaEn(P.x, P.z) === 'pueblo') { volar(false); P.planeoAuto = true; }
   if (enAbismo(P.x) && !P.vuela && !P.muerto && P.y < -60 && !caidaEnviada) { caidaEnviada = true; mandar({ t: 'caida' }); }
   else if (caidaEnviada && P.y > -40) caidaEnviada = false;   // el servidor la perdono (planeaba alto): se puede volver a avisar
@@ -4385,7 +4587,9 @@ $('temp3') && $('temp3').addEventListener('click', ev => {
     return;
   }
   const { n, meta } = textoTemp3(tp);
-  const despues = prox && tp.fin - Date.now() < 2 * 86400000 ? ' Después: ' + prox.emoji + ' ' + prox.nombre + ' desde el ' + fechaTemp3(prox.ini) + '.' : '';
+  const ley = LORE_TEMPORADA_LEYENDA[tp.campo];   // y una frase de su leyenda, al azar
+  if (ley && ley.length) setTimeout(() => aviso('📜 ' + ley[Math.floor(Math.random() * ley.length)], 'ok', 3), 4000);
+  const despues =prox && tp.fin - Date.now() < 2 * 86400000 ? ' Después: ' + prox.emoji + ' ' + prox.nombre + ' desde el ' + fechaTemp3(prox.ini) + '.' : '';
   aviso(tp.emoji + ' ' + tp.nombre + ' (hasta el ' + tp.hasta + '): los monstruos sueltan ' + tp.cosas + ' y los jefes, varias. Llevas ' + n.toLocaleString('es') + (meta ? '; con ' + meta + ' ganas ' + (meta === 50 ? '3.000' : '12.000') + ' de oro y el título «' + tp.titulos[meta === 50 ? 0 : 1] + '».' : ': ya tienes los dos títulos.') + despues, 'ok');
 });
 function proxTemp3() { return TEMPORADAS.filter(x => x.ini > Date.now()).sort((a, b) => a.ini - b.ini)[0] || null; }
@@ -4849,12 +5053,17 @@ function cuadroBucle(t) {
     if (npcAbierto && $('v-npc').classList.contains('on')) { const n = NPCS3D.find(x => x.tipo === npcAbierto); if (n && Math.hypot(P.x - n.x, P.z - n.z) > NPC_DIST + 6) cerrar('v-npc'); }
   }
   cieloAct.lerp(cieloObj, Math.min(1, dt * 1.5));
-  escena.background.copy(cieloAct); escena.fog.color.copy(cieloAct);
-  // Cupula: horizonte = niebla; cenit mas profundo (de dia azul intenso, de noche casi negro).
+  nieblaAct.lerp(nieblaTinteObj, Math.min(1, dt * 1.5));
+  escena.background.copy(nieblaAct); escena.fog.color.copy(nieblaAct);
+  // Cupula: horizonte = niebla (con el tinte de la zona); cenit mas profundo
+  // (de dia azul intenso, de noche casi negro); banda calida al amanecer y ocaso.
   cielo.m.position.copy(camara.position);
-  cielo.u.uHor.value.copy(cieloAct);
-  cielo.u.uTop.value.copy(cieloAct).lerp(C('#2a4fb8'), 0.45 * (1 - nocheK)).multiplyScalar(0.62 + 0.2 * (1 - nocheK));
+  cielo.u.uHor.value.copy(nieblaAct);
+  cielo.u.uTop.value.copy(cieloAct).lerp(CENIT_DIA, 0.5 * (1 - nocheK)).lerp(CENIT_NOCHE, 0.45 * nocheK).multiplyScalar(0.6 + 0.22 * (1 - nocheK));
   cielo.u.uSol.value.copy(solDir); cielo.u.uNoche.value = nocheK;
+  ocasoAct = lerp(ocasoAct, ocasoK, Math.min(1, dt * 1.5)); cielo.u.uOcaK.value = ocasoAct;
+  cielo.u.uBruma.value = lerp(cielo.u.uBruma.value, brumaObj, Math.min(1, dt));
+  if (estrellas.material.opacity > 0.01) estrellasT.value = t / 1000;
   const zC = zonaEn(P.x, P.z);
   nubes3.im.visible = zC !== 'cueva';
   if (nubes3.im.visible) { nubes3.mover(dt, P.x, P.z); nubes3.mat.color.setRGB(1 - nocheK * 0.72, 1 - nocheK * 0.7, 1 - nocheK * 0.6); }
@@ -4877,7 +5086,23 @@ function cuadroBucle(t) {
   for (const cr of cristalesHito) { cr.rotation.y = t / 900; cr.position.y += Math.sin(t / 500) * 0.004; }
   if (molinoAspas && Math.hypot(P.x, P.z) < 160) molinoAspas.rotation.x = t / 1400;
   if (corcho) corcho.position.y = corcho.userData.y0 + (pica > performance.now() ? -0.18 + Math.sin(t / 60) * 0.08 : Math.sin(t / 500) * 0.04);
-  if (agua) agua.material.opacity = 0.7 + Math.sin(t / 900) * 0.04;
+  if (agua && agua.material.uniforms) {
+    // Agua viva: refleja el horizonte, brilla con el sol (o la luna) y se oscurece de noche.
+    AGUA_U.uT.value = t / 1000; AGUA_U.uCielo.value.copy(nieblaAct); AGUA_U.uSol.value.copy(solDir);
+    AGUA_U.uSolC.value.copy(sol.color).multiplyScalar(clamp(sol.intensity / 2, 0.15, 1));
+    AGUA_U.uLuz.value = clamp(0.25 + hemi.intensity * 0.55, 0.25, 1.5);
+  } else if (agua) agua.material.opacity = 0.7 + Math.sin(t / 900) * 0.04;
+  if (bruma) {
+    // Bruma de Cumbres: solo se ve desde encima del manto (no se camina dentro de ella).
+    const obj = zC === 'cumbres' ? clamp((cy - BRUMA_Y - 1) / 6, 0, 1) * 0.85 : 0;
+    bruma.k = lerp(bruma.k, obj, Math.min(1, dt * 0.8));
+    bruma.m.visible = bruma.k > 0.02;
+    if (bruma.m.visible) {
+      bruma.m.material.opacity = bruma.k; bruma.m.position.set(cx, BRUMA_Y, cz);
+      bruma.tex.offset.set(cx / 80 + t / 90000, -cz / 80);
+      bruma.m.material.color.setRGB(0.93 - nocheK * 0.6, 0.95 - nocheK * 0.58, 0.98 - nocheK * 0.5);
+    }
+  }
   if (portal) portal.velo.material.opacity = 0.45 + Math.sin(t / 300) * 0.15;
   pintarObjetivo();
   if (toca(2, 100, t)) { pintarMini(); pintarCds(); pintarAuras(); pintarObjetivoP(); }
@@ -4903,7 +5128,10 @@ function cuadroBucle(t) {
     n.d.style.opacity = 1 - Math.max(0, n.t - 0.7) / 0.4;
     return true;
   });
-  if (toca(4, 500, t)) { const z = zonaEn(P.x, P.z); FX.ambiente(z === 'eter' ? 'eter' : z === 'cueva' ? 'polvo' : nocheK > 0.5 && z !== 'pueblo' ? 'luciernagas' : ''); }
+  if (toca(4, 500, t)) {   // ambiente de motas por zona (particulas.js)
+    const z = zonaEn(P.x, P.z), nch = nocheK > 0.5;
+    FX.ambiente(z === 'eter' || z === 'abismo' ? 'eter' : z === 'cueva' || z === 'cavernas' ? 'polvo' : z === 'cumbres' ? 'nieve' : z === 'tormenta' || z === 'castillo' ? 'ceniza' : z === 'desierto' ? 'arena' : z === 'selva' || z === 'pueblo' ? (nch ? 'luciernagas' : 'hojas') : nch ? 'luciernagas' : '');
+  }
   vFX.set(P.x, P.y, P.z); FX.actualizar(dt, vFX, lienzo.height);
   if (composer) composer.render(dt); else render.render(escena, camara);
 }

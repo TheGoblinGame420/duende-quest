@@ -19,7 +19,7 @@
 // piezas fijas de cada pivote se funden en una malla (fusionarRig): ~6-14 draw calls.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=339';
+import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=340';
 
 const PX_M = 34;                 // pixeles del 2D por metro
 const PI = Math.PI;
@@ -392,6 +392,8 @@ class Modelo {
     this.mallas = [];
     r.raiz.traverse(o => { if (o.isMesh) this.mallas.push(o); });
     this._tf = 0;
+    // Desfase propio: asi dos goblins o dos NPC no respiran ni parpadean a la vez.
+    this.fase = Math.random() * 40;
   }
   // estado: quieto | anda | corre | ataca | lanza | herido | muere | salta | vuela | nada
   //         (+ 'monta': sentado en la silla de una montura)
@@ -432,6 +434,7 @@ class Modelo {
 function animarRig(m, est, te, t) {
   const r = m.r;
   if (!r) return;
+  t += m.fase || 0;                                    // cada modelo con su propio ritmo
   const b = m.base, A = m.alto;
   for (const o of r.piv) { const u = o.userData.reposo; o.position.copy(u[0]); o.rotation.copy(u[1]); o.scale.copy(u[2]); }
   b.position.set(0, 0, 0); b.rotation.set(0, 0, 0); b.scale.set(1, 1, 1);
@@ -453,6 +456,31 @@ function animarRig(m, est, te, t) {
   const brilla = eL ? 1.3 + 0.35 * Math.sin(t * 16) : 1 + 0.1 * Math.sin(t * 3);
   for (const o of r.brillo) o.scale.multiplyScalar(brilla);
   if (r.aura) r.aura.scale.multiplyScalar(1 + 0.06 * Math.sin(t * 3));
+  // Funda de brillo del arma: late suave (y mas fuerte en el tajo).
+  if (r.filos) {
+    const kf = 1 + 0.18 * Math.sin(t * 4.2) + (est === 'ataca' ? 0.35 * arco(te / r.tAtk) : 0);
+    for (const o of r.filos) { o.scale.x *= kf; o.scale.y *= kf; }
+  }
+  // Parpadeo: cada ~3-5 s los ojos se cierran ~0,13 s (cerrados al morir).
+  // Los ojos de los enemigos, en vez de parpadear tanto, laten con malicia.
+  if (r.ojosP) {
+    const per = 3.2 + (m.fase % 1.9), ph = t % per;
+    let cierre = ph < 0.13 ? arco(ph / 0.13) : 0;
+    if (!r.ojosMalos && ph > 0.25 && ph < 0.38 && m.fase % 3 < 1) cierre = arco((ph - 0.25) / 0.13);   // a veces, doble
+    if (muerto) cierre = Math.min(1, te / 0.4);
+    r.ojosP.scale.y *= 1 - 0.88 * cierre;
+    if (r.ojosMalos && !muerto) { const kp = 1 + 0.12 * Math.max(0, Math.sin(t * 5)); r.ojosP.scale.x *= kp; r.ojosP.scale.z *= kp; }
+  }
+  // Orejas: vaiven suave y, de vez en cuando, un tic rapido (como un gato).
+  if (r.orejas) {
+    const tic = (t % 6.1) < 0.35 ? Math.sin((t % 6.1) / 0.35 * PI * 3) * 0.22 : 0;
+    const va = mueve ? Math.sin(f) * 0.1 : Math.sin(t * 1.6) * 0.05;
+    for (const [o, x] of r.orejas) {
+      o.rotation.z += x * (va + (x > 0 ? tic : 0));
+      o.rotation.x += mueve ? -0.12 - Math.abs(c) * 0.08 : 0;          // al correr se echan atras
+      if (est === 'herido') o.rotation.z -= x * 0.35 * Math.max(0, 1 - te / 0.35);   // se encogen al recibir
+    }
+  }
 
   // Alas (P = la que sale hacia +x, N = hacia -x). a > 0 = arriba.
   if (r.alaP) {
@@ -469,18 +497,49 @@ function animarRig(m, est, te, t) {
   switch (r.modo) {
     case 'bipedo': {
       if (est === 'quieto') {
+        // Respira: el pecho se hincha (y y algo de z) y los hombros suben con el aire.
         const res = Math.sin(t * 2.4);
-        if (cu) cu.scale.y *= 1 + 0.022 * res;
-        if (cb) cb.rotation.y += Math.sin(t * 0.7) * 0.12;
-        if (bI) { bI.rotation.z += 0.05 * res; bD.rotation.z -= 0.05 * res; }
+        if (cu) { cu.scale.y *= 1 + 0.03 * res; cu.scale.z *= 1 + 0.025 * res; cu.rotation.z += Math.sin(t * 0.9) * 0.025; }
+        if (cb) { cb.rotation.y += Math.sin(t * 0.7) * 0.12; cb.rotation.z += Math.sin(t * 0.55 + 1) * 0.05; cb.rotation.x -= 0.03 * res; }
+        if (bI) { bI.rotation.z += 0.05 * res; bD.rotation.z -= 0.05 * res; bI.rotation.x += 0.04 * res; bD.rotation.x += 0.04 * res; }
+        if (pI) { pI.rotation.z += 0.02 * Math.sin(t * 0.9); pD.rotation.z += 0.02 * Math.sin(t * 0.9); }   // cambia el peso de pie
+        if (m.tipo === 'npc') {
+          // NPC del pueblo: mira a un lado y al otro (con pausas) y cada ~11 s saluda.
+          const mira = Math.sin(t * 0.33), pausa = Math.sign(mira) * Math.min(1, Math.abs(mira) * 2.2);
+          if (cb) { cb.rotation.y += pausa * 0.38; cb.rotation.x += Math.max(0, Math.sin(t * 0.21)) * 0.12; }
+          if (cu) cu.rotation.y += pausa * 0.1;
+          const kg = (t % 11) / 1.6;
+          if (kg < 1 && bI) {
+            const g = arco(kg), sacude = Math.sin(kg * PI * 6) * 0.35 * g;
+            bI.rotation.z += 2.3 * g + sacude; bI.rotation.x -= 0.25 * g;
+            if (cb) cb.rotation.z -= 0.12 * g;
+          }
+        }
       }
       if (amp && est !== 'nada') {
+        // Paso con gracia: brazos que balancean y abren algo, torso que gira contra
+        // las piernas, cabeza que se queda mirando al frente y rebote en dos tiempos.
         if (pI) { pI.rotation.x += s * amp; pD.rotation.x -= s * amp; }
-        if (bI) { bI.rotation.x -= s * amp * 0.8; bD.rotation.x += s * amp * 0.8; }
-        b.position.y += Math.abs(c) * 0.03 * A * (corre ? 1.4 : 1);
-        if (cu) cu.rotation.x += corre ? 0.18 : 0.06;
+        if (bI) {
+          bI.rotation.x -= s * amp * 0.9; bD.rotation.x += s * amp * 0.9;
+          bI.rotation.z += 0.08 + Math.max(0, s) * 0.06; bD.rotation.z -= 0.08 + Math.max(0, -s) * 0.06;
+        }
+        b.position.y += Math.abs(c) * 0.035 * A * (corre ? 1.4 : 1);
+        b.rotation.z += s * (corre ? 0.035 : 0.025);
+        if (cu) { cu.rotation.x += corre ? 0.2 : 0.07; cu.rotation.y += s * (corre ? 0.14 : 0.1); }
+        if (cb) { cb.rotation.y -= s * (corre ? 0.12 : 0.08); cb.rotation.x -= corre ? 0.1 : 0.03; }
         if (r.bamboleo && cu) cu.rotation.z += s * 0.15;
         if (r.tunica) r.tunica.rotation.z += s * 0.06;
+      }
+      if (ataca) {
+        // Pose de ataque mas marcada: carga agachado, estocada del cuerpo y brazo libre atras.
+        const kc = Math.min(kA, 1);
+        const carga = kc < 0.4 ? suave(kc / 0.4) : Math.max(0, 1 - (kc - 0.4) / 0.6 * 2);
+        b.position.y -= carga * 0.035 * A;
+        b.position.z += aA * 0.07 * A;
+        b.rotation.x += aA * 0.08;
+        if (cb) cb.rotation.x += aA * 0.12;
+        if (bI && !r.dosArmas && !r.escudo && !(r.manoI && r.manoI.userData.escudo)) { bI.rotation.x += aA * 0.7; bI.rotation.z += aA * 0.25; }
       }
       if (ataca) {
         // Brazo derecho: arriba y atras, luego tajo hacia delante (~0.35 s).
@@ -543,6 +602,8 @@ function animarRig(m, est, te, t) {
       }
       if (est === 'quieto' && cu) cu.scale.y *= 1 + 0.02 * Math.sin(t * 2.2);
       if (cb) cb.rotation.x += Math.sin(t * 1.3) * 0.05;
+      // Quieto, olfatea y mira a los lados (con pausas, como un animal alerta).
+      if (est === 'quieto' && cb) { const mi = Math.sin(t * 0.45); cb.rotation.y += Math.sign(mi) * Math.min(1, Math.abs(mi) * 2) * 0.25; cb.rotation.x += Math.max(0, Math.sin(t * 7)) * 0.03 * (Math.sin(t * 0.6) > 0.6 ? 1 : 0); }
       if (ataca) {
         b.position.z += aA * 0.15 * A;
         if (cb) cb.rotation.x += aA * 0.35;
@@ -717,9 +778,13 @@ function humano(r, o) {
   if (o.cabezaCubo) M(cb, 'caja', piel, [0, 0.27 * H, 0], [0.54 * H, 0.5 * H, 0.5 * H]);
   else M(cb, 'esfera', piel, [0, 0.26 * H, 0], [0.3 * H, 0.28 * H, 0.28 * H]);
   if (o.orejas) for (const x of [-1, 1]) {
-    M(cb, 'cono', piel, [x * 0.24 * H, 0.3 * H, -0.03 * H], [0.075 * H, o.orejas * H, 0.045 * H], [0, -x * 0.25, -x * (o.orejaRot || 1.2)]);
+    // Con orejasVivas cada oreja cuelga de su pivote (en su base) y se mueve sola.
+    const og = o.orejasVivas ? piv(r, G(cb, [x * 0.24 * H, 0.3 * H, -0.03 * H])) : cb;
+    const o0 = o.orejasVivas ? [0, 0, 0] : [x * 0.24 * H, 0.3 * H, -0.03 * H];
+    M(og, 'cono', piel, o0, [0.075 * H, o.orejas * H, 0.045 * H], [0, -x * 0.25, -x * (o.orejaRot || 1.2)]);
     // Interior naranja de la oreja (como la mascota).
-    if (o.orejaDentro) M(cb, 'cono', o.orejaDentro, [x * 0.245 * H, 0.3 * H, -0.005 * H], [0.05 * H, o.orejas * 0.82 * H, 0.03 * H], [0, -x * 0.25, -x * (o.orejaRot || 1.2)]);
+    if (o.orejaDentro) M(og, 'cono', o.orejaDentro, [o0[0] + x * 0.005 * H, o0[1], o0[2] + 0.025 * H], [0.05 * H, o.orejas * 0.82 * H, 0.03 * H], [0, -x * 0.25, -x * (o.orejaRot || 1.2)]);
+    if (o.orejasVivas) (r.orejas || (r.orejas = [])).push([og, x]);
   }
   if (o.nariz === 'bola') M(cb, 'esfera', osc(piel, 0.92), [0, 0.21 * H, 0.27 * H], [0.08 * H, 0.07 * H, 0.09 * H]);
   else if (o.nariz === 'pico') M(cb, 'cono', piel, [0, 0.22 * H, 0.23 * H], [0.06 * H, 0.22 * H, 0.06 * H], [PI / 2 + 0.25, 0, 0]);
@@ -727,11 +792,21 @@ function humano(r, o) {
     MF(cb, [['cono', hx(osc(piel, 0.9)), [0, 0.27, 0.22], [0.085, 0.26, 0.075], [PI / 2 + 0.5, 0, 0]],
       ['esfera', hx(osc(piel, 0.9)), [0, 0.15, 0.4], [0.05, 0.045, 0.05]]], null, null, null, H);
   }
+  // Ojos en su propio pivote (a la altura de los ojos) para poder parpadear:
+  // se aplasta en y. Cejas, boca y mejillas siguen en la cabeza.
+  const YO = 0.3;
   if (o.ojos === 'duende') {
-    MF(cb, o.ojosGrandes ? partesOjos(true) : o.mascota ? partesMascota() : o.ojosVideo ? partesOjosVideo() : partesOjos2D(piel), null, null, null, H);
+    const cara = o.ojosGrandes ? partesOjos(true) : o.mascota ? partesMascota() : o.ojosVideo ? partesOjosVideo() : partesOjos2D(piel);
+    const esOjo = p => p[2][1] >= 0.25 && p[2][1] <= 0.345;
+    const resto = cara.filter(p => !esOjo(p));
+    if (resto.length) MF(cb, resto, null, null, null, H);
+    r.ojosP = piv(r, G(cb, [0, YO * H, 0]));
+    MF(r.ojosP, cara.filter(esOjo), null, null, [0, -YO * H, 0], H);
   } else if (o.ojos) {
     const ojo = mat(o.ojos, { e: 1 });
-    for (const x of [-1, 1]) M(cb, 'esferaB', ojo, [x * 0.1 * H, 0.31 * H, 0.25 * H], [0.06 * H, 0.045 * H, 0.03 * H]);
+    r.ojosP = piv(r, G(cb, [0, 0.31 * H, 0]));
+    for (const x of [-1, 1]) M(r.ojosP, 'esferaB', ojo, [x * 0.1 * H, 0, 0.25 * H], [0.06 * H, 0.045 * H, 0.03 * H]);
+    r.ojosMalos = !o.amigo;
   }
   if (o.colmillos) for (const x of [-1, 1]) M(cb, 'cono', '#f4efd8', [x * 0.07 * H, 0.1 * H, 0.22 * H], [0.025 * H, 0.08 * H, 0.025 * H]);
   r.topeCabeza = 0.54 * H;
@@ -907,6 +982,12 @@ function espada(mano, o = {}) {
   if (o.e) M(g, 'caja', mat(o.hoja, { e: o.e }), hoja[2], hoja[3]).userData.sinFlash = true;
   else P.push(hoja);
   MF(g, P);
+  // Brillo de rareza: funda aditiva un poco mas grande que la hoja que late (o.r = rig).
+  if (o.filo && o.r) {
+    const fp = piv(o.r, G(g, hoja[2]));
+    M(fp, 'caja', mat(o.filo, { aura: true, op: o.daga ? 0.32 : 0.24 }), [0, 0, 0], [0.06, (o.ancho ?? 0.07) * 1.7, L * 1.05]).userData.sinFlash = true;
+    (o.r.filos || (o.r.filos = [])).push(fp);
+  }
   return g;
 }
 function garrote(mano, c = '#6b4a2b') {
@@ -957,6 +1038,7 @@ function baston(r, mano, c = '#7dd3fc', madera = '#6b4a2b') {
 }
 function escudo(mano, c, forma = 'redondo', borde = '#c9a227') {
   const g = fuera(G(mano, [0.09, 0.05, 0.04]));
+  mano.userData.escudo = true;   // el brazo del escudo no se echa atras al atacar
   if (forma === 'rect') M(g, 'caja', c, [0, 0, 0], [0.04, 0.5, 0.32]);
   else M(g, 'cil', c, [0, 0, 0], [0.25, 0.04, 0.25], [0, 0, PI / 2]);
   if (borde) M(g, 'esferaB', borde, [0.03, 0, 0], 0.06);
@@ -1162,7 +1244,7 @@ export function crearDuende({ skin = 'comun', clase = null, arma = 'katana', loo
     // Orejas largas hacia arriba y afuera, como en los videos (antes casi horizontales).
     // Como la mascota $DUENDE (Descargas): cabeza cubo, cara propia, orejas con interior naranja.
     cabeza: 'duende', ojos: 'duende', ojosGrandes: lk.cara === 5, ojosVideo: true, mascota: lk.cara !== 5, cabezaCubo: lk.cara !== 5, orejaDentro: '#f07a3a',
-    nariz: lk.cara === 5 ? 'bola' : null, orejas: 0.62, orejaRot: 0.98, manoG: 1.18, cab: 1.18, L: 0.45, T: 0.46, A: 0.38,
+    nariz: lk.cara === 5 ? 'bola' : null, orejas: 0.62, orejaRot: 0.98, orejasVivas: true, manoG: 1.18, cab: 1.18, L: 0.45, T: 0.46, A: 0.38,
     ancho: cpo.ancho, panza: cpo.panza, grueso: cpo.grueso,
   });
   const cc = cl ? CLASES[cl].color : ropa;
@@ -1209,12 +1291,13 @@ export function crearDuende({ skin = 'comun', clase = null, arma = 'katana', loo
   // Arma: los de vara (mago, sacerdote) llevan baston.
   if (cl && CLASES[cl].basico === 'vara') baston(r, r.manoD, cl === 'sacerdote' ? '#fff3b0' : cc);
   else if (arma === 'dagas') {
-    espada(r.manoD, { largo: 0.32, daga: true, guarda: ARMAS.dagas.color });
-    espada(r.manoI, { largo: 0.32, daga: true, guarda: ARMAS.dagas.color });
+    // Brillo segun la rareza del arma: dagas violeta, odachi blanco frio, chispa celeste.
+    espada(r.manoD, { largo: 0.32, daga: true, guarda: ARMAS.dagas.color, filo: ARMAS.dagas.color, r });
+    espada(r.manoI, { largo: 0.32, daga: true, guarda: ARMAS.dagas.color, filo: ARMAS.dagas.color, r });
     r.dosArmas = true;
-  } else if (arma === 'odachi') espada(r.manoD, { largo: 1.25, hoja: '#ffffff', guarda: '#2b2b2b' });
-  else if (arma === 'chispa') espada(r.manoD, { largo: 0.8, hoja: ARMAS.chispa.color, e: 0.9, guarda: '#1e3a5f' });
-  else if (R0.hojaNeon) espada(r.manoD, { largo: 0.95, hoja: R0.hojaNeon, e: 0.9, guarda: '#ff3cf0' });
+  } else if (arma === 'odachi') espada(r.manoD, { largo: 1.25, hoja: '#ffffff', guarda: '#2b2b2b', filo: '#cfe8ff', r });
+  else if (arma === 'chispa') espada(r.manoD, { largo: 0.8, hoja: ARMAS.chispa.color, e: 0.9, guarda: '#1e3a5f', filo: ARMAS.chispa.color, r });
+  else if (R0.hojaNeon) espada(r.manoD, { largo: 0.95, hoja: R0.hojaNeon, e: 0.9, guarda: '#ff3cf0', filo: R0.hojaNeon, r });
   else espada(r.manoD, { largo: 0.75, guarda: ARMAS.katana.color });
   if (brilla) auraSuelo(r, sk.color, 0.55);
   const m = new Modelo(r, 1.75 * lk.altura, 'd:' + JSON.stringify([skin, cl, arma, Object.assign({}, lk, { altura: 0 })]));
@@ -1349,7 +1432,7 @@ function goblin(c, v) {
     piel: d.piel, ropa, ropaMat: mr,
     pantalon: c.color ? osc(ropa, 0.7) : d.pantalon ?? osc(ropa, 0.6), botas: d.botas ?? '#3a2a1c', cinto: d.armadura || d.tunica ? null : '#3a2412',
     cabeza: 'goblin', ojos: c.amigo ? 'duende' : v === 'goblin_assassin' ? '#ffe14a' : '#ff3b2f',
-    nariz: 'pico', orejas: 0.36, colmillos: !c.amigo, cab: 1.05, L: 0.42, T: 0.48, A: 0.4,
+    nariz: 'pico', orejas: 0.36, orejasVivas: !!c.amigo, colmillos: !c.amigo, cab: 1.05, L: 0.42, T: 0.48, A: 0.4,
     panza: d.panza, ancho: d.ancho, tunica: d.tunica ? ropa : null, tunicaMat: d.tunica ? mr : null,
   });
   if (d.pelo) fuera(MF(r.cabeza, partesPelo(d.pelo[0], ''), d.pelo[1], null, null, r.H));
@@ -1558,6 +1641,8 @@ function cosa(c) {
 function ojos(padre, color, x, y, z, ra, brillo = true) {
   const m = mat(color, brillo ? { e: 1 } : null);
   for (const s of [-1, 1]) M(padre, 'esferaB', m, [s * x, y, z], [ra, ra * 1.1, ra * 0.7]);
+  // Chispa blanca en cada ojo (se funde con el resto: no cuesta draw calls).
+  if (brillo) { const w = mat('#ffffff', { e: 1 }); for (const s of [-1, 1]) M(padre, 'esferaB', w, [s * x - ra * 0.3, y + ra * 0.4, z + ra * 0.55], ra * 0.32); }
 }
 // Pata colgando de un pivote (cuadrupedos). del = pata delantera.
 function pata(r, padre, pos, largo, grosor, m, pie, ph, del, abre = 0) {

@@ -3354,3 +3354,14 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Móvil: ventanas casi a pantalla completa, botones sobre el chat, botón 📣 +oro. OG de /jugar/ e invitaciones de Telegram con el premio.
 - Aviso de Telegram solo a verificados; bono de tareas visible al momento; duelos con daño proporcional a la vida.
 - Arnés 897 bien.
+
+### Gráficos, lore, sonidos y música de ORIGINS (1-nov-2026, `?v=340`)
+
+- 6 especialistas + 6 revisores.
+- musica.js: instrumentos sintetizados (soplo/quena-zampoña, cuerda/charango, bombo legüero, chajchas, caja, bajo), MOTIVO de 2 compases por zona con variaciones, progresiones por zona, secuenciador por semicorcheas, buses por zona con crossfade de 2,5 s, `M.combate(on)` (vuelve a la calma ~6 s), `M.evento(id)` con FIESTAS tanta2026/cosecha2026, DynamicsCompressor en la salida. En el pueblo con buena red sigue sonando el MP3 del dueño (temaPueblo).
+- sonidos.js (nuevo): `crearSonidos` con bus y compresor, sonido posicional con paneo, recetas cofre/botín por rareza/nivel/logro/hab/cura/alas/splash/aterriza/clic, variación de tono.
+- mundo.js (cielo/agua): degradado de cielo con halo de sol y luna, estrellas que titilan, niebla por zona y bruma en Cumbres, agua con profundidad, brillo móvil y espuma.
+- particulas.js: formas (chispa, estrella, humo, anillo), ambiente por zona, impactos, críticos, subida de nivel y botín pulsante.
+- modelos.js: respiración, parpadeo, orejas, caminar y ataque más vivos, NPC que miran y saludan, brillo de armas raras.
+- lore.js: más frases por PNJ, mitos andinos y amazónicos, `LORE_MONSTRUOS` mostrado al marcar un monstruo por primera vez, leyendas de T'anta Wawa y Cosecha.
+- Arnés 897 bien; probado en local de tarde y de noche, con sonido activado, sin errores en consola.
