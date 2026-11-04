@@ -516,12 +516,19 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 366;
+export const VERSION = 367;
 
 // gancho (opcional): la frase que ve en ORIGINS quien vuelve (tira diaria y aviso tras actualizar);
 // sin gancho se usa el primer item. Siempre lo que GANA un jugador que vuelve, nunca un arreglo para novatos ni algo tecnico.
 // solo3d: true en los parches que solo cambian ORIGINS (CLASSIC no abre la ventana y el aviso de Telegram solo va a quien juega en 3D).
 export const NOVEDADES = [
+  { n: 135, fecha: '4 nov 2026', items: [
+    '📱 En el celular ahora se ve el juego: marco y misiones más compactos, iconos pequeños y solo mochila, tienda y ⋯ a la vista (lo demás, dentro de ⋯).',
+    'Los botones de ATACAR, ESQUIVAR, SALTO y VOLAR son más pequeños y van en arco en la esquina; el joystick es más discreto.',
+    'Avisos y diálogos fáciles de leer: franja casi opaca con letra más grande y sin mezclarse con los botones.',
+    '🗺 Minimapa redondo y claro: tu flecha, la misión bien marcada y los eventos en el borde. Tócalo para abrir el mapa.',
+    'Mapa nuevo a pantalla completa: pellizca para hacer zoom, arrastra, mira zonas y niveles, y toca un punto para poner un destino 📍 con flecha y metros.',
+  ] },
   { n: 134, fecha: '2 nov 2026', items: [
     'La música del pueblo arranca bien al tocar la pantalla en el celular y ya no se encima con otra música.',
     'Si tu celular es antiguo para el 3D (iPhone con iOS 15 a 16.3), te avisamos al instante y entras directo a CLASSIC con el mismo duende.',

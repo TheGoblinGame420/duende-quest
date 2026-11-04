@@ -14,29 +14,29 @@
 import * as THREE from 'three';
 import { esNocheDuendes, TEMPORADAS, temporadaDe, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=366';
-import { iniciarVentanas, talentoPreElegido, TAL_PRE_NIVEL } from './ventanas.js?v=366';
-import { TALENTOS, TALENTO_NIVEL } from '/mmo/js/data.js?v=366';   // meta del talento elegido a Nv 7 en la barra de XP
-import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel, DEBIL_EMO, statsJugador } from '/mmo/js/data.js?v=366';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
-import { diaFiesta, diasFiesta, TEMP_DIAS, premioDiaFiesta, esNochebuena } from '/mmo/js/data.js?v=366';   // tarea del dia de la fiesta en la caja de misiones
-import { NOVEDADES } from '/mmo/js/data.js?v=366';   // linea «Nuevo» de la tira diaria y aviso tras actualizar
-import { iniciarRegalo } from '/mmo/js/regalo.js?v=366';
-import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=366';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=366';
-import { crearMusica } from './musica.js?v=366';
-import { crearSonidos } from './sonidos.js?v=366';
-import { construirCueva } from './cueva.js?v=366';
-import { TAPA, transparentar } from './tapa.js?v=366';
-import { construirAbismo } from './abismo.js?v=366';
-import { crearParticulas } from './particulas.js?v=366';
-import { cargarKenney, piezasCasa } from './kenney.js?v=366';
-import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=366';
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=367';
+import { iniciarVentanas, talentoPreElegido, TAL_PRE_NIVEL } from './ventanas.js?v=367';
+import { TALENTOS, TALENTO_NIVEL } from '/mmo/js/data.js?v=367';   // meta del talento elegido a Nv 7 en la barra de XP
+import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel, DEBIL_EMO, statsJugador } from '/mmo/js/data.js?v=367';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
+import { diaFiesta, diasFiesta, TEMP_DIAS, premioDiaFiesta, esNochebuena } from '/mmo/js/data.js?v=367';   // tarea del dia de la fiesta en la caja de misiones
+import { NOVEDADES } from '/mmo/js/data.js?v=367';   // linea «Nuevo» de la tira diaria y aviso tras actualizar
+import { iniciarRegalo } from '/mmo/js/regalo.js?v=367';
+import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=367';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=367';
+import { crearMusica } from './musica.js?v=367';
+import { crearSonidos } from './sonidos.js?v=367';
+import { construirCueva } from './cueva.js?v=367';
+import { TAPA, transparentar } from './tapa.js?v=367';
+import { construirAbismo } from './abismo.js?v=367';
+import { crearParticulas } from './particulas.js?v=367';
+import { cargarKenney, piezasCasa } from './kenney.js?v=367';
+import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=367';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=366';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, esNoche, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=366';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=366';
-import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=366';
-import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe } from './lore.js?v=366';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=367';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, esNoche, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=367';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=367';
+import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=367';
+import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe } from './lore.js?v=367';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -550,11 +550,13 @@ function ambiente(z) {
   const hh = Math.floor(h), mm = Math.floor((h - hh) * 60);
   const hora3 = String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0'), clima3 = NOMBRE_CLIMA[cl] ? ' · ' + NOMBRE_CLIMA[cl] : '';
   // Minimapa de 72-110 px en una sola linea con "…": primero la hora y los jugadores; el icono y el clima al final (los corta el "…")
-  const txt = chico
-    ? hora3 + (enLinea3 > 1 ? ' · 👥 ' + enLinea3 : '') + ' · ' + (bonoNoche ? '🌙+10%' : nocheK > 0.5 ? '🌙' : '☀') + clima3
-    : (bonoNoche ? '🌙 ' : nocheK > 0.5 ? '🌙 ' : '☀ ') + hora3 + (bonoNoche ? ' +10% XP' : '') + clima3
+  const larga3 = (bonoNoche ? '🌙 ' : nocheK > 0.5 ? '🌙 ' : '☀ ') + hora3 + (bonoNoche ? ' +10% XP' : '') + clima3
       + (enLinea3 > 1 ? ' · 👥 ' + enLinea3 + ' en línea' : '') + (hoy3 > enLinea3 ? ' · ' + hoy3 + ' hoy' : '');
+  // Celular: solo hora y zona bajo el minimapa; clima, jugadores y bono nocturno se leen en el mapa grande (#mapa-info).
+  const txt = chico ? hora3 + ' · ' + $('mini-z').textContent : larga3;
   if ($('mini-r')._h !== txt) { $('mini-r').textContent = txt; $('mini-r')._h = txt; }
+  const info3 = $('mapa-info'), infoTxt = $('mini-z').textContent + ' · ' + larga3;
+  if (info3 && info3._h !== infoTxt) { info3.textContent = infoTxt; info3._h = infoTxt; }
 }
 // Cae la lluvia (o la nieve): cada segmento baja y vuelve arriba al salir.
 function moverLluvia(dt, t) {
@@ -3177,6 +3179,7 @@ function verChicha() {
   abrir('v-diario');
 }
 $('chicha3').addEventListener('click', verChicha);
+$('b-chicha').addEventListener('click', verChicha);
 // ── BARRA DE XP: próximo desbloqueo, ritmo (~min) y XP de descanso ──
 // Muestras [t, XP total acumulada] solo en el cliente; al subir de nivel se suma el xpSig del nivel que se deja.
 const ritmoXp = { nv: 0, mae: 0, xp: 0, sig: 0, base: 0, desde: 0, m: [] };
@@ -3268,7 +3271,7 @@ function pintarHud() {
   if (!yo) return;
   const cl = CLASES[yo.clase];
   $('m-nombre').textContent = (yo.dios ? 'GM ' : '') + yo.nombre;
-  $('m-nivel').textContent = 'Nv ' + yo.nivel + (yo.mae ? ' ★' + yo.mae : '') + (cl ? ' · ' + cl.nombre : '');
+  $('m-nivel').textContent = 'Nv ' + yo.nivel + (yo.mae ? ' ★' + yo.mae : '') + (cl && !COMPACTO ? ' · ' + cl.nombre : '');   // en el marco fino del movil la clase dejaba el nombre en 4 letras
   pintarOro(Number(yo.oro || 0));
   $('m-rec').style.display = cl ? '' : 'none';
   if (cl) $('m-rec').firstElementChild.style.background = RECURSOS[cl.recurso].color;
@@ -3335,9 +3338,9 @@ function pintarBarra() {
       const d = document.createElement('button'); d.className = 'acc' + (yo.nivel < h.nv ? ' bloq' : ''); d.dataset.hab = h.id;
       // Las 3 primeras aprendidas van en arco alrededor de ATACAR (solo movil en horizontal, ver CSS .acc.arco)
       if (yo.nivel >= h.nv && enArco < 3) {
-        const ang = [-100, -135, -170][enArco++], r = ang * Math.PI / 180;
-        d.classList.add('arco'); d.style.setProperty('--ang', ang + 'deg');
-        d.style.setProperty('--dx', (95 * Math.cos(r)).toFixed(1) + 'px'); d.style.setProperty('--dy', (95 * Math.sin(r)).toFixed(1) + 'px');
+        const [ax, ay] = [[10, -62], [-98, -44], [-46, -106]][enArco++];   // casilla respecto a ATACAR: libres entre ESQUIVAR, SALTO y VOLAR
+        d.classList.add('arco');
+        d.style.setProperty('--dx', ax + 'px'); d.style.setProperty('--dy', ay + 'px');
       }
       d.innerHTML = `<span class="t">${i + 2}</span><img src="${A}items/equipo/${h.icono}.png" alt="">${yo.nivel < h.nv ? '<span class="lv">Nv ' + h.nv + '</span>' : ''}<span class="cd"></span><span class="cs"></span>`;
       d.title = h.nombre + ' (' + (i + 2) + ') — ' + h.desc;
@@ -3649,7 +3652,7 @@ function npcSiguiente() {
   const fin = () => { pararEsc(); d.classList.remove('on'); d.onclick = null; setTimeout(npcSiguiente, 400); };
   const cara = d.querySelector('.nd-cara'), nq = NPCS3D.find(x => x.nombre === it.quien);
   cara.textContent = it.emoji;
-  if (it.hoja || nq) retratoNpc(it.hoja || nq.hoja).then(u => { if (u && d.querySelector('.nd-quien').textContent === it.quien) cara.innerHTML = `<img src="${u}" alt="" style="width:34px;height:34px;image-rendering:pixelated;border-radius:50%">`; });
+  if (it.hoja || nq) retratoNpc(it.hoja || nq.hoja).then(u => { if (u && d.querySelector('.nd-quien').textContent === it.quien) cara.innerHTML = `<img src="${u}" alt="" style="width:100%;height:100%;image-rendering:pixelated;border-radius:50%">`; });
   d.querySelector('.nd-quien').textContent = it.quien;
   d.onclick = e => {
     e.stopPropagation();
@@ -3663,9 +3666,71 @@ function npcSiguiente() {
   try { sfx('moneda', 0.2); } catch (e) {}
 }
 function avisoTapado() { try { return hayVentana() || (COMPACTO && hayLateral()) || $('v-diario').classList.contains('on') || !!cineEst; } catch (e) { return false; } }
-function pintarAviso(txt, tipo, prio) {
+// Movil: como mucho 2 lineas de aviso a la vez; lo largo se parte en trozos de 2 lineas que salen en orden.
+function letrasPorLineaAviso() { return Math.max(24, Math.floor(((avisos.clientWidth || 320) - 28) / ((document.body.classList.contains('texto-grande') ? 15 : 14) * 0.54))); }
+function lineasAvisoTxt(txt) { return String(txt).length > letrasPorLineaAviso() ? 2 : 1; }
+function cabeAviso(txt) { let n = 0; for (const c of avisos.children) n += c._lin || 0; return n + lineasAvisoTxt(txt) <= 2; }   // las ofertas con boton (grupo, LFG) duran hasta 30 s: no cuentan, para no frenar la cola
+function trozosAviso(txt) {
+  const tope = Math.floor(letrasPorLineaAviso() * 1.8), out = [];
+  let r = String(txt).trim();
+  while (r.length > tope + 1) {   // +1: un trozo que ya lleva su «…» no se vuelve a partir al salir de la cola
+    const c = r.slice(0, tope);
+    let k = -1;
+    for (let i = c.length - 1; i >= tope * 0.45 && k < 0; i--) if (/[.!?…]/.test(c[i]) && c[i + 1] === ' ') k = i + 1;
+    if (k > 0) { out.push(r.slice(0, k).trim()); r = r.slice(k).trim(); continue; }
+    const e = c.lastIndexOf(' '), corte = e > tope * 0.45 ? e : tope;
+    out.push(r.slice(0, corte).trim() + '…'); r = r.slice(corte).trim();
+  }
+  if (r) out.push(r);
+  return out;
+}
+// Franja de avisos justo bajo lo que haya arriba en su columna (se mide: el HUD cambia con misiones, grupo o Telegram).
+let rectsHud = [];
+const HUD_ARRIBA = ['marco', 'grupo3', 'misiones', 'alas', 'obj', 'objp', 'mini', 'botones', 'chicha3', 'cofre-meta', 'tira-diario', 'probar-clase', 'invit3'];
+function colocarAvisos() {
+  if (!COMPACTO) { rectsHud = []; return; }
+  try {
+    const az = avisos.getBoundingClientRect(), vh = innerHeight, rs = [];
+    let y = 0;
+    for (const id of HUD_ARRIBA) {
+      const el = $(id); if (!el) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width < 2 || r.height < 2 || r.bottom <= 0) continue;
+      const cs = getComputedStyle(el);
+      if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity < 0.1) continue;
+      if (id === 'marco' || id === 'misiones' || id === 'mini' || id === 'botones' || id === 'obj' || id === 'grupo3') rs.push(r);
+      if (r.top < vh * 0.4 && r.bottom < vh * 0.6 && (!az.width || (r.left < az.right && r.right > az.left))) y = Math.max(y, r.bottom);
+    }
+    rectsHud = rs;
+    const top = Math.round(Math.min(y ? y + 6 : 8, vh * 0.42));
+    if (top !== colocarAvisos.ult) { colocarAvisos.ult = top; document.documentElement.style.setProperty('--av-top', top + 'px'); }
+  } catch (e) {}
+}
+setInterval(colocarAvisos, 700);
+addEventListener('resize', colocarAvisos);
+// Las etiquetas del mundo no asoman por el HUD del movil.
+function lblTapaHud(s) { for (const r of rectsHud) if (s[0] > r.left - 24 && s[0] < r.right + 24 && s[1] > r.top - 2 && s[1] < r.bottom + 16) return true; return false; }
+function pintarAviso(txt, tipo, prio, deCola) {
+  if (COMPACTO) {
+    colocarAvisos();
+    const tr = trozosAviso(txt); let cabe = cabeAviso(tr[0]);
+    const antes = !deCola && colaAvisos.some(a => a.prio <= prio);
+    if (!cabe && !antes) {
+      // Lo importante entra al instante en lugar de lo que pese menos.
+      for (const c of [...avisos.children]) if (c._lin && (c._prio || 2) > prio) c.remove();
+      cabe = cabeAviso(tr[0]);
+    }
+    if (!cabe || antes) {
+      if (/^🎆 \d+…$/.test(txt)) return;   // la cuenta atras no se atrasa
+      if (tr.length > 1) avisoVisto.set(txt, Date.now());   // el mismo texto largo otra vez no deja trozos sueltos sin su inicio
+      if (!colaAvisos.some(a => a.txt === tr[0])) for (const t of tr) colaAvisos.push({ txt: t, tipo, prio, vence: Date.now() + 45000 });
+      while (colaAvisos.length > 8) colaAvisos.splice(colaAvisos.reduce((m, a, i, l) => a.prio > l[m].prio ? i : m, 0), 1);
+      return;
+    }
+    if (tr.length > 1) { avisoVisto.set(txt, Date.now()); for (let i = tr.length - 1; i > 0; i--) colaAvisos.unshift({ txt: tr[i], tipo, prio, vence: Date.now() + 45000 }); txt = tr[0]; }
+  }
   const max = COMPACTO ? 2 : 4;
-  if (avisos.children.length >= max) {
+  if (!COMPACTO && avisos.children.length >= max) {
     // Lleno: sale el de menor prioridad (el mas viejo si empatan); si todos pesan mas, este espera.
     let v = null; for (const c of avisos.children) if (!v || (c._prio || 2) > (v._prio || 2)) v = c;
     if (v && (v._prio || 2) >= prio) v.remove();
@@ -3673,7 +3738,7 @@ function pintarAviso(txt, tipo, prio) {
   }
   avisoVisto.set(txt, Date.now());
   if (avisoVisto.size > 60) avisoVisto.delete(avisoVisto.keys().next().value);
-  const d = document.createElement('div'); d.textContent = txt; if (tipo) d.className = tipo; d._prio = prio;
+  const d = document.createElement('div'); d.textContent = txt; if (tipo) d.className = tipo; d._prio = prio; d._lin = lineasAvisoTxt(txt);
   avisos.appendChild(d);
   if (tipo === 'err' && !/^(¡|📍|🥤|🔮)|Furia x\d/.test(txt)) { const ahN = performance.now(); if (ahN - (pintarAviso.noT || 0) >= 1500) { pintarAviso.noT = ahN; try { SON.tocar('no'); } catch (e) {} vib('error'); } }   // «no se pudo» con sonido propio, tope 1 cada 1,5 s
   setTimeout(() => { d.classList.add('fuera'); setTimeout(() => d.remove(), 190); }, Math.min(12000, Math.max(4500, txt.length * 60)));   // los largos (lore, premios) se leen enteros
@@ -3682,10 +3747,14 @@ setInterval(() => {
   if (!colaAvisos.length) return;
   const ahora = Date.now();
   for (let i = colaAvisos.length - 1; i >= 0; i--) if (colaAvisos[i].vence < ahora) colaAvisos.splice(i, 1);
-  if (!colaAvisos.length || avisoTapado() || avisos.children.length >= (COMPACTO ? 2 : 4)) return;
+  if (!colaAvisos.length || avisos.children.length >= (COMPACTO ? 2 : 4)) return;
   let tutoTemprano = false; try { tutoTemprano = COMPACTO && yo && yo.clase && tuto3.i >= 0 && tuto3.i < TUTO3.length && yo.nivel <= 6; } catch (e) {}
-  if (tutoTemprano) return;
-  const a = colaAvisos.shift(); if (ahora - (avisoVisto.get(a.txt) || 0) < 8000) return; avisoVisto.delete(a.txt); pintarAviso(a.txt, a.tipo, a.prio);
+  // Movil: sale primero lo mas importante y, a igual peso, el mas antiguo (los trozos de un aviso largo van seguidos).
+  const iSig = COMPACTO ? colaAvisos.reduce((m, a, i, l) => a.prio < l[m].prio ? i : m, 0) : 0;
+  const urge = COMPACTO && colaAvisos[iSig].prio === 1;
+  if ((avisoTapado() && !urge) || (tutoTemprano && !urge)) return;
+  if (COMPACTO && !cabeAviso(colaAvisos[iSig].txt)) return;
+  const a = colaAvisos.splice(iSig, 1)[0]; if (ahora - (avisoVisto.get(a.txt) || 0) < 8000) return; avisoVisto.delete(a.txt); pintarAviso(a.txt, a.tipo, a.prio, true);
 }, 900);
 // Lo que no debe tapar el tutorial (leyenda, vestuario, promos) espera a la mision 1
 // entregada; si no la entrega, sale igual desde Nv 4 o a los 6 min para no quedarse sin ver.
@@ -3846,6 +3915,7 @@ function lineaChat(m) {
   else { const b = document.createElement('b'); b.textContent = (m.canal === 'grupo' ? '[Grupo] ' : m.canal === 'susurro' ? '[Susurro] ' : m.canal === 'hermandad' ? '[Hermandad] ' : '') + (m.gm === 2 ? '[DUEÑO] ' : m.gm ? '[MOD] ' : '') + m.n + ': '; b.style.color = m.gm ? '#ffd84a' : (CLASES[m.cl] ? CLASES[m.cl].color : '#fff'); d.appendChild(b); d.appendChild(document.createTextNode(m.m)); }
   const log = $('chat-log'); log.appendChild(d);
   while (log.children.length > 8) log.firstChild.remove();
+  if (COMPACTO) { const ch = $('chat'); ch.classList.add('vivo'); clearTimeout(ch._vivoT); ch._vivoT = setTimeout(() => ch.classList.remove('vivo'), 6000); }   // en el telefono no se queda fija sobre el mundo (index.html)
 }
 // Tarjeta «CAPÍTULO N» al empezar un capitulo de la cadena de Tito (la misma de tituloZona).
 // Con un jefe cerca o en pleno combate se pospone 5 s (hasta ~2 min; luego se omite).
@@ -4446,7 +4516,8 @@ const FRASES3 = ['¡Ayuda aquí!', 'Vamos al jefe', 'Gracias, causa', 'Espérame
   const cerrarG = () => { fila.classList.remove('on'); };
   // Debajo del boton y nunca hasta la barra de habilidades/joystick (si no cabe, desliza).
   const colocar = () => {
-    const r = bt.getBoundingClientRect(), w = Math.min(330, innerWidth - 16), top = Math.max(8, r.bottom + 6);
+    const ra = bt.getBoundingClientRect(), r = ra.width ? ra : $('b-mas').getBoundingClientRect();   // en tactil el boton vive dentro de ⋯, que ya se cerro
+    const w = Math.min(330, innerWidth - 16), top = Math.max(8, r.bottom + 6);
     fila.style.width = w + 'px';
     fila.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.right - w)) + 'px';
     fila.style.top = top + 'px';
@@ -4469,10 +4540,17 @@ const FRASES3 = ['¡Ayuda aquí!', 'Vamos al jefe', 'Gracias, causa', 'Espérame
   document.addEventListener('pointerdown', e => { if (fila.classList.contains('on') && !fila.contains(e.target) && !bt.contains(e.target)) cerrarG(); }, true);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarG(); });
 })();
+// El menu ⋯ abierto se cierra al tocar fuera de el (tapa parte del mundo).
+document.addEventListener('pointerdown', e => { const m = $('botones'); if (m.classList.contains('abierto') && !m.contains(e.target)) m.classList.remove('abierto'); }, true);
 $('b-reconectar').onclick = () => location.reload();   // error() lo cambia segun el caso
 
 // ── MAPA (minimapa y mapa del mundo, pintados una vez) ──
 let mapaBase = null;
+// three guarda los colores en lineal; el lienzo los quiere en sRGB (sin esto el mapa salia oscuro).
+const GAMA_MAPA = THREE.ColorManagement && THREE.ColorManagement.enabled ? 1 / 2.2 : 1;
+// Destino 📍 personal del mapa (solo en este navegador). Se ve en el minimapa con flecha y metros.
+let destino3 = null;
+try { const d = JSON.parse(localStorage.getItem('dq_destino3') || 'null'); if (d && Number.isFinite(d.x) && Number.isFinite(d.z)) destino3 = { x: d.x, z: d.z }; } catch (e) {}
 function pintarMapaBase() {
   const N = 220, c = document.createElement('canvas'); c.width = c.height = N;
   const x = c.getContext('2d'), img = x.createImageData(N, N), col = new THREE.Color();
@@ -4480,7 +4558,7 @@ function pintarMapaBase() {
     const wx = (i / N - 0.5) * LADO, wz = (j / N - 0.5) * LADO, h = alturaEn(wx, wz);
     if (h < MUNDO.agua) col.set('#2f74b5'); else colorSuelo(wx, wz, h, col);
     const k = (j * N + i) * 4;
-    img.data[k] = col.r * 255; img.data[k + 1] = col.g * 255; img.data[k + 2] = col.b * 255; img.data[k + 3] = 255;
+    img.data[k] = Math.pow(col.r, GAMA_MAPA) * 255; img.data[k + 1] = Math.pow(col.g, GAMA_MAPA) * 255; img.data[k + 2] = Math.pow(col.b, GAMA_MAPA) * 255; img.data[k + 3] = 255;
   }
   x.putImageData(img, 0, 0);
   mapaBase = c;
@@ -4490,76 +4568,139 @@ let ryMini = 0;
 // Si un punto del minimapa queda fuera del cuadro, lo recorta al borde en su
 // misma direccion (asi se ve hacia donde esta la mision o el compañero).
 function alBordeMini(px, pz, S, m = 8) {
+  if (COMPACTO) {   // en el celular el minimapa es redondo: se recorta al circulo, no al cuadro
+    const dx = px - S / 2, dz = pz - S / 2, d = Math.hypot(dx, dz), R = S / 2 - m;
+    return d <= R ? [px, pz] : [S / 2 + dx / d * R, S / 2 + dz / d * R];
+  }
   if (px >= m - 2 && pz >= m - 2 && px <= S - m + 2 && pz <= S - m + 2) return [px, pz];
   const a = Math.atan2(pz - S / 2, px - S / 2);
   return [S / 2 + Math.cos(a) * (S / 2 - m), S / 2 + Math.sin(a) * (S / 2 - m)];
 }
+let miniUltT = 0;
 function pintarMini() {
   actualizarMarcas3();
   if (!mapaBase) return;
-  const cv = $('mini-c'), x = cv.getContext('2d'), S = 150, vista = 240;
+  // Celular: 5 repintados por segundo como mucho, y ninguno si el HUD esta oculto.
+  const ahoraMini = performance.now();
+  if (COMPACTO && (ahoraMini - miniUltT < 195 || document.body.classList.contains('cine'))) return;
+  miniUltT = ahoraMini;
+  const cv = $('mini-c'), x = cv.getContext('2d'), S = 150, vista = COMPACTO ? 200 : 240;
+  // Lienzo nitido en pantallas densas; se sigue dibujando en unidades de 150.
+  const escMini = COMPACTO ? Math.min(2, Math.max(1, Math.ceil((window.devicePixelRatio || 1) * 0.67))) : 1;
+  if (cv.width !== S * escMini) cv.width = cv.height = S * escMini;
+  x.setTransform(escMini, 0, 0, escMini, 0, 0);
   const N = mapaBase.width, [mx, mz] = aMapa(P.x, P.z, N), lado = vista / LADO * N;
   x.clearRect(0, 0, S, S);
   const k = S / vista;
+  // Celular: el mapa gira con la camara, asi "arriba" en el minimapa es "adelante" en la pantalla.
+  const yawM = COMPACTO ? camYaw : 0, cM = Math.cos(yawM), sM = Math.sin(yawM);
+  const aPx = (wx, wz) => { const dx = (wx - P.x) * k, dz = (wz - P.z) * k; return [dx * cM - dz * sM + S / 2, dx * sM + dz * cM + S / 2]; };
   if (enAbismo(P.x)) {
     x.fillStyle = '#1a1240'; x.fillRect(0, 0, S, S);
-    for (const is of ABISMO.islas) { x.fillStyle = is.base === 'luz' ? '#c9b46a' : is.base === 'sombra' ? '#6b2f7e' : is.nucleo ? '#8a7fb0' : '#5b4bb0'; x.beginPath(); x.arc((ABISMO_X0 + is.x - P.x) * k + S / 2, (is.z - P.z) * k + S / 2, is.r * k, 0, 7); x.fill(); }
+    for (const is of ABISMO.islas) { const [ix, iz] = aPx(ABISMO_X0 + is.x, is.z); x.fillStyle = is.base === 'luz' ? '#c9b46a' : is.base === 'sombra' ? '#6b2f7e' : is.nucleo ? '#8a7fb0' : '#5b4bb0'; x.beginPath(); x.arc(ix, iz, is.r * k, 0, 7); x.fill(); }
   } else if (enCueva(P.x)) {
     x.fillStyle = '#0b0814'; x.fillRect(0, 0, S, S);
     x.fillStyle = '#4a3f5c';
-    for (const [a, b, c, d] of CUEVA.salas) x.fillRect((CUEVA_X0 + a - P.x) * k * 2.2 + S / 2, (b - P.z) * k * 2.2 + S / 2, (c - a) * k * 2.2, (d - b) * k * 2.2);
-  } else x.drawImage(mapaBase, mx - lado / 2, mz - lado / 2, lado, lado, 0, 0, S, S);
-  const esMovil = document.body.classList.contains('movil');
-  const punto = (wx, wz, color, r) => { const px = (wx - P.x) * k + S / 2, pz = (wz - P.z) * k + S / 2; if (px < 0 || pz < 0 || px > S || pz > S) return; if (esMovil && r < 3) r *= 1.6; x.fillStyle = color; x.beginPath(); x.arc(px, pz, r, 0, 7); x.fill(); };
+    x.save(); x.translate(S / 2, S / 2); x.rotate(yawM);
+    for (const [a, b, c, d] of CUEVA.salas) x.fillRect((CUEVA_X0 + a - P.x) * k * 2.2, (b - P.z) * k * 2.2, (c - a) * k * 2.2, (d - b) * k * 2.2);
+    x.restore();
+  } else {
+    if (COMPACTO) { x.fillStyle = '#16251c'; x.fillRect(0, 0, S, S); }
+    x.save(); x.translate(S / 2, S / 2); x.rotate(yawM);
+    x.drawImage(mapaBase, mx - lado / 2, mz - lado / 2, lado, lado, -S / 2, -S / 2, S, S);
+    x.restore();
+  }
+  const esMovil = COMPACTO;
+  // Norte en el borde para no perderse al girar y poder comparar con el mapa grande.
+  if (esMovil && !enCueva(P.x)) {
+    const nx = S / 2 + sM * (S / 2 - 11), nz = S / 2 - cM * (S / 2 - 11);
+    x.font = 'bold 15px system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.lineJoin = 'round';
+    x.strokeStyle = '#000'; x.lineWidth = 3; x.strokeText('N', nx, nz); x.fillStyle = '#fecaca'; x.fillText('N', nx, nz);
+  }
+  const punto = (wx, wz, color, r) => { const [px, pz] = aPx(wx, wz); if (px < 0 || pz < 0 || px > S || pz > S) return; if (esMovil && r < 3) r *= 1.25; x.fillStyle = color; x.beginPath(); x.arc(px, pz, r, 0, 7); x.fill(); if (esMovil) { x.strokeStyle = 'rgba(0,0,0,.65)'; x.lineWidth = 1; x.stroke(); } };
   // Eventos grandes: nunca desaparecen; si estan lejos se pegan al borde, laten y muestran la distancia.
   const borde = (wx, wz, color, r) => {
-    if (esMovil) r *= 1.7;   // en movil el canvas se ve a ~0,56x: punto y texto mas grandes
-    const px0 = (wx - P.x) * k + S / 2, pz0 = (wz - P.z) * k + S / 2, [bx, bz] = alBordeMini(px0, pz0, S, esMovil ? 13 : 8), alBorde = bx !== px0 || bz !== pz0;
+    if (esMovil) r *= 1.7;   // en movil el canvas se ve a ~0,66x: punto y texto mas grandes
+    const [px0, pz0] = aPx(wx, wz), [bx, bz] = alBordeMini(px0, pz0, S, esMovil ? 13 : 8), alBorde = bx !== px0 || bz !== pz0;
     x.fillStyle = color; x.strokeStyle = '#fff'; x.lineWidth = esMovil ? 2.5 : 1.5;
     x.beginPath(); x.arc(bx, bz, r * (1 + 0.25 * Math.sin(Date.now() / 200)), 0, 7); x.fill(); x.stroke();
     if (alBorde) {
-      const t = Math.round(Math.hypot(wx - P.x, wz - P.z)) + 'm', ty = bz < (esMovil ? 24 : 16) ? bz + r + (esMovil ? 12 : 9) : bz - r - (esMovil ? 10 : 7);
+      const t = Math.round(Math.hypot(wx - P.x, wz - P.z)) + 'm', d0 = Math.hypot(bx - S / 2, bz - S / 2) || 1;
+      // En el celular la distancia va hacia el centro del circulo: en las esquinas se recortaria.
+      const ty = esMovil ? bz + (S / 2 - bz) / d0 * (r + 12) : bz < 16 ? bz + r + 9 : bz - r - 7;
       x.font = esMovil ? 'bold 16px system-ui' : 'bold 9px system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle';
-      const mt = esMovil ? 25 : 16, tx = Math.max(mt, Math.min(S - mt, bx));
+      const mt = esMovil ? 25 : 16, tx = esMovil ? bx + (S / 2 - bx) / d0 * (r + 18) : Math.max(mt, Math.min(S - mt, bx));
       x.strokeStyle = '#000'; x.lineWidth = esMovil ? 3.5 : 2.5; x.strokeText(t, tx, ty); x.fillStyle = '#fff'; x.fillText(t, tx, ty);
     }
   };
   const mundoPrincipal = !enCueva(P.x) && !enAbismo(P.x);
   if (asedio && asedio.activo && asedio.puerta && enAbismo(P.x)) punto(PUERTA_NUCLEO.x, PUERTA_NUCLEO.z, '#ff3b3b', 4.5);
-  if (metaEnc) punto(metaEnc.x, metaEnc.z, '#7dd3fc', 3.5);
+  if (metaEnc) punto(metaEnc.x, metaEnc.z, esMovil ? '#fef08a' : '#7dd3fc', 3.5);   // celular: el celeste queda solo para el grupo
   if (enAbismo(P.x) && yo && yo.faccion) for (const q of MAQUINAS) if (q.f === yo.faccion) punto(q.x, q.z, '#fbbf24', 2);
   for (const o of mons.values()) if (!o.muereT) punto(o.x, o.z, o.j ? '#ffd84a' : '#ff4455', o.j ? 3.5 : 2);
-  for (const o of otros.values()) punto(o.x, o.z, enGrupo(o.id) ? '#7dd3fc' : '#4ade80', enGrupo(o.id) ? 3.5 : 2.5);
+  for (const o of otros.values()) punto(o.x, o.z, enGrupo(o.id) ? '#7dd3fc' : '#4ade80', enGrupo(o.id) ? (esMovil ? 5 : 3.5) : 2.5);
   // Compañeros de grupo fuera de vista: el servidor manda p3 [x, z]; si quedan
   // lejos se pegan al borde del minimapa para saber hacia donde ir.
   if (grupo3 && grupo3.m) for (const g of grupo3.m) if (g.on && Array.isArray(g.p3) && g.id !== miId && !otros.has(g.id) && !enCueva(g.p3[0]) === !enCueva(P.x) && !enAbismo(g.p3[0]) === !enAbismo(P.x)) {
-    const [gx, gz] = alBordeMini((g.p3[0] - P.x) * k + S / 2, (g.p3[1] - P.z) * k + S / 2, S);
+    const [g0x, g0z] = aPx(g.p3[0], g.p3[1]), [gx, gz] = alBordeMini(g0x, g0z, S, esMovil ? 10 : 8);
     x.fillStyle = '#7dd3fc'; x.strokeStyle = '#fff'; x.lineWidth = 1.5;
-    x.beginPath(); x.arc(gx, gz, 3.5, 0, 7); x.fill(); x.stroke();
+    x.beginPath(); x.arc(gx, gz, esMovil ? 5 : 3.5, 0, 7); x.fill(); x.stroke();
   }
   { const ah = Date.now(); for (const c of COFRES3) if (c.listoEn <= ah && Math.abs(c.x - P.x) < 130 && Math.abs(c.z - P.z) < 130) punto(c.x, c.z, c.tipo === 'legendario' ? '#ffd84a' : c.tipo === 'epico' ? '#c084fc' : '#d6a35c', c.tipo === 'legendario' ? 3.2 : 2.4); }
   for (const o of mons.values()) if (o.ra && !o.muereT) punto(o.x, o.z, o.ti || '#ffd84a', 4);
   { const ah = performance.now(); for (const n of NODOS) if (Math.abs(n.x - P.x) < 130 && Math.abs(n.z - P.z) < 130 && !(nodoListo.get(n.i) > ah)) punto(n.x, n.z, n.tipo === 'hierba' ? '#c084fc' : '#fbbf24', 1.6); }
   // NPC: cuadrado gris claro (no se confunde con el grupo) y debajo del '!' de mision.
-  { x.fillStyle = '#e5e7eb'; const rn = esMovil ? 3.2 : 2; for (const n of NPCS3D) { const px = (n.x - P.x) * k + S / 2, pz = (n.z - P.z) * k + S / 2; if (px >= 0 && pz >= 0 && px <= S && pz <= S) x.fillRect(px - rn, pz - rn, rn * 2, rn * 2); } }
+  { x.fillStyle = '#e5e7eb'; x.strokeStyle = '#000'; x.lineWidth = 1; const rn = esMovil ? 3.6 : 2; for (const n of NPCS3D) { const [px, pz] = aPx(n.x, n.z); if (px >= 0 && pz >= 0 && px <= S && pz <= S) { x.fillRect(px - rn, pz - rn, rn * 2, rn * 2); if (esMovil) x.strokeRect(px - rn, pz - rn, rn * 2, rn * 2); } } }
+  // Portal (celular): aro violeta con centro claro; en el Abismo, el de tu faccion para volver.
+  if (esMovil) {
+    const pb = enAbismo(P.x) ? (yo && yo.faccion ? portalBase(yo.faccion) : null) : mundoPrincipal ? portal : null;
+    if (pb) { const [px, pz] = aPx(pb.x, pb.z); if (px >= 0 && pz >= 0 && px <= S && pz <= S) { x.fillStyle = '#f5f3ff'; x.strokeStyle = '#a855f7'; x.lineWidth = 3; x.beginPath(); x.arc(px, pz, 5, 0, 7); x.fill(); x.stroke(); } }
+  }
   if (mundoPrincipal && invasion3 && ZONAS3D[invasion3.zona]) borde(ZONAS3D[invasion3.zona].x, ZONAS3D[invasion3.zona].z, '#ff5a1f', 5);
   else if (mundoPrincipal && invPre3 && ZONAS3D[invPre3.zona]) borde(ZONAS3D[invPre3.zona].x, ZONAS3D[invPre3.zona].z, '#ff9a3c', 4);
   if (mundoPrincipal && mundial3 && mundial3.vivo) borde(ARENA3D.x, ARENA3D.z, '#ff6b3d', 5);
   if (metaMision) {
-    const [px, pz] = alBordeMini((metaMision.x - P.x) * k + S / 2, (metaMision.z - P.z) * k + S / 2, S, esMovil ? 13 : 8);
-    x.fillStyle = metaMision.guia ? '#4ade80' : '#ffd84a'; x.strokeStyle = '#000'; x.lineWidth = esMovil ? 3.2 : 2;
-    x.font = esMovil ? 'bold 22px system-ui' : 'bold 14px system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle';
-    x.strokeText(metaMision.guia ? '?' : '!', px, pz); x.fillText(metaMision.guia ? '?' : '!', px, pz);
+    const [m0x, m0z] = aPx(metaMision.x, metaMision.z), [px, pz] = alBordeMini(m0x, m0z, S, esMovil ? 13 : 8);
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    if (esMovil) {   // celular: disco grande con el signo dentro, se ve de un vistazo incluso pegado al borde
+      x.fillStyle = metaMision.guia ? '#4ade80' : '#ffd84a'; x.strokeStyle = '#000'; x.lineWidth = 2.5;
+      x.beginPath(); x.arc(px, pz, 11, 0, 7); x.fill(); x.stroke();
+      x.font = 'bold 17px system-ui'; x.fillStyle = '#000'; x.fillText(metaMision.guia ? '?' : '!', px, pz + 1);
+    } else {
+      x.fillStyle = metaMision.guia ? '#4ade80' : '#ffd84a'; x.strokeStyle = '#000'; x.lineWidth = 2;
+      x.font = 'bold 14px system-ui';
+      x.strokeText(metaMision.guia ? '?' : '!', px, pz); x.fillText(metaMision.guia ? '?' : '!', px, pz);
+    }
   }
   // Marcas 📍 vivas: punto que parpadea (encendido/apagado cada 250 ms).
-  if (marcas3.length && ((Date.now() / 250) | 0) % 2 === 0) for (const a of marcas3) { const [mx2, mz2] = alBordeMini((a.x - P.x) * k + S / 2, (a.z - P.z) * k + S / 2, S); x.fillStyle = MARCA_CSS[a.k]; x.strokeStyle = '#000'; x.lineWidth = 1.5; x.beginPath(); x.arc(mx2, mz2, 4.5, 0, 7); x.fill(); x.stroke(); }
-  // Cono de vision de la camara (mira hacia -sin/-cos de camYaw).
-  x.save(); x.translate(S / 2, S / 2); x.rotate(-camYaw);
-  x.fillStyle = 'rgba(255,255,255,.13)'; x.beginPath(); x.moveTo(0, 0); x.arc(0, 0, 46, -Math.PI / 2 - 0.55, -Math.PI / 2 + 0.55); x.closePath(); x.fill(); x.restore();
+  if (marcas3.length && ((Date.now() / 250) | 0) % 2 === 0) for (const a of marcas3) { const [a0x, a0z] = aPx(a.x, a.z), [mx2, mz2] = alBordeMini(a0x, a0z, S); x.fillStyle = MARCA_CSS[a.k]; x.strokeStyle = '#000'; x.lineWidth = 1.5; x.beginPath(); x.arc(mx2, mz2, esMovil ? 6 : 4.5, 0, 7); x.fill(); x.stroke(); }
+  // Destino 📍 del mapa grande: dentro del cuadro, el 📍; fuera, una flecha en el borde. Siempre con los metros.
+  if (destino3 && mundoPrincipal && yo) {
+    const dm = Math.hypot(destino3.x - P.x, destino3.z - P.z);
+    if (dm < 10) { ponerDestino(null); aviso('📍 ¡Llegaste a tu destino!', 'ok'); }
+    else {
+      const [px0, pz0] = aPx(destino3.x, destino3.z), mg = esMovil ? 17 : 10, [bx, bz] = alBordeMini(px0, pz0, S, mg), aD = Math.atan2(pz0 - S / 2, px0 - S / 2), lejos = bx !== px0 || bz !== pz0;
+      x.textAlign = 'center'; x.textBaseline = 'middle';
+      if (lejos) {
+        const t = esMovil ? 15 : 9;
+        x.save(); x.translate(bx, bz); x.rotate(aD + Math.PI / 2); x.fillStyle = '#ff2d55'; x.strokeStyle = '#fff'; x.lineWidth = esMovil ? 3 : 1.5;
+        x.beginPath(); x.moveTo(0, -t); x.lineTo(t * 0.8, t * 0.7); x.lineTo(-t * 0.8, t * 0.7); x.closePath(); x.stroke(); x.fill(); x.restore();
+      } else { x.font = (esMovil ? 34 : 20) + 'px system-ui'; x.fillStyle = '#ff2d55'; x.fillText('📍', bx, bz - (esMovil ? 14 : 8)); }
+      const txt = Math.round(dm) + 'm', fT = esMovil ? 16 : 11, mt = esMovil ? 30 : 18;
+      // En el celular la distancia va junto a la marca, sin llegar a la flecha del jugador (centro).
+      const tx = lejos ? (esMovil ? bx : bx - Math.cos(aD) * 20) : bx, tz = lejos ? (esMovil ? bz + (bz < S / 2 ? 24 : -24) : bz - Math.sin(aD) * 16) : bz + (esMovil ? 14 : 9);
+      x.font = 'bold ' + fT + 'px system-ui'; x.strokeStyle = '#000'; x.lineWidth = esMovil ? 4 : 2.5;
+      const txC = clamp(tx, mt, S - mt), tzC = clamp(tz, fT, S - fT);
+      x.strokeText(txt, txC, tzC); x.fillStyle = '#fff'; x.fillText(txt, txC, tzC);
+    }
+  }
+  // Cono de vision de la camara (mira hacia -sin/-cos de camYaw); en el celular apunta siempre arriba.
+  x.save(); x.translate(S / 2, S / 2); x.rotate(yawM - camYaw);
+  x.fillStyle = esMovil ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.13)'; x.beginPath(); x.moveTo(0, 0); x.arc(0, 0, esMovil ? 58 : 46, -Math.PI / 2 - 0.55, -Math.PI / 2 + 0.55); x.closePath(); x.fill(); x.restore();
   // Flecha propia: hacia donde mira el duende (P.ry = atan2(dx, dz); en el
   // mapa x es x y z va hacia abajo, asi que la rotacion es PI - ry).
-  ryMini = lerpAng(ryMini, P.ry, 0.5);
-  x.save(); x.translate(S / 2, S / 2); x.rotate(Math.PI - ryMini);
+  ryMini = lerpAng(ryMini, P.ry, esMovil ? 0.8 : 0.5);
+  x.save(); x.translate(S / 2, S / 2); x.rotate(Math.PI - ryMini + yawM); if (esMovil) x.scale(1.5, 1.5);
   x.fillStyle = '#fff'; x.strokeStyle = '#000'; x.lineWidth = 1.5;
   x.beginPath(); x.moveTo(0, -8); x.lineTo(5.5, 6); x.lineTo(0, 3); x.lineTo(-5.5, 6); x.closePath(); x.fill(); x.stroke(); x.restore();
 }
@@ -4604,66 +4745,269 @@ function pintarNiebla(x, S) {
   const m = S / NIEBLA_N; x.drawImage(c, 0, 0, T, T, -m, -m, S + 2 * m, S + 2 * m);
   x.restore();
 }
-function abrirMapa() {
-  const cv = $('mapa-c'), x = cv.getContext('2d'), S = cv.width;
+// ── MAPA DEL MUNDO: lienzo a pantalla completa en el movil, con zoom (pellizco, rueda, + y -),
+// arrastre, centrar en mi y destino 📍 personal. Mantiene la niebla y los datos de exploracion.
+const MAPA_TINTE = Object.fromEntries(Object.entries({
+  pueblo: '#86df6e', noche: '#4f7fc9', amanecer: '#ec8f63', selva: '#3fc65c', tormenta: '#8f8bc0', desierto: '#f3d789',
+  castillo: '#aeaa9c', cumbres: '#e3e7f5', cavernas: '#45aeb0', abismo: '#86dccb', acantilados: '#bd8fe6',
+}).map(([k, h]) => [k, [1, 3, 5].map(i => parseInt(h.substr(i, 2), 16))]));
+const MAPA_ESC_MAX = 3;   // pixeles por metro con el zoom al maximo
+const MV = { esc: 0, cx: 0, cz: 0, w: 0, h: 0, ptrs: new Map(), toque: null, raf: 0, tic: 0, zonas: [], miradores: [], hitos: [], pc: 0, niebla: null };
+let mapaHD = null, mapaHDEn = false;
+// Version nitida del terreno: color de la zona, relieve sombreado y limites de zona. Se pinta
+// a trozos la primera vez que se abre (mientras tanto se usa la base del minimapa).
+function pintarMapaHD() {
+  if (mapaHD || mapaHDEn) return;
+  mapaHDEn = true;
+  const N = 440, c = document.createElement('canvas'); c.width = c.height = N;
+  const x = c.getContext('2d'), img = x.createImageData(N, N), d = img.data, col = new THREE.Color(), g = GAMA_MAPA;
+  let hA = new Float32Array(N), hN = new Float32Array(N), zA = new Array(N), zN = new Array(N), j = 0;
+  const trozo = () => {
+    const t0 = performance.now();
+    while (j < N && performance.now() - t0 < 8) {
+      const wz = ((j + 0.5) / N - 0.5) * LADO;
+      for (let i = 0; i < N; i++) {
+        const wx = ((i + 0.5) / N - 0.5) * LADO, h = alturaEn(wx, wz), zid = zonaEn(wx, wz), k = (j * N + i) * 4;
+        hN[i] = h; zN[i] = zid;
+        let r, v, b;
+        if (h < MUNDO.agua) { const t = clamp((MUNDO.agua - h) / 9, 0, 1); r = 96 - 56 * t; v = 190 - 70 * t; b = 240 - 40 * t; }
+        else {
+          colorSuelo(wx, wz, h, col);
+          const ti = MAPA_TINTE[zid] || MAPA_TINTE.castillo, s = clamp(1 + (h - (i && j ? hA[i - 1] : h)) * 0.1, 0.74, 1.22);
+          r = (Math.pow(clamp(col.r, 0, 1), g) * 140 + ti[0] * 0.45) * s;
+          v = (Math.pow(clamp(col.g, 0, 1), g) * 140 + ti[1] * 0.45) * s;
+          b = (Math.pow(clamp(col.b, 0, 1), g) * 140 + ti[2] * 0.45) * s;
+          if ((i && zN[i - 1] !== zid) || (j && zA[i] !== zid)) { r = r * 0.45 + 140; v = v * 0.45 + 140; b = b * 0.45 + 140; }
+        }
+        d[k] = r; d[k + 1] = v; d[k + 2] = b; d[k + 3] = 255;
+      }
+      [hA, hN] = [hN, hA]; [zA, zN] = [zN, zA];
+      j++;
+    }
+    if (j < N) { setTimeout(trozo, 0); return; }
+    x.putImageData(img, 0, 0);
+    mapaHD = c;
+    mapaPedir();
+  };
+  trozo();
+}
+const mapaEscMin = () => Math.min(MV.w, MV.h) / LADO;   // el mundo entero cabe en la pantalla
+function mapaLimitar() {
+  MV.esc = clamp(MV.esc, mapaEscMin(), Math.max(mapaEscMin(), MAPA_ESC_MAX));
+  // Acercado se puede pasar 84 px del borde (para que nada quede bajo los botones); de lejos, el mundo queda centrado.
+  const m = 84 / MV.esc * clamp(MV.esc / mapaEscMin() - 1, 0, 1), mx = Math.max(0, LADO / 2 + m - MV.w / 2 / MV.esc), mz = Math.max(0, LADO / 2 + m - MV.h / 2 / MV.esc);
+  MV.cx = clamp(MV.cx, -mx, mx); MV.cz = clamp(MV.cz, -mz, mz);
+}
+function mapaPedir() { if (!MV.raf) MV.raf = requestAnimationFrame(() => { MV.raf = 0; mapaDibujar(); }); }
+function mapaZoom(px, py, f) {
+  // El punto bajo el dedo (o el cursor) se queda quieto mientras cambia la escala.
+  const wx = (px - MV.w / 2) / MV.esc + MV.cx, wz = (py - MV.h / 2) / MV.esc + MV.cz;
+  MV.esc = clamp(MV.esc * f, mapaEscMin(), Math.max(mapaEscMin(), MAPA_ESC_MAX));
+  MV.cx = wx - (px - MV.w / 2) / MV.esc; MV.cz = wz - (py - MV.h / 2) / MV.esc;
+  mapaLimitar(); mapaPedir();
+}
+function mapaEnMundo() { return !enCueva(P.x) && !enAbismo(P.x); }
+function mapaCentrar() {
+  if (mapaEnMundo()) { MV.cx = P.x; MV.cz = P.z; } else { MV.cx = 0; MV.cz = 0; }
+  mapaLimitar(); mapaPedir();
+}
+function ponerDestino(wx, wz) {
+  destino3 = wx == null ? null : { x: Math.round(wx), z: Math.round(wz) };
+  try { if (destino3) localStorage.setItem('dq_destino3', JSON.stringify(destino3)); else localStorage.removeItem('dq_destino3'); } catch (e) {}
+  mapaChip(); mapaPedir();
+}
+function mapaChip() {
+  const t = $('mapa-dest-t'), q = $('mapa-dest-q');
+  if (!t) return;
+  const txt = !destino3 ? (mapaEnMundo() ? 'Toca el mapa para poner un destino 📍' : 'Tu posición no sale aquí: estás fuera del mundo abierto.')
+    : mapaEnMundo() ? `📍 Destino a ${Math.round(Math.hypot(destino3.x - P.x, destino3.z - P.z))} m` : '📍 Destino guardado';
+  if (t.textContent !== txt) t.textContent = txt;
+  q.style.display = destino3 ? '' : 'none';
+}
+function mapaTocar(px, py) {
+  const ley = $('mapa-ley');
+  if (ley.open) { ley.open = false; return; }   // el primer toque fuera solo pliega la leyenda
+  const wx = (px - MV.w / 2) / MV.esc + MV.cx, wz = (py - MV.h / 2) / MV.esc + MV.cz;
+  if (destino3 && Math.hypot((destino3.x - MV.cx) * MV.esc + MV.w / 2 - px, (destino3.z - MV.cz) * MV.esc + MV.h / 2 - 14 - py) < 34) { ponerDestino(null); return; }
+  if (Math.abs(wx) > LADO / 2 || Math.abs(wz) > LADO / 2) return;
+  if (mapaEnMundo() && Math.hypot(wx - P.x, wz - P.z) < 12) { aviso('📍 Ya estás en ese punto.', 'ok', 1); return; }
+  ponerDestino(wx, wz);
+  SON.tocar('clic', { vol: 0.6 });
+}
+function mapaDibujar() {
+  const cv = $('mapa-c');
+  if (!$('v-mapa').classList.contains('on')) return;
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if (!w || !h) return;
+  const dpr = Math.min(devicePixelRatio || 1, 2), bw = Math.round(w * dpr), bh = Math.round(h * dpr);
+  if (cv.width !== bw || cv.height !== bh) { cv.width = bw; cv.height = bh; }
+  MV.w = w; MV.h = h; mapaLimitar();
+  const x = cv.getContext('2d'), e = MV.esc, sx = wx => (wx - MV.cx) * e + w / 2, sz = wz => (wz - MV.cz) * e + h / 2;
+  const fuera = (px, py, m) => px < -m || py < -m || px > w + m || py > h + m;
+  x.setTransform(dpr, 0, 0, dpr, 0, 0);
   x.imageSmoothingEnabled = true;
-  x.drawImage(mapaBase, 0, 0, S, S);
+  x.fillStyle = '#0d1730'; x.fillRect(0, 0, w, h);
+  const ox = sx(-LADO / 2), oz = sz(-LADO / 2), T = LADO * e;
+  x.drawImage(mapaHD || mapaBase, ox, oz, T, T);
+  if (MV.niebla) { x.globalAlpha = 0.72; x.drawImage(MV.niebla, ox, oz, T, T); x.globalAlpha = 1; }   // se intuye el color de la zona bajo la niebla
+  x.strokeStyle = 'rgba(255,255,255,.35)'; x.lineWidth = 1; x.strokeRect(ox, oz, T, T);
+  x.textAlign = 'center'; x.textBaseline = 'middle'; x.lineJoin = 'round';
+  const rI = clamp(8 + e * 2.5, 10, 15);   // radio de los iconos: crece un poco con el zoom
+  // Icono: disco oscuro con borde de color y su emoji o letra dentro.
+  const pin = (px, py, ico, borde, r = rI, col = '#fff') => {
+    if (fuera(px, py, r + 2)) return;
+    x.fillStyle = 'rgba(12,10,26,.9)'; x.strokeStyle = borde; x.lineWidth = 2;
+    x.beginPath(); x.arc(px, py, r, 0, 7); x.fill(); x.stroke();
+    x.font = `700 ${Math.round(r * 1.25)}px system-ui`; x.fillStyle = col; x.fillText(ico, px, py + 1);
+  };
+  const texto = (t, px, py, col, f = '700 12px system-ui') => { x.font = f; x.strokeStyle = 'rgba(0,0,0,.85)'; x.lineWidth = 3; x.strokeText(t, px, py); x.fillStyle = col; x.fillText(t, px, py); };
+  // Placa legible (fondo oscuro) con varias lineas: [texto, color, fuente].
+  // De lejos, placas mas pequeñas y sin la exploracion: asi las 11 caben sin pisarse.
+  const chico = e < 0.42, AL = chico ? 14 : 16, F1 = chico ? '700 12px system-ui' : '700 13px system-ui', F2 = chico ? '600 11px system-ui' : '600 12px system-ui';
+  const placas = [], placa = (lineas, px, py) => {
+    let an = 0;
+    for (const [t, , f] of lineas) { x.font = f; an = Math.max(an, x.measureText(t).width); }
+    const aw = an + 12, ah = lineas.length * AL + 4;
+    if (fuera(px, py, Math.max(aw, ah))) return;
+    const bx = clamp(px - aw / 2, 2, Math.max(2, w - aw - 2));
+    let by = py;
+    // Si pisa otra placa ya dibujada, baja lo justo para que ambas se lean.
+    for (let n = 0; n < 2; n++) { const o = placas.find(r => bx < r[0] + r[2] && bx + aw > r[0] && by < r[1] + r[3] && by + ah > r[1]); if (!o) break; by = o[1] + o[3] + 2; }
+    placas.push([bx, by, aw, ah]);
+    x.fillStyle = 'rgba(10,8,24,.74)'; x.beginPath(); x.moveTo(bx + 5, by); x.arcTo(bx + aw, by, bx + aw, by + ah, 5); x.arcTo(bx + aw, by + ah, bx, by + ah, 5); x.arcTo(bx, by + ah, bx, by, 5); x.arcTo(bx, by, bx + aw, by, 5); x.closePath(); x.fill();
+    lineas.forEach(([t, c, f], i) => { x.font = f; x.fillStyle = c; x.fillText(t, bx + aw / 2, by + 2 + AL * (i + 0.5)); });
+  };
+  const ah = Date.now();
+  // Cofres (solo en zonas con el mirador descubierto), como cofrecitos de color.
+  if (MV.miradores.length) for (const cf of COFRES3) if (MV.miradores.includes(cf.zona)) {
+    const cx = sx(cf.x), cz = sz(cf.z); if (fuera(cx, cz, 10)) continue;
+    const a = cf.tipo === 'legendario' ? 7 : 6;
+    x.fillStyle = cf.listoEn > ah ? '#6b7280' : cf.tipo === 'legendario' ? '#ffd84a' : cf.tipo === 'epico' ? '#c084fc' : '#d6a35c';
+    x.strokeStyle = '#000'; x.lineWidth = 1.5; x.fillRect(cx - a, cz - a * 0.75, a * 2, a * 1.5); x.strokeRect(cx - a, cz - a * 0.75, a * 2, a * 1.5);
+    x.beginPath(); x.moveTo(cx - a, cz - 0.5); x.lineTo(cx + a, cz - 0.5); x.stroke();
+  }
+  // Jefes: calavera; con zoom, su nivel debajo.
+  for (const cp of campamentos(MAPAS, MONSTRUOS)) if (cp.jefe) {
+    const px = sx(cp.x), pz = sz(cp.z); pin(px, pz, '💀', '#ff6b6b');
+    const mo = MONSTRUOS[cp.k];
+    if (e >= 0.9 && mo && mo.nivel && !fuera(px, pz, 30)) texto('Nv ' + mo.nivel, px, pz + rI + 8, '#fecaca');
+  }
+  for (const hi of MV.hitos) pin(sx(hi.x), sz(hi.z), '🔭', '#fde047');
+  // Arena del jefe mundial.
+  { const ax = sx(ARENA3D.x), az = sz(ARENA3D.z), viva = mundial3 && mundial3.vivo; pin(ax, az, '⚔️', viva ? '#ff6b3d' : '#c4a484'); if (!fuera(ax, az, 80)) texto(ARENA3D.nombre, ax, az - rI - 8, viva ? '#ff9a7a' : '#f1e3d3'); }
+  // Pueblo y portal: de lejos el portal se separa del pueblo lo justo para que se distingan.
+  { const ux = sx(0), uz = sz(0);
+    if (portal) { const dd = Math.hypot(portal.x, portal.z) * e, k = dd < 28 ? 28 / dd : 1; pin(ux + (portal.x * e) * k, uz + (portal.z * e) * k, '🌀', '#c084fc'); }
+    if (e >= 2) { x.fillStyle = '#e5e7eb'; for (const n of NPCS3D) { const nx = sx(n.x), nz = sz(n.z); if (fuera(nx, nz, 60)) continue; x.fillRect(nx - 3, nz - 3, 6, 6); texto(n.nombre, nx, nz - 11, '#e5e7eb'); } }
+    pin(ux, uz, '🏘️', '#86efac', rI + 2);
+    placa([['Pueblo Duende', '#fff', F1], ['Zona segura', '#86efac', F2]], ux, uz + rI + 5); }
+  // Nombre de cada zona, nivel recomendado y exploracion.
+  for (const z of MV.zonas) {
+    const l = [[z.nombre, '#fff', F1], ['Nv ' + z.nv[0] + '-' + z.nv[1] + (z.total && !chico ? ` · 🧭 ${z.hechos}/${z.total}` : ''), z.total && z.hechos >= z.total ? '#86efac' : '#ffd84a', F2]];
+    if (z.total && !z.mira && e >= 0.7) l.push(['🔭 encuentra su hito', '#93c5fd', F2]);
+    placa(l, sx(z.x), sz(z.z) - 18);
+  }
+  // Grupo.
+  if (grupo3 && grupo3.m) for (const g of grupo3.m) {
+    if (!g.on || g.id === miId) continue;
+    const o = otros.get(g.id), wx = o ? o.x : Array.isArray(g.p3) ? g.p3[0] : null, wz = o ? o.z : Array.isArray(g.p3) ? g.p3[1] : null;
+    if (wx == null || enAbismo(wx) || enCueva(wx)) continue;
+    const gx = sx(wx), gz = sz(wz); if (fuera(gx, gz, 60)) continue;
+    x.fillStyle = '#7dd3fc'; x.strokeStyle = '#fff'; x.lineWidth = 2; x.beginPath(); x.arc(gx, gz, 7, 0, 7); x.fill(); x.stroke();
+    const nom = String(g.n || '').slice(0, 16); if (nom) texto(nom, gx, gz - 14, '#7dd3fc');
+  }
+  // Mision o guia.
+  if (metaMision) pin(sx(metaMision.x), sz(metaMision.z), metaMision.guia ? '?' : '!', metaMision.guia ? '#4ade80' : '#ffd84a', rI + 2, metaMision.guia ? '#4ade80' : '#ffd84a');
+  const enM = mapaEnMundo(), yx = sx(P.x), yz = sz(P.z);
+  // Destino personal: linea punteada desde ti y su 📍 con la punta justo en el punto tocado.
+  if (destino3) {
+    const dx = sx(destino3.x), dz = sz(destino3.z);
+    if (enM) { x.save(); x.strokeStyle = '#ff5c7a'; x.lineWidth = 2.5; x.setLineDash([7, 7]); x.beginPath(); x.moveTo(yx, yz); x.lineTo(dx, dz); x.stroke(); x.restore(); }
+    x.font = '30px system-ui'; x.fillStyle = '#ff2d55'; x.fillText('📍', dx, dz - 14);
+  }
+  // Tu flecha: hacia donde mira el duende (misma cuenta que el minimapa).
+  if (enM) {
+    x.fillStyle = 'rgba(74,222,128,.28)'; x.beginPath(); x.arc(yx, yz, 20, 0, 7); x.fill();
+    x.save(); x.translate(yx, yz); x.rotate(Math.PI - P.ry);
+    x.fillStyle = '#4ade80'; x.strokeStyle = '#fff'; x.lineWidth = 2.5;
+    x.beginPath(); x.moveTo(0, -13); x.lineTo(9, 10); x.lineTo(0, 5); x.lineTo(-9, 10); x.closePath(); x.stroke(); x.fill(); x.restore();
+  }
+  mapaChip();
+}
+function abrirMapa() {
+  if (!mapaBase) return;
   // Antes de la niebla: miradores ya revelados y donde estas parado cuentan como vistos.
   for (const zid of ZONAS_ENC) { let vm = false; try { vm = localStorage.getItem('dq_mirador_' + zid) === '1'; } catch (e) {} if (vm || (encargos || {})[zid + ':hito'] === true) revelarNieblaZona(zid); }
-  try { if (!enCueva(P.x) && !enAbismo(P.x)) marcarNiebla(P.x, P.z); } catch (e) {}
-  pintarNiebla(x, S);
-  x.font = '600 12px system-ui'; x.textAlign = 'center';
+  try { if (mapaEnMundo()) marcarNiebla(P.x, P.z); } catch (e) {}
+  if (!MV.niebla) { MV.niebla = document.createElement('canvas'); MV.niebla.width = MV.niebla.height = 440; }
+  { const n = MV.niebla.getContext('2d'); n.clearRect(0, 0, 440, 440); pintarNiebla(n, 440); }
   // Exploracion: encargos hechos por zona y, con el mirador (hito) descubierto, sus cofres y su hito.
-  const encH = encargos || {}, miradores = [];
+  const encH = encargos || {};
   let expHechos = 0;
+  MV.zonas = []; MV.miradores = []; MV.hitos = [];
   for (const [id, c] of Object.entries(ZONAS3D)) {
-    const [px, pz] = aMapa(c.x, c.z, S), mp = MAPAS[id];
+    const mp = MAPAS[id]; if (!mp) continue;
     const enc = ZONAS_ENC.includes(id) ? encargosDe(id, MAPAS, MONSTRUOS) : [];
     let mira = false;
     if (enc.length) { try { mira = localStorage.getItem('dq_mirador_' + id) === '1'; } catch (e) {} mira = mira || encH[id + ':hito'] === true; }
-    x.fillStyle = 'rgba(0,0,0,.55)'; x.fillRect(px - 62, pz - 14, 124, enc.length ? (mira ? 43 : 56) : 30);
-    x.fillStyle = '#fff'; x.fillText(mp.nombre, px, pz);
-    x.fillStyle = '#ffd84a'; x.fillText('Nv ' + mp.nv[0] + '-' + mp.nv[1], px, pz + 13);
-    if (enc.length) {
-      const n = enc.filter(e => encH[e.id] === true).length; expHechos += n;
-      x.fillStyle = n >= enc.length ? '#4ade80' : '#cbd5e1'; x.fillText(`🧭 ${n}/${enc.length}`, px, pz + 26);
-      if (mira) miradores.push(id); else { x.fillStyle = '#93c5fd'; x.fillText('🔭 encuentra su hito', px, pz + 39); }
-    }
+    const hechos = enc.filter(q => encH[q.id] === true).length; expHechos += hechos;
+    MV.zonas.push({ x: c.x, z: c.z, nombre: mp.nombre, nv: mp.nv, total: enc.length, hechos, mira });
+    if (mira) { MV.miradores.push(id); const hi = hitoDe(id, ZONAS3D, alturaEn); if (hi) MV.hitos.push(hi); }
   }
-  if (miradores.length) {
-    const ah = Date.now();
-    for (const cf of COFRES3) if (miradores.includes(cf.zona)) {
-      const [cx, cz] = aMapa(cf.x, cf.z, S), listo = cf.listoEn <= ah;
-      x.fillStyle = !listo ? '#6b7280' : cf.tipo === 'legendario' ? '#ffd84a' : cf.tipo === 'epico' ? '#c084fc' : '#d6a35c';
-      x.strokeStyle = '#000'; x.lineWidth = 1.5; x.beginPath(); x.arc(cx, cz, cf.tipo === 'legendario' ? 5 : 4, 0, 7); x.fill(); x.stroke();
-    }
-    x.font = 'bold 18px system-ui'; x.lineWidth = 3; x.strokeStyle = '#000'; x.fillStyle = '#fde047';
-    for (const id of miradores) { const hi = hitoDe(id, ZONAS3D, alturaEn); if (!hi) continue; const [hx, hz] = aMapa(hi.x, hi.z, S); x.strokeText('★', hx, hz + 6); x.fillText('★', hx, hz + 6); }
-    x.font = '600 12px system-ui'; x.lineWidth = 1;
-  }
-  { const tot = ZONAS_ENC.length * 5, vistas = niebla.reduce((a, b) => a + b, 0), pc = Math.round((expHechos / tot * 100 + vistas / niebla.length * 100) / 2), txt = `Mundo explorado: ${pc} %`;
-    x.font = 'bold 15px system-ui'; x.fillStyle = 'rgba(0,0,0,.6)'; x.fillRect(S / 2 - 95, 6, 190, 24);
-    x.fillStyle = pc >= 100 ? '#4ade80' : '#ffd84a'; x.fillText(txt, S / 2, 24); x.font = '600 12px system-ui'; }
-  for (const cp of campamentos(MAPAS, MONSTRUOS)) if (cp.jefe) { const [px, pz] = aMapa(cp.x, cp.z, S); x.fillStyle = '#ffd84a'; x.beginPath(); x.arc(px, pz, 5, 0, 7); x.fill(); }
-  const [ux, uz] = aMapa(0, 0, S); x.fillStyle = '#fff'; x.fillText('Pueblo Duende', ux, uz - 8);
-  { const [ax, az] = aMapa(ARENA3D.x, ARENA3D.z, S); x.fillStyle = mundial3 && mundial3.vivo ? '#ff6b3d' : '#c4a484'; x.beginPath(); x.arc(ax, az, 7, 0, 7); x.fill(); x.fillText(ARENA3D.nombre, ax, az - 11); }
-  if (metaMision) { const [mx2, mz2] = aMapa(metaMision.x, metaMision.z, S); x.font = 'bold 22px system-ui'; x.fillStyle = metaMision.guia ? '#4ade80' : '#ffd84a'; x.strokeStyle = '#000'; x.lineWidth = 3; x.strokeText(metaMision.guia ? '?' : '!', mx2, mz2 + 7); x.fillText(metaMision.guia ? '?' : '!', mx2, mz2 + 7); x.font = '600 12px system-ui'; }
-  if (grupo3 && grupo3.m) {
-    x.font = '700 12px system-ui'; x.textAlign = 'center'; x.lineJoin = 'round';
-    for (const g of grupo3.m) {
-      if (!g.on || g.id === miId) continue;
-      const o = otros.get(g.id), wx = o ? o.x : Array.isArray(g.p3) ? g.p3[0] : null, wz = o ? o.z : Array.isArray(g.p3) ? g.p3[1] : null;
-      if (wx == null || enAbismo(wx) || enCueva(wx)) continue;
-      const [gx, gz] = aMapa(wx, wz, S);
-      x.fillStyle = '#7dd3fc'; x.strokeStyle = '#fff'; x.lineWidth = 1.5; x.beginPath(); x.arc(gx, gz, 5, 0, 7); x.fill(); x.stroke();
-      const nom = String(g.n || '').slice(0, 16);
-      if (nom) { x.strokeStyle = '#000'; x.lineWidth = 3; x.strokeText(nom, gx, gz - 9); x.fillStyle = '#7dd3fc'; x.fillText(nom, gx, gz - 9); }
-    }
-    x.font = '600 12px system-ui'; x.lineWidth = 1;
-  }
-  const [yx, yz] = aMapa(P.x, P.z, S); x.fillStyle = '#4ade80'; x.beginPath(); x.arc(yx, yz, 6, 0, 7); x.fill(); x.strokeStyle = '#000'; x.stroke();
-  if (!$('mapa-leyenda')) { const ly = document.createElement('p'); ly.id = 'mapa-leyenda'; ly.style.cssText = 'margin:6px 0 0;font-size:12px;opacity:.9;text-align:center;white-space:nowrap;overflow-x:auto'; ly.innerHTML = '<b style="color:#ffd84a">!</b> misión · <b style="color:#4ade80">?</b> guía · <b style="color:#fde047">★</b> hito · <b style="color:#d6a35c">●</b> cofre · <b style="color:#ffd84a">●</b> jefe · <b style="color:#4ade80">●</b> tú · <b style="color:#8b7fc7">▒</b> por descubrir'; cv.insertAdjacentElement('afterend', ly); }
+  { const tot = ZONAS_ENC.length * 5, vistas = niebla.reduce((a, b) => a + b, 0); MV.pc = Math.round((expHechos / tot * 100 + vistas / niebla.length * 100) / 2);
+    const pc = $('mapa-pc'); pc.textContent = `Explorado: ${MV.pc} %`; pc.style.color = MV.pc >= 100 ? '#4ade80' : '#ffd84a'; }
   abrir('v-mapa');
+  const cv = $('mapa-c');
+  MV.w = cv.clientWidth; MV.h = cv.clientHeight;
+  // Al abrir: el alto completo del mundo en pantalla (o mas cerca si ya lo acercaste) y centrado en ti.
+  if (!MV.esc) MV.esc = Math.max(MV.w, MV.h) / LADO;
+  $('mapa-ley').open = false;
+  MV.ptrs.clear(); MV.toque = null;   // un dedo que quedo apoyado al cerrar no debe contar como pellizco
+  mapaCentrar();
+  pintarMapaHD();
+  clearInterval(MV.tic);
+  MV.tic = setInterval(() => { if ($('v-mapa').classList.contains('on')) mapaPedir(); else clearInterval(MV.tic); }, 500);
+}
+{ // Gestos del mapa grande: un dedo o raton arrastra, dos dedos o la rueda hacen zoom; un toque sin mover pone el destino.
+  const cv = $('mapa-c');
+  const pos = ev => { const r = cv.getBoundingClientRect(); return { x: ev.clientX - r.left, y: ev.clientY - r.top }; };
+  cv.addEventListener('pointerdown', ev => {
+    if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+    ev.preventDefault();
+    try { cv.setPointerCapture(ev.pointerId); } catch (e) {}
+    const p = pos(ev);
+    MV.ptrs.set(ev.pointerId, p);
+    MV.toque = MV.ptrs.size === 1 ? { x: p.x, y: p.y, t: performance.now(), mov: false } : null;
+  });
+  cv.addEventListener('pointermove', ev => {
+    const ant = MV.ptrs.get(ev.pointerId);
+    if (!ant) return;
+    const p = pos(ev);
+    if (MV.ptrs.size >= 2) {
+      const otro = [...MV.ptrs.entries()].find(([id]) => id !== ev.pointerId)[1];
+      const dAnt = Math.hypot(ant.x - otro.x, ant.y - otro.y) || 1, dNue = Math.hypot(p.x - otro.x, p.y - otro.y) || 1;
+      MV.cx -= (p.x - ant.x) / 2 / MV.esc; MV.cz -= (p.y - ant.y) / 2 / MV.esc;
+      mapaZoom((p.x + otro.x) / 2, (p.y + otro.y) / 2, dNue / dAnt);
+    } else {
+      if (MV.toque && !MV.toque.mov && Math.hypot(p.x - MV.toque.x, p.y - MV.toque.y) > 8) MV.toque.mov = true;
+      if (!MV.toque || MV.toque.mov) { MV.cx -= (p.x - ant.x) / MV.esc; MV.cz -= (p.y - ant.y) / MV.esc; mapaLimitar(); mapaPedir(); }
+    }
+    MV.ptrs.set(ev.pointerId, p);
+  });
+  const fin = ev => {
+    if (!MV.ptrs.delete(ev.pointerId)) return;
+    const q = MV.toque; MV.toque = null;
+    if (ev.type === 'pointerup' && q && !q.mov && !MV.ptrs.size && performance.now() - q.t < 700) mapaTocar(q.x, q.y);
+  };
+  cv.addEventListener('pointerup', fin); cv.addEventListener('pointercancel', fin);
+  cv.addEventListener('lostpointercapture', ev => { MV.ptrs.delete(ev.pointerId); });
+  cv.addEventListener('wheel', ev => { ev.preventDefault(); const p = pos(ev); mapaZoom(p.x, p.y, Math.exp(-ev.deltaY * (ev.deltaMode === 1 ? 40 : 1) * 0.0015)); }, { passive: false });
+  cv.addEventListener('contextmenu', ev => ev.preventDefault());
+  $('mapa-mas').onclick = () => mapaZoom(MV.w / 2, MV.h / 2, 1.5);
+  $('mapa-menos').onclick = () => mapaZoom(MV.w / 2, MV.h / 2, 1 / 1.5);
+  $('mapa-yo').onclick = () => mapaCentrar();
+  $('mapa-dest-q').onclick = () => ponerDestino(null);
+  addEventListener('resize', () => { if ($('v-mapa').classList.contains('on')) mapaPedir(); });
 }
 
 // ── ENTRADA ──
@@ -6761,7 +7105,7 @@ if (MOVIL) {
     const t = e.changedTouches[0]; joy.id = t.identifier; joy.x = t.clientX; joy.y = t.clientY; joy.dx = joy.dy = 0;
     joy.x0 = t.clientX; joy.y0 = t.clientY; joy.t0 = performance.now(); joy.lejos = 0;   // para distinguir un toque corto (elegir) de mover
     const r = $('joy').getBoundingClientRect();   // la base se dibuja bajo el dedo aunque #joy no empiece en (0,0)
-    base.style.display = 'block'; base.style.left = (t.clientX - r.left - 60) + 'px'; base.style.top = (t.clientY - r.top - 60) + 'px';
+    base.style.display = 'block'; base.style.left = (t.clientX - r.left - 48) + 'px'; base.style.top = (t.clientY - r.top - 48) + 'px';
     e.preventDefault();
   }, { passive: false });
   $('joy').addEventListener('touchmove', e => {
@@ -6770,20 +7114,20 @@ if (MOVIL) {
       joy.lejos = Math.max(joy.lejos || 0, Math.hypot(t.clientX - joy.x0, t.clientY - joy.y0));
       if (joy.lejos > 30 && !joy.t30) joy.t30 = performance.now();
       joyPistaOk();
-      if (d > 50) {   // joystick flotante: la base sigue al dedo (girar en redondo sin quedarse atascado al borde)
-        const k = (d - 50) / d; joy.x += dx * k; joy.y += dy * k; dx -= dx * k; dy -= dy * k;
+      if (d > 38) {   // joystick flotante: la base sigue al dedo (girar en redondo sin quedarse atascado al borde)
+        const k = (d - 38) / d; joy.x += dx * k; joy.y += dy * k; dx -= dx * k; dy -= dy * k;
         const r = $('joy').getBoundingClientRect();
-        base.style.left = (joy.x - r.left - 60) + 'px'; base.style.top = (joy.y - r.top - 60) + 'px';
+        base.style.left = (joy.x - r.left - 48) + 'px'; base.style.top = (joy.y - r.top - 48) + 'px';
       }
-      joy.dx = dx / 50; joy.dy = dy / 50;
-      pomo.style.left = (33 + dx) + 'px'; pomo.style.top = (33 + dy) + 'px';
+      joy.dx = dx / 38; joy.dy = dy / 38;
+      pomo.style.left = (26 + dx) + 'px'; pomo.style.top = (26 + dy) + 'px';
     }
     e.preventDefault();
   }, { passive: false });
   const finJoy = e => {
     for (const t of e.changedTouches) if (t.identifier === joy.id) {
       joyPistaOk(); if (pistaJoy) pistaJoy.style.display = '';   // no llego a arrastrar: la pista vuelve
-      joy.id = null; joy.dx = joy.dy = 0; base.style.display = 'none'; pomo.style.left = pomo.style.top = '33px';
+      joy.id = null; joy.dx = joy.dy = 0; base.style.display = 'none'; pomo.style.left = pomo.style.top = '26px';
       // Toque corto sin arrastrar: elige lo que haya debajo (monstruo, jugador, PNJ) como en el resto de la pantalla.
       const quieto = Math.max(joy.lejos || 0, Math.hypot(t.clientX - joy.x0, t.clientY - joy.y0)) < 12;
       if (e.type === 'touchend' && quieto && performance.now() - (joy.t0 || 0) < 300) { const om = elegirEn(t.clientX, t.clientY, false); if (om && !om.muereT && mons.has(om.id) && Math.hypot(om.x - P.x, om.z - P.z) <= rangoAtaque(om)) { vib('light'); golpeManual(); } }
@@ -6828,6 +7172,11 @@ if (MOVIL) {
   const soltarChat = () => { const i = $('chat-in'); if (document.activeElement === i) { i.blur(); if (!i.value.trim()) i.style.display = 'none'; } };
   $('tactil').addEventListener('touchstart', soltarChat, { capture: true, passive: true });
   $('joy').addEventListener('touchstart', soltarChat, { capture: true, passive: true });
+  // Los botones hacen preventDefault y así el celular no activa :active: esta clase da el brillo y la opacidad al pulsar.
+  $('tactil').addEventListener('touchstart', e => { const b = e.target.closest('button'); if (b) b.classList.add('pulsado'); }, { capture: true, passive: true });
+  const soltarBoton = e => { const b = e.target.closest('button'); if (b && !e.targetTouches.length) b.classList.remove('pulsado'); };
+  $('tactil').addEventListener('touchend', soltarBoton, { capture: true, passive: true });
+  $('tactil').addEventListener('touchcancel', soltarBoton, { capture: true, passive: true });
   // Mantener SALTO: sube volando y planea al caer (como Espacio).
   $('t-salto').addEventListener('touchstart', e => { e.preventDefault(); tocandoSubir = true; if (!P.vuela) saltar(); }, { passive: false });
   $('t-salto').addEventListener('touchend', () => { tocandoSubir = false; });
@@ -7264,7 +7613,7 @@ function etiquetas(t) {
   const ponLbl = (lbl, x, y, z, html, maxD, extra) => {
     const d = Math.hypot(x - P.x, z - P.z);
     const s = d < maxD ? aPantalla(x, y, z) : null;
-    if (!s) { if (lbl.style.display !== 'none') lbl.style.display = 'none'; return; }
+    if (!s || (rectsHud.length && lblTapaHud(s))) { if (lbl.style.display !== 'none') lbl.style.display = 'none'; return; }
     if (lbl.style.display === 'none') lbl.style.display = '';
     if (lbl._h !== html) { lbl.innerHTML = html; lbl._h = html; }
     lbl.style.transform = `translate(${s[0].toFixed(1)}px,${s[1].toFixed(1)}px) translate(-50%,-100%)`;
@@ -8201,7 +8550,7 @@ function cuadroBucle(t) {
     if (toca(1, 1000, t)) revisarNodos();
     animarCofres(t);
     for (const o of mons.values()) if (o.ra && !o.muereT && Math.abs(o.x - P.x) < 60 && Math.abs(o.z - P.z) < 60) FX.emitir(o.x, alturaEn(o.x, o.z) + 0.3, o.z, { n: 5, color: o.ti || '#ffd84a', vel: 1.2, vida: 1, grav: -2.5, radio: 0.8, tam: 0.8 });
-    if (MOVIL) { const u = $('t-usar'), b = $('hablar'), ver = b.style.display === 'block' && !P.vuela; u.style.visibility = ver ? 'visible' : 'hidden'; if (ver) u.textContent = /Abrir/.test(b.textContent) ? 'ABRIR' : /Recoger/.test(b.textContent) ? 'RECOGER' : /Pescar|TIRAR|pique/.test(b.textContent) ? (/TIRAR/.test(b.textContent) ? '¡TIRAR!' : /pique/.test(b.textContent) ? 'ESPERA…' : 'PESCAR') : /Salir/.test(b.textContent) ? 'SALIR' : /Disparar/.test(b.textContent) ? 'FUEGO' : /Resucitar/.test(b.textContent) ? 'REVIVIR' : /🛒 Tienda/.test(b.textContent) ? 'TIENDA' : /📜 Misiones/.test(b.textContent) ? 'MISIONES' : /⚒️ Fabricar/.test(b.textContent) ? 'FABRICAR' : /🏆 Ranking/.test(b.textContent) ? 'RANKING' : 'HABLAR';
+    if (MOVIL) { const u = $('t-usar'), b = $('hablar'), ver = b.style.display === 'block' && !P.vuela && !P.planea; u.style.visibility = ver ? 'visible' : 'hidden'; if (ver) u.textContent = /Abrir/.test(b.textContent) ? 'ABRIR' : /Recoger/.test(b.textContent) ? 'RECOGER' : /Pescar|TIRAR|pique/.test(b.textContent) ? (/TIRAR/.test(b.textContent) ? '¡TIRAR!' : /pique/.test(b.textContent) ? 'ESPERA…' : 'PESCAR') : /Salir/.test(b.textContent) ? 'SALIR' : /Disparar/.test(b.textContent) ? 'FUEGO' : /Resucitar/.test(b.textContent) ? 'REVIVIR' : /🛒 Tienda/.test(b.textContent) ? 'TIENDA' : /📜 Misiones/.test(b.textContent) ? 'MISIONES' : /⚒️ Fabricar/.test(b.textContent) ? 'FABRICAR' : /🏆 Ranking/.test(b.textContent) ? 'RANKING' : 'HABLAR';
       const tira = ver && typeof pica === 'number' && pica > performance.now();   // la pica: boton rojo y grande, imposible de no ver
       if (tira) { u.textContent = '¡TIRAR!'; u.classList.add('grande', 'on'); } else if (u.classList.contains('on')) u.classList.remove('grande', 'on');
       if (ver) u.style.fontSize = u.textContent.length > 7 ? '10px' : ''; }

@@ -26,12 +26,12 @@
 <meta name="theme-color" content="#0a0418">
 <link rel="manifest" href="/mundo/manifest.json">
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
-<script src="/js/pwa.js?v=366" defer></script>
+<script src="/js/pwa.js?v=367" defer></script>
 <link rel="icon" href="/assets/ui/coin.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=fallback" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=fallback" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=366"></script>
+<script src="/js/origen.js?v=367"></script>
 <script>
 // Red de seguridad de la carga (script clasico: corre aunque el modulo 3D o el CDN fallen).
 // - Errores antes de conectar: se guardan en __errQ y mundo.js los manda al entrar.
@@ -118,29 +118,29 @@
   });
 })();
 </script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=366" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=367" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=366">
-<link rel="modulepreload" href="/mmo/js/data.js?v=366">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=366">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=366">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=366">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=366">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=366">
-<link rel="modulepreload" href="/mmo/js/regalo.js?v=366">
-<link rel="modulepreload" href="/mmo/js/avisotg.js?v=366">
-<link rel="modulepreload" href="/mundo/js/musica.js?v=366">
-<link rel="modulepreload" href="/mundo/js/sonidos.js?v=366">
-<link rel="modulepreload" href="/mundo/js/cueva.js?v=366">
-<link rel="modulepreload" href="/mundo/js/tapa.js?v=366">
-<link rel="modulepreload" href="/mundo/js/abismo.js?v=366">
-<link rel="modulepreload" href="/mundo/js/particulas.js?v=366">
-<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=366">
-<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=366">
-<link rel="modulepreload" href="/mmo/js/secundarias.js?v=366">
-<link rel="modulepreload" href="/mundo/js/lore.js?v=366">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=367">
+<link rel="modulepreload" href="/mmo/js/data.js?v=367">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=367">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=367">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=367">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=367">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=367">
+<link rel="modulepreload" href="/mmo/js/regalo.js?v=367">
+<link rel="modulepreload" href="/mmo/js/avisotg.js?v=367">
+<link rel="modulepreload" href="/mundo/js/musica.js?v=367">
+<link rel="modulepreload" href="/mundo/js/sonidos.js?v=367">
+<link rel="modulepreload" href="/mundo/js/cueva.js?v=367">
+<link rel="modulepreload" href="/mundo/js/tapa.js?v=367">
+<link rel="modulepreload" href="/mundo/js/abismo.js?v=367">
+<link rel="modulepreload" href="/mundo/js/particulas.js?v=367">
+<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=367">
+<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=367">
+<link rel="modulepreload" href="/mmo/js/secundarias.js?v=367">
+<link rel="modulepreload" href="/mundo/js/lore.js?v=367">
 <!-- Kit 3D de Kenney (mundo/js/kenney.js lo pide con fetch() sin opciones: mismo origen, cors, URL sin ?v=): se baja ya, junto a los modulos.
      El binario: .gz si hay DecompressionStream (como hace kenney.js), si no el normal; asi no se baja dos veces. -->
 <link rel="preload" href="/assets/3d/kenney.json" as="fetch" crossorigin>
@@ -372,7 +372,32 @@ html.anuncio #carga img{content:url(/assets/skins/skin_bruja.png)}
 .clases{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .clases button{padding:12px 8px;border-radius:10px;border:1px solid var(--borde);background:rgba(255,255,255,.05);color:var(--txt);font:700 14px var(--sans);cursor:pointer;}
 .clases button small{display:block;font-weight:500;color:var(--txt2);margin-top:4px;font-size:12px;}
-#mapa-grande canvas{width:100%;border-radius:10px;display:block;}
+/* Mapa grande: ventana en PC y pantalla completa en movil. Todo flota sobre el lienzo y nada le quita sitio */
+#mapa-grande{width:min(760px,94vw);height:min(760px,90vh);height:min(760px,90dvh);max-height:none;padding:0;overflow:hidden;background:#0d1730;-webkit-backdrop-filter:none;backdrop-filter:none;--mapa-sup:calc(8px + env(safe-area-inset-top) + var(--tg-top,0px));--mapa-inf:calc(10px + env(safe-area-inset-bottom) + var(--tg-bot,0px));}
+#v-mapa.modal.on #mapa-grande{animation:none;}
+#mapa-grande canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
+#mapa-grande canvas:active{cursor:grabbing;}
+#mapa-cab{position:absolute;left:calc(8px + env(safe-area-inset-left));right:calc(66px + env(safe-area-inset-right));top:var(--mapa-sup);display:flex;flex-direction:column;align-items:flex-start;gap:4px;pointer-events:none;}
+.mapa-chip{max-width:100%;display:flex;align-items:center;gap:8px;padding:4px 10px;min-height:28px;border-radius:9px;background:rgba(10,8,24,.82);color:#fff;font:600 13px/1.25 var(--sans);}
+#mapa-pc{font-weight:700;}
+#mapa-info{color:var(--cian);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}#mapa-pc{flex:none;}
+#mapa-dest-q{pointer-events:auto;flex:none;position:relative;min-height:28px;padding:2px 10px;border:1px solid rgba(255,255,255,.35);border-radius:7px;background:rgba(255,92,122,.3);color:#fff;font:700 13px var(--sans);cursor:pointer;touch-action:manipulation;}
+#mapa-dest-q::after{content:"";position:absolute;inset:-9px -6px;}
+#mapa-grande .cerrar{width:48px;height:48px;top:var(--mapa-sup);right:calc(8px + env(safe-area-inset-right));font-size:22px;font-weight:700;background:rgba(10,8,24,.85)!important;color:#fff;touch-action:manipulation;}
+#mapa-ctrl{position:absolute;right:calc(8px + env(safe-area-inset-right));bottom:var(--mapa-inf);display:flex;flex-direction:column;gap:8px;}
+#mapa-ctrl .bt{width:48px;height:48px;border-radius:12px;background:rgba(10,8,24,.95);color:#fff;font:700 24px var(--sans);touch-action:manipulation;}
+#mapa-ley{position:absolute;left:calc(8px + env(safe-area-inset-left));bottom:var(--mapa-inf);max-width:min(300px,calc(100% - 76px));}
+#mapa-ley summary{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:12px;background:rgba(10,8,24,.85);color:#fff;font:700 14px var(--sans);cursor:pointer;list-style:none;touch-action:manipulation;}
+#mapa-ley summary::-webkit-details-marker{display:none;}
+#mapa-ley summary::after{content:"▴";margin-left:7px;}
+#mapa-ley[open] summary::after{content:"▾";}
+#mapa-ley ul{list-style:none;margin:6px 0 0;padding:8px 10px 2px;border-radius:12px 12px 0 0;background:rgba(10,8,24,.92);color:#fff;font:500 13px/1.3 var(--sans);}
+#mapa-ley li{margin-bottom:5px;}
+#mapa-ley li i{display:inline-block;width:22px;text-align:center;font-style:normal;font-weight:700;}
+#mapa-ley p{margin:0;padding:2px 10px 8px;border-radius:0 0 12px 12px;background:rgba(10,8,24,.92);color:#cbd5e1;font:500 12px/1.3 var(--sans);}
+#mapa-ley[open]{max-height:calc(100% - var(--mapa-sup) - var(--mapa-inf) - 72px);overflow-y:auto;}
+body.movil #v-mapa.modal,body.compacto #v-mapa.modal{padding:0!important;}
+body.movil .modal #mapa-grande,body.compacto .modal #mapa-grande{width:100vw!important;max-width:none!important;height:100vh;height:100dvh;max-height:none!important;padding:0!important;border:0;border-radius:0;overflow:hidden;}
 #lanzar{left:50%;bottom:100px;transform:translateX(-50%);width:280px;padding:6px 8px;display:none;}
 #lanzar .barra i{background:linear-gradient(90deg,#f59e0b,#ffe600);transform:scaleX(0);}
 #alas{position:fixed;left:12px;top:120px;width:120px;height:12px;background:rgba(0,0,0,.6);border-radius:6px;overflow:hidden;display:none;pointer-events:none;}
@@ -391,21 +416,21 @@ html.anuncio #carga img{content:url(/assets/skins/skin_bruja.png)}
 .acc .lv{position:absolute;left:0;right:0;bottom:2px;font:700 9px var(--sans);color:var(--warn);text-align:center;}
 /* Movil: joystick a la izquierda, botones a la derecha */
 #joy{position:fixed;left:0;bottom:0;width:45%;height:55%;pointer-events:auto;display:none;}
-#joy .base{position:absolute;width:120px;height:120px;border-radius:50%;border:2px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);display:none;}
+#joy .base{position:absolute;width:96px;height:96px;border-radius:50%;border:2px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);display:none;}
 /* Pista del joystick (hasta el primer toque) y sin letras de teclado en el movil */
-#joy .pista-joy{position:absolute;left:28px;bottom:24px;display:flex;align-items:center;gap:10px;pointer-events:none;animation:pistaJ 1.6s ease-in-out infinite;}
-#joy .pista-joy i{width:84px;height:84px;border-radius:50%;border:2px dashed rgba(255,255,255,.45);background:rgba(255,255,255,.08);}
+#joy .pista-joy{position:absolute;left:12px;bottom:8px;display:flex;align-items:center;gap:6px;pointer-events:none;animation:pistaJ 1.6s ease-in-out infinite;}
+#joy .pista-joy i{width:52px;height:52px;border-radius:50%;border:2px dashed rgba(255,255,255,.45);background:rgba(255,255,255,.08);}
 #joy .pista-joy span{font:600 12px var(--sans);color:#fff;text-shadow:0 1px 3px #000;}
 @keyframes pistaJ{50%{opacity:.45}}
 /* Pulgar fantasma: un punto blanco que arrastra del centro hacia arriba-derecha y vuelve */
 #joy .pista-joy i{position:relative;flex-shrink:0;}
-#joy .pista-joy i::after{content:'';position:absolute;left:27px;top:27px;width:30px;height:30px;border-radius:50%;background:#fff;box-shadow:0 0 8px rgba(0,0,0,.5);animation:pulgarJ 1.4s ease-in-out infinite;}
-@keyframes pulgarJ{0%,15%{transform:translate(0,0)}55%,70%{transform:translate(28px,-28px)}100%{transform:translate(0,0)}}
-#joy .pista-joy.grande{transform:scale(1.4);transform-origin:left bottom;}
+#joy .pista-joy i::after{content:'';position:absolute;left:15px;top:15px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 0 8px rgba(0,0,0,.5);animation:pulgarJ 1.4s ease-in-out infinite;}
+@keyframes pulgarJ{0%,15%{transform:translate(0,0)}55%,70%{transform:translate(16px,-16px)}100%{transform:translate(0,0)}}
+#joy .pista-joy.grande{transform:scale(1.15);transform-origin:left bottom;}
 body.movil.mano-der #joy .pista-joy.grande{transform-origin:right bottom;}
 @media (prefers-reduced-motion:reduce){#joy .pista-joy,#joy .pista-joy i::after{animation:none;}}
 body.movil .acc .t{display:none;}
-#joy .pomo{position:absolute;width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,.35);left:33px;top:33px;}
+#joy .pomo{position:absolute;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.35);left:26px;top:26px;}
 #tactil{position:fixed;right:10px;bottom:120px;display:none;grid-template-columns:repeat(2,58px) 74px;gap:8px;pointer-events:auto;align-items:center;justify-items:center;}
 #tactil button{width:58px;height:58px;border-radius:50%;border:1px solid var(--borde);background:rgba(20,12,44,.75);color:var(--txt);font:700 12px var(--sans);-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;-webkit-user-select:none;transition:transform .12s,filter .12s;}
 #tactil button:active{transform:scale(.9);filter:brightness(1.35);transition:transform .06s;}
@@ -509,7 +534,7 @@ body.movil #b-compartir small,body.compacto #b-compartir small{font-size:10px;}
    Marco estrecho, objetivo arriba al centro, misiones de 2 lineas, minimapa pequeño,
    botones de 32 px y la barra de acciones en una sola fila. */
 body.movil #marco,body.compacto #marco{min-width:0;width:min(150px,40vw);padding:4px 6px;}
-body.movil #senal3,body.compacto #senal3{top:auto !important;bottom:-7px;right:-7px;}
+body.movil #senal3,body.compacto #senal3{top:-7px !important;bottom:auto;right:-7px;}
 body.movil .nm,body.compacto .nm{font-size:11px;margin-bottom:2px;}
 body.movil .barra,body.compacto .barra{height:11px;margin-top:2px;}
 body.movil .barra span,body.compacto .barra span{font-size:8.5px;line-height:11px;}
@@ -631,9 +656,9 @@ button{-webkit-tap-highlight-color:transparent;}
  body.movil #tactil #t-atk{grid-column:5;grid-row:2;}
  body.movil #tactil #t-esq{width:48px;height:48px;right:-4px;top:-68px;}   /* un poco mas arriba y al borde: no pisa el arco */
  body.movil #barra{left:auto;right:calc(8px + env(safe-area-inset-right));width:min(320px,42vw);bottom:calc(6px + env(safe-area-inset-bottom));-webkit-backdrop-filter:none;backdrop-filter:none;}   /* sin desenfoque: si no, el arco (position:fixed) quedaria atado a la barra */
- /* Arco: centro de ATACAR = borde de #tactil (10 px dcha, 64 px abajo) + media columna/fila de 68 px = 44 px y 98 px.
-    mundo.js (pintarBarra) pone --ang y --dx/--dy = 95 px en esa direccion; sin transform para que tiemble y destelle igual */
- body.movil #barra .acc.arco{position:fixed;width:50px;height:50px;max-width:none;max-height:none;min-width:0;aspect-ratio:auto;flex:none;border-radius:50%;left:auto;right:calc(44px + env(safe-area-inset-right) - 25px - var(--dx,0px));bottom:calc(98px + env(safe-area-inset-bottom) - 25px - var(--dy,0px));background:rgba(20,12,44,.8);z-index:2;touch-action:manipulation;}
+ /* Arco: centro de ATACAR a 40 px de la esquina (ver "Controles en arco" abajo).
+    mundo.js (pintarBarra) pone --dx/--dy, la casilla de cada habilidad respecto a ATACAR; sin transform para que tiemble y destelle igual */
+ body.movil #barra .acc.arco{position:fixed;width:46px;height:46px;max-width:none;max-height:none;min-width:0;aspect-ratio:auto;flex:none;border-radius:50%;left:auto;right:calc(40px + env(safe-area-inset-right) - 23px - var(--dx,0px));bottom:calc(40px + env(safe-area-inset-bottom) - 23px - var(--dy,0px));background:rgba(20,12,44,.8);z-index:2;touch-action:manipulation;}
  body.movil #barra .acc.arco img{width:26px;height:26px;}
  body.movil #barra .acc.arco .cd{border-radius:50%;}
  body.movil #barra .acc.arco .cs{font-size:13px;}
@@ -653,7 +678,7 @@ button{-webkit-tap-highlight-color:transparent;}
 /* Mando para diestros (Ajustes, mundo.js 'dq3_mano'): joystick a la derecha y botones de accion a la izquierda */
 body.movil.mano-der #joy{left:auto;right:0;}
 body.movil.mano-der #tactil{right:auto;left:calc(10px + env(safe-area-inset-left));}
-body.movil.mano-der #joy .pista-joy{left:auto;right:28px;flex-direction:row-reverse;}
+body.movil.mano-der #joy .pista-joy{left:auto;right:12px;flex-direction:row-reverse;}
 @media (orientation:landscape) and (max-height:500px){
  body.movil.mano-der #joy{left:auto;right:0;}
  body.movil.mano-der #tactil{right:auto;left:calc(10px + env(safe-area-inset-left));}
@@ -662,7 +687,7 @@ body.movil.mano-der #joy .pista-joy{left:auto;right:28px;flex-direction:row-reve
  /* Espejo: ATACAR en la esquina izquierda (columnas de derecha a izquierda) y el arco abierto hacia la derecha */
  body.movil.mano-der #tactil{direction:rtl;}
  body.movil.mano-der #tactil #t-esq{right:auto;left:-4px;}
- body.movil.mano-der #barra .acc.arco{right:auto;left:calc(44px + env(safe-area-inset-left) - 25px - var(--dx,0px));}
+ body.movil.mano-der #barra .acc.arco{right:auto;left:calc(40px + env(safe-area-inset-left) - 23px - var(--dx,0px));}
 }
 /* Subir de nivel: destello dorado y cartel grande */
 #flash-nv{position:fixed;inset:0;pointer-events:none;z-index:5;background:radial-gradient(circle,rgba(255,230,102,.55),transparent 70%);opacity:0;transition:opacity .6s}
@@ -690,6 +715,17 @@ body.movil.texto-grande #misiones:not(.abierto),body.compacto.texto-grande #misi
 body.movil.texto-grande #misiones.con-tuto:not(.abierto),body.compacto.texto-grande #misiones.con-tuto:not(.abierto){max-height:104px;}   /* el paso del tutorial entero; el JS lo recorta antes del joystick */
 body.texto-grande #mini .z{font-size:12px!important;line-height:1.15;width:0;min-width:100%;overflow-wrap:anywhere;}   /* width:0 + min-width:100%: no ensancha el minimapa, parte el nombre en 2 lineas */
 body.movil.texto-grande #mini .z,body.compacto.texto-grande #mini .z{font-size:11px!important;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal;}   /* en movil una sola linea: si no, el minimapa baja hasta el menu y tapa jugadores/hora */
+/* Minimapa en el celular: redondo, sin caja; una linea de hora y zona montada sobre el borde inferior (no tapa la mision que queda detras) y una insignia que dice "toca para abrir" */
+body.movil #mini,body.compacto #mini{padding:0;background:none;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;border-radius:50%;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+body.movil #mini:active,body.compacto #mini:active{transform:scale(.96);}
+body.movil #mini canvas,body.compacto #mini canvas{box-sizing:border-box;width:clamp(96px,27vw,104px);height:clamp(96px,27vw,104px);border-radius:50%;border:2px solid rgba(255,255,255,.8);box-shadow:0 2px 8px rgba(0,0,0,.55);background:#16251c;}
+body.movil #mini #mini-z,body.compacto #mini #mini-z{display:none;}
+body.movil #mini #mini-r,body.compacto #mini #mini-r{position:absolute;left:0;right:0;bottom:-8px;width:auto;min-width:0;margin:0;padding:1px 5px;box-sizing:border-box;font:600 10px/12px var(--sans)!important;color:#fff!important;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:rgba(0,0,0,.72);border-radius:7px;pointer-events:none;}
+body.movil #mini::after,body.compacto #mini::after{content:'🗺';position:absolute;left:-3px;top:-3px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;line-height:1;background:rgba(0,0,0,.72);border:1px solid rgba(255,255,255,.7);border-radius:50%;box-sizing:border-box;pointer-events:none;}
+@media (orientation:landscape) and (max-height:500px){
+ body.movil #mini canvas,body.compacto #mini canvas{width:80px;height:80px;}
+ body.movil #mini #mini-r,body.compacto #mini #mini-r{font-size:9.5px!important;line-height:11px!important;padding:0 3px;bottom:-7px;}
+}
 body.texto-grande #chicha3{font-size:12px!important;}
 body.texto-grande .vv-stat small{font-size:11px!important;overflow-wrap:anywhere;}
 body.texto-grande .d7 em{font-size:10.5px;overflow-wrap:anywhere;}
@@ -745,6 +781,53 @@ body.movil.mano-der #chicha3{right:auto;left:calc(8px + env(safe-area-inset-left
 body.tgfs.movil #chicha3{margin-bottom:var(--tg-bot,0px);}   /* Telegram a pantalla completa sube la barra: la chicha sube con ella */
 /* En horizontal el joystick (42 %) y los botones+barra ocupan las dos mitades de abajo: la chicha sube al centro, sobre los avisos */
 @media (orientation:landscape) and (max-height:500px){body.movil #chicha3,body.movil.mano-der #chicha3{left:50%;right:auto;transform:translateX(-50%);top:calc(82px + env(safe-area-inset-top) + var(--tg-top,0px));bottom:auto;max-width:min(36vw,280px);}body.movil:has(#botones.abierto) #chicha3{visibility:hidden;}body.movil:has(#cofre-meta.on) #chicha3{visibility:hidden;}body.movil.tz-on #chicha3{visibility:hidden;}}   /* con el menu ⋯ abierto (2 filas desde 6 px) la chicha quedaba encima de sus botones */
+/* Controles en arco (móvil): ATACAR en la esquina y los demás alrededor, sin rejilla ni botones sueltos en el centro.
+   #tactil no recibe toques (solo sus botones): lo vacío deja pasar el dedo al mundo.
+   --cx/--cy = centro de cada botón medido desde la esquina de #tactil; 44 px mínimo y 8 px entre botones. */
+body.movil #tactil{display:block;grid-template-columns:none;gap:0;pointer-events:none;left:auto;right:calc(8px + env(safe-area-inset-right));bottom:calc(63px + env(safe-area-inset-bottom));width:208px;height:116px;direction:ltr;}
+body.movil #tactil button,body.movil #tactil #t-atk,body.movil #tactil #t-esq{position:absolute;left:auto;top:auto;right:calc(var(--cx) - 22px);bottom:calc(var(--cy) - 22px);width:44px;height:44px;padding:0;pointer-events:auto;opacity:.75;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font:700 9px/1 var(--sans);letter-spacing:-.2px;text-shadow:0 1px 2px #000;background:rgba(20,12,44,.8);}
+body.movil #tactil button::before{font-size:17px;line-height:1;}
+/* .pulsado la pone mundo.js: los toques hacen preventDefault y en el celular :active no se activa. Con los #id para ganar a ATACAR y ESQUIVAR. */
+body.movil #tactil button.pulsado,body.movil #tactil #t-atk.pulsado,body.movil #tactil #t-esq.pulsado,body.movil #tactil button.tuto-pulso,body.movil #tactil #t-atk.tuto-pulso,body.movil #tactil #t-esq.tuto-pulso{opacity:1;}
+body.movil #tactil button.pulsado{transform:scale(.9);filter:brightness(1.35);transition:transform .06s;}
+@media (prefers-reduced-motion:reduce){body.movil #tactil button.pulsado{transform:none;}}
+body.movil #tactil #t-atk{--cx:32px;--cy:32px;right:0;bottom:0;width:64px;height:64px;font-size:10px;opacity:.92;background:rgba(37,99,235,.85);}
+body.movil #tactil #t-atk.on{background:rgba(220,38,38,.9);}
+body.movil #tactil #t-atk::before{content:'⚔️';font-size:22px;}
+body.movil #tactil #t-esq{--cx:82px;--cy:78px;font-size:20px;background:rgba(14,116,144,.8);}
+body.movil #tactil #t-salto{--cx:106px;--cy:32px;}
+body.movil #tactil #t-salto::before{content:'⏫';}
+body.movil #tactil #t-volar{--cx:32px;--cy:94px;}
+body.movil #tactil #t-volar::before{content:'🦅';}
+body.movil #tactil #t-usar,body.movil #tactil #t-bajar{--cx:134px;--cy:84px;}
+body.movil #tactil #t-usar{opacity:1;border-color:#fbbf24;}
+body.movil #tactil #t-usar::before{content:'👆';}
+body.movil #tactil #t-bajar::before{content:'⏬';}
+body.movil #tactil #t-montar{--cx:158px;--cy:32px;}
+body.movil #tactil #t-montar::before{content:'🐎';}
+body.movil #tactil #t-obj{--cx:186px;--cy:84px;}
+body.movil #tactil #t-obj::before{content:'🎯';}
+body.movil #joy{width:40%;}
+@media (orientation:portrait){
+ body.movil #chicha3{right:auto;left:calc(8px + env(safe-area-inset-left));max-width:44vw;white-space:normal;border-radius:12px;}   /* la pildora de reclamar va al lado del joystick, en 2 lineas: no tapa ATACAR */
+ body.movil.mano-der #chicha3{left:auto;right:calc(8px + env(safe-area-inset-right));}
+}
+body.movil.mano-der #tactil{right:auto;left:calc(8px + env(safe-area-inset-left));direction:ltr;}
+body.movil.mano-der #tactil button,body.movil.mano-der #tactil #t-esq{right:auto;left:calc(var(--cx) - 22px);}
+body.movil.mano-der #tactil #t-atk{right:auto;left:0;}
+@media (orientation:landscape) and (max-height:500px){
+ /* ATACAR en la esquina real y la barra a su lado: arriba, habilidades (mundo.js) y botones repartidos en dos arcos */
+ body.movil #tactil{bottom:calc(8px + env(safe-area-inset-bottom));width:256px;height:168px;}
+ body.movil #tactil #t-esq{--cx:78px;--cy:84px;}
+ body.movil #tactil #t-salto{--cx:130px;--cy:130px;}
+ body.movil #tactil #t-volar{--cx:22px;--cy:146px;}
+ body.movil #tactil #t-montar{--cx:182px;--cy:128px;}
+ body.movil #tactil #t-usar,body.movil #tactil #t-bajar{--cx:182px;--cy:76px;}
+ body.movil #tactil #t-obj{--cx:234px;--cy:76px;}
+ body.movil #barra{right:calc(80px + env(safe-area-inset-right));width:min(270px,36vw);}
+ body.movil.mano-der #barra{right:auto;left:calc(80px + env(safe-area-inset-left));}
+ body.movil.movil #joy{top:calc(90px + env(safe-area-inset-top));bottom:0;height:auto;}   /* hasta el borde de abajo: el pulgar cae en la esquina (doble .movil: gana a la regla vertical de mas abajo) */
+}
 /* 🎬 Modo cine: sin HUD para grabar (el lienzo 3D sigue visible) */
 body.cine #hud,body.cine .g3-e,body.cine #joy,body.cine #tactil,body.cine #marco,body.cine #grupo3,body.cine #objp,body.cine #invit3,body.cine #obj,body.cine #presumir3,body.cine #botones,body.cine #misiones,body.cine #mini,body.cine #barra,body.cine #chicha3,body.cine #lanzar,body.cine #alas,body.cine #chat,body.cine #avisos,body.cine #gestos3,body.cine #titulo-zona,body.cine #hablar,body.cine #xp,body.cine #xp-prox,body.cine #chip-bienv,body.cine #npc-dice,body.cine #probar-clase,body.cine #tira-comunidad,body.cine #franja-inst,body.cine #franja-iab,body.cine #mejor3,body.cine #res-jefe,body.cine #tira-diario,body.cine #vv-franja,body.cine #b-ayuda-caido,body.cine #acc-atk{visibility:hidden !important;} body.cine #capa{visibility:hidden !important;}
 </style>
@@ -761,6 +844,122 @@ body.cine #hud,body.cine .g3-e,body.cine #joy,body.cine #tactil,body.cine #marco
 #cofre-meta .cm-b i{display:block;height:100%;background:var(--oro);transition:width .4s;}
 @media (prefers-reduced-motion:reduce){#cofre-sem.tiembla .cs-ico{animation:none;}#cofre-meta,#cofre-meta .cm-b i{transition:none;}}
 body.cine #cofre-sem,body.cine #cofre-meta{visibility:hidden !important;}
+/* HUD compacto en el telefono: marco fino, misiones plegadas y solo mochila, tienda y ⋯ a la vista (lo demas va dentro de ⋯). Icono de 22 px en zona tactil de 40 px. Texto grande solo cambia letras, no cajas. */
+#b-chicha{display:none;}   /* en PC no existe: en tactil lo muestra la regla .extra de ⋯ abierto */
+body:is(.movil,.compacto) #marco{left:calc(8px + env(safe-area-inset-left));top:calc(8px + env(safe-area-inset-top));width:min(124px,34vw);min-width:0;box-sizing:border-box;padding:3px 6px;display:grid;grid-template-columns:minmax(38px,1fr) minmax(0,auto);column-gap:5px;align-items:center;border-radius:10px;background:rgba(14,9,30,.62);box-shadow:none;}
+body:is(.movil,.compacto) #marco>*{grid-column:1/-1;min-width:0;}
+body:is(.movil,.compacto) #marco .nm{font-size:11px;line-height:14px;margin:0;}
+body:is(.movil,.compacto) #marco .nm small{font-size:10.5px;}
+body:is(.movil,.compacto) #m-hp{margin-top:1px;}
+body:is(.movil,.compacto) #m-hp,body:is(.movil,.compacto).texto-grande #m-hp{height:13px!important;}
+body:is(.movil,.compacto) #m-hp span,body:is(.movil,.compacto).texto-grande #m-hp span{font-size:10.5px!important;line-height:13px!important;}
+body:is(.movil,.compacto) #m-rec{grid-column:1;margin-top:1px;}
+body:is(.movil,.compacto) #m-rec,body:is(.movil,.compacto).texto-grande #m-rec{height:4px!important;}
+body:is(.movil,.compacto) #m-rec span{display:none;}
+body:is(.movil,.compacto) #oro{grid-column:2;position:relative;z-index:1;margin:1px 0 0;padding-left:2px;font-size:10.5px;line-height:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:rgba(14,9,30,.92);border-radius:3px;}   /* mucho oro: tapa el final de la pildora en vez de montarse sobre ella */
+body:is(.movil,.compacto) #temp3{grid-column:1;grid-row:4;justify-self:start;margin-top:1px;padding:0 3px;font-size:9.5px;line-height:12px;}
+body:is(.movil,.compacto) #marco:has(#temp3:not(:empty)) #m-rec{grid-column:1/-1;}   /* con evento: recurso a todo el ancho y pildora + oro en una sola fila */
+body:is(.movil,.compacto) #marco:has(#temp3:not(:empty)) #oro{grid-row:4;}
+body:is(.movil,.compacto) #misiones{left:calc(8px + env(safe-area-inset-left));width:min(180px,50vw);box-sizing:border-box;padding:3px 6px;font-size:11px;line-height:1.2;}
+body:is(.movil,.compacto) #misiones:not(.abierto){max-height:36px;background:rgba(14,9,30,.5);border-color:transparent;box-shadow:none;text-shadow:0 1px 2px #000;}
+body:is(.movil,.compacto).texto-grande #misiones:not(.abierto){max-height:36px;}
+body:is(.movil,.compacto) #misiones:not(.abierto) .q{margin-bottom:0;}
+body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto) .q,body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto) b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0;}   /* el avance es texto suelto dentro de .q: se recorta en la fila */
+body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto) .q:nth-child(n+3){display:none;}
+body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto) .q:first-child:has(>b:only-child)+.q:not([style*="sticky"])>b{display:none;}   /* con el 🎁 de una linea arriba, la segunda es el avance (Goblin 0/5 ⬆ 48 m), no el nombre de la mision */
+body:is(.movil,.compacto) #misiones:not(.abierto) .q[style*="sticky"]{position:static!important;background:none!important;}   /* plegada se lee mision y avance; la fila del dia queda al abrir */
+body:is(.movil,.compacto) #misiones:not(.abierto)::after{content:'▾';position:absolute;right:4px;top:2px;font-size:12px;line-height:1;color:#ffd84a;}
+body:is(.movil,.compacto) #misiones:not(.abierto){padding-right:15px;}
+body:is(.movil,.compacto) #misiones.con-tuto:not(.abierto),body:is(.movil,.compacto).texto-grande #misiones.con-tuto:not(.abierto){width:min(230px,62vw);max-height:66px;}
+/* Tutorial plegado: el paso entero (el mas largo son 3 lineas) y debajo solo el avance de la mision, sin filas cortadas; lo demas, al abrir */
+body:is(.movil,.compacto) #misiones.con-tuto:not(.abierto) .q:first-child b{display:inline;margin:0 4px 0 0;}
+body:is(.movil,.compacto) #misiones.con-tuto:not(.abierto) .q:nth-child(2) b{display:none;}
+body:is(.movil,.compacto) #misiones.con-tuto:not(.abierto) .q:nth-child(2){white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+body:is(.movil,.compacto) #misiones.con-tuto:not(.abierto) .q:nth-child(n+3){display:none;}
+body:is(.movil,.compacto):has(#obj[style*="block"]) #misiones.con-tuto:not(.abierto){width:min(230px,62vw);margin-top:20px;}   /* con objetivo el paso no se estrecha: baja bajo su ficha */
+body:is(.movil,.compacto):has(#obj[style*="block"]) :is(#grupo3,#objp,#alas){width:min(124px,34vw);}   /* no se meten bajo la ficha del objetivo */
+/* Chat en el telefono: la caja sale unos segundos con cada mensaje (mundo.js) y cede ante los avisos; ⋯ > Chat la deja abierta para leer y escribir */
+body:is(.movil,.compacto) #chat:not(.vivo):not(:has(#chat-in[style*="block"])){visibility:hidden;}
+body:is(.movil,.compacto):has(#avisos>div) #chat:not(:has(#chat-in[style*="block"])){visibility:hidden;}
+body:is(.movil,.compacto) #misiones.abierto{width:min(240px,66vw);background:rgba(14,9,30,.92);}
+body:is(.movil,.compacto):has(#obj[style*="block"]) #misiones:not(.abierto){width:min(124px,34vw);}   /* con objetivo fijado, su ficha va a la derecha de las misiones */
+body:is(.movil,.compacto) #obj{left:calc(136px + env(safe-area-inset-left));transform:none;top:calc(50px + env(safe-area-inset-top) + var(--tg-top,0px));width:min(120px,33vw);max-width:none;padding:3px 6px;box-sizing:border-box;}
+body:is(.movil,.compacto) #botones:not(.abierto){top:calc(6px + env(safe-area-inset-top) + var(--tg-top,0px));right:calc(105px + env(safe-area-inset-right));display:grid;grid-template-columns:repeat(3,40px);gap:0;padding:0;}
+body:is(.movil,.compacto) #botones:not(.abierto) #b-chat,body:is(.movil,.compacto) #botones:not(.abierto) #b-gestos,body:is(.movil,.compacto) #botones:not(.abierto) #b-compartir{display:none;}
+body:is(.movil,.compacto) #botones:not(.abierto) .bt{width:40px;height:40px;padding:0;font-size:22px;line-height:1;background:none;border-color:transparent;box-shadow:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.9));touch-action:manipulation;}
+body:is(.movil,.compacto) #botones:not(.abierto) #b-mas{font-weight:800;color:#fff;}
+body:is(.movil,.compacto) #botones.abierto{top:calc(50px + env(safe-area-inset-top) + var(--tg-top,0px));right:calc(8px + env(safe-area-inset-right));grid-template-columns:repeat(5,44px);background:rgba(14,9,30,.94);}
+body:is(.movil,.compacto) #botones.abierto .bt{width:44px;}
+body:is(.movil,.compacto):not(:has(#botones.abierto)) #xp-prox{display:none!important;}   /* lo proximo a desbloquear se lee al abrir ⋯ */
+body:is(.movil,.compacto) #xp-prox{bottom:calc(58px + env(safe-area-inset-bottom));max-width:calc(100vw - 32px);font-size:12px;line-height:16px;}
+body:is(.movil,.compacto) #chicha3:not(.listo){display:none;}   /* sigue en ⋯ > Chicha; la pildora solo sale cuando ya se puede reclamar */
+body:is(.movil,.compacto) #chicha3{bottom:calc(58px + env(safe-area-inset-bottom));}
+body:is(.movil,.compacto) #barra{bottom:calc(10px + env(safe-area-inset-bottom));padding:0;gap:4px;justify-content:center;background:transparent;border-color:transparent;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;pointer-events:none;}
+body:is(.movil,.compacto) #barra .acc{flex:0 0 40px;width:40px;height:40px;max-width:40px;max-height:40px;aspect-ratio:auto;background:rgba(14,9,30,.45);border-color:rgba(255,255,255,.18);pointer-events:auto;touch-action:manipulation;}
+body:is(.movil,.compacto) #barra .acc img{width:22px;height:22px;}
+body.movil #joy{bottom:calc(54px + env(safe-area-inset-bottom));height:calc(55% - 54px - env(safe-area-inset-bottom));}
+body.movil #joy .pista-joy{left:14px;bottom:10px;gap:6px;}
+body.movil #joy .pista-joy i{width:48px;height:48px;border-width:1px;}
+body.movil #joy .pista-joy i::after{left:14px;top:14px;width:16px;height:16px;}
+body.movil #joy .pista-joy span{font-size:11px;}
+body.movil #joy .pista-joy.grande{transform:scale(1.15);}
+@media (max-width:359px){   /* menos de 360 px: la fila no cabe entre el marco y el minimapa, va bajo el minimapa */
+ body:is(.movil,.compacto) #botones:not(.abierto){top:calc(108px + env(safe-area-inset-top) + var(--tg-top,0px));right:calc(8px + env(safe-area-inset-right));}
+ body:is(.movil,.compacto) #misiones.con-tuto:not(.abierto),body:is(.movil,.compacto).texto-grande #misiones.con-tuto:not(.abierto),body:is(.movil,.compacto):has(#obj[style*="block"]) #misiones.con-tuto:not(.abierto){width:calc(100vw - 136px);}
+ body:is(.movil,.compacto) #obj{left:calc(120px + env(safe-area-inset-left));width:calc(100vw - 228px);}
+}
+@media (orientation:landscape) and (max-height:500px){
+ body:is(.movil,.compacto) #misiones,body:is(.movil,.compacto).texto-grande #misiones{top:calc(6px + env(safe-area-inset-top) + var(--tg-top,0px))!important;left:calc(138px + env(safe-area-inset-left));width:clamp(100px,26vw,200px);}
+ body:is(.movil,.compacto):has(#obj[style*="block"]) #misiones:not(.abierto){width:clamp(90px,17vw,130px);}
+ body:is(.movil,.compacto) #misiones.con-tuto:not(.abierto),body:is(.movil,.compacto).texto-grande #misiones.con-tuto:not(.abierto),body:is(.movil,.compacto):has(#obj[style*="block"]) #misiones.con-tuto:not(.abierto){width:max(120px,min(300px,calc(100vw - 356px - env(safe-area-inset-left) - env(safe-area-inset-right))));margin-top:0;}   /* todo el hueco hasta los botones: en 3 lineas cabe el paso mas largo */
+ body:is(.movil,.compacto) #misiones.abierto,body:is(.movil,.compacto).texto-grande #misiones.abierto{width:min(300px,44vw);max-height:70vh;}
+ body:is(.movil,.compacto) #obj{left:calc(50% + 10px);transform:translateX(-50%);top:calc(6px + env(safe-area-inset-top) + var(--tg-top,0px));width:min(116px,20vw);}
+ body:is(.movil,.compacto):has(#misiones.con-tuto:not(.abierto)) #obj{left:calc(138px + env(safe-area-inset-left));transform:none;top:calc(74px + env(safe-area-inset-top) + var(--tg-top,0px));}   /* en el tutorial el paso ocupa la fila de arriba: la ficha va debajo */
+ body:is(.movil,.compacto) #botones:not(.abierto){top:calc(4px + env(safe-area-inset-top) + var(--tg-top,0px));right:calc(90px + env(safe-area-inset-right));}
+ body:is(.movil,.compacto) #botones.abierto{top:calc(4px + env(safe-area-inset-top) + var(--tg-top,0px));right:calc(90px + env(safe-area-inset-right));grid-template-columns:repeat(6,44px);}
+ body:is(.movil,.compacto) #xp-prox{bottom:calc(48px + env(safe-area-inset-bottom));max-width:34vw;}   /* encima de la barra, no sobre ella */
+ body.movil #chicha3{bottom:auto;}   /* en horizontal va por top: con los dos la pildora se estiraba 220 px */
+ body.movil #barra{bottom:calc(6px + env(safe-area-inset-bottom));}
+}
+</style>
+<style id="css-avisos-movil">
+/* Movil: avisos en franja legible bajo el HUD (--av-top lo mide mundo.js colocarAvisos), por encima de etiquetas y botones */
+html body.movil #avisos,html body.compacto #avisos{left:50%;right:auto;transform:translateX(-50%);top:var(--av-top,calc(120px + env(safe-area-inset-top) + var(--tg-top,0px)))!important;bottom:auto;width:min(92vw,460px);max-width:none;align-items:center;gap:4px;z-index:7;}
+html body.movil #avisos div,html body.compacto #avisos div{box-sizing:border-box;max-width:100%;background:rgba(10,6,22,.94);color:#fff;font:600 14px/1.3 var(--sans);padding:6px 10px;border-radius:8px;overflow-wrap:anywhere;box-shadow:0 2px 10px rgba(0,0,0,.5);}
+html body.movil #avisos div.err,html body.compacto #avisos div.err{color:#ffd4d9;}
+html body.movil.texto-grande #avisos div,html body.compacto.texto-grande #avisos div{font-size:15px;}
+body.movil:has(.modal.on) #avisos,body.compacto:has(.modal.on) #avisos{z-index:11;}
+body.movil.tz-on #avisos,body.compacto.tz-on #avisos{margin-top:36px;}
+/* Nombre de la zona: pequeño, centrado bajo el HUD y encima de los avisos */
+html body.movil #titulo-zona,html body.compacto #titulo-zona{top:var(--av-top,120px);margin-top:0;max-width:92vw;z-index:6;white-space:nowrap;}
+html body.movil #titulo-zona b,html body.compacto #titulo-zona b{font-size:11px;line-height:1.2;}
+html body.movil #titulo-zona small,html body.compacto #titulo-zona small{margin-top:3px;font-size:11px;}
+/* Etiquetas del mundo mas discretas en el telefono */
+html body.movil .lbl,html body.compacto .lbl{font-size:10px;line-height:1.15;}
+html body.movil .lbl small,html body.compacto .lbl small{font-size:9px!important;}
+html body.movil .lbl .b,html body.compacto .lbl .b{width:32px;height:4px;margin-top:1px;}
+/* Dialogos de historia (#npc-dice): panel ancho abajo, sobre los controles, opaco y con boton claro */
+html body.movil #npc-dice,html body.compacto #npc-dice{top:auto;bottom:calc(8px + env(safe-area-inset-bottom) + var(--tg-bot,0px));width:min(560px,calc(100vw - 16px));background:#160c2c;padding:8px 12px 10px;font-size:15px;z-index:6;}
+html body.movil #npc-dice .nd-cab,html body.compacto #npc-dice .nd-cab{margin-bottom:4px;}
+html body.movil #npc-dice .nd-cara,html body.compacto #npc-dice .nd-cara{width:30px;height:30px;font-size:20px;}
+html body.movil #npc-dice .nd-quien,html body.compacto #npc-dice .nd-quien{font-size:14px;}
+html body.movil #npc-dice .nd-pag,html body.compacto #npc-dice .nd-pag{font-size:12px;color:#ddd6fe;}
+html body.movil #npc-dice .nd-txt,html body.compacto #npc-dice .nd-txt{font-size:15px;line-height:1.4;font-weight:500;margin-bottom:8px;}
+html body.movil #npc-dice .nd-bot button,html body.compacto #npc-dice .nd-bot button{min-height:44px;font-size:14px;touch-action:manipulation;}
+html body.movil #npc-dice .nd-seguir,html body.compacto #npc-dice .nd-seguir{flex:1;}
+@media (orientation:landscape) and (max-height:500px){html body.movil #npc-dice,html body.compacto #npc-dice{top:auto;width:min(560px,68vw);}html body.movil #npc-dice .nd-txt,html body.compacto #npc-dice .nd-txt{min-height:0;}}
+/* Ventana al hablar con un NPC: hoja inferior ancha y opaca (ya no tapa el HUD ni el centro) */
+html body.movil #v-npc.modal,html body.compacto #v-npc.modal{justify-content:center;align-items:flex-end;padding:0 6px calc(6px + env(safe-area-inset-bottom) + var(--tg-bot,0px))!important;}
+html body.movil #v-npc .ventana,html body.compacto #v-npc .ventana{width:min(560px,calc(100vw - 12px))!important;max-width:none!important;max-height:68vh!important;max-height:68dvh!important;background:#160c2c;font-size:15px;}
+html body.movil #v-npc .ventana p,html body.compacto #v-npc .ventana p{font-size:15px;line-height:1.4;}
+html body.movil #v-npc .cerrar,html body.compacto #v-npc .cerrar{width:44px;height:44px;}
+@media (orientation:landscape) and (max-height:500px){html body.movil #v-npc .ventana,html body.compacto #v-npc .ventana{width:min(600px,74vw)!important;max-height:88vh!important;max-height:88dvh!important;}}
+/* Tarjetas: el cofre no ocupa media pantalla y la tira de racha se lee */
+body.movil #cofre-sem,body.compacto #cofre-sem{padding:10px 18px 10px;font-size:15px;}
+body.movil #cofre-sem .cs-ico,body.compacto #cofre-sem .cs-ico{font-size:40px;}
+body.movil #cofre-sem .cs-sub,body.compacto #cofre-sem .cs-sub{font-size:13px;}
+body.movil #tira-diario,body.compacto #tira-diario{font-size:13px;background:rgba(20,14,34,.95);}
+body.movil #tira-diario .tx small,body.compacto #tira-diario .tx small{font-size:12px;}
 </style>
 </head>
 <body>
@@ -837,10 +1036,11 @@ body.cine #cofre-sem,body.cine #cofre-meta{visibility:hidden !important;}
   <a class="bt" href="/mmo/" title="CLASSIC (2D): mazmorras, Torre y banda, con tu mismo personaje">2D</a>
   <a class="bt" href="/inicio/" title="Inicio: elige tu juego">⌂</a>
   <button class="bt" id="b-compartir" title="Invitar a un amigo: cuando llegue a Nv 10, los dos ganan oro" aria-label="Invitar a un amigo">📣<small>+oro</small></button>
+  <button class="bt extra" id="b-chicha" title="Premio real de chicha morada" aria-label="Premio de chicha morada" data-l="Chicha">🥤</button>
   <button class="bt" id="b-mas" title="Más" aria-label="Más">⋯</button>
 </div>
 <div class="caja" id="misiones"></div>
-<div class="caja" id="mini"><canvas id="mini-c" width="150" height="150"></canvas><div class="z" id="mini-z">—</div><div class="z" id="mini-r" style="color:var(--txt2);font-weight:600"></div></div>
+<div class="caja" id="mini" role="button" aria-label="Abrir el mapa del mundo"><canvas id="mini-c" width="150" height="150"></canvas><div class="z" id="mini-z">—</div><div class="z" id="mini-r" style="color:var(--txt2);font-weight:600"></div></div>
 <div class="caja" id="barra"></div>
 <button id="chicha3" title="Premio real: 2 litros de chicha morada al llegar a nivel 60">🥤 Nv 60 = 2 L de chicha morada real</button>
 <div class="caja" id="lanzar"><div class="barra"><i></i><span id="lanzar-t"></span></div></div>
@@ -891,11 +1091,35 @@ body.cine #cofre-sem,body.cine #cofre-meta{visibility:hidden !important;}
   <div id="npc-c"></div>
 </div></div>
 
-<div class="modal" id="v-mapa"><div class="ventana" id="mapa-grande" style="width:min(640px,94vw)">
-  <button class="bt cerrar" data-cerrar>✕</button>
-  <h2>MAPA DEL MUNDO</h2>
-  <canvas id="mapa-c" width="600" height="600"></canvas>
-  <p style="margin-top:8px;font-size:12px">Las zonas de nivel bajo rodean el pueblo; las de nivel alto están en los bordes. Los puntos amarillos son jefes.</p>
+<div class="modal" id="v-mapa"><div class="ventana" id="mapa-grande">
+  <canvas id="mapa-c" width="600" height="600" aria-label="Mapa del mundo: arrastra para moverlo, pellizca para acercar y toca un punto para marcar tu destino"></canvas>
+  <div id="mapa-cab">
+    <div class="mapa-chip"><span id="mapa-pc"></span><span id="mapa-info"></span></div>
+    <div class="mapa-chip" id="mapa-dest"><span id="mapa-dest-t"></span><button id="mapa-dest-q" type="button" style="display:none">Quitar</button></div>
+  </div>
+  <button class="bt cerrar" data-cerrar aria-label="Cerrar el mapa">✕</button>
+  <div id="mapa-ctrl">
+    <button class="bt" id="mapa-mas" type="button" aria-label="Acercar" title="Acercar">+</button>
+    <button class="bt" id="mapa-menos" type="button" aria-label="Alejar" title="Alejar">−</button>
+    <button class="bt" id="mapa-yo" type="button" aria-label="Centrar en mí" title="Centrar en mí">🎯</button>
+  </div>
+  <details id="mapa-ley">
+    <summary>Leyenda</summary>
+    <ul>
+      <li><i>🏘️</i> Pueblo</li>
+      <li><i>🌀</i> Portal (mazmorras, cueva y Abismo)</li>
+      <li><i>💀</i> Jefe</li>
+      <li><i>⚔️</i> Arena del jefe mundial</li>
+      <li><i>🔭</i> Mirador descubierto</li>
+      <li><i style="color:#d6a35c">■</i> Cofre <span style="color:#c084fc">■</span> épico <span style="color:#ffd84a">■</span> legendario <span style="color:#9ca3af">■</span> ya abierto</li>
+      <li><i style="color:#ffd84a">!</i> Misión <span style="color:#4ade80">?</span> guía</li>
+      <li><i style="color:#7dd3fc">●</i> Tu grupo</li>
+      <li><i style="color:#4ade80">▲</i> Tú y hacia dónde miras</li>
+      <li><i>📍</i> Tu destino: tócalo otra vez para quitarlo</li>
+      <li><i style="color:#8b7fc7">▒</i> Por descubrir</li>
+    </ul>
+    <p>Las zonas de nivel bajo rodean el pueblo; las de nivel alto están en los bordes.</p>
+  </details>
 </div></div>
 
 <div class="modal" id="v-herm"><div class="ventana">
@@ -974,8 +1198,8 @@ body.cine #cofre-sem,body.cine #cofre-meta{visibility:hidden !important;}
 <!-- Telegram: su SDK se carga arriba solo dentro de Telegram (window.__tgListo).
      defer: no frenan el HTML y corren en orden, antes que mundo.js (que usa supabase). -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=366" defer></script>
-<script type="module" src="/mundo/js/mundo.js?v=366"></script>
+<script src="/js/config.js?v=367" defer></script>
+<script type="module" src="/mundo/js/mundo.js?v=367"></script>
 <div id="flash-nv"></div>
 <div id="cartel-nv"></div>
 <div id="aviso-dir" aria-hidden="true"></div>

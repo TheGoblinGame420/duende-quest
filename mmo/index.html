@@ -3,7 +3,7 @@
 <head>
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=366"></script>
+<script src="/js/origen.js?v=367"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Duende Quest CLASSIC · MMORPG 2D gratis en el navegador</title>
@@ -71,9 +71,9 @@
 })();
 </script>
 <!-- defer se ejecuta en orden y todo antes del modulo client.js -->
-<script src="/js/pwa.js?v=366" defer></script>
+<script src="/js/pwa.js?v=367" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=366" defer></script>
+<script src="/js/config.js?v=367" defer></script>
 <style>
 /* ── Tokens (guia de diseno, oct 2026). Las variables viejas (--verde, --amarillo,
    --rosa, --cian, --rojo) siguen existiendo porque client.js las usa, pero ahora
@@ -209,6 +209,7 @@ body:not(.tactil) #hud.estrecho #monedero{bottom:52px;}
 #b-tienda:hover{background:linear-gradient(135deg,rgba(255,216,74,.5),rgba(234,179,8,.22));}
 #b-tienda .bt-txt{font-size:8px;}
 #hud.estrecho #b-tienda .bt-txt{display:none;}
+#b-tienda.aviso{animation:none;}   /* comparte la clase con los avisos: sin esto heredaba su fundido y la Tienda desaparecia a los 3,6 s */
 #b-tienda.aviso::after{content:'';position:absolute;top:2px;right:2px;width:8px;height:8px;border-radius:50%;background:#ff4d6d;box-shadow:0 0 6px #ff4d6d;}
 #monedero{cursor:pointer;pointer-events:auto;}
 #hud.estrecho #botones:not(.abierto) .extra{display:none;}
@@ -572,9 +573,110 @@ input.nombre:focus{border-color:var(--pri-txt);}
  #m-tienda .tabs .tab{flex:0 0 auto;white-space:nowrap;}   /* sin esto las pestañas se encogen en vez de deslizarse */
 }
 /* Texto grande (mismo ajuste que ORIGINS: localStorage 'dq3_texto'; por defecto en pantallas de 5") */
+/* Telefono: avisos legibles en franja ancha (client.js colocarAvisoMovil fija el alto) y misiones de NPC con letra comoda */
+html #hud.estrecho #avisos{display:flex;flex-direction:column;align-items:center;width:min(92vw,460px);background:none;border:none;box-shadow:none;padding:0;-webkit-backdrop-filter:none;backdrop-filter:none;}
+html body.tactil #hud.estrecho #avisos{width:min(92vw,460px);}
+#hud.estrecho #avisos .aviso,body.tactil #avisos-modal .aviso{font-size:14px;line-height:1.35;background:rgba(10,14,22,.95);color:#fff;box-sizing:border-box;width:fit-content;align-self:center;max-width:100%;overflow-wrap:anywhere;}
+#hud.estrecho #avisos .aviso.jefe{color:#e9e3ff;}
+@media (orientation:landscape) and (max-height:500px){html body.tactil #hud.estrecho #avisos{width:min(52vw,420px);}}
+@media (max-width:600px){#m-mision .ventana{font-size:15px;line-height:1.4;}#m-mision .ventana p{font-size:15px;line-height:1.4;}}
 body.texto-grande #monedero,body.texto-grande #hud.estrecho #monedero{font-size:10px;}
 body.texto-grande .uf .nm,body.texto-grande #hud.estrecho .uf .nm{font-size:10px;}
 body.texto-grande .uf .nm small,body.texto-grande #hud.estrecho .uf .nm small{font-size:9px;}
+/* ── Móvil compacto: menos iconos, más mundo y avisos que se leen. Solo táctil: el PC no cambia. ──
+   Arriba: retrato y barras a la izquierda; Mapa, Mochila, Tienda y ⋯ a la derecha, debajo el minimapa
+   (un toque abre el mapa) y la misión en una o dos líneas. El resto va en ⋯, con su nombre. */
+body.tactil #hud.estrecho #uf-yo,body.tactil #hud.estrecho #uf-obj{width:164px;padding:3px 6px 3px 4px;gap:5px;}
+body.tactil #hud.estrecho #uf-yo{left:8px;top:6px;}
+body.tactil #hud.estrecho #uf-obj{left:8px;top:50px;}
+body.tactil #hud.estrecho .uf .ret{width:32px;height:32px;flex:0 0 32px;}
+body.tactil #hud.estrecho .uf .ret b{left:-4px;bottom:-4px;min-width:15px;height:15px;font:700 10px/13px var(--sans);}
+body.tactil #hud.estrecho .uf .nm{font:600 12px/14px var(--sans);margin-bottom:1px;}
+body.tactil #hud.estrecho .uf .nm small{font:600 10px/14px var(--sans);}
+body.tactil #hud.estrecho #uf-yo .nm small{display:none;}
+body.tactil #hud.estrecho .barra.hp{margin-bottom:2px;}
+body.tactil #hud.estrecho .barra.rc{height:8px;margin-bottom:0;}
+body.tactil #hud.estrecho .barra.rc>span{font:700 8px/8px var(--sans);}
+body.tactil #hud.estrecho .au{width:16px;height:16px;}
+body.tactil #hud.estrecho #grupo{top:96px;}
+body.tactil #hud.estrecho #jefe-bar{pointer-events:none;}   /* solo informa: no le quita el toque a las acciones del objetivo */
+/* Botones: se ven de 30 px y se tocan en 40 (10 px de hueco repartidos, sin solaparse) */
+body.tactil #hud.estrecho #botones{top:6px;right:8px;width:150px;max-width:none;gap:10px;}
+body.tactil #hud.estrecho #botones .bt{width:30px;height:30px;font-size:12px;}
+body.tactil #hud.estrecho #botones .bt::before{inset:-5px;}
+body.tactil #hud.estrecho #botones .ico-bt{width:18px;height:18px;margin:0;}
+body.tactil #hud.estrecho #botones:not(.abierto)>.bt:not(#b-mapa):not(#b-inv):not(#b-tienda):not(#b-mas){display:none;}
+/* Invitado: el punto en ⋯ recuerda que Mi cuenta guarda el progreso */
+body.tactil #hud.estrecho #botones:not(.abierto):has(#b-cuenta.invitado) #b-mas::after{content:'';position:absolute;top:2px;right:2px;width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 5px #4ade80;}
+/* Menú ⋯ abierto: los cuatro de arriba no se mueven; debajo, el resto con icono y nombre */
+body.tactil #hud.estrecho #botones.abierto{z-index:70;top:0;right:2px;width:min(286px,calc(100vw - 8px));gap:6px 10px;padding:5px;background:rgba(14,18,28,.98);border:1px solid var(--borde);border-radius:10px;box-shadow:var(--sombra);}
+body.tactil #hud.estrecho #botones.abierto::before{content:'';order:1;flex:0 0 100%;height:0;}
+body.tactil #hud.estrecho #botones.abierto>.bt:not(#b-mapa):not(#b-inv):not(#b-tienda):not(#b-mas){order:2;flex:1 1 calc(50% - 5px);width:auto;height:42px;min-width:0;justify-content:flex-start;gap:8px;padding:0 8px;box-sizing:border-box;}
+body.tactil #hud.estrecho #botones.abierto>.bt:not(#b-mapa):not(#b-inv):not(#b-tienda):not(#b-mas)::before{inset:0;}
+body.tactil #hud.estrecho #botones.abierto>button.bt:not(#b-mapa):not(#b-inv):not(#b-tienda):not(#b-mas)::after,body.tactil #hud.estrecho #botones.abierto>a.bt:not(.bt3d)::after{content:attr(aria-label);font:600 12px/1.2 var(--sans);text-align:left;}
+/* Minimapa: una tira fina; tocarla abre el mapa del mundo (zona táctil de 40 px) */
+body.tactil #hud.estrecho #minimapa{top:44px;right:8px;padding:3px;cursor:pointer;}
+body.tactil #hud.estrecho #minimapa canvas{width:142px;}
+body.tactil #hud.estrecho #minimapa::before{content:'';position:absolute;inset:-3px 0 -7px;}
+/* Misión: solo lo que toca ahora. Las tareas y la chicha siguen al tocarla (misiones) y en la Mochila */
+body.tactil #hud.estrecho #seguimiento{top:78px;right:8px;max-width:calc(100% - 184px);}   /* no pisa el marco del objetivo (termina en x=172) */
+@media (max-width:340px){body.tactil #hud.estrecho #uf-yo,body.tactil #hud.estrecho #uf-obj{width:146px;}body.tactil #hud.estrecho #seguimiento{max-width:calc(100% - 166px);}}
+body.tactil #hud.estrecho #h-tareas,body.tactil #hud.estrecho #h-chicha{display:none;}
+body.tactil #hud.estrecho #h-mision{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;width:fit-content;max-width:100%;margin-left:auto;font:600 12px/1.25 var(--sans);padding:1px 6px;border-radius:5px;background:rgba(10,14,22,.62);}
+body.tactil #hud.estrecho #h-mundial{font:600 11px/1.3 var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* Avisos: franja opaca, letra de 14 px, a lo ancho bajo el HUD; se ven los 2 últimos */
+body.tactil #hud.estrecho #avisos{top:116px;width:calc(100% - 16px);align-items:stretch;gap:4px;}
+body.tactil #hud.estrecho #avisos .aviso{padding:6px 10px;max-width:none;}
+body.tactil #hud.estrecho #avisos .aviso:nth-last-child(n+3){display:none;}
+body.tactil #hud.estrecho #errores div{font-size:14px;background:rgba(14,18,28,.98);padding:5px 10px;border-radius:6px;text-shadow:none;}
+body.tactil #hud.estrecho #consejo{top:114px;font-size:14px;}
+body.tactil #hud.estrecho #chat-log{font-size:12px;line-height:1.35;background:rgba(10,14,22,.74);}
+body.tactil #hud.estrecho #chat-log:empty{background:none;}
+body.tactil #hud.estrecho #chat-log.abierto{background:rgba(10,14,22,.92);}
+/* Vertical: controles más bajos (≤ 28 % del alto), siguen en zona de pulgar */
+@media (orientation:portrait) and (max-width:600px){
+ body.tactil #tactil{gap:5px;padding:5px 8px calc(6px + env(safe-area-inset-bottom,0px));}
+ body.tactil .tc{width:48px;height:48px;font-size:15px;}
+ body.tactil .tc.grande{width:58px;height:58px;font-size:20px;}
+ body.tactil .tc.chico{width:40px;height:40px;font-size:14px;}
+ body.tactil .tc.grande .ico-tc{width:26px;height:26px;}
+ body.tactil #t-izq,body.tactil #t-der{gap:6px;}
+ body.tactil #t-fila0 #acciones{gap:2px;}
+ body.tactil #t-fila0 .pw{width:clamp(34px,calc((100vw - 30px)/8),40px);}
+ body.tactil #hud.estrecho #jefe-bar{top:130px;}
+ body.tactil #chat{width:62%;bottom:8px;}
+}
+/* Horizontal: una sola fila arriba; controles en las esquinas y el centro libre para el duende */
+@media (orientation:landscape) and (max-height:500px){
+ body.tactil #hud.estrecho #uf-yo,body.tactil #hud.estrecho #uf-obj{width:min(150px,23vw);}
+ body.tactil #hud.estrecho #uf-obj{left:calc(14px + min(150px,23vw));top:6px;}
+ body.tactil #hud.estrecho #monedero{left:8px;right:auto;top:50px;bottom:auto;padding:1px 6px;}
+ body.tactil #hud.estrecho #grupo{top:70px;}
+ body.tactil #hud.estrecho #minimapa{top:6px;right:166px;}
+ body.tactil #hud.estrecho #minimapa canvas{width:min(116px,18vw);}
+ body.tactil #hud.estrecho #minimapa::before{inset:-4px 0 -10px;}
+ body.tactil #hud.estrecho #seguimiento{top:42px;max-width:280px;}
+ body.tactil #hud.estrecho #h-mision{-webkit-line-clamp:1;}
+ body.tactil #hud.estrecho #avisos{top:64px;width:min(340px,54%);}
+ body.tactil #hud.estrecho #consejo{top:64px;width:min(340px,54%);font-size:13px;}
+ body.tactil #tactil{gap:4px 8px;padding-bottom:calc(4px + env(safe-area-inset-bottom,0px));}
+ body.tactil #tactil .tc{position:relative;width:44px;height:44px;font-size:15px;}
+ body.tactil #tactil .tc::after{content:'';position:absolute;inset:-3px;}
+ body.tactil #tactil .tc.grande{width:52px;height:52px;}
+ body.tactil #tactil .tc.chico{width:40px;height:40px;}
+ body.tactil #tactil .tc.chico::after{inset:0;}
+ body.tactil #tactil .tc.grande .ico-tc{width:24px;height:24px;}
+ body.tactil #t-izq,body.tactil #t-der{gap:6px;}
+ body.tactil #t-fila0 #acciones{gap:2px;}
+ body.tactil #t-fila0 .pw{width:40px;}
+ body.tactil #hud.estrecho #jefe-bar{top:78px;width:min(340px,54%);}
+ /* Menu ⋯ en 3 columnas: en 2 llegaba a y=288 y bajaba hasta HABLAR y el chat, que van encima */
+ body.tactil #hud.estrecho #botones.abierto{width:min(440px,calc(100vw - 8px));}
+ body.tactil #hud.estrecho #botones.abierto>.bt:not(#b-mapa):not(#b-inv):not(#b-tienda):not(#b-mas){flex:1 1 calc(33% - 8px);}
+ body.tactil #tactil .pw{background:rgba(22,30,48,.72);}
+ body.tactil #hud.estrecho #chat{bottom:104px;}
+ body.tactil #hud.estrecho #lanzar{bottom:108px;}
+}
 </style>
 </head>
 <body>
@@ -619,7 +721,7 @@ body.texto-grande .uf .nm small,body.texto-grande #hud.estrecho .uf .nm small{fo
       <div class="caja" id="minimapa"><canvas id="mini" width="170" height="26"></canvas></div>
       <div class="caja" id="seguimiento"><div id="h-cobrar" role="button"></div><div id="h-mision"></div><div id="h-tareas"></div><div id="h-mundial"></div><div id="h-evento"></div><div id="h-chicha" title="Premio real: 2 litros de chicha morada al llegar a nivel 60"></div></div>
       <div class="caja" id="mapa-nom"><span id="h-mapa">—</span><small id="h-mapa-sub"></small></div>
-      <div class="caja" id="botones" onclick="if(event.target.closest('#b-mas'))this.classList.toggle('abierto');else if(event.target.closest('.extra'))this.classList.remove('abierto')">
+      <div class="caja" id="botones" onclick="if(event.target.closest('#b-mas'))this.classList.toggle('abierto');else if(event.target.closest('.bt'))this.classList.remove('abierto')">
         <button class="bt" id="b-libro" title="Hechizos y clase (P)" aria-label="Hechizos"><img class="ico-bt" src="/assets/items/equipo/W_Book01.png" alt=""></button>
         <button class="bt" id="b-mapa" title="Mapa del mundo (M)" aria-label="Mapa"><img class="ico-bt" src="/assets/items/equipo/I_Map.png" alt=""></button>
         <button class="bt" id="b-social" title="Grupo, jugadores y hermandad (O)" aria-label="Social"><img class="ico-bt" src="/assets/items/equipo/I_Scroll.png" alt=""></button>
@@ -1013,7 +1115,7 @@ body.texto-grande .uf .nm small,body.texto-grande #hud.estrecho .uf .nm small{fo
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=366"></script>
+<script type="module" src="/mmo/js/client.js?v=367"></script>
 <div id="nuevo3d" role="dialog" aria-label="Nuevo mundo 3D">
   <video src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" muted loop playsinline preload="none"></video>
   <div class="t">🌌 NUEVO: Duende Quest Origins, el mundo abierto en 3D</div>

@@ -3681,3 +3681,15 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - Modo anuncio: mundo lleno sin enlace a game.html; portada sin enlaces al arcade ni grupo cripto.
 - CLASSIC: tutorial de la Ira, tienda en móvil con botones de pago en su fila, pestañas deslizables en horizontal, invitados abren PODERES.
 - Arnés 908 bien (2 de 2).
+
+### HUD móvil, avisos y mapa (4-nov-2026, `?v=367`)
+
+- Queja del dueño en su teléfono. Medido antes a 360x640: HUD 34% arriba y controles casi 45% abajo.
+- 4 investigadores web y 6 equipos con revisor (hud, controles, avisos, minimapa, mapa, classic).
+- HUD (`body:is(.movil,.compacto)` al final de mundo/index.html): marco 122 px, recurso como barra de 4 px, misiones plegadas, solo mochila/tienda/⋯ (chat, gestos, +oro y #b-chicha dentro de ⋯), #xp-prox solo con ⋯ abierto, #chicha3 solo al poder reclamar, ranuras de 40 px, #chat con clase `vivo` 6 s.
+- Controles en arco en la esquina inferior derecha; joystick pequeño.
+- Avisos: franja opaca, paginación de textos largos, cola; #npc-dice en panel inferior.
+- Minimapa circular de ~97 px; mapa grande a pantalla completa con zoom, arrastre, placas de zona, leyenda y destino 📍 en localStorage.
+- CLASSIC: mismos criterios.
+- Retoques propios tras comprobarlo: distancia del destino junto a la marca y punto de señal fuera del marco.
+- Arnés 908 bien; comprobado a 360x640 y 640x360 en local. Falta el pellizco en un teléfono real.

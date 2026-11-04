@@ -17,9 +17,9 @@ import {
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
   PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=366';
-import { iniciarRegalo } from './regalo.js?v=366';
-import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=366';
+} from './data.js?v=367';
+import { iniciarRegalo } from './regalo.js?v=367';
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=367';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -180,6 +180,7 @@ function vibrar(tipo) {
 
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
 if (TACTIL) document.body.classList.add('tactil');
+const colaAvisoMovil = [];   // aviso() es izada y puede llamarse antes que su seccion: la cola va aqui arriba
 if (TG) document.body.classList.add('tg');
 
 // ── VISTA ──
@@ -2487,6 +2488,11 @@ const avisoTg2 = iniciarAvisoTg({ mandar, ocupado: () => !!document.querySelecto
 
 $('b-social').onclick = () => abrirSocial();
 $('b-mapa').onclick = () => abrirMapaMundo();
+// Movil: tocar el minimapa abre el mapa del mundo y tocar fuera cierra el menu ⋯.
+if (TACTIL) {
+  $('minimapa').onclick = () => abrirMapaMundo();
+  document.addEventListener('pointerdown', e => { if (!e.target.closest('#botones')) $('botones').classList.remove('abierto'); }, true);
+}
 
 // Hermandades: se completa en su seccion (justo debajo).
 let pintarHermandad = L => { L.innerHTML = ''; };
@@ -5504,7 +5510,37 @@ function pintarLanzar() {
 
 // ms: lo que dura (los importantes, mas). Los importantes no los echa el
 // botin que llega detras.
+// Telefono: dos avisos a la vez, los demas en cola y en orden; la franja va bajo lo que haya arriba en su columna.
+function colocarAvisoMovil() {
+  const az = $('avisos'); if (!az) return;
+  const hud = $('hud'), vh = innerHeight;
+  if (!hud || !hud.classList.contains('estrecho')) { az.style.top = ''; return; }
+  const a = az.getBoundingClientRect(); let y = 0;
+  for (const id of ['uf-yo', 'uf-obj', 'botones', 'minimapa', 'seguimiento', 'jefe-bar', 'consejo', 'presumir']) {
+    const el = $(id); if (!el) continue;
+    const r = el.getBoundingClientRect();
+    if (r.width < 2 || r.height < 2 || getComputedStyle(el).display === 'none') continue;
+    if (r.top < vh * 0.4 && r.bottom < vh * 0.6 && (!a.width || (r.left < a.right && r.right > a.left))) y = Math.max(y, r.bottom);
+  }
+  az.style.top = Math.round(Math.min(y ? y + 6 : 8, vh * 0.42) - hud.getBoundingClientRect().top) + 'px';   // top se cuenta desde #hud, que puede no empezar en y=0
+}
+setInterval(() => { const cz = $('avisos'); if (cz && cz.children.length) colocarAvisoMovil(); }, 800);
 function aviso(txt, tipo, ms) {
+  const hudA = $('hud');
+  if (hudA && hudA.classList.contains('estrecho') && !document.querySelector('.modal.on, #dq-regalo.on, #dq-avtg.on, .heredar-fondo')) {
+    const cz = $('avisos');
+    if (cz && [...cz.children].some(x => x.textContent === sinEmoji(txt))) return;   // con solo 2 huecos, el mismo texto dos veces no aporta
+    if (cz && cz.children.length >= 2) {
+      if (ms) { const v = [...cz.children].find(x => !x.dataset.imp); if (v) v.remove(); }
+      if (cz.children.length >= 2) {
+        if (colaAvisoMovil.some(a => a.txt === txt)) return;
+        if (ms) { let i = 0; while (i < colaAvisoMovil.length && colaAvisoMovil[i].ms) i++; colaAvisoMovil.splice(i, 0, { txt, tipo, ms }); }
+        else { if (colaAvisoMovil.length >= 6) return; colaAvisoMovil.push({ txt, tipo, ms }); }
+        return;
+      }
+    }
+    colocarAvisoMovil();
+  }
   const d = document.createElement('div');
   d.className = 'aviso';
   if (ms) d.dataset.imp = '1';
@@ -5520,10 +5556,13 @@ function aviso(txt, tipo, ms) {
     if (!capa) { capa = document.createElement('div'); capa.id = 'avisos-modal'; capa.setAttribute('role', 'status'); capa.setAttribute('aria-live', 'polite'); document.body.appendChild(capa); }
   }
   // Duracion segun lo largo del texto (antes la animacion de 3,6 s cortaba los largos).
-  const dur = ms || Math.min(9000, Math.max(3700, String(txt).length * 65));
+  const dur = ms || Math.min(9000, Math.max(hudA && hudA.classList.contains('estrecho') ? 4200 : 3700, String(txt).length * 65));
   d.style.animationDuration = dur + 'ms';
   capa.appendChild(d);
-  setTimeout(() => d.remove(), dur);
+  setTimeout(() => {
+    d.remove();
+    if (colaAvisoMovil.length) setTimeout(() => { const cz = $('avisos'); if (colaAvisoMovil.length && cz && cz.children.length < 2) { const s = colaAvisoMovil.shift(); aviso(s.txt, s.tipo, s.ms); } }, 250);
+  }, dur);
   while (capa.children.length > 4) { const v = [...capa.children].find(x => !x.dataset.imp) || capa.firstChild; v.remove(); }
 }
 
