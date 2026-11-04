@@ -16,10 +16,10 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-  PIEDRA_X, costoViaje, tienePiedra, VERSION, waChicha,
-} from './data.js?v=368';
-import { iniciarRegalo } from './regalo.js?v=368';
-import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=368';
+  PIEDRA_X, costoViaje, tienePiedra, VERSION, waChicha, mesChicha,
+} from './data.js?v=369';
+import { iniciarRegalo } from './regalo.js?v=369';
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=369';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -737,7 +737,7 @@ function recibir(m) {
       }
       // Invitado: su personaje vive solo en este navegador. Se le recuerda
       // en algunos niveles como no perderlo (y recibir avisos y mTON).
-      if (antes && yo.nivel > antes.nivel && soyInvitado && [5, 10, 15, 25].includes(yo.nivel)) setTimeout(() => aviso('Juegas como invitado: este personaje solo existe en este navegador. Pulsa el botón de cuenta (arriba) para guardarlo gratis con tu correo, o entra por @duendequest_bot en Telegram.', 'ok'), 4000);
+      if (antes && yo.nivel > antes.nivel && soyInvitado && [3, 10, 15, 25].includes(yo.nivel)) setTimeout(() => aviso('Juegas como invitado: este personaje solo existe en este navegador y tus cazas no suman puntos de chicha. Si quieres guardarlo y que sumen, pulsa ' + ($('hud').classList.contains('estrecho') ? '⋯ → el botón de cuenta' : 'el botón de cuenta (arriba)') + ': es gratis con tu correo, y ahí también puedes pasarlo a Telegram.', 'ok'), 4000);
       if ($('m-libro').classList.contains('on')) pintarLibro();
       if (yo.clase && $('m-clase').classList.contains('on') && antes && !antes.clase) cerrarModales();
       if (yo.clase && loginPend) { const lp = loginPend; loginPend = null; setTimeout(() => mostrarLogin(lp), 900); }
@@ -794,7 +794,7 @@ function recibir(m) {
       for (let i = 0; i < Math.min(8, 2 + Math.floor(m.oro / 15)); i++) monedas.push({ x: m.x, y: m.y + 20, vx: (Math.random() - .5) * 5, vy: -4 - Math.random() * 3, t: 0 });
       flotante(m.x, m.y, '+' + m.xp + ' XP', '#c084fc', 10);
       if (m.chi) { flotante(m.x - 18, m.y - 44, '+' + m.chi + ' 🥤', '#c084fc', 9); if (yo && yo.chicha) { yo.chicha.p += m.chi; yo.chicha.hoy += m.chi; } }
-      else if (m.chl) flotante(m.x - 18, m.y - 44, '🔒 🥤 desde Nv ' + CHICHA.nvPuntos, '#a8a2b8', 8);   // candado de la chicha (primeras cazas con Nv < 10)
+      else if (m.chl) flotante(m.x - 18, m.y - 44, '🔒 🥤 desde Nv ' + CHICHA.nvPuntos + (TG || !soyInvitado ? '' : ' con cuenta'), '#a8a2b8', 8);   // candado de la chicha (primeras cazas con Nv < 10)
       if (m.cal) { const tp = TEMPORADAS.find(x => x.id === m.tp) || temporadaDe() || TEMPORADAS[0]; flotante(m.x + 18, m.y - 30, '+' + m.cal + ' ' + tp.emoji, tp.color, 10); if (yo) yo[tp.campo] = (yo[tp.campo] || 0) + m.cal; }
       if (m.oro > 0) flotante(m.x, m.y + 14, '+' + m.oro + ' oro', '#ffe600', 10);
       if (m.drops && m.drops.length) m.drops.forEach(d => { const pd = PODERES.find(p => p.id === d); if (pd) aviso('🎁 Encontraste: ' + pd.nombre, 'ok'); });
@@ -3414,14 +3414,34 @@ function cajaReclamos(ch) {
     const que = r.meta === 'nv60' ? r.l + ' litros de nivel ' + CHICHA.nv60 : r.meta.toLocaleString('es', { useGrouping: 'always' }) + ' puntos';
     if (r.estado === 'enviado') return `<div class="mis-caja" style="text-align:center;font-size:12px"><b style="color:var(--ok)">Tu chicha ya va en camino</b> (#${esc(r.id)} · ${que})</div>`;
     if (r.estado === 'rechazado') return `<div class="mis-caja" style="text-align:center;font-size:12px">Tu reclamo #${esc(r.id)} (${que}) no se pudo completar${r.motivo ? ': ' + esc(r.motivo) : ''}.</div>`;
-    return `<div class="mis-caja" style="text-align:center"><p style="font-size:12px;color:var(--txt2)">Tu código de reclamo (${que})</p><p style="font-size:22px;color:var(--oro);margin:4px 0">#${esc(r.id)}</p>${r.cola ? '<p style="font-size:12px;color:var(--txt2)">El cupo de este mes está lleno: se envía el mes que viene.</p>' : ''}<a class="btn" data-wa href="${esc(waChicha(r.id, yo.nombre || 'duende', r.l))}" target="_blank" rel="noopener" style="display:block;margin:8px 0;text-decoration:none;background:#25d366;border-color:#25d366;color:#fff">Coordinar el envío por WhatsApp</a><p style="font-size:12px;color:var(--txt2)">Al ${CHICHA.whatsappVer}, con tu código y tu nombre de duende. El equipo revisa y aprueba cada reclamo a mano. Envío gratis: no hay nada que pagar.</p></div>`;
+    return `<div class="mis-caja" style="text-align:center"><p style="font-size:12px;color:var(--txt2)">Tu código de reclamo (${que})</p><p style="font-size:22px;color:var(--oro);margin:4px 0">#${esc(r.id)}</p>${r.meta === 'nv60' && ch.q60 && ch.q60.id === r.id ? `<p style="font-size:12px;color:var(--txt2)">Puesto ${ch.q60.p} de ${ch.q60.n} en la revisión${r.cola && r.me ? ' · cupo lleno: envío estimado para ' + mesChicha(r.me) : r.me ? ' · cupo de ' + mesChicha(r.me) : ''}.</p>` : ''}${r.coord ? '<p style="font-size:12px;color:var(--ok)">Envío ya coordinado con el equipo.</p>' : ''}${r.cl ? `<details id="cl-${esc(r.id)}" style="margin:8px 0"><summary style="cursor:pointer;font-weight:700;padding:12px 0">Ver mi clave de entrega</summary><p style="font-size:20px;color:var(--oro);letter-spacing:2px;margin:4px 0;user-select:text;-webkit-user-select:text">${esc(r.cl)}</p><p style="font-size:12px;color:var(--txt2)">Te la pedimos por WhatsApp antes de tomar tu dirección. Es solo para el ${CHICHA.whatsappVer}: no se la des a nadie más, ni la muestres en capturas o en el chat. Si otro número te la pide, es una estafa.</p></details>` : ''}<a class="btn" data-wa href="${esc(waChicha(r.id, yo.nombre || 'duende', r.l))}" target="_blank" rel="noopener" style="display:block;margin:8px 0;text-decoration:none;background:#25d366;border-color:#25d366;color:#fff">Coordinar el envío por WhatsApp</a><p style="font-size:12px;color:var(--txt2)">Al ${CHICHA.whatsappVer}, con tu código y tu nombre de duende. El equipo revisa y aprueba cada reclamo a mano. Envío gratis: no hay nada que pagar.</p></div>`;
   }).join('');
 }
+// Lo que falta de tiempo para los litros de Nv 60: «3 días y 5 h» (vacío si ya lo cumple). Mismos requisitos que chicha.js.
+function falta60(ch) {
+  const fd = Math.max(0, CHICHA.dias60 - (ch.dj || 0)), fh = Math.max(0, Math.round(CHICHA.min60 / 60) - Math.floor((ch.mj || 0) / 60));
+  return [fd ? fd + (fd === 1 ? ' día' : ' días') : '', fh ? fh + ' h' : ''].filter(Boolean).join(' y ');
+}
+// Texto del HUD: «¡Reclama!» solo cuando el servidor lo aceptaría.
+function textoHudChicha() {
+  const ch = yo.chicha || {}, est = ch.q60 && ch.q60.estado, L = CHICHA.litros60, N = CHICHA.nv60;
+  if ((ch.rec || []).includes('nv60')) return est === 'rechazado' ? `🥤 Reclamo de ${L} L no aprobado` : est === 'enviado' ? `🥤 ${L} L de chicha en camino ✓` : `🥤 ${L} L de chicha reclamados ✓`;
+  if (yo.nivel < N) return `🥤 Nv ${N} = ${L} L de chicha morada real (${yo.nivel}/${N})`;
+  if (!TG && soyInvitado) return `🥤 Nv ${N} ✓ · para reclamar, crea tu cuenta`;
+  const f = falta60(ch);
+  return f ? `🥤 Nv ${N} ✓ · te falta jugar ${f}` : `🥤 ¡Reclama tus ${L} L de chicha!`;
+}
 function pintarChicha() {
+  // Cada 'yo' o 'yoC' repinta la mochila: la clave que el jugador está leyendo sigue abierta.
+  const claveAbierta = [...$('inv-lista').querySelectorAll('details[id^="cl-"][open]')].map(d => d.id);
   const ch = yo.chicha || { p: 0, hoy: 0, rec: [] };
   const cuenta = TG || !soyInvitado;
-  // Invitado: el aviso va arriba, con el boton para seguir en Telegram.
-  let h = cuenta ? '' : '<div class="seguridad centro" style="margin-top:0;color:var(--txt)">Juegas como invitado: los puntos de chicha se juntan solo con una cuenta (Telegram o correo).<a class="btn" href="https://t.me/duendequest_bot" target="_blank" rel="noopener" style="display:block;margin-top:10px;text-decoration:none;color:#fff">Abrir en Telegram</a></div>';
+  // Rechazado por trampa: el premio sigue en rec (no se puede repetir), pero no se enseña como reclamado.
+  const noAprobado = meta => (ch.rcl || []).some(r => r.estado === 'rechazado' && (r.meta === meta || r.meta === CHICHA.antes[CHICHA.niveles.indexOf(meta)]));
+  const accHecho = meta => noAprobado(meta) ? '<span class="precio" style="color:var(--warn)">No aprobado</span>' : '<span class="precio" style="color:var(--ok)">✓ Reclamado</span>';
+  const accFalta = t => `<span class="precio" style="display:block;white-space:normal;font-size:12px;line-height:1.3;max-width:96px;text-align:right">${t}</span>`;
+  // Invitado: el aviso va arriba, con el boton para crear la cuenta aqui mismo (o seguir en Telegram).
+  let h = cuenta ? '' : '<div class="seguridad centro" style="margin-top:0;color:var(--txt)">Juegas como invitado: tus cazas no suman puntos de chicha y los premios se reclaman con una cuenta. Si la creas gratis con tu correo, tu duende y tu nivel pasan contigo y desde ahí tus cazas suman.<button class="btn" id="chi-cuenta" style="display:block;width:100%;margin-top:10px">Crear cuenta gratis</button><p style="font-size:12px;color:var(--txt2);margin-top:8px">¿Prefieres Telegram? En «Crear cuenta gratis» pide tu código de «Pasar mi duende» y escríbelo allá: sin el código, allá empiezas otro duende.</p><a class="btn" href="https://t.me/duendequest_bot" target="_blank" rel="noopener" style="display:block;margin-top:8px;text-decoration:none;color:#fff">Abrir en Telegram</a></div>';
   h += `<div class="mis-caja" style="margin-top:0;text-align:center"><b style="color:var(--txt);font:600 16px/1.35 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;margin-bottom:0">Chicha morada de verdad, enviada a tu casa</b>
     <p style="font-size:12px;color:var(--txt2);margin-top:4px">Promoción gratuita y opcional: no hay que comprar nada.</p>
     <p style="font-size:12px;margin-top:6px">Cada monstruo que cazas suelta su chicha: <b style="display:inline">1 punto</b>, <b style="display:inline">3</b> si es de tu nivel o más, <b style="display:inline">25</b> un jefe. Desde nivel ${CHICHA.nvPuntos}, hasta ${CHICHA.porDia} puntos al día.</p>
@@ -3441,24 +3461,27 @@ function pintarChicha() {
   // El gran premio: 2 litros por llegar a nivel 60 (siempre a la vista).
   {
     const nv = yo.nivel || 1, hecho = (ch.rec || []).includes('nv60'), pct = Math.min(100, Math.round(nv / CHICHA.nv60 * 100));
-    const acc = hecho ? '<span class="precio" style="color:var(--ok)">✓ Reclamado</span>'
-      : nv >= CHICHA.nv60 ? '<button class="btn" data-chicha="nv60">Reclamar</button>' : `<span class="precio">Nv ${nv}/${CHICHA.nv60}</span>`;
+    const f60 = falta60(ch);
+    const acc = hecho ? accHecho('nv60')
+      : nv < CHICHA.nv60 ? `<span class="precio">Nv ${nv}/${CHICHA.nv60}</span>` : !cuenta ? accFalta('Falta tu cuenta') : f60 ? accFalta('Te falta jugar ' + f60) : '<button class="btn" data-chicha="nv60">Reclamar</button>';
     h += tarjeta(icoPack('I_Bottle02'), `Nivel ${CHICHA.nv60}: ${CHICHA.litros60} litros`, `Llega a nivel ${CHICHA.nv60} en este mundo y te llevas ${CHICHA.litros60} litros de chicha morada a tu casa.<div class="mis-barra"><i style="width:${pct}%"></i></div>`, acc);
   }
   for (const meta of CHICHA.niveles) {
     const hecho = (ch.rec || []).includes(meta);
     const pct = Math.min(100, Math.round(ch.p / meta * 100));
-    const acc = hecho ? '<span class="precio" style="color:var(--ok)">✓ Reclamado</span>'
-      : ch.p >= meta ? `<button class="btn" data-chicha="${meta}">Reclamar</button>` : `<span class="precio">${pct}%</span>`;
+    const acc = hecho ? accHecho(meta)
+      : ch.p < meta ? `<span class="precio">${pct}%</span>` : !cuenta ? accFalta('Falta tu cuenta') : (yo.nivel || 1) < CHICHA.nvReclamo ? accFalta('Desde Nv ' + CHICHA.nvReclamo) : `<button class="btn" data-chicha="${meta}">Reclamar</button>`;
     h += tarjeta(icoPack('I_Bottle02'), `${meta.toLocaleString('es', { useGrouping: 'always' })} puntos`, `Un litro de chicha morada peruana enviado a tu casa.<div class="mis-barra"><i style="width:${pct}%"></i></div>`, acc);
   }
   h += `<ul style="padding-left:18px;margin-top:8px;font-size:12px;line-height:1.45;color:var(--txt2)">
     <li>Promoción gratuita: no hay que comprar nada. Los puntos no se compran, no se venden y no se gastan al reclamar.</li>
     <li>Para reclamar: nivel ${CHICHA.nvReclamo}, personaje de 2 días y una cuenta (no invitado). Al reclamar verás tu código y un botón para coordinar el envío por WhatsApp (${CHICHA.whatsappVer}); nunca te pediremos pagos ni contraseñas.</li>
-    <li>Envíos desde Perú, revisados uno a uno (las trampas o bots quedan fuera). Hay ${CHICHA.mesMax} litros por puntos al mes: si se acaban, tus puntos te esperan al mes siguiente.</li>
+    <li>Envíos desde Perú, revisados uno a uno (las trampas o bots quedan fuera). Hay ${CHICHA.mesMax} litros por puntos al mes: si ya están reclamados, tus puntos te esperan al mes siguiente.</li>
     <li>¿Dudas sobre la chicha? WhatsApp <a href="https://wa.me/51916778731" target="_blank" rel="noopener" style="color:var(--cian)">+51 916 778 731</a>.</li></ul>`;
   h += '<p class="centro" style="font-size:12px;color:var(--txt2);margin-top:10px">🔒 Nunca te pediremos contraseñas<span class="solo-cripto">, frases semilla</span> ni pagos por mensaje privado.</p>';
   $('inv-lista').innerHTML = h;
+  claveAbierta.forEach(id => { const d = $(id); if (d) d.open = true; });
+  if ($('chi-cuenta')) $('chi-cuenta').onclick = abrirCuenta;
   $('inv-lista').querySelectorAll('[data-chicha]').forEach(b => b.onclick = () => { const es60 = b.dataset.chicha === 'nv60'; if (confirm(`¿Reclamar ${es60 ? `tus ${CHICHA.litros60} litros` : 'tu litro'} de chicha morada? Verás tu código para coordinar el envío por WhatsApp.`)) { mandar({ t: 'chicha', meta: es60 ? 'nv60' : +b.dataset.chicha }); b.disabled = true; } });
   $('inv-lista').querySelectorAll('[data-wa]').forEach(a => a.onclick = e => { try { if (TG && TG.openLink) { e.preventDefault(); TG.openLink(a.href); } } catch (er) {} });
 }
@@ -5127,8 +5150,7 @@ function pintarHud() {
   rellenar($('bxp').querySelector('i'), pxp / 100);
   $('bxp').title = 'Experiencia: ' + yo.xp.toLocaleString('es', { useGrouping: 'always' }) + ' / ' + (yo.xpSig || 0).toLocaleString('es', { useGrouping: 'always' }) + ' (' + pxp + '%)';
   {
-    const rec = ((yo.chicha || {}).rec || []).includes('nv60');
-    ponTxt($('h-chicha'), rec ? `🥤 ${CHICHA.litros60} L de chicha reclamados ✓` : yo.nivel >= CHICHA.nv60 ? `🥤 ¡Reclama tus ${CHICHA.litros60} L de chicha!` : `🥤 Nv ${CHICHA.nv60} = ${CHICHA.litros60} L de chicha morada real (${yo.nivel}/${CHICHA.nv60})`);
+    ponTxt($('h-chicha'), textoHudChicha());
   }
   const q = MISIONES[yo.mis ? yo.mis.i : 0];
   const hm = $('h-mision');

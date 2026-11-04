@@ -109,7 +109,7 @@
     var okM = window.dqMedirOk();
     if (!enTg && okM !== 0 && (okM === 1 || (origen && (origen.o === 'meta' || origen.fr)))) {
       var sm = document.createElement('script');
-      sm.src = '/js/medir.js?v=368'; sm.async = true;
+      sm.src = '/js/medir.js?v=369'; sm.async = true;
       (document.head || document.documentElement).appendChild(sm);
     }
   } catch (e) {}
@@ -121,7 +121,8 @@
   // OCULTA mTON, wallet y pagos SOL/$DUENDE. Solo presentacion: no borra nada.
   var anuncio = false;
   try {
-    anuncio = /[?&](fbclid|utm_[a-z]+|ad)=/i.test(location.search) || /^\/jugar(\/|$)/.test(location.pathname);
+    // /jugar/ es de anuncios, salvo si llega desde el boton de la portada (?web=1): esa visita sigue siendo la que era.
+    anuncio = /[?&](fbclid|utm_[a-z]+|ad)=/i.test(location.search) || (/^\/jugar(\/|$)/.test(location.pathname) && !/[?&]web=1(&|$)/.test(location.search));
     try { if (anuncio) sessionStorage.setItem('dq_anuncio', '1'); else anuncio = sessionStorage.getItem('dq_anuncio') === '1'; } catch (e) {}
     if (!anuncio && origen && origen.o === 'meta') anuncio = true;
     // Llego por el QR de la botella: tampoco ve la parte cripto en los 30 dias siguientes.
@@ -142,17 +143,20 @@
     mis_0: 1, mis_1: 1, mis_2: 1, mis_3: 1, mis_4: 1, mis_5: 1, jefe1_ver: 1, jefe1_muere: 1, jefe1_ok: 1,
     fps_baja_ok: 1, fps_baja_justo: 1, fps_baja_lento: 1, fps_media_ok: 1, fps_media_justo: 1, fps_media_lento: 1, fps_alta_ok: 1, fps_alta_justo: 1, fps_alta_lento: 1,
     gpu_mali: 1, gpu_adreno: 1, gpu_powervr: 1, gpu_apple: 1, gpu_intel: 1, gpu_swiftshader: 1, gpu_otra: 1, fuga_gpu: 1, nan_pos: 1,
-    golpe1: 1, caza1: 1, nombre_puesto: 1, look_guardado: 1 };
+    golpe1: 1, caza1: 1, nombre_puesto: 1, look_guardado: 1,
+    ld_portada_ver: 1, ld_portada_clic: 1, ld_jugar_ver: 1, ld_jugar_clic: 1, ld_chicha_ver: 1, ld_chicha_clic: 1 };
   var hechos = {}, clicT = -1, juego = '';
   var movil = false;
   try { movil = (window.matchMedia && matchMedia('(pointer:coarse)').matches) || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent); } catch (e) {}
   window.dqPaso = function (e, j) {
     try {
-      if (!EVENTOS[e] || (j !== 'origins' && j !== 'classic')) return;
+      // j='web': paginas de aterrizaje (solo ld_*). No marcan juego: irse de ellas no es abandonar una carga.
+      var web = /^ld_/.test(e);
+      if (!EVENTOS[e] || (web ? j !== 'web' : j !== 'origins' && j !== 'classic')) return;
       var k = j + ':' + e;
       if (hechos[k]) return;
       hechos[k] = 1;
-      juego = j;
+      if (!web) juego = j;
       var ahora = Math.round(performance.now());
       if (e === 'clic_entrar') clicT = ahora;
       var ss = 'dq_ev_' + k;

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- Pagina de las rutas que no existen (not_found_handling = "404-page" en wrangler.toml). -->
+<meta name="robots" content="noindex">
+<title>Duende Quest · Página no encontrada</title>
+<meta name="theme-color" content="#0a0418">
+<link rel="icon" href="/assets/ui/coin.png">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{min-height:100%;}
+body{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px;background:#0a0418;color:#f2efff;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;text-align:center;}
+main{max-width:420px;width:100%;}
+img{width:72px;height:72px;margin-bottom:12px;}
+h1{font-size:26px;line-height:1.2;margin-bottom:8px;}
+p{color:#b8b0d8;margin-bottom:20px;}
+.jugar{display:block;padding:16px;border-radius:14px;background:#ffd84a;color:#1a0a2e;font-size:18px;font-weight:800;text-decoration:none;}
+.web{display:inline-block;margin-top:12px;padding:10px;color:#f2efff;}
+a:focus-visible{outline:3px solid #fff;outline-offset:2px;}
+</style>
+</head>
+<body>
+<main>
+  <img src="/assets/ui/coin.png" alt="" width="72" height="72">
+  <h1>Este camino no lleva a ningún lado</h1>
+  <p>La página que buscas no existe o cambió de lugar.</p>
+  <a class="jugar" href="/jugar/?web=1">Jugar gratis</a>
+  <a class="web" href="/">Ir a la portada</a>
+</main>
+<script>
+/* Un enlace de anuncio roto: el utm/fbclid sigue su camino, y con el el modo anuncio sin cripto. */
+(function () {
+  var q = location.search;
+  if (!/[?&](fbclid|utm_[a-z]+|ad)=/i.test(q)) return;
+  document.querySelector('.jugar').href = '/jugar/' + q;
+  document.querySelector('.web').href = '/' + q;
+})();
+</script>
+</body>
+</html>

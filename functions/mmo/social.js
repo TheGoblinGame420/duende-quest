@@ -53,13 +53,59 @@ const RE_ESTAFA = [
   /\b(?:EQ|UQ|kQ|0Q)[A-Za-z0-9_-]{46}\b/,               // direccion TON
   /\b0x[a-fA-F0-9]{40}\b/,                              // direccion EVM
   /(?:https?:\/\/|www\.|t\.me\/|telegram\.me\/|discord\.gg\/)/i,
-  /\b[a-z0-9-]{2,}\.(?:com|io|xyz|net|org|app|gg|link|site|online|click|shop)\b/i,
+  /\b[a-z0-9-]{2,}\.(?:com|io|xyz|net|org|app|gg|link|site|online|click|shop|dev|ly|gd|gy|gl|lat|top|vip|club|store|live|info|biz|icu|cfd|sbs|fun|tk|gq|pw|ws|cc|win|bet|cash|money|pro|tv|website|space|page|pages)\b/i,
+  // Terminaciones que tambien son palabras («ya.pe», «ok.me»): solo con ruta o en dominios de dos partes.
+  /\b[a-z0-9-]{2,}\s*\.\s*(?:me|co|to|pe|es|la|ar|mx|cl|br|ai|in|it|us|be|so|sh)\/[a-z0-9]/i,
+  // Sin ruta tambien caen si imitan al premio («chicha.pe», «premio.pe»); «ya.pe» sigue libre.
+  /\b[a-z0-9-]*(?:chicha|premio|duende|token|reclam|envio|asiri|yape|plin|sorteo)[a-z0-9-]*\.(?:me|co|to|pe|es|la|ar|mx|cl|br|ai|in|it|us|be|so|sh)\b/i,
+  /\b[a-z0-9-]{2,}\.(?:co|gob|edu)\.[a-z]{2}\b/i,
+  /(?:^|[^a-z0-9])(?:wa|t)\.me\b/i,
+  // Con espacios o en palabras: «bit . ly», «chicha punto com», «chicha(dot)xyz».
+  /\b[a-z0-9-]{2,}\s*(?:\.\s+|\s+\.\s*|[([]\s*(?:dot|punto)\s*[)\]]|\s+(?:dot|punto)\s+)\s*(?:com|net|org|xyz|ly|dev|site|shop|link)\b/i,
+  /\b[a-z0-9-]{2,}\s*[([]\s*(?:dot|punto|\.)\s*[)\]]\s*[a-z]{2,}\b/i,
   /\b(?:seed phrase|seed|frase semilla|semilla de (?:tu |la )?(?:wallet|cartera|billetera)|mnemonic|clave privada|private key|frase de recuperaci[oó]n|12 palabras|24 palabras)\b/i,
+];
+// El unico dominio que se puede escribir (con sus rutas). Ni «…workers.dev.otro.com», ni «…workers.dev@otro.com»,
+// ni «x-duende-quest…», ni otro dominio escondido en la ruta («…workers.dev/?u=otro.com»): esos siguen bloqueados. Con dominio propio, se añade aqui.
+const DOMINIO_OFICIAL = /(?<![\w.@-])(?:https?:\/\/)?duende-quest\.alfonso12hc\.workers\.dev(?:[/?#][\w\-/?=&#%]*(?:\.html)?)?(?![\w@-]|[.:][a-z0-9/])/gi;
+// Estafas de la chicha y de cobros por chat: pedir plata por un envio, un deposito, un yape o un premio.
+// Hablar del premio, del banco del juego o de pagar con oro NO cae aqui («reclamo mi chicha», «deposita oro en la bóveda»).
+// Tambien la forma de escribirlo en Peru («S/. 20»), en palabras («cinco soles») y en dolares.
+const PLATA = '(?:\\d+\\s*(?:sol(?:es?)?|lucas|lukas|luquitas|dolares|usd)\\b|(?:dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|veinte|treinta|cincuenta|cien)\\s+(?:soles|lucas|lukas|dolares)\\b|s\\/\\.?\\s*\\d|\\$\\s*\\d)';
+// Con el usted y el plural («paguen», «envie», «mande»): quien estafa escribe asi tan a menudo como «paga».
+const PAGAR = '(?:pag(?:a|ue)\\w*|abon[ae]\\w*|mand[ae]\\w*|envi[ae]\\w*|transfier\\w*)';
+const ENVIO = '(?:envio|flete|delivery|courier)';
+const RE_ESTAFA_COBRO = [
+  /\b(?:yapea(?:me|le|nos|r)?|yapeo|yapeas|yapeen|plinea(?:me|le|nos|r)?|plineo|plinean)\b/,
+  /\b(?:por|al|a mi|mi|tu) (?:yape|plin)\b/,
+  /\b(?:yape|plin)\b.{0,40}\b(?:pag(?:a|ue)\w*|pago|abon[ae]\w*|cancel[ae]\w*|deposit\w*|envio|envi[ae]\w*|mand[ae]\w*|premio|chicha|soles|numero|transfer\w*)\b/,
+  /\b(?:pag(?:a|ue)\w*|pago|abon[ae]\w*|cancel[ae]\w*|deposit\w*|envio|envi[ae]\w*|mand[ae]\w*|premio|chicha|soles|numero|transfer\w*)\b.{0,40}\b(?:yape|plin)\b/,
+  /\b(?:depositame|depositale|depositenme|depositarme)\b/,
+  new RegExp('\\bdeposit\\w*\\b.{0,30}(?:' + PLATA + '|\\bsoles\\b|\\blucas\\b|\\bdinero\\b(?!.{0,25}\\b(?:boveda|banco|cofre|alcancia)\\b)|\\bbcp\\b|\\binterbank\\b|\\bbbva\\b|\\bscotiabank\\b|\\b(?:a|en) (?:mi|esta|la siguiente) cuenta\\b)'),
+  new RegExp('(?:' + PLATA + '|\\bsoles\\b|\\bbcp\\b|\\binterbank\\b|\\bbbva\\b).{0,30}\\bdeposit\\w*\\b'),
+  // «¿quién paga el envío?» y «no pagues el envío» no piden plata: esos pasan.
+  new RegExp('(?<!\\bquien (?:se )?|(?:^|[.,;!?¿¡]\\s*)no (?:se )?)\\b(?:pag(?:a|ue)\\w*|pago|abon[ae]\\w*|cancel[ae]\\w*|deposit\\w*|adelant[ae]\\w*|transfier\\w*)\\b(?:\\s+\\S+){0,4}?\\s+(?:el|tu|su|del|por|de|al|mi)\\s+(?:\\S+\\s+){0,2}?' + ENVIO + '\\b'),
+  new RegExp('\\b(?:gastos?|costos?|cobro|cargo|pago|precio)\\s+(?:de|del|por)\\s+(?:el\\s+|tu\\s+|su\\s+)?' + ENVIO + '\\b'),
+  new RegExp(PLATA + '\\s+(?:de|del|por|para)\\s+(?:el\\s+|tu\\s+)?' + ENVIO + '\\b'),
+  new RegExp('\\b' + ENVIO + '\\b.{0,25}' + PLATA),
+  // La botella se vende y se habla de su precio: con «chicha» solo cuenta si se pide pagar.
+  new RegExp('\\b' + PAGAR + '\\b.{0,20}' + PLATA),
+  new RegExp('\\b(?:premio|chicha|litros?|ganaste|sorteo)\\b.{0,40}\\b' + PAGAR + '\\b.{0,30}' + PLATA),
+  new RegExp('\\b(?:premio|ganaste|sorteo|ganador\\w*)\\b.{0,40}' + PLATA),
+  /\b(?:ganaste|tu premio|te toco|eres (?:el |la )?ganador\w*)\b.{0,50}\b(?:escribe(?:me|nos|le)|escribe (?:a|al|por|en)|contacta\w*|llama(?:me|nos)|comunicate|tus datos|dni)\b/,
+  /\b(?:reclam\w*|cobra\w*)\b.{0,30}\b(?:premio|chicha|litros?)\b.{0,30}\b(?:escribe\w*|privado|interno|conmigo|link|enlace|dm|md)\b/,
+  /\b(?:escribe(?:me|nos)|hablame|contacta(?:me|nos)|(?:por|al) (?:privado|interno)|dm|md)\b.{0,40}\b(?:premio|chicha|litros?)\b/,
 ];
 // Se mira tambien una copia en NFKC y sin marcas ni invisibles: un selector de
 // variacion (U+FE0F) o una etiqueta (U+E0020) dentro de «t.me» o «seed» saltaba el filtro.
-const normEstafa = t => String(t || '').normalize('NFKC').replace(/[\p{M}\p{Cf}︀-️᠋-᠍ﾠ⠀ㅤᅟᅠ]|[\u{E0000}-\u{E007F}]/gu, '');
-export const riesgoEstafa = t => { const n = normEstafa(t); return RE_ESTAFA.some(r => r.test(t) || r.test(n)); };
+const normEstafa = t => String(t || '').normalize('NFKC').replace(/[\p{M}\p{Cf}︀-️᠋-᠍ﾠ⠀ㅤᅟᅠ]|[\u{E0000}-\u{E007F}]/gu, '').replace(/。/g, '.');
+// Minusculas y sin tildes. La otra copia deshace letras por numeros y letras sueltas («d3p0sita», «y a p e a m e»).
+const llano = t => String(t || '').toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
+const sinLeet = t => t.replace(/[@4]/g, 'a').replace(/[1!|]/g, 'i').replace(/0/g, 'o').replace(/3/g, 'e').replace(/\$/g, 's').replace(/\b(\w)[\s._*-]+(?=\w\b)/g, '$1');
+export const riesgoEstafa = t => {
+  const crudo = String(t || '').replace(DOMINIO_OFICIAL, ' '), n = normEstafa(t).replace(DOMINIO_OFICIAL, ' '), b = llano(n), bl = sinLeet(b);
+  return RE_ESTAFA.some(r => r.test(crudo) || r.test(n)) || RE_ESTAFA_COBRO.some(r => r.test(b) || r.test(bl));
+};
 // Chat seguro para menores: groserias se tapan con asteriscos (tambien vetan nombres en dios.js).
 // Sin \w* tras marica/verga: "Maricarmen" y "Vergara" son nombres de verdad.
 export const RE_GROSERIA = /\b(?:put[ao]s?|putamadre|mierd[\wáéíóúñ]*|conchatumadre|ctm|csm|huev[oó]n[\wáéíóúñ]*|cojud[\wáéíóúñ]*|pendej[\wáéíóúñ]*|maric(?:as?|[oó]n[\wáéíóúñ]*)|cabr[oó]n[\wáéíóúñ]*|vergas?|pinga[\wáéíóúñ]*|poronga[\wáéíóúñ]*|cach[ae]r[\wáéíóúñ]*|porno[\wáéíóúñ]*|nudes?|violar[\wáéíóúñ]*|ptm[r]?|conchatumare|conchasumadre|conchasumare|concha\s*tu\s*madre|csmr|ctmr|chucha|w[e]b[oó]n|we[oó]n|hdp|mrd|zorra|pajer[oa]s?|marac[oa]s?)(?![\wáéíóúñ])/gi;
@@ -67,7 +113,33 @@ export const RE_GROSERIA = /\b(?:put[ao]s?|putamadre|mierd[\wáéíóúñ]*|conc
 const RE_CONTACTO = [/(?:(?<!\d)|(?<=(?<!\d)\+?51))9\d{2}[\s.\-]?\d{3}[\s.\-]?\d{3}(?!\d)/, /\b(?:wsp|whats?app|wasap|watsap|wpp|snap(?:chat)?|n[uú]mero de cel)\b/i, /\b(?:mi|tu|su|dame|pasa(?:me)?|p[aá]same|agr[eé]game|escr[ií]beme|h[aá]blame|s[ií]gueme)\s+(?:al\s+|por\s+|en\s+|el\s+|tu\s+|su\s+)?(?:insta(?:gram)?|tiktok|face(?:book)?|discord|n[uú]mero)\b/i, /\b(?:dame|pasa(?:me)?|p[aá]same|agr[eé]game|escr[ií]beme|h[aá]blame)\s+(?:al\s+|por\s+|en\s+|el\s+|tu\s+|su\s+)?cel(?:ular)?\b/i,/(?:^|\s)@[a-z0-9_.]{3,}/i, /\b(?:cu[aá]ntos a[nñ]os tienes|d[oó]nde vives|tu direcci[oó]n|tu colegio|manda foto)\b/i];
 // Preguntas tipicas de grooming y numeros sueltos: se prueban en minusculas y sin tildes.
 const RE_CONTACTO2 = [/\b(?:que edad|edad tienes|cual es tu edad)\b/, /\b(?:manda|mandame|pasa|pasame)\s+(?:una\s+|tu\s+|tus\s+)?fotos?\b/, /\b(?:mi|tu|su|al)\s+(?:ig|tg|insta|instagram|telegram|face|facebook|tiktok)\b/, /\b(?:que|cual)\s+colegio\b|\bcolegio\s+estudias\b/, /\b(?:en que distrito|vives en|tienes novi[oa]|eres (?:chica|chico|mujer|hombre))\b/, /\btu\s+cel(?:ular)?\b/, /(?<!\d)9(?:\d{8}|(?:[\s.-]\d){8})(?!\d)/];
-export const riesgoContacto = t => { const n = normEstafa(t); if (RE_CONTACTO.some(r => r.test(t) || r.test(n))) return true; const b = n.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); return RE_CONTACTO2.some(r => r.test(b)); };
+// Telefono disfrazado: «9167 78732», «916/778/732», «9l6 778 732», «nueve uno seis siete…».
+// No caen una vida («9000/10000») ni cifras redondas seguidas («9000 10000», «9500/12000»).
+const NUM_PALABRA = { cero: 0, uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9 };
+const NUM_LETRA = { l: 1, i: 1, o: 0, z: 2, e: 3, a: 4, s: 5, t: 7, b: 8, g: 9 };
+// Separador: cualquier cosa que no sea letra ni cifra («916🔥778🔥732», «916;778;732»).
+const RE_TEL_SEPARADO = /(?<!\d)(?:0{0,2}51)?9(?:[^\p{L}\p{N}]{0,3}\d){8}(?!\d)/gu;
+// Cualquier forma de escribir WhatsApp, tambien deletreada («w s p», «guasap», «whats4pp»).
+const RE_WSP = /\b(?:wh?at?s+app?|w[s5]a?pp?|wpp|guas+ap+|waz+ap+)\b/;
+const RE_TEL_LETRAS = /\bnovecient[oa]s(?:\s+(?:y\s+)?(?:[a-z]*cient[oa]s|cien|diez|once|doce|trece|catorce|quince|dieci[a-z]+|veinti[a-z]+|veinte|treinta|cuarenta|cincuenta|sesenta|setenta|ochenta|noventa|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|cero)\b){3,}/;
+export const telefonoDisfrazado = t => {
+  const b = llano(normEstafa(t)).replace(/_/g, ' ');
+  if (RE_TEL_LETRAS.test(b)) return true;
+  const c = b.replace(/\b(?:cero|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve)\b/g, x => NUM_PALABRA[x])
+    .replace(/\b[0-9a-z]*\d[0-9a-z]*\b/g, x => (/^[0-9lizeastbgo]+$/.test(x) ? x.replace(/[a-z]/g, l => NUM_LETRA[l]) : x))
+    .replace(/(?<=\d[\s.,\/-]{1,3})l(?=[\s.,\/-]{1,3}\d)/g, '1');
+  for (const m of c.matchAll(RE_TEL_SEPARADO)) {
+    const g = m[0].match(/\d+/g);
+    if (g.length === 2 && m[0].includes('/')) continue;
+    if (g.length >= 2 && g.every(x => x.endsWith('00'))) continue;
+    // Tampoco una lista de horas («9:30 10:45 12:00») ni una cuenta seguida («9 10 11 12 13»).
+    if (/^\d{1,2}[.:]\d{2}\s+\d{1,2}[.:]\d{2}\s/.test(m[0])) continue;
+    if (g.length >= 4 && g.every((x, i) => !i || +x === +g[i - 1] + 1)) continue;
+    return true;
+  }
+  return false;
+};
+export const riesgoContacto = t => { const n = normEstafa(t); if (RE_CONTACTO.some(r => r.test(t) || r.test(n))) return true; const b = n.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); return RE_CONTACTO2.some(r => r.test(b)) || RE_WSP.test(b) || RE_WSP.test(sinLeet(b)) || telefonoDisfrazado(t); };
 // Copia normalizada para pillar letras disfrazadas (put@, p u t a, m1erda).
 const normGroseria = t => normEstafa(t).normalize('NFKC').toLowerCase().replace(/[@4]/g, 'a').replace(/[1!|]/g, 'i').replace(/0/g, 'o').replace(/3/g, 'e').replace(/\$/g, 's').replace(/\b(\w)[\s._*-]+(?=\w\b)/g, '$1');
 // Se quitan antes las groserias normales (esas van con asteriscos) para que "puta m1erda" no deje pasar la disfrazada.
@@ -424,7 +496,7 @@ export const Social = {
     const mudo = this.silenciado ? this.silenciado(s) : 0;
     if (mudo) return this.no(s, `🔇 Estás silenciado por un moderador ${Math.ceil((mudo - ahora) / 60000)} min más.`);
     // Solo el dueño se salta el filtro: un moderador no publica carteras ni enlaces (nadie se hace pasar por el equipo).
-    if (!(this.esDueno && this.esDueno(s)) && riesgoEstafa(txt)) return this.no(s, '🛡 Por seguridad no se permiten direcciones de cartera, enlaces ni frases semilla en el chat. Nadie del equipo te pedirá nunca tu frase semilla.');
+    if (!(this.esDueno && this.esDueno(s)) && riesgoEstafa(txt)) return this.no(s, '🛡 Por seguridad no se permiten carteras, enlaces, cobros ni frases semilla. Nadie del equipo te cobra por aquí ni te pide tu frase.');
     if (!(this.esDueno && this.esDueno(s)) && riesgoContacto(txt)) return this.no(s, '🛡 Por tu seguridad no se comparten teléfonos, redes ni datos personales en el chat. Si alguien te los pide, usa Reportar.');
     if (groseriaDisfrazada(txt)) return this.no(s, 'Ese mensaje tiene palabras no permitidas.');
     const txtF = txt.replace(RE_GROSERIA, x => '*'.repeat(x.length));

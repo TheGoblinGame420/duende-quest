@@ -10,7 +10,7 @@
 // 'miembro'. Crear una cuesta oro (sale del juego, no de dinero real).
 // ═══════════════════════════════════════════════════════
 import { HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, GESTA_ANTIG_MS, premioGesta, semanaUTC } from '../../mmo/js/data.js';
-import { pub, riesgoEstafa, meIgnora } from './social.js';
+import { pub, riesgoEstafa, riesgoContacto, meIgnora } from './social.js';
 import { esqueleto } from './dios.js';
 
 const INV_MS = 60000;
@@ -87,7 +87,9 @@ export const Hermandades = {
     // La frase tambien con las letras que se confunden ('EI Duende', 'El Ðuende').
     const esqHerm = llanoHerm.replace(/[il1|!]/g, 'l').replace(/ð/g, 'd').replace(/[0ø]/g, 'o').replace(/3/g, 'e');
     const RE_FRASE = /(^| )el ?duende( |$)|duende ?quest/;
-    if (!this.esDueno(s) && (nombre.split(' ').some(w => this.nombreReservado(w)) || RE_FRASE.test(llanoHerm) || RE_FRASE.test(esqHerm))) return this.no(s, 'Ese nombre está reservado.');
+    if (!this.esDueno(s) && (nombre.split(' ').some(w => this.nombreReservado(w)) || this.nombrePremio(nombre) || RE_FRASE.test(llanoHerm) || RE_FRASE.test(esqHerm))) return this.no(s, 'Ese nombre está reservado.');
+    // Palabra a palabra no se veria un telefono partido («Los 916 778 732»). Solo al fundar: las que ya existen no cambian.
+    if (!this.esDueno(s) && (nombre.match(/\d/g) || []).length > 4) return this.no(s, 'Ese nombre lleva muchas cifras y parece un teléfono: usa 4 como máximo.');
     const clave = 'hn:' + nombre.toLowerCase();
     // Cerrojo: un doble toque (o dos peticiones seguidas) no cobra dos veces
     // ni deja una hermandad huerfana; tampoco dos jugadores el mismo nombre.
@@ -324,7 +326,7 @@ export const Hermandades = {
     if (this.esperaHerm(s)) return;
     const motd = String(m.m || '').replace(/[\u0000-\u001f\u007f­͏ᅟᅠ᠎​-‏‪-‮⁠-⁯ㅤ﻿]/g, '').trim().slice(0, 140);
     // El mensaje del dia sale a toda la hermandad: el mismo filtro que el chat.
-    if (!(this.esDueno && this.esDueno(s)) && riesgoEstafa(motd)) return this.no(s, '🛡 Por seguridad no se permiten direcciones de cartera, enlaces ni frases semilla.');
+    if (!(this.esDueno && this.esDueno(s)) && (riesgoEstafa(motd) || riesgoContacto(motd))) return this.no(s, '🛡 Por seguridad no se permiten direcciones de cartera, enlaces, cobros, teléfonos ni frases semilla.');
     h.motd = motd;
     await this.guardarHerm(h);
     this.avisarHerm(h, `📜 Nuevo mensaje del día: ${h.motd || '(vacío)'}`);

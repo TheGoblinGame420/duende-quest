@@ -9,10 +9,10 @@
 // mismos mensajes y ventanas del juego. Lo que depende de mundo.js llega por `c`.
 //
 // El premio real no cambia con la historia: 2 litros en Nv 60 con sus requisitos.
-import { MISIONES, MONSTRUOS, MAPAS, CHICHA, DIARIA, premioDiaria, EXPEDICION, horaFelizTiempos, zonaDeNivel } from '/mmo/js/data.js?v=368';
-import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=368';
-import { encargosDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=368';
-import * as LORE from './lore.js?v=368';
+import { MISIONES, MONSTRUOS, MAPAS, CHICHA, mesChicha, DIARIA, premioDiaria, EXPEDICION, horaFelizTiempos, zonaDeNivel } from '/mmo/js/data.js?v=369';
+import { SECUNDARIAS, secundariaDe } from '/mmo/js/secundarias.js?v=369';
+import { encargosDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=369';
+import * as LORE from './lore.js?v=369';
 
 const { CAPITULOS, capituloDe, LORE_ZONAS, LORE_MISIONES } = LORE;
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, x => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[x]));
@@ -57,10 +57,10 @@ export function capituloActual(misI) {
   const total = (sig ? sig.desde : MISIONES.length) - cap.desde;
   return { n: cap.n, titulo: cap.titulo, z: cap.z, k: Math.min(i - cap.desde + 1, total), total, fin: i >= MISIONES.length };
 }
-// El ultimo gancho ganado: nunca adelanta lo que aun no has vivido. x4 cumplida trae el
-// segundo gancho del capitulo 10. Devuelve solo el texto; quien lo dice va en quienGancho.
+// El ultimo gancho ganado: nunca adelanta lo que aun no has vivido. x3 cumplida trae la
+// carta y x4 el caso cerrado. Devuelve solo el texto; quien lo dice va en quienGancho.
 export function ganchoDe(misI, sec) {
-  try { return LORE.ganchoActual(misI, !!(sec || {})['x4:ok']) || { quien: '', texto: '' }; } catch (e) { return { quien: '', texto: '' }; }
+  try { return LORE.ganchoActual(misI, !!(sec || {})['x3:ok'], !!(sec || {})['x4:ok']) || { quien: '', texto: '' }; } catch (e) { return { quien: '', texto: '' }; }
 }
 export const htmlGancho = g => (g && g.texto ? `<p class="ob-gancho">${esc(g.texto)}${g.quien ? ` <small>— ${esc(g.quien)}</small>` : ''}</p>` : '');
 // Lo reunido de la historia. Recetario y pistas salen de las misiones hechas: el numero
@@ -80,19 +80,23 @@ export function granMeta(y, invitado) {
   const ch = (y && y.chicha) || {}, nv = (y && y.nivel) || 1;
   const dias = ch.dj || 0, horas = Math.floor((ch.mj || 0) / 60), hMeta = Math.round(CHICHA.min60 / 60);
   const rec = (ch.rec || []).includes('nv60');
+  // Lo que le falta de tiempo con el Nv 60 ya hecho: «3 días y 5 h» (vacío si ya lo cumple).
+  const fd = Math.max(0, CHICHA.dias60 - dias), fh = Math.max(0, hMeta - horas);
+  const falta = [fd ? fd + (fd === 1 ? ' día' : ' días') : '', fh ? fh + ' h' : ''].filter(Boolean).join(' y ');
   return {
-    nv, nvMeta: CHICHA.nv60, pct: Math.min(100, Math.round(nv / CHICHA.nv60 * 100)),
+    falta, nv, nvMeta: CHICHA.nv60, pct: Math.min(100, Math.round(nv / CHICHA.nv60 * 100)),
     dias, diasMeta: CHICHA.dias60, horas, hMeta, litros: CHICHA.litros60, rec, q: ch.q60 || null,
     tg: !invitado, listo: !rec && !invitado && nv >= CHICHA.nv60 && dias >= CHICHA.dias60 && horas >= hMeta,
   };
 }
 // El puesto en la cola: solo existe de verdad desde que se reclama.
 export function textoCola(g) {
-  if (g.q && g.q.p) return `Tu reclamo #${g.q.id}: puesto ${g.q.p} de ${g.q.n} en la revisión del equipo${g.q.cola ? ' · el cupo de este mes está lleno, se envía el mes que viene' : ''}.`;
+  if (g.q && g.q.p) return `Tu reclamo #${g.q.id}: puesto ${g.q.p} de ${g.q.n} en la revisión del equipo${g.q.cola && g.q.me ? ' · cupo lleno: envío estimado para ' + mesChicha(g.q.me) : g.q.me ? ' · cupo de ' + mesChicha(g.q.me) : ''}.`;
   if (g.q && g.q.estado === 'enviado') return '🎉 Tu chicha ya va en camino.';
-  if (g.q && g.q.estado === 'rechazado') return 'El equipo no aprobó tu reclamo. El motivo está en «Ver el premio».';
+  if (g.q && g.q.estado === 'rechazado') return 'El equipo no aprobó tu reclamo. Los detalles están en «Ver el premio».';
+  if (!g.rec && g.nv >= g.nvMeta && g.tg && g.falta) return `Ya tienes el nivel. Para reclamar te falta jugar ${g.falta}.`;
   if (g.rec) return 'Ya reclamaste: coordina el envío por WhatsApp con tu código.';
-  return `Puesto en la cola: lo recibes al reclamar. Se envían hasta ${CHICHA.mesMax60} premios de Nv ${CHICHA.nv60} al mes; si ese mes se llena, el tuyo sale al mes siguiente.`;
+  return `Puesto en la cola: lo recibes al reclamar. Se envían hasta ${CHICHA.mesMax60} premios de Nv ${CHICHA.nv60} al mes; si ese mes se llena, entras en cola y ves tu puesto y el mes estimado.`;
 }
 
 const CSS = `
@@ -127,6 +131,10 @@ button.ob-fila::after{content:'▸';position:absolute;right:9px;top:50%;transfor
 #misiones .ob-btn{float:right;position:relative;width:24px;height:24px;margin:-2px -3px 1px 4px;padding:0;border-radius:7px;border:1px solid rgba(255,216,74,.6);background:rgba(255,216,74,.14);color:#fff;font-size:13px;line-height:22px;text-align:center;cursor:pointer;touch-action:manipulation;}
 #misiones .ob-btn::after{content:'';position:absolute;inset:-5px;}
 body:is(.movil,.compacto) #misiones:not(.abierto) .ob-btn{margin-right:10px;}
+/* Movil plegado: la caja crece lo que ocupa el boton, para que la fila conserve flecha y metros. Con objetivo fijado no hay sitio: el boton sale al desplegar. */
+body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto):has(>.ob-btn){width:calc(min(180px,50vw) + 38px);}
+@media (orientation:landscape) and (max-height:500px){body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto):has(>.ob-btn){width:max(min(218px,calc(100vw - 354px)),calc(clamp(100px,26vw,200px) + 38px));}}
+body:is(.movil,.compacto):has(#obj[style*="block"]) #misiones:not(.abierto) .ob-btn{display:none;}
 #ob-sig{position:fixed;left:50%;top:calc(64px + env(safe-area-inset-top) + var(--tg-top,0px));transform:translateX(-50%);z-index:8;width:min(340px,calc(100vw - 24px));box-sizing:border-box;padding:10px 12px;border-radius:14px;border:1px solid rgba(255,216,74,.55);background:rgba(20,14,34,.93);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 6px 20px rgba(0,0,0,.45);color:#fff;font:500 13px/1.35 var(--sans);transition:opacity .25s ease;opacity:0;}
 #ob-sig.salida{z-index:30;top:50%;transform:translate(-50%,-50%);}
 #ob-sig .ob-h{display:block;color:#4ade80;font-weight:800;font-size:13.5px;}
@@ -135,7 +143,21 @@ body:is(.movil,.compacto) #misiones:not(.abierto) .ob-btn{margin-right:10px;}
 #ob-sig .ob-bs{display:flex;gap:6px;margin-top:8px;}
 #ob-sig .ob-bs .btn{flex:1;min-width:0;padding:7px 8px;font-size:12.5px;min-height:36px;}
 #ob-sig .ob-bs .ob-mini{flex:0 0 42px;padding:0;}
-@media (orientation:landscape) and (max-height:500px){#ob-sig:not(.salida){top:calc(8px + var(--tg-top,0px));}}
+body:is(.movil,.compacto) #ob-sig:not(.salida){top:var(--hud-fin,calc(110px + env(safe-area-inset-top) + var(--tg-top,0px)));}
+html body:is(.movil,.compacto):has(#ob-sig:not(.salida)) #presumir3{bottom:auto;top:min(calc(var(--av-top,224px) + 60px),calc(100vh - 232px));}
+@media (orientation:landscape) and (max-height:500px){
+ html body:is(.movil,.compacto):has(#ob-sig:not(.salida)) #presumir3{left:calc(256px + env(safe-area-inset-left) + min(320px,calc(100vw - 272px))/2);width:min(320px,calc(100vw - 272px));}   /* left es su centro: su animacion «latir» lleva translateX(-50%) */
+ html body.mano-der:is(.movil,.compacto):has(#ob-sig:not(.salida)) #presumir3{left:calc(64px + env(safe-area-inset-left) + min(320px,calc(100vw - 328px))/2);width:min(320px,calc(100vw - 328px));}
+ body:is(.movil,.compacto) #ob-sig:not(.salida){left:calc(8px + env(safe-area-inset-left));right:auto;transform:none;top:calc(70px + env(safe-area-inset-top) + var(--tg-top,0px));width:min(240px,38vw);max-height:calc(100vh - 78px - env(safe-area-inset-top) - var(--tg-top,0px));overflow-y:auto;padding:8px 10px;font-size:12px;}
+ body.mano-der:is(.movil,.compacto) #ob-sig:not(.salida){left:auto;right:calc(8px + env(safe-area-inset-right));top:calc(92px + env(safe-area-inset-top) + var(--tg-top,0px));max-height:calc(100vh - 100px - env(safe-area-inset-top) - var(--tg-top,0px));}
+ html body:is(.movil,.compacto):has(#ob-sig:not(.salida)) #avisos{left:auto;right:calc(8px + env(safe-area-inset-right));transform:none;width:min(460px,calc(100vw - 264px));}
+ html body.mano-der:is(.movil,.compacto):has(#ob-sig:not(.salida)) #avisos{left:calc(8px + env(safe-area-inset-left));right:auto;}
+ /* Con grupo, alas o ficha de otro jugador bajo el marco, la tarjeta va a su derecha y no los tapa; los avisos ceden ese ancho. */
+ html body:not(.mano-der):is(.movil,.compacto):has(:is(#grupo3,#alas,#objp)[style*="block"]) #ob-sig:not(.salida){left:calc(200px + env(safe-area-inset-left));top:calc(48px + env(safe-area-inset-top) + var(--tg-top,0px));width:min(220px,calc(100vw - 420px));max-height:calc(100vh - 56px - env(safe-area-inset-top) - var(--tg-top,0px));}
+ html body:not(.mano-der):is(.movil,.compacto):has(:is(#grupo3,#alas,#objp)[style*="block"]):has(#ob-sig:not(.salida)) #avisos{width:calc(100vw - 436px);}
+ html body:is(.movil,.compacto):has(#ob-sig:not(.salida)) #presumir3{top:calc(var(--av-top,92px) + 56px);}
+ html body:not(.mano-der):is(.movil,.compacto):has(:is(#grupo3,#alas,#objp)[style*="block"]):has(#ob-sig:not(.salida)) #presumir3{top:calc(173px + env(safe-area-inset-top) + var(--tg-top,0px));left:calc(335px + env(safe-area-inset-left));width:270px;}
+}
 @media (prefers-reduced-motion:reduce){#ob-sig{transition:none;}}
 `;
 
@@ -164,7 +186,8 @@ export function crearObjetivos(c) {
     c.pintarMisiones(); pintar(); c.abrir(ID);
     cu.scrollTop = 0;
   }
-  function alternar() { if (abierto()) c.cerrar(ID); else if (!c.tutoActivo()) abrirPanel(); }   // tecla O: en el tutorial tampoco, como el boton
+  // Tecla O: en el tutorial tampoco abre, como el boton, pero avisa: la linea de teclas la anuncia desde el principio.
+  function alternar() { if (abierto()) c.cerrar(ID); else if (c.tutoActivo()) c.aviso('🎯 Tus objetivos se abren al entregar tu primera misión', 'ok'); else abrirPanel(); }
 
   // Una accion del panel o de la tarjeta: los mismos caminos que ya tiene el juego.
   function hacer(d) {
@@ -178,6 +201,7 @@ export function crearObjetivos(c) {
     else if (a === 'exped') c.V.abrirExpedicion();
     else if (a === 'ttemp') c.V.abrirTiendaTemp();
     else if (a === 'chicha') c.verChicha();
+    else if (a === 'cuenta') c.crearCuenta();
     else if (a === 'leyenda') c.verLeyenda();
     else if (a === 'receta') c.verReceta();
     else if (a === 'caso') c.verCaso();
@@ -330,8 +354,9 @@ export function crearObjetivos(c) {
     h += `<small style="color:#fff">Nivel ${g.nv} de ${g.nvMeta}</small><div class="ob-barra" role="progressbar" aria-valuenow="${g.pct}" aria-valuemin="0" aria-valuemax="100"><span style="width:${g.pct}%"></span></div>`;
     h += `<div class="ob-chips"><span>${si(g.nv >= g.nvMeta)} Nv ${g.nv}/${g.nvMeta}</span><span>${si(g.dias >= g.diasMeta)} Días ${Math.min(g.dias, g.diasMeta)}/${g.diasMeta}</span><span>${si(g.horas >= g.hMeta)} Horas ${Math.min(g.horas, g.hMeta)}/${g.hMeta}</span><span>${si(g.tg)} Cuenta real</span></div>`;
     h += `<small>${esc(textoCola(g))}</small><small>El equipo revisa cada reclamo · envíos solo en Perú · gratis, no hay que comprar nada.</small>`;
+    if (!g.tg) h += `<small style="color:#fde68a">Como invitado tus cazas no suman puntos de chicha. Con una cuenta gratis sí suman, y tu duende pasa contigo.</small><button type="button" class="btn sec ob-acc" data-a="cuenta">📧 Crear cuenta gratis</button>`;
     h += `<button type="button" class="btn ${g.listo ? '' : 'sec'} ob-acc" data-a="chicha">${g.listo ? `🥤 Reclamar mis ${g.litros} litros` : '🥤 Ver el premio'}</button></div>`;
-    const cap = capituloActual(y.mis.i), I = intrigaDe(cap.z), n = contarHistoria(c.secundarias(), c.encargos()), gancho = ganchoDe(y.mis.i, c.secundarias());
+    const cap = capituloActual(y.mis.i), I = intrigaDe(cap.z), n = contarHistoria(c.secundarias(), c.encargos()), gancho = ganchoVivido();
     h += `<div class="ob-fila"><b style="color:#fde68a">📖 Capítulo ${cap.n}/${CAPITULOS.length}: ${esc(cap.titulo)}</b>`;
     h += `<small>${cap.fin ? 'La cadena de Tito está completa.' : `Misión ${cap.k}/${cap.total} del capítulo.`}${I.objetivo && !cap.fin ? ' ' + esc(I.objetivo) : ''}</small>`;
     h += htmlGancho(gancho);
@@ -350,7 +375,17 @@ export function crearObjetivos(c) {
   // Pequeña y sin fondo: nunca tapa una pelea, una ventana ni un dialogo; se va sola a
   // los 11 s o al volver a pelear. Lo ultimo que pasa sustituye a lo que esperaba.
   // Tambien en modo anuncio: estas tarjetas solo llevan lore, oro y misiones, nada de cripto.
-  let pend = null, pendT = 0, ultimaLeve = 0, salirA = null, salidaVista = false;
+  let pend = null, pendT = 0, ultimaLeve = 0, salirA = null, salidaVista = false, ultimoGancho = '';
+  // El gancho que ya se gano en esta partida. Quien llega con la cadena avanzada (partida anterior al arco) no vivio la
+  // escena: no se le adelanta «Fui yo» ni «se llamaba Sami». Con la carta o el caso cerrado ya hizo el camino de las pistas.
+  function ganchoVivido() {
+    const y = c.yo(), s = c.secundarias(), i = (y && y.mis && y.mis.i) || 0;
+    if (!s['x3:ok'] && !s['x4:ok']) {
+      const ult = CAPITULOS.filter(x => i >= LORE.finCapitulo(x)).pop();
+      if (ult && !c.capVisto('g' + ult.n)) return { quien: '', texto: '' };
+    }
+    return ganchoDe(i, s);
+  }
   function quitarTarjeta() {
     const t = document.getElementById('ob-sig'); if (!t) return;
     clearTimeout(t._t); clearInterval(t._i);
@@ -389,7 +424,10 @@ export function crearObjetivos(c) {
     pend = null;
     c.pintarMisiones();
     const p = pasoAhora();
-    const gancho = o.gancho ? ganchoDe(c.yo().mis.i, c.secundarias()) : null;
+    // La misma frase no se repite tras cada mision del capitulo: sigue en el panel. «Donde lo dejaste» si la recuerda.
+    let gancho = o.gancho ? ganchoVivido() : null;
+    if (gancho && gancho.texto === ultimoGancho && o.cl !== 'vuelta') gancho = null;
+    if (gancho && gancho.texto) ultimoGancho = gancho.texto;
     tarjeta(o.cl || '', o.titulo, (o.extra ? `<p class="ob-sg" style="color:#e9d5ff">${esc(o.extra)}</p>` : '') + htmlGancho(gancho) + lineaPaso(p), botonesPaso(p), 11000);
     try { c.sfx && c.sfx(); } catch (e) {}
   }
@@ -420,12 +458,12 @@ export function crearObjetivos(c) {
     sugerir(q.nombre, { extra, gancho: !!q.pista });
   }
   // Al salir por ⌂ o por Atras: una tarjeta (una vez por sesion) con la intriga y lo de
-  // mañana. Salir siempre esta a un toque: nada se pierde por irse.
+  // mañana. Con una ventana abierta no se le pone encima: sale directo.
   function despedida(irse) {
     const y = c.yo();
-    if (salidaVista || !y || !y.mis || !y.clase || c.tutoActivo()) return false;
+    if (salidaVista || !y || !y.mis || !y.clase || c.tutoActivo() || document.querySelector('.modal.on, #tarjeta-bautizo')) return false;
     salidaVista = true; salirA = irse; pend = null;
-    const gancho = ganchoDe(y.mis.i, c.secundarias()), mn = c.textoManana();
+    const gancho = ganchoVivido(), mn = c.textoManana();
     let p = null; try { c.pintarMisiones(); p = pasoAhora(); } catch (e) {}
     tarjeta('salida', '🌙 Hasta la próxima', `${htmlGancho(gancho)}${p ? `<p class="ob-sg">Te queda: <b>${esc(p.tit)}</b></p>` : ''}${mn ? `<p class="ob-sg">🎁 ${esc(mn)}</p>` : ''}`,
       '<button type="button" class="btn" data-a="cerrar">Seguir jugando</button><button type="button" class="btn sec" data-a="salir">Salir</button>', 0);
@@ -452,5 +490,5 @@ export function crearObjetivos(c) {
     clearTimeout(pendT); pendT = setTimeout(mostrarPend, 6000);
   }
 
-  return { abrir: abrirPanel, alternar, sugerir, misionCumplida, secundariaCumplida, despedida, alEntrar, ganchoHtml: () => { const y = c.yo(); return y && y.mis ? htmlGancho(ganchoDe(y.mis.i, c.secundarias())) : ''; }, boton: '<button type="button" class="ob-btn" data-objetivos="1" aria-label="Mis objetivos" title="Mis objetivos (O)">🎯</button>' };
+  return { ganchoVivido, abrir: abrirPanel, alternar, sugerir, misionCumplida, secundariaCumplida, despedida, alEntrar, ganchoHtml: () => { const y = c.yo(); return y && y.mis ? htmlGancho(ganchoVivido()) : ''; }, boton: '<button type="button" class="ob-btn" data-objetivos="1" aria-label="Mis objetivos" title="Mis objetivos (O)">🎯</button>' };
 }

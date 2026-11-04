@@ -519,17 +519,44 @@ async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
   if (cmd === '/chicha') {
     const r = await mmoInterno(env, 'chichas');
     if (!r.ok) return enviar('❌ ' + (r.error || 'error'));
-    const cab = `🥤 Litros de este mes: ${r.mes}/${r.mesMax}${r.mesMax60 ? ` · Nv 60: ${r.mes60 || 0}/${r.mesMax60}` : ''}\n\n`;
+    const ahora = Date.now(), mes60 = (r.meses60 || []).map(m => `${m.mes}: ${m.n}/${r.mesMax60} · ${m.pend} por enviar (${m.pend * 2} L)`).join('\n');
+    const cab = `🥤 Litros por puntos de este mes: ${r.mes}/${r.mesMax}${mes60 ? `\nNv 60 por mes de entrega:\n${mes60}` : ''}\n\n`;
     if (!r.pendientes.length) return enviar(cab + '✅ No hay premios de chicha por enviar.');
-    const lineas = r.pendientes.map(x => `#${x.id} · ${x.nombre} Nv${x.nivel} · ${x.meta === 'nv60' ? `Nv 60 (${x.litros || 2} L)${x.cola ? ' · EN COLA' : ''}` : x.meta.toLocaleString('es') + ' pts'}\nContacto: ${x.uid.startsWith('tg:') ? `tg://user?id=${x.uid.slice(3)} (id ${x.uid.slice(3)})` : 'cuenta de correo: te escribe por WhatsApp con su código'}`);
-    return enviar(cab + lineas.join('\n\n') + '\n\nEscríbele para pedir la dirección. Enviado: /chichaok CODIGO · No se puede: /chichano CODIGO motivo (añade "trampa" al final para que no pueda volver a reclamarlo).');
+    const lineas = r.pendientes.map(x => `#${x.id} · ${x.nombre} Nv${x.nivel} · ${x.meta === 'nv60' ? `Nv 60 (${x.litros || 2} L)${x.cola ? ' · EN COLA' : ''} · entrega ${x.mesEnt || x.mes}` : x.meta.toLocaleString('es') + ' pts · ' + x.mes} · ${x.coord ? 'coordinado' : x.cola ? 'sin coordinar' : `sin coordinar (${Math.floor((ahora - (x.desde || x.creado || ahora)) / 86400000)} d)`}\nContacto: ${x.uid.startsWith('tg:') ? `tg://user?id=${x.uid.slice(3)} (id ${x.uid.slice(3)})` : 'cuenta de correo: te escribe por WhatsApp con su código'}\n🔑 Clave de entrega: ${x.clave || '—'}${(x.alertas || []).length ? '\n' + x.alertas.join('\n') : ''}`);
+    return enviar(cab + lineas.join('\n\n') + '\n\nPor WhatsApp, antes de tomar la dirección, pide la clave de entrega: solo la ve el jugador dentro de su cuenta. Si no coincide, no envíes. Anota su teléfono: /chichatel CODIGO NUMERO (avisa si se repite). Enviado: /chichaok CODIGO · No se puede: /chichano CODIGO motivo (añade "trampa" al final para que no pueda volver a reclamarlo).\nTelegram: puedes escribirle tú; a ese chat no le pidas la clave, ya es su cuenta. Correo: espera su WhatsApp con el código. Coordinado: /chichacoord CODIGO · Sin coordinar: /chichasin · Liberar: /chichalibera CODIGO');
+  }
+  // Los reclamos que nadie coordina no caducan solos: el dueño los ve y decide cuáles liberar.
+  if (cmd === '/chichasin') {
+    const r = await mmoInterno(env, 'chichasSin', { dias: Number(arg1) || 0 });
+    if (!r.ok) return enviar('❌ ' + (r.error || 'error'));
+    const ahora = Date.now(), lineas = r.lista.map(x => `#${x.id} · ${x.nombre} · ${x.meta === 'nv60' ? 'Nv 60' : x.meta.toLocaleString('es') + ' pts'} · le toca hace ${Math.floor((ahora - (x.desde || x.creado || ahora)) / 86400000)} d`);
+    const cola = r.enCola ? `\n\n${r.enCola} más en cola para meses siguientes (aún no les toca).` : '';
+    if (!lineas.length) return enviar(`✅ Nada sin coordinar${r.dias ? ` con ${r.dias} días o más` : ''}.${cola}`);
+    return enviar(`🥤 Sin coordinar${r.dias ? ` (${r.dias} días o más)` : ''}, del más antiguo al más nuevo:\n\n${lineas.join('\n')}${cola}\n\nCoordinado: /chichacoord CODIGO · Liberar el cupo: /chichalibera CODIGO`);
+  }
+  if (cmd === '/chichacoord') {
+    if (!arg1) return enviar('Uso: /chichacoord CODIGO');
+    const r = await mmoInterno(env, 'chichaCoord', { id: arg1 });
+    return enviar(r.ok ? `🥤 Premio #${r.chicha.id} marcado como coordinado. Al enviarlo: /chichaok ${r.chicha.id}` : '❌ ' + r.error);
+  }
+  if (cmd === '/chichalibera') {
+    if (!arg1) return enviar('Uso: /chichalibera CODIGO [motivo]');
+    const r = await mmoInterno(env, 'chichaLibera', { id: arg1, motivo: payload.trim().split(/\s+/).slice(1).join(' ') });
+    return enviar(r.ok ? `🥤 Premio #${r.chicha.id} liberado: ${r.mesPasado ? 'su cupo era de un mes ya pasado, así que no adelanta a nadie, y' : 'su cupo queda libre y'} el jugador puede volver a reclamarlo (lo verá en su panel; no se le escribió).` : '❌ ' + r.error);
+  }
+  if (cmd === '/chichatel') {
+    const tel = payload.trim().split(/\s+/).slice(1).join('');
+    if (!arg1 || !tel) return enviar('Uso: /chichatel CODIGO NUMERO');
+    const r = await mmoInterno(env, 'chichaTel', { id: arg1, tel });
+    if (!r.ok) return enviar('❌ ' + (r.error || 'error'));
+    return enviar(`☎️ Teléfono anotado en #${r.id} (solo su huella, no el número).\n${(r.alertas || []).length ? r.alertas.join('\n') : '✅ Sin coincidencias con otros reclamos.'}`);
   }
   if (cmd === '/chichaok' || cmd === '/chichano') {
     if (!arg1) return enviar('Uso: ' + cmd + ' CODIGO' + (cmd === '/chichano' ? ' motivo' : ''));
     const resto = payload.trim().split(/\s+/).slice(1);
     const trampa = resto[resto.length - 1] === 'trampa';
     const r = await mmoInterno(env, cmd === '/chichaok' ? 'chichaOk' : 'chichaNo', { id: arg1, motivo: resto.filter(x => x !== 'trampa').join(' '), trampa });
-    return enviar(r.ok ? `🥤 Premio #${r.chicha.id} marcado como ${r.chicha.estado}. Se le avisó al jugador.` : '❌ ' + r.error);
+    return enviar(r.ok ? `🥤 Premio #${r.chicha.id} marcado como ${r.chicha.estado}. ${r.avisado ? 'Se le avisó al jugador.' : 'No se le pudo avisar ahora: lo verá en su panel al entrar. Si tienes su WhatsApp, díselo tú.'}` : '❌ ' + r.error);
   }
   if (cmd === '/mmostats') {
     const r = await mmoInterno(env, 'stats');
@@ -619,6 +646,15 @@ function textoOrigenes(r) {
     return `${NOMBRE_ORIGEN[k]}: ${PASOS.map(([e, n]) => `${n} ${p[e] || 0}`).join(' → ')} (${pm}% se mueve) · se van ${p.oculta || 0} · sin 3D ${p.fallo_webgl || 0}${p.t_hab || p.t_volar || p.t_fin ? ` · tutorial: habilidad ${p.t_hab || 0} → alas (solo 3D) ${p.t_volar || 0} → fin ${p.t_fin || 0}` : ''}${p.mis_0 || p.jefe1_ver ? ` · misiones (3D) ${['mis_0', 'mis_1', 'mis_2', 'mis_3', 'mis_4', 'mis_5'].map(e => p[e] || 0).join('→')} · 1er jefe: lo ve ${p.jefe1_ver || 0}, muere ${p.jefe1_muere || 0}, lo vence ${p.jefe1_ok || 0}` : ''}${p.cueva_entra ? ` · cueva: entra ${p.cueva_entra || 0}, ve al Rey ${p.cueva_rey_ve || 0}, cae ${p.cueva_muere || 0}, completa ${p.cueva_ok || 0}` : ''}${m20}${mgc}`;
   });
   if (cf.length) t += `🚪 Carga del juego (7 días, sesiones):\n${cf.join('\n')}\n\n`;
+  // Paginas de aterrizaje (js/origen.js, j='web'): visitas contra clics en Jugar, y el QR de la botella hasta abrir el juego.
+  const suma = e => Object.values(c).reduce((s, x) => s + ((x && x.pasos && x.pasos[e]) || 0), 0);
+  const ld = [['ld_portada', 'Portada'], ['ld_jugar', '/jugar/'], ['ld_chicha', '/chicha/']].filter(([k]) => suma(k + '_ver') || suma(k + '_clic')).map(([k, n]) => {
+    const v = suma(k + '_ver'), cl = suma(k + '_clic');
+    return `${n}: visitas ${v} → clic en Jugar ${cl}${v ? ` (${Math.round(cl / v * 100)}%)` : ''}`;
+  });
+  const qr = c.etiqueta && c.etiqueta.pasos;
+  if (qr && qr.ld_chicha_ver) ld.push(`QR de la botella: escaneos ${qr.ld_chicha_ver} → clic ${qr.ld_chicha_clic || 0} → abren el juego ${qr.carga_ini || 0}`);
+  if (ld.length) t += `🛬 Páginas de aterrizaje (7 días, sesiones):\n${ld.join('\n')}\n\n`;
   return t;
 }
 
@@ -1231,7 +1267,7 @@ async function onRequestPost(context) {
         case '/terms': case '/terminos': await handleTerms(token, chatId); break;
         case '/miscompras': case '/compras': await handleMisCompras(token, env, context, chatId, user.id); break;
         case '/creador': case '/creator': case '/oficial': await handleCreador(token, chatId); break;
-        case '/retiros': case '/pagado': case '/rechazar': case '/fondo': case '/pedidos': case '/ventas': case '/entregar': case '/anular': case '/mmostats': case '/gasto': case '/chicha': case '/chichaok': case '/chichano': case '/skinweb': case '/starsok': await handleMmoAdmin(token, context, chatId, user.id, cmd, payload); break;
+        case '/retiros': case '/pagado': case '/rechazar': case '/fondo': case '/pedidos': case '/ventas': case '/entregar': case '/anular': case '/mmostats': case '/gasto': case '/chicha': case '/chichasin': case '/chichacoord': case '/chichalibera': case '/chichaok': case '/chichano': case '/chichatel': case '/skinweb': case '/starsok': await handleMmoAdmin(token, context, chatId, user.id, cmd, payload); break;
         case '/avisos': await handleAvisos(token, context, chatId, user.id, payload); break;
         case '/admin': await handleAdmin(token, env, context, chatId, user.id); break;
         case '/live': case '/envivo': await handleLive(token, env, context, chatId, user.id, payload); break;

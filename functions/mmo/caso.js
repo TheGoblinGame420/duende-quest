@@ -31,7 +31,7 @@ export const Caso = {
         c.mat = c.mat || {};
         for (const m in q.mat || {}) c.mat[m] = Math.min(999, (c.mat[m] || 0) + q.mat[m]);
         if (!calla) this.enviar(s, { t: 'gana', xp: 0, oro, drops: [] });
-        this.enviar(s, { t: 'pista', id: q.id, n: estadoCaso(c).p.length, oro, mat: q.mat || null, ...(calla ? { calla: 1 } : {}) });
+        if (!calla) this.enviar(s, { t: 'pista', id: q.id, n: estadoCaso(c).p.length, oro, mat: q.mat || null });
         cambio = true;
       }
     }
@@ -46,8 +46,8 @@ export const Caso = {
     }
     if (cambio) {
       s.sucio = true;
-      this.enviar(s, this.infoCaso(c));
-      this.actualizarYo(s);
+      // calla (ponerse al dia al entrar): revisarCaso manda un solo 'yo' al final, no uno entero por pista.
+      if (!calla) { this.enviar(s, this.infoCaso(c)); this.actualizarYo(s); }
     }
     return cambio;
   },
@@ -58,7 +58,9 @@ export const Caso = {
     for (const q of PISTAS) if (sec[q.mision + ':ok'] && !(c.caso && c.caso.p && c.caso.p[q.id])) this.avanzarCaso(s, q.mision, true);
     const nN = estadoCaso(c).p.length - n0;
     if (nN) this.enviar(s, { t: 'casoDia', n: nN, oro: c.oro - oro0 });   // un solo aviso, no una tanda de monedas al entrar
+    // Quien llama (mundo3d, al entrar) manda el 'caso' de despues. El cierre del caso ya lleva su propio 'yo'.
     if (sec[CASO.misionFinal + ':ok'] && !(c.caso && c.caso.res)) this.avanzarCaso(s, CASO.misionFinal);
+    else if (nN) this.actualizarYo(s);
   },
 
   marcarSospecha(s, m) {

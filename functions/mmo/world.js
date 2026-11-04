@@ -739,7 +739,7 @@ export class MmoWorld {
           // El nombre que el invitado eligio (gratis, una vez) se conserva: su reserva pasa a la cuenta.
           const eligio = previo.nombre && (previo.nombreLibreUsado || !/^Duende[0-9a-z]{3,6}$/i.test(previo.nombre));
           if (eligio) await this.pasarNombre(uidInv, uid, previo.nombre);
-          c = { ...previo, uid, nombre: await this.nombreLibre(eligio ? previo.nombre : nombre, uid, this.calcularDios({ c: { uid } }, s.extraAuth) === 'dueno') };
+          c = { ...previo, uid, nombre: await this.nombreLibre(eligio ? previo.nombre : nombre, uid, this.calcularDios({ c: { uid } }, s.extraAuth) === 'dueno', eligio) };
           // Si hubo choque (raro: reserva vieja de otro) le toca el nombre con cifras; no se marca como elegido.
           if (c.nombre !== previo.nombre) delete c.nombreLibreUsado;
           nombre = c.nombre;
@@ -1937,7 +1937,7 @@ export class MmoWorld {
       this.guardarFondo();
       return json({ ok: true, ...this.infoFondo() });
     }
-    if (accion === 'chichas' || accion === 'chichaOk' || accion === 'chichaNo') return json(await this.internoChicha(accion, b));
+    if (accion === 'chichas' || accion === 'chichasSin' || accion === 'chichaCoord' || accion === 'chichaLibera' || accion === 'chichaOk' || accion === 'chichaNo' || accion === 'chichaTel') return json(await this.internoChicha(accion, b));
     if (accion === 'mantenimiento') return json(await this.mantenimiento(b));   // antes de publicar (copias.js, tools/deploy.mjs)
     if (accion === 'retiros') return json({ ok: true, pendientes: this.retiros.filter(x => x.estado === 'pendiente'), fondo: this.infoFondo() });
     if (accion === 'pedidoValido') {

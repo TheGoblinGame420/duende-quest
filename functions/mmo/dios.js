@@ -31,7 +31,7 @@
 // ═══════════════════════════════════════════════════════
 import { MAPAS, SKINS, MONSTRUOS, MUNDIALES, limpiarNombre } from '../../mmo/js/data.js';
 import { getEnv } from '../api/lib.js';
-import { riesgoEstafa, RE_GROSERIA } from './social.js';
+import { riesgoEstafa, riesgoContacto, RE_GROSERIA } from './social.js';
 const RE_GROSERIA_1 = new RegExp(RE_GROSERIA.source, 'i');
 
 // Por subcadena (sin espacios): imita al equipo o a quien cobra ("Tienda Duende", "Yape Pagos").
@@ -43,6 +43,13 @@ const RESERVADO_ESQ = /admln|moderador|staff|soporte|slstema|oflclal|elduende|du
 // Groserias por subcadena sobre el nombre sin espacios ('Soy Puta', 'XPendejo'). 'verga' sin 'Vergara' (apellido); 'puta' sin Diputado/Computadora/Disputa.
 const RE_GROSERIA_NOMBRE = /putamadre|conchatumadre|conchatumare|conchasumare|ctmr|csmr|chucha|mierd|pendej|cojud|huev[oó]n|huevon|webon|maric[oó]n|maricon|cabr[oó]n|cabron|poronga|pinga|cacher|porno|violar|nazi|hitler|(?<!d[il]|com|re|[il]m|am|d[il]s)put[ao]|verga(?!ra)/;
 const PAL_RESERVADA = new Set(['mod', 'mods', 'gm', 'dios', 'dlos', 'admin', 'admln', 'staff']);
+// Solo para nombres NUEVOS (los ya creados se quedan como estan): imitan al premio o a quien lo entrega
+// («MamaAsiri», «ChichaEnvios», «DuendeToken»). Pasan nombres de verdad: Yasiri, Kasiri, Jasiri, Chicharito, Chicharrón.
+const RESERVADO_PREMIO = /chicha(?!rr|ron|rit)|chicher[ao]|(?<![ykj])asiri|envio|entrega|premio|reclam[ao]|wh?at?s+app?|guas+ap+|waz+ap+|wsp|wpp|token|ventaduende|duendeventa|compraduende/;
+const RESERVADO_PREMIO_ESQ = /chlcha(?!rr|ron|rlt)|chlcher[ao]|(?<![ykj])aslrl|envlo|entrega|premlo|reclam[ao]|wh?at?s+app?|guas+ap+|waz+ap+|wsp|wpp|token|ventaduende|duendeventa|compraduende/;
+// Un nombre con 5 cifras o mas puede llevar un telefono falso encima de la cabeza.
+export const CIFRAS_NOMBRE_MAX = 4;
+export const cifrasNombre = n => (String(n || '').match(/\d/g) || []).length;
 export const esqueleto = n => claveNombre(n).replace(/[il1|!]/g, 'l').replace(/[0ø]/g, 'o').replace(/3/g, 'e').replace(/[4@]/g, 'a').replace(/[5$]/g, 's').replace(/7/g, 't').replace(/ð/g, 'd').replace(/rn/g, 'm');
 // Clave para comparar nombres: minusculas, sin tildes, sin espacios ni '_'
 // (asi "El_Duende", "el duende" y "ÉlDuende" son el mismo). Las letras no
@@ -81,19 +88,33 @@ export const Dios = {
   diosActivo(s) { return !!(s && s.dios && s.diosModo && MODOS.some(k => s.diosModo[k])); },
 
   // ── NOMBRES UNICOS ──
-  nombreReservado(n) {
+  // Lo que ya valia antes: imitar al equipo o groserias. Se sigue aplicando a los nombres ya creados.
+  nombreDelEquipo(n) {
     const pal = String(n || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().split(/[\s_]+/);
     const k = claveNombre(n), e = esqueleto(n);
     return pal.some(p => PAL_RESERVADA.has(p) || PAL_RESERVADA.has(esqueleto(p))) || RESERVADO.test(k) || RESERVADO_ESQ.test(e) ||
       RE_GROSERIA_1.test(String(n || '')) || RE_GROSERIA_1.test(k) || RE_GROSERIA_NOMBRE.test(k) || RE_GROSERIA_NOMBRE.test(e);
   },
+  // Para nombres nuevos: ademas, el premio, quien lo entrega, 5 cifras o mas, y una cifra metida en medio («Chi9cha»).
+  nombreReservado(n) {
+    if (this.nombreDelEquipo(n) || cifrasNombre(n) > CIFRAS_NOMBRE_MAX) return true;
+    return this.nombrePremio(n) || RESERVADO.test(claveNombre(n).replace(/\d/g, ''));
+  },
+  // Solo el premio y quien lo entrega; las hermandades lo miran sobre el nombre entero («Chi Cha»).
+  nombrePremio(n) {
+    const k = claveNombre(n), kSin = k.replace(/\d/g, '');
+    return RESERVADO_PREMIO.test(k) || RESERVADO_PREMIO.test(kSin) || RESERVADO_PREMIO_ESQ.test(esqueleto(n));
+  },
   // Devuelve un nombre libre para uid partiendo de "deseado" (le añade cifras
   // si ya es de otro). No lo reserva: eso lo hace reservarNombre al guardarse.
-  async nombreLibre(deseado, uid, dios) {
+  // yaCreado: el nombre ya existia (invitado que pasa a cuenta): no le cae lo que se prohibio despues.
+  async nombreLibre(deseado, uid, dios, yaCreado) {
     let base = limpiarNombre(deseado) || 'Duende';
-    if (!dios && this.nombreReservado(base)) base = 'Duende';
+    if (!dios && (yaCreado ? this.nombreDelEquipo(base) : this.nombreReservado(base))) base = 'Duende';
+    // Al sumar 4 cifras por choque se quitan las que traia: «Juan916» no acaba en «Juan9161234».
+    const raiz = (dios ? base : base.replace(/\d+/g, '').trim()) || 'Duende';
     for (let i = 0; i < 12; i++) {
-      const n = i === 0 && base !== 'Duende' ? base : (base.slice(0, 11) + Math.floor(1000 + Math.random() * 9000));
+      const n = i === 0 && base !== 'Duende' ? base : (raiz.slice(0, 11) + Math.floor(1000 + Math.random() * 9000));
       const dueno = await this.state.storage.get('n:' + claveNombre(n));
       // Tampoco uno que se vea igual ('AIonso' con I mayuscula, 'Pedr0'): clave ne: por esqueleto.
       const duenoEsq = await this.state.storage.get('ne:' + esqueleto(n));
@@ -139,7 +160,8 @@ export const Dios = {
     if (s.cerrado || s.c !== c) return;
     if (!limpio || limpio.length < 3 || /^duende/i.test(n) || n !== limpio) {
       if (!limpio || limpio.length < 3) return this.enviar(s, { t: 'toast', m: 'El nombre debe tener de 3 a 16 letras.' });
-      if (this.nombreReservado(limpio)) return this.enviar(s, { t: 'toast', m: 'Ese nombre no está permitido (parece del equipo o es una grosería). Prueba otro.' });
+      if (cifrasNombre(limpio) > CIFRAS_NOMBRE_MAX) return this.enviar(s, { t: 'toast', m: `Ese nombre lleva muchas cifras y parece un teléfono: usa ${CIFRAS_NOMBRE_MAX} como máximo.` });
+      if (this.nombreReservado(limpio)) return this.enviar(s, { t: 'toast', m: 'Ese nombre no está permitido (parece del equipo o de quien entrega los premios, o es una grosería). Prueba otro.' });
       return this.enviar(s, { t: 'toast', m: 'Otro jugador ya se llama así: prueba agregando algo, como «' + limpio.slice(0, 11) + ' Inca»' });
     }
     c.nombre = n;
@@ -246,7 +268,7 @@ export const Dios = {
         const txt = String(m.m || '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 200);
         if (!txt) return;
         // Un moderador firma con su nombre y pasa el filtro antiestafa: nadie anuncia una cartera «del equipo».
-        if (!dueno && riesgoEstafa(txt)) return this.no(s, '🛡 Los anuncios de moderador no pueden llevar carteras, enlaces ni frases semilla.');
+        if (!dueno && (riesgoEstafa(txt) || riesgoContacto(txt))) return this.no(s, '🛡 Los anuncios de moderador no pueden llevar carteras, enlaces, cobros, teléfonos ni frases semilla.');
         this.aTodos({ t: 'aviso', m: dueno ? '📢 ' + txt : '📢 [Mod ' + s.c.nombre + '] ' + txt });
         this.registrarMod(s, 'anuncio: ' + txt);
         return;

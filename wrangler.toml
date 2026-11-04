@@ -11,7 +11,9 @@ directory = "."
 # Sin binding, env.ASSETS era undefined en worker.js y cualquier ruta que no
 # fuera un archivo devolvia 500 (error 1101) en vez del fallback SPA.
 binding = "ASSETS"
-not_found_handling = "single-page-application"
+# Una ruta que no existe es un 404 de verdad con /404.html (antes, "single-page-application"
+# devolvia la portada con 200: Google veia paginas falsas y un enlace roto no se notaba).
+not_found_handling = "404-page"
 # Solo las rutas dinamicas pasan primero por worker.js; los estaticos
 # (index.html, mundo/js, mmo/js, assets...) se sirven directo, sin gastar una
 # invocacion del Worker por archivo (antes 40-60 por visita, ahora 1-3). Sus
@@ -20,7 +22,7 @@ not_found_handling = "single-page-application"
 # facturas, helius, wallet, token-stats) y /mmo/ws (WebSocket del Durable
 # Object). /interno/* NO va: solo existe dentro del Durable Object
 # (stub.fetch) y nunca pasa por este enrutado. Si worker.js gana una ruta
-# nueva, AGREGARLA aqui o la tapara el fallback SPA.
+# nueva, AGREGARLA aqui si tambien coincide con un archivo; si no, ya llega al Worker.
 run_worker_first = ["/api/*", "/mmo/ws", "/mmo/ws/*", "/mmo/ev"]
 # (/api/medir, el ID del pixel de Meta para js/medir.js, ya entra por /api/*.)
 

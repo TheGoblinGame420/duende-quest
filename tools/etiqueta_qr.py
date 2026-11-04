@@ -352,8 +352,8 @@ def pruebas():
 def arte():
     from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
     f = Image.open(os.path.join(RAIZ, 'assets', 'promo', 'historia_3.jpg')).convert('RGB')
-    escena = f.crop((0, 650, 1080, 1310))  # solo el combate, sin los textos del afiche
-    e = escena.resize((720, 440), Image.LANCZOS)
+    escena = f.crop((0, 642, 1080, 1320))  # el combate entero (casco y pies), sin los textos del afiche
+    e = escena.resize((720, 452), Image.LANCZOS)
     e.save(os.path.join(SALIDA, 'escena.jpg'), quality=72, optimize=True, progressive=True)
 
     W, H = 1200, 630

@@ -3,7 +3,7 @@
 // Una sola columna de pistas y las cuatro caras en dos columnas: se lee a 360x640,
 // a 640x360 y en PC. Sin datos de pago ni nada del HUD.
 // ═══════════════════════════════════════════════════════
-import { CASO, PISTAS, SOSPECHOSOS, VERDAD, estadoSospechoso, reaccionCaso } from '/mmo/js/caso.js?v=368';
+import { CASO, PISTAS, APUNTES, SOSPECHOSOS, VERDAD, estadoSospechoso, reaccionCaso } from '/mmo/js/caso.js?v=369';
 
 const COLOR = { sospecha: '#fca5a5', duda: '#fde68a', limpio: '#4ade80', nadie: '#cbd5e1', culpable: '#f0abfc' };
 
@@ -37,9 +37,11 @@ export function htmlCaso(st, { sec, nivel, esc, zonaNombre }) {
     if (hechas.has(p.id)) {
       h += `<div style="padding:6px 8px;border-radius:9px;background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.28);margin-bottom:5px"><b style="font-size:13px">${p.emoji} ${esc(p.titulo)}</b> <small style="opacity:.75">${esc(p.tipo)}</small><p class="vv-p" style="margin:3px 0;font-size:13px">${esc(p.texto)}</p><small style="color:#fde68a">${esc(p.efecto)}</small></div>`;
     } else {
-      h += `<div style="padding:6px 8px;border-radius:9px;background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.2);margin-bottom:5px"><b style="font-size:13px;opacity:.7">❔ ???</b><p class="vv-p" style="margin:3px 0;font-size:13px">${esc(p.pregunta)}</p><small style="opacity:.7">${esc(zonaNombre(p.zona))} · Nv ${p.nv}</small></div>`;
+      h += `<div style="padding:6px 8px;border-radius:9px;background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.2);margin-bottom:5px"><b style="font-size:13px;opacity:.7">❔ ???</b><p class="vv-p" style="margin:3px 0;font-size:13px">${(nivel || 1) >= p.nv ? esc(p.pregunta) : 'Aún no llegas hasta aquí.'}</p><small style="opacity:.7">${esc(zonaNombre(p.zona))} · Nv ${p.nv}</small></div>`;
     }
   }
+  const apuntes = APUNTES.filter(a => hallada(a.mision));
+  if (apuntes.length) h += '<p class="vv-p" style="margin:10px 0 6px;font-weight:700">Lo que oíste por ahí</p>' + apuntes.map(a => `<div style="padding:6px 8px;border-radius:9px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);margin-bottom:5px"><b style="font-size:13px">${a.emoji} ${esc(a.titulo)}</b><p class="vv-p" style="margin:3px 0;font-size:13px">${esc(a.texto)}</p><small style="color:#fde68a">${esc((st.res && a.efectoRes) || a.efecto)}</small></div>`).join('');
   h += '<button type="button" class="btn sec" data-caso-volver="1" style="width:100%;min-height:40px;margin-top:6px">← La Leyenda</button></div>';
   return h;
 }

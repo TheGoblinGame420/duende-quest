@@ -516,12 +516,19 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 368;
+export const VERSION = 369;
 
 // gancho (opcional): la frase que ve en ORIGINS quien vuelve (tira diaria y aviso tras actualizar);
 // sin gancho se usa el primer item. Siempre lo que GANA un jugador que vuelve, nunca un arreglo para novatos ni algo tecnico.
 // solo3d: true en los parches que solo cambian ORIGINS (CLASSIC no abre la ventana y el aviso de Telegram solo va a quien juega en 3D).
 export const NOVEDADES = [
+  { n: 137, fecha: '4 nov 2026', items: [
+    '🥤 Premio de chicha más seguro: al reclamar ves una clave de entrega que solo aparece en tu cuenta. Dásela únicamente al +51 916 778 731.',
+    '📋 La cola del premio ahora es clara: ves tu puesto y el mes estimado de tu envío.',
+    '🕵️ El Caso del Traidor guarda mejor el secreto: la culpable ya no se delata tan pronto y el cuaderno trae lo que las misiones te mandan a mirar.',
+    '🛡️ Más protección contra estafas: nombres que imitan a la chicha o llevan un número falso, y frases de cobro en el chat, ya no pasan.',
+    '📱 Menos cosas tapando el juego: el rastreador vuelve a mostrar flecha y metros, y las tarjetas de historia ya no se acumulan al entrar.',
+  ] },
   { n: 136, fecha: '4 nov 2026', items: [
     '🕵️ Nueva historia en ORIGINS: alguien de adentro abrió la puerta al Rey Goblin. Reúne 12 pistas, marca a tu sospechoso y resuelve El Caso del Traidor.',
     '🌽 La Receta del Cántaro: 10 ingredientes por zona, capítulos con final en suspenso y 30 misiones secundarias nuevas con vecinos que comentan lo que haces.',
@@ -2158,11 +2165,15 @@ export const diasFiesta = tp => Math.ceil((tp.fin - tp.ini) / 86400000);
 // whatsapp: el número de la chicha para coordinar el envío (wa.me); whatsappVer, el mismo para leerlo.
 // mesMax: litros al mes para todo el juego (el dueño lo cambia aqui).
 // nv60: al llegar a nivel 60 (una vez por personaje) se reclaman 2 litros (25-oct-2026, decision del dueño).
-// mesMax60: premios de Nv 60 al mes (aparte de mesMax); los de más quedan EN COLA para el mes siguiente, no se pierden.
+// mesMax60: premios de Nv 60 al mes (aparte de mesMax); los de más quedan EN COLA para el primer mes con cupo, no se pierden.
 // dias60 / min60: días jugados (c.login.total) y minutos de juego activo (c.tjs / 60) para reclamar el de Nv 60 (frena granjas).
 export const CHICHA = { niveles: [25000, 100000], antes: [10000, 50000], porDia: 600, nvPuntos: 10, nvReclamo: 15, mesMax: 4, nv60: 60, litros60: 2, mesMax60: 5, dias60: 14, min60: 1800, whatsapp: '51916778731', whatsappVer: '+51 916 778 731' };
 // Enlace al WhatsApp de la chicha con el mensaje ya escrito: el código de reclamo y el nombre de duende.
 export const waChicha = (id, nombre, litros) => 'https://wa.me/' + CHICHA.whatsapp + '?text=' + encodeURIComponent('Hola, soy ' + nombre + ' en Duende Quest. Reclamé ' + (litros > 1 ? 'mis ' + litros + ' litros' : 'mi litro') + ' de chicha morada. Mi código de reclamo es #' + id + '. ¿Coordinamos el envío?');
+
+// '2026-12' -> 'diciembre de 2026' (mes de entrega de la chicha, para leerlo).
+const MESES_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+export const mesChicha = m => { const n = MESES_ES[+String(m || '').slice(5, 7) - 1]; return n ? n + ' de ' + String(m).slice(0, 4) : ''; };
 
 // ── BESTIARIO ──
 // Cuantos de cada monstruo has cazado. Cada tipo tiene 3 hitos con premio

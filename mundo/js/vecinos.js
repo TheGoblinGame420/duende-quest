@@ -111,7 +111,7 @@ export const VOCES = {
     especial: [{ ok: 'x4', t: 'Ahora la Abuela amasa aquí conmigo, wawa. Yo sirvo y tú descansas un rato.' }],
   },
   sisa: {
-    frases: ['Pasa, hijito, come primero.', 'Yo solo amaso. ¿Qué voy a saber?', 'Cada pan tiene su carita. Algunas pesan.'],
+    frases: ['Pasa, hijito, come primero.', 'La masa no espera a nadie, hijito.', 'Cada pan tiene su carita, y cada carita, su casa.'],
     comenta: {
       0: 'Pasa, hijito, come primero. El Sabueso puede esperar un ratito.',
       1: '¿Venciste a esa bestia? Toma, hijito, un pan caliente para el camino.',
@@ -119,9 +119,9 @@ export const VOCES = {
       3: 'La selva da hambre, hijito. Siéntate.',
       4: 'Por los Picos no llega ni la harina. Por eso guardo un poquito.',
       5: 'Hasta el desierto, hijito. Ni los pájaros llegan tan lejos.',
-      6: '¿Cayó el Rey? Ay, hijito. Yo solo amaso. ¿Qué voy a saber?',
+      6: '¿Cayó el Rey? Ay, hijito. Esa noche yo cantaba con todos. ¿Qué voy a saber?',
       7: 'No le hagas caso a mi nieto, hijito. Se carga cosas que no son suyas.',
-      8: '¿Ese nombre? Hoy me salió mal la masa, hijito. Come, que se enfría.',
+      8: '¿Ese nombre? Aquí no se dice, hijito. Come, que se enfría.',
       9: 'Cada pan tiene su carita. Algunas pesan.',
       10: 'Siempre hago uno de más, hijito. Ya sabes. No preguntes para quién.',
     },

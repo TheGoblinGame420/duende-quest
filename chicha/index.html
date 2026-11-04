@@ -7,13 +7,13 @@
      Los requisitos de la meta repiten CHICHA de mmo/js/data.js; tools/humo_produccion.mjs avisa si se separan. -->
 <meta name="robots" content="noindex,follow">
 <title>Duende Quest · El Cántaro Eterno</title>
-<meta name="description" content="Esta botella viene del Cántaro Eterno. Entra gratis al mundo de los duendes y descubre quién abrió la puerta. En tu celular, sin descargar.">
+<meta name="description" content="Duende Quest es un juego gratis en tu celular, sin descargar. Caza monstruos con otros jugadores y, al llegar a nivel 60, reclama 2 litros de chicha morada de verdad.">
 <meta name="theme-color" content="#1a0a2e">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Duende Quest">
 <meta property="og:locale" content="es_PE">
 <meta property="og:title" content="Esta botella viene del Cántaro Eterno">
-<meta property="og:description" content="Su chicha encendía el sol del bosque. Alguien abrió la puerta. Descubre quién: juega gratis en tu celular, sin descargar.">
+<meta property="og:description" content="Es un juego gratis en tu celular, sin descargar. Llega a nivel 60 y reclama 2 litros de chicha morada de verdad.">
 <meta property="og:url" content="https://duende-quest.alfonso12hc.workers.dev/chicha/">
 <meta property="og:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/og/chicha.jpg">
 <meta property="og:image:type" content="image/jpeg">
@@ -21,7 +21,7 @@
 <meta property="og:image:alt" content="Un duende pelea contra un goblin en el bosque de Duende Quest">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Esta botella viene del Cántaro Eterno">
-<meta name="twitter:description" content="Su chicha encendía el sol del bosque. Alguien abrió la puerta. Descubre quién: juega gratis en tu celular, sin descargar.">
+<meta name="twitter:description" content="Es un juego gratis en tu celular, sin descargar. Llega a nivel 60 y reclama 2 litros de chicha morada de verdad.">
 <meta name="twitter:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/og/chicha.jpg">
 <link rel="icon" href="/assets/ui/coin.png">
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
@@ -33,15 +33,17 @@ body{min-height:100vh;background:var(--bg);color:var(--txt);font:16px/1.5 var(--
 main{max-width:980px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 16px calc(104px + env(safe-area-inset-bottom));}
 .marca{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px;letter-spacing:.08em;}
 .marca img{width:28px;height:28px;}
-.heroe{text-align:center;padding:12px 0 20px;}
-.cantaro{display:block;width:124px;height:132px;margin:0 auto 6px;}
+.heroe{text-align:center;padding:12px 0 8px;}
+.cantaro{display:block;width:92px;height:98px;margin:0 auto 8px;}
 h1{font-size:clamp(27px,8vw,44px);line-height:1.12;font-weight:800;}
 h1 b{color:var(--oro);font-weight:800;}
-.historia{max-width:34em;margin:12px auto 0;}
+.promesa{max-width:34em;margin:10px auto 0;}
+.promesa b{color:var(--oro);}
+.historia{padding:16px;border-radius:16px;border:1px solid var(--borde);}
 .historia p+p{margin-top:6px;}
 .historia .gancho{color:var(--oro);font-weight:700;}
 .consejo{max-width:34em;margin:12px auto 0;padding:10px 12px;border-radius:12px;border:1px solid var(--borde);color:var(--txt2);font-size:14px;}
-.escena{max-width:460px;margin:0 auto;}
+.escena{max-width:460px;margin:12px auto 0;}
 .foto{display:block;width:100%;height:auto;border-radius:14px;border:1px solid var(--borde);background:var(--caja);}
 .pie-foto{margin-top:6px;color:var(--txt2);font-size:14px;text-align:center;}
 section{margin-top:22px;}
@@ -65,13 +67,9 @@ footer a{color:inherit;display:inline-block;padding:6px 4px;}
 .jugar:active{transform:scale(.98);}
 a:focus-visible{outline:3px solid #fff;outline-offset:2px;}
 @media (min-width:600px){
-  .heroe{display:grid;grid-template-columns:auto minmax(0,1fr);gap:0 20px;align-items:center;text-align:left;}
-  .cantaro{grid-row:span 3;margin:0;}
-  .historia,.consejo{margin-left:0;}
   .contactos{grid-template-columns:1fr 1fr;}
 }
 @media (min-width:600px) and (max-height:480px){
-  .cantaro{width:92px;height:98px;}
   .escena{max-width:300px;}
   h1{font-size:27px;}
   .barra{padding-top:6px;padding-bottom:calc(6px + env(safe-area-inset-bottom));}
@@ -80,56 +78,62 @@ a:focus-visible{outline:3px solid #fff;outline-offset:2px;}
 }
 @media (min-width:860px){
   main{padding-top:32px;}
-  .cuerpo{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);grid-template-areas:"meta escena" "meta contacto";grid-template-rows:auto 1fr;gap:0 28px;align-items:start;}
-  .escena{grid-area:escena;max-width:none;}
+  .heroe{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 28px;align-items:center;text-align:left;}
+  .heroe .escena{grid-column:2;grid-row:1 / span 3;max-width:none;margin:0;}
+  .promesa,.consejo{margin-left:0;}
+  .cuerpo{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);grid-template-areas:"meta mito" "meta contacto";grid-template-rows:auto 1fr;gap:22px 28px;align-items:start;margin-top:16px;}
   .s-meta{grid-area:meta;margin-top:0;}
-  .s-contacto{grid-area:contacto;}
+  .s-mito{grid-area:mito;margin-top:0;}
+  .s-contacto{grid-area:contacto;margin-top:0;}
   .contactos{grid-template-columns:1fr;}
 }
 </style>
-<script src="/js/origen.js?v=368"></script>
+<script src="/js/origen.js?v=369"></script>
 </head>
 <body>
 <main>
   <div class="marca"><img src="/assets/ui/coin.png" alt="" width="28" height="28">DUENDE QUEST</div>
   <header class="heroe">
-    <svg class="cantaro" viewBox="0 0 120 128" aria-hidden="true">
-      <circle cx="60" cy="72" r="56" fill="#7c3aed" opacity=".28"/>
-      <path d="M41 34c-15 4-17 26-5 37" fill="none" stroke="#b5673a" stroke-width="7" stroke-linecap="round"/>
-      <path d="M46 12h28l-3 18c15 7 25 22 25 41 0 25-17 45-36 45S24 96 24 71c0-19 10-34 25-41z" fill="#c9783f"/>
-      <path d="M71 30c15 7 25 22 25 41 0 25-17 45-36 45 25-12 30-58 11-86z" fill="#8f4e26"/>
-      <ellipse cx="60" cy="12" rx="15" ry="4.5" fill="#4c1d95" stroke="#8f4e26" stroke-width="2"/>
-      <path d="M31 66c12-5 21 4 29 0s18-5 29 0c1 21-13 42-29 42S31 87 31 66z" fill="#5b21b6"/>
-      <path d="M54 30l7 13-9 12 11 12-7 14 8 12-3 15M61 43l13 5M52 55l-13 2M63 67l15 3M56 81l-12 4" fill="none" stroke="#ffd84a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-    <h1>Esta botella viene del <b>Cántaro Eterno</b></h1>
-    <div class="historia">
-      <p>Inti y Mama Quilla moldearon el Cántaro con barro de la Pachamama, y su chicha morada encendía el sol del bosque.</p>
-      <p>El Rey Goblin lo robó y lo rompió, y empezó la Larga Noche.</p>
-      <p class="gancho">Pero el nudo de la puerta no se cortó: alguien de adentro lo desató. Descubre quién.</p>
-    </div>
+    <h1>Es un <b>juego gratis</b> en tu celular</h1>
+    <p class="promesa">Caza monstruos con otros jugadores y, si llegas a nivel 60 con 14 días y 30 horas de juego, reclama <b>2 litros de chicha morada</b> de verdad. Se abre en el navegador, sin descargar nada. Crea tu cuenta para que tus cazas sumen.</p>
+    <figure class="escena">
+      <img class="foto" src="/assets/etiqueta/escena.jpg" alt="Un duende con espada pelea contra un goblin en el bosque" width="720" height="452" fetchpriority="high">
+    </figure>
     <p class="consejo" id="consejo" hidden></p>
   </header>
 
   <div class="cuerpo">
-    <figure class="escena">
-      <img class="foto" src="/assets/etiqueta/escena.jpg" alt="Un duende con espada pelea contra un goblin en el bosque" width="720" height="440" loading="lazy">
-      <figcaption class="pie-foto">Juego gratis: se abre en el navegador, sin descargar nada.</figcaption>
-    </figure>
-
     <section class="s-meta" aria-labelledby="t-meta">
       <div class="meta">
         <h2 id="t-meta">La chicha del juego también es de verdad</h2>
         <p class="grande">Llega a <b>nivel 60</b> y reclama <b>2 litros</b> de chicha morada.</p>
         <ul>
           <li>Necesitas <b>14 días jugados</b> y <b>30 horas de juego</b>. Es un camino largo, sin atajos.</li>
-          <li>Juega con una <b>cuenta de Telegram o correo</b>, no como invitado.</li>
+          <li>Crea tu <b>cuenta gratis de Telegram o correo</b>: como invitado tus cazas no suman puntos ni puedes reclamar. Tu duende y tu nivel pasan a la cuenta; lo cazado antes no suma después.</li>
           <li>El equipo <b>revisa cada reclamo</b> a mano. Las trampas y los bots quedan fuera.</li>
-          <li>El envío es <b>dentro de Perú</b>, y se coordina por WhatsApp con tu código de reclamo.</li>
-          <li>Son <b>5 premios de nivel 60 al mes</b>. Si ese mes ya se entregaron, tu reclamo queda en cola para el siguiente.</li>
+          <li>El envío es <b>dentro de Perú</b>, y se coordina por WhatsApp con tu código de reclamo y tu clave de entrega, que ves dentro de tu cuenta.</li>
+          <li>Son <b>5 premios de nivel 60 al mes</b>. Si ese mes ya está lleno, entras en cola para el primer mes con cupo y ves tu puesto y el mes estimado.</li>
           <li>Además, desde el nivel 10 cazar suma puntos (hasta 600 al día): con <b>25.000</b> y con <b>100.000 puntos</b> reclamas un litro cada vez. Hay 4 litros por puntos al mes, y tus puntos no se pierden.</li>
         </ul>
         <p class="claro"><b>Esta botella no trae premio ni código.</b> El QR solo abre el juego, y no hay que comprar nada para llegar a la meta.</p>
+      </div>
+    </section>
+
+    <section class="s-mito" aria-labelledby="t-mito">
+      <div class="historia">
+        <svg class="cantaro" viewBox="0 0 120 128" aria-hidden="true">
+          <circle cx="60" cy="72" r="56" fill="#7c3aed" opacity=".28"/>
+          <path d="M41 34c-15 4-17 26-5 37" fill="none" stroke="#b5673a" stroke-width="7" stroke-linecap="round"/>
+          <path d="M46 12h28l-3 18c15 7 25 22 25 41 0 25-17 45-36 45S24 96 24 71c0-19 10-34 25-41z" fill="#c9783f"/>
+          <path d="M71 30c15 7 25 22 25 41 0 25-17 45-36 45 25-12 30-58 11-86z" fill="#8f4e26"/>
+          <ellipse cx="60" cy="12" rx="15" ry="4.5" fill="#4c1d95" stroke="#8f4e26" stroke-width="2"/>
+          <path d="M31 66c12-5 21 4 29 0s18-5 29 0c1 21-13 42-29 42S31 87 31 66z" fill="#5b21b6"/>
+          <path d="M54 30l7 13-9 12 11 12-7 14 8 12-3 15M61 43l13 5M52 55l-13 2M63 67l15 3M56 81l-12 4" fill="none" stroke="#ffd84a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h2 id="t-mito">Esta botella viene del Cántaro Eterno</h2>
+        <p>Inti y Mama Quilla moldearon el Cántaro con barro de la Pachamama, y su chicha morada encendía el sol del bosque.</p>
+        <p>El Rey Goblin lo robó y lo rompió, y empezó la Larga Noche.</p>
+        <p class="gancho">Pero el nudo de la puerta no se cortó: alguien de adentro lo desató. Descubre quién.</p>
       </div>
     </section>
 
@@ -186,12 +190,39 @@ a:focus-visible{outline:3px solid #fff;outline-offset:2px;}
   if (tiene) b.textContent = 'CONTINUAR CON MI DUENDE';
   // El utm_source=etiqueta pasa al juego tal cual, para medirlo en /mmostats. Sin utm, ad=1:
   // el juego abre en el mismo modo anuncio que desde /jugar/.
-  var qs = location.search;
-  try { sessionStorage.setItem('dq_anuncio', '1'); } catch (e) {}
-  if (!/[?&]utm_[a-z]+=/i.test(qs)) qs += (qs ? '&' : '?') + 'ad=1';
+  // ?web=1 (enlace de la portada): sigue siendo una visita normal, si no venia ya de un anuncio.
+  var desdeWeb = /[?&]web=1(&|$)/.test(location.search) && !document.documentElement.classList.contains('anuncio');
+  var qs = location.search.replace(/([?&])web=1(&|$)/, function (m, a, z) { return z ? a : ''; });
+  if (!desdeWeb) {
+    try { sessionStorage.setItem('dq_anuncio', '1'); } catch (e) {}
+    if (!/[?&]utm_[a-z]+=/i.test(qs)) qs += (qs ? '&' : '?') + 'ad=1';
+  }
   if (ir === '/mmo/' && !/[?&]j=/i.test(qs)) qs += (qs ? '&' : '?') + 'j=2d';
   b.href = ir + qs;
-  b.addEventListener('click', function () { try { localStorage.setItem('dq_ultimo_juego', ir); } catch (e) {} });
+  b.addEventListener('click', function () { try { localStorage.setItem('dq_ultimo_juego', ir); } catch (e) {} if (window.dqPaso) window.dqPaso('ld_chicha_clic', 'web'); });
+  if (window.dqPaso) window.dqPaso('ld_chicha_ver', 'web');
+  // Precarga, igual que /jugar/: mientras lee, el navegador baja el juego elegido (no con ahorro
+  // de datos ni en 2G/3G, y destino() ya manda al 2D a los equipos con poca memoria).
+  try {
+    var cxp = navigator.connection;
+    if (!(cxp && (cxp.saveData || (cxp.effectiveType && cxp.effectiveType !== '4g')))) {
+      var lista = ir === '/mundo/'
+        ? ['https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js', '/mundo/js/mundo.js?v=369', '/mundo/js/modelos.js?v=369', '/mundo/js/ventanas.js?v=369', '/mmo/js/data.js?v=369', '/assets/3d/kenney.json', '/assets/3d/kenney.bin.gz']
+        : ['/mmo/js/client.js?v=369', '/mmo/js/data.js?v=369'];
+      window.addEventListener('load', function () {
+        setTimeout(function () {
+          try {
+            for (var i = 0; i < lista.length; i++) {
+              var l = document.createElement('link');
+              l.rel = 'prefetch'; l.href = lista[i];
+              if (/^https:/.test(lista[i])) l.crossOrigin = 'anonymous';
+              document.head.appendChild(l);
+            }
+          } catch (e) {}
+        }, 800);
+      });
+    }
+  } catch (e) {}
 })();
 </script>
 </body>

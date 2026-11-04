@@ -14,34 +14,34 @@
 import * as THREE from 'three';
 import { esNocheDuendes, TEMPORADAS, temporadaDe, MAPAS, MONSTRUOS, HOJAS, SKINS, CLASES, PODERES, ARMAS, VARA, MISIONES, DIARIA, statsMonstruo, xpParaSubir,
   habsDe, habPorId, costoHab, RECURSOS, GCD_MS, MONTURAS, velMontura, MATERIALES, RECETAS, VASO, precioVaso, APARIENCIA, LOOK_BASE, limpiarLook, ALAS, alaDe,
-  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=368';
-import { iniciarVentanas, talentoPreElegido, TAL_PRE_NIVEL } from './ventanas.js?v=368';
-import { TALENTOS, TALENTO_NIVEL } from '/mmo/js/data.js?v=368';   // meta del talento elegido a Nv 7 en la barra de XP
-import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel, DEBIL_EMO, statsJugador } from '/mmo/js/data.js?v=368';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
-import { diaFiesta, diasFiesta, TEMP_DIAS, premioDiaFiesta, esNochebuena } from '/mmo/js/data.js?v=368';   // tarea del dia de la fiesta en la caja de misiones
-import { waChicha } from '/mmo/js/data.js?v=368';   // WhatsApp de la chicha con el código de reclamo
-import { NOVEDADES } from '/mmo/js/data.js?v=368';   // linea «Nuevo» de la tira diaria y aviso tras actualizar
-import { iniciarRegalo } from '/mmo/js/regalo.js?v=368';
-import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=368';
-import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=368';
-import { crearMusica } from './musica.js?v=368';
-import { crearSonidos } from './sonidos.js?v=368';
-import { construirCueva } from './cueva.js?v=368';
-import { TAPA, transparentar } from './tapa.js?v=368';
-import { construirAbismo } from './abismo.js?v=368';
-import { crearParticulas } from './particulas.js?v=368';
-import { cargarKenney, piezasCasa } from './kenney.js?v=368';
-import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=368';
+  LOGIN_PREMIOS, multLogin, diaRacha, semanaRacha, multSemanaRacha, premioRacha, PASE, premioPase, paseMes, HERM_COSTO, HERM_NIVEL, HERM_MAX, HERM_COLORES, GESTA_UMBRALES, GESTA_NOMBRES, GESTA_MIN, CHICHA, RAREZAS, nombreItem, talento, LOGROS, premioAmigo, TINTES, GESTOS, MASCOTAS } from '/mmo/js/data.js?v=369';
+import { iniciarVentanas, talentoPreElegido, TAL_PRE_NIVEL } from './ventanas.js?v=369';
+import { TALENTOS, TALENTO_NIVEL } from '/mmo/js/data.js?v=369';   // meta del talento elegido a Nv 7 en la barra de XP
+import { EXPEDICION, VERSION, horaFelizTiempos, premioDiaria, BESTIARIO_HITOS, progresoLogro, ESPEC_NIVEL, costoCambioClase, TAREAS_DIA, zonaDeNivel, DEBIL_EMO, statsJugador } from '/mmo/js/data.js?v=369';   // fila 🧭 de las misiones; VERSION: la del cliente frente a la del servidor
+import { diaFiesta, diasFiesta, TEMP_DIAS, premioDiaFiesta, esNochebuena } from '/mmo/js/data.js?v=369';   // tarea del dia de la fiesta en la caja de misiones
+import { waChicha, mesChicha } from '/mmo/js/data.js?v=369';   // WhatsApp de la chicha con el código de reclamo
+import { NOVEDADES } from '/mmo/js/data.js?v=369';   // linea «Nuevo» de la tira diaria y aviso tras actualizar
+import { iniciarRegalo } from '/mmo/js/regalo.js?v=369';
+import { iniciarAvisoTg, escribirTgPendiente } from '/mmo/js/avisotg.js?v=369';
+import { crearDuende, crearMonstruo, crearNpc, crearMontura, precalentar } from './modelos.js?v=369';
+import { crearMusica } from './musica.js?v=369';
+import { crearSonidos } from './sonidos.js?v=369';
+import { construirCueva } from './cueva.js?v=369';
+import { TAPA, transparentar } from './tapa.js?v=369';
+import { construirAbismo } from './abismo.js?v=369';
+import { crearParticulas } from './particulas.js?v=369';
+import { cargarKenney, piezasCasa } from './kenney.js?v=369';
+import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=369';
 const MAQUINAS = maquinasAbismo();
-import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=368';
-import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, esNoche, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=368';
-import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=368';
-import { SECUNDARIAS, INGREDIENTES, ingredientesDe, secundariaDe, contarPistas } from '/mmo/js/secundarias.js?v=368';
-import { PISTAS } from '/mmo/js/caso.js?v=368';
-import { htmlCaso } from './caso.js?v=368';
-import { crearObjetivos, migrarClavesViejas } from './objetivos.js?v=368';
-import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe, CAPITULOS_INTRIGA, ganchoCapitulo, finCapitulo, ganchoActual, epilogoDe, RECETA_DE_CASA } from './lore.js?v=368';
-import { VECINOS, VOCES, comentarioNpc } from './vecinos.js?v=368';
+import { CUEVA, CUEVA_X0, caminable, enCueva } from '/mmo/js/cueva3d.js?v=369';
+import { MUNDO, ZONAS3D, NPCS3D, NPC_DIST, CASAS, SPAWN3D, ARENA3D, horaMundo, esNoche, climaEn, nodos3d, RECOGER_DIST, alturaEn, zonaEn, mezclaEn, pendienteEn, campamentos, cofres3d, COFRE3D_DIST, revivirEn3d, corrientesMundo } from '/mmo/js/mundo3d.js?v=369';
+import { encargosDe, hitoDe, ZONAS_ENC } from '/mmo/js/encargos3d.js?v=369';
+import { SECUNDARIAS, INGREDIENTES, ingredientesDe, secundariaDe, contarPistas } from '/mmo/js/secundarias.js?v=369';
+import { PISTAS } from '/mmo/js/caso.js?v=369';
+import { htmlCaso } from './caso.js?v=369';
+import { crearObjetivos, migrarClavesViejas, granMeta } from './objetivos.js?v=369';
+import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe, CAPITULOS_INTRIGA, ganchoCapitulo, finCapitulo, ganchoActual, epilogoDe, RECETA_DE_CASA } from './lore.js?v=369';
+import { VECINOS, VOCES, comentarioNpc } from './vecinos.js?v=369';
 
 const A = '/assets/';
 const PX_M = 34;                       // pixeles del 2D por metro
@@ -2078,6 +2078,7 @@ function recibir(m) {
       { const cg = $('carga'); cg.classList.add('sale'); setTimeout(() => { cg.style.display = 'none'; cg.classList.remove('sale'); }, 360); }   // fundido de entrada al mundo
       cerrar('v-inicio');
       pintarHud(); pintarTemp3();
+      document.body.classList.toggle('teclas-sabidas', (yo.nivel || 1) >= 15);   // PC: la linea de teclas acompaña al que empieza; luego deja de ocupar sitio
       // El nuevo entra ya como Guerrero (la recomendada): un paso menos antes de jugar. El que
       // vuelve sin clase (personaje antiguo) la elige como siempre.
       if (!yo.clase) { if (m.nuevo) { mandar({ t: 'clase', id: 'guerrero' }); setTimeout(() => despuesMision1(() => { aviso('⚔ Empiezas como Guerrero. Puedes cambiar de clase gratis hasta Nv 9 en ' + K('📖 (tecla P)', '⋯ → 📖') + ' → Clase.', 'ok', 1); setTimeout(ofrecerClases, 4000); }), 6000); } else abrirClases(); }
@@ -2130,7 +2131,7 @@ function recibir(m) {
       if (yo.mis && yo.mis.i <= 5 && (antes ? antes.mis && yo.mis.i !== antes.mis.i : yo.mis.i === 0)) paso('mis_' + yo.mis.i);
       if (antes && antes.mis && yo.mis && yo.mis.i > antes.mis.i) OBJ.misionCumplida(antes.mis.i);
       if (antes && antes.diaria && yo.diaria && !antes.diaria.ok && yo.diaria.ok) OBJ.sugerir(DIARIA.nombre + ' cobrada');
-      if (antes && antes.nivel < 60 && yo.nivel >= 60) { aviso('🏆 ' + LORE_NIVEL60, 'ok'); setTimeout(() => aviso('🥤 Toca la barra morada de la chicha para reclamar tus 2 litros.', 'ok'), 5000); }
+      if (antes && antes.nivel < 60 && yo.nivel >= 60) { aviso('🏆 ' + LORE_NIVEL60, 'ok'); setTimeout(() => { const g = granMeta(yo, soyInvitado); if (!g.rec) aviso(g.listo ? '🥤 Ya puedes reclamar tus ' + g.litros + ' litros: toca la barra morada de la chicha.' : soyInvitado ? '🥤 Para reclamar tus ' + g.litros + ' litros de chicha falta tu cuenta gratis. Tu duende pasa contigo.' : '🥤 Para reclamar tus ' + g.litros + ' litros te falta jugar ' + g.falta + '.', 'ok'); }, 5000); }
       ALAS_MAX = (ALAS[yo.ala] || ALAS.aprendiz).vuelo; if (!antes) P.alas = ALAS_MAX; alasPropias();
       ALAS_MAX && (P.alas = Math.min(P.alas, ALAS_MAX));
       if (antes && antes.skins && yo.skins && yo.skins.length > antes.skins.length) { const nueva = yo.skins.find(k => !antes.skins.includes(k)); const sk = nueva && SKINS[nueva]; if (sk) setTimeout(() => ofrecerPresumir('¡Estrené la skin ' + (sk.nombre || nueva) + ' en Duende Quest 3D!', 'look'), 1500); }
@@ -2309,7 +2310,7 @@ function recibir(m) {
       if (m.oro) { partes.push('+' + m.oro + ' oro'); sfxK('monedas', 0.22); }
       if (m.oro) oroCaza3 = performance.now();   // el oro de la caza ya sono: el contador no lanza la escalera de tics
       if (m.chi) partes.push('+' + m.chi + ' 🥤');   // puntos de chicha
-      else if (m.chl) partes.push('🔒 🥤 Nv ' + CHICHA.nvPuntos);   // candado: primeras cazas con Nv < 10
+      else if (m.chl) partes.push('🔒 🥤 Nv ' + CHICHA.nvPuntos + (soyInvitado ? ' con cuenta' : ''));   // candado: primeras cazas con Nv < 10
       // Objeto del evento de temporada (calabazas, t'anta wawas...): como en CLASSIC (client.js).
       if (m.cal) { const tp = TEMPORADAS.find(x => x.id === m.tp) || temporadaDe(); if (tp) { partes.push('+' + m.cal + ' ' + tp.emoji); if (yo) yo[tp.campo] = (yo[tp.campo] || 0) + m.cal; if (window.dqTempG) window.dqTempG.n += m.cal; pintarTemp3(); } }
       if (partes.length) numero(P.x, P.y + 3.1, P.z, partes.join(' · '), '#ffd84a');   // sin 'grande': no apaga los numeros de golpe y respeta texto grande
@@ -3191,11 +3192,12 @@ if ($('b-revivir-pociones')) $('b-revivir-pociones').onclick = () => { if (!ws |
 // morada (functions/mmo/chicha.js, meta 'nv60'). Tocarlo cuenta la leyenda o reclama.
 let chicha3Txt = '';
 function pintarChicha3() {
-  const b = $('chicha3'), nv = yo.nivel || 1, rec = ((yo.chicha || {}).rec || []).includes('nv60');
+  const b = $('chicha3'), nv = yo.nivel || 1, g = granMeta(yo, soyInvitado), est = g.q && g.q.estado;
   const corto = document.body.classList.contains('movil') && matchMedia('(orientation:portrait)').matches;
-  const t = rec ? `🥤 ${CHICHA.litros60} L de chicha reclamados ✓` : nv >= CHICHA.nv60 ? `🥤 ¡Reclama tus ${CHICHA.litros60} L de chicha morada!` : corto ? `🥤 ${CHICHA.litros60} L chicha real · Nv ${nv}/${CHICHA.nv60}` : `🥤 Nv ${CHICHA.nv60} = ${CHICHA.litros60} L de chicha morada real · Nv ${nv}/${CHICHA.nv60}`;
+  // «¡Reclama!» solo cuando el servidor lo aceptaría: con Nv 60 aún pueden faltar la cuenta, los días o las horas.
+  const t = g.rec ? (est === 'rechazado' ? `🥤 Reclamo de ${CHICHA.litros60} L no aprobado` : est === 'enviado' ? `🥤 ${CHICHA.litros60} L de chicha en camino ✓` : `🥤 ${CHICHA.litros60} L de chicha reclamados ✓`) : g.listo ? `🥤 ¡Reclama tus ${CHICHA.litros60} L de chicha morada!` : nv >= CHICHA.nv60 ? (soyInvitado ? `🥤 Nv ${CHICHA.nv60} ✓ · para reclamar, crea tu cuenta` : `🥤 Nv ${CHICHA.nv60} ✓ · te falta jugar ${g.falta}`) : corto ? `🥤 ${CHICHA.litros60} L chicha real · Nv ${nv}/${CHICHA.nv60}` : `🥤 Nv ${CHICHA.nv60} = ${CHICHA.litros60} L de chicha morada real · Nv ${nv}/${CHICHA.nv60}`;
   if (t === chicha3Txt) return;
-  chicha3Txt = t; b.textContent = t; b.title = `🥤 Nv ${CHICHA.nv60} = ${CHICHA.litros60} L de chicha morada real`; b.classList.toggle('listo', !rec && nv >= CHICHA.nv60);
+  chicha3Txt = t; b.textContent = t; b.title = `🥤 Nv ${CHICHA.nv60} = ${CHICHA.litros60} L de chicha morada real`; b.classList.toggle('listo', g.listo);
 }
 // Al girar el telefono la pildora cambia entre texto corto (vertical) y largo.
 addEventListener('orientationchange', () => setTimeout(() => { chicha3Txt = ''; try { if (yo) pintarChicha3(); } catch (e) {} }, 300));
@@ -3205,24 +3207,26 @@ function reclamos3(ch) {
     const que = r.meta === 'nv60' ? r.l + ' litros de nivel ' + CHICHA.nv60 : r.meta.toLocaleString('es') + ' puntos';
     if (r.estado === 'enviado') return `<p class="vv-p" style="text-align:center;font-size:12px;margin:6px 0"><b style="color:#4ade80">Tu chicha ya va en camino</b> (#${esc(r.id)} · ${que})</p>`;
     if (r.estado === 'rechazado') return `<p class="vv-p" style="text-align:center;font-size:12px;margin:6px 0">Tu reclamo #${esc(r.id)} (${que}) no se pudo completar${r.motivo ? ': ' + esc(r.motivo) : ''}.</p>`;
-    return `<div style="margin:8px 0;padding:10px;border-radius:10px;text-align:center;background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.5)"><small>Tu código de reclamo (${que})</small><div style="font-size:22px;font-weight:800;color:#fde68a;margin:2px 0;overflow-wrap:anywhere">#${esc(r.id)}</div>${r.cola ? '<small style="display:block">El cupo de este mes está lleno: se envía el mes que viene.</small>' : ''}<a class="btn" data-wa href="${esc(waChicha(r.id, yo.nombre || 'duende', r.l))}" target="_blank" rel="noopener" style="display:block;margin:6px 0;text-decoration:none;background:#25d366;border-color:#25d366;color:#fff">Coordinar el envío por WhatsApp</a><small>Al ${CHICHA.whatsappVer}, con tu código y tu nombre de duende. El equipo revisa y aprueba cada reclamo a mano. Envío gratis: no hay nada que pagar.</small></div>`;
+    return `<div style="margin:8px 0;padding:10px;border-radius:10px;text-align:center;background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.5)"><small>Tu código de reclamo (${que})</small><div style="font-size:22px;font-weight:800;color:#fde68a;margin:2px 0;overflow-wrap:anywhere">#${esc(r.id)}</div>${r.meta === 'nv60' && ch.q60 && ch.q60.id === r.id ? `<small style="display:block">Puesto ${ch.q60.p} de ${ch.q60.n} en la revisión${r.cola && r.me ? ' · cupo lleno: envío estimado para ' + mesChicha(r.me) : r.me ? ' · cupo de ' + mesChicha(r.me) : ''}.</small>` : ''}${r.coord ? '<small style="display:block;color:#4ade80">Envío ya coordinado con el equipo.</small>' : ''}${r.cl ? `<details style="margin:6px 0"><summary style="cursor:pointer;font-weight:700;padding:12px 0">Ver mi clave de entrega</summary><div style="font-size:20px;font-weight:800;letter-spacing:2px;color:#fde68a;margin:2px 0;user-select:text;-webkit-user-select:text">${esc(r.cl)}</div><small style="display:block">Te la pedimos por WhatsApp antes de tomar tu dirección. Es solo para el ${CHICHA.whatsappVer}: no se la des a nadie más, ni la muestres en capturas o en el chat. Si otro número te la pide, es una estafa.</small></details>` : ''}<a class="btn" data-wa href="${esc(waChicha(r.id, yo.nombre || 'duende', r.l))}" target="_blank" rel="noopener" style="display:block;margin:6px 0;text-decoration:none;background:#25d366;border-color:#25d366;color:#fff">Coordinar el envío por WhatsApp</a><small>Al ${CHICHA.whatsappVer}, con tu código y tu nombre de duende. El equipo revisa y aprueba cada reclamo a mano. Envío gratis: no hay nada que pagar.</small></div>`;
   }).join('');
 }
 // Ventana de la chicha en ORIGINS: puntos, los tres premios y como se reclaman.
 function verChicha() {
   if (!yo) return;
   clearTimeout(mostrarDiario.t); mostrarDiario.t = 0;
-  const ch = yo.chicha || { p: 0, hoy: 0, rec: [] }, rec = ch.rec || [], nv = yo.nivel || 1;
-  const fila = (meta, tit, txt, pct, listo) => {
+  const ch = yo.chicha || { p: 0, hoy: 0, rec: [] }, rec = ch.rec || [], nv = yo.nivel || 1, gm = granMeta(yo, soyInvitado);
+  // Rechazado por trampa: el premio sigue en rec (no se puede repetir), pero no se enseña como reclamado.
+  const noAprobado = meta => (ch.rcl || []).some(r => r.estado === 'rechazado' && (r.meta === meta || r.meta === CHICHA.antes[CHICHA.niveles.indexOf(meta)]));
+  const fila = (meta, tit, txt, pct, listo, falta) => {
     const hecho = rec.includes(meta);
-    const acc = hecho ? '<b style="color:#4ade80">✓ Reclamado</b>' : listo ? `<button class="btn" data-chi="${meta}" style="padding:6px 10px">Reclamar</button>` : `<b style="color:#fde68a">${pct}%</b>`;
+    const acc = hecho ? (noAprobado(meta) ? '<b style="color:#fca5a5">No aprobado</b>' : '<b style="color:#4ade80">✓ Reclamado</b>') : falta ? `<small style="flex:none;max-width:34%;text-align:right;color:#fde68a">${falta}</small>` : listo ? `<button class="btn" data-chi="${meta}" style="padding:6px 10px">Reclamar</button>` : `<b style="color:#fde68a">${pct}%</b>`;
     return `<div style="display:flex;gap:8px;align-items:center;margin:8px 0;padding:8px;border-radius:10px;background:rgba(124,58,237,.15);border:1px solid rgba(192,132,252,.35)"><div style="flex:1;min-width:0"><b style="color:#e9d5ff">${tit}</b><br><small>${txt}</small><div style="height:5px;background:rgba(0,0,0,.4);border-radius:3px;margin-top:4px"><i style="display:block;height:100%;width:${pct}%;background:#a855f7;border-radius:3px"></i></div></div>${acc}</div>`;
   };
   let h = `<img src="${imgLore()}" alt="" style="display:block;width:100%;max-height:120px;object-fit:${modoAnuncio() ? 'contain' : 'cover'};border-radius:10px;margin-bottom:8px">`;
-  if (soyInvitado) h += `<p class="vv-p" style="color:#fca5a5">Juegas como invitado: los premios de chicha se reclaman con una cuenta (Telegram o correo), con tu mismo duende.</p>`;
+  if (soyInvitado) h += `<p class="vv-p" style="color:#fde68a">Juegas como invitado: tus cazas no suman puntos de chicha y los premios se reclaman con una cuenta. Si la creas gratis con tu correo, tu duende y tu nivel pasan contigo y desde ahí tus cazas suman.</p><button class="btn" id="chi-cuenta" style="width:100%;margin-bottom:8px">📧 Crear cuenta gratis</button>`;
   h += `<p class="vv-p" style="text-align:center;font-size:20px;color:#fde68a;margin:4px 0">${(ch.p || 0).toLocaleString('es')} puntos de chicha</p><p class="vv-p" style="text-align:center;font-size:12px">Hoy ${ch.hoy || 0}/${CHICHA.porDia} · desde nivel ${CHICHA.nvPuntos}: 1 punto por monstruo, 3 si es de tu nivel, 25 un jefe.</p>` + reclamos3(ch);
-  h += fila('nv60', `Nivel ${CHICHA.nv60}: ${CHICHA.litros60} litros`, `Llega a nivel ${CHICHA.nv60} y te llevas ${CHICHA.litros60} litros a tu casa (Nv ${nv}/${CHICHA.nv60}).`, Math.min(100, Math.round(nv / CHICHA.nv60 * 100)), nv >= CHICHA.nv60);
-  for (const meta of CHICHA.niveles) h += fila(meta, `${meta.toLocaleString('es')} puntos: 1 litro`, 'Un litro de chicha morada peruana enviado a tu casa.', Math.min(100, Math.round((ch.p || 0) / meta * 100)), (ch.p || 0) >= meta);
+  h += fila('nv60', `Nivel ${CHICHA.nv60}: ${CHICHA.litros60} litros`, `Llega a nivel ${CHICHA.nv60} y te llevas ${CHICHA.litros60} litros a tu casa (Nv ${nv}/${CHICHA.nv60}).`, Math.min(100, Math.round(nv / CHICHA.nv60 * 100)), gm.listo, nv < CHICHA.nv60 ? '' : soyInvitado ? 'Falta tu cuenta' : gm.falta ? `Te falta jugar ${gm.falta}` : '');
+  for (const meta of CHICHA.niveles) h += fila(meta, `${meta.toLocaleString('es')} puntos: 1 litro`, 'Un litro de chicha morada peruana enviado a tu casa.', Math.min(100, Math.round((ch.p || 0) / meta * 100)), (ch.p || 0) >= meta, (ch.p || 0) < meta ? '' : soyInvitado ? 'Falta tu cuenta' : nv < CHICHA.nvReclamo ? `Desde Nv ${CHICHA.nvReclamo}` : '');
   // Requisitos a la vista (los mismos que revisa el servidor en chicha.js).
   const dj = ch.dj || 0, hj = Math.floor((ch.mj || 0) / 60), h60 = Math.round(CHICHA.min60 / 60), si = b => b ? '✅' : '⬜';
   h += `<p class="vv-p" style="font-size:12px;line-height:1.6;margin:6px 0"><b>Requisitos</b><br>${si(!soyInvitado)} Cuenta real (no invitado)<br>${si(nv >= CHICHA.nvPuntos)} Puntos desde nivel ${CHICHA.nvPuntos}<br>${si(nv >= CHICHA.nvReclamo)} Reclamar desde nivel ${CHICHA.nvReclamo} y 2 días de personaje<br>${si(nv >= CHICHA.nv60 && dj >= CHICHA.dias60 && hj >= h60)} ${CHICHA.litros60} litros: nivel ${CHICHA.nv60} + ${CHICHA.dias60} días jugados (${Math.min(dj, CHICHA.dias60)}/${CHICHA.dias60}) + ${h60} h de juego (${Math.min(hj, h60)}/${h60})<br>📦 Envíos solo en Perú · se coordinan por WhatsApp</p>`;
@@ -3235,6 +3239,7 @@ function verChicha() {
   });
   $('diario-c').querySelectorAll('[data-wa]').forEach(a => a.onclick = e => { try { if (TG && TG.openLink) { e.preventDefault(); TG.openLink(a.href); } } catch (er) {} });
   $('chi-leyenda').onclick = verLeyenda;
+  if ($('chi-cuenta')) $('chi-cuenta').onclick = irACrearCuenta;
   abrir('v-diario');
 }
 $('chicha3').addEventListener('click', verChicha);
@@ -3675,7 +3680,7 @@ function npcOcupado() {
   try {
     if (avisoTapado() || autoAtk || jefeCerca()) return true;
     const t = performance.now();
-    return !!(P && (P.muerto || t - (P.heridoT || 0) < 6000 || (objetivo && t - (P.atkT || 0) < 6000))) || !!$('probar-clase');
+    return !!(P && (P.muerto || t - (P.heridoT || 0) < 6000 || t - (P.atkT || 0) < 6000)) || !!$('probar-clase');   // sin mirar el objetivo: al morir el monstruo vuelve a 0, y la tarjeta no debe saltar en plena caza
   } catch (e) { return false; }
 }
 // texto: un texto o una lista (la ultima con sigue: 'frase de suspense' sale en dorado).
@@ -3762,7 +3767,7 @@ function trozosAviso(txt) {
 }
 // Franja de avisos justo bajo lo que haya arriba en su columna (se mide: el HUD cambia con misiones, grupo o Telegram).
 let rectsHud = [];
-const HUD_ARRIBA = ['marco', 'grupo3', 'misiones', 'alas', 'obj', 'objp', 'mini', 'botones', 'chicha3', 'cofre-meta', 'tira-diario', 'probar-clase', 'invit3'];
+const HUD_ARRIBA = ['marco', 'grupo3', 'misiones', 'alas', 'obj', 'objp', 'mini', 'botones', 'chicha3', 'cofre-meta', 'tira-diario', 'probar-clase', 'invit3', 'chat'];
 function colocarAvisos() {
   if (!COMPACTO) { rectsHud = []; return; }
   try {
@@ -3772,13 +3777,20 @@ function colocarAvisos() {
       const el = $(id); if (!el) continue;
       const r = el.getBoundingClientRect();
       if (r.width < 2 || r.height < 2 || r.bottom <= 0) continue;
+      if (id === 'chat' && ($('chat-in').style.display !== 'block' || r.bottom + 6 > vh * 0.42)) continue;   // solo el chat abierto para escribir: el que sale solo con un mensaje cede ante los avisos
       const cs = getComputedStyle(el);
       if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity < 0.1) continue;
       if (id === 'marco' || id === 'misiones' || id === 'mini' || id === 'botones' || id === 'obj' || id === 'grupo3') rs.push(r);
       if (r.top < vh * 0.4 && r.bottom < vh * 0.6 && (!az.width || (r.left < az.right && r.right > az.left))) y = Math.max(y, r.bottom);
     }
     rectsHud = rs;
-    const top = Math.round(Math.min(y ? y + 6 : 8, vh * 0.42));
+    // La tarjeta de «lo siguiente» va justo bajo el HUD (--hud-fin); los avisos, bajo ella si comparten columna.
+    const fin = Math.round(y ? y + 6 : 8);
+    if (fin !== colocarAvisos.fin) { colocarAvisos.fin = fin; document.documentElement.style.setProperty('--hud-fin', fin + 'px'); }
+    const sig = $('ob-sig');
+    let rg = null;
+    if (sig && !sig.classList.contains('salida')) { const r = sig.getBoundingClientRect(); if (r.left < az.right && r.right > az.left) rg = r; }
+    const top = Math.round(rg ? Math.min(rg.bottom + 6, vh * 0.58) : Math.min(y ? y + 6 : 8, vh * 0.42));
     if (top !== colocarAvisos.ult) { colocarAvisos.ult = top; document.documentElement.style.setProperty('--av-top', top + 'px'); }
   } catch (e) {}
 }
@@ -4033,13 +4045,27 @@ function escenaCapitulo(c) {
   if (!ci || capVisto(k)) return;
   capMarcar(k); decirPartes(ci.escena);
 }
-function historiaEntrada() { if (yo && yo.mis) escenaCapitulo(capituloDe(yo.mis.i)); }
+// Al entrar nunca salta una tarjeta sin relacion con donde estas: la escena espera a que llegues (el capitulo 1, junto a
+// Mama Asiri). Solo si aun no empezaste el capitulo: quien ya va por dentro la vio en otro aparato o es un veterano al que
+// le llegaria fuera de orden. A este se le dice una vez donde leer la historia desde el principio.
+function historiaEntrada() {
+  if (!yo || !yo.mis) return;
+  const c = capituloDe(yo.mis.i);
+  if (c.n === 1 || yo.mis.i <= c.desde) { escenaNoAntes = Date.now() + 45000; return escenaAlLlegar(c); }
+  if (capVisto('e' + c.n) || capVisto('rec')) return;
+  capMarcar('rec'); aviso('📖 El pueblo guardaba una historia: léela desde el principio en 🎯 Objetivos → La Receta', 'ok', 1);
+}
 // La escena del capitulo nuevo espera a que llegues a su zona: si saliera detras del gancho, le pisaria el suspenso
 // (tras «Fui yo» de Tito, Asiri diria al toque que no le cree). Si hoy no llegas, sale la proxima vez que entres.
+// Quien entra ya en la zona no la recibe pegada al saludo: primero 45 s de juego, sin otra tarjeta ni ventana delante.
+let escenaEsperaT = 0, escenaNoAntes = 0;
 function escenaAlLlegar(c) {
-  if (!yo || !yo.mis || capituloDe(yo.mis.i).n !== c.n || capVisto('e' + c.n)) return;
-  if (zonaEn(P.x, P.z) === c.z) escenaCapitulo(c);
-  else setTimeout(() => escenaAlLlegar(c), 4000);
+  clearTimeout(escenaEsperaT);
+  if (!yo || !yo.mis || capituloDe(yo.mis.i).n !== c.n || capVisto('e' + c.n) || secundarias['x4:ok']) return;   // con el caso cerrado sonaria fuera de orden: queda para releer
+  const na = c.n === 1 && NPCS3D.find(n => n.tipo === 'chichera');
+  const nd = $('npc-dice'), libre = Date.now() >= escenaNoAntes && !colaNpc.length && !(nd && nd.classList.contains('on')) && !hayVentana();
+  if (libre && (na ? Math.hypot(na.x - P.x, na.z - P.z) < 9 : zonaEn(P.x, P.z) === c.z)) escenaCapitulo(c);
+  else escenaEsperaT = setTimeout(() => escenaAlLlegar(c), 4000);
 }
 function historiaAvance(de, a) {
   setTimeout(() => {
@@ -4047,8 +4073,8 @@ function historiaAvance(de, a) {
     let cg = null;
     for (const c of CAPITULOS) if (de < finCapitulo(c) && a >= finCapitulo(c)) cg = c;
     if (cg) {
-      const conCarta = !!secundarias['x4:ok'], k = 'g' + cg.n + (conCarta ? 'c' : '');
-      if (!capVisto(k)) { capMarcar(k); decirPartes(ganchoCapitulo(cg, conCarta)); }
+      const conCarta = !!secundarias['x3:ok'], res = !!secundarias['x4:ok'], k = 'g' + cg.n + (res ? 'r' : conCarta ? 'c' : '');
+      if (!capVisto(k)) { capMarcar(k); decirPartes(ganchoCapitulo(cg, conCarta, res)); }
     }
     if (capituloDe(a).n !== capituloDe(de).n) escenaAlLlegar(capituloDe(a));
   }, 3500);
@@ -4061,18 +4087,20 @@ function historiaSecFin(q, m) {
     const avisar = i => { const nd = $('npc-dice'); if (i < 90 && ((nd && nd.classList.contains('on')) || colaNpc.length)) { setTimeout(() => avisar(i + 1), 1000); return; } aviso('🌽 Recetario ' + n + '/' + INGREDIENTES.length + ': ' + ing.nombre, 'ok', 1); };
     setTimeout(() => avisar(0), 1200);
   }
+  // Con el Dragon ya vencido, la carta de Sami abre aqui la pregunta de Asiri: no hay otro jefe que la traiga.
+  if (q.id === 'x3' && yo && yo.mis && yo.mis.i >= LORE_MISIONES.length && !capVisto('g10c')) { capMarcar('g10c'); setTimeout(() => decirPartes(ganchoCapitulo(CAPITULOS[CAPITULOS.length - 1], true)), 500); }
   if (q.id !== 'x4') return;
   // Un momento despues: asi el final del Caso del Traidor (casoFin) entra antes en la cola.
   setTimeout(() => {
     decirPartes(epilogoDe(ingredientesDe({ ...secundarias, 'x4:ok': 1 }).length, yo ? yo.nivel : 1, CHICHA.nv60));
-    if (yo && yo.mis && yo.mis.i >= LORE_MISIONES.length && !capVisto('g10c')) { capMarcar('g10c'); decirPartes(ganchoCapitulo(CAPITULOS[CAPITULOS.length - 1], true)); }
+    if (yo && yo.mis && yo.mis.i >= LORE_MISIONES.length && !capVisto('g10r')) { capMarcar('g10r'); decirPartes(ganchoCapitulo(CAPITULOS[CAPITULOS.length - 1], true, true)); }
   }, 500);
 }
 // La Receta del Cantaro: pagina dentro de la ventana de La Leyenda (nada nuevo en el HUD).
 function verReceta() {
   clearTimeout(mostrarDiario.t); mostrarDiario.t = 0;
-  const mi = yo && yo.mis ? yo.mis.i : 0, cur = capituloDe(mi), fin = mi >= LORE_MISIONES.length, conCarta = !!secundarias['x4:ok'];
-  const tengo = ingredientesDe(secundarias), g = ganchoActual(mi, conCarta), ci = CAPITULOS_INTRIGA[cur.z] || {};
+  const mi = yo && yo.mis ? yo.mis.i : 0, cur = capituloDe(mi), fin = mi >= LORE_MISIONES.length, conCarta = !!secundarias['x3:ok'], casoCerrado = !!secundarias['x4:ok'];
+  const tengo = ingredientesDe(secundarias), g = OBJ.ganchoVivido(), ci = CAPITULOS_INTRIGA[cur.z] || {};
   const filaIng = x => {
     const ok = tengo.includes(x), q = SECUNDARIAS.find(s => s.id === x.mision), zn = (MAPAS[x.zona] || {}).nombre || x.zona;
     return '<p class="vv-p" style="margin:6px 0;' + (ok ? '' : 'opacity:.65') + '"><b style="color:' + (ok ? '#4ade80' : '#e9d5ff') + '">' + (ok ? '✓' : '·') + ' ' + x.emoji + ' ' + esc(x.nombre) + '</b><br><small>' + (ok ? esc(x.dato) : esc(zn) + (q ? ' · Nv ' + q.nv + ' · ' + esc(q.quien) : '')) + '</small></p>';
@@ -4086,11 +4114,11 @@ function verReceta() {
     + '<p class="vv-p">Las reliquias rearman el Cántaro. Los <b style="color:#c084fc">10 ingredientes</b> devuelven lo que va dentro: desde esa noche, la olla de Mama Asiri está vacía.</p>'
     + '<div style="margin:8px 0;padding:8px;border-radius:8px;border-left:3px solid #fde68a;background:rgba(253,230,138,.08)"><b style="color:#fde68a">' + (fin ? '✓ La cadena de Tito está completa' : '▶ Capítulo ' + cur.n + ': ' + esc(cur.titulo)) + '</b>'
     + (fin ? '' : '<p class="vv-p" style="margin:4px 0 0">🎯 ' + esc(ci.objetivo || '') + '</p>')
-    + '<p class="vv-p" style="margin:6px 0 0;color:#fde68a"><b>🕯 El misterio:</b> <i>' + esc(g.texto) + '</i><br><small style="color:#e9d5ff">' + esc(g.quien) + '</small></p></div>'
+    + (g.texto ? '<p class="vv-p" style="margin:6px 0 0;color:#fde68a"><b>🕯 El misterio:</b> <i>' + esc(g.texto) + '</i><br><small style="color:#e9d5ff">' + esc(g.quien) + '</small></p>' : '') + '</div>'
     + '<details open style="margin-top:8px"><summary style="cursor:pointer;color:#c084fc;font-weight:700">🥤 El Recetario de Mama Asiri: ' + tengo.length + '/' + INGREDIENTES.length + '</summary>' + INGREDIENTES.map(filaIng).join('')
     + (tengo.length >= INGREDIENTES.length ? '<p class="vv-p" style="margin:8px 0;padding:8px;border-radius:8px;background:rgba(192,132,252,.14)"><b style="color:#c084fc">🥤 Receta de casa</b><br>' + esc(RECETA_DE_CASA) + '</p>' : '') + '</details>'
     + '<details style="margin-top:8px"><summary style="cursor:pointer;color:#fde68a;font-weight:700">📜 Los capítulos: ' + Math.min(cur.n, CAPITULOS.length) + '/' + CAPITULOS.length + '</summary>' + CAPITULOS.map(filaCap).join('') + (secundarias['x4:ok'] ? '<p class="vv-p" style="margin:6px 0"><b style="color:#4ade80">✓ Después de todo</b> <button type="button" class="btn sec" id="receta-epilogo" style="padding:6px 10px;font-size:12px;margin-top:4px">▶ Releer</button></p>' : '') + '</details>'
-    + '<p class="vv-p" style="font-size:12px;margin-top:8px">El Recetario es parte de la historia y no suma litros. Los ' + CHICHA.litros60 + ' litros de chicha se ganan en nivel ' + CHICHA.nv60 + ', con las condiciones de la barra morada 🥤.</p>';
+    + '<p class="vv-p" style="font-size:12px;margin-top:8px">El Recetario es parte de la historia y no suma litros. Los ' + CHICHA.litros60 + ' litros de chicha se ganan en nivel ' + CHICHA.nv60 + ', con las condiciones que ves en ' + K('la barra morada 🥤', '⋯ → Chicha 🥤') + '.</p>';
   $('v-diario').querySelector('h2').textContent = 'LA RECETA DEL CÁNTARO';
   $('receta-volver').onclick = verLeyenda;
   $('diario-c').querySelectorAll('[data-cap-releer]').forEach(b => { b.onclick = e => {
@@ -4098,7 +4126,8 @@ function verReceta() {
     const c = CAPITULOS.find(x => x.n === +b.dataset.capReleer), cci = c && CAPITULOS_INTRIGA[c.z]; if (!cci) return;
     cerrar('v-diario');
     capMarcar('e' + c.n);   // releida a mano: ya no vuelve a salir sola
-    decirPartes(cci.escena.concat(mi >= finCapitulo(c) ? ganchoCapitulo(c, conCarta) : []), true);
+    if (mi >= finCapitulo(c)) capMarcar('g' + c.n);   // y su gancho ya lo leyo: desde aqui puede salir en el panel
+    decirPartes(cci.escena.concat(mi >= finCapitulo(c) ? ganchoCapitulo(c, conCarta, casoCerrado) : []), true);
   }; });
   if ($('receta-epilogo')) $('receta-epilogo').onclick = e => { e.preventDefault(); cerrar('v-diario'); decirPartes(epilogoDe(tengo.length, yo ? yo.nivel : 1, CHICHA.nv60), true); };
   abrir('v-diario');
@@ -4350,7 +4379,9 @@ function comentarioNuevo(id) {
   } catch (e) { return ''; }
 }
 function frasesDe(id) {
-  const l = [...(LORE_NPC[id] || []), ...((VOCES[id] || {}).frases || [])];
+  // Tras «Fui yo» (jefe 6), Tito ya no se presenta como si nada: quedan sus frases de despues.
+  let tito = false; try { tito = id === 'guia' && jefesVencidos() >= 6; } catch (e) {}
+  const l = [...(tito ? [] : LORE_NPC[id] || []), ...((VOCES[id] || {}).frases || [])];
   if (id === 'sisa' && decoTp.campo === 'tantas' && LORE_NPC.abuela) l.push(...LORE_NPC.abuela);
   try { for (const c of [comentarioNpc(id, jefesVencidos(), secundarias), comentarioNpc(id, jefesVencidos())]) if (c) l.push(c.t); } catch (e) {}
   return [...new Set(l)];   // sin repetidas: «Cuéntame más» avanza con indexOf y una repetida lo dejaria en bucle
@@ -5392,7 +5423,7 @@ function abrirMapa() {
 function chatAbierto() { return document.activeElement === $('chat-in'); }
 // Ventanas laterales (como WoW): no tapan el centro y se puede seguir
 // caminando con ellas abiertas. Las demas (mapa, muerte, inicio...) si bloquean.
-const LATERALES = ['v-npc', 'v-ayuda', 'v-inv', 'v-libro', 'v-tienda', 'v-logros', 'v-pase', 'v-diario', 'v-herm', 'v-rank', 'v-amigos'];
+const LATERALES = ['v-npc', 'v-ayuda', 'v-inv', 'v-libro', 'v-tienda', 'v-logros', 'v-pase', 'v-diario', 'v-herm', 'v-rank', 'v-amigos', 'v-obj'];
 addEventListener('keydown', e => {
   const t = e.target;
   if (!t || !t.closest || !t.closest('.modal') || t.matches('input,textarea')) return;
@@ -5440,7 +5471,7 @@ function verLeyenda() {
     <p class="vv-p"><img src="/assets/lore/maiz-morado.png" alt="" style="float:left;width:34px;margin:0 6px 0 0">Hace siglos, los duendes guardaban el <b style="color:#c084fc">Maíz Morado Sagrado</b>. Con él preparaban la <b style="color:#c084fc">chicha morada</b>, la bebida que les daba su fuerza y su magia.</p>
     <p class="vv-p">El <b>Rey Goblin</b> robó el <b style="color:#ffd84a">Cántaro Eterno</b> y lo rompió en pedazos. Sin chicha, la noche cubrió el bosque, los goblins invadieron las colinas y el Éter del cielo se partió en islas flotantes: el <b>Abismo</b>.</p>
     <p class="vv-p"><img src="${modoAnuncio() ? '/assets/skins/skin_bruja.png' : '/assets/lore/duende-chicha.webp'}" alt="" style="float:right;height:96px;margin:0 0 4px 6px">Tú eres un duende joven. <b>Recupera las zonas</b> (misiones y encargos 🧭), <b>vence a sus jefes</b>, abre los cofres y junta <b>puntos de chicha</b> cazando. En el Abismo, la Luz y la Sombra luchan por el <b>Núcleo</b>, donde late el último pedazo del Cántaro.</p>
-    <p class="vv-p" style="color:#fde68a;font-weight:700">🥤 Y es de verdad: quien llegue a nivel ${CHICHA.nv60} en este mundo se lleva ${CHICHA.litros60} litros de chicha morada a su casa. Además, con ${CHICHA.niveles[0].toLocaleString('es')} puntos de chicha cazando (desde nivel ${CHICHA.nvPuntos}), otro litro: toca la barra morada 🥤. Se reclama con una cuenta (no de invitado) · envíos solo en Perú.</p>
+    <p class="vv-p" style="color:#fde68a;font-weight:700">🥤 Y es de verdad: quien llegue a nivel ${CHICHA.nv60} en este mundo, con ${CHICHA.dias60} días y ${Math.round(CHICHA.min60 / 60)} h jugadas, se lleva ${CHICHA.litros60} litros de chicha morada a su casa. Además, con ${CHICHA.niveles[0].toLocaleString('es')} puntos de chicha cazando (desde nivel ${CHICHA.nvPuntos}), otro litro: mira ${K('la barra morada 🥤', '⋯ → Chicha 🥤')}. Todo va con una cuenta gratis: como invitado las cazas no suman puntos · envíos solo en Perú.</p>
 <button type="button" class="btn" id="b-receta" style="width:100%;margin-top:8px">🥤 La Receta del Cántaro: ${ingredientesDe(secundarias).length}/${INGREDIENTES.length}</button>
 <details style="margin-top:8px"><summary style="cursor:pointer;color:#fde68a;font-weight:700">📜 Los capítulos de la historia: ${yo && yo.mis ? Math.min(capituloDe(yo.mis.i).n, CAPITULOS.length) : 1}/${CAPITULOS.length}</summary><p class="vv-p" style="font-size:12px;margin:6px 0">La cadena de misiones del Guardia Tito, contada por capítulos.</p>${CAPITULOS.map(c => { const mi = yo && yo.mis ? yo.mis.i : 0, cur = capituloDe(mi).n, sig = CAPITULOS.find(x => x.n === c.n + 1), fin = mi >= LORE_MISIONES.length; const est = fin || c.n < cur ? 'ok' : c.n === cur ? 'ya' : 'no'; return `<p class="vv-p" style="margin:4px 0;${est === 'no' ? 'opacity:.55' : ''}"><b style="color:${est === 'ok' ? '#4ade80' : est === 'ya' ? '#fde68a' : '#cbd5e1'}">${est === 'ok' ? '✓' : est === 'ya' ? '▶' : '·'} Capítulo ${c.n}:</b> ${esc(c.titulo)} <small>(misiones ${c.desde + 1}-${sig ? sig.desde : LORE_MISIONES.length})</small></p>`; }).join('')}</details>
 <details style="margin-top:8px"><summary style="cursor:pointer;color:#c084fc;font-weight:700">🏺 Las reliquias del Cántaro: ${Object.keys(LORE_ZONAS).filter(z => encargos[z + ':jefe'] === true).length}/10 recuperadas</summary><p class="vv-p" style="font-size:12px;margin:6px 0">Cada reliquia (un pedazo, su semilla, su barro o un secreto) se recupera venciendo al jefe de su zona en los encargos 🧭. Con las 10, el último pedazo espera en el Núcleo del Abismo: el nivel ${CHICHA.nv60}.</p>${Object.entries(LORE_ZONAS).map(([id, z]) => { const ok = encargos[id + ':jefe'] === true; return `<p class="vv-p" style="margin:6px 0;${ok ? '' : 'opacity:.6'}"><b style="color:${ok ? '#4ade80' : '#fde68a'}">${ok ? '✓' : '·'} ${esc((MAPAS[id] || {}).nombre || id)}:</b> ${ok ? esc(z.pedazo) + ` <button type="button" class="btn sec" data-releer-z="${esc(id)}" style="padding:4px 10px;font-size:12px;margin-top:4px">▶ Releer</button>` : 'reliquia perdida… vence al jefe de la zona.'}</p>`; }).join('')}</details>
@@ -5707,6 +5738,7 @@ function avisoInvitado() {
   try { if (localStorage.getItem('dq_aviso_inv') === hoy) return; localStorage.setItem('dq_aviso_inv', hoy); } catch (e) {}
   ventanaAutoT = Date.now(); autoN++;
   $('diario-c').innerHTML = `<button class="btn" id="inv-cuenta" style="width:100%;margin:6px 0 10px">📧 Crear cuenta gratis (guarda tu duende)</button>
+    <p class="vv-p">🥤 Con cuenta, desde nivel ${CHICHA.nvPuntos} tus cazas suman puntos de chicha morada real. Como invitado no suman, y lo cazado antes no se recupera. Tu duende y tu nivel sí pasan a la cuenta.</p>
     <p class="vv-p">Juegas como <b>invitado</b>: tu duende vive solo en este navegador. Para no perderlo:</p>
     <p class="vv-p">Guarda tu <b>código de rescate</b>: con él recuperas tu duende en otro navegador o celular (${K('⌂ Inicio', '⋯ → ? → Inicio')} → código de rescate).</p>
     <div style="display:flex;gap:6px;align-items:center"><code style="flex:1;min-width:0;overflow-wrap:anywhere;background:rgba(0,0,0,.4);padding:8px;border-radius:8px;font-size:12px;color:#ffd84a">${codigoRescate()}</code><button class="btn" id="copiar-rescate" style="padding:8px 10px;font-size:12px">Copiar</button></div>`;
@@ -6057,7 +6089,7 @@ function subiNivel(lv) {
   if (lv === TAL_PRE_NIVEL) setTimeout(() => aviso(`🌟 Nv ${lv}: elige tu primer talento en ${dondeLibro} → Talentos. A Nv 10 lo activas con un toque (elegirlo no gasta nada).`, 'ok'), 2500);
   if (lv === 9) setTimeout(() => aviso('⚔ Último nivel para cambiar de clase gratis: desde Nv 10 cuesta oro. Pruébalas en ' + dondeLibro + '.', 'ok'), 2500);
   // El aviso de la XP al morir desde Nv 10 se da en la pantalla de muerte (la primera vez), no aqui entre otros 3.
-  if (lv === 10 && soyInvitado) setTimeout(() => aviso('🥤 Desde nivel 10 cada caza suma puntos de chicha morada de verdad, pero solo con cuenta. Crea tu cuenta gratis (tu duende pasa contigo) en ' + K('Ajustes (?)', 'Más (⋯) → ?') + '.', 'ok'), 20000);
+  if (lv === 10 && soyInvitado) setTimeout(() => aviso('🥤 Desde nivel 10 las cazas suman puntos de chicha real, pero como invitado no suman. Si quieres que cuenten, crea tu cuenta gratis (tu duende pasa contigo) en ' + K('Ajustes (?)', 'Más (⋯) → ?') + '.', 'ok'), 6000);
   if (lv === 10) setTimeout(() => aviso(`🌟 ¡Nivel 10! Ya puedes elegir tu especialización y repartir puntos de talento en ${dondeLibro}.`, 'ok'), 1500);
   else if (lv > 10) setTimeout(() => aviso(`🌟 +1 punto de talento: úsalo en ${dondeLibro} → Talentos.`, 'ok'), 1500);
   // Nv 3+, una vez por dispositivo: permiso para que el bot te escriba (Bot API 6.9).
@@ -8869,7 +8901,8 @@ function peleando3() { try { const n = performance.now(); return !!(P && (n - (P
 function ocupadoObj3() {
   try {
     const n = performance.now();
-    return jefeCerca() || camCombate || autoAtk || !!cineEst || !!loginPend3 || hayVentana() || hayLateral() || $('v-diario').classList.contains('on') || document.body.classList.contains('tz-on') || colaNpc.length > 0 || !!document.querySelector('#npc-dice.on,#dq-noche,#probar-clase,#tira-diario.on,#dq-regalo.on,#dq-avtg.on,#tarjeta-bautizo,#cofre-sem,#cofre-meta.on') || !!(P && (P.muerto || n - (P.heridoT || 0) < 5000 || (objetivo && n - (P.atkT || 0) < 5000)));
+    if (COMPACTO && innerHeight <= 500 && $('misiones').classList.contains('abierto')) return true;   // en horizontal la lista abierta ocupa el sitio de la tarjeta
+    return jefeCerca() || camCombate || autoAtk || !!cineEst || !!loginPend3 || hayVentana() || hayLateral() ||$('v-diario').classList.contains('on') || document.body.classList.contains('tz-on') || colaNpc.length > 0 || !!document.querySelector('#npc-dice.on,#dq-noche,#probar-clase,#tira-diario.on,#dq-regalo.on,#dq-avtg.on,#tarjeta-bautizo,#cofre-sem,#cofre-meta.on') || !!(P && (P.muerto || n - (P.heridoT || 0) < 5000 || n - (P.atkT || 0) < 5000));
   } catch (e) { return true; }
 }
 const OBJ = crearObjetivos({
@@ -8879,8 +8912,8 @@ const OBJ = crearObjetivos({
   zonaPunto: z => { const zc = ZONAS3D[z]; return zc ? { x: zc.x, z: zc.z } : null; }, puntoSec: puntoSec3, vistaSec, cofreCerca: cofreCerca3,
   secundarias: () => secundarias, encargos: () => encargos, invasion3: () => invasion3, invPre3: () => invPre3, asedio: () => asedio, asedioAbierto: () => !!yo && yo.nivel >= ABISMO.nvMin,
   cuevaHecha: () => !!(cuevaInfo && cuevaInfo.hecha), estadoFiesta: estadoFiestaDia, textoManana: textoManana3, soyInvitado: () => soyInvitado, modoAnuncio,
-  irTarea, ponerDestino, verChicha, verLeyenda, verReceta, verCaso, ocupado: ocupadoObj3, peleando: peleando3,
-  tutoActivo: () => !yo || !yo.mis || (yo.mis.i < 1 && (yo.nivel || 1) <= 6),
+  irTarea, ponerDestino, verChicha, crearCuenta: irACrearCuenta, verLeyenda, verReceta, verCaso, ocupado: ocupadoObj3, peleando: peleando3,
+  tutoActivo: () => !yo || !yo.mis || (yo.mis.i < 1 && (yo.nivel || 1) <= 6), capVisto,
 });
 function misionLista() { if (!yo) return false; const q = MISIONES[yo.mis.i]; const d = yo.diaria || {}; return (q && yo.mis.p >= q.n) || (!d.ok && (d.p || 0) >= DIARIA.n); }
 function colorNivel(nv) { const d = nv - (yo ? yo.nivel : 1); return d >= 5 ? '#ff3344' : d >= 2 ? '#ff9900' : d <= -8 ? '#9a9a9a' : d <= -3 ? '#4ade80' : '#ffe600'; }

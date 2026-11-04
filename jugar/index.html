@@ -56,7 +56,7 @@ footer a{color:var(--txt2);}
 @media (min-width:800px){main{grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:40px;padding-top:48px;}.marca{grid-column:1/-1;}h1,.sub,.consejo{text-align:left;}.lista{justify-content:flex-start;}footer{grid-column:1/-1;}}
 @media (prefers-reduced-motion:reduce){.jugar{animation:none;}}
 </style>
-<script src="/js/origen.js?v=368"></script>
+<script src="/js/origen.js?v=369"></script>
 </head>
 <body>
 <div class="aurora" aria-hidden="true"></div>
@@ -69,7 +69,7 @@ footer a{color:var(--txt2);}
     <ul class="lista"><li>Gratis</li><li>Sin descargas</li><li>Con amigos en tiempo real</li></ul>
     <p class="consejo" id="consejo" hidden></p>
   </section>
-  <footer><a href="/terminos">Términos</a> · <a href="/privacidad">Privacidad</a> · <a href="/seguridad">Seguridad</a><br>Habla con el creador del juego: <a href="https://wa.me/51900877863" target="_blank" rel="noopener">WhatsApp +51 900 877 863</a></footer>
+  <footer><a href="/terminos">Términos</a> · <a href="/privacidad">Privacidad</a> · <a href="/seguridad">Seguridad</a></footer>
 </main>
 <div class="barra"><div class="iab" id="iab" role="note"></div><a class="jugar" id="jugar" href="/mundo/">JUGAR GRATIS</a></div>
 <script>
@@ -152,11 +152,15 @@ footer a{color:var(--txt2);}
   }
   // Los utm y el fbclid pasan al juego tal cual, para medir el anuncio.
   // CLASSIC elegido aqui lleva j=2d: el nuevo entra solo, sin un segundo «Jugar» (client.js, inicio).
-  var qs = location.search;
+  // ?web=1 (boton de la portada): sigue siendo una visita normal, si no venia ya de un anuncio.
+  var desdeWeb = /[?&]web=1(&|$)/.test(location.search) && !document.documentElement.classList.contains('anuncio');
+  var qs = location.search.replace(/([?&])web=1(&|$)/, function (m, a, z) { return z ? a : ''; });
   // Quien entra por /jugar/ (anuncio o revisor de Meta con la URL limpia) juega sin la parte cripto:
   // marca en la pestaña y ad=1 en la URL (el salto a Chrome por intent pierde el sessionStorage).
-  try { sessionStorage.setItem('dq_anuncio', '1'); } catch (e) {}
-  if (!/[?&](fbclid|utm_[a-z]+)=/i.test(qs)) qs += (qs ? '&' : '?') + 'ad=1';
+  if (!desdeWeb) {
+    try { sessionStorage.setItem('dq_anuncio', '1'); } catch (e) {}
+    if (!/[?&](fbclid|utm_[a-z]+)=/i.test(qs)) qs += (qs ? '&' : '?') + 'ad=1';
+  }
   // Invitacion de un amigo (?ref=CODIGO): textos fijos, sin meter nada de la URL en la pagina.
   if (/[?&]ref=[a-z0-9]{6}(&|$)/.test(location.search)) {
     try {
@@ -179,7 +183,8 @@ footer a{color:var(--txt2);}
   if (gancho && !/[?&]g=/i.test(qs)) qs += (qs ? '&' : '?') + 'g=' + gancho;
   if (ir === '/mmo/' && !/[?&]j=/i.test(qs)) qs += (qs ? '&' : '?') + 'j=2d';
   b.href = ir + qs;
-  b.addEventListener('click', function () { try { localStorage.setItem('dq_ultimo_juego', ir); } catch (e) {} });
+  b.addEventListener('click', function () { try { localStorage.setItem('dq_ultimo_juego', ir); } catch (e) {} if (window.dqPaso) window.dqPaso('ld_jugar_clic', 'web'); });
+  if (window.dqPaso) window.dqPaso('ld_jugar_ver', 'web');
   // Navegador interno de Facebook/Instagram (el anuncio abre aqui): se puede jugar igual,
   // pero se sugiere abrirlo en Chrome/Safari (guarda mejor el duende y va mas fluido). No bloquea.
   var ua = navigator.userAgent || '';
@@ -209,8 +214,8 @@ footer a{color:var(--txt2);}
       pc.rel = 'preconnect'; pc.href = 'https://cdn.jsdelivr.net'; pc.crossOrigin = 'anonymous';
       if (ir === '/mundo/') document.head.appendChild(pc);
       var lista = ir === '/mundo/'
-        ? ['https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js', '/mundo/js/mundo.js?v=368', '/mundo/js/modelos.js?v=368', '/mundo/js/ventanas.js?v=368', '/mmo/js/data.js?v=368', '/assets/3d/kenney.json', '/assets/3d/kenney.bin.gz']
-        : ['/mmo/js/client.js?v=368', '/mmo/js/data.js?v=368'];
+        ? ['https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js', '/mundo/js/mundo.js?v=369', '/mundo/js/modelos.js?v=369', '/mundo/js/ventanas.js?v=369', '/mmo/js/data.js?v=369', '/assets/3d/kenney.json', '/assets/3d/kenney.bin.gz']
+        : ['/mmo/js/client.js?v=369', '/mmo/js/data.js?v=369'];
       window.addEventListener('load', function () {
         setTimeout(function () {
           try {

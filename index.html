@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=368"></script>
+<script src="/js/origen.js?v=369"></script>
 <!-- Modo anuncio: quien llega de un anuncio (fbclid / utm_*) ve la web sin la parte cripto
      (wallet, precio, token, donaciones). Se recuerda en la pestaña; el resto de visitas no cambia. -->
 <script>(function(){var a=/[?&](fbclid|utm_[a-z]+)=/i.test(location.search);try{if(a)sessionStorage.setItem('dq_anuncio','1');else a=sessionStorage.getItem('dq_anuncio')==='1';}catch(e){}if(a)document.documentElement.classList.add('anuncio');})()</script>
@@ -32,7 +32,7 @@
 <meta name="twitter:image:alt" content="Duende Quest Online, el MMORPG de los duendes">
 <meta name="theme-color" content="#0b0f17">
 <link rel="manifest" href="/inicio/manifest.json">
-<script src="/js/pwa.js?v=368" defer></script>
+<script src="/js/pwa.js?v=369" defer></script>
 <link rel="icon" type="image/png" href="assets/ui/coin.png">
 <script type="application/ld+json">
 {
@@ -137,7 +137,7 @@
       "name": "¿Qué es la chicha morada?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Un premio físico y gratuito de Duende Quest Online: un litro de chicha morada. Desde el nivel 10, cada monstruo que cazas suma puntos (hasta 600 por día). Al llegar a 25.000 y a 100.000 puntos puedes reclamar un litro cada vez, como máximo dos por jugador. No es un sorteo y nunca se paga nada, ni siquiera el envío. Solo suman las cuentas (no los invitados). Para reclamar necesitas nivel 15, un personaje de al menos 48 horas y tener una cuenta (no invitado). Se entregan como máximo 4 litros al mes por puntos y los envíos son dentro del Perú. Las reglas completas están en los Términos. ¿Dudas sobre la chicha? WhatsApp +51 916 778 731."
+        "text": "Un premio físico y gratuito de Duende Quest Online. Al llegar a nivel 60 con 14 días jugados y 30 horas de juego reclamas 2 litros de chicha morada, una vez por personaje; son 5 premios de nivel 60 al mes y, si ese mes ya está lleno, entras en cola para el primer mes con cupo. Además, desde el nivel 10 cada monstruo que cazas suma puntos (hasta 600 por día, así que 25.000 son unos 42 días): con 25.000 y con 100.000 puntos puedes reclamar un litro cada vez, como máximo dos por jugador. No es un sorteo y nunca se paga nada, ni siquiera el envío. Solo suman las cuentas (no los invitados). Para reclamar necesitas nivel 15, un personaje de al menos 48 horas y tener una cuenta (no invitado). Se entregan como máximo 4 litros al mes por puntos y los envíos son dentro del Perú. Cómo funciona: /chicha/. Las reglas completas están en los Términos. ¿Dudas sobre la chicha? WhatsApp +51 916 778 731."
       }
     },
     {
@@ -249,13 +249,14 @@ nav{
 .juego.origins h3{background:linear-gradient(90deg,#c4b5fd,#f9a8d4,#93c5fd);-webkit-background-clip:text;background-clip:text;color:transparent;}
 .juego ul{margin:0;padding-left:1.1rem;color:#cbd5e1;font-size:.92rem;line-height:1.45;}
 .juego-btn{text-align:center;margin-top:auto;}
-.juego.origins .juego-btn{background:linear-gradient(90deg,#7c3aed,#db2777,#2563eb);}
 .una-skin{width:min(760px,100%);margin:0 auto 1.1rem;padding:12px 14px;border-radius:14px;background:linear-gradient(90deg,rgba(250,204,21,.14),rgba(167,139,250,.14));border:1px solid rgba(250,204,21,.45);color:#fde68a;font-size:.95rem;line-height:1.45;}
 .una-skin b{color:#fff;}
 @media (max-width:640px){.juegos{grid-template-columns:1fr;justify-items:center;}.juego{width:min(340px,100%);}.juego-media{aspect-ratio:9/13;max-height:62vh;}}
-/* Boton de jugar en la primera pantalla del movil (en PC ya se ven las tarjetas) */
-.hero .hero-cta-movil{display:none}
-@media (max-width:640px){.hero .hero-cta-movil{display:flex;justify-content:center;width:100%;max-width:340px;margin:0 auto 1rem;font-size:17px;min-height:52px}.hero-coin,.hero-blink{display:none}.juego-media{max-height:44vh}.hero .hero-h1-sub{margin-top:.6rem}}
+/* El boton de jugar de la primera pantalla; las tarjetas de abajo son para quien ya sabe cual quiere */
+.hero .hero-cta-movil{display:flex;align-items:center;justify-content:center;width:100%;max-width:380px;margin:0 auto 1.4rem;font-size:18px;min-height:56px}
+.juego .juego-btn{display:flex;align-items:center;justify-content:center;min-height:46px;background:transparent;border:1px solid rgba(255,255,255,.38);color:#fff;box-shadow:none;font-size:15px}
+.juego .juego-btn:hover{background:rgba(255,255,255,.08)}
+@media (max-width:640px){.hero .hero-cta-movil{max-width:340px;margin:0 auto 1rem;font-size:17px;min-height:52px}.hero-coin,.hero-blink{display:none}.juego-media{max-height:44vh}.hero .hero-h1-sub{margin-top:.6rem}}
 .hero{
   min-height:88vh;display:flex;flex-direction:column;
   align-items:center;justify-content:center;
@@ -621,6 +622,16 @@ footer{
   .live-price-pill{display:none!important;}
   .game-layout{grid-template-columns:1fr;}
 }
+.nav-right.con-cta .nav-play{display:none!important;}
+/* Celular apaisado y ventanas bajas: el boton de jugar tambien cabe en la primera pantalla */
+@media (min-width:600px) and (max-height:480px){
+  section.hero{padding-top:4.6rem;min-height:auto;}
+  .hero .hero-coin,.hero .hero-blink,.hero .hero-nuevo,.hero .hero-sub{display:none;}
+  .hero .hero-title{font-size:26px;margin-bottom:.3rem;}
+  .hero .hero-h1-sub{margin-top:.3rem;}
+  .hero .hero-benef{margin-bottom:.7rem;}
+  .hero .hero-cta-movil{min-height:48px;margin-bottom:1rem;}
+}
 @media(max-width:700px){
   .section{padding:3rem 16px;}
   .hero{padding:5.5rem 16px 2.5rem;min-height:auto;}
@@ -787,7 +798,7 @@ section[id]{scroll-margin-top:72px;}
   </ul>
   <div class="nav-right">
     <a class="nav-play" href="#" data-instalar hidden style="display:none;background:transparent;border:1px solid #ffd84a;color:#ffd84a">⬇ Instalar</a>
-    <a class="nav-play" href="/inicio/">Jugar</a>
+    <a class="nav-play" href="/jugar/?web=1">Jugar</a>
     <button id="wallet-connect-btn" type="button">🔗 Conectar Wallet</button>
     <div class="live-price-pill" title="Precio de $DUENDE (DexScreener)" data-solo-dex hidden>
       <span class="dot"></span>
@@ -804,14 +815,17 @@ section[id]{scroll-margin-top:72px;}
   <img class="hero-coin" src="assets/ui/coin.png" alt="Logo de Duende Quest: la moneda pixel art del duende" id="hero-coin" width="88" height="88">
   <p class="hero-blink">Juego peruano · Pixel art · Multijugador</p>
   <a class="hero-nuevo" href="/novedades"><span id="nuevo-temp">Nuevo: Semana de la T'anta Wawa (3–12 nov) · 5 mazmorras</span> <span aria-hidden="true">›</span></a>
-  <h1 class="hero-title" id="hero-h1">Duende Quest<span class="hero-h1-sub">Dos juegos, un mismo duende: $DUENDE ORIGINS (3D) y $DUENDE CLASSIC (2D)</span></h1>
-  <p class="hero-sub">Crea tu duende una vez y juega donde quieras: su nivel, su oro, su equipo y sus skins son los mismos en los dos juegos. Gratis, en el móvil o en el PC, sin instalar nada.</p>
+  <h1 class="hero-title" id="hero-h1">Duende Quest<span class="hero-h1-sub">El juego de rol online de duendes, hecho en Perú</span></h1>
+  <p class="hero-sub">Crea tu duende, caza monstruos y vence jefes con otros jugadores. En el celular o en la PC, sin instalar nada.</p>
   <ul class="hero-benef">
     <li>Gratis</li>
     <li>Sin descargas</li>
     <li>Navegador o Telegram</li>
+    <li>Nv 60, 14 días y 30 h de juego: 2 L de chicha morada de verdad</li>
   </ul>
-  <a href="/jugar/" class="btn-main hero-cta-movil" id="hero-cta-movil">▶ Jugar gratis ahora</a>
+  <!-- El unico boton de la primera pantalla: /jugar/ elige el juego que mejor corre en este equipo.
+       ?web=1: quien viene de aqui no pasa a modo anuncio (js/origen.js). -->
+  <a href="/jugar/?web=1" class="btn-main hero-cta-movil" id="hero-cta-movil">▶ Jugar gratis ahora</a>
   <div class="juegos" aria-label="Elige tu juego">
     <article class="juego origins">
       <div class="juego-media">
@@ -841,7 +855,7 @@ section[id]{scroll-margin-top:72px;}
     <span class="vivo-item" id="vivo-hoy" hidden><b></b>&nbsp;jugaron hoy</span>
     <span class="vivo-item jefe" id="vivo-jefe">Jefe mundial en&nbsp;<b>--:--</b></span>
   </div>
-  <a class="vivo-skins" href="/mmo/"><b>4 skins exclusivas animadas</b> con poderes (Esmeralda, Sombrío, Solar y Cósmico): se compran una vez y valen en $DUENDE CLASSIC y en $DUENDE ORIGINS.</a>
+  <a class="vivo-skins" href="#nft-store"><b>4 skins exclusivas animadas</b> con poderes (Esmeralda, Sombrío, Solar y Cósmico): se compran una vez y valen en $DUENDE CLASSIC y en $DUENDE ORIGINS.</a>
   <p class="hero-more">Más opciones: <a href="#capturas">ver capturas</a> · <a href="game.html" target="_blank">modo arcade clásico</a> · <a href="#nft-store">tienda de skins</a> · <button type="button" onclick="openPumpFun()" id="btn-buy-main">token $DUENDE (opcional)</button></p>
   <div class="hero-creador">Creado en Perú por <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial</a> · <a href="https://wa.me/51900877863" target="_blank" rel="noopener">Habla con el creador</a> · <a href="https://t.me/elduende420peru" target="_blank" rel="noopener">Canal oficial</a> · <a href="https://t.me/duendesolana420" target="_blank" rel="noopener">Grupo oficial</a> · <a href="#community">¿Quién está detrás?</a></div>
 </section>
@@ -882,7 +896,7 @@ section[id]{scroll-margin-top:72px;}
   </style>
   <h2 class="px-title" id="lo-nuevo-h">Lo nuevo</h2>
   <div class="nuevo-grid">
-    <div class="nuevo-card"><span class="ico" aria-hidden="true">🥤</span><b>Gana chicha morada jugando</b><p>Desde Nv 10, cada monstruo que cazas en el mundo online suma puntos. Con 25.000 puntos ganas un litro de chicha morada a tu casa (se reclama desde Nv 15, con tu cuenta; cupos por mes). No es un sorteo. Envío en Perú.</p></div>
+    <div class="nuevo-card"><span class="ico" aria-hidden="true">🥤</span><b>Gana chicha morada de verdad</b><p><strong>Llega a nivel 60 y reclama 2 litros</strong>, con 14 días jugados y 30 horas de juego. También por puntos: desde Nv 10 cazar suma hasta 600 al día, y con 25.000 (unos 42 días) y 100.000 reclamas un litro cada vez. Con tu cuenta, cupos por mes y envío en Perú. No es un sorteo. <a href="/chicha/?web=1">Cómo funciona</a></p></div>
     <div class="nuevo-card"><span class="ico" aria-hidden="true">🏰</span><b>5 mazmorras y Desafíos</b><p>Fortaleza Goblin y Nido de la Reina Araña se suman a las mazmorras. A nivel 60, los Desafíos +k suben la dificultad sin límite.</p></div>
     <div class="nuevo-card"><span class="ico" aria-hidden="true" id="temp-ico">🍞</span><b>Temporadas con premios</b><p id="temp-txt">T'anta Wawa (3–12 nov), Cosecha del Maíz Morado (13–30 nov), Navidad y Carnaval: objetos para juntar y títulos únicos.</p></div>
     <script>try { if (Date.now() < Date.UTC(2026, 10, 3)) { document.getElementById('nuevo-temp').textContent = 'Nuevo: 5 mazmorras · Noche de Duendes'; document.getElementById('temp-ico').textContent = '🎃'; document.getElementById('temp-txt').textContent = "Noche de Duendes (hasta el 2 nov), T'anta Wawa (3–12 nov), Cosecha del Maíz Morado, Navidad y Carnaval: objetos para juntar y títulos únicos."; } } catch (e) {}</script>
@@ -934,7 +948,7 @@ section[id]{scroll-margin-top:72px;}
     </video>
   </div>
   <div style="text-align:center;margin-top:1.1rem">
-    <a class="btn-main" href="/inicio/">Jugar gratis ahora</a>
+    <a class="btn-main" href="/jugar/?web=1">Jugar gratis ahora</a>
   </div>
 </section>
 
@@ -1013,7 +1027,7 @@ section[id]{scroll-margin-top:72px;}
     </figure>
   </div>
   <div class="pasos-cta">
-    <a href="/inicio/" class="btn-main">Jugar gratis ahora</a>
+    <a href="/jugar/?web=1" class="btn-main">Jugar gratis ahora</a>
     <p class="pasos-nota">o <a href="https://t.me/duendequest_bot?start=ad_web" target="_blank" rel="noopener">ábrelo en Telegram</a> · Sin descargas</p>
   </div>
 </section>
@@ -1904,7 +1918,7 @@ section[id]{scroll-margin-top:72px;}
     </details>
     <details>
       <summary>¿Qué es la chicha morada?</summary>
-      <div class="faq-r"><p>Un premio físico y gratuito de Duende Quest Online: un litro de chicha morada. Desde el nivel 10, cada monstruo que cazas suma puntos (hasta 600 por día). Al llegar a 25.000 y a 100.000 puntos puedes reclamar un litro cada vez, como máximo dos por jugador. No es un sorteo y nunca se paga nada, ni siquiera el envío.</p><p>Solo suman las cuentas (no los invitados). Para reclamar necesitas nivel 15, un personaje de al menos 48 horas y tener una cuenta (no invitado). Se entregan como máximo 4 litros al mes por puntos y los envíos son dentro del Perú. Las reglas completas están en los <a href="/terminos#chicha">Términos</a>. ¿Dudas sobre la chicha? WhatsApp <a href="https://wa.me/51916778731" target="_blank" rel="noopener">+51 916 778 731</a>.</p></div>
+      <div class="faq-r"><p>Un premio físico y gratuito de Duende Quest Online. Al llegar a nivel 60 con 14 días jugados y 30 horas de juego reclamas 2 litros de chicha morada, una vez por personaje; son 5 premios de nivel 60 al mes y, si ese mes ya está lleno, entras en cola para el primer mes con cupo. Además, desde el nivel 10 cada monstruo que cazas suma puntos (hasta 600 por día, así que 25.000 son unos 42 días): con 25.000 y con 100.000 puntos puedes reclamar un litro cada vez, como máximo dos por jugador. No es un sorteo y nunca se paga nada, ni siquiera el envío.</p><p>Solo suman las cuentas (no los invitados). Para reclamar necesitas nivel 15, un personaje de al menos 48 horas y tener una cuenta (no invitado). Se entregan como máximo 4 litros al mes por puntos y los envíos son dentro del Perú. Mira <a href="/chicha/?web=1">cómo funciona</a> y las reglas completas en los <a href="/terminos#chicha">Términos</a>. ¿Dudas sobre la chicha? WhatsApp <a href="https://wa.me/51916778731" target="_blank" rel="noopener">+51 916 778 731</a>.</p></div>
     </details>
     <details>
       <summary>¿Es seguro?</summary>
@@ -1916,7 +1930,7 @@ section[id]{scroll-margin-top:72px;}
     </details>
   </div>
   <div class="faq-cta">
-    <a href="/inicio/" class="btn-main">Jugar gratis ahora</a>
+    <a href="/jugar/?web=1" class="btn-main">Jugar gratis ahora</a>
     <p>¿Otra duda? Pregunta en el <a href="https://t.me/duendesolana420" target="_blank" rel="noopener">grupo oficial de Telegram</a>.</p>
   </div>
 </section>
@@ -2187,7 +2201,7 @@ document.addEventListener('DOMContentLoaded', loadLiveStats);
 // Ticker de actividad y contador "oferta expira": quitados (prometian premios en $DUENDE
 // y metian prisa falsa). Modo anuncio: los botones de jugar llevan a /jugar/ con el utm.
 if (document.documentElement.classList.contains('anuncio')) document.addEventListener('DOMContentLoaded', function () {
-  document.querySelectorAll('a[href="/inicio/"],a[href="/jugar/"]').forEach(function (a) { a.href = '/jugar/' + location.search; });
+  document.querySelectorAll('a[href="/jugar/?web=1"]').forEach(function (a) { a.href = '/jugar/' + location.search; });
   document.querySelectorAll('a[href="game.html"],a[href="/game.html"]').forEach(function (a) { a.href = '/jugar/' + location.search; a.removeAttribute('target'); var t = a.textContent.trim(); if (/arcade/i.test(t)) a.textContent = /^[a-z]/.test(t) ? 'jugar gratis' : 'Jugar gratis'; });
   try { var bb = document.getElementById('btn-buy-main'); if (bb && bb.previousSibling && bb.previousSibling.nodeType === 3) bb.previousSibling.nodeValue = bb.previousSibling.nodeValue.replace(/\s*·\s*$/, ''); } catch (e) {}
   // Grupo oculto: sin '·' doble en el pie del héroe ni la frase "Pregunta en el ." colgando en el FAQ.
@@ -2203,14 +2217,35 @@ if (document.documentElement.classList.contains('anuncio')) document.addEventLis
   }); } catch (e) {}
 });
 </script>
-<!-- Solana web3.js -->
-<script defer src="https://unpkg.com/@solana/web3.js@1.99.0/lib/index.iife.min.js" integrity="sha384-DjHoHg45N+L5RZPO5p+uK874TyHExfoonwFDUKKpozAERZGg+SY8y+ntxvWd672b" crossorigin="anonymous"></script>
-<!-- Supabase -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
+<!-- Solana web3.js (110 KB): solo lo usa el envio de SOL de #donation-panel (js/donation-manager.js). Se pide al
+     acercarse a esa seccion o al tocar la wallet, y nunca en modo anuncio, donde todo eso esta oculto. -->
+<script>
+(function () {
+  if (document.documentElement.classList.contains('anuncio')) return;
+  var puesto = false;
+  function cargar() {
+    if (puesto) return;
+    puesto = true;
+    var s = document.createElement('script');
+    s.src = 'https://unpkg.com/@solana/web3.js@1.99.0/lib/index.iife.min.js';
+    s.integrity = 'sha384-DjHoHg45N+L5RZPO5p+uK874TyHExfoonwFDUKKpozAERZGg+SY8y+ntxvWd672b';
+    s.crossOrigin = 'anonymous';
+    document.head.appendChild(s);
+  }
+  document.addEventListener('click', function (e) { var t = e.target; if (t && t.closest && t.closest('#wallet-connect-btn,#donate,#exchange')) cargar(); }, true);
+  document.addEventListener('DOMContentLoaded', function () {
+    if (!('IntersectionObserver' in window)) { cargar(); return; }
+    var io = new IntersectionObserver(function (es) { if (es.some(function (x) { return x.isIntersecting; })) { io.disconnect(); cargar(); } }, { rootMargin: '800px 0px' });
+    ['donate', 'exchange'].forEach(function (id) { var el = document.getElementById(id); if (el) io.observe(el); });
+  });
+})();
+</script>
+<!-- Supabase: defer no frena el dibujo y corre antes de 'load', que es cuando lo usa auth-manager.js (initSupabase) -->
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <!-- Config (keys + DUENDE_CFG) -->
-<script src="js/config.js?v=368"></script>
+<script src="js/config.js?v=369"></script>
 <!-- Módulos en orden de dependencia -->
-<script src="js/auth-manager.js?v=368"></script>
+<script src="js/auth-manager.js?v=369"></script>
 <script>
 // Ranking real de la landing (antes: 5 nombres inventados con un badge
 // "LIVE" que no estaba conectado a nada). auth-manager.js registra su
@@ -2273,9 +2308,24 @@ window.addEventListener('load', cargarRankingLanding);
   try { var n = localStorage.getItem('dq_mmo_nombre'), b = document.getElementById('hero-cta-movil'); if (n && b) b.textContent = '▶ Continuar con ' + n.replace(/[<>&"]/g, '').slice(0, 16); } catch (e) {}
   jefe(); setInterval(jefe, 1000);
   estado(); setInterval(estado, 60000);
+  // Embudo (js/origen.js): visita a la portada y clic en cualquier boton que lleve a un juego.
+  try {
+    if (window.dqPaso) {
+      window.dqPaso('ld_portada_ver', 'web');
+      document.addEventListener('click', function (e) {
+        var a = e.target && e.target.closest && e.target.closest('a[href]');
+        if (a && /^\/(jugar|mundo|mmo|inicio)\//.test(a.getAttribute('href'))) window.dqPaso('ld_portada_clic', 'web');
+      }, true);
+    }
+  } catch (e) {}
+  // Un solo boton a la vista: Jugar e Instalar de la barra aparecen cuando el del heroe ya no se ve.
+  try {
+    var cta = document.getElementById('hero-cta-movil'), nr = document.querySelector('.nav-right');
+    if (cta && nr && 'IntersectionObserver' in window) new IntersectionObserver(function (es) { nr.classList.toggle('con-cta', es[0].isIntersecting); }).observe(cta);
+  } catch (e) {}
 })();
 </script>
-<script src="js/price-feed.js?v=368"></script>
+<script src="js/price-feed.js?v=369"></script>
 <script src="js/wallet-manager.js"></script>
 <script src="js/donation-manager.js"></script>
 <script>

@@ -139,12 +139,16 @@ export const EV_PASOS = ['carga_ini', 'arte_ok', 'form_visto', 'clic_entrar', 'b
   // Primer ataque mandado y primera caza (ms desde el clic en entrar): los dos juegos.
   'golpe1', 'caza1',
   // Bautizo del duende (invitado se pone nombre) y apariencia guardada: ORIGINS.
-  'nombre_puesto', 'look_guardado'];
+  'nombre_puesto', 'look_guardado',
+  // Paginas de aterrizaje (j='web', sin juego todavia): visita y clic en su boton de jugar, una vez por sesion.
+  'ld_portada_ver', 'ld_portada_clic', 'ld_jugar_ver', 'ld_jugar_clic', 'ld_chicha_ver', 'ld_chicha_clic'];
+// Un paso vale si esta en la lista, con su juego: los ld_* van siempre con 'web' y el resto con origins/classic.
+export const evValido = (e, j) => EV_PASOS.includes(e) && (String(e).startsWith('ld_') ? j === 'web' : j === 'origins' || j === 'classic');
 const EV_TRAMOS = [2000, 5000, 10000, 20000, 40000, 90000];   // el ultimo tramo es "mas de 90 s"
 const EV_POR_IP_HORA = 40;      // por /64 de IPv6: un jugador manda ~11 (8 de carga + 3 del tutorial); recargas y los dos juegos caben de sobra
 const EV_POR_IPV4_HORA = 800;   // IPv4: la comparten cientos de moviles por CGNAT (Claro, Movistar, Entel, Bitel)
 const EV_MAX_DIA = 60000;       // tope diario de avisos aceptados (cuida el cupo)
-const EV_MAX_CLAVES = 800;      // 2 juegos x 11 pasos x 6 origenes x 2 equipos = 264, mas 16 de rendimiento y 9 de misiones/1er jefe (solo origins) x 12 = 564 posibles, y holgura para los pasos de GPU
+const EV_MAX_CLAVES = 900;      // 2 juegos x 11 pasos x 6 origenes x 2 equipos = 264, mas 16 de rendimiento y 9 de misiones/1er jefe (solo origins) x 12 = 564 posibles, 72 de paginas de aterrizaje (6 x 12), y holgura para los pasos de GPU
 // IPv6: se limita por /64 (un equipo cambia de direccion dentro de su bloque).
 const claveIpEv = ip => ip.includes(':') ? ip.split(':').slice(0, 4).join(':') : ip;
 
@@ -571,7 +575,7 @@ export const Retencion = {
     const nada = () => new Response(null, { status: 204 });
     try {
       const b = await request.json();
-      if (!b || !EV_PASOS.includes(b.e) || (b.j !== 'origins' && b.j !== 'classic')) return nada();
+      if (!b || !evValido(b.e, b.j)) return nada();
       const ahora = Date.now(), hoy = diaNum(ahora), h = Math.floor(ahora / 3600000);
       const ip = claveIpEv(request.headers.get('CF-Connecting-IP') || '');
       this._evIp = this._evIp && this._evIp.h === h ? this._evIp : { h, n: new Map() };

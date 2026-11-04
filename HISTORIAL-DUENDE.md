@@ -105,6 +105,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v366 | Ronda final: música del pueblo con el toque, iPhone antiguo a CLASSIC, tienda CLASSIC en móvil, tutorial de la Ira, bot con cuentas vinculadas | **B** |
 | v367 | HUD móvil compacto, controles en arco, avisos legibles, minimapa claro y mapa a pantalla completa con zoom y destino | **B** |
 | v368 | Historia: Caso del Traidor, Receta, 30 secundarias, vasos de chicha, Mis objetivos, premio por WhatsApp, /chicha/, /token/, panel de críticos | **B** |
+| v369 | Segunda tanda de críticos: clave de entrega, cola del premio, filtro antiestafa, misterio, portada y 404 real | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

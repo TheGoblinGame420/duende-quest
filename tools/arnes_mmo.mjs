@@ -609,6 +609,7 @@ async function pruebas() {
   await pruebasTorreVuelta();
   await pruebasEvadir();
   await pruebasDios();
+  await pruebasFiltro();
   await pruebasSinCortes();
   await pruebas3d();
   await pruebasHabs3d();
@@ -715,8 +716,11 @@ async function pruebasEncargos3d() {
     const vet = {}; for (const id of viejas) vet[id + ':ok'] = 1;
     chequear(viejas.every(id => ids.includes(id)), 'secundarias: siguen todas las de antes');
     chequear(S.secundariaDe('noche', vet, 60).id === 'n3' && S.secundariaDe('acantilados', vet, 60) === null && S.contarPistas(vet) === 0, 'secundarias: el veterano recibe las nuevas y x3 espera sus pistas');
-    const conP = { ...vet }; for (const q of L.filter(x => x.pista).slice(0, 8)) conP[q.id + ':ok'] = 1;
-    chequear(S.contarPistas(conP) === 8 && S.secundariaDe('acantilados', conP, 60).id === 'x3' && S.secundariaDe('acantilados', conP, 57) === null, 'secundarias: con 8 pistas y su nivel se abre x3');
+    const conP = { ...vet }; for (const q of L.filter(x => x.pista).slice(0, 11)) conP[q.id + ':ok'] = 1;
+    chequear(S.contarPistas(conP) === 11 && S.secundariaDe('acantilados', conP, 60) === null, 'secundarias: con 11 pistas x3 sigue cerrada');
+    chequear(S.secundariaDe('acantilados', { ...conP, x3: 3 }, 60).id === 'x3', 'secundarias: quien ya había empezado x3 con menos pistas no la pierde');
+    for (const q of L.filter(x => x.pista)) conP[q.id + ':ok'] = 1;
+    chequear(S.contarPistas(conP) === 12 && S.secundariaDe('acantilados', conP, 60).id === 'x3' && S.secundariaDe('acantilados', conP, 57) === null, 'secundarias: con las 12 pistas y su nivel se abre x3');
     // La pesca avanza primero la mision de la zona donde estas, y el premio no regala niveles altos por volver al bosque.
     const nv0 = a.c.nivel, sec0 = a.c.sec, xp0 = a.c.xp, p0 = a.p;
     const ab = W.ZONAS3D.abismo;
@@ -1603,6 +1607,32 @@ async function pruebasRetencion() {
   irA(D + 8, 10);
   const h3b = await entrarR('Cohorte3', '6c');
   await dejar(h3b);
+
+  // Paginas de aterrizaje en el embudo (j='web'), con el mismo filtro en worker.js y en el Durable Object.
+  {
+    const evEnv = async b => mundo.evRecibir(new Request('https://mmo/mmo/ev', { method: 'POST', headers: { 'CF-Connecting-IP': '203.0.113.9' }, body: JSON.stringify(b) }));
+    await evEnv({ e: 'ld_chicha_ver', j: 'web', org: 'etiqueta', ms: 900, movil: 1 });
+    await evEnv({ e: 'ld_chicha_clic', j: 'web', org: 'etiqueta', ms: 4000, movil: 1 });
+    await evEnv({ e: 'ld_chicha_ver', j: 'origins', org: 'etiqueta', ms: 1, movil: 1 });
+    await evEnv({ e: 'carga_ini', j: 'web', org: 'etiqueta', ms: 1, movil: 1 });
+    await mundo.evVolcar();
+    const pe = (await mundo.evStats(1)).por.etiqueta.pasos;
+    chequear(pe.ld_chicha_ver === 1 && pe.ld_chicha_clic === 1, 'el embudo cuenta visita y clic de /chicha/ por origen');
+    chequear(!pe.carga_ini, 'un paso del juego con j=web no cuenta');
+    const { default: wk } = await import('../worker.js');
+    const pasa = [];
+    const envW = { MMO: { idFromName: x => x, get: () => ({ fetch: async (u, o) => { pasa.push(JSON.parse(o.body)); return new Response(null, { status: 204 }); } }) } };
+    const espera = [];
+    const ctxW = { waitUntil: p => espera.push(p) };
+    const alWorker = b => wk.fetch(new Request('https://x.test/mmo/ev', { method: 'POST', body: JSON.stringify(b) }), envW, ctxW);
+    await alWorker({ e: 'ld_jugar_ver', j: 'web', org: 'meta', ms: 5, movil: 1, tel: '999' });
+    await alWorker({ e: 'golpe1', j: 'origins', org: 'org', ms: 5 });
+    await alWorker({ e: 'ld_jugar_ver', j: 'origins', org: 'org', ms: 5 });
+    await alWorker({ e: 'inventado', j: 'web', org: 'org', ms: 5 });
+    await Promise.all(espera);
+    chequear(pasa.length === 2 && pasa[0].e === 'ld_jugar_ver' && pasa[1].e === 'golpe1', 'worker.js deja pasar ld_* con web y golpe1 con juego, y nada más');
+    chequear(pasa[0] && !('tel' in pasa[0]), 'worker.js solo reenvía los campos conocidos: nada personal');
+  }
 
   const st = await interno('stats');
   chequear((await interno('stats', {}, 'mala')).status === 403, 'sin la clave interna no hay estadísticas');
@@ -3469,6 +3499,115 @@ async function pruebasAfijos() {
   chequear(mundo.rds.sem === D.semanaUTC() && !Object.keys(mundo.rds.l).length, 'y la tabla empieza de cero');
   await dejar(d);
 }
+// Huellas de multicuenta, clave de entrega y /chichatel (functions/mmo/chicha.js).
+async function pruebasChichaFraude(D, avisos) {
+  const { readFileSync } = await import('node:fs');
+  const ant = mundo.chichas;
+  mundo.chichas = [];
+  const pjs = [];
+  const crea = async (nom, n, uid, dev, ip, vida = 60) => {
+    const p = await entrar(nom, n); ponerNivel(p, 20, 'guerrero');
+    p.c.uid = uid; p.c.creado = Date.now() - vida * 86400000; p.c.chicha = { p: 25000, d: '', hoy: 0, rec: [] };
+    p.dev = dev; p.ip = ip; p.limpiar(); pjs.push(p);
+    return p;
+  };
+  // Reclama y devuelve el aviso del dueño; el mes se vacía para que el tope de litros no estorbe.
+  const reclama = async p => {
+    avisos.length = 0;
+    await p.mandar({ t: 'chicha', meta: 25000 });
+    for (let i = 0; i < 20; i++) await new Promise(r => setImmediate(r));
+    const r = mundo.chichas.filter(x => x.uid === p.c.uid).pop();
+    for (const x of mundo.chichas) x.mes = '2000-01';
+    return { r, aviso: avisos.find(a => a.startsWith('ADMIN')) || '' };
+  };
+  const DEV_A = 'a'.repeat(32), DEV_B = 'b'.repeat(32), DEV_C = 'c'.repeat(32), DEV_D = 'd'.repeat(32), DEV_E = 'e'.repeat(32), DEV_F = 'f'.repeat(32);
+
+  const uno = await crea('MultiUno', 'f1a', 'web:mf-1', DEV_A, '2800:200:e0:aaaa:1:2:3:4');
+  const a1 = await reclama(uno), r1 = a1.r;
+  chequear(r1 && /^[A-HJKMNP-Z2-9]{6}$/.test(r1.clave || ''), 'el reclamo nace con su clave de entrega');
+  chequear(r1 && r1.hd && r1.hi && r1.hv === 1 && !JSON.stringify(r1).includes('2800:200') && !JSON.stringify(r1).includes(DEV_A), 'guarda huellas del dispositivo y la red, nunca la IP en claro');
+  chequear(a1.aviso.includes(r1.clave) && !a1.aviso.includes('Mismo dispositivo') && !a1.aviso.includes('comprueba que el nombre'), 'el dueño recibe la clave y un primer reclamo no lleva alerta');
+  chequear(!a1.aviso.includes('⚠️ rápido'), 'por puntos con una vida posible no marca «rápido»');
+  chequear(uno.ultimos('yo').some(m => ((m.yo.chicha || {}).rcl || []).some(x => x.id === r1.id && x.cl === r1.clave)), 'el jugador ve su clave dentro de su cuenta');
+  const sinClave = uno.ws.rec.filter(m => m.t !== 'yo').map(m => JSON.stringify(m)).join('');
+  chequear(!sinClave.includes(r1.clave), 'la clave solo viaja en sus datos propios: ni en el aviso ni en chicha_rec');
+  chequear(!decodeURIComponent(D.waChicha(r1.id, 'MultiUno', 1)).includes(r1.clave), 'el mensaje de WhatsApp ya escrito no lleva la clave');
+  const rclUno = mundo.reclamosChicha('web:mf-1')[0];
+  chequear(rclUno && !('hd' in rclUno) && !('hi' in rclUno) && !('hv' in rclUno) && !('clave' in rclUno), 'las huellas nunca salen hacia el cliente');
+
+  const dos = await crea('MultiDos', 'f2b', 'web:mf-2', DEV_A, '190.1.2.3');
+  const a2 = await reclama(dos);
+  chequear(a2.aviso.includes('Mismo dispositivo') && a2.aviso.includes('#' + r1.id) && a2.aviso.includes('MultiUno'), 'mismo dispositivo en otra cuenta: el aviso nombra el reclamo anterior');
+  chequear(a2.r.clave !== r1.clave, 'cada reclamo tiene su propia clave');
+  chequear(!dos.ws.rec.map(m => JSON.stringify(m)).join('').includes(r1.clave), 'otro jugador nunca recibe una clave ajena');
+
+  const tres = await crea('MultiTres', '3c', 'web:mf-3', DEV_B, '2800:200:e0:AAAA::9');
+  const a3 = await reclama(tres);
+  chequear(a3.aviso.includes('Misma red de casa') && a3.aviso.includes('#' + r1.id) && !a3.aviso.includes('Mismo dispositivo'), 'IPv6 escrita de otra forma pero del mismo /64: misma red');
+
+  const cuatro = await crea('MultiCuatro', '4d', 'web:mf-4', DEV_C, '190.1.2.3');
+  const a4 = await reclama(cuatro);
+  chequear(a4.aviso.includes('puede ser compartida') && !a4.aviso.includes('Misma red de casa'), 'la IPv4 repetida avisa, pero aclara que puede ser compartida');
+
+  const cinco = await crea('MultiCinco', '5e', 'web:mf-5', DEV_D, '2800:200:e0:bbbb::1', 3);
+  const a5 = await reclama(cinco);
+  chequear(!a5.aviso.includes('Mismo') && !a5.aviso.includes('Misma'), 'sin nada en común no hay alerta falsa');
+  chequear(a5.aviso.includes('⚠️ rápido'), 'por puntos con menos vida de la que permite el tope diario marca «rápido»');
+
+  const seis = await crea('MultiSeis', '6f', 'web:mf-6', '', '');
+  const a6 = await reclama(seis);
+  chequear(a6.r && !a6.r.hd && !a6.r.hi && !a6.aviso.includes('Mismo') && !a6.aviso.includes('Misma'), 'sin dispositivo ni IP el reclamo sale igual y no coincide con otro vacío');
+  const siete = await crea('MultiSiete', '7g', 'web:mf-7', '', '190.7.7.7');
+  const a7 = await reclama(siete);
+  chequear(a7.aviso.includes('Sin huella de dispositivo') && !a1.aviso.includes('Sin huella'), 'con red pero sin dispositivo (cliente alterado) el dueño lo ve');
+  const ocho = await crea('MultiOcho', '8h', 'tg:7000008', DEV_E, '190.8.8.8');
+  const a8 = await reclama(ocho);
+  chequear(a8.aviso.includes('ahí no le pidas la clave') && a8.aviso.includes(a8.r.clave) && !a1.aviso.includes('ahí no le pidas'), 'en su chat de Telegram no se le pide la clave, que es solo para WhatsApp');
+
+  const lista = await mundo.internoChicha('chichas', {});
+  const en1 = lista.pendientes.find(x => x.id === r1.id);
+  chequear(en1 && en1.clave === r1.clave && en1.alertas.some(t => t.includes('Mismo dispositivo') && t.includes('MultiDos')), '/chicha enseña la clave y las coincidencias, también al reclamo más antiguo');
+  chequear(!('alertas' in r1), '/chicha no ensucia el reclamo guardado con sus alertas');
+
+  // Reclamos de antes de esta versión: sin huellas ni clave, y siguen funcionando.
+  const viejo = { id: 'VIEJO', uid: 'web:mf-viejo', nombre: 'Viejito', nivel: 20, meta: 25000, litros: 1, puntos: 25000, mes: '2000-01', creado: 1, estado: 'pendiente' };
+  mundo.chichas.push(viejo);
+  const lista2 = await mundo.internoChicha('chichas', {}), enV = lista2.pendientes.find(x => x.id === 'VIEJO');
+  chequear(enV && /^[A-HJKMNP-Z2-9]{6}$/.test(enV.clave) && enV.alertas.length === 0, 'un reclamo viejo recibe su clave y no da alertas');
+  const rclV = mundo.reclamosChicha('web:mf-viejo')[0];
+  await new Promise(r => setImmediate(r));
+  const guardados = await mundo.state.storage.get('chichas');
+  chequear(rclV.cl === enV.clave && guardados.find(x => x.id === 'VIEJO').clave === enV.clave, 'esa clave no cambia y queda guardada');
+
+  // /chichatel: mismo número escrito de dos formas, y solo se guarda su huella.
+  const tel1 = await mundo.internoChicha('chichaTel', { id: r1.id, tel: '+51 916 111 222' });
+  chequear(tel1.ok && tel1.alertas.every(t => !t.includes('Mismo teléfono')), '/chichatel anota el primero sin alerta de teléfono');
+  const tel2 = await mundo.internoChicha('chichaTel', { id: a5.r.id.toLowerCase(), tel: '916111222' });
+  chequear(tel2.ok && tel2.alertas.some(t => t.includes('Mismo teléfono') && t.includes('#' + r1.id)), '/chichatel avisa si el teléfono ya salió en otro reclamo');
+  chequear(!JSON.stringify(await mundo.state.storage.get('chichas')).includes('916111222'), 'el teléfono no se guarda en claro');
+  const tel3 = await mundo.internoChicha('chichaTel', { id: r1.id, tel: '123' }), tel4 = await mundo.internoChicha('chichaTel', { id: 'NOHAY', tel: '916111222' });
+  chequear(!tel3.ok && !tel4.ok, '/chichatel rechaza un número raro o un código que no existe');
+
+  // Cerrado el reclamo, la clave deja de viajar, pero sus huellas siguen sirviendo.
+  await mundo.internoChicha('chichaOk', { id: r1.id });
+  chequear(!('cl' in mundo.reclamosChicha('web:mf-1')[0]), 'con el premio enviado la clave ya no se envía');
+  chequear(mundo.coincidenciasChicha(a2.r).some(t => t.includes('#' + r1.id) && t.includes('enviado')), 'un premio ya enviado sigue contando como coincidencia');
+
+  // Los textos: los dos paneles esconden la clave tras un toque y avisan que no se comparte.
+  for (const f of ['mundo/js/mundo.js', 'mmo/js/client.js']) {
+    const t = readFileSync(new URL('../' + f, import.meta.url), 'utf8');
+    chequear(/<details[^>]*><summary[^>]*>Ver mi clave de entrega/.test(t) && t.includes('no se la des a nadie más'), f + ': la clave se abre con un toque y avisa que no se comparte');
+    chequear(/letter-spacing:2px[^"]*user-select:text/.test(t), f + ': la clave se puede seleccionar para copiarla');
+  }
+  chequear(readFileSync(new URL('../mmo/js/client.js', import.meta.url), 'utf8').includes('claveAbierta.forEach'), 'CLASSIC: repintar la mochila no cierra la clave abierta');
+  const bot = readFileSync(new URL('../functions/api/telegram-bot.js', import.meta.url), 'utf8');
+  chequear(bot.includes("case '/chichatel':") && bot.includes("mmoInterno(env, 'chichaTel'"), 'el bot del dueño conoce /chichatel');
+
+  mundo.chichas = ant;
+  await mundo.state.storage.put('chichas', mundo.chichas);
+  for (const p of pjs) await dejar(p);
+}
+
 async function pruebasChicha() {
   console.log('Premio de chicha morada');
   const D = await import('../mmo/js/data.js');
@@ -3500,6 +3639,7 @@ async function pruebasChicha() {
     for (let i = 0; i < 20; i++) await espera();
     const r = (mundo.chichas || []).find(x => x.uid === j.c.uid);
     chequear(r && r.estado === 'pendiente' && j.c.chicha.rec.includes(25000), 'con 25.000 puntos se reclama el litro');
+    chequear(r && r.clave && avisos.some(a => !a.startsWith('ADMIN') && a.includes('clave de entrega')) && !avisos.some(a => !a.startsWith('ADMIN') && a.includes(r.clave)), 'el mensaje de Telegram habla de la clave, pero no la lleva');
     chequear(avisos.some(a => a.startsWith('ADMIN') && a.includes(r.id) && a.includes('7101')), 'al dueño le llega el aviso con el contacto');
     await j.mandar({ t: 'chicha', meta: 25000 });
     chequear(mundo.chichas.filter(x => x.uid === j.c.uid).length === 1, 'no se reclama dos veces');
@@ -3542,7 +3682,14 @@ async function pruebasChicha() {
     chequear(w.ultimos('yo').some(m => ((m.yo.chicha || {}).rcl || []).some(x => x.id === rw.id && x.estado === 'pendiente')), 'el código le queda a la vista en el panel');
     chequear(avisos.some(a => a.startsWith('ADMIN') && a.includes(rw.id)) && !avisos.some(a => !a.startsWith('ADMIN')), 'avisa al dueño y el bot no escribe a una cuenta sin Telegram');
     chequear(decodeURIComponent(D.waChicha(rw.id, 'ChichaWeb', 1)).includes('#' + rw.id) && D.waChicha(rw.id, 'ChichaWeb', 1).startsWith('https://wa.me/51916778731?text=') && decodeURIComponent(D.waChicha(rw.id, 'ChichaWeb', 1)).includes('ChichaWeb'), 'el mensaje de WhatsApp lleva código y nombre');
-    await mundo.internoChicha('chichaOk', { id: rw.id });
+    // Cuenta de correo: conectada se entera dentro del juego; desconectada, el bot no le dice al dueño que se le avisó.
+    mundo.chichas.push({ id: 'OFFW', uid: 'web:chi-off', meta: 25000, mes: rw.mes, creado: reloj, estado: 'pendiente' });
+    chequear(!(await mundo.internoChicha('chichaOk', { id: 'OFFW' })).avisado, 'correo desconectado: no consta como avisado');
+    mundo.chichas = mundo.chichas.filter(x => x.id !== 'OFFW');
+    { const pu0 = mundo.porUid.get('web:chi-1'); mundo.porUid.set('web:chi-1', w); w.ws.rec.length = 0; w.noT = 0;
+      const rOk = await mundo.internoChicha('chichaOk', { id: rw.id });
+      chequear(rOk.avisado === 'juego' && w.ultimos('toast').some(m => /va en camino/.test(m.m)), 'correo conectado: el envío se le avisa dentro del juego');
+      if (pu0) mundo.porUid.set('web:chi-1', pu0); else mundo.porUid.delete('web:chi-1'); }
     // Veterano: su reclamo viejo vale por el premio nuevo y no se paga dos veces.
     w.c.chicha = { p: 120000, d: '', hoy: 0, rec: [50000] };
     await w.mandar({ t: 'chicha', meta: 100000 });
@@ -3555,12 +3702,160 @@ async function pruebasChicha() {
     await w.mandar({ t: 'chicha', meta: 25000 });
     for (let i = 0; i < 10; i++) await espera();
     chequear(!w.c.chicha.rec.includes(25000), 'lleno el tope del mes, los puntos esperan');
+    // El mensaje no dice que se repartieron si los litros siguen por coordinar; liberar uno abre el cupo.
+    mundo.chichas = Array.from({ length: D.CHICHA.mesMax }, (_, i) => ({ id: 'P' + i, uid: 'tg:' + (900 + i), meta: 25000, mes, creado: reloj - i * 86400000, estado: 'pendiente' }));
+    w.ws.rec.length = 0; w.noT = 0;
+    await w.mandar({ t: 'chicha', meta: 25000 });
+    for (let i = 0; i < 10; i++) await espera();
+    chequear(!w.c.chicha.rec.includes(25000) && !JSON.stringify(w.ws.rec).includes('ya se repartieron') && JSON.stringify(w.ws.rec).includes('ya están reclamados'), 'cupo por puntos lleno de pendientes: el aviso es veraz');
+    const sinP = await mundo.internoChicha('chichasSin', { dias: 2 });
+    chequear(sinP.ok && sinP.lista.map(x => x.id).join() === 'P3,P2', 'el dueño ve los no coordinados, del más antiguo al más nuevo y por antigüedad');
+    chequear(mundo.chichas.every(x => x.estado === 'pendiente'), 'nada caduca solo');
+    const coordP = await mundo.internoChicha('chichaCoord', { id: 'P0' });
+    chequear(coordP.ok && (await mundo.internoChicha('chichasSin', {})).lista.every(x => x.id !== 'P0'), 'lo coordinado sale de la lista');
+    const libC = await mundo.internoChicha('chichaLibera', { id: 'P0' });
+    chequear(!libC.ok && mundo.chichas[0].estado === 'pendiente', 'lo ya coordinado no se libera por error');
+    let tgLib = 0; const tgAntes = mundo.tgEnviar; mundo.tgEnviar = async () => { tgLib++; };
+    const libP = await mundo.internoChicha('chichaLibera', { id: 'p3' });
+    mundo.tgEnviar = tgAntes;
+    chequear(libP.ok && libP.chicha.estado === 'rechazado' && libP.chicha.liberado === 1 && tgLib === 0, 'el dueño libera un no coordinado y el bot no escribe');
+    await w.mandar({ t: 'chicha', meta: 25000 });
+    for (let i = 0; i < 10; i++) await espera();
+    chequear(w.c.chicha.rec.includes(25000), 'el cupo liberado lo puede usar otro jugador');
+    // Cola de Nv 60: cada mes solo 5 y los recién llegados no se cuelan.
+    const pr60 = await entrar('ChichaCola', '5c9'); ponerNivel(pr60, 60, 'guerrero');
+    pr60.c.uid = 'web:cola-1'; pr60.c.creado = reloj - 30 * 86400000; pr60.c.login = { total: D.CHICHA.dias60 }; pr60.c.tjs = D.CHICHA.min60 * 60 + 60; pr60.c.chicha = { p: 0, d: '', hoy: 0, rec: [] };
+    const mesSig = m => new Date(Date.UTC(+m.slice(0, 4), +m.slice(5, 7), 1)).toISOString().slice(0, 7);
+    const m1 = mesSig(mes), m2 = mesSig(m1);
+    const pend60 = (i, extra) => ({ id: 'C' + i, uid: 'web:c' + i, nombre: 'C' + i, nivel: 60, meta: 'nv60', litros: 2, mes, creado: reloj - (100 - i) * 60000, estado: 'pendiente', ...extra });
+    mundo.chichas = Array.from({ length: 12 }, (_, i) => pend60(i, i < 5 ? {} : { cola: true }));
+    const uso60 = mundo.planChicha60();
+    chequear(uso60.get(mes) === 5 && uso60.get(m1) === 5 && uso60.get(m2) === 2, 'los reclamos viejos en cola se reparten: nunca más de 5 por mes');
+    chequear(mundo.chichas[4].mesEnt === mes && mundo.chichas[5].mesEnt === m1 && mundo.chichas[11].mesEnt === m2, 'por antigüedad');
+    const foto = JSON.stringify(mundo.chichas);
+    mundo.planChicha60();
+    chequear(foto === JSON.stringify(mundo.chichas), 'repartir dos veces no cambia nada');
+    await pr60.mandar({ t: 'chicha', meta: 'nv60' });
+    for (let i = 0; i < 10; i++) await espera();
+    const r60c = mundo.chichas.find(x => x.uid === 'web:cola-1');
+    chequear(r60c && r60c.cola && r60c.mesEnt === m2, 'un reclamo nuevo toma el primer mes con cupo y consume la cola');
+    const iCola = mundo.infoChicha(pr60.c);
+    chequear(iCola.q60.p === 13 && iCola.q60.n === 13 && iCola.q60.cola && iCola.q60.me === m2 && iCola.rcl.some(x => x.meta === 'nv60' && x.cola && x.me === m2), 'el jugador ve su puesto y su mes estimado');
+    chequear(/^[a-z]+ de \d{4}$/.test(D.mesChicha(m2)) && JSON.stringify(pr60.ws.rec).includes(D.mesChicha(m2)), 'el aviso le dice el mes con letras');
+    const list60 = await mundo.internoChicha('chichas');
+    chequear(list60.meses60[0].mes === mes && list60.meses60[0].n === 5 && list60.meses60[2].n === 3 && list60.mes60 === 5, 'el dueño ve lo debido de cada mes');
+    const sin60 = await mundo.internoChicha('chichasSin', {});
+    chequear(sin60.lista.length === 5 && sin60.enCola === 8, '/chichasin no ofrece liberar a quien aún no le toca');
+    const libCola = await mundo.internoChicha('chichaLibera', { id: 'C11' });
+    chequear(!libCola.ok && mundo.chichas[11].estado === 'pendiente', 'tampoco se libera a mano a quien sigue en cola');
+    await mundo.internoChicha('chichaLibera', { id: 'C0' });
+    chequear(mundo.chichas[5].mesEnt === mes && mundo.chichas[10].mesEnt === m1 && r60c.mesEnt === m2 && mundo.planChicha60().get(mes) === 5, 'al liberar, el primero de la cola sube y el mes sigue en 5');
+    reloj += 31 * 86400000;
+    const uso2 = mundo.planChicha60();
+    chequear(mundo.chichas.filter(x => x.estado === 'pendiente').length === 12 && [...uso2.values()].every(n => n <= 5), 'al pasar el mes nada caduca y sigue el tope');
+    reloj -= 31 * 86400000;
+    // Cambio de mes de verdad: mesUTC usa new Date(), que el reloj del arnés no mueve.
+    const DateReal = Date, alMes = (m, dia = 1) => { const t = DateReal.UTC(+m.slice(0, 4), +m.slice(5, 7) - 1, dia, 12); globalThis.Date = class extends DateReal { constructor(...a) { if (a.length) super(...a); else super(t); } static now() { return t; } }; };
+    try {
+      const mV = mesSig(m2);
+      const creado0 = DateReal.UTC(+mes.slice(0, 4), +mes.slice(5, 7) - 1, 2);   // el reloj del arnés va por otro mes
+      mundo.chichas = Array.from({ length: 12 }, (_, i) => pend60(i, i < 5 ? { creado: creado0 + i } : { cola: true, creado: creado0 + i }));
+      mundo.planChicha60();
+      alMes(m1, 20);
+      const usoM1 = mundo.planChicha60();
+      chequear(mundo.chichas[0].mesEnt === mes && usoM1.get(m1) === 5 && usoM1.get(m2) === 2 && !usoM1.has(mV), 'al cambiar de mes los ya repartidos siguen en su mes y la cola no se mueve');
+      const sinM1 = await mundo.internoChicha('chichasSin', { dias: 10 });
+      const sinCorto = await mundo.internoChicha('chichasSin', { dias: 25 });
+      chequear(sinM1.lista.some(x => x.id === 'C5') && sinCorto.lista.every(x => x.id !== 'C5') && sinCorto.lista.some(x => x.id === 'C0'), 'los días sin coordinar se cuentan desde que le toca, no desde que entró en cola');
+      const libPas = await mundo.internoChicha('chichaLibera', { id: 'C0' });
+      chequear(libPas.ok && libPas.mesPasado && mundo.chichas[10].mesEnt === m2, 'liberar un cupo de un mes pasado no adelanta a nadie y lo avisa');
+      const libAct = await mundo.internoChicha('chichaLibera', { id: 'C5' });
+      chequear(libAct.ok && !libAct.mesPasado && mundo.chichas[10].mesEnt === m1 && mundo.chichas[10].toca && mundo.planChicha60().get(m1) === 5, 'liberar uno del mes en curso sube al primero de la cola');
+      const sinSube = await mundo.internoChicha('chichasSin', { dias: 1 });
+      chequear(sinSube.lista.every(x => x.id !== 'C10'), 'quien acaba de subir de la cola no sale como atrasado');
+      mundo.chichas = [{ id: 'ANT', uid: 'tg:ant', meta: D.CHICHA.antes[0], litros: 1, mes: m1, creado: 1, estado: 'pendiente' }];
+      const libAnt = await mundo.internoChicha('chichaLibera', { id: 'ANT' });
+      chequear(!libAnt.ok && mundo.chichas[0].estado === 'pendiente', 'un reclamo de la cifra anterior no se libera: perdería el premio');
+    } finally { globalThis.Date = DateReal; }
+    // Al recortar a 300 no se pierde ningún pendiente.
+    const viejos = Array.from({ length: 300 }, (_, i) => ({ id: 'V' + i, uid: 'tg:v' + i, meta: 25000, mes: '2026-01', creado: i, estado: 'rechazado' }));
+    mundo.chichas = [{ id: 'VIEJO', uid: 'tg:vv', meta: 'nv60', litros: 2, mes: '2026-01', mesEnt: '2026-01', creado: 0, estado: 'pendiente' }, ...viejos];
+    pr60.c.chicha.rec = [];
+    await pr60.mandar({ t: 'chicha', meta: 'nv60' });
+    for (let i = 0; i < 10; i++) await espera();
+    chequear(mundo.chichas.length === 300 && mundo.chichas.some(x => x.id === 'VIEJO') && mundo.chichas.some(x => x.uid === 'web:cola-1' && x.estado === 'pendiente'), 'al recortar a 300 no se borra ningún pendiente');
     mundo.chichas = chichas0;
+    await dejar(pr60);
+    await pruebasChichaFraude(D, avisos);
     await dejar(inv); await dejar(j); await dejar(nuevo); await dejar(w);
   } finally { mundo.tgEnviar = tgReal; mundo.avisarAdmin = adminReal; }
 }
 
 // ── MODO DIOS, NOMBRES UNICOS, SKINS PREMIUM Y VELOCIDAD (functions/mmo/dios.js) ──
+// ── FILTRO DE CHAT Y NOMBRES: estafas de la chicha, de ambos lados (lo que cae y lo que NO debe caer) ──
+async function pruebasFiltro() {
+  console.log('Filtro de chat y nombres');
+  const { riesgoEstafa, riesgoContacto } = await import('../functions/mmo/social.js');
+  const raro = t => riesgoEstafa(t) || riesgoContacto(t);
+  for (const t of ['9167 78732', '916 7 7 8 7 3 2', '916/778/732', '916_778_732', '916,778,732', '9l6 778 732', '+51 916 778 732', '51916778732', '916-778-732',
+    'nueve uno seis siete siete ocho siete tres dos', 'novecientos dieciseis setecientos setenta y ocho setecientos treinta y dos', 'escribe al ９１６７７８７３２', '916🔥778🔥732', '916;778;732', '916:778:732', '916=778=732', 'whatsap', 'wassap', 'guasap', 'wazap', 'w s p', 'w.s.p', 'w5p', 'whats4pp'])
+    chequear(riesgoContacto(t), 'teléfono disfrazado cae: ' + t);
+  for (const t of ['reclama tu chicha en duende-quest.alfonso13hc.workers.dev', 'reclama tu chicha en bit.ly/chicha', 'bit . ly/chicha', 'chicha punto com', 'mira chicha.lat', 'tu-premio.pages.dev', 'wa.me/51916778732', 'chicha.pe/premio',
+    'duende-quest.alfonso12hc.workers.dev.chicha.com', 'duende-quest.alfonso12hc.workers.dev@chicha.xyz', 'x-duende-quest.alfonso12hc.workers.dev',
+    'paga el envio de tu chicha por yape', 'paga el envío de tu chicha', 'tu premio chicha, deposita 5 soles', 'deposita 5 soles', 'deposita en mi cuenta', 'depositame', 'yapeame 10', 'te yapeo', 'mi yape', 'd3posita 5 soles',
+    'paga 5 soles por el envio', 'gastos de envio', 'son 10 soles de envio', 'el flete son 8 soles', 'ganaste un premio, escribeme', 'tu premio son s/ 20', 'reclama tu chicha por privado', 'manda 5 soles y te doy tu chicha',
+    'paguen el envio de su chicha', 'pague el envio', 'abone el envio', 'cancele el envio', 'envie 5 soles', 'mande 5 soles por tu chicha', 'tu premio S/. 20', 'S/.5 por el envio', 'paga 5 soles', 'transfiere 10 soles', 'manda 5 lukas', 'deposita 1 sol', 'deposita 5 dolares', 'paga cinco soles por tu premio', 'tu premio $20',
+    'chicha.pe', 'premio.pe', 'duendequest.pe', 'chicha . pe/x', 'chicha。com', 'chicha[.]com', 'chicha(.)com', 'duende-quest.alfonso12hc.workers.dev/?u=chicha.com', 'duende-quest.alfonso12hc.workers.dev/https://x.y', 'duende-quest.alfonso12hc.workers.dev/premio.xyz',
+    'escribeme por interno y te doy tu premio', 'escribeme para tu chicha', 'por privado te entrego tu chicha', 'contactame para reclamar tu premio', 'te toco chicha llamame'])
+    chequear(riesgoEstafa(t), 'estafa cae: ' + t);
+  for (const t of ['hola a todos', 'gg', 'ya pe', 'ya.pe vamos', 'dale.pe', 'ok.me voy', 'hola.como estas', 'si o no', 'uno dos tres vamos', 'nueve de cada diez', 'a las 9:30 10:45 12:00',
+    'tengo 9000/10000 de vida', 'hp 9123/12345', 'cuesta 9000 oro', 'entre 9000 10000 de daño', 'tengo 950 oro y 120 de mana', '9 de cada 10', 'el 9/11/2026', 'nivel 60 y 14 dias',
+    'paga el pase', 'pago 500 oro por la espada', 'te pago 500 oro y te envio la espada', 'te envio oro', 'deposita oro en la boveda', 'deposité mis runas',
+    'como reclamo mi chicha', 'reclama tu premio diario', 'reclama tu chicha en el panel', 'voy por mi chicha', 'me falta poco para la chicha', 'el envio de la chicha ya llegó', 'la botella de chicha cuesta 5 soles', 'gané un premio en la pesca', 'ganaste el duelo', 'no tengo yape', '¿aceptan yape?', 'el token sube', 'la tienda tiene premios',
+    'mira duende-quest.alfonso12hc.workers.dev', 'entra a https://duende-quest.alfonso12hc.workers.dev/mundo/ amigo', 'mira duende-quest.alfonso12hc.workers.dev.', 'duende-quest.alfonso12hc.workers.dev/jugar/?ref=abc12 entra', 'duende-quest.alfonso12hc.workers.dev/mundo/index.html',
+    'te toco una llama', 'ganaste una llama de mascota', 'ganaste contra el que se llama pedro', 'ganaste el duelo, escribe gg', 'deposita tu dinero en la boveda', 'quien paga el envio', '¿quién paga el envío?', 'no pagues el envio', 'el envio es gratis', 'a las 9.30 10.45 12.00', 'a las 9:30 10:45 12:00', 'tengo 9 10 11 12 13',
+    'pague el pase', 'mande la espada', 'envie la pocion', 'envia 5 pociones', 'paga 500 oro', 'hijos del sol', 'como cobro mi premio', 'escribeme cuando salga el jefe', 'por privado te paso la espada'])
+    chequear(!raro(t), 'frase normal pasa: ' + t);
+
+  // Nombres nuevos: el premio, quien lo entrega y los números largos.
+  for (const n of ['MamaAsiri', 'Mama Asiri', 'ChichaEnvios', 'Chichera', 'WhatsappChicha', 'PremioChicha', 'EntregaChicha', 'ReclamosChicha', 'VentaDuende', 'CompraToken', 'DuendeToken', 'Chicha916778732', 'Wsp916778732', 'Rico12345', 'Ch1cha', 'T0ken', 'Chi9cha', 'Env1os', 'Prem1o', '9 1 6 7 8', 'MamAsiri', 'Mam Asiri', 'Don Asiri', 'DonAsiri', 'Chichero', 'Chicha Real', 'Whatsap', 'Wassap', 'Guasap', 'Reclamar'])
+    chequear(mundo.nombreReservado(n), 'nombre nuevo reservado: ' + n);
+  for (const n of ['Pedro', 'Rico1234', 'Yasiri', 'Kasiri', 'Tokio', 'Lalo 2026', 'Maricarmen', 'Envidia', 'Chichi', 'Reclutador', 'Duende5698', 'Aventura', 'Chicharito', 'Chicharron', 'Jasiri'])
+    chequear(!mundo.nombreReservado(n), 'nombre normal permitido: ' + n);
+  const v = await entrar('Chicha916778732', 'filtro7');
+  chequear(/^Duende\d{4}$/.test(v.c.nombre), 'un invitado no entra con un número falso de nombre (' + v.c.nombre + ')');
+  v.limpiar(); avanzar(3000); await v.mandar({ t: 'miNombre', n: 'Rico12345' }); await calma();
+  chequear(v.ultimos('toast').some(m => /cifras/.test(m.m)) && /^Duende/.test(v.c.nombre), 'elegir nombre con 5 cifras se rechaza y lo explica');
+  v.limpiar(); avanzar(3000); await v.mandar({ t: 'miNombre', n: 'ChichaEnvios' }); await calma();
+  chequear(v.ultimos('toast').some(m => /no está permitido/.test(m.m)) && /^Duende/.test(v.c.nombre), 'elegir un nombre de premio se rechaza');
+  v.limpiar(); avanzar(3000); await v.mandar({ t: 'miNombre', n: 'Rico1234' }); await calma();
+  chequear(v.c.nombre === 'Rico1234', 'con 4 cifras sí se puede elegir (' + v.c.nombre + ')');
+  const v2 = await entrar('Rico1234', 'filtro8');
+  chequear(!/\d{5}/.test(v2.c.nombre) && (v2.c.nombre.match(/\d/g) || []).length === 4, 'al chocar no suma cifras hasta formar un número largo (' + v2.c.nombre + ')');
+
+  // Los ya creados no se tocan: ni al volver a entrar ni al pasar de invitado a cuenta.
+  const y = await entrar('ViejoFiltro', 'filtro9');
+  y.c.nombre = 'Chicha916778732'; y.c.nombreLibreUsado = 1; y.sucio = true; await mundo.guardar(y); await dejar(y);
+  const y2 = await entrar('OtroCualquiera', 'filtro9');
+  chequear(y2.c.nombre === 'Chicha916778732', 'un nombre ya creado se conserva al volver (' + y2.c.nombre + ')');
+  chequear(await mundo.nombreLibre('Token Rico 12345', 'web:nf1', false, true) === 'Token Rico 12345', 'al heredar, el nombre ya creado se conserva');
+  chequear(await mundo.nombreLibre('Admin', 'web:nf1', false, true) !== 'Admin', 'al heredar sigue sin valer imitar al equipo');
+  chequear(/^Duende/.test(await mundo.nombreLibre('Token Rico', 'web:nf1', false)), 'sin ser heredado, el nombre nuevo se rechaza');
+
+  chequear(mundo.nombrePremio('Chi Cha') && mundo.nombrePremio('Los Pre Mio') && !mundo.nombrePremio('Los Incas'), 'una hermandad no parte el nombre del premio con espacios');
+
+  // De punta a punta por el chat real: lo que cae no llega al otro; lo normal sí.
+  const a = await entrar('FiltroUno', 'filtroa'), b = await entrar('FiltroDos', 'fb');
+  a.limpiar(); b.limpiar(); avanzar(1500);
+  await a.mandar({ t: 'chat', canal: 'general', m: 'tu premio chicha, deposita 5 soles' });
+  chequear(!b.ultimos('chat').length && a.ultimos('no').some(m => /cobros/.test(m.m)), 'el chat no reparte un cobro falso');
+  avanzar(1500); await a.mandar({ t: 'chat', canal: 'general', m: '916/778/732' });
+  chequear(!b.ultimos('chat').length && a.ultimos('no').some(m => /teléfonos/.test(m.m)), 'el chat no reparte un teléfono disfrazado');
+  avanzar(1500); await a.mandar({ t: 'chat', canal: 'general', m: 'como reclamo mi chicha' });
+  chequear(b.ultimos('chat').some(m => m.m === 'como reclamo mi chicha'), 'preguntar por la chicha llega');
+  for (const x of [v, v2, y2, a, b]) await dejar(x);
+}
+
 async function pruebasDios() {
   console.log('Nombres únicos y reservados');
   const n1 = await entrar('Copion', 'f1'), n2 = await entrar('copion', 'f2'), n3 = await entrar('Admin', 'f3'), n4 = await entrar('El Duende', 'f4');
@@ -4014,9 +4309,13 @@ async function pruebasRecetario() {
   chequear(L.ganchoActual(3, false).texto === L.ganchoActual(0, false).texto && /Lo desató/.test(L.ganchoActual(4, false).texto), 'al vencer al jefe del capítulo se abre su gancho');
   chequear(/Fui yo/.test(L.ganchoActual(24, false).texto), 'el gancho del capítulo 6 es la confesión de Tito');
   chequear(/carta/.test(L.ganchoActual(40, false).texto) && /misma mano/.test(L.ganchoActual(40, true).texto), 'el último gancho depende de la carta');
+  chequear(/misma mano/.test(L.ganchoActual(36, true).texto) && /Tráelo/.test(L.ganchoActual(36, true, true).texto) && /Ya puede descansar/.test(L.ganchoActual(40, true, true).texto) && L.ganchoCapitulo(L.CAPITULOS[9], true, true).length > 0, 'con la carta o el caso cerrado no se repite una pregunta ya contestada, y el Dragón tiene remate');
   const ep = n => L.epilogoDe(n, 59, 60)[0][1].join(' ');
   chequear(/Diez ingredientes/.test(ep(10)) && !/Diez ingredientes/.test(ep(9)) && /falta un ingrediente/.test(ep(9)) && /faltan 3/.test(ep(7)), 'Asiri solo dice «Diez ingredientes» con la olla completa');
   chequear(/reclamar/.test(L.epilogoDe(10, 60, 60)[0][1].join(' ')) && !/reclamar/.test(ep(10)), 'en nivel 60 manda a reclamar, antes solo señala la barra');
+  // En el celular la píldora morada no se ve hasta poder reclamar: el aviso de puntos dice dónde mirar.
+  const { readFileSync: leerChicha } = await import('node:fs');
+  chequear(leerChicha(new URL('../functions/mmo/chicha.js', import.meta.url), 'utf8').includes('en el celular, ⋯ → Chicha'), 'el aviso de puntos de chicha también orienta al celular');
 }
 
 async function pruebasCaso() {
@@ -4043,10 +4342,15 @@ async function pruebasCaso() {
   avanzar(2000); await a.mandar({ t: 'casoSospecha', id: 'sisa' });
   chequear(!a.c.caso.s, 'sin 6 pistas no se puede señalar');
   a.c.sec['n8:ok'] = 1; a.c.sec['a5:ok'] = 1; a.c.sec['a6:ok'] = 1; a.c.sec['s4:ok'] = 1; a.c.sec['s6:ok'] = 1;
+  a.limpiar();
   mundo.revisarCaso(a);
+  chequear(a.ultimos('yo').length === 1 && a.ultimos('yo')[0].yo.oro === a.c.oro && !a.ultimos('pista').length && !a.ultimos('caso').length, 'ponerse al día con 5 pistas manda un solo yo, con el oro ya sumado, sin un mensaje por pista');
   chequear(Object.keys(a.c.caso.p).length === 6 && a.c.oro === oro + K.PISTAS.slice(1, 6).reduce((n, p) => n + p.oro, 0), 'al entrar se entregan solo las pistas pendientes');
   chequear(!a.ultimos('gana').length && a.ultimos('casoDia').some(m => m.n === 5 && m.oro === K.PISTAS.slice(1, 6).reduce((n, p) => n + p.oro, 0)), 'al entrar llega un solo aviso, sin una tanda de monedas');
   { const sab = K.SOSPECHOSOS.find(x => x.id === 'sabio'); chequear(K.estadoSospechoso(sab, () => false, 0).nota !== sab.motivo && K.estadoSospechoso(sab, x => x === 'p6', 0).nota === sab.motivo, 'la ficha no adelanta una pista que aún no tienes'); }
+  { const sis = K.SOSPECHOSOS.find(x => x.id === 'sisa'), g = id => Q.SECUNDARIAS.find(q => q.id === id), txt = q => [q.inicio, q.fin, q.sigue].join(' ');
+    chequear(K.estadoSospechoso(sis, x => x === 'a8', 0).txt === 'Tiene coartada' && K.estadoSospechoso(sis, x => x === 'a8' || x === 'p12', 0).k === 'duda' && K.estadoSospechoso(sis, () => false, 1).k === 'culpable', 'la coartada de la Abuela se ve hasta que la botella la tumba');
+    chequear(!/zurd|costal/i.test(txt(g('n6')) + txt(g('n9')).replace('soy zurdo', '')) && K.APUNTES.every(a => g(a.mision) && !g(a.mision).pista) && ['x1', 'x2'].every(id => K.APUNTES.some(a => a.mision === id)), 'la zurda y el costal de la Abuela salen tarde y quedan en el cuaderno, sin premio'); }
   oro = a.c.oro;
   avanzar(2000); await a.mandar({ t: 'casoSospecha', id: 'nadie' });
   chequear(!a.c.caso.s, 'no se puede señalar a quien no existe');

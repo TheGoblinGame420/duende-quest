@@ -88,4 +88,11 @@ const PriceFeed = {
     document.dispatchEvent(new CustomEvent('priceUpdated', {detail: this}));
   }
 };
-document.addEventListener('DOMContentLoaded', () => PriceFeed.start());
+// Modo anuncio: sin precio ni peticiones a DexScreener (todo eso esta oculto). Los demas lo
+// piden con el navegador libre, tras la carga: un dato del token no debe frenar la portada.
+window.addEventListener('load', () => {
+  if (document.documentElement.classList.contains('anuncio')) return;
+  const arrancar = () => PriceFeed.start();
+  if (window.requestIdleCallback) requestIdleCallback(arrancar, { timeout: 3000 });
+  else setTimeout(arrancar, 1500);
+});

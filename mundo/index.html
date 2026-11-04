@@ -26,12 +26,12 @@
 <meta name="theme-color" content="#0a0418">
 <link rel="manifest" href="/mundo/manifest.json">
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
-<script src="/js/pwa.js?v=368" defer></script>
+<script src="/js/pwa.js?v=369" defer></script>
 <link rel="icon" href="/assets/ui/coin.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=fallback" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=fallback" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=368"></script>
+<script src="/js/origen.js?v=369"></script>
 <script>
 // Red de seguridad de la carga (script clasico: corre aunque el modulo 3D o el CDN fallen).
 // - Errores antes de conectar: se guardan en __errQ y mundo.js los manda al entrar.
@@ -118,33 +118,33 @@
   });
 })();
 </script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=368" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=369" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=368">
-<link rel="modulepreload" href="/mmo/js/data.js?v=368">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=368">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=368">
-<link rel="modulepreload" href="/mundo/js/objetivos.js?v=368">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=368">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=368">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=368">
-<link rel="modulepreload" href="/mmo/js/regalo.js?v=368">
-<link rel="modulepreload" href="/mmo/js/avisotg.js?v=368">
-<link rel="modulepreload" href="/mundo/js/musica.js?v=368">
-<link rel="modulepreload" href="/mundo/js/sonidos.js?v=368">
-<link rel="modulepreload" href="/mundo/js/cueva.js?v=368">
-<link rel="modulepreload" href="/mundo/js/tapa.js?v=368">
-<link rel="modulepreload" href="/mundo/js/abismo.js?v=368">
-<link rel="modulepreload" href="/mundo/js/particulas.js?v=368">
-<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=368">
-<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=368">
-<link rel="modulepreload" href="/mmo/js/secundarias.js?v=368">
-<link rel="modulepreload" href="/mmo/js/caso.js?v=368">
-<link rel="modulepreload" href="/mundo/js/caso.js?v=368">
-<link rel="modulepreload" href="/mundo/js/lore.js?v=368">
-<link rel="modulepreload" href="/mundo/js/vecinos.js?v=368">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=369">
+<link rel="modulepreload" href="/mmo/js/data.js?v=369">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=369">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=369">
+<link rel="modulepreload" href="/mundo/js/objetivos.js?v=369">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=369">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=369">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=369">
+<link rel="modulepreload" href="/mmo/js/regalo.js?v=369">
+<link rel="modulepreload" href="/mmo/js/avisotg.js?v=369">
+<link rel="modulepreload" href="/mundo/js/musica.js?v=369">
+<link rel="modulepreload" href="/mundo/js/sonidos.js?v=369">
+<link rel="modulepreload" href="/mundo/js/cueva.js?v=369">
+<link rel="modulepreload" href="/mundo/js/tapa.js?v=369">
+<link rel="modulepreload" href="/mundo/js/abismo.js?v=369">
+<link rel="modulepreload" href="/mundo/js/particulas.js?v=369">
+<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=369">
+<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=369">
+<link rel="modulepreload" href="/mmo/js/secundarias.js?v=369">
+<link rel="modulepreload" href="/mmo/js/caso.js?v=369">
+<link rel="modulepreload" href="/mundo/js/caso.js?v=369">
+<link rel="modulepreload" href="/mundo/js/lore.js?v=369">
+<link rel="modulepreload" href="/mundo/js/vecinos.js?v=369">
 <!-- Kit 3D de Kenney (mundo/js/kenney.js lo pide con fetch() sin opciones: mismo origen, cors, URL sin ?v=): se baja ya, junto a los modulos.
      El binario: .gz si hay DecompressionStream (como hace kenney.js), si no el normal; asi no se baja dos veces. -->
 <link rel="preload" href="/assets/3d/kenney.json" as="fetch" crossorigin>
@@ -904,6 +904,10 @@ body:is(.movil,.compacto) #chicha3{bottom:calc(58px + env(safe-area-inset-bottom
 body:is(.movil,.compacto) #barra{bottom:calc(10px + env(safe-area-inset-bottom));padding:0;gap:4px;justify-content:center;background:transparent;border-color:transparent;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;pointer-events:none;}
 body:is(.movil,.compacto) #barra .acc{flex:0 0 40px;width:40px;height:40px;max-width:40px;max-height:40px;aspect-ratio:auto;background:rgba(14,9,30,.45);border-color:rgba(255,255,255,.18);pointer-events:auto;touch-action:manipulation;}
 body:is(.movil,.compacto) #barra .acc img{width:22px;height:22px;}
+/* Con muchas casillas se estrechan en vez de salirse de la pantalla: siguen midiendo 40 de alto y todas se pueden tocar. */
+body:is(.movil,.compacto) #barra{gap:3px;}
+body:is(.movil,.compacto) #barra .acc{flex:0 1 40px;width:auto;min-width:0;}
+body:is(.movil,.compacto) #barra .acc img{max-width:100%;object-fit:contain;}
 body.movil #joy{bottom:calc(54px + env(safe-area-inset-bottom));height:calc(55% - 54px - env(safe-area-inset-bottom));}
 body.movil #joy .pista-joy{left:14px;bottom:10px;gap:6px;}
 body.movil #joy .pista-joy i{width:48px;height:48px;border-width:1px;}
@@ -926,7 +930,8 @@ body.movil #joy .pista-joy.grande{transform:scale(1.15);}
  body:is(.movil,.compacto) #botones.abierto{top:calc(4px + env(safe-area-inset-top) + var(--tg-top,0px));right:calc(90px + env(safe-area-inset-right));grid-template-columns:repeat(6,44px);}
  body:is(.movil,.compacto) #xp-prox{bottom:calc(48px + env(safe-area-inset-bottom));max-width:34vw;}   /* encima de la barra, no sobre ella */
  body.movil #chicha3{bottom:auto;}   /* en horizontal va por top: con los dos la pildora se estiraba 220 px */
- body.movil #barra{bottom:calc(6px + env(safe-area-inset-bottom));}
+ body.movil #barra{bottom:calc(6px + env(safe-area-inset-bottom));width:min(352px,calc(60vw - 80px - env(safe-area-inset-right)));justify-content:flex-end;}   /* del joystick a ATACAR, sin meterse bajo ATACAR */
+ body.movil.mano-der #barra{width:min(352px,calc(60vw - 80px - env(safe-area-inset-left)));justify-content:flex-start;}
 }
 </style>
 <style id="css-avisos-movil">
@@ -988,15 +993,19 @@ html body:not(.movil):not(.compacto) #misiones:not(.pc-abierto) .q:nth-of-type(n
 #misiones .mis-ver{display:block;width:100%;margin-top:4px;padding:3px 0;min-height:24px;background:none;border:0;border-top:1px solid rgba(160,140,255,.3);color:#ffd84a;font:600 11px var(--sans);text-align:left;cursor:pointer;}
 #misiones .mis-ver:hover{color:#fff;}
 /* PC: las ventanas laterales abren bajo el marco del jugador (crece con avisos y a 1080p), sin taparlo. */
-html body:not(.movil):not(.compacto) :is(#v-npc,#v-ayuda,#v-inv,#v-libro,#v-tienda,#v-logros,#v-pase,#v-diario,#v-herm,#v-rank,#v-amigos).modal{padding-top:calc(var(--marco-b,156px) + 8px);}
-html body:not(.movil):not(.compacto) :is(#v-npc,#v-ayuda,#v-inv,#v-libro,#v-tienda,#v-logros,#v-pase,#v-diario,#v-herm,#v-rank,#v-amigos) .ventana{max-height:calc((100vh - var(--marco-b,156px) - 116px)/var(--wz));}
+html body:not(.movil):not(.compacto) #v-obj.modal{background:none;pointer-events:none;justify-content:flex-start;align-items:flex-start;padding-left:12px;padding-right:0;z-index:9;}   /* PC: Mis Objetivos es lateral, se sigue jugando */
+html body:not(.movil):not(.compacto) #v-obj .ventana{pointer-events:auto;width:min(420px,40vw);box-shadow:0 10px 30px rgba(0,0,0,.5);}
+html body:not(.movil):not(.compacto) :is(#v-npc,#v-ayuda,#v-inv,#v-libro,#v-tienda,#v-logros,#v-pase,#v-diario,#v-herm,#v-rank,#v-amigos,#v-obj).modal{padding-top:calc(var(--marco-b,156px) + 8px);}
+html body:not(.movil):not(.compacto) :is(#v-npc,#v-ayuda,#v-inv,#v-libro,#v-tienda,#v-logros,#v-pase,#v-diario,#v-herm,#v-rank,#v-amigos,#v-obj) .ventana{max-height:calc((100vh - var(--marco-b,156px) - 116px)/var(--wz));}
 /* PC: el chat vacio no deja una barra oscura sin nada. */
 html body:not(.movil):not(.compacto) #chat:has(#chat-log:empty):not(:focus-within){background:none;border-color:transparent;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;}
 /* PC: teclas a la vista, en los botones, en la barra de acciones y en una linea bajo el chat. */
 #teclas-pc{display:none;}
-html body:not(.movil):not(.compacto) #teclas-pc{display:block;position:fixed;left:12px;bottom:9px;max-width:calc(50vw - 150px);z-index:1;pointer-events:none;font:600 11px/13px var(--sans);color:#efeaff;text-shadow:0 1px 2px #000,0 0 3px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+html body:not(.movil):not(.compacto) #teclas-pc{display:block;position:fixed;left:12px;bottom:9px;max-width:calc(50vw - 250px);z-index:1;pointer-events:none;font:600 11px/13px var(--sans);color:#efeaff;text-shadow:0 1px 2px #000,0 0 3px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 #teclas-pc kbd{font:700 10px/12px var(--sans);color:#fff;background:rgba(8,5,22,.8);border:1px solid rgba(255,255,255,.35);border-radius:3px;padding:0 3px;margin-right:2px;}
-html body.cine #teclas-pc{display:none;}
+html body.cine #teclas-pc,html body.teclas-sabidas #teclas-pc{display:none!important;}   /* !important: la regla de arriba, con sus :not(), pesa mas */
+@media (max-width:1500px){#teclas-pc .tp-x{display:none;}}   /* no pisa la barra de lo proximo (#xp-prox, centrada y de hasta 460px): quedan las que mas se usan */
+@media (max-width:1130px){#teclas-pc .tp-y{display:none;}}   /* ventana estrecha: la linea no corta «O metas» con puntos suspensivos */
 @media (hover:hover) and (pointer:fine){
  html body:not(.movil):not(.compacto) #botones .bt{position:relative;}
  html body:not(.movil):not(.compacto) #b-inv::after,html body:not(.movil):not(.compacto) #b-libro::after,html body:not(.movil):not(.compacto) #b-logros::after,html body:not(.movil):not(.compacto) #b-mapa::after,html body:not(.movil):not(.compacto) #b-chat::after{position:absolute;right:1px;bottom:0;font:700 9px/11px var(--sans);color:#fff;background:rgba(8,5,22,.85);border-radius:3px;padding:0 2px;pointer-events:none;}
@@ -1007,8 +1016,15 @@ html body.cine #teclas-pc{display:none;}
  html body:not(.movil):not(.compacto) #b-chat::after{content:'\21B5';}
 }
 html body:not(.movil):not(.compacto) .acc .t{left:3px;top:2px;font:700 10px/12px var(--sans);color:#fff;background:rgba(8,5,22,.75);border-radius:3px;padding:0 3px;}
+/* PC: los avisos empiezan sobre el chat con el historial lleno (a 200 px lo pisaban). */
+html body:not(.movil):not(.compacto) #avisos{bottom:calc(232px*var(--hz));}
 /* PC: con una ventana lateral abierta los avisos salen a su lado, no encima de su contenido. */
-html body:not(.movil):not(.compacto):has(:is(#v-npc,#v-ayuda,#v-inv,#v-libro,#v-tienda,#v-logros,#v-pase,#v-diario,#v-herm,#v-rank,#v-amigos).modal.on) #avisos{left:calc(min(420px,40vw)*var(--wz) + 24px);}
+html body:not(.movil):not(.compacto):has(:is(#v-npc,#v-ayuda,#v-inv,#v-libro,#v-tienda,#v-logros,#v-pase,#v-diario,#v-herm,#v-rank,#v-amigos,#v-obj).modal.on) #avisos{left:calc(min(420px,40vw)*var(--wz) + 24px);}
+/* PC: con la tarjeta de un NPC y una ventana lateral, los avisos suben sobre la tarjeta para no taparla. Sin ventana, solo se ajusta el ancho. */
+html body:not(.movil):not(.compacto):has(#npc-dice.on) #avisos{max-width:min(380px,42vw,calc(50vw - 240px));}
+html body:not(.movil):not(.compacto):has(#npc-dice.on):has(:is(#v-npc,#v-ayuda,#v-inv,#v-libro,#v-tienda,#v-logros,#v-pase,#v-diario,#v-herm,#v-rank,#v-amigos,#v-obj).modal.on) #avisos{bottom:auto;top:calc(72px*var(--hz));}
+/* PC: el chat termina antes de la barra de acciones, con todas sus casillas (hasta 13: 762 px de ancho). */
+html body:not(.movil):not(.compacto) #chat{width:min(380px,42vw,max(220px,calc(50vw - 402px)));}
 /* Pantallas grandes: el HUD no se queda diminuto (a 1920x1080 mide lo que a 1600x900). 860: Chrome maximizado en un monitor 1080p deja unos 910-945 px de alto util. */
 @media (min-width:1700px) and (min-height:860px){
  :root{--hz:1.2;--wz:1.15;}
@@ -1103,7 +1119,7 @@ html body:not(.movil):not(.compacto):has(:is(#v-npc,#v-ayuda,#v-inv,#v-libro,#v-
 <button id="chicha3" title="Premio real: 2 litros de chicha morada al llegar a nivel 60">🥤 Nv 60 = 2 L de chicha morada real</button>
 <div class="caja" id="lanzar"><div class="barra"><i></i><span id="lanzar-t"></span></div></div>
 <div id="alas"><i></i><span>ALAS</span></div>
-<div id="teclas-pc" aria-hidden="true"><kbd data-vt="KeyW,KeyA,KeyS,KeyD">WASD</kbd>mover · <kbd data-vt="KeyZ">Z</kbd>atacar · <kbd data-vt="KeyX">X</kbd>esquivar · <kbd data-vt="Space">Espacio</kbd>saltar · <kbd data-vt="Tab">Tab</kbd>objetivo · <kbd data-vt="KeyE">E</kbd>hablar · <kbd data-vt="KeyO">O</kbd>metas</div>
+<div id="teclas-pc" aria-hidden="true"><kbd data-vt="KeyW,KeyA,KeyS,KeyD">WASD</kbd>mover · <kbd data-vt="KeyZ">Z</kbd>atacar · <span class="tp-y"><kbd data-vt="KeyX">X</kbd>esquivar · </span><span class="tp-x"><kbd data-vt="Space">Espacio</kbd>saltar · <kbd data-vt="Tab">Tab</kbd>objetivo · </span><kbd data-vt="KeyE">E</kbd>hablar · <kbd data-vt="KeyO">O</kbd>metas</div>
 <div class="caja" id="chat"><div id="chat-log"></div><form id="chat-f" style="display:flex;gap:4px;margin:0" onsubmit="return false"><input id="chat-in" maxlength="120" placeholder="Escribe tu mensaje…" autocomplete="off" enterkeyhint="send"><button type="submit" id="chat-env" aria-label="Enviar">➤</button></form></div>
 <div id="avisos" role="status" aria-live="polite"></div>
 <div id="gestos3" role="menu" aria-label="Gestos y frases rápidas"></div>
@@ -1262,8 +1278,8 @@ html body:not(.movil):not(.compacto):has(:is(#v-npc,#v-ayuda,#v-inv,#v-libro,#v-
 <!-- Telegram: su SDK se carga arriba solo dentro de Telegram (window.__tgListo).
      defer: no frenan el HTML y corren en orden, antes que mundo.js (que usa supabase). -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=368" defer></script>
-<script type="module" src="/mundo/js/mundo.js?v=368"></script>
+<script src="/js/config.js?v=369" defer></script>
+<script type="module" src="/mundo/js/mundo.js?v=369"></script>
 <div id="flash-nv"></div>
 <div id="cartel-nv"></div>
 <div id="aviso-dir" aria-hidden="true"></div>

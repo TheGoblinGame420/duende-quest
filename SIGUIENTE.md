@@ -3702,3 +3702,11 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - `/token/`: compra manual con la wallet y la tasa de la portada; oculta en modo anuncio y Telegram.
 - Panel de 8 críticos: 42 fallos confirmados, 14 arreglados; juez: publicar. Quedan fallos para la siguiente tanda (multicuenta y prueba de identidad en el reclamo, cola de Nv 60, filtro de nombres y chat, portada).
 - Arnés: 1022 bien, 0 mal.
+
+### Segunda tanda del panel de críticos (4-nov-2026, `?v=369`)
+
+- 8 grupos con revisor sobre los 28 fallos confirmados restantes.
+- Premio: huellas hd/hi/hv en el reclamo, coincidencias en el aviso y /chicha, `r.clave` solo en datos propios, /chichatel, cola que consume meses siguientes, /chichasin para ver y liberar no coordinados; nada caduca solo.
+- Filtro: nombres reservados y máximo 4 cifras en nombres nuevos, normalización de teléfonos, frases de cobro y dominios no oficiales (`DOMINIO_OFICIAL` en social.js; añadir ahí un dominio propio si se compra).
+- Portada: un solo botón de jugar, web3 y DexScreener se cargan al usarse, chicha enlazada; /chicha/ abre con el juego; `not_found_handling = 404-page` con 404.html.
+- Arnés: 1300 bien, 0 mal (colisión de ids f7/f8 corregida en pruebasFiltro).

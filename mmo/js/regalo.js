@@ -9,7 +9,7 @@
 //   const R = iniciarRegalo({ mandar, ocupado, presumir, fanfarria, vibrar, filtro });
 //   en 'buzon': R.alBuzon(m)   en 'regalo': R.alRegalo(m)
 // ocupado(): true mientras haya otra ventana (el cofre diario va primero).
-import { SKINS, ALAS } from './data.js?v=368';
+import { SKINS, ALAS } from './data.js?v=369';
 
 const CLAVE = 'dq_buzon_visto';
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
