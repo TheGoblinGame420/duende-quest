@@ -25,8 +25,8 @@ export const maxGrupo = g => (g && g.banda ? BANDA_MAX : GRUPO_MAX);
 // Telegram>" o el de la cuenta web, y no debe llegar a otros jugadores.
 // Un id al azar por uid, guardado en memoria durante este arranque del
 // servidor. Antes era un hash FNV con sal, pero se podia invertir partiendo
-// del pid propio y sacar el id de Telegram de otros. Los clientes no lo
-// guardan, asi que cambiar en cada despliegue no molesta.
+// del pid propio y sacar el id de Telegram de otros. Cambia en cada despliegue:
+// lo que el cliente recuerda en su navegador usa yo.ck (world.js datosPropios).
 const PUB = new Map();
 export function pub(uid) {
   let p = PUB.get(uid);

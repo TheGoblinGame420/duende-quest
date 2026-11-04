@@ -14,6 +14,11 @@ export const MUNDO_URL = 'https://duende-quest.alfonso12hc.workers.dev/mundo/';
 // El creador del juego y sus canales oficiales: se muestran en /start y
 // /creador para que cualquiera pueda comprobar quién está detrás del juego.
 const CREADOR_TG = 'https://t.me/ElDuendeOficial';
+// Los dos unicos numeros oficiales (seguridad.html#numeros). El bot solo los muestra si le preguntan.
+const WA_CREADOR = 'https://wa.me/51900877863';
+const WA_CHICHA = 'https://wa.me/51916778731';
+const TEXTO_WHATSAPP = '💬 *Habla con el creador (WhatsApp):* +51 900 877 863\n🥤 *La chicha (WhatsApp):* +51 916 778 731\nSon los únicos números oficiales.';
+const BOTONES_WHATSAPP = [[{ text: '💬 WhatsApp del creador', url: WA_CREADOR }], [{ text: '🥤 WhatsApp de la chicha', url: WA_CHICHA }]];
 const CANAL_TG = 'https://t.me/elduende420peru';
 const GRUPO_TG = 'https://t.me/duendesolana420';
 const TEXTO_CREADOR = '👤 *Creador:* @ElDuendeOficial\n📢 *Canal oficial:* t.me/elduende420peru\n💬 *Grupo oficial:* t.me/duendesolana420';
@@ -187,7 +192,7 @@ async function handleStart(token, env, chatId, user, startPayload, desdeMenu) {
   }
   await tg(token, 'sendMessage', {
     chat_id: chatId,
-    text: `🧌 *Bienvenido a DUENDE QUEST, ${mdSeguro(user.first_name || 'Duende')}*\n\nJuego de duendes gratis y sin descargas: juega aquí en Telegram o en el navegador.\n\n🌌 *ORIGINS 3D:* mundo abierto con alas, cueva y PvP, gratis en el celular.\n🎮 *Arcade:* campaña de 15 etapas con jefes y ranking global.\n🌍 *DUENDE QUEST ONLINE:* MMORPG estilo WoW con 4 clases, grupos, mazmorras con jefes, hermandades y 10 zonas hasta el nivel 60.\n🥤 *Premio:* junta 10.000 puntos cazando en el MMO y te enviamos un litro de chicha morada a tu casa. No es un sorteo: lo ganas jugando.\n💎 *Recompensas en TON (opcional):* desde el nivel 15, los jefes del MMO dan mTON del fondo del día, si lo hay (1.000 mTON = 1 TON). Retiro desde 5 TON.\n🪙 *$DUENDE:* token del juego en Solana; también se gana jugando.\n\n${TEXTO_SEGURIDAD}\nMás información: ${SEGURIDAD_URL}\n\n${TEXTO_CREADOR}\n\n*Invita a un amigo* (500 $DUENDE para cada uno):\n\`${referralLink}\``,
+    text: `🧌 *Bienvenido a DUENDE QUEST, ${mdSeguro(user.first_name || 'Duende')}*\n\nJuego de duendes gratis y sin descargas: juega aquí en Telegram o en el navegador.\n\n🌌 *ORIGINS 3D:* mundo abierto con alas, cueva y PvP, gratis en el celular.\n🎮 *Arcade:* campaña de 15 etapas con jefes y ranking global.\n🌍 *DUENDE QUEST ONLINE:* MMORPG estilo WoW con 4 clases, grupos, mazmorras con jefes, hermandades y 10 zonas hasta el nivel 60.\n🥤 *Premio:* junta 25.000 puntos cazando en el MMO y te enviamos un litro de chicha morada a tu casa. No es un sorteo: lo ganas jugando.\n💎 *Recompensas en TON (opcional):* desde el nivel 15, los jefes del MMO dan mTON del fondo del día, si lo hay (1.000 mTON = 1 TON). Retiro desde 5 TON.\n🪙 *$DUENDE:* token del juego en Solana; también se gana jugando.\n\n${TEXTO_SEGURIDAD}\nMás información: ${SEGURIDAD_URL}\n\n${TEXTO_CREADOR}\n\n*Invita a un amigo* (500 $DUENDE para cada uno):\n\`${referralLink}\``,
     parse_mode: 'Markdown',
     disable_web_page_preview: true,
     reply_markup: { inline_keyboard: [
@@ -347,7 +352,7 @@ async function devolverStarsArcade(context, token, cargo, tgAviso) {
     // Cobro que Supabase no guardo: sin fila no hay cerrojo, pero Telegram no devuelve dos veces el mismo cargo.
     const rsp = await tg(token, 'refundStarPayment', { user_id: Number(tgAviso), telegram_payment_charge_id: cargo }).catch(() => null);
     if (!rsp || !rsp.ok) return '❌ Telegram no aceptó la devolución: ' + ((rsp && rsp.description) || 'sin respuesta');
-    await tg(token, 'sendMessage', { chat_id: tgAviso, text: '↩️ Te devolvimos las Stars de tu compra. Si tienes dudas, escribe a @ElDuendeOficial (creador oficial).' }).catch(() => {});
+    await tg(token, 'sendMessage', { chat_id: tgAviso, text: '↩️ Te devolvimos las Stars de tu compra. Si tienes dudas, habla con el creador del juego por WhatsApp (+51 900 877 863) o escribe a @ElDuendeOficial.' }).catch(() => {});
     return `↩️ Stars devueltas a tg ${tgAviso} (el cobro no estaba en Supabase).`;
   }
   if (!f) return Array.isArray(filas) ? '❌ No hay un pago con ese cargo.' : '❌ No pude leer el pago (Supabase). Inténtalo en un rato.';
@@ -366,7 +371,7 @@ async function devolverStarsArcade(context, token, cargo, tgAviso) {
     await supabaseQuery(sb, `stars_purchases?tx_id=eq.${encodeURIComponent(cargo)}&tokens_credited=eq.-1`, { method: 'PATCH', body: { tokens_credited: 0 } }).catch(() => {});
     return '❌ Telegram no aceptó la devolución: ' + ((rsp && rsp.description) || 'sin respuesta');
   }
-  await tg(token, 'sendMessage', { chat_id: f.telegram_id, text: '↩️ Te devolvimos las Stars de tu compra. Si tienes dudas, escribe a @ElDuendeOficial (creador oficial).' }).catch(() => {});
+  await tg(token, 'sendMessage', { chat_id: f.telegram_id, text: '↩️ Te devolvimos las Stars de tu compra. Si tienes dudas, habla con el creador del juego por WhatsApp (+51 900 877 863) o escribe a @ElDuendeOficial.' }).catch(() => {});
   return `↩️ Stars devueltas a tg ${f.telegram_id}.`;
 }
 async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
@@ -486,7 +491,7 @@ async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
       const r = await mmoInterno(env, 'gasto', {});
       if (!r || !r.ok) return enviar('❌ ' + ((r && r.error) || 'error'));
       return enviar('💸 Gasto en anuncios (últimos anotados, US$):\n' + (r.l.length ? r.l.map(x => `${x.f} · ${x.src}${x.camp ? ' · ' + x.camp : ''} · $${x.usd}`).join('\n') : '— (nada anotado)')
-        + '\n\nAnotar: /gasto 2026-11-01 meta 42.50 campaña\n(fecha: AAAA-MM-DD, hoy o ayer · origen: meta, tg, wa o ref · campaña opcional = utm_campaign del anuncio · 0 borra esa fila)');
+        + '\n\nAnotar: /gasto 2026-11-01 meta 42.50 campaña\n(fecha: AAAA-MM-DD, hoy o ayer · origen: meta, tg, wa, etiqueta o ref · campaña opcional = utm_campaign del anuncio · 0 borra esa fila)');
     }
     const iso = t => new Date(t - 5 * 3600000).toISOString().slice(0, 10);   // dia de Lima (UTC-5), igual que diaJuego
     const f = p[0] === 'hoy' ? iso(Date.now()) : p[0] === 'ayer' ? iso(Date.now() - 86400000) : p[0];
@@ -516,7 +521,7 @@ async function handleMmoAdmin(token, context, chatId, userId, cmd, payload) {
     if (!r.ok) return enviar('❌ ' + (r.error || 'error'));
     const cab = `🥤 Litros de este mes: ${r.mes}/${r.mesMax}${r.mesMax60 ? ` · Nv 60: ${r.mes60 || 0}/${r.mesMax60}` : ''}\n\n`;
     if (!r.pendientes.length) return enviar(cab + '✅ No hay premios de chicha por enviar.');
-    const lineas = r.pendientes.map(x => `#${x.id} · ${x.nombre} Nv${x.nivel} · ${x.meta === 'nv60' ? `Nv 60 (${x.litros || 2} L)${x.cola ? ' · EN COLA' : ''}` : x.meta.toLocaleString('es') + ' pts'}\nContacto: tg://user?id=${x.uid.slice(3)} (id ${x.uid.slice(3)})`);
+    const lineas = r.pendientes.map(x => `#${x.id} · ${x.nombre} Nv${x.nivel} · ${x.meta === 'nv60' ? `Nv 60 (${x.litros || 2} L)${x.cola ? ' · EN COLA' : ''}` : x.meta.toLocaleString('es') + ' pts'}\nContacto: ${x.uid.startsWith('tg:') ? `tg://user?id=${x.uid.slice(3)} (id ${x.uid.slice(3)})` : 'cuenta de correo: te escribe por WhatsApp con su código'}`);
     return enviar(cab + lineas.join('\n\n') + '\n\nEscríbele para pedir la dirección. Enviado: /chichaok CODIGO · No se puede: /chichano CODIGO motivo (añade "trampa" al final para que no pueda volver a reclamarlo).');
   }
   if (cmd === '/chichaok' || cmd === '/chichano') {
@@ -582,7 +587,7 @@ function textoVersiones(r) {
 function textoAnuncios(r) {
   const a = r.anuncios;
   if (!a || (!Object.keys(a.porSrc || {}).length && !(a.camps || []).length && !(a.ads || []).length)) return '';
-  const nom = { meta: 'Meta', tg: 'Telegram', wa: 'WhatsApp', ref: 'Invitación' };
+  const nom = { meta: 'Meta', tg: 'Telegram', wa: 'WhatsApp', etiqueta: 'Etiqueta (QR)', ref: 'Invitación' };
   const usd = v => v === null || v === undefined ? '—' : '$' + String(v).replace('.', ',');
   const x = v => v === null || v === undefined ? '—' : String(v).replace('.', ',') + 'x';
   const pc = v => v === null || v === undefined ? '—' : String(v).replace('.', ',') + '%';
@@ -596,7 +601,7 @@ function textoAnuncios(r) {
 
 // /mmostats, por origen (/js/origen.js): altas y embudo de 14 dias con su
 // D1/D7, y el embudo de la carga de 7 dias (beacon /mmo/ev). Vacio si aun no hay datos.
-const NOMBRE_ORIGEN = { meta: 'Meta', tg: 'Telegram', wa: 'WhatsApp', ref: 'Invitación', org: 'Orgánico' };
+const NOMBRE_ORIGEN = { meta: 'Meta', tg: 'Telegram', wa: 'WhatsApp', etiqueta: 'Etiqueta (QR)', ref: 'Invitación', org: 'Orgánico' };
 function textoOrigenes(r) {
   const pc = x => !x || x.pct === null ? '—' : String(x.pct).replace('.', ',') + '%';
   let t = '';
@@ -692,7 +697,7 @@ async function handleYo(token, env, chatId, userId) {
 }
 
 async function handleCreador(token, chatId) {
-  await tg(token, 'sendMessage', { chat_id: chatId, text: `🧌 *DUENDE QUEST — ¿Quién está detrás?*\n\nEl juego lo crea y mantiene *El Duende* desde Perú 🇵🇪. Estos son los únicos canales oficiales: desconfía de cualquier otra cuenta que diga ser del juego.\n\n${TEXTO_CREADOR}\n🤖 *Bot oficial:* @duendequest\\_bot\n\n${TEXTO_SEGURIDAD}`, parse_mode: 'Markdown', disable_web_page_preview: true, reply_markup: { inline_keyboard: [...BOTONES_CREADOR, BOTON_SEGURIDAD, [{ text: '⌂ Menú', callback_data: 'menu' }]] } });
+  await tg(token, 'sendMessage', { chat_id: chatId, text: `🧌 *DUENDE QUEST — ¿Quién está detrás?*\n\nEl juego lo crea y mantiene *El Duende* desde Perú 🇵🇪. Estos son los únicos canales oficiales: desconfía de cualquier otra cuenta que diga ser del juego.\n\n${TEXTO_CREADOR}\n🤖 *Bot oficial:* @duendequest\\_bot\n\n${TEXTO_WHATSAPP}\n\n${TEXTO_SEGURIDAD}`, parse_mode: 'Markdown', disable_web_page_preview: true, reply_markup: { inline_keyboard: [...BOTONES_WHATSAPP, ...BOTONES_CREADOR, BOTON_SEGURIDAD, [{ text: '⌂ Menú', callback_data: 'menu' }]] } });
 }
 
 // ── Soporte de compras (Telegram lo exige para cobrar con Stars) ──
@@ -700,13 +705,13 @@ async function handleCreador(token, chatId) {
 // entrega ni devuelve nada: eso lo hace el dueño a mano.
 const REEMBOLSOS_URL = SITE_URL + '/reembolsos.html';
 const TERMINOS_URL = SITE_URL + '/terminos.html';
-const BOTONES_SOPORTE = [[{ text: '📄 Entregas y reembolsos', url: REEMBOLSOS_URL }], [{ text: '👤 Escribir a @ElDuendeOficial', url: CREADOR_TG }]];
+const BOTONES_SOPORTE = [[{ text: '💬 Habla con el creador (WhatsApp)', url: WA_CREADOR }], [{ text: '📄 Entregas y reembolsos', url: REEMBOLSOS_URL }], [{ text: '👤 Escribir a @ElDuendeOficial', url: CREADOR_TG }]];
 const TEXTO_PAYSUPPORT = '🆘 Ayuda con un pago\n\n'
   + 'Todas las compras se entregan a mano: El Duende revisa cada pago de ' + ENTREGA.horario + ', ' + ENTREGA.plazo + ' (máximo ' + ENTREGA.plazoMaxH + ' h).\n\n'
   + 'Si pagaste y no recibiste tu compra:\n'
   + '1. Mira su estado con /miscompras (o en el juego: Tienda → 💎 PAQUETES → Tus compras).\n'
   + '2. En el juego, pulsa «¿Problema?» en ese pedido: a El Duende le llega un aviso con tus datos.\n'
-  + '3. O escribe a @ElDuendeOficial con tu número de pedido, la fecha y cuántas Stars pagaste.\n\n'
+  + '3. O habla con el creador del juego por WhatsApp (+51 900 877 863) o escribe a @ElDuendeOficial, con tu número de pedido, la fecha y cuántas Stars pagaste.\n\n'
   + 'Si el pedido no se puede entregar, se anula y Telegram te devuelve las Stars.\n\n'
   + TEXTO_SEGURIDAD;
 const TEXTO_TERMS = '📄 Condiciones de compra\n\n'
@@ -1212,7 +1217,7 @@ async function onRequestPost(context) {
           await tg(token, 'sendMessage', { chat_id: chatId, text: '🌌 *DUENDE QUEST 3D*\nEl mundo abierto con tu mismo personaje: vuela con alas, entra a la Cueva de los Goblins y, desde el nivel 20, elige facción en el Abismo de Éter.\n\n' + TEXTO_SEGURIDAD, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🌌 Entrar al mundo 3D', web_app: { url: MUNDO_URL } }], BOTON_SEGURIDAD] } });
           break;
         case '/mmo': case '/online':
-          await tg(token, 'sendMessage', { chat_id: chatId, text: '*DUENDE QUEST ONLINE*\nRPG online de duendes. Gratis, en Telegram y en el navegador.\n\n• 4 clases, grupos y hermandades\n• 6 mazmorras, la banda del Titán y la Torre del Duende\n• Jefe mundial cada 30 minutos\n• Pesca, expediciones y artesanía\n• 10 zonas hasta el nivel 60\n• Mundo abierto en 3D: vuelo con alas, el Abismo de Éter y PvP de facciones\n\n*Skins:* dan bonificaciones; se compran con oro del juego o con Stars.\n*Chicha morada:* con 10.000 puntos de caza te enviamos un litro a casa.\n*mTON (opcional):* desde Nv 15, jefes y caza del día reparten un fondo diario. 1.000 mTON = 1 TON; retiro desde 5 TON, revisado a mano.\n\n' + TEXTO_SEGURIDAD, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🌍 Entrar al mundo', web_app: { url: MMO_URL } }], [{ text: '🌌 Mundo abierto 3D', web_app: { url: MUNDO_URL } }], [{ text: '🏆 Ranking de la semana', callback_data: 'topmmo' }, { text: '🧝 Mi personaje', callback_data: 'yo' }], BOTON_SEGURIDAD] } });
+          await tg(token, 'sendMessage', { chat_id: chatId, text: '*DUENDE QUEST ONLINE*\nRPG online de duendes. Gratis, en Telegram y en el navegador.\n\n• 4 clases, grupos y hermandades\n• 6 mazmorras, la banda del Titán y la Torre del Duende\n• Jefe mundial cada 30 minutos\n• Pesca, expediciones y artesanía\n• 10 zonas hasta el nivel 60\n• Mundo abierto en 3D: vuelo con alas, el Abismo de Éter y PvP de facciones\n\n*Skins:* dan bonificaciones; se compran con oro del juego o con Stars.\n*Chicha morada:* con 25.000 puntos de caza te enviamos un litro a casa.\n*mTON (opcional):* desde Nv 15, jefes y caza del día reparten un fondo diario. 1.000 mTON = 1 TON; retiro desde 5 TON, revisado a mano.\n\n' + TEXTO_SEGURIDAD, parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: '🌍 Entrar al mundo', web_app: { url: MMO_URL } }], [{ text: '🌌 Mundo abierto 3D', web_app: { url: MUNDO_URL } }], [{ text: '🏆 Ranking de la semana', callback_data: 'topmmo' }, { text: '🧝 Mi personaje', callback_data: 'yo' }], BOTON_SEGURIDAD] } });
           break;
         case '/ranking': case '/top': await handleRanking(token, env, chatId); break;
         case '/topmmo': case '/torre': await handleTopMmo(token, env, chatId); break;

@@ -57,6 +57,7 @@ export const AVISO_ORDEN = ['ev', 'soc', 'racha', 'col', 'exped', 'feliz', 'mazm
 // mismos topes que los de Telegram y /avisos off). Premio pequeño, una vez.
 export const AVISO_TG_MS = 10 * 60 * 1000;
 export const AVISO_TG_ORO = 300;
+export const AVISO_TG_NV = 8;   // la oferta sola no sale antes de este nivel; a pedido, siempre
 const AV_LETRAS = 'abcdefghjkmnpqrstuvwxyz23456789';
 
 // Dia de juego (medianoche de Lima, como hoyUTC de data.js): diaISO(diaNum(t)) === diaJuego(t).
@@ -71,7 +72,7 @@ const vacio = () => ({ n: 0, a: 0, ses: 0, min: 0, r1: 0, r7: 0, r30: 0 });
 // alta (c.ret.src), y la herencia de invitado lo conserva (copia c entero).
 // Con el, el alta, el embudo y D1/D7 se suman tambien como <campo>_<src>
 // (n_meta, c1_meta, r1_meta...) en el mismo ret:dia.
-export const ORIGENES = ['meta', 'tg', 'wa', 'ref', 'org'];
+export const ORIGENES = ['meta', 'tg', 'wa', 'etiqueta', 'ref', 'org'];
 const srcDe = v => ORIGENES.includes(v) ? v : 'org';
 const conSrc = (c, campos) => {
   const s = c && c.ret && c.ret.src;
@@ -143,7 +144,7 @@ const EV_TRAMOS = [2000, 5000, 10000, 20000, 40000, 90000];   // el ultimo tramo
 const EV_POR_IP_HORA = 40;      // por /64 de IPv6: un jugador manda ~11 (8 de carga + 3 del tutorial); recargas y los dos juegos caben de sobra
 const EV_POR_IPV4_HORA = 800;   // IPv4: la comparten cientos de moviles por CGNAT (Claro, Movistar, Entel, Bitel)
 const EV_MAX_DIA = 60000;       // tope diario de avisos aceptados (cuida el cupo)
-const EV_MAX_CLAVES = 600;      // 2 juegos x 11 pasos x 5 origenes x 2 equipos = 220, mas 16 de rendimiento y 9 de misiones/1er jefe (solo origins) x 10 = 470 posibles
+const EV_MAX_CLAVES = 800;      // 2 juegos x 11 pasos x 6 origenes x 2 equipos = 264, mas 16 de rendimiento y 9 de misiones/1er jefe (solo origins) x 12 = 564 posibles, y holgura para los pasos de GPU
 // IPv6: se limita por /64 (un equipo cambia de direccion dentro de su bloque).
 const claveIpEv = ip => ip.includes(':') ? ip.split(':').slice(0, 4).join(':') : ip;
 
@@ -300,7 +301,7 @@ export const Retencion = {
       const t = Date.parse(f + 'T12:00:00Z');   // mediodia: cae en ese dia de juego (Lima)
       if (!/^\d{4}-\d{2}-\d{2}$/.test(f) || !Number.isFinite(t) || diaISO(diaNum(t)) !== f) return { ok: false, error: 'Fecha no válida (usa AAAA-MM-DD, hoy o ayer).' };
       if (diaNum(t) > diaNum() || diaNum(t) < diaNum() - 120) return { ok: false, error: 'La fecha debe ser de los últimos 120 días.' };
-      if (!ORIGENES.includes(src) || src === 'org') return { ok: false, error: 'Origen no válido: meta, tg, wa o ref.' };
+      if (!ORIGENES.includes(src) || src === 'org') return { ok: false, error: 'Origen no válido: meta, tg, wa, etiqueta o ref.' };
       if (!(usd >= 0 && usd <= 100000)) return { ok: false, error: 'Monto no válido (US$, entre 0 y 100000).' };
       l = l.filter(x => !(x.f === f && x.src === src && x.camp === camp));
       if (usd > 0) l.push({ f, src, camp, usd: r2(usd) });
@@ -1049,6 +1050,7 @@ export const Retencion = {
   async ofrecerAvisoTg(s, pedido) {
     const c = s && s.c;
     if (!c || s.cerrado) return;
+    if (!pedido && (c.nivel || 1) < AVISO_TG_NV) return;   // a un novato no: se la ofrece avisoTgSubio al llegar al nivel
     const yoAuth = s.uidAuth || c.uid;
     if (c.uid.startsWith('tg:') || String(yoAuth).startsWith('tg:') || this.uidsPrueba.has(c.uid)) return;
     const ahora = Date.now();
@@ -1068,6 +1070,10 @@ export const Retencion = {
     } while (m.has(cod));
     m.set(cod, { uid: c.uid, exp: ahora + AVISO_TG_MS });
     this.enviar(s, { t: 'avisoTg', cod, url: 'https://t.me/duendequest_bot?start=av_' + cod, oro: c.avTgOro ? 0 : AVISO_TG_ORO, ya: !!(e && e.tc), ms: AVISO_TG_MS, pedido: !!pedido });
+  },
+  // Al cruzar AVISO_TG_NV (world.js sumarXp): la oferta que la mision 1 o el dia 2 ya no dan a un novato.
+  avisoTgSubio(s, nivel0) {
+    if (nivel0 < AVISO_TG_NV && s.c.nivel >= AVISO_TG_NV) this.ofrecerAvisoTg(s).catch(() => {});
   },
 
   // El bot recibio /start av_<cod> en un chat privado: ese chat avisa a ese

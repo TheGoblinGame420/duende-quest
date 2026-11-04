@@ -29,10 +29,12 @@ import { MMO_URL } from '../api/telegram-bot.js';
 import { Cueva3D } from './cueva3d.js';
 import { Encargos } from './encargos.js';
 import { Secundarias } from './secundarias.js';
+import { Vasos } from './vasos.js';
+import { Caso } from './caso.js';
 import { Eventos3D } from './eventos3d.js';
 import { Temporada } from './temporada.js';
 import { Copias } from './copias.js';
-import { VERSION as VERSION_JUEGO, ENTREGA } from '../../mmo/js/data.js';   // va en 'bienvenido': el cliente viejo se recarga solo
+import { VERSION as VERSION_JUEGO, ENTREGA, VASO } from '../../mmo/js/data.js';   // va en 'bienvenido': el cliente viejo se recarga solo
 import { Vincular } from './vincular.js';
 import { rangoDe, enAbismo, islaEn } from '../../mmo/js/abismo3d.js';
 import { Combate } from './combate.js';
@@ -1556,7 +1558,7 @@ export class MmoWorld {
     const pd = this.buscarPedido(m.codigo);
     const no = t => this.enviar(s, { t: 'toast', m: t });
     if (!pd || pd.uid !== c.uid) return no('Ese pedido no es tuyo.');
-    if (pd.reclamadoEn && Date.now() - pd.reclamadoEn < 6 * 3600000) return no(`Ya avisamos a El Duende del pedido #${pd.codigo}: lo está revisando. Si quieres dar más datos, escribe a @ElDuendeOficial.`);
+    if (pd.reclamadoEn && Date.now() - pd.reclamadoEn < 6 * 3600000) return no(`Ya avisamos a El Duende del pedido #${pd.codigo}: lo está revisando. Si quieres dar más datos, escribe al creador por WhatsApp: +51 900 877 863.`);
     if (!this.ritmoSol(c.uid, 'r', 120000)) return no('Espera un par de minutos antes de otro aviso.');
     pd.reclamadoEn = Date.now();
     await this.guardarPedidos();
@@ -1564,9 +1566,9 @@ export class MmoWorld {
     const hace = pd.pagadoEn ? Math.round((Date.now() - pd.pagadoEn) / 60000) + ' min' : 'sin pago registrado';
     const vencido = pd.pagadoEn && (pd.estado === 'pagado' || pd.estado === 'por_verificar') && Date.now() - pd.pagadoEn > ENTREGA.plazoMaxH * 3600000;
     const llego = await this.avisarAdmin(`${vencido ? '🔴 FUERA DE PLAZO · ' : ''}🆘 Reclamo del pedido #${pd.codigo} — ${pd.nombre} ($${pd.usd})\n👤 ${String(pd.jugador || c.nombre).replace(/[^\p{L}\p{N} ]/gu, '')} · Nv ${c.nivel}${tgId ? ' · tg ' + tgId : ' · cuenta web'}\nEstado: ${pd.estado} · método ${pd.metodo} · pagado hace ${hace}${pd.charge ? '\nCargo: ' + pd.charge : ''}${pd.firma ? '\nTx: https://solscan.io/tx/' + pd.firma : ''}\n\nEl jugador dice que tiene un problema con esta compra. Revísalo: /pedidos · /entregar ${pd.codigo} · /anular ${pd.codigo}`, null, true);
-    if (!llego) { pd.reclamadoEn = 0; return no('No pudimos avisar ahora. Prueba en unos minutos o escribe a @ElDuendeOficial con el número de pedido.'); }
+    if (!llego) { pd.reclamadoEn = 0; return no('No pudimos avisar ahora. Prueba en unos minutos o escribe al creador por WhatsApp (+51 900 877 863) con el número de pedido.'); }
     this.actualizarYo(s);   // el botón pasa a «Avisado»
-    this.enviar(s, { t: 'toast', ok: 1, m: `Listo: El Duende revisará tu pedido #${pd.codigo} y te avisará${tgId ? ' por Telegram' : ' aquí en el juego'}. Si quieres dar más datos, escribe a @ElDuendeOficial.` });
+    this.enviar(s, { t: 'toast', ok: 1, m: `Listo: El Duende revisará tu pedido #${pd.codigo} y te avisará${tgId ? ' por Telegram' : ' aquí en el juego'}. Si quieres dar más datos, escribe al creador por WhatsApp: +51 900 877 863.` });
   }
 
   // "Ya pague": busca el pago entre las ultimas transacciones de la wallet
@@ -1847,7 +1849,7 @@ export class MmoWorld {
     pd.estado = 'anulado'; pd.motivo = String(b.motivo || '').slice(0, 120);
     await this.guardarPedidos();
     const extraMetodo = pd.metodo === 'stars' && reembolso ? ' Tus Stars fueron devueltas.'
-      : pd.metodo === 'yape' ? ' Si ya yapeaste, El Duende te devuelve el monto a tu Yape/Plin; dudas: @ElDuendeOficial.'
+      : pd.metodo === 'yape' ? ' Si ya yapeaste, El Duende te devuelve el monto a tu Yape/Plin; dudas: WhatsApp +51 900 877 863.'
       : (pd.metodo === 'sol' || pd.metodo === 'duende') ? ' Si llegó tu pago, se devuelve a tu wallet.' : '';
     await this.avisarJugador(pd.uid, `❌ Tu compra "${pd.nombre}" (#${pd.codigo}) fue anulada${pd.motivo ? ': ' + pd.motivo : ''}.${extraMetodo}`);
     return { ok: true, pedido: pd, reembolso };
@@ -2162,8 +2164,11 @@ export class MmoWorld {
     const c = s.c;
     this.diariaDe(c);
     if (this.rotarBoveda(c)) s.sucio = true;
+    // Clave de este personaje para lo que su navegador recuerda (capitulos vistos, hora de salida): al azar, guardada y
+    // solo para su dueño. El pid no sirve: cambia en cada despliegue. Con 'k' delante, para no confundirla con un pid viejo.
+    if (!c.ck) { c.ck = 'k' + crypto.randomUUID().replace(/-/g, '').slice(0, 15); s.sucio = true; }
     return {
-      diaria: c.diaria, fiestaDias: c.fiestaDias || null,
+      ck: c.ck, diaria: c.diaria, fiestaDias: c.fiestaDias || null,
       nombre: c.nombre, nivel: c.nivel, xp: c.nivel >= NIVEL_MAX ? (c.mae || {}).p || 0 : c.xp, xpSig: c.nivel >= NIVEL_MAX ? MAESTRIA_XP : xpParaSubir(c.nivel), mae: (c.mae || {}).n || 0, oro: c.oro,
       hp: Math.ceil(s.hp), maxHp: s.st.maxHp, atk: s.st.atk, def: s.st.def,
       arma: c.arma, armas: c.armas, skin: c.skin, skins: c.skins, pw: c.pw,
@@ -2171,7 +2176,7 @@ export class MmoWorld {
       eq: c.eq, bolsa: c.bolsa, logros: c.logros, titulo: c.titulo, mundiales: c.mundiales, login: c.login, crit: s.st.crit,
       clase: c.clase, rec: Math.round(s.rec || 0), recMax: s.st.recMax, combo: s.combo || 0, mazDia: c.mazDia || null, mazmorras: c.mazmorras || 0, torreSem: this.torreSem(c).max, torreMax: c.torreMax || 0, exped: c.exped || null, nVisitadas: c.nVisitadas || 0, visitadas: c.visitadas || [], especies: c.especies || {}, nEspecies: c.nEspecies || 0, dorados: c.dorados || 0, seca: c.seca || 0, secaEp: c.secaEp || 0, exped8: c.exped8 || 0, peces: c.peces || 0, expediciones: c.expediciones || 0, duelosG: c.duelosG || 0, desafioMax: c.desafioMax || 0, amigosN: c.amigos || 0, desafio: c.desafio || {}, ...Object.fromEntries(TEMPORADAS.map(t => [t.campo, c[t.campo] || 0])), chicha: this.infoChicha(c), temp: (temporadaDe() || {}).id || '', herm: c.herm || null, pid: pub(c.uid), descanso: c.descanso || 0, tareas: this.infoTareas(c), mat: c.mat || {}, tal: c.tal || {}, talGratis8: !c.talR8 ? 1 : 0, best: c.best || {}, bestR: c.bestR || {}, sellos: c.sellos || {},
       boveda: c.boveda, bovedaOpc: c.bovedaOpc || null, pase: this.infoPase(c), banda: this.infoBanda(c), runas: c.runas || {}, gestaCob: c.gestaCob || null, cuevaHoy: c.cuevaDia && c.cuevaDia.d === hoyUTC() ? Math.min(3, c.cuevaDia.n) : 0, cuevaRec: c.cuevaRecord || 0, recetas: c.recetas || {}, bestD: c.bestD || {},
-      faccion: c.faccion || null, pa: c.pa || 0, bajasPvP: c.bajasPvP || 0, look: c.look || null, alas: c.alas || ['aprendiz'], ala: c.ala || 'aprendiz', espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, tintes: c.tintes || [], tinte: c.tinte || '', mascotas: c.mascotas || [], mascota: c.mascota || '', montado: s.montado || null,
+      vaso: this.infoVaso(c), faccion: c.faccion || null, pa: c.pa || 0, bajasPvP: c.bajasPvP || 0, look: c.look || null, alas: c.alas || ['aprendiz'], ala: c.ala || 'aprendiz', espec: c.espec || null, monturas: c.monturas || [], montura: c.montura || null, tintes: c.tintes || [], tinte: c.tinte || '', mascotas: c.mascotas || [], mascota: c.mascota || '', montado: s.montado || null,
       mton: c.mton, wallet: c.wallet ? { a: tonAmigable(c.wallet.a), desde: c.wallet.desde } : null,
       p2e: this.elegibilidad(c), creado: c.creado,
       retiros: this.retiros.filter(x => x.uid === c.uid).slice(-5).map(x => ({ id: x.id, ton: x.ton, estado: x.estado, creado: x.creado })),
@@ -2746,6 +2751,7 @@ export class MmoWorld {
     // Nv 60: aviso a todo el mundo (un momento para presumir y para que los demas lo vean).
     if (subio && nivel0 < NIVEL_MAX && c.nivel >= NIVEL_MAX) this.aTodos({ t: 'aviso', m: `🏆 ${c.nombre} llegó al nivel ${NIVEL_MAX}, el máximo. ¡Una leyenda del Éter!` });
     if (subio && this.hitoEmbudo) { if (nivel0 < 5 && c.nivel >= 5) this.hitoEmbudo(c, 'n5'); if (nivel0 < 10 && c.nivel >= 10) this.hitoEmbudo(c, 'n10'); }
+    if (subio && this.avisoTgSubio) this.avisoTgSubio(s, nivel0);
     if (subio) {
       s.st = this.stats(c);
       s.hp = s.st.maxHp;
@@ -2781,6 +2787,7 @@ export class MmoWorld {
     // Elixir de Sabiduria (artesania): +10% de la XP de caza. Skins con xpMult.
     if (this.elixir(s, 'elixirX')) xp = Math.round(xp * 1.1);
     if (this.elixir(s, 'chichaE')) xp = Math.round(xp * 1.05);
+    if (this.elixir(s, 'vaso')) xp = Math.round(xp * VASO.xp);   // Vaso de chicha (vasos.js)
     const xpSkin = ((SKINS[c.skin] || {}).buffs || {}).xpMult;
     if (xpSkin) xp = Math.round(xp * xpSkin);
     // Invitado de Nv < 10 en grupo con quien lo invito: +25% (amigos.js).
@@ -2819,6 +2826,7 @@ export class MmoWorld {
       }
     }
     if (Math.random() < 0.05) { c.pw.pocion = Math.min(99, c.pw.pocion + 1); drops.push('pocion'); }
+    if (pelea) this.dropVaso(s, o);
     if (o && o.jefe) {
       const r = PODERES[1 + Math.floor(Math.random() * 3)].id;
       c.pw[r] = Math.min(99, c.pw[r] + 1); drops.push(r);
@@ -2981,6 +2989,8 @@ export class MmoWorld {
     // El Escudo (consumible que se puede comprar) protege de monstruos, no de jugadores.
     if ((ahora < s.inv && !pct && !duelo && !pvp) || (ahora < s.escudo && !duelo && !pvp) || this.aura(s, 'bloque')) return;
     if (s.dios && s.diosModo && s.diosModo.inv) return;   // Modo Dios: invencible
+    // ESQUIVAR de ORIGINS (esquivar3d): golpes de monstruo y balas. Ni pisotones/zonas ni jugadores.
+    if (ahora < (s.esqInv || 0) && fuente && fuente.id && !fuente.zona && !pct && !duelo && !pvp) { this.enviar(s, { t: 'mesq', id: fuente.id }); return; }
     // Evasion del picaro: esquiva golpes cuerpo a cuerpo (las bolas y las
     // zonas no).
     if (!(fuente && (fuente.bala || fuente.zona)) && this.aura(s, 'evasion') && Math.random() < EVASION) {
@@ -2991,7 +3001,8 @@ export class MmoWorld {
     const bruto = dmg * rnd(0.9, 1.1);
     // La defensa resta, pero el golpe nunca baja del 25%: con las clases un
     // guerrero bien equipado llegaba a no recibir daño de nada.
-    let real = Math.max(1, Math.round(Math.max(bruto * 0.25, bruto - s.st.def * 0.6)));
+    // (fuente.suelo: las presas de campamento de ORIGINS lo suben con el nivel, ver durezaPresa3d.)
+    let real = Math.max(1, Math.round(Math.max(bruto * ((fuente && fuente.suelo) || 0.25), bruto - s.st.def * 0.6)));
     // Jefe mundial: un % de la vida de cada uno, asi todos los niveles
     // pueden pelear juntos (y ninguno muere de un toque).
     if (fuente && fuente.mundial) real = Math.round(s.st.maxHp * (fuente.embiste ? 0.15 : fuente.bala ? 0.06 : 0.04) * rnd(0.9, 1.1));
@@ -3764,7 +3775,7 @@ export class MmoWorld {
     for (const s of jugadores) {
       this.tickJugador(s, ahora, dt, !mapa.zona);
       if (s.muerto || s.hp >= s.st.maxHp) continue;
-      const k = !mapa.zona ? 0.12 : (ahora - (s.golpeT || 0) > 4000 ? 0.04 : 0);
+      const k = (!mapa.zona ? 0.12 : (ahora - (s.golpeT || 0) > 4000 ? 0.04 : 0)) + this.regenVaso(s, ahora);
       if (k) s.hp = Math.min(s.st.maxHp, s.hp + s.st.maxHp * k * dt);
     }
     // La Piedra de Hogar pudo sacar a alguien de aqui en este mismo tick.
@@ -4094,6 +4105,8 @@ Object.assign(MmoWorld.prototype, Mundo3D);
 Object.assign(MmoWorld.prototype, Cueva3D);
 Object.assign(MmoWorld.prototype, Encargos);
 Object.assign(MmoWorld.prototype, Secundarias);
+Object.assign(MmoWorld.prototype, Vasos);
+Object.assign(MmoWorld.prototype, Caso);
 // Pieza de equipo nueva (para los modulos que no ven generarItem).
 MmoWorld.prototype.nuevoItem = (nv, r) => generarItem(nv, r);
 MmoWorld.prototype.generarItem = generarItem;

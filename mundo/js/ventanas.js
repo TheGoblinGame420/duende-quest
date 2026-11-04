@@ -24,8 +24,8 @@ import {
   ORO_POR_USD, STAR_TIENDA_USD, PEN_POR_USD,
   temporadaDe, TEMPORADAS, TEMP_DIAS, premioDiaFiesta, esNochebuena, diaFiesta, diasFiesta,
   ESPECIES, MAPAS, MONSTRUOS, BESTIARIO_HITOS, premioBestiario, DEBIL_EMO,
-} from '/mmo/js/data.js?v=367';
-import { LORE_MONSTRUOS } from './lore.js?v=367';
+} from '/mmo/js/data.js?v=368';
+import { LORE_MONSTRUOS } from './lore.js?v=368';
 
 const A = '/assets/';
 const TACTIL = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
@@ -398,8 +398,13 @@ function pintarInventario() {
   parte(id, 'sub').innerHTML = `<span><b>${esc(y.nombre)}</b> · Nv ${y.nivel}</span><span>${oro(y.oro)}</span><span>Bolsa <b>${(y.bolsa || []).length}/${BOLSA_MAX}</b></span>`;
   pintarTabs(id, [['equipo', 'EQUIPO'], ['skin', 'SKINS'], ['arma', 'ARMAS']], est.inv, 'itab');
   const c = parte(id, 'cuerpo');
-  c.innerHTML = (est.inv === 'equipo' ? htmlFilaMejor(y) : '') + htmlStats(y) + (est.inv === 'equipo' ? htmlEquipo(y) : htmlColeccion(y, est.inv));
+  c.innerHTML = (est.inv === 'equipo' ? htmlFilaMejor(y) + htmlVaso(y) : '') + htmlStats(y) + (est.inv === 'equipo' ? htmlEquipo(y) : htmlColeccion(y, est.inv));
   dibujarHojas(c);
+}
+// Vaso de chicha en la bolsa: se toma de aqui (el servidor no gasta otro si ya hay uno activo).
+function htmlVaso(y) {
+  const n = (y.vaso && y.vaso.n) | 0;
+  return n > 0 ? `<div class="vv-fila2">${btn(`🥤 Tomar chicha (tienes ${n})`, 'tomarVaso', {}, '')}</div>` : '';
 }
 // Atajos: lo mejor de la bolsa para cada ranura y vender lo comun (arriba del todo, visible en movil).
 function htmlFilaMejor(y) {
@@ -566,7 +571,7 @@ function siguienteTal(y, id) {
 }
 // Talento pre-elegido entre Nv 7 y 9 (solo localStorage de este equipo).
 export const TAL_PRE_NIVEL = 7;
-const talPreClave = y => 'dq3_talPre_' + ((y && y.pid) || '');
+const talPreClave = y => 'dq3_talPre_' + ((y && (y.ck || y.pid)) || '');
 export function talentoPreElegido(y) {
   let v = null; try { v = localStorage.getItem(talPreClave(y)); } catch (e) { v = null; }
   return v && TALENTOS.some(t => t.id === v) ? v : null;
@@ -797,7 +802,7 @@ function htmlArmasSkins(y, tab) {
     if (extra) h += extra + '</div>';
   }
   h += '</div>';
-  if (tab === 'skin') h += `<p class="vv-nota" style="color:#fde68a"><b>Una skin, dos juegos:</b> la que consigas la llevas también en CLASSIC (2D), con los mismos poderes. En PvP (duelos y Abismo) sus ventajas de combate no cuentan: ahí todos pelean igual.</p><p class="vv-nota">Cada skin da sus poderes mientras la llevas. Se compran con oro o, con tu cuenta, con dinero: ${esTg() || anuncio() ? 'Telegram Stars' : 'SOL o $DUENDE (10% de descuento) a la wallet de El Duende'}; El Duende revisa el pago y la activa en tu personaje. Los siete disfraces de la mascota (Bruja, Momia, Frankenstein, Vampiro, Esqueleto, Lobo y Pirata) se compran solo con oro y cambian tu duende 3D con su sombrero o peinado. Las cuatro exclusivas (Esmeralda, Sombrío, Solar y Cósmico) solo se consiguen así${anuncio() ? '' : '; ninguna cambia lo que se gana en mTON'}.</p>`;
+  if (tab === 'skin') h += `<p class="vv-nota" style="color:#fde68a"><b>Una skin, dos juegos:</b> la que consigas la llevas también en CLASSIC (2D), con los mismos poderes. En PvP (duelos y Abismo) sus ventajas de combate no cuentan: ahí todos pelean igual.</p><p class="vv-nota">Cada skin da sus poderes mientras la llevas. Se compran con oro o, con tu cuenta, con dinero: ${esTg() || anuncio() ? 'Telegram Stars' : 'SOL o $DUENDE (10% de descuento) a la wallet de El Duende'}; El Duende revisa el pago y la activa en tu personaje. Los siete disfraces de la mascota (Bruja, Momia, Frankenstein, Vampiro, Esqueleto, Lobo y Pirata) se compran solo con oro y cambian tu duende 3D con su sombrero o peinado. Las cuatro exclusivas (Esmeralda, Sombrío, Solar y Cósmico) solo se consiguen así${anuncio() ? '' : '; ninguna cambia lo que se gana en mTON'}.</p><p class="vv-nota">🆘 ¿Dudas con una compra? <a href="https://wa.me/51900877863" target="_blank" rel="noopener" style="color:inherit;font-weight:700">Habla con el creador del juego</a>: WhatsApp +51 900 877 863.</p>`;
   return h;
 }
 // Valor en dolares de un paquete si lo compraras suelto: oro al mejor cambio de los
@@ -868,6 +873,7 @@ function htmlPremium(y) {
     h += '<div class="vv-sec">Tus compras</div><div class="vv-pedidos">' + ps.slice().reverse().map(x => `<div class="fila"><span>#${esc(x.codigo)} · ${esc(x.nombre)}</span><span class="${col[x.estado] || ''}">${esc(txt[x.estado] || x.estado)}${x.estado === 'esperando_pago' && (x.lamports || x.raw || x.yape) ? ' ' + btn('Pagar', 'retomar', { id: x.codigo }, 'sec') : ''}${textoPlazo(x)} ${x.reclamado ? '<small class="vv-dim">Avisado</small>' : btn('¿Problema?', 'reclamo', { id: x.codigo }, 'sec')}</span></div>`).join('') + '</div>'
       + `<p class="vv-nota">Las compras se entregan a mano de ${esc(ENTREGA.horario)}, ${esc(ENTREGA.plazo)}. Te avisamos al entregarlas. ¿Algo salió mal? Pulsa «¿Problema?» y El Duende lo revisa. <a href="/reembolsos.html" target="_blank" rel="noopener" style="color:inherit">Entregas y reembolsos</a> · <a href="/reembolsos.html#libro" target="_blank" rel="noopener" style="color:inherit">Libro de Reclamaciones</a></p>`;
   }
+  h += '<p class="vv-nota">🆘 ¿Dudas con una compra? <a href="https://wa.me/51900877863" target="_blank" rel="noopener" style="color:inherit;font-weight:700">Habla con el creador del juego</a>: WhatsApp +51 900 877 863. Nunca te pediremos contraseñas.</p>';
   return h;
 }
 
@@ -1343,6 +1349,7 @@ const ACC = {
     if (it && (it.r >= 2 || it.cj) && !confirmar('vender:' + it.id)) { marcarSeguro(b); return; }
     H.sfx('moneda', 0.3); H.mandar({ t: 'item', a: 'vender', id: b.dataset.id });
   },
+  tomarVaso: () => { H.sfx('boton', 0.3); H.mandar({ t: 'vaso', a: 'tomar' }); },
   mejor: () => {
     const y = H.yo(); if (!y) return;
     const eq = y.eq || {}, bolsa = y.bolsa || [], pz = piezasConjunto(eq);

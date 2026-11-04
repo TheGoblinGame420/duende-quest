@@ -7,7 +7,7 @@
 //      { s: utm_source, c: utm_campaign, a: utm_content, fbc: fbclid,
 //        ref: codigo de invitacion o start_param, t: cuando, o: grupo }
 //    Todo saneado a [a-z0-9_-]{0,40}. Nada personal: solo la etiqueta del enlace.
-//    El grupo (o) es uno de meta | tg | wa | ref | org y viaja en el 'hola'
+//    El grupo (o) es uno de meta | tg | wa | etiqueta | ref | org y viaja en el 'hola'
 //    (src): el servidor lo vuelve a validar con la misma lista blanca.
 // 2) EMBUDO: window.dqPaso(e, j) manda un beacon a /mmo/ev UNA vez por sesion
 //    (sessionStorage) con { e, j, ms, org, movil, tg }. ms es el tiempo desde
@@ -19,7 +19,7 @@
   'use strict';
   /* iOS < 15.4 no trae Object.hasOwn: sin esto los modulos de CLASSIC y ORIGINS mueren al cargar */
   try { if (!Object.hasOwn) Object.hasOwn = function (o, k) { return Object.prototype.hasOwnProperty.call(o, k); }; } catch (e) {}
-  var CLAVE = 'dq_origen', DIAS = 30, GRUPOS = { meta: 1, tg: 1, wa: 1, ref: 1, org: 1 };
+  var CLAVE = 'dq_origen', DIAS = 30, GRUPOS = { meta: 1, tg: 1, wa: 1, etiqueta: 1, ref: 1, org: 1 };
   var limpio = function (v) { return String(v || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 40); };
   var enTg = false;
   try { enTg = !!(window.TelegramWebviewProxy || window.parent !== window || (window.external && 'notify' in window.external)) || /tgWebApp/.test(location.hash + location.search); } catch (e) {}
@@ -32,6 +32,7 @@
     if (o.fbc || /^(fb|facebook|ig|instagram|meta|an|messenger|threads)/.test(o.s)) return 'meta';
     if (/^(tg|telegram)/.test(o.s)) return 'tg';
     if (/^(wa|whatsapp)/.test(o.s)) return 'wa';
+    if (/^etiqueta/.test(o.s)) return 'etiqueta';
     if (o.ref) return 'ref';
     if (o.tg) return 'tg';
     return 'org';
@@ -108,7 +109,7 @@
     var okM = window.dqMedirOk();
     if (!enTg && okM !== 0 && (okM === 1 || (origen && (origen.o === 'meta' || origen.fr)))) {
       var sm = document.createElement('script');
-      sm.src = '/js/medir.js?v=367'; sm.async = true;
+      sm.src = '/js/medir.js?v=368'; sm.async = true;
       (document.head || document.documentElement).appendChild(sm);
     }
   } catch (e) {}
@@ -123,6 +124,8 @@
     anuncio = /[?&](fbclid|utm_[a-z]+|ad)=/i.test(location.search) || /^\/jugar(\/|$)/.test(location.pathname);
     try { if (anuncio) sessionStorage.setItem('dq_anuncio', '1'); else anuncio = sessionStorage.getItem('dq_anuncio') === '1'; } catch (e) {}
     if (!anuncio && origen && origen.o === 'meta') anuncio = true;
+    // Llego por el QR de la botella: tampoco ve la parte cripto en los 30 dias siguientes.
+    if (!anuncio && origen && origen.o === 'etiqueta') anuncio = true;
     // Anuncio que llego por el bot (/start ad_ o startapp=ad_): tambien sin cripto.
     if (!anuncio && origen && origen.s === 'tg_ad') anuncio = true;
     if (anuncio) document.documentElement.classList.add('anuncio');

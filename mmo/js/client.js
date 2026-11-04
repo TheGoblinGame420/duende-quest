@@ -16,10 +16,10 @@ import {
   premioAmigo, BANDA_MAX, BANDA_MONTURA, RUNAS, RUNA_NIVEL, RUNA_MAX, RUNA_PCT, costoRuna,
   GESTA_UMBRALES, GESTA_NOMBRES, GESTA_PUNTOS, GESTA_MIN, premioGesta,
   statsJugador,
-  PIEDRA_X, costoViaje, tienePiedra, VERSION,
-} from './data.js?v=367';
-import { iniciarRegalo } from './regalo.js?v=367';
-import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=367';
+  PIEDRA_X, costoViaje, tienePiedra, VERSION, waChicha,
+} from './data.js?v=368';
+import { iniciarRegalo } from './regalo.js?v=368';
+import { iniciarAvisoTg, escribirTgPendiente } from './avisotg.js?v=368';
 
 // Durante un despliegue puede llegar este JS con un HTML de la version
 // anterior (y al reves): si falta un elemento, se usa uno suelto en vez de
@@ -118,6 +118,7 @@ function mostrarNuevo3d() {
   $('nuevo3d-ir').href = '/mundo/' + (location.hash || '');
   c.style.display = 'block';
   const v = c.querySelector('video');
+  if (v) v.poster = '/assets/video/promo3d-poster.jpg';   // aqui y no en el HTML: quien no ve este aviso no lo descarga
   const cx = navigator.connection, lento = !!(cx && (cx.saveData || /2g/.test(cx.effectiveType || '')));
   if (v && !lento) { v.preload = 'auto'; v.play().catch(() => {}); }   // con ahorro de datos, solo el poster
   $('nuevo3d-no').onclick = () => { c.style.display = 'none'; if (v) v.pause(); try { sessionStorage.setItem('dq_cerro3d', '1'); } catch (e) {} };
@@ -141,7 +142,7 @@ function permisosTg(nv) {
         const intentar = () => {
           escribirTgT = 0;
           if (!escribirTgPendiente()) return;
-          let ocu = true; try { ocu = !yo || P.muerto || enCombate() || document.hidden || !!document.querySelector('.modal.on, #dq-regalo.on'); } catch (e) {}
+          let ocu = true; try { ocu = !yo || P.muerto || enCombate() || !pausaTg2() || document.hidden || !!document.querySelector('.modal.on, #dq-regalo.on'); } catch (e) {}
           if ((ocu || !avisoTg2.pedirPermiso()) && ++intentos < 8) escribirTgT = setTimeout(intentar, 15000);
         };
         escribirTgT = setTimeout(intentar, 15000);
@@ -248,6 +249,11 @@ let porCargar = 0, cargadas = 0;
 // en RUTAS y se baja en ratos libres o cuando hace falta (pedir): en 4G lenta
 // el juego abre en segundos en vez de esperar ~5 MB. (v328)
 const RUTAS = {};
+// Quien entra por la version ligera, con poca memoria o con la red justa no baja
+// lo diferido por adelantado: cada cosa se pide cuando va a dibujarse (pedir).
+const DATOS_JUSTOS = /[?&]j=2d\b/i.test(location.search)
+  || (typeof navigator.deviceMemory === 'number' && navigator.deviceMemory <= 3)
+  || !!(navigator.connection && (navigator.connection.saveData || /2g|3g/.test(navigator.connection.effectiveType || '')));
 function cargar(k, src, critico) {
   if (IMG[k]) return;
   if (critico === false) { RUTAS[k] = src; return; }
@@ -262,6 +268,8 @@ function pedir(k) {
   if (IMG[k] || !RUTAS[k]) return;
   const im = new Image();
   im.decoding = 'async';
+  // Sin cargarResto nadie prepara los tintes de esta hoja: se hace al llegar, para que el primer golpe no de tiron.
+  if (DATOS_JUSTOS && k.startsWith('sh_')) im.addEventListener('load', precalentarTintes, { once: true });
   im.src = RUTAS[k];
   IMG[k] = im;
   delete RUTAS[k];
@@ -276,6 +284,7 @@ function pedirZona(id) {
 // El resto, de a 2 en los ratos libres del navegador; al terminar se
 // preparan sus tintes (antes no se podia: la imagen no estaba).
 function cargarResto() {
+  if (DATOS_JUSTOS) return;
   const ocio = window.requestIdleCallback ? f => requestIdleCallback(f, { timeout: 1500 }) : f => setTimeout(f, 200);
   let vivas = 0;
   const sig = () => {
@@ -669,7 +678,7 @@ function recibir(m) {
       try { if (canalJuego) canalJuego.postMessage({ t: 'aqui', n: yo.nombre }); } catch (e) {}
       // Aviso de ORIGINS: al jugador nuevo no se le saca hacia el 3D antes de
       // acabar el tutorial (se le ofrece al terminarlo, en pintarTutorial).
-      { let tH = false; try { tH = +(localStorage.getItem('dq_tuto_' + (yo.pid || '')) || 0) >= TUTORIAL.length; } catch (e) {}
+      { let tH = false; try { tH = +(localStorage.getItem('dq_tuto_' + (yo.ck || yo.pid || '')) || 0) >= TUTORIAL.length; } catch (e) {}
         if (!m.nuevo && yo.clase && (yo.nivel > 6 || tH)) mostrarNuevo3d(); }
       $('m-error').classList.remove('on');
       $('m-inicio').classList.remove('on');
@@ -942,7 +951,7 @@ function recibir(m) {
     case 'pedidoYape': mostrarPedidoYape(m); if (window.dqMedir) window.dqMedir('InitiateCheckout', {}, m.codigo); break;
     case 'buzon': regalo2.alBuzon(m); break;
     case 'regalo': regalo2.alRegalo(m); break;
-    case 'avisoTg': avisoTg2.alOferta(m); break;   // «Avísame por Telegram» (avisotg.js)
+    case 'avisoTg': avisoTgPed2 = !!(m && m.pedido); peleaT2 = Date.now(); avisoTg2.alOferta(m); break;   // «Avísame por Telegram» (avisotg.js); llega justo tras cazar: cuenta como pelea
     case 'avisoTgOk': avisoTg2.alOk(m); break;
     case 'fondo': fondoInfo = m; if ($('m-wallet').classList.contains('on')) pintarWallet(); break;
     case 'login': mostrarLogin(m); if (m.vuelta) aviso(`🎉 ¡Bienvenido de vuelta! ${m.vuelta.dias} días fuera: +${m.vuelta.oro.toLocaleString('es', { useGrouping: 'always' })} oro, ${m.vuelta.pociones} pociones y ${m.vuelta.item}.`, 'ok', 8000); break;
@@ -1002,6 +1011,7 @@ function recibir(m) {
     case 'anoNuevo': vibrar('success'); break;
     case 'fuegos': break;
     // Cuenta regresiva de Año Nuevo («🎆 n…»): cada numero reemplaza al anterior (sin apilar 10 avisos).
+    case 'chicha_rec': if (tabInv === 'chicha') pintarChicha(); break;   // ya reclamó: que vea su código y el botón de WhatsApp
     case 'toast': if (/^🎆 \d+…$/.test(m.m || '')) { document.querySelectorAll('.aviso').forEach(a => { if (/^\d+…$/.test(a.textContent)) a.remove(); }); aviso(m.m, 'ok', 1500); break; }
       if (!(modoAnuncio() && SIN_CRIPTO_RE.test(m.m || ''))) aviso(m.m, m.ok ? 'ok' : ''); if (m.yapeOk && $('m-sol')) $('m-sol').classList.remove('on'); if (m.hab) { $('acciones').innerHTML = ''; pintarHud(); } break;
     case 'aviso': aviso(m.m, 'jefe'); lineaChat(null, sinEmoji(m.m)); sfx('explosion', .3); break;
@@ -1533,7 +1543,9 @@ function dibujarVitrina() {
   if (x < -60 || x > VW + 60) return;
   const ids = Object.keys(SKINS).filter(k => SKINS[k].usd);
   if (!ids.length) return;
-  const sk = SKINS[ids[Math.floor(performance.now() / 5000) % ids.length]];
+  // Con los datos justos no rota: cada vuelta bajaria una skin que nadie pidio.
+  const sk = SKINS[ids[DATOS_JUSTOS ? 0 : Math.floor(performance.now() / 5000) % ids.length]];
+  pedir(sk.img);
   const img = IMG[sk.img];
   g.fillStyle = '#2a2238'; g.fillRect(x - 24, SUELO - 34, 48, 34);
   g.fillStyle = '#3b3050'; g.fillRect(x - 20, SUELO - 30, 40, 26);
@@ -2484,7 +2496,10 @@ const regalo2 = iniciarRegalo({
 // «Avísame por Telegram» para jugadores web e invitados (avisotg.js): espera a que no haya otra ventana.
 // En combate: zona con monstruos vivos cerca (no se abre ninguna ventana encima de la pelea).
 function enCombate() { return !!(MAPAS[mapaId] && MAPAS[mapaId].zona && [...mons.values()].some(o => o.hp > 0 && !o.muereT && Math.abs(o.x - P.x) < 450)); }
-const avisoTg2 = iniciarAvisoTg({ mandar, ocupado: () => !!document.querySelector('.modal.on, #dq-regalo.on') || !yo || P.muerto || enCombate(), aviso: (t, k) => aviso(t, k, 7000), tg: TG });
+// Ofrecida sola, solo en una pausa real: en el pueblo o tras 30 s sin monstruos cerca (si la pidio el jugador, basta con no estar peleando).
+let avisoTgPed2 = false, peleaT2 = 0;
+function pausaTg2() { const n = Date.now(); if (enCombate()) peleaT2 = n; return !(MAPAS[mapaId] && MAPAS[mapaId].zona) || n - peleaT2 >= 30000; }
+const avisoTg2 = iniciarAvisoTg({ mandar, ocupado: () => (!avisoTgPed2 && !pausaTg2()) || !!document.querySelector('.modal.on, #dq-regalo.on') || !yo || P.muerto || enCombate(), aviso: (t, k) => aviso(t, k, 7000), tg: TG, alAbrir: () => { for (const k in teclas) teclas[k] = false; tIzq = tDer = false; soltarAtk(); } });
 
 $('b-social').onclick = () => abrirSocial();
 $('b-mapa').onclick = () => abrirMapaMundo();
@@ -3259,7 +3274,7 @@ function pintarTutorial() {
   if (TACTIL && tuto.i >= 0) { const pa = TUTORIAL[tuto.i]; if (!pa || pa.id !== 'atacar') ponClase($('t-atk'), 'tuto-pulso', false); }   // fuera del paso de atacar, sin latido
   { const pa = TUTORIAL[tuto.i], a0 = $('acciones') && $('acciones').firstElementChild; if (a0 && (!pa || pa.id !== 'habilidad')) ponClase(a0, 'tuto-pulso', false); }   // fuera del paso de habilidad, sin latido
   if (!yo || !yo.clase || yo.nivel > 6 || $('m-clase').classList.contains('on')) { ponCss(el, 'display', 'none'); ponClase($('hud'), 'tuto', false); return; }
-  const clave = 'dq_tuto_' + (yo.pid || '');
+  const clave = 'dq_tuto_' + (yo.ck || yo.pid || '');
   if (tuto.clave !== clave) {
     tuto.clave = clave;
     let i = 0; try { i = +(localStorage.getItem(clave) || 0); } catch (e) {}
@@ -3358,6 +3373,7 @@ function abrirArtesana() {
   let h = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin-bottom:10px">' +
     Object.entries(MATERIALES).map(([k, m]) => `<span style="display:flex;align-items:center;gap:4px;font:12px/1.3 var(--sans);color:var(--txt2)"><img src="${A}items/equipo/${m.icono}.png" style="width:22px;height:22px;image-rendering:pixelated">${esc(m.nombre)}: ${mat[k] || 0}</span>`).join('') + '</div>';
   for (const r of RECETAS) {
+    if (r.solo3d) continue;   // sus vasos se toman en ORIGINS
     const pide = Object.entries(r.pide).map(([k, n]) => `<span style="color:${(mat[k] || 0) >= n ? 'var(--ok)' : 'var(--err)'}">${n} ${esc(MATERIALES[k].nombre)}</span>`).join(' + ');
     const puede = Object.entries(r.pide).every(([k, n]) => (mat[k] || 0) >= n);
     h += tarjeta(`<img src="${A}${r.dir || 'items/equipo/'}${r.icono}.png">`, esc(r.nombre), esc(r.desc) + '<br>' + pide,
@@ -3392,25 +3408,35 @@ function abrirArtesana() {
 
 // ── BESTIARIO ──
 // Premio fisico: un litro de chicha morada (functions/mmo/chicha.js).
+// Cada reclamo con su código y, si sigue abierto, el botón de WhatsApp con el mensaje ya escrito.
+function cajaReclamos(ch) {
+  return (ch.rcl || []).map(r => {
+    const que = r.meta === 'nv60' ? r.l + ' litros de nivel ' + CHICHA.nv60 : r.meta.toLocaleString('es', { useGrouping: 'always' }) + ' puntos';
+    if (r.estado === 'enviado') return `<div class="mis-caja" style="text-align:center;font-size:12px"><b style="color:var(--ok)">Tu chicha ya va en camino</b> (#${esc(r.id)} · ${que})</div>`;
+    if (r.estado === 'rechazado') return `<div class="mis-caja" style="text-align:center;font-size:12px">Tu reclamo #${esc(r.id)} (${que}) no se pudo completar${r.motivo ? ': ' + esc(r.motivo) : ''}.</div>`;
+    return `<div class="mis-caja" style="text-align:center"><p style="font-size:12px;color:var(--txt2)">Tu código de reclamo (${que})</p><p style="font-size:22px;color:var(--oro);margin:4px 0">#${esc(r.id)}</p>${r.cola ? '<p style="font-size:12px;color:var(--txt2)">El cupo de este mes está lleno: se envía el mes que viene.</p>' : ''}<a class="btn" data-wa href="${esc(waChicha(r.id, yo.nombre || 'duende', r.l))}" target="_blank" rel="noopener" style="display:block;margin:8px 0;text-decoration:none;background:#25d366;border-color:#25d366;color:#fff">Coordinar el envío por WhatsApp</a><p style="font-size:12px;color:var(--txt2)">Al ${CHICHA.whatsappVer}, con tu código y tu nombre de duende. El equipo revisa y aprueba cada reclamo a mano. Envío gratis: no hay nada que pagar.</p></div>`;
+  }).join('');
+}
 function pintarChicha() {
   const ch = yo.chicha || { p: 0, hoy: 0, rec: [] };
   const cuenta = TG || !soyInvitado;
   // Invitado: el aviso va arriba, con el boton para seguir en Telegram.
-  let h = cuenta ? '' : '<div class="seguridad centro" style="margin-top:0;color:var(--txt)">Juegas como invitado: los puntos de chicha se juntan solo con cuenta de Telegram.<a class="btn" href="https://t.me/duendequest_bot" target="_blank" rel="noopener" style="display:block;margin-top:10px;text-decoration:none;color:#fff">Abrir en Telegram</a></div>';
+  let h = cuenta ? '' : '<div class="seguridad centro" style="margin-top:0;color:var(--txt)">Juegas como invitado: los puntos de chicha se juntan solo con una cuenta (Telegram o correo).<a class="btn" href="https://t.me/duendequest_bot" target="_blank" rel="noopener" style="display:block;margin-top:10px;text-decoration:none;color:#fff">Abrir en Telegram</a></div>';
   h += `<div class="mis-caja" style="margin-top:0;text-align:center"><b style="color:var(--txt);font:600 16px/1.35 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;margin-bottom:0">Chicha morada de verdad, enviada a tu casa</b>
     <p style="font-size:12px;color:var(--txt2);margin-top:4px">Promoción gratuita y opcional: no hay que comprar nada.</p>
     <p style="font-size:12px;margin-top:6px">Cada monstruo que cazas suelta su chicha: <b style="display:inline">1 punto</b>, <b style="display:inline">3</b> si es de tu nivel o más, <b style="display:inline">25</b> un jefe. Desde nivel ${CHICHA.nvPuntos}, hasta ${CHICHA.porDia} puntos al día.</p>
     <p style="font-size:22px;color:var(--oro);margin:8px 0">${ch.p.toLocaleString('es', { useGrouping: 'always' })} puntos</p>
     <p style="font-size:12px;color:var(--txt2)">Hoy: ${ch.hoy}/${CHICHA.porDia}</p></div>`;
+  h += cajaReclamos(ch);
   // Requisitos a la vista (los mismos que revisa el servidor en chicha.js).
   {
     const nv = yo.nivel || 1, dj = ch.dj || 0, hj = Math.floor((ch.mj || 0) / 60), si = b => b ? '✅' : '⬜';
     h += `<div class="mis-caja" style="font-size:12px;line-height:1.6"><b style="display:block;color:var(--txt);margin-bottom:2px">Requisitos</b>
-      ${si(cuenta)} Cuenta de Telegram (para coordinar el envío)<br>
+      ${si(cuenta)} Cuenta real (no invitado)<br>
       ${si(nv >= CHICHA.nvPuntos)} Puntos desde nivel ${CHICHA.nvPuntos}<br>
       ${si(nv >= CHICHA.nvReclamo)} Reclamar desde nivel ${CHICHA.nvReclamo} y 2 días de personaje<br>
       ${si(nv >= CHICHA.nv60 && dj >= CHICHA.dias60 && hj * 60 >= CHICHA.min60)} ${CHICHA.litros60} litros: nivel ${CHICHA.nv60} + ${CHICHA.dias60} días jugados (${Math.min(dj, CHICHA.dias60)}/${CHICHA.dias60}) + ${Math.round(CHICHA.min60 / 60)} h de juego (${Math.min(hj, Math.round(CHICHA.min60 / 60))}/${Math.round(CHICHA.min60 / 60)})<br>
-      📦 Envíos solo en Perú · el equipo revisa y envía a mano</div>`;
+      📦 Envíos solo en Perú · se coordinan por WhatsApp · el equipo revisa y envía a mano</div>`;
   }
   // El gran premio: 2 litros por llegar a nivel 60 (siempre a la vista).
   {
@@ -3428,11 +3454,13 @@ function pintarChicha() {
   }
   h += `<ul style="padding-left:18px;margin-top:8px;font-size:12px;line-height:1.45;color:var(--txt2)">
     <li>Promoción gratuita: no hay que comprar nada. Los puntos no se compran, no se venden y no se gastan al reclamar.</li>
-    <li>Para reclamar: nivel ${CHICHA.nvReclamo}, personaje de 2 días y entrar con Telegram. El equipo te escribirá por Telegram para pedirte la dirección; nunca te pediremos pagos ni contraseñas.</li>
-    <li>Envíos desde Perú, revisados uno a uno (las trampas o bots quedan fuera). Hay ${CHICHA.mesMax} litros al mes: si se acaban, tus puntos te esperan al mes siguiente.</li></ul>`;
-  h += '<p class="centro" style="font-size:12px;color:var(--txt2);margin-top:10px">🔒 Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado.</p>';
+    <li>Para reclamar: nivel ${CHICHA.nvReclamo}, personaje de 2 días y una cuenta (no invitado). Al reclamar verás tu código y un botón para coordinar el envío por WhatsApp (${CHICHA.whatsappVer}); nunca te pediremos pagos ni contraseñas.</li>
+    <li>Envíos desde Perú, revisados uno a uno (las trampas o bots quedan fuera). Hay ${CHICHA.mesMax} litros por puntos al mes: si se acaban, tus puntos te esperan al mes siguiente.</li>
+    <li>¿Dudas sobre la chicha? WhatsApp <a href="https://wa.me/51916778731" target="_blank" rel="noopener" style="color:var(--cian)">+51 916 778 731</a>.</li></ul>`;
+  h += '<p class="centro" style="font-size:12px;color:var(--txt2);margin-top:10px">🔒 Nunca te pediremos contraseñas<span class="solo-cripto">, frases semilla</span> ni pagos por mensaje privado.</p>';
   $('inv-lista').innerHTML = h;
-  $('inv-lista').querySelectorAll('[data-chicha]').forEach(b => b.onclick = () => { const es60 = b.dataset.chicha === 'nv60'; if (confirm(es60 ? `¿Reclamar tus ${CHICHA.litros60} litros de chicha morada? El equipo te escribirá por Telegram.` : '¿Reclamar tu litro de chicha morada? El equipo te escribirá por Telegram.')) { mandar({ t: 'chicha', meta: es60 ? 'nv60' : +b.dataset.chicha }); b.disabled = true; } });
+  $('inv-lista').querySelectorAll('[data-chicha]').forEach(b => b.onclick = () => { const es60 = b.dataset.chicha === 'nv60'; if (confirm(`¿Reclamar ${es60 ? `tus ${CHICHA.litros60} litros` : 'tu litro'} de chicha morada? Verás tu código para coordinar el envío por WhatsApp.`)) { mandar({ t: 'chicha', meta: es60 ? 'nv60' : +b.dataset.chicha }); b.disabled = true; } });
+  $('inv-lista').querySelectorAll('[data-wa]').forEach(a => a.onclick = e => { try { if (TG && TG.openLink) { e.preventDefault(); TG.openLink(a.href); } } catch (er) {} });
 }
 
 function pintarBestiario() {
@@ -3567,6 +3595,13 @@ let loginPend = null;
 function mostrarLogin(m) {
   if (yo && m.racha) yo.login = { ...(yo.login || {}), racha: m.racha, amu: m.amu || 0 };   // para "Mañana" antes de que llegue el yo nuevo
   if (!yo || !yo.clase) { loginPend = m; return; }
+  // Novato (dia 1 de racha, sin entregar la primera mision): aun no sabe caminar, asi que
+  // nada de ventana con reglas. El servidor ya dio el premio: basta una linea. El calendario, desde el dia 2.
+  if (yo.mis && yo.mis.i === 0 && m.racha === 1) {
+    aviso('Regalo de hoy: ' + (m.oro ? '+' + m.oro.toLocaleString('es', { useGrouping: 'always' }) + ' oro' : m.txt) + '. Vuelve mañana por más.', 'ok', 6000);
+    sfx('moneda', .5);
+    return;
+  }
   // La racha crece sin tope: se pinta la semana en curso (dia 1..7 de esa semana).
   const dHoy = diaRacha(m.racha), sem = semanaRacha(m.racha);
   let h = sem > 1 ? `<p class="centro" style="margin-bottom:6px;font-weight:700;color:var(--oro)">🔥 Semana ${sem} de tu racha · ${m.racha} días seguidos${sem >= 2 ? ' · oro x' + String(multSemanaRacha(m.racha)).replace('.', ',') : ''}</p>` : '';
@@ -3580,7 +3615,7 @@ function mostrarLogin(m) {
   let txt = 'Hoy recibes ' + m.txt + '.';
   if (m.oro) txt = 'Hoy recibes ' + m.oro.toLocaleString('es', { useGrouping: 'always' }) + ' oro' + (m.item ? ' y ' + RAREZAS[m.item.r].nombre.toLowerCase() + ': ' + nombreItem(m.item) : '') + '.';
   ponTxt($('login-ok'), m.oro ? 'Recoger ' + m.oro.toLocaleString('es', { useGrouping: 'always' }) + ' oro' : 'Recoger');
-  $('login-cuerpo').innerHTML = h + `<p class="centro" style="margin-top:12px;color:var(--ok);font-weight:600">${esc(txt)}</p>${(m.hitos || []).map(x => `<p class="centro" style="margin-top:6px;color:var(--oro);font-weight:700">🏅 ¡Hito de racha! Ganaste ${esc(x)}.</p>`).join('')}<p class="centro" style="font-size:12px;color:var(--txt2)">${esc(textoManana())}.${m.pase ? ` Entrar sumó +${m.pase} al pase del mes.` : ''}</p>${m.amuUsado ? '<p class="centro" style="margin-top:6px;color:#7dd3fc;font-weight:700">🧿 Tu protector salvó tu racha</p>' : ''}${m.amuRegalo ? '<p class="centro" style="margin-top:6px;color:#7dd3fc;font-weight:700">🧿 Protector de regalo: si un día no puedes entrar, salva tu racha.</p>' : ''}<p class="centro" style="font-size:12px;color:var(--txt2)">🧿 Protectores: ${m.amu || 0} (te regalamos uno al empezar cada semana si no te queda ninguno, y otro con el bono semanal; máximo 2). Si faltas un día, un protector salva tu racha; sin protector retrocede un día (desde la semana 2, vuelve al inicio de su semana; si ya cumpliste la semana, no la pierdes); si faltas más, vuelves al inicio de tu semana: las semanas cumplidas no se pierden. El oro crece con tu nivel y con cada semana (hasta x1,5).</p>`;
+  $('login-cuerpo').innerHTML = h + `<p class="centro" style="margin-top:12px;color:var(--ok);font-weight:600">${esc(txt)}</p>${(m.hitos || []).map(x => `<p class="centro" style="margin-top:6px;color:var(--oro);font-weight:700">🏅 ¡Hito de racha! Ganaste ${esc(x)}.</p>`).join('')}<p class="centro" style="font-size:12px;color:var(--txt2)">${esc(textoManana())}.${m.pase ? ` Entrar sumó +${m.pase} al pase del mes.` : ''}</p>${m.amuUsado ? '<p class="centro" style="margin-top:6px;color:#7dd3fc;font-weight:700">🧿 Tu protector salvó tu racha</p>' : ''}${m.amuRegalo ? '<p class="centro" style="margin-top:6px;color:#7dd3fc;font-weight:700">🧿 Protector de regalo: si un día no puedes entrar, salva tu racha.</p>' : ''}<p class="centro" style="font-size:12px;color:var(--txt2);margin-top:6px">🧿 Protectores: ${m.amu || 0}</p><details style="font-size:12px;line-height:1.45;color:var(--txt2);margin-top:4px"><summary class="centro" style="cursor:pointer">Ver reglas</summary>Te regalamos un protector al empezar cada semana si no te queda ninguno, y otro con el bono semanal; máximo 2. Si faltas un día, un protector salva tu racha; sin protector retrocede un día (desde la semana 2, vuelve al inicio de su semana; si ya cumpliste la semana, no la pierdes); si faltas más, vuelves al inicio de tu semana: las semanas cumplidas no se pierden. El oro crece con tu nivel y con cada semana (hasta x1,5).</details>`;
   abrir('m-login');
   sfx('moneda', .5);
 }
@@ -3775,6 +3810,7 @@ function htmlPremium() {
     h += '<p style="margin:12px 0 4px;font-size:12px">Tus compras:</p>' + ps.slice().reverse().map(x => `<div class="fila"><span>#${esc(x.codigo)} · ${esc(x.nombre)}</span><span style="color:${col[x.estado] || 'var(--txt)'}">${txt[x.estado] || esc(x.estado)}${x.estado === 'esperando_pago' && (x.lamports || x.raw || x.yape) ? ` <button class="btn sec" data-retomar="${esc(x.codigo)}" style="padding:4px 8px">Pagar</button>` : ''}${textoPlazo(x)} ${x.reclamado ? '<small style="color:var(--txt2)">Avisado</small>' : `<button class="btn sec" data-reclamo="${esc(x.codigo)}" style="padding:4px 8px">¿Problema?</button>`}</span></div>`).join('')
       + '<p style="font-size:11px;color:var(--txt2);margin-top:6px">¿Algo salió mal con una compra? Pulsa «¿Problema?» y El Duende lo revisa. <a href="/reembolsos.html" target="_blank" rel="noopener" style="color:var(--txt2)">Entregas y reembolsos</a> · <a href="/reembolsos.html#libro" target="_blank" rel="noopener" style="color:var(--txt2)">Libro de Reclamaciones</a></p>';
   }
+  h += '<p style="font-size:11px;color:var(--txt2);margin-top:6px">🆘 ¿Dudas con una compra? <a href="https://wa.me/51900877863" target="_blank" rel="noopener" style="color:inherit;font-weight:700">Habla con el creador del juego</a>: WhatsApp +51 900 877 863. Nunca te pediremos contraseñas.</p>';
   return h;
 }
 function conectarPremium(L) {
@@ -4070,6 +4106,7 @@ function retratoSkin(skin) {
   const sk = SKINS[skin];
   if (!sk || !sk.anim) return A + 'skins/' + (sk ? sk.img : 'skin_hero') + '.png';
   if (_retratos[skin]) return _retratos[skin];
+  pedir(sk.img);
   const img = IMG[sk.img];
   if (!img || !img.naturalWidth) return A + 'skins/' + sk.img + '.png';
   return (_retratos[skin] = teñir(img, sk.hue, sk.sat).toDataURL());
@@ -4428,7 +4465,7 @@ function dibujarPortales(mp) {
     // Dos lineas (nombre / nivel): en una sola, los portales vecinos del
     // pueblo se pisaban las etiquetas.
     const sube = mp.portales.some(q => q !== p && q.x < p.x && p.x - q.x < 200) ? 30 : 0;
-    etiqueta(x, y - 72 - sube, p.etiqueta, activo ? '#ffe600' : '#c084fc', 7);
+    etiqueta(x, y - 73 - sube, p.etiqueta, activo ? '#ffe600' : '#c084fc', 7);
     if (p.nv) etiqueta(x, y - 58 - sube, /^\d/.test(p.nv) ? 'NV ' + p.nv : p.nv, activo ? '#ffe600' : 'rgba(255,255,255,.7)', 6);
   });
 }
@@ -4438,7 +4475,7 @@ function dibujarPortales(mp) {
 // la CPU 4x mas lenta). Una etiqueta se pinta una vez y luego solo se copia.
 const _textos = new Map();
 // En el movil la letra pixel de 6 px no se lee: minimo 7.
-const TAM_MIN = t => (TACTIL ? Math.max(t, 7) : t);
+const TAM_MIN = t => Math.max(t, 8);   // 8 px: el tamano nativo de la letra pixel (nitida); con 6-7 salia borrosa en movil y en PC.
 // La letra pixel solo trae el latin basico: flechas, emojis y otros simbolos
 // salian como "_". Esos textos van con la letra del sistema.
 const FUERA_PIXEL = /[^\x00-\xff]/;
@@ -4454,12 +4491,12 @@ function spriteTexto(txt, tam, color, fondo, sombra) {
   const fu = raro ? 'bold ' + fs + 'px system-ui, sans-serif' : tam + 'px "Press Start 2P", monospace';
   x.font = fu;
   const w = Math.ceil(x.measureText(txt).width);
-  c.width = w + (fondo ? 8 : 2); c.height = fs + baja + (fondo ? 7 : 3);
+  c.width = w + (fondo ? 8 : 4); c.height = fs + baja + (fondo ? 7 : 4);
   x.font = fu; x.textBaseline = 'alphabetic'; x.textAlign = 'left';
   if (fondo) { x.fillStyle = 'rgba(0,0,0,.6)'; x.fillRect(0, 0, c.width, c.height); }
-  const bx = fondo ? 4 : 0, by = fondo ? fs + 3 : fs;
+  const bx = fondo ? 4 : 1, by = fondo ? fs + 3 : fs + 1;
   c._by = by;   // linea base: etiqueta() la alinea con la de la letra pixel
-  if (sombra) { x.fillStyle = '#000'; x.fillText(txt, bx + 1, by + 1); }
+  if (sombra) { x.fillStyle = '#000'; for (const [dx, dy] of [[1, 1], [-1, 1], [1, -1], [-1, -1], [0, 2]]) x.fillText(txt, bx + dx, by + dy); }   // contorno: se lee sobre fondo claro y oscuro
   x.fillStyle = color; x.fillText(txt, bx, by);
   if (_textos.size > 600) _textos.delete(_textos.keys().next().value);
   _textos.set(k, c);
@@ -4658,8 +4695,8 @@ function dibujarMonstruo(o) {
     const w = 40, y = o.y - o.alto - 12;
     if (o.hp < o.mx || elegido) barraMini(x, y, w, o.hp / o.mx, '#ff3344');
     // Con el nombre solo cuando esta herido o elegido: todos a la vez llenaban la pantalla.
-    const tn = spriteTexto(marcaNivel(o.nv) + 'NV' + o.nv + (o.hp < o.mx || elegido ? ' ' + def.nombre : ''), 6, colorNivel(o.nv), false, false);
-    g.drawImage(tn, Math.round(x - tn.width / 2), Math.round(y - 4 - 6 - (o.etqNivel || 0) * 10));
+    const tn = spriteTexto(marcaNivel(o.nv) + 'NV' + o.nv + (o.hp < o.mx || elegido ? ' ' + def.nombre : ''), 6, colorNivel(o.nv), false, true);
+    g.drawImage(tn, Math.round(x - tn.width / 2), Math.round(y - 4 - 10 - (o.etqNivel || 0) * 12));
     if (cm) barraMini(x, y + 7, w, (ahora - cm.ini) / (cm.fin - cm.ini), cm.int ? '#ffae00' : '#aaa');
   } else {
     etiqueta(x, o.y - o.alto - 10, '👑 ' + def.nombre, '#ff3cf0', 7);
@@ -4831,7 +4868,7 @@ function dibujarDuende(q, esYo) {
   const nom = esYo ? yo.nombre : q.n, lv = esYo ? yo.nivel : q.lv;
   // Si otro duende esta pegado al propio, su nombre baja una linea: antes
   // se encimaban ("ClaudeTest · Nv1Duendecillo Bot").
-  const baja = !esYo && Math.abs(q.x - P.x) < 110 && Math.abs(q.y - P.y) < 40 ? 13 : 0;
+  const baja = !esYo && Math.abs(q.x - P.x) < 110 && Math.abs(q.y - P.y) < 40 ? 15 : 0;
   const tn = TINTES[esYo ? yo.tinte : q.tn];
   const colNom = tn ? colorTinte(tn) : esYo ? '#ffe600' : (CLASES[clase] ? CLASES[clase].color : (SKINS[skin] ? SKINS[skin].color : '#fff'));
   pies = piesOrig;
@@ -4840,8 +4877,8 @@ function dibujarDuende(q, esYo) {
   // Hermandad y titulo debajo; si otro duende esta pegado al tuyo, solo su
   // nombre (en el suelo no caben dos pilas de etiquetas).
   const hn = esYo ? (hermandad ? hermandad.nombre : '') : (baja ? '' : q.hn);
-  let linea = pies + 29 + baja;
-  if (hn) { etiqueta(x, linea, '<' + hn + '>', HERM_COLORES[(esYo ? hermandad && hermandad.color : q.hc) | 0] || '#4ade80', 5); linea += 12; }
+  let linea = pies + 31 + baja;
+  if (hn) { etiqueta(x, linea, '<' + hn + '>', HERM_COLORES[(esYo ? hermandad && hermandad.color : q.hc) | 0] || '#4ade80', 5); linea += 15; }
   const ti = esYo ? tituloDe(yo.titulo) : (baja ? '' : q.ti);
   if (ti) etiqueta(x, linea, '« ' + ti + ' »', '#c084fc', 5);
   if (!esYo && (q.hp < q.mx || elegido) && !muerto) barraMini(x, pies - 78, 36, q.hp / q.mx, '#4ade80');
@@ -4945,7 +4982,7 @@ function dibujarEfectos() {
     t.t++; t.y -= .7;
     if (t.t > 60) return false;
     g.globalAlpha = Math.min(1, (60 - t.t) / 20);
-    const c = t.spr || (t.spr = spriteTexto(t.txt, t.tam, t.color, false, true));
+    const c = t.spr || (t.spr = spriteTexto(t.txt, TACTIL ? Math.round(t.tam * 1.25) : t.tam, t.color, false, true));
     g.drawImage(c, Math.round(t.x - camX - c.width / 2), Math.round(t.y - t.tam));
     return true;
   });
@@ -5492,6 +5529,7 @@ function dibujarRetrato(o, q) {
     x.restore();
   } else {
     const skin = q === P ? yo.skin : q.sk;
+    pedir(SKINS[skin] ? SKINS[skin].img : 'skin_hero');
     const img = IMG[SKINS[skin] ? SKINS[skin].img : 'skin_hero'];
     if (!img || !img.naturalWidth) return;
     const e = Math.min(60 / img.naturalWidth, 60 / img.naturalHeight);
@@ -5771,7 +5809,7 @@ function pintarTienda() {
       const ganala = tabTienda === 'skin' && !tiene.includes(id) && typeof d.precio === 'number' && (yo.oro || 0) < precioOro(tabTienda, id) ? barraGanala(precioOro(tabTienda, id)) : '';
       h += tarjeta(ico, d.premium ? `<span style="color:${d.color}">${esc(d.nombre)}</span>` : d.nombre, d.desc + (tabTienda === 'skin' && puesto !== id ? difSkin(id) : '') + ganala, acc);
     }
-    if (tabTienda === 'skin') h += '<p style="margin-top:8px;font-size:12px;color:#fde68a"><b>Una skin, dos juegos:</b> la que compres la llevas también en ORIGINS (3D), con los mismos poderes. En PvP (duelos y Abismo) sus ventajas de combate no cuentan: ahí todos pelean igual.</p><p style="margin-top:6px;font-size:12px;color:var(--txt2)">Cada skin da sus poderes mientras la llevas. Se compran con oro o, con tu cuenta, con dinero: ' + ((TG && !forzarInvitado) || modoAnuncio() ? 'Telegram Stars' : 'SOL o $DUENDE (10% de descuento) a la wallet de El Duende') + '; El Duende revisa el pago y la activa en tu personaje. Las cuatro exclusivas (Esmeralda, Sombrío, Solar y Cósmico) solo se consiguen así; sus ventajas suben con el precio sin superar a las de oro de final de juego' + (modoAnuncio() ? '' : ', y ninguna cambia lo que se gana en mTON') + '.</p>';
+    if (tabTienda === 'skin') h += '<p style="margin-top:8px;font-size:12px;color:#fde68a"><b>Una skin, dos juegos:</b> la que compres la llevas también en ORIGINS (3D), con los mismos poderes. En PvP (duelos y Abismo) sus ventajas de combate no cuentan: ahí todos pelean igual.</p><p style="margin-top:6px;font-size:12px;color:var(--txt2)">Cada skin da sus poderes mientras la llevas. Se compran con oro o, con tu cuenta, con dinero: ' + ((TG && !forzarInvitado) || modoAnuncio() ? 'Telegram Stars' : 'SOL o $DUENDE (10% de descuento) a la wallet de El Duende') + '; El Duende revisa el pago y la activa en tu personaje. Las cuatro exclusivas (Esmeralda, Sombrío, Solar y Cósmico) solo se consiguen así; sus ventajas suben con el precio sin superar a las de oro de final de juego' + (modoAnuncio() ? '' : ', y ninguna cambia lo que se gana en mTON') + '.</p><p style="margin-top:6px;font-size:11px;color:var(--txt2)">🆘 ¿Dudas con una compra? <a href="https://wa.me/51900877863" target="_blank" rel="noopener" style="color:inherit;font-weight:700">Habla con el creador del juego</a>: WhatsApp +51 900 877 863.</p>';
   }
   L.innerHTML = h;
   // Retratos de las monturas (primer cuadro de su hoja).

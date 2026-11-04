@@ -3,7 +3,7 @@
 <head>
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=367"></script>
+<script src="/js/origen.js?v=368"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Duende Quest CLASSIC · MMORPG 2D gratis en el navegador</title>
@@ -71,9 +71,9 @@
 })();
 </script>
 <!-- defer se ejecuta en orden y todo antes del modulo client.js -->
-<script src="/js/pwa.js?v=367" defer></script>
+<script src="/js/pwa.js?v=368" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=367" defer></script>
+<script src="/js/config.js?v=368" defer></script>
 <style>
 /* ── Tokens (guia de diseno, oct 2026). Las variables viejas (--verde, --amarillo,
    --rosa, --cian, --rojo) siguen existiendo porque client.js las usa, pero ahora
@@ -677,6 +677,41 @@ body.tactil #hud.estrecho #chat-log.abierto{background:rgba(10,14,22,.92);}
  body.tactil #hud.estrecho #chat{bottom:104px;}
  body.tactil #hud.estrecho #lanzar{bottom:108px;}
 }
+/* Visibilidad en PC: seguimiento legible sobre cualquier fondo, teclas a la vista y HUD que no se queda diminuto en 1080p. */
+#hud:not(.estrecho) #uf-yo{width:226px;}
+#hud:not(.estrecho) #seguimiento{background:rgba(8,12,22,.6);border-radius:8px;padding:6px 8px;max-width:244px;}
+#hud:not(.estrecho) #h-mision{font-size:13px;}
+#hud:not(.estrecho) #h-tareas{font-size:12.5px;color:#e2e6f0;}
+#hud:not(.estrecho) #h-chicha,#hud:not(.estrecho) #h-mundial{font-size:9px;}
+#teclas-pc{display:none;}
+@media (min-width:1140px){
+ body:not(.tactil) #pie{position:relative;}
+ body:not(.tactil) #teclas-pc{display:block;position:absolute;left:12px;top:50%;transform:translateY(-50%);width:calc(50vw - 170px);pointer-events:none;font:600 12px/19px var(--sans);color:#d7dcea;}
+}
+/* PC: el error rojo se lee tambien sobre zonas rojas y sobre los avisos. */
+body:not(.tactil) #errores div{background:rgba(8,12,22,.86);padding:3px 10px;border-radius:6px;}
+#teclas-pc kbd{font:700 11px/14px var(--sans);color:#fff;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.35);border-radius:3px;padding:0 4px;margin-right:3px;}
+@media (hover:hover) and (pointer:fine){
+ #hud:not(.estrecho) #botones .bt{position:relative;}
+ #hud:not(.estrecho) #b-libro::after,#hud:not(.estrecho) #b-mapa::after,#hud:not(.estrecho) #b-social::after,#hud:not(.estrecho) #b-regreso::after,#hud:not(.estrecho) #b-inv::after{position:absolute;right:1px;bottom:0;font:700 9px/11px var(--sans);color:#fff;background:rgba(8,12,22,.85);border-radius:3px;padding:0 2px;pointer-events:none;}
+ #hud:not(.estrecho) #b-libro::after{content:'P';}
+ #hud:not(.estrecho) #b-mapa::after{content:'M';}
+ #hud:not(.estrecho) #b-social::after{content:'O';}
+ #hud:not(.estrecho) #b-regreso::after{content:'R';}
+ #hud:not(.estrecho) #b-inv::after{content:'I';}
+}
+body:not(.tactil) .pw .k{left:2px;top:2px;font:700 11px/13px var(--sans);color:#fff;background:rgba(8,12,22,.72);border-radius:3px;padding:0 3px;}
+body:not(.tactil) .pw .k.lejos{color:#f87171;}   /* tecla en rojo: objetivo fuera de alcance (client.js) */
+/* 860: Chrome maximizado en un monitor 1080p deja unos 910-945 px de alto util. */
+@media (min-width:1700px) and (min-height:860px){
+ #hud:not(.estrecho) .caja{zoom:1.2;}
+ body:not(.tactil) #barra{zoom:1.25;}
+ body:not(.tactil) #teclas-pc{font-size:14px;line-height:22px;}
+ .modal .ventana{zoom:1.15;max-height:calc(92vh/1.15);}
+}
+/* Moviles: ningun boton de ventana se sale de lado; Recoger siempre a la vista aunque el premio sea largo. */
+@media (max-width:520px){.modal .btn{white-space:normal;}}
+@media (max-height:500px){#login-ok{position:sticky;bottom:0;z-index:1;}}
 </style>
 </head>
 <body>
@@ -750,7 +785,7 @@ body.tactil #hud.estrecho #chat-log.abierto{background:rgba(10,14,22,.92);}
       <div class="caja barra" id="bxp"><i style="transform:scaleX(0)"></i><span id="h-xp"></span></div>
     </div>
   </div>
-  <div id="pie"><div id="barra"><div id="acciones"></div><div id="consumibles"></div></div></div>
+  <div id="pie"><div id="teclas-pc" aria-hidden="true"><kbd>←→</kbd>mover · <kbd>↑</kbd>saltar · <kbd>Z</kbd>atacar · <kbd>X</kbd>esquivar<br><kbd>E</kbd>hablar · <kbd>Tab</kbd>objetivo · <kbd>L</kbd>misiones · <kbd>Enter</kbd>chat</div><div id="barra"><div id="acciones"></div><div id="consumibles"></div></div></div>
   <div id="tactil">
     <div class="tf" id="t-fila0"></div>
     <div class="tf" id="t-fila1">
@@ -797,7 +832,7 @@ body.tactil #hud.estrecho #chat-log.abierto{background:rgba(10,14,22,.92);}
     <button class="btn sec btn-grande" data-instalar hidden style="display:none;margin-top:8px">⬇ Instalar la app</button>
     <div class="confianza">
       <a href="/terminos.html" target="_blank" rel="noopener">Términos</a> · <a href="/privacidad.html" target="_blank" rel="noopener">Privacidad</a> · <a href="/seguridad.html" target="_blank" rel="noopener">Seguridad</a> · 🔒 Nunca te pediremos contraseñas<span class="solo-cripto"> ni frases semilla</span>.
-      <p class="creador">Creado por <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial</a> (cuenta oficial)<span class="solo-cripto"> · <a href="https://t.me/elduende420peru" target="_blank" rel="noopener">Canal</a> · <a href="https://t.me/duendesolana420" target="_blank" rel="noopener">Grupo</a></span></p>
+      <p class="creador">Creado por <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial</a> (cuenta oficial) · <a href="https://wa.me/51900877863" target="_blank" rel="noopener">WhatsApp del creador</a><span class="solo-cripto"> · <a href="https://t.me/elduende420peru" target="_blank" rel="noopener">Canal</a> · <a href="https://t.me/duendesolana420" target="_blank" rel="noopener">Grupo</a></span></p>
     </div>
   </div>
 </div>
@@ -820,7 +855,7 @@ body.tactil #hud.estrecho #chat-log.abierto{background:rgba(10,14,22,.92);}
       <button class="tab" data-tab="premium" style="margin-left:6px;border-color:var(--oro);color:var(--oro)">💎 PAQUETES</button>
     </div>
     <div class="lista" id="tienda-lista"></div>
-    <p class="seguridad">🔒 Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado.</p>
+    <p class="seguridad">🔒 Nunca te pediremos contraseñas<span class="solo-cripto">, frases semilla</span> ni pagos por mensaje privado.</p>
   </div>
 </div>
 
@@ -955,11 +990,12 @@ body.tactil #hud.estrecho #chat-log.abierto{background:rgba(10,14,22,.92);}
         <li><b>Tienda premium.</b> Oro, poderes y skins con Stars en Telegram<span class="solo-web"> o con SOL en la web (Phantom, Solflare o QR de Solana Pay; «Ya pagué» comprueba el pago)</span>. Cada pedido se revisa y se entrega a mano.<span class="solo-cripto"> Con dinero nunca se compran mTON.</span></li>
         <li><b>Oro.</b> Es solo del juego: no se canjea por dinero<span class="solo-cripto"> ni por $DUENDE</span>.</li>
         <li class="solo-cripto"><b>mTON (opcional).</b> Desde Nv 15 con cuenta: jefes, jefe mundial y caza del día reparten un fondo diario limitado. 1.000 mTON = 1 TON; retiro desde 5 TON, una vez por semana y hasta 10 TON.</li>
-        <li><b>Seguridad.</b> Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado. El único contacto oficial es @ElDuendeOficial.</li>
+        <li><b>Seguridad.</b> Nunca te pediremos contraseñas<span class="solo-cripto">, frases semilla</span> ni pagos por mensaje privado. Contactos oficiales: @ElDuendeOficial en Telegram y estos dos únicos números de WhatsApp: +51 900 877 863 (creador) y +51 916 778 731 (chicha).</li>
       </ul>
       <p class="creditos"><b>Créditos de arte:</b> Luis Zuno (ansimuz) — Magic Cliffs y Warped Caves (CC-BY 3.0), Mountain Dusk, Underwater, GothicVania y Sunny Land (CC0); Moikmellah, Ashuuya, Scratchio y 7Soul1 (CC0). Sonidos: Juhani Junkala (CC0).</p>
     </div>
-    <p class="creador">👤 Creado por <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial</a><span class="solo-cripto"> · <a href="https://t.me/elduende420peru" target="_blank" rel="noopener">📢 Canal</a> · <a href="https://t.me/duendesolana420" target="_blank" rel="noopener">💬 Grupo</a></span></p>
+    <p class="creador">🆘 <a href="https://wa.me/51900877863" target="_blank" rel="noopener">Habla con el creador del juego</a>: WhatsApp +51 900 877 863<br>🥤 <a href="https://wa.me/51916778731" target="_blank" rel="noopener">Sobre la chicha</a>: WhatsApp +51 916 778 731<span class="solo-cripto solo-web"><br>🪙 <a href="/token/" target="_blank" rel="noopener">Comprar $DUENDE al creador</a></span></p>
+    <p class="creador" style="margin-top:4px">👤 Creado por <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial</a><span class="solo-cripto"> · <a href="https://t.me/elduende420peru" target="_blank" rel="noopener">📢 Canal</a> · <a href="https://t.me/duendesolana420" target="_blank" rel="noopener">💬 Grupo</a></span></p>
   </div>
 </div>
 
@@ -1115,9 +1151,9 @@ body.tactil #hud.estrecho #chat-log.abierto{background:rgba(10,14,22,.92);}
 <!-- ?v= y el mismo numero en el import de data.js (client.js): subirlos
      juntos en cada cambio del cliente, asi un HTML nuevo nunca se queda con
      un JS o unos datos viejos de la cache. -->
-<script type="module" src="/mmo/js/client.js?v=367"></script>
+<script type="module" src="/mmo/js/client.js?v=368"></script>
 <div id="nuevo3d" role="dialog" aria-label="Nuevo mundo 3D">
-  <video src="/assets/video/promo3d.mp4" poster="/assets/video/promo3d-poster.jpg" muted loop playsinline preload="none"></video>
+  <video src="/assets/video/promo3d.mp4" muted loop playsinline preload="none"></video>
   <div class="t">🌌 NUEVO: Duende Quest Origins, el mundo abierto en 3D</div>
   <div class="d">Tu mismo duende, con su nivel, oro y skins: vuela con alas, elige Luz o Sombra en el Abismo, asedia la Fortaleza del Núcleo y caza en un mundo enorme.</div>
   <div class="b"><a id="nuevo3d-ir" href="/mundo/">Jugar ORIGINS</a><button id="nuevo3d-no" type="button">Ahora no</button></div>

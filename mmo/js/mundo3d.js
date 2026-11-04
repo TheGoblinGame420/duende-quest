@@ -129,6 +129,7 @@ export const NPCS3D = [
   { id: 'mercader', nombre: 'Mercader Grumo',  hoja: 'goblin_peasant', tipo: 'tienda',    x: 16,  z: 8 },
   { id: 'sabio',    nombre: 'Sabio Hechicero', hoja: 'hechicero',      tipo: 'ranking',   x: 2,   z: -20 },
   { id: 'artesana', nombre: 'Artesana Lila',   hoja: 'goblin_mage',    tipo: 'artesania', x: -20, z: -12 },
+  { id: 'chichera', nombre: 'Mama Asiri',      hoja: 'goblin_peasant', tipo: 'chichera',  x: 24,  z: 13 },
 ];
 // ── HORA Y CLIMA DEL MUNDO ──
 // Un dia del mundo dura 48 minutos y es el mismo para todos (sale del reloj).
@@ -166,6 +167,18 @@ export const CASAS = [
 // En cada zona, 14 claros donde viven 2-3 monstruos de su bestiario; los mas
 // cercanos al pueblo tienen los de menor nivel (como en el 2D, que empezaba
 // por los faciles). El jefe de la zona vive en el claro mas lejano.
+// Primera hora (Bosque, Colinas, Selva): un claro de 2 con su vecino a 55 m o mas sube a 3
+// (la parada vale la caminata y el grupo mas grande sigue siendo de 3), y estos claros
+// puente cubren los tramos vacios del camino. Van al final de la lista y con `puente`:
+// nodos, cofres y reapariciones no los miran, asi no se mueve nada de lo que ya existia.
+const ZONAS_PRIMERA_HORA = ['noche', 'amanecer', 'selva'];
+const PUENTES3D = [
+  ['noche', 'goblin_assassin', -135, -135, 2],
+  ['amanecer', 'goblin_guard', 225, -45, 3],
+  ['amanecer', 'pajaro', 255, -165, 3],
+  ['selva', 'hongo', 75, 108, 3],
+  ['selva', 'hongo', 181, 85, 3],
+];
 function rng(semilla) {
   let s = semilla >>> 0;
   return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
@@ -209,7 +222,9 @@ export function campamentos(MAPAS, MONSTRUOS) {
     if (jefe) l.push({ id: l.length, zona: id, x: jefe.x, z: jefe.z, k: mp.jefe, n: 1, jefe: true });
     n++;
   }
+  for (const cp of l) if (ZONAS_PRIMERA_HORA.includes(cp.zona) && !cp.jefe && cp.n === 2 && !l.some(o => o !== cp && o.zona === cp.zona && !o.jefe && Math.hypot(o.x - cp.x, o.z - cp.z) < 55)) cp.n = 3;
   l.push(...camposAbismo(l.length));   // los de elite del Abismo de Eter
+  for (const [zona, k, x, z, cuantos] of PUENTES3D) if (MONSTRUOS[k]) l.push({ id: l.length, zona, x, z, k, n: cuantos, jefe: false, puente: true });
   return (_campos = l);
 }
 
@@ -223,7 +238,7 @@ export function campamentos(MAPAS, MONSTRUOS) {
 let _rev3 = null;
 export function puntosRev3d(MAPAS, MONSTRUOS) {
   if (_rev3) return _rev3;
-  const campos = campamentos(MAPAS, MONSTRUOS).filter(c => c.zona !== 'eter');
+  const campos = campamentos(MAPAS, MONSTRUOS).filter(c => c.zona !== 'eter' && !c.puente);
   const l = [];
   for (const id of IDS) {
     const c = ZONAS3D[id], ang0 = Math.atan2(c.z - MUNDO.pueblo.z, c.x - MUNDO.pueblo.x), dc = Math.hypot(c.x, c.z);
@@ -273,7 +288,7 @@ export const COFRE3D_DIST = 3.5;
 let _cofres3 = null;
 export function cofres3d(MAPAS, MONSTRUOS) {
   if (_cofres3) return _cofres3;
-  const campos = campamentos(MAPAS, MONSTRUOS);
+  const campos = campamentos(MAPAS, MONSTRUOS).filter(c => !c.puente);
   const l = [];
   let n = 0;
   for (const id of IDS) {
@@ -301,7 +316,7 @@ export const RECOGER_DIST = 3.5;
 let _nodos = null;
 export function nodos3d(MAPAS, MONSTRUOS) {
   if (_nodos) return _nodos;
-  const campos = campamentos(MAPAS, MONSTRUOS);
+  const campos = campamentos(MAPAS, MONSTRUOS).filter(c => !c.puente);
   const l = [];
   let n = 0;
   for (const id of IDS) {

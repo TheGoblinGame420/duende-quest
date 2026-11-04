@@ -104,6 +104,7 @@ Un mismo personaje, oro y skins valen en los dos juegos. Es una beta privada con
 | v365 | Última ronda: música del pueblo siempre, mordida antes de la apertura, revancha sin fase falsa, chicha legible, Atrás cierra tarjetas | **B** |
 | v366 | Ronda final: música del pueblo con el toque, iPhone antiguo a CLASSIC, tienda CLASSIC en móvil, tutorial de la Ira, bot con cuentas vinculadas | **B** |
 | v367 | HUD móvil compacto, controles en arco, avisos legibles, minimapa claro y mapa a pantalla completa con zoom y destino | **B** |
+| v368 | Historia: Caso del Traidor, Receta, 30 secundarias, vasos de chicha, Mis objetivos, premio por WhatsApp, /chicha/, /token/, panel de críticos | **B** |
 
 ## Reglas del dueño (siguen vigentes)
 

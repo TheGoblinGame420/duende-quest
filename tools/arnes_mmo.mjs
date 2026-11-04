@@ -614,6 +614,7 @@ async function pruebas() {
   await pruebasHabs3d();
   await pruebasMundial3d();
   await pruebasGrupo3d();
+  await pruebasPrimeraHora3d();
   await pruebasAmbiente3d();
   await pruebasRecoleccion3d();
   await pruebasLook3d();
@@ -623,6 +624,9 @@ async function pruebas() {
   await pruebasAbismo3d();
   await pruebasPvP3d();
   await pruebasSinPvP();
+  await pruebasVasos();
+  await pruebasCaso();
+  await pruebasRecetario();
   await pruebasSocial3d();
   await pruebasEventos3d();
   await pruebasTempAbismo();
@@ -677,15 +681,53 @@ async function pruebasEncargos3d() {
   chequear(E.encargosDe(z, (await import('../mmo/js/data.js')).MAPAS, (await import('../mmo/js/data.js')).MONSTRUOS).length === 5, 'cada zona tiene 5 encargos');
   // Recoger: 4 veces en la zona
   a.p = { x: zc.x, z: zc.z }; a.limpiar();
+  a.c.sec = { 'n3:ok': 1 };   // la primera de la zona (2 recogidas): aqui se prueba la siguiente
   for (let i = 0; i < 4; i++) mundo.progresoTarea(a, 'recoger');
   chequear(a.c.enc['noche:recoger'] === true && a.ultimos('toast').some(m => /Encargo cumplido/.test(m.m)), 'recoger 4 en la zona cumple su encargo');
   // Misiones secundarias: las mismas 4 recogidas cumplen «Linternas para el pueblo»; luego toca la de los asesinos.
   chequear(a.c.sec && a.c.sec['n1:ok'] === 1 && a.ultimos('secFin').some(m => m.id === 'n1'), 'la misión secundaria de la zona avanza con lo que ya haces y se cumple');
+  Object.assign(a.c.sec, { 'n4:ok': 1, 'n5:ok': 1, 'n6:ok': 1 });   // las de en medio de la cadena del bosque
   const oroS = a.c.oro;
   mundo.progresoTarea(a, 'caza', { k: 'goblin_normal' });
   chequear(!a.c.sec.n2, 'la siguiente pide un monstruo concreto (otro no cuenta)');
   for (let i = 0; i < 5; i++) mundo.progresoTarea(a, 'caza', { k: 'goblin_assassin' });
   chequear(a.c.sec['n2:ok'] === 1 && a.c.oro > oroS, 'y al cazar los pedidos se cumple con su premio');
+  {
+    // Las 50 misiones: todas se pueden completar en ORIGINS y no rompen a los personajes guardados.
+    const S = await import('../mmo/js/secundarias.js');
+    const D = await import('../mmo/js/data.js');
+    const L = S.SECUNDARIAS, ids = L.map(q => q.id);
+    const campos = W.campamentos(D.MAPAS, D.MONSTRUOS), nodos = W.nodos3d(D.MAPAS, D.MONSTRUOS), cofres = W.cofres3d(D.MAPAS, D.MONSTRUOS);
+    chequear(L.length === 50 && new Set(ids).size === L.length, 'secundarias: son 50 y sus ids no se repiten');
+    chequear(L.every(q => E.ZONAS_ENC.includes(q.zona) && D.MAPAS[q.zona]), 'secundarias: todas están en una zona real con encargos');
+    chequear(L.filter(q => q.tipo === 'caza').every(q => D.MONSTRUOS[q.k] && D.MAPAS[q.zona].monstruos.includes(q.k) && campos.some(c => c.k === q.k && W.zonaEn(c.x, c.z) === q.zona)), 'secundarias: cada caza pide un monstruo real que vive en un campamento de su zona');
+    chequear(L.filter(q => q.tipo === 'recoger').every(q => nodos.filter(n => W.zonaEn(n.x, n.z) === q.zona).length >= q.n), 'secundarias: hay puntos de recogida de sobra en su zona');
+    chequear(L.filter(q => q.tipo === 'cofre').every(q => cofres.some(c => c.zona === q.zona && c.tipo === 'comun')), 'secundarias: hay cofre en la zona donde se pide abrirlo');
+    chequear(L.filter(q => q.tipo === 'fabricar' && q.k).every(q => D.RECETAS.some(r => r.id === q.k)), 'secundarias: cada fabricación pide una receta real');
+    chequear(L.every(q => ['caza', 'recoger', 'cofre', 'pescar', 'fabricar'].includes(q.tipo) && q.n > 0 && q.quien && q.nombre && q.pide && q.inicio && q.fin), 'secundarias: tipo conocido y diálogo completo');
+    chequear(L.every(q => q.premio.xp > 0 && q.premio.oro > 0 && Object.keys(q.premio.mat || {}).every(k => D.MATERIALES[k])), 'secundarias: premios con materiales reales');
+    chequear(E.ZONAS_ENC.every(z => { const Z = L.filter(q => q.zona === z); return Z.every((q, i) => !i || (q.nv >= Z[i - 1].nv && q.premio.oro >= Z[i - 1].premio.oro * 0.75)); }), 'secundarias: en cada zona van de menor a mayor nivel y el oro acompaña');
+    chequear(new Set(L.filter(q => q.pista).map(q => q.pista)).size === 12 && new Set(L.filter(q => q.ingr).map(q => q.ingr)).size === 10, 'secundarias: 12 pistas y 10 ingredientes distintos');
+    const textos = L.map(q => [q.pide, q.inicio, q.fin, q.sigue || ''].join(' ')).join(' ');
+    chequear(!/\b(token|cripto|solana|staking|\$duende)\b/i.test(textos), 'secundarias: nada de cripto en los diálogos');
+    // Veterano con las 20 de antes hechas: nada se pierde y las nuevas le salen al volver a la zona.
+    const viejas = ['n1', 'n2', 'a1', 'a2', 's1', 's2', 't1', 't2', 'd1', 'd2', 'c1', 'c2', 'u1', 'u2', 'v1', 'v2', 'm1', 'm2', 'x1', 'x2'];
+    const vet = {}; for (const id of viejas) vet[id + ':ok'] = 1;
+    chequear(viejas.every(id => ids.includes(id)), 'secundarias: siguen todas las de antes');
+    chequear(S.secundariaDe('noche', vet, 60).id === 'n3' && S.secundariaDe('acantilados', vet, 60) === null && S.contarPistas(vet) === 0, 'secundarias: el veterano recibe las nuevas y x3 espera sus pistas');
+    const conP = { ...vet }; for (const q of L.filter(x => x.pista).slice(0, 8)) conP[q.id + ':ok'] = 1;
+    chequear(S.contarPistas(conP) === 8 && S.secundariaDe('acantilados', conP, 60).id === 'x3' && S.secundariaDe('acantilados', conP, 57) === null, 'secundarias: con 8 pistas y su nivel se abre x3');
+    // La pesca avanza primero la mision de la zona donde estas, y el premio no regala niveles altos por volver al bosque.
+    const nv0 = a.c.nivel, sec0 = a.c.sec, xp0 = a.c.xp, p0 = a.p;
+    const ab = W.ZONAS3D.abismo;
+    a.c.nivel = 55; a.c.sec = { ...conP, 'a1:ok': 1, 'a3:ok': 1, 'a4:ok': 1, 'a2:ok': 1, 'a5:ok': 1, 'a6:ok': 1, 'a7:ok': 1 }; delete a.c.sec['m1:ok'];
+    a.p = { x: ab.x, z: ab.z }; mundo.progresoTarea(a, 'pescar');
+    chequear(a.c.sec.m1 === 1 && !a.c.sec.a8, 'secundarias: pescar en una zona avanza la misión de esa zona');
+    a.limpiar(); const qN = L.find(q => q.id === 'n3'); mundo.cumplirSecundaria(a, qN);
+    const xpN = a.ultimos('secFin').pop();
+    chequear(xpN && xpN.xp === Math.max(10, Math.round(D.xpParaSubir(qN.nv + 6) * qN.premio.xp)), 'secundarias: la XP tiene tope cerca del nivel de la misión');
+    a.c.nivel = nv0; a.c.sec = sec0; a.c.xp = xp0; a.p = p0; a.st = mundo.stats(a.c); a.limpiar();
+  }
   // Recoger fuera de la zona (pueblo) no cuenta
   a.p = { x: 0, z: 20 }; const otro = { ...a.c.enc }; mundo.progresoTarea(a, 'recoger');
   chequear(JSON.stringify(otro) === JSON.stringify(a.c.enc), 'fuera de las zonas no cuenta');
@@ -1328,6 +1370,70 @@ async function pruebasAmbiente3d() {
   const vistos = new Set(); for (let i = 0; i < 300; i++) vistos.add(W.climaEn('selva', t + i * 720000));
   chequear(vistos.has('despejado') && vistos.has('lluvia'), 'la selva alterna lluvia y cielo despejado');
   chequear(W.esNoche(W.DIA_MS * 3) && !W.esNoche(W.DIA_MS * 3 + W.DIA_MS / 2), 'medianoche es de noche y mediodía de día');
+}
+
+// ── PRIMERA HORA: que siempre haya algo cerca, sin cambiar lo que paga cada presa ──
+async function pruebasPrimeraHora3d() {
+  console.log('Mundo 3D: primera hora');
+  const W = await import('../mmo/js/mundo3d.js');
+  const D = await import('../mmo/js/data.js');
+  const campos = W.campamentos(D.MAPAS, D.MONSTRUOS), puentes = campos.filter(c => c.puente);
+  const fijos = campos.filter(c => !c.puente);
+  chequear(campos.every((c, i) => c.id === i), 'cada campamento sigue en el índice de su id');
+  chequear(puentes.length === 5 && puentes.every(c => W.zonaEn(c.x, c.z) === c.zona && D.MAPAS[c.zona].monstruos.includes(c.k) && W.alturaEn(c.x, c.z) > 0.8 && W.pendienteEn(c.x, c.z) < 0.55), 'claros puente: en su zona, en tierra firme y con un monstruo de allí');
+  chequear(puentes.every(c => fijos.every(o => Math.hypot(o.x - c.x, o.z - c.z) >= 26) && W.puntosRev3d(D.MAPAS, D.MONSTRUOS).every(r => Math.hypot(r.x - c.x, r.z - c.z) >= 45)), 'claros puente: ni encima de otro claro ni junto a donde se revive');
+  chequear(campos.filter(c => ['noche', 'amanecer', 'selva'].includes(c.zona) && !c.jefe).every(c => c.n <= 3), 'primera hora: ningún claro pasa de 3 monstruos con una sola persona');
+  const a = await entrar3d('PrimeraA', '1e1'), b = await entrar3d('PrimeraB', '1e2');
+  ponerNivel(a, 9, 'guerrero'); ponerNivel(b, 9, 'mago');
+  a.c.mis = { i: 5, p: 0 }; b.c.mis = { i: 5, p: 0 };
+  const prepara = (c, jugs) => {
+    mundo.m3.mons.clear();
+    for (const k of mundo.m3.campos) { k.vivos.clear(); k.prox = Date.now() + 1e9; }
+    const K = mundo.m3.campos[c.id]; K.prox = 0;
+    jugs.forEach((s, i) => { s.p = { x: c.x + i, z: c.z + 2 }; s.movBud = undefined; s.hp = s.st.maxHp; s.inv = Date.now() + 1e7; });
+    return K;
+  };
+  const mata = async (K, s) => { const o = mundo.m3.mons.get([...K.vivos][0]); o.hp = 1; o.x = s.p.x + 1; o.z = s.p.z; s.atkT = 0; await s.mandar({ t: 'atk3', tg: o.id }); return o; };
+  const lejos = { x: 500, z: 500 };
+  // Solo: su claro normal, y reaparece a los 12 s.
+  const guardia = campos.find(c => c.k === 'goblin_guard' && !c.puente);
+  b.p = { ...lejos }; b.movBud = undefined;
+  let K = prepara(guardia, [a]); b.p = { ...lejos };
+  tick(40);
+  chequear(K.vivos.size === guardia.n, 'con una persona el claro no crece (' + K.vivos.size + '/' + guardia.n + ')');
+  let t0 = Date.now(); await mata(K, a);
+  chequear(K.prox - t0 === 12000, 'presa de la primera hora: reaparece a los 12 s (' + (K.prox - t0) + ')');
+  // Dos en el mismo claro: uno mas y a la mitad.
+  K = prepara(guardia, [a, b]); tick(50);
+  chequear(K.vivos.size === guardia.n + 1 && K.gente === 2, 'con dos personas el claro crece en uno (' + K.vivos.size + ')');
+  t0 = Date.now(); await mata(K, a);
+  chequear(K.prox - t0 === 6000, 'y reaparece a la mitad (' + (K.prox - t0) + ')');
+  b.movT = Date.now() - 61000; b.atkT = 0; tick(1);
+  chequear(K.gente === 1, 'un personaje quieto al lado no cuenta como gente que caza (' + K.gente + ')');
+  // Zona alta: como siempre.
+  const alto = campos.find(c => c.zona === 'castillo' && !c.jefe && !c.k2);
+  ponerNivel(a, 35, 'guerrero'); ponerNivel(b, 35, 'mago');
+  K = prepara(alto, [a, b]); tick(50);
+  chequear(K.vivos.size === alto.n, 'en zonas altas el claro no crece');
+  t0 = Date.now(); await mata(K, a);
+  chequear(K.prox - t0 === 20000, 'y sigue reapareciendo a los 20 s (' + (K.prox - t0) + ')');
+  // Jefe: 5 min, salvo si alguien cerca lo necesita para su mision de la cadena.
+  const jefe = campos.find(c => c.k === 'jefe_caballero');
+  K = prepara(jefe, [a]); b.p = { ...lejos }; K.prox = Date.now() + 300000; a.c.mis = { i: 5, p: 0 };
+  tick(5);
+  chequear(K.prox - Date.now() > 280000, 'el jefe caído tarda sus 5 min si nadie cerca lo pide');
+  a.c.mis = { i: D.MISIONES.findIndex(q => q.tipo === 'jefe_caballero'), p: 0 };
+  tick(1);
+  const espera = K.prox - Date.now();
+  chequear(espera <= 90000, 'si alguien cerca lo pide para su misión, a lo sumo 90 s (' + espera + ')');
+  tick(10);
+  chequear(Math.abs((K.prox - Date.now()) - (espera - 1000)) < 200, 'y esa espera corre: no se reinicia en cada tick');
+  K.prox = Date.now() + 300000; tick(1);
+  chequear(K.prox - Date.now() > 280000, 'el mismo personaje no lo acelera otra vez: aparcado cerca no deja el jefe cada 90 s');
+  b.p = { x: jefe.x + 2, z: jefe.z }; b.c.mis = { i: a.c.mis.i, p: 0 }; tick(1);
+  chequear(K.prox - Date.now() <= 90000, 'otro personaje que lo necesita sí tiene su propia espera corta');
+  a.inv = 0; b.inv = 0;
+  await dejar(a); await dejar(b);
 }
 
 // ── GRUPO EN EL 3D ──
@@ -3383,20 +3489,23 @@ async function pruebasChicha() {
     const o2 = monstruo(j, 'jefe_sabueso', 30); mundo.danar(o2, o2.hp + 1, j); tick(1);
     chequear(j.c.chicha.hoy === D.CHICHA.porDia && j.c.chicha.p === 3, 'el tope diario se respeta');
     // Reclamar
-    j.c.chicha.p = 10000;
+    j.c.chicha.p = D.CHICHA.niveles[0];
     j.c.creado = Date.now() - 3 * 86400000;
-    await j.mandar({ t: 'chicha', meta: 50000 });
-    chequear(!(j.c.chicha.rec || []).includes(50000), 'sin puntos suficientes no se reclama');
+    chequear(D.CHICHA.niveles[0] === 25000 && D.CHICHA.niveles[1] === 100000 && D.CHICHA.mesMax === 4 && D.CHICHA.mesMax60 === 5 && D.CHICHA.litros60 === 2 && D.CHICHA.nv60 === 60 && D.CHICHA.dias60 === 14 && D.CHICHA.min60 === 1800, 'las cifras del premio son las de los términos');
+    await j.mandar({ t: 'chicha', meta: 100000 });
+    chequear(!(j.c.chicha.rec || []).includes(100000), 'sin puntos suficientes no se reclama');
     await j.mandar({ t: 'chicha', meta: 10000 });
+    chequear(!(j.c.chicha.rec || []).includes(10000), 'las cifras viejas ya no se reclaman');
+    await j.mandar({ t: 'chicha', meta: 25000 });
     for (let i = 0; i < 20; i++) await espera();
     const r = (mundo.chichas || []).find(x => x.uid === j.c.uid);
-    chequear(r && r.estado === 'pendiente' && j.c.chicha.rec.includes(10000), 'con 10.000 puntos se reclama el litro');
+    chequear(r && r.estado === 'pendiente' && j.c.chicha.rec.includes(25000), 'con 25.000 puntos se reclama el litro');
     chequear(avisos.some(a => a.startsWith('ADMIN') && a.includes(r.id) && a.includes('7101')), 'al dueño le llega el aviso con el contacto');
-    await j.mandar({ t: 'chicha', meta: 10000 });
+    await j.mandar({ t: 'chicha', meta: 25000 });
     chequear(mundo.chichas.filter(x => x.uid === j.c.uid).length === 1, 'no se reclama dos veces');
     const ok = await mundo.internoChicha('chichaNo', { id: r.id, motivo: 'sin dirección' });
-    chequear(ok.ok && !j.c.chicha.rec.includes(10000), 'rechazado sin trampa: puede volver a reclamar');
-    await j.mandar({ t: 'chicha', meta: 10000 });
+    chequear(ok.ok && !j.c.chicha.rec.includes(25000), 'rechazado sin trampa: puede volver a reclamar');
+    await j.mandar({ t: 'chicha', meta: 25000 });
     for (let i = 0; i < 20; i++) await espera();
     const r2 = mundo.chichas.find(x => x.uid === j.c.uid && x.estado === 'pendiente');
     const env = await mundo.internoChicha('chichaOk', { id: r2.id });
@@ -3422,7 +3531,32 @@ async function pruebasChicha() {
     nuevo.ws.rec.length = 0;
     const o3 = monstruo(nuevo, 'goblin_normal', 30); mundo.danar(o3, o3.hp + 1, nuevo); tick(1);
     chequear(nuevo.ws.rec.some(x => x.t === 'gana' && x.chl === 1 && !x.chi), 'con Nv < 10 la caza avisa del candado de la chicha');
-    await dejar(inv); await dejar(j); await dejar(nuevo);
+    // Cuenta de correo: reclama sin Telegram, ve su código y el bot no le escribe; al dueño le llega el aviso.
+    const w = await entrar('ChichaWeb', '5c7'); ponerNivel(w, 20, 'guerrero');
+    w.c.uid = 'web:chi-1'; w.c.creado = Date.now() - 3 * 86400000; w.c.chicha = { p: 25000, d: '', hoy: 0, rec: [] };
+    w.limpiar(); avisos.length = 0;
+    await w.mandar({ t: 'chicha', meta: 25000 });
+    for (let i = 0; i < 20; i++) await espera();
+    const rw = mundo.chichas.find(x => x.uid === 'web:chi-1');
+    chequear(rw && rw.estado === 'pendiente' && (w.ultimos('chicha_rec')[0] || {}).id === rw.id, 'una cuenta de correo reclama y recibe su código');
+    chequear(w.ultimos('yo').some(m => ((m.yo.chicha || {}).rcl || []).some(x => x.id === rw.id && x.estado === 'pendiente')), 'el código le queda a la vista en el panel');
+    chequear(avisos.some(a => a.startsWith('ADMIN') && a.includes(rw.id)) && !avisos.some(a => !a.startsWith('ADMIN')), 'avisa al dueño y el bot no escribe a una cuenta sin Telegram');
+    chequear(decodeURIComponent(D.waChicha(rw.id, 'ChichaWeb', 1)).includes('#' + rw.id) && D.waChicha(rw.id, 'ChichaWeb', 1).startsWith('https://wa.me/51916778731?text=') && decodeURIComponent(D.waChicha(rw.id, 'ChichaWeb', 1)).includes('ChichaWeb'), 'el mensaje de WhatsApp lleva código y nombre');
+    await mundo.internoChicha('chichaOk', { id: rw.id });
+    // Veterano: su reclamo viejo vale por el premio nuevo y no se paga dos veces.
+    w.c.chicha = { p: 120000, d: '', hoy: 0, rec: [50000] };
+    await w.mandar({ t: 'chicha', meta: 100000 });
+    for (let i = 0; i < 10; i++) await espera();
+    chequear(!w.c.chicha.rec.includes(100000), 'quien ya reclamó 50.000 no cobra también 100.000');
+    chequear(mundo.infoChicha(w.c).rec.includes(100000) && !mundo.infoChicha(w.c).rec.includes(25000), 'el panel lo marca reclamado y deja libre el otro premio');
+    // Tope de 4 litros al mes (los de Nv 60 aparte).
+    const chichas0 = mundo.chichas, mes = rw.mes;
+    mundo.chichas = Array.from({ length: D.CHICHA.mesMax }, (_, i) => ({ id: 'T' + i, uid: 'tg:' + i, meta: 25000, mes, estado: 'enviado' }));
+    await w.mandar({ t: 'chicha', meta: 25000 });
+    for (let i = 0; i < 10; i++) await espera();
+    chequear(!w.c.chicha.rec.includes(25000), 'lleno el tope del mes, los puntos esperan');
+    mundo.chichas = chichas0;
+    await dejar(inv); await dejar(j); await dejar(nuevo); await dejar(w);
   } finally { mundo.tgEnviar = tgReal; mundo.avisarAdmin = adminReal; }
 }
 
@@ -3823,6 +3957,222 @@ async function pruebasBienvenida() {
   await dejar(j);
 }
 
+// El Recetario: cada ingrediente se gana una vez, queda en el personaje y no cambia a nadie sin progreso.
+async function pruebasRecetario() {
+  console.log('Recetario de Mama Asiri: cada ingrediente una sola vez y guardado en el personaje');
+  const Q = await import('../mmo/js/secundarias.js');
+  const W = await import('../mmo/js/mundo3d.js');
+  const L = await import('../mundo/js/lore.js');
+  chequear(Q.INGREDIENTES.length === 10 && new Set(Q.INGREDIENTES.map(x => x.zona)).size === 10, 'hay 10 ingredientes, uno por zona');
+  chequear(Q.INGREDIENTES.every(x => { const q = Q.SECUNDARIAS.find(m => m.id === x.mision); return q && q.ingr === x.id && q.zona === x.zona; }), 'cada ingrediente sale de su misión, en su zona');
+  chequear(Q.SECUNDARIAS.filter(q => q.ingr).length === 10, 'ninguna otra misión da un ingrediente');
+  chequear(L.CAPITULOS.every(c => { const ci = L.CAPITULOS_INTRIGA[c.z]; return ci && ci.objetivo && ci.escena.length && L.ganchoCapitulo(c, false).length && L.ganchoCapitulo(c, true).length; }), 'cada capítulo tiene objetivo, escena y gancho');
+  chequear(Q.ingredientesDe(undefined).length === 0 && Q.ingredientesDe({ 'n1:ok': 1, n5: 2 }).length === 0, 'un personaje antiguo o a medias no tiene ingredientes de regalo');
+
+  let a = await entrar3d('Cocinera', '5c1'); ponerNivel(a, 60, 'mago');
+  const zc = W.ZONAS3D.noche, n5 = Q.SECUNDARIAS.find(q => q.id === 'n5');
+  a.p = { x: zc.x, z: zc.z };
+  a.c.sec = {};
+  for (const q of Q.SECUNDARIAS.filter(q => q.zona === 'noche')) { if (q.id === 'n5') break; a.c.sec[q.id + ':ok'] = 1; }   // las de antes en la cadena del bosque
+  const oro0 = a.c.oro;
+  a.limpiar();
+  for (let i = 0; i < n5.n - 1; i++) mundo.progresoTarea(a, 'recoger');
+  chequear(!a.ultimos('secFin').length && Q.ingredientesDe(a.c.sec).length === 0, 'sin terminar la misión no hay ingrediente');
+  mundo.progresoTarea(a, 'recoger');
+  let fins = a.ultimos('secFin').filter(m => m.id === 'n5');
+  chequear(fins.length === 1 && fins[0].ingr === 'luisa' && fins[0].ingrN === 1, 'al cumplirla llega la hierba luisa como 1/10');
+  chequear(a.c.sec['n5:ok'] === 1 && Q.ingredientesDe(a.c.sec).map(x => x.id).join() === 'luisa', 'queda en el progreso del personaje');
+  const oro1 = a.c.oro;
+  chequear(oro1 === oro0 + n5.premio.oro, 'cobra el premio de la misión una vez');
+  // Una sola vez: recoger de mas no repite la mision ni su premio.
+  a.limpiar();
+  const sig = Q.secundariaDe('noche', a.c.sec, 60);
+  chequear(sig && sig.id !== 'n5', 'la misión hecha ya no vuelve a tocar');
+  for (let i = 0; i < 12; i++) mundo.progresoTarea(a, 'recoger');
+  chequear(!a.ultimos('secFin').some(m => m.id === 'n5' || m.ingr === 'luisa') && Q.ingredientesDe(a.c.sec).length === 1, 'seguir recogiendo no da otra hierba luisa');
+  // En desorden (un veterano): el numero sale del conteo, no de la zona.
+  a.limpiar();
+  mundo.cumplirSecundaria(a, Q.SECUNDARIAS.find(q => q.id === 'x4'));
+  chequear(a.ultimos('secFin').find(m => m.id === 'x4').ingrN === 2 && a.ultimos('secFin').find(m => m.id === 'x4').ingr === 'agua', 'el agua, la última de la lista, es 2/10 si fue la segunda');
+  // Una mision sin ingrediente no manda campos de mas (clientes viejos en cache).
+  a.limpiar();
+  mundo.cumplirSecundaria(a, Q.SECUNDARIAS.find(q => q.id === 'x1'));
+  chequear(!('ingr' in a.ultimos('secFin')[0]) && !('ingrN' in a.ultimos('secFin')[0]), 'una misión sin ingrediente no lo menciona');
+  // Persiste: se va y vuelve con los dos, y el cliente los recibe al entrar.
+  await dejar(a);
+  a = await entrar3d('Cocinera', '5c1');
+  chequear(a.c.sec['n5:ok'] === 1 && a.c.sec['x4:ok'] === 1 && Q.ingredientesDe(a.c.sec).length === 2, 'al volver a entrar conserva sus ingredientes');
+  chequear(a.ultimos('sec').some(m => m.l['n5:ok'] === 1 && m.l['x4:ok'] === 1), 'y el cliente los recibe al entrar');
+  await dejar(a);
+  // Personaje sin c.sec guardado: sigue entrando y empieza de cero.
+  let v = await entrar3d('Veterana', '5c2'); ponerNivel(v, 60, 'mago');
+  delete v.c.sec;
+  chequear(mundo.infoSec(v.c).l && Q.ingredientesDe(mundo.infoSec(v.c).l).length === 0, 'sin datos de misiones no falla y marca 0/10');
+  await dejar(v);
+  // El misterio de la ventana y el cierre de Asiri.
+  chequear(/nudo/.test(L.ganchoActual(0, false).texto), 'antes del primer jefe, el misterio es el nudo de la escena');
+  chequear(L.ganchoActual(3, false).texto === L.ganchoActual(0, false).texto && /Lo desató/.test(L.ganchoActual(4, false).texto), 'al vencer al jefe del capítulo se abre su gancho');
+  chequear(/Fui yo/.test(L.ganchoActual(24, false).texto), 'el gancho del capítulo 6 es la confesión de Tito');
+  chequear(/carta/.test(L.ganchoActual(40, false).texto) && /misma mano/.test(L.ganchoActual(40, true).texto), 'el último gancho depende de la carta');
+  const ep = n => L.epilogoDe(n, 59, 60)[0][1].join(' ');
+  chequear(/Diez ingredientes/.test(ep(10)) && !/Diez ingredientes/.test(ep(9)) && /falta un ingrediente/.test(ep(9)) && /faltan 3/.test(ep(7)), 'Asiri solo dice «Diez ingredientes» con la olla completa');
+  chequear(/reclamar/.test(L.epilogoDe(10, 60, 60)[0][1].join(' ')) && !/reclamar/.test(ep(10)), 'en nivel 60 manda a reclamar, antes solo señala la barra');
+}
+
+async function pruebasCaso() {
+  console.log('El Caso del Traidor: pistas una sola vez, sospecha sin premio y título al resolverlo');
+  const K = await import('../mmo/js/caso.js');
+  const Q = await import('../mmo/js/secundarias.js');
+  const D = await import('../mmo/js/data.js');
+  chequear(K.PISTAS.length === 12 && K.PISTAS.every(p => { const q = Q.SECUNDARIAS.find(x => x.id === p.mision); return q && q.zona === p.zona && q.nv === p.nv && q.pista === p.id; }), 'cada pista coincide con su misión, zona y nivel');
+  chequear(Q.SECUNDARIAS.some(q => q.id === K.CASO.misionFinal) && K.CASO.logro === D.LOGROS.find(l => l.id === 'caso').id, 'la misión final y el logro existen');
+  let a = await entrar3d('Detective', '5b1'); ponerNivel(a, 60, 'mago');
+  chequear(a.ultimos('caso').some(m => m.p.length === 0 && !m.res), 'al entrar llega el cuaderno vacío, sin campos nuevos en el personaje');
+  const q1 = Q.SECUNDARIAS.find(q => q.id === 'n7'), p1 = K.PISTAS[0];
+  let oro = a.c.oro, hierba = (a.c.mat || {}).hierba || 0;
+  chequear(!mundo.avanzarCaso(a, 'n7') && a.c.oro === oro, 'sin cumplir la misión no hay pista');
+  a.limpiar();
+  a.c.sec = a.c.sec || {};
+  mundo.cumplirSecundaria(a, q1);
+  chequear(a.c.caso.p.p1 === 1 && a.ultimos('pista').some(m => m.id === 'p1' && m.n === 1), 'cumplir la misión entrega su pista');
+  chequear(a.c.oro === oro + q1.premio.oro + p1.oro && a.c.mat.hierba === hierba + (q1.premio.mat?.hierba || 0) + p1.mat.hierba, 'la pista da su premio pequeño');
+  oro = a.c.oro; a.limpiar();
+  for (let i = 0; i < 5; i++) { mundo.avanzarCaso(a, 'n7'); mundo.revisarCaso(a); }
+  await a.mandar({ t: 'pista', id: 'p1' }); await a.mandar({ t: 'caso', p: ['p2'] });
+  chequear(a.c.oro === oro && !a.ultimos('pista').length && !a.c.caso.p.p2, 'la pista no se puede repetir ni pedir desde el cliente');
+  avanzar(2000); await a.mandar({ t: 'casoSospecha', id: 'sisa' });
+  chequear(!a.c.caso.s, 'sin 6 pistas no se puede señalar');
+  a.c.sec['n8:ok'] = 1; a.c.sec['a5:ok'] = 1; a.c.sec['a6:ok'] = 1; a.c.sec['s4:ok'] = 1; a.c.sec['s6:ok'] = 1;
+  mundo.revisarCaso(a);
+  chequear(Object.keys(a.c.caso.p).length === 6 && a.c.oro === oro + K.PISTAS.slice(1, 6).reduce((n, p) => n + p.oro, 0), 'al entrar se entregan solo las pistas pendientes');
+  chequear(!a.ultimos('gana').length && a.ultimos('casoDia').some(m => m.n === 5 && m.oro === K.PISTAS.slice(1, 6).reduce((n, p) => n + p.oro, 0)), 'al entrar llega un solo aviso, sin una tanda de monedas');
+  { const sab = K.SOSPECHOSOS.find(x => x.id === 'sabio'); chequear(K.estadoSospechoso(sab, () => false, 0).nota !== sab.motivo && K.estadoSospechoso(sab, x => x === 'p6', 0).nota === sab.motivo, 'la ficha no adelanta una pista que aún no tienes'); }
+  oro = a.c.oro;
+  avanzar(2000); await a.mandar({ t: 'casoSospecha', id: 'nadie' });
+  chequear(!a.c.caso.s, 'no se puede señalar a quien no existe');
+  avanzar(2000); await a.mandar({ t: 'casoSospecha', id: 'grumo' });
+  chequear(a.c.caso.s === 'grumo' && a.c.caso.sN === 6 && a.c.oro === oro, 'la sospecha se guarda y no da premio');
+  a.c.sec[K.CASO.cierre + ':ok'] = 1; avanzar(2000); await a.mandar({ t: 'casoSospecha', id: 'sisa' });
+  chequear(a.c.caso.s === 'grumo', 'tras la carta de Sami (la confesión) la sospecha ya no cambia');
+  mundo.revisarLogros(a); oro = a.c.oro;   // a nivel 60 caen otros logros: se descuentan antes
+  const logros = a.c.logros.length;
+  a.c.sec[K.CASO.misionFinal + ':ok'] = 1; a.limpiar();
+  mundo.avanzarCaso(a, K.CASO.misionFinal);
+  const oroL = D.LOGROS.find(l => l.id === 'caso').oro;
+  chequear(a.c.caso.res === 1 && a.ultimos('casoFin').some(m => /Grumo/.test(m.txt)) && a.c.logros.includes('caso') && a.c.logros.length === logros + 1 && a.c.oro === oro + oroL, 'equivocarse no castiga: el caso se resuelve con el título igual');
+  a.c.oro = oro; a.limpiar();
+  mundo.avanzarCaso(a, K.CASO.misionFinal); mundo.revisarCaso(a);
+  avanzar(2000); await a.mandar({ t: 'casoSospecha', id: 'sisa' });
+  chequear(a.c.oro === oro && a.c.caso.s === 'grumo' && !a.ultimos('casoFin').length, 'resuelto una vez: no repite premio y la sospecha queda fija');
+  a.c.caso = 'dañado'; mundo.revisarCaso(a);
+  chequear(a.c.caso.res === 1 && a.c.caso.p.p1 === 1 && a.ultimos('caso').length > 0, 'un dato dañado no rompe el personaje');
+  await dejar(a);
+  oro = a.c.oro; a = await entrar3d('Detective', '5b1');
+  chequear(a.c.caso.res === 1 && a.c.oro === oro && a.ultimos('caso').some(m => m.res === 1 && m.p.includes('p1')) && !a.ultimos('pista').length, 'al volver a entrar el caso sigue guardado y no se paga de nuevo');
+  await dejar(a);
+}
+async function pruebasVasos() {
+  console.log('Vasos de chicha (Mama Asiri)');
+  const D = await import('../mmo/js/data.js'), W = await import('../mmo/js/mundo3d.js'), S = await import('../mmo/js/secundarias.js');
+  const { VASO, precioVaso } = D;
+  const a = await entrar3d('Bebedor', '7c1'); ponerNivel(a, 20, 'guerrero');
+  a.p = { x: 24, z: 13 }; a.movBud = undefined;
+  chequear(W.zonaEn(a.p.x, a.p.z) === 'pueblo' && W.NPCS3D.some(n => n.tipo === 'chichera' && n.nombre === 'Mama Asiri'), 'Mama Asiri está en el pueblo');
+  chequear(a.c.vasos === undefined && a.c.vasoHoy === undefined, 'el personaje empieza sin campos nuevos (los guardados igual)');
+  // Comprar: el oro se descuenta una sola vez aunque haya doble toque.
+  a.c.oro = 1; const precio = precioVaso(20);
+  await a.mandar({ t: 'vaso', a: 'comprar' });
+  chequear(!a.c.vasos && a.c.oro === 1, 'sin oro no se compra ni se descuenta');
+  a.c.oro = 10 * precio; avanzar(1000);
+  await a.mandar({ t: 'vaso', a: 'comprar' });
+  await a.mandar({ t: 'vaso', a: 'comprar' });
+  chequear(a.c.vasos === 1 && a.c.oro === 9 * precio, 'el doble toque cobra una sola vez');
+  avanzar(1000); await a.mandar({ t: 'vaso', a: 'comprar' });
+  avanzar(1000); await a.mandar({ t: 'vaso', a: 'comprar' });
+  avanzar(1000); await a.mandar({ t: 'vaso', a: 'comprar' });
+  chequear(a.c.vasos === VASO.compraDia && a.c.oro === (10 - VASO.compraDia) * precio, 'tope de compras al día (' + a.c.vasos + ')');
+  const p2 = a.p; a.p = { x: 400, z: 400 }; avanzar(1000); a.c.vasoHoy = null; const o2 = a.c.oro, v2 = a.c.vasos;
+  chequear(W.zonaEn(a.p.x, a.p.z) !== 'pueblo', 'fuera del pueblo');
+  await a.mandar({ t: 'vaso', a: 'comprar' });
+  chequear(a.c.oro === o2 && a.c.vasos === v2, 'fuera del pueblo no se vende');
+  a.p = p2;
+  await a.mandar({ t: 'vaso', a: 'inventado' });
+  chequear(a.c.oro === o2 && a.c.vasos === v2, 'una acción rara no hace nada');
+  // Tomar: una sola activa, sin acumular duración y sin gastar el segundo vaso.
+  a.c.elix = {}; a.c.vasos = 2; avanzar(1000);
+  const fin = Date.now() + VASO.ms;
+  await a.mandar({ t: 'vaso', a: 'tomar' });
+  chequear(a.c.vasos === 1 && a.c.elix.vaso === fin && mundo.aura(a, 'vaso'), 'tomar gasta uno y pone la bendición');
+  avanzar(5000);
+  await a.mandar({ t: 'vaso', a: 'tomar' });
+  chequear(a.c.vasos === 1 && a.c.elix.vaso === fin, 'con una activa no se gasta otra ni se suma tiempo');
+  chequear(a.c.elix.vaso - Date.now() <= VASO.ms, 'nunca pasa del tope de duración');
+  chequear(mundo.infoVaso(a.c).n === 1 && mundo.datosPropios(a).vaso.n === 1, 'el cliente recibe sus vasos');
+  // Persiste tras morir (como los elixires), y se acaba al cumplir su tiempo.
+  mundo.limpiarAuras(a); mundo.reponerElixires(a);
+  chequear(mundo.aura(a, 'vaso') && mundo.elixir(a, 'vaso'), 'sigue tras morir o volver a entrar');
+  // XP: +10 % de la de caza.
+  const sinVaso = (() => { const e = a.c.elix; a.c.elix = {}; a.c.descanso = 0; const x0 = a.c.xp; mundo.dar(a, 1000, 0, null, 1, false); const r = a.c.xp - x0; a.c.elix = e; return r; })();
+  a.c.descanso = 0; const x1 = a.c.xp; mundo.dar(a, 1000, 0, null, 1, false);
+  chequear(sinVaso > 0 && Math.abs((a.c.xp - x1) / sinVaso - VASO.xp) < 0.01, 'da +10% de XP de caza (' + (a.c.xp - x1) + ' frente a ' + sinVaso + ')');
+  // Regeneracion suave: tambien en pelea, pero no en duelo ni tras PvP.
+  const ah = Date.now(); a.pvpT = 0; a.duelo = null;
+  chequear(mundo.regenVaso(a, ah) === VASO.regen, 'regenera con la chicha');
+  a.pvpT = ah; chequear(mundo.regenVaso(a, ah) === 0, 'tras pelear con otro jugador no regenera'); a.pvpT = 0;
+  a.duelo = { con: 1 }; chequear(mundo.regenVaso(a, ah) === 0, 'en duelo no regenera'); a.duelo = null;
+  // De verdad en el tick: recibiendo golpes (sin la vida base) sube poco a poco y solo con chicha.
+  const p3 = a.p; a.p = { x: 400, z: 400 }; a.h = 0; a.hp = Math.round(a.st.maxHp / 2);
+  a.golpeT = Date.now() + 60000; let h0 = a.hp; tick(10);
+  chequear(a.hp > h0 && a.hp - h0 < a.st.maxHp * 0.01, 'en pelea cura suave (' + (a.hp - h0).toFixed(1) + ' de ' + a.st.maxHp + ' en 1 s)');
+  const fx = a.c.elix.vaso; a.c.elix.vaso = 0; h0 = a.hp; tick(10);
+  chequear(a.hp === h0, 'sin chicha, en pelea no cura'); a.c.elix.vaso = fx;
+  a.golpeT = 0; a.p = p3; a.hp = a.st.maxHp;
+  // Se acaba, y entonces ya se puede tomar otra.
+  avanzar(VASO.ms);
+  chequear(!mundo.elixir(a, 'vaso') && mundo.regenVaso(a, Date.now()) === 0, 'al acabarse ya no da nada');
+  await a.mandar({ t: 'vaso', a: 'tomar' });
+  chequear(a.c.vasos === 0 && a.c.elix.vaso === Date.now() + VASO.ms, 'acabada, se puede tomar otra');
+  avanzar(1000); await a.mandar({ t: 'vaso', a: 'tomar' });
+  chequear(a.c.vasos === 0, 'sin vasos no pasa nada');
+  // Misiones: la Chichera y los ingredientes sirven uno; las demás no.
+  const qi = S.SECUNDARIAS.find(q => q.ingr), qo = S.SECUNDARIAS.find(q => !q.ingr && q.quien !== 'Mama Asiri' && q.id !== 's2');
+  a.c.vasos = 0; a.c.sec = {}; mundo.cumplirSecundaria(a, qo);
+  chequear(!a.c.vasos, 'una misión de otro no da vaso');
+  mundo.cumplirSecundaria(a, qi);
+  chequear(a.c.vasos === 1, 'una misión de ingrediente da un vaso');
+  a.c.vasos = VASO.max; mundo.cumplirSecundaria(a, qi);
+  chequear(a.c.vasos === VASO.max, 'nunca pasa del máximo que se carga');
+  // Caza: raro, con tope al día; los grises y los que no pelean no sueltan.
+  const rnd = Math.random; Math.random = () => 0;
+  const mon = { k: 'goblin_normal', nv: 20 };
+  a.c.vasos = 0; a.c.vasoHoy = null;
+  mundo.dropVaso(a, { k: 'goblin_normal', nv: 5 });
+  chequear(!a.c.vasos, 'un monstruo gris no suelta vaso');
+  for (let i = 0; i < 10; i++) mundo.dropVaso(a, mon);
+  chequear(a.c.vasos === VASO.cazaDia, 'cazando hay tope al día (' + a.c.vasos + ')');
+  a.c.vasoHoy = null; a.c.vasos = 0; a.m3 = false; mundo.dropVaso(a, mon); a.m3 = true;
+  chequear(!a.c.vasos, 'en CLASSIC no suelta (allí no se pueden tomar)');
+  Math.random = () => 0.99; mundo.dropVaso(a, mon); Math.random = rnd;
+  chequear(!a.c.vasos, 'lo normal es que no caiga');
+  // Receta de la casa con Lila: gasta sus materiales una vez y da un vaso.
+  const lila = W.NPCS3D.find(n => n.tipo === 'artesania'); a.p = { x: lila.x, z: lila.z };
+  a.c.mat = { hierba: 4, pescado: 2 }; a.c.vasos = 0;
+  await a.mandar({ t: 'fabricar', id: 'vasoOlla' });
+  chequear(a.c.vasos === 1 && !a.c.mat.hierba && !a.c.mat.pescado, 'la Olla de la casa da un vaso');
+  a.c.mat = { hierba: 4, pescado: 2 }; a.c.vasos = VASO.max;
+  await a.mandar({ t: 'fabricar', id: 'vasoOlla' });
+  chequear(a.c.mat.hierba === 4 && a.c.vasos === VASO.max, 'con la bolsa llena no gasta materiales');
+  // El personaje viejo, sin ningún campo nuevo, funciona igual.
+  delete a.c.vasos; delete a.c.vasoHoy; a.c.elix = {};
+  const info = mundo.infoVaso(a.c);
+  chequear(info.n === 0 && info.hoy === 0 && info.ms === 0 && !mundo.elixir(a, 'vaso') && mundo.regenVaso(a, Date.now()) === 0, 'un personaje guardado sin vasos sigue funcionando');
+  // El tope diario vuelve a cero con el dia nuevo, sin tocar los vasos que ya tiene.
+  a.c.vasos = 1; a.c.vasoHoy = { d: -1, c: VASO.compraDia, g: VASO.cazaDia }; a.c.oro = precioVaso(a.c.nivel);
+  a.vasoT = 0; a.p = { x: 24, z: 13 }; avanzar(1000);
+  await a.mandar({ t: 'vaso', a: 'comprar' });
+  chequear(a.c.vasos === 2 && a.c.oro === 0 && a.c.vasoHoy.c === 1 && a.c.vasoHoy.g === 0, 'al día siguiente se puede volver a comprar');
+  await dejar(a);
+}
 // Sin PvP fuera de duelos y del Abismo (?v=344): pegar o lanzar un area al
 // lado de otro jugador en el pueblo o en una zona normal no le quita vida
 // (ni en ORIGINS ni en CLASSIC); en el Abismo, a la otra faccion si.

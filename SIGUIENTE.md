@@ -3693,3 +3693,12 @@ Autorizado por el dueño: unificar precios, entregar solo lo ya verificado y qui
 - CLASSIC: mismos criterios.
 - Retoques propios tras comprobarlo: distancia del destino junto a la marca y punto de señal fuera del marco.
 - Arnés 908 bien; comprobado a 360x640 y 640x360 en local. Falta el pellizco en un teléfono real.
+
+### Historia, objetivos, chicha y panel de críticos (4-nov-2026, `?v=368`)
+
+- Pedido del dueño: juego con historia, intriga, objetivos y chicha; botella con QR solo enlace; envío por WhatsApp; creador como soporte; compra manual de $DUENDE (sin límite de personas: el dueño retiró la idea de demo).
+- Biblia del arco, 11 tareas con revisor: arco y receta, caso del traidor (`functions/mmo/caso.js`, `mmo/js/caso.js`, `mundo/js/caso.js`), 30 secundarias, vecinos (`mundo/js/vecinos.js`), vasos (`functions/mmo/vasos.js`), panel (`mundo/js/objetivos.js`), premio, soporte, `/chicha/`, QR en `assets/etiqueta/`, visibilidad y primera hora.
+- Premio: `CHICHA.niveles` [25000, 100000], `mesMax` 4; Nv 60 sin cambios. Reclamo sin Telegram si la cuenta es real.
+- `/token/`: compra manual con la wallet y la tasa de la portada; oculta en modo anuncio y Telegram.
+- Panel de 8 críticos: 42 fallos confirmados, 14 arreglados; juez: publicar. Quedan fallos para la siguiente tanda (multicuenta y prueba de identidad en el reclamo, cola de Nv 60, filtro de nombres y chat, portada).
+- Arnés: 1022 bien, 0 mal.

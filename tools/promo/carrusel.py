@@ -66,5 +66,5 @@ def lamina(n, titulo1, titulo2, sub, captura, emoji=None, nota=None):
 os.makedirs(SALIDA, exist_ok=True)
 lamina(1, 'UN MMORPG', 'DE DUENDES', 'Gratis en tu celular y en el navegador', 'mmo-dragon-acantilados.png')
 lamina(2, 'MAZMORRAS', 'CON JEFES', 'Solo o en grupo · 4 clases · duelos', 'mmo-jefe-selva.png')
-lamina(3, 'GANA CHICHA', 'MORADA JUGANDO', '10.000 puntos = 1 litro a tu casa', 'mmo-cavernas-combate.png', emoji='🥤',
+lamina(3, 'GANA CHICHA', 'MORADA JUGANDO', '25.000 puntos = 1 litro a tu casa', 'mmo-cavernas-combate.png', emoji='🥤',
        nota='Promoción: puntos con cuenta de Telegram desde Nv 10. Condiciones en el juego.')

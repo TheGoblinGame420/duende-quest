@@ -516,13 +516,22 @@ export function limpiarLook(l) {
 // Version del juego: la misma N que los ?v= de los HTML/JS y la cache dq-vN de
 // sw.js (las sube todas juntas `node tools/version.mjs N`). El servidor la manda
 // en 'bienvenido': un cliente con una N menor se recarga solo cuando es seguro.
-export const VERSION = 367;
+export const VERSION = 368;
 
 // gancho (opcional): la frase que ve en ORIGINS quien vuelve (tira diaria y aviso tras actualizar);
 // sin gancho se usa el primer item. Siempre lo que GANA un jugador que vuelve, nunca un arreglo para novatos ni algo tecnico.
 // solo3d: true en los parches que solo cambian ORIGINS (CLASSIC no abre la ventana y el aviso de Telegram solo va a quien juega en 3D).
 export const NOVEDADES = [
+  { n: 136, fecha: '4 nov 2026', items: [
+    '🕵️ Nueva historia en ORIGINS: alguien de adentro abrió la puerta al Rey Goblin. Reúne 12 pistas, marca a tu sospechoso y resuelve El Caso del Traidor.',
+    '🌽 La Receta del Cántaro: 10 ingredientes por zona, capítulos con final en suspenso y 30 misiones secundarias nuevas con vecinos que comentan lo que haces.',
+    '🥤 Mama Asiri abre su puesto en la plaza: vasos de chicha morada que dan más experiencia y vida durante 20 minutos.',
+    '🎯 Mis objetivos: qué hacer ahora, qué hay hoy y tu camino a la chicha de verdad.',
+    '⚔️ Más combate: desde Nv 20 las presas aguantan más y pagan más, y esquivar justo a tiempo da un crítico seguro. En PC puedes cambiar las teclas.',
+    '📲 Ahora puedes hablar directo con el creador por WhatsApp: +51 900 877 863. La chicha se coordina al +51 916 778 731.',
+  ] },
   { n: 135, fecha: '4 nov 2026', items: [
+    '🥤 Premio de chicha: los litros por puntos ahora se reclaman con 25.000 y 100.000 puntos (hay 4 al mes). Nivel 60 sigue igual: 2 litros. Lo ya reclamado se respeta, y con cualquier cuenta coordinas el envío por WhatsApp con tu código.',
     '📱 En el celular ahora se ve el juego: marco y misiones más compactos, iconos pequeños y solo mochila, tienda y ⋯ a la vista (lo demás, dentro de ⋯).',
     'Los botones de ATACAR, ESQUIVAR, SALTO y VOLAR son más pequeños y van en arco en la esquina; el joystick es más discreto.',
     'Avisos y diálogos fáciles de leer: franja casi opaca con letra más grande y sin mezclarse con los botones.',
@@ -973,7 +982,7 @@ export const NOVEDADES = [
     'El código de rescate de la página de inicio guarda el código de tu duende anterior para que puedas volver a él.',
   ] },
   { n: 73, fecha: '26 oct 2026', items: [
-    'Chicha morada en ORIGINS: toca la barra morada 🥤 para ver tus puntos y reclamar los tres premios (nivel 60 = 2 litros, 10.000 y 50.000 puntos = 1 litro). Al cazar verás el «+N 🥤».',
+    'Chicha morada en ORIGINS: toca la barra morada 🥤 para ver tus puntos y reclamar los tres premios (nivel 60 = 2 litros; por puntos = 1 litro, hoy con 25.000 y 100.000). Al cazar verás el «+N 🥤».',
     'Las 10 reliquias del Cántaro: al reunirlas todas, la historia te lleva al Núcleo del Abismo y al premio del nivel 60. El jefe cuenta para su zona aunque pelee junto al borde.',
     'Títulos sobre el nombre en ORIGINS (el tuyo y el de los demás), aviso de talentos y especialización al subir de nivel desde el 10, y el talento Agilidad ya acelera de verdad.',
     'Juego en grupo en la misma wifi: ya entran 20+ personas desde la misma conexión sin que el servidor eche a nadie. Tras la desconexión por inactividad, tocar la pantalla te devuelve al juego.',
@@ -1501,6 +1510,7 @@ export const AURAS = {
   ceviche:     { nombre: 'Ceviche del Duende (+10% oro de caza)', icono: 'I_C_Fish' },
   sudado:      { nombre: 'Sudado Dorado (+5% daño, -5% daño recibido)', icono: 'I_C_Pie' },
   bendicion:   { nombre: 'Bendición del Duende (−25% de daño recibido)', icono: 'S_Holy09' },
+  vaso:        { nombre: 'Chicha del Duende (+10% XP de caza y vida poco a poco)', icono: 'I_Bottle02' },
 };
 
 // ── EQUIPO ──
@@ -1668,6 +1678,7 @@ export const LOGROS = [
   { id: 'exped8',    titulo: 'Gran Viajero',       desc: 'Completa 10 expediciones de 8 horas', oro: 6000, cond: c => (c.exped8 || 0) >= 10 },
   { id: 'pesca50',   titulo: 'Pescador',           desc: 'Pesca 50 peces',                 oro: 1500,  cond: c => (c.peces || 0) >= 50 },
   { id: 'pesca500',  titulo: 'Maestro Pescador',   desc: 'Pesca 500 peces',                oro: 8000,  cond: c => (c.peces || 0) >= 500 },
+  { id: 'caso',      titulo: 'Lector de Nudos',    desc: 'Resuelve El Caso del Traidor en ORIGINS', oro: 2000,  cond: c => !!(c.caso && c.caso.res) },
   { id: 'mundial10', titulo: 'Titán',              desc: 'Vence 10 veces al jefe mundial', oro: 15000, cond: c => (c.mundiales || 0) >= 10 },
   { id: 'legend',    titulo: 'Bendecido',          desc: 'Consigue un objeto legendario',  oro: 3000,  cond: c => !!c.tuvoLegendario },
   { id: 'racha7',    titulo: 'Fiel al Duende',     desc: 'Entra 7 días seguidos',          oro: 3000,  cond: c => ((c.login || {}).racha || 0) >= 7 },
@@ -1961,6 +1972,12 @@ export const esenciaJefe = (banda, k) => (banda ? 2 : 1 + (k ? 1 : 0));
 export const NODO_CADA_MS = 5 * 60000;
 export const RECOLECTAR_MS = 1500;
 export const ELIXIR_MS = 30 * 60000;
+// Vaso de Chicha Morada del Duende (functions/mmo/vasos.js): bendicion que se gana
+// jugando. Una sola activa y sin sumar tiempo. Mama Asiri vende pocos al dia por
+// oro (15 presas de tu nivel, mas o menos): gasta oro sin ser obligatorio.
+// La vida base es 4 %/s fuera de pelea; regen es lo que se nota dentro de ella.
+export const VASO = { nombre: 'Vaso de Chicha Morada del Duende', ms: 20 * 60000, xp: 1.1, regen: 0.003, max: 20, compraDia: 3, cazaDia: 2, probCaza: 0.012, probJefe: 0.25 };
+export const precioVaso = nv => 30 + 30 * Math.max(1, Math.min(60, nv | 0));
 // Vetas y plantas de una zona: posiciones fijas segun su ancho.
 export function nodosDe(mapaId) {
   const m = MAPAS[mapaId];
@@ -1981,6 +1998,7 @@ export const RECETAS = [
   { id: 'ceviche', nombre: 'Ceviche del Duende', icono: 'I_C_Fish', pide: { pescado: 5, hierba: 2 }, da: { elixir: 'ceviche' }, desc: '+10% de oro por caza durante 30 min (persiste al morir)' },
   // Recetas andinas (27-oct-2026): la chicha del lore tambien se prepara.
   { id: 'chichaE', nombre: 'Chicha Morada del Duende', icono: 'I_Bottle02', pide: { hierba: 5, flor: 1 }, da: { elixir: 'chichaE' }, desc: 'La bebida del Cántaro: +10% de oro y +5% de experiencia por caza durante 30 min (persiste al morir)', oculta: 1, pista: 'Hierbas con una flor que solo sale de noche…' },
+  { id: 'vasoOlla', nombre: 'Olla de la casa', icono: 'I_Bottle02', pide: { hierba: 4, pescado: 2 }, da: { vasos: 1 }, desc: 'La receta de Mama Asiri: un vaso de chicha para tomar cuando quieras (+10% XP de caza y vida poco a poco, 20 min)', solo3d: 1 },
   { id: 'mazamorra', nombre: 'Mazamorra Morada', icono: 'I_C_Pie', pide: { hierba: 4, mineral: 2, pescado: 1 }, da: { pw: { pocion: 5, escudo: 1 } }, desc: 'Postre de maíz morado: 5 pociones y un escudo', oculta: 1, pista: 'Hierbas, piedra y un pescadito para el postre…' },
   { id: 'sudado', nombre: 'Sudado Dorado', icono: 'I_C_Pie', pide: { pescado: 3, pez_dorado: 1 }, da: { elixir: 'sudado' }, desc: '+5% de daño y -5% de daño recibido durante 30 min (persiste al morir)', oculta: 1, pista: 'Algo con pescado y un pez que brilla…' },
 ];
@@ -2135,12 +2153,16 @@ export const diasFiesta = tp => Math.ceil((tp.fin - tp.ini) / 86400000);
 
 // ── PREMIO FISICO: CHICHA MORADA (functions/mmo/chicha.js) ──
 // niveles: puntos para cada litro (dos premios por jugador como mucho).
-// porDia: tope diario de puntos (10.000 = unas semanas de juego, frena bots).
+// antes: los niveles de antes del 4-nov-2026; un reclamo viejo de antes[i] vale como niveles[i] (nunca se paga dos veces).
+// porDia: tope diario de puntos (25.000 = unas seis semanas de juego, frena bots).
+// whatsapp: el número de la chicha para coordinar el envío (wa.me); whatsappVer, el mismo para leerlo.
 // mesMax: litros al mes para todo el juego (el dueño lo cambia aqui).
 // nv60: al llegar a nivel 60 (una vez por personaje) se reclaman 2 litros (25-oct-2026, decision del dueño).
 // mesMax60: premios de Nv 60 al mes (aparte de mesMax); los de más quedan EN COLA para el mes siguiente, no se pierden.
 // dias60 / min60: días jugados (c.login.total) y minutos de juego activo (c.tjs / 60) para reclamar el de Nv 60 (frena granjas).
-export const CHICHA = { niveles: [10000, 50000], porDia: 600, nvPuntos: 10, nvReclamo: 15, mesMax: 10, nv60: 60, litros60: 2, mesMax60: 5, dias60: 14, min60: 1800 };
+export const CHICHA = { niveles: [25000, 100000], antes: [10000, 50000], porDia: 600, nvPuntos: 10, nvReclamo: 15, mesMax: 4, nv60: 60, litros60: 2, mesMax60: 5, dias60: 14, min60: 1800, whatsapp: '51916778731', whatsappVer: '+51 916 778 731' };
+// Enlace al WhatsApp de la chicha con el mensaje ya escrito: el código de reclamo y el nombre de duende.
+export const waChicha = (id, nombre, litros) => 'https://wa.me/' + CHICHA.whatsapp + '?text=' + encodeURIComponent('Hola, soy ' + nombre + ' en Duende Quest. Reclamé ' + (litros > 1 ? 'mis ' + litros + ' litros' : 'mi litro') + ' de chicha morada. Mi código de reclamo es #' + id + '. ¿Coordinamos el envío?');
 
 // ── BESTIARIO ──
 // Cuantos de cada monstruo has cazado. Cada tipo tiene 3 hitos con premio

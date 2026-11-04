@@ -10,7 +10,8 @@
 // Uso:
 //   const A = iniciarAvisoTg({ mandar, ocupado, aviso, tg });
 //   en 'avisoTg': A.alOferta(m)   en 'avisoTgOk': A.alOk(m)
-// ocupado(): true mientras haya otra ventana (la oferta espera, 10 min como mucho).
+// ocupado(): true mientras haya otra ventana o no sea una pausa real (la oferta espera, 10 min como mucho).
+// alAbrir(): opcional, suelta las teclas del juego al salir la tarjeta.
 // tg: el Telegram.WebApp si se juega dentro de Telegram (abre el enlace con el).
 
 const CLAVE_NO = 'dq_avtg_no';            // "Ahora no": no se vuelve a ofrecer en 7 dias
@@ -67,12 +68,18 @@ export function iniciarAvisoTg(H) {
     raiz = document.createElement('div'); raiz.id = 'dq-avtg';
     raiz.setAttribute('role', 'dialog'); raiz.setAttribute('aria-modal', 'true'); raiz.setAttribute('aria-labelledby', 'dq-avtg-t');
     raiz.addEventListener('click', e => { if (e.target === raiz) { if (permiso) ponerEscNo(); cerrar(); } });
-    addEventListener('keydown', e => { if (abierto && e.key === 'Escape') { e.stopPropagation(); if (permiso) ponerEscNo(); cerrar(); } }, true);   // Esc cierra como el Atrás
+    addEventListener('keydown', e => {
+      if (!abierto) return;
+      if (e.key === 'Escape') { e.stopPropagation(); if (permiso) ponerEscNo(); cerrar(); return; }   // Esc cierra como el Atrás
+      // Con la tarjeta encima las teclas no llegan al juego (ni atacar, ni caminar); Tab y Enter siguen sirviendo en sus botones.
+      if (!(e.target && e.target.matches && e.target.matches('input,textarea,select'))) e.stopPropagation();
+    }, true);
     document.body.appendChild(raiz);
     return raiz;
   }
   function cerrar() { abierto = false; permiso = false; if (raiz) raiz.classList.remove('on'); }
   function caducado() { return !oferta || Date.now() > oferta.hasta - 15000; }
+  function soltarJuego() { try { if (H.alAbrir) H.alAbrir(); } catch (e) {} }   // lo que se tenia pulsado no sigue caminando ni pegando detras
 
   function pintar(fase) {
     const r = montar(), o = oferta;
@@ -98,7 +105,7 @@ export function iniciarAvisoTg(H) {
     });
     const b = r.querySelector('button');
     b.addEventListener('click', () => { if (b.dataset.a === 'no') ponerNo(); cerrar(); });
-    r.classList.add('on'); abierto = true;
+    r.classList.add('on'); abierto = true; soltarJuego();
   }
 
   function intentar() {
@@ -138,7 +145,7 @@ export function iniciarAvisoTg(H) {
         } catch (e) {}
       });
       r.querySelector('[data-a="no"]').addEventListener('click', () => { ponerEscNo(); try { H.mandar({ t: 'tgEscribirNo' }); } catch (e) {} cerrar(); });
-      r.classList.add('on'); abierto = true; permiso = true;
+      r.classList.add('on'); abierto = true; permiso = true; soltarJuego();
       return true;
     },
     alOferta(m) {

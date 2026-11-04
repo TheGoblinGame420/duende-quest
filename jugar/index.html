@@ -56,7 +56,7 @@ footer a{color:var(--txt2);}
 @media (min-width:800px){main{grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:40px;padding-top:48px;}.marca{grid-column:1/-1;}h1,.sub,.consejo{text-align:left;}.lista{justify-content:flex-start;}footer{grid-column:1/-1;}}
 @media (prefers-reduced-motion:reduce){.jugar{animation:none;}}
 </style>
-<script src="/js/origen.js?v=367"></script>
+<script src="/js/origen.js?v=368"></script>
 </head>
 <body>
 <div class="aurora" aria-hidden="true"></div>
@@ -69,7 +69,7 @@ footer a{color:var(--txt2);}
     <ul class="lista"><li>Gratis</li><li>Sin descargas</li><li>Con amigos en tiempo real</li></ul>
     <p class="consejo" id="consejo" hidden></p>
   </section>
-  <footer><a href="/terminos">Términos</a> · <a href="/privacidad">Privacidad</a></footer>
+  <footer><a href="/terminos">Términos</a> · <a href="/privacidad">Privacidad</a> · <a href="/seguridad">Seguridad</a><br>Habla con el creador del juego: <a href="https://wa.me/51900877863" target="_blank" rel="noopener">WhatsApp +51 900 877 863</a></footer>
 </main>
 <div class="barra"><div class="iab" id="iab" role="note"></div><a class="jugar" id="jugar" href="/mundo/">JUGAR GRATIS</a></div>
 <script>
@@ -140,7 +140,7 @@ footer a{color:var(--txt2);}
     try {
       var pm = document.querySelector('.poster img'), cm = document.getElementById('consejo');
       if (pm) pm.alt = 'Duende Quest';
-      if (cm) { cm.textContent = '📱 Se abrirá la versión ligera CLASSIC (2D): va fluida en cualquier celular y gasta pocos datos. Es tu mismo duende.'; cm.hidden = false; }
+      if (cm) { cm.textContent = '📱 Se abrirá la versión ligera CLASSIC (2D): va más fluida en tu equipo. Es tu mismo duende.'; cm.hidden = false; }
     } catch (e) {}
   }
   if (tiene && !/[?&]ref=/i.test(location.search)) {
@@ -209,8 +209,8 @@ footer a{color:var(--txt2);}
       pc.rel = 'preconnect'; pc.href = 'https://cdn.jsdelivr.net'; pc.crossOrigin = 'anonymous';
       if (ir === '/mundo/') document.head.appendChild(pc);
       var lista = ir === '/mundo/'
-        ? ['https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js', '/mundo/js/mundo.js?v=367', '/mundo/js/modelos.js?v=367', '/mundo/js/ventanas.js?v=367', '/mmo/js/data.js?v=367', '/assets/3d/kenney.json', '/assets/3d/kenney.bin.gz']
-        : ['/mmo/js/client.js?v=367', '/mmo/js/data.js?v=367'];
+        ? ['https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js', '/mundo/js/mundo.js?v=368', '/mundo/js/modelos.js?v=368', '/mundo/js/ventanas.js?v=368', '/mmo/js/data.js?v=368', '/assets/3d/kenney.json', '/assets/3d/kenney.bin.gz']
+        : ['/mmo/js/client.js?v=368', '/mmo/js/data.js?v=368'];
       window.addEventListener('load', function () {
         setTimeout(function () {
           try {

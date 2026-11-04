@@ -26,6 +26,7 @@ export const LORE_NPC = {
   mercader: ['¡Pasa, pasa! Grumo tiene de todo: pociones, ponchos y algún que otro chisme.', 'Ese pedazo de Cántaro no te lo compro, ¡no tengo tanto oro en todo el bosque!', 'Una buena chicha cura el cansancio. Una mala… mejor no preguntes.', '¿Ves a mi Ekeko? Cargadito de cositas. Dicen que trae suerte… a mí me trae clientes.', 'Precio de amigo, pues. Bueno, de amigo que paga bien.', 'Llévate pociones antes de salir, no seas pichiruchi. Muerto no compras nada.', 'Un cliente me pagó con un sapo de la charca. Todavía croa en la caja.', '¿Sin oro? Caza un rato y vuelve, pues. Grumo acepta oro, no excusas.'],
   sabio: ['Hace mucho, el Cántaro Eterno guardaba la chicha que encendía el sol de nuestro bosque.', 'Inti y Mama Quilla lo moldearon con barro que les regaló la Pachamama. Por eso nunca se vaciaba.', 'El Rey Goblin lo robó y lo rompió. Esa misma noche el cielo se partió en islas y nunca volvió a amanecer.', 'Sus pedazos cayeron por todo el mundo. El último está en el Núcleo, donde Luz y Sombra no dejan de luchar.', 'Quien reúna las 10 reliquias y llegue a nivel 60 llenará el Cántaro de nuevo… y se llevará 2 litros de chicha morada de verdad.', 'Cada reliquia la guarda el jefe de su zona. Mira tus encargos 🧭: ahí sabrás a quién buscar.', 'Cuando un jefe junta poder con su barra de hechizo, córtalo a tiempo. El sabio no es el que pega más fuerte, sino el que pega a tiempo.', 'Antes de cada cosecha dejábamos un poquito de chicha en la tierra para la Pachamama. Ella no olvida a los agradecidos.'],
   artesana: ['Soy Lila. Tráeme materiales y te tejo un poncho que hasta los goblins envidiarán.', 'Cada hilo morado está teñido con maíz sagrado. Por eso brillan de noche.', 'Con barro del Cristal Madre podría pegar el Cántaro… si alguien llega tan lejos.', 'Mi abuela tejía mirando a Mama Quilla. Decía que la luna le prestaba el hilo de plata.', '¿Ese poncho tienes? Ay, no, qué roche. Ven que te hago uno bonito.', 'Por el camino hay hierbas 🌿 y minerales ⛏. Recógelos y tráemelos, que todo se aprovecha.', 'Un buen tejido protege más que una armadura fea. Bueno… casi igual. Pero se ve mejor.', 'Tejo tan rápido que una vez le hice chompa a una alpaca sin que se diera cuenta.'],
+  chichera: ['Un chorrito para la Pachamama y recién para ti.', 'Sin apuro, wawa. La olla no sabe de relojes.', 'Yo no creo en nadie, pero a todos les sirvo.'],
   // La Abuela del puesto de t'anta wawas (decorado del evento; mundo.js abrirAbuela dice una al tocar el puesto).
   abuela: ['Pasa, hijito, pasa. Hay t\'anta wawa calientita para los que tienen hambre y para los que extrañan.', 'Cada pan lleva su carita. Así recordamos a los que ya no están con nosotros.', 'El 2 de noviembre ponemos la mesa con lo que les gustaba. Ellos vienen a visitar, ya verás.', '¡Esos goblins sinvergüenzas me robaron la hornada entera! Tráemelas, que se enfrían.', 'Mi t\'anta wawa sabe a anís y a canela. La receta me la dio mi mamá, y a ella la suya.', 'Con un pan de estos en la mochila, el camino se hace más corto. Eso dicen.', 'Después viene la Cosecha del Maíz Morado. Sin mazorcas no hay chicha, ni mazamorra, ni nada.'],
 };
@@ -224,3 +225,89 @@ export function capituloDe(i) {
   for (const x of CAPITULOS) if (x.desde <= (+i || 0)) c = x;
   return c;
 }
+
+// ── ARCO «LA RECETA Y LA PUERTA» ──
+// Se suma a los capitulos sin tocar sus titulos. Cada parte es [quien, texto, dorado opcional], tal
+// como la pide npcDice. escena: al abrir el capitulo; gancho: al vencer al jefe de su cadena.
+// objetivo: lo que se ve en La Receta del Cantaro. El capitulo 10 tiene dos ganchos (ver ganchoCapitulo).
+export const CAPITULOS_INTRIGA = {
+  noche: {
+    objetivo: 'Vence al Sabueso, consigue la hierba luisa y conoce a los cuatro que sabían el nudo.',
+    escena: [['Mama Asiri', ['Tito te mandó donde la chichera, ¿no? Siéntate, wawa.', 'Esa noche yo era niña. Me escondí bajo la mesa. La puerta estaba abierta, y el nudo, sin un corte.']]],
+    gancho: [['Mama Asiri', [], 'El nudo no lo cortaron. Lo desató alguien que tú ya saludaste hoy.']],
+  },
+  amanecer: {
+    objetivo: 'Vence al Rey Goblin Caballero, baja el membrillo e intercepta los recados.',
+    escena: [['Tayta Mallku', ['Siembro entre cenizas, qué más. Por esa Roca del Alba corrieron los goblins cargando el Cántaro.', 'Uno soltó el Borde. Yo vi lo que vi, pero nadie preguntó.']]],
+    gancho: [['Tayta Mallku', [], 'El hilo enganchado en esa puerta era de un poncho de la Guardia.']],
+  },
+  selva: {
+    objetivo: 'Vence al Señor de la Guerra, pide el maíz morado y lee las huellas.',
+    escena: [['Chamán Amaru', ['Antes de entrar, saluda. El monte tiene dueños.', 'Bajo la cascada brilla la Semilla Madre. El maíz recuerda. Pregúntale con respeto.']]],
+    gancho: [['Chamán Amaru', [], 'Alguien arrancó una página del Libro del Cántaro, y la letra es del Sabio.']],
+  },
+  tormenta: {
+    objetivo: 'Vence al Ghoul Infernal, busca el clavo de olor y rescata el libro de encargos.',
+    escena: [['Herrera Coya', ['¿Oyes? Si no canta, no es metal. Y mandé un clavo… el clavo equivocado.', 'Ya, en serio. Mira mi libro de encargos: Grumo me pagó algo raro.']]],
+    gancho: [['Herrera Coya', [], 'Grumo no le vendía al Rey: le compraba. ¿Entonces quién cobró?']],
+  },
+  desierto: {
+    objetivo: 'Vence al Ángel Caído, trae limón del oasis y consigue una orden de la corte.',
+    escena: [['Viajera Illari', ['Bebe. Esta agua sabe a chicha, y una gota es una gota.', 'He cruzado todos los caminos y he visto órdenes del castillo. Esa letra yo no la olvido.']]],
+    gancho: [['Mama Asiri', [], 'El Hechicero de la Corte escribe igualito a nuestro Sabio.']],
+  },
+  castillo: {
+    objetivo: 'Vence al Rey Goblin, saca la chancaca y revisa la torre.',
+    escena: [['Espía Kantu', ['Baja la voz. Entramos por la bodega.', 'Dos guardias. Tres si cuentas al gato.']]],
+    // Lo que dice el Rey al caer va aqui y no en la escena: si no, se oiria antes de pelear con el.
+    gancho: [['Rey Goblin', ['Yo no forcé nada, duendecito. A mí me abrieron.']], ['Guardia Tito', ['Cuando vuelvas al pueblo, me vas a encontrar sin lanza.'], 'Fui yo, causa. Yo dejé la puerta. Ya no busques más.']],
+  },
+  cumbres: {
+    objetivo: 'Vence al Coloso, corta la canela e interroga a los huesos.',
+    escena: [['Mama Asiri', ['Tito no sabe mentir, wawa: le suda la oreja. Yo no le creo.']], ['Guardián Inti', ['Te saludan los que ya no pueden. Los muertos de estas cumbres lo vieron todo desde arriba.']]],
+    gancho: [['Guardián Inti', [], 'Tito dormía. ¿Por qué confesó algo que no hizo?']],
+  },
+  cavernas: {
+    objetivo: 'Vence al Rey Cangrejo, recupera la alforja de la mina y sus manzanas.',
+    escena: [['Minera Ñusta', ['Ese barro late, ¿lo oyes?', 'Aquí vino a aprender alguien, hace mucho. Preguntaba cómo se rompe el barro. Dejó sus cosas en una veta.']]],
+    gancho: [['Minera Ñusta', [], 'Era un niño duende, se llamaba Sami, y nadie en el pueblo dice ese nombre.']],
+  },
+  abismo: {
+    objetivo: 'Vence al Leviatán, pesca la piña y abre la botella.',
+    escena: [['Farera Quilla', ['Sin faro no hay regreso, y apenas me queda aceite.','El mar todo devuelve, pero tarde: piñas de la selva y botellas con cartas de hace mucho.']]],
+    gancho: [['Farera Quilla', [], '«Señora: su hijo vive.» ¿Qué madre del pueblo perdió a un hijo?']],
+  },
+  acantilados: {
+    objetivo: 'Vence al Dragón Ancestral. Reúne 8 pistas para escuchar al alma y consigue el agua.',
+    escena: [['Sabia Mama Ocllo', ['Del borde se ve todo. Siéntate.', 'Esa alma no se aleja del borde. Llevaba el último pedazo. Y algo más, que no era para el Rey.']]],
+    ganchoSinCarta: [['Mama Asiri', [], 'Esa alma cargaba una carta que nunca salió. Mama Ocllo sabe para quién era.']],
+    ganchoConCarta: [['Mama Asiri', ['A ver, wawa, pon las dos cartas en la mesa.'], 'La de Sami y la de la botella no son de la misma mano. Entonces, ¿quién le escribió a esa madre?']],
+  },
+};
+// El gancho de un capitulo. El ultimo depende de si ya terminaste «Un plato más» (x4).
+export function ganchoCapitulo(c, conCarta) {
+  const ci = c && CAPITULOS_INTRIGA[c.z];
+  if (!ci) return [];
+  return ci.gancho || (conCarta ? ci.ganchoConCarta : ci.ganchoSinCarta);
+}
+// La mision de la cadena en la que termina el capitulo c (el jefe vencido la deja en este indice).
+export function finCapitulo(c) {
+  const sig = CAPITULOS.find(x => x.n === c.n + 1);
+  return sig ? sig.desde : LORE_MISIONES.length;
+}
+// El ultimo gancho alcanzado con la cadena en i: el misterio que tienes abierto ahora mismo.
+// Sin ningun jefe vencido todavia, la escena del capitulo 1 hace de gancho.
+export function ganchoActual(i, conCarta) {
+  const mi = +i || 0, hechos = CAPITULOS.filter(c => mi >= finCapitulo(c));
+  const partes = hechos.length ? ganchoCapitulo(hechos[hechos.length - 1], conCarta) : CAPITULOS_INTRIGA.noche.escena;
+  const p = partes[partes.length - 1];
+  return { quien: p[0], texto: p[2] || [].concat(p[1]).pop() || '' };
+}
+// Tras «Un plato más»: el pueblo sigue y Asiri cierra. Solo la olla completa dice «Diez ingredientes»,
+// porque un veterano pudo dejar alguno atras. Los litros no cambian: mismo premio de nivel 60.
+export function epilogoDe(nIngr, nivel, nv60) {
+  const olla = nIngr >= 10 ? 'Diez ingredientes, wawa. La olla está lista.' : `Te ${nIngr === 9 ? 'falta un ingrediente' : `faltan ${10 - nIngr} ingredientes`}, wawa. La olla no sabe de relojes.`;
+  const chicha = nivel >= nv60 ? 'Mira la barra morada 🥤 para reclamar lo tuyo.' : `El Cántaro se llena cuando llegues a nivel ${nv60}. Y esa chicha es de verdad: mira la barra morada 🥤.`;
+  return [['Mama Asiri', ['Tito duerme por primera vez, y Grumo hace guardia refunfuñando y cobrándole. La Abuela amasa conmigo.', olla, chicha]]];
+}
+export const RECETA_DE_CASA = 'Hierve en agua el maíz con la piña, el membrillo, la manzana, la canela, el clavo y la hierba luisa. Cuela y deja enfriar. Endulza con chancaca y echa el limón al final.';

@@ -19,7 +19,7 @@
 // piezas fijas de cada pivote se funden en una malla (fusionarRig): ~6-14 draw calls.
 // ═══════════════════════════════════════════════════════
 import * as THREE from 'three';
-import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=367';
+import { MONSTRUOS, HOJAS, SKINS, CLASES, ARMAS, MONTURAS, APARIENCIA, LOOK_BASE, limpiarLook, statsMonstruo, DISFRAZ_ID } from '/mmo/js/data.js?v=368';
 
 const PX_M = 34;                 // pixeles del 2D por metro
 const PI = Math.PI;
@@ -2311,15 +2311,17 @@ export function crearMonstruo(k) {
 }
 
 // NPC del pueblo: los mismos arquetipos con colores amables y ojos de duende.
-export function crearNpc(hoja) {
-  const c = { k: 'npc_' + hoja, color: null, jefe: false, e: 0, amigo: true };
+// look (opcional, vecinos de mundo/js/vecinos.js): { color: ropa, acc: 'paja' | 'capucha', accC: color del accesorio }.
+export function crearNpc(hoja, look) {
+  const c = { k: 'npc_' + hoja, color: (look && look.color) || null, jefe: false, e: 0, amigo: true };
   let r;
-  if (hoja === 'goblin_guard') { c.color = '#2f6fd6'; r = goblin(c, 'goblin_guard'); }
-  else if (hoja === 'goblin_mage') { c.color = '#b9a4f5'; r = goblin(c, 'goblin_mage'); }
+  if (hoja === 'goblin_guard') { c.color = c.color || '#2f6fd6'; r = goblin(c, 'goblin_guard'); }
+  else if (hoja === 'goblin_mage') { c.color = c.color || '#b9a4f5'; r = goblin(c, 'goblin_mage'); }
   else if (hoja === 'goblin_peasant') r = goblin(c, 'goblin_peasant');
   else if (hoja === 'hechicero') r = hechicero(c);
   else r = (ARQ[hoja] || ARQ.goblin_peasant)(c);
-  const m = new Modelo(r, 62 / PX_M, 'n:' + hoja);
+  if (look && look.acc && ACC[look.acc]) ACC[look.acc](r, look.accC);
+  const m = new Modelo(r, 62 / PX_M, 'n:' + hoja + (look ? ':' + (look.color || '') + ':' + (look.acc || '') + ':' + (look.accC || '') : ''));
   m.tipo = 'npc'; m.hoja = hoja;
   return m;
 }

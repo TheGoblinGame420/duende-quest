@@ -15,7 +15,7 @@
 // RUNAS permanentes desde Nv 40 (+2% por rango, 5 rangos).
 // ═══════════════════════════════════════════════════════
 import { climaEn } from '../../mmo/js/mundo3d.js';
-import { MAPAS, MATERIALES, NODO_CADA_MS, RECOLECTAR_MS, ELIXIR_MS, RECETAS, nodosDe, RARO_ZONA, raroDe, RUNAS, RUNA_NIVEL, RUNA_MAX, costoRuna, PESCA, pesqueroDe, hoyUTC, climaDe, ESPECIES, premioEspecie, xpParaSubir } from '../../mmo/js/data.js';
+import { MAPAS, MATERIALES, NODO_CADA_MS, RECOLECTAR_MS, ELIXIR_MS, RECETAS, nodosDe, RARO_ZONA, raroDe, RUNAS, RUNA_NIVEL, RUNA_MAX, costoRuna, PESCA, pesqueroDe, hoyUTC, climaDe, ESPECIES, premioEspecie, xpParaSubir, VASO } from '../../mmo/js/data.js';
 
 export const Profesiones = {
   // Al entrar a un mapa: sus nodos y cuando vuelve a estar listo cada uno.
@@ -175,10 +175,13 @@ export const Profesiones = {
     if (!this.cercaDeArtesana(s)) return this.no(s, 'Habla con la Artesana Lila en el pueblo.');
     c.mat = c.mat || {};
     for (const k in r.pide) if ((c.mat[k] || 0) < r.pide[k]) return this.no(s, `Te faltan materiales: ${MATERIALES[k].nombre}.`);
-    if (r.da.pw) for (const k in r.da.pw) if ((c.pw[k] || 0) + r.da.pw[k] > 99) return this.no(s, 'Ya llevas el máximo (99) de eso.');
+    if (r.da.pw) for (const k in r.da.pw) if ((c.pw[k] || 0) + r.da.pw[k] > 99) return this.no(s, 'Ya llevas el máximo (99) de eso: gasta algunas y vuelve.');
+    if (r.solo3d && !s.m3) return this.no(s, 'Esa receta se prepara en ORIGINS.');
+    if (r.da.vasos && (c.vasos | 0) + r.da.vasos > VASO.max) return this.no(s, `Ya cargas ${VASO.max} vasos: toma alguno primero.`);
     for (const k in r.pide) c.mat[k] -= r.pide[k];
     if (r.da.pw) for (const k in r.da.pw) c.pw[k] = (c.pw[k] || 0) + r.da.pw[k];
     if (r.da.mat) for (const k in r.da.mat) c.mat[k] = Math.min(999, (c.mat[k] || 0) + r.da.mat[k]);
+    if (r.da.vasos) c.vasos = (c.vasos | 0) + r.da.vasos;
     if (r.da.elixir) {
       // Otro igual con el elixir activo suma su tiempo (antes gastaba los materiales y no daba nada; tope 3 elixires).
       c.elix = c.elix || {};
@@ -197,8 +200,9 @@ export const Profesiones = {
       const xp = Math.round(xpParaSubir(c.nivel) * 0.03);
       c.oro += oro;
       if (xp > 0 && this.sumarXp) this.sumarXp(s, xp);
-      const n = RECETAS.filter(x => c.recetas[x.id]).length;
-      this.enviar(s, { t: 'toast', m: `📖 Receta nueva en tu recetario (${n}/${RECETAS.length}) · +${oro} oro${xp > 0 ? ` · +${xp} XP` : ''}`, ok: true });
+      const hay = RECETAS.filter(x => s.m3 || !x.solo3d);   // en CLASSIC no cuenta lo que solo se prepara en ORIGINS
+      const n = hay.filter(x => c.recetas[x.id]).length;
+      this.enviar(s, { t: 'toast', m: `📖 Receta nueva en tu recetario (${n}/${hay.length}) · +${oro} oro${xp > 0 ? ` · +${xp} XP` : ''}`, ok: true });
     }
     this.actualizarYo(s);
     this.guardar(s);

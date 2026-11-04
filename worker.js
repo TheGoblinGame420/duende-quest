@@ -63,7 +63,7 @@ export default {
         const b = JSON.parse(txt);
         const EV = ['carga_ini', 'arte_ok', 'form_visto', 'clic_entrar', 'bienvenido', 'mover', 'fallo_webgl', 'oculta', 't_hab', 't_volar', 't_fin',
           'mis_0', 'mis_1', 'mis_2', 'mis_3', 'mis_4', 'mis_5', 'jefe1_ver', 'jefe1_muere', 'jefe1_ok'];
-        const ORG = ['meta', 'tg', 'wa', 'ref', 'org'];
+        const ORG = ['meta', 'tg', 'wa', 'etiqueta', 'ref', 'org'];
         // Rendimiento de ORIGINS (mundo.js, 90 s tras arte_ok): la lista exacta esta en EV_PASOS (retencion.js).
         const EV_REND = /^(fps_(baja|media|alta)_(ok|justo|lento)|gpu_(mali|adreno|powervr|apple|intel|swiftshader|otra)|fuga_gpu|nan_pos|oculta_(dl|arte|gl|red))$/;
         if (!b || !(EV.includes(b.e) || EV_REND.test(String(b.e))) || (b.j !== 'origins' && b.j !== 'classic')) return nada;

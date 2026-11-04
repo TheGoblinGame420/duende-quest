@@ -24,7 +24,20 @@ console.log((/classList\.add\('anuncio'\)/.test(portada.txt) ? 'OK  ' : 'MAL ') 
 // que responde como imagen (si falla, limpiar la cache con el depurador de Meta).
 const UA_FB = { 'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)' };
 const og = (txt, p) => { const m = txt.match(new RegExp('<meta property="og:' + p + '" content="([^"]*)"')); return m ? m[1] : ''; };
-for (const ruta of ['/', '/jugar/', '/inicio/', '/mundo/', '/mmo/']) {
+// /chicha/: destino del QR de la botella. Sin cripto, sin promesa nueva, con los requisitos reales de
+// CHICHA (si se cambian en data.js, esta prueba avisa de que la pagina quedo vieja) y el QR publicado.
+const chicha = await verPagina('/chicha/?utm_source=etiqueta');
+console.log((chicha.ok && /C[aá]ntaro Eterno/.test(chicha.txt) && /id="jugar"/.test(chicha.txt) ? 'OK  ' : 'MAL ') + '/chicha/ responde con su portada y boton JUGAR');
+console.log((chicha.ok && !/\$DUENDE|token|pump|solana|wallet|cripto/i.test(chicha.txt) ? 'OK  ' : 'MAL ') + '/chicha/ sin palabras cripto');
+const { CHICHA } = await import('../mmo/js/data.js');
+const faltanChicha = [`nivel ${CHICHA.nv60}`, `${CHICHA.litros60} litros`, `${CHICHA.dias60} días jugados`, `${Math.round(CHICHA.min60 / 60)} horas de juego`, `${CHICHA.mesMax60} premios`, `${CHICHA.mesMax} litros por puntos`, CHICHA.whatsappVer, 'wa.me/' + CHICHA.whatsapp, ...CHICHA.niveles.map(n => n.toLocaleString('es', { useGrouping: 'always' }))].filter(x => !chicha.txt.includes(x));
+console.log((chicha.ok && !faltanChicha.length ? 'OK  ' : 'MAL ') + '/chicha/ con los datos reales de CHICHA' + (faltanChicha.length ? ' (no dice: ' + faltanChicha.join(', ') + ')' : ''));
+for (const [ruta, tipo] of [['/assets/etiqueta/qr-chicha.png', /^image\/png/], ['/assets/etiqueta/qr-chicha.svg', /^image\/svg/]]) {
+  let ok = false;
+  try { const r = await fetch(web + ruta, { cache: 'no-store' }); ok = r.ok && tipo.test(r.headers.get('content-type') || ''); } catch (e) {}
+  console.log((ok ? 'OK  ' : 'MAL ') + ruta + ' publicado');
+}
+for (const ruta of ['/', '/jugar/', '/chicha/', '/inicio/', '/mundo/', '/mmo/']) {
   let txt = '', ok = false;
   try { const r = await fetch(web + ruta, { cache: 'no-store', headers: UA_FB }); ok = r.ok; txt = await r.text(); } catch (e) {}
   const img = og(txt, 'image');

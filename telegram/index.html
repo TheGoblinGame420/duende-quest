@@ -33,7 +33,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="/js/origen.js?v=367"></script>
+<script src="/js/origen.js?v=368"></script>
 <script>
 // ── ARRANQUE TEMPRANO DE TELEGRAM ──
 // Va aquí, antes de cargar Supabase/TON Connect/el motor, para que Telegram
@@ -469,7 +469,7 @@ html.anuncio #tabbar{grid-template-columns:repeat(4,1fr);}
           <div style="font-size:34px;line-height:1" aria-hidden="true">🥤</div>
           <div style="flex:1;min-width:0">
             <div class="card-t" style="margin-bottom:4px">Gana chicha morada jugando</div>
-            <div class="hub-sub">Desde el nivel 10, cada monstruo que cazas en el mundo online suma puntos. Al llegar a 10.000 y a 50.000 puntos ganas <b>un litro de chicha morada</b> cada vez. Lo reclamas desde el nivel 15, entrando por Telegram. No es un sorteo y no pagas nada. Envío en Perú.</div>
+            <div class="hub-sub">Desde el nivel 10, cada monstruo que cazas en el mundo online suma puntos. Al llegar a 25.000 y a 100.000 puntos ganas <b>un litro de chicha morada</b> cada vez. Lo reclamas desde el nivel 15, con tu cuenta. No es un sorteo y no pagas nada. Envío en Perú.</div>
             <button class="ob sec" type="button" onclick="irMMO()" style="width:100%;margin-top:8px">Empezar a juntar puntos</button>
           </div>
         </div>
@@ -493,7 +493,7 @@ html.anuncio #tabbar{grid-template-columns:repeat(4,1fr);}
         <h2 class="seccion-t">Comunidad</h2>
         <div class="card" style="text-align:center">
           <div class="card-t">Cuenta<span class="solo-cripto"> y canales</span> oficiales</div>
-          <div class="hub-sub" style="margin-bottom:10px">Creador del juego: @ElDuendeOficial. Desconfía de cualquier otra cuenta que diga ser nosotros.</div>
+          <div class="hub-sub" style="margin-bottom:10px">Creador del juego: @ElDuendeOficial. WhatsApp: <a href="https://wa.me/51900877863" target="_blank" rel="noopener" style="color:inherit">+51 900 877 863</a>. Chicha: <a href="https://wa.me/51916778731" target="_blank" rel="noopener" style="color:inherit">+51 916 778 731</a>. Desconfía de cualquier otra cuenta o número que diga ser nosotros.</div>
           <button class="ob sec" onclick="abrirTg('ElDuendeOficial')" style="width:100%">@ElDuendeOficial</button>
           <div class="fila2 solo-cripto" style="margin-top:10px">
             <button class="ob sec" onclick="abrirTg('elduende420peru')">📢 Canal</button>
@@ -601,6 +601,7 @@ html.anuncio #tabbar{grid-template-columns:repeat(4,1fr);}
           <a href="/terminos.html" target="_blank" rel="noopener">Términos</a>
           <a href="/privacidad.html" target="_blank" rel="noopener">Privacidad</a>
           <a href="/seguridad.html" target="_blank" rel="noopener">Seguridad</a>
+          <a href="https://wa.me/51900877863" target="_blank" rel="noopener">Habla con el creador: WhatsApp +51 900 877 863</a>
           <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">Contacto: @ElDuendeOficial</a>
         </nav>
         <small>🔒 Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado.</small>
@@ -813,10 +814,10 @@ html.anuncio #tabbar{grid-template-columns:repeat(4,1fr);}
      pesan cientos de KB). Aquí se ejecutan en el MISMO orden y antes que el
      código de la página, así que nada de lo que los usa cambia. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
-<script src="../js/dom-utils.js?v=367"></script>
-<script src="../js/missions.js?v=367"></script>
-<script src="../js/streak.js?v=367"></script>
-<script src="../js/achievements.js?v=367"></script>
+<script src="../js/dom-utils.js?v=368"></script>
+<script src="../js/missions.js?v=368"></script>
+<script src="../js/streak.js?v=368"></script>
+<script src="../js/achievements.js?v=368"></script>
 <script>
 // TON Connect (~400 KB) bajo demanda: al abrir la wallet, o al cargar si ya hay una sesion guardada.
 // tonGuardada(): el SDK guarda su sesion en localStorage con claves 'ton-connect...'.
@@ -833,7 +834,7 @@ function cargarTon(){
 }
 function tonGuardada(){ try{ for(var i=0;i<localStorage.length;i++){ if(/^ton-connect/.test(localStorage.key(i)||'')) return true; } }catch(e){} return false; }
 </script>
-<script src="../js/config.js?v=367"></script>
+<script src="../js/config.js?v=368"></script>
 <script>
 'use strict';
 
@@ -1652,7 +1653,7 @@ window.DQE={
   },
 };
 </script>
-<script src="../js/engine.js?v=367"></script>
+<script src="../js/engine.js?v=368"></script>
 <script>
 
 // ══ MENU EN PESTAÑAS ══
@@ -2002,7 +2003,7 @@ function shareScore(){
 // (la misma tabla STARS_DE_USD que usa /api/telegram-bot-invoice al cobrar), asi
 // la Mini App nunca anuncia un precio distinto del que cobra Telegram.
 // Subir este ?v= junto con el de los otros imports de data.js.
-import { SKINS as CATALOGO, estrellasDe } from '../mmo/js/data.js?v=367';
+import { SKINS as CATALOGO, estrellasDe } from '../mmo/js/data.js?v=368';
 try{
   for(const s of SKINS){
     const c=CATALOGO[s.id];

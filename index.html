@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <!-- El sitio viejo de Netlify ya no se actualiza: quien llegue ahi pasa al de Cloudflare -->
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=367"></script>
+<script src="/js/origen.js?v=368"></script>
 <!-- Modo anuncio: quien llega de un anuncio (fbclid / utm_*) ve la web sin la parte cripto
      (wallet, precio, token, donaciones). Se recuerda en la pestaña; el resto de visitas no cambia. -->
 <script>(function(){var a=/[?&](fbclid|utm_[a-z]+)=/i.test(location.search);try{if(a)sessionStorage.setItem('dq_anuncio','1');else a=sessionStorage.getItem('dq_anuncio')==='1';}catch(e){}if(a)document.documentElement.classList.add('anuncio');})()</script>
@@ -32,7 +32,7 @@
 <meta name="twitter:image:alt" content="Duende Quest Online, el MMORPG de los duendes">
 <meta name="theme-color" content="#0b0f17">
 <link rel="manifest" href="/inicio/manifest.json">
-<script src="/js/pwa.js?v=367" defer></script>
+<script src="/js/pwa.js?v=368" defer></script>
 <link rel="icon" type="image/png" href="assets/ui/coin.png">
 <script type="application/ld+json">
 {
@@ -137,7 +137,7 @@
       "name": "¿Qué es la chicha morada?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Un premio físico y gratuito de Duende Quest Online: un litro de chicha morada. Desde el nivel 10, cada monstruo que cazas suma puntos (hasta 600 por día). Al llegar a 10.000 y a 50.000 puntos puedes reclamar un litro cada vez, como máximo dos por jugador. No es un sorteo y nunca se paga nada, ni siquiera el envío. Solo suman las cuentas (no los invitados). Para reclamar necesitas nivel 15, un personaje de al menos 48 horas y haber entrado por Telegram. Se entregan como máximo 10 litros al mes y los envíos son dentro del Perú. Las reglas completas están en los Términos."
+        "text": "Un premio físico y gratuito de Duende Quest Online: un litro de chicha morada. Desde el nivel 10, cada monstruo que cazas suma puntos (hasta 600 por día). Al llegar a 25.000 y a 100.000 puntos puedes reclamar un litro cada vez, como máximo dos por jugador. No es un sorteo y nunca se paga nada, ni siquiera el envío. Solo suman las cuentas (no los invitados). Para reclamar necesitas nivel 15, un personaje de al menos 48 horas y tener una cuenta (no invitado). Se entregan como máximo 4 litros al mes por puntos y los envíos son dentro del Perú. Las reglas completas están en los Términos. ¿Dudas sobre la chicha? WhatsApp +51 916 778 731."
       }
     },
     {
@@ -145,7 +145,7 @@
       "name": "¿Es seguro?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado. Los únicos canales oficiales son los de esta página (compruébalo escribiendo /creador al bot @duendequest_bot); desconfía de quien te escriba primero por privado diciendo ser «soporte» o «admin». Si conectas una wallet, revisa siempre lo que firmas. Más detalles y cómo reportar estafas en Seguridad."
+        "text": "Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado. Los únicos canales oficiales son los de esta página (compruébalo escribiendo /creador al bot @duendequest_bot) y los únicos números son dos, por WhatsApp: +51 900 877 863 (creador) y +51 916 778 731 (chicha). Desconfía de quien te escriba primero por privado diciendo ser «soporte» o «admin». Si conectas una wallet, revisa siempre lo que firmas. Más detalles y cómo reportar estafas en Seguridad."
       }
     },
     {
@@ -153,7 +153,7 @@
       "name": "¿Quién lo hace?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Duende Quest lo crea y lo mantiene El Duende, un desarrollador independiente en Perú, sin inversores. Puedes escribirle en Telegram a @ElDuendeOficial y seguir las novedades en el canal oficial."
+        "text": "Duende Quest lo crea y lo mantiene El Duende, un desarrollador independiente en Perú, sin inversores. Puedes hablar con él por WhatsApp al +51 900 877 863 o en Telegram a @ElDuendeOficial, y seguir las novedades en el canal oficial."
       }
     }
   ]
@@ -843,7 +843,7 @@ section[id]{scroll-margin-top:72px;}
   </div>
   <a class="vivo-skins" href="/mmo/"><b>4 skins exclusivas animadas</b> con poderes (Esmeralda, Sombrío, Solar y Cósmico): se compran una vez y valen en $DUENDE CLASSIC y en $DUENDE ORIGINS.</a>
   <p class="hero-more">Más opciones: <a href="#capturas">ver capturas</a> · <a href="game.html" target="_blank">modo arcade clásico</a> · <a href="#nft-store">tienda de skins</a> · <button type="button" onclick="openPumpFun()" id="btn-buy-main">token $DUENDE (opcional)</button></p>
-  <div class="hero-creador">Creado en Perú por <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial</a> · <a href="https://t.me/elduende420peru" target="_blank" rel="noopener">Canal oficial</a> · <a href="https://t.me/duendesolana420" target="_blank" rel="noopener">Grupo oficial</a> · <a href="#community">¿Quién está detrás?</a></div>
+  <div class="hero-creador">Creado en Perú por <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial</a> · <a href="https://wa.me/51900877863" target="_blank" rel="noopener">Habla con el creador</a> · <a href="https://t.me/elduende420peru" target="_blank" rel="noopener">Canal oficial</a> · <a href="https://t.me/duendesolana420" target="_blank" rel="noopener">Grupo oficial</a> · <a href="#community">¿Quién está detrás?</a></div>
 </section>
 
 <!-- ========== STATS (dato real: jugadores registrados de la base del juego).
@@ -882,7 +882,7 @@ section[id]{scroll-margin-top:72px;}
   </style>
   <h2 class="px-title" id="lo-nuevo-h">Lo nuevo</h2>
   <div class="nuevo-grid">
-    <div class="nuevo-card"><span class="ico" aria-hidden="true">🥤</span><b>Gana chicha morada jugando</b><p>Desde Nv 10, cada monstruo que cazas en el mundo online suma puntos. Con 10.000 puntos ganas un litro de chicha morada a tu casa (se reclama desde Nv 15, con Telegram; cupos por mes). No es un sorteo. Envío en Perú.</p></div>
+    <div class="nuevo-card"><span class="ico" aria-hidden="true">🥤</span><b>Gana chicha morada jugando</b><p>Desde Nv 10, cada monstruo que cazas en el mundo online suma puntos. Con 25.000 puntos ganas un litro de chicha morada a tu casa (se reclama desde Nv 15, con tu cuenta; cupos por mes). No es un sorteo. Envío en Perú.</p></div>
     <div class="nuevo-card"><span class="ico" aria-hidden="true">🏰</span><b>5 mazmorras y Desafíos</b><p>Fortaleza Goblin y Nido de la Reina Araña se suman a las mazmorras. A nivel 60, los Desafíos +k suben la dificultad sin límite.</p></div>
     <div class="nuevo-card"><span class="ico" aria-hidden="true" id="temp-ico">🍞</span><b>Temporadas con premios</b><p id="temp-txt">T'anta Wawa (3–12 nov), Cosecha del Maíz Morado (13–30 nov), Navidad y Carnaval: objetos para juntar y títulos únicos.</p></div>
     <script>try { if (Date.now() < Date.UTC(2026, 10, 3)) { document.getElementById('nuevo-temp').textContent = 'Nuevo: 5 mazmorras · Noche de Duendes'; document.getElementById('temp-ico').textContent = '🎃'; document.getElementById('temp-txt').textContent = "Noche de Duendes (hasta el 2 nov), T'anta Wawa (3–12 nov), Cosecha del Maíz Morado, Navidad y Carnaval: objetos para juntar y títulos únicos."; } } catch (e) {}</script>
@@ -1181,6 +1181,8 @@ section[id]{scroll-margin-top:72px;}
     <h3 class="creador-t">Creador del juego</h3>
     <p>DUENDE QUEST lo crea y mantiene <b>El Duende</b> desde Perú. Estos son los únicos canales oficiales: desconfía de cualquier otra cuenta que diga ser del juego.</p>
     <div class="creador-links">
+      <a href="https://wa.me/51900877863" target="_blank" rel="noopener">+51 900 877 863<small>Habla con el creador (WhatsApp)</small></a>
+      <a href="https://wa.me/51916778731" target="_blank" rel="noopener">+51 916 778 731<small>La chicha (WhatsApp)</small></a>
       <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial<small>Creador</small></a>
       <a href="https://t.me/elduende420peru" target="_blank" rel="noopener">t.me/elduende420peru<small>Canal oficial</small></a>
       <a href="https://t.me/duendesolana420" target="_blank" rel="noopener">t.me/duendesolana420<small>Grupo oficial</small></a>
@@ -1761,7 +1763,7 @@ section[id]{scroll-margin-top:72px;}
         <button id="btn-send-donation" type="button" style="width:100%;padding:.8rem 1rem;border:none;cursor:pointer">Enviar SOL y recibir $DUENDE</button>
         <div id="tx-link-container" style="font-size:13px;text-align:center"></div>
       </div>
-      <p style="font-size:13px;color:var(--txt2);margin-top:.9rem;line-height:1.5">¿Dudas con tu envío? Escribe a <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial</a> con el enlace de tu transacción. También puedes comprar en el mercado: <a href="#" onclick="openPumpFun();return false">ver $DUENDE en pump.fun</a>.</p>
+      <p style="font-size:13px;color:var(--txt2);margin-top:.9rem;line-height:1.5"><a href="/token/">Ver el paso a paso y los avisos importantes</a>. ¿Dudas con tu envío? Escribe a <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial</a> con el enlace de tu transacción. También puedes comprar en el mercado: <a href="#" onclick="openPumpFun();return false">ver $DUENDE en pump.fun</a>.</p>
     </div>
 
     <!-- Donaciones -->
@@ -1902,15 +1904,15 @@ section[id]{scroll-margin-top:72px;}
     </details>
     <details>
       <summary>¿Qué es la chicha morada?</summary>
-      <div class="faq-r"><p>Un premio físico y gratuito de Duende Quest Online: un litro de chicha morada. Desde el nivel 10, cada monstruo que cazas suma puntos (hasta 600 por día). Al llegar a 10.000 y a 50.000 puntos puedes reclamar un litro cada vez, como máximo dos por jugador. No es un sorteo y nunca se paga nada, ni siquiera el envío.</p><p>Solo suman las cuentas (no los invitados). Para reclamar necesitas nivel 15, un personaje de al menos 48 horas y haber entrado por Telegram. Se entregan como máximo 10 litros al mes y los envíos son dentro del Perú. Las reglas completas están en los <a href="/terminos#chicha">Términos</a>.</p></div>
+      <div class="faq-r"><p>Un premio físico y gratuito de Duende Quest Online: un litro de chicha morada. Desde el nivel 10, cada monstruo que cazas suma puntos (hasta 600 por día). Al llegar a 25.000 y a 100.000 puntos puedes reclamar un litro cada vez, como máximo dos por jugador. No es un sorteo y nunca se paga nada, ni siquiera el envío.</p><p>Solo suman las cuentas (no los invitados). Para reclamar necesitas nivel 15, un personaje de al menos 48 horas y tener una cuenta (no invitado). Se entregan como máximo 4 litros al mes por puntos y los envíos son dentro del Perú. Las reglas completas están en los <a href="/terminos#chicha">Términos</a>. ¿Dudas sobre la chicha? WhatsApp <a href="https://wa.me/51916778731" target="_blank" rel="noopener">+51 916 778 731</a>.</p></div>
     </details>
     <details>
       <summary>¿Es seguro?</summary>
-      <div class="faq-r"><p>Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado. Los únicos canales oficiales son los de esta página (compruébalo escribiendo /creador al bot @duendequest_bot); desconfía de quien te escriba primero por privado diciendo ser «soporte» o «admin». Si conectas una wallet, revisa siempre lo que firmas. Más detalles y cómo reportar estafas en <a href="/seguridad">Seguridad</a>.</p></div>
+      <div class="faq-r"><p>Nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado. Los únicos canales oficiales son los de esta página (compruébalo escribiendo /creador al bot @duendequest_bot) y los únicos números son dos, por WhatsApp: <a href="https://wa.me/51900877863" target="_blank" rel="noopener">+51 900 877 863</a> (creador) y <a href="https://wa.me/51916778731" target="_blank" rel="noopener">+51 916 778 731</a> (chicha). Desconfía de quien te escriba primero por privado diciendo ser «soporte» o «admin». Si conectas una wallet, revisa siempre lo que firmas. Más detalles y cómo reportar estafas en <a href="/seguridad">Seguridad</a>.</p></div>
     </details>
     <details>
       <summary>¿Quién lo hace?</summary>
-      <div class="faq-r"><p>Duende Quest lo crea y lo mantiene <strong>El Duende</strong>, un desarrollador independiente en Perú, sin inversores. Puedes escribirle en Telegram a <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial</a> y seguir las novedades en el <a href="https://t.me/elduende420peru" target="_blank" rel="noopener">canal oficial</a>.</p></div>
+      <div class="faq-r"><p>Duende Quest lo crea y lo mantiene <strong>El Duende</strong>, un desarrollador independiente en Perú, sin inversores. Puedes hablar con él por WhatsApp al <a href="https://wa.me/51900877863" target="_blank" rel="noopener">+51 900 877 863</a> o en Telegram a <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">@ElDuendeOficial</a>, y seguir las novedades en el <a href="https://t.me/elduende420peru" target="_blank" rel="noopener">canal oficial</a>.</p></div>
     </details>
   </div>
   <div class="faq-cta">
@@ -1993,7 +1995,9 @@ section[id]{scroll-margin-top:72px;}
     <a href="/terminos">Términos de Servicio</a>
     <a href="/privacidad">Política de Privacidad</a>
     <a href="/seguridad">Seguridad</a>
-    <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">Contacto: @ElDuendeOficial (creador)</a>
+    <a href="https://wa.me/51900877863" target="_blank" rel="noopener">Habla con el creador del juego: WhatsApp +51 900 877 863</a>
+    <a href="https://wa.me/51916778731" target="_blank" rel="noopener">La chicha: WhatsApp +51 916 778 731</a>
+    <a href="https://t.me/ElDuendeOficial" target="_blank" rel="noopener">Telegram: @ElDuendeOficial (creador)</a>
   </div>
   <p class="f-note" id="seguridad">🔒 Seguridad: nunca te pediremos contraseñas, frases semilla ni pagos por mensaje privado. Los únicos canales oficiales son los de esta página.</p>
   <p class="f-note solo-cripto">
@@ -2204,9 +2208,9 @@ if (document.documentElement.classList.contains('anuncio')) document.addEventLis
 <!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <!-- Config (keys + DUENDE_CFG) -->
-<script src="js/config.js?v=367"></script>
+<script src="js/config.js?v=368"></script>
 <!-- Módulos en orden de dependencia -->
-<script src="js/auth-manager.js?v=367"></script>
+<script src="js/auth-manager.js?v=368"></script>
 <script>
 // Ranking real de la landing (antes: 5 nombres inventados con un badge
 // "LIVE" que no estaba conectado a nada). auth-manager.js registra su
@@ -2271,7 +2275,7 @@ window.addEventListener('load', cargarRankingLanding);
   estado(); setInterval(estado, 60000);
 })();
 </script>
-<script src="js/price-feed.js?v=367"></script>
+<script src="js/price-feed.js?v=368"></script>
 <script src="js/wallet-manager.js"></script>
 <script src="js/donation-manager.js"></script>
 <script>

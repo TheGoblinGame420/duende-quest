@@ -26,12 +26,12 @@
 <meta name="theme-color" content="#0a0418">
 <link rel="manifest" href="/mundo/manifest.json">
 <link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
-<script src="/js/pwa.js?v=367" defer></script>
+<script src="/js/pwa.js?v=368" defer></script>
 <link rel="icon" href="/assets/ui/coin.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=fallback" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=fallback" rel="stylesheet"></noscript>
 <script>if(/netlify\.app$/.test(location.hostname))location.replace("https://duende-quest.alfonso12hc.workers.dev"+location.pathname+location.search+location.hash)</script>
-<script src="/js/origen.js?v=367"></script>
+<script src="/js/origen.js?v=368"></script>
 <script>
 // Red de seguridad de la carga (script clasico: corre aunque el modulo 3D o el CDN fallen).
 // - Errores antes de conectar: se guardan en __errQ y mundo.js los manda al entrar.
@@ -118,29 +118,33 @@
   });
 })();
 </script>
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=367" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "/mmo/js/abismo3d.js": "/mmo/js/abismo3d.js?v=368" } }</script>
 <!-- Precargas: el navegador baja three.js y los modulos grandes a la vez, sin esperar a descubrir cada import -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js" crossorigin>
-<link rel="modulepreload" href="/mundo/js/mundo.js?v=367">
-<link rel="modulepreload" href="/mmo/js/data.js?v=367">
-<link rel="modulepreload" href="/mundo/js/modelos.js?v=367">
-<link rel="modulepreload" href="/mundo/js/ventanas.js?v=367">
-<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=367">
-<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=367">
-<link rel="modulepreload" href="/mundo/js/kenney.js?v=367">
-<link rel="modulepreload" href="/mmo/js/regalo.js?v=367">
-<link rel="modulepreload" href="/mmo/js/avisotg.js?v=367">
-<link rel="modulepreload" href="/mundo/js/musica.js?v=367">
-<link rel="modulepreload" href="/mundo/js/sonidos.js?v=367">
-<link rel="modulepreload" href="/mundo/js/cueva.js?v=367">
-<link rel="modulepreload" href="/mundo/js/tapa.js?v=367">
-<link rel="modulepreload" href="/mundo/js/abismo.js?v=367">
-<link rel="modulepreload" href="/mundo/js/particulas.js?v=367">
-<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=367">
-<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=367">
-<link rel="modulepreload" href="/mmo/js/secundarias.js?v=367">
-<link rel="modulepreload" href="/mundo/js/lore.js?v=367">
+<link rel="modulepreload" href="/mundo/js/mundo.js?v=368">
+<link rel="modulepreload" href="/mmo/js/data.js?v=368">
+<link rel="modulepreload" href="/mundo/js/modelos.js?v=368">
+<link rel="modulepreload" href="/mundo/js/ventanas.js?v=368">
+<link rel="modulepreload" href="/mundo/js/objetivos.js?v=368">
+<link rel="modulepreload" href="/mmo/js/mundo3d.js?v=368">
+<link rel="modulepreload" href="/mmo/js/abismo3d.js?v=368">
+<link rel="modulepreload" href="/mundo/js/kenney.js?v=368">
+<link rel="modulepreload" href="/mmo/js/regalo.js?v=368">
+<link rel="modulepreload" href="/mmo/js/avisotg.js?v=368">
+<link rel="modulepreload" href="/mundo/js/musica.js?v=368">
+<link rel="modulepreload" href="/mundo/js/sonidos.js?v=368">
+<link rel="modulepreload" href="/mundo/js/cueva.js?v=368">
+<link rel="modulepreload" href="/mundo/js/tapa.js?v=368">
+<link rel="modulepreload" href="/mundo/js/abismo.js?v=368">
+<link rel="modulepreload" href="/mundo/js/particulas.js?v=368">
+<link rel="modulepreload" href="/mmo/js/cueva3d.js?v=368">
+<link rel="modulepreload" href="/mmo/js/encargos3d.js?v=368">
+<link rel="modulepreload" href="/mmo/js/secundarias.js?v=368">
+<link rel="modulepreload" href="/mmo/js/caso.js?v=368">
+<link rel="modulepreload" href="/mundo/js/caso.js?v=368">
+<link rel="modulepreload" href="/mundo/js/lore.js?v=368">
+<link rel="modulepreload" href="/mundo/js/vecinos.js?v=368">
 <!-- Kit 3D de Kenney (mundo/js/kenney.js lo pide con fetch() sin opciones: mismo origen, cors, URL sin ?v=): se baja ya, junto a los modulos.
      El binario: .gz si hay DecompressionStream (como hace kenney.js), si no el normal; asi no se baja dos veces. -->
 <link rel="preload" href="/assets/3d/kenney.json" as="fetch" crossorigin>
@@ -162,6 +166,9 @@ body.sin-post #vineta{display:block;}
 .flecha-amz.roja::before{border-left-color:#ff3b4e;filter:drop-shadow(0 0 6px rgba(255,40,60,.9));}
 @keyframes latido{0%,100%{opacity:.1}50%{opacity:.38}}
 .lbl{position:absolute;left:0;top:0;transform:translate(-50%,-100%);white-space:nowrap;font:600 11px var(--sans);text-shadow:0 1px 2px #000,0 0 3px #000;text-align:center;will-change:transform;}
+.lbl .npc-marca{display:inline-block;color:#ffd84a;font:900 30px/1 system-ui,sans-serif;text-shadow:0 0 3px #000,0 0 3px #000,0 1px 2px #000,0 0 12px rgba(255,216,74,.85);animation:npcMarca 1.2s ease-in-out infinite;}
+@keyframes npcMarca{50%{transform:translateY(-4px) scale(1.08);}}
+@media (prefers-reduced-motion:reduce){.lbl .npc-marca{animation:none;}}
 .lbl .b{display:block;width:44px;height:4px;margin:2px auto 0;background:rgba(0,0,0,.7);border-radius:2px;overflow:hidden;}
 .lbl .b i{display:block;height:100%;background:#ff3344;transform-origin:left;}
 .lbl.yo .b i,.lbl.pj .b i{background:#38bdf8;}   /* cian (no verde): aliado y enemigo se distinguen sin depender del rojo/verde */
@@ -865,8 +872,8 @@ body:is(.movil,.compacto) #misiones:not(.abierto){max-height:36px;background:rgb
 body:is(.movil,.compacto).texto-grande #misiones:not(.abierto){max-height:36px;}
 body:is(.movil,.compacto) #misiones:not(.abierto) .q{margin-bottom:0;}
 body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto) .q,body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto) b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0;}   /* el avance es texto suelto dentro de .q: se recorta en la fila */
-body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto) .q:nth-child(n+3){display:none;}
-body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto) .q:first-child:has(>b:only-child)+.q:not([style*="sticky"])>b{display:none;}   /* con el 🎁 de una linea arriba, la segunda es el avance (Goblin 0/5 ⬆ 48 m), no el nombre de la mision */
+body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto) .q:nth-of-type(n+3){display:none;}   /* of-type: el boton 🎯 va delante de las filas y no debe contar */
+body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto) .q:first-of-type:has(>b:only-child)+.q:not([style*="sticky"])>b{display:none;}   /* con el 🎁 de una linea arriba, la segunda es el avance (Goblin 0/5 ⬆ 48 m), no el nombre de la mision */
 body:is(.movil,.compacto) #misiones:not(.abierto) .q[style*="sticky"]{position:static!important;background:none!important;}   /* plegada se lee mision y avance; la fila del dia queda al abrir */
 body:is(.movil,.compacto) #misiones:not(.abierto)::after{content:'▾';position:absolute;right:4px;top:2px;font-size:12px;line-height:1;color:#ffd84a;}
 body:is(.movil,.compacto) #misiones:not(.abierto){padding-right:15px;}
@@ -884,7 +891,7 @@ body:is(.movil,.compacto):has(#avisos>div) #chat:not(:has(#chat-in[style*="block
 body:is(.movil,.compacto) #misiones.abierto{width:min(240px,66vw);background:rgba(14,9,30,.92);}
 body:is(.movil,.compacto):has(#obj[style*="block"]) #misiones:not(.abierto){width:min(124px,34vw);}   /* con objetivo fijado, su ficha va a la derecha de las misiones */
 body:is(.movil,.compacto) #obj{left:calc(136px + env(safe-area-inset-left));transform:none;top:calc(50px + env(safe-area-inset-top) + var(--tg-top,0px));width:min(120px,33vw);max-width:none;padding:3px 6px;box-sizing:border-box;}
-body:is(.movil,.compacto) #botones:not(.abierto){top:calc(6px + env(safe-area-inset-top) + var(--tg-top,0px));right:calc(105px + env(safe-area-inset-right));display:grid;grid-template-columns:repeat(3,40px);gap:0;padding:0;}
+body:is(.movil,.compacto) #botones:not(.abierto){top:calc(6px + env(safe-area-inset-top) + var(--tg-top,0px));right:calc(clamp(96px,27vw,104px) + 9px + env(safe-area-inset-right));display:grid;grid-template-columns:repeat(3,40px);gap:0;padding:0;}
 body:is(.movil,.compacto) #botones:not(.abierto) #b-chat,body:is(.movil,.compacto) #botones:not(.abierto) #b-gestos,body:is(.movil,.compacto) #botones:not(.abierto) #b-compartir{display:none;}
 body:is(.movil,.compacto) #botones:not(.abierto) .bt{width:40px;height:40px;padding:0;font-size:22px;line-height:1;background:none;border-color:transparent;box-shadow:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.9));touch-action:manipulation;}
 body:is(.movil,.compacto) #botones:not(.abierto) #b-mas{font-weight:800;color:#fff;}
@@ -960,6 +967,57 @@ body.movil #cofre-sem .cs-ico,body.compacto #cofre-sem .cs-ico{font-size:40px;}
 body.movil #cofre-sem .cs-sub,body.compacto #cofre-sem .cs-sub{font-size:13px;}
 body.movil #tira-diario,body.compacto #tira-diario{font-size:13px;background:rgba(20,14,34,.95);}
 body.movil #tira-diario .tx small,body.compacto #tira-diario .tx small{font-size:12px;}
+/* Visibilidad (PC y movil): textos del mundo con contorno y pildora: se leen sobre pasto de dia, nieve y de noche. */
+.lbl{text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000,0 0 4px rgba(0,0,0,.9);}
+.lbl>span:not(.b){display:inline-block;padding:0 5px;border-radius:6px;background:rgba(8,5,22,.58);}
+.num{font-weight:800;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000,0 2px 4px rgba(0,0,0,.9);}
+html body.movil .lbl,html body.compacto .lbl{font-size:12px;font-weight:700;line-height:1.2;}
+html body.movil .lbl small,html body.compacto .lbl small{font-size:10.5px!important;}
+html body.movil .lbl .b,html body.compacto .lbl .b{width:38px;height:5px;}
+html body.movil .num,html body.compacto .num{font-size:19px;}
+html body.movil.texto-grande .lbl,html body.compacto.texto-grande .lbl{font-size:13px;}
+html body.movil.texto-grande .num,html body.compacto.texto-grande .num{font-size:22px;}
+/* PC: las misiones empiezan bajo el minimapa, no se salen de la pantalla (--mini-b y --mis-max, mundo.js) y se leen mejor. */
+:root{--hz:1;--wz:1;}
+html body:not(.movil):not(.compacto) #botones{right:184px;}
+html body:not(.movil):not(.compacto) #misiones{top:calc((var(--mini-b,226px) + 8px)/var(--hz));width:204px;max-height:calc(var(--mis-max,460px)/var(--hz));overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(160,140,255,.5) transparent;font-size:12px;line-height:1.35;}
+html body:not(.movil):not(.compacto) #misiones b{font-size:12.5px;}
+html body:not(.movil):not(.compacto) #misiones .tarea,html body:not(.movil):not(.compacto) #misiones .q .ok{font-size:12px;}
+html body:not(.movil):not(.compacto) #misiones small{font-size:11px;color:#d6d0f2;}
+html body:not(.movil):not(.compacto) #misiones:not(.pc-abierto) .q:nth-of-type(n+3){display:none;}   /* plegada: 2 filas y «Ver más» (of-type: el boton 🎯 no cuenta) */
+#misiones .mis-ver{display:block;width:100%;margin-top:4px;padding:3px 0;min-height:24px;background:none;border:0;border-top:1px solid rgba(160,140,255,.3);color:#ffd84a;font:600 11px var(--sans);text-align:left;cursor:pointer;}
+#misiones .mis-ver:hover{color:#fff;}
+/* PC: las ventanas laterales abren bajo el marco del jugador (crece con avisos y a 1080p), sin taparlo. */
+html body:not(.movil):not(.compacto) :is(#v-npc,#v-ayuda,#v-inv,#v-libro,#v-tienda,#v-logros,#v-pase,#v-diario,#v-herm,#v-rank,#v-amigos).modal{padding-top:calc(var(--marco-b,156px) + 8px);}
+html body:not(.movil):not(.compacto) :is(#v-npc,#v-ayuda,#v-inv,#v-libro,#v-tienda,#v-logros,#v-pase,#v-diario,#v-herm,#v-rank,#v-amigos) .ventana{max-height:calc((100vh - var(--marco-b,156px) - 116px)/var(--wz));}
+/* PC: el chat vacio no deja una barra oscura sin nada. */
+html body:not(.movil):not(.compacto) #chat:has(#chat-log:empty):not(:focus-within){background:none;border-color:transparent;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;}
+/* PC: teclas a la vista, en los botones, en la barra de acciones y en una linea bajo el chat. */
+#teclas-pc{display:none;}
+html body:not(.movil):not(.compacto) #teclas-pc{display:block;position:fixed;left:12px;bottom:9px;max-width:calc(50vw - 150px);z-index:1;pointer-events:none;font:600 11px/13px var(--sans);color:#efeaff;text-shadow:0 1px 2px #000,0 0 3px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#teclas-pc kbd{font:700 10px/12px var(--sans);color:#fff;background:rgba(8,5,22,.8);border:1px solid rgba(255,255,255,.35);border-radius:3px;padding:0 3px;margin-right:2px;}
+html body.cine #teclas-pc{display:none;}
+@media (hover:hover) and (pointer:fine){
+ html body:not(.movil):not(.compacto) #botones .bt{position:relative;}
+ html body:not(.movil):not(.compacto) #b-inv::after,html body:not(.movil):not(.compacto) #b-libro::after,html body:not(.movil):not(.compacto) #b-logros::after,html body:not(.movil):not(.compacto) #b-mapa::after,html body:not(.movil):not(.compacto) #b-chat::after{position:absolute;right:1px;bottom:0;font:700 9px/11px var(--sans);color:#fff;background:rgba(8,5,22,.85);border-radius:3px;padding:0 2px;pointer-events:none;}
+ html body:not(.movil):not(.compacto) #b-inv::after{content:'I';}
+ html body:not(.movil):not(.compacto) #b-libro::after{content:'P';}
+ html body:not(.movil):not(.compacto) #b-logros::after{content:'L';}
+ html body:not(.movil):not(.compacto) #b-mapa::after{content:'M';}
+ html body:not(.movil):not(.compacto) #b-chat::after{content:'\21B5';}
+}
+html body:not(.movil):not(.compacto) .acc .t{left:3px;top:2px;font:700 10px/12px var(--sans);color:#fff;background:rgba(8,5,22,.75);border-radius:3px;padding:0 3px;}
+/* PC: con una ventana lateral abierta los avisos salen a su lado, no encima de su contenido. */
+html body:not(.movil):not(.compacto):has(:is(#v-npc,#v-ayuda,#v-inv,#v-libro,#v-tienda,#v-logros,#v-pase,#v-diario,#v-herm,#v-rank,#v-amigos).modal.on) #avisos{left:calc(min(420px,40vw)*var(--wz) + 24px);}
+/* Pantallas grandes: el HUD no se queda diminuto (a 1920x1080 mide lo que a 1600x900). 860: Chrome maximizado en un monitor 1080p deja unos 910-945 px de alto util. */
+@media (min-width:1700px) and (min-height:860px){
+ :root{--hz:1.2;--wz:1.15;}
+ html body:not(.movil):not(.compacto) #marco,html body:not(.movil):not(.compacto) #grupo3,html body:not(.movil):not(.compacto) #objp,html body:not(.movil):not(.compacto) #misiones,html body:not(.movil):not(.compacto) #mini,html body:not(.movil):not(.compacto) #botones,html body:not(.movil):not(.compacto) #barra,html body:not(.movil):not(.compacto) #chicha3,html body:not(.movil):not(.compacto) #xp-prox,html body:not(.movil):not(.compacto) #chat,html body:not(.movil):not(.compacto) #obj,html body:not(.movil):not(.compacto) #alas,html body:not(.movil):not(.compacto) #invit3,html body:not(.movil):not(.compacto) #hablar,html body:not(.movil):not(.compacto) #teclas-pc{zoom:1.2;}
+ html body:not(.movil):not(.compacto) .modal:not(#v-mapa) .ventana{zoom:1.15;}
+ html body:not(.movil):not(.compacto) .modal .ventana{max-height:calc(86vh/1.15);}
+ html body:not(.movil):not(.compacto) .lbl{font-size:13px;}
+ html body:not(.movil):not(.compacto) .num{font-size:19px;}
+}
 </style>
 </head>
 <body>
@@ -1045,6 +1103,7 @@ body.movil #tira-diario .tx small,body.compacto #tira-diario .tx small{font-size
 <button id="chicha3" title="Premio real: 2 litros de chicha morada al llegar a nivel 60">🥤 Nv 60 = 2 L de chicha morada real</button>
 <div class="caja" id="lanzar"><div class="barra"><i></i><span id="lanzar-t"></span></div></div>
 <div id="alas"><i></i><span>ALAS</span></div>
+<div id="teclas-pc" aria-hidden="true"><kbd data-vt="KeyW,KeyA,KeyS,KeyD">WASD</kbd>mover · <kbd data-vt="KeyZ">Z</kbd>atacar · <kbd data-vt="KeyX">X</kbd>esquivar · <kbd data-vt="Space">Espacio</kbd>saltar · <kbd data-vt="Tab">Tab</kbd>objetivo · <kbd data-vt="KeyE">E</kbd>hablar · <kbd data-vt="KeyO">O</kbd>metas</div>
 <div class="caja" id="chat"><div id="chat-log"></div><form id="chat-f" style="display:flex;gap:4px;margin:0" onsubmit="return false"><input id="chat-in" maxlength="120" placeholder="Escribe tu mensaje…" autocomplete="off" enterkeyhint="send"><button type="submit" id="chat-env" aria-label="Enviar">➤</button></form></div>
 <div id="avisos" role="status" aria-live="polite"></div>
 <div id="gestos3" role="menu" aria-label="Gestos y frases rápidas"></div>
@@ -1163,12 +1222,14 @@ body.movil #tira-diario .tx small,body.compacto #tira-diario .tx small{font-size
   poner(v);var s=document.getElementById('sel-texto');
   if(s){s.value=v;s.onchange=function(){var x=s.value==='g'?'g':'n';try{localStorage.setItem('dq3_texto',x);}catch(e){}poner(x);};}})();
   </script>
+  <div class="fila" id="fila-teclas"><span>⌨️ Teclas (abajo, las de fábrica)</span><b><button type="button" class="btn sec" id="b-teclas" style="padding:5px 10px;font-size:12px">Cambiar</button></b></div>
+  <div id="lista-teclas" style="display:none"></div>
   <div class="fila"><span>Moverse</span><b>W A S D</b></div>
   <div class="fila"><span>Girar la cámara</span><b>Arrastrar con el ratón</b></div>
   <div class="fila"><span>Zoom</span><b>Rueda</b></div>
   <div class="fila"><span>Saltar</span><b>Espacio</b></div>
   <div class="fila"><span>Esquivar (golpe rojo)</span><b>X o Mayús</b></div>
-  <div class="fila"><span>Elegir objetivo</span><b>Clic o Tab · !! = mucho más fuerte que tú</b></div>
+  <div class="fila"><span>Elegir objetivo</span><b>Clic, Tab o Mayús+Tab · !! = mucho más fuerte que tú</b></div>
   <div class="fila"><span>Atacar (mantén pulsado para seguir)</span><b>1 o Z</b></div>
   <div class="fila"><span>Habilidades de clase</span><b>2 a 9</b></div>
   <div class="fila"><span>Volar (alas)</span><b>V o doble salto · Espacio sube · C baja</b></div>
@@ -1182,9 +1243,12 @@ body.movil #tira-diario .tx small,body.compacto #tira-diario .tx small{font-size
   <p style="margin-top:10px">En el móvil: joystick a un lado (cámbialo en «Mando»), arrastra en el resto de la pantalla para girar la cámara, acércate a un monstruo y toca ATACAR en cada golpe (mantenlo pulsado para seguir pegando). Las mazmorras, la Torre y la banda están por ahora en CLASSIC (botón 2D): es el mismo personaje.</p>
 
   <p style="margin-top:10px"><button class="btn sec" id="b-leyenda" style="width:100%">📜 La leyenda del Cántaro (la historia del juego)</button></p>
+  <div class="fila" id="fila-token" style="display:none"><span>🪙 Comprar $DUENDE al creador</span><b><a class="btn sec" href="/token/" target="_blank" rel="noopener" style="padding:5px 10px;font-size:12px;text-decoration:none;white-space:nowrap">Ver cómo</a></b></div>
+  <div class="fila" style="flex-wrap:wrap"><span>🆘 Habla con el creador del juego</span><b><a class="btn sec" href="https://wa.me/51900877863" target="_blank" rel="noopener" style="padding:5px 10px;font-size:12px;text-decoration:none;white-space:nowrap">WhatsApp +51 900 877 863</a></b></div>
+  <div class="fila" style="flex-wrap:wrap"><span>🥤 Dudas sobre la chicha</span><b><a class="btn sec" href="https://wa.me/51916778731" target="_blank" rel="noopener" style="padding:5px 10px;font-size:12px;text-decoration:none;white-space:nowrap">WhatsApp +51 916 778 731</a></b></div>
   <div class="fila"><span>📢 Comunidad oficial</span><b style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button type="button" class="btn sec" id="com-canal" style="padding:5px 10px;font-size:12px">Canal (novedades)</button><button type="button" class="btn sec" id="com-grupo" style="padding:5px 10px;font-size:12px">Grupo (jugadores)</button></b></div>
   <div class="fila" id="fila-avtg"><span>🔔 Avisos por Telegram</span><b><button type="button" class="btn sec" id="b-avtg" style="padding:5px 10px;font-size:12px">Avísame</button></b></div>
-  <p style="margin:4px 0 0;font-size:11px;color:var(--txt3)">Nunca te pediremos pagos por privado.</p>
+  <p style="margin:4px 0 0;font-size:11px;color:var(--txt3)">Esos dos WhatsApp son los únicos números oficiales. Nunca te pediremos contraseñas ni pagos por privado.</p>
   <p style="margin-top:10px;font-size:11px;color:var(--txt3)">Créditos de arte y sonido (CC0): árboles, casas, castillos y efectos de <a href="https://kenney.nl" target="_blank" rel="noopener" style="color:var(--cian)">Kenney</a> (Nature Kit, Fantasy Town Kit, Castle Kit, RPG Audio, Impact Sounds) y voces de criaturas de «80 CC0 creature SFX» en OpenGameArt. ¡Gracias!</p>
   <p style="margin-top:10px;display:flex;gap:6px"><a class="btn sec" href="/mmo/" style="flex:1;text-align:center;text-decoration:none">CLASSIC (2D)</a><a class="btn sec" href="/inicio/" style="flex:1;text-align:center;text-decoration:none">Inicio</a><a class="btn sec" href="#" data-instalar hidden style="display:none;flex:1;text-align:center;text-decoration:none">⬇ Instalar</a></p>
 </div></div>
@@ -1198,8 +1262,8 @@ body.movil #tira-diario .tx small,body.compacto #tira-diario .tx small{font-size
 <!-- Telegram: su SDK se carga arriba solo dentro de Telegram (window.__tgListo).
      defer: no frenan el HTML y corren en orden, antes que mundo.js (que usa supabase). -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-<script src="/js/config.js?v=367" defer></script>
-<script type="module" src="/mundo/js/mundo.js?v=367"></script>
+<script src="/js/config.js?v=368" defer></script>
+<script type="module" src="/mundo/js/mundo.js?v=368"></script>
 <div id="flash-nv"></div>
 <div id="cartel-nv"></div>
 <div id="aviso-dir" aria-hidden="true"></div>

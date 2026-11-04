@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- Destino del QR de la etiqueta de la botella (tools/etiqueta_qr.py). Solo enlace: sin premio ni canje.
+     Los requisitos de la meta repiten CHICHA de mmo/js/data.js; tools/humo_produccion.mjs avisa si se separan. -->
+<meta name="robots" content="noindex,follow">
+<title>Duende Quest · El Cántaro Eterno</title>
+<meta name="description" content="Esta botella viene del Cántaro Eterno. Entra gratis al mundo de los duendes y descubre quién abrió la puerta. En tu celular, sin descargar.">
+<meta name="theme-color" content="#1a0a2e">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Duende Quest">
+<meta property="og:locale" content="es_PE">
+<meta property="og:title" content="Esta botella viene del Cántaro Eterno">
+<meta property="og:description" content="Su chicha encendía el sol del bosque. Alguien abrió la puerta. Descubre quién: juega gratis en tu celular, sin descargar.">
+<meta property="og:url" content="https://duende-quest.alfonso12hc.workers.dev/chicha/">
+<meta property="og:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/og/chicha.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Un duende pelea contra un goblin en el bosque de Duende Quest">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Esta botella viene del Cántaro Eterno">
+<meta name="twitter:description" content="Su chicha encendía el sol del bosque. Alguien abrió la puerta. Descubre quién: juega gratis en tu celular, sin descargar.">
+<meta name="twitter:image" content="https://duende-quest.alfonso12hc.workers.dev/assets/og/chicha.jpg">
+<link rel="icon" href="/assets/ui/coin.png">
+<link rel="apple-touch-icon" href="/assets/ui/icon-180.png">
+<style>
+:root{--bg:#1a0a2e;--caja:#2a1447;--borde:rgba(196,167,255,.28);--txt:#f6f1ff;--txt2:#c9bde6;--oro:#ffd84a;--wa:#0f7a41;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html{-webkit-text-size-adjust:100%;}
+body{min-height:100vh;background:var(--bg);color:var(--txt);font:16px/1.5 var(--sans);overflow-x:hidden;}
+main{max-width:980px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 16px calc(104px + env(safe-area-inset-bottom));}
+.marca{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px;letter-spacing:.08em;}
+.marca img{width:28px;height:28px;}
+.heroe{text-align:center;padding:12px 0 20px;}
+.cantaro{display:block;width:124px;height:132px;margin:0 auto 6px;}
+h1{font-size:clamp(27px,8vw,44px);line-height:1.12;font-weight:800;}
+h1 b{color:var(--oro);font-weight:800;}
+.historia{max-width:34em;margin:12px auto 0;}
+.historia p+p{margin-top:6px;}
+.historia .gancho{color:var(--oro);font-weight:700;}
+.consejo{max-width:34em;margin:12px auto 0;padding:10px 12px;border-radius:12px;border:1px solid var(--borde);color:var(--txt2);font-size:14px;}
+.escena{max-width:460px;margin:0 auto;}
+.foto{display:block;width:100%;height:auto;border-radius:14px;border:1px solid var(--borde);background:var(--caja);}
+.pie-foto{margin-top:6px;color:var(--txt2);font-size:14px;text-align:center;}
+section{margin-top:22px;}
+h2{font-size:21px;line-height:1.25;font-weight:800;margin-bottom:8px;}
+.meta{padding:16px;border-radius:16px;background:var(--caja);border:1px solid var(--borde);}
+.grande{font-size:18px;font-weight:700;}
+.grande b{color:var(--oro);}
+ul{list-style:none;margin-top:10px;}
+li{position:relative;padding-left:18px;margin-top:7px;font-size:15px;color:var(--txt2);}
+li::before{content:"";position:absolute;left:2px;top:.62em;width:7px;height:7px;border-radius:50%;background:var(--oro);}
+li b{color:var(--txt);}
+.claro{margin-top:12px;padding-top:12px;border-top:1px solid var(--borde);font-size:15px;}
+.contactos{display:grid;gap:10px;}
+.wa{display:block;padding:12px 14px;border-radius:14px;background:var(--wa);color:#fff;text-decoration:none;font-weight:700;line-height:1.3;}
+.wa small{display:block;font-weight:500;font-size:14px;margin-top:2px;}
+.nota{margin-top:10px;font-size:14px;color:var(--txt2);}
+footer{margin-top:22px;text-align:center;font-size:14px;color:var(--txt2);}
+footer a{color:inherit;display:inline-block;padding:6px 4px;}
+.barra{position:fixed;left:0;right:0;bottom:0;z-index:5;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(26,10,46,0),rgba(26,10,46,.95) 32%);}
+.jugar{display:block;max-width:420px;margin:0 auto;padding:16px;border-radius:16px;background:var(--oro);color:#1a0a2e;font-size:19px;font-weight:800;text-align:center;text-decoration:none;box-shadow:0 8px 26px rgba(0,0,0,.45);}
+.jugar:active{transform:scale(.98);}
+a:focus-visible{outline:3px solid #fff;outline-offset:2px;}
+@media (min-width:600px){
+  .heroe{display:grid;grid-template-columns:auto minmax(0,1fr);gap:0 20px;align-items:center;text-align:left;}
+  .cantaro{grid-row:span 3;margin:0;}
+  .historia,.consejo{margin-left:0;}
+  .contactos{grid-template-columns:1fr 1fr;}
+}
+@media (min-width:600px) and (max-height:480px){
+  .cantaro{width:92px;height:98px;}
+  .escena{max-width:300px;}
+  h1{font-size:27px;}
+  .barra{padding-top:6px;padding-bottom:calc(6px + env(safe-area-inset-bottom));}
+  .jugar{padding:11px;font-size:17px;}
+  main{padding-bottom:calc(78px + env(safe-area-inset-bottom));}
+}
+@media (min-width:860px){
+  main{padding-top:32px;}
+  .cuerpo{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);grid-template-areas:"meta escena" "meta contacto";grid-template-rows:auto 1fr;gap:0 28px;align-items:start;}
+  .escena{grid-area:escena;max-width:none;}
+  .s-meta{grid-area:meta;margin-top:0;}
+  .s-contacto{grid-area:contacto;}
+  .contactos{grid-template-columns:1fr;}
+}
+</style>
+<script src="/js/origen.js?v=368"></script>
+</head>
+<body>
+<main>
+  <div class="marca"><img src="/assets/ui/coin.png" alt="" width="28" height="28">DUENDE QUEST</div>
+  <header class="heroe">
+    <svg class="cantaro" viewBox="0 0 120 128" aria-hidden="true">
+      <circle cx="60" cy="72" r="56" fill="#7c3aed" opacity=".28"/>
+      <path d="M41 34c-15 4-17 26-5 37" fill="none" stroke="#b5673a" stroke-width="7" stroke-linecap="round"/>
+      <path d="M46 12h28l-3 18c15 7 25 22 25 41 0 25-17 45-36 45S24 96 24 71c0-19 10-34 25-41z" fill="#c9783f"/>
+      <path d="M71 30c15 7 25 22 25 41 0 25-17 45-36 45 25-12 30-58 11-86z" fill="#8f4e26"/>
+      <ellipse cx="60" cy="12" rx="15" ry="4.5" fill="#4c1d95" stroke="#8f4e26" stroke-width="2"/>
+      <path d="M31 66c12-5 21 4 29 0s18-5 29 0c1 21-13 42-29 42S31 87 31 66z" fill="#5b21b6"/>
+      <path d="M54 30l7 13-9 12 11 12-7 14 8 12-3 15M61 43l13 5M52 55l-13 2M63 67l15 3M56 81l-12 4" fill="none" stroke="#ffd84a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <h1>Esta botella viene del <b>Cántaro Eterno</b></h1>
+    <div class="historia">
+      <p>Inti y Mama Quilla moldearon el Cántaro con barro de la Pachamama, y su chicha morada encendía el sol del bosque.</p>
+      <p>El Rey Goblin lo robó y lo rompió, y empezó la Larga Noche.</p>
+      <p class="gancho">Pero el nudo de la puerta no se cortó: alguien de adentro lo desató. Descubre quién.</p>
+    </div>
+    <p class="consejo" id="consejo" hidden></p>
+  </header>
+
+  <div class="cuerpo">
+    <figure class="escena">
+      <img class="foto" src="/assets/etiqueta/escena.jpg" alt="Un duende con espada pelea contra un goblin en el bosque" width="720" height="440" loading="lazy">
+      <figcaption class="pie-foto">Juego gratis: se abre en el navegador, sin descargar nada.</figcaption>
+    </figure>
+
+    <section class="s-meta" aria-labelledby="t-meta">
+      <div class="meta">
+        <h2 id="t-meta">La chicha del juego también es de verdad</h2>
+        <p class="grande">Llega a <b>nivel 60</b> y reclama <b>2 litros</b> de chicha morada.</p>
+        <ul>
+          <li>Necesitas <b>14 días jugados</b> y <b>30 horas de juego</b>. Es un camino largo, sin atajos.</li>
+          <li>Juega con una <b>cuenta de Telegram o correo</b>, no como invitado.</li>
+          <li>El equipo <b>revisa cada reclamo</b> a mano. Las trampas y los bots quedan fuera.</li>
+          <li>El envío es <b>dentro de Perú</b>, y se coordina por WhatsApp con tu código de reclamo.</li>
+          <li>Son <b>5 premios de nivel 60 al mes</b>. Si ese mes ya se entregaron, tu reclamo queda en cola para el siguiente.</li>
+          <li>Además, desde el nivel 10 cazar suma puntos (hasta 600 al día): con <b>25.000</b> y con <b>100.000 puntos</b> reclamas un litro cada vez. Hay 4 litros por puntos al mes, y tus puntos no se pierden.</li>
+        </ul>
+        <p class="claro"><b>Esta botella no trae premio ni código.</b> El QR solo abre el juego, y no hay que comprar nada para llegar a la meta.</p>
+      </div>
+    </section>
+
+    <section class="s-contacto" aria-labelledby="t-contacto">
+      <h2 id="t-contacto">¿Dudas? Escríbenos</h2>
+      <div class="contactos">
+        <a class="wa" href="https://wa.me/51916778731?text=Hola%2C%20escane%C3%A9%20la%20etiqueta%20de%20la%20chicha%20y%20tengo%20una%20consulta." target="_blank" rel="noopener">WhatsApp de la chicha<small>+51 916 778 731</small></a>
+        <a class="wa" href="https://wa.me/51900877863?text=Hola%2C%20tengo%20una%20consulta%20sobre%20Duende%20Quest." target="_blank" rel="noopener">WhatsApp del creador del juego<small>+51 900 877 863</small></a>
+      </div>
+      <p class="nota">Nunca te pediremos contraseñas ni pagos para entregarte tu chicha.</p>
+    </section>
+  </div>
+
+  <footer><a href="/terminos">Términos</a> · <a href="/privacidad">Privacidad</a></footer>
+</main>
+<div class="barra"><a class="jugar" id="jugar" href="/mundo/">JUGAR GRATIS</a></div>
+<script>
+(function () {
+  // Misma eleccion que /jugar/: el 3D (/mundo/) pide WebGL, importmap, memoria y buena conexion;
+  // si falta algo va al 2D (/mmo/). ?j=2d|3d lo fuerza y quien vuelve retoma su ultimo juego.
+  function puede3d() {
+    var gl = false;
+    try { var c = document.createElement('canvas'); gl = !!(window.WebGLRenderingContext && (c.getContext('webgl2') || c.getContext('webgl') || c.getContext('experimental-webgl'))); } catch (e) {}
+    if (!gl) return false;
+    try { if (!(window.HTMLScriptElement && HTMLScriptElement.supports && HTMLScriptElement.supports('importmap'))) return false; } catch (e) { return false; }
+    return true;
+  }
+  function destino() {
+    var j = (/[?&]j=(2d|3d)\b/i.exec(location.search) || [])[1];
+    if (j) return j.toLowerCase() === '2d' ? '/mmo/' : '/mundo/';
+    if (!puede3d()) return '/mmo/';
+    var mem = navigator.deviceMemory;
+    if (typeof mem === 'number' && mem <= 3) return '/mmo/';
+    var cx = navigator.connection;
+    if (cx && cx.saveData) return '/mmo/';
+    if (cx && cx.effectiveType && cx.effectiveType !== '4g') return '/mmo/';
+    return '/mundo/';
+  }
+  var ult = null, tiene = false;
+  try { ult = localStorage.getItem('dq_ultimo_juego'); } catch (e) {}
+  try { tiene = /^[a-f0-9]{32}$/.test(localStorage.getItem('dq_mmo_tok') || ''); } catch (e) {}
+  // Tambien cuenta quien inicio sesion (Supabase guarda su sesion como sb-<proyecto>-auth-...).
+  try { tiene = tiene || Object.keys(localStorage).some(function (k) { return /^sb-.*-auth-/.test(k); }); } catch (e) {}
+  if (ult !== '/mundo/' && ult !== '/mmo/') ult = null;
+  var ir = destino(), b = document.getElementById('jugar');
+  if (ult && !/[?&]j=(2d|3d)\b/i.test(location.search)) ir = (ult === '/mundo/' && !puede3d()) ? destino() : ult;
+  if (ir === '/mmo/') {
+    var cm = document.getElementById('consejo');
+    cm.textContent = 'Aquí se abrirá la versión ligera CLASSIC (2D): va más fluida en tu equipo. El Caso de quién desató el nudo solo se investiga en ORIGINS (3D), con tu mismo duende.';
+    cm.hidden = false;
+    // CLASSIC no tiene el Caso (functions/mmo/caso.js solo corre en ORIGINS): aqui no se promete.
+    document.querySelector('.gancho').textContent = 'Entra al bosque, cumple las misiones del Guardia Tito y vence al Rey Goblin.';
+  }
+  if (tiene) b.textContent = 'CONTINUAR CON MI DUENDE';
+  // El utm_source=etiqueta pasa al juego tal cual, para medirlo en /mmostats. Sin utm, ad=1:
+  // el juego abre en el mismo modo anuncio que desde /jugar/.
+  var qs = location.search;
+  try { sessionStorage.setItem('dq_anuncio', '1'); } catch (e) {}
+  if (!/[?&]utm_[a-z]+=/i.test(qs)) qs += (qs ? '&' : '?') + 'ad=1';
+  if (ir === '/mmo/' && !/[?&]j=/i.test(qs)) qs += (qs ? '&' : '?') + 'j=2d';
+  b.href = ir + qs;
+  b.addEventListener('click', function () { try { localStorage.setItem('dq_ultimo_juego', ir); } catch (e) {} });
+})();
+</script>
+</body>
+</html>

@@ -19,7 +19,7 @@
 // ═══════════════════════════════════════════════════════
 import {
   MAPAS, MONSTRUOS, SKINS, ARMAS, CLASES, PODERES, VARA, statsMonstruo, multForja, talento, velMontura, xpParaSubir, costoReparacion,
-  MATERIALES, NODO_CADA_MS, RECOLECTAR_MS, RARO_ZONA, raroDe, PESCA, hoyUTC, alaDe,
+  MATERIALES, NODO_CADA_MS, RECOLECTAR_MS, RARO_ZONA, raroDe, PESCA, hoyUTC, alaDe, MISIONES,
   habPorId, costoHab, GCD_MS, RECURSOS, MELEE, limpiarLook, MUNDIAL_CADA_MS, MUNDIAL_DURA_MS, proximoMundial, mundialDe, TIPO_HAB, DEBIL_EMO, premioBestiario,
 } from '../../mmo/js/data.js';
 import { MUNDO, NPCS3D, NPC_DIST, SPAWN3D, ARENA3D, CASAS, campamentos, revivirEn3d, zonaEn, esNoche, nodos3d, RECOGER_DIST, alturaEn, corrienteEnMundo } from '../../mmo/js/mundo3d.js';
@@ -41,7 +41,13 @@ const RETIRAR = 240;            // m: y se vacia si nadie queda a esta
 const REAPARECE_MS = 20000;
 const REAPARECE_NOVATO_MS = 7000;   // campamentos de Nv 1-2: el primer minuto sin esperar presas
 const REAPARECE_JEFE_MS = 5 * 60 * 1000;
-const CORREA = 50;              // m: un monstruo no se aleja mas de su campamento
+// Primera hora (presas de hasta Nv 17): casi todo es acercarse, asi que se acorta la espera, no el premio de cada presa.
+const REAPARECE_PRIMERA_MS = 12000, NV_PRIMERA_HORA = 17;
+// Si dos o mas cazan el mismo claro (GENTE_R), reaparece a la mitad y crece: 2 personas +1, 4 o mas +2.
+const GENTE_R = 40, GENTE_ACTIVO_MS = 60000;
+// Jefe que alguien cerca necesita para su mision de la cadena: lo espera 90 s como mucho (solo ese jefe y solo entonces).
+const JEFE_PEDIDO_MS = 90000;
+const CORREA = 50;             // m: un monstruo no se aleja mas de su campamento
 const MELEE3D = 3.2;              // m: alcance del golpe cuerpo a cuerpo (x arma.alcance)
 const RANGO_VARA = 24;          // m: disparo de vara de magos y sacerdotes
 const MON_MELEE = 2.4, MON_DISPARO = 15;
@@ -49,6 +55,16 @@ const MON_MELEE = 2.4, MON_DISPARO = 15;
 // a su presa (los jefes, a todos los de cerca; los tiradores no avisan); el cliente lo muestra agachado y en rojo para que
 // pueda retroceder. No cambia el ritmo ni el daño.
 const AVISO_MON_MS = 650;       // 650: con 400 llegaba tarde en 4G
+// Presas de campamento en ORIGINS: el basico (x3,6) las mataba en 2 golpes y con equipo el suelo del 25 % las dejaba sin dientes.
+// Hasta Nv 5 (vida) y Nv 10 (daño) todo sigue igual: ahi se aprende. Desde Nv 20, unos 5 golpes y de verdad duelen.
+// premio compensa XP y oro por presa: el ciclo de caza dura ~1,5 veces mas y el camino al 60 no se alarga. Solo campamentos: jefes, 2D, Cueva y eventos, igual.
+const durezaPresa3d = nv => {
+  const a = Math.min(1, Math.max(0, (nv - 5) / 15)), b = Math.min(1, Math.max(0, (nv - 10) / 10));
+  return { vida: 1 + 3 * a, dano: 1 + 0.2 * b, suelo: 0.25 + 0.35 * b, premio: 1 + 0.5 * a };
+};
+// ESQUIVAR (mensaje 'esq3'): 180 ms sin recibir golpes de monstruo; dentro de los ultimos 200 ms del aviso rojo es
+// esquiva perfecta: +15 % de recurso y critico asegurado en el siguiente golpe (hay 4 s para darlo).
+const ESQ_INV_MS = 180, ESQ_PERFECTA_MS = 200, ESQ_CD_MS = 1200, ESQ_CRIT_MS = 4000;
 const FOTO_CADA = 2;            // ticks entre fotos (200 ms)
 // Margen para el jitter de la red: un golpe o una habilidad que llega hasta
 // 150 ms antes de su recarga cuenta (la cadencia se mide desde el golpe
@@ -133,6 +149,7 @@ export const Mundo3D = {
     this.enviar(s, this.estadoAsedio());
     if (this.infoEncargos) this.enviar(s, this.infoEncargos(c));
     if (this.infoSec) this.enviar(s, this.infoSec(c));
+    if (this.infoCaso) { this.revisarCaso(s); this.enviar(s, this.infoCaso(c)); }
     this.nodos3AlEntrar(s);
     this.aClave(K3, { t: 'pj3', p: this.info3d(s) }, s);
   },
@@ -161,6 +178,7 @@ export const Mundo3D = {
   recibir3d(s, m) {
     switch (m.t) {
       case 'mv3': return this.mover3d(s, m);
+      case 'esq3': return this.esquivar3d(s);
       // Lo social y lo de cuenta funciona igual que en el 2D (mismo personaje).
       case 'pase': return this.cobrarPase(s, m);
       case 'exped': return this.expedicion(s, m);   // expediciones.js: la mascota sale aunque no juegues
@@ -217,6 +235,7 @@ export const Mundo3D = {
       case 'equipar': return this.equipar(s, m);
       case 'item': return this.item(s, m);
       case 'titulo': return this.ponerTitulo(s, m);
+      case 'casoSospecha': return this.marcarSospecha(s, m);
       case 'miNombre': return this.miNombre(s, m);   // dios.js: el invitado elige su nombre (1 vez)
       case 'faccion': return this.elegirFaccion(s, m);
       case 'maquina': return this.dispararMaquina(s, m);
@@ -234,6 +253,7 @@ export const Mundo3D = {
       case 'pescar': return this.pescar3d(s);
       case 'tirar': return this.tirar(s, m);
       case 'fabricar': return this.fabricar(s, m);   // cercaDeArtesana() sabe del 3D
+      case 'vaso': return this.mensajeVaso(s, m);   // vasos.js: comprar y tomar chicha
       case 'invitar': return this.invitar(s, m);
       case 'unirmeRef': return this.unirmeRef(s, m);   // social.js: enlace «Invitar a mi grupo» (#g= / startapp=g_)
       case 'grupoLink': {
@@ -276,6 +296,31 @@ export const Mundo3D = {
         if (['tp', 'irA', 'traer'].includes(m.a)) return this.no(s, 'En el mundo 3D usa el mapa para moverte.');
         return this.dios(s, m);
     }
+  },
+
+  // ── ESQUIVA ──
+  // El boton del cliente avisa aqui: la recarga la cuenta el servidor (con margen de red) para que no sea explotable.
+  // La invulnerabilidad solo cubre golpes de monstruo (herir); los pisotones se evitan saliendo del circulo.
+  esquivar3d(s) {
+    if (s.muerto || s.cast || s.h > 4 || this.aura(s, 'aturdido') || this.aura(s, 'bloque')) return;
+    const ahora = Date.now();
+    if (ahora - (s.esqUlt || 0) < ESQ_CD_MS - JITTER_MS) return;
+    s.esqUlt = ahora; s.esqInv = ahora + ESQ_INV_MS;
+    // Perfecta: un aviso rojo de un monstruo que aun no golpeo (atkEn sigue igual), a un paso y en sus ultimos 200 ms.
+    const avisos = (s.esqAv || []).filter(e => e.en > ahora - 250);
+    const mons = this.iniciar3d().mons;
+    const i = avisos.findIndex(e => {
+      const o = mons.get(e.id);
+      return o && !o.muere && o.atkEn === e.en && o.avisoA === s.id && ahora >= e.en - ESQ_PERFECTA_MS && dist(o, s.p) <= MON_MELEE + (o.jefe ? 1 : 0) + 1.5;
+    });
+    if (i >= 0) {
+      const [e] = avisos.splice(i, 1);   // un premio por golpe
+      s.esqInv = Math.max(s.esqInv, e.en + 150);   // el golpe cae en el primer tick tras atkEn: la perfecta siempre lo evita
+      s.esqCrit = ahora + ESQ_CRIT_MS;
+      if (s.st.recMax > 0) s.rec = Math.min(s.st.recMax, (s.rec || 0) + s.st.recMax * 0.15);   // 15 de Ira (sobre 100); en mana, a escala
+      this.enviar(s, { t: 'esqp', id: e.id });
+    }
+    s.esqAv = avisos;
   },
 
   // ── MOVIMIENTO ──
@@ -335,7 +380,7 @@ export const Mundo3D = {
       const rec = vel * 1.15 * dt / 1000, pago = Math.min(s.esqDeuda || 0, rec);
       s.esqDeuda = (s.esqDeuda || 0) - pago;
       s.movBud = Math.min(tope, (s.movBud === undefined ? tope : s.movBud) + rec - pago);
-      // ESQUIVAR (boton del cliente, 3 m en 180 ms): +3 m de margen a pie, 0,9 s entre esquivas (aguanta dos paquetes juntos por 4G). Solo mueve.
+      // ESQUIVAR (boton del cliente, 3 m en 180 ms): +3 m de margen a pie, 0,9 s entre esquivas (aguanta dos paquetes juntos por 4G). Aqui solo mueve: la invulnerabilidad va por 'esq3' (esquivar3d).
       if (d > s.movBud + 1 && d <= s.movBud + 4 && a <= 1 && ahora - (s.esqT || 0) > 900) { s.esqT = ahora; s.movBud += 3; s.esqDeuda = (s.esqDeuda || 0) + 3; }
       if (d > s.movBud + 1) { this.enviar(s, { t: 'snap3', x: r1(s.p.x), z: r1(s.p.z) }); return; }
       s.movBud -= d;   // el margen de +1 m es un prestamo unico: puede quedar en -1 y la recarga lo repone
@@ -476,6 +521,7 @@ export const Mundo3D = {
       return;
     }
     const base = statsMonstruo(o.k, o.nv);
+    if (o.premioX) { base.xp = Math.round(base.xp * o.premioX); base.oro = Math.round(base.oro * o.premioX); }
     const total = [...o.dano.values()].reduce((a, b) => a + b, 0) || 1;
     const cobraron = new Set();
     // Resumen personal del jefe: puesto por daño (se ordena una sola vez).
@@ -537,7 +583,7 @@ export const Mundo3D = {
     // «Jugaste con» y oferta de grupo a quien caza junto (social.js cazaJuntos).
     if (this.cazaJuntos) this.cazaJuntos([...cobraron].map(id => this.sesiones.get(id)).concat(juntos), o);
     const campo = W.campos[o.campo];
-    if (campo) { campo.vivos.delete(o.id); campo.prox = Date.now() + (o.k === 'jefe_sabueso' ? 60000 + Math.random() * 30000 : o.jefe ? REAPARECE_JEFE_MS : (o.nv || (MONSTRUOS[o.k] || {}).nivel || 99) <= 2 ? REAPARECE_NOVATO_MS : REAPARECE_MS); }
+    if (campo) { const nvO = o.nv || (MONSTRUOS[o.k] || {}).nivel || 99; campo.vivos.delete(o.id); campo.prox = Date.now() + (o.k === 'jefe_sabueso' ? 60000 + Math.random() * 30000 : o.jefe ? REAPARECE_JEFE_MS : nvO <= 2 ? REAPARECE_NOVATO_MS : nvO <= NV_PRIMERA_HORA ? REAPARECE_PRIMERA_MS / (campo.gente >= 2 ? 2 : 1) : REAPARECE_MS); }
     // Moral de manada: si cae un compañero comun, los cobardes de su campamento
     // (a menos de 8 m) pueden huir 1,8 s. Nunca jefes, cueva, eventos, élites ni en el pueblo.
     if (campo && !o.jefe && !o.cueva && !o.i3 && !o.ex3 && !o.persiste && !o.asedio && zonaEn(o.x, o.z) !== 'pueblo') {
@@ -676,7 +722,7 @@ export const Mundo3D = {
       if (this.vacio3d(s, ahora)) continue;
       this.tickJugador(s, ahora, dt, seguro);
       if (s.muerto || s.hp >= s.st.maxHp) continue;
-      const k = seguro ? 0.12 : (ahora - (s.golpeT || 0) > 4000 ? 0.04 : 0);
+      const k = (seguro ? 0.12 : (ahora - (s.golpeT || 0) > 4000 ? 0.04 : 0)) + this.regenVaso(s, ahora);
       if (k) s.hp = Math.min(s.st.maxHp, s.hp + s.st.maxHp * k * dt);
     } catch (e) { fallo('3d-jug', e); }
     const vivos = jugadores.filter(s => !s.muerto);
@@ -684,9 +730,24 @@ export const Mundo3D = {
     if (!this.tempT || ahora - this.tempT > 60000) { this.tempT = ahora; this.paso('3d-temporada', () => this.temporadaA()); }   // cierre del mes
     // Campamentos: se pueblan cerca de alguien.
     for (const c of W.campos) {
-      let cerca = Infinity;
-      for (const s of jugadores) { const d = dist(s.p, c); if (d < cerca) cerca = d; }
-      if (cerca < ACTIVO && c.vivos.size < c.n + (c.k2 ? c.n2 || 1 : 0) && ahora >= c.prox) {
+      let cerca = Infinity, gente = 0;
+      for (const s of jugadores) {
+        const d = dist(s.p, c);
+        if (d < cerca) cerca = d;
+        // Solo cuenta quien caza de verdad: un personaje quieto al lado no acelera el claro.
+        if (d < GENTE_R && !s.muerto && ahora - Math.max(s.movT || 0, s.atkT || 0) < GENTE_ACTIVO_MS) gente++;
+        // Una sola vez por personaje y jefe: si no, otro personaje aparcado cerca con la mision sin cumplir lo dejaba cada 90 s para siempre.
+        if (c.jefe && ahora + JEFE_PEDIDO_MS < c.prox && d < ACTIVO && !c.vivos.size) {
+          const q = MISIONES[s.c.mis && s.c.mis.i];
+          if (q && q.tipo === c.k && s.c.mis.p < q.n && !(c.pedidos && c.pedidos.has(s.c.nombre))) {
+            (c.pedidos = c.pedidos || new Set()).add(s.c.nombre);
+            c.prox = ahora + JEFE_PEDIDO_MS;
+          }
+        }
+      }
+      c.gente = gente;
+      const extra = gente >= 2 && !c.jefe && !c.k2 && ((MONSTRUOS[c.k] || {}).nivel || 99) <= NV_PRIMERA_HORA ? Math.min(2, gente >> 1) : 0;
+      if (cerca < ACTIVO && c.vivos.size < c.n + (c.k2 ? c.n2 || 1 : 0) + extra && ahora >= c.prox) {
         this.crear3d(c);
         c.prox = ahora + 1500;
       }
@@ -749,6 +810,10 @@ export const Mundo3D = {
       hp: st.hp, max: st.hp, atk: st.atk, vel: st.vel, y: 0, h: 0,
       dano: new Map(), amen: new Map(), au: {}, cl: K3, obj: 0, atkEn: 0, golpeT: 0, st: 0, paseo: 0, destino: null,
     };
+    if (!o.jefe) {
+      const dz = durezaPresa3d(def.nivel);
+      o.hp = o.max = Math.round(st.hp * dz.vida); o.atk = Math.round(st.atk * dz.dano); o.suelo = dz.suelo; o.premioX = dz.premio;
+    }
     // Monstruo nocturno: de noche, 1 de cada 10 comunes del mundo abierto sale morado (+25 % de oro).
     o.noct = !o.jefe && !o.i3 && !o.ex3 && !enCueva(o.x) && !enAbismo(o.x) && esNoche(Date.now()) && Math.random() < 0.1 ? 1 : 0;
     W.mons.set(o.id, o);
@@ -1442,6 +1507,7 @@ export const Mundo3D = {
         // Los tiradores no avisan (15 m: alejarse no sirve); los jefes avisan a todos los de cerca.
         if (!o.dispara && o.avisoAtk !== o.atkEn && ahora < o.atkEn && ahora >= o.atkEn - AVISO_MON_MS) {
           o.avisoAtk = o.atkEn; o.avisoA = s.id;   // el "¡Esquivado!" solo va a quien vio el aviso
+          s.esqAv = (s.esqAv || []).slice(-5); s.esqAv.push({ id: o.id, en: o.atkEn });   // para reconocer la esquiva perfecta
           const pre = { t: 'mpre', id: o.id, ms: Math.round(o.atkEn - ahora), a: s.id };
           if (o.jefe) this.aCerca3d(o, pre, 40); else this.enviar(s, pre);
         }
@@ -1450,7 +1516,7 @@ export const Mundo3D = {
           if (o.jefe && o.campo >= 0 && !o.cueva && o.expuesto > ahora) o.atkEn = Math.max(o.atkEn, o.expuesto + 300);   // la apertura ¡AHORA! empieza tras la mordida avisada
           const golpe = o.atk * (o.jefe ? 0.7 : 1) * (o.dispara ? 0.9 : 1) * (1 + 0.06 * (o.furia || 0)) * (o.ex3 && o.ex3.af === 'furioso' && o.hp < o.max * 0.3 ? 1.5 : 1);   // élite Furioso: +50 % bajo el 30 % de vida
           if (o.dispara) this.aCerca3d(o, { t: 'b3', de: o.id, a: s.id });
-          this.herir(s, golpe, { jefe: o.jefe, bala: o.dispara, mundial: o.mundial3 || o.guardian, id: o.id });
+          this.herir(s, golpe, { jefe: o.jefe, bala: o.dispara, mundial: o.mundial3 || o.guardian, id: o.id, suelo: o.suelo });
           // Revancha (Nv < 10): si te derriba casi muerto, queda herido 90 s y no se cura al volver.
           if (s.muerto && !s.muertoPvP && puedeRevancha(o, s)) {
             // Una sola revancha por monstruo (no se renueva con cada muerte), nunca en la Cueva ni contra uno muy superior.
@@ -1656,7 +1722,9 @@ export const Mundo3D = {
     const w = this.debil3d(s, o, tipo);
     if (this.aura(s, 'sigilo')) { k = 2; this.quitarAura(s, 'sigilo'); if (s.c.clase === 'picaro') this.sumarCombo(s, 2); }
     if (w) k *= 1.3;
-    const crit = Math.random() < s.st.crit;
+    const critEsq = ahora < (s.esqCrit || 0);   // esquiva perfecta: el siguiente golpe es critico seguro
+    if (critEsq) s.esqCrit = 0;
+    const crit = critEsq || Math.random() < s.st.crit;
     const forja = multForja((s.c.forja || {})[s.c.arma]);
     const dmg = Math.max(1, Math.round(s.st.atk * mult * forja * rnd(0.9, 1.1) * (crit ? 1.8 : 1)
       * (ahora < s.fuego ? 1.5 : 1) * (this.aura(s, 'grito') ? 1.1 : 1) * (this.elixir(s, 'elixirF') ? 1.1 : 1) * (this.elixir(s, 'sudado') ? 1.05 : 1) * k));
