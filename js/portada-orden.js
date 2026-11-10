@@ -37,7 +37,19 @@
     '.jugar-flota.ver{transform:none}',
     '.jugar-flota:active{transform:translateY(4px);box-shadow:0 2px 0 var(--pri2)}',
     '@media(min-width:821px){.jugar-flota{display:none}}',
-    '@media(prefers-reduced-motion:reduce){.pliegue[open]>.pliegue-cuerpo,.jugar-flota,.pliegue>summary{animation:none;transition:none}}'
+    // Pestañas: varias secciones en el espacio de una
+    '.pestanas{max-width:1100px;margin:0 auto;padding:2.2rem 1rem .6rem}',
+    '.pestanas-t{font-family:var(--px);font-size:clamp(13px,2.4vw,18px);text-align:center;color:var(--txt);margin-bottom:1rem}',
+    '.pestanas-lista{display:flex;gap:.4rem;overflow-x:auto;scrollbar-width:none;justify-content:center;padding:.2rem .1rem .6rem}',
+    '.pestanas-lista::-webkit-scrollbar{display:none}',
+    '@media(max-width:600px){.pestanas-lista{justify-content:flex-start}}',
+    '.pestana{flex:none;font-family:var(--px);font-size:10.5px;line-height:1.4;color:var(--txt2);background:var(--panel);border:1px solid var(--borde);border-bottom-width:4px;border-radius:10px;padding:.7rem .9rem;cursor:pointer;transition:transform .12s steps(2)}',
+    '.pestana:hover{color:var(--txt)}',
+    '.pestana[aria-selected="true"]{color:#0b0f17;background:var(--oro);border-color:#b8902e;transform:translateY(2px)}',
+    '.pestanas-panel>.section{padding-top:1rem}',
+    '.pestanas-panel>.section.entra{animation:pestana-entra .35s steps(5) both}',
+    '@keyframes pestana-entra{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}',
+    '@media(prefers-reduced-motion:reduce){.pliegue[open]>.pliegue-cuerpo,.jugar-flota,.pliegue>summary,.pestanas-panel>.section.entra{animation:none;transition:none}}'
   ].join('\n');
   var st = d.createElement('style'); st.textContent = css; d.head.appendChild(st);
 
@@ -67,21 +79,72 @@
     return det;
   }
 
+  // ---------- Pestañas ----------
+  function pestanas(items, titulo, idBloque) {
+    var secs = items.map(function (x) { return [d.getElementById(x[0]), x[1]]; })
+      .filter(function (x) { return x[0] && getComputedStyle(x[0]).display !== 'none'; });
+    if (secs.length < 2) return null;
+    var cont = d.createElement('section');
+    cont.className = 'pestanas'; cont.id = idBloque; cont.setAttribute('aria-label', titulo);
+    cont.innerHTML = '<h2 class="pestanas-t">' + titulo + '</h2><div class="pestanas-lista" role="tablist"></div><div class="pestanas-panel"></div>';
+    secs[0][0].parentNode.insertBefore(cont, secs[0][0]);
+    var lista = cont.querySelector('.pestanas-lista'), panel = cont.querySelector('.pestanas-panel');
+    secs.forEach(function (x, i) {
+      var sec = x[0], b = d.createElement('button');
+      b.type = 'button'; b.className = 'pestana'; b.setAttribute('role', 'tab'); b.id = 'tab-' + sec.id;
+      b.setAttribute('aria-controls', sec.id); b.textContent = x[1];
+      sec.setAttribute('role', 'tabpanel'); sec.setAttribute('aria-labelledby', b.id);
+      lista.appendChild(b); panel.appendChild(sec);
+      b.addEventListener('click', function () { activar(sec.id, true); });
+    });
+    function activar(id, animar) {
+      secs.forEach(function (x) {
+        var on = x[0].id === id, b = d.getElementById('tab-' + x[0].id);
+        b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1;
+        x[0].hidden = !on;
+        if (on) {
+          x[0].querySelectorAll('.reveal').forEach(function (r) { r.classList.add('visible'); });
+          if (animar) { x[0].classList.remove('entra'); void x[0].offsetWidth; x[0].classList.add('entra'); }
+          b.scrollIntoView({ block: 'nearest', inline: 'center', behavior: quieto ? 'auto' : 'smooth' });
+        }
+      });
+    }
+    // Flechas del teclado entre pestañas
+    lista.addEventListener('keydown', function (e) {
+      var bs = [].slice.call(lista.children), i = bs.indexOf(d.activeElement);
+      if (i < 0 || (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft')) return;
+      var j = (i + (e.key === 'ArrowRight' ? 1 : -1) + bs.length) % bs.length; bs[j].focus(); bs[j].click();
+    });
+    activar(secs[0][0].id, false);
+    cont._activar = activar;
+    return cont;
+  }
+
   function iniciar() {
+    // El juego: qué es, tráiler, capturas y modo arcade en un solo bloque
+    pestanas([['que-es', 'Qué es'], ['trailer', 'Tráiler'], ['capturas', 'Capturas'], ['game', 'Modo arcade']], 'Conoce el juego', 'bloque-juego');
+    // Comunidad: Telegram, ranking y canales oficiales
+    pestanas([['ranking', 'Ranking'], ['telegram', 'Telegram'], ['community', 'Canales oficiales']], 'Comunidad', 'bloque-comunidad');
     plegar(['nfts', 'boosters', 'arsenal', 'nft-store'], '🛡️', 'Tienda, skins y potenciadores',
       'Todo opcional: el juego completo es gratis. Mira skins, armas, cofres y sus precios.', 'bloque-tienda');
     plegar(['trust', 'tokenomics', 'exchange', 'roadmap', 'donate'], '🪙', 'Zona $DUENDE',
       'El token es opcional para jugar. Transparencia, hoja de ruta y cómo apoyar el proyecto.', 'bloque-duende');
     var bt = d.getElementById('bloque-tienda'), bd = d.getElementById('bloque-duende');
     if (bt && bd && (bd.compareDocumentPosition(bt) & Node.DOCUMENT_POSITION_FOLLOWING)) bt.insertAdjacentElement('afterend', bd);
+    var orden = ['lo-nuevo', 'bloque-juego', 'empieza', 'bloque-comunidad', 'bloque-tienda', 'bloque-duende', 'faq']
+      .map(function (id) { return d.getElementById(id); }).filter(Boolean);
+    for (var k = 1; k < orden.length; k++) orden[k - 1].insertAdjacentElement('afterend', orden[k]);
 
     // Un enlace a una sección plegada la abre antes de bajar hasta ella
     function abrirDestino(hash) {
       if (!hash || hash.length < 2) return false;
       var el; try { el = d.querySelector(hash); } catch (e) { return false; }
-      var det = el && el.closest('details.pliegue');
-      if (!det) return false;
-      det.open = true;
+      if (!el) return false;
+      var tab = el.closest('.pestanas'), det = el.closest('details.pliegue');
+      if (tab && tab._activar && el.getAttribute('role') === 'tabpanel') tab._activar(el.id, true);
+      else if (tab && tab._activar && el.closest('[role="tabpanel"]')) tab._activar(el.closest('[role="tabpanel"]').id, true);
+      if (!det && !tab) return false;
+      if (det) det.open = true;
       requestAnimationFrame(function () { el.scrollIntoView({ behavior: quieto ? 'auto' : 'smooth', block: 'start' }); });
       return true;
     }
@@ -94,7 +157,7 @@
 
     // ---------- Barra de secciones en celular ----------
     var nav = d.querySelector('body > nav, nav[aria-label="Principal"]');
-    var lista = [['que-es', 'El juego'], ['capturas', 'Capturas'], ['empieza', 'Empieza'], ['ranking', 'Ranking'], ['community', 'Comunidad'], ['bloque-tienda', 'Tienda'], ['faq', 'Preguntas']]
+    var lista = [['lo-nuevo', 'Novedades'], ['bloque-juego', 'El juego'], ['empieza', 'Empieza'], ['bloque-comunidad', 'Comunidad'], ['bloque-tienda', 'Tienda'], ['faq', 'Preguntas']]
       .filter(function (x) { var el = d.getElementById(x[0]); return el && !el.hidden && getComputedStyle(el).display !== 'none'; });
     if (nav && lista.length) {
       var barra = d.createElement('div');
