@@ -1,0 +1,251 @@
+/* ═══════════════════════════════════════════════════════
+   PORTADA — capa de marca (nov-2026)
+   Se carga DESPUÉS del <style> de index.html: redefine las variables de color
+   y tipografía (todo lo viejo las usa, así que cambia solo) y añade las piezas
+   nuevas: héroe con la mascota, franja del token, utilidad y cómo comprar.
+   Índice: 1 variables · 2 base · 3 cabecera · 4 botones · 5 héroe · 6 franja
+           7 secciones y tarjetas · 8 utilidad · 9 cómo comprar · 10 pie
+           11 celular · 12 movimiento reducido
+   ═══════════════════════════════════════════════════════ */
+
+/* Iconos del juego: los símbolos y emojis del texto salen de un solo color, como en ORIGINS */
+@font-face{font-family:"DQ Iconos";src:url(/assets/ui/dq-iconos.woff2?v=372) format("woff2");font-display:swap;unicode-range:U+2190-21FF,U+2300-23FF,U+25A0-27BF,U+2900-297F,U+2B00-2BFF,U+1F000-1FAFF;}
+
+/* ── 1. Variables ── */
+:root{
+  /* Noche andina: fondo morado casi negro, paneles índigo, filete dorado */
+  --bg:#090615;--panel:#120e24;--panel2:#1a1533;--borde:#2c2550;
+  --txt:#f1eefb;--txt2:#b6b0cf;--txt3:#958fb3;
+  /* Un solo acento: el oro de la moneda. El violeta queda para enlaces y botones secundarios */
+  --oro:#f2c14e;--oro2:#c9962a;--oro-tinta:#1b1305;
+  --pri:#7c3aed;--pri2:#6d28d9;--pri-txt:#c4b5fd;--cian:#c4b5fd;
+  --yellow:#f2c14e;--amarillo:#f2c14e;--cyan:#c4b5fd;
+  --dark:#090615;--card:#120e24;
+  --titulo:"DQ Iconos","Cinzel","Trajan Pro",Georgia,"Times New Roman",serif;
+  --sans:"DQ Iconos",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  /* La fuente pixel ya no se usa: lo que la pedía hereda la de títulos */
+  --px:var(--titulo);
+  --radio:14px;--ancho:1120px;
+  --sombra:0 10px 30px rgba(3,1,12,.45);
+  --brillo:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,0) 42%);
+}
+
+/* ── 2. Base ── */
+body{font-size:16px;line-height:1.55;}
+a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--oro);outline-offset:3px;border-radius:6px;}
+::selection{background:var(--oro);color:var(--oro-tinta);}
+section[id]{scroll-margin-top:84px;}
+
+/* ── 3. Cabecera ── */
+nav{padding:.6rem 1.25rem;background:rgba(9,6,21,.82);-webkit-backdrop-filter:blur(14px) saturate(1.3);backdrop-filter:blur(14px) saturate(1.3);border-bottom-color:rgba(196,181,253,.14);}
+.nav-logo{font-family:var(--titulo);font-weight:800;font-size:18px;letter-spacing:.04em;color:var(--txt);white-space:nowrap;}
+.nav-logo{min-height:44px;}
+.nav-logo img{width:32px;height:32px;}
+.nav-links{gap:.15rem;}
+.nav-links a{padding:10px 9px;border-radius:8px;color:var(--txt2);}
+.nav-links a:hover{color:var(--txt);background:rgba(196,181,253,.08);}
+#wallet-connect-btn{border-radius:10px;border-color:rgba(196,181,253,.3);color:var(--txt);}
+.live-price-pill{border-radius:10px;}
+@media(max-width:1180px){.nav-links{display:none;}}
+
+/* ── 4. Botones ── */
+.btn-main,.btn-play-big,.nav-play{
+  background:linear-gradient(180deg,#f9d877,#e8b03a);color:var(--oro-tinta);
+  font-weight:800;border-radius:12px;letter-spacing:.01em;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 8px 24px rgba(242,193,78,.22);
+  transition:filter .15s,transform .1s,box-shadow .15s;
+}
+.btn-main:hover,.btn-play-big:hover,.nav-play:hover{background:linear-gradient(180deg,#fbe08d,#eeb945);filter:brightness(1.05);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 10px 30px rgba(242,193,78,.32);}
+.nav-play{min-height:44px;padding:.4rem 1.1rem;font-weight:800;}
+.btn-tg,.btn-sec,.btn-buy,.btn-game,.btn-pink{border-radius:12px;border-color:rgba(196,181,253,.34);background:rgba(196,181,253,.04);}
+.btn-tg:hover,.btn-sec:hover,.btn-buy:hover,.btn-game:hover,.btn-pink:hover{border-color:var(--oro);background:rgba(242,193,78,.08);}
+/* Las tarjetas de los dos juegos conservan su botón de contorno (el dorado es solo para «Jugar gratis») */
+.juego .juego-btn{background:rgba(255,255,255,.04);color:#fff;box-shadow:none;font-weight:700;border:1px solid rgba(255,255,255,.38);}
+.juego .juego-btn:hover{background:rgba(255,255,255,.1);filter:none;box-shadow:none;}
+.nft-buy-btn.free{background:var(--pri);border-color:var(--pri-txt);color:#fff;}
+
+/* ── 5. Héroe ── */
+.hero{
+  display:block;min-height:0;text-align:left;padding:6.4rem 1.25rem 2rem;overflow:hidden;
+  background:
+    radial-gradient(58rem 34rem at 80% 6%,rgba(124,58,237,.30),transparent 62%),
+    radial-gradient(40rem 26rem at 4% 0%,rgba(176,58,140,.18),transparent 60%),
+    linear-gradient(180deg,#0e0822 0%,var(--bg) 100%);
+  border-bottom:1px solid rgba(196,181,253,.12);
+}
+.hero-top{max-width:var(--ancho);margin:0 auto;display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr);gap:2.5rem;align-items:center;min-height:min(600px,72vh);}
+.hero-txt{min-width:0;}
+.hero-nuevo{margin:0 0 1rem;background:rgba(18,14,36,.7);border-color:rgba(196,181,253,.25);}
+.hero-nuevo:hover{border-color:var(--oro);color:var(--oro);}
+.hero-blink{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--oro);margin-bottom:.8rem;}
+.hero-title{
+  font-family:var(--titulo);font-weight:800;font-size:clamp(42px,6.6vw,88px);line-height:.98;letter-spacing:.01em;
+  max-width:none;color:var(--oro);
+}
+@supports ((-webkit-background-clip:text) or (background-clip:text)){
+  .hero-title{background:linear-gradient(180deg,#fff4cf 0%,#f2c14e 52%,#c48a1f 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;}
+}
+.hero-h1-sub{margin-top:1.1rem;font-family:var(--sans);font-weight:700;font-size:clamp(20px,2.5vw,31px);line-height:1.2;letter-spacing:0;color:var(--txt);-webkit-text-fill-color:var(--txt);}
+.hero-sub{font-size:17px;line-height:1.55;color:var(--txt2);max-width:560px;margin:1.1rem 0 1.5rem;}
+.hero-acciones{display:flex;flex-wrap:wrap;gap:.8rem;align-items:center;}
+.hero .hero-cta-movil{width:auto;max-width:none;margin:0;min-height:58px;padding:.8rem 2rem;font-size:18px;}
+.hero-cta-token{min-height:58px;padding:.8rem 1.4rem;font-size:16px;}
+/* Contrato a la vista, con copiar y verificar */
+.hero-ca{display:inline-flex;flex-wrap:wrap;align-items:center;gap:.35rem .7rem;max-width:100%;margin-top:1.1rem;padding:.4rem .45rem .4rem .9rem;border:1px solid rgba(196,181,253,.25);border-radius:12px;background:rgba(18,14,36,.72);font-size:13px;color:var(--txt2);}
+.hero-ca-l{font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:11px;color:var(--txt3);}
+.hero-ca-addr{font-family:var(--mono);font-size:14px;color:var(--txt);}
+.hero-ca-copiar{min-height:40px;padding:.3rem .9rem;border-radius:9px;border:1px solid rgba(242,193,78,.55);background:rgba(242,193,78,.1);color:var(--oro);font:700 13px var(--sans);cursor:pointer;}
+.hero-ca-copiar:hover{background:rgba(242,193,78,.2);}
+.hero-ca-copiar.ok,.compra-ca-copiar.ok{border-color:var(--ok);color:var(--ok);background:rgba(34,197,94,.1);box-shadow:none;}
+.hero-ca-ver{display:inline-flex;align-items:center;min-height:40px;padding:0 .5rem;color:var(--pri-txt);font-weight:600;}
+.hero-benef{justify-content:flex-start;gap:.4rem 1.2rem;margin:1.3rem 0 0;font-size:14px;color:var(--txt2);}
+.hero-benef li::before{color:var(--oro);}
+/* Arte: la botella con la etiqueta, la mascota delante y la moneda */
+.hero-arte{position:relative;min-height:520px;}
+.hero-arte::before{content:'';position:absolute;left:50%;top:50%;width:min(520px,112%);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;
+  background:radial-gradient(closest-side,rgba(242,193,78,.24),rgba(124,58,237,.16) 58%,transparent 72%);}
+.hero-arte::after{content:'';position:absolute;left:50%;top:50%;width:min(430px,94%);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;border:1px solid rgba(242,193,78,.28);}
+.arte-foto{position:absolute;right:4%;top:50%;width:min(330px,66%);height:auto;transform:translateY(-50%) rotate(3deg);border-radius:22px;border:1px solid rgba(242,193,78,.5);box-shadow:0 30px 60px rgba(3,1,12,.6),0 0 0 6px rgba(9,6,21,.55);z-index:1;}
+.arte-duende{position:absolute;left:2%;bottom:3%;width:min(236px,46%);height:auto;z-index:2;filter:drop-shadow(0 18px 22px rgba(3,1,12,.65));}
+.arte-juego{position:absolute;left:50%;top:50%;width:min(300px,70%);height:auto;transform:translate(-50%,-50%) rotate(2deg);border-radius:22px;border:1px solid rgba(242,193,78,.5);box-shadow:0 30px 60px rgba(3,1,12,.6);z-index:1;}
+.hero-arte .hero-coin{position:absolute;right:1%;top:5%;width:76px;height:76px;margin:0;z-index:3;filter:drop-shadow(0 8px 14px rgba(3,1,12,.6));animation:moneda-flota 5s ease-in-out infinite;}
+@keyframes moneda-flota{0%,100%{translate:0 0;}50%{translate:0 -10px;}}
+/* Pie del héroe: en vivo y quién lo hace */
+.hero .vivo{max-width:var(--ancho);margin:1.8rem auto 0;justify-content:flex-start;}
+.vivo-item{background:rgba(18,14,36,.72);border-color:rgba(196,181,253,.22);}
+.hero-creador{max-width:var(--ancho);margin:.6rem auto 0;font-size:13px;}
+
+/* ── 6. Franja del token ── */
+.franja-token{position:relative;z-index:1;padding:2rem 1.25rem .5rem;}
+.franja{max-width:var(--ancho);margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--borde);border:1px solid var(--borde);border-radius:18px;overflow:hidden;box-shadow:var(--sombra);}
+.franja-i{background:var(--brillo),var(--panel);padding:1.3rem 1.2rem;display:flex;flex-direction:column;gap:.35rem;}
+.franja-i b{font-family:var(--titulo);font-weight:800;font-size:clamp(20px,2.4vw,28px);line-height:1.1;color:var(--oro);letter-spacing:.02em;}
+.franja-i span{font-size:14px;line-height:1.4;color:var(--txt2);}
+.franja-nota{max-width:var(--ancho);margin:.9rem auto 0;text-align:center;font-size:14px;color:var(--txt2);}
+
+/* ── 7. Secciones y tarjetas ── */
+.section{padding:4.5rem 1.25rem;}
+.px-title{font-family:var(--titulo);font-weight:800;font-size:clamp(25px,3.8vw,40px);line-height:1.15;letter-spacing:.02em;margin-bottom:.9rem;}
+.px-title::after{content:'';display:block;width:56px;height:3px;border-radius:3px;margin:.8rem auto 0;background:linear-gradient(90deg,var(--oro2),var(--oro));}
+.px-sub{font-size:17px;line-height:1.55;max-width:680px;}
+.about-card,.tcard,.trust-card,.nuevo-card,.rm-card,.booster-card,.skin-card,.tier-card,.arsenal-card,.nft-card,.game-feat,.ls-card,.creador-box,.donate-card,.apoyo-card,.exc-wrap,.pasos li,.faq details,.soc{border-radius:var(--radio);background:var(--brillo),var(--panel);}
+.faq details[open]{border-color:rgba(242,193,78,.45);}
+.faq summary{font-size:16px;}
+.faq summary::after{color:var(--oro);}
+.faq-r{font-size:15px;}
+.paso-n{background:rgba(242,193,78,.1);border-color:rgba(242,193,78,.45);color:var(--oro);font-family:var(--titulo);font-weight:800;}
+.sec-line{border-radius:12px;font-size:14px;}
+.ca-box{border-radius:var(--radio);border-color:rgba(242,193,78,.4);}
+.ca-addr{font-size:14px;}
+.soc:hover,.creador-links a:hover,.cap-abrir:hover{border-color:var(--oro);}
+.creador-links a{border-radius:12px;}
+/* Lo que antes iba en letra pixel de 9 a 13 px: tamaños legibles con la fuente de títulos */
+.stat-n{font-weight:800;font-size:clamp(20px,3vw,28px);color:var(--oro);}
+.tnum{font-weight:800;font-size:26px;color:var(--oro)!important;letter-spacing:.02em;}
+.ls-val{font-weight:800;font-size:clamp(16px,2.4vw,20px);}
+.creador-t,.d-title,.exc-title{font-weight:800!important;font-size:19px;letter-spacing:.03em;}
+.exc-steps span{font-weight:800;font-size:16px;}
+.f-logo{font-weight:800;font-size:19px;letter-spacing:.04em;}
+.gs-header,.gs-bar-label{font:700 11px var(--sans);letter-spacing:.04em;}
+.gs-title{font-weight:800;font-size:16px;}
+.gs-vs{font-weight:800;font-size:15px;}
+.rm-phase{letter-spacing:.1em;}
+.rm-card{padding:1.4rem;}
+/* Ranking vacío: el aviso salía en letra pixel de 5 px y casi transparente */
+#landing-leaderboard>div:only-child{font-size:14px!important;color:var(--txt2)!important;}
+#ranking a[href="game.html"]{display:inline-flex;align-items:center;min-height:44px;}
+.juego-son{min-height:40px;padding:6px 12px;}
+#juegos .juegos{margin-top:.5rem;}
+#juegos .hero-btns{margin-top:.4rem;}
+#juegos .hero-more{text-align:center;}
+
+/* ── 8. Utilidad ── */
+.util-grid{max-width:var(--ancho);margin:0 auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.2rem;}
+.util-card{display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--borde);border-radius:18px;background:var(--panel);box-shadow:var(--sombra);}
+.util-card>picture,.util-card>img,.util-skins{display:block;width:100%;aspect-ratio:16/10;background:#0c0820;}
+.util-card>picture img,.util-card>img{display:block;width:100%;height:100%;object-fit:cover;aspect-ratio:16/10;}
+.util-skins{display:flex;align-items:flex-end;justify-content:center;gap:3%;padding:5% 5% 0;overflow:hidden;background:radial-gradient(closest-side at 50% 85%,rgba(124,58,237,.4),transparent),#0c0820;}
+.util-skins img{width:28%;height:auto;filter:drop-shadow(0 8px 10px rgba(3,1,12,.6));}
+.util-skins img:nth-child(2){width:36%;}
+.util-txt{display:flex;flex-direction:column;gap:.5rem;padding:1.3rem 1.3rem 1.4rem;flex:1;}
+.util-txt h3{font-family:var(--titulo);font-weight:800;font-size:20px;line-height:1.2;letter-spacing:.02em;color:var(--txt);}
+.util-txt p{font-size:15px;line-height:1.55;color:var(--txt2);flex:1;}
+.util-txt a{align-self:flex-start;display:inline-flex;align-items:center;min-height:44px;font-weight:700;color:var(--oro);text-underline-offset:4px;}
+.util-no{max-width:760px;margin-top:1.6rem;color:var(--txt2);}
+.util-no strong{color:var(--txt);}
+
+/* ── 9. Cómo comprar ── */
+.compra-wrap{max-width:var(--ancho);margin:0 auto 1.4rem;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);gap:1.4rem;align-items:start;}
+.compra-pasos h3{font-size:18px;}
+.compra-pasos p{font-size:15px;}
+.compra-btns{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.8rem;}
+.compra-ca{position:sticky;top:92px;display:flex;flex-direction:column;gap:.7rem;padding:1.5rem;border:1px solid rgba(242,193,78,.45);border-radius:18px;background:var(--brillo),var(--panel);box-shadow:var(--sombra);}
+.compra-ca h3{font-family:var(--titulo);font-weight:800;font-size:20px;letter-spacing:.03em;color:var(--oro);}
+.compra-ca-red{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3);}
+.compra-ca-addr{display:block;padding:.8rem .9rem;border-radius:10px;background:var(--bg);border:1px solid var(--borde);font-family:var(--mono);font-size:13px;line-height:1.5;color:var(--txt);word-break:break-all;}
+.compra-ca-copiar{width:100%;min-height:48px;border:1px solid transparent;}
+.compra-ca-ver{list-style:none;display:flex;flex-direction:column;}
+.compra-ca-ver a{display:inline-flex;align-items:center;min-height:44px;font-weight:600;font-size:15px;}
+.compra-ca-riesgo{font-size:13px;line-height:1.5;color:var(--txt2);padding-top:.7rem;border-top:1px solid var(--borde);}
+
+/* ── 10. Pie ── */
+footer{background:#06040f;border-top-color:rgba(196,181,253,.14);padding:3rem 1.25rem;}
+.f-note{font-size:13px;}
+
+/* ── 11. Celular y tableta ── */
+@media(max-width:900px){
+  .hero{padding:5.2rem 16px 1.6rem;text-align:center;}
+  .hero-top{grid-template-columns:1fr;gap:.6rem;min-height:0;}
+  .hero-arte{order:-1;min-height:0;height:170px;}
+  .hero-arte::before{width:250px;}
+  .hero-arte::after{width:200px;}
+  .hero-arte picture{display:none!important;}
+  .arte-duende{left:50%;bottom:0;width:auto;height:166px;transform:translateX(-50%);}
+  .arte-juego{width:auto;height:158px;top:auto;bottom:4px;transform:translateX(-50%) rotate(2deg);border-radius:14px;}
+  .hero-arte .hero-coin{right:calc(50% - 118px);top:6px;width:44px;height:44px;}
+  .hero-nuevo{margin:0 auto .7rem;font-size:12px;max-width:100%;}
+  .hero-nuevo #nuevo-temp{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+  .hero-blink{display:block;font-size:11px;letter-spacing:.1em;margin-bottom:.5rem;}
+  .hero-arte .hero-coin{display:block;}
+  .hero-title{font-size:clamp(38px,11.5vw,60px);}
+  .hero-h1-sub{margin-top:.7rem;font-size:clamp(18px,5vw,24px);}
+  .hero-sub{font-size:15.5px;margin:.8rem auto 1.1rem;}
+  .hero-acciones{flex-direction:column;align-items:stretch;max-width:380px;margin:0 auto;}
+  .hero .hero-cta-movil{width:100%;min-height:54px;font-size:17px;}
+  .hero-cta-token{min-height:48px;}
+  .hero-ca{justify-content:center;}
+  .hero-benef{justify-content:center;}
+  .hero .vivo{justify-content:center;margin-top:1.3rem;}
+  .hero-creador{text-align:center;}
+  .franja{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .util-grid{grid-template-columns:1fr;max-width:460px;}
+  .compra-wrap{grid-template-columns:1fr;}
+  .compra-ca{position:static;}
+  .trust-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .section{padding:3.2rem 16px;}
+  .franja-token{padding:1.4rem 16px .3rem;}
+}
+@media(max-width:600px){
+  .ca-box{flex-direction:column;align-items:stretch;gap:.7rem;padding-top:1.2rem;}
+  .ca-copy{width:100%;}
+  .hero-creador{line-height:1.5;}
+  .hero-creador a{padding:8px 4px;}
+}
+@media(max-width:380px){
+  .hero-arte{height:150px;}
+  .arte-duende{height:146px;}
+  .franja-i{padding:1rem .9rem;}
+  .nav-logo{font-size:16px;}
+}
+/* Celular apaisado y ventanas bajas: sin arte, el botón cabe en la primera pantalla */
+@media (min-width:600px) and (max-height:480px){
+  .hero-arte{display:none;}
+  section.hero{padding-top:4.4rem;}
+  .hero .hero-title{font-size:30px;}
+  .hero .hero-h1-sub{font-size:17px;}
+  .hero-acciones{flex-direction:row;justify-content:center;max-width:none;margin-top:.8rem;}
+  .hero .hero-cta-movil{width:auto;}
+}
+
+/* ── 12. Movimiento reducido ── */
+@media(prefers-reduced-motion:reduce){.hero-arte .hero-coin{animation:none;}}
