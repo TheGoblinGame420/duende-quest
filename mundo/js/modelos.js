@@ -7,7 +7,7 @@
 //
 // API:
 //   crearDuende({ skin, clase, arma }) -> Modelo   (el jugador)
-//   crearMonstruo(k)                    -> Modelo   (clave de MONSTRUOS)
+//   crearMonstruo(k, { ligero }?)       -> Modelo   (clave de MONSTRUOS; ligero = calidad baja)
 //   crearNpc(hoja)                      -> Modelo   (NPC del pueblo)
 //   precalentar()                                    (crea las geometrias)
 // Modelo = { obj, alto, animar(estado, tEstado, t), golpe(), dispose() }
@@ -2132,11 +2132,13 @@ function esqueleto(c, conCapa) {
   }
   const lig = !!c.ligero, jefe = !!c.jefe;
   const d = osamenta(r, c, { nucleo: jefe ? c.color || '#ff7a1a' : null });
-  if (jefe) hombrerasB(r, c.color ? mez(c.color, '#3a3a44', 0.5) : '#6a6a74', { k: 1.05, pua: d.h });
+  if (jefe) hombrerasB(r, c.color ? mez(c.color, '#3a3a44', 0.5) : '#6a6a74', { k: 1.05 });
   // Espada mellada y, si no es ligero, media rodela podrida en el otro brazo.
   espada(r.manoD, { largo: 0.72, hoja: c.color ? hx(mez(c.color, '#9a8f7a', 0.5)) : '#9a8f7a', guarda: '#5b4a35', ancho: 0.075 });
-  if (!lig) escudoGob(r.manoI, 'rodela', '#5a4632', '#7a7468');
-  if (c.k === 'esqueleto_real') { ACC.corona(r, '#d8b23a', 0.85); r.conCorona = false; }
+  const real = c.k === 'esqueleto_real';
+  if (!lig && !jefe && !real) escudoGob(r.manoI, 'rodela', '#5a4632', '#7a7468');
+  /* Esqueleto Real: corona vieja de oro, fundida con la cabeza (sin dibujo de mas). */
+  if (real) fuera(MF(r.cabeza, [['aro6', '#d8b23a', [0, 0.47, 0], [0.2, 0.07, 0.21]], ['cono4', '#d8b23a', [0, 0.5, 0.19], [0.04, 0.12, 0.03]], ['cono4', '#d8b23a', [0.17, 0.5, -0.08], [0.04, 0.1, 0.03]], ['cono4', '#d8b23a', [-0.17, 0.5, -0.08], [0.04, 0.1, 0.03]]]));
   r.paso = 8;
   return r;
 }
@@ -2314,12 +2316,12 @@ function ghoul(c) {
 // cuernos, espinazo de puas y puños como mazas. Golpea con los dos brazos y se desarma al caer.
 function coloso(c) {
   const r = nuevoRig('bipedo'), lig = !!c.ligero;
-  const d = osamenta(r, c, { hueso: '#dcdcdc', L: 0.56, T: 0.76, A: 0.74, g: 2.6, W: 2.1, cab: 0.95, enc: 0.22, costillas: 4, punos: true, ojo: '#ff3a2a', nucleo: '#e02818' });
+  const d = osamenta(r, c, { hueso: '#dcdcdc', L: 0.56, T: 0.76, A: 0.74, g: 2.6, W: 1.95, cab: 0.95, enc: 0.22, costillas: 4, punos: true, ojo: '#ff3a2a', nucleo: '#e02818' });
   /* Placas de piedra en antebrazos y espinillas: es de hueso y piedra. */
   const piedra = '#7c7c86';
   for (const b of [r.bI, r.bD]) MF(b, [['caja', piedra, [0, -d.Ab * 0.74, d.Ab * 0.1 - 0.02], [0.2, d.Ab * 0.34, 0.16], [-0.35, 0, 0]]]);
   for (const q of [r.pI, r.pD]) MF(q, [['caja', piedra, [0, -d.L * 0.72, d.L * 0.07], [0.2, d.L * 0.3, 0.17], [0.14, 0, 0]], ['cono4', '#f0eadc', [0, -d.L * 0.5, d.L * 0.1 + 0.08], [0.05, 0.16, 0.05], [1.2, 0, 0]]]);
-  hombrerasB(r, piedra, { k: 1.7, pua: '#f0eadc' });
+  hombrerasB(r, piedra, { k: 1.5, pua: '#f0eadc' });
   const P = [];
   for (const [y, z, l] of [[0.9, -0.1, 0.24], [0.66, -0.16, 0.2], [0.42, -0.16, 0.16]]) P.push(['cono4', d.h2, [0, d.T * y, z], [0.07, l, 0.07], [-1.0, 0, 0]]);
   MF(r.cuerpo, P);
@@ -2932,7 +2934,6 @@ function cangrejo(c) {
       ['esferaB', k1, [0, 0.03, 0.36], [0.13, 0.12, 0.17]],                 // mano de la pinza
       ['cuna', k1, [0, 0.07, 0.44], [0.11, 0.1, 0.23]],                     // dedo fijo
     ];
-    if (!lig) Q.push(['cono4', k3, [0, 0.035, 0.52], [0.022, 0.05, 0.022], [PI, 0, 0]], ['cono4', k3, [0, 0.035, 0.6], [0.02, 0.045, 0.02], [PI, 0, 0]]);
     MF(brazo, Q);
     const inf = piv(r, G(brazo, [0, -0.02, 0.4], [0.28, 0, 0]));
     M(inf, 'cuna', k2, [0, -0.025, 0], [0.09, 0.06, 0.24]);
@@ -3076,7 +3077,7 @@ function dragon(c) {
   MF(cu, B);
   const cuello = piv(r, G(cu, [0, 0.3, 0.78], [0.55, 0, 0]));
   const N = [['tronco', p1, [0, 0, 0], [0.27, 0.9, 0.27]], ['caja', vientre, [0, 0.4, 0.14], [0.2, 0.7, 0.1], [-0.12, 0, 0]]];
-  if (!lig) for (const y of [0.25, 0.5, 0.72]) N.push(['cono4', cuerno, [0, y, -0.2 + y * 0.1], [0.05, 0.18, 0.07], [-1.1, 0, 0]]);
+  if (!lig && !c.montura) for (const y of [0.25, 0.5, 0.72]) N.push(['cono4', cuerno, [0, y, -0.2 + y * 0.1], [0.05, 0.18, 0.07], [-1.1, 0, 0]]);
   MF(cuello, N);
   const cb = r.cabeza = piv(r, G(cuello, [0, 0.85, 0], [-0.55, 0, 0]));
   const C = [
