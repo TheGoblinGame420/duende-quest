@@ -30,6 +30,7 @@ import { construirCueva } from './cueva.js?v=369';
 import { TAPA, transparentar } from './tapa.js?v=369';
 import { construirAbismo } from './abismo.js?v=369';
 import { crearParticulas } from './particulas.js?v=369';
+import { PERF } from './perf.js?v=369';
 import { cargarKenney, piezasCasa } from './kenney.js?v=369';
 import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=369';
 const MAQUINAS = maquinasAbismo();
@@ -8987,7 +8988,7 @@ function bucle(t, forzar) {
     if (t < proxCuadro - 1.5) return;
     proxCuadro = Math.max(proxCuadro + paso, t + paso * 0.5);
   }
-  try { armarColaFig(); cuadroBucle(t); }
+  try { PERF.a(); armarColaFig(); cuadroBucle(t); }
   catch (e) {
     if (t - bucleErrT > 10000) { bucleErrT = t; console.error(e); avisarError('bucle: ' + ((e && e.message) || e), String(e && e.stack || '').split('\n')[1] || '', 0); }
     try { if (composer) composer.render(0.016); else render.render(escena, camara); } catch (e2) {}
@@ -9227,7 +9228,9 @@ function cuadroBucle(t) {
   }
   guardaNaN();
   vFX.set(P.x, P.y, P.z); FX.actualizar(dt, vFX, lienzo.height);
+  PERF.b();
   if (composer) composer.render(dt); else render.render(escena, camara);
+  PERF.c();
 }
 const vFX = new THREE.Vector3();
 
@@ -9314,6 +9317,7 @@ async function inicio() {
       paso('gpu_' + fam);
     } catch (e) {}
   }, 90000);
+  PERF.ini(render, escena);
   requestAnimationFrame(bucle);
   // Lo que llego del servidor durante la carga, en orden (un mensaje roto no corta los demas).
   arteListo = true;
