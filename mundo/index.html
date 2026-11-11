@@ -415,6 +415,12 @@ html.anuncio #carga img{content:url(/assets/skins/skin_bruja.png)}
 #mapa-ley ul{list-style:none;margin:6px 0 0;padding:8px 10px 2px;border-radius:12px 12px 0 0;background:rgba(10,8,24,.92);color:#fff;font:500 13px/1.3 var(--sans);}
 #mapa-ley li{margin-bottom:5px;}
 #mapa-ley li i{display:inline-block;width:22px;text-align:center;font-style:normal;font-weight:700;}
+#mapa-ley label{display:flex;align-items:center;gap:6px;min-height:34px;cursor:pointer;touch-action:manipulation;}
+#mapa-ley label span{flex:1;min-width:0;}
+#mapa-ley input{flex:none;width:20px;height:20px;margin:0;accent-color:#e3b25b;}
+#mapa-ley li:has(input:not(:checked)) span,#mapa-ley li:has(input:not(:checked)) i{opacity:.45;}
+#mapa-ley li.fijo{padding-left:26px;color:#d6d0f2;}
+#mapa-ley-n{color:#ffd84a;font-weight:600;}
 #mapa-ley p{margin:0;padding:2px 10px 8px;border-radius:0 0 12px 12px;background:rgba(10,8,24,.92);color:#cbd5e1;font:500 12px/1.3 var(--sans);}
 #mapa-ley[open]{max-height:calc(100% - var(--mapa-sup) - var(--mapa-inf) - 72px);overflow-y:auto;}
 body.movil #v-mapa.modal,body.compacto #v-mapa.modal{padding:0!important;}
@@ -960,6 +966,34 @@ body:is(.movil,.compacto) #botones:not(.abierto){grid-template-columns:repeat(4,
 @media (orientation:landscape) and (max-height:500px){
  body:is(.movil,.compacto) #misiones.con-tuto:not(.abierto),body:is(.movil,.compacto).texto-grande #misiones.con-tuto:not(.abierto),body:is(.movil,.compacto):has(#obj[style*="block"]) #misiones.con-tuto:not(.abierto){width:max(120px,min(300px,calc(100vw - 396px - env(safe-area-inset-left) - env(safe-area-inset-right))));}   /* la fila tiene un boton mas (40 px) */
 }
+/* ── HUD despejado en el celular ── solo lo esencial a la vista: vida, la mision en una linea, minimapa, ⋯/⚙ y controles.
+   mundo.js pone .quieto a los textos que llevan un rato sin cambiar, .vivo a la mision recien cambiada y
+   body.hud-limpio con Menu > Interfaz > Pantalla: Limpia (localStorage 'dq_hud_limpio'). */
+@media (orientation:portrait){body:is(.movil,.compacto) #botones.abierto{top:calc(clamp(96px,27vw,104px) + 16px + env(safe-area-inset-top) + var(--tg-top,0px));}}   /* ⋯ abierto: bajo el minimapa, ya no lo pisa */
+body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto):has(.q-mis) .q:not(.q-mis){display:none!important;}
+body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto):has(.q-mis) .q.q-mis{display:block!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto):has(.q-mis) .q.q-mis>b{display:none;}
+body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto):has(.q-mis) .q.q-mis small{display:inline!important;}
+body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto):has(.q-mis) .ob-btn{display:none;}
+body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto):has(.q-mis){max-height:22px;}
+body:is(.movil,.compacto) #oro.quieto,body:is(.movil,.compacto) #temp3.quieto{display:none;}
+body:is(.movil,.compacto) #mini #mini-r{transition:opacity .5s;}
+body:is(.movil,.compacto) #mini #mini-r.quieto{opacity:0;}
+body:is(.movil,.compacto) #joy .pista-joy{transition:opacity .4s;}
+body:is(.movil,.compacto).en-combate #joy .pista-joy{opacity:0;}
+@media (orientation:landscape) and (max-height:500px){html body:is(.movil,.compacto):not(.cine) #avisos{left:calc(50% + 72px);width:min(48vw,360px);}}   /* acostado: los avisos van arriba, a la derecha de la ficha del objetivo, y no bajan al centro en pleno combate */
+@media (orientation:portrait){body:is(.movil,.compacto):has(#obj[style*="block"]) #misiones.con-tuto:not(.abierto){top:calc(112px + env(safe-area-inset-top) + var(--tg-top,0px))!important;margin-top:0;}}   /* tutorial con objetivo fijado: el paso va bajo la ficha del objetivo, no encima */
+/* Pantalla limpia: fuera todo lo que no sea vida, minimapa, menu y controles; la mision asoma unos segundos cuando avanza. */
+body.hud-limpio #oro,body.hud-limpio #temp3,body.hud-limpio #mundial,body.hud-limpio #chicha3:not(.listo),body.hud-limpio #xp-prox,body.hud-limpio #mini .z,body.hud-limpio #mini::after,body.hud-limpio #joy .pista-joy,body.hud-limpio #tira-diario,body.hud-limpio #ob-sig{display:none!important;}
+body.hud-limpio #misiones:not(.abierto):not(.con-tuto):not(.vivo){opacity:0;pointer-events:none;}
+body.hud-limpio #misiones{transition:opacity .5s;}
+body.hud-limpio:is(.movil,.compacto) #botones:not(.abierto) :is(#b-inv,#b-premium,#b-libro,#b-pase,#b-amigos){display:none;}
+body.hud-limpio:is(.movil,.compacto) #botones:not(.abierto){grid-template-columns:repeat(2,40px);}
+body.hud-limpio:is(.movil,.compacto) #botones:not(.abierto) #b-menu{position:static;}
+body.hud-limpio:is(.movil,.compacto) #marco{background:transparent;border-color:transparent;}
+body.hud-limpio:is(.movil,.compacto) #barra .acc{background:rgba(14,9,30,.28);border-color:rgba(255,255,255,.1);}
+body.hud-limpio:not(.movil):not(.compacto) #chat:not(:focus-within){opacity:.35;}
+@media (prefers-reduced-motion:reduce){body.hud-limpio #misiones,body:is(.movil,.compacto) #mini #mini-r,body:is(.movil,.compacto) #joy .pista-joy{transition:none;}}
 </style>
 <style id="css-avisos-movil">
 /* Movil: avisos en franja legible bajo el HUD (--av-top lo mide mundo.js colocarAvisos), por encima de etiquetas y botones */
@@ -1209,21 +1243,20 @@ html body:not(.movil):not(.compacto) #chat{width:min(380px,42vw,max(220px,calc(5
     <button class="bt" id="mapa-yo" type="button" aria-label="Centrar en mí" title="Centrar en mí">🎯</button>
   </div>
   <details id="mapa-ley">
-    <summary>Leyenda</summary>
+    <summary>Leyenda y filtros<span id="mapa-ley-n"></span></summary>
     <ul>
-      <li><i>🏘️</i> Pueblo</li>
-      <li><i>🌀</i> Portal (mazmorras, cueva y Abismo)</li>
-      <li><i>💀</i> Jefe</li>
-      <li><i>⚔️</i> Arena del jefe mundial</li>
-      <li><i>🔭</i> Mirador descubierto</li>
-      <li><i style="color:#d6a35c">■</i> Cofre <span style="color:#c084fc">■</span> épico <span style="color:#ffd84a">■</span> legendario <span style="color:#9ca3af">■</span> ya abierto</li>
-      <li><i style="color:#ffd84a">!</i> Misión <span style="color:#4ade80">?</span> guía</li>
-      <li><i style="color:#7dd3fc">●</i> Tu grupo</li>
-      <li><i style="color:#4ade80">▲</i> Tú y hacia dónde miras</li>
-      <li><i>📍</i> Tu destino: tócalo otra vez para quitarlo</li>
-      <li><i style="color:#8b7fc7">▒</i> Por descubrir</li>
+      <li><label><input type="checkbox" data-mf="zonas" checked><i>🗺</i><span>Zonas y su nivel: <b style="color:#86efac">a tu alcance</b>, <b style="color:#ffd84a">difícil</b>, <b style="color:#ff9a9a">peligro</b> · ⭐ la de tu nivel</span></label></li>
+      <li><label><input type="checkbox" data-mf="jefes" checked><i>💀</i><span>Jefes y ⚔ arena del jefe mundial</span></label></li>
+      <li><label><input type="checkbox" data-mf="vecinos" checked><i>👤</i><span>Vecinos y encargos</span></label></li>
+      <li><label><input type="checkbox" data-mf="cofres" checked><i style="color:#d6a35c">■</i><span>Cofres: <span style="color:#c084fc">■</span> épico <span style="color:#ffd84a">■</span> legendario <span style="color:#9ca3af">■</span> abierto</span></label></li>
+      <li><label><input type="checkbox" data-mf="miradores" checked><i>🔭</i><span>Miradores descubiertos</span></label></li>
+      <li><label><input type="checkbox" data-mf="grupo" checked><i style="color:#7dd3fc">●</i><span>Tu grupo</span></label></li>
+      <li class="fijo"><i>⌂</i> Pueblo · <i>🌀</i> Portal: mazmorras, cueva y Abismo</li>
+      <li class="fijo"><i style="color:#ffd84a">!</i> Misión, con su ruta punteada · <span style="color:#4ade80">?</span> guía</li>
+      <li class="fijo"><i style="color:#4ade80">▲</i> Tú · <i>📍</i> tu destino (tócalo para quitarlo)</li>
+      <li class="fijo"><i style="color:#8b7fc7">▒</i> Por descubrir: camina por ahí para despejarlo</li>
     </ul>
-    <p>Las zonas de nivel bajo rodean el pueblo; las de nivel alto están en los bordes.</p>
+    <p>Desmarca lo que no quieras ver. Las zonas de nivel bajo rodean el pueblo; las de nivel alto están en los bordes.</p>
   </details>
 </div></div>
 
@@ -1260,6 +1293,7 @@ html body:not(.movil):not(.compacto) #chat{width:min(380px,42vw,max(220px,calc(5
   <div class="fila" id="fila-mano" style="display:none"><span>Mando</span><b><select id="sel-mano" style="background:#22164a;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="izq">Joystick a la izquierda</option><option value="der">Joystick a la derecha</option></select></b></div>
   <div class="fila" id="fila-vib"><span>Vibración</span><b><select id="sel-vib" style="background:#22164a;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="normal">Normal</option><option value="suave">Suave</option><option value="off">Apagada</option></select></b></div>
   <div class="fila"><span>Texto</span><b><select id="sel-texto" style="background:#22164a;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="n">Normal</option><option value="g">Grande</option></select></b></div>
+  <div class="fila" id="fila-hud"><span>Pantalla</span><b><select id="sel-hud" title="Limpia: solo vida, minimapa, menú y controles; la misión asoma cuando avanza" style="background:#22164a;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="n">Normal</option><option value="l">Limpia (solo lo esencial)</option></select></b></div>
   <script>
   /* Texto grande: 'dq3_texto' (n|g). Sin valor guardado, grande en pantallas de 5" (lado corto <= 430 px: Android de gama media de 393-412 px). */
   (function(){var v=null;try{v=localStorage.getItem('dq3_texto');}catch(e){}
