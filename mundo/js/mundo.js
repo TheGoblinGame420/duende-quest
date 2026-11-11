@@ -30,6 +30,7 @@ import { construirCueva } from './cueva.js?v=372';
 import { TAPA, transparentar } from './tapa.js?v=372';
 import { construirAbismo } from './abismo.js?v=372';
 import { crearParticulas } from './particulas.js?v=372';
+import { crearCielo } from './cielo.js?v=372';
 import { PERF } from './perf.js?v=372';
 import { cargarKenney, piezasCasa } from './kenney.js?v=372';
 import { CORRIENTES, sueloRef, ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, portalBase, VACIO, RANGOS, rangoDe, santuario, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo, TEMP_ABISMO, FACC_BONO, RECLUTA } from '/mmo/js/abismo3d.js?v=372';
@@ -426,81 +427,19 @@ const estrellas = (() => {
         .replace('gl_PointSize = size;', 'vTw = 0.6 + 0.4 * sin(uT * (1.2 + fase * 2.4) + fase * 40.0); gl_PointSize = size * (0.8 + 0.45 * vTw);');
       sh.fragmentShader = f.replace('#include <common>', '#include <common>\nvarying float vTw;')
         .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.a *= vTw;');
+      try { cielo.velarEstrellas(sh); } catch (e) {}   /* se apagan tras la luna y las nubes (cielo.js) */
     } catch (e) {}
   };
   const p = new THREE.Points(g, mat);
+  p.scale.setScalar(2);   /* a 840 m: detras de la cordillera lejana (cielo.js), que las tapa */
   escena.add(p);
   respaldosShader.push(['estrellas', () => { const m2 = new THREE.PointsMaterial({ color: 0xffffff, size: 1.7, sizeAttenuation: false, transparent: true, opacity: p.material.opacity, fog: false, depthWrite: false }); const viejo = p.material; p.material = m2; setTimeout(() => { try { viejo.dispose(); } catch (e) {} }, 0); }]);
   return p;
 })();
-// ── CIELO: cupula con degradado (horizonte → cenit), halo y disco del sol, y
-// nubes low-poly que derivan alto. La niebla usa el color del horizonte, asi
-// el mundo se funde con el cielo.
-const cielo = (() => {
-  // uOca/uOcaK: banda calida del amanecer y el ocaso (mas fuerte del lado del
-  // sol); uBruma: horizonte lechoso (Cumbres, niebla); la luna sale enfrente
-  // del sol con su halo frio. Un pelo de ruido evita las franjas del degradado.
-  const u = { uHor: { value: new THREE.Color() }, uTop: { value: new THREE.Color() }, uSol: { value: new THREE.Vector3(0, 1, 0) }, uSolC: { value: new THREE.Color('#fff1c9') }, uNoche: { value: 0 },
-    uOca: { value: new THREE.Color('#ff9a5a') }, uOcaK: { value: 0 }, uBruma: { value: 0.12 }, uLunaC: { value: new THREE.Color('#dfe8ff') } };
-  const m = new THREE.Mesh(new THREE.SphereGeometry(440, 32, 16), new THREE.ShaderMaterial({
-    uniforms: u, side: THREE.BackSide, depthWrite: false, depthTest: false, fog: false,
-    vertexShader: 'varying vec3 vD; void main() { vD = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-    // En baja: sin ruido de dithering ni los pow altos de sol y luna (smoothstep es mas barato en GPUs modestas).
-    fragmentShader: (CAL === 'baja' ? '#define BAJA\n' : '') + `uniform vec3 uHor; uniform vec3 uTop; uniform vec3 uSol; uniform vec3 uSolC; uniform float uNoche;
-      uniform vec3 uOca; uniform float uOcaK; uniform float uBruma; uniform vec3 uLunaC; varying vec3 vD;
-      // dq:cielo
-      void main() {
-        vec3 d = normalize(vD); float h = d.y;
-        vec3 sd = normalize(uSol);
-        vec3 c = mix(uHor, uTop, pow(smoothstep(-0.02, 0.7, h), 0.75));
-        float lado = 0.5 + 0.5 * dot(normalize(d.xz + vec2(0.0001)), normalize(sd.xz + vec2(0.0001)));
-        float banda = exp(-max(h, 0.0) * 5.0) * (0.3 + 0.7 * lado * lado);
-        c = mix(c, uOca, clamp(banda * uOcaK, 0.0, 0.85));
-        c = mix(c, uHor * 1.06, clamp(uBruma * exp(-abs(h) * 8.0), 0.0, 0.9));
-        c = mix(c, uHor * 0.8, smoothstep(0.0, -0.25, h));
-        float s = max(dot(d, sd), 0.0);
-        float l = max(dot(d, normalize(vec3(-sd.x, sd.y, -sd.z))), 0.0);
-        #ifndef BAJA
-        c += uSolC * (pow(s, 8.0) * 0.2 + pow(s, 60.0) * 0.3 + pow(s, 900.0) * 1.6) * (1.0 - uNoche);
-        c += uLunaC * (pow(l, 14.0) * 0.1 + pow(l, 120.0) * 0.18 + smoothstep(0.9991, 0.9995, l) * 0.85) * uNoche;
-        c += (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) / 255.0;
-        #else
-        c += uSolC * (pow(s, 8.0) * 0.2 + pow(s, 60.0) * 0.3 + smoothstep(0.9975, 0.9995, s) * 1.6) * (1.0 - uNoche);
-        c += uLunaC * (pow(l, 14.0) * 0.1 + smoothstep(0.975, 1.0, l) * 0.18 + smoothstep(0.9991, 0.9995, l) * 0.85) * uNoche;
-        #endif
-        gl_FragColor = vec4(max(c, vec3(0.0)), 1.0);
-        #include <colorspace_fragment>
-      }`,
-  }));
-  m.renderOrder = -10; m.frustumCulled = false; escena.add(m);
-  // Si la cupula no compila queda el color de fondo de la escena (como antes de tener cupula).
-  respaldosShader.push(['cielo', () => { m.visible = false; }]);
-  return { m, u };
-})();
-const nubes3 = (() => {
-  const N = MOVIL ? 26 : 44, geo = new THREE.IcosahedronGeometry(1, 1);
-  const mat = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true, transparent: true, opacity: 0.92, fog: false });
-  const im = new THREE.InstancedMesh(geo, mat, N * 4);
-  const l = [];
-  for (let i = 0; i < N; i++) l.push({ x: (Math.random() - 0.5) * 1100, z: (Math.random() - 0.5) * 1100, y: 75 + Math.random() * 30, s: 9 + Math.random() * 10, v: 0.6 + Math.random() * 0.8 });
-  im.frustumCulled = false; im.renderOrder = -5; escena.add(im);
-  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), sc = new THREE.Vector3();
-  const PUFF = [[0, 0, 0, 1], [0.9, -0.15, 0.2, 0.75], [-0.85, -0.2, -0.1, 0.7], [0.2, 0.25, -0.6, 0.6]];
-  return {
-    im, mat,
-    mover(dt, cx, cz) {
-      let k = 0;
-      for (const n of l) {
-        n.x += n.v * dt * 2;
-        let dx = n.x - cx, dz = n.z - cz;
-        if (dx > 550) n.x -= 1100; else if (dx < -550) n.x += 1100;
-        if (dz > 550) n.z -= 1100; else if (dz < -550) n.z += 1100;
-        for (const [ox, oy, oz, f] of PUFF) { p.set(n.x + ox * n.s, n.y + oy * n.s, n.z + oz * n.s); sc.set(n.s * f * 1.4, n.s * f * 0.7, n.s * f); m4.compose(p, q, sc); im.setMatrixAt(k++, m4); }
-      }
-      im.instanceMatrix.needsUpdate = true;
-    },
-  };
-})();
+// ── CIELO Y PAISAJE LEJANO (cielo.js): cupula con degradado por hora, sol y luna con halo,
+// Via Lactea, capa de nubes con volumen, cordillera lejana por capas y cumulos 3D que derivan.
+// La niebla usa el color del horizonte, asi el mundo se funde con el cielo.
+const cielo = crearCielo({ escena, calidad: CAL, movil: MOVIL, zonas: ZONAS3D, respaldos: respaldosShader });
 // ── BRUMA DE ALTURA (Cumbres): un manto de niebla en los valles que se ve
 // desde arriba, con las cimas asomando. Un disco con textura que deriva y se
 // desvanece hacia el borde (alfa por vertice); en calidad baja no se crea.
@@ -548,7 +487,7 @@ const NIEBLA_TINTE = Object.fromEntries(Object.entries({
   pueblo: '#cfe6ff', noche: '#3b4f86', amanecer: '#ffc9a6', selva: '#b8e8c4', tormenta: '#8a8fb4', desierto: '#f4d9a6',
   castillo: '#9d93ad', cumbres: '#eef1fa', cavernas: '#4f8592', abismo: '#9fd0ee', acantilados: '#e6c8ff',
 }).map(([k, v]) => [k, C(v)]));
-const SOL_DIA = C('#fff2dd'), SOL_NOCHE = C('#9fb4ff'), SOL_PUEBLO = C('#ffcf8f'), CENIT_DIA = C('#2a4fb8'), CENIT_NOCHE = C('#02040e');
+const SOL_DIA = C('#fff2dd'), SOL_NOCHE = C('#9fb4ff'), SOL_PUEBLO = C('#ffcf8f'), CENIT_DIA = C('#2a4fb8'), CENIT_NOCHE = C('#02040e'), CENIT_ACT = C('#2a4fb8');
 const nieblaTinteObj = C(CIELO.pueblo), nieblaAct = C(CIELO.pueblo);
 let ocasoK = 0, ocasoAct = 0, brumaObj = 0.12;
 // Volumen de la musica y de los efectos (menu → Sonido): 0..1, guardado como 0-100 en dq3_vol_mus y dq3_vol_fx.
@@ -582,6 +521,7 @@ function ambiente(z) {
   ocasoK = fijo ? 0 : ocaso * (0.35 + 0.65 * nub) * (1 - nocheK * 0.5);
   brumaObj = z === 'cueva' ? 0 : z === 'cumbres' ? 0.55 : cl === 'niebla' || cl === 'arena' ? 0.45 : cl === 'nieve' ? 0.3 : 0.12;
   estrellas.material.opacity = z === 'eter' ? 0.7 : z === 'cueva' ? 0 : nocheK * (cl === 'despejado' ? 0.9 : 0.2);
+  cielo.ambiente(h, z, cl, nocheK, ocaso, luz, nub, ahora);
   if (z === 'cueva') { hemiBase = 0.6; sol.intensity = 0.3; }   // 0.6: un pelo mas sin las luces de las antorchas (ahora horneadas)
   hemi.color.copy(cieloObj).lerp(BLANCO_H, 0.55);
   hemi.groundColor.set(SUELO[z] || '#3a3040').multiplyScalar(0.5);
@@ -9440,16 +9380,11 @@ function cuadroBucle(t) {
   escena.background.copy(nieblaAct); escena.fog.color.copy(nieblaAct);
   // Cupula: horizonte = niebla (con el tinte de la zona); cenit mas profundo
   // (de dia azul intenso, de noche casi negro); banda calida al amanecer y ocaso.
-  cielo.m.position.copy(camara.position);
-  cielo.u.uHor.value.copy(nieblaAct);
-  cielo.u.uTop.value.copy(cieloAct).lerp(CENIT_DIA, 0.5 * (1 - nocheK)).lerp(CENIT_NOCHE, 0.45 * nocheK).multiplyScalar(0.6 + 0.22 * (1 - nocheK));
-  cielo.u.uSol.value.copy(solDir); cielo.u.uNoche.value = nocheK;
-  ocasoAct = lerp(ocasoAct, ocasoK, Math.min(1, dt * 1.5)); cielo.u.uOcaK.value = ocasoAct;
-  cielo.u.uBruma.value = lerp(cielo.u.uBruma.value, brumaObj, Math.min(1, dt));
+  CENIT_ACT.copy(cieloAct).lerp(CENIT_DIA, 0.5 * (1 - nocheK)).lerp(CENIT_NOCHE, 0.45 * nocheK).multiplyScalar(0.6 + 0.22 * (1 - nocheK));
+  ocasoAct = lerp(ocasoAct, ocasoK, Math.min(1, dt * 1.5));
+  cielo.cuadro(camara, t, dt, nieblaAct, CENIT_ACT, nocheK, ocasoAct, brumaObj);   /* cupula, astros, nubes y cordillera (cielo.js) */
   if (estrellas.material.opacity > 0.01) estrellasT.value = t / 1000;
   const zC = zonaEn(P.x, P.z);
-  nubes3.im.visible = zC !== 'cueva';
-  if (nubes3.im.visible) { nubes3.mover(dt, P.x, P.z); nubes3.mat.color.setRGB(1 - nocheK * 0.72, 1 - nocheK * 0.7, 1 - nocheK * 0.6); }
   escena.fog.near = lerp(escena.fog.near, nieblaObj[0], Math.min(1, dt)); escena.fog.far = lerp(escena.fog.far, nieblaObj[1], Math.min(1, dt));
   const flash = t - relampagoT < 120 || (t - relampagoT > 220 && t - relampagoT < 300);
   hemi.intensity = 1.5 * hemiBase + (flash ? 2.4 : 0);
