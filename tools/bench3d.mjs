@@ -36,8 +36,15 @@ if (!BASE) {
   BASE = 'http://localhost:' + PUERTO;
   const datos = path.join(os.tmpdir(), 'dq_bench3d_' + PUERTO + '.json');
   try { fs.rmSync(datos, { force: true }); } catch (e) {}
-  srv = spawn(process.execPath, ['--no-warnings', path.join(AQUI, 'mmo_local.mjs')], { env: { ...process.env, PUERTO: String(PUERTO), DATOS: datos }, stdio: 'ignore' });
-  for (let i = 0; i < 80; i++) { await esperar(150); try { if ((await fetch(BASE + '/mmo/ws')).ok) break; } catch (e) {} }
+  // Hasta 3 intentos: si el puerto aun no se libero de una pasada anterior, el servidor muere al arrancar.
+  let arriba = false;
+  for (let intento = 0; intento < 3 && !arriba; intento++) {
+    srv = spawn(process.execPath, ['--no-warnings', path.join(AQUI, 'mmo_local.mjs')], { env: { ...process.env, PUERTO: String(PUERTO), DATOS: datos }, stdio: 'ignore' });
+    let muerto = false; srv.on('exit', () => { muerto = true; });
+    for (let i = 0; i < 80 && !arriba && !muerto; i++) { await esperar(150); try { arriba = (await fetch(BASE + '/mmo/ws')).ok; } catch (e) {} }
+    if (!arriba) { try { srv.kill(); } catch (e) {} await esperar(1500); }
+  }
+  if (!arriba) { console.error('El servidor local no arranco en el puerto ' + PUERTO); process.exit(1); }
 }
 const dev = async js => { const r = await (await fetch(BASE + '/__dev?js=' + encodeURIComponent(js))).json(); if (!r.ok) throw new Error('__dev: ' + r.e); return r.v; };
 
