@@ -14,7 +14,7 @@ const web = url.replace(/^ws/, 'http').replace(/\/mmo\/ws.*$/, '');
 const verPagina = async (ruta) => { try { const r = await fetch(web + ruta, { cache: 'no-store' }); return { ok: r.ok, txt: await r.text() }; } catch (e) { return { ok: false, txt: '' }; } };
 const jugar = await verPagina('/jugar/');
 console.log((jugar.ok ? 'OK  ' : 'MAL ') + '/jugar/ responde');
-console.log((jugar.ok && !/\$DUENDE|token|pump|solana|wallet|cripto/i.test(jugar.txt) ? 'OK  ' : 'MAL ') + '/jugar/ sin palabras cripto');
+console.log((jugar.ok && !/\$DUENDE|token|pump|solana|wallet|cripto/i.test(jugar.txt.replace(/auth-token/g, '')) ? 'OK  ' : 'MAL ') + '/jugar/ sin palabras cripto');
 console.log((/noindex/.test(jugar.txt) && /id="jugar"/.test(jugar.txt) ? 'OK  ' : 'MAL ') + '/jugar/ con noindex y boton JUGAR');
 const portada = await verPagina('/');
 console.log((portada.ok && !/TICKER_EVENTS|initCountdown|Garantiza un objeto legendario|se activa sola/.test(portada.txt) ? 'OK  ' : 'MAL ') + 'portada sin ticker, contador ni cofres falsos');
