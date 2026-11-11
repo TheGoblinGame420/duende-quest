@@ -767,6 +767,7 @@ const solidos = new Map();
 function ponerSolido(x, z, r) { const k = Math.floor(x / REJ) + ',' + Math.floor(z / REJ); let c = solidos.get(k); if (!c) solidos.set(k, c = []); c.push({ x, z, r }); }
 const RADIO_DUENDE = 0.45;
 let solidosExtra = [];
+const EMPUJE = [0, 0];
 function empujarFuera(x, z) {
   for (const o of solidosExtra) {
     const dx = x - o.x, dz = z - o.z, d = Math.hypot(dx, dz), m = o.r + RADIO_DUENDE;
@@ -794,7 +795,9 @@ function empujarFuera(x, z) {
       x = c.x + lx * co + lz * si; z = c.z - lx * si + lz * co;
     }
   }
-  return [x, z];
+  /* El mismo par cada vez (se llama varias veces por cuadro): quien llama lo desarma al momento, no lo guarda. */
+  EMPUJE[0] = x; EMPUJE[1] = z;
+  return EMPUJE;
 }
 // En la cueva la camara no sale de salas y pasillos.
 function choqueCueva(tx, tz, cx, cz) {
