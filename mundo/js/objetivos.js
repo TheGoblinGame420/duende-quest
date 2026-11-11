@@ -205,6 +205,7 @@ export function crearObjetivos(c) {
     else if (a === 'leyenda') c.verLeyenda();
     else if (a === 'receta') c.verReceta();
     else if (a === 'caso') c.verCaso();
+    else if (a === 'rit') { if (c.ritual) c.ritual(d.r); }
     else if (a === 'panel') abrirPanel();
     else if (a === 'salir' && salirA) salirA();
   }
@@ -293,6 +294,7 @@ export function crearObjetivos(c) {
   function secHoy() {
     const y = c.yo(), d = y.diaria || {}, T = y.tareas, ahora = Date.now();
     let h = '';
+    try { if (c.filasRitual) h += c.filasRitual(); } catch (e) {}   /* rituales.js: amanecer, olla, intencion y ritual de la noche */
     for (const ev of eventosHoy()) h += ev;
     if (d.ok) {
       const msD = 86400000 - ((ahora - 5 * 3600000) % 86400000);

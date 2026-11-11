@@ -903,6 +903,9 @@ export const Retencion = {
   // tiene su hora habitual en otra hora que las 17:00 (esa la hace el cron).
   // Una tanda por hora (el limite de subpeticiones por invocacion).
   async alarm() {
+    // Recordatorios de la mañana y de la noche que el jugador eligio (rituales.js). Van antes: quien
+    // recibe el suyo queda marcado (e.ad) y hoy ya no recibe ademas el aviso de vuelta.
+    try { if (this.avisosRitual) await this.avisosRitual(); } catch (e) { console.error('[MMO avisos ritual]', e); }
     try {
       const h = horaUTC();
       if (h !== HORA_DEFECTO) {

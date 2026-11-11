@@ -43,6 +43,7 @@ import { SECUNDARIAS, INGREDIENTES, ingredientesDe, secundariaDe, contarPistas }
 import { PISTAS } from '/mmo/js/caso.js?v=372';
 import { htmlCaso } from './caso.js?v=372';
 import { crearObjetivos, migrarClavesViejas, granMeta } from './objetivos.js?v=372';
+import { crearRituales } from './rituales.js?v=372';
 import { LORE_ZONAS, LORE_NPC, LORE_NPC_CTX, LORE_HITOS, LORE_NIVEL60, LORE_TEMPORADA, AVENTUREROS, FRASES_AVENTUREROS, LORE_MISIONES, LORE_MONSTRUOS, LORE_TEMPORADA_LEYENDA, CAPITULOS, capituloDe, CAPITULOS_INTRIGA, ganchoCapitulo, finCapitulo, ganchoActual, epilogoDe, RECETA_DE_CASA } from './lore.js?v=372';
 import { VECINOS, VOCES, comentarioNpc } from './vecinos.js?v=372';
 import { iniciarMenu, crearGfx, fusionarGfx, PRESETS, NIVELES } from './menu.js?v=372';
@@ -2183,6 +2184,7 @@ function recibir(m) {
       setTimeout(() => despuesMision1(historiaEntrada), 9000);   // la escena de tu capitulo, una vez (nunca una fila de tarjetas)
       setTimeout(() => despuesMision1(ofrecerInstalar), 4000);   // tras la mision 1 y el premio diario, una vez al dia
       setTimeout(() => despuesMision1(tarjetaBautizo), 6500);   // invitado: ponle nombre a tu duende (una vez)
+      setTimeout(() => { try { RIT.pedir(); } catch (e) {} }, 2500);   /* rituales.js: amanecer y ritual de la noche */
       setTimeout(() => { if (yo && yo.clase) OBJ.alEntrar(); }, 4000);   // «Donde lo dejaste» al volver tras horas (sale a los 10 s, despues de la escena del capitulo; una vez por visita)
       if (soyInvitado) { setTimeout(avisoInvitado, 20000); if (!avisoInvT) avisoInvT = setInterval(avisoInvitado, 60000); try { localStorage.setItem('dq_mmo_nombre', yo.nombre); } catch (e) {} }
       { const cg = $('carga'); cg.classList.add('sale'); setTimeout(() => { cg.style.display = 'none'; cg.classList.remove('sale'); }, 360); }   // fundido de entrada al mundo
@@ -2506,6 +2508,7 @@ function recibir(m) {
     case 'anoNuevo': fuegosArtificiales(true); vib('success'); setTimeout(() => fuegosArtificiales(false), 6500); break;
     case 'login': if (yo && yo.clase) { mostrarDiario(m); if (m.item && !m.item.vendido) setTimeout(() => botinFuerte(m.item), 2500); } else loginPend3 = m; setTimeout(() => despuesMision1(ofrecerInstalar), 4000); break;
     case 'buzon': regalo3.alBuzon(m); break;
+    case 'rit': try { RIT.alMensaje(m); } catch (e) {} break;   /* rituales.js */
     case 'regalo': regalo3.alRegalo(m); break;
     case 'avisoTg': {   // «Avísame por Telegram» (/mmo/js/avisotg.js)
       // Mismas reglas que avisotg.js: si la oferta no se va a pintar, no retrasa «Guarda tu duende».
@@ -9340,6 +9343,14 @@ const OBJ = crearObjetivos({
   cuevaHecha: () => !!(cuevaInfo && cuevaInfo.hecha), estadoFiesta: estadoFiestaDia, textoManana: textoManana3, soyInvitado: () => soyInvitado, modoAnuncio,
   irTarea, ponerDestino, verChicha, crearCuenta: irACrearCuenta, verLeyenda, verReceta, verCaso, ocupado: ocupadoObj3, peleando: peleando3,
   tutoActivo: () => !yo || !yo.mis || (yo.mis.i < 1 && (yo.nivel || 1) <= 6), capVisto,
+  filasRitual: () => RIT.filasHoy(), ritual: r => RIT.accion(r),
+});
+/* Rituales del dia (rituales.js): tarjeta «Buenos días», ritual de la noche y sus filas en HOY. */
+const RIT = crearRituales({
+  yo: () => yo, mandar, aviso: (t, k) => aviso(t, k, 1), abrir, cerrar, V, TG, modoAnuncio, sfx: () => sfxK('libro', 0.2),
+  ocupado: ocupadoObj3, peleando: peleando3, textoManana: textoManana3, gancho: () => OBJ.ganchoHtml(),
+  tutoActivo: () => !yo || !yo.mis || (yo.mis.i || 0) < 4,
+  pedirAvisoWeb: () => { try { $('b-avtg').click(); } catch (e) {} },
 });
 function misionLista() { if (!yo) return false; const q = MISIONES[yo.mis.i]; const d = yo.diaria || {}; return (q && yo.mis.p >= q.n) || (!d.ok && (d.p || 0) >= DIARIA.n); }
 function colorNivel(nv) { const d = nv - (yo ? yo.nivel : 1); return d >= 5 ? '#ff3344' : d >= 2 ? '#ff9900' : d <= -8 ? '#9a9a9a' : d <= -3 ? '#4ade80' : '#ffe600'; }
