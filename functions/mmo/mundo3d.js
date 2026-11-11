@@ -24,6 +24,7 @@ import {
 } from '../../mmo/js/data.js';
 import { MUNDO, NPCS3D, NPC_DIST, SPAWN3D, ARENA3D, CASAS, campamentos, revivirEn3d, zonaEn, esNoche, nodos3d, RECOGER_DIST, alturaEn, corrienteEnMundo } from '../../mmo/js/mundo3d.js';
 import { CUEVA, CUEVA_X0, caminable, enCueva, vistaCueva, pasoCueva, PORTAL_PUEBLO } from '../../mmo/js/cueva3d.js';
+import { ARQUETIPOS, ARQ_NIVEL_MIN, ESPECIAL, TIRADOR, CURANDERO, JEFE_FORMAS, JEFE_CONO, JEFE_LINEA, dentroForma, REMATES, ESTADOS_REMATE, REMATE_X, SINERGIA_X } from '../../mmo/js/combate3d.js';
 import { CORRIENTES, CORRIENTE_CD, corrienteEn } from '../../mmo/js/abismo3d.js';
 import { ABISMO, ABISMO_X0, FACCIONES, enAbismo, islaEn, baseDe, portalBase, VACIO, rangoDe, santuario, ASEDIO, proximoAsedio, CENTRO_NUCLEO, PUERTA_NUCLEO, MAQUINA, MAQUINA_DIST, maquinasAbismo } from '../../mmo/js/abismo3d.js';
 const MAQUINAS = maquinasAbismo();
@@ -506,6 +507,7 @@ export const Mundo3D = {
   matar3d(o) {
     const W = this.iniciar3d();
     o.muere = true; o.hp = 0; o.borrarEn = Date.now() + 1600;
+    if (o.tel) { o.tel = null; this.aCerca3d(o, { t: 'zona3f', id: o.id, no: 1 }); }   // muere a medio ataque especial: se borra su forma del suelo
     if (o.asedio) return this.caeAsedio(o);
     if (o.ex3 && o.ex3.raro) {
       this.premioRaro3d(o); this.aClave(K3, { t: 'md3', id: o.id });
@@ -1343,7 +1345,7 @@ export const Mundo3D = {
     if (o.pzj && ahora >= o.pzj.en) {
       // Furia: cada jugador que se come el pisoton la sube (+6 % de golpe por punto, max 5).
       const furia0 = o.furia || 0;
-      for (const x of vivos) if (!(x.h > 4) && Math.hypot(x.p.x - o.pzj.x, x.p.z - o.pzj.z) <= PISOTON_JEFE_R && (enAbismo(o.x) || zonaEn(x.p.x, x.p.z) !== 'pueblo')) {
+      for (const x of vivos) if (!(x.h > 4) && dentroForma(o.pzj, x.p.x, x.p.z) && (enAbismo(o.x) || zonaEn(x.p.x, x.p.z) !== 'pueblo')) {
         const vivoAntes = !x.muerto; this.herir(x, 1, { zona: true, jefe: true, pct: 0.2, id: o.id });
         if (vivoAntes && x.muerto && !x.muertoPvP && puedeRevancha(o, x)) {
           o.revancha = { pid: x.id, hasta: ahora + 90000 }; o.revanchaUsada = true;
@@ -1380,6 +1382,19 @@ export const Mundo3D = {
       if (golpeFuerte || this.auraMon(o, 'silencio') || this.auraMon(o, 'aturdido') || this.auraMon(o, 'oveja')) { o.sorbo = null; if (o.furia > 0) o.furia--; this.aCerca3d(o, { t: 'mcast', id: o.id, ms: 0, cortado: 1 }); }
       else if (ahora >= o.sorbo.fin) { o.sorbo = null; o.hp = Math.min(o.max, o.hp + Math.round(o.max * SORBO_CURA)); this.aCerca3d(o, { t: 'mcast', id: o.id, ms: 0, cura: 1, hp: Math.ceil(o.hp) }); }
     }
+    // Cantico del curandero: lo corta un golpe fuerte (10 % de su vida), Silencio/Patada o un aturdimiento.
+    if (o.cura3) {
+      const cu = o.cura3;
+      if (cu.hp0 - o.hp >= o.max * CURANDERO.corte || this.auraMon(o, 'silencio') || this.auraMon(o, 'aturdido') || this.auraMon(o, 'oveja') || o.vuelve) { o.cura3 = null; this.aCerca3d(o, { t: 'mcast', id: o.id, ms: 0, cortado: 1, k: 'cura' }); }
+      else if (ahora >= cu.fin) {
+        o.cura3 = null;
+        const al = this.iniciar3d().mons.get(cu.a);
+        if (al && !al.muere && !al.vuelve) { al.hp = Math.min(al.max, al.hp + Math.round(al.max * CURANDERO.cura)); this.aCerca3d(o, { t: 'mcast', id: o.id, ms: 0, k: 'cura', ha: al.id, hpa: Math.ceil(al.hp) }); }
+        else this.aCerca3d(o, { t: 'mcast', id: o.id, ms: 0, k: 'cura' });
+      }
+    }
+    // Ataque especial avisado (embestida, tajo en abanico): aturdirlo a tiempo lo cancela.
+    if (o.tel && (this.auraMon(o, 'aturdido') || this.auraMon(o, 'oveja') || o.vuelve)) { o.tel = null; this.aCerca3d(o, { t: 'zona3f', id: o.id, no: 1, co: 1 }); }
     if (this.auraMon(o, 'aturdido') || this.auraMon(o, 'oveja')) { o.st = 0; return; }
     const enC = !!o.cueva;
     const ve = (bx, bz) => !enC || vistaCueva(o.x, o.z, bx, bz);
@@ -1441,6 +1456,32 @@ export const Mundo3D = {
       o.ry = Math.atan2(nx - o.x, nz - o.z); o.x = nx; o.z = nz;
       return d - paso;
     };
+    // Especial en curso: quieto y mirando a donde apunto; al llenarse la forma, golpea a quien siga dentro.
+    if (o.tel) {
+      if (ahora < o.tel.en) { o.st = 2; o.ry = o.tel.ry; return; }
+      const T = o.tel; o.tel = null;
+      let dio = 0;
+      const furioso = o.ex3 && o.ex3.af === 'furioso' && o.hp < o.max * 0.3 ? 1.5 : 1;
+      for (const x of vivos) {
+        if (x.muerto || x.h > 4 || !dentroForma(T, x.p.x, x.p.z) || !(enA || zonaEn(x.p.x, x.p.z) !== 'pueblo') || !enSuIsla(x)) continue;
+        const hp0 = x.hp;
+        this.herir(x, o.atk * T.dano * furioso, { id: o.id, suelo: o.suelo, tel: 1 });
+        if (x.hp < hp0 || x.muerto) dio++;
+      }
+      // fa: nadie lo recibio (el cliente dice «¡Esquivado!» a quien estaba dentro al marcarse).
+      this.aCerca3d(o, { t: 'zona3f', id: o.id, ...(dio ? {} : { fa: 1 }) });
+      // Embestida: recorre su linea (sin salir de la correa, de su isla ni meterse en el pueblo o en una casa).
+      if (T.f === 'l' && !this.auraMon(o, 'raiz')) {
+        let lar = T.r - 1;
+        const sx = Math.sin(T.ry), sz = Math.cos(T.ry);
+        while (lar > 1 && (Math.hypot(T.x + sx * lar - casa.x, T.z + sz * lar - casa.z) > CORREA - 2 || (!enA && zonaEn(T.x + sx * lar, T.z + sz * lar) === 'pueblo'))) lar -= 1;
+        const ex = T.x + sx * lar, ez = T.z + sz * lar;
+        for (let i = 0, antes = Infinity; i < 10; i++) { const q = mover(ex, ez, 30); if (q < 0.3 || q >= antes - 0.01) break; antes = q; }
+        o.ry = T.ry + Math.PI;   // queda mirando de vuelta a su presa
+      }
+      o.st = 2;
+      return;
+    }
     // Panico (murio un compañero cerca): 1,8 s sin pegar, sin avisar golpe ni curarse;
     // se aleja de su objetivo mas lento que el jugador y sin romper la correa ni pisar el pueblo.
     if (o.panico) {
@@ -1463,6 +1504,59 @@ export const Mundo3D = {
       const alcance = o.dispara && !silencio ? MON_DISPARO : MON_MELEE + (o.jefe ? 1 : 0);
       const d = dist(o, s.p);
       const veo = ve(s.p.x, s.p.z);
+      // ── Arquetipos (mmo/js/combate3d.js): el especial OCUPA el hueco de un golpe normal, no se suma. ──
+      const arq = this.arq3d(o);
+      if (arq) {
+        if (!o.espProx) o.espProx = ahora + rnd(2500, 5000);   // el primero, unos segundos despues del tiron
+        // Curandero a medio cantico: quieto (el corte y el final se resuelven arriba).
+        if (o.cura3) { o.st = 0; o.ry = Math.atan2(s.p.x - o.x, s.p.z - o.z); return; }
+        const libre = !(o.avisoAtk === o.atkEn && ahora < o.atkEn);   // no hay un golpe ya avisado en rojo
+        if (arq === 'curandero' && libre && !silencio && ahora >= o.espProx) {
+          // Al compañero mas herido de su grupo que este peleando cerca (nunca a si mismo: solo, no se cura).
+          let al = null;
+          for (const x of this.iniciar3d().mons.values()) if (x !== o && !x.muere && !x.vuelve && !x.jefe && x.obj && x.campo === o.campo && (x.i3 || 0) === (o.i3 || 0) && x.hp < x.max * CURANDERO.bajo && dist(x, o) < CURANDERO.radio && (!al || x.hp / x.max < al.hp / al.max)) al = x;
+          if (!al) o.espProx = ahora + 2000;
+          else {
+            o.cura3 = { fin: ahora + CURANDERO.ms, a: al.id, hp0: o.hp };
+            o.espProx = ahora + rnd(CURANDERO.cada[0], CURANDERO.cada[1]);
+            o.atkEn = Math.max(o.atkEn || 0, o.cura3.fin + 600);
+            this.aCerca3d(o, { t: 'mcast', id: o.id, ms: CURANDERO.ms, n: CURANDERO.nombre, k: 'cura', ha: al.id });
+            o.st = 0; return;
+          }
+        }
+        if (arq === 'embestidor' && libre && veo && d >= 1 && d <= 14 && ahora >= o.espProx && !this.auraMon(o, 'raiz')) {
+          const E = ESPECIAL.embestida, ry = Math.round(Math.atan2(s.p.x - o.x, s.p.z - o.z) * 100) / 100;
+          o.tel = { f: 'l', x: r1(o.x), z: r1(o.z), ry, r: r1(Math.max(E.min, Math.min(E.max, d + 4))), w: E.w, en: ahora + E.ms, dano: E.dano, a: s.id };
+          o.espProx = ahora + rnd(E.cada[0], E.cada[1]);
+          o.atkEn = o.tel.en + 1600;
+          this.aCerca3d(o, { t: 'zona3', id: o.id, f: 'l', x: o.tel.x, z: o.tel.z, ry, r: o.tel.r, w: E.w, ms: E.ms, n: E.nombre });
+          o.st = 2; o.ry = ry; return;
+        }
+        if (arq === 'barredor' && libre && veo && d <= MON_MELEE + 0.6 && ahora >= o.espProx && ahora >= (o.atkEn || 0) - AVISO_MON_MS - 100) {
+          const E = ESPECIAL.barrido, ry = Math.round(Math.atan2(s.p.x - o.x, s.p.z - o.z) * 100) / 100;
+          o.tel = { f: 'k', x: r1(o.x), z: r1(o.z), ry, r: E.r, an: E.an, en: ahora + E.ms, dano: E.dano, a: s.id };
+          o.espProx = ahora + rnd(E.cada[0], E.cada[1]);
+          o.atkEn = o.tel.en + 1600;
+          this.aCerca3d(o, { t: 'zona3', id: o.id, f: 'k', x: o.tel.x, z: o.tel.z, ry, r: E.r, an: E.an, ms: E.ms, n: E.nombre });
+          o.st = 2; o.ry = ry; return;
+        }
+        // Tirador: si te le pegas, se aparta de un salto (y pierde parte de un disparo). Silenciado o enraizado, no.
+        if (arq === 'tirador' && o.dispara && !silencio && veo && !enC && d < TIRADOR.cerca && ahora >= (o.saltoProx || 0) && !this.auraMon(o, 'raiz')) {
+          const dx = o.x - s.p.x, dz = o.z - s.p.z, dd = Math.hypot(dx, dz) || 1;
+          let tx = o.x + dx / dd * TIRADOR.salto, tz = o.z + dz / dd * TIRADOR.salto;
+          const dc = Math.hypot(tx - casa.x, tz - casa.z), lim = CORREA - 2;
+          if (dc > lim) { tx = casa.x + (tx - casa.x) / dc * lim; tz = casa.z + (tz - casa.z) / dc * lim; }
+          const x0 = o.x, z0 = o.z;
+          if (enA || zonaEn(tx, tz) !== 'pueblo') for (let i = 0, antes = Infinity; i < 4; i++) { const q = mover(tx, tz, 30); if (q < 0.3 || q >= antes - 0.01) break; antes = q; }
+          if (Math.hypot(o.x - x0, o.z - z0) > 2) {
+            o.saltoProx = ahora + rnd(TIRADOR.cada[0], TIRADOR.cada[1]);
+            if (!(o.avisoAtk === o.atkEn && ahora < o.atkEn)) o.atkEn = Math.max(o.atkEn || 0, ahora) + TIRADOR.pausa;
+            o.ry = Math.atan2(s.p.x - o.x, s.p.z - o.z); o.st = 1;
+            return;
+          }
+          o.saltoProx = ahora + 3000;   // acorralado: no lo reintenta cada tick
+        }
+      }
       // Jefes de zona: cada 10-14 s un pisoton avisado (circulo rojo donde esta
       // su objetivo, 2,5 s para salir). Antes solo pegaban y daba igual moverse.
       if (o.jefe && o.campo >= 0 && !enC && !o.pzj && d < 12 && ahora >= (o.pzjProx || 0)) {
@@ -1470,9 +1564,15 @@ export const Mundo3D = {
         else {
           // Jefes de novato (Nv <= 10, p. ej. el Sabueso): aviso 40% mas largo para aprender a esquivar.
           const avisoPz = ((MONSTRUOS[o.k] || {}).nivel || 99) <= 10 ? Math.round(PISOTON_AVISO * 1.4) : PISOTON_AVISO;
-          o.pzj = { x: s.p.x, z: s.p.z, en: ahora + avisoPz };
+          // Forma del golpe: los jefes de novato, siempre el circulo; el resto alterna circulo, cono y linea
+          // (mismo daño y cadencia; cono y linea avisan menos porque se sale antes). Ver mmo/js/combate3d.js.
+          const fz = ((MONSTRUOS[o.k] || {}).nivel || 99) <= 10 ? 'c' : JEFE_FORMAS[(o.pzjN = (o.pzjN || 0) + 1) % JEFE_FORMAS.length];
+          const ryz = Math.round(Math.atan2(s.p.x - o.x, s.p.z - o.z) * 100) / 100;
+          if (fz === 'k') o.pzj = { f: 'k', x: r1(o.x), z: r1(o.z), ry: ryz, r: r1(Math.max(JEFE_CONO.r, d + 3)), an: JEFE_CONO.an, en: ahora + Math.round(avisoPz * JEFE_CONO.k) };
+          else if (fz === 'l') o.pzj = { f: 'l', x: r1(o.x), z: r1(o.z), ry: ryz, r: JEFE_LINEA.r, w: JEFE_LINEA.w, en: ahora + Math.round(avisoPz * JEFE_LINEA.k) };
+          else o.pzj = { f: 'c', x: s.p.x, z: s.p.z, r: PISOTON_JEFE_R, en: ahora + avisoPz };
           o.pzjProx = ahora + Math.round(rnd(10000, 14000) * (o.fase === 2 ? 0.7 : 1));
-          this.aCerca3d(o, { t: 'zona3', id: o.id, x: r1(s.p.x), z: r1(s.p.z), r: PISOTON_JEFE_R, ms: avisoPz });
+          this.aCerca3d(o, { t: 'zona3', id: o.id, x: r1(o.pzj.x), z: r1(o.pzj.z), r: o.pzj.r, ms: o.pzj.en - ahora, ...(fz !== 'c' ? { f: fz, ry: ryz, an: o.pzj.an, w: o.pzj.w } : {}) });
         }
       }
       if (o.jefe && o.campo >= 0 && !enC && !o.sorbo && o.hp < o.max * 0.6 && d < 20 && ahora >= (o.sorboProx || 0)) {
@@ -1538,6 +1638,7 @@ export const Mundo3D = {
     if (o.vuelve) {
       o.st = 1;
       o.pzjProx = 0;   // la proxima pelea empieza otra vez sin pisoton inmediato
+      o.espProx = 0; o.saltoProx = 0;
       const herido = o.revancha && ahora < o.revancha.hasta;   // revancha: sigue herido 90 s
       if (!herido) o.fase = 0; o.furia = 0;   // con revancha conserva la Fase 2: no la reanuncia en casa
       if (!o.persiste && !herido) o.hp = Math.min(o.max, o.hp + o.max * 0.15 * dt);   // se cura visiblemente al irse
@@ -1567,6 +1668,27 @@ export const Mundo3D = {
   // y efectos; solo cambian las distancias: el 2D media en pixeles en una
   // linea y aqui son metros en el plano (rango / 17; el cuerpo a cuerpo usa
   // el alcance del arma).
+  // Arquetipo de IA (mmo/js/combate3d.js): presas de campamento de Nv 8+ y élites con afijo. Ni jefes, ni cueva, ni asedio.
+  arq3d(o) {
+    if (o.arq !== undefined) return o.arq;
+    const elite = !!(o.ex3 && o.ex3.af);
+    o.arq = o.jefe || o.cueva || o.i3 || o.asedio || o.guardian || o.mundial3 || (o.nv || 0) < ARQ_NIVEL_MIN || !(o.campo >= 0 || elite) ? null : (ARQUETIPOS[o.k] || (elite ? 'barredor' : null));
+    return o.arq;
+  },
+  // Remate: ciertas habilidades pegan mas a un enemigo aturdido, enraizado o silenciado
+  // (una vez por estado; mas si el estado lo puso otro jugador). Marca el evento con rm.
+  remate3d(s, h, o, ev) {
+    if (!REMATES[h.id] || !o || o.muere) return 1;
+    for (const a of ESTADOS_REMATE) {
+      const au = this.auraMon(o, a);
+      if (!au || au.rem) continue;
+      au.rem = 1;
+      const ajeno = !!(au.de && au.de !== s.id);
+      ev.rm = ajeno ? 2 : 1;
+      return ajeno ? SINERGIA_X : REMATE_X;
+    }
+    return 1;
+  },
   metros(px, s) {
     if (px === MELEE) { const arma = ARMAS[s.c.arma] || ARMAS.katana; return MELEE / 33 * (arma.alcance || 1) + 0.6; }
     return px / 17;
@@ -1748,7 +1870,7 @@ export const Mundo3D = {
     const g = x => { if (x) golpes.push(x); return x; };
     const sp = this.especDe(s);
     const mh = (sp && sp.hab && sp.hab[h.id]) || 1;
-    const pegar = (o, mult, amen) => this.pegar3d(s, o, mult * mh, amen, TIPO_HAB[h.id]);
+    const pegar = (o, mult, amen) => this.pegar3d(s, o, mult * mh * this.remate3d(s, h, o, ev), amen, TIPO_HAB[h.id]);
     const radio = h.radio ? h.radio / 17 : 0;
     switch (h.id) {
       // Golpe del Puma: cuesta Ira, asi que pega mas que el basico (3.6 x arma): 3 x 1.6 x arma.
@@ -1774,7 +1896,8 @@ export const Mundo3D = {
         this.enviar(s, { t: 'tp3', x: r1(s.p.x), z: r1(s.p.z), carga: 1 });
         s.rec = Math.min(100, s.rec + h.genera);
         g(pegar(obj, 0.6, 2));
-        if (!obj.muere && !obj.jefe) this.ponerAuraMon(obj, 'aturdido', h.aturde);
+        if (!obj.muere && !obj.jefe) this.ponerAuraMon(obj, 'aturdido', h.aturde, { de: s.id });
+        else if (!obj.muere) ev.inm = 1;   // los jefes no se aturden: el cliente lo dice («Inmune»)
         break;
       }
       case 'provocar': {
@@ -1795,7 +1918,7 @@ export const Mundo3D = {
         for (const o of vivos()) {
           if (dist(o, s.p) > radio + 0.6) continue;
           g(pegar(o, h.mult));
-          if (!o.muere) this.ponerAuraMon(o, 'raiz', (o.jefe ? h.raiz * 0.4 : h.raiz) * ((sp && sp.raiz) || 1));
+          if (!o.muere) this.ponerAuraMon(o, 'raiz', (o.jefe ? h.raiz * 0.4 : h.raiz) * ((sp && sp.raiz) || 1), { de: s.id });
         }
         break;
       case 'polimorfia': this.ponerAuraMon(obj, 'oveja', h.dura); break;
@@ -1831,7 +1954,7 @@ export const Mundo3D = {
       case 'sigilo': this.ponerAura(s, 'sigilo', 0); break;
       case 'patada': case 'zurrar': case 'contrahechizo': case 'silencio':
         g(pegar(obj, h.mult));
-        if (!obj.muere) this.ponerAuraMon(obj, 'silencio', h.interrumpe);
+        if (!obj.muere) this.ponerAuraMon(obj, 'silencio', h.interrumpe, { de: s.id });
         break;
       case 'evasion': this.ponerAura(s, 'evasion', h.dura); break;
       case 'desvanecer':
@@ -1919,12 +2042,12 @@ export const Mundo3D = {
           const dm = dist(o, s.p);
           if (dm > VISTA_MON) continue;
           ve.add(o.id);
-          if (!s.vistos.has(o.id)) n.push({ id: o.id, k: o.k, nv: o.nv, x: r1(o.x), z: r1(o.z), hp: Math.ceil(o.hp), mx: o.max, j: o.jefe ? 1 : 0, mu: o.mundial3 || o.guardian ? 1 : undefined, ra: o.ex3 && o.ex3.nom ? o.ex3.nom : undefined, ti: o.ex3 && o.ex3.ti ? o.ex3.ti : undefined, af: o.ex3 && o.ex3.af ? o.ex3.af : undefined, iv: o.ex3 && o.ex3.ev ? 1 : undefined, la: o.ex3 && o.ex3.ladron ? 1 : undefined, noct: o.noct && esNoche(ahora) ? 1 : undefined });
+          if (!s.vistos.has(o.id)) n.push({ id: o.id, k: o.k, nv: o.nv, x: r1(o.x), z: r1(o.z), hp: Math.ceil(o.hp), mx: o.max, j: o.jefe ? 1 : 0, mu: o.mundial3 || o.guardian ? 1 : undefined, ra: o.ex3 && o.ex3.nom ? o.ex3.nom : undefined, ti: o.ex3 && o.ex3.ti ? o.ex3.ti : undefined, af: o.ex3 && o.ex3.af ? o.ex3.af : undefined, iv: o.ex3 && o.ex3.ev ? 1 : undefined, la: o.ex3 && o.ex3.ladron ? 1 : undefined, aq: this.arq3d(o) || undefined, noct: o.noct && esNoche(ahora) ? 1 : undefined });
           else {
             // Lejanos tranquilos ya presentados: una foto si y otra no (repartidos por id).
             if (dm > 50 && o.obj !== s.id && !o.jefe && !o.muere && o.st !== 3 && ((o.id + par) & 1)) continue;
             let fm = filaM.get(o.id);
-            if (!fm) filaM.set(o.id, fm = JSON.stringify([o.id, r1(o.x), r1(o.z), Math.round(o.ry * 100) / 100, Math.ceil(o.hp), o.muere ? 3 : o.st]));
+            if (!fm) filaM.set(o.id, fm = JSON.stringify(o.obj && !o.muere ? [o.id, r1(o.x), r1(o.z), Math.round(o.ry * 100) / 100, Math.ceil(o.hp), o.st, o.obj] : [o.id, r1(o.x), r1(o.z), Math.round(o.ry * 100) / 100, Math.ceil(o.hp), o.muere ? 3 : o.st]));
             ms.push(fm);
           }
         }

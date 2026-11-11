@@ -613,6 +613,7 @@ async function pruebas() {
   await pruebasSinCortes();
   await pruebas3d();
   await pruebasHabs3d();
+  await pruebasCombate3d();
   await pruebasMundial3d();
   await pruebasGrupo3d();
   await pruebasPrimeraHora3d();
@@ -4209,6 +4210,187 @@ async function pruebasHabs3d() {
 
 // Pack de bienvenida (SOLO 1 VEZ): el servidor solo deja pedirlo si la cuenta
 // nunca pagó nada; se entrega a mano como el resto y no cambia el precio del oro.
+// ── COMBATE v372: formas de peligro, arquetipos de IA, remates y objetivo del objetivo (mmo/js/combate3d.js) ──
+async function pruebasCombate3d() {
+  console.log('Mundo 3D: combate v372 (formas, arquetipos, remates)');
+  const W = await import('../mmo/js/mundo3d.js');
+  const D = await import('../mmo/js/data.js');
+  const C = await import('../mmo/js/combate3d.js');
+  const dentro = C.dentroForma;
+  chequear(dentro({ f: 'c', x: 0, z: 0, r: 5 }, 3, 3) && !dentro({ f: 'c', x: 0, z: 0, r: 5 }, 4, 4) && dentro({ x: 0, z: 0, r: 5 }, 0, 5), 'forma círculo: dentro hasta el radio (sin f también es círculo)');
+  const cono = { f: 'k', x: 0, z: 0, ry: 0, r: 5, an: 0.9 };   // mira a +z
+  chequear(dentro(cono, 0, 3) && dentro(cono, 2, 3) && !dentro(cono, 0, -3) && !dentro(cono, 4, 1) && !dentro(cono, 0, 6), 'forma cono: delante sí; detrás, al costado y más lejos no');
+  const linea = { f: 'l', x: 0, z: 0, ry: Math.PI / 2, r: 10, w: 2 };   // hacia +x
+  chequear(dentro(linea, 5, 0.9) && !dentro(linea, 5, 1.2) && !dentro(linea, 11, 0) && !dentro(linea, -2, 0), 'forma línea: dentro de su ancho y su largo, no detrás del origen');
+  chequear(Object.keys(C.ARQUETIPOS).every(k => D.MONSTRUOS[k] && !D.MONSTRUOS[k].jefe && D.MONSTRUOS[k].nivel >= C.ARQ_NIVEL_MIN), 'todos los arquetipos son presas reales de Nv 8+ (ningún jefe ni monstruo de novato)');
+  chequear(Object.entries(C.ARQUETIPOS).every(([k, a]) => a !== 'tirador' || D.MONSTRUOS[k].dispara), 'los tiradores son monstruos que disparan');
+
+  const campo = W.campamentos(D.MAPAS, D.MONSTRUOS).find(c => c.zona === 'amanecer' && !c.jefe);
+  const s = await entrar3d('Combate3D', 'c72a');
+  ponerNivel(s, 30, 'guerrero');
+  const B = { x: campo.x + 40, z: campo.z };
+  const aqui = () => { s.p = { x: B.x, z: B.z }; s.movBud = undefined; s.hp = s.st.maxHp; s.inv = 0; s.escudo = 0; s.esqInv = 0; s.muerto = false; if (s.au) s.au = {}; };
+  aqui();
+  // Fuera los muñecos que dejaron otras pruebas por aquí (alguno seguía peleando).
+  for (const x of [...mundo.m3.mons.values()]) if (!x.i3 && Math.hypot(x.hx - B.x, x.hz - B.z) < 30) mundo.m3.mons.delete(x.id);
+  chequear(W.zonaEn(B.x, B.z) !== 'pueblo', 'el campo de pruebas no está en el pueblo');
+  const pon = (k, dx, dz = 0, id = 9001) => {
+    const o = mundo.crear3d({ id, x: B.x + dx, z: B.z + dz, k, n: 1, jefe: !!D.MONSTRUOS[k].jefe, vivos: new Set(), zona: 'amanecer' });
+    o.x = B.x + dx; o.z = B.z + dz; o.hx = o.x; o.hz = o.z;
+    o.hp = o.max = 1e6; o.paseo = Date.now() + 1e9; o.destino = null; o.noct = 0;
+    return o;
+  };
+  const enfada = o => { o.obj = s.id; o.amen.set(s.id, 50); o.espProx = 1; };
+  const quita = o => { mundo.m3.mons.delete(o.id); };
+
+  // ── Embestidor: línea avisada, golpea a quien siga dentro y recorre su línea ──
+  let o = pon('goblin_knight', 8);
+  chequear(mundo.arq3d(o) === 'embestidor' && mundo.arq3d(pon('goblin_normal', 60)) === null, 'arquetipo por especie: el Goblin Caballero embiste; el Goblin de novato no cambia');
+  enfada(o); s.limpiar(); tick(1);
+  const z3 = s.ultimos('zona3').pop();
+  chequear(o.tel && o.tel.f === 'l' && z3 && z3.f === 'l' && z3.id === o.id && z3.ms === C.ESPECIAL.embestida.ms && z3.r >= 8, 'el embestidor avisa su carga con una línea en el suelo');
+  chequear(o.atkEn === o.tel.en + 1600, 'la embestida ocupa el hueco de un golpe normal (el siguiente llega 1,6 s después)');
+  const xo = o.x; tick(5);
+  chequear(o.x === xo && s.hp === s.st.maxHp, 'mientras se llena la línea se queda quieto y no hiere');
+  tick(8);
+  chequear(s.hp < s.st.maxHp && !o.tel && o.x < B.x, 'al llenarse golpea a quien sigue dentro y cruza hasta el final de su línea');
+  chequear(s.ultimos('zona3f').some(m => m.id === o.id && !m.fa && !m.no), 'la forma se cierra con su golpe (zona3f)');
+  // Salir de la línea = no recibir el golpe.
+  aqui(); o.x = B.x + 8; o.z = B.z; enfada(o); o.atkEn = Date.now() + 1e7; s.limpiar(); tick(1);
+  chequear(!!o.tel, 'vuelve a avisar otra embestida');
+  s.p = { x: B.x, z: B.z + 3 }; tick(13);
+  chequear(s.hp === s.st.maxHp && s.ultimos('zona3f').some(m => m.id === o.id && m.fa === 1), 'salir de la línea a tiempo = no recibir el golpe (el servidor lo valida y avisa fa)');
+  // Aturdirlo a tiempo cancela el especial.
+  aqui(); o.x = B.x + 8; o.z = B.z; enfada(o); o.atkEn = Date.now() + 1e7; s.limpiar(); tick(1);
+  mundo.ponerAuraMon(o, 'aturdido', 1500, { de: s.id }); tick(1);
+  chequear(!o.tel && s.ultimos('zona3f').some(m => m.id === o.id && m.no === 1 && m.co === 1), 'aturdir al embestidor mientras avisa cancela la carga');
+  tick(14);
+  chequear(s.hp === s.st.maxHp, 'la carga cancelada no hace daño');
+  // La esquiva (i-frames) también vale contra el especial de un monstruo normal.
+  aqui(); o.au = {}; o.x = B.x + 8; o.z = B.z; enfada(o); o.atkEn = Date.now() + 1e7; s.limpiar(); tick(1);
+  s.esqInv = Date.now() + 5000; tick(13);
+  chequear(s.hp === s.st.maxHp && s.ultimos('mesq').some(m => m.id === o.id), 'esquivar justo cuando cae también evita la embestida');
+  // Objetivo del objetivo y arquetipo en las fotos.
+  const fotos = s.ws.rec.filter(m => m.t === 's3');
+  chequear(fotos.some(m => (m.m || []).some(f => f[0] === o.id && f[6] === s.id)), 'la fila del monstruo en combate dice a quién mira (objetivo del objetivo)');
+  quita(o);
+  s.vistos = new Set(); o = pon('goblin_knight', 8); s.limpiar(); tick(3);
+  chequear(s.ws.rec.some(m => m.t === 's3' && (m.n || []).some(x => x.id === o.id && x.aq === 'embestidor')), 'al presentarse, el monstruo llega con su arquetipo (aq)');
+  chequear(s.ws.rec.filter(m => m.t === 's3').every(m => (m.m || []).every(f => f[0] !== o.id || f.length === 6)), 'un monstruo tranquilo conserva su fila de 6 datos');
+  quita(o);
+
+  // ── Barredor: cono delante de él, en el hueco de un golpe ──
+  aqui(); o = pon('goblin_samurai', 1.5);
+  enfada(o); o.atkEn = Date.now() + 5000; tick(6);
+  chequear(!o.tel, 'el barredor no lanza su tajo fuera del hueco de su golpe');
+  o.x = B.x + 1.5; o.z = B.z; o.atkEn = Date.now() + 700; s.limpiar(); tick(1);
+  chequear(o.tel && o.tel.f === 'k' && s.ultimos('zona3').some(m => m.id === o.id && m.f === 'k' && m.an > 0) && !s.ultimos('mpre').some(m => m.id === o.id), 'el barredor avisa un cono en vez del golpe normal');
+  tick(13);
+  const danoCono = s.st.maxHp - s.hp;
+  chequear(danoCono > 0, 'quedarse delante del cono duele');
+  aqui(); o.x = B.x + 1.5; o.z = B.z; enfada(o); o.atkEn = Date.now() + 700; tick(1);
+  chequear(!!o.tel, 'el barredor vuelve a avisar');
+  o.atkEn = Date.now() + 1e7; s.p = { x: B.x + 4, z: B.z }; tick(13);   // se pone detrás
+  chequear(s.hp === s.st.maxHp, 'ponerse detrás del barredor evita el tajo');
+  quita(o);
+  // Élite con afijo de una especie sin arquetipo: barredor. Su esbirro, no.
+  const el = mundo.crearEspecial3d('goblin_peasant', B.x + 30, B.z, { zona: 'amanecer', nv: 12, hpX: 6, atkX: 1.3, ex: { raro: 1, nom: 'Prueba', af: 'furioso' }, expira: Date.now() + 60000 });
+  const esb = mundo.crearEspecial3d('goblin_peasant', B.x + 33, B.z, { zona: 'amanecer', nv: 12, ex: { esb: el.id }, expira: Date.now() + 60000 });
+  chequear(mundo.arq3d(el) === 'barredor' && mundo.arq3d(esb) === null, 'los élites con afijo barren en cono; sus esbirros siguen siendo normales');
+  quita(el); quita(esb);
+
+  // ── Tirador: se aparta si te le pegas (y pierde parte de un disparo) ──
+  aqui(); o = pon('goblin_mage', 2);
+  enfada(o); o.atkEn = Date.now() + 400; const atk0 = o.atkEn; tick(1);
+  chequear(Math.hypot(o.x - s.p.x, o.z - s.p.z) > 6 && o.saltoProx > Date.now() + 8000 && o.atkEn >= atk0 + C.TIRADOR.pausa, 'el tirador salta atrás al tenerte encima y retrasa su disparo');
+  const xt = o.x; s.p = { x: o.x - 2, z: o.z }; tick(3);
+  chequear(Math.abs(o.x - xt) < 0.01, 'no salta dos veces seguidas (9-12 s entre saltos)');
+  o.saltoProx = 0; mundo.ponerAuraMon(o, 'silencio', 4000, { de: s.id }); tick(1);
+  chequear(Math.hypot(o.x - s.p.x, o.z - s.p.z) < 4, 'silenciado no salta');
+  quita(o);
+
+  // ── Curandero: cura a un compañero herido; se corta pegándole o silenciándolo ──
+  aqui();
+  const cu = pon('hongo', 7), al = pon('goblin_peasant', 5, 3);
+  al.obj = s.id; al.amen.set(s.id, 50); al.atk = 0; al.hp = al.max * 0.5; cu.atk = 0;
+  enfada(cu); s.limpiar(); tick(1);
+  chequear(cu.cura3 && cu.cura3.a === al.id && s.ultimos('mcast').some(m => m.id === cu.id && m.k === 'cura' && m.ms === C.CURANDERO.ms), 'el curandero empieza su cántico sobre el compañero herido');
+  const hpAl = al.hp; tick(26);
+  chequear(!cu.cura3 && Math.abs(al.hp - (hpAl + Math.round(al.max * C.CURANDERO.cura))) < 2 && s.ultimos('mcast').some(m => m.id === cu.id && m.ha === al.id && m.hpa > hpAl), 'al terminar le devuelve un 12 % de vida');
+  al.hp = al.max * 0.5; cu.espProx = 1; cu.au = {}; s.limpiar(); tick(1);
+  chequear(!!cu.cura3, 'vuelve a cantar');
+  mundo.danar3d(cu, Math.ceil(cu.max * 0.11), s); tick(1);
+  chequear(!cu.cura3 && s.ultimos('mcast').some(m => m.id === cu.id && m.cortado === 1), 'un golpe fuerte al curandero corta el cántico');
+  tick(26);
+  chequear(al.hp <= al.max * 0.5, 'el cántico cortado no cura');
+  cu.espProx = 1; tick(1); mundo.ponerAuraMon(cu, 'silencio', 4000, { de: s.id }); tick(1);
+  chequear(!cu.cura3, 'silenciarlo también lo corta');
+  quita(al); cu.au = {}; cu.espProx = 1; cu.hp = cu.max * 0.4; tick(3);
+  chequear(!cu.cura3 && cu.hp <= cu.max * 0.4, 'solo no se cura a sí mismo (las peleas de uno contra uno no cambian)');
+  quita(cu);
+
+  // ── Jefes de zona: alternan cono, círculo y línea; los de novato, siempre círculo ──
+  aqui();
+  const j = pon('jefe_senor', 3, 0, 9002);
+  j.obj = s.id; j.amen.set(s.id, 50); j.atkEn = Date.now() + 1e7;
+  const formas = [];
+  for (let i = 0; i < 4; i++) {
+    aqui(); j.pzj = null; j.pzjProx = 1; j.x = B.x + 3; j.z = B.z; j.expuesto = 0; s.limpiar(); tick(1);
+    formas.push(j.pzj ? j.pzj.f : '-');
+    if (i === 0) {
+      chequear(s.ultimos('zona3').some(m => m.id === j.id && m.f === 'k' && m.ry !== undefined), 'el jefe avisa un cono (zona3 con f, ry y an)');
+      tick(22);
+      chequear(s.hp < s.st.maxHp * 0.9 && s.ultimos('expuesto').length === 1, 'quedarse en el cono del jefe quita un 20 % y después queda expuesto (¡AHORA!)');
+    }
+    if (i === 2) {
+      s.p = { x: B.x, z: B.z + 4 }; tick(22);
+      chequear(s.hp === s.st.maxHp, 'hacerse a un lado de la línea del jefe evita el golpe');
+    }
+  }
+  chequear(formas.join('') === 'kclc', 'el jefe alterna cono, círculo, línea y círculo (' + formas.join('') + ')');
+  quita(j);
+  aqui();
+  const jn = pon('jefe_sabueso', 3, 0, 9002);
+  jn.obj = s.id; jn.amen.set(s.id, 50); jn.atkEn = Date.now() + 1e7;
+  const fn = [];
+  for (let i = 0; i < 3; i++) { jn.pzj = null; jn.pzjProx = 1; tick(1); fn.push(jn.pzj ? jn.pzj.f : '-'); }
+  chequear(fn.join('') === 'ccc', 'el jefe de novato (Sabueso) solo usa el círculo de siempre');
+  quita(jn);
+
+  // ── Remates y sinergias ──
+  const azar = Math.random; Math.random = () => 0.5;   // sin críticos ni variación: se comparan golpes exactos
+  try {
+    aqui();
+    const m = mundo.crear3d({ id: -1, x: B.x + 1.5, z: B.z, k: campo.k, n: 1, jefe: false, vivos: new Set(), zona: 'amanecer' });
+    m.x = B.x + 1.5; m.z = B.z; m.hx = m.x; m.hz = m.z; m.hp = m.max = 1e7; m.paseo = Date.now() + 1e9; m.destino = null; m.atk = 0;
+    const golpe = async () => { avanzar(1200); s.rec = 100; s.cdHab = {}; s.gcdHasta = 0; s.fuego = 0; s.limpiar(); const h0 = m.hp; await s.mandar({ t: 'hab3', id: 'golpe_heroico', tg: m.id }); return [h0 - m.hp, s.ultimos('hb').pop() || {}]; };
+    const [d0, e0] = await golpe();
+    mundo.ponerAuraMon(m, 'aturdido', 3000, { de: s.id });
+    const [d1, e1] = await golpe();
+    chequear(d0 > 0 && !e0.rm && e1.rm === 1 && Math.abs(d1 / d0 - C.REMATE_X) < 0.02, 'Golpe del Puma a un enemigo aturdido: REMATE +20 % (' + d0 + ' → ' + d1 + ')');
+    mundo.ponerAuraMon(m, 'aturdido', 60000, { de: s.id, rem: 1 });
+    const [d2, e2] = await golpe();
+    chequear(d2 === d0 && !e2.rm, 'el remate vale una vez por estado');
+    m.au = {}; mundo.ponerAuraMon(m, 'raiz', 5000, { de: s.id + 999 });
+    const [d3, e3] = await golpe();
+    chequear(e3.rm === 2 && Math.abs(d3 / d0 - C.SINERGIA_X) < 0.02, 'si el estado lo puso otro jugador: SINERGIA +30 %');
+    m.au = {}; mundo.ponerAuraMon(m, 'raiz', 5000, { de: s.id });
+    avanzar(1200); s.rec = 100; s.cdHab = {}; s.gcdHasta = 0; s.limpiar(); const hT = m.hp;
+    await s.mandar({ t: 'hab3', id: 'torbellino' });
+    chequear(hT - m.hp > 0 && !(s.ultimos('hb').pop() || {}).rm && !m.au.raiz.rem, 'las habilidades que no son remate no gastan el estado');
+    quita(m);
+    // Inmune: la Carga no aturde a un jefe y el evento lo dice.
+    const jf = mundo.crear3d({ id: -1, x: B.x + 12, z: B.z, k: campo.k, n: 1, jefe: true, vivos: new Set(), zona: 'amanecer' });
+    jf.x = B.x + 12; jf.z = B.z; jf.hx = jf.x; jf.hz = jf.z; jf.hp = jf.max = 1e7; jf.atk = 0; jf.atkEn = Date.now() + 1e7;
+    avanzar(1200); s.rec = 0; s.cdHab = {}; s.gcdHasta = 0; s.limpiar();
+    await s.mandar({ t: 'hab3', id: 'carga', tg: jf.id });
+    chequear((s.ultimos('hb').pop() || {}).inm === 1 && !mundo.auraMon(jf, 'aturdido'), 'la Carga contra un jefe avisa «Inmune» (no lo aturde)');
+    quita(jf);
+  } finally { Math.random = azar; }
+  for (const x of [...mundo.m3.mons.values()]) if (x.campo === 9001 || x.campo === 9002) quita(x);
+  await mundo.cerrar(s);
+}
+
 async function pruebasBienvenida() {
   console.log('Pack de bienvenida: una sola vez, comprobado por el servidor');
   const D = await import('../mmo/js/data.js');
