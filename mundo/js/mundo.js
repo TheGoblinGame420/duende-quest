@@ -3851,6 +3851,7 @@ function aviso(txt, tipo, prio) {
   txt = String(txt); prio = prio || (tipo === 'err' ? 1 : 2);
   const ahora = Date.now();
   if (ahora - (avisoVisto.get(txt) || 0) < 8000) return;
+  if (prio > 2 && document.body.classList.contains('hud-limpio')) return;   /* pantalla limpia: sin avisos de ambiente (lore, consejos) */
   if (prio > 1) {
     let tutoTemprano = false; try { tutoTemprano = COMPACTO && yo && yo.clase && tuto3.i >= 0 && tuto3.i < TUTO3.length && yo.nivel <= 6; } catch (e) {}
     if (tutoTemprano && prio > 2) return;
@@ -4028,6 +4029,40 @@ function colocarAvisos() {
   } catch (e) {}
 }
 setInterval(colocarAvisos, 700);
+// ── HUD despejado ── Textos que se esconden solos cuando llevan un rato sin cambiar (oro, evento, hora y zona
+// del minimapa), la mision que asoma al avanzar en «pantalla limpia» y body.en-combate. Un repaso cada 600 ms.
+const HUD_QUIETOS = [['oro', 8000], ['temp3', 8000], ['mini-r', 7000]];
+let hudLimpio = false;
+try { hudLimpio = localStorage.getItem('dq_hud_limpio') === '1'; } catch (e) {}
+function ponerHudLimpio(v) {
+  hudLimpio = !!v; document.body.classList.toggle('hud-limpio', hudLimpio);
+  try { if (hudLimpio) localStorage.setItem('dq_hud_limpio', '1'); else localStorage.removeItem('dq_hud_limpio'); } catch (e) {}
+  if ($('sel-hud')) $('sel-hud').value = hudLimpio ? 'l' : 'n';
+  try { colocarAvisos(); } catch (e) {}
+}
+ponerHudLimpio(hudLimpio);
+if ($('sel-hud')) $('sel-hud').onchange = () => { ponerHudLimpio($('sel-hud').value === 'l'); if (hudLimpio) aviso('Pantalla limpia: la misión asoma cuando avanza. Lo demás está en ⋯', 'ok', 1); };
+window.dqHud = { get limpio() { return hudLimpio; }, limpiar: ponerHudLimpio };
+function repasoHud() {
+  const ah = performance.now();
+  for (const [id, ms] of HUD_QUIETOS) {
+    const el = $(id); if (!el) continue;
+    // La hora del minimapa corre sola: solo cuenta la zona.
+    const t = id === 'mini-r' ? $('mini-z').textContent : el.textContent;
+    if (t !== el._qt) { el._qt = t; el._qT = ah; if (el._q) { el._q = false; el.classList.remove('quieto'); } }
+    else if (!el._q && ah - el._qT > ms) { el._q = true; el.classList.add('quieto'); }
+  }
+  const mi = $('misiones');
+  if (mi) {
+    // Sin los metros ni los relojes, que cambian solos al caminar.
+    const t = hudLimpio ? mi.textContent.replace(/\d+ m\b|\d+:\d\d/g, '') : '';
+    if (t !== mi._qt) { const primera = mi._qt === undefined || mi._qt === ''; mi._qt = t; mi._qT = ah; if (hudLimpio && !primera && !mi._v) { mi._v = true; mi.classList.add('vivo'); } }
+    else if (mi._v && ah - mi._qT > 7000) { mi._v = false; mi.classList.remove('vivo'); }
+  }
+  let comb = false; try { comb = !!yo && enCombate3(); } catch (e) {}
+  if (comb !== repasoHud.comb) { repasoHud.comb = comb; document.body.classList.toggle('en-combate', comb); }
+}
+setInterval(repasoHud, 600);
 addEventListener('resize', colocarAvisos);
 // PC: la caja de misiones empieza justo bajo el minimapa (su alto cambia con el texto) y nunca se sale de la pantalla.
 function medirMiniPc() {
@@ -8413,10 +8448,13 @@ function lblUsa() { if (lblUsN < 160) { lblUsX[lblUsN] = lblSx; lblUsY[lblUsN++]
 const lblOrden = (a, b) => a._dl - b._dl;
 function etiquetas(t) {
   lblW = innerWidth; lblH = innerHeight;
-  if (yo && P.lbl && lblVe(P.lbl, P.x, P.y + 2.15 + (P.fig && P.fig.montura ? 1.2 : 0), P.z, 999)) lblPon(P.lbl, `<span style="color:${yo.dios ? '#ffd84a' : (yo.tinte && colorTinte3(yo.tinte)) || '#ffe600'}">${yo.dios ? 'GM ' : ''}${esc(yo.nombre)}</span>${yo.titulo && LOGROS.find(l => l.id === yo.titulo) ? `<small style="display:block;color:#fde68a;font-size:10px">«${esc(LOGROS.find(l => l.id === yo.titulo).titulo)}»</small>` : ''}${hermInfo ? `<small style="display:block;color:${HERM_COLORES[hermInfo.color] || '#4ade80'};font-size:10px">&lt;${esc(hermInfo.nombre)}&gt;</small>` : ''}`);
+  const lblK = COMPACTO ? (hudLimpio ? 0.45 : 0.62) : 1;
+  let lblYo = !COMPACTO; if (!lblYo && !hudLimpio) for (const o of otros.values()) { const dx = o.x - P.x, dz = o.z - P.z; if (dx * dx + dz * dz < 900) { lblYo = true; break; } }
+  if (!lblYo) { if (P.lbl && P.lbl.style.display !== 'none') P.lbl.style.display = 'none'; }
+  else if (yo && P.lbl && lblVe(P.lbl, P.x, P.y + 2.15 + (P.fig && P.fig.montura ? 1.2 : 0), P.z, 999)) lblPon(P.lbl, `<span style="color:${yo.dios ? '#ffd84a' : (yo.tinte && colorTinte3(yo.tinte)) || '#ffe600'}">${yo.dios ? 'GM ' : ''}${esc(yo.nombre)}</span>${yo.titulo && LOGROS.find(l => l.id === yo.titulo) ? `<small style="display:block;color:#fde68a;font-size:10px">«${esc(LOGROS.find(l => l.id === yo.titulo).titulo)}»</small>` : ''}${hermInfo ? `<small style="display:block;color:${HERM_COLORES[hermInfo.color] || '#4ade80'};font-size:10px">&lt;${esc(hermInfo.nombre)}&gt;</small>` : ''}`);
   for (const o of otros.values()) {
     const cl = CLASES[o.cl];
-    if (lblVe(o.lbl, o.x, (o.y || alturaEn(o.x, o.z)) + 2.15 + (o.fig && o.fig.montura ? 1.2 : 0), o.z, 70)) lblPon(o.lbl, `<span style="color:${o.gm ? '#ffd84a' : o.fc && yo && yo.faccion && o.fc !== yo.faccion && enAbismo(o.x) ? '#ff4d4d' : (o.tn && colorTinte3(o.tn)) || (cl ? cl.color : '#fff')}">${o.gm === 2 ? 'DUEÑO ' : o.gm ? 'MOD ' : ''}${o.fc && enAbismo(o.x) ? (o.fc === 'luz' ? '☀ ' : '🌑 ') : ''}${o.fc && yo && yo.faccion && o.fc !== yo.faccion && enAbismo(o.x) ? '⚔ ' : ''}${esc(o.n)} · Nv${o.lv}</span>${o.ti ? `<small style="display:block;color:#fde68a;font-size:10px">«${esc(o.ti)}»</small>` : ''}${o.hn ? `<small style="display:block;color:${HERM_COLORES[o.hc] || '#4ade80'};font-size:10px">&lt;${esc(o.hn)}&gt;</small>` : ''}${o.ra && enAbismo(o.x) ? `<small style="display:block;color:#c4b5fd;font-size:10px">${RANGOS[o.ra].n}</small>` : ''}<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})${o.fc && yo && yo.faccion && o.fc !== yo.faccion && enAbismo(o.x) ? ";background:#ff3344" : ""}"></i></span>`);
+    if (lblVe(o.lbl, o.x, (o.y || alturaEn(o.x, o.z)) + 2.15 + (o.fig && o.fig.montura ? 1.2 : 0), o.z, (enGrupo(o.id) || o.id === objetivoP ? 70 : 70 * lblK))) lblPon(o.lbl, `<span style="color:${o.gm ? '#ffd84a' : o.fc && yo && yo.faccion && o.fc !== yo.faccion && enAbismo(o.x) ? '#ff4d4d' : (o.tn && colorTinte3(o.tn)) || (cl ? cl.color : '#fff')}">${o.gm === 2 ? 'DUEÑO ' : o.gm ? 'MOD ' : ''}${o.fc && enAbismo(o.x) ? (o.fc === 'luz' ? '☀ ' : '🌑 ') : ''}${o.fc && yo && yo.faccion && o.fc !== yo.faccion && enAbismo(o.x) ? '⚔ ' : ''}${esc(o.n)} · Nv${o.lv}</span>${o.ti ? `<small style="display:block;color:#fde68a;font-size:10px">«${esc(o.ti)}»</small>` : ''}${o.hn ? `<small style="display:block;color:${HERM_COLORES[o.hc] || '#4ade80'};font-size:10px">&lt;${esc(o.hn)}&gt;</small>` : ''}${o.ra && enAbismo(o.x) ? `<small style="display:block;color:#c4b5fd;font-size:10px">${RANGOS[o.ra].n}</small>` : ''}<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})${o.fc && yo && yo.faccion && o.fc !== yo.faccion && enAbismo(o.x) ? ";background:#ff3344" : ""}"></i></span>`);
   }
   const kMis = tipoMision();
   // '❗' solo en el monstruo de mision vivo mas cercano; etiquetas de cerca a lejos (el objetivo primero) y sin encimarse.
@@ -8431,13 +8469,13 @@ function etiquetas(t) {
     const def = MONSTRUOS[o.k], el = o.id === objetivo, mis = o.id === misId;
     const alto = o.fig ? altoFig(o.fig) : 2;
     const herido = o.hp < o.mx || el;
-    if (lblVe(o.lbl, o.x, alturaEn(o.x, o.z) + alto + 0.2, o.z, el ? 90 : (o.j || mis ? 70 : o.noct ? 55 : 38)) && (el || mis || !lblPisa(o.lbl))) { lblUsa(); lblPon(o.lbl, `${o.cast && o.cast.fin > t ? `<b style="display:block;color:#fb923c;font-size:12px">🔮 ${esc(o.cast.n)}…</b>` : ''}<span style="color:${o.ra ? o.ti || '#ffd84a' : o.iv ? '#ff5a1f' : o.j ? '#ff6bf0' : colorNivel(o.nv)}">${o.alertaT && t - o.alertaT < 600 && t >= o.alertaT ? '<b style="color:#ff4d4d;font-size:15px">! </b>' : ''}${mis ? '<b style="color:#ffd84a;font-size:15px">❗</b>' : ''}${o.ra ? (o.la ? '💰 ' : '★ ') + esc(o.ra) + (o.af ? ' · ' + ({ furioso: '😡', sanguinario: '🩸' }[o.af] || '') : '') + ' · ' :o.iv ? '⚔ ' : o.j ? '★ ' : ''}${asedio && asedio.dormido && o.id === asedio.guardian ? '💤 ' : ''}${def && def.dispara ? '🏹 ' : ''}${def && def.vel >= 1.25 ? '⚡ ' : ''}${o.noct ? '<b style="color:#c4a8ff">🌙 ' + esc(def.nombre) + ' nocturno</b> ' : herido || o.j || mis ? esc(def.nombre) + ' ' : ''}${o.ra ? `<span style="color:${colorNivel(o.nv)}">${marcaNivel(o.nv)}Nv${o.nv}</span>` : marcaNivel(o.nv) + 'Nv' + o.nv}</span>${herido ? `<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>` : ''}`); }
+    if (lblVe(o.lbl, o.x, alturaEn(o.x, o.z) + alto + 0.2, o.z, el ? 90 : (o.j || mis ? 70 : (o.noct ? 55 : 38) * lblK)) && (el || mis || !lblPisa(o.lbl))) { lblUsa(); lblPon(o.lbl, `${o.cast && o.cast.fin > t ? `<b style="display:block;color:#fb923c;font-size:12px">🔮 ${esc(o.cast.n)}…</b>` : ''}<span style="color:${o.ra ? o.ti || '#ffd84a' : o.iv ? '#ff5a1f' : o.j ? '#ff6bf0' : colorNivel(o.nv)}">${o.alertaT && t - o.alertaT < 600 && t >= o.alertaT ? '<b style="color:#ff4d4d;font-size:15px">! </b>' : ''}${mis ? '<b style="color:#ffd84a;font-size:15px">❗</b>' : ''}${o.ra ? (o.la ? '💰 ' : '★ ') + esc(o.ra) + (o.af ? ' · ' + ({ furioso: '😡', sanguinario: '🩸' }[o.af] || '') : '') + ' · ' :o.iv ? '⚔ ' : o.j ? '★ ' : ''}${asedio && asedio.dormido && o.id === asedio.guardian ? '💤 ' : ''}${def && def.dispara ? '🏹 ' : ''}${def && def.vel >= 1.25 ? '⚡ ' : ''}${o.noct ? '<b style="color:#c4a8ff">🌙 ' + esc(def.nombre) + ' nocturno</b> ' : herido || o.j || mis ? esc(def.nombre) + ' ' : ''}${o.ra ? `<span style="color:${colorNivel(o.nv)}">${marcaNivel(o.nv)}Nv${o.nv}</span>` : marcaNivel(o.nv) + 'Nv' + o.nv}</span>${herido ? `<span class="b"><i style="transform:scaleX(${clamp(o.hp / o.mx, 0, 1).toFixed(2)})"></i></span>` : ''}`); }
   }
   for (const av of aventureros) if (lblVe(av.lbl, av.x, alturaEn(av.x, av.z) + 2.15, av.z, 24)) lblPon(av.lbl, `${av.diceT > t ? `<span style="display:block;background:rgba(255,255,255,.92);color:#222;border-radius:8px;padding:2px 7px;margin:0 auto 2px;font-weight:600;white-space:normal;width:max-content;max-width:170px">${esc(av.dice)}</span>` : ''}<span style="color:#93c5fd">${esc(Math.hypot(av.x - P.x, av.z - P.z) < 10 ? av.n : av.n.split(' ')[0])}</span> <small style="color:#bbb;font-size:9px">PNJ</small>`);
   if (decoTp.lbl) { if (decoTp.puesto) { if (lblVe(decoTp.lbl, decoTp.puesto.x, decoTp.puesto.y + 1.6, decoTp.puesto.z, 40)) lblPon(decoTp.lbl, '<span style="color:#4ade80">Abuela · Tienda de la fiesta</span>'); } else decoTp.lbl.style.display = 'none'; }
   { const mk = marcasNpc();
     for (const n of npcs) {
-      const m = mk.get(n.nombre), rol = n.rol || ROL_NPC[n.tipo], cerca = Math.hypot(n.x - P.x, n.z - P.z) < 60;
+      const m = mk.get(n.nombre), rol = n.rol || ROL_NPC[n.tipo], cerca = Math.hypot(n.x - P.x, n.z - P.z) < 60 * lblK;
       if (lblVe(n.lbl, n.x, n.y + 2.4, n.z, m ? 140 : 60)) { const kL = (m || '') + (cerca ? '1' : '0'); if (n._lk !== kL) { n._lk = kL; n._lh = `${m ? `<b class="npc-marca">${m}</b>${cerca ? '<br>' : ''}` : ''}${cerca ? `<span style="color:#4ade80">${esc(n.nombre)}</span>${rol ? `<br><small style="color:#fde68a;font-size:11px">${rol}</small>` : ''}` : ''}`; } lblPon(n.lbl, n._lh); }   /* el texto de un vecino solo cambia con su marca o al acercarte */
     } }
 }
@@ -8948,7 +8986,7 @@ function pintarMisiones() {
     // En su guarida y sin el jefe a la vista (el cliente ve todo lo cercano): ya cayo y reaparece en 1-1,5 min.
     let sinJefe = !lista && !campo && metaMision && metaMision.jefe && dist < 25;
     if (sinJefe) for (const o of mons.values()) if (o.k === q.tipo && o.hp > 0 && !o.muereT) { sinJefe = false; break; }
-    h += `<div class="q"><b>📜 ${esc(q.nombre)}</b>${lista ? `<span class="ok" data-entregar="1" style="cursor:pointer;text-decoration:underline">¡Lista! Toca aquí para entregarla</span>` : `${mq.nombre || q.tipo}${nvq}: ${Math.min(yo.mis.p, q.n)}/${q.n}<small>${campo ? '' : donde}</small>${sinJefe ? '<small style="display:block;color:#ffd84a">Reaparece pronto: caza cerca mientras tanto</small>' : ''}${alta ? `<small style="display:block;color:#ff9900">${campo ? `Muy fuerte para ti: sube a Nv ${Math.max(yo.nivel + 1, mq.nivel - (mq.jefe ? 2 : 3))} cazando ${esc(MONSTRUOS[campo.k].nombre || campo.k)} en la luz amarilla${donde || ' →'} o invita a un amigo 🤝` : `Muy fuerte para ti: sube antes${zt ? ' en ' + esc(zt.nombre) : ''} o ve en grupo`}</small>` : ''}`}</div>`;
+    h += `<div class="q q-mis"><b>📜 ${esc(q.nombre)}</b>${lista ? `<span class="ok" data-entregar="1" style="cursor:pointer;text-decoration:underline">¡Lista! Toca aquí para entregarla</span>` : `${mq.nombre || q.tipo}${nvq}: ${Math.min(yo.mis.p, q.n)}/${q.n}<small>${campo ? '' : donde}</small>${sinJefe ? '<small style="display:block;color:#ffd84a">Reaparece pronto: caza cerca mientras tanto</small>' : ''}${alta ? `<small style="display:block;color:#ff9900">${campo ? `Muy fuerte para ti: sube a Nv ${Math.max(yo.nivel + 1, mq.nivel - (mq.jefe ? 2 : 3))} cazando ${esc(MONSTRUOS[campo.k].nombre || campo.k)} en la luz amarilla${donde || ' →'} o invita a un amigo 🤝` : `Muy fuerte para ti: sube antes${zt ? ' en ' + esc(zt.nombre) : ''} o ve en grupo`}</small>` : ''}`}</div>`;
   }
   // Encargos de la zona (no son "mata N"): el siguiente sin hacer.
   metaEnc = null;

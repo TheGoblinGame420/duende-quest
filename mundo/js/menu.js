@@ -424,7 +424,7 @@ export function iniciarMenu(api) {
 
   // ── Lo que vivia en #v-ayuda: se muda con sus mismos ids ──
   secs.controles.appendChild(hueco.controles);
-  secs.interfaz.appendChild(h('p', 'mn-sub', 'Tamaño del texto y respuesta del dispositivo.'));
+  secs.interfaz.appendChild(h('p', 'mn-sub', 'Tamaño del texto, respuesta del dispositivo y cuánto se ve en pantalla.'));
   secs.interfaz.appendChild(hueco.interfaz);
   secs.ayuda.appendChild(hueco.ayuda);
   const teclado = h('details', 'mn-det'); teclado.appendChild(h('summary', '', 'Controles con teclado y ratón')); teclado.open = !api.movil;
@@ -438,7 +438,7 @@ export function iniciarMenu(api) {
       if (n.matches('.cerrar,h2')) { n.remove(); continue; }
       if (tiene('sel-calidad')) { n.remove(); continue; }
       if (tiene('sel-brillo')) { hueco.graficos.appendChild(n); continue; }
-      if (tiene('sel-vib') || tiene('sel-texto')) { hueco.interfaz.appendChild(n); continue; }
+      if (tiene('sel-vib') || tiene('sel-texto') || tiene('sel-hud')) { hueco.interfaz.appendChild(n); continue; }
       if (tiene('sel-mano')) { hueco.controles.appendChild(n); continue; }
       if (tiene('b-teclas')) { dest = 'teclado'; hueco.controles.appendChild(teclado); }
       else if (tiene('b-leyenda')) dest = 'ayuda';

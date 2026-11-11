@@ -960,6 +960,32 @@ body:is(.movil,.compacto) #botones:not(.abierto){grid-template-columns:repeat(4,
 @media (orientation:landscape) and (max-height:500px){
  body:is(.movil,.compacto) #misiones.con-tuto:not(.abierto),body:is(.movil,.compacto).texto-grande #misiones.con-tuto:not(.abierto),body:is(.movil,.compacto):has(#obj[style*="block"]) #misiones.con-tuto:not(.abierto){width:max(120px,min(300px,calc(100vw - 396px - env(safe-area-inset-left) - env(safe-area-inset-right))));}   /* la fila tiene un boton mas (40 px) */
 }
+/* ── HUD despejado en el celular ── solo lo esencial a la vista: vida, la mision en una linea, minimapa, ⋯/⚙ y controles.
+   mundo.js pone .quieto a los textos que llevan un rato sin cambiar, .vivo a la mision recien cambiada y
+   body.hud-limpio con Menu > Interfaz > Pantalla: Limpia (localStorage 'dq_hud_limpio'). */
+@media (orientation:portrait){body:is(.movil,.compacto) #botones.abierto{top:calc(clamp(96px,27vw,104px) + 16px + env(safe-area-inset-top) + var(--tg-top,0px));}}   /* ⋯ abierto: bajo el minimapa, ya no lo pisa */
+body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto):has(.q-mis) .q:not(.q-mis){display:none!important;}
+body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto):has(.q-mis) .q.q-mis{display:block!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto):has(.q-mis) .q.q-mis>b{display:none;}
+body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto):has(.q-mis) .q.q-mis small{display:inline!important;}
+body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto):has(.q-mis) .ob-btn{display:none;}
+body:is(.movil,.compacto) #misiones:not(.abierto):not(.con-tuto):has(.q-mis){max-height:22px;}
+body:is(.movil,.compacto) #oro.quieto,body:is(.movil,.compacto) #temp3.quieto{display:none;}
+body:is(.movil,.compacto) #mini #mini-r{transition:opacity .5s;}
+body:is(.movil,.compacto) #mini #mini-r.quieto{opacity:0;}
+body:is(.movil,.compacto) #joy .pista-joy{transition:opacity .4s;}
+body:is(.movil,.compacto).en-combate #joy .pista-joy{opacity:0;}
+/* Pantalla limpia: fuera todo lo que no sea vida, minimapa, menu y controles; la mision asoma unos segundos cuando avanza. */
+body.hud-limpio #oro,body.hud-limpio #temp3,body.hud-limpio #mundial,body.hud-limpio #chicha3:not(.listo),body.hud-limpio #xp-prox,body.hud-limpio #mini .z,body.hud-limpio #mini::after,body.hud-limpio #joy .pista-joy,body.hud-limpio #tira-diario,body.hud-limpio #ob-sig{display:none!important;}
+body.hud-limpio #misiones:not(.abierto):not(.con-tuto):not(.vivo){opacity:0;pointer-events:none;}
+body.hud-limpio #misiones{transition:opacity .5s;}
+body.hud-limpio:is(.movil,.compacto) #botones:not(.abierto) :is(#b-inv,#b-premium,#b-libro,#b-pase,#b-amigos){display:none;}
+body.hud-limpio:is(.movil,.compacto) #botones:not(.abierto){grid-template-columns:repeat(2,40px);}
+body.hud-limpio:is(.movil,.compacto) #botones:not(.abierto) #b-menu{position:static;}
+body.hud-limpio:is(.movil,.compacto) #marco{background:transparent;border-color:transparent;}
+body.hud-limpio:is(.movil,.compacto) #barra .acc{background:rgba(14,9,30,.28);border-color:rgba(255,255,255,.1);}
+body.hud-limpio:not(.movil):not(.compacto) #chat:not(:focus-within){opacity:.35;}
+@media (prefers-reduced-motion:reduce){body.hud-limpio #misiones,body:is(.movil,.compacto) #mini #mini-r,body:is(.movil,.compacto) #joy .pista-joy{transition:none;}}
 </style>
 <style id="css-avisos-movil">
 /* Movil: avisos en franja legible bajo el HUD (--av-top lo mide mundo.js colocarAvisos), por encima de etiquetas y botones */
@@ -1260,6 +1286,7 @@ html body:not(.movil):not(.compacto) #chat{width:min(380px,42vw,max(220px,calc(5
   <div class="fila" id="fila-mano" style="display:none"><span>Mando</span><b><select id="sel-mano" style="background:#22164a;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="izq">Joystick a la izquierda</option><option value="der">Joystick a la derecha</option></select></b></div>
   <div class="fila" id="fila-vib"><span>Vibración</span><b><select id="sel-vib" style="background:#22164a;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="normal">Normal</option><option value="suave">Suave</option><option value="off">Apagada</option></select></b></div>
   <div class="fila"><span>Texto</span><b><select id="sel-texto" style="background:#22164a;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="n">Normal</option><option value="g">Grande</option></select></b></div>
+  <div class="fila" id="fila-hud"><span>Pantalla</span><b><select id="sel-hud" title="Limpia: solo vida, minimapa, menú y controles; la misión asoma cuando avanza" style="background:#22164a;color:#fff;border:1px solid var(--borde);border-radius:6px;padding:3px 6px;pointer-events:auto"><option value="n">Normal</option><option value="l">Limpia (solo lo esencial)</option></select></b></div>
   <script>
   /* Texto grande: 'dq3_texto' (n|g). Sin valor guardado, grande en pantallas de 5" (lado corto <= 430 px: Android de gama media de 393-412 px). */
   (function(){var v=null;try{v=localStorage.getItem('dq3_texto');}catch(e){}
