@@ -8210,7 +8210,7 @@ function etiquetas(t) {
   { const mk = marcasNpc();
     for (const n of npcs) {
       const m = mk.get(n.nombre), rol = n.rol || ROL_NPC[n.tipo], cerca = Math.hypot(n.x - P.x, n.z - P.z) < 60;
-      if (lblVe(n.lbl, n.x, n.y + 2.4, n.z, m ? 140 : 60)) lblPon(n.lbl, `${m ? `<b class="npc-marca">${m}</b>${cerca ? '<br>' : ''}` : ''}${cerca ? `<span style="color:#4ade80">${esc(n.nombre)}</span>${rol ? `<br><small style="color:#fde68a;font-size:11px">${rol}</small>` : ''}` : ''}`);
+      if (lblVe(n.lbl, n.x, n.y + 2.4, n.z, m ? 140 : 60)) { const kL = (m || '') + (cerca ? '1' : '0'); if (n._lk !== kL) { n._lk = kL; n._lh = `${m ? `<b class="npc-marca">${m}</b>${cerca ? '<br>' : ''}` : ''}${cerca ? `<span style="color:#4ade80">${esc(n.nombre)}</span>${rol ? `<br><small style="color:#fde68a;font-size:11px">${rol}</small>` : ''}` : ''}`; } lblPon(n.lbl, n._lh); }   /* el texto de un vecino solo cambia con su marca o al acercarte */
     } }
 }
 // ── TEMA DEL PUEBLO ──
@@ -8245,6 +8245,7 @@ for (const ev of ['pointerup', 'touchend', 'click', 'keydown']) addEventListener
 // Columnas de aire celeste entre islas (mmo/js/abismo3d.js CORRIENTES): el servidor
 // recarga las alas al cruzarlas volando o planeando y avisa con 'corriente'.
 const corrientes3 = [];
+let corr3Ve = null;
 function crearCorrientes() {
   const geoC = new THREE.CylinderGeometry(7, 7, 70, 20, 1, true), geoA = new THREE.TorusGeometry(7.5, 0.35, 6, 32);
   for (const c of CORRIENTES) {
@@ -9232,6 +9233,8 @@ function cuadroBucle(t) {
   if (cueva) cueva.grupo.visible = cueva.grupo.matrixWorldAutoUpdate = enCueva(P.x);
   if (abismo) abismo.grupo.visible = abismo.grupo.matrixWorldAutoUpdate = enAbismo(P.x);
   if (cueva && enCueva(P.x)) cueva.animar(t);
+  // Las corrientes del Abismo (a 6 km) solo existen para three dentro del Abismo.
+  { const enAbC = enAbismo(P.x); if (enAbC !== corr3Ve) { corr3Ve = enAbC; for (const c of corrientes3) { c.col.visible = c.col.matrixWorldAutoUpdate = enAbC; for (const a of c.aros) a.visible = a.matrixWorldAutoUpdate = enAbC; } } }
   if (abismo && enAbismo(P.x)) { abismo.animar(t); animarCorrientes(t); }
   else if (!enCueva(P.x)) animarCorrientesMundo(t);
   animarNocheDuendes(t);

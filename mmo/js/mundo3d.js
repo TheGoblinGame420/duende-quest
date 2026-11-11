@@ -84,10 +84,12 @@ let _a = IDS[0], _b = IDS[1], _k = 1;
 function cercanas(x, z) {
   let da = Infinity, db = Infinity, ia = IDS[0], ib = IDS[1];   // con NaN queda como antes (noche/amanecer)
   for (let i = 0; i < IDS.length; i++) {
-    const id = IDS[i], c = ZONAS3D[id], d = Math.hypot(c.x - x, c.z - z);
+    // Distancias al cuadrado (el mismo orden) y solo dos raices al final: Math.hypot es lento y esto corre
+    // cientos de miles de veces al cargar y cientos por cuadro.
+    const id = IDS[i], c = ZONAS3D[id], dx = c.x - x, dz = c.z - z, d = dx * dx + dz * dz;
     if (d < da) { db = da; ib = ia; da = d; ia = id; } else if (d < db) { db = d; ib = id; }
   }
-  _a = ia; _b = ib;
+  _a = ia; _b = ib; da = Math.sqrt(da); db = Math.sqrt(db);
   _k = 0.5 + 0.5 * suave(Math.max(0, Math.min(1, (db - da) / 60)));   // 60 m de transicion
 }
 export function mezclaEn(x, z) {
