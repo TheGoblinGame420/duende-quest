@@ -520,7 +520,7 @@ function ambiente(z) {
   if (!fijo && NIEBLA_TINTE[z]) nieblaTinteObj.lerp(NIEBLA_TINTE[z], (z === 'cumbres' ? 0.4 : 0.22) * (1 - nocheK * 0.6));
   ocasoK = fijo ? 0 : ocaso * (0.35 + 0.65 * nub) * (1 - nocheK * 0.5);
   brumaObj = z === 'cueva' ? 0 : z === 'cumbres' ? 0.55 : cl === 'niebla' || cl === 'arena' ? 0.45 : cl === 'nieve' ? 0.3 : 0.12;
-  estrellas.material.opacity = z === 'eter' ? 0.7 : z === 'cueva' ? 0 : nocheK * (cl === 'despejado' ? 0.9 : 0.2);
+  estrellas.material.opacity = z === 'eter' ? 0.7 : z === 'cueva' ? 0 : clamp((nocheK - 0.5) * 2, 0, 1) * (cl === 'despejado' ? 0.9 : 0.2);   /* no salen hasta que el cielo oscurece de verdad */
   cielo.ambiente(h, z, cl, nocheK, ocaso, luz, nub, ahora);
   if (z === 'cueva') { hemiBase = 0.6; sol.intensity = 0.3; }   // 0.6: un pelo mas sin las luces de las antorchas (ahora horneadas)
   hemi.color.copy(cieloObj).lerp(BLANCO_H, 0.55);
@@ -651,7 +651,9 @@ function crearTerreno() {
 // alturas del terreno ya calculadas (una textura, sin calculos extra). Sin
 // luces de three: el brillo lo da uLuz (dia/noche/relampago) desde el bucle.
 const AGUA_U = { uT: { value: 0 }, uCielo: { value: C(CIELO.pueblo) }, uSol: { value: new THREE.Vector3(0.5, 0.8, 0.3) }, uSolC: { value: C('#fff2dd') },
-  uLuz: { value: 1 }, uProf: { value: null }, uEsc: { value: new THREE.Vector2(1, 0) } };
+  uLuz: { value: 1 }, uProf: { value: null }, uEsc: { value: new THREE.Vector2(1, 0) },
+  /* del cielo (cielo.js): cenit, direccion de la luz visible (sol o luna), nubes y su deriva: el agua las refleja */
+  uTop: cielo.u.uTop, uLuzD: cielo.u.uLuzD, uNubL: cielo.u.uNubL, dqRuido: cielo.u.dqRuido, dqDes: cielo.u.dqDes, dqNub: cielo.u.dqNub };
 function materialAgua(pos) {
   const N = SEG + 1, datos = new Uint8Array(N * N * 4);
   for (let i = 0; i < pos.count; i++) {
@@ -678,6 +680,7 @@ function materialAgua(pos) {
       }`,
     fragmentShader: `// dq:agua
       uniform float uT; uniform vec3 uCielo; uniform vec3 uSol; uniform vec3 uSolC; uniform float uLuz; uniform sampler2D uProf; uniform vec2 uEsc;
+      uniform vec3 uTop; uniform vec3 uLuzD; uniform vec3 uNubL; uniform sampler2D dqRuido; uniform vec4 dqDes; uniform float dqNub;
       varying vec3 vW;
       #include <common>
       #include <fog_pars_fragment>
@@ -696,12 +699,19 @@ function materialAgua(pos) {
         vec3 v = normalize(cameraPosition - vW);
         float fres = pow(1.0 - max(dot(n, v), 0.0), 3.0);
         vec3 col = mix(vec3(0.07, 0.42, 0.44), vec3(0.012, 0.09, 0.24), hondo);
-        col = mix(col, uCielo, 0.18 + 0.5 * fres) * uLuz;
-        float spec = pow(max(dot(n, normalize(normalize(uSol) + v)), 0.0), 160.0);
-        col += uSolC * spec * 1.3;
+        // Reflejo: a cada ola le toca su trozo de cielo (horizonte al mirar rasante, cenit hacia arriba) y las nubes que pasan.
+        vec3 rf = reflect(-v, n); float ry = max(rf.y, 0.0);
+        vec3 cieloR = mix(uCielo, uTop, pow(ry, 0.6) * 0.7);
+        ${baja ? '' : `float nb = texture2D(dqRuido, rf.xz / (ry + 0.2) * 0.13 + dqDes.xy).r; float th = mix(0.8, 0.22, dqNub);
+        cieloR = mix(cieloR, uNubL, smoothstep(th, th + 0.2, nb) * smoothstep(0.04, 0.3, ry) * 0.55);`}
+        col = mix(col, cieloR, 0.18 + 0.5 * fres) * uLuz;
+        // Brillo del astro que se ve (sol, o luna de noche): destello fino y una estela ancha y suave.
+        float nh = max(dot(n, normalize(uLuzD + v)), 0.0);
+        col += uSolC * (pow(nh, 160.0) * 1.3 + pow(nh, 22.0) * 0.07);
         float orilla = 1.0 - smoothstep(0.0, 1.1, p);
         float ola = 0.5 + 0.5 * sin(p * 9.0 - t * 1.8 + sin(q.x * 0.25 + q.y * 0.2) * 2.0);
         float espuma = orilla * (0.35 + 0.65 * ola);
+        ${baja ? '' : 'if (orilla > 0.01) espuma *= 0.55 + 0.9 * texture2D(dqRuido, q * 0.05 + vec2(t * 0.012, t * -0.007)).g;'}
         col = mix(col, vec3(0.85, 0.92, 0.95) * uLuz, espuma * 0.65);
         gl_FragColor = vec4(col, clamp(mix(0.5, 0.86, hondo) + fres * 0.1 + espuma * 0.35, 0.0, 0.95));
         #include <colorspace_fragment>

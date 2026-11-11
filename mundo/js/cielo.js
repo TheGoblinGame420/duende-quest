@@ -243,7 +243,7 @@ export function crearCielo({ escena, calidad = 'media', movil = false, zonas = n
     uniforms: u, side: THREE.BackSide, depthWrite: false, depthTest: false, fog: false,
     vertexShader: 'varying vec3 vD; void main() { vD = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
     fragmentShader: DEF + `uniform vec3 uSolC; uniform float uNoche; uniform vec3 uLunaC; uniform vec3 uLuna; uniform float uSolK; uniform float uLunaK; uniform vec3 uFase; uniform float uVia;
-      uniform vec3 uNubL; uniform vec3 uNubS; varying vec3 vD;
+      uniform vec3 uNubL; uniform vec3 uNubS; uniform float uVelo; varying vec3 vD;
       // dq:cielo
       ${GLSL_BASE}
       ${GLSL_NUBE}
@@ -257,23 +257,25 @@ export function crearCielo({ escena, calidad = 'media', movil = false, zonas = n
         if (uVia > 0.01 && h > 0.0) {
           float b = dot(d, ${v3(viaN)});
           vec2 q = vec2(dot(d, ${v3(viaA)}), dot(d, ${v3(viaB)}));
-          float polvo = texture2D(dqRuido, q * 0.55 + vec2(b * 0.5, 0.21)).b;
-          float fino = texture2D(dqRuido, q * 2.3).g;
-          float franja = exp(-b * b * (9.0 + 14.0 * polvo));
-          float v = franja * (0.25 + 1.1 * polvo) * (0.55 + 0.7 * fino) * smoothstep(0.0, 0.3, h) * uVia;
-          c += vec3(0.2, 0.26, 0.5) * v * 0.3 + vec3(0.5, 0.36, 0.42) * v * v * 0.22;
+          q *= 1.0 + b * 1.3;   /* a lo ancho de la franja el dibujo tambien cambia (sin esto salen rayas) */
+          vec4 r1 = texture2D(dqRuido, q * 0.9 + 0.21);
+          float fino = texture2D(dqRuido, q * 3.7).g;
+          float franja = exp(-b * b * (20.0 + 26.0 * r1.b));
+          float v = franja * (0.2 + 1.0 * r1.b) * (0.5 + 0.8 * fino) * smoothstep(0.02, 0.32, h) * uVia;
+          v *= 1.0 - 0.6 * smoothstep(0.5, 0.75, r1.r) * exp(-b * b * 60.0);   /* vetas oscuras de polvo */
+          c += vec3(0.2, 0.26, 0.5) * v * 0.2 + vec3(0.5, 0.36, 0.42) * v * v * 0.16;
         }
         c += uSolC * (pow(s, 8.0) * 0.2 + pow(s, 60.0) * 0.3 + pow(s, 900.0) * 1.1 + smoothstep(0.99952, 0.99972, s) * 1.5) * uSolK * sobre;
         c += uLunaC * (pow(l, 14.0) * 0.1 + pow(l, 120.0) * 0.18) * uLunaK;
-        if (l > 0.9985 && uLunaK > 0.01) {
+        if (l > 0.9992 && uLunaK > 0.01) {
           vec3 ex = normalize(cross(vec3(0.0, 1.0, 0.0), uLuna)); vec3 ey = cross(uLuna, ex);
-          vec2 q = vec2(dot(d, ex), dot(d, ey)) / 0.042; float r2 = dot(q, q);
+          vec2 q = vec2(dot(d, ex), dot(d, ey)) / 0.036; float r2 = dot(q, q);
           if (r2 < 1.0) {
             vec3 nl = vec3(q, sqrt(1.0 - r2));
             float fase = smoothstep(-0.08, 0.22, dot(nl, uFase));
             float mar = texture2D(dqRuido, q * 0.17 + 0.37).b;
             vec3 lc = uLunaC * (0.62 + 0.5 * mar) * (0.75 + 0.25 * nl.z);
-            c = mix(c, c * 0.55 + lc * (0.035 + 1.05 * fase), smoothstep(1.0, 0.86, r2) * uLunaK);
+            c = mix(c, c * 0.82 + lc * (0.03 + 1.05 * fase), smoothstep(1.0, 0.86, r2) * uLunaK);
           }
         }
         #else
@@ -296,6 +298,7 @@ export function crearCielo({ escena, calidad = 'media', movil = false, zonas = n
           nc = mix(uHor, nc, smoothstep(0.0, 0.26, h));
           c = mix(c, nc, dens * 0.94);
         }
+        c = mix(c, uHor, uVelo * uVelo * 0.85);   /* niebla o tormenta de arena: el cielo se cierra */
         #ifndef BAJA
         c += (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) / 255.0;
         #endif
@@ -345,28 +348,29 @@ export function crearCielo({ escena, calidad = 'media', movil = false, zonas = n
   try {
     const N = movil ? 22 : 40, PUFFS = baja ? 4 : alta ? 7 : 6;
     nubes = new THREE.Mesh(geometriaNubes(N, PUFFS, alta && !movil ? 2 : 1), new THREE.ShaderMaterial({
-      uniforms: u, transparent: true, fog: false,
+      uniforms: u, fog: false,
       vertexShader: `// dq:nubes3
         attribute vec4 aNube; attribute vec4 aPuff;
-        uniform vec3 uCam; uniform float uT; uniform vec3 uLuzD; uniform vec3 uNubL; uniform vec3 uNubS; uniform vec3 uHor;
-        varying vec3 vC; varying float vA;
+        uniform vec3 uCam; uniform float uT; uniform vec3 uLuzD; uniform vec3 uNubL; uniform vec3 uNubS; uniform vec3 uHor; uniform float uVelo;
+        varying vec3 vC;
         void main() {
           vec3 c = aNube.xyz; c.x += aNube.w * uT;
           c.xz = uCam.xz + mod(c.xz - uCam.xz + 550.0, 1100.0) - 550.0;
           vec3 nrm = normalize(position);
-          vec3 w = c + aPuff.xyz + position * vec3(1.35, 0.78, 1.1) * aPuff.w;
+          // A lo lejos se deshacen (se encogen hasta nada): asi no aparecen ni desaparecen de golpe al dar la vuelta.
+          float esc = 1.0 - smoothstep(330.0, 540.0, length(c.xz - uCam.xz));
+          vec3 w = c + (aPuff.xyz + position * vec3(1.35, 0.78, 1.1) * aPuff.w) * esc;
           // Arriba y hacia la luz, claro; la panza, en sombra.
           float k = clamp((dot(nrm, uLuzD) * 0.5 + 0.5) * 0.6 + (nrm.y * 0.5 + 0.5) * 0.62 - 0.14, 0.0, 1.0);
           k = k * k * (3.0 - 2.0 * k);
           float dl = length(w.xz - uCam.xz);
-          vC = mix(mix(uNubS, uNubL, k), uHor, smoothstep(160.0, 540.0, dl) * 0.6);
-          vA = (1.0 - smoothstep(380.0, 540.0, length(c.xz - uCam.xz))) * 0.96;
+          vC = mix(mix(uNubS, uNubL, k), uHor, max(smoothstep(160.0, 540.0, dl) * 0.6, uVelo * uVelo * 0.85));
           gl_Position = projectionMatrix * viewMatrix * vec4(w, 1.0);
         }`,
       fragmentShader: `// dq:nubes3
-        varying vec3 vC; varying float vA;
+        varying vec3 vC;
         void main() {
-          gl_FragColor = vec4(vC, vA);
+          gl_FragColor = vec4(vC, 1.0);
           #include <colorspace_fragment>
         }`,
     }));
@@ -413,7 +417,7 @@ export function crearCielo({ escena, calidad = 'media', movil = false, zonas = n
       if (gris > 0) { tmp.copy(NUB_GRIS).multiplyScalar(1 - nk * 0.8); nubL.lerp(tmp, gris); nubS.lerp(tmp.multiplyScalar(0.62), gris); }
       luzC.copy(LUZ_DIA).lerp(LUZ_OCA, oc * 0.8).lerp(LUZ_NOC, nk).multiplyScalar((0.85 - 0.5 * nk) * (0.45 + 0.55 * nub) * luzZona);
       nubObj = oculto ? 0 : z === 'eter' ? 0.3 : cl === 'despejado' ? (COB_ZONA[z] || COBERTURA.despejado) : (COBERTURA[cl] || 0.5);
-      veloObj = fijo ? 1 : Math.max(VELO[cl] || 0, z === 'cumbres' ? 0.12 : 0);
+      veloObj = fijo ? 0 : Math.max(VELO[cl] || 0, z === 'cumbres' ? 0.12 : 0);
       viaObj = z === 'eter' ? 0.8 : oculto ? 0 : suave(0.6, 1, nocheK) * (cl === 'despejado' ? 1 : 0.15);
     },
     // Cada cuadro. hor = color del horizonte (el de la niebla), top = color del cenit.
@@ -450,7 +454,7 @@ export function crearCielo({ escena, calidad = 'media', movil = false, zonas = n
       sh.uniforms.dqRuido = u.dqRuido; sh.uniforms.dqDes = u.dqDes; sh.uniforms.dqNub = u.dqNub; sh.uniforms.uLuna = u.uLuna; sh.uniforms.uLunaK = u.uLunaK;
       sh.vertexShader = v.replace('#include <common>', '#include <common>\nuniform vec3 uLuna; uniform float uLunaK;' + GLSL_NUBE)
         .replace(ancla, `vec3 dqD = normalize(position); vec2 dqUv; float dqN;
-          vTw *= (1.0 - smoothstep(0.9972, 0.9984, dot(dqD, uLuna)) * step(0.01, uLunaK)) * (1.0 - dqNube(dqD, dqUv, dqN));
+          vTw *= (1.0 - smoothstep(0.9988, 0.9994, dot(dqD, uLuna)) * step(0.01, uLunaK)) * (1.0 - dqNube(dqD, dqUv, dqN));
           ` + ancla);
     },
   };
